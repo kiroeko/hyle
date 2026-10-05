@@ -1,0 +1,565 @@
+Abs	ggml	ADMITTED	dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1|->dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1
+Abs	oneDNN	UNIMPLEMENTED	dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1|->dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1	onednn: oneDNN provider does not implement this operation
+Abs	Native	ADMITTED	dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1|->dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1
+Neg	ggml	ADMITTED	dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1|->dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1
+Neg	oneDNN	UNIMPLEMENTED	dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1|->dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1	onednn: oneDNN provider does not implement this operation
+Neg	Native	ADMITTED	dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1|->dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1
+Exp	ggml	ADMITTED	dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1|->dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1
+Exp	oneDNN	UNIMPLEMENTED	dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1|->dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1	onednn: oneDNN provider does not implement this operation
+Exp	Native	ADMITTED	dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1|->dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1
+Log	ggml	ADMITTED	dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1|->dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1
+Log	oneDNN	UNIMPLEMENTED	dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1|->dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1	onednn: oneDNN provider does not implement this operation
+Log	Native	ADMITTED	dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1|->dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1
+Sqrt	ggml	ADMITTED	dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1|->dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1
+Sqrt	oneDNN	UNIMPLEMENTED	dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1|->dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1	onednn: oneDNN provider does not implement this operation
+Sqrt	Native	ADMITTED	dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1|->dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1
+Rsqrt	ggml	ADMITTED	dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1|->dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1
+Rsqrt	oneDNN	UNIMPLEMENTED	dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1|->dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1	onednn: oneDNN provider does not implement this operation
+Rsqrt	Native	ADMITTED	dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1|->dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1
+Tanh	ggml	ADMITTED	dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1|->dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1
+Tanh	oneDNN	UNIMPLEMENTED	dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1|->dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1	onednn: oneDNN provider does not implement this operation
+Tanh	Native	ADMITTED	dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1|->dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1
+Sigmoid	ggml	ADMITTED	dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1|->dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1
+Sigmoid	oneDNN	UNIMPLEMENTED	dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1|->dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1	onednn: oneDNN provider does not implement this operation
+Sigmoid	Native	ADMITTED	dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1|->dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1
+Relu	ggml	ADMITTED	dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1|->dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1
+Relu	oneDNN	UNIMPLEMENTED	dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1|->dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1	onednn: oneDNN provider does not implement this operation
+Relu	Native	ADMITTED	dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1|->dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1
+Gelu	ggml	UNIMPLEMENTED	dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1|->dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1	ggml-cpu: ggml CPU operation domain is not admitted
+Gelu	oneDNN	UNIMPLEMENTED	dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1|->dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1	onednn: oneDNN provider does not implement this operation
+Gelu	Native	ADMITTED	dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1|->dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1
+GeluTanh	ggml	UNIMPLEMENTED	dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1|->dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1	ggml-cpu: ggml CPU operation domain is not admitted
+GeluTanh	oneDNN	UNIMPLEMENTED	dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1|->dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1	onednn: oneDNN provider does not implement this operation
+GeluTanh	Native	ADMITTED	dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1|->dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1
+Silu	ggml	UNIMPLEMENTED	dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1|->dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1	ggml-cpu: ggml CPU operation domain is not admitted
+Silu	oneDNN	UNIMPLEMENTED	dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1|->dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1	onednn: oneDNN provider does not implement this operation
+Silu	Native	ADMITTED	dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1|->dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1
+Softplus	ggml	UNIMPLEMENTED	dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1|->dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1	ggml-cpu: ggml CPU operation domain is not admitted
+Softplus	oneDNN	ADMITTED	dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1|->dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1
+Softplus	Native	ADMITTED	dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1|->dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1
+Add	ggml	ADMITTED	dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1|dtype=6;shape=8,;strides=4,;plain=1;dense=1|->dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1
+Add	oneDNN	UNIMPLEMENTED	dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1|dtype=6;shape=8,;strides=4,;plain=1;dense=1|->dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1	onednn: oneDNN provider does not implement this operation
+Add	Native	ADMITTED	dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1|dtype=6;shape=8,;strides=4,;plain=1;dense=1|->dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1
+Subtract	ggml	ADMITTED	dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1|dtype=6;shape=8,;strides=4,;plain=1;dense=1|->dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1
+Subtract	oneDNN	UNIMPLEMENTED	dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1|dtype=6;shape=8,;strides=4,;plain=1;dense=1|->dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1	onednn: oneDNN provider does not implement this operation
+Subtract	Native	ADMITTED	dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1|dtype=6;shape=8,;strides=4,;plain=1;dense=1|->dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1
+Multiply	ggml	ADMITTED	dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1|dtype=6;shape=8,;strides=4,;plain=1;dense=1|->dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1
+Multiply	oneDNN	UNIMPLEMENTED	dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1|dtype=6;shape=8,;strides=4,;plain=1;dense=1|->dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1	onednn: oneDNN provider does not implement this operation
+Multiply	Native	ADMITTED	dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1|dtype=6;shape=8,;strides=4,;plain=1;dense=1|->dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1
+Divide	ggml	ADMITTED	dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1|dtype=6;shape=8,;strides=4,;plain=1;dense=1|->dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1
+Divide	oneDNN	UNIMPLEMENTED	dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1|dtype=6;shape=8,;strides=4,;plain=1;dense=1|->dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1	onednn: oneDNN provider does not implement this operation
+Divide	Native	ADMITTED	dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1|dtype=6;shape=8,;strides=4,;plain=1;dense=1|->dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1
+Minimum	ggml	UNIMPLEMENTED	dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1|dtype=6;shape=8,;strides=4,;plain=1;dense=1|->dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1	ggml-cpu: ggml CPU operation domain is not admitted
+Minimum	oneDNN	UNIMPLEMENTED	dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1|dtype=6;shape=8,;strides=4,;plain=1;dense=1|->dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1	onednn: oneDNN provider does not implement this operation
+Minimum	Native	ADMITTED	dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1|dtype=6;shape=8,;strides=4,;plain=1;dense=1|->dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1
+Maximum	ggml	UNIMPLEMENTED	dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1|dtype=6;shape=8,;strides=4,;plain=1;dense=1|->dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1	ggml-cpu: ggml CPU operation domain is not admitted
+Maximum	oneDNN	UNIMPLEMENTED	dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1|dtype=6;shape=8,;strides=4,;plain=1;dense=1|->dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1	onednn: oneDNN provider does not implement this operation
+Maximum	Native	ADMITTED	dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1|dtype=6;shape=8,;strides=4,;plain=1;dense=1|->dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1
+ReduceSum	ggml	ADMITTED	dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1|->dtype=6;shape=;strides=;plain=1;dense=1
+ReduceSum	oneDNN	UNIMPLEMENTED	dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1|->dtype=6;shape=;strides=;plain=1;dense=1	onednn: oneDNN provider does not implement this operation
+ReduceSum	Native	ADMITTED	dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1|->dtype=6;shape=;strides=;plain=1;dense=1
+ReduceMean	ggml	ADMITTED	dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1|->dtype=6;shape=;strides=;plain=1;dense=1
+ReduceMean	oneDNN	UNIMPLEMENTED	dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1|->dtype=6;shape=;strides=;plain=1;dense=1	onednn: oneDNN provider does not implement this operation
+ReduceMean	Native	ADMITTED	dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1|->dtype=6;shape=;strides=;plain=1;dense=1
+ReduceMin	ggml	UNIMPLEMENTED	dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1|->dtype=6;shape=;strides=;plain=1;dense=1	ggml-cpu: ggml CPU operation domain is not admitted
+ReduceMin	oneDNN	UNIMPLEMENTED	dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1|->dtype=6;shape=;strides=;plain=1;dense=1	onednn: oneDNN provider does not implement this operation
+ReduceMin	Native	ADMITTED	dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1|->dtype=6;shape=;strides=;plain=1;dense=1
+ReduceMax	ggml	UNIMPLEMENTED	dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1|->dtype=6;shape=;strides=;plain=1;dense=1	ggml-cpu: ggml CPU operation domain is not admitted
+ReduceMax	oneDNN	UNIMPLEMENTED	dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1|->dtype=6;shape=;strides=;plain=1;dense=1	onednn: oneDNN provider does not implement this operation
+ReduceMax	Native	ADMITTED	dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1|->dtype=6;shape=;strides=;plain=1;dense=1
+GateSiluPacked	ggml	ADMITTED	dtype=6;shape=2,16,;strides=64,4,;plain=1;dense=1|->dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1
+GateSiluPacked	oneDNN	UNIMPLEMENTED	dtype=6;shape=2,16,;strides=64,4,;plain=1;dense=1|->dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1	onednn: oneDNN provider does not implement this operation
+GateSiluPacked	Native	ADMITTED	dtype=6;shape=2,16,;strides=64,4,;plain=1;dense=1|->dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1
+GateGeluPacked	ggml	UNIMPLEMENTED	dtype=6;shape=2,16,;strides=64,4,;plain=1;dense=1|->dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1	ggml-cpu: ggml CPU operation domain is not admitted
+GateGeluPacked	oneDNN	UNIMPLEMENTED	dtype=6;shape=2,16,;strides=64,4,;plain=1;dense=1|->dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1	onednn: oneDNN provider does not implement this operation
+GateGeluPacked	Native	ADMITTED	dtype=6;shape=2,16,;strides=64,4,;plain=1;dense=1|->dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1
+GateGeluTanhPacked	ggml	UNIMPLEMENTED	dtype=6;shape=2,16,;strides=64,4,;plain=1;dense=1|->dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1	ggml-cpu: ggml CPU operation domain is not admitted
+GateGeluTanhPacked	oneDNN	UNIMPLEMENTED	dtype=6;shape=2,16,;strides=64,4,;plain=1;dense=1|->dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1	onednn: oneDNN provider does not implement this operation
+GateGeluTanhPacked	Native	ADMITTED	dtype=6;shape=2,16,;strides=64,4,;plain=1;dense=1|->dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1
+SelectBoolBroadcast	ggml	UNIMPLEMENTED	dtype=1;shape=2,1,;strides=1,1,;plain=1;dense=1|dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1|dtype=6;shape=8,;strides=4,;plain=1;dense=1|->dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1	ggml-cpu: ggml CPU operation domain is not admitted
+SelectBoolBroadcast	oneDNN	ADMITTED	dtype=1;shape=2,1,;strides=1,1,;plain=1;dense=1|dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1|dtype=6;shape=8,;strides=4,;plain=1;dense=1|->dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1
+SelectBoolBroadcast	Native	ADMITTED	dtype=1;shape=2,1,;strides=1,1,;plain=1;dense=1|dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1|dtype=6;shape=8,;strides=4,;plain=1;dense=1|->dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1
+RmsNorm	ggml	ADMITTED	dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1|dtype=6;shape=8,;strides=4,;plain=1;dense=1|->dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1
+RmsNorm	oneDNN	ADMITTED	dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1|dtype=6;shape=8,;strides=4,;plain=1;dense=1|->dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1
+RmsNorm	Native	ADMITTED	dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1|dtype=6;shape=8,;strides=4,;plain=1;dense=1|->dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1
+LayerNorm	ggml	ADMITTED	dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1|dtype=6;shape=8,;strides=4,;plain=1;dense=1|dtype=6;shape=8,;strides=4,;plain=1;dense=1|->dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1
+LayerNorm	oneDNN	ADMITTED	dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1|dtype=6;shape=8,;strides=4,;plain=1;dense=1|dtype=6;shape=8,;strides=4,;plain=1;dense=1|->dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1
+LayerNorm	Native	ADMITTED	dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1|dtype=6;shape=8,;strides=4,;plain=1;dense=1|dtype=6;shape=8,;strides=4,;plain=1;dense=1|->dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1
+SoftmaxRank2	ggml	ADMITTED	dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1|->dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1
+SoftmaxRank2	oneDNN	UNIMPLEMENTED	dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1|->dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1	onednn: oneDNN provider does not implement this operation
+SoftmaxRank2	Native	ADMITTED	dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1|->dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1
+SoftmaxRank1	ggml	UNIMPLEMENTED	dtype=6;shape=8,;strides=4,;plain=1;dense=1|->dtype=6;shape=8,;strides=4,;plain=1;dense=1	ggml-cpu: ggml CPU operation domain is not admitted
+SoftmaxRank1	oneDNN	UNIMPLEMENTED	dtype=6;shape=8,;strides=4,;plain=1;dense=1|->dtype=6;shape=8,;strides=4,;plain=1;dense=1	onednn: oneDNN provider does not implement this operation
+SoftmaxRank1	Native	ADMITTED	dtype=6;shape=8,;strides=4,;plain=1;dense=1|->dtype=6;shape=8,;strides=4,;plain=1;dense=1
+SoftmaxRank4Scale	ggml	UNIMPLEMENTED	dtype=6;shape=2,2,3,8,;strides=192,96,32,4,;plain=1;dense=1|->dtype=6;shape=2,2,3,8,;strides=192,96,32,4,;plain=1;dense=1	ggml-cpu: ggml CPU operation domain is not admitted
+SoftmaxRank4Scale	oneDNN	UNIMPLEMENTED	dtype=6;shape=2,2,3,8,;strides=192,96,32,4,;plain=1;dense=1|->dtype=6;shape=2,2,3,8,;strides=192,96,32,4,;plain=1;dense=1	onednn: oneDNN provider does not implement this operation
+SoftmaxRank4Scale	Native	ADMITTED	dtype=6;shape=2,2,3,8,;strides=192,96,32,4,;plain=1;dense=1|->dtype=6;shape=2,2,3,8,;strides=192,96,32,4,;plain=1;dense=1
+SoftmaxAxis0	ggml	UNIMPLEMENTED	dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1|->dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1	ggml-cpu: ggml CPU operation domain is not admitted
+SoftmaxAxis0	oneDNN	UNIMPLEMENTED	dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1|->dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1	onednn: oneDNN provider does not implement this operation
+SoftmaxAxis0	Native	ADMITTED	dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1|->dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1
+LogSoftmax	ggml	UNIMPLEMENTED	dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1|->dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1	ggml-cpu: ggml CPU operation domain is not admitted
+LogSoftmax	oneDNN	UNIMPLEMENTED	dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1|->dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1	onednn: oneDNN provider does not implement this operation
+LogSoftmax	Native	ADMITTED	dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1|->dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1
+SoftmaxBoolMask	ggml	UNIMPLEMENTED	dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1|dtype=1;shape=2,8,;strides=8,1,;plain=1;dense=1|->dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1	ggml-cpu: ggml CPU operation domain is not admitted
+SoftmaxBoolMask	oneDNN	UNIMPLEMENTED	dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1|dtype=1;shape=2,8,;strides=8,1,;plain=1;dense=1|->dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1	onednn: oneDNN provider does not implement this operation
+SoftmaxBoolMask	Native	ADMITTED	dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1|dtype=1;shape=2,8,;strides=8,1,;plain=1;dense=1|->dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1
+SoftmaxAdditiveMask	ggml	UNIMPLEMENTED	dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1|dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1|->dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1	ggml-cpu: ggml CPU operation domain is not admitted
+SoftmaxAdditiveMask	oneDNN	UNIMPLEMENTED	dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1|dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1|->dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1	onednn: oneDNN provider does not implement this operation
+SoftmaxAdditiveMask	Native	ADMITTED	dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1|dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1|->dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1
+AttentionCausal	ggml	ADMITTED	dtype=6;shape=1,2,2,4,;strides=64,32,16,4,;plain=1;dense=1|dtype=6;shape=1,3,2,4,;strides=96,32,16,4,;plain=1;dense=1|dtype=6;shape=1,3,2,4,;strides=96,32,16,4,;plain=1;dense=1|->dtype=6;shape=1,2,2,4,;strides=64,32,16,4,;plain=1;dense=1
+AttentionCausal	oneDNN	UNIMPLEMENTED	dtype=6;shape=1,2,2,4,;strides=64,32,16,4,;plain=1;dense=1|dtype=6;shape=1,3,2,4,;strides=96,32,16,4,;plain=1;dense=1|dtype=6;shape=1,3,2,4,;strides=96,32,16,4,;plain=1;dense=1|->dtype=6;shape=1,2,2,4,;strides=64,32,16,4,;plain=1;dense=1	onednn: oneDNN provider does not implement this operation
+AttentionCausal	Native	ADMITTED	dtype=6;shape=1,2,2,4,;strides=64,32,16,4,;plain=1;dense=1|dtype=6;shape=1,3,2,4,;strides=96,32,16,4,;plain=1;dense=1|dtype=6;shape=1,3,2,4,;strides=96,32,16,4,;plain=1;dense=1|->dtype=6;shape=1,2,2,4,;strides=64,32,16,4,;plain=1;dense=1
+AttentionNonCausal	ggml	UNIMPLEMENTED	dtype=6;shape=1,2,2,4,;strides=64,32,16,4,;plain=1;dense=1|dtype=6;shape=1,3,2,4,;strides=96,32,16,4,;plain=1;dense=1|dtype=6;shape=1,3,2,4,;strides=96,32,16,4,;plain=1;dense=1|->dtype=6;shape=1,2,2,4,;strides=64,32,16,4,;plain=1;dense=1	ggml-cpu: ggml CPU operation domain is not admitted
+AttentionNonCausal	oneDNN	UNIMPLEMENTED	dtype=6;shape=1,2,2,4,;strides=64,32,16,4,;plain=1;dense=1|dtype=6;shape=1,3,2,4,;strides=96,32,16,4,;plain=1;dense=1|dtype=6;shape=1,3,2,4,;strides=96,32,16,4,;plain=1;dense=1|->dtype=6;shape=1,2,2,4,;strides=64,32,16,4,;plain=1;dense=1	onednn: oneDNN provider does not implement this operation
+AttentionNonCausal	Native	ADMITTED	dtype=6;shape=1,2,2,4,;strides=64,32,16,4,;plain=1;dense=1|dtype=6;shape=1,3,2,4,;strides=96,32,16,4,;plain=1;dense=1|dtype=6;shape=1,3,2,4,;strides=96,32,16,4,;plain=1;dense=1|->dtype=6;shape=1,2,2,4,;strides=64,32,16,4,;plain=1;dense=1
+AttentionBoolMask	ggml	UNIMPLEMENTED	dtype=6;shape=1,2,2,4,;strides=64,32,16,4,;plain=1;dense=1|dtype=6;shape=1,3,2,4,;strides=96,32,16,4,;plain=1;dense=1|dtype=6;shape=1,3,2,4,;strides=96,32,16,4,;plain=1;dense=1|dtype=1;shape=1,2,2,3,;strides=12,6,3,1,;plain=1;dense=1|->dtype=6;shape=1,2,2,4,;strides=64,32,16,4,;plain=1;dense=1	ggml-cpu: ggml CPU operation domain is not admitted
+AttentionBoolMask	oneDNN	UNIMPLEMENTED	dtype=6;shape=1,2,2,4,;strides=64,32,16,4,;plain=1;dense=1|dtype=6;shape=1,3,2,4,;strides=96,32,16,4,;plain=1;dense=1|dtype=6;shape=1,3,2,4,;strides=96,32,16,4,;plain=1;dense=1|dtype=1;shape=1,2,2,3,;strides=12,6,3,1,;plain=1;dense=1|->dtype=6;shape=1,2,2,4,;strides=64,32,16,4,;plain=1;dense=1	onednn: oneDNN provider does not implement this operation
+AttentionBoolMask	Native	ADMITTED	dtype=6;shape=1,2,2,4,;strides=64,32,16,4,;plain=1;dense=1|dtype=6;shape=1,3,2,4,;strides=96,32,16,4,;plain=1;dense=1|dtype=6;shape=1,3,2,4,;strides=96,32,16,4,;plain=1;dense=1|dtype=1;shape=1,2,2,3,;strides=12,6,3,1,;plain=1;dense=1|->dtype=6;shape=1,2,2,4,;strides=64,32,16,4,;plain=1;dense=1
+AttentionHeadFirst	ggml	UNIMPLEMENTED	dtype=6;shape=1,2,2,4,;strides=64,32,16,4,;plain=1;dense=1|dtype=6;shape=1,2,3,4,;strides=96,48,16,4,;plain=1;dense=1|dtype=6;shape=1,2,3,4,;strides=96,48,16,4,;plain=1;dense=1|->dtype=6;shape=1,2,2,4,;strides=64,32,16,4,;plain=1;dense=1	ggml-cpu: ggml CPU operation domain is not admitted
+AttentionHeadFirst	oneDNN	UNIMPLEMENTED	dtype=6;shape=1,2,2,4,;strides=64,32,16,4,;plain=1;dense=1|dtype=6;shape=1,2,3,4,;strides=96,48,16,4,;plain=1;dense=1|dtype=6;shape=1,2,3,4,;strides=96,48,16,4,;plain=1;dense=1|->dtype=6;shape=1,2,2,4,;strides=64,32,16,4,;plain=1;dense=1	onednn: oneDNN provider does not implement this operation
+AttentionHeadFirst	Native	ADMITTED	dtype=6;shape=1,2,2,4,;strides=64,32,16,4,;plain=1;dense=1|dtype=6;shape=1,2,3,4,;strides=96,48,16,4,;plain=1;dense=1|dtype=6;shape=1,2,3,4,;strides=96,48,16,4,;plain=1;dense=1|->dtype=6;shape=1,2,2,4,;strides=64,32,16,4,;plain=1;dense=1
+Gather	ggml	ADMITTED	dtype=6;shape=4,8,;strides=32,4,;plain=1;dense=1|dtype=12;shape=3,;strides=4,;plain=1;dense=1|->dtype=6;shape=3,8,;strides=32,4,;plain=1;dense=1
+Gather	oneDNN	UNIMPLEMENTED	dtype=6;shape=4,8,;strides=32,4,;plain=1;dense=1|dtype=12;shape=3,;strides=4,;plain=1;dense=1|->dtype=6;shape=3,8,;strides=32,4,;plain=1;dense=1	onednn: oneDNN provider does not implement this operation
+Gather	Native	ADMITTED	dtype=6;shape=4,8,;strides=32,4,;plain=1;dense=1|dtype=12;shape=3,;strides=4,;plain=1;dense=1|->dtype=6;shape=3,8,;strides=32,4,;plain=1;dense=1
+ScatterAdd	ggml	ADMITTED	dtype=6;shape=4,8,;strides=32,4,;plain=1;dense=1|dtype=12;shape=3,;strides=4,;plain=1;dense=1|dtype=6;shape=3,8,;strides=32,4,;plain=1;dense=1|->dtype=6;shape=4,8,;strides=32,4,;plain=1;dense=1
+ScatterAdd	oneDNN	UNIMPLEMENTED	dtype=6;shape=4,8,;strides=32,4,;plain=1;dense=1|dtype=12;shape=3,;strides=4,;plain=1;dense=1|dtype=6;shape=3,8,;strides=32,4,;plain=1;dense=1|->dtype=6;shape=4,8,;strides=32,4,;plain=1;dense=1	onednn: oneDNN provider does not implement this operation
+ScatterAdd	Native	ADMITTED	dtype=6;shape=4,8,;strides=32,4,;plain=1;dense=1|dtype=12;shape=3,;strides=4,;plain=1;dense=1|dtype=6;shape=3,8,;strides=32,4,;plain=1;dense=1|->dtype=6;shape=4,8,;strides=32,4,;plain=1;dense=1
+ScatterAssign	ggml	UNIMPLEMENTED	dtype=6;shape=4,8,;strides=32,4,;plain=1;dense=1|dtype=12;shape=3,;strides=4,;plain=1;dense=1|dtype=6;shape=3,8,;strides=32,4,;plain=1;dense=1|->dtype=6;shape=4,8,;strides=32,4,;plain=1;dense=1	ggml-cpu: ggml CPU operation domain is not admitted
+ScatterAssign	oneDNN	UNIMPLEMENTED	dtype=6;shape=4,8,;strides=32,4,;plain=1;dense=1|dtype=12;shape=3,;strides=4,;plain=1;dense=1|dtype=6;shape=3,8,;strides=32,4,;plain=1;dense=1|->dtype=6;shape=4,8,;strides=32,4,;plain=1;dense=1	onednn: oneDNN provider does not implement this operation
+ScatterAssign	Native	ADMITTED	dtype=6;shape=4,8,;strides=32,4,;plain=1;dense=1|dtype=12;shape=3,;strides=4,;plain=1;dense=1|dtype=6;shape=3,8,;strides=32,4,;plain=1;dense=1|->dtype=6;shape=4,8,;strides=32,4,;plain=1;dense=1
+RopeRank4Axis1	ggml	ADMITTED	dtype=6;shape=1,3,2,8,;strides=192,64,32,4,;plain=1;dense=1|dtype=12;shape=3,;strides=4,;plain=1;dense=1|dtype=6;shape=4,;strides=4,;plain=1;dense=1|->dtype=6;shape=1,3,2,8,;strides=192,64,32,4,;plain=1;dense=1
+RopeRank4Axis1	oneDNN	UNIMPLEMENTED	dtype=6;shape=1,3,2,8,;strides=192,64,32,4,;plain=1;dense=1|dtype=12;shape=3,;strides=4,;plain=1;dense=1|dtype=6;shape=4,;strides=4,;plain=1;dense=1|->dtype=6;shape=1,3,2,8,;strides=192,64,32,4,;plain=1;dense=1	onednn: oneDNN provider does not implement this operation
+RopeRank4Axis1	Native	ADMITTED	dtype=6;shape=1,3,2,8,;strides=192,64,32,4,;plain=1;dense=1|dtype=12;shape=3,;strides=4,;plain=1;dense=1|dtype=6;shape=4,;strides=4,;plain=1;dense=1|->dtype=6;shape=1,3,2,8,;strides=192,64,32,4,;plain=1;dense=1
+RopeRank3Axis0	ggml	UNIMPLEMENTED	dtype=6;shape=3,2,8,;strides=64,32,4,;plain=1;dense=1|dtype=12;shape=3,;strides=4,;plain=1;dense=1|dtype=6;shape=4,;strides=4,;plain=1;dense=1|->dtype=6;shape=3,2,8,;strides=64,32,4,;plain=1;dense=1	ggml-cpu: ggml CPU operation domain is not admitted
+RopeRank3Axis0	oneDNN	UNIMPLEMENTED	dtype=6;shape=3,2,8,;strides=64,32,4,;plain=1;dense=1|dtype=12;shape=3,;strides=4,;plain=1;dense=1|dtype=6;shape=4,;strides=4,;plain=1;dense=1|->dtype=6;shape=3,2,8,;strides=64,32,4,;plain=1;dense=1	onednn: oneDNN provider does not implement this operation
+RopeRank3Axis0	Native	ADMITTED	dtype=6;shape=3,2,8,;strides=64,32,4,;plain=1;dense=1|dtype=12;shape=3,;strides=4,;plain=1;dense=1|dtype=6;shape=4,;strides=4,;plain=1;dense=1|->dtype=6;shape=3,2,8,;strides=64,32,4,;plain=1;dense=1
+Gather	ggml	UNIMPLEMENTED	dtype=6;shape=4,8,;strides=32,4,;plain=1;dense=1|dtype=14;shape=3,;strides=8,;plain=1;dense=1|->dtype=6;shape=3,8,;strides=32,4,;plain=1;dense=1	ggml-cpu: ggml CPU operation domain is not admitted
+Gather	oneDNN	UNIMPLEMENTED	dtype=6;shape=4,8,;strides=32,4,;plain=1;dense=1|dtype=14;shape=3,;strides=8,;plain=1;dense=1|->dtype=6;shape=3,8,;strides=32,4,;plain=1;dense=1	onednn: oneDNN provider does not implement this operation
+Gather	Native	ADMITTED	dtype=6;shape=4,8,;strides=32,4,;plain=1;dense=1|dtype=14;shape=3,;strides=8,;plain=1;dense=1|->dtype=6;shape=3,8,;strides=32,4,;plain=1;dense=1
+ScatterAdd	ggml	UNIMPLEMENTED	dtype=6;shape=4,8,;strides=32,4,;plain=1;dense=1|dtype=14;shape=3,;strides=8,;plain=1;dense=1|dtype=6;shape=3,8,;strides=32,4,;plain=1;dense=1|->dtype=6;shape=4,8,;strides=32,4,;plain=1;dense=1	ggml-cpu: ggml CPU operation domain is not admitted
+ScatterAdd	oneDNN	UNIMPLEMENTED	dtype=6;shape=4,8,;strides=32,4,;plain=1;dense=1|dtype=14;shape=3,;strides=8,;plain=1;dense=1|dtype=6;shape=3,8,;strides=32,4,;plain=1;dense=1|->dtype=6;shape=4,8,;strides=32,4,;plain=1;dense=1	onednn: oneDNN provider does not implement this operation
+ScatterAdd	Native	ADMITTED	dtype=6;shape=4,8,;strides=32,4,;plain=1;dense=1|dtype=14;shape=3,;strides=8,;plain=1;dense=1|dtype=6;shape=3,8,;strides=32,4,;plain=1;dense=1|->dtype=6;shape=4,8,;strides=32,4,;plain=1;dense=1
+ScatterAssign	ggml	UNIMPLEMENTED	dtype=6;shape=4,8,;strides=32,4,;plain=1;dense=1|dtype=14;shape=3,;strides=8,;plain=1;dense=1|dtype=6;shape=3,8,;strides=32,4,;plain=1;dense=1|->dtype=6;shape=4,8,;strides=32,4,;plain=1;dense=1	ggml-cpu: ggml CPU operation domain is not admitted
+ScatterAssign	oneDNN	UNIMPLEMENTED	dtype=6;shape=4,8,;strides=32,4,;plain=1;dense=1|dtype=14;shape=3,;strides=8,;plain=1;dense=1|dtype=6;shape=3,8,;strides=32,4,;plain=1;dense=1|->dtype=6;shape=4,8,;strides=32,4,;plain=1;dense=1	onednn: oneDNN provider does not implement this operation
+ScatterAssign	Native	ADMITTED	dtype=6;shape=4,8,;strides=32,4,;plain=1;dense=1|dtype=14;shape=3,;strides=8,;plain=1;dense=1|dtype=6;shape=3,8,;strides=32,4,;plain=1;dense=1|->dtype=6;shape=4,8,;strides=32,4,;plain=1;dense=1
+RopeRank4Axis1	ggml	UNIMPLEMENTED	dtype=6;shape=1,3,2,8,;strides=192,64,32,4,;plain=1;dense=1|dtype=14;shape=3,;strides=8,;plain=1;dense=1|dtype=6;shape=4,;strides=4,;plain=1;dense=1|->dtype=6;shape=1,3,2,8,;strides=192,64,32,4,;plain=1;dense=1	ggml-cpu: ggml CPU operation domain is not admitted
+RopeRank4Axis1	oneDNN	UNIMPLEMENTED	dtype=6;shape=1,3,2,8,;strides=192,64,32,4,;plain=1;dense=1|dtype=14;shape=3,;strides=8,;plain=1;dense=1|dtype=6;shape=4,;strides=4,;plain=1;dense=1|->dtype=6;shape=1,3,2,8,;strides=192,64,32,4,;plain=1;dense=1	onednn: oneDNN provider does not implement this operation
+RopeRank4Axis1	Native	ADMITTED	dtype=6;shape=1,3,2,8,;strides=192,64,32,4,;plain=1;dense=1|dtype=14;shape=3,;strides=8,;plain=1;dense=1|dtype=6;shape=4,;strides=4,;plain=1;dense=1|->dtype=6;shape=1,3,2,8,;strides=192,64,32,4,;plain=1;dense=1
+RopeRank3Axis0	ggml	UNIMPLEMENTED	dtype=6;shape=3,2,8,;strides=64,32,4,;plain=1;dense=1|dtype=14;shape=3,;strides=8,;plain=1;dense=1|dtype=6;shape=4,;strides=4,;plain=1;dense=1|->dtype=6;shape=3,2,8,;strides=64,32,4,;plain=1;dense=1	ggml-cpu: ggml CPU operation domain is not admitted
+RopeRank3Axis0	oneDNN	UNIMPLEMENTED	dtype=6;shape=3,2,8,;strides=64,32,4,;plain=1;dense=1|dtype=14;shape=3,;strides=8,;plain=1;dense=1|dtype=6;shape=4,;strides=4,;plain=1;dense=1|->dtype=6;shape=3,2,8,;strides=64,32,4,;plain=1;dense=1	onednn: oneDNN provider does not implement this operation
+RopeRank3Axis0	Native	ADMITTED	dtype=6;shape=3,2,8,;strides=64,32,4,;plain=1;dense=1|dtype=14;shape=3,;strides=8,;plain=1;dense=1|dtype=6;shape=4,;strides=4,;plain=1;dense=1|->dtype=6;shape=3,2,8,;strides=64,32,4,;plain=1;dense=1
+Concat	ggml	ADMITTED	dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1|dtype=6;shape=1,8,;strides=32,4,;plain=1;dense=1|->dtype=6;shape=3,8,;strides=32,4,;plain=1;dense=1
+Concat	oneDNN	UNIMPLEMENTED	dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1|dtype=6;shape=1,8,;strides=32,4,;plain=1;dense=1|->dtype=6;shape=3,8,;strides=32,4,;plain=1;dense=1	onednn: oneDNN provider does not implement this operation
+Concat	Native	ADMITTED	dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1|dtype=6;shape=1,8,;strides=32,4,;plain=1;dense=1|->dtype=6;shape=3,8,;strides=32,4,;plain=1;dense=1
+Copy	ggml	ADMITTED	dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1|->dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1
+Copy	oneDNN	ADMITTED	dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1|->dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1
+Copy	Native	ADMITTED	dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1|->dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1
+CastF32	ggml	ADMITTED	dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1|->dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1
+CastF32	oneDNN	UNIMPLEMENTED	dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1|->dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1	onednn: oneDNN provider does not implement this operation
+CastF32	Native	ADMITTED	dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1|->dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1
+MatMulRowMajor	ggml	UNIMPLEMENTED	dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1|dtype=6;shape=8,5,;strides=20,4,;plain=1;dense=1|->dtype=6;shape=2,5,;strides=20,4,;plain=1;dense=1	ggml-cpu: ggml CPU operation domain is not admitted
+MatMulRowMajor	oneDNN	ADMITTED	dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1|dtype=6;shape=8,5,;strides=20,4,;plain=1;dense=1|->dtype=6;shape=2,5,;strides=20,4,;plain=1;dense=1
+MatMulRowMajor	Native	ADMITTED	dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1|dtype=6;shape=8,5,;strides=20,4,;plain=1;dense=1|->dtype=6;shape=2,5,;strides=20,4,;plain=1;dense=1
+MatMulTransposed	ggml	ADMITTED	dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1|dtype=6;shape=8,5,;strides=4,32,;plain=1;dense=0|->dtype=6;shape=2,5,;strides=20,4,;plain=1;dense=1
+MatMulTransposed	oneDNN	UNIMPLEMENTED	dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1|dtype=6;shape=8,5,;strides=4,32,;plain=1;dense=0|->dtype=6;shape=2,5,;strides=20,4,;plain=1;dense=1	onednn: oneDNN provider route requires dense row-major float32 matrices
+MatMulTransposed	Native	ADMITTED	dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1|dtype=6;shape=8,5,;strides=4,32,;plain=1;dense=0|->dtype=6;shape=2,5,;strides=20,4,;plain=1;dense=1
+MatMulBatchTransposed	ggml	ADMITTED	dtype=6;shape=2,3,8,;strides=96,32,4,;plain=1;dense=1|dtype=6;shape=8,5,;strides=4,32,;plain=1;dense=0|->dtype=6;shape=2,3,5,;strides=60,20,4,;plain=1;dense=1
+MatMulBatchTransposed	oneDNN	UNIMPLEMENTED	dtype=6;shape=2,3,8,;strides=96,32,4,;plain=1;dense=1|dtype=6;shape=8,5,;strides=4,32,;plain=1;dense=0|->dtype=6;shape=2,3,5,;strides=60,20,4,;plain=1;dense=1	onednn: oneDNN provider route requires dense row-major float32 matrices
+MatMulBatchTransposed	Native	ADMITTED	dtype=6;shape=2,3,8,;strides=96,32,4,;plain=1;dense=1|dtype=6;shape=8,5,;strides=4,32,;plain=1;dense=0|->dtype=6;shape=2,3,5,;strides=60,20,4,;plain=1;dense=1
+MatMulBatchRowMajor	ggml	UNIMPLEMENTED	dtype=6;shape=2,3,8,;strides=96,32,4,;plain=1;dense=1|dtype=6;shape=8,5,;strides=20,4,;plain=1;dense=1|->dtype=6;shape=2,3,5,;strides=60,20,4,;plain=1;dense=1	ggml-cpu: ggml CPU operation domain is not admitted
+MatMulBatchRowMajor	oneDNN	UNIMPLEMENTED	dtype=6;shape=2,3,8,;strides=96,32,4,;plain=1;dense=1|dtype=6;shape=8,5,;strides=20,4,;plain=1;dense=1|->dtype=6;shape=2,3,5,;strides=60,20,4,;plain=1;dense=1	onednn: oneDNN provider route requires dense row-major float32 matrices
+MatMulBatchRowMajor	Native	ADMITTED	dtype=6;shape=2,3,8,;strides=96,32,4,;plain=1;dense=1|dtype=6;shape=8,5,;strides=20,4,;plain=1;dense=1|->dtype=6;shape=2,3,5,;strides=60,20,4,;plain=1;dense=1
+Abs	ggml	ADMITTED	dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1|->dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1
+Abs	oneDNN	UNIMPLEMENTED	dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1|->dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1	onednn: oneDNN provider does not implement this operation
+Abs	Native	ADMITTED	dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1|->dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1
+Neg	ggml	ADMITTED	dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1|->dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1
+Neg	oneDNN	UNIMPLEMENTED	dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1|->dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1	onednn: oneDNN provider does not implement this operation
+Neg	Native	ADMITTED	dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1|->dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1
+Exp	ggml	ADMITTED	dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1|->dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1
+Exp	oneDNN	UNIMPLEMENTED	dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1|->dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1	onednn: oneDNN provider does not implement this operation
+Exp	Native	ADMITTED	dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1|->dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1
+Log	ggml	ADMITTED	dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1|->dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1
+Log	oneDNN	UNIMPLEMENTED	dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1|->dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1	onednn: oneDNN provider does not implement this operation
+Log	Native	ADMITTED	dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1|->dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1
+Sqrt	ggml	ADMITTED	dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1|->dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1
+Sqrt	oneDNN	UNIMPLEMENTED	dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1|->dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1	onednn: oneDNN provider does not implement this operation
+Sqrt	Native	ADMITTED	dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1|->dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1
+Rsqrt	ggml	ADMITTED	dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1|->dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1
+Rsqrt	oneDNN	UNIMPLEMENTED	dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1|->dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1	onednn: oneDNN provider does not implement this operation
+Rsqrt	Native	ADMITTED	dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1|->dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1
+Tanh	ggml	ADMITTED	dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1|->dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1
+Tanh	oneDNN	UNIMPLEMENTED	dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1|->dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1	onednn: oneDNN provider does not implement this operation
+Tanh	Native	ADMITTED	dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1|->dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1
+Sigmoid	ggml	ADMITTED	dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1|->dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1
+Sigmoid	oneDNN	UNIMPLEMENTED	dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1|->dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1	onednn: oneDNN provider does not implement this operation
+Sigmoid	Native	ADMITTED	dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1|->dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1
+Relu	ggml	ADMITTED	dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1|->dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1
+Relu	oneDNN	UNIMPLEMENTED	dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1|->dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1	onednn: oneDNN provider does not implement this operation
+Relu	Native	ADMITTED	dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1|->dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1
+Gelu	ggml	UNIMPLEMENTED	dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1|->dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1	ggml-cpu: ggml CPU operation domain is not admitted
+Gelu	oneDNN	UNIMPLEMENTED	dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1|->dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1	onednn: oneDNN provider does not implement this operation
+Gelu	Native	ADMITTED	dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1|->dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1
+GeluTanh	ggml	UNIMPLEMENTED	dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1|->dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1	ggml-cpu: ggml CPU operation domain is not admitted
+GeluTanh	oneDNN	UNIMPLEMENTED	dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1|->dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1	onednn: oneDNN provider does not implement this operation
+GeluTanh	Native	ADMITTED	dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1|->dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1
+Silu	ggml	UNIMPLEMENTED	dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1|->dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1	ggml-cpu: ggml CPU operation domain is not admitted
+Silu	oneDNN	UNIMPLEMENTED	dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1|->dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1	onednn: oneDNN provider does not implement this operation
+Silu	Native	ADMITTED	dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1|->dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1
+Softplus	ggml	UNIMPLEMENTED	dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1|->dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1	ggml-cpu: ggml CPU operation domain is not admitted
+Softplus	oneDNN	UNIMPLEMENTED	dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1|->dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1	onednn: oneDNN stable softplus requires float32
+Softplus	Native	ADMITTED	dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1|->dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1
+Add	ggml	ADMITTED	dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1|dtype=4;shape=8,;strides=2,;plain=1;dense=1|->dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1
+Add	oneDNN	UNIMPLEMENTED	dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1|dtype=4;shape=8,;strides=2,;plain=1;dense=1|->dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1	onednn: oneDNN provider does not implement this operation
+Add	Native	ADMITTED	dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1|dtype=4;shape=8,;strides=2,;plain=1;dense=1|->dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1
+Subtract	ggml	ADMITTED	dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1|dtype=4;shape=8,;strides=2,;plain=1;dense=1|->dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1
+Subtract	oneDNN	UNIMPLEMENTED	dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1|dtype=4;shape=8,;strides=2,;plain=1;dense=1|->dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1	onednn: oneDNN provider does not implement this operation
+Subtract	Native	ADMITTED	dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1|dtype=4;shape=8,;strides=2,;plain=1;dense=1|->dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1
+Multiply	ggml	ADMITTED	dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1|dtype=4;shape=8,;strides=2,;plain=1;dense=1|->dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1
+Multiply	oneDNN	UNIMPLEMENTED	dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1|dtype=4;shape=8,;strides=2,;plain=1;dense=1|->dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1	onednn: oneDNN provider does not implement this operation
+Multiply	Native	ADMITTED	dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1|dtype=4;shape=8,;strides=2,;plain=1;dense=1|->dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1
+Divide	ggml	ADMITTED	dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1|dtype=4;shape=8,;strides=2,;plain=1;dense=1|->dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1
+Divide	oneDNN	UNIMPLEMENTED	dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1|dtype=4;shape=8,;strides=2,;plain=1;dense=1|->dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1	onednn: oneDNN provider does not implement this operation
+Divide	Native	ADMITTED	dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1|dtype=4;shape=8,;strides=2,;plain=1;dense=1|->dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1
+Minimum	ggml	UNIMPLEMENTED	dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1|dtype=4;shape=8,;strides=2,;plain=1;dense=1|->dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1	ggml-cpu: ggml CPU operation domain is not admitted
+Minimum	oneDNN	UNIMPLEMENTED	dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1|dtype=4;shape=8,;strides=2,;plain=1;dense=1|->dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1	onednn: oneDNN provider does not implement this operation
+Minimum	Native	ADMITTED	dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1|dtype=4;shape=8,;strides=2,;plain=1;dense=1|->dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1
+Maximum	ggml	UNIMPLEMENTED	dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1|dtype=4;shape=8,;strides=2,;plain=1;dense=1|->dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1	ggml-cpu: ggml CPU operation domain is not admitted
+Maximum	oneDNN	UNIMPLEMENTED	dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1|dtype=4;shape=8,;strides=2,;plain=1;dense=1|->dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1	onednn: oneDNN provider does not implement this operation
+Maximum	Native	ADMITTED	dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1|dtype=4;shape=8,;strides=2,;plain=1;dense=1|->dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1
+ReduceSum	ggml	ADMITTED	dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1|->dtype=4;shape=;strides=;plain=1;dense=1
+ReduceSum	oneDNN	UNIMPLEMENTED	dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1|->dtype=4;shape=;strides=;plain=1;dense=1	onednn: oneDNN provider does not implement this operation
+ReduceSum	Native	ADMITTED	dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1|->dtype=4;shape=;strides=;plain=1;dense=1
+ReduceMean	ggml	ADMITTED	dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1|->dtype=4;shape=;strides=;plain=1;dense=1
+ReduceMean	oneDNN	UNIMPLEMENTED	dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1|->dtype=4;shape=;strides=;plain=1;dense=1	onednn: oneDNN provider does not implement this operation
+ReduceMean	Native	ADMITTED	dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1|->dtype=4;shape=;strides=;plain=1;dense=1
+ReduceMin	ggml	UNIMPLEMENTED	dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1|->dtype=4;shape=;strides=;plain=1;dense=1	ggml-cpu: ggml CPU operation domain is not admitted
+ReduceMin	oneDNN	UNIMPLEMENTED	dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1|->dtype=4;shape=;strides=;plain=1;dense=1	onednn: oneDNN provider does not implement this operation
+ReduceMin	Native	ADMITTED	dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1|->dtype=4;shape=;strides=;plain=1;dense=1
+ReduceMax	ggml	UNIMPLEMENTED	dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1|->dtype=4;shape=;strides=;plain=1;dense=1	ggml-cpu: ggml CPU operation domain is not admitted
+ReduceMax	oneDNN	UNIMPLEMENTED	dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1|->dtype=4;shape=;strides=;plain=1;dense=1	onednn: oneDNN provider does not implement this operation
+ReduceMax	Native	ADMITTED	dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1|->dtype=4;shape=;strides=;plain=1;dense=1
+GateSiluPacked	ggml	ADMITTED	dtype=4;shape=2,16,;strides=32,2,;plain=1;dense=1|->dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1
+GateSiluPacked	oneDNN	UNIMPLEMENTED	dtype=4;shape=2,16,;strides=32,2,;plain=1;dense=1|->dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1	onednn: oneDNN provider does not implement this operation
+GateSiluPacked	Native	ADMITTED	dtype=4;shape=2,16,;strides=32,2,;plain=1;dense=1|->dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1
+GateGeluPacked	ggml	UNIMPLEMENTED	dtype=4;shape=2,16,;strides=32,2,;plain=1;dense=1|->dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1	ggml-cpu: ggml CPU operation domain is not admitted
+GateGeluPacked	oneDNN	UNIMPLEMENTED	dtype=4;shape=2,16,;strides=32,2,;plain=1;dense=1|->dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1	onednn: oneDNN provider does not implement this operation
+GateGeluPacked	Native	ADMITTED	dtype=4;shape=2,16,;strides=32,2,;plain=1;dense=1|->dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1
+GateGeluTanhPacked	ggml	UNIMPLEMENTED	dtype=4;shape=2,16,;strides=32,2,;plain=1;dense=1|->dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1	ggml-cpu: ggml CPU operation domain is not admitted
+GateGeluTanhPacked	oneDNN	UNIMPLEMENTED	dtype=4;shape=2,16,;strides=32,2,;plain=1;dense=1|->dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1	onednn: oneDNN provider does not implement this operation
+GateGeluTanhPacked	Native	ADMITTED	dtype=4;shape=2,16,;strides=32,2,;plain=1;dense=1|->dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1
+SelectBoolBroadcast	ggml	UNIMPLEMENTED	dtype=1;shape=2,1,;strides=1,1,;plain=1;dense=1|dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1|dtype=4;shape=8,;strides=2,;plain=1;dense=1|->dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1	ggml-cpu: ggml CPU operation domain is not admitted
+SelectBoolBroadcast	oneDNN	ADMITTED	dtype=1;shape=2,1,;strides=1,1,;plain=1;dense=1|dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1|dtype=4;shape=8,;strides=2,;plain=1;dense=1|->dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1
+SelectBoolBroadcast	Native	ADMITTED	dtype=1;shape=2,1,;strides=1,1,;plain=1;dense=1|dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1|dtype=4;shape=8,;strides=2,;plain=1;dense=1|->dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1
+RmsNorm	ggml	ADMITTED	dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1|dtype=6;shape=8,;strides=4,;plain=1;dense=1|->dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1
+RmsNorm	oneDNN	UNIMPLEMENTED	dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1|dtype=6;shape=8,;strides=4,;plain=1;dense=1|->dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1	onednn: oneDNN primitive domain is unsupported
+RmsNorm	Native	ADMITTED	dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1|dtype=6;shape=8,;strides=4,;plain=1;dense=1|->dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1
+LayerNorm	ggml	ADMITTED	dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1|dtype=6;shape=8,;strides=4,;plain=1;dense=1|dtype=6;shape=8,;strides=4,;plain=1;dense=1|->dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1
+LayerNorm	oneDNN	UNIMPLEMENTED	dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1|dtype=6;shape=8,;strides=4,;plain=1;dense=1|dtype=6;shape=8,;strides=4,;plain=1;dense=1|->dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1	onednn: oneDNN primitive domain is unsupported
+LayerNorm	Native	ADMITTED	dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1|dtype=6;shape=8,;strides=4,;plain=1;dense=1|dtype=6;shape=8,;strides=4,;plain=1;dense=1|->dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1
+SoftmaxRank2	ggml	UNIMPLEMENTED	dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1|->dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1	ggml-cpu: ggml CPU operation domain is not admitted
+SoftmaxRank2	oneDNN	UNIMPLEMENTED	dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1|->dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1	onednn: oneDNN provider does not implement this operation
+SoftmaxRank2	Native	ADMITTED	dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1|->dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1
+SoftmaxRank1	ggml	UNIMPLEMENTED	dtype=4;shape=8,;strides=2,;plain=1;dense=1|->dtype=4;shape=8,;strides=2,;plain=1;dense=1	ggml-cpu: ggml CPU operation domain is not admitted
+SoftmaxRank1	oneDNN	UNIMPLEMENTED	dtype=4;shape=8,;strides=2,;plain=1;dense=1|->dtype=4;shape=8,;strides=2,;plain=1;dense=1	onednn: oneDNN provider does not implement this operation
+SoftmaxRank1	Native	ADMITTED	dtype=4;shape=8,;strides=2,;plain=1;dense=1|->dtype=4;shape=8,;strides=2,;plain=1;dense=1
+SoftmaxRank4Scale	ggml	UNIMPLEMENTED	dtype=4;shape=2,2,3,8,;strides=96,48,16,2,;plain=1;dense=1|->dtype=4;shape=2,2,3,8,;strides=96,48,16,2,;plain=1;dense=1	ggml-cpu: ggml CPU operation domain is not admitted
+SoftmaxRank4Scale	oneDNN	UNIMPLEMENTED	dtype=4;shape=2,2,3,8,;strides=96,48,16,2,;plain=1;dense=1|->dtype=4;shape=2,2,3,8,;strides=96,48,16,2,;plain=1;dense=1	onednn: oneDNN provider does not implement this operation
+SoftmaxRank4Scale	Native	ADMITTED	dtype=4;shape=2,2,3,8,;strides=96,48,16,2,;plain=1;dense=1|->dtype=4;shape=2,2,3,8,;strides=96,48,16,2,;plain=1;dense=1
+SoftmaxAxis0	ggml	UNIMPLEMENTED	dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1|->dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1	ggml-cpu: ggml CPU operation domain is not admitted
+SoftmaxAxis0	oneDNN	UNIMPLEMENTED	dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1|->dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1	onednn: oneDNN provider does not implement this operation
+SoftmaxAxis0	Native	ADMITTED	dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1|->dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1
+LogSoftmax	ggml	UNIMPLEMENTED	dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1|->dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1	ggml-cpu: ggml CPU operation domain is not admitted
+LogSoftmax	oneDNN	UNIMPLEMENTED	dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1|->dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1	onednn: oneDNN provider does not implement this operation
+LogSoftmax	Native	ADMITTED	dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1|->dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1
+SoftmaxBoolMask	ggml	UNIMPLEMENTED	dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1|dtype=1;shape=2,8,;strides=8,1,;plain=1;dense=1|->dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1	ggml-cpu: ggml CPU operation domain is not admitted
+SoftmaxBoolMask	oneDNN	UNIMPLEMENTED	dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1|dtype=1;shape=2,8,;strides=8,1,;plain=1;dense=1|->dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1	onednn: oneDNN provider does not implement this operation
+SoftmaxBoolMask	Native	ADMITTED	dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1|dtype=1;shape=2,8,;strides=8,1,;plain=1;dense=1|->dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1
+SoftmaxAdditiveMask	ggml	UNIMPLEMENTED	dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1|dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1|->dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1	ggml-cpu: ggml CPU operation domain is not admitted
+SoftmaxAdditiveMask	oneDNN	UNIMPLEMENTED	dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1|dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1|->dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1	onednn: oneDNN provider does not implement this operation
+SoftmaxAdditiveMask	Native	ADMITTED	dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1|dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1|->dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1
+AttentionCausal	ggml	ADMITTED	dtype=4;shape=1,2,2,4,;strides=32,16,8,2,;plain=1;dense=1|dtype=4;shape=1,3,2,4,;strides=48,16,8,2,;plain=1;dense=1|dtype=4;shape=1,3,2,4,;strides=48,16,8,2,;plain=1;dense=1|->dtype=4;shape=1,2,2,4,;strides=32,16,8,2,;plain=1;dense=1
+AttentionCausal	oneDNN	UNIMPLEMENTED	dtype=4;shape=1,2,2,4,;strides=32,16,8,2,;plain=1;dense=1|dtype=4;shape=1,3,2,4,;strides=48,16,8,2,;plain=1;dense=1|dtype=4;shape=1,3,2,4,;strides=48,16,8,2,;plain=1;dense=1|->dtype=4;shape=1,2,2,4,;strides=32,16,8,2,;plain=1;dense=1	onednn: oneDNN provider does not implement this operation
+AttentionCausal	Native	UNIMPLEMENTED	dtype=4;shape=1,2,2,4,;strides=32,16,8,2,;plain=1;dense=1|dtype=4;shape=1,3,2,4,;strides=48,16,8,2,;plain=1;dense=1|dtype=4;shape=1,3,2,4,;strides=48,16,8,2,;plain=1;dense=1|->dtype=4;shape=1,2,2,4,;strides=32,16,8,2,;plain=1;dense=1	hyle-native: native SDPA currently requires plain float32 Q/K/V tensors
+AttentionNonCausal	ggml	UNIMPLEMENTED	dtype=4;shape=1,2,2,4,;strides=32,16,8,2,;plain=1;dense=1|dtype=4;shape=1,3,2,4,;strides=48,16,8,2,;plain=1;dense=1|dtype=4;shape=1,3,2,4,;strides=48,16,8,2,;plain=1;dense=1|->dtype=4;shape=1,2,2,4,;strides=32,16,8,2,;plain=1;dense=1	ggml-cpu: ggml CPU operation domain is not admitted
+AttentionNonCausal	oneDNN	UNIMPLEMENTED	dtype=4;shape=1,2,2,4,;strides=32,16,8,2,;plain=1;dense=1|dtype=4;shape=1,3,2,4,;strides=48,16,8,2,;plain=1;dense=1|dtype=4;shape=1,3,2,4,;strides=48,16,8,2,;plain=1;dense=1|->dtype=4;shape=1,2,2,4,;strides=32,16,8,2,;plain=1;dense=1	onednn: oneDNN provider does not implement this operation
+AttentionNonCausal	Native	UNIMPLEMENTED	dtype=4;shape=1,2,2,4,;strides=32,16,8,2,;plain=1;dense=1|dtype=4;shape=1,3,2,4,;strides=48,16,8,2,;plain=1;dense=1|dtype=4;shape=1,3,2,4,;strides=48,16,8,2,;plain=1;dense=1|->dtype=4;shape=1,2,2,4,;strides=32,16,8,2,;plain=1;dense=1	hyle-native: native SDPA currently requires plain float32 Q/K/V tensors
+AttentionBoolMask	ggml	UNIMPLEMENTED	dtype=4;shape=1,2,2,4,;strides=32,16,8,2,;plain=1;dense=1|dtype=4;shape=1,3,2,4,;strides=48,16,8,2,;plain=1;dense=1|dtype=4;shape=1,3,2,4,;strides=48,16,8,2,;plain=1;dense=1|dtype=1;shape=1,2,2,3,;strides=12,6,3,1,;plain=1;dense=1|->dtype=4;shape=1,2,2,4,;strides=32,16,8,2,;plain=1;dense=1	ggml-cpu: ggml CPU operation domain is not admitted
+AttentionBoolMask	oneDNN	UNIMPLEMENTED	dtype=4;shape=1,2,2,4,;strides=32,16,8,2,;plain=1;dense=1|dtype=4;shape=1,3,2,4,;strides=48,16,8,2,;plain=1;dense=1|dtype=4;shape=1,3,2,4,;strides=48,16,8,2,;plain=1;dense=1|dtype=1;shape=1,2,2,3,;strides=12,6,3,1,;plain=1;dense=1|->dtype=4;shape=1,2,2,4,;strides=32,16,8,2,;plain=1;dense=1	onednn: oneDNN provider does not implement this operation
+AttentionBoolMask	Native	UNIMPLEMENTED	dtype=4;shape=1,2,2,4,;strides=32,16,8,2,;plain=1;dense=1|dtype=4;shape=1,3,2,4,;strides=48,16,8,2,;plain=1;dense=1|dtype=4;shape=1,3,2,4,;strides=48,16,8,2,;plain=1;dense=1|dtype=1;shape=1,2,2,3,;strides=12,6,3,1,;plain=1;dense=1|->dtype=4;shape=1,2,2,4,;strides=32,16,8,2,;plain=1;dense=1	hyle-native: native SDPA currently requires plain float32 Q/K/V tensors
+AttentionHeadFirst	ggml	UNIMPLEMENTED	dtype=4;shape=1,2,2,4,;strides=32,16,8,2,;plain=1;dense=1|dtype=4;shape=1,2,3,4,;strides=48,24,8,2,;plain=1;dense=1|dtype=4;shape=1,2,3,4,;strides=48,24,8,2,;plain=1;dense=1|->dtype=4;shape=1,2,2,4,;strides=32,16,8,2,;plain=1;dense=1	ggml-cpu: ggml CPU operation domain is not admitted
+AttentionHeadFirst	oneDNN	UNIMPLEMENTED	dtype=4;shape=1,2,2,4,;strides=32,16,8,2,;plain=1;dense=1|dtype=4;shape=1,2,3,4,;strides=48,24,8,2,;plain=1;dense=1|dtype=4;shape=1,2,3,4,;strides=48,24,8,2,;plain=1;dense=1|->dtype=4;shape=1,2,2,4,;strides=32,16,8,2,;plain=1;dense=1	onednn: oneDNN provider does not implement this operation
+AttentionHeadFirst	Native	UNIMPLEMENTED	dtype=4;shape=1,2,2,4,;strides=32,16,8,2,;plain=1;dense=1|dtype=4;shape=1,2,3,4,;strides=48,24,8,2,;plain=1;dense=1|dtype=4;shape=1,2,3,4,;strides=48,24,8,2,;plain=1;dense=1|->dtype=4;shape=1,2,2,4,;strides=32,16,8,2,;plain=1;dense=1	hyle-native: native SDPA currently requires plain float32 Q/K/V tensors
+Gather	ggml	ADMITTED	dtype=4;shape=4,8,;strides=16,2,;plain=1;dense=1|dtype=12;shape=3,;strides=4,;plain=1;dense=1|->dtype=4;shape=3,8,;strides=16,2,;plain=1;dense=1
+Gather	oneDNN	UNIMPLEMENTED	dtype=4;shape=4,8,;strides=16,2,;plain=1;dense=1|dtype=12;shape=3,;strides=4,;plain=1;dense=1|->dtype=4;shape=3,8,;strides=16,2,;plain=1;dense=1	onednn: oneDNN provider does not implement this operation
+Gather	Native	ADMITTED	dtype=4;shape=4,8,;strides=16,2,;plain=1;dense=1|dtype=12;shape=3,;strides=4,;plain=1;dense=1|->dtype=4;shape=3,8,;strides=16,2,;plain=1;dense=1
+ScatterAdd	ggml	ADMITTED	dtype=4;shape=4,8,;strides=16,2,;plain=1;dense=1|dtype=12;shape=3,;strides=4,;plain=1;dense=1|dtype=4;shape=3,8,;strides=16,2,;plain=1;dense=1|->dtype=4;shape=4,8,;strides=16,2,;plain=1;dense=1
+ScatterAdd	oneDNN	UNIMPLEMENTED	dtype=4;shape=4,8,;strides=16,2,;plain=1;dense=1|dtype=12;shape=3,;strides=4,;plain=1;dense=1|dtype=4;shape=3,8,;strides=16,2,;plain=1;dense=1|->dtype=4;shape=4,8,;strides=16,2,;plain=1;dense=1	onednn: oneDNN provider does not implement this operation
+ScatterAdd	Native	ADMITTED	dtype=4;shape=4,8,;strides=16,2,;plain=1;dense=1|dtype=12;shape=3,;strides=4,;plain=1;dense=1|dtype=4;shape=3,8,;strides=16,2,;plain=1;dense=1|->dtype=4;shape=4,8,;strides=16,2,;plain=1;dense=1
+ScatterAssign	ggml	UNIMPLEMENTED	dtype=4;shape=4,8,;strides=16,2,;plain=1;dense=1|dtype=12;shape=3,;strides=4,;plain=1;dense=1|dtype=4;shape=3,8,;strides=16,2,;plain=1;dense=1|->dtype=4;shape=4,8,;strides=16,2,;plain=1;dense=1	ggml-cpu: ggml CPU operation domain is not admitted
+ScatterAssign	oneDNN	UNIMPLEMENTED	dtype=4;shape=4,8,;strides=16,2,;plain=1;dense=1|dtype=12;shape=3,;strides=4,;plain=1;dense=1|dtype=4;shape=3,8,;strides=16,2,;plain=1;dense=1|->dtype=4;shape=4,8,;strides=16,2,;plain=1;dense=1	onednn: oneDNN provider does not implement this operation
+ScatterAssign	Native	ADMITTED	dtype=4;shape=4,8,;strides=16,2,;plain=1;dense=1|dtype=12;shape=3,;strides=4,;plain=1;dense=1|dtype=4;shape=3,8,;strides=16,2,;plain=1;dense=1|->dtype=4;shape=4,8,;strides=16,2,;plain=1;dense=1
+RopeRank4Axis1	ggml	ADMITTED	dtype=4;shape=1,3,2,8,;strides=96,32,16,2,;plain=1;dense=1|dtype=12;shape=3,;strides=4,;plain=1;dense=1|dtype=6;shape=4,;strides=4,;plain=1;dense=1|->dtype=4;shape=1,3,2,8,;strides=96,32,16,2,;plain=1;dense=1
+RopeRank4Axis1	oneDNN	UNIMPLEMENTED	dtype=4;shape=1,3,2,8,;strides=96,32,16,2,;plain=1;dense=1|dtype=12;shape=3,;strides=4,;plain=1;dense=1|dtype=6;shape=4,;strides=4,;plain=1;dense=1|->dtype=4;shape=1,3,2,8,;strides=96,32,16,2,;plain=1;dense=1	onednn: oneDNN provider does not implement this operation
+RopeRank4Axis1	Native	UNIMPLEMENTED	dtype=4;shape=1,3,2,8,;strides=96,32,16,2,;plain=1;dense=1|dtype=12;shape=3,;strides=4,;plain=1;dense=1|dtype=6;shape=4,;strides=4,;plain=1;dense=1|->dtype=4;shape=1,3,2,8,;strides=96,32,16,2,;plain=1;dense=1	hyle-native: native RoPE currently requires plain float32 data
+RopeRank3Axis0	ggml	UNIMPLEMENTED	dtype=4;shape=3,2,8,;strides=32,16,2,;plain=1;dense=1|dtype=12;shape=3,;strides=4,;plain=1;dense=1|dtype=6;shape=4,;strides=4,;plain=1;dense=1|->dtype=4;shape=3,2,8,;strides=32,16,2,;plain=1;dense=1	ggml-cpu: ggml CPU operation domain is not admitted
+RopeRank3Axis0	oneDNN	UNIMPLEMENTED	dtype=4;shape=3,2,8,;strides=32,16,2,;plain=1;dense=1|dtype=12;shape=3,;strides=4,;plain=1;dense=1|dtype=6;shape=4,;strides=4,;plain=1;dense=1|->dtype=4;shape=3,2,8,;strides=32,16,2,;plain=1;dense=1	onednn: oneDNN provider does not implement this operation
+RopeRank3Axis0	Native	UNIMPLEMENTED	dtype=4;shape=3,2,8,;strides=32,16,2,;plain=1;dense=1|dtype=12;shape=3,;strides=4,;plain=1;dense=1|dtype=6;shape=4,;strides=4,;plain=1;dense=1|->dtype=4;shape=3,2,8,;strides=32,16,2,;plain=1;dense=1	hyle-native: native RoPE currently requires plain float32 data
+Gather	ggml	UNIMPLEMENTED	dtype=4;shape=4,8,;strides=16,2,;plain=1;dense=1|dtype=14;shape=3,;strides=8,;plain=1;dense=1|->dtype=4;shape=3,8,;strides=16,2,;plain=1;dense=1	ggml-cpu: ggml CPU operation domain is not admitted
+Gather	oneDNN	UNIMPLEMENTED	dtype=4;shape=4,8,;strides=16,2,;plain=1;dense=1|dtype=14;shape=3,;strides=8,;plain=1;dense=1|->dtype=4;shape=3,8,;strides=16,2,;plain=1;dense=1	onednn: oneDNN provider does not implement this operation
+Gather	Native	ADMITTED	dtype=4;shape=4,8,;strides=16,2,;plain=1;dense=1|dtype=14;shape=3,;strides=8,;plain=1;dense=1|->dtype=4;shape=3,8,;strides=16,2,;plain=1;dense=1
+ScatterAdd	ggml	UNIMPLEMENTED	dtype=4;shape=4,8,;strides=16,2,;plain=1;dense=1|dtype=14;shape=3,;strides=8,;plain=1;dense=1|dtype=4;shape=3,8,;strides=16,2,;plain=1;dense=1|->dtype=4;shape=4,8,;strides=16,2,;plain=1;dense=1	ggml-cpu: ggml CPU operation domain is not admitted
+ScatterAdd	oneDNN	UNIMPLEMENTED	dtype=4;shape=4,8,;strides=16,2,;plain=1;dense=1|dtype=14;shape=3,;strides=8,;plain=1;dense=1|dtype=4;shape=3,8,;strides=16,2,;plain=1;dense=1|->dtype=4;shape=4,8,;strides=16,2,;plain=1;dense=1	onednn: oneDNN provider does not implement this operation
+ScatterAdd	Native	ADMITTED	dtype=4;shape=4,8,;strides=16,2,;plain=1;dense=1|dtype=14;shape=3,;strides=8,;plain=1;dense=1|dtype=4;shape=3,8,;strides=16,2,;plain=1;dense=1|->dtype=4;shape=4,8,;strides=16,2,;plain=1;dense=1
+ScatterAssign	ggml	UNIMPLEMENTED	dtype=4;shape=4,8,;strides=16,2,;plain=1;dense=1|dtype=14;shape=3,;strides=8,;plain=1;dense=1|dtype=4;shape=3,8,;strides=16,2,;plain=1;dense=1|->dtype=4;shape=4,8,;strides=16,2,;plain=1;dense=1	ggml-cpu: ggml CPU operation domain is not admitted
+ScatterAssign	oneDNN	UNIMPLEMENTED	dtype=4;shape=4,8,;strides=16,2,;plain=1;dense=1|dtype=14;shape=3,;strides=8,;plain=1;dense=1|dtype=4;shape=3,8,;strides=16,2,;plain=1;dense=1|->dtype=4;shape=4,8,;strides=16,2,;plain=1;dense=1	onednn: oneDNN provider does not implement this operation
+ScatterAssign	Native	ADMITTED	dtype=4;shape=4,8,;strides=16,2,;plain=1;dense=1|dtype=14;shape=3,;strides=8,;plain=1;dense=1|dtype=4;shape=3,8,;strides=16,2,;plain=1;dense=1|->dtype=4;shape=4,8,;strides=16,2,;plain=1;dense=1
+RopeRank4Axis1	ggml	UNIMPLEMENTED	dtype=4;shape=1,3,2,8,;strides=96,32,16,2,;plain=1;dense=1|dtype=14;shape=3,;strides=8,;plain=1;dense=1|dtype=6;shape=4,;strides=4,;plain=1;dense=1|->dtype=4;shape=1,3,2,8,;strides=96,32,16,2,;plain=1;dense=1	ggml-cpu: ggml CPU operation domain is not admitted
+RopeRank4Axis1	oneDNN	UNIMPLEMENTED	dtype=4;shape=1,3,2,8,;strides=96,32,16,2,;plain=1;dense=1|dtype=14;shape=3,;strides=8,;plain=1;dense=1|dtype=6;shape=4,;strides=4,;plain=1;dense=1|->dtype=4;shape=1,3,2,8,;strides=96,32,16,2,;plain=1;dense=1	onednn: oneDNN provider does not implement this operation
+RopeRank4Axis1	Native	UNIMPLEMENTED	dtype=4;shape=1,3,2,8,;strides=96,32,16,2,;plain=1;dense=1|dtype=14;shape=3,;strides=8,;plain=1;dense=1|dtype=6;shape=4,;strides=4,;plain=1;dense=1|->dtype=4;shape=1,3,2,8,;strides=96,32,16,2,;plain=1;dense=1	hyle-native: native RoPE currently requires plain float32 data
+RopeRank3Axis0	ggml	UNIMPLEMENTED	dtype=4;shape=3,2,8,;strides=32,16,2,;plain=1;dense=1|dtype=14;shape=3,;strides=8,;plain=1;dense=1|dtype=6;shape=4,;strides=4,;plain=1;dense=1|->dtype=4;shape=3,2,8,;strides=32,16,2,;plain=1;dense=1	ggml-cpu: ggml CPU operation domain is not admitted
+RopeRank3Axis0	oneDNN	UNIMPLEMENTED	dtype=4;shape=3,2,8,;strides=32,16,2,;plain=1;dense=1|dtype=14;shape=3,;strides=8,;plain=1;dense=1|dtype=6;shape=4,;strides=4,;plain=1;dense=1|->dtype=4;shape=3,2,8,;strides=32,16,2,;plain=1;dense=1	onednn: oneDNN provider does not implement this operation
+RopeRank3Axis0	Native	UNIMPLEMENTED	dtype=4;shape=3,2,8,;strides=32,16,2,;plain=1;dense=1|dtype=14;shape=3,;strides=8,;plain=1;dense=1|dtype=6;shape=4,;strides=4,;plain=1;dense=1|->dtype=4;shape=3,2,8,;strides=32,16,2,;plain=1;dense=1	hyle-native: native RoPE currently requires plain float32 data
+Concat	ggml	ADMITTED	dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1|dtype=4;shape=1,8,;strides=16,2,;plain=1;dense=1|->dtype=4;shape=3,8,;strides=16,2,;plain=1;dense=1
+Concat	oneDNN	UNIMPLEMENTED	dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1|dtype=4;shape=1,8,;strides=16,2,;plain=1;dense=1|->dtype=4;shape=3,8,;strides=16,2,;plain=1;dense=1	onednn: oneDNN provider does not implement this operation
+Concat	Native	ADMITTED	dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1|dtype=4;shape=1,8,;strides=16,2,;plain=1;dense=1|->dtype=4;shape=3,8,;strides=16,2,;plain=1;dense=1
+Copy	ggml	ADMITTED	dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1|->dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1
+Copy	oneDNN	ADMITTED	dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1|->dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1
+Copy	Native	ADMITTED	dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1|->dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1
+CastF32	ggml	ADMITTED	dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1|->dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1
+CastF32	oneDNN	UNIMPLEMENTED	dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1|->dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1	onednn: oneDNN provider does not implement this operation
+CastF32	Native	ADMITTED	dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1|->dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1
+MatMulRowMajor	ggml	ADMITTED	dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1|dtype=4;shape=8,5,;strides=10,2,;plain=1;dense=1|->dtype=4;shape=2,5,;strides=10,2,;plain=1;dense=1
+MatMulRowMajor	oneDNN	UNIMPLEMENTED	dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1|dtype=4;shape=8,5,;strides=10,2,;plain=1;dense=1|->dtype=4;shape=2,5,;strides=10,2,;plain=1;dense=1	onednn: oneDNN provider route requires dense row-major float32 matrices
+MatMulRowMajor	Native	UNIMPLEMENTED	dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1|dtype=4;shape=8,5,;strides=10,2,;plain=1;dense=1|->dtype=4;shape=2,5,;strides=10,2,;plain=1;dense=1	hyle-native: HYLE native route currently requires float32 tensors
+MatMulTransposed	ggml	ADMITTED	dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1|dtype=4;shape=8,5,;strides=2,16,;plain=1;dense=0|->dtype=4;shape=2,5,;strides=10,2,;plain=1;dense=1
+MatMulTransposed	oneDNN	UNIMPLEMENTED	dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1|dtype=4;shape=8,5,;strides=2,16,;plain=1;dense=0|->dtype=4;shape=2,5,;strides=10,2,;plain=1;dense=1	onednn: oneDNN provider route requires dense row-major float32 matrices
+MatMulTransposed	Native	UNIMPLEMENTED	dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1|dtype=4;shape=8,5,;strides=2,16,;plain=1;dense=0|->dtype=4;shape=2,5,;strides=10,2,;plain=1;dense=1	hyle-native: HYLE native route currently requires float32 tensors
+MatMulBatchTransposed	ggml	ADMITTED	dtype=4;shape=2,3,8,;strides=48,16,2,;plain=1;dense=1|dtype=4;shape=8,5,;strides=2,16,;plain=1;dense=0|->dtype=4;shape=2,3,5,;strides=30,10,2,;plain=1;dense=1
+MatMulBatchTransposed	oneDNN	UNIMPLEMENTED	dtype=4;shape=2,3,8,;strides=48,16,2,;plain=1;dense=1|dtype=4;shape=8,5,;strides=2,16,;plain=1;dense=0|->dtype=4;shape=2,3,5,;strides=30,10,2,;plain=1;dense=1	onednn: oneDNN provider route requires dense row-major float32 matrices
+MatMulBatchTransposed	Native	UNIMPLEMENTED	dtype=4;shape=2,3,8,;strides=48,16,2,;plain=1;dense=1|dtype=4;shape=8,5,;strides=2,16,;plain=1;dense=0|->dtype=4;shape=2,3,5,;strides=30,10,2,;plain=1;dense=1	hyle-native: HYLE native route currently requires float32 tensors
+MatMulBatchRowMajor	ggml	ADMITTED	dtype=4;shape=2,3,8,;strides=48,16,2,;plain=1;dense=1|dtype=4;shape=8,5,;strides=10,2,;plain=1;dense=1|->dtype=4;shape=2,3,5,;strides=30,10,2,;plain=1;dense=1
+MatMulBatchRowMajor	oneDNN	UNIMPLEMENTED	dtype=4;shape=2,3,8,;strides=48,16,2,;plain=1;dense=1|dtype=4;shape=8,5,;strides=10,2,;plain=1;dense=1|->dtype=4;shape=2,3,5,;strides=30,10,2,;plain=1;dense=1	onednn: oneDNN provider route requires dense row-major float32 matrices
+MatMulBatchRowMajor	Native	UNIMPLEMENTED	dtype=4;shape=2,3,8,;strides=48,16,2,;plain=1;dense=1|dtype=4;shape=8,5,;strides=10,2,;plain=1;dense=1|->dtype=4;shape=2,3,5,;strides=30,10,2,;plain=1;dense=1	hyle-native: HYLE native route currently requires float32 tensors
+Abs	ggml	ADMITTED	dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1|->dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1
+Abs	oneDNN	UNIMPLEMENTED	dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1|->dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1	onednn: oneDNN provider does not implement this operation
+Abs	Native	ADMITTED	dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1|->dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1
+Neg	ggml	ADMITTED	dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1|->dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1
+Neg	oneDNN	UNIMPLEMENTED	dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1|->dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1	onednn: oneDNN provider does not implement this operation
+Neg	Native	ADMITTED	dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1|->dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1
+Exp	ggml	ADMITTED	dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1|->dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1
+Exp	oneDNN	UNIMPLEMENTED	dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1|->dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1	onednn: oneDNN provider does not implement this operation
+Exp	Native	ADMITTED	dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1|->dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1
+Log	ggml	ADMITTED	dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1|->dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1
+Log	oneDNN	UNIMPLEMENTED	dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1|->dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1	onednn: oneDNN provider does not implement this operation
+Log	Native	ADMITTED	dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1|->dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1
+Sqrt	ggml	ADMITTED	dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1|->dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1
+Sqrt	oneDNN	UNIMPLEMENTED	dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1|->dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1	onednn: oneDNN provider does not implement this operation
+Sqrt	Native	ADMITTED	dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1|->dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1
+Rsqrt	ggml	ADMITTED	dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1|->dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1
+Rsqrt	oneDNN	UNIMPLEMENTED	dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1|->dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1	onednn: oneDNN provider does not implement this operation
+Rsqrt	Native	ADMITTED	dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1|->dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1
+Tanh	ggml	ADMITTED	dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1|->dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1
+Tanh	oneDNN	UNIMPLEMENTED	dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1|->dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1	onednn: oneDNN provider does not implement this operation
+Tanh	Native	ADMITTED	dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1|->dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1
+Sigmoid	ggml	ADMITTED	dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1|->dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1
+Sigmoid	oneDNN	UNIMPLEMENTED	dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1|->dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1	onednn: oneDNN provider does not implement this operation
+Sigmoid	Native	ADMITTED	dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1|->dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1
+Relu	ggml	ADMITTED	dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1|->dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1
+Relu	oneDNN	UNIMPLEMENTED	dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1|->dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1	onednn: oneDNN provider does not implement this operation
+Relu	Native	ADMITTED	dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1|->dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1
+Gelu	ggml	UNIMPLEMENTED	dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1|->dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1	ggml-cpu: ggml CPU operation domain is not admitted
+Gelu	oneDNN	UNIMPLEMENTED	dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1|->dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1	onednn: oneDNN provider does not implement this operation
+Gelu	Native	ADMITTED	dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1|->dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1
+GeluTanh	ggml	UNIMPLEMENTED	dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1|->dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1	ggml-cpu: ggml CPU operation domain is not admitted
+GeluTanh	oneDNN	UNIMPLEMENTED	dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1|->dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1	onednn: oneDNN provider does not implement this operation
+GeluTanh	Native	ADMITTED	dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1|->dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1
+Silu	ggml	UNIMPLEMENTED	dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1|->dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1	ggml-cpu: ggml CPU operation domain is not admitted
+Silu	oneDNN	UNIMPLEMENTED	dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1|->dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1	onednn: oneDNN provider does not implement this operation
+Silu	Native	ADMITTED	dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1|->dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1
+Softplus	ggml	UNIMPLEMENTED	dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1|->dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1	ggml-cpu: ggml CPU operation domain is not admitted
+Softplus	oneDNN	UNIMPLEMENTED	dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1|->dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1	onednn: oneDNN stable softplus requires float32
+Softplus	Native	ADMITTED	dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1|->dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1
+Add	ggml	ADMITTED	dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1|dtype=5;shape=8,;strides=2,;plain=1;dense=1|->dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1
+Add	oneDNN	UNIMPLEMENTED	dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1|dtype=5;shape=8,;strides=2,;plain=1;dense=1|->dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1	onednn: oneDNN provider does not implement this operation
+Add	Native	ADMITTED	dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1|dtype=5;shape=8,;strides=2,;plain=1;dense=1|->dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1
+Subtract	ggml	ADMITTED	dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1|dtype=5;shape=8,;strides=2,;plain=1;dense=1|->dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1
+Subtract	oneDNN	UNIMPLEMENTED	dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1|dtype=5;shape=8,;strides=2,;plain=1;dense=1|->dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1	onednn: oneDNN provider does not implement this operation
+Subtract	Native	ADMITTED	dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1|dtype=5;shape=8,;strides=2,;plain=1;dense=1|->dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1
+Multiply	ggml	ADMITTED	dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1|dtype=5;shape=8,;strides=2,;plain=1;dense=1|->dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1
+Multiply	oneDNN	UNIMPLEMENTED	dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1|dtype=5;shape=8,;strides=2,;plain=1;dense=1|->dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1	onednn: oneDNN provider does not implement this operation
+Multiply	Native	ADMITTED	dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1|dtype=5;shape=8,;strides=2,;plain=1;dense=1|->dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1
+Divide	ggml	ADMITTED	dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1|dtype=5;shape=8,;strides=2,;plain=1;dense=1|->dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1
+Divide	oneDNN	UNIMPLEMENTED	dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1|dtype=5;shape=8,;strides=2,;plain=1;dense=1|->dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1	onednn: oneDNN provider does not implement this operation
+Divide	Native	ADMITTED	dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1|dtype=5;shape=8,;strides=2,;plain=1;dense=1|->dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1
+Minimum	ggml	UNIMPLEMENTED	dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1|dtype=5;shape=8,;strides=2,;plain=1;dense=1|->dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1	ggml-cpu: ggml CPU operation domain is not admitted
+Minimum	oneDNN	UNIMPLEMENTED	dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1|dtype=5;shape=8,;strides=2,;plain=1;dense=1|->dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1	onednn: oneDNN provider does not implement this operation
+Minimum	Native	ADMITTED	dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1|dtype=5;shape=8,;strides=2,;plain=1;dense=1|->dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1
+Maximum	ggml	UNIMPLEMENTED	dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1|dtype=5;shape=8,;strides=2,;plain=1;dense=1|->dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1	ggml-cpu: ggml CPU operation domain is not admitted
+Maximum	oneDNN	UNIMPLEMENTED	dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1|dtype=5;shape=8,;strides=2,;plain=1;dense=1|->dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1	onednn: oneDNN provider does not implement this operation
+Maximum	Native	ADMITTED	dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1|dtype=5;shape=8,;strides=2,;plain=1;dense=1|->dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1
+ReduceSum	ggml	ADMITTED	dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1|->dtype=5;shape=;strides=;plain=1;dense=1
+ReduceSum	oneDNN	UNIMPLEMENTED	dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1|->dtype=5;shape=;strides=;plain=1;dense=1	onednn: oneDNN provider does not implement this operation
+ReduceSum	Native	ADMITTED	dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1|->dtype=5;shape=;strides=;plain=1;dense=1
+ReduceMean	ggml	ADMITTED	dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1|->dtype=5;shape=;strides=;plain=1;dense=1
+ReduceMean	oneDNN	UNIMPLEMENTED	dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1|->dtype=5;shape=;strides=;plain=1;dense=1	onednn: oneDNN provider does not implement this operation
+ReduceMean	Native	ADMITTED	dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1|->dtype=5;shape=;strides=;plain=1;dense=1
+ReduceMin	ggml	UNIMPLEMENTED	dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1|->dtype=5;shape=;strides=;plain=1;dense=1	ggml-cpu: ggml CPU operation domain is not admitted
+ReduceMin	oneDNN	UNIMPLEMENTED	dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1|->dtype=5;shape=;strides=;plain=1;dense=1	onednn: oneDNN provider does not implement this operation
+ReduceMin	Native	ADMITTED	dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1|->dtype=5;shape=;strides=;plain=1;dense=1
+ReduceMax	ggml	UNIMPLEMENTED	dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1|->dtype=5;shape=;strides=;plain=1;dense=1	ggml-cpu: ggml CPU operation domain is not admitted
+ReduceMax	oneDNN	UNIMPLEMENTED	dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1|->dtype=5;shape=;strides=;plain=1;dense=1	onednn: oneDNN provider does not implement this operation
+ReduceMax	Native	ADMITTED	dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1|->dtype=5;shape=;strides=;plain=1;dense=1
+GateSiluPacked	ggml	ADMITTED	dtype=5;shape=2,16,;strides=32,2,;plain=1;dense=1|->dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1
+GateSiluPacked	oneDNN	UNIMPLEMENTED	dtype=5;shape=2,16,;strides=32,2,;plain=1;dense=1|->dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1	onednn: oneDNN provider does not implement this operation
+GateSiluPacked	Native	ADMITTED	dtype=5;shape=2,16,;strides=32,2,;plain=1;dense=1|->dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1
+GateGeluPacked	ggml	UNIMPLEMENTED	dtype=5;shape=2,16,;strides=32,2,;plain=1;dense=1|->dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1	ggml-cpu: ggml CPU operation domain is not admitted
+GateGeluPacked	oneDNN	UNIMPLEMENTED	dtype=5;shape=2,16,;strides=32,2,;plain=1;dense=1|->dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1	onednn: oneDNN provider does not implement this operation
+GateGeluPacked	Native	ADMITTED	dtype=5;shape=2,16,;strides=32,2,;plain=1;dense=1|->dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1
+GateGeluTanhPacked	ggml	UNIMPLEMENTED	dtype=5;shape=2,16,;strides=32,2,;plain=1;dense=1|->dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1	ggml-cpu: ggml CPU operation domain is not admitted
+GateGeluTanhPacked	oneDNN	UNIMPLEMENTED	dtype=5;shape=2,16,;strides=32,2,;plain=1;dense=1|->dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1	onednn: oneDNN provider does not implement this operation
+GateGeluTanhPacked	Native	ADMITTED	dtype=5;shape=2,16,;strides=32,2,;plain=1;dense=1|->dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1
+SelectBoolBroadcast	ggml	UNIMPLEMENTED	dtype=1;shape=2,1,;strides=1,1,;plain=1;dense=1|dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1|dtype=5;shape=8,;strides=2,;plain=1;dense=1|->dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1	ggml-cpu: ggml CPU operation domain is not admitted
+SelectBoolBroadcast	oneDNN	ADMITTED	dtype=1;shape=2,1,;strides=1,1,;plain=1;dense=1|dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1|dtype=5;shape=8,;strides=2,;plain=1;dense=1|->dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1
+SelectBoolBroadcast	Native	ADMITTED	dtype=1;shape=2,1,;strides=1,1,;plain=1;dense=1|dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1|dtype=5;shape=8,;strides=2,;plain=1;dense=1|->dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1
+RmsNorm	ggml	ADMITTED	dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1|dtype=6;shape=8,;strides=4,;plain=1;dense=1|->dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1
+RmsNorm	oneDNN	UNIMPLEMENTED	dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1|dtype=6;shape=8,;strides=4,;plain=1;dense=1|->dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1	onednn: oneDNN primitive domain is unsupported
+RmsNorm	Native	ADMITTED	dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1|dtype=6;shape=8,;strides=4,;plain=1;dense=1|->dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1
+LayerNorm	ggml	ADMITTED	dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1|dtype=6;shape=8,;strides=4,;plain=1;dense=1|dtype=6;shape=8,;strides=4,;plain=1;dense=1|->dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1
+LayerNorm	oneDNN	UNIMPLEMENTED	dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1|dtype=6;shape=8,;strides=4,;plain=1;dense=1|dtype=6;shape=8,;strides=4,;plain=1;dense=1|->dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1	onednn: oneDNN primitive domain is unsupported
+LayerNorm	Native	ADMITTED	dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1|dtype=6;shape=8,;strides=4,;plain=1;dense=1|dtype=6;shape=8,;strides=4,;plain=1;dense=1|->dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1
+SoftmaxRank2	ggml	UNIMPLEMENTED	dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1|->dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1	ggml-cpu: ggml CPU operation domain is not admitted
+SoftmaxRank2	oneDNN	UNIMPLEMENTED	dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1|->dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1	onednn: oneDNN provider does not implement this operation
+SoftmaxRank2	Native	ADMITTED	dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1|->dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1
+SoftmaxRank1	ggml	UNIMPLEMENTED	dtype=5;shape=8,;strides=2,;plain=1;dense=1|->dtype=5;shape=8,;strides=2,;plain=1;dense=1	ggml-cpu: ggml CPU operation domain is not admitted
+SoftmaxRank1	oneDNN	UNIMPLEMENTED	dtype=5;shape=8,;strides=2,;plain=1;dense=1|->dtype=5;shape=8,;strides=2,;plain=1;dense=1	onednn: oneDNN provider does not implement this operation
+SoftmaxRank1	Native	ADMITTED	dtype=5;shape=8,;strides=2,;plain=1;dense=1|->dtype=5;shape=8,;strides=2,;plain=1;dense=1
+SoftmaxRank4Scale	ggml	UNIMPLEMENTED	dtype=5;shape=2,2,3,8,;strides=96,48,16,2,;plain=1;dense=1|->dtype=5;shape=2,2,3,8,;strides=96,48,16,2,;plain=1;dense=1	ggml-cpu: ggml CPU operation domain is not admitted
+SoftmaxRank4Scale	oneDNN	UNIMPLEMENTED	dtype=5;shape=2,2,3,8,;strides=96,48,16,2,;plain=1;dense=1|->dtype=5;shape=2,2,3,8,;strides=96,48,16,2,;plain=1;dense=1	onednn: oneDNN provider does not implement this operation
+SoftmaxRank4Scale	Native	ADMITTED	dtype=5;shape=2,2,3,8,;strides=96,48,16,2,;plain=1;dense=1|->dtype=5;shape=2,2,3,8,;strides=96,48,16,2,;plain=1;dense=1
+SoftmaxAxis0	ggml	UNIMPLEMENTED	dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1|->dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1	ggml-cpu: ggml CPU operation domain is not admitted
+SoftmaxAxis0	oneDNN	UNIMPLEMENTED	dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1|->dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1	onednn: oneDNN provider does not implement this operation
+SoftmaxAxis0	Native	ADMITTED	dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1|->dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1
+LogSoftmax	ggml	UNIMPLEMENTED	dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1|->dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1	ggml-cpu: ggml CPU operation domain is not admitted
+LogSoftmax	oneDNN	UNIMPLEMENTED	dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1|->dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1	onednn: oneDNN provider does not implement this operation
+LogSoftmax	Native	ADMITTED	dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1|->dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1
+SoftmaxBoolMask	ggml	UNIMPLEMENTED	dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1|dtype=1;shape=2,8,;strides=8,1,;plain=1;dense=1|->dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1	ggml-cpu: ggml CPU operation domain is not admitted
+SoftmaxBoolMask	oneDNN	UNIMPLEMENTED	dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1|dtype=1;shape=2,8,;strides=8,1,;plain=1;dense=1|->dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1	onednn: oneDNN provider does not implement this operation
+SoftmaxBoolMask	Native	ADMITTED	dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1|dtype=1;shape=2,8,;strides=8,1,;plain=1;dense=1|->dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1
+SoftmaxAdditiveMask	ggml	UNIMPLEMENTED	dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1|dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1|->dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1	ggml-cpu: ggml CPU operation domain is not admitted
+SoftmaxAdditiveMask	oneDNN	UNIMPLEMENTED	dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1|dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1|->dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1	onednn: oneDNN provider does not implement this operation
+SoftmaxAdditiveMask	Native	ADMITTED	dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1|dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1|->dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1
+AttentionCausal	ggml	ADMITTED	dtype=5;shape=1,2,2,4,;strides=32,16,8,2,;plain=1;dense=1|dtype=5;shape=1,3,2,4,;strides=48,16,8,2,;plain=1;dense=1|dtype=5;shape=1,3,2,4,;strides=48,16,8,2,;plain=1;dense=1|->dtype=5;shape=1,2,2,4,;strides=32,16,8,2,;plain=1;dense=1
+AttentionCausal	oneDNN	UNIMPLEMENTED	dtype=5;shape=1,2,2,4,;strides=32,16,8,2,;plain=1;dense=1|dtype=5;shape=1,3,2,4,;strides=48,16,8,2,;plain=1;dense=1|dtype=5;shape=1,3,2,4,;strides=48,16,8,2,;plain=1;dense=1|->dtype=5;shape=1,2,2,4,;strides=32,16,8,2,;plain=1;dense=1	onednn: oneDNN provider does not implement this operation
+AttentionCausal	Native	UNIMPLEMENTED	dtype=5;shape=1,2,2,4,;strides=32,16,8,2,;plain=1;dense=1|dtype=5;shape=1,3,2,4,;strides=48,16,8,2,;plain=1;dense=1|dtype=5;shape=1,3,2,4,;strides=48,16,8,2,;plain=1;dense=1|->dtype=5;shape=1,2,2,4,;strides=32,16,8,2,;plain=1;dense=1	hyle-native: native SDPA currently requires plain float32 Q/K/V tensors
+AttentionNonCausal	ggml	UNIMPLEMENTED	dtype=5;shape=1,2,2,4,;strides=32,16,8,2,;plain=1;dense=1|dtype=5;shape=1,3,2,4,;strides=48,16,8,2,;plain=1;dense=1|dtype=5;shape=1,3,2,4,;strides=48,16,8,2,;plain=1;dense=1|->dtype=5;shape=1,2,2,4,;strides=32,16,8,2,;plain=1;dense=1	ggml-cpu: ggml CPU operation domain is not admitted
+AttentionNonCausal	oneDNN	UNIMPLEMENTED	dtype=5;shape=1,2,2,4,;strides=32,16,8,2,;plain=1;dense=1|dtype=5;shape=1,3,2,4,;strides=48,16,8,2,;plain=1;dense=1|dtype=5;shape=1,3,2,4,;strides=48,16,8,2,;plain=1;dense=1|->dtype=5;shape=1,2,2,4,;strides=32,16,8,2,;plain=1;dense=1	onednn: oneDNN provider does not implement this operation
+AttentionNonCausal	Native	UNIMPLEMENTED	dtype=5;shape=1,2,2,4,;strides=32,16,8,2,;plain=1;dense=1|dtype=5;shape=1,3,2,4,;strides=48,16,8,2,;plain=1;dense=1|dtype=5;shape=1,3,2,4,;strides=48,16,8,2,;plain=1;dense=1|->dtype=5;shape=1,2,2,4,;strides=32,16,8,2,;plain=1;dense=1	hyle-native: native SDPA currently requires plain float32 Q/K/V tensors
+AttentionBoolMask	ggml	UNIMPLEMENTED	dtype=5;shape=1,2,2,4,;strides=32,16,8,2,;plain=1;dense=1|dtype=5;shape=1,3,2,4,;strides=48,16,8,2,;plain=1;dense=1|dtype=5;shape=1,3,2,4,;strides=48,16,8,2,;plain=1;dense=1|dtype=1;shape=1,2,2,3,;strides=12,6,3,1,;plain=1;dense=1|->dtype=5;shape=1,2,2,4,;strides=32,16,8,2,;plain=1;dense=1	ggml-cpu: ggml CPU operation domain is not admitted
+AttentionBoolMask	oneDNN	UNIMPLEMENTED	dtype=5;shape=1,2,2,4,;strides=32,16,8,2,;plain=1;dense=1|dtype=5;shape=1,3,2,4,;strides=48,16,8,2,;plain=1;dense=1|dtype=5;shape=1,3,2,4,;strides=48,16,8,2,;plain=1;dense=1|dtype=1;shape=1,2,2,3,;strides=12,6,3,1,;plain=1;dense=1|->dtype=5;shape=1,2,2,4,;strides=32,16,8,2,;plain=1;dense=1	onednn: oneDNN provider does not implement this operation
+AttentionBoolMask	Native	UNIMPLEMENTED	dtype=5;shape=1,2,2,4,;strides=32,16,8,2,;plain=1;dense=1|dtype=5;shape=1,3,2,4,;strides=48,16,8,2,;plain=1;dense=1|dtype=5;shape=1,3,2,4,;strides=48,16,8,2,;plain=1;dense=1|dtype=1;shape=1,2,2,3,;strides=12,6,3,1,;plain=1;dense=1|->dtype=5;shape=1,2,2,4,;strides=32,16,8,2,;plain=1;dense=1	hyle-native: native SDPA currently requires plain float32 Q/K/V tensors
+AttentionHeadFirst	ggml	UNIMPLEMENTED	dtype=5;shape=1,2,2,4,;strides=32,16,8,2,;plain=1;dense=1|dtype=5;shape=1,2,3,4,;strides=48,24,8,2,;plain=1;dense=1|dtype=5;shape=1,2,3,4,;strides=48,24,8,2,;plain=1;dense=1|->dtype=5;shape=1,2,2,4,;strides=32,16,8,2,;plain=1;dense=1	ggml-cpu: ggml CPU operation domain is not admitted
+AttentionHeadFirst	oneDNN	UNIMPLEMENTED	dtype=5;shape=1,2,2,4,;strides=32,16,8,2,;plain=1;dense=1|dtype=5;shape=1,2,3,4,;strides=48,24,8,2,;plain=1;dense=1|dtype=5;shape=1,2,3,4,;strides=48,24,8,2,;plain=1;dense=1|->dtype=5;shape=1,2,2,4,;strides=32,16,8,2,;plain=1;dense=1	onednn: oneDNN provider does not implement this operation
+AttentionHeadFirst	Native	UNIMPLEMENTED	dtype=5;shape=1,2,2,4,;strides=32,16,8,2,;plain=1;dense=1|dtype=5;shape=1,2,3,4,;strides=48,24,8,2,;plain=1;dense=1|dtype=5;shape=1,2,3,4,;strides=48,24,8,2,;plain=1;dense=1|->dtype=5;shape=1,2,2,4,;strides=32,16,8,2,;plain=1;dense=1	hyle-native: native SDPA currently requires plain float32 Q/K/V tensors
+Gather	ggml	ADMITTED	dtype=5;shape=4,8,;strides=16,2,;plain=1;dense=1|dtype=12;shape=3,;strides=4,;plain=1;dense=1|->dtype=5;shape=3,8,;strides=16,2,;plain=1;dense=1
+Gather	oneDNN	UNIMPLEMENTED	dtype=5;shape=4,8,;strides=16,2,;plain=1;dense=1|dtype=12;shape=3,;strides=4,;plain=1;dense=1|->dtype=5;shape=3,8,;strides=16,2,;plain=1;dense=1	onednn: oneDNN provider does not implement this operation
+Gather	Native	ADMITTED	dtype=5;shape=4,8,;strides=16,2,;plain=1;dense=1|dtype=12;shape=3,;strides=4,;plain=1;dense=1|->dtype=5;shape=3,8,;strides=16,2,;plain=1;dense=1
+ScatterAdd	ggml	ADMITTED	dtype=5;shape=4,8,;strides=16,2,;plain=1;dense=1|dtype=12;shape=3,;strides=4,;plain=1;dense=1|dtype=5;shape=3,8,;strides=16,2,;plain=1;dense=1|->dtype=5;shape=4,8,;strides=16,2,;plain=1;dense=1
+ScatterAdd	oneDNN	UNIMPLEMENTED	dtype=5;shape=4,8,;strides=16,2,;plain=1;dense=1|dtype=12;shape=3,;strides=4,;plain=1;dense=1|dtype=5;shape=3,8,;strides=16,2,;plain=1;dense=1|->dtype=5;shape=4,8,;strides=16,2,;plain=1;dense=1	onednn: oneDNN provider does not implement this operation
+ScatterAdd	Native	ADMITTED	dtype=5;shape=4,8,;strides=16,2,;plain=1;dense=1|dtype=12;shape=3,;strides=4,;plain=1;dense=1|dtype=5;shape=3,8,;strides=16,2,;plain=1;dense=1|->dtype=5;shape=4,8,;strides=16,2,;plain=1;dense=1
+ScatterAssign	ggml	UNIMPLEMENTED	dtype=5;shape=4,8,;strides=16,2,;plain=1;dense=1|dtype=12;shape=3,;strides=4,;plain=1;dense=1|dtype=5;shape=3,8,;strides=16,2,;plain=1;dense=1|->dtype=5;shape=4,8,;strides=16,2,;plain=1;dense=1	ggml-cpu: ggml CPU operation domain is not admitted
+ScatterAssign	oneDNN	UNIMPLEMENTED	dtype=5;shape=4,8,;strides=16,2,;plain=1;dense=1|dtype=12;shape=3,;strides=4,;plain=1;dense=1|dtype=5;shape=3,8,;strides=16,2,;plain=1;dense=1|->dtype=5;shape=4,8,;strides=16,2,;plain=1;dense=1	onednn: oneDNN provider does not implement this operation
+ScatterAssign	Native	ADMITTED	dtype=5;shape=4,8,;strides=16,2,;plain=1;dense=1|dtype=12;shape=3,;strides=4,;plain=1;dense=1|dtype=5;shape=3,8,;strides=16,2,;plain=1;dense=1|->dtype=5;shape=4,8,;strides=16,2,;plain=1;dense=1
+RopeRank4Axis1	ggml	ADMITTED	dtype=5;shape=1,3,2,8,;strides=96,32,16,2,;plain=1;dense=1|dtype=12;shape=3,;strides=4,;plain=1;dense=1|dtype=6;shape=4,;strides=4,;plain=1;dense=1|->dtype=5;shape=1,3,2,8,;strides=96,32,16,2,;plain=1;dense=1
+RopeRank4Axis1	oneDNN	UNIMPLEMENTED	dtype=5;shape=1,3,2,8,;strides=96,32,16,2,;plain=1;dense=1|dtype=12;shape=3,;strides=4,;plain=1;dense=1|dtype=6;shape=4,;strides=4,;plain=1;dense=1|->dtype=5;shape=1,3,2,8,;strides=96,32,16,2,;plain=1;dense=1	onednn: oneDNN provider does not implement this operation
+RopeRank4Axis1	Native	UNIMPLEMENTED	dtype=5;shape=1,3,2,8,;strides=96,32,16,2,;plain=1;dense=1|dtype=12;shape=3,;strides=4,;plain=1;dense=1|dtype=6;shape=4,;strides=4,;plain=1;dense=1|->dtype=5;shape=1,3,2,8,;strides=96,32,16,2,;plain=1;dense=1	hyle-native: native RoPE currently requires plain float32 data
+RopeRank3Axis0	ggml	UNIMPLEMENTED	dtype=5;shape=3,2,8,;strides=32,16,2,;plain=1;dense=1|dtype=12;shape=3,;strides=4,;plain=1;dense=1|dtype=6;shape=4,;strides=4,;plain=1;dense=1|->dtype=5;shape=3,2,8,;strides=32,16,2,;plain=1;dense=1	ggml-cpu: ggml CPU operation domain is not admitted
+RopeRank3Axis0	oneDNN	UNIMPLEMENTED	dtype=5;shape=3,2,8,;strides=32,16,2,;plain=1;dense=1|dtype=12;shape=3,;strides=4,;plain=1;dense=1|dtype=6;shape=4,;strides=4,;plain=1;dense=1|->dtype=5;shape=3,2,8,;strides=32,16,2,;plain=1;dense=1	onednn: oneDNN provider does not implement this operation
+RopeRank3Axis0	Native	UNIMPLEMENTED	dtype=5;shape=3,2,8,;strides=32,16,2,;plain=1;dense=1|dtype=12;shape=3,;strides=4,;plain=1;dense=1|dtype=6;shape=4,;strides=4,;plain=1;dense=1|->dtype=5;shape=3,2,8,;strides=32,16,2,;plain=1;dense=1	hyle-native: native RoPE currently requires plain float32 data
+Gather	ggml	UNIMPLEMENTED	dtype=5;shape=4,8,;strides=16,2,;plain=1;dense=1|dtype=14;shape=3,;strides=8,;plain=1;dense=1|->dtype=5;shape=3,8,;strides=16,2,;plain=1;dense=1	ggml-cpu: ggml CPU operation domain is not admitted
+Gather	oneDNN	UNIMPLEMENTED	dtype=5;shape=4,8,;strides=16,2,;plain=1;dense=1|dtype=14;shape=3,;strides=8,;plain=1;dense=1|->dtype=5;shape=3,8,;strides=16,2,;plain=1;dense=1	onednn: oneDNN provider does not implement this operation
+Gather	Native	ADMITTED	dtype=5;shape=4,8,;strides=16,2,;plain=1;dense=1|dtype=14;shape=3,;strides=8,;plain=1;dense=1|->dtype=5;shape=3,8,;strides=16,2,;plain=1;dense=1
+ScatterAdd	ggml	UNIMPLEMENTED	dtype=5;shape=4,8,;strides=16,2,;plain=1;dense=1|dtype=14;shape=3,;strides=8,;plain=1;dense=1|dtype=5;shape=3,8,;strides=16,2,;plain=1;dense=1|->dtype=5;shape=4,8,;strides=16,2,;plain=1;dense=1	ggml-cpu: ggml CPU operation domain is not admitted
+ScatterAdd	oneDNN	UNIMPLEMENTED	dtype=5;shape=4,8,;strides=16,2,;plain=1;dense=1|dtype=14;shape=3,;strides=8,;plain=1;dense=1|dtype=5;shape=3,8,;strides=16,2,;plain=1;dense=1|->dtype=5;shape=4,8,;strides=16,2,;plain=1;dense=1	onednn: oneDNN provider does not implement this operation
+ScatterAdd	Native	ADMITTED	dtype=5;shape=4,8,;strides=16,2,;plain=1;dense=1|dtype=14;shape=3,;strides=8,;plain=1;dense=1|dtype=5;shape=3,8,;strides=16,2,;plain=1;dense=1|->dtype=5;shape=4,8,;strides=16,2,;plain=1;dense=1
+ScatterAssign	ggml	UNIMPLEMENTED	dtype=5;shape=4,8,;strides=16,2,;plain=1;dense=1|dtype=14;shape=3,;strides=8,;plain=1;dense=1|dtype=5;shape=3,8,;strides=16,2,;plain=1;dense=1|->dtype=5;shape=4,8,;strides=16,2,;plain=1;dense=1	ggml-cpu: ggml CPU operation domain is not admitted
+ScatterAssign	oneDNN	UNIMPLEMENTED	dtype=5;shape=4,8,;strides=16,2,;plain=1;dense=1|dtype=14;shape=3,;strides=8,;plain=1;dense=1|dtype=5;shape=3,8,;strides=16,2,;plain=1;dense=1|->dtype=5;shape=4,8,;strides=16,2,;plain=1;dense=1	onednn: oneDNN provider does not implement this operation
+ScatterAssign	Native	ADMITTED	dtype=5;shape=4,8,;strides=16,2,;plain=1;dense=1|dtype=14;shape=3,;strides=8,;plain=1;dense=1|dtype=5;shape=3,8,;strides=16,2,;plain=1;dense=1|->dtype=5;shape=4,8,;strides=16,2,;plain=1;dense=1
+RopeRank4Axis1	ggml	UNIMPLEMENTED	dtype=5;shape=1,3,2,8,;strides=96,32,16,2,;plain=1;dense=1|dtype=14;shape=3,;strides=8,;plain=1;dense=1|dtype=6;shape=4,;strides=4,;plain=1;dense=1|->dtype=5;shape=1,3,2,8,;strides=96,32,16,2,;plain=1;dense=1	ggml-cpu: ggml CPU operation domain is not admitted
+RopeRank4Axis1	oneDNN	UNIMPLEMENTED	dtype=5;shape=1,3,2,8,;strides=96,32,16,2,;plain=1;dense=1|dtype=14;shape=3,;strides=8,;plain=1;dense=1|dtype=6;shape=4,;strides=4,;plain=1;dense=1|->dtype=5;shape=1,3,2,8,;strides=96,32,16,2,;plain=1;dense=1	onednn: oneDNN provider does not implement this operation
+RopeRank4Axis1	Native	UNIMPLEMENTED	dtype=5;shape=1,3,2,8,;strides=96,32,16,2,;plain=1;dense=1|dtype=14;shape=3,;strides=8,;plain=1;dense=1|dtype=6;shape=4,;strides=4,;plain=1;dense=1|->dtype=5;shape=1,3,2,8,;strides=96,32,16,2,;plain=1;dense=1	hyle-native: native RoPE currently requires plain float32 data
+RopeRank3Axis0	ggml	UNIMPLEMENTED	dtype=5;shape=3,2,8,;strides=32,16,2,;plain=1;dense=1|dtype=14;shape=3,;strides=8,;plain=1;dense=1|dtype=6;shape=4,;strides=4,;plain=1;dense=1|->dtype=5;shape=3,2,8,;strides=32,16,2,;plain=1;dense=1	ggml-cpu: ggml CPU operation domain is not admitted
+RopeRank3Axis0	oneDNN	UNIMPLEMENTED	dtype=5;shape=3,2,8,;strides=32,16,2,;plain=1;dense=1|dtype=14;shape=3,;strides=8,;plain=1;dense=1|dtype=6;shape=4,;strides=4,;plain=1;dense=1|->dtype=5;shape=3,2,8,;strides=32,16,2,;plain=1;dense=1	onednn: oneDNN provider does not implement this operation
+RopeRank3Axis0	Native	UNIMPLEMENTED	dtype=5;shape=3,2,8,;strides=32,16,2,;plain=1;dense=1|dtype=14;shape=3,;strides=8,;plain=1;dense=1|dtype=6;shape=4,;strides=4,;plain=1;dense=1|->dtype=5;shape=3,2,8,;strides=32,16,2,;plain=1;dense=1	hyle-native: native RoPE currently requires plain float32 data
+Concat	ggml	ADMITTED	dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1|dtype=5;shape=1,8,;strides=16,2,;plain=1;dense=1|->dtype=5;shape=3,8,;strides=16,2,;plain=1;dense=1
+Concat	oneDNN	UNIMPLEMENTED	dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1|dtype=5;shape=1,8,;strides=16,2,;plain=1;dense=1|->dtype=5;shape=3,8,;strides=16,2,;plain=1;dense=1	onednn: oneDNN provider does not implement this operation
+Concat	Native	ADMITTED	dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1|dtype=5;shape=1,8,;strides=16,2,;plain=1;dense=1|->dtype=5;shape=3,8,;strides=16,2,;plain=1;dense=1
+Copy	ggml	ADMITTED	dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1|->dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1
+Copy	oneDNN	ADMITTED	dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1|->dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1
+Copy	Native	ADMITTED	dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1|->dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1
+CastF32	ggml	ADMITTED	dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1|->dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1
+CastF32	oneDNN	UNIMPLEMENTED	dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1|->dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1	onednn: oneDNN provider does not implement this operation
+CastF32	Native	ADMITTED	dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1|->dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1
+MatMulRowMajor	ggml	ADMITTED	dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1|dtype=5;shape=8,5,;strides=10,2,;plain=1;dense=1|->dtype=5;shape=2,5,;strides=10,2,;plain=1;dense=1
+MatMulRowMajor	oneDNN	UNIMPLEMENTED	dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1|dtype=5;shape=8,5,;strides=10,2,;plain=1;dense=1|->dtype=5;shape=2,5,;strides=10,2,;plain=1;dense=1	onednn: oneDNN provider route requires dense row-major float32 matrices
+MatMulRowMajor	Native	UNIMPLEMENTED	dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1|dtype=5;shape=8,5,;strides=10,2,;plain=1;dense=1|->dtype=5;shape=2,5,;strides=10,2,;plain=1;dense=1	hyle-native: HYLE native route currently requires float32 tensors
+MatMulTransposed	ggml	ADMITTED	dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1|dtype=5;shape=8,5,;strides=2,16,;plain=1;dense=0|->dtype=5;shape=2,5,;strides=10,2,;plain=1;dense=1
+MatMulTransposed	oneDNN	UNIMPLEMENTED	dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1|dtype=5;shape=8,5,;strides=2,16,;plain=1;dense=0|->dtype=5;shape=2,5,;strides=10,2,;plain=1;dense=1	onednn: oneDNN provider route requires dense row-major float32 matrices
+MatMulTransposed	Native	UNIMPLEMENTED	dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1|dtype=5;shape=8,5,;strides=2,16,;plain=1;dense=0|->dtype=5;shape=2,5,;strides=10,2,;plain=1;dense=1	hyle-native: HYLE native route currently requires float32 tensors
+MatMulBatchTransposed	ggml	ADMITTED	dtype=5;shape=2,3,8,;strides=48,16,2,;plain=1;dense=1|dtype=5;shape=8,5,;strides=2,16,;plain=1;dense=0|->dtype=5;shape=2,3,5,;strides=30,10,2,;plain=1;dense=1
+MatMulBatchTransposed	oneDNN	UNIMPLEMENTED	dtype=5;shape=2,3,8,;strides=48,16,2,;plain=1;dense=1|dtype=5;shape=8,5,;strides=2,16,;plain=1;dense=0|->dtype=5;shape=2,3,5,;strides=30,10,2,;plain=1;dense=1	onednn: oneDNN provider route requires dense row-major float32 matrices
+MatMulBatchTransposed	Native	UNIMPLEMENTED	dtype=5;shape=2,3,8,;strides=48,16,2,;plain=1;dense=1|dtype=5;shape=8,5,;strides=2,16,;plain=1;dense=0|->dtype=5;shape=2,3,5,;strides=30,10,2,;plain=1;dense=1	hyle-native: HYLE native route currently requires float32 tensors
+MatMulBatchRowMajor	ggml	ADMITTED	dtype=5;shape=2,3,8,;strides=48,16,2,;plain=1;dense=1|dtype=5;shape=8,5,;strides=10,2,;plain=1;dense=1|->dtype=5;shape=2,3,5,;strides=30,10,2,;plain=1;dense=1
+MatMulBatchRowMajor	oneDNN	UNIMPLEMENTED	dtype=5;shape=2,3,8,;strides=48,16,2,;plain=1;dense=1|dtype=5;shape=8,5,;strides=10,2,;plain=1;dense=1|->dtype=5;shape=2,3,5,;strides=30,10,2,;plain=1;dense=1	onednn: oneDNN provider route requires dense row-major float32 matrices
+MatMulBatchRowMajor	Native	UNIMPLEMENTED	dtype=5;shape=2,3,8,;strides=48,16,2,;plain=1;dense=1|dtype=5;shape=8,5,;strides=10,2,;plain=1;dense=1|->dtype=5;shape=2,3,5,;strides=30,10,2,;plain=1;dense=1	hyle-native: HYLE native route currently requires float32 tensors
+WideCopy	ggml	UNIMPLEMENTED	dtype=1;shape=2,8,;strides=8,1,;plain=1;dense=1|->dtype=1;shape=2,8,;strides=8,1,;plain=1;dense=1	ggml-cpu: ggml CPU operation domain is not admitted
+WideCopy	oneDNN	ADMITTED	dtype=1;shape=2,8,;strides=8,1,;plain=1;dense=1|->dtype=1;shape=2,8,;strides=8,1,;plain=1;dense=1
+WideCopy	Native	ADMITTED	dtype=1;shape=2,8,;strides=8,1,;plain=1;dense=1|->dtype=1;shape=2,8,;strides=8,1,;plain=1;dense=1
+WideGather	ggml	UNIMPLEMENTED	dtype=1;shape=4,8,;strides=8,1,;plain=1;dense=1|dtype=12;shape=3,;strides=4,;plain=1;dense=1|->dtype=1;shape=3,8,;strides=8,1,;plain=1;dense=1	ggml-cpu: ggml CPU operation domain is not admitted
+WideGather	oneDNN	UNIMPLEMENTED	dtype=1;shape=4,8,;strides=8,1,;plain=1;dense=1|dtype=12;shape=3,;strides=4,;plain=1;dense=1|->dtype=1;shape=3,8,;strides=8,1,;plain=1;dense=1	onednn: oneDNN provider does not implement this operation
+WideGather	Native	ADMITTED	dtype=1;shape=4,8,;strides=8,1,;plain=1;dense=1|dtype=12;shape=3,;strides=4,;plain=1;dense=1|->dtype=1;shape=3,8,;strides=8,1,;plain=1;dense=1
+WideConcat	ggml	UNIMPLEMENTED	dtype=1;shape=2,8,;strides=8,1,;plain=1;dense=1|dtype=1;shape=1,8,;strides=8,1,;plain=1;dense=1|->dtype=1;shape=3,8,;strides=8,1,;plain=1;dense=1	ggml-cpu: ggml CPU operation domain is not admitted
+WideConcat	oneDNN	UNIMPLEMENTED	dtype=1;shape=2,8,;strides=8,1,;plain=1;dense=1|dtype=1;shape=1,8,;strides=8,1,;plain=1;dense=1|->dtype=1;shape=3,8,;strides=8,1,;plain=1;dense=1	onednn: oneDNN provider does not implement this operation
+WideConcat	Native	ADMITTED	dtype=1;shape=2,8,;strides=8,1,;plain=1;dense=1|dtype=1;shape=1,8,;strides=8,1,;plain=1;dense=1|->dtype=1;shape=3,8,;strides=8,1,;plain=1;dense=1
+WideCopy	ggml	UNIMPLEMENTED	dtype=7;shape=2,8,;strides=64,8,;plain=1;dense=1|->dtype=7;shape=2,8,;strides=64,8,;plain=1;dense=1	ggml-cpu: ggml CPU operation domain is not admitted
+WideCopy	oneDNN	ADMITTED	dtype=7;shape=2,8,;strides=64,8,;plain=1;dense=1|->dtype=7;shape=2,8,;strides=64,8,;plain=1;dense=1
+WideCopy	Native	ADMITTED	dtype=7;shape=2,8,;strides=64,8,;plain=1;dense=1|->dtype=7;shape=2,8,;strides=64,8,;plain=1;dense=1
+WideGather	ggml	UNIMPLEMENTED	dtype=7;shape=4,8,;strides=64,8,;plain=1;dense=1|dtype=12;shape=3,;strides=4,;plain=1;dense=1|->dtype=7;shape=3,8,;strides=64,8,;plain=1;dense=1	ggml-cpu: ggml CPU operation domain is not admitted
+WideGather	oneDNN	UNIMPLEMENTED	dtype=7;shape=4,8,;strides=64,8,;plain=1;dense=1|dtype=12;shape=3,;strides=4,;plain=1;dense=1|->dtype=7;shape=3,8,;strides=64,8,;plain=1;dense=1	onednn: oneDNN provider does not implement this operation
+WideGather	Native	ADMITTED	dtype=7;shape=4,8,;strides=64,8,;plain=1;dense=1|dtype=12;shape=3,;strides=4,;plain=1;dense=1|->dtype=7;shape=3,8,;strides=64,8,;plain=1;dense=1
+WideConcat	ggml	UNIMPLEMENTED	dtype=7;shape=2,8,;strides=64,8,;plain=1;dense=1|dtype=7;shape=1,8,;strides=64,8,;plain=1;dense=1|->dtype=7;shape=3,8,;strides=64,8,;plain=1;dense=1	ggml-cpu: ggml CPU operation domain is not admitted
+WideConcat	oneDNN	UNIMPLEMENTED	dtype=7;shape=2,8,;strides=64,8,;plain=1;dense=1|dtype=7;shape=1,8,;strides=64,8,;plain=1;dense=1|->dtype=7;shape=3,8,;strides=64,8,;plain=1;dense=1	onednn: oneDNN provider does not implement this operation
+WideConcat	Native	ADMITTED	dtype=7;shape=2,8,;strides=64,8,;plain=1;dense=1|dtype=7;shape=1,8,;strides=64,8,;plain=1;dense=1|->dtype=7;shape=3,8,;strides=64,8,;plain=1;dense=1
+WideCopy	ggml	ADMITTED	dtype=12;shape=2,8,;strides=32,4,;plain=1;dense=1|->dtype=12;shape=2,8,;strides=32,4,;plain=1;dense=1
+WideCopy	oneDNN	ADMITTED	dtype=12;shape=2,8,;strides=32,4,;plain=1;dense=1|->dtype=12;shape=2,8,;strides=32,4,;plain=1;dense=1
+WideCopy	Native	ADMITTED	dtype=12;shape=2,8,;strides=32,4,;plain=1;dense=1|->dtype=12;shape=2,8,;strides=32,4,;plain=1;dense=1
+WideGather	ggml	ADMITTED	dtype=12;shape=4,8,;strides=32,4,;plain=1;dense=1|dtype=12;shape=3,;strides=4,;plain=1;dense=1|->dtype=12;shape=3,8,;strides=32,4,;plain=1;dense=1
+WideGather	oneDNN	UNIMPLEMENTED	dtype=12;shape=4,8,;strides=32,4,;plain=1;dense=1|dtype=12;shape=3,;strides=4,;plain=1;dense=1|->dtype=12;shape=3,8,;strides=32,4,;plain=1;dense=1	onednn: oneDNN provider does not implement this operation
+WideGather	Native	ADMITTED	dtype=12;shape=4,8,;strides=32,4,;plain=1;dense=1|dtype=12;shape=3,;strides=4,;plain=1;dense=1|->dtype=12;shape=3,8,;strides=32,4,;plain=1;dense=1
+WideConcat	ggml	ADMITTED	dtype=12;shape=2,8,;strides=32,4,;plain=1;dense=1|dtype=12;shape=1,8,;strides=32,4,;plain=1;dense=1|->dtype=12;shape=3,8,;strides=32,4,;plain=1;dense=1
+WideConcat	oneDNN	UNIMPLEMENTED	dtype=12;shape=2,8,;strides=32,4,;plain=1;dense=1|dtype=12;shape=1,8,;strides=32,4,;plain=1;dense=1|->dtype=12;shape=3,8,;strides=32,4,;plain=1;dense=1	onednn: oneDNN provider does not implement this operation
+WideConcat	Native	ADMITTED	dtype=12;shape=2,8,;strides=32,4,;plain=1;dense=1|dtype=12;shape=1,8,;strides=32,4,;plain=1;dense=1|->dtype=12;shape=3,8,;strides=32,4,;plain=1;dense=1
+WideCopy	ggml	UNIMPLEMENTED	dtype=14;shape=2,8,;strides=64,8,;plain=1;dense=1|->dtype=14;shape=2,8,;strides=64,8,;plain=1;dense=1	ggml-cpu: ggml CPU operation domain is not admitted
+WideCopy	oneDNN	ADMITTED	dtype=14;shape=2,8,;strides=64,8,;plain=1;dense=1|->dtype=14;shape=2,8,;strides=64,8,;plain=1;dense=1
+WideCopy	Native	ADMITTED	dtype=14;shape=2,8,;strides=64,8,;plain=1;dense=1|->dtype=14;shape=2,8,;strides=64,8,;plain=1;dense=1
+WideGather	ggml	UNIMPLEMENTED	dtype=14;shape=4,8,;strides=64,8,;plain=1;dense=1|dtype=12;shape=3,;strides=4,;plain=1;dense=1|->dtype=14;shape=3,8,;strides=64,8,;plain=1;dense=1	ggml-cpu: ggml CPU operation domain is not admitted
+WideGather	oneDNN	UNIMPLEMENTED	dtype=14;shape=4,8,;strides=64,8,;plain=1;dense=1|dtype=12;shape=3,;strides=4,;plain=1;dense=1|->dtype=14;shape=3,8,;strides=64,8,;plain=1;dense=1	onednn: oneDNN provider does not implement this operation
+WideGather	Native	ADMITTED	dtype=14;shape=4,8,;strides=64,8,;plain=1;dense=1|dtype=12;shape=3,;strides=4,;plain=1;dense=1|->dtype=14;shape=3,8,;strides=64,8,;plain=1;dense=1
+WideConcat	ggml	UNIMPLEMENTED	dtype=14;shape=2,8,;strides=64,8,;plain=1;dense=1|dtype=14;shape=1,8,;strides=64,8,;plain=1;dense=1|->dtype=14;shape=3,8,;strides=64,8,;plain=1;dense=1	ggml-cpu: ggml CPU operation domain is not admitted
+WideConcat	oneDNN	UNIMPLEMENTED	dtype=14;shape=2,8,;strides=64,8,;plain=1;dense=1|dtype=14;shape=1,8,;strides=64,8,;plain=1;dense=1|->dtype=14;shape=3,8,;strides=64,8,;plain=1;dense=1	onednn: oneDNN provider does not implement this operation
+WideConcat	Native	ADMITTED	dtype=14;shape=2,8,;strides=64,8,;plain=1;dense=1|dtype=14;shape=1,8,;strides=64,8,;plain=1;dense=1|->dtype=14;shape=3,8,;strides=64,8,;plain=1;dense=1
+CastNarrow	ggml	ADMITTED	dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1|->dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1
+CastNarrow	oneDNN	UNIMPLEMENTED	dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1|->dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1	onednn: oneDNN provider does not implement this operation
+CastNarrow	Native	ADMITTED	dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1|->dtype=4;shape=2,8,;strides=16,2,;plain=1;dense=1
+CastNarrow	ggml	ADMITTED	dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1|->dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1
+CastNarrow	oneDNN	UNIMPLEMENTED	dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1|->dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1	onednn: oneDNN provider does not implement this operation
+CastNarrow	Native	ADMITTED	dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1|->dtype=5;shape=2,8,;strides=16,2,;plain=1;dense=1
+CastNarrow	ggml	UNIMPLEMENTED	dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1|->dtype=2;shape=2,8,;strides=8,1,;plain=1;dense=1	ggml-cpu: ggml CPU operation domain is not admitted
+CastNarrow	oneDNN	UNIMPLEMENTED	dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1|->dtype=2;shape=2,8,;strides=8,1,;plain=1;dense=1	onednn: oneDNN provider does not implement this operation
+CastNarrow	Native	ADMITTED	dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1|->dtype=2;shape=2,8,;strides=8,1,;plain=1;dense=1
+CastNarrow	ggml	UNIMPLEMENTED	dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1|->dtype=3;shape=2,8,;strides=8,1,;plain=1;dense=1	ggml-cpu: ggml CPU operation domain is not admitted
+CastNarrow	oneDNN	UNIMPLEMENTED	dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1|->dtype=3;shape=2,8,;strides=8,1,;plain=1;dense=1	onednn: oneDNN provider does not implement this operation
+CastNarrow	Native	ADMITTED	dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1|->dtype=3;shape=2,8,;strides=8,1,;plain=1;dense=1
+FillF32	ggml	UNIMPLEMENTED	->dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1	ggml-cpu: ggml CPU operation domain is not admitted
+FillF32	oneDNN	UNIMPLEMENTED	->dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1	onednn: oneDNN provider does not implement this operation
+FillF32	Native	ADMITTED	->dtype=6;shape=2,8,;strides=32,4,;plain=1;dense=1
+SUMMARY provider_rows=564 invalid_schema_cases=0

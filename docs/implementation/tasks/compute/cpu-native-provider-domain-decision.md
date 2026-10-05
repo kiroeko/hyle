@@ -29,6 +29,26 @@
 本卡目前只是SCOPED审计，尚未测新比较、删算子或签WIN。具体有限样本/成本与FIX须AUDITED
 后才开始，禁止生成逐算子无界benchmark目录；在用户确认的既有矩阵上批量处理。
 
+## 接线遗漏专门排查（先于性能裁决）
+
+2026-10-05 用户要求：连续发现准入遗漏后，先专门批量排查，不再逐个尝试接线或启动自研比较。
+本卡原本已覆盖全部 Native payload；现固定这轮有限审计 A1–A3，不扩张公开能力或重审全库。
+已提交的 GB1–3 验证完成后，优先完成本轮；其它新接线与 Native 性能/清退继续冻结。
+
+| ID | 有限工作 | 必需输出与停止 |
+|---|---|---|
+| A1 | 将当前 `build_plan` 每个数学分支、dtype/量化/布局/mask/index-width/资源档对照已锁 ggml 与 oneDNN 的原版 API/CPU kernel；官方 Torch/ds4 和标准库借用域单列 | 一张覆盖表，区分已接、adapter 限制、真实语义差异、原库未提供；有函数名不等于合格，未接不等于 UNIQUE |
+| A2 | 同一批普通/expert 冷准备 witness，覆盖全部现存泛型能力族和具名限制；三个 provider 返回事实保持，不计时 | 保存每行完整端口与 prepare 状态；成功只证明冷准入，不代签执行、精度、生命周期或性能；无效 public descriptor 不误计 provider 缺口 |
+| A3 | 对表中有源码支持的关键限制，最多一批原版程序 witness：已验 rank4 MatMul/激活，加 scaled rank4/narrow Softmax、非因果 attention、Fill 与 i64 row-write 的具名调查 | 实际数值或源码拒绝证据；不能因 witness 未写而判唯一。最终批量 FIX/DEFER ledger 一次冻结，最多一轮具体失败纠正，不逐算子扩建工具 |
+
+范围是成熟实现接线审计，不是增加自研目录、性能赛跑或完整模型再研究。
+专门表与收据落在本卡引用的 evidence，完成后才确定下一批成熟接线及 Native 逐域裁决样本。
+
+本轮 A1–A3 已完成[批量表与证据边界](../../../../evidence/correctness/cpu-ggml-mature-batch/adapter-audit.md)：
+188 个合法案例、564 条实际冷准备；原程序的 scaled/masked/narrow rank4 Softmax、非因果整 attention、
+Fill 与 unique I64 row-write 有实际 witness。未资格的特殊值/alias/duplicate/其它原 carrier 不冒充通过。
+下一批成熟接缝按普通 tensor、transformer、index/layout 三族处理；本卡仍 SCOPED，Native 继续冻结。
+
 ## 当前源码域表（尚未裁决）
 
 按实际已接同合同候选划界；不同 dtype、mask、alias、bounded shape、预算档位分别审计。

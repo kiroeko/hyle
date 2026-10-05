@@ -1,0 +1,11 @@
+rank4 scaled softmax type=f32 additive_mask=0 max_abs=1.39241e-08 PASS
+rank4 scaled softmax type=f32 additive_mask=1 max_abs=1.67822e-08 PASS
+rank4 scaled softmax type=f16 additive_mask=0 max_abs=6.0739e-05 PASS
+rank4 scaled softmax type=f16 additive_mask=1 max_abs=5.84277e-05 PASS
+rank4 scaled softmax type=bf16 additive_mask=0 max_abs=0.000478061 PASS
+rank4 scaled softmax type=bf16 additive_mask=1 max_abs=0.000479446 PASS
+noncausal original whole attention region max_abs=2.64676e-08 PASS
+original Fill type=f32 (bf16 through F32 cast) PASS
+original Fill type=f16 (bf16 through F32 cast) PASS
+original Fill type=bf16 (bf16 through F32 cast) PASS
+original i64 row assign unique indices PASS; duplicate destinations are upstream undefined, NOT public last-wins qualification

@@ -1,0 +1,35 @@
+[
+  {
+    "name": "compile-original-broad-probe",
+    "args": [
+      "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\bin\\HostX64\\x64\\cl.EXE",
+      "/nologo",
+      "/std:c++17",
+      "/EHsc",
+      "/O2",
+      "/MD",
+      "/DGGML_STATIC",
+      "/IC:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\src\\compute_ggml_runtime\\source-d8ea95b566c61d43\\include",
+      "/IC:\\public\\project-hyle\\hyle\\src\\compute_ggml_runtime",
+      "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\cpu-ggml-mature-batch\\broad_probe.cc",
+      "/FoC:\\public\\project-hyle\\hyle\\.scratch\\validation\\cpu-ggml-mature-batch\\broad-probe\\probe.obj",
+      "/FeC:\\public\\project-hyle\\hyle\\.scratch\\validation\\cpu-ggml-mature-batch\\broad-probe\\probe.exe",
+      "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\ggml-base.lib"
+    ],
+    "candidate": "ef9defea07bbc576a4c6bff1ce0d07e4e53acd19",
+    "log": "1-compile-original-broad-probe.log",
+    "returncode": 0,
+    "seconds": 0.484
+  },
+  {
+    "name": "original-broad-program-witness",
+    "args": [
+      "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\cpu-ggml-mature-batch\\broad-probe\\probe.exe",
+      "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_ggml_cpu_avx2_456172ec.dll"
+    ],
+    "candidate": "ef9defea07bbc576a4c6bff1ce0d07e4e53acd19",
+    "log": "2-original-broad-program-witness.log",
+    "returncode": 0,
+    "seconds": 0.047
+  }
+]

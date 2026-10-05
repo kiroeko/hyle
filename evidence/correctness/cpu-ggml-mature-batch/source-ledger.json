@@ -1,0 +1,17 @@
+{
+  "candidate": "ef9defea07bbc576a4c6bff1ce0d07e4e53acd19",
+  "files": {
+    "src/compute_provider_native/native_provider.cc": "53c96c47334b8f46d88c1dc6ec0932d896d5787f823dd83d0be7fc3f21dcbf30",
+    "src/compute_provider_ggml/ggml_cpu_provider.cc": "21e4787dc873d4be287ab4f36a276d0199af63bf5f187f59e14c7ac7cef52ad0",
+    "src/compute_provider_ggml/standard_index.cc": "a069b7ec6b4eb06851c60e8140db7226903c0821e2a6e63f3cb4f245a0c4e3e8",
+    "src/compute_provider_onednn/onednn_provider.cc": "e37a9e0f72a04926b31ea792387bb1504b8c9af02d2d72dbfa2b6bac8641b609",
+    "src/compute_provider_onednn/normalization_internal.cc": "ec4f59b2b18e62a3346d2be25cc3dbdcd18ed78769046953468a5fa7c2dc0816",
+    "src/compute_provider_native/torch_cpu_program.cc": "d50578e046dda9133091eb523622c59c4ab3673f025bf5ffe70a1fb3d58119db",
+    "src/compute_provider_native/ds4_quantization.cc": "d6b94940bebdcedea46de8bb347e248916770c65ee360f7c021163cff9c80aa9",
+    "include/hyle/compute/operation.h": "e4ee275e58618a5e18e4c4cd4e5c749f9dd209102a3bdb854a5fac11acb2e079",
+    ".scratch/build-compute-v2-dev/src/compute_ggml_runtime/source-d8ea95b566c61d43/include/ggml.h": "9ac7ee3d3a957e5f7b21b104d3e3dc50b1b106f808f9d6735ead950450bfeec6",
+    ".scratch/build-compute-v2-dev/src/compute_ggml_runtime/source-d8ea95b566c61d43/src/ggml-cpu/ops.cpp": "dbffc3df9816cc3f7e5428f9fb9afa13db4ac2979899605a057121bb031ba136",
+    ".scratch/build-compute-v2-dev/src/compute_ggml_runtime/source-d8ea95b566c61d43/src/ggml-cpu/vec.h": "926330bae1c5d003bd654035426e31381fafcdca23ffcc23201d219dbb97cbeb",
+    "C:/Users/kiro/AppData/Local/hyle/dependencies/v1/sources/onednn-71094df45190-7ee703ecda81/include/oneapi/dnnl/dnnl.hpp": "a5137e4f6e68a29ff38d5ba7ad471a8a6a9912ca02847d4a9087bca1c37bb7c5"
+  }
+}

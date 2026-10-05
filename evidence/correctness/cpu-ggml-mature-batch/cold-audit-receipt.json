@@ -1,0 +1,78 @@
+[
+  {
+    "name": "compile-cold-audit",
+    "args": [
+      "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\bin\\HostX64\\x64\\cl.EXE",
+      "/nologo",
+      "/std:c++latest",
+      "/Zc:__cplusplus",
+      "/Zc:preprocessor",
+      "/utf-8",
+      "/EHsc",
+      "/O2",
+      "/MD",
+      "/DHYLE_COMPUTE_GGML_CPU=1",
+      "/DHYLE_COMPUTE_ONEDNN=1",
+      "/IC:\\public\\project-hyle\\hyle\\include",
+      "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\cpu-ggml-mature-batch\\cold_audit.cc",
+      "/FoC:\\public\\project-hyle\\hyle\\.scratch\\validation\\cpu-ggml-mature-batch\\cold-audit\\cold-audit.obj",
+      "/FeC:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\cpu_cold_audit.exe",
+      "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_compute_provider_ggml.lib",
+      "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_compute_provider_onednn.lib",
+      "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_compute_provider_native.lib",
+      "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_compute_backend_cpu.lib",
+      "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_compute.lib",
+      "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_compute_ops.lib",
+      "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_mem.lib",
+      "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_platform.lib",
+      "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_error.lib"
+    ],
+    "candidate": "ef9defea07bbc576a4c6bff1ce0d07e4e53acd19",
+    "log": "1-compile-cold-audit.log",
+    "returncode": 2,
+    "seconds": 0.625
+  },
+  {
+    "name": "compile-cold-audit",
+    "args": [
+      "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\bin\\HostX64\\x64\\cl.EXE",
+      "/nologo",
+      "/std:c++latest",
+      "/Zc:__cplusplus",
+      "/Zc:preprocessor",
+      "/utf-8",
+      "/EHsc",
+      "/O2",
+      "/MD",
+      "/DHYLE_COMPUTE_GGML_CPU=1",
+      "/DHYLE_COMPUTE_ONEDNN=1",
+      "/IC:\\public\\project-hyle\\hyle\\include",
+      "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\cpu-ggml-mature-batch\\cold_audit.cc",
+      "/FoC:\\public\\project-hyle\\hyle\\.scratch\\validation\\cpu-ggml-mature-batch\\cold-audit\\cold-audit.obj",
+      "/FeC:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\cpu_cold_audit.exe",
+      "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_compute_provider_ggml.lib",
+      "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_compute_provider_onednn.lib",
+      "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_compute_provider_native.lib",
+      "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_compute_backend_cpu.lib",
+      "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_compute.lib",
+      "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_compute_ops.lib",
+      "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_mem.lib",
+      "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_platform.lib",
+      "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_error.lib"
+    ],
+    "candidate": "ef9defea07bbc576a4c6bff1ce0d07e4e53acd19",
+    "log": "2-compile-cold-audit.log",
+    "returncode": 0,
+    "seconds": 0.922
+  },
+  {
+    "name": "actual-cold-provider-matrix",
+    "args": [
+      "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\cpu_cold_audit.exe"
+    ],
+    "candidate": "ef9defea07bbc576a4c6bff1ce0d07e4e53acd19",
+    "log": "3-actual-cold-provider-matrix.log",
+    "returncode": 0,
+    "seconds": 0.266
+  }
+]

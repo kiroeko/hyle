@@ -1,6 +1,6 @@
 # CPU ggml：剩余成熟能力批量准入
 
-<!-- MODULE REVIEW: AUDITED -->
+<!-- MODULE REVIEW: CANDIDATE -->
 
 ## Closure card
 
@@ -64,3 +64,15 @@ P0 成本明确，无热 Provider 搜索或计时；未来 Native 逐域比较�
 实际原版程序诊断、`internal::supports`、`native_shape` 与原位 custom2 的 source/slot 合同已核对。
 GB1–3 已固定；开始产品修改前 owner 从 SCOPED 顺序进入 AUDITED。新增产品成本只限表内，
 其它激活仍未资格、Native 全部冻结。未运行的三交付与测试仍为 UNPROVEN。
+
+## 固定候选与当前验收
+
+候选 `ef9defea07bbc576a4c6bff1ce0d07e4e53acd19`；GB1–3 产品停止变化。Windows Provider 48/48、
+普通 CPU/Graph 的具名受影响测试、三 dtype 的普通 Direct 与完整 ReLU→混合 batch MatMul region、
+source/static/shared 实际独立消费已通过。Linux 单向校验同步 1,581 项输入，正在同候选验收，
+未完成项不签 PASS。新试验曾错误期待外部原位成功，收到既有 unsafe-overlap 拒绝；纠正测试预期，
+保留原始失败。内部原位边界不改公开 alias 能力，不扩张资源映射。
+
+用户要求的先专门排查已落入逐域卡 A1–A3；[全族回映与564条冷记录](../../../../evidence/correctness/cpu-ggml-mature-batch/adapter-audit.md)
+不代签新产品支持或 Native 胜负。Compute + Graph 当前 **61,050 实现行 / 248 文件**，统一脚本，
+不含测试与 vendor。本批 Linux 适用验收尚待完成，不提前 CLOSED。

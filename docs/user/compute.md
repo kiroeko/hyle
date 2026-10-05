@@ -919,12 +919,15 @@ operation、全部端口、资源和完成边界。旧 `RouteProfile`、运行�
 
 oneDNN 的 MatMul 路线接收 **plain** dense row-major f32 rank-2 MatMul。它适合普通
 `[M,K] * [K,N]`；模型常见的
-物理 `[N,K]`、逻辑转置为 `[K,N]` 的连续-K权重在满足ggml rank-2 F32准入时选择ggml；
+物理 `[...,N,K]`、逻辑转置为 `[...,K,N]` 的连续-K权重在满足ggml rank-2..4 F32准入时选择ggml；
 其余域继续匹配具名Native残余，不能将所有转置权重都描述为HYLE SIMD执行。
 SiLU的packed/separate门控在ggml合法域使用原版SwiGLU程序，并在内部中间值进入下游前处理
 `-Inf`的稳定零极限；该边界复用输出buffer，增加一次线性检查，其成本属于完整执行成本。
 oneDNN的非空exact dense F32 MatMul也接收单任务`M < 16`，不以未裁决的Native成本推断拒绝成熟能力；
-batched、零尺寸及其它未被成熟路径覆盖的已准入域由具名Native残余承载。真实并行executor
+F32 batch 的 dense activation 与 plain contiguous-K 转置权重已接原 ggml 程序，支持原版可表达的
+共享/逐批及两 leading axes 广播；左小右大批次、row-major batch、零尺寸等未接域继续匹配具名残余。
+ggml ReLU 采用原 kernel 加内部原位 NaN 传播边界，覆盖 F32/F16/BF16；外部 input/output alias 仍拒绝。
+这些接线不表示剩余 Native 胜负已经裁决，当前资格与限制以 registry 的接入卡为准。真实并行executor
 可让oneDNN沿N维分成不重叠tile。所有选择均在准备期固定，submit不重选。
 
 oneDNN 另接入原版 RMSNorm/LayerNorm primitive：dense 非空 `[..., hidden]`，显式 F32
