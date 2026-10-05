@@ -19,6 +19,7 @@
 | CB1 | 在中央dependency lock登记CPU SDK Windows/Linux x86_64原版archive/hash；Native私有CMake取得器读取，默认缺本地SDK时取得已验收版本 | 锁与原来源一致；CPU OFF/不支持目标不探测或下载；显式错误root拒绝 |
 | CB2 | 复用统一source-cache根中的独立SDK子区，按平台/hash唯一身份，锁住单写入、原archive SHA校验、完整原SDK发布；离线命中复用、离线miss具名失败 | 本地锁定原archive一次解包，两fresh配置复用；坏archive/不完整SDK不启用；不每build复制SDK |
 | CB3 | 普通CPU preset/指南及高级参数、SDK三交付定位与DLL staging；标准模式不静默降级 | 普通CPU配置实际启用全部Provider且无GPU探测；source/安装消费者复用已验SDK，不要求逐库flag |
+| CB4 | 原LibTorch导出的target图没有完整描述Windows四个间接DLL（asmjit/fbgemm/libiomp5md/uv）。已有通用runtime staging只看TARGET_RUNTIME_DLLS，有限增加owner关联的runtime文件声明并按真实consumer链接闭包收集；Native在同一SDK接缝声明七个原DLL | 一次CPU独立消费者调用既有hyle_stage_runtime_dependencies即可邻置完整闭包；不相关目标不复制Torch；既有staging幂等与增量合同回归 |
 
 验证预算：一批CMake取得/隔离/离线/缓存与错误注入；复用现有原SDK及构建，不下载另一份相同SDK；
 按selector运行适用构建/交付合同和普通C++消费者。重型j2串行，DLL邻置/隐藏子进程。
@@ -40,3 +41,16 @@ shim/取得器/原锁随Native static development seam交付。OFF或未选CPU�
 增加一个普通CPU preset，现有CMake产品/route布尔与高级裁剪继续复用，不新增重复路线selector。
 缓存第一次完整解包核对build-version并保存文件SHA，命中核对完整文件清单；锁住单写入，
 不把中断目录当命中，不修改外部用户SDK。C++和原SDK字节不变，原P1身份复用。
+
+CB4是源码已证实的交付缺陷：原SDK只导出torch/c10/torch_cpu，fbgemm是非target的dependent-library
+字符串，uv/libiomp5md也不在CMake target图；过去验证靠单独脚本邻置七份DLL。用户要求默认CPU
+模式完成依赖，因此本构建卡只扩充已有runtime helper的文件描述，不重写package/治理或性能核心。
+安装shared与static均交付同一私有SDK shim；通用helper只对consumer真实链接闭包中的owner添加文件，
+避免无关目标因SDK已发现就复制整份runtime。尚未验证，不预称PASS。
+
+Linux安装消费者补查发现具名CB4尾项：shared HYLE的`$ORIGIN`无法找到外部CPU SDK，
+即使consumer的find_package成功，实际启动仍报`libtorch_cpu.so`缺失。固定有限修复为
+同一owner runtime文件登记与同一个`hyle_stage_runtime_dependencies(app)`入口：Linux不复制
+一整份SDK，仅为实际使用CPU SDK的consumer添加已解析SDK目录和可覆盖间接依赖的ELF RPATH。
+未关联目标不改变loader路径；启动不再要求用户另写LD_LIBRARY_PATH。source/static/shared
+均用小型真实FP8 Direct/Graph重复执行验证，不因此重跑原数学P1或修统计工具。

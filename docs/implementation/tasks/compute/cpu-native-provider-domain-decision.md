@@ -26,3 +26,35 @@
 
 本卡目前只是SCOPED审计，尚未测新比较、删算子或签WIN。具体有限样本/成本与FIX须AUDITED
 后才开始，禁止生成逐算子无界benchmark目录；在用户确认的既有矩阵上批量处理。
+
+## 当前源码域表（尚未裁决）
+
+按实际已接同合同候选划界；不同 dtype、mask、alias、bounded shape、预算档位分别审计。
+下表的 `DECISION_REQUIRED` 仍是未完成，不把 vendor 尚未接入的能力虚报为可调用路线。
+
+| Native 能力族 | 成熟重叠候选 | 不能用重叠域结果直接删除的边界 | 动作 |
+|---|---|---|---|
+| MatMul | ggml 非空 rank2 plain F32，row-major/转置权重；oneDNN 非空 dense F32、serial M≥16 | Native F32 NumPy batch 广播、空K、非vendor可表达批次布局 | DECISION_REQUIRED；旧M1 Native-vs-Native不是胜出 |
+| RMSNorm/LayerNorm | oneDNN dense浮点；ggml可表达浮点、F32 accumulation | bounded RMS整符号域、受控预算、in-place；普通托管out-of-place仍须比较 | DECISION_REQUIRED；旧Graph结果不能代签新融合 |
+| Unary | ggml Abs/Neg/Exp/Log/Sqrt/Rsqrt/Tanh/Sigmoid；oneDNN dense F32稳定Softplus | 未接ReLU/SiLU/GELU/GELU-tanh、narrow Softplus、layout/alias/非有限值 | DECISION_REQUIRED，按kind/dtype分开 |
+| Binary/Select | ggml Add/Subtract/Multiply/Divide；oneDNN Bool Select广播/plain分支 | number Min/Max的NaN/signed-zero、特殊alias/layout/scalar-width | DECISION_REQUIRED |
+| Reduce | ggml Sum/Mean、Unknown/F32 accumulation | Min/Max语义、部分axes/rank/empty/checked strides | DECISION_REQUIRED |
+| GatedActivation | ggml SiLU、合格packed/separate浮点端口 | GELU/GELU-tanh当前无相同已接片段；alias/layout单列 | DECISION_REQUIRED |
+| RoPE | ggml dense rank4、sequence-axis1、i32 positions、F32 frequencies | i64 positions、其它axis/rank/layout与checked strides | DECISION_REQUIRED，不偷换公共位置公式 |
+| Softmax | ggml dense rank2 F32、axis−1、scale1、unmasked普通Softmax | mask/log-softmax、其它axis/scale/narrow/strides与非有限值 | DECISION_REQUIRED |
+| SDPA | ggml causal BSHD、unmasked、F32 accumulation，满足具体Q/K/V shape | non-causal/mask/BHSD/不同depth；Native仅相同Q/K/V heads | DECISION_REQUIRED，只测共同shape |
+| Gather/Scatter | ggml i32 indices浮点Gather、浮点Scatter Add | i64、其它scalar/rank/layout；Assign最后逻辑写入获胜不与Add比较 | DECISION_REQUIRED，包含越界和失败不写输出 |
+| Concat/Cast/Copy | ggml可表达dtype/rank/layout；oneDNN plain reorder | FP8 Cast、bounded Copy整域、更宽scalar/rank与预算；需实际准入区分 | DECISION_REQUIRED |
+| View/Fill | 当前无相同已接替代；View无数值payload，Fill为基础资源写入 | schema/offset/alias/close/empty/OOM仍须已有证据 | KEEP_UNIQUE候选，不虚构性能胜负 |
+| ds4/Torch官方lowp | 原版ds4/TorchAO数学与ATen CPU程序 | HYLE只拥有描述、checked mapping、生命周期与组合 | BORROW；官方44/44不重开数学 |
+| Scan/TopK接缝 | `standard_index.cc`采用C++标准库inclusive_scan/partial_sort | 明确并非ggml数学；checked overflow、stable tie/NaN/storage-bits为语义适配 | BORROW/STANDARD；不重添旧Native实现 |
+
+源码锚点为Native `build_plan`/各`prepare_*`、ggml CPU `internal::supports`与
+`standard_index::supports`、oneDNN `validate_route`/`validate_primitive`/`validate_tensor`。
+矩阵只是源码审计，下一批还需实际prepare与数值检查，不能仅凭源码谓词写支持PASS。
+
+比较的共同边界固定为冷Context/prepare、resident端口、每次submit到真实wait；计入成熟实现
+必需的转换、复制、分配与同步。Graph另验完整融合片段，叶算子赢不授权拆更快的whole-region。
+硬件/OS/编译器/Provider版本/线程预算绑定证据，未知域不套用WIN。
+SIMD基础与通用primitive保留，只清理随已退场算子失去独立用途的专属调用/kernel。
+目前未删除新的payload或宣布新WIN。
