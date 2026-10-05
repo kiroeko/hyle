@@ -28,7 +28,7 @@ template <class T> void softmax_batch() {
     const std::array providers{ProviderBinding{ggml_cpu::provider({.native_threads = 4}), 100}};
     auto context = Context::create(cpu::device(), {.metadata_allocator = stats.get(), .providers = providers}).value();
     auto queue = context.create_queue().value();
-    for (const std::vector<std::int64_t> shape : {std::vector<std::int64_t>{7}, {3, 7}, {2, 2, 3, 7}}) {
+    for (const auto &shape : {std::vector<std::int64_t>{7}, {3, 7}, {2, 2, 3, 7}}) {
       const auto desc = TensorDesc::dense(type, shape).value();
       const auto count = desc.element_count().value();
       for (const bool masked : {false, true}) {
@@ -132,7 +132,7 @@ template <class T> void fill_batch() {
   const auto type = half_test::data_type<T>();
   auto context = Context::create(cpu::device(), ggml_cpu::provider()).value();
   auto queue = context.create_queue().value();
-  for (const std::vector<std::int64_t> shape : {std::vector<std::int64_t>{}, {0, 7}, {2, 3, 7}}) {
+  for (const auto &shape : {std::vector<std::int64_t>{}, {0, 7}, {2, 3, 7}}) {
     const auto desc = TensorDesc::dense(type, shape).value();
     for (const std::uint32_t bits : {0U, 0x80000000U, 0x7f800000U, 0x7fc12345U, 0x3fa00000U}) {
       // Include native quiet NaN payloads; no numeric roundtrip is permitted.
