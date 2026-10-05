@@ -1,0 +1,32 @@
+{
+  "candidate": "dd3009f0ff2014de048e6a765d07746d5eba1bd4",
+  "stage": "prepare",
+  "steps": [
+    {
+      "name": "archive",
+      "argv": [
+        "git",
+        "archive",
+        "--format=tar",
+        "--output=C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-ds4-binding\\delivery-prepare\\product.tar",
+        "dd3009f0ff2014de048e6a765d07746d5eba1bd4",
+        "--",
+        "include",
+        "src",
+        "cmake",
+        "third_party",
+        "CMakeLists.txt",
+        "LICENSE",
+        "README.md",
+        "SOURCE-MANIFEST.txt",
+        "scripts"
+      ],
+      "returncode": 0,
+      "seconds": 0.188
+    }
+  ],
+  "scope": "ds4 CPU roundtrip, Direct/Graph; not full official model or P1",
+  "changed_source_files": 1,
+  "verified_source_files": 968,
+  "archive_bytes": 31252480
+}

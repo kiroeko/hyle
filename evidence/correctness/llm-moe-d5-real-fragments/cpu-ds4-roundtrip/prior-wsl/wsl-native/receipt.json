@@ -1,0 +1,58 @@
+{
+  "candidate": "223589e48d7384a95d132c9cf27e1589611d0c4b",
+  "system": [
+    "Linux",
+    "kiro-workstation",
+    "6.18.40.1-microsoft-standard-WSL2",
+    "#1 SMP PREEMPT_DYNAMIC Fri Jul 31 22:12:15 UTC 2026",
+    "x86_64"
+  ],
+  "scope": "ds4 partial CPU capability, Direct/Graph, source delivery",
+  "steps": [
+    {
+      "label": "configure",
+      "argv": [
+        "cmake",
+        "-S",
+        "/root/hyle-scratch/active-cpu-z/source",
+        "-B",
+        "/root/hyle-scratch/active-cpu-z/build",
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DHYLE_WERROR=ON",
+        "-DHYLE_STATIC=ON",
+        "-DHYLE_BUILD_TESTS=ON",
+        "-DHYLE_INSTALL=OFF",
+        "-DHYLE_BUILD_BENCH=OFF",
+        "-DHYLE_TEST_INSTRUMENTATION=OFF",
+        "-DHYLE_DEV_FACTORS=compute_provider_native;compute_route_cpu;graph_route_cpu",
+        "-DHYLE_COMPUTE_CPU=ON",
+        "-DHYLE_COMPUTE_ONEDNN=OFF",
+        "-DHYLE_COMPUTE_CUDA=OFF",
+        "-DHYLE_COMPUTE_APPLE=OFF",
+        "-DHYLE_COMPUTE_VULKAN=OFF",
+        "-DFETCHCONTENT_FULLY_DISCONNECTED=ON"
+      ],
+      "returncode": 0,
+      "seconds": 2.947
+    },
+    {
+      "label": "build",
+      "argv": [
+        "cmake",
+        "--build",
+        "/root/hyle-scratch/active-cpu-z/build",
+        "--target",
+        "hyle_compute_route_cpu_tests",
+        "hyle_graph_route_cpu_tests",
+        "-j",
+        "2"
+      ],
+      "returncode": 1,
+      "seconds": 66.668
+    }
+  ],
+  "synced_files": 1499,
+  "updated": 0,
+  "removed": 0,
+  "archive_sha256": "b689c23b3c2a9bb7039e534e41e06157efc7ea3580b54da14dbfd07bb4fe8d42"
+}

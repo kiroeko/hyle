@@ -1,6 +1,6 @@
 # D5 CPU：原版 ds4 状态量化批量接线
 
-<!-- MODULE REVIEW: AUDITED -->
+<!-- MODULE REVIEW: CANDIDATE -->
 
 ## 范围与重新打开依据
 
@@ -52,3 +52,19 @@ native 过去仅间接使用它，新增直接 include 必须如其他 Provider 
 后续依赖审计发现生成摘要时 Windows Path 使用不区分大小写排序，与 CMake 的文件名排序
 不一致；按现有 CMake 算法纠正 lock 摘要，三个 vendor 文件和原函数全部不变。
 两次均停在配置期、尚未编译，保留各自日志；合并为本次构建接缝修正，不开启数值重试预算。
+
+## 不可变候选与补验
+
+产品候选 `dd3009f0ff2014de048e6a765d07746d5eba1bd4`；2026-10-05 补验时的
+`223589e4` 仅更新设备可用性文档。N1–N4 产品接线固定，后续无算法/API 改动。
+原 `custom_as` optional 适配、测试 include 和终态 invocation 退役用法均已修正。
+源码交付补验修复的是包装脚本的环境变量大小写，核对源文件和消费者后复用已编译产物。
+
+[本批证据](../../../../evidence/correctness/llm-moe-d5-real-fragments/cpu-ds4-roundtrip/README.md)
+保存普通 Windows 两入口 6 项、Windows 三交付 18 项、WSL 两入口 6 项通过。
+WSL 使用 oneDNN OFF 的实际 CPU/Graph 产品和两个独立消费者，产品 `-Werror` 保留；
+旧完整测试目标的无关 oneDNN 测试和两类夹具告警没有扩成本卡产品改动。
+中止的无关构建和原夹具失败保留，未记为通过。Windows 默认组合/三交付仍 oneDNN ON。
+
+有限能力范围仍只含两种成熟 roundtrip，group128、完整官方 MoE 与新增完整片段 P1 保持缺口。
+统一实现 LOC 为 60,481 行 / 242 文件；本轮补验没有产品代码变化。

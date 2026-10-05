@@ -414,6 +414,14 @@ Provider 单独声明计算域；当前 CPU Native 只支持同 head MHA，对 G
 默认路线先匹配已接入的oneDNN/ggml合法域，Native只保留具名残余；block/opaque storage、量化
 与窄storage attention由理解相应格式的Provider承载，不会被隐藏materialize成另一种合同。
 
+CPU 默认入口也支持 `model_ops::block_quantization_roundtrip()` 的
+`kFloat8E4M3Block64` 与 `kFloat4E2M1Block32`，调用固定原版 ds4 CPU 程序。
+输入/输出是相同形状、独立存储的 dense BF16 矩阵，最后一维必须是相应分组的正整数倍；
+普通 `prepare()` 与 GraphBuilder 的 `add()` 均可绑定。非有限输入通过 Completion 报错，
+该 invocation 随终态失败退役，后续需从同一 prepared program 创建新 invocation。
+group128 当前拒绝；这两个状态操作的接入不表示完整官方 FP8/FP4 MoE 已可执行，
+验证范围见[本批证据](../../evidence/correctness/llm-moe-d5-real-fragments/cpu-ds4-roundtrip/README.md)。
+
 `GatedDeltaNet{}` 描述六个显式输入与两个输出：Q/K `[B,T,Hk,Dk]`、V `[B,T,Hv,Dv]`、
 FP32 log-decay/beta `[B,T,Hv,1]`、FP32 初态 `[B,Hv,Dv,Dk]`；输出为 V 同形结果与新 FP32 状态。
 Q/K/V 使用同一 F16/BF16/F32 类型，Hv 是 Hk 的正整数倍。它不修改初态，也不隐含 Q/K 归一化、

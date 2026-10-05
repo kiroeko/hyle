@@ -1,0 +1,40 @@
+{
+  "candidate": "dd3009f0ff2014de048e6a765d07746d5eba1bd4",
+  "steps": [
+    {
+      "label": "build",
+      "argv": [
+        "cmake",
+        "--build",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+        "--target",
+        "hyle_compute_provider_native_tests",
+        "hyle_compute_route_cpu_tests",
+        "hyle_graph_route_cpu_tests",
+        "-j",
+        "2"
+      ],
+      "returncode": 0,
+      "seconds": 3.516
+    },
+    {
+      "label": "tests",
+      "argv": [
+        "ctest",
+        "--test-dir",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+        "--output-on-failure",
+        "--no-tests=error",
+        "-R",
+        "^hyle_(compute|graph)_route_cpu_test$",
+        "-j",
+        "1",
+        "--output-junit",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-ds4-binding\\windows-qualified\\tests.xml"
+      ],
+      "returncode": 0,
+      "seconds": 0.187
+    }
+  ],
+  "scope": "CPU native owner and ordinary Direct/Graph, partial official profile; no P1 verdict"
+}

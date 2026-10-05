@@ -1,0 +1,70 @@
+{
+  "candidate": "223589e48d7384a95d132c9cf27e1589611d0c4b",
+  "stage": "static",
+  "steps": [
+    {
+      "name": "install",
+      "argv": [
+        "cmake",
+        "--install",
+        "C:\\hv\\d5cp\\source-build",
+        "--prefix",
+        "C:\\hv\\d5cp\\ds4-static-staging"
+      ],
+      "returncode": 0,
+      "seconds": 3.954
+    },
+    {
+      "name": "consumer-configure",
+      "argv": [
+        "cmake",
+        "-S",
+        "C:\\hv\\d5cp\\consumer",
+        "-B",
+        "C:\\hv\\d5cp\\ds4-static-consumer",
+        "-G",
+        "Ninja",
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON",
+        "-DD5_GGML_SOURCE=C:\\Users\\kiro\\AppData\\Local\\hyle\\dependencies\\v1\\sources\\ggml-456172ec733a-41b7e10fd424",
+        "-DD5_GTEST_SOURCE=C:\\Users\\kiro\\AppData\\Local\\hyle\\dependencies\\v1\\sources\\googletest-063de7e9578f-162765170ae6",
+        "-DCMAKE_PREFIX_PATH=C:\\hv\\d5cp\\ds4-static-relocated"
+      ],
+      "returncode": 0,
+      "seconds": 3.516
+    },
+    {
+      "name": "consumer-build",
+      "argv": [
+        "cmake",
+        "--build",
+        "C:\\hv\\d5cp\\ds4-static-consumer",
+        "--target",
+        "d5_cpu_delivery",
+        "-j",
+        "2"
+      ],
+      "returncode": 0,
+      "seconds": 7.797
+    },
+    {
+      "name": "tests",
+      "argv": [
+        "ctest",
+        "--test-dir",
+        "C:\\hv\\d5cp\\ds4-static-consumer",
+        "--output-on-failure",
+        "--no-tests=error",
+        "-j",
+        "1",
+        "--output-junit",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-ds4-binding-recovery\\delivery-static\\tests.xml"
+      ],
+      "returncode": 0,
+      "seconds": 0.219
+    }
+  ],
+  "scope": "ds4 CPU roundtrip, Direct/Graph; not full official model or P1",
+  "verdict": "PASS",
+  "passed_tests": 6
+}

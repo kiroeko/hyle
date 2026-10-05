@@ -1,0 +1,89 @@
+{
+  "candidate": "223589e48d7384a95d132c9cf27e1589611d0c4b",
+  "system": [
+    "Linux",
+    "kiro-workstation",
+    "6.18.40.1-microsoft-standard-WSL2",
+    "#1 SMP PREEMPT_DYNAMIC Fri Jul 31 22:12:15 UTC 2026",
+    "x86_64"
+  ],
+  "scope": "ds4 partial CPU capability, Direct/Graph, source delivery",
+  "steps": [
+    {
+      "label": "configure",
+      "argv": [
+        "cmake",
+        "-S",
+        "/root/hyle-scratch/active-cpu-z/source",
+        "-B",
+        "/root/hyle-scratch/active-cpu-z/build",
+        "-DCMAKE_PROJECT_INCLUDE=/mnt/c/public/project-hyle/hyle/.scratch/validation/d5-ds4-binding-recovery/wsl-consumers/fixture-warnings.cmake",
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DHYLE_WERROR=ON",
+        "-DHYLE_STATIC=ON",
+        "-DHYLE_BUILD_TESTS=ON",
+        "-DHYLE_INSTALL=OFF",
+        "-DHYLE_BUILD_BENCH=OFF",
+        "-DHYLE_TEST_INSTRUMENTATION=OFF",
+        "-DHYLE_DEV_FACTORS=compute_provider_native;compute_route_cpu;graph_route_cpu",
+        "-DHYLE_COMPUTE_CPU=ON",
+        "-DHYLE_COMPUTE_ONEDNN=OFF",
+        "-DHYLE_COMPUTE_CUDA=OFF",
+        "-DHYLE_COMPUTE_APPLE=OFF",
+        "-DHYLE_COMPUTE_VULKAN=OFF",
+        "-DFETCHCONTENT_FULLY_DISCONNECTED=ON"
+      ],
+      "returncode": 0,
+      "seconds": 4.801
+    },
+    {
+      "label": "build",
+      "argv": [
+        "cmake",
+        "--build",
+        "/root/hyle-scratch/active-cpu-z/build",
+        "--target",
+        "d5_ds4_cpu_direct",
+        "d5_ds4_cpu_graph",
+        "-j",
+        "2"
+      ],
+      "returncode": 0,
+      "seconds": 29.308
+    },
+    {
+      "label": "tests",
+      "argv": [
+        "ctest",
+        "--test-dir",
+        "/root/hyle-scratch/active-cpu-z/build",
+        "--output-on-failure",
+        "--no-tests=error",
+        "-R",
+        "^d5_ds4_cpu_(direct|graph)$",
+        "-j",
+        "1",
+        "--output-junit",
+        "/mnt/c/public/project-hyle/hyle/.scratch/validation/d5-ds4-binding-recovery/wsl-consumers/tests.xml"
+      ],
+      "returncode": 0,
+      "seconds": 0.077
+    }
+  ],
+  "synced_files": 1499,
+  "updated": 0,
+  "removed": 0,
+  "archive_sha256": "b689c23b3c2a9bb7039e534e41e06157efc7ea3580b54da14dbfd07bb4fe8d42",
+  "test_only_warning_overlay": {
+    "path": "/mnt/c/public/project-hyle/hyle/.scratch/validation/d5-ds4-binding-recovery/wsl-consumers/fixture-warnings.cmake",
+    "sha256": "56d2cab2352c2d4eb9d046a336f687cde2c67912dd36a75a10cbf210d9b2decc",
+    "targets": [
+      "d5_ds4_cpu_direct",
+      "d5_ds4_cpu_graph"
+    ],
+    "product_werror": true,
+    "reason": "Existing fixtures intentionally default remaining aggregate fields; gtest macros under an if trigger dangling-else warnings. No product warning flags changed."
+  },
+  "verdict": "PASS",
+  "receipt_metadata_correction": "Target names corrected from old full-suite names; argv, verdict, logs and overlay SHA unchanged."
+}

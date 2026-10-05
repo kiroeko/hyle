@@ -1,0 +1,31 @@
+{
+  "candidate": "223589e48d7384a95d132c9cf27e1589611d0c4b",
+  "stage": "source",
+  "steps": [
+    {
+      "name": "tests",
+      "argv": [
+        "ctest",
+        "--test-dir",
+        "C:\\hv\\d5cp\\source-build",
+        "--output-on-failure",
+        "--no-tests=error",
+        "-j",
+        "1",
+        "--output-junit",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-ds4-binding-recovery\\delivery-source\\tests.xml"
+      ],
+      "returncode": 0,
+      "seconds": 0.266
+    }
+  ],
+  "scope": "ds4 CPU roundtrip, Direct/Graph; not full official model or P1",
+  "reused_source_build": {
+    "candidate": "dd3009f0ff2014de048e6a765d07746d5eba1bd4",
+    "receipt": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-ds4-binding\\delivery-source\\receipt.json",
+    "source_files": 968,
+    "consumer_files": 24
+  },
+  "verdict": "PASS",
+  "passed_tests": 6
+}

@@ -1,0 +1,301 @@
+{
+  "product_candidate": "dd3009f0ff2014de048e6a765d07746d5eba1bd4",
+  "validation_candidate": "223589e48d7384a95d132c9cf27e1589611d0c4b",
+  "scope": "CPU ds4 original FP8 group64 / FP4 group32 roundtrip; no full official MoE or P1 verdict",
+  "ordinary_windows_tests": 6,
+  "windows_delivery_tests": 18,
+  "wsl_tests": 6,
+  "wsl_onednn": "OFF; Windows default composition and all three deliveries use ON",
+  "archive": [
+    {
+      "path": "source/native-tests.log.gz",
+      "decoded_sha256": "a388ca0ea5586fb7cd6cb5954351528dd3133ab8e2acdf1830d2770e5f18f69f",
+      "bytes": 3342
+    },
+    {
+      "path": "source/receipt.json",
+      "decoded_sha256": "a7a50ca8cc9897b174710137c9c9c799745e5bb7e1fc6711154a697b8d8d408d",
+      "bytes": 923
+    },
+    {
+      "path": "source/tests.log.gz",
+      "decoded_sha256": "3ddd6c0d158b66b6e0eb4b2b55bef715b6b59f002dd2bb4caed762feac9f146b",
+      "bytes": 293
+    },
+    {
+      "path": "source/tests.xml",
+      "decoded_sha256": "b53c49169b3b4628c462cfd4cc263125b0e39661746474be530cbe7507801460",
+      "bytes": 2560
+    },
+    {
+      "path": "static/compile-link-commands.log.gz",
+      "decoded_sha256": "61216f9948e0a36769203b29a01ef85b96f1c031ddce414312ae0745c5378e8e",
+      "bytes": 16310
+    },
+    {
+      "path": "static/consumer-build.log.gz",
+      "decoded_sha256": "f182fb3afc7624a9d983da5005bd9635203dcde3e006aa1fde97de0b7444afca",
+      "bytes": 1858
+    },
+    {
+      "path": "static/consumer-configure.log.gz",
+      "decoded_sha256": "330f0a8ed7b1bdddd5340f5bc631ed6c49347200c2df112dea922fce3a615533",
+      "bytes": 2133
+    },
+    {
+      "path": "static/dll-origins.json",
+      "decoded_sha256": "e3566b3a06430868d71e9287dfd6c6c520a3da027aabea01951d407ee131dc2f",
+      "bytes": 4
+    },
+    {
+      "path": "static/install.log.gz",
+      "decoded_sha256": "8f46298a93bab7324d50cd715158bdc09861ef27e5008853dbc842fbd9b0764f",
+      "bytes": 42855
+    },
+    {
+      "path": "static/native-tests.log.gz",
+      "decoded_sha256": "70c6490bdb2a29e3451a8331bf6074cb44f756fb8bb3aad2477195c994d69914",
+      "bytes": 3370
+    },
+    {
+      "path": "static/receipt.json",
+      "decoded_sha256": "fdbda4a7e2464774705f80ab807a49dc74e8d8b8fb0bdb2c0a458afa0ce6e4fd",
+      "bytes": 1907
+    },
+    {
+      "path": "static/tests.log.gz",
+      "decoded_sha256": "0d4a33bfa67065f8c24541daa7cf2c9fc3d302e82131b5a9c0eecd8ec5e4627b",
+      "bytes": 300
+    },
+    {
+      "path": "static/tests.xml",
+      "decoded_sha256": "6d7b98fa9d685443ca55ec46b44c77dd7e7f4752aecfbdcf3d9cbef39882de3c",
+      "bytes": 2560
+    },
+    {
+      "path": "shared/compile-link-commands.log.gz",
+      "decoded_sha256": "8180515b37b35f87fb538612e4abf4d528b52247fdb3066442968646171c5170",
+      "bytes": 15404
+    },
+    {
+      "path": "shared/consumer-build.log.gz",
+      "decoded_sha256": "b4e43e50454e653831b283131e2086057141e3afa937f735eb49a65b0b44b7ce",
+      "bytes": 1858
+    },
+    {
+      "path": "shared/consumer-configure.log.gz",
+      "decoded_sha256": "4701e160acd51154d6bc2e2b76d524cc78a10583a2bac4891ce6c4643a5cdb0a",
+      "bytes": 2133
+    },
+    {
+      "path": "shared/dll-origins.json",
+      "decoded_sha256": "7b113c03ba01a4357ce94a4a4caa958af5503762741e29362d7582d118498a2e",
+      "bytes": 2603
+    },
+    {
+      "path": "shared/install.log.gz",
+      "decoded_sha256": "1dbef69fe85be646e662dd6c8c9244211e37ff9fad713343e8e770ab693bb405",
+      "bytes": 40833
+    },
+    {
+      "path": "shared/native-tests.log.gz",
+      "decoded_sha256": "34c40ad4f53ccc54226cc806e6932c24bc2d7a0a4569807bab97c85f49f8d677",
+      "bytes": 3370
+    },
+    {
+      "path": "shared/producer-build.log.gz",
+      "decoded_sha256": "6c9301cfa54aced7637f36dd2707c55c140b0dbe3255ee5d4bd2442bff6e651a",
+      "bytes": 5695
+    },
+    {
+      "path": "shared/producer-configure.log.gz",
+      "decoded_sha256": "f3c16e07760a7c9a46757b4989544a0502d2b08862e8294c5ea3d92cbe2fe0f5",
+      "bytes": 4190
+    },
+    {
+      "path": "shared/receipt.json",
+      "decoded_sha256": "312538f3e142ada6124d5e451c6add80dcb7065296af13f361c4b526b8813e1c",
+      "bytes": 2665
+    },
+    {
+      "path": "shared/tests.log.gz",
+      "decoded_sha256": "9955d4ef541fafd9d5f12452776975d8f0045b999c78f94ccb933f3c178c933f",
+      "bytes": 300
+    },
+    {
+      "path": "shared/tests.xml",
+      "decoded_sha256": "2f49fb4da56a0f865e7f035d7df2714bc85c13968dac0ff2c9057a7171275191",
+      "bytes": 2558
+    },
+    {
+      "path": "ordinary-windows/build.log.gz",
+      "decoded_sha256": "ad5d8be19fed065a471423f9c008fe8ced39540d2ea17b9615b2141d1f64e0a1",
+      "bytes": 429
+    },
+    {
+      "path": "ordinary-windows/native-tests.log.gz",
+      "decoded_sha256": "cb73af45a0829cdde556f6ad455a40b4cb3ba265fb89e57816bf1a4a1601dac8",
+      "bytes": 3710
+    },
+    {
+      "path": "ordinary-windows/receipt.json",
+      "decoded_sha256": "ec4faaaf88e234f4a2e1fc643817570c64d01bc23035bb8708f1f998dcee4a43",
+      "bytes": 1110
+    },
+    {
+      "path": "ordinary-windows/tests.log.gz",
+      "decoded_sha256": "350d53ce922d0dbf8fafecec8c76da882dd1010a7511fdf0c660ca4535a819f5",
+      "bytes": 475
+    },
+    {
+      "path": "ordinary-windows/tests.xml",
+      "decoded_sha256": "d51c91d9c1db326a3961c0c8ecd59d41f051be977c660fda04f7e452aab37f2f",
+      "bytes": 2768
+    },
+    {
+      "path": "wsl/build.log.gz",
+      "decoded_sha256": "87150d9861a742312c78e9628f2013fd1fc50a735552d398f78cdb5b6b04ce8c",
+      "bytes": 4407
+    },
+    {
+      "path": "wsl/configure.log.gz",
+      "decoded_sha256": "efadec4556c7f3ef8cb0aab8e4c33df2e2440559fb833ee989f6e779a9939ee3",
+      "bytes": 1652
+    },
+    {
+      "path": "wsl/fixture-warnings.cmake",
+      "decoded_sha256": "56d2cab2352c2d4eb9d046a336f687cde2c67912dd36a75a10cbf210d9b2decc",
+      "bytes": 950
+    },
+    {
+      "path": "wsl/native-tests.log.gz",
+      "decoded_sha256": "c41e2ae8283cffd50de1c41d73d65edbf0974bcc0fab1db460533f66327a957a",
+      "bytes": 3231
+    },
+    {
+      "path": "wsl/receipt.json",
+      "decoded_sha256": "acb4c40a9662071d39c349bf763026ab9c7b5aefa6f96259fa0d81abdde953a9",
+      "bytes": 2953
+    },
+    {
+      "path": "wsl/run.py.gz",
+      "decoded_sha256": "94de7e13bc8fec472be99cb29cb957086e7ac46f88cbf42724512006b665ddf8",
+      "bytes": 4644
+    },
+    {
+      "path": "wsl/tests.log.gz",
+      "decoded_sha256": "6d35899a04291efffa7b4cee2be7c9f2502229680a2bdead9d80000a248445a3",
+      "bytes": 409
+    },
+    {
+      "path": "wsl/tests.xml",
+      "decoded_sha256": "77660757bb31a9118a9ce9c3b6b0b3f6e26c0e3aab1330917ea5344cf8bb121f",
+      "bytes": 2495
+    },
+    {
+      "path": "source-provenance/receipt.json",
+      "decoded_sha256": "60a6dc8520bb231cb79ee2caa950004d94ea752bb2771fef885edaeffe319eb2",
+      "bytes": 842
+    },
+    {
+      "path": "source-provenance/source-identity.json",
+      "decoded_sha256": "ed8090ef9a4c202f97af283dba5b2486a31b01ec0718529cd458fd6ca031215e",
+      "bytes": 109219
+    },
+    {
+      "path": "source-provenance/consumer-inputs.json",
+      "decoded_sha256": "fe4c0dea96a6c1c385c474ec4b19d82126d960c7412fdab2626f3e5eca4505cd",
+      "bytes": 2891
+    },
+    {
+      "path": "prior-source-build/build.log.gz",
+      "decoded_sha256": "7be3fe90664d69b4fbc5b9e7c2ceb16bf2c77ae6ccf750f16c3488f6b3e81678",
+      "bytes": 7792
+    },
+    {
+      "path": "prior-source-build/configure.log.gz",
+      "decoded_sha256": "c64c3ef43f390ce2ac5a5c7c20b0dc2cc9f496d1939ce12e1c32ab54394b7577",
+      "bytes": 4156
+    },
+    {
+      "path": "prior-source-build/receipt.json",
+      "decoded_sha256": "b107189282bd78781a1b676edc17ad4901ce3ba7f08dd63e09877a7491d80b98",
+      "bytes": 1174
+    },
+    {
+      "path": "prior-lifecycle-test.log.gz",
+      "decoded_sha256": "219f660184b80cedfeed585213fae17cae928d891cd063ee1bd61537bf13e540",
+      "bytes": 32336
+    },
+    {
+      "path": "prior-wsl/wsl/receipt.json",
+      "decoded_sha256": "b0c3166bced753a098f34979d5b222622f9ba9a525fec277039cf631bc842593",
+      "bytes": 1269
+    },
+    {
+      "path": "prior-wsl/wsl/interruption.json",
+      "decoded_sha256": "bd524783d27174e29bf294bfb5cd706b6cc50ad79ce4c697318a488d490edae4",
+      "bytes": 172
+    },
+    {
+      "path": "prior-wsl/wsl/build.log.gz",
+      "decoded_sha256": "7368456649c2236971599d0268df06cba63c80e86d7ab7c49ffb374c06671eec",
+      "bytes": 19560
+    },
+    {
+      "path": "prior-wsl/wsl/configure.log.gz",
+      "decoded_sha256": "e66e3ee77b4e611e1e7c2b55b7fb336202dbfd7aa41d3a44a414ef645d48b845",
+      "bytes": 2997
+    },
+    {
+      "path": "prior-wsl/wsl-native/receipt.json",
+      "decoded_sha256": "05c45001c36476d21056cb0d162cd2763f88f303d242736298ad770ac4cf9efe",
+      "bytes": 1585
+    },
+    {
+      "path": "prior-wsl/wsl-native/build.log.gz",
+      "decoded_sha256": "9247135c31b4bd1579fd6a7d3f9e83227664f83df05bd2adc36e3a5f6ac74ebc",
+      "bytes": 67214
+    },
+    {
+      "path": "prior-wsl/wsl-native/configure.log.gz",
+      "decoded_sha256": "2c59ea3d3d111285bb48c352713822125402de61816aad3ce580edf97c613df6",
+      "bytes": 1652
+    },
+    {
+      "path": "prior-wsl/wsl-qualified/receipt.json",
+      "decoded_sha256": "728ea70d06c48411cd392a1956f5bd20a1e1b68c0d30d2e0c875fcdbdf0a6597",
+      "bytes": 2279
+    },
+    {
+      "path": "prior-wsl/wsl-qualified/build.log.gz",
+      "decoded_sha256": "967d3a8f1455dae5539ccc8a924dbc8f7e368df9bad1af3be77bf7848f1cbf10",
+      "bytes": 9830
+    },
+    {
+      "path": "prior-wsl/wsl-qualified/configure.log.gz",
+      "decoded_sha256": "3713028ed9ef9831b5b8c1b27816373a30580af490759b06fde73965a47f8512",
+      "bytes": 1652
+    },
+    {
+      "path": "scripts/d5-ds4-delivery.py.gz",
+      "decoded_sha256": "87c76baf4c2d861e609235a3b2112a2233620b3da099c0142bbd068ec8f50ec4",
+      "bytes": 9474
+    },
+    {
+      "path": "scripts/d5-ds4-wsl.py.gz",
+      "decoded_sha256": "9c71afdddf238b4ed6d452f395f87951a85bea5a585ada8d00056f437cdecc4b",
+      "bytes": 5571
+    },
+    {
+      "path": "scripts/d5-ds4-batch.py.gz",
+      "decoded_sha256": "939d6659e8fe3f434b0a192858d3cef28c09a59cc1fcbbef426aa50179315171",
+      "bytes": 2647
+    },
+    {
+      "path": "loc.json",
+      "decoded_sha256": "51af059abaf00a9f6b9e53ae18aa0457ca02facb034bad12ad593099de81d0df",
+      "bytes": 4133
+    }
+  ]
+}

@@ -1,0 +1,66 @@
+{
+  "hyle_compute.dll": {
+    "sha256": "3907fbb945bc7a70a9d133efd94ca359d42070ae8f3adc6457820cdd5248ac55",
+    "sdk": "bin\\hyle_compute.dll"
+  },
+  "hyle_compute_backend_cpu.dll": {
+    "sha256": "d80e8e4b885369c9432dde185201ac799cceeeae3f7e53f2a08b12548c5998bf",
+    "sdk": "bin\\hyle_compute_backend_cpu.dll"
+  },
+  "hyle_compute_ggml_runtime.dll": {
+    "sha256": "5c399fb39a75508ae961a96137dd3c6b851c124b5f900f6ee32ac8e7c9b3905b",
+    "sdk": "bin\\hyle_compute_ggml_runtime.dll"
+  },
+  "hyle_compute_ops.dll": {
+    "sha256": "c0c4e46182f7ea0b3ac32380dae91dfeff3433b9f8afeb01c8e049f55d7bd38c",
+    "sdk": "bin\\hyle_compute_ops.dll"
+  },
+  "hyle_compute_provider_ggml.dll": {
+    "sha256": "fd727150108273f16b186318d9cb3df1beb3b387eeea1e8cc01f18944606c212",
+    "sdk": "bin\\hyle_compute_provider_ggml.dll"
+  },
+  "hyle_compute_provider_native.dll": {
+    "sha256": "bd2312b21d55875d2a74c19553d0509afdec47f54bf2e5124005d7dbb1e3d5d7",
+    "sdk": "bin\\hyle_compute_provider_native.dll"
+  },
+  "hyle_compute_provider_onednn.dll": {
+    "sha256": "a181db5d3218e7a693ebc96124af60207899f4cde38e53c70dffef605eab67f3",
+    "sdk": "bin\\hyle_compute_provider_onednn.dll"
+  },
+  "hyle_compute_route_cpu.dll": {
+    "sha256": "d394035833c5f752de0cbc8594c4fc3b18e50c5f78190f2c684d5924fe841655",
+    "sdk": "bin\\hyle_compute_route_cpu.dll"
+  },
+  "hyle_container.dll": {
+    "sha256": "f3876d36169d61247ed675844bd47f206f0bea80c52a41826c52152f262f9cf2",
+    "sdk": "bin\\hyle_container.dll"
+  },
+  "hyle_error.dll": {
+    "sha256": "9745125c0c0578d6ba52b54159da9ac632b56847c13c0311d9a750ad11dad69e",
+    "sdk": "bin\\hyle_error.dll"
+  },
+  "hyle_graph.dll": {
+    "sha256": "8f9ad25fa732382aecc97527d64e96a9894fa7f27e9acbf3ae1b0210b86d757d",
+    "sdk": "bin\\hyle_graph.dll"
+  },
+  "hyle_graph_provider_onednn.dll": {
+    "sha256": "eb25780dde0fb4123e236a9813bcdafbf20937334c8607cccc792b6e5feec011",
+    "sdk": "bin\\hyle_graph_provider_onednn.dll"
+  },
+  "hyle_graph_route_cpu.dll": {
+    "sha256": "c3edf98d838b77fa8a91a301afd56c325151cc910deffef9628499ed3ca5487d",
+    "sdk": "bin\\hyle_graph_route_cpu.dll"
+  },
+  "hyle_mem.dll": {
+    "sha256": "6f4a93f9723f3f893bd64038e7fc702e8bcd79d8d2821a3d44238f77f70c6418",
+    "sdk": "bin\\hyle_mem.dll"
+  },
+  "hyle_platform.dll": {
+    "sha256": "595e252ee62e0024966d00e7991b0e4abc5199ffbbe3683b449a22e07b24c539",
+    "sdk": "bin\\hyle_platform.dll"
+  },
+  "hyle_simd.dll": {
+    "sha256": "40d570baa5c1c14d36a0893b8068dc13d4fc5e4f6d3c968c9ba0eafacd0ab128",
+    "sdk": "bin\\hyle_simd.dll"
+  }
+}
