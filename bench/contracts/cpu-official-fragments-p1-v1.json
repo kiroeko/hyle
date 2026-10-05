@@ -43,7 +43,7 @@
   "peers": [
     {
       "id": "mature-direct",
-      "revision": "34cb428be980a78170b787c426963b494234c62c",
+      "revision": "a4f5646150f960bfdf1f9e45460bbab4f77eebae",
       "configuration": {
         "role": "Same immutable official fragment source and product SDK; ordinary default CPU Context, managed native temporary memory, OMP/MKL=1. Direct prepared complete DAG compared with Graph planning/reuse. Each measured call visits all changed slots once.",
         "sdk_product_candidate": "3c22b7b9f230abc86e749225174d86b59c79881e",
@@ -134,7 +134,7 @@
       "consumer_key": "inference-fragment/cpu/glm-flash-official-fp8-moe-cycle",
       "provenance": {
         "path": "consumer.json",
-        "sha256": "bfa934c5f1c63a23fe467ebf7abf5178ed3eafe9f86dd1bc276dc047b596f8f1"
+        "sha256": "d7f2a1d36c2e1e37a54ad08e84e341364b5213a5c670a990c7c1aa3e1d6cad37"
       },
       "ownership_topology": {
         "candidate": "Independent Graph Context, constants, invocation slots and retained output buffers. Graph liveness may reuse intermediate resources. Every accepted completion is settled and destroyed within the call; native temporary Tensors are released.",
@@ -169,7 +169,7 @@
           "input_slots": 2
         }
       },
-      "setup": "Cold binding, constants and all resident slots outside timing. Two full oracle sweeps before and after every process; original final-output gate. Required native warmup and one-thread policy fixed.",
+      "setup": "Cold binding, constants and all resident slots outside timing. One full changed-input oracle cycle before and after every process; original final-output gate. Required native warmup and one-thread policy fixed.",
       "charged_phases": [
         "All 2 complete ordinary blocking fragments per call: native math, finite/ID checks, original quantization, necessary conversion/copies, managed temporary Tensors, terminal waits and completion destruction; retained slot buffer ownership identical."
       ],
@@ -204,7 +204,7 @@
       "consumer_key": "inference-fragment/cpu/deepseek-flash-official-fp4-fp8-moe-cycle",
       "provenance": {
         "path": "consumer.json",
-        "sha256": "bfa934c5f1c63a23fe467ebf7abf5178ed3eafe9f86dd1bc276dc047b596f8f1"
+        "sha256": "d7f2a1d36c2e1e37a54ad08e84e341364b5213a5c670a990c7c1aa3e1d6cad37"
       },
       "ownership_topology": {
         "candidate": "Independent Graph Context, constants, invocation slots and retained output buffers. Graph liveness may reuse intermediate resources. Every accepted completion is settled and destroyed within the call; native temporary Tensors are released.",
@@ -239,7 +239,7 @@
           "input_slots": 3
         }
       },
-      "setup": "Cold binding, constants and all resident slots outside timing. Two full oracle sweeps before and after every process; original final-output gate. Required native warmup and one-thread policy fixed.",
+      "setup": "Cold binding, constants and all resident slots outside timing. One full changed-input oracle cycle before and after every process; original final-output gate. Required native warmup and one-thread policy fixed.",
       "charged_phases": [
         "All 3 complete ordinary blocking fragments per call: native math, finite/ID checks, original quantization, necessary conversion/copies, managed temporary Tensors, terminal waits and completion destruction; retained slot buffer ownership identical."
       ],
