@@ -176,11 +176,17 @@ TEST(OneDnnRegionProvider, NativeNormRegionKeepsIndependentReplayAndClose) {
       std::array<hyle::Status, 2> status;
       std::thread first([&] {
         auto done = invocations[0].submit(queue0);
-        status[0] = done ? done->wait() : done.error();
+        if (done)
+          status[0] = done->wait();
+        else
+          status[0] = std::move(done).error();
       });
       std::thread second([&] {
         auto done = invocations[1].submit(queue1);
-        status[1] = done ? done->wait() : done.error();
+        if (done)
+          status[1] = done->wait();
+        else
+          status[1] = std::move(done).error();
       });
       first.join();
       second.join();
