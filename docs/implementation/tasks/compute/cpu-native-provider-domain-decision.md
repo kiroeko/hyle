@@ -2,9 +2,11 @@
 
 <!-- MODULE REVIEW: SCOPED -->
 
-- baseline：`59f68e326`，Windows canonical。用户要求：有成熟替代的所有自研算子都要裁决，
+- baseline：`155d1385c2b9a50eaa66a6c069b569f11daf4b03`，Windows canonical。用户要求：有成熟替代的所有自研算子都要裁决，
   不能因为低优先级后备就永久保留；只有唯一实现的精确域才直接保留。SIMD基础不删除。
-- owner：后续涉及实际产品修改的Native/CPU route按当前registry绑定；先完成CPU标准构建卡。
+- owner：`compute_provider_native`、`compute_route_cpu`、`graph_route_cpu`先绑定本卡SCOPED。
+  [标准CPU构建](../build/cpu-standard-provider-build-v1.md)与ggml优化程序接入已独立关闭，不能代替本卡。涉及oneDNN/ggml的具体接入修复，
+  先据反例重新绑定相应owner并固定有限FIX，不借旧CLOSED/AUDITED记录授权。
 - scope：现存Native全部payload数学域（MatMul、norm、activation/gate、reduce/softmax、
   attention/RoPE、index/transform/cast），相对于oneDNN、ggml、已接Torch成熟域逐项核对。
   TorchAO/ds4原版数学、ATen调用和checked生命周期adapter与自研数学分开。
@@ -61,6 +63,14 @@ SIMD基础与通用primitive保留，只清理随已退场算子失去独立用�
 
 ## 成熟CPU ISA准入前置
 
-默认ggml当前是旧M1的安全基线profile，禁用AVX2/FMA/F16C/BMI2；不能与Native SIMD比较后把配置
-优势误写成算法WIN。[独立有限接入卡](cpu-ggml-isa-admission-v1.md)先保留基线并接通原版优化程序，
-此后才固定本卡不可变批次。该前置不授权新数学、GPU施工或无界ISA/benchmark扩张。
+旧M1只交付安全基线profile，不能与Native SIMD比较后把配置优势误写成算法WIN。
+[独立有限接入卡](cpu-ggml-isa-admission-v1.md)已CLOSED：原版优化程序、两平台三交付及资源/隔离
+验收已完成。现在才固定本卡批次；不能继承旧scalar ggml计时或旧宽泛KEEP_RESIDUAL。
+
+## 有限准入核对（先于自研计时）
+
+先用一批无计时资格化检查实际普通prepare和必要的原版carrier，区分三类：已接同合同、
+成熟库存在但adapter挡住、真实数值/资源语义差异。只在第三类有源码与实际反例时，才允许记录唯一域。
+当前具体疑点：oneDNN的serial M<16冷拒绝来自旧“Native更便宜”判断，非成熟kernel能力声明；
+Unary/Gated激活必须核对NaN、±Inf与尾部，不能仅以同名算子或有限随机数签等价。
+一次batch保存正向/拒绝/数值结果，不计时、不优化自研；之后固定接入/清退/规则FIX及一次P1批次。

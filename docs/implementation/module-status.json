@@ -418,14 +418,9 @@
     },
     {
       "module": "compute_provider_native",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/build/cpu-standard-provider-build-v1.md",
-      "summary": "CPU标准构建CLOSED：CB1–4已实现并完成锁定SDK/失败隔离、CPU入口、Windows28×三交付及WSL真实FP8 Direct/Graph三交付；原数学/P1不变。CPU自研逐域与路由裁决仍未完成，其它路线暂停。",
-      "candidate": "eb7f97b8ff8d82071ce65aa3f6fcd89715f7b174",
-      "performance": {
-        "tier": "P0",
-        "evidence": "evidence/correctness/cpu-standard-provider-build-v1/README.md"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/cpu-native-provider-domain-decision.md",
+      "summary": "CPU逐域SCOPED：用户要求裁决全部自研重叠域；标准构建/原版优化程序已独立关闭。先批量核对成熟准入/语义、固定有限FIX再修改产品；不签WIN、不扩写数学，SIMD基础保留，其它路线暂停。"
     },
     {
       "module": "compute_sched",
@@ -434,25 +429,15 @@
     },
     {
       "module": "compute_route_cpu",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/compute/llm-moe-d4-self-operator-retirement.md",
-      "summary": "M3-D4 CLOSED 91c2fb4d：无合格优势且由成熟 Provider 覆盖的 Marlin、CPU/CUDA/Apple/Vulkan 自有算子域已批量退场；四路线正确性、组件合同与 Compute/Graph 三交付通过，D5 继续真实模型片段验收。",
-      "candidate": "91c2fb4df18f6937d64d195793a8c5b30b06a8ed",
-      "performance": {
-        "tier": "P0",
-        "evidence": "evidence/correctness/llm-moe-d4-self-operator-retirement/README.md"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/cpu-native-provider-domain-decision.md",
+      "summary": "CPU逐域SCOPED：用户要求裁决全部自研重叠域；标准构建/原版优化程序已独立关闭。先批量核对成熟准入/语义、固定有限FIX再修改产品；不签WIN、不扩写数学，SIMD基础保留，其它路线暂停。"
     },
     {
       "module": "graph_route_cpu",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/compute/llm-moe-d4-self-operator-retirement.md",
-      "summary": "M3-D4 CLOSED 91c2fb4d：无合格优势且由成熟 Provider 覆盖的 Marlin、CPU/CUDA/Apple/Vulkan 自有算子域已批量退场；四路线正确性、组件合同与 Compute/Graph 三交付通过，D5 继续真实模型片段验收。",
-      "candidate": "91c2fb4df18f6937d64d195793a8c5b30b06a8ed",
-      "performance": {
-        "tier": "P0",
-        "evidence": "evidence/correctness/llm-moe-d4-self-operator-retirement/README.md"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/cpu-native-provider-domain-decision.md",
+      "summary": "CPU逐域SCOPED：用户要求裁决全部自研重叠域；标准构建/原版优化程序已独立关闭。先批量核对成熟准入/语义、固定有限FIX再修改产品；不签WIN、不扩写数学，SIMD基础保留，其它路线暂停。"
     },
     {
       "module": "compute_provider_cublas",
