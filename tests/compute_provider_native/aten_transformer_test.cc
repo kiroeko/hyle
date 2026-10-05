@@ -226,7 +226,8 @@ template <class T> void softmax_batch() {
       }
   const auto d = description(type, std::array<std::int64_t, 2>{2, 3});
   std::vector<T> special;
-  for (double x : {-INFINITY, -INFINITY, -INFINITY, 0., INFINITY, 1.})
+  for (double x :
+       std::array<double, 6>{-INFINITY, -INFINITY, -INFINITY, 0., INFINITY, 1.})
     special.push_back(half_test::encode<T>(x));
   std::array bd{d};
   std::array bb{storage(d)};
