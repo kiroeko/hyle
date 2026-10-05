@@ -4,7 +4,7 @@ hyle_add_test(graph_route_cpu SOURCES
   ../compute_route_cpu/ds4_roundtrip_test.cc
   ../compute_route_cpu/context_test.cc d5_qwen35_profile_test.cc
   d5_qwen_gguf_vocabulary_test.cc
-  d5_qwen38_official_test.cc
+  d5_qwen38_official_test.cc hybrid_ffn_numeric_test.cc
   d5_qwen35_gguf_projection_test.cc d5_qwen35_gguf_fragment_test.cc graph_test.cc
   DEPS hyle_compute_provider_native hyle_compute_provider_onednn
        hyle_graph_provider_onednn hyle_compute_provider_ggml)
