@@ -1,0 +1,14 @@
+Direct gate=ggml-cpu sigmoid=ggml-cpu Graph steps=1 first=ggml-cpu
+x=-80 value=1e+38 direct=-144388.094 downstream=-144388.094 oracle=-144388.109 MATCH
+sigmoid x=-80 actual=+1.80485133e-35 oracle=+1.80485133e-35
+x=-80 value=inf direct=-inf downstream=-inf oracle=-inf MATCH
+sigmoid x=-80 actual=+1.80485133e-35 oracle=+1.80485133e-35
+x=-90 value=1e+38 direct=-0 downstream=+0 oracle=-7.3746109 MISMATCH
+sigmoid x=-90 actual=+0 oracle=+8.19400869e-40
+x=-90 value=inf direct=-nan(ind) downstream=-nan(ind) oracle=-inf MISMATCH
+sigmoid x=-90 actual=+0 oracle=+8.19400869e-40
+x=-100 value=1e+38 direct=-0 downstream=+0 oracle=-0.000372044742 MISMATCH
+sigmoid x=-100 actual=+0 oracle=+3.78350585e-44
+x=-100 value=inf direct=-nan(ind) downstream=-nan(ind) oracle=-inf MISMATCH
+sigmoid x=-100 actual=+0 oracle=+3.78350585e-44
+finite-tail diagnostic mismatches=4 (no timing, no Native comparison)

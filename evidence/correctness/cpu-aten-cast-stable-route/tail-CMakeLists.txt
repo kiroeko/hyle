@@ -1,0 +1,7 @@
+cmake_minimum_required(VERSION 3.28)
+project(cpu_finite_tail_probe LANGUAGES CXX)
+find_package(Hyle CONFIG REQUIRED COMPONENTS compute graph)
+add_executable(cpu_finite_tail_probe probe.cc)
+target_compile_features(cpu_finite_tail_probe PRIVATE cxx_std_23)
+target_link_libraries(cpu_finite_tail_probe PRIVATE hyle::compute hyle::graph)
+hyle_stage_runtime_dependencies(cpu_finite_tail_probe)

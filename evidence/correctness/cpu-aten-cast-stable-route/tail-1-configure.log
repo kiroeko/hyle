@@ -1,0 +1,24 @@
+-- The CXX compiler identification is MSVC 19.50.35728.0
+-- Detecting CXX compiler ABI info
+-- Detecting CXX compiler ABI info - done
+-- Check for working CXX compiler: C:/Program Files/Microsoft Visual Studio/18/Enterprise/VC/Tools/MSVC/14.50.35717/bin/Hostx64/x64/cl.exe - skipped
+-- Detecting CXX compile features
+-- Detecting CXX compile features - done
+-- Performing Test CMAKE_HAVE_LIBC_PTHREAD
+-- Performing Test CMAKE_HAVE_LIBC_PTHREAD - Failed
+-- Looking for pthread_create in pthreads
+-- Looking for pthread_create in pthreads - not found
+-- Looking for pthread_create in pthread
+-- Looking for pthread_create in pthread - not found
+-- Found Threads: TRUE
+-- HYLE: reusing locked CPU SDK at C:/Users/kiro/AppData/Local/hyle/dependencies/v1/sdks/torch-cpu/Windows-bf0079104e068dcbd60b2f8de589dc725282cbe865a85016cc5b8aa46cab519d/libtorch
+-- Found Torch: C:/Users/kiro/AppData/Local/hyle/dependencies/v1/sdks/torch-cpu/Windows-bf0079104e068dcbd60b2f8de589dc725282cbe865a85016cc5b8aa46cab519d/libtorch/lib/torch.lib (Required is exact version "2.8.0")
+-- Configuring done (13.0s)
+-- Generating done (0.0s)
+CMake Warning (unused-cli):
+  Manually-specified variables were not used by the project:
+
+    FETCHCONTENT_FULLY_DISCONNECTED
+
+
+-- Build files have been written to: C:/hv/cpu-ggml-finite-tail-probe

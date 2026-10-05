@@ -373,14 +373,9 @@
     },
     {
       "module": "compute_provider_ggml",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/compute/cpu-ggml-layout-broadcast-admission.md",
-      "summary": "LB1–5 CLOSED：MatMul双向广播/row-major、任意轴Softmax、两SDPA布局与独立depth、15scalar位存储及合法空输入整region通过两平台58/58、普通Direct/Graph三交付；P0/终审。Native冻结，CPU未完成。",
-      "candidate": "395418f62cfb1226a76c8a5e1d4d319fe5543364",
-      "performance": {
-        "tier": "P0",
-        "evidence": "evidence/correctness/cpu-ggml-layout-broadcast/README.md"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/cpu-aten-cast-stable-route.md",
+      "summary": "TC1–4 SCOPED：五dtype Cast原成熟候选与ggml generic有限尾部真实反例；仅原程序有限审计，未改产品/未启动Native比较，其它路线冻结。"
     },
     {
       "module": "graph_provider_onednn",
@@ -423,14 +418,9 @@
     },
     {
       "module": "compute_provider_native",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/compute/cpu-aten-numeric-admission.md",
-      "summary": "MN1–4 CLOSED：原ATen四stable Unary/三gate、number MinMax/四Reduce的F32/F16/BF16 exact/stride数值程序；Win/Linux120/120、CPU12通过/1旧fixture跳过、Graph15/15、普通Direct/Graph三交付及P0通过。Native自研冻结，CPU整体未完。",
-      "candidate": "0763fd3e3163d16eb0b43e684f5881f8314bc1e9",
-      "performance": {
-        "tier": "P0",
-        "evidence": "evidence/correctness/cpu-aten-numeric/README.md"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/cpu-aten-cast-stable-route.md",
+      "summary": "TC1–4 SCOPED：五dtype Cast原成熟候选与ggml generic有限尾部真实反例；仅原程序有限审计，未改产品/未启动Native比较，其它路线冻结。"
     },
     {
       "module": "compute_sched",

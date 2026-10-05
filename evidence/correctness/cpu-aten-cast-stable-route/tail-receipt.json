@@ -1,0 +1,45 @@
+[
+  {
+    "name": "configure",
+    "args": [
+      "cmake",
+      "-S",
+      "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\cpu-ggml-finite-tail",
+      "-B",
+      "C:\\hv\\cpu-ggml-finite-tail-probe",
+      "-G",
+      "Ninja",
+      "-DCMAKE_BUILD_TYPE=Release",
+      "-DCMAKE_PREFIX_PATH=C:/hv/cpu-ggml-isa-static-sdk",
+      "-DFETCHCONTENT_FULLY_DISCONNECTED=ON"
+    ],
+    "candidate": "b881d2788e0848404c536342b806d6642f3aefa7",
+    "log": "1-configure.log",
+    "returncode": 0,
+    "seconds": 13.094
+  },
+  {
+    "name": "build",
+    "args": [
+      "cmake",
+      "--build",
+      "C:\\hv\\cpu-ggml-finite-tail-probe",
+      "--parallel",
+      "2"
+    ],
+    "candidate": "b881d2788e0848404c536342b806d6642f3aefa7",
+    "log": "2-build.log",
+    "returncode": 0,
+    "seconds": 2.937
+  },
+  {
+    "name": "finite-tail-direct-and-whole-graph",
+    "args": [
+      "C:\\hv\\cpu-ggml-finite-tail-probe\\cpu_finite_tail_probe.exe"
+    ],
+    "candidate": "b881d2788e0848404c536342b806d6642f3aefa7",
+    "log": "3-finite-tail-direct-and-whole-graph.log",
+    "returncode": 0,
+    "seconds": 0.953
+  }
+]

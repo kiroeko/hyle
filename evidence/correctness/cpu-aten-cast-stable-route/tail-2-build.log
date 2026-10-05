@@ -1,0 +1,5 @@
+[1/5] C:\WINDOWS\system32\cmd.exe /C "cd /D C:\hv\cpu-ggml-finite-tail-probe && "C:\Program Files\CMake\bin\cmake.exe" -P C:/hv/cpu-ggml-finite-tail-probe/hyle-runtime/cpu_finite_tail_probe-Release.cmake"
+[2/5] Scanning C:\public\project-hyle\hyle\.scratch\validation\cpu-ggml-finite-tail\probe.cc for CXX dependencies
+[3/5] Generating CXX dyndep file CMakeFiles\cpu_finite_tail_probe.dir\CXX.dd
+[4/5] Building CXX object CMakeFiles\cpu_finite_tail_probe.dir\probe.cc.obj
+[5/5] Linking CXX executable cpu_finite_tail_probe.exe
