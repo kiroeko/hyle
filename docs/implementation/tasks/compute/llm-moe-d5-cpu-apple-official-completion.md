@@ -1,12 +1,12 @@
 # D5：优先补齐 CPU / Apple 官方低精度三类缺口
 
-<!-- MODULE REVIEW: CANDIDATE -->
+<!-- MODULE REVIEW: CLOSED -->
 
 - baseline：`5bb3d153bfe137feb6b7e3d22ced40e513b1fd5a`；Windows canonical，初始工作树干净。
 - 当前授权：2026-10-05 用户要求优先处理上一答的三类残余能力，再回到 Vulkan。
 - 当前实际 owner：`compute_provider_native`；由缺失的真实官方消费能力重新打开。
   新增成熟来源调查已结束；`53be4356` 完成 SCOPED、`feba1184` 绑定有限 FIX 为 AUDITED，
-  CPU-O1–O4 已接线并进入集中验证，CPU-O5 尚未完成。
+  CPU-O1–O5 的产品与全部适用验收完成，本轮 CPU owner CLOSED。
   此次不重开已关闭的 SIMD、CPU/Graph 运行时或 oneDNN，不新增数学内核。
 - 固定目标：CPU GLM 官方 grouped FP8、CPU DeepSeek 官方 grouped FP4/FP8、
   Apple DeepSeek 官方混合低精度完整片段，共原账本 12 个拒绝入口格。
@@ -124,7 +124,7 @@ margin、n=15；预检不合格不正式采样，不把库自身成本或机器�
 数值、资源、构建隔离或许可不能保持时止于具体 BLOCKED/INCONCLUSIVE；不扩大算法范围。
 本卡源码阶段统一 LOC 为 60,481 / 242 实现文件（无产品修改，不含测试）；接线后重新统计。
 
-### 七问的当前裁决
+### 审计时七问（后续验收结论见终审）
 
 1. 第三方：来源、revision、原始 BSD-3-Clause 与 CPU-only ABI 已固定；产品 SDK/license/lock 待 CPU-O3。
 2. 完整性：原来拒绝的四个 CPU 官方画像是具体 consumer 缺口；原生投影可行，完整配方待 CPU-O5。
@@ -237,5 +237,43 @@ GLM四顺序中位耗时差 -1.16%～+0.85%，最不利区间允许退化1.97%�
 DeepSeek -0.25%～+0.54%，最不利区间3.08%，均低于固定5%。
 这只签代表完整程序Graph/Direct成本，不声称数学SOTA、全模型推理或Pro独立P1。
 
-CPU-O1–O5 的产品/普通消费/资源/Windows三交付/WSL/P0/P1已取证；下一步只更新用户
-指南、8个CPU官方完整画像格和终审状态。Apple完整程序仍未成立，本卡不代签Apple。
+## CPU 终审与停止（2026-10-05）
+
+CPU-O1–O5 全部完成；[汇总收据](../../../../evidence/correctness/llm-moe-d5-real-fragments/cpu-official-torch-binding/receipt.json)
+将四个CPU官方画像 × Direct/Graph 共8格转为RUN_PASS，保留其原拒绝收据与历史结果。
+当前ledger为162运行通过、12准备拒绝、2数值失败；CPU全部22画像两入口44/44。
+Apple调查Q3到达有界停止条件，产品FIX为零，其原F45 owner与四个拒绝格保持；
+Native CLOSED仅表示本轮CPU有限能力完成，不表示本卡标题中的Apple目标或整体goal已完成。
+
+| Gate | 实际证据与边界 | Verdict |
+|---|---|---|
+| scope / architecture | CPU-O1–O5、原版TorchAO/ATen、既有CPU/Graph资源与冷绑定；无自研数学或新公开API | PASS |
+| correctness | Native106、Direct157、Graph173；全部四画像普通完整链、变化输入、实际状态反馈；GLM非Flash补验 | PASS |
+| resource / failure | OOM、非法ID、非有限输入、独立槽、关闭/保活、失败后重建；managed/private runtime声明与预算拒绝 | PASS |
+| delivery | Windows source/static/shared各26项及补验各2项；搬迁、独立头/链接、DLL邻置、许可证；WSL source26+2 | PASS |
+| usability_docs | [Compute指南](../../../user/compute.md)、[逐画像覆盖表](../../../user/model-fragment-coverage.md)明确可选SDK、普通入口和运行限制 | PASS |
+| red_team | 大资源中间Tensor改为原顺序分块；精确成熟identity断言；源码固定unfused oracle；补齐GLM非Flash完整纵切 | PASS |
+| engineering_performance | P0选中专家展开/逐块成本已查；新增两条完整官方MoE四顺序n15与controls、A/A、严格重放，原5%门通过 | PASS |
+
+终审七问：来源版本与BSD-3-Clause、CPU SDK完整身份/许可均已固定；真实四画像完整配方及正交
+资源/shape/failure域已验；复用已关闭下层而未改其API；新域P0/P1完成且无数学SOTA声明；
+不增加Python runtime/模型loader/FFI；三种C++交付真实可消费；普通Direct/Graph入口自动冷绑定。
+严格方向均INCONCLUSIVE，5%实用带PASS，另记入[全库性能总账增量](../../evidence/performance/full-library-scorecard.md#2026-10-05cpu-官方低精度完整-moe-增量)。
+
+限制：官方新域只资格化Windows/Linux x86_64、CPU-only LibTorch2.8.0+cpu；HYLE static仍依赖
+外部shared LibTorch。库有私有分配和线程、同步host完成；观测RSS约4.1GiB不是严格上界，
+strict replay或无法证明的内部硬预算请求拒绝。Pro真实shape完成正确性，但性能只签两条Flash
+代表完整MoE；没有整模型推理/容量或其它硬件性能资格。
+
+产品候选保持`3c22b7b9`。最后覆盖/状态/证据文档变更不重编、不重跑P1；执行账本与输入结构、
+selector、closure previous-ref、docs和diff检查。统一Compute+Graph为60,866行/244实现文件，
+不含测试/第三方。删除旧SDK重复副本559,220,140 bytes，另逐项删除已中止P1构建中的重复
+DLL/旧exe，原日志、cache/编译命令与SHA保留，合格构建和正式SDK保留。
+
+reopen仅限本域可复现consumer/资源/交付缺陷、成熟来源/SDK升级的实际影响或合格同合同
+material回归；用户提出的默认CPU依赖取得问题另定构建有限任务，不恢复自研数学或重跑此轮P1。
+CPU owner到此CLOSED；Apple、Vulkan原阻塞和D6不由此关闭。
+
+最终文档批次selector只选docs/closure、跳过或复用130项；ledger结构、13项输入工具测试、
+closure（previous-ref `fdaed53e`）、docs及diff检查通过。核对恰好8格更新，其余168格完全
+不变；98个correctness文件与114个P1归档/原始SHA全部一致。没有追加产品构建或性能采样。

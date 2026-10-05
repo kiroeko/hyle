@@ -65,3 +65,15 @@ CUDA在原合同n15完成两个完整片段的PARITY/5%非劣PASS，严格重放
 [停止记录](llm-moe-d5-vulkan-performance-blocker.md)进入BLOCKED，不缩减原完整覆盖需求。
 20格冷拒绝、2格数值失败及成熟来源残余裁决保持未完成，不能以本次CUDA性能通过结束goal。
 统一Compute+Graph仍为60,373实现行/241文件。本批没有产品修改或重跑三交付。
+
+## 2026-10-05：CPU官方低精度有限补齐后的对账
+
+[CPU独立接线与验收](llm-moe-d5-cpu-apple-official-completion.md)完成GLM官方FP8及DeepSeek
+官方FP4/FP8四画像的8格，原拒绝记录保留在ledger的`prior_result`。当前为162运行通过、
+12准备拒绝、2数值失败；CPU44/44、CUDA44/44、Apple40/44、Vulkan34/44。
+新增[CPU普通入口/资源/三交付/WSL收据](../../../../evidence/correctness/llm-moe-d5-real-fragments/cpu-official-torch-binding/receipt.json)
+及[官方完整MoE P1](../../../../evidence/performance/cpu-official-fragments-p1/README.md)通过，
+产品候选`3c22b7b9`；统一Compute+Graph为60,866实现行/244文件。
+
+上方154/20/2为该次历史对账；当前覆盖以ledger与用户表为准。尚有Apple4拒绝、Vulkan8拒绝及
+2数值失败，Vulkan A6资格阻塞保持。没有用CPU验收解除这些边界，完整D6仍未完成。

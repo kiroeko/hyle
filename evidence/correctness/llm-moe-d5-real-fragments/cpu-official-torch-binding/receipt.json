@@ -1,0 +1,133 @@
+{
+  "schema_version": 1,
+  "candidate": "3c22b7b9f230abc86e749225174d86b59c79881e",
+  "verdict": "RUN_PASS",
+  "scope": "Complete required CPU regions for the four fixed official GLM/DeepSeek profiles via ordinary Direct/Graph, conditional on qualified CPU-only LibTorch SDK; no other-route/full-model/Pro-independent-performance claim",
+  "profiles": [
+    "deepseek_v4_pro:official:official-fp4-fp8",
+    "deepseek_v4_flash:official:official-fp4-fp8",
+    "glm53:official:official-fp8",
+    "glm53_flash:official:official-fp8"
+  ],
+  "entries": [
+    "direct",
+    "graph"
+  ],
+  "new_complete_cells": 8,
+  "regions_by_profile": {
+    "deepseek_v4_pro:official:official-fp4-fp8": [
+      "R01",
+      "R02",
+      "R03",
+      "R07",
+      "R08",
+      "R09",
+      "R10",
+      "R11",
+      "R12",
+      "R13",
+      "R14",
+      "R15"
+    ],
+    "deepseek_v4_flash:official:official-fp4-fp8": [
+      "R01",
+      "R02",
+      "R03",
+      "R07",
+      "R08",
+      "R09",
+      "R10",
+      "R11",
+      "R12",
+      "R13",
+      "R14",
+      "R15"
+    ],
+    "glm53:official:official-fp8": [
+      "R01",
+      "R02",
+      "R03",
+      "R07",
+      "R08",
+      "R09",
+      "R10",
+      "R11",
+      "R13",
+      "R14",
+      "R15"
+    ],
+    "glm53_flash:official:official-fp8": [
+      "R01",
+      "R02",
+      "R03",
+      "R06",
+      "R07",
+      "R08",
+      "R09",
+      "R10",
+      "R11",
+      "R12",
+      "R13",
+      "R14",
+      "R15"
+    ]
+  },
+  "mathematics": "Pinned original TorchAO codec/quantization + CPU-only LibTorch2.8.0 ATen, original A8/W4/W8/BF16/F32; existing mature providers for surrounding nodes",
+  "ordinary_windows": {
+    "receipt": "evidence/correctness/llm-moe-d5-real-fragments/cpu-official-torch-binding/3c22b7b9f230-tests/receipt.json",
+    "Native": 106,
+    "Direct": 157,
+    "Graph": 173,
+    "verdict": "PASS"
+  },
+  "non_flash_glm_supplement": {
+    "consumer_candidate": "e15dc754c52bff02a228b77a03f56ae9c34ef1d5",
+    "product_unchanged": "3c22b7b9f230abc86e749225174d86b59c79881e",
+    "windows": "evidence/correctness/llm-moe-d5-real-fragments/cpu-official-torch-binding/e15dc754c52b-glm-carry-supplement/receipt.json",
+    "wsl": "evidence/correctness/llm-moe-d5-real-fragments/cpu-official-torch-binding/e15dc754c52b-glm-wsl-supplement-r1/receipt.json",
+    "verdict": "PASS"
+  },
+  "windows_delivery": {
+    "source": 26,
+    "static": 26,
+    "shared": 26,
+    "added_non_flash_glm": 6,
+    "verdict": "PASS",
+    "linkage": "HYLE static still requires external shared LibTorch CPU runtime"
+  },
+  "wsl": {
+    "receipt": "evidence/correctness/llm-moe-d5-real-fragments/cpu-official-torch-binding/wsl-official-consumers/receipt.json",
+    "tests": 26,
+    "supplement": 2,
+    "verdict": "PASS",
+    "scope": "Linux source correctness; no unrun install/static/shared journey claim"
+  },
+  "performance": {
+    "receipt": "evidence/performance/cpu-official-fragments-p1/qualified-run/index.json",
+    "verdict": "PASS",
+    "scope": "Representative complete Flash MoE original FP8/FP4 cycles; four strata n15, same-math ordinary managed Graph versus Direct, not raw Provider or SOTA ranking"
+  },
+  "reused_scope": {
+    "R01": "Unchanged BF16/F32 embedding/gather from moe-vocabulary-cpu-checkpoint; new tests retain actual full head/vocabulary in MTP/NextN, not older BF16-only head substitution",
+    "receipt": "evidence/correctness/llm-moe-d5-real-fragments/moe-vocabulary-cpu-checkpoint/receipt.json",
+    "validation": "Native/CPU/Graph ordinary suites ran on current product; Torch proposal intercepts only listed new low-precision domains"
+  },
+  "region_source_consumers": {
+    "GLM": [
+      "D5GlmOfficialFp8FullMoe",
+      "D5GlmOfficialMixedRemaining",
+      "D5GlmOfficialAbsorbedMlaAndNextN (non-Flash supplement)"
+    ],
+    "DeepSeek": [
+      "D5DeepSeekOfficialCompression",
+      "D5DeepSeekOfficialAttention",
+      "D5DeepSeekOfficialMtpAndFullHead",
+      "D5DeepSeekOfficialMoe",
+      "D5DeepSeekExpertActivationRoundtrip"
+    ]
+  },
+  "resource": "Managed native temporary memory/threads and synchronous host completion; OOM/invalid IDs/nonfinite input, independent slots and failed-slot recreation tested. Observed max RSS4.1GiB, not strict internal allocator bound",
+  "source_inputs": "tests/compute_models/d5_cpu_torch_official_tests.h; fixed original header/config model shape/format facts",
+  "unchanged_numeric_contract": true,
+  "other_routes": "Apple4 official rejection cells and Vulkan8 official rejection/2numerical-failure cells remain unchanged"
+}

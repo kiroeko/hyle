@@ -49,8 +49,10 @@ factor seam，也不要把单个 family 的域支持当成整个算子目录都�
 Windows/Linux x86_64 可用 CPU-only LibTorch `2.8.0+cpu` SDK 开启 TorchAO/ATen
 低精度组合，构建选项为 `HYLE_COMPUTE_TORCH_CPU=ON` 和
 `HYLE_COMPUTE_TORCH_CPU_ROOT=<libtorch prefix>`。默认 `AUTO` 只在发现该 CPU SDK 时接入；
-`OFF` 不探测 Torch。CUDA Torch SDK 不能替代它。此新增范围尚在完整片段验收中，
-当前可依赖的模型画像仍以[能力账本](../implementation/tasks/compute/llm-moe-d5-acceptance-ledger.json)为准。
+`OFF` 不探测 Torch。CUDA Torch SDK 不能替代它。GLM 5.3/Flash 官方FP8、DeepSeek V4
+Pro/Flash 官方FP4/FP8的普通完整片段已通过正确性、Windows三交付与WSL检查；两条代表
+完整MoE的Graph/Direct成本通过原5%门。具体模型与平台范围见
+[能力账本](../implementation/tasks/compute/llm-moe-d5-acceptance-ledger.json)。
 
 普通 C++ 入口仍为 `cpu::create_context()` 与 `graph::cpu::create_context()`。
 既有 `Float8BlockLinear`、`GroupedFloat8Linear`、`GroupedFloat4Linear`、block128 encoded
@@ -446,8 +448,11 @@ CPU 默认入口也支持 `model_ops::block_quantization_roundtrip()` 的
 输入/输出是相同形状、独立存储的 dense BF16 矩阵，最后一维必须是相应分组的正整数倍；
 普通 `prepare()` 与 GraphBuilder 的 `add()` 均可绑定。非有限输入通过 Completion 报错，
 该 invocation 随终态失败退役，后续需从同一 prepared program 创建新 invocation。
-group128 当前拒绝；这两个状态操作的接入不表示完整官方 FP8/FP4 MoE 已可执行，
-验证范围见[本批证据](../../evidence/correctness/llm-moe-d5-real-fragments/cpu-ds4-roundtrip/README.md)。
+原ds4路径不包含group128；开启上述CPU-only SDK后，group128由固定TorchAO/ATen原程序
+承载，官方完整FP8/FP4片段的验证范围见
+[完整批次](../../evidence/correctness/llm-moe-d5-real-fragments/cpu-official-torch-binding/README.md)。
+ds4两个状态操作自身的边界仍见
+[原批次](../../evidence/correctness/llm-moe-d5-real-fragments/cpu-ds4-roundtrip/README.md)。
 
 `GatedDeltaNet{}` 描述六个显式输入与两个输出：Q/K `[B,T,Hk,Dk]`、V `[B,T,Hv,Dv]`、
 FP32 log-decay/beta `[B,T,Hv,1]`、FP32 初态 `[B,Hv,Dv,Dk]`；输出为 V 同形结果与新 FP32 状态。

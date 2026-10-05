@@ -46,11 +46,15 @@ consumer revision 为 `e15dc754`，产品与SDK保持 `3c22b7b9`；既有13项�
 
 [WSL普通批次](wsl-official-consumers/receipt.json)从 Windows 固定候选同步，实际26项通过。
 这里证明 Linux source correctness，不代签 Linux install/static/shared 三交付。
-新增完整片段 P1 尚未启动。
+[新增完整片段P1](../../../performance/cpu-official-fragments-p1/README.md)已通过；
+8个A/A、四顺序各n=15、30公共控制及严格重放完成，两个代表完整官方MoE均PARITY/5%非劣PASS。
 Apple 原极小值 / BF16 中间边界仍未解除；本批没有 Apple 产品修改。
-因此当前完整画像账本保持154 RUN_PASS /20 BACKEND_REJECTED /2 RUN_FAIL；
-不把上述部分证据宣传为 CPU 四画像或整体 goal 收口。
+本批[汇总收据](receipt.json)补齐CPU四个官方画像的8个普通入口格；原拒绝仍保留为历史事实。
+当前账本为162 RUN_PASS /12 BACKEND_REJECTED /2 RUN_FAIL，CPU44/44通过。
+这不表示Apple、Vulkan或整体goal收口。
 
 [统一 LOC](loc.json)为 Compute + Graph 60,866行 /244实现文件，排除测试和第三方源码。
 [清理记录](cleanup-obsolete-sdk.json)保存逐项 SHA，删除字节相同的旧 SDK / probe 临时副本，
 释放559,220,140 bytes；正式 SDK、来源输入、原归档和证据均保留。
+另清理[已中止P1构建的逐项旧文件](../../../performance/cpu-official-fragments-p1/initial-heavy-consumer/obsolete-build-cleanup.json)，
+释放285,724,541 bytes；合格P1构建保留。本轮两次合计释放844,944,681 bytes（约806MiB）。

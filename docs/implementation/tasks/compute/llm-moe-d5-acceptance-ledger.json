@@ -2,7 +2,7 @@
   "schema_version": 1,
   "id": "llm-moe-d5-real-fragment-acceptance-v1",
   "baseline": "deae2ed23fd3bf9ebc30364874d94881fc8f16c3",
-  "generated_at": "2026-09-27",
+  "generated_at": "2026-10-05",
   "authority": {
     "closure_card": "llm-moe-d5-real-fragment-acceptance.md",
     "model_facts": "llm-moe-model-sources.json",
@@ -7354,30 +7354,162 @@
       "profile": "deepseek_v4_pro:official:official-fp4-fp8",
       "route": "cpu",
       "entry": "direct",
-      "status": "BACKEND_REJECTED",
-      "receipt": "evidence/correctness/llm-moe-d5-real-fragments/cpu-official-boundary/summary.json",
+      "status": "RUN_PASS",
+      "receipt": "evidence/correctness/llm-moe-d5-real-fragments/cpu-official-torch-binding/receipt.json",
       "region_verdicts": [
         {
+          "region": "R01",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/cpu-official-torch-binding/receipt.json"
+        },
+        {
+          "region": "R02",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/cpu-official-torch-binding/receipt.json"
+        },
+        {
+          "region": "R03",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/cpu-official-torch-binding/receipt.json"
+        },
+        {
+          "region": "R07",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/cpu-official-torch-binding/receipt.json"
+        },
+        {
+          "region": "R08",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/cpu-official-torch-binding/receipt.json"
+        },
+        {
+          "region": "R09",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/cpu-official-torch-binding/receipt.json"
+        },
+        {
+          "region": "R10",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/cpu-official-torch-binding/receipt.json"
+        },
+        {
           "region": "R11",
-          "verdict": "BACKEND_REJECTED",
-          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/cpu-official-boundary/summary.json"
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/cpu-official-torch-binding/receipt.json"
+        },
+        {
+          "region": "R12",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/cpu-official-torch-binding/receipt.json"
+        },
+        {
+          "region": "R13",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/cpu-official-torch-binding/receipt.json"
+        },
+        {
+          "region": "R14",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/cpu-official-torch-binding/receipt.json"
+        },
+        {
+          "region": "R15",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/cpu-official-torch-binding/receipt.json"
         }
-      ]
+      ],
+      "prior_result": {
+        "status": "BACKEND_REJECTED",
+        "receipt": "evidence/correctness/llm-moe-d5-real-fragments/cpu-official-boundary/summary.json",
+        "region_verdicts": [
+          {
+            "region": "R11",
+            "verdict": "BACKEND_REJECTED",
+            "receipt": "evidence/correctness/llm-moe-d5-real-fragments/cpu-official-boundary/summary.json"
+          }
+        ]
+      }
     },
     {
       "id": "deepseek_v4_pro:official:official-fp4-fp8:cpu:graph",
       "profile": "deepseek_v4_pro:official:official-fp4-fp8",
       "route": "cpu",
       "entry": "graph",
-      "status": "BACKEND_REJECTED",
-      "receipt": "evidence/correctness/llm-moe-d5-real-fragments/cpu-official-boundary/summary.json",
+      "status": "RUN_PASS",
+      "receipt": "evidence/correctness/llm-moe-d5-real-fragments/cpu-official-torch-binding/receipt.json",
       "region_verdicts": [
         {
+          "region": "R01",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/cpu-official-torch-binding/receipt.json"
+        },
+        {
+          "region": "R02",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/cpu-official-torch-binding/receipt.json"
+        },
+        {
+          "region": "R03",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/cpu-official-torch-binding/receipt.json"
+        },
+        {
+          "region": "R07",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/cpu-official-torch-binding/receipt.json"
+        },
+        {
+          "region": "R08",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/cpu-official-torch-binding/receipt.json"
+        },
+        {
+          "region": "R09",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/cpu-official-torch-binding/receipt.json"
+        },
+        {
+          "region": "R10",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/cpu-official-torch-binding/receipt.json"
+        },
+        {
           "region": "R11",
-          "verdict": "BACKEND_REJECTED",
-          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/cpu-official-boundary/summary.json"
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/cpu-official-torch-binding/receipt.json"
+        },
+        {
+          "region": "R12",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/cpu-official-torch-binding/receipt.json"
+        },
+        {
+          "region": "R13",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/cpu-official-torch-binding/receipt.json"
+        },
+        {
+          "region": "R14",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/cpu-official-torch-binding/receipt.json"
+        },
+        {
+          "region": "R15",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/cpu-official-torch-binding/receipt.json"
         }
-      ]
+      ],
+      "prior_result": {
+        "status": "BACKEND_REJECTED",
+        "receipt": "evidence/correctness/llm-moe-d5-real-fragments/cpu-official-boundary/summary.json",
+        "region_verdicts": [
+          {
+            "region": "R11",
+            "verdict": "BACKEND_REJECTED",
+            "receipt": "evidence/correctness/llm-moe-d5-real-fragments/cpu-official-boundary/summary.json"
+          }
+        ]
+      }
     },
     {
       "id": "deepseek_v4_pro:official:official-fp4-fp8:cuda:direct",
@@ -7584,30 +7716,162 @@
       "profile": "deepseek_v4_flash:official:official-fp4-fp8",
       "route": "cpu",
       "entry": "direct",
-      "status": "BACKEND_REJECTED",
-      "receipt": "evidence/correctness/llm-moe-d5-real-fragments/cpu-official-boundary/summary.json",
+      "status": "RUN_PASS",
+      "receipt": "evidence/correctness/llm-moe-d5-real-fragments/cpu-official-torch-binding/receipt.json",
       "region_verdicts": [
         {
+          "region": "R01",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/cpu-official-torch-binding/receipt.json"
+        },
+        {
+          "region": "R02",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/cpu-official-torch-binding/receipt.json"
+        },
+        {
+          "region": "R03",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/cpu-official-torch-binding/receipt.json"
+        },
+        {
+          "region": "R07",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/cpu-official-torch-binding/receipt.json"
+        },
+        {
+          "region": "R08",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/cpu-official-torch-binding/receipt.json"
+        },
+        {
+          "region": "R09",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/cpu-official-torch-binding/receipt.json"
+        },
+        {
+          "region": "R10",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/cpu-official-torch-binding/receipt.json"
+        },
+        {
           "region": "R11",
-          "verdict": "BACKEND_REJECTED",
-          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/cpu-official-boundary/summary.json"
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/cpu-official-torch-binding/receipt.json"
+        },
+        {
+          "region": "R12",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/cpu-official-torch-binding/receipt.json"
+        },
+        {
+          "region": "R13",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/cpu-official-torch-binding/receipt.json"
+        },
+        {
+          "region": "R14",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/cpu-official-torch-binding/receipt.json"
+        },
+        {
+          "region": "R15",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/cpu-official-torch-binding/receipt.json"
         }
-      ]
+      ],
+      "prior_result": {
+        "status": "BACKEND_REJECTED",
+        "receipt": "evidence/correctness/llm-moe-d5-real-fragments/cpu-official-boundary/summary.json",
+        "region_verdicts": [
+          {
+            "region": "R11",
+            "verdict": "BACKEND_REJECTED",
+            "receipt": "evidence/correctness/llm-moe-d5-real-fragments/cpu-official-boundary/summary.json"
+          }
+        ]
+      }
     },
     {
       "id": "deepseek_v4_flash:official:official-fp4-fp8:cpu:graph",
       "profile": "deepseek_v4_flash:official:official-fp4-fp8",
       "route": "cpu",
       "entry": "graph",
-      "status": "BACKEND_REJECTED",
-      "receipt": "evidence/correctness/llm-moe-d5-real-fragments/cpu-official-boundary/summary.json",
+      "status": "RUN_PASS",
+      "receipt": "evidence/correctness/llm-moe-d5-real-fragments/cpu-official-torch-binding/receipt.json",
       "region_verdicts": [
         {
+          "region": "R01",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/cpu-official-torch-binding/receipt.json"
+        },
+        {
+          "region": "R02",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/cpu-official-torch-binding/receipt.json"
+        },
+        {
+          "region": "R03",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/cpu-official-torch-binding/receipt.json"
+        },
+        {
+          "region": "R07",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/cpu-official-torch-binding/receipt.json"
+        },
+        {
+          "region": "R08",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/cpu-official-torch-binding/receipt.json"
+        },
+        {
+          "region": "R09",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/cpu-official-torch-binding/receipt.json"
+        },
+        {
+          "region": "R10",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/cpu-official-torch-binding/receipt.json"
+        },
+        {
           "region": "R11",
-          "verdict": "BACKEND_REJECTED",
-          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/cpu-official-boundary/summary.json"
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/cpu-official-torch-binding/receipt.json"
+        },
+        {
+          "region": "R12",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/cpu-official-torch-binding/receipt.json"
+        },
+        {
+          "region": "R13",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/cpu-official-torch-binding/receipt.json"
+        },
+        {
+          "region": "R14",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/cpu-official-torch-binding/receipt.json"
+        },
+        {
+          "region": "R15",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/cpu-official-torch-binding/receipt.json"
         }
-      ]
+      ],
+      "prior_result": {
+        "status": "BACKEND_REJECTED",
+        "receipt": "evidence/correctness/llm-moe-d5-real-fragments/cpu-official-boundary/summary.json",
+        "region_verdicts": [
+          {
+            "region": "R11",
+            "verdict": "BACKEND_REJECTED",
+            "receipt": "evidence/correctness/llm-moe-d5-real-fragments/cpu-official-boundary/summary.json"
+          }
+        ]
+      }
     },
     {
       "id": "deepseek_v4_flash:official:official-fp4-fp8:cuda:direct",
@@ -8754,30 +9018,152 @@
       "profile": "glm53:official:official-fp8",
       "route": "cpu",
       "entry": "direct",
-      "status": "BACKEND_REJECTED",
-      "receipt": "evidence/correctness/llm-moe-d5-real-fragments/cpu-official-boundary/summary.json",
+      "status": "RUN_PASS",
+      "receipt": "evidence/correctness/llm-moe-d5-real-fragments/cpu-official-torch-binding/receipt.json",
       "region_verdicts": [
         {
+          "region": "R01",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/cpu-official-torch-binding/receipt.json"
+        },
+        {
+          "region": "R02",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/cpu-official-torch-binding/receipt.json"
+        },
+        {
+          "region": "R03",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/cpu-official-torch-binding/receipt.json"
+        },
+        {
+          "region": "R07",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/cpu-official-torch-binding/receipt.json"
+        },
+        {
+          "region": "R08",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/cpu-official-torch-binding/receipt.json"
+        },
+        {
+          "region": "R09",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/cpu-official-torch-binding/receipt.json"
+        },
+        {
+          "region": "R10",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/cpu-official-torch-binding/receipt.json"
+        },
+        {
           "region": "R11",
-          "verdict": "BACKEND_REJECTED",
-          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/cpu-official-boundary/summary.json"
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/cpu-official-torch-binding/receipt.json"
+        },
+        {
+          "region": "R13",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/cpu-official-torch-binding/receipt.json"
+        },
+        {
+          "region": "R14",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/cpu-official-torch-binding/receipt.json"
+        },
+        {
+          "region": "R15",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/cpu-official-torch-binding/receipt.json"
         }
-      ]
+      ],
+      "prior_result": {
+        "status": "BACKEND_REJECTED",
+        "receipt": "evidence/correctness/llm-moe-d5-real-fragments/cpu-official-boundary/summary.json",
+        "region_verdicts": [
+          {
+            "region": "R11",
+            "verdict": "BACKEND_REJECTED",
+            "receipt": "evidence/correctness/llm-moe-d5-real-fragments/cpu-official-boundary/summary.json"
+          }
+        ]
+      }
     },
     {
       "id": "glm53:official:official-fp8:cpu:graph",
       "profile": "glm53:official:official-fp8",
       "route": "cpu",
       "entry": "graph",
-      "status": "BACKEND_REJECTED",
-      "receipt": "evidence/correctness/llm-moe-d5-real-fragments/cpu-official-boundary/summary.json",
+      "status": "RUN_PASS",
+      "receipt": "evidence/correctness/llm-moe-d5-real-fragments/cpu-official-torch-binding/receipt.json",
       "region_verdicts": [
         {
+          "region": "R01",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/cpu-official-torch-binding/receipt.json"
+        },
+        {
+          "region": "R02",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/cpu-official-torch-binding/receipt.json"
+        },
+        {
+          "region": "R03",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/cpu-official-torch-binding/receipt.json"
+        },
+        {
+          "region": "R07",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/cpu-official-torch-binding/receipt.json"
+        },
+        {
+          "region": "R08",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/cpu-official-torch-binding/receipt.json"
+        },
+        {
+          "region": "R09",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/cpu-official-torch-binding/receipt.json"
+        },
+        {
+          "region": "R10",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/cpu-official-torch-binding/receipt.json"
+        },
+        {
           "region": "R11",
-          "verdict": "BACKEND_REJECTED",
-          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/cpu-official-boundary/summary.json"
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/cpu-official-torch-binding/receipt.json"
+        },
+        {
+          "region": "R13",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/cpu-official-torch-binding/receipt.json"
+        },
+        {
+          "region": "R14",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/cpu-official-torch-binding/receipt.json"
+        },
+        {
+          "region": "R15",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/cpu-official-torch-binding/receipt.json"
         }
-      ]
+      ],
+      "prior_result": {
+        "status": "BACKEND_REJECTED",
+        "receipt": "evidence/correctness/llm-moe-d5-real-fragments/cpu-official-boundary/summary.json",
+        "region_verdicts": [
+          {
+            "region": "R11",
+            "verdict": "BACKEND_REJECTED",
+            "receipt": "evidence/correctness/llm-moe-d5-real-fragments/cpu-official-boundary/summary.json"
+          }
+        ]
+      }
     },
     {
       "id": "glm53:official:official-fp8:cuda:direct",
@@ -10114,13 +10500,73 @@
       "profile": "glm53_flash:official:official-fp8",
       "route": "cpu",
       "entry": "direct",
-      "status": "BACKEND_REJECTED",
-      "receipt": "evidence/correctness/llm-moe-d5-real-fragments/cpu-official-boundary/summary.json",
+      "status": "RUN_PASS",
+      "receipt": "evidence/correctness/llm-moe-d5-real-fragments/cpu-official-torch-binding/receipt.json",
       "region_verdicts": [
         {
+          "region": "R01",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/cpu-official-torch-binding/receipt.json"
+        },
+        {
+          "region": "R02",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/cpu-official-torch-binding/receipt.json"
+        },
+        {
+          "region": "R03",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/cpu-official-torch-binding/receipt.json"
+        },
+        {
+          "region": "R06",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/cpu-official-torch-binding/receipt.json"
+        },
+        {
+          "region": "R07",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/cpu-official-torch-binding/receipt.json"
+        },
+        {
+          "region": "R08",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/cpu-official-torch-binding/receipt.json"
+        },
+        {
+          "region": "R09",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/cpu-official-torch-binding/receipt.json"
+        },
+        {
+          "region": "R10",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/cpu-official-torch-binding/receipt.json"
+        },
+        {
           "region": "R11",
-          "verdict": "BACKEND_REJECTED",
-          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/cpu-official-boundary/summary.json"
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/cpu-official-torch-binding/receipt.json"
+        },
+        {
+          "region": "R12",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/cpu-official-torch-binding/receipt.json"
+        },
+        {
+          "region": "R13",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/cpu-official-torch-binding/receipt.json"
+        },
+        {
+          "region": "R14",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/cpu-official-torch-binding/receipt.json"
+        },
+        {
+          "region": "R15",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/cpu-official-torch-binding/receipt.json"
         }
       ],
       "partial_receipts": [
@@ -10131,20 +10577,91 @@
           "verdict": "RUN_PASS",
           "receipt": "evidence/correctness/llm-moe-d5-real-fragments/kda-complete-chain-batch/receipt.json"
         }
-      ]
+      ],
+      "prior_result": {
+        "status": "BACKEND_REJECTED",
+        "receipt": "evidence/correctness/llm-moe-d5-real-fragments/cpu-official-boundary/summary.json",
+        "region_verdicts": [
+          {
+            "region": "R11",
+            "verdict": "BACKEND_REJECTED",
+            "receipt": "evidence/correctness/llm-moe-d5-real-fragments/cpu-official-boundary/summary.json"
+          }
+        ]
+      }
     },
     {
       "id": "glm53_flash:official:official-fp8:cpu:graph",
       "profile": "glm53_flash:official:official-fp8",
       "route": "cpu",
       "entry": "graph",
-      "status": "BACKEND_REJECTED",
-      "receipt": "evidence/correctness/llm-moe-d5-real-fragments/cpu-official-boundary/summary.json",
+      "status": "RUN_PASS",
+      "receipt": "evidence/correctness/llm-moe-d5-real-fragments/cpu-official-torch-binding/receipt.json",
       "region_verdicts": [
         {
+          "region": "R01",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/cpu-official-torch-binding/receipt.json"
+        },
+        {
+          "region": "R02",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/cpu-official-torch-binding/receipt.json"
+        },
+        {
+          "region": "R03",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/cpu-official-torch-binding/receipt.json"
+        },
+        {
+          "region": "R06",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/cpu-official-torch-binding/receipt.json"
+        },
+        {
+          "region": "R07",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/cpu-official-torch-binding/receipt.json"
+        },
+        {
+          "region": "R08",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/cpu-official-torch-binding/receipt.json"
+        },
+        {
+          "region": "R09",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/cpu-official-torch-binding/receipt.json"
+        },
+        {
+          "region": "R10",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/cpu-official-torch-binding/receipt.json"
+        },
+        {
           "region": "R11",
-          "verdict": "BACKEND_REJECTED",
-          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/cpu-official-boundary/summary.json"
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/cpu-official-torch-binding/receipt.json"
+        },
+        {
+          "region": "R12",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/cpu-official-torch-binding/receipt.json"
+        },
+        {
+          "region": "R13",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/cpu-official-torch-binding/receipt.json"
+        },
+        {
+          "region": "R14",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/cpu-official-torch-binding/receipt.json"
+        },
+        {
+          "region": "R15",
+          "verdict": "RUN_PASS",
+          "receipt": "evidence/correctness/llm-moe-d5-real-fragments/cpu-official-torch-binding/receipt.json"
         }
       ],
       "partial_receipts": [
@@ -10155,7 +10672,18 @@
           "verdict": "RUN_PASS",
           "receipt": "evidence/correctness/llm-moe-d5-real-fragments/kda-complete-chain-batch/receipt.json"
         }
-      ]
+      ],
+      "prior_result": {
+        "status": "BACKEND_REJECTED",
+        "receipt": "evidence/correctness/llm-moe-d5-real-fragments/cpu-official-boundary/summary.json",
+        "region_verdicts": [
+          {
+            "region": "R11",
+            "verdict": "BACKEND_REJECTED",
+            "receipt": "evidence/correctness/llm-moe-d5-real-fragments/cpu-official-boundary/summary.json"
+          }
+        ]
+      }
     },
     {
       "id": "glm53_flash:official:official-fp8:cuda:direct",
@@ -11892,8 +12420,8 @@
     "routes": 4,
     "entries": 2,
     "cells": 176,
-    "RUN_PASS": 154,
-    "BACKEND_REJECTED": 20,
+    "RUN_PASS": 162,
+    "BACKEND_REJECTED": 12,
     "UPSTREAM_MISSING": 0,
     "VALIDATION_NOT_RUN": 0,
     "RUN_FAIL": 2

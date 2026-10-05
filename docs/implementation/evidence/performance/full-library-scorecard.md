@@ -284,3 +284,24 @@ natural-sequence 对照没有 Graph 的接纳/排他/关闭/Completion 服务，
 八项的原有利与不利统计对称保留，当前比较均为 NATURAL_ROUTE，排名/同合同 NI 为 N/A。
 [逐项前后记录](../../../../evidence/review/cpu-r3-comparison-boundary/identity.json)证明全部 98 项
 绝对值、ratio/CI、采样事实不变，其他 90 个 claim 完全不变。没有新的计时、产品修正或性能 PASS。
+
+## 2026-10-05：CPU 官方低精度完整 MoE 增量
+
+本节登记D5新增两个合格工作负载；上述98项与机器JSON是2026-09-17的基础架构历史快照，
+没有将旧算子claim重新绑定到新产品，也未重签无关模块。当前owner状态以module-status.json为准。
+
+产品与SDK固定`3c22b7b9`、消费者`a8ec029a`、同数学Direct来源`a4f56461`，CPU-only
+LibTorch2.8.0+cpu。比较普通managed Graph/Direct一次完整变化输入周期，包括原A8、权重codec、
+matmul、复制/转换、同步与Completion释放；不比较不同数学或裸库API。
+
+| 工作负载 | Direct/Graph速度ratio范围（大于1有利于Graph） | 四顺序CI外包络 | 严格方向 | 固定5%非劣门 | 工程动作 |
+|---|---|---|---|---|---|
+| GLM5.3 Flash官方FP8 MoE，两个完整片段/周期 | 0.991525–1.011748 | 0.980660–1.025591 | INCONCLUSIVE | PASS | KEEP成熟组合与普通入口 |
+| DeepSeekV4 Flash官方FP4/FP8 MoE，三个完整片段/周期 | 0.994669–1.002478 | 0.970165–1.023398 | INCONCLUSIVE | PASS | KEEP成熟组合与普通入口 |
+
+每条四种执行/分配顺序各n15，共60产品进程、8工作负载A/A和30公共控制，全部完成；
+W1-WIN/i9-13900K、MSVC19.50、caller P核/native-runtime-pair、OMP/MKL1。
+全部逐顺序CI跨1，不能把实用带PARITY/PASS说成数学胜利。没有Pro独立P1、其它硬件或整模型声明。
+[完整证据与限制](../../../../evidence/performance/cpu-official-fragments-p1/README.md)、
+[原值summary](../../../../evidence/performance/cpu-official-fragments-p1/qualified-run/run/summary.json)
+及[严格重放](../../../../evidence/performance/cpu-official-fragments-p1/qualified-run/run/strict-replay.json)。

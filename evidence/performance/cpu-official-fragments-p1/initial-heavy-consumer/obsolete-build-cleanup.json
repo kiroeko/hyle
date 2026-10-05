@@ -1,0 +1,80 @@
+{
+  "scope": "Obsolete interrupted first P1 build: individual DLL/exe/import files only",
+  "obsolete_build": "C:\\hv\\d5p1-official",
+  "retained_qualified_build": "C:\\hv\\d5p1-official-r1",
+  "records": [
+    {
+      "path": "C:\\hv\\d5p1-official\\asmjit.dll",
+      "bytes": 367104,
+      "sha256": "eb8f9c478bfc4b671f83b630c97424c60b4c948c0a8645fe588aed4f6bab5df5",
+      "retained_runtime_sha256": "eb8f9c478bfc4b671f83b630c97424c60b4c948c0a8645fe588aed4f6bab5df5"
+    },
+    {
+      "path": "C:\\hv\\d5p1-official\\c10.dll",
+      "bytes": 1046528,
+      "sha256": "93bff2548e330df0f94ce3c71c531887d049ae645d1e38e3c08689e2d86a7888",
+      "retained_runtime_sha256": "93bff2548e330df0f94ce3c71c531887d049ae645d1e38e3c08689e2d86a7888"
+    },
+    {
+      "path": "C:\\hv\\d5p1-official\\fbgemm.dll",
+      "bytes": 5721600,
+      "sha256": "250dc6f79b26e022ca3088e9b71a023598c7e997c96b62ef350a74fa1b501d81",
+      "retained_runtime_sha256": "250dc6f79b26e022ca3088e9b71a023598c7e997c96b62ef350a74fa1b501d81"
+    },
+    {
+      "path": "C:\\hv\\d5p1-official\\libiomp5md.dll",
+      "bytes": 1613680,
+      "sha256": "d9d66ed25f1a0ea725fa3a41b22cfd5d182c19dbe4771d9c90ca02ad7466f6a1",
+      "retained_runtime_sha256": "d9d66ed25f1a0ea725fa3a41b22cfd5d182c19dbe4771d9c90ca02ad7466f6a1"
+    },
+    {
+      "path": "C:\\hv\\d5p1-official\\torch_cpu.dll",
+      "bytes": 255948800,
+      "sha256": "2cb91cf2ba957fad5a17eab5bb7af6b3d73bbc98d94e2deeadc9fb9294eea809",
+      "retained_runtime_sha256": "2cb91cf2ba957fad5a17eab5bb7af6b3d73bbc98d94e2deeadc9fb9294eea809"
+    },
+    {
+      "path": "C:\\hv\\d5p1-official\\torch.dll",
+      "bytes": 9728,
+      "sha256": "16a220e55b35fbfd946c26663eb3eefc76782872280cdc47ab0caea1babf0613",
+      "retained_runtime_sha256": "16a220e55b35fbfd946c26663eb3eefc76782872280cdc47ab0caea1babf0613"
+    },
+    {
+      "path": "C:\\hv\\d5p1-official\\uv.dll",
+      "bytes": 195072,
+      "sha256": "fa569e682fc5fb7a8eb94c6829af9f30a569748dbbc6bce39735d48bc960bcf8",
+      "retained_runtime_sha256": "fa569e682fc5fb7a8eb94c6829af9f30a569748dbbc6bce39735d48bc960bcf8"
+    },
+    {
+      "path": "C:\\hv\\d5p1-official\\hyle_graph_route_cpu_d5_bench.exe",
+      "bytes": 20664320,
+      "sha256": "eaa16a2d91e7d5df1ac894249b8373a8267579c23e53b7626e29fd7c1714a95c",
+      "retained_runtime_sha256": null
+    },
+    {
+      "path": "C:\\hv\\d5p1-official\\hyle_perf_control_bench.exe",
+      "bytes": 89088,
+      "sha256": "90cd0a26cdda157d94d4ef211b368e1c229b638886f7e83f60d64c05032f1c39",
+      "retained_runtime_sha256": null
+    },
+    {
+      "path": "C:\\hv\\d5p1-official\\hyle_graph_route_cpu_d5_bench.exp",
+      "bytes": 24941,
+      "sha256": "6ff40610c655432856302d00f60e3a3601e4fa2b3c6ee9c426edf1d6722bbdc0",
+      "retained_runtime_sha256": null
+    },
+    {
+      "path": "C:\\hv\\d5p1-official\\hyle_graph_route_cpu_d5_bench.lib",
+      "bytes": 43680,
+      "sha256": "e2058edddcc73968204541eb07c5582516bbf130496184ae8840ff2fed6a606d",
+      "retained_runtime_sha256": null
+    }
+  ],
+  "released_bytes": 285724541,
+  "process_check": "No CPU D5 benchmark or control process running",
+  "verdict": "PASS",
+  "retained_metadata": {
+    "obsolete-CMakeCache.txt": "1209118cd98c60f7cd6e9a95c74f4aa612dcef4ff065026125610a0576fd2b13",
+    "obsolete-compile_commands.json": "bc2b330ece722f912d1b87096de61c88ce0982eeb539d321b329e0ee8d6f54cd"
+  }
+}

@@ -1,6 +1,6 @@
 # 固定模型画像的 Compute / Graph 支持范围
 
-本页按2026-09-27的[当前验收账本](../implementation/tasks/compute/llm-moe-d5-acceptance-ledger.json)
+本页按2026-10-05的[当前验收账本](../implementation/tasks/compute/llm-moe-d5-acceptance-ledger.json)
 说明可依赖的**模型片段支持范围**。每个表格单元同时对应普通Direct和Graph两个入口；
 “通过”表示该固定画像的全部必需片段已运行，并通过原数值、状态反馈及资源/完成检查。
 它不表示整模型推理、完整上下文容量或任意硬件已经验收。HYLE不负责模型加载、tokenizer或采样。
@@ -25,19 +25,23 @@
 | Kimi K3 | [official-mxfp4](https://huggingface.co/moonshotai/Kimi-K3/tree/f831ab66814297da540d832a5235f8e904f29d06) | 通过 | 通过 | 通过 | 通过 |
 | Kimi K3 | [UD-Q4_K_XL](https://huggingface.co/unsloth/Kimi-K3-GGUF/tree/a0836360ce58dfec088d966a97f2ddc8a606279b) | 通过 | 通过 | 通过 | 通过 |
 | Kimi K3 | [UD-Q8_K_XL](https://huggingface.co/unsloth/Kimi-K3-GGUF/tree/a0836360ce58dfec088d966a97f2ddc8a606279b) | 通过 | 通过 | 通过 | 通过 |
-| DeepSeek V4 Pro | [official-fp4-fp8](https://huggingface.co/deepseek-ai/DeepSeek-V4-Pro/tree/b5968e9190ef611bbf34a7229255be88a0e937c1) | 准备拒绝 | 通过 | 准备拒绝 | 准备拒绝 |
-| DeepSeek V4 Flash | [official-fp4-fp8](https://huggingface.co/deepseek-ai/DeepSeek-V4-Flash/tree/60d8d70770c6776ff598c94bb586a859a38244f1) | 准备拒绝 | 通过 | 准备拒绝 | 准备拒绝 |
+| DeepSeek V4 Pro | [official-fp4-fp8](https://huggingface.co/deepseek-ai/DeepSeek-V4-Pro/tree/b5968e9190ef611bbf34a7229255be88a0e937c1) | 通过¹ | 通过 | 准备拒绝 | 准备拒绝 |
+| DeepSeek V4 Flash | [official-fp4-fp8](https://huggingface.co/deepseek-ai/DeepSeek-V4-Flash/tree/60d8d70770c6776ff598c94bb586a859a38244f1) | 通过¹ | 通过 | 准备拒绝 | 准备拒绝 |
 | DeepSeek V4 Flash | [UD-Q4_K_XL](https://huggingface.co/unsloth/DeepSeek-V4-Flash-GGUF/tree/e3aa0d6a5fa4f820d9e132ac1fd1d01e1b2b49e0) | 通过 | 通过 | 通过 | 通过 |
 | DeepSeek V4 Flash | [UD-Q8_K_XL](https://huggingface.co/unsloth/DeepSeek-V4-Flash-GGUF/tree/e3aa0d6a5fa4f820d9e132ac1fd1d01e1b2b49e0) | 通过 | 通过 | 通过 | 数值失败 |
-| GLM-5.3 | [official-fp8](https://huggingface.co/zai-org/GLM-5.3/tree/aca966e4e02791568aa6a4ced368624b3d897f42) | 准备拒绝 | 通过 | 通过 | 准备拒绝 |
+| GLM-5.3 | [official-fp8](https://huggingface.co/zai-org/GLM-5.3/tree/aca966e4e02791568aa6a4ced368624b3d897f42) | 通过¹ | 通过 | 通过 | 准备拒绝 |
 | GLM-5.3 | [UD-Q4_K_XL](https://huggingface.co/unsloth/GLM-5.3-GGUF/tree/346b3591c7f28d1a23716f97a065ecf12ec14771) | 通过 | 通过 | 通过 | 通过 |
 | GLM-5.3 | [Q8_0](https://huggingface.co/unsloth/GLM-5.3-GGUF/tree/346b3591c7f28d1a23716f97a065ecf12ec14771) | 通过 | 通过 | 通过 | 通过 |
-| GLM-5.3-Flash | [official-fp8](https://huggingface.co/zai-org/GLM-5.3-Flash/tree/eb9eb208eb0d988989d07a6a12d0fdeb5f52574a) | 准备拒绝 | 通过 | 通过 | 准备拒绝 |
+| GLM-5.3-Flash | [official-fp8](https://huggingface.co/zai-org/GLM-5.3-Flash/tree/eb9eb208eb0d988989d07a6a12d0fdeb5f52574a) | 通过¹ | 通过 | 通过 | 准备拒绝 |
 | GLM-5.3-Flash | [UD-Q4_K_XL](https://huggingface.co/unsloth/GLM-5.3-Flash-GGUF/tree/621d456e93e926e4b52f85cff5f634358c1828f9) | 通过 | 通过 | 通过 | 通过 |
 | GLM-5.3-Flash | [Q8_0](https://huggingface.co/unsloth/GLM-5.3-Flash-GGUF/tree/621d456e93e926e4b52f85cff5f634358c1828f9) | 通过 | 通过 | 通过 | 通过 |
 
-合计176个入口格：**154运行通过、20准备拒绝、2数值失败**，没有尚未执行验收的画像格。
-CPU为36/44通过，CUDA为44/44，Apple为40/44，Vulkan为34/44。这个计数是片段正确性范围，
+¹ 这四个CPU官方画像要求Windows/Linux x86_64启用CPU-only LibTorch2.8.0+cpu，
+见[构建与资源档位](compute.md#可选-cpu-fp8fp4-成熟程序)；无该SDK的构建仍拒绝对应域。
+完整片段保留原A8、FP4/FP8、BF16/F32边界，不是硬件原生FP8 GEMM。
+
+合计176个入口格：**162运行通过、12准备拒绝、2数值失败**，没有尚未执行验收的画像格。
+CPU为44/44通过，CUDA为44/44，Apple为40/44，Vulkan为34/44。这个计数是片段正确性范围，
 不是整个Compute/Graph目标的完成百分比；CPU、Apple、CUDA的代表片段完整成本性能验收已通过，
 Vulkan仍因A/A资格失败而未完成。
 
@@ -45,8 +49,6 @@ Vulkan仍因A/A资格失败而未完成。
 
 | 路线与画像 | 必需边界与结果 | 证据 |
 |---|---|---|
-| CPU：GLM两个官方FP8画像 | 完整MoE在`GroupedFloat8Linear`准备失败 | [CPU边界](../../evidence/correctness/llm-moe-d5-real-fragments/cpu-official-boundary/README.md) |
-| CPU：DeepSeek两个官方FP4/FP8画像 | 完整MoE在`GroupedFloat4Linear`准备失败 | [CPU边界](../../evidence/correctness/llm-moe-d5-real-fragments/cpu-official-boundary/README.md) |
 | Apple：DeepSeek两个官方FP4/FP8画像 | grouped FP4权重在`input_spec`阶段拒绝；固定MLX/M4原调用还有scale floor及极小值差异 | [完整拒绝](../../evidence/correctness/llm-moe-d5-real-fragments/apple-delivery/README.md)、[原生反例](../../evidence/correctness/llm-moe-d5-real-fragments/apple-fp4-native-boundary/README.md) |
 | Vulkan：GLM两个官方FP8、DeepSeek两个官方FP4/FP8画像 | 完整MoE分别在grouped FP8/FP4冷准备或完整Graph编译拒绝 | [Vulkan边界](../../evidence/correctness/llm-moe-d5-real-fragments/vulkan-delivery/README.md) |
 | Vulkan：DeepSeek Flash `UD-Q8_K_XL` | 长位置attention/压缩片段未通过原数值门；同模型`UD-Q4_K_XL`逐画像通过 | [逐画像裁决](../../evidence/correctness/llm-moe-d5-real-fragments/vulkan-delivery/README.md) |
@@ -72,14 +74,15 @@ Vulkan仍因A/A资格失败而未完成。
 
 | 路线 | source / static / shared代表消费者 | 本轮两个完整片段P1 |
 |---|---|---|
-| CPU | [24/24通过](../../evidence/correctness/llm-moe-d5-real-fragments/cpu-delivery/README.md) | [已通过](../../evidence/performance/graph-cpu-d5-fragments-p1/README.md) |
+| CPU | [原24/24](../../evidence/correctness/llm-moe-d5-real-fragments/cpu-delivery/README.md)及[官方低精度每种28项通过](../../evidence/correctness/llm-moe-d5-real-fragments/cpu-official-torch-binding/README.md) | [原批次](../../evidence/performance/graph-cpu-d5-fragments-p1/README.md)及[官方FP8/FP4完整MoE通过](../../evidence/performance/cpu-official-fragments-p1/README.md) |
 | CUDA | [24/24通过](../../evidence/correctness/llm-moe-d5-real-fragments/cuda-delivery/README.md) | [已通过，原失败保留](../../evidence/performance/graph-cuda-d5-fragments-p1/README.md) |
 | Apple | [36项通过，含预期拒绝](../../evidence/correctness/llm-moe-d5-real-fragments/apple-delivery/README.md) | [已通过](../../evidence/performance/graph-apple-d5-fragments-p1/README.md) |
 | Vulkan | [36项通过，含预期拒绝](../../evidence/correctness/llm-moe-d5-real-fragments/vulkan-delivery/README.md) | [恢复A/A未合格，正式采样被阻止；P1未完成](../../evidence/performance/graph-vulkan-d5-fragments-recovery-preflight/README.md) |
 
 P1比较普通Graph与同完成/资源合同的Direct完整片段，计入必要转换、同步与释放。
 CPU/Apple/CUDA通过5%工程非劣门仅覆盖各自受测片段：共同BF16 FFN，CPU/Apple混合GGUF MoE、
-CUDA官方FP4/FP8 MoE；不表示每个算子都更快或整模型SOTA。
+CUDA官方FP4/FP8 MoE，以及本次CPU官方GLM FP8/DeepSeek FP4/FP8 MoE；
+不表示每个算子都更快或整模型SOTA。
 三交付验证也不为上表拒绝/失败的画像提供运行支持。
 
 ## 普通使用与证据
@@ -96,5 +99,6 @@ CUDA官方FP4/FP8 MoE；不表示每个算子都更快或整模型SOTA。
 [Flash](../../evidence/correctness/llm-moe-d5-real-fragments/glm-official-flash-cuda/README.md)/
 [Apple](../../evidence/correctness/llm-moe-d5-real-fragments/apple-fp8-glm-complete/README.md)、
 [DeepSeek官方CUDA](../../evidence/correctness/llm-moe-d5-real-fragments/deepseek-official-cuda-complete/README.md)、
+[CPU官方四画像](../../evidence/correctness/llm-moe-d5-real-fragments/cpu-official-torch-binding/receipt.json)、
 [DeepSeek GGUF](../../evidence/correctness/llm-moe-d5-real-fragments/deepseek-gguf-three-route/README.md)。
 Vulkan GGUF的后续逐画像裁决以上方当前收据为准。历史失败和撤回资格仍保留，不能覆盖当前ledger。

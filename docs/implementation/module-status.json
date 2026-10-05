@@ -284,7 +284,7 @@
       "module": "graph",
       "state": "BLOCKED",
       "record": "docs/implementation/tasks/compute/llm-moe-d5-vulkan-performance-blocker.md",
-      "summary": "D5 BLOCKED：总ledger154通过/20拒绝/2数值失败，四路线A5完成，CPU/Apple/CUDA代表片段P1通过。Vulkan恢复A/A失败、正式样本0，保留原中断数据；A6与D6未关闭，产品FIX零。",
+      "summary": "D5 BLOCKED：总ledger162通过/12拒绝/2数值失败，四路线A5完成，CPU/Apple/CUDA代表片段P1通过。Vulkan恢复A/A失败、正式样本0，保留原中断数据；A6与D6未关闭，产品FIX零。",
       "blocked_from": "AUDITED",
       "blocker": "Vulkan D5 A6唯一中断恢复的同实现A/A超过5%因素门/10%粗不稳定门；guard阻止正式样本，P1 INCONCLUSIVE，非产品性能FAIL。",
       "blocker_owner": "D5性能验证维护者（Windows canonical）",
@@ -392,7 +392,7 @@
       "module": "compute_ops",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-d5-original-fp4-expert-binding.md",
-      "summary": "D5 AUDITED：F44原版专家与资源、F43官方完整消费已验，CUDA正确性44/44；总ledger154通过/20拒绝/2数值失败。四路线A5和CPU/Apple/CUDA代表片段P1完成；Vulkan A6资格阻塞，残余覆盖与D6未关闭。"
+      "summary": "D5 AUDITED：F44原版专家与资源、F43官方完整消费已验，CUDA正确性44/44；总ledger162通过/12拒绝/2数值失败。四路线A5和CPU/Apple/CUDA代表片段P1完成；Vulkan A6资格阻塞，残余覆盖与D6未关闭。"
     },
     {
       "module": "compute_backend_cpu",
@@ -418,10 +418,15 @@
     },
     {
       "module": "compute_provider_native",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/compute/llm-moe-d5-cpu-apple-official-completion.md",
-      "summary": "D5 CPU官方低精度CANDIDATE：TorchAO/ATen成熟组合的正确性、Windows三交付、WSL及新完整MoE P1均通过；固定产品3c22b7b9，待用户覆盖文档/账本终审登记。Apple产品FIX为零，数值边界保持。",
-      "candidate": "3c22b7b9f230abc86e749225174d86b59c79881e"
+      "summary": "D5 CPU官方低精度CLOSED：固定3c22b7b9 TorchAO/ATen成熟组合，四官方画像两入口、资源/失败、Windows三交付、WSL source和新增完整MoE P1均通过，CPU44/44。Apple产品FIX零，官方FP4边界及D6仍未完成。",
+      "candidate": "3c22b7b9f230abc86e749225174d86b59c79881e",
+      "performance": {
+        "tier": "P1",
+        "evidence": "evidence/performance/cpu-official-fragments-p1/README.md",
+        "material_margin_pct": 5
+      }
     },
     {
       "module": "compute_sched",

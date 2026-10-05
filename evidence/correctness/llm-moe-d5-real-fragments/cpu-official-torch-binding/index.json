@@ -94,5 +94,7 @@
   "wsl-official-consumers\\receipt.json": "04b98aa9d18e33e925490928802f7ebb71de45af48d24c149b9ce1eba5af36d1",
   "wsl-official-consumers\\run.py": "2c8d447d344f521c8c6371c4882f43b750cec4511888b0d319093f191879be33",
   "wsl-official-consumers\\tests.log": "dfe4110dd2f62e650b43449ec57d03a6b0ad93b1d788a8d197c8a76e6937b996",
-  "wsl-official-consumers\\tests.xml": "ec413eb7c1490c78961c557a0c71540251a32d0f2d6709b1ccbd5498954f8e5e"
+  "wsl-official-consumers\\tests.xml": "ec413eb7c1490c78961c557a0c71540251a32d0f2d6709b1ccbd5498954f8e5e",
+  "receipt.json": "bd9121411d877439a5f94f22ba491795429dbe51024d4d0c0f60043b31e2c0c9",
+  "loc.json": "f0a8652f8248591fbd2e0d84a1e833dae4f3255c8be1142343d0aeb33ceadf87"
 }
