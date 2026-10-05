@@ -373,6 +373,20 @@ ggml_tensor *restore_indexed_rows(ggml_context *context, ggml_tensor *value,
   return value;
 }
 
+// ggml ReLU maps NaN to zero. Keep the public propagation contract before
+// downstream region consumers; all non-NaN arithmetic stays in the original.
+void relu_nan(ggml_tensor *output, const ggml_tensor *,
+              const ggml_tensor *input, int ith, int nth, void *) noexcept {
+  const auto count = ggml_nelements(output);
+  const auto chunk = (count + nth - 1) / nth;
+  const auto end = std::min(count, chunk * (ith + 1));
+  const auto *source = static_cast<const float *>(input->data);
+  auto *destination = static_cast<float *>(output->data);
+  for (auto i = chunk * ith; i < end; ++i)
+    if (std::isnan(source[i]))
+      destination[i] = source[i];
+}
+
 // Preserve the stable -Inf activation limit inside the ggml region, before
 // its downstream consumers. The original SwiGLU owns all finite arithmetic;
 // this in-place boundary only repairs zero * finite-value storage bits.
@@ -460,6 +474,10 @@ std::vector<ggml_tensor *> lower(Program &program, Invocation &invocation,
       break;
     case UnaryKind::kSigmoid:
       result = ggml_sigmoid(context, a);
+      break;
+    case UnaryKind::kRelu:
+      result = ggml_map_custom2_inplace(context, ggml_relu(context, a), a,
+                                        &relu_nan, GGML_N_TASKS_MAX, nullptr);
       break;
     default:
       break; // Stable tails and non-finite domains need another mature carrier.
@@ -1213,6 +1231,7 @@ bool supports(void *context, Operation operation,
     case UnaryKind::kRsqrt:
     case UnaryKind::kTanh:
     case UnaryKind::kSigmoid:
+    case UnaryKind::kRelu:
       return true;
     default:
       return false;
@@ -1260,7 +1279,6 @@ bool supports(void *context, Operation operation,
   if (const auto *matmul = operation.get_if<MatMul>()) {
     const bool quantized_rhs = native_quantized(inputs[1]);
     const bool native_f32 = inputs[0].data_type() == DataType::kFloat32 &&
-                            inputs[0].rank() == 2 && inputs[1].rank() == 2 &&
                             inputs[0].is_dense() && inputs[0].is_plain() &&
                             inputs[1].is_plain() && native_matmul_rhs(inputs[1]);
     if (!nonempty || elements(output) == 0 || inputs.size() != 2 ||

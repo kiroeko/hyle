@@ -1120,7 +1120,7 @@ TEST(GgmlCpuProvider, DeclinesUnqualifiedDomainsAndInvalidThreadBudget) {
   auto context = Context::create(cpu::device(), ggml_cpu::provider()).value();
   const auto description = dense(DataType::kFloat32, {2, 7});
   for (auto kind :
-       {UnaryKind::kRelu, UnaryKind::kSilu, UnaryKind::kGelu,
+       {UnaryKind::kSilu, UnaryKind::kGelu,
         UnaryKind::kGeluTanh, UnaryKind::kSoftplus}) {
     auto result = prepare(context, Unary{kind}, description);
     ASSERT_FALSE(result);
