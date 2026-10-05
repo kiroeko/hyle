@@ -1075,9 +1075,10 @@ TEST(GgmlCpuProvider, PersistentIndependentSlotsHonorExecutorAndClose) {
       ASSERT_TRUE(completion->wait().ok());
       for (float value : half_test::read<float>(outputs[run % 2]))
         EXPECT_FLOAT_EQ(value, -static_cast<float>(run + 1));
-      if (run != 0)
+      if (run != 0) {
         for (float value : half_test::read<float>(outputs[(run + 1) % 2]))
           EXPECT_FLOAT_EQ(value, -static_cast<float>(run));
+      }
     }
     EXPECT_EQ(stats.snapshot().total_allocs, allocation_count);
     EXPECT_EQ(executor.calls, 4U);
@@ -1232,11 +1233,13 @@ TEST(GgmlCpuProvider, StandardScanHandlesAxisStridesAndCheckedOverflow) {
         std::int64_t sum = 0;
         for (std::size_t b = 0; b < 7; ++b) {
           const auto index = (a * 7 + b) * 3 + c;
-          if (exclusive)
+          if (exclusive) {
             EXPECT_EQ(actual[index], sum);
+          }
           sum += logical[index];
-          if (!exclusive)
+          if (!exclusive) {
             EXPECT_EQ(actual[index], sum);
+          }
         }
       }
   }
