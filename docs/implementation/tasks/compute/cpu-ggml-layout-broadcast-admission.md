@@ -2,7 +2,7 @@
 
 <!-- MODULE REVIEW: AUDITED -->
 
-- owner `compute_provider_ggml`，baseline `786a3ec36e4a9b19b6eed572f1e9c96dc93396f5`，Windows canonical。
+- owner `compute_provider_ggml`、`graph_route_cpu`，baseline `786a3ec36e4a9b19b6eed572f1e9c96dc93396f5`，Windows canonical。
 - trigger：全族审计的 MatMul row-major batch/左小右大、Softmax 非末轴、SDPA BHSD/value depth、
   Concat 宽 scalar 是现存公开 CPU 旅程；当前 adapter 拒绝，原 API/源码已提供相应布局与 byte-copy。
 - 主纵切：多 batch/head 广播线性层、两种 attention layout、不同 K/V depth；正交纵切：普通 tensor
@@ -31,7 +31,7 @@
 | LB2 | Softmax任意axis用原reshape/permute/cont移动到row轴、复用安全Softmax后逆变换 | 三dtype、mask/特殊行传播、下游/重放、原末轴回归 |
 | LB3 | SDPA BSHD/BHSD布局转换与Dk/Dv独立；仅按因果建mask | 三dtype/因果/GQA/独立oracle/两种布局 |
 | LB4 | plain scalar native representation供原Copy/Concat使用；同时收紧未提供宽Gather/Cast数学谓词 | 全storage bits、strides、原被接受域不回归、未接算术明确拒绝 |
-| LB5 | 一批普通Direct/Graph、三交付、文档/实际成本与剩余ledger | 普通入口自动固定成熟程序；未运行不PASS |
+| LB5 | 一批普通Direct/Graph、三交付、文档/实际成本与剩余ledger；Graph拒绝空输出而非一切空输入，计入LHS原repeat展开 | K0非空输出和空Concat部件保留整region；普通入口自动固定成熟程序；未运行不PASS |
 
 ## 审计与边界
 
@@ -53,3 +53,12 @@ Gather 继续仅原 F32/F16/BF16/I32 table、I32 index；不同 public dtype 的
 普通 typed Direct/Graph、原 metadata/payload/worker/完成 owner 不变；原 pin、许可证、交付组件和
 依赖方向复用。主模型与非模型纵切、资源/数值/成本/错误/构建/升级七问已有限定界；LB1–5
 BORROW/FIX 固定，其余 DEFER。owner AUDITED，适用门尚未运行，均 UNPROVEN。
+
+## 普通 Graph 反例与有限纠正
+
+候选 `7a5dfe49865c5e7f98ac58ef557303c839a8a32d` Windows Provider58/58已通过；普通 consumer 的
+K0 MatMul→Copy 得到两个 leaf、零region。源码 `graph_route_cpu/ggml_region.cc::supported_node`
+不问输出或原supports就拒绝所有空输入，且region repack仅计算RHS，遗漏本轮LHS广播展开。
+据此把当前SCOPED的 `graph_route_cpu` 绑定本卡并AUDITED；LB5仅去除该空输入总拒绝、保留空输出
+区域拒绝，把原supports作为语义准入，补LHS展开字节并检查加法溢出。无Graph公共规划/API重写。
+这是本批一次产品纠正，测试语法/旧冷拒绝断言迁移另保留原失败收据，不放宽数值门。

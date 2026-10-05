@@ -435,9 +435,9 @@
     },
     {
       "module": "graph_route_cpu",
-      "state": "SCOPED",
-      "record": "docs/implementation/tasks/compute/cpu-native-provider-domain-decision.md",
-      "summary": "CPU逐域SCOPED：用户要求裁决全部自研重叠域；标准构建/原版优化程序已独立关闭。先批量核对成熟准入/语义、固定有限FIX再修改产品；不签WIN、不扩写数学，SIMD基础保留，其它路线暂停。"
+      "state": "AUDITED",
+      "record": "docs/implementation/tasks/compute/cpu-ggml-layout-broadcast-admission.md",
+      "summary": "LB5 AUDITED：普通K0 MatMul被空输入总拒绝打断region；有限修复合法空输入准入和LHS广播展开成本，空输出保留拒绝。Native裁决冻结。"
     },
     {
       "module": "compute_provider_cublas",
