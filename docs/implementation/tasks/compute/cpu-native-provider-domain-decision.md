@@ -4,8 +4,9 @@
 
 - baseline：`155d1385c2b9a50eaa66a6c069b569f11daf4b03`，Windows canonical。用户要求：有成熟替代的所有自研算子都要裁决，
   不能因为低优先级后备就永久保留；只有唯一实现的精确域才直接保留。SIMD基础不删除。
-- owner：本卡保留SCOPED的冻结自研裁决ledger，不是当前产品owner授权。`compute_provider_native`、
-  `compute_route_cpu`、`graph_route_cpu`当前绑定[SI卡](cpu-aten-storage-index-admission.md)并独立CLOSED；
+- owner：本卡保留SCOPED的冻结自研裁决ledger，不是当前产品owner授权。`compute_provider_native`
+  当前绑定[MN卡](cpu-aten-numeric-admission.md) CANDIDATE；`compute_route_cpu`、`graph_route_cpu`
+  当前绑定[SI卡](cpu-aten-storage-index-admission.md)并独立CLOSED；
   后续自研逐域裁决或新成熟接线需按新事实重新绑定owner并固定有限FIX。
   [标准CPU构建](../build/cpu-standard-provider-build-v1.md)与ggml优化程序接入已独立关闭，不能代替本卡。涉及oneDNN/ggml的具体接入修复，
   先据反例重新绑定相应owner并固定有限FIX，不借旧CLOSED/AUDITED记录授权。
@@ -122,3 +123,9 @@ MatMul 的 Native 比较应保持调用方真实 RHS 物理布局：row-major �
 ### 成熟接线的当前资格增量
 
 [GB批](cpu-ggml-mature-admission-batch.md)、[TF批](cpu-ggml-transformer-fill-admission.md)、[LB批](cpu-ggml-layout-broadcast-admission.md)与[SI批](cpu-aten-storage-index-admission.md)已分别真实关闭；上表更新为当前已接域。原188/564冷审计是不可变历史，不重写为新执行证据。activation/gate、Min/Max/reduce、RoPE/I64 positions、Bool/log-softmax、FP8 numeric Cast与其它具名shape/资源域候选仍需批量资格；I64 Gather/Assign已由SI接入，不再混列未接。oneDNN原REDUCTION API不等于当前primitive whitelist已启用。Native/SIMD算子优化、比较和清退继续冻结，拒绝不签UNIQUE，优先级不签WIN。
+
+
+MN数值批候选已完成Windows120/120与三dtype普通Direct/Graph首批验证，Linux/三交付尚未完整
+资格，不提前更新上表为全验收。已锁ggml的Sigmoid与SiLU scalar尾部仍用exp(−x)，可能在有限
+负尾部溢出归零，特别是大value的gate；此具体源码疑点在CPU最终收口前必须做一次完整消费反例
+核对，不由当前ATen后备或旧−Inf边界通过掩盖，也不借Native owner权限修改ggml。

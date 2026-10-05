@@ -423,9 +423,10 @@
     },
     {
       "module": "compute_provider_native",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/cpu-aten-numeric-admission.md",
-      "summary": "MN1–4 AUDITED：原ATen数值程序48,780具名断言，稳定activation/gate/number minmax/reduce零号与对齐byte packing固定BORROW/FIX；产品尚未资格，Native自研冻结。"
+      "summary": "MN1–4 CANDIDATE：原ATen稳定activation/gate、number MinMax/reduce接入；Win120/120、CPU12通过/1旧fixture跳过、Graph15/15，三dtype普通Direct/Graph通过。Linux/三交付待验；Native自研冻结。",
+      "candidate": "0763fd3e3163d16eb0b43e684f5881f8314bc1e9"
     },
     {
       "module": "compute_sched",

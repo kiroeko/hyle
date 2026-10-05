@@ -1,6 +1,6 @@
 # CPU ATen：数值成熟程序批量接线
 
-<!-- MODULE REVIEW: AUDITED -->
+<!-- MODULE REVIEW: CANDIDATE -->
 
 - owner：`compute_provider_native`，baseline `7c263f8631902b01b20b06007fc59db4fd6a2506`，Windows canonical。
   现有普通CPU/Graph已经组装独立ATen factory；本批不新增优先级或改公共规划器。若新的具名原库
@@ -60,3 +60,13 @@ P0为O(input+output)原Tensor程序，Double cast/原library多节点temporary/�
 不承诺热零分配/完整内部内存上界，不制造prepared-only资格。软件/资源合同不变，无SDK或架构重写。
 owner AUDITED，产品gate尚未运行；原program witness不代签产品成功。已经存在的GGML有限尾部
 源码疑点在remaining ledger记录，不能据本批新ATen后备宣称所有现有默认数学已合格。
+
+
+## 不可变候选与首批产品资格
+
+`0763fd3e3163d16eb0b43e684f5881f8314bc1e9`：原Tensor程序与cold对齐packing槽、允许Unary/Binary
+exact alias、实际两lane并发/冷OOM/资源平衡与managed成本已固定。Windows Provider120/120、
+普通CPU12通过/1旧fixture跳过、Graph15/15，三dtype普通Direct和op→Copy Graph变化输入通过。
+先行Provider119/120因qualification调用Axes::from(empty).value()；公共schema明确拒绝该列表。
+仅修正测试用合法Axes::all/单轴/多轴，保留初始XML与命令，产品未变、不放宽数值门。
+源码/installed static/shared、Linux与剩余工程门尚未全部运行，本卡保持CANDIDATE，不签CLOSED。
