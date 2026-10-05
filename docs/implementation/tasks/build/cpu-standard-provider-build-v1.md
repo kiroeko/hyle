@@ -1,0 +1,28 @@
+# CPU标准构建：默认取得已验收Provider
+
+<!-- MODULE REVIEW: SCOPED -->
+
+- baseline：`59f68e326`，Windows canonical；CPU官方四画像新能力已独立CLOSED，工作树干净。
+- owner：`compute_provider_native`。用户要求普通用户只选CPU模式，HYLE处理成熟库依赖；
+  真实新事实是当前Torch AUTO只发现本地SDK，未安装时静默缺失已验收的官方FP8/FP4域。
+- scope：CPU-only LibTorch的取得、锁/缓存/离线与默认CPU入口说明；不改变库版本、数学、API、
+  Provider顺序或执行/线程合同，不修改公共source-cache/性能统计核心。
+- 普通消费：`HYLE_COMPONENTS=compute;graph`默认CPU ON、其它路线OFF；同一默认闭包接好
+  oneDNN、ggml及本轮已验收TorchAO/ATen，用户不枚举Provider。
+- 高级控制：既有route/Provider ON/AUTO/OFF、显式SDK root、统一cache和disconnected；
+  增加可选本地锁定SDK archive输入，适用于代理不稳/离线/复用既有下载，不增加路线枚举。
+
+## 有限审计与FIX
+
+| ID | 允许改动 | 验收 |
+|---|---|---|
+| CB1 | 在中央dependency lock登记CPU SDK Windows/Linux x86_64原版archive/hash；Native私有CMake取得器读取，默认缺本地SDK时取得已验收版本 | 锁与原来源一致；CPU OFF/不支持目标不探测或下载；显式错误root拒绝 |
+| CB2 | 复用统一source-cache根中的独立SDK子区，按平台/hash唯一身份，锁住单写入、原archive SHA校验、完整原SDK发布；离线命中复用、离线miss具名失败 | 本地锁定原archive一次解包，两fresh配置复用；坏archive/不完整SDK不启用；不每build复制SDK |
+| CB3 | 普通CPU preset/指南及高级参数、SDK三交付定位与DLL staging；标准模式不静默降级 | 普通CPU配置实际启用全部Provider且无GPU探测；source/安装消费者复用已验SDK，不要求逐库flag |
+
+验证预算：一批CMake取得/隔离/离线/缓存与错误注入；复用现有原SDK及构建，不下载另一份相同SDK；
+按selector运行适用构建/交付合同和普通C++消费者。重型j2串行，DLL邻置/隐藏子进程。
+P0为configure/缓存与target闭包成本；产品C++、SDK内容、执行路径不变，不重跑官方完整P1。
+公共锁加入SDK元数据不改变旧source记录与读取/验证核心；若发现需要改公共治理，另记具体问题。
+
+CPU自研算子逐域裁决由另一个有限卡承接用户最新要求，不以本构建任务宣布旧自研域获胜或全部清退。

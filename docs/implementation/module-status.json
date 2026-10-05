@@ -418,15 +418,9 @@
     },
     {
       "module": "compute_provider_native",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/compute/llm-moe-d5-cpu-apple-official-completion.md",
-      "summary": "D5 CPU官方低精度CLOSED：固定3c22b7b9 TorchAO/ATen成熟组合，四官方画像两入口、资源/失败、Windows三交付、WSL source和新增完整MoE P1均通过，CPU44/44。Apple产品FIX零，官方FP4边界及D6仍未完成。",
-      "candidate": "3c22b7b9f230abc86e749225174d86b59c79881e",
-      "performance": {
-        "tier": "P1",
-        "evidence": "evidence/performance/cpu-official-fragments-p1/README.md",
-        "material_margin_pct": 5
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/build/cpu-standard-provider-build-v1.md",
+      "summary": "CPU标准构建SCOPED：默认CPU闭包应自动取得已验LibTorch CPU SDK，复用锁定archive与统一缓存，离线/裁剪显式；CPU原数学/44格及P1不变。自研逐域裁决另卡，尚未获胜/清退。"
     },
     {
       "module": "compute_sched",
