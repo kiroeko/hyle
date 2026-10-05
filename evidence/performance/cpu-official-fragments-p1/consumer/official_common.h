@@ -34,6 +34,50 @@ inline sem::Fragment deepseek_official() {
   return publish_result(d5_deepseek_official_fragments::moe_chain(
       d5_moe_execution_cases::kCases[4], false, nullptr, false), 5);
 }
+
+// Seconds-long native work needs one exact cycle per arm, not a microbenchmark's
+// additional in-process confidence interval. The common instrument supplies
+// fifteen independent process pairs in each predeclared order stratum.
+template <class Route>
+void measure_official(sem::Fragment fixture, const char *name, bool verify_only) {
+  const auto aa = environment("HYLE_BENCH_AA_ROUTE");
+  if (!aa.empty() && aa != "selected" && aa != "peer")
+    throw std::runtime_error("invalid A/A route");
+  const bool allocation_first = !environment("HYLE_BENCH_PEER_ALLOCATION_FIRST").empty();
+  std::unique_ptr<Route> candidate, peer;
+  if (allocation_first) peer = std::make_unique<Route>(fixture, aa == "selected");
+  candidate = std::make_unique<Route>(fixture, aa != "peer");
+  if (!allocation_first) peer = std::make_unique<Route>(fixture, aa == "selected");
+  candidate->verify();
+  peer->verify();
+  std::fprintf(stderr, "# verify PASS profile=%s replays=%zu aa=%s\n", name,
+               fixture.replays.size(), aa.empty() ? "off" : aa.c_str());
+  if (verify_only) return;
+  nb::Bench bench;
+  bench.title(name).epochIterations(1).epochs(1).output(nullptr);
+  std::printf("\n| ns/op | op/s | err%% | total | %s\n", name);
+  const auto run = [&](const char *label, Route &route) {
+    bench.run(label, [&] { require(route.run()); });
+    const auto &result = bench.results().back();
+    const auto seconds = result.median(nb::Result::Measure::elapsed);
+    if (!(seconds > 0) || !std::isfinite(seconds))
+      throw std::runtime_error("invalid native cycle duration");
+    // The usual table's two decimal op/s rounds seconds-long cycles by ~3%.
+    // Retain native nanobench elapsed at full precision, with its same row parser.
+    std::printf("| %.17g | %.17g | 0 | %.17g | `%s`\n",
+                seconds * 1e9, 1.0 / seconds, seconds, label);
+  };
+  if (!environment("HYLE_BENCH_RIVAL_FIRST").empty()) {
+    run("Direct complete fragment", *peer);
+    run("Graph complete fragment", *candidate);
+  } else {
+    run("Graph complete fragment", *candidate);
+    run("Direct complete fragment", *peer);
+  }
+  candidate->verify();
+  peer->verify();
+}
+
 template <class Route> int run_official_main(int argc, char **argv) {
   try {
     ::testing::InitGoogleTest(&argc, argv);
@@ -59,7 +103,7 @@ template <class Route> int run_official_main(int argc, char **argv) {
       throw std::runtime_error("caller did not land on the declared CPU");
     std::fprintf(stderr,
         "# HYLE_D5_FRAGMENT_RUN execution_order=%s allocation_order=%s aa_route=%s "
-        "paired_mode=nanobench-compare affinity_topology=%s caller_cpu=%s affinity_ok=%s "
+        "paired_mode=native-fixed-cycle affinity_topology=%s caller_cpu=%s affinity_ok=%s "
         "parent_mask=0x%llx priority=%s run_nonce=%s verify_only=%d\n",
         environment("HYLE_BENCH_RIVAL_FIRST").empty() ? "candidate-first" : "peer-first",
         environment("HYLE_BENCH_PEER_ALLOCATION_FIRST").empty() ? "candidate-first" : "peer-first",
@@ -71,7 +115,7 @@ template <class Route> int run_official_main(int argc, char **argv) {
     const auto qos = hyle::bench::perf::configure_thread_qos();
     std::fprintf(stderr,
         "# HYLE_D5_FRAGMENT_RUN execution_order=%s allocation_order=%s aa_route=%s "
-        "paired_mode=nanobench-compare apple_qos=%s qos_ok=%s run_nonce=%s verify_only=%d\n",
+        "paired_mode=native-fixed-cycle apple_qos=%s qos_ok=%s run_nonce=%s verify_only=%d\n",
         environment("HYLE_BENCH_RIVAL_FIRST").empty() ? "candidate-first" : "peer-first",
         environment("HYLE_BENCH_PEER_ALLOCATION_FIRST").empty() ? "candidate-first" : "peer-first",
         aa.empty() ? "off" : aa.c_str(), qos.name, qos.ok,
@@ -80,8 +124,8 @@ template <class Route> int run_official_main(int argc, char **argv) {
 #else
     nb::doNotOptimizeAway(affinity);
 #endif
-    measure<Route>(glm_official(), "GLM 5.3 Flash official FP8 MoE H4096 N2048 top8 cycle2", verify);
-    measure<Route>(deepseek_official(), "DeepSeek V4 Flash official FP4 FP8 MoE H4096 N2048 top6 cycle3", verify);
+    measure_official<Route>(glm_official(), "GLM 5.3 Flash official FP8 MoE H4096 N2048 top8 cycle2", verify);
+    measure_official<Route>(deepseek_official(), "DeepSeek V4 Flash official FP4 FP8 MoE H4096 N2048 top6 cycle3", verify);
     return ::testing::Test::HasFailure() ? 1 : 0;
   } catch (const std::exception &error) {
     std::fprintf(stderr, "D5 fragment benchmark failed: %s\n", error.what());

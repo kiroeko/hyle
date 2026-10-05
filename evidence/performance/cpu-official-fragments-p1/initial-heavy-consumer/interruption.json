@@ -1,0 +1,27 @@
+{
+  "reason": "Bounded consumer correction: default nanobench compare produces 12 paired rounds for whole cycles of 0.78s/3.4s; avoid ~2.5h aggregate redundant execution",
+  "candidate": "b8310dfe",
+  "product_candidate": "3c22b7b9",
+  "terminated_owned_children": [
+    {
+      "pid": 52124,
+      "name": "python.exe"
+    },
+    {
+      "pid": 58912,
+      "name": "conhost.exe"
+    },
+    {
+      "pid": 60764,
+      "name": "hyle_graph_route_cpu_d5_bench.exe"
+    },
+    {
+      "pid": 57856,
+      "name": "conhost.exe"
+    }
+  ],
+  "formal_product_samples": 0,
+  "workload_aa_gate": "INCONCLUSIVE",
+  "completed_aa_logs": 1,
+  "next": "fixed one whole cycle per arm per independent process; unchanged four strata/n15/oracle; one consumer sampling correction only"
+}

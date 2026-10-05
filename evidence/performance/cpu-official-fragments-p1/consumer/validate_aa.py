@@ -108,7 +108,7 @@ def main():
                         env.update(HYLE_BENCH_AA_ROUTE=arm, HYLE_PERF_RUN_NONCE=uuid.uuid4().hex)
                         expected = {'execution_order': 'peer-first' if peer_first else 'candidate-first',
                                     'allocation_order': 'peer-first' if allocation_first else 'candidate-first',
-                                    'aa_route': arm, 'paired_mode': 'nanobench-compare',
+                                    'aa_route': arm, 'paired_mode': 'native-fixed-cycle',
                                     'run_nonce': env['HYLE_PERF_RUN_NONCE'], 'verify_only': '0'}
                         if windows:
                             env.update(HYLE_PERF_CALLER_CPU=str(policy['caller_logical_cpu']),

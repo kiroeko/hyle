@@ -1,0 +1,223 @@
+
+| relative |              95% CI |               ns/op |                op/s |    err% |     total | GLM 5.3 Flash official FP8 MoE H4096 N2048 top8 cycle2
+|---------:|--------------------:|--------------------:|--------------------:|--------:|----------:|:-------------------------------------------------------
+|   100.0% |                     |      780,373,200.00 |                1.28 |    0.8% |      9.27 | `Graph complete fragment`
+|   100.0% |     98.4% .. 100.6% |      781,951,300.00 |                1.28 |    0.6% |      9.34 | `Direct complete fragment`
+
+  Summary
+    no difference resolved between `Graph complete fragment` and `Direct complete fragment`
+    ratio 1.00x, 95% CI [0.98 .. 1.01], 12 paired rounds, interleaved
+
+| relative |              95% CI |               ns/op |                op/s |    err% |     total | DeepSeek V4 Flash official FP4 FP8 MoE H4096 N2048 top6 cycle3
+|---------:|--------------------:|--------------------:|--------------------:|--------:|----------:|:---------------------------------------------------------------
+|   100.0% |                     |    3,378,867,950.00 |                0.30 |    2.1% |     40.53 | `Graph complete fragment`
+|    98.5% |      95.3% .. 99.5% |    3,445,718,750.00 |                0.29 |    1.2% |     41.58 | `Direct complete fragment`
+
+  Summary
+    `Direct complete fragment` ran 1.02x slower than `Graph complete fragment`
+    95% CI [1.01 .. 1.05], 12 paired rounds, interleaved
+# HYLE_D5_FRAGMENT_RUN execution_order=candidate-first allocation_order=candidate-first aa_route=selected paired_mode=nanobench-compare affinity_topology=native-runtime-pair caller_cpu=2 affinity_ok=1 parent_mask=0x14 priority=above-normal run_nonce=ab8e9caa8b774ec2a944e93006d51d41 verify_only=0
+# D5_CPU_ENV omp=1 mkl=1 libtorch=2.8.0-cpu replay=managed
+# graph steps=45 regions=0 workspace=566528
+# provider=ggml-cpu version=456172ec+hyle-resource-v1
+# provider=ggml-cpu version=456172ec+hyle-resource-v1
+# provider=ggml-cpu version=456172ec+hyle-resource-v1
+# provider=ggml-cpu version=456172ec+hyle-resource-v1
+# provider=ggml-cpu version=456172ec+hyle-resource-v1
+# provider= version=
+# provider=ggml-cpu version=456172ec+hyle-resource-v1
+# provider= version=
+# provider=ggml-cpu version=456172ec+hyle-resource-v1
+# provider=ggml-cpu version=456172ec+hyle-resource-v1
+# provider=ggml-cpu version=456172ec+hyle-resource-v1
+# provider=ggml-cpu version=456172ec+hyle-resource-v1
+# provider=ggml-cpu version=456172ec+hyle-resource-v1
+# provider= version=
+# provider=hyle-native version=2+torchao-a701b6a60587+libtorch-2.8.0-cpu
+# provider=ggml-cpu version=456172ec+hyle-resource-v1
+# provider= version=
+# provider=onednn version=3.13.2
+# provider=ggml-cpu version=456172ec+hyle-resource-v1
+# provider= version=
+# provider=onednn version=3.13.2
+# provider=ggml-cpu version=456172ec+hyle-resource-v1
+# provider=ggml-cpu version=456172ec+hyle-resource-v1
+# provider=ggml-cpu version=456172ec+hyle-resource-v1
+# provider=ggml-cpu version=456172ec+hyle-resource-v1
+# provider=hyle-native version=2+torchao-a701b6a60587+libtorch-2.8.0-cpu
+# provider=ggml-cpu version=456172ec+hyle-resource-v1
+# provider= version=
+# provider=ggml-cpu version=456172ec+hyle-resource-v1
+# provider=ggml-cpu version=456172ec+hyle-resource-v1
+# provider=hyle-native version=2+torchao-a701b6a60587+libtorch-2.8.0-cpu
+# provider=ggml-cpu version=456172ec+hyle-resource-v1
+# provider= version=
+# provider=onednn version=3.13.2
+# provider=ggml-cpu version=456172ec+hyle-resource-v1
+# provider= version=
+# provider=onednn version=3.13.2
+# provider=ggml-cpu version=456172ec+hyle-resource-v1
+# provider=ggml-cpu version=456172ec+hyle-resource-v1
+# provider=ggml-cpu version=456172ec+hyle-resource-v1
+# provider=ggml-cpu version=456172ec+hyle-resource-v1
+# provider=hyle-native version=2+torchao-a701b6a60587+libtorch-2.8.0-cpu
+# provider=ggml-cpu version=456172ec+hyle-resource-v1
+# provider= version=
+# provider=ggml-cpu version=456172ec+hyle-resource-v1
+# setup route=graph slots=2 external_host_bytes=254146848 milliseconds=41.446
+# D5_CPU_ENV omp=1 mkl=1 libtorch=2.8.0-cpu replay=managed
+# graph steps=45 regions=0 workspace=566528
+# provider=ggml-cpu version=456172ec+hyle-resource-v1
+# provider=ggml-cpu version=456172ec+hyle-resource-v1
+# provider=ggml-cpu version=456172ec+hyle-resource-v1
+# provider=ggml-cpu version=456172ec+hyle-resource-v1
+# provider=ggml-cpu version=456172ec+hyle-resource-v1
+# provider= version=
+# provider=ggml-cpu version=456172ec+hyle-resource-v1
+# provider= version=
+# provider=ggml-cpu version=456172ec+hyle-resource-v1
+# provider=ggml-cpu version=456172ec+hyle-resource-v1
+# provider=ggml-cpu version=456172ec+hyle-resource-v1
+# provider=ggml-cpu version=456172ec+hyle-resource-v1
+# provider=ggml-cpu version=456172ec+hyle-resource-v1
+# provider= version=
+# provider=hyle-native version=2+torchao-a701b6a60587+libtorch-2.8.0-cpu
+# provider=ggml-cpu version=456172ec+hyle-resource-v1
+# provider= version=
+# provider=onednn version=3.13.2
+# provider=ggml-cpu version=456172ec+hyle-resource-v1
+# provider= version=
+# provider=onednn version=3.13.2
+# provider=ggml-cpu version=456172ec+hyle-resource-v1
+# provider=ggml-cpu version=456172ec+hyle-resource-v1
+# provider=ggml-cpu version=456172ec+hyle-resource-v1
+# provider=ggml-cpu version=456172ec+hyle-resource-v1
+# provider=hyle-native version=2+torchao-a701b6a60587+libtorch-2.8.0-cpu
+# provider=ggml-cpu version=456172ec+hyle-resource-v1
+# provider= version=
+# provider=ggml-cpu version=456172ec+hyle-resource-v1
+# provider=ggml-cpu version=456172ec+hyle-resource-v1
+# provider=hyle-native version=2+torchao-a701b6a60587+libtorch-2.8.0-cpu
+# provider=ggml-cpu version=456172ec+hyle-resource-v1
+# provider= version=
+# provider=onednn version=3.13.2
+# provider=ggml-cpu version=456172ec+hyle-resource-v1
+# provider= version=
+# provider=onednn version=3.13.2
+# provider=ggml-cpu version=456172ec+hyle-resource-v1
+# provider=ggml-cpu version=456172ec+hyle-resource-v1
+# provider=ggml-cpu version=456172ec+hyle-resource-v1
+# provider=ggml-cpu version=456172ec+hyle-resource-v1
+# provider=hyle-native version=2+torchao-a701b6a60587+libtorch-2.8.0-cpu
+# provider=ggml-cpu version=456172ec+hyle-resource-v1
+# provider= version=
+# provider=ggml-cpu version=456172ec+hyle-resource-v1
+# setup route=graph slots=2 external_host_bytes=254146848 milliseconds=35.770
+# verify PASS profile=GLM 5.3 Flash official FP8 MoE H4096 N2048 top8 cycle2 replays=2 aa=selected
+# D5_CPU_ENV omp=1 mkl=1 libtorch=2.8.0-cpu replay=managed
+# graph steps=50 regions=0 workspace=353368
+# provider=ggml-cpu version=456172ec+hyle-resource-v1
+# provider=ggml-cpu version=456172ec+hyle-resource-v1
+# provider=ggml-cpu version=456172ec+hyle-resource-v1
+# provider=ggml-cpu version=456172ec+hyle-resource-v1
+# provider=onednn version=3.13.2
+# provider=ggml-cpu version=456172ec+hyle-resource-v1
+# provider=ggml-cpu version=456172ec+hyle-resource-v1
+# provider=ggml-cpu version=456172ec+hyle-resource-v1
+# provider= version=
+# provider=ggml-cpu version=456172ec+hyle-resource-v1
+# provider= version=
+# provider=ggml-cpu version=456172ec+hyle-resource-v1
+# provider=ggml-cpu version=456172ec+hyle-resource-v1
+# provider=ggml-cpu version=456172ec+hyle-resource-v1
+# provider=ggml-cpu version=456172ec+hyle-resource-v1
+# provider= version=
+# provider=ggml-cpu version=456172ec+hyle-resource-v1
+# provider=hyle-native version=2+torchao-a701b6a60587+libtorch-2.8.0-cpu
+# provider=ggml-cpu version=456172ec+hyle-resource-v1
+# provider=ggml-cpu version=456172ec+hyle-resource-v1
+# provider=hyle-native version=2+torchao-a701b6a60587+libtorch-2.8.0-cpu
+# provider=ggml-cpu version=456172ec+hyle-resource-v1
+# provider=ggml-cpu version=456172ec+hyle-resource-v1
+# provider=ggml-cpu version=456172ec+hyle-resource-v1
+# provider=ggml-cpu version=456172ec+hyle-resource-v1
+# provider=ggml-cpu version=456172ec+hyle-resource-v1
+# provider= version=
+# provider=ggml-cpu version=456172ec+hyle-resource-v1
+# provider=ggml-cpu version=456172ec+hyle-resource-v1
+# provider=hyle-native version=2+torchao-a701b6a60587+libtorch-2.8.0-cpu
+# provider=ggml-cpu version=456172ec+hyle-resource-v1
+# provider=ggml-cpu version=456172ec+hyle-resource-v1
+# provider= version=
+# provider=onednn version=3.13.2
+# provider=ggml-cpu version=456172ec+hyle-resource-v1
+# provider=hyle-native version=2+torchao-a701b6a60587+libtorch-2.8.0-cpu
+# provider=ggml-cpu version=456172ec+hyle-resource-v1
+# provider=ggml-cpu version=456172ec+hyle-resource-v1
+# provider=hyle-native version=2+torchao-a701b6a60587+libtorch-2.8.0-cpu
+# provider=ggml-cpu version=456172ec+hyle-resource-v1
+# provider=ggml-cpu version=456172ec+hyle-resource-v1
+# provider=ggml-cpu version=456172ec+hyle-resource-v1
+# provider=ggml-cpu version=456172ec+hyle-resource-v1
+# provider=ggml-cpu version=456172ec+hyle-resource-v1
+# provider=ggml-cpu version=456172ec+hyle-resource-v1
+# provider=hyle-native version=2+torchao-a701b6a60587+libtorch-2.8.0-cpu
+# provider=ggml-cpu version=456172ec+hyle-resource-v1
+# provider=ggml-cpu version=456172ec+hyle-resource-v1
+# provider=ggml-cpu version=456172ec+hyle-resource-v1
+# provider=ggml-cpu version=456172ec+hyle-resource-v1
+# setup route=graph slots=3 external_host_bytes=137469976 milliseconds=10.035
+# D5_CPU_ENV omp=1 mkl=1 libtorch=2.8.0-cpu replay=managed
+# graph steps=50 regions=0 workspace=353368
+# provider=ggml-cpu version=456172ec+hyle-resource-v1
+# provider=ggml-cpu version=456172ec+hyle-resource-v1
+# provider=ggml-cpu version=456172ec+hyle-resource-v1
+# provider=ggml-cpu version=456172ec+hyle-resource-v1
+# provider=onednn version=3.13.2
+# provider=ggml-cpu version=456172ec+hyle-resource-v1
+# provider=ggml-cpu version=456172ec+hyle-resource-v1
+# provider=ggml-cpu version=456172ec+hyle-resource-v1
+# provider= version=
+# provider=ggml-cpu version=456172ec+hyle-resource-v1
+# provider= version=
+# provider=ggml-cpu version=456172ec+hyle-resource-v1
+# provider=ggml-cpu version=456172ec+hyle-resource-v1
+# provider=ggml-cpu version=456172ec+hyle-resource-v1
+# provider=ggml-cpu version=456172ec+hyle-resource-v1
+# provider= version=
+# provider=ggml-cpu version=456172ec+hyle-resource-v1
+# provider=hyle-native version=2+torchao-a701b6a60587+libtorch-2.8.0-cpu
+# provider=ggml-cpu version=456172ec+hyle-resource-v1
+# provider=ggml-cpu version=456172ec+hyle-resource-v1
+# provider=hyle-native version=2+torchao-a701b6a60587+libtorch-2.8.0-cpu
+# provider=ggml-cpu version=456172ec+hyle-resource-v1
+# provider=ggml-cpu version=456172ec+hyle-resource-v1
+# provider=ggml-cpu version=456172ec+hyle-resource-v1
+# provider=ggml-cpu version=456172ec+hyle-resource-v1
+# provider=ggml-cpu version=456172ec+hyle-resource-v1
+# provider= version=
+# provider=ggml-cpu version=456172ec+hyle-resource-v1
+# provider=ggml-cpu version=456172ec+hyle-resource-v1
+# provider=hyle-native version=2+torchao-a701b6a60587+libtorch-2.8.0-cpu
+# provider=ggml-cpu version=456172ec+hyle-resource-v1
+# provider=ggml-cpu version=456172ec+hyle-resource-v1
+# provider= version=
+# provider=onednn version=3.13.2
+# provider=ggml-cpu version=456172ec+hyle-resource-v1
+# provider=hyle-native version=2+torchao-a701b6a60587+libtorch-2.8.0-cpu
+# provider=ggml-cpu version=456172ec+hyle-resource-v1
+# provider=ggml-cpu version=456172ec+hyle-resource-v1
+# provider=hyle-native version=2+torchao-a701b6a60587+libtorch-2.8.0-cpu
+# provider=ggml-cpu version=456172ec+hyle-resource-v1
+# provider=ggml-cpu version=456172ec+hyle-resource-v1
+# provider=ggml-cpu version=456172ec+hyle-resource-v1
+# provider=ggml-cpu version=456172ec+hyle-resource-v1
+# provider=ggml-cpu version=456172ec+hyle-resource-v1
+# provider=ggml-cpu version=456172ec+hyle-resource-v1
+# provider=hyle-native version=2+torchao-a701b6a60587+libtorch-2.8.0-cpu
+# provider=ggml-cpu version=456172ec+hyle-resource-v1
+# provider=ggml-cpu version=456172ec+hyle-resource-v1
+# provider=ggml-cpu version=456172ec+hyle-resource-v1
+# provider=ggml-cpu version=456172ec+hyle-resource-v1
+# setup route=graph slots=3 external_host_bytes=137469976 milliseconds=13.050
+# verify PASS profile=DeepSeek V4 Flash official FP4 FP8 MoE H4096 N2048 top6 cycle3 replays=3 aa=selected

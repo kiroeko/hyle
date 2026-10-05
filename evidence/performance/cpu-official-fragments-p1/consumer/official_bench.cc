@@ -117,7 +117,7 @@ public:
 
   void verify() {
     next_ = 0;
-    for (std::size_t repeat = 0; repeat < 2; ++repeat)
+    for (std::size_t repeat = 0; repeat < 1; ++repeat)
       for (std::size_t i = 0; i < slots_.size(); ++i) {
         require(run_one());
         auto &slot = *slots_[i];
