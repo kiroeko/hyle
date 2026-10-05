@@ -373,9 +373,9 @@
     },
     {
       "module": "compute_provider_ggml",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/cpu-ggml-layout-broadcast-admission.md",
-      "summary": "LB1–5 SCOPED：MatMul广播/row-major batch、Softmax任意axis、SDPA布局/value depth、宽scalar Copy/Concat 原程序批量准入；Native冻结。"
+      "summary": "LB1–5 AUDITED：原布局/广播/byte-copy接口、数值和资源有限FIX已固定，批量接线后统一资格；Native冻结。"
     },
     {
       "module": "graph_provider_onednn",

@@ -1,6 +1,6 @@
 # CPU ggml：布局、广播与宽标量批量接线
 
-<!-- MODULE REVIEW: SCOPED -->
+<!-- MODULE REVIEW: AUDITED -->
 
 - owner `compute_provider_ggml`，baseline `786a3ec36e4a9b19b6eed572f1e9c96dc93396f5`，Windows canonical。
 - trigger：全族审计的 MatMul row-major batch/左小右大、Softmax 非末轴、SDPA BHSD/value depth、
@@ -18,12 +18,12 @@
   source/static/shared；最多一轮具体失败纠正。不逐算子重复 SDK、不重复模型/loader/GPU/P1。
 - 验证：provider/普通 CPU/Graph；F32 row-major/transposed rank2..4、shared/双向leading广播、变化输入、
   K0非空输出与独立double oracle；三dtype Softmax axis0/1/−2、mask广播/特殊行/恢复；
-  BSHD/BHSD、三dtype、causal/noncausal、GQA与不同Dk/Dv；Copy/Concat 全16种plain scalar bits，
+  BSHD/BHSD、三dtype、causal/noncausal、GQA与不同Dk/Dv；Copy/Concat 全15种plain scalar bits，
   大整数、NaN payload/负零、空部件、strided inputs与变化输入；拒绝未接宽 Gather/index/numeric Cast。
   生命周期/OOM/close/alias复跑现有受影响provider；selector/closure/docs/diff、统一LOC。
 - stop：原 kernel 对具体 dtype/layout 不能完整承载则记录具名限制与证据，不增加自研算法或签UNIQUE。
 
-## 待冻结有限 FIX
+## 已审计固定的有限 FIX
 
 | ID | 允许改动 | 必需验收 |
 |---|---|---|
@@ -33,4 +33,23 @@
 | LB4 | plain scalar native representation供原Copy/Concat使用；同时收紧未提供宽Gather/Cast数学谓词 | 全storage bits、strides、原被接受域不回归、未接算术明确拒绝 |
 | LB5 | 一批普通Direct/Graph、三交付、文档/实际成本与剩余ledger | 普通入口自动固定成熟程序；未运行不PASS |
 
-当前只SCOPED；固定原接口、数值、资源和边界后进入AUDITED再写产品。
+## 审计与边界
+
+原 pin 的 `ggml.c` transpose/cont、repeat_4d 与 mul_mat 保留完整程序；原 mul_mat 只能把 RHS
+广播到 LHS，因此 LB1 先用原 repeat 扩展 LHS 到公共 NumPy 输出批次。展开元素超过现有 INT32
+资源域保持拒绝；K0 非空输出借原 repeat 零 identity，空输出混合区域不扩大。RHS repack 与 LHS
+展开均计入成本。Softmax 原 kernel 仅沿 ne0：LB2 在 scale/additive 后用 reshape/permute/cont
+移动选定轴，再逆变换；复用安全特殊行，无新指数或归约数学。每节点 32 tensor 的冷 metadata
+预算覆盖此轮最多 16 个 lowering 节点，payload 由原规划器复用。
+
+`ggml_flash_attn_ext` 原输出 ne={Dv,Hq,Tq,B}，CPU 实现 DK/DV 独立；LB3 的 F16 causal 保留 flash，
+BHSD 输出用原 permute/cont 恢复。其余原 F32 score/value 程序原输出 ne={Dv,Tq,Hq,B}；BSHD
+才恢复排列。causal mask 的 sequence 轴随 layout 冷绑定；公共 infer 已校验 batch/head/depth。
+原 dup 同类型走 byte copy，concat_any 对未专化 dtype 走 row memcpy；LB4 的 I8/I16/I32/I64/F64
+只是存储载体，不等于 unsigned/FP8 数学。实际 public enum 共 15 种已知 scalar，非 16 种。
+Gather 继续仅原 F32/F16/BF16/I32 table、I32 index；不同 public dtype 的宽 Cast 不因原类型映射
+相同而准入。宽 Fill、其他 arithmetic/alias/index 域继续具名待资格化。
+
+普通 typed Direct/Graph、原 metadata/payload/worker/完成 owner 不变；原 pin、许可证、交付组件和
+依赖方向复用。主模型与非模型纵切、资源/数值/成本/错误/构建/升级七问已有限定界；LB1–5
+BORROW/FIX 固定，其余 DEFER。owner AUDITED，适用门尚未运行，均 UNPROVEN。
