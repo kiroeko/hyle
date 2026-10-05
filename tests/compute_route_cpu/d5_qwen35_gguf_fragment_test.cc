@@ -14,6 +14,7 @@
 #include "hyle/compute/model_ops.h"
 #include "hyle/compute/prepared_operation.h"
 #include "hyle/compute/providers/ggml_cpu.h"
+#include "hyle/compute/providers/native.h"
 #include "hyle/compute/providers/onednn.h"
 #include "hyle/mem/stats.h"
 
@@ -142,8 +143,7 @@ void run_qwen35_gguf_ffn(const c::ModelArtifactProfileDescription &profile,
               norm.prepared.provider().id == c::ggml_cpu::kProviderId);
   EXPECT_EQ(gate.prepared.provider().id, c::ggml_cpu::kProviderId);
   EXPECT_EQ(up.prepared.provider().id, c::ggml_cpu::kProviderId);
-  EXPECT_TRUE(gated.prepared.provider().id == c::onednn::kProviderId ||
-              gated.prepared.provider().id == c::ggml_cpu::kProviderId);
+  EXPECT_EQ(gated.prepared.provider().id, c::aten_cpu::kProviderId);
   EXPECT_EQ(down.prepared.provider().id, c::ggml_cpu::kProviderId);
   for (const auto *call : {&norm, &gate, &up, &gated, &down})
     EXPECT_EQ(call->prepared.workload(), workload);

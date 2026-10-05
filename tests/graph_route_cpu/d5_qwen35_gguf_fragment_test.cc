@@ -11,6 +11,7 @@
 #include "../compute_provider_native/half_test_support.h"
 #include "hyle/compute/model_ops.h"
 #include "hyle/compute/providers/ggml_cpu.h"
+#include "hyle/compute/providers/native.h"
 #include "hyle/compute/providers/onednn.h"
 #include "hyle/graph/cpu.h"
 #include "hyle/graph/providers/onednn.h"
@@ -69,6 +70,7 @@ template <class Compiled> void expect_mature(const Compiled &compiled) {
     const auto provider = report.provider.id;
     EXPECT_TRUE(provider == c::ggml_cpu::kProviderId ||
                 provider == c::onednn::kProviderId ||
+                provider == c::aten_cpu::kProviderId ||
                 provider == g::onednn::kProviderId)
         << report.provider.name;
   }
@@ -164,6 +166,7 @@ void run_qwen35_gguf_ffn(const c::ModelArtifactProfileDescription &profile,
     const auto provider = report.provider.id;
     EXPECT_TRUE(provider == c::ggml_cpu::kProviderId ||
                 provider == c::onednn::kProviderId ||
+                provider == c::aten_cpu::kProviderId ||
                 provider == g::onednn::kProviderId)
         << report.provider.name;
     if (provider == c::ggml_cpu::kProviderId)

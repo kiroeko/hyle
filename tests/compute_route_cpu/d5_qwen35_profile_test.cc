@@ -17,6 +17,7 @@
 #include "hyle/compute/model_ops.h"
 #include "hyle/compute/prepared_operation.h"
 #include "hyle/compute/providers/ggml_cpu.h"
+#include "hyle/compute/providers/native.h"
 #include "hyle/compute/providers/onednn.h"
 #include "hyle/mem/stats.h"
 
@@ -86,7 +87,8 @@ DirectCall make_call(const c::Context &context, c::Operation operation,
 void expect_mature(const DirectCall &call, const c::WorkloadContext &workload) {
   const auto provider = call.prepared.provider().id;
   EXPECT_TRUE(provider == c::ggml_cpu::kProviderId ||
-              provider == c::onednn::kProviderId)
+              provider == c::onednn::kProviderId ||
+              provider == c::aten_cpu::kProviderId)
       << c::operation_name(call.prepared.kind()) << ": "
       << call.prepared.provider().name;
   EXPECT_EQ(call.prepared.workload(), workload);

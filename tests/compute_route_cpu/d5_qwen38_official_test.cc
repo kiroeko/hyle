@@ -107,6 +107,7 @@ void expect_mature(const DirectCall &call, const c::WorkloadContext &workload) {
       call.original_ds4_roundtrip && call.prepared.implementation().value() ==
           static_cast<std::uint64_t>(c::OperationKind::kCustom) + 1);
 #if defined(HYLE_TEST_TORCH_CPU)
+  mature = mature || provider == c::aten_cpu::kProviderId;
   mature = mature || (provider == c::native::kProviderId &&
                      call.prepared.implementation().value() >= 0x544f524348000001ULL &&
                      call.prepared.implementation().value() <= 0x544f524348000006ULL);

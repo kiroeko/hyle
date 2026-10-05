@@ -85,6 +85,7 @@ template <class Compiled> void expect_mature(const Compiled &compiled,
               static_cast<std::uint64_t>(c::OperationKind::kCustom) + 1);
     }
 #if defined(HYLE_TEST_TORCH_CPU)
+    mature = mature || provider == c::aten_cpu::kProviderId;
     mature = mature || (provider == c::native::kProviderId &&
                        report.implementation.value() >= 0x544f524348000001ULL &&
                        report.implementation.value() <= 0x544f524348000006ULL);

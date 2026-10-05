@@ -33,7 +33,7 @@
 - stop：原库程序不能匹配具体域即保存具名差异，不放宽数值、不写自研math或判UNIQUE；达到预算
   按协议裁决，未运行适用验证不签PASS。此轮完成不是CPU整体完成。
 
-## 有限审计对象（尚未产品FIX）
+## 初始SCOPED审计对象（历史）
 
 | ID | 对象与拟接缝 | 必需证据 |
 |---|---|---|
@@ -42,7 +42,7 @@
 | TC3 | private invocation/managed成本/失败/close/alias边界 | 一批资源与普通重放资格，native物理OOM与实际冷OOM分开 |
 | TC4 | ordinary Direct/Graph原最终结果、三交付与剩余ledger | 不用Native fallback代签接入；记录必要region边界，不以未资格核计时 |
 
-当前SCOPED，Cast原程序尚未审计完成，产品/三交付/工程门UNPROVEN；完成原witness后固定有限FIX才写产品。
+初始SCOPED时Cast原程序尚未审计完成；以下固定审计与FIX记录替代该阶段，未运行的产品门仍不签PASS。
 
 
 ## 固定审计与有限 FIX
@@ -72,11 +72,25 @@ kernel或跨vendor回调/vtable。TC2固定撤回这两种generic冷准入及其
 | TC4 | FIX：迁移这两个generic资格测试及普通消费者的合法承载/图边界假设；Win/Linux完整受影响factor与三交付一批 | 有效旧准入保持、fixture跳过不计PASS；输出完整下游oracle，不用错误whole region作性能基线 |
 
 其它Cast dtype、SDK平台、模型program、public API、性能仪器与Native自研payload不变。
-owner已AUDITED，有限TC1–4已固定；全部产品工程门尚未运行，不能写CLOSED或新性能WIN。
+owner已AUDITED，有限TC1–4已固定；未完成全部产品工程门前不能写CLOSED或新性能WIN。
 
 
-### TC1有限接缝补充（仍AUDITED，产品未固定）
+### TC1有限接缝补充（实现前AUDITED记录）
 
 同一旧SDK实际默认ggml Cast对F32 quiet NaN 0x7fc12345/0xffc12345：F16给7e00/fe00，BF16给7fc1/ffc1；公共Cast的既有canonical为7fff/ffff和7fc0/ffc0。此诊断仍链接先前合格SDK产品0763fd3e，不是当前未编译草稿；收据HEAD只标原consumer生成时revision，命令/source见cast-nan-prior-*。
 
 TC1补充固定GGML mixed浮点Cast的原位NaN storage-boundary：原kernel保留全部finite conversion与内存/融合，只检查原stored NaN bits并写已有规定bits；不做有限payload数学。额外O(n)检查和一个internal view node包含成本。新增全源bits/普通Graph下游回归，完整原转换与其它region保持；不因NaN编码差异撤掉有效成熟Cast。该FIX仍在已有五dtype Cast与同两个owner范围内，无新公开合同/SDK/常态成本等级；没有Native自研优化或P1。
+
+
+## 产品与直接消费者迁移
+
+产品提交 `689e9a1b0fd912f57387f38caf42e920fc9c7617` 已实现TC1–4；Native自研数学和其它模型原program未改。
+Windows同候选批量构建通过，Native124/124、ggml58/58通过。完整CPU首次158项：114通过、7旧fixture
+跳过、37失败；失败均是旧mature身份白名单不认可独立ATen，以及由该断言造成的HasFailure传播，
+没有新增数值差异。原XML/日志及全部失败位置保留，不重写成PASS。
+
+TC4批量迁移六个CPU/Graph直接消费者的白名单到精确ATen身份；普通FFN generic gate明确要求ATen，
+不接受任意Native后备。所有最终数值、重放、workload与资源oracle保持；只改测试，不改产品/API/成本。
+Windows只重跑实际失败的37项，114通过及7跳过以完整初次XML、产品全输入相同和单调身份谓词
+证明复用；Graph首次完整受影响factor照常运行。Linux完整受影响factor与两平台同ordinary consumer
+三交付仍待验，不把原Cast witness或已通过Provider单元代签。此处没有新增产品纠正或P1。
