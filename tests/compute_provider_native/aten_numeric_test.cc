@@ -262,7 +262,7 @@ template <class T> void reductions() {
   auto ctx = context();
   auto queue = ctx.create_queue().value();
   const float nan = (std::numeric_limits<float>::quiet_NaN)();
-  for (const auto shape : std::vector<std::vector<std::int64_t>>{
+  for (const auto &shape : std::vector<std::vector<std::int64_t>>{
            {}, {2, 3, 4}, {2, 0, 4}, {1, 1, 1, 1, 1, 2, 3, 4}}) {
     for (bool odd : {false, true}) {
       auto desc = description(type, shape, odd);
