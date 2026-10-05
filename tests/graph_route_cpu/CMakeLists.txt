@@ -10,6 +10,10 @@ hyle_add_test(graph_route_cpu SOURCES
        hyle_graph_provider_onednn hyle_compute_provider_ggml)
 target_compile_definitions(hyle_graph_route_cpu_test PRIVATE
   HYLE_TEST_GRAPH_ROUTE_CPU=1)
+get_target_property(_hyle_torch_cpu hyle_compute_provider_native HYLE_TORCH_CPU_ENABLED)
+if(_hyle_torch_cpu)
+  target_compile_definitions(hyle_graph_route_cpu_test PRIVATE HYLE_TEST_TORCH_CPU=1)
+endif()
 if(HYLE_GGML_CPU_ENABLED)
   target_link_libraries(hyle_graph_route_cpu_test PRIVATE ggml)
 endif()

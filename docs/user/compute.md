@@ -44,6 +44,33 @@ oneDNN 仍 exact-only，可进入 Graph 的预编译 exact 变体；Graph 也已
 [有限精确变体与通用回退](graph.md#有限精确变体与通用回退)。完整动态属性尚未交付。不要直接调用私有
 factor seam，也不要把单个 family 的域支持当成整个算子目录都支持动态尺寸。
 
+### 可选 CPU FP8/FP4 成熟程序
+
+Windows/Linux x86_64 可用 CPU-only LibTorch `2.8.0+cpu` SDK 开启 TorchAO/ATen
+低精度组合，构建选项为 `HYLE_COMPUTE_TORCH_CPU=ON` 和
+`HYLE_COMPUTE_TORCH_CPU_ROOT=<libtorch prefix>`。默认 `AUTO` 只在发现该 CPU SDK 时接入；
+`OFF` 不探测 Torch。CUDA Torch SDK 不能替代它。此新增范围尚在完整片段验收中，
+当前可依赖的模型画像仍以[能力账本](../implementation/tasks/compute/llm-moe-d5-acceptance-ledger.json)为准。
+
+普通 C++ 入口仍为 `cpu::create_context()` 与 `graph::cpu::create_context()`。
+既有 `Float8BlockLinear`、`GroupedFloat8Linear`、`GroupedFloat4Linear`、block128 encoded
+`MatMul`、`Float8WeightDecode` 与 FP8 group128 roundtrip 由固定的原版 TorchAO tensor
+序列和 ATen CPU 运算组合执行。它保留动态 A8 转换、原权重格式、scale 和输出 dtype；
+CPU 内部把已量化数值表达为 F32 并计算，不宣称硬件原生 FP8 GEMM。
+专家 ID 可以重复；实现先选择所需专家再解码，不预解码全部专家。
+
+这组程序为 managed replay，库管理内部 Tensor、临时内存和线程，提交阻塞 host 至完成。
+它不承诺零热分配、capture 或确定的内部内存上界；要求 prepared-only replay 或不能
+接受未知私有内存的硬预算会拒绝。它不把全局 Torch 线程数当作 Context 局部 executor 设置。
+非有限激活与越界专家 ID 返回失败；失败输出不可消费，失败执行槽需重新创建。
+
+source/static/shared 三种 HYLE 交付都依赖此外部 shared CPU runtime。
+HYLE static 不代表把 LibTorch 静态链接进进程；安装消费者通过 `CMAKE_PREFIX_PATH`
+同时提供 HYLE 与 CPU LibTorch prefix。Windows 运行前把 CPU SDK `lib` 目录的 DLL
+复制到 exe 所在目录，同时部署 HYLE 及其它已启用 Provider 的 DLL；不要让程序依赖
+Python 或 CUDA 的 DLL 搜索目录。Linux 运行时提供 CPU SDK `lib` 的 loader 路径。
+分发 CPU SDK 时同时保留其原许可证和第三方 notices，HYLE 安装包另附所借用 TorchAO 的 BSD 许可。
+
 ## 可选模型与阶段信息
 
 已知模型与固定部署制品的消费者可在冷准备时传入 `WorkloadContext`。普通工程计算省略它即可。

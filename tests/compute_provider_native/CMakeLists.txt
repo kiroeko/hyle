@@ -15,3 +15,8 @@ hyle_add_test(compute_provider_native SOURCES
   DEPS hyle_compute_backend_cpu)
 target_include_directories(hyle_compute_provider_native_test PRIVATE
   "${CMAKE_CURRENT_SOURCE_DIR}/../../src/compute")
+get_target_property(_hyle_torch_cpu hyle_compute_provider_native HYLE_TORCH_CPU_ENABLED)
+if(_hyle_torch_cpu)
+  target_sources(hyle_compute_provider_native_test PRIVATE torch_cpu_test.cc)
+  target_link_libraries(hyle_compute_provider_native_test PRIVATE torch)
+endif()

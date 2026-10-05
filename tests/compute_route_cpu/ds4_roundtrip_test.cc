@@ -24,12 +24,13 @@ namespace c = hyle::compute;
 namespace mem = hyle::mem;
 using Format = c::model_ops::BlockQuantizationFormat;
 
-void run_roundtrip(bool fp4, std::vector<std::uint16_t> values) {
+void run_roundtrip(bool fp4, std::vector<std::uint16_t> values, std::size_t fp8_group = 64) {
   const auto description = c::TensorDesc::dense(
       c::DataType::kBFloat16,
       std::array<std::int64_t, 2>{1, static_cast<std::int64_t>(values.size())}).value();
   const auto operation = c::model_ops::block_quantization_roundtrip(
-      fp4 ? Format::kFloat4E2M1Block32 : Format::kFloat8E4M3Block64);
+      fp4 ? Format::kFloat4E2M1Block32 : (fp8_group == 128 ? Format::kFloat8E4M3Block128
+                                                        : Format::kFloat8E4M3Block64));
   auto input_storage = half_test::buffer<std::uint16_t>(values);
   auto output_storage = half_test::buffer<std::uint16_t>(values);
   const auto input = c::ConstTensorView::create(description, input_storage.view()).value();
@@ -72,7 +73,7 @@ void run_roundtrip(bool fp4, std::vector<std::uint16_t> values) {
       std::vector<float> decoded;
       for (auto value : values)
         decoded.push_back(std::bit_cast<float>(std::uint32_t(value) << 16));
-      const auto expected = d5_quantization_roundtrip::reference(decoded, fp4);
+      const auto expected = d5_quantization_roundtrip::reference(decoded, fp4, fp8_group);
       ASSERT_TRUE(input_storage.view().write(std::as_bytes(std::span(values))).ok());
       auto done = submit();
       ASSERT_TRUE(done) << done.error().message();
@@ -135,7 +136,7 @@ TEST(CpuDs4Roundtrip, MatureMidpointsAndLowScalesKeepExactNumericalBoundary) {
     run_roundtrip(fp4, values);
 }
 
-TEST(CpuDs4Roundtrip, RejectsUnavailableGroupAndRecoversAfterColdOom) {
+TEST(CpuDs4Roundtrip, FixedGroupCapabilityAndRecoveryAfterColdOom) {
   const auto description = c::TensorDesc::dense(
       c::DataType::kBFloat16, std::array<std::int64_t, 2>{1, 128}).value();
   mem::QuotaAllocator quota(mem::system_allocator(), 4 * 1024 * 1024);
@@ -143,8 +144,13 @@ TEST(CpuDs4Roundtrip, RejectsUnavailableGroupAndRecoversAfterColdOom) {
   const std::array descriptions{description};
   auto unsupported = c::prepare(context, c::model_ops::block_quantization_roundtrip(
       Format::kFloat8E4M3Block128), descriptions, descriptions, mem::system_resource());
+#if defined(HYLE_TEST_TORCH_CPU)
+  ASSERT_TRUE(unsupported) << unsupported.error().message();
+  EXPECT_EQ(unsupported->runtime_properties().replay_class, c::ProviderReplayClass::kManaged);
+#else
   ASSERT_FALSE(unsupported);
   EXPECT_TRUE(unsupported.error().IsUnimplemented());
+#endif
   const auto operation = c::model_ops::block_quantization_roundtrip(Format::kFloat4E2M1Block32);
   {
     auto reserved = quota.try_reserve_bytes(quota.remaining());
@@ -157,4 +163,34 @@ TEST(CpuDs4Roundtrip, RejectsUnavailableGroupAndRecoversAfterColdOom) {
   EXPECT_TRUE(c::prepare(context, operation, descriptions, descriptions,
                          mem::system_resource()));
 }
+#if defined(HYLE_TEST_TORCH_CPU)
+#if defined(HYLE_TEST_GRAPH_ROUTE_CPU)
+TEST(CpuDs4Roundtrip, ManagedGroup128DeclinesPreparedPolicyAndUnknownPrivateBudget) {
+  namespace g = hyle::graph;
+  auto context = g::cpu::create_context().value();
+  const auto desc = c::TensorDesc::dense(c::DataType::kBFloat16,
+      std::array<std::int64_t, 2>{1, 128}).value();
+  auto builder = g::GraphBuilder::create().value();
+  auto x = builder.input(desc).value();
+  auto y = builder.add(c::model_ops::block_quantization_roundtrip(
+      Format::kFloat8E4M3Block128), x).value();
+  ASSERT_TRUE(builder.publish(y).ok());
+  auto graph = std::move(builder).finish().value();
+  EXPECT_TRUE(g::compile(graph, context));
+  auto prepared_only = g::compile(graph, context,
+      {.provider_replay = g::ProviderReplayPolicy::kRequirePrepared});
+  EXPECT_FALSE(prepared_only);
+  auto budgeted = g::compile(graph, context,
+      {.invocation_storage = g::InvocationStorageLimits{.max_bytes = 1024 * 1024}});
+  if (budgeted) EXPECT_FALSE(budgeted->executable.create_invocation());
+}
+#endif
+TEST(CpuDs4Roundtrip, MatureGroup128AllFiniteBfloatReplayAndFailureRecovery) {
+  std::vector<std::uint16_t> values;
+  for (unsigned bits = 0; bits < 65536; ++bits)
+    if ((bits & 0x7f80) != 0x7f80)
+      values.push_back(static_cast<std::uint16_t>(bits));
+  run_roundtrip(false, std::move(values), 128);
+}
+#endif
 } // namespace

@@ -19,6 +19,9 @@
 #include "hyle/simd/math.h"
 #include "hyle/simd/ops.h"
 #include "native_plan.h"
+#if defined(HYLE_COMPUTE_TORCH_CPU)
+#include "torch_cpu_program.h"
+#endif
 
 namespace hyle::compute::native {
 namespace {
@@ -1200,6 +1203,11 @@ propose(void *context_value, const detail::ProviderOperationRequest &request,
   auto *context = static_cast<NativeContext *>(context_value);
   if (context == nullptr)
     return Status::Internal("native provider context is null");
+#if defined(HYLE_COMPUTE_TORCH_CPU)
+  if (internal::is_torch_cpu_operation(operation, inputs))
+    return internal::propose_torch_cpu(request, input_requirements,
+                                       output_requirements, proposal);
+#endif
   NativePlan plan{};
   Status status =
       build_plan(operation, inputs, outputs, plan, context->executor);
@@ -1255,6 +1263,10 @@ prepare(void *context_value, const detail::ProviderPrepareRequest &request,
   if (context == nullptr)
     return ProviderPrepareOutcome::error(
         Status::Internal("native provider context is null"));
+#if defined(HYLE_COMPUTE_TORCH_CPU)
+  if (internal::is_torch_cpu_operation(request.operation, request.inputs))
+    return internal::prepare_torch_cpu(request, allocator, prepared_output);
+#endif
   if (!request.shape.exact()) {
     const auto status = validate_bounded(
         {request.operation, request.inputs, request.outputs, request.shape});
@@ -1296,7 +1308,11 @@ Status drain_context(void *) noexcept { return Status::Ok(); }
 const detail::ProviderVTable kProviderVTable{
     .identity = ProviderIdentity{.id = kProviderId,
                                  .name = "hyle-native",
+#if defined(HYLE_COMPUTE_TORCH_CPU)
+                                 .version = "2+torchao-a701b6a60587+libtorch-2.8.0-cpu"},
+#else
                                  .version = "2"},
+#endif
     .create_context = &create_context,
     .destroy_context = &destroy_context,
     .propose = &propose,

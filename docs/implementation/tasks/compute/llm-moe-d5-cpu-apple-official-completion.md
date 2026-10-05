@@ -92,7 +92,7 @@ Completion 失败并回收库临时对象。输出失败时不可消费，无回
 
 | ID | 允许改动 | 验收 |
 |---|---|---|
-| CPU-O1 | 在现有 Native factor 组合固定原 TorchAO 分组 FP8 / rceil / FP4 codec 与 ATen matmul；已有接口：FP8 activation quantize、block linear、weight decode、encoded MatMul、grouped FP8/FP4、缺失的 group128 roundtrip | code/scale/存储和完整四画像的普通 Direct/Graph；不恢复自研算子 |
+| CPU-O1 | 在现有 Native factor 组合固定原 TorchAO 分组 FP8 / rceil / FP4 codec 与 ATen matmul；激活量化为私有序列，公开接口继续使用 block linear、weight decode、encoded MatMul、grouped FP8/FP4、缺失的 group128 roundtrip | code/scale/存储和完整四画像的普通 Direct/Graph；不新增公开 quantize API，不恢复自研算子 |
 | CPU-O2 | 将新组合的 managed replay、private memory/threads、host completion、OOM/非有限输入/越界 ID、资源 mapping/flush/close 绑定到现有运行协议；保持 NativePlan 布局，原路线成本声明不被改成 managed | 变化/重复/非法 ID、多个 replay、不同槽、保活、失败后重建、预算拒绝；原 ds4/普通 Native 回归 |
 | CPU-O3 | Native owning CMake seam 接入版本固定的 CPU-only LibTorch SDK，Provider OFF 不探测；private includes/flags/link，拒绝 CUDA SDK；来源和 license、source/static/shared 闭包完整 | Windows/WSL C++ 调用、CPU-only 隔离、三交付；HYLE static 仍依赖 mature shared runtime，明确文档 |
 | CPU-O4 | 原默认 Native fallback 仅承担当前未覆盖的原精度请求；普通入口、版本/实现 identity、资源/规则同构建能力投影 | 不让用户排序 Provider，不替换原有通过域的赢家；完整画像未 PASS 前账本不变 |

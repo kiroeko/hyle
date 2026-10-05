@@ -2,6 +2,7 @@
 #include "../compute_models/d5_moe_execution_fragments.h"
 #include "../compute_models/d5_official_fp8_fragments.h"
 #include "../compute_models/d5_cpu_official_boundary.h"
+#include "../compute_models/d5_deepseek_official_attention.h"
 #include "../compute_models/d5_kda_full_fragments.h"
 #include "../compute_models/d5_kimi_remaining_fragments.h"
 #include "../compute_models/d5_glm_remaining_fragments.h"
@@ -26,6 +27,7 @@
 #include "../compute_models/d5_qwen_vocabulary_graph_test.h"
 #include "../compute_provider_native/half_test_support.h"
 #include "hyle/compute/model_ops.h"
+#include "hyle/compute/providers/native.h"
 #include "hyle/compute/providers/ggml_cpu.h"
 #include "hyle/compute/providers/onednn.h"
 #include "hyle/graph/cpu.h"
@@ -71,7 +73,13 @@ template <class Compiled> void expect_mature(const Compiled &compiled) {
       continue;
     EXPECT_TRUE(provider == c::ggml_cpu::kProviderId ||
                 provider == c::onednn::kProviderId ||
-                provider == g::onednn::kProviderId)
+                provider == g::onednn::kProviderId
+#if defined(HYLE_TEST_TORCH_CPU)
+                || (provider == c::native::kProviderId &&
+                    report.implementation.value() >= 0x544f524348000001ULL &&
+                    report.implementation.value() <= 0x544f524348000006ULL)
+#endif
+                )
         << "step=" << step << " node=" << report.node_begin
         << " operation=" << c::operation_name(node.kind)
         << " provider=" << report.provider.name;
@@ -512,15 +520,62 @@ TEST(CpuGraphQwen38_24T, D5GgufGroupedExpertKeepsNativeBlocksAndDynamicIds) {
   }
 }
 
+void prepare_model_constants(const d5_qwen38_24t_semantic_fragments::Fragment &cold,
+    c::Context &context,
+    std::vector<hyle::mem::Buffer> &result) {
+  namespace sem = d5_qwen38_24t_semantic_fragments;
+  ASSERT_TRUE(cold.inputs.empty());
+  ASSERT_FALSE(cold.preparation);
+  auto graph = sem::make_graph(cold);
+  std::vector<hyle::mem::Buffer> sources;
+  std::vector<g::ConstantBinding> bindings;
+  for (std::size_t i = 0; i < cold.constants.size(); ++i) {
+    sources.push_back(half_test::buffer<std::byte>( cold.constant_bytes[i]));
+    bindings.push_back({graph.constants[i], c::ConstTensorView::create(
+        cold.description(cold.constants[i]), sources.back().view()).value()});
+  }
+  const auto workload = q::workload(*cold.profile, c::WorkloadPhase::kDecode, cold.region);
+  auto compiled_result = g::compile(graph.graph, context,
+      {.constants = bindings, .workload = workload});
+  ASSERT_TRUE(compiled_result) << compiled_result.error().message();
+  auto compiled = std::move(*compiled_result);
+  expect_mature(compiled);
+  auto invocation = compiled.executable.create_invocation().value();
+  for (std::size_t i = 0; i < cold.outputs.size(); ++i) {
+    result.push_back(output_buffer( cold.description(cold.outputs[i])));
+    ASSERT_TRUE(invocation.bind(graph.outputs[i], c::TensorView::create(
+        cold.description(cold.outputs[i]), result.back().view()).value()).ok());
+  }
+  auto queue = context.create_queue().value();
+  auto done = invocation.submit(queue);
+  ASSERT_TRUE(done) << done.error().message();
+  ASSERT_TRUE(done->wait().ok());
+  d5_fp8_weight_preparation::check_constants(cold, result);
+  // The cold Graph and all source/intermediate storage are destroyed before
+  // compiling the hot Graph. Only its independently owned outputs remain.
+}
+
 void run_q24_semantic_fragment(
     d5_qwen38_24t_semantic_fragments::Fragment fixture) {
   namespace sem = d5_qwen38_24t_semantic_fragments;
   auto full = sem::make_graph(fixture);
   auto context = g::cpu::create_context().value();
   std::vector<hyle::mem::Buffer> constants(fixture.constants.size());
-  for (std::size_t index = 0; index < constants.size(); ++index)
-    constants[index] =
-        half_test::buffer<std::byte>(fixture.constant_bytes[index]);
+  std::vector<hyle::mem::Buffer> prepared_constants;
+  if (fixture.preparation) {
+    prepare_model_constants(*fixture.preparation, context, prepared_constants);
+    ASSERT_FALSE(::testing::Test::HasFatalFailure());
+    ASSERT_EQ(prepared_constants.size(), fixture.prepared_constants.size());
+    for (const auto &step : fixture.nodes)
+      EXPECT_FALSE(step.operation.custom_as<c::model_ops::Float8WeightDecode>());
+  }
+  for (std::size_t index = 0; index < constants.size(); ++index) {
+    const auto found = std::ranges::find(fixture.prepared_constants, index);
+    if (found != fixture.prepared_constants.end()) {
+      ASSERT_TRUE(fixture.constant_bytes[index].empty());
+      constants[index] = std::move(prepared_constants[found - fixture.prepared_constants.begin()]);
+    } else constants[index] = half_test::buffer<std::byte>( fixture.constant_bytes[index]);
+  }
   fixture.constant_bytes = {};
   std::vector<g::ConstantBinding> bindings;
   for (std::size_t i = 0; i < constants.size(); ++i)
@@ -668,6 +723,7 @@ TEST(CpuGraphMoeFragments, D5ThirteenProfilesExpertActivation) {
   }
 }
 
+#if !defined(HYLE_TEST_TORCH_CPU)
 TEST(CpuGraphMoeFragments, D5OfficialFp8DenseColdRejection) {
   namespace fp8 = d5_official_fp8_fragments;
   auto context = g::cpu::create_context().value();
@@ -711,6 +767,12 @@ TEST(CpuGraphMoeFragments, D5OfficialFullMoeColdBoundary) {
     boundary::record("graph", fragment, 0, "complete_moe", result.error());
   });
 }
+
+#endif
+
+#if defined(HYLE_TEST_TORCH_CPU)
+#include "../compute_models/d5_cpu_torch_official_tests.h"
+#endif
 
 TEST(CpuGraphMoeFragments, D5OfficialFp4ExpertBatch) {
   ASSERT_TRUE(d5_official_fp4_storage::matches_original_converter());

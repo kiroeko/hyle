@@ -642,7 +642,7 @@ inline ValueId hyper_post(Fragment &f, const Hyper &mix, ValueId state, ValueId 
 // The fixed official config appends ratio0 for mtp.0 on both Pro and Flash.
 // MTP has two distinct FP8 projections and a BF16 sum, then a complete mHC
 // attention + MoE decoder; it is not GLM's concatenated EH projection.
-inline Fragment mtp(const moe::Case &model) {
+inline Fragment mtp(const moe::Case &model, bool native_routing = true) {
   if (model.gguf) throw std::runtime_error("official MTP profile required");
   Fragment f{.profile = model.profile, .region = 0x0d0a3401, .quantized = true};
   auto hidden = f.input(dense({1, 4, model.hidden}));
@@ -666,7 +666,7 @@ inline Fragment mtp(const moe::Case &model) {
   auto m = hyper_pre(f, after_attention, model.hidden, 313);
   auto moe_input = norm(f, m.collapsed, fns);
   moe::MoeReference moe_reference;
-  auto moe_recipe = official::moe_chain(model, false, &moe_reference);
+  auto moe_recipe = official::moe_chain(model, false, &moe_reference, native_routing);
   auto moe_outputs = glm::attach(f, std::move(moe_recipe), {moe_input});
   auto after_moe = hyper_post(f, m, after_attention, moe_outputs[5]);
   auto flat = reshape(f, after_moe, {1, 4*model.hidden});
@@ -728,8 +728,9 @@ inline Fragment mtp(const moe::Case &model) {
   return f;
 }
 
-template <class Run> void check_mtp_head(const moe::Case &model, Run run) {
-  auto recipe = mtp(model);
+template <class Run> void check_mtp_head(const moe::Case &model, Run run,
+                                       bool native_routing = true) {
+  auto recipe = mtp(model, native_routing);
   std::vector<std::vector<float>> observed, reference;
   for (const auto &replay : recipe.replays) reference.push_back(replay.outputs.back());
   recipe.observe = [&](std::size_t port, std::span<const float> actual) {

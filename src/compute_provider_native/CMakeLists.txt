@@ -2,6 +2,7 @@
 # so GPU-only maintenance builds do not acquire SIMD kernels.
 include(HyleDispatch)
 hyle_audit_in_tree_dependencies(ds4_quantization)
+include("${CMAKE_CURRENT_SOURCE_DIR}/torch_cpu_sdk.cmake")
 
 hyle_add_module(compute_provider_native SOURCES
   attention.cc
@@ -17,6 +18,35 @@ hyle_add_module(compute_provider_native SOURCES
 target_include_directories(hyle_compute_provider_native PRIVATE
   "${CMAKE_CURRENT_SOURCE_DIR}/../compute"
   "${HYLE_SOURCE_DIR}/third_party/ds4_quantization")
+
+if(HYLE_COMPUTE_TORCH_CPU_ENABLED)
+  hyle_audit_in_tree_dependencies(torchao_cpu)
+  target_sources(hyle_compute_provider_native PRIVATE torch_cpu_program.cc)
+  target_include_directories(hyle_compute_provider_native PRIVATE
+    "${HYLE_SOURCE_DIR}/third_party/torchao_cpu")
+  target_include_directories(hyle_compute_provider_native SYSTEM PRIVATE ${TORCH_INCLUDE_DIRS})
+  if(TORCH_CXX_FLAGS)
+    separate_arguments(_hyle_torch_flags NATIVE_COMMAND "${TORCH_CXX_FLAGS}")
+    target_compile_options(hyle_compute_provider_native PRIVATE ${_hyle_torch_flags})
+  endif()
+  target_link_libraries(hyle_compute_provider_native PRIVATE ${TORCH_LIBRARIES})
+  target_compile_definitions(hyle_compute_provider_native PRIVATE HYLE_COMPUTE_TORCH_CPU=1)
+  set_property(TARGET hyle_compute_provider_native PROPERTY HYLE_TORCH_CPU_ENABLED TRUE)
+  hyle_register_package_dependency(
+    NAME torch_cpu_sdk
+    OWNER compute_provider_native
+    FEATURES compute_torch_cpu
+    STATIC_FIND_DEPENDENCIES Torch|2.8.0 HyleTorchCpuSdk
+    STATIC_DEVELOPMENT_FILE_SPECS
+      "${CMAKE_CURRENT_SOURCE_DIR}/HyleTorchCpuSdkConfig.cmake|${CMAKE_INSTALL_LIBDIR}/cmake/HyleTorchCpuSdk|HyleTorchCpuSdkConfig.cmake")
+  hyle_register_package_dependency(
+    NAME torchao_cpu
+    OWNER compute_provider_native
+    LOCKED_DEPENDENCIES torchao_cpu
+    RUNTIME_FILE_SPECS
+      "${HYLE_SOURCE_DIR}/third_party/torchao_cpu/LICENSE|${CMAKE_INSTALL_DATADIR}/licenses/Hyle|TorchAO-CPU-LICENSE"
+      "${HYLE_SOURCE_DIR}/third_party/torchao_cpu/NOTICE.md|${CMAKE_INSTALL_DATADIR}/licenses/Hyle|TorchAO-CPU-NOTICE.md")
+endif()
 
 hyle_register_package_dependency(
   NAME ds4_quantization

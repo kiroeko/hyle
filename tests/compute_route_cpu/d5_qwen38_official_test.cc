@@ -17,6 +17,7 @@
 #include "../compute_models/d5_moe_execution_fragments.h"
 #include "../compute_models/d5_official_fp8_fragments.h"
 #include "../compute_models/d5_cpu_official_boundary.h"
+#include "../compute_models/d5_deepseek_official_attention.h"
 #include "../compute_models/d5_kda_full_fragments.h"
 #include "../compute_models/d5_kimi_remaining_fragments.h"
 #include "../compute_models/d5_glm_remaining_fragments.h"
@@ -31,6 +32,7 @@
 #include "../compute_provider_native/half_test_support.h"
 #include "hyle/compute/cpu.h"
 #include "hyle/compute/model_ops.h"
+#include "hyle/compute/providers/native.h"
 #include "hyle/compute/prepared_operation.h"
 #include "hyle/compute/providers/ggml_cpu.h"
 #include "hyle/compute/providers/onednn.h"
@@ -94,7 +96,13 @@ DirectCall make_call(const c::Context &context, c::Operation operation,
 void expect_mature(const DirectCall &call, const c::WorkloadContext &workload) {
   const auto provider = call.prepared.provider().id;
   EXPECT_TRUE(provider == c::ggml_cpu::kProviderId ||
-              provider == c::onednn::kProviderId)
+              provider == c::onednn::kProviderId
+#if defined(HYLE_TEST_TORCH_CPU)
+              || (provider == c::native::kProviderId &&
+                  call.prepared.implementation().value() >= 0x544f524348000001ULL &&
+                  call.prepared.implementation().value() <= 0x544f524348000006ULL)
+#endif
+              )
       << c::operation_name(call.prepared.kind()) << ": "
       << call.prepared.provider().name;
   EXPECT_EQ(call.prepared.workload(), workload);
@@ -721,6 +729,59 @@ TEST(CpuQwen38_24T,
   }
 }
 
+void prepare_model_constants(const d5_qwen38_24t_semantic_fragments::Fragment &cold,
+    c::Context &context,
+    std::vector<hyle::mem::Buffer> &result) {
+  ASSERT_TRUE(cold.inputs.empty());
+  ASSERT_FALSE(cold.preparation);
+  const auto workload = q::workload(*cold.profile, c::WorkloadPhase::kDecode, cold.region);
+  auto queue = context.create_queue().value();
+  std::vector<hyle::mem::Buffer> buffers(cold.descriptions.size());
+  std::vector<hyle::mem::BufferView> views(cold.descriptions.size());
+  const auto allocate = [&](qfull::ValueId id) {
+    buffers[id.ordinal()] = output_buffer( cold.description(id));
+    views[id.ordinal()] = buffers[id.ordinal()].view();
+  };
+  for (std::size_t i = 0; i < cold.constants.size(); ++i) {
+    auto id = cold.constants[i];
+    allocate(id);
+    ASSERT_TRUE(views[id.ordinal()].write(cold.constant_bytes[i]).ok());
+  }
+  for (const auto &step : cold.nodes) {
+    if (const auto *view = step.operation.get_if<c::View>()) {
+      const auto input = step.inputs[0], output = step.outputs[0];
+      views[output.ordinal()] = views[input.ordinal()];
+      if (view->kind() == c::ViewKind::kSlice) {
+        const auto &desc = cold.description(input);
+        const auto offset = std::size_t(view->start() * desc.byte_strides()[view->axis()]);
+        views[output.ordinal()] = views[input.ordinal()].subview(offset,
+            cold.description(output).required_bytes().value()).value();
+      }
+      continue;
+    }
+    std::vector<c::TensorDesc> in_desc, out_desc;
+    std::vector<c::ConstTensorView> inputs;
+    std::vector<c::TensorView> outputs;
+    for (auto id : step.inputs) {
+      in_desc.push_back(cold.description(id));
+      inputs.push_back(c::ConstTensorView::create(cold.description(id), views[id.ordinal()]).value());
+    }
+    for (auto id : step.outputs) {
+      allocate(id);
+      out_desc.push_back(cold.description(id));
+      outputs.push_back(c::TensorView::create(cold.description(id), views[id.ordinal()]).value());
+    }
+    auto call = make_call(context, step.operation, in_desc, out_desc, workload);
+    expect_mature(call, workload);
+    run(call, queue, inputs, outputs);
+    ASSERT_FALSE(::testing::Test::HasFatalFailure());
+  }
+  for (auto id : cold.outputs) result.push_back(std::move(buffers[id.ordinal()]));
+  d5_fp8_weight_preparation::check_constants(cold, result);
+  // Encoded weights, decoded full matrix and cold programs die here; only
+  // the two real CPU caches survive into the repeated model program.
+}
+
 void run_q24_semantic_fragment(
     d5_qwen38_24t_semantic_fragments::Fragment fixture) {
   namespace sem = d5_qwen38_24t_semantic_fragments;
@@ -741,9 +802,24 @@ void run_q24_semantic_fragment(
   };
   for (auto id : fixture.inputs)
     allocate(id);
+  std::vector<hyle::mem::Buffer> prepared_constants;
+  if (fixture.preparation) {
+    prepare_model_constants(*fixture.preparation, context, prepared_constants);
+    ASSERT_FALSE(::testing::Test::HasFatalFailure());
+    ASSERT_EQ(prepared_constants.size(), fixture.prepared_constants.size());
+    for (const auto &step : fixture.nodes)
+      EXPECT_FALSE(step.operation.custom_as<c::model_ops::Float8WeightDecode>());
+  }
   const auto &constant_bytes = fixture.constant_bytes;
   for (std::size_t index = 0; index < fixture.constants.size(); ++index) {
     const auto id = fixture.constants[index];
+    const auto found = std::ranges::find(fixture.prepared_constants, index);
+    if (found != fixture.prepared_constants.end()) {
+      ASSERT_TRUE(constant_bytes[index].empty());
+      buffers[id.ordinal()] = std::move(prepared_constants[found - fixture.prepared_constants.begin()]);
+      views[id.ordinal()] = buffers[id.ordinal()].view();
+      continue;
+    }
     allocate(id);
     ASSERT_TRUE(views[id.ordinal()].write(constant_bytes[index]).ok());
   }
@@ -910,6 +986,7 @@ TEST(CpuMoeFragments, D5ThirteenProfilesExpertActivation) {
   }
 }
 
+#if !defined(HYLE_TEST_TORCH_CPU)
 TEST(CpuMoeFragments, D5OfficialFp8DenseColdRejection) {
   namespace fp8 = d5_official_fp8_fragments;
   auto context = c::cpu::create_context().value();
@@ -959,6 +1036,12 @@ TEST(CpuMoeFragments, D5OfficialFullMoeColdBoundary) {
               "and replace the old rejection record.";
   });
 }
+
+#endif
+
+#if defined(HYLE_TEST_TORCH_CPU)
+#include "../compute_models/d5_cpu_torch_official_tests.h"
+#endif
 
 TEST(CpuMoeFragments, D5OfficialFp4ExpertBatch) {
   ASSERT_TRUE(d5_official_fp4_storage::matches_original_converter());

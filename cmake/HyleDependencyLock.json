@@ -764,6 +764,37 @@
           }
         ]
       }
+    },
+    {
+      "name": "torchao_cpu",
+      "class": "in_tree",
+      "repository": "https://github.com/pytorch/ao.git",
+      "version": "a701b6a60587-atencpu",
+      "revision": "a701b6a6058720c21f95908b7ae4a24bf0cae1b6",
+      "git_tree": "6350b01077059cfea4e7862f1980434dd0527bb4",
+      "archive": {
+        "url": "https://codeload.github.com/pytorch/ao/tar.gz/a701b6a6058720c21f95908b7ae4a24bf0cae1b6",
+        "sha256": "a6f563be319e997d68a5e82351c8efd4ec4338909c33c55eecf78229824a3623"
+      },
+      "vendored": {
+        "path": "third_party/torchao_cpu",
+        "tree_sha256": "c0cd5d2ddbc0ed8231f9f1c282fe1acd967569ad33e8e08ad7cef47fc2b0aa51"
+      },
+      "license": {
+        "expression": "BSD-3-Clause",
+        "files": [
+          {
+            "root": "hyle",
+            "path": "third_party/torchao_cpu/LICENSE",
+            "sha256": "67901e351baeaa5aef967cccd0886ba679f085df8673d1ecd49592bf284115af"
+          },
+          {
+            "root": "hyle",
+            "path": "third_party/torchao_cpu/NOTICE.md",
+            "sha256": "7794506df743c07737c18da9628f339f65cd933da0059f48e9712421b8b8bc93"
+          }
+        ]
+      }
     }
   ]
 }
