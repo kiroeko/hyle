@@ -1,0 +1,48 @@
+HYLE canonical LOC report
+root:   C:\public\project-hyle\hyle
+commit: eb7f97b8ff8d82071ce65aa3f6fcd89715f7b174
+dirty:  no
+cloc:   2.08
+
+metric                                           code   counted files
+------------------------------------------ ---------- ---------------
+full repository code                        1,567,533           4,143
+self-written excluding tests                  156,051             595
+module implementation (compute-graph)          60,866             244
+
+path/language policy:
+  full repository: immutable Git commit tree; every cloc language
+  self-written - tests: include/hyle, src; C++, C/C++ Header, C, CUDA, Objective-C++, GLSL
+  self-written excludes bench, docs, third_party, samples, CMake and build/cache/scratch trees
+  current unit languages: C++, C/C++ Header, C, CUDA, Objective-C++, GLSL
+  module boundary (explicit):
+    - include/hyle/compute
+    - include/hyle/graph
+    - src/compute
+    - src/compute_backend_cpu
+    - src/compute_backend_cuda
+    - src/compute_ggml_runtime
+    - src/compute_ops
+    - src/compute_provider_cublas
+    - src/compute_provider_cuda
+    - src/compute_provider_flashinfer
+    - src/compute_provider_ggml
+    - src/compute_provider_ggml_cuda
+    - src/compute_provider_ggml_metal
+    - src/compute_provider_ggml_vulkan
+    - src/compute_provider_iree_vulkan
+    - src/compute_provider_marlin
+    - src/compute_provider_native
+    - src/compute_provider_onednn
+    - src/compute_route_apple
+    - src/compute_route_cpu
+    - src/compute_route_cuda
+    - src/compute_route_vulkan
+    - src/graph
+    - src/graph_provider_ggml_cuda
+    - src/graph_provider_onednn
+    - src/graph_route_apple
+    - src/graph_route_cpu
+    - src/graph_route_cuda
+    - src/graph_route_vulkan
+self-check: PASS

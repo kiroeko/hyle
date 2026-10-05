@@ -1,0 +1,23 @@
+{
+  "candidate": "eb7f97b8ff8d82071ce65aa3f6fcd89715f7b174",
+  "tree": "2fc966073ab222af7cd7542da8e6f0b25c76c3f1",
+  "canonical": "C:\\public\\project-hyle\\hyle",
+  "product_inputs_sha256": {
+    "CMakePresets.json": "2340811130c8f5c5a1f5ec39d39e32b666de47cb8a6514b652868c2f33c6b156",
+    "cmake/HyleCiRuntimeStagingContract.cmake": "01cfaa25ff9dbabbb99c098f7dbfc15e161419e71cefc220a700388623c2818e",
+    "cmake/HyleDependencyLock.json": "3a876af50edead64c04f8281a03ac1d49614fda7d4925d0af050cbc96c6491b9",
+    "cmake/HyleRuntimeStaging.cmake": "58b2b1f82ee9631ca6ac80999be816c2e6b40d22c1bb4c78cfd2ec2ec51bc6d5",
+    "src/compute_provider_native/CMakeLists.txt": "2b5a9995bcec4b2276917336ed16dbbc0eb95fe26e39cde85ab9f711ec4aa577",
+    "src/compute_provider_native/HyleTorchCpuSdkConfig.cmake": "a95de72ee65a038edbbf37ce639bfba6102986fd1cc1792b781af3fe56fadb1d",
+    "src/compute_provider_native/torch_cpu_sdk.cmake": "8fb453a97ef2deac279dd652bf1855fff117ee645088a83bb3918016711b3392",
+    "src/compute_provider_native/torch_cpu_fetch.cmake": "2a5da48d7fa7d924d4c473e63115a12ffffc7bbe4154fc4f307b85f923f1dde6"
+  },
+  "archive_sha256": "871bfbf7421397a9740205abda73084a882e2feaee5aec25dc5dacb4d44562b8",
+  "selector": "Conservative global plan preserved separately; not a selector-run PASS.",
+  "precommit_checks": "Native C++ mathematics and original SDK bytes unchanged. Targeted CMake and loader checks ran on these product contents before freezing this commit; final generic helper comment differs only in prose.",
+  "limits": [
+    "Default live HTTP download not exercised: previously downloaded locked original archives reused.",
+    "WSL installed consumers cover FP8 Direct/Graph with two replays; not the Windows 28-test suite.",
+    "Some corrective reruns overwrote same-name raw logs. Receipt history retains exit codes; README distinguishes observed defects from harness mistakes."
+  ]
+}

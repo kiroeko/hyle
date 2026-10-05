@@ -1,6 +1,6 @@
 # CPU标准构建：默认取得已验收Provider
 
-<!-- MODULE REVIEW: AUDITED -->
+<!-- MODULE REVIEW: CANDIDATE -->
 
 - baseline：`59f68e326`，Windows canonical；CPU官方四画像新能力已独立CLOSED，工作树干净。
 - owner：`compute_provider_native`。用户要求普通用户只选CPU模式，HYLE处理成熟库依赖；
@@ -54,3 +54,29 @@ Linux安装消费者补查发现具名CB4尾项：shared HYLE的`$ORIGIN`无法�
 一整份SDK，仅为实际使用CPU SDK的consumer添加已解析SDK目录和可覆盖间接依赖的ELF RPATH。
 未关联目标不改变loader路径；启动不再要求用户另写LD_LIBRARY_PATH。source/static/shared
 均用小型真实FP8 Direct/Graph重复执行验证，不因此重跑原数学P1或修统计工具。
+
+## 固定候选与工程验收
+
+候选为`eb7f97b8ff8d82071ce65aa3f6fcd89715f7b174`；
+[证据与限制](../../../../evidence/correctness/cpu-standard-provider-build-v1/README.md)记录实际命令、
+失败纠正、SDK/输入SHA和三交付。CB1–4已实现。七门仅评价本卡构建接缝，不宣布CPU算子裁决完成。
+
+| 门 | 本卡裁决 |
+|---|---|
+| scope | PASS：只取得已验同版原SDK、普通CPU入口与必要loader闭包 |
+| architecture | PASS：中央SDK附属锁、Native私有取得器、既有staging接缝；没有新执行器/数学/Provider排序 |
+| correctness | PASS：十项SDK失败/隔离检查、显式root对旧缓存、实际runtime合同；原C++与SDK字节不变 |
+| delivery | PASS：Windows每种28项真实官方Direct/Graph；WSL三种真实FP8 Direct/Graph重复执行，无LD_LIBRARY_PATH |
+| usability_docs | PASS：普通CPU preset、单产品选择和高级裁剪/离线参数，消费者只给HYLE prefix |
+| red_team | PASS：坏root/archive/缓存manifest、条件闭包与非关联owner；修复真实Linux shared间接依赖缺失 |
+| engineering_performance | PASS/P0：配置期取得/文件SHA、按身份共享；执行路径不变，不重跑数学P1 |
+
+selector的120门保守计划保留为计划，未运行项不签PASS或REUSED。按本卡有限风险定界，未改的旧preset/
+source-lock记录、无runtime metadata的其它owner、其它库数学及GPU实现不加入产品复测；实际公共
+接缝通过组件与runtime合同验证。在线重新下载原大archive未运行，只签源码检查与真实本地archive取得，
+不伪称在线下载PASS。WSL小型交付证明不冒称Windows完整套件。
+
+红队复核确认显式ROOT胜出、静态导出不泄漏producer c10.lib、shared与static均安装依赖shim，Linux
+Native DT_RPATH保留$ORIGIN并允许应用的SDK路径作用于间接依赖；修正后实际启动通过。
+重开条件：真实SDK取得/隔离/缓存破损误判、普通CPU能力静默缺失或三交付loader/relocation缺陷。
+Compute + Graph为60,866实现行/244文件（统一脚本，不含测试/vendor），本包未新增C++行。
