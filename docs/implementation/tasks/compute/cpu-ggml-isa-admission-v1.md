@@ -48,6 +48,18 @@ DLL实际已安装到`lib`，不是编译或数学缺失。本包仅将shim的Wi
 消费者仍由staging helper复制到exe同目录，不改变通用安装/验证工具。该CMake路径纠正不影响
 已通过的383项CPU GTest；只重验交付与对应文档/状态检查，不重复整批数学回归或P1。
 
+## 当前已运行验收（尚未关闭）
+
+- 产品候选：`bf4027e7`；安装路径纠正候选：`d0b774c5`，未改C++或上游数学。
+- Windows CPU runtime、ggml Provider、普通CPU Direct及Graph共8/8 CTest目标通过，
+  其中383项GTest；覆盖F32/F16/BF16、既有真实GGUF/lowp片段与资源/重放路径。
+- Windows源码、静态SDK、动态SDK的独立普通消费者实际执行F16 MatMul和完整
+  RMSNorm→MatMul Graph，均各重复两次通过；静态/动态消费者只传HYLE安装前缀，
+  优化程序DLL由现有helper自动放到exe同目录。
+- 待验：Linux优化程序及对应三交付、冷ISA/ABI失败与CPU OFF隔离。当前不能签CI1–4全PASS
+  或关闭runtime；Native自研域仍未完成比较、删除和规则定案，本卡不签算法WIN。
+- 完整日志/身份/统计见[当前证据](../../../../evidence/correctness/cpu-ggml-isa-admission-v1/README.md)。
+
 ## AUDITED绑定
 
 CI1–4已经固定；Windows原版程序探针成功，没有改上游数学。当前runtime owner重新绑定本卡，

@@ -35,7 +35,7 @@
 | Native 能力族 | 成熟重叠候选 | 不能用重叠域结果直接删除的边界 | 动作 |
 |---|---|---|---|
 | MatMul | ggml 非空 rank2 plain F32，row-major/转置权重；oneDNN 非空 dense F32、serial M≥16 | Native F32 NumPy batch 广播、空K、非vendor可表达批次布局 | DECISION_REQUIRED；旧M1 Native-vs-Native不是胜出 |
-| RMSNorm/LayerNorm | oneDNN dense浮点；ggml可表达浮点、F32 accumulation | bounded RMS整符号域、受控预算、in-place；普通托管out-of-place仍须比较 | DECISION_REQUIRED；旧Graph结果不能代签新融合 |
+| RMSNorm/LayerNorm | oneDNN dense浮点、input0精确原位；ggml可表达浮点、F32 accumulation | bounded RMS整符号域、受控预算、非vendor布局；原位不能一概归唯一 | DECISION_REQUIRED；普通out-of-place与oneDNN原位均须比较，旧Graph不能代签新融合 |
 | Unary | ggml Abs/Neg/Exp/Log/Sqrt/Rsqrt/Tanh/Sigmoid；oneDNN dense F32稳定Softplus | 未接ReLU/SiLU/GELU/GELU-tanh、narrow Softplus、layout/alias/非有限值 | DECISION_REQUIRED，按kind/dtype分开 |
 | Binary/Select | ggml Add/Subtract/Multiply/Divide；oneDNN Bool Select广播/plain分支 | number Min/Max的NaN/signed-zero、特殊alias/layout/scalar-width | DECISION_REQUIRED |
 | Reduce | ggml Sum/Mean、Unknown/F32 accumulation | Min/Max语义、部分axes/rank/empty/checked strides | DECISION_REQUIRED |
