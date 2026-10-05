@@ -1,0 +1,20 @@
+{
+  "consumer": "Ordinary managed CPU Direct/Graph complete official low-precision MoE replay cycles",
+  "scope": "Complete GLM Flash and DeepSeek Flash official numerical programs, not bare APIs, independent mathematical SOTA or model throughput",
+  "profiles": [
+    "GLM 5.3 Flash official FP8 H4096 N2048 top8 router288, two changed input slots",
+    "DeepSeek V4 Flash official mixed routed FP4/shared FP8 H4096 N2048 top6 router256, three changed input slots"
+  ],
+  "product_candidate": "3c22b7b9f230abc86e749225174d86b59c79881e",
+  "input_identity_file": "inputs.json",
+  "input_identity_sha256": "797cf0065ad28e26a43e38da9341e46cc8783289c2e3025fabf0976dcf5e2478",
+  "ownership": "Separate owners, constants and resident slots; every native tensor, accepted completion and output use settled within the blocking fragment. All slots visited once per measured call. Cold binding not charged.",
+  "math": "Original A8 scale/floor/rceil, W8/W4 codecs and BF16/F32 boundaries; source-qualified TorchAO/ATen plus existing mature providers. Same program in both arms.",
+  "thread_policy": "Existing instrument OMP_NUM_THREADS=1/MKL_NUM_THREADS=1; no global thread override. P-core caller and native-runtime-pair process policy unchanged.",
+  "oracle": "Original final-output gate; two complete sweeps before/after each process. Correctness suite separately retains all diagnostic and state checks.",
+  "limitations": [
+    "Synthetic format-valid weights retain actual N/K/topK; no downloaded full model or token throughput claim",
+    "Representative performance consumers; Pro shapes have full correctness evidence but no separate performance verdict",
+    "Graph versus ordinary HYLE Direct does not establish Direct superiority over raw ATen APIs"
+  ]
+}

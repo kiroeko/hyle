@@ -193,3 +193,22 @@ Apple 有界检查将 ds4 upstream HEAD `0aaea5a238fb41a35106a551e73c8409dfb751a
 `metal/dsv4_kv.metal` 与已登记 `9139e2ae58a4` 比较，SHA完全相同；相关 FP4/Hadamard 原函数
 没有提供区别于旧失败的新机制。`dsv4_misc.metal` 有其它变化，不能据此宣称FP4已修复。
 没有重跑旧资格或打开Apple产品FIX；不外推全生态缺失。
+
+### 新完整消费者 P1 的固定输入
+
+产品与安装 SDK 保持 `3c22b7b9`。复用既有 D5 `measure`、nanobench compare、machine policy、
+A/A 与公共统计核心，不修改公共仪器。新增独立 C++ 消费者只接两条代表完整链：
+GLM 5.3 Flash 官方 FP8 MoE（H4096/N2048/router288/top8，两变化输入）；
+DeepSeek V4 Flash 官方 FP4 routed + FP8 shared MoE（H4096/N2048/router256/top6，三变化输入）。
+两个产品格式/量化机制覆盖本批新增域；Pro 真实形状已完成 correctness，不虚构 Pro 的独立 P1。
+
+每个计时调用执行一次完整变化输入周期（分别2/3个完整片段），保持两臂输入次数相等；
+分母明确为 complete-replay-cycle，不混报单片段或整模型速度。只发布完整最终输出，
+裁剪诊断 tap；实际路由、专家选择、A8、全部投影、组合和必要转换保持。冷编译和常量准备在
+计时外，managed native 临时 Tensor、所有检查/转换/同步/Completion销毁均在计时内。
+双方为默认普通 CPU Context；复用仪器固定 OMP/MKL=1，与已有 correctness 两线程证据分别记录。
+两个完整 oracle 周期在每个进程前后执行，保持原 BF16/量化门。
+
+一次八进程工作负载 A/A（两臂各四种执行/分配顺序）通过后，四种顺序各 n=15，
+5%非劣门，无 n=31 延长；初次 source/reference/config 包装失败不计产品样本。
+没有合格 A/A 时止于测量 INCONCLUSIVE，先查已有源码成本，不反复变换环境重测。
