@@ -207,8 +207,7 @@ TEST(OneDnnProvider, DirectBrgemmDeclinesNonExactShapeDomains) {
   auto context = Context::create(hyle::compute::cpu::device(),
                                  hyle::compute::onednn::provider())
                      .value();
-  // Match the supported prefill shape below; tiny serial decode deliberately
-  // declines to Native independently of the shape-domain contract.
+  // An exact point is admitted independently of a bounded shape domain.
   const std::array inputs{matrix(16, 5), matrix(5, 4)};
   const std::array outputs{matrix(16, 4)};
   std::array dimensions{ShapeDimension{.bounds = {1, 16, 1}}};
@@ -464,16 +463,72 @@ TEST(OneDnnProvider, UsesTheBorrowedSynchronousExecutor) {
     EXPECT_EQ(observed, static_cast<float>(inner));
 }
 
-TEST(OneDnnProvider, RejectsSmallSerialDecodeWithoutAnotherProvider) {
+TEST(OneDnnProvider, SmallSerialMatricesExecuteAndReplayWithCallerWorkspace) {
   Context context = create_context();
-  for (const std::int64_t rows : {1, 4}) {
-    const TensorDesc left = matrix(rows, 17);
-    const TensorDesc right = matrix(17, 65);
-    const TensorDesc output = matrix(rows, 65);
-    auto prepared =
-        hyle::compute::prepare(context, MatMul{}, left, right, output);
-    ASSERT_FALSE(prepared.has_value());
-    EXPECT_TRUE(prepared.error().IsUnimplemented());
+  auto queue = context.create_queue().value();
+  for (const std::int64_t rows : {1, 4, 15, 16}) {
+    for (const auto shape : {std::array<std::int64_t, 2>{17, 65},
+                             std::array<std::int64_t, 2>{64, 64}}) {
+      SCOPED_TRACE(rows);
+      SCOPED_TRACE(shape[0]);
+      const auto inner = shape[0], columns = shape[1];
+      const TensorDesc left = matrix(rows, inner);
+      const TensorDesc right = matrix(inner, columns);
+      const TensorDesc output = matrix(rows, columns);
+      auto prepared =
+          hyle::compute::prepare(context, MatMul{}, left, right, output);
+      ASSERT_TRUE(prepared.has_value()) << prepared.error().message();
+      EXPECT_EQ(prepared->provider().id, hyle::compute::onednn::kProviderId);
+      Buffer scratch;
+      const auto requirement = prepared->workspace_requirement();
+      if (requirement.size != 0) {
+        scratch = Buffer::create(hyle::mem::system_resource(), requirement.size,
+                                 requirement.alignment)
+                      .value();
+      }
+      auto invocation = prepared->create_invocation(scratch.view()).value();
+      auto left_buffer = Buffer::create(hyle::mem::system_resource(),
+                                        left.required_bytes().value(), 64)
+                             .value();
+      auto right_buffer = Buffer::create(hyle::mem::system_resource(),
+                                         right.required_bytes().value(), 64)
+                              .value();
+      auto output_buffer = Buffer::create(hyle::mem::system_resource(),
+                                          output.required_bytes().value(), 64)
+                               .value();
+      std::vector<float> a(static_cast<std::size_t>(rows * inner));
+      std::vector<float> b(static_cast<std::size_t>(inner * columns));
+      for (std::size_t i = 0; i < b.size(); ++i)
+        b[i] = static_cast<float>(static_cast<int>(i % 7) - 3) * 0.25F;
+      write_floats(right_buffer.view(), b);
+      const auto lhs =
+          ConstTensorView::create(left, left_buffer.view()).value();
+      const auto rhs =
+          ConstTensorView::create(right, right_buffer.view()).value();
+      const auto out = TensorView::create(output, output_buffer.view()).value();
+      for (const int seed : {1, 7}) {
+        for (std::size_t i = 0; i < a.size(); ++i)
+          a[i] =
+              static_cast<float>((static_cast<int>(i % 11) + seed) % 11 - 5) *
+              0.125F;
+        write_floats(left_buffer.view(), a);
+        auto done = invocation.submit(queue, lhs, rhs, out);
+        ASSERT_TRUE(done.has_value()) << done.error().message();
+        ASSERT_TRUE(done->wait().ok());
+        const auto actual = read_floats(
+            output_buffer.view(), static_cast<std::size_t>(rows * columns));
+        for (std::int64_t row = 0; row < rows; ++row) {
+          for (std::int64_t column = 0; column < columns; ++column) {
+            double expected = 0;
+            for (std::int64_t k = 0; k < inner; ++k)
+              expected += static_cast<double>(a[row * inner + k]) *
+                          b[k * columns + column];
+            EXPECT_NEAR(actual[row * columns + column], expected,
+                        2.0e-5 * (1.0 + std::abs(expected)));
+          }
+        }
+      }
+    }
   }
 }
 

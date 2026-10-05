@@ -15,8 +15,6 @@
 namespace hyle::compute::onednn {
 namespace {
 
-inline constexpr std::size_t kNativeSerialRowCutoff = 16;
-
 struct OneDnnContext final {
   ParallelExecutorRef executor{};
 };
@@ -297,12 +295,6 @@ Status select_route(void *context_value, Operation operation,
   route.task_count = internal::recommended_brgemm_task_count(
       route.shape.columns, context->executor.concurrency());
 
-  // The HYLE-native 1/4-row kernels have a structurally cheaper decode route.
-  // A real external executor may still make independent N tiles worthwhile.
-  if (route.task_count == 1 && route.shape.rows < kNativeSerialRowCutoff) {
-    return Status::Unimplemented(
-        "small serial MatMul remains on the HYLE-native decode route");
-  }
   return Status::Ok();
 }
 

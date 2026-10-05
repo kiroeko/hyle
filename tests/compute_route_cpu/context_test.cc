@@ -243,7 +243,7 @@ TEST(CpuDefaultContext, MatMulNeverFallsBackToLowerAccumulationPrecision) {
 
 TEST(CpuDefaultContext, MatMulRulesAndChangedInputReplay) {
   constexpr std::int64_t inner = 129, columns = 65;
-  for (const std::int64_t rows : {1, 15, 16, 17}) {
+  for (const std::int64_t rows : {1, 4, 15, 16, 17}) {
     for (const bool transposed : {false, true}) {
       SCOPED_TRACE(rows);
       SCOPED_TRACE(transposed);
@@ -271,7 +271,7 @@ TEST(CpuDefaultContext, MatMulRulesAndChangedInputReplay) {
         }
         ProviderId expected = native::kProviderId;
 #if defined(HYLE_COMPUTE_ONEDNN)
-        if (rows >= 16 && !transposed)
+        if (!transposed)
           expected = onednn::kProviderId;
 #endif
 #if defined(HYLE_COMPUTE_GGML_CPU)
@@ -432,19 +432,17 @@ TEST(CpuDefaultContext, D5RealQwenProjectionUsesExactProfileAndReplays) {
   ASSERT_NO_THROW(fixture = d5_qwen35_fixture::load_projection(*fixture_root));
 
   const auto activation_desc =
-      TensorDesc::dense(DataType::kBFloat16,
-                        std::array<std::int64_t, 2>{1,
-                                                    d5_qwen35_fixture::kHidden})
+      TensorDesc::dense(
+          DataType::kBFloat16,
+          std::array<std::int64_t, 2>{1, d5_qwen35_fixture::kHidden})
           .value();
   const auto stored_weight_desc =
       TensorDesc::dense(DataType::kBFloat16,
-                        std::array<std::int64_t, 2>{
-                            d5_qwen35_fixture::kHidden,
-                            d5_qwen35_fixture::kHidden})
+                        std::array<std::int64_t, 2>{d5_qwen35_fixture::kHidden,
+                                                    d5_qwen35_fixture::kHidden})
           .value();
   const auto weight_desc = stored_weight_desc.transposed().value();
-  const auto workload =
-      d5_qwen35_fixture::workload(WorkloadPhase::kDecode);
+  const auto workload = d5_qwen35_fixture::workload(WorkloadPhase::kDecode);
   auto context = create_context().value();
   auto prepared = prepare(context, MatMul{}, activation_desc, weight_desc,
                           hyle::mem::system_resource(), workload);
@@ -452,18 +450,17 @@ TEST(CpuDefaultContext, D5RealQwenProjectionUsesExactProfileAndReplays) {
   EXPECT_EQ(prepared->provider().id, ggml_cpu::kProviderId);
   EXPECT_EQ(prepared->workload(), workload);
 
-  auto activation =
-      hyle::mem::Buffer::create(hyle::mem::system_resource(),
-                                fixture.activation.size(), 64)
-          .value();
+  auto activation = hyle::mem::Buffer::create(hyle::mem::system_resource(),
+                                              fixture.activation.size(), 64)
+                        .value();
   auto weight = hyle::mem::Buffer::create(hyle::mem::system_resource(),
                                           fixture.weight.size(), 64)
                     .value();
   const auto output_desc = prepared->output_description().value();
-  auto output = hyle::mem::Buffer::create(
-                    hyle::mem::system_resource(),
-                    output_desc.required_bytes().value(), 64)
-                    .value();
+  auto output =
+      hyle::mem::Buffer::create(hyle::mem::system_resource(),
+                                output_desc.required_bytes().value(), 64)
+          .value();
   ASSERT_TRUE(weight.view().write(fixture.weight).ok());
   const std::array inputs{
       ConstTensorView::create(activation_desc, activation.view()).value(),
@@ -482,8 +479,7 @@ TEST(CpuDefaultContext, D5RealQwenProjectionUsesExactProfileAndReplays) {
   for (int run = 0; run < 2; ++run) {
     auto values = fixture.activation;
     if (run != 0) {
-      for (std::size_t index = 0; index < d5_qwen35_fixture::kHidden;
-           ++index)
+      for (std::size_t index = 0; index < d5_qwen35_fixture::kHidden; ++index)
         values[index * 2 + 1] ^= std::byte{0x80};
     }
     ASSERT_TRUE(activation.view().write(values).ok());
@@ -493,29 +489,30 @@ TEST(CpuDefaultContext, D5RealQwenProjectionUsesExactProfileAndReplays) {
     const auto actual = half_test::read<hyle::simd::bfloat16_t>(output);
     ASSERT_EQ(actual.size(), fixture.expected.size());
     for (std::size_t index = 0; index < actual.size(); ++index)
-      half_test::expect_near(actual[index],
-                             run == 0 ? fixture.expected[index]
-                                      : -fixture.expected[index]);
+      half_test::expect_near(actual[index], run == 0
+                                                ? fixture.expected[index]
+                                                : -fixture.expected[index]);
   }
 }
 
-class CpuQwen38GdnProfiles
-    : public ::testing::TestWithParam<
-          const d5_qwen38_profile_cases::ProfileCase *> {};
+class CpuQwen38GdnProfiles : public ::testing::TestWithParam<
+                                 const d5_qwen38_profile_cases::ProfileCase *> {
+};
 
 TEST_P(CpuQwen38GdnProfiles, GroupedHeadUsesOrdinaryRouteAndReplays) {
   const auto &profile_case = *GetParam();
-  const d5_qwen38_gdn_fixture::Fixture fixture(
-      0, profile_case.gdn_key_heads, profile_case.gdn_value_heads);
+  const d5_qwen38_gdn_fixture::Fixture fixture(0, profile_case.gdn_key_heads,
+                                               profile_case.gdn_value_heads);
   std::vector<hyle::mem::Buffer> input_storage;
   std::vector<ConstTensorView> inputs;
   input_storage.reserve(fixture.inputs.size());
   inputs.reserve(fixture.inputs.size());
   for (std::size_t port = 0; port < fixture.inputs.size(); ++port) {
-    input_storage.push_back(hyle::mem::Buffer::create(
-                                hyle::mem::system_resource(),
-                                fixture.inputs[port].required_bytes().value(), 64)
-                                .value());
+    input_storage.push_back(
+        hyle::mem::Buffer::create(hyle::mem::system_resource(),
+                                  fixture.inputs[port].required_bytes().value(),
+                                  64)
+            .value());
     ASSERT_TRUE(input_storage.back()
                     .view()
                     .write(std::as_bytes(std::span(fixture.data[port])))
@@ -534,9 +531,8 @@ TEST_P(CpuQwen38GdnProfiles, GroupedHeadUsesOrdinaryRouteAndReplays) {
   const std::array outputs{
       TensorView::create(fixture.outputs[0], output_storage[0].view()).value(),
       TensorView::create(fixture.outputs[1], output_storage[1].view()).value()};
-  const auto workload =
-      d5_qwen38_gdn_fixture::workload(*profile_case.profile,
-                                     WorkloadPhase::kDecode);
+  const auto workload = d5_qwen38_gdn_fixture::workload(*profile_case.profile,
+                                                        WorkloadPhase::kDecode);
   auto context = create_context().value();
   auto prepared = prepare(context, Operation(GatedDeltaNet{}), inputs, outputs,
                           hyle::mem::system_resource(), workload);
