@@ -52,9 +52,10 @@ MN1–4固定BORROW/FIX。erf-GELU采用原Double erfc Tensor等价程序，tanh
 sigmoid/pow/add/mul程序，SiLU采用原Double silu；原where仅处理−Inf极限，activation显式F32
 后乘value的F32，再一次cast输出。直接raw gelu与消减参考失败保留，不放宽数值门。
 number Min/Max与Reduce用原kernel及零号mask组合；empty/reduce axes由cold Program固定。
-冷native typed input槽包含对齐Byte packing；旧SI借用slots与映射顺序保持。仅Unary/Binary/
-separate gate的允许dense equal-desc端口可精确alias，所有输入先native packing后才写输出。
-公共trait允许与实际可行域分别匹配，广播/strided/packed gate/reduce外部alias拒绝。
+冷native typed input槽包含对齐Byte packing；旧SI借用slots与映射顺序保持。仅Unary/Binary
+的允许dense equal-desc端口可精确alias，所有输入先native packing后才写输出。
+公共trait允许与实际可行域分别匹配，广播/strided/所有gate/reduce外部alias拒绝；GatedActivation
+公共trait为kNone，即使native private packing可保留旧值也不扩大别名合同。
 P0为O(input+output)原Tensor程序，Double cast/原library多节点temporary/全部packing均收费；
 不承诺热零分配/完整内部内存上界，不制造prepared-only资格。软件/资源合同不变，无SDK或架构重写。
 owner AUDITED，产品gate尚未运行；原program witness不代签产品成功。已经存在的GGML有限尾部

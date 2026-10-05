@@ -13,12 +13,14 @@
 #include <c10/util/Exception.h>
 
 #include <array>
+#include <cmath>
 #include <cstddef>
 #include <cstdint>
 #include <cstring>
 #include <limits>
 #include <memory>
 #include <new>
+#include <numbers>
 #include <string_view>
 
 #include "hyle/mem/buffer.h"
@@ -42,10 +44,14 @@ struct Program final {
   std::size_t allocation_bytes = 0;
   std::size_t axis = 0;
   std::size_t index_count = 0;
+  std::array<std::int64_t, kMaxTensorRank> reduction_axes{};
+  std::size_t reduction_axis_count = 0;
+  bool empty_reduction = false;
 };
 struct alignas(std::max_align_t) Invocation final {
   std::span<mem::HostMapping> mappings{};
   std::span<at::Tensor> tensors{};
+  std::span<at::Tensor> numeric_inputs{};
   at::Tensor condition{}, index_bytes{}, index_destination{}, index_values{};
   std::size_t allocation_bytes = 0;
 };
@@ -70,6 +76,26 @@ Result<std::size_t> allocation_size(std::size_t header, std::size_t count,
   return header + count * item;
 }
 
+bool numeric_program(Operation operation) noexcept {
+  if (const auto *unary = operation.get_if<Unary>())
+    return unary->kind == UnaryKind::kSilu || unary->kind == UnaryKind::kGelu ||
+           unary->kind == UnaryKind::kGeluTanh ||
+           unary->kind == UnaryKind::kSoftplus;
+  if (const auto *binary = operation.get_if<Binary>())
+    return binary->kind == BinaryKind::kMinimum ||
+           binary->kind == BinaryKind::kMaximum;
+  return operation.get_if<GatedActivation>() || operation.get_if<Reduce>();
+}
+bool floating(DataType type) noexcept {
+  return type == DataType::kFloat32 || type == DataType::kFloat16 ||
+         type == DataType::kBFloat16;
+}
+at::ScalarType native_type(DataType type) noexcept {
+  return type == DataType::kFloat16    ? at::kHalf
+         : type == DataType::kBFloat16 ? at::kBFloat16
+                                       : at::kFloat;
+}
+
 Status select(Operation operation, std::span<const TensorDesc> inputs,
               std::span<const TensorDesc> outputs) noexcept {
   const bool supported =
@@ -77,9 +103,10 @@ Status select(Operation operation, std::span<const TensorDesc> inputs,
       operation.get_if<Fill>() || operation.get_if<Copy>() ||
       operation.get_if<Concat>() ||
       (operation.get_if<Scatter>() &&
-       operation.get_if<Scatter>()->kind == ScatterKind::kAssign);
+       operation.get_if<Scatter>()->kind == ScatterKind::kAssign) ||
+      numeric_program(operation);
   if (!supported)
-    return Status::Unimplemented("ATen CPU storage program is not admitted");
+    return Status::Unimplemented("ATen CPU program is not admitted");
   std::array<TensorDesc, 1> inferred{};
   HYLE_RETURN_IF_ERROR(infer_output_descriptions(operation, inputs, inferred));
   if (outputs.size() != 1 || outputs[0] != inferred[0] ||
@@ -101,13 +128,26 @@ Status select(Operation operation, std::span<const TensorDesc> inputs,
   HYLE_RETURN_IF_ERROR(validate(outputs[0]));
   for (const auto &input : inputs)
     HYLE_RETURN_IF_ERROR(validate(input));
+  if (numeric_program(operation)) {
+    if (!floating(outputs[0].data_type()))
+      return Status::Unimplemented("ATen CPU math requires F32/F16/BF16");
+    for (const auto &input : inputs)
+      if (!floating(input.data_type()))
+        return Status::Unimplemented("ATen CPU math input is not floating");
+    if (const auto *reduce = operation.get_if<Reduce>())
+      if (reduce->accumulation_type != DataType::kFloat32 &&
+          !(reduce->accumulation_type == DataType::kUnknown &&
+            inputs[0].data_type() == DataType::kFloat32))
+        return Status::Unimplemented(
+            "ATen CPU Reduce requires F32 accumulation");
+  }
   auto program_bytes =
       allocation_size(sizeof(Program), inputs.size(), sizeof(TensorDesc));
   if (!program_bytes)
     return std::move(program_bytes).error();
   auto invocation_bytes =
       allocation_size(sizeof(Invocation), inputs.size(),
-                      sizeof(mem::HostMapping) + sizeof(at::Tensor));
+                      sizeof(mem::HostMapping) + 2 * sizeof(at::Tensor));
   if (!invocation_bytes)
     return std::move(invocation_bytes).error();
   return Status::Ok();
@@ -157,6 +197,8 @@ void destroy_invocation(void *state, mem::AllocatorRef allocator) noexcept {
   const auto bytes = inv->allocation_bytes;
   for (auto &tensor : inv->tensors)
     std::destroy_at(&tensor);
+  for (auto &tensor : inv->numeric_inputs)
+    std::destroy_at(&tensor);
   for (auto &mapping : inv->mappings)
     std::destroy_at(&mapping);
   std::destroy_at(inv);
@@ -171,7 +213,7 @@ Status create_invocation(void *state, mem::AllocatorRef allocator,
   HYLE_ASSIGN_OR_RETURN(
       auto bytes,
       allocation_size(sizeof(Invocation), p.inputs.size(),
-                      sizeof(mem::HostMapping) + sizeof(at::Tensor)));
+                      sizeof(mem::HostMapping) + 2 * sizeof(at::Tensor)));
   auto *storage =
       static_cast<std::byte *>(allocator.allocate(bytes, alignof(Invocation)));
   if (!storage)
@@ -185,12 +227,21 @@ Status create_invocation(void *state, mem::AllocatorRef allocator,
   for (std::size_t i = 0; i < p.inputs.size(); ++i) {
     std::construct_at(maps + i);
     std::construct_at(tensors + i);
+    std::construct_at(tensors + p.inputs.size() + i);
   }
   inv->mappings = {maps, p.inputs.size()};
   inv->tensors = {tensors, p.inputs.size()};
+  inv->numeric_inputs = {tensors + p.inputs.size(), p.inputs.size()};
   Status status;
   try {
     at::NoGradGuard guard;
+    if (numeric_program(p.operation))
+      for (std::size_t i = 0; i < p.inputs.size(); ++i) {
+        const auto dimensions = p.inputs[i].dimensions();
+        inv->numeric_inputs[i] =
+            at::empty(at::IntArrayRef(dimensions.data(), dimensions.size()),
+                      native_type(p.inputs[i].data_type()));
+      }
     if (p.operation.get_if<Select>()) {
       const auto shape = byte_shape(p.inputs[0]);
       inv->condition =
@@ -253,12 +304,135 @@ Status check_indices(const Program &p, const std::byte *data) noexcept {
   return Status::Ok();
 }
 
+// These are original ATen Tensor programs. The private native inputs are
+// aligned and packed by original Byte copy, never a truncated element stride.
+at::Tensor numeric_input(const Program &p, Invocation &inv, std::size_t index) {
+  const auto shape = byte_shape(p.inputs[index]);
+  auto bytes = inv.numeric_inputs[index].flatten().view(at::kByte).view(
+      at::IntArrayRef(shape.sizes.data(), shape.rank));
+  bytes.copy_(inv.tensors[index]);
+  return inv.numeric_inputs[index].to(at::kFloat);
+}
+at::Tensor activation(const at::Tensor &input, GatedActivationKind kind) {
+  auto wide = input.to(at::kDouble);
+  at::Tensor result;
+  switch (kind) {
+  case GatedActivationKind::kSilu:
+    result = at::silu(wide);
+    break;
+  case GatedActivationKind::kGelu:
+    // The equivalent erfc form avoids cancellation in the negative tail.
+    result = wide.mul(0.5).mul(at::erfc(wide.mul(-std::numbers::sqrt2 / 2)));
+    break;
+  case GatedActivationKind::kGeluTanh: {
+    auto inner = wide.add(wide.pow(3).mul(0.044715))
+                     .mul(2 * std::sqrt(2 / std::numbers::pi));
+    result = wide.mul(at::sigmoid(inner));
+    break;
+  }
+  }
+  return at::where(wide.eq(-(std::numeric_limits<double>::infinity)()),
+                   at::zeros_like(result), result)
+      .to(at::kFloat);
+}
+at::Tensor number_minmax(const at::Tensor &left, const at::Tensor &right,
+                         bool minimum) {
+  auto result = minimum ? at::fmin(left, right) : at::fmax(left, right);
+  auto negative = minimum ? at::signbit(left).logical_or(at::signbit(right))
+                          : at::signbit(left).logical_and(at::signbit(right));
+  auto zero =
+      at::where(negative, at::full_like(result, -0.0), at::zeros_like(result));
+  return at::where(left.eq(0).logical_and(right.eq(0)), zero, result);
+}
+at::Tensor reduction(const Program &p, const at::Tensor &input) {
+  const auto &op = *p.operation.get_if<Reduce>();
+  if (p.reduction_axis_count == 0)
+    return input;
+  if (p.empty_reduction) {
+    const auto dimensions = p.output.dimensions();
+    const auto infinity = (std::numeric_limits<double>::infinity)();
+    const double identity = op.kind == ReductionKind::kSum ? 0.0
+                            : op.kind == ReductionKind::kMean
+                                ? (std::numeric_limits<double>::quiet_NaN)()
+                            : op.kind == ReductionKind::kMinimum ? infinity
+                                                                 : -infinity;
+    return at::full(at::IntArrayRef(dimensions.data(), dimensions.size()),
+                    identity, at::kFloat);
+  }
+  const auto axes =
+      at::IntArrayRef(p.reduction_axes.data(), p.reduction_axis_count);
+  at::Tensor result;
+  switch (op.kind) {
+  case ReductionKind::kSum:
+    return at::sum(input, axes, op.keep_dimensions);
+  case ReductionKind::kMean:
+    return at::mean(input, axes, op.keep_dimensions);
+  case ReductionKind::kMinimum:
+    result = at::amin(input, axes, op.keep_dimensions);
+    break;
+  case ReductionKind::kMaximum:
+    result = at::amax(input, axes, op.keep_dimensions);
+    break;
+  }
+  // Original reductions propagate NaN, but their equal-zero choice is not the
+  // public number min/max rule. Repair only zero results with original kernels.
+  auto negative = op.kind == ReductionKind::kMinimum
+                      ? at::any(at::signbit(input).logical_and(input.eq(0)),
+                                axes, op.keep_dimensions)
+                      : at::all(at::signbit(input).logical_or(input.ne(0)),
+                                axes, op.keep_dimensions);
+  auto zero =
+      at::where(negative, at::full_like(result, -0.0), at::zeros_like(result));
+  return at::where(result.eq(0), zero, result);
+}
+void execute_numeric(const Program &p, Invocation &inv, at::Tensor &output) {
+  auto first = numeric_input(p, inv, 0);
+  at::Tensor result;
+  if (const auto *unary = p.operation.get_if<Unary>()) {
+    if (unary->kind == UnaryKind::kSoftplus)
+      result = at::softplus(first, 1, 20);
+    else
+      result = activation(first, unary->kind == UnaryKind::kSilu
+                                     ? GatedActivationKind::kSilu
+                                 : unary->kind == UnaryKind::kGelu
+                                     ? GatedActivationKind::kGelu
+                                     : GatedActivationKind::kGeluTanh);
+  } else if (const auto *binary = p.operation.get_if<Binary>()) {
+    result = number_minmax(first, numeric_input(p, inv, 1),
+                           binary->kind == BinaryKind::kMinimum);
+  } else if (const auto *gate = p.operation.get_if<GatedActivation>()) {
+    at::Tensor values;
+    if (gate->inputs == GatedInputKind::kSeparate)
+      values = numeric_input(p, inv, 1);
+    else {
+      const auto axis = static_cast<std::int64_t>(p.output.rank() - 1);
+      const auto hidden = p.output.dimensions().back();
+      values = first.slice(axis, hidden);
+      first = first.slice(axis, 0, hidden);
+    }
+    // Keep an F32 activation and multiplication, with one storage rounding.
+    result = activation(first, gate->activation).mul(values);
+  } else
+    result = reduction(p, first);
+  const auto shape = byte_shape(p.output);
+  auto bytes = result.to(native_type(p.output.data_type()))
+                   .contiguous()
+                   .flatten()
+                   .view(at::kByte)
+                   .view(at::IntArrayRef(shape.sizes.data(), shape.rank));
+  output.copy_(bytes);
+}
+
 Status execute(const Program &p, Invocation &inv,
                std::byte *destination) noexcept {
   try {
     at::NoGradGuard guard;
     const auto &input = inv.tensors;
     auto out = byte_tensor(p.output, destination);
+    if (numeric_program(p.operation)) {
+      execute_numeric(p, inv, out);
+      return Status::Ok();
+    }
     switch (p.operation.kind()) {
     case OperationKind::kSelect:
       at::ne_out(inv.condition, input[0], 0);
@@ -401,9 +575,11 @@ detail::EnqueueResult submit(void *state, void *invocation, Queue &,
 AliasSupport alias(void *state, std::size_t output,
                    std::size_t input) noexcept {
   const auto &p = *static_cast<const Program *>(state);
-  return {.supported = output == 0 && input == 0 && !p.inputs.empty() &&
-                       p.inputs[0] == p.output &&
-                       p.operation.get_if<Scatter>()};
+  const bool allowed = (input == 0 && (p.operation.get_if<Scatter>() ||
+                                       p.operation.get_if<Unary>())) ||
+                       p.operation.get_if<Binary>();
+  return {.supported = allowed && output == 0 && input < p.inputs.size() &&
+                       p.inputs[input] == p.output};
 }
 const detail::ProviderPreparedVTable kPreparedVTable{
     .destroy_prepared = &destroy_program,
@@ -503,6 +679,24 @@ ProviderPrepareOutcome prepare(void *,
             : requested_axis);
   if (request.operation.get_if<Gather>() || request.operation.get_if<Scatter>())
     p->index_count = p->inputs[1].element_count().value();
+  if (const auto *reduce = request.operation.get_if<Reduce>()) {
+    std::array<bool, kMaxTensorRank> selected{};
+    if (reduce->axes.is_all())
+      for (std::size_t i = 0; i < p->inputs[0].rank(); ++i)
+        selected[i] = true;
+    else
+      for (auto axis : reduce->axes.values())
+        selected[static_cast<std::size_t>(
+            axis < 0 ? axis + static_cast<std::int64_t>(p->inputs[0].rank())
+                     : axis)] = true;
+    for (std::size_t i = 0; i < p->inputs[0].rank(); ++i)
+      if (selected[i]) {
+        p->reduction_axes[p->reduction_axis_count++] =
+            static_cast<std::int64_t>(i);
+        p->empty_reduction =
+            p->empty_reduction || p->inputs[0].dimensions()[i] == 0;
+      }
+  }
   if (const auto *fill = request.operation.get_if<Fill>()) {
     const auto bits = fill->value.bits();
     switch (data_type_size(p->output.data_type())) {
@@ -535,8 +729,8 @@ ProviderPrepareOutcome prepare(void *,
 }
 const detail::ProviderVTable kProviderVTable{
     .identity = {.id = kProviderId,
-                 .name = "ATen CPU storage/index",
-                 .version = "libtorch-2.8.0-cpu+storage-1"},
+                 .name = "ATen CPU programs",
+                 .version = "libtorch-2.8.0-cpu+programs-2"},
     .create_context = &create_context,
     .destroy_context = &destroy_context,
     .propose = &propose,
