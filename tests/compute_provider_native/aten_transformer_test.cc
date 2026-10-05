@@ -471,5 +471,258 @@ TEST(AtenCpuTransformer, DenseAliasPrivateSlotsAndCloseRetainCorrectSoftmax) {
   }
   EXPECT_TRUE(stats.balanced());
 }
+struct FaultAllocator final {
+  hyle::mem::AllocatorRef backing;
+  std::size_t attempts = 0, fail = SIZE_MAX;
+  hyle::mem::AllocatorRef get() noexcept {
+    return {[](void *self, std::size_t bytes,
+               std::size_t alignment) noexcept -> void * {
+              auto &owner = *static_cast<FaultAllocator *>(self);
+              return owner.attempts++ == owner.fail
+                         ? nullptr
+                         : owner.backing.allocate(bytes, alignment);
+            },
+            [](void *self, void *data, std::size_t bytes,
+               std::size_t alignment) noexcept {
+              static_cast<FaultAllocator *>(self)->backing.deallocate(
+                  data, bytes, alignment);
+            },
+            [](void *self, void *data, std::size_t old_bytes, std::size_t bytes,
+               std::size_t alignment) noexcept -> void * {
+              auto &owner = *static_cast<FaultAllocator *>(self);
+              return bytes != 0 && owner.attempts++ == owner.fail
+                         ? nullptr
+                         : owner.backing.reallocate(data, old_bytes, bytes,
+                                                    alignment);
+            },
+            this};
+  }
+};
+
+TEST(AtenCpuTransformer, EmptyAxisZeroKeysAndEmptyRopeHaveDeclaredResults) {
+  auto ctx = context();
+  for (auto type :
+       {DataType::kFloat32, DataType::kFloat16, DataType::kBFloat16}) {
+    const auto d = description(type, std::array<std::int64_t, 3>{2, 0, 4});
+    const std::array ds{d};
+    std::array bs{storage(d)};
+    for (auto kind : {SoftmaxKind::kSoftmax, SoftmaxKind::kLogSoftmax}) {
+      const auto out =
+          infer_single_output(Operation(Softmax{.axis = 1, .kind = kind}), ds)
+              .value();
+      auto prepared =
+          prepare(ctx, Operation(Softmax{.axis = 1, .kind = kind}), ds,
+                  std::span(&out, 1), hyle::mem::system_resource())
+              .value();
+      auto inv = prepared.create_invocation().value();
+      auto queue = ctx.create_queue().value();
+      auto dest = storage(out);
+      const std::array views{ConstTensorView::create(d, bs[0].view()).value()};
+      const std::array output{TensorView::create(out, dest.view()).value()};
+      auto done = inv.submit(queue, views, output);
+      ASSERT_TRUE(done);
+      EXPECT_TRUE(done->wait().ok());
+      EXPECT_EQ(dest.size(), 0U);
+    }
+    const auto q = description(type, std::array<std::int64_t, 4>{1, 2, 2, 2});
+    const auto k = description(type, std::array<std::int64_t, 4>{1, 0, 1, 2});
+    const auto v = description(type, std::array<std::int64_t, 4>{1, 0, 1, 3});
+    const std::array sd{q, k, v};
+    std::array sb{storage(q), storage(k), storage(v)};
+    if (type == DataType::kFloat32) {
+      auto values =
+          run<float>(ctx, Operation(ScaledDotProductAttention{}), sd, sb);
+      ASSERT_EQ(values.size(), 12U);
+      for (float x : values)
+        EXPECT_TRUE(std::isnan(x));
+    } else if (type == DataType::kFloat16) {
+      auto values = run<hyle::simd::float16_t>(
+          ctx, Operation(ScaledDotProductAttention{}), sd, sb);
+      for (auto x : values)
+        EXPECT_TRUE(std::isnan(half_test::decode(x)));
+    } else {
+      auto values = run<hyle::simd::bfloat16_t>(
+          ctx, Operation(ScaledDotProductAttention{}), sd, sb);
+      for (auto x : values)
+        EXPECT_TRUE(std::isnan(half_test::decode(x)));
+    }
+  }
+  const std::array rs{
+      description(DataType::kFloat32, std::array<std::int64_t, 2>{0, 5}),
+      description(DataType::kInt64, std::array<std::int64_t, 1>{0}),
+      description(DataType::kFloat32, std::array<std::int64_t, 1>{2})};
+  std::array rb{storage(rs[0]), storage(rs[1]), storage(rs[2])};
+  const std::array<float, 2> freq{.1F, .003F};
+  write<float>(rb[2], rs[2], freq);
+  auto result = run<float>(
+      ctx, Operation(RoPE{.rotary_dimensions = 4, .sequence_axis = 0}), rs, rb);
+  EXPECT_TRUE(result.empty());
+}
+TEST(AtenCpuTransformer, RopeAxisZeroAndRankEightNormalizations) {
+  auto ctx = context();
+  const std::array rs{
+      description(DataType::kFloat32, std::array<std::int64_t, 2>{2, 5}, true),
+      description(DataType::kInt64, std::array<std::int64_t, 1>{2}, true),
+      description(DataType::kFloat32, std::array<std::int64_t, 1>{2}, true)};
+  std::array rb{storage(rs[0]), storage(rs[1]), storage(rs[2])};
+  const std::array<float, 10> x{1, 2, 3, 4, 5, -1, -2, -3, -4, -5};
+  const std::array<std::int64_t, 2> positions{0, 0};
+  const std::array<float, 2> frequency{.1F, .003F};
+  write<float>(rb[0], rs[0], x);
+  write<std::int64_t>(rb[1], rs[1], positions);
+  write<float>(rb[2], rs[2], frequency);
+  for (auto layout : {RopeLayout::kInterleaved, RopeLayout::kHalfSplit}) {
+    auto actual = run<float>(
+        ctx,
+        Operation(
+            RoPE{.rotary_dimensions = 4, .sequence_axis = 0, .layout = layout}),
+        rs, rb);
+    EXPECT_EQ(actual, std::vector<float>(x.begin(), x.end()));
+  }
+  const auto d =
+      description(DataType::kFloat32,
+                  std::array<std::int64_t, 8>{1, 1, 1, 1, 1, 1, 2, 4}, true);
+  const std::array ds{d};
+  std::array bs{storage(d)};
+  const std::array<float, 8> values{1, 2, 3, 4, 1, 2, 3, 4};
+  write<float>(bs[0], d, values);
+  for (bool layer : {false, true}) {
+    auto actual = run<float>(
+        ctx, layer ? Operation(LayerNorm{}) : Operation(RmsNorm{}), ds, bs);
+    for (std::size_t i = 0; i < 8; ++i) {
+      double expected =
+          layer ? (values[i] - 2.5) / std::sqrt(1.25 + double(float(1e-5)))
+                : values[i] / std::sqrt(7.5 + double(float(1e-5)));
+      near_value(actual[i], expected);
+    }
+  }
+}
+TEST(AtenCpuTransformer, SharedPreparedSoftmaxUsesIndependentConcurrentQueues) {
+  auto stats =
+      hyle::mem::StatsAllocator::create(hyle::mem::system_allocator()).value();
+  {
+    auto ctx = context(stats.get());
+    const auto d = description(DataType::kFloat32,
+                               std::array<std::int64_t, 2>{2, 4}, true);
+    const auto mask =
+        description(DataType::kBool, std::array<std::int64_t, 2>{1, 4}, true);
+    const std::array ds{d, mask};
+    const auto out =
+        infer_single_output(Operation(Softmax{.mask = MaskKind::kBoolean}), ds)
+            .value();
+    auto prepared =
+        prepare(ctx, Operation(Softmax{.mask = MaskKind::kBoolean}), ds,
+                std::span(&out, 1), hyle::mem::system_resource())
+            .value();
+    std::array inv{prepared.create_invocation().value(),
+                   prepared.create_invocation().value()};
+    std::array queues{ctx.create_queue().value(), ctx.create_queue().value()};
+    std::array data{storage(d), storage(d)},
+        masks{storage(mask), storage(mask)}, output{storage(out), storage(out)};
+    const std::array<std::uint8_t, 4> bits{2, 0, 255, 1};
+    for (auto &m : masks)
+      write<std::uint8_t>(m, mask, bits);
+    for (int replay = 0; replay < 4; ++replay) {
+      std::array<std::array<float, 8>, 2> values;
+      for (std::size_t slot = 0; slot < 2; ++slot) {
+        for (std::size_t i = 0; i < 8; ++i)
+          values[slot][i] = float(i + slot + std::size_t(replay)) * .25F;
+        write<float>(data[slot], d, values[slot]);
+      }
+      std::array<hyle::Status, 2> status;
+      std::array<std::thread, 2> workers;
+      for (std::size_t slot = 0; slot < 2; ++slot)
+        workers[slot] = std::thread([&, slot] {
+          const std::array input{
+              ConstTensorView::create(d, data[slot].view()).value(),
+              ConstTensorView::create(mask, masks[slot].view()).value()};
+          const std::array dest{
+              TensorView::create(out, output[slot].view()).value()};
+          auto done = inv[slot].submit(queues[slot], input, dest);
+          if (done)
+            status[slot] = done->wait();
+          else
+            status[slot] = std::move(done).error();
+        });
+      for (auto &worker : workers)
+        worker.join();
+      for (std::size_t slot = 0; slot < 2; ++slot) {
+        ASSERT_TRUE(status[slot].ok());
+        auto actual = read<float>(output[slot]);
+        for (int row = 0; row < 2; ++row) {
+          double sum = 0;
+          for (int col = 0; col < 4; ++col)
+            if (bits[col])
+              sum += std::exp(double(values[slot][row * 4 + col]));
+          for (int col = 0; col < 4; ++col)
+            near_value(actual[row * 4 + col],
+                       bits[col]
+                           ? std::exp(double(values[slot][row * 4 + col])) / sum
+                           : 0);
+        }
+      }
+    }
+  }
+  EXPECT_TRUE(stats.balanced());
+}
+TEST(AtenCpuTransformer, ColdMaskedAttentionOomRestoresLiveBytesAndRetries) {
+  auto stats =
+      hyle::mem::StatsAllocator::create(hyle::mem::system_allocator()).value();
+  FaultAllocator owner{.backing = stats.get()};
+  {
+    auto ctx = context(owner.get());
+    const std::array ds{
+        description(DataType::kFloat32, std::array<std::int64_t, 4>{1, 2, 2, 2},
+                    true),
+        description(DataType::kFloat32, std::array<std::int64_t, 4>{1, 2, 1, 2},
+                    true),
+        description(DataType::kFloat32, std::array<std::int64_t, 4>{1, 2, 1, 3},
+                    true),
+        description(DataType::kBool, std::array<std::int64_t, 4>{1, 2, 2, 2},
+                    true)};
+    const auto op =
+        Operation(ScaledDotProductAttention{.mask = MaskKind::kBoolean});
+    const auto out = infer_single_output(op, ds).value();
+    const auto base = owner.attempts;
+    {
+      auto prepared = prepare(ctx, op, ds, std::span(&out, 1),
+                              hyle::mem::system_resource());
+      ASSERT_TRUE(prepared);
+    }
+    const auto count = owner.attempts - base;
+    ASSERT_GT(count, 0U);
+    for (std::size_t failure = 0; failure < count; ++failure) {
+      auto live = stats.snapshot().live_bytes;
+      owner.fail = owner.attempts + failure;
+      auto prepared = prepare(ctx, op, ds, std::span(&out, 1),
+                              hyle::mem::system_resource());
+      ASSERT_FALSE(prepared);
+      EXPECT_TRUE(prepared.error().IsResourceExhausted());
+      EXPECT_EQ(stats.snapshot().live_bytes, live);
+      owner.fail = SIZE_MAX;
+    }
+    auto prepared =
+        prepare(ctx, op, ds, std::span(&out, 1), hyle::mem::system_resource())
+            .value();
+    const auto begin = owner.attempts;
+    {
+      auto invocation = prepared.create_invocation();
+      ASSERT_TRUE(invocation);
+    }
+    const auto attempts = owner.attempts - begin;
+    ASSERT_GT(attempts, 0U);
+    for (std::size_t failure = 0; failure < attempts; ++failure) {
+      auto live = stats.snapshot().live_bytes;
+      owner.fail = owner.attempts + failure;
+      auto invocation = prepared.create_invocation();
+      ASSERT_FALSE(invocation);
+      EXPECT_TRUE(invocation.error().IsResourceExhausted());
+      EXPECT_EQ(stats.snapshot().live_bytes, live);
+      owner.fail = SIZE_MAX;
+      EXPECT_TRUE(prepared.create_invocation());
+    }
+  }
+  EXPECT_TRUE(stats.balanced());
+}
 #endif
 } // namespace
