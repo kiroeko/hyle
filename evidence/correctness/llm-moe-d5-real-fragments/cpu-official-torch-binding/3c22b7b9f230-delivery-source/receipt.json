@@ -1,0 +1,41 @@
+{
+  "candidate": "3c22b7b9f230abc86e749225174d86b59c79881e",
+  "stage": "source",
+  "steps": [
+    {
+      "name": "source-configure",
+      "argv": [
+        "cmake",
+        "-S",
+        "C:\\hv\\d5cp\\consumer",
+        "-B",
+        "C:\\hv\\d5cp\\source-build",
+        "-G",
+        "Ninja",
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON",
+        "-DD5_GGML_SOURCE=C:\\Users\\kiro\\AppData\\Local\\hyle\\dependencies\\v1\\sources\\ggml-456172ec733a-41b7e10fd424",
+        "-DD5_GTEST_SOURCE=C:\\Users\\kiro\\AppData\\Local\\hyle\\dependencies\\v1\\sources\\googletest-063de7e9578f-162765170ae6",
+        "-DD5_SOURCE_ROOT=C:\\hv\\d5cd\\source-tree",
+        "-DHYLE_COMPUTE_TORCH_CPU_ROOT=C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-cpu-apple-official-sources\\cpu-sdk-full\\libtorch"
+      ],
+      "returncode": 0,
+      "seconds": 40.328
+    },
+    {
+      "name": "source-build",
+      "argv": [
+        "cmake",
+        "--build",
+        "C:\\hv\\d5cp\\source-build",
+        "--target",
+        "d5_cpu_delivery",
+        "-j",
+        "2"
+      ],
+      "returncode": 4294967295,
+      "seconds": 56.297
+    }
+  ],
+  "scope": "official GLM/DeepSeek CPU full fragments, independent Direct/Graph C++ delivery; no P1 verdict"
+}

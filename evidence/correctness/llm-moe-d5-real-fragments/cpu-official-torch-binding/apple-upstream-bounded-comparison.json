@@ -1,0 +1,18 @@
+[
+  {
+    "path": "metal/dsv4_kv.metal",
+    "baseline": "9139e2ae58a41503968a500f36f75895c1ba63fc",
+    "head": "0aaea5a238fb41a35106a551e73c8409dfb751ac",
+    "baseline_sha256": "65e6e12ac3266fdf72b1e9c69bfbd07ea7324e930a8117b63b651b5016b1b5f6",
+    "head_sha256": "65e6e12ac3266fdf72b1e9c69bfbd07ea7324e930a8117b63b651b5016b1b5f6",
+    "unchanged": true
+  },
+  {
+    "path": "metal/dsv4_misc.metal",
+    "baseline": "9139e2ae58a41503968a500f36f75895c1ba63fc",
+    "head": "0aaea5a238fb41a35106a551e73c8409dfb751ac",
+    "baseline_sha256": "94e48cd289bada052adbb9d84b0d4799bbc38b342ca89ade62d7a2d5cc2a37b3",
+    "head_sha256": "a978211b6f274d863f7ea2bbee9db52d5d3ecf64c1c7642d4c2f353f96249c1c",
+    "unchanged": false
+  }
+]

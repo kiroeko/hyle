@@ -1,0 +1,14 @@
+{
+  "c10.dll": {
+    "sha256": "93bff2548e330df0f94ce3c71c531887d049ae645d1e38e3c08689e2d86a7888",
+    "origin": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-cpu-apple-official-sources\\cpu-sdk-full\\libtorch\\lib\\c10.dll"
+  },
+  "torch.dll": {
+    "sha256": "16a220e55b35fbfd946c26663eb3eefc76782872280cdc47ab0caea1babf0613",
+    "origin": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-cpu-apple-official-sources\\cpu-sdk-full\\libtorch\\lib\\torch.dll"
+  },
+  "torch_cpu.dll": {
+    "sha256": "2cb91cf2ba957fad5a17eab5bb7af6b3d73bbc98d94e2deeadc9fb9294eea809",
+    "origin": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-cpu-apple-official-sources\\cpu-sdk-full\\libtorch\\lib\\torch_cpu.dll"
+  }
+}

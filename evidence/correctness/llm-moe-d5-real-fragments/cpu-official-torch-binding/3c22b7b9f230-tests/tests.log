@@ -1,0 +1,25 @@
+Test project C:/public/project-hyle/hyle/.scratch/build-compute-v2-dev
+    Start 76: hyle_compute_provider_native_header_self_contained_test
+1/7 Test #76: hyle_compute_provider_native_header_self_contained_test ...   Passed    0.31 sec
+    Start 77: hyle_compute_provider_native_test
+2/7 Test #77: hyle_compute_provider_native_test .........................   Passed    0.49 sec
+    Start 78: hyle_compute_route_cpu_header_self_contained_test
+3/7 Test #78: hyle_compute_route_cpu_header_self_contained_test .........   Passed    0.48 sec
+    Start 79: hyle_compute_route_cpu_test
+4/7 Test #79: hyle_compute_route_cpu_test ...............................   Passed  382.78 sec
+    Start 80: hyle_graph_route_cpu_header_self_contained_test
+5/7 Test #80: hyle_graph_route_cpu_header_self_contained_test ...........   Passed    0.81 sec
+    Start 81: hyle_graph_route_cpu_test
+6/7 Test #81: hyle_graph_route_cpu_test .................................   Passed  380.30 sec
+    Start 82: hyle_graph_route_cpu_cpu_executor_test
+7/7 Test #82: hyle_graph_route_cpu_cpu_executor_test ....................   Passed    0.26 sec
+
+100% tests passed out of 7
+
+Label Time Summary:
+compute_provider_native    =   0.81 sec*proc (2 tests)
+compute_route_cpu          = 383.26 sec*proc (2 tests)
+graph_route_cpu            = 381.37 sec*proc (3 tests)
+headers                    =   1.60 sec*proc (3 tests)
+
+Total Test time (real) = 765.60 sec

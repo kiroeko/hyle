@@ -1,0 +1,67 @@
+{
+  "retained_sdk": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-cpu-apple-official-sources\\cpu-sdk-full\\libtorch\\lib",
+  "files": [
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-cpu-apple-official-sources\\cpu-sdk-subset\\lib\\asmjit.dll",
+      "bytes": 367104,
+      "sha256": "EB8F9C478BFC4B671F83B630C97424C60B4C948C0A8645FE588AED4F6BAB5DF5"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-cpu-apple-official-sources\\cpu-sdk-subset\\lib\\c10.dll",
+      "bytes": 1046528,
+      "sha256": "93BFF2548E330DF0F94CE3C71C531887D049AE645D1E38E3C08689E2D86A7888"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-cpu-apple-official-sources\\cpu-sdk-subset\\lib\\c10.lib",
+      "bytes": 778152,
+      "sha256": "3B9653F65F59C09915AA425FB1EBC9ABBF5F1F524B94E98E607C2301183724BA"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-cpu-apple-official-sources\\cpu-sdk-subset\\lib\\fbgemm.dll",
+      "bytes": 5721600,
+      "sha256": "250DC6F79B26E022CA3088E9B71A023598C7E997C96B62EF350A74FA1B501D81"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-cpu-apple-official-sources\\cpu-sdk-subset\\lib\\libiomp5md.dll",
+      "bytes": 1613680,
+      "sha256": "D9D66ED25F1A0EA725FA3A41B22CFD5D182C19DBE4771D9C90CA02AD7466F6A1"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-cpu-apple-official-sources\\cpu-sdk-subset\\lib\\torch_cpu.dll",
+      "bytes": 255948800,
+      "sha256": "2CB91CF2BA957FAD5A17EAB5BB7AF6B3D73BBC98D94E2DEEADC9FB9294EEA809"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-cpu-apple-official-sources\\cpu-sdk-subset\\lib\\torch_cpu.lib",
+      "bytes": 29046564,
+      "sha256": "5C2C703CF2F71E0124228A19CEDC7A1A334DD1260B6494D01BBBB5A58B33B3A1"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-cpu-apple-official-sources\\cpu-carrier-probe\\asmjit.dll",
+      "bytes": 367104,
+      "sha256": "EB8F9C478BFC4B671F83B630C97424C60B4C948C0A8645FE588AED4F6BAB5DF5"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-cpu-apple-official-sources\\cpu-carrier-probe\\c10.dll",
+      "bytes": 1046528,
+      "sha256": "93BFF2548E330DF0F94CE3C71C531887D049AE645D1E38E3C08689E2D86A7888"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-cpu-apple-official-sources\\cpu-carrier-probe\\fbgemm.dll",
+      "bytes": 5721600,
+      "sha256": "250DC6F79B26E022CA3088E9B71A023598C7E997C96B62EF350A74FA1B501D81"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-cpu-apple-official-sources\\cpu-carrier-probe\\libiomp5md.dll",
+      "bytes": 1613680,
+      "sha256": "D9D66ED25F1A0EA725FA3A41B22CFD5D182C19DBE4771D9C90CA02AD7466F6A1"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-cpu-apple-official-sources\\cpu-carrier-probe\\torch_cpu.dll",
+      "bytes": 255948800,
+      "sha256": "2CB91CF2BA957FAD5A17EAB5BB7AF6B3D73BBC98D94E2DEEADC9FB9294EEA809"
+    }
+  ],
+  "released_bytes": 559220140.0,
+  "reason": "Delete only byte-identical unused qualification DLL/lib copies. Keep directories, source inputs, original archive and product SDK."
+}

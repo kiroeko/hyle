@@ -1,0 +1,25 @@
+-- The CXX compiler identification is MSVC 19.50.35728.0
+-- Detecting CXX compiler ABI info
+-- Detecting CXX compiler ABI info - done
+-- Check for working CXX compiler: C:/Program Files/Microsoft Visual Studio/18/Enterprise/VC/Tools/MSVC/14.50.35717/bin/Hostx64/x64/cl.exe - skipped
+-- Detecting CXX compile features
+-- Detecting CXX compile features - done
+-- HYLE developer factors: requested='compute_provider_native' resolved='core,util_core,error,math,platform,mem,simd,compute_ops,compute,compute_backend_cpu,compute_provider_native' products=''
+-- The C compiler identification is MSVC 19.50.35728.0
+-- Detecting C compiler ABI info
+-- Detecting C compiler ABI info - done
+-- Check for working C compiler: C:/Program Files/Microsoft Visual Studio/18/Enterprise/VC/Tools/MSVC/14.50.35717/bin/Hostx64/x64/cl.exe - skipped
+-- Detecting C compile features
+-- Detecting C compile features - done
+-- HYLE_SANITIZER = off
+-- HYLE_TESTING = OFF (test-only interfaces stripped -- zero in shipped lib)
+-- Performing Test HYLE_CXX_HAS_AVX10_2_INTRINSICS
+-- Performing Test HYLE_CXX_HAS_AVX10_2_INTRINSICS - Failed
+CMake Error at src/compute_provider_native/torch_cpu_sdk.cmake:41 (message):
+  Set HYLE_COMPUTE_TORCH_CPU_ROOT to LibTorch 2.8.0+cpu; CUDA Torch is not
+  accepted
+Call Stack (most recent call first):
+  src/compute_provider_native/CMakeLists.txt:5 (include)
+
+
+-- Configuring incomplete, errors occurred!

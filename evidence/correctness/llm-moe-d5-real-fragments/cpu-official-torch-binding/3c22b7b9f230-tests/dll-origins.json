@@ -1,0 +1,11 @@
+{
+  "bin\\asmjit.dll": "lib\\asmjit.dll",
+  "bin\\c10.dll": "lib\\c10.dll",
+  "bin\\fbgemm.dll": "lib\\fbgemm.dll",
+  "bin\\libiomp5md.dll": "lib\\libiomp5md.dll",
+  "bin\\libiompstubs5md.dll": "lib\\libiompstubs5md.dll",
+  "bin\\torch.dll": "lib\\torch.dll",
+  "bin\\torch_cpu.dll": "lib\\torch_cpu.dll",
+  "bin\\torch_global_deps.dll": "lib\\torch_global_deps.dll",
+  "bin\\uv.dll": "lib\\uv.dll"
+}

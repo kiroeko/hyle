@@ -120,7 +120,7 @@ margin、n=15；预检不合格不正式采样，不把库自身成本或机器�
 一次原生资格、一次集中产品验证及一次具名编译/API/正确性纠正；P1 失败先查成本结构，
 只有本批可修复机制才准一次纠正，不不断换姿势加样本。
 
-当前产品 gates 全部 `UNPROVEN`；新来源原生资格不是产品 correctness gate 的 PASS。
+首次冻结时产品 gates 全部 `UNPROVEN`；新来源资格不代签产品 gates，当前结果见后面的实际批次。
 数值、资源、构建隔离或许可不能保持时止于具体 BLOCKED/INCONCLUSIVE；不扩大算法范围。
 本卡源码阶段统一 LOC 为 60,481 / 242 实现文件（无产品修改，不含测试）；接线后重新统计。
 
@@ -159,3 +159,35 @@ unfused oracle 与具体中间边界，按源码固定 CPU policy，原完整片
 
 本轮重用未改变的 CMake 配置和已编译对象，只批量重编受影响 TU，串行复核受影响完整片段。
 P1 尚未启动，三交付/WSL 尚未验收；不以来源 probe 或旧 GGUF P1 代签。
+
+## 已完成的 Windows 批次与覆盖补验
+
+产品固定候选 `3c22b7b9f230abc86e749225174d86b59c79881e`；
+[普通入口与交付原始记录](../../../../evidence/correctness/llm-moe-d5-real-fragments/cpu-official-torch-binding/README.md)。
+分块 codec/matmul 后 Windows Native 106、Direct 157、Graph 173 项全部通过，另有三组公开头和
+CPU executor 检查通过；0.5 秒采样观测的最大单进程 RSS 为 4,404,211,712 bytes（约4.1 GiB），
+不将其宣传为严格 allocator 上界。GLM 使用源码预先确定的独立 F32 multiply/add oracle，
+未改变原数值门。源码、静态、动态交付各跑两入口13项官方测试，共26项，均通过。
+已验证安装搬迁、独立 include/link 闭包、borrowed licenses 与 DLL 邻置/来源；HYLE static
+仍依赖外部 shared LibTorch。源码首次消费者漏链接已有词表 oracle companion TU，日志保留；
+仅补齐消费者后通过，产品代码未改。
+
+SDK 配置检查确认：OFF 加不存在 SDK root 不加载 Torch；ON 对不存在 root 在自身版本检查处
+明确拒绝。初次组合选择器参数和换行消息断言的验证包装错误均保留，不伪装产品 FAIL，
+未改公共治理/仪器。旧研究 SDK 与 probe 中逐项 SHA 相同的12份 DLL/lib 副本已删除，
+释放559,220,140 bytes；正式 SDK、输入、原归档和证据保留。
+
+红队范围对照发现继承的官方剩余测试只为 Flash 执行完整 MLA/NextN；非Flash GLM 5.3 还须
+证明冷期原 FP8 KV 解码/拆分、实际缓存反馈、完整 NextN/MoE 与全词表 head。本次增加一条
+对应消费者测试，仍在 CPU-O5 内，不修改产品算法/API。只补跑这个旅程的普通/三交付/WSL，
+其余未变化13项及原基础模块结果按同产品/SDK/工具链身份复用，不重复全部批次。
+
+WSL 正在同步同一 Windows 产品候选并使用官方 CPU-only Linux LibTorch 2.8.0 archive；
+版本/CPU shared closure 已核对，但尚无 Linux 产品 PASS。正式新增完整片段 P1 尚未启动。
+原154/20/2账本保持；没有把单个来源资格、未跑的补验、旧GGUF P1或Apple限制计成完成。
+统一 Compute+Graph 实现为60,866行 /244文件，不含测试和第三方源码。
+
+Apple 有界检查将 ds4 upstream HEAD `0aaea5a238fb41a35106a551e73c8409dfb751ac` 的
+`metal/dsv4_kv.metal` 与已登记 `9139e2ae58a4` 比较，SHA完全相同；相关 FP4/Hadamard 原函数
+没有提供区别于旧失败的新机制。`dsv4_misc.metal` 有其它变化，不能据此宣称FP4已修复。
+没有重跑旧资格或打开Apple产品FIX；不外推全生态缺失。

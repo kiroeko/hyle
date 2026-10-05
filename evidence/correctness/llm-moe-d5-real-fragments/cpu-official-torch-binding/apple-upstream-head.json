@@ -1,0 +1,82 @@
+{
+  "sha": "0aaea5a238fb41a35106a551e73c8409dfb751ac",
+  "node_id": "C_kwDOSWHWUtoAKDBhYWVhNWEyMzhmYjQxYTM1MTA2YTU1MWU3M2M4NDA5ZGZiNzUxYWM",
+  "commit": {
+    "author": {
+      "name": "Salvatore Sanfilippo",
+      "email": "antirez@gmail.com",
+      "date": "2026-09-20T01:21:24Z"
+    },
+    "committer": {
+      "name": "antirez",
+      "email": "antirez@gmail.com",
+      "date": "2026-09-20T01:21:24Z"
+    },
+    "message": "Document physical Metal TP QA preflight and native batch coverage\n\nCheck per-boot RDMA addressing and wired residency limits, match prefill chunk overrides on both ranks, and account for the extra sessions used by numerical oracles. Require at least three Metal TP rows when checking the native V4.1 path; two rows intentionally use ordered decoding.",
+    "tree": {
+      "sha": "8b782c8ef988cc5ad70262655285f3d2e657c8e4",
+      "url": "https://api.github.com/repos/antirez/ds4/git/trees/8b782c8ef988cc5ad70262655285f3d2e657c8e4"
+    },
+    "url": "https://api.github.com/repos/antirez/ds4/git/commits/0aaea5a238fb41a35106a551e73c8409dfb751ac",
+    "comment_count": 0,
+    "verification": {
+      "verified": false,
+      "reason": "unsigned",
+      "signature": null,
+      "payload": null,
+      "verified_at": null
+    }
+  },
+  "url": "https://api.github.com/repos/antirez/ds4/commits/0aaea5a238fb41a35106a551e73c8409dfb751ac",
+  "html_url": "https://github.com/antirez/ds4/commit/0aaea5a238fb41a35106a551e73c8409dfb751ac",
+  "comments_url": "https://api.github.com/repos/antirez/ds4/commits/0aaea5a238fb41a35106a551e73c8409dfb751ac/comments",
+  "author": {
+    "login": "antirez",
+    "id": 65632,
+    "node_id": "MDQ6VXNlcjY1NjMy",
+    "avatar_url": "https://avatars.githubusercontent.com/u/65632?v=4",
+    "gravatar_id": "",
+    "url": "https://api.github.com/users/antirez",
+    "html_url": "https://github.com/antirez",
+    "followers_url": "https://api.github.com/users/antirez/followers",
+    "following_url": "https://api.github.com/users/antirez/following{/other_user}",
+    "gists_url": "https://api.github.com/users/antirez/gists{/gist_id}",
+    "starred_url": "https://api.github.com/users/antirez/starred{/owner}{/repo}",
+    "subscriptions_url": "https://api.github.com/users/antirez/subscriptions",
+    "organizations_url": "https://api.github.com/users/antirez/orgs",
+    "repos_url": "https://api.github.com/users/antirez/repos",
+    "events_url": "https://api.github.com/users/antirez/events{/privacy}",
+    "received_events_url": "https://api.github.com/users/antirez/received_events",
+    "type": "User",
+    "user_view_type": "public",
+    "site_admin": false
+  },
+  "committer": {
+    "login": "antirez",
+    "id": 65632,
+    "node_id": "MDQ6VXNlcjY1NjMy",
+    "avatar_url": "https://avatars.githubusercontent.com/u/65632?v=4",
+    "gravatar_id": "",
+    "url": "https://api.github.com/users/antirez",
+    "html_url": "https://github.com/antirez",
+    "followers_url": "https://api.github.com/users/antirez/followers",
+    "following_url": "https://api.github.com/users/antirez/following{/other_user}",
+    "gists_url": "https://api.github.com/users/antirez/gists{/gist_id}",
+    "starred_url": "https://api.github.com/users/antirez/starred{/owner}{/repo}",
+    "subscriptions_url": "https://api.github.com/users/antirez/subscriptions",
+    "organizations_url": "https://api.github.com/users/antirez/orgs",
+    "repos_url": "https://api.github.com/users/antirez/repos",
+    "events_url": "https://api.github.com/users/antirez/events{/privacy}",
+    "received_events_url": "https://api.github.com/users/antirez/received_events",
+    "type": "User",
+    "user_view_type": "public",
+    "site_admin": false
+  },
+  "parents": [
+    {
+      "sha": "6687c6f90ba59c17e1dc18e8403b20d079f21b6e",
+      "url": "https://api.github.com/repos/antirez/ds4/commits/6687c6f90ba59c17e1dc18e8403b20d079f21b6e",
+      "html_url": "https://github.com/antirez/ds4/commit/6687c6f90ba59c17e1dc18e8403b20d079f21b6e"
+    }
+  ]
+}

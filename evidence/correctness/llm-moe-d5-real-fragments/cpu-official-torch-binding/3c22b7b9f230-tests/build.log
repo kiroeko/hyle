@@ -1,0 +1,7 @@
+[0/2] Re-checking globbed directories...
+[1/11] Building CXX object src\compute_provider_native\CMakeFiles\hyle_compute_provider_native.dir\torch_cpu_program.cc.obj
+[2/11] Linking CXX shared library bin\hyle_compute_provider_native.dll
+[3/7] Building CXX object tests\compute_route_cpu\CMakeFiles\hyle_compute_route_cpu_test.dir\d5_qwen38_official_test.cc.obj
+[4/7] Linking CXX executable bin\hyle_compute_route_cpu_test.exe
+[5/7] Building CXX object tests\graph_route_cpu\CMakeFiles\hyle_graph_route_cpu_test.dir\d5_qwen38_official_test.cc.obj
+[6/7] Linking CXX executable bin\hyle_graph_route_cpu_test.exe

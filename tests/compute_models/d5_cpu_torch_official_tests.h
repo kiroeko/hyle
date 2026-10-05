@@ -89,6 +89,14 @@ TEST(HYLE_CPU_OFFICIAL_SUITE, D5GlmOfficialMixedRemaining) {
   }
 }
 
+TEST(HYLE_CPU_OFFICIAL_SUITE, D5GlmOfficialAbsorbedMlaAndNextN) {
+  // The non-Flash program prepares and splits the original FP8 KV weight
+  // once, then carries the real MLA/NextN state into the complete head.
+  const auto &model = d5_glm_remaining_fragments::kUnfusedFp8Cases[0];
+  run_q24_semantic_fragment(d5_glm_remaining_fragments::mla(model));
+  d5_glm_remaining_fragments::check_mtp_head(model, run_q24_semantic_fragment);
+}
+
 TEST(HYLE_CPU_OFFICIAL_SUITE, D5DeepSeekOfficialCompression) {
   for (int index : {3, 4}) {
     SCOPED_TRACE(index);

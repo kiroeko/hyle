@@ -1,0 +1,63 @@
+-- The C compiler identification is MSVC 19.50.35728.0
+-- The CXX compiler identification is MSVC 19.50.35728.0
+-- Detecting C compiler ABI info
+-- Detecting C compiler ABI info - done
+-- Check for working C compiler: C:/Program Files/Microsoft Visual Studio/18/Enterprise/VC/Tools/MSVC/14.50.35717/bin/Hostx64/x64/cl.exe - skipped
+-- Detecting C compile features
+-- Detecting C compile features - done
+-- Detecting CXX compiler ABI info
+-- Detecting CXX compiler ABI info - done
+-- Check for working CXX compiler: C:/Program Files/Microsoft Visual Studio/18/Enterprise/VC/Tools/MSVC/14.50.35717/bin/Hostx64/x64/cl.exe - skipped
+-- Detecting CXX compile features
+-- Detecting CXX compile features - done
+-- Performing Test CMAKE_HAVE_LIBC_PTHREAD
+-- Performing Test CMAKE_HAVE_LIBC_PTHREAD - Failed
+-- Looking for pthread_create in pthreads
+-- Looking for pthread_create in pthreads - not found
+-- Looking for pthread_create in pthread
+-- Looking for pthread_create in pthread - not found
+-- Found Threads: TRUE
+CMake Warning at C:/public/project-hyle/hyle/.scratch/validation/d5-cpu-apple-official-sources/cpu-sdk-full/libtorch/share/cmake/Torch/TorchConfig.cmake:22 (message):
+  static library kineto_LIBRARY-NOTFOUND not found.
+Call Stack (most recent call first):
+  C:/public/project-hyle/hyle/.scratch/validation/d5-cpu-apple-official-sources/cpu-sdk-full/libtorch/share/cmake/Torch/TorchConfig.cmake:125 (append_torchlib_if_found)
+  C:/Program Files/CMake/share/cmake-4.4/Modules/CMakeFindDependencyMacro.cmake:93 (find_package)
+  C:/Program Files/CMake/share/cmake-4.4/Modules/CMakeFindDependencyMacro.cmake:125 (__find_dependency_common)
+  C:/hv/d5cp/official-static-relocated/lib/cmake/Hyle/HyleConfig.cmake:33 (find_dependency)
+  CMakeLists.txt:19 (find_package)
+
+
+-- Found Torch: C:/public/project-hyle/hyle/.scratch/validation/d5-cpu-apple-official-sources/cpu-sdk-full/libtorch/lib/torch.lib (Required is at least version "2.8.0")
+CMake Warning at C:/public/project-hyle/hyle/.scratch/validation/d5-cpu-apple-official-sources/cpu-sdk-full/libtorch/share/cmake/Torch/TorchConfig.cmake:22 (message):
+  static library kineto_LIBRARY-NOTFOUND not found.
+Call Stack (most recent call first):
+  C:/public/project-hyle/hyle/.scratch/validation/d5-cpu-apple-official-sources/cpu-sdk-full/libtorch/share/cmake/Torch/TorchConfig.cmake:125 (append_torchlib_if_found)
+  C:/Program Files/CMake/share/cmake-4.4/Modules/CMakeFindDependencyMacro.cmake:93 (find_package)
+  C:/Program Files/CMake/share/cmake-4.4/Modules/CMakeFindDependencyMacro.cmake:125 (__find_dependency_common)
+  C:/hv/d5cp/official-static-relocated/lib/cmake/HyleTorchCpuSdk/HyleTorchCpuSdkConfig.cmake:4 (find_dependency)
+  C:/Program Files/CMake/share/cmake-4.4/Modules/CMakeFindDependencyMacro.cmake:93 (find_package)
+  C:/Program Files/CMake/share/cmake-4.4/Modules/CMakeFindDependencyMacro.cmake:125 (__find_dependency_common)
+  C:/hv/d5cp/official-static-relocated/lib/cmake/Hyle/HyleConfig.cmake:33 (find_dependency)
+  CMakeLists.txt:19 (find_package)
+
+
+-- The ASM compiler identification is MSVC
+CMake Warning (policy) at C:/Program Files/CMake/share/cmake-4.4/Modules/CMakeDetermineASMCompiler.cmake:237 (cmake_policy):
+  Policy CMP0194 is not set: MSVC is not an assembler for language ASM.  Run
+  "cmake --help-policy CMP0194" for policy details.  Use the cmake_policy
+  command to set the policy and suppress this warning.
+Call Stack (most recent call first):
+  C:/Users/kiro/AppData/Local/hyle/dependencies/v1/sources/ggml-456172ec733a-41b7e10fd424/CMakeLists.txt:3 (project)
+This warning is for project developers.  Use -Wno-author or -Wno-policy to
+suppress it.
+
+-- Found assembler: C:/Program Files/Microsoft Visual Studio/18/Enterprise/VC/Tools/MSVC/14.50.35717/bin/Hostx64/x64/cl.exe
+-- Warning: ccache not found - consider installing it for faster compilation or disable this warning with GGML_CCACHE=OFF
+-- CMAKE_SYSTEM_PROCESSOR: AMD64
+-- CMAKE_GENERATOR_PLATFORM: 
+-- GGML_SYSTEM_ARCH: x86
+-- ggml version: 0.24.0
+-- ggml commit:  unknown
+-- Configuring done (3.2s)
+-- Generating done (0.0s)
+-- Build files have been written to: C:/hv/d5cp/official-static-consumer

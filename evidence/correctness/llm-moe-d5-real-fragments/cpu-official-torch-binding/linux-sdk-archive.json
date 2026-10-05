@@ -1,0 +1,22 @@
+{
+  "url": "https://download.pytorch.org/libtorch/cpu/libtorch-shared-with-deps-2.8.0%2Bcpu.zip",
+  "sha256": "8dea5bcfed4b53ca0f6852517bea4b4d1f3ff1cc0c21da662e834d34af1ec824",
+  "bytes": 178902575,
+  "build_version": "2.8.0+cpu",
+  "entries": 9618,
+  "shared_libraries": [
+    "libtorch/lib/libaoti_custom_ops.so",
+    "libtorch/lib/libbackend_with_compiler.so",
+    "libtorch/lib/libc10.so",
+    "libtorch/lib/libjitbackend_test.so",
+    "libtorch/lib/libnnapi_backend.so",
+    "libtorch/lib/libshm.so",
+    "libtorch/lib/libtorchbind_test.so",
+    "libtorch/lib/libtorch_cpu.so",
+    "libtorch/lib/libtorch_global_deps.so",
+    "libtorch/lib/libtorch_python.so",
+    "libtorch/lib/libtorch.so"
+  ],
+  "download_seconds": 17.719,
+  "verdict": "CPU SDK identity only; no Linux product verdict"
+}

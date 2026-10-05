@@ -1,0 +1,22 @@
+[1/22] C:\WINDOWS\system32\cmd.exe /C "cd /D C:\hv\d5cp\official-static-consumer && "C:\Program Files\CMake\bin\cmake.exe" -P C:/hv/d5cp/official-static-consumer/hyle-runtime/d5_cpu_direct-Release.cmake"
+[2/22] C:\WINDOWS\system32\cmd.exe /C "cd /D C:\hv\d5cp\official-static-consumer && "C:\Program Files\CMake\bin\cmake.exe" -P C:/hv/d5cp/official-static-consumer/hyle-runtime/d5_cpu_graph-Release.cmake"
+[3/22] Building C object fixture-ggml\src\CMakeFiles\ggml-base.dir\ggml.c.obj
+[4/22] Building CXX object fixture-ggml\src\CMakeFiles\ggml-base.dir\ggml.cpp.obj
+[5/22] Building C object fixture-ggml\src\CMakeFiles\ggml-base.dir\ggml-alloc.c.obj
+[6/22] Building CXX object fixture-gtest\googletest\CMakeFiles\gtest.dir\src\gtest-all.cc.obj
+[7/22] Building CXX object fixture-ggml\src\CMakeFiles\ggml-base.dir\ggml-backend.cpp.obj
+[8/22] Building CXX object fixture-ggml\src\CMakeFiles\ggml-base.dir\ggml-opt.cpp.obj
+[9/22] Building CXX object fixture-ggml\src\CMakeFiles\ggml-base.dir\ggml-backend-meta.cpp.obj
+[10/22] Building CXX object fixture-ggml\src\CMakeFiles\ggml-base.dir\ggml-threading.cpp.obj
+[11/22] Building C object fixture-ggml\src\CMakeFiles\ggml-base.dir\ggml-quants.c.obj
+[12/22] Linking CXX static library lib\gtest.lib
+[13/22] Building CXX object fixture-ggml\src\CMakeFiles\ggml-base.dir\gguf.cpp.obj
+[14/22] Building CXX object fixture-gtest\googletest\CMakeFiles\gtest_main.dir\src\gtest_main.cc.obj
+[15/22] Building CXX object CMakeFiles\d5_cpu_direct.dir\tests\compute_route_cpu\d5_qwen_gguf_vocabulary_test.cc.obj
+[16/22] Building CXX object CMakeFiles\d5_cpu_direct.dir\tests\compute_route_cpu\d5_qwen38_official_test.cc.obj
+[17/22] Building CXX object CMakeFiles\d5_cpu_graph.dir\tests\graph_route_cpu\d5_qwen_gguf_vocabulary_test.cc.obj
+[18/22] Linking CXX static library fixture-ggml\src\ggml-base.lib
+[19/22] Linking CXX static library lib\gtest_main.lib
+[20/22] Building CXX object CMakeFiles\d5_cpu_graph.dir\tests\graph_route_cpu\d5_qwen38_official_test.cc.obj
+[21/22] Linking CXX executable d5_cpu_direct.exe
+[22/22] Linking CXX executable d5_cpu_graph.exe

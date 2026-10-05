@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="(empty)"
+	tests="2"
+	failures="0"
+	disabled="0"
+	skipped="0"
+	hostname=""
+	time="248"
+	timestamp="2026-10-05T15:15:09"
+	>
+	<testcase name="d5_cpu_direct" classname="d5_cpu_direct" time="124.081" status="run">
+		<properties/>
+		<system-out>Running main() from C:\Users\kiro\AppData\Local\hyle\dependencies\v1\sources\googletest-063de7e9578f-162765170ae6\googletest\src\gtest_main.cc
+Note: Google Test filter = *TorchOfficial*
+[==========] Running 13 tests from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 13 tests from CpuTorchOfficial
+[ RUN      ] CpuTorchOfficial.D5GroupedFp8Batch
+[       OK ] CpuTorchOfficial.D5GroupedFp8Batch (17547 ms)
+[ RUN      ] CpuTorchOfficial.D5GlmOfficialFp8FullMoe
+[       OK ] CpuTorchOfficial.D5GlmOfficialFp8FullMoe (1195 ms)
+[ RUN      ] CpuTorchOfficial.D5DynamicFp8DenseBatch
+[       OK ] CpuTorchOfficial.D5DynamicFp8DenseBatch (2680 ms)
+[ RUN      ] CpuTorchOfficial.D5GlmOfficialDynamicFp8SharedFfn
+[       OK ] CpuTorchOfficial.D5GlmOfficialDynamicFp8SharedFfn (490 ms)
+[ RUN      ] CpuTorchOfficial.D5OfficialFp8DenseNativeBatch
+[       OK ] CpuTorchOfficial.D5OfficialFp8DenseNativeBatch (743 ms)
+[ RUN      ] CpuTorchOfficial.D5GlmOfficialMixedRemaining
+[       OK ] CpuTorchOfficial.D5GlmOf...
+[This part of the test output was removed since it exceeds the threshold of 1024 bytes.]
+</system-out>
+	</testcase>
+	<testcase name="d5_cpu_graph" classname="d5_cpu_graph" time="124.067" status="run">
+		<properties/>
+		<system-out>Running main() from C:\Users\kiro\AppData\Local\hyle\dependencies\v1\sources\googletest-063de7e9578f-162765170ae6\googletest\src\gtest_main.cc
+Note: Google Test filter = *TorchOfficial*
+[==========] Running 13 tests from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 13 tests from CpuGraphTorchOfficial
+[ RUN      ] CpuGraphTorchOfficial.D5GroupedFp8Batch
+[       OK ] CpuGraphTorchOfficial.D5GroupedFp8Batch (17489 ms)
+[ RUN      ] CpuGraphTorchOfficial.D5GlmOfficialFp8FullMoe
+[       OK ] CpuGraphTorchOfficial.D5GlmOfficialFp8FullMoe (1192 ms)
+[ RUN      ] CpuGraphTorchOfficial.D5DynamicFp8DenseBatch
+[       OK ] CpuGraphTorchOfficial.D5DynamicFp8DenseBatch (2681 ms)
+[ RUN      ] CpuGraphTorchOfficial.D5GlmOfficialDynamicFp8SharedFfn
+[       OK ] CpuGraphTorchOfficial.D5GlmOfficialDynamicFp8SharedFfn (489 ms)
+[ RUN      ] CpuGraphTorchOfficial.D5OfficialFp8DenseNativeBatch
+[       OK ] CpuGraphTorchOfficial.D5OfficialFp8DenseNativeBatch (737 ms)
+[ RUN      ] CpuGraphTorchOfficial.D5Glm...
+[This part of the test output was removed since it exceeds the threshold of 1024 bytes.]
+</system-out>
+	</testcase>
+</testsuite>

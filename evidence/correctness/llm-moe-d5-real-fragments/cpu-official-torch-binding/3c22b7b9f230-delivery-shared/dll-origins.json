@@ -1,0 +1,66 @@
+{
+  "hyle_compute.dll": {
+    "sha256": "3907fbb945bc7a70a9d133efd94ca359d42070ae8f3adc6457820cdd5248ac55",
+    "origin": "C:\\hv\\d5cp\\official-shared-relocated\\bin\\hyle_compute.dll"
+  },
+  "hyle_compute_backend_cpu.dll": {
+    "sha256": "d80e8e4b885369c9432dde185201ac799cceeeae3f7e53f2a08b12548c5998bf",
+    "origin": "C:\\hv\\d5cp\\official-shared-relocated\\bin\\hyle_compute_backend_cpu.dll"
+  },
+  "hyle_compute_ggml_runtime.dll": {
+    "sha256": "5c399fb39a75508ae961a96137dd3c6b851c124b5f900f6ee32ac8e7c9b3905b",
+    "origin": "C:\\hv\\d5cp\\official-shared-relocated\\bin\\hyle_compute_ggml_runtime.dll"
+  },
+  "hyle_compute_ops.dll": {
+    "sha256": "c0c4e46182f7ea0b3ac32380dae91dfeff3433b9f8afeb01c8e049f55d7bd38c",
+    "origin": "C:\\hv\\d5cp\\official-shared-relocated\\bin\\hyle_compute_ops.dll"
+  },
+  "hyle_compute_provider_ggml.dll": {
+    "sha256": "fd727150108273f16b186318d9cb3df1beb3b387eeea1e8cc01f18944606c212",
+    "origin": "C:\\hv\\d5cp\\official-shared-relocated\\bin\\hyle_compute_provider_ggml.dll"
+  },
+  "hyle_compute_provider_native.dll": {
+    "sha256": "e6ecd69463c499c065c03a335564021671c4aaa12f1ebea0c2b3d05de68412e5",
+    "origin": "C:\\hv\\d5cp\\official-shared-relocated\\bin\\hyle_compute_provider_native.dll"
+  },
+  "hyle_compute_provider_onednn.dll": {
+    "sha256": "a181db5d3218e7a693ebc96124af60207899f4cde38e53c70dffef605eab67f3",
+    "origin": "C:\\hv\\d5cp\\official-shared-relocated\\bin\\hyle_compute_provider_onednn.dll"
+  },
+  "hyle_compute_route_cpu.dll": {
+    "sha256": "a9d34db4feb63381e7c17bc9bdfbc9e6eec76d5cab5cc1ec5917666bd58327a5",
+    "origin": "C:\\hv\\d5cp\\official-shared-relocated\\bin\\hyle_compute_route_cpu.dll"
+  },
+  "hyle_container.dll": {
+    "sha256": "f3876d36169d61247ed675844bd47f206f0bea80c52a41826c52152f262f9cf2",
+    "origin": "C:\\hv\\d5cp\\official-shared-relocated\\bin\\hyle_container.dll"
+  },
+  "hyle_error.dll": {
+    "sha256": "9745125c0c0578d6ba52b54159da9ac632b56847c13c0311d9a750ad11dad69e",
+    "origin": "C:\\hv\\d5cp\\official-shared-relocated\\bin\\hyle_error.dll"
+  },
+  "hyle_graph.dll": {
+    "sha256": "8f9ad25fa732382aecc97527d64e96a9894fa7f27e9acbf3ae1b0210b86d757d",
+    "origin": "C:\\hv\\d5cp\\official-shared-relocated\\bin\\hyle_graph.dll"
+  },
+  "hyle_graph_provider_onednn.dll": {
+    "sha256": "a6368320655e8bcb5194c67600ba4a428dc3704abc0f1a059c1454fb4d0a40c6",
+    "origin": "C:\\hv\\d5cp\\official-shared-relocated\\bin\\hyle_graph_provider_onednn.dll"
+  },
+  "hyle_graph_route_cpu.dll": {
+    "sha256": "c75d0b4e004af50fc45aaf59039fd4460ab5be9af815c6840af90ba1b588068b",
+    "origin": "C:\\hv\\d5cp\\official-shared-relocated\\bin\\hyle_graph_route_cpu.dll"
+  },
+  "hyle_mem.dll": {
+    "sha256": "6f4a93f9723f3f893bd64038e7fc702e8bcd79d8d2821a3d44238f77f70c6418",
+    "origin": "C:\\hv\\d5cp\\official-shared-relocated\\bin\\hyle_mem.dll"
+  },
+  "hyle_platform.dll": {
+    "sha256": "595e252ee62e0024966d00e7991b0e4abc5199ffbbe3683b449a22e07b24c539",
+    "origin": "C:\\hv\\d5cp\\official-shared-relocated\\bin\\hyle_platform.dll"
+  },
+  "hyle_simd.dll": {
+    "sha256": "1654207ded52b1e3697ec241a2c8e496ccec9d0f1bd3e8b699268195cf5701ab",
+    "origin": "C:\\hv\\d5cp\\official-shared-relocated\\bin\\hyle_simd.dll"
+  }
+}

@@ -1,0 +1,58 @@
+{
+  "candidate": "3c22b7b9f230abc86e749225174d86b59c79881e",
+  "scope": "owning CPU SDK ON/OFF discovery; configuration only, no correctness/P1 verdict",
+  "steps": [
+    {
+      "name": "off-invalid-root",
+      "argv": [
+        "cmake",
+        "-S",
+        "C:\\public\\project-hyle\\hyle",
+        "-G",
+        "Ninja",
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DHYLE_BUILD_TESTS=OFF",
+        "-DHYLE_INSTALL=OFF",
+        "-DHYLE_DEV_FACTORS=compute_provider_native",
+        "-DHYLE_COMPUTE_CPU=ON",
+        "-DHYLE_COMPUTE_ONEDNN=OFF",
+        "-DHYLE_COMPUTE_CUDA=OFF",
+        "-DHYLE_COMPUTE_APPLE=OFF",
+        "-DHYLE_COMPUTE_VULKAN=OFF",
+        "-B",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-cpu-apple-official-binding\\3c22b7b9f230-sdk-isolation-r2\\off-invalid-root-build",
+        "-DHYLE_COMPUTE_TORCH_CPU=OFF",
+        "-DHYLE_COMPUTE_TORCH_CPU_ROOT=C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-cpu-apple-official-binding\\3c22b7b9f230-sdk-isolation-r2\\missing-sdk"
+      ],
+      "returncode": 0,
+      "seconds": 2.516,
+      "verdict": "PASS"
+    },
+    {
+      "name": "on-invalid-root",
+      "argv": [
+        "cmake",
+        "-S",
+        "C:\\public\\project-hyle\\hyle",
+        "-G",
+        "Ninja",
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DHYLE_BUILD_TESTS=OFF",
+        "-DHYLE_INSTALL=OFF",
+        "-DHYLE_DEV_FACTORS=compute_provider_native",
+        "-DHYLE_COMPUTE_CPU=ON",
+        "-DHYLE_COMPUTE_ONEDNN=OFF",
+        "-DHYLE_COMPUTE_CUDA=OFF",
+        "-DHYLE_COMPUTE_APPLE=OFF",
+        "-DHYLE_COMPUTE_VULKAN=OFF",
+        "-B",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-cpu-apple-official-binding\\3c22b7b9f230-sdk-isolation-r2\\on-invalid-root-build",
+        "-DHYLE_COMPUTE_TORCH_CPU=ON",
+        "-DHYLE_COMPUTE_TORCH_CPU_ROOT=C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-cpu-apple-official-binding\\3c22b7b9f230-sdk-isolation-r2\\missing-sdk"
+      ],
+      "returncode": 1,
+      "seconds": 2.562,
+      "verdict": "PASS"
+    }
+  ]
+}

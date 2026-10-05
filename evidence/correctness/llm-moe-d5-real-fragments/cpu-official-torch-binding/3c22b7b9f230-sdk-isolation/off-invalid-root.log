@@ -1,0 +1,15 @@
+-- The CXX compiler identification is MSVC 19.50.35728.0
+-- Detecting CXX compiler ABI info
+-- Detecting CXX compiler ABI info - done
+-- Check for working CXX compiler: C:/Program Files/Microsoft Visual Studio/18/Enterprise/VC/Tools/MSVC/14.50.35717/bin/Hostx64/x64/cl.exe - skipped
+-- Detecting CXX compile features
+-- Detecting CXX compile features - done
+CMake Error at cmake/HyleComponents.cmake:581 (message):
+  HYLE_DEV_FACTORS and HYLE_COMPONENTS are mutually exclusive; use a fresh
+  build tree and choose either an internal maintenance root or a consumer
+  product
+Call Stack (most recent call first):
+  CMakeLists.txt:95 (include)
+
+
+-- Configuring incomplete, errors occurred!

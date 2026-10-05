@@ -1,0 +1,1163 @@
+Start testing: Oct 05 14:52 中国标准时间
+----------------------------------------------------------
+76/99 Testing: hyle_compute_provider_native_header_self_contained_test
+76/99 Test: hyle_compute_provider_native_header_self_contained_test
+Command: "C:/Program Files/Python312/python.exe" "C:/public/project-hyle/hyle/scripts/header-self-contained.py" "--module" "compute_provider_native" "--include-dir" "C:/public/project-hyle/hyle/include" "--cxx" "C:/Program Files/Microsoft Visual Studio/18/Enterprise/VC/Tools/MSVC/14.50.35717/bin/Hostx64/x64/cl.exe" "--cxx-compiler-id" "MSVC" "--cxx-frontend" "MSVC" "--header-dir" "compute" "--header" "providers/native.h"
+Directory: C:/public/project-hyle/hyle/.scratch/build-compute-v2-dev/tests/compute_provider_native
+"hyle_compute_provider_native_header_self_contained_test" start time: Oct 05 14:52 中国标准时间
+Output:
+----------------------------------------------------------
+compute_provider_native C++ headers self-contained: 1
+<end of output>
+Test time =   0.31 sec
+----------------------------------------------------------
+Test Passed.
+"hyle_compute_provider_native_header_self_contained_test" end time: Oct 05 14:52 中国标准时间
+"hyle_compute_provider_native_header_self_contained_test" time elapsed: 00:00:00
+----------------------------------------------------------
+
+77/99 Testing: hyle_compute_provider_native_test
+77/99 Test: hyle_compute_provider_native_test
+Command: "C:/public/project-hyle/hyle/.scratch/build-compute-v2-dev/bin/hyle_compute_provider_native_test.exe"
+Directory: C:/public/project-hyle/hyle/.scratch/build-compute-v2-dev/tests/compute_provider_native
+"hyle_compute_provider_native_test" start time: Oct 05 14:52 中国标准时间
+Output:
+----------------------------------------------------------
+Running main() from C:\Users\kiro\AppData\Local\hyle\dependencies\v1\sources\googletest-063de7e9578f-162765170ae6\googletest\src\gtest_main.cc
+[==========] Running 106 tests from 16 test suites.
+[----------] Global test environment set-up.
+[----------] 15 tests from PreparedOperation
+[ RUN      ] PreparedOperation.ExposesColdRouteAndShapeDiagnostics
+[       OK ] PreparedOperation.ExposesColdRouteAndShapeDiagnostics (0 ms)
+[ RUN      ] PreparedOperation.DescriptorCapabilityUsesResourcesWithoutPayloadAccess
+[       OK ] PreparedOperation.DescriptorCapabilityUsesResourcesWithoutPayloadAccess (0 ms)
+[ RUN      ] PreparedOperation.RejectsUnsupportedOrInconsistentPreparation
+[       OK ] PreparedOperation.RejectsUnsupportedOrInconsistentPreparation (0 ms)
+[ RUN      ] PreparedOperation.LeavesValidEncodedWeightsForAQualifiedProvider
+[       OK ] PreparedOperation.LeavesValidEncodedWeightsForAQualifiedProvider (0 ms)
+[ RUN      ] PreparedOperation.NativeCpuResultLeaseRetainsComputedOutput
+[       OK ] PreparedOperation.NativeCpuResultLeaseRetainsComputedOutput (0 ms)
+[ RUN      ] PreparedOperation.RunsRowWiseWeightedRmsNorm
+[       OK ] PreparedOperation.RunsRowWiseWeightedRmsNorm (0 ms)
+[ RUN      ] PreparedOperation.RunsRowMajorAndTransposedWeightMatMul
+[       OK ] PreparedOperation.RunsRowMajorAndTransposedWeightMatMul (0 ms)
+[ RUN      ] PreparedOperation.RowMajorMatMulCoversEveryNativeTileAndTail
+[       OK ] PreparedOperation.RowMajorMatMulCoversEveryNativeTileAndTail (0 ms)
+[ RUN      ] PreparedOperation.RunsPackedSiluGatedActivationAcrossRows
+[       OK ] PreparedOperation.RunsPackedSiluGatedActivationAcrossRows (0 ms)
+[ RUN      ] PreparedOperation.RunsUnweightedWeightedAndExactInPlaceRmsNorm
+[       OK ] PreparedOperation.RunsUnweightedWeightedAndExactInPlaceRmsNorm (0 ms)
+[ RUN      ] PreparedOperation.RejectsWrongBindingContextAndUnsafeAlias
+[       OK ] PreparedOperation.RejectsWrongBindingContextAndUnsafeAlias (0 ms)
+[ RUN      ] PreparedOperation.UsesExplicitCoherenceAndReportsProviderFailureInCompletion
+[       OK ] PreparedOperation.UsesExplicitCoherenceAndReportsProviderFailureInCompletion (0 ms)
+[ RUN      ] PreparedOperation.RejectsAnActuallyMisalignedHostMapping
+[       OK ] PreparedOperation.RejectsAnActuallyMisalignedHostMapping (0 ms)
+[ RUN      ] PreparedOperation.RejectsStorageThatCpuCannotMapDuringPrepare
+[       OK ] PreparedOperation.RejectsStorageThatCpuCannotMapDuringPrepare (0 ms)
+[ RUN      ] PreparedOperation.ContextDestructionRejectsRetainedPreparedAndQueueHandles
+[       OK ] PreparedOperation.ContextDestructionRejectsRetainedPreparedAndQueueHandles (0 ms)
+[----------] 15 tests from PreparedOperation (0 ms total)
+
+[----------] 1 test from OperationShape
+[ RUN      ] OperationShape.InfersNaturalInferenceShapesAndRejectsMismatches
+[       OK ] OperationShape.InfersNaturalInferenceShapesAndRejectsMismatches (0 ms)
+[----------] 1 test from OperationShape (0 ms total)
+
+[----------] 5 tests from NativeCast
+[ RUN      ] NativeCast.CoversCompleteInferenceStorageConversionGraph
+[       OK ] NativeCast.CoversCompleteInferenceStorageConversionGraph (0 ms)
+[ RUN      ] NativeCast.ConvertsDenseFloat32ToFloat16Bits
+[       OK ] NativeCast.ConvertsDenseFloat32ToFloat16Bits (0 ms)
+[ RUN      ] NativeCast.MaterializesStridedFloat16ToFloat32
+[       OK ] NativeCast.MaterializesStridedFloat16ToFloat32 (0 ms)
+[ RUN      ] NativeCast.RejectsUnfrozenIntegerConversionSemantics
+[       OK ] NativeCast.RejectsUnfrozenIntegerConversionSemantics (0 ms)
+[ RUN      ] NativeCast.RejectsOverlappingInputAndOutputStorage
+[       OK ] NativeCast.RejectsOverlappingInputAndOutputStorage (0 ms)
+[----------] 5 tests from NativeCast (0 ms total)
+
+[----------] 12 tests from NativeElementwise
+[ RUN      ] NativeElementwise.ExecutesEveryDenseUnaryModeAndExactAlias
+[       OK ] NativeElementwise.ExecutesEveryDenseUnaryModeAndExactAlias (0 ms)
+[ RUN      ] NativeElementwise.SoftplusHasStableTailsSpecialValuesAndExactAlias
+[       OK ] NativeElementwise.SoftplusHasStableTailsSpecialValuesAndExactAlias (0 ms)
+[ RUN      ] NativeElementwise.HalfStorageExecutesAllModesAndRoundsOnce
+[       OK ] NativeElementwise.HalfStorageExecutesAllModesAndRoundsOnce (15 ms)
+[ RUN      ] NativeElementwise.HalfStorageSupportsOddByteStridesAndBroadcast
+[       OK ] NativeElementwise.HalfStorageSupportsOddByteStridesAndBroadcast (0 ms)
+[ RUN      ] NativeElementwise.MaterializesUnalignedStridedUnary
+[       OK ] NativeElementwise.MaterializesUnalignedStridedUnary (0 ms)
+[ RUN      ] NativeElementwise.ExecutesEveryDenseBinaryModeAndAliasesSecondInput
+[       OK ] NativeElementwise.ExecutesEveryDenseBinaryModeAndAliasesSecondInput (0 ms)
+[ RUN      ] NativeElementwise.BroadcastsBinaryOperands
+[       OK ] NativeElementwise.BroadcastsBinaryOperands (0 ms)
+[ RUN      ] NativeElementwise.BroadcastsSelectWithoutChangingBranchBits
+[       OK ] NativeElementwise.BroadcastsSelectWithoutChangingBranchBits (0 ms)
+[ RUN      ] NativeElementwise.SupportsDenseSelectAliasingABranch
+[       OK ] NativeElementwise.SupportsDenseSelectAliasingABranch (0 ms)
+[ RUN      ] NativeElementwise.ExecutesDenseF32SelectAcrossVectorBlocksAndTail
+[       OK ] NativeElementwise.ExecutesDenseF32SelectAcrossVectorBlocksAndTail (0 ms)
+[ RUN      ] NativeElementwise.RejectsUnsafeStridedAliasAndUnsupportedArithmeticType
+[       OK ] NativeElementwise.RejectsUnsafeStridedAliasAndUnsupportedArithmeticType (0 ms)
+[ RUN      ] NativeElementwise.ExecutesZeroElementFamiliesWithoutTouchingStorage
+[       OK ] NativeElementwise.ExecutesZeroElementFamiliesWithoutTouchingStorage (0 ms)
+[----------] 12 tests from NativeElementwise (16 ms total)
+
+[----------] 4 tests from NativeIndexing
+[ RUN      ] NativeIndexing.GatherCopiesDenseSuffixBlocksAndChecksIndices
+[       OK ] NativeIndexing.GatherCopiesDenseSuffixBlocksAndChecksIndices (0 ms)
+[ RUN      ] NativeIndexing.ScatterAssignsOrAddsAndSupportsExactSourceAlias
+[       OK ] NativeIndexing.ScatterAssignsOrAddsAndSupportsExactSourceAlias (0 ms)
+[ RUN      ] NativeIndexing.ConcatenatesVariadicDenseInputsAlongMiddleAxis
+[       OK ] NativeIndexing.ConcatenatesVariadicDenseInputsAlongMiddleAxis (0 ms)
+[ RUN      ] NativeIndexing.HalfScatterUsesOrderedRoundingAndChecksBeforeWriting
+[       OK ] NativeIndexing.HalfScatterUsesOrderedRoundingAndChecksBeforeWriting (0 ms)
+[----------] 4 tests from NativeIndexing (0 ms total)
+
+[----------] 5 tests from NativeMatMul
+[ RUN      ] NativeMatMul.BroadcastsBothBatchOperandsAndSupportsTransposedWeights
+[       OK ] NativeMatMul.BroadcastsBothBatchOperandsAndSupportsTransposedWeights (0 ms)
+[ RUN      ] NativeMatMul.AcceptsAnEmptyBroadcastBatch
+[       OK ] NativeMatMul.AcceptsAnEmptyBroadcastBatch (0 ms)
+[ RUN      ] NativeMatMul.ZeroInnerDimensionProducesZeroWithoutReadingInputs
+[       OK ] NativeMatMul.ZeroInnerDimensionProducesZeroWithoutReadingInputs (0 ms)
+[ RUN      ] NativeMatMul.BroadcastsAnOperandWithNoExplicitBatchAxes
+[       OK ] NativeMatMul.BroadcastsAnOperandWithNoExplicitBatchAxes (0 ms)
+[ RUN      ] NativeMatMul.RejectsUnsupportedAccumulationAtBothColdStages
+[       OK ] NativeMatMul.RejectsUnsupportedAccumulationAtBothColdStages (0 ms)
+[----------] 5 tests from NativeMatMul (0 ms total)
+
+[----------] 2 tests from NativeGatedActivation
+[ RUN      ] NativeGatedActivation.ExecutesEveryModeForPackedAndSeparateInputs
+[       OK ] NativeGatedActivation.ExecutesEveryModeForPackedAndSeparateInputs (0 ms)
+[ RUN      ] NativeGatedActivation.HalfStoragePreservesPackedAndSeparateSemantics
+[       OK ] NativeGatedActivation.HalfStoragePreservesPackedAndSeparateSemantics (8 ms)
+[----------] 2 tests from NativeGatedActivation (9 ms total)
+
+[----------] 5 tests from NativeLayerNorm
+[ RUN      ] NativeLayerNorm.ExecutesNonAffineScaleOnlyAndAffineRows
+[       OK ] NativeLayerNorm.ExecutesNonAffineScaleOnlyAndAffineRows (0 ms)
+[ RUN      ] NativeLayerNorm.SupportsExactInputOutputAlias
+[       OK ] NativeLayerNorm.SupportsExactInputOutputAlias (0 ms)
+[ RUN      ] NativeLayerNorm.AcceptsAnEmptyLastDimension
+[       OK ] NativeLayerNorm.AcceptsAnEmptyLastDimension (0 ms)
+[ RUN      ] NativeLayerNorm.RejectsUnsupportedStorageAndAccumulation
+[       OK ] NativeLayerNorm.RejectsUnsupportedStorageAndAccumulation (0 ms)
+[ RUN      ] NativeLayerNorm.PinsExecutorAndUsesOneBoundedSynchronousFanOut
+[       OK ] NativeLayerNorm.PinsExecutorAndUsesOneBoundedSynchronousFanOut (0 ms)
+[----------] 5 tests from NativeLayerNorm (0 ms total)
+
+[----------] 1 test from NativeNormalization
+[ RUN      ] NativeNormalization.HalfStorageKeepsParametersAndIndependentInvocations
+[       OK ] NativeNormalization.HalfStorageKeepsParametersAndIndependentInvocations (201 ms)
+[----------] 1 test from NativeNormalization (201 ms total)
+
+[----------] 15 tests from NativeProviderShape
+[ RUN      ] NativeProviderShape.DoesNotMistakeUpperPointSupportForABoundedArtifact
+[       OK ] NativeProviderShape.DoesNotMistakeUpperPointSupportForABoundedArtifact (0 ms)
+[ RUN      ] NativeProviderShape.ExecutesEveryAdmittedDerivedPointWithAndWithoutScale
+[       OK ] NativeProviderShape.ExecutesEveryAdmittedDerivedPointWithAndWithoutScale (0 ms)
+[ RUN      ] NativeProviderShape.OwnsProgramAndAxesAfterSourceMutationAndDestruction
+[       OK ] NativeProviderShape.OwnsProgramAndAxesAfterSourceMutationAndDestruction (0 ms)
+[ RUN      ] NativeProviderShape.RejectsInvalidPointsWithoutMetadataAllocation
+[       OK ] NativeProviderShape.RejectsInvalidPointsWithoutMetadataAllocation (0 ms)
+[ RUN      ] NativeProviderShape.EqualBoundsAreNotEqualSymbolsAndHiddenWidthIsFixed
+[       OK ] NativeProviderShape.EqualBoundsAreNotEqualSymbolsAndHiddenWidthIsFixed (0 ms)
+[ RUN      ] NativeProviderShape.ZeroHiddenWidthRemainsAValidEmptyExecution
+[       OK ] NativeProviderShape.ZeroHiddenWidthRemainsAValidEmptyExecution (0 ms)
+[ RUN      ] NativeProviderShape.BindsMultiplePrefixAxesWithoutChangingTheRowKernel
+[       OK ] NativeProviderShape.BindsMultiplePrefixAxesWithoutChangingTheRowKernel (0 ms)
+[ RUN      ] NativeProviderShape.ConcreteRowsReuseTheExistingExecutorPartition
+[       OK ] NativeProviderShape.ConcreteRowsReuseTheExistingExecutorPartition (0 ms)
+[ RUN      ] NativeProviderShape.OrdinaryExactArtifactsDoNotBecomeDomains
+[       OK ] NativeProviderShape.OrdinaryExactArtifactsDoNotBecomeDomains (0 ms)
+[ RUN      ] NativeProviderShape.EveryColdAllocationFailureCleansUpAndCanRetry
+[       OK ] NativeProviderShape.EveryColdAllocationFailureCleansUpAndCanRetry (0 ms)
+[ RUN      ] NativeProviderShape.IndependentInstancesShareOneImmutableDomain
+[       OK ] NativeProviderShape.IndependentInstancesShareOneImmutableDomain (0 ms)
+[ RUN      ] NativeProviderShape.SuppliedMetadataExecutesAndRetainsItsOwnDescriptors
+[       OK ] NativeProviderShape.SuppliedMetadataExecutesAndRetainsItsOwnDescriptors (0 ms)
+[ RUN      ] NativeProviderShape.SuppliedMetadataAllocationFailureAndOwnerLifetime
+[       OK ] NativeProviderShape.SuppliedMetadataAllocationFailureAndOwnerLifetime (0 ms)
+[ RUN      ] NativeProviderShape.DenseEnvelopeDoesNotProveAStridedFamily
+[       OK ] NativeProviderShape.DenseEnvelopeDoesNotProveAStridedFamily (0 ms)
+[ RUN      ] NativeProviderShape.BoundedCopyRequiresDenseOutputAndIdenticalAxisExpressions
+[       OK ] NativeProviderShape.BoundedCopyRequiresDenseOutputAndIdenticalAxisExpressions (0 ms)
+[----------] 15 tests from NativeProviderShape (1 ms total)
+
+[----------] 5 tests from NativeMetadataOwner
+[ RUN      ] NativeMetadataOwner.ExactAndDomainArtifactsUseTheirOwnAllocator
+[       OK ] NativeMetadataOwner.ExactAndDomainArtifactsUseTheirOwnAllocator (0 ms)
+[ RUN      ] NativeMetadataOwner.EveryOverrideAllocationCanFailAndRetry
+[       OK ] NativeMetadataOwner.EveryOverrideAllocationCanFailAndRetry (0 ms)
+[ RUN      ] NativeMetadataOwner.InvalidOverrideIsNotSilentlyInherited
+[       OK ] NativeMetadataOwner.InvalidOverrideIsNotSilentlyInherited (0 ms)
+[ RUN      ] NativeMetadataOwner.OrdinaryInvocationKeepsItsSizeAndAllocationCount
+[       OK ] NativeMetadataOwner.OrdinaryInvocationKeepsItsSizeAndAllocationCount (0 ms)
+[ RUN      ] NativeMetadataOwner.ConcurrentInstancesHaveIndependentOwners
+[       OK ] NativeMetadataOwner.ConcurrentInstancesHaveIndependentOwners (0 ms)
+[----------] 5 tests from NativeMetadataOwner (0 ms total)
+
+[----------] 8 tests from PreparedDomainContract
+[ RUN      ] PreparedDomainContract.RequiresInstantiationBeforeAcceptingADomainArtifact
+[       OK ] PreparedDomainContract.RequiresInstantiationBeforeAcceptingADomainArtifact (0 ms)
+[ RUN      ] PreparedDomainContract.RejectsBrokenInstancesAndDestroysOwnedPartials
+[       OK ] PreparedDomainContract.RejectsBrokenInstancesAndDestroysOwnedPartials (0 ms)
+[ RUN      ] PreparedDomainContract.ChecksShapeBeforeCallbackAndInvocationRetainsRoot
+[       OK ] PreparedDomainContract.ChecksShapeBeforeCallbackAndInvocationRetainsRoot (0 ms)
+[ RUN      ] PreparedDomainContract.ConcretePrivateStorageCannotExceedDomainBound
+[       OK ] PreparedDomainContract.ConcretePrivateStorageCannotExceedDomainBound (0 ms)
+[ RUN      ] PreparedDomainContract.SchemaIsRecheckedBeforeAConcreteProviderCallback
+[       OK ] PreparedDomainContract.SchemaIsRecheckedBeforeAConcreteProviderCallback (0 ms)
+[ RUN      ] PreparedDomainContract.RejectsPointOnlyAndInvalidCoverageBeforePreparation
+[       OK ] PreparedDomainContract.RejectsPointOnlyAndInvalidCoverageBeforePreparation (0 ms)
+[ RUN      ] PreparedDomainContract.SuppliedMetadataIsCheckedBeforeTheProvider
+[       OK ] PreparedDomainContract.SuppliedMetadataIsCheckedBeforeTheProvider (0 ms)
+[ RUN      ] PreparedDomainContract.StridedMembershipDoesNotOverrideOperationSchema
+[       OK ] PreparedDomainContract.StridedMembershipDoesNotOverrideOperationSchema (0 ms)
+[----------] 8 tests from PreparedDomainContract (0 ms total)
+
+[----------] 7 tests from NativeReduction
+[ RUN      ] NativeReduction.ExecutesEveryModeAcrossTheLastAxis
+[       OK ] NativeReduction.ExecutesEveryModeAcrossTheLastAxis (0 ms)
+[ RUN      ] NativeReduction.ReducesMultipleAxesWithAndWithoutKeptDimensions
+[       OK ] NativeReduction.ReducesMultipleAxesWithAndWithoutKeptDimensions (0 ms)
+[ RUN      ] NativeReduction.HandlesUnalignedStrideNaNAndSignedZero
+[       OK ] NativeReduction.HandlesUnalignedStrideNaNAndSignedZero (0 ms)
+[ RUN      ] NativeReduction.DefinesEmptyReductionIdentities
+[       OK ] NativeReduction.DefinesEmptyReductionIdentities (0 ms)
+[ RUN      ] NativeReduction.RejectsUnsupportedStorageAndAccumulation
+[       OK ] NativeReduction.RejectsUnsupportedStorageAndAccumulation (0 ms)
+[ RUN      ] NativeReduction.HalfAccumulatesInFloat32AcrossDenseAndStridedAxes
+[       OK ] NativeReduction.HalfAccumulatesInFloat32AcrossDenseAndStridedAxes (0 ms)
+[ RUN      ] NativeReduction.HalfPreservesEmptyAndNonFiniteRules
+[       OK ] NativeReduction.HalfPreservesEmptyAndNonFiniteRules (0 ms)
+[----------] 7 tests from NativeReduction (1 ms total)
+
+[----------] 3 tests from NativeTransform
+[ RUN      ] NativeTransform.ValidatesAndExecutesZeroKernelSliceView
+[       OK ] NativeTransform.ValidatesAndExecutesZeroKernelSliceView (0 ms)
+[ RUN      ] NativeTransform.MaterializesPlainStridedCopy
+[       OK ] NativeTransform.MaterializesPlainStridedCopy (0 ms)
+[ RUN      ] NativeTransform.FillsExactTypedScalarBits
+[       OK ] NativeTransform.FillsExactTypedScalarBits (0 ms)
+[----------] 3 tests from NativeTransform (0 ms total)
+
+[----------] 16 tests from NativeTransformer
+[ RUN      ] NativeTransformer.ExecutesBothRopeLayoutsAndPreservesTheTail
+[       OK ] NativeTransformer.ExecutesBothRopeLayoutsAndPreservesTheTail (0 ms)
+[ RUN      ] NativeTransformer.RopeExercisesVectorBlocksAndPairTail
+[       OK ] NativeTransformer.RopeExercisesVectorBlocksAndPairTail (0 ms)
+[ RUN      ] NativeTransformer.RopeMaterializesPlainStridedInputs
+[       OK ] NativeTransformer.RopeMaterializesPlainStridedInputs (0 ms)
+[ RUN      ] NativeTransformer.SoftmaxSupportsBroadcastMasksScaleAndExactAlias
+[       OK ] NativeTransformer.SoftmaxSupportsBroadcastMasksScaleAndExactAlias (0 ms)
+[ RUN      ] NativeTransformer.LogSoftmaxSupportsANonTrailingAxis
+[       OK ] NativeTransformer.LogSoftmaxSupportsANonTrailingAxis (0 ms)
+[ RUN      ] NativeTransformer.SoftmaxSupportsAdditiveMasksAndUndefinedRows
+[       OK ] NativeTransformer.SoftmaxSupportsAdditiveMasksAndUndefinedRows (0 ms)
+[ RUN      ] NativeTransformer.SdpaExecutesBlockedOnlineSoftmaxInBothLayouts
+[       OK ] NativeTransformer.SdpaExecutesBlockedOnlineSoftmaxInBothLayouts (0 ms)
+[ RUN      ] NativeTransformer.SdpaKeepsBatchAndHeadRowsSeparateInBothLayouts
+[       OK ] NativeTransformer.SdpaKeepsBatchAndHeadRowsSeparateInBothLayouts (0 ms)
+[ RUN      ] NativeTransformer.SdpaUsesBottomRightCausalAndExplicitMasks
+[       OK ] NativeTransformer.SdpaUsesBottomRightCausalAndExplicitMasks (0 ms)
+[ RUN      ] NativeTransformer.SdpaSupportsPlainStridedReferenceInputs
+[       OK ] NativeTransformer.SdpaSupportsPlainStridedReferenceInputs (0 ms)
+[ RUN      ] NativeTransformer.SdpaUsesDisjointWorkspacePerExecutorTask
+[       OK ] NativeTransformer.SdpaUsesDisjointWorkspacePerExecutorTask (0 ms)
+[ RUN      ] NativeTransformer.SdpaDefinesAnEmptyKeyRowAsInvalid
+[       OK ] NativeTransformer.SdpaDefinesAnEmptyKeyRowAsInvalid (0 ms)
+[ RUN      ] NativeTransformer.SdpaDeclinesGroupedHeadsBeforeAnyExecution
+[       OK ] NativeTransformer.SdpaDeclinesGroupedHeadsBeforeAnyExecution (0 ms)
+[ RUN      ] NativeTransformer.SdpaRejectsUnsupportedStorageAndAccumulation
+[       OK ] NativeTransformer.SdpaRejectsUnsupportedStorageAndAccumulation (0 ms)
+[ RUN      ] NativeTransformer.HalfSoftmaxUsesDeclaredWorkspaceAndMaskSemantics
+[       OK ] NativeTransformer.HalfSoftmaxUsesDeclaredWorkspaceAndMaskSemantics (2 ms)
+[ RUN      ] NativeTransformer.EmptyHalfWorkloadRequiresNoWorkspace
+[       OK ] NativeTransformer.EmptyHalfWorkloadRequiresNoWorkspace (0 ms)
+[----------] 16 tests from NativeTransformer (3 ms total)
+
+[----------] 2 tests from NativeTorchCpu
+[ RUN      ] NativeTorchCpu.ManagedReplayReportsRealAllocationFailureAndReleasesProgram
+[       OK ] NativeTorchCpu.ManagedReplayReportsRealAllocationFailureAndReleasesProgram (10 ms)
+[ RUN      ] NativeTorchCpu.DuplicateExpertIdsAndFailedInvocationRecovery
+[       OK ] NativeTorchCpu.DuplicateExpertIdsAndFailedInvocationRecovery (1 ms)
+[----------] 2 tests from NativeTorchCpu (12 ms total)
+
+[----------] Global test environment tear-down
+[==========] 106 tests from 16 test suites ran. (247 ms total)
+[  PASSED  ] 106 tests.
+<end of output>
+Test time =   0.49 sec
+----------------------------------------------------------
+Test Passed.
+"hyle_compute_provider_native_test" end time: Oct 05 14:52 中国标准时间
+"hyle_compute_provider_native_test" time elapsed: 00:00:00
+----------------------------------------------------------
+
+78/99 Testing: hyle_compute_route_cpu_header_self_contained_test
+78/99 Test: hyle_compute_route_cpu_header_self_contained_test
+Command: "C:/Program Files/Python312/python.exe" "C:/public/project-hyle/hyle/scripts/header-self-contained.py" "--module" "compute_route_cpu" "--include-dir" "C:/public/project-hyle/hyle/include" "--cxx" "C:/Program Files/Microsoft Visual Studio/18/Enterprise/VC/Tools/MSVC/14.50.35717/bin/Hostx64/x64/cl.exe" "--cxx-compiler-id" "MSVC" "--cxx-frontend" "MSVC" "--header-dir" "compute" "--header" "cpu.h"
+Directory: C:/public/project-hyle/hyle/.scratch/build-compute-v2-dev/tests/compute_route_cpu
+"hyle_compute_route_cpu_header_self_contained_test" start time: Oct 05 14:52 中国标准时间
+Output:
+----------------------------------------------------------
+compute_route_cpu C++ headers self-contained: 1
+<end of output>
+Test time =   0.48 sec
+----------------------------------------------------------
+Test Passed.
+"hyle_compute_route_cpu_header_self_contained_test" end time: Oct 05 14:52 中国标准时间
+"hyle_compute_route_cpu_header_self_contained_test" time elapsed: 00:00:00
+----------------------------------------------------------
+
+79/99 Testing: hyle_compute_route_cpu_test
+79/99 Test: hyle_compute_route_cpu_test
+Command: "C:/public/project-hyle/hyle/.scratch/build-compute-v2-dev/bin/hyle_compute_route_cpu_test.exe"
+Directory: C:/public/project-hyle/hyle/.scratch/build-compute-v2-dev/tests/compute_route_cpu
+"hyle_compute_route_cpu_test" start time: Oct 05 14:52 中国标准时间
+Output:
+----------------------------------------------------------
+Running main() from C:\Users\kiro\AppData\Local\hyle\dependencies\v1\sources\googletest-063de7e9578f-162765170ae6\googletest\src\gtest_main.cc
+[==========] Running 157 tests from 16 test suites.
+[----------] Global test environment set-up.
+[----------] 13 tests from CpuDefaultContext
+[ RUN      ] CpuDefaultContext.ColdFailureReleasesPartialProviderAssembly
+[       OK ] CpuDefaultContext.ColdFailureReleasesPartialProviderAssembly (0 ms)
+[ RUN      ] CpuDefaultContext.GgmlBindsThroughOrdinaryFactory
+[       OK ] CpuDefaultContext.GgmlBindsThroughOrdinaryFactory (0 ms)
+[ RUN      ] CpuDefaultContext.NativeQ8UsesOrdinaryDirectRouteAndReplays
+[       OK ] CpuDefaultContext.NativeQ8UsesOrdinaryDirectRouteAndReplays (1 ms)
+[ RUN      ] CpuDefaultContext.StandardIndexProgramsBindThroughOrdinaryFactory
+[       OK ] CpuDefaultContext.StandardIndexProgramsBindThroughOrdinaryFactory (0 ms)
+[ RUN      ] CpuDefaultContext.MatureScatterAddBindsThroughOrdinaryFactory
+[       OK ] CpuDefaultContext.MatureScatterAddBindsThroughOrdinaryFactory (0 ms)
+[ RUN      ] CpuDefaultContext.MatureNormalizationBindsThroughOrdinaryFactory
+[       OK ] CpuDefaultContext.MatureNormalizationBindsThroughOrdinaryFactory (0 ms)
+[ RUN      ] CpuDefaultContext.MatMulNeverFallsBackToLowerAccumulationPrecision
+[       OK ] CpuDefaultContext.MatMulNeverFallsBackToLowerAccumulationPrecision (0 ms)
+[ RUN      ] CpuDefaultContext.MatMulRulesAndChangedInputReplay
+[       OK ] CpuDefaultContext.MatMulRulesAndChangedInputReplay (2 ms)
+[ RUN      ] CpuDefaultContext.InvalidAndUnsupportedInputsRemainErrors
+[       OK ] CpuDefaultContext.InvalidAndUnsupportedInputsRemainErrors (0 ms)
+[ RUN      ] CpuDefaultContext.B2MatureDomainsBindThroughDefaultRuleSet
+[       OK ] CpuDefaultContext.B2MatureDomainsBindThroughDefaultRuleSet (0 ms)
+[ RUN      ] CpuDefaultContext.D5RealQwenProjectionUsesExactProfileAndReplays
+[       OK ] CpuDefaultContext.D5RealQwenProjectionUsesExactProfileAndReplays (12 ms)
+[ RUN      ] CpuDefaultContext.StableSoftplusUsesMatureBindingAcrossReplay
+[       OK ] CpuDefaultContext.StableSoftplusUsesMatureBindingAcrossReplay (0 ms)
+[ RUN      ] CpuDefaultContext.SelectUsesMatureProviderWithoutManualOrdering
+[       OK ] CpuDefaultContext.SelectUsesMatureProviderWithoutManualOrdering (0 ms)
+[----------] 13 tests from CpuDefaultContext (16 ms total)
+
+[----------] 21 tests from CpuDefaultDirect
+[ RUN      ] CpuDefaultDirect.D5Qwen35PrimaryGgufFfnUsesMixedNativeWeightsAndStableReplay
+[       OK ] CpuDefaultDirect.D5Qwen35PrimaryGgufFfnUsesMixedNativeWeightsAndStableReplay (1835 ms)
+[ RUN      ] CpuDefaultDirect.D5Qwen35FidelityGgufFfnUsesQ8NativeWeightsAndStableReplay
+[       OK ] CpuDefaultDirect.D5Qwen35FidelityGgufFfnUsesQ8NativeWeightsAndStableReplay (399 ms)
+[ RUN      ] CpuDefaultDirect.D5Qwen35PrimaryGgufAttentionSemanticsUseMaturePreparedCalls
+[       OK ] CpuDefaultDirect.D5Qwen35PrimaryGgufAttentionSemanticsUseMaturePreparedCalls (0 ms)
+[ RUN      ] CpuDefaultDirect.D5Qwen35FidelityGgufAttentionSemanticsUseMaturePreparedCalls
+[       OK ] CpuDefaultDirect.D5Qwen35FidelityGgufAttentionSemanticsUseMaturePreparedCalls (0 ms)
+[ RUN      ] CpuDefaultDirect.D5Qwen35PrimaryGgufGdnStateUsesMaturePreparedCalls
+[       OK ] CpuDefaultDirect.D5Qwen35PrimaryGgufGdnStateUsesMaturePreparedCalls (7 ms)
+[ RUN      ] CpuDefaultDirect.D5Qwen35FidelityGgufGdnStateUsesMaturePreparedCalls
+[       OK ] CpuDefaultDirect.D5Qwen35FidelityGgufGdnStateUsesMaturePreparedCalls (7 ms)
+[ RUN      ] CpuDefaultDirect.D5Qwen35PrimaryGgufExactMixedProjectionsUseNativeRegionsAndReplay
+[       OK ] CpuDefaultDirect.D5Qwen35PrimaryGgufExactMixedProjectionsUseNativeRegionsAndReplay (3666 ms)
+[ RUN      ] CpuDefaultDirect.D5Qwen38PrimaryGgufEveryStoredProjectionTypeUsesNativeRegionsAndReplay
+[       OK ] CpuDefaultDirect.D5Qwen38PrimaryGgufEveryStoredProjectionTypeUsesNativeRegionsAndReplay (52898 ms)
+[ RUN      ] CpuDefaultDirect.D5Qwen38FidelityGgufQ8ProjectionRolesUseNativeRegionsAndReplay
+[       OK ] CpuDefaultDirect.D5Qwen38FidelityGgufQ8ProjectionRolesUseNativeRegionsAndReplay (3127 ms)
+[ RUN      ] CpuDefaultDirect.D5Qwen38_24TGgufMoeWeightRolesUseNativeRegions
+[       OK ] CpuDefaultDirect.D5Qwen38_24TGgufMoeWeightRolesUseNativeRegions (5023 ms)
+[ RUN      ] CpuDefaultDirect.D5Qwen35FidelityGgufExactQ8ProjectionsUseNativeRegionsAndReplay
+[       OK ] CpuDefaultDirect.D5Qwen35FidelityGgufExactQ8ProjectionsUseNativeRegionsAndReplay (319 ms)
+[ RUN      ] CpuDefaultDirect.D5Qwen35FidelityGgufF16ProjectionsUseMatureRegionsAndReplay
+[       OK ] CpuDefaultDirect.D5Qwen35FidelityGgufF16ProjectionsUseMatureRegionsAndReplay (2141 ms)
+[ RUN      ] CpuDefaultDirect.D5Qwen35PrimaryGgufQuantizedEmbeddingUsesNativeRowsAndReplays
+[       OK ] CpuDefaultDirect.D5Qwen35PrimaryGgufQuantizedEmbeddingUsesNativeRowsAndReplays (0 ms)
+[ RUN      ] CpuDefaultDirect.D5Qwen38PrimaryGgufQuantizedEmbeddingUsesExactWidthAndReplays
+[       OK ] CpuDefaultDirect.D5Qwen38PrimaryGgufQuantizedEmbeddingUsesExactWidthAndReplays (1 ms)
+[ RUN      ] CpuDefaultDirect.D5Qwen38FidelityGgufQuantizedEmbeddingUsesExactWidthAndReplays
+[       OK ] CpuDefaultDirect.D5Qwen38FidelityGgufQuantizedEmbeddingUsesExactWidthAndReplays (0 ms)
+[ RUN      ] CpuDefaultDirect.D5Qwen35FidelityGgufF16EmbeddingUsesMatureRowsAndReplays
+[       OK ] CpuDefaultDirect.D5Qwen35FidelityGgufF16EmbeddingUsesMatureRowsAndReplays (3 ms)
+[ RUN      ] CpuDefaultDirect.D5Qwen35OfficialEmbeddingNormHeadAndFailureUsePreparedCalls
+[       OK ] CpuDefaultDirect.D5Qwen35OfficialEmbeddingNormHeadAndFailureUsePreparedCalls (1 ms)
+[ RUN      ] CpuDefaultDirect.D5Qwen35OfficialFfnUsesMaturePreparedCalls
+[       OK ] CpuDefaultDirect.D5Qwen35OfficialFfnUsesMaturePreparedCalls (101 ms)
+[ RUN      ] CpuDefaultDirect.D5Qwen35OfficialGqaNormRopeAndAttentionUsePreparedCalls
+[       OK ] CpuDefaultDirect.D5Qwen35OfficialGqaNormRopeAndAttentionUsePreparedCalls (0 ms)
+[ RUN      ] CpuDefaultDirect.D5Qwen35OfficialCausalConvAndGdnUsePreparedCalls
+[       OK ] CpuDefaultDirect.D5Qwen35OfficialCausalConvAndGdnUsePreparedCalls (6 ms)
+[ RUN      ] CpuDefaultDirect.D5Qwen35OfficialMtpAndBfloatBoundaryUsePreparedCalls
+[       OK ] CpuDefaultDirect.D5Qwen35OfficialMtpAndBfloatBoundaryUsePreparedCalls (23 ms)
+[----------] 21 tests from CpuDefaultDirect (69570 ms total)
+
+[----------] 4 tests from CpuDs4Roundtrip
+[ RUN      ] CpuDs4Roundtrip.OrdinaryEntryExhaustsFiniteBfloatAndReplaysBothFormats
+[       OK ] CpuDs4Roundtrip.OrdinaryEntryExhaustsFiniteBfloatAndReplaysBothFormats (18 ms)
+[ RUN      ] CpuDs4Roundtrip.MatureMidpointsAndLowScalesKeepExactNumericalBoundary
+[       OK ] CpuDs4Roundtrip.MatureMidpointsAndLowScalesKeepExactNumericalBoundary (2 ms)
+[ RUN      ] CpuDs4Roundtrip.FixedGroupCapabilityAndRecoveryAfterColdOom
+[       OK ] CpuDs4Roundtrip.FixedGroupCapabilityAndRecoveryAfterColdOom (5 ms)
+[ RUN      ] CpuDs4Roundtrip.MatureGroup128AllFiniteBfloatReplayAndFailureRecovery
+[       OK ] CpuDs4Roundtrip.MatureGroup128AllFiniteBfloatReplayAndFailureRecovery (8 ms)
+[----------] 4 tests from CpuDs4Roundtrip (34 ms total)
+
+[----------] 9 tests from CpuQwen38_24T
+[ RUN      ] CpuQwen38_24T.D5ExactWidthCausalConvDirectReplay
+[       OK ] CpuQwen38_24T.D5ExactWidthCausalConvDirectReplay (0 ms)
+[ RUN      ] CpuQwen38_24T.D5OfficialBfloatGroupedExpertKeepsExactWidthsTopKPortsAndReplay
+[       OK ] CpuQwen38_24T.D5OfficialBfloatGroupedExpertKeepsExactWidthsTopKPortsAndReplay (1195 ms)
+[ RUN      ] CpuQwen38_24T.D5GgufGroupedExpertKeepsNativeBlocksAndDynamicIds
+[       OK ] CpuQwen38_24T.D5GgufGroupedExpertKeepsNativeBlocksAndDynamicIds (3120 ms)
+[ RUN      ] CpuQwen38_24T.D5OfficialRouterScoresAll512ExpertsAndNormalizesStableTop10
+[       OK ] CpuQwen38_24T.D5OfficialRouterScoresAll512ExpertsAndNormalizesStableTop10 (12 ms)
+[ RUN      ] CpuQwen38_24T.D5GgufAttentionGdnAndMtpUseRealRoleTypes
+[       OK ] CpuQwen38_24T.D5GgufAttentionGdnAndMtpUseRealRoleTypes (1614 ms)
+[ RUN      ] CpuQwen38_24T.D5GgufAttentionAndGdnProjectionRoleBatch
+[       OK ] CpuQwen38_24T.D5GgufAttentionAndGdnProjectionRoleBatch (8740 ms)
+[ RUN      ] CpuQwen38_24T.D5OfficialAttentionAndGdnProjectionRoleBatch
+[       OK ] CpuQwen38_24T.D5OfficialAttentionAndGdnProjectionRoleBatch (2128 ms)
+[ RUN      ] CpuQwen38_24T.D5FullRouterSharedExpertAndNearTieDirectReplay
+[       OK ] CpuQwen38_24T.D5FullRouterSharedExpertAndNearTieDirectReplay (1882 ms)
+[ RUN      ] CpuQwen38_24T.D5GgufFullRouterSharedExpertAndNearTieReplay
+[       OK ] CpuQwen38_24T.D5GgufFullRouterSharedExpertAndNearTieReplay (9956 ms)
+[----------] 9 tests from CpuQwen38_24T (28650 ms total)
+
+[----------] 32 tests from CpuMoeFragments
+[ RUN      ] CpuMoeFragments.D5MatureClampBoundaries
+[       OK ] CpuMoeFragments.D5MatureClampBoundaries (0 ms)
+[ RUN      ] CpuMoeFragments.D5DeepSeekWeightedHyperConnectionAndHead
+[       OK ] CpuMoeFragments.D5DeepSeekWeightedHyperConnectionAndHead (3444 ms)
+[ RUN      ] CpuMoeFragments.D5DeepSeekFullAttentionChain
+[       OK ] CpuMoeFragments.D5DeepSeekFullAttentionChain (7001 ms)
+[ RUN      ] CpuMoeFragments.D5DeepSeekStatefulCompression
+[       OK ] CpuMoeFragments.D5DeepSeekStatefulCompression (1845 ms)
+[ RUN      ] CpuMoeFragments.D5DeepSeekNativeSinkAttention
+[       OK ] CpuMoeFragments.D5DeepSeekNativeSinkAttention (256 ms)
+[ RUN      ] CpuMoeFragments.D5DeepSeekTokenTableRouting
+[       OK ] CpuMoeFragments.D5DeepSeekTokenTableRouting (39 ms)
+[ RUN      ] CpuMoeFragments.D5DeepSeekHashRoutingFeedsMixedWeightMoe
+[       OK ] CpuMoeFragments.D5DeepSeekHashRoutingFeedsMixedWeightMoe (6153 ms)
+[ RUN      ] CpuMoeFragments.D5ThirteenProfilesModelRouters
+[       OK ] CpuMoeFragments.D5ThirteenProfilesModelRouters (89 ms)
+[ RUN      ] CpuMoeFragments.D5ThirteenProfilesExpertActivation
+[       OK ] CpuMoeFragments.D5ThirteenProfilesExpertActivation (1 ms)
+[ RUN      ] CpuMoeFragments.D5OfficialFp4ExpertBatch
+[       OK ] CpuMoeFragments.D5OfficialFp4ExpertBatch (707 ms)
+[ RUN      ] CpuMoeFragments.D5OfficialKimiMixedStorageFullMoe
+[       OK ] CpuMoeFragments.D5OfficialKimiMixedStorageFullMoe (1150 ms)
+[ RUN      ] CpuMoeFragments.D5EightGgufProfilesFullMoe
+[       OK ] CpuMoeFragments.D5EightGgufProfilesFullMoe (31207 ms)
+[ RUN      ] CpuMoeFragments.D5KdaProjectionRoleBatch
+[       OK ] CpuMoeFragments.D5KdaProjectionRoleBatch (2262 ms)
+[ RUN      ] CpuMoeFragments.D5GlmFlashWeightedHyperConnection
+[       OK ] CpuMoeFragments.D5GlmFlashWeightedHyperConnection (35 ms)
+[ RUN      ] CpuMoeFragments.D5GlmDsaIndexerWithCache
+[       OK ] CpuMoeFragments.D5GlmDsaIndexerWithCache (283 ms)
+[ RUN      ] CpuMoeFragments.D5GlmFlashPooledIndexerWithTail
+[       OK ] CpuMoeFragments.D5GlmFlashPooledIndexerWithTail (1246 ms)
+[ RUN      ] CpuMoeFragments.D5GlmGgufDenseFfn
+[       OK ] CpuMoeFragments.D5GlmGgufDenseFfn (3124 ms)
+[ RUN      ] CpuMoeFragments.D5GlmGgufNextNDecoderWithCarryAndFullHead
+[       OK ] CpuMoeFragments.D5GlmGgufNextNDecoderWithCarryAndFullHead (13469 ms)
+[ RUN      ] CpuMoeFragments.D5GlmGgufDsaSelectionConsumesMlaCache
+[       OK ] CpuMoeFragments.D5GlmGgufDsaSelectionConsumesMlaCache (10584 ms)
+[ RUN      ] CpuMoeFragments.D5GlmLayerSpecificExpertFormats
+[       OK ] CpuMoeFragments.D5GlmLayerSpecificExpertFormats (4426 ms)
+[ RUN      ] CpuMoeFragments.D5GlmGgufMtpIndexCarryReset
+[       OK ] CpuMoeFragments.D5GlmGgufMtpIndexCarryReset (6308 ms)
+[ RUN      ] CpuMoeFragments.D5GlmNextNInputBoundary
+[       OK ] CpuMoeFragments.D5GlmNextNInputBoundary (1421 ms)
+[ RUN      ] CpuMoeFragments.D5GlmGgufAbsorbedMlaWithCache
+[       OK ] CpuMoeFragments.D5GlmGgufAbsorbedMlaWithCache (2784 ms)
+[ RUN      ] CpuMoeFragments.D5KimiBfloatRoundingBoundaries
+[       OK ] CpuMoeFragments.D5KimiBfloatRoundingBoundaries (0 ms)
+[ RUN      ] CpuMoeFragments.D5KimiDenseFfn
+[       OK ] CpuMoeFragments.D5KimiDenseFfn (6699 ms)
+[ RUN      ] CpuMoeFragments.D5KimiAbsorbedMlaWithCache
+[       OK ] CpuMoeFragments.D5KimiAbsorbedMlaWithCache (2447 ms)
+[ RUN      ] CpuMoeFragments.D5KimiAttentionResidualBanking
+[       OK ] CpuMoeFragments.D5KimiAttentionResidualBanking (63 ms)
+[ RUN      ] CpuMoeFragments.D5KimiAttentionResidualOrdinary
+[       OK ] CpuMoeFragments.D5KimiAttentionResidualOrdinary (65 ms)
+[ RUN      ] CpuMoeFragments.D5SixProfilesFullKdaChainAndTwoStates
+[       OK ] CpuMoeFragments.D5SixProfilesFullKdaChainAndTwoStates (10120 ms)
+[ RUN      ] CpuMoeFragments.D5SixProfilesBoundedKdaActualStateFeedback
+[       OK ] CpuMoeFragments.D5SixProfilesBoundedKdaActualStateFeedback (954 ms)
+[ RUN      ] CpuMoeFragments.D5KimiThreeProfilesSituActivation
+[       OK ] CpuMoeFragments.D5KimiThreeProfilesSituActivation (11 ms)
+[ RUN      ] CpuMoeFragments.D5SevenProfilesHyperConnectionCore
+[       OK ] CpuMoeFragments.D5SevenProfilesHyperConnectionCore (9 ms)
+[----------] 32 tests from CpuMoeFragments (118218 ms total)
+
+[----------] 13 tests from CpuTorchOfficial
+[ RUN      ] CpuTorchOfficial.D5GroupedFp8Batch
+[       OK ] CpuTorchOfficial.D5GroupedFp8Batch (17697 ms)
+[ RUN      ] CpuTorchOfficial.D5GlmOfficialFp8FullMoe
+[       OK ] CpuTorchOfficial.D5GlmOfficialFp8FullMoe (1201 ms)
+[ RUN      ] CpuTorchOfficial.D5DynamicFp8DenseBatch
+[       OK ] CpuTorchOfficial.D5DynamicFp8DenseBatch (2740 ms)
+[ RUN      ] CpuTorchOfficial.D5GlmOfficialDynamicFp8SharedFfn
+[       OK ] CpuTorchOfficial.D5GlmOfficialDynamicFp8SharedFfn (493 ms)
+[ RUN      ] CpuTorchOfficial.D5OfficialFp8DenseNativeBatch
+[       OK ] CpuTorchOfficial.D5OfficialFp8DenseNativeBatch (746 ms)
+[ RUN      ] CpuTorchOfficial.D5GlmOfficialMixedRemaining
+[       OK ] CpuTorchOfficial.D5GlmOfficialMixedRemaining (11929 ms)
+[ RUN      ] CpuTorchOfficial.D5DeepSeekOfficialCompression
+[       OK ] CpuTorchOfficial.D5DeepSeekOfficialCompression (2328 ms)
+[ RUN      ] CpuTorchOfficial.D5DeepSeekOfficialAttention
+[       OK ] CpuTorchOfficial.D5DeepSeekOfficialAttention (18124 ms)
+[ RUN      ] CpuTorchOfficial.D5DeepSeekOfficialMtpAndFullHead
+[       OK ] CpuTorchOfficial.D5DeepSeekOfficialMtpAndFullHead (26497 ms)
+[ RUN      ] CpuTorchOfficial.D5DeepSeekOriginalFp4Projections
+[       OK ] CpuTorchOfficial.D5DeepSeekOriginalFp4Projections (26473 ms)
+[ RUN      ] CpuTorchOfficial.D5DeepSeekOfficialMoe
+[       OK ] CpuTorchOfficial.D5DeepSeekOfficialMoe (15916 ms)
+[ RUN      ] CpuTorchOfficial.D5DeepSeekExpertActivationRoundtrip
+[       OK ] CpuTorchOfficial.D5DeepSeekExpertActivationRoundtrip (114 ms)
+[ RUN      ] CpuTorchOfficial.OriginalFp8WeightDecodeAllFiniteCodes
+[       OK ] CpuTorchOfficial.OriginalFp8WeightDecodeAllFiniteCodes (4 ms)
+[----------] 13 tests from CpuTorchOfficial (124269 ms total)
+
+[----------] 1 test from CpuQwenRecurrent
+[ RUN      ] CpuQwenRecurrent.D5NineProfilesUseCompleteGateAndActualStateFeedback
+[       OK ] CpuQwenRecurrent.D5NineProfilesUseCompleteGateAndActualStateFeedback (1646 ms)
+[----------] 1 test from CpuQwenRecurrent (1646 ms total)
+
+[----------] 2 tests from D5OfficialAndPrimaryGguf/CpuQwen38GdnProfiles
+[ RUN      ] D5OfficialAndPrimaryGguf/CpuQwen38GdnProfiles.GroupedHeadUsesOrdinaryRouteAndReplays/0
+[       OK ] D5OfficialAndPrimaryGguf/CpuQwen38GdnProfiles.GroupedHeadUsesOrdinaryRouteAndReplays/0 (14 ms)
+[ RUN      ] D5OfficialAndPrimaryGguf/CpuQwen38GdnProfiles.GroupedHeadUsesOrdinaryRouteAndReplays/1
+[       OK ] D5OfficialAndPrimaryGguf/CpuQwen38GdnProfiles.GroupedHeadUsesOrdinaryRouteAndReplays/1 (14 ms)
+[----------] 2 tests from D5OfficialAndPrimaryGguf/CpuQwen38GdnProfiles (28 ms total)
+
+[----------] 1 test from D5FidelityGguf/CpuQwen38GdnProfiles
+[ RUN      ] D5FidelityGguf/CpuQwen38GdnProfiles.GroupedHeadUsesOrdinaryRouteAndReplays/0
+[       OK ] D5FidelityGguf/CpuQwen38GdnProfiles.GroupedHeadUsesOrdinaryRouteAndReplays/0 (14 ms)
+[----------] 1 test from D5FidelityGguf/CpuQwen38GdnProfiles (15 ms total)
+
+[----------] 1 test from D5Official24T/CpuQwen38GdnProfiles
+[ RUN      ] D5Official24T/CpuQwen38GdnProfiles.GroupedHeadUsesOrdinaryRouteAndReplays/0
+[       OK ] D5Official24T/CpuQwen38GdnProfiles.GroupedHeadUsesOrdinaryRouteAndReplays/0 (40 ms)
+[----------] 1 test from D5Official24T/CpuQwen38GdnProfiles (40 ms total)
+
+[----------] 12 tests from D5ExactQwenGguf/CpuQwenGgufVocabulary
+[ RUN      ] D5ExactQwenGguf/CpuQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/0
+[       OK ] D5ExactQwenGguf/CpuQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/0 (611 ms)
+[ RUN      ] D5ExactQwenGguf/CpuQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/1
+[       OK ] D5ExactQwenGguf/CpuQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/1 (917 ms)
+[ RUN      ] D5ExactQwenGguf/CpuQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/2
+[       OK ] D5ExactQwenGguf/CpuQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/2 (1521 ms)
+[ RUN      ] D5ExactQwenGguf/CpuQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/3
+[       OK ] D5ExactQwenGguf/CpuQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/3 (2411 ms)
+[ RUN      ] D5ExactQwenGguf/CpuQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/4
+[       OK ] D5ExactQwenGguf/CpuQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/4 (1324 ms)
+[ RUN      ] D5ExactQwenGguf/CpuQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/5
+[       OK ] D5ExactQwenGguf/CpuQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/5 (1808 ms)
+[ RUN      ] D5ExactQwenGguf/CpuQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/0
+[       OK ] D5ExactQwenGguf/CpuQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/0 (29 ms)
+[ RUN      ] D5ExactQwenGguf/CpuQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/1
+[       OK ] D5ExactQwenGguf/CpuQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/1 (180 ms)
+[ RUN      ] D5ExactQwenGguf/CpuQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/2
+[       OK ] D5ExactQwenGguf/CpuQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/2 (56 ms)
+[ RUN      ] D5ExactQwenGguf/CpuQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/3
+[       OK ] D5ExactQwenGguf/CpuQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/3 (105 ms)
+[ RUN      ] D5ExactQwenGguf/CpuQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/4
+[       OK ] D5ExactQwenGguf/CpuQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/4 (93 ms)
+[ RUN      ] D5ExactQwenGguf/CpuQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/5
+[       OK ] D5ExactQwenGguf/CpuQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/5 (168 ms)
+[----------] 12 tests from D5ExactQwenGguf/CpuQwenGgufVocabulary (9230 ms total)
+
+[----------] 26 tests from D5ExactMoeVocabulary/CpuQwenGgufVocabulary
+[ RUN      ] D5ExactMoeVocabulary/CpuQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/0
+[       OK ] D5ExactMoeVocabulary/CpuQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/0 (2461 ms)
+[ RUN      ] D5ExactMoeVocabulary/CpuQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/1
+[       OK ] D5ExactMoeVocabulary/CpuQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/1 (1030 ms)
+[ RUN      ] D5ExactMoeVocabulary/CpuQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/2
+[       OK ] D5ExactMoeVocabulary/CpuQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/2 (2483 ms)
+[ RUN      ] D5ExactMoeVocabulary/CpuQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/3
+[       OK ] D5ExactMoeVocabulary/CpuQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/3 (1963 ms)
+[ RUN      ] D5ExactMoeVocabulary/CpuQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/4
+[       OK ] D5ExactMoeVocabulary/CpuQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/4 (1022 ms)
+[ RUN      ] D5ExactMoeVocabulary/CpuQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/5
+[       OK ] D5ExactMoeVocabulary/CpuQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/5 (474 ms)
+[ RUN      ] D5ExactMoeVocabulary/CpuQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/6
+[       OK ] D5ExactMoeVocabulary/CpuQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/6 (1033 ms)
+[ RUN      ] D5ExactMoeVocabulary/CpuQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/7
+[       OK ] D5ExactMoeVocabulary/CpuQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/7 (1812 ms)
+[ RUN      ] D5ExactMoeVocabulary/CpuQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/8
+[       OK ] D5ExactMoeVocabulary/CpuQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/8 (834 ms)
+[ RUN      ] D5ExactMoeVocabulary/CpuQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/9
+[       OK ] D5ExactMoeVocabulary/CpuQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/9 (830 ms)
+[ RUN      ] D5ExactMoeVocabulary/CpuQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/10
+[       OK ] D5ExactMoeVocabulary/CpuQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/10 (1227 ms)
+[ RUN      ] D5ExactMoeVocabulary/CpuQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/11
+[       OK ] D5ExactMoeVocabulary/CpuQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/11 (565 ms)
+[ RUN      ] D5ExactMoeVocabulary/CpuQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/12
+[       OK ] D5ExactMoeVocabulary/CpuQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/12 (559 ms)
+[ RUN      ] D5ExactMoeVocabulary/CpuQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/0
+[       OK ] D5ExactMoeVocabulary/CpuQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/0 (802 ms)
+[ RUN      ] D5ExactMoeVocabulary/CpuQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/1
+[       OK ] D5ExactMoeVocabulary/CpuQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/1 (274 ms)
+[ RUN      ] D5ExactMoeVocabulary/CpuQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/2
+[       OK ] D5ExactMoeVocabulary/CpuQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/2 (816 ms)
+[ RUN      ] D5ExactMoeVocabulary/CpuQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/3
+[       OK ] D5ExactMoeVocabulary/CpuQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/3 (643 ms)
+[ RUN      ] D5ExactMoeVocabulary/CpuQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/4
+[       OK ] D5ExactMoeVocabulary/CpuQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/4 (341 ms)
+[ RUN      ] D5ExactMoeVocabulary/CpuQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/5
+[       OK ] D5ExactMoeVocabulary/CpuQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/5 (145 ms)
+[ RUN      ] D5ExactMoeVocabulary/CpuQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/6
+[       OK ] D5ExactMoeVocabulary/CpuQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/6 (336 ms)
+[ RUN      ] D5ExactMoeVocabulary/CpuQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/7
+[       OK ] D5ExactMoeVocabulary/CpuQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/7 (404 ms)
+[ RUN      ] D5ExactMoeVocabulary/CpuQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/8
+[       OK ] D5ExactMoeVocabulary/CpuQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/8 (167 ms)
+[ RUN      ] D5ExactMoeVocabulary/CpuQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/9
+[       OK ] D5ExactMoeVocabulary/CpuQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/9 (171 ms)
+[ RUN      ] D5ExactMoeVocabulary/CpuQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/10
+[       OK ] D5ExactMoeVocabulary/CpuQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/10 (275 ms)
+[ RUN      ] D5ExactMoeVocabulary/CpuQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/11
+[       OK ] D5ExactMoeVocabulary/CpuQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/11 (113 ms)
+[ RUN      ] D5ExactMoeVocabulary/CpuQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/12
+[       OK ] D5ExactMoeVocabulary/CpuQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/12 (113 ms)
+[----------] 26 tests from D5ExactMoeVocabulary/CpuQwenGgufVocabulary (20907 ms total)
+
+[----------] 8 tests from D5OfficialAndPrimaryGguf/CpuQwen38Profiles
+[ RUN      ] D5OfficialAndPrimaryGguf/CpuQwen38Profiles.D5Qwen38ProfileBoundaryProjectionUsesExactHiddenAndReplays/0
+[       OK ] D5OfficialAndPrimaryGguf/CpuQwen38Profiles.D5Qwen38ProfileBoundaryProjectionUsesExactHiddenAndReplays/0 (86 ms)
+[ RUN      ] D5OfficialAndPrimaryGguf/CpuQwen38Profiles.D5Qwen38ProfileBoundaryProjectionUsesExactHiddenAndReplays/1
+[       OK ] D5OfficialAndPrimaryGguf/CpuQwen38Profiles.D5Qwen38ProfileBoundaryProjectionUsesExactHiddenAndReplays/1 (85 ms)
+[ RUN      ] D5OfficialAndPrimaryGguf/CpuQwen38Profiles.D5Qwen38ProfileFfnUsesExactInnerWidthAndReplays/0
+[       OK ] D5OfficialAndPrimaryGguf/CpuQwen38Profiles.D5Qwen38ProfileFfnUsesExactInnerWidthAndReplays/0 (509 ms)
+[ RUN      ] D5OfficialAndPrimaryGguf/CpuQwen38Profiles.D5Qwen38ProfileFfnUsesExactInnerWidthAndReplays/1
+[       OK ] D5OfficialAndPrimaryGguf/CpuQwen38Profiles.D5Qwen38ProfileFfnUsesExactInnerWidthAndReplays/1 (495 ms)
+[ RUN      ] D5OfficialAndPrimaryGguf/CpuQwen38Profiles.D5Qwen38ProfilePartialRopeGqaAndOutputGateReplay/0
+[       OK ] D5OfficialAndPrimaryGguf/CpuQwen38Profiles.D5Qwen38ProfilePartialRopeGqaAndOutputGateReplay/0 (2 ms)
+[ RUN      ] D5OfficialAndPrimaryGguf/CpuQwen38Profiles.D5Qwen38ProfilePartialRopeGqaAndOutputGateReplay/1
+[       OK ] D5OfficialAndPrimaryGguf/CpuQwen38Profiles.D5Qwen38ProfilePartialRopeGqaAndOutputGateReplay/1 (2 ms)
+[ RUN      ] D5OfficialAndPrimaryGguf/CpuQwen38Profiles.D5Qwen38ProfileMtpUsesExactConcatWidthAndReplays/0
+[       OK ] D5OfficialAndPrimaryGguf/CpuQwen38Profiles.D5Qwen38ProfileMtpUsesExactConcatWidthAndReplays/0 (98 ms)
+[ RUN      ] D5OfficialAndPrimaryGguf/CpuQwen38Profiles.D5Qwen38ProfileMtpUsesExactConcatWidthAndReplays/1
+[       OK ] D5OfficialAndPrimaryGguf/CpuQwen38Profiles.D5Qwen38ProfileMtpUsesExactConcatWidthAndReplays/1 (100 ms)
+[----------] 8 tests from D5OfficialAndPrimaryGguf/CpuQwen38Profiles (1381 ms total)
+
+[----------] 4 tests from D5FidelityGguf/CpuQwen38Profiles
+[ RUN      ] D5FidelityGguf/CpuQwen38Profiles.D5Qwen38ProfileBoundaryProjectionUsesExactHiddenAndReplays/0
+[       OK ] D5FidelityGguf/CpuQwen38Profiles.D5Qwen38ProfileBoundaryProjectionUsesExactHiddenAndReplays/0 (84 ms)
+[ RUN      ] D5FidelityGguf/CpuQwen38Profiles.D5Qwen38ProfileFfnUsesExactInnerWidthAndReplays/0
+[       OK ] D5FidelityGguf/CpuQwen38Profiles.D5Qwen38ProfileFfnUsesExactInnerWidthAndReplays/0 (488 ms)
+[ RUN      ] D5FidelityGguf/CpuQwen38Profiles.D5Qwen38ProfilePartialRopeGqaAndOutputGateReplay/0
+[       OK ] D5FidelityGguf/CpuQwen38Profiles.D5Qwen38ProfilePartialRopeGqaAndOutputGateReplay/0 (2 ms)
+[ RUN      ] D5FidelityGguf/CpuQwen38Profiles.D5Qwen38ProfileMtpUsesExactConcatWidthAndReplays/0
+[       OK ] D5FidelityGguf/CpuQwen38Profiles.D5Qwen38ProfileMtpUsesExactConcatWidthAndReplays/0 (96 ms)
+[----------] 4 tests from D5FidelityGguf/CpuQwen38Profiles (672 ms total)
+
+[----------] 4 tests from D5Official24T/CpuQwen38Profiles
+[ RUN      ] D5Official24T/CpuQwen38Profiles.D5Qwen38ProfileBoundaryProjectionUsesExactHiddenAndReplays/0
+[       OK ] D5Official24T/CpuQwen38Profiles.D5Qwen38ProfileBoundaryProjectionUsesExactHiddenAndReplays/0 (205 ms)
+[ RUN      ] D5Official24T/CpuQwen38Profiles.D5Qwen38ProfileFfnUsesExactInnerWidthAndReplays/0
+[       OK ] D5Official24T/CpuQwen38Profiles.D5Qwen38ProfileFfnUsesExactInnerWidthAndReplays/0 (95 ms)
+[ RUN      ] D5Official24T/CpuQwen38Profiles.D5Qwen38ProfilePartialRopeGqaAndOutputGateReplay/0
+[       OK ] D5Official24T/CpuQwen38Profiles.D5Qwen38ProfilePartialRopeGqaAndOutputGateReplay/0 (7 ms)
+[ RUN      ] D5Official24T/CpuQwen38Profiles.D5Qwen38ProfileMtpUsesExactConcatWidthAndReplays/0
+[       OK ] D5Official24T/CpuQwen38Profiles.D5Qwen38ProfileMtpUsesExactConcatWidthAndReplays/0 (271 ms)
+[----------] 4 tests from D5Official24T/CpuQwen38Profiles (580 ms total)
+
+[----------] 6 tests from D5Official2B27BAnd24T/CpuQwenOfficialVocabulary
+[ RUN      ] D5Official2B27BAnd24T/CpuQwenOfficialVocabulary.D5WholeVocabularyHeadStreamsAllRows/0
+[       OK ] D5Official2B27BAnd24T/CpuQwenOfficialVocabulary.D5WholeVocabularyHeadStreamsAllRows/0 (884 ms)
+[ RUN      ] D5Official2B27BAnd24T/CpuQwenOfficialVocabulary.D5WholeVocabularyHeadStreamsAllRows/1
+[       OK ] D5Official2B27BAnd24T/CpuQwenOfficialVocabulary.D5WholeVocabularyHeadStreamsAllRows/1 (2130 ms)
+[ RUN      ] D5Official2B27BAnd24T/CpuQwenOfficialVocabulary.D5WholeVocabularyHeadStreamsAllRows/2
+[       OK ] D5Official2B27BAnd24T/CpuQwenOfficialVocabulary.D5WholeVocabularyHeadStreamsAllRows/2 (3423 ms)
+[ RUN      ] D5Official2B27BAnd24T/CpuQwenOfficialVocabulary.D5WholeVocabularyGatherMapsGlobalRows/0
+[       OK ] D5Official2B27BAnd24T/CpuQwenOfficialVocabulary.D5WholeVocabularyGatherMapsGlobalRows/0 (89 ms)
+[ RUN      ] D5Official2B27BAnd24T/CpuQwenOfficialVocabulary.D5WholeVocabularyGatherMapsGlobalRows/1
+[       OK ] D5Official2B27BAnd24T/CpuQwenOfficialVocabulary.D5WholeVocabularyGatherMapsGlobalRows/1 (217 ms)
+[ RUN      ] D5Official2B27BAnd24T/CpuQwenOfficialVocabulary.D5WholeVocabularyGatherMapsGlobalRows/2
+[       OK ] D5Official2B27BAnd24T/CpuQwenOfficialVocabulary.D5WholeVocabularyGatherMapsGlobalRows/2 (424 ms)
+[----------] 6 tests from D5Official2B27BAnd24T/CpuQwenOfficialVocabulary (7172 ms total)
+
+[----------] Global test environment tear-down
+[==========] 157 tests from 16 test suites ran. (382436 ms total)
+[  PASSED  ] 157 tests.
+<end of output>
+Test time = 382.78 sec
+----------------------------------------------------------
+Test Passed.
+"hyle_compute_route_cpu_test" end time: Oct 05 14:58 中国标准时间
+"hyle_compute_route_cpu_test" time elapsed: 00:06:22
+----------------------------------------------------------
+
+80/99 Testing: hyle_graph_route_cpu_header_self_contained_test
+80/99 Test: hyle_graph_route_cpu_header_self_contained_test
+Command: "C:/Program Files/Python312/python.exe" "C:/public/project-hyle/hyle/scripts/header-self-contained.py" "--module" "graph_route_cpu" "--include-dir" "C:/public/project-hyle/hyle/include" "--cxx" "C:/Program Files/Microsoft Visual Studio/18/Enterprise/VC/Tools/MSVC/14.50.35717/bin/Hostx64/x64/cl.exe" "--cxx-compiler-id" "MSVC" "--cxx-frontend" "MSVC" "--header-dir" "graph" "--header" "cpu.h"
+Directory: C:/public/project-hyle/hyle/.scratch/build-compute-v2-dev/tests/graph_route_cpu
+"hyle_graph_route_cpu_header_self_contained_test" start time: Oct 05 14:58 中国标准时间
+Output:
+----------------------------------------------------------
+graph_route_cpu C++ headers self-contained: 1
+<end of output>
+Test time =   0.81 sec
+----------------------------------------------------------
+Test Passed.
+"hyle_graph_route_cpu_header_self_contained_test" end time: Oct 05 14:58 中国标准时间
+"hyle_graph_route_cpu_header_self_contained_test" time elapsed: 00:00:00
+----------------------------------------------------------
+
+81/99 Testing: hyle_graph_route_cpu_test
+81/99 Test: hyle_graph_route_cpu_test
+Command: "C:/public/project-hyle/hyle/.scratch/build-compute-v2-dev/bin/hyle_graph_route_cpu_test.exe"
+Directory: C:/public/project-hyle/hyle/.scratch/build-compute-v2-dev/tests/graph_route_cpu
+"hyle_graph_route_cpu_test" start time: Oct 05 14:58 中国标准时间
+Output:
+----------------------------------------------------------
+Running main() from C:\Users\kiro\AppData\Local\hyle\dependencies\v1\sources\googletest-063de7e9578f-162765170ae6\googletest\src\gtest_main.cc
+[==========] Running 173 tests from 17 test suites.
+[----------] Global test environment set-up.
+[----------] 5 tests from CpuDs4Roundtrip
+[ RUN      ] CpuDs4Roundtrip.OrdinaryEntryExhaustsFiniteBfloatAndReplaysBothFormats
+[       OK ] CpuDs4Roundtrip.OrdinaryEntryExhaustsFiniteBfloatAndReplaysBothFormats (19 ms)
+[ RUN      ] CpuDs4Roundtrip.MatureMidpointsAndLowScalesKeepExactNumericalBoundary
+[       OK ] CpuDs4Roundtrip.MatureMidpointsAndLowScalesKeepExactNumericalBoundary (2 ms)
+[ RUN      ] CpuDs4Roundtrip.FixedGroupCapabilityAndRecoveryAfterColdOom
+[       OK ] CpuDs4Roundtrip.FixedGroupCapabilityAndRecoveryAfterColdOom (5 ms)
+[ RUN      ] CpuDs4Roundtrip.ManagedGroup128DeclinesPreparedPolicyAndUnknownPrivateBudget
+[       OK ] CpuDs4Roundtrip.ManagedGroup128DeclinesPreparedPolicyAndUnknownPrivateBudget (0 ms)
+[ RUN      ] CpuDs4Roundtrip.MatureGroup128AllFiniteBfloatReplayAndFailureRecovery
+[       OK ] CpuDs4Roundtrip.MatureGroup128AllFiniteBfloatReplayAndFailureRecovery (9 ms)
+[----------] 5 tests from CpuDs4Roundtrip (37 ms total)
+
+[----------] 12 tests from CpuDefaultContext
+[ RUN      ] CpuDefaultContext.ColdFailureReleasesPartialProviderAssembly
+[       OK ] CpuDefaultContext.ColdFailureReleasesPartialProviderAssembly (0 ms)
+[ RUN      ] CpuDefaultContext.GgmlBindsThroughOrdinaryFactory
+[       OK ] CpuDefaultContext.GgmlBindsThroughOrdinaryFactory (0 ms)
+[ RUN      ] CpuDefaultContext.NativeQ8UsesOrdinaryDirectRouteAndReplays
+[       OK ] CpuDefaultContext.NativeQ8UsesOrdinaryDirectRouteAndReplays (1 ms)
+[ RUN      ] CpuDefaultContext.StandardIndexProgramsBindThroughOrdinaryFactory
+[       OK ] CpuDefaultContext.StandardIndexProgramsBindThroughOrdinaryFactory (0 ms)
+[ RUN      ] CpuDefaultContext.MatureScatterAddBindsThroughOrdinaryFactory
+[       OK ] CpuDefaultContext.MatureScatterAddBindsThroughOrdinaryFactory (0 ms)
+[ RUN      ] CpuDefaultContext.MatureNormalizationBindsThroughOrdinaryFactory
+[       OK ] CpuDefaultContext.MatureNormalizationBindsThroughOrdinaryFactory (0 ms)
+[ RUN      ] CpuDefaultContext.MatMulNeverFallsBackToLowerAccumulationPrecision
+[       OK ] CpuDefaultContext.MatMulNeverFallsBackToLowerAccumulationPrecision (0 ms)
+[ RUN      ] CpuDefaultContext.MatMulRulesAndChangedInputReplay
+[       OK ] CpuDefaultContext.MatMulRulesAndChangedInputReplay (2 ms)
+[ RUN      ] CpuDefaultContext.InvalidAndUnsupportedInputsRemainErrors
+[       OK ] CpuDefaultContext.InvalidAndUnsupportedInputsRemainErrors (0 ms)
+[ RUN      ] CpuDefaultContext.B2MatureDomainsBindThroughDefaultRuleSet
+[       OK ] CpuDefaultContext.B2MatureDomainsBindThroughDefaultRuleSet (0 ms)
+[ RUN      ] CpuDefaultContext.StableSoftplusUsesMatureBindingAcrossReplay
+[       OK ] CpuDefaultContext.StableSoftplusUsesMatureBindingAcrossReplay (0 ms)
+[ RUN      ] CpuDefaultContext.SelectUsesMatureProviderWithoutManualOrdering
+[       OK ] CpuDefaultContext.SelectUsesMatureProviderWithoutManualOrdering (0 ms)
+[----------] 12 tests from CpuDefaultContext (4 ms total)
+
+[----------] 35 tests from CpuDefaultGraph
+[ RUN      ] CpuDefaultGraph.D5Qwen35PrimaryGgufFfnUsesMixedMatureRegionsAndStableReplay
+[       OK ] CpuDefaultGraph.D5Qwen35PrimaryGgufFfnUsesMixedMatureRegionsAndStableReplay (1867 ms)
+[ RUN      ] CpuDefaultGraph.D5Qwen35FidelityGgufFfnUsesQ8MatureRegionsAndStableReplay
+[       OK ] CpuDefaultGraph.D5Qwen35FidelityGgufFfnUsesQ8MatureRegionsAndStableReplay (409 ms)
+[ RUN      ] CpuDefaultGraph.D5Qwen35PrimaryGgufAttentionSemanticsUseMatureRegionsAndReplay
+[       OK ] CpuDefaultGraph.D5Qwen35PrimaryGgufAttentionSemanticsUseMatureRegionsAndReplay (0 ms)
+[ RUN      ] CpuDefaultGraph.D5Qwen35FidelityGgufAttentionSemanticsUseMatureRegionsAndReplay
+[       OK ] CpuDefaultGraph.D5Qwen35FidelityGgufAttentionSemanticsUseMatureRegionsAndReplay (0 ms)
+[ RUN      ] CpuDefaultGraph.D5Qwen35PrimaryGgufGdnStateUsesMatureRegionsAndReplay
+[       OK ] CpuDefaultGraph.D5Qwen35PrimaryGgufGdnStateUsesMatureRegionsAndReplay (7 ms)
+[ RUN      ] CpuDefaultGraph.D5Qwen35FidelityGgufGdnStateUsesMatureRegionsAndReplay
+[       OK ] CpuDefaultGraph.D5Qwen35FidelityGgufGdnStateUsesMatureRegionsAndReplay (7 ms)
+[ RUN      ] CpuDefaultGraph.D5Qwen35PrimaryGgufExactMixedProjectionsUseNativeRegionsAndReplay
+[       OK ] CpuDefaultGraph.D5Qwen35PrimaryGgufExactMixedProjectionsUseNativeRegionsAndReplay (3723 ms)
+[ RUN      ] CpuDefaultGraph.D5Qwen38PrimaryGgufEveryStoredProjectionTypeUsesNativeRegionsAndReplay
+[       OK ] CpuDefaultGraph.D5Qwen38PrimaryGgufEveryStoredProjectionTypeUsesNativeRegionsAndReplay (53243 ms)
+[ RUN      ] CpuDefaultGraph.D5Qwen38FidelityGgufQ8ProjectionRolesUseNativeRegionsAndReplay
+[       OK ] CpuDefaultGraph.D5Qwen38FidelityGgufQ8ProjectionRolesUseNativeRegionsAndReplay (3162 ms)
+[ RUN      ] CpuDefaultGraph.D5Qwen38_24TGgufMoeWeightRolesUseNativeRegions
+[       OK ] CpuDefaultGraph.D5Qwen38_24TGgufMoeWeightRolesUseNativeRegions (5089 ms)
+[ RUN      ] CpuDefaultGraph.D5Qwen35FidelityGgufExactQ8ProjectionsUseNativeRegionsAndReplay
+[       OK ] CpuDefaultGraph.D5Qwen35FidelityGgufExactQ8ProjectionsUseNativeRegionsAndReplay (324 ms)
+[ RUN      ] CpuDefaultGraph.D5Qwen35FidelityGgufF16ProjectionsUseMatureRegionsAndReplay
+[       OK ] CpuDefaultGraph.D5Qwen35FidelityGgufF16ProjectionsUseMatureRegionsAndReplay (2136 ms)
+[ RUN      ] CpuDefaultGraph.D5Qwen35PrimaryGgufQuantizedEmbeddingUsesNativeRowsAndReplays
+[       OK ] CpuDefaultGraph.D5Qwen35PrimaryGgufQuantizedEmbeddingUsesNativeRowsAndReplays (0 ms)
+[ RUN      ] CpuDefaultGraph.D5Qwen38PrimaryGgufQuantizedEmbeddingUsesExactWidthAndReplays
+[       OK ] CpuDefaultGraph.D5Qwen38PrimaryGgufQuantizedEmbeddingUsesExactWidthAndReplays (2 ms)
+[ RUN      ] CpuDefaultGraph.D5Qwen38FidelityGgufQuantizedEmbeddingUsesExactWidthAndReplays
+[       OK ] CpuDefaultGraph.D5Qwen38FidelityGgufQuantizedEmbeddingUsesExactWidthAndReplays (0 ms)
+[ RUN      ] CpuDefaultGraph.D5Qwen35FidelityGgufF16EmbeddingUsesMatureRowsAndReplays
+[       OK ] CpuDefaultGraph.D5Qwen35FidelityGgufF16EmbeddingUsesMatureRowsAndReplays (3 ms)
+[ RUN      ] CpuDefaultGraph.D5Qwen35OfficialEmbeddingNormHeadAndFailureUseOnePreparedGraph
+[       OK ] CpuDefaultGraph.D5Qwen35OfficialEmbeddingNormHeadAndFailureUseOnePreparedGraph (1 ms)
+[ RUN      ] CpuDefaultGraph.D5Qwen35OfficialBfloatFfnUsesMatureRegionsAndRealWeights
+[       OK ] CpuDefaultGraph.D5Qwen35OfficialBfloatFfnUsesMatureRegionsAndRealWeights (101 ms)
+[ RUN      ] CpuDefaultGraph.D5Qwen35OfficialGqaNormRopeAndAttentionUseExactProfileAndReplay
+[       OK ] CpuDefaultGraph.D5Qwen35OfficialGqaNormRopeAndAttentionUseExactProfileAndReplay (0 ms)
+[ RUN      ] CpuDefaultGraph.D5Qwen35OfficialCausalConvAndGdnUseExactProfileAndReplay
+[       OK ] CpuDefaultGraph.D5Qwen35OfficialCausalConvAndGdnUseExactProfileAndReplay (7 ms)
+[ RUN      ] CpuDefaultGraph.D5Qwen35OfficialMtpAndBfloatBoundaryUseExactWeightsAndReplay
+[       OK ] CpuDefaultGraph.D5Qwen35OfficialMtpAndBfloatBoundaryUseExactWeightsAndReplay (23 ms)
+[ RUN      ] CpuDefaultGraph.NativeQ8GraphImportsGgufBytesAndReplays
+[       OK ] CpuDefaultGraph.NativeQ8GraphImportsGgufBytesAndReplays (0 ms)
+[ RUN      ] CpuDefaultGraph.MatureMoeAndHyperConnectionBatchUsesOrdinaryGraphEntry
+[       OK ] CpuDefaultGraph.MatureMoeAndHyperConnectionBatchUsesOrdinaryGraphEntry (0 ms)
+[ RUN      ] CpuDefaultGraph.MatureLightningIndexerUsesOrdinaryGraphEntry
+[       OK ] CpuDefaultGraph.MatureLightningIndexerUsesOrdinaryGraphEntry (0 ms)
+[ RUN      ] CpuDefaultGraph.D5RealQwenProjectionUsesExactProfileAndReplays
+[       OK ] CpuDefaultGraph.D5RealQwenProjectionUsesExactProfileAndReplays (11 ms)
+[ RUN      ] CpuDefaultGraph.MatureNormPostOpsFuseAndPreserveObservableBoundaries
+[       OK ] CpuDefaultGraph.MatureNormPostOpsFuseAndPreserveObservableBoundaries (2 ms)
+[ RUN      ] CpuDefaultGraph.MatureHalfLinearAndHadamardCompileAsOneReplayableRegion
+[       OK ] CpuDefaultGraph.MatureHalfLinearAndHadamardCompileAsOneReplayableRegion (0 ms)
+[ RUN      ] CpuDefaultGraph.MatureHalfGqaPrefillUsesOneCausalRegion
+[       OK ] CpuDefaultGraph.MatureHalfGqaPrefillUsesOneCausalRegion (0 ms)
+[ RUN      ] CpuDefaultGraph.NonModelGraphReplaysAndReclaimsItsOwners
+[       OK ] CpuDefaultGraph.NonModelGraphReplaysAndReclaimsItsOwners (0 ms)
+[ RUN      ] CpuDefaultGraph.HalfTensorFragmentHasIndependentReplayState
+[       OK ] CpuDefaultGraph.HalfTensorFragmentHasIndependentReplayState (39 ms)
+[ RUN      ] CpuDefaultGraph.ExpertCountsBecomeGatherOffsetsWithoutRecompilation
+[       OK ] CpuDefaultGraph.ExpertCountsBecomeGatherOffsetsWithoutRecompilation (0 ms)
+[ RUN      ] CpuDefaultGraph.SelectedGroupMeansBroadcastWithinOneMatureRegion
+[       OK ] CpuDefaultGraph.SelectedGroupMeansBroadcastWithinOneMatureRegion (0 ms)
+[ RUN      ] CpuDefaultGraph.MatureL2RegionPreservesEpsilonRoundingAndIndependentReplay
+[       OK ] CpuDefaultGraph.MatureL2RegionPreservesEpsilonRoundingAndIndependentReplay (1 ms)
+[ RUN      ] CpuDefaultGraph.StandardTopKPublishesBothOutputsAcrossReplay
+[       OK ] CpuDefaultGraph.StandardTopKPublishesBothOutputsAcrossReplay (0 ms)
+[ RUN      ] CpuDefaultGraph.MatureScatterAddReducesDuplicateRowsAndRejectsCurrentBadIndices
+[       OK ] CpuDefaultGraph.MatureScatterAddReducesDuplicateRowsAndRejectsCurrentBadIndices (0 ms)
+[----------] 35 tests from CpuDefaultGraph (70172 ms total)
+
+[----------] 9 tests from CpuGraphQwen38_24T
+[ RUN      ] CpuGraphQwen38_24T.D5ExactWidthCausalConvGraphReplay
+[       OK ] CpuGraphQwen38_24T.D5ExactWidthCausalConvGraphReplay (0 ms)
+[ RUN      ] CpuGraphQwen38_24T.D5GgufGroupedExpertKeepsNativeBlocksAndDynamicIds
+[       OK ] CpuGraphQwen38_24T.D5GgufGroupedExpertKeepsNativeBlocksAndDynamicIds (3114 ms)
+[ RUN      ] CpuGraphQwen38_24T.D5GgufAttentionGdnAndMtpUseRealRoleTypes
+[       OK ] CpuGraphQwen38_24T.D5GgufAttentionGdnAndMtpUseRealRoleTypes (1601 ms)
+[ RUN      ] CpuGraphQwen38_24T.D5GgufAttentionAndGdnProjectionRoleBatch
+[       OK ] CpuGraphQwen38_24T.D5GgufAttentionAndGdnProjectionRoleBatch (8705 ms)
+[ RUN      ] CpuGraphQwen38_24T.D5OfficialAttentionAndGdnProjectionRoleBatch
+[       OK ] CpuGraphQwen38_24T.D5OfficialAttentionAndGdnProjectionRoleBatch (2107 ms)
+[ RUN      ] CpuGraphQwen38_24T.D5FullRouterSharedExpertAndNearTieReplay
+[       OK ] CpuGraphQwen38_24T.D5FullRouterSharedExpertAndNearTieReplay (1880 ms)
+[ RUN      ] CpuGraphQwen38_24T.D5GgufFullRouterSharedExpertAndNearTieReplay
+[       OK ] CpuGraphQwen38_24T.D5GgufFullRouterSharedExpertAndNearTieReplay (9886 ms)
+[ RUN      ] CpuGraphQwen38_24T.D5OfficialBfloatGroupedExpertKeepsExactWidthsTopKPortsAndReplay
+[       OK ] CpuGraphQwen38_24T.D5OfficialBfloatGroupedExpertKeepsExactWidthsTopKPortsAndReplay (1678 ms)
+[ RUN      ] CpuGraphQwen38_24T.D5OfficialRouterScoresAll512ExpertsAndNormalizesStableTop10
+[       OK ] CpuGraphQwen38_24T.D5OfficialRouterScoresAll512ExpertsAndNormalizesStableTop10 (12 ms)
+[----------] 9 tests from CpuGraphQwen38_24T (28987 ms total)
+
+[----------] 32 tests from CpuGraphMoeFragments
+[ RUN      ] CpuGraphMoeFragments.D5MatureClampBoundaries
+[       OK ] CpuGraphMoeFragments.D5MatureClampBoundaries (0 ms)
+[ RUN      ] CpuGraphMoeFragments.D5DeepSeekWeightedHyperConnectionAndHead
+[       OK ] CpuGraphMoeFragments.D5DeepSeekWeightedHyperConnectionAndHead (3442 ms)
+[ RUN      ] CpuGraphMoeFragments.D5DeepSeekFullAttentionChain
+[       OK ] CpuGraphMoeFragments.D5DeepSeekFullAttentionChain (7021 ms)
+[ RUN      ] CpuGraphMoeFragments.D5DeepSeekStatefulCompression
+[       OK ] CpuGraphMoeFragments.D5DeepSeekStatefulCompression (1853 ms)
+[ RUN      ] CpuGraphMoeFragments.D5DeepSeekNativeSinkAttention
+[       OK ] CpuGraphMoeFragments.D5DeepSeekNativeSinkAttention (216 ms)
+[ RUN      ] CpuGraphMoeFragments.D5DeepSeekTokenTableRouting
+[       OK ] CpuGraphMoeFragments.D5DeepSeekTokenTableRouting (40 ms)
+[ RUN      ] CpuGraphMoeFragments.D5DeepSeekHashRoutingFeedsMixedWeightMoe
+[       OK ] CpuGraphMoeFragments.D5DeepSeekHashRoutingFeedsMixedWeightMoe (6171 ms)
+[ RUN      ] CpuGraphMoeFragments.D5ThirteenProfilesModelRouters
+[       OK ] CpuGraphMoeFragments.D5ThirteenProfilesModelRouters (88 ms)
+[ RUN      ] CpuGraphMoeFragments.D5ThirteenProfilesExpertActivation
+[       OK ] CpuGraphMoeFragments.D5ThirteenProfilesExpertActivation (2 ms)
+[ RUN      ] CpuGraphMoeFragments.D5OfficialFp4ExpertBatch
+[       OK ] CpuGraphMoeFragments.D5OfficialFp4ExpertBatch (720 ms)
+[ RUN      ] CpuGraphMoeFragments.D5OfficialKimiMixedStorageFullMoe
+[       OK ] CpuGraphMoeFragments.D5OfficialKimiMixedStorageFullMoe (1173 ms)
+[ RUN      ] CpuGraphMoeFragments.D5EightGgufProfilesFullMoe
+[       OK ] CpuGraphMoeFragments.D5EightGgufProfilesFullMoe (31036 ms)
+[ RUN      ] CpuGraphMoeFragments.D5KdaProjectionRoleBatch
+[       OK ] CpuGraphMoeFragments.D5KdaProjectionRoleBatch (2257 ms)
+[ RUN      ] CpuGraphMoeFragments.D5GlmFlashWeightedHyperConnection
+[       OK ] CpuGraphMoeFragments.D5GlmFlashWeightedHyperConnection (35 ms)
+[ RUN      ] CpuGraphMoeFragments.D5GlmDsaIndexerWithCache
+[       OK ] CpuGraphMoeFragments.D5GlmDsaIndexerWithCache (272 ms)
+[ RUN      ] CpuGraphMoeFragments.D5GlmFlashPooledIndexerWithTail
+[       OK ] CpuGraphMoeFragments.D5GlmFlashPooledIndexerWithTail (1139 ms)
+[ RUN      ] CpuGraphMoeFragments.D5GlmGgufDenseFfn
+[       OK ] CpuGraphMoeFragments.D5GlmGgufDenseFfn (3126 ms)
+[ RUN      ] CpuGraphMoeFragments.D5GlmGgufNextNDecoderWithCarryAndFullHead
+[       OK ] CpuGraphMoeFragments.D5GlmGgufNextNDecoderWithCarryAndFullHead (13473 ms)
+[ RUN      ] CpuGraphMoeFragments.D5GlmGgufDsaSelectionConsumesMlaCache
+[       OK ] CpuGraphMoeFragments.D5GlmGgufDsaSelectionConsumesMlaCache (10443 ms)
+[ RUN      ] CpuGraphMoeFragments.D5GlmLayerSpecificExpertFormats
+[       OK ] CpuGraphMoeFragments.D5GlmLayerSpecificExpertFormats (4457 ms)
+[ RUN      ] CpuGraphMoeFragments.D5GlmGgufMtpIndexCarryReset
+[       OK ] CpuGraphMoeFragments.D5GlmGgufMtpIndexCarryReset (6268 ms)
+[ RUN      ] CpuGraphMoeFragments.D5GlmNextNInputBoundary
+[       OK ] CpuGraphMoeFragments.D5GlmNextNInputBoundary (1376 ms)
+[ RUN      ] CpuGraphMoeFragments.D5GlmGgufAbsorbedMlaWithCache
+[       OK ] CpuGraphMoeFragments.D5GlmGgufAbsorbedMlaWithCache (2792 ms)
+[ RUN      ] CpuGraphMoeFragments.D5KimiBfloatRoundingBoundaries
+[       OK ] CpuGraphMoeFragments.D5KimiBfloatRoundingBoundaries (0 ms)
+[ RUN      ] CpuGraphMoeFragments.D5KimiDenseFfn
+[       OK ] CpuGraphMoeFragments.D5KimiDenseFfn (6646 ms)
+[ RUN      ] CpuGraphMoeFragments.D5KimiAbsorbedMlaWithCache
+[       OK ] CpuGraphMoeFragments.D5KimiAbsorbedMlaWithCache (2427 ms)
+[ RUN      ] CpuGraphMoeFragments.D5KimiAttentionResidualBanking
+[       OK ] CpuGraphMoeFragments.D5KimiAttentionResidualBanking (70 ms)
+[ RUN      ] CpuGraphMoeFragments.D5KimiAttentionResidualOrdinary
+[       OK ] CpuGraphMoeFragments.D5KimiAttentionResidualOrdinary (73 ms)
+[ RUN      ] CpuGraphMoeFragments.D5SixProfilesFullKdaChainAndTwoStates
+[       OK ] CpuGraphMoeFragments.D5SixProfilesFullKdaChainAndTwoStates (9910 ms)
+[ RUN      ] CpuGraphMoeFragments.D5SixProfilesBoundedKdaActualStateFeedback
+[       OK ] CpuGraphMoeFragments.D5SixProfilesBoundedKdaActualStateFeedback (815 ms)
+[ RUN      ] CpuGraphMoeFragments.D5KimiThreeProfilesSituActivation
+[       OK ] CpuGraphMoeFragments.D5KimiThreeProfilesSituActivation (11 ms)
+[ RUN      ] CpuGraphMoeFragments.D5SevenProfilesHyperConnectionCore
+[       OK ] CpuGraphMoeFragments.D5SevenProfilesHyperConnectionCore (9 ms)
+[----------] 32 tests from CpuGraphMoeFragments (117375 ms total)
+
+[----------] 13 tests from CpuGraphTorchOfficial
+[ RUN      ] CpuGraphTorchOfficial.D5GroupedFp8Batch
+[       OK ] CpuGraphTorchOfficial.D5GroupedFp8Batch (17572 ms)
+[ RUN      ] CpuGraphTorchOfficial.D5GlmOfficialFp8FullMoe
+[       OK ] CpuGraphTorchOfficial.D5GlmOfficialFp8FullMoe (1195 ms)
+[ RUN      ] CpuGraphTorchOfficial.D5DynamicFp8DenseBatch
+[       OK ] CpuGraphTorchOfficial.D5DynamicFp8DenseBatch (2717 ms)
+[ RUN      ] CpuGraphTorchOfficial.D5GlmOfficialDynamicFp8SharedFfn
+[       OK ] CpuGraphTorchOfficial.D5GlmOfficialDynamicFp8SharedFfn (491 ms)
+[ RUN      ] CpuGraphTorchOfficial.D5OfficialFp8DenseNativeBatch
+[       OK ] CpuGraphTorchOfficial.D5OfficialFp8DenseNativeBatch (746 ms)
+[ RUN      ] CpuGraphTorchOfficial.D5GlmOfficialMixedRemaining
+[       OK ] CpuGraphTorchOfficial.D5GlmOfficialMixedRemaining (11853 ms)
+[ RUN      ] CpuGraphTorchOfficial.D5DeepSeekOfficialCompression
+[       OK ] CpuGraphTorchOfficial.D5DeepSeekOfficialCompression (2301 ms)
+[ RUN      ] CpuGraphTorchOfficial.D5DeepSeekOfficialAttention
+[       OK ] CpuGraphTorchOfficial.D5DeepSeekOfficialAttention (18010 ms)
+[ RUN      ] CpuGraphTorchOfficial.D5DeepSeekOfficialMtpAndFullHead
+[       OK ] CpuGraphTorchOfficial.D5DeepSeekOfficialMtpAndFullHead (26378 ms)
+[ RUN      ] CpuGraphTorchOfficial.D5DeepSeekOriginalFp4Projections
+[       OK ] CpuGraphTorchOfficial.D5DeepSeekOriginalFp4Projections (26053 ms)
+[ RUN      ] CpuGraphTorchOfficial.D5DeepSeekOfficialMoe
+[       OK ] CpuGraphTorchOfficial.D5DeepSeekOfficialMoe (15467 ms)
+[ RUN      ] CpuGraphTorchOfficial.D5DeepSeekExpertActivationRoundtrip
+[       OK ] CpuGraphTorchOfficial.D5DeepSeekExpertActivationRoundtrip (114 ms)
+[ RUN      ] CpuGraphTorchOfficial.OriginalFp8WeightDecodeAllFiniteCodes
+[       OK ] CpuGraphTorchOfficial.OriginalFp8WeightDecodeAllFiniteCodes (4 ms)
+[----------] 13 tests from CpuGraphTorchOfficial (122907 ms total)
+
+[----------] 1 test from CpuGraphQwenRecurrent
+[ RUN      ] CpuGraphQwenRecurrent.D5NineProfilesUseCompleteGateAndActualStateFeedback
+[       OK ] CpuGraphQwenRecurrent.D5NineProfilesUseCompleteGateAndActualStateFeedback (1425 ms)
+[----------] 1 test from CpuGraphQwenRecurrent (1425 ms total)
+
+[----------] 2 tests from CpuGraph
+[ RUN      ] CpuGraph.StableSoftplusAndSelectKeepTwoPublishedResultsAcrossReplay
+[       OK ] CpuGraph.StableSoftplusAndSelectKeepTwoPublishedResultsAcrossReplay (0 ms)
+[ RUN      ] CpuGraph.SelectRetainsBitsAndResultsAcrossTwoInvocations
+[       OK ] CpuGraph.SelectRetainsBitsAndResultsAcrossTwoInvocations (0 ms)
+[----------] 2 tests from CpuGraph (0 ms total)
+
+[----------] 12 tests from D5ExactQwenGguf/CpuGraphQwenGgufVocabulary
+[ RUN      ] D5ExactQwenGguf/CpuGraphQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/0
+[       OK ] D5ExactQwenGguf/CpuGraphQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/0 (595 ms)
+[ RUN      ] D5ExactQwenGguf/CpuGraphQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/1
+[       OK ] D5ExactQwenGguf/CpuGraphQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/1 (904 ms)
+[ RUN      ] D5ExactQwenGguf/CpuGraphQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/2
+[       OK ] D5ExactQwenGguf/CpuGraphQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/2 (1496 ms)
+[ RUN      ] D5ExactQwenGguf/CpuGraphQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/3
+[       OK ] D5ExactQwenGguf/CpuGraphQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/3 (2377 ms)
+[ RUN      ] D5ExactQwenGguf/CpuGraphQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/4
+[       OK ] D5ExactQwenGguf/CpuGraphQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/4 (1327 ms)
+[ RUN      ] D5ExactQwenGguf/CpuGraphQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/5
+[       OK ] D5ExactQwenGguf/CpuGraphQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/5 (1774 ms)
+[ RUN      ] D5ExactQwenGguf/CpuGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/0
+[       OK ] D5ExactQwenGguf/CpuGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/0 (29 ms)
+[ RUN      ] D5ExactQwenGguf/CpuGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/1
+[       OK ] D5ExactQwenGguf/CpuGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/1 (179 ms)
+[ RUN      ] D5ExactQwenGguf/CpuGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/2
+[       OK ] D5ExactQwenGguf/CpuGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/2 (57 ms)
+[ RUN      ] D5ExactQwenGguf/CpuGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/3
+[       OK ] D5ExactQwenGguf/CpuGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/3 (105 ms)
+[ RUN      ] D5ExactQwenGguf/CpuGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/4
+[       OK ] D5ExactQwenGguf/CpuGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/4 (93 ms)
+[ RUN      ] D5ExactQwenGguf/CpuGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/5
+[       OK ] D5ExactQwenGguf/CpuGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/5 (170 ms)
+[----------] 12 tests from D5ExactQwenGguf/CpuGraphQwenGgufVocabulary (9111 ms total)
+
+[----------] 26 tests from D5ExactMoeVocabulary/CpuGraphQwenGgufVocabulary
+[ RUN      ] D5ExactMoeVocabulary/CpuGraphQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/0
+[       OK ] D5ExactMoeVocabulary/CpuGraphQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/0 (2247 ms)
+[ RUN      ] D5ExactMoeVocabulary/CpuGraphQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/1
+[       OK ] D5ExactMoeVocabulary/CpuGraphQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/1 (1040 ms)
+[ RUN      ] D5ExactMoeVocabulary/CpuGraphQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/2
+[       OK ] D5ExactMoeVocabulary/CpuGraphQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/2 (2315 ms)
+[ RUN      ] D5ExactMoeVocabulary/CpuGraphQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/3
+[       OK ] D5ExactMoeVocabulary/CpuGraphQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/3 (1817 ms)
+[ RUN      ] D5ExactMoeVocabulary/CpuGraphQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/4
+[       OK ] D5ExactMoeVocabulary/CpuGraphQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/4 (1046 ms)
+[ RUN      ] D5ExactMoeVocabulary/CpuGraphQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/5
+[       OK ] D5ExactMoeVocabulary/CpuGraphQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/5 (463 ms)
+[ RUN      ] D5ExactMoeVocabulary/CpuGraphQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/6
+[       OK ] D5ExactMoeVocabulary/CpuGraphQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/6 (1032 ms)
+[ RUN      ] D5ExactMoeVocabulary/CpuGraphQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/7
+[       OK ] D5ExactMoeVocabulary/CpuGraphQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/7 (1818 ms)
+[ RUN      ] D5ExactMoeVocabulary/CpuGraphQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/8
+[       OK ] D5ExactMoeVocabulary/CpuGraphQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/8 (840 ms)
+[ RUN      ] D5ExactMoeVocabulary/CpuGraphQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/9
+[       OK ] D5ExactMoeVocabulary/CpuGraphQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/9 (848 ms)
+[ RUN      ] D5ExactMoeVocabulary/CpuGraphQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/10
+[       OK ] D5ExactMoeVocabulary/CpuGraphQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/10 (1218 ms)
+[ RUN      ] D5ExactMoeVocabulary/CpuGraphQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/11
+[       OK ] D5ExactMoeVocabulary/CpuGraphQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/11 (562 ms)
+[ RUN      ] D5ExactMoeVocabulary/CpuGraphQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/12
+[       OK ] D5ExactMoeVocabulary/CpuGraphQwenGgufVocabulary.HeadRunsEntireLogicalVocabulary/12 (564 ms)
+[ RUN      ] D5ExactMoeVocabulary/CpuGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/0
+[       OK ] D5ExactMoeVocabulary/CpuGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/0 (641 ms)
+[ RUN      ] D5ExactMoeVocabulary/CpuGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/1
+[       OK ] D5ExactMoeVocabulary/CpuGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/1 (275 ms)
+[ RUN      ] D5ExactMoeVocabulary/CpuGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/2
+[       OK ] D5ExactMoeVocabulary/CpuGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/2 (642 ms)
+[ RUN      ] D5ExactMoeVocabulary/CpuGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/3
+[       OK ] D5ExactMoeVocabulary/CpuGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/3 (613 ms)
+[ RUN      ] D5ExactMoeVocabulary/CpuGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/4
+[       OK ] D5ExactMoeVocabulary/CpuGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/4 (344 ms)
+[ RUN      ] D5ExactMoeVocabulary/CpuGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/5
+[       OK ] D5ExactMoeVocabulary/CpuGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/5 (147 ms)
+[ RUN      ] D5ExactMoeVocabulary/CpuGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/6
+[       OK ] D5ExactMoeVocabulary/CpuGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/6 (347 ms)
+[ RUN      ] D5ExactMoeVocabulary/CpuGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/7
+[       OK ] D5ExactMoeVocabulary/CpuGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/7 (411 ms)
+[ RUN      ] D5ExactMoeVocabulary/CpuGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/8
+[       OK ] D5ExactMoeVocabulary/CpuGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/8 (164 ms)
+[ RUN      ] D5ExactMoeVocabulary/CpuGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/9
+[       OK ] D5ExactMoeVocabulary/CpuGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/9 (166 ms)
+[ RUN      ] D5ExactMoeVocabulary/CpuGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/10
+[       OK ] D5ExactMoeVocabulary/CpuGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/10 (271 ms)
+[ RUN      ] D5ExactMoeVocabulary/CpuGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/11
+[       OK ] D5ExactMoeVocabulary/CpuGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/11 (110 ms)
+[ RUN      ] D5ExactMoeVocabulary/CpuGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/12
+[       OK ] D5ExactMoeVocabulary/CpuGraphQwenGgufVocabulary.GatherMapsGlobalRowsAndRejectsOutOfBounds/12 (107 ms)
+[----------] 26 tests from D5ExactMoeVocabulary/CpuGraphQwenGgufVocabulary (20061 ms total)
+
+[----------] 8 tests from D5OfficialAndPrimaryGguf/CpuGraphQwen38Profiles
+[ RUN      ] D5OfficialAndPrimaryGguf/CpuGraphQwen38Profiles.D5Qwen38ProfileBoundaryProjectionUsesExactHiddenAndReplays/0
+[       OK ] D5OfficialAndPrimaryGguf/CpuGraphQwen38Profiles.D5Qwen38ProfileBoundaryProjectionUsesExactHiddenAndReplays/0 (85 ms)
+[ RUN      ] D5OfficialAndPrimaryGguf/CpuGraphQwen38Profiles.D5Qwen38ProfileBoundaryProjectionUsesExactHiddenAndReplays/1
+[       OK ] D5OfficialAndPrimaryGguf/CpuGraphQwen38Profiles.D5Qwen38ProfileBoundaryProjectionUsesExactHiddenAndReplays/1 (86 ms)
+[ RUN      ] D5OfficialAndPrimaryGguf/CpuGraphQwen38Profiles.D5Qwen38ProfileFfnUsesExactInnerWidthAndReplays/0
+[       OK ] D5OfficialAndPrimaryGguf/CpuGraphQwen38Profiles.D5Qwen38ProfileFfnUsesExactInnerWidthAndReplays/0 (507 ms)
+[ RUN      ] D5OfficialAndPrimaryGguf/CpuGraphQwen38Profiles.D5Qwen38ProfileFfnUsesExactInnerWidthAndReplays/1
+[       OK ] D5OfficialAndPrimaryGguf/CpuGraphQwen38Profiles.D5Qwen38ProfileFfnUsesExactInnerWidthAndReplays/1 (499 ms)
+[ RUN      ] D5OfficialAndPrimaryGguf/CpuGraphQwen38Profiles.D5Qwen38ProfilePartialRopeGqaAndOutputGateReplay/0
+[       OK ] D5OfficialAndPrimaryGguf/CpuGraphQwen38Profiles.D5Qwen38ProfilePartialRopeGqaAndOutputGateReplay/0 (3 ms)
+[ RUN      ] D5OfficialAndPrimaryGguf/CpuGraphQwen38Profiles.D5Qwen38ProfilePartialRopeGqaAndOutputGateReplay/1
+[       OK ] D5OfficialAndPrimaryGguf/CpuGraphQwen38Profiles.D5Qwen38ProfilePartialRopeGqaAndOutputGateReplay/1 (3 ms)
+[ RUN      ] D5OfficialAndPrimaryGguf/CpuGraphQwen38Profiles.D5Qwen38ProfileMtpUsesExactConcatWidthAndReplays/0
+[       OK ] D5OfficialAndPrimaryGguf/CpuGraphQwen38Profiles.D5Qwen38ProfileMtpUsesExactConcatWidthAndReplays/0 (97 ms)
+[ RUN      ] D5OfficialAndPrimaryGguf/CpuGraphQwen38Profiles.D5Qwen38ProfileMtpUsesExactConcatWidthAndReplays/1
+[       OK ] D5OfficialAndPrimaryGguf/CpuGraphQwen38Profiles.D5Qwen38ProfileMtpUsesExactConcatWidthAndReplays/1 (98 ms)
+[----------] 8 tests from D5OfficialAndPrimaryGguf/CpuGraphQwen38Profiles (1381 ms total)
+
+[----------] 4 tests from D5FidelityGguf/CpuGraphQwen38Profiles
+[ RUN      ] D5FidelityGguf/CpuGraphQwen38Profiles.D5Qwen38ProfileBoundaryProjectionUsesExactHiddenAndReplays/0
+[       OK ] D5FidelityGguf/CpuGraphQwen38Profiles.D5Qwen38ProfileBoundaryProjectionUsesExactHiddenAndReplays/0 (85 ms)
+[ RUN      ] D5FidelityGguf/CpuGraphQwen38Profiles.D5Qwen38ProfileFfnUsesExactInnerWidthAndReplays/0
+[       OK ] D5FidelityGguf/CpuGraphQwen38Profiles.D5Qwen38ProfileFfnUsesExactInnerWidthAndReplays/0 (503 ms)
+[ RUN      ] D5FidelityGguf/CpuGraphQwen38Profiles.D5Qwen38ProfilePartialRopeGqaAndOutputGateReplay/0
+[       OK ] D5FidelityGguf/CpuGraphQwen38Profiles.D5Qwen38ProfilePartialRopeGqaAndOutputGateReplay/0 (3 ms)
+[ RUN      ] D5FidelityGguf/CpuGraphQwen38Profiles.D5Qwen38ProfileMtpUsesExactConcatWidthAndReplays/0
+[       OK ] D5FidelityGguf/CpuGraphQwen38Profiles.D5Qwen38ProfileMtpUsesExactConcatWidthAndReplays/0 (96 ms)
+[----------] 4 tests from D5FidelityGguf/CpuGraphQwen38Profiles (688 ms total)
+
+[----------] 4 tests from D5Official24T/CpuGraphQwen38Profiles
+[ RUN      ] D5Official24T/CpuGraphQwen38Profiles.D5Qwen38ProfileBoundaryProjectionUsesExactHiddenAndReplays/0
+[       OK ] D5Official24T/CpuGraphQwen38Profiles.D5Qwen38ProfileBoundaryProjectionUsesExactHiddenAndReplays/0 (208 ms)
+[ RUN      ] D5Official24T/CpuGraphQwen38Profiles.D5Qwen38ProfileFfnUsesExactInnerWidthAndReplays/0
+[       OK ] D5Official24T/CpuGraphQwen38Profiles.D5Qwen38ProfileFfnUsesExactInnerWidthAndReplays/0 (100 ms)
+[ RUN      ] D5Official24T/CpuGraphQwen38Profiles.D5Qwen38ProfilePartialRopeGqaAndOutputGateReplay/0
+[       OK ] D5Official24T/CpuGraphQwen38Profiles.D5Qwen38ProfilePartialRopeGqaAndOutputGateReplay/0 (7 ms)
+[ RUN      ] D5Official24T/CpuGraphQwen38Profiles.D5Qwen38ProfileMtpUsesExactConcatWidthAndReplays/0
+[       OK ] D5Official24T/CpuGraphQwen38Profiles.D5Qwen38ProfileMtpUsesExactConcatWidthAndReplays/0 (281 ms)
+[----------] 4 tests from D5Official24T/CpuGraphQwen38Profiles (598 ms total)
+
+[----------] 6 tests from D5Official2B27BAnd24T/CpuGraphQwenOfficialVocabulary
+[ RUN      ] D5Official2B27BAnd24T/CpuGraphQwenOfficialVocabulary.D5WholeVocabularyHeadStreamsAllRows/0
+[       OK ] D5Official2B27BAnd24T/CpuGraphQwenOfficialVocabulary.D5WholeVocabularyHeadStreamsAllRows/0 (903 ms)
+[ RUN      ] D5Official2B27BAnd24T/CpuGraphQwenOfficialVocabulary.D5WholeVocabularyHeadStreamsAllRows/1
+[       OK ] D5Official2B27BAnd24T/CpuGraphQwenOfficialVocabulary.D5WholeVocabularyHeadStreamsAllRows/1 (2137 ms)
+[ RUN      ] D5Official2B27BAnd24T/CpuGraphQwenOfficialVocabulary.D5WholeVocabularyHeadStreamsAllRows/2
+[       OK ] D5Official2B27BAnd24T/CpuGraphQwenOfficialVocabulary.D5WholeVocabularyHeadStreamsAllRows/2 (3431 ms)
+[ RUN      ] D5Official2B27BAnd24T/CpuGraphQwenOfficialVocabulary.D5WholeVocabularyGatherMapsGlobalRows/0
+[       OK ] D5Official2B27BAnd24T/CpuGraphQwenOfficialVocabulary.D5WholeVocabularyGatherMapsGlobalRows/0 (83 ms)
+[ RUN      ] D5Official2B27BAnd24T/CpuGraphQwenOfficialVocabulary.D5WholeVocabularyGatherMapsGlobalRows/1
+[       OK ] D5Official2B27BAnd24T/CpuGraphQwenOfficialVocabulary.D5WholeVocabularyGatherMapsGlobalRows/1 (205 ms)
+[ RUN      ] D5Official2B27BAnd24T/CpuGraphQwenOfficialVocabulary.D5WholeVocabularyGatherMapsGlobalRows/2
+[       OK ] D5Official2B27BAnd24T/CpuGraphQwenOfficialVocabulary.D5WholeVocabularyGatherMapsGlobalRows/2 (349 ms)
+[----------] 6 tests from D5Official2B27BAnd24T/CpuGraphQwenOfficialVocabulary (7111 ms total)
+
+[----------] 2 tests from D5OfficialAndPrimaryGguf/CpuGraphQwen38GdnProfiles
+[ RUN      ] D5OfficialAndPrimaryGguf/CpuGraphQwen38GdnProfiles.GroupedHeadUsesOrdinaryGraphAndReplays/0
+[       OK ] D5OfficialAndPrimaryGguf/CpuGraphQwen38GdnProfiles.GroupedHeadUsesOrdinaryGraphAndReplays/0 (13 ms)
+[ RUN      ] D5OfficialAndPrimaryGguf/CpuGraphQwen38GdnProfiles.GroupedHeadUsesOrdinaryGraphAndReplays/1
+[       OK ] D5OfficialAndPrimaryGguf/CpuGraphQwen38GdnProfiles.GroupedHeadUsesOrdinaryGraphAndReplays/1 (13 ms)
+[----------] 2 tests from D5OfficialAndPrimaryGguf/CpuGraphQwen38GdnProfiles (27 ms total)
+
+[----------] 1 test from D5FidelityGguf/CpuGraphQwen38GdnProfiles
+[ RUN      ] D5FidelityGguf/CpuGraphQwen38GdnProfiles.GroupedHeadUsesOrdinaryGraphAndReplays/0
+[       OK ] D5FidelityGguf/CpuGraphQwen38GdnProfiles.GroupedHeadUsesOrdinaryGraphAndReplays/0 (13 ms)
+[----------] 1 test from D5FidelityGguf/CpuGraphQwen38GdnProfiles (13 ms total)
+
+[----------] 1 test from D5Official24T/CpuGraphQwen38GdnProfiles
+[ RUN      ] D5Official24T/CpuGraphQwen38GdnProfiles.GroupedHeadUsesOrdinaryGraphAndReplays/0
+[       OK ] D5Official24T/CpuGraphQwen38GdnProfiles.GroupedHeadUsesOrdinaryGraphAndReplays/0 (35 ms)
+[----------] 1 test from D5Official24T/CpuGraphQwen38GdnProfiles (35 ms total)
+
+[----------] Global test environment tear-down
+[==========] 173 tests from 17 test suites ran. (379941 ms total)
+[  PASSED  ] 173 tests.
+<end of output>
+Test time = 380.30 sec
+----------------------------------------------------------
+Test Passed.
+"hyle_graph_route_cpu_test" end time: Oct 05 15:05 中国标准时间
+"hyle_graph_route_cpu_test" time elapsed: 00:06:20
+----------------------------------------------------------
+
+82/99 Testing: hyle_graph_route_cpu_cpu_executor_test
+82/99 Test: hyle_graph_route_cpu_cpu_executor_test
+Command: "C:/public/project-hyle/hyle/.scratch/build-compute-v2-dev/bin/hyle_graph_route_cpu_cpu_executor_test.exe"
+Directory: C:/public/project-hyle/hyle/.scratch/build-compute-v2-dev/tests/graph_route_cpu
+"hyle_graph_route_cpu_cpu_executor_test" start time: Oct 05 15:05 中国标准时间
+Output:
+----------------------------------------------------------
+CPU executor PASS: workers=1 route=explicit Native regions=0 workspace=61260 replay_metadata_allocations=0 executor_episodes=0 worker_tasks=0 nested=0
+CPU executor PASS: workers=1 route=default regions=1 workspace=43908 replay_metadata_allocations=0 executor_episodes=18 worker_tasks=18 nested=3
+  actual worker tasks=[26,0], episodes=19 nested=3, workers_started/stopped=1/1
+CPU executor PASS: workers=2 route=explicit Native regions=0 workspace=61260 replay_metadata_allocations=0 executor_episodes=15 worker_tasks=30 nested=0
+CPU executor PASS: workers=2 route=default regions=1 workspace=43972 replay_metadata_allocations=0 executor_episodes=18 worker_tasks=30 nested=3
+  actual worker tasks=[39,29], episodes=34 nested=3, workers_started/stopped=2/2
+<end of output>
+Test time =   0.26 sec
+----------------------------------------------------------
+Test Passed.
+"hyle_graph_route_cpu_cpu_executor_test" end time: Oct 05 15:05 中国标准时间
+"hyle_graph_route_cpu_cpu_executor_test" time elapsed: 00:00:00
+----------------------------------------------------------
+
+End testing: Oct 05 15:05 中国标准时间
+
+compute_provider_native =   0.81 sec*proc
+
+compute_route_cpu = 383.26 sec*proc
+
+graph_route_cpu = 381.37 sec*proc
+
+headers =   1.60 sec*proc
+
