@@ -373,9 +373,9 @@
     },
     {
       "module": "compute_provider_ggml",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/cpu-ggml-mature-admission-batch.md",
-      "summary": "GB1–3 SCOPED：原版rank4 F32 MatMul已实测，ReLU NaN接缝与批量准入范围固定；其它activation数值差异未资格，Native冻结。"
+      "summary": "GB1–3 AUDITED：原版ReLU加NaN传播原位接缝、F32 rank3/4已有lowering准入、批量数值/普通Graph/三交付FIX固定；不改数学核/ISA/API，Native冻结。"
     },
     {
       "module": "graph_provider_onednn",

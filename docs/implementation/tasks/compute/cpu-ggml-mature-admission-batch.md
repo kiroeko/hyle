@@ -1,6 +1,6 @@
 # CPU ggml：剩余成熟能力批量准入
 
-<!-- MODULE REVIEW: SCOPED -->
+<!-- MODULE REVIEW: AUDITED -->
 
 ## Closure card
 
@@ -39,7 +39,7 @@
 | GELU-erf | -Inf 为 NaN；float erf cancellation 的尾部误差需按 F32 语义核对 | 未资格：不直接扩大支持、不新写数学 |
 | GELU-tanh | 当前原版 F32 使用 FP16 查表，诊断 x=3 偏差约 2.69e-4；gate finite-zero × Inf 分类也可能不同 | 未资格：查具名原版精度配置/成熟 carrier；不裁决 Native WIN，不无限研究 |
 
-## 有限 FIX（审计后固定）
+## 有限 FIX（AUDITED，已固定）
 
 | ID | 允许改动 | 验收 |
 |---|---|---|
@@ -56,3 +56,9 @@ provider 接口不引入新的线程/资源 owner。source/static/shared 的新�
 F32 MatMul 与 ReLU 是既有公开任务的成熟承载补齐；其它尚未资格 kind 不是 UNIQUE。
 P0 成本明确，无热 Provider 搜索或计时；未来 Native 逐域比较须使用本轮真实成本。
 没有新的 FFI 或 build factor；用户文档补充真实 rank/dtype/数值接缝。当前未运行的新门保持 UNPROVEN。
+
+## 审计绑定
+
+实际原版程序诊断、`internal::supports`、`native_shape` 与原位 custom2 的 source/slot 合同已核对。
+GB1–3 已固定；开始产品修改前 owner 从 SCOPED 顺序进入 AUDITED。新增产品成本只限表内，
+其它激活仍未资格、Native 全部冻结。未运行的三交付与测试仍为 UNPROVEN。
