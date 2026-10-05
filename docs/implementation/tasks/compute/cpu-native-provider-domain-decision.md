@@ -141,3 +141,9 @@ owner卡处理。Native/SIMD性能比较和清退保持冻结，SIMD本体不删
 NX混合FFN已固定退役候选，owner `graph_provider_onednn` 绑定
 [当前卡](cpu-onednn-hybrid-ffn-retirement.md) CANDIDATE，普通mature FFN/两平台三交付仍在验收。
 此举依据具名数值缺陷，不是Native/SIMD性能LOSS；SIMD库与其函数不改，原norm/MatMul保留。
+
+
+NX已真实CLOSED：原oneDNN-labelled generic混合FFN route/artifact/执行和HYLE SwiGLU调用已退役，
+两平台同ordinary Direct/Graph FFN三交付、norm保留/并发/close/逐点cold OOM回滚通过。该缺陷属于
+HYLE SIMD提前舍入与错误成熟分类，不是oneDNN kernel性能或数学FAIL；未改SIMD本体/函数，
+也不宣布新的Native LOSS。旧NX CANDIDATE段为历史进展，当前以registry CLOSED为准。

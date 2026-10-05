@@ -1,0 +1,304 @@
+{
+  "candidate": "80c9ab0075c667bd16255d43d46a21d46df234ac",
+  "fixture_commit": "798e91231f97b464900d509bd3d7a35ff90a80e3",
+  "scope": "NX1-3; retire invalid hybrid FFN, keep original Norm/MatMul/SIMD",
+  "performance": "P0; no self operator performance comparison",
+  "platforms": {
+    "windows": {
+      "commands": 27,
+      "actual_validation_commits": [
+        "1b50371c94f2a8f5560b5f7efb5c59c6844ccdee",
+        "80c9ab0075c667bd16255d43d46a21d46df234ac"
+      ],
+      "tests": {
+        "provider": {
+          "registered": 3,
+          "passed": 3,
+          "skipped": []
+        },
+        "graph": {
+          "registered": 6,
+          "passed": 4,
+          "skipped": [
+            "CpuDefaultGraph.D5Qwen35OfficialEmbeddingNormHeadAndFailureUseOnePreparedGraph",
+            "CpuDefaultGraph.D5Qwen35OfficialGqaNormRopeAndAttentionUseExactProfileAndReplay"
+          ]
+        },
+        "header": {
+          "registered": 1,
+          "passed": 1,
+          "skipped": []
+        }
+      },
+      "source_identity": {
+        "candidate": "80c9ab0075c667bd16255d43d46a21d46df234ac",
+        "checked": 1336,
+        "forward_updated": [
+          "src/graph_provider_onednn/onednn_region_provider.cc",
+          "tests/graph_provider_onednn/onednn_region_provider_test.cc",
+          "tests/graph_route_cpu/CMakeLists.txt",
+          "tests/graph_route_cpu/hybrid_ffn_numeric_test.cc",
+          ".scratch/validation/cpu-onednn-hybrid-retirement/consumer.cc",
+          ".scratch/validation/cpu-onednn-hybrid-retirement/windows-overlay.cmake",
+          ".scratch/validation/cpu-onednn-hybrid-retirement/linux-overlay.cmake",
+          ".scratch/validation/cpu-onednn-hybrid-retirement/consumer/CMakeLists.txt"
+        ]
+      },
+      "latest_commands_passed": [
+        "affected-graph-tests",
+        "batch-build",
+        "configure",
+        "provider-tests",
+        "public-header",
+        "shared-consumer-build",
+        "shared-consumer-configure",
+        "shared-install",
+        "shared-installed-ordinary",
+        "shared-producer-build",
+        "shared-producer-configure",
+        "shared-source-ordinary",
+        "static-consumer-build",
+        "static-consumer-configure",
+        "static-install",
+        "static-installed-ordinary",
+        "static-producer-build",
+        "static-producer-configure",
+        "static-source-ordinary"
+      ],
+      "cleanup": [
+        {
+          "removed": true,
+          "files": 52,
+          "adjacent_runtime_dlls": [
+            {
+              "name": "asmjit.dll",
+              "bytes": 367104
+            },
+            {
+              "name": "c10.dll",
+              "bytes": 1046528
+            },
+            {
+              "name": "fbgemm.dll",
+              "bytes": 5721600
+            },
+            {
+              "name": "hyle_compute_backend_cpu.dll",
+              "bytes": 16384
+            },
+            {
+              "name": "hyle_compute_ggml_runtime.dll",
+              "bytes": 1136640
+            },
+            {
+              "name": "hyle_compute_ops.dll",
+              "bytes": 70144
+            },
+            {
+              "name": "hyle_compute_provider_ggml.dll",
+              "bytes": 404480
+            },
+            {
+              "name": "hyle_compute_provider_native.dll",
+              "bytes": 441856
+            },
+            {
+              "name": "hyle_compute_provider_onednn.dll",
+              "bytes": 16674304
+            },
+            {
+              "name": "hyle_compute_route_cpu.dll",
+              "bytes": 11776
+            },
+            {
+              "name": "hyle_compute.dll",
+              "bytes": 189440
+            },
+            {
+              "name": "hyle_container.dll",
+              "bytes": 41472
+            },
+            {
+              "name": "hyle_error.dll",
+              "bytes": 28160
+            },
+            {
+              "name": "hyle_ggml_cpu_avx2_456172ec.dll",
+              "bytes": 1153536
+            },
+            {
+              "name": "hyle_graph_provider_onednn.dll",
+              "bytes": 34816
+            },
+            {
+              "name": "hyle_graph_route_cpu.dll",
+              "bytes": 45056
+            },
+            {
+              "name": "hyle_graph.dll",
+              "bytes": 509952
+            },
+            {
+              "name": "hyle_mem.dll",
+              "bytes": 230912
+            },
+            {
+              "name": "hyle_platform.dll",
+              "bytes": 85504
+            },
+            {
+              "name": "hyle_simd.dll",
+              "bytes": 1571328
+            },
+            {
+              "name": "libiomp5md.dll",
+              "bytes": 1613680
+            },
+            {
+              "name": "torch_cpu.dll",
+              "bytes": 255948800
+            },
+            {
+              "name": "torch.dll",
+              "bytes": 9728
+            },
+            {
+              "name": "uv.dll",
+              "bytes": 195072
+            }
+          ],
+          "path": "C:\\hv\\cpu-nx-shared-consumer",
+          "original_probe_hardlinks": false,
+          "logical_bytes": 288537291.0
+        },
+        {
+          "removed": true,
+          "files": 38,
+          "adjacent_runtime_dlls": [
+            {
+              "name": "asmjit.dll",
+              "bytes": 367104
+            },
+            {
+              "name": "c10.dll",
+              "bytes": 1046528
+            },
+            {
+              "name": "fbgemm.dll",
+              "bytes": 5721600
+            },
+            {
+              "name": "hyle_ggml_cpu_avx2_456172ec.dll",
+              "bytes": 1153024
+            },
+            {
+              "name": "libiomp5md.dll",
+              "bytes": 1613680
+            },
+            {
+              "name": "torch_cpu.dll",
+              "bytes": 255948800
+            },
+            {
+              "name": "torch.dll",
+              "bytes": 9728
+            },
+            {
+              "name": "uv.dll",
+              "bytes": 195072
+            }
+          ],
+          "path": "C:\\hv\\cpu-nx-static-consumer",
+          "original_probe_hardlinks": false,
+          "logical_bytes": 287336075.0
+        }
+      ]
+    },
+    "linux": {
+      "commands": 20,
+      "actual_validation_commits": [
+        "80c9ab0075c667bd16255d43d46a21d46df234ac"
+      ],
+      "tests": {
+        "provider": {
+          "registered": 3,
+          "passed": 3,
+          "skipped": []
+        },
+        "graph": {
+          "registered": 6,
+          "passed": 4,
+          "skipped": [
+            "CpuDefaultGraph.D5Qwen35OfficialEmbeddingNormHeadAndFailureUseOnePreparedGraph",
+            "CpuDefaultGraph.D5Qwen35OfficialGqaNormRopeAndAttentionUseExactProfileAndReplay"
+          ]
+        },
+        "header": {
+          "registered": 1,
+          "passed": 1,
+          "skipped": []
+        }
+      },
+      "source_identity": {
+        "candidate": "80c9ab0075c667bd16255d43d46a21d46df234ac",
+        "checked": 1336,
+        "forward_updated": [
+          "src/graph_provider_onednn/onednn_region_provider.cc",
+          "tests/graph_provider_onednn/onednn_region_provider_test.cc",
+          "tests/graph_route_cpu/CMakeLists.txt",
+          "tests/graph_route_cpu/hybrid_ffn_numeric_test.cc",
+          ".scratch/validation/cpu-onednn-hybrid-retirement/consumer.cc",
+          ".scratch/validation/cpu-onednn-hybrid-retirement/windows-overlay.cmake",
+          ".scratch/validation/cpu-onednn-hybrid-retirement/linux-overlay.cmake",
+          ".scratch/validation/cpu-onednn-hybrid-retirement/consumer/CMakeLists.txt"
+        ]
+      },
+      "latest_commands_passed": [
+        "affected-graph-tests",
+        "batch-build",
+        "configure",
+        "provider-tests",
+        "public-header",
+        "shared-consumer-build",
+        "shared-consumer-configure",
+        "shared-install",
+        "shared-installed-ordinary",
+        "shared-producer-build",
+        "shared-producer-configure",
+        "shared-source-ordinary",
+        "static-consumer-build",
+        "static-consumer-configure",
+        "static-install",
+        "static-installed-ordinary",
+        "static-producer-build",
+        "static-producer-configure",
+        "static-source-ordinary"
+      ],
+      "cleanup": [
+        {
+          "path": "/root/hyle-scratch/cpu-ggml-isa-delivery/shared-nx-consumer",
+          "files": 24,
+          "logical_bytes": 3465629,
+          "removed": true
+        },
+        {
+          "path": "/root/hyle-scratch/cpu-ggml-isa-delivery/static-nx-consumer",
+          "files": 24,
+          "logical_bytes": 45491914,
+          "removed": true
+        }
+      ]
+    }
+  },
+  "loc": {
+    "code": 61318,
+    "files": 249,
+    "commit": "80c9ab0075c667bd16255d43d46a21d46df234ac"
+  },
+  "artifact": {
+    "file": "qualification.zip",
+    "entries": 78,
+    "bytes": 193568,
+    "sha256": "47c91378e491334ef5ae1c156cd12536d998c0f4b4e89b5327b06533bb8c8462"
+  }
+}

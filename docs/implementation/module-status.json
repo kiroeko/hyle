@@ -384,10 +384,14 @@
     },
     {
       "module": "graph_provider_onednn",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/compute/cpu-onednn-hybrid-ffn-retirement.md",
-      "summary": "NX1–3 CANDIDATE：错误generic oneDNN/SIMD FFN退役，valid norm/MatMul/SIMD保留；产品80c9ab00固定，fixture-only改进冷OOM跟踪，Windows3/3与Graph4通过/2skip已有实测。两平台同ordinary FFN三交付正在验收，未CLOSED。",
-      "candidate": "80c9ab0075c667bd16255d43d46a21d46df234ac"
+      "summary": "NX1–3 CLOSED：错误generic oneDNN/SIMD FFN资格及artifact/执行退役，valid norm/MatMul与SIMD保留；两平台3/3、Graph4通过/2skip、头1/1、同ordinary mature FFN三交付和P0通过。CPU剩余接缝/自研裁决仍未完成。",
+      "candidate": "80c9ab0075c667bd16255d43d46a21d46df234ac",
+      "performance": {
+        "tier": "P0",
+        "evidence": "evidence/correctness/cpu-onednn-hybrid-ffn/README.md"
+      }
     },
     {
       "module": "compute_ops",

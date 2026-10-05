@@ -1,6 +1,6 @@
 # CPU混合FFN：撤回错误自研gate资格
 
-<!-- MODULE REVIEW: CANDIDATE -->
+<!-- MODULE REVIEW: CLOSED -->
 
 - owner `graph_provider_onednn`；baseline `9489dd2af0e698e13ff5951c346b9a06e4215799`，Windows canonical。
 - trigger：普通四节点F32 FFN完整输出在−100/value1e38误差约1.7%；该region内部是HYLE SIMD SwiGLU，
@@ -72,3 +72,36 @@ Windows冷OOM新增逐点Stats live-byte回滚通过；公开头1/1，Graph4通�
 最终结果通过。ordinary夹具第一次遗漏oneDNN MatMul caller workspace，create_invocation的失败被
 .value() fast-fail；补齐三份独立冷workspace后通过，产品未改，原命令/空失败日志/returncode保留。
 这不是DLL缺失或产品数值失败，修正后同一consumer用于全部交付，不逐平台另写消费程序。
+
+
+## 终审：CLOSED（NX1–3）
+
+产品候选`80c9ab0075c667bd16255d43d46a21d46df234ac`固定后未改。fixture `798e91231f97b464900d509bd3d7a35ff90a80e3`只
+改测试Status表达式与OOM回滚统计；普通consumer的caller workspace修正另保留日志，没有产品纠正。
+Win/Linux各provider **3/3**、Graph **4通过/2旧fixture skip**、公开头 **1/1**；同一C++ consumer
+source shared/static、installed shared/static全部通过，1336前向输入hash匹配。两个skip不计PASS，
+未改旧模型权重验证不冒充本卡资格，主/正交现有norm与完整mature FFN均实际运行。
+
+| 工程门 | 结论与实际证据 |
+|---|---|
+| 第三方路径 | PASS：既有oneDNN/ggml/ATen版本与许可证不变；删除HYLE gate混合接缝，不引入新SDK |
+| 功能完整 | PASS（NX）：错误FFN不再提案；普通完整FFN−80/−90/−100、large/Inf与变化输入正确；有效oneDNN norm保留 |
+| 内部复用 | PASS：Graph现有region/leaf边界与原CPU factory；原norm validation/alias/mapping/生命周期函数语义hash完全相同 |
+| 性能 | PASS P0：必要正确边界、host阻塞/unknown内存、ATen packing/Double/F32/原临时数据全部收费；无P1/WIN，不拿错误旧FFN作公平基线 |
+| 交付边界 | PASS：无新公开API/FFI/框架执行器，普通C++只链接compute/graph；private artifact与死执行已清理 |
+| 构建交付 | PASS：两平台source/static/shared同一consumer；SDK因本卡实际产品修改构建，未改TC/GPU验证不重复 |
+| 易用与文档 | PASS：普通入口无需provider排序/profile，三份Direct caller workspace与独立invocation合法；用户guide不再称旧混合FFN为完整oneDNN数学 |
+
+root已复核原Source分类、全部旧FFN-only live引用、norm source复用、实际mature身份/最终输出、
+两个独立槽、真实wait、context close、两线程norm并发、HYLE cold compile/invocation逐点OOM live-byte
+回滚和重试。native私有OOM/非coherent故障未注入，不签故障注入PASS；原norm传播语义证据按
+相同函数复用。SDK关闭/public ABI未改变，不虚构SDK-OFF重建。tier P0，无新的自研性能输赢。
+
+统一Compute+Graph实现LOC **61,318/249文件**，不可变产品80c9ab00，不含测试/vendor；较TC减少
+692实现行，SIMD本体及其函数未改。本批消费目录已删除，文件逻辑大小 **624,830,909 bytes**，
+SDK/producer/cache保留；探针DLL硬链接只解绑，不计实际回收空间。
+
+[收据](../../../../evidence/correctness/cpu-onednn-hybrid-ffn/receipt.json)、qualification.zip保存所有
+首次失败/命令/XML、consumer/driver/源码、manifest、norm复用、selector、cleanup与LOC。
+CPU整个goal未完成：剩余RoPE/I64、Bool/log-softmax、shape/资源与冻结自研去留需后续有限批次；
+NX CLOSED不代签这些。重开限本批具名数值/资源/组合/交付反例或相关依赖升级。
