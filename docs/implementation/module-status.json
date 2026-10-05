@@ -423,10 +423,14 @@
     },
     {
       "module": "compute_provider_native",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/compute/cpu-aten-numeric-admission.md",
-      "summary": "MN1–4 CANDIDATE：原ATen稳定activation/gate、number MinMax/reduce接入；Win120/120、CPU12通过/1旧fixture跳过、Graph15/15，三dtype普通Direct/Graph通过。Linux/三交付待验；Native自研冻结。",
-      "candidate": "0763fd3e3163d16eb0b43e684f5881f8314bc1e9"
+      "summary": "MN1–4 CLOSED：原ATen四stable Unary/三gate、number MinMax/四Reduce的F32/F16/BF16 exact/stride数值程序；Win/Linux120/120、CPU12通过/1旧fixture跳过、Graph15/15、普通Direct/Graph三交付及P0通过。Native自研冻结，CPU整体未完。",
+      "candidate": "0763fd3e3163d16eb0b43e684f5881f8314bc1e9",
+      "performance": {
+        "tier": "P0",
+        "evidence": "evidence/correctness/cpu-aten-numeric/README.md"
+      }
     },
     {
       "module": "compute_sched",

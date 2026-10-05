@@ -474,7 +474,7 @@ Provider 单独声明计算域；当前 CPU Native 只支持同 head MHA，对 G
 
 公共schema可以做纯描述推导，存在描述不等于每个Provider都能执行。上表是普通CPU能力与合同，
 不是Native Provider目录；CPU的Scan/TopK由成熟标准库接线承载，原Native域已退场。
-默认路线先匹配已接入的oneDNN/ggml合法域，再匹配已构建的ATen存储/索引程序，Native只保留具名残余；block/opaque storage、量化
+默认路线先匹配已接入的oneDNN/ggml合法域，再匹配已构建的ATen原程序，Native只保留具名残余；block/opaque storage、量化
 与窄storage attention由理解相应格式的Provider承载，不会被隐藏materialize成另一种合同。
 
 CPU ATen 接入 Select、Gather、ScatterAssign、Fill、Copy、Concat 的15种 plain scalar位存储，
@@ -489,6 +489,14 @@ Tensor metadata分配；同步阻塞host、使用原库私有线程、不承诺c
 `native_threads`只设置ggml workers，不控制ATen线程池。要求Prepared-only或不能容忍unknown内存
 的硬预算会拒绝该候选；source/static/shared继续使用同一shared CPU LibTorch runtime。
 具体域与两平台普通三交付见[CPU ATen资格](../../evidence/correctness/cpu-aten-storage-index/README.md)。
+
+同一ATen接入还覆盖F32/F16/BF16的SiLU、GELU、GELU-tanh、Softplus，三种packed/separate
+gate、number Min/Max和四种Reduce；exact/rank<=8、合法byte stride、dense output。Reduce显式F32
+accumulation（F32也允许Unknown）。稳定activation用原Double Tensor程序后显式F32，gate在F32
+乘法后一次storage舍入；输入必须原Byte packing到冷私有对齐native槽。Unary/Binary只有dense
+equal-desc端口允许精确alias；Gate/Reduce无alias。Double转换/原Tensor节点/临时数据均收费，
+仍为managed leaf，不承诺零热分配或性能WIN。已锁SDK仅Windows/Linux x86_64；其他平台不继承
+这项资格。[数值范围和两平台交付](../../evidence/correctness/cpu-aten-numeric/README.md)。
 
 CPU 默认入口也支持 `model_ops::block_quantization_roundtrip()` 的
 `kFloat8E4M3Block64` 与 `kFloat4E2M1Block32`，调用固定原版 ds4 CPU 程序。

@@ -1,0 +1,264 @@
+{
+  "candidate": "0763fd3e3163d16eb0b43e684f5881f8314bc1e9",
+  "previous_registry_ref": "91f04856270880e9cdc4548c116d92f10a839e57",
+  "qualification_fixture_tree": "91f04856270880e9cdc4548c116d92f10a839e57",
+  "platforms": {
+    "windows": {
+      "validation_tree": "0763fd3e3163d16eb0b43e684f5881f8314bc1e9",
+      "product_candidate": "0763fd3e3163d16eb0b43e684f5881f8314bc1e9",
+      "commands": 26,
+      "qualified_tree_commands": 23,
+      "latest_commands_passed": [
+        "batch-build",
+        "compute_route_cpu-affected-tests",
+        "graph_route_cpu-affected-tests",
+        "native-public-header",
+        "provider-tests",
+        "sdk-disabled-adapter-and-assembly",
+        "shared-consumer-build",
+        "shared-consumer-configure",
+        "shared-install",
+        "shared-installed-ordinary",
+        "shared-producer-build",
+        "shared-producer-configure",
+        "shared-source-ordinary",
+        "static-consumer-build",
+        "static-consumer-configure",
+        "static-install",
+        "static-installed-ordinary",
+        "static-producer-build",
+        "static-producer-configure",
+        "static-source-ordinary",
+        "stub-build",
+        "stub-configure"
+      ],
+      "tests": {
+        "provider": {
+          "registered": 120,
+          "passed": 120,
+          "skipped": []
+        },
+        "compute_route_cpu": {
+          "registered": 13,
+          "passed": 12,
+          "skipped": [
+            "D5RealQwenProjectionUsesExactProfileAndReplays"
+          ]
+        },
+        "graph_route_cpu": {
+          "registered": 15,
+          "passed": 15,
+          "skipped": []
+        },
+        "header": {
+          "registered": 1,
+          "passed": 1,
+          "skipped": []
+        }
+      },
+      "prior_failures_retained": [
+        {
+          "name": "provider-tests",
+          "args": [
+            "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_compute_provider_native_test.exe",
+            "--gtest_output=xml:C:\\public\\project-hyle\\hyle\\.scratch\\validation\\cpu-aten-numeric\\windows\\provider.xml"
+          ],
+          "candidate": "e5d4f31f77eb25154e1aaf80e9c013ebbfbb4e52",
+          "log": "3-provider-tests.log",
+          "returncode": 1,
+          "seconds": 0.594
+        }
+      ],
+      "source_identity_files": 1333,
+      "consumer_cleanup_logical_bytes": 865001379,
+      "delivery": {
+        "source_shared": "PASS",
+        "source_static": "PASS",
+        "installed_shared": "PASS",
+        "installed_static": "PASS"
+      }
+    },
+    "linux": {
+      "validation_tree": "91f04856270880e9cdc4548c116d92f10a839e57",
+      "product_candidate": "0763fd3e3163d16eb0b43e684f5881f8314bc1e9",
+      "commands": 22,
+      "qualified_tree_commands": 20,
+      "latest_commands_passed": [
+        "batch-build",
+        "compute_route_cpu-affected-tests",
+        "graph_route_cpu-affected-tests",
+        "native-public-header",
+        "provider-tests",
+        "shared-consumer-build",
+        "shared-consumer-configure",
+        "shared-install",
+        "shared-installed-ordinary",
+        "shared-producer-build",
+        "shared-producer-configure",
+        "shared-source-ordinary",
+        "static-consumer-build",
+        "static-consumer-configure",
+        "static-install",
+        "static-installed-ordinary",
+        "static-producer-build",
+        "static-producer-configure",
+        "static-source-ordinary"
+      ],
+      "tests": {
+        "provider": {
+          "registered": 120,
+          "passed": 120,
+          "skipped": []
+        },
+        "compute_route_cpu": {
+          "registered": 13,
+          "passed": 12,
+          "skipped": [
+            "D5RealQwenProjectionUsesExactProfileAndReplays"
+          ]
+        },
+        "graph_route_cpu": {
+          "registered": 15,
+          "passed": 15,
+          "skipped": []
+        },
+        "header": {
+          "registered": 1,
+          "passed": 1,
+          "skipped": []
+        }
+      },
+      "prior_failures_retained": [
+        {
+          "name": "batch-build",
+          "args": [
+            "cmake",
+            "--build",
+            "/root/hyle-scratch/active-cpu-z/build",
+            "--target",
+            "hyle_compute_provider_native_tests",
+            "hyle_compute_route_cpu_tests",
+            "hyle_graph_route_cpu_tests",
+            "cpu_mature_consumer",
+            "--parallel",
+            "2"
+          ],
+          "candidate": "0763fd3e3163d16eb0b43e684f5881f8314bc1e9",
+          "log": "2-batch-build.log",
+          "returncode": 1,
+          "seconds": 50.242
+        }
+      ],
+      "source_identity_files": 1333,
+      "consumer_cleanup_logical_bytes": 49241935,
+      "delivery": {
+        "source_shared": "PASS",
+        "source_static": "PASS",
+        "installed_shared": "PASS",
+        "installed_static": "PASS"
+      }
+    }
+  },
+  "test_only_correction": {
+    "file": "tests/compute_provider_native/aten_numeric_test.cc",
+    "reason": "GCC14 -Werror=range-loop-construct",
+    "edit": "const auto shape -> const auto &shape; immutable read-only values and all numerical cases unchanged",
+    "unchanged_product_and_consumer_inputs": 725,
+    "proof": "test-fixture-only-reuse.json in qualification.zip",
+    "windows_reuse": "Actual candidate tests/deliveries, not relabelled as runs at fixture tree"
+  },
+  "original_diagnostic": {
+    "assertions": 48780,
+    "manifest": "original-manifest.json",
+    "does_not_prove_ordinary_or_delivery": true
+  },
+  "archive": {
+    "path": "qualification.zip",
+    "files": 82,
+    "bytes": 284401,
+    "sha256": "fc0dc342778796e9b5bcc2be26f5c707af27eaf596e0dd407d82c78a56cad5c1"
+  },
+  "loc": {
+    "candidate": "0763fd3e3163d16eb0b43e684f5881f8314bc1e9",
+    "code": 61950,
+    "files": 249
+  },
+  "cleanup": {
+    "consumer_logical_bytes_removed": 914243314,
+    "retained": "producer builds, installed SDKs and dependency caches",
+    "original_probe_hardlinks_not_counted_as_reclaimed_disk_bytes": true
+  },
+  "disabled_adapter": {
+    "platform": "windows",
+    "verdict": "PASS",
+    "boundary": "Current ATen/CPU/Graph translation units compiled with the ATen feature disabled; invalid factory omitted by both ordinary assemblers. Reused installed dependencies; not a fresh full SDK-OFF build or a no-Torch-dependency claim."
+  },
+  "performance": {
+    "tier": "P0",
+    "verdict": "PASS",
+    "boundary": "Full Byte packing, F32/Double casts, original Tensor nodes, scratch and hot metadata declared. No Native P1, SOTA or WIN claim."
+  },
+  "red_team": {
+    "reviewer": "root, separate post-qualification source/evidence pass",
+    "date": "2026-10-06",
+    "budget": "one finite MN1-MN4 pass",
+    "verdict": "PASS",
+    "findings": [
+      {
+        "severity": "fixture",
+        "finding": "An explicit empty Axes list is illegal in the public schema",
+        "disposition": "Use legal all/single/multi axes; keep original XML and unchanged numerical gates"
+      },
+      {
+        "severity": "fixture",
+        "finding": "GCC14 rejects copied vector loop variable with Werror",
+        "disposition": "Read-only const reference only; preserve initial Linux build log, hash all product/consumer inputs"
+      },
+      {
+        "severity": "limit",
+        "finding": "Original GELU and cancellation-prone oracle lose negative tails",
+        "disposition": "Qualified original Double erfc / sigmoid Tensor programs and stable independent oracle; cost is not a raw single-kernel timing"
+      },
+      {
+        "severity": "limit",
+        "finding": "Native physical OOM/noncoherent mapping fault not injected",
+        "disposition": "Source-audited exception/mapping propagation, tracked HYLE cold OOM actually tested"
+      },
+      {
+        "severity": "limit",
+        "finding": "Other default ggml Sigmoid/SiLU finite-tail source suspicion remains",
+        "disposition": "Explicitly outside MN owner, finite complete-consumer followup required before CPU goal closes"
+      }
+    ]
+  },
+  "maintenance": [
+    {
+      "command": "python scripts/check-module-closure.py --previous-ref 91f04856270880e9cdc4548c116d92f10a839e57 --write-status",
+      "returncode": 0,
+      "result": "generated status updated"
+    },
+    {
+      "command": "python scripts/check-module-closure.py --previous-ref 91f04856270880e9cdc4548c116d92f10a839e57",
+      "returncode": 0,
+      "result": "57 components, schema 4"
+    },
+    {
+      "command": "python scripts/check-docs.py",
+      "returncode": 0,
+      "result": "711 Markdown files, 3208 relative links"
+    },
+    {
+      "command": "python scripts/validation-select.py plan --base 91f04856270880e9cdc4548c116d92f10a839e57 --candidate WORKTREE --output .scratch/validation/cpu-aten-numeric/selector-terminal-docs.json",
+      "returncode": 0,
+      "selected": [
+        "docs",
+        "closure"
+      ],
+      "skipped_or_reused": 130
+    },
+    {
+      "command": "git diff --check",
+      "returncode": 0
+    }
+  ]
+}

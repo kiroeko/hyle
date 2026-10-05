@@ -5,7 +5,7 @@
 - baseline：`155d1385c2b9a50eaa66a6c069b569f11daf4b03`，Windows canonical。用户要求：有成熟替代的所有自研算子都要裁决，
   不能因为低优先级后备就永久保留；只有唯一实现的精确域才直接保留。SIMD基础不删除。
 - owner：本卡保留SCOPED的冻结自研裁决ledger，不是当前产品owner授权。`compute_provider_native`
-  当前绑定[MN卡](cpu-aten-numeric-admission.md) CANDIDATE；`compute_route_cpu`、`graph_route_cpu`
+  当前绑定[MN卡](cpu-aten-numeric-admission.md) CLOSED；`compute_route_cpu`、`graph_route_cpu`
   当前绑定[SI卡](cpu-aten-storage-index-admission.md)并独立CLOSED；
   后续自研逐域裁决或新成熟接线需按新事实重新绑定owner并固定有限FIX。
   [标准CPU构建](../build/cpu-standard-provider-build-v1.md)与ggml优化程序接入已独立关闭，不能代替本卡。涉及oneDNN/ggml的具体接入修复，
@@ -61,10 +61,10 @@ Fill 与 unique I64 row-write 有实际 witness。未资格的特殊值/alias/du
 |---|---|---|---|
 | MatMul | ggml rank2..4 plain F32 row-major/contiguous-K转置RHS、双向leading广播与K0；oneDNN非空exact dense row-major F32含小M | rank>4、非vendor可表达strides/空输出region/预算档；转换成本不得抹掉 | DECISION_REQUIRED；两种物理布局按实际消费者匹配，旧Native-vs-Native不签WIN |
 | RMSNorm/LayerNorm | oneDNN dense浮点、input0精确原位；ggml可表达浮点、F32 accumulation | bounded RMS整符号域、受控预算、非vendor布局；原位不能一概归唯一 | DECISION_REQUIRED；普通out-of-place与oneDNN原位均须比较，旧Graph不能代签新融合 |
-| Unary | ggml Abs/Neg/Exp/Log/Sqrt/Rsqrt/Tanh/Sigmoid/ReLU三floating dtype；oneDNN dense F32稳定Softplus | SiLU/GELU/GELU-tanh、narrow Softplus、特殊layout/alias/非有限尾部仍需成熟资格 | DECISION_REQUIRED，按kind/dtype分开；ReLU成熟接线已验 |
-| Binary/Select | ggml Add/Subtract/Multiply/Divide；oneDNN Bool Select广播/plain分支；ATen全15scalar exact Select/odd-byte stride/非零condition | number Min/Max的NaN/signed-zero、特殊alias/预算/bounded域 | DECISION_REQUIRED；宽位Select成熟接线已验 |
-| Reduce | ggml Sum/Mean、Unknown/F32 accumulation | Min/Max语义、部分axes/rank/empty/checked strides | DECISION_REQUIRED |
-| GatedActivation | ggml SiLU的packed/separate浮点端口；原位-Inf数值边界已完成两平台三交付资格 | 原版数学核不改；GELU/GELU-tanh原函数未接，alias/layout单列 | SiLU DECISION_REQUIRED；其它kind继续成熟准入核对，边界检查和必要cast成本全部计入 |
+| Unary | ggml Abs/Neg/Exp/Log/Sqrt/Rsqrt/Tanh/Sigmoid/ReLU三floating dtype；oneDNN dense F32稳定Softplus；ATen三dtype稳定SiLU/GELU/GELU-tanh/Softplus，rank<=8/odd-byte与限定exact alias | bounded/严格预算及原ggml有限尾部仍待具名核对 | DECISION_REQUIRED，按kind/dtype/精度与资源分开；MN成熟接线已验 |
+| Binary/Select | ggml Add/Subtract/Multiply/Divide；oneDNN Bool Select广播/plain分支；ATen全15scalar exact Select及三floating number Min/Max/odd-byte/broadcast/NaN-signed-zero与限定dense exact alias | 其它alias/严格预算/bounded域 | DECISION_REQUIRED；SI/MN成熟接线已验 |
+| Reduce | ggml Sum/Mean、Unknown/F32 accumulation；ATen三floating四kind、任意合法axes/keepdim/rank0..8/empty/byte stride，显式F32 accumulation，NaN与零号资格 | bounded/严格预算；native内部内存unknown | DECISION_REQUIRED；MN成熟接线已验 |
+| GatedActivation | ggml SiLU packed/separate与-Inf边界；ATen三kind/三dtype packed-separate、rank<=8/odd-byte，稳定F32 activation+乘法后一次舍入，普通Graph下游已验 | 原ggml SiLU有限负尾部另核对；bounded/严格预算；公共gate禁止alias | DECISION_REQUIRED；MN成熟接线已验，完整Double/F32 cast/packing/原节点成本包含 |
 | RoPE | ggml dense rank4、sequence-axis1、i32 positions、F32 frequencies | i64 positions、其它axis/rank/layout与checked strides | DECISION_REQUIRED，不偷换公共位置公式 |
 | Softmax | ggml dense三floating dtype任意axis、finite scale、同类型dense additive广播，安全特殊行 | Bool mask/log-softmax、非dense/alias/bounded预算等剩余域 | DECISION_REQUIRED；包含安全score扫描/scale-add和原布局materialization成本 |
 | SDPA | ggml unmasked BSHD/BHSD、三floating dtype、causal/noncausal、独立Dk/Dv与GQA | mask/alias/预算与具体非有限合同；不把同head Native与GQA完整程序混比 | DECISION_REQUIRED，只测同合同共同shape及真实资源/完成 |
@@ -122,10 +122,10 @@ MatMul 的 Native 比较应保持调用方真实 RHS 物理布局：row-major �
 
 ### 成熟接线的当前资格增量
 
-[GB批](cpu-ggml-mature-admission-batch.md)、[TF批](cpu-ggml-transformer-fill-admission.md)、[LB批](cpu-ggml-layout-broadcast-admission.md)与[SI批](cpu-aten-storage-index-admission.md)已分别真实关闭；上表更新为当前已接域。原188/564冷审计是不可变历史，不重写为新执行证据。activation/gate、Min/Max/reduce、RoPE/I64 positions、Bool/log-softmax、FP8 numeric Cast与其它具名shape/资源域候选仍需批量资格；I64 Gather/Assign已由SI接入，不再混列未接。oneDNN原REDUCTION API不等于当前primitive whitelist已启用。Native/SIMD算子优化、比较和清退继续冻结，拒绝不签UNIQUE，优先级不签WIN。
+[GB批](cpu-ggml-mature-admission-batch.md)、[TF批](cpu-ggml-transformer-fill-admission.md)、[LB批](cpu-ggml-layout-broadcast-admission.md)、[SI批](cpu-aten-storage-index-admission.md)与[MN批](cpu-aten-numeric-admission.md)已分别真实关闭；上表更新为当前已接域。原188/564冷审计是不可变历史，不重写为新执行证据。RoPE/I64 positions、Bool/log-softmax、FP8 numeric Cast与其它具名shape/资源域候选仍需批量资格；I64 Gather/Assign已由SI接入，不再混列未接。oneDNN原REDUCTION API不等于当前primitive whitelist已启用。Native/SIMD算子优化、比较和清退继续冻结，拒绝不签UNIQUE，优先级不签WIN。
 
 
-MN数值批候选已完成Windows120/120与三dtype普通Direct/Graph首批验证，Linux/三交付尚未完整
-资格，不提前更新上表为全验收。已锁ggml的Sigmoid与SiLU scalar尾部仍用exp(−x)，可能在有限
+MN数值批已完成Windows/Linux120/120、三dtype普通Direct/Graph与三交付资格，上表更新为本批
+已接域，不是性能WIN或CPU整体完成。已锁ggml的Sigmoid与SiLU scalar尾部仍用exp(−x)，可能在有限
 负尾部溢出归零，特别是大value的gate；此具体源码疑点在CPU最终收口前必须做一次完整消费反例
 核对，不由当前ATen后备或旧−Inf边界通过掩盖，也不借Native owner权限修改ggml。
