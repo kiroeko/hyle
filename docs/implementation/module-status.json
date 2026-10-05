@@ -384,14 +384,9 @@
     },
     {
       "module": "graph_provider_onednn",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/compute/llm-moe-model-profile-routing-refactor.md",
-      "summary": "MR CLOSED：graph_provider_onednn 的真实模型制品画像、任意端口规则、确定性冷绑定和四路线单轨迁移已通过正确性、三交付、红队及 P0；M3 覆盖保持独立。",
-      "candidate": "2ada22a89821d20b312407c9575df8f9a923df89",
-      "performance": {
-        "tier": "P0",
-        "evidence": "evidence/correctness/model-profile-routing-refactor/README.md"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/cpu-onednn-hybrid-ffn-retirement.md",
+      "summary": "NX1–3 SCOPED：完整oneDNN-labelled FFN实有HYLE SIMD SwiGLU，−100/1e38约1.7%下游偏差。有限退役错误generic混合region、保留有效norm/MatMul与SIMD本体；未改产品，不计性能WIN。"
     },
     {
       "module": "compute_ops",
