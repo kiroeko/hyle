@@ -778,7 +778,7 @@
       },
       "vendored": {
         "path": "third_party/torchao_cpu",
-        "tree_sha256": "c0cd5d2ddbc0ed8231f9f1c282fe1acd967569ad33e8e08ad7cef47fc2b0aa51"
+        "tree_sha256": "c752da408b895f3714466b26083c9b3a892bd7675584d10a9672ce430567dbd0"
       },
       "license": {
         "expression": "BSD-3-Clause",
