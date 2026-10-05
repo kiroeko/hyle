@@ -1,6 +1,6 @@
 # CPU ggml原版优化程序接入
 
-<!-- MODULE REVIEW: CANDIDATE -->
+<!-- MODULE REVIEW: CLOSED -->
 
 - baseline：`12904dc99`，Windows canonical；普通CPU SDK取得/loader已独立关闭。
 - owner：`compute_ggml_runtime`；本卡重新定界CPU有限范围后绑定当前record。
@@ -12,8 +12,8 @@
 - scope：原固定ggml CPU target的源码组成，以独立私有AVX2程序编译；保留现有基线程序。固定CPU/OS
   feature条件冷绑定，一套程序拥有自己的pool/plan/运行/释放；Host graph/POD元数据与workspace借用。
 - non-goals：任何新数学、ggml升级、AVX512/AMX/ARM优化扩张、GPU修改、公共loader/性能工具重写。
-- 调查预算：一次有界源码/接入探针，Windows已完成F32 norm→MatMul两次执行；仍待narrow/量化、
-  资源和交付验证。最多两次具体根因纠正；不在本卡证明Native领先或运行逐算子P1。
+- 调查预算：一次有界源码/接入探针及固定narrow/量化、资源和交付批次，现已完成。
+  最多两次具体根因纠正，实际产品纠正1次；不在本卡证明Native领先或运行逐算子P1。
 - tier：P0，优化原程序的接入/ISA安全/资源生命周期；后续Native精确域裁决再固定适用P1。
 
 ## 审计与有限FIX
@@ -48,7 +48,7 @@ DLL实际已安装到`lib`，不是编译或数学缺失。本包仅将shim的Wi
 消费者仍由staging helper复制到exe同目录，不改变通用安装/验证工具。该CMake路径纠正不影响
 已通过的383项CPU GTest；只重验交付与对应文档/状态检查，不重复整批数学回归或P1。
 
-## 当前已运行验收（尚未关闭）
+## 分段验收记录
 
 - 产品候选：`bf4027e7`；安装路径纠正候选：`d0b774c5`，未改C++或上游数学。
 - Windows CPU runtime、ggml Provider、普通CPU Direct及Graph共8/8 CTest目标通过，
@@ -56,8 +56,8 @@ DLL实际已安装到`lib`，不是编译或数学缺失。本包仅将shim的Wi
 - Windows源码、静态SDK、动态SDK的独立普通消费者实际执行F16 MatMul和完整
   RMSNorm→MatMul Graph，均各重复两次通过；静态/动态消费者只传HYLE安装前缀，
   优化程序DLL由现有helper自动放到exe同目录。
-- 待验：Linux优化程序及对应三交付、冷ISA/ABI失败与CPU OFF隔离。当前不能签CI1–4全PASS
-  或关闭runtime；Native自研域仍未完成比较、删除和规则定案，本卡不签算法WIN。
+- 该分段记录时未完成的Linux三交付、冷ISA/ABI失败和CPU OFF，已在下方Candidate记录补齐。
+  Native自研域仍未完成比较、删除和规则定案，本卡不签算法WIN。
 - 完整日志/身份/统计见[当前证据](../../../../evidence/correctness/cpu-ggml-isa-admission-v1/README.md)。
 
 ## AUDITED绑定
@@ -80,3 +80,28 @@ CI1–4已经固定；Windows原版程序探针成功，没有改上游数学。
   由冷条件单元检查；没有冒称在物理非AVX2机器上测试过。
 - 本卡P0只签固定程序接入、资源与交付，不签性能WIN。准备缓存加载/ISA事实并绑定整程序，
   invocation重放无探测/搜索/计时；只调用一次整图compute，pool/workspace按slot释放。
+
+## 七门与终审
+
+| Gate | 已检查的当前范围与证据 | Verdict |
+|---|---|---|
+| scope | CI1–4完成；CPU原版程序接入，未新增数学/AVX512/ARM优化或GPU施工 | PASS |
+| architecture | 完整原版target组成及私有整程序ABI，冷绑定、slot独立资源、原融合图；未加公共队列/逐kernel接口 | PASS |
+| correctness | Windows383与Linux51项GTest、实际GGUF/narrow与资源故障；冷条件及具名ABI/缺程序失败 | PASS |
+| delivery | 两平台普通源码/静态/动态及静态/动态SDK实际搬移，CPU OFF资产隔离；801个canonical输入核对及前后同步证据 | PASS |
+| usability_docs | 同一CPU/Graph普通入口与单一runtime helper；指南明确私有DLL/so与静态交付资产要求 | PASS |
+| red_team | 无效SDK在CPU OFF不探测，缺优化程序不能参加scalar性能比较，错ABI/回调拒绝；未运行物理老CPU不冒签PASS | PASS |
+| engineering_performance | P0冷缓存/整程序成本及资源结构复核；未改原数学，不运行P1或继承基线计时宣称WIN | PASS |
+
+第三方版本、许可证与失败/基线行为复用固定ggml和资源patch registry。公有入口全部保持，
+内部复用Mem/Platform/既有staging/package；program ABI仅私有同版原生程序边界，不新增公共Native FFI。
+主Direct/Graph旅程与宽/窄/量化正交旅程均有实际证据。文档与closure检查通过，doc/state更新不重建。
+
+限制：优化程序仅Windows/Linux x86_64 AVX2/FMA/F16C/BMI2域，其它平台/CPU继续原基线；
+物理非AVX2主机未运行，本轮以冷条件覆盖、现有Platform OS gating和原基线源码/已有链路证明安全分支。
+模块进程常驻，slot资源仍按生命周期回收。没有新算法优势声明。
+重开条件：真实ISA准入错误、同版POD/资源生命周期反例、source/static/shared资产加载或隔离破坏。
+
+Compute + Graph统一统计60994实现行/248文件，不含测试/vendor/CMake；详见归档LOC全量指标。
+本卡CLOSED只收口CPU优化程序。Native逐域与默认规则继续，CPU整体goal保持active；
+旧F35/GPU/A6/D6待验未被解除，不处理其它路线，也不以本卡代表CPU算子全部完成。
