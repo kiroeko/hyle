@@ -85,7 +85,9 @@ std::vector<T> run(Context &ctx, Operation op,
                    std::span<Buffer> buffers) {
   std::array<TensorDesc, 1> outputs{};
   EXPECT_TRUE(infer_output_descriptions(op, descriptors, outputs).ok());
-  auto prepared = prepare(ctx, op, descriptors, outputs).value();
+  auto prepared =
+      prepare(ctx, op, descriptors, outputs, hyle::mem::system_resource())
+          .value();
   EXPECT_EQ(prepared.provider().id, aten_cpu::kProviderId);
   auto output = storage(outputs[0]);
   auto invocation = prepared.create_invocation().value();
@@ -421,11 +423,11 @@ TEST(AtenCpuTransformer, DenseAliasPrivateSlotsAndCloseRetainCorrectSoftmax) {
         description(DataType::kBool, std::array<std::int64_t, 2>{1, 4});
     const std::array ds{d, mask};
     const std::array out{d};
-    auto prepared =
-        prepare(ctx, Operation(Softmax{.mask = MaskKind::kBoolean}), ds, out)
-            .value();
-    EXPECT_TRUE(prepared.alias_support(0, 0).supported);
-    EXPECT_FALSE(prepared.alias_support(0, 1).supported);
+    auto prepared = prepare(ctx, Operation(Softmax{.mask = MaskKind::kBoolean}),
+                            ds, out, hyle::mem::system_resource())
+                        .value();
+    EXPECT_TRUE(prepared.alias_support(0, 0)->supported);
+    EXPECT_FALSE(prepared.alias_support(0, 1)->supported);
     std::array inv{prepared.create_invocation().value(),
                    prepared.create_invocation().value()};
     std::array data{storage(d), storage(d)};
