@@ -1,6 +1,6 @@
 # CPU成熟接线：Transformer与矩阵剩余域
 
-<!-- MODULE REVIEW: SCOPED -->
+<!-- MODULE REVIEW: AUDITED -->
 
 - owner `compute_provider_native`；baseline `7a6d35353626e332d7d0a1f7d984c6cabebea7a9`，Windows canonical。
   CPU/Graph assembler、oneDNN、ggml产品不改；本轮只在已有ATen独立factory接入原库程序。
@@ -27,3 +27,22 @@
   交付/selector/closure/docs/diff与统一LOC，不重跑未改模型/旧TC/NX/GPU/P1，不扩建仪器。
 - stop：不能承载具体域保存具名DEFER/拒绝，不能写自研替代或签UNIQUE；预算后按协议裁决。
   当前SCOPED，原程序和产品/工程门均未验，固定AUDITED有限FIX前不写产品。
+
+
+## 固定审计/FIX
+
+[同一原库witness](../../../../evidence/correctness/cpu-aten-transformer-matrix/README.md)最终212断言通过，
+不代签产品。首次oracle漏判visible +Inf已纠正，不归因vendor。原fused SDPA all-mask返回0的合同
+差异已实际确认；不拆它冒充同合同程序，通用候选是原Tensor math完整attention，不新写HYLE kernel。
+
+| FIX | 固定BORROW/接缝 | 产品验收 |
+|---|---|---|
+| TM1 | 原F32 matmul/Softmax/log-softmax与RMSNorm/LayerNorm程序，支持已有三floating dtype、rank/byte stride/axis/Bool-additive | 正交/empty/rank8/非末轴/special rows/parameter storage与最终结果 |
+| TM2 | 原Double位置RoPE，I32/I64/两layout/prefix/frequency，clone保留tail；原attention math与bottom-right/zero keys | 长/负I64、未旋转NaN bits、mask/GQA/Dk-Dv/layout及最终storage舍入 |
+| TM3 | 复用对齐native packing/private invocation/mapping/异常/OOM/close；增加Bool/long原载体，不重写生命周期 | alias只在公共允许且equal-dense input0；MatMul/SDPA仍无alias；两槽/线程/资源及managed完整成本 |
+| TM4 | 同一普通Direct/Graph消费者默认绑定成熟域，与必要有效region组合；两平台三交付 | 用户不排序、不timing；缺验证/fixture skip不签PASS；Source/native数学冻结 |
+
+固定精确域为plain已公开三浮点、F32 accumulation（现有合法Unknown匹配），输出inferred dense；
+RoPE限已有F32 data/frequency域，I32/I64和全部公开axis/prefix，mask为Bool非零或可广播三floating。
+未证dtype/bounded/严格native内存预算不签支持/唯一。RMS/LayerNorm增加非vendor-layout成熟候选；
+合法省略gamma/beta、已声明F32阶段必须保持。AUDITED后只改现有ATen factory的TM1–4。

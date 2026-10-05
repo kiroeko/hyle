@@ -423,9 +423,9 @@
     },
     {
       "module": "compute_provider_native",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/cpu-aten-transformer-matrix-admission.md",
-      "summary": "TM1–4 SCOPED：有限核对已锁ATen的矩阵/Bool-log-softmax/I64 RoPE/mask SDPA剩余域与norm布局候选；未改产品、未签资格或唯一，自研数学和性能冻结。"
+      "summary": "TM1–4 AUDITED：原库四族+norm212断言与fused SDPA all-mask差异实证；固定原Tensor完整程序、packing/数值/alias/资源与批量交付FIX。未改产品，无自研数学或性能裁决。"
     },
     {
       "module": "compute_sched",
