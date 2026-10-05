@@ -120,8 +120,9 @@ inline void check_head(const c::Context &context,
         c::TensorView::create(output_desc, output.view()).value()};
     auto done = call.invocation.submit(queue, inputs, outputs);
     EXPECT_TRUE(done) << done.error().message();
-    if (done)
+    if (done) {
       EXPECT_TRUE(done->wait().ok());
+    }
     return fixture::decode_values(
         profile.output, read(output, output_desc.required_bytes().value()));
   };
@@ -165,8 +166,9 @@ inline void check_gather(const c::Context &context,
         c::TensorView::create(output_desc, output.view()).value()};
     auto done = call.invocation.submit(queue, inputs, outputs);
     EXPECT_TRUE(done) << done.error().message();
-    if (done)
+    if (done) {
       EXPECT_TRUE(done->wait().ok());
+    }
     return fixture::decode_values(
         profile.embedding, read(output, output_desc.required_bytes().value()));
   };
