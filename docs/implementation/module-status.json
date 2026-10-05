@@ -384,9 +384,10 @@
     },
     {
       "module": "graph_provider_onednn",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/cpu-onednn-hybrid-ffn-retirement.md",
-      "summary": "NX1–3 AUDITED：错误generic oneDNN/SIMD FFN route/artifact/执行已退役；保留有效norm/MatMul与SIMD本体。首批Windows3/3与selected Graph4通过/2skip，Linux/三交付未验；自研性能冻结。"
+      "summary": "NX1–3 CANDIDATE：错误generic oneDNN/SIMD FFN退役，valid norm/MatMul/SIMD保留；产品80c9ab00固定，fixture-only改进冷OOM跟踪，Windows3/3与Graph4通过/2skip已有实测。两平台同ordinary FFN三交付正在验收，未CLOSED。",
+      "candidate": "80c9ab0075c667bd16255d43d46a21d46df234ac"
     },
     {
       "module": "compute_ops",

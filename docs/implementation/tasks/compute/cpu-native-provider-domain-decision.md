@@ -136,3 +136,8 @@ TC批已真实CLOSED：两平台Cast/稳定Sigmoid/必要Graph边界与三交付
 未接FP8 Cast或未查ggml尾部。最新small FFN probe揭示oneDNN-labelled region内的HYLE SIMD
 SwiGLU提前舍入，x=-100/value1e38下游约1.7%差异；该混合接缝不能仅凭oneDNN身份算成熟，下一有限
 owner卡处理。Native/SIMD性能比较和清退保持冻结，SIMD本体不删除。
+
+
+NX混合FFN已固定退役候选，owner `graph_provider_onednn` 绑定
+[当前卡](cpu-onednn-hybrid-ffn-retirement.md) CANDIDATE，普通mature FFN/两平台三交付仍在验收。
+此举依据具名数值缺陷，不是Native/SIMD性能LOSS；SIMD库与其函数不改，原norm/MatMul保留。

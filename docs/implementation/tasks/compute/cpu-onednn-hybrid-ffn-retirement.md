@@ -1,6 +1,6 @@
 # CPU混合FFN：撤回错误自研gate资格
 
-<!-- MODULE REVIEW: AUDITED -->
+<!-- MODULE REVIEW: CANDIDATE -->
 
 - owner `graph_provider_onednn`；baseline `9489dd2af0e698e13ff5951c346b9a06e4215799`，Windows canonical。
 - trigger：普通四节点F32 FFN完整输出在−100/value1e38误差约1.7%；该region内部是HYLE SIMD SwiGLU，
@@ -54,3 +54,21 @@ Windows初编译失败为测试Status/ResultError三元式歧义；fixture commi
 `1b50371c94f2a8f5560b5f7efb5c59c6844ccdee`只改两处测试表达式，产品/API/成本不变，原日志保留。
 首批Windows provider 3/3和selected Graph 4通过/2旧fixture跳过（非6项PASS），Linux与三交付未运行；状态仍AUDITED，不签CLOSED。
 统一Compute+Graph实现LOC **61,318/249文件**（产品80c9ab00，不含tests/vendor），比TC减少692实现行。
+
+
+## 不可变候选与普通交付消费
+
+CANDIDATE产品`80c9ab0075c667bd16255d43d46a21d46df234ac`；只在fixture提交中修正Status三元式和
+加入StatsAllocator冷OOM逐点live-byte恢复断言，源码/API/算法/常态成本不变。1336输入manifest
+区分产品与fixture commit，不改写旧执行身份。普通consumer只链接compute/graph，分别走Direct三
+MatMul与stable gate、完整constant FFN Graph；两个invocation/变化输入、−80/−90/−100大值/Inf均
+检查最终八个输出及真实wait，默认gate身份为ATen，不承认任意Native后备。
+
+前一轮Graph XML确为4通过/2旧模型fixture skip；6是registered数量，旧进度中的6/6表述已纠正，
+历史XML不重写。Linux及source/static/shared适用资格正在验，未跑项不签PASS。
+
+
+Windows冷OOM新增逐点Stats live-byte回滚通过；公开头1/1，Graph4通过/2skip，普通Direct/Graph FFN
+最终结果通过。ordinary夹具第一次遗漏oneDNN MatMul caller workspace，create_invocation的失败被
+.value() fast-fail；补齐三份独立冷workspace后通过，产品未改，原命令/空失败日志/returncode保留。
+这不是DLL缺失或产品数值失败，修正后同一consumer用于全部交付，不逐平台另写消费程序。
