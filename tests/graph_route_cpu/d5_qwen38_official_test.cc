@@ -63,7 +63,8 @@ std::vector<std::byte> read_bytes(const hyle::mem::Buffer &buffer) {
   return result;
 }
 
-template <class Compiled> void expect_mature(const Compiled &compiled) {
+template <class Compiled> void expect_mature(const Compiled &compiled,
+    const d5_qwen38_24t_semantic_fragments::Fragment *fixture = nullptr) {
   ASSERT_GT(compiled.report.step_count(), 0U);
   for (std::size_t step = 0; step < compiled.report.step_count(); ++step) {
     const auto report = compiled.report.step(step).value();
@@ -74,6 +75,15 @@ template <class Compiled> void expect_mature(const Compiled &compiled) {
     bool mature = provider == c::ggml_cpu::kProviderId ||
                   provider == c::onednn::kProviderId ||
                   provider == g::onednn::kProviderId;
+    if (fixture && node.ordinal < fixture->nodes.size() && report.node_count == 1) {
+      const auto roundtrip = fixture->nodes[node.ordinal].operation
+          .template custom_as<c::model_ops::BlockQuantizationRoundtrip>();
+      mature = mature || (provider == c::native::kProviderId && roundtrip &&
+          (roundtrip->format == c::model_ops::BlockQuantizationFormat::kFloat8E4M3Block64 ||
+           roundtrip->format == c::model_ops::BlockQuantizationFormat::kFloat4E2M1Block32) &&
+          report.implementation.value() ==
+              static_cast<std::uint64_t>(c::OperationKind::kCustom) + 1);
+    }
 #if defined(HYLE_TEST_TORCH_CPU)
     mature = mature || (provider == c::native::kProviderId &&
                        report.implementation.value() >= 0x544f524348000001ULL &&
@@ -539,7 +549,7 @@ void prepare_model_constants(const d5_qwen38_24t_semantic_fragments::Fragment &c
       {.constants = bindings, .workload = workload});
   ASSERT_TRUE(compiled_result) << compiled_result.error().message();
   auto compiled = std::move(*compiled_result);
-  expect_mature(compiled);
+  expect_mature(compiled, &cold);
   auto invocation = compiled.executable.create_invocation().value();
   for (std::size_t i = 0; i < cold.outputs.size(); ++i) {
     result.push_back(output_buffer( cold.description(cold.outputs[i])));
@@ -590,7 +600,7 @@ void run_q24_semantic_fragment(
       full.graph, context, {.constants = bindings, .workload = workload});
   ASSERT_TRUE(compiled_result) << compiled_result.error().message();
   auto compiled = std::move(*compiled_result);
-  expect_mature(compiled);
+  expect_mature(compiled, &fixture);
   auto invocation = compiled.executable.create_invocation().value();
   std::vector<hyle::mem::Buffer> inputs, outputs;
   for (auto id : fixture.inputs)

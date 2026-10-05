@@ -70,7 +70,9 @@ TEST(HYLE_CPU_OFFICIAL_SUITE, D5OfficialFp8DenseNativeBatch) {
 TEST(HYLE_CPU_OFFICIAL_SUITE, D5GlmOfficialMixedRemaining) {
   namespace glm = d5_glm_remaining_fragments;
   run_q24_semantic_fragment(glm::official_flash_clamped_activation());
-  for (const auto &model : glm::kCases) {
+  // ATen tensor multiply/add nodes have distinct F32 rounding boundaries.
+  // Fix the independent oracle from that source policy before execution.
+  for (const auto &model : glm::kUnfusedFp8Cases) {
     if (!model.official) continue;
     SCOPED_TRACE(model.profile->model_name);
     run_q24_semantic_fragment(glm::dense_ffn(model));

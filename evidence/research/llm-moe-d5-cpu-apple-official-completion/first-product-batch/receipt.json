@@ -1,0 +1,49 @@
+{
+  "candidate": "0c4f636fb9c3b513f339a8c606c645e03781aab8",
+  "steps": [
+    {
+      "name": "build",
+      "argv": [
+        "cmake",
+        "--build",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+        "--target",
+        "hyle_compute_provider_native_tests",
+        "hyle_compute_route_cpu_tests",
+        "hyle_graph_route_cpu_tests",
+        "-j",
+        "2"
+      ],
+      "returncode": 0,
+      "seconds": 2.328
+    },
+    {
+      "name": "tests",
+      "argv": [
+        "ctest",
+        "--test-dir",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+        "--output-on-failure",
+        "--no-tests=error",
+        "-R",
+        "^hyle_(compute_provider_native|compute_route_cpu|graph_route_cpu)(_.*)?_test$",
+        "-j",
+        "1",
+        "--output-junit",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-cpu-apple-official-binding\\0c4f636fb9c3-tests\\tests.xml"
+      ],
+      "returncode": 4294967295,
+      "seconds": 603.844
+    }
+  ],
+  "threads": {
+    "OMP_NUM_THREADS": "2",
+    "MKL_NUM_THREADS": "2"
+  },
+  "scope": "Native CPU mature low precision plus ordinary CPU Direct/Graph; no Apple or P1 verdict",
+  "reused_configuration": {
+    "receipt": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-cpu-apple-official-binding\\8860c1186b78-tests\\receipt.json",
+    "candidate": "8860c1186b78aa33cea80b1a2c07a560aebd6411",
+    "sdk": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-cpu-apple-official-sources\\cpu-sdk-full\\libtorch"
+  }
+}

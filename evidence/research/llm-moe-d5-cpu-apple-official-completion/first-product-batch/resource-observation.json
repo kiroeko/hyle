@@ -1,0 +1,12 @@
+{
+  "candidate": "0c4f636fb9c3b513f339a8c606c645e03781aab8",
+  "observation": "manual working-set snapshot of owned CPU Direct test process during full grouped FP4 consumption; not a sampled P1 verdict",
+  "peak_observed_bytes": 48651546624,
+  "available_physical_memory_approx_bytes": 1717986918,
+  "direct_completed": {
+    "total": 157,
+    "passed": 153,
+    "failed": 4
+  },
+  "graph": "interrupted after Direct completed; no verdict"
+}

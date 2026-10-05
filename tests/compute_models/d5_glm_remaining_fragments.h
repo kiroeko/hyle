@@ -55,7 +55,7 @@ inline constexpr std::array kCases{
     Case{&core::profiles::glm53_flash_official, 4096, 1536, true, true},
     Case{&core::profiles::glm53_flash_primary_gguf, 4096, 1536, true, false},
     Case{&core::profiles::glm53_flash_fidelity_gguf, 4096, 1536, true, false}};
-// MLX Safe compilation uses separately rounded multiply/add nodes. This is
+// MLX Safe compilation and CPU ATen use separately rounded multiply/add nodes. This is
 // one whole-fixture oracle policy, fixed before execution, never selected by
 // comparing outputs. CUDA's original FMA policy remains the default.
 inline constexpr auto kUnfusedFp8Cases = [] {

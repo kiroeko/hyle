@@ -69,6 +69,7 @@ struct DirectCall final {
   c::PreparedOperation prepared;
   hyle::mem::Buffer workspace;
   c::OperationInvocation invocation;
+  bool original_ds4_roundtrip = false;
 };
 
 DirectCall make_call(const c::Context &context, c::Operation operation,
@@ -76,6 +77,10 @@ DirectCall make_call(const c::Context &context, c::Operation operation,
                      std::span<const c::TensorDesc> outputs,
                      const c::WorkloadContext &workload) {
   const auto kind = operation.kind();
+  const auto roundtrip = operation.custom_as<c::model_ops::BlockQuantizationRoundtrip>();
+  const bool original_ds4_roundtrip = roundtrip &&
+      (roundtrip->format == c::model_ops::BlockQuantizationFormat::kFloat8E4M3Block64 ||
+       roundtrip->format == c::model_ops::BlockQuantizationFormat::kFloat4E2M1Block32);
   auto prepared = c::prepare(context, std::move(operation), inputs, outputs,
                              hyle::mem::system_resource(), workload);
   if (!prepared)
@@ -90,13 +95,17 @@ DirectCall make_call(const c::Context &context, c::Operation operation,
                                       requirement.size, requirement.alignment)
                 .value();
   auto invocation = prepared->create_invocation(workspace.view()).value();
-  return {std::move(*prepared), std::move(workspace), std::move(invocation)};
+  return {std::move(*prepared), std::move(workspace), std::move(invocation),
+          original_ds4_roundtrip};
 }
 
 void expect_mature(const DirectCall &call, const c::WorkloadContext &workload) {
   const auto provider = call.prepared.provider().id;
   bool mature = provider == c::ggml_cpu::kProviderId ||
                 provider == c::onednn::kProviderId;
+  mature = mature || (provider == c::native::kProviderId &&
+      call.original_ds4_roundtrip && call.prepared.implementation().value() ==
+          static_cast<std::uint64_t>(c::OperationKind::kCustom) + 1);
 #if defined(HYLE_TEST_TORCH_CPU)
   mature = mature || (provider == c::native::kProviderId &&
                      call.prepared.implementation().value() >= 0x544f524348000001ULL &&

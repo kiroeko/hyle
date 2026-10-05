@@ -141,9 +141,9 @@ Quantized weight(const at::Tensor &carrier, const Shape &s, const at::Tensor &id
     codes = codes.index_select(0, ids).contiguous();
     scales = scales.index_select(0, ids);
   }
-  if (four) codes = torchao_cpu::f4_unpacked_to_f32(torchao_cpu::unpack_uint4(codes));
-  else { codes = codes.view(at::kFloat8_e4m3fn).to(at::kFloat);
-    scales = scales.repeat_interleave(128, 1).slice(1, 0, s.n); }
+  // Retain encoded weights. The original FP4 codec creates several tensors;
+  // decoding an entire selected expert batch magnifies its temporary memory.
+  if (!four) scales = scales.repeat_interleave(128, 1).slice(1, 0, s.n);
   return {std::move(codes), std::move(scales)};
 }
 at::Tensor block_dot(Quantized a, Quantized w, const Shape &s) {
@@ -151,16 +151,22 @@ at::Tensor block_dot(Quantized a, Quantized w, const Shape &s) {
   const auto group = s.kind == Kind::kGrouped4 ? 32 : 128;
   const auto blocks = s.k / group;
   auto lhs = a.codes.to(at::kFloat).reshape({rows, blocks, 1, group});
-  auto rhs = w.codes.reshape({rows, s.n, blocks, group}).permute({0, 2, 3, 1});
-  auto dots = at::matmul(lhs, rhs);
   auto scales = a.scales.reshape({rows, s.k / 128});
   if (group == 32) scales = scales.repeat_interleave(4, 1);
-  auto scaled = dots * scales.unsqueeze(-1).unsqueeze(-1);
-  auto weight_scales = w.scales.transpose(1, 2).unsqueeze(2);
   auto accumulated = at::zeros({rows, 1, s.n}, at::kFloat);
-  // Fixed original K-block order, matrix execution and arithmetic owned by ATen.
-  for (std::int64_t block = 0; block < blocks; ++block)
-    accumulated = accumulated + scaled.select(1, block) * weight_scales.select(1, block);
+  // Fixed original K-block order. Decode and matrix temporaries are bounded
+  // by one original block; all codec and payload arithmetic remains in ATen.
+  const auto encoded_group = s.kind == Kind::kGrouped4 ? group / 2 : group;
+  for (std::int64_t block = 0; block < blocks; ++block) {
+    auto encoded = w.codes.slice(2, block * encoded_group,
+                                 (block + 1) * encoded_group).contiguous();
+    auto decoded = s.kind == Kind::kGrouped4
+        ? torchao_cpu::f4_unpacked_to_f32(torchao_cpu::unpack_uint4(encoded))
+        : encoded.view(at::kFloat8_e4m3fn).to(at::kFloat);
+    auto dots = at::matmul(lhs.select(1, block), decoded.transpose(1, 2));
+    auto scaled = dots * scales.select(1, block).reshape({rows, 1, 1});
+    accumulated = accumulated + scaled * w.scales.select(2, block).unsqueeze(1);
+  }
   return accumulated.reshape({s.tokens, s.slots, s.n}).to(s.output);
 }
 template <Kind Selected>
@@ -189,7 +195,8 @@ Status execute(const Program &p, std::span<const std::byte *const> pointers,
     at::Tensor result;
     if constexpr (Selected == Kind::kDecode) {
       auto w = weight(input[0], s, {});
-      result = (w.codes.reshape({1, s.n, s.k / 128, 128}) * w.scales.unsqueeze(-1))
+      result = (w.codes.view(at::kFloat8_e4m3fn).to(at::kFloat)
+                    .reshape({1, s.n, s.k / 128, 128}) * w.scales.unsqueeze(-1))
           .reshape({s.n, s.k}).to(s.output);
     } else if constexpr (Selected == Kind::kRoundtrip) {
       auto q = quantize(input[0], s);

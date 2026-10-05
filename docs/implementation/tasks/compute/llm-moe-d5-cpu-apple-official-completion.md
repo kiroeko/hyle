@@ -5,7 +5,8 @@
 - baseline：`5bb3d153bfe137feb6b7e3d22ced40e513b1fd5a`；Windows canonical，初始工作树干净。
 - 当前授权：2026-10-05 用户要求优先处理上一答的三类残余能力，再回到 Vulkan。
 - 当前实际 owner：`compute_provider_native`；由缺失的真实官方消费能力重新打开。
-  已结束新增成熟来源调查，尚未实施产品 FIX；`53be4356` 提交 SCOPED，本次将有限 FIX 绑定 AUDITED。
+  新增成熟来源调查已结束；`53be4356` 完成 SCOPED、`feba1184` 绑定有限 FIX 为 AUDITED，
+  CPU-O1–O4 已接线并进入集中验证，CPU-O5 尚未完成。
   此次不重开已关闭的 SIMD、CPU/Graph 运行时或 oneDNN，不新增数学内核。
 - 固定目标：CPU GLM 官方 grouped FP8、CPU DeepSeek 官方 grouped FP4/FP8、
   Apple DeepSeek 官方混合低精度完整片段，共原账本 12 个拒绝入口格。
@@ -132,3 +133,29 @@ margin、n=15；预检不合格不正式采样，不把库自身成本或机器�
 5. 边界：仅 C++，不引入 Python runtime、模型 loader 或 Native FFI。
 6. 交付：HYLE 三交付均是 C++，CPU SDK 作为私有成熟 runtime，待真实独立消费者证明。
 7. 易用：普通入口与既有 op 保持；高级构建可裁剪，缺 SDK/严格 replay/不明内存上界明确拒绝。
+
+## 第一批产品验证与一次定向纠正（2026-10-05）
+
+不可变 candidate `0c4f636fb9c3b513f339a8c606c645e03781aab8` 已成功编译。
+Windows Native owner 测试及三组公开头检查通过，包括真实 ATen OOM、恢复、重复/非法 ID、
+并发槽、冷 metadata 配额与 managed 声明。CPU Direct 全套 157 项完成，153 PASS / 4 FAIL；
+Graph 测试启动后为避免重复资源峰值而中止，不能计 PASS。此批不是完整画像验收。
+原始输出保存在本卡对应研究证据的 `first-product-batch/`，完整账本仍为 154/20/2。
+
+资源观察：Direct FP4 完整专家片段的进程峰值 working set 为 48,651,546,624 bytes，
+此时本机可用物理内存约 1.6 GiB。源码确认：选中专家后，整块 FP4 解码生成 F32/int64/mask
+Tensor 临时对象，随后所有 K-block 批量 matmul 再次物化布局，放大 O(T*S*N*K) 中间资源。
+CPU-O1/O2 内的一次纠正：保留选中原 encoded bytes，按固定 K32/K128 顺序逐块调用同一
+TorchAO codec 与 ATen matmul；激活量化、F32 scale 乘法/累加、BF16 输出边界不改。
+不新增数学 kernel，不以减少实际 N/K/slots 验收，不把库私有内存改报已知硬预算。
+
+三个 DeepSeek 失败首先来自 `expect_mature` 未纳入已 CLOSED 的原 ds4 group64/group32
+roundtrip；修正测试只允许精确 operation/format 与现有 implementation 身份，不白名单全部
+Native，自研 fallback 仍禁止。GLM Flash 的 MLA 最后一次反馈在一个 BF16 输出超原门：
+actual -0.006866455078125 / expected -0.007080078125，门为 0.00019700196571648121。
+新组合是独立 ATen multiply/add，原 fixture 默认绑定 CUDA FMA oracle；核对既有独立
+unfused oracle 与具体中间边界，按源码固定 CPU policy，原完整片段数值门保持，不能事后
+挑较有利答案。若该原始机制纠正后仍失败，保留数值 FAIL，停止此候选而不扩预算。
+
+本轮重用未改变的 CMake 配置和已编译对象，只批量重编受影响 TU，串行复核受影响完整片段。
+P1 尚未启动，三交付/WSL 尚未验收；不以来源 probe 或旧 GGUF P1 代签。
