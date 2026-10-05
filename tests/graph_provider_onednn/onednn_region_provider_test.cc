@@ -222,7 +222,9 @@ TEST(OneDnnRegionProvider, NativeNormRegionKeepsIndependentReplayAndClose) {
 }
 
 TEST(OneDnnRegionProvider, NormCompileAndInvocationColdOomRecover) {
+  auto stats = m::StatsAllocator::create(m::system_allocator()).value();
   AllocatorProbe probe;
+  probe.backing = stats.get();
   const auto providers = bindings();
   auto context =
       c::Context::create(c::cpu::device(),
@@ -238,12 +240,14 @@ TEST(OneDnnRegionProvider, NormCompileAndInvocationColdOomRecover) {
   const auto compile_count = probe.attempts.load();
   ASSERT_GT(compile_count, 4U);
   for (std::size_t failure = 0; failure < compile_count; ++failure) {
+    const auto live = stats.snapshot().live_bytes;
     probe.attempts = 0;
     probe.fail_on_attempt = failure;
     auto failed = g::compile(graph.graph, context);
     ASSERT_FALSE(failed) << failure;
     EXPECT_TRUE(failed.error().IsResourceExhausted())
         << failed.error().message();
+    EXPECT_EQ(stats.snapshot().live_bytes, live);
     probe.fail_on_attempt = (std::numeric_limits<std::size_t>::max)();
     auto retried = g::compile(graph.graph, context);
     ASSERT_TRUE(retried) << failure;
@@ -257,12 +261,14 @@ TEST(OneDnnRegionProvider, NormCompileAndInvocationColdOomRecover) {
   const auto invocation_count = probe.attempts.load();
   ASSERT_GT(invocation_count, 1U);
   for (std::size_t failure = 0; failure < invocation_count; ++failure) {
+    const auto live = stats.snapshot().live_bytes;
     probe.attempts = 0;
     probe.fail_on_attempt = failure;
     auto failed = compiled.executable.create_invocation();
     ASSERT_FALSE(failed) << failure;
     EXPECT_TRUE(failed.error().IsResourceExhausted())
         << failed.error().message();
+    EXPECT_EQ(stats.snapshot().live_bytes, live);
     probe.fail_on_attempt = (std::numeric_limits<std::size_t>::max)();
     auto retried = compiled.executable.create_invocation();
     ASSERT_TRUE(retried) << failure;

@@ -52,5 +52,5 @@ callback，保留norm全部数学/生命周期、共享oneDNN MatMul与SIMD本�
 −80/−90/−100大值/Inf、最终输出、真实wait，norm并发/close/冷compile与invocation OOM恢复。
 Windows初编译失败为测试Status/ResultError三元式歧义；fixture commit
 `1b50371c94f2a8f5560b5f7efb5c59c6844ccdee`只改两处测试表达式，产品/API/成本不变，原日志保留。
-首批Windows provider 3/3和selected Graph已通过，Linux与三交付未运行；状态仍AUDITED，不签CLOSED。
+首批Windows provider 3/3和selected Graph 4通过/2旧fixture跳过（非6项PASS），Linux与三交付未运行；状态仍AUDITED，不签CLOSED。
 统一Compute+Graph实现LOC **61,318/249文件**（产品80c9ab00，不含tests/vendor），比TC减少692实现行。
