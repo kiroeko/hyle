@@ -1,6 +1,6 @@
 # CPU oneDNN：恢复小矩阵的真实准入
 
-<!-- MODULE REVIEW: SCOPED -->
+<!-- MODULE REVIEW: AUDITED -->
 
 ## Closure card
 
@@ -29,13 +29,24 @@
 - stop：适用验证通过后冻结候选/terminal；若原 carrier 在真实普通生命周期失败，则记录具体事实，
   退回有限纠正或 BLOCKED，不恢复未经比较的 Native 优势假设。
 
-## 能力审计与有限改动集（待固定）
+## 能力审计与有限改动集（已固定）
 
 | 能力 | 现状/语义 | 承载 | 动作 |
 |---|---|---|---|
 | exact 非空 dense F32 MatMul，M<16 serial | 同版 carrier 可运行，adapter 人为拒绝 | BORROW oneDNN | FIX 小矩阵准入 |
 | M≥16 或 caller executor 分片 | 已接 BRGEMM、caller scratch、真实 wait | BORROW，现有路径 | KEEP |
 | 空维度、非 plain/非 dense、非 F32、bounded shape | 本 carrier 不能兑现这些完整合同 | 已有其它合格 Provider 或明确拒绝 | KEEP 真实边界 |
+
+审计：`onednn_provider.cc::select_route` 仅在 task_count=1/M<16 按旧 Native 成本推断拒绝。
+`brgemm_internal.cc::create_brgemm_plan` 验证正维度、int64 上界和任务数，没有 M16 能力门；
+实际 M1 carrier 正确性证据已保存。因此只删除推断过滤，保留全部语义、资源、workspace 检查。
+
+| FIX | 允许改动 | 验收 |
+|---|---|---|
+| OM1 | 删除 `kNativeSerialRowCutoff` 与 serial M<16 冷拒绝；不改 BRGEMM 数学/plan/submit | M1/M4/M15/M16，奇数 K17/N65 和 K64/N64 实际输出、两次重放 |
+| OM2 | 旧小矩阵拒绝测试改为准入；composition 回落用真实不支持的转置布局；增加 ordinary CPU 小矩阵身份测试及独立三交付 consumer | 冷 propose/prepare 同语义，真实 unsupported 不受影响，输出正确 |
+
+有限 FIX 已冻结，owner 为 AUDITED；不借此更改 Native、ggml、Graph planner、路由器 API 或性能工具。
 
 ## 七问
 
@@ -49,4 +60,4 @@
 
 ## 验证与裁决
 
-当前 SCOPED，产品尚未修改。各适用 gate 为 UNPROVEN，不签性能 WIN，也不关闭 CPU 逐域目标。
+当前 AUDITED，产品尚未修改。各适用 gate 为 UNPROVEN，不签性能 WIN，也不关闭 CPU 逐域目标。

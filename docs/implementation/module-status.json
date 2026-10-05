@@ -362,9 +362,9 @@
     },
     {
       "module": "compute_provider_onednn",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/cpu-onednn-small-matmul-admission.md",
-      "summary": "CPU小矩阵准入SCOPED：实际M1 carrier可正确运行，旧Native优势假设阻止普通prepare；只修真实能力过滤，数学/API/资源不变，Native逐域P1另裁。"
+      "summary": "CPU小矩阵准入AUDITED：OM1删除无当前资格的serial M<16过滤，OM2固定小矩阵真实重放/普通入口/三交付测试；原版数学、API、资源与失败合同不变，Native胜负仍待逐域裁决。"
     },
     {
       "module": "compute_provider_ggml",
