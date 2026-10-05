@@ -111,6 +111,11 @@
       "sha256": "e03ff931a651b87dbb31fa19b9ebcbfbb6dd8cd9522dd69be4946bd3fb66076a"
     },
     {
+      "path": "cpu-sdk-archive-receipt.json",
+      "bytes": 262,
+      "sha256": "50c5b5c7e36c4543f12e25d6804a2b8e658335b3c4af255bd4c8a328c6109443"
+    },
+    {
       "path": "cpu-sdk-subset-manifest.json",
       "bytes": 1901,
       "sha256": "011598136180d0ed8b24f73f80374bb6fdacc603df48faec8c9c2cba4c242b89"
@@ -147,8 +152,8 @@
     },
     {
       "path": "README.md",
-      "bytes": 4903,
-      "sha256": "d5a64cf9a674e07236d65aeb21b8c8194bd183c89b4ed8a82e542443d8e709b4"
+      "bytes": 5222,
+      "sha256": "927852580647faf87c94ba7554fc9f33ad49d25e6d2a9a5aa78f5d4c1aa16bc5"
     },
     {
       "path": "source-manifest.json",

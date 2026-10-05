@@ -1,0 +1,7 @@
+{
+  "url": "https://download.pytorch.org/libtorch/cpu/libtorch-win-shared-with-deps-2.8.0%2Bcpu.zip",
+  "exit_code": 0,
+  "seconds": 52.96900000004098,
+  "bytes": 584320064,
+  "sha256": "bf0079104e068dcbd60b2f8de589dc725282cbe865a85016cc5b8aa46cab519d"
+}

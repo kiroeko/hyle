@@ -1,11 +1,11 @@
 # D5：优先补齐 CPU / Apple 官方低精度三类缺口
 
-<!-- MODULE REVIEW: SCOPED -->
+<!-- MODULE REVIEW: AUDITED -->
 
 - baseline：`5bb3d153bfe137feb6b7e3d22ced40e513b1fd5a`；Windows canonical，初始工作树干净。
 - 当前授权：2026-10-05 用户要求优先处理上一答的三类残余能力，再回到 Vulkan。
 - 当前实际 owner：`compute_provider_native`；由缺失的真实官方消费能力重新打开。
-  已结束新增成熟来源调查，尚未实施产品 FIX；先提交 SCOPED，再将有限 FIX 绑定 AUDITED。
+  已结束新增成熟来源调查，尚未实施产品 FIX；`53be4356` 提交 SCOPED，本次将有限 FIX 绑定 AUDITED。
   此次不重开已关闭的 SIMD、CPU/Graph 运行时或 oneDNN，不新增数学内核。
 - 固定目标：CPU GLM 官方 grouped FP8、CPU DeepSeek 官方 grouped FP4/FP8、
   Apple DeepSeek 官方混合低精度完整片段，共原账本 12 个拒绝入口格。
@@ -88,7 +88,7 @@ CPU 库有私有 allocation、选中权重展开、结果复制和进程线程 r
 Completion 失败并回收库临时对象。输出失败时不可消费，无回滚承诺。
 并发槽只共享不可变计划，各次 native Tensor/临时 allocation 独立；本批不设计第二套 Queue。
 
-### 有限产品 FIX（SCOPED 冻结，AUDITED 后实施）
+### 有限产品 FIX（已冻结，AUDITED 后实施）
 
 | ID | 允许改动 | 验收 |
 |---|---|---|
@@ -99,7 +99,9 @@ Completion 失败并回收库临时对象。输出失败时不可消费，无回
 | CPU-O5 | 批量 ordinary 完整四画像消费及资源测试；冻结后一次适用新完整消费者 P1，更新用户能力表、账本及收口记录 | 完整 MoE/MLA或KDA/压缩/反馈链原门通过，全部适用正确性/三交付/P0/P1 后才裁决完成 |
 
 SDK 与 borrowed 资产必须先完成独立依赖身份和交付审计，不能把研究用的部分 ZIP entry 资格
-manifest 直接伪装成完整产品依赖锁。若需要新的长期 component identity，再依法 QUEUED→SCOPED，
+manifest 直接伪装成完整产品依赖锁。现已取得官方完整 Windows CPU SDK archive 的 hash；
+其 CMake/version metadata 与 shared closure 在有限 FIX 内接入，库 runtime 为外部 CPU SDK，
+静态 HYLE 消费方仍需要它，不能宣传完全静态进程。若需要新的长期 component identity，再依法 QUEUED→SCOPED，
 不在本卡臆造空 target。既有 Native 接入不要求新的普通产品 façade。
 
 ### 预声明门、预算与停止

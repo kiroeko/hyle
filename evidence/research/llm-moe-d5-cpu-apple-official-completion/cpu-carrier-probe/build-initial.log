@@ -1,0 +1,10 @@
+cxx.cc
+cxx.cc(35): error C2039: 'NoGradGuard': is not a member of 'at'
+C:\Program Files\Python312\Lib\site-packages\torch\include\ATen/Parallel-inl.h(7): note: see declaration of 'at'
+cxx.cc(35): error C2065: 'NoGradGuard': undeclared identifier
+cxx.cc(35): error C2146: syntax error: missing ';' before identifier 'guard'
+cxx.cc(35): error C2065: 'guard': undeclared identifier
+cxx.cc(44): error C2440: 'reinterpret_cast': cannot convert from 'const void *' to 'char *'
+cxx.cc(44): note: Conversion loses qualifiers
+cxx.cc(46): error C2440: 'reinterpret_cast': cannot convert from 'const void *' to 'char *'
+cxx.cc(46): note: Conversion loses qualifiers

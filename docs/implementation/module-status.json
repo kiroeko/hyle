@@ -418,9 +418,9 @@
     },
     {
       "module": "compute_provider_native",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-d5-cpu-apple-official-completion.md",
-      "summary": "D5 CPU 官方低精度有限接入 SCOPED：新 TorchAO/ATen 原生投影与 CPU-only C++ 接缝已资格化；仅补原先缺失的官方 FP8/FP4 成熟组合，产品尚未修改，完整画像/三交付/P1 待验。Apple 原数值边界不解除。"
+      "summary": "D5 CPU 官方低精度有限接入 AUDITED：TorchAO/ATen 原生编码投影与 CPU-only C++ 接缝资格通过，CPU-O1–O5 固定；仅接入成熟组合，不新增自研数学。产品完整画像/三交付/P1 未验；Apple 原数值边界不解除。"
     },
     {
       "module": "compute_sched",

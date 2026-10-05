@@ -2,7 +2,7 @@
 
 2026-10-05，baseline `5bb3d153bfe137feb6b7e3d22ced40e513b1fd5a`。
 这批只签新增成熟程序的来源、原生数值及 CPU C++ 接缝，**不签 HYLE 完整画像、三交付或 P1**。
-原 ledger 的 154 RUN_PASS / 20 BACKEND_REJECTED / 2 NUMERICAL_FAIL 不变。
+原 ledger 的 154 RUN_PASS / 20 BACKEND_REJECTED / 2 RUN_FAIL（数值失败）不变。
 
 ## 来源及裁决
 
@@ -49,9 +49,12 @@ runtime，不宣称完全静态进程。线程由成熟 CPU 库的进程 runtime
 分组组合有内部 allocation、选中权重展开和 caller 输出复制，应归 managed replay。
 本轮无 P1，无 prepared-only / 内部严格内存上界 / 多种硬件性能资格。
 
-CPU SDK 资格下载仅取得所需 ZIP entries，CRC32 和逐文件 SHA256 已核对；manifest
-明确不声称全量 SDK archive SHA256。正式产品还须使用完整、版本锁定的 CPU SDK 交付合同。
-产品接线前由当前 owner 固定有限 FIX；SDK DLL 不入仓库。证据文本/源码/输入约 649 KiB。
+最初 CPU SDK 资格下载仅取得所需 ZIP entries，CRC32 和逐文件 SHA256 已核对；该 subset manifest
+不声称全量 SDK archive SHA256。随后取得官方完整 584,320,064 字节 archive，SHA256
+`bf0079104e068dcbd60b2f8de589dc725282cbe865a85016cc5b8aa46cab519d`，见
+`cpu-sdk-archive-receipt.json`。只展开 header/CMake metadata 和实际 shared runtime/import libraries，
+约 323 MiB；未展开不使用的巨型静态库。正式产品仍须完成 CPU SDK 的版本/许可和三交付合同。
+产品接线前由当前 owner 固定有限 FIX；SDK DLL 不入仓库。证据文本/源码/输入小于 1 MiB。
 
 ## Apple 当前边界
 
