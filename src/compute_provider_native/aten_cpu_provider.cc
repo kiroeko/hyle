@@ -86,7 +86,10 @@ bool numeric_program(Operation operation) noexcept {
     return binary->kind == BinaryKind::kMinimum ||
            binary->kind == BinaryKind::kMaximum;
   return operation.get_if<Cast>() || operation.get_if<GatedActivation>() ||
-         operation.get_if<Reduce>();
+         operation.get_if<Reduce>() || operation.get_if<MatMul>() ||
+         operation.get_if<Softmax>() || operation.get_if<RoPE>() ||
+         operation.get_if<ScaledDotProductAttention>() ||
+         operation.get_if<RmsNorm>() || operation.get_if<LayerNorm>();
 }
 bool floating(DataType type) noexcept {
   return type == DataType::kFloat32 || type == DataType::kFloat16 ||
@@ -98,6 +101,12 @@ bool cast_storage(DataType type) noexcept {
 }
 at::ScalarType native_type(DataType type) noexcept {
   switch (type) {
+  case DataType::kBool:
+    return at::kByte;
+  case DataType::kInt32:
+    return at::kInt;
+  case DataType::kInt64:
+    return at::kLong;
   case DataType::kFloat16:
     return at::kHalf;
   case DataType::kBFloat16:
@@ -148,10 +157,59 @@ Status select(Operation operation, std::span<const TensorDesc> inputs,
     if (!admitted(outputs[0].data_type()))
       return Status::Unimplemented(
           "ATen CPU numerical storage is not admitted");
-    for (const auto &input : inputs)
-      if (!admitted(input.data_type()))
+    for (std::size_t i = 0; i < inputs.size(); ++i) {
+      const auto type = inputs[i].data_type();
+      const bool rope_index =
+          operation.get_if<RoPE>() && i == 1 &&
+          (type == DataType::kInt32 || type == DataType::kInt64);
+      const bool bool_mask =
+          type == DataType::kBool &&
+          ((operation.get_if<Softmax>() && i == 1 &&
+            operation.get_if<Softmax>()->mask == MaskKind::kBoolean) ||
+           (operation.get_if<ScaledDotProductAttention>() && i == 3 &&
+            operation.get_if<ScaledDotProductAttention>()->mask ==
+                MaskKind::kBoolean));
+      if (!admitted(type) && !rope_index && !bool_mask)
         return Status::Unimplemented(
             "ATen CPU numerical input is not admitted");
+    }
+    if (operation.get_if<RoPE>() &&
+        (inputs[0].data_type() != DataType::kFloat32 ||
+         inputs[2].data_type() != DataType::kFloat32))
+      return Status::Unimplemented("ATen CPU RoPE requires F32 data/frequency");
+    auto accumulation = DataType::kFloat32;
+    if (const auto *op = operation.get_if<MatMul>())
+      accumulation = op->accumulation_type;
+    if (const auto *op = operation.get_if<Softmax>())
+      accumulation = op->accumulation_type;
+    if (const auto *op = operation.get_if<ScaledDotProductAttention>())
+      accumulation = op->accumulation_type;
+    if (const auto *op = operation.get_if<RmsNorm>())
+      accumulation = op->accumulation_type;
+    if (const auto *op = operation.get_if<LayerNorm>())
+      accumulation = op->accumulation_type;
+    if (accumulation != DataType::kFloat32 &&
+        !(accumulation == DataType::kUnknown &&
+          inputs[0].data_type() == DataType::kFloat32))
+      return Status::Unimplemented(
+          "ATen CPU numerical program requires F32 accumulation");
+    if (const auto *attention = operation.get_if<ScaledDotProductAttention>()) {
+      const auto sequence =
+          attention->layout == AttentionLayout::kBatchSequenceHeadDepth ? 1U
+                                                                        : 2U;
+      const auto heads = sequence == 1 ? 2U : 1U;
+      std::uint64_t count = 1;
+      for (const auto value :
+           {inputs[0].dimensions()[0], inputs[0].dimensions()[heads],
+            inputs[0].dimensions()[sequence],
+            inputs[1].dimensions()[sequence]}) {
+        if (value != 0 && count > static_cast<std::uint64_t>(INT64_MAX) /
+                                      static_cast<std::uint64_t>(value))
+          return Status::Unimplemented(
+              "ATen CPU score tensor exceeds native int64 capacity");
+        count *= static_cast<std::uint64_t>(value);
+      }
+    }
     if (const auto *reduce = operation.get_if<Reduce>())
       if (reduce->accumulation_type != DataType::kFloat32 &&
           !(reduce->accumulation_type == DataType::kUnknown &&
@@ -470,6 +528,106 @@ at::Tensor reduction(const Program &p, const at::Tensor &input) {
       at::where(negative, at::full_like(result, -0.0), at::zeros_like(result));
   return at::where(result.eq(0), zero, result);
 }
+at::Tensor transformer_softmax(const Program &p, Invocation &inv,
+                               const at::Tensor &first) {
+  const auto &op = *p.operation.get_if<Softmax>();
+  auto scores = first.mul(op.scale);
+  if (op.mask == MaskKind::kBoolean)
+    scores = scores.masked_fill(numeric_input(p, inv, 1).eq(0),
+                                -(std::numeric_limits<float>::infinity)());
+  else if (op.mask == MaskKind::kAdditive)
+    scores = scores.add(numeric_input(p, inv, 1).to(at::kFloat));
+  return op.kind == SoftmaxKind::kLogSoftmax
+             ? at::log_softmax(scores, static_cast<std::int64_t>(p.axis),
+                               at::kFloat)
+             : at::softmax(scores, static_cast<std::int64_t>(p.axis),
+                           at::kFloat);
+}
+at::Tensor transformer_rope(const Program &p, Invocation &inv,
+                            const at::Tensor &first) {
+  const auto &op = *p.operation.get_if<RoPE>();
+  const auto positions = numeric_input(p, inv, 1);
+  const auto frequency = numeric_input(p, inv, 2);
+  std::array<std::int64_t, kMaxTensorRank> ps{}, fs{};
+  ps.fill(1);
+  fs.fill(1);
+  if (positions.dim() == 1)
+    ps[p.axis] = positions.size(0);
+  else
+    for (std::int64_t i = 0; i < positions.dim(); ++i)
+      ps[static_cast<std::size_t>(i)] = positions.size(i);
+  const auto rank = p.inputs[0].rank();
+  const auto rotary = static_cast<std::int64_t>(op.rotary_dimensions);
+  fs[rank - 1] = rotary / 2;
+  if (frequency.dim() == 2)
+    fs[p.axis] = frequency.size(0);
+  auto angles =
+      positions.to(at::kDouble)
+          .view(at::IntArrayRef(ps.data(), rank))
+          .mul(
+              frequency.to(at::kDouble).view(at::IntArrayRef(fs.data(), rank)));
+  auto cosine = angles.cos(), sine = angles.sin();
+  auto data = first.to(at::kDouble);
+  const bool split = op.layout == RopeLayout::kHalfSplit;
+  auto left =
+      split ? data.slice(-1, 0, rotary / 2) : data.slice(-1, 0, rotary, 2);
+  auto right =
+      split ? data.slice(-1, rotary / 2, rotary) : data.slice(-1, 1, rotary, 2);
+  auto a = left.mul(cosine).sub(right.mul(sine));
+  auto b = left.mul(sine).add(right.mul(cosine));
+  auto rotated =
+      split ? at::cat({a, b}, -1) : at::stack({a, b}, -1).flatten(-2);
+  auto result = first.clone();
+  result.slice(-1, 0, rotary).copy_(rotated);
+  return result;
+}
+at::Tensor transformer_attention(const Program &p, Invocation &inv,
+                                 const at::Tensor &first) {
+  const auto &op = *p.operation.get_if<ScaledDotProductAttention>();
+  auto q = first, k = numeric_input(p, inv, 1).to(at::kFloat),
+       v = numeric_input(p, inv, 2).to(at::kFloat);
+  const bool bshd = op.layout == AttentionLayout::kBatchSequenceHeadDepth;
+  if (bshd) {
+    q = q.transpose(1, 2);
+    k = k.transpose(1, 2);
+    v = v.transpose(1, 2);
+  }
+  const auto groups = q.size(1) / k.size(1);
+  if (groups != 1) {
+    k = k.repeat_interleave(groups, 1);
+    v = v.repeat_interleave(groups, 1);
+  }
+  auto scores = at::matmul(q, k.transpose(-1, -2)).mul(op.scale);
+  if (op.mask == MaskKind::kBoolean)
+    scores = scores.masked_fill(numeric_input(p, inv, 3).eq(0),
+                                -(std::numeric_limits<float>::infinity)());
+  else if (op.mask == MaskKind::kAdditive)
+    scores = scores.add(numeric_input(p, inv, 3).to(at::kFloat));
+  if (op.causal) {
+    auto row = at::arange(q.size(2), at::kLong).view({q.size(2), 1});
+    auto column = at::arange(k.size(2), at::kLong).view({1, k.size(2)});
+    auto allowed = column.le(row.add(k.size(2) - q.size(2)));
+    scores = scores.masked_fill(allowed.logical_not(),
+                                -(std::numeric_limits<float>::infinity)());
+  }
+  auto result = at::matmul(at::softmax(scores, -1, at::kFloat), v);
+  if (k.size(2) == 0)
+    result = at::full_like(result, (std::numeric_limits<float>::quiet_NaN)());
+  return bshd ? result.transpose(1, 2) : result;
+}
+at::Tensor transformer_norm(const Program &p, Invocation &inv,
+                            const at::Tensor &first) {
+  const std::array<std::int64_t, 1> shape{first.size(-1)};
+  std::optional<at::Tensor> gamma, beta;
+  if (p.inputs.size() > 1)
+    gamma = numeric_input(p, inv, 1).to(at::kFloat);
+  if (p.inputs.size() > 2)
+    beta = numeric_input(p, inv, 2).to(at::kFloat);
+  if (const auto *op = p.operation.get_if<RmsNorm>())
+    return at::rms_norm(first, shape, gamma, op->epsilon);
+  return at::layer_norm(first, shape, gamma, beta,
+                        p.operation.get_if<LayerNorm>()->epsilon);
+}
 void execute_numeric(const Program &p, Invocation &inv, at::Tensor &output) {
   auto first = numeric_input(p, inv, 0);
   at::Tensor result;
@@ -503,7 +661,17 @@ void execute_numeric(const Program &p, Invocation &inv, at::Tensor &output) {
       }
       // Keep an F32 activation and multiplication, with one storage rounding.
       result = activation(first, gate->activation).mul(values);
-    } else
+    } else if (p.operation.get_if<MatMul>())
+      result = at::matmul(first, numeric_input(p, inv, 1).to(at::kFloat));
+    else if (p.operation.get_if<Softmax>())
+      result = transformer_softmax(p, inv, first);
+    else if (p.operation.get_if<RoPE>())
+      result = transformer_rope(p, inv, first);
+    else if (p.operation.get_if<ScaledDotProductAttention>())
+      result = transformer_attention(p, inv, first);
+    else if (p.operation.get_if<RmsNorm>() || p.operation.get_if<LayerNorm>())
+      result = transformer_norm(p, inv, first);
+    else
       result = reduction(p, first);
   }
   const auto shape = byte_shape(p.output);
@@ -667,9 +835,12 @@ detail::EnqueueResult submit(void *state, void *invocation, Queue &,
 AliasSupport alias(void *state, std::size_t output,
                    std::size_t input) noexcept {
   const auto &p = *static_cast<const Program *>(state);
-  const bool allowed = (input == 0 && (p.operation.get_if<Scatter>() ||
-                                       p.operation.get_if<Unary>())) ||
-                       p.operation.get_if<Binary>();
+  const bool allowed =
+      (input == 0 &&
+       (p.operation.get_if<Scatter>() || p.operation.get_if<Unary>() ||
+        p.operation.get_if<Softmax>() || p.operation.get_if<RoPE>() ||
+        p.operation.get_if<RmsNorm>() || p.operation.get_if<LayerNorm>())) ||
+      p.operation.get_if<Binary>();
   return {.supported = allowed && output == 0 && input < p.inputs.size() &&
                        p.inputs[input] == p.output};
 }
@@ -764,6 +935,10 @@ ProviderPrepareOutcome prepare(void *,
     requested_axis = op->axis;
   if (const auto *op = request.operation.get_if<Concat>())
     requested_axis = op->axis;
+  if (const auto *op = request.operation.get_if<Softmax>())
+    requested_axis = op->axis;
+  if (const auto *op = request.operation.get_if<RoPE>())
+    requested_axis = op->sequence_axis;
   if (!p->inputs.empty())
     p->axis = static_cast<std::size_t>(
         requested_axis < 0
@@ -822,7 +997,7 @@ ProviderPrepareOutcome prepare(void *,
 const detail::ProviderVTable kProviderVTable{
     .identity = {.id = kProviderId,
                  .name = "ATen CPU programs",
-                 .version = "libtorch-2.8.0-cpu+programs-3"},
+                 .version = "libtorch-2.8.0-cpu+programs-4"},
     .create_context = &create_context,
     .destroy_context = &destroy_context,
     .propose = &propose,

@@ -4,6 +4,7 @@ hyle_add_header_self_contained_test(compute_provider_native
 hyle_add_test(compute_provider_native SOURCES
   aten_cast_test.cc
   aten_numeric_test.cc
+  aten_transformer_test.cc
   aten_storage_test.cc
   ../compute/operation_test.cc
   cast_test.cc
