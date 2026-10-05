@@ -40,6 +40,14 @@ selector记录selected/skipped及适用范围；docs/closure使用明确previous
 [Native逐域裁决](cpu-native-provider-domain-decision.md)冻结有限重叠域比较和清退/路由FIX；
 两者都完成才可通知CPU算子与路由收口。其它三路线暂停，SIMD基础保留。
 
+## 交付根因纠正（1/2）
+
+Windows源码交付的普通Direct/Graph F16片段通过；静态安装consumer发现私有shim错误地在
+`bin`查找优化程序。CMake将`MODULE_LIBRARY`安装到`LIBRARY`目的地，即现有统一规则的`lib`；
+DLL实际已安装到`lib`，不是编译或数学缺失。本包仅将shim的Windows路径改为实际`lib`位置，
+消费者仍由staging helper复制到exe同目录，不改变通用安装/验证工具。该CMake路径纠正不影响
+已通过的383项CPU GTest；只重验交付与对应文档/状态检查，不重复整批数学回归或P1。
+
 ## AUDITED绑定
 
 CI1–4已经固定；Windows原版程序探针成功，没有改上游数学。当前runtime owner重新绑定本卡，

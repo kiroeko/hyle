@@ -39,7 +39,7 @@ hyle_register_runtime_files(TARGETS hyle_compute_ggml_runtime
 include(CMakePackageConfigHelpers)
 if(WIN32)
   set(HYLE_GGML_CPU_PROGRAM_INSTALLED_FILE
-    "${CMAKE_INSTALL_BINDIR}/hyle_ggml_cpu_avx2_456172ec${CMAKE_SHARED_MODULE_SUFFIX}")
+    "${CMAKE_INSTALL_LIBDIR}/hyle_ggml_cpu_avx2_456172ec${CMAKE_SHARED_MODULE_SUFFIX}")
 else()
   set(HYLE_GGML_CPU_PROGRAM_INSTALLED_FILE
     "${CMAKE_INSTALL_LIBDIR}/libhyle_ggml_cpu_avx2_456172ec${CMAKE_SHARED_MODULE_SUFFIX}")
