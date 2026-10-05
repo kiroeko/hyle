@@ -1,5 +1,12 @@
 #include "torch_cpu_program.h"
 
+#if defined(_MSC_VER)
+// c10 2.8 irange's inlined iterator produces C4702 under MSVC /O2, even with
+// SYSTEM headers. Keep this SDK diagnostic local to its adapter translation unit.
+#pragma warning(push)
+#pragma warning(disable : 4702)
+#endif
+
 #include <array>
 #include <cstdint>
 #include <new>
@@ -358,3 +365,7 @@ ProviderPrepareOutcome prepare_torch_cpu(const detail::ProviderPrepareRequest &r
   return ProviderPrepareOutcome::prepared();
 }
 } // namespace hyle::compute::native::internal
+
+#if defined(_MSC_VER)
+#pragma warning(pop)
+#endif
