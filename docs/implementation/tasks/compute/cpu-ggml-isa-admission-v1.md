@@ -1,9 +1,9 @@
 # CPU ggml原版优化程序接入
 
-<!-- MODULE REVIEW: AUDITED -->
+<!-- MODULE REVIEW: CANDIDATE -->
 
 - baseline：`12904dc99`，Windows canonical；普通CPU SDK取得/loader已独立关闭。
-- owner：`compute_ggml_runtime`，仍为AUDITED；本卡重新定界CPU有限范围后绑定当前record。
+- owner：`compute_ggml_runtime`；本卡重新定界CPU有限范围后绑定当前record。
   旧F35的GPU/A6/D6剩余事实保留，不因本卡关闭CPU接缝而解除其它路线或其BLOCKED。
 - trigger：真实默认CPU ggml将SSE42/AVX/AVX2/FMA/F16C/BMI2全部关闭，而Native为SIMD分派，
   因此不能据此给Native签WIN。旧M1安全ISA floor是可移植初始交付决策，不是已接优化程序的证据。
@@ -67,3 +67,16 @@ CI1–4已经固定；Windows原版程序探针成功，没有改上游数学。
 不扩充Platform API。AVX2 flags复用既有HyleIsa；私有bridge只用于一个完整CPU程序的pool/plan/run/free，
 不是公共或跨路线逐kernel vtable。源/安装runtime登记通过本包私有shim，不修改通用helper。
 公开CPU/Graph API与Provider顺序保持；赢的精确规则及自研删除仍由后续裁决卡固定。
+
+## Candidate
+
+- 固定候选：`129f36a9f0c5c31799728cc32afb8fc74f8d3eb8`。产品C++与`bf4027e7`相同，
+  包路径已包含`d0b774c5`修正；后续GCC断言括号与运行资产声明仅修改测试接缝。
+- API、原数学、layout与常态成本已固定。Windows383项GTest按相同产品C++身份复用；
+  Linux以相同产品源、锁与完整同步清单完成51项GTest及三交付。没有用测试数替代范围矩阵。
+- Windows及Linux静态/动态SDK实际搬移后重新发现、链接与运行均通过；检查后恢复原验证前缀。
+- CPU OFF配置在故意无效的Torch root下通过，断言无CPU优化target、资产registry或活runtime。
+  缺程序/错误ABI/缺必要回调的独立普通消费者分别得到预期失败。ISA前提的逐项删除与空事实
+  由冷条件单元检查；没有冒称在物理非AVX2机器上测试过。
+- 本卡P0只签固定程序接入、资源与交付，不签性能WIN。准备缓存加载/ISA事实并绑定整程序，
+  invocation重放无探测/搜索/计时；只调用一次整图compute，pool/workspace按slot释放。

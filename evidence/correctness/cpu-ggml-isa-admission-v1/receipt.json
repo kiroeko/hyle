@@ -408,5 +408,215 @@
     "log": "26-shared-installed-execute.log",
     "returncode": 0,
     "seconds": 0.844
+  },
+  {
+    "name": "abi-negative-fixture-build-configure",
+    "args": [
+      "cmake",
+      "-S",
+      "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\cpu-ggml-isa-admission\\negative-program",
+      "-B",
+      "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\cpu-ggml-isa-admission\\negative-build",
+      "-G",
+      "Ninja",
+      "-DCMAKE_BUILD_TYPE=Release",
+      "-DCPU_PROGRAM_HEADER_DIR=C:\\public\\project-hyle\\hyle\\src\\compute_ggml_runtime",
+      "-DGGML_HEADER_DIR=C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\src\\compute_ggml_runtime\\source-d8ea95b566c61d43\\include"
+    ],
+    "candidate": "129f36a9f0c5c31799728cc32afb8fc74f8d3eb8",
+    "log": "27-abi-negative-fixture-build-configure.log",
+    "returncode": 0,
+    "seconds": 1.453
+  },
+  {
+    "name": "abi-negative-fixture-build",
+    "args": [
+      "cmake",
+      "--build",
+      "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\cpu-ggml-isa-admission\\negative-build",
+      "--parallel",
+      "2"
+    ],
+    "candidate": "129f36a9f0c5c31799728cc32afb8fc74f8d3eb8",
+    "log": "28-abi-negative-fixture-build.log",
+    "returncode": 0,
+    "seconds": 0.203
+  },
+  {
+    "name": "missing_program",
+    "candidate": "129f36a9f0c5c31799728cc32afb8fc74f8d3eb8",
+    "log": "29-missing_program.log",
+    "returncode": 1,
+    "expected_returncode": 1,
+    "expected_message": "ggml CPU AVX2 program",
+    "passed": true,
+    "seconds": 0.547
+  },
+  {
+    "name": "bad_version",
+    "candidate": "129f36a9f0c5c31799728cc32afb8fc74f8d3eb8",
+    "log": "30-bad_version.log",
+    "returncode": 1,
+    "expected_returncode": 1,
+    "expected_message": "ggml CPU program ABI",
+    "passed": true,
+    "seconds": 0.235
+  },
+  {
+    "name": "missing_callback",
+    "candidate": "129f36a9f0c5c31799728cc32afb8fc74f8d3eb8",
+    "log": "31-missing_callback.log",
+    "returncode": 1,
+    "expected_returncode": 1,
+    "expected_message": "ggml CPU program ABI",
+    "passed": true,
+    "seconds": 0.219
+  },
+  {
+    "name": "cpu-off-isolation-configure",
+    "args": [
+      "cmake",
+      "-S",
+      "C:\\public\\project-hyle\\hyle",
+      "-B",
+      "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\cpu-ggml-isa-admission\\cpu-off-build",
+      "-G",
+      "Ninja",
+      "-DCMAKE_BUILD_TYPE=Release",
+      "-DHYLE_COMPONENTS=compute;graph",
+      "-DHYLE_COMPUTE_CPU=OFF",
+      "-DHYLE_COMPUTE_CUDA=OFF",
+      "-DHYLE_COMPUTE_APPLE=OFF",
+      "-DHYLE_COMPUTE_VULKAN=OFF",
+      "-DHYLE_COMPUTE_TORCH_CPU_ROOT=C:/__hyle_invalid_cpu_sdk__",
+      "-DHYLE_BUILD_TESTS=OFF",
+      "-DHYLE_BUILD_BENCH=OFF",
+      "-DFETCHCONTENT_FULLY_DISCONNECTED=ON",
+      "-DCMAKE_PROJECT_INCLUDE=C:\\public\\project-hyle\\hyle\\.scratch\\validation\\cpu-ggml-isa-admission\\cpu-off-overlay.cmake"
+    ],
+    "candidate": "129f36a9f0c5c31799728cc32afb8fc74f8d3eb8",
+    "log": "32-cpu-off-isolation-configure.log",
+    "returncode": 0,
+    "seconds": 6.469
+  },
+  {
+    "name": "static-relocated-configure",
+    "args": [
+      "cmake",
+      "-S",
+      "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\cpu-ggml-isa-admission\\consumer",
+      "-B",
+      "C:\\hv\\cpu-ggml-isa-static-installed",
+      "-UHyle_DIR",
+      "-DCMAKE_PREFIX_PATH=C:\\hv\\cpu-ggml-isa-static-sdk-moved",
+      "-DFETCHCONTENT_FULLY_DISCONNECTED=ON"
+    ],
+    "candidate": "129f36a9f0c5c31799728cc32afb8fc74f8d3eb8",
+    "log": "33-static-relocated-configure.log",
+    "returncode": 0,
+    "seconds": 55.359
+  },
+  {
+    "name": "static-relocated-build",
+    "args": [
+      "cmake",
+      "--build",
+      "C:\\hv\\cpu-ggml-isa-static-installed",
+      "--target",
+      "cpu_program_consumer",
+      "--parallel",
+      "2"
+    ],
+    "candidate": "129f36a9f0c5c31799728cc32afb8fc74f8d3eb8",
+    "log": "34-static-relocated-build.log",
+    "returncode": 0,
+    "seconds": 2.563
+  },
+  {
+    "name": "static-relocated-public-f16",
+    "args": [
+      "C:\\hv\\cpu-ggml-isa-static-installed\\cpu_program_consumer.exe"
+    ],
+    "candidate": "129f36a9f0c5c31799728cc32afb8fc74f8d3eb8",
+    "log": "35-static-relocated-public-f16.log",
+    "returncode": 0,
+    "seconds": 0.234
+  },
+  {
+    "name": "static-restored-configure",
+    "args": [
+      "cmake",
+      "-S",
+      "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\cpu-ggml-isa-admission\\consumer",
+      "-B",
+      "C:\\hv\\cpu-ggml-isa-static-installed",
+      "-UHyle_DIR",
+      "-DCMAKE_PREFIX_PATH=C:\\hv\\cpu-ggml-isa-static-sdk",
+      "-DFETCHCONTENT_FULLY_DISCONNECTED=ON"
+    ],
+    "candidate": "129f36a9f0c5c31799728cc32afb8fc74f8d3eb8",
+    "log": "36-static-restored-configure.log",
+    "returncode": 0,
+    "seconds": 11.641
+  },
+  {
+    "name": "shared-relocated-configure",
+    "args": [
+      "cmake",
+      "-S",
+      "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\cpu-ggml-isa-admission\\consumer",
+      "-B",
+      "C:\\hv\\cpu-ggml-isa-shared-installed",
+      "-UHyle_DIR",
+      "-DCMAKE_PREFIX_PATH=C:\\hv\\cpu-ggml-isa-shared-sdk-moved",
+      "-DFETCHCONTENT_FULLY_DISCONNECTED=ON"
+    ],
+    "candidate": "129f36a9f0c5c31799728cc32afb8fc74f8d3eb8",
+    "log": "37-shared-relocated-configure.log",
+    "returncode": 0,
+    "seconds": 11.578
+  },
+  {
+    "name": "shared-relocated-build",
+    "args": [
+      "cmake",
+      "--build",
+      "C:\\hv\\cpu-ggml-isa-shared-installed",
+      "--target",
+      "cpu_program_consumer",
+      "--parallel",
+      "2"
+    ],
+    "candidate": "129f36a9f0c5c31799728cc32afb8fc74f8d3eb8",
+    "log": "38-shared-relocated-build.log",
+    "returncode": 0,
+    "seconds": 2.812
+  },
+  {
+    "name": "shared-relocated-public-f16",
+    "args": [
+      "C:\\hv\\cpu-ggml-isa-shared-installed\\cpu_program_consumer.exe"
+    ],
+    "candidate": "129f36a9f0c5c31799728cc32afb8fc74f8d3eb8",
+    "log": "39-shared-relocated-public-f16.log",
+    "returncode": 0,
+    "seconds": 0.235
+  },
+  {
+    "name": "shared-restored-configure",
+    "args": [
+      "cmake",
+      "-S",
+      "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\cpu-ggml-isa-admission\\consumer",
+      "-B",
+      "C:\\hv\\cpu-ggml-isa-shared-installed",
+      "-UHyle_DIR",
+      "-DCMAKE_PREFIX_PATH=C:\\hv\\cpu-ggml-isa-shared-sdk",
+      "-DFETCHCONTENT_FULLY_DISCONNECTED=ON"
+    ],
+    "candidate": "129f36a9f0c5c31799728cc32afb8fc74f8d3eb8",
+    "log": "40-shared-restored-configure.log",
+    "returncode": 0,
+    "seconds": 11.453
   }
 ]

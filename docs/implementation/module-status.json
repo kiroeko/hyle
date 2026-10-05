@@ -539,9 +539,10 @@
     },
     {
       "module": "compute_ggml_runtime",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/cpu-ggml-isa-admission-v1.md",
-      "summary": "CPU ISA接入AUDITED：CI1–4固定，保留ggml安全基线，独立原版AVX2整程序按Platform CPU/OS事实冷绑定；资源与三交付待验，不签Native WIN。旧F35/GPU待验保留，其它路线暂停。"
+      "summary": "CPU ISA CANDIDATE：原版AVX2整程序已安全冷绑定；Windows383与Linux51 GTest、两平台三交付/SDK搬移、缺程序/ABI失败及CPU OFF隔离已运行通过，P0收口复核中；Native逐域未裁决，其它路线暂停，旧F35/GPU事实保留。",
+      "candidate": "129f36a9f0c5c31799728cc32afb8fc74f8d3eb8"
     },
     {
       "module": "compute_provider_ggml_cuda",

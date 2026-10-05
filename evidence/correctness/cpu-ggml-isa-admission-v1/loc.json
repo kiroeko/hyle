@@ -2,9 +2,9 @@
   "schema": 3,
   "repository": {
     "root": "C:\\public\\project-hyle\\hyle",
-    "commit": "bf4027e7dde9371b984a0322275dcaf6444648a2",
+    "commit": "129f36a9f0c5c31799728cc32afb8fc74f8d3eb8",
     "dirty": true,
-    "tracked_regular_files": 8811,
+    "tracked_regular_files": 8815,
     "tracked_missing_files": []
   },
   "policy": {
@@ -77,9 +77,9 @@
     {
       "id": "repository",
       "label": "full repository code",
-      "code": 1574286,
-      "files": 4154,
-      "selected_files": 8811,
+      "code": 1574922,
+      "files": 4157,
+      "selected_files": 8815,
       "paths": [
         "Git-tracked regular files (current working tree)"
       ],

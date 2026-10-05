@@ -97,6 +97,16 @@ Python 或 CUDA 的 DLL 搜索目录。Linux使用同一helper为实际CPU SDK�
 覆盖shared adapter的间接依赖；无需另设`LD_LIBRARY_PATH`或逐应用复制整份SDK。
 分发 CPU SDK 时同时保留其原许可证和第三方 notices，HYLE 安装包另附所借用 TorchAO 的 BSD 许可。
 
+### ggml CPU 优化程序
+
+Windows/Linux x86_64 的普通 CPU 路线包含同一锁定版本的 ggml 基线与独立优化程序。
+准备时依据缓存的 CPU 与操作系统能力绑定原版 AVX2/FMA/F16C/BMI2 程序；不满足条件时使用基线，
+执行时不重新探测、计时或选择。用户不需要选择 ISA。适用的优化程序缺失或版本不匹配时明确报错。
+
+源码、静态与动态交付都须保留随附的私有 CPU 程序 DLL/so，HYLE 静态库也不是无运行资产的单文件交付。
+源与安装消费者均调用 `hyle_stage_runtime_dependencies(my_app)`：Windows 将 DLL 放到 exe 同目录，
+Linux 为实际运行资产绑定加载路径。私有程序不提供公共 ABI，也不改变普通 Direct/Graph 入口。
+
 ## 可选模型与阶段信息
 
 已知模型与固定部署制品的消费者可在冷准备时传入 `WorkloadContext`。普通工程计算省略它即可。
