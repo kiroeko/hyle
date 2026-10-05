@@ -10,7 +10,7 @@
 #include <c10/core/CPUAllocator.h>
 
 #include "half_test_support.h"
-#include "hyle/compute/cpu.h"
+#include "../compute/native_context_fixture.h"
 #include "hyle/compute/model_ops.h"
 #include "hyle/compute/prepared_operation.h"
 #include "hyle/compute/providers/native.h"
@@ -40,7 +40,7 @@ TEST(NativeTorchCpu, ManagedReplayReportsRealAllocationFailureAndReleasesProgram
   mem::QuotaAllocator metadata(mem::system_allocator(), 4 * 1024 * 1024);
   const auto initial = metadata.remaining();
   {
-    auto context = c::cpu::create_context({.metadata_allocator = metadata.get()}).value();
+    auto context = c::test::native_context({.metadata_allocator = metadata.get()}).value();
     const auto desc = c::TensorDesc::dense(c::DataType::kBFloat16,
         std::array<std::int64_t, 2>{1, 128}).value();
     const std::array descriptors{desc};
@@ -86,7 +86,7 @@ TEST(NativeTorchCpu, ManagedReplayReportsRealAllocationFailureAndReleasesProgram
 }
 
 TEST(NativeTorchCpu, DuplicateExpertIdsAndFailedInvocationRecovery) {
-  auto context = c::cpu::create_context().value();
+  auto context = c::test::native_context().value();
   auto queue = context.create_queue().value();
   const auto w = c::float8_grouped_weight_description(2, 128, 128).value();
   const auto a = c::TensorDesc::dense(c::DataType::kFloat32,
