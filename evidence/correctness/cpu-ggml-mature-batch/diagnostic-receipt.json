@@ -1,0 +1,57 @@
+[
+  {
+    "name": "compile-raw-probe",
+    "args": [
+      "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\bin\\HostX64\\x64\\cl.EXE",
+      "/nologo",
+      "/std:c++17",
+      "/EHsc",
+      "/O2",
+      "/MD",
+      "/DGGML_STATIC",
+      "/IC:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\src\\compute_ggml_runtime\\source-d8ea95b566c61d43\\include",
+      "/IC:\\public\\project-hyle\\hyle\\src\\compute_ggml_runtime",
+      "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\cpu-ggml-mature-batch\\probe.cc",
+      "/FoC:\\public\\project-hyle\\hyle\\.scratch\\validation\\cpu-ggml-mature-batch\\probe.obj",
+      "/FeC:\\public\\project-hyle\\hyle\\.scratch\\validation\\cpu-ggml-mature-batch\\probe.exe",
+      "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\ggml-base.lib"
+    ],
+    "candidate": "7053e854783c0d9ec42d0b8e80a79a7c02251b14",
+    "log": "1-compile-raw-probe.log",
+    "returncode": 2,
+    "seconds": 0.484
+  },
+  {
+    "name": "compile-raw-probe",
+    "args": [
+      "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\bin\\HostX64\\x64\\cl.EXE",
+      "/nologo",
+      "/std:c++17",
+      "/EHsc",
+      "/O2",
+      "/MD",
+      "/DGGML_STATIC",
+      "/IC:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\src\\compute_ggml_runtime\\source-d8ea95b566c61d43\\include",
+      "/IC:\\public\\project-hyle\\hyle\\src\\compute_ggml_runtime",
+      "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\cpu-ggml-mature-batch\\probe.cc",
+      "/FoC:\\public\\project-hyle\\hyle\\.scratch\\validation\\cpu-ggml-mature-batch\\probe.obj",
+      "/FeC:\\public\\project-hyle\\hyle\\.scratch\\validation\\cpu-ggml-mature-batch\\probe.exe",
+      "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\ggml-base.lib"
+    ],
+    "candidate": "7053e854783c0d9ec42d0b8e80a79a7c02251b14",
+    "log": "2-compile-raw-probe.log",
+    "returncode": 0,
+    "seconds": 0.485
+  },
+  {
+    "name": "original-optimized-domain-probe",
+    "args": [
+      "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\cpu-ggml-mature-batch\\probe.exe",
+      "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_ggml_cpu_avx2_456172ec.dll"
+    ],
+    "candidate": "7053e854783c0d9ec42d0b8e80a79a7c02251b14",
+    "log": "3-original-optimized-domain-probe.log",
+    "returncode": 0,
+    "seconds": 0.046
+  }
+]

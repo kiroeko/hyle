@@ -373,14 +373,9 @@
     },
     {
       "module": "compute_provider_ggml",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/compute/cpu-ggml-gated-numeric-admission.md",
-      "summary": "CPU门控数值CLOSED：GN1/GN2三dtype/两布局/-Inf稳定边界、两平台44/44、完整Graph及三交付/P0已验；未部署旧fixture不计PASS。原版核保持，Native胜负与其它kind准入仍待逐域卡。",
-      "candidate": "65a02982ac108d57b13769029f56a6a6903895be",
-      "performance": {
-        "tier": "P0",
-        "evidence": "evidence/correctness/cpu-mature-admission-batch-v1/README.md"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/cpu-ggml-mature-admission-batch.md",
+      "summary": "GB1–3 SCOPED：原版rank4 F32 MatMul已实测，ReLU NaN接缝与批量准入范围固定；其它activation数值差异未资格，Native冻结。"
     },
     {
       "module": "graph_provider_onednn",
