@@ -1,0 +1,4 @@
+CPU FP8 mode=0 elements=65280
+CPU FP8 mode=1 elements=65280
+Original TorchAO FP4 decode / 512 encodings including signed zero PASS
+Native CPU matmul PASS; no Python or CUDA linkage

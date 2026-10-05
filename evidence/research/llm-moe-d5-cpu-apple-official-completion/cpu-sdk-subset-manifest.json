@@ -1,0 +1,49 @@
+{
+  "url": "https://download.pytorch.org/libtorch/cpu/libtorch-win-shared-with-deps-2.8.0%2Bcpu.zip",
+  "archive_bytes": 584320064,
+  "scope": "Qualification CPU runtime subset; whole archive SHA256 not claimed; C++ headers from same 2.8.0 installed SDK",
+  "files": [
+    {
+      "name": "asmjit.dll",
+      "bytes": 367104,
+      "sha256": "eb8f9c478bfc4b671f83b630c97424c60b4c948c0a8645fe588aed4f6bab5df5",
+      "transport": "official CPU ZIP compressed-entry range; CRC32 checked"
+    },
+    {
+      "name": "c10.dll",
+      "bytes": 1046528,
+      "sha256": "93bff2548e330df0f94ce3c71c531887d049ae645d1e38e3c08689e2d86a7888",
+      "transport": "official CPU ZIP compressed-entry range; CRC32 checked"
+    },
+    {
+      "name": "c10.lib",
+      "bytes": 778152,
+      "sha256": "3b9653f65f59c09915aa425fb1ebc9abbf5f1f524b94e98e607c2301183724ba",
+      "transport": "reused exact archive-entry bytes from installed 2.8.0"
+    },
+    {
+      "name": "fbgemm.dll",
+      "bytes": 5721600,
+      "sha256": "250dc6f79b26e022ca3088e9b71a023598c7e997c96b62ef350a74fa1b501d81",
+      "transport": "official CPU ZIP compressed-entry range; CRC32 checked"
+    },
+    {
+      "name": "libiomp5md.dll",
+      "bytes": 1613680,
+      "sha256": "d9d66ed25f1a0ea725fa3a41b22cfd5d182c19dbe4771d9c90ca02ad7466f6a1",
+      "transport": "reused exact archive-entry bytes from installed 2.8.0"
+    },
+    {
+      "name": "torch_cpu.dll",
+      "bytes": 255948800,
+      "sha256": "2cb91cf2ba957fad5a17eab5bb7af6b3d73bbc98d94e2deeadc9fb9294eea809",
+      "transport": "official CPU ZIP compressed-entry range; CRC32 checked"
+    },
+    {
+      "name": "torch_cpu.lib",
+      "bytes": 29046564,
+      "sha256": "5c2c703cf2f71e0124228a19cedc7a1a334dd1260b6494d01bbbb5a58b33b3a1",
+      "transport": "official CPU ZIP compressed-entry range; CRC32 checked"
+    }
+  ]
+}

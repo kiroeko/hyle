@@ -1,0 +1,137 @@
+{
+  "source_revision": "a701b6a6058720c21f95908b7ae4a24bf0cae1b6",
+  "torch_version": "2.8.0+cu129",
+  "torch_commit": "a1cb3cc05d46d198467bebbb6e8fba50a325d4e7",
+  "machine": "Windows-11-10.0.26200-SP0",
+  "threads": 2,
+  "seconds": 0.10900000005494803,
+  "borrowed": [
+    {
+      "path": ".scratch\\validation\\d5-cpu-apple-official-sources\\ao\\torchao\\quantization\\quant_primitives.py",
+      "symbol": "_RoundToFloat8",
+      "sha256": "a54948dac3588887d88cbd846be876343cf96613b290f8ccbdb5af673eb310eb"
+    },
+    {
+      "path": ".scratch\\validation\\d5-cpu-apple-official-sources\\ao\\torchao\\quantization\\quant_primitives.py",
+      "symbol": "_get_reduction_params",
+      "sha256": "157748a04ac9128c7a804b6df5f946ad8cfcf6a87c7d02d7462185ebe9dbb954"
+    },
+    {
+      "path": ".scratch\\validation\\d5-cpu-apple-official-sources\\ao\\torchao\\quantization\\quant_primitives.py",
+      "symbol": "_choose_scale_float8",
+      "sha256": "5693b21f15188e74fbc9fc22cc6975ccd6979a3bb9d89dadf4f63c15037ffbf0"
+    },
+    {
+      "path": ".scratch\\validation\\d5-cpu-apple-official-sources\\ao\\torchao\\quantization\\quant_primitives.py",
+      "symbol": "_maybe_expand_scale_to_tensor_shape",
+      "sha256": "df036ef9507ac0fcfcaf4803763884d7cb709b7da4f9a20bb46655ed957705be"
+    },
+    {
+      "path": ".scratch\\validation\\d5-cpu-apple-official-sources\\ao\\torchao\\quantization\\quant_primitives.py",
+      "symbol": "_quantize_affine_float8",
+      "sha256": "ab1cfca5688b2c8508fba93d8f6a64066ae6f61ee66dd6876393190f6e1a9105"
+    },
+    {
+      "path": ".scratch\\validation\\d5-cpu-apple-official-sources\\ao\\torchao\\prototype\\mx_formats\\mx_tensor.py",
+      "symbol": "_f32_to_e8m0_rceil",
+      "sha256": "f4e6666dc7c75a19960fcc0a157460172743997b8251f2f404f67a7eeb817370"
+    },
+    {
+      "path": ".scratch\\validation\\d5-cpu-apple-official-sources\\ao\\torchao\\prototype\\mx_formats\\mx_tensor.py",
+      "symbol": "_e8m0_scale_to_reciprocal_fp32",
+      "sha256": "cae537fc0255f5df4ea3835e4d0c8240b699c530c96b7c34b57b281655ee2372"
+    },
+    {
+      "path": ".scratch\\validation\\d5-cpu-apple-official-sources\\ao\\torchao\\prototype\\mx_formats\\mx_tensor.py",
+      "symbol": "_to_mx_rceil",
+      "sha256": "642d104965c9eef70bd283407fd9dfa49ea966de7436a191625f2ef5bef5f3c1"
+    }
+  ],
+  "results": [
+    {
+      "input": "all_finite_bf16.bin",
+      "input_sha256": "bf7148a7bfda758982a6218f7c74077a198605183d5a21d61fe14cdea1b07378",
+      "mode": "GLM-ordinary",
+      "elements": 65280,
+      "code_mismatch": 0,
+      "scale_bit_mismatch": 0
+    },
+    {
+      "input": "all_finite_bf16.bin",
+      "input_sha256": "bf7148a7bfda758982a6218f7c74077a198605183d5a21d61fe14cdea1b07378",
+      "mode": "DeepSeek-power2",
+      "elements": 65280,
+      "code_mismatch": 0,
+      "scale_bit_mismatch": 0
+    },
+    {
+      "input": "ordinary.bin",
+      "input_sha256": "9c70d50f6cb155f645b10fe63b1c839c9ed1a9b42d7bb3aaa794d26a9bdec0d3",
+      "mode": "GLM-ordinary",
+      "elements": 32768,
+      "code_mismatch": 0,
+      "scale_bit_mismatch": 0
+    },
+    {
+      "input": "ordinary.bin",
+      "input_sha256": "9c70d50f6cb155f645b10fe63b1c839c9ed1a9b42d7bb3aaa794d26a9bdec0d3",
+      "mode": "DeepSeek-power2",
+      "elements": 32768,
+      "code_mismatch": 0,
+      "scale_bit_mismatch": 0
+    },
+    {
+      "input": "tiny_and_scale.bin",
+      "input_sha256": "3fbf63f4e4c21e134152f1c7f896ca93e269accd0349159b3deaf775dc4dbe4d",
+      "mode": "GLM-ordinary",
+      "elements": 9216,
+      "code_mismatch": 0,
+      "scale_bit_mismatch": 0
+    },
+    {
+      "input": "tiny_and_scale.bin",
+      "input_sha256": "3fbf63f4e4c21e134152f1c7f896ca93e269accd0349159b3deaf775dc4dbe4d",
+      "mode": "DeepSeek-power2",
+      "elements": 9216,
+      "code_mismatch": 0,
+      "scale_bit_mismatch": 0
+    },
+    {
+      "case": "ATen-selected-block-GEMM-composition",
+      "rows": 1,
+      "slots": 1,
+      "k": 256,
+      "n": 576,
+      "elements": 576,
+      "output_mismatch": 0
+    },
+    {
+      "case": "ATen-selected-block-GEMM-composition",
+      "rows": 1,
+      "slots": 2,
+      "k": 256,
+      "n": 576,
+      "elements": 1152,
+      "output_mismatch": 0
+    },
+    {
+      "case": "ATen-selected-block-GEMM-composition",
+      "rows": 3,
+      "slots": 1,
+      "k": 256,
+      "n": 576,
+      "elements": 1728,
+      "output_mismatch": 0
+    },
+    {
+      "case": "ATen-selected-block-GEMM-composition",
+      "rows": 3,
+      "slots": 2,
+      "k": 256,
+      "n": 576,
+      "elements": 3456,
+      "output_mismatch": 0
+    }
+  ],
+  "scope": "Original CPU group128 functions and ATen composition qualification; no HYLE ordinary entry/delivery/P1 or full model PASS."
+}

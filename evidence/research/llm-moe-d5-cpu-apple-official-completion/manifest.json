@@ -1,0 +1,165 @@
+{
+  "files": [
+    {
+      "path": "cpu-carrier-probe/all_finite_bf16.bin",
+      "bytes": 261120,
+      "sha256": "bf7148a7bfda758982a6218f7c74077a198605183d5a21d61fe14cdea1b07378"
+    },
+    {
+      "path": "cpu-carrier-probe/build-cuda-wheel.log",
+      "bytes": 1834,
+      "sha256": "9668e9dd620e8e71122c402fff804ce6b42ea2fa45a9bff0c44c94de44401646"
+    },
+    {
+      "path": "cpu-carrier-probe/build-fp8.log",
+      "bytes": 1787,
+      "sha256": "780b02ac7887d5e2eda7d425abfa7d1d13d47838abfca14687e3353b40a7f143"
+    },
+    {
+      "path": "cpu-carrier-probe/build-initial.log",
+      "bytes": 665,
+      "sha256": "f02f7cf21dd1d5a0de62ad65b0933ca15337dcc17862da18f0adc94c231f8193"
+    },
+    {
+      "path": "cpu-carrier-probe/build.cmd",
+      "bytes": 585,
+      "sha256": "eb1e1d6cd1710fee582eb99059ded0ce9623617875d80f4c79c06d1103ec44a7"
+    },
+    {
+      "path": "cpu-carrier-probe/build.log",
+      "bytes": 1787,
+      "sha256": "1326625ecab6727e5e315126fe269a0fefd4690203dec66f332ddd4285062a12"
+    },
+    {
+      "path": "cpu-carrier-probe/cxx-cuda-wheel-receipt.json",
+      "bytes": 1569,
+      "sha256": "c4e58d3001cb2f996c532eec1a6f545c90b2d04d3403fdddad3a02460802c353"
+    },
+    {
+      "path": "cpu-carrier-probe/cxx-fp8-receipt.json",
+      "bytes": 1547,
+      "sha256": "de102b340ec5903dd00f8f2af7107cd4cf785060b63ea09935e4ec4fac6d4c99"
+    },
+    {
+      "path": "cpu-carrier-probe/cxx-initial-receipt.json",
+      "bytes": 1301,
+      "sha256": "6d49d2204f2bacf9f33ef499ae5f0c6c4d7928fd87fc23c8f042e9ebc14ebbaf"
+    },
+    {
+      "path": "cpu-carrier-probe/cxx-initial.cc",
+      "bytes": 2943,
+      "sha256": "184270576be100c6c9de67ab7e83f50f40b65fc1c9eaae27be1f94ebbee004d5"
+    },
+    {
+      "path": "cpu-carrier-probe/cxx-numeric-check.json",
+      "bytes": 373,
+      "sha256": "8f85e23617aa15e739093f865979b606c8cc2e645fcc2e302c3b7796d58c1ee8"
+    },
+    {
+      "path": "cpu-carrier-probe/cxx-ordinary-codes.bin",
+      "bytes": 65280,
+      "sha256": "96457cc14f88ec99adc775de6d00de56fbaf7f24177e143efb365ebc8e3471fa"
+    },
+    {
+      "path": "cpu-carrier-probe/cxx-ordinary-scales.bin",
+      "bytes": 2040,
+      "sha256": "ddc9e87ef77e43c995e84590e453407d1b2d5c756f0dd55635cc51d1f6e9e508"
+    },
+    {
+      "path": "cpu-carrier-probe/cxx-power-codes.bin",
+      "bytes": 65280,
+      "sha256": "2e6599445609d1a6699c199a5d015f110315f7b56a12eb06ee5349b9f77b627e"
+    },
+    {
+      "path": "cpu-carrier-probe/cxx-power-scales.bin",
+      "bytes": 2040,
+      "sha256": "1b4d50f4c0f7825e4840b7561ec74790e59bb88140123c478d3ce9bb11b4090c"
+    },
+    {
+      "path": "cpu-carrier-probe/cxx-receipt.json",
+      "bytes": 1561,
+      "sha256": "470598b7299558d019625ad107bed95406ebac01a9e1453938a06cb0d1f6bddd"
+    },
+    {
+      "path": "cpu-carrier-probe/cxx.cc",
+      "bytes": 4677,
+      "sha256": "fc143fd3132b437ccbfcc146831a2fbbf0cbbfc60eb9317d87d411af5b2438b6"
+    },
+    {
+      "path": "cpu-carrier-probe/receipt.json",
+      "bytes": 10745,
+      "sha256": "9dfbb33e5128a1ac06438d0e6d399fe113cbd1248e0e3c4f3e0f4cbccaeda82c"
+    },
+    {
+      "path": "cpu-carrier-probe/run-cuda-wheel.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "cpu-carrier-probe/run-fp8.log",
+      "bytes": 113,
+      "sha256": "21e806578a1776f5ece62b8798a180c52eb2c602df037e85ae4464ea95c341d6"
+    },
+    {
+      "path": "cpu-carrier-probe/run.log",
+      "bytes": 185,
+      "sha256": "76951f23035c7bed8e01515337dc17c1e62fa477e40924f6f05c095708cb2611"
+    },
+    {
+      "path": "cpu-probe/receipt.json",
+      "bytes": 4854,
+      "sha256": "e03ff931a651b87dbb31fa19b9ebcbfbb6dd8cd9522dd69be4946bd3fb66076a"
+    },
+    {
+      "path": "cpu-sdk-subset-manifest.json",
+      "bytes": 1901,
+      "sha256": "011598136180d0ed8b24f73f80374bb6fdacc603df48faec8c9c2cba4c242b89"
+    },
+    {
+      "path": "d5-official-cpu-carrier-probe.py",
+      "bytes": 10494,
+      "sha256": "6b84c1cef6edc8b21a506b5223ee14bc869d703c217ff15dadc2c34d384f5426"
+    },
+    {
+      "path": "d5-official-cpu-cxx-seam.py",
+      "bytes": 2391,
+      "sha256": "9a63c513bb924329e4e0e667f2d8f857bf4f265f6db078cc279a7760ce6d49ce"
+    },
+    {
+      "path": "d5-official-cpu-probe.py",
+      "bytes": 7927,
+      "sha256": "d3725fc49f5302e0287bd254775191964c74bec92d3490e6fae9780f73f22b19"
+    },
+    {
+      "path": "d5-official-cpu-sdk-subset.py",
+      "bytes": 2881,
+      "sha256": "5e8ca8aa3d4e014e93472b4620df608a5f35b853054d7bdb5ed5030323f95849"
+    },
+    {
+      "path": "discovery.json",
+      "bytes": 4125,
+      "sha256": "5aa3d5733c6181fd21d9a76d173f80242dd8393bf6dea4eb98c61b69b965870f"
+    },
+    {
+      "path": "inputs.tar.gz",
+      "bytes": 142113,
+      "sha256": "5b8a36938e98784916b0a02bbfa724f9a36ecabbae1bce7620de5d334fa7397d"
+    },
+    {
+      "path": "README.md",
+      "bytes": 4903,
+      "sha256": "d5a64cf9a674e07236d65aeb21b8c8194bd183c89b4ed8a82e542443d8e709b4"
+    },
+    {
+      "path": "source-manifest.json",
+      "bytes": 4872,
+      "sha256": "a0aa91cae1390f73be3af8a682fcdb1d337f4c0063f1770d596078cb940b1a39"
+    },
+    {
+      "path": "upstream-source.tar.gz",
+      "bytes": 54891,
+      "sha256": "3d35a4a03d6ea98dfce564f9d93b864449b8b8d44f0427e4a7b2e8746949d3fa"
+    }
+  ],
+  "scope": "Source/qualification evidence, no full HYLE profile or delivery/P1 PASS"
+}

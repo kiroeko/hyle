@@ -1,0 +1,52 @@
+{
+  "steps": [
+    {
+      "name": "build",
+      "argv": [
+        "cmd.exe",
+        "/d",
+        "/c",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-cpu-apple-official-sources\\cpu-carrier-probe\\build.cmd"
+      ],
+      "exit_code": 0,
+      "seconds": 6.766000000061467
+    },
+    {
+      "name": "run",
+      "argv": [
+        "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-cpu-apple-official-sources\\cpu-carrier-probe\\cxx.exe"
+      ],
+      "exit_code": 3221225781,
+      "seconds": 0.734000000054948
+    }
+  ],
+  "source_sha256": "ea6c8ab07616105ef13f98e87dc210be490be42bba8de24917bfe4bf791fe5af",
+  "private_cpu_runtime": [
+    {
+      "name": "torch_cpu.dll",
+      "bytes": 256088064,
+      "sha256": "98509b94e96ee6d07f74c4a45ab102c10fed335032a1bd13a75703819162df14"
+    },
+    {
+      "name": "c10.dll",
+      "bytes": 1046528,
+      "sha256": "82f38fe9fa1a93a7fa23f528875f5a98dd06f0f615f5a708326355cdc76adc82"
+    },
+    {
+      "name": "fbgemm.dll",
+      "bytes": 5721600,
+      "sha256": "30453cedf3632dfcb29a7a186415caba26d325fa40fbb3f31653353a5b16cc38"
+    },
+    {
+      "name": "asmjit.dll",
+      "bytes": 367104,
+      "sha256": "67f071b9cdabd022261a5f29c6f39ebdca88a7a8f5d2d3e3a5bace52dcaa7c29"
+    },
+    {
+      "name": "libiomp5md.dll",
+      "bytes": 1613680,
+      "sha256": "d9d66ed25f1a0ea725fa3a41b22cfd5d182c19dbe4771d9c90ca02ad7466f6a1"
+    }
+  ],
+  "scope": "CPU-only C++ ABI/DLL seam; not an installed HYLE SDK or full fragment qualification"
+}

@@ -1,0 +1,98 @@
+[
+  {
+    "repository": "pytorch/ao",
+    "revision": "a701b6a6058720c21f95908b7ae4a24bf0cae1b6",
+    "path": "torchao/prototype/mx_formats/mx_tensor.py",
+    "url": "https://raw.githubusercontent.com/pytorch/ao/a701b6a6058720c21f95908b7ae4a24bf0cae1b6/torchao/prototype/mx_formats/mx_tensor.py",
+    "bytes": 39375,
+    "sha256": "56fac19463ae1730dc1f315c060160915a317223697cf0a6763808e220b2018b"
+  },
+  {
+    "repository": "pytorch/ao",
+    "revision": "a701b6a6058720c21f95908b7ae4a24bf0cae1b6",
+    "path": "torchao/prototype/mx_formats/utils.py",
+    "url": "https://raw.githubusercontent.com/pytorch/ao/a701b6a6058720c21f95908b7ae4a24bf0cae1b6/torchao/prototype/mx_formats/utils.py",
+    "bytes": 16166,
+    "sha256": "676e704f475e43b408a038e78415e604febc7b8d7faeeafc7422f0327a75aaf5"
+  },
+  {
+    "repository": "pytorch/ao",
+    "revision": "a701b6a6058720c21f95908b7ae4a24bf0cae1b6",
+    "path": "torchao/prototype/mx_formats/constants.py",
+    "url": "https://raw.githubusercontent.com/pytorch/ao/a701b6a6058720c21f95908b7ae4a24bf0cae1b6/torchao/prototype/mx_formats/constants.py",
+    "bytes": 1624,
+    "sha256": "f1b26a0cdcff166f564da49c0e22a1584bdc297462bdab854ad91adba462c607"
+  },
+  {
+    "repository": "pytorch/ao",
+    "revision": "a701b6a6058720c21f95908b7ae4a24bf0cae1b6",
+    "path": "torchao/prototype/blockwise_fp8_inference/kernels.py",
+    "url": "https://raw.githubusercontent.com/pytorch/ao/a701b6a6058720c21f95908b7ae4a24bf0cae1b6/torchao/prototype/blockwise_fp8_inference/kernels.py",
+    "bytes": 3840,
+    "sha256": "0f37c3c2aed9cad9b8fbf9b645df71d5ad10a8b429748f82265d2145233d156a"
+  },
+  {
+    "repository": "pytorch/ao",
+    "revision": "a701b6a6058720c21f95908b7ae4a24bf0cae1b6",
+    "path": "torchao/prototype/blockwise_fp8_inference/blockwise_linear.py",
+    "url": "https://raw.githubusercontent.com/pytorch/ao/a701b6a6058720c21f95908b7ae4a24bf0cae1b6/torchao/prototype/blockwise_fp8_inference/blockwise_linear.py",
+    "bytes": 2504,
+    "sha256": "bbc722d0ac6970ac2b544b9788f416dbc82d0cca8d1f32b7d3028109d20acb60"
+  },
+  {
+    "repository": "pytorch/ao",
+    "revision": "a701b6a6058720c21f95908b7ae4a24bf0cae1b6",
+    "path": "torchao/quantization/quant_primitives.py",
+    "url": "https://raw.githubusercontent.com/pytorch/ao/a701b6a6058720c21f95908b7ae4a24bf0cae1b6/torchao/quantization/quant_primitives.py",
+    "bytes": 91285,
+    "sha256": "ad8a7aec7f5b775a3ac41d54426d3264a81a7d5e7ad140db5a78474785e04d44"
+  },
+  {
+    "repository": "pytorch/FBGEMM",
+    "revision": "b20a2e28de7277dcd3b447e44e3cf9866c908028",
+    "path": "fbgemm_gpu/src/quantize_ops/quantize_ops_cpu.cpp",
+    "url": "https://raw.githubusercontent.com/pytorch/FBGEMM/b20a2e28de7277dcd3b447e44e3cf9866c908028/fbgemm_gpu/src/quantize_ops/quantize_ops_cpu.cpp",
+    "bytes": 25512,
+    "sha256": "0656e0b415166f3b989fec3ba5006d677848b66a53922020ac0422f824fe319e"
+  },
+  {
+    "repository": "pytorch/FBGEMM",
+    "revision": "b20a2e28de7277dcd3b447e44e3cf9866c908028",
+    "path": "LICENSE",
+    "url": "https://raw.githubusercontent.com/pytorch/FBGEMM/b20a2e28de7277dcd3b447e44e3cf9866c908028/LICENSE",
+    "bytes": 1535,
+    "sha256": "12c2370ec32e78115dcd71ba22cdcb1297320fdc4ade81f798136d42357c58b8"
+  },
+  {
+    "repository": "pytorch/ao",
+    "revision": "a701b6a6058720c21f95908b7ae4a24bf0cae1b6",
+    "path": "LICENSE",
+    "url": "https://raw.githubusercontent.com/pytorch/ao/a701b6a6058720c21f95908b7ae4a24bf0cae1b6/LICENSE",
+    "bytes": 1537,
+    "sha256": "67901e351baeaa5aef967cccd0886ba679f085df8673d1ecd49592bf284115af"
+  },
+  {
+    "repository": "pytorch/ao",
+    "revision": "a701b6a6058720c21f95908b7ae4a24bf0cae1b6",
+    "path": "torchao/prototype/mx_formats/kernels.py",
+    "url": "https://raw.githubusercontent.com/pytorch/ao/a701b6a6058720c21f95908b7ae4a24bf0cae1b6/torchao/prototype/mx_formats/kernels.py",
+    "bytes": 56741,
+    "sha256": "0c80e39c101025436b3a9623d7dc1a98ede90d0639833c18801109d5c1a912ef"
+  },
+  {
+    "repository": "pytorch/ao",
+    "revision": "a701b6a6058720c21f95908b7ae4a24bf0cae1b6",
+    "path": "torchao/quantization/quantize_/workflows/float8/kernels.py",
+    "url": "https://raw.githubusercontent.com/pytorch/ao/a701b6a6058720c21f95908b7ae4a24bf0cae1b6/torchao/quantization/quantize_/workflows/float8/kernels.py",
+    "bytes": 4838,
+    "sha256": "f21829d0889b34a50eb637ef4b3d29337eda892338786d6aac5b39e85c49a804"
+  },
+  {
+    "repository": "pytorch/ao",
+    "revision": "a701b6a6058720c21f95908b7ae4a24bf0cae1b6",
+    "path": "torchao/prototype/custom_fp_utils.py",
+    "url": "https://raw.githubusercontent.com/pytorch/ao/a701b6a6058720c21f95908b7ae4a24bf0cae1b6/torchao/prototype/custom_fp_utils.py",
+    "bytes": 8337,
+    "sha256": "de8eb4077510684f9b7c03f6be48f2dae1d199c35b953ecc4a08acf72782965d"
+  }
+]

@@ -1,0 +1,17 @@
+{
+  "reference_source_sha256": "d3725fc49f5302e0287bd254775191964c74bec92d3490e6fae9780f73f22b19",
+  "results": [
+    {
+      "mode": "ordinary",
+      "elements": 65280,
+      "code_mismatch": 0,
+      "scale_bit_mismatch": 0
+    },
+    {
+      "mode": "power",
+      "elements": 65280,
+      "code_mismatch": 0,
+      "scale_bit_mismatch": 0
+    }
+  ]
+}

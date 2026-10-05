@@ -1,0 +1,142 @@
+[
+  {
+    "repository": "pytorch/ao",
+    "revision": "a701b6a6058720c21f95908b7ae4a24bf0cae1b6",
+    "directory": "torchao/prototype/mx_formats",
+    "sha256": "b661f3bf6656a54c1063d0b9529e0ff7403623ce8abe85a27a925c510145ab6b",
+    "files": [
+      {
+        "name": "README.md",
+        "sha": "b7f9f73874ea703f15b1109a45fde6d4f4b5913c"
+      },
+      {
+        "name": "__init__.py",
+        "sha": "d91cbef78fcd2027f678f1b70c38310dad78fe95"
+      },
+      {
+        "name": "config.py",
+        "sha": "ef9ed1b05c5ee00b2d4be51df2b40391ba7d1678"
+      },
+      {
+        "name": "constants.py",
+        "sha": "015dc1639e86434fa4ce0f7cf7837ea862326239"
+      },
+      {
+        "name": "fp_format_spec.py",
+        "sha": "d89a3ad2a9b2fcdbbc72b355209fa08314551258"
+      },
+      {
+        "name": "inference_workflow.py",
+        "sha": "33bfce42a82ed5e325b441eca5fb848eafec1726"
+      },
+      {
+        "name": "kernels.py",
+        "sha": "89ea5759e2345e2f604bfa10d5cea7c9733e6374"
+      },
+      {
+        "name": "mx_tensor.py",
+        "sha": "e2ecc7e929bf87e819234f0df3ccc0328ef48c9d"
+      },
+      {
+        "name": "nvfp4_tensor.py",
+        "sha": "091c0fb8ce17826d8ee333b717dca08bfbc9817b"
+      },
+      {
+        "name": "utils.py",
+        "sha": "ac19b8abecb9e15b1d1660020c2c51ed74cd5c9c"
+      }
+    ]
+  },
+  {
+    "repository": "pytorch/ao",
+    "revision": "a701b6a6058720c21f95908b7ae4a24bf0cae1b6",
+    "directory": "torchao/prototype/blockwise_fp8_inference",
+    "sha256": "5cfbbda2da63c6f03c552dc736fa1610e9d652d884ed495248876b19830d53fc",
+    "files": [
+      {
+        "name": "README.md",
+        "sha": "2421afef143bb9a671c86f62ad747c1af1875900"
+      },
+      {
+        "name": "__init__.py",
+        "sha": "13a7380e56213eb9a097b3d5afdcade7ca219a5e"
+      },
+      {
+        "name": "blockwise_linear.py",
+        "sha": "01d8638d290121cd3770f22f0dd87ac7f21d3abf"
+      },
+      {
+        "name": "kernels.py",
+        "sha": "ff83e034f58da077c019b67c9b052d3385c498b2"
+      }
+    ]
+  },
+  {
+    "repository": "pytorch/FBGEMM",
+    "revision": "b20a2e28de7277dcd3b447e44e3cf9866c908028",
+    "directory": "fbgemm_gpu/src/quantize_ops",
+    "sha256": "055fb727ae8f9f95739de4c6921d31ab599e40ceb741c60daf55c55d049284eb",
+    "files": [
+      {
+        "name": "common.cuh",
+        "sha": "7635ad4f67ad3e882b140d542c2264de78164f5e"
+      },
+      {
+        "name": "mx",
+        "sha": "42430a1e6c2d085a46a577c5cafc3d9f42906595"
+      },
+      {
+        "name": "mx_common.cuh",
+        "sha": "782f463fe8c19864ec95240ff74f66f87b9a59a5"
+      },
+      {
+        "name": "quantize_bfloat16.cu",
+        "sha": "544d1ba06874ddcfe8454ae37a854795180e3bbe"
+      },
+      {
+        "name": "quantize_fp8_rowwise.cu",
+        "sha": "05be08ebd0d2a8a600398a5eaafde743bd97ff84"
+      },
+      {
+        "name": "quantize_fused_8bit_rowwise.cu",
+        "sha": "c04428ca33a2b19df797a6a8b47bbcc8752586d2"
+      },
+      {
+        "name": "quantize_fused_nbit_rowwise.cu",
+        "sha": "1f7382b7e83f71f8cef7c6abe6fd4f8d033c2610"
+      },
+      {
+        "name": "quantize_hfp8.cu",
+        "sha": "730bacd1cc736bc8c8b3a94c6f148ca18aed71dd"
+      },
+      {
+        "name": "quantize_msfp.cu",
+        "sha": "651cc9aedad6496d78b1d164424261e8d624afaf"
+      },
+      {
+        "name": "quantize_mx.cu",
+        "sha": "74fa58ca3891f172b8f36b1f51fc329cc1eacef8"
+      },
+      {
+        "name": "quantize_mx.cuh",
+        "sha": "0c21f47417c57700bb9c1b46a2489947147514f6"
+      },
+      {
+        "name": "quantize_ops_cpu.cpp",
+        "sha": "12ea5ab797ecfcd98d407a13448413a2c169490b"
+      },
+      {
+        "name": "quantize_ops_gpu.cpp",
+        "sha": "13c57cd81fe4dd6d7991a2026aab95c68c92854f"
+      },
+      {
+        "name": "quantize_ops_meta.cpp",
+        "sha": "46e1a7553014a08303e3749829c9b0301e343fd7"
+      },
+      {
+        "name": "quantize_padded_fp8_rowwise.cu",
+        "sha": "c2a231e1a2ce59bdc37d33027ae09389eadec279"
+      }
+    ]
+  }
+]

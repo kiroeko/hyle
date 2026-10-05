@@ -1,0 +1,426 @@
+{
+  "revision": "a701b6a6058720c21f95908b7ae4a24bf0cae1b6",
+  "torch_version": "2.8.0+cu129",
+  "torch_commit": "a1cb3cc05d46d198467bebbb6e8fba50a325d4e7",
+  "seconds": 15.969000000040978,
+  "threads": 2,
+  "borrowed": [
+    {
+      "path": ".scratch\\validation\\d5-cpu-apple-official-sources\\ao\\torchao\\quantization\\quant_primitives.py",
+      "symbol": "_RoundToFloat8",
+      "sha256": "a54948dac3588887d88cbd846be876343cf96613b290f8ccbdb5af673eb310eb"
+    },
+    {
+      "path": ".scratch\\validation\\d5-cpu-apple-official-sources\\ao\\torchao\\quantization\\quant_primitives.py",
+      "symbol": "_get_reduction_params",
+      "sha256": "157748a04ac9128c7a804b6df5f946ad8cfcf6a87c7d02d7462185ebe9dbb954"
+    },
+    {
+      "path": ".scratch\\validation\\d5-cpu-apple-official-sources\\ao\\torchao\\quantization\\quant_primitives.py",
+      "symbol": "_choose_scale_float8",
+      "sha256": "5693b21f15188e74fbc9fc22cc6975ccd6979a3bb9d89dadf4f63c15037ffbf0"
+    },
+    {
+      "path": ".scratch\\validation\\d5-cpu-apple-official-sources\\ao\\torchao\\quantization\\quant_primitives.py",
+      "symbol": "_maybe_expand_scale_to_tensor_shape",
+      "sha256": "df036ef9507ac0fcfcaf4803763884d7cb709b7da4f9a20bb46655ed957705be"
+    },
+    {
+      "path": ".scratch\\validation\\d5-cpu-apple-official-sources\\ao\\torchao\\quantization\\quant_primitives.py",
+      "symbol": "_quantize_affine_float8",
+      "sha256": "ab1cfca5688b2c8508fba93d8f6a64066ae6f61ee66dd6876393190f6e1a9105"
+    },
+    {
+      "path": ".scratch\\validation\\d5-cpu-apple-official-sources\\ao\\torchao\\prototype\\mx_formats\\mx_tensor.py",
+      "symbol": "_f32_to_e8m0_rceil",
+      "sha256": "f4e6666dc7c75a19960fcc0a157460172743997b8251f2f404f67a7eeb817370"
+    },
+    {
+      "path": ".scratch\\validation\\d5-cpu-apple-official-sources\\ao\\torchao\\prototype\\mx_formats\\mx_tensor.py",
+      "symbol": "_e8m0_scale_to_reciprocal_fp32",
+      "sha256": "cae537fc0255f5df4ea3835e4d0c8240b699c530c96b7c34b57b281655ee2372"
+    },
+    {
+      "path": ".scratch\\validation\\d5-cpu-apple-official-sources\\ao\\torchao\\prototype\\mx_formats\\mx_tensor.py",
+      "symbol": "_to_mx_rceil",
+      "sha256": "642d104965c9eef70bd283407fd9dfa49ea966de7436a191625f2ef5bef5f3c1"
+    },
+    {
+      "path": ".scratch\\validation\\d5-cpu-apple-official-sources\\ao\\torchao\\prototype\\custom_fp_utils.py",
+      "symbol": "_n_ones",
+      "sha256": "ff0dcfe3eaafcf5e83c3fa659be57df5164e4c97469ed61f5a63941563015ee1"
+    },
+    {
+      "path": ".scratch\\validation\\d5-cpu-apple-official-sources\\ao\\torchao\\prototype\\custom_fp_utils.py",
+      "symbol": "_floatx_unpacked_to_f32",
+      "sha256": "48d855609c2bca7131acf90c68d42c699ea05e0244781ea8239745fdeb0d4702"
+    },
+    {
+      "path": ".scratch\\validation\\d5-cpu-apple-official-sources\\ao\\torchao\\prototype\\mx_formats\\kernels.py",
+      "symbol": "f4_unpacked_to_f32",
+      "sha256": "d8c3264a5e9c7f9843c7d12d75e3531baa5128cd8912c2b4985057ffbf528dca"
+    },
+    {
+      "path": ".scratch\\validation\\d5-cpu-apple-official-sources\\ao\\torchao\\prototype\\mx_formats\\kernels.py",
+      "symbol": "up_size",
+      "sha256": "3e0f8ecaf64b149ed104517c34f2953e649e8d490152e153fd80543821d8ac66"
+    },
+    {
+      "path": ".scratch\\validation\\d5-cpu-apple-official-sources\\ao\\torchao\\prototype\\mx_formats\\kernels.py",
+      "symbol": "unpack_uint4",
+      "sha256": "106b3786a3576b30760246120e0941a49a626c8efc2937715792697510b8d138"
+    }
+  ],
+  "results": [
+    {
+      "case": "original-TorchAO-FP4-all-packed-bytes",
+      "elements": 512,
+      "bit_mismatch": 0
+    },
+    {
+      "case": "encoded-grouped-FP8",
+      "n": 4096,
+      "k": 6144,
+      "shared": true,
+      "seed": 0,
+      "elements": 12288,
+      "bf16_mismatch": 0
+    },
+    {
+      "case": "encoded-grouped-FP8",
+      "n": 4096,
+      "k": 6144,
+      "shared": true,
+      "seed": 1,
+      "elements": 12288,
+      "bf16_mismatch": 0
+    },
+    {
+      "case": "encoded-grouped-FP8",
+      "n": 4096,
+      "k": 6144,
+      "shared": false,
+      "seed": 0,
+      "elements": 12288,
+      "bf16_mismatch": 0
+    },
+    {
+      "case": "encoded-grouped-FP8",
+      "n": 4096,
+      "k": 6144,
+      "shared": false,
+      "seed": 1,
+      "elements": 12288,
+      "bf16_mismatch": 0
+    },
+    {
+      "case": "invalid-expert-ID",
+      "n": 4096,
+      "k": 6144,
+      "four": false,
+      "rejected": true
+    },
+    {
+      "case": "encoded-grouped-FP8",
+      "n": 6144,
+      "k": 2048,
+      "shared": true,
+      "seed": 0,
+      "elements": 18432,
+      "bf16_mismatch": 0
+    },
+    {
+      "case": "encoded-grouped-FP8",
+      "n": 6144,
+      "k": 2048,
+      "shared": true,
+      "seed": 1,
+      "elements": 18432,
+      "bf16_mismatch": 0
+    },
+    {
+      "case": "encoded-grouped-FP8",
+      "n": 6144,
+      "k": 2048,
+      "shared": false,
+      "seed": 0,
+      "elements": 18432,
+      "bf16_mismatch": 0
+    },
+    {
+      "case": "encoded-grouped-FP8",
+      "n": 6144,
+      "k": 2048,
+      "shared": false,
+      "seed": 1,
+      "elements": 18432,
+      "bf16_mismatch": 0
+    },
+    {
+      "case": "invalid-expert-ID",
+      "n": 6144,
+      "k": 2048,
+      "four": false,
+      "rejected": true
+    },
+    {
+      "case": "encoded-grouped-FP8",
+      "n": 4096,
+      "k": 4096,
+      "shared": true,
+      "seed": 0,
+      "elements": 12288,
+      "bf16_mismatch": 0
+    },
+    {
+      "case": "encoded-grouped-FP8",
+      "n": 4096,
+      "k": 4096,
+      "shared": true,
+      "seed": 1,
+      "elements": 12288,
+      "bf16_mismatch": 0
+    },
+    {
+      "case": "encoded-grouped-FP8",
+      "n": 4096,
+      "k": 4096,
+      "shared": false,
+      "seed": 0,
+      "elements": 12288,
+      "bf16_mismatch": 0
+    },
+    {
+      "case": "encoded-grouped-FP8",
+      "n": 4096,
+      "k": 4096,
+      "shared": false,
+      "seed": 1,
+      "elements": 12288,
+      "bf16_mismatch": 0
+    },
+    {
+      "case": "invalid-expert-ID",
+      "n": 4096,
+      "k": 4096,
+      "four": false,
+      "rejected": true
+    },
+    {
+      "case": "encoded-grouped-FP8",
+      "n": 4096,
+      "k": 2048,
+      "shared": true,
+      "seed": 0,
+      "elements": 12288,
+      "bf16_mismatch": 0
+    },
+    {
+      "case": "encoded-grouped-FP8",
+      "n": 4096,
+      "k": 2048,
+      "shared": true,
+      "seed": 1,
+      "elements": 12288,
+      "bf16_mismatch": 0
+    },
+    {
+      "case": "encoded-grouped-FP8",
+      "n": 4096,
+      "k": 2048,
+      "shared": false,
+      "seed": 0,
+      "elements": 12288,
+      "bf16_mismatch": 0
+    },
+    {
+      "case": "encoded-grouped-FP8",
+      "n": 4096,
+      "k": 2048,
+      "shared": false,
+      "seed": 1,
+      "elements": 12288,
+      "bf16_mismatch": 0
+    },
+    {
+      "case": "invalid-expert-ID",
+      "n": 4096,
+      "k": 2048,
+      "four": false,
+      "rejected": true
+    },
+    {
+      "case": "encoded-grouped-FP4",
+      "n": 3072,
+      "k": 7168,
+      "shared": true,
+      "seed": 0,
+      "elements": 9216,
+      "bf16_mismatch": 0
+    },
+    {
+      "case": "encoded-grouped-FP4",
+      "n": 3072,
+      "k": 7168,
+      "shared": true,
+      "seed": 1,
+      "elements": 9216,
+      "bf16_mismatch": 0
+    },
+    {
+      "case": "encoded-grouped-FP4",
+      "n": 3072,
+      "k": 7168,
+      "shared": false,
+      "seed": 0,
+      "elements": 9216,
+      "bf16_mismatch": 0
+    },
+    {
+      "case": "encoded-grouped-FP4",
+      "n": 3072,
+      "k": 7168,
+      "shared": false,
+      "seed": 1,
+      "elements": 9216,
+      "bf16_mismatch": 0
+    },
+    {
+      "case": "invalid-expert-ID",
+      "n": 3072,
+      "k": 7168,
+      "four": true,
+      "rejected": true
+    },
+    {
+      "case": "encoded-grouped-FP4",
+      "n": 7168,
+      "k": 3072,
+      "shared": true,
+      "seed": 0,
+      "elements": 21504,
+      "bf16_mismatch": 0
+    },
+    {
+      "case": "encoded-grouped-FP4",
+      "n": 7168,
+      "k": 3072,
+      "shared": true,
+      "seed": 1,
+      "elements": 21504,
+      "bf16_mismatch": 0
+    },
+    {
+      "case": "encoded-grouped-FP4",
+      "n": 7168,
+      "k": 3072,
+      "shared": false,
+      "seed": 0,
+      "elements": 21504,
+      "bf16_mismatch": 0
+    },
+    {
+      "case": "encoded-grouped-FP4",
+      "n": 7168,
+      "k": 3072,
+      "shared": false,
+      "seed": 1,
+      "elements": 21504,
+      "bf16_mismatch": 0
+    },
+    {
+      "case": "invalid-expert-ID",
+      "n": 7168,
+      "k": 3072,
+      "four": true,
+      "rejected": true
+    },
+    {
+      "case": "encoded-grouped-FP4",
+      "n": 2048,
+      "k": 4096,
+      "shared": true,
+      "seed": 0,
+      "elements": 6144,
+      "bf16_mismatch": 0
+    },
+    {
+      "case": "encoded-grouped-FP4",
+      "n": 2048,
+      "k": 4096,
+      "shared": true,
+      "seed": 1,
+      "elements": 6144,
+      "bf16_mismatch": 0
+    },
+    {
+      "case": "encoded-grouped-FP4",
+      "n": 2048,
+      "k": 4096,
+      "shared": false,
+      "seed": 0,
+      "elements": 6144,
+      "bf16_mismatch": 0
+    },
+    {
+      "case": "encoded-grouped-FP4",
+      "n": 2048,
+      "k": 4096,
+      "shared": false,
+      "seed": 1,
+      "elements": 6144,
+      "bf16_mismatch": 0
+    },
+    {
+      "case": "invalid-expert-ID",
+      "n": 2048,
+      "k": 4096,
+      "four": true,
+      "rejected": true
+    },
+    {
+      "case": "encoded-grouped-FP4",
+      "n": 4096,
+      "k": 2048,
+      "shared": true,
+      "seed": 0,
+      "elements": 12288,
+      "bf16_mismatch": 0
+    },
+    {
+      "case": "encoded-grouped-FP4",
+      "n": 4096,
+      "k": 2048,
+      "shared": true,
+      "seed": 1,
+      "elements": 12288,
+      "bf16_mismatch": 0
+    },
+    {
+      "case": "encoded-grouped-FP4",
+      "n": 4096,
+      "k": 2048,
+      "shared": false,
+      "seed": 0,
+      "elements": 12288,
+      "bf16_mismatch": 0
+    },
+    {
+      "case": "encoded-grouped-FP4",
+      "n": 4096,
+      "k": 2048,
+      "shared": false,
+      "seed": 1,
+      "elements": 12288,
+      "bf16_mismatch": 0
+    },
+    {
+      "case": "invalid-expert-ID",
+      "n": 4096,
+      "k": 2048,
+      "four": true,
+      "rejected": true
+    }
+  ],
+  "scope": "Native CPU mature tensor composition; exact encoded weights/real inner dimensions. No HYLE full region, C++ delivery, or P1 PASS."
+}
