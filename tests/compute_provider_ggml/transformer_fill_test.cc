@@ -15,6 +15,11 @@
 
 namespace {
 using namespace hyle::compute;
+template <class T> constexpr double tolerance(double f32, double f16, double bf16) {
+  if constexpr (std::is_same_v<T, float>) return f32;
+  else if constexpr (std::is_same_v<T, hyle::simd::float16_t>) return f16;
+  else return bf16;
+}
 
 template <class T> void softmax_batch() {
   const auto type = half_test::data_type<T>();
@@ -75,7 +80,7 @@ template <class T> void softmax_batch() {
               sum += scores[col];
             }
             for (std::size_t col = 0; col < 7; ++col)
-              EXPECT_NEAR(half_test::decode(actual[row * 7 + col]), scores[col] / sum, half_test::tolerance<T>(2.e-6, 2.e-4, 2.e-3));
+              EXPECT_NEAR(half_test::decode(actual[row * 7 + col]), scores[col] / sum, tolerance<T>(2.e-6, 2.e-4, 2.e-3));
           }
         }
         EXPECT_EQ(stats.snapshot().total_allocs, allocs);
@@ -134,7 +139,7 @@ template <class T> void fill_batch() {
       const auto payload = type == DataType::kFloat32 ? bits : type == DataType::kBFloat16
           ? bits >> 16 : bits == 0x80000000U ? 0x8000U : bits == 0x7f800000U ? 0x7c00U
           : bits == 0x7fc12345U ? 0x7e25U : bits == 0x3fa00000U ? 0x3d00U : 0U;
-      const Fill operation{.output_shape = TensorShape::from(shape).value(), .output_type = type,
+      const Fill operation{.output_shape = TensorShape::create(shape).value(), .output_type = type,
                             .value = ScalarValue::from_bits(type, payload)};
       auto prepared = prepare(context, operation, hyle::mem::system_resource());
       ASSERT_TRUE(prepared) << prepared.error().message();
@@ -208,7 +213,7 @@ template <class T> void noncausal_attention() {
           for (std::int64_t key = 0; key < nk; ++key)
             expected += weights[key] / sum * half_test::decode(v[((b * nk + key) * kv_heads + kh) * depth + d]);
           EXPECT_NEAR(half_test::decode(actual[((b * nq + row) * heads + h) * depth + d]), expected,
-                       half_test::tolerance<T>(2.e-6, 7.e-4, 6.e-3));
+                       tolerance<T>(2.e-6, 7.e-4, 6.e-3));
         }
       }
   }
