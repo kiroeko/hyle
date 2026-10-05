@@ -179,12 +179,14 @@ SDK 配置检查确认：OFF 加不存在 SDK root 不加载 Torch；ON 对不�
 
 红队范围对照发现继承的官方剩余测试只为 Flash 执行完整 MLA/NextN；非Flash GLM 5.3 还须
 证明冷期原 FP8 KV 解码/拆分、实际缓存反馈、完整 NextN/MoE 与全词表 head。本次增加一条
-对应消费者测试，仍在 CPU-O5 内，不修改产品算法/API。只补跑这个旅程的普通/三交付/WSL，
-其余未变化13项及原基础模块结果按同产品/SDK/工具链身份复用，不重复全部批次。
+对应消费者测试，仍在 CPU-O5 内，不修改产品算法/API。Windows source/static/shared ×
+Direct/Graph 共6项补验、WSL两个入口补验已通过；其余未变化13项及原基础模块结果按
+同产品/SDK/工具链身份复用，不重复全部批次。
 
-WSL 正在同步同一 Windows 产品候选并使用官方 CPU-only Linux LibTorch 2.8.0 archive；
-版本/CPU shared closure 已核对，但尚无 Linux 产品 PASS。正式新增完整片段 P1 尚未启动。
-原154/20/2账本保持；没有把单个来源资格、未跑的补验、旧GGUF P1或Apple限制计成完成。
+WSL 从 Windows 同步同一产品候选，使用官方 CPU-only Linux LibTorch 2.8.0 archive、
+GCC 14.2、产品 Werror、oneDNN ON；Direct/Graph各13项，共26项实际通过，另2项补验通过。
+这是 Linux source correctness，不代签未运行的 Linux 三交付。新增完整片段 P1 尚未启动。
+原154/20/2账本保持；没有把单个来源资格、旧GGUF P1或Apple限制计成完成。
 统一 Compute+Graph 实现为60,866行 /244文件，不含测试和第三方源码。
 
 Apple 有界检查将 ds4 upstream HEAD `0aaea5a238fb41a35106a551e73c8409dfb751ac` 的

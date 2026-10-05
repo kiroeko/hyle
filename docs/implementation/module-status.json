@@ -420,7 +420,7 @@
       "module": "compute_provider_native",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/llm-moe-d5-cpu-apple-official-completion.md",
-      "summary": "D5 CPU 官方低精度有限接入 AUDITED：CPU-O1–O5 固定，TorchAO/ATen 成熟组合已接线；Windows Native/Direct/Graph 主体436项、source/static/shared各26项通过。GLM非Flash完整MLA/NextN补验、WSL与新增P1待验；尚未增加完整画像格，Apple数值边界不解除。"
+      "summary": "D5 CPU 官方低精度有限接入 AUDITED：CPU-O1–O5 固定，TorchAO/ATen 成熟组合已接线；Windows Native/Direct/Graph 主体436项、source/static/shared各26项通过。GLM非Flash完整MLA/NextN三交付补验及WSL官方完整片段通过；新增P1待验，尚未增加完整画像格，Apple数值边界不解除。"
     },
     {
       "module": "compute_sched",

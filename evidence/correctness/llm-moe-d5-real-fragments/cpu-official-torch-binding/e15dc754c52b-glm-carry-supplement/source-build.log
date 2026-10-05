@@ -1,0 +1,7 @@
+[0/2] Re-checking globbed directories...
+[1/7] C:\WINDOWS\system32\cmd.exe /C "cd /D C:\hv\d5cp\source-build && "C:\Program Files\CMake\bin\cmake.exe" -P C:/hv/d5cp/source-build/hyle-runtime/d5_cpu_direct-Release.cmake"
+[2/7] C:\WINDOWS\system32\cmd.exe /C "cd /D C:\hv\d5cp\source-build && "C:\Program Files\CMake\bin\cmake.exe" -P C:/hv/d5cp/source-build/hyle-runtime/d5_cpu_graph-Release.cmake"
+[3/7] Building CXX object CMakeFiles\d5_cpu_direct.dir\tests\compute_route_cpu\d5_qwen38_official_test.cc.obj
+[4/7] Building CXX object CMakeFiles\d5_cpu_graph.dir\tests\graph_route_cpu\d5_qwen38_official_test.cc.obj
+[5/7] Linking CXX executable d5_cpu_direct.exe
+[6/7] Linking CXX executable d5_cpu_graph.exe

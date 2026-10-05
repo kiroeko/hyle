@@ -1,4 +1,4 @@
-# CPU 官方低精度：已完成的 Windows 批次
+# CPU 官方低精度：已完成的正确性与交付批次
 
 产品候选 `3c22b7b9f230abc86e749225174d86b59c79881e`；MSVC 19.50.35728，
 Release、C++23、产品 Werror、instrumentation OFF，OMP/MKL 两线程。
@@ -13,6 +13,8 @@ Release、C++23、产品 Werror、instrumentation OFF，OMP/MKL 两线程。
 | 公开头 / CPU executor | 三组公开头及 executor 检查 PASS |
 | Windows source / static / shared | 每种交付两个独立消费者、各13项官方低精度测试，共26项 PASS；搬迁、独立 include/link、DLL邻置及许可核对 |
 | SDK ON/OFF 配置 | OFF 不探测不存在 root；ON 在 HYLE 自身版本检查处明确拒绝不存在 root |
+| GLM 5.3 非Flash 完整 MLA/NextN/head 补验 | Windows source/static/shared × Direct/Graph 共6项 PASS |
+| WSL 官方完整片段 | GCC 14.2、产品 Werror、oneDNN ON、CPU-only LibTorch；两个普通入口各13项，共26项 PASS；非Flash补验另2项 PASS |
 
 普通测试的原始 CTest / GoogleTest 输出在
 [普通批次](3c22b7b9f230-tests/receipt.json)和其 `native-tests.log`。
@@ -32,13 +34,19 @@ GLM 原默认 CUDA FMA oracle 与 ATen 独立 multiply/add 边界不同，已在
 SDK 检查的初次选择器组合与消息换行解析错误也保留，未作为产品数值 FAIL。
 [索引](index.json)记录这批原始小文件 SHA；没有归档大型 SDK/DLL 或模型权重。
 
-## 尚未验收的内容
+## 覆盖补验与剩余验收
 
 范围对照发现原13项只为 GLM Flash 执行完整吸收式 MLA/NextN。
-GLM 5.3 非Flash 的冷 FP8 KV 解码/拆分、反馈与完整 head 已补消费者，尚待补跑。
-此前已运行的13项结果不会代签该新增旅程。
+GLM 5.3 非Flash 的冷 FP8 KV 解码/拆分、反馈与完整 head 已补消费者。
+[Windows三交付补验](e15dc754c52b-glm-carry-supplement/receipt.json)和
+[WSL补验](e15dc754c52b-glm-wsl-supplement-r1/receipt.json)实际通过。
+consumer revision 为 `e15dc754`，产品与SDK保持 `3c22b7b9`；既有13项结果按相同产品身份复用。
+初次 Linux 补验生成器因嵌套字符串换行而发生 Python syntax error，未执行产品；原脚本保留，
+修正验证包装后只编译两个消费者TU并通过，不重编产品。
 
-WSL 官方 CPU SDK 的版本和 shared closure 已读取；Linux 产品和新增完整片段 P1 尚未通过。
+[WSL普通批次](wsl-official-consumers/receipt.json)从 Windows 固定候选同步，实际26项通过。
+这里证明 Linux source correctness，不代签 Linux install/static/shared 三交付。
+新增完整片段 P1 尚未启动。
 Apple 原极小值 / BF16 中间边界仍未解除；本批没有 Apple 产品修改。
 因此当前完整画像账本保持154 RUN_PASS /20 BACKEND_REJECTED /2 RUN_FAIL；
 不把上述部分证据宣传为 CPU 四画像或整体 goal 收口。

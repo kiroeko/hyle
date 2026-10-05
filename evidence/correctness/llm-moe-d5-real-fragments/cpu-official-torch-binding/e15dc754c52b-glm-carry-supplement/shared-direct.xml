@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites tests="1" failures="0" disabled="0" errors="0" time="6.236" timestamp="2026-10-05T15:45:15.994" name="AllTests">
+  <testsuite name="CpuTorchOfficial" tests="1" failures="0" disabled="0" skipped="0" errors="0" time="6.235" timestamp="2026-10-05T15:45:15.994">
+    <testcase name="D5GlmOfficialAbsorbedMlaAndNextN" file="C:\hv\d5cp\consumer\tests\compute_route_cpu\../compute_models/d5_cpu_torch_official_tests.h" line="92" status="run" result="completed" time="6.235" timestamp="2026-10-05T15:45:15.994" classname="CpuTorchOfficial" />
+  </testsuite>
+</testsuites>

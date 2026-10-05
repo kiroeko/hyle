@@ -1,0 +1,6 @@
+[1/6] C:\WINDOWS\system32\cmd.exe /C "cd /D C:\hv\d5cp\official-shared-consumer && "C:\Program Files\CMake\bin\cmake.exe" -P C:/hv/d5cp/official-shared-consumer/hyle-runtime/d5_cpu_direct-Release.cmake"
+[2/6] C:\WINDOWS\system32\cmd.exe /C "cd /D C:\hv\d5cp\official-shared-consumer && "C:\Program Files\CMake\bin\cmake.exe" -P C:/hv/d5cp/official-shared-consumer/hyle-runtime/d5_cpu_graph-Release.cmake"
+[3/6] Building CXX object CMakeFiles\d5_cpu_direct.dir\tests\compute_route_cpu\d5_qwen38_official_test.cc.obj
+[4/6] Linking CXX executable d5_cpu_direct.exe
+[5/6] Building CXX object CMakeFiles\d5_cpu_graph.dir\tests\graph_route_cpu\d5_qwen38_official_test.cc.obj
+[6/6] Linking CXX executable d5_cpu_graph.exe

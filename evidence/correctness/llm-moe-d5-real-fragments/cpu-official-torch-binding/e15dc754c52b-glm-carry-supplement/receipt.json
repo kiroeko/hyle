@@ -1,0 +1,125 @@
+{
+  "candidate": "e15dc754c52bff02a228b77a03f56ae9c34ef1d5",
+  "product_candidate": "3c22b7b9f230abc86e749225174d86b59c79881e",
+  "scope": "added non-Flash GLM full cold KV/absorbed MLA/NextN/head consumer; reuse unchanged 13-case product evidence",
+  "steps": [
+    {
+      "stage": "source",
+      "name": "build",
+      "argv": [
+        "cmake",
+        "--build",
+        "C:\\hv\\d5cp\\source-build",
+        "--target",
+        "d5_cpu_delivery",
+        "-j",
+        "2"
+      ],
+      "returncode": 0,
+      "seconds": 11.438
+    },
+    {
+      "stage": "source",
+      "name": "direct",
+      "argv": [
+        "C:\\hv\\d5cp\\source-build\\d5_cpu_direct.exe",
+        "--gtest_filter=*D5GlmOfficialAbsorbedMlaAndNextN",
+        "--gtest_output=xml:C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-cpu-apple-official-binding\\e15dc754c52b-glm-carry-supplement\\source-direct.xml"
+      ],
+      "returncode": 0,
+      "seconds": 6.516,
+      "observed_process_peak_rss": 2354237440
+    },
+    {
+      "stage": "source",
+      "name": "graph",
+      "argv": [
+        "C:\\hv\\d5cp\\source-build\\d5_cpu_graph.exe",
+        "--gtest_filter=*D5GlmOfficialAbsorbedMlaAndNextN",
+        "--gtest_output=xml:C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-cpu-apple-official-binding\\e15dc754c52b-glm-carry-supplement\\source-graph.xml"
+      ],
+      "returncode": 0,
+      "seconds": 6.531,
+      "observed_process_peak_rss": 2221469696
+    },
+    {
+      "stage": "static",
+      "name": "build",
+      "argv": [
+        "cmake",
+        "--build",
+        "C:\\hv\\d5cp\\official-static-consumer",
+        "--target",
+        "d5_cpu_delivery",
+        "-j",
+        "2"
+      ],
+      "returncode": 0,
+      "seconds": 11.14
+    },
+    {
+      "stage": "static",
+      "name": "direct",
+      "argv": [
+        "C:\\hv\\d5cp\\official-static-consumer\\d5_cpu_direct.exe",
+        "--gtest_filter=*D5GlmOfficialAbsorbedMlaAndNextN",
+        "--gtest_output=xml:C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-cpu-apple-official-binding\\e15dc754c52b-glm-carry-supplement\\static-direct.xml"
+      ],
+      "returncode": 0,
+      "seconds": 6.531,
+      "observed_process_peak_rss": 2354487296
+    },
+    {
+      "stage": "static",
+      "name": "graph",
+      "argv": [
+        "C:\\hv\\d5cp\\official-static-consumer\\d5_cpu_graph.exe",
+        "--gtest_filter=*D5GlmOfficialAbsorbedMlaAndNextN",
+        "--gtest_output=xml:C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-cpu-apple-official-binding\\e15dc754c52b-glm-carry-supplement\\static-graph.xml"
+      ],
+      "returncode": 0,
+      "seconds": 6.531,
+      "observed_process_peak_rss": 2331168768
+    },
+    {
+      "stage": "shared",
+      "name": "build",
+      "argv": [
+        "cmake",
+        "--build",
+        "C:\\hv\\d5cp\\official-shared-consumer",
+        "--target",
+        "d5_cpu_delivery",
+        "-j",
+        "2"
+      ],
+      "returncode": 0,
+      "seconds": 9.938
+    },
+    {
+      "stage": "shared",
+      "name": "direct",
+      "argv": [
+        "C:\\hv\\d5cp\\official-shared-consumer\\d5_cpu_direct.exe",
+        "--gtest_filter=*D5GlmOfficialAbsorbedMlaAndNextN",
+        "--gtest_output=xml:C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-cpu-apple-official-binding\\e15dc754c52b-glm-carry-supplement\\shared-direct.xml"
+      ],
+      "returncode": 0,
+      "seconds": 7.047,
+      "observed_process_peak_rss": 2152333312
+    },
+    {
+      "stage": "shared",
+      "name": "graph",
+      "argv": [
+        "C:\\hv\\d5cp\\official-shared-consumer\\d5_cpu_graph.exe",
+        "--gtest_filter=*D5GlmOfficialAbsorbedMlaAndNextN",
+        "--gtest_output=xml:C:\\public\\project-hyle\\hyle\\.scratch\\validation\\d5-cpu-apple-official-binding\\e15dc754c52b-glm-carry-supplement\\shared-graph.xml"
+      ],
+      "returncode": 0,
+      "seconds": 6.547,
+      "observed_process_peak_rss": 2249846784
+    }
+  ],
+  "verdict": "PASS"
+}

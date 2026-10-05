@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="(empty)"
+	tests="2"
+	failures="0"
+	disabled="0"
+	skipped="0"
+	hostname=""
+	time="11"
+	timestamp="2026-10-05T15:48:31"
+	>
+	<testcase name="d5_ds4_cpu_direct" classname="d5_ds4_cpu_direct" time="5.94208" status="run">
+		<properties/>
+		<system-out>Running main() from /root/.cache/hyle/dependencies/v1/sources/googletest-063de7e9578f-162765170ae6/googletest/src/gtest_main.cc
+Note: Google Test filter = *D5GlmOfficialAbsorbedMlaAndNextN
+[==========] Running 1 test from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 1 test from CpuTorchOfficial
+[ RUN      ] CpuTorchOfficial.D5GlmOfficialAbsorbedMlaAndNextN
+[       OK ] CpuTorchOfficial.D5GlmOfficialAbsorbedMlaAndNextN (5734 ms)
+[----------] 1 test from CpuTorchOfficial (5734 ms total)
+
+[----------] Global test environment tear-down
+[==========] 1 test from 1 test suite ran. (5734 ms total)
+[  PASSED  ] 1 test.
+</system-out>
+	</testcase>
+	<testcase name="d5_ds4_cpu_graph" classname="d5_ds4_cpu_graph" time="5.33296" status="run">
+		<properties/>
+		<system-out>Running main() from /root/.cache/hyle/dependencies/v1/sources/googletest-063de7e9578f-162765170ae6/googletest/src/gtest_main.cc
+Note: Google Test filter = *D5GlmOfficialAbsorbedMlaAndNextN
+[==========] Running 1 test from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 1 test from CpuGraphTorchOfficial
+[ RUN      ] CpuGraphTorchOfficial.D5GlmOfficialAbsorbedMlaAndNextN
+[       OK ] CpuGraphTorchOfficial.D5GlmOfficialAbsorbedMlaAndNextN (5191 ms)
+[----------] 1 test from CpuGraphTorchOfficial (5191 ms total)
+
+[----------] Global test environment tear-down
+[==========] 1 test from 1 test suite ran. (5191 ms total)
+[  PASSED  ] 1 test.
+</system-out>
+	</testcase>
+</testsuite>

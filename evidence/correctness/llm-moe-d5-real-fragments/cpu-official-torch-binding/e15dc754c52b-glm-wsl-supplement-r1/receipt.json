@@ -1,0 +1,42 @@
+{
+  "consumer_candidate": "e15dc754c52bff02a228b77a03f56ae9c34ef1d5",
+  "product_candidate": "3c22b7b9f230abc86e749225174d86b59c79881e",
+  "source_header_sha256": "40c83a30f0269e2aa8e601e68946455793c4bf23d8440561920b5fcbd98ff316",
+  "scope": "added non-Flash GLM full MLA/NextN/head; product and previous 13 consumers unchanged",
+  "steps": [
+    {
+      "name": "build",
+      "argv": [
+        "cmake",
+        "--build",
+        "/root/hyle-scratch/active-cpu-z/build",
+        "--target",
+        "d5_ds4_cpu_direct",
+        "d5_ds4_cpu_graph",
+        "-j",
+        "2"
+      ],
+      "returncode": 0,
+      "seconds": 26.172
+    },
+    {
+      "name": "tests",
+      "argv": [
+        "ctest",
+        "--test-dir",
+        "/root/hyle-scratch/active-cpu-z/build",
+        "--output-on-failure",
+        "--no-tests=error",
+        "-R",
+        "^d5_ds4_cpu_(direct|graph)$",
+        "-j",
+        "1",
+        "--output-junit",
+        "/mnt/c/public/project-hyle/hyle/.scratch/validation/d5-cpu-apple-official-binding/e15dc754c52b-glm-wsl-supplement-r1/tests.xml"
+      ],
+      "returncode": 0,
+      "seconds": 11.321
+    }
+  ],
+  "verdict": "PASS"
+}

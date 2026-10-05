@@ -1,0 +1,57 @@
+Start testing: Oct 05 15:48 CST
+----------------------------------------------------------
+1/86 Testing: d5_ds4_cpu_direct
+1/86 Test: d5_ds4_cpu_direct
+Command: "/root/hyle-scratch/active-cpu-z/build/bin/d5_ds4_cpu_direct"
+Directory: /root/hyle-scratch/active-cpu-z/build
+"d5_ds4_cpu_direct" start time: Oct 05 15:48 CST
+Output:
+----------------------------------------------------------
+Running main() from /root/.cache/hyle/dependencies/v1/sources/googletest-063de7e9578f-162765170ae6/googletest/src/gtest_main.cc
+Note: Google Test filter = *D5GlmOfficialAbsorbedMlaAndNextN
+[==========] Running 1 test from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 1 test from CpuTorchOfficial
+[ RUN      ] CpuTorchOfficial.D5GlmOfficialAbsorbedMlaAndNextN
+[       OK ] CpuTorchOfficial.D5GlmOfficialAbsorbedMlaAndNextN (5734 ms)
+[----------] 1 test from CpuTorchOfficial (5734 ms total)
+
+[----------] Global test environment tear-down
+[==========] 1 test from 1 test suite ran. (5734 ms total)
+[  PASSED  ] 1 test.
+<end of output>
+Test time =   5.94 sec
+----------------------------------------------------------
+Test Passed.
+"d5_ds4_cpu_direct" end time: Oct 05 15:48 CST
+"d5_ds4_cpu_direct" time elapsed: 00:00:05
+----------------------------------------------------------
+
+2/86 Testing: d5_ds4_cpu_graph
+2/86 Test: d5_ds4_cpu_graph
+Command: "/root/hyle-scratch/active-cpu-z/build/bin/d5_ds4_cpu_graph"
+Directory: /root/hyle-scratch/active-cpu-z/build
+"d5_ds4_cpu_graph" start time: Oct 05 15:48 CST
+Output:
+----------------------------------------------------------
+Running main() from /root/.cache/hyle/dependencies/v1/sources/googletest-063de7e9578f-162765170ae6/googletest/src/gtest_main.cc
+Note: Google Test filter = *D5GlmOfficialAbsorbedMlaAndNextN
+[==========] Running 1 test from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 1 test from CpuGraphTorchOfficial
+[ RUN      ] CpuGraphTorchOfficial.D5GlmOfficialAbsorbedMlaAndNextN
+[       OK ] CpuGraphTorchOfficial.D5GlmOfficialAbsorbedMlaAndNextN (5191 ms)
+[----------] 1 test from CpuGraphTorchOfficial (5191 ms total)
+
+[----------] Global test environment tear-down
+[==========] 1 test from 1 test suite ran. (5191 ms total)
+[  PASSED  ] 1 test.
+<end of output>
+Test time =   5.33 sec
+----------------------------------------------------------
+Test Passed.
+"d5_ds4_cpu_graph" end time: Oct 05 15:48 CST
+"d5_ds4_cpu_graph" time elapsed: 00:00:05
+----------------------------------------------------------
+
+End testing: Oct 05 15:48 CST

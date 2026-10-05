@@ -1,0 +1,46 @@
+-- HYLE developer factors: requested='compute_provider_native;compute_route_cpu;graph_route_cpu' resolved='core,container_intrusive,util_core,error,time,math,timer_queue,platform,platform_thread,platform_fs,mem,mem_vm,simd,container,container_queue,sched,compute_ops,compute,graph,compute_provider_onednn,compute_backend_cpu,compute_ggml_runtime,compute_provider_ggml,graph_provider_onednn,compute_provider_native,compute_route_cpu,graph_route_cpu' products=''
+-- HYLE_SANITIZER = off
+-- HYLE_TESTING = OFF (tests exercise the shipping layout/hot paths)
+-- DNNL_TARGET_ARCH: X64
+-- ONEDNN_LIBRARY_TYPE: STATIC (default: SHARED)
+-- ONEDNN_BUILD_GRAPH: OFF (default: ON)
+-- ONEDNN_ENABLE_CONCURRENT_EXEC: ON (default: OFF)
+-- ONEDNN_ENABLE_PRIMITIVE_CACHE: OFF (default: ON)
+-- ONEDNN_ENABLE_WORKLOAD: INFERENCE (default: TRAINING)
+-- ONEDNN_ENABLE_PRIMITIVE: MATMUL;LAYER_NORMALIZATION;BINARY;ELTWISE;REORDER (default: ALL)
+-- ONEDNN_EXPERIMENTAL_UKERNEL: ON (default: OFF)
+-- ONEDNN_ENABLE_JIT_PROFILING: OFF (default: ON)
+-- ONEDNN_ENABLE_ITT_TASKS: OFF (default: ON)
+-- ONEDNN_VERBOSE: OFF (default: ON)
+-- ONEDNN_CPU_RUNTIME: THREADPOOL (default: OMP)
+-- ONEDNN_ENABLE_MAX_CPU_ISA: OFF (default: ON)
+-- ONEDNN_ENABLE_CPU_ISA_HINTS: OFF (default: ON)
+-- Threadpool testing: standalone
+-- Found OpenCL headers: /root/.cache/hyle/dependencies/v1/sources/onednn-71094df45190-7ee703ecda81/third_party/opencl
+-- Enabled testing coverage: CI
+-- Enabled workload: INFERENCE
+-- Enabled primitives: MATMUL;LAYER_NORMALIZATION;BINARY;ELTWISE;REORDER
+-- Enabled primitive CPU ISA: ALL
+-- Enabled primitive GPU ISA: ALL
+-- Enabled GeMM kernels ISA: ALL
+-- Primitive cache is disabled
+-- Experimental functionality for ukernels is enabled
+-- HYLE: oneDNN v3.13.2 -- x64 BRGEMM, normalization and tensor primitives enabled
+-- ggml source: 2263 files, 3 exact patches
+
+-- CMAKE_SYSTEM_PROCESSOR: x86_64
+-- GGML_SYSTEM_ARCH: x86
+-- Including CPU backend
+-- x86 detected
+-- Adding CPU backend variant ggml-cpu:  
+-- ggml version: 0.24.0
+-- ggml commit:  456172ec733a135778adcd32d00e576a58232e45-hyle
+-- Found Torch: /root/hyle-scratch/libtorch-cpu-2.8.0/libtorch/lib/libtorch.so (Required is exact version "2.8.0") 
+-- HYLE: original TorchAO/ATen CPU low precision -- LibTorch 2.8.0+cpu
+-- HYLE_TRACE = OFF (hooks compile to nothing -- zero cost)
+-- HYLE source package target unavailable (requires Git and a Git checkout)
+-- HYLE tests: skipping Git-only LOC reporter outside a Git checkout
+-- HYLE 0.1.0 | GNU 14.2.0 | C++23 | sanitizer=off | linkage=static | products= | factors=core,container_intrusive,util_core,error,time,math,timer_queue,platform,platform_thread,platform_fs,mem,mem_vm,simd,container,container_queue,sched,compute_ops,compute,graph,compute_provider_onednn,compute_backend_cpu,compute_ggml_runtime,compute_provider_ggml,graph_provider_onednn,compute_provider_native,compute_route_cpu,graph_route_cpu
+-- Configuring done (16.7s)
+-- Generating done (0.1s)
+-- Build files have been written to: /root/hyle-scratch/active-cpu-z/build

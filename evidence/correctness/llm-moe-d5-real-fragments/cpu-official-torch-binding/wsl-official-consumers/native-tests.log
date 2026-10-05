@@ -1,0 +1,105 @@
+Start testing: Oct 05 15:39 CST
+----------------------------------------------------------
+1/86 Testing: d5_ds4_cpu_direct
+1/86 Test: d5_ds4_cpu_direct
+Command: "/root/hyle-scratch/active-cpu-z/build/bin/d5_ds4_cpu_direct"
+Directory: /root/hyle-scratch/active-cpu-z/build
+"d5_ds4_cpu_direct" start time: Oct 05 15:39 CST
+Output:
+----------------------------------------------------------
+Running main() from /root/.cache/hyle/dependencies/v1/sources/googletest-063de7e9578f-162765170ae6/googletest/src/gtest_main.cc
+Note: Google Test filter = *TorchOfficial*
+[==========] Running 13 tests from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 13 tests from CpuTorchOfficial
+[ RUN      ] CpuTorchOfficial.D5GroupedFp8Batch
+[       OK ] CpuTorchOfficial.D5GroupedFp8Batch (19832 ms)
+[ RUN      ] CpuTorchOfficial.D5GlmOfficialFp8FullMoe
+[       OK ] CpuTorchOfficial.D5GlmOfficialFp8FullMoe (999 ms)
+[ RUN      ] CpuTorchOfficial.D5DynamicFp8DenseBatch
+[       OK ] CpuTorchOfficial.D5DynamicFp8DenseBatch (1529 ms)
+[ RUN      ] CpuTorchOfficial.D5GlmOfficialDynamicFp8SharedFfn
+[       OK ] CpuTorchOfficial.D5GlmOfficialDynamicFp8SharedFfn (313 ms)
+[ RUN      ] CpuTorchOfficial.D5OfficialFp8DenseNativeBatch
+[       OK ] CpuTorchOfficial.D5OfficialFp8DenseNativeBatch (410 ms)
+[ RUN      ] CpuTorchOfficial.D5GlmOfficialMixedRemaining
+[       OK ] CpuTorchOfficial.D5GlmOfficialMixedRemaining (10261 ms)
+[ RUN      ] CpuTorchOfficial.D5DeepSeekOfficialCompression
+[       OK ] CpuTorchOfficial.D5DeepSeekOfficialCompression (2082 ms)
+[ RUN      ] CpuTorchOfficial.D5DeepSeekOfficialAttention
+[       OK ] CpuTorchOfficial.D5DeepSeekOfficialAttention (14243 ms)
+[ RUN      ] CpuTorchOfficial.D5DeepSeekOfficialMtpAndFullHead
+[       OK ] CpuTorchOfficial.D5DeepSeekOfficialMtpAndFullHead (19471 ms)
+[ RUN      ] CpuTorchOfficial.D5DeepSeekOriginalFp4Projections
+[       OK ] CpuTorchOfficial.D5DeepSeekOriginalFp4Projections (25922 ms)
+[ RUN      ] CpuTorchOfficial.D5DeepSeekOfficialMoe
+[       OK ] CpuTorchOfficial.D5DeepSeekOfficialMoe (10003 ms)
+[ RUN      ] CpuTorchOfficial.D5DeepSeekExpertActivationRoundtrip
+[       OK ] CpuTorchOfficial.D5DeepSeekExpertActivationRoundtrip (75 ms)
+[ RUN      ] CpuTorchOfficial.OriginalFp8WeightDecodeAllFiniteCodes
+[       OK ] CpuTorchOfficial.OriginalFp8WeightDecodeAllFiniteCodes (2 ms)
+[----------] 13 tests from CpuTorchOfficial (105149 ms total)
+
+[----------] Global test environment tear-down
+[==========] 13 tests from 1 test suite ran. (105149 ms total)
+[  PASSED  ] 13 tests.
+<end of output>
+Test time = 105.36 sec
+----------------------------------------------------------
+Test Passed.
+"d5_ds4_cpu_direct" end time: Oct 05 15:41 CST
+"d5_ds4_cpu_direct" time elapsed: 00:01:45
+----------------------------------------------------------
+
+2/86 Testing: d5_ds4_cpu_graph
+2/86 Test: d5_ds4_cpu_graph
+Command: "/root/hyle-scratch/active-cpu-z/build/bin/d5_ds4_cpu_graph"
+Directory: /root/hyle-scratch/active-cpu-z/build
+"d5_ds4_cpu_graph" start time: Oct 05 15:41 CST
+Output:
+----------------------------------------------------------
+Running main() from /root/.cache/hyle/dependencies/v1/sources/googletest-063de7e9578f-162765170ae6/googletest/src/gtest_main.cc
+Note: Google Test filter = *TorchOfficial*
+[==========] Running 13 tests from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 13 tests from CpuGraphTorchOfficial
+[ RUN      ] CpuGraphTorchOfficial.D5GroupedFp8Batch
+[       OK ] CpuGraphTorchOfficial.D5GroupedFp8Batch (20856 ms)
+[ RUN      ] CpuGraphTorchOfficial.D5GlmOfficialFp8FullMoe
+[       OK ] CpuGraphTorchOfficial.D5GlmOfficialFp8FullMoe (1102 ms)
+[ RUN      ] CpuGraphTorchOfficial.D5DynamicFp8DenseBatch
+[       OK ] CpuGraphTorchOfficial.D5DynamicFp8DenseBatch (1637 ms)
+[ RUN      ] CpuGraphTorchOfficial.D5GlmOfficialDynamicFp8SharedFfn
+[       OK ] CpuGraphTorchOfficial.D5GlmOfficialDynamicFp8SharedFfn (281 ms)
+[ RUN      ] CpuGraphTorchOfficial.D5OfficialFp8DenseNativeBatch
+[       OK ] CpuGraphTorchOfficial.D5OfficialFp8DenseNativeBatch (386 ms)
+[ RUN      ] CpuGraphTorchOfficial.D5GlmOfficialMixedRemaining
+[       OK ] CpuGraphTorchOfficial.D5GlmOfficialMixedRemaining (9978 ms)
+[ RUN      ] CpuGraphTorchOfficial.D5DeepSeekOfficialCompression
+[       OK ] CpuGraphTorchOfficial.D5DeepSeekOfficialCompression (2164 ms)
+[ RUN      ] CpuGraphTorchOfficial.D5DeepSeekOfficialAttention
+[       OK ] CpuGraphTorchOfficial.D5DeepSeekOfficialAttention (14745 ms)
+[ RUN      ] CpuGraphTorchOfficial.D5DeepSeekOfficialMtpAndFullHead
+[       OK ] CpuGraphTorchOfficial.D5DeepSeekOfficialMtpAndFullHead (20300 ms)
+[ RUN      ] CpuGraphTorchOfficial.D5DeepSeekOriginalFp4Projections
+[       OK ] CpuGraphTorchOfficial.D5DeepSeekOriginalFp4Projections (27865 ms)
+[ RUN      ] CpuGraphTorchOfficial.D5DeepSeekOfficialMoe
+[       OK ] CpuGraphTorchOfficial.D5DeepSeekOfficialMoe (10207 ms)
+[ RUN      ] CpuGraphTorchOfficial.D5DeepSeekExpertActivationRoundtrip
+[       OK ] CpuGraphTorchOfficial.D5DeepSeekExpertActivationRoundtrip (78 ms)
+[ RUN      ] CpuGraphTorchOfficial.OriginalFp8WeightDecodeAllFiniteCodes
+[       OK ] CpuGraphTorchOfficial.OriginalFp8WeightDecodeAllFiniteCodes (2 ms)
+[----------] 13 tests from CpuGraphTorchOfficial (109605 ms total)
+
+[----------] Global test environment tear-down
+[==========] 13 tests from 1 test suite ran. (109605 ms total)
+[  PASSED  ] 13 tests.
+<end of output>
+Test time = 109.77 sec
+----------------------------------------------------------
+Test Passed.
+"d5_ds4_cpu_graph" end time: Oct 05 15:43 CST
+"d5_ds4_cpu_graph" time elapsed: 00:01:49
+----------------------------------------------------------
+
+End testing: Oct 05 15:43 CST

@@ -1,0 +1,90 @@
+{
+  "candidate": "3c22b7b9f230abc86e749225174d86b59c79881e",
+  "system": [
+    "Linux",
+    "kiro-workstation",
+    "6.18.40.1-microsoft-standard-WSL2",
+    "#1 SMP PREEMPT_DYNAMIC Fri Jul 31 22:12:15 UTC 2026",
+    "x86_64"
+  ],
+  "scope": "CPU official GLM/DeepSeek full fragments, Direct/Graph; Linux source correctness only",
+  "steps": [
+    {
+      "label": "configure",
+      "argv": [
+        "cmake",
+        "-S",
+        "/root/hyle-scratch/active-cpu-z/source",
+        "-B",
+        "/root/hyle-scratch/active-cpu-z/build",
+        "-DCMAKE_PROJECT_INCLUDE=/mnt/c/public/project-hyle/hyle/.scratch/validation/d5-cpu-apple-official-binding/wsl-official-consumers/fixture-warnings.cmake",
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DHYLE_WERROR=ON",
+        "-DHYLE_STATIC=ON",
+        "-DHYLE_BUILD_TESTS=ON",
+        "-DHYLE_INSTALL=OFF",
+        "-DHYLE_BUILD_BENCH=OFF",
+        "-DHYLE_TEST_INSTRUMENTATION=OFF",
+        "-DHYLE_DEV_FACTORS=compute_provider_native;compute_route_cpu;graph_route_cpu",
+        "-DHYLE_COMPUTE_CPU=ON",
+        "-DHYLE_COMPUTE_ONEDNN=ON",
+        "-DHYLE_COMPUTE_TORCH_CPU=ON",
+        "-DHYLE_COMPUTE_TORCH_CPU_ROOT=/root/hyle-scratch/libtorch-cpu-2.8.0/libtorch",
+        "-DHYLE_COMPUTE_CUDA=OFF",
+        "-DHYLE_COMPUTE_APPLE=OFF",
+        "-DHYLE_COMPUTE_VULKAN=OFF",
+        "-DFETCHCONTENT_FULLY_DISCONNECTED=ON"
+      ],
+      "returncode": 0,
+      "seconds": 16.895
+    },
+    {
+      "label": "build",
+      "argv": [
+        "cmake",
+        "--build",
+        "/root/hyle-scratch/active-cpu-z/build",
+        "--target",
+        "d5_ds4_cpu_direct",
+        "d5_ds4_cpu_graph",
+        "-j",
+        "2"
+      ],
+      "returncode": 0,
+      "seconds": 532.559
+    },
+    {
+      "label": "tests",
+      "argv": [
+        "ctest",
+        "--test-dir",
+        "/root/hyle-scratch/active-cpu-z/build",
+        "--output-on-failure",
+        "--no-tests=error",
+        "-R",
+        "^d5_ds4_cpu_(direct|graph)$",
+        "-j",
+        "1",
+        "--output-junit",
+        "/mnt/c/public/project-hyle/hyle/.scratch/validation/d5-cpu-apple-official-binding/wsl-official-consumers/tests.xml"
+      ],
+      "returncode": 0,
+      "seconds": 215.158
+    }
+  ],
+  "synced_files": 1508,
+  "updated": 22,
+  "removed": 0,
+  "archive_sha256": "8354ea4964489fbaf920ae05a0f945caa6ecb15da3ac6a3592e27adcb4639459",
+  "test_only_warning_overlay": {
+    "path": "/mnt/c/public/project-hyle/hyle/.scratch/validation/d5-cpu-apple-official-binding/wsl-official-consumers/fixture-warnings.cmake",
+    "sha256": "a25a340fa76c143fb4a2c9a70f414e1ddfa2c1e28180b575f04d59e76ffa2938",
+    "targets": [
+      "hyle_compute_route_cpu_test",
+      "hyle_graph_route_cpu_test"
+    ],
+    "product_werror": true,
+    "reason": "Existing fixtures intentionally default remaining aggregate fields; gtest macros under an if trigger dangling-else warnings. No product warning flags changed."
+  },
+  "verdict": "PASS"
+}

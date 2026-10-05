@@ -1,0 +1,5 @@
+[0/2] Re-checking globbed directories...
+[1/4] Building CXX object CMakeFiles/d5_ds4_cpu_direct.dir/tests/compute_route_cpu/d5_qwen38_official_test.cc.o
+[2/4] Building CXX object CMakeFiles/d5_ds4_cpu_graph.dir/tests/graph_route_cpu/d5_qwen38_official_test.cc.o
+[3/4] Linking CXX executable bin/d5_ds4_cpu_direct
+[4/4] Linking CXX executable bin/d5_ds4_cpu_graph

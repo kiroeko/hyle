@@ -1,0 +1,10 @@
+Internal ctest changing into directory: /root/hyle-scratch/active-cpu-z/build
+Test project /root/hyle-scratch/active-cpu-z/build
+    Start 1: d5_ds4_cpu_direct
+1/2 Test #1: d5_ds4_cpu_direct ................   Passed    5.94 sec
+    Start 2: d5_ds4_cpu_graph
+2/2 Test #2: d5_ds4_cpu_graph .................   Passed    5.33 sec
+
+100% tests passed, 0 tests failed out of 2
+
+Total Test time (real) =  11.29 sec
