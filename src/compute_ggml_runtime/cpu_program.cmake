@@ -1,0 +1,56 @@
+# A complete original CPU program, isolated from the baseline and GPU owners.
+# Read the locked target's composition rather than maintaining a kernel list.
+get_target_property(_cpu_sources ggml-cpu SOURCES)
+get_target_property(_cpu_source_dir ggml-cpu SOURCE_DIR)
+set(_cpu_absolute_sources "")
+foreach(_source IN LISTS _cpu_sources)
+  if(_source MATCHES "\\$<")
+    message(FATAL_ERROR "Locked ggml CPU source composition changed")
+  endif()
+  cmake_path(ABSOLUTE_PATH _source BASE_DIRECTORY "${_cpu_source_dir}" OUTPUT_VARIABLE _path)
+  list(APPEND _cpu_absolute_sources "${_path}")
+endforeach()
+add_library(hyle_ggml_cpu_avx2 MODULE ${_cpu_absolute_sources} cpu_program_export.cc)
+set_target_properties(hyle_ggml_cpu_avx2 PROPERTIES
+  EXPORT_NAME _ggml_cpu_avx2_456172ec OUTPUT_NAME hyle_ggml_cpu_avx2_456172ec
+  C_STANDARD 11 CXX_STANDARD 17 POSITION_INDEPENDENT_CODE ON
+  C_VISIBILITY_PRESET hidden CXX_VISIBILITY_PRESET hidden VISIBILITY_INLINES_HIDDEN ON)
+target_include_directories(hyle_ggml_cpu_avx2 PRIVATE
+  "$<TARGET_PROPERTY:ggml-cpu,INCLUDE_DIRECTORIES>")
+target_compile_definitions(hyle_ggml_cpu_avx2 PRIVATE
+  "$<TARGET_PROPERTY:ggml-cpu,COMPILE_DEFINITIONS>"
+  GGML_AVX GGML_AVX2 GGML_FMA GGML_F16C GGML_BMI2)
+target_compile_options(hyle_ggml_cpu_avx2 PRIVATE
+  "$<TARGET_PROPERTY:ggml-cpu,COMPILE_OPTIONS>")
+if(MSVC)
+  target_compile_definitions(hyle_ggml_cpu_avx2 PRIVATE __BMI2__)
+endif()
+include("${HYLE_SOURCE_DIR}/cmake/HyleIsa.cmake")
+hyle_isa_flags(_cpu_isa_flags AVX2)
+target_compile_options(hyle_ggml_cpu_avx2 PRIVATE ${_cpu_isa_flags})
+target_link_libraries(hyle_ggml_cpu_avx2 PRIVATE
+  "$<TARGET_PROPERTY:ggml-cpu,LINK_LIBRARIES>")
+hyle_apply_sanitizer(hyle_ggml_cpu_avx2)
+add_dependencies(hyle_compute_ggml_runtime hyle_ggml_cpu_avx2)
+target_compile_definitions(hyle_compute_ggml_runtime PRIVATE HYLE_GGML_CPU_AVX2_PROGRAM=1)
+hyle_register_runtime_files(TARGETS hyle_compute_ggml_runtime
+  FILES "$<TARGET_FILE:hyle_ggml_cpu_avx2>")
+
+include(CMakePackageConfigHelpers)
+if(WIN32)
+  set(HYLE_GGML_CPU_PROGRAM_INSTALLED_FILE
+    "${CMAKE_INSTALL_BINDIR}/hyle_ggml_cpu_avx2_456172ec${CMAKE_SHARED_MODULE_SUFFIX}")
+else()
+  set(HYLE_GGML_CPU_PROGRAM_INSTALLED_FILE
+    "${CMAKE_INSTALL_LIBDIR}/libhyle_ggml_cpu_avx2_456172ec${CMAKE_SHARED_MODULE_SUFFIX}")
+endif()
+configure_package_config_file("${CMAKE_CURRENT_SOURCE_DIR}/HyleGgmlCpuRuntimeConfig.cmake.in"
+  "${CMAKE_CURRENT_BINARY_DIR}/HyleGgmlCpuRuntimeConfig.cmake"
+  INSTALL_DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/HyleGgmlCpuRuntime"
+  PATH_VARS HYLE_GGML_CPU_PROGRAM_INSTALLED_FILE)
+hyle_register_package_dependency(NAME ggml_cpu_programs OWNER compute_ggml_runtime
+  EXPORT_TARGETS hyle_ggml_cpu_avx2
+  FEATURES compute_ggml_cpu_program
+  FIND_DEPENDENCIES HyleGgmlCpuRuntime
+  DEVELOPMENT_FILE_SPECS
+    "${CMAKE_CURRENT_BINARY_DIR}/HyleGgmlCpuRuntimeConfig.cmake|${CMAKE_INSTALL_LIBDIR}/cmake/HyleGgmlCpuRuntime|HyleGgmlCpuRuntimeConfig.cmake")

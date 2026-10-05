@@ -6,6 +6,8 @@
 
 namespace hyle::compute::ggml_runtime {
 
+struct CpuProgram;
+
 // One synchronous invocation slot. Graph metadata, tensor payloads, callback
 // data and allocator are borrowed and must outlive this object. Preparation
 // validates a graph built by a trusted, capacity-checked HYLE lowering; this is
@@ -32,6 +34,7 @@ public:
 private:
   void reset() noexcept;
   mem::AllocatorRef allocator_;
+  const CpuProgram *program_ = nullptr;
   ggml_cgraph *graph_ = nullptr;
   ggml_cplan plan_{};
 };

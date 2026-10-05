@@ -1,0 +1,15 @@
+@PACKAGE_INIT@
+
+set(_hyle_cpu_program "@PACKAGE_HYLE_GGML_CPU_PROGRAM_INSTALLED_FILE@")
+if(NOT EXISTS "${_hyle_cpu_program}")
+  message(FATAL_ERROR "Hyle CPU SDK is missing its original optimized ggml program: ${_hyle_cpu_program}")
+endif()
+# find_dependency runs before HyleTargets and the generic staging helper.
+foreach(_owner IN ITEMS hyle_compute_ggml_runtime hyle::_factor_compute_ggml_runtime)
+  string(SHA256 _key "${_owner}")
+  set_property(GLOBAL APPEND PROPERTY "HYLE_RUNTIME_FILES_${_key}" "${_hyle_cpu_program}")
+endforeach()
+set(HyleGgmlCpuRuntime_FOUND TRUE)
+unset(_hyle_cpu_program)
+unset(_owner)
+unset(_key)

@@ -1,4 +1,5 @@
 #include "cpu_execution.h"
+#include "cpu_program.h"
 
 #include <array>
 #include <atomic>
@@ -14,6 +15,27 @@
 namespace {
 using hyle::compute::ggml_runtime::CpuExecution;
 using hyle::compute::ggml_runtime::MetadataArena;
+
+TEST(GgmlCpuExecution, Avx2ProgramRequiresCpuAndOsEnabledPrerequisites) {
+  using hyle::platform::CpuFeature;
+  using hyle::platform::CpuFeatureSet;
+  using hyle::compute::ggml_runtime::cpu_avx2_program_eligible;
+  const std::array required{CpuFeature::kX86Avx, CpuFeature::kX86Avx2,
+                            CpuFeature::kX86Fma, CpuFeature::kX86F16c,
+                            CpuFeature::kX86Bmi2};
+  CpuFeatureSet complete;
+  for (const auto feature : required)
+    complete.set(feature);
+  EXPECT_TRUE(cpu_avx2_program_eligible(complete));
+  EXPECT_FALSE(cpu_avx2_program_eligible({}));
+  for (const auto feature : required) {
+    auto missing = complete;
+    missing.set(feature, false);
+    EXPECT_FALSE(cpu_avx2_program_eligible(missing));
+  }
+  CpuFeatureSet unrelated{CpuFeature::kArmNeon, CpuFeature::kArmBf16};
+  EXPECT_FALSE(cpu_avx2_program_eligible(unrelated));
+}
 
 // An original ggml RMSNorm -> F16 MatMul -> state addition. Payloads are
 // borrowed, metadata is arena-owned, and each invocation owns its workspace.

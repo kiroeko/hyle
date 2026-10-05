@@ -480,7 +480,7 @@ _hyle_declare_component(compute_provider_ggml_vulkan
 
 # Shared locked source and fallible resource seam; private to native providers.
 _hyle_declare_component(compute_ggml_runtime
-  PRIVATE_DEPS core error mem)
+  PRIVATE_DEPS core error mem platform)
 
 # M1-C AUDITED identities; the finite native resource/ABI contract is frozen.
 # Product dependencies and headers are added with their real implementation.
