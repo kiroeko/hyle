@@ -1,0 +1,258 @@
+{
+  "candidate": "91ad443bbaa20d51535d0bfcae145ba46b07b4a4",
+  "previous_registry_ref": "e05f13184215a9cba0a35ae33b1b16f03d3fcde6",
+  "platforms": {
+    "windows": {
+      "commands": 33,
+      "final_candidate_commands": 25,
+      "latest_commands_passed": [
+        "batch-build",
+        "compute_route_cpu-affected-tests",
+        "graph_route_cpu-affected-tests",
+        "native-public-header",
+        "provider-tests",
+        "sdk-disabled-adapter-and-assembly",
+        "shared-consumer-build",
+        "shared-consumer-configure",
+        "shared-install",
+        "shared-installed-ordinary",
+        "shared-producer-build",
+        "shared-producer-configure",
+        "shared-source-ordinary",
+        "static-consumer-build",
+        "static-consumer-configure",
+        "static-install",
+        "static-installed-ordinary",
+        "static-producer-build",
+        "static-producer-configure",
+        "static-source-ordinary",
+        "stub-build",
+        "stub-build-corrected-consumer",
+        "stub-configure"
+      ],
+      "tests": {
+        "provider": {
+          "registered": 114,
+          "passed": 114,
+          "skipped": []
+        },
+        "compute_route_cpu": {
+          "registered": 13,
+          "passed": 12,
+          "skipped": [
+            "D5RealQwenProjectionUsesExactProfileAndReplays"
+          ]
+        },
+        "graph_route_cpu": {
+          "registered": 15,
+          "passed": 15,
+          "skipped": []
+        },
+        "header": {
+          "registered": 1,
+          "passed": 1,
+          "skipped": []
+        }
+      },
+      "prior_failures_retained": [
+        {
+          "name": "provider-tests",
+          "args": [
+            "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_compute_provider_native_test.exe",
+            "--gtest_output=xml:C:\\public\\project-hyle\\hyle\\.scratch\\validation\\cpu-aten-storage-index\\windows\\provider.xml"
+          ],
+          "candidate": "685010865ec8fd43f6f2990cb5b72919515ca8eb",
+          "log": "3-provider-tests.log",
+          "returncode": 1,
+          "seconds": 0.547
+        },
+        {
+          "name": "shared-source-ordinary",
+          "args": [
+            "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\cpu_mature_consumer.exe"
+          ],
+          "candidate": "a546adbe4c052f7b23f744326477312e109c1eb3",
+          "log": "8-shared-source-ordinary.log",
+          "returncode": 3,
+          "seconds": 0.343
+        },
+        {
+          "name": "sdk-disabled-adapter-and-assembly",
+          "args": [
+            "C:\\hv\\cpu-si-disabled-stub\\cpu_aten_disabled_stub.exe"
+          ],
+          "candidate": "91ad443bbaa20d51535d0bfcae145ba46b07b4a4",
+          "log": "17-sdk-disabled-adapter-and-assembly.log",
+          "returncode": 2,
+          "seconds": 0.953
+        }
+      ],
+      "source_identity_files": 1332,
+      "delivery": {
+        "source_shared": "PASS",
+        "source_static": "PASS",
+        "installed_shared": "PASS",
+        "installed_static": "PASS"
+      },
+      "consumer_cleanup_bytes": 864985438
+    },
+    "linux": {
+      "commands": 21,
+      "final_candidate_commands": 21,
+      "latest_commands_passed": [
+        "batch-build",
+        "compute_route_cpu-affected-tests",
+        "configure",
+        "graph_route_cpu-affected-tests",
+        "native-public-header",
+        "provider-tests",
+        "shared-consumer-build",
+        "shared-consumer-configure",
+        "shared-install",
+        "shared-installed-ordinary",
+        "shared-producer-build",
+        "shared-producer-configure",
+        "shared-source-ordinary",
+        "static-consumer-build",
+        "static-consumer-configure",
+        "static-install",
+        "static-installed-ordinary",
+        "static-producer-build",
+        "static-producer-configure",
+        "static-source-ordinary"
+      ],
+      "tests": {
+        "provider": {
+          "registered": 114,
+          "passed": 114,
+          "skipped": []
+        },
+        "compute_route_cpu": {
+          "registered": 13,
+          "passed": 12,
+          "skipped": [
+            "D5RealQwenProjectionUsesExactProfileAndReplays"
+          ]
+        },
+        "graph_route_cpu": {
+          "registered": 15,
+          "passed": 15,
+          "skipped": []
+        },
+        "header": {
+          "registered": 1,
+          "passed": 1,
+          "skipped": []
+        }
+      },
+      "prior_failures_retained": [],
+      "source_identity_files": 1332,
+      "delivery": {
+        "source_shared": "PASS",
+        "source_static": "PASS",
+        "installed_shared": "PASS",
+        "installed_static": "PASS"
+      },
+      "consumer_cleanup_bytes": 48577829
+    }
+  },
+  "original_diagnostic": {
+    "assertions": 454,
+    "manifest": "original-manifest.json",
+    "does_not_prove_ordinary_or_delivery": true
+  },
+  "archive": {
+    "path": "qualification.zip",
+    "files": 89,
+    "bytes": 196593,
+    "sha256": "c35876a4e511b8027197db3715498467ca30c9763e3f3fae3af101c38068060e"
+  },
+  "loc": {
+    "candidate": "91ad443bbaa20d51535d0bfcae145ba46b07b4a4",
+    "code": 61764,
+    "files": 249
+  },
+  "cleanup": {
+    "consumer_logical_bytes_removed": 913563267,
+    "retained": "producer builds, installed SDKs and dependency caches",
+    "original_probe_hardlinks_not_counted_as_reclaimed_disk_bytes": true
+  },
+  "disabled_adapter": {
+    "platform": "windows",
+    "verdict": "PASS",
+    "boundary": "Current ATen/CPU/Graph translation units compiled with the ATen feature disabled; invalid factory omitted by both ordinary assemblers. Reused installed dependencies; this is not a fresh full SDK-OFF build or a claim of no Torch runtime dependency."
+  },
+  "performance": {
+    "tier": "P0",
+    "verdict": "PASS",
+    "boundary": "Declared packing, stable sort, native scratch and hot Tensor metadata. No Native P1, SOTA or WIN claim."
+  },
+  "red_team": {
+    "reviewer": "root, separate post-qualification source/evidence pass",
+    "date": "2026-10-06",
+    "budget": "one finite SI1-SI4 pass",
+    "verdict": "PASS",
+    "findings": [
+      {
+        "severity": "product",
+        "finding": "Copy alias advertisement violated public kNone",
+        "disposition": "Fixed once before candidate; retained initial XML and log"
+      },
+      {
+        "severity": "fixture",
+        "finding": "Failed invocation was reused in a recovery assertion",
+        "disposition": "Assert terminal rejection and cold recreation; core contract unchanged"
+      },
+      {
+        "severity": "fixture",
+        "finding": "Ordinary consumer demanded ATen for already mature domains",
+        "disposition": "Require named mature identities and exact results; wide index/Fill require ATen"
+      },
+      {
+        "severity": "fixture",
+        "finding": "Disabled assembly consumer assumed existing oneDNN absent",
+        "disposition": "Require no ATen candidate; preserve other built mature implementations"
+      },
+      {
+        "severity": "limit",
+        "finding": "Native physical OOM and noncoherent mapping fault not injected",
+        "disposition": "Source-audited native exception/mapping propagation; do not claim injection"
+      },
+      {
+        "severity": "limit",
+        "finding": "Managed native sorting/Tensor metadata can allocate during replay",
+        "disposition": "Explicit managed/private-thread/unknown-memory properties, not prepared-only"
+      }
+    ]
+  },
+  "maintenance": [
+    {
+      "command": "python scripts/check-module-closure.py --previous-ref e05f13184215a9cba0a35ae33b1b16f03d3fcde6 --write-status",
+      "returncode": 0,
+      "result": "generated status updated"
+    },
+    {
+      "command": "python scripts/check-module-closure.py --previous-ref e05f13184215a9cba0a35ae33b1b16f03d3fcde6",
+      "returncode": 0,
+      "result": "57 components, schema 4"
+    },
+    {
+      "command": "python scripts/check-docs.py",
+      "returncode": 0,
+      "result": "709 Markdown files, 3197 relative links"
+    },
+    {
+      "command": "python scripts/validation-select.py plan --base e05f13184215a9cba0a35ae33b1b16f03d3fcde6 --candidate WORKTREE --output .scratch/validation/cpu-aten-storage-index/selector-terminal-docs.json",
+      "returncode": 0,
+      "selected": [
+        "docs",
+        "closure"
+      ],
+      "skipped_or_reused": 130
+    },
+    {
+      "command": "git diff --check",
+      "returncode": 0
+    }
+  ]
+}

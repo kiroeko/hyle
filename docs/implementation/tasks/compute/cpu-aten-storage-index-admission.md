@@ -1,6 +1,6 @@
 # CPU ATen：存储与索引批量接线
 
-<!-- MODULE REVIEW: CANDIDATE -->
+<!-- MODULE REVIEW: CLOSED -->
 
 - owner：`compute_provider_native`、`compute_route_cpu`、`graph_route_cpu`；baseline
   `79ded44e1307b5161f3068b65b22b9feb894d029`，Windows canonical。
@@ -53,7 +53,7 @@
 原版程序 witness 已完成：[454个具名原程序断言与边界](../../../../evidence/correctness/cpu-aten-storage-index/README.md)。
 包括 I32/I64、odd-byte stride、rank9 Byte、重复读与原稳定排序选择最后逻辑写入。
 所需原 API 已提供且可运行，SI1–4 固定 BORROW/FIX；其它数学差异明确 DEFER。
-owner AUDITED，产品未改、产品 gate 均 UNPROVEN；不会继承原程序 witness 当普通路线通过。
+审计时owner AUDITED、产品尚未改；原程序 witness 不代签普通路线。产品资格见下方最终裁决。
 
 ### 接缝定界补充
 
@@ -86,8 +86,7 @@ exact input0，测试改成 Copy alias 明确拒绝。另一个失败是测试�
 
 ## 验证状态
 
-所有产品 correctness/delivery/usability/red-team gate 尚未运行；scope/architecture 已固定，P0 成本已声明。
-原 API diagnostic 不计成新普通路线接线完成或性能胜负。
+产品最终资格见下方；原 API diagnostic 不计成新普通路线接线完成或性能胜负。
 
 ## 不可变候选
 
@@ -102,4 +101,35 @@ Windows Provider114/114（其中新增8项批量资格）、普通CPU12通过/1�
 宽Fill本批具名消费仍必须绑定ATen。不给Native fallback签新接线通过；不修改产品排序。
 初始返回3保留收据与日志，此次仅消费者断言调整，不改变产品候选数学或常态成本。
 
-Linux、公开头、SDK关闭stub、installed static/shared尚未运行，均UNPROVEN；适用验证继续串行。
+Windows/Linux公开头、相同consumer的源码与installed static/shared全部通过；Windows关闭feature adapter/普通assembler资格通过，具体边界见证据。
+
+
+## 逐能力语义覆盖与最终七门
+
+[完整收据/命令/XML/失败与边界](../../../../evidence/correctness/cpu-aten-storage-index/README.md)。
+本表PASS仅本卡exact/plain/rank<=8/dense-output域，不代签任何未运行模型、GPU或数值math。
+
+| 能力/public journey | 正常与边界 | failure/OOM/overflow | ownership/teardown | concurrency/取消 | 主/正交消费 | 平台/交付 |
+|---|---|---|---|---|---|---|
+| Select/Fill/Copy/Concat，普通Direct→Graph下游 | PASS：全15scalar/odd stride/broadcast/rank0/8/empty/33parts | PASS：checked容量源码与tracked冷OOM；Copy非法alias拒绝 | PASS：borrowed Tensor先于maps关闭、资源平衡与close | PASS：私有槽/独立queue；中途原kernel取消NOT_APPLICABLE，无该承诺 | PASS：普通存储变化输入、UInt64 exact bits；无模型名特化 | PASS：Win/Linux测试/头及source/static/shared |
+| Gather/ScatterAssign，索引状态与下游 | PASS：all scalar/I32/I64/3axes/scalar及多维indices/odd stride/duplicate最后逻辑写入 | PASS：晚越界输出不变、旧failed槽拒绝、新槽恢复；tracked冷OOM，容量源码检查 | PASS：cold私有index slots，exact Scatter input0 alias，close/归零 | PASS：两个独立invocation/queue两线程12轮；同步完成，不承诺kernel抢占 | PASS：expert精确oracle+普通UInt64/I64 Direct与Graph消费 | PASS：Win/Linux及同一consumer三交付 |
+| factory/默认程序集与代价 | PASS：独立identity、旧成熟域顺序、关闭feature无ATen绑定 | PASS：明确unsupported/unknown预算与managed属性；native物理OOM只源码审计 | PASS：既有CPU Context/Completion不变 | PASS：原私有线程明确，ggml线程预算不冒充ATen局部控制 | PASS：用户仅选CPU，不给Provider排序/timing | PASS：existing header/package seam；stub不是完整SDK-OFF重建 |
+
+| Gate | 证据与限制 | Verdict |
+|---|---|---|
+| scope | SI1–4固定，六族全部public入口回映；math/模型loader/其它路线不扩张 | PASS |
+| architecture | existing Native binary/SDK与独立factory；Byte原程序/checked边界；CPU/Graph默认排序；无万能新executor | PASS |
+| correctness | 两平台Provider114/114、CPU12通过/1旧fixture跳过、Graph15/15、公开头1/1；逐语义/故障/生命周期上述矩阵 | PASS |
+| delivery | 两平台同一ordinary consumer source shared/static、installed shared/static；1332输入hash一致，Win DLL邻exe | PASS |
+| usability_docs | compute/graph说明普通入口、范围、managed/private线程/未知内存与三交付；docs/closure工具通过 | PASS |
+| red_team | root于2026-10-06独立一遍固定SI范围复核；Copy产品纠正、两消费者假设与failed槽纠正、原始失败全保留，无新未决产品发现 | PASS |
+| engineering_performance | P0包含packing/sort/base copy/native allocation与热metadata，属性明确；不是SOTA/WIN资格，Native P1冻结 | PASS |
+
+sanitizer/codegen测量不在本卡预声明验证；未改intrinsic/layout ABI/source hint，不补虚构测量。
+native物理OOM与非coherent mapping fault未注入，只源码检查传播，不写注入PASS；受供allocator冷OOM逐点实测。
+旧Qwen fixture跳过是本轮未改画像的既有缺失，本卡主/正交普通旅程独立已实跑。
+
+最终 **CLOSED**：候选 `91ad443bbaa20d51535d0bfcae145ba46b07b4a4`，全部适用SI工程门完成。相关code没有候选后修改；
+收口只证据/文档/状态。重开须具名数值/资源/生命周期/组合/交付反例或相关原依赖升级。
+Compute + Graph统一实现LOC **61,764/249文件**，由不可变候选统一脚本统计。
+CPU整体未完成，剩余数值成熟接线与冻结自研逐域裁决仍需后续独立有限批次。

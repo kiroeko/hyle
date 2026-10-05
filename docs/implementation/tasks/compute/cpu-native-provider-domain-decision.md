@@ -4,14 +4,15 @@
 
 - baseline：`155d1385c2b9a50eaa66a6c069b569f11daf4b03`，Windows canonical。用户要求：有成熟替代的所有自研算子都要裁决，
   不能因为低优先级后备就永久保留；只有唯一实现的精确域才直接保留。SIMD基础不删除。
-- owner：`compute_provider_native`、`compute_route_cpu`当前绑定本卡SCOPED；`graph_route_cpu`的有限成熟
-  接缝由[LB卡](cpu-ggml-layout-broadcast-admission.md)独立关闭，后续裁决若需改此owner须另行绑定。
+- owner：本卡保留SCOPED的冻结自研裁决ledger，不是当前产品owner授权。`compute_provider_native`、
+  `compute_route_cpu`、`graph_route_cpu`当前绑定[SI卡](cpu-aten-storage-index-admission.md)并独立CLOSED；
+  后续自研逐域裁决或新成熟接线需按新事实重新绑定owner并固定有限FIX。
   [标准CPU构建](../build/cpu-standard-provider-build-v1.md)与ggml优化程序接入已独立关闭，不能代替本卡。涉及oneDNN/ggml的具体接入修复，
   先据反例重新绑定相应owner并固定有限FIX，不借旧CLOSED/AUDITED记录授权。
 - scope：现存Native全部payload数学域（MatMul、norm、activation/gate、reduce/softmax、
   attention/RoPE、index/transform/cast），相对于oneDNN、ggml、已接Torch成熟域逐项核对。
   TorchAO/ds4原版数学、ATen调用和checked生命周期adapter与自研数学分开。
-- 证据：D4的宽泛KEEP_RESIDUAL不是新裁决；当前默认先oneDNN100、ggml200、Native1000，
+- 证据：D4的宽泛KEEP_RESIDUAL不是新裁决；当前Direct默认先oneDNN100、ggml200、可用ATen350、Native1000，
   优先级本身不证明胜负或保留依据。旧原子/完整片段性能只能在身份与合同匹配时复用。
 
 ## 顺序与停止
@@ -60,15 +61,15 @@ Fill 与 unique I64 row-write 有实际 witness。未资格的特殊值/alias/du
 | MatMul | ggml rank2..4 plain F32 row-major/contiguous-K转置RHS、双向leading广播与K0；oneDNN非空exact dense row-major F32含小M | rank>4、非vendor可表达strides/空输出region/预算档；转换成本不得抹掉 | DECISION_REQUIRED；两种物理布局按实际消费者匹配，旧Native-vs-Native不签WIN |
 | RMSNorm/LayerNorm | oneDNN dense浮点、input0精确原位；ggml可表达浮点、F32 accumulation | bounded RMS整符号域、受控预算、非vendor布局；原位不能一概归唯一 | DECISION_REQUIRED；普通out-of-place与oneDNN原位均须比较，旧Graph不能代签新融合 |
 | Unary | ggml Abs/Neg/Exp/Log/Sqrt/Rsqrt/Tanh/Sigmoid/ReLU三floating dtype；oneDNN dense F32稳定Softplus | SiLU/GELU/GELU-tanh、narrow Softplus、特殊layout/alias/非有限尾部仍需成熟资格 | DECISION_REQUIRED，按kind/dtype分开；ReLU成熟接线已验 |
-| Binary/Select | ggml Add/Subtract/Multiply/Divide；oneDNN Bool Select广播/plain分支 | number Min/Max的NaN/signed-zero、特殊alias/layout/scalar-width | DECISION_REQUIRED |
+| Binary/Select | ggml Add/Subtract/Multiply/Divide；oneDNN Bool Select广播/plain分支；ATen全15scalar exact Select/odd-byte stride/非零condition | number Min/Max的NaN/signed-zero、特殊alias/预算/bounded域 | DECISION_REQUIRED；宽位Select成熟接线已验 |
 | Reduce | ggml Sum/Mean、Unknown/F32 accumulation | Min/Max语义、部分axes/rank/empty/checked strides | DECISION_REQUIRED |
 | GatedActivation | ggml SiLU的packed/separate浮点端口；原位-Inf数值边界已完成两平台三交付资格 | 原版数学核不改；GELU/GELU-tanh原函数未接，alias/layout单列 | SiLU DECISION_REQUIRED；其它kind继续成熟准入核对，边界检查和必要cast成本全部计入 |
 | RoPE | ggml dense rank4、sequence-axis1、i32 positions、F32 frequencies | i64 positions、其它axis/rank/layout与checked strides | DECISION_REQUIRED，不偷换公共位置公式 |
 | Softmax | ggml dense三floating dtype任意axis、finite scale、同类型dense additive广播，安全特殊行 | Bool mask/log-softmax、非dense/alias/bounded预算等剩余域 | DECISION_REQUIRED；包含安全score扫描/scale-add和原布局materialization成本 |
 | SDPA | ggml unmasked BSHD/BHSD、三floating dtype、causal/noncausal、独立Dk/Dv与GQA | mask/alias/预算与具体非有限合同；不把同head Native与GQA完整程序混比 | DECISION_REQUIRED，只测同合同共同shape及真实资源/完成 |
-| Gather/Scatter | ggml i32 indices浮点Gather、浮点Scatter Add | i64、其它scalar/rank/layout；Assign最后逻辑写入获胜不与Add比较 | DECISION_REQUIRED，包含越界和失败不写输出 |
-| Concat/Cast/Copy | ggml全15plain scalar位Copy/Concat、三floating dtype Cast；oneDNN plain reorder | FP8 numeric Cast、odd/unaligned strides、bounded整域与预算；宽载体不等于宽math | DECISION_REQUIRED；宽存储成熟接线已验，数值转换另资格 |
-| View/Fill | ggml三floating dtype原精确scalar bits→repeat Fill；View为无数值payload的schema操作 | 宽Fill与alias/预算仍需成熟候选资格；不能以adapter拒绝签唯一 | Fill浮点DECISION_REQUIRED；View非payload，不虚构胜负 |
+| Gather/Scatter | ggml i32 indices浮点Gather、浮点Scatter Add；ATen全15scalar/I32-I64/各axis/多维indices/odd-byte stride Gather与最后逻辑写入Assign，exact dense input0 Assign alias | bounded/严格预算/其它alias；Assign不与Add比较 | DECISION_REQUIRED；SI成熟接线已验，late越界不写输出与失败槽重建 |
+| Concat/Cast/Copy | ggml全15plain scalar位Copy/Concat、三floating dtype Cast；oneDNN plain reorder；ATen全15scalar Copy/Concat含odd/unaligned stride | FP8 numeric Cast、bounded整域与预算；宽载体不等于宽math | DECISION_REQUIRED；宽存储成熟接线已验，数值转换另资格 |
+| View/Fill | ggml三floating dtype原精确scalar bits→repeat Fill；ATen全15scalar exact bits Fill；View为无数值payload的schema操作 | alias/bounded/严格预算仍单列，不能以adapter拒绝签唯一 | Fill DECISION_REQUIRED；全宽Fill成熟接线已验，View非payload不虚构胜负 |
 | ds4/Torch官方lowp | 原版ds4/TorchAO数学与ATen CPU程序 | HYLE只拥有描述、checked mapping、生命周期与组合 | BORROW；官方44/44不重开数学 |
 | Scan/TopK接缝 | `standard_index.cc`采用C++标准库inclusive_scan/partial_sort | 明确并非ggml数学；checked overflow、stable tie/NaN/storage-bits为语义适配 | BORROW/STANDARD；不重添旧Native实现 |
 
@@ -120,4 +121,4 @@ MatMul 的 Native 比较应保持调用方真实 RHS 物理布局：row-major �
 
 ### 成熟接线的当前资格增量
 
-[GB批](cpu-ggml-mature-admission-batch.md)、[TF批](cpu-ggml-transformer-fill-admission.md)与[LB批](cpu-ggml-layout-broadcast-admission.md)已分别真实关闭；上表更新为当前已接域。原188/564冷审计是不可变历史，不重写为新执行证据。activation/gate、Min/Max/宽Select/reduce、RoPE/I64 index/Scatter Assign、FP8 numeric Cast等候选仍需批量资格；oneDNN原REDUCTION API不等于当前primitive whitelist已启用。Native/SIMD算子优化、比较和清退继续冻结，拒绝不签UNIQUE，优先级不签WIN。
+[GB批](cpu-ggml-mature-admission-batch.md)、[TF批](cpu-ggml-transformer-fill-admission.md)、[LB批](cpu-ggml-layout-broadcast-admission.md)与[SI批](cpu-aten-storage-index-admission.md)已分别真实关闭；上表更新为当前已接域。原188/564冷审计是不可变历史，不重写为新执行证据。activation/gate、Min/Max/reduce、RoPE/I64 positions、Bool/log-softmax、FP8 numeric Cast与其它具名shape/资源域候选仍需批量资格；I64 Gather/Assign已由SI接入，不再混列未接。oneDNN原REDUCTION API不等于当前primitive whitelist已启用。Native/SIMD算子优化、比较和清退继续冻结，拒绝不签UNIQUE，优先级不签WIN。

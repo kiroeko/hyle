@@ -111,9 +111,14 @@ L2 可以直接用 F32 输入（低精度先 Cast）、平方、末轴 Sum、加
 同一接线也能保留按批次/头/分组轴归约、将结果广播回输入的组合；必要的物化由原版程序执行。
 支持的常量权重四节点 gated FFN 仍可保留 oneDNN 完整 region，其余节点按 CPU leaf 规则处理。
 普通用户不排列 Provider，compile 不接受 timing profile。标准 x64 构建通过 oneDNN AUTO 提供
-其实现；oneDNN 不可用时继续匹配 ggml/Native。超出已有能力明确返回错误。
+其实现；oneDNN 不可用或不支持该域时继续匹配 ggml、已构建的ATen与Native。超出已有能力明确返回错误。
 `compute::cpu::DefaultContextOptions` 可传入借用的 metadata allocator、同步 executor 和独立
 `native_threads` 预算；默认1使用调用线程，显式大于1才为每个 ggml invocation 准备持久 workers。
+ATen六族plain存储/索引程序同样由默认leaf规则准备绑定，可接Graph下游重放；宽scalar/I64/odd-byte
+stride与重复Assign的确切域见[CPU ATen资格](../../evidence/correctness/cpu-aten-storage-index/README.md)。
+这是原库managed leaf程序，没有新增整ATen region；既有ggml/oneDNN融合保留。其Tensor/scratch与
+私有线程由原库管理，`native_threads`不控制ATen线程池；借用的Tensor先于host mapping关闭，
+真实Completion返回完成或失败，不在执行时重选Provider。
 固定画像的当前运行结果及Windows三交付、代表片段性能资格见[覆盖表](model-fragment-coverage.md)，
 不外推到所有模型、形状或平台。
 

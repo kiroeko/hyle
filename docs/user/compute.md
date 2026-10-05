@@ -1,7 +1,7 @@
 # HYLE Compute：何时直接执行一个计算
 
 > 本页描述当前 Compute runtime foundation、CPU operation surface 与 CUDA runtime；施工资格只以
-> [`module-status.json`](../implementation/module-status.json) 为准。普通 CPU 入口自动组装已构建的 oneDNN/ggml/Native 实现；
+> [`module-status.json`](../implementation/module-status.json) 为准。普通 CPU 入口自动组装已构建的 oneDNN/ggml/ATen/Native 实现；
 > 标准 CPU 构建使用 `HYLE_COMPUTE_ONEDNN=AUTO`，在支持的 x86-64 目标接入已支持的 oneDNN 能力。
 > CUDA factor 提供 device/context/queue、memory resource、stream interop、byte transfer、Completion 与
 > command capture 基础运行时。普通路线已接入 ggml CUDA、cuBLASLt、SGLang、CCCL 与有限 HYLE CUDA Provider，
@@ -474,8 +474,21 @@ Provider 单独声明计算域；当前 CPU Native 只支持同 head MHA，对 G
 
 公共schema可以做纯描述推导，存在描述不等于每个Provider都能执行。上表是普通CPU能力与合同，
 不是Native Provider目录；CPU的Scan/TopK由成熟标准库接线承载，原Native域已退场。
-默认路线先匹配已接入的oneDNN/ggml合法域，Native只保留具名残余；block/opaque storage、量化
+默认路线先匹配已接入的oneDNN/ggml合法域，再匹配已构建的ATen存储/索引程序，Native只保留具名残余；block/opaque storage、量化
 与窄storage attention由理解相应格式的Provider承载，不会被隐藏materialize成另一种合同。
+
+CPU ATen 接入 Select、Gather、ScatterAssign、Fill、Copy、Concat 的15种 plain scalar位存储，
+exact shape、rank<=8、稠密输出；支持合法odd-byte strides、I32/I64及scalar/多维index、广播条件非零
+判真、重复Assign最后逻辑写入获胜。负零/NaN payload/FP8和宽整数只是原始位，不产生numeric Cast
+或宽math支持。Copy拒绝alias，仅Scatter允许exact dense input0 alias；索引先验界再写输出，失败
+执行槽冷重建。普通Direct与Graph下游无需额外接线；专家factory在`providers/native.h`中的
+`aten_cpu::provider()`，SDK关闭时invalid并由普通assembler跳过。
+
+这组原库程序是managed replay，包含必要index packing、稳定sort、base copy、native scratch与热
+Tensor metadata分配；同步阻塞host、使用原库私有线程、不承诺capture或精确私有内存上界。
+`native_threads`只设置ggml workers，不控制ATen线程池。要求Prepared-only或不能容忍unknown内存
+的硬预算会拒绝该候选；source/static/shared继续使用同一shared CPU LibTorch runtime。
+具体域与两平台普通三交付见[CPU ATen资格](../../evidence/correctness/cpu-aten-storage-index/README.md)。
 
 CPU 默认入口也支持 `model_ops::block_quantization_roundtrip()` 的
 `kFloat8E4M3Block64` 与 `kFloat4E2M1Block32`，调用固定原版 ds4 CPU 程序。
