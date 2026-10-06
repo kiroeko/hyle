@@ -1,0 +1,36 @@
+Running main() from C:\Users\kiro\AppData\Local\hyle\dependencies\v1\sources\googletest-063de7e9578f-162765170ae6\googletest\src\gtest_main.cc
+Note: Google Test filter = *C5Plain*.*
+[==========] Running 45 tests from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 45 tests from C5ActualPlainContracts/CpuC5Plain
+[ RUN      ] C5ActualPlainContracts/CpuC5Plain.ActualUncompressedTextRolesPreserveStorageAndReplay/p033ae23672c4671a
+[       OK ] C5ActualPlainContracts/CpuC5Plain.ActualUncompressedTextRolesPreserveStorageAndReplay/p033ae23672c4671a (3884 ms)
+[ RUN      ] C5ActualPlainContracts/CpuC5Plain.ActualUncompressedTextRolesPreserveStorageAndReplay/p0afd29f5ba0d80fe
+[       OK ] C5ActualPlainContracts/CpuC5Plain.ActualUncompressedTextRolesPreserveStorageAndReplay/p0afd29f5ba0d80fe (1 ms)
+[ RUN      ] C5ActualPlainContracts/CpuC5Plain.ActualUncompressedTextRolesPreserveStorageAndReplay/p0bd7aad8df2d52de
+[       OK ] C5ActualPlainContracts/CpuC5Plain.ActualUncompressedTextRolesPreserveStorageAndReplay/p0bd7aad8df2d52de (0 ms)
+[ RUN      ] C5ActualPlainContracts/CpuC5Plain.ActualUncompressedTextRolesPreserveStorageAndReplay/p17277e53d2d86a4c
+[       OK ] C5ActualPlainContracts/CpuC5Plain.ActualUncompressedTextRolesPreserveStorageAndReplay/p17277e53d2d86a4c (0 ms)
+[ RUN      ] C5ActualPlainContracts/CpuC5Plain.ActualUncompressedTextRolesPreserveStorageAndReplay/p1e385a41b1182a6a
+[       OK ] C5ActualPlainContracts/CpuC5Plain.ActualUncompressedTextRolesPreserveStorageAndReplay/p1e385a41b1182a6a (10 ms)
+[ RUN      ] C5ActualPlainContracts/CpuC5Plain.ActualUncompressedTextRolesPreserveStorageAndReplay/p1ee2dd3f7e4dba6e
+[       OK ] C5ActualPlainContracts/CpuC5Plain.ActualUncompressedTextRolesPreserveStorageAndReplay/p1ee2dd3f7e4dba6e (55160 ms)
+[ RUN      ] C5ActualPlainContracts/CpuC5Plain.ActualUncompressedTextRolesPreserveStorageAndReplay/p25de7cab6d16489e
+[       OK ] C5ActualPlainContracts/CpuC5Plain.ActualUncompressedTextRolesPreserveStorageAndReplay/p25de7cab6d16489e (21 ms)
+[ RUN      ] C5ActualPlainContracts/CpuC5Plain.ActualUncompressedTextRolesPreserveStorageAndReplay/p2e309ecbb28e6116
+[       OK ] C5ActualPlainContracts/CpuC5Plain.ActualUncompressedTextRolesPreserveStorageAndReplay/p2e309ecbb28e6116 (4 ms)
+[ RUN      ] C5ActualPlainContracts/CpuC5Plain.ActualUncompressedTextRolesPreserveStorageAndReplay/p2f522eea94460483
+[       OK ] C5ActualPlainContracts/CpuC5Plain.ActualUncompressedTextRolesPreserveStorageAndReplay/p2f522eea94460483 (226 ms)
+[ RUN      ] C5ActualPlainContracts/CpuC5Plain.ActualUncompressedTextRolesPreserveStorageAndReplay/p393f3bca8bb96741
+[       OK ] C5ActualPlainContracts/CpuC5Plain.ActualUncompressedTextRolesPreserveStorageAndReplay/p393f3bca8bb96741 (35 ms)
+[ RUN      ] C5ActualPlainContracts/CpuC5Plain.ActualUncompressedTextRolesPreserveStorageAndReplay/p395036291851d773
+[       OK ] C5ActualPlainContracts/CpuC5Plain.ActualUncompressedTextRolesPreserveStorageAndReplay/p395036291851d773 (0 ms)
+[ RUN      ] C5ActualPlainContracts/CpuC5Plain.ActualUncompressedTextRolesPreserveStorageAndReplay/p401603e31391cadf
+[       OK ] C5ActualPlainContracts/CpuC5Plain.ActualUncompressedTextRolesPreserveStorageAndReplay/p401603e31391cadf (0 ms)
+[ RUN      ] C5ActualPlainContracts/CpuC5Plain.ActualUncompressedTextRolesPreserveStorageAndReplay/p4952faefad3c4446
+[       OK ] C5ActualPlainContracts/CpuC5Plain.ActualUncompressedTextRolesPreserveStorageAndReplay/p4952faefad3c4446 (0 ms)
+[ RUN      ] C5ActualPlainContracts/CpuC5Plain.ActualUncompressedTextRolesPreserveStorageAndReplay/p4b14bc81a1f54ccb
+[       OK ] C5ActualPlainContracts/CpuC5Plain.ActualUncompressedTextRolesPreserveStorageAndReplay/p4b14bc81a1f54ccb (0 ms)
+[ RUN      ] C5ActualPlainContracts/CpuC5Plain.ActualUncompressedTextRolesPreserveStorageAndReplay/p4dc6f44efc136a4f
+[       OK ] C5ActualPlainContracts/CpuC5Plain.ActualUncompressedTextRolesPreserveStorageAndReplay/p4dc6f44efc136a4f (0 ms)
+[ RUN      ] C5ActualPlainContracts/CpuC5Plain.ActualUncompressedTextRolesPreserveStorageAndReplay/p6521e759968a3577

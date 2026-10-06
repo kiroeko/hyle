@@ -1,0 +1,6 @@
+{
+  "verdict": "INCOMPLETE_OWNED_PROCESS_CANCELLED",
+  "reason": "ScalarHalf generation of repeated whole-vocabulary payload; partial tests are not whole45 PASS",
+  "fix": "Same-byte periodic-row generation; K/N/vocabulary/native computation unchanged",
+  "numerical_gate_change": false
+}

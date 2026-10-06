@@ -1,0 +1,66 @@
+[
+  {
+    "name": "selected-build",
+    "args": [
+      "cmake",
+      "--build",
+      "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+      "--target",
+      "hyle_compute_provider_native_tests",
+      "hyle_compute_route_cpu_tests",
+      "hyle_graph_route_cpu_tests",
+      "--parallel",
+      "2"
+    ],
+    "candidate": "c740abc74a5a62ffacf60b26798228ca484317df",
+    "log": "1-selected-build.log",
+    "returncode": 0,
+    "seconds": 7.969
+  },
+  {
+    "name": "native-factor",
+    "args": [
+      "ctest",
+      "--test-dir",
+      "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+      "--output-on-failure",
+      "--no-tests=error",
+      "-L",
+      "^compute_provider_native$",
+      "-LE",
+      "headers",
+      "-j",
+      "1",
+      "--output-junit",
+      "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\cpu-coverage-c5-plain-windows\\c740abc74a5a\\native.xml"
+    ],
+    "candidate": "c740abc74a5a62ffacf60b26798228ca484317df",
+    "log": "2-native-factor.log",
+    "returncode": 0,
+    "seconds": 0.766
+  },
+  {
+    "name": "direct-plain-contracts",
+    "args": [
+      "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_compute_route_cpu_test.exe",
+      "--gtest_filter=*C5Plain*.*",
+      "--gtest_output=xml:C:\\public\\project-hyle\\hyle\\.scratch\\validation\\cpu-coverage-c5-plain-windows\\c740abc74a5a\\direct.xml"
+    ],
+    "candidate": "c740abc74a5a62ffacf60b26798228ca484317df",
+    "log": "3-direct-plain-contracts.log",
+    "returncode": 0,
+    "seconds": 6.313
+  },
+  {
+    "name": "graph-plain-contracts",
+    "args": [
+      "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_graph_route_cpu_test.exe",
+      "--gtest_filter=*C5Plain*.*",
+      "--gtest_output=xml:C:\\public\\project-hyle\\hyle\\.scratch\\validation\\cpu-coverage-c5-plain-windows\\c740abc74a5a\\graph.xml"
+    ],
+    "candidate": "c740abc74a5a62ffacf60b26798228ca484317df",
+    "log": "4-graph-plain-contracts.log",
+    "returncode": 0,
+    "seconds": 6.453
+  }
+]

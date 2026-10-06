@@ -1,0 +1,100 @@
+Running main() from C:\Users\kiro\AppData\Local\hyle\dependencies\v1\sources\googletest-063de7e9578f-162765170ae6\googletest\src\gtest_main.cc
+Note: Google Test filter = *C5Plain*.*
+[==========] Running 45 tests from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 45 tests from C5ActualPlainContracts/CpuC5Plain
+[ RUN      ] C5ActualPlainContracts/CpuC5Plain.ActualUncompressedTextRolesPreserveStorageAndReplay/p033ae23672c4671a
+[       OK ] C5ActualPlainContracts/CpuC5Plain.ActualUncompressedTextRolesPreserveStorageAndReplay/p033ae23672c4671a (96 ms)
+[ RUN      ] C5ActualPlainContracts/CpuC5Plain.ActualUncompressedTextRolesPreserveStorageAndReplay/p0afd29f5ba0d80fe
+[       OK ] C5ActualPlainContracts/CpuC5Plain.ActualUncompressedTextRolesPreserveStorageAndReplay/p0afd29f5ba0d80fe (1 ms)
+[ RUN      ] C5ActualPlainContracts/CpuC5Plain.ActualUncompressedTextRolesPreserveStorageAndReplay/p0bd7aad8df2d52de
+[       OK ] C5ActualPlainContracts/CpuC5Plain.ActualUncompressedTextRolesPreserveStorageAndReplay/p0bd7aad8df2d52de (0 ms)
+[ RUN      ] C5ActualPlainContracts/CpuC5Plain.ActualUncompressedTextRolesPreserveStorageAndReplay/p17277e53d2d86a4c
+[       OK ] C5ActualPlainContracts/CpuC5Plain.ActualUncompressedTextRolesPreserveStorageAndReplay/p17277e53d2d86a4c (0 ms)
+[ RUN      ] C5ActualPlainContracts/CpuC5Plain.ActualUncompressedTextRolesPreserveStorageAndReplay/p1e385a41b1182a6a
+[       OK ] C5ActualPlainContracts/CpuC5Plain.ActualUncompressedTextRolesPreserveStorageAndReplay/p1e385a41b1182a6a (13 ms)
+[ RUN      ] C5ActualPlainContracts/CpuC5Plain.ActualUncompressedTextRolesPreserveStorageAndReplay/p1ee2dd3f7e4dba6e
+[       OK ] C5ActualPlainContracts/CpuC5Plain.ActualUncompressedTextRolesPreserveStorageAndReplay/p1ee2dd3f7e4dba6e (1280 ms)
+[ RUN      ] C5ActualPlainContracts/CpuC5Plain.ActualUncompressedTextRolesPreserveStorageAndReplay/p25de7cab6d16489e
+[       OK ] C5ActualPlainContracts/CpuC5Plain.ActualUncompressedTextRolesPreserveStorageAndReplay/p25de7cab6d16489e (21 ms)
+[ RUN      ] C5ActualPlainContracts/CpuC5Plain.ActualUncompressedTextRolesPreserveStorageAndReplay/p2e309ecbb28e6116
+[       OK ] C5ActualPlainContracts/CpuC5Plain.ActualUncompressedTextRolesPreserveStorageAndReplay/p2e309ecbb28e6116 (5 ms)
+[ RUN      ] C5ActualPlainContracts/CpuC5Plain.ActualUncompressedTextRolesPreserveStorageAndReplay/p2f522eea94460483
+[       OK ] C5ActualPlainContracts/CpuC5Plain.ActualUncompressedTextRolesPreserveStorageAndReplay/p2f522eea94460483 (7 ms)
+[ RUN      ] C5ActualPlainContracts/CpuC5Plain.ActualUncompressedTextRolesPreserveStorageAndReplay/p393f3bca8bb96741
+[       OK ] C5ActualPlainContracts/CpuC5Plain.ActualUncompressedTextRolesPreserveStorageAndReplay/p393f3bca8bb96741 (13 ms)
+[ RUN      ] C5ActualPlainContracts/CpuC5Plain.ActualUncompressedTextRolesPreserveStorageAndReplay/p395036291851d773
+[       OK ] C5ActualPlainContracts/CpuC5Plain.ActualUncompressedTextRolesPreserveStorageAndReplay/p395036291851d773 (1 ms)
+[ RUN      ] C5ActualPlainContracts/CpuC5Plain.ActualUncompressedTextRolesPreserveStorageAndReplay/p401603e31391cadf
+[       OK ] C5ActualPlainContracts/CpuC5Plain.ActualUncompressedTextRolesPreserveStorageAndReplay/p401603e31391cadf (0 ms)
+[ RUN      ] C5ActualPlainContracts/CpuC5Plain.ActualUncompressedTextRolesPreserveStorageAndReplay/p4952faefad3c4446
+[       OK ] C5ActualPlainContracts/CpuC5Plain.ActualUncompressedTextRolesPreserveStorageAndReplay/p4952faefad3c4446 (0 ms)
+[ RUN      ] C5ActualPlainContracts/CpuC5Plain.ActualUncompressedTextRolesPreserveStorageAndReplay/p4b14bc81a1f54ccb
+[       OK ] C5ActualPlainContracts/CpuC5Plain.ActualUncompressedTextRolesPreserveStorageAndReplay/p4b14bc81a1f54ccb (0 ms)
+[ RUN      ] C5ActualPlainContracts/CpuC5Plain.ActualUncompressedTextRolesPreserveStorageAndReplay/p4dc6f44efc136a4f
+[       OK ] C5ActualPlainContracts/CpuC5Plain.ActualUncompressedTextRolesPreserveStorageAndReplay/p4dc6f44efc136a4f (0 ms)
+[ RUN      ] C5ActualPlainContracts/CpuC5Plain.ActualUncompressedTextRolesPreserveStorageAndReplay/p6521e759968a3577
+[       OK ] C5ActualPlainContracts/CpuC5Plain.ActualUncompressedTextRolesPreserveStorageAndReplay/p6521e759968a3577 (1024 ms)
+[ RUN      ] C5ActualPlainContracts/CpuC5Plain.ActualUncompressedTextRolesPreserveStorageAndReplay/p6656a11cafc1dac0
+[       OK ] C5ActualPlainContracts/CpuC5Plain.ActualUncompressedTextRolesPreserveStorageAndReplay/p6656a11cafc1dac0 (55 ms)
+[ RUN      ] C5ActualPlainContracts/CpuC5Plain.ActualUncompressedTextRolesPreserveStorageAndReplay/p67911b255e95f6ce
+[       OK ] C5ActualPlainContracts/CpuC5Plain.ActualUncompressedTextRolesPreserveStorageAndReplay/p67911b255e95f6ce (0 ms)
+[ RUN      ] C5ActualPlainContracts/CpuC5Plain.ActualUncompressedTextRolesPreserveStorageAndReplay/p6cad3b2609a46d21
+[       OK ] C5ActualPlainContracts/CpuC5Plain.ActualUncompressedTextRolesPreserveStorageAndReplay/p6cad3b2609a46d21 (1035 ms)
+[ RUN      ] C5ActualPlainContracts/CpuC5Plain.ActualUncompressedTextRolesPreserveStorageAndReplay/p7075e074f5c559c6
+[       OK ] C5ActualPlainContracts/CpuC5Plain.ActualUncompressedTextRolesPreserveStorageAndReplay/p7075e074f5c559c6 (0 ms)
+[ RUN      ] C5ActualPlainContracts/CpuC5Plain.ActualUncompressedTextRolesPreserveStorageAndReplay/p73b1be8a81f60682
+[       OK ] C5ActualPlainContracts/CpuC5Plain.ActualUncompressedTextRolesPreserveStorageAndReplay/p73b1be8a81f60682 (0 ms)
+[ RUN      ] C5ActualPlainContracts/CpuC5Plain.ActualUncompressedTextRolesPreserveStorageAndReplay/p77a635b55664287f
+[       OK ] C5ActualPlainContracts/CpuC5Plain.ActualUncompressedTextRolesPreserveStorageAndReplay/p77a635b55664287f (31 ms)
+[ RUN      ] C5ActualPlainContracts/CpuC5Plain.ActualUncompressedTextRolesPreserveStorageAndReplay/p78cfb55fb5085d3a
+[       OK ] C5ActualPlainContracts/CpuC5Plain.ActualUncompressedTextRolesPreserveStorageAndReplay/p78cfb55fb5085d3a (0 ms)
+[ RUN      ] C5ActualPlainContracts/CpuC5Plain.ActualUncompressedTextRolesPreserveStorageAndReplay/p893cd9940b6cedd0
+[       OK ] C5ActualPlainContracts/CpuC5Plain.ActualUncompressedTextRolesPreserveStorageAndReplay/p893cd9940b6cedd0 (0 ms)
+[ RUN      ] C5ActualPlainContracts/CpuC5Plain.ActualUncompressedTextRolesPreserveStorageAndReplay/p89a9ec4743c9107b
+[       OK ] C5ActualPlainContracts/CpuC5Plain.ActualUncompressedTextRolesPreserveStorageAndReplay/p89a9ec4743c9107b (0 ms)
+[ RUN      ] C5ActualPlainContracts/CpuC5Plain.ActualUncompressedTextRolesPreserveStorageAndReplay/p89c23f07a68ea22a
+[       OK ] C5ActualPlainContracts/CpuC5Plain.ActualUncompressedTextRolesPreserveStorageAndReplay/p89c23f07a68ea22a (414 ms)
+[ RUN      ] C5ActualPlainContracts/CpuC5Plain.ActualUncompressedTextRolesPreserveStorageAndReplay/p8f3f00196aec37da
+[       OK ] C5ActualPlainContracts/CpuC5Plain.ActualUncompressedTextRolesPreserveStorageAndReplay/p8f3f00196aec37da (1817 ms)
+[ RUN      ] C5ActualPlainContracts/CpuC5Plain.ActualUncompressedTextRolesPreserveStorageAndReplay/p91a52869c4190996
+[       OK ] C5ActualPlainContracts/CpuC5Plain.ActualUncompressedTextRolesPreserveStorageAndReplay/p91a52869c4190996 (4 ms)
+[ RUN      ] C5ActualPlainContracts/CpuC5Plain.ActualUncompressedTextRolesPreserveStorageAndReplay/p938bcf88666f5aa4
+[       OK ] C5ActualPlainContracts/CpuC5Plain.ActualUncompressedTextRolesPreserveStorageAndReplay/p938bcf88666f5aa4 (86 ms)
+[ RUN      ] C5ActualPlainContracts/CpuC5Plain.ActualUncompressedTextRolesPreserveStorageAndReplay/p968d0881539dd7a3
+[       OK ] C5ActualPlainContracts/CpuC5Plain.ActualUncompressedTextRolesPreserveStorageAndReplay/p968d0881539dd7a3 (0 ms)
+[ RUN      ] C5ActualPlainContracts/CpuC5Plain.ActualUncompressedTextRolesPreserveStorageAndReplay/p9e4bbe139a148cc5
+[       OK ] C5ActualPlainContracts/CpuC5Plain.ActualUncompressedTextRolesPreserveStorageAndReplay/p9e4bbe139a148cc5 (45 ms)
+[ RUN      ] C5ActualPlainContracts/CpuC5Plain.ActualUncompressedTextRolesPreserveStorageAndReplay/pa2a7b9ba93a5c9c2
+[       OK ] C5ActualPlainContracts/CpuC5Plain.ActualUncompressedTextRolesPreserveStorageAndReplay/pa2a7b9ba93a5c9c2 (0 ms)
+[ RUN      ] C5ActualPlainContracts/CpuC5Plain.ActualUncompressedTextRolesPreserveStorageAndReplay/paac32a736c36ec89
+[       OK ] C5ActualPlainContracts/CpuC5Plain.ActualUncompressedTextRolesPreserveStorageAndReplay/paac32a736c36ec89 (0 ms)
+[ RUN      ] C5ActualPlainContracts/CpuC5Plain.ActualUncompressedTextRolesPreserveStorageAndReplay/pac94ec1bf56a019b
+[       OK ] C5ActualPlainContracts/CpuC5Plain.ActualUncompressedTextRolesPreserveStorageAndReplay/pac94ec1bf56a019b (30 ms)
+[ RUN      ] C5ActualPlainContracts/CpuC5Plain.ActualUncompressedTextRolesPreserveStorageAndReplay/pb2ff1ec2df5e4a16
+[       OK ] C5ActualPlainContracts/CpuC5Plain.ActualUncompressedTextRolesPreserveStorageAndReplay/pb2ff1ec2df5e4a16 (1 ms)
+[ RUN      ] C5ActualPlainContracts/CpuC5Plain.ActualUncompressedTextRolesPreserveStorageAndReplay/pb3839cd7a67d8b9e
+[       OK ] C5ActualPlainContracts/CpuC5Plain.ActualUncompressedTextRolesPreserveStorageAndReplay/pb3839cd7a67d8b9e (50 ms)
+[ RUN      ] C5ActualPlainContracts/CpuC5Plain.ActualUncompressedTextRolesPreserveStorageAndReplay/pb76b261976613ec5
+[       OK ] C5ActualPlainContracts/CpuC5Plain.ActualUncompressedTextRolesPreserveStorageAndReplay/pb76b261976613ec5 (6 ms)
+[ RUN      ] C5ActualPlainContracts/CpuC5Plain.ActualUncompressedTextRolesPreserveStorageAndReplay/pbe853152955b7d0c
+[       OK ] C5ActualPlainContracts/CpuC5Plain.ActualUncompressedTextRolesPreserveStorageAndReplay/pbe853152955b7d0c (1 ms)
+[ RUN      ] C5ActualPlainContracts/CpuC5Plain.ActualUncompressedTextRolesPreserveStorageAndReplay/pc5b6491635fce0b8
+[       OK ] C5ActualPlainContracts/CpuC5Plain.ActualUncompressedTextRolesPreserveStorageAndReplay/pc5b6491635fce0b8 (0 ms)
+[ RUN      ] C5ActualPlainContracts/CpuC5Plain.ActualUncompressedTextRolesPreserveStorageAndReplay/pcd4216fa4b5222b9
+[       OK ] C5ActualPlainContracts/CpuC5Plain.ActualUncompressedTextRolesPreserveStorageAndReplay/pcd4216fa4b5222b9 (4 ms)
+[ RUN      ] C5ActualPlainContracts/CpuC5Plain.ActualUncompressedTextRolesPreserveStorageAndReplay/pd349b6da7bece4a8
+[       OK ] C5ActualPlainContracts/CpuC5Plain.ActualUncompressedTextRolesPreserveStorageAndReplay/pd349b6da7bece4a8 (1 ms)
+[ RUN      ] C5ActualPlainContracts/CpuC5Plain.ActualUncompressedTextRolesPreserveStorageAndReplay/pd75430a907622b9e
+[       OK ] C5ActualPlainContracts/CpuC5Plain.ActualUncompressedTextRolesPreserveStorageAndReplay/pd75430a907622b9e (0 ms)
+[ RUN      ] C5ActualPlainContracts/CpuC5Plain.ActualUncompressedTextRolesPreserveStorageAndReplay/pdacb7536905755fa
+[       OK ] C5ActualPlainContracts/CpuC5Plain.ActualUncompressedTextRolesPreserveStorageAndReplay/pdacb7536905755fa (0 ms)
+[ RUN      ] C5ActualPlainContracts/CpuC5Plain.ActualUncompressedTextRolesPreserveStorageAndReplay/pdc1efdcf1673bd32
+[       OK ] C5ActualPlainContracts/CpuC5Plain.ActualUncompressedTextRolesPreserveStorageAndReplay/pdc1efdcf1673bd32 (1 ms)
+[ RUN      ] C5ActualPlainContracts/CpuC5Plain.ActualUncompressedTextRolesPreserveStorageAndReplay/pf0d7ebdd2f4776da
+[       OK ] C5ActualPlainContracts/CpuC5Plain.ActualUncompressedTextRolesPreserveStorageAndReplay/pf0d7ebdd2f4776da (0 ms)
+[----------] 45 tests from C5ActualPlainContracts/CpuC5Plain (6060 ms total)
+
+[----------] Global test environment tear-down
+[==========] 45 tests from 1 test suite ran. (6060 ms total)
+[  PASSED  ] 45 tests.

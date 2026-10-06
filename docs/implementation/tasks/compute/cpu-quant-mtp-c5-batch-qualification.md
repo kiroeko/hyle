@@ -208,3 +208,8 @@ Direct4已通过，只补未执行Graph，没有重复build/Direct或改产品�
 仍原完整K/N/词表与原库计算；原45批次被具名停止，日志保留未完成，不计PASS。
 新conv资源诊断发现测试allocator代理未转发raw_deleter，原小conv raw_deallocate因此退出；
 按原接口补齐代理，OOM/退役/恢复/并发诊断已通过，产品原库无需数学修复。移除诊断输出后须正式补验。
+
+`c740abc74a5a`移除诊断后的两系统普通Direct/Graph各45项，共180项实际通过；
+原资源因子包含卷积真实原allocator OOM、恢复/并发/metadata回收，也通过。
+准确信息见[非GGUF原text资格](../../../../evidence/correctness/cpu-quant-mtp-c5-plain/README.md)。
+更新两系统static/shared SDK正在执行，尚未写PASS；新增原库接缝使旧产品SDK不能代签这三conv格。

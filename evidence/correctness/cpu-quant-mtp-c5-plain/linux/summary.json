@@ -1,0 +1,16 @@
+{
+  "candidate": "c740abc74a5a62ffacf60b26798228ca484317df",
+  "platform": "linux",
+  "checks": 90,
+  "scope": "All45 actual uncompressed language contracts of four admitted nonGGUF artifacts",
+  "storage": "F16/BF16/F32/I32 preserved; Qwen zero-centered norms separate from ordinary gamma",
+  "capacities": "Full reduction/output width, native low-precision conv channels/kernel, whole vocabulary span and all head rows",
+  "failure": "Indexed cases fail before published writes, retire failed slots and recover through fresh slots",
+  "resource": "Real original allocator OOM/fresh recovery/concurrent independent convolution slots in Native factor",
+  "limits": [
+    "Synthetic nonzero legal payloads; not full real-weight inference",
+    "Vision stays outside original language scope",
+    "Packed companions already qualify via F2",
+    "Whole model-family aggregation and updated SDK remain required"
+  ]
+}

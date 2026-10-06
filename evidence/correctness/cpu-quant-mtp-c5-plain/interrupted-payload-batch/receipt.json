@@ -1,0 +1,54 @@
+[
+  {
+    "name": "selected-build",
+    "args": [
+      "cmake",
+      "--build",
+      "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+      "--target",
+      "hyle_compute_provider_native_tests",
+      "hyle_compute_route_cpu_tests",
+      "hyle_graph_route_cpu_tests",
+      "--parallel",
+      "2"
+    ],
+    "candidate": "07a9c71ddb2b06973e8e716f34dba60222b08943",
+    "log": "1-selected-build.log",
+    "returncode": 0,
+    "seconds": 13.813
+  },
+  {
+    "name": "native-factor",
+    "args": [
+      "ctest",
+      "--test-dir",
+      "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+      "--output-on-failure",
+      "--no-tests=error",
+      "-L",
+      "^compute_provider_native$",
+      "-LE",
+      "headers",
+      "-j",
+      "1",
+      "--output-junit",
+      "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\cpu-coverage-c5-plain-windows\\07a9c71ddb2b\\native.xml"
+    ],
+    "candidate": "07a9c71ddb2b06973e8e716f34dba60222b08943",
+    "log": "2-native-factor.log",
+    "returncode": 0,
+    "seconds": 0.828
+  },
+  {
+    "name": "direct-plain-contracts",
+    "args": [
+      "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_compute_route_cpu_test.exe",
+      "--gtest_filter=*C5Plain*.*",
+      "--gtest_output=xml:C:\\public\\project-hyle\\hyle\\.scratch\\validation\\cpu-coverage-c5-plain-windows\\07a9c71ddb2b\\direct.xml"
+    ],
+    "candidate": "07a9c71ddb2b06973e8e716f34dba60222b08943",
+    "log": "3-direct-plain-contracts.log",
+    "returncode": 4294967295,
+    "seconds": 236.031
+  }
+]

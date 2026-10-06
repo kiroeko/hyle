@@ -1,0 +1,11 @@
+[0/2] Re-checking globbed directories...
+[1/11] Linking CXX static library bin\hyle_compute_provider_native.lib
+[2/11] C:\WINDOWS\system32\cmd.exe /C "cd /D C:\public\project-hyle\hyle\.scratch\build-compute-v2-dev\tests\compute_route_cpu && "C:\Program Files\CMake\bin\cmake.exe" -P C:/public/project-hyle/hyle/.scratch/build-compute-v2-dev/tests/compute_route_cpu/hyle-runtime/hyle_compute_route_cpu_test-Release.cmake"
+[3/11] C:\WINDOWS\system32\cmd.exe /C "cd /D C:\public\project-hyle\hyle\.scratch\build-compute-v2-dev\tests\graph_route_cpu && "C:\Program Files\CMake\bin\cmake.exe" -P C:/public/project-hyle/hyle/.scratch/build-compute-v2-dev/tests/graph_route_cpu/hyle-runtime/hyle_graph_route_cpu_test-Release.cmake"
+[4/11] C:\WINDOWS\system32\cmd.exe /C "cd /D C:\public\project-hyle\hyle\.scratch\build-compute-v2-dev\tests\graph_route_cpu && "C:\Program Files\CMake\bin\cmake.exe" -P C:/public/project-hyle/hyle/.scratch/build-compute-v2-dev/tests/graph_route_cpu/hyle-runtime/hyle_graph_route_cpu_cpu_executor_test-Release.cmake"
+[5/11] Building CXX object tests\compute_route_cpu\CMakeFiles\hyle_compute_route_cpu_test.dir\d5_qwen38_official_test.cc.obj
+[6/11] Linking CXX executable bin\hyle_compute_provider_native_test.exe
+[7/11] Building CXX object tests\graph_route_cpu\CMakeFiles\hyle_graph_route_cpu_test.dir\d5_qwen38_official_test.cc.obj
+[8/11] Linking CXX executable bin\hyle_compute_route_cpu_test.exe
+[9/11] Linking CXX executable bin\hyle_graph_route_cpu_test.exe
+[10/11] Linking CXX executable bin\hyle_graph_route_cpu_cpu_executor_test.exe
