@@ -373,8 +373,8 @@
     {
       "module": "compute_provider_ggml",
       "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/cpu-quant-mtp-c3-format-bindings.md",
-      "summary": "CPU扩覆盖C3 AUDITED：真实11 GGUF格式与原MatMul/Grouped/GetRows有限G1–G4已冻结，非GGUF仍审计未授权Native新实现；批量接线、未签执行/三交付，GPU资格保持。"
+      "record": "docs/implementation/tasks/compute/cpu-quant-mtp-c4-model-branches.md",
+      "summary": "CPU扩覆盖C4 AUDITED：新版精确身份、target hidden、独立DSpark cache/sink attention、Markov/confidence及完整主干/sidecar有限F1-F4固定；原C3证据保留，禁止新自研数学，未签本包运行资格。"
     },
     {
       "module": "graph_provider_onednn",
@@ -390,8 +390,8 @@
     {
       "module": "compute_ops",
       "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/cpu-quant-mtp-c3-format-bindings.md",
-      "summary": "CPU扩覆盖C3 AUDITED：真实11 GGUF格式与原MatMul/Grouped/GetRows有限G1–G4已冻结，非GGUF仍审计未授权Native新实现；批量接线、未签执行/三交付，GPU资格保持。"
+      "record": "docs/implementation/tasks/compute/cpu-quant-mtp-c4-model-branches.md",
+      "summary": "CPU扩覆盖C4 AUDITED：新版精确身份、target hidden、独立DSpark cache/sink attention、Markov/confidence及完整主干/sidecar有限F1-F4固定；原C3证据保留，禁止新自研数学，未签本包运行资格。"
     },
     {
       "module": "compute_backend_cpu",
@@ -418,8 +418,8 @@
     {
       "module": "compute_provider_native",
       "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/cpu-quant-mtp-c3-format-bindings.md",
-      "summary": "CPU扩覆盖C3 AUDITED：非GGUF N1–N3原NF4/double-quant、AWQ、CT cold CPU解码端口与成熟ATen次序固定；MLX压缩执行仍审计未授权新数学，原自研冻结，未签运行/三交付。"
+      "record": "docs/implementation/tasks/compute/cpu-quant-mtp-c4-model-branches.md",
+      "summary": "CPU扩覆盖C4 AUDITED：新版精确身份、target hidden、独立DSpark cache/sink attention、Markov/confidence及完整主干/sidecar有限F1-F4固定；原C3证据保留，禁止新自研数学，未签本包运行资格。"
     },
     {
       "module": "compute_sched",

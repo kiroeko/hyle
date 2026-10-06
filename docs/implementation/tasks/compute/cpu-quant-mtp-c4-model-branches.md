@@ -1,10 +1,11 @@
 # C4：CPU 新版主干、MTP 与 DSpark 组合接线
 
-<!-- MODULE REVIEW: SCOPED -->
+<!-- MODULE REVIEW: AUDITED -->
 
 ## 计划身份
 
-- 状态：SCOPED，当前审计真实新版组合消费者；未将产品owner从C3交接，没有新产品修改授权或执行PASS。
+- 状态：AUDITED，真实新版组合消费已完成有限源码/角色审计；compute_ops/ggml/native从C3交接，保持原状态。
+  没有新数学核授权或执行PASS；C3原证据/未决画像资格保留，不假写整包CLOSED。
 - baseline：`2d1d787396f1f2798fe14c7ff3cece9bbebbbbda`；Windows实际HEAD/worktree已核对，保留全部后续提交。
 - owner范围：compute_provider_ggml、compute_ops；原ATen/借用计算涉及compute_provider_native；CPU Direct/Graph facade按实际产品变化绑定。
 - 总合同：[CPU扩覆盖计划](cpu-quant-mtp-coverage-expansion-plan.md)；事实：[缺口清单](cpu-popular-quant-mtp-gap-list.md)。
@@ -62,3 +63,18 @@
   若发现公开语义或成熟承载真缺口，须先固定具名FIX并绑定owner，不能写新的数学核补洞。
 - 缩小token/batch/驻留专家与头部常量分片；保留实际hidden/latent/head/rank/block/词表跨度。
   采样/接受策略留给consumer，head输入显式提供前一token，不省略Markov偏置或confidence。
+
+## 固定 FIX 与承载裁决
+
+| FIX | 真实差异 | 本批动作 | 结束证据 |
+|---|---|---|---|
+| F1 | 旧preview profile/NextN不能描述新版 | 固定新版revision/config/header身份、3-stage DSpark及sidecar实际角色；不扩公共路由器 | 精确身份和原dtype/shape对账 |
+| F2 | 缺target三层hidden与draft输入消费 | 成熟Reduce/Concat、原FP8 projection/RMSNorm、BF16 embedding及HC扩展 | 原公式非零数值、实际内宽、共享参数 |
+| F3 | 旧单token滑窗不能代签draft block | 原target KV/RoPE/group64 roundtrip、独立环cache、5-token稀疏sink attention与逆RoPE/分组output | prefill超过window、wrap/reset/实际反馈、完整attention输出 |
+| F4 | 缺Markov/confidence及完整新版branch | BF16 embedding→F32全词表head、logit bias与BF16-source/F32 confidence；原HC/MoE/共享head；真实Qwen/Flash sidecar | 四片段与完整branch，两入口、状态/资源/三交付 |
+
+已有成熟语义能表达上述程序；初批仅接组合消费者与资格，没有已证明必须新增的产品数学或公共API。
+若实际执行暴露接缝缺陷，只在这些FIX所列边界内定向修复；超出范围先重新审计，不重开自研竞赛。
+Provider可执行原完整operation/region，Graph负责边界；测试Direct展开仅为自然Compute消费，不规定产品逐kernel调度。
+P0记录实际cold scale widening、prepare绑定、hot原量化/selected-expert和managed临时成本。
+无第二家同合同承载的格不比赛；有具名重叠或接入成本风险才纳入总计划最多两个完整消费族的一份P1。
