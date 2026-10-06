@@ -1,7 +1,6 @@
 #pragma once
 
 #include "d5_deepseek_official_attention.h"
-#include <iostream>
 
 // Fixed new model consumers. Product math stays in the mature providers.
 // Source: C1 complete headers and the official DSpark model.py, not preview NextN.
@@ -280,19 +279,21 @@ inline Fragment draft_attention(const Model &model,std::span<const float> initia
   auto observed=std::make_shared<RotaryObservation>();
   f.observe=[observed,heads=model.heads](std::size_t port,std::span<const float> actual) {
     if(port==1)observed->attention.assign(actual.begin(),actual.end());
-    if(port==2) {
-      std::vector<std::int32_t> positions(block);
-      std::iota(positions.begin(),positions.end(),int(129+observed->step%3));
-      const auto local=rotary_rows(observed->attention,heads,positions,true);
-      float maximum=0;std::size_t different=0;
-      for(std::size_t i=0;i<actual.size();++i) {
-        maximum=std::max(maximum,std::abs(actual[i]-local[i]));
-        if(actual[i]!=local[i])++different;
-      }
-      std::cout<<"DSpark inverse RoPE conditioned on actual attention: step="<<observed->step
-               <<" max_abs="<<maximum<<" different="<<different<<'\n';
-    }
     if(port==4)++observed->step;
+  };
+  // Inverse rotation can cancel two admitted BF16 inputs. A pointwise
+  // relative gate on the tiny result is not an error propagation bound.
+  // Validate the original equation on the actual public attention output;
+  // cache, attention, grouped projection and final output retain chain gates.
+  f.validate_intermediate=[observed,heads=model.heads](std::size_t port,std::span<const float> actual) {
+    if(port!=2)return false;
+    std::vector<std::int32_t> positions(block);
+    std::iota(positions.begin(),positions.end(),int(129+observed->step%3));
+    const auto local=rotary_rows(observed->attention,heads,positions,true);
+    EXPECT_EQ(actual.size(),local.size());
+    for(std::size_t i=0;i<actual.size() && i<local.size();++i)
+      EXPECT_EQ(actual[i],local[i])<<i;
+    return true;
   };
   return f;
 }

@@ -61,6 +61,9 @@ struct Fragment final {
   };
   std::optional<UnorderedIds> unordered_ids{};
   std::function<void(std::size_t, std::span<const float>)> observe{};
+  // A consumer may validate an ill-conditioned intermediate against its
+  // actual predecessor. Final outputs still use the independent chain oracle.
+  std::function<bool(std::size_t, std::span<const float>)> validate_intermediate{};
   // Optional one-time, native weight preparation. Outputs replace these
   // constant slots; no host-generated payload is uploaded into those slots.
   std::shared_ptr<const Fragment> preparation{};
@@ -686,7 +689,9 @@ inline void expect_output(const Fragment &fragment,
                           std::span<const float> native_attention = {},
                           bool exact = false,
                           const Fragment::UnorderedIds *ids = nullptr,
-                          bool bfloat_chain = false) {
+                          bool bfloat_chain = false,
+                          std::size_t output = std::numeric_limits<std::size_t>::max()) {
+  if (fragment.validate_intermediate && fragment.validate_intermediate(output,actual)) return;
   if (ids) {
     ASSERT_EQ(actual.size(), expected.size());
     ASSERT_EQ(actual.size() % ids->row_width, 0U);
