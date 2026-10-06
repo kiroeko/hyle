@@ -906,19 +906,21 @@ Status propose(void *, const detail::ProviderOperationRequest &request,
   for (auto &item : inputs)
     item = host();
   outputs[0] = host();
-  *out = {.route = static_cast<std::uint64_t>(request.operation.kind()),
-          .runtime = kRuntime,
-          .workspace_resource = host(),
-          .cost = {.workspace = WorkspaceRequirement{},
-                   .persistent_bytes = sizeof(Program) + request.inputs.size() *
-                                                             sizeof(TensorDesc),
-                   .copy_bytes = std::nullopt,
-                   .repack_bytes = std::nullopt,
-                   .synchronization_count = 0,
-                   .dispatch_count = std::nullopt},
-          .implementation = ProviderImplementationId{
-              0x4154454e00000100ULL +
-              static_cast<std::uint64_t>(request.operation.kind())}};
+  *out = {
+      .route = static_cast<std::uint64_t>(request.operation.kind()),
+      .runtime = kRuntime,
+      .workspace_resource = host(),
+      .cost = {.workspace = WorkspaceRequirement{},
+               .persistent_bytes =
+                   sizeof(Program) + request.inputs.size() * sizeof(TensorDesc),
+               .copy_bytes = std::nullopt,
+               .repack_bytes = std::nullopt,
+               .synchronization_count = 0,
+               .dispatch_count = std::nullopt,
+               .compilation_storage = {.resident_bytes = 0, .peak_bytes = 0}},
+      .implementation = ProviderImplementationId{
+          0x4154454e00000100ULL +
+          static_cast<std::uint64_t>(request.operation.kind())}};
   return Status::Ok();
 }
 ProviderPrepareOutcome prepare(void *,
@@ -1022,7 +1024,8 @@ ProviderPrepareOutcome prepare(void *,
 const detail::ProviderVTable kProviderVTable{
     .identity = {.id = kProviderId,
                  .name = "ATen CPU programs",
-                 .version = "libtorch-2.8.0-cpu+programs-5"},
+                 .version =
+                     "libtorch-2.8.0-cpu+programs-5+compilation-bounds-1"},
     .create_context = &create_context,
     .destroy_context = &destroy_context,
     .propose = &propose,

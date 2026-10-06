@@ -124,6 +124,9 @@ stride与重复Assign的确切域见[CPU ATen资格](../../evidence/correctness/
 这是原库managed leaf程序，没有新增整ATen region；既有ggml/oneDNN融合保留。其Tensor/scratch与
 私有线程由原库管理，`native_threads`不控制ATen线程池；借用的Tensor先于host mapping关闭，
 真实Completion返回完成或失败，不在执行时重选Provider。
+冷编译Program/描述由传入allocator计费，额外private resident/peak为0，所以strict compilation
+预算也可匹配此成熟leaf。总编译metadata仍受预算约束，运行时private存储仍可能unknown；
+这不表示prepared replay、capture或zero-hot-allocation。
 同一ATen leaf还接稳定activation/gate、number Min/Max与多轴Reduce，F32/F16/BF16变化输入
 已通过普通Direct和op→Copy Graph三交付；[范围/数值阶段/alias/成本](../../evidence/correctness/cpu-aten-numeric/README.md)
 同Compute，限定已锁Windows/Linux x86_64 SDK。原Double/F32转换、packing和临时Tensor成本仍在

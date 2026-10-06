@@ -13,6 +13,8 @@
 #include <vector>
 
 #include "../compute/native_context_fixture.h"
+#include "hyle/compute/backends/cpu.h"
+#include "hyle/compute/providers/native.h"
 #include "hyle/mem/buffer.h"
 #include "prepared_state.h"
 #include "provider_internal.h"
@@ -1315,6 +1317,75 @@ TEST(NativeProviderShape,
   auto arbitrary_output = propose();
   ASSERT_FALSE(arbitrary_output);
   EXPECT_TRUE(arbitrary_output.error().IsUnimplemented());
+}
+
+TEST(AtenCpuResources, ColdCompilationBoundsCoverAllAdmittedProgramFamilies) {
+  if (!aten_cpu::provider())
+    GTEST_SKIP() << "locked Torch CPU SDK disabled";
+  auto context = Context::create(cpu::device(), aten_cpu::provider()).value();
+  const auto tensor = [](DataType type,
+                         std::initializer_list<std::int64_t> shape) {
+    return TensorDesc::dense(type, {shape.begin(), shape.size()}).value();
+  };
+  const auto f = DataType::kFloat32;
+  const auto a = tensor(f, {2, 4}), parameter = tensor(f, {4});
+  const auto table = tensor(f, {3, 4});
+  const auto index = tensor(DataType::kInt64, {2});
+  const auto attention = tensor(f, {1, 2, 2, 4});
+  struct Case {
+    Operation operation;
+    std::vector<TensorDesc> inputs;
+  };
+  const std::vector<Case> cases{
+      {Operation(Copy{}), {tensor(DataType::kUInt64, {2, 4})}},
+      {Operation(Fill{
+           .output_shape =
+               TensorShape::create(std::array<std::int64_t, 2>{2, 4}).value(),
+           .output_type = DataType::kInt64,
+           .value = ScalarValue(std::int64_t{7})}),
+       {}},
+      {Operation(Select{}), {tensor(DataType::kBool, {2, 1}), a, parameter}},
+      {Operation(Gather{}), {table, index}},
+      {Operation(Scatter{}), {table, index, a}},
+      {Operation(Scatter{.kind = ScatterKind::kAdd}), {table, index, a}},
+      {Operation(Concat{}), {a, tensor(f, {1, 4})}},
+      {Operation(Cast{.output_type = DataType::kFloat8E4M3FN}), {a}},
+      {Operation(Unary{UnaryKind::kSigmoid}), {a}},
+      {Operation(Binary{BinaryKind::kMinimum}), {a, parameter}},
+      {Operation(GatedActivation{}), {tensor(f, {2, 8})}},
+      {Operation(Reduce{.accumulation_type = f}), {a}},
+      {Operation(MatMul{.accumulation_type = f}), {a, tensor(f, {4, 3})}},
+      {Operation(RmsNorm{}), {a, parameter}},
+      {Operation(LayerNorm{}), {a, parameter, parameter}},
+      {Operation(Softmax{.mask = MaskKind::kBoolean}),
+       {a, tensor(DataType::kBool, {2, 4})}},
+      {Operation(RoPE{.rotary_dimensions = 4, .sequence_axis = 1}),
+       {attention, index, tensor(f, {2})}},
+      {Operation(ScaledDotProductAttention{}),
+       {attention, attention, attention}},
+  };
+  for (const auto &test : cases) {
+    SCOPED_TRACE(static_cast<int>(test.operation.kind()));
+    const auto output = infer_single_output(test.operation, test.inputs);
+    ASSERT_TRUE(output) << output.error().message();
+    std::vector<ResourceBindingRequirement> inputs(test.inputs.size());
+    std::array<ResourceBindingRequirement, 1> outputs{};
+    auto proposal = OperationPreparationAccess::propose(
+        context, 0, test.operation, test.inputs, std::span(&*output, 1), inputs,
+        outputs);
+    ASSERT_TRUE(proposal) << proposal.error().message();
+    EXPECT_EQ(proposal->cost.compilation_storage.resident_bytes, 0);
+    EXPECT_EQ(proposal->cost.compilation_storage.peak_bytes, 0);
+    EXPECT_EQ(proposal->runtime.replay_class, ProviderReplayClass::kManaged);
+    auto prepared =
+        prepare(context, test.operation, test.inputs, std::span(&*output, 1),
+                hyle::mem::system_resource());
+    ASSERT_TRUE(prepared) << prepared.error().message();
+    ASSERT_TRUE(prepared->persistent_bytes());
+    EXPECT_GT(*prepared->persistent_bytes(), 0U);
+    EXPECT_FALSE(prepared->invocation_private_bytes().has_value());
+    EXPECT_FALSE(prepared->capture_compatible());
+  }
 }
 
 } // namespace

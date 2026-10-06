@@ -487,8 +487,10 @@ exact shape、rank<=8、稠密输出；支持合法odd-byte strides、I32/I64及
 这组原库程序是managed replay，包含必要index packing、稳定sort、base copy、native scratch与热
 Tensor metadata分配；同步阻塞host、使用原库私有线程、不承诺capture或精确私有内存上界。
 `native_threads`只设置ggml workers，不控制ATen线程池。要求Prepared-only或拒绝unknown的
-compilation/invocation硬预算会拒绝该候选；prepared artifact retained bytes已知，不能把仅限制
-retained bytes的预算视为必然拒绝。source/static/shared继续使用同一shared CPU LibTorch runtime。
+invocation硬预算会拒绝该候选。冷compilation的Program/描述由传入allocator计费，额外private
+resident/peak明确为0，总编译内存仍非0；prepared artifact retained bytes已知。因此有限
+compilation/retained预算可接受该候选，实际仍需容纳Graph/Compute metadata。
+source/static/shared继续使用同一shared CPU LibTorch runtime。
 具体域与两平台普通三交付见[CPU ATen资格](../../evidence/correctness/cpu-aten-storage-index/README.md)。
 
 同一ATen接入还覆盖F32/F16/BF16的SiLU、GELU、GELU-tanh、Softplus，三种packed/separate
