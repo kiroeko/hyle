@@ -174,3 +174,8 @@ Q8和Q5/Q6 shared、F32 router/norm、Q8 eh_proj，主embedding/head为Q8与Q4_K
 expert512/top10/I2048/shared2048、完整V248320，四次carry/cache反馈；普通成熟操作和原codec/reference。
 按计划降低驻留expert到8，用显式I32映射表达合成重复expert权重；router仍完整512，K/N与head跨度不缩小。
 没有新产品API/kernel或性能比较。此完整NextN资格尚未运行，输入边界PASS不能代签。
+
+`61155eed2a73`完整NextN在两系统普通两入口通过；没有失败、skip或数值门变化。
+required-region对账另确认旧2B GQA夹具虽为HalfSplit，却旋转完整256并用默认epsilon；
+同一CPU-only实际GQA消费者按固定配置统一覆盖Q8/KV2、Q24/KV4、Q64/KV4（三者D256、rotary64），
+保留theta1e7/epsilon1e-6与KV反馈。只补三个真实几何，无新kernel、GPU改动或通用API默认值修改。

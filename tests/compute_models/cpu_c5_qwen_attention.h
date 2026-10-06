@@ -26,26 +26,27 @@ inline std::vector<float> rotate(std::span<const float> input, std::int32_t posi
 }
 inline std::array<std::vector<float>, 2> attention_reference(
     std::span<const float> q, std::span<const float> k,
-    std::span<const float> v, std::span<const float> gate, bool half_products) {
+    std::span<const float> v, std::span<const float> gate, bool half_products,
+    std::int64_t query_count = heads, std::int64_t key_count = kv_heads) {
   const auto rounded = [&](double value) {
     return half_products ? half_test::decode(half_test::encode<hyle::simd::float16_t>(value)) : value;
   };
   std::array<std::vector<float>, 2> result{
-      std::vector<float>(heads * depth), std::vector<float>(heads * depth)};
-  for (std::int64_t head = 0; head < heads; ++head) {
-    const auto kh = head / (heads / kv_heads);
+      std::vector<float>(query_count * depth), std::vector<float>(query_count * depth)};
+  for (std::int64_t head = 0; head < query_count; ++head) {
+    const auto kh = head / (query_count / key_count);
     std::array<double, 3> score{};
     for (int token = 0; token < 3; ++token)
       for (std::int64_t d = 0; d < depth; ++d)
         score[token] += rounded(q[head * depth + d]) *
-                        rounded(k[(token * kv_heads + kh) * depth + d]) / 16;
+                        rounded(k[(token * key_count + kh) * depth + d]) / 16;
     const auto maximum = *std::max_element(score.begin(), score.end());
     double sum = 0;
     for (auto &value : score) sum += value = std::exp(value - maximum);
     for (std::int64_t d = 0; d < depth; ++d) {
       double value = 0;
       for (int token = 0; token < 3; ++token)
-        value += rounded(score[token] / sum) * rounded(v[(token * kv_heads + kh) * depth + d]);
+        value += rounded(score[token] / sum) * rounded(v[(token * key_count + kh) * depth + d]);
       const auto index = head * depth + d;
       result[0][index] = float(value);
       result[1][index] = float(value / (1 + std::exp(-double(gate[index]))));
@@ -54,13 +55,16 @@ inline std::array<std::vector<float>, 2> attention_reference(
   return result;
 }
 inline Fragment make(const c::ModelArtifactProfileDescription *identity) {
+  const std::int64_t query_count = identity->model_repository == "Qwen/Qwen3.5-2B" ? 8 :
+      identity->model_repository == "Qwen/Qwen3.8-27B" ? 24 : heads;
+  const std::int64_t key_count = identity->model_repository == "Qwen/Qwen3.5-2B" ? 2 : kv_heads;
   Fragment f{.profile = identity, .region = 0x040c0501};
-  auto query = f.input(dense({1, 1, heads, depth}));
-  auto key = f.input(dense({1, 1, kv_heads, depth}));
-  auto value = f.input(dense({1, 1, kv_heads, depth}));
-  auto gate = f.input(dense({1, 1, heads, depth}));
-  auto past_k = f.input(dense({1, 2, kv_heads, depth}));
-  auto past_v = f.input(dense({1, 2, kv_heads, depth}));
+  auto query = f.input(dense({1, 1, query_count, depth}));
+  auto key = f.input(dense({1, 1, key_count, depth}));
+  auto value = f.input(dense({1, 1, key_count, depth}));
+  auto gate = f.input(dense({1, 1, query_count, depth}));
+  auto past_k = f.input(dense({1, 2, key_count, depth}));
+  auto past_v = f.input(dense({1, 2, key_count, depth}));
   auto position = f.input(dense({1}, c::DataType::kInt32));
   const auto scale = sem::oracle::scale(depth);
   auto weight = f.constant(dense({depth}), bytes(scale));
@@ -83,13 +87,13 @@ inline Fragment make(const c::ModelArtifactProfileDescription *identity) {
   f.outputs = {ds::slice(f, keys, 1, 1, 2), ds::slice(f, values, 1, 1, 2), nq, nk, rq, rk, attended, final};
   f.state_ports = {{4, 0}, {5, 1}};
   f.exact_outputs = {1}; // V is a copy; rotated K retains the numeric gate.
-  auto history_k = d5_gguf_test::values(2 * kv_heads, depth, 5);
-  auto history_v = d5_gguf_test::values(2 * kv_heads, depth, 13);
+  auto history_k = d5_gguf_test::values(2 * key_count, depth, 5);
+  auto history_v = d5_gguf_test::values(2 * key_count, depth, 13);
   for (int step = 0; step < 4; ++step) {
-    auto q = d5_gguf_test::values(heads, depth, 3 + step * 7);
-    auto k = d5_gguf_test::values(kv_heads, depth, 11 + step * 13);
-    auto v = d5_gguf_test::values(kv_heads, depth, 17 + step * 11);
-    auto g = d5_gguf_test::values(heads, depth, 23 + step * 17);
+    auto q = d5_gguf_test::values(query_count, depth, 3 + step * 7);
+    auto k = d5_gguf_test::values(key_count, depth, 11 + step * 13);
+    auto v = d5_gguf_test::values(key_count, depth, 17 + step * 11);
+    auto g = d5_gguf_test::values(query_count, depth, 23 + step * 17);
     const std::array<std::int32_t, 1> positions{37 + step};
     auto normalized_q = sem::oracle::rms_norm_rows(q, scale, depth, 1.0e-6F);
     auto normalized_k = sem::oracle::rms_norm_rows(k, scale, depth, 1.0e-6F);
@@ -97,10 +101,10 @@ inline Fragment make(const c::ModelArtifactProfileDescription *identity) {
     auto all_k = history_k, all_v = history_v;
     all_k.insert(all_k.end(), rotated_k.begin(), rotated_k.end());
     all_v.insert(all_v.end(), v.begin(), v.end());
-    auto reference = attention_reference(rotated_q, all_k, all_v, g, false);
-    auto native = attention_reference(rotated_q, all_k, all_v, g, true);
-    auto next_k = std::vector<float>(all_k.begin() + kv_heads * depth, all_k.end());
-    auto next_v = std::vector<float>(all_v.begin() + kv_heads * depth, all_v.end());
+    auto reference = attention_reference(rotated_q, all_k, all_v, g, false, query_count, key_count);
+    auto native = attention_reference(rotated_q, all_k, all_v, g, true, query_count, key_count);
+    auto next_k = std::vector<float>(all_k.begin() + key_count * depth, all_k.end());
+    auto next_v = std::vector<float>(all_v.begin() + key_count * depth, all_v.end());
     f.replays.push_back({{bytes(q), bytes(k), bytes(v), bytes(g), bytes(history_k), bytes(history_v), bytes<std::int32_t>(positions)},
         {next_k, next_v, normalized_q, normalized_k, rotated_q, rotated_k, reference[0], reference[1]},
         {{}, {}, {}, {}, {}, {}, native[0], native[1]}});

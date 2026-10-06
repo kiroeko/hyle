@@ -44,10 +44,10 @@ INSTANTIATE_TEST_SUITE_P(C5ExactNewGgufMain, HYLE_C5_DEEPSEEK_SUITE,
     ::testing::ValuesIn(cpu_c5_parameters::new_deepseek_profiles()),
     [](const auto &parameter) { return "Profile" + std::to_string(parameter.param); });
 TEST(HYLE_C5_PARAMETER_SUITE, Qwen24ActualHalfSplitFrequencyNormAndKvFeedback) {
-  for (const auto &p : {48u, 49u}) {
+  for (const auto &p : {0u, 22u, 48u, 49u}) {
     const auto identity = cpu_c5_gguf_fixture::profile(p);
     SCOPED_TRACE(identity.variant);
-    ASSERT_EQ(identity.model_name, "Qwen3.8-2.4T-A95B");
+    ASSERT_TRUE(identity.model_repository.starts_with("Qwen/"));
     run_q24_semantic_fragment(cpu_c5_qwen_attention::make(&identity));
     ASSERT_FALSE(::testing::Test::HasFatalFailure());
   }
