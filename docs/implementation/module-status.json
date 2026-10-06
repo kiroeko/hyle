@@ -271,9 +271,10 @@
     },
     {
       "module": "compute",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/cpu-native-matmul-private-kernel-cleanup.md",
-      "summary": "K1 AUDITED：引用/编译归属已审计；仅删Native专用MatMul两私有文件与迁移矩阵fixture，不改Compute runtime/API"
+      "summary": "MM/K1 CANDIDATE：自研MatMul及专用kernels/旧比较targets已源级删除；成熟矩阵fixture和ordinary executor已迁移，剩余Linux/交付待验",
+      "candidate": "7157655201df3b63619a4e5b11dfe272bcf35273"
     },
     {
       "module": "graph",
@@ -418,9 +419,10 @@
     },
     {
       "module": "compute_provider_native",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/cpu-native-matmul-retirement-decision.md",
-      "summary": "MM AUDITED：用户批准自研MatMul源级退役与严格能力撤回；有限MM1–3固定，SIMD与原库保留，其它域待后续裁决"
+      "summary": "MM/K1 CANDIDATE：自研MatMul及专用kernels/旧比较targets已源级删除；成熟矩阵fixture和ordinary executor已迁移，剩余Linux/交付待验",
+      "candidate": "7157655201df3b63619a4e5b11dfe272bcf35273"
     },
     {
       "module": "compute_sched",

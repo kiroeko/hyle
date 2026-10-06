@@ -1,6 +1,6 @@
 # CPU Native MatMul：源级清退与独有资源能力的取舍
 
-<!-- MODULE REVIEW: AUDITED -->
+<!-- MODULE REVIEW: CANDIDATE -->
 
 owner `compute_provider_native`；用户已明确选择源级删除并撤回具名严格能力。
 这是[ND3-D比较](cpu-native-domain-performance-verdict-v1.md)之后的有限实施子批。
@@ -63,3 +63,9 @@ Compute owner单独绑定两份历史common-path私有kernel删除及operation_t
 Windows产品真相；j2构建/j1测试/重型串行/DLL邻exe/隐藏子进程。新SDK使用独立小前缀，不覆盖
 本轮775b2bed静态SDK性能输入；只清本批已完成的consumer临时目录。
 closure/docs/selector/统一29路径LOC适用；实际全部通过前不关闭本子批或整个goal。
+
+## 固定候选与已运行
+
+- candidate `7157655201df3b63619a4e5b11dfe272bcf35273`，产品删除b4c8899a，直接消费者最终71576552。
+- Windows144 Native、13 CPU、19 Graph、Core与header1各通过；ordinary六shape Direct/Graph与executor实际通过。
+- Linux与剩余三交付未完成，不写PASS；P0删除无新增热成本，不重跑已结束P1。

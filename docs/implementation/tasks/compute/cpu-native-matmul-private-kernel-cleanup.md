@@ -1,6 +1,6 @@
 # Compute历史私有CPU MatMul文件清理
 
-<!-- MODULE REVIEW: AUDITED -->
+<!-- MODULE REVIEW: CANDIDATE -->
 
 - owner `compute`；baseline `e8fec259ec6e687acce81affd09deec39c0e302b`；Windows canonical。
 - trigger：用户批准[Native MatMul退役](cpu-native-matmul-retirement-decision.md)。两份私有kernel位于
@@ -15,3 +15,9 @@
 - 每轮closure/docs/selector/统一LOC；一次批量验收，实际未运行不PASS，不扩大为Compute重审。
 
 已审计：src引用只有Native CMake/include，Compute runtime无include和编译source；K1有限FIX固定。
+
+## 固定候选与已运行
+
+- candidate `7157655201df3b63619a4e5b11dfe272bcf35273`，产品删除b4c8899a，直接消费者最终71576552。
+- Windows144 Native、13 CPU、19 Graph、Core与header1各通过；ordinary六shape Direct/Graph与executor实际通过。
+- Linux与剩余三交付未完成，不写PASS；P0删除无新增热成本，不重跑已结束P1。
