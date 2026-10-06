@@ -350,7 +350,7 @@ inline std::vector<ValueId> attach_branch(Fragment &parent,Fragment child,
 struct DraftProgram {
   Fragment fragment;
   linear::Projection head;
-  std::vector<float> head_base{-0.25F,0.125F,0.375F,-0.5F},norm_scale;
+  std::vector<float> head_base{-0.25F,0.125F,0.375F,-0.5F},norm_scale{};
 };
 inline DraftProgram complete_draft(const Model &model) {
   DraftProgram result{Fragment{.profile=model.profile,.region=0x0c040108,.quantized=true},{}};

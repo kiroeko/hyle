@@ -41,4 +41,7 @@ TEST(HYLE_C4_CPU_SUITE, CompleteThreeStageDsparkWithSharedEmbeddingAndConfidence
     cpu_c4_model_branches::check_complete_draft(model,run_q24_semantic_fragment);
   }
 }
+TEST(HYLE_C4_CPU_SUITE, QwenQ4NamedSidecarUsesActualQ3Q4Q6AndCompleteMtp) {
+  cpu_c4_qwen_mtp::check(run_q24_semantic_fragment);
+}
 #undef HYLE_C4_CPU_SUITE

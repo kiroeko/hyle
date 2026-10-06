@@ -4,6 +4,7 @@
 #include "../compute_models/d5_cpu_official_boundary.h"
 #include "../compute_models/d5_deepseek_official_attention.h"
 #include "../compute_models/cpu_c4_model_branches.h"
+#include "../compute_models/cpu_c4_qwen_mtp.h"
 #include "../compute_models/d5_kda_full_fragments.h"
 #include "../compute_models/d5_kimi_remaining_fragments.h"
 #include "../compute_models/d5_glm_remaining_fragments.h"
