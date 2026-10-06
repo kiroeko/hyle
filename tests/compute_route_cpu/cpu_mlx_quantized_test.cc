@@ -54,9 +54,15 @@ template<class T> void run(c::Operation op, std::span<const c::TensorDesc> descr
   const auto execute=[&]()->hyle::Status{auto done=invocation.submit(queue,inputs,std::span(&destination,1));if(!done)return std::move(done).error();return done->wait();};
 #endif
   for(int repeat=0;repeat<2;++repeat){
+    if(repeat==1 && op.custom_as<c::model_ops::MlxQuantized>()->kind!=Kind::kEmbedding){
+      auto activation=half_test::read<T>(buffers[0]);
+      for(auto &value:activation)value=half_test::encode<T>(half_test::decode(value)*2);
+      ASSERT_TRUE(buffers[0].view().write(std::as_bytes(std::span(activation))).ok());
+    }
     ASSERT_TRUE(execute().ok());const auto actual=half_test::read<T>(output);
     ASSERT_EQ(actual.size(),expected.size());for(std::size_t i=0;i<actual.size();++i)
-      EXPECT_EQ(half_test::decode(actual[i]),half_test::decode(expected[i]));
+      EXPECT_EQ(half_test::decode(actual[i]),half_test::decode(expected[i])*
+          (repeat==1 && op.custom_as<c::model_ops::MlxQuantized>()->kind!=Kind::kEmbedding?2:1));
   }
   if(indexed){
     const auto before=half_test::read<T>(output);auto ids=half_test::read<std::int32_t>(buffers.back());
