@@ -1,6 +1,6 @@
 # CPU 最终适用域裁决与默认规则
 
-<!-- MODULE REVIEW: AUDITED -->
+<!-- MODULE REVIEW: CANDIDATE -->
 
 - owners：compute_provider_native、compute_route_cpu、graph_route_cpu；baseline `f6470870d3de7f2475e245b6ee2ca76905f82249`。
 - user trigger：完成当前CPU goal；成熟接线及MatMul退役已实际关闭，不重开GPU/旧大队列。
@@ -43,3 +43,8 @@
 单轴相同就误绑定broadcast、extra bias、另一axis/scale/mask/rotary layout；bounded roots不签exact WIN。
 CUDA/Apple/Vulkan与第三方数学不改。187比较只证明相对本轮默认mature完整调用的收益，条件不满足
 不做全局CPU架构外推。Native expert算法共享保留与默认cold规则分开，MatMul退役保持。
+
+## 不可变候选
+
+候选 `7090222ac6da73edab35c0f4d8d1bd098748a793`；API/算法/有限规则已固定，适用 P0 与批量 correctness/交付验收继续，
+不重跑已结束 ND3 P1，不把新候选称为新计时比较。

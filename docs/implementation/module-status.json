@@ -97,9 +97,10 @@
     },
     {
       "module": "platform",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/platform/cpu-identity-route-facts.md",
-      "summary": "CPU最终规则AUDITED：F1–5/I1有限FIX冻结，187实际优势条件绑定、13已测落后exact冷拒绝，成熟region保留；无新算法/重测"
+      "summary": "CPU最终默认域规则与缓存身份已实现；不可变候选批量完成适用正确性和两平台三交付验收，未验门不签PASS。",
+      "candidate": "7090222ac6da73edab35c0f4d8d1bd098748a793"
     },
     {
       "module": "platform_thread",
@@ -417,9 +418,10 @@
     },
     {
       "module": "compute_provider_native",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/cpu-default-domain-routing-final.md",
-      "summary": "CPU最终规则AUDITED：F1–5/I1有限FIX冻结，187实际优势条件绑定、13已测落后exact冷拒绝，成熟region保留；无新算法/重测"
+      "summary": "CPU最终默认域规则与缓存身份已实现；不可变候选批量完成适用正确性和两平台三交付验收，未验门不签PASS。",
+      "candidate": "7090222ac6da73edab35c0f4d8d1bd098748a793"
     },
     {
       "module": "compute_sched",
@@ -428,15 +430,17 @@
     },
     {
       "module": "compute_route_cpu",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/cpu-default-domain-routing-final.md",
-      "summary": "CPU最终规则AUDITED：F1–5/I1有限FIX冻结，187实际优势条件绑定、13已测落后exact冷拒绝，成熟region保留；无新算法/重测"
+      "summary": "CPU最终默认域规则与缓存身份已实现；不可变候选批量完成适用正确性和两平台三交付验收，未验门不签PASS。",
+      "candidate": "7090222ac6da73edab35c0f4d8d1bd098748a793"
     },
     {
       "module": "graph_route_cpu",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/cpu-default-domain-routing-final.md",
-      "summary": "CPU最终规则AUDITED：F1–5/I1有限FIX冻结，187实际优势条件绑定、13已测落后exact冷拒绝，成熟region保留；无新算法/重测"
+      "summary": "CPU最终默认域规则与缓存身份已实现；不可变候选批量完成适用正确性和两平台三交付验收，未验门不签PASS。",
+      "candidate": "7090222ac6da73edab35c0f4d8d1bd098748a793"
     },
     {
       "module": "compute_provider_cublas",

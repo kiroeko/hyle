@@ -1,6 +1,6 @@
 # Platform CPU identity：默认CPU规则需要的缓存事实
 
-<!-- MODULE REVIEW: AUDITED -->
+<!-- MODULE REVIEW: CANDIDATE -->
 
 - owner platform；baseline `f6470870d3de7f2475e245b6ee2ca76905f82249`；真实consumer为[CPU最终默认规则](../compute/cpu-default-domain-routing-final.md)。
 - 缺口事实：CPU Device.name仍为HYLE host CPU，已有cpu_features/cache/topology无法表达已测CPU
@@ -15,3 +15,8 @@
 
 I1已审计：cpu.cc已有MSVC/GCC cpuid helper、baseline/IPO-off合同；只追加一次缓存identity，
 不复制probe，不改CpuFeatureSet。非x86全空未知，不发系统查询；source/static/shared CPUconsumer将实读。
+
+## 不可变候选
+
+候选 `7090222ac6da73edab35c0f4d8d1bd098748a793`；API/算法/有限规则已固定，适用 P0 与批量 correctness/交付验收继续，
+不重跑已结束 ND3 P1，不把新候选称为新计时比较。
