@@ -40,7 +40,8 @@ void check(c::Operation op, std::span<const c::TensorDesc> descriptions,
   auto builder = g::GraphBuilder::create().value();
   std::vector<g::ValueId> arguments;
   for (const auto &desc : descriptions) arguments.push_back(builder.input(desc).value());
-  const auto value = builder.add(op, output, arguments).value();
+  const auto node = builder.add_node(op, arguments).value();
+  const auto value = builder.result(node).value();
   ASSERT_TRUE(builder.publish(value).ok());
   auto compiled = g::compile(std::move(builder).finish().value(), context);
   ASSERT_TRUE(compiled) << compiled.error().message();
