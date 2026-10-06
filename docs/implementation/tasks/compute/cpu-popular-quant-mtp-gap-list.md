@@ -8,6 +8,27 @@
 
 ## 结论与统计口径
 
+### CPU 待接数量：按什么计数
+
+当前可固定为 **11项GGUF格式扩展 + 4项DSpark计算片段接线 = 15项核心接入工作**。
+这是工作项计数，不能改称15个新数学算子；全部HF量化范围尚未完成审计，因此不是全范围最终总数。
+
+| 计数对象 | 当前数量 | 含义 |
+|---|---:|---|
+| 确认必须新增的基础数学算子种类 | 0项已确认 | 不表示未知项已经证明为0；当前新需求主要可由已有成熟运算组合表达 |
+| GGUF公开格式/CPU映射扩展 | 11 | Q01–Q11；共同扩展已有MatMul、GroupedMatMul、Gather/GetRows，而非各写一个新核 |
+| DSpark独立计算片段 | 4 | 输入/target hidden投影；带sink attention与cache；Markov head；confidence head |
+| 非GGUF待审格式族 | 3 | NF4/double quant、AWQ/GPTQ/compressed-tensors、MLX int4；实际接缝数尚未固定 |
+| 新版DeepSeek主模型 | 2 | Pro-0813、Flash-0731；版本/角色/完整链资格，不额外算成算子 |
+| 已发布独立MTP/DSpark sidecar | 3 | Qwen Q4_0 MTP、Flash Q8_0/BF16 DSpark；格式和上述片段不重复计数 |
+| 主GGUF档位缺资格/待revision对账 | 94 | 批量验证实例，不是94个新算子 |
+
+四个DSpark片段由官方forward中的独立计算边界去重得到：B04为一个，B05为一个，B06的
+`DSparkMarkovHead`与`DSparkConfidenceHead`各为一个。B07完整组合、B08两份sidecar是验收层，
+不再作为新计算片段相加。Qwen旧MTP组合已有资格；新增Q4_0 sidecar主要补格式及精确制品绑定。
+同样不能将11格式乘MatMul/GroupedMatMul/Gather的最大组合格数，称为必须新增的算子数；
+每个格式在哪些端口使用要由实际tensor header决定，未出现的角色不强行扩张。
+
 - **11 种明确缺少公开格式描述和 CPU 映射的 GGUF 物理格式**；应借用 ggml，不是新增11种数学算子。
 - 既有 Q3_K/Q4_K/Q5_K/Q6_K/Q8_0/IQ3_XXS/IQ3_S/IQ4_NL/IQ4_XS/MXFP4 已接，不按每个文件重写实现。
 - 八个 Unsloth 仓库的元数据 API 快照共列出 **104 个主模型档位**；与现有22画像的精确

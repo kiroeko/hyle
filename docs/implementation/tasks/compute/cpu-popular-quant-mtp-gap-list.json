@@ -2081,5 +2081,47 @@
         "CPU carrier; Apple MLX qualification is not CPU qualification"
       ]
     }
-  ]
+  ],
+  "counting_contract": {
+    "unit": "core CPU integration work item; not new mathematical operator, profile, or validation-cell count",
+    "fixed_core_integration_items": 15,
+    "gguf_format_extensions": 11,
+    "dspark_computation_fragments": [
+      {
+        "id": "DSP01",
+        "source_branch": "B04",
+        "name": "draft input and target hidden projection"
+      },
+      {
+        "id": "DSP02",
+        "source_branch": "B05",
+        "name": "sink sparse attention and separate cache"
+      },
+      {
+        "id": "DSP03",
+        "source_branch": "B06",
+        "name": "Markov head"
+      },
+      {
+        "id": "DSP04",
+        "source_branch": "B06",
+        "name": "FP32 confidence head"
+      }
+    ],
+    "existing_math_families_extended": [
+      "MatMul",
+      "GroupedMatMul",
+      "Gather/GetRows"
+    ],
+    "new_basic_math_operator_kinds_confirmed_required": 0,
+    "other_container_families_pending_audit": 3,
+    "complete_all_container_operator_count": "NOT_YET_DETERMINED",
+    "excluded_from_additive_operator_count": [
+      "B02/B03 model revision qualification",
+      "B07 whole DSpark assembly qualification",
+      "B08 sidecar profile qualification",
+      "94 variant/revision qualification instances",
+      "unobserved format-role cross products"
+    ]
+  }
 }
