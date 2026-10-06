@@ -1,6 +1,6 @@
 # CPU 自研精确域：一次有限批量性能裁决
 
-<!-- MODULE REVIEW: SCOPED -->
+<!-- MODULE REVIEW: AUDITED -->
 
 - owner `compute_provider_native`；baseline `db77f16fa`（完整identity由Git导出），Windows canonical。
   SI/MN/TC/TM/AS/CP、ND-R1及RN1/RN4已实际关闭，两个fixture skip也已两平台补跑通过。
@@ -30,8 +30,30 @@
 - disposition：资格化方向LOSS即退役相应ordinary自研域；无完整优势的PARITY/INCONCLUSIVE选成熟，
   不伪造LOSS/WIN。WIN只固定适用硬件/软件/模型/精度/shape/layout规则；真实unique资源域保留其
   准确边界，不把此理由扩成整个目录。结果先固定有限产品FIX，再进入AUDITED修改和批量验收。
-- current：SCOPED只授权benchmark fixture/合同与已有source/resource事实绑定；不授权产品删除、
+- current：AUDITED仅冻结下列benchmark资格/采样FIX；不授权尚未定界的产品删除、
   API、默认组装器或其它CLOSED owner改动。产品FIX若涉及其它owner，必须据具体结果独立绑定。
 - terminal：适用gate未运行不PASS；不可比不签SOTA。预算止后按实际证据裁决，不无限研究。
   产品变更后一次所选factor/实际Direct+Graph与必要两平台三交付、closure/docs/selector/统一LOC；
   无产品变更不重建。完成本轮最终CPU路由/去留后才审核整个goal完成，不能以本计划代签。
+
+## 有限审计与 FIX
+
+| ID | 已固定事实 / 允许动作 | 停止 |
+|---|---|---|
+| ND3-P | 278 场景普通 mature 数值预检通过；8 个实际同实现对照中206项满足既定范围。冻结这些项的统一 P1 合同，原产品与普通 API 不变 | 同 SDK/源码/loaded code 资格复用；一次n15、最多预定n31，优化0；不得重测72项寻找PASS |
+| ND3-U | 72项A/A未资格，整体FAIL原样保留；当前没有正式方向 | 不签LOSS/SOTA；按无完整优势优先成熟的去留政策审计，具名独有能力单列 |
+| ND3-D | P1与独有域审计完成后，据实际结果固定有限产品删除/默认规则FIX及必要其它owner | 此行只规定输出，不提前授权未列明的产品变更 |
+
+源级时序：每臂 cold Context/Queue/prepare/invocation，caller resident 输入与共同输出；steady 为
+实际 submit 到 Completion::wait，所有 provider 内部 Tensor/packing/转换/输出物化仍在计时内。
+Native caller workspace 与成熟原私有状态不同，但普通无限预算串行合同相同；不能由此签 strict
+资源或融合 region 的可比性。源码入口是 `native_domain_bench.cc::Session::run/measure`、
+Native `build_plan/submit`、ggml prepared graph、oneDNN primitive 与 ATen `torch_cpu_program`。
+Native O(elements)/矩阵乘与各原库程序；Native热私有分配0、成熟热原库分配/转换视原程序计费，
+公开 checked admission/真实完成两臂均未删减。配置1线程，不把旧scalar ggml当优化peer。
+
+[完整前置证据](../../../../evidence/performance/cpu-native-domain-preflight/README.md)记录数值/对照、
+一次具名测量纠正、无效并发尝试及完整72项失格；它不是正式性能WIN/LOSS或新产品完成。
+统一合同仅206项，原278 catalog合同另存，C++仍执行全部数值和固定catalog；额外行不参加产品门。
+rows1/32的token/small batch与正交存储消费只绑定精确op/kind/dtype/shape/layout/资源/平台版本，
+无图融合或整个模型频率外推。SIMD基础与原版 borrowing 不在删除候选内。

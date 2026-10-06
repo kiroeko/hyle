@@ -423,9 +423,9 @@
     },
     {
       "module": "compute_provider_native",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/cpu-native-domain-performance-verdict-v1.md",
-      "summary": "ND3 SCOPED：成熟接线/RN及fixture补跑已关闭；开始一次有限同合同批量比较，复用固定CPU SDK，绑定数值/资源/真实成本与AA/顺序；优化预算0，SIMD/原库保留，结果固定有限FIX前不改产品。"
+      "summary": "CPU自研有限裁决：18个数值失格域已退役；278场景数值前置通过，206项固定P1资格批，72项对照失格按成熟优先审计；SIMD基础与独有资源域分开，不追加优化"
     },
     {
       "module": "compute_sched",
