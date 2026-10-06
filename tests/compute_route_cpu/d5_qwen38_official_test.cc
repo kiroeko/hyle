@@ -22,6 +22,7 @@
 #include "../compute_models/cpu_c4_qwen_mtp.h"
 #include "../compute_models/cpu_c4_flash_sidecars.h"
 #include "../compute_models/cpu_c5_gguf_fixture.h"
+#include "../compute_models/cpu_c5_non_gguf_fixture.h"
 #include "../compute_models/d5_kda_full_fragments.h"
 #include "../compute_models/d5_kimi_remaining_fragments.h"
 #include "../compute_models/d5_glm_remaining_fragments.h"
@@ -114,7 +115,7 @@ void expect_mature(const DirectCall &call, const c::WorkloadContext &workload) {
   mature = mature || provider == c::aten_cpu::kProviderId;
   mature = mature || (provider == c::native::kProviderId &&
                      call.prepared.implementation().value() >= 0x544f524348000001ULL &&
-                     call.prepared.implementation().value() <= 0x544f524348000006ULL);
+                     call.prepared.implementation().value() <= 0x544f524348000008ULL);
 #endif
   EXPECT_TRUE(mature)
       << c::operation_name(call.prepared.kind()) << ": "
@@ -922,26 +923,36 @@ void run_q24_semantic_fragment(
     ASSERT_EQ(fixture.description(id).data_type(),c::DataType::kInt32);
     std::vector<std::vector<std::byte>> before;
     for(auto output:fixture.outputs)before.push_back(read_bytes(buffers[output.ordinal()]));
-    const std::array<std::int32_t,1> bad{-1};
-    ASSERT_TRUE(views[id.ordinal()].write(std::as_bytes(std::span(bad))).ok());
-    const auto &step=fixture.nodes.front();
+    auto bad=fixture.replays.back().inputs[port];
+    const std::int32_t invalid=-1;std::memcpy(bad.data(),&invalid,sizeof(invalid));
+    ASSERT_TRUE(views[id.ordinal()].write(bad).ok());
+    std::size_t node_index=0,call_index=0;
+    while(node_index<fixture.nodes.size()) {
+      const auto &candidate=fixture.nodes[node_index];
+      if(candidate.operation.kind()!=c::OperationKind::kView&&
+         std::ranges::find(candidate.inputs,id)!=candidate.inputs.end())break;
+      if(candidate.operation.kind()!=c::OperationKind::kView)++call_index;
+      ++node_index;
+    }
+    ASSERT_LT(node_index,fixture.nodes.size());
+    const auto &step=fixture.nodes[node_index];
     std::vector<c::ConstTensorView> inputs;std::vector<c::TensorView> outputs;
     for(auto input:step.inputs)inputs.push_back(c::ConstTensorView::create(fixture.description(input),views[input.ordinal()]).value());
     for(auto output:step.outputs)outputs.push_back(c::TensorView::create(fixture.description(output),views[output.ordinal()]).value());
-    auto failed=calls.front().invocation.submit(queue,inputs,outputs);
+    auto failed=calls[call_index].invocation.submit(queue,inputs,outputs);
     ASSERT_TRUE(failed);EXPECT_TRUE(failed->wait().IsOutOfRange());
-    EXPECT_TRUE(calls.front().invocation.submit(queue,inputs,outputs).error().IsFailedPrecondition());
+    EXPECT_TRUE(calls[call_index].invocation.submit(queue,inputs,outputs).error().IsFailedPrecondition());
     for(std::size_t output=0;output<before.size();++output)
       EXPECT_EQ(read_bytes(buffers[fixture.outputs[output].ordinal()]),before[output]);
     ASSERT_TRUE(views[id.ordinal()].write(fixture.replays.back().inputs[port]).ok());
-    calls.front().invocation=calls.front().prepared.create_invocation(calls.front().workspace.view()).value();
-    run(calls.front(),queue,inputs,outputs);
-    // C5 indexed consumers have one arithmetic node followed, at most, by a cast.
-    if(calls.size()>1) {
-      const auto &last=fixture.nodes.back();inputs.clear();outputs.clear();
-      for(auto input:last.inputs)inputs.push_back(c::ConstTensorView::create(fixture.description(input),views[input.ordinal()]).value());
-      for(auto output:last.outputs)outputs.push_back(c::TensorView::create(fixture.description(output),views[output.ordinal()]).value());
-      ASSERT_EQ(calls.size(),2u);run(calls.back(),queue,inputs,outputs);
+    calls[call_index].invocation=calls[call_index].prepared.create_invocation(calls[call_index].workspace.view()).value();
+    std::size_t replay_call=0;
+    for(const auto &replay_step:fixture.nodes) {
+      if(replay_step.operation.kind()==c::OperationKind::kView)continue;
+      inputs.clear();outputs.clear();
+      for(auto input:replay_step.inputs)inputs.push_back(c::ConstTensorView::create(fixture.description(input),views[input.ordinal()]).value());
+      for(auto output:replay_step.outputs)outputs.push_back(c::TensorView::create(fixture.description(output),views[output.ordinal()]).value());
+      run(calls[replay_call++],queue,inputs,outputs);
     }
     for(std::size_t output=0;output<before.size();++output)
       EXPECT_EQ(read_bytes(buffers[fixture.outputs[output].ordinal()]),before[output]);
@@ -1088,6 +1099,7 @@ TEST(CpuMoeFragments, D5OfficialFullMoeColdBoundary) {
 #include "../compute_models/d5_cpu_torch_official_tests.h"
 #include "../compute_models/cpu_c4_model_branch_tests.h"
 #include "../compute_models/cpu_c5_gguf_tests.h"
+#include "../compute_models/cpu_c5_non_gguf_tests.h"
 #endif
 
 TEST(CpuMoeFragments, D5OfficialFp4ExpertBatch) {

@@ -20,6 +20,15 @@ void check_constants(const sem::Fragment &cold, const Buffers &buffers) {
         ASSERT_EQ(actual[i], expected[i]) << "cache " << port << " at " << i;
       continue;
     }
+    if (cold.description(cold.outputs[port]).data_type() == c::DataType::kFloat16) {
+      std::vector<hyle::simd::float16_t> actual(buffers[port].size() / 2);
+      ASSERT_TRUE(buffers[port].view().read(std::as_writable_bytes(std::span(actual))).ok());
+      const auto &expected = cold.replays[0].outputs[port];
+      ASSERT_EQ(actual.size(), expected.size());
+      for (std::size_t i = 0; i < actual.size(); ++i)
+        ASSERT_EQ(float(half_test::decode(actual[i])), expected[i]) << "cache " << port << " at " << i;
+      continue;
+    }
     ASSERT_EQ(cold.description(cold.outputs[port]).data_type(), c::DataType::kBFloat16);
     std::vector<sem::q::BF16> actual(buffers[port].size() / 2);
     ASSERT_TRUE(buffers[port].view().read(std::as_writable_bytes(std::span(actual))).ok());

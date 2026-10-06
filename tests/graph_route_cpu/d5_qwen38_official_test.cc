@@ -7,6 +7,7 @@
 #include "../compute_models/cpu_c4_qwen_mtp.h"
 #include "../compute_models/cpu_c4_flash_sidecars.h"
 #include "../compute_models/cpu_c5_gguf_fixture.h"
+#include "../compute_models/cpu_c5_non_gguf_fixture.h"
 #include "../compute_models/d5_kda_full_fragments.h"
 #include "../compute_models/d5_kimi_remaining_fragments.h"
 #include "../compute_models/d5_glm_remaining_fragments.h"
@@ -92,7 +93,7 @@ template <class Compiled> void expect_mature(const Compiled &compiled,
     mature = mature || provider == c::aten_cpu::kProviderId;
     mature = mature || (provider == c::native::kProviderId &&
                        report.implementation.value() >= 0x544f524348000001ULL &&
-                       report.implementation.value() <= 0x544f524348000006ULL);
+                       report.implementation.value() <= 0x544f524348000008ULL);
 #endif
     EXPECT_TRUE(mature)
         << "step=" << step << " node=" << report.node_begin
@@ -659,8 +660,9 @@ void run_q24_semantic_fragment(
     ASSERT_EQ(fixture.description(fixture.inputs[port]).data_type(),c::DataType::kInt32);
     std::vector<std::vector<std::byte>> before;
     for(const auto &output:outputs)before.push_back(read_bytes(output));
-    const std::array<std::int32_t,1> bad{-1};
-    ASSERT_TRUE(inputs[port].view().write(std::as_bytes(std::span(bad))).ok());
+    auto bad=fixture.replays.back().inputs[port];
+    const std::int32_t invalid=-1;std::memcpy(bad.data(),&invalid,sizeof(invalid));
+    ASSERT_TRUE(inputs[port].view().write(bad).ok());
     auto failed=invocation.submit(queue);ASSERT_TRUE(failed);
     EXPECT_TRUE(failed->wait().IsOutOfRange());
     EXPECT_TRUE(invocation.submit(queue).error().IsFailedPrecondition());
@@ -811,6 +813,7 @@ TEST(CpuGraphMoeFragments, D5OfficialFullMoeColdBoundary) {
 #include "../compute_models/d5_cpu_torch_official_tests.h"
 #include "../compute_models/cpu_c4_model_branch_tests.h"
 #include "../compute_models/cpu_c5_gguf_tests.h"
+#include "../compute_models/cpu_c5_non_gguf_tests.h"
 #endif
 
 TEST(CpuGraphMoeFragments, D5OfficialFp4ExpertBatch) {
