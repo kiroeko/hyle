@@ -141,3 +141,9 @@ F3仍须完成80条角色与全部required-region最终关联，F4最终红队/�
 theta1e7、两行KV历史与四次changed replay/反馈、sigmoid gate。只组合既有成熟操作；
 不改产品数学、旧GPU测试/资格或误差门。投影原格式/真实内宽仍引用F1实际矩阵。
 本格尚未运行，旧交错测试保留为该布局的历史事实，不改写旧PASS来代签目标模型。
+
+同一参数审计发现旧Qwen GGUF FFN与2.4T MTP的部分RmsNorm使用API默认1e-5，
+不能代签固定模型1e-6。有限补验合并为一个CPU-only批次：H2048/5120/8192的F32 norm/残差，
+以及2.4T真实Q8_0 eh_proj的embedding-first双norm/Concat/MatMul/后norm与四次carry反馈。
+后者保留原Q8 activation codec/vec-dot参考、真实K16384/N8192；不以F32点积替代。
+这只补实际消费者资格，不改API默认值、产品kernel或旧GPU资格。

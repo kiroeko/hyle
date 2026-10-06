@@ -108,5 +108,59 @@ inline Fragment make(const c::ModelArtifactProfileDescription *identity) {
   }
   return f;
 }
+
+inline Fragment norm_residual(const c::ModelArtifactProfileDescription *identity,
+                              std::int64_t hidden) {
+  Fragment f{.profile = identity, .region = 0x020c0501};
+  auto x = f.input(dense({1, hidden})), residual = f.input(dense({1, hidden}));
+  auto scales = sem::oracle::scale(hidden);
+  auto weight = f.constant(dense({hidden}), bytes(scales));
+  auto normalized = f.one(c::Operation(c::RmsNorm{.epsilon = 1.0e-6F}), {x, weight});
+  f.outputs = {normalized, core::binary(f, c::BinaryKind::kAdd, normalized, residual)};
+  for (int seed : {3, 19}) {
+    auto values = d5_gguf_test::activation(hidden, seed);
+    auto prior = d5_gguf_test::activation(hidden, seed + 7);
+    auto n = sem::oracle::rms_norm_rows(values, scales, hidden, 1.0e-6F);
+    auto output = n;
+    for (std::size_t index = 0; index < output.size(); ++index) output[index] += prior[index];
+    f.replays.push_back({{bytes(values), bytes(prior)}, {n, output}});
+  }
+  return f;
+}
+
+inline Fragment mtp(const c::ModelArtifactProfileDescription *identity) {
+  constexpr std::int64_t hidden = 8192;
+  const cpu_c5_inputs::Case item{"C5QwenMtpEh", cpu_c5_inputs::Kind::kProjection,
+      GGML_TYPE_Q8_0, c::GgufQuantizedType::kQ8_0, true, 2 * hidden, hidden, 1, 0, 0};
+  const cpu_c5_gguf_fixture::Bank bank(item);
+  Fragment f{.profile = identity, .region = 0x0d0c0501};
+  auto h = f.input(dense({1, hidden})), e = f.input(dense({1, hidden}));
+  auto hs = sem::oracle::scale(hidden), es = hs, ns = hs;
+  std::reverse(es.begin(), es.end()); std::rotate(ns.begin(), ns.begin() + 7, ns.end());
+  const auto norm = [&](sem::ValueId x, const std::vector<float> &scales) {
+    auto weight = f.constant(dense({hidden}), bytes(scales));
+    return f.one(c::Operation(c::RmsNorm{.epsilon = 1.0e-6F}), {x, weight});
+  };
+  auto hn = norm(h, hs), en = norm(e, es);
+  auto joined = ds::concat(f, en, hn, 1);
+  auto weight = f.constant(c::gguf_weight_description(item.quant, c::DataType::kFloat32,
+      item.k, item.n).value(), bank.rows(item.n));
+  auto projected = f.one(c::Operation(c::MatMul{}), {joined, weight});
+  auto carry = norm(projected, ns);
+  f.outputs = {hn, en, joined, projected, carry}; f.state_ports = {{0, 4}};
+  auto state = d5_gguf_test::activation(hidden, 3);
+  for (int step = 0; step < 4; ++step) {
+    auto embedding = d5_gguf_test::activation(hidden, 11 + step * 13);
+    auto hv = sem::oracle::rms_norm_rows(state, hs, hidden, 1.0e-6F);
+    auto ev = sem::oracle::rms_norm_rows(embedding, es, hidden, 1.0e-6F);
+    auto combined = ev; combined.insert(combined.end(), hv.begin(), hv.end());
+    auto dot = bank.dots(combined); std::vector<float> product(hidden);
+    for (std::int64_t row = 0; row < hidden; ++row) product[row] = dot[row % cpu_c5_gguf_fixture::prototypes];
+    auto next = sem::oracle::rms_norm_rows(product, ns, hidden, 1.0e-6F);
+    f.replays.push_back({{bytes(state), bytes(embedding)}, {hv, ev, combined, product, next}});
+    state = std::move(next);
+  }
+  return f;
+}
 } // namespace cpu_c5_qwen_attention
 #endif

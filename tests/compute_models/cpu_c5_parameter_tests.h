@@ -52,6 +52,22 @@ TEST(HYLE_C5_PARAMETER_SUITE, Qwen24ActualHalfSplitFrequencyNormAndKvFeedback) {
     ASSERT_FALSE(::testing::Test::HasFatalFailure());
   }
 }
+TEST(HYLE_C5_PARAMETER_SUITE, QwenActualWidthsUseDeclaredFloatNormEpsilon) {
+  for (const auto &model : {std::pair{0u, 2048LL}, std::pair{22u, 5120LL}, std::pair{47u, 8192LL}}) {
+    const auto identity = cpu_c5_gguf_fixture::profile(model.first);
+    SCOPED_TRACE(identity.model_name);
+    run_q24_semantic_fragment(cpu_c5_qwen_attention::norm_residual(&identity, model.second));
+    ASSERT_FALSE(::testing::Test::HasFatalFailure());
+  }
+}
+TEST(HYLE_C5_PARAMETER_SUITE, Qwen24OriginalMtpCodecNormOrderAndCarry) {
+  for (unsigned profile : {48u, 49u}) {
+    const auto identity = cpu_c5_gguf_fixture::profile(profile);
+    SCOPED_TRACE(identity.variant);
+    run_q24_semantic_fragment(cpu_c5_qwen_attention::mtp(&identity));
+    ASSERT_FALSE(::testing::Test::HasFatalFailure());
+  }
+}
 #undef HYLE_C5_PARAMETER_SUITE
 #undef HYLE_C5_DEEPSEEK_SUITE
 #endif
