@@ -27,7 +27,8 @@ if(HYLE_GGML_CPU_ENABLED)
     ../compute_provider_ggml_vulkan/metadata_test.cc)
   target_include_directories(hyle_compute_ggml_runtime_test PRIVATE
     "${HYLE_SOURCE_DIR}/src/compute_provider_ggml_vulkan"
-    "${HYLE_SOURCE_DIR}/src/compute_ggml_runtime"
+    "${HYLE_SOURCE_DIR}/src/compute_ggml_runtime")
+  target_include_directories(hyle_compute_ggml_runtime_test SYSTEM PRIVATE
     "${HYLE_GGML_SOURCE_DIR}/src")
   target_link_libraries(hyle_compute_ggml_runtime_test PRIVATE ggml hyle_mem hyle_error)
   hyle_stage_runtime_dependencies(hyle_compute_ggml_runtime_test)
