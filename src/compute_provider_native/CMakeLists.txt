@@ -8,6 +8,7 @@ hyle_add_module(compute_provider_native SOURCES
   aten_cpu_provider.cc
   attention.cc
   cast.cc
+  default_rules.cc
   ds4_quantization.cc
   elementwise.cc
   indexing.cc

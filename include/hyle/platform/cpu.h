@@ -164,6 +164,23 @@ class CpuFeatureSet final {
 // subsequent calls and set membership are O(1) and perform no system call.
 HYLE_PLATFORM_API const CpuFeatureSet& cpu_features() noexcept;
 
+// Cached identity of the processor that performs the first query. Identity is
+// separate from executable ISA features, topology and machine-local CPU ranks.
+// x86 CPUID supplies these facts; unsupported identities stay empty/zero.
+// vendor/brand are NUL-terminated raw hardware spellings, not routing scores.
+struct CpuIdentity final {
+  std::array<char, 13> vendor{};
+  std::array<char, 49> brand{};
+  std::uint32_t family = 0;
+  std::uint32_t model = 0;
+  std::uint32_t stepping = 0;
+};
+
+// First query uses the isolated baseline probe; later calls are allocation-free
+// and perform no CPUID or system call. Heterogeneous-package users must not
+// reinterpret one observed identity as a guarantee for every processor.
+HYLE_PLATFORM_API const CpuIdentity &cpu_identity() noexcept;
+
 // Stable diagnostic spelling for every declared feature; invalid values return
 // "unknown". This is not a target name or dispatch recommendation.
 HYLE_PLATFORM_API const char* cpu_feature_name(CpuFeature feature) noexcept;

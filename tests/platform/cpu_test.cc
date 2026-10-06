@@ -37,6 +37,22 @@ using hyle::platform::cpu_features;
 using hyle::platform::CpuCacheClassInfo;
 using hyle::platform::CpuFeature;
 using hyle::platform::CpuFeatureSet;
+
+TEST(CpuIdentity, CachedHardwareValueHasTerminatedNames) {
+  const auto &first = hyle::platform::cpu_identity();
+  const auto &second = hyle::platform::cpu_identity();
+  EXPECT_EQ(&first, &second);
+  EXPECT_EQ(first.vendor.back(), '\0');
+  EXPECT_EQ(first.brand.back(), '\0');
+  static_assert(std::is_trivially_copyable_v<hyle::platform::CpuIdentity>);
+#if HYLE_ARCH_X64
+  EXPECT_NE(first.vendor.front(), '\0');
+  EXPECT_GT(first.family, 0U);
+#else
+  EXPECT_EQ(first.vendor.front(), '\0');
+  EXPECT_EQ(first.family, 0U);
+#endif
+}
 using hyle::platform::CpuInfo;
 using hyle::platform::CpuKind;
 using hyle::platform::CpuOrder;

@@ -11,6 +11,7 @@
 
 #include "../compute/native_route.h"
 #include "../compute/provider_internal.h"
+#include "default_rules.h"
 #include "hyle/compute/prepared_operation.h"
 #include "hyle/math/scalar.h"
 #include "hyle/mem/resource.h"
@@ -30,8 +31,15 @@ using internal::completed;
 using internal::NativePlan;
 using internal::preserve_first_error;
 
+struct Configuration final {
+  Options options{};
+  internal::DefaultRuleScope scope = internal::DefaultRuleScope::kExpert;
+  bool single_native_thread = true;
+};
 struct NativeContext final {
   ParallelExecutorRef executor{};
+  internal::DefaultRuleScope scope = internal::DefaultRuleScope::kExpert;
+  bool qualified_environment = false;
 };
 
 struct NativeInvocation final {
@@ -165,9 +173,14 @@ Status create_context(const Provider &provider_value, Device device, void *,
   if (storage == nullptr)
     return Status::ResourceExhausted(
         "native provider context allocation failed");
-  const Options options =
-      detail::ProviderAccess::payload<Options>(provider_value);
-  *context_output = ::new (storage) NativeContext{.executor = options.executor};
+  const Configuration config =
+      detail::ProviderAccess::payload<Configuration>(provider_value);
+  *context_output = ::new (storage) NativeContext{
+      .executor = config.options.executor,
+      .scope = config.scope,
+      .qualified_environment = config.single_native_thread &&
+                               config.options.executor.concurrency() <= 1 &&
+                               internal::qualified_default_environment()};
   return Status::Ok();
 }
 
@@ -761,6 +774,10 @@ propose(void *context_value, const detail::ProviderOperationRequest &request,
     return internal::propose_torch_cpu(request, input_requirements,
                                        output_requirements, proposal);
 #endif
+  if (request.shape.exact() && context->qualified_environment &&
+      internal::retired_default_domain(operation, inputs, outputs))
+    return Status::Unimplemented(
+        "native domain retired; use mature CPU program");
   NativePlan plan{};
   Status status =
       build_plan(operation, inputs, outputs, plan, context->executor);
@@ -795,6 +812,16 @@ propose(void *context_value, const detail::ProviderOperationRequest &request,
               static_cast<std::uint64_t>(operation.kind()) + 1 +
               (request.shape.exact() ? 0 : (std::uint64_t{1} << 32))},
   };
+  if (request.shape.exact() && context->qualified_environment &&
+      context->scope != internal::DefaultRuleScope::kExpert) {
+    const auto policy =
+        internal::qualified_default_policy(operation, inputs, outputs);
+    if (policy.valid()) {
+      proposal->policy = policy;
+      proposal->preference =
+          context->scope == internal::DefaultRuleScope::kDirect ? 50 : 175;
+    }
+  }
   return Status::Ok();
 }
 
@@ -828,6 +855,11 @@ prepare(void *context_value, const detail::ProviderPrepareRequest &request,
                  ? ProviderPrepareOutcome::unsupported(status)
                  : ProviderPrepareOutcome::error(status);
   }
+  if (request.shape.exact() && context->qualified_environment &&
+      internal::retired_default_domain(request.operation, request.inputs,
+                                       request.outputs))
+    return ProviderPrepareOutcome::unsupported(
+        Status::Unimplemented("native domain retired; use mature CPU program"));
   NativePlan plan{};
   Status status = build_plan(request.operation, request.inputs, request.outputs,
                              plan, context->executor);
@@ -878,7 +910,15 @@ const detail::ProviderVTable kProviderVTable{
 } // namespace
 
 Provider provider(Options options) noexcept {
-  return detail::ProviderAccess::make(&kProviderVTable, options);
+  return detail::ProviderAccess::make(&kProviderVTable,
+                                      Configuration{.options = options});
 }
 
+namespace internal {
+Provider default_provider(Options options, DefaultRuleScope scope,
+                          bool single_native_thread) noexcept {
+  return detail::ProviderAccess::make(
+      &kProviderVTable, Configuration{options, scope, single_native_thread});
+}
+} // namespace internal
 } // namespace hyle::compute::native

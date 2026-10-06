@@ -1,5 +1,6 @@
 #include "hyle/compute/cpu.h"
 
+#include "../compute_provider_native/default_rules.h"
 #include <array>
 
 #include "hyle/compute/providers/native.h"
@@ -24,7 +25,11 @@ Result<Context> create_context(DefaultContextOptions options) noexcept {
           200},
 #endif
       ProviderBinding{aten_cpu::provider(), 350},
-      ProviderBinding{native::provider({.executor = options.executor}), 1000}};
+      ProviderBinding{native::internal::default_provider(
+                          {.executor = options.executor},
+                          native::internal::DefaultRuleScope::kDirect,
+                          options.native_threads == 1),
+                      1000}};
   auto count = providers.size();
   if (!providers[count - 2].provider.valid()) {
     providers[count - 2] = std::move(providers[count - 1]);

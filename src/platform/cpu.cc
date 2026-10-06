@@ -1368,6 +1368,41 @@ const CpuFeatureSet& cpu_features() noexcept {
   return f;
 }
 
+const CpuIdentity &cpu_identity() noexcept {
+  static const CpuIdentity identity = []() noexcept {
+    CpuIdentity result;
+#if HYLE_ARCH_X64
+    std::uint32_t registers[4]{};
+    cpuid(0, 0, registers);
+    const auto maximum_leaf = registers[0];
+    std::memcpy(result.vendor.data(), &registers[1], 4);
+    std::memcpy(result.vendor.data() + 4, &registers[3], 4);
+    std::memcpy(result.vendor.data() + 8, &registers[2], 4);
+    if (maximum_leaf >= 1) {
+      cpuid(1, 0, registers);
+      const auto signature = registers[0];
+      const auto base_family = (signature >> 8) & 0xfU;
+      result.family = base_family;
+      if (base_family == 0xfU)
+        result.family += (signature >> 20) & 0xffU;
+      result.model = (signature >> 4) & 0xfU;
+      if (base_family == 6U || base_family == 0xfU)
+        result.model |= ((signature >> 16) & 0xfU) << 4;
+      result.stepping = signature & 0xfU;
+    }
+    cpuid(0x80000000U, 0, registers);
+    if (registers[0] >= 0x80000004U) {
+      for (std::uint32_t part = 0; part != 3; ++part) {
+        cpuid(0x80000002U + part, 0, registers);
+        std::memcpy(result.brand.data() + part * 16, registers, 16);
+      }
+    }
+#endif
+    return result;
+  }();
+  return identity;
+}
+
 namespace {
 
 struct CoarseCacheFacts {

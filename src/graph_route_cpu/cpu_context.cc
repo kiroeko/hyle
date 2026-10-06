@@ -1,5 +1,6 @@
 #include "hyle/graph/cpu.h"
 
+#include "../compute_provider_native/default_rules.h"
 #include <array>
 
 #if defined(HYLE_COMPUTE_GGML_CPU)
@@ -40,7 +41,11 @@ create_context(compute::cpu::DefaultContextOptions options) noexcept {
 #endif
       compute::ProviderBinding{compute::aten_cpu::provider(), 400},
       compute::ProviderBinding{
-          compute::native::provider({.executor = options.executor}), 1000}};
+          compute::native::internal::default_provider(
+              {.executor = options.executor},
+              compute::native::internal::DefaultRuleScope::kGraph,
+              options.native_threads == 1),
+          1000}};
   auto count = providers.size();
   if (!providers[count - 2].provider.valid()) {
     providers[count - 2] = std::move(providers[count - 1]);
