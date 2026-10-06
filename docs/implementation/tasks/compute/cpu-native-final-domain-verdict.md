@@ -88,3 +88,8 @@ shared/static全部实际通过。固定candidate的无计时witness322条中Nat
 本实现子批七门与P0通过；实现61,387行/249文件，四个consumer目录清理625,435,572 logical bytes。
 SIMD与原库不改，未签新性能胜负。整个owner仍AUDITED、goal活动，因为剩余合格自研普通域的ND3
 有限性能/默认路由与精确资源保留裁决尚未完成；不以本子批代签CPU或四路线全部完成。
+
+ND3数值前置出现新的具体反例：Native half ScatterAdd逐更新舍入，以及Native/ggml的通用I32 RoPE
+先转F32丢整数位置。按[RN子批](cpu-residual-scatter-rope-numeric-retirement.md)定界，不让错误或不同
+phase语义参加同合同竞速；ggml由新事实重开SCOPED。当前Native仍只授权已固定ND-R1，RN有限FIX
+须完成审计再绑定，不扩成全族复审、算法优化或公共仪器课题。

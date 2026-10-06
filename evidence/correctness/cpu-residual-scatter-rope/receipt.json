@@ -1,0 +1,23 @@
+{
+  "baseline": "e80cf22ccf285934693f40da9cc558b457283d7b",
+  "product_candidate": "f32d261a5a68d5af99233286fcc81603c4bdb87a",
+  "forward_input_hashes_matched": 1337,
+  "diagnostic": "Expected failure; no P1 or product completion",
+  "records": 330,
+  "native_mismatch_rows": 3,
+  "mature_mismatch_rows": 3,
+  "declines": 32,
+  "source_sha256": {
+    "include/hyle/compute/operation.h": "e4ee275e58618a5e18e4c4cd4e5c749f9dd209102a3bdb854a5fac11acb2e079",
+    "src/compute_provider_native/indexing.cc": "d64b77c51e3ad0f850ef8459ece70669c707c91113173f860284b02d3c4edcfa",
+    "src/compute_provider_native/transformer.cc": "7be6b237e53f6100f4074d831bab6f04fd89d08128696734001fdefd7b1303d7",
+    "src/compute_provider_native/aten_cpu_provider.cc": "26be384a801c53551ae6a54c67e087035a98d8ff923f3671fe2a22fa05a45b73",
+    "src/compute_provider_ggml/ggml_cpu_provider.cc": "a2e22426ce2d85327b780c22e472171071d2bf05e4f87b0229a58100f2e67596",
+    "src/compute_ggml_runtime/explicit_rope.h": "eb3adc26db7641a35c433e83492c74c1d5316b32433c799a161d8a8b31289e8e"
+  },
+  "artifact": {
+    "entries": 16,
+    "bytes": 58458,
+    "sha256": "1e3bdf8acfb697d030c4dd23a6e08ac2a282b95fd203b53eaf65cc0e8be39bdd"
+  }
+}
