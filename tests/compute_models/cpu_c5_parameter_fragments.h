@@ -2,6 +2,7 @@
 #if defined(HYLE_GGML_CPU_IQ1_EXTENSIONS)
 #include "cpu_c5_gguf_fixture.h"
 #include "d5_kda_full_fragments.h"
+#include "d5_deepseek_remaining_fragments.h"
 
 // Actual GGUF convolution parameters enter an existing complete recurrent
 // consumer. Only storage views/concatenation are added; its independent oracle,
@@ -71,6 +72,68 @@ inline Fragment convolution(const ConvCase &item,
       if (input.ordinal() == old.ordinal()) input = bound;
   for (auto &value : original_nodes) f.nodes.push_back(std::move(value));
   return f;
+}
+
+inline std::vector<unsigned> new_deepseek_profiles() {
+  std::vector<unsigned> result;
+  for (unsigned index = 0; index < std::size(cpu_c5_inputs::profiles); ++index) {
+    const auto &value = cpu_c5_inputs::profiles[index];
+    if (value.family >= 6 && (std::string_view(value.variant) == "UD-Q4_K_XL" ||
+                             std::string_view(value.variant) == "UD-Q8_K_XL"))
+      result.push_back(index);
+  }
+  if (result.size() != 4) throw std::runtime_error("missing fixed DeepSeek GGUF profiles");
+  return result;
+}
+
+inline d5_moe_execution_cases::Case new_deepseek_case(
+    const c::ModelArtifactProfileDescription *identity) {
+  using Storage = d5_moe_execution_cases::Storage;
+  const bool pro = identity->model_name == "DeepSeek-V4-Pro-0813";
+  auto result = cpu_c4_model_branches::models[pro ? 0 : 1].main_case();
+  result.profile = identity;
+  result.gguf = true;
+  result.router_bf16 = true;
+  result.gate = result.up = result.down = Storage::kMxfp4;
+  const auto plain = identity->variant == "UD-Q4_K_XL" ? Storage::kQ8_0 : Storage::kBFloat16;
+  result.shared_gate = result.shared_up = result.shared_down = plain;
+  result.latent_storage = Storage::kBFloat16;
+  return result;
+}
+
+template <class Run>
+void new_deepseek_hyper_head(const d5_moe_execution_cases::Case &model, Run run) {
+  auto fragment = d5_deepseek_remaining_fragments::hyper_connection(model);
+  std::vector<std::vector<float>> observed, reference;
+  for (const auto &replay : fragment.replays) reference.push_back(replay.outputs.back());
+  fragment.observe = [&](std::size_t port, std::span<const float> values) {
+    if (port == 6) observed.emplace_back(values.begin(), values.end());
+  };
+  run(std::move(fragment));
+  ASSERT_FALSE(::testing::Test::HasFatalFailure());
+  ASSERT_EQ(observed.size(), reference.size());
+  const bool packed = model.shared_gate == d5_moe_execution_cases::Storage::kQ8_0;
+  const cpu_c5_inputs::Case item{"C5NewDeepSeekHead", cpu_c5_inputs::Kind::kHead,
+      packed ? GGML_TYPE_Q8_0 : GGML_TYPE_BF16, c::GgufQuantizedType::kQ8_0, packed,
+      model.hidden, 129280, 1, 0, 0};
+  const cpu_c5_gguf_fixture::Bank bank(item);
+  // Keep every vocabulary row. Only resident head rows are sharded, as in F1.
+  for (std::int64_t first = 0; first < item.n; first += 4096) {
+    const auto count = std::min<std::int64_t>(4096, item.n - first);
+    auto head = cpu_c5_gguf_fixture::projection(item, bank, model.profile, count, first);
+    head.replays.clear();
+    for (std::size_t replay = 0; replay < observed.size(); ++replay) {
+      // The independent complete mHC oracle supplies the expected activation;
+      // the product output supplies the actual activation to the next program.
+      const auto dot = bank.dots(reference[replay]);
+      std::vector<float> expected(count);
+      for (std::int64_t row = 0; row < count; ++row)
+        expected[row] = dot[(first + row) % cpu_c5_gguf_fixture::prototypes];
+      head.replays.push_back({{sem::bytes(observed[replay])}, {std::move(expected)}});
+    }
+    run(std::move(head));
+    ASSERT_FALSE(::testing::Test::HasFatalFailure());
+  }
 }
 } // namespace cpu_c5_parameters
 #endif

@@ -18,3 +18,7 @@ Windows/Linux 的 installed-static、installed-shared 普通 Direct/Graph 各8�
 另一平台现已完成，当前剩余范围以 C5 施工卡为准。
 
 此目录证明更新 SDK 的必要接缝；完整参数/required-region对账及最终收口仍须完成。
+
+归档后核对CMake owner、绝对目录边界及活动进程，删除本批Windows/WSL临时SDK消费者，
+释放1,327,652,425 bytes（约1.24GiB）；保留producer、安装SDK、原源码和依赖cache。
+清理明细见 `cleanup-windows.json` 与 `cleanup-linux.json`。

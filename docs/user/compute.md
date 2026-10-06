@@ -24,6 +24,8 @@ CPU 优选规则在冷准备时匹配硬件、编译器、线程合同及完整�
 单线程及固定 dense 形状的 187 个完整调用优势域；不匹配时沿成熟 Provider 顺序绑定。
 Graph 的成熟完整 region 优先于 Native 单算子，避免破坏融合。执行和重复执行不重新选路。
 相同资格条件下的 13 个已测劣势域拒绝 Native exact 请求，改由成熟实现承接。
+这些 Native 优选还要求相同的成熟 peer 软件版本。当前新版 CPU-only SDK 使用成熟实现默认，
+不把旧版 ggml 对照下的187条优势自动沿用到新版；SIMD基础与已保留的专家能力不因此删除。
 这些证据是相对当时默认成熟调用的比较，不表示全部硬件、形状或所有 Provider 的全局最优。
 逐操作保留与退役边界见[CPU 域账本](../implementation/tasks/compute/cpu-default-domain-ledger.md)。
 
@@ -156,7 +158,7 @@ backing 必须活到最后一个画像/程序释放。`program.workload()` 返�
 CPU-only 构建已追加 Q4_0/Q4_1/Q2_K、IQ2_XXS/XS/S、IQ1_S/M、IQ1_XXXS/XXS/XS 的原 block 描述与
 CPU 接线。最后三种使用固定 Unsloth IQ1 narrow 扩展，不能从文件名中的 UD 档位猜编码。
 包含 GPU 的 SDK 仍保留原 ggml 版本与资格，明确拒绝这批新增 CPU 格式。
-本轮完整画像、交付与资源资格进度见[当前任务](../implementation/tasks/compute/cpu-quant-mtp-c3-format-bindings.md)。
+本轮完整画像、交付与资源资格进度见[当前任务](../implementation/tasks/compute/cpu-quant-mtp-c5-batch-qualification.md)。
 
 调用方已经解析 GGUF tensor table 时，用 `<hyle/compute/low_precision.h>` 描述原文件中的压缩字节，
 不需要也不应先展开成常驻浮点权重。`gguf_weight_description()` 接收 Q3_K、Q4_K、Q5_K、Q6_K、
@@ -282,6 +284,10 @@ MX 输出保持 A dtype。scale 先按原 CPU 转为 A dtype，低精度溢出�
 越界索引和分配失败通过 Completion 报错，已失败的执行槽需要重建；独立槽可以共享只读参数。
 当前有限数值、默认精度和资源测试的范围见[验证记录](../../evidence/correctness/cpu-quant-mtp-c3-mixed-batch/README.md)，
 不据此承诺整个模型或其它路线已完成资格。
+实际模型内宽的559类GGUF及34类非GGUF端口已在Windows/Linux普通两入口验证，见
+[实际端口矩阵](../../evidence/correctness/cpu-quant-mtp-c5-matrix/README.md)；修复后的大词表和六个非GGUF族
+也已验证更新后的static/shared SDK。该资格仍按真实packing/group/dtype和端口区分，
+不把一个文件名的“4-bit”当作所有张量格式，也不代签全部混合模型完整片段。
 
 ### 激活的组量化与还原
 

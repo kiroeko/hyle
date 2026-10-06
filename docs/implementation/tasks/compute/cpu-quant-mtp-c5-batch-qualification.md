@@ -117,3 +117,11 @@ F3完整required-region与30类参数对账、F4更新SDK和最终聚合仍未�
 不足以证明原GGUF singleton物理形状接入。固定本批有限补验：六个实际卷积形状经公共View/Concat
 进入原完整GDN/KDA消费者；独立oracle、实际state宽度及反馈不变，没有新增数学或产品改动。
 这六项尚未运行；其余参数完整用途/required-region仍须裁决，owner保持AUDITED。
+
+F3另一个明确复用边界：C4新版主干签的是官方FP4/FP8/BF16程序，不能代签新版GGUF主干的F32 state/math。
+固定完整header显示Pro-0813与Flash-0731各UD-Q4_K_XL/UD-Q8_K_XL的专家均MXFP4、router均BF16，
+shared与普通投影分别Q8_0/BF16，q-rank为1536/1024，H为7168/4096，E为384/256。
+既有原GGUF程序可完整承载。将这四个精确身份纳入同一F3批次：ratio0/4/128 attention/cache、
+indexer compressor、ordinary/hash MoE、mHC后真实全词表head组合。只复用原provider/recipe，
+原独立oracle、实际内宽、完整vocab跨度及state反馈保留；其它档位实际格式合同仍回指F1矩阵。
+没有新增产品数学、公开API或性能赢家。这四项尚未运行，不签PASS。
