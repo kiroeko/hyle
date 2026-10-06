@@ -27,7 +27,7 @@
   不把新default candidate伪写成刚做过P1或跨平台WIN。
 - docs/closure/selector/统一LOC/垃圾清理；所有适用门实际完成才关闭CPU goal，GPU继续暂停。
 
-产品代码尚未授权；下一步AUDITED必须把有限FIX、匹配条件及保留理由固定，不无限研究。
+本卡已 AUDITED；产品施工只限下列 F1–F5，不增加算子或重开性能比较。
 
 ## 有限 FIX（源码与成本已审计）
 

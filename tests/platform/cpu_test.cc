@@ -44,6 +44,15 @@ TEST(CpuIdentity, CachedHardwareValueHasTerminatedNames) {
   EXPECT_EQ(&first, &second);
   EXPECT_EQ(first.vendor.back(), '\0');
   EXPECT_EQ(first.brand.back(), '\0');
+  std::array<const hyle::platform::CpuIdentity *, 8> concurrent{};
+  std::array<std::thread, 8> readers;
+  for (std::size_t i = 0; i < readers.size(); ++i)
+    readers[i] = std::thread(
+        [&, i] { concurrent[i] = &hyle::platform::cpu_identity(); });
+  for (auto &reader : readers)
+    reader.join();
+  for (const auto *observed : concurrent)
+    EXPECT_EQ(observed, &first);
   static_assert(std::is_trivially_copyable_v<hyle::platform::CpuIdentity>);
 #if HYLE_ARCH_X64
   EXPECT_NE(first.vendor.front(), '\0');

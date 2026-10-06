@@ -30,7 +30,7 @@ A/B 前固定为有资格子批，72项失格不参赛。一次统一 runner 用
 |---|---|---|
 | F32 weighted RMSNorm，rows32/hidden2048 | 0.592–0.607 | 大批次成熟oneDNN更优；小rows和其它dtype有独立WIN，不能整族删除 |
 | F32/I32、F16/I64、BF16/I32 Assign，32条2048元素更新 | 0.126–0.226 | Native逐元素索引/offset/写入；成熟原index-copy整段处理。退役对应普通域，保留已赢小更新/确认独有域所需共享代码 |
-| 三dtype log-softmax，rows32/hidden2048，none/Bool | 0.242–0.261 | Native标量逐元素exp/log；成熟原Tensor程序摊薄成本。6项退役普通域，不优化自研 |
+| 三dtype Bool Softmax/LogSoftmax，rows32/hidden2048 | 0.242–0.261 | Native标量逐元素exp/log；成熟原Tensor程序摊薄成本。6项退役普通域，不优化自研 |
 | F32 equal-head SDPA，query rows32 | 0.098–0.099 | Native简单dot/softmax/value loops落后原ggml完整attention约10倍；小query有独立结果，不能据此拆成熟region |
 | F16/BF16 Softplus，rows32/hidden2048 | 0.736–0.789 | 标量稳定函数/低精度codec成本；普通大批次选择成熟，已赢小批次与资源域分开 |
 | F32物理转置RHS MatMul，M32/K=N1024 | 0.522–0.535 | Native逐row/column dot，成熟ggml更优约1.9倍；两个M1布局无可靠方向，row-major M32前置失格，整个本批MatMul没有完整优势证据 |

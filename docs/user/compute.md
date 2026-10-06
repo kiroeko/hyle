@@ -19,6 +19,14 @@
 普通用户不排列 Provider 或提供性能资料；规则与性能验收状态由当前 CPU 任务卡记录。
 路线原则见[开发期优选规则](../architecture/compute-design.md#41-开发时验证-best-of准备时应用规则)。
 
+CPU 优选规则在冷准备时匹配硬件、编译器、线程合同及完整操作参数。当前 Native 优选仅覆盖
+已测 i9-13900K（family 6/model 183/stepping 1、AVX2）、Windows MSVC 19.50.35728、
+单线程及固定 dense 形状的 187 个完整调用优势域；不匹配时沿成熟 Provider 顺序绑定。
+Graph 的成熟完整 region 优先于 Native 单算子，避免破坏融合。执行和重复执行不重新选路。
+相同资格条件下的 13 个已测劣势域拒绝 Native exact 请求，改由成熟实现承接。
+这些证据是相对当时默认成熟调用的比较，不表示全部硬件、形状或所有 Provider 的全局最优。
+逐操作保留与退役边界见[CPU 域账本](../implementation/tasks/compute/cpu-default-domain-ledger.md)。
+
 Apple 与 Vulkan 各自使用原生 Program、运行槽和资源；普通 Direct/Graph 用法分别见
 [Apple MLX/Metal](apple-compute.md) 与 [Vulkan](vulkan-compute.md)。本文后续 Queue/Provider 的
 细节属于 CPU/CUDA 接入，不要求这两条原生路线采用同一执行器。

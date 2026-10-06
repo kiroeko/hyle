@@ -242,8 +242,17 @@ std::optional<Domain> domain(Operation op, std::span<const TensorDesc> in,
     return result(Family::Select);
   if (op.kind() == OperationKind::kCopy && r && in.size() == 1 && tensor(0))
     return result(Family::Copy);
-  if (op.kind() == OperationKind::kFill && r && in.empty())
-    return result(Family::Fill);
+  if (auto p = op.get_if<Fill>(); p && r && in.empty() && p->output_type == t &&
+                                  p->value.data_type() == t) {
+    // The qualified request fills 1.25; do not extrapolate a scalar-sensitive
+    // implementation to zero, NaN, or another unmeasured attribute.
+    const auto bits = t == DataType::kFloat32    ? 0x3fa00000ULL
+                      : t == DataType::kFloat16  ? 0x3d00ULL
+                      : t == DataType::kBFloat16 ? 0x3fa0ULL
+                                                 : 0ULL;
+    if (bits && p->value.bits() == bits)
+      return result(Family::Fill);
+  }
   if (op.kind() == OperationKind::kCast && r && in.size() == 1 &&
       shape(in[0], {r, 2048}, in[0].data_type()))
     return Domain{Family::Cast, 0, in[0].data_type(), t, r};
