@@ -156,8 +156,12 @@ TEST(CpuExpandedGgufDirect, OriginalFormatsProjectionExpertsAndEmbedding) {
     const std::array table_descs{table, ids_desc};
     check(c::Operation(c::Gather{}), table_descs, tables, gathered,
       [&](int pass) { ids = pass ? std::array<std::int32_t, 3>{0, 2, 0} : std::array<std::int32_t, 3>{3, 1, 1}; EXPECT_TRUE(tables[1].view().write(std::as_bytes(std::span(ids))).ok()); },
-      [&] { std::vector<float> y(3 * f::k); for (int i = 0; i < 3; ++i)
-        std::copy_n(decoded.data() + ids[i] * f::k, f::k, y.data() + i * f::k); return y; }, true, true);
+      [&] {
+        std::vector<float> y(3 * f::k);
+        for (int i = 0; i < 3; ++i)
+          std::copy_n(decoded.data() + ids[i] * f::k, f::k, y.data() + i * f::k);
+        return y;
+      }, true, true);
 
     const auto group = c::gguf_grouped_weight_description(item.format, c::DataType::kFloat32, f::experts, f::n, f::k).value();
     const auto ga = c::TensorDesc::dense(c::DataType::kFloat32, std::array<std::int64_t, 3>{2, 2, f::k}).value();
@@ -169,8 +173,13 @@ TEST(CpuExpandedGgufDirect, OriginalFormatsProjectionExpertsAndEmbedding) {
     const std::array group_descs{group, ga, gi};
     check(c::model_ops::grouped_matmul(), group_descs, groups, gy,
       [&](int pass) { for (std::size_t i = 0; i < selected.size(); ++i) selected[i] = float(static_cast<int>(i % 17) - 8) * (pass ? -0.25f : 0.25f); EXPECT_TRUE(groups[1].view().write(std::as_bytes(std::span(selected))).ok()); EXPECT_TRUE(groups[2].view().write(std::as_bytes(std::span(expert_ids))).ok()); },
-      [&] { std::vector<float> y(4 * f::n); for (int slot = 0; slot < 4; ++slot) for (int row = 0; row < f::n; ++row)
-        y[slot * f::n + row] = f::dot(item, packed.data() + (expert_ids[slot] * f::n + row) * stride, std::span(selected).subspan(slot * f::k, f::k)); return y; }, true, false, roundoff);
+      [&] {
+        std::vector<float> y(4 * f::n);
+        for (int slot = 0; slot < 4; ++slot)
+          for (int row = 0; row < f::n; ++row)
+            y[slot * f::n + row] = f::dot(item, packed.data() + (expert_ids[slot] * f::n + row) * stride, std::span(selected).subspan(slot * f::k, f::k));
+        return y;
+      }, true, false, roundoff);
   }
 }
 } // namespace
