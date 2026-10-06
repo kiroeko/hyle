@@ -612,7 +612,9 @@ void scatter_add_case(std::span<const std::int64_t> base_shape,
   if (index_type == DataType::kInt64)
     write(i, index, std::span<const std::int64_t>(indices));
   else {
-    const std::vector<std::int32_t> small(indices.begin(), indices.end());
+    std::vector<std::int32_t> small(indices.size());
+    for (std::size_t n = 0; n < indices.size(); ++n)
+      small[n] = static_cast<std::int32_t>(indices[n]);
     write(i, index, std::span<const std::int32_t>(small));
   }
   std::size_t prefix = 1, suffix = 1;
