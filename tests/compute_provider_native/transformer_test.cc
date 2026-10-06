@@ -101,40 +101,45 @@ TEST(NativeTransformer, ExecutesBothRopeLayoutsAndPreservesTheTail) {
   const std::array outputs{
       TensorView::create(data_desc, output_storage.view()).value()};
   auto context = hyle::compute::test::native_context().value();
+  const auto i64 = TensorDesc::dense(DataType::kInt64, position_shape).value();
+  auto retired = hyle::compute::prepare(
+      context, RoPE{.rotary_dimensions = 4, .sequence_axis = 1}, data_desc, i64,
+      frequency_desc);
+  ASSERT_FALSE(retired);
+  EXPECT_TRUE(retired.error().IsUnimplemented());
   auto queue = context.create_queue().value();
 
   auto interleaved =
-      hyle::compute::prepare(
-          context,
-          RoPE{.rotary_dimensions = 4,
-               .sequence_axis = 1,
-               .layout = RopeLayout::kInterleaved},
-          data_desc, position_desc, frequency_desc)
+      hyle::compute::prepare(context,
+                             RoPE{.rotary_dimensions = 4,
+                                  .sequence_axis = 1,
+                                  .layout = RopeLayout::kInterleaved},
+                             data_desc, position_desc, frequency_desc)
           .value();
   auto invocation = interleaved.create_invocation().value();
-  ASSERT_TRUE(invocation.submit(queue, inputs[0], inputs[1], inputs[2],
-                                outputs[0])
-                  ->wait()
-                  .ok());
+  ASSERT_TRUE(
+      invocation.submit(queue, inputs[0], inputs[1], inputs[2], outputs[0])
+          ->wait()
+          .ok());
   expect_near(read_buffer<float, values.size()>(output_storage),
               interleaved_expected);
 
   const TensorView alias_output =
       TensorView::create(data_desc, data_storage.view()).value();
   const std::array alias_outputs{alias_output};
-  auto split = hyle::compute::prepare(
-                   context,
-                   RoPE{.rotary_dimensions = 4,
-                        .sequence_axis = 1,
-                        .layout = RopeLayout::kHalfSplit},
-                   data_desc, position_desc, frequency_desc)
+  auto split = hyle::compute::prepare(context,
+                                      RoPE{.rotary_dimensions = 4,
+                                           .sequence_axis = 1,
+                                           .layout = RopeLayout::kHalfSplit},
+                                      data_desc, position_desc, frequency_desc)
                    .value();
   EXPECT_TRUE(split.alias_support(0, 0)->supported);
   invocation = split.create_invocation().value();
-  ASSERT_TRUE(invocation.submit(queue, inputs[0], inputs[1], inputs[2],
-                                alias_outputs[0])
-                  ->wait()
-                  .ok());
+  ASSERT_TRUE(
+      invocation
+          .submit(queue, inputs[0], inputs[1], inputs[2], alias_outputs[0])
+          ->wait()
+          .ok());
   expect_near(read_buffer<float, values.size()>(data_storage), split_expected);
 }
 
@@ -285,9 +290,8 @@ TEST(NativeTransformer, SoftmaxSupportsBroadcastMasksScaleAndExactAlias) {
   ASSERT_TRUE(invocation_result.has_value())
       << invocation_result.error().message();
   auto invocation = std::move(*invocation_result);
-  ASSERT_TRUE(invocation.submit(queue, inputs[0], inputs[1], outputs[0])
-                  ->wait()
-                  .ok());
+  ASSERT_TRUE(
+      invocation.submit(queue, inputs[0], inputs[1], outputs[0])->wait().ok());
 
   const auto first =
       reference_softmax({0.5F, -std::numeric_limits<float>::infinity(), 1.5F});
@@ -411,9 +415,8 @@ TEST(NativeTransformer, SdpaExecutesBlockedOnlineSoftmaxInBothLayouts) {
       TensorView::create(output_desc, output.view()).value()};
   auto context = hyle::compute::test::native_context().value();
   auto queue = context.create_queue().value();
-  auto prepared = hyle::compute::prepare(
-                      context, ScaledDotProductAttention{}, query_desc,
-                      key_desc, value_desc)
+  auto prepared = hyle::compute::prepare(context, ScaledDotProductAttention{},
+                                         query_desc, key_desc, value_desc)
                       .value();
   const auto requirement = prepared.workspace_requirement();
   EXPECT_GT(requirement.size, 0U);
@@ -421,10 +424,10 @@ TEST(NativeTransformer, SdpaExecutesBlockedOnlineSoftmaxInBothLayouts) {
                                     requirement.size, requirement.alignment)
                          .value();
   auto invocation = prepared.create_invocation(workspace.view()).value();
-  ASSERT_TRUE(invocation.submit(queue, inputs[0], inputs[1], inputs[2],
-                                outputs[0])
-                  ->wait()
-                  .ok());
+  ASSERT_TRUE(
+      invocation.submit(queue, inputs[0], inputs[1], inputs[2], outputs[0])
+          ->wait()
+          .ok());
 
   const float e = std::exp(1.0F);
   const float first_sum = 2.0F * e + 1.0F;
@@ -774,15 +777,17 @@ TEST(NativeTransformer, SdpaDeclinesGroupedHeadsBeforeAnyExecution) {
     const std::array<std::int64_t, 4> key_shape =
         bshd ? std::array<std::int64_t, 4>{1, 17, 2, 256}
              : std::array<std::int64_t, 4>{1, 2, 17, 256};
-    const auto query = TensorDesc::dense(DataType::kFloat32, query_shape).value();
+    const auto query =
+        TensorDesc::dense(DataType::kFloat32, query_shape).value();
     const auto key = TensorDesc::dense(DataType::kFloat32, key_shape).value();
     const std::array inputs{query, key, key};
     const std::array outputs{query};
     auto prepared = hyle::compute::prepare(
-        context, Operation(ScaledDotProductAttention{.layout = layout}),
-        inputs, outputs, hyle::mem::system_resource());
+        context, Operation(ScaledDotProductAttention{.layout = layout}), inputs,
+        outputs, hyle::mem::system_resource());
     ASSERT_FALSE(prepared);
-    EXPECT_TRUE(prepared.error().IsUnimplemented()) << prepared.error().message();
+    EXPECT_TRUE(prepared.error().IsUnimplemented())
+        << prepared.error().message();
   }
 }
 

@@ -30,10 +30,9 @@ using hyle::compute::TensorView;
 using hyle::mem::Buffer;
 
 Buffer make_buffer(std::span<const float> values) {
-  Buffer result =
-      Buffer::create(hyle::mem::system_resource(),
-                     values.size_bytes(), alignof(float))
-          .value();
+  Buffer result = Buffer::create(hyle::mem::system_resource(),
+                                 values.size_bytes(), alignof(float))
+                      .value();
   EXPECT_TRUE(result.view().write(std::as_bytes(values)).ok());
   return result;
 }
@@ -46,8 +45,7 @@ std::vector<float> read_buffer(const Buffer &buffer, std::size_t count) {
 }
 
 void expect_matmul(const TensorDesc &left_desc, std::span<const float> left,
-                   const TensorDesc &right_desc,
-                   std::span<const float> right,
+                   const TensorDesc &right_desc, std::span<const float> right,
                    std::span<const float> expected) {
   Buffer left_storage = make_buffer(left);
   Buffer right_storage = make_buffer(right);
@@ -57,8 +55,7 @@ void expect_matmul(const TensorDesc &left_desc, std::span<const float> left,
   auto queue = context.create_queue().value();
   auto prepared_result =
       hyle::compute::prepare(context, MatMul{}, left_desc, right_desc);
-  ASSERT_TRUE(prepared_result.has_value())
-      << prepared_result.error().message();
+  ASSERT_TRUE(prepared_result.has_value()) << prepared_result.error().message();
   auto prepared = std::move(*prepared_result);
   auto output_desc = prepared.output_description();
   ASSERT_TRUE(output_desc.has_value()) << output_desc.error().message();
@@ -91,8 +88,7 @@ float activate(GatedActivationKind kind, float value) {
     return value * sigmoid;
   }
   case GatedActivationKind::kGelu:
-    return 0.5F * value *
-           (1.0F + std::erf(value * 0.70710678118654752440F));
+    return 0.5F * value * (1.0F + std::erf(value * 0.70710678118654752440F));
   case GatedActivationKind::kGeluTanh:
     return 0.5F * value *
            (1.0F + std::tanh(0.79788456080286535588F * value *
@@ -112,12 +108,9 @@ TEST(NativeMatMul, BroadcastsBothBatchOperandsAndSupportsTransposedWeights) {
   constexpr std::array<std::int64_t, 4> physical_right_shape{1, 3, 2, 3};
   constexpr std::array<std::int64_t, 4> output_shape{2, 3, 2, 2};
 
-  const std::vector<float> left{1,  2, 3, 4,  5,  6,
-                                -1, 0, 2, 0.5F, -2, 3};
+  const std::vector<float> left{1, 2, 3, 4, 5, 6, -1, 0, 2, 0.5F, -2, 3};
   const std::vector<float> right{
-      1, 2, 3, 4, 5, 6,
-      -1, 1, 2, 0, 0.5F, -2,
-      3, -1, 0, 2, 4, 0.25F,
+      1, 2, 3, 4, 5, 6, -1, 1, 2, 0, 0.5F, -2, 3, -1, 0, 2, 4, 0.25F,
   };
   std::vector<float> expected(first_batches * second_batches * rows * columns,
                               0.0F);
@@ -220,8 +213,7 @@ TEST(NativeMatMul, AcceptsAnEmptyBroadcastBatch) {
   auto queue = context.create_queue().value();
   auto prepared_result =
       hyle::compute::prepare(context, MatMul{}, left_desc, right_desc);
-  ASSERT_TRUE(prepared_result.has_value())
-      << prepared_result.error().message();
+  ASSERT_TRUE(prepared_result.has_value()) << prepared_result.error().message();
   auto prepared = std::move(*prepared_result);
   auto invocation = prepared.create_invocation().value();
   EXPECT_TRUE(invocation.submit(queue, left_view, right_view, output_view)
@@ -229,8 +221,8 @@ TEST(NativeMatMul, AcceptsAnEmptyBroadcastBatch) {
                   .ok());
 
   constexpr auto maximum = (std::numeric_limits<std::int64_t>::max)();
-  constexpr std::array<std::int64_t, 4> huge_empty_left_shape{maximum,
-                                                              maximum, 0, 1};
+  constexpr std::array<std::int64_t, 4> huge_empty_left_shape{maximum, maximum,
+                                                              0, 1};
   constexpr std::array<std::int64_t, 4> scalar_right_shape{1, 1, 1, 1};
   const TensorDesc huge_empty_left =
       TensorDesc::dense(DataType::kFloat32, huge_empty_left_shape).value();
@@ -254,8 +246,7 @@ TEST(NativeMatMul, ZeroInnerDimensionProducesZeroWithoutReadingInputs) {
     Buffer left = Buffer::create(hyle::mem::system_resource(), 0).value();
     Buffer right = Buffer::create(hyle::mem::system_resource(), 0).value();
     const std::size_t output_elements = output_desc.element_count().value();
-    Buffer output =
-        make_buffer(std::vector<float>(output_elements, 17.0F));
+    Buffer output = make_buffer(std::vector<float>(output_elements, 17.0F));
     const auto left_view =
         ConstTensorView::create(left_desc, left.view()).value();
     const auto right_view =
@@ -302,8 +293,7 @@ TEST(NativeMatMul, BroadcastsAnOperandWithNoExplicitBatchAxes) {
 
   const std::vector<float> left{1, 2, 3, 4, 5, 6};
   const std::vector<float> right_batches{
-      1, 2, 3, 4, 5, 6,
-      -1, 1, 2, 0, 0.5F, -2,
+      1, 2, 3, 4, 5, 6, -1, 1, 2, 0, 0.5F, -2,
   };
   std::vector<float> expected_left_broadcast(8, 0.0F);
   for (std::size_t batch = 0; batch < 2; ++batch) {
@@ -321,8 +311,7 @@ TEST(NativeMatMul, BroadcastsAnOperandWithNoExplicitBatchAxes) {
                 expected_left_broadcast);
 
   const std::vector<float> left_batches{
-      1, 2, 3, 4, 5, 6,
-      -1, 0, 2, 0.5F, -2, 3,
+      1, 2, 3, 4, 5, 6, -1, 0, 2, 0.5F, -2, 3,
   };
   const std::vector<float> right{1, 2, 3, 4, 5, 6};
   std::vector<float> expected_right_broadcast(8, 0.0F);
@@ -341,7 +330,9 @@ TEST(NativeMatMul, BroadcastsAnOperandWithNoExplicitBatchAxes) {
                 expected_right_broadcast);
 }
 
-TEST(NativeGatedActivation, ExecutesEveryModeForPackedAndSeparateInputs) {
+TEST(MatureGatedActivation, ExecutesEveryModeForPackedAndSeparateInputs) {
+  if (!hyle::compute::aten_cpu::provider())
+    GTEST_SKIP() << "locked Torch CPU SDK disabled";
   constexpr std::size_t rows = 2;
   constexpr std::size_t hidden = 5;
   const std::vector<float> gate{
@@ -356,8 +347,7 @@ TEST(NativeGatedActivation, ExecutesEveryModeForPackedAndSeparateInputs) {
       4,
       -0.25F,
   };
-  const std::vector<float> value{0.5F, 2, -1, 3, 0.25F,
-                                 -2, 1.5F, 4, -0.5F, 8};
+  const std::vector<float> value{0.5F, 2, -1, 3, 0.25F, -2, 1.5F, 4, -0.5F, 8};
   std::vector<float> packed(rows * hidden * 2);
   for (std::size_t row = 0; row < rows; ++row) {
     std::copy_n(gate.data() + row * hidden, hidden,
@@ -386,12 +376,15 @@ TEST(NativeGatedActivation, ExecutesEveryModeForPackedAndSeparateInputs) {
       ConstTensorView::create(packed_desc, packed_storage.view()).value();
   const auto output_view =
       TensorView::create(separate_desc, output_storage.view()).value();
-  auto context = hyle::compute::test::native_context().value();
+  auto context =
+      hyle::compute::Context::create(hyle::compute::cpu::device(),
+                                     hyle::compute::aten_cpu::provider())
+          .value();
   auto queue = context.create_queue().value();
 
-  for (const GatedActivationKind kind : {GatedActivationKind::kSilu,
-                                         GatedActivationKind::kGelu,
-                                         GatedActivationKind::kGeluTanh}) {
+  for (const GatedActivationKind kind :
+       {GatedActivationKind::kSilu, GatedActivationKind::kGelu,
+        GatedActivationKind::kGeluTanh}) {
     auto packed_prepared =
         hyle::compute::prepare(
             context,
@@ -400,7 +393,8 @@ TEST(NativeGatedActivation, ExecutesEveryModeForPackedAndSeparateInputs) {
             packed_desc)
             .value();
     auto invocation = packed_prepared.create_invocation().value();
-    ASSERT_TRUE(invocation.submit(queue, packed_view, output_view)->wait().ok());
+    ASSERT_TRUE(
+        invocation.submit(queue, packed_view, output_view)->wait().ok());
     const auto packed_actual = read_buffer(output_storage, gate.size());
 
     auto separate_prepared =
@@ -447,9 +441,8 @@ TEST(NativeGatedActivation, ExecutesEveryModeForPackedAndSeparateInputs) {
 
   auto separate_prepared =
       hyle::compute::prepare(
-          context,
-          GatedActivation{.inputs = GatedInputKind::kSeparate}, separate_desc,
-          separate_desc)
+          context, GatedActivation{.inputs = GatedInputKind::kSeparate},
+          separate_desc, separate_desc)
           .value();
   auto separate_invocation = separate_prepared.create_invocation().value();
   const auto gate_alias =
@@ -509,6 +502,11 @@ template <class Value> void expect_half_gated(std::size_t hidden) {
       auto prepared =
           is_packed ? hyle::compute::prepare(context, operation, packed_desc)
                     : hyle::compute::prepare(context, operation, desc, desc);
+      if (type != DataType::kFloat16 || kind != GatedActivationKind::kSilu) {
+        ASSERT_FALSE(prepared);
+        EXPECT_TRUE(prepared.error().IsUnimplemented());
+        continue;
+      }
       ASSERT_TRUE(prepared.has_value());
       auto invocation = prepared->create_invocation().value();
       auto completion =
@@ -533,7 +531,7 @@ template <class Value> void expect_half_gated(std::size_t hidden) {
   }
 }
 
-TEST(NativeGatedActivation, HalfStoragePreservesPackedAndSeparateSemantics) {
+TEST(NativeGatedActivation, RetainsHalfSiluAndDeclinesOtherGateDomains) {
   for (const std::size_t hidden : {0, 1, 127, 128, 129, 2048}) {
     expect_half_gated<hyle::simd::float16_t>(hidden);
     expect_half_gated<hyle::simd::bfloat16_t>(hidden);

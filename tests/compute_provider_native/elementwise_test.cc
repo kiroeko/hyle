@@ -128,15 +128,15 @@ void expect_float(float actual, float expected) {
   }
 }
 
-TEST(NativeElementwise, ExecutesEveryDenseUnaryModeAndExactAlias) {
+TEST(NativeElementwise, ExecutesRetainedUnaryModesAndDeclinesRetiredDomains) {
   constexpr std::array<std::int64_t, 1> shape{7};
   constexpr std::array<float, 7> values{-2.0F, -0.0F, 0.25F, 0.5F,
                                         1.0F,  2.0F,  4.0F};
   constexpr std::array kinds{
-      UnaryKind::kAbs,  UnaryKind::kNeg,      UnaryKind::kExp,
-      UnaryKind::kLog,  UnaryKind::kSqrt,     UnaryKind::kRsqrt,
-      UnaryKind::kTanh, UnaryKind::kSigmoid,  UnaryKind::kRelu,
-      UnaryKind::kGelu, UnaryKind::kGeluTanh, UnaryKind::kSilu,
+      UnaryKind::kAbs,     UnaryKind::kNeg,      UnaryKind::kExp,
+      UnaryKind::kLog,     UnaryKind::kSqrt,     UnaryKind::kRsqrt,
+      UnaryKind::kTanh,    UnaryKind::kSigmoid,  UnaryKind::kRelu,
+      UnaryKind::kGelu,    UnaryKind::kGeluTanh, UnaryKind::kSilu,
       UnaryKind::kSoftplus};
   const TensorDesc description =
       TensorDesc::dense(DataType::kFloat32, shape).value();
@@ -152,6 +152,12 @@ TEST(NativeElementwise, ExecutesEveryDenseUnaryModeAndExactAlias) {
 
   for (UnaryKind kind : kinds) {
     auto prepared = hyle::compute::prepare(context, Unary{kind}, description);
+    if (kind == UnaryKind::kGelu || kind == UnaryKind::kGeluTanh ||
+        kind == UnaryKind::kSilu) {
+      ASSERT_FALSE(prepared);
+      EXPECT_TRUE(prepared.error().IsUnimplemented());
+      continue;
+    }
     ASSERT_TRUE(prepared.has_value());
     auto invocation = prepared->create_invocation().value();
     ASSERT_TRUE(invocation.submit(queue, input, output)->wait().ok());
@@ -184,8 +190,7 @@ TEST(NativeElementwise, SoftplusHasStableTailsSpecialValuesAndExactAlias) {
   values[255] = std::numeric_limits<float>::quiet_NaN();
   values[256] = -0.0F;
   const TensorDesc description =
-      TensorDesc::dense(DataType::kFloat32,
-                        std::array<std::int64_t, 1>{count})
+      TensorDesc::dense(DataType::kFloat32, std::array<std::int64_t, 1>{count})
           .value();
   auto context = hyle::compute::test::native_context().value();
   auto queue = context.create_queue().value();
@@ -194,7 +199,8 @@ TEST(NativeElementwise, SoftplusHasStableTailsSpecialValuesAndExactAlias) {
           .value();
   auto invocation = prepared.create_invocation().value();
   Buffer storage = make_buffer(values);
-  const TensorView alias = TensorView::create(description, storage.view()).value();
+  const TensorView alias =
+      TensorView::create(description, storage.view()).value();
   ASSERT_TRUE(invocation.submit(queue, alias.as_const(), alias)->wait().ok());
   const auto actual = read_buffer<float, count>(storage);
   for (std::size_t index = 0; index < count; ++index) {
@@ -213,7 +219,7 @@ TEST(NativeElementwise, SoftplusHasStableTailsSpecialValuesAndExactAlias) {
   // A separate padded input exercises the scalar stride route, including
   // values for which expf(x) would overflow or 1+expf(x) would round to one.
   const std::array<float, 8> padded{-100.0F, -999.0F, 100.0F, -999.0F,
-                                   -40.0F, -999.0F, 0.0F, -999.0F};
+                                    -40.0F,  -999.0F, 0.0F,   -999.0F};
   Buffer strided_storage = make_buffer(padded);
   const TensorDesc strided =
       TensorDesc::strided_bytes(DataType::kFloat32,
@@ -228,15 +234,15 @@ TEST(NativeElementwise, SoftplusHasStableTailsSpecialValuesAndExactAlias) {
   const auto input =
       ConstTensorView::create(strided, strided_storage.view()).value();
   const auto output_description =
-      TensorDesc::dense(DataType::kFloat32,
-                        std::array<std::int64_t, 1>{4})
+      TensorDesc::dense(DataType::kFloat32, std::array<std::int64_t, 1>{4})
           .value();
   const auto output =
       TensorView::create(output_description, output_storage.view()).value();
   ASSERT_TRUE(strided_invocation.submit(queue, input, output)->wait().ok());
   const auto strided_actual = read_buffer<float, 4>(output_storage);
   for (std::size_t index = 0; index < strided_actual.size(); ++index) {
-    const float expected = unary_reference(UnaryKind::kSoftplus, padded[index * 2]);
+    const float expected =
+        unary_reference(UnaryKind::kSoftplus, padded[index * 2]);
     EXPECT_NEAR(strided_actual[index], expected,
                 std::abs(expected) * 5.0e-6F + 1.0e-43F);
   }
@@ -319,6 +325,11 @@ template <class Value> void expect_half_elementwise(std::size_t count) {
         UnaryKind::kGeluTanh, UnaryKind::kSilu, UnaryKind::kSoftplus}) {
     ASSERT_TRUE(storage.view().write(std::as_bytes(std::span(values))).ok());
     auto prepared = hyle::compute::prepare(context, Unary{kind}, description);
+    if (kind == UnaryKind::kGelu || kind == UnaryKind::kGeluTanh) {
+      ASSERT_FALSE(prepared);
+      EXPECT_TRUE(prepared.error().IsUnimplemented());
+      continue;
+    }
     ASSERT_TRUE(prepared.has_value());
     auto invocation = prepared->create_invocation().value();
     ASSERT_TRUE(invocation.submit(queue, alias.as_const(), alias)->wait().ok());
@@ -355,7 +366,7 @@ template <class Value> void expect_half_elementwise(std::size_t count) {
   }
 }
 
-TEST(NativeElementwise, HalfStorageExecutesAllModesAndRoundsOnce) {
+TEST(NativeElementwise, HalfStorageExecutesRetainedModesAndDeclinesGelu) {
   for (const std::size_t count : {0, 1, 127, 128, 129, 257}) {
     SCOPED_TRACE(count);
     expect_half_elementwise<hyle::simd::float16_t>(count);

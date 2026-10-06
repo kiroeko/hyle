@@ -1388,4 +1388,56 @@ TEST(AtenCpuResources, ColdCompilationBoundsCoverAllAdmittedProgramFamilies) {
   }
 }
 
+TEST(NativeNumericRetirement, BothColdStagesDeclineAllRetiredDomains) {
+  auto context = test::native_context().value();
+  const auto dense = [](DataType type,
+                        std::initializer_list<std::int64_t> dims) {
+    return TensorDesc::dense(type, {dims.begin(), dims.size()}).value();
+  };
+  struct Case {
+    Operation operation;
+    std::vector<TensorDesc> inputs;
+  };
+  std::vector<Case> cases;
+  for (auto type :
+       {DataType::kFloat32, DataType::kFloat16, DataType::kBFloat16}) {
+    const auto d = dense(type, {2, 4});
+    for (auto kind : {UnaryKind::kGelu, UnaryKind::kGeluTanh})
+      cases.push_back({Operation(Unary{kind}), {d}});
+    if (type == DataType::kFloat32)
+      cases.push_back({Operation(Unary{UnaryKind::kSilu}), {d}});
+    for (auto kind : {GatedActivationKind::kSilu, GatedActivationKind::kGelu,
+                      GatedActivationKind::kGeluTanh}) {
+      if (type == DataType::kFloat16 && kind == GatedActivationKind::kSilu)
+        continue;
+      cases.push_back(
+          {Operation(GatedActivation{.activation = kind,
+                                     .inputs = GatedInputKind::kSeparate}),
+           {d, d}});
+      cases.push_back({Operation(GatedActivation{.activation = kind}),
+                       {dense(type, {2, 8})}});
+    }
+  }
+  cases.push_back(
+      {Operation(RoPE{.rotary_dimensions = 4, .sequence_axis = 1}),
+       {dense(DataType::kFloat32, {1, 2, 1, 4}), dense(DataType::kInt64, {2}),
+        dense(DataType::kFloat32, {2})}});
+  for (const auto &item : cases) {
+    const auto output = infer_single_output(item.operation, item.inputs);
+    ASSERT_TRUE(output) << output.error().message();
+    std::vector<ResourceBindingRequirement> ir(item.inputs.size());
+    std::array<ResourceBindingRequirement, 1> orq{};
+    auto proposal = OperationPreparationAccess::propose(
+        context, 0, item.operation, item.inputs, std::span(&*output, 1), ir,
+        orq);
+    ASSERT_FALSE(proposal);
+    EXPECT_TRUE(proposal.error().IsUnimplemented());
+    auto prepared =
+        prepare(context, item.operation, item.inputs, std::span(&*output, 1),
+                hyle::mem::system_resource());
+    ASSERT_FALSE(prepared);
+    EXPECT_TRUE(prepared.error().IsUnimplemented());
+  }
+}
+
 } // namespace
