@@ -271,9 +271,9 @@
     },
     {
       "module": "compute",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/cpu-native-matmul-private-kernel-cleanup.md",
-      "summary": "K1 SCOPED：仅删除历史common-path的Native专用MatMul两私有文件并迁移矩阵fixture；runtime/API/路由不变"
+      "summary": "K1 AUDITED：引用/编译归属已审计；仅删Native专用MatMul两私有文件与迁移矩阵fixture，不改Compute runtime/API"
     },
     {
       "module": "graph",

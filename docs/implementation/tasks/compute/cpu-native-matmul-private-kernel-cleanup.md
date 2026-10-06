@@ -1,6 +1,6 @@
 # Compute历史私有CPU MatMul文件清理
 
-<!-- MODULE REVIEW: SCOPED -->
+<!-- MODULE REVIEW: AUDITED -->
 
 - owner `compute`；baseline `e8fec259ec6e687acce81affd09deec39c0e302b`；Windows canonical。
 - trigger：用户批准[Native MatMul退役](cpu-native-matmul-retirement-decision.md)。两份私有kernel位于
@@ -13,3 +13,5 @@
   selector因目录归属选出的无实际include依赖的GPU消费者给出未变源码/编译闭包理由，不重审GPU。
 - 生命周期/error/公共C++ ABI与原MR路由资格复用，仅原Native-only矩阵成功预期撤回。
 - 每轮closure/docs/selector/统一LOC；一次批量验收，实际未运行不PASS，不扩大为Compute重审。
+
+已审计：src引用只有Native CMake/include，Compute runtime无include和编译source；K1有限FIX固定。
