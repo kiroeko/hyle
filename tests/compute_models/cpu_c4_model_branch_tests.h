@@ -23,4 +23,16 @@ TEST(HYLE_C4_CPU_SUITE, DsparkTargetPrefillAndFiveTokenAttentionCache) {
     cpu_c4_model_branches::check_attention(model,run_q24_semantic_fragment);
   }
 }
+TEST(HYLE_C4_CPU_SUITE, NewOfficialMainAttentionCompressionAndMoe) {
+  for(const auto &model:cpu_c4_model_branches::models) {
+    SCOPED_TRACE(model.profile->model_name);
+    const auto shape=model.main_case();
+    for(std::int64_t ratio:{0,4,128}) {
+      SCOPED_TRACE(ratio);
+      run_q24_semantic_fragment(d5_deepseek_official_attention::attention(shape,ratio));
+    }
+    run_q24_semantic_fragment(d5_deepseek_official_fragments::moe_chain(shape,false,nullptr,false));
+    run_q24_semantic_fragment(d5_deepseek_official_fragments::moe_chain(shape,true,nullptr,false));
+  }
+}
 #undef HYLE_C4_CPU_SUITE
