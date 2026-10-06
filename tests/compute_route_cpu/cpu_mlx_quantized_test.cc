@@ -56,7 +56,7 @@ template<class T> void run(c::Operation op, std::span<const c::TensorDesc> descr
   for(int repeat=0;repeat<2;++repeat){
     if(repeat==1 && op.custom_as<c::model_ops::MlxQuantized>()->kind!=Kind::kEmbedding){
       auto activation=half_test::read<T>(buffers[0]);
-      for(auto &value:activation)value=half_test::encode<T>(half_test::decode(value)*2);
+      for(auto &sample:activation)sample=half_test::encode<T>(half_test::decode(sample)*2);
       ASSERT_TRUE(buffers[0].view().write(std::as_bytes(std::span(activation))).ok());
     }
     ASSERT_TRUE(execute().ok());const auto actual=half_test::read<T>(output);
