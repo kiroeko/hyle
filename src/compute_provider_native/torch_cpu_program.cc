@@ -90,6 +90,13 @@ Result<Shape> select(const Operation &op, std::span<const TensorDesc> inputs,
     s.k = w.dimensions().back() * (mlx->format == model_ops::MlxWeightFormat::kMxfp8 ? 4 : 8);
     s.n = w.dimensions()[w.rank() - 2];
     s.e = mlx->kind == model_ops::MlxQuantizedKind::kGrouped ? w.dimensions()[0] : 1;
+    // ATen's current-group codes/decoded matrices require more bytes than the
+    // caller's final F16/BF16 output. Check that bounded native capacity too.
+    const auto count = outputs[0].element_count().value();
+    const std::uint64_t factor = mlx->kind == model_ops::MlxQuantizedKind::kEmbedding
+        ? 32 : std::uint64_t{32} * mlx->group_size;
+    if (count > static_cast<std::uint64_t>(INT64_MAX) / factor)
+      return std::unexpected(Status::OutOfRange("MLX selected-group native temporary capacity overflows"));
   } else if (const auto artifact = op.custom_as<model_ops::ArtifactWeightDecode>()) {
     s.kind = Kind::kArtifactDecode; s.artifact = *artifact;
     s.n = outputs[0].dimensions()[0]; s.k = outputs[0].dimensions()[1];
