@@ -2,11 +2,11 @@
 
 ## 当前授权与基线
 
-- 用户于2026-10-06要求制定新计划，将已列缺口接入CPU；本次完成计划，不创建goal或修改产品。
+- 用户于2026-10-06已明确要求创建新goal并实际实施CPU扩覆盖；新的goal已创建，当前执行C1。
 - baseline `5b0044e2a10d11fdfce54893020cfcaaed47b0c0`，执行时解析完整commit并核对HEAD/worktree；Windows canonical，不回退。
 - 本计划对应[缺口清单](cpu-popular-quant-mtp-gap-list.md)及[固定元数据](cpu-popular-quant-mtp-gap-list.json)，
   是新的CPU扩覆盖计划，不恢复旧M/C/D施工队列、旧goal、旧进度或GPU阻塞项。
-- 当前模块状态仍只在[module-status](../../module-status.json)。以下5张卡是**待激活计划卡**；
+- 当前模块状态仍只在[module-status](../../module-status.json)。C1已激活为SCOPED，其余4张卡仍是**待激活计划卡**；
   开始每包时绑定其真实owner，合法进入SCOPED，审计后AUDITED固定有限FIX，再写产品。
   现有CLOSED不因本页自动重开；现有AUDITED范围改变必须重新定界；BLOCKED不自动恢复。
 
@@ -93,7 +93,12 @@ Provider可保留完整融合片段，禁止为了HYLE逐核调度拆开成熟re
 
 ## 终局
 
-当前实现新增0，本计划新增0运行资格；模块registry不变。所有已准入CPU必需域/两入口/资源与交付
+启动时实现新增0、新运行资格0；当前只激活C1审计，registry按真实owner进入SCOPED。所有已准入CPU必需域/两入口/资源与交付
 完成后，明确报告“CPU量化与MTP扩覆盖完成”，列出硬件/软件/制品限制并停止。
 存在用户未裁决的非GGUF缺口、未通过格或升级ABI阻塞时不得宣布整个计划完成。
 不会由本计划自动扩到GPU、模型引擎或自研算子大全。新goal只能按用户明确请求另建，旧goal保持已完成。
+
+## 本次启动
+
+实际HEAD `a09e9642d91e5c13227bd68462ab426f2e69c462`，工作树干净；保留计划基线后的提交。
+新goal目标就是本页完整CPUscope；旧已完成goal不恢复，GPU阻塞不解除。

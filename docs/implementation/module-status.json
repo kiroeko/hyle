@@ -372,14 +372,9 @@
     },
     {
       "module": "compute_provider_ggml",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/compute/cpu-rope-phase-contract-audit.md",
-      "summary": "RoPE精度审计CLOSED无产品FIX：官方Float32模型与Double oracle不同，不签数值FAIL/同合同SOTA；19个ggml/runtime输入不变，原程序与TC资格保留，P0/docs/closure通过，未构建/P1。Native RN1/RN4仍在验收。",
-      "candidate": "e80cf22ccf285934693f40da9cc558b457283d7b",
-      "performance": {
-        "tier": "P0",
-        "evidence": "docs/implementation/tasks/compute/cpu-rope-phase-contract-audit.md"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/cpu-quant-mtp-c1-demand-and-carriers.md",
+      "summary": "CPU扩覆盖C1 SCOPED：104 GGUF档位/3 sidecar/2新版/3非GGUF族的角色与成熟CPU承载定界；只审计，无产品代码/P1/新增RUN_PASS，自研冻结，GPU旧范围与阻塞保持。"
     },
     {
       "module": "graph_provider_onednn",
@@ -422,14 +417,9 @@
     },
     {
       "module": "compute_provider_native",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/compute/cpu-default-domain-routing-final.md",
-      "summary": "CPU最终收口CLOSED：缓存硬件身份、187精确优势规则、13劣势冷拒绝与成熟region优先完成；两平台正确性/普通Direct+Graph/三交付通过。复用冻结比较，不跑新P1；去留有WIN/资源依据，SIMD不删，GPU暂停。",
-      "candidate": "393c7545b06f599001a4066876f03595d0bb0b15",
-      "performance": {
-        "tier": "P0",
-        "evidence": "evidence/correctness/cpu-default-domain-routing/README.md"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/cpu-quant-mtp-c1-demand-and-carriers.md",
+      "summary": "CPU扩覆盖C1 SCOPED：104 GGUF档位/3 sidecar/2新版/3非GGUF族的角色与成熟CPU承载定界；只审计，无产品代码/P1/新增RUN_PASS，自研冻结，GPU旧范围与阻塞保持。"
     },
     {
       "module": "compute_sched",
@@ -543,14 +533,9 @@
     },
     {
       "module": "compute_ggml_runtime",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/compute/cpu-ggml-isa-admission-v1.md",
-      "summary": "CPU ISA CLOSED：CI1–4原版优化整程序、冷ISA绑定/失败、资源生命周期和Windows/Linux三交付/搬移/P0已验；不签Native WIN。CPU自研逐域与路由仍未完成，其它路线暂停，旧F35/GPU待验未解除。",
-      "candidate": "129f36a9f0c5c31799728cc32afb8fc74f8d3eb8",
-      "performance": {
-        "tier": "P0",
-        "evidence": "evidence/correctness/cpu-ggml-isa-admission-v1/README.md"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/cpu-quant-mtp-c1-demand-and-carriers.md",
+      "summary": "CPU扩覆盖C1 SCOPED：104 GGUF档位/3 sidecar/2新版/3非GGUF族的角色与成熟CPU承载定界；只审计，无产品代码/P1/新增RUN_PASS，自研冻结，GPU旧范围与阻塞保持。"
     },
     {
       "module": "compute_provider_ggml_cuda",
