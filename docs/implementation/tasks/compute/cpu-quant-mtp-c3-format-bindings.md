@@ -115,7 +115,17 @@ MLX仍须借入原压缩CPU调用/selected expert边界后才签范围。
   没有性能P1、自研算子扩充或SIMD删除。
 
 后续混合格式候选与实际范围见[第二组证据](../../../../evidence/correctness/cpu-quant-mtp-c3-mixed-batch/README.md)。
-统一29路径当前实现61,471行/250文件；不含测试/vendor/bench，完整LOC收据在第二组证据。
+统一29路径当前实现61,475行/250文件；不含测试/vendor/bench，完整LOC收据在第二组后续证据。
+
+## 第二组后续与 Linux 接线资格
+
+- Windows补验MLX F16，以及四个artifact decoder/三个MLX linear的真实ATen分配失败、
+  失败slot退役、新slot恢复、独立slot并发及metadata额度回收；原API/数学未放宽。
+- Linux GCC14完成四个计算因子与新增GGUF/非GGUF普通Direct/Graph矩阵，数值、默认dtype和cold消费通过。
+  全批因子仅查CPU envelope；原GPU资格/Graph Vulkan BLOCKED保持，未代签新GPU能力。
+- 修复GCC严格警告：元数据/参考循环的显式语句边界、测试对象按引用遍历、旧D5 fixture明确拒绝新增类型。
+  Windows source普通消费者36项通过；其Q4_0/Q4_1 oracle包含原Q8 activation半精度scale，未拿F32全精度数学替代。
+- 精确候选、fixture和未完成项见第二组收据。安装static/shared与两平台完整delivery、低精度极值、实际profile及C4仍待验。
 
 ## MLX 有限审计与 N4–N6 冻结
 

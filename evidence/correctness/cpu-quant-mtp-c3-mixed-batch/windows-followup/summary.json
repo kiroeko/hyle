@@ -1,0 +1,19 @@
+{
+  "candidate": "11462ba08825d86fbf63e179fa2f4a591b2d37d9",
+  "scope": [
+    "Native all four artifact decoders and three MLX linear modes real allocation failure",
+    "accepted failure retires slot, independent concurrent slots, metadata quota refund",
+    "default route ordinary source C++ Direct/Graph consumer 36 checks",
+    "artifact and MLX checked packing/dtype/group/selected expert descriptor rejections"
+  ],
+  "fixture_sha256": "d6fe3c3be3e24cb72a9bbaafe331be57c192bd5f805af8d3ea6092bb02d04c97",
+  "corrections": [
+    "test-only explicit Operation constructor",
+    "Q4_0/Q4_1 oracle includes original half Q8 activation scale"
+  ],
+  "remaining": [
+    "installed static/shared delivery",
+    "full actual profiles and C4 branches",
+    "precision edge cases"
+  ]
+}

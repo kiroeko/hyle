@@ -1,0 +1,7 @@
+[0/2] Re-checking globbed directories...
+[1/7] C:\WINDOWS\system32\cmd.exe /C "cd /D C:\public\project-hyle\hyle\.scratch\build-compute-v2-dev && "C:\Program Files\CMake\bin\cmake.exe" -P C:/public/project-hyle/hyle/.scratch/build-compute-v2-dev/hyle-runtime/cpu_coverage_consumer-Release.cmake"
+[2/7] C:\WINDOWS\system32\cmd.exe /C "cd /D C:\public\project-hyle\hyle\.scratch\build-compute-v2-dev\tests\compute_route_cpu && "C:\Program Files\CMake\bin\cmake.exe" -P C:/public/project-hyle/hyle/.scratch/build-compute-v2-dev/tests/compute_route_cpu/hyle-runtime/hyle_compute_route_cpu_test-Release.cmake"
+[3/7] C:\WINDOWS\system32\cmd.exe /C "cd /D C:\public\project-hyle\hyle\.scratch\build-compute-v2-dev\tests\graph_route_cpu && "C:\Program Files\CMake\bin\cmake.exe" -P C:/public/project-hyle/hyle/.scratch/build-compute-v2-dev/tests/graph_route_cpu/hyle-runtime/hyle_graph_route_cpu_test-Release.cmake"
+[4/7] C:\WINDOWS\system32\cmd.exe /C "cd /D C:\public\project-hyle\hyle\.scratch\build-compute-v2-dev\tests\graph_route_cpu && "C:\Program Files\CMake\bin\cmake.exe" -P C:/public/project-hyle/hyle/.scratch/build-compute-v2-dev/tests/graph_route_cpu/hyle-runtime/hyle_graph_route_cpu_cpu_executor_test-Release.cmake"
+[5/7] Building CXX object CMakeFiles\cpu_coverage_consumer.dir\.scratch\validation\cpu-coverage-c3-delivery\consumer.cc.obj
+[6/7] Linking CXX executable bin\cpu_coverage_consumer.exe

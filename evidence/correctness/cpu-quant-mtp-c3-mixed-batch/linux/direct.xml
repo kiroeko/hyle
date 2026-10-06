@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites tests="5" failures="0" disabled="0" errors="0" time="0.045" timestamp="2026-10-06T23:40:32.815" name="AllTests">
+  <testsuite name="CpuExpandedGgufDirect" tests="1" failures="0" disabled="0" skipped="0" errors="0" time="0.007" timestamp="2026-10-06T23:40:32.819">
+    <testcase name="OriginalFormatsProjectionExpertsAndEmbedding" file="/root/hyle-scratch/active-cpu-z/source/tests/compute_route_cpu/cpu_expanded_gguf_test.cc" line="112" status="run" result="completed" time="0.003" timestamp="2026-10-06T23:40:32.819" classname="CpuExpandedGgufDirect" />
+  </testsuite>
+  <testsuite name="CpuArtifactDecode" tests="2" failures="0" disabled="0" skipped="0" errors="0" time="0.017" timestamp="2026-10-06T23:40:32.828">
+    <testcase name="Nf4AndNestedScalesPreserveOriginalHighFirstOrder" file="/root/hyle-scratch/active-cpu-z/source/tests/compute_route_cpu/cpu_artifact_decode_test.cc" line="116" status="run" result="completed" time="0.004" timestamp="2026-10-06T23:40:32.830" classname="CpuArtifactDecode" />
+    <testcase name="AwqAndCompressedTensorsUseDifferentOriginalWordLayouts" file="/root/hyle-scratch/active-cpu-z/source/tests/compute_route_cpu/cpu_artifact_decode_test.cc" line="147" status="run" result="completed" time="0.001" timestamp="2026-10-06T23:40:32.840" classname="CpuArtifactDecode" />
+  </testsuite>
+  <testsuite name="CpuMlxQuantizedDirect" tests="2" failures="0" disabled="0" skipped="0" errors="0" time="0.01" timestamp="2026-10-06T23:40:32.847">
+    <testcase name="MixedFormatsAndSelectedExperts" file="/root/hyle-scratch/active-cpu-z/source/tests/compute_route_cpu/cpu_mlx_quantized_test.cc" line="125" status="run" result="completed" time="0.002" timestamp="2026-10-06T23:40:32.849" classname="CpuMlxQuantizedDirect" />
+    <testcase name="OriginalAffineEmbeddingUsesSelectedRows" file="/root/hyle-scratch/active-cpu-z/source/tests/compute_route_cpu/cpu_mlx_quantized_test.cc" line="133" status="run" result="completed" time="0." timestamp="2026-10-06T23:40:32.855" classname="CpuMlxQuantizedDirect" />
+  </testsuite>
+</testsuites>

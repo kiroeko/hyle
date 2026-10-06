@@ -1,0 +1,16 @@
+{
+  "candidate": "e3b21c8266e20b36ffd94db8d6f34ec39487a659",
+  "platform": "WSL Ubuntu 24.04 x86_64 GCC 14.2",
+  "canonical": "Windows forward-only manifest; no reverse product transfer",
+  "scope": [
+    "compute_ops/ggml_runtime/ggml/native factor tests",
+    "ordinary Direct/Graph added formats, F32/BF16/F16 MLX, default artifact dtype and constant consumer",
+    "new Native real allocation failure, failed slot retirement, independent slots and metadata refund"
+  ],
+  "remaining": [
+    "final added metadata rejection tests after candidate",
+    "source/static/shared deliveries",
+    "C4 new branches",
+    "C5 full profile matrix"
+  ]
+}

@@ -1,0 +1,162 @@
+[
+  {
+    "name": "source-consumer-configure",
+    "args": [
+      "cmake",
+      "-S",
+      "C:\\public\\project-hyle\\hyle",
+      "-B",
+      "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+      "-DFETCHCONTENT_FULLY_DISCONNECTED=ON",
+      "-DCMAKE_PROJECT_INCLUDE=C:\\public\\project-hyle\\hyle\\.scratch\\validation\\cpu-coverage-c3-delivery\\source-overlay.cmake"
+    ],
+    "candidate": "11462ba08825d86fbf63e179fa2f4a591b2d37d9",
+    "log": "1-source-consumer-configure.log",
+    "returncode": 0,
+    "seconds": 39.328
+  },
+  {
+    "name": "source-consumer-build",
+    "args": [
+      "cmake",
+      "--build",
+      "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+      "--target",
+      "cpu_coverage_consumer",
+      "hyle_compute_ops_tests",
+      "hyle_compute_provider_native_tests",
+      "hyle_compute_route_cpu_tests",
+      "hyle_graph_route_cpu_tests",
+      "--parallel",
+      "2"
+    ],
+    "candidate": "11462ba08825d86fbf63e179fa2f4a591b2d37d9",
+    "log": "2-source-consumer-build.log",
+    "returncode": 2,
+    "seconds": 40.547
+  },
+  {
+    "name": "source-consumer-build",
+    "args": [
+      "cmake",
+      "--build",
+      "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+      "--target",
+      "cpu_coverage_consumer",
+      "hyle_compute_ops_tests",
+      "hyle_compute_provider_native_tests",
+      "hyle_compute_route_cpu_tests",
+      "hyle_graph_route_cpu_tests",
+      "--parallel",
+      "2"
+    ],
+    "candidate": "11462ba08825d86fbf63e179fa2f4a591b2d37d9",
+    "log": "3-source-consumer-build.log",
+    "returncode": 0,
+    "seconds": 25.547
+  },
+  {
+    "name": "ordinary-source-consumer",
+    "args": [
+      "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\cpu_coverage_consumer.exe"
+    ],
+    "candidate": "11462ba08825d86fbf63e179fa2f4a591b2d37d9",
+    "log": "4-ordinary-source-consumer.log",
+    "returncode": 1,
+    "seconds": 0.25
+  },
+  {
+    "name": "source-consumer-build",
+    "args": [
+      "cmake",
+      "--build",
+      "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+      "--target",
+      "cpu_coverage_consumer",
+      "hyle_compute_ops_tests",
+      "hyle_compute_provider_native_tests",
+      "hyle_compute_route_cpu_tests",
+      "hyle_graph_route_cpu_tests",
+      "--parallel",
+      "2"
+    ],
+    "candidate": "11462ba08825d86fbf63e179fa2f4a591b2d37d9",
+    "log": "5-source-consumer-build.log",
+    "returncode": 0,
+    "seconds": 2.828
+  },
+  {
+    "name": "ordinary-source-consumer",
+    "args": [
+      "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\cpu_coverage_consumer.exe"
+    ],
+    "candidate": "11462ba08825d86fbf63e179fa2f4a591b2d37d9",
+    "log": "6-ordinary-source-consumer.log",
+    "returncode": 1,
+    "seconds": 0.219
+  },
+  {
+    "name": "source-consumer-build",
+    "args": [
+      "cmake",
+      "--build",
+      "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+      "--target",
+      "cpu_coverage_consumer",
+      "hyle_compute_ops_tests",
+      "hyle_compute_provider_native_tests",
+      "hyle_compute_route_cpu_tests",
+      "hyle_graph_route_cpu_tests",
+      "--parallel",
+      "2"
+    ],
+    "candidate": "11462ba08825d86fbf63e179fa2f4a591b2d37d9",
+    "log": "7-source-consumer-build.log",
+    "returncode": 0,
+    "seconds": 2.782
+  },
+  {
+    "name": "ordinary-source-consumer",
+    "args": [
+      "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\cpu_coverage_consumer.exe"
+    ],
+    "candidate": "11462ba08825d86fbf63e179fa2f4a591b2d37d9",
+    "log": "8-ordinary-source-consumer.log",
+    "returncode": 0,
+    "seconds": 0.234
+  },
+  {
+    "name": "new-family-resource-failures",
+    "args": [
+      "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_compute_provider_native_test.exe",
+      "--gtest_filter=NativeTorchCpu.ArtifactAndMlxProgramsHaveIndependentSlotsAndReleaseFailedResources",
+      "--gtest_output=xml:C:\\public\\project-hyle\\hyle\\.scratch\\validation\\cpu-coverage-c3-delivery\\windows\\11462ba08825\\resources.xml"
+    ],
+    "candidate": "11462ba08825d86fbf63e179fa2f4a591b2d37d9",
+    "log": "9-new-family-resource-failures.log",
+    "returncode": 0,
+    "seconds": 0.234
+  },
+  {
+    "name": "metadata-and-native-tests",
+    "args": [
+      "ctest",
+      "--test-dir",
+      "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+      "--output-on-failure",
+      "--no-tests=error",
+      "-L",
+      "^(compute_ops|compute_provider_native)$",
+      "-LE",
+      "headers",
+      "-j",
+      "1",
+      "--output-junit",
+      "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\cpu-coverage-c3-delivery\\windows\\11462ba08825\\factors.xml"
+    ],
+    "candidate": "11462ba08825d86fbf63e179fa2f4a591b2d37d9",
+    "log": "10-metadata-and-native-tests.log",
+    "returncode": 0,
+    "seconds": 0.969
+  }
+]

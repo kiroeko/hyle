@@ -153,6 +153,11 @@ backing 必须活到最后一个画像/程序释放。`program.workload()` 返�
 
 ### GGUF/ggml 原生压缩权重
 
+CPU-only 构建已追加 Q4_0/Q4_1/Q2_K、IQ2_XXS/XS/S、IQ1_S/M、IQ1_XXXS/XXS/XS 的原 block 描述与
+CPU 接线。最后三种使用固定 Unsloth IQ1 narrow 扩展，不能从文件名中的 UD 档位猜编码。
+包含 GPU 的 SDK 仍保留原 ggml 版本与资格，明确拒绝这批新增 CPU 格式。
+本轮完整画像、交付与资源资格进度见[当前任务](../implementation/tasks/compute/cpu-quant-mtp-c3-format-bindings.md)。
+
 调用方已经解析 GGUF tensor table 时，用 `<hyle/compute/low_precision.h>` 描述原文件中的压缩字节，
 不需要也不应先展开成常驻浮点权重。`gguf_weight_description()` 接收 Q3_K、Q4_K、Q5_K、Q6_K、
 Q8_0、IQ3_XXS、IQ3_S、IQ4_NL、IQ4_XS 或 MXFP4，返回逻辑 `[K,N]`、物理连续 `[N,K]` 的
@@ -248,6 +253,35 @@ dtype `[M,N]`。它显式包含动态量化，普通 `MatMul` 不暗中量化输
 scale输入需要2字节对齐；Graph规划会应用这些要求，手动绑定的错位输入在提交前拒绝。
 该接口不加载模型。完整官方模型画像及三交付/P1状态见
 [当前验收卡](../implementation/tasks/compute/llm-moe-d5-real-fragment-acceptance.md)。
+
+### CPU 非 GGUF 原格式与压缩专家
+
+这些接口位于 `<hyle/compute/model_ops.h>`，普通 CPU Direct/Graph 自动绑定已构建的原库组合。
+输入是调用方解析好的原 tensor；HYLE 不读取模型文件，也不把不同的 4-bit 制品视为相同编码。
+
+| 原格式 | 接口与端口 | 输出或执行边界 |
+|---|---|---|
+| NF4 | `artifact_weight_decode(kNf4, group)`；U8 `[N,K/2]`、F32 absmax `[G]`、F32 codebook `[16]` | 高 nibble 在前，默认 BF16 |
+| NF4 double quant | 同接口 `kNf4DoubleQuant`；U8 codes `[N,K/2]`、U8 absmax `[G]`、F32 nested absmax `[ceil(G/256)]`、F32 nested codebook `[256]`、F32 scalar offset、F32 codebook `[16]` | nested scale 与 offset 保留，默认 BF16 |
+| AWQ GEMM int4 | 同接口 `kAwqGemm4`；I32 `[K,N/8]`、I32 zero `[K/group,N/8]`、floating scale `[K/group,N]` | 原 AWQ 列排列与 zero point，默认 scale dtype |
+| compressed-tensors symmetric int4 | 同接口 `kCompressedTensorsSymmetric4`；I32 `[N,K/8]`、floating scale `[N,K/group]` | low-first pack、减 8 后按原 scale dtype 计算；无 g_idx 模式 |
+| MLX affine4 / mxfp4 / mxfp8 | `mlx_quantized_matmul(format, group)`；A `[M,K]`、原 U32 words `[N,K/pack]`、scale、affine bias | 直接消费压缩权重，F32 累加；MX scale 为原 U8 E8M0 group32 |
+| MLX 选中专家 | `mlx_grouped_matmul(format, group)`；A `[T,S,K]`、words/scale/bias 带 expert 首轴、I32 ids `[T,S]` | 只展开当前 K group 与选中专家，不建立整个浮点专家库 |
+| MLX affine embedding | `mlx_quantized_embedding(group)`；原 words/scale/bias、I32 row ids | 只选择所需行，保持原 scale dtype 的解码次序 |
+
+`G=N*K/group`。`artifact_weight_decode()` 显式输出 dense `[N,K]`；调用方运行一次并持有结果，
+随后用其 transposed 描述作为普通 MatMul RHS，或绑定为 Graph constant。重复 MatMul 不应重新插入解码。
+显式 `output_type` 可选 F16/BF16/F32；它不替代制品的原 scale 精度或 packing。
+
+MLX affine 的 group 为 32/64/128，MX 为 32；`pack` 为 affine4/mxfp4 的 8 或 mxfp8 的 4。
+线性与专家输入 A 为 F16/BF16/F32；affine A/scale dtype 相同时保持该类型，混合时输出 F32，
+MX 输出保持 A dtype。scale 先按原 CPU 转为 A dtype，低精度溢出或下溢不会被隐去。
+
+这组实现借用固定 bitsandbytes、AutoAWQ、compressed-tensors、MLX 的原计算组合，由 ATen CPU 承载。
+它们属于 managed replay，存在原库临时分配与线程成本；不保证 capture、零热分配或未知私有内存的硬预算。
+越界索引和分配失败通过 Completion 报错，已失败的执行槽需要重建；独立槽可以共享只读参数。
+当前有限数值、默认精度和资源测试的范围见[验证记录](../../evidence/correctness/cpu-quant-mtp-c3-mixed-batch/README.md)，
+不据此承诺整个模型或其它路线已完成资格。
 
 ### 激活的组量化与还原
 

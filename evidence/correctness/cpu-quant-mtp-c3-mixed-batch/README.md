@@ -13,6 +13,10 @@
 
 数值测试使用原 packing/scale/计算次序的非零夹具；现有 MLX 夹具使用可精确表示的值，
 不能替代低精度极值、故障/OOM、并发独立 slot、完整实际宽度与所有准入画像的最终资格。
-Linux、source/static/shared 交付及 C4 新主干/MTP/DSpark 完整程序仍待验。
+后续 Linux factor/普通入口有限资格已通过，精确候选见 [Linux 收据](linux/summary.json)；
+F16、真实分配失败、并发独立槽和额度回收，以及 Windows 普通源码消费者见
+[Windows 后续收据](windows-followup/summary.json)。C3 整包的精度极值、完整画像、交付及
+C4 新主干/MTP/DSpark 完整程序仍待验，不能由这些有限测试外推。
 
-统一 29 路径 Compute+Graph 实现 **61,471 行 / 250 文件**，不含测试、vendor 或 benchmark。
+首批候选统一 29 路径 Compute+Graph 实现 61,471 行；后续可移植元数据候选为
+**61,475 行 / 250 文件**，不含测试、vendor 或 benchmark，见 [LOC](windows-followup/loc.json)。

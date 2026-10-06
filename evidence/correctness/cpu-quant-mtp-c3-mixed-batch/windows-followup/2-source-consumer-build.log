@@ -1,0 +1,59 @@
+[0/2] Re-checking globbed directories...
+[1/70] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\ops\dispatch_ops.cc.obj
+[2/70] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\runtime.cc.obj
+[3/70] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\random\random_dispatch.cc.obj
+[4/70] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\search\search_dispatch.cc.obj
+[5/70] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\narrow\narrow_dispatch.cc.obj
+[6/70] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\scan\scan_dispatch.cc.obj
+[7/70] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\dtype\dtype_dispatch.cc.obj
+[8/70] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\math\math_dispatch.cc.obj
+[9/70] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\sort\sort_dispatch.cc.obj
+[10/70] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\bitpack\bitpack_dispatch.cc.obj
+[11/70] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\ops\ops_scalar.cc.obj
+[12/70] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\ops\ops_sse4.cc.obj
+[13/70] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\ops\ops_avx2.cc.obj
+[14/70] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\ops\ops_avx512.cc.obj
+[15/70] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\dtype_convert\dtype_convert_scalar.cc.obj
+[16/70] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\dtype_convert\dtype_convert_sse4.cc.obj
+[17/70] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\dtype_convert\dtype_convert_avx2.cc.obj
+[18/70] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\scan\scan_scalar.cc.obj
+[19/70] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\dtype_convert\dtype_convert_avx512.cc.obj
+[20/70] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\scan\scan_sse4.cc.obj
+[21/70] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\scan\scan_avx2.cc.obj
+[22/70] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\random\random_scalar.cc.obj
+[23/70] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\scan\scan_avx512.cc.obj
+[24/70] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\random\random_sse4.cc.obj
+[25/70] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\random\random_avx2.cc.obj
+[26/70] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\random\random_avx512.cc.obj
+[27/70] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\search\search_scalar.cc.obj
+[28/70] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\search\search_sse4.cc.obj
+[29/70] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\search\search_avx2.cc.obj
+[30/70] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\narrow\narrow_scalar.cc.obj
+[31/70] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\search\search_avx512.cc.obj
+[32/70] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\narrow\narrow_sse4.cc.obj
+[33/70] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\narrow\narrow_avx2.cc.obj
+[34/70] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\narrow\narrow_avx512.cc.obj
+[35/70] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\bitpack\bitpack_scalar.cc.obj
+[36/70] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\bitpack\bitpack_sse4.cc.obj
+[37/70] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\bitpack\bitpack_avx2.cc.obj
+[38/70] Building CXX object tests\compute_ops\CMakeFiles\hyle_compute_ops_test.dir\operation_test.cc.obj
+[39/70] Linking CXX executable bin\hyle_compute_ops_test.exe
+[40/70] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\bitpack\bitpack_avx512.cc.obj
+[41/70] Linking CXX shared library bin\hyle_simd.dll
+[42/64] C:\WINDOWS\system32\cmd.exe /C "cd /D C:\public\project-hyle\hyle\.scratch\build-compute-v2-dev && "C:\Program Files\CMake\bin\cmake.exe" -P C:/public/project-hyle/hyle/.scratch/build-compute-v2-dev/hyle-runtime/cpu_coverage_consumer-Release.cmake"
+[43/64] C:\WINDOWS\system32\cmd.exe /C "cd /D C:\public\project-hyle\hyle\.scratch\build-compute-v2-dev\tests\compute_route_cpu && "C:\Program Files\CMake\bin\cmake.exe" -P C:/public/project-hyle/hyle/.scratch/build-compute-v2-dev/tests/compute_route_cpu/hyle-runtime/hyle_compute_route_cpu_test-Release.cmake"
+[44/64] C:\WINDOWS\system32\cmd.exe /C "cd /D C:\public\project-hyle\hyle\.scratch\build-compute-v2-dev\tests\graph_route_cpu && "C:\Program Files\CMake\bin\cmake.exe" -P C:/public/project-hyle/hyle/.scratch/build-compute-v2-dev/tests/graph_route_cpu/hyle-runtime/hyle_graph_route_cpu_test-Release.cmake"
+[45/64] C:\WINDOWS\system32\cmd.exe /C "cd /D C:\public\project-hyle\hyle\.scratch\build-compute-v2-dev\tests\graph_route_cpu && "C:\Program Files\CMake\bin\cmake.exe" -P C:/public/project-hyle/hyle/.scratch/build-compute-v2-dev/tests/graph_route_cpu/hyle-runtime/hyle_graph_route_cpu_cpu_executor_test-Release.cmake"
+[46/64] Building CXX object CMakeFiles\cpu_coverage_consumer.dir\.scratch\validation\cpu-coverage-c3-delivery\consumer.cc.obj
+FAILED: [code=2] CMakeFiles/cpu_coverage_consumer.dir/.scratch/validation/cpu-coverage-c3-delivery/consumer.cc.obj 
+"C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\bin\Hostx64\x64\cl.exe"  /nologo /TP -DHYLE_COMPUTE_CPU=1 -DHYLE_COMPUTE_ONEDNN=1 -DHYLE_GRAPH_ONEDNN=1 -IC:\public\project-hyle\hyle\include /DWIN32 /D_WINDOWS /EHsc /O2 /Ob2 /DNDEBUG -std:c++latest -MD /Zc:__cplusplus /utf-8 /Zc:preprocessor /showIncludes /FoCMakeFiles\cpu_coverage_consumer.dir\.scratch\validation\cpu-coverage-c3-delivery\consumer.cc.obj /FdCMakeFiles\cpu_coverage_consumer.dir\ /FS -c C:\public\project-hyle\hyle\.scratch\validation\cpu-coverage-c3-delivery\consumer.cc
+C:\public\project-hyle\hyle\.scratch\validation\cpu-coverage-c3-delivery\consumer.cc(82): error C2664: 'std::vector<std::byte,std::allocator<std::byte>> execute(bool,hyle::compute::Operation,const std::vector<hyle::compute::TensorDesc,std::allocator<hyle::compute::TensorDesc>> &,const std::vector<std::vector<std::byte,std::allocator<std::byte>>,std::allocator<std::vector<std::byte,std::allocator<std::byte>>>> &)': cannot convert argument 2 from 'hyle::compute::MatMul' to 'hyle::compute::Operation'
+C:\public\project-hyle\hyle\.scratch\validation\cpu-coverage-c3-delivery\consumer.cc(82): note: No user-defined-conversion operator available that can perform this conversion, or the operator cannot be called
+C:\public\project-hyle\hyle\.scratch\validation\cpu-coverage-c3-delivery\consumer.cc(24): note: see declaration of 'execute'
+C:\public\project-hyle\hyle\.scratch\validation\cpu-coverage-c3-delivery\consumer.cc(82): note: while trying to match the argument list '(bool, hyle::compute::MatMul, initializer list, initializer list)'
+C:\public\project-hyle\hyle\.scratch\validation\cpu-coverage-c3-delivery\consumer.cc(109): error C2664: 'std::vector<std::byte,std::allocator<std::byte>> execute(bool,hyle::compute::Operation,const std::vector<hyle::compute::TensorDesc,std::allocator<hyle::compute::TensorDesc>> &,const std::vector<std::vector<std::byte,std::allocator<std::byte>>,std::allocator<std::vector<std::byte,std::allocator<std::byte>>>> &)': cannot convert argument 2 from 'hyle::compute::MatMul' to 'hyle::compute::Operation'
+C:\public\project-hyle\hyle\.scratch\validation\cpu-coverage-c3-delivery\consumer.cc(109): note: No user-defined-conversion operator available that can perform this conversion, or the operator cannot be called
+C:\public\project-hyle\hyle\.scratch\validation\cpu-coverage-c3-delivery\consumer.cc(24): note: see declaration of 'execute'
+C:\public\project-hyle\hyle\.scratch\validation\cpu-coverage-c3-delivery\consumer.cc(109): note: while trying to match the argument list '(bool, hyle::compute::MatMul, initializer list, initializer list)'
+[47/64] Building CXX object tests\compute_route_cpu\CMakeFiles\hyle_compute_route_cpu_test.dir\d5_qwen35_profile_test.cc.obj
+ninja: build stopped: subcommand failed.

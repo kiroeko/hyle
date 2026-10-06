@@ -1,0 +1,7 @@
+cmake_minimum_required(VERSION 3.25)
+project(cpu_coverage_consumer LANGUAGES CXX)
+find_package(Hyle 0.1.0 EXACT CONFIG REQUIRED COMPONENTS compute graph)
+add_executable(cpu_coverage_consumer ../consumer.cc)
+target_compile_features(cpu_coverage_consumer PRIVATE cxx_std_23)
+target_link_libraries(cpu_coverage_consumer PRIVATE hyle::compute hyle::graph)
+hyle_stage_runtime_dependencies(cpu_coverage_consumer)

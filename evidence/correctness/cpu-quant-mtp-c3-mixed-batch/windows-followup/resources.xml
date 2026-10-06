@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites tests="1" failures="0" disabled="0" errors="0" time="0.011" timestamp="2026-10-06T23:43:45.966" name="AllTests">
+  <testsuite name="NativeTorchCpu" tests="1" failures="0" disabled="0" skipped="0" errors="0" time="0.011" timestamp="2026-10-06T23:43:45.966">
+    <testcase name="ArtifactAndMlxProgramsHaveIndependentSlotsAndReleaseFailedResources" file="C:\public\project-hyle\hyle\tests\compute_provider_native\torch_cpu_test.cc" line="161" status="run" result="completed" time="0.009" timestamp="2026-10-06T23:43:45.966" classname="NativeTorchCpu" />
+  </testsuite>
+</testsuites>

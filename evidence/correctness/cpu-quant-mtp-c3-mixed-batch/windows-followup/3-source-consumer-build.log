@@ -1,0 +1,22 @@
+[0/2] Re-checking globbed directories...
+[1/22] C:\WINDOWS\system32\cmd.exe /C "cd /D C:\public\project-hyle\hyle\.scratch\build-compute-v2-dev && "C:\Program Files\CMake\bin\cmake.exe" -P C:/public/project-hyle/hyle/.scratch/build-compute-v2-dev/hyle-runtime/cpu_coverage_consumer-Release.cmake"
+[2/22] C:\WINDOWS\system32\cmd.exe /C "cd /D C:\public\project-hyle\hyle\.scratch\build-compute-v2-dev\tests\compute_route_cpu && "C:\Program Files\CMake\bin\cmake.exe" -P C:/public/project-hyle/hyle/.scratch/build-compute-v2-dev/tests/compute_route_cpu/hyle-runtime/hyle_compute_route_cpu_test-Release.cmake"
+[3/22] C:\WINDOWS\system32\cmd.exe /C "cd /D C:\public\project-hyle\hyle\.scratch\build-compute-v2-dev\tests\graph_route_cpu && "C:\Program Files\CMake\bin\cmake.exe" -P C:/public/project-hyle/hyle/.scratch/build-compute-v2-dev/tests/graph_route_cpu/hyle-runtime/hyle_graph_route_cpu_test-Release.cmake"
+[4/22] C:\WINDOWS\system32\cmd.exe /C "cd /D C:\public\project-hyle\hyle\.scratch\build-compute-v2-dev\tests\graph_route_cpu && "C:\Program Files\CMake\bin\cmake.exe" -P C:/public/project-hyle/hyle/.scratch/build-compute-v2-dev/tests/graph_route_cpu/hyle-runtime/hyle_graph_route_cpu_cpu_executor_test-Release.cmake"
+[5/22] Building CXX object CMakeFiles\cpu_coverage_consumer.dir\.scratch\validation\cpu-coverage-c3-delivery\consumer.cc.obj
+[6/22] Building CXX object tests\compute_route_cpu\CMakeFiles\hyle_compute_route_cpu_test.dir\cpu_expanded_gguf_test.cc.obj
+[7/22] Building CXX object tests\compute_route_cpu\CMakeFiles\hyle_compute_route_cpu_test.dir\d5_qwen_gguf_vocabulary_test.cc.obj
+[8/22] Building CXX object tests\compute_route_cpu\CMakeFiles\hyle_compute_route_cpu_test.dir\ds4_roundtrip_test.cc.obj
+[9/22] Building CXX object tests\compute_route_cpu\CMakeFiles\hyle_compute_route_cpu_test.dir\d5_qwen35_gguf_projection_test.cc.obj
+[10/22] Building CXX object tests\compute_route_cpu\CMakeFiles\hyle_compute_route_cpu_test.dir\d5_qwen35_gguf_fragment_test.cc.obj
+[11/22] Building CXX object tests\compute_route_cpu\CMakeFiles\hyle_compute_route_cpu_test.dir\d5_qwen38_official_test.cc.obj
+[12/22] Building CXX object tests\graph_route_cpu\CMakeFiles\hyle_graph_route_cpu_test.dir\__\compute_route_cpu\cpu_expanded_gguf_test.cc.obj
+[13/22] Building CXX object tests\graph_route_cpu\CMakeFiles\hyle_graph_route_cpu_test.dir\__\compute_route_cpu\ds4_roundtrip_test.cc.obj
+[14/22] Building CXX object tests\graph_route_cpu\CMakeFiles\hyle_graph_route_cpu_test.dir\d5_qwen35_profile_test.cc.obj
+[15/22] Building CXX object tests\graph_route_cpu\CMakeFiles\hyle_graph_route_cpu_test.dir\d5_qwen_gguf_vocabulary_test.cc.obj
+[16/22] Building CXX object tests\graph_route_cpu\CMakeFiles\hyle_graph_route_cpu_test.dir\d5_qwen35_gguf_projection_test.cc.obj
+[17/22] Building CXX object tests\graph_route_cpu\CMakeFiles\hyle_graph_route_cpu_test.dir\d5_qwen38_official_test.cc.obj
+[18/22] Linking CXX executable bin\cpu_coverage_consumer.exe
+[19/22] Linking CXX executable bin\hyle_compute_route_cpu_test.exe
+[20/22] Building CXX object tests\graph_route_cpu\CMakeFiles\hyle_graph_route_cpu_test.dir\d5_qwen35_gguf_fragment_test.cc.obj
+[21/22] Linking CXX executable bin\hyle_graph_route_cpu_test.exe

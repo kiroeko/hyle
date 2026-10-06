@@ -1,0 +1,3 @@
+graph=0 GGUF=10
+float actual=63.9961 expected=64
+CPU delivery consumer failed
