@@ -170,4 +170,29 @@ TEST(CpuArtifactDecode, AwqAndCompressedTensorsUseDifferentOriginalWordLayouts) 
   std::array bf_inputs{buffer<std::int32_t>(ct_words),buffer<hyle::simd::bfloat16_t>(bf_scale)};
   check(Format::kCompressedTensorsSymmetric4,group,bf_descs,bf_inputs,expected,c::DataType::kUnknown);
 }
+
+TEST(CpuArtifactDecode, OriginalScaleDtypeRoundsBeforeExplicitFloat32Output) {
+  constexpr int k=256,n=8,group=128;
+  using Half=hyle::simd::float16_t;
+  using Bfloat=hyle::simd::bfloat16_t;
+  const auto hs=half_test::encode<Half>(0.1),bs=half_test::encode<Bfloat>(0.1);
+  std::vector<std::int32_t> words(k,0x76543210),zeros(2,0x33333333);
+  constexpr std::array<int,8> reverse{0,4,1,5,2,6,3,7};
+  std::vector<float> expected(n*k);
+  for(int row=0;row<n;++row)for(int col=0;col<k;++col)
+    expected[row*k+col]=float(half_test::decode(half_test::encode<Half>((reverse[row]-3)*half_test::decode(hs))));
+  const std::array awq_descs{dense(c::DataType::kInt32,{k,n/8}),dense(c::DataType::kInt32,{2,n/8}),
+                           dense(c::DataType::kFloat16,{2,n})};
+  std::array awq_inputs{buffer<std::int32_t>(words),buffer<std::int32_t>(zeros),
+                       buffer<Half>(std::vector<Half>(2*n,hs))};
+  check(Format::kAwqGemm4,group,awq_descs,awq_inputs,expected);
+  check(Format::kAwqGemm4,group,awq_descs,awq_inputs,expected,c::DataType::kUnknown);
+  std::vector<std::int32_t> packed(n*k/8,0x76543210);
+  for(int row=0;row<n;++row)for(int col=0;col<k;++col)
+    expected[row*k+col]=float(half_test::decode(half_test::encode<Bfloat>((col%8-8)*half_test::decode(bs))));
+  const std::array ct_descs{dense(c::DataType::kInt32,{n,k/8}),dense(c::DataType::kBFloat16,{n,2})};
+  std::array ct_inputs{buffer<std::int32_t>(packed),buffer<Bfloat>(std::vector<Bfloat>(n*2,bs))};
+  check(Format::kCompressedTensorsSymmetric4,group,ct_descs,ct_inputs,expected);
+  check(Format::kCompressedTensorsSymmetric4,group,ct_descs,ct_inputs,expected,c::DataType::kUnknown);
+}
 } // namespace

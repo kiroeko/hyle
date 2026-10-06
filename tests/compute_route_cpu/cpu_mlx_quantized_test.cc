@@ -119,6 +119,37 @@ template<class T> void matrices(){
       run<T>(grouped?c::model_ops::mlx_grouped_matmul(format,group):c::model_ops::mlx_quantized_matmul(format,group),descriptions,buffers,expected,grouped);
     }
 }
+
+template<class T> void scale_boundaries(std::span<const std::uint8_t> exponents) {
+  constexpr std::int64_t k=32;
+  const auto type=half_test::data_type<T>();
+  for (const auto exponent:exponents) {
+    SCOPED_TRACE(exponent);
+    const auto source_scale=half_test::encode<T>(std::ldexp(1.0, int(exponent)-127));
+    const std::array expected{half_test::encode<T>(32*half_test::decode(source_scale))};
+    for (const auto format:{Format::kMxfp4,Format::kMxfp8}) {
+      SCOPED_TRACE(int(format));
+      const auto pack=format==Format::kMxfp8?4:8;
+      const auto word=format==Format::kMxfp8?0x38383838u:0x22222222u;
+      const std::array descriptions{desc(type,{1,k}),desc(c::DataType::kUInt32,{1,k/pack}),
+                                   desc(c::DataType::kUInt8,{1,1})};
+      std::array buffers{upload<T>(std::vector<T>(k,half_test::encode<T>(1))),
+          upload<std::uint32_t>(std::vector<std::uint32_t>(k/pack,word)),
+          upload<std::uint8_t>(std::array{exponent})};
+      run<T>(c::model_ops::mlx_quantized_matmul(format,32),descriptions,buffers,expected,false);
+    }
+  }
+}
+
+#if defined(HYLE_TEST_GRAPH_ROUTE_CPU)
+TEST(CpuMlxQuantizedGraph, OriginalScaleCastPreservesUnderflowSubnormalAndOverflow){
+#else
+TEST(CpuMlxQuantizedDirect, OriginalScaleCastPreservesUnderflowSubnormalAndOverflow){
+#endif
+  scale_boundaries<hyle::simd::float16_t>(std::array<std::uint8_t,4>{102,103,127,143});
+  scale_boundaries<hyle::simd::bfloat16_t>(std::array<std::uint8_t,3>{0,1,127});
+  scale_boundaries<float>(std::array<std::uint8_t,3>{0,1,127});
+}
 #if defined(HYLE_TEST_GRAPH_ROUTE_CPU)
 TEST(CpuMlxQuantizedGraph, MixedFormatsAndSelectedExperts){
 #else
