@@ -800,7 +800,7 @@ void run_q24_semantic_fragment(
   auto queue = context.create_queue().value();
   const auto resource = hyle::mem::system_resource();
   const auto workload =
-      q::workload(*fixture.profile, c::WorkloadPhase::kDecode, fixture.region);
+      q::workload(*fixture.profile, fixture.phase, fixture.region);
   std::vector<hyle::mem::Buffer> buffers(fixture.descriptions.size());
   std::vector<hyle::mem::BufferView> views(fixture.descriptions.size());
   const auto allocate = [&](qfull::ValueId id) {

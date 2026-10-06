@@ -64,6 +64,7 @@ struct Fragment final {
   // A consumer may validate an ill-conditioned intermediate against its
   // actual predecessor. Final outputs still use the independent chain oracle.
   std::function<bool(std::size_t, std::span<const float>)> validate_intermediate{};
+  c::WorkloadPhase phase=c::WorkloadPhase::kDecode;
   // Optional one-time, native weight preparation. Outputs replace these
   // constant slots; no host-generated payload is uploaded into those slots.
   std::shared_ptr<const Fragment> preparation{};

@@ -597,7 +597,7 @@ void run_q24_semantic_fragment(
                                     constants[i].view())
              .value()});
   const auto workload =
-      q::workload(*fixture.profile, c::WorkloadPhase::kDecode, fixture.region);
+      q::workload(*fixture.profile, fixture.phase, fixture.region);
   auto compiled_result = g::compile(
       full.graph, context, {.constants = bindings, .workload = workload});
   ASSERT_TRUE(compiled_result) << compiled_result.error().message();

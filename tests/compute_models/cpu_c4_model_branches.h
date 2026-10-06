@@ -178,6 +178,7 @@ inline std::vector<float> rotary_rows(std::vector<float> data,std::int64_t heads
 }
 inline Fragment cache_prefill(const Model &model,std::int64_t tokens) {
   Fragment f{.profile=model.profile,.region=0x0c040106,.quantized=true};
+  f.phase=c::WorkloadPhase::kPrefill;
   auto x=f.input(dense({tokens,model.hidden}));
   std::vector<std::int32_t> positions(tokens);std::iota(positions.begin(),positions.end(),0);
   auto pos=f.constant(dense({tokens},c::DataType::kInt32),bytes(positions));
@@ -277,7 +278,7 @@ inline Fragment draft_attention(const Model &model,std::span<const float> initia
   }
   struct RotaryObservation {std::vector<float> attention;std::size_t step=0;};
   auto observed=std::make_shared<RotaryObservation>();
-  f.observe=[observed,heads=model.heads](std::size_t port,std::span<const float> actual) {
+  f.observe=[observed](std::size_t port,std::span<const float> actual) {
     if(port==1)observed->attention.assign(actual.begin(),actual.end());
     if(port==4)++observed->step;
   };
