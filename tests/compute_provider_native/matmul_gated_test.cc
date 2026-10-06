@@ -51,7 +51,10 @@ void expect_matmul(const TensorDesc &left_desc, std::span<const float> left,
   Buffer right_storage = make_buffer(right);
   Buffer output_storage =
       make_buffer(std::vector<float>(expected.size(), 0.0F));
-  auto context = hyle::compute::test::native_context().value();
+  auto context =
+      hyle::compute::Context::create(hyle::compute::cpu::device(),
+                                     hyle::compute::aten_cpu::provider())
+          .value();
   auto queue = context.create_queue().value();
   auto prepared_result =
       hyle::compute::prepare(context, MatMul{}, left_desc, right_desc);
@@ -97,7 +100,9 @@ float activate(GatedActivationKind kind, float value) {
   return 0.0F;
 }
 
-TEST(NativeMatMul, BroadcastsBothBatchOperandsAndSupportsTransposedWeights) {
+TEST(MatureMatMul, BroadcastsBothBatchOperandsAndSupportsTransposedWeights) {
+  if (!hyle::compute::aten_cpu::provider())
+    GTEST_SKIP() << "locked Torch CPU SDK disabled";
   constexpr std::size_t first_batches = 2;
   constexpr std::size_t second_batches = 3;
   constexpr std::size_t rows = 2;
@@ -162,7 +167,10 @@ TEST(NativeMatMul, BroadcastsBothBatchOperandsAndSupportsTransposedWeights) {
       ConstTensorView::create(left_desc, left_storage.view()).value();
   const TensorView output_view =
       TensorView::create(expected_output, output_storage.view()).value();
-  auto context = hyle::compute::test::native_context().value();
+  auto context =
+      hyle::compute::Context::create(hyle::compute::cpu::device(),
+                                     hyle::compute::aten_cpu::provider())
+          .value();
   auto queue = context.create_queue().value();
 
   const auto run = [&](const TensorDesc &description, const Buffer &storage) {
@@ -190,7 +198,9 @@ TEST(NativeMatMul, BroadcastsBothBatchOperandsAndSupportsTransposedWeights) {
   run(transposed_desc, transposed_storage);
 }
 
-TEST(NativeMatMul, AcceptsAnEmptyBroadcastBatch) {
+TEST(MatureMatMul, AcceptsAnEmptyBroadcastBatch) {
+  if (!hyle::compute::aten_cpu::provider())
+    GTEST_SKIP() << "locked Torch CPU SDK disabled";
   constexpr std::array<std::int64_t, 3> left_shape{0, 2, 3};
   constexpr std::array<std::int64_t, 3> right_shape{1, 3, 4};
   constexpr std::array<std::int64_t, 3> output_shape{0, 2, 4};
@@ -209,7 +219,10 @@ TEST(NativeMatMul, AcceptsAnEmptyBroadcastBatch) {
       ConstTensorView::create(right_desc, right.view()).value();
   const auto output_view =
       TensorView::create(output_desc, output.view()).value();
-  auto context = hyle::compute::test::native_context().value();
+  auto context =
+      hyle::compute::Context::create(hyle::compute::cpu::device(),
+                                     hyle::compute::aten_cpu::provider())
+          .value();
   auto queue = context.create_queue().value();
   auto prepared_result =
       hyle::compute::prepare(context, MatMul{}, left_desc, right_desc);
@@ -229,11 +242,15 @@ TEST(NativeMatMul, AcceptsAnEmptyBroadcastBatch) {
   const TensorDesc scalar_right =
       TensorDesc::dense(DataType::kFloat32, scalar_right_shape).value();
   auto huge_empty =
-      hyle::compute::prepare(context, MatMul{}, huge_empty_left, scalar_right);
-  ASSERT_TRUE(huge_empty.has_value()) << huge_empty.error().message();
+      hyle::compute::prepare(hyle::compute::test::native_context().value(),
+                             MatMul{}, huge_empty_left, scalar_right);
+  ASSERT_FALSE(huge_empty.has_value());
+  EXPECT_TRUE(huge_empty.error().IsUnimplemented());
 }
 
-TEST(NativeMatMul, ZeroInnerDimensionProducesZeroWithoutReadingInputs) {
+TEST(MatureMatMul, ZeroInnerDimensionProducesZeroWithoutReadingInputs) {
+  if (!hyle::compute::aten_cpu::provider())
+    GTEST_SKIP() << "locked Torch CPU SDK disabled";
   const auto run = [](std::span<const std::int64_t> left_shape,
                       std::span<const std::int64_t> right_shape,
                       std::span<const std::int64_t> output_shape) {
@@ -253,7 +270,10 @@ TEST(NativeMatMul, ZeroInnerDimensionProducesZeroWithoutReadingInputs) {
         ConstTensorView::create(right_desc, right.view()).value();
     const auto output_view =
         TensorView::create(output_desc, output.view()).value();
-    auto context = hyle::compute::test::native_context().value();
+    auto context =
+        hyle::compute::Context::create(hyle::compute::cpu::device(),
+                                       hyle::compute::aten_cpu::provider())
+            .value();
     auto queue = context.create_queue().value();
     auto prepared =
         hyle::compute::prepare(context, MatMul{}, left_desc, right_desc)
@@ -277,7 +297,9 @@ TEST(NativeMatMul, ZeroInnerDimensionProducesZeroWithoutReadingInputs) {
   run(batched_left, batched_right, batched_output);
 }
 
-TEST(NativeMatMul, BroadcastsAnOperandWithNoExplicitBatchAxes) {
+TEST(MatureMatMul, BroadcastsAnOperandWithNoExplicitBatchAxes) {
+  if (!hyle::compute::aten_cpu::provider())
+    GTEST_SKIP() << "locked Torch CPU SDK disabled";
   constexpr std::array<std::int64_t, 2> matrix_left_shape{2, 3};
   constexpr std::array<std::int64_t, 3> batched_right_shape{2, 3, 2};
   constexpr std::array<std::int64_t, 3> batched_left_shape{2, 2, 3};

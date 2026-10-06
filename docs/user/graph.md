@@ -265,6 +265,9 @@ metadata View；Graph 插入的跨存储 copy/sync 仍由 backend 完成，不�
 
 ### 何时要求 prepared-only
 
+CPU自研Native MatMul已退役。普通矩阵仍可绑定成熟库；高rank只有managed候选或严格内存
+政策无法接受成熟库未知上界时，compile会明确拒绝该请求，不能要求Native后备或自动放宽政策。
+
 若热路径不能接受 Provider 实例化执行 metadata/array 或内部 shape/cache 工作，在冷编译时明确要求：
 
 ```cpp

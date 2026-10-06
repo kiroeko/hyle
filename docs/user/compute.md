@@ -474,6 +474,9 @@ Provider 单独声明计算域；当前 CPU Native 只支持同 head MHA，对 G
 
 公共schema可以做纯描述推导，存在描述不等于每个Provider都能执行。上表是普通CPU能力与合同，
 不是Native Provider目录；CPU的Scan/TopK由成熟标准库接线承载，原Native域已退场。
+Native自研MatMul已源级退役；普通CPU MatMul由oneDNN、ggml或ATen承载。Native-only矩阵
+准备明确返回Unimplemented。原Native的0额外private invocation及高rank prepared-only矩阵能力
+同时撤回：成熟候选不满足严格unknown-reject/prepared-only请求时明确拒绝，不放宽预算或填假上界。
 默认路线先匹配已接入的oneDNN/ggml合法域，再匹配已构建的ATen原程序，Native只保留具名残余；block/opaque storage、量化
 与窄storage attention由理解相应格式的Provider承载，不会被隐藏materialize成另一种合同。
 
@@ -623,7 +626,7 @@ Provider 已接入明确有限域；合法的 block-Q4 `TensorDesc` 仍须匹配
 不同 Q4 格式、activation 临时量化
 与累加类型不是同一件事。当前
 `MatMul::accumulation_type` 不能解释为允许 Provider 静默把 F32 输入量化成 Q8。
-当前 CPU Native 与 oneDNN MatMul 仅实现显式 F32 累加（也是 `MatMul{}` 的默认值）；
+当前 CPU oneDNN MatMul 仅实现显式 F32 累加（也是 `MatMul{}` 的默认值）；
 其他累加类型在准备期返回 `Unimplemented`，默认 Direct/Graph 不会通过 fallback 静默降精度。
 
 ### CUDA Provider 接入状态
@@ -1112,7 +1115,7 @@ span 只需活到调用返回。序列没有人为四项上限，也不会自动
 `cpu::DefaultContextOptions::executor`、`native::Options::executor` 或 `onednn::Options::executor` 传入借用的
 `ParallelExecutorRef`。其 `parallel_for` 必须在返回前完成全部任务、不得失败或抛异常，并在嵌套调用时
 保证进展；executor backing 必须活过由 provider 创建的 Context 及其 retained artifacts。Native 在 prepare
-冷路径按总工作量固定 task count，目前为足够大的 Norm、MatMul、dense gated activation 与 SDPA row 做
+冷路径按总工作量固定 task count，目前为足够大的 Norm、dense gated activation 与 SDPA row 做
 至多一次同步 fan-out；默认、小工作量与可检测的 nested episode 保持 caller-thread 串行。
 
 并行分片由 HYLE 在 prepare 冷路径决定，不是 oneDNN 的隐藏线程池：正常 tile 宽度至少为 64 columns，

@@ -68,12 +68,6 @@ hyle_register_package_dependency(
 
 hyle_add_fat_kernel(
   TARGET hyle_compute_provider_native
-  NAME compute_matmul
-  IMPL "src/compute/matmul_kernel_impl.h"
-  TARGETS scalar sse4 avx2 avx512 neon sve rvv)
-
-hyle_add_fat_kernel(
-  TARGET hyle_compute_provider_native
   NAME compute_rope
   IMPL "src/compute/rope_kernel_impl.h"
   TARGETS scalar sse4 avx2 avx512 neon sve rvv)

@@ -430,6 +430,8 @@ TEST(PreparedOperation, RunsRowWiseWeightedRmsNorm) {
 }
 
 TEST(PreparedOperation, RunsRowMajorAndTransposedWeightMatMul) {
+  if (!hyle::compute::aten_cpu::provider())
+    GTEST_SKIP() << "locked Torch CPU SDK disabled";
   constexpr std::size_t rows = 2;
   constexpr std::size_t inner = 3;
   constexpr std::size_t columns = 4;
@@ -469,7 +471,9 @@ TEST(PreparedOperation, RunsRowMajorAndTransposedWeightMatMul) {
                              .value();
   write_floats(left_buffer.view(), left);
 
-  Context context = hyle::compute::test::native_context().value();
+  Context context = Context::create(hyle::compute::cpu::device(),
+                                    hyle::compute::aten_cpu::provider())
+                        .value();
   Queue queue = context.create_queue().value();
   auto left_view =
       ConstTensorView::create(left_desc, left_buffer.view()).value();
@@ -507,7 +511,9 @@ TEST(PreparedOperation, RunsRowMajorAndTransposedWeightMatMul) {
   }
 }
 
-TEST(PreparedOperation, RowMajorMatMulCoversEveryNativeTileAndTail) {
+TEST(PreparedOperation, MatureMatMulCoversNonAlignedShapesAndZeroInner) {
+  if (!hyle::compute::aten_cpu::provider())
+    GTEST_SKIP() << "locked Torch CPU SDK disabled";
   struct Shape final {
     std::size_t rows;
     std::size_t inner;
@@ -518,7 +524,9 @@ TEST(PreparedOperation, RowMajorMatMulCoversEveryNativeTileAndTail) {
       Shape{10, 13, 31}, Shape{17, 15, 35}, Shape{32, 17, 67}, Shape{9, 0, 21},
   };
 
-  Context context = hyle::compute::test::native_context().value();
+  Context context = Context::create(hyle::compute::cpu::device(),
+                                    hyle::compute::aten_cpu::provider())
+                        .value();
   Queue queue = context.create_queue().value();
   for (const Shape shape : shapes) {
     SCOPED_TRACE(::testing::Message() << "M=" << shape.rows << " K="

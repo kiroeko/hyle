@@ -27,7 +27,7 @@ using hyle::Result;
 using hyle::Status;
 using hyle::mem::Buffer;
 
-TEST(NativeMatMul, RejectsUnsupportedAccumulationAtBothColdStages) {
+TEST(NativeMatMul, BothColdStagesDeclineRetiredMatrixPrograms) {
   auto context = test::native_context().value();
   const auto matrix = [](std::int64_t rows, std::int64_t columns) {
     return TensorDesc::dense(DataType::kFloat32, std::array{rows, columns})
@@ -37,34 +37,47 @@ TEST(NativeMatMul, RejectsUnsupportedAccumulationAtBothColdStages) {
   const std::array outputs{matrix(16, 4)};
   std::array<ResourceBindingRequirement, 2> input_requirements{};
   std::array<ResourceBindingRequirement, 1> output_requirements{};
-  const auto proposal = OperationPreparationAccess::propose(
-      context, 0, Operation(MatMul{}), inputs, outputs, input_requirements,
-      output_requirements);
-  ASSERT_TRUE(proposal.has_value()) << proposal.error().message();
   const std::array resources{hyle::mem::system_resource(),
                              hyle::mem::system_resource()};
+  const auto factory = native::provider();
+  const auto *vtable = ProviderAccess::vtable(factory);
+  const auto allocator = hyle::mem::system_allocator();
+  void *provider_state = nullptr;
+  ASSERT_TRUE(vtable
+                  ->create_context(factory, cpu::device(), nullptr, allocator,
+                                   &provider_state)
+                  .ok());
+  const auto destroy = [vtable, allocator](void *state) {
+    vtable->destroy_context(state, allocator);
+  };
+  const std::unique_ptr<void, decltype(destroy)> owner(provider_state, destroy);
   for (const auto type :
-       {DataType::kFloat64, DataType::kFloat16, DataType::kBFloat16,
-        DataType::kInt32, DataType::kUnknown}) {
+       {DataType::kFloat32, DataType::kFloat64, DataType::kFloat16,
+        DataType::kBFloat16, DataType::kInt32, DataType::kUnknown}) {
     SCOPED_TRACE(static_cast<int>(type));
     const Operation operation(MatMul{type});
-    auto query_inputs = input_requirements;
-    auto query_outputs = output_requirements;
     auto rejected = OperationPreparationAccess::propose(
-        context, 0, operation, inputs, outputs, query_inputs, query_outputs);
+        context, 0, operation, inputs, outputs, input_requirements,
+        output_requirements);
     ASSERT_FALSE(rejected.has_value());
     EXPECT_TRUE(rejected.error().IsUnimplemented());
     auto direct =
         prepare(context, MatMul{type}, inputs[0], inputs[1], outputs[0]);
     ASSERT_FALSE(direct.has_value());
     EXPECT_TRUE(direct.error().IsUnimplemented());
-    auto exact = OperationPreparationAccess::prepare_candidate(
-        context, *proposal, operation, inputs, outputs, input_requirements,
-        output_requirements, {resources, std::span(resources).first(1)});
-    ASSERT_TRUE(exact.has_value()) << exact.error().message();
-    EXPECT_FALSE(exact->succeeded());
-    EXPECT_EQ(exact->decline, ProviderPrepareDecline::kUnsupported);
-    EXPECT_TRUE(exact->reason.IsUnimplemented());
+    const ProviderPrepareRequest request{
+        .operation = operation,
+        .inputs = inputs,
+        .outputs = outputs,
+        .input_resources = resources,
+        .output_resources = std::span(resources).first(1),
+        .route = static_cast<std::uint64_t>(OperationKind::kMatMul)};
+    ProviderPrepared prepared{};
+    const auto outcome =
+        vtable->prepare(provider_state, request, allocator, &prepared);
+    EXPECT_EQ(outcome.kind, ProviderPrepareOutcomeKind::kDeclinedUnsupported);
+    EXPECT_TRUE(outcome.status.IsUnimplemented());
+    EXPECT_EQ(prepared.state, nullptr);
   }
 }
 
