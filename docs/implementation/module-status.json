@@ -97,9 +97,9 @@
     },
     {
       "module": "platform",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/platform/cpu-identity-route-facts.md",
-      "summary": "CPU最终规则SCOPED：按已结束证据逐域绑定；缓存硬件事实、共享优势保留、13已测落后场景拒绝；不重测/不优化"
+      "summary": "CPU最终规则AUDITED：F1–5/I1有限FIX冻结，187实际优势条件绑定、13已测落后exact冷拒绝，成熟region保留；无新算法/重测"
     },
     {
       "module": "platform_thread",
@@ -417,9 +417,9 @@
     },
     {
       "module": "compute_provider_native",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/cpu-default-domain-routing-final.md",
-      "summary": "CPU最终规则SCOPED：按已结束证据逐域绑定；缓存硬件事实、共享优势保留、13已测落后场景拒绝；不重测/不优化"
+      "summary": "CPU最终规则AUDITED：F1–5/I1有限FIX冻结，187实际优势条件绑定、13已测落后exact冷拒绝，成熟region保留；无新算法/重测"
     },
     {
       "module": "compute_sched",
@@ -428,15 +428,15 @@
     },
     {
       "module": "compute_route_cpu",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/cpu-default-domain-routing-final.md",
-      "summary": "CPU最终规则SCOPED：按已结束证据逐域绑定；缓存硬件事实、共享优势保留、13已测落后场景拒绝；不重测/不优化"
+      "summary": "CPU最终规则AUDITED：F1–5/I1有限FIX冻结，187实际优势条件绑定、13已测落后exact冷拒绝，成熟region保留；无新算法/重测"
     },
     {
       "module": "graph_route_cpu",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/cpu-default-domain-routing-final.md",
-      "summary": "CPU最终规则SCOPED：按已结束证据逐域绑定；缓存硬件事实、共享优势保留、13已测落后场景拒绝；不重测/不优化"
+      "summary": "CPU最终规则AUDITED：F1–5/I1有限FIX冻结，187实际优势条件绑定、13已测落后exact冷拒绝，成熟region保留；无新算法/重测"
     },
     {
       "module": "compute_provider_cublas",

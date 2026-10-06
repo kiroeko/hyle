@@ -1,6 +1,6 @@
 # CPU 最终适用域裁决与默认规则
 
-<!-- MODULE REVIEW: SCOPED -->
+<!-- MODULE REVIEW: AUDITED -->
 
 - owners：compute_provider_native、compute_route_cpu、graph_route_cpu；baseline `f6470870d3de7f2475e245b6ee2ca76905f82249`。
 - user trigger：完成当前CPU goal；成熟接线及MatMul退役已实际关闭，不重开GPU/旧大队列。
@@ -28,3 +28,18 @@
 - docs/closure/selector/统一LOC/垃圾清理；所有适用门实际完成才关闭CPU goal，GPU继续暂停。
 
 产品代码尚未授权；下一步AUDITED必须把有限FIX、匹配条件及保留理由固定，不无限研究。
+
+## 有限 FIX（源码与成本已审计）
+
+| ID | 允许修改 | 通过条件 |
+|---|---|---|
+| F1 | Native新增私有默认规则factory与semantic domain matcher；真实品牌/ISA/MSVC195035728/串行条件cached于Context，Win表只含187个固定case对应op/kind/dtype/ports/attrs | 构造时硬件匹配；prepare阶段只匹配/绑定，submit不变化；无Timing表/搜索/计时，公共Options与NativePlan/Invocation layout不变 |
+| F2 | 同一13个LOSScase在已测硬件/软件/串行exact请求的Native propose/prepare明确Unsupported；shared kernel保留用于对应其它WIN与已验whole-domain | 6项Bool Softmax/LogSoftmax、RMS1、Assign3、SDPA1、Softplus2；未测不是LOSS，whole-domain Copy/RMS不被exact拒绝误伤 |
+| F3 | compute_route_cpu与graph_route_cpu仅换具名私有Native默认factory；pref Direct50/Graph175，非匹配沿已有mature顺序 | 原GGML region100/oneDNN region150先于175叶，公共用户无需选provider，无热选路 |
+| F4 | 显式domain disposition ledger与统一普通consumer/测试 | 各族源码是否仍被WIN/真实resource使用可复核；不能以1000优先级本身保留；3小幅Cast和71非MatMul AA失格成熟优先，不签胜负 |
+| F5 | 文档/状态/三交付/源码身份/cleanup终审 | Win/Linux owning与真实普通入口逐格实跑；完整Graph成熟region资格复用未变源码，并实际核对不被抢走 |
+
+非泛化原则：只匹配当前协议的dense端口、相同arity/shape/params与资源精度，不因hidden=2048
+单轴相同就误绑定broadcast、extra bias、另一axis/scale/mask/rotary layout；bounded roots不签exact WIN。
+CUDA/Apple/Vulkan与第三方数学不改。187比较只证明相对本轮默认mature完整调用的收益，条件不满足
+不做全局CPU架构外推。Native expert算法共享保留与默认cold规则分开，MatMul退役保持。

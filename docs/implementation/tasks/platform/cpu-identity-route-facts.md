@@ -1,6 +1,6 @@
 # Platform CPU identity：默认CPU规则需要的缓存事实
 
-<!-- MODULE REVIEW: SCOPED -->
+<!-- MODULE REVIEW: AUDITED -->
 
 - owner platform；baseline `f6470870d3de7f2475e245b6ee2ca76905f82249`；真实consumer为[CPU最终默认规则](../compute/cpu-default-domain-routing-final.md)。
 - 缺口事实：CPU Device.name仍为HYLE host CPU，已有cpu_features/cache/topology无法表达已测CPU
@@ -12,3 +12,6 @@
   源码/static/shared CPU默认consumer实际调用；ARM未知分支明确，不宣称Apple型号验收。
 - 公共API新增为真实硬件规则需求，不是按benchmark行制造metadata；无新增热成本，P0，不跑P1。
 - budget：本次有限实现与一次批量验收，最多定向纠正；不重审platform，不改公共仪器。
+
+I1已审计：cpu.cc已有MSVC/GCC cpuid helper、baseline/IPO-off合同；只追加一次缓存identity，
+不复制probe，不改CpuFeatureSet。非x86全空未知，不发系统查询；source/static/shared CPUconsumer将实读。
