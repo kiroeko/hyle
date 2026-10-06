@@ -97,10 +97,14 @@
     },
     {
       "module": "platform",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/platform/cpu-identity-route-facts.md",
-      "summary": "CPU最终默认域规则与缓存身份已实现；不可变候选批量完成适用正确性和两平台三交付验收，未验门不签PASS。",
-      "candidate": "393c7545b06f599001a4066876f03595d0bb0b15"
+      "summary": "Platform I1 CLOSED：仅追加cached CpuIdentity事实；两平台CPU/header/实际普通C++三交付通过，非x86未知不宣称验收，P0无重复probe/heap。",
+      "candidate": "393c7545b06f599001a4066876f03595d0bb0b15",
+      "performance": {
+        "tier": "P0",
+        "evidence": "evidence/correctness/cpu-default-domain-routing/README.md"
+      }
     },
     {
       "module": "platform_thread",
@@ -418,10 +422,14 @@
     },
     {
       "module": "compute_provider_native",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/compute/cpu-default-domain-routing-final.md",
-      "summary": "CPU最终默认域规则与缓存身份已实现；不可变候选批量完成适用正确性和两平台三交付验收，未验门不签PASS。",
-      "candidate": "393c7545b06f599001a4066876f03595d0bb0b15"
+      "summary": "CPU最终收口CLOSED：缓存硬件身份、187精确优势规则、13劣势冷拒绝与成熟region优先完成；两平台正确性/普通Direct+Graph/三交付通过。复用冻结比较，不跑新P1；去留有WIN/资源依据，SIMD不删，GPU暂停。",
+      "candidate": "393c7545b06f599001a4066876f03595d0bb0b15",
+      "performance": {
+        "tier": "P0",
+        "evidence": "evidence/correctness/cpu-default-domain-routing/README.md"
+      }
     },
     {
       "module": "compute_sched",
@@ -430,17 +438,25 @@
     },
     {
       "module": "compute_route_cpu",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/compute/cpu-default-domain-routing-final.md",
-      "summary": "CPU最终默认域规则与缓存身份已实现；不可变候选批量完成适用正确性和两平台三交付验收，未验门不签PASS。",
-      "candidate": "393c7545b06f599001a4066876f03595d0bb0b15"
+      "summary": "CPU最终收口CLOSED：缓存硬件身份、187精确优势规则、13劣势冷拒绝与成熟region优先完成；两平台正确性/普通Direct+Graph/三交付通过。复用冻结比较，不跑新P1；去留有WIN/资源依据，SIMD不删，GPU暂停。",
+      "candidate": "393c7545b06f599001a4066876f03595d0bb0b15",
+      "performance": {
+        "tier": "P0",
+        "evidence": "evidence/correctness/cpu-default-domain-routing/README.md"
+      }
     },
     {
       "module": "graph_route_cpu",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/compute/cpu-default-domain-routing-final.md",
-      "summary": "CPU最终默认域规则与缓存身份已实现；不可变候选批量完成适用正确性和两平台三交付验收，未验门不签PASS。",
-      "candidate": "393c7545b06f599001a4066876f03595d0bb0b15"
+      "summary": "CPU最终收口CLOSED：缓存硬件身份、187精确优势规则、13劣势冷拒绝与成熟region优先完成；两平台正确性/普通Direct+Graph/三交付通过。复用冻结比较，不跑新P1；去留有WIN/资源依据，SIMD不删，GPU暂停。",
+      "candidate": "393c7545b06f599001a4066876f03595d0bb0b15",
+      "performance": {
+        "tier": "P0",
+        "evidence": "evidence/correctness/cpu-default-domain-routing/README.md"
+      }
     },
     {
       "module": "compute_provider_cublas",

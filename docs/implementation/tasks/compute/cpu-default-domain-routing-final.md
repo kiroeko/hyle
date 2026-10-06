@@ -1,6 +1,6 @@
 # CPU 最终适用域裁决与默认规则
 
-<!-- MODULE REVIEW: CANDIDATE -->
+<!-- MODULE REVIEW: CLOSED -->
 
 - owners：compute_provider_native、compute_route_cpu、graph_route_cpu；baseline `f6470870d3de7f2475e245b6ee2ca76905f82249`。
 - user trigger：完成当前CPU goal；成熟接线及MatMul退役已实际关闭，不重开GPU/旧大队列。
@@ -60,3 +60,21 @@ Debug：同 MSVC 版本但未定义 NDEBUG 也会继承 Release 比较。退回 
 
 候选 `393c7545b06f599001a4066876f03595d0bb0b15`；API/算法/有限规则已固定，适用 P0 与批量 correctness/交付验收继续，
 不重跑已结束 ND3 P1，不把新候选称为新计时比较。
+
+## CLOSED：CPU 收口完成
+
+最终产品候选 `393c7545b06f599001a4066876f03595d0bb0b15`；[完整资格](../../../../evidence/correctness/cpu-default-domain-routing/README.md)。
+F1–F5 全部完成：有条件的 187 优选、13 cold reject、成熟 region 优先、274 场景账本和普通
+Direct/Graph 两次 changed replay、9 类错配、并发/close、两平台 owning/header 与三交付均通过。
+源码/布局不变的原数值/OOM/whole-domain 与冷编译 P0 证据复用；未跑新 P1，不签跨硬件收益。
+
+七门 scope/architecture/correctness/delivery/usability_docs/red_team/performance(P0) PASS。
+红队一次构建模式纠正已完结；旧实验失败及 Linux install 的 fixture 纠正保留，不改门线。
+保留算法逐族由 WIN 或实际资源域证明，MatMul 和此前18错误数值域退役保持，SIMD 基础不删。
+统一 Compute+Graph 实现 LOC=61,109 / 249 文件；414新增行均为冷路由/规则，无新增数学算子。
+本批清理647MiB，证据已归档。没有未决 CPU blocker；CUDA/Apple/Vulkan 继续暂停。
+
+限制：187比较只相对原默认成熟完整调用；条件不符成熟优先，不承诺未知 shape/版本/硬件 SOTA。
+严格预算不会把未知当零；已撤回的 Native MatMul-only/strict/high-rank prepared 能力不恢复。
+reopen trigger：真实普通消费者的数值/资源/绑定反例，或新硬件/软件有资格证据要求规则扩展；
+旧 CLOSED/研究卡、未资格点值或想再扫一遍不授权重开。本 goal 在 CPU收口后停止。

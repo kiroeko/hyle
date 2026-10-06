@@ -1,6 +1,6 @@
 # Platform CPU identity：默认CPU规则需要的缓存事实
 
-<!-- MODULE REVIEW: CANDIDATE -->
+<!-- MODULE REVIEW: CLOSED -->
 
 - owner platform；baseline `f6470870d3de7f2475e245b6ee2ca76905f82249`；真实consumer为[CPU最终默认规则](../compute/cpu-default-domain-routing-final.md)。
 - 缺口事实：CPU Device.name仍为HYLE host CPU，已有cpu_features/cache/topology无法表达已测CPU
@@ -25,3 +25,14 @@ I1已审计：cpu.cc已有MSVC/GCC cpuid helper、baseline/IPO-off合同；只�
 
 候选 `393c7545b06f599001a4066876f03595d0bb0b15`；API/算法/有限规则已固定，适用 P0 与批量 correctness/交付验收继续，
 不重跑已结束 ND3 P1，不把新候选称为新计时比较。
+
+## CLOSED：I1 完成
+
+候选 `393c7545b06f599001a4066876f03595d0bb0b15`，CPU 身份 API/实现与7090222a相同；
+[两平台实际证据](../../../../evidence/correctness/cpu-default-domain-routing/README.md)。
+19/19 CPU tests、两个 owner 的逐头测试、两平台 source/static/shared 的普通 C++ 消费实际通过；
+实际 vendor/brand/family/model/stepping、缓存稳定地址/终止字符/并发读取一致。非x86未知分支
+按源合同保留，没有宣称 Apple 实机身份资格。零heap、一次baseline CPUID、重复查询无syscall，P0 PASS。
+七门 scope/architecture/correctness/delivery/usability_docs/red_team/performance(P0) PASS。
+只关闭I1，不重审其它Platform能力。reopen trigger：真实消费者证明身份取值错误、缓存竞争或
+当前未知平台有明确身份需求；营销名称、性能点值与历史task不授权重开。
