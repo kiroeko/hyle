@@ -372,10 +372,14 @@
     },
     {
       "module": "compute_provider_ggml",
-      "state": "CANDIDATE",
-      "record": "docs/implementation/tasks/compute/cpu-quant-mtp-c5-batch-qualification.md",
-      "summary": "CPU扩覆盖候选固定：实际格式/端口、参数和完整branch已完成有限批次，两系统三交付/资源收据保留；最终全范围聚合与独立红队尚未裁决，不签CLOSED。",
-      "candidate": "c740abc74a5a62ffacf60b26798228ca484317df"
+      "state": "CLOSED",
+      "record": "docs/implementation/tasks/compute/cpu-quant-mtp-coverage-terminal.md",
+      "summary": "CPU热门量化/MTP/DSpark原准入合同CLOSED：固定104 GGUF及两新官方/三sidecar/四非GGUF typed+semantic/state联合资格、Windows/Linux三交付/真实失败并发资源、文档/独立终审与P0通过；不称整模型推理/SOTA、不改GPU旧状态。",
+      "candidate": "c740abc74a5a62ffacf60b26798228ca484317df",
+      "performance": {
+        "tier": "P0",
+        "evidence": "evidence/correctness/cpu-quant-mtp-c5-plain/cost-audit.md"
+      }
     },
     {
       "module": "graph_provider_onednn",
@@ -390,10 +394,14 @@
     },
     {
       "module": "compute_ops",
-      "state": "CANDIDATE",
-      "record": "docs/implementation/tasks/compute/cpu-quant-mtp-c5-batch-qualification.md",
-      "summary": "CPU扩覆盖候选固定：实际格式/端口、参数和完整branch已完成有限批次，两系统三交付/资源收据保留；最终全范围聚合与独立红队尚未裁决，不签CLOSED。",
-      "candidate": "c740abc74a5a62ffacf60b26798228ca484317df"
+      "state": "CLOSED",
+      "record": "docs/implementation/tasks/compute/cpu-quant-mtp-coverage-terminal.md",
+      "summary": "CPU热门量化/MTP/DSpark原准入合同CLOSED：固定104 GGUF及两新官方/三sidecar/四非GGUF typed+semantic/state联合资格、Windows/Linux三交付/真实失败并发资源、文档/独立终审与P0通过；不称整模型推理/SOTA、不改GPU旧状态。",
+      "candidate": "c740abc74a5a62ffacf60b26798228ca484317df",
+      "performance": {
+        "tier": "P0",
+        "evidence": "evidence/correctness/cpu-quant-mtp-c5-plain/cost-audit.md"
+      }
     },
     {
       "module": "compute_backend_cpu",
@@ -419,10 +427,14 @@
     },
     {
       "module": "compute_provider_native",
-      "state": "CANDIDATE",
-      "record": "docs/implementation/tasks/compute/cpu-quant-mtp-c5-batch-qualification.md",
-      "summary": "CPU扩覆盖候选固定：实际格式/端口、参数和完整branch已完成有限批次，两系统三交付/资源收据保留；最终全范围聚合与独立红队尚未裁决，不签CLOSED。",
-      "candidate": "c740abc74a5a62ffacf60b26798228ca484317df"
+      "state": "CLOSED",
+      "record": "docs/implementation/tasks/compute/cpu-quant-mtp-coverage-terminal.md",
+      "summary": "CPU热门量化/MTP/DSpark原准入合同CLOSED：固定104 GGUF及两新官方/三sidecar/四非GGUF typed+semantic/state联合资格、Windows/Linux三交付/真实失败并发资源、文档/独立终审与P0通过；不称整模型推理/SOTA、不改GPU旧状态。",
+      "candidate": "c740abc74a5a62ffacf60b26798228ca484317df",
+      "performance": {
+        "tier": "P0",
+        "evidence": "evidence/correctness/cpu-quant-mtp-c5-plain/cost-audit.md"
+      }
     },
     {
       "module": "compute_sched",
@@ -536,10 +548,14 @@
     },
     {
       "module": "compute_ggml_runtime",
-      "state": "CANDIDATE",
-      "record": "docs/implementation/tasks/compute/cpu-quant-mtp-c2-ggml-upgrade.md",
-      "summary": "CPU扩覆盖候选固定：实际格式/端口、参数和完整branch已完成有限批次，两系统三交付/资源收据保留；最终全范围聚合与独立红队尚未裁决，不签CLOSED。",
-      "candidate": "c740abc74a5a62ffacf60b26798228ca484317df"
+      "state": "CLOSED",
+      "record": "docs/implementation/tasks/compute/cpu-quant-mtp-coverage-terminal.md",
+      "summary": "CPU热门量化/MTP/DSpark原准入合同CLOSED：固定104 GGUF及两新官方/三sidecar/四非GGUF typed+semantic/state联合资格、Windows/Linux三交付/真实失败并发资源、文档/独立终审与P0通过；不称整模型推理/SOTA、不改GPU旧状态。",
+      "candidate": "c740abc74a5a62ffacf60b26798228ca484317df",
+      "performance": {
+        "tier": "P0",
+        "evidence": "evidence/correctness/cpu-quant-mtp-c5-plain/cost-audit.md"
+      }
     },
     {
       "module": "compute_provider_ggml_cuda",

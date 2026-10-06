@@ -12,6 +12,8 @@
 
 当前22个固定模型画像的Direct/Graph结果、逐路线限制及三交付/P1范围见
 [模型片段覆盖](model-fragment-coverage.md)。下文R4/R5/R6基础验收不代签后来新增的全部模型域。
+CPU-only新版的104 GGUF档位、非GGUF与MTP/DSpark原计算合同覆盖另见[CPU当前覆盖](cpu-model-coverage.md)，
+与旧四路线整画像RUN_PASS账本区分。
 
 四路线目标、MLX 内 Metal 扩展与每个 native runtime 的边界见[路线设计](../architecture/compute-routes.md)。
 研究程序不属于安装 SDK；本文的现有 API 也不保证在本次重构后兼容，不把目标设计当成已交付功能。

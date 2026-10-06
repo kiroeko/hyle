@@ -2,12 +2,13 @@
 
 ## 当前授权与基线
 
-- 用户于2026-10-06已明确要求创建新goal并实际实施CPU扩覆盖；新的goal已创建；C1审计完成，C2/C3已有有限两平台接线/交付资格，当前执行C4组合接线。
+- 用户于2026-10-06已明确要求创建新goal并实际实施CPU扩覆盖；按C1–C5实施与两系统资格已完成，
+  当前准确范围与停止记录见[终审](cpu-quant-mtp-coverage-terminal.md)。
 - baseline `5b0044e2a10d11fdfce54893020cfcaaed47b0c0`，执行时解析完整commit并核对HEAD/worktree；Windows canonical，不回退。
 - 本计划对应[缺口清单](cpu-popular-quant-mtp-gap-list.md)及[固定元数据](cpu-popular-quant-mtp-gap-list.json)，
   是新的CPU扩覆盖计划，不恢复旧M/C/D施工队列、旧goal、旧进度或GPU阻塞项。
 - 当前模块状态仍只在[module-status](../../module-status.json)。C1审计已完成，C2/C3证据保留；C4有限资格已完成，
-  三CPU owner已交接C5 **AUDITED**，实际角色/几何审计与有限F1–F4已固定；
+  四CPU相关owner已按候选/七门协议完成终审，记录以registry所指[终审](cpu-quant-mtp-coverage-terminal.md)为准；
   开始每包时绑定其真实owner，合法进入SCOPED，审计后AUDITED固定有限FIX，再写产品。
   现有CLOSED不因本页自动重开；现有AUDITED范围改变必须重新定界；BLOCKED不自动恢复。
 

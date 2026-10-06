@@ -270,7 +270,8 @@
         "gf7a8ea4874da3508"
       ],
       "semantic_family": "Qwen3.5-2B-GGUF",
-      "status": "CONTRACT_EVIDENCE_COMPLETE_PROFILE_AGGREGATE_PENDING"
+      "status": "LIBRARY_CONTRACT_PASS",
+      "joint_verdict": "evidence/correctness/cpu-quant-mtp-c5-required/joint-verdict.md"
     },
     {
       "id": 1,
@@ -297,7 +298,8 @@
         "gf7a8ea4874da3508"
       ],
       "semantic_family": "Qwen3.5-2B-GGUF",
-      "status": "CONTRACT_EVIDENCE_COMPLETE_PROFILE_AGGREGATE_PENDING"
+      "status": "LIBRARY_CONTRACT_PASS",
+      "joint_verdict": "evidence/correctness/cpu-quant-mtp-c5-required/joint-verdict.md"
     },
     {
       "id": 2,
@@ -324,7 +326,8 @@
         "gf7a8ea4874da3508"
       ],
       "semantic_family": "Qwen3.5-2B-GGUF",
-      "status": "CONTRACT_EVIDENCE_COMPLETE_PROFILE_AGGREGATE_PENDING"
+      "status": "LIBRARY_CONTRACT_PASS",
+      "joint_verdict": "evidence/correctness/cpu-quant-mtp-c5-required/joint-verdict.md"
     },
     {
       "id": 3,
@@ -354,7 +357,8 @@
         "gf7a8ea4874da3508"
       ],
       "semantic_family": "Qwen3.5-2B-GGUF",
-      "status": "CONTRACT_EVIDENCE_COMPLETE_PROFILE_AGGREGATE_PENDING"
+      "status": "LIBRARY_CONTRACT_PASS",
+      "joint_verdict": "evidence/correctness/cpu-quant-mtp-c5-required/joint-verdict.md"
     },
     {
       "id": 4,
@@ -380,7 +384,8 @@
         "gf7a8ea4874da3508"
       ],
       "semantic_family": "Qwen3.5-2B-GGUF",
-      "status": "CONTRACT_EVIDENCE_COMPLETE_PROFILE_AGGREGATE_PENDING"
+      "status": "LIBRARY_CONTRACT_PASS",
+      "joint_verdict": "evidence/correctness/cpu-quant-mtp-c5-required/joint-verdict.md"
     },
     {
       "id": 5,
@@ -407,7 +412,8 @@
         "gf7a8ea4874da3508"
       ],
       "semantic_family": "Qwen3.5-2B-GGUF",
-      "status": "CONTRACT_EVIDENCE_COMPLETE_PROFILE_AGGREGATE_PENDING"
+      "status": "LIBRARY_CONTRACT_PASS",
+      "joint_verdict": "evidence/correctness/cpu-quant-mtp-c5-required/joint-verdict.md"
     },
     {
       "id": 6,
@@ -433,7 +439,8 @@
         "gf7a8ea4874da3508"
       ],
       "semantic_family": "Qwen3.5-2B-GGUF",
-      "status": "CONTRACT_EVIDENCE_COMPLETE_PROFILE_AGGREGATE_PENDING"
+      "status": "LIBRARY_CONTRACT_PASS",
+      "joint_verdict": "evidence/correctness/cpu-quant-mtp-c5-required/joint-verdict.md"
     },
     {
       "id": 7,
@@ -462,7 +469,8 @@
         "gf7a8ea4874da3508"
       ],
       "semantic_family": "Qwen3.5-2B-GGUF",
-      "status": "CONTRACT_EVIDENCE_COMPLETE_PROFILE_AGGREGATE_PENDING"
+      "status": "LIBRARY_CONTRACT_PASS",
+      "joint_verdict": "evidence/correctness/cpu-quant-mtp-c5-required/joint-verdict.md"
     },
     {
       "id": 8,
@@ -490,7 +498,8 @@
         "gf7a8ea4874da3508"
       ],
       "semantic_family": "Qwen3.5-2B-GGUF",
-      "status": "CONTRACT_EVIDENCE_COMPLETE_PROFILE_AGGREGATE_PENDING"
+      "status": "LIBRARY_CONTRACT_PASS",
+      "joint_verdict": "evidence/correctness/cpu-quant-mtp-c5-required/joint-verdict.md"
     },
     {
       "id": 9,
@@ -519,7 +528,8 @@
         "gf7a8ea4874da3508"
       ],
       "semantic_family": "Qwen3.5-2B-GGUF",
-      "status": "CONTRACT_EVIDENCE_COMPLETE_PROFILE_AGGREGATE_PENDING"
+      "status": "LIBRARY_CONTRACT_PASS",
+      "joint_verdict": "evidence/correctness/cpu-quant-mtp-c5-required/joint-verdict.md"
     },
     {
       "id": 10,
@@ -545,7 +555,8 @@
         "gf7a8ea4874da3508"
       ],
       "semantic_family": "Qwen3.5-2B-GGUF",
-      "status": "CONTRACT_EVIDENCE_COMPLETE_PROFILE_AGGREGATE_PENDING"
+      "status": "LIBRARY_CONTRACT_PASS",
+      "joint_verdict": "evidence/correctness/cpu-quant-mtp-c5-required/joint-verdict.md"
     },
     {
       "id": 11,
@@ -571,7 +582,8 @@
         "gf7a8ea4874da3508"
       ],
       "semantic_family": "Qwen3.5-2B-GGUF",
-      "status": "CONTRACT_EVIDENCE_COMPLETE_PROFILE_AGGREGATE_PENDING"
+      "status": "LIBRARY_CONTRACT_PASS",
+      "joint_verdict": "evidence/correctness/cpu-quant-mtp-c5-required/joint-verdict.md"
     },
     {
       "id": 12,
@@ -596,7 +608,8 @@
         "gf7a8ea4874da3508"
       ],
       "semantic_family": "Qwen3.5-2B-GGUF",
-      "status": "CONTRACT_EVIDENCE_COMPLETE_PROFILE_AGGREGATE_PENDING"
+      "status": "LIBRARY_CONTRACT_PASS",
+      "joint_verdict": "evidence/correctness/cpu-quant-mtp-c5-required/joint-verdict.md"
     },
     {
       "id": 13,
@@ -629,7 +642,8 @@
         "gf7a8ea4874da3508"
       ],
       "semantic_family": "Qwen3.5-2B-GGUF",
-      "status": "CONTRACT_EVIDENCE_COMPLETE_PROFILE_AGGREGATE_PENDING"
+      "status": "LIBRARY_CONTRACT_PASS",
+      "joint_verdict": "evidence/correctness/cpu-quant-mtp-c5-required/joint-verdict.md"
     },
     {
       "id": 14,
@@ -660,7 +674,8 @@
         "gf7a8ea4874da3508"
       ],
       "semantic_family": "Qwen3.5-2B-GGUF",
-      "status": "CONTRACT_EVIDENCE_COMPLETE_PROFILE_AGGREGATE_PENDING"
+      "status": "LIBRARY_CONTRACT_PASS",
+      "joint_verdict": "evidence/correctness/cpu-quant-mtp-c5-required/joint-verdict.md"
     },
     {
       "id": 15,
@@ -693,7 +708,8 @@
         "gf7a8ea4874da3508"
       ],
       "semantic_family": "Qwen3.5-2B-GGUF",
-      "status": "CONTRACT_EVIDENCE_COMPLETE_PROFILE_AGGREGATE_PENDING"
+      "status": "LIBRARY_CONTRACT_PASS",
+      "joint_verdict": "evidence/correctness/cpu-quant-mtp-c5-required/joint-verdict.md"
     },
     {
       "id": 16,
@@ -730,7 +746,8 @@
         "gf7a8ea4874da3508"
       ],
       "semantic_family": "Qwen3.5-2B-GGUF",
-      "status": "CONTRACT_EVIDENCE_COMPLETE_PROFILE_AGGREGATE_PENDING"
+      "status": "LIBRARY_CONTRACT_PASS",
+      "joint_verdict": "evidence/correctness/cpu-quant-mtp-c5-required/joint-verdict.md"
     },
     {
       "id": 17,
@@ -768,7 +785,8 @@
         "gf7a8ea4874da3508"
       ],
       "semantic_family": "Qwen3.5-2B-GGUF",
-      "status": "CONTRACT_EVIDENCE_COMPLETE_PROFILE_AGGREGATE_PENDING"
+      "status": "LIBRARY_CONTRACT_PASS",
+      "joint_verdict": "evidence/correctness/cpu-quant-mtp-c5-required/joint-verdict.md"
     },
     {
       "id": 18,
@@ -804,7 +822,8 @@
         "gf7a8ea4874da3508"
       ],
       "semantic_family": "Qwen3.5-2B-GGUF",
-      "status": "CONTRACT_EVIDENCE_COMPLETE_PROFILE_AGGREGATE_PENDING"
+      "status": "LIBRARY_CONTRACT_PASS",
+      "joint_verdict": "evidence/correctness/cpu-quant-mtp-c5-required/joint-verdict.md"
     },
     {
       "id": 19,
@@ -838,7 +857,8 @@
         "gf7a8ea4874da3508"
       ],
       "semantic_family": "Qwen3.5-2B-GGUF",
-      "status": "CONTRACT_EVIDENCE_COMPLETE_PROFILE_AGGREGATE_PENDING"
+      "status": "LIBRARY_CONTRACT_PASS",
+      "joint_verdict": "evidence/correctness/cpu-quant-mtp-c5-required/joint-verdict.md"
     },
     {
       "id": 20,
@@ -867,7 +887,8 @@
         "gf7a8ea4874da3508"
       ],
       "semantic_family": "Qwen3.5-2B-GGUF",
-      "status": "CONTRACT_EVIDENCE_COMPLETE_PROFILE_AGGREGATE_PENDING"
+      "status": "LIBRARY_CONTRACT_PASS",
+      "joint_verdict": "evidence/correctness/cpu-quant-mtp-c5-required/joint-verdict.md"
     },
     {
       "id": 21,
@@ -897,7 +918,8 @@
         "gf7a8ea4874da3508"
       ],
       "semantic_family": "Qwen3.5-2B-GGUF",
-      "status": "CONTRACT_EVIDENCE_COMPLETE_PROFILE_AGGREGATE_PENDING"
+      "status": "LIBRARY_CONTRACT_PASS",
+      "joint_verdict": "evidence/correctness/cpu-quant-mtp-c5-required/joint-verdict.md"
     },
     {
       "id": 22,
@@ -926,7 +948,8 @@
         "gf7a8ea4874da3508"
       ],
       "semantic_family": "Qwen3.8-27B-GGUF",
-      "status": "CONTRACT_EVIDENCE_COMPLETE_PROFILE_AGGREGATE_PENDING"
+      "status": "LIBRARY_CONTRACT_PASS",
+      "joint_verdict": "evidence/correctness/cpu-quant-mtp-c5-required/joint-verdict.md"
     },
     {
       "id": 23,
@@ -957,7 +980,8 @@
         "gf7a8ea4874da3508"
       ],
       "semantic_family": "Qwen3.8-27B-GGUF",
-      "status": "CONTRACT_EVIDENCE_COMPLETE_PROFILE_AGGREGATE_PENDING"
+      "status": "LIBRARY_CONTRACT_PASS",
+      "joint_verdict": "evidence/correctness/cpu-quant-mtp-c5-required/joint-verdict.md"
     },
     {
       "id": 24,
@@ -987,7 +1011,8 @@
         "gf7a8ea4874da3508"
       ],
       "semantic_family": "Qwen3.8-27B-GGUF",
-      "status": "CONTRACT_EVIDENCE_COMPLETE_PROFILE_AGGREGATE_PENDING"
+      "status": "LIBRARY_CONTRACT_PASS",
+      "joint_verdict": "evidence/correctness/cpu-quant-mtp-c5-required/joint-verdict.md"
     },
     {
       "id": 25,
@@ -1016,7 +1041,8 @@
         "gf7a8ea4874da3508"
       ],
       "semantic_family": "Qwen3.8-27B-GGUF",
-      "status": "CONTRACT_EVIDENCE_COMPLETE_PROFILE_AGGREGATE_PENDING"
+      "status": "LIBRARY_CONTRACT_PASS",
+      "joint_verdict": "evidence/correctness/cpu-quant-mtp-c5-required/joint-verdict.md"
     },
     {
       "id": 26,
@@ -1074,7 +1100,8 @@
         "gf7a8ea4874da3508"
       ],
       "semantic_family": "Qwen3.8-27B-GGUF",
-      "status": "CONTRACT_EVIDENCE_COMPLETE_PROFILE_AGGREGATE_PENDING"
+      "status": "LIBRARY_CONTRACT_PASS",
+      "joint_verdict": "evidence/correctness/cpu-quant-mtp-c5-required/joint-verdict.md"
     },
     {
       "id": 27,
@@ -1133,7 +1160,8 @@
         "gf7a8ea4874da3508"
       ],
       "semantic_family": "Qwen3.8-27B-GGUF",
-      "status": "CONTRACT_EVIDENCE_COMPLETE_PROFILE_AGGREGATE_PENDING"
+      "status": "LIBRARY_CONTRACT_PASS",
+      "joint_verdict": "evidence/correctness/cpu-quant-mtp-c5-required/joint-verdict.md"
     },
     {
       "id": 28,
@@ -1204,7 +1232,8 @@
         "gf7a8ea4874da3508"
       ],
       "semantic_family": "Qwen3.8-27B-GGUF",
-      "status": "CONTRACT_EVIDENCE_COMPLETE_PROFILE_AGGREGATE_PENDING"
+      "status": "LIBRARY_CONTRACT_PASS",
+      "joint_verdict": "evidence/correctness/cpu-quant-mtp-c5-required/joint-verdict.md"
     },
     {
       "id": 29,
@@ -1266,7 +1295,8 @@
         "gf7a8ea4874da3508"
       ],
       "semantic_family": "Qwen3.8-27B-GGUF",
-      "status": "CONTRACT_EVIDENCE_COMPLETE_PROFILE_AGGREGATE_PENDING"
+      "status": "LIBRARY_CONTRACT_PASS",
+      "joint_verdict": "evidence/correctness/cpu-quant-mtp-c5-required/joint-verdict.md"
     },
     {
       "id": 30,
@@ -1335,7 +1365,8 @@
         "gf7a8ea4874da3508"
       ],
       "semantic_family": "Qwen3.8-27B-GGUF",
-      "status": "CONTRACT_EVIDENCE_COMPLETE_PROFILE_AGGREGATE_PENDING"
+      "status": "LIBRARY_CONTRACT_PASS",
+      "joint_verdict": "evidence/correctness/cpu-quant-mtp-c5-required/joint-verdict.md"
     },
     {
       "id": 31,
@@ -1412,7 +1443,8 @@
         "gf7a8ea4874da3508"
       ],
       "semantic_family": "Qwen3.8-27B-GGUF",
-      "status": "CONTRACT_EVIDENCE_COMPLETE_PROFILE_AGGREGATE_PENDING"
+      "status": "LIBRARY_CONTRACT_PASS",
+      "joint_verdict": "evidence/correctness/cpu-quant-mtp-c5-required/joint-verdict.md"
     },
     {
       "id": 32,
@@ -1475,7 +1507,8 @@
         "gf7a8ea4874da3508"
       ],
       "semantic_family": "Qwen3.8-27B-GGUF",
-      "status": "CONTRACT_EVIDENCE_COMPLETE_PROFILE_AGGREGATE_PENDING"
+      "status": "LIBRARY_CONTRACT_PASS",
+      "joint_verdict": "evidence/correctness/cpu-quant-mtp-c5-required/joint-verdict.md"
     },
     {
       "id": 33,
@@ -1552,7 +1585,8 @@
         "gf7a8ea4874da3508"
       ],
       "semantic_family": "Qwen3.8-27B-GGUF",
-      "status": "CONTRACT_EVIDENCE_COMPLETE_PROFILE_AGGREGATE_PENDING"
+      "status": "LIBRARY_CONTRACT_PASS",
+      "joint_verdict": "evidence/correctness/cpu-quant-mtp-c5-required/joint-verdict.md"
     },
     {
       "id": 34,
@@ -1620,7 +1654,8 @@
         "gf7a8ea4874da3508"
       ],
       "semantic_family": "Qwen3.8-27B-GGUF",
-      "status": "CONTRACT_EVIDENCE_COMPLETE_PROFILE_AGGREGATE_PENDING"
+      "status": "LIBRARY_CONTRACT_PASS",
+      "joint_verdict": "evidence/correctness/cpu-quant-mtp-c5-required/joint-verdict.md"
     },
     {
       "id": 35,
@@ -1675,7 +1710,8 @@
         "gf7a8ea4874da3508"
       ],
       "semantic_family": "Qwen3.8-27B-GGUF",
-      "status": "CONTRACT_EVIDENCE_COMPLETE_PROFILE_AGGREGATE_PENDING"
+      "status": "LIBRARY_CONTRACT_PASS",
+      "joint_verdict": "evidence/correctness/cpu-quant-mtp-c5-required/joint-verdict.md"
     },
     {
       "id": 36,
@@ -1734,7 +1770,8 @@
         "gf7a8ea4874da3508"
       ],
       "semantic_family": "Qwen3.8-27B-GGUF",
-      "status": "CONTRACT_EVIDENCE_COMPLETE_PROFILE_AGGREGATE_PENDING"
+      "status": "LIBRARY_CONTRACT_PASS",
+      "joint_verdict": "evidence/correctness/cpu-quant-mtp-c5-required/joint-verdict.md"
     },
     {
       "id": 37,
@@ -1790,7 +1827,8 @@
         "gf7a8ea4874da3508"
       ],
       "semantic_family": "Qwen3.8-27B-GGUF",
-      "status": "CONTRACT_EVIDENCE_COMPLETE_PROFILE_AGGREGATE_PENDING"
+      "status": "LIBRARY_CONTRACT_PASS",
+      "joint_verdict": "evidence/correctness/cpu-quant-mtp-c5-required/joint-verdict.md"
     },
     {
       "id": 38,
@@ -1838,7 +1876,8 @@
         "gf7a8ea4874da3508"
       ],
       "semantic_family": "Qwen3.8-27B-GGUF",
-      "status": "CONTRACT_EVIDENCE_COMPLETE_PROFILE_AGGREGATE_PENDING"
+      "status": "LIBRARY_CONTRACT_PASS",
+      "joint_verdict": "evidence/correctness/cpu-quant-mtp-c5-required/joint-verdict.md"
     },
     {
       "id": 39,
@@ -1890,7 +1929,8 @@
         "gf7a8ea4874da3508"
       ],
       "semantic_family": "Qwen3.8-27B-GGUF",
-      "status": "CONTRACT_EVIDENCE_COMPLETE_PROFILE_AGGREGATE_PENDING"
+      "status": "LIBRARY_CONTRACT_PASS",
+      "joint_verdict": "evidence/correctness/cpu-quant-mtp-c5-required/joint-verdict.md"
     },
     {
       "id": 40,
@@ -1939,7 +1979,8 @@
         "gf7a8ea4874da3508"
       ],
       "semantic_family": "Qwen3.8-27B-GGUF",
-      "status": "CONTRACT_EVIDENCE_COMPLETE_PROFILE_AGGREGATE_PENDING"
+      "status": "LIBRARY_CONTRACT_PASS",
+      "joint_verdict": "evidence/correctness/cpu-quant-mtp-c5-required/joint-verdict.md"
     },
     {
       "id": 41,
@@ -1986,7 +2027,8 @@
         "gf7a8ea4874da3508"
       ],
       "semantic_family": "Qwen3.8-27B-GGUF",
-      "status": "CONTRACT_EVIDENCE_COMPLETE_PROFILE_AGGREGATE_PENDING"
+      "status": "LIBRARY_CONTRACT_PASS",
+      "joint_verdict": "evidence/correctness/cpu-quant-mtp-c5-required/joint-verdict.md"
     },
     {
       "id": 42,
@@ -2031,7 +2073,8 @@
         "gf7a8ea4874da3508"
       ],
       "semantic_family": "Qwen3.8-27B-GGUF",
-      "status": "CONTRACT_EVIDENCE_COMPLETE_PROFILE_AGGREGATE_PENDING"
+      "status": "LIBRARY_CONTRACT_PASS",
+      "joint_verdict": "evidence/correctness/cpu-quant-mtp-c5-required/joint-verdict.md"
     },
     {
       "id": 43,
@@ -2077,7 +2120,8 @@
         "gf7a8ea4874da3508"
       ],
       "semantic_family": "Qwen3.8-27B-GGUF",
-      "status": "CONTRACT_EVIDENCE_COMPLETE_PROFILE_AGGREGATE_PENDING"
+      "status": "LIBRARY_CONTRACT_PASS",
+      "joint_verdict": "evidence/correctness/cpu-quant-mtp-c5-required/joint-verdict.md"
     },
     {
       "id": 44,
@@ -2121,7 +2165,8 @@
         "gf7a8ea4874da3508"
       ],
       "semantic_family": "Qwen3.8-27B-GGUF",
-      "status": "CONTRACT_EVIDENCE_COMPLETE_PROFILE_AGGREGATE_PENDING"
+      "status": "LIBRARY_CONTRACT_PASS",
+      "joint_verdict": "evidence/correctness/cpu-quant-mtp-c5-required/joint-verdict.md"
     },
     {
       "id": 45,
@@ -2163,7 +2208,8 @@
         "gf7a8ea4874da3508"
       ],
       "semantic_family": "Qwen3.8-27B-GGUF",
-      "status": "CONTRACT_EVIDENCE_COMPLETE_PROFILE_AGGREGATE_PENDING"
+      "status": "LIBRARY_CONTRACT_PASS",
+      "joint_verdict": "evidence/correctness/cpu-quant-mtp-c5-required/joint-verdict.md"
     },
     {
       "id": 46,
@@ -2192,7 +2238,8 @@
         "gf7a8ea4874da3508"
       ],
       "semantic_family": "Qwen3.8-27B-GGUF",
-      "status": "CONTRACT_EVIDENCE_COMPLETE_PROFILE_AGGREGATE_PENDING"
+      "status": "LIBRARY_CONTRACT_PASS",
+      "joint_verdict": "evidence/correctness/cpu-quant-mtp-c5-required/joint-verdict.md"
     },
     {
       "id": 47,
@@ -2223,7 +2270,8 @@
         "gf7a8ea4874da3508"
       ],
       "semantic_family": "Qwen3.8-2.4T-A95B-GGUF",
-      "status": "CONTRACT_EVIDENCE_COMPLETE_PROFILE_AGGREGATE_PENDING"
+      "status": "LIBRARY_CONTRACT_PASS",
+      "joint_verdict": "evidence/correctness/cpu-quant-mtp-c5-required/joint-verdict.md"
     },
     {
       "id": 48,
@@ -2254,7 +2302,8 @@
         "gf7a8ea4874da3508"
       ],
       "semantic_family": "Qwen3.8-2.4T-A95B-GGUF",
-      "status": "CONTRACT_EVIDENCE_COMPLETE_PROFILE_AGGREGATE_PENDING"
+      "status": "LIBRARY_CONTRACT_PASS",
+      "joint_verdict": "evidence/correctness/cpu-quant-mtp-c5-required/joint-verdict.md"
     },
     {
       "id": 49,
@@ -2288,7 +2337,8 @@
         "gf7a8ea4874da3508"
       ],
       "semantic_family": "Qwen3.8-2.4T-A95B-GGUF",
-      "status": "CONTRACT_EVIDENCE_COMPLETE_PROFILE_AGGREGATE_PENDING"
+      "status": "LIBRARY_CONTRACT_PASS",
+      "joint_verdict": "evidence/correctness/cpu-quant-mtp-c5-required/joint-verdict.md"
     },
     {
       "id": 50,
@@ -2322,7 +2372,8 @@
         "gf7a8ea4874da3508"
       ],
       "semantic_family": "Qwen3.8-2.4T-A95B-GGUF",
-      "status": "CONTRACT_EVIDENCE_COMPLETE_PROFILE_AGGREGATE_PENDING"
+      "status": "LIBRARY_CONTRACT_PASS",
+      "joint_verdict": "evidence/correctness/cpu-quant-mtp-c5-required/joint-verdict.md"
     },
     {
       "id": 51,
@@ -2356,7 +2407,8 @@
         "gf7a8ea4874da3508"
       ],
       "semantic_family": "Qwen3.8-2.4T-A95B-GGUF",
-      "status": "CONTRACT_EVIDENCE_COMPLETE_PROFILE_AGGREGATE_PENDING"
+      "status": "LIBRARY_CONTRACT_PASS",
+      "joint_verdict": "evidence/correctness/cpu-quant-mtp-c5-required/joint-verdict.md"
     },
     {
       "id": 52,
@@ -2390,7 +2442,8 @@
         "gf7a8ea4874da3508"
       ],
       "semantic_family": "Qwen3.8-2.4T-A95B-GGUF",
-      "status": "CONTRACT_EVIDENCE_COMPLETE_PROFILE_AGGREGATE_PENDING"
+      "status": "LIBRARY_CONTRACT_PASS",
+      "joint_verdict": "evidence/correctness/cpu-quant-mtp-c5-required/joint-verdict.md"
     },
     {
       "id": 53,
@@ -2424,7 +2477,8 @@
         "gf7a8ea4874da3508"
       ],
       "semantic_family": "Qwen3.8-2.4T-A95B-GGUF",
-      "status": "CONTRACT_EVIDENCE_COMPLETE_PROFILE_AGGREGATE_PENDING"
+      "status": "LIBRARY_CONTRACT_PASS",
+      "joint_verdict": "evidence/correctness/cpu-quant-mtp-c5-required/joint-verdict.md"
     },
     {
       "id": 54,
@@ -2458,7 +2512,8 @@
         "gf7a8ea4874da3508"
       ],
       "semantic_family": "Qwen3.8-2.4T-A95B-GGUF",
-      "status": "CONTRACT_EVIDENCE_COMPLETE_PROFILE_AGGREGATE_PENDING"
+      "status": "LIBRARY_CONTRACT_PASS",
+      "joint_verdict": "evidence/correctness/cpu-quant-mtp-c5-required/joint-verdict.md"
     },
     {
       "id": 55,
@@ -2492,7 +2547,8 @@
         "gf7a8ea4874da3508"
       ],
       "semantic_family": "Qwen3.8-2.4T-A95B-GGUF",
-      "status": "CONTRACT_EVIDENCE_COMPLETE_PROFILE_AGGREGATE_PENDING"
+      "status": "LIBRARY_CONTRACT_PASS",
+      "joint_verdict": "evidence/correctness/cpu-quant-mtp-c5-required/joint-verdict.md"
     },
     {
       "id": 56,
@@ -2537,7 +2593,8 @@
         "gd57295091e4ad903"
       ],
       "semantic_family": "Kimi-K3-GGUF",
-      "status": "CONTRACT_EVIDENCE_COMPLETE_PROFILE_AGGREGATE_PENDING"
+      "status": "LIBRARY_CONTRACT_PASS",
+      "joint_verdict": "evidence/correctness/cpu-quant-mtp-c5-required/joint-verdict.md"
     },
     {
       "id": 57,
@@ -2582,7 +2639,8 @@
         "gd57295091e4ad903"
       ],
       "semantic_family": "Kimi-K3-GGUF",
-      "status": "CONTRACT_EVIDENCE_COMPLETE_PROFILE_AGGREGATE_PENDING"
+      "status": "LIBRARY_CONTRACT_PASS",
+      "joint_verdict": "evidence/correctness/cpu-quant-mtp-c5-required/joint-verdict.md"
     },
     {
       "id": 58,
@@ -2627,7 +2685,8 @@
         "gd57295091e4ad903"
       ],
       "semantic_family": "Kimi-K3-GGUF",
-      "status": "CONTRACT_EVIDENCE_COMPLETE_PROFILE_AGGREGATE_PENDING"
+      "status": "LIBRARY_CONTRACT_PASS",
+      "joint_verdict": "evidence/correctness/cpu-quant-mtp-c5-required/joint-verdict.md"
     },
     {
       "id": 59,
@@ -2670,7 +2729,8 @@
         "gd57295091e4ad903"
       ],
       "semantic_family": "Kimi-K3-GGUF",
-      "status": "CONTRACT_EVIDENCE_COMPLETE_PROFILE_AGGREGATE_PENDING"
+      "status": "LIBRARY_CONTRACT_PASS",
+      "joint_verdict": "evidence/correctness/cpu-quant-mtp-c5-required/joint-verdict.md"
     },
     {
       "id": 60,
@@ -2715,7 +2775,8 @@
         "gd57295091e4ad903"
       ],
       "semantic_family": "Kimi-K3-GGUF",
-      "status": "CONTRACT_EVIDENCE_COMPLETE_PROFILE_AGGREGATE_PENDING"
+      "status": "LIBRARY_CONTRACT_PASS",
+      "joint_verdict": "evidence/correctness/cpu-quant-mtp-c5-required/joint-verdict.md"
     },
     {
       "id": 61,
@@ -2758,7 +2819,8 @@
         "gd57295091e4ad903"
       ],
       "semantic_family": "Kimi-K3-GGUF",
-      "status": "CONTRACT_EVIDENCE_COMPLETE_PROFILE_AGGREGATE_PENDING"
+      "status": "LIBRARY_CONTRACT_PASS",
+      "joint_verdict": "evidence/correctness/cpu-quant-mtp-c5-required/joint-verdict.md"
     },
     {
       "id": 62,
@@ -2801,7 +2863,8 @@
         "gd197458cabf1df53"
       ],
       "semantic_family": "Kimi-K3-GGUF",
-      "status": "CONTRACT_EVIDENCE_COMPLETE_PROFILE_AGGREGATE_PENDING"
+      "status": "LIBRARY_CONTRACT_PASS",
+      "joint_verdict": "evidence/correctness/cpu-quant-mtp-c5-required/joint-verdict.md"
     },
     {
       "id": 63,
@@ -2844,7 +2907,8 @@
         "gd57295091e4ad903"
       ],
       "semantic_family": "Kimi-K3-GGUF",
-      "status": "CONTRACT_EVIDENCE_COMPLETE_PROFILE_AGGREGATE_PENDING"
+      "status": "LIBRARY_CONTRACT_PASS",
+      "joint_verdict": "evidence/correctness/cpu-quant-mtp-c5-required/joint-verdict.md"
     },
     {
       "id": 64,
@@ -2887,7 +2951,8 @@
         "gd57295091e4ad903"
       ],
       "semantic_family": "Kimi-K3-GGUF",
-      "status": "CONTRACT_EVIDENCE_COMPLETE_PROFILE_AGGREGATE_PENDING"
+      "status": "LIBRARY_CONTRACT_PASS",
+      "joint_verdict": "evidence/correctness/cpu-quant-mtp-c5-required/joint-verdict.md"
     },
     {
       "id": 65,
@@ -2923,7 +2988,8 @@
         "gf7a8ea4874da3508"
       ],
       "semantic_family": "GLM-5.3-GGUF",
-      "status": "CONTRACT_EVIDENCE_COMPLETE_PROFILE_AGGREGATE_PENDING"
+      "status": "LIBRARY_CONTRACT_PASS",
+      "joint_verdict": "evidence/correctness/cpu-quant-mtp-c5-required/joint-verdict.md"
     },
     {
       "id": 66,
@@ -2959,7 +3025,8 @@
         "gf7a8ea4874da3508"
       ],
       "semantic_family": "GLM-5.3-GGUF",
-      "status": "CONTRACT_EVIDENCE_COMPLETE_PROFILE_AGGREGATE_PENDING"
+      "status": "LIBRARY_CONTRACT_PASS",
+      "joint_verdict": "evidence/correctness/cpu-quant-mtp-c5-required/joint-verdict.md"
     },
     {
       "id": 67,
@@ -3002,7 +3069,8 @@
         "gf7a8ea4874da3508"
       ],
       "semantic_family": "GLM-5.3-GGUF",
-      "status": "CONTRACT_EVIDENCE_COMPLETE_PROFILE_AGGREGATE_PENDING"
+      "status": "LIBRARY_CONTRACT_PASS",
+      "joint_verdict": "evidence/correctness/cpu-quant-mtp-c5-required/joint-verdict.md"
     },
     {
       "id": 68,
@@ -3045,7 +3113,8 @@
         "gf7a8ea4874da3508"
       ],
       "semantic_family": "GLM-5.3-GGUF",
-      "status": "CONTRACT_EVIDENCE_COMPLETE_PROFILE_AGGREGATE_PENDING"
+      "status": "LIBRARY_CONTRACT_PASS",
+      "joint_verdict": "evidence/correctness/cpu-quant-mtp-c5-required/joint-verdict.md"
     },
     {
       "id": 69,
@@ -3088,7 +3157,8 @@
         "gf7a8ea4874da3508"
       ],
       "semantic_family": "GLM-5.3-GGUF",
-      "status": "CONTRACT_EVIDENCE_COMPLETE_PROFILE_AGGREGATE_PENDING"
+      "status": "LIBRARY_CONTRACT_PASS",
+      "joint_verdict": "evidence/correctness/cpu-quant-mtp-c5-required/joint-verdict.md"
     },
     {
       "id": 70,
@@ -3131,7 +3201,8 @@
         "gf7a8ea4874da3508"
       ],
       "semantic_family": "GLM-5.3-GGUF",
-      "status": "CONTRACT_EVIDENCE_COMPLETE_PROFILE_AGGREGATE_PENDING"
+      "status": "LIBRARY_CONTRACT_PASS",
+      "joint_verdict": "evidence/correctness/cpu-quant-mtp-c5-required/joint-verdict.md"
     },
     {
       "id": 71,
@@ -3171,7 +3242,8 @@
         "gf7a8ea4874da3508"
       ],
       "semantic_family": "GLM-5.3-GGUF",
-      "status": "CONTRACT_EVIDENCE_COMPLETE_PROFILE_AGGREGATE_PENDING"
+      "status": "LIBRARY_CONTRACT_PASS",
+      "joint_verdict": "evidence/correctness/cpu-quant-mtp-c5-required/joint-verdict.md"
     },
     {
       "id": 72,
@@ -3214,7 +3286,8 @@
         "gf7a8ea4874da3508"
       ],
       "semantic_family": "GLM-5.3-GGUF",
-      "status": "CONTRACT_EVIDENCE_COMPLETE_PROFILE_AGGREGATE_PENDING"
+      "status": "LIBRARY_CONTRACT_PASS",
+      "joint_verdict": "evidence/correctness/cpu-quant-mtp-c5-required/joint-verdict.md"
     },
     {
       "id": 73,
@@ -3254,7 +3327,8 @@
         "gf7a8ea4874da3508"
       ],
       "semantic_family": "GLM-5.3-GGUF",
-      "status": "CONTRACT_EVIDENCE_COMPLETE_PROFILE_AGGREGATE_PENDING"
+      "status": "LIBRARY_CONTRACT_PASS",
+      "joint_verdict": "evidence/correctness/cpu-quant-mtp-c5-required/joint-verdict.md"
     },
     {
       "id": 74,
@@ -3291,7 +3365,8 @@
         "gf7a8ea4874da3508"
       ],
       "semantic_family": "GLM-5.3-GGUF",
-      "status": "CONTRACT_EVIDENCE_COMPLETE_PROFILE_AGGREGATE_PENDING"
+      "status": "LIBRARY_CONTRACT_PASS",
+      "joint_verdict": "evidence/correctness/cpu-quant-mtp-c5-required/joint-verdict.md"
     },
     {
       "id": 75,
@@ -3328,7 +3403,8 @@
         "gf7a8ea4874da3508"
       ],
       "semantic_family": "GLM-5.3-GGUF",
-      "status": "CONTRACT_EVIDENCE_COMPLETE_PROFILE_AGGREGATE_PENDING"
+      "status": "LIBRARY_CONTRACT_PASS",
+      "joint_verdict": "evidence/correctness/cpu-quant-mtp-c5-required/joint-verdict.md"
     },
     {
       "id": 76,
@@ -3364,7 +3440,8 @@
         "gf7a8ea4874da3508"
       ],
       "semantic_family": "GLM-5.3-GGUF",
-      "status": "CONTRACT_EVIDENCE_COMPLETE_PROFILE_AGGREGATE_PENDING"
+      "status": "LIBRARY_CONTRACT_PASS",
+      "joint_verdict": "evidence/correctness/cpu-quant-mtp-c5-required/joint-verdict.md"
     },
     {
       "id": 77,
@@ -3411,7 +3488,8 @@
         "gde6f2b3637242ea4"
       ],
       "semantic_family": "GLM-5.3-Flash-GGUF",
-      "status": "CONTRACT_EVIDENCE_COMPLETE_PROFILE_AGGREGATE_PENDING"
+      "status": "LIBRARY_CONTRACT_PASS",
+      "joint_verdict": "evidence/correctness/cpu-quant-mtp-c5-required/joint-verdict.md"
     },
     {
       "id": 78,
@@ -3458,7 +3536,8 @@
         "gde6f2b3637242ea4"
       ],
       "semantic_family": "GLM-5.3-Flash-GGUF",
-      "status": "CONTRACT_EVIDENCE_COMPLETE_PROFILE_AGGREGATE_PENDING"
+      "status": "LIBRARY_CONTRACT_PASS",
+      "joint_verdict": "evidence/correctness/cpu-quant-mtp-c5-required/joint-verdict.md"
     },
     {
       "id": 79,
@@ -3514,7 +3593,8 @@
         "gde6f2b3637242ea4"
       ],
       "semantic_family": "GLM-5.3-Flash-GGUF",
-      "status": "CONTRACT_EVIDENCE_COMPLETE_PROFILE_AGGREGATE_PENDING"
+      "status": "LIBRARY_CONTRACT_PASS",
+      "joint_verdict": "evidence/correctness/cpu-quant-mtp-c5-required/joint-verdict.md"
     },
     {
       "id": 80,
@@ -3570,7 +3650,8 @@
         "gde6f2b3637242ea4"
       ],
       "semantic_family": "GLM-5.3-Flash-GGUF",
-      "status": "CONTRACT_EVIDENCE_COMPLETE_PROFILE_AGGREGATE_PENDING"
+      "status": "LIBRARY_CONTRACT_PASS",
+      "joint_verdict": "evidence/correctness/cpu-quant-mtp-c5-required/joint-verdict.md"
     },
     {
       "id": 81,
@@ -3626,7 +3707,8 @@
         "gde6f2b3637242ea4"
       ],
       "semantic_family": "GLM-5.3-Flash-GGUF",
-      "status": "CONTRACT_EVIDENCE_COMPLETE_PROFILE_AGGREGATE_PENDING"
+      "status": "LIBRARY_CONTRACT_PASS",
+      "joint_verdict": "evidence/correctness/cpu-quant-mtp-c5-required/joint-verdict.md"
     },
     {
       "id": 82,
@@ -3682,7 +3764,8 @@
         "gde6f2b3637242ea4"
       ],
       "semantic_family": "GLM-5.3-Flash-GGUF",
-      "status": "CONTRACT_EVIDENCE_COMPLETE_PROFILE_AGGREGATE_PENDING"
+      "status": "LIBRARY_CONTRACT_PASS",
+      "joint_verdict": "evidence/correctness/cpu-quant-mtp-c5-required/joint-verdict.md"
     },
     {
       "id": 83,
@@ -3733,7 +3816,8 @@
         "gde6f2b3637242ea4"
       ],
       "semantic_family": "GLM-5.3-Flash-GGUF",
-      "status": "CONTRACT_EVIDENCE_COMPLETE_PROFILE_AGGREGATE_PENDING"
+      "status": "LIBRARY_CONTRACT_PASS",
+      "joint_verdict": "evidence/correctness/cpu-quant-mtp-c5-required/joint-verdict.md"
     },
     {
       "id": 84,
@@ -3790,7 +3874,8 @@
         "gde6f2b3637242ea4"
       ],
       "semantic_family": "GLM-5.3-Flash-GGUF",
-      "status": "CONTRACT_EVIDENCE_COMPLETE_PROFILE_AGGREGATE_PENDING"
+      "status": "LIBRARY_CONTRACT_PASS",
+      "joint_verdict": "evidence/correctness/cpu-quant-mtp-c5-required/joint-verdict.md"
     },
     {
       "id": 85,
@@ -3841,7 +3926,8 @@
         "gde6f2b3637242ea4"
       ],
       "semantic_family": "GLM-5.3-Flash-GGUF",
-      "status": "CONTRACT_EVIDENCE_COMPLETE_PROFILE_AGGREGATE_PENDING"
+      "status": "LIBRARY_CONTRACT_PASS",
+      "joint_verdict": "evidence/correctness/cpu-quant-mtp-c5-required/joint-verdict.md"
     },
     {
       "id": 86,
@@ -3890,7 +3976,8 @@
         "gde6f2b3637242ea4"
       ],
       "semantic_family": "GLM-5.3-Flash-GGUF",
-      "status": "CONTRACT_EVIDENCE_COMPLETE_PROFILE_AGGREGATE_PENDING"
+      "status": "LIBRARY_CONTRACT_PASS",
+      "joint_verdict": "evidence/correctness/cpu-quant-mtp-c5-required/joint-verdict.md"
     },
     {
       "id": 87,
@@ -3939,7 +4026,8 @@
         "gde6f2b3637242ea4"
       ],
       "semantic_family": "GLM-5.3-Flash-GGUF",
-      "status": "CONTRACT_EVIDENCE_COMPLETE_PROFILE_AGGREGATE_PENDING"
+      "status": "LIBRARY_CONTRACT_PASS",
+      "joint_verdict": "evidence/correctness/cpu-quant-mtp-c5-required/joint-verdict.md"
     },
     {
       "id": 88,
@@ -3987,7 +4075,8 @@
         "gde6f2b3637242ea4"
       ],
       "semantic_family": "GLM-5.3-Flash-GGUF",
-      "status": "CONTRACT_EVIDENCE_COMPLETE_PROFILE_AGGREGATE_PENDING"
+      "status": "LIBRARY_CONTRACT_PASS",
+      "joint_verdict": "evidence/correctness/cpu-quant-mtp-c5-required/joint-verdict.md"
     },
     {
       "id": 89,
@@ -4031,7 +4120,8 @@
         "ge7e2005b88a3235e"
       ],
       "semantic_family": "DeepSeek-V4-Pro-0813-GGUF",
-      "status": "CONTRACT_EVIDENCE_COMPLETE_PROFILE_AGGREGATE_PENDING"
+      "status": "LIBRARY_CONTRACT_PASS",
+      "joint_verdict": "evidence/correctness/cpu-quant-mtp-c5-required/joint-verdict.md"
     },
     {
       "id": 90,
@@ -4075,7 +4165,8 @@
         "ge7e2005b88a3235e"
       ],
       "semantic_family": "DeepSeek-V4-Pro-0813-GGUF",
-      "status": "CONTRACT_EVIDENCE_COMPLETE_PROFILE_AGGREGATE_PENDING"
+      "status": "LIBRARY_CONTRACT_PASS",
+      "joint_verdict": "evidence/correctness/cpu-quant-mtp-c5-required/joint-verdict.md"
     },
     {
       "id": 91,
@@ -4125,7 +4216,8 @@
         "gf7a8ea4874da3508"
       ],
       "semantic_family": "DeepSeek-V4-Flash-0731-GGUF",
-      "status": "CONTRACT_EVIDENCE_COMPLETE_PROFILE_AGGREGATE_PENDING"
+      "status": "LIBRARY_CONTRACT_PASS",
+      "joint_verdict": "evidence/correctness/cpu-quant-mtp-c5-required/joint-verdict.md"
     },
     {
       "id": 92,
@@ -4175,7 +4267,8 @@
         "gf7a8ea4874da3508"
       ],
       "semantic_family": "DeepSeek-V4-Flash-0731-GGUF",
-      "status": "CONTRACT_EVIDENCE_COMPLETE_PROFILE_AGGREGATE_PENDING"
+      "status": "LIBRARY_CONTRACT_PASS",
+      "joint_verdict": "evidence/correctness/cpu-quant-mtp-c5-required/joint-verdict.md"
     },
     {
       "id": 93,
@@ -4225,7 +4318,8 @@
         "gf7a8ea4874da3508"
       ],
       "semantic_family": "DeepSeek-V4-Flash-0731-GGUF",
-      "status": "CONTRACT_EVIDENCE_COMPLETE_PROFILE_AGGREGATE_PENDING"
+      "status": "LIBRARY_CONTRACT_PASS",
+      "joint_verdict": "evidence/correctness/cpu-quant-mtp-c5-required/joint-verdict.md"
     },
     {
       "id": 94,
@@ -4275,7 +4369,8 @@
         "gf7a8ea4874da3508"
       ],
       "semantic_family": "DeepSeek-V4-Flash-0731-GGUF",
-      "status": "CONTRACT_EVIDENCE_COMPLETE_PROFILE_AGGREGATE_PENDING"
+      "status": "LIBRARY_CONTRACT_PASS",
+      "joint_verdict": "evidence/correctness/cpu-quant-mtp-c5-required/joint-verdict.md"
     },
     {
       "id": 95,
@@ -4323,7 +4418,8 @@
         "gf7a8ea4874da3508"
       ],
       "semantic_family": "DeepSeek-V4-Flash-0731-GGUF",
-      "status": "CONTRACT_EVIDENCE_COMPLETE_PROFILE_AGGREGATE_PENDING"
+      "status": "LIBRARY_CONTRACT_PASS",
+      "joint_verdict": "evidence/correctness/cpu-quant-mtp-c5-required/joint-verdict.md"
     },
     {
       "id": 96,
@@ -4373,7 +4469,8 @@
         "gf7a8ea4874da3508"
       ],
       "semantic_family": "DeepSeek-V4-Flash-0731-GGUF",
-      "status": "CONTRACT_EVIDENCE_COMPLETE_PROFILE_AGGREGATE_PENDING"
+      "status": "LIBRARY_CONTRACT_PASS",
+      "joint_verdict": "evidence/correctness/cpu-quant-mtp-c5-required/joint-verdict.md"
     },
     {
       "id": 97,
@@ -4418,7 +4515,8 @@
         "gf7a8ea4874da3508"
       ],
       "semantic_family": "DeepSeek-V4-Flash-0731-GGUF",
-      "status": "CONTRACT_EVIDENCE_COMPLETE_PROFILE_AGGREGATE_PENDING"
+      "status": "LIBRARY_CONTRACT_PASS",
+      "joint_verdict": "evidence/correctness/cpu-quant-mtp-c5-required/joint-verdict.md"
     },
     {
       "id": 98,
@@ -4463,7 +4561,8 @@
         "gf7a8ea4874da3508"
       ],
       "semantic_family": "DeepSeek-V4-Flash-0731-GGUF",
-      "status": "CONTRACT_EVIDENCE_COMPLETE_PROFILE_AGGREGATE_PENDING"
+      "status": "LIBRARY_CONTRACT_PASS",
+      "joint_verdict": "evidence/correctness/cpu-quant-mtp-c5-required/joint-verdict.md"
     },
     {
       "id": 99,
@@ -4513,7 +4612,8 @@
         "gf7a8ea4874da3508"
       ],
       "semantic_family": "DeepSeek-V4-Flash-0731-GGUF",
-      "status": "CONTRACT_EVIDENCE_COMPLETE_PROFILE_AGGREGATE_PENDING"
+      "status": "LIBRARY_CONTRACT_PASS",
+      "joint_verdict": "evidence/correctness/cpu-quant-mtp-c5-required/joint-verdict.md"
     },
     {
       "id": 100,
@@ -4558,7 +4658,8 @@
         "gf7a8ea4874da3508"
       ],
       "semantic_family": "DeepSeek-V4-Flash-0731-GGUF",
-      "status": "CONTRACT_EVIDENCE_COMPLETE_PROFILE_AGGREGATE_PENDING"
+      "status": "LIBRARY_CONTRACT_PASS",
+      "joint_verdict": "evidence/correctness/cpu-quant-mtp-c5-required/joint-verdict.md"
     },
     {
       "id": 101,
@@ -4603,7 +4704,8 @@
         "gf7a8ea4874da3508"
       ],
       "semantic_family": "DeepSeek-V4-Flash-0731-GGUF",
-      "status": "CONTRACT_EVIDENCE_COMPLETE_PROFILE_AGGREGATE_PENDING"
+      "status": "LIBRARY_CONTRACT_PASS",
+      "joint_verdict": "evidence/correctness/cpu-quant-mtp-c5-required/joint-verdict.md"
     },
     {
       "id": 102,
@@ -4647,7 +4749,8 @@
         "gf7a8ea4874da3508"
       ],
       "semantic_family": "DeepSeek-V4-Flash-0731-GGUF",
-      "status": "CONTRACT_EVIDENCE_COMPLETE_PROFILE_AGGREGATE_PENDING"
+      "status": "LIBRARY_CONTRACT_PASS",
+      "joint_verdict": "evidence/correctness/cpu-quant-mtp-c5-required/joint-verdict.md"
     },
     {
       "id": 103,
@@ -4690,7 +4793,8 @@
         "gf7a8ea4874da3508"
       ],
       "semantic_family": "DeepSeek-V4-Flash-0731-GGUF",
-      "status": "CONTRACT_EVIDENCE_COMPLETE_PROFILE_AGGREGATE_PENDING"
+      "status": "LIBRARY_CONTRACT_PASS",
+      "joint_verdict": "evidence/correctness/cpu-quant-mtp-c5-required/joint-verdict.md"
     }
   ],
   "separately_required": {
@@ -4768,10 +4872,12 @@
       }
     ]
   },
-  "overall": "INCONCLUSIVE_PENDING_FULL_SCOPE_AGGREGATION_AND_RED_TEAM",
+  "overall": "LIBRARY_CONTRACT_PASS",
   "limits": [
     "An exact typed-port PASS is not a104-full-model RUN_PASS claim.",
     "Full semantic regions and resource/delivery evidence must be tied to matching contracts, not merely test names.",
     "Existing GPU states/rejections/FAIL/P1 block remain unchanged."
-  ]
+  ],
+  "joint_verdict": "evidence/correctness/cpu-quant-mtp-c5-required/joint-verdict.md",
+  "model_run_claim": "Not asserted: coverage is exact typed contracts jointly qualified with matched full semantic/state programs."
 }

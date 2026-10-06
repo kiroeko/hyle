@@ -1,10 +1,11 @@
 # C2：ggml 固定升级、CPU 编译与软件资格
 
-<!-- MODULE REVIEW: CANDIDATE -->
+<!-- MODULE REVIEW: CLOSED -->
 
 ## 计划身份
 
-- 状态：AUDITED，绑定compute_ggml_runtime、compute_provider_native、compute_provider_ggml；
+- 状态：CLOSED，当前终审见[CPU扩覆盖终审](cpu-quant-mtp-coverage-terminal.md)；下方保留当时绑定与实施事实。
+  绑定compute_ggml_runtime、compute_provider_native、compute_provider_ggml；
   adapter只纳入升级后的软件身份，格式/算法仍待C3。原SCOPED审计交接，有限FIX如下。
 - baseline：`ac9bc40006e1caaa9e42b812f6e5a832e66ee034`；Windows实际HEAD核对，无用户产品修改，不回退。
 - owner范围：compute_ggml_runtime、compute_provider_native及ggml adapter的软件版本元数据。软件约束在Native私有默认规则完成，

@@ -1,10 +1,10 @@
 # C5：CPU 全批验收、文档与停止
 
-<!-- MODULE REVIEW: CANDIDATE -->
+<!-- MODULE REVIEW: CLOSED -->
 
 ## 计划身份
 
-- 状态：CANDIDATE，产品/API/普通消费形状已冻结；适用批次已有收据，最终聚合与红队尚未裁决。
+- 状态：CLOSED，本卡保留scope/audit/实施过程；当前准确资格、七门、限制与停止见[终审](cpu-quant-mtp-coverage-terminal.md)。
 - candidate：`c740abc74a5a62ffacf60b26798228ca484317df`；后续只含docs/evidence。
 - baseline：`400927ff7af0b150432b830ce47b3aa7ac5fd3c9`；SCOPED提交`39ea36847d679900537375eefb2b7ac9368e9002`。
   Windows实际HEAD与干净工作树已核对，保留C1–C4全部后续提交。

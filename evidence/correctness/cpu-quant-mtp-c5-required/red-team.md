@@ -25,5 +25,9 @@
 共同semantic/state程序、identity、生命周期与三交付联合证明，并给出每类所继承的准确合同。
 这些单独证据不能通过改名为整模型run来消除作用域差异。
 
-本遍只签上述有限技术反证，**整个scope/red-team聚合门目前仍INCONCLUSIVE**；
-完成资格账本与公开使用文档后再裁决CLOSED。未提出新kernel/依赖版本/P1或跨路线恢复。
+原本仅签上述有限技术反证，scope聚合未裁决。后续已按
+[联合合同裁决](joint-verdict.md)逐条件对齐全部对象：不同矩阵编码各自继承actual typed端口资格，
+semantic/state只按同族同实际几何/算法/边界精度复用，资源/三交付与software差异分别证明。
+全部104 GGUF和两官版/三sidecar/四非GGUF原范围保留；没有将范围改成104次整模型运行。
+这解决的是证明链作用域，未补造未运行PASS。scope/red-team在本CPU库合同范围通过，
+最终仍需状态协议/文档七门记录。未提出新kernel/依赖版本/P1或跨路线恢复。
