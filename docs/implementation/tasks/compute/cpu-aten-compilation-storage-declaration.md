@@ -1,6 +1,6 @@
 # CPU ATen：冷编译存储声明
 
-<!-- MODULE REVIEW: SCOPED -->
+<!-- MODULE REVIEW: AUDITED -->
 
 - owner `compute_provider_native`；baseline `e6a34210731f7d0e957f5470eab8e0a3988029c8`，Windows canonical。
 - trigger：[实际资源审计](../../../../evidence/correctness/cpu-resource-domain-audit/README.md)的严格
@@ -35,4 +35,7 @@
 | CP1 | Program仅Operation/描述/固定数组与span；prepare单次supplied allocate；destroy由同allocator释放，没有原Tensor/JIT | proposal额外resident/peak已知0、retained非零；失败与销毁源码；managed/unknown invocation不变 |
 | CP2 | 当前ordinary Graph因adapter unknown拒绝已接成熟域 | strict compilation Graph选ATen并实际正确完成；不足预算失败；其它政策不虚报；两平台普通三交付 |
 
-本卡SCOPED阶段不授权产品。固定cold执行闭包后进入AUDITED；模型数据和算子算法无需重设计。
+审计固定CP1–2，owner AUDITED。原Program、select/infer、prepare单次supplied allocate与值初始化、
+destroy闭包已核对，无native Tensor/JIT/packing或额外private scratch；诊断Status分配按既有quota
+合同排除，Context/Queue/driver控制与invocation另计。实际普通Graph baseline counterexample返回
+预期5（未绑定ATen），不是PASS或原库数学失败。实现不得改变数学、布局、typed lane或invocation。

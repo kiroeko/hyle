@@ -423,9 +423,9 @@
     },
     {
       "module": "compute_provider_native",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/cpu-aten-compilation-storage-declaration.md",
-      "summary": "CP SCOPED：ATen冷propose/prepare只用supplied allocator，未声明额外compilation private bounds造成严格预算假缺口；有限CP1–2，不改算法/API/执行，不启动自研比较。"
+      "summary": "CP AUDITED：cold闭包无native Tensor/JIT/packing，额外private resident/peak=0，Program/描述由supplied allocator计费；CP1–2冻结，managed与invocation unknown不变；批量两平台普通预算/三交付适用。"
     },
     {
       "module": "compute_sched",
