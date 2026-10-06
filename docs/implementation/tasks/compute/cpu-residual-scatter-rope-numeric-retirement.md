@@ -40,3 +40,10 @@ RN2/RN3明确REJECT_NOT_SAME_PHASE_CONTRACT，非延期自研优化。ggml无产
 未旋转sNaN tail bits暴露公共numeric入口先转F32的接缝，原件保存为provider-first-failed.xml。
 RN4定向保持RoPE的原typed Tensor，再交原Double prefix程序；其它numeric程序仍转F32，不放宽
 数学/bit门、不写新payload算法。这是本轮具名一次产品纠正，之后只增量编译及必要批次。
+
+纠正候选`775b2bedace019de423edc5d8a6477772b8ef3ec`的Windows owning factor144/144、header1/1、
+直接CPU消费者16通过/2缺少旧Qwen fixture skip、Graph22/22、ordinary source/shared-installed消费
+实际通过。初次local driver误选全CPU模型目录，运行272.89秒后有界中止，原件保留，不算整套PASS；
+改用`CpuDefaultContext.*:*Rope*:*Scatter*`与相应普通Graph/具名RoPE消费者，不改公共治理工具。
+两平台驱动都使用同一有限范围；已过factor/header不因收窄消费者而重跑。Windows静态交付与Linux
+仍在验证，不签RN全部完成。统一脚本在固定候选计实现61,386行/249文件，不含tests/vendor。
