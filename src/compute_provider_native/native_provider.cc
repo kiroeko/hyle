@@ -87,51 +87,6 @@ void run_rms_norm(const float *input, const float *weight, float *output,
   }
 }
 
-template <GatedActivationKind Activation, GatedInputKind Inputs>
-void run_gated_activation(const float *first, const float *second,
-                          float *output, const Parameters &parameters,
-                          float) noexcept {
-  const std::size_t rows = parameters[0];
-  const std::size_t hidden = parameters[1];
-  if (hidden == 0)
-    return;
-  for (std::size_t row = 0; row < rows; ++row) {
-    const float *gate =
-        first + row * hidden *
-                    (Inputs == GatedInputKind::kPackedHalves ? std::size_t{2}
-                                                             : std::size_t{1});
-    const float *value = Inputs == GatedInputKind::kPackedHalves
-                             ? gate + hidden
-                             : second + row * hidden;
-    float *destination = output + row * hidden;
-    if constexpr (Activation == GatedActivationKind::kSilu) {
-      simd::swiglu_f32_batch(gate, value, destination, hidden);
-    } else if constexpr (Activation == GatedActivationKind::kGelu) {
-      simd::geglu_f32_batch(gate, value, destination, hidden);
-    } else {
-      simd::geglu_tanh_f32_batch(gate, value, destination, hidden);
-    }
-  }
-}
-
-Route select_gated_activation(GatedActivationKind activation,
-                              GatedInputKind inputs) noexcept {
-#define HYLE_NATIVE_GATED_CASE(kind)                                           \
-  case GatedActivationKind::kind:                                              \
-    return inputs == GatedInputKind::kPackedHalves                             \
-               ? &run_gated_activation<GatedActivationKind::kind,              \
-                                       GatedInputKind::kPackedHalves>          \
-               : &run_gated_activation<GatedActivationKind::kind,              \
-                                       GatedInputKind::kSeparate>
-  switch (activation) {
-    HYLE_NATIVE_GATED_CASE(kSilu);
-    HYLE_NATIVE_GATED_CASE(kGelu);
-    HYLE_NATIVE_GATED_CASE(kGeluTanh);
-  }
-#undef HYLE_NATIVE_GATED_CASE
-  return nullptr;
-}
-
 struct FloatRouteEpisode final {
   const NativePlan *plan = nullptr;
   const float *first = nullptr;
@@ -907,49 +862,8 @@ Status build_plan(Operation operation, std::span<const TensorDesc> inputs,
     break;
   }
   case OperationKind::kGatedActivation: {
-    if (inputs[0].data_type() == DataType::kFloat16 ||
-        inputs[0].data_type() == DataType::kBFloat16) {
-      Status status =
-          internal::prepare_half_gated(operation, inputs, outputs, plan);
-      if (!status.ok())
-        return status;
-      break;
-    }
-    const GatedActivation *gated = operation.get_if<GatedActivation>();
-    if (gated == nullptr)
-      return Status::Internal("native gated descriptor is missing");
-    const std::size_t expected_inputs =
-        gated->inputs == GatedInputKind::kSeparate ? 2 : 1;
-    if (inputs.size() != expected_inputs)
-      return Status::Internal("native gated input arity is invalid");
-    Status status = validate_dense_f32(inputs[0]);
-    if (!status.ok())
-      return status;
-    if (inputs.size() == 2) {
-      status = validate_dense_f32(inputs[1]);
-      if (!status.ok())
-        return status;
-    }
-    status = validate_dense_f32(outputs[0]);
-    if (!status.ok())
-      return status;
-    auto rows = outer_count(inputs[0]);
-    auto width = dimension(inputs[0], inputs[0].rank() - 1);
-    if (!rows)
-      return std::move(rows).error();
-    if (!width)
-      return std::move(width).error();
-    const std::size_t hidden =
-        gated->inputs == GatedInputKind::kPackedHalves ? *width / 2 : *width;
-    plan.parameters = {*rows, hidden, 0};
-    plan.row_first_stride = *width;
-    plan.row_second_stride =
-        gated->inputs == GatedInputKind::kSeparate ? *width : 0;
-    plan.row_output_stride = hidden;
-    plan.route = select_gated_activation(gated->activation, gated->inputs);
-    if (plan.route == nullptr)
-      return Status::Internal("native gated activation mode is invalid");
-    plan.submit_route = &submit_float;
+    HYLE_RETURN_IF_ERROR(
+        internal::prepare_half_gated(operation, inputs, outputs, plan));
     break;
   }
   case OperationKind::kGather:
@@ -1306,12 +1220,14 @@ prepare(void *context_value, const detail::ProviderPrepareRequest &request,
 Status drain_context(void *) noexcept { return Status::Ok(); }
 
 const detail::ProviderVTable kProviderVTable{
-    .identity = ProviderIdentity{.id = kProviderId,
-                                 .name = "hyle-native",
+    .identity =
+        ProviderIdentity{.id = kProviderId,
+                         .name = "hyle-native",
 #if defined(HYLE_COMPUTE_TORCH_CPU)
-                                 .version = "2+torchao-a701b6a60587+libtorch-2.8.0-cpu"},
+                         .version =
+                             "2+torchao-a701b6a60587+libtorch-2.8.0-cpu"},
 #else
-                                 .version = "2"},
+                         .version = "2"},
 #endif
     .create_context = &create_context,
     .destroy_context = &destroy_context,

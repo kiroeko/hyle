@@ -76,12 +76,7 @@ void store_f32(std::byte *data, std::size_t offset, float value) noexcept {
 std::int64_t load_position(const std::byte *data, const TensorDesc &description,
                            std::size_t linear) noexcept {
   const std::size_t offset = logical_byte_offset(description, linear);
-  if (description.data_type() == DataType::kInt32) {
-    std::int32_t value = 0;
-    std::memcpy(&value, data + offset, sizeof(value));
-    return value;
-  }
-  std::int64_t value = 0;
+  std::int32_t value = 0;
   std::memcpy(&value, data + offset, sizeof(value));
   return value;
 }
@@ -586,10 +581,9 @@ Status prepare_transformer(Operation operation,
         inputs[2], "native RoPE currently requires plain float32 frequencies");
     if (!status.ok())
       return status;
-    if (!inputs[1].is_plain() || (inputs[1].data_type() != DataType::kInt32 &&
-                                  inputs[1].data_type() != DataType::kInt64)) {
+    if (!inputs[1].is_plain() || inputs[1].data_type() != DataType::kInt32) {
       return Status::Unimplemented(
-          "native RoPE requires plain i32/i64 positions");
+          "native RoPE retains only plain i32 positions; i64 uses mature math");
     }
     status = require_plain_f32(
         outputs[0], "native RoPE currently requires plain float32 output");

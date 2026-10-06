@@ -19,10 +19,6 @@
 namespace hyle::compute::native::internal {
 namespace {
 
-constexpr float kSqrt2Inv = 0.70710678118654752440F;
-constexpr float kSqrt2OverPi = 0.79788456080286535588F;
-constexpr float kGeluCoefficient = 0.044715F;
-
 float sigmoid(float value) noexcept {
   if (std::isnan(value))
     return value;
@@ -52,16 +48,6 @@ template <UnaryKind Kind> float evaluate_unary(float value) noexcept {
     if (std::isnan(value))
       return value;
     return value > 0.0F ? value : 0.0F;
-  } else if constexpr (Kind == UnaryKind::kGelu) {
-    if (value == -std::numeric_limits<float>::infinity())
-      return 0.0F;
-    return 0.5F * value * (1.0F + std::erf(value * kSqrt2Inv));
-  } else if constexpr (Kind == UnaryKind::kGeluTanh) {
-    if (value == -std::numeric_limits<float>::infinity())
-      return 0.0F;
-    const float inner =
-        kSqrt2OverPi * value * std::fma(kGeluCoefficient, value * value, 1.0F);
-    return 0.5F * value * (1.0F + std::tanh(inner));
   } else if constexpr (Kind == UnaryKind::kSoftplus) {
     return std::fmax(value, 0.0F) + std::log1p(std::exp(-std::abs(value)));
   } else {
@@ -93,10 +79,6 @@ void unary_linear(const void *first, const void *, const void *, void *output,
     simd::sigmoid_f32_batch(source, destination, count);
   } else if constexpr (Kind == UnaryKind::kRelu) {
     simd::relu_f32_batch(source, destination, count);
-  } else if constexpr (Kind == UnaryKind::kGelu) {
-    simd::gelu_f32_batch(source, destination, count);
-  } else if constexpr (Kind == UnaryKind::kGeluTanh) {
-    simd::gelu_tanh_f32_batch(source, destination, count);
   } else if constexpr (Kind == UnaryKind::kSilu) {
     simd::silu_f32_batch(source, destination, count);
   } else if constexpr (Kind == UnaryKind::kSoftplus) {
@@ -200,7 +182,7 @@ void binary_scalar(const std::byte *first, const std::byte *second,
                                               numeric::load<Value>(second)));
 }
 
-template <GatedActivationKind Kind, class Value>
+template <class Value>
 void gated_narrow_linear(const void *first, const void *second, const void *,
                          void *output, std::size_t count) noexcept {
   std::array<float, 128> gate;
@@ -209,12 +191,7 @@ void gated_narrow_linear(const void *first, const void *second, const void *,
     const std::size_t size = (std::min)(gate.size(), count - begin);
     numeric::load_tile<Value>(first, begin, gate.data(), size);
     numeric::load_tile<Value>(second, begin, value.data(), size);
-    if constexpr (Kind == GatedActivationKind::kSilu)
-      simd::swiglu_f32_batch(gate.data(), value.data(), gate.data(), size);
-    else if constexpr (Kind == GatedActivationKind::kGelu)
-      simd::geglu_f32_batch(gate.data(), value.data(), gate.data(), size);
-    else
-      simd::geglu_tanh_f32_batch(gate.data(), value.data(), gate.data(), size);
+    simd::swiglu_f32_batch(gate.data(), value.data(), gate.data(), size);
     numeric::store_tile<Value>(gate.data(), output, begin, size);
   }
 }
@@ -244,9 +221,8 @@ void select_scalar(const std::byte *first, const std::byte *second,
     std::memcpy(output, source, ElementSize);
 }
 
-void select_f32_linear(const void *first, const void *second,
-                       const void *third, void *output,
-                       std::size_t count) noexcept {
+void select_f32_linear(const void *first, const void *second, const void *third,
+                       void *output, std::size_t count) noexcept {
   simd::select_values(static_cast<const std::uint8_t *>(first),
                       static_cast<const float *>(second),
                       static_cast<const float *>(third),
@@ -462,6 +438,9 @@ submit_elementwise(const NativePlan &plan,
 
 template <class Value>
 bool select_unary(UnaryKind kind, NativePlan &plan) noexcept {
+  if constexpr (std::is_same_v<Value, float>)
+    if (kind == UnaryKind::kSilu)
+      return false;
 #define HYLE_NATIVE_SELECT_UNARY(name)                                         \
   case UnaryKind::name:                                                        \
     if constexpr (std::is_same_v<Value, float>)                                \
@@ -482,10 +461,11 @@ bool select_unary(UnaryKind kind, NativePlan &plan) noexcept {
     HYLE_NATIVE_SELECT_UNARY(kTanh);
     HYLE_NATIVE_SELECT_UNARY(kSigmoid);
     HYLE_NATIVE_SELECT_UNARY(kRelu);
-    HYLE_NATIVE_SELECT_UNARY(kGelu);
-    HYLE_NATIVE_SELECT_UNARY(kGeluTanh);
     HYLE_NATIVE_SELECT_UNARY(kSilu);
     HYLE_NATIVE_SELECT_UNARY(kSoftplus);
+  case UnaryKind::kGelu:
+  case UnaryKind::kGeluTanh:
+    return false;
   }
   return false;
 
@@ -574,9 +554,8 @@ bool dense_same_shape(const TensorDesc &input,
          std::ranges::equal(input.dimensions(), output.dimensions());
 }
 
-std::size_t dense_broadcast_suffix(
-    std::span<const TensorDesc> inputs,
-    const TensorDesc &output) noexcept {
+std::size_t dense_broadcast_suffix(std::span<const TensorDesc> inputs,
+                                   const TensorDesc &output) noexcept {
   if (!output.is_dense())
     return 0;
   for (const TensorDesc &input : inputs) {
@@ -599,8 +578,8 @@ std::size_t dense_broadcast_suffix(
     }
     if (!all_match)
       break;
-    const auto next = math::try_multiply(
-        chunk, static_cast<std::size_t>(output_extent));
+    const auto next =
+        math::try_multiply(chunk, static_cast<std::size_t>(output_extent));
     if (!next)
       return 0;
     chunk = *next;
@@ -723,9 +702,10 @@ Status prepare_half_gated(Operation operation,
       outputs[0].rank() == 0)
     return Status::Internal("native half gated activation arity is invalid");
   const DataType type = inputs[0].data_type();
-  if (type != DataType::kFloat16 && type != DataType::kBFloat16)
+  if (type != DataType::kFloat16 ||
+      gated->activation != GatedActivationKind::kSilu)
     return Status::Unimplemented(
-        "native half gated activation requires float16/bfloat16");
+        "native gated activation retains only qualified float16 SiLU");
   for (const TensorDesc &input : inputs)
     if (!input.is_plain() || !input.is_dense())
       return Status::Unimplemented(
@@ -752,32 +732,7 @@ Status prepare_half_gated(Operation operation,
   plan.parameters = {rows, *hidden, data_type_size(type)};
   plan.row_first_stride = *width;
   plan.row_output_stride = *hidden;
-  switch (gated->activation) {
-  case GatedActivationKind::kSilu:
-    plan.linear_elementwise_route =
-        type == DataType::kFloat16
-            ? &gated_narrow_linear<GatedActivationKind::kSilu, simd::float16_t>
-            : &gated_narrow_linear<GatedActivationKind::kSilu,
-                                   simd::bfloat16_t>;
-    break;
-  case GatedActivationKind::kGelu:
-    plan.linear_elementwise_route =
-        type == DataType::kFloat16
-            ? &gated_narrow_linear<GatedActivationKind::kGelu, simd::float16_t>
-            : &gated_narrow_linear<GatedActivationKind::kGelu,
-                                   simd::bfloat16_t>;
-    break;
-  case GatedActivationKind::kGeluTanh:
-    plan.linear_elementwise_route =
-        type == DataType::kFloat16
-            ? &gated_narrow_linear<GatedActivationKind::kGeluTanh,
-                                   simd::float16_t>
-            : &gated_narrow_linear<GatedActivationKind::kGeluTanh,
-                                   simd::bfloat16_t>;
-    break;
-  }
-  if (plan.linear_elementwise_route == nullptr)
-    return Status::InvalidArgument("native gated activation mode is invalid");
+  plan.linear_elementwise_route = &gated_narrow_linear<simd::float16_t>;
   plan.submit_route = &submit_elementwise<true>;
   return Status::Ok();
 }
