@@ -959,6 +959,37 @@
           }
         ]
       }
+    },
+    {
+      "name": "mlx_cpu_quant",
+      "repository": "https://github.com/ml-explore/mlx.git",
+      "revision": "2b2bb49790158ecd008d1685c94e3ef119792a00",
+      "git_tree": "56ba183d94c673f590ce257b2297920c420a2928",
+      "archive": {
+        "url": "https://codeload.github.com/ml-explore/mlx/tar.gz/2b2bb49790158ecd008d1685c94e3ef119792a00",
+        "sha256": "486e8b0626ab6bbc0a905bdcc47aa7db8b9a258a958ffefd4898aacaf1f7d396"
+      },
+      "version": "original-mlx-cpu-equations-2b2bb4979015",
+      "class": "in_tree",
+      "vendored": {
+        "path": "third_party/mlx_cpu_quant",
+        "tree_sha256": "5d2eb4704336b4298457df7acff407841efc59327f513223307b2443a3006732"
+      },
+      "license": {
+        "expression": "MIT",
+        "files": [
+          {
+            "root": "hyle",
+            "path": "third_party/mlx_cpu_quant/LICENSE",
+            "sha256": "ccfab7ccb2ea306f71531c8ca77bb55507606cd90768b1e32b8b52ab5b48cf01"
+          },
+          {
+            "root": "hyle",
+            "path": "third_party/mlx_cpu_quant/NOTICE.md",
+            "sha256": "d388f6652116b8e8a5603a3061ccb97dcccda991deb7694c8ca66bf22b40e3c4"
+          }
+        ]
+      }
     }
   ]
 }

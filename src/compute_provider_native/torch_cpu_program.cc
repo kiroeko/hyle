@@ -26,11 +26,12 @@
 #include "bitsandbytes_cpu.h"
 #include "awq_cpu.h"
 #include "compressed_tensors_cpu.h"
+#include "mlx_cpu_quant.h"
 
 namespace hyle::compute::native::internal {
 namespace {
 enum class Kind { kDecode, kLinear, kEncodedMatMul, kGrouped8, kGrouped4, kRoundtrip,
-                  kArtifactDecode };
+                  kArtifactDecode, kMlx };
 struct Shape final {
   Kind kind{};
   std::int64_t e = 1, n = 0, k = 0, tokens = 0, slots = 1, activations = 1;
@@ -38,6 +39,7 @@ struct Shape final {
   bool power = false;
   at::ScalarType output = at::kFloat;
   model_ops::ArtifactWeightDecode artifact{};
+  model_ops::MlxQuantized mlx{};
 };
 struct Program final {
   using Run = Status (*)(const Program &, std::span<const std::byte *const>, std::byte *) noexcept;
@@ -82,7 +84,13 @@ Result<Shape> select(const Operation &op, std::span<const TensorDesc> inputs,
   Shape s;
   s.output = outputs[0].data_type() == DataType::kBFloat16 ? at::kBFloat16 :
       (outputs[0].data_type() == DataType::kFloat16 ? at::kHalf : at::kFloat);
-  if (const auto artifact = op.custom_as<model_ops::ArtifactWeightDecode>()) {
+  if (const auto mlx = op.custom_as<model_ops::MlxQuantized>()) {
+    s.kind = Kind::kMlx;s.mlx = *mlx;
+    const auto &w = inputs[mlx->kind == model_ops::MlxQuantizedKind::kEmbedding ? 0 : 1];
+    s.k = w.dimensions().back() * (mlx->format == model_ops::MlxWeightFormat::kMxfp8 ? 4 : 8);
+    s.n = w.dimensions()[w.rank() - 2];
+    s.e = mlx->kind == model_ops::MlxQuantizedKind::kGrouped ? w.dimensions()[0] : 1;
+  } else if (const auto artifact = op.custom_as<model_ops::ArtifactWeightDecode>()) {
     s.kind = Kind::kArtifactDecode; s.artifact = *artifact;
     s.n = outputs[0].dimensions()[0]; s.k = outputs[0].dimensions()[1];
   } else if (op.custom_as<model_ops::Float8WeightDecode>()) {
@@ -123,7 +131,7 @@ Result<Shape> select(const Operation &op, std::span<const TensorDesc> inputs,
   auto rows = product(s.tokens, s.slots);
   auto matrix = product(s.n, s.k);
   auto elements = rows && matrix ? math::try_multiply(*rows, *matrix) : std::nullopt;
-  if (!matrix || (s.kind != Kind::kDecode && s.kind != Kind::kArtifactDecode &&
+  if (!matrix || (s.kind != Kind::kDecode && s.kind != Kind::kArtifactDecode && s.kind != Kind::kMlx &&
                   (!elements || *elements > INT64_MAX / 32)))
     return std::unexpected(Status::OutOfRange("ATen CPU selected tensor capacity overflows"));
   return s;
@@ -191,22 +199,43 @@ Status execute(const Program &p, std::span<const std::byte *const> pointers,
         input[i] = at::from_blob(const_cast<std::byte *>(pointers[i]),
             {static_cast<std::int64_t>(desc.required_bytes().value())}, at::kByte);
       } else {
-        const auto type = desc.data_type() == DataType::kInt32 ? at::kInt
+        const auto type = desc.data_type() == DataType::kUInt32 ? at::kUInt32
+            : (desc.data_type() == DataType::kInt32 ? at::kInt
             : (desc.data_type() == DataType::kUInt8 ? at::kByte
             : (desc.data_type() == DataType::kFloat16 ? at::kHalf
-            : (desc.data_type() == DataType::kBFloat16 ? at::kBFloat16 : at::kFloat)));
+            : (desc.data_type() == DataType::kBFloat16 ? at::kBFloat16 : at::kFloat))));
         input[i] = at::from_blob(const_cast<std::byte *>(pointers[i]),
             at::IntArrayRef(desc.dimensions().data(), desc.rank()), type);
       }
     }
     const auto &s = p.shape;
     constexpr auto activation_index = (Selected == Kind::kGrouped8 || Selected == Kind::kGrouped4) ? 1u : 0u;
-    if (Selected != Kind::kDecode && Selected != Kind::kArtifactDecode &&
+    if (Selected != Kind::kDecode && Selected != Kind::kArtifactDecode && Selected != Kind::kMlx &&
         Selected != Kind::kEncodedMatMul &&
         !at::isfinite(input[activation_index]).all().item<bool>())
       return Status::InvalidArgument("original ATen CPU quantization requires finite activation");
     at::Tensor result;
-    if constexpr (Selected == Kind::kArtifactDecode) {
+    if constexpr (Selected == Kind::kMlx) {
+      const bool embedding = s.mlx.kind == model_ops::MlxQuantizedKind::kEmbedding;
+      const bool grouped = s.mlx.kind == model_ops::MlxQuantizedKind::kGrouped;
+      const bool affine = s.mlx.format == model_ops::MlxWeightFormat::kAffine4;
+      at::Tensor ids;
+      if (embedding || grouped) {
+        ids = input[p.input_count - 1].reshape({-1}).to(at::kLong);
+        if (at::logical_or(ids < 0, ids >= (embedding ? s.n : s.e)).any().item<bool>())
+          return Status::OutOfRange("MLX original selected row/expert id is outside its source");
+      }
+      if (embedding) {
+        result = borrowed::mlx_cpu_quant::embedding(input[0], input[1], input[2],
+                                                    ids, s.mlx.group_size);
+      } else {
+        using Format = borrowed::mlx_cpu_quant::Format;
+        const auto format = affine ? Format::affine4 :
+            (s.mlx.format == model_ops::MlxWeightFormat::kMxfp4 ? Format::mxfp4 : Format::mxfp8);
+        result = borrowed::mlx_cpu_quant::matmul(input[0], input[1], input[2],
+            affine ? input[3] : at::Tensor{}, ids, format, s.mlx.group_size, s.output);
+      }
+    } else if constexpr (Selected == Kind::kArtifactDecode) {
       switch (s.artifact.format) {
       case model_ops::WeightArtifactFormat::kNf4:
         result = borrowed::bitsandbytes_cpu::decode_nf4(input[0], input[1],
@@ -334,7 +363,8 @@ bool is_torch_cpu_operation(const Operation &operation,
                            std::span<const TensorDesc> inputs) noexcept {
   if (const auto q = operation.custom_as<model_ops::BlockQuantizationRoundtrip>())
     return q->format == model_ops::BlockQuantizationFormat::kFloat8E4M3Block128;
-  return operation.custom_as<model_ops::ArtifactWeightDecode>() ||
+  return operation.custom_as<model_ops::MlxQuantized>() ||
+      operation.custom_as<model_ops::ArtifactWeightDecode>() ||
       operation.custom_as<model_ops::Float8WeightDecode>() ||
       operation.custom_as<model_ops::Float8BlockLinear>() ||
       operation.custom_as<model_ops::GroupedFloat8Linear>() ||
@@ -398,6 +428,7 @@ ProviderPrepareOutcome prepare_torch_cpu(const detail::ProviderPrepareRequest &r
   case Kind::kGrouped4: p->run = &execute<Kind::kGrouped4>; break;
   case Kind::kRoundtrip: p->run = &execute<Kind::kRoundtrip>; break;
   case Kind::kArtifactDecode: p->run = &execute<Kind::kArtifactDecode>; break;
+  case Kind::kMlx: p->run = &execute<Kind::kMlx>; break;
   }
   for (std::size_t i = 0; i < p->input_count; ++i) p->inputs[i] = request.inputs[i];
   *out = {.vtable = &kVTable, .state = p, .workspace = {}, .runtime = kRuntime,

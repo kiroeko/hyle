@@ -53,6 +53,44 @@ inline Operation artifact_weight_decode(WeightArtifactFormat format,
 
 enum class Float8ScaleRounding : std::uint32_t { kNone, kPowerOfTwo };
 
+enum class MlxWeightFormat : std::uint32_t { kAffine4, kMxfp4, kMxfp8 };
+enum class MlxQuantizedKind : std::uint32_t { kLinear, kGrouped, kEmbedding };
+
+// Original MLX packed CPU formulas with F32 accumulation and explicit source
+// storage. Codes are U32 words with low bits first. Affine scale/bias retain
+// their float dtype; MX scales are original U8 E8M0 group32 values.
+// Linear: A[M,K], W[N,K/pack], scales[N,K/group], optional affine bias.
+// Grouped: A[T,S,K], W[E,N,K/pack], scales[E,N,K/group], optional bias,
+// I32 ids[T,S]. Embedding: affine W/scales/bias and I32 ids[M].
+// Only selected experts/rows and one K group are expanded during execution.
+struct MlxQuantized final {
+  MlxWeightFormat format = MlxWeightFormat::kAffine4;
+  MlxQuantizedKind kind = MlxQuantizedKind::kLinear;
+  std::uint32_t group_size = 64;
+  static constexpr OperationId operation_id{0x48594c454d4f444cULL,
+                                            0x4d4c585150550001ULL};
+  static constexpr std::string_view operation_name = "mlx-packed-quantized";
+  constexpr OperationTraits operation_traits() const noexcept {
+    const std::uint16_t count = kind == MlxQuantizedKind::kEmbedding ? 4 :
+        static_cast<std::uint16_t>((format == MlxWeightFormat::kAffine4 ? 4 : 3) +
+                                   (kind == MlxQuantizedKind::kGrouped ? 1 : 0));
+    return {{count, count}, 1, AliasPolicy::kNone, EffectKind::kPure,
+            PrecisionPolicy::kAccumulateInDeclaredType, DataType::kFloat32, true};
+  }
+  HYLE_COMPUTE_OPS_API Status infer_output_descriptions(
+      std::span<const TensorDesc> inputs, std::span<TensorDesc> outputs) const noexcept;
+};
+inline Operation mlx_quantized_matmul(MlxWeightFormat format, std::uint32_t group) noexcept {
+  return Operation::custom(MlxQuantized{format, MlxQuantizedKind::kLinear, group});
+}
+inline Operation mlx_grouped_matmul(MlxWeightFormat format, std::uint32_t group) noexcept {
+  return Operation::custom(MlxQuantized{format, MlxQuantizedKind::kGrouped, group});
+}
+inline Operation mlx_quantized_embedding(std::uint32_t group = 64) noexcept {
+  return Operation::custom(MlxQuantized{MlxWeightFormat::kAffine4,
+                                      MlxQuantizedKind::kEmbedding, group});
+}
+
 enum class BlockQuantizationFormat : std::uint32_t {
   kFloat8E4M3Block64,
   kFloat4E2M1Block32,

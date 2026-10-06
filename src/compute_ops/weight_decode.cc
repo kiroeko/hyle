@@ -16,6 +16,72 @@ bool shaped(const TensorDesc &desc, DataType type,
 }
 } // namespace
 
+Status MlxQuantized::infer_output_descriptions(std::span<const TensorDesc> inputs,
+    std::span<TensorDesc> outputs) const noexcept {
+  if ((format != MlxWeightFormat::kAffine4 && format != MlxWeightFormat::kMxfp4 &&
+       format != MlxWeightFormat::kMxfp8) ||
+      (kind != MlxQuantizedKind::kLinear && kind != MlxQuantizedKind::kGrouped &&
+       kind != MlxQuantizedKind::kEmbedding) || group_size == 0 ||
+      inputs.size() != operation_traits().inputs.minimum || outputs.size() != 1)
+    return Status::InvalidArgument("MLX packed operation format/ports/group are invalid");
+  const bool affine = format == MlxWeightFormat::kAffine4;
+  const bool embedding = kind == MlxQuantizedKind::kEmbedding;
+  const bool grouped = kind == MlxQuantizedKind::kGrouped;
+  if ((!affine && group_size != 32) ||
+      (affine && group_size != 32 && group_size != 64 && group_size != 128) ||
+      (embedding && !affine))
+    return Status::InvalidArgument("MLX format requires its original scale grouping");
+  for (const auto &input : inputs)
+    if (!input.valid() || !input.is_plain() || !input.is_dense())
+      return Status::InvalidArgument("MLX packed ports require plain dense storage");
+  const auto &w = inputs[embedding ? 0 : 1];
+  const auto &scale = inputs[embedding ? 1 : 2];
+  const std::size_t rank = grouped ? 3 : 2;
+  if (w.rank() != rank || scale.rank() != rank || w.data_type() != DataType::kUInt32 ||
+      (affine ? !floating(scale.data_type()) : scale.data_type() != DataType::kUInt8))
+    return Status::InvalidArgument("MLX original word/scale dtype or rank differs");
+  for (const auto d : w.dimensions())
+    if (d <= 0) return Status::InvalidArgument("MLX packed weight dimensions must be positive");
+  const std::int64_t pack = format == MlxWeightFormat::kMxfp8 ? 4 : 8;
+  if (w.dimensions().back() > INT64_MAX / pack)
+    return Status::OutOfRange("MLX unpacked K overflows");
+  const auto k = w.dimensions().back() * pack;
+  const auto n = w.dimensions()[rank - 2];
+  if (k % group_size != 0 || scale.dimensions().back() != k / group_size)
+    return Status::InvalidArgument("MLX codes and complete scale groups differ");
+  for (std::size_t axis = 0; axis + 1 < rank; ++axis)
+    if (scale.dimensions()[axis] != w.dimensions()[axis])
+      return Status::InvalidArgument("MLX weight/scale leading axes differ");
+  if (affine && inputs[embedding ? 2 : 3] != scale)
+    return Status::InvalidArgument("MLX affine biases must match scale shape and dtype");
+  DataType dtype = scale.data_type();
+  if (embedding) {
+    const auto &ids = inputs.back();
+    if (ids.rank() != 1 || ids.data_type() != DataType::kInt32)
+      return Status::InvalidArgument("MLX embedding requires checked I32 row ids");
+    auto out = TensorDesc::dense(dtype, std::array{ids.dimensions()[0], k});
+    if (!out) return std::move(out).error();outputs[0] = *out;return Status::Ok();
+  }
+  const auto &a = inputs[0];
+  if (a.rank() != rank || !floating(a.data_type()) || a.dimensions().back() != k)
+    return Status::InvalidArgument("MLX activation rank, floating dtype or K differs");
+  for (const auto d : a.dimensions())
+    if (d <= 0) return Status::InvalidArgument("MLX activation dimensions must be positive");
+  dtype = a.data_type();
+  if (affine && scale.data_type() != dtype) dtype = DataType::kFloat32;
+  if (grouped) {
+    if (!shaped(inputs.back(), DataType::kInt32,
+                 {a.dimensions()[0], a.dimensions()[1]}))
+      return Status::InvalidArgument("MLX selected expert ids must match [T,S]");
+    auto out = TensorDesc::dense(dtype, std::array{a.dimensions()[0], a.dimensions()[1], n});
+    if (!out) return std::move(out).error();outputs[0] = *out;
+  } else {
+    auto out = TensorDesc::dense(dtype, std::array{a.dimensions()[0], n});
+    if (!out) return std::move(out).error();outputs[0] = *out;
+  }
+  return Status::Ok();
+}
+
 Status ArtifactWeightDecode::infer_output_descriptions(
     std::span<const TensorDesc> inputs, std::span<TensorDesc> outputs) const noexcept {
   if (format != WeightArtifactFormat::kNf4 &&

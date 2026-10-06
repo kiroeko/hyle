@@ -68,6 +68,7 @@
     "third_party/bitsandbytes_cpu/": ["compute_provider_native"],
     "third_party/awq_cpu/": ["compute_provider_native"],
     "third_party/compressed_tensors_cpu/": ["compute_provider_native"],
+    "third_party/mlx_cpu_quant/": ["compute_provider_native"],
     "third_party/torchao_cpu/": ["compute_provider_native"],
     "third_party/mlx_cast/": ["compute_route_apple"],
     "third_party/iree_vulkan_runtime/": ["compute_provider_iree_vulkan"],

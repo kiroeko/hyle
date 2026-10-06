@@ -1,0 +1,31 @@
+{
+  "name": "mlx_cpu_quant",
+  "repository": "https://github.com/ml-explore/mlx.git",
+  "revision": "2b2bb49790158ecd008d1685c94e3ef119792a00",
+  "git_tree": "56ba183d94c673f590ce257b2297920c420a2928",
+  "archive": {
+    "url": "https://codeload.github.com/ml-explore/mlx/tar.gz/2b2bb49790158ecd008d1685c94e3ef119792a00",
+    "sha256": "486e8b0626ab6bbc0a905bdcc47aa7db8b9a258a958ffefd4898aacaf1f7d396"
+  },
+  "archive_bytes": 4505349,
+  "license_origin": "LICENSE",
+  "license_sha256": "ccfab7ccb2ea306f71531c8ca77bb55507606cd90768b1e32b8b52ab5b48cf01",
+  "additional_sources": [
+    {
+      "url": "https://raw.githubusercontent.com/ml-explore/mlx/2b2bb49790158ecd008d1685c94e3ef119792a00/mlx/ops.cpp",
+      "sha256": "7af38c420eb8e8ec56dd0077c7fccbfa24c593e22ee242c038e6503369002ee5"
+    },
+    {
+      "path": "mlx-cpu-quantized.cpp",
+      "url": "https://raw.githubusercontent.com/ml-explore/mlx/2b2bb49790158ecd008d1685c94e3ef119792a00/mlx/backend/cpu/quantized.cpp",
+      "bytes": 40348,
+      "sha256": "8890160da0a884b559aad18ce20a2b08170b721c38ce1c800229ae9998ed846d"
+    },
+    {
+      "path": "mlx-quantized.py",
+      "url": "https://raw.githubusercontent.com/ml-explore/mlx/2b2bb49790158ecd008d1685c94e3ef119792a00/python/mlx/nn/layers/quantized.py",
+      "bytes": 15026,
+      "sha256": "8ca4574a212f14cbec4c446826474583ef0bf1e2cb1630574fd730c77af03b33"
+    }
+  ]
+}
