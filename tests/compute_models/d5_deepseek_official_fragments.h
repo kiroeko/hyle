@@ -32,8 +32,10 @@ inline ValueId roundtrip(Fragment &f, ValueId value, quant::Format format) {
 inline Fragment moe_chain(const moe::Case &model, bool use_hash = false,
                            moe::MoeReference *reference_out = nullptr,
                            bool native_routing = true) {
-  if (model.gguf || (model.profile != moe::cases::kCases[3].profile &&
-                    model.profile != moe::cases::kCases[4].profile) ||
+  const bool pro=model.hidden==7168 && model.experts==384 && model.intermediate==3072;
+  const bool flash=model.hidden==4096 && model.experts==256 && model.intermediate==2048;
+  if (model.gguf || !model.profile || model.profile->model_family!="deepseek_v4" ||
+      model.profile->format_family!="safetensors" || (!pro && !flash) || model.top_k!=6 ||
       (use_hash && reference_out))
     throw std::runtime_error("official DeepSeek MoE profile/replay mismatch");
   Fragment f{.profile = model.profile, .region = use_hash ? 0x0a0b0602u : 0x0a0b0601u,
