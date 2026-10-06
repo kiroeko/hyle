@@ -320,7 +320,8 @@ bool contains(const std::array<Rule, N> &rules, const Domain &d) noexcept {
 } // namespace
 
 bool qualified_default_environment() noexcept {
-#if defined(_WIN32) && defined(_MSC_FULL_VER) && _MSC_FULL_VER == 195035728
+#if defined(_WIN32) && defined(NDEBUG) && defined(_MSC_FULL_VER) && \
+    _MSC_FULL_VER == 195035728
   const auto &identity = platform::cpu_identity();
   std::string_view brand(identity.brand.data());
   while (!brand.empty() && brand.front() == ' ')
