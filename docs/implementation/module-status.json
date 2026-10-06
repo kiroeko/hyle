@@ -423,14 +423,9 @@
     },
     {
       "module": "compute_provider_native",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/compute/cpu-aten-compilation-storage-declaration.md",
-      "summary": "CP1–2 CLOSED：ATen额外cold private bounds正确声明0；两平台cold各族/严格预算普通Graph实际执行与source/static/shared通过，managed/invocation unknown仍真实；复用未变AS数学/模型/生命周期资格，无Native/SIMD比较或新WIN。",
-      "candidate": "a527dd73dcc21a5b4b89979d43339d67becabe86",
-      "performance": {
-        "tier": "P0",
-        "evidence": "evidence/correctness/cpu-aten-compilation-storage/README.md"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/cpu-native-final-domain-verdict.md",
+      "summary": "ND SCOPED：成熟接线/资源声明已关闭，冻结Native12族按当前同合同成熟候选做一批数值/资源与有限P1裁决；先审计固定有限FIX，不优化自研，不用fallback保留依据，SIMD基础/原版借用保留，GPU暂停。"
     },
     {
       "module": "compute_sched",
