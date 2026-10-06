@@ -1,6 +1,6 @@
 # CPU RoPE：中间精度与同合同审计
 
-<!-- MODULE REVIEW: AUDITED -->
+<!-- MODULE REVIEW: CANDIDATE -->
 
 - owner `compute_provider_ggml`；baseline `e80cf22ccf285934693f40da9cc558b457283d7b`。
 - RN诊断曾把保留完整整数的Double phase oracle用于当前Float32模型程序，需核对真实consumer；
@@ -17,4 +17,8 @@
 - P0/no-product-change：不重建、不采样，复用现有TC数学/资源与两平台三交付；验收仅source identity、
   selector、closure/docs与语义边界。无API/layout/资源/执行/安装行为变化，不制造新的binary journey。
 - scope、架构、成本、依赖/许可证、C++交付、易用文档和红队均只裁决此精度比较命题；不声明CPU
-  剩余自研已裁决，也不重新认证所有模型。候选/终审尚未登记。
+  剩余自研已裁决，也不重新认证所有模型。
+
+无FIX候选沿baseline `e80cf22ccf285934693f40da9cc558b457283d7b`，19个ggml/runtime/公开factory输入
+逐字SHA256一致，见[源码身份](../../../../evidence/correctness/cpu-residual-scatter-rope/ggml-no-change.json)。
+本轮只裁决同合同边界，产品能力、安装、执行和资源没有变化；复用已有TC资格，不触发新构建/P1。

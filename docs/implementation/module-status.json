@@ -373,9 +373,10 @@
     },
     {
       "module": "compute_provider_ggml",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/cpu-rope-phase-contract-audit.md",
-      "summary": "RoPE精度AUDITED无产品FIX：官方模型Float32 phase与Double oracle不同，原诊断不签原模型数值FAIL；ggml源码逐字未改，保留原程序，按同中间精度比较。"
+      "summary": "RoPE精度审计无FIX候选：19个ggml/runtime输入SHA256一致；Float32模型与Double oracle差异不签FAIL，保留既有原程序，不构建/P1。",
+      "candidate": "e80cf22ccf285934693f40da9cc558b457283d7b"
     },
     {
       "module": "graph_provider_onednn",
