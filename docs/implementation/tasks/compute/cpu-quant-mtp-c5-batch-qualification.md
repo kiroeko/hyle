@@ -1,10 +1,11 @@
 # C5：CPU 全批验收、文档与停止
 
-<!-- MODULE REVIEW: AUDITED -->
+<!-- MODULE REVIEW: CANDIDATE -->
 
 ## 计划身份
 
-- 状态：AUDITED，真实角色/几何与既有承载已对账，固定下方有限F1–F4；尚未签本包执行PASS。
+- 状态：CANDIDATE，产品/API/普通消费形状已冻结；适用批次已有收据，最终聚合与红队尚未裁决。
+- candidate：`c740abc74a5a62ffacf60b26798228ca484317df`；后续只含docs/evidence。
 - baseline：`400927ff7af0b150432b830ce47b3aa7ac5fd3c9`；SCOPED提交`39ea36847d679900537375eefb2b7ac9368e9002`。
   Windows实际HEAD与干净工作树已核对，保留C1–C4全部后续提交。
 - owner范围：compute_ops、compute_provider_ggml、compute_provider_native；以本卡交接其AUDITED记录，
@@ -221,3 +222,12 @@ source180+installed360共同资格化本批原text与ID9原conv程序。依赖/�
 本批临时安装consumer清理1,337,587,592 bytes，保持producer/SDK/source cache；
 统一29路径Compute+Graph实现61,499行/250文件，不含tests/vendor/bench。
 F4全范围聚合、七门终审与状态仍未关闭；所有新适用格未完以前不签goal完成。
+
+## 不可变候选与证据复用冻结
+
+当前HEAD `8e7709538d68b576732f5c7a376c1e3f1f8c947b`工作树干净。
+相对候选只有docs/evidence；产品、测试与交付配置同候选。停止本轮产品/API/算法改动，进入CANDIDATE。
+比F1候选`46a55325a465`只增加Torch program的低dtype conv kind/ID9；原ID1–8、runtime、ABI与原数学未变。
+比C3/C4交付候选仅此接缝及已具名CPU-only大encoded Gather准入，两格各有自己的更新SDK资格。
+复用不得扩大旧receipt范围：typed端口与参数、完整semantic程序、资源/三交付分别对账；
+104身份的最小projection仍不是104个完整混合模型run。七门与最终资格账本待独立红队后裁决。

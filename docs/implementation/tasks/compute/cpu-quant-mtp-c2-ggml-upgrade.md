@@ -1,6 +1,6 @@
 # C2：ggml 固定升级、CPU 编译与软件资格
 
-<!-- MODULE REVIEW: AUDITED -->
+<!-- MODULE REVIEW: CANDIDATE -->
 
 ## 计划身份
 
@@ -94,5 +94,13 @@ Windows/Linux x86_64 baseline/AVX2、普通Direct/Graph、source/static/shared�
   保留复用的CPU producer与源码cache，不另开逐格式构建树。
 
 当前owner维持AUDITED；不得因Windows阶段结果跳为CLOSED。下一步继续有限批次接线与剩余适用资格。
+
+## 当前冻结候选
+
+上述为当时执行快照。CPU core/patch/程序/软件事实/ABI与build envelope产品已固定，
+当前候选 `c740abc74a5a62ffacf60b26798228ca484317df`，owner进入CANDIDATE，不跳CLOSED。
+C3/C4/C5两系统source/static/shared、搬移/offline与失败/独立slots收据用于相同core/patch范围，
+最新产品变动只有两个CPU adapter接缝，均有自己的SDK资格，不修改runtime的core/ABI。
+原GPU envelope保留原core与未变资格。最终七门、P0与terminal仍按本卡U1–U4逐项裁决。
 
 统一29路径统计：Compute＋Graph实现61,110行/249文件（不含测试/vendor/bench）；完整收据在C2证据loc.json。

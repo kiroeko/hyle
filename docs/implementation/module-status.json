@@ -372,9 +372,10 @@
     },
     {
       "module": "compute_provider_ggml",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/cpu-quant-mtp-c5-batch-qualification.md",
-      "summary": "CPU扩覆盖C5 AUDITED：104实际GGUF档位/589消费合同、34非GGUFpacking几何、完整模型族/branch与两系统资格聚合有限F1-F4固定；C3/C4证据保留，只借成熟实现，无新数学，未签本包运行PASS。"
+      "summary": "CPU扩覆盖候选固定：实际格式/端口、参数和完整branch已完成有限批次，两系统三交付/资源收据保留；最终全范围聚合与独立红队尚未裁决，不签CLOSED。",
+      "candidate": "c740abc74a5a62ffacf60b26798228ca484317df"
     },
     {
       "module": "graph_provider_onednn",
@@ -389,9 +390,10 @@
     },
     {
       "module": "compute_ops",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/cpu-quant-mtp-c5-batch-qualification.md",
-      "summary": "CPU扩覆盖C5 AUDITED：104实际GGUF档位/589消费合同、34非GGUFpacking几何、完整模型族/branch与两系统资格聚合有限F1-F4固定；C3/C4证据保留，只借成熟实现，无新数学，未签本包运行PASS。"
+      "summary": "CPU扩覆盖候选固定：实际格式/端口、参数和完整branch已完成有限批次，两系统三交付/资源收据保留；最终全范围聚合与独立红队尚未裁决，不签CLOSED。",
+      "candidate": "c740abc74a5a62ffacf60b26798228ca484317df"
     },
     {
       "module": "compute_backend_cpu",
@@ -417,9 +419,10 @@
     },
     {
       "module": "compute_provider_native",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/cpu-quant-mtp-c5-batch-qualification.md",
-      "summary": "CPU扩覆盖C5 AUDITED：104实际GGUF档位/589消费合同、34非GGUFpacking几何、完整模型族/branch与两系统资格聚合有限F1-F4固定；C3/C4证据保留，只借成熟实现，无新数学，未签本包运行PASS。"
+      "summary": "CPU扩覆盖候选固定：实际格式/端口、参数和完整branch已完成有限批次，两系统三交付/资源收据保留；最终全范围聚合与独立红队尚未裁决，不签CLOSED。",
+      "candidate": "c740abc74a5a62ffacf60b26798228ca484317df"
     },
     {
       "module": "compute_sched",
@@ -533,9 +536,10 @@
     },
     {
       "module": "compute_ggml_runtime",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/cpu-quant-mtp-c2-ggml-upgrade.md",
-      "summary": "CPU扩覆盖C2 AUDITED：C1完整头/成熟承载审计完成；固定CPU-only新版core+原IQ1推理扩展、GPU envelope旧core、同源CPU程序与Native peer版本约束，U1–U4有限FIX；未签产品执行/交付。"
+      "summary": "CPU扩覆盖候选固定：实际格式/端口、参数和完整branch已完成有限批次，两系统三交付/资源收据保留；最终全范围聚合与独立红队尚未裁决，不签CLOSED。",
+      "candidate": "c740abc74a5a62ffacf60b26798228ca484317df"
     },
     {
       "module": "compute_provider_ggml_cuda",
