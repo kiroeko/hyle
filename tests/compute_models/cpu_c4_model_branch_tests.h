@@ -38,8 +38,7 @@ TEST(HYLE_C4_CPU_SUITE, NewOfficialMainAttentionCompressionAndMoe) {
 TEST(HYLE_C4_CPU_SUITE, CompleteThreeStageDsparkWithSharedEmbeddingAndConfidence) {
   for(const auto &model:cpu_c4_model_branches::models) {
     SCOPED_TRACE(model.profile->model_name);
-    auto program=cpu_c4_model_branches::complete_draft(model);
-    run_q24_semantic_fragment(std::move(program.fragment));
+    cpu_c4_model_branches::check_complete_draft(model,run_q24_semantic_fragment);
   }
 }
 #undef HYLE_C4_CPU_SUITE

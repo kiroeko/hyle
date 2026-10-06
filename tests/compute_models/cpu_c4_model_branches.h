@@ -471,4 +471,47 @@ inline DraftProgram complete_draft(const Model &model) {
   }
   return result;
 }
+
+template<class Run> void check_complete_draft(const Model &model,Run run) {
+  auto program=complete_draft(model);
+  std::vector<std::vector<float>> normalized,markov,normalized_reference,markov_reference;
+  for(const auto &replay:program.fragment.replays) {
+    normalized_reference.push_back(replay.outputs[5]);markov_reference.push_back(replay.outputs[6]);
+  }
+  program.fragment.observe=[&](std::size_t port,std::span<const float> values) {
+    if(port==5)normalized.emplace_back(values.begin(),values.end());
+    if(port==6)markov.emplace_back(values.begin(),values.end());
+  };
+  run(std::move(program.fragment));ASSERT_FALSE(::testing::Test::HasFailure());
+  ASSERT_EQ(normalized.size(),normalized_reference.size());ASSERT_EQ(markov.size(),markov_reference.size());
+  constexpr std::int64_t shard=4096;
+  std::int64_t checked=0;
+  for(std::int64_t first=0;first<vocabulary;first+=shard) {
+    const auto count=std::min(shard,vocabulary-first);
+    Fragment head{.profile=model.profile,.region=0x0c040109,.quantized=true};
+    auto main=head.input(dense({1,model.hidden}));
+    auto draft=head.input(dense({block,model.hidden}));
+    auto markov_input=head.input(dense({block,model.markov}));
+    // One original BF16-source/F32 LM parameter is shared by main and draft.
+    auto shared=ds::compressor_projection(head,ds::concat(head,main,draft,0),count,model.hidden,int(491+first));
+    auto main_logits=ds::slice(head,shared.output,0,0,1);
+    auto draft_logits=ds::slice(head,shared.output,0,1,block);
+    auto bias=ds::compressor_projection(head,markov_input,count,model.markov,int(431+first));
+    head.outputs={main_logits,core::binary(head,c::BinaryKind::kAdd,draft_logits,bias.output)};
+    for(std::size_t replay=0;replay<normalized.size();++replay) {
+      auto mh=ds::bfloat_boundary(d5_gguf_test::activation(model.hidden,int(17+replay*13)));
+      auto teacher=shared.reference(mh);
+      std::vector<float> output;
+      for(std::int64_t row=0;row<block;++row) {
+        auto p=shared.reference(std::span(normalized_reference[replay]).subspan(row*model.hidden,model.hidden));
+        auto b=bias.reference(std::span(markov_reference[replay]).subspan(row*model.markov,model.markov));
+        for(std::int64_t col=0;col<count;++col)output.push_back(p[col]+b[col]);
+      }
+      head.replays.push_back({{bytes(mh),bytes(normalized[replay]),bytes(markov[replay])},
+                             {std::move(teacher),std::move(output)}});
+    }
+    run(std::move(head));ASSERT_FALSE(::testing::Test::HasFailure());checked+=count;
+  }
+  EXPECT_EQ(checked,vocabulary);
+}
 } // namespace cpu_c4_model_branches
