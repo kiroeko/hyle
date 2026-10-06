@@ -4,9 +4,10 @@
 
 ## 计划身份
 
-- 状态：AUDITED，绑定compute_ggml_runtime、compute_provider_native；两owner由C1 SCOPED审计交接，有限FIX如下。
+- 状态：AUDITED，绑定compute_ggml_runtime、compute_provider_native、compute_provider_ggml；
+  adapter只纳入升级后的软件身份，格式/算法仍待C3。原SCOPED审计交接，有限FIX如下。
 - baseline：`ac9bc40006e1caaa9e42b812f6e5a832e66ee034`；Windows实际HEAD核对，无用户产品修改，不回退。
-- owner范围：compute_ggml_runtime、compute_provider_native。软件约束在Native私有默认规则完成，
+- owner范围：compute_ggml_runtime、compute_provider_native及ggml adapter的软件版本元数据。软件约束在Native私有默认规则完成，
   无需修改已CLOSED CPU facade；GPU owner和Graph阻塞保持。
 - 总合同：[CPU扩覆盖计划](cpu-quant-mtp-coverage-expansion-plan.md)；事实：[缺口清单](cpu-popular-quant-mtp-gap-list.md)。
 - 本卡是一个批次，不是逐算子/逐模型队列。CLOSED按真实trigger新开；AUDITED范围变化重新定界。
@@ -46,6 +47,9 @@
   原版tensor/cplan/graph由对应SDK编译，不跨旧/新SDK混用。
 - Native旧WIN的环境资格加私有编译期peer版本条件；新版默认使用成熟实现，专家Native入口不因此撤回。
   新约束不在submit查询、不重跑187项自研比较、不改变SIMD。
+- U1软件事实补项：adapter仍硬编码`456172ec+hyle-resource-v1`；CPU-only新包必须从已选core/patch
+  投影真实版本到ProviderIdentity，含GPU原envelope保留原CPU标签。仅改metadata字符串/构建投影，
+  不扩算子；源码反例已确认，产品改动前将adapter合法绑定本AUDITED卡。
 
 ### API、资源与验证冻结
 

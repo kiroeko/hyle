@@ -373,8 +373,8 @@
     {
       "module": "compute_provider_ggml",
       "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/cpu-quant-mtp-c1-demand-and-carriers.md",
-      "summary": "CPU扩覆盖C1 AUDITED：104主档位/826 GGUF分片及sidecar/152 Safetensors头已对账，真实11格式与成熟承载交接已固定；当前产品资格未增加，C3接线前绑定具体卡。"
+      "record": "docs/implementation/tasks/compute/cpu-quant-mtp-c2-ggml-upgrade.md",
+      "summary": "CPU扩覆盖C2 AUDITED：adapter有限修复真实core/patch软件身份，原硬编码旧版本不能代签新版；C1全制品头对账已完成，11格式接线仍待C3，GPU资格不变。"
     },
     {
       "module": "graph_provider_onednn",

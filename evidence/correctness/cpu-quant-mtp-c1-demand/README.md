@@ -9,7 +9,7 @@
 - Q09–Q11 实际是 Unsloth IQ1_XXXS/XXS/XS：type66/65/64，38/42/46 字节每256值。
   原始枚举、block、grid、dequantize 和 CPU dot 位于
   [固定原版扩展](https://github.com/unslothai/llama.cpp/tree/46cbf0e95786fe8f5b7c0e86d57aaf8f8eceea7f/ggml)。
-  不能映射为 stock Q1_0/TQ1_0/TQ2_0。扩展来源0.22，CPU core候选0.24；只借入具名推理代码。
+  不能映射为 stock Q1_0/TQ1_0/TQ2_0。扩展来源0.22，CPU core候选0.26；只借入具名推理代码。
 - Qwen命名Q4_0的MTP含18 tensors，实际为Q3_K/Q4_K/Q6_K/F32；完整分支仍需C4资格。
 - 官方DeepSeek新版本均有`mtp.*` DSpark权重。main projection为F8_E4M3＋F8_E8M0 scale；
   Markov与confidence源权重为BF16，confidence执行遵循官方F32边界。
