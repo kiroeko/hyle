@@ -27,7 +27,8 @@ mem::Buffer payload(const c::TensorDesc &desc, std::span<const std::byte> bytes)
 template<class Update, class Reference>
 void check(c::Operation op, std::span<const c::TensorDesc> descriptions,
            std::span<mem::Buffer> storage, c::TensorDesc output,
-           Update update, Reference reference, bool indexed, bool exact = false) {
+           Update update, Reference reference, bool indexed, bool exact = false,
+           float dot_roundoff = 0.0f) {
   auto result = mem::Buffer::create(mem::system_resource(),
                                    output.required_bytes().value(), 64).value();
   std::vector<c::ConstTensorView> inputs;
@@ -78,8 +79,8 @@ void check(c::Operation op, std::span<const c::TensorDesc> descriptions,
     const auto expected = reference();
     ASSERT_EQ(actual.size(), expected.size());
     for (std::size_t i = 0; i < actual.size(); ++i)
-      EXPECT_NEAR(actual[i], expected[i], exact ? 0.0f :
-          16 * std::numeric_limits<float>::epsilon() * std::max(1.0f, std::abs(expected[i])));
+      EXPECT_NEAR(actual[i], expected[i], exact ? 0.0f : std::max(dot_roundoff,
+          16 * std::numeric_limits<float>::epsilon() * std::max(1.0f, std::abs(expected[i]))));
   }
   if (indexed) {
     // Current ids are checked before any output mapping/write. A failed replay
@@ -114,6 +115,19 @@ TEST(CpuExpandedGgufDirect, OriginalFormatsProjectionExpertsAndEmbedding) {
     SCOPED_TRACE(static_cast<int>(item.native));
     const auto packed = f::weights(item, f::experts * f::n);
     const auto decoded = f::decode(item, packed);
+    double max_row_norm = 0;
+    for (int row = 0; row < f::experts * f::n; ++row) {
+      double norm = 0;
+      for (int column = 0; column < f::k; ++column)
+        norm += std::abs(decoded[row * f::k + column]);
+      max_row_norm = std::max(max_row_norm, norm);
+    }
+    // Scalar and AVX2 original reductions associate F32 terms differently.
+    // Cancellation makes an output-relative bound invalid. Bound roundoff by
+    // the decoded row L1 norm and maximum activation (2 plus codec rounding),
+    // while GetRows below still checks every decoded value exactly.
+    const auto roundoff = static_cast<float>(
+        16 * std::numeric_limits<float>::epsilon() * 2.1 * max_row_norm);
     const auto stride = ggml_row_size(item.native, f::k);
     const auto weight = c::gguf_weight_description(item.format, c::DataType::kFloat32, f::k, f::n).value();
     const auto activation = c::TensorDesc::dense(c::DataType::kFloat32, std::array<std::int64_t, 2>{2, f::k}).value();
@@ -132,7 +146,7 @@ TEST(CpuExpandedGgufDirect, OriginalFormatsProjectionExpertsAndEmbedding) {
       [&] { std::vector<float> y(2 * f::n);
         for (int t = 0; t < 2; ++t) for (int row = 0; row < f::n; ++row)
           y[t * f::n + row] = f::dot(item, packed.data() + row * stride, std::span(a).subspan(t * f::k, f::k));
-        return y; }, false);
+        return y; }, false, false, roundoff);
 
     const auto table = weight.transposed().value();
     const auto ids_desc = c::TensorDesc::dense(c::DataType::kInt32, std::array<std::int64_t, 1>{3}).value();
@@ -156,7 +170,7 @@ TEST(CpuExpandedGgufDirect, OriginalFormatsProjectionExpertsAndEmbedding) {
     check(c::model_ops::grouped_matmul(), group_descs, groups, gy,
       [&](int pass) { for (std::size_t i = 0; i < selected.size(); ++i) selected[i] = float(static_cast<int>(i % 17) - 8) * (pass ? -0.25f : 0.25f); EXPECT_TRUE(groups[1].view().write(std::as_bytes(std::span(selected))).ok()); EXPECT_TRUE(groups[2].view().write(std::as_bytes(std::span(expert_ids))).ok()); },
       [&] { std::vector<float> y(4 * f::n); for (int slot = 0; slot < 4; ++slot) for (int row = 0; row < f::n; ++row)
-        y[slot * f::n + row] = f::dot(item, packed.data() + (expert_ids[slot] * f::n + row) * stride, std::span(selected).subspan(slot * f::k, f::k)); return y; }, true);
+        y[slot * f::n + row] = f::dot(item, packed.data() + (expert_ids[slot] * f::n + row) * stride, std::span(selected).subspan(slot * f::k, f::k)); return y; }, true, false, roundoff);
   }
 }
 } // namespace
