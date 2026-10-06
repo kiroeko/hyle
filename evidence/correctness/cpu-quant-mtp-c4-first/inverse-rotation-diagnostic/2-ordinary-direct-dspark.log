@@ -1,0 +1,80 @@
+Running main() from C:\Users\kiro\AppData\Local\hyle\dependencies\v1\sources\googletest-063de7e9578f-162765170ae6\googletest\src\gtest_main.cc
+Note: Google Test filter = CpuC4Branches.*
+[==========] Running 3 tests from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 3 tests from CpuC4Branches
+[ RUN      ] CpuC4Branches.DsparkTargetHiddenAndFp32Confidence
+[       OK ] CpuC4Branches.DsparkTargetHiddenAndFp32Confidence (498 ms)
+[ RUN      ] CpuC4Branches.DsparkMarkovFullVocabularyWithLogitBias
+[       OK ] CpuC4Branches.DsparkMarkovFullVocabularyWithLogitBias (358 ms)
+[ RUN      ] CpuC4Branches.DsparkTargetPrefillAndFiveTokenAttentionCache
+DSpark inverse RoPE conditioned on actual attention: step=0 max_abs=0 different=0
+DSpark inverse RoPE conditioned on actual attention: step=1 max_abs=0 different=0
+C:\public\project-hyle\hyle\tests\compute_models\d5_qwen35_gguf_fragment_support.h(158): error: The difference between actual[index] and expected[index] is 0.000335693359375, which exceeds absolute + relative * std::abs(expected[index]), where
+actual[index] evaluates to 0.005096435546875,
+expected[index] evaluates to 0.00543212890625, and
+absolute + relative * std::abs(expected[index]) evaluates to 0.00015580322360619903.
+80349
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(909): worst index=10337 actual=-0.125977 expected=-0.126953
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(897): output 2 region 201588994
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(895): fragment output=2
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(874): replay 1
+C:\public\project-hyle\hyle\tests\compute_route_cpu\../compute_models/cpu_c4_model_branch_tests.h(22): DeepSeek-V4-Pro-0813
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_qwen35_gguf_fragment_support.h(158): error: The difference between actual[index] and expected[index] is 0.000335693359375, which exceeds absolute + relative * std::abs(expected[index]), where
+actual[index] evaluates to 0.005096435546875,
+expected[index] evaluates to 0.00543212890625, and
+absolute + relative * std::abs(expected[index]) evaluates to 0.00015580322360619903.
+97245
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(909): worst index=10337 actual=-0.125977 expected=-0.126953
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(897): output 2 region 201588994
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(895): fragment output=2
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(874): replay 1
+C:\public\project-hyle\hyle\tests\compute_route_cpu\../compute_models/cpu_c4_model_branch_tests.h(22): DeepSeek-V4-Pro-0813
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_qwen35_gguf_fragment_support.h(158): error: The difference between actual[index] and expected[index] is 0.000335693359375, which exceeds absolute + relative * std::abs(expected[index]), where
+actual[index] evaluates to 0.005096435546875,
+expected[index] evaluates to 0.00543212890625, and
+absolute + relative * std::abs(expected[index]) evaluates to 0.00015580322360619903.
+114141
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(909): worst index=10337 actual=-0.125977 expected=-0.126953
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(897): output 2 region 201588994
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(895): fragment output=2
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(874): replay 1
+C:\public\project-hyle\hyle\tests\compute_route_cpu\../compute_models/cpu_c4_model_branch_tests.h(22): DeepSeek-V4-Pro-0813
+
+C:\public\project-hyle\hyle\tests\compute_models\d5_qwen35_gguf_fragment_support.h(158): error: The difference between actual[index] and expected[index] is 0.000335693359375, which exceeds absolute + relative * std::abs(expected[index]), where
+actual[index] evaluates to 0.005096435546875,
+expected[index] evaluates to 0.00543212890625, and
+absolute + relative * std::abs(expected[index]) evaluates to 0.00015580322360619903.
+131037
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(909): worst index=10337 actual=-0.125977 expected=-0.126953
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(897): output 2 region 201588994
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(895): fragment output=2
+C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc(874): replay 1
+C:\public\project-hyle\hyle\tests\compute_route_cpu\../compute_models/cpu_c4_model_branch_tests.h(22): DeepSeek-V4-Pro-0813
+
+DSpark inverse RoPE conditioned on actual attention: step=2 max_abs=0 different=0
+DSpark inverse RoPE conditioned on actual attention: step=3 max_abs=0 different=0
+DSpark inverse RoPE conditioned on actual attention: step=4 max_abs=0 different=0
+DSpark inverse RoPE conditioned on actual attention: step=5 max_abs=0 different=0
+C:\public\project-hyle\hyle\tests\compute_route_cpu\../compute_models/cpu_c4_model_branches.h(304): error: Value of: ::testing::Test::HasFailure()
+  Actual: true
+Expected: false
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_cpu\../compute_models/cpu_c4_model_branch_tests.h(22): DeepSeek-V4-Flash-0731
+
+[  FAILED  ] CpuC4Branches.DsparkTargetPrefillAndFiveTokenAttentionCache (12033 ms)
+[----------] 3 tests from CpuC4Branches (12890 ms total)
+
+[----------] Global test environment tear-down
+[==========] 3 tests from 1 test suite ran. (12890 ms total)
+[  PASSED  ] 2 tests.
+[  FAILED  ] 1 test, listed below:
+[  FAILED  ] CpuC4Branches.DsparkTargetPrefillAndFiveTokenAttentionCache
+
+ 1 FAILED TEST

@@ -1,0 +1,19 @@
+{
+  "candidate": "1b91a2265ded2c0b04561cd68e80563a9c8f5a7f",
+  "scope": [
+    "Pro-0813 H7168/R512 and Flash-0731 H4096/R256 exact fixed artifact identity",
+    "three target HC hidden means, concat, original FP8 main projection and norm",
+    "BF16 Markov embedding, all 129280 head rows in resident shards and F32 logit bias",
+    "BF16-source/F32 confidence projection across all five draft rows",
+    "target KV prefill 128/129, draft five-token sink attention, inverse RoPE, grouped wo_a/wo_b",
+    "actual cache feedback across wrap and reset; shared wkv and cold wo_a preparation"
+  ],
+  "remaining": [
+    "complete three DSpark HC/MoE stages/shared LM head",
+    "new main and Qwen/Flash sidecar complete qualifications",
+    "C4 resources/deliveries/cost",
+    "C5 admitted artifact matrix and closure"
+  ],
+  "no_new_product_math": true,
+  "linux_candidate": "c1c034d208ce95265abb7adc7121302a5d4f84eb"
+}

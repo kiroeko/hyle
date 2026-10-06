@@ -78,3 +78,19 @@
 Provider可执行原完整operation/region，Graph负责边界；测试Direct展开仅为自然Compute消费，不规定产品逐kernel调度。
 P0记录实际cold scale widening、prepare绑定、hot原量化/selected-expert和managed临时成本。
 无第二家同合同承载的格不比赛；有具名重叠或接入成本风险才纳入总计划最多两个完整消费族的一份P1。
+
+## 首批实施与实际资格
+
+- F1精确新版profile已接普通CPU workload身份；F2 target hidden mean/concat/FP8投影/norm、
+  F3 prefill128/129与五token cache/sink attention/逆RoPE/分组输出、F4 Markov完整词表/bias与F32confidence
+  已在Windows/Linux普通Direct/Graph执行通过。
+- 三stage的完整HC/MoE/共享head及Qwen/Flash sidecar尚未完成；本包不签CLOSED。
+- inverse RoPE最初失败已定向证明来自非相同输入的中间相对比较；局部原公式对实际attention逐值相等，
+  修正测试口径，未修改产品数学或全链门。原始诊断与有限范围见
+  [首批证据](../../../../evidence/correctness/cpu-quant-mtp-c4-first/README.md)。
+- 新主干复用的旧test recipe最初只接受preview对象指针，尚未调用Provider就拒绝新profile；
+  改按实际DeepSeek语义与H/E/intermediate/top-k/schema检查。产品Provider没有这项指针限制。
+- 新版Pro/Flash的ratio0/4/128 attention、压缩/索引/cache反馈、普通及hash完整FP4/FP8 MoE，
+  已在Windows/Linux两入口通过，精确范围见首批证据中的main-followup。
+- 普通浮点重叠域可按总预算集中比较；本轮尚无需要自研的新数学缺口，没有性能竞赛或GPU重签。
+- 当前产品源码与C3交付候选相同，Compute+Graph仍为61,475实现行/250文件（不含测试/vendor/bench）。

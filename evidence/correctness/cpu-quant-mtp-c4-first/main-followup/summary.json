@@ -1,0 +1,16 @@
+{
+  "candidate": "e1dbfe1bddc32ce8bc7a4ce46ff570f90131c0dd",
+  "scope": [
+    "Windows four C4 test families in ordinary Direct/Graph",
+    "Linux added main family with first three families reused from c1c034d2",
+    "new Pro-0813/Flash-0731 sliding/compressed/indexed attention ratio0/4/128 and cache feedback",
+    "new main ordinary and hash routing complete FP4 expert/FP8 shared MoE"
+  ],
+  "fixture_correction": "old test recipe pointer gate replaced by source semantic/shape validation",
+  "remaining": [
+    "complete three DSpark HC/MoE/shared LM head",
+    "Qwen/Flash sidecar qualifications",
+    "C4 resources/deliveries/cost",
+    "C5 full matrix"
+  ]
+}

@@ -1,0 +1,16 @@
+Running main() from C:\Users\kiro\AppData\Local\hyle\dependencies\v1\sources\googletest-063de7e9578f-162765170ae6\googletest\src\gtest_main.cc
+Note: Google Test filter = CpuC4Branches.*
+[==========] Running 3 tests from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 3 tests from CpuC4Branches
+[ RUN      ] CpuC4Branches.DsparkTargetHiddenAndFp32Confidence
+[       OK ] CpuC4Branches.DsparkTargetHiddenAndFp32Confidence (470 ms)
+[ RUN      ] CpuC4Branches.DsparkMarkovFullVocabularyWithLogitBias
+[       OK ] CpuC4Branches.DsparkMarkovFullVocabularyWithLogitBias (329 ms)
+[ RUN      ] CpuC4Branches.DsparkTargetPrefillAndFiveTokenAttentionCache
+[       OK ] CpuC4Branches.DsparkTargetPrefillAndFiveTokenAttentionCache (15910 ms)
+[----------] 3 tests from CpuC4Branches (16710 ms total)
+
+[----------] Global test environment tear-down
+[==========] 3 tests from 1 test suite ran. (16710 ms total)
+[  PASSED  ] 3 tests.

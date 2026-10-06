@@ -1,0 +1,43 @@
+[
+  {
+    "name": "batch-build",
+    "args": [
+      "cmake",
+      "--build",
+      "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+      "--target",
+      "hyle_compute_route_cpu_tests",
+      "hyle_graph_route_cpu_tests",
+      "--parallel",
+      "2"
+    ],
+    "candidate": "1b91a2265ded2c0b04561cd68e80563a9c8f5a7f",
+    "log": "1-batch-build.log",
+    "returncode": 0,
+    "seconds": 15.875
+  },
+  {
+    "name": "ordinary-direct-dspark",
+    "args": [
+      "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_compute_route_cpu_test.exe",
+      "--gtest_filter=CpuC4Branches.*",
+      "--gtest_output=xml:C:\\public\\project-hyle\\hyle\\.scratch\\validation\\cpu-coverage-c4-first\\1b91a2265ded\\direct.xml"
+    ],
+    "candidate": "1b91a2265ded2c0b04561cd68e80563a9c8f5a7f",
+    "log": "2-ordinary-direct-dspark.log",
+    "returncode": 0,
+    "seconds": 17.031
+  },
+  {
+    "name": "ordinary-graph-dspark",
+    "args": [
+      "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_graph_route_cpu_test.exe",
+      "--gtest_filter=CpuGraphC4Branches.*",
+      "--gtest_output=xml:C:\\public\\project-hyle\\hyle\\.scratch\\validation\\cpu-coverage-c4-first\\1b91a2265ded\\graph.xml"
+    ],
+    "candidate": "1b91a2265ded2c0b04561cd68e80563a9c8f5a7f",
+    "log": "3-ordinary-graph-dspark.log",
+    "returncode": 0,
+    "seconds": 17.031
+  }
+]

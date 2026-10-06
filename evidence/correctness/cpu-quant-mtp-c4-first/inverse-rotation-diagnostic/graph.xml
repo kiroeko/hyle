@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites tests="3" failures="1" disabled="0" errors="0" time="12.75" timestamp="2026-10-07T00:16:31.891" name="AllTests">
+  <testsuite name="CpuGraphC4Branches" tests="3" failures="1" disabled="0" skipped="0" errors="0" time="12.75" timestamp="2026-10-07T00:16:31.891">
+    <testcase name="DsparkTargetHiddenAndFp32Confidence" file="C:\public\project-hyle\hyle\tests\graph_route_cpu\../compute_models/cpu_c4_model_branch_tests.h" line="7" status="run" result="completed" time="0.476" timestamp="2026-10-07T00:16:31.891" classname="CpuGraphC4Branches" />
+    <testcase name="DsparkMarkovFullVocabularyWithLogitBias" file="C:\public\project-hyle\hyle\tests\graph_route_cpu\../compute_models/cpu_c4_model_branch_tests.h" line="14" status="run" result="completed" time="0.335" timestamp="2026-10-07T00:16:32.368" classname="CpuGraphC4Branches" />
+    <testcase name="DsparkTargetPrefillAndFiveTokenAttentionCache" file="C:\public\project-hyle\hyle\tests\graph_route_cpu\../compute_models/cpu_c4_model_branch_tests.h" line="20" status="run" result="completed" time="11.935" timestamp="2026-10-07T00:16:32.705" classname="CpuGraphC4Branches">
+      <failure message="C:\public\project-hyle\hyle\tests\compute_models\d5_qwen35_gguf_fragment_support.h:158&#x0A;The difference between actual[index] and expected[index] is 0.000335693359375, which exceeds absolute + relative * std::abs(expected[index]), where&#x0A;actual[index] evaluates to 0.005096435546875,&#x0A;expected[index] evaluates to 0.00543212890625, and&#x0A;absolute + relative * std::abs(expected[index]) evaluates to 0.00015580322360619903.&#x0A;80349&#x0A;Google Test trace:&#x0A;C:\public\project-hyle\hyle\tests\graph_route_cpu\d5_qwen38_official_test.cc(643): output 2 region 201588994&#x0A;C:\public\project-hyle\hyle\tests\graph_route_cpu\d5_qwen38_official_test.cc(634): replay 1&#x0A;C:\public\project-hyle\hyle\tests\graph_route_cpu\../compute_models/cpu_c4_model_branch_tests.h(22): DeepSeek-V4-Pro-0813&#x0A;" type=""><![CDATA[C:\public\project-hyle\hyle\tests\compute_models\d5_qwen35_gguf_fragment_support.h:158
+The difference between actual[index] and expected[index] is 0.000335693359375, which exceeds absolute + relative * std::abs(expected[index]), where
+actual[index] evaluates to 0.005096435546875,
+expected[index] evaluates to 0.00543212890625, and
+absolute + relative * std::abs(expected[index]) evaluates to 0.00015580322360619903.
+80349
+Google Test trace:
+C:\public\project-hyle\hyle\tests\graph_route_cpu\d5_qwen38_official_test.cc(643): output 2 region 201588994
+C:\public\project-hyle\hyle\tests\graph_route_cpu\d5_qwen38_official_test.cc(634): replay 1
+C:\public\project-hyle\hyle\tests\graph_route_cpu\../compute_models/cpu_c4_model_branch_tests.h(22): DeepSeek-V4-Pro-0813
+]]></failure>
+      <failure message="C:\public\project-hyle\hyle\tests\compute_models\d5_qwen35_gguf_fragment_support.h:158&#x0A;The difference between actual[index] and expected[index] is 0.000335693359375, which exceeds absolute + relative * std::abs(expected[index]), where&#x0A;actual[index] evaluates to 0.005096435546875,&#x0A;expected[index] evaluates to 0.00543212890625, and&#x0A;absolute + relative * std::abs(expected[index]) evaluates to 0.00015580322360619903.&#x0A;97245&#x0A;Google Test trace:&#x0A;C:\public\project-hyle\hyle\tests\graph_route_cpu\d5_qwen38_official_test.cc(643): output 2 region 201588994&#x0A;C:\public\project-hyle\hyle\tests\graph_route_cpu\d5_qwen38_official_test.cc(634): replay 1&#x0A;C:\public\project-hyle\hyle\tests\graph_route_cpu\../compute_models/cpu_c4_model_branch_tests.h(22): DeepSeek-V4-Pro-0813&#x0A;" type=""><![CDATA[C:\public\project-hyle\hyle\tests\compute_models\d5_qwen35_gguf_fragment_support.h:158
+The difference between actual[index] and expected[index] is 0.000335693359375, which exceeds absolute + relative * std::abs(expected[index]), where
+actual[index] evaluates to 0.005096435546875,
+expected[index] evaluates to 0.00543212890625, and
+absolute + relative * std::abs(expected[index]) evaluates to 0.00015580322360619903.
+97245
+Google Test trace:
+C:\public\project-hyle\hyle\tests\graph_route_cpu\d5_qwen38_official_test.cc(643): output 2 region 201588994
+C:\public\project-hyle\hyle\tests\graph_route_cpu\d5_qwen38_official_test.cc(634): replay 1
+C:\public\project-hyle\hyle\tests\graph_route_cpu\../compute_models/cpu_c4_model_branch_tests.h(22): DeepSeek-V4-Pro-0813
+]]></failure>
+      <failure message="C:\public\project-hyle\hyle\tests\compute_models\d5_qwen35_gguf_fragment_support.h:158&#x0A;The difference between actual[index] and expected[index] is 0.000335693359375, which exceeds absolute + relative * std::abs(expected[index]), where&#x0A;actual[index] evaluates to 0.005096435546875,&#x0A;expected[index] evaluates to 0.00543212890625, and&#x0A;absolute + relative * std::abs(expected[index]) evaluates to 0.00015580322360619903.&#x0A;114141&#x0A;Google Test trace:&#x0A;C:\public\project-hyle\hyle\tests\graph_route_cpu\d5_qwen38_official_test.cc(643): output 2 region 201588994&#x0A;C:\public\project-hyle\hyle\tests\graph_route_cpu\d5_qwen38_official_test.cc(634): replay 1&#x0A;C:\public\project-hyle\hyle\tests\graph_route_cpu\../compute_models/cpu_c4_model_branch_tests.h(22): DeepSeek-V4-Pro-0813&#x0A;" type=""><![CDATA[C:\public\project-hyle\hyle\tests\compute_models\d5_qwen35_gguf_fragment_support.h:158
+The difference between actual[index] and expected[index] is 0.000335693359375, which exceeds absolute + relative * std::abs(expected[index]), where
+actual[index] evaluates to 0.005096435546875,
+expected[index] evaluates to 0.00543212890625, and
+absolute + relative * std::abs(expected[index]) evaluates to 0.00015580322360619903.
+114141
+Google Test trace:
+C:\public\project-hyle\hyle\tests\graph_route_cpu\d5_qwen38_official_test.cc(643): output 2 region 201588994
+C:\public\project-hyle\hyle\tests\graph_route_cpu\d5_qwen38_official_test.cc(634): replay 1
+C:\public\project-hyle\hyle\tests\graph_route_cpu\../compute_models/cpu_c4_model_branch_tests.h(22): DeepSeek-V4-Pro-0813
+]]></failure>
+      <failure message="C:\public\project-hyle\hyle\tests\compute_models\d5_qwen35_gguf_fragment_support.h:158&#x0A;The difference between actual[index] and expected[index] is 0.000335693359375, which exceeds absolute + relative * std::abs(expected[index]), where&#x0A;actual[index] evaluates to 0.005096435546875,&#x0A;expected[index] evaluates to 0.00543212890625, and&#x0A;absolute + relative * std::abs(expected[index]) evaluates to 0.00015580322360619903.&#x0A;131037&#x0A;Google Test trace:&#x0A;C:\public\project-hyle\hyle\tests\graph_route_cpu\d5_qwen38_official_test.cc(643): output 2 region 201588994&#x0A;C:\public\project-hyle\hyle\tests\graph_route_cpu\d5_qwen38_official_test.cc(634): replay 1&#x0A;C:\public\project-hyle\hyle\tests\graph_route_cpu\../compute_models/cpu_c4_model_branch_tests.h(22): DeepSeek-V4-Pro-0813&#x0A;" type=""><![CDATA[C:\public\project-hyle\hyle\tests\compute_models\d5_qwen35_gguf_fragment_support.h:158
+The difference between actual[index] and expected[index] is 0.000335693359375, which exceeds absolute + relative * std::abs(expected[index]), where
+actual[index] evaluates to 0.005096435546875,
+expected[index] evaluates to 0.00543212890625, and
+absolute + relative * std::abs(expected[index]) evaluates to 0.00015580322360619903.
+131037
+Google Test trace:
+C:\public\project-hyle\hyle\tests\graph_route_cpu\d5_qwen38_official_test.cc(643): output 2 region 201588994
+C:\public\project-hyle\hyle\tests\graph_route_cpu\d5_qwen38_official_test.cc(634): replay 1
+C:\public\project-hyle\hyle\tests\graph_route_cpu\../compute_models/cpu_c4_model_branch_tests.h(22): DeepSeek-V4-Pro-0813
+]]></failure>
+      <failure message="C:\public\project-hyle\hyle\tests\graph_route_cpu\../compute_models/cpu_c4_model_branches.h:304&#x0A;Value of: ::testing::Test::HasFailure()&#x0A;  Actual: true&#x0A;Expected: false&#x0A;Google Test trace:&#x0A;C:\public\project-hyle\hyle\tests\graph_route_cpu\../compute_models/cpu_c4_model_branch_tests.h(22): DeepSeek-V4-Flash-0731&#x0A;" type=""><![CDATA[C:\public\project-hyle\hyle\tests\graph_route_cpu\../compute_models/cpu_c4_model_branches.h:304
+Value of: ::testing::Test::HasFailure()
+  Actual: true
+Expected: false
+Google Test trace:
+C:\public\project-hyle\hyle\tests\graph_route_cpu\../compute_models/cpu_c4_model_branch_tests.h(22): DeepSeek-V4-Flash-0731
+]]></failure>
+    </testcase>
+  </testsuite>
+</testsuites>

@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites tests="3" failures="0" disabled="0" errors="0" time="16.71" timestamp="2026-10-07T00:20:11.496" name="AllTests">
+  <testsuite name="CpuC4Branches" tests="3" failures="0" disabled="0" skipped="0" errors="0" time="16.71" timestamp="2026-10-07T00:20:11.496">
+    <testcase name="DsparkTargetHiddenAndFp32Confidence" file="C:\public\project-hyle\hyle\tests\compute_route_cpu\../compute_models/cpu_c4_model_branch_tests.h" line="7" status="run" result="completed" time="0.47" timestamp="2026-10-07T00:20:11.496" classname="CpuC4Branches" />
+    <testcase name="DsparkMarkovFullVocabularyWithLogitBias" file="C:\public\project-hyle\hyle\tests\compute_route_cpu\../compute_models/cpu_c4_model_branch_tests.h" line="14" status="run" result="completed" time="0.329" timestamp="2026-10-07T00:20:11.967" classname="CpuC4Branches" />
+    <testcase name="DsparkTargetPrefillAndFiveTokenAttentionCache" file="C:\public\project-hyle\hyle\tests\compute_route_cpu\../compute_models/cpu_c4_model_branch_tests.h" line="20" status="run" result="completed" time="15.91" timestamp="2026-10-07T00:20:12.297" classname="CpuC4Branches" />
+  </testsuite>
+</testsuites>

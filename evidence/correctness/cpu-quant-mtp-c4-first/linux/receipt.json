@@ -1,0 +1,38 @@
+[
+  {
+    "name": "canonical-forward-build",
+    "args": [
+      "python3",
+      "/mnt/c/public/project-hyle/hyle/.scratch/cpu-coverage-c3-linux.py",
+      "--resume-build"
+    ],
+    "candidate": "c1c034d208ce95265abb7adc7121302a5d4f84eb",
+    "log": "1-canonical-forward-build.log",
+    "returncode": 0,
+    "seconds": 36.698
+  },
+  {
+    "name": "ordinary-direct-dspark",
+    "args": [
+      "/root/hyle-scratch/active-cpu-z/build/bin/hyle_compute_route_cpu_test",
+      "--gtest_filter=CpuC4Branches.*",
+      "--gtest_output=xml:/mnt/c/public/project-hyle/hyle/.scratch/validation/cpu-coverage-c4-linux/c1c034d208ce/direct.xml"
+    ],
+    "candidate": "c1c034d208ce95265abb7adc7121302a5d4f84eb",
+    "log": "2-ordinary-direct-dspark.log",
+    "returncode": 0,
+    "seconds": 16.788
+  },
+  {
+    "name": "ordinary-graph-dspark",
+    "args": [
+      "/root/hyle-scratch/active-cpu-z/build/bin/hyle_graph_route_cpu_test",
+      "--gtest_filter=CpuGraphC4Branches.*",
+      "--gtest_output=xml:/mnt/c/public/project-hyle/hyle/.scratch/validation/cpu-coverage-c4-linux/c1c034d208ce/graph.xml"
+    ],
+    "candidate": "c1c034d208ce95265abb7adc7121302a5d4f84eb",
+    "log": "3-ordinary-graph-dspark.log",
+    "returncode": 0,
+    "seconds": 16.72
+  }
+]
