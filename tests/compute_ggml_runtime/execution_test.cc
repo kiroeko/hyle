@@ -1,5 +1,6 @@
 #include "cpu_execution.h"
 #include "cpu_program.h"
+#include "ggml-quants.h"
 
 #include <algorithm>
 #include <array>
@@ -253,22 +254,32 @@ TEST(GgmlCpuExecution, OriginalNarrowIq1MatMulAndGatherReplayEncodedBlocks) {
       ASSERT_TRUE(execution);
       const auto allocated = workspace.used();
       for (int pass = 0; pass < 2; ++pass) {
-        // Integer [-127,128] (or its negative) is exactly representable by
-        // original Q8_K activation conversion; no quantization tolerance hides
-        // a wrong codebook, scale, row layout or replayed input.
+        // MatMul's declared original CPU path converts F32 activation to Q8_K.
+        // Apply that original encoder to the independent decoded-weight oracle;
+        // comparing against unquantized activation would change the contract.
         for (int token = 0; token < tokens; ++token)
           for (int column = 0; column < k; ++column)
             input[token * k + column] =
                 float(column - 127) * ((pass + token) % 2 ? -1 : 1);
         ASSERT_TRUE(execution->run().ok());
         EXPECT_EQ(workspace.used(), allocated);
-        for (int token = 0; token < tokens; ++token)
+        for (int token = 0; token < tokens; ++token) {
+          block_q8_K quantized{};
+          const auto *activation_traits = ggml_get_type_traits_cpu(GGML_TYPE_Q8_K);
+          ASSERT_NE(activation_traits->from_float, nullptr);
+          activation_traits->from_float(input.data() + token * k, &quantized, k);
           for (int row = 0; row < n; ++row) {
-            float expected = 0;
+            double expected = 0;
             for (int column = 0; column < k; ++column)
-              expected += input[token * k + column] * decoded[row * k + column];
-            EXPECT_NEAR(product[token * n + row], expected, 1.0e-4f);
+              expected += double(quantized.d) * quantized.qs[column] *
+                          decoded[row * k + column];
+            // The original dot factors F32 scales outside its integer reduction;
+            // allow eight F32 rounding units for that arithmetic association.
+            const auto tolerance = 8 * std::numeric_limits<float>::epsilon() *
+                                   std::max(1.0, std::abs(expected));
+            EXPECT_NEAR(product[token * n + row], expected, tolerance);
           }
+        }
         for (int index = 0; index < 3; ++index)
           for (int column = 0; column < k; ++column)
             EXPECT_EQ(rows[index * k + column], decoded[ids[index] * k + column]);
