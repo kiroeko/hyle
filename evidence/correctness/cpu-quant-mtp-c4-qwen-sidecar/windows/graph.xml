@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites tests="1" failures="0" disabled="0" errors="0" time="7.707" timestamp="2026-10-07T01:04:31.559" name="AllTests">
+  <testsuite name="CpuGraphC4Branches" tests="1" failures="0" disabled="0" skipped="0" errors="0" time="7.706" timestamp="2026-10-07T01:04:31.559">
+    <testcase name="QwenQ4NamedSidecarUsesActualQ3Q4Q6AndCompleteMtp" file="C:\public\project-hyle\hyle\tests\graph_route_cpu\../compute_models/cpu_c4_model_branch_tests.h" line="44" status="run" result="completed" time="7.706" timestamp="2026-10-07T01:04:31.559" classname="CpuGraphC4Branches" />
+  </testsuite>
+</testsuites>

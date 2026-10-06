@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites tests="1" failures="0" disabled="0" errors="0" time="181.956" timestamp="2026-10-07T00:56:55.960" name="AllTests">
+  <testsuite name="CpuC4Branches" tests="1" failures="0" disabled="0" skipped="0" errors="0" time="181.955" timestamp="2026-10-07T00:56:55.961">
+    <testcase name="CompleteThreeStageDsparkWithSharedEmbeddingAndConfidence" file="/root/hyle-scratch/active-cpu-z/source/tests/compute_route_cpu/../compute_models/cpu_c4_model_branch_tests.h" line="38" status="run" result="completed" time="181.954" timestamp="2026-10-07T00:56:55.961" classname="CpuC4Branches" />
+  </testsuite>
+</testsuites>

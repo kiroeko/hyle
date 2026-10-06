@@ -1,0 +1,12 @@
+Running main() from /root/.cache/hyle/dependencies/v1/sources/googletest-063de7e9578f-162765170ae6/googletest/src/gtest_main.cc
+Note: Google Test filter = CpuGraphC4Branches.QwenQ4NamedSidecarUsesActualQ3Q4Q6AndCompleteMtp
+[==========] Running 1 test from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 1 test from CpuGraphC4Branches
+[ RUN      ] CpuGraphC4Branches.QwenQ4NamedSidecarUsesActualQ3Q4Q6AndCompleteMtp
+[       OK ] CpuGraphC4Branches.QwenQ4NamedSidecarUsesActualQ3Q4Q6AndCompleteMtp (6966 ms)
+[----------] 1 test from CpuGraphC4Branches (6967 ms total)
+
+[----------] Global test environment tear-down
+[==========] 1 test from 1 test suite ran. (6968 ms total)
+[  PASSED  ] 1 test.

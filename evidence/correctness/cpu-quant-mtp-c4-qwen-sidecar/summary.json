@@ -1,0 +1,16 @@
+{
+  "candidate": "025354fe6d426b3036e8d5454332bc445c479a5c",
+  "artifact": "unsloth/Qwen3.8-27B-GGUF@4ca720788d1e01f1bff70c033e0d0028fd02e502/MTP/mtp-Qwen3.8-27B-Q4_0.gguf",
+  "tensor_table_digest": "e94135836ef1ea7fcb4dd77420060378d200f70d55ed2fbc73030661e9d531c8",
+  "scope": [
+    "Windows/Linux ordinary Direct/Graph Q3_K embedding actual output into complete MTP",
+    "Q4_K concat projection, Q6_K joint QG/attention/output, Q4_K FFN and residual/shared norm",
+    "actual KV/carry feedback/reset; all 248320 Q3_K head rows in resident shards",
+    "original CPU activation codec and dot reference; equal text positions MRoPE/half-split64"
+  ],
+  "remaining": [
+    "Flash sidecar programs",
+    "C4 resources/deliveries/cost",
+    "C5 full matrix"
+  ]
+}

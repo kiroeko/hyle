@@ -1,0 +1,12 @@
+Running main() from C:\Users\kiro\AppData\Local\hyle\dependencies\v1\sources\googletest-063de7e9578f-162765170ae6\googletest\src\gtest_main.cc
+Note: Google Test filter = CpuC4Branches.CompleteThreeStageDsparkWithSharedEmbeddingAndConfidence
+[==========] Running 1 test from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 1 test from CpuC4Branches
+[ RUN      ] CpuC4Branches.CompleteThreeStageDsparkWithSharedEmbeddingAndConfidence
+[       OK ] CpuC4Branches.CompleteThreeStageDsparkWithSharedEmbeddingAndConfidence (141510 ms)
+[----------] 1 test from CpuC4Branches (141510 ms total)
+
+[----------] Global test environment tear-down
+[==========] 1 test from 1 test suite ran. (141510 ms total)
+[  PASSED  ] 1 test.

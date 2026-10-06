@@ -84,7 +84,9 @@ P0记录实际cold scale widening、prepare绑定、hot原量化/selected-expert
 - F1精确新版profile已接普通CPU workload身份；F2 target hidden mean/concat/FP8投影/norm、
   F3 prefill128/129与五token cache/sink attention/逆RoPE/分组输出、F4 Markov完整词表/bias与F32confidence
   已在Windows/Linux普通Direct/Graph执行通过。
-- 三stage的完整HC/MoE/共享head及Qwen/Flash sidecar尚未完成；本包不签CLOSED。
+- 三stage完整HC/MoE/共享head已在Windows/Linux两入口通过；Qwen实际混合sidecar
+  embedding→完整MTP decoder/cache/carry→全词表head已接入并取得Windows/Linux两入口资格；Flash sidecar仍待接。
+  [完整三阶段记录](../../../../evidence/correctness/cpu-quant-mtp-c4-three-stage/README.md)保存准确边界，本包不签CLOSED。
 - inverse RoPE最初失败已定向证明来自非相同输入的中间相对比较；局部原公式对实际attention逐值相等，
   修正测试口径，未修改产品数学或全链门。原始诊断与有限范围见
   [首批证据](../../../../evidence/correctness/cpu-quant-mtp-c4-first/README.md)。
@@ -94,3 +96,9 @@ P0记录实际cold scale widening、prepare绑定、hot原量化/selected-expert
   已在Windows/Linux两入口通过，精确范围见首批证据中的main-followup。
 - 普通浮点重叠域可按总预算集中比较；本轮尚无需要自研的新数学缺口，没有性能竞赛或GPU重签。
 - 当前产品源码与C3交付候选相同，Compute+Graph仍为61,475实现行/250文件（不含测试/vendor/bench）。
+
+Qwen sidecar按已登记Unsloth qwen35 `graph_mtp`原程序连接：enorm在hnorm之前拼接，QG按head拆分，
+text相同position时MRoPE三段退化为64维half-split，保留Q6_K attention、Q4_K FFN、残差与shared-head norm。
+数值参考包括原CPU activation编码/vec-dot，避免把未量化F32当成相同MatMul。全248320行Q3_K head分片验证。
+精确候选、相同text position范围与未完成项见[Qwen sidecar收据](../../../../evidence/correctness/cpu-quant-mtp-c4-qwen-sidecar/README.md)。
+Flash sidecar依据同源`dflash.cpp`，FP32图与官方FP8/BF16图分开资格；不能仅替换profile后假签其三阶段。

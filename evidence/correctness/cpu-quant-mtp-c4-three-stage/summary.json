@@ -1,0 +1,17 @@
+{
+  "candidate": "6d0d2db37af58d4df69bb77d9103d30c042d1c93",
+  "platform": "Windows x86_64 MSVC19.50",
+  "scope": [
+    "five-token batch shared BF16 embedding; three complete HC/attention/FP4-MoE stages",
+    "three independent cache feedback/reset; unique cold preparation banks",
+    "final HC collapse/norm/FP32 confidence; complete 129280 LM+Markov head rows in resident shards",
+    "same LM head parameter serves main and draft inputs"
+  ],
+  "remaining": [
+    "Qwen/Flash sidecar complete qualification",
+    "C4 resources/deliveries/cost",
+    "C5 complete admitted model matrix"
+  ],
+  "product_source_changed": false,
+  "linux_candidate": "025354fe6d426b3036e8d5454332bc445c479a5c"
+}
