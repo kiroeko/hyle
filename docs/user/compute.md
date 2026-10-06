@@ -486,8 +486,9 @@ exact shape、rank<=8、稠密输出；支持合法odd-byte strides、I32/I64及
 
 这组原库程序是managed replay，包含必要index packing、稳定sort、base copy、native scratch与热
 Tensor metadata分配；同步阻塞host、使用原库私有线程、不承诺capture或精确私有内存上界。
-`native_threads`只设置ggml workers，不控制ATen线程池。要求Prepared-only或不能容忍unknown内存
-的硬预算会拒绝该候选；source/static/shared继续使用同一shared CPU LibTorch runtime。
+`native_threads`只设置ggml workers，不控制ATen线程池。要求Prepared-only或拒绝unknown的
+compilation/invocation硬预算会拒绝该候选；prepared artifact retained bytes已知，不能把仅限制
+retained bytes的预算视为必然拒绝。source/static/shared继续使用同一shared CPU LibTorch runtime。
 具体域与两平台普通三交付见[CPU ATen资格](../../evidence/correctness/cpu-aten-storage-index/README.md)。
 
 同一ATen接入还覆盖F32/F16/BF16的SiLU、GELU、GELU-tanh、Softplus，三种packed/separate
@@ -517,6 +518,12 @@ Softmax axis／scale、非零 Bool 或 floating additive mask，以及 SDPA 的 
 Tensor，内存上界未知。Torch 原 fused SDPA 的全 mask 行为不同，因此该通用候选使用满足
 公共合同的原 Tensor math 程序。Softmax／norm／RoPE 只接 equal-dense input0 的精确 alias；
 MatMul／SDPA 拒绝 alias，默认 prepare 仍绑定已有合法成熟域，不在执行时计时或搜索。
+
+ATen还接plain F32/F16/BF16 `Scatter{.kind=ScatterKind::kAdd}` 的I32/I64、scalar/多维indices、
+各轴与合法byte strides，输出为inferred dense。原F32 `index_add_` 累加base和全部重复updates，
+最终一次storage舍入；公共Add允许更宽累加/重排，不保证逐更新窄舍入或位复现。empty indices
+保留base原bits。索引全部checked后才写output，仅equal-dense input0允许alias；其它限制与managed
+成本同上。[本轮接线资格](../implementation/tasks/compute/cpu-aten-scatter-add-admission.md)尚在验收。
 
 CPU 默认入口也支持 `model_ops::block_quantization_roundtrip()` 的
 `kFloat8E4M3Block64` 与 `kFloat4E2M1Block32`，调用固定原版 ds4 CPU 程序。

@@ -571,4 +571,345 @@ TEST(AtenCpuNumeric,
   }
   EXPECT_TRUE(stats.balanced());
 }
+
+template <class T>
+void scatter_add_case(std::span<const std::int64_t> base_shape,
+                      std::span<const std::int64_t> index_shape,
+                      DataType index_type, std::int32_t axis, bool odd,
+                      bool alias = false) {
+  const auto base = description(half_test::data_type<T>(), base_shape, odd);
+  const auto index = description(index_type, index_shape, odd);
+  const auto update_shape = infer_single_output(Operation(Gather{.axis = axis}),
+                                                std::array{base, index})
+                                .value();
+  const auto updates =
+      description(base.data_type(), update_shape.dimensions(), odd);
+  auto ctx = context();
+  auto queue = ctx.create_queue().value();
+  auto p = prepare(ctx, Scatter{.axis = axis, .kind = ScatterKind::kAdd}, base,
+                   index, updates)
+               .value();
+  EXPECT_EQ(p.provider().id, aten_cpu::kProviderId);
+  EXPECT_EQ(p.runtime_properties().replay_class, ProviderReplayClass::kManaged);
+  EXPECT_EQ(p.alias_support(0, 0)->supported, base.is_dense());
+  EXPECT_FALSE(p.alias_support(0, 2)->supported);
+  auto inv = p.create_invocation().value();
+  auto b = storage(base), i = storage(index), u = storage(updates);
+  auto o = storage(p.output_description().value());
+  const auto output = TensorView::create(p.output_description().value(),
+                                         alias ? b.view() : o.view())
+                          .value();
+  const std::array inputs{ConstTensorView::create(base, b.view()).value(),
+                          ConstTensorView::create(index, i.view()).value(),
+                          ConstTensorView::create(updates, u.view()).value()};
+  const auto positive_axis = static_cast<std::size_t>(
+      axis < 0 ? axis + static_cast<std::int32_t>(base.rank()) : axis);
+  const auto extent = base.dimensions()[positive_axis];
+  const auto count = index.element_count().value();
+  std::vector<std::int64_t> indices(count);
+  for (std::size_t n = 0; n < count; ++n)
+    indices[n] = n % 2 == 0 ? extent - 1 : 0;
+  if (index_type == DataType::kInt64)
+    write(i, index, std::span<const std::int64_t>(indices));
+  else {
+    const std::vector<std::int32_t> small(indices.begin(), indices.end());
+    write(i, index, std::span<const std::int32_t>(small));
+  }
+  std::size_t prefix = 1, suffix = 1;
+  for (std::size_t n = 0; n < positive_axis; ++n)
+    prefix *= static_cast<std::size_t>(base.dimensions()[n]);
+  for (std::size_t n = positive_axis + 1; n < base.rank(); ++n)
+    suffix *= static_cast<std::size_t>(base.dimensions()[n]);
+  for (int replay = 0; replay < 2; ++replay) {
+    std::vector<T> initial(base.element_count().value());
+    std::vector<T> added(updates.element_count().value());
+    for (std::size_t n = 0; n < initial.size(); ++n)
+      initial[n] = half_test::encode<T>(float(n + replay) * .125F);
+    for (std::size_t n = 0; n < added.size(); ++n)
+      added[n] = half_test::encode<T>(float(n % 7 + replay) * .25F);
+    write(b, base, std::span<const T>(initial));
+    write(u, updates, std::span<const T>(added));
+    std::vector<float> expected(initial.size());
+    for (std::size_t n = 0; n < initial.size(); ++n)
+      expected[n] = static_cast<float>(half_test::decode(initial[n]));
+    for (std::size_t outer = 0; outer < prefix; ++outer)
+      for (std::size_t n = 0; n < count; ++n)
+        for (std::size_t inner = 0; inner < suffix; ++inner) {
+          const auto destination = (outer * static_cast<std::size_t>(extent) +
+                                    static_cast<std::size_t>(indices[n])) *
+                                       suffix +
+                                   inner;
+          expected[destination] += static_cast<float>(
+              half_test::decode(added[(outer * count + n) * suffix + inner]));
+        }
+    auto done = inv.submit(queue, inputs, output);
+    ASSERT_TRUE(done) << done.error().message();
+    ASSERT_TRUE(done->wait().ok());
+    const auto actual = read<T>(alias ? b : o);
+    for (std::size_t n = 0; n < actual.size(); ++n)
+      equal_numeric(actual[n], half_test::encode<T>(expected[n]));
+  }
+}
+template <class T> void scatter_add_shapes() {
+  for (auto index : {DataType::kInt32, DataType::kInt64})
+    for (bool odd : {false, true}) {
+      for (int axis = 0; axis < 3; ++axis) {
+        const std::array<std::int64_t, 3> base{2, 4, 3};
+        scatter_add_case<T>(base, std::array<std::int64_t, 2>{2, 2}, index,
+                            axis, odd);
+        scatter_add_case<T>(base, std::span<const std::int64_t>{}, index,
+                            axis - 3, odd);
+        scatter_add_case<T>(base, std::array<std::int64_t, 1>{0}, index, axis,
+                            odd);
+      }
+      scatter_add_case<T>(std::array<std::int64_t, 8>{1, 1, 1, 1, 1, 1, 4, 3},
+                          std::array<std::int64_t, 1>{4}, index, -2, odd);
+    }
+  scatter_add_case<T>(std::array<std::int64_t, 2>{4, 3},
+                      std::array<std::int64_t, 1>{4}, DataType::kInt64, 0,
+                      false, true);
+}
+TEST(AtenCpuNumeric, ScatterAddUsesMatureMathForBothIndexWidthsAndAllAxes) {
+  if (!aten_cpu::provider())
+    GTEST_SKIP();
+  scatter_add_shapes<float>();
+  scatter_add_shapes<hyle::simd::float16_t>();
+  scatter_add_shapes<hyle::simd::bfloat16_t>();
+}
+
+TEST(AtenCpuNumeric, ScatterAddChecksLateIndicesBeforeWritingAndRecovers) {
+  if (!aten_cpu::provider())
+    GTEST_SKIP();
+  auto stats =
+      hyle::mem::StatsAllocator::create(hyle::mem::system_allocator()).value();
+  {
+    auto ctx = context(stats.get());
+    auto queue = ctx.create_queue().value();
+    const auto bdesc =
+        description(DataType::kFloat32, std::array<std::int64_t, 1>{3});
+    const auto idesc =
+        description(DataType::kInt64, std::array<std::int64_t, 1>{3}, true);
+    auto p =
+        prepare(ctx, Scatter{.kind = ScatterKind::kAdd}, bdesc, idesc, bdesc)
+            .value();
+    auto inv = p.create_invocation().value();
+    auto b = storage(bdesc), i = storage(idesc), u = storage(bdesc);
+    auto o = storage(bdesc);
+    const std::array inputs{ConstTensorView::create(bdesc, b.view()).value(),
+                            ConstTensorView::create(idesc, i.view()).value(),
+                            ConstTensorView::create(bdesc, u.view()).value()};
+    const auto output = TensorView::create(bdesc, o.view()).value();
+    const std::array<float, 3> base{1, 2, 3}, updates{4, 5, 6};
+    write(b, bdesc, std::span<const float>(base));
+    write(u, bdesc, std::span<const float>(updates));
+    const std::array<float, 3> poison{-7, -7, -7};
+    for (auto bad : {std::int64_t{-1}, std::int64_t{3}, INT64_MAX}) {
+      const std::array<std::int64_t, 3> indices{2, 0, bad};
+      write(i, idesc, std::span<const std::int64_t>(indices));
+      write(o, bdesc, std::span<const float>(poison));
+      auto done = inv.submit(queue, inputs, output);
+      ASSERT_TRUE(done);
+      EXPECT_TRUE(done->wait().IsOutOfRange());
+      EXPECT_EQ(read<float>(o),
+                std::vector<float>(poison.begin(), poison.end()));
+      auto stale = inv.submit(queue, inputs, output);
+      ASSERT_FALSE(stale);
+      EXPECT_TRUE(stale.error().IsFailedPrecondition());
+      inv = p.create_invocation().value();
+    }
+    const std::array<std::int64_t, 3> indices{2, 0, 2};
+    write(i, idesc, std::span<const std::int64_t>(indices));
+    ASSERT_TRUE(inv.submit(queue, inputs, output)->wait().ok());
+    EXPECT_EQ(read<float>(o), (std::vector<float>{6, 2, 13}));
+    EXPECT_TRUE(ctx.close().ok());
+    EXPECT_FALSE(inv.submit(queue, inputs, output));
+  }
+  EXPECT_TRUE(stats.balanced());
+}
+
+TEST(AtenCpuNumeric, ScatterAddEmptyIndicesPreserveBitsAndAcceptsEmptyOutput) {
+  if (!aten_cpu::provider())
+    GTEST_SKIP();
+  auto ctx = context();
+  auto queue = ctx.create_queue().value();
+  const auto bdesc =
+      description(DataType::kFloat16, std::array<std::int64_t, 1>{3});
+  const auto idesc =
+      description(DataType::kInt64, std::array<std::int64_t, 1>{0});
+  const auto udesc =
+      description(DataType::kFloat16, std::array<std::int64_t, 1>{0});
+  auto p = prepare(ctx, Scatter{.kind = ScatterKind::kAdd}, bdesc, idesc, udesc)
+               .value();
+  auto inv = p.create_invocation().value();
+  auto b = storage(bdesc), i = storage(idesc), u = storage(udesc);
+  auto o = storage(bdesc);
+  const std::array<std::uint16_t, 3> bits{0x8000, 0x7c01, 0xffff};
+  write(b, bdesc, std::span<const std::uint16_t>(bits));
+  const std::array inputs{ConstTensorView::create(bdesc, b.view()).value(),
+                          ConstTensorView::create(idesc, i.view()).value(),
+                          ConstTensorView::create(udesc, u.view()).value()};
+  const auto output = TensorView::create(bdesc, o.view()).value();
+  ASSERT_TRUE(inv.submit(queue, inputs, output)->wait().ok());
+  EXPECT_EQ(read<std::uint16_t>(o),
+            std::vector<std::uint16_t>(bits.begin(), bits.end()));
+  scatter_add_case<float>(std::array<std::int64_t, 2>{0, 4},
+                          std::array<std::int64_t, 1>{0}, DataType::kInt64, 0,
+                          false);
+}
+
+template <class T> void scatter_add_special() {
+  const auto infinity = (std::numeric_limits<float>::infinity)();
+  const auto nan = (std::numeric_limits<float>::quiet_NaN)();
+  auto ctx = context();
+  auto queue = ctx.create_queue().value();
+  const auto desc = description(half_test::data_type<T>(),
+                                std::array<std::int64_t, 1>{4}, true);
+  const auto idesc =
+      description(DataType::kInt64, std::array<std::int64_t, 1>{4}, true);
+  auto p = prepare(ctx, Scatter{.kind = ScatterKind::kAdd}, desc, idesc, desc)
+               .value();
+  auto inv = p.create_invocation().value();
+  auto b = storage(desc), i = storage(idesc), u = storage(desc);
+  auto o = storage(p.output_description().value());
+  const std::array<T, 4> base{
+      half_test::encode<T>(nan), half_test::encode<T>(infinity),
+      half_test::encode<T>(-infinity), half_test::encode<T>(16)};
+  const std::array<T, 4> added{
+      half_test::encode<T>(2), half_test::encode<T>(-infinity),
+      half_test::encode<T>(3), half_test::encode<T>(.015625)};
+  const std::array<std::int64_t, 4> indices{0, 1, 2, 3};
+  write(b, desc, std::span<const T>(base));
+  write(i, idesc, std::span<const std::int64_t>(indices));
+  write(u, desc, std::span<const T>(added));
+  const std::array inputs{ConstTensorView::create(desc, b.view()).value(),
+                          ConstTensorView::create(idesc, i.view()).value(),
+                          ConstTensorView::create(desc, u.view()).value()};
+  ASSERT_TRUE(
+      inv.submit(queue, inputs,
+                 TensorView::create(p.output_description().value(), o.view())
+                     .value())
+          ->wait()
+          .ok());
+  const auto actual = read<T>(o);
+  EXPECT_TRUE(std::isnan(half_test::decode(actual[0])));
+  EXPECT_TRUE(std::isnan(half_test::decode(actual[1])));
+  EXPECT_EQ(half_test::decode(actual[2]), -infinity);
+  equal_numeric(actual[3], half_test::encode<T>(16.015625));
+}
+TEST(AtenCpuNumeric, ScatterAddKeepsFloatingSpecialValueSemantics) {
+  if (!aten_cpu::provider())
+    GTEST_SKIP();
+  scatter_add_special<float>();
+  scatter_add_special<hyle::simd::float16_t>();
+  scatter_add_special<hyle::simd::bfloat16_t>();
+}
+
+TEST(AtenCpuNumeric, ScatterAddPrivateLanesReplayConcurrently) {
+  if (!aten_cpu::provider())
+    GTEST_SKIP();
+  auto stats =
+      hyle::mem::StatsAllocator::create(hyle::mem::system_allocator()).value();
+  {
+    auto ctx = context(stats.get());
+    const auto desc =
+        description(DataType::kFloat32, std::array<std::int64_t, 1>{3});
+    const auto idesc =
+        description(DataType::kInt64, std::array<std::int64_t, 1>{3}, true);
+    auto p = prepare(ctx, Scatter{.kind = ScatterKind::kAdd}, desc, idesc, desc)
+                 .value();
+    std::array queues{ctx.create_queue().value(), ctx.create_queue().value()};
+    std::array lanes{p.create_invocation().value(),
+                     p.create_invocation().value()};
+    std::array base{storage(desc), storage(desc)},
+        ids{storage(idesc), storage(idesc)},
+        updates{storage(desc), storage(desc)},
+        output{storage(desc), storage(desc)};
+    for (int replay = 0; replay < 4; ++replay) {
+      for (std::size_t slot = 0; slot < 2; ++slot) {
+        const std::array<float, 3> b{float(replay + slot), 2, 3};
+        const std::array<float, 3> u{float(slot + 4), 5, 6};
+        const std::array<std::int64_t, 3> index{2, 0, 2};
+        write(base[slot], desc, std::span<const float>(b));
+        write(updates[slot], desc, std::span<const float>(u));
+        write(ids[slot], idesc, std::span<const std::int64_t>(index));
+      }
+      std::array<hyle::Status, 2> status;
+      std::array<std::thread, 2> threads;
+      for (std::size_t slot = 0; slot < 2; ++slot)
+        threads[slot] = std::thread([&, slot] {
+          const std::array inputs{
+              ConstTensorView::create(desc, base[slot].view()).value(),
+              ConstTensorView::create(idesc, ids[slot].view()).value(),
+              ConstTensorView::create(desc, updates[slot].view()).value()};
+          auto done = lanes[slot].submit(
+              queues[slot], inputs,
+              TensorView::create(desc, output[slot].view()).value());
+          if (done)
+            status[slot] = done->wait();
+          else
+            status[slot] = std::move(done).error();
+        });
+      for (auto &thread : threads)
+        thread.join();
+      for (std::size_t slot = 0; slot < 2; ++slot) {
+        ASSERT_TRUE(status[slot].ok()) << status[slot].message();
+        EXPECT_EQ(read<float>(output[slot]),
+                  (std::vector<float>{float(replay + slot + 5), 2,
+                                      float(slot + 13)}));
+      }
+    }
+  }
+  EXPECT_TRUE(stats.balanced());
+}
+
+TEST(AtenCpuNumeric, ScatterAddColdOomRestoresLiveBytesAndRetries) {
+  if (!aten_cpu::provider())
+    GTEST_SKIP();
+  auto stats =
+      hyle::mem::StatsAllocator::create(hyle::mem::system_allocator()).value();
+  FaultAllocator owner{.backing = stats.get()};
+  {
+    auto ctx = context(owner.get());
+    const auto desc = description(DataType::kBFloat16,
+                                  std::array<std::int64_t, 2>{4, 3}, true);
+    const auto idesc =
+        description(DataType::kInt64, std::array<std::int64_t, 1>{4}, true);
+    const auto op = Scatter{.kind = ScatterKind::kAdd};
+    const auto start = owner.attempts;
+    {
+      auto p = prepare(ctx, op, desc, idesc, desc);
+      ASSERT_TRUE(p);
+    }
+    const auto attempts = owner.attempts - start;
+    ASSERT_GT(attempts, 0U);
+    for (std::size_t failure = 0; failure < attempts; ++failure) {
+      const auto live = stats.snapshot().live_bytes;
+      owner.fail = owner.attempts + failure;
+      auto p = prepare(ctx, op, desc, idesc, desc);
+      ASSERT_FALSE(p);
+      EXPECT_TRUE(p.error().IsResourceExhausted());
+      EXPECT_EQ(stats.snapshot().live_bytes, live);
+      owner.fail = SIZE_MAX;
+    }
+    auto p = prepare(ctx, op, desc, idesc, desc).value();
+    const auto begin = owner.attempts;
+    {
+      auto inv = p.create_invocation();
+      ASSERT_TRUE(inv);
+    }
+    const auto count = owner.attempts - begin;
+    ASSERT_GT(count, 0U);
+    for (std::size_t failure = 0; failure < count; ++failure) {
+      const auto live = stats.snapshot().live_bytes;
+      owner.fail = owner.attempts + failure;
+      auto inv = p.create_invocation();
+      ASSERT_FALSE(inv);
+      EXPECT_TRUE(inv.error().IsResourceExhausted());
+      EXPECT_EQ(stats.snapshot().live_bytes, live);
+      owner.fail = SIZE_MAX;
+      EXPECT_TRUE(p.create_invocation());
+    }
+  }
+  EXPECT_TRUE(stats.balanced());
+}
 } // namespace

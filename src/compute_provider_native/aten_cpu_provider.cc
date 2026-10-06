@@ -77,6 +77,8 @@ Result<std::size_t> allocation_size(std::size_t header, std::size_t count,
 }
 
 bool numeric_program(Operation operation) noexcept {
+  if (const auto *scatter = operation.get_if<Scatter>())
+    return scatter->kind == ScatterKind::kAdd;
   if (const auto *unary = operation.get_if<Unary>())
     return unary->kind == UnaryKind::kSigmoid ||
            unary->kind == UnaryKind::kSilu || unary->kind == UnaryKind::kGelu ||
@@ -162,6 +164,9 @@ Status select(Operation operation, std::span<const TensorDesc> inputs,
       const bool rope_index =
           operation.get_if<RoPE>() && i == 1 &&
           (type == DataType::kInt32 || type == DataType::kInt64);
+      const bool scatter_index =
+          operation.get_if<Scatter>() && i == 1 &&
+          (type == DataType::kInt32 || type == DataType::kInt64);
       const bool bool_mask =
           type == DataType::kBool &&
           ((operation.get_if<Softmax>() && i == 1 &&
@@ -169,7 +174,7 @@ Status select(Operation operation, std::span<const TensorDesc> inputs,
            (operation.get_if<ScaledDotProductAttention>() && i == 3 &&
             operation.get_if<ScaledDotProductAttention>()->mask ==
                 MaskKind::kBoolean));
-      if (!admitted(type) && !rope_index && !bool_mask)
+      if (!admitted(type) && !rope_index && !scatter_index && !bool_mask)
         return Status::Unimplemented(
             "ATen CPU numerical input is not admitted");
     }
@@ -323,7 +328,9 @@ Status create_invocation(void *state, mem::AllocatorRef allocator,
       inv->condition =
           at::empty(at::IntArrayRef(shape.sizes.data(), shape.rank), at::kBool);
     }
-    if (p.operation.get_if<Gather>() || p.operation.get_if<Scatter>()) {
+    if (p.operation.get_if<Gather>() ||
+        (p.operation.get_if<Scatter>() &&
+         p.operation.get_if<Scatter>()->kind == ScatterKind::kAssign)) {
       const auto width =
           static_cast<std::int64_t>(data_type_size(p.inputs[1].data_type()));
       // Own an aligned native buffer even when the public index bytes are
@@ -661,6 +668,20 @@ void execute_numeric(const Program &p, Invocation &inv, at::Tensor &output) {
       }
       // Keep an F32 activation and multiplication, with one storage rounding.
       result = activation(first, gate->activation).mul(values);
+    } else if (p.operation.get_if<Scatter>()) {
+      auto indices = numeric_input(p, inv, 1).flatten();
+      auto updates = numeric_input(p, inv, 2).to(at::kFloat);
+      const auto axis = static_cast<std::int64_t>(p.axis);
+      updates =
+          p.inputs[1].rank() == 0
+              ? updates.unsqueeze(axis)
+              : updates.flatten(
+                    axis,
+                    axis + static_cast<std::int64_t>(p.inputs[1].rank()) - 1);
+      // Public Add allows wider accumulation and reassociation. Retain all
+      // updates, use the original numeric kernel, and round to storage once.
+      result = first.clone();
+      result.index_add_(axis, indices, updates);
     } else if (p.operation.get_if<MatMul>())
       result = at::matmul(first, numeric_input(p, inv, 1).to(at::kFloat));
     else if (p.operation.get_if<Softmax>())
@@ -690,6 +711,10 @@ Status execute(const Program &p, Invocation &inv,
     const auto &input = inv.tensors;
     auto out = byte_tensor(p.output, destination);
     if (numeric_program(p.operation)) {
+      if (p.operation.get_if<Scatter>() && p.index_count == 0) {
+        out.copy_(input[0]);
+        return Status::Ok();
+      }
       execute_numeric(p, inv, out);
       return Status::Ok();
     }
@@ -997,7 +1022,7 @@ ProviderPrepareOutcome prepare(void *,
 const detail::ProviderVTable kProviderVTable{
     .identity = {.id = kProviderId,
                  .name = "ATen CPU programs",
-                 .version = "libtorch-2.8.0-cpu+programs-4"},
+                 .version = "libtorch-2.8.0-cpu+programs-5"},
     .create_context = &create_context,
     .destroy_context = &destroy_context,
     .propose = &propose,
