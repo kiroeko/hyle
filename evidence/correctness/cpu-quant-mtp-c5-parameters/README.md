@@ -14,3 +14,9 @@ singleton维度，reshape为[channel,4]再沿channel合并。原数值字节不�
 GDN/KDA程序，保留独立oracle和状态反馈，补验实际storage-to-port接缝。尚未运行，不计PASS。
 
 剩余工作：核对80条role合同的完整消费和精确身份、运行六类卷积接缝，并汇总required-region。
+
+另一明确缺口是新版DeepSeek GGUF主干：官方主干收据不能代签GGUF的F32 state/math。
+固定Pro-0813/Flash-0731各UD-Q4_K_XL/UD-Q8_K_XL四个精确身份，共用原MXFP4专家和BF16 router，
+ordinary/shared投影为Q8_0或BF16。已一次接入原GGUF完整attention/compression、ordinary/hash MoE、
+mHC输出后全词表head消费者，原完整oracle/cache反馈保留。这四项尚未运行，不签PASS。
+本轮有限P0成本与性能适用边界见[成本审计](cost-audit.md)。
