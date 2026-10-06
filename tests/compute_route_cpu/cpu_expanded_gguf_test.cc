@@ -83,7 +83,8 @@ void check(c::Operation op, std::span<const c::TensorDesc> descriptions,
   }
   if (indexed) {
     // Current ids are checked before any output mapping/write. A failed replay
-    // must leave all results intact, and the same invocation can recover.
+    // must leave all results intact. Accepted failure retires the invocation;
+    // the immutable artifact can create a fresh slot for corrected payloads.
     const auto before = half_test::read<float>(result);
     auto ids = half_test::read<std::int32_t>(storage.back());
     ids[0] = -1;
@@ -91,6 +92,15 @@ void check(c::Operation op, std::span<const c::TensorDesc> descriptions,
     EXPECT_TRUE(run().IsOutOfRange());
     EXPECT_EQ(half_test::read<float>(result), before);
     update(0);
+#if defined(HYLE_TEST_GRAPH_ROUTE_CPU)
+    invocation = compiled->executable.create_invocation().value();
+    for (std::size_t i = 0; i < arguments.size(); ++i)
+      ASSERT_TRUE(invocation.bind(arguments[i], inputs[i]).ok());
+    ASSERT_TRUE(invocation.bind(value, destination).ok());
+    ASSERT_TRUE(invocation.prepare_replay(queues).ok());
+#else
+    invocation = prepared->create_invocation().value();
+#endif
     EXPECT_TRUE(run().ok());
   }
 }
