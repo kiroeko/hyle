@@ -54,3 +54,14 @@ consumer 目录已清理 **917,628,251 logical bytes**，SDK/producer/cache 保�
 [qualification.zip](qualification.zip)（101 entries，230,035 bytes），SHA256/摘要见
 [receipt.json](receipt.json)。本批七门与P0通过；剩余合格自研域仍按有限批次裁决，不能因低优先级
 fallback永久保留，也不能删SIMD本体。
+
+## 两个原 skip 的实际补跑
+
+检查确认 `.scratch/d5-qwen35-six-profile-fixture` 已有真实权重/参考输出；原 skip 的直接原因是
+测试进程未设置 `HYLE_D5_QWEN35_FIXTURE`，不是用户原模型缺失。设置仅子进程环境后，固定产品
+候选的两个测试在 Windows/Linux **各2/2实际通过，无skip**，不重建：真实2048维BF16输出投影及
+原Q/K norm权重参与的RMSNorm→RoPE→GQA Attention普通准备/重放。
+5个输入文件hash在Linux前向副本匹配，8MiB级临时副本已清理；原Windows fixture保留复用。
+初次16通过/2skip的XML与receipt不回写，两个补跑通过覆盖原未运行项，当前合并为18/18已执行。
+完整原件/driver/hash见[fixture-followup.zip](fixture-followup.zip)和
+[fixture-followup.json](fixture-followup.json)。这仍是片段验收，不是整模型推理。

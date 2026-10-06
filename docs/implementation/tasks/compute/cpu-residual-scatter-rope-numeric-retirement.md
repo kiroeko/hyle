@@ -62,3 +62,7 @@ RN4定向保持RoPE的原typed Tensor，再交原Double prefix程序；其它num
 没有公共API、原库pin/算法优化、GPU或SIMD本体改动。未跑P1，不签自研性能方向。
 现按协议CLOSED；具体新数值/布局/资源/交付反例或原依赖/接口变化才可重开。剩余自研域的用户
 要求以新卡定界，旧父卡仅提供已发生的证据，不授权继续改CLOSED源码。
+
+后续用户询问两个skip时发现Windows真实fixture已存在，只是测试子进程未设
+`HYLE_D5_QWEN35_FIXTURE`。设置并核对5个输入hash后，Windows/Linux定向各2/2通过、无skip，
+当前CPU消费者合并18/18已运行。未重建/未改产品，原skip事实保留，新证据见本批README补跑节。

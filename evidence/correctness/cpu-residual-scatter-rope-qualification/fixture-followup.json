@@ -1,0 +1,58 @@
+{
+  "candidate": "775b2bedace019de423edc5d8a6477772b8ef3ec",
+  "cause": "HYLE_D5_QWEN35_FIXTURE unset; existing Windows fixture was present",
+  "platforms": {
+    "windows": {
+      "passed": 2,
+      "skipped": 0,
+      "tests": [
+        "CpuDefaultContext.D5RealQwenProjectionUsesExactProfileAndReplays",
+        "CpuDefaultDirect.D5Qwen35OfficialGqaNormRopeAndAttentionUsePreparedCalls"
+      ],
+      "fixture": {
+        "source_id": "4068044d8571635d8a86f1e96a43dad104efc7089169065f735601e350008155",
+        "files": {
+          "tensors/model_language_model_layers_0_linear_attn_out_proj_weight.bin": "e0f911be79a8903db2418e802c0bbb77a21b87e978b292dfb9a0c515fdc9e7cb",
+          "tensors/model_language_model_layers_3_self_attn_k_norm_weight.bin": "b556287b9856486717f5657500a6a91f0ac930d77785f34c4f5fcde0cff42df9",
+          "tensors/model_language_model_layers_3_self_attn_q_norm_weight.bin": "256d2ba957ffe155e7c776679526382e67b773115072a3bc090f89dc5fe0e902",
+          "activation_1x2048.bf16": "971cd82cdbda1035894d96550a48c0d14fb552dd224c538371db39a0599e1fb8",
+          "expected_out_proj_1x2048.f32": "1988918337846e42f50a1bf4fa113f4cf1aa2a6d7672bd9efba0b52ac86b9265"
+        },
+        "matched_manifest_hashes": [
+          "tensors/model_language_model_layers_0_linear_attn_out_proj_weight.bin",
+          "tensors/model_language_model_layers_3_self_attn_k_norm_weight.bin",
+          "tensors/model_language_model_layers_3_self_attn_q_norm_weight.bin"
+        ]
+      }
+    },
+    "linux": {
+      "passed": 2,
+      "skipped": 0,
+      "tests": [
+        "CpuDefaultContext.D5RealQwenProjectionUsesExactProfileAndReplays",
+        "CpuDefaultDirect.D5Qwen35OfficialGqaNormRopeAndAttentionUsePreparedCalls"
+      ],
+      "fixture": {
+        "source_id": "4068044d8571635d8a86f1e96a43dad104efc7089169065f735601e350008155",
+        "files": {
+          "tensors/model_language_model_layers_0_linear_attn_out_proj_weight.bin": "e0f911be79a8903db2418e802c0bbb77a21b87e978b292dfb9a0c515fdc9e7cb",
+          "tensors/model_language_model_layers_3_self_attn_k_norm_weight.bin": "b556287b9856486717f5657500a6a91f0ac930d77785f34c4f5fcde0cff42df9",
+          "tensors/model_language_model_layers_3_self_attn_q_norm_weight.bin": "256d2ba957ffe155e7c776679526382e67b773115072a3bc090f89dc5fe0e902",
+          "activation_1x2048.bf16": "971cd82cdbda1035894d96550a48c0d14fb552dd224c538371db39a0599e1fb8",
+          "expected_out_proj_1x2048.f32": "1988918337846e42f50a1bf4fa113f4cf1aa2a6d7672bd9efba0b52ac86b9265"
+        },
+        "matched_manifest_hashes": [
+          "tensors/model_language_model_layers_0_linear_attn_out_proj_weight.bin",
+          "tensors/model_language_model_layers_3_self_attn_k_norm_weight.bin",
+          "tensors/model_language_model_layers_3_self_attn_q_norm_weight.bin"
+        ]
+      }
+    }
+  },
+  "artifact": {
+    "file": "fixture-followup.zip",
+    "entries": 12,
+    "bytes": 7724,
+    "sha256": "c9de95a9737d9e1e0c4cc7779528e07a9967ec53ae44cbf05e547f22a59d8774"
+  }
+}
