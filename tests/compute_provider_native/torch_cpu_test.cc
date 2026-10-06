@@ -101,7 +101,9 @@ TEST(NativeTorchCpu, LowPrecisionConvolutionHasRealFailureRecoveryAndIndependent
       auto weights=c::TensorDesc::dense(type,std::array<std::int64_t,2>{8,4}).value();
       auto result=c::TensorDesc::dense(type,std::array<std::int64_t,3>{1,1,8}).value();
       const std::array descs{samples,weights};const std::array outputs{result};
-      auto prepared=c::prepare(context,c::model_ops::causal_conv1d(),descs,outputs,mem::system_resource()).value();
+      auto candidate=c::prepare(context,c::model_ops::causal_conv1d(),descs,outputs,mem::system_resource());
+      ASSERT_TRUE(candidate)<<candidate.error().message();
+      auto prepared=std::move(candidate).value();
       EXPECT_EQ(prepared.implementation().value(),0x544f524348000009ULL);
       EXPECT_EQ(prepared.runtime_properties().replay_class,c::ProviderReplayClass::kManaged);
       EXPECT_FALSE(prepared.invocation_private_bytes());EXPECT_FALSE(prepared.capture_compatible());
