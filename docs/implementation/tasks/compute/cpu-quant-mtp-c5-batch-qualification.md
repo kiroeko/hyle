@@ -110,7 +110,8 @@ F3完整required-region与30类参数对账、F4更新SDK和最终聚合仍未�
 [更新SDK](../../../../evidence/correctness/cpu-quant-mtp-c5-sdk/README.md)：两系统static/shared普通两入口64项通过，
 包含修复后的2.16GB Q8_0真实表；其余包装/资产/缓存合同按未变身份复用C3/C4。
 [源代码消费者](../../../../evidence/correctness/cpu-quant-mtp-c5-final/README.md)：Windows剩余两入口362项完成，
-首次14项fixture环境skip保留，设置已校验的本地fixture后全部补跑通过。Linux同批仍执行，不签PASS。
+首次14项fixture环境skip保留，设置已校验的本地fixture后全部补跑通过。Linux同批Direct172/Graph190全部通过，
+没有skip；两系统共724项。产品/测试身份与原数值矩阵匹配，没有重复执行594项/入口。
 
 [参数精确对账](../../../../evidence/correctness/cpu-quant-mtp-c5-parameters/README.md)把30类shape/storage细分为
 80类真实role/shape、1,354制品关联，不是80个新算子。F3发现旧完整消费者已经归一化卷积权重，

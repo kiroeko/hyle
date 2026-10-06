@@ -17,6 +17,10 @@
 
 ## Linux
 
-当前批次尚在执行，未签 PASS；完成后附其实际收据。
+[批次收据](linux/receipt.json)：四个当前factor通过，普通Direct172项、Graph190项全部通过，
+没有失败和skip。使用相同Windows canonical fixture前向复制并逐文件核验SHA；
+没有从WSL回写产品源码。configure/build并行2，重型消费者串行、线程上限2。
+
+两系统此批共724项普通完整消费者通过；数值矩阵和更新SDK的范围另行保留。
 
 以上是已有完整消费者的当前软件回归资格，尚不替代新增制品全部参数角色/required-region对账。

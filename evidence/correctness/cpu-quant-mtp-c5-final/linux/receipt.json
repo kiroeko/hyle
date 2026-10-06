@@ -1,0 +1,89 @@
+[
+  {
+    "name": "configure-tests",
+    "args": [
+      "cmake",
+      "-S",
+      "/root/hyle-scratch/active-cpu-z/source",
+      "-B",
+      "/root/hyle-scratch/active-cpu-z/build",
+      "-DHYLE_BUILD_TESTS=ON",
+      "-DHYLE_INSTALL=OFF",
+      "-DHYLE_STATIC=ON",
+      "-DFETCHCONTENT_FULLY_DISCONNECTED=ON",
+      "-U",
+      "CMAKE_PROJECT_INCLUDE"
+    ],
+    "candidate": "182f5d036ae214d13beba23d65646a3064545b0b",
+    "log": "1-configure-tests.log",
+    "returncode": 0,
+    "seconds": 30.813
+  },
+  {
+    "name": "selected-build",
+    "args": [
+      "cmake",
+      "--build",
+      "/root/hyle-scratch/active-cpu-z/build",
+      "--target",
+      "hyle_compute_ops_tests",
+      "hyle_compute_ggml_runtime_tests",
+      "hyle_compute_provider_ggml_tests",
+      "hyle_compute_provider_native_tests",
+      "hyle_compute_route_cpu_tests",
+      "hyle_graph_route_cpu_tests",
+      "--parallel",
+      "2"
+    ],
+    "candidate": "182f5d036ae214d13beba23d65646a3064545b0b",
+    "log": "2-selected-build.log",
+    "returncode": 0,
+    "seconds": 50.218
+  },
+  {
+    "name": "factors",
+    "args": [
+      "ctest",
+      "--test-dir",
+      "/root/hyle-scratch/active-cpu-z/build",
+      "--output-on-failure",
+      "--no-tests=error",
+      "-L",
+      "^(compute_ops|compute_ggml_runtime|compute_provider_ggml|compute_provider_native)$",
+      "-LE",
+      "headers",
+      "-j",
+      "1",
+      "--output-junit",
+      "/mnt/c/public/project-hyle/hyle/.scratch/validation/cpu-coverage-c5-final-linux/182f5d036ae2/factors.xml"
+    ],
+    "candidate": "182f5d036ae214d13beba23d65646a3064545b0b",
+    "log": "3-factors.log",
+    "returncode": 0,
+    "seconds": 0.616
+  },
+  {
+    "name": "direct-remaining-suite",
+    "args": [
+      "/root/hyle-scratch/active-cpu-z/build/bin/hyle_compute_route_cpu_test",
+      "--gtest_filter=*-*C5Actual*",
+      "--gtest_output=xml:/mnt/c/public/project-hyle/hyle/.scratch/validation/cpu-coverage-c5-final-linux/182f5d036ae2/direct.xml"
+    ],
+    "candidate": "182f5d036ae214d13beba23d65646a3064545b0b",
+    "log": "4-direct-remaining-suite.log",
+    "returncode": 0,
+    "seconds": 446.049
+  },
+  {
+    "name": "graph-remaining-suite",
+    "args": [
+      "/root/hyle-scratch/active-cpu-z/build/bin/hyle_graph_route_cpu_test",
+      "--gtest_filter=*-*C5Actual*",
+      "--gtest_output=xml:/mnt/c/public/project-hyle/hyle/.scratch/validation/cpu-coverage-c5-final-linux/182f5d036ae2/graph.xml"
+    ],
+    "candidate": "182f5d036ae214d13beba23d65646a3064545b0b",
+    "log": "5-graph-remaining-suite.log",
+    "returncode": 0,
+    "seconds": 435.187
+  }
+]

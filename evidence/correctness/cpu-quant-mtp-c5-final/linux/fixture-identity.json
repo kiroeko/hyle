@@ -1,0 +1,31 @@
+{
+  "source_id": "4068044d8571635d8a86f1e96a43dad104efc7089169065f735601e350008155",
+  "files": {
+    "activation_1x2048.bf16": "971cd82cdbda1035894d96550a48c0d14fb552dd224c538371db39a0599e1fb8",
+    "embedding_rows_7x2048.bf16": "3924223432b46b6dd5463a5872d76ad674ba377bf76e27c1a56ce5625ee62945",
+    "expected_out_proj_1x2048.f32": "1988918337846e42f50a1bf4fa113f4cf1aa2a6d7672bd9efba0b52ac86b9265",
+    "ffn_activation_seed17_1x2048.bf16": "0567183befd305c765316c56d5c7febecebdac79915c9b61b5e14bc24a93335f",
+    "ffn_activation_seed5_1x2048.bf16": "5c578222ff5f26e5dd1afa9d57e67f93593ca053d8a5640b49f6238b13f32b15",
+    "ffn_direct_expected_seed17_1x2048.f32": "9acb37e037087d9b924f40990b79d0bb39ede3f4f0a887777eedcf5ce4acc95a",
+    "ffn_direct_expected_seed5_1x2048.f32": "840be4222754706a9d4533473e9eef7e5e4aabddc77b7f80e418a18064247ffe",
+    "ffn_expected_seed17_1x2048.f32": "3598c9e7d697cccb29ce11900e058bdcb0b9a67ee65495ce6fa2e67dd4325756",
+    "ffn_expected_seed5_1x2048.f32": "ab3b8fbad5ef20ba993a65c1d6468783eea6996c0bc5c1f8de2929a3b93318bb",
+    "mtp_activation_seed11_1x4096.bf16": "95af5ea712689d7f1c32f6d6b4ccf9228ae0af801f1ebdb5d70dd88057bf89e7",
+    "mtp_activation_seed3_1x4096.bf16": "a72c46b4f67f4ab122229e9d6426799afdf6b0cfcbaddb3b9313f933299d6475",
+    "mtp_expected_seed11_1x2048.f32": "e0c0b9cd5349a9b6bdc17fe7425ea7aa364f7a3c40b96d8a3542e92148683762",
+    "mtp_expected_seed3_1x2048.f32": "083ab53a826e38258eea6964de5fe906c7c5de228070f3583bfe2202d55bba3d",
+    "tensors/model_language_model_layers_0_input_layernorm_weight.bin": "e3bfb63b03722ec637ed4ea2cc552d68a87e661bbba1e889f721858b34162877",
+    "tensors/model_language_model_layers_0_linear_attn_A_log.bin": "4482c77a3cbbb4d1f3c777090048fa1e7abd89ac4e8055bf6a04c1596fdfb500",
+    "tensors/model_language_model_layers_0_linear_attn_conv1d_weight.bin": "0dbb863f97d7ac62ca2e452e0fe1487edb5d954e2380192102aa1ace8f40642a",
+    "tensors/model_language_model_layers_0_linear_attn_dt_bias.bin": "e636c88bee625312e5f3dc657e1ac60c1f5fbd5ef2d35ad4a82f0fc7dd7a1aa1",
+    "tensors/model_language_model_layers_0_linear_attn_out_proj_weight.bin": "e0f911be79a8903db2418e802c0bbb77a21b87e978b292dfb9a0c515fdc9e7cb",
+    "tensors/model_language_model_layers_0_mlp_down_proj_weight.bin": "fbafb4be6b6a3e93fb969b1679f7430a824cd912db98a83a7c4b9658e511d766",
+    "tensors/model_language_model_layers_0_mlp_gate_proj_weight.bin": "6d99f0ade7791154ee7806b24444ead0d3dcb67b203dcd9304faae9cd69a2c42",
+    "tensors/model_language_model_layers_0_mlp_up_proj_weight.bin": "e603e29e2effc8e110dca2d2b1d20a5b9fe399ef7d4c48c289a9febb95472f5e",
+    "tensors/model_language_model_layers_3_self_attn_k_norm_weight.bin": "b556287b9856486717f5657500a6a91f0ac930d77785f34c4f5fcde0cff42df9",
+    "tensors/model_language_model_layers_3_self_attn_q_norm_weight.bin": "256d2ba957ffe155e7c776679526382e67b773115072a3bc090f89dc5fe0e902",
+    "tensors/model_language_model_layers_3_self_attn_q_proj_weight.bin": "17bd3cd9059fbc52c07bbcbf23c01493e3ead9103d61f7de3744267ce2a9d664",
+    "tensors/mtp_fc_weight.bin": "04a296fcc7c41188d9551afc386a38ae75b2ade3ccefe0a75d85f7472f04b60c"
+  },
+  "matched_manifest_files": 25
+}

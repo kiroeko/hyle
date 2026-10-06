@@ -1,0 +1,22 @@
+{
+  "candidate": "182f5d036ae214d13beba23d65646a3064545b0b",
+  "platform": "linux",
+  "entries": {
+    "direct": {
+      "total": 172,
+      "initially_skipped": 0,
+      "passed": 172
+    },
+    "graph": {
+      "total": 190,
+      "initially_skipped": 0,
+      "passed": 190
+    }
+  },
+  "reused_numeric_candidate": "46a55325a465a94da3d79d2e5e92b0cb6b2cfb62",
+  "scope": "remaining full source facade/family suites, C5 numeric cases excluded because identical qualified test/product sources",
+  "remaining": [
+    "F3 complete exact parameter/required-region reconciliation",
+    "final costs/docs/status/red-team/cleanup"
+  ]
+}
