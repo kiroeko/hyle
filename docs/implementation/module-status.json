@@ -373,9 +373,9 @@
     },
     {
       "module": "compute_provider_ggml",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/cpu-residual-scatter-rope-numeric-retirement.md",
-      "summary": "RN定界：性能前置实际发现Native half ScatterAdd逐更新舍入，以及Native/ggml generic I32 RoPE先转F32丢整数位置；Native保持父卡AUDITED旧有限FIX，ggml重开SCOPED，RN产品FIX尚未固定，不优化/不计时。"
+      "summary": "RN1–4 AUDITED：实际重复half ScatterAdd与I32 RoPE反例已固定有限FIX；撤不合格Native/ggml普通域并接原ATen低精度Double phase RoPE，不优化/不计时/SIMD不改。数学、普通入口、资源与两平台三交付仍待产品验收。"
     },
     {
       "module": "graph_provider_onednn",
@@ -419,8 +419,8 @@
     {
       "module": "compute_provider_native",
       "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/cpu-native-final-domain-verdict.md",
-      "summary": "RN定界：性能前置实际发现Native half ScatterAdd逐更新舍入，以及Native/ggml generic I32 RoPE先转F32丢整数位置；Native保持父卡AUDITED旧有限FIX，ggml重开SCOPED，RN产品FIX尚未固定，不优化/不计时。"
+      "record": "docs/implementation/tasks/compute/cpu-residual-scatter-rope-numeric-retirement.md",
+      "summary": "RN1–4 AUDITED：实际重复half ScatterAdd与I32 RoPE反例已固定有限FIX；撤不合格Native/ggml普通域并接原ATen低精度Double phase RoPE，不优化/不计时/SIMD不改。数学、普通入口、资源与两平台三交付仍待产品验收。"
     },
     {
       "module": "compute_sched",

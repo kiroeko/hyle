@@ -1,6 +1,6 @@
 # CPU 剩余数值语义：重复 ScatterAdd 与整数 RoPE
 
-<!-- MODULE REVIEW: SCOPED -->
+<!-- MODULE REVIEW: AUDITED -->
 
 - owners `compute_provider_native`、`compute_provider_ggml`，baseline
   `e80cf22ccf285934693f40da9cc558b457283d7b`，Windows canonical。ggml以本卡重开SCOPED；Native保持
@@ -33,4 +33,23 @@
 2. Native half ScatterAdd、Native 通用 RoPE，以及 ggml 通用三 floating/I32 RoPE 的准入与死分支去留。
 3. 旧错误数学预期迁移；专家冷拒绝与普通成熟 Direct/Graph 的两平台三交付。
 
-当前 SCOPED 不授权产品。原库、SIMD 本体和 GPU 专用/原模型程序保留；不能误删有效借用。
+上方为SCOPED定界过程。源码与实际反例现已完成审计，两owner重绑定本卡AUDITED，仅授权下列FIX。
+原库、SIMD 本体和 GPU 专用/原模型程序保留；不能误删有效借用。
+
+## 固定审计/FIX
+
+| ID | 有限产品改动 | 必需验收 |
+|---|---|---|
+| RN1 | Native F16/BF16 ScatterAdd明确冷拒绝；保留F32 Add及各storage Assign，原专用half Add不再执行 | propose/prepare拒绝；成熟重复/越界无写/alias/empty；旧ordered-rounding预期迁移 |
+| RN2 | Native通用RoPE明确拒绝，删除本factor专用位置读取/选择/执行/准入和无其它用途的private plan fields | 两index widths专家冷拒绝；其它Native Transformer执行不变 |
+| RN3 | ggml CPU通用三floating/I32 RoPE准入与对应lowering退役；其它原程序/模型扩展不改 | expert拒绝，不冒充ggml kernel失败；其它ggml族实跑与region消费 |
+| RN4 | 已接ATen原Double phase RoPE开放F16/BF16 data，frequency仍F32；原Tensor数学/clone-tail与资源模型不改，更新implementation版本 | 三floating、I32/I64、两layout、axis/byte-stride、sNaN tail bits、empty、alias、并发/close/cold OOM；普通Direct/Graph两平台三交付 |
+
+不为不同数值语义扩张性能对比；本轮不签WIN。RoPE旧F32-phase计算预期不能代签整数端口资格。
+RN2删除仅限Native拥有的死代码；仍在其它owner下的旧CPU专用kernel/helper先登记末尾定向清理，
+不借本卡改Compute/runtime CLOSED源码或SIMD基础，不用“暂存”保留不合格准入。
+
+七问：原ATen/ggml版本、许可证/SDK沿已锁闭包；三dtype能力先成熟接入再撤错误路径；复用已关闭
+runtime/packing/Completion；P0完整Tensor转换/分配/同步计成本，无新的数学核；无C/FFI或公共API；
+三交付使用同一ordinary consumer及邻置DLL；guide明确整数位置/managed/专家拒绝。
+最终七门、红队及适用结果仍须实际验证；当前AUDITED不是完成声明。
