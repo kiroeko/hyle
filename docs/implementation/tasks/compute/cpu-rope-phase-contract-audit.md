@@ -1,6 +1,6 @@
 # CPU RoPE：中间精度与同合同审计
 
-<!-- MODULE REVIEW: CANDIDATE -->
+<!-- MODULE REVIEW: CLOSED -->
 
 - owner `compute_provider_ggml`；baseline `e80cf22ccf285934693f40da9cc558b457283d7b`。
 - RN诊断曾把保留完整整数的Double phase oracle用于当前Float32模型程序，需核对真实consumer；
@@ -22,3 +22,13 @@
 无FIX候选沿baseline `e80cf22ccf285934693f40da9cc558b457283d7b`，19个ggml/runtime/公开factory输入
 逐字SHA256一致，见[源码身份](../../../../evidence/correctness/cpu-residual-scatter-rope/ggml-no-change.json)。
 本轮只裁决同合同边界，产品能力、安装、执行和资源没有变化；复用已有TC资格，不触发新构建/P1。
+
+## 终审：无产品FIX
+
+七门在本次精度审计范围通过：scope具名反例；architecture保留原模型程序；correctness明确原件与
+Float32/Double不同程序的边界、19个源输入不变；delivery复用未改TC闭包；usability/docs不宣传
+不同精度的SOTA；red-team核对了官方模型原精度及未提交修改撤回；engineering_performance为P0，
+没有新执行成本或P1命题。docs/closure实际通过；docs/state-only selector不选择构建/P1。
+“correctness/delivery复用”不是本轮重跑测试，亦不复用其未证明的整模型或任意精度结论。
+剩余Native RN1/RN4资格与有限性能裁决继续，不以本卡关闭CPU整个goal。新的同相位实际错误、
+真实consumer需要另一明确相位合同或原依赖/接口变化才可重开。

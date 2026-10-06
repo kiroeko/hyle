@@ -373,10 +373,14 @@
     },
     {
       "module": "compute_provider_ggml",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/compute/cpu-rope-phase-contract-audit.md",
-      "summary": "RoPE精度审计无FIX候选：19个ggml/runtime输入SHA256一致；Float32模型与Double oracle差异不签FAIL，保留既有原程序，不构建/P1。",
-      "candidate": "e80cf22ccf285934693f40da9cc558b457283d7b"
+      "summary": "RoPE精度审计CLOSED无产品FIX：官方Float32模型与Double oracle不同，不签数值FAIL/同合同SOTA；19个ggml/runtime输入不变，原程序与TC资格保留，P0/docs/closure通过，未构建/P1。Native RN1/RN4仍在验收。",
+      "candidate": "e80cf22ccf285934693f40da9cc558b457283d7b",
+      "performance": {
+        "tier": "P0",
+        "evidence": "docs/implementation/tasks/compute/cpu-rope-phase-contract-audit.md"
+      }
     },
     {
       "module": "graph_provider_onednn",
