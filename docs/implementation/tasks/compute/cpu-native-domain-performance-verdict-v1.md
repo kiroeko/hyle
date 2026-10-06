@@ -63,4 +63,20 @@ rows1/32的token/small batch与正交存储消费只绑定精确op/kind/dtype/sh
 - benchmark/合同/资格输入：`481fc3ea2bd2bc9ab50e6b4185c7daa64111ddb3`；产品数学固定 `775b2bedace019de423edc5d8a6477772b8ef3ec` 的已验收SDK。
 - 52个SDK安装输入、8个运行DLL和244个同源码peer输入由资格器核对；每项实际mature身份另记。
 - 没有产品/API/layout/算法修改；候选后仅状态/证据，不因此重编译产品或重跑旧验收。
-- 正式统一采样尚未运行；只能在同loaded code与SDK资格复用成立后开始，适用control未PASS不能签方向。
+- 同loaded code与SDK资格复用成立后，正式统一采样已完成；见下方本批结果，不能把该结果代签后续产品删除。
+
+## ND3-P已完成：结果冻结，不追加测量
+
+[统一P1证据](../../../../evidence/performance/cpu-native-domain-verdict/README.md)已复核：15样本×4
+strata，30 controls，1422.625秒；QUALIFIED、controls/validators/stability通过。
+严格方向190 WIN/14 LOSS/2 INCONCLUSIVE；原5%实用门187 WIN/14 LOSE/5 INCONCLUSIVE，
+non-inferiority192 PASS/14 FAIL，聚合performance FAIL。3个小幅Cast WIN另记，不阈值改名为parity。
+72项前置失格仍未资格。没有再开n31、优化算法或测量姿势，产品实现未变。
+
+当前处于冻结比较候选之后的ND3-D去留审计：14个明确劣势普通域选成熟，77个无完整优势/未资格
+场景也按既定成熟优先处理；187个完整收益只绑定本机/软件/精确shape/layout/正常消费范围，不宣称
+所有peer、值分布、alias、strict资源、融合region或模型的SOTA。按共享源码与实际独有消费确认源级
+可删除函数，再固定有限FIX进入AUDITED；不先把Native1000优先级改写成已清退。
+
+MatMul的源级删除及严格资源能力撤回已形成[具体待决方案](cpu-native-matmul-retirement-decision.md)：
+普通数学成熟实现可接替，但不能不说明就撤回原Native-only/strict请求。当前尚未实施。

@@ -27,5 +27,6 @@ caller CPU2、单线程、above-normal，真实 submit/wait。没有更改用户
 rows32 是几何 holdout；统一 runner 的 sample-partition holdout flag 仍为 false。
 普通 alias、严格内存、whole-region 与完整模型不因这个有限 leaf replay 自动获得性能结论。
 
-当前正式 P1 尚未运行；产品删除/路由有限 FIX 尚未据结果固定。Compute+Graph 实现仍为
+前置之后的一次正式 P1 已完成，见[统一结果](../cpu-native-domain-verdict/README.md)；本页的整体
+前置FAIL和72项失格不回写。产品删除/路由有限 FIX 尚未据结果固定。Compute+Graph 实现仍为
 61,386 行 / 249 文件，不含测试或第三方源码，本目录是验证资产，不能计为产品完成。

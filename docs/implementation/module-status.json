@@ -271,14 +271,9 @@
     },
     {
       "module": "compute",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/compute/llm-moe-model-profile-routing-refactor.md",
-      "summary": "MR CLOSED：compute 的真实模型制品画像、任意端口规则、确定性冷绑定和四路线单轨迁移已通过正确性、三交付、红队及 P0；M3 覆盖保持独立。",
-      "candidate": "2ada22a89821d20b312407c9575df8f9a923df89",
-      "performance": {
-        "tier": "P0",
-        "evidence": "evidence/correctness/model-profile-routing-refactor/README.md"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/cpu-native-matmul-private-kernel-cleanup.md",
+      "summary": "K1 SCOPED：仅删除历史common-path的Native专用MatMul两私有文件并迁移矩阵fixture；runtime/API/路由不变"
     },
     {
       "module": "graph",
@@ -423,10 +418,9 @@
     },
     {
       "module": "compute_provider_native",
-      "state": "CANDIDATE",
-      "record": "docs/implementation/tasks/compute/cpu-native-domain-performance-verdict-v1.md",
-      "summary": "CPU自研有限裁决：固定206项同合同P1候选，72项对照失格原样保留；产品数学仍775b2bed，尚无正式WIN/LOSS或新删除",
-      "candidate": "481fc3ea2bd2bc9ab50e6b4185c7daa64111ddb3"
+      "state": "AUDITED",
+      "record": "docs/implementation/tasks/compute/cpu-native-matmul-retirement-decision.md",
+      "summary": "MM AUDITED：用户批准自研MatMul源级退役与严格能力撤回；有限MM1–3固定，SIMD与原库保留，其它域待后续裁决"
     },
     {
       "module": "compute_sched",
