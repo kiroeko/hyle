@@ -1,0 +1,13 @@
+{
+  "name": "awq_cpu",
+  "repository": "https://github.com/casper-hansen/AutoAWQ.git",
+  "revision": "88e4c76b20755db275574e6a03c83c84ba3bece5",
+  "git_tree": "25b64783617d2ddda337abab631dd99dc619e825",
+  "archive": {
+    "url": "https://codeload.github.com/casper-hansen/AutoAWQ/tar.gz/88e4c76b20755db275574e6a03c83c84ba3bece5",
+    "sha256": "525f90b888389bd437a4c9c70bcebb177799be0fa195666987c7341dc713ea27"
+  },
+  "archive_bytes": 86785,
+  "license_origin": "LICENSE",
+  "license_sha256": "2af485d269071b583c62c20250a63349f8313312cc9df0bd9007ca39c6d57bd9"
+}

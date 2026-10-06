@@ -1,0 +1,13 @@
+{
+  "name": "compressed_tensors_cpu",
+  "repository": "https://github.com/vllm-project/compressed-tensors.git",
+  "revision": "ac8e2ba82f4e0d5eaa40069f8fc642738f124cd4",
+  "git_tree": "3d02bd5c03a948ec9b08200b8e5c91355d4f2820",
+  "archive": {
+    "url": "https://codeload.github.com/vllm-project/compressed-tensors/tar.gz/ac8e2ba82f4e0d5eaa40069f8fc642738f124cd4",
+    "sha256": "658df62507e53454c77ec998dce9f82c8d8d434ebfc123ec85ffb21f0f7b2f06"
+  },
+  "archive_bytes": 284069,
+  "license_origin": "LICENSE",
+  "license_sha256": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4"
+}

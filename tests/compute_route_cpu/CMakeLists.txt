@@ -2,6 +2,7 @@ hyle_add_header_self_contained_test(compute_route_cpu
   HEADER_DIR compute HEADERS cpu.h)
 hyle_add_test(compute_route_cpu SOURCES context_test.cc d5_qwen35_profile_test.cc
   cpu_expanded_gguf_test.cc
+  cpu_artifact_decode_test.cc
   ds4_roundtrip_test.cc
   d5_qwen_gguf_vocabulary_test.cc
   d5_qwen38_official_test.cc

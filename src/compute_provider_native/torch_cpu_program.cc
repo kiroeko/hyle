@@ -23,21 +23,26 @@
 #include "hyle/mem/resource.h"
 #include "native_plan.h"
 #include "torchao_cpu.h"
+#include "bitsandbytes_cpu.h"
+#include "awq_cpu.h"
+#include "compressed_tensors_cpu.h"
 
 namespace hyle::compute::native::internal {
 namespace {
-enum class Kind { kDecode, kLinear, kEncodedMatMul, kGrouped8, kGrouped4, kRoundtrip };
+enum class Kind { kDecode, kLinear, kEncodedMatMul, kGrouped8, kGrouped4, kRoundtrip,
+                  kArtifactDecode };
 struct Shape final {
   Kind kind{};
   std::int64_t e = 1, n = 0, k = 0, tokens = 0, slots = 1, activations = 1;
   float floor = 1.0e-10F;
   bool power = false;
   at::ScalarType output = at::kFloat;
+  model_ops::ArtifactWeightDecode artifact{};
 };
 struct Program final {
   using Run = Status (*)(const Program &, std::span<const std::byte *const>, std::byte *) noexcept;
   Shape shape{};
-  std::array<TensorDesc, 3> inputs{};
+  std::array<TensorDesc, 6> inputs{};
   TensorDesc output{};
   std::size_t input_count = 0;
   Run run = nullptr;
@@ -75,8 +80,12 @@ Result<Shape> select(const Operation &op, std::span<const TensorDesc> inputs,
     if (desc.required_bytes().value() > static_cast<std::uint64_t>(INT64_MAX))
       return std::unexpected(Status::OutOfRange("ATen CPU carrier exceeds native int64 capacity"));
   Shape s;
-  s.output = outputs[0].data_type() == DataType::kBFloat16 ? at::kBFloat16 : at::kFloat;
-  if (op.custom_as<model_ops::Float8WeightDecode>()) {
+  s.output = outputs[0].data_type() == DataType::kBFloat16 ? at::kBFloat16 :
+      (outputs[0].data_type() == DataType::kFloat16 ? at::kHalf : at::kFloat);
+  if (const auto artifact = op.custom_as<model_ops::ArtifactWeightDecode>()) {
+    s.kind = Kind::kArtifactDecode; s.artifact = *artifact;
+    s.n = outputs[0].dimensions()[0]; s.k = outputs[0].dimensions()[1];
+  } else if (op.custom_as<model_ops::Float8WeightDecode>()) {
     s.kind = Kind::kDecode;
     s.k = inputs[0].dimensions()[0]; s.n = inputs[0].dimensions()[1];
   } else if (op.custom_as<model_ops::BlockQuantizationRoundtrip>()) {
@@ -114,7 +123,8 @@ Result<Shape> select(const Operation &op, std::span<const TensorDesc> inputs,
   auto rows = product(s.tokens, s.slots);
   auto matrix = product(s.n, s.k);
   auto elements = rows && matrix ? math::try_multiply(*rows, *matrix) : std::nullopt;
-  if (!matrix || (s.kind != Kind::kDecode && (!elements || *elements > INT64_MAX / 32)))
+  if (!matrix || (s.kind != Kind::kDecode && s.kind != Kind::kArtifactDecode &&
+                  (!elements || *elements > INT64_MAX / 32)))
     return std::unexpected(Status::OutOfRange("ATen CPU selected tensor capacity overflows"));
   return s;
 }
@@ -174,7 +184,7 @@ Status execute(const Program &p, std::span<const std::byte *const> pointers,
                std::byte *destination) noexcept {
   try {
     at::NoGradGuard no_grad;
-    std::array<at::Tensor, 3> input;
+    std::array<at::Tensor, 6> input;
     for (std::size_t i = 0; i < p.input_count; ++i) {
       const auto &desc = p.inputs[i];
       if (!desc.is_plain()) {
@@ -182,18 +192,39 @@ Status execute(const Program &p, std::span<const std::byte *const> pointers,
             {static_cast<std::int64_t>(desc.required_bytes().value())}, at::kByte);
       } else {
         const auto type = desc.data_type() == DataType::kInt32 ? at::kInt
-            : (desc.data_type() == DataType::kBFloat16 ? at::kBFloat16 : at::kFloat);
+            : (desc.data_type() == DataType::kUInt8 ? at::kByte
+            : (desc.data_type() == DataType::kFloat16 ? at::kHalf
+            : (desc.data_type() == DataType::kBFloat16 ? at::kBFloat16 : at::kFloat)));
         input[i] = at::from_blob(const_cast<std::byte *>(pointers[i]),
             at::IntArrayRef(desc.dimensions().data(), desc.rank()), type);
       }
     }
     const auto &s = p.shape;
     constexpr auto activation_index = (Selected == Kind::kGrouped8 || Selected == Kind::kGrouped4) ? 1u : 0u;
-    if (Selected != Kind::kDecode && Selected != Kind::kEncodedMatMul &&
+    if (Selected != Kind::kDecode && Selected != Kind::kArtifactDecode &&
+        Selected != Kind::kEncodedMatMul &&
         !at::isfinite(input[activation_index]).all().item<bool>())
       return Status::InvalidArgument("original ATen CPU quantization requires finite activation");
     at::Tensor result;
-    if constexpr (Selected == Kind::kDecode) {
+    if constexpr (Selected == Kind::kArtifactDecode) {
+      switch (s.artifact.format) {
+      case model_ops::WeightArtifactFormat::kNf4:
+        result = borrowed::bitsandbytes_cpu::decode_nf4(input[0], input[1],
+            input[2], s.artifact.group_size, s.n, s.k, s.output); break;
+      case model_ops::WeightArtifactFormat::kNf4DoubleQuant: {
+        auto scales = borrowed::bitsandbytes_cpu::nested_scales(input[1],
+            input[2], input[3], input[4]);
+        result = borrowed::bitsandbytes_cpu::decode_nf4(input[0], scales,
+            input[5], s.artifact.group_size, s.n, s.k, s.output); break;
+      }
+      case model_ops::WeightArtifactFormat::kAwqGemm4:
+        result = borrowed::awq_cpu::decode_gemm4(input[0], input[1], input[2],
+                                               s.artifact.group_size).to(s.output); break;
+      case model_ops::WeightArtifactFormat::kCompressedTensorsSymmetric4:
+        result = borrowed::compressed_tensors_cpu::decode_symmetric4(
+            input[0], input[1], s.artifact.group_size).to(s.output); break;
+      }
+    } else if constexpr (Selected == Kind::kDecode) {
       auto w = weight(input[0], s, {});
       result = (w.codes.view(at::kFloat8_e4m3fn).to(at::kFloat)
                     .reshape({1, s.n, s.k / 128, 128}) * w.scales.unsqueeze(-1))
@@ -260,8 +291,8 @@ detail::EnqueueResult submit(void *state, void *, Queue &,
   const auto &p = *static_cast<const Program *>(state);
   if (inputs.size() != p.input_count || outputs.size() != 1)
     return completed(Status::Internal("ATen CPU binding count differs"));
-  std::array<mem::HostMapping, 3> mappings;
-  std::array<const std::byte *, 3> pointers{};
+  std::array<mem::HostMapping, 6> mappings;
+  std::array<const std::byte *, 6> pointers{};
   mem::HostMapping mapped_output;
   Status status = Status::Ok();
   for (std::size_t i = 0; i < inputs.size(); ++i) {
@@ -303,7 +334,8 @@ bool is_torch_cpu_operation(const Operation &operation,
                            std::span<const TensorDesc> inputs) noexcept {
   if (const auto q = operation.custom_as<model_ops::BlockQuantizationRoundtrip>())
     return q->format == model_ops::BlockQuantizationFormat::kFloat8E4M3Block128;
-  return operation.custom_as<model_ops::Float8WeightDecode>() ||
+  return operation.custom_as<model_ops::ArtifactWeightDecode>() ||
+      operation.custom_as<model_ops::Float8WeightDecode>() ||
       operation.custom_as<model_ops::Float8BlockLinear>() ||
       operation.custom_as<model_ops::GroupedFloat8Linear>() ||
       operation.custom_as<model_ops::GroupedFloat4Linear>() ||
@@ -365,6 +397,7 @@ ProviderPrepareOutcome prepare_torch_cpu(const detail::ProviderPrepareRequest &r
   case Kind::kGrouped8: p->run = &execute<Kind::kGrouped8>; break;
   case Kind::kGrouped4: p->run = &execute<Kind::kGrouped4>; break;
   case Kind::kRoundtrip: p->run = &execute<Kind::kRoundtrip>; break;
+  case Kind::kArtifactDecode: p->run = &execute<Kind::kArtifactDecode>; break;
   }
   for (std::size_t i = 0; i < p->input_count; ++i) p->inputs[i] = request.inputs[i];
   *out = {.vtable = &kVTable, .state = p, .workspace = {}, .runtime = kRuntime,

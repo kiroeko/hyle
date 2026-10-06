@@ -29,9 +29,13 @@ target_include_directories(hyle_compute_provider_native PRIVATE
 
 if(HYLE_COMPUTE_TORCH_CPU_ENABLED)
   hyle_audit_in_tree_dependencies(torchao_cpu)
+  hyle_audit_in_tree_dependencies(bitsandbytes_cpu awq_cpu compressed_tensors_cpu)
   target_sources(hyle_compute_provider_native PRIVATE torch_cpu_program.cc)
   target_include_directories(hyle_compute_provider_native PRIVATE
-    "${HYLE_SOURCE_DIR}/third_party/torchao_cpu")
+    "${HYLE_SOURCE_DIR}/third_party/torchao_cpu"
+    "${HYLE_SOURCE_DIR}/third_party/bitsandbytes_cpu"
+    "${HYLE_SOURCE_DIR}/third_party/awq_cpu"
+    "${HYLE_SOURCE_DIR}/third_party/compressed_tensors_cpu")
   target_include_directories(hyle_compute_provider_native SYSTEM PRIVATE ${TORCH_INCLUDE_DIRS})
   if(TORCH_CXX_FLAGS)
     separate_arguments(_hyle_torch_flags NATIVE_COMMAND "${TORCH_CXX_FLAGS}")
@@ -64,6 +68,14 @@ if(HYLE_COMPUTE_TORCH_CPU_ENABLED)
     RUNTIME_FILE_SPECS
       "${HYLE_SOURCE_DIR}/third_party/torchao_cpu/LICENSE|${CMAKE_INSTALL_DATADIR}/licenses/Hyle|TorchAO-CPU-LICENSE"
       "${HYLE_SOURCE_DIR}/third_party/torchao_cpu/NOTICE.md|${CMAKE_INSTALL_DATADIR}/licenses/Hyle|TorchAO-CPU-NOTICE.md")
+  foreach(_recipe IN ITEMS bitsandbytes_cpu awq_cpu compressed_tensors_cpu)
+    hyle_register_package_dependency(
+      NAME ${_recipe} OWNER compute_provider_native
+      LOCKED_DEPENDENCIES ${_recipe}
+      RUNTIME_FILE_SPECS
+        "${HYLE_SOURCE_DIR}/third_party/${_recipe}/LICENSE|${CMAKE_INSTALL_DATADIR}/licenses/Hyle|${_recipe}-LICENSE"
+        "${HYLE_SOURCE_DIR}/third_party/${_recipe}/NOTICE.md|${CMAKE_INSTALL_DATADIR}/licenses/Hyle|${_recipe}-NOTICE.md")
+  endforeach()
 endif()
 
 hyle_register_package_dependency(

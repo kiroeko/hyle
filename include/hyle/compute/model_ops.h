@@ -12,6 +12,45 @@
 
 namespace hyle::compute::model_ops {
 
+enum class WeightArtifactFormat : std::uint32_t {
+  kNf4,
+  kNf4DoubleQuant,
+  kAwqGemm4,
+  kCompressedTensorsSymmetric4,
+};
+
+// Explicit cold preparation of dense original model weights. Run once and
+// retain the resulting [N,K] tensor as a constant for mature MatMul/Gather.
+// This operation neither loads a model nor caches mutable input payloads.
+// NF4 inputs: U8[N,K/2], F32[G] absmax, F32[16] codebook, G=N*K/group.
+// Nested NF4: U8[N,K/2], U8[G], F32[ceil(G/256)], F32[256], F32 scalar
+// offset, F32[16]. AWQ: I32[K,N/8], I32[K/group,N/8], float[K/group,N].
+// CT symmetric: I32[N,K/8], float[N,K/group], original low-first q minus8.
+// Packing/group/precision come from the artifact, never its filename.
+struct ArtifactWeightDecode final {
+  WeightArtifactFormat format = WeightArtifactFormat::kNf4;
+  std::uint32_t group_size = 64;
+  // Unknown chooses the original scale dtype for AWQ/CT and BF16 for the
+  // admitted NF4 artifact. F16/BF16/F32 overrides are explicit numeric choices.
+  DataType output_type = DataType::kUnknown;
+  static constexpr OperationId operation_id{0x48594c454d4f444cULL,
+                                            0x57474445434f0001ULL};
+  static constexpr std::string_view operation_name = "artifact-weight-decode";
+  constexpr OperationTraits operation_traits() const noexcept {
+    const std::uint16_t count = format == WeightArtifactFormat::kNf4DoubleQuant ? 6 :
+        (format == WeightArtifactFormat::kCompressedTensorsSymmetric4 ? 2 : 3);
+    return {{count, count}, 1, AliasPolicy::kNone, EffectKind::kPure,
+            PrecisionPolicy::kAccumulateInDeclaredType, DataType::kFloat32, true};
+  }
+  HYLE_COMPUTE_OPS_API Status infer_output_descriptions(
+      std::span<const TensorDesc> inputs, std::span<TensorDesc> outputs) const noexcept;
+};
+
+inline Operation artifact_weight_decode(WeightArtifactFormat format,
+    std::uint32_t group_size, DataType output_type = DataType::kUnknown) noexcept {
+  return Operation::custom(ArtifactWeightDecode{format, group_size, output_type});
+}
+
 enum class Float8ScaleRounding : std::uint32_t { kNone, kPowerOfTwo };
 
 enum class BlockQuantizationFormat : std::uint32_t {

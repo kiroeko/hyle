@@ -866,6 +866,99 @@
           }
         ]
       }
+    },
+    {
+      "name": "bitsandbytes_cpu",
+      "repository": "https://github.com/bitsandbytes-foundation/bitsandbytes.git",
+      "revision": "833649043474794b8fe7a4136e0c40faf077b2e0",
+      "git_tree": "7eb993be924aa9fb875fa1fd99c92f4a0e37faae",
+      "archive": {
+        "url": "https://codeload.github.com/bitsandbytes-foundation/bitsandbytes/tar.gz/833649043474794b8fe7a4136e0c40faf077b2e0",
+        "sha256": "be02cdc9d8b7c73462a93629e7d8c7522742c90606014bd0b92c33794985c570"
+      },
+      "version": "original-cpu-recipes-833649043474",
+      "class": "in_tree",
+      "vendored": {
+        "path": "third_party/bitsandbytes_cpu",
+        "tree_sha256": "780371d987e2509080cfb302525907cb34f25e68fed2deae269ba7b7a3e1402c"
+      },
+      "license": {
+        "expression": "MIT",
+        "files": [
+          {
+            "root": "hyle",
+            "path": "third_party/bitsandbytes_cpu/LICENSE",
+            "sha256": "52412d7bc7ce4157ea628bbaacb8829e0a9cb3c58f57f99176126bc8cf2bfc85"
+          },
+          {
+            "root": "hyle",
+            "path": "third_party/bitsandbytes_cpu/NOTICE.md",
+            "sha256": "d3a563332d2c49eeb00b8fac4e9365d4dccd4bff94a8236aaf1ba38833cd7aa3"
+          }
+        ]
+      }
+    },
+    {
+      "name": "awq_cpu",
+      "repository": "https://github.com/casper-hansen/AutoAWQ.git",
+      "revision": "88e4c76b20755db275574e6a03c83c84ba3bece5",
+      "git_tree": "25b64783617d2ddda337abab631dd99dc619e825",
+      "archive": {
+        "url": "https://codeload.github.com/casper-hansen/AutoAWQ/tar.gz/88e4c76b20755db275574e6a03c83c84ba3bece5",
+        "sha256": "525f90b888389bd437a4c9c70bcebb177799be0fa195666987c7341dc713ea27"
+      },
+      "version": "original-cpu-recipes-88e4c76b2075",
+      "class": "in_tree",
+      "vendored": {
+        "path": "third_party/awq_cpu",
+        "tree_sha256": "2516e3e730e8d57ac5b74d33082e998872c7867c6f73b85f6b3d9054cf1da3a8"
+      },
+      "license": {
+        "expression": "MIT",
+        "files": [
+          {
+            "root": "hyle",
+            "path": "third_party/awq_cpu/LICENSE",
+            "sha256": "2af485d269071b583c62c20250a63349f8313312cc9df0bd9007ca39c6d57bd9"
+          },
+          {
+            "root": "hyle",
+            "path": "third_party/awq_cpu/NOTICE.md",
+            "sha256": "aaa539f8bcb81d8e8f6bf7d7b872a8c7cf8d7ebca0e772f3f6cc2e172ad9e256"
+          }
+        ]
+      }
+    },
+    {
+      "name": "compressed_tensors_cpu",
+      "repository": "https://github.com/vllm-project/compressed-tensors.git",
+      "revision": "ac8e2ba82f4e0d5eaa40069f8fc642738f124cd4",
+      "git_tree": "3d02bd5c03a948ec9b08200b8e5c91355d4f2820",
+      "archive": {
+        "url": "https://codeload.github.com/vllm-project/compressed-tensors/tar.gz/ac8e2ba82f4e0d5eaa40069f8fc642738f124cd4",
+        "sha256": "658df62507e53454c77ec998dce9f82c8d8d434ebfc123ec85ffb21f0f7b2f06"
+      },
+      "version": "original-cpu-recipes-ac8e2ba82f4e",
+      "class": "in_tree",
+      "vendored": {
+        "path": "third_party/compressed_tensors_cpu",
+        "tree_sha256": "51977db55c6dd19c22fcb29da21dc4c4c6876523a4b2f9615cfc5f4dfd8a5791"
+      },
+      "license": {
+        "expression": "Apache-2.0",
+        "files": [
+          {
+            "root": "hyle",
+            "path": "third_party/compressed_tensors_cpu/LICENSE",
+            "sha256": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4"
+          },
+          {
+            "root": "hyle",
+            "path": "third_party/compressed_tensors_cpu/NOTICE.md",
+            "sha256": "7baf13b61d28973e85fea26f4f9c25d1ba1aeb70883e2e9e546132b7284a60aa"
+          }
+        ]
+      }
     }
   ]
 }

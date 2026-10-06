@@ -1,0 +1,13 @@
+{
+  "name": "bitsandbytes_cpu",
+  "repository": "https://github.com/bitsandbytes-foundation/bitsandbytes.git",
+  "revision": "833649043474794b8fe7a4136e0c40faf077b2e0",
+  "git_tree": "7eb993be924aa9fb875fa1fd99c92f4a0e37faae",
+  "archive": {
+    "url": "https://codeload.github.com/bitsandbytes-foundation/bitsandbytes/tar.gz/833649043474794b8fe7a4136e0c40faf077b2e0",
+    "sha256": "be02cdc9d8b7c73462a93629e7d8c7522742c90606014bd0b92c33794985c570"
+  },
+  "archive_bytes": 410911,
+  "license_origin": "LICENSE",
+  "license_sha256": "52412d7bc7ce4157ea628bbaacb8829e0a9cb3c58f57f99176126bc8cf2bfc85"
+}
