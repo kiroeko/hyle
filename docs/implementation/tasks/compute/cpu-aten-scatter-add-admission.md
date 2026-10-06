@@ -1,6 +1,6 @@
 # CPU 成熟接线：ScatterAdd 索引域
 
-<!-- MODULE REVIEW: CANDIDATE -->
+<!-- MODULE REVIEW: CLOSED -->
 
 - owner `compute_provider_native`；baseline `214cb3d48cb39416e8540f7188249105cde58b10`，Windows canonical。
 - trigger：[资源域审计](../../../../evidence/correctness/cpu-resource-domain-audit/README.md)实证：
@@ -52,3 +52,30 @@ Windows Provider140/140、CPU12通过/1旧fixture skip、Graph33通过/6旧fixtu
 相同ordinary Direct/Graph的I64 duplicate多维/非末轴scalar/odd-byte与empty、变化输入及close实际通过。
 Linux与两平台installed/static仍按本卡验收，当前未运行不签PASS；无Native/SIMD比较或新WIN。
 1337个固定前向产品/test/构建/consumer输入绑定候选，副本不作为产品改动来源。
+
+## 终审：AS1–3 CLOSED
+
+产品candidate固定后未改；所有预声明适用门已完成，之前CANDIDATE段的待运行项现以
+[完整资格收据](../../../../evidence/correctness/cpu-aten-scatter-add/README.md)为准。
+两平台各Provider140/140、CPU12通过/1skip、Graph33通过/6skip、header1/1；same ordinary Direct/
+Graph source shared/static与installed shared/static全部实际运行通过。七个旧fixture skip不计PASS。
+三storage/I32-I64/各轴/多维-scalar/rank8/odd stride/duplicate/empty/special值与alias实测；
+late越界无写与重建、并发两个私有lane、close、逐点cold HYLE OOM live-byte回滚及Stats平衡通过。
+native物理OOM/noncoherent故障只审计传播；不虚构注入、capture、zero-allocation或整模型推理资格。
+
+| 七门 | Verdict与边界 |
+|---|---|
+| 第三方路径 | PASS：原已锁Torch2.8 CPU与156 SDK断言；无新SDK/自研数学/许可证变化 |
+| 功能完整 | PASS，AS精确域：已有public Add、三floating/I32-I64/布局/duplicate/empty及最终storage结果 |
+| 内部复用 | PASS：原typed/index-add、现有packing/mappings/Completion/alias/异常与cold allocator |
+| 性能 | PASS P0：F32 packing/clone/index-add/cast、原Tensor/线程/临时存储完整计入managed；无自研P1/WIN |
+| 交付边界 | PASS：无公开API/新factor/FFI/中央依赖改动；不扩大Assign或其它原库数学 |
+| 构建交付 | PASS：Win/Linux同consumer source/static/shared，header与1337前向hash；关闭分支仅复用未变接缝证据 |
+| 易用文档 | PASS：CPU路线自动匹配，普通Direct/Graph下游/变化输入/close；资源/舍入/SDK/alias限制公开 |
+
+统一Compute+Graph实现 **61,516行 / 249文件**，不含tests/vendor；本批四个consumer目录清理
+**625,241,686 logical bytes**，保留SDK/producer/cache。所有失败、源码/consumer、原输出/XML、
+driver、身份/selector/LOC/cleanup存档，不把旧CLOSED、probe或文档算新架构完成。
+
+重开限AS具名数值/资源/失败/交付反例、已锁依赖升级或真实新公共消费域；不因“再看一遍”重开。
+CPU goal仍需精确资源声明与冻结自研的有限域裁决，SIMD基础保留、其它路线暂停，本卡不关闭该goal。

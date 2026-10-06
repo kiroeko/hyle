@@ -523,7 +523,7 @@ ATen还接plain F32/F16/BF16 `Scatter{.kind=ScatterKind::kAdd}` 的I32/I64、sca
 各轴与合法byte strides，输出为inferred dense。原F32 `index_add_` 累加base和全部重复updates，
 最终一次storage舍入；公共Add允许更宽累加/重排，不保证逐更新窄舍入或位复现。empty indices
 保留base原bits。索引全部checked后才写output，仅equal-dense input0允许alias；其它限制与managed
-成本同上。[本轮接线资格](../implementation/tasks/compute/cpu-aten-scatter-add-admission.md)尚在验收。
+成本同上。[两平台接线与三交付资格](../../evidence/correctness/cpu-aten-scatter-add/README.md)。
 
 CPU 默认入口也支持 `model_ops::block_quantization_roundtrip()` 的
 `kFloat8E4M3Block64` 与 `kFloat4E2M1Block32`，调用固定原版 ds4 CPU 程序。

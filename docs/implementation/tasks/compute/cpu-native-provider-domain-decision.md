@@ -178,3 +178,10 @@ F32 I64/axis/layout/prefix RoPE、masked GQA/Dk-Dv/causal/emptykeys，以及norm
 重复/empty的156断言通过；未完成产品执行/失败/两平台三交付资格，不能先写完成或UNIQUE。
 AS关闭后进入本卡原定有限普通域比较/清退，不重开整个CPU能力研究。strict资源/whole-domain仍有
 实际产品用途，性能裁决不能把相应能力一起删除，也不能为普通重叠永久保留未经裁决的fallback。
+
+AS1–3现已真实CLOSED：原Add两平台140/140、普通Direct/Graph三交付、alias/越界无写/恢复/并发/
+close/逐点cold OOM通过，原191案例的三行I64 Add不再未接。还有一个具名资源声明项：ATen的
+`propose/prepare`只用supplied allocator持有Program/descriptor，并未调用native Tensor/数学/JIT；
+compilation额外private bounds未填，不证明原库有未知冷内存。需按有限owner任务核实并正确声明，
+不能把这个adapter unknown当Native唯一。managed replay与native invocation scratch unknown不同，
+仍不能声明prepared或zero-hot-allocation。资源声明固定后才签自研资源边界与普通域去留。

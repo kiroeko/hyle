@@ -119,8 +119,8 @@ L2 可以直接用 F32 输入（低精度先 Cast）、平方、末轴 Sum、加
 ATen六族plain存储/索引程序同样由默认leaf规则准备绑定，可接Graph下游重放；宽scalar/I64/odd-byte
 stride与重复Assign的确切域见[CPU ATen资格](../../evidence/correctness/cpu-aten-storage-index/README.md)。
 同一leaf还接三floating `ScatterAdd` 的I32/I64与byte-stride/多维索引；原F32 index-add允许更宽
-累加和重复updates重排，empty indices保留base bits；索引checked后才写output。当前本批适用资格
-见[接线卡](../implementation/tasks/compute/cpu-aten-scatter-add-admission.md)，未完成项不代签PASS。
+累加和重复updates重排，empty indices保留base bits；索引checked后才写output。本批适用资格
+见[两平台接线与三交付](../../evidence/correctness/cpu-aten-scatter-add/README.md)。
 这是原库managed leaf程序，没有新增整ATen region；既有ggml/oneDNN融合保留。其Tensor/scratch与
 私有线程由原库管理，`native_threads`不控制ATen线程池；借用的Tensor先于host mapping关闭，
 真实Completion返回完成或失败，不在执行时重选Provider。
