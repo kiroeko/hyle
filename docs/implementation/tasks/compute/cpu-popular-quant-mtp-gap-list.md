@@ -5,6 +5,8 @@
 当前状态仍以 [module-status](../../module-status.json) 为准；当前执行资格仍在
 [D5 ledger](llm-moe-d5-acceptance-ledger.json)。机器可读逐版本/文件列表见
 [本清单 JSON](cpu-popular-quant-mtp-gap-list.json)。
+用户随后要求的CPU接入顺序已写入[新计划](cpu-quant-mtp-coverage-expansion-plan.md)及五张计划卡；
+本页仍只作需求输入，不转成新的运行状态或产品资格。
 
 ## 结论与统计口径
 

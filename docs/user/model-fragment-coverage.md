@@ -108,3 +108,5 @@ Vulkan GGUF的后续逐画像裁决以上方当前收据为准。历史失败和
 面向更多 GGUF 档位、独立 MTP 和 DeepSeek Pro-0813/Flash-0731 DSpark 的
 [具体缺口清单](../implementation/tasks/compute/cpu-popular-quant-mtp-gap-list.md)已单独盘点。
 它区分公开格式接线缺失、已有格式的新制品资格、完整分支接线及身份对账，不改变本页当前通过数。
+接入顺序和五个有限批次见[新的CPU扩覆盖计划](../implementation/tasks/compute/cpu-quant-mtp-coverage-expansion-plan.md)。
+计划卡尚未激活，不表示新增画像已经支持。
