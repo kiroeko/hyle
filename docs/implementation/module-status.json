@@ -423,14 +423,9 @@
     },
     {
       "module": "compute_provider_native",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/compute/cpu-aten-scatter-add-admission.md",
-      "summary": "AS1–3 CLOSED：原ATen三浮点/I32-I64 ScatterAdd接线、Win/Linux各140/140、CPU12pass/1skip、Graph33pass/6skip、header、普通Direct/Graph source/static/shared全部通过；alias/late越界无写/恢复/close/并发/逐点cold OOM与资源平衡完成；无Native/SIMD比较或新WIN，CPU整体goal仍活动。",
-      "candidate": "e13edaebe0aac974fd2f7d2ff50246dfd61ad330",
-      "performance": {
-        "tier": "P0",
-        "evidence": "evidence/correctness/cpu-aten-scatter-add/README.md"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/cpu-aten-compilation-storage-declaration.md",
+      "summary": "CP SCOPED：ATen冷propose/prepare只用supplied allocator，未声明额外compilation private bounds造成严格预算假缺口；有限CP1–2，不改算法/API/执行，不启动自研比较。"
     },
     {
       "module": "compute_sched",
