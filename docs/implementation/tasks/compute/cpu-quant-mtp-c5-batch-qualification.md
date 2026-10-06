@@ -129,3 +129,15 @@ indexer compressor、ordinary/hash MoE、mHC后真实全词表head组合。只�
 准确候选及40项收据见上述参数对账目录；两平台只差docs/evidence，产品/测试源匹配。
 全词表head实际消费mHC产品输出，预期来自完整独立mHC oracle和原codec，不自我对照；误差门未改。
 F3仍须完成80条角色与全部required-region最终关联，F4最终红队/状态/清理仍未关闭。
+
+### F3有界反例：Qwen2.4T实际RoPE核心
+
+当前旧`sem::attention`用交错RoPE、`1/(i+1)`频率与默认norm epsilon。
+固定C1第一GGUF shard metadata为qwen35moe、rotary64、theta10000000、rms_eps1e-6、MRoPE sections11/11/10/0；
+已登记Transformers固定源码的rotate_half/apply_rotary_pos_emb使用前后半区，原llama qwen35moe路径同属MRoPE。
+文本三轴position相同可用HalfSplit表达；旧交错夹具不能签这个模型的R04真实核心资格。
+
+固定有限补验：CPU-only两份精确C1制品身份（Q8_0/UD-IQ1_M）的F32 Q/K norm、HalfSplit64、
+theta1e7、两行KV历史与四次changed replay/反馈、sigmoid gate。只组合既有成熟操作；
+不改产品数学、旧GPU测试/资格或误差门。投影原格式/真实内宽仍引用F1实际矩阵。
+本格尚未运行，旧交错测试保留为该布局的历史事实，不改写旧PASS来代签目标模型。
