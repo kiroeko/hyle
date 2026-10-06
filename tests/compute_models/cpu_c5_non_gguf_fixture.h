@@ -47,6 +47,7 @@ inline std::vector<float> activation(std::int64_t rows,std::int64_t k,int pass) 
 inline Fragment artifact(const in::Case &item,const c::ModelArtifactProfileDescription *identity) {
   using Format=c::model_ops::WeightArtifactFormat;
   const std::int64_t n=item.n,k=item.k,group=item.group,groups=n*k/group;
+  const auto block=std::uint32_t(item.group);
   const bool nf4=item.format==in::Format::kNf4,awq=item.format==in::Format::kAwq;
   const auto type=awq?c::DataType::kFloat16:c::DataType::kBFloat16;
   auto cold=std::make_shared<Fragment>(Fragment{.profile=identity,.region=0x0c050101});
@@ -90,7 +91,7 @@ inline Fragment artifact(const in::Case &item,const c::ModelArtifactProfileDescr
         std::initializer_list<std::int64_t>{n,k/group},type),floating_bytes(type,scales));
   }
   const auto op=c::model_ops::artifact_weight_decode(nf4?Format::kNf4DoubleQuant:
-      (awq?Format::kAwqGemm4:Format::kCompressedTensorsSymmetric4),group);
+      (awq?Format::kAwqGemm4:Format::kCompressedTensorsSymmetric4),block);
   std::vector<c::TensorDesc> descriptions;for(auto value:inputs)descriptions.push_back(cold->description(value));
   std::array<c::TensorDesc,1> outputs;auto status=c::infer_output_descriptions(op,descriptions,outputs);
   if(!status.ok())throw std::runtime_error(std::string(status.message()));
@@ -120,6 +121,7 @@ inline Fragment mlx(const in::Case &item,const c::ModelArtifactProfileDescriptio
   const bool affine=item.format==in::Format::kAffine,mx8=item.format==in::Format::kMx8;
   const auto format=affine?Format::kAffine4:(mx8?Format::kMxfp8:Format::kMxfp4);
   const std::int64_t k=item.k,group=item.group,pack=mx8?4:8;
+  const auto block=std::uint32_t(item.group);
   const std::int64_t e=item.grouped?std::min<std::int64_t>(item.e,8):1,slots=item.grouped?3:1;
   constexpr auto type=c::DataType::kBFloat16;
   Fragment f{.profile=identity,.region=0x0c050103};
@@ -142,11 +144,11 @@ inline Fragment mlx(const in::Case &item,const c::ModelArtifactProfileDescriptio
   ValueId ids;if(item.grouped)ids=f.input(dense({1,slots},c::DataType::kInt32));
   auto a=item.embedding?input:f.one(c::Operation(c::Cast{.output_type=type}),{input});
   ValueId y;
-  if(item.embedding)y=f.one(c::model_ops::mlx_quantized_embedding(group),{w,s,z,input});
-  else if(item.grouped)y=affine?f.one(c::model_ops::mlx_grouped_matmul(format,group),{a,w,s,z,ids}):
-      f.one(c::model_ops::mlx_grouped_matmul(format,group),{a,w,s,ids});
-  else y=affine?f.one(c::model_ops::mlx_quantized_matmul(format,group),{a,w,s,z}):
-      f.one(c::model_ops::mlx_quantized_matmul(format,group),{a,w,s});
+  if(item.embedding)y=f.one(c::model_ops::mlx_quantized_embedding(block),{w,s,z,input});
+  else if(item.grouped)y=affine?f.one(c::model_ops::mlx_grouped_matmul(format,block),{a,w,s,z,ids}):
+      f.one(c::model_ops::mlx_grouped_matmul(format,block),{a,w,s,ids});
+  else y=affine?f.one(c::model_ops::mlx_quantized_matmul(format,block),{a,w,s,z}):
+      f.one(c::model_ops::mlx_quantized_matmul(format,block),{a,w,s});
   f.outputs={f.one(c::Operation(c::Cast{.output_type=c::DataType::kFloat32}),{y})};
   if(item.embedding)f.invalid_index_input=0;else if(item.grouped)f.invalid_index_input=1;
   constexpr std::array<float,8> fp4{0,.5f,1,1.5f,2,3,4,6};

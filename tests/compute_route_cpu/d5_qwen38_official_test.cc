@@ -930,7 +930,7 @@ void run_q24_semantic_fragment(
     while(node_index<fixture.nodes.size()) {
       const auto &candidate=fixture.nodes[node_index];
       if(candidate.operation.kind()!=c::OperationKind::kView&&
-         std::ranges::find(candidate.inputs,id)!=candidate.inputs.end())break;
+         std::ranges::find_if(candidate.inputs,[&](auto input){return input.ordinal()==id.ordinal();})!=candidate.inputs.end())break;
       if(candidate.operation.kind()!=c::OperationKind::kView)++call_index;
       ++node_index;
     }
