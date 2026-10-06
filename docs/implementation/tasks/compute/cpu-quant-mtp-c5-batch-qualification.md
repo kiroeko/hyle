@@ -160,3 +160,17 @@ theta1e7、两行KV历史与四次changed replay/反馈、sigmoid gate。只组�
 [实际Qwen资格](../../../../evidence/correctness/cpu-quant-mtp-c5-qwen-actual/README.md)。
 本MTP程序只签输入/投影/carry边界，不代签完整NextN decoder；required-region最终聚合须保留该区别。
 80条参数已生成源码/SHA/两系统收据索引，仍不以testcase名称匹配代替完整语义复核。
+
+### F3完整NextN有限补验
+
+固定原Unsloth llama `46cbf0e95786`的qwen35moe.cpp（SHA
+`e449e79acb469d122addd9a9aaa2886fc99c13c3b5826877f84e9c6ab38b25bd`）确认NextN为
+embedding-first双norm/eh_proj→完整GQA/cache→attention residual→post norm→routed及gated shared MoE
+→FFN residual→shared-head norm→h_nextn/full vocabulary head。
+C1的2.4T blk.92 Q8_0与UD-IQ1_M真实格式分别为Q8和Q5 attention、Q8和Q2 expert、
+Q8和Q5/Q6 shared、F32 router/norm、Q8 eh_proj，主embedding/head为Q8与Q4_K。
+
+固定同一批两个完整CPU-onlyNextN消费者，两入口/两系统：H8192、Q64/KV4/D256、
+expert512/top10/I2048/shared2048、完整V248320，四次carry/cache反馈；普通成熟操作和原codec/reference。
+按计划降低驻留expert到8，用显式I32映射表达合成重复expert权重；router仍完整512，K/N与head跨度不缩小。
+没有新产品API/kernel或性能比较。此完整NextN资格尚未运行，输入边界PASS不能代签。

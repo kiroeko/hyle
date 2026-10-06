@@ -68,6 +68,13 @@ TEST(HYLE_C5_PARAMETER_SUITE, Qwen24OriginalMtpCodecNormOrderAndCarry) {
     ASSERT_FALSE(::testing::Test::HasFatalFailure());
   }
 }
+TEST(HYLE_C5_PARAMETER_SUITE, Qwen24CompleteNextNUsesMixedRolesCacheMoeAndFullHead) {
+  for (unsigned profile : {48u, 49u}) {
+    SCOPED_TRACE(profile);
+    cpu_c5_qwen_nextn::check(profile, run_q24_semantic_fragment);
+    ASSERT_FALSE(::testing::Test::HasFatalFailure());
+  }
+}
 #undef HYLE_C5_PARAMETER_SUITE
 #undef HYLE_C5_DEEPSEEK_SUITE
 #endif
