@@ -1,0 +1,66 @@
+[
+  {
+    "name": "build-gguf-and-artifact-batch",
+    "args": [
+      "cmake",
+      "--build",
+      "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+      "--target",
+      "hyle_compute_ops_tests",
+      "hyle_compute_provider_ggml_tests",
+      "hyle_compute_provider_native_tests",
+      "hyle_compute_route_cpu_tests",
+      "hyle_graph_route_cpu_tests",
+      "--parallel",
+      "2"
+    ],
+    "candidate": "21ed3f976c9392933bcebe745c0f31ca3ca21136",
+    "log": "1-build-gguf-and-artifact-batch.log",
+    "returncode": 0,
+    "seconds": 3.265
+  },
+  {
+    "name": "ops-provider-native-tests",
+    "args": [
+      "ctest",
+      "--test-dir",
+      "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+      "--output-on-failure",
+      "--no-tests=error",
+      "-L",
+      "^(compute_ops|compute_provider_ggml|compute_provider_native)$",
+      "-LE",
+      "headers",
+      "-j",
+      "1",
+      "--output-junit",
+      "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\cpu-coverage-c3-batch\\21ed3f976c93\\tests.xml"
+    ],
+    "candidate": "21ed3f976c9392933bcebe745c0f31ca3ca21136",
+    "log": "2-ops-provider-native-tests.log",
+    "returncode": 0,
+    "seconds": 1.047
+  },
+  {
+    "name": "ordinary-direct-expansion",
+    "args": [
+      "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_compute_route_cpu_test.exe",
+      "--gtest_filter=CpuExpandedGgufDirect.*:CpuArtifactDecode.*"
+    ],
+    "candidate": "21ed3f976c9392933bcebe745c0f31ca3ca21136",
+    "log": "3-ordinary-direct-expansion.log",
+    "returncode": 0,
+    "seconds": 0.25
+  },
+  {
+    "name": "ordinary-graph-expansion",
+    "args": [
+      "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_graph_route_cpu_test.exe",
+      "--gtest_filter=CpuExpandedGgufGraph.*"
+    ],
+    "candidate": "21ed3f976c9392933bcebe745c0f31ca3ca21136",
+    "log": "4-ordinary-graph-expansion.log",
+    "returncode": 0,
+    "seconds": 0.266
+  }
+]

@@ -1,0 +1,16 @@
+Test project C:/public/project-hyle/hyle/.scratch/build-compute-v2-dev
+    Start 69: hyle_compute_provider_ggml_test
+1/3 Test #69: hyle_compute_provider_ggml_test .....   Passed    0.20 sec
+    Start 73: hyle_compute_ops_test
+2/3 Test #73: hyle_compute_ops_test ...............   Passed    0.01 sec
+    Start 77: hyle_compute_provider_native_test
+3/3 Test #77: hyle_compute_provider_native_test ...   Passed    0.80 sec
+
+100% tests passed out of 3
+
+Label Time Summary:
+compute_ops                =   0.01 sec*proc (1 test)
+compute_provider_ggml      =   0.20 sec*proc (1 test)
+compute_provider_native    =   0.80 sec*proc (1 test)
+
+Total Test time (real) =   1.02 sec

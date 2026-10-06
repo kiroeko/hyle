@@ -1,0 +1,9 @@
+[0/2] Re-checking globbed directories...
+[1/9] C:\WINDOWS\system32\cmd.exe /C "cd /D C:\public\project-hyle\hyle\.scratch\build-compute-v2-dev\tests\compute_provider_ggml && "C:\Program Files\CMake\bin\cmake.exe" -P C:/public/project-hyle/hyle/.scratch/build-compute-v2-dev/tests/compute_provider_ggml/hyle-runtime/hyle_compute_provider_ggml_test-Release.cmake"
+[2/9] C:\WINDOWS\system32\cmd.exe /C "cd /D C:\public\project-hyle\hyle\.scratch\build-compute-v2-dev\tests\compute_route_cpu && "C:\Program Files\CMake\bin\cmake.exe" -P C:/public/project-hyle/hyle/.scratch/build-compute-v2-dev/tests/compute_route_cpu/hyle-runtime/hyle_compute_route_cpu_test-Release.cmake"
+[3/9] C:\WINDOWS\system32\cmd.exe /C "cd /D C:\public\project-hyle\hyle\.scratch\build-compute-v2-dev\tests\graph_route_cpu && "C:\Program Files\CMake\bin\cmake.exe" -P C:/public/project-hyle/hyle/.scratch/build-compute-v2-dev/tests/graph_route_cpu/hyle-runtime/hyle_graph_route_cpu_test-Release.cmake"
+[4/9] C:\WINDOWS\system32\cmd.exe /C "cd /D C:\public\project-hyle\hyle\.scratch\build-compute-v2-dev\tests\graph_route_cpu && "C:\Program Files\CMake\bin\cmake.exe" -P C:/public/project-hyle/hyle/.scratch/build-compute-v2-dev/tests/graph_route_cpu/hyle-runtime/hyle_graph_route_cpu_cpu_executor_test-Release.cmake"
+[5/9] Building CXX object tests\compute_route_cpu\CMakeFiles\hyle_compute_route_cpu_test.dir\cpu_expanded_gguf_test.cc.obj
+[6/9] Linking CXX executable bin\hyle_compute_route_cpu_test.exe
+[7/9] Building CXX object tests\graph_route_cpu\CMakeFiles\hyle_graph_route_cpu_test.dir\__\compute_route_cpu\cpu_expanded_gguf_test.cc.obj
+[8/9] Linking CXX executable bin\hyle_graph_route_cpu_test.exe

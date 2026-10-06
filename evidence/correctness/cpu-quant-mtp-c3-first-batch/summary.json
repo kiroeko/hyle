@@ -1,0 +1,38 @@
+{
+  "candidate": "21ed3f976c9392933bcebe745c0f31ca3ca21136",
+  "scope": "Windows shared producer only; C3 first batch, not full goal qualification",
+  "gguf_new_formats": 11,
+  "entry_paths": [
+    "ordinary CPU Direct",
+    "ordinary CPU Graph"
+  ],
+  "gguf_executed_operations": [
+    "MatMul",
+    "GroupedMatMul",
+    "GetRows"
+  ],
+  "checks": [
+    "nonzero original encoded blocks",
+    "original codec/CPU dot reference",
+    "changed activation and indices",
+    "duplicate expert/embedding indices",
+    "invalid indices preserve output",
+    "accepted failure retires invocation; new slot recovers"
+  ],
+  "dense_artifact_decode_formats": [
+    "NF4",
+    "NF4 double quant",
+    "AWQ GEMM4",
+    "compressed-tensors symmetric4"
+  ],
+  "artifact_scope": "Original decode sequence in F32 numerical test; actual BF16/F16 dtype/end-to-end constant reuse/Graph paths and failure-resource cases still require full qualification",
+  "performance": "P0 structure in progress; no P1 or self-kernel contest",
+  "remaining": [
+    "MLX affine/mxfp4/mxfp8 packed CPU execution and embedding",
+    "non-GGUF default dtype/constant reuse/Graph and failure qualification",
+    "C4 full new model/MTP/DSpark programs",
+    "Linux and source/static/shared/relocation/offline",
+    "C5 complete admitted profile matrix and closure"
+  ],
+  "test_corrections": "Consumer API calls corrected to views and add_node/result; accepted failure correctly retires slot. Q2_K scalar-vs-AVX2 F32 cancellation bound uses original decoded operand L1 norm and max activation, while GetRows is bit-exact. Earlier failed receipts remain in scratch; no product math changed for those test corrections."
+}

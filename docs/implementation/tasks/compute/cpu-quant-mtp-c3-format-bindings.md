@@ -100,3 +100,18 @@ NF4 group64、AWQ/CT group128为实际目标；参数只控制原数学分组与
 所有输入要求plain dense，K完整group/packing，invalid shape/enum/type/overflow显式失败。
 Decoded weight驻留和cold临时量明确记账；这组只面向实际dense Qwen制品，不能用于MLX全专家热展开。
 MLX仍须借入原压缩CPU调用/selected expert边界后才签范围。
+
+## 第一组实施与有限验证
+
+- GGUF G1/G2批量接入已提交，11格式的普通CPU Direct/Graph MatMul、GroupedMatMul、GetRows及
+  changed replay、重复ids/越界写保护实际通过；失败后按公开合同退役slot，再由原artifact创建新slot。
+- N1/N2原bitsandbytes NF4/nested、AutoAWQ GEMM、CT0.18 symmetric4 CPU序列已接入，F32格式差分通过。
+  N3默认BF16/F16、cold constant完整消费、Graph及资源失败格仍未验；不能由F32结果代签。
+- 两组typed consumer和factor suite共享Windows producer，完整候选/命令/失败修正边界见
+  [第一组证据](../../../../evidence/correctness/cpu-quant-mtp-c3-first-batch/README.md)。
+- MLX affine/mxfp4/mxfp8、压缩专家及embedding仍未接完，整体C3保持AUDITED、不签完成。
+  Linux/三交付、C4全部新分支和C5资格矩阵仍未完成。
+- P0：GGUF原packed byte直接执行；dense artifact解码是显式cold操作，caller支付并持有decoded存储。
+  没有性能P1、自研算子扩充或SIMD删除。
+
+统一29路径当前实现61,341行/250文件；不含测试/vendor/bench，完整LOC收据在第一组证据。

@@ -1,0 +1,19 @@
+Running main() from C:\Users\kiro\AppData\Local\hyle\dependencies\v1\sources\googletest-063de7e9578f-162765170ae6\googletest\src\gtest_main.cc
+Note: Google Test filter = CpuExpandedGgufDirect.*:CpuArtifactDecode.*
+[==========] Running 3 tests from 2 test suites.
+[----------] Global test environment set-up.
+[----------] 1 test from CpuExpandedGgufDirect
+[ RUN      ] CpuExpandedGgufDirect.OriginalFormatsProjectionExpertsAndEmbedding
+[       OK ] CpuExpandedGgufDirect.OriginalFormatsProjectionExpertsAndEmbedding (4 ms)
+[----------] 1 test from CpuExpandedGgufDirect (5 ms total)
+
+[----------] 2 tests from CpuArtifactDecode
+[ RUN      ] CpuArtifactDecode.Nf4AndNestedScalesPreserveOriginalHighFirstOrder
+[       OK ] CpuArtifactDecode.Nf4AndNestedScalesPreserveOriginalHighFirstOrder (8 ms)
+[ RUN      ] CpuArtifactDecode.AwqAndCompressedTensorsUseDifferentOriginalWordLayouts
+[       OK ] CpuArtifactDecode.AwqAndCompressedTensorsUseDifferentOriginalWordLayouts (0 ms)
+[----------] 2 tests from CpuArtifactDecode (8 ms total)
+
+[----------] Global test environment tear-down
+[==========] 3 tests from 2 test suites ran. (14 ms total)
+[  PASSED  ] 3 tests.

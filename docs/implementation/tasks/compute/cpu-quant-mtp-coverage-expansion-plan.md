@@ -2,7 +2,7 @@
 
 ## 当前授权与基线
 
-- 用户于2026-10-06已明确要求创建新goal并实际实施CPU扩覆盖；新的goal已创建；C1审计完成，当前执行C2。
+- 用户于2026-10-06已明确要求创建新goal并实际实施CPU扩覆盖；新的goal已创建；C1审计完成，C2 Windows阶段已验，当前执行C3批量接线。
 - baseline `5b0044e2a10d11fdfce54893020cfcaaed47b0c0`，执行时解析完整commit并核对HEAD/worktree；Windows canonical，不回退。
 - 本计划对应[缺口清单](cpu-popular-quant-mtp-gap-list.md)及[固定元数据](cpu-popular-quant-mtp-gap-list.json)，
   是新的CPU扩覆盖计划，不恢复旧M/C/D施工队列、旧goal、旧进度或GPU阻塞项。
