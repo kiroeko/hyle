@@ -3,6 +3,7 @@ hyle_add_header_self_contained_test(graph_route_cpu
 hyle_add_test(graph_route_cpu SOURCES
   ../compute_route_cpu/cpu_expanded_gguf_test.cc
   ../compute_route_cpu/cpu_mlx_quantized_test.cc
+  ../compute_route_cpu/cpu_artifact_decode_test.cc
   ../compute_route_cpu/ds4_roundtrip_test.cc
   ../compute_route_cpu/context_test.cc d5_qwen35_profile_test.cc
   d5_qwen_gguf_vocabulary_test.cc
