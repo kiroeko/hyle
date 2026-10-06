@@ -7,7 +7,8 @@
 class HYLE_C5_PLAIN_SUITE : public ::testing::TestWithParam<const cpu_c5_plain_inputs::Case *> {};
 TEST_P(HYLE_C5_PLAIN_SUITE, ActualUncompressedTextRolesPreserveStorageAndReplay) {
   const auto &item=*GetParam();const auto identity=cpu_c5_plain_fixture::profile(item);
-  SCOPED_TRACE(item.id);SCOPED_TRACE(identity.artifact_repository);
+  SCOPED_TRACE(item.id);
+  SCOPED_TRACE(identity.artifact_repository);
   const std::string_view kind=item.kind;namespace p=cpu_c5_plain_fixture;
   if(kind=="projection"||kind=="head") {
     const auto rows=kind=="head"?4096:item.shape[0];
