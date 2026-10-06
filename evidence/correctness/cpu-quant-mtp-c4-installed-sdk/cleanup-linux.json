@@ -1,0 +1,14 @@
+[
+  {
+    "path": "/root/hyle-scratch/active-cpu-z/coverage-c4-sdk/static",
+    "bytes": 96674704,
+    "owner": "/mnt/c/public/project-hyle/hyle/.scratch/validation/cpu-coverage-c4-sdk",
+    "removed": true
+  },
+  {
+    "path": "/root/hyle-scratch/active-cpu-z/coverage-c4-sdk/shared",
+    "bytes": 16468312,
+    "owner": "/mnt/c/public/project-hyle/hyle/.scratch/validation/cpu-coverage-c4-sdk",
+    "removed": true
+  }
+]

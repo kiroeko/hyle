@@ -1,0 +1,124 @@
+[
+  {
+    "name": "shared-installed-configure",
+    "args": [
+      "cmake",
+      "-S",
+      "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\cpu-coverage-c4-sdk",
+      "-B",
+      "C:\\public\\project-hyle\\hyle\\.scratch\\build-cpu-coverage-c4-sdk\\shared",
+      "-G",
+      "Ninja",
+      "-DCMAKE_BUILD_TYPE=Release",
+      "-DCMAKE_PREFIX_PATH=C:\\public\\project-hyle\\hyle\\.scratch\\install-cpu-coverage-c3\\shared-relocated",
+      "-DHYLE_TEST_REPO=C:\\public\\project-hyle\\hyle",
+      "-DHYLE_ORACLE_BUILD=C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+      "-DHYLE_ORACLE_SOURCE=C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\src\\compute_ggml_runtime\\source-bdae1e43311ee486",
+      "-DHYLE_GTEST_SOURCE=C:\\Users\\kiro\\AppData\\Local\\hyle\\dependencies\\v1\\sources\\googletest-063de7e9578f-162765170ae6",
+      "-DFETCHCONTENT_FULLY_DISCONNECTED=ON"
+    ],
+    "candidate": "216242d2fabdfae8e69d00872786aac0148442c1",
+    "log": "1-shared-installed-configure.log",
+    "returncode": 0,
+    "seconds": 11.625
+  },
+  {
+    "name": "shared-installed-build",
+    "args": [
+      "cmake",
+      "--build",
+      "C:\\public\\project-hyle\\hyle\\.scratch\\build-cpu-coverage-c4-sdk\\shared",
+      "--parallel",
+      "2"
+    ],
+    "candidate": "216242d2fabdfae8e69d00872786aac0148442c1",
+    "log": "2-shared-installed-build.log",
+    "returncode": 0,
+    "seconds": 12.516
+  },
+  {
+    "name": "shared-direct",
+    "args": [
+      "C:\\public\\project-hyle\\hyle\\.scratch\\build-cpu-coverage-c4-sdk\\shared\\direct\\cpu_branch_direct.exe",
+      "--gtest_filter=CpuC4Branches.DsparkTargetHiddenAndFp32Confidence:CpuC4Branches.DsparkMarkovFullVocabularyWithLogitBias:CpuC4Branches.QwenQ4NamedSidecarUsesActualQ3Q4Q6AndCompleteMtp:CpuC4Branches.FlashSidecarsKeepMixedMxfp4BfloatAndQ8ThreeStagePrograms:CpuTorchOfficial.D5DeepSeekOriginalFp4Projections",
+      "--gtest_output=xml:C:\\public\\project-hyle\\hyle\\.scratch\\validation\\cpu-coverage-c4-sdk\\windows\\216242d2fabd\\shared-direct.xml"
+    ],
+    "candidate": "216242d2fabdfae8e69d00872786aac0148442c1",
+    "log": "3-shared-direct.log",
+    "returncode": 0,
+    "seconds": 94.968
+  },
+  {
+    "name": "shared-graph",
+    "args": [
+      "C:\\public\\project-hyle\\hyle\\.scratch\\build-cpu-coverage-c4-sdk\\shared\\graph\\cpu_branch_graph.exe",
+      "--gtest_filter=CpuGraphC4Branches.DsparkTargetHiddenAndFp32Confidence:CpuGraphC4Branches.DsparkMarkovFullVocabularyWithLogitBias:CpuGraphC4Branches.QwenQ4NamedSidecarUsesActualQ3Q4Q6AndCompleteMtp:CpuGraphC4Branches.FlashSidecarsKeepMixedMxfp4BfloatAndQ8ThreeStagePrograms:CpuGraphTorchOfficial.D5DeepSeekOriginalFp4Projections",
+      "--gtest_output=xml:C:\\public\\project-hyle\\hyle\\.scratch\\validation\\cpu-coverage-c4-sdk\\windows\\216242d2fabd\\shared-graph.xml"
+    ],
+    "candidate": "216242d2fabdfae8e69d00872786aac0148442c1",
+    "log": "4-shared-graph.log",
+    "returncode": 0,
+    "seconds": 93.641
+  },
+  {
+    "name": "static-installed-configure",
+    "args": [
+      "cmake",
+      "-S",
+      "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\cpu-coverage-c4-sdk",
+      "-B",
+      "C:\\public\\project-hyle\\hyle\\.scratch\\build-cpu-coverage-c4-sdk\\static",
+      "-G",
+      "Ninja",
+      "-DCMAKE_BUILD_TYPE=Release",
+      "-DCMAKE_PREFIX_PATH=C:\\public\\project-hyle\\hyle\\.scratch\\install-cpu-coverage-c3\\static-relocated",
+      "-DHYLE_TEST_REPO=C:\\public\\project-hyle\\hyle",
+      "-DHYLE_ORACLE_BUILD=C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+      "-DHYLE_ORACLE_SOURCE=C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\src\\compute_ggml_runtime\\source-bdae1e43311ee486",
+      "-DHYLE_GTEST_SOURCE=C:\\Users\\kiro\\AppData\\Local\\hyle\\dependencies\\v1\\sources\\googletest-063de7e9578f-162765170ae6",
+      "-DFETCHCONTENT_FULLY_DISCONNECTED=ON"
+    ],
+    "candidate": "216242d2fabdfae8e69d00872786aac0148442c1",
+    "log": "5-static-installed-configure.log",
+    "returncode": 0,
+    "seconds": 12.079
+  },
+  {
+    "name": "static-installed-build",
+    "args": [
+      "cmake",
+      "--build",
+      "C:\\public\\project-hyle\\hyle\\.scratch\\build-cpu-coverage-c4-sdk\\static",
+      "--parallel",
+      "2"
+    ],
+    "candidate": "216242d2fabdfae8e69d00872786aac0148442c1",
+    "log": "6-static-installed-build.log",
+    "returncode": 0,
+    "seconds": 13.515
+  },
+  {
+    "name": "static-direct",
+    "args": [
+      "C:\\public\\project-hyle\\hyle\\.scratch\\build-cpu-coverage-c4-sdk\\static\\direct\\cpu_branch_direct.exe",
+      "--gtest_filter=CpuC4Branches.DsparkTargetHiddenAndFp32Confidence:CpuC4Branches.DsparkMarkovFullVocabularyWithLogitBias:CpuC4Branches.QwenQ4NamedSidecarUsesActualQ3Q4Q6AndCompleteMtp:CpuC4Branches.FlashSidecarsKeepMixedMxfp4BfloatAndQ8ThreeStagePrograms:CpuTorchOfficial.D5DeepSeekOriginalFp4Projections",
+      "--gtest_output=xml:C:\\public\\project-hyle\\hyle\\.scratch\\validation\\cpu-coverage-c4-sdk\\windows\\216242d2fabd\\static-direct.xml"
+    ],
+    "candidate": "216242d2fabdfae8e69d00872786aac0148442c1",
+    "log": "7-static-direct.log",
+    "returncode": 0,
+    "seconds": 92.75
+  },
+  {
+    "name": "static-graph",
+    "args": [
+      "C:\\public\\project-hyle\\hyle\\.scratch\\build-cpu-coverage-c4-sdk\\static\\graph\\cpu_branch_graph.exe",
+      "--gtest_filter=CpuGraphC4Branches.DsparkTargetHiddenAndFp32Confidence:CpuGraphC4Branches.DsparkMarkovFullVocabularyWithLogitBias:CpuGraphC4Branches.QwenQ4NamedSidecarUsesActualQ3Q4Q6AndCompleteMtp:CpuGraphC4Branches.FlashSidecarsKeepMixedMxfp4BfloatAndQ8ThreeStagePrograms:CpuGraphTorchOfficial.D5DeepSeekOriginalFp4Projections",
+      "--gtest_output=xml:C:\\public\\project-hyle\\hyle\\.scratch\\validation\\cpu-coverage-c4-sdk\\windows\\216242d2fabd\\static-graph.xml"
+    ],
+    "candidate": "216242d2fabdfae8e69d00872786aac0148442c1",
+    "log": "8-static-graph.log",
+    "returncode": 0,
+    "seconds": 93.563
+  }
+]

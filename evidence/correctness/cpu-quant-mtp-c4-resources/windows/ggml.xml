@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites tests="2" failures="0" disabled="0" errors="0" time="0.003" timestamp="2026-10-07T01:45:28.034" name="AllTests">
+  <testsuite name="GgmlCpuProvider" tests="2" failures="0" disabled="0" skipped="0" errors="0" time="0.003" timestamp="2026-10-07T01:45:28.035">
+    <testcase name="PersistentIndependentSlotsHonorExecutorAndClose" file="C:\public\project-hyle\hyle\tests\compute_provider_ggml\cpu_provider_test.cc" line="971" status="run" result="completed" time="0.002" timestamp="2026-10-07T01:45:28.035" classname="GgmlCpuProvider" />
+    <testcase name="InvocationAllocationFailureRollsBackAndCanRecover" file="C:\public\project-hyle\hyle\tests\compute_provider_ggml\cpu_provider_test.cc" line="1106" status="run" result="completed" time="0." timestamp="2026-10-07T01:45:28.037" classname="GgmlCpuProvider" />
+  </testsuite>
+</testsuites>

@@ -1,0 +1,8 @@
+[1/8] C:\WINDOWS\system32\cmd.exe /C "cd /D C:\public\project-hyle\hyle\.scratch\build-cpu-coverage-c4-sdk\shared && "C:\Program Files\CMake\bin\cmake.exe" -P C:/public/project-hyle/hyle/.scratch/build-cpu-coverage-c4-sdk/shared/hyle-runtime/cpu_branch_direct-Release.cmake"
+[2/8] C:\WINDOWS\system32\cmd.exe /C "cd /D C:\public\project-hyle\hyle\.scratch\build-cpu-coverage-c4-sdk\shared && "C:\Program Files\CMake\bin\cmake.exe" -P C:/public/project-hyle/hyle/.scratch/build-cpu-coverage-c4-sdk/shared/hyle-runtime/cpu_branch_graph-Release.cmake"
+[3/8] Building CXX object CMakeFiles\cpu_branch_direct.dir\C_\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen_gguf_vocabulary_test.cc.obj
+[4/8] Building CXX object CMakeFiles\cpu_branch_direct.dir\C_\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc.obj
+[5/8] Building CXX object CMakeFiles\cpu_branch_graph.dir\C_\public\project-hyle\hyle\tests\graph_route_cpu\d5_qwen_gguf_vocabulary_test.cc.obj
+[6/8] Building CXX object CMakeFiles\cpu_branch_graph.dir\C_\public\project-hyle\hyle\tests\graph_route_cpu\d5_qwen38_official_test.cc.obj
+[7/8] Linking CXX executable direct\cpu_branch_direct.exe
+[8/8] Linking CXX executable graph\cpu_branch_graph.exe

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites tests="5" failures="0" disabled="0" errors="0" time="80.611" timestamp="2026-10-07T01:40:14.007" name="AllTests">
+  <testsuite name="CpuGraphTorchOfficial" tests="1" failures="0" disabled="0" skipped="0" errors="0" time="36.41" timestamp="2026-10-07T01:40:14.009">
+    <testcase name="D5DeepSeekOriginalFp4Projections" file="/mnt/c/public/project-hyle/hyle/tests/graph_route_cpu/../compute_models/d5_cpu_torch_official_tests.h" line="131" status="run" result="completed" time="36.408" timestamp="2026-10-07T01:40:14.009" classname="CpuGraphTorchOfficial" />
+  </testsuite>
+  <testsuite name="CpuGraphC4Branches" tests="4" failures="0" disabled="0" skipped="0" errors="0" time="44.199" timestamp="2026-10-07T01:40:50.449">
+    <testcase name="DsparkTargetHiddenAndFp32Confidence" file="/mnt/c/public/project-hyle/hyle/tests/graph_route_cpu/../compute_models/cpu_c4_model_branch_tests.h" line="7" status="run" result="completed" time="0.292" timestamp="2026-10-07T01:40:50.449" classname="CpuGraphC4Branches" />
+    <testcase name="DsparkMarkovFullVocabularyWithLogitBias" file="/mnt/c/public/project-hyle/hyle/tests/graph_route_cpu/../compute_models/cpu_c4_model_branch_tests.h" line="14" status="run" result="completed" time="0.213" timestamp="2026-10-07T01:40:52.958" classname="CpuGraphC4Branches" />
+    <testcase name="QwenQ4NamedSidecarUsesActualQ3Q4Q6AndCompleteMtp" file="/mnt/c/public/project-hyle/hyle/tests/graph_route_cpu/../compute_models/cpu_c4_model_branch_tests.h" line="44" status="run" result="completed" time="6.281" timestamp="2026-10-07T01:40:53.174" classname="CpuGraphC4Branches" />
+    <testcase name="FlashSidecarsKeepMixedMxfp4BfloatAndQ8ThreeStagePrograms" file="/mnt/c/public/project-hyle/hyle/tests/graph_route_cpu/../compute_models/cpu_c4_model_branch_tests.h" line="47" status="run" result="completed" time="37.407" timestamp="2026-10-07T01:40:59.456" classname="CpuGraphC4Branches" />
+  </testsuite>
+</testsuites>

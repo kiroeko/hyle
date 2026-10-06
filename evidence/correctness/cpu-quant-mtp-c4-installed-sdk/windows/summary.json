@@ -1,0 +1,31 @@
+{
+  "candidate": "216242d2fabdfae8e69d00872786aac0148442c1",
+  "sdk_candidate": "0bea4748333fbb94ff7e132119e4d12ee299dd4a",
+  "platform": "windows",
+  "product_diff": [],
+  "consumer_build": "find_package installed relocated Hyle; no Hyle source linked",
+  "static_oracle": "installed exported locked ggml libraries",
+  "shared_oracle": "matching source-build ggml archives only for independent numerical references; product uses installed DLL/so",
+  "source_test_sha256": {
+    "tests/compute_models/cpu_c4_flash_sidecars.h": "d06e39229c3ed374e8176da1e76c07f183d0b445ba207e04f2b086a13529cff2",
+    "tests/compute_models/cpu_c4_model_branch_tests.h": "ac9876470748f17d9054c43b99076fdb40c25ae2899c89b67ccec1d29105598e",
+    "tests/compute_models/cpu_c4_model_branches.h": "b7dbe3619e98178a64455aa7e61a171ffd297774d9a5d5bca39ef553dee587a5",
+    "tests/compute_models/cpu_c4_qwen_mtp.h": "a7cd7d23abed91ddd9537d64874f0bff4fb285b699a4fb3f9f2c9328e9b2552a"
+  },
+  "checks": 20,
+  "scope": [
+    "target projection and confidence",
+    "complete Markov vocabulary",
+    "Qwen mixed Q3/Q4/Q6 complete MTP",
+    "two mixed Flash three-stage sidecars",
+    "original official FP4 projections"
+  ],
+  "reused": [
+    "full source-build official main and three-stage qualification",
+    "unchanged C3 SDK relocation, dependency assets, disconnected cache-hit qualification"
+  ],
+  "remaining": [
+    "C4 resources and P0/cost",
+    "C5 complete admitted artifact matrix"
+  ]
+}

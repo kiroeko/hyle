@@ -1,0 +1,4 @@
+-- HYLE: reusing locked CPU SDK at C:/Users/kiro/AppData/Local/hyle/dependencies/v1/sdks/torch-cpu/Windows-bf0079104e068dcbd60b2f8de589dc725282cbe865a85016cc5b8aa46cab519d/libtorch
+-- Configuring done (12.0s)
+-- Generating done (0.0s)
+-- Build files have been written to: C:/public/project-hyle/hyle/.scratch/build-cpu-coverage-c4-sdk/static

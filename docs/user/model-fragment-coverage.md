@@ -109,4 +109,9 @@ Vulkan GGUF的后续逐画像裁决以上方当前收据为准。历史失败和
 [具体缺口清单](../implementation/tasks/compute/cpu-popular-quant-mtp-gap-list.md)已单独盘点。
 它区分公开格式接线缺失、已有格式的新制品资格、完整分支接线及身份对账，不改变本页当前通过数。
 接入顺序和五个有限批次见[新的CPU扩覆盖计划](../implementation/tasks/compute/cpu-quant-mtp-coverage-expansion-plan.md)。
-计划卡尚未激活，不表示新增画像已经支持。
+CPU扩展已经进入实施：11种新增GGUF格式和已准入NF4/AWQ/CT/MLX接缝已取得基础资格；
+新版Pro-0813/Flash-0731主干与三阶段DSpark、Qwen混合Q3/Q4/Q6 MTP及两份Flash混合sidecar，
+已通过Windows/Linux普通Direct/Graph计算链与安装入口，见
+[当前C4资格](../implementation/tasks/compute/cpu-quant-mtp-c4-model-branches.md#本包交接资格)。
+精确软件/制品身份与资源限制以对应收据为准；104个GGUF档位及全部准入非GGUF角色
+仍待C5最终矩阵，不把基础格式接线计为这些新画像全部完成，也不改变本页旧ledger通过数。

@@ -1,0 +1,19 @@
+Running main() from /root/.cache/hyle/dependencies/v1/sources/googletest-063de7e9578f-162765170ae6/googletest/src/gtest_main.cc
+Note: Google Test filter = CpuDefaultGraph.NonModelGraphReplaysAndReclaimsItsOwners:CpuDefaultGraph.HalfTensorFragmentHasIndependentReplayState:CpuGraph.StableSoftplusAndSelectKeepTwoPublishedResultsAcrossReplay
+[==========] Running 3 tests from 2 test suites.
+[----------] Global test environment set-up.
+[----------] 2 tests from CpuDefaultGraph
+[ RUN      ] CpuDefaultGraph.NonModelGraphReplaysAndReclaimsItsOwners
+[       OK ] CpuDefaultGraph.NonModelGraphReplaysAndReclaimsItsOwners (3 ms)
+[ RUN      ] CpuDefaultGraph.HalfTensorFragmentHasIndependentReplayState
+[       OK ] CpuDefaultGraph.HalfTensorFragmentHasIndependentReplayState (32 ms)
+[----------] 2 tests from CpuDefaultGraph (37 ms total)
+
+[----------] 1 test from CpuGraph
+[ RUN      ] CpuGraph.StableSoftplusAndSelectKeepTwoPublishedResultsAcrossReplay
+[       OK ] CpuGraph.StableSoftplusAndSelectKeepTwoPublishedResultsAcrossReplay (3 ms)
+[----------] 1 test from CpuGraph (4 ms total)
+
+[----------] Global test environment tear-down
+[==========] 3 tests from 2 test suites ran. (43 ms total)
+[  PASSED  ] 3 tests.

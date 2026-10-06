@@ -5,7 +5,7 @@
 ## 计划身份
 
 - 状态：AUDITED，真实新版组合消费已完成有限源码/角色审计；compute_ops/ggml/native从C3交接，保持原状态。
-  没有新数学核授权或执行PASS；C3原证据/未决画像资格保留，不假写整包CLOSED。
+  不授权新数学核；实际资格以下方收据为准。C3原证据/未决画像资格保留，不假写整个CPU范围CLOSED。
 - baseline：`2d1d787396f1f2798fe14c7ff3cece9bbebbbbda`；Windows实际HEAD/worktree已核对，保留全部后续提交。
 - owner范围：compute_provider_ggml、compute_ops；原ATen/借用计算涉及compute_provider_native；CPU Direct/Graph facade按实际产品变化绑定。
 - 总合同：[CPU扩覆盖计划](cpu-quant-mtp-coverage-expansion-plan.md)；事实：[缺口清单](cpu-popular-quant-mtp-gap-list.md)。
@@ -85,7 +85,7 @@ P0记录实际cold scale widening、prepare绑定、hot原量化/selected-expert
   F3 prefill128/129与五token cache/sink attention/逆RoPE/分组输出、F4 Markov完整词表/bias与F32confidence
   已在Windows/Linux普通Direct/Graph执行通过。
 - 三stage完整HC/MoE/共享head已在Windows/Linux两入口通过；Qwen实际混合sidecar
-  embedding→完整MTP decoder/cache/carry→全词表head已接入并取得Windows/Linux两入口资格；Flash sidecar仍待接。
+  embedding→完整MTP decoder/cache/carry→全词表head已接入并取得Windows/Linux两入口资格；Flash两份sidecar亦完成两平台两入口。
   [完整三阶段记录](../../../../evidence/correctness/cpu-quant-mtp-c4-three-stage/README.md)保存准确边界，本包不签CLOSED。
 - inverse RoPE最初失败已定向证明来自非相同输入的中间相对比较；局部原公式对实际attention逐值相等，
   修正测试口径，未修改产品数学或全链门。原始诊断与有限范围见
@@ -102,3 +102,25 @@ text相同position时MRoPE三段退化为64维half-split，保留Q6_K attention�
 数值参考包括原CPU activation编码/vec-dot，避免把未量化F32当成相同MatMul。全248320行Q3_K head分片验证。
 精确候选、相同text position范围与未完成项见[Qwen sidecar收据](../../../../evidence/correctness/cpu-quant-mtp-c4-qwen-sidecar/README.md)。
 Flash sidecar依据同源`dflash.cpp`，FP32图与官方FP8/BF16图分开资格；不能仅替换profile后假签其三阶段。
+普通投影分别Q8_0/BF16，专家均MXFP4，router/Markov/confidence为BF16、HC/norm/sink/bias为F32。
+129-token prefill、实际target embedding到三阶段、cache反馈/reset/wrap、全词表共享head＋Markov与sigmoid confidence通过。
+原库vec-dot参考必须先ggml_cpu_init初始化half-scale表，未改产品数学。精确范围见
+[Flash sidecar证据](../../../../evidence/correctness/cpu-quant-mtp-c4-flash-sidecars/README.md)。
+C4本包有限FIX与适用验收已完成，全部准入画像的最终裁决仍由C5负责，不跳整个CPU范围CLOSED。
+
+## 本包交接资格
+
+- Windows/Linux普通source完整程序资格分别保留在上述主干/三阶段/sidecar收据。
+  安装static/shared消费者各两入口每次5项，两系统共40项实际通过；
+  C3安装候选与C4产品源码无差异，复用既有搬移、依赖资产与offline cache-hit资格。
+  精确复用边界见[安装SDK](../../../../evidence/correctness/cpu-quant-mtp-c4-installed-sdk/README.md)。
+- 独立slots、真实ATen分配失败/退役/恢复、ggml invocation OOM回滚、普通入口close与owner回收，
+  两系统各10项通过，结合实际cache反馈与共享参数消费者，见
+  [资源资格](../../../../evidence/correctness/cpu-quant-mtp-c4-resources/README.md)。
+  不宣称全链事务回滚、ATen严格私有内存上界或全实权重整模型验收。
+- [P0](../../../../evidence/correctness/cpu-quant-mtp-c4-installed-sdk/cost-audit.md)记录原动态编码、
+  selected expert复制、K-block解码与managed临时成本。没有新增成熟赢家规则，
+  本包不生成新的赢家P1或SOTA主张；C5对总准入矩阵核定剩余同合同重叠与风险。
+- 统一LOC为61,475实现行/250文件；本批临时消费者清理约1.79GiB，producer/SDK/cache保留。
+- F1精确身份、F2输入/投影、F3 cache/完整attention、F4三阶段/三个sidecar均取得上述有限资格。
+  未完成的是C5全部104档位与准入非GGUF角色的去重矩阵、最终文档/状态和终审；无新数学缺口。

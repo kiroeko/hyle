@@ -1,0 +1,15 @@
+{
+  "windows_candidate": "cf7a708c3c91e099c7f0b09c89c133970fd75b6a",
+  "linux_candidate": "216242d2fabdfae8e69d00872786aac0148442c1",
+  "scope": [
+    "two fixed Flash-0731 GGUF sidecars, Q8_0 and BF16 projections with MXFP4 experts",
+    "F32 graph state, target projection and three independent KV prefill/wrap caches",
+    "actual target embedding and prefill output into three full five-token HC/attention/MoE stages",
+    "all129280 shared target LM head rows plus BF16 Markov bias, sigmoid confidence",
+    "two ordinary CPU entries on Windows/Linux; no new product math"
+  ],
+  "remaining": [
+    "C4 installed delivery/resources/cost",
+    "C5 admitted artifact matrix and closure"
+  ]
+}

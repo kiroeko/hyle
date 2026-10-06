@@ -1,0 +1,16 @@
+Running main() from C:\Users\kiro\AppData\Local\hyle\dependencies\v1\sources\googletest-063de7e9578f-162765170ae6\googletest\src\gtest_main.cc
+Note: Google Test filter = NativeTorchCpu.*
+[==========] Running 3 tests from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 3 tests from NativeTorchCpu
+[ RUN      ] NativeTorchCpu.ManagedReplayReportsRealAllocationFailureAndReleasesProgram
+[       OK ] NativeTorchCpu.ManagedReplayReportsRealAllocationFailureAndReleasesProgram (6 ms)
+[ RUN      ] NativeTorchCpu.DuplicateExpertIdsAndFailedInvocationRecovery
+[       OK ] NativeTorchCpu.DuplicateExpertIdsAndFailedInvocationRecovery (2 ms)
+[ RUN      ] NativeTorchCpu.ArtifactAndMlxProgramsHaveIndependentSlotsAndReleaseFailedResources
+[       OK ] NativeTorchCpu.ArtifactAndMlxProgramsHaveIndependentSlotsAndReleaseFailedResources (2 ms)
+[----------] 3 tests from NativeTorchCpu (11 ms total)
+
+[----------] Global test environment tear-down
+[==========] 3 tests from 1 test suite ran. (11 ms total)
+[  PASSED  ] 3 tests.

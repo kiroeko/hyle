@@ -1,0 +1,19 @@
+Running main() from C:\Users\kiro\AppData\Local\hyle\dependencies\v1\sources\googletest-063de7e9578f-162765170ae6\googletest\src\gtest_main.cc
+Note: Google Test filter = CpuDefaultGraph.NonModelGraphReplaysAndReclaimsItsOwners:CpuDefaultGraph.HalfTensorFragmentHasIndependentReplayState:CpuGraph.StableSoftplusAndSelectKeepTwoPublishedResultsAcrossReplay
+[==========] Running 3 tests from 2 test suites.
+[----------] Global test environment set-up.
+[----------] 2 tests from CpuDefaultGraph
+[ RUN      ] CpuDefaultGraph.NonModelGraphReplaysAndReclaimsItsOwners
+[       OK ] CpuDefaultGraph.NonModelGraphReplaysAndReclaimsItsOwners (3 ms)
+[ RUN      ] CpuDefaultGraph.HalfTensorFragmentHasIndependentReplayState
+[       OK ] CpuDefaultGraph.HalfTensorFragmentHasIndependentReplayState (46 ms)
+[----------] 2 tests from CpuDefaultGraph (50 ms total)
+
+[----------] 1 test from CpuGraph
+[ RUN      ] CpuGraph.StableSoftplusAndSelectKeepTwoPublishedResultsAcrossReplay
+[       OK ] CpuGraph.StableSoftplusAndSelectKeepTwoPublishedResultsAcrossReplay (0 ms)
+[----------] 1 test from CpuGraph (0 ms total)
+
+[----------] Global test environment tear-down
+[==========] 3 tests from 2 test suites ran. (51 ms total)
+[  PASSED  ] 3 tests.

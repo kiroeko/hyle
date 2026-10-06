@@ -1,0 +1,50 @@
+[
+  {
+    "name": "ggml",
+    "args": [
+      "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_compute_provider_ggml_test.exe",
+      "--gtest_filter=GgmlCpuProvider.PersistentIndependentSlotsHonorExecutorAndClose:GgmlCpuProvider.InvocationAllocationFailureRollsBackAndCanRecover",
+      "--gtest_output=xml:C:\\public\\project-hyle\\hyle\\.scratch\\validation\\cpu-coverage-c4-resources\\windows\\216242d2fabd\\ggml.xml"
+    ],
+    "candidate": "216242d2fabdfae8e69d00872786aac0148442c1",
+    "log": "1-ggml.log",
+    "returncode": 0,
+    "seconds": 0.031
+  },
+  {
+    "name": "original-aten",
+    "args": [
+      "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_compute_provider_native_test.exe",
+      "--gtest_filter=NativeTorchCpu.*",
+      "--gtest_output=xml:C:\\public\\project-hyle\\hyle\\.scratch\\validation\\cpu-coverage-c4-resources\\windows\\216242d2fabd\\original-aten.xml"
+    ],
+    "candidate": "216242d2fabdfae8e69d00872786aac0148442c1",
+    "log": "2-original-aten.log",
+    "returncode": 0,
+    "seconds": 0.25
+  },
+  {
+    "name": "direct",
+    "args": [
+      "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_compute_route_cpu_test.exe",
+      "--gtest_filter=CpuDefaultContext.ColdFailureReleasesPartialProviderAssembly:CpuDefaultContext.StableSoftplusUsesMatureBindingAcrossReplay",
+      "--gtest_output=xml:C:\\public\\project-hyle\\hyle\\.scratch\\validation\\cpu-coverage-c4-resources\\windows\\216242d2fabd\\direct.xml"
+    ],
+    "candidate": "216242d2fabdfae8e69d00872786aac0148442c1",
+    "log": "3-direct.log",
+    "returncode": 0,
+    "seconds": 0.219
+  },
+  {
+    "name": "graph",
+    "args": [
+      "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_graph_route_cpu_test.exe",
+      "--gtest_filter=CpuDefaultGraph.NonModelGraphReplaysAndReclaimsItsOwners:CpuDefaultGraph.HalfTensorFragmentHasIndependentReplayState:CpuGraph.StableSoftplusAndSelectKeepTwoPublishedResultsAcrossReplay",
+      "--gtest_output=xml:C:\\public\\project-hyle\\hyle\\.scratch\\validation\\cpu-coverage-c4-resources\\windows\\216242d2fabd\\graph.xml"
+    ],
+    "candidate": "216242d2fabdfae8e69d00872786aac0148442c1",
+    "log": "4-graph.log",
+    "returncode": 0,
+    "seconds": 0.25
+  }
+]

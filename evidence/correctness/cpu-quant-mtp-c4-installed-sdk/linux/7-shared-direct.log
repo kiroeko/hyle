@@ -1,0 +1,23 @@
+Running main() from /root/.cache/hyle/dependencies/v1/sources/googletest-063de7e9578f-162765170ae6/googletest/src/gtest_main.cc
+Note: Google Test filter = CpuC4Branches.DsparkTargetHiddenAndFp32Confidence:CpuC4Branches.DsparkMarkovFullVocabularyWithLogitBias:CpuC4Branches.QwenQ4NamedSidecarUsesActualQ3Q4Q6AndCompleteMtp:CpuC4Branches.FlashSidecarsKeepMixedMxfp4BfloatAndQ8ThreeStagePrograms:CpuTorchOfficial.D5DeepSeekOriginalFp4Projections
+[==========] Running 5 tests from 2 test suites.
+[----------] Global test environment set-up.
+[----------] 1 test from CpuTorchOfficial
+[ RUN      ] CpuTorchOfficial.D5DeepSeekOriginalFp4Projections
+[       OK ] CpuTorchOfficial.D5DeepSeekOriginalFp4Projections (37385 ms)
+[----------] 1 test from CpuTorchOfficial (37386 ms total)
+
+[----------] 4 tests from CpuC4Branches
+[ RUN      ] CpuC4Branches.DsparkTargetHiddenAndFp32Confidence
+[       OK ] CpuC4Branches.DsparkTargetHiddenAndFp32Confidence (296 ms)
+[ RUN      ] CpuC4Branches.DsparkMarkovFullVocabularyWithLogitBias
+[       OK ] CpuC4Branches.DsparkMarkovFullVocabularyWithLogitBias (216 ms)
+[ RUN      ] CpuC4Branches.QwenQ4NamedSidecarUsesActualQ3Q4Q6AndCompleteMtp
+[       OK ] CpuC4Branches.QwenQ4NamedSidecarUsesActualQ3Q4Q6AndCompleteMtp (6328 ms)
+[ RUN      ] CpuC4Branches.FlashSidecarsKeepMixedMxfp4BfloatAndQ8ThreeStagePrograms
+[       OK ] CpuC4Branches.FlashSidecarsKeepMixedMxfp4BfloatAndQ8ThreeStagePrograms (37001 ms)
+[----------] 4 tests from CpuC4Branches (43854 ms total)
+
+[----------] Global test environment tear-down
+[==========] 5 tests from 2 test suites ran. (81243 ms total)
+[  PASSED  ] 5 tests.

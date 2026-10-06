@@ -1,0 +1,28 @@
+{
+  "candidate": "216242d2fabdfae8e69d00872786aac0148442c1",
+  "platform": "windows",
+  "tests": [
+    "GgmlCpuProvider.PersistentIndependentSlotsHonorExecutorAndClose",
+    "GgmlCpuProvider.InvocationAllocationFailureRollsBackAndCanRecover",
+    "NativeTorchCpu.ManagedReplayReportsRealAllocationFailureAndReleasesProgram",
+    "NativeTorchCpu.DuplicateExpertIdsAndFailedInvocationRecovery",
+    "NativeTorchCpu.ArtifactAndMlxProgramsHaveIndependentSlotsAndReleaseFailedResources",
+    "CpuDefaultContext.ColdFailureReleasesPartialProviderAssembly",
+    "CpuDefaultContext.StableSoftplusUsesMatureBindingAcrossReplay",
+    "CpuDefaultGraph.NonModelGraphReplaysAndReclaimsItsOwners",
+    "CpuDefaultGraph.HalfTensorFragmentHasIndependentReplayState",
+    "CpuGraph.StableSoftplusAndSelectKeepTwoPublishedResultsAcrossReplay"
+  ],
+  "source_sha256": {
+    "tests/compute_provider_ggml/cpu_provider_test.cc": "e4867b72b9ed02ded8905b16937033f4259b3f90e710cdbc4232f6c9edee3331",
+    "tests/compute_provider_native/torch_cpu_test.cc": "109692f6421361903e25a4839e2092fe21cb0152407bedc5d162e518d8f89b24",
+    "tests/compute_route_cpu/context_test.cc": "394f00139ebd409ae54de81f64d577a12ca87b351618e7d8ee436096fa96563d",
+    "tests/graph_route_cpu/graph_test.cc": "620c077fe3c5874e90efe8891739ade2e95c099bedf6542148e4c08612647989"
+  },
+  "scope": "unchanged provider/facade lifecycle boundaries reused by the actual C4 replay consumers",
+  "limitations": [
+    "metadata accounting is not ATen process RSS/private allocation bound",
+    "a failed full chain does not promise transactional rollback of every earlier output",
+    "no entire real-weight model or inference engine qualification"
+  ]
+}
