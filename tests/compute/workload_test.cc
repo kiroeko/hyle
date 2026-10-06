@@ -97,7 +97,7 @@ TEST(ModelArtifactProfile, ExactIdentitySeparatesModelAndArtifactVariants) {
   variant.variant = "UD-Q4_K_XL";
   auto format = kProfile;
   format.format_family = "gguf";
-  for (const auto other :
+  for (const auto &other :
        {model_revision, artifact_revision, variant, format}) {
     auto different = ModelArtifactProfile::create(other);
     ASSERT_TRUE(different.has_value());
