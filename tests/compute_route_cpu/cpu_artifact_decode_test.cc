@@ -175,7 +175,8 @@ TEST(CpuArtifactDecode, OriginalScaleDtypeRoundsBeforeExplicitFloat32Output) {
   constexpr int k=256,n=8,group=128;
   using Half=hyle::simd::float16_t;
   using Bfloat=hyle::simd::bfloat16_t;
-  const auto hs=half_test::encode<Half>(0.1),bs=half_test::encode<Bfloat>(0.1);
+  const auto hs=half_test::encode<Half>(0.1);
+  const auto bs=half_test::encode<Bfloat>(0.1);
   std::vector<std::int32_t> words(k,0x76543210),zeros(2,0x33333333);
   constexpr std::array<int,8> reverse{0,4,1,5,2,6,3,7};
   std::vector<float> expected(n*k);
