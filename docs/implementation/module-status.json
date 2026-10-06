@@ -418,10 +418,9 @@
     },
     {
       "module": "compute_provider_native",
-      "state": "CANDIDATE",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/cpu-default-domain-routing-final.md",
-      "summary": "CPU最终默认域规则与缓存身份已实现；不可变候选批量完成适用正确性和两平台三交付验收，未验门不签PASS。",
-      "candidate": "7090222ac6da73edab35c0f4d8d1bd098748a793"
+      "summary": "有限红队纠正F1：Release性能规则缺少NDEBUG门，Debug同编译器不应继承；只加冷构建条件，不改热算法。"
     },
     {
       "module": "compute_sched",
@@ -430,17 +429,15 @@
     },
     {
       "module": "compute_route_cpu",
-      "state": "CANDIDATE",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/cpu-default-domain-routing-final.md",
-      "summary": "CPU最终默认域规则与缓存身份已实现；不可变候选批量完成适用正确性和两平台三交付验收，未验门不签PASS。",
-      "candidate": "7090222ac6da73edab35c0f4d8d1bd098748a793"
+      "summary": "有限红队纠正F1：Release性能规则缺少NDEBUG门，Debug同编译器不应继承；只加冷构建条件，不改热算法。"
     },
     {
       "module": "graph_route_cpu",
-      "state": "CANDIDATE",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/cpu-default-domain-routing-final.md",
-      "summary": "CPU最终默认域规则与缓存身份已实现；不可变候选批量完成适用正确性和两平台三交付验收，未验门不签PASS。",
-      "candidate": "7090222ac6da73edab35c0f4d8d1bd098748a793"
+      "summary": "有限红队纠正F1：Release性能规则缺少NDEBUG门，Debug同编译器不应继承；只加冷构建条件，不改热算法。"
     },
     {
       "module": "compute_provider_cublas",

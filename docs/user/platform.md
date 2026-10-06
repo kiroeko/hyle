@@ -54,6 +54,7 @@ macOS 使用 platform component 时部署目标必须是 14.4 或更新版本；
 | 等待调用方已有的原子字 | `wait_on_address` | `Parker` 再包一层 | 允许伪唤醒，必须循环检查谓词 |
 | 插件/可选系统库 | `DynLib` | 裸 `dlopen`/`LoadLibrary` 分叉 | `get` 会 pin；symbol 借用不活过 owner；显式 close 可观察错误 |
 | 自定义 kernel 的运行时 feature gate | `cpu_features().has_all(requirements)` | 把 Platform facts 当“最佳 ISA”，或只检查一个营销级 feature | kernel owner 声明其生成 TU 的完整 requirements；Platform 不替它选择 target |
+| 为固定硬件规则提供 CPU 身份 | `cpu_identity()` | 用营销品牌猜 ISA 或性能胜负 | x86 vendor/brand/family/model/stepping 首次读取后缓存；非 x86 未知为空/0；heterogeneous package 不能由一个值代表全部 CPU |
 | 决定 work 可放在哪些 CPU/绑核 | owning `available_cpu_ids()` 或 buffer-fill core | 只看 `hardware_concurrency()` | 动态遵守 affinity、cgroup/cpuset、Windows CPU Sets；id 可稀疏；只表达 placement |
 | 选择 CPU-bound 默认 worker 上限 | `process_cpu_capacity()` + `parallelism_ceiling()` | 把 placement 数直接当获准 CPU 带宽 | 独立保留 placement 和可选 hard quota；weight/share 不伪造成上限；最终策略仍由调用方决定 |
 | 按 package/core/SMT/NUMA/cache domain 放置 worker | `available_cpu_topology()` | 假定 CPU id 连续或 cache 独占 | 返回当前进程可用 CPU 的动态快照；未知 domain 使用 sentinel |
