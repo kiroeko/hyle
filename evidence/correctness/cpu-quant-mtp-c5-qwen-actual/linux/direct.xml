@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites tests="3" failures="0" disabled="0" errors="0" time="0.387" timestamp="2026-10-07T04:52:19.774" name="AllTests">
+  <testsuite name="CpuC5Parameters" tests="3" failures="0" disabled="0" skipped="0" errors="0" time="0.385" timestamp="2026-10-07T04:52:19.775">
+    <testcase name="Qwen24ActualHalfSplitFrequencyNormAndKvFeedback" file="/root/hyle-scratch/active-cpu-z/source/tests/compute_route_cpu/../compute_models/cpu_c5_parameter_tests.h" line="46" status="run" result="completed" time="0.184" timestamp="2026-10-07T04:52:19.775" classname="CpuC5Parameters" />
+    <testcase name="QwenActualWidthsUseDeclaredFloatNormEpsilon" file="/root/hyle-scratch/active-cpu-z/source/tests/compute_route_cpu/../compute_models/cpu_c5_parameter_tests.h" line="55" status="run" result="completed" time="0.001" timestamp="2026-10-07T04:52:19.961" classname="CpuC5Parameters" />
+    <testcase name="Qwen24OriginalMtpCodecNormOrderAndCarry" file="/root/hyle-scratch/active-cpu-z/source/tests/compute_route_cpu/../compute_models/cpu_c5_parameter_tests.h" line="63" status="run" result="completed" time="0.196" timestamp="2026-10-07T04:52:19.964" classname="CpuC5Parameters" />
+  </testsuite>
+</testsuites>

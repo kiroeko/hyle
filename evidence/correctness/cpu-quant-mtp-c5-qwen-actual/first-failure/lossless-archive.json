@@ -1,0 +1,14 @@
+[
+  {
+    "file": "2-direct-actual-qwen.log",
+    "bytes": 105535870,
+    "sha256": "adb7caba656d8cc966bbc91feccf7cff16470a1336340171d4f3744d884b1b92",
+    "compressed_bytes": 3306800
+  },
+  {
+    "file": "direct.xml",
+    "bytes": 219937504,
+    "sha256": "97aa0c6ce23e08b25ba36159db135f09422801b7e033ae5cad9f6348d3a6f8e3",
+    "compressed_bytes": 7926614
+  }
+]

@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites tests="3" failures="0" disabled="0" errors="0" time="0.407" timestamp="2026-10-07T04:50:52.090" name="AllTests">
+  <testsuite name="CpuGraphC5Parameters" tests="3" failures="0" disabled="0" skipped="0" errors="0" time="0.407" timestamp="2026-10-07T04:50:52.091">
+    <testcase name="Qwen24ActualHalfSplitFrequencyNormAndKvFeedback" file="C:\public\project-hyle\hyle\tests\graph_route_cpu\../compute_models/cpu_c5_parameter_tests.h" line="46" status="run" result="completed" time="0.248" timestamp="2026-10-07T04:50:52.091" classname="CpuGraphC5Parameters" />
+    <testcase name="QwenActualWidthsUseDeclaredFloatNormEpsilon" file="C:\public\project-hyle\hyle\tests\graph_route_cpu\../compute_models/cpu_c5_parameter_tests.h" line="55" status="run" result="completed" time="0.001" timestamp="2026-10-07T04:50:52.339" classname="CpuGraphC5Parameters" />
+    <testcase name="Qwen24OriginalMtpCodecNormOrderAndCarry" file="C:\public\project-hyle\hyle\tests\graph_route_cpu\../compute_models/cpu_c5_parameter_tests.h" line="63" status="run" result="completed" time="0.157" timestamp="2026-10-07T04:50:52.340" classname="CpuGraphC5Parameters" />
+  </testsuite>
+</testsuites>

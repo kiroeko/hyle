@@ -1,0 +1,31 @@
+[
+  {
+    "name": "selected-build",
+    "args": [
+      "cmake",
+      "--build",
+      "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+      "--target",
+      "hyle_compute_route_cpu_tests",
+      "hyle_graph_route_cpu_tests",
+      "--parallel",
+      "2"
+    ],
+    "candidate": "911efc5c7e10cc035f0001940f544c2088959ec0",
+    "log": "1-selected-build.log",
+    "returncode": 0,
+    "seconds": 12.5
+  },
+  {
+    "name": "direct-actual-qwen",
+    "args": [
+      "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_compute_route_cpu_test.exe",
+      "--gtest_filter=*C5Parameters*.Qwen*",
+      "--gtest_output=xml:C:\\public\\project-hyle\\hyle\\.scratch\\validation\\cpu-coverage-c5-qwen-windows\\911efc5c7e10\\direct.xml"
+    ],
+    "candidate": "911efc5c7e10cc035f0001940f544c2088959ec0",
+    "log": "2-direct-actual-qwen.log",
+    "returncode": 1,
+    "seconds": 7.047
+  }
+]

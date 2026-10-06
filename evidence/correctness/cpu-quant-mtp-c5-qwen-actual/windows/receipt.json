@@ -1,0 +1,43 @@
+[
+  {
+    "name": "selected-build",
+    "args": [
+      "cmake",
+      "--build",
+      "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+      "--target",
+      "hyle_compute_route_cpu_tests",
+      "hyle_graph_route_cpu_tests",
+      "--parallel",
+      "2"
+    ],
+    "candidate": "a68f8ed7a5ead29cd418c4642388a7a02a2f6009",
+    "log": "1-selected-build.log",
+    "returncode": 0,
+    "seconds": 12.5
+  },
+  {
+    "name": "direct-actual-qwen",
+    "args": [
+      "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_compute_route_cpu_test.exe",
+      "--gtest_filter=*C5Parameters*.Qwen*",
+      "--gtest_output=xml:C:\\public\\project-hyle\\hyle\\.scratch\\validation\\cpu-coverage-c5-qwen-windows\\a68f8ed7a5ea\\direct.xml"
+    ],
+    "candidate": "a68f8ed7a5ead29cd418c4642388a7a02a2f6009",
+    "log": "2-direct-actual-qwen.log",
+    "returncode": 0,
+    "seconds": 0.656
+  },
+  {
+    "name": "graph-actual-qwen",
+    "args": [
+      "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_graph_route_cpu_test.exe",
+      "--gtest_filter=*C5Parameters*.Qwen*",
+      "--gtest_output=xml:C:\\public\\project-hyle\\hyle\\.scratch\\validation\\cpu-coverage-c5-qwen-windows\\a68f8ed7a5ea\\graph.xml"
+    ],
+    "candidate": "a68f8ed7a5ead29cd418c4642388a7a02a2f6009",
+    "log": "3-graph-actual-qwen.log",
+    "returncode": 0,
+    "seconds": 0.641
+  }
+]

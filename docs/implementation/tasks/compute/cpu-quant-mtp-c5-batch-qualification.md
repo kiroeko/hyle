@@ -142,6 +142,8 @@ theta1e7、两行KV历史与四次changed replay/反馈、sigmoid gate。只组�
 不改产品数学、旧GPU测试/资格或误差门。投影原格式/真实内宽仍引用F1实际矩阵。
 本格尚未运行，旧交错测试保留为该布局的历史事实，不改写旧PASS来代签目标模型。
 
+后续CPU-only实际HalfSplit/频率/epsilon与KV反馈已两系统两入口通过；旧交错历史结果不代签。
+
 同一参数审计发现旧Qwen GGUF FFN与2.4T MTP的部分RmsNorm使用API默认1e-5，
 不能代签固定模型1e-6。有限补验合并为一个CPU-only批次：H2048/5120/8192的F32 norm/残差，
 以及2.4T真实Q8_0 eh_proj的embedding-first双norm/Concat/MatMul/后norm与四次carry反馈。
@@ -153,3 +155,8 @@ theta1e7、两行KV历史与四次changed replay/反馈、sigmoid gate。只组�
 原Q8 activation codec对上游浮点差异不是光滑映射，不能套非量化F32片段的门。
 修正测试分类，复用已有量化片段门，不新设阈值；三真实宽度的norm仍独立按严格F32门。
 保留失败raw/XML（可无损gzip），不改产品数学或原codec/reference，随后两入口补跑。
+
+最终候选`a68f8ed7a5ea`两系统普通两入口各3项，共12项通过。准确作用域、失败归档与精度合同见
+[实际Qwen资格](../../../../evidence/correctness/cpu-quant-mtp-c5-qwen-actual/README.md)。
+本MTP程序只签输入/投影/carry边界，不代签完整NextN decoder；required-region最终聚合须保留该区别。
+80条参数已生成源码/SHA/两系统收据索引，仍不以testcase名称匹配代替完整语义复核。

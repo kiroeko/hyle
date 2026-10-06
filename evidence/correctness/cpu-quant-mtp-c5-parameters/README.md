@@ -38,3 +38,7 @@ mHC输出后全词表head消费者，原完整oracle/cache反馈保留。两系�
 
 上述收据签本批六类存储与四个主干消费者，不把全部80条角色或104个完整混合模型改成RUN_PASS。
 全部角色/required-region的最终关联与聚合仍由当前C5卡负责。
+
+[80条参数的收据索引](parameter-witness-map.json)包含按模型族的源码anchor/SHA与两系统两入口testcase。
+它只是可追踪索引，状态仍为待最后源码/合同复核；测试名匹配本身不能改变verdict。
+此复核已发现并补验Qwen实际RoPE/epsilon/MTP输入边界，见[准确资格](../cpu-quant-mtp-c5-qwen-actual/README.md)。

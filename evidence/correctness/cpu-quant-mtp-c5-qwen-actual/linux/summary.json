@@ -1,0 +1,21 @@
+{
+  "candidate": "a68f8ed7a5ead29cd418c4642388a7a02a2f6009",
+  "platform": "linux",
+  "checks": 6,
+  "ordinary_entries": [
+    "Direct",
+    "Graph"
+  ],
+  "source": "CPU-only actual Qwen GGUF consumers; product unchanged",
+  "scope": [
+    "HalfSplit64/theta1e7/rms_eps1e-6/Q64/KV4/D256 with four-step KV feedback for two actual profiles",
+    "strict F32 norm+residual at actual H2048/5120/8192 and declared epsilon1e-6",
+    "original Q8_0 MTP eh_proj K16384/N8192, embedding-first norm, cold bound weights and four carry replays"
+  ],
+  "error_contract": "Existing whole-quantized-fragment gate for Q8 feedback; strict F32 norm is separately checked; no new numeric threshold",
+  "limits": [
+    "text MRoPE axes equal only",
+    "synthetic nonzero legal payload, not full real-weight inference",
+    "this MTP consumer proves the input/projection/carry boundary, not the entire NextN decoder"
+  ]
+}
