@@ -213,3 +213,11 @@ Direct4已通过，只补未执行Graph，没有重复build/Direct或改产品�
 原资源因子包含卷积真实原allocator OOM、恢复/并发/metadata回收，也通过。
 准确信息见[非GGUF原text资格](../../../../evidence/correctness/cpu-quant-mtp-c5-plain/README.md)。
 更新两系统static/shared SDK正在执行，尚未写PASS；新增原库接缝使旧产品SDK不能代签这三conv格。
+
+同一不可变产品候选的两系统更新static/shared普通Direct/Graph各45项，共360项已实际通过。
+见[更新SDK准确收据](../../../../evidence/correctness/cpu-quant-mtp-c5-plain-sdk/README.md)；
+source180+installed360共同资格化本批原text与ID9原conv程序。依赖/原core/旧实现ID未变，
+其它程序证据只按精确产品/语义差异复用，不能拿新编译标签重签旧GPU或SOTA。
+本批临时安装consumer清理1,337,587,592 bytes，保持producer/SDK/source cache；
+统一29路径Compute+Graph实现61,499行/250文件，不含tests/vendor/bench。
+F4全范围聚合、七门终审与状态仍未关闭；所有新适用格未完以前不签goal完成。

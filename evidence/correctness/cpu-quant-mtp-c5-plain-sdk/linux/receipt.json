@@ -1,0 +1,218 @@
+[
+  {
+    "name": "shared-producer-configure",
+    "args": [
+      "cmake",
+      "-S",
+      "/root/hyle-scratch/active-cpu-z/source",
+      "-B",
+      "/root/hyle-scratch/active-cpu-z/build",
+      "-DHYLE_BUILD_TESTS=OFF",
+      "-DHYLE_INSTALL=ON",
+      "-DHYLE_STATIC=OFF",
+      "-DFETCHCONTENT_FULLY_DISCONNECTED=ON"
+    ],
+    "candidate": "c740abc74a5a62ffacf60b26798228ca484317df",
+    "log": "1-shared-producer-configure.log",
+    "returncode": 0,
+    "seconds": 14.665
+  },
+  {
+    "name": "shared-producer-build",
+    "args": [
+      "cmake",
+      "--build",
+      "/root/hyle-scratch/active-cpu-z/build",
+      "--parallel",
+      "2"
+    ],
+    "candidate": "c740abc74a5a62ffacf60b26798228ca484317df",
+    "log": "2-shared-producer-build.log",
+    "returncode": 0,
+    "seconds": 90.587
+  },
+  {
+    "name": "shared-install",
+    "args": [
+      "cmake",
+      "--install",
+      "/root/hyle-scratch/active-cpu-z/build",
+      "--prefix",
+      "/root/hyle-scratch/active-cpu-z/coverage-c3-sdk/shared-relocated"
+    ],
+    "candidate": "c740abc74a5a62ffacf60b26798228ca484317df",
+    "log": "3-shared-install.log",
+    "returncode": 0,
+    "seconds": 0.134
+  },
+  {
+    "name": "shared-consumer-configure",
+    "args": [
+      "cmake",
+      "-S",
+      "/mnt/c/public/project-hyle/hyle/.scratch/validation/cpu-coverage-c5-plain-sdk",
+      "-B",
+      "/root/hyle-scratch/active-cpu-z/coverage-c5-plain-sdk/shared",
+      "-G",
+      "Ninja",
+      "-DCMAKE_BUILD_TYPE=Release",
+      "-DCMAKE_CXX_COMPILER=g++-14",
+      "-DCMAKE_PREFIX_PATH=/root/hyle-scratch/active-cpu-z/coverage-c3-sdk/shared-relocated",
+      "-DHYLE_TEST_REPO=/mnt/c/public/project-hyle/hyle",
+      "-DHYLE_ORACLE_BUILD=/root/hyle-scratch/active-cpu-z/build",
+      "-DHYLE_ORACLE_SOURCE=/root/hyle-scratch/active-cpu-z/build/src/compute_ggml_runtime/source-bdae1e43311ee486",
+      "-DHYLE_GTEST_SOURCE=/root/.cache/hyle/dependencies/v1/sources/googletest-063de7e9578f-162765170ae6",
+      "-DFETCHCONTENT_FULLY_DISCONNECTED=ON"
+    ],
+    "candidate": "c740abc74a5a62ffacf60b26798228ca484317df",
+    "log": "4-shared-consumer-configure.log",
+    "returncode": 0,
+    "seconds": 7.741
+  },
+  {
+    "name": "shared-consumer-build",
+    "args": [
+      "cmake",
+      "--build",
+      "/root/hyle-scratch/active-cpu-z/coverage-c5-plain-sdk/shared",
+      "--parallel",
+      "2"
+    ],
+    "candidate": "c740abc74a5a62ffacf60b26798228ca484317df",
+    "log": "5-shared-consumer-build.log",
+    "returncode": 0,
+    "seconds": 33.349
+  },
+  {
+    "name": "shared-direct",
+    "args": [
+      "/root/hyle-scratch/active-cpu-z/coverage-c5-plain-sdk/shared/direct/cpu_branch_direct",
+      "--gtest_filter=*C5Plain*.*",
+      "--gtest_output=xml:/mnt/c/public/project-hyle/hyle/.scratch/validation/cpu-coverage-c5-plain-sdk/linux/c740abc74a5a/shared-direct.xml"
+    ],
+    "candidate": "c740abc74a5a62ffacf60b26798228ca484317df",
+    "log": "6-shared-direct.log",
+    "returncode": 0,
+    "seconds": 7.859
+  },
+  {
+    "name": "shared-graph",
+    "args": [
+      "/root/hyle-scratch/active-cpu-z/coverage-c5-plain-sdk/shared/graph/cpu_branch_graph",
+      "--gtest_filter=*C5Plain*.*",
+      "--gtest_output=xml:/mnt/c/public/project-hyle/hyle/.scratch/validation/cpu-coverage-c5-plain-sdk/linux/c740abc74a5a/shared-graph.xml"
+    ],
+    "candidate": "c740abc74a5a62ffacf60b26798228ca484317df",
+    "log": "7-shared-graph.log",
+    "returncode": 0,
+    "seconds": 7.338
+  },
+  {
+    "name": "static-producer-configure",
+    "args": [
+      "cmake",
+      "-S",
+      "/root/hyle-scratch/active-cpu-z/source",
+      "-B",
+      "/root/hyle-scratch/active-cpu-z/build",
+      "-DHYLE_BUILD_TESTS=OFF",
+      "-DHYLE_INSTALL=ON",
+      "-DHYLE_STATIC=ON",
+      "-DFETCHCONTENT_FULLY_DISCONNECTED=ON"
+    ],
+    "candidate": "c740abc74a5a62ffacf60b26798228ca484317df",
+    "log": "8-static-producer-configure.log",
+    "returncode": 0,
+    "seconds": 11.718
+  },
+  {
+    "name": "static-producer-build",
+    "args": [
+      "cmake",
+      "--build",
+      "/root/hyle-scratch/active-cpu-z/build",
+      "--parallel",
+      "2"
+    ],
+    "candidate": "c740abc74a5a62ffacf60b26798228ca484317df",
+    "log": "9-static-producer-build.log",
+    "returncode": 0,
+    "seconds": 85.279
+  },
+  {
+    "name": "static-install",
+    "args": [
+      "cmake",
+      "--install",
+      "/root/hyle-scratch/active-cpu-z/build",
+      "--prefix",
+      "/root/hyle-scratch/active-cpu-z/coverage-c3-sdk/static-relocated"
+    ],
+    "candidate": "c740abc74a5a62ffacf60b26798228ca484317df",
+    "log": "10-static-install.log",
+    "returncode": 0,
+    "seconds": 0.136
+  },
+  {
+    "name": "static-consumer-configure",
+    "args": [
+      "cmake",
+      "-S",
+      "/mnt/c/public/project-hyle/hyle/.scratch/validation/cpu-coverage-c5-plain-sdk",
+      "-B",
+      "/root/hyle-scratch/active-cpu-z/coverage-c5-plain-sdk/static",
+      "-G",
+      "Ninja",
+      "-DCMAKE_BUILD_TYPE=Release",
+      "-DCMAKE_CXX_COMPILER=g++-14",
+      "-DCMAKE_PREFIX_PATH=/root/hyle-scratch/active-cpu-z/coverage-c3-sdk/static-relocated",
+      "-DHYLE_TEST_REPO=/mnt/c/public/project-hyle/hyle",
+      "-DHYLE_ORACLE_BUILD=/root/hyle-scratch/active-cpu-z/build",
+      "-DHYLE_ORACLE_SOURCE=/root/hyle-scratch/active-cpu-z/build/src/compute_ggml_runtime/source-bdae1e43311ee486",
+      "-DHYLE_GTEST_SOURCE=/root/.cache/hyle/dependencies/v1/sources/googletest-063de7e9578f-162765170ae6",
+      "-DFETCHCONTENT_FULLY_DISCONNECTED=ON"
+    ],
+    "candidate": "c740abc74a5a62ffacf60b26798228ca484317df",
+    "log": "11-static-consumer-configure.log",
+    "returncode": 0,
+    "seconds": 7.419
+  },
+  {
+    "name": "static-consumer-build",
+    "args": [
+      "cmake",
+      "--build",
+      "/root/hyle-scratch/active-cpu-z/coverage-c5-plain-sdk/static",
+      "--parallel",
+      "2"
+    ],
+    "candidate": "c740abc74a5a62ffacf60b26798228ca484317df",
+    "log": "12-static-consumer-build.log",
+    "returncode": 0,
+    "seconds": 34.306
+  },
+  {
+    "name": "static-direct",
+    "args": [
+      "/root/hyle-scratch/active-cpu-z/coverage-c5-plain-sdk/static/direct/cpu_branch_direct",
+      "--gtest_filter=*C5Plain*.*",
+      "--gtest_output=xml:/mnt/c/public/project-hyle/hyle/.scratch/validation/cpu-coverage-c5-plain-sdk/linux/c740abc74a5a/static-direct.xml"
+    ],
+    "candidate": "c740abc74a5a62ffacf60b26798228ca484317df",
+    "log": "13-static-direct.log",
+    "returncode": 0,
+    "seconds": 7.347
+  },
+  {
+    "name": "static-graph",
+    "args": [
+      "/root/hyle-scratch/active-cpu-z/coverage-c5-plain-sdk/static/graph/cpu_branch_graph",
+      "--gtest_filter=*C5Plain*.*",
+      "--gtest_output=xml:/mnt/c/public/project-hyle/hyle/.scratch/validation/cpu-coverage-c5-plain-sdk/linux/c740abc74a5a/static-graph.xml"
+    ],
+    "candidate": "c740abc74a5a62ffacf60b26798228ca484317df",
+    "log": "14-static-graph.log",
+    "returncode": 0,
+    "seconds": 7.264
+  }
+]

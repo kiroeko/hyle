@@ -9,6 +9,10 @@ Windows runtime DLL由既有helper邻置到各exe独立目录；安装prefix使�
 未变资产/离线cache合同保留。lowdtype conv、uncompressed F16/BF16/F32/I32、实际K/N/词表均实际执行。
 原模型片段、packed F1/F2与资源证据按未变实现的准确范围复用，没有重跑性能或假签新winner。
 
-Linux同批正在执行，尚未签PASS；C5全范围聚合、终审与模块状态还未关闭。
+Linux同批static/shared普通两入口共180项已通过，见[Linux收据](linux/receipt.json)。
+两系统更新安装SDK合计360项，加source180项，共540项本批typed contract检查通过。
+C5全范围聚合、终审与模块状态还未关闭。
 归档后按CMake owner/绝对路径/活动进程校验删除Windows临时消费目录，明细见 `cleanup-windows.json`。
 producer、安装SDK、source/dependency cache和原始收据保留。
+Linux同批临时consumer已按同一owner/路径/活动进程合同删除，明细见 `cleanup-linux.json`。
+两系统本批清理1,337,587,592 bytes（约1.25GiB）。

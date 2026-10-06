@@ -1,0 +1,6 @@
+[1/6] Building CXX object CMakeFiles/cpu_branch_direct.dir/mnt/c/public/project-hyle/hyle/tests/compute_route_cpu/d5_qwen_gguf_vocabulary_test.cc.o
+[2/6] Building CXX object CMakeFiles/cpu_branch_direct.dir/mnt/c/public/project-hyle/hyle/tests/compute_route_cpu/d5_qwen38_official_test.cc.o
+[3/6] Linking CXX executable direct/cpu_branch_direct
+[4/6] Building CXX object CMakeFiles/cpu_branch_graph.dir/mnt/c/public/project-hyle/hyle/tests/graph_route_cpu/d5_qwen38_official_test.cc.o
+[5/6] Building CXX object CMakeFiles/cpu_branch_graph.dir/mnt/c/public/project-hyle/hyle/tests/graph_route_cpu/d5_qwen_gguf_vocabulary_test.cc.o
+[6/6] Linking CXX executable graph/cpu_branch_graph

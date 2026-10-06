@@ -29,4 +29,6 @@ projection/Gather仍保留完整原payload、K/N、词表和实际原库执行�
 恢复原allocator接口后正式Native因子通过；此修正只在本地测试代理，不改公共性能仪器。
 软件版本、资源、转换/临时与未知私有上界沿现有managed合同；不宣称capture、零热分配或严格RSS界。
 
-两系统更新安装SDK与全范围聚合仍需完成；本目录不是整model RUN_PASS或goal CLOSED。
+[更新安装SDK](../cpu-quant-mtp-c5-plain-sdk/README.md)两系统static/shared普通两入口共360项通过，
+产品包含新的原conv接缝；原source/资源边界与安装身份联合证明本批45合同。
+全范围聚合仍需完成；本目录不是整model RUN_PASS或goal CLOSED。
