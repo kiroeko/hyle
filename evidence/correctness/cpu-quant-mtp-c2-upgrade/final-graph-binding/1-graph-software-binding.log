@@ -1,0 +1,18 @@
+Running main() from C:\Users\kiro\AppData\Local\hyle\dependencies\v1\sources\googletest-063de7e9578f-162765170ae6\googletest\src\gtest_main.cc
+Note: Google Test filter = CpuDefaultGraph.NativeQ8GraphImportsGgufBytesAndReplays:CpuDefaultGraph.MatureNormPostOpsFuseAndPreserveObservableBoundaries:CpuDefaultGraph.MatureHalfLinearAndHadamardCompileAsOneReplayableRegion:CpuDefaultGraph.NonModelGraphReplaysAndReclaimsItsOwners
+[==========] Running 4 tests from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 4 tests from CpuDefaultGraph
+[ RUN      ] CpuDefaultGraph.NativeQ8GraphImportsGgufBytesAndReplays
+[       OK ] CpuDefaultGraph.NativeQ8GraphImportsGgufBytesAndReplays (2 ms)
+[ RUN      ] CpuDefaultGraph.MatureNormPostOpsFuseAndPreserveObservableBoundaries
+[       OK ] CpuDefaultGraph.MatureNormPostOpsFuseAndPreserveObservableBoundaries (2 ms)
+[ RUN      ] CpuDefaultGraph.MatureHalfLinearAndHadamardCompileAsOneReplayableRegion
+[       OK ] CpuDefaultGraph.MatureHalfLinearAndHadamardCompileAsOneReplayableRegion (0 ms)
+[ RUN      ] CpuDefaultGraph.NonModelGraphReplaysAndReclaimsItsOwners
+[       OK ] CpuDefaultGraph.NonModelGraphReplaysAndReclaimsItsOwners (0 ms)
+[----------] 4 tests from CpuDefaultGraph (5 ms total)
+
+[----------] Global test environment tear-down
+[==========] 4 tests from 1 test suite ran. (5 ms total)
+[  PASSED  ] 4 tests.

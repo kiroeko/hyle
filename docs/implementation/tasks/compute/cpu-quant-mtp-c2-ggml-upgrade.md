@@ -74,3 +74,22 @@ Windows/Linux x86_64 baseline/AVX2、普通Direct/Graph、source/static/shared�
 公共头/API/package变化遵守现有selector；P0查allocation/copy/lock/syscall/metadata/热冷分界。
 产品改动前真实owner必须AUDITED；每轮适用检查及closure/docs实际运行，未运行不写PASS。
 只有Windows可改产品，WSL/mac仅验证副本；构建j2、测试j1、重型串行；临时目录按owner校验清理。
+
+## 当前实施与验证（整包仍未收口）
+
+- U1–U3产品实现已提交：CPU-only新版锁/原IQ1推理port、GPU原envelope、同源优化程序名、
+  真实Provider软件标签以及Native peer版本条件。没有修改自研数学、SIMD或GPU状态。
+- Windows shared producer批量9/9测试目标通过，涵盖CPU Direct/Graph及资源/故障。
+  新IQ1_XS/XXS/XXXS MatMul/GetRows、changed replay与配额退还的最终定向5/5目标通过；
+  软件metadata变化后普通CPU绑定与四个普通Graph replay/边界案例亦通过。两个阶段的准确候选与复用边界见
+  [C2证据](../../../../evidence/correctness/cpu-quant-mtp-c2-upgrade/README.md)。
+- 新测试最初误将原库Q8_K activation与未量化F32比较；失败记录保留，改用原CPU encoder后的
+  decoded-weight独立oracle通过。没有修改kernel或用量化级别的宽容差掩盖错误。
+- U4 Linux及完整source/static/shared、搬移/offline仍未运行，不签PASS；随C2–C4稳定批次集中完成。
+  C3公开格式/non-GGUF接线和C4新分支尚未开始，不能用上述内部原库测试代签。
+- C1临时ATen probe已在核对CMake owner/活动进程/目录边界后删除，释放289,707,808 bytes。
+  保留复用的CPU producer与源码cache，不另开逐格式构建树。
+
+当前owner维持AUDITED；不得因Windows阶段结果跳为CLOSED。下一步继续有限批次接线与剩余适用资格。
+
+统一29路径统计：Compute＋Graph实现61,110行/249文件（不含测试/vendor/bench）；完整收据在C2证据loc.json。

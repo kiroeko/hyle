@@ -1,0 +1,63 @@
+[
+  {
+    "name": "configure-cpu-upgrade",
+    "args": [
+      "cmake",
+      "-S",
+      "C:\\public\\project-hyle\\hyle",
+      "-B",
+      "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+      "-DHYLE_BUILD_TESTS=ON",
+      "-DHYLE_INSTALL=OFF",
+      "-DHYLE_BUILD_BENCH=OFF",
+      "-DFETCHCONTENT_FULLY_DISCONNECTED=ON",
+      "-DFETCHCONTENT_SOURCE_DIR_GGML_CPU=C:\\public\\project-hyle\\hyle\\.scratch\\validation\\cpu-quant-mtp-c1\\stock-ggml-cpu"
+    ],
+    "candidate": "8d7bb375bfd4040f0628d7f587ce519b62a158b7",
+    "log": "1-configure-cpu-upgrade.log",
+    "returncode": 0,
+    "seconds": 40.578
+  },
+  {
+    "name": "build-cpu-upgrade-batch",
+    "args": [
+      "cmake",
+      "--build",
+      "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+      "--target",
+      "hyle_compute_ggml_runtime_tests",
+      "hyle_compute_provider_ggml_tests",
+      "hyle_compute_provider_native_tests",
+      "hyle_compute_route_cpu_tests",
+      "hyle_graph_route_cpu_tests",
+      "--parallel",
+      "2"
+    ],
+    "candidate": "8d7bb375bfd4040f0628d7f587ce519b62a158b7",
+    "log": "2-build-cpu-upgrade-batch.log",
+    "returncode": 0,
+    "seconds": 178.812
+  },
+  {
+    "name": "test-cpu-upgrade-batch",
+    "args": [
+      "ctest",
+      "--test-dir",
+      "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+      "--output-on-failure",
+      "--no-tests=error",
+      "-L",
+      "^(compute_ggml_runtime|compute_provider_ggml|compute_provider_native|compute_route_cpu|graph_route_cpu)$",
+      "-LE",
+      "headers",
+      "-j",
+      "1",
+      "--output-junit",
+      "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\cpu-coverage-c2-build\\8d7bb375bfd4\\tests.xml"
+    ],
+    "candidate": "8d7bb375bfd4040f0628d7f587ce519b62a158b7",
+    "log": "3-test-cpu-upgrade-batch.log",
+    "returncode": 0,
+    "seconds": 644.813
+  }
+]

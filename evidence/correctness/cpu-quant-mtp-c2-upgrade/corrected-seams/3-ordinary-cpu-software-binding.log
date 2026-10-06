@@ -1,0 +1,34 @@
+Running main() from C:\Users\kiro\AppData\Local\hyle\dependencies\v1\sources\googletest-063de7e9578f-162765170ae6\googletest\src\gtest_main.cc
+Note: Google Test filter = CpuDefaultContext.*-CpuDefaultContext.D5*
+[==========] Running 12 tests from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 12 tests from CpuDefaultContext
+[ RUN      ] CpuDefaultContext.ColdFailureReleasesPartialProviderAssembly
+[       OK ] CpuDefaultContext.ColdFailureReleasesPartialProviderAssembly (0 ms)
+[ RUN      ] CpuDefaultContext.GgmlBindsThroughOrdinaryFactory
+[       OK ] CpuDefaultContext.GgmlBindsThroughOrdinaryFactory (0 ms)
+[ RUN      ] CpuDefaultContext.NativeQ8UsesOrdinaryDirectRouteAndReplays
+[       OK ] CpuDefaultContext.NativeQ8UsesOrdinaryDirectRouteAndReplays (2 ms)
+[ RUN      ] CpuDefaultContext.StandardIndexProgramsBindThroughOrdinaryFactory
+[       OK ] CpuDefaultContext.StandardIndexProgramsBindThroughOrdinaryFactory (0 ms)
+[ RUN      ] CpuDefaultContext.MatureScatterAddBindsThroughOrdinaryFactory
+[       OK ] CpuDefaultContext.MatureScatterAddBindsThroughOrdinaryFactory (0 ms)
+[ RUN      ] CpuDefaultContext.MatureNormalizationBindsThroughOrdinaryFactory
+[       OK ] CpuDefaultContext.MatureNormalizationBindsThroughOrdinaryFactory (0 ms)
+[ RUN      ] CpuDefaultContext.MatMulNeverFallsBackToLowerAccumulationPrecision
+[       OK ] CpuDefaultContext.MatMulNeverFallsBackToLowerAccumulationPrecision (0 ms)
+[ RUN      ] CpuDefaultContext.MatMulRulesAndChangedInputReplay
+[       OK ] CpuDefaultContext.MatMulRulesAndChangedInputReplay (1 ms)
+[ RUN      ] CpuDefaultContext.InvalidAndUnsupportedInputsRemainErrors
+[       OK ] CpuDefaultContext.InvalidAndUnsupportedInputsRemainErrors (0 ms)
+[ RUN      ] CpuDefaultContext.B2MatureDomainsBindThroughDefaultRuleSet
+[       OK ] CpuDefaultContext.B2MatureDomainsBindThroughDefaultRuleSet (0 ms)
+[ RUN      ] CpuDefaultContext.StableSoftplusUsesMatureBindingAcrossReplay
+[       OK ] CpuDefaultContext.StableSoftplusUsesMatureBindingAcrossReplay (0 ms)
+[ RUN      ] CpuDefaultContext.SelectUsesMatureProviderWithoutManualOrdering
+[       OK ] CpuDefaultContext.SelectUsesMatureProviderWithoutManualOrdering (0 ms)
+[----------] 12 tests from CpuDefaultContext (7 ms total)
+
+[----------] Global test environment tear-down
+[==========] 12 tests from 1 test suite ran. (7 ms total)
+[  PASSED  ] 12 tests.

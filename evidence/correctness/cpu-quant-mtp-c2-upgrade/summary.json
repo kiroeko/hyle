@@ -1,0 +1,29 @@
+{
+  "product_candidate": "0db0944c84fd554f2f0e8d674d570f892c54e6a8",
+  "test_candidate": "5d3e21d87459ce289026363a601be2ff5728c4d2",
+  "machine": "Windows x86_64 i9-13900K",
+  "compiler": "MSVC 19.50.35728.0",
+  "scope": "C2 Windows shared producer and applicable CPU suites only; not C3 formats, C4 branches, Linux or three deliveries",
+  "batch_test_targets": 9,
+  "batch_returncode": 0,
+  "corrected_seam_test_targets": 5,
+  "corrected_seam_returncode": 0,
+  "ordinary_cpu_returncode": 0,
+  "oracle_correction": "original MatMul Q8_K activation is encoded by original CPU trait; decoded original IQ1 weights are checked against double dot of those codes and scale, with eight F32 arithmetic rounding units. Original unquantized F32 comparison was non-equivalent; failure retained. Gather bit-exact and changed replay/quota retirement checked.",
+  "reuse_boundary": "8d7 to final product changes only provider software version projection; numerical/backend sources unchanged. Basic ordinary CPU software binding rerun; full mathematical/profile runs retained from initial batch. Final full delivery/profile qualification remains unproven. Four ordinary Graph replay/boundary cases also rerun after software identity projection.",
+  "cleanup": {
+    "owner": "cpu-quant-mtp-c1",
+    "removed_path": "C:/hv/cpu-c1-aten-probe",
+    "removed_bytes": 289707808,
+    "ownership_check": "CMake home exactly C1 aten-probe, no active probe executable or reparse points"
+  },
+  "remaining": [
+    "C2 Linux and source/static/shared relocation/offline qualification in combined producer batch",
+    "C3 actual 11-format and non-GGUF bindings",
+    "C4 DSpark/new model/sidecar full programs",
+    "C5 admitted matrix and closure"
+  ],
+  "final_graph_binding_returncode": 0,
+  "final_graph_binding_cases": 4,
+  "compute_graph_implementation_loc": 61110
+}

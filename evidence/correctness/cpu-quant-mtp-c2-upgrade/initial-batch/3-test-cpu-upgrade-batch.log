@@ -1,0 +1,30 @@
+Test project C:/public/project-hyle/hyle/.scratch/build-compute-v2-dev
+    Start 69: hyle_compute_provider_ggml_test
+1/9 Test #69: hyle_compute_provider_ggml_test ..........   Passed    0.15 sec
+    Start 77: hyle_compute_provider_native_test
+2/9 Test #77: hyle_compute_provider_native_test ........   Passed    0.74 sec
+    Start 79: hyle_compute_route_cpu_test
+3/9 Test #79: hyle_compute_route_cpu_test ..............   Passed  322.81 sec
+    Start 81: hyle_graph_route_cpu_test
+4/9 Test #81: hyle_graph_route_cpu_test ................   Passed  320.07 sec
+    Start 82: hyle_graph_route_cpu_cpu_executor_test
+5/9 Test #82: hyle_graph_route_cpu_cpu_executor_test ...   Passed    0.25 sec
+    Start 92: hyle_ggml_runtime_source_contract_test
+6/9 Test #92: hyle_ggml_runtime_source_contract_test ...   Passed    0.15 sec
+    Start 93: hyle_compute_ggml_runtime_test
+7/9 Test #93: hyle_compute_ggml_runtime_test ...........   Passed    0.05 sec
+    Start 94: hyle_ggml_cpu_fault_test
+8/9 Test #94: hyle_ggml_cpu_fault_test .................   Passed    0.03 sec
+    Start 95: hyle_ggml_context_fault_test
+9/9 Test #95: hyle_ggml_context_fault_test .............   Passed    0.03 sec
+
+100% tests passed out of 9
+
+Label Time Summary:
+compute_ggml_runtime       =   0.26 sec*proc (4 tests)
+compute_provider_ggml      =   0.15 sec*proc (1 test)
+compute_provider_native    =   0.74 sec*proc (1 test)
+compute_route_cpu          = 322.81 sec*proc (1 test)
+graph_route_cpu            = 320.33 sec*proc (2 tests)
+
+Total Test time (real) = 644.78 sec

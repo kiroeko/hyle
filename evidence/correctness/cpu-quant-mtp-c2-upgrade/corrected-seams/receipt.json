@@ -1,0 +1,52 @@
+[
+  {
+    "name": "build-iq1-and-software-seams",
+    "args": [
+      "cmake",
+      "--build",
+      "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+      "--target",
+      "hyle_compute_ggml_runtime_tests",
+      "hyle_compute_provider_ggml_tests",
+      "--parallel",
+      "2"
+    ],
+    "candidate": "5d3e21d87459ce289026363a601be2ff5728c4d2",
+    "log": "1-build-iq1-and-software-seams.log",
+    "returncode": 0,
+    "seconds": 77.563
+  },
+  {
+    "name": "iq1-resource-and-provider-tests",
+    "args": [
+      "ctest",
+      "--test-dir",
+      "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+      "--output-on-failure",
+      "--no-tests=error",
+      "-L",
+      "^(compute_ggml_runtime|compute_provider_ggml)$",
+      "-LE",
+      "headers",
+      "-j",
+      "1",
+      "--output-junit",
+      "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\cpu-coverage-c2-seams\\5d3e21d87459\\tests.xml"
+    ],
+    "candidate": "5d3e21d87459ce289026363a601be2ff5728c4d2",
+    "log": "2-iq1-resource-and-provider-tests.log",
+    "returncode": 0,
+    "seconds": 0.422
+  },
+  {
+    "name": "ordinary-cpu-software-binding",
+    "args": [
+      "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_compute_route_cpu_test.exe",
+      "--gtest_filter=CpuDefaultContext.*-CpuDefaultContext.D5*"
+    ],
+    "candidate": "5d3e21d87459ce289026363a601be2ff5728c4d2",
+    "log": "3-ordinary-cpu-software-binding.log",
+    "returncode": 0,
+    "seconds": 0.234
+  }
+]

@@ -1,0 +1,13 @@
+[
+  {
+    "name": "graph-software-binding",
+    "args": [
+      "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_graph_route_cpu_test.exe",
+      "--gtest_filter=CpuDefaultGraph.NativeQ8GraphImportsGgufBytesAndReplays:CpuDefaultGraph.MatureNormPostOpsFuseAndPreserveObservableBoundaries:CpuDefaultGraph.MatureHalfLinearAndHadamardCompileAsOneReplayableRegion:CpuDefaultGraph.NonModelGraphReplaysAndReclaimsItsOwners"
+    ],
+    "candidate": "5d3e21d87459ce289026363a601be2ff5728c4d2",
+    "log": "1-graph-software-binding.log",
+    "returncode": 0,
+    "seconds": 0.218
+  }
+]

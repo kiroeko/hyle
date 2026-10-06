@@ -1,0 +1,41 @@
+[
+  {
+    "name": "build-iq1-and-software-seams",
+    "args": [
+      "cmake",
+      "--build",
+      "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+      "--target",
+      "hyle_compute_ggml_runtime_tests",
+      "hyle_compute_provider_ggml_tests",
+      "--parallel",
+      "2"
+    ],
+    "candidate": "0db0944c84fd554f2f0e8d674d570f892c54e6a8",
+    "log": "1-build-iq1-and-software-seams.log",
+    "returncode": 0,
+    "seconds": 87.265
+  },
+  {
+    "name": "iq1-resource-and-provider-tests",
+    "args": [
+      "ctest",
+      "--test-dir",
+      "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+      "--output-on-failure",
+      "--no-tests=error",
+      "-L",
+      "^(compute_ggml_runtime|compute_provider_ggml)$",
+      "-LE",
+      "headers",
+      "-j",
+      "1",
+      "--output-junit",
+      "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\cpu-coverage-c2-seams\\0db0944c84fd\\tests.xml"
+    ],
+    "candidate": "0db0944c84fd554f2f0e8d674d570f892c54e6a8",
+    "log": "2-iq1-resource-and-provider-tests.log",
+    "returncode": 8,
+    "seconds": 0.5
+  }
+]

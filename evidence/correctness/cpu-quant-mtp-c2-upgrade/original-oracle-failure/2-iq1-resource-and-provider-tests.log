@@ -1,0 +1,310 @@
+Test project C:/public/project-hyle/hyle/.scratch/build-compute-v2-dev
+    Start 69: hyle_compute_provider_ggml_test
+1/5 Test #69: hyle_compute_provider_ggml_test ..........   Passed    0.12 sec
+    Start 92: hyle_ggml_runtime_source_contract_test
+2/5 Test #92: hyle_ggml_runtime_source_contract_test ...   Passed    0.14 sec
+    Start 93: hyle_compute_ggml_runtime_test
+3/5 Test #93: hyle_compute_ggml_runtime_test ...........***Failed    0.04 sec
+Running main() from C:\Users\kiro\AppData\Local\hyle\dependencies\v1\sources\googletest-063de7e9578f-162765170ae6\googletest\src\gtest_main.cc
+[==========] Running 9 tests from 2 test suites.
+[----------] Global test environment set-up.
+[----------] 6 tests from GgmlCpuExecution
+[ RUN      ] GgmlCpuExecution.Avx2ProgramRequiresCpuAndOsEnabledPrerequisites
+[       OK ] GgmlCpuExecution.Avx2ProgramRequiresCpuAndOsEnabledPrerequisites (0 ms)
+[ RUN      ] GgmlCpuExecution.ReusesGraphPoolWorkspaceAndRetiresExactBacking
+[       OK ] GgmlCpuExecution.ReusesGraphPoolWorkspaceAndRetiresExactBacking (2 ms)
+[ RUN      ] GgmlCpuExecution.IndependentSlotsShareOnlyImmutableWeights
+[       OK ] GgmlCpuExecution.IndependentSlotsShareOnlyImmutableWeights (0 ms)
+[ RUN      ] GgmlCpuExecution.CancellationJoinsWorkersAndAllowsReuse
+[       OK ] GgmlCpuExecution.CancellationJoinsWorkersAndAllowsReuse (0 ms)
+[ RUN      ] GgmlCpuExecution.InvalidPreparationAndWorkspaceExhaustionAreRecoverable
+[       OK ] GgmlCpuExecution.InvalidPreparationAndWorkspaceExhaustionAreRecoverable (0 ms)
+[ RUN      ] GgmlCpuExecution.OriginalNarrowIq1MatMulAndGatherReplayEncodedBlocks
+C:\public\project-hyle\hyle\tests\compute_ggml_runtime\execution_test.cc(270): error: The difference between product[token * n + row] and expected is 25.665283203125, which exceeds 1.0e-4f, where
+product[token * n + row] evaluates to -3650.834716796875,
+expected evaluates to -3676.5, and
+1.0e-4f evaluates to 9.9999997473787516e-05.
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_ggml_runtime\execution_test.cc(207): 0
+
+C:\public\project-hyle\hyle\tests\compute_ggml_runtime\execution_test.cc(270): error: The difference between product[token * n + row] and expected is 39.455078125, which exceeds 1.0e-4f, where
+product[token * n + row] evaluates to 10393.794921875,
+expected evaluates to 10433.25, and
+1.0e-4f evaluates to 9.9999997473787516e-05.
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_ggml_runtime\execution_test.cc(207): 0
+
+C:\public\project-hyle\hyle\tests\compute_ggml_runtime\execution_test.cc(270): error: The difference between product[token * n + row] and expected is 27.701171875, which exceeds 1.0e-4f, where
+product[token * n + row] evaluates to -11030.298828125,
+expected evaluates to -11058, and
+1.0e-4f evaluates to 9.9999997473787516e-05.
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_ggml_runtime\execution_test.cc(207): 0
+
+C:\public\project-hyle\hyle\tests\compute_ggml_runtime\execution_test.cc(270): error: The difference between product[token * n + row] and expected is 25.665283203125, which exceeds 1.0e-4f, where
+product[token * n + row] evaluates to 3650.834716796875,
+expected evaluates to 3676.5, and
+1.0e-4f evaluates to 9.9999997473787516e-05.
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_ggml_runtime\execution_test.cc(207): 0
+
+C:\public\project-hyle\hyle\tests\compute_ggml_runtime\execution_test.cc(270): error: The difference between product[token * n + row] and expected is 39.455078125, which exceeds 1.0e-4f, where
+product[token * n + row] evaluates to -10393.794921875,
+expected evaluates to -10433.25, and
+1.0e-4f evaluates to 9.9999997473787516e-05.
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_ggml_runtime\execution_test.cc(207): 0
+
+C:\public\project-hyle\hyle\tests\compute_ggml_runtime\execution_test.cc(270): error: The difference between product[token * n + row] and expected is 27.701171875, which exceeds 1.0e-4f, where
+product[token * n + row] evaluates to 11030.298828125,
+expected evaluates to 11058, and
+1.0e-4f evaluates to 9.9999997473787516e-05.
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_ggml_runtime\execution_test.cc(207): 0
+
+C:\public\project-hyle\hyle\tests\compute_ggml_runtime\execution_test.cc(270): error: The difference between product[token * n + row] and expected is 25.665283203125, which exceeds 1.0e-4f, where
+product[token * n + row] evaluates to 3650.834716796875,
+expected evaluates to 3676.5, and
+1.0e-4f evaluates to 9.9999997473787516e-05.
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_ggml_runtime\execution_test.cc(207): 0
+
+C:\public\project-hyle\hyle\tests\compute_ggml_runtime\execution_test.cc(270): error: The difference between product[token * n + row] and expected is 39.455078125, which exceeds 1.0e-4f, where
+product[token * n + row] evaluates to -10393.794921875,
+expected evaluates to -10433.25, and
+1.0e-4f evaluates to 9.9999997473787516e-05.
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_ggml_runtime\execution_test.cc(207): 0
+
+C:\public\project-hyle\hyle\tests\compute_ggml_runtime\execution_test.cc(270): error: The difference between product[token * n + row] and expected is 27.701171875, which exceeds 1.0e-4f, where
+product[token * n + row] evaluates to 11030.298828125,
+expected evaluates to 11058, and
+1.0e-4f evaluates to 9.9999997473787516e-05.
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_ggml_runtime\execution_test.cc(207): 0
+
+C:\public\project-hyle\hyle\tests\compute_ggml_runtime\execution_test.cc(270): error: The difference between product[token * n + row] and expected is 25.665283203125, which exceeds 1.0e-4f, where
+product[token * n + row] evaluates to -3650.834716796875,
+expected evaluates to -3676.5, and
+1.0e-4f evaluates to 9.9999997473787516e-05.
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_ggml_runtime\execution_test.cc(207): 0
+
+C:\public\project-hyle\hyle\tests\compute_ggml_runtime\execution_test.cc(270): error: The difference between product[token * n + row] and expected is 39.455078125, which exceeds 1.0e-4f, where
+product[token * n + row] evaluates to 10393.794921875,
+expected evaluates to 10433.25, and
+1.0e-4f evaluates to 9.9999997473787516e-05.
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_ggml_runtime\execution_test.cc(207): 0
+
+C:\public\project-hyle\hyle\tests\compute_ggml_runtime\execution_test.cc(270): error: The difference between product[token * n + row] and expected is 27.701171875, which exceeds 1.0e-4f, where
+product[token * n + row] evaluates to -11030.298828125,
+expected evaluates to -11058, and
+1.0e-4f evaluates to 9.9999997473787516e-05.
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_ggml_runtime\execution_test.cc(207): 0
+
+C:\public\project-hyle\hyle\tests\compute_ggml_runtime\execution_test.cc(270): error: The difference between product[token * n + row] and expected is 28.259765625, which exceeds 1.0e-4f, where
+product[token * n + row] evaluates to 3270.740234375,
+expected evaluates to 3299, and
+1.0e-4f evaluates to 9.9999997473787516e-05.
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_ggml_runtime\execution_test.cc(207): 1
+
+C:\public\project-hyle\hyle\tests\compute_ggml_runtime\execution_test.cc(270): error: The difference between product[token * n + row] and expected is 21.51953125, which exceeds 1.0e-4f, where
+product[token * n + row] evaluates to -5166.51953125,
+expected evaluates to -5145, and
+1.0e-4f evaluates to 9.9999997473787516e-05.
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_ggml_runtime\execution_test.cc(207): 1
+
+C:\public\project-hyle\hyle\tests\compute_ggml_runtime\execution_test.cc(270): error: The difference between product[token * n + row] and expected is 25.09423828125, which exceeds 1.0e-4f, where
+product[token * n + row] evaluates to -6012.09423828125,
+expected evaluates to -5987, and
+1.0e-4f evaluates to 9.9999997473787516e-05.
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_ggml_runtime\execution_test.cc(207): 1
+
+C:\public\project-hyle\hyle\tests\compute_ggml_runtime\execution_test.cc(270): error: The difference between product[token * n + row] and expected is 28.259765625, which exceeds 1.0e-4f, where
+product[token * n + row] evaluates to -3270.740234375,
+expected evaluates to -3299, and
+1.0e-4f evaluates to 9.9999997473787516e-05.
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_ggml_runtime\execution_test.cc(207): 1
+
+C:\public\project-hyle\hyle\tests\compute_ggml_runtime\execution_test.cc(270): error: The difference between product[token * n + row] and expected is 21.51953125, which exceeds 1.0e-4f, where
+product[token * n + row] evaluates to 5166.51953125,
+expected evaluates to 5145, and
+1.0e-4f evaluates to 9.9999997473787516e-05.
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_ggml_runtime\execution_test.cc(207): 1
+
+C:\public\project-hyle\hyle\tests\compute_ggml_runtime\execution_test.cc(270): error: The difference between product[token * n + row] and expected is 25.09423828125, which exceeds 1.0e-4f, where
+product[token * n + row] evaluates to 6012.09423828125,
+expected evaluates to 5987, and
+1.0e-4f evaluates to 9.9999997473787516e-05.
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_ggml_runtime\execution_test.cc(207): 1
+
+C:\public\project-hyle\hyle\tests\compute_ggml_runtime\execution_test.cc(270): error: The difference between product[token * n + row] and expected is 28.259765625, which exceeds 1.0e-4f, where
+product[token * n + row] evaluates to -3270.740234375,
+expected evaluates to -3299, and
+1.0e-4f evaluates to 9.9999997473787516e-05.
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_ggml_runtime\execution_test.cc(207): 1
+
+C:\public\project-hyle\hyle\tests\compute_ggml_runtime\execution_test.cc(270): error: The difference between product[token * n + row] and expected is 21.51953125, which exceeds 1.0e-4f, where
+product[token * n + row] evaluates to 5166.51953125,
+expected evaluates to 5145, and
+1.0e-4f evaluates to 9.9999997473787516e-05.
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_ggml_runtime\execution_test.cc(207): 1
+
+C:\public\project-hyle\hyle\tests\compute_ggml_runtime\execution_test.cc(270): error: The difference between product[token * n + row] and expected is 25.09423828125, which exceeds 1.0e-4f, where
+product[token * n + row] evaluates to 6012.09423828125,
+expected evaluates to 5987, and
+1.0e-4f evaluates to 9.9999997473787516e-05.
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_ggml_runtime\execution_test.cc(207): 1
+
+C:\public\project-hyle\hyle\tests\compute_ggml_runtime\execution_test.cc(270): error: The difference between product[token * n + row] and expected is 28.259765625, which exceeds 1.0e-4f, where
+product[token * n + row] evaluates to 3270.740234375,
+expected evaluates to 3299, and
+1.0e-4f evaluates to 9.9999997473787516e-05.
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_ggml_runtime\execution_test.cc(207): 1
+
+C:\public\project-hyle\hyle\tests\compute_ggml_runtime\execution_test.cc(270): error: The difference between product[token * n + row] and expected is 21.51953125, which exceeds 1.0e-4f, where
+product[token * n + row] evaluates to -5166.51953125,
+expected evaluates to -5145, and
+1.0e-4f evaluates to 9.9999997473787516e-05.
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_ggml_runtime\execution_test.cc(207): 1
+
+C:\public\project-hyle\hyle\tests\compute_ggml_runtime\execution_test.cc(270): error: The difference between product[token * n + row] and expected is 25.09423828125, which exceeds 1.0e-4f, where
+product[token * n + row] evaluates to -6012.09423828125,
+expected evaluates to -5987, and
+1.0e-4f evaluates to 9.9999997473787516e-05.
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_ggml_runtime\execution_test.cc(207): 1
+
+C:\public\project-hyle\hyle\tests\compute_ggml_runtime\execution_test.cc(270): error: The difference between product[token * n + row] and expected is 7.93310546875, which exceeds 1.0e-4f, where
+product[token * n + row] evaluates to 6928.56689453125,
+expected evaluates to 6936.5, and
+1.0e-4f evaluates to 9.9999997473787516e-05.
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_ggml_runtime\execution_test.cc(207): 2
+
+C:\public\project-hyle\hyle\tests\compute_ggml_runtime\execution_test.cc(270): error: The difference between product[token * n + row] and expected is 4.78369140625, which exceeds 1.0e-4f, where
+product[token * n + row] evaluates to 4296.28369140625,
+expected evaluates to 4291.5, and
+1.0e-4f evaluates to 9.9999997473787516e-05.
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_ggml_runtime\execution_test.cc(207): 2
+
+C:\public\project-hyle\hyle\tests\compute_ggml_runtime\execution_test.cc(270): error: The difference between product[token * n + row] and expected is 35.330810546875, which exceeds 1.0e-4f, where
+product[token * n + row] evaluates to -2821.669189453125,
+expected evaluates to -2857, and
+1.0e-4f evaluates to 9.9999997473787516e-05.
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_ggml_runtime\execution_test.cc(207): 2
+
+C:\public\project-hyle\hyle\tests\compute_ggml_runtime\execution_test.cc(270): error: The difference between product[token * n + row] and expected is 7.93310546875, which exceeds 1.0e-4f, where
+product[token * n + row] evaluates to -6928.56689453125,
+expected evaluates to -6936.5, and
+1.0e-4f evaluates to 9.9999997473787516e-05.
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_ggml_runtime\execution_test.cc(207): 2
+
+C:\public\project-hyle\hyle\tests\compute_ggml_runtime\execution_test.cc(270): error: The difference between product[token * n + row] and expected is 4.78369140625, which exceeds 1.0e-4f, where
+product[token * n + row] evaluates to -4296.28369140625,
+expected evaluates to -4291.5, and
+1.0e-4f evaluates to 9.9999997473787516e-05.
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_ggml_runtime\execution_test.cc(207): 2
+
+C:\public\project-hyle\hyle\tests\compute_ggml_runtime\execution_test.cc(270): error: The difference between product[token * n + row] and expected is 35.330810546875, which exceeds 1.0e-4f, where
+product[token * n + row] evaluates to 2821.669189453125,
+expected evaluates to 2857, and
+1.0e-4f evaluates to 9.9999997473787516e-05.
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_ggml_runtime\execution_test.cc(207): 2
+
+C:\public\project-hyle\hyle\tests\compute_ggml_runtime\execution_test.cc(270): error: The difference between product[token * n + row] and expected is 7.93310546875, which exceeds 1.0e-4f, where
+product[token * n + row] evaluates to -6928.56689453125,
+expected evaluates to -6936.5, and
+1.0e-4f evaluates to 9.9999997473787516e-05.
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_ggml_runtime\execution_test.cc(207): 2
+
+C:\public\project-hyle\hyle\tests\compute_ggml_runtime\execution_test.cc(270): error: The difference between product[token * n + row] and expected is 4.78369140625, which exceeds 1.0e-4f, where
+product[token * n + row] evaluates to -4296.28369140625,
+expected evaluates to -4291.5, and
+1.0e-4f evaluates to 9.9999997473787516e-05.
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_ggml_runtime\execution_test.cc(207): 2
+
+C:\public\project-hyle\hyle\tests\compute_ggml_runtime\execution_test.cc(270): error: The difference between product[token * n + row] and expected is 35.330810546875, which exceeds 1.0e-4f, where
+product[token * n + row] evaluates to 2821.669189453125,
+expected evaluates to 2857, and
+1.0e-4f evaluates to 9.9999997473787516e-05.
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_ggml_runtime\execution_test.cc(207): 2
+
+C:\public\project-hyle\hyle\tests\compute_ggml_runtime\execution_test.cc(270): error: The difference between product[token * n + row] and expected is 7.93310546875, which exceeds 1.0e-4f, where
+product[token * n + row] evaluates to 6928.56689453125,
+expected evaluates to 6936.5, and
+1.0e-4f evaluates to 9.9999997473787516e-05.
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_ggml_runtime\execution_test.cc(207): 2
+
+C:\public\project-hyle\hyle\tests\compute_ggml_runtime\execution_test.cc(270): error: The difference between product[token * n + row] and expected is 4.78369140625, which exceeds 1.0e-4f, where
+product[token * n + row] evaluates to 4296.28369140625,
+expected evaluates to 4291.5, and
+1.0e-4f evaluates to 9.9999997473787516e-05.
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_ggml_runtime\execution_test.cc(207): 2
+
+C:\public\project-hyle\hyle\tests\compute_ggml_runtime\execution_test.cc(270): error: The difference between product[token * n + row] and expected is 35.330810546875, which exceeds 1.0e-4f, where
+product[token * n + row] evaluates to -2821.669189453125,
+expected evaluates to -2857, and
+1.0e-4f evaluates to 9.9999997473787516e-05.
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_ggml_runtime\execution_test.cc(207): 2
+
+[  FAILED  ] GgmlCpuExecution.OriginalNarrowIq1MatMulAndGatherReplayEncodedBlocks (1 ms)
+[----------] 6 tests from GgmlCpuExecution (4 ms total)
+
+[----------] 3 tests from GgmlVulkanMetadata
+[ RUN      ] GgmlVulkanMetadata.RejectsInvalidAndExhaustedBacking
+[       OK ] GgmlVulkanMetadata.RejectsInvalidAndExhaustedBacking (0 ms)
+[ RUN      ] GgmlVulkanMetadata.MoveAndIndependentContextsRetireTheirExactAllocations
+[       OK ] GgmlVulkanMetadata.MoveAndIndependentContextsRetireTheirExactAllocations (0 ms)
+[ RUN      ] GgmlVulkanMetadata.PatchedContextRejectsOverflowAndMisalignmentWithoutAbort
+[       OK ] GgmlVulkanMetadata.PatchedContextRejectsOverflowAndMisalignmentWithoutAbort (0 ms)
+[----------] 3 tests from GgmlVulkanMetadata (0 ms total)
+
+[----------] Global test environment tear-down
+[==========] 9 tests from 2 test suites ran. (4 ms total)
+[  PASSED  ] 8 tests.
+[  FAILED  ] 1 test, listed below:
+[  FAILED  ] GgmlCpuExecution.OriginalNarrowIq1MatMulAndGatherReplayEncodedBlocks
+
+ 1 FAILED TEST
+
+    Start 94: hyle_ggml_cpu_fault_test
+4/5 Test #94: hyle_ggml_cpu_fault_test .................   Passed    0.01 sec
+    Start 95: hyle_ggml_context_fault_test
+5/5 Test #95: hyle_ggml_context_fault_test .............   Passed    0.01 sec
+
+80% tests passed, 1 tests failed out of 5
+
+Label Time Summary:
+compute_ggml_runtime     =   0.19 sec*proc (4 tests)
+compute_provider_ggml    =   0.12 sec*proc (1 test)
+
+Total Test time (real) =   0.47 sec
+
+The following tests FAILED:
+	 93 - hyle_compute_ggml_runtime_test (Failed)           compute_ggml_runtime
+Errors while running CTest

@@ -1,0 +1,19 @@
+[
+  {
+    "name": "build-iq1-and-software-seams",
+    "args": [
+      "cmake",
+      "--build",
+      "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+      "--target",
+      "hyle_compute_ggml_runtime_tests",
+      "hyle_compute_provider_ggml_tests",
+      "--parallel",
+      "2"
+    ],
+    "candidate": "accf463bf5fbb9fa5cfefb98d4bcde37aecfec3b",
+    "log": "1-build-iq1-and-software-seams.log",
+    "returncode": 2,
+    "seconds": 76.75
+  }
+]

@@ -1,0 +1,19 @@
+Test project C:/public/project-hyle/hyle/.scratch/build-compute-v2-dev
+    Start 69: hyle_compute_provider_ggml_test
+1/5 Test #69: hyle_compute_provider_ggml_test ..........   Passed    0.10 sec
+    Start 92: hyle_ggml_runtime_source_contract_test
+2/5 Test #92: hyle_ggml_runtime_source_contract_test ...   Passed    0.11 sec
+    Start 93: hyle_compute_ggml_runtime_test
+3/5 Test #93: hyle_compute_ggml_runtime_test ...........   Passed    0.04 sec
+    Start 94: hyle_ggml_cpu_fault_test
+4/5 Test #94: hyle_ggml_cpu_fault_test .................   Passed    0.01 sec
+    Start 95: hyle_ggml_context_fault_test
+5/5 Test #95: hyle_ggml_context_fault_test .............   Passed    0.01 sec
+
+100% tests passed out of 5
+
+Label Time Summary:
+compute_ggml_runtime     =   0.18 sec*proc (4 tests)
+compute_provider_ggml    =   0.10 sec*proc (1 test)
+
+Total Test time (real) =   0.39 sec
