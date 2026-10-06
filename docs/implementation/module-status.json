@@ -423,9 +423,10 @@
     },
     {
       "module": "compute_provider_native",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/cpu-residual-scatter-rope-numeric-retirement.md",
-      "summary": "RN1/RN4 AUDITED：退役错误half ScatterAdd，接原ATen lowp整数RoPE；RN2/RN3因Float32/Double phase不同比较撤回，不删除有效Native/ggml RoPE。两平台产品/资源/普通三交付仍待验收。"
+      "summary": "RN1/RN4固定候选：两平台144/144、Graph22/22、普通低精度Direct/Graph三交付与alias/empty/并发/close/所供冷OOM通过；两个旧fixture skip不算PASS。SIMD/有效Float32模型RoPE保留，剩余合格自研性能与路由仍未裁决。",
+      "candidate": "775b2bedace019de423edc5d8a6477772b8ef3ec"
     },
     {
       "module": "compute_sched",

@@ -1,6 +1,6 @@
 # CPU 剩余数值接缝：重复 ScatterAdd 与 RoPE 数据域
 
-<!-- MODULE REVIEW: AUDITED -->
+<!-- MODULE REVIEW: CANDIDATE -->
 
 - owner `compute_provider_native`；baseline `e80cf22ccf285934693f40da9cc558b457283d7b`，Windows canonical。
 - 主消费：公开 F16/BF16 重复索引聚合，及已有整数 positions/F32 frequency RoPE 的低精度 data。
@@ -47,3 +47,11 @@ RN4定向保持RoPE的原typed Tensor，再交原Double prefix程序；其它num
 改用`CpuDefaultContext.*:*Rope*:*Scatter*`与相应普通Graph/具名RoPE消费者，不改公共治理工具。
 两平台驱动都使用同一有限范围；已过factor/header不因收窄消费者而重跑。Windows静态交付与Linux
 仍在验证，不签RN全部完成。统一脚本在固定候选计实现61,386行/249文件，不含tests/vendor。
+
+## 固定候选与终审事实
+
+产品仍固定`775b2bedace019de423edc5d8a6477772b8ef3ec`。最终Windows/Linux各factor144/144、CPU16通过/
+2旧fixture skip、Graph22/22、header1/1；同ordinary source shared/static与installed shared/static全部
+实际通过，两个低精度storage的alias/empty/两条独立并发Queue/变化重放/close/所供冷OOM回滚也通过。
+完整原件和限制见[本批证据](../../../../evidence/correctness/cpu-residual-scatter-rope-qualification/README.md)。
+只关闭RN1/RN4，不签整模型或剩余Native性能裁决。当前CANDIDATE不可变，终审登记后结束本子批。
