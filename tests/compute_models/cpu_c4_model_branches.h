@@ -327,13 +327,19 @@ template<class Run> void check_attention(const Model &model,Run run) {
 inline std::vector<ValueId> attach_branch(Fragment &parent,Fragment child,
                                          std::initializer_list<ValueId> inputs) {
   if(child.preparation) {
-    auto cold=std::make_shared<Fragment>(Fragment{.profile=parent.profile,.region=0x0c040107});
-    if(parent.preparation) {
-      auto outputs=ds::glm::attach(*cold,*parent.preparation,{});
-      cold->outputs.insert(cold->outputs.end(),outputs.begin(),outputs.end());
-    }
-    auto outputs=ds::glm::attach(*cold,*child.preparation,{});
+    // These builders created mutable Fragments with make_shared; the const
+    // view is only their later execution contract. Consume each unique bank
+    // while constructing this model, without copying prior weight payloads.
+    if(child.preparation.use_count()!=1 || (parent.preparation && parent.preparation.use_count()!=1))
+      throw std::runtime_error("C4 cold bank must have unique construction ownership");
+    auto cold=parent.preparation?std::const_pointer_cast<Fragment>(parent.preparation):
+        std::make_shared<Fragment>(Fragment{.profile=parent.profile,.region=0x0c040107});
+    if(cold->replays.empty())cold->replays.push_back({{}, {}});
+    auto incoming=std::const_pointer_cast<Fragment>(child.preparation);
+    auto expected=std::move(incoming->replays.at(0).outputs);
+    auto outputs=ds::glm::attach(*cold,std::move(*incoming),{});
     cold->outputs.insert(cold->outputs.end(),outputs.begin(),outputs.end());
+    for(auto &values:expected)cold->replays[0].outputs.push_back(std::move(values));
     parent.preparation=std::move(cold);
     for(auto slot:child.prepared_constants)parent.prepared_constants.push_back(parent.constants.size()+slot);
     child.preparation.reset();child.prepared_constants.clear();
