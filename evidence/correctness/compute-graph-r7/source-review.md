@@ -32,7 +32,8 @@
 - [默认 OFF 宏](../../../include/hyle/obs/trace.h)、[构建门](../../../cmake/HyleModule.cmake)、
   [实际 P0 证据](README.md)。
 - [当前比较边界](../../../bench/comparison-boundaries.md)、
-  [CPU fixture](../../../bench/graph_route_cpu/region_p1_bench.cc)、
+  [CPU历史fixture](https://github.com/axiomates/hyle/blob/e8fec259ec6e687acce81affd09deec39c0e302b/bench/graph_route_cpu/region_p1_bench.cc)
+  （随CPU Native MatMul退役已从当前构建移除）、
   CUDA 历史 fixture `bench/compute_route_cuda/route_p1_bench.cc`（已由
   [M3-D4](../../../docs/implementation/tasks/compute/llm-moe-d4-self-operator-retirement.md)
   随专用 Marlin 路线退场）、

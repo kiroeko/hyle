@@ -3,7 +3,7 @@
 This executable composes the public `sched::Scheduler` and `bulk_execute` with
 Compute's borrowed `ParallelExecutorRef`. Graph does not create a second pool or
 acquire a product dependency on Sched. It runs RMS normalization and a gated MLP,
-using Native or an explicitly requested oneDNN region with the same executor.
+using the ordinary CPU route and its qualified mature programs with the same executor.
 
 ```powershell
 cmake -S samples/package/graph/cpu_executor -B <build-dir> -G Ninja `
@@ -13,9 +13,9 @@ ctest --test-dir <build-dir> --output-on-failure
 ```
 
 For an installed SDK, omit `HYLE_SAMPLE_SOURCE` and set `CMAKE_PREFIX_PATH` to an
-SDK containing both `graph` and `sched`. Add `-DHYLE_SAMPLE_ONEDNN=ON` to exercise
-the oneDNN region as well; this requires the x64 oneDNN feature in either source
-configuration or the installed SDK. Static and shared use the same consumer.
+SDK containing both `graph` and `sched`. Static and shared use the same consumer.
+The route chooses eligible mature fragments; the sample does not force a retired
+Native MatMul, a particular FFN region, or prepared-only replay.
 
 ## Contract and checks
 
@@ -31,9 +31,9 @@ configuration or the installed SDK. Static and shared use the same consumer.
   Invocations, and calls an already-prepared Invocation from a worker callback.
   A separate double-precision oracle checks results after actual Completion.
 - Task/worker counters are sample instrumentation, not product metadata. They
-  report tasks separately for Native and oneDNN, excluding setup and the queue
-  sanity check. Native deliberately runs single-task/already-parallel calls
-  inline; parallel Native and oneDNN must actually use the supplied executor.
+  report the selected route's tasks, excluding setup and the queue sanity check.
+  Providers may handle nested calls inline without another bulk episode;
+  scheduled nested execution still must complete and produce correct output.
   The counters do not require the OS to schedule every batch simultaneously or
   establish a speedup.
 - Compute metadata and Scheduler lifetime allocations are observed separately.
