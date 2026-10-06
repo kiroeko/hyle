@@ -30,13 +30,7 @@ struct Linear {ValueId output;Reference reference;};
 inline Linear linear(Fragment &f,ValueId input,std::int64_t n,std::int64_t k,bool bf16,int seed) {
   if(!bf16) {
     auto p=q::projection(f,input,n,k,c::GgufQuantizedType::kQ8_0,seed);
-    return {p.output,[p=std::move(p)](std::span<const float> x){
-      auto result=p.reference(x);
-      if(std::all_of(result.begin(),result.end(),[](float value){return value==0;}))
-        std::fprintf(stderr,"sidecar reference all zero: n=%lld k=%lld inputs=%zu weights=%zu first=%g\n",
-            static_cast<long long>(p.n),static_cast<long long>(p.k),x.size(),p.weight.storage.size(),x.empty()?0:x[0]);
-      return result;
-    }};
+    return {p.output,[p=std::move(p)](std::span<const float> x){return p.reference(x);}};
   }
   auto p=ds::linear::projection(f,input,n,k,ds::linear::Storage::kBFloat16,seed);
   return {p.output,[p=std::move(p),k](std::span<const float> x){
@@ -57,6 +51,7 @@ inline ValueId grouped(Fragment &f,const Grouped &w,ValueId x,ValueId ids) {
 }
 inline std::vector<float> grouped_reference(const Grouped &w,std::span<const float> input,
                                             std::span<const std::int32_t> ids) {
+  ggml_cpu_init();
   std::vector<float> result(ids.size()*w.n);
   const bool bf16=w.weight.description.is_plain();
   const auto native=bf16?GGML_TYPE_BF16:d5_gguf_test::native_type(c::gguf_quantized_type(w.weight.description.storage_format()).value());

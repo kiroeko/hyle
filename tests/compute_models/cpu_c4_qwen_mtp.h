@@ -19,6 +19,7 @@ inline constexpr auto profile=[] {
 struct Projection {
   sem::Weight weight;ValueId output;c::GgufQuantizedType type;std::int64_t n,k;
   std::vector<float> reference(std::span<const float> input) const {
+    ggml_cpu_init(); // Original CPU scale lookup tables precede direct vec-dot.
     const auto native=d5_gguf_test::native_type(type);
     const auto *traits=ggml_get_type_traits_cpu(native);
     const auto dot_type=traits->vec_dot_type;
