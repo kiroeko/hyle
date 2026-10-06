@@ -1,6 +1,6 @@
 # CPU 成熟接线：ScatterAdd 索引域
 
-<!-- MODULE REVIEW: AUDITED -->
+<!-- MODULE REVIEW: CANDIDATE -->
 
 - owner `compute_provider_native`；baseline `214cb3d48cb39416e8540f7188249105cde58b10`，Windows canonical。
 - trigger：[资源域审计](../../../../evidence/correctness/cpu-resource-domain-audit/README.md)实证：
@@ -43,3 +43,12 @@ Add使用F32 base/update与原index_add之后一次输出storage舍入，符合�
 逐更新HYLE数学或alias扩大。empty indices直接原Byte copy，避免无计算时破坏base特殊值存储bits。
 现有legacy Gather/Assign index scratch不为Add重复分配；Add已有typed index lane足够，所有检查和
 原kernel/metadata成本仍归managed。本卡不代签全CPU goal或性能WIN。
+
+## 不可变候选与已完成验收
+
+产品candidate `e13edaebe0aac974fd2f7d2ff50246dfd61ad330`，fixture-only `7356a06f`
+显式声明测试I64→I32 narrowing，修复`/WX`；产品/API/成本未改。原compile failure保留。
+Windows Provider140/140、CPU12通过/1旧fixture skip、Graph33通过/6旧fixture skip、header1/1，
+相同ordinary Direct/Graph的I64 duplicate多维/非末轴scalar/odd-byte与empty、变化输入及close实际通过。
+Linux与两平台installed/static仍按本卡验收，当前未运行不签PASS；无Native/SIMD比较或新WIN。
+1337个固定前向产品/test/构建/consumer输入绑定候选，副本不作为产品改动来源。
