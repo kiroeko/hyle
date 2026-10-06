@@ -1,9 +1,11 @@
 #include "cpu_execution.h"
 #include "cpu_program.h"
 
+#include <algorithm>
 #include <array>
 #include <atomic>
 #include <cmath>
+#include <cstring>
 #include <limits>
 #include <thread>
 #include <utility>
@@ -194,4 +196,86 @@ TEST(GgmlCpuExecution, InvalidPreparationAndWorkspaceExhaustionAreRecoverable) {
   EXPECT_FALSE(MetadataArena::for_graph(
       (std::numeric_limits<std::size_t>::max)(), 8, allocator));
 }
+
+#if defined(HYLE_GGML_CPU_IQ1_EXTENSIONS)
+TEST(GgmlCpuExecution, OriginalNarrowIq1MatMulAndGatherReplayEncodedBlocks) {
+  const std::array types{GGML_TYPE_IQ1_XS, GGML_TYPE_IQ1_XXS,
+                         GGML_TYPE_IQ1_XXXS};
+  const std::array<std::size_t, 3> block_bytes{46, 42, 38};
+  constexpr int k = 256, n = 4, tokens = 2;
+  for (std::size_t type_index = 0; type_index < types.size(); ++type_index) {
+    SCOPED_TRACE(type_index);
+    const auto type = types[type_index];
+    ASSERT_EQ(ggml_blck_size(type), k);
+    ASSERT_EQ(ggml_type_size(type), block_bytes[type_index]);
+    alignas(64) std::array<std::byte, n * 46> packed{};
+    std::array<float, n * k> decoded{};
+    for (int row = 0; row < n; ++row) {
+      auto *block = packed.data() + row * block_bytes[type_index];
+      for (std::size_t byte = 2; byte < block_bytes[type_index]; ++byte)
+        block[byte] = std::byte((byte * 37 + row * 19) & 255);
+      const auto scale = ggml_fp32_to_fp16(float(row + 1) / 4);
+      std::memcpy(block, &scale, sizeof(scale));
+      ASSERT_TRUE(ggml_validate_row_data(type, block, block_bytes[type_index]));
+    }
+    // The all-zero grid index is an independent golden block: original grid
+    // entry zero is all -1, the unsigned delta is +1/8, and d is 1/4.
+    std::fill(packed.begin() + 2, packed.begin() + block_bytes[type_index],
+              std::byte{});
+    const auto *traits = ggml_get_type_traits(type);
+    ASSERT_NE(traits->to_float, nullptr);
+    traits->to_float(packed.data(), decoded.data(), n * k);
+    for (int column = 0; column < k; ++column)
+      EXPECT_EQ(decoded[column], -0.21875f);
+
+    auto arena = MetadataArena::for_graph(8, 8, hyle::mem::system_allocator());
+    ASSERT_TRUE(arena);
+    auto *w = ggml_new_tensor_2d(arena->get(), type, k, n);
+    auto *x = ggml_new_tensor_2d(arena->get(), GGML_TYPE_F32, k, tokens);
+    auto *indices = ggml_new_tensor_1d(arena->get(), GGML_TYPE_I32, 3);
+    std::array<float, k * tokens> input{};
+    std::array<float, n * tokens> product{};
+    std::array<std::int32_t, 3> ids{3, 1, 1};
+    std::array<float, k * 3> rows{};
+    w->data = packed.data();
+    x->data = input.data();
+    indices->data = ids.data();
+    auto *mul = ggml_mul_mat(arena->get(), w, x);
+    auto *gather = ggml_get_rows(arena->get(), w, indices);
+    mul->data = product.data();
+    gather->data = rows.data();
+    auto *graph = ggml_new_graph_custom(arena->get(), 8, false);
+    ggml_build_forward_expand(graph, mul);
+    ggml_build_forward_expand(graph, gather);
+    hyle::mem::QuotaAllocator workspace(hyle::mem::system_allocator(), 65536);
+    {
+      auto execution = CpuExecution::prepare(graph, 2, workspace.get());
+      ASSERT_TRUE(execution);
+      const auto allocated = workspace.used();
+      for (int pass = 0; pass < 2; ++pass) {
+        // Integer [-127,128] (or its negative) is exactly representable by
+        // original Q8_K activation conversion; no quantization tolerance hides
+        // a wrong codebook, scale, row layout or replayed input.
+        for (int token = 0; token < tokens; ++token)
+          for (int column = 0; column < k; ++column)
+            input[token * k + column] =
+                float(column - 127) * ((pass + token) % 2 ? -1 : 1);
+        ASSERT_TRUE(execution->run().ok());
+        EXPECT_EQ(workspace.used(), allocated);
+        for (int token = 0; token < tokens; ++token)
+          for (int row = 0; row < n; ++row) {
+            float expected = 0;
+            for (int column = 0; column < k; ++column)
+              expected += input[token * k + column] * decoded[row * k + column];
+            EXPECT_NEAR(product[token * n + row], expected, 1.0e-4f);
+          }
+        for (int index = 0; index < 3; ++index)
+          for (int column = 0; column < k; ++column)
+            EXPECT_EQ(rows[index * k + column], decoded[ids[index] * k + column]);
+      }
+    }
+    EXPECT_EQ(workspace.used(), 0u);
+  }
+}
+#endif
 } // namespace
