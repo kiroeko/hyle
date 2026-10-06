@@ -133,7 +133,9 @@ inline Fragment mtp(const c::ModelArtifactProfileDescription *identity) {
   const cpu_c5_inputs::Case item{"C5QwenMtpEh", cpu_c5_inputs::Kind::kProjection,
       GGML_TYPE_Q8_0, c::GgufQuantizedType::kQ8_0, true, 2 * hidden, hidden, 1, 0, 0};
   const cpu_c5_gguf_fixture::Bank bank(item);
-  Fragment f{.profile = identity, .region = 0x0d0c0501};
+  // Same frozen whole-quantized-fragment gate as sem::mtp. The independent
+  // F32 norm consumer remains strict; feedback includes the original A8 codec.
+  Fragment f{.profile = identity, .region = 0x0d0c0501, .quantized = true};
   auto h = f.input(dense({1, hidden})), e = f.input(dense({1, hidden}));
   auto hs = sem::oracle::scale(hidden), es = hs, ns = hs;
   std::reverse(es.begin(), es.end()); std::rotate(ns.begin(), ns.begin() + 7, ns.end());

@@ -147,3 +147,9 @@ theta1e7、两行KV历史与四次changed replay/反馈、sigmoid gate。只组�
 以及2.4T真实Q8_0 eh_proj的embedding-first双norm/Concat/MatMul/后norm与四次carry反馈。
 后者保留原Q8 activation codec/vec-dot参考、真实K16384/N8192；不以F32点积替代。
 这只补实际消费者资格，不改API默认值、产品kernel或旧GPU资格。
+
+首轮`911efc5c7e10`的Windows规范norm/RoPE两项通过，MTP反馈FAIL。
+源码确认新MTP夹具漏了`.quantized=true`；原`sem::mtp`及完整GGUF反馈均按已冻结量化片段门，
+原Q8 activation codec对上游浮点差异不是光滑映射，不能套非量化F32片段的门。
+修正测试分类，复用已有量化片段门，不新设阈值；三真实宽度的norm仍独立按严格F32门。
+保留失败raw/XML（可无损gzip），不改产品数学或原codec/reference，随后两入口补跑。
