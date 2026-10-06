@@ -271,10 +271,14 @@
     },
     {
       "module": "compute",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/compute/cpu-native-matmul-private-kernel-cleanup.md",
-      "summary": "MM/K1 CANDIDATE：自研MatMul及专用kernels/旧比较targets已源级删除；成熟矩阵fixture和ordinary executor已迁移，剩余Linux/交付待验",
-      "candidate": "7157655201df3b63619a4e5b11dfe272bcf35273"
+      "summary": "MM/K1 CLOSED：自研MatMul执行/准备/两私有kernel及七fat路线已源级删除；两平台实际144/13/19与三交付、executor和Core通过；strict能力明确撤回，SIMD/原库保留；其余CPU路由裁决独立待办",
+      "candidate": "7157655201df3b63619a4e5b11dfe272bcf35273",
+      "performance": {
+        "tier": "P0",
+        "evidence": "evidence/correctness/cpu-native-matmul-retirement/README.md"
+      }
     },
     {
       "module": "graph",
@@ -419,10 +423,14 @@
     },
     {
       "module": "compute_provider_native",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/compute/cpu-native-matmul-retirement-decision.md",
-      "summary": "MM/K1 CANDIDATE：自研MatMul及专用kernels/旧比较targets已源级删除；成熟矩阵fixture和ordinary executor已迁移，剩余Linux/交付待验",
-      "candidate": "7157655201df3b63619a4e5b11dfe272bcf35273"
+      "summary": "MM/K1 CLOSED：自研MatMul执行/准备/两私有kernel及七fat路线已源级删除；两平台实际144/13/19与三交付、executor和Core通过；strict能力明确撤回，SIMD/原库保留；其余CPU路由裁决独立待办",
+      "candidate": "7157655201df3b63619a4e5b11dfe272bcf35273",
+      "performance": {
+        "tier": "P0",
+        "evidence": "evidence/correctness/cpu-native-matmul-retirement/README.md"
+      }
     },
     {
       "module": "compute_sched",

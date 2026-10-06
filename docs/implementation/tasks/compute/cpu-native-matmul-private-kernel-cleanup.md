@@ -1,6 +1,6 @@
 # Compute历史私有CPU MatMul文件清理
 
-<!-- MODULE REVIEW: CANDIDATE -->
+<!-- MODULE REVIEW: CLOSED -->
 
 - owner `compute`；baseline `e8fec259ec6e687acce81affd09deec39c0e302b`；Windows canonical。
 - trigger：用户批准[Native MatMul退役](cpu-native-matmul-retirement-decision.md)。两份私有kernel位于
@@ -21,3 +21,11 @@
 - candidate `7157655201df3b63619a4e5b11dfe272bcf35273`，产品删除b4c8899a，直接消费者最终71576552。
 - Windows144 Native、13 CPU、19 Graph、Core与header1各通过；ordinary六shape Direct/Graph与executor实际通过。
 - Linux与剩余三交付未完成，不写PASS；P0删除无新增热成本，不重跑已结束P1。
+
+## MM / K1 terminal
+
+[实际终审与归档](../../../../evidence/correctness/cpu-native-matmul-retirement/README.md)：
+Win/Linux144 Native、13 CPU、19 Graph、63 Core、header与ordinary source/static/shared及executor
+全部实际通过；已删除691实现行/2文件，剩余60695/247。严格能力撤回、SIMD/原库不变、无新P1，
+七门与P0通过。旧失败日志保留，四consumer清理624947376 logical bytes。
+本卡只关闭MatMul退役子批，不代签其它CPU默认WIN规则或整个goal完成。

@@ -1,6 +1,6 @@
 # CPU Native MatMul：源级清退与独有资源能力的取舍
 
-<!-- MODULE REVIEW: CANDIDATE -->
+<!-- MODULE REVIEW: CLOSED -->
 
 owner `compute_provider_native`；用户已明确选择源级删除并撤回具名严格能力。
 这是[ND3-D比较](cpu-native-domain-performance-verdict-v1.md)之后的有限实施子批。
@@ -71,3 +71,11 @@ closure/docs/selector/统一29路径LOC适用；实际全部通过前不关闭�
 - Linux与剩余三交付未完成，不写PASS；P0删除无新增热成本，不重跑已结束P1。
 
 最后一次直接消费扫描确认multi_op_tax也只比较已退役Native矩阵/门控MLP；同MM4删除，CUDA pipeline/RMSNorm比较与固定SDK的ND3资产保留。普通compute/graph cpp样例已使用默认成熟入口，无Native矩阵调用。
+
+## MM / K1 terminal
+
+[实际终审与归档](../../../../evidence/correctness/cpu-native-matmul-retirement/README.md)：
+Win/Linux144 Native、13 CPU、19 Graph、63 Core、header与ordinary source/static/shared及executor
+全部实际通过；已删除691实现行/2文件，剩余60695/247。严格能力撤回、SIMD/原库不变、无新P1，
+七门与P0通过。旧失败日志保留，四consumer清理624947376 logical bytes。
+本卡只关闭MatMul退役子批，不代签其它CPU默认WIN规则或整个goal完成。
