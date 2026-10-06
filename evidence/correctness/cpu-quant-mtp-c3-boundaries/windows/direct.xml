@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites tests="7" failures="0" disabled="0" errors="0" time="0.023" timestamp="2026-10-07T00:03:33.348" name="AllTests">
+  <testsuite name="CpuExpandedGgufDirect" tests="1" failures="0" disabled="0" skipped="0" errors="0" time="0.003" timestamp="2026-10-07T00:03:33.348">
+    <testcase name="OriginalFormatsProjectionExpertsAndEmbedding" file="C:\public\project-hyle\hyle\tests\compute_route_cpu\cpu_expanded_gguf_test.cc" line="112" status="run" result="completed" time="0.003" timestamp="2026-10-07T00:03:33.348" classname="CpuExpandedGgufDirect" />
+  </testsuite>
+  <testsuite name="CpuArtifactDecode" tests="3" failures="0" disabled="0" skipped="0" errors="0" time="0.012" timestamp="2026-10-07T00:03:33.352">
+    <testcase name="Nf4AndNestedScalesPreserveOriginalHighFirstOrder" file="C:\public\project-hyle\hyle\tests\compute_route_cpu\cpu_artifact_decode_test.cc" line="116" status="run" result="completed" time="0.006" timestamp="2026-10-07T00:03:33.352" classname="CpuArtifactDecode" />
+    <testcase name="AwqAndCompressedTensorsUseDifferentOriginalWordLayouts" file="C:\public\project-hyle\hyle\tests\compute_route_cpu\cpu_artifact_decode_test.cc" line="147" status="run" result="completed" time="0.002" timestamp="2026-10-07T00:03:33.359" classname="CpuArtifactDecode" />
+    <testcase name="OriginalScaleDtypeRoundsBeforeExplicitFloat32Output" file="C:\public\project-hyle\hyle\tests\compute_route_cpu\cpu_artifact_decode_test.cc" line="174" status="run" result="completed" time="0.003" timestamp="2026-10-07T00:03:33.361" classname="CpuArtifactDecode" />
+  </testsuite>
+  <testsuite name="CpuMlxQuantizedDirect" tests="3" failures="0" disabled="0" skipped="0" errors="0" time="0.006" timestamp="2026-10-07T00:03:33.365">
+    <testcase name="OriginalScaleCastPreservesUnderflowSubnormalAndOverflow" file="C:\public\project-hyle\hyle\tests\compute_route_cpu\cpu_mlx_quantized_test.cc" line="147" status="run" result="completed" time="0.002" timestamp="2026-10-07T00:03:33.365" classname="CpuMlxQuantizedDirect" />
+    <testcase name="MixedFormatsAndSelectedExperts" file="C:\public\project-hyle\hyle\tests\compute_route_cpu\cpu_mlx_quantized_test.cc" line="156" status="run" result="completed" time="0.004" timestamp="2026-10-07T00:03:33.367" classname="CpuMlxQuantizedDirect" />
+    <testcase name="OriginalAffineEmbeddingUsesSelectedRows" file="C:\public\project-hyle\hyle\tests\compute_route_cpu\cpu_mlx_quantized_test.cc" line="164" status="run" result="completed" time="0." timestamp="2026-10-07T00:03:33.371" classname="CpuMlxQuantizedDirect" />
+  </testsuite>
+</testsuites>

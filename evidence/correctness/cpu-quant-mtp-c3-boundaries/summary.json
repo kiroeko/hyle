@@ -1,0 +1,13 @@
+{
+  "candidate": "2d1d787396f1f2798fe14c7ff3cece9bbebbbbda",
+  "scope": [
+    "Windows/Linux ordinary Direct/Graph original low-precision boundary and format tests",
+    "MX F16 scale underflow/subnormal/overflow; BF16/F32 smallest E8M0 scales",
+    "AWQ F16 and CT BF16 scale multiplication rounds before explicit F32 output",
+    "Windows/Linux eight public Compute/Graph CPU header suites"
+  ],
+  "remaining": [
+    "C4 complete branches",
+    "all admitted model profiles final matrix"
+  ]
+}

@@ -1,0 +1,30 @@
+Running main() from C:\Users\kiro\AppData\Local\hyle\dependencies\v1\sources\googletest-063de7e9578f-162765170ae6\googletest\src\gtest_main.cc
+Note: Google Test filter = CpuMlxQuantizedGraph.*:CpuArtifactDecode.*:CpuExpandedGgufGraph.*
+[==========] Running 7 tests from 3 test suites.
+[----------] Global test environment set-up.
+[----------] 1 test from CpuExpandedGgufGraph
+[ RUN      ] CpuExpandedGgufGraph.OriginalFormatsProjectionExpertsAndEmbedding
+[       OK ] CpuExpandedGgufGraph.OriginalFormatsProjectionExpertsAndEmbedding (5 ms)
+[----------] 1 test from CpuExpandedGgufGraph (5 ms total)
+
+[----------] 3 tests from CpuMlxQuantizedGraph
+[ RUN      ] CpuMlxQuantizedGraph.OriginalScaleCastPreservesUnderflowSubnormalAndOverflow
+[       OK ] CpuMlxQuantizedGraph.OriginalScaleCastPreservesUnderflowSubnormalAndOverflow (8 ms)
+[ RUN      ] CpuMlxQuantizedGraph.MixedFormatsAndSelectedExperts
+[       OK ] CpuMlxQuantizedGraph.MixedFormatsAndSelectedExperts (4 ms)
+[ RUN      ] CpuMlxQuantizedGraph.OriginalAffineEmbeddingUsesSelectedRows
+[       OK ] CpuMlxQuantizedGraph.OriginalAffineEmbeddingUsesSelectedRows (0 ms)
+[----------] 3 tests from CpuMlxQuantizedGraph (13 ms total)
+
+[----------] 3 tests from CpuArtifactDecode
+[ RUN      ] CpuArtifactDecode.Nf4AndNestedScalesPreserveOriginalHighFirstOrder
+[       OK ] CpuArtifactDecode.Nf4AndNestedScalesPreserveOriginalHighFirstOrder (1 ms)
+[ RUN      ] CpuArtifactDecode.AwqAndCompressedTensorsUseDifferentOriginalWordLayouts
+[       OK ] CpuArtifactDecode.AwqAndCompressedTensorsUseDifferentOriginalWordLayouts (3 ms)
+[ RUN      ] CpuArtifactDecode.OriginalScaleDtypeRoundsBeforeExplicitFloat32Output
+[       OK ] CpuArtifactDecode.OriginalScaleDtypeRoundsBeforeExplicitFloat32Output (3 ms)
+[----------] 3 tests from CpuArtifactDecode (7 ms total)
+
+[----------] Global test environment tear-down
+[==========] 7 tests from 3 test suites ran. (26 ms total)
+[  PASSED  ] 7 tests.

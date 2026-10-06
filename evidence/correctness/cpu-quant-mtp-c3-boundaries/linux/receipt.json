@@ -1,0 +1,115 @@
+[
+  {
+    "name": "configure",
+    "args": [
+      "cmake",
+      "-S",
+      "/root/hyle-scratch/active-cpu-z/source",
+      "-B",
+      "/root/hyle-scratch/active-cpu-z/build",
+      "-DHYLE_COMPONENTS=compute;graph",
+      "-DHYLE_BUILD_TESTS=ON",
+      "-DHYLE_INSTALL=OFF",
+      "-DHYLE_BUILD_BENCH=OFF",
+      "-DHYLE_COMPUTE_CPU=ON",
+      "-DHYLE_COMPUTE_CUDA=OFF",
+      "-DHYLE_COMPUTE_APPLE=OFF",
+      "-DHYLE_COMPUTE_VULKAN=OFF",
+      "-DFETCHCONTENT_FULLY_DISCONNECTED=ON",
+      "-DFETCHCONTENT_SOURCE_DIR_GGML_CPU=/root/hyle-scratch/active-cpu-z/ggml-cpu-ffa4e8b8",
+      "-U",
+      "CMAKE_PROJECT_INCLUDE"
+    ],
+    "candidate": "2d1d787396f1f2798fe14c7ff3cece9bbebbbbda",
+    "log": "1-configure.log",
+    "returncode": 0,
+    "seconds": 30.354
+  },
+  {
+    "name": "batch-build",
+    "args": [
+      "cmake",
+      "--build",
+      "/root/hyle-scratch/active-cpu-z/build",
+      "--target",
+      "hyle_compute_ops_tests",
+      "hyle_compute_ggml_runtime_tests",
+      "hyle_compute_provider_ggml_tests",
+      "hyle_compute_provider_native_tests",
+      "hyle_compute_route_cpu_tests",
+      "hyle_graph_route_cpu_tests",
+      "--parallel",
+      "2"
+    ],
+    "candidate": "2d1d787396f1f2798fe14c7ff3cece9bbebbbbda",
+    "log": "2-batch-build.log",
+    "returncode": 0,
+    "seconds": 148.716
+  },
+  {
+    "name": "factor-tests",
+    "args": [
+      "ctest",
+      "--test-dir",
+      "/root/hyle-scratch/active-cpu-z/build",
+      "--output-on-failure",
+      "--no-tests=error",
+      "-L",
+      "^(compute_ops|compute_ggml_runtime|compute_provider_ggml|compute_provider_native)$",
+      "-LE",
+      "headers",
+      "-j",
+      "1",
+      "--output-junit",
+      "/mnt/c/public/project-hyle/hyle/.scratch/validation/cpu-coverage-c3-linux/2d1d787396f1/factors.xml"
+    ],
+    "candidate": "2d1d787396f1f2798fe14c7ff3cece9bbebbbbda",
+    "log": "3-factor-tests.log",
+    "returncode": 0,
+    "seconds": 0.623
+  },
+  {
+    "name": "ordinary-direct-mixed-formats",
+    "args": [
+      "/root/hyle-scratch/active-cpu-z/build/bin/hyle_compute_route_cpu_test",
+      "--gtest_filter=CpuMlxQuantizedDirect.*:CpuArtifactDecode.*:CpuExpandedGgufDirect.*",
+      "--gtest_output=xml:/mnt/c/public/project-hyle/hyle/.scratch/validation/cpu-coverage-c3-linux/2d1d787396f1/direct.xml"
+    ],
+    "candidate": "2d1d787396f1f2798fe14c7ff3cece9bbebbbbda",
+    "log": "4-ordinary-direct-mixed-formats.log",
+    "returncode": 0,
+    "seconds": 0.176
+  },
+  {
+    "name": "ordinary-graph-mixed-formats",
+    "args": [
+      "/root/hyle-scratch/active-cpu-z/build/bin/hyle_graph_route_cpu_test",
+      "--gtest_filter=CpuMlxQuantizedGraph.*:CpuArtifactDecode.*:CpuExpandedGgufGraph.*",
+      "--gtest_output=xml:/mnt/c/public/project-hyle/hyle/.scratch/validation/cpu-coverage-c3-linux/2d1d787396f1/graph.xml"
+    ],
+    "candidate": "2d1d787396f1f2798fe14c7ff3cece9bbebbbbda",
+    "log": "5-ordinary-graph-mixed-formats.log",
+    "returncode": 0,
+    "seconds": 0.179
+  },
+  {
+    "name": "cpu-public-headers",
+    "args": [
+      "ctest",
+      "--test-dir",
+      "/root/hyle-scratch/active-cpu-z/build",
+      "--output-on-failure",
+      "--no-tests=error",
+      "-R",
+      "^hyle_(compute_ops|compute|compute_backend_cpu|compute_provider_native|compute_provider_ggml|compute_route_cpu|graph|graph_route_cpu)_header_self_contained_test$",
+      "-j",
+      "1",
+      "--output-junit",
+      "/mnt/c/public/project-hyle/hyle/.scratch/validation/cpu-coverage-c3-linux/2d1d787396f1/headers.xml"
+    ],
+    "candidate": "2d1d787396f1f2798fe14c7ff3cece9bbebbbbda",
+    "log": "6-cpu-public-headers.log",
+    "returncode": 0,
+    "seconds": 19.835
+  }
+]

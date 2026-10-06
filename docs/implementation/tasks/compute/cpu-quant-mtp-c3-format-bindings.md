@@ -128,7 +128,11 @@ MLX仍须借入原压缩CPU调用/selected expert边界后才签范围。
 - Windows/Linux的普通source/static/shared消费者36项均通过；两平台安装SDK搬移后新消费者通过。
   精确候选见[Windows交付](../../../../evidence/correctness/cpu-quant-mtp-c3-mixed-batch/delivery-windows/summary.json)与
   [Linux交付](../../../../evidence/correctness/cpu-quant-mtp-c3-mixed-batch/delivery-linux/summary.json)。
-  公共头复核、低精度极值、实际profile及C4仍待验；不能以有限delivery消费者代签全部准入格。
+  后续[精度边界与公共头](../../../../evidence/correctness/cpu-quant-mtp-c3-boundaries/README.md)已通过，
+  复用相同产品实现的上述交付；实际profile与C4仍待验，不能以有限delivery消费者代签全部准入格。
+
+CPU三owner已在完成有限格式/资源/交付与精度尾项后交接C4 AUDITED；C3不是整包CLOSED，
+全部准入画像与组合资格由当前C4/C5收口。三GPU enum拒绝范围仍只保留C3补充合同与旧资格。
 
 ## MLX 有限审计与 N4–N6 冻结
 

@@ -1,0 +1,65 @@
+[
+  {
+    "name": "build-affected-tests",
+    "args": [
+      "cmake",
+      "--build",
+      "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+      "--target",
+      "hyle_compute_ops_tests",
+      "hyle_compute_provider_native_tests",
+      "hyle_compute_route_cpu_tests",
+      "hyle_graph_route_cpu_tests",
+      "--parallel",
+      "2"
+    ],
+    "candidate": "2d1d787396f1f2798fe14c7ff3cece9bbebbbbda",
+    "log": "1-build-affected-tests.log",
+    "returncode": 0,
+    "seconds": 32.703
+  },
+  {
+    "name": "ordinary-direct-final-formats",
+    "args": [
+      "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_compute_route_cpu_test.exe",
+      "--gtest_filter=CpuMlxQuantizedDirect.*:CpuArtifactDecode.*:CpuExpandedGgufDirect.*",
+      "--gtest_output=xml:C:\\public\\project-hyle\\hyle\\.scratch\\validation\\cpu-coverage-c3-final-tests\\2d1d787396f1\\direct.xml"
+    ],
+    "candidate": "2d1d787396f1f2798fe14c7ff3cece9bbebbbbda",
+    "log": "2-ordinary-direct-final-formats.log",
+    "returncode": 0,
+    "seconds": 0.297
+  },
+  {
+    "name": "ordinary-graph-final-formats",
+    "args": [
+      "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_graph_route_cpu_test.exe",
+      "--gtest_filter=CpuMlxQuantizedGraph.*:CpuArtifactDecode.*:CpuExpandedGgufGraph.*",
+      "--gtest_output=xml:C:\\public\\project-hyle\\hyle\\.scratch\\validation\\cpu-coverage-c3-final-tests\\2d1d787396f1\\graph.xml"
+    ],
+    "candidate": "2d1d787396f1f2798fe14c7ff3cece9bbebbbbda",
+    "log": "3-ordinary-graph-final-formats.log",
+    "returncode": 0,
+    "seconds": 0.266
+  },
+  {
+    "name": "public-compute-graph-headers",
+    "args": [
+      "ctest",
+      "--test-dir",
+      "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+      "--output-on-failure",
+      "--no-tests=error",
+      "-R",
+      "^hyle_(compute_ops|compute|compute_backend_cpu|compute_provider_native|compute_provider_ggml|compute_route_cpu|graph|graph_route_cpu)_header_self_contained_test$",
+      "-j",
+      "1",
+      "--output-junit",
+      "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\cpu-coverage-c3-final-tests\\2d1d787396f1\\headers.xml"
+    ],
+    "candidate": "2d1d787396f1f2798fe14c7ff3cece9bbebbbbda",
+    "log": "4-public-compute-graph-headers.log",
+    "returncode": 0,
+    "seconds": 16.843
+  }
+]

@@ -1,0 +1,32 @@
+Test project C:/public/project-hyle/hyle/.scratch/build-compute-v2-dev
+    Start 57: hyle_compute_header_self_contained_test
+1/8 Test #57: hyle_compute_header_self_contained_test ...................   Passed    7.45 sec
+    Start 59: hyle_graph_header_self_contained_test
+2/8 Test #59: hyle_graph_header_self_contained_test .....................   Passed    5.06 sec
+    Start 68: hyle_compute_provider_ggml_header_self_contained_test
+3/8 Test #68: hyle_compute_provider_ggml_header_self_contained_test .....   Passed    0.27 sec
+    Start 72: hyle_compute_ops_header_self_contained_test
+4/8 Test #72: hyle_compute_ops_header_self_contained_test ...............   Passed    1.84 sec
+    Start 74: hyle_compute_backend_cpu_header_self_contained_test
+5/8 Test #74: hyle_compute_backend_cpu_header_self_contained_test .......   Passed    0.47 sec
+    Start 76: hyle_compute_provider_native_header_self_contained_test
+6/8 Test #76: hyle_compute_provider_native_header_self_contained_test ...   Passed    0.26 sec
+    Start 78: hyle_compute_route_cpu_header_self_contained_test
+7/8 Test #78: hyle_compute_route_cpu_header_self_contained_test .........   Passed    0.47 sec
+    Start 80: hyle_graph_route_cpu_header_self_contained_test
+8/8 Test #80: hyle_graph_route_cpu_header_self_contained_test ...........   Passed    0.77 sec
+
+100% tests passed out of 8
+
+Label Time Summary:
+compute                    =   7.45 sec*proc (1 test)
+compute_backend_cpu        =   0.47 sec*proc (1 test)
+compute_ops                =   1.84 sec*proc (1 test)
+compute_provider_ggml      =   0.27 sec*proc (1 test)
+compute_provider_native    =   0.26 sec*proc (1 test)
+compute_route_cpu          =   0.47 sec*proc (1 test)
+graph                      =   5.06 sec*proc (1 test)
+graph_route_cpu            =   0.77 sec*proc (1 test)
+headers                    =  16.60 sec*proc (8 tests)
+
+Total Test time (real) =  16.80 sec

@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites tests="7" failures="0" disabled="0" errors="0" time="0.025" timestamp="2026-10-07T00:09:07.412" name="AllTests">
+  <testsuite name="CpuExpandedGgufGraph" tests="1" failures="0" disabled="0" skipped="0" errors="0" time="0.005" timestamp="2026-10-07T00:09:07.413">
+    <testcase name="OriginalFormatsProjectionExpertsAndEmbedding" file="/root/hyle-scratch/active-cpu-z/source/tests/compute_route_cpu/cpu_expanded_gguf_test.cc" line="110" status="run" result="completed" time="0.004" timestamp="2026-10-07T00:09:07.413" classname="CpuExpandedGgufGraph" />
+  </testsuite>
+  <testsuite name="CpuMlxQuantizedGraph" tests="3" failures="0" disabled="0" skipped="0" errors="0" time="0.01" timestamp="2026-10-07T00:09:07.419">
+    <testcase name="OriginalScaleCastPreservesUnderflowSubnormalAndOverflow" file="/root/hyle-scratch/active-cpu-z/source/tests/compute_route_cpu/cpu_mlx_quantized_test.cc" line="145" status="run" result="completed" time="0.005" timestamp="2026-10-07T00:09:07.419" classname="CpuMlxQuantizedGraph" />
+    <testcase name="MixedFormatsAndSelectedExperts" file="/root/hyle-scratch/active-cpu-z/source/tests/compute_route_cpu/cpu_mlx_quantized_test.cc" line="154" status="run" result="completed" time="0.003" timestamp="2026-10-07T00:09:07.426" classname="CpuMlxQuantizedGraph" />
+    <testcase name="OriginalAffineEmbeddingUsesSelectedRows" file="/root/hyle-scratch/active-cpu-z/source/tests/compute_route_cpu/cpu_mlx_quantized_test.cc" line="162" status="run" result="completed" time="0." timestamp="2026-10-07T00:09:07.429" classname="CpuMlxQuantizedGraph" />
+  </testsuite>
+  <testsuite name="CpuArtifactDecode" tests="3" failures="0" disabled="0" skipped="0" errors="0" time="0.007" timestamp="2026-10-07T00:09:07.430">
+    <testcase name="Nf4AndNestedScalesPreserveOriginalHighFirstOrder" file="/root/hyle-scratch/active-cpu-z/source/tests/compute_route_cpu/cpu_artifact_decode_test.cc" line="116" status="run" result="completed" time="0." timestamp="2026-10-07T00:09:07.430" classname="CpuArtifactDecode" />
+    <testcase name="AwqAndCompressedTensorsUseDifferentOriginalWordLayouts" file="/root/hyle-scratch/active-cpu-z/source/tests/compute_route_cpu/cpu_artifact_decode_test.cc" line="147" status="run" result="completed" time="0.002" timestamp="2026-10-07T00:09:07.432" classname="CpuArtifactDecode" />
+    <testcase name="OriginalScaleDtypeRoundsBeforeExplicitFloat32Output" file="/root/hyle-scratch/active-cpu-z/source/tests/compute_route_cpu/cpu_artifact_decode_test.cc" line="174" status="run" result="completed" time="0.001" timestamp="2026-10-07T00:09:07.435" classname="CpuArtifactDecode" />
+  </testsuite>
+</testsuites>

@@ -1,0 +1,30 @@
+Running main() from C:\Users\kiro\AppData\Local\hyle\dependencies\v1\sources\googletest-063de7e9578f-162765170ae6\googletest\src\gtest_main.cc
+Note: Google Test filter = CpuMlxQuantizedDirect.*:CpuArtifactDecode.*:CpuExpandedGgufDirect.*
+[==========] Running 7 tests from 3 test suites.
+[----------] Global test environment set-up.
+[----------] 1 test from CpuExpandedGgufDirect
+[ RUN      ] CpuExpandedGgufDirect.OriginalFormatsProjectionExpertsAndEmbedding
+[       OK ] CpuExpandedGgufDirect.OriginalFormatsProjectionExpertsAndEmbedding (3 ms)
+[----------] 1 test from CpuExpandedGgufDirect (3 ms total)
+
+[----------] 3 tests from CpuArtifactDecode
+[ RUN      ] CpuArtifactDecode.Nf4AndNestedScalesPreserveOriginalHighFirstOrder
+[       OK ] CpuArtifactDecode.Nf4AndNestedScalesPreserveOriginalHighFirstOrder (6 ms)
+[ RUN      ] CpuArtifactDecode.AwqAndCompressedTensorsUseDifferentOriginalWordLayouts
+[       OK ] CpuArtifactDecode.AwqAndCompressedTensorsUseDifferentOriginalWordLayouts (2 ms)
+[ RUN      ] CpuArtifactDecode.OriginalScaleDtypeRoundsBeforeExplicitFloat32Output
+[       OK ] CpuArtifactDecode.OriginalScaleDtypeRoundsBeforeExplicitFloat32Output (3 ms)
+[----------] 3 tests from CpuArtifactDecode (12 ms total)
+
+[----------] 3 tests from CpuMlxQuantizedDirect
+[ RUN      ] CpuMlxQuantizedDirect.OriginalScaleCastPreservesUnderflowSubnormalAndOverflow
+[       OK ] CpuMlxQuantizedDirect.OriginalScaleCastPreservesUnderflowSubnormalAndOverflow (2 ms)
+[ RUN      ] CpuMlxQuantizedDirect.MixedFormatsAndSelectedExperts
+[       OK ] CpuMlxQuantizedDirect.MixedFormatsAndSelectedExperts (4 ms)
+[ RUN      ] CpuMlxQuantizedDirect.OriginalAffineEmbeddingUsesSelectedRows
+[       OK ] CpuMlxQuantizedDirect.OriginalAffineEmbeddingUsesSelectedRows (0 ms)
+[----------] 3 tests from CpuMlxQuantizedDirect (6 ms total)
+
+[----------] Global test environment tear-down
+[==========] 7 tests from 3 test suites ran. (23 ms total)
+[  PASSED  ] 7 tests.
