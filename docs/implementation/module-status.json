@@ -373,8 +373,8 @@
     {
       "module": "compute_provider_ggml",
       "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/cpu-quant-mtp-c2-ggml-upgrade.md",
-      "summary": "CPU扩覆盖C2 AUDITED：adapter有限修复真实core/patch软件身份，原硬编码旧版本不能代签新版；C1全制品头对账已完成，11格式接线仍待C3，GPU资格不变。"
+      "record": "docs/implementation/tasks/compute/cpu-quant-mtp-c3-format-bindings.md",
+      "summary": "CPU扩覆盖C3 AUDITED：真实11 GGUF格式与原MatMul/Grouped/GetRows有限G1–G4已冻结，非GGUF仍审计未授权Native新实现；批量接线、未签执行/三交付，GPU资格保持。"
     },
     {
       "module": "graph_provider_onednn",
@@ -390,8 +390,8 @@
     {
       "module": "compute_ops",
       "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/llm-moe-d5-original-fp4-expert-binding.md",
-      "summary": "D5 AUDITED：F44原版专家与资源、F43官方完整消费已验，CUDA正确性44/44；总ledger162通过/12拒绝/2数值失败。四路线A5和CPU/Apple/CUDA代表片段P1完成；Vulkan A6资格阻塞，残余覆盖与D6未关闭。"
+      "record": "docs/implementation/tasks/compute/cpu-quant-mtp-c3-format-bindings.md",
+      "summary": "CPU扩覆盖C3 AUDITED：真实11 GGUF格式与原MatMul/Grouped/GetRows有限G1–G4已冻结，非GGUF仍审计未授权Native新实现；批量接线、未签执行/三交付，GPU资格保持。"
     },
     {
       "module": "compute_backend_cpu",
@@ -528,8 +528,8 @@
     {
       "module": "compute_provider_ggml_vulkan",
       "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/llm-moe-d5-real-fragment-acceptance.md",
-      "summary": "D5-F30 AUDITED：Kimi MLA、GLM64-head及资源边界已验，Vulkan A5完成；当前34通过/8拒绝/2数值失败。A6原中断数据保留，唯一恢复A/A失败、正式样本0；路线A6阻塞，D6未关闭。"
+      "record": "docs/implementation/tasks/compute/cpu-quant-mtp-c3-format-bindings.md",
+      "summary": "C3公共GGUF enum消费者有限迁移AUDITED：只明确拒绝新增CPU格式，原D5资格/算法/限制不变，不恢复GPU队列；不签新增GPU能力。"
     },
     {
       "module": "compute_ggml_runtime",
@@ -540,8 +540,8 @@
     {
       "module": "compute_provider_ggml_cuda",
       "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/llm-moe-d5-real-fragment-acceptance.md",
-      "summary": "D5-F30/F31 AUDITED：64-head压缩MLA、原生I32 Concat及拒绝/所有权边界已验，无新kernel。CUDA正确性44/44、三交付A5和两完整片段A6均通过；D6未关闭。"
+      "record": "docs/implementation/tasks/compute/cpu-quant-mtp-c3-format-bindings.md",
+      "summary": "C3公共GGUF enum消费者有限迁移AUDITED：只明确拒绝新增CPU格式，原D5资格/算法/限制不变，不恢复GPU队列；不签新增GPU能力。"
     },
     {
       "module": "graph_provider_ggml_cuda",
@@ -564,8 +564,8 @@
     {
       "module": "compute_provider_ggml_metal",
       "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/llm-moe-d5-real-fragment-acceptance.md",
-      "summary": "D5-F24/MB AUDITED：原生Clamp、recurrent gate/GDN及原生buffer分配失败回滚已验，Apple A5和两个代表完整片段P1通过；官方DeepSeek FP4拒绝域保留，D6未关闭。"
+      "record": "docs/implementation/tasks/compute/cpu-quant-mtp-c3-format-bindings.md",
+      "summary": "C3公共GGUF enum消费者有限迁移AUDITED：只明确拒绝新增CPU格式，原D5资格/算法/限制不变，不恢复GPU队列；不签新增GPU能力。"
     },
     {
       "module": "compute_provider_iree_vulkan",

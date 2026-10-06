@@ -1,9 +1,12 @@
 # C3：CPU 格式与普通算子批量接线
 
+<!-- MODULE REVIEW: AUDITED -->
+
 ## 计划身份
 
-- 状态：PLANNED，未激活、未绑定registry；没有SCOPED/AUDITED产品授权或执行PASS。
-- baseline：`5b0044e2a10d11fdfce54893020cfcaaed47b0c0`；激活时核对Windows实际HEAD/worktree，保留后续及用户修改。
+- 状态：AUDITED，仅固定本节GGUF语义/映射与公共枚举消费者迁移。非GGUF Q3仍有界审计，
+  Native保持C2记录，未授权其新数学/执行实现。本卡整体未完成，Q3不得被跳过。
+- baseline：`1efa59bd218adef71de0c3606cd2e968e3f953e3`；Windows实际HEAD核对、工作树干净，保留全部后续提交。
 - owner范围：compute_ops、compute_provider_ggml；C1准入的ATen/借用原程序由compute_provider_native承接，CPU facade只在真实缺口时按owner纳入。
 - 总合同：[CPU扩覆盖计划](cpu-quant-mtp-coverage-expansion-plan.md)；事实：[缺口清单](cpu-popular-quant-mtp-gap-list.md)。
 - 本卡是一个批次，不是逐算子/逐模型队列。CLOSED按真实trigger新开；AUDITED范围变化重新定界。
@@ -43,3 +46,33 @@
 
 单一合格成熟carrier完成正确接入与P0；多家成熟库具备同合同重叠域时按总计划批量比较固定默认规则。
 不比较自研，不为每个算子/档位重建或计时，最多两个代表消费族共用一份稳定候选P1。
+
+## GGUF 有限审计与 API 冻结
+
+来源：C1完整104画像/826分片实际头；C2固定CPU core与原IQ1 MatMul/GetRows资源/数值验证。
+现有`gguf_weight_description` / `gguf_grouped_weight_description`、MatMul、GroupedMatMul、Gather保留，
+不增加新执行器或模型loader。公开枚举追加11项，具名StorageFormatId追加不覆盖旧ID。
+
+| FIX | 原问题/源码 | 固定产品动作 | 验收 |
+|---|---|---|---|
+| G1 | low_precision.h/.cc只列10编码 | 批量追加Q4_0、Q4_1、Q2_K、IQ2_XXS/XS/S、IQ1_S/M、IQ1_XXXS/XXS/XS，原bytes/block/alignment | 原编码描述、非法/溢出/伪造格式、checked import |
+| G2 | CPU native_quantized_type无11格式；embedding仅Q4K/Q6K/Q8 | 对应原ggml type；IQ1扩展只在C2新core feature下接受；embedding依实际decoder能力接受 | 一批参数化MatMul、GroupedMatMul、GetRows；重复/越界ids、changed replay |
+| G3 | 三GPU helper的enum switch封闭 | 仅添加default返回COUNT，拒绝新增未验格式；不接新GPU数学/数据布局 | 编译期consumer seam/source合同；既有能力与GPU状态不变 |
+| G4 | 需要普通入口真实消费 | 普通CPU Direct和Graph参数化fixture，保留原压缩bytes、F32/Q8_K内部转换边界 | 原编码参考、多个slots、资源/失败/close、批末两系统三交付 |
+
+G1/G2 owner compute_ops、compute_provider_ggml。G3的compute_provider_ggml_cuda/metal/vulkan保持
+原AUDITED状态，只将当前卡绑定为公共enum拒绝分支的补充范围；原D5资格/限制仍见
+[原记录](llm-moe-d5-real-fragment-acceptance.md)，本批不恢复旧GPU队列或Graph BLOCKED。
+
+语义：weights原block、MatMul逻辑[K,N]，grouped[E,N,K]，embedding[N,K]；quant GetRows输出F32。
+原库MatMul内部activation Q8_0/Q8_K转换由其CPU trait决定，对照包括该转换；F32累加，声明输出dtype。
+prepare只按descriptor建元数据/pool/workspace；payload每次绑定，可changed replay，不偷偷缓存mutable weights。
+ids在写输出前checked；不同slot共享不可变bytes、独占workspace/pool，borrow owner活至最后完成。
+资源/销毁/OOM复用C2已有原库边界；hot path不重新搜索/计时/编译或展开完整权重。
+
+MatMul/Grouped/Gather从现有普通入口自动绑定mature provider，用户不选择Provider或timing profile。
+新格式只签实际CPU envelope，GPU保留原锁、旧资格和明确拒绝。单一原ggml carrier无适用赢家P1。
+
+非GGUF后续有限审计须固定packing、codebook/nested scale/zero-point/permutation端口和cold转换边界，
+才能把Native从C2绑定本卡。现有Float8WeightDecode提供“显式执行一次→作为constant复用”的自然先例；
+不得把每轮全库解包、未资格化的4bit等价替换或放宽精度写成完成。
