@@ -22,19 +22,37 @@ endif()
 
 include(FetchContent)
 find_package(Python3 REQUIRED COMPONENTS Interpreter)
-hyle_audit_in_tree_dependencies(ggml_runtime_patches)
-FetchContent_Declare(ggml
-  URL "${HYLE_DEP_GGML_ARCHIVE_URL}"
-  URL_HASH "SHA256=${HYLE_DEP_GGML_ARCHIVE_SHA256}"
+# One source revision per SDK. Existing GPU programs keep their qualified core;
+# CPU-only builds receive the newer core and the original narrow IQ1 extension.
+set(_cpu_upgrade OFF)
+set(_dependency ggml)
+set(_dependency_upper GGML)
+set(_patch_dependency ggml_runtime_patches)
+set(_patch_dependency_upper GGML_RUNTIME_PATCHES)
+set(_patch_root "${HYLE_SOURCE_DIR}/third_party/ggml_runtime")
+if(_cpu AND NOT HYLE_COMPUTE_CUDA_ENABLED AND
+   NOT HYLE_COMPUTE_APPLE_ENABLED AND NOT HYLE_COMPUTE_VULKAN_ENABLED)
+  set(_cpu_upgrade ON)
+  set(_dependency ggml_cpu)
+  set(_dependency_upper GGML_CPU)
+  set(_patch_dependency ggml_cpu_runtime_patches)
+  set(_patch_dependency_upper GGML_CPU_RUNTIME_PATCHES)
+  set(_patch_root "${HYLE_SOURCE_DIR}/third_party/ggml_cpu_runtime")
+endif()
+set(_selected_commit "${HYLE_DEP_${_dependency_upper}_COMMIT}")
+set(HYLE_GGML_CPU_PEER_REVISION "${_selected_commit}" PARENT_SCOPE)
+hyle_audit_in_tree_dependencies(${_patch_dependency})
+FetchContent_Declare(${_dependency}
+  URL "${HYLE_DEP_${_dependency_upper}_ARCHIVE_URL}"
+  URL_HASH "SHA256=${HYLE_DEP_${_dependency_upper}_ARCHIVE_SHA256}"
   DOWNLOAD_EXTRACT_TIMESTAMP FALSE
   SOURCE_SUBDIR hyle-verified-source-only)
-hyle_fetchcontent_make_available_locked(ggml)
-FetchContent_GetProperties(ggml)
-set(_patch_root "${HYLE_SOURCE_DIR}/third_party/ggml_runtime")
+hyle_fetchcontent_make_available_locked(${_dependency})
+FetchContent_GetProperties(${_dependency} SOURCE_DIR ggml_SOURCE_DIR)
 set(_manifests "${_patch_root}/patches.json")
 set(_patch_args --manifest "${_patch_root}/patches.json")
-set(_source_identity "${HYLE_DEP_GGML_RUNTIME_PATCHES_VENDORED_TREE_SHA256}")
-set(_locked ggml ggml_runtime_patches)
+set(_source_identity "${HYLE_DEP_${_patch_dependency_upper}_VENDORED_TREE_SHA256}")
+set(_locked ${_dependency} ${_patch_dependency})
 set(_licenses
   "${ggml_SOURCE_DIR}/LICENSE|${CMAKE_INSTALL_DATADIR}/licenses/Hyle|ggml-runtime-LICENSE"
   "${_patch_root}/LICENSE|${CMAKE_INSTALL_DATADIR}/licenses/Hyle|ggml-runtime-patches-LICENSE"
@@ -111,9 +129,13 @@ block()
   # Original embedded Metal sources survive prefix relocation in every delivery.
   # Device libraries and shape pipelines are prepared cold by the native owner.
   set(GGML_METAL_EMBED_LIBRARY "${HYLE_COMPUTE_APPLE_ENABLED}")
-  set(GGML_BUILD_COMMIT "${HYLE_DEP_GGML_COMMIT}-hyle")
+  set(GGML_BUILD_COMMIT "${_selected_commit}-hyle")
   add_subdirectory("${_patched_source}" vendor EXCLUDE_FROM_ALL)
 endblock()
+
+if(_cpu_upgrade)
+  target_compile_definitions(ggml INTERFACE HYLE_GGML_CPU_IQ1_EXTENSIONS=1)
+endif()
 
 set(_vendor_targets ggml ggml-base)
 set(_sources metadata_arena.cc)
@@ -202,6 +224,11 @@ hyle_add_module(compute_ggml_runtime SOURCES ${_sources})
 target_link_libraries(hyle_compute_ggml_runtime PRIVATE ggml)
 if(_cpu AND HYLE_TARGET_PROCESSOR STREQUAL "x86_64" AND
    CMAKE_SYSTEM_NAME MATCHES "^(Windows|Linux)$")
+  set(_cpu_program_basename hyle_ggml_cpu_avx2_456172ec)
+  if(_cpu_upgrade)
+    string(SUBSTRING "${_selected_commit}" 0 8 _cpu_commit_short)
+    set(_cpu_program_basename "hyle_ggml_cpu_avx2_${_cpu_commit_short}_${_source_id}")
+  endif()
   include("${CMAKE_CURRENT_SOURCE_DIR}/cpu_program.cmake")
   target_link_libraries(hyle_compute_ggml_runtime PRIVATE ${CMAKE_DL_LIBS})
 endif()

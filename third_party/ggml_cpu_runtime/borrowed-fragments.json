@@ -1,0 +1,97 @@
+[
+  {
+    "destination": "include/ggml.h",
+    "origin_path": "include/ggml.h",
+    "borrowed_text_sha256": "44325c2156959fa3afe9f3b56bf3146cbdea0bc3e0385a3002ce2fc1b8480383"
+  },
+  {
+    "destination": "src/ggml-common.h",
+    "origin_path": "src/ggml-common.h",
+    "borrowed_text_sha256": "2436d6a0072609acf83d15dd438449a5f26451cc7ca4384ee80d7f292da54607"
+  },
+  {
+    "destination": "src/ggml-common.h",
+    "origin_path": "src/ggml-common.h",
+    "borrowed_text_sha256": "66f0d72dcd4923bb96b269e1dca8321503e225ace16b03d07f0ccc64fd7d07b9"
+  },
+  {
+    "destination": "src/ggml-common.h",
+    "origin_path": "src/ggml-common.h",
+    "borrowed_text_sha256": "308de5e59e6bf5d9aff04de45b8fa374209fa6befa1f3fb3ba2c68e53ceca5cd"
+  },
+  {
+    "destination": "src/ggml.c",
+    "origin_path": "src/ggml.c",
+    "borrowed_text_sha256": "687bd8dadf91f2d7176f43e1d277d56eb7dd4d997ffd8e1efd977dd90052425d"
+  },
+  {
+    "destination": "src/ggml-cpu/ggml-cpu.c",
+    "origin_path": "src/ggml-cpu/ggml-cpu.c",
+    "borrowed_text_sha256": "5308b5457b0ee6a267ed72fe7fff0902f5f291c3774c4b8b6a64d15377e06f98"
+  },
+  {
+    "destination": "src/ggml-quants.c",
+    "origin_path": "src/ggml-quants.c",
+    "borrowed_text_sha256": "480fc8902417ee163cde35448c9fe52834073af107f473ab1c4713675393c4ab"
+  },
+  {
+    "destination": "src/ggml-cpu/quants.c",
+    "origin_path": "src/ggml-cpu/quants.c",
+    "borrowed_text_sha256": "7384d71fdc14fc21f696b5f238a961a5e96e919b13192ee43e2e5d0c6419a54c"
+  },
+  {
+    "destination": "src/ggml-quants.h",
+    "origin_path": "src/ggml-quants.h",
+    "borrowed_text_sha256": "47b6c40d240450f420b6a406603b9205c1cf953844faf48866342160153d2197"
+  },
+  {
+    "destination": "src/ggml-cpu/quants.h",
+    "origin_path": "src/ggml-cpu/quants.h",
+    "borrowed_text_sha256": "3a324253f36001531625c4f0604954feb83245b1ae2db0734dc86919e75f826f"
+  },
+  {
+    "destination": "src/ggml-cpu/arch-fallback.h",
+    "origin_path": "src/ggml-cpu/arch-fallback.h",
+    "borrowed_text_sha256": "e87010d425220f0bea62237ebf3afe0b83624b10d41f6c37ca51ab41b909533d"
+  },
+  {
+    "destination": "src/ggml-quants.c",
+    "origin_path": "src/ggml-quants.c",
+    "borrowed_text_sha256": "557e4cd2bc7cafb86be5c2d0cb00155b0d51f2a1e10029fbb8f92ebd1ce64aa2"
+  },
+  {
+    "destination": "src/ggml-cpu/ops.cpp",
+    "origin_path": "src/ggml-cpu/ops.cpp",
+    "borrowed_text_sha256": "88613842f43a042d0c51405be57fc1ce9076d665845a1ca70a53a8f1c0faa96b"
+  },
+  {
+    "destination": "src/ggml-cpu/ops.cpp",
+    "origin_path": "src/ggml-cpu/ops.cpp",
+    "borrowed_text_sha256": "4d871f36cfd2b621ceb8382beadd0b9ffa85510c4a9f814e9fc5c29e6bd3d54d"
+  },
+  {
+    "destination": "src/ggml-cpu/ops.cpp",
+    "origin_path": "src/ggml-cpu/ops.cpp",
+    "borrowed_text_sha256": "f485c9d05ec5966a347de5c21d461ff654071c3ac219779055317bd184eff819"
+  },
+  {
+    "destination": "src/ggml-cpu/ops.cpp",
+    "origin_path": "src/ggml-cpu/ops.cpp",
+    "borrowed_text_sha256": "ab28683fbabc2b9093f54265daaabeef859d088105d48c761b19749c3f5b70f4"
+  },
+  {
+    "destination": "src/ggml-cpu/ops.cpp",
+    "origin_path": "src/ggml-cpu/ops.cpp",
+    "borrowed_text_sha256": "ca5c69c1d5f749e868eb1d75bf76fac537ba964ca5b50bbc847a30285ec54a0b"
+  },
+  {
+    "destination": "src/ggml-cpu/ops.cpp",
+    "origin_path": "src/ggml-cpu/ops.cpp",
+    "borrowed_text_sha256": "8e3804ebd6a0c2f699b314482fb6775b5c6bf8f519638a3f081a20cab0389f4f"
+  },
+  {
+    "destination": "src/ggml-cpu/ops.cpp",
+    "origin_path": "src/ggml-cpu/ops.cpp",
+    "borrowed_text_sha256": "94d615550e5293b5635d9826830ddfacef61e81a9d05e29dbbcb5d4b34d66078"
+  }
+]

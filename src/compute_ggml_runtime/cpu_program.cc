@@ -26,7 +26,7 @@ const CpuProgram kBaseline{
 Result<const CpuProgram *> load_avx2_program() noexcept {
   using Entry = const CpuProgram *(*)() noexcept;
 #if defined(_WIN32)
-  const auto library = LoadLibraryExW(L"hyle_ggml_cpu_avx2_456172ec.dll", nullptr,
+  const auto library = LoadLibraryExA(HYLE_GGML_CPU_PROGRAM_LIBRARY, nullptr,
                                     LOAD_LIBRARY_SEARCH_DEFAULT_DIRS);
   if (library == nullptr)
     return std::unexpected(status_from_win32(GetLastError(),
@@ -35,7 +35,7 @@ Result<const CpuProgram *> load_avx2_program() noexcept {
       GetProcAddress(library, "hyle_ggml_cpu_program_v1"));
 #else
   const auto library =
-      dlopen("libhyle_ggml_cpu_avx2_456172ec.so", RTLD_NOW | RTLD_LOCAL);
+      dlopen(HYLE_GGML_CPU_PROGRAM_LIBRARY, RTLD_NOW | RTLD_LOCAL);
   if (library == nullptr)
     return std::unexpected(Status::NotFound("ggml CPU AVX2 program"));
   const auto entry =

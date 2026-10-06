@@ -12,7 +12,7 @@ foreach(_source IN LISTS _cpu_sources)
 endforeach()
 add_library(hyle_ggml_cpu_avx2 MODULE ${_cpu_absolute_sources} cpu_program_export.cc)
 set_target_properties(hyle_ggml_cpu_avx2 PROPERTIES
-  EXPORT_NAME _ggml_cpu_avx2_456172ec OUTPUT_NAME hyle_ggml_cpu_avx2_456172ec
+  EXPORT_NAME "_${_cpu_program_basename}" OUTPUT_NAME "${_cpu_program_basename}"
   C_STANDARD 11 CXX_STANDARD 17 POSITION_INDEPENDENT_CODE ON
   C_VISIBILITY_PRESET hidden CXX_VISIBILITY_PRESET hidden VISIBILITY_INLINES_HIDDEN ON)
 target_include_directories(hyle_ggml_cpu_avx2 PRIVATE
@@ -32,17 +32,19 @@ target_link_libraries(hyle_ggml_cpu_avx2 PRIVATE
   "$<TARGET_PROPERTY:ggml-cpu,LINK_LIBRARIES>")
 hyle_apply_sanitizer(hyle_ggml_cpu_avx2)
 add_dependencies(hyle_compute_ggml_runtime hyle_ggml_cpu_avx2)
-target_compile_definitions(hyle_compute_ggml_runtime PRIVATE HYLE_GGML_CPU_AVX2_PROGRAM=1)
+target_compile_definitions(hyle_compute_ggml_runtime PRIVATE
+  HYLE_GGML_CPU_AVX2_PROGRAM=1
+  HYLE_GGML_CPU_PROGRAM_LIBRARY="$<TARGET_FILE_NAME:hyle_ggml_cpu_avx2>")
 hyle_register_runtime_files(TARGETS hyle_compute_ggml_runtime
   FILES "$<TARGET_FILE:hyle_ggml_cpu_avx2>")
 
 include(CMakePackageConfigHelpers)
 if(WIN32)
   set(HYLE_GGML_CPU_PROGRAM_INSTALLED_FILE
-    "${CMAKE_INSTALL_LIBDIR}/hyle_ggml_cpu_avx2_456172ec${CMAKE_SHARED_MODULE_SUFFIX}")
+    "${CMAKE_INSTALL_LIBDIR}/${_cpu_program_basename}${CMAKE_SHARED_MODULE_SUFFIX}")
 else()
   set(HYLE_GGML_CPU_PROGRAM_INSTALLED_FILE
-    "${CMAKE_INSTALL_LIBDIR}/libhyle_ggml_cpu_avx2_456172ec${CMAKE_SHARED_MODULE_SUFFIX}")
+    "${CMAKE_INSTALL_LIBDIR}/lib${_cpu_program_basename}${CMAKE_SHARED_MODULE_SUFFIX}")
 endif()
 configure_package_config_file("${CMAKE_CURRENT_SOURCE_DIR}/HyleGgmlCpuRuntimeConfig.cmake.in"
   "${CMAKE_CURRENT_BINARY_DIR}/HyleGgmlCpuRuntimeConfig.cmake"

@@ -17,6 +17,12 @@ hyle_add_module(compute_provider_native SOURCES
   reduction.cc
   transform.cc
   transformer.cc)
+# Frozen Native wins were qualified against the original mature peer. A newer
+# CPU core uses mature defaults until a separately qualified rule says otherwise.
+if(HYLE_GGML_CPU_PEER_REVISION STREQUAL "456172ec733a135778adcd32d00e576a58232e45")
+  target_compile_definitions(hyle_compute_provider_native PRIVATE
+    HYLE_NATIVE_DEFAULT_PEER_456172EC=1)
+endif()
 target_include_directories(hyle_compute_provider_native PRIVATE
   "${CMAKE_CURRENT_SOURCE_DIR}/../compute"
   "${HYLE_SOURCE_DIR}/third_party/ds4_quantization")
