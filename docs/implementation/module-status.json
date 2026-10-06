@@ -97,15 +97,9 @@
     },
     {
       "module": "platform",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/platform/platform-v11-perf-control-resume.md",
-      "candidate": "3c1ef2392d1f05c79edfe1c5d4ea5558bd917e3c",
-      "performance": {
-        "tier": "P1",
-        "evidence": "docs/implementation/evidence/performance/benchmarks-platform.md",
-        "material_margin_pct": 5
-      },
-      "summary": "platform v11 CLOSED：NUMA node memory fact 与原有 host facts 已完成三平台 correctness、三交付、API/docs、依赖和红队；唯一 fresh W1-WIN receipt 全 controls 与 4/4 host-planning NI PASS，未改 3c1ef239/63b58d10 产品候选重新确认。"
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/platform/cpu-identity-route-facts.md",
+      "summary": "CPU最终规则SCOPED：按已结束证据逐域绑定；缓存硬件事实、共享优势保留、13已测落后场景拒绝；不重测/不优化"
     },
     {
       "module": "platform_thread",
@@ -423,14 +417,9 @@
     },
     {
       "module": "compute_provider_native",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/compute/cpu-native-matmul-retirement-decision.md",
-      "summary": "MM/K1 CLOSED：自研MatMul执行/准备/两私有kernel及七fat路线已源级删除；两平台实际144/13/19与三交付、executor和Core通过；strict能力明确撤回，SIMD/原库保留；其余CPU路由裁决独立待办",
-      "candidate": "7157655201df3b63619a4e5b11dfe272bcf35273",
-      "performance": {
-        "tier": "P0",
-        "evidence": "evidence/correctness/cpu-native-matmul-retirement/README.md"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/cpu-default-domain-routing-final.md",
+      "summary": "CPU最终规则SCOPED：按已结束证据逐域绑定；缓存硬件事实、共享优势保留、13已测落后场景拒绝；不重测/不优化"
     },
     {
       "module": "compute_sched",
@@ -439,25 +428,15 @@
     },
     {
       "module": "compute_route_cpu",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/compute/cpu-aten-storage-index-admission.md",
-      "summary": "SI1–4 CLOSED：原ATen六组plain存储/索引宽scalar、I32/I64、odd stride及duplicate Assign接线；两平台114/114、CPU12通过/1旧fixture跳过、Graph15/15、普通Direct/Graph三交付与P0通过。Native数学冻结，CPU全裁决未完成。",
-      "candidate": "91ad443bbaa20d51535d0bfcae145ba46b07b4a4",
-      "performance": {
-        "tier": "P0",
-        "evidence": "evidence/correctness/cpu-aten-storage-index/README.md"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/cpu-default-domain-routing-final.md",
+      "summary": "CPU最终规则SCOPED：按已结束证据逐域绑定；缓存硬件事实、共享优势保留、13已测落后场景拒绝；不重测/不优化"
     },
     {
       "module": "graph_route_cpu",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/compute/cpu-aten-storage-index-admission.md",
-      "summary": "SI1–4 CLOSED：原ATen六组plain存储/索引宽scalar、I32/I64、odd stride及duplicate Assign接线；两平台114/114、CPU12通过/1旧fixture跳过、Graph15/15、普通Direct/Graph三交付与P0通过。Native数学冻结，CPU全裁决未完成。",
-      "candidate": "91ad443bbaa20d51535d0bfcae145ba46b07b4a4",
-      "performance": {
-        "tier": "P0",
-        "evidence": "evidence/correctness/cpu-aten-storage-index/README.md"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/cpu-default-domain-routing-final.md",
+      "summary": "CPU最终规则SCOPED：按已结束证据逐域绑定；缓存硬件事实、共享优势保留、13已测落后场景拒绝；不重测/不优化"
     },
     {
       "module": "compute_provider_cublas",
