@@ -90,6 +90,48 @@ TEST(NativeTorchCpu, ManagedReplayReportsRealAllocationFailureAndReleasesProgram
   EXPECT_EQ(metadata.remaining(), initial);
 }
 
+TEST(NativeTorchCpu, LowPrecisionConvolutionHasRealFailureRecoveryAndIndependentSlots) {
+  auto &allocation=allocation_failure();c10::SetCPUAllocator(&allocation,255);
+  for(auto type:{c::DataType::kFloat16,c::DataType::kBFloat16}) {
+    mem::QuotaAllocator metadata(mem::system_allocator(),4*1024*1024);
+    const auto initial=metadata.remaining();
+    {
+      auto context=c::test::native_context({.metadata_allocator=metadata.get()}).value();
+      auto samples=c::TensorDesc::dense(type,std::array<std::int64_t,3>{1,4,8}).value();
+      auto weights=c::TensorDesc::dense(type,std::array<std::int64_t,2>{8,4}).value();
+      auto result=c::TensorDesc::dense(type,std::array<std::int64_t,3>{1,1,8}).value();
+      const std::array descs{samples,weights};const std::array outputs{result};
+      auto prepared=c::prepare(context,c::model_ops::causal_conv1d(),descs,outputs,mem::system_resource()).value();
+      EXPECT_EQ(prepared.implementation().value(),0x544f524348000009ULL);
+      EXPECT_EQ(prepared.runtime_properties().replay_class,c::ProviderReplayClass::kManaged);
+      EXPECT_FALSE(prepared.invocation_private_bytes());EXPECT_FALSE(prepared.capture_compatible());
+      const std::uint16_t one=type==c::DataType::kFloat16?0x3c00:0x3f80;
+      const std::uint16_t four=type==c::DataType::kFloat16?0x4400:0x4080;
+      auto x=half_test::buffer<std::uint16_t>(std::vector<std::uint16_t>(32,one));
+      auto w=half_test::buffer<std::uint16_t>(std::vector<std::uint16_t>(32,one));
+      auto a=half_test::buffer<std::uint16_t>(std::vector<std::uint16_t>(8));
+      auto b=half_test::buffer<std::uint16_t>(std::vector<std::uint16_t>(8));
+      const std::array inputs{c::ConstTensorView::create(samples,x.view()).value(),c::ConstTensorView::create(weights,w.view()).value()};
+      auto ya=c::TensorView::create(result,a.view()).value(),yb=c::TensorView::create(result,b.view()).value();
+      auto queue=context.create_queue().value();auto lane=prepared.create_invocation().value();
+      allocation.fail=true;auto failed=lane.submit(queue,inputs,std::span(&ya,1));ASSERT_TRUE(failed);
+      EXPECT_TRUE(failed->wait().IsResourceExhausted());EXPECT_FALSE(allocation.fail.load());
+      EXPECT_TRUE(lane.submit(queue,inputs,std::span(&ya,1)).error().IsFailedPrecondition());
+      for(auto value:half_test::read<std::uint16_t>(a))EXPECT_EQ(value,0);
+      lane=prepared.create_invocation().value();
+      auto done=lane.submit(queue,inputs,std::span(&ya,1));ASSERT_TRUE(done);EXPECT_TRUE(done->wait().ok());
+      std::thread first([&]{auto q=context.create_queue().value();auto run=prepared.create_invocation().value();
+        auto completion=run.submit(q,inputs,std::span(&ya,1));EXPECT_TRUE(completion&&completion->wait().ok());});
+      std::thread second([&]{auto q=context.create_queue().value();auto run=prepared.create_invocation().value();
+        auto completion=run.submit(q,inputs,std::span(&yb,1));EXPECT_TRUE(completion&&completion->wait().ok());});
+      first.join();second.join();
+      for(auto value:half_test::read<std::uint16_t>(a))EXPECT_EQ(value,four);
+      for(auto value:half_test::read<std::uint16_t>(b))EXPECT_EQ(value,four);
+    }
+    EXPECT_EQ(metadata.remaining(),initial);
+  }
+}
+
 TEST(NativeTorchCpu, DuplicateExpertIdsAndFailedInvocationRecovery) {
   auto context = c::test::native_context().value();
   auto queue = context.create_queue().value();
