@@ -224,7 +224,8 @@ inline Program complete(const Model &model,std::span<const float> embedding_actu
     std::vector<float> collapsed_ref(t*h);
     for(std::int64_t row=0;row<t;++row) {
       auto local=std::span(states).subspan(row*4*h,4*h);auto m=hf.reference(local);double square=0;
-      for(auto value:local)square+=double(value)*value;const auto inv=1/std::sqrt(float(square/local.size())+1e-6F);
+      for(auto value:local)square+=double(value)*value;
+      const auto inv=1/std::sqrt(float(square/local.size())+1e-6F);
       for(std::int64_t col=0;col<h;++col) {
         double sum=0;for(int stream=0;stream<4;++stream)sum+=local[stream*h+col]*(core::sigmoid(m[stream]*inv*0.125F+head_base[stream])+1e-6);
         collapsed_ref[row*h+col]=float(sum);
