@@ -71,7 +71,8 @@ template<class T> void matrices(){
   const auto type=half_test::data_type<T>();
   for(const auto format:{Format::kAffine4,Format::kMxfp4,Format::kMxfp8})
     for(const bool grouped:{false,true}){
-      SCOPED_TRACE(static_cast<int>(format));SCOPED_TRACE(grouped);
+      SCOPED_TRACE(static_cast<int>(format));
+      SCOPED_TRACE(grouped);
       const bool affine=format==Format::kAffine4;
       const int bits=format==Format::kMxfp8?8:4,pack=32/bits,group=affine?64:32;
       const int experts=grouped?e:1,rows=grouped?4:2;
