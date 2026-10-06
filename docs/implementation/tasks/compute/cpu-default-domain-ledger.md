@@ -51,7 +51,7 @@ Native MatMul 已物理删除（691 实现行与两文件），严格内存/高 
 
 ## 非泛化条件
 
-当前优选限 i9-13900K、vendor/family/model/stepping/brand/AVX2、Windows MSVC 195035728，
+当前优选限 i9-13900K、vendor/family/model/stepping/brand/AVX2、Windows MSVC 195035728、Release（NDEBUG），
 native_threads=1 且 executor concurrency<=1。身份在 Context 创建时缓存；端口和参数在 prepare
 匹配，submit 和 Invocation layout 不变。Linux、新编译器/其它硬件不承接这批 WIN 标签。
 其余模型、量化制品、dtype/资源/精度合同仍通过已有成熟规则和实际端口表达，不由此表外推。

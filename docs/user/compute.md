@@ -20,7 +20,7 @@
 路线原则见[开发期优选规则](../architecture/compute-design.md#41-开发时验证-best-of准备时应用规则)。
 
 CPU 优选规则在冷准备时匹配硬件、编译器、线程合同及完整操作参数。当前 Native 优选仅覆盖
-已测 i9-13900K（family 6/model 183/stepping 1、AVX2）、Windows MSVC 19.50.35728、
+已测 i9-13900K（family 6/model 183/stepping 1、AVX2）、Windows MSVC 19.50.35728、Release（NDEBUG）、
 单线程及固定 dense 形状的 187 个完整调用优势域；不匹配时沿成熟 Provider 顺序绑定。
 Graph 的成熟完整 region 优先于 Native 单算子，避免破坏融合。执行和重复执行不重新选路。
 相同资格条件下的 13 个已测劣势域拒绝 Native exact 请求，改由成熟实现承接。

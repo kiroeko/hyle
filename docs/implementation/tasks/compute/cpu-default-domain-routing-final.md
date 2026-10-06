@@ -1,6 +1,6 @@
 # CPU 最终适用域裁决与默认规则
 
-<!-- MODULE REVIEW: AUDITED -->
+<!-- MODULE REVIEW: CANDIDATE -->
 
 - owners：compute_provider_native、compute_route_cpu、graph_route_cpu；baseline `f6470870d3de7f2475e245b6ee2ca76905f82249`。
 - user trigger：完成当前CPU goal；成熟接线及MatMul退役已实际关闭，不重开GPU/旧大队列。
@@ -55,3 +55,8 @@ CUDA/Apple/Vulkan与第三方数学不改。187比较只证明相对本轮默认
 Debug：同 MSVC 版本但未定义 NDEBUG 也会继承 Release 比较。退回 AUDITED，有限纠正仅为
 给现有编译期资格加 NDEBUG，保留所有热算法/表/布局；Release 逻辑不变。完成后不重开 P1，
 定向重编该冷 helper、复核三交付并检查非 NDEBUG 预处理分支。其它已验事实按相同代码复用。
+
+## 不可变候选
+
+候选 `393c7545b06f599001a4066876f03595d0bb0b15`；API/算法/有限规则已固定，适用 P0 与批量 correctness/交付验收继续，
+不重跑已结束 ND3 P1，不把新候选称为新计时比较。

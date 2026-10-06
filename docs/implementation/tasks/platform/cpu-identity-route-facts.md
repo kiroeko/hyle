@@ -20,3 +20,8 @@ I1已审计：cpu.cc已有MSVC/GCC cpuid helper、baseline/IPO-off合同；只�
 
 候选 `7090222ac6da73edab35c0f4d8d1bd098748a793`；API/算法/有限规则已固定，适用 P0 与批量 correctness/交付验收继续，
 不重跑已结束 ND3 P1，不把新候选称为新计时比较。
+
+## 不可变候选
+
+候选 `393c7545b06f599001a4066876f03595d0bb0b15`；API/算法/有限规则已固定，适用 P0 与批量 correctness/交付验收继续，
+不重跑已结束 ND3 P1，不把新候选称为新计时比较。
