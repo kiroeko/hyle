@@ -1,0 +1,26 @@
+Running main() from C:\Users\kiro\AppData\Local\hyle\dependencies\v1\sources\googletest-063de7e9578f-162765170ae6\googletest\src\gtest_main.cc
+Note: Google Test filter = CpuMlxQuantizedDirect.*:CpuArtifactDecode.*:CpuExpandedGgufDirect.*
+[==========] Running 5 tests from 3 test suites.
+[----------] Global test environment set-up.
+[----------] 1 test from CpuExpandedGgufDirect
+[ RUN      ] CpuExpandedGgufDirect.OriginalFormatsProjectionExpertsAndEmbedding
+[       OK ] CpuExpandedGgufDirect.OriginalFormatsProjectionExpertsAndEmbedding (4 ms)
+[----------] 1 test from CpuExpandedGgufDirect (4 ms total)
+
+[----------] 2 tests from CpuArtifactDecode
+[ RUN      ] CpuArtifactDecode.Nf4AndNestedScalesPreserveOriginalHighFirstOrder
+[       OK ] CpuArtifactDecode.Nf4AndNestedScalesPreserveOriginalHighFirstOrder (6 ms)
+[ RUN      ] CpuArtifactDecode.AwqAndCompressedTensorsUseDifferentOriginalWordLayouts
+[       OK ] CpuArtifactDecode.AwqAndCompressedTensorsUseDifferentOriginalWordLayouts (2 ms)
+[----------] 2 tests from CpuArtifactDecode (9 ms total)
+
+[----------] 2 tests from CpuMlxQuantizedDirect
+[ RUN      ] CpuMlxQuantizedDirect.MixedFormatsAndSelectedExperts
+[       OK ] CpuMlxQuantizedDirect.MixedFormatsAndSelectedExperts (3 ms)
+[ RUN      ] CpuMlxQuantizedDirect.OriginalAffineEmbeddingUsesSelectedRows
+[       OK ] CpuMlxQuantizedDirect.OriginalAffineEmbeddingUsesSelectedRows (0 ms)
+[----------] 2 tests from CpuMlxQuantizedDirect (3 ms total)
+
+[----------] Global test environment tear-down
+[==========] 5 tests from 3 test suites ran. (17 ms total)
+[  PASSED  ] 5 tests.

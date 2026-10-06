@@ -1,0 +1,65 @@
+[
+  {
+    "name": "build-mlx-and-artifact-consumers",
+    "args": [
+      "cmake",
+      "--build",
+      "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+      "--target",
+      "hyle_compute_ops_tests",
+      "hyle_compute_provider_native_tests",
+      "hyle_compute_route_cpu_tests",
+      "hyle_graph_route_cpu_tests",
+      "--parallel",
+      "2"
+    ],
+    "candidate": "ba4e430f2717edd7904e10f1ec7a4ccf6e1593a8",
+    "log": "1-build-mlx-and-artifact-consumers.log",
+    "returncode": 0,
+    "seconds": 6.594
+  },
+  {
+    "name": "ops-and-native-tests",
+    "args": [
+      "ctest",
+      "--test-dir",
+      "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+      "--output-on-failure",
+      "--no-tests=error",
+      "-L",
+      "^(compute_ops|compute_provider_native)$",
+      "-LE",
+      "headers",
+      "-j",
+      "1",
+      "--output-junit",
+      "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\cpu-coverage-c3-mlx-batch\\ba4e430f2717\\tests.xml"
+    ],
+    "candidate": "ba4e430f2717edd7904e10f1ec7a4ccf6e1593a8",
+    "log": "2-ops-and-native-tests.log",
+    "returncode": 0,
+    "seconds": 0.781
+  },
+  {
+    "name": "ordinary-direct-mixed-formats",
+    "args": [
+      "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_compute_route_cpu_test.exe",
+      "--gtest_filter=CpuMlxQuantizedDirect.*:CpuArtifactDecode.*:CpuExpandedGgufDirect.*"
+    ],
+    "candidate": "ba4e430f2717edd7904e10f1ec7a4ccf6e1593a8",
+    "log": "3-ordinary-direct-mixed-formats.log",
+    "returncode": 0,
+    "seconds": 0.234
+  },
+  {
+    "name": "ordinary-graph-mixed-formats",
+    "args": [
+      "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_graph_route_cpu_test.exe",
+      "--gtest_filter=CpuMlxQuantizedGraph.*:CpuExpandedGgufGraph.*:CpuArtifactDecode.*"
+    ],
+    "candidate": "ba4e430f2717edd7904e10f1ec7a4ccf6e1593a8",
+    "log": "4-ordinary-graph-mixed-formats.log",
+    "returncode": 0,
+    "seconds": 0.235
+  }
+]

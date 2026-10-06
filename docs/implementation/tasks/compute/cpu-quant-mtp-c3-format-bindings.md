@@ -4,8 +4,8 @@
 
 ## 计划身份
 
-- 状态：AUDITED，仅固定本节GGUF语义/映射与公共枚举消费者迁移。非GGUF Q3仍有界审计，
-  Native保持C2记录，未授权其新数学/执行实现。本卡整体未完成，Q3不得被跳过。
+- 状态：AUDITED，已固定G1–G4、N1–N6范围；Native已绑定本卡的原CPU解码/MLX组合接缝。
+  本卡整体未完成，适用资源、平台、交付和画像资格不得被跳过。
 - baseline：`1efa59bd218adef71de0c3606cd2e968e3f953e3`；Windows实际HEAD核对、工作树干净，保留全部后续提交。
 - owner范围：compute_ops、compute_provider_ggml；C1准入的ATen/借用原程序由compute_provider_native承接，CPU facade只在真实缺口时按owner纳入。
 - 总合同：[CPU扩覆盖计划](cpu-quant-mtp-coverage-expansion-plan.md)；事实：[缺口清单](cpu-popular-quant-mtp-gap-list.md)。
@@ -106,15 +106,16 @@ MLX仍须借入原压缩CPU调用/selected expert边界后才签范围。
 - GGUF G1/G2批量接入已提交，11格式的普通CPU Direct/Graph MatMul、GroupedMatMul、GetRows及
   changed replay、重复ids/越界写保护实际通过；失败后按公开合同退役slot，再由原artifact创建新slot。
 - N1/N2原bitsandbytes NF4/nested、AutoAWQ GEMM、CT0.18 symmetric4 CPU序列已接入，F32格式差分通过。
-  N3默认BF16/F16、cold constant完整消费、Graph及资源失败格仍未验；不能由F32结果代签。
+  后续候选已补验N3默认BF16/F16、cold constant MatMul及changed activation的Direct/Graph消费；资源失败格仍待验。
 - 两组typed consumer和factor suite共享Windows producer，完整候选/命令/失败修正边界见
   [第一组证据](../../../../evidence/correctness/cpu-quant-mtp-c3-first-batch/README.md)。
-- MLX affine/mxfp4/mxfp8、压缩专家及embedding仍未接完，整体C3保持AUDITED、不签完成。
+- MLX affine/mxfp4/mxfp8 linear/选中专家F32/BF16、affine BF16 embedding已接入并通过Windows有限矩阵；整体C3保持AUDITED、不签完成。
   Linux/三交付、C4全部新分支和C5资格矩阵仍未完成。
 - P0：GGUF原packed byte直接执行；dense artifact解码是显式cold操作，caller支付并持有decoded存储。
   没有性能P1、自研算子扩充或SIMD删除。
 
-统一29路径当前实现61,341行/250文件；不含测试/vendor/bench，完整LOC收据在第一组证据。
+后续混合格式候选与实际范围见[第二组证据](../../../../evidence/correctness/cpu-quant-mtp-c3-mixed-batch/README.md)。
+统一29路径当前实现61,471行/250文件；不含测试/vendor/bench，完整LOC收据在第二组证据。
 
 ## MLX 有限审计与 N4–N6 冻结
 

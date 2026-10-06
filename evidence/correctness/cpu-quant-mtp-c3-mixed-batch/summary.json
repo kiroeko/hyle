@@ -1,0 +1,18 @@
+{
+  "candidate": "ba4e430f2717edd7904e10f1ec7a4ccf6e1593a8",
+  "platform": "Windows x86_64 MSVC 19.50",
+  "scope": [
+    "11 expanded GGUF formats Direct/Graph",
+    "NF4/nested NF4, AWQ, CT F32 and default BF16/F16",
+    "explicit cold decode then ordinary constant MatMul Direct/Graph with changed activation",
+    "MLX affine4/mxfp4/mxfp8 linear/selected experts F32/BF16, affine BF16 embedding"
+  ],
+  "remaining": [
+    "Linux",
+    "source/static/shared delivery",
+    "new-family resource/fault and precision edge matrix",
+    "C4 complete main/MTP/DSpark branches",
+    "C5 admitted artifact/profile qualification"
+  ],
+  "no_performance_winner_verdict": true
+}
