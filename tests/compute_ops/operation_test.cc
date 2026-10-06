@@ -30,7 +30,7 @@ TEST(ModelQuantizationRoundtrip, ExplicitFormatsShapeAndRejections) {
     EXPECT_EQ(operation_name(op), "block-quantization-roundtrip");
     EXPECT_FALSE(infer_single_output(op, std::span<const TensorDesc>{}));
     EXPECT_FALSE(infer_single_output(op, std::array{valid, valid}));
-    for (const auto desc : {TensorDesc{},
+    for (const auto &desc : {TensorDesc{},
         TensorDesc::dense(DataType::kFloat32, valid.dimensions()).value(),
         TensorDesc::dense(DataType::kBFloat16, std::array<std::int64_t, 2>{3, 65}).value(),
         TensorDesc::dense(DataType::kBFloat16, std::array<std::int64_t, 1>{128}).value()})
@@ -49,11 +49,11 @@ TEST(ModelGroupedFloat4, SharedAndSlotActivationAndInvalidLayouts) {
     const auto output = infer_single_output(op, inputs);
     ASSERT_TRUE(output);
     EXPECT_EQ(*output, TensorDesc::dense(DataType::kBFloat16, std::array<std::int64_t, 3>{3, 6, 4096}).value());
-    for (const auto invalid : {float8_grouped_weight_description(7, 4096, 2048).value(),
+    for (const auto &invalid : {float8_grouped_weight_description(7, 4096, 2048).value(),
         gguf_grouped_weight_description(GgufQuantizedType::kMxfp4, DataType::kFloat32, 7, 4096, 2048).value(),
         TensorDesc::opaque(w.data_type(), w.dimensions(), w.storage_format(), w.required_bytes().value() + 4).value()})
       EXPECT_FALSE(infer_single_output(op, std::array{invalid, x, ids}));
-    for (const auto invalid : {
+    for (const auto &invalid : {
         TensorDesc::dense(DataType::kFloat32, x.dimensions()).value(),
         TensorDesc::dense(DataType::kBFloat16, std::array<std::int64_t, 3>{3, 2, 2048}).value(),
         TensorDesc::dense(DataType::kBFloat16, std::array<std::int64_t, 3>{3, a, 1024}).value()})
@@ -148,7 +148,7 @@ TEST(ModelClamp, InferenceRejectsMalformedDescriptionsAndBounds) {
   const std::array inputs{input};
   const auto infinity = std::numeric_limits<float>::infinity();
   const auto nan = std::numeric_limits<float>::quiet_NaN();
-  for (const auto operation : {model_ops::clamp(-10, 10),
+  for (const auto &operation : {model_ops::clamp(-10, 10),
                                model_ops::clamp(-infinity, 10),
                                model_ops::clamp(0, infinity),
                                model_ops::clamp(1, 1)}) {
@@ -157,7 +157,7 @@ TEST(ModelClamp, InferenceRejectsMalformedDescriptionsAndBounds) {
     EXPECT_EQ(*result, input);
     EXPECT_EQ(operation_name(operation), "model-clamp");
   }
-  for (const auto operation : {model_ops::clamp(1, -1),
+  for (const auto &operation : {model_ops::clamp(1, -1),
                                model_ops::clamp(nan, 1),
                                model_ops::clamp(0, nan)})
     EXPECT_FALSE(infer_single_output(operation, inputs));
