@@ -1207,7 +1207,7 @@ const void *extension(void *value, ProviderExtensionId id) noexcept {
 const detail::ProviderVTable kProvider{
     .identity = {.id = kProviderId,
                  .name = "ggml-cpu",
-                 .version = "456172ec+hyle-resource-v1"},
+                 .version = HYLE_GGML_CPU_PROVIDER_VERSION},
     .create_context = &create_context,
     .destroy_context = &destroy_context,
     .propose = &propose,

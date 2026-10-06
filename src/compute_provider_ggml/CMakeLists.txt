@@ -9,3 +9,5 @@ target_include_directories(hyle_compute_provider_ggml PRIVATE
   "${HYLE_SOURCE_DIR}/src/compute_ggml_runtime")
 target_link_libraries(hyle_compute_provider_ggml PRIVATE ggml)
 target_compile_definitions(hyle_compute_provider_ggml PUBLIC HYLE_COMPUTE_GGML_CPU=1)
+target_compile_definitions(hyle_compute_provider_ggml PRIVATE
+  HYLE_GGML_CPU_PROVIDER_VERSION="${HYLE_GGML_CPU_PROVIDER_VERSION}")
