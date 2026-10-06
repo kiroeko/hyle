@@ -13,6 +13,7 @@ inline constexpr auto profile=[] {
   auto p=d5_qwen38_gdn_fixture::kPrimaryGgufProfile;
   p.artifact_revision="4ca720788d1e01f1bff70c033e0d0028fd02e502";
   p.variant="sidecar:MTP/mtp-Qwen3.8-27B-Q4_0.gguf";
+  p.manifest_digest="e94135836ef1ea7fcb4dd77420060378d200f70d55ed2fbc73030661e9d531c8";
   return p;
 }();
 struct Projection {
