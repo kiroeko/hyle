@@ -125,7 +125,10 @@ MLX仍须借入原压缩CPU调用/selected expert边界后才签范围。
   全批因子仅查CPU envelope；原GPU资格/Graph Vulkan BLOCKED保持，未代签新GPU能力。
 - 修复GCC严格警告：元数据/参考循环的显式语句边界、测试对象按引用遍历、旧D5 fixture明确拒绝新增类型。
   Windows source普通消费者36项通过；其Q4_0/Q4_1 oracle包含原Q8 activation半精度scale，未拿F32全精度数学替代。
-- 精确候选、fixture和未完成项见第二组收据。安装static/shared与两平台完整delivery、低精度极值、实际profile及C4仍待验。
+- Windows/Linux的普通source/static/shared消费者36项均通过；两平台安装SDK搬移后新消费者通过。
+  精确候选见[Windows交付](../../../../evidence/correctness/cpu-quant-mtp-c3-mixed-batch/delivery-windows/summary.json)与
+  [Linux交付](../../../../evidence/correctness/cpu-quant-mtp-c3-mixed-batch/delivery-linux/summary.json)。
+  公共头复核、低精度极值、实际profile及C4仍待验；不能以有限delivery消费者代签全部准入格。
 
 ## MLX 有限审计与 N4–N6 冻结
 

@@ -1,0 +1,288 @@
+[
+  {
+    "name": "shared-producer-configure",
+    "args": [
+      "cmake",
+      "-S",
+      "C:\\public\\project-hyle\\hyle",
+      "-B",
+      "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+      "-DHYLE_BUILD_TESTS=OFF",
+      "-DHYLE_INSTALL=ON",
+      "-DHYLE_STATIC=OFF",
+      "-DFETCHCONTENT_FULLY_DISCONNECTED=ON",
+      "-DCMAKE_PROJECT_INCLUDE=C:\\public\\project-hyle\\hyle\\.scratch\\validation\\cpu-coverage-c3-delivery\\source-overlay.cmake"
+    ],
+    "candidate": "0bea4748333fbb94ff7e132119e4d12ee299dd4a",
+    "log": "1-shared-producer-configure.log",
+    "returncode": 0,
+    "seconds": 28.907
+  },
+  {
+    "name": "shared-producer-build",
+    "args": [
+      "cmake",
+      "--build",
+      "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+      "--parallel",
+      "2"
+    ],
+    "candidate": "0bea4748333fbb94ff7e132119e4d12ee299dd4a",
+    "log": "2-shared-producer-build.log",
+    "returncode": 0,
+    "seconds": 125.75
+  },
+  {
+    "name": "shared-source-ordinary",
+    "args": [
+      "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\cpu_coverage_consumer.exe"
+    ],
+    "candidate": "0bea4748333fbb94ff7e132119e4d12ee299dd4a",
+    "log": "3-shared-source-ordinary.log",
+    "returncode": 0,
+    "seconds": 0.281
+  },
+  {
+    "name": "shared-install",
+    "args": [
+      "cmake",
+      "--install",
+      "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+      "--prefix",
+      "C:\\public\\project-hyle\\hyle\\.scratch\\install-cpu-coverage-c3\\shared"
+    ],
+    "candidate": "0bea4748333fbb94ff7e132119e4d12ee299dd4a",
+    "log": "4-shared-install.log",
+    "returncode": 0,
+    "seconds": 0.797
+  },
+  {
+    "name": "shared-installed-configure",
+    "args": [
+      "cmake",
+      "-S",
+      "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\cpu-coverage-c3-delivery\\consumer",
+      "-B",
+      "C:\\public\\project-hyle\\hyle\\.scratch\\build-cpu-coverage-c3-consumer\\shared",
+      "-G",
+      "Ninja",
+      "-DCMAKE_BUILD_TYPE=Release",
+      "-DCMAKE_PREFIX_PATH=C:\\public\\project-hyle\\hyle\\.scratch\\install-cpu-coverage-c3\\shared",
+      "-DFETCHCONTENT_FULLY_DISCONNECTED=ON"
+    ],
+    "candidate": "0bea4748333fbb94ff7e132119e4d12ee299dd4a",
+    "log": "5-shared-installed-configure.log",
+    "returncode": 0,
+    "seconds": 12.625
+  },
+  {
+    "name": "shared-installed-build",
+    "args": [
+      "cmake",
+      "--build",
+      "C:\\public\\project-hyle\\hyle\\.scratch\\build-cpu-coverage-c3-consumer\\shared",
+      "--parallel",
+      "2"
+    ],
+    "candidate": "0bea4748333fbb94ff7e132119e4d12ee299dd4a",
+    "log": "6-shared-installed-build.log",
+    "returncode": 0,
+    "seconds": 2.687
+  },
+  {
+    "name": "shared-installed-ordinary",
+    "args": [
+      "C:\\public\\project-hyle\\hyle\\.scratch\\build-cpu-coverage-c3-consumer\\shared\\cpu_coverage_consumer.exe"
+    ],
+    "candidate": "0bea4748333fbb94ff7e132119e4d12ee299dd4a",
+    "log": "7-shared-installed-ordinary.log",
+    "returncode": 0,
+    "seconds": 0.938
+  },
+  {
+    "name": "static-producer-configure",
+    "args": [
+      "cmake",
+      "-S",
+      "C:\\public\\project-hyle\\hyle",
+      "-B",
+      "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+      "-DHYLE_BUILD_TESTS=OFF",
+      "-DHYLE_INSTALL=ON",
+      "-DHYLE_STATIC=ON",
+      "-DFETCHCONTENT_FULLY_DISCONNECTED=ON",
+      "-DCMAKE_PROJECT_INCLUDE=C:\\public\\project-hyle\\hyle\\.scratch\\validation\\cpu-coverage-c3-delivery\\source-overlay.cmake"
+    ],
+    "candidate": "0bea4748333fbb94ff7e132119e4d12ee299dd4a",
+    "log": "8-static-producer-configure.log",
+    "returncode": 0,
+    "seconds": 42.093
+  },
+  {
+    "name": "static-producer-build",
+    "args": [
+      "cmake",
+      "--build",
+      "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+      "--parallel",
+      "2"
+    ],
+    "candidate": "0bea4748333fbb94ff7e132119e4d12ee299dd4a",
+    "log": "9-static-producer-build.log",
+    "returncode": 0,
+    "seconds": 139.204
+  },
+  {
+    "name": "static-source-ordinary",
+    "args": [
+      "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\cpu_coverage_consumer.exe"
+    ],
+    "candidate": "0bea4748333fbb94ff7e132119e4d12ee299dd4a",
+    "log": "10-static-source-ordinary.log",
+    "returncode": 0,
+    "seconds": 0.234
+  },
+  {
+    "name": "static-install",
+    "args": [
+      "cmake",
+      "--install",
+      "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+      "--prefix",
+      "C:\\public\\project-hyle\\hyle\\.scratch\\install-cpu-coverage-c3\\static"
+    ],
+    "candidate": "0bea4748333fbb94ff7e132119e4d12ee299dd4a",
+    "log": "11-static-install.log",
+    "returncode": 0,
+    "seconds": 2.437
+  },
+  {
+    "name": "static-installed-configure",
+    "args": [
+      "cmake",
+      "-S",
+      "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\cpu-coverage-c3-delivery\\consumer",
+      "-B",
+      "C:\\public\\project-hyle\\hyle\\.scratch\\build-cpu-coverage-c3-consumer\\static",
+      "-G",
+      "Ninja",
+      "-DCMAKE_BUILD_TYPE=Release",
+      "-DCMAKE_PREFIX_PATH=C:\\public\\project-hyle\\hyle\\.scratch\\install-cpu-coverage-c3\\static",
+      "-DFETCHCONTENT_FULLY_DISCONNECTED=ON"
+    ],
+    "candidate": "0bea4748333fbb94ff7e132119e4d12ee299dd4a",
+    "log": "12-static-installed-configure.log",
+    "returncode": 0,
+    "seconds": 12.438
+  },
+  {
+    "name": "static-installed-build",
+    "args": [
+      "cmake",
+      "--build",
+      "C:\\public\\project-hyle\\hyle\\.scratch\\build-cpu-coverage-c3-consumer\\static",
+      "--parallel",
+      "2"
+    ],
+    "candidate": "0bea4748333fbb94ff7e132119e4d12ee299dd4a",
+    "log": "13-static-installed-build.log",
+    "returncode": 0,
+    "seconds": 3.375
+  },
+  {
+    "name": "static-installed-ordinary",
+    "args": [
+      "C:\\public\\project-hyle\\hyle\\.scratch\\build-cpu-coverage-c3-consumer\\static\\cpu_coverage_consumer.exe"
+    ],
+    "candidate": "0bea4748333fbb94ff7e132119e4d12ee299dd4a",
+    "log": "14-static-installed-ordinary.log",
+    "returncode": 0,
+    "seconds": 0.875
+  },
+  {
+    "name": "shared-relocated-configure",
+    "args": [
+      "cmake",
+      "-S",
+      "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\cpu-coverage-c3-delivery\\consumer",
+      "-B",
+      "C:\\public\\project-hyle\\hyle\\.scratch\\build-cpu-coverage-c3-consumer\\shared-relocated",
+      "-G",
+      "Ninja",
+      "-DCMAKE_BUILD_TYPE=Release",
+      "-DCMAKE_PREFIX_PATH=C:\\public\\project-hyle\\hyle\\.scratch\\install-cpu-coverage-c3\\shared-relocated",
+      "-DFETCHCONTENT_FULLY_DISCONNECTED=ON"
+    ],
+    "candidate": "0bea4748333fbb94ff7e132119e4d12ee299dd4a",
+    "log": "15-shared-relocated-configure.log",
+    "returncode": 0,
+    "seconds": 11.906
+  },
+  {
+    "name": "shared-relocated-build",
+    "args": [
+      "cmake",
+      "--build",
+      "C:\\public\\project-hyle\\hyle\\.scratch\\build-cpu-coverage-c3-consumer\\shared-relocated",
+      "--parallel",
+      "2"
+    ],
+    "candidate": "0bea4748333fbb94ff7e132119e4d12ee299dd4a",
+    "log": "16-shared-relocated-build.log",
+    "returncode": 0,
+    "seconds": 2.422
+  },
+  {
+    "name": "shared-relocated-ordinary",
+    "args": [
+      "C:\\public\\project-hyle\\hyle\\.scratch\\build-cpu-coverage-c3-consumer\\shared-relocated\\cpu_coverage_consumer.exe"
+    ],
+    "candidate": "0bea4748333fbb94ff7e132119e4d12ee299dd4a",
+    "log": "17-shared-relocated-ordinary.log",
+    "returncode": 0,
+    "seconds": 0.938
+  },
+  {
+    "name": "static-relocated-configure",
+    "args": [
+      "cmake",
+      "-S",
+      "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\cpu-coverage-c3-delivery\\consumer",
+      "-B",
+      "C:\\public\\project-hyle\\hyle\\.scratch\\build-cpu-coverage-c3-consumer\\static-relocated",
+      "-G",
+      "Ninja",
+      "-DCMAKE_BUILD_TYPE=Release",
+      "-DCMAKE_PREFIX_PATH=C:\\public\\project-hyle\\hyle\\.scratch\\install-cpu-coverage-c3\\static-relocated",
+      "-DFETCHCONTENT_FULLY_DISCONNECTED=ON"
+    ],
+    "candidate": "0bea4748333fbb94ff7e132119e4d12ee299dd4a",
+    "log": "18-static-relocated-configure.log",
+    "returncode": 0,
+    "seconds": 12.547
+  },
+  {
+    "name": "static-relocated-build",
+    "args": [
+      "cmake",
+      "--build",
+      "C:\\public\\project-hyle\\hyle\\.scratch\\build-cpu-coverage-c3-consumer\\static-relocated",
+      "--parallel",
+      "2"
+    ],
+    "candidate": "0bea4748333fbb94ff7e132119e4d12ee299dd4a",
+    "log": "19-static-relocated-build.log",
+    "returncode": 0,
+    "seconds": 3.36
+  },
+  {
+    "name": "static-relocated-ordinary",
+    "args": [
+      "C:\\public\\project-hyle\\hyle\\.scratch\\build-cpu-coverage-c3-consumer\\static-relocated\\cpu_coverage_consumer.exe"
+    ],
+    "candidate": "0bea4748333fbb94ff7e132119e4d12ee299dd4a",
+    "log": "20-static-relocated-ordinary.log",
+    "returncode": 0,
+    "seconds": 0.875
+  }
+]

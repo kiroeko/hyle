@@ -1,0 +1,292 @@
+[
+  {
+    "name": "shared-producer-configure",
+    "args": [
+      "cmake",
+      "-S",
+      "/root/hyle-scratch/active-cpu-z/source",
+      "-B",
+      "/root/hyle-scratch/active-cpu-z/build",
+      "-DHYLE_BUILD_TESTS=OFF",
+      "-DHYLE_INSTALL=ON",
+      "-DHYLE_STATIC=OFF",
+      "-DFETCHCONTENT_FULLY_DISCONNECTED=ON",
+      "-DCMAKE_PROJECT_INCLUDE=/mnt/c/public/project-hyle/hyle/.scratch/validation/cpu-coverage-c3-delivery/linux/11462ba08825/source-overlay.cmake"
+    ],
+    "candidate": "11462ba08825d86fbf63e179fa2f4a591b2d37d9",
+    "log": "1-shared-producer-configure.log",
+    "returncode": 0,
+    "seconds": 21.204
+  },
+  {
+    "name": "shared-producer-build",
+    "args": [
+      "cmake",
+      "--build",
+      "/root/hyle-scratch/active-cpu-z/build",
+      "--parallel",
+      "2"
+    ],
+    "candidate": "11462ba08825d86fbf63e179fa2f4a591b2d37d9",
+    "log": "2-shared-producer-build.log",
+    "returncode": 0,
+    "seconds": 52.172
+  },
+  {
+    "name": "shared-source-ordinary",
+    "args": [
+      "/root/hyle-scratch/active-cpu-z/build/bin/cpu_coverage_consumer"
+    ],
+    "candidate": "11462ba08825d86fbf63e179fa2f4a591b2d37d9",
+    "log": "3-shared-source-ordinary.log",
+    "returncode": 0,
+    "seconds": 0.172
+  },
+  {
+    "name": "shared-install",
+    "args": [
+      "cmake",
+      "--install",
+      "/root/hyle-scratch/active-cpu-z/build",
+      "--prefix",
+      "/root/hyle-scratch/active-cpu-z/coverage-c3-sdk/shared"
+    ],
+    "candidate": "11462ba08825d86fbf63e179fa2f4a591b2d37d9",
+    "log": "4-shared-install.log",
+    "returncode": 0,
+    "seconds": 0.177
+  },
+  {
+    "name": "shared-installed-configure",
+    "args": [
+      "cmake",
+      "-S",
+      "/mnt/c/public/project-hyle/hyle/.scratch/validation/cpu-coverage-c3-delivery/consumer",
+      "-B",
+      "/root/hyle-scratch/active-cpu-z/coverage-c3-sdk/shared-consumer",
+      "-G",
+      "Ninja",
+      "-DCMAKE_BUILD_TYPE=Release",
+      "-DCMAKE_CXX_COMPILER=g++-14",
+      "-DCMAKE_PREFIX_PATH=/root/hyle-scratch/active-cpu-z/coverage-c3-sdk/shared",
+      "-DFETCHCONTENT_FULLY_DISCONNECTED=ON"
+    ],
+    "candidate": "11462ba08825d86fbf63e179fa2f4a591b2d37d9",
+    "log": "5-shared-installed-configure.log",
+    "returncode": 0,
+    "seconds": 9.426
+  },
+  {
+    "name": "shared-installed-build",
+    "args": [
+      "cmake",
+      "--build",
+      "/root/hyle-scratch/active-cpu-z/coverage-c3-sdk/shared-consumer",
+      "--parallel",
+      "2"
+    ],
+    "candidate": "11462ba08825d86fbf63e179fa2f4a591b2d37d9",
+    "log": "6-shared-installed-build.log",
+    "returncode": 0,
+    "seconds": 2.16
+  },
+  {
+    "name": "shared-installed-ordinary",
+    "args": [
+      "/root/hyle-scratch/active-cpu-z/coverage-c3-sdk/shared-consumer/cpu_coverage_consumer"
+    ],
+    "candidate": "11462ba08825d86fbf63e179fa2f4a591b2d37d9",
+    "log": "7-shared-installed-ordinary.log",
+    "returncode": 0,
+    "seconds": 0.168
+  },
+  {
+    "name": "static-producer-configure",
+    "args": [
+      "cmake",
+      "-S",
+      "/root/hyle-scratch/active-cpu-z/source",
+      "-B",
+      "/root/hyle-scratch/active-cpu-z/build",
+      "-DHYLE_BUILD_TESTS=OFF",
+      "-DHYLE_INSTALL=ON",
+      "-DHYLE_STATIC=ON",
+      "-DFETCHCONTENT_FULLY_DISCONNECTED=ON",
+      "-DCMAKE_PROJECT_INCLUDE=/mnt/c/public/project-hyle/hyle/.scratch/validation/cpu-coverage-c3-delivery/linux/11462ba08825/source-overlay.cmake"
+    ],
+    "candidate": "11462ba08825d86fbf63e179fa2f4a591b2d37d9",
+    "log": "8-static-producer-configure.log",
+    "returncode": 0,
+    "seconds": 24.75
+  },
+  {
+    "name": "static-producer-build",
+    "args": [
+      "cmake",
+      "--build",
+      "/root/hyle-scratch/active-cpu-z/build",
+      "--parallel",
+      "2"
+    ],
+    "candidate": "11462ba08825d86fbf63e179fa2f4a591b2d37d9",
+    "log": "9-static-producer-build.log",
+    "returncode": 0,
+    "seconds": 91.14
+  },
+  {
+    "name": "static-source-ordinary",
+    "args": [
+      "/root/hyle-scratch/active-cpu-z/build/bin/cpu_coverage_consumer"
+    ],
+    "candidate": "11462ba08825d86fbf63e179fa2f4a591b2d37d9",
+    "log": "10-static-source-ordinary.log",
+    "returncode": 0,
+    "seconds": 0.167
+  },
+  {
+    "name": "static-install",
+    "args": [
+      "cmake",
+      "--install",
+      "/root/hyle-scratch/active-cpu-z/build",
+      "--prefix",
+      "/root/hyle-scratch/active-cpu-z/coverage-c3-sdk/static"
+    ],
+    "candidate": "11462ba08825d86fbf63e179fa2f4a591b2d37d9",
+    "log": "11-static-install.log",
+    "returncode": 0,
+    "seconds": 0.713
+  },
+  {
+    "name": "static-installed-configure",
+    "args": [
+      "cmake",
+      "-S",
+      "/mnt/c/public/project-hyle/hyle/.scratch/validation/cpu-coverage-c3-delivery/consumer",
+      "-B",
+      "/root/hyle-scratch/active-cpu-z/coverage-c3-sdk/static-consumer",
+      "-G",
+      "Ninja",
+      "-DCMAKE_BUILD_TYPE=Release",
+      "-DCMAKE_CXX_COMPILER=g++-14",
+      "-DCMAKE_PREFIX_PATH=/root/hyle-scratch/active-cpu-z/coverage-c3-sdk/static",
+      "-DFETCHCONTENT_FULLY_DISCONNECTED=ON"
+    ],
+    "candidate": "11462ba08825d86fbf63e179fa2f4a591b2d37d9",
+    "log": "12-static-installed-configure.log",
+    "returncode": 0,
+    "seconds": 7.085
+  },
+  {
+    "name": "static-installed-build",
+    "args": [
+      "cmake",
+      "--build",
+      "/root/hyle-scratch/active-cpu-z/coverage-c3-sdk/static-consumer",
+      "--parallel",
+      "2"
+    ],
+    "candidate": "11462ba08825d86fbf63e179fa2f4a591b2d37d9",
+    "log": "13-static-installed-build.log",
+    "returncode": 0,
+    "seconds": 2.807
+  },
+  {
+    "name": "static-installed-ordinary",
+    "args": [
+      "/root/hyle-scratch/active-cpu-z/coverage-c3-sdk/static-consumer/cpu_coverage_consumer"
+    ],
+    "candidate": "11462ba08825d86fbf63e179fa2f4a591b2d37d9",
+    "log": "14-static-installed-ordinary.log",
+    "returncode": 0,
+    "seconds": 0.16
+  },
+  {
+    "name": "shared-relocated-configure",
+    "args": [
+      "cmake",
+      "-S",
+      "/mnt/c/public/project-hyle/hyle/.scratch/validation/cpu-coverage-c3-delivery/consumer",
+      "-B",
+      "/root/hyle-scratch/active-cpu-z/coverage-c3-sdk/shared-relocated-consumer",
+      "-G",
+      "Ninja",
+      "-DCMAKE_BUILD_TYPE=Release",
+      "-DCMAKE_CXX_COMPILER=g++-14",
+      "-DCMAKE_PREFIX_PATH=/root/hyle-scratch/active-cpu-z/coverage-c3-sdk/shared-relocated",
+      "-DFETCHCONTENT_FULLY_DISCONNECTED=ON"
+    ],
+    "candidate": "11462ba08825d86fbf63e179fa2f4a591b2d37d9",
+    "log": "15-shared-relocated-configure.log",
+    "returncode": 0,
+    "seconds": 9.293
+  },
+  {
+    "name": "shared-relocated-build",
+    "args": [
+      "cmake",
+      "--build",
+      "/root/hyle-scratch/active-cpu-z/coverage-c3-sdk/shared-relocated-consumer",
+      "--parallel",
+      "2"
+    ],
+    "candidate": "11462ba08825d86fbf63e179fa2f4a591b2d37d9",
+    "log": "16-shared-relocated-build.log",
+    "returncode": 0,
+    "seconds": 2.569
+  },
+  {
+    "name": "shared-relocated-ordinary",
+    "args": [
+      "/root/hyle-scratch/active-cpu-z/coverage-c3-sdk/shared-relocated-consumer/cpu_coverage_consumer"
+    ],
+    "candidate": "11462ba08825d86fbf63e179fa2f4a591b2d37d9",
+    "log": "17-shared-relocated-ordinary.log",
+    "returncode": 0,
+    "seconds": 0.193
+  },
+  {
+    "name": "static-relocated-configure",
+    "args": [
+      "cmake",
+      "-S",
+      "/mnt/c/public/project-hyle/hyle/.scratch/validation/cpu-coverage-c3-delivery/consumer",
+      "-B",
+      "/root/hyle-scratch/active-cpu-z/coverage-c3-sdk/static-relocated-consumer",
+      "-G",
+      "Ninja",
+      "-DCMAKE_BUILD_TYPE=Release",
+      "-DCMAKE_CXX_COMPILER=g++-14",
+      "-DCMAKE_PREFIX_PATH=/root/hyle-scratch/active-cpu-z/coverage-c3-sdk/static-relocated",
+      "-DFETCHCONTENT_FULLY_DISCONNECTED=ON"
+    ],
+    "candidate": "11462ba08825d86fbf63e179fa2f4a591b2d37d9",
+    "log": "18-static-relocated-configure.log",
+    "returncode": 0,
+    "seconds": 6.873
+  },
+  {
+    "name": "static-relocated-build",
+    "args": [
+      "cmake",
+      "--build",
+      "/root/hyle-scratch/active-cpu-z/coverage-c3-sdk/static-relocated-consumer",
+      "--parallel",
+      "2"
+    ],
+    "candidate": "11462ba08825d86fbf63e179fa2f4a591b2d37d9",
+    "log": "19-static-relocated-build.log",
+    "returncode": 0,
+    "seconds": 3.499
+  },
+  {
+    "name": "static-relocated-ordinary",
+    "args": [
+      "/root/hyle-scratch/active-cpu-z/coverage-c3-sdk/static-relocated-consumer/cpu_coverage_consumer"
+    ],
+    "candidate": "11462ba08825d86fbf63e179fa2f4a591b2d37d9",
+    "log": "20-static-relocated-ordinary.log",
+    "returncode": 0,
+    "seconds": 0.159
+  }
+]

@@ -18,5 +18,11 @@ F16、真实分配失败、并发独立槽和额度回收，以及 Windows 普�
 [Windows 后续收据](windows-followup/summary.json)。C3 整包的精度极值、完整画像、交付及
 C4 新主干/MTP/DSpark 完整程序仍待验，不能由这些有限测试外推。
 
+普通混合格式消费者的 Windows/Linux source/static/shared 三交付通过：
+[Windows](delivery-windows/summary.json)、[Linux](delivery-linux/summary.json)。两平台均已搬移SDK并
+在全新消费者目录通过；离线验证复用现有固定依赖cache，不据此宣称无依赖cache的SDK自包含。
+交付消费者有非零Q4_0/Q4_1/Q2_K、artifact和MLX计算；其它新增IQ编码使用零scale，仅核对交付与
+原生程序加载，非零数值资格来自普通route矩阵，不能以零scale代签其数学正确性。
+
 首批候选统一 29 路径 Compute+Graph 实现 61,471 行；后续可移植元数据候选为
 **61,475 行 / 250 文件**，不含测试、vendor 或 benchmark，见 [LOC](windows-followup/loc.json)。

@@ -85,8 +85,11 @@ Windows/Linux x86_64 baseline/AVX2、普通Direct/Graph、source/static/shared�
   [C2证据](../../../../evidence/correctness/cpu-quant-mtp-c2-upgrade/README.md)。
 - 新测试最初误将原库Q8_K activation与未量化F32比较；失败记录保留，改用原CPU encoder后的
   decoded-weight独立oracle通过。没有修改kernel或用量化级别的宽容差掩盖错误。
-- U4 Linux及完整source/static/shared、搬移/offline仍未运行，不签PASS；随C2–C4稳定批次集中完成。
-  C3公开格式/non-GGUF接线和C4新分支尚未开始，不能用上述内部原库测试代签。
+- U4后续Linux owning因子与普通新增格式入口已通过；Windows/Linux普通source/static/shared消费者均已通过，
+  两平台安装SDK搬移后新消费者亦通过。精确候选与有限范围见
+  [后续批量证据](../../../../evidence/correctness/cpu-quant-mtp-c3-mixed-batch/README.md)。
+  公共头最终复核、旧完整模型suite/全准入画像等未完资格仍不签PASS。
+  C3公开格式/non-GGUF已接入并取得有限资格；C4新分支仍未开始，不能用内部原库测试代签。
 - C1临时ATen probe已在核对CMake owner/活动进程/目录边界后删除，释放289,707,808 bytes。
   保留复用的CPU producer与源码cache，不另开逐格式构建树。
 

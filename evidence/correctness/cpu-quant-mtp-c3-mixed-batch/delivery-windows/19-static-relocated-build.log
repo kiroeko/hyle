@@ -1,0 +1,3 @@
+[1/3] C:\WINDOWS\system32\cmd.exe /C "cd /D C:\public\project-hyle\hyle\.scratch\build-cpu-coverage-c3-consumer\static-relocated && "C:\Program Files\CMake\bin\cmake.exe" -P C:/public/project-hyle/hyle/.scratch/build-cpu-coverage-c3-consumer/static-relocated/hyle-runtime/cpu_coverage_consumer-Release.cmake"
+[2/3] Building CXX object CMakeFiles\cpu_coverage_consumer.dir\C_\public\project-hyle\hyle\.scratch\validation\cpu-coverage-c3-delivery\consumer.cc.obj
+[3/3] Linking CXX executable cpu_coverage_consumer.exe

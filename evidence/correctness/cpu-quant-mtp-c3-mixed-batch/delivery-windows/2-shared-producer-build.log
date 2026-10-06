@@ -1,0 +1,62 @@
+[0/2] Re-checking globbed directories...
+[1/64] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\ops\dispatch_ops.cc.obj
+[2/64] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\runtime.cc.obj
+[3/64] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\random\random_dispatch.cc.obj
+[4/64] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\search\search_dispatch.cc.obj
+[5/64] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\narrow\narrow_dispatch.cc.obj
+[6/64] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\scan\scan_dispatch.cc.obj
+[7/64] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\dtype\cvt_fp8_scalar.cc.obj
+[8/64] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\dtype\dtype_dispatch.cc.obj
+[9/64] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\math\math_dispatch.cc.obj
+[10/64] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\math\transcendental_scalar.cc.obj
+[11/64] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\math\activations.cc.obj
+[12/64] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\sort\top_k.cc.obj
+[13/64] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\sort\sort_dispatch.cc.obj
+[14/64] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\sort\radix_sort.cc.obj
+[15/64] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\sort\vqsort_scalar.cc.obj
+[16/64] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\ops\dot_f16c.cc.obj
+[17/64] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\bitpack\bitpack_dispatch.cc.obj
+[18/64] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\ops\dot_avx_vnni.cc.obj
+[19/64] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\ops\dot_avx512_vnni.cc.obj
+[20/64] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\ops\dot_avx512bf16.cc.obj
+[21/64] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\dtype\cvt_f16c.cc.obj
+[22/64] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\dtype\cvt_avx512bf16.cc.obj
+[23/64] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\math\transcendental_highway.cc.obj
+[24/64] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\math\transcendental_highway_avx512.cc.obj
+[25/64] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\ops\ops_scalar.cc.obj
+[26/64] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\ops\ops_sse4.cc.obj
+[27/64] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\ops\ops_avx2.cc.obj
+[28/64] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\ops\ops_avx512.cc.obj
+[29/64] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\dtype_convert\dtype_convert_scalar.cc.obj
+[30/64] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\dtype_convert\dtype_convert_sse4.cc.obj
+[31/64] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\dtype_convert\dtype_convert_avx2.cc.obj
+[32/64] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\dtype_convert\dtype_convert_avx512.cc.obj
+[33/64] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\scan\scan_scalar.cc.obj
+[34/64] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\scan\scan_sse4.cc.obj
+[35/64] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\scan\scan_avx2.cc.obj
+[36/64] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\scan\scan_avx512.cc.obj
+[37/64] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\random\random_scalar.cc.obj
+[38/64] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\random\random_sse4.cc.obj
+[39/64] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\random\random_avx2.cc.obj
+[40/64] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\random\random_avx512.cc.obj
+[41/64] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\search\search_scalar.cc.obj
+[42/64] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\search\search_sse4.cc.obj
+[43/64] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\search\search_avx2.cc.obj
+[44/64] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\search\search_avx512.cc.obj
+[45/64] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\narrow\narrow_scalar.cc.obj
+[46/64] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\narrow\narrow_sse4.cc.obj
+[47/64] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\narrow\narrow_avx2.cc.obj
+[48/64] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\narrow\narrow_avx512.cc.obj
+[49/64] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\bitpack\bitpack_scalar.cc.obj
+[50/64] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\bitpack\bitpack_sse4.cc.obj
+[51/64] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\bitpack\bitpack_avx2.cc.obj
+[52/64] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\bitpack\bitpack_avx512.cc.obj
+[53/64] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\sort\vqsort_hyle_avx2.cc.obj
+[54/64] Linking CXX shared library bin\hyle_simd.dll
+[55/64] Linking CXX shared library bin\hyle_graph_provider_onednn.dll
+[56/64] Linking CXX shared library bin\hyle_compute_provider_native.dll
+[57/62] C:\WINDOWS\system32\cmd.exe /C "cd /D C:\public\project-hyle\hyle\.scratch\build-compute-v2-dev && "C:\Program Files\CMake\bin\cmake.exe" -P C:/public/project-hyle/hyle/.scratch/build-compute-v2-dev/hyle-runtime/cpu_coverage_consumer-Release.cmake"
+[58/62] Scanning C:\public\project-hyle\hyle\.scratch\validation\cpu-coverage-c3-delivery\consumer.cc for CXX dependencies
+[59/62] Generating CXX dyndep file CMakeFiles\cpu_coverage_consumer.dir\CXX.dd
+[60/62] Building CXX object CMakeFiles\cpu_coverage_consumer.dir\.scratch\validation\cpu-coverage-c3-delivery\consumer.cc.obj
+[61/62] Linking CXX executable bin\cpu_coverage_consumer.exe

@@ -1,0 +1,96 @@
+[0/2] Re-checking globbed directories...
+[1/95] Scanning /mnt/c/public/project-hyle/hyle/.scratch/validation/cpu-coverage-c3-delivery/consumer.cc for CXX dependencies
+[2/95] Generating CXX dyndep file CMakeFiles/cpu_coverage_consumer.dir/CXX.dd
+[3/95] Linking CXX shared library bin/libhyle_error.so.0.1.0
+[4/95] Creating library symlink bin/libhyle_error.so
+[5/95] Linking CXX shared library bin/libhyle_time.so.0.1.0
+[6/95] Creating library symlink bin/libhyle_time.so
+[7/95] Linking CXX shared library bin/libhyle_platform.so.0.1.0
+[8/95] Creating library symlink bin/libhyle_platform.so
+[9/95] Linking CXX shared library bin/libhyle_platform_thread.so.0.1.0
+[10/95] Creating library symlink bin/libhyle_platform_thread.so
+[11/95] Linking CXX shared library bin/libhyle_mem.so.0.1.0
+[12/95] Creating library symlink bin/libhyle_mem.so
+[13/95] Building CXX object CMakeFiles/cpu_coverage_consumer.dir/mnt/c/public/project-hyle/hyle/.scratch/validation/cpu-coverage-c3-delivery/consumer.cc.o
+[14/95] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/runtime.cc.o
+[15/95] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/ops/dispatch_ops.cc.o
+[16/95] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/random/random_dispatch.cc.o
+[17/95] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/search/search_dispatch.cc.o
+[18/95] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/narrow/narrow_dispatch.cc.o
+[19/95] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/scan/scan_dispatch.cc.o
+[20/95] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/dtype/cvt_fp8_scalar.cc.o
+[21/95] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/dtype/dtype_dispatch.cc.o
+[22/95] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/math/transcendental_scalar.cc.o
+[23/95] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/math/math_dispatch.cc.o
+[24/95] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/math/activations.cc.o
+[25/95] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/sort/top_k.cc.o
+[26/95] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/sort/sort_dispatch.cc.o
+[27/95] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/sort/radix_sort.cc.o
+[28/95] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/sort/vqsort_scalar.cc.o
+[29/95] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/bitpack/bitpack_dispatch.cc.o
+[30/95] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/ops/dot_f16c.cc.o
+[31/95] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/ops/dot_avx_vnni.cc.o
+[32/95] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/ops/dot_avx512_vnni.cc.o
+[33/95] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/ops/dot_avx512bf16.cc.o
+[34/95] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/dtype/cvt_f16c.cc.o
+[35/95] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/dtype/cvt_avx512bf16.cc.o
+[36/95] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/math/transcendental_highway.cc.o
+[37/95] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/math/transcendental_highway_avx512.cc.o
+[38/95] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/sort/vqsort_hyle_avx2.cc.o
+[39/95] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/ops/ops_scalar.cc.o
+[40/95] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/ops/ops_sse4.cc.o
+[41/95] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/ops/ops_avx2.cc.o
+[42/95] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/ops/ops_avx512.cc.o
+[43/95] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/dtype_convert/dtype_convert_scalar.cc.o
+[44/95] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/dtype_convert/dtype_convert_sse4.cc.o
+[45/95] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/dtype_convert/dtype_convert_avx2.cc.o
+[46/95] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/sort/vqsort_hyle_avx512.cc.o
+[47/95] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/dtype_convert/dtype_convert_avx512.cc.o
+[48/95] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/scan/scan_scalar.cc.o
+[49/95] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/scan/scan_sse4.cc.o
+[50/95] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/scan/scan_avx2.cc.o
+[51/95] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/scan/scan_avx512.cc.o
+[52/95] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/random/random_scalar.cc.o
+[53/95] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/random/random_sse4.cc.o
+[54/95] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/random/random_avx2.cc.o
+[55/95] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/random/random_avx512.cc.o
+[56/95] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/search/search_scalar.cc.o
+[57/95] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/search/search_sse4.cc.o
+[58/95] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/search/search_avx2.cc.o
+[59/95] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/narrow/narrow_scalar.cc.o
+[60/95] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/search/search_avx512.cc.o
+[61/95] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/narrow/narrow_sse4.cc.o
+[62/95] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/narrow/narrow_avx2.cc.o
+[63/95] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/bitpack/bitpack_scalar.cc.o
+[64/95] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/narrow/narrow_avx512.cc.o
+[65/95] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/bitpack/bitpack_sse4.cc.o
+[66/95] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/bitpack/bitpack_avx2.cc.o
+[67/95] Linking CXX shared library bin/libhyle_container.so.0.1.0
+[68/95] Creating library symlink bin/libhyle_container.so
+[69/95] Linking CXX shared library bin/libhyle_compute_ops.so.0.1.0
+[70/95] Creating library symlink bin/libhyle_compute_ops.so
+[71/95] Linking CXX shared library bin/libhyle_compute.so.0.1.0
+[72/95] Creating library symlink bin/libhyle_compute.so
+[73/95] Linking CXX shared library bin/libhyle_graph.so.0.1.0
+[74/95] Creating library symlink bin/libhyle_graph.so
+[75/95] Linking CXX shared library bin/libhyle_compute_provider_onednn.so.0.1.0
+[76/95] Creating library symlink bin/libhyle_compute_provider_onednn.so
+[77/95] Linking CXX shared library bin/libhyle_compute_backend_cpu.so.0.1.0
+[78/95] Creating library symlink bin/libhyle_compute_backend_cpu.so
+[79/95] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/bitpack/bitpack_avx512.cc.o
+[80/95] Linking CXX shared module bin/libhyle_ggml_cpu_avx2_ffa4e8b8_bdae1e43311ee486.so
+[81/95] Linking CXX shared library bin/libhyle_simd.so.0.1.0
+[82/95] Creating library symlink bin/libhyle_simd.so
+[83/95] Linking CXX shared library bin/libhyle_compute_ggml_runtime.so.0.1.0
+[84/95] Creating library symlink bin/libhyle_compute_ggml_runtime.so
+[85/95] Linking CXX shared library bin/libhyle_graph_provider_onednn.so.0.1.0
+[86/95] Creating library symlink bin/libhyle_graph_provider_onednn.so
+[87/95] Linking CXX shared library bin/libhyle_compute_provider_ggml.so.0.1.0
+[88/95] Creating library symlink bin/libhyle_compute_provider_ggml.so
+[89/95] Linking CXX shared library bin/libhyle_compute_provider_native.so.0.1.0
+[90/95] Creating library symlink bin/libhyle_compute_provider_native.so
+[91/95] Linking CXX shared library bin/libhyle_compute_route_cpu.so.0.1.0
+[92/95] Creating library symlink bin/libhyle_compute_route_cpu.so
+[93/95] Linking CXX shared library bin/libhyle_graph_route_cpu.so.0.1.0
+[94/95] Creating library symlink bin/libhyle_graph_route_cpu.so
+[95/95] Linking CXX executable bin/cpu_coverage_consumer

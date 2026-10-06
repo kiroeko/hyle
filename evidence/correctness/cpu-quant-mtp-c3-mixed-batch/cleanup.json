@@ -1,0 +1,11 @@
+{
+  "scope": "obsolete original installed consumer builds, replaced by successful relocated consumers",
+  "canonical_workspace": "C:/public/project-hyle/hyle",
+  "checks": ["resolved target inside owned workspace scratch root", "matching CMake source owner", "no reparse points", "no live process using target"],
+  "removed": [
+    {"path": ".scratch/build-cpu-coverage-c3-consumer/shared", "bytes": 289296537},
+    {"path": ".scratch/build-cpu-coverage-c3-consumer/static", "bytes": 288055725}
+  ],
+  "reclaimed_bytes": 577352262,
+  "preserved": ["canonical producer", "locked dependency cache", "relocated SDKs and consumers", "older frozen performance SDKs"]
+}

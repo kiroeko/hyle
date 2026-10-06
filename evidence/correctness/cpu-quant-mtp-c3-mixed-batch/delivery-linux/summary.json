@@ -1,0 +1,16 @@
+{
+  "candidate": "11462ba08825d86fbf63e179fa2f4a591b2d37d9",
+  "platform": "linux",
+  "scope": [
+    "ordinary source/shared-installed/static-installed CPU Direct/Graph mixed-format consumer",
+    "36 checks per execution, HYLE static still carries private ggml and external shared LibTorch runtime",
+    "disconnected producer and installed consumer; existing locked platform dependency cache reused"
+  ],
+  "relocation_pass": true,
+  "remaining": [
+    "offline cache-miss audit reuse",
+    "full actual artifact/profile matrix",
+    "C4 complete new main/MTP/DSpark branches",
+    "precision edge qualification"
+  ]
+}
