@@ -51,7 +51,7 @@ baseline为上方不可变e8fec259；仅普通Native F32 MatMul退役，原Torch
 | MM1 | native_provider.cc删MatMul专用执行/helpers/准备与fan-out，冷阶段明确Unimplemented；Native CMake删compute_matmul fat路线 | 源引用0，Native propose/prepare拒绝F32及其它accumulation/empty/high-rank；SIMD与borrowed源identity不变 |
 | MM2 | 迁移matmul_gated_test与operation_test的原Native矩阵fixture到ATen；超大empty的Native-only成功预期转拒绝；新增明确资源撤回/普通替代消费 | 保留独立数值参考、row/transposed/broadcast/K0/empty与changed replay/close、ordinary Direct/Graph；不把拒绝算执行PASS |
 | MM3 | 更新CPU guide的Native目录/并行/资源限制，记录已删除而非1000后备 | source/static/shared用法一致，严格请求明确失败不放宽 |
-| MM4 | 直接消费扫描发现旧CPU/Graph MatMul比较targets与cpu_executor样例仍用退役Native矩阵/FFN。移除两个仅比较旧自研的benchmark目录；样例只用ordinary CPU、不强制已撤回FFN region或prepared-only | 实际executor样例在Win/Linux执行；保留原数值、并发、nested completion、owner平衡，不因特定provider身份制造失败；原P1合同/证据历史保留 |
+| MM4 | 直接消费扫描发现旧CPU/Graph MatMul比较targets与cpu_executor样例仍用退役Native矩阵/FFN。移除三个仅比较旧Native矩阵/MLP的benchmark target组（CPU route、Graph CPU route、Graph multi-op tax）；样例只用ordinary CPU、不强制已撤回FFN region或prepared-only | 实际executor样例在Win/Linux执行；保留原数值、并发、nested completion、owner平衡，不因特定provider身份制造失败；原P1合同/证据历史保留 |
 
 Compute owner单独绑定两份历史common-path私有kernel删除及operation_test迁移，见
 [相邻小卡](cpu-native-matmul-private-kernel-cleanup.md)。没有公共API或Compute runtime算法变化。
@@ -69,3 +69,5 @@ closure/docs/selector/统一29路径LOC适用；实际全部通过前不关闭�
 - candidate `7157655201df3b63619a4e5b11dfe272bcf35273`，产品删除b4c8899a，直接消费者最终71576552。
 - Windows144 Native、13 CPU、19 Graph、Core与header1各通过；ordinary六shape Direct/Graph与executor实际通过。
 - Linux与剩余三交付未完成，不写PASS；P0删除无新增热成本，不重跑已结束P1。
+
+最后一次直接消费扫描确认multi_op_tax也只比较已退役Native矩阵/门控MLP；同MM4删除，CUDA pipeline/RMSNorm比较与固定SDK的ND3资产保留。普通compute/graph cpp样例已使用默认成熟入口，无Native矩阵调用。
