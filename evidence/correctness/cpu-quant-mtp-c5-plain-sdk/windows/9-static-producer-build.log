@@ -1,0 +1,156 @@
+[0/2] Re-checking globbed directories...
+[1/155] Building CXX object src\error\CMakeFiles\hyle_error.dir\status.cc.obj
+[2/155] Linking CXX static library bin\hyle_error.lib
+[3/155] Building CXX object src\platform\CMakeFiles\hyle_platform_cpu_probe.dir\cpu.cc.obj
+[4/155] Building CXX object src\platform\CMakeFiles\hyle_platform.dir\dynlib.cc.obj
+[5/155] Building CXX object src\platform\CMakeFiles\hyle_platform.dir\cpu_resource.cc.obj
+[6/155] Building CXX object src\platform\CMakeFiles\hyle_platform.dir\environment.cc.obj
+[7/155] Building CXX object src\platform\CMakeFiles\hyle_platform.dir\host_memory.cc.obj
+[8/155] Building CXX object src\platform\CMakeFiles\hyle_platform.dir\process.cc.obj
+[9/155] Building CXX object src\platform\CMakeFiles\hyle_platform.dir\numa.cc.obj
+[10/155] Building CXX object src\platform\CMakeFiles\hyle_platform.dir\random.cc.obj
+[11/155] Building CXX object src\mem\CMakeFiles\hyle_mem.dir\buffer.cc.obj
+[12/155] Building CXX object src\platform\CMakeFiles\hyle_platform.dir\virtual_memory.cc.obj
+[13/155] Linking CXX static library bin\hyle_platform.lib
+[14/155] Building CXX object src\mem\CMakeFiles\hyle_mem.dir\composite_buffer.cc.obj
+[15/155] Building CXX object src\mem\CMakeFiles\hyle_mem.dir\buffer_pool.cc.obj
+[16/155] Building CXX object src\mem\CMakeFiles\hyle_mem.dir\heap.cc.obj
+[17/155] Building CXX object src\mem\CMakeFiles\hyle_mem.dir\range_allocator.cc.obj
+[18/155] Building CXX object src\mem\CMakeFiles\hyle_mem.dir\lifetime_plan.cc.obj
+[19/155] Building CXX object src\mem\CMakeFiles\hyle_mem.dir\resource.cc.obj
+[20/155] Building CXX object src\mem\CMakeFiles\hyle_mem.dir\system.cc.obj
+[21/155] Building CXX object src\mem\CMakeFiles\hyle_mem.dir\stats.cc.obj
+[22/155] Building CXX object src\compute_ops\CMakeFiles\hyle_compute_ops.dir\tensor_desc.cc.obj
+[23/155] Building CXX object src\compute_ops\CMakeFiles\hyle_compute_ops.dir\low_precision.cc.obj
+[24/155] Building CXX object src\compute_ops\CMakeFiles\hyle_compute_ops.dir\operation.cc.obj
+[25/155] Linking CXX static library bin\hyle_mem.lib
+[26/155] Building CXX object src\compute\CMakeFiles\hyle_compute.dir\command_capture.cc.obj
+[27/155] Building CXX object src\compute_ops\CMakeFiles\hyle_compute_ops.dir\weight_decode.cc.obj
+[28/155] Linking CXX static library bin\hyle_compute_ops.lib
+[29/155] Building CXX object src\compute\CMakeFiles\hyle_compute.dir\completion.cc.obj
+[30/155] Building CXX object src\compute\CMakeFiles\hyle_compute.dir\custom_kernel.cc.obj
+[31/155] Building CXX object src\compute\CMakeFiles\hyle_compute.dir\device.cc.obj
+[32/155] Building CXX object src\compute\CMakeFiles\hyle_compute.dir\provider.cc.obj
+[33/155] Building CXX object src\compute\CMakeFiles\hyle_compute.dir\operation.cc.obj
+[34/155] Building CXX object src\compute\CMakeFiles\hyle_compute.dir\route_policy.cc.obj
+[35/155] Building CXX object src\compute\CMakeFiles\hyle_compute.dir\result.cc.obj
+[36/155] Building CXX object src\compute\CMakeFiles\hyle_compute.dir\shape_domain.cc.obj
+[37/155] Building CXX object src\compute\CMakeFiles\hyle_compute.dir\shape_program.cc.obj
+[38/155] Building CXX object src\compute\CMakeFiles\hyle_compute.dir\tensor_view.cc.obj
+[39/155] Building CXX object src\compute\CMakeFiles\hyle_compute.dir\transfer.cc.obj
+[40/155] Building CXX object src\compute\CMakeFiles\hyle_compute.dir\workload.cc.obj
+[41/155] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\runtime.cc.obj
+[42/155] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\ops\dispatch_ops.cc.obj
+[43/155] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\random\random_dispatch.cc.obj
+[44/155] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\search\search_dispatch.cc.obj
+[45/155] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\narrow\narrow_dispatch.cc.obj
+[46/155] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\scan\scan_dispatch.cc.obj
+[47/155] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\dtype\cvt_fp8_scalar.cc.obj
+[48/155] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\dtype\dtype_dispatch.cc.obj
+[49/155] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\math\math_dispatch.cc.obj
+[50/155] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\math\transcendental_scalar.cc.obj
+[51/155] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\math\activations.cc.obj
+[52/155] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\sort\sort_dispatch.cc.obj
+[53/155] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\sort\top_k.cc.obj
+[54/155] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\sort\radix_sort.cc.obj
+[55/155] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\sort\vqsort_scalar.cc.obj
+[56/155] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\ops\dot_f16c.cc.obj
+[57/155] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\bitpack\bitpack_dispatch.cc.obj
+[58/155] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\ops\dot_avx_vnni.cc.obj
+[59/155] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\ops\dot_avx512_vnni.cc.obj
+[60/155] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\ops\dot_avx512bf16.cc.obj
+[61/155] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\dtype\cvt_f16c.cc.obj
+[62/155] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\dtype\cvt_avx512bf16.cc.obj
+[63/155] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\math\transcendental_highway.cc.obj
+[64/155] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\math\transcendental_highway_avx512.cc.obj
+[65/155] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\ops\ops_scalar.cc.obj
+[66/155] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\ops\ops_sse4.cc.obj
+[67/155] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\ops\ops_avx2.cc.obj
+[68/155] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\ops\ops_avx512.cc.obj
+[69/155] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\dtype_convert\dtype_convert_scalar.cc.obj
+[70/155] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\dtype_convert\dtype_convert_sse4.cc.obj
+[71/155] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\dtype_convert\dtype_convert_avx2.cc.obj
+[72/155] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\dtype_convert\dtype_convert_avx512.cc.obj
+[73/155] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\scan\scan_scalar.cc.obj
+[74/155] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\scan\scan_sse4.cc.obj
+[75/155] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\scan\scan_avx2.cc.obj
+[76/155] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\scan\scan_avx512.cc.obj
+[77/155] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\random\random_scalar.cc.obj
+[78/155] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\random\random_sse4.cc.obj
+[79/155] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\random\random_avx2.cc.obj
+[80/155] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\random\random_avx512.cc.obj
+[81/155] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\search\search_scalar.cc.obj
+[82/155] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\search\search_sse4.cc.obj
+[83/155] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\search\search_avx2.cc.obj
+[84/155] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\search\search_avx512.cc.obj
+[85/155] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\narrow\narrow_scalar.cc.obj
+[86/155] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\narrow\narrow_sse4.cc.obj
+[87/155] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\narrow\narrow_avx2.cc.obj
+[88/155] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\narrow\narrow_avx512.cc.obj
+[89/155] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\bitpack\bitpack_scalar.cc.obj
+[90/155] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\bitpack\bitpack_sse4.cc.obj
+[91/155] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\bitpack\bitpack_avx2.cc.obj
+[92/155] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\bitpack\bitpack_avx512.cc.obj
+[93/155] Building CXX object src\container\CMakeFiles\hyle_container.dir\hash.cc.obj
+[94/155] Building CXX object src\container\CMakeFiles\hyle_container.dir\pod_vector.cc.obj
+[95/155] Building CXX object src\container\CMakeFiles\hyle_container.dir\flat_hash_map.cc.obj
+[96/155] Building CXX object src\container\CMakeFiles\hyle_container.dir\dynamic_bitset.cc.obj
+[97/155] Building CXX object src\container\CMakeFiles\hyle_container.dir\hash_xxh3_avx2.cc.obj
+[98/155] Building CXX object src\container\CMakeFiles\hyle_container.dir\generated\simd-dispatch\container_bitset\container_bitset_scalar.cc.obj
+[99/155] Building CXX object src\container\CMakeFiles\hyle_container.dir\generated\simd-dispatch\container_bitset\container_bitset_sse4.cc.obj
+[100/155] Building CXX object src\container\CMakeFiles\hyle_container.dir\generated\simd-dispatch\container_bitset\container_bitset_avx2.cc.obj
+[101/155] Linking CXX static library bin\hyle_compute.lib
+[102/155] Building CXX object src\compute_backend_cpu\CMakeFiles\hyle_compute_backend_cpu.dir\cpu_backend.cc.obj
+[103/155] Building CXX object src\compute_ggml_runtime\CMakeFiles\hyle_compute_ggml_runtime.dir\metadata_arena.cc.obj
+[104/155] Building CXX object src\compute_ggml_runtime\CMakeFiles\hyle_compute_ggml_runtime.dir\cpu_execution.cc.obj
+[105/155] Building CXX object src\compute_ggml_runtime\CMakeFiles\hyle_compute_ggml_runtime.dir\cpu_program.cc.obj
+[106/155] Linking CXX static library bin\hyle_container.lib
+[107/155] Building CXX object src\graph\CMakeFiles\hyle_graph.dir\graph.cc.obj
+[108/155] Building CXX object src\graph\CMakeFiles\hyle_graph.dir\effect_order.cc.obj
+[109/155] Building CXX object src\graph\CMakeFiles\hyle_graph.dir\executable.cc.obj
+[110/155] Building CXX object src\graph\CMakeFiles\hyle_graph.dir\view_domain.cc.obj
+[111/155] Building CXX object src\graph\CMakeFiles\hyle_graph.dir\constant_artifact.cc.obj
+[112/155] Building CXX object src\compute_provider_onednn\CMakeFiles\hyle_compute_provider_onednn.dir\brgemm_internal.cc.obj
+[113/155] Building CXX object src\compute_provider_onednn\CMakeFiles\hyle_compute_provider_onednn.dir\normalization_internal.cc.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[114/155] Building CXX object src\compute_provider_onednn\CMakeFiles\hyle_compute_provider_onednn.dir\onednn_provider.cc.obj
+[115/155] Linking CXX static library bin\hyle_compute_backend_cpu.lib
+[116/155] Linking CXX static library bin\hyle_compute_ggml_runtime.lib
+[117/155] Building CXX object src\compute_provider_ggml\CMakeFiles\hyle_compute_provider_ggml.dir\ggml_cpu_provider.cc.obj
+[118/155] Building CXX object src\compute_provider_ggml\CMakeFiles\hyle_compute_provider_ggml.dir\standard_index.cc.obj
+[119/155] Building CXX object src\compute_provider_native\CMakeFiles\hyle_compute_provider_native.dir\aten_cpu_provider.cc.obj
+[120/155] Building CXX object src\compute_provider_native\CMakeFiles\hyle_compute_provider_native.dir\attention.cc.obj
+[121/155] Building CXX object src\compute_provider_native\CMakeFiles\hyle_compute_provider_native.dir\cast.cc.obj
+[122/155] Building CXX object src\compute_provider_native\CMakeFiles\hyle_compute_provider_native.dir\default_rules.cc.obj
+[123/155] Building CXX object src\compute_provider_native\CMakeFiles\hyle_compute_provider_native.dir\ds4_quantization.cc.obj
+[124/155] Building CXX object src\compute_provider_native\CMakeFiles\hyle_compute_provider_native.dir\elementwise.cc.obj
+[125/155] Building CXX object src\compute_provider_native\CMakeFiles\hyle_compute_provider_native.dir\indexing.cc.obj
+[126/155] Building CXX object src\compute_provider_native\CMakeFiles\hyle_compute_provider_native.dir\native_provider.cc.obj
+[127/155] Building CXX object src\compute_provider_native\CMakeFiles\hyle_compute_provider_native.dir\normalization.cc.obj
+[128/155] Building CXX object src\compute_provider_native\CMakeFiles\hyle_compute_provider_native.dir\reduction.cc.obj
+[129/155] Building CXX object src\compute_provider_native\CMakeFiles\hyle_compute_provider_native.dir\transform.cc.obj
+[130/155] Building CXX object src\compute_provider_native\CMakeFiles\hyle_compute_provider_native.dir\transformer.cc.obj
+[131/155] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\sort\vqsort_hyle_avx2.cc.obj
+[132/155] Linking CXX static library bin\hyle_simd.lib
+[133/155] Building CXX object src\compute_provider_native\CMakeFiles\hyle_compute_provider_native.dir\generated\simd-dispatch\compute_rope\compute_rope_scalar.cc.obj
+[134/155] Building CXX object src\compute_provider_native\CMakeFiles\hyle_compute_provider_native.dir\generated\simd-dispatch\compute_rope\compute_rope_sse4.cc.obj
+[135/155] Building CXX object src\compute_provider_native\CMakeFiles\hyle_compute_provider_native.dir\generated\simd-dispatch\compute_rope\compute_rope_avx2.cc.obj
+[136/155] Building CXX object src\compute_provider_native\CMakeFiles\hyle_compute_provider_native.dir\generated\simd-dispatch\compute_rope\compute_rope_avx512.cc.obj
+[137/155] Building CXX object src\compute_provider_native\CMakeFiles\hyle_compute_provider_native.dir\torch_cpu_program.cc.obj
+[138/155] Building CXX object src\time\CMakeFiles\hyle_time.dir\clock.cc.obj
+[139/155] Building CXX object src\time\CMakeFiles\hyle_time.dir\interop.cc.obj
+[140/155] Linking CXX static library bin\hyle_compute_provider_onednn.lib
+[141/155] Linking CXX static library bin\hyle_graph.lib
+[142/155] Linking CXX static library bin\hyle_compute_provider_ggml.lib
+[143/155] Linking CXX static library bin\hyle_compute_provider_native.lib
+[144/155] Building CXX object src\compute_route_cpu\CMakeFiles\hyle_compute_route_cpu.dir\cpu_context.cc.obj
+[145/155] Linking CXX static library bin\hyle_time.lib
+[146/155] Building CXX object src\graph_provider_onednn\CMakeFiles\hyle_graph_provider_onednn.dir\onednn_region_provider.cc.obj
+[147/155] Building CXX object src\platform_thread\CMakeFiles\hyle_platform_thread.dir\thread.cc.obj
+[148/155] Linking CXX static library bin\hyle_graph_provider_onednn.lib
+[149/155] Linking CXX static library bin\hyle_compute_route_cpu.lib
+[150/155] Building CXX object src\platform_thread\CMakeFiles\hyle_platform_thread.dir\wait.cc.obj
+[151/155] Building CXX object src\graph_route_cpu\CMakeFiles\hyle_graph_route_cpu.dir\cpu_context.cc.obj
+[152/155] Linking CXX static library bin\hyle_platform_thread.lib
+[153/155] Building CXX object src\graph_route_cpu\CMakeFiles\hyle_graph_route_cpu.dir\ggml_region.cc.obj
+[154/155] Linking CXX static library bin\hyle_graph_route_cpu.lib

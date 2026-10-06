@@ -1,0 +1,14 @@
+[
+  {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\build-cpu-coverage-c5-plain-sdk\\static",
+    "bytes": 606713471.0,
+    "owner": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\cpu-coverage-c5-plain-sdk",
+    "removed": true
+  },
+  {
+    "path": "C:\\public\\project-hyle\\hyle\\.scratch\\build-cpu-coverage-c5-plain-sdk\\shared",
+    "bytes": 612177103.0,
+    "owner": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\cpu-coverage-c5-plain-sdk",
+    "removed": true
+  }
+]

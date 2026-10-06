@@ -289,6 +289,13 @@ MX 输出保持 A dtype。scale 先按原 CPU 转为 A dtype，低精度溢出�
 也已验证更新后的static/shared SDK。该资格仍按真实packing/group/dtype和端口区分，
 不把一个文件名的“4-bit”当作所有张量格式，也不代签全部混合模型完整片段。
 
+CPU-only LibTorch启用时，`model_ops::causal_conv1d()`的F16/BF16输入现在由原ATen CPU程序承载。
+samples为`[B,W,C]`、weights为`[C,K]`，二者dtype相同；F32累加后一次回原output dtype。
+原`[C,1,K]`文件权重由调用方用View整理。该managed路径包含布局/精度转换、原库临时与结果copy，
+不能要求capture、零热分配或已知严格私有内存界；失败slot需要重建。F32继续走原ggml路径。
+真实dtype/宽度、越界与资源范围见[本批资格](../../evidence/correctness/cpu-quant-mtp-c5-plain/README.md)，
+更新安装SDK的进度另行记录，不以旧二进制代签新增接缝。
+
 ### 激活的组量化与还原
 
 `model_ops::block_quantization_roundtrip(format)` 将 dense BF16 `[M,K]` 输入量化后还原为
