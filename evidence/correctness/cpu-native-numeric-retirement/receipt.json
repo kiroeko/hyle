@@ -1,0 +1,447 @@
+{
+  "candidate": "f32d261a5a68d5af99233286fcc81603c4bdb87a",
+  "fixture_commit": "f83aa9f14348c50457ffd4d28cb77bec6ba63e5e",
+  "scope": "ND-R1; retired numerically ineligible Native domains and mature ordinary migration",
+  "performance": "P0; no self operator performance comparison",
+  "platforms": {
+    "windows": {
+      "commands": 21,
+      "actual_validation_commits": [
+        "f32d261a5a68d5af99233286fcc81603c4bdb87a"
+      ],
+      "tests": {
+        "provider": {
+          "registered": 142,
+          "passed": 142,
+          "skipped": []
+        },
+        "compute_route_cpu": {
+          "registered": 13,
+          "passed": 12,
+          "skipped": [
+            "CpuDefaultContext.D5RealQwenProjectionUsesExactProfileAndReplays"
+          ]
+        },
+        "graph_route_cpu": {
+          "registered": 17,
+          "passed": 17,
+          "skipped": []
+        },
+        "header": {
+          "registered": 1,
+          "passed": 1,
+          "skipped": []
+        }
+      },
+      "source_identity": {
+        "candidate": "f32d261a5a68d5af99233286fcc81603c4bdb87a",
+        "checked": 1337,
+        "forward_updated": [
+          "src/compute_provider_native/elementwise.cc",
+          "src/compute_provider_native/native_provider.cc",
+          "src/compute_provider_native/transformer.cc",
+          "tests/compute/operation_test.cc",
+          "tests/compute_provider_native/elementwise_test.cc",
+          "tests/compute_provider_native/matmul_gated_test.cc",
+          "tests/compute_provider_native/provider_shape_test.cc",
+          "tests/compute_provider_native/transformer_test.cc",
+          ".scratch/validation/cpu-native-numeric-retirement/consumer.cc",
+          ".scratch/validation/cpu-native-numeric-retirement/consumer/CMakeLists.txt",
+          ".scratch/validation/cpu-native-numeric-retirement/windows-overlay.cmake",
+          ".scratch/validation/cpu-native-numeric-retirement/linux-overlay.cmake"
+        ]
+      },
+      "latest_commands_passed": [
+        "batch-build",
+        "compute_route_cpu-affected-tests",
+        "configure",
+        "graph_route_cpu-affected-tests",
+        "provider-tests",
+        "public-header",
+        "shared-consumer-build",
+        "shared-consumer-configure",
+        "shared-install",
+        "shared-installed-ordinary",
+        "shared-producer-build",
+        "shared-producer-configure",
+        "shared-source-ordinary",
+        "static-consumer-build",
+        "static-consumer-configure",
+        "static-install",
+        "static-installed-ordinary",
+        "static-producer-build",
+        "static-producer-configure",
+        "static-source-ordinary"
+      ],
+      "cleanup": [
+        {
+          "adjacent_runtime_dlls": [
+            {
+              "bytes": 367104,
+              "name": "asmjit.dll"
+            },
+            {
+              "bytes": 1046528,
+              "name": "c10.dll"
+            },
+            {
+              "bytes": 5721600,
+              "name": "fbgemm.dll"
+            },
+            {
+              "bytes": 16384,
+              "name": "hyle_compute_backend_cpu.dll"
+            },
+            {
+              "bytes": 1136640,
+              "name": "hyle_compute_ggml_runtime.dll"
+            },
+            {
+              "bytes": 70144,
+              "name": "hyle_compute_ops.dll"
+            },
+            {
+              "bytes": 404480,
+              "name": "hyle_compute_provider_ggml.dll"
+            },
+            {
+              "bytes": 446976,
+              "name": "hyle_compute_provider_native.dll"
+            },
+            {
+              "bytes": 16674304,
+              "name": "hyle_compute_provider_onednn.dll"
+            },
+            {
+              "bytes": 11776,
+              "name": "hyle_compute_route_cpu.dll"
+            },
+            {
+              "bytes": 189440,
+              "name": "hyle_compute.dll"
+            },
+            {
+              "bytes": 41472,
+              "name": "hyle_container.dll"
+            },
+            {
+              "bytes": 28160,
+              "name": "hyle_error.dll"
+            },
+            {
+              "bytes": 1153536,
+              "name": "hyle_ggml_cpu_avx2_456172ec.dll"
+            },
+            {
+              "bytes": 34816,
+              "name": "hyle_graph_provider_onednn.dll"
+            },
+            {
+              "bytes": 45056,
+              "name": "hyle_graph_route_cpu.dll"
+            },
+            {
+              "bytes": 509952,
+              "name": "hyle_graph.dll"
+            },
+            {
+              "bytes": 230912,
+              "name": "hyle_mem.dll"
+            },
+            {
+              "bytes": 85504,
+              "name": "hyle_platform.dll"
+            },
+            {
+              "bytes": 1571328,
+              "name": "hyle_simd.dll"
+            },
+            {
+              "bytes": 1613680,
+              "name": "libiomp5md.dll"
+            },
+            {
+              "bytes": 255948800,
+              "name": "torch_cpu.dll"
+            },
+            {
+              "bytes": 9728,
+              "name": "torch.dll"
+            },
+            {
+              "bytes": 195072,
+              "name": "uv.dll"
+            }
+          ],
+          "files": 52,
+          "path": "C:\\hv\\cpu-nd1-shared-consumer",
+          "logical_bytes": 288777322.0,
+          "original_probe_hardlinks": false,
+          "removed": true
+        },
+        {
+          "adjacent_runtime_dlls": [
+            {
+              "bytes": 367104,
+              "name": "asmjit.dll"
+            },
+            {
+              "bytes": 1046528,
+              "name": "c10.dll"
+            },
+            {
+              "bytes": 5721600,
+              "name": "fbgemm.dll"
+            },
+            {
+              "bytes": 1153024,
+              "name": "hyle_ggml_cpu_avx2_456172ec.dll"
+            },
+            {
+              "bytes": 1613680,
+              "name": "libiomp5md.dll"
+            },
+            {
+              "bytes": 255948800,
+              "name": "torch_cpu.dll"
+            },
+            {
+              "bytes": 9728,
+              "name": "torch.dll"
+            },
+            {
+              "bytes": 195072,
+              "name": "uv.dll"
+            }
+          ],
+          "files": 38,
+          "path": "C:\\hv\\cpu-nd1-static-consumer",
+          "logical_bytes": 287560868.0,
+          "original_probe_hardlinks": false,
+          "removed": true
+        }
+      ]
+    },
+    "linux": {
+      "commands": 21,
+      "actual_validation_commits": [
+        "f32d261a5a68d5af99233286fcc81603c4bdb87a"
+      ],
+      "tests": {
+        "provider": {
+          "registered": 142,
+          "passed": 142,
+          "skipped": []
+        },
+        "compute_route_cpu": {
+          "registered": 13,
+          "passed": 12,
+          "skipped": [
+            "CpuDefaultContext.D5RealQwenProjectionUsesExactProfileAndReplays"
+          ]
+        },
+        "graph_route_cpu": {
+          "registered": 17,
+          "passed": 17,
+          "skipped": []
+        },
+        "header": {
+          "registered": 1,
+          "passed": 1,
+          "skipped": []
+        }
+      },
+      "source_identity": {
+        "candidate": "f32d261a5a68d5af99233286fcc81603c4bdb87a",
+        "checked": 1337,
+        "forward_updated": [
+          "src/compute_provider_native/elementwise.cc",
+          "src/compute_provider_native/native_provider.cc",
+          "src/compute_provider_native/transformer.cc",
+          "tests/compute/operation_test.cc",
+          "tests/compute_provider_native/elementwise_test.cc",
+          "tests/compute_provider_native/matmul_gated_test.cc",
+          "tests/compute_provider_native/provider_shape_test.cc",
+          "tests/compute_provider_native/transformer_test.cc",
+          ".scratch/validation/cpu-native-numeric-retirement/consumer.cc",
+          ".scratch/validation/cpu-native-numeric-retirement/consumer/CMakeLists.txt",
+          ".scratch/validation/cpu-native-numeric-retirement/windows-overlay.cmake",
+          ".scratch/validation/cpu-native-numeric-retirement/linux-overlay.cmake"
+        ]
+      },
+      "latest_commands_passed": [
+        "batch-build",
+        "compute_route_cpu-affected-tests",
+        "configure",
+        "graph_route_cpu-affected-tests",
+        "provider-tests",
+        "public-header",
+        "shared-consumer-build",
+        "shared-consumer-configure",
+        "shared-install",
+        "shared-installed-ordinary",
+        "shared-producer-build",
+        "shared-producer-configure",
+        "shared-source-ordinary",
+        "static-consumer-build",
+        "static-consumer-configure",
+        "static-install",
+        "static-installed-ordinary",
+        "static-producer-build",
+        "static-producer-configure",
+        "static-source-ordinary"
+      ],
+      "cleanup": [
+        {
+          "path": "/root/hyle-scratch/cpu-ggml-isa-delivery/shared-nd1-consumer",
+          "files": 24,
+          "logical_bytes": 3531945,
+          "removed": true
+        },
+        {
+          "path": "/root/hyle-scratch/cpu-ggml-isa-delivery/static-nd1-consumer",
+          "files": 24,
+          "logical_bytes": 45565437,
+          "removed": true
+        }
+      ]
+    }
+  },
+  "mature_and_infra_identity": {
+    "mature_math_simd_and_assemblers_unchanged": {
+      "include/hyle/simd/bitpack.h": "0f097b727d8989a7f0bdb9cf3dcfa6bdb7618164bacf851f9fd75e93b164ea90",
+      "include/hyle/simd/dtype.h": "ef351c21ddf58309cd1bca6c7558862eb10fd53934194065e3a9d7d62f590ae8",
+      "include/hyle/simd/dtype_ops.h": "67f53a3095f2a27fda8445c378d3154385fba06a70b28408cb082be333d8a822",
+      "include/hyle/simd/fat_kernel.h": "82ebf7c6ab617b67bd18f2d2544f12c1900abe233d720fbb8423a0b1ff3dd989",
+      "include/hyle/simd/math.h": "fbc4f22a4bd329c37fdb7cf08b6be2f56ba24cb1fbe2781bd1babf11c5c50dd6",
+      "include/hyle/simd/narrow_ops.h": "98f9b01e898fc2f38deb0951e2f6c771ccb00c17e1882749ab1d9ab0a4df2298",
+      "include/hyle/simd/ops.h": "7ca600d232b2dfcf0b0b3143678818a250d8aba2216febaee0438e1b94c1fd45",
+      "include/hyle/simd/provider/hyle_winners-inl.h": "21d49f435351af7fa4af0387cfbe54fe6a9c32158140a45b5a40b0a47cf8a73e",
+      "include/hyle/simd/provider/hyle_winners_avx2-inl.h": "9d2ad0bf893ad657e1e0c2de26755fcfd52043faf415b5a7742f9e63478f9ca6",
+      "include/hyle/simd/provider/hyle_winners_neon-inl.h": "d1cf28563cc3bbf84c7adc0eba0602502be74d26064499bfcc44cef72e55cc6e",
+      "include/hyle/simd/provider/operation_manifest.h": "78091576525c08d9f3400475c12208d1a57a824f6e563222ab3ce9b7009582c9",
+      "include/hyle/simd/provider/route.h": "52891b2187eb9aaa0c53ae56ce29d75b1ef7066a260bb54b020d26ab79ce7e46",
+      "include/hyle/simd/provider/routes_generated.h": "044652c75aee97f8fd4bd1214c78b643a56cdc8343b59fb7026c79ed7571491c",
+      "include/hyle/simd/random.h": "b258ce03e1687fffbb898efdc0be62ec1883344b7399248d22484a31583655f3",
+      "include/hyle/simd/runtime.h": "9bce97120633ed2b1b9e17e040a8b8726ab3800ffb8c9d63d9c13ffaedb7e166",
+      "include/hyle/simd/scan.h": "c3712705333942794196603254345f9b8860e7398d64fb497aebf33c543eaa57",
+      "include/hyle/simd/search.h": "b1a753bcddefeb3a6dbe74e821be15f80f094777a3ce84a00464e59bb3878ff2",
+      "include/hyle/simd/sort.h": "5d3b5cd320fef2e6922e6ca7b68a52adcf7895828aa2e96bdb521ecc9396005a",
+      "include/hyle/simd/target.h": "c6f6b7e3b4f9b1cca02b3957d4d0ff59e352c0da791c08aa16b5442e6c6e22b8",
+      "include/hyle/simd/types.h": "e79863029c8036f918f36f93dd0267b8d42857516e0d74678584d75f8926abbd",
+      "include/hyle/simd/visibility.h": "e6220681c938d0b898165975736f412d3025050e10597b57f62ee7b49799eb03",
+      "src/compute_provider_ggml/CMakeLists.txt": "f3014ef88f5ecd42336b6100d8b9fdc3b552a8523a8afe84101482da8f85cfe3",
+      "src/compute_provider_ggml/ggml_cpu_provider.cc": "a2e22426ce2d85327b780c22e472171071d2bf05e4f87b0229a58100f2e67596",
+      "src/compute_provider_ggml/program.h": "cfe6389cb783a6ca238f752048462d62da4c6c0520637fa6afa44a1348b295ee",
+      "src/compute_provider_ggml/standard_index.cc": "a069b7ec6b4eb06851c60e8140db7226903c0821e2a6e63f3cb4f245a0c4e3e8",
+      "src/compute_provider_ggml/standard_index.h": "9a760f757eafad3aa86ff8d08110a80e37b8ebffa9595e963d26f4f4699ea2a2",
+      "src/compute_provider_native/aten_cpu_provider.cc": "26be384a801c53551ae6a54c67e087035a98d8ff923f3671fe2a22fa05a45b73",
+      "src/compute_provider_onednn/CMakeLists.txt": "ad46259fff6d3d579d20de8aa078107dffba0689b13d50e6247936ff1334b327",
+      "src/compute_provider_onednn/brgemm_internal.cc": "ebd46e91db2f9b0275a1debb15196c2e07a74be4ce3725852b92d9c4d473ff67",
+      "src/compute_provider_onednn/brgemm_internal.h": "4e9985e014f1a0033511310fa58652a0de39d1c20cca91194d54a3ec127ce6eb",
+      "src/compute_provider_onednn/normalization_internal.cc": "ec4f59b2b18e62a3346d2be25cc3dbdcd18ed78769046953468a5fa7c2dc0816",
+      "src/compute_provider_onednn/normalization_internal.h": "4e901ae080ee6ab1bad490835a8017fb676b53cd5c8075873072d4624b500534",
+      "src/compute_provider_onednn/onednn_provider.cc": "e37a9e0f72a04926b31ea792387bb1504b8c9af02d2d72dbfa2b6bac8641b609",
+      "src/compute_provider_onednn/runtime_overlay.cmake": "5c460de0c04f62f9679a44837ae00cd828d4d221ca932e84e37fe71a04ca6690",
+      "src/compute_provider_onednn/tensor_internal.h": "a4db195f2cff546f8ffadb2b2ecdcadf57a7da311df53d09b619373b0666b66f",
+      "src/compute_route_cpu/CMakeLists.txt": "c8ae70cd8a4286753e40b73c9cee6f797f36246c17f68bf2ea54f141710beae9",
+      "src/compute_route_cpu/cpu_context.cc": "4c8577762e15d98d918edcd6e8a1e43118aebb7861cc08f530d063394ab1d9fd",
+      "src/graph_provider_onednn/CMakeLists.txt": "d4c1ccad3e8a9f37e8d1cbe52466c2a461e5bb0cc8f517336399621c4c427e18",
+      "src/graph_provider_onednn/onednn_region_provider.cc": "7d8d69767de2d05cd032d0ea502eaf421f0f25d0aa9b5ddcc857576cd51601ef",
+      "src/graph_route_cpu/CMakeLists.txt": "da87ecc46916b09c58809311e68b255468087504e084aee4ea50aa138a46e3f6",
+      "src/graph_route_cpu/cpu_context.cc": "612531fe16b2272716a46e57ef4e010f778dd8a5a4f0b8fbd0452f7cebd48568",
+      "src/graph_route_cpu/ggml_region.cc": "cbd366dca805b13bba4e44abd34c6ac44899992ef02f041d005031a7595a0273",
+      "src/graph_route_cpu/ggml_region.h": "7e48271ff689b9e6287f49632da42a1ab9f0b932c01474fa2f762714507d667f",
+      "src/simd/CMakeLists.txt": "c70e9d5725d793b1048918b1802176df8a731c037f3bd09613faa0a5ec3209b7",
+      "src/simd/bitpack/bitpack_dispatch.cc": "6e9b4781f042885aaf39ea15ae28cef46d076532b31547197fb3753e2016da6d",
+      "src/simd/bitpack/bitstream.h": "68fde8e2c304ebcc7656dc2b8dc9bffec23aa02ff0678b9b9560b3b6624a21ff",
+      "src/simd/bitpack/kernel_impl.h": "5ef838ac2478662264fde2645e8513fdb20a1947d053d9c299efd77a997d037c",
+      "src/simd/bitpack/kernels.h": "2b5472c05d046168aa7069664761004b9649a0beac62c5a08a9b989777127649",
+      "src/simd/bitpack/scalar_layout.h": "b8b5ea0b4626e4779025f97f4b6ef4261192886d5b41aef8da0e9fd9a91cff6f",
+      "src/simd/dispatch_internal.h": "b856a1d22450d0c10d1aa42233312445df75fc8019849f9a003ec53bdaa2f6d5",
+      "src/simd/dtype/conversion_kernel_impl.h": "b66b62b15f283a0b2c53ef3e9040a50b38ad1c306754ac7bd63a43894333b109",
+      "src/simd/dtype/conversion_kernels.h": "55ae87fa5a55bc28e52402393c8a824c780f748c8fda2d42f4f9524f80910bd8",
+      "src/simd/dtype/cvt_avx10_2.cc": "f9f6c821f822ad11d0ec98c4bbc72929fcba552295d19ed053a4ec0f3de4559f",
+      "src/simd/dtype/cvt_avx512bf16.cc": "57064ccae55c8b0346b3b1aa5d2c84cc349d8bb3638b2841f9bee41493cf1423",
+      "src/simd/dtype/cvt_f16c.cc": "dbf4dfa6bfeea5b1e91e96b02457e71831780c17fbbdd0ccff36883736fe45fa",
+      "src/simd/dtype/cvt_fp8_scalar.cc": "2a288da529b9fd74f7a09810b20b9c399601d58351e599e78986a379bdbdb379",
+      "src/simd/dtype/dtype_dispatch.cc": "8829157c2d4b18f01bb38be0f42a188d6993eb798dbca73572a37cc78bdfbb2d",
+      "src/simd/dtype/highway_narrow.h": "e2d4c0ebb65e0ba1b8c24d2a4ed0a97a10814ca3769c9444db4685ecd9909ff2",
+      "src/simd/dtype/kernels.h": "9fe79d97e74fb73227ba6f0e37e95be20cc0830adb66ebd9487c7bdc671ce478",
+      "src/simd/math/activations.cc": "1497902d7a90b64bda69e7cd11563b2d6664478c54ddc9538f882088c3abdf44",
+      "src/simd/math/complex_hyle-inl.h": "f4b578718b38b75d74d9579b2f2a6d4fe607124e56c05979a9cde16b30391864",
+      "src/simd/math/complex_typed_hyle-inl.h": "99a6bccc4f63f9b7728e0abdfdedf1d1765ebad0eed78fd584d4e624a6962ea9",
+      "src/simd/math/highway_math_kernel-inl.h": "3d2267b83c218fd59142318c9740f3e7badb9389c9cf184ffe013f64dc6ebc5c",
+      "src/simd/math/kernels.h": "3628d768af7e81c83457e1df983f51ad170c8b8553f9ab7c1c50fb3b39e56bf0",
+      "src/simd/math/math_dispatch.cc": "5985edbc5331e5f5091ded6f912a70f7ee4e3828706fe207aa5cb3ec5d7043eb",
+      "src/simd/math/transcendental_highway.cc": "7f2aeeb40f2c31be3a21a19e8c13fe5212f06e0ffb44e34f799f32d4bfde4042",
+      "src/simd/math/transcendental_highway_avx512.cc": "65f1629f8a8624ae825411597de494b71ff6881d788a6292f603bf496e10c011",
+      "src/simd/math/transcendental_highway_neon.cc": "2244d5a124c71c5353b43dd1cf73caa23363e14836f1205d67893e6621517692",
+      "src/simd/math/transcendental_highway_scalable.cc": "c98ba02de48b6535a8e082112dde96c2b5457012eed180c2ddd8c2e33df430b1",
+      "src/simd/math/transcendental_scalar.cc": "a97eb16a85843204357f5f683149fefc6db92a534bc926baed9ba869564217a2",
+      "src/simd/narrow/kernel_impl.h": "e6029f83e22e73c960c51828ee8ec517db1b2c5e4b5e065ffb372b9803120f7d",
+      "src/simd/narrow/kernels.h": "6f6d4627b8955ed654370ba63f0da89357b5e27ad66f4563ca5154c0ff2e73fa",
+      "src/simd/narrow/narrow_dispatch.cc": "27dca5ad4f121f82093ba3f3ee3a450e8a96a900bb4e81c526a008bd00102457",
+      "src/simd/ops/dispatch_ops.cc": "d54c4e126e7bfbe28dc74a7bcfab6d226632d7c334e09e30902993c65d28ada7",
+      "src/simd/ops/dot_avx512_vnni.cc": "bfc740f2b109c3502305796b7c4102e8095348f179984a4a3012a2a1bea5befe",
+      "src/simd/ops/dot_avx512bf16.cc": "11a95c64e63381faf802b1eae70618bed1cddba8f16750b89835b4d6d01c39f5",
+      "src/simd/ops/dot_avx_vnni.cc": "fa8031cacd4090c4db80081c12dccc39df0b5a898acbefb53062cc281a570be8",
+      "src/simd/ops/dot_f16c.cc": "23e74886580ddc8d9fae5eff9b02a4b866a8939ede25622238341a27a000c33c",
+      "src/simd/ops/kernel_impl.h": "6eec4ea1d75fdbfdc9c8407a7bbe4638da9076f769dec210627d1d22b3cec49a",
+      "src/simd/ops/kernels.h": "6198ea89b602fcfa96335f3d7d6d6f17b61b860cb9b09e23b1375299a5c725f3",
+      "src/simd/random/kernel_impl.h": "4b255666c5d9becc434f6c27a365939bb0d10bd9cf6ed4c3e22481c9325ca75b",
+      "src/simd/random/kernels.h": "fda42c551b2e9d502688718137c82483864eed277bc36836842966f849caa7be",
+      "src/simd/random/random_dispatch.cc": "9a1c89fd4cd076db5b913319d451b2b3c97673256436bf2d342fdc3894bde5d7",
+      "src/simd/runtime.cc": "3516fbc66edc8a1b5223c1d0cf4b799db8f2b39b8ea64845f780b87c5ea8078a",
+      "src/simd/runtime_internal.h": "c459d4e7a9888676dcf2d0297655f44f3d8d4317d3b453247f8c8377de0a2efa",
+      "src/simd/scan/kernel_impl.h": "32fafcfe9b9d49e81e4e8cd0eb2de061653bf7a8595cf4822e2d2f93db95af42",
+      "src/simd/scan/kernels.h": "62838eea1e92f853a8705abb553582f7d5d9f420a27cbd8e5e2c13bd1f0f5e46",
+      "src/simd/scan/scan_dispatch.cc": "a037733dcbdf5cb89e89863b3065b27c46b2abc0cecd02c65f0cc171b5c8c2d0",
+      "src/simd/search/kernel_impl.h": "73f93659094d49e08732811c47b1ec7a75ae35e7b8a697844db927b17660e543",
+      "src/simd/search/kernels.h": "e6d3ea75027c36ad0aeb42e3bc56f0480e2d9afd715482aab9d047a57106c285",
+      "src/simd/search/search_dispatch.cc": "b735ee97a6ad53d11faaab8fd476852c21e7cd3678f432ebcda92d5068dbe476",
+      "src/simd/sort/kernels.h": "4298747105603a4845b9eeb32a571af07fd11182f87753be70d93b2cc3c62562",
+      "src/simd/sort/radix_sort.cc": "9402ac4aec73723fd0cec4723fa58371fa533f56111a920927bf546537294a2b",
+      "src/simd/sort/sort_dispatch.cc": "8573790dcd7fb6f92dc2127ede4e28aea1c01c63216396d402abb6958f513e82",
+      "src/simd/sort/top_k.cc": "fd64ce77e15864f7781d50055d60bd79814ccc4a29291f0e7830549bd9fb22bf",
+      "src/simd/sort/vqsort_body.inc": "12f5ac22ac07b057dfa85c3cec06f6f1f487b3d0cfb299aa55b0efa52223076d",
+      "src/simd/sort/vqsort_hyle/order.h": "99b0b6e5b99f877996e0eec2b38b6299a2c3489c2c06d1c50019f908eb14ba30",
+      "src/simd/sort/vqsort_hyle/shared-inl.h": "3d67f5280489e56a31e1e5db804e081aea0300e0488c691b31c861cb211bc0bd",
+      "src/simd/sort/vqsort_hyle/sorting_networks-inl.h": "74e0f60109982fdabd8d013d382ead8d906d7bee9acd4af15d30b0fac391ceee",
+      "src/simd/sort/vqsort_hyle/traits-inl.h": "0553c6ee0e5a092b90970915fc46ac94b9dd0111d8925e9604e08369d1b01929",
+      "src/simd/sort/vqsort_hyle/traits128-inl.h": "362065cd3e80e5fe95128a2b2b53446c153e89f7a83f54fad25134d0271cd7d3",
+      "src/simd/sort/vqsort_hyle/vqsort-inl.h": "9fdfcb76ff55d06a2fd10a2e181756344da9b202ff7c22953735c25e5c04949c",
+      "src/simd/sort/vqsort_hyle/vqsort_ops.h": "4a90a0a27d61b31222bd168d9264a224992959a0adc862bd1bfa968602d72faa",
+      "src/simd/sort/vqsort_hyle_avx2.cc": "68db9131bb9ae6870c19d26e933d69be96b0f77838526fbf23c459a57820c8a8",
+      "src/simd/sort/vqsort_hyle_avx512.cc": "bee9cddad2adee72ed7774bb8bf89e8b6115ea9c92b5495a2dfb5ca55bc09623",
+      "src/simd/sort/vqsort_hyle_neon.cc": "6588e261959a7f769a8a73061bd74325a364978e0d64ad6916162fbdfd5178df",
+      "src/simd/sort/vqsort_hyle_rvv.cc": "d287279c1cfa0eead229df8ee5df141bb58775d4ceab9aabe6cd70f02c49c8f0",
+      "src/simd/sort/vqsort_hyle_sve.cc": "f071f84a10cf0ebe6bfe2aa473fcbaa5a81bec963338b6b0e7ea383e75f724fd",
+      "src/simd/sort/vqsort_scalar.cc": "e84cdeb432455d0fa345a40568f3d5426e7f89a34baff3a911b593987c4deeec",
+      "src/simd/target_manifest.h": "7e6e5d4a00ae69df9c936b8b726c336b1cb48f6275c07d360a77cfc13c798a8f"
+    },
+    "basis": "CP immutable source manifest",
+    "not_inferred": "Does not replace current Native retirement correctness/delivery or final self performance verdict."
+  },
+  "loc": {
+    "code": 61387,
+    "files": 249,
+    "commit": "cde6fb3ac4cdae94c15cdcca47db0eb351afcd24"
+  },
+  "post_retirement_semantic_witness": {
+    "candidate": "f32d261a5a68d5af99233286fcc81603c4bdb87a",
+    "records": 322,
+    "native_declined": 31,
+    "retired_domains": 16,
+    "mature_executed": 161,
+    "executed_mismatch_rows": 0,
+    "scope": "Sampled witness; declines are not execution PASS",
+    "earlier_receipt_limit": "Earlier witness receipts retain their stale cde6fb3a stamp; only the final pair binds the corrected immutable candidate."
+  },
+  "artifact": {
+    "file": "qualification.zip",
+    "entries": 82,
+    "bytes": 205819,
+    "sha256": "2291938979d90672c77307f56af7bd20d39a53708ab21d97e37c9ff503b732ca"
+  }
+}

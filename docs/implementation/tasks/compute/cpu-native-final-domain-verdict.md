@@ -21,7 +21,8 @@
   2小时、采样总额2小时，n15起且不超过31有效配对/比较，算法优化预算0。没有需求的域不制造
   benchmark；既有可完整替代且无保留优势的平局/INCONCLUSIVE选择成熟实现，不伪造LOSS/WIN。
 - stop：到预算按证据裁决而非无限重测。真实同合同缺口具名记录，不能丢必需能力或把整个
-  重叠目录当唯一。测量失格不签赢家；适用未运行不签PASS。此卡当前SCOPED仅授权审计/fixture。
+  重叠目录当唯一。测量失格不签赢家；适用未运行不签PASS。当前产品授权仅为下列AUDITED的ND-R1，
+  ND3未固定的benchmark/rule/deletion不在产品FIX内。
 - 后续验证：只有冻结的有限产品FIX进入AUDITED才实现；一次所选factor/普通Direct/Graph与
   必要Win/Linux source/static/shared、closed SDK分支/源码身份复用、selector/closure/docs/diff与
   统一LOC。无GPU/模型级联合推理/新目录扩张/公共治理或性能仪器重写。
@@ -30,7 +31,7 @@
 
 | ID | 必需输出 | 当前 |
 |---|---|---|
-| ND1 | 12族当前具名成熟候选/资源边界/borrow vs self，valid旧证据与实际P0成本 | 待固定；历史宽泛KEEP_RESIDUAL不授权保留 |
+| ND1 | 12族当前具名成熟候选/资源边界/borrow vs self，valid旧证据与实际P0成本 | 全族/source/resource审计已固定ND-R1；剩余ND3逐域保留依据待裁决，历史KEEP_RESIDUAL不授权保留 |
 | ND2 | 一批同端口/同reference/同checked执行数值与资源witness，不计时 | 数值322条实际完成；Native31未资格、成熟0失败；16个域固定退場，不能入竞速 |
 | ND3 | 固定有限P1消费/peer/采样与严格方向；无优化，结果驱动有限FIX | ND2之后，不让错误实现赢性能 |
 
@@ -74,3 +75,16 @@ ND-R1 fixture `f83aa9f1`已迁移旧Native-only预期：retired Unary/gate在exp
 放大gate和长I64位置的Direct/op→Copy Graph变化输入/真实wait/close，且Native-only Graph拒绝。
 Windows Provider142/142、CPU12通过/1旧skip、Graph17/17、header1/1及source ordinary通过；
 Linux与installed/static尚未签PASS。产品仍固定`f32d261a`，模块AUDITED不自动签ND3裁决。
+
+## ND-R1已验收，ND3仍未完成
+
+以上“尚未”段为施工过程。最终产品仍为`f32d261a`：Windows/Linux各Provider142/142、CPU12通过/
+1旧skip、Graph17/17、header1/1；两平台同ordinary Direct/Graph在source shared/static与installed
+shared/static全部实际通过。固定candidate的无计时witness322条中Native31拒绝、成熟161全部执行、
+已执行0误差失败；拒绝不算PASS。旧witness receipt继承错误stamp，原件保留，仅短witness重编译/
+执行后明确绑定正确candidate，不重新构建产品。完整事实/限制见
+[ND-R1证据](../../../../evidence/correctness/cpu-native-numeric-retirement/README.md)。
+
+本实现子批七门与P0通过；实现61,387行/249文件，四个consumer目录清理625,435,572 logical bytes。
+SIMD与原库不改，未签新性能胜负。整个owner仍AUDITED、goal活动，因为剩余合格自研普通域的ND3
+有限性能/默认路由与精确资源保留裁决尚未完成；不以本子批代签CPU或四路线全部完成。
