@@ -60,7 +60,9 @@ Status MlxQuantized::infer_output_descriptions(std::span<const TensorDesc> input
     if (ids.rank() != 1 || ids.data_type() != DataType::kInt32)
       return Status::InvalidArgument("MLX embedding requires checked I32 row ids");
     auto out = TensorDesc::dense(dtype, std::array{ids.dimensions()[0], k});
-    if (!out) return std::move(out).error();outputs[0] = *out;return Status::Ok();
+    if (!out) return std::move(out).error();
+    outputs[0] = *out;
+    return Status::Ok();
   }
   const auto &a = inputs[0];
   if (a.rank() != rank || !floating(a.data_type()) || a.dimensions().back() != k)
@@ -74,10 +76,12 @@ Status MlxQuantized::infer_output_descriptions(std::span<const TensorDesc> input
                  {a.dimensions()[0], a.dimensions()[1]}))
       return Status::InvalidArgument("MLX selected expert ids must match [T,S]");
     auto out = TensorDesc::dense(dtype, std::array{a.dimensions()[0], a.dimensions()[1], n});
-    if (!out) return std::move(out).error();outputs[0] = *out;
+    if (!out) return std::move(out).error();
+    outputs[0] = *out;
   } else {
     auto out = TensorDesc::dense(dtype, std::array{a.dimensions()[0], n});
-    if (!out) return std::move(out).error();outputs[0] = *out;
+    if (!out) return std::move(out).error();
+    outputs[0] = *out;
   }
   return Status::Ok();
 }

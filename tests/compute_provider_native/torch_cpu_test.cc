@@ -34,8 +34,13 @@ public:
   }
 };
 
-TEST(NativeTorchCpu, ManagedReplayReportsRealAllocationFailureAndReleasesProgram) {
+AllocationFailure &allocation_failure() {
   static AllocationFailure allocation;
+  return allocation;
+}
+
+TEST(NativeTorchCpu, ManagedReplayReportsRealAllocationFailureAndReleasesProgram) {
+  auto &allocation = allocation_failure();
   c10::SetCPUAllocator(&allocation, 255);
   mem::QuotaAllocator metadata(mem::system_allocator(), 4 * 1024 * 1024);
   const auto initial = metadata.remaining();
@@ -151,5 +156,85 @@ TEST(NativeTorchCpu, DuplicateExpertIdsAndFailedInvocationRecovery) {
   auto done = lane.submit(queue, x, std::span(&y, 1));
   ASSERT_TRUE(done);
   EXPECT_TRUE(done->wait().IsInvalidArgument());
+}
+
+TEST(NativeTorchCpu, ArtifactAndMlxProgramsHaveIndependentSlotsAndReleaseFailedResources) {
+  auto &allocation = allocation_failure();
+  c10::SetCPUAllocator(&allocation, 255);
+  using D = c::DataType;
+  using F = c::model_ops::WeightArtifactFormat;
+  using M = c::model_ops::MlxWeightFormat;
+  const auto dense = [](D type, std::initializer_list<std::int64_t> shape) {
+    return c::TensorDesc::dense(type, {shape.begin(), shape.size()}).value();
+  };
+  struct Case {
+    c::Operation op;
+    std::vector<c::TensorDesc> inputs;
+  };
+  std::vector<Case> cases;
+  cases.push_back({c::model_ops::artifact_weight_decode(F::kNf4, 64, D::kFloat32),
+      {dense(D::kUInt8,{2,128}),dense(D::kFloat32,{8}),dense(D::kFloat32,{16})}});
+  cases.push_back({c::model_ops::artifact_weight_decode(F::kNf4DoubleQuant, 64, D::kFloat32),
+      {dense(D::kUInt8,{2,128}),dense(D::kUInt8,{8}),dense(D::kFloat32,{1}),
+       dense(D::kFloat32,{256}),dense(D::kFloat32,{}),dense(D::kFloat32,{16})}});
+  cases.push_back({c::model_ops::artifact_weight_decode(F::kAwqGemm4, 128, D::kFloat32),
+      {dense(D::kInt32,{256,1}),dense(D::kInt32,{2,1}),dense(D::kFloat32,{2,8})}});
+  cases.push_back({c::model_ops::artifact_weight_decode(F::kCompressedTensorsSymmetric4,128,D::kFloat32),
+      {dense(D::kInt32,{2,32}),dense(D::kFloat32,{2,2})}});
+  for (auto format : {M::kAffine4,M::kMxfp4,M::kMxfp8}) {
+    const bool affine = format == M::kAffine4;
+    const auto packed = format == M::kMxfp8 ? 16 : 8;
+    cases.push_back({c::model_ops::mlx_quantized_matmul(format,affine ? 64 : 32),
+        {dense(D::kFloat32,{2,64}),dense(D::kUInt32,{3,packed}),
+         dense(affine ? D::kFloat32 : D::kUInt8,{3,affine ? 1 : 2})}});
+    if (affine) cases.back().inputs.push_back(cases.back().inputs[2]);
+  }
+  for (const auto &test : cases) {
+    SCOPED_TRACE(test.op.custom_as<c::model_ops::ArtifactWeightDecode>() ? "artifact" : "mlx");
+    mem::QuotaAllocator metadata(mem::system_allocator(), 4 * 1024 * 1024);
+    const auto initial = metadata.remaining();
+    {
+      auto context = c::test::native_context({.metadata_allocator=metadata.get()}).value();
+      std::array<c::TensorDesc,1> outputs;
+      ASSERT_TRUE(c::infer_output_descriptions(test.op,test.inputs,outputs).ok());
+      auto prepared = c::prepare(context,test.op,test.inputs,outputs,mem::system_resource()).value();
+      std::vector<mem::Buffer> storage;
+      std::vector<c::ConstTensorView> inputs;
+      for (const auto &desc : test.inputs) {
+        const auto bytes=desc.required_bytes().value();
+        storage.push_back(half_test::buffer<std::byte>(std::vector<std::byte>(bytes)));
+        inputs.push_back(c::ConstTensorView::create(desc,storage.back().view()).value());
+      }
+      auto output=half_test::buffer<float>(std::vector<float>(outputs[0].element_count().value(),17));
+      const auto destination=c::TensorView::create(outputs[0],output.view()).value();
+      auto queue=context.create_queue().value();
+      auto lane=prepared.create_invocation().value();
+      allocation.fail=true;
+      auto failed=lane.submit(queue,inputs,std::span(&destination,1));
+      ASSERT_TRUE(failed);
+      EXPECT_TRUE(failed->wait().IsResourceExhausted());
+      EXPECT_FALSE(allocation.fail.load());
+      for (auto value:half_test::read<float>(output)) EXPECT_EQ(value,17);
+      EXPECT_TRUE(lane.submit(queue,inputs,std::span(&destination,1)).error().IsFailedPrecondition());
+      lane=prepared.create_invocation().value();
+      auto second=prepared.create_invocation().value();
+      auto second_queue=context.create_queue().value();
+      auto second_output=half_test::buffer<float>(std::vector<float>(outputs[0].element_count().value(),19));
+      const auto second_destination=c::TensorView::create(outputs[0],second_output.view()).value();
+      bool first_ok=false,second_ok=false;
+      {
+        std::jthread a([&]{auto done=lane.submit(queue,inputs,std::span(&destination,1));first_ok=done && done->wait().ok();});
+        std::jthread b([&]{auto done=second.submit(second_queue,inputs,std::span(&second_destination,1));second_ok=done && done->wait().ok();});
+      }
+      EXPECT_TRUE(first_ok);EXPECT_TRUE(second_ok);
+      EXPECT_EQ(half_test::read<float>(output),half_test::read<float>(second_output));
+      {
+        auto reserved=metadata.try_reserve_bytes(metadata.remaining()).value();
+        auto no_metadata=c::prepare(context,test.op,test.inputs,outputs,mem::system_resource());
+        ASSERT_FALSE(no_metadata);EXPECT_TRUE(no_metadata.error().IsResourceExhausted());
+      }
+    }
+    EXPECT_EQ(metadata.remaining(),initial);
+  }
 }
 } // namespace

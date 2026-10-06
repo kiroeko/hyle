@@ -124,7 +124,7 @@ TEST(CpuMlxQuantizedGraph, MixedFormatsAndSelectedExperts){
 #else
 TEST(CpuMlxQuantizedDirect, MixedFormatsAndSelectedExperts){
 #endif
-  matrices<float>();matrices<hyle::simd::bfloat16_t>();
+  matrices<float>();matrices<hyle::simd::bfloat16_t>();matrices<hyle::simd::float16_t>();
 }
 
 #if defined(HYLE_TEST_GRAPH_ROUTE_CPU)
