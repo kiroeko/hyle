@@ -1,0 +1,17 @@
+{
+  "candidate": "f53bf27dc35b3e4aa116b50d4f7bab15fe9a825b",
+  "platform": "linux",
+  "checks": 20,
+  "scope": [
+    "six actual GGUF convolution physical shapes into complete GDN/KDA state feedback",
+    "four exact new DeepSeek GGUF main identities with MXFP4 experts and Q8/BF16 projections",
+    "ratio0/4/128 attention/cache, indexer compressor, ordinary/hash MoE",
+    "complete mHC product output feeds full129280-row head in4096-row resident shards"
+  ],
+  "mathematics": "unchanged mature recipes/codecs and independent complete-program reference; no tolerance change or new product kernel",
+  "limits": [
+    "synthetic nonzero legal payloads; not entire real-weight inference",
+    "four main identity recipes do not replace the per-format actual contracts for all104 variants",
+    "final80 role and all required-region evidence aggregation remains pending"
+  ]
+}

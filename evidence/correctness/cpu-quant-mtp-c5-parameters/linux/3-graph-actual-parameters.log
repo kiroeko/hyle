@@ -1,0 +1,33 @@
+Running main() from /root/.cache/hyle/dependencies/v1/sources/googletest-063de7e9578f-162765170ae6/googletest/src/gtest_main.cc
+Note: Google Test filter = *C5Parameters*.*:*C5NewDeepSeek*.*
+[==========] Running 10 tests from 2 test suites.
+[----------] Global test environment set-up.
+[----------] 6 tests from C5ActualConvolutionParameters/CpuGraphC5Parameters
+[ RUN      ] C5ActualConvolutionParameters/CpuGraphC5Parameters.ActualGgufConvolutionStorageFeedsCompleteRecurrentState/gc3c587739220f12d
+[       OK ] C5ActualConvolutionParameters/CpuGraphC5Parameters.ActualGgufConvolutionStorageFeedsCompleteRecurrentState/gc3c587739220f12d (23 ms)
+[ RUN      ] C5ActualConvolutionParameters/CpuGraphC5Parameters.ActualGgufConvolutionStorageFeedsCompleteRecurrentState/gf4c46eb70564ef43
+[       OK ] C5ActualConvolutionParameters/CpuGraphC5Parameters.ActualGgufConvolutionStorageFeedsCompleteRecurrentState/gf4c46eb70564ef43 (125 ms)
+[ RUN      ] C5ActualConvolutionParameters/CpuGraphC5Parameters.ActualGgufConvolutionStorageFeedsCompleteRecurrentState/g7651f3980ebb670e
+[       OK ] C5ActualConvolutionParameters/CpuGraphC5Parameters.ActualGgufConvolutionStorageFeedsCompleteRecurrentState/g7651f3980ebb670e (154 ms)
+[ RUN      ] C5ActualConvolutionParameters/CpuGraphC5Parameters.ActualGgufConvolutionStorageFeedsCompleteRecurrentState/gd57295091e4ad903
+[       OK ] C5ActualConvolutionParameters/CpuGraphC5Parameters.ActualGgufConvolutionStorageFeedsCompleteRecurrentState/gd57295091e4ad903 (1784 ms)
+[ RUN      ] C5ActualConvolutionParameters/CpuGraphC5Parameters.ActualGgufConvolutionStorageFeedsCompleteRecurrentState/g31709c3de72cf996
+[       OK ] C5ActualConvolutionParameters/CpuGraphC5Parameters.ActualGgufConvolutionStorageFeedsCompleteRecurrentState/g31709c3de72cf996 (1613 ms)
+[ RUN      ] C5ActualConvolutionParameters/CpuGraphC5Parameters.ActualGgufConvolutionStorageFeedsCompleteRecurrentState/g89aa3265ac4fdf68
+[       OK ] C5ActualConvolutionParameters/CpuGraphC5Parameters.ActualGgufConvolutionStorageFeedsCompleteRecurrentState/g89aa3265ac4fdf68 (534 ms)
+[----------] 6 tests from C5ActualConvolutionParameters/CpuGraphC5Parameters (4242 ms total)
+
+[----------] 4 tests from C5ExactNewGgufMain/CpuGraphC5NewDeepSeek
+[ RUN      ] C5ExactNewGgufMain/CpuGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile89
+[       OK ] C5ExactNewGgufMain/CpuGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile89 (11128 ms)
+[ RUN      ] C5ExactNewGgufMain/CpuGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile90
+[       OK ] C5ExactNewGgufMain/CpuGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile90 (10275 ms)
+[ RUN      ] C5ExactNewGgufMain/CpuGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile102
+[       OK ] C5ExactNewGgufMain/CpuGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile102 (4233 ms)
+[ RUN      ] C5ExactNewGgufMain/CpuGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile103
+[       OK ] C5ExactNewGgufMain/CpuGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile103 (4188 ms)
+[----------] 4 tests from C5ExactNewGgufMain/CpuGraphC5NewDeepSeek (29828 ms total)
+
+[----------] Global test environment tear-down
+[==========] 10 tests from 2 test suites ran. (34072 ms total)
+[  PASSED  ] 10 tests.

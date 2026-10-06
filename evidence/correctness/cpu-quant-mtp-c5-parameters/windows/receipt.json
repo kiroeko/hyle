@@ -1,0 +1,43 @@
+[
+  {
+    "name": "selected-build",
+    "args": [
+      "cmake",
+      "--build",
+      "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+      "--target",
+      "hyle_compute_route_cpu_tests",
+      "hyle_graph_route_cpu_tests",
+      "--parallel",
+      "2"
+    ],
+    "candidate": "ed23f301facc564396f5ed34b78f98137464fcd8",
+    "log": "1-selected-build.log",
+    "returncode": 0,
+    "seconds": 12.703
+  },
+  {
+    "name": "direct-actual-parameters",
+    "args": [
+      "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_compute_route_cpu_test.exe",
+      "--gtest_filter=*C5Parameters*.*:*C5NewDeepSeek*.*",
+      "--gtest_output=xml:C:\\public\\project-hyle\\hyle\\.scratch\\validation\\cpu-coverage-c5-parameters-windows\\ed23f301facc\\direct.xml"
+    ],
+    "candidate": "ed23f301facc564396f5ed34b78f98137464fcd8",
+    "log": "2-direct-actual-parameters.log",
+    "returncode": 0,
+    "seconds": 62.765
+  },
+  {
+    "name": "graph-actual-parameters",
+    "args": [
+      "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_graph_route_cpu_test.exe",
+      "--gtest_filter=*C5Parameters*.*:*C5NewDeepSeek*.*",
+      "--gtest_output=xml:C:\\public\\project-hyle\\hyle\\.scratch\\validation\\cpu-coverage-c5-parameters-windows\\ed23f301facc\\graph.xml"
+    ],
+    "candidate": "ed23f301facc564396f5ed34b78f98137464fcd8",
+    "log": "3-graph-actual-parameters.log",
+    "returncode": 0,
+    "seconds": 61.657
+  }
+]

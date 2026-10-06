@@ -1,0 +1,33 @@
+Running main() from /root/.cache/hyle/dependencies/v1/sources/googletest-063de7e9578f-162765170ae6/googletest/src/gtest_main.cc
+Note: Google Test filter = *C5Parameters*.*:*C5NewDeepSeek*.*
+[==========] Running 10 tests from 2 test suites.
+[----------] Global test environment set-up.
+[----------] 6 tests from C5ActualConvolutionParameters/CpuC5Parameters
+[ RUN      ] C5ActualConvolutionParameters/CpuC5Parameters.ActualGgufConvolutionStorageFeedsCompleteRecurrentState/gc3c587739220f12d
+[       OK ] C5ActualConvolutionParameters/CpuC5Parameters.ActualGgufConvolutionStorageFeedsCompleteRecurrentState/gc3c587739220f12d (22 ms)
+[ RUN      ] C5ActualConvolutionParameters/CpuC5Parameters.ActualGgufConvolutionStorageFeedsCompleteRecurrentState/gf4c46eb70564ef43
+[       OK ] C5ActualConvolutionParameters/CpuC5Parameters.ActualGgufConvolutionStorageFeedsCompleteRecurrentState/gf4c46eb70564ef43 (58 ms)
+[ RUN      ] C5ActualConvolutionParameters/CpuC5Parameters.ActualGgufConvolutionStorageFeedsCompleteRecurrentState/g7651f3980ebb670e
+[       OK ] C5ActualConvolutionParameters/CpuC5Parameters.ActualGgufConvolutionStorageFeedsCompleteRecurrentState/g7651f3980ebb670e (160 ms)
+[ RUN      ] C5ActualConvolutionParameters/CpuC5Parameters.ActualGgufConvolutionStorageFeedsCompleteRecurrentState/gd57295091e4ad903
+[       OK ] C5ActualConvolutionParameters/CpuC5Parameters.ActualGgufConvolutionStorageFeedsCompleteRecurrentState/gd57295091e4ad903 (1760 ms)
+[ RUN      ] C5ActualConvolutionParameters/CpuC5Parameters.ActualGgufConvolutionStorageFeedsCompleteRecurrentState/g31709c3de72cf996
+[       OK ] C5ActualConvolutionParameters/CpuC5Parameters.ActualGgufConvolutionStorageFeedsCompleteRecurrentState/g31709c3de72cf996 (1610 ms)
+[ RUN      ] C5ActualConvolutionParameters/CpuC5Parameters.ActualGgufConvolutionStorageFeedsCompleteRecurrentState/g89aa3265ac4fdf68
+[       OK ] C5ActualConvolutionParameters/CpuC5Parameters.ActualGgufConvolutionStorageFeedsCompleteRecurrentState/g89aa3265ac4fdf68 (551 ms)
+[----------] 6 tests from C5ActualConvolutionParameters/CpuC5Parameters (4168 ms total)
+
+[----------] 4 tests from C5ExactNewGgufMain/CpuC5NewDeepSeek
+[ RUN      ] C5ExactNewGgufMain/CpuC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile89
+[       OK ] C5ExactNewGgufMain/CpuC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile89 (11240 ms)
+[ RUN      ] C5ExactNewGgufMain/CpuC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile90
+[       OK ] C5ExactNewGgufMain/CpuC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile90 (10554 ms)
+[ RUN      ] C5ExactNewGgufMain/CpuC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile102
+[       OK ] C5ExactNewGgufMain/CpuC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile102 (4190 ms)
+[ RUN      ] C5ExactNewGgufMain/CpuC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile103
+[       OK ] C5ExactNewGgufMain/CpuC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile103 (3986 ms)
+[----------] 4 tests from C5ExactNewGgufMain/CpuC5NewDeepSeek (29974 ms total)
+
+[----------] Global test environment tear-down
+[==========] 10 tests from 2 test suites ran. (34144 ms total)
+[  PASSED  ] 10 tests.
