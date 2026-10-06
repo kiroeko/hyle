@@ -426,11 +426,7 @@
       "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/cpu-aten-scatter-add-admission.md",
       "summary": "AS CANDIDATE：原ATen三浮点/I32-I64 ScatterAdd已接，Windows140/140、CPU12pass/1skip、Graph33pass/6skip、header及ordinary Direct/Graph通过；Linux和两平台三交付尚在验收，不代签PASS；Native/SIMD比较清退冻结。",
-      "candidate": "e13edaebe0aac974fd2f7d2ff50246dfd61ad330",
-      "performance": {
-        "tier": "P0",
-        "evidence": "docs/implementation/tasks/compute/cpu-aten-scatter-add-admission.md"
-      }
+      "candidate": "e13edaebe0aac974fd2f7d2ff50246dfd61ad330"
     },
     {
       "module": "compute_sched",
