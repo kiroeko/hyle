@@ -18,6 +18,7 @@
 #include "../compute_models/d5_official_fp8_fragments.h"
 #include "../compute_models/d5_cpu_official_boundary.h"
 #include "../compute_models/d5_deepseek_official_attention.h"
+#include "../compute_models/cpu_c4_model_branches.h"
 #include "../compute_models/d5_kda_full_fragments.h"
 #include "../compute_models/d5_kimi_remaining_fragments.h"
 #include "../compute_models/d5_glm_remaining_fragments.h"
@@ -1052,6 +1053,7 @@ TEST(CpuMoeFragments, D5OfficialFullMoeColdBoundary) {
 
 #if defined(HYLE_TEST_TORCH_CPU)
 #include "../compute_models/d5_cpu_torch_official_tests.h"
+#include "../compute_models/cpu_c4_model_branch_tests.h"
 #endif
 
 TEST(CpuMoeFragments, D5OfficialFp4ExpertBatch) {
