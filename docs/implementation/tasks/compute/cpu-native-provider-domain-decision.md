@@ -5,7 +5,7 @@
 - baseline：`155d1385c2b9a50eaa66a6c069b569f11daf4b03`，Windows canonical。用户要求：有成熟替代的所有自研算子都要裁决，
   不能因为低优先级后备就永久保留；只有唯一实现的精确域才直接保留。SIMD基础不删除。
 - owner：本卡保留SCOPED的冻结自研裁决ledger，不是当前产品owner授权。`compute_provider_native`
-  当前绑定[AS卡](cpu-aten-scatter-add-admission.md)，阶段以registry为准；[TM卡](cpu-aten-transformer-matrix-admission.md)已CLOSED；ggml仍[TC卡](cpu-aten-cast-stable-route.md) CLOSED；`compute_route_cpu`、`graph_route_cpu`
+  当前绑定[CP卡](cpu-aten-compilation-storage-declaration.md)，阶段以registry为准；[AS卡](cpu-aten-scatter-add-admission.md)与[TM卡](cpu-aten-transformer-matrix-admission.md)已CLOSED；ggml仍[TC卡](cpu-aten-cast-stable-route.md) CLOSED；`compute_route_cpu`、`graph_route_cpu`
   当前绑定[SI卡](cpu-aten-storage-index-admission.md)并独立CLOSED；
   后续自研逐域裁决或新成熟接线需按新事实重新绑定owner并固定有限FIX。
   [标准CPU构建](../build/cpu-standard-provider-build-v1.md)与ggml优化程序接入已独立关闭，不能代替本卡。涉及oneDNN/ggml的具体接入修复，
@@ -165,10 +165,10 @@ F32 I64/axis/layout/prefix RoPE、masked GQA/Dk-Dv/causal/emptykeys，以及norm
 
 | 当前边界 | 成熟事实 / Native事实 | 固定动作 |
 |---|---|---|
-| 普通 exact 数值/存储域 | SI/MN/TC/TM等真实资格；本批Native-only普通样例只剩三dtype I64 ScatterAdd | AS借用原ATen index_add，先接线资格，继续冻结自研比较 |
+| 普通 exact 数值/存储域 | SI/MN/TC/TM/AS等真实资格；原Native-only普通样例的三dtype I64 ScatterAdd也已接原ATen | 进入有限域去留前先完成CP资源声明资格；不把冷样例当完整模型或WIN |
 | prepared-only | ggml普通程序与oneDNN MatMul已prepared；稳定gate/Bool Softmax等ATen managed | 按op/kind/资源单列，不能把全部prepared需求签Native唯一或把managed冒充prepared |
 | retained compiled预算 | ATen Program+descriptor retained已知；本批1MiB实际可选择ATen | 普通重叠域仍需裁决，不以“ATen所有内存unknown”保留自研 |
-| compilation峰值预算 | 原库额外private upper bound未知；本批64MiB+reject unknown只选Native | 保留具名资源域资格，与普通性能结论分开；1MiB先前失败是Graph自身metadata容量 |
+| compilation峰值预算 | CP已关闭：ATen额外private bounds=0，Program/描述计supplied allocator；两平台strict预算普通三交付通过 | 此域也有成熟候选，不签Native唯一；总metadata仍非零 |
 | invocation严格预算 | ATen/普通ggml/oneDNN私有原库storage未知；Native caller workspace+已知0额外private | 本批1MiB实际Native可创建；不等于任何预算皆可用，不外推physical RSS/zero allocation |
 | whole declared shape domain | Native仅有derived-dense RMSNorm固定hidden与Copy；三个成熟factory exact-only | 保留现有已资格化整域能力，不能扩成其它bounded算子；动态Exp全拒绝 |
 | alias | 已资格化ATen dense-equal input0 norm/Unary/Binary/Softmax/RoPE/Assign、oneDNN限定norm | 精确重叠仍裁决；其余public允许与provider拒绝分开，不 blanket UNIQUE |
@@ -183,5 +183,7 @@ AS1–3现已真实CLOSED：原Add两平台140/140、普通Direct/Graph三交付
 close/逐点cold OOM通过，原191案例的三行I64 Add不再未接。还有一个具名资源声明项：ATen的
 `propose/prepare`只用supplied allocator持有Program/descriptor，并未调用native Tensor/数学/JIT；
 compilation额外private bounds未填，不证明原库有未知冷内存。需按有限owner任务核实并正确声明，
-不能把这个adapter unknown当Native唯一。managed replay与native invocation scratch unknown不同，
-仍不能声明prepared或zero-hot-allocation。资源声明固定后才签自研资源边界与普通域去留。
+不能把这个adapter unknown当Native唯一。该项已由CP1–2真实CLOSED解决：两平台141/141、strict
+普通Graph与三交付通过；数学/执行/布局不改，未变D5/生命周期以源码/contract身份复用。
+managed replay与native invocation scratch unknown不同，仍不能声明prepared或zero-hot-allocation。
+资源声明现已固定，下一步才签冻结自研的精确资源边界与普通域有限去留，不重开成熟接线目录。

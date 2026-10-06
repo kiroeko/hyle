@@ -423,10 +423,14 @@
     },
     {
       "module": "compute_provider_native",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/compute/cpu-aten-compilation-storage-declaration.md",
-      "summary": "CP CANDIDATE：已固定ATen冷编译存储声明候选；数学/执行/布局未改，严格预算普通Graph及两平台交付按本卡验收，不签未运行PASS或Native WIN。",
-      "candidate": "a527dd73dcc21a5b4b89979d43339d67becabe86"
+      "summary": "CP1–2 CLOSED：ATen额外cold private bounds正确声明0；两平台cold各族/严格预算普通Graph实际执行与source/static/shared通过，managed/invocation unknown仍真实；复用未变AS数学/模型/生命周期资格，无Native/SIMD比较或新WIN。",
+      "candidate": "a527dd73dcc21a5b4b89979d43339d67becabe86",
+      "performance": {
+        "tier": "P0",
+        "evidence": "evidence/correctness/cpu-aten-compilation-storage/README.md"
+      }
     },
     {
       "module": "compute_sched",

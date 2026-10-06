@@ -1,6 +1,6 @@
 # CPU ATen：冷编译存储声明
 
-<!-- MODULE REVIEW: CANDIDATE -->
+<!-- MODULE REVIEW: CLOSED -->
 
 - owner `compute_provider_native`；baseline `e6a34210731f7d0e957f5470eab8e0a3988029c8`，Windows canonical。
 - trigger：[实际资源审计](../../../../evidence/correctness/cpu-resource-domain-audit/README.md)的严格
@@ -50,3 +50,26 @@ candidate `a527dd73dcc21a5b4b89979d43339d67becabe86`：只修改propose的额外
 Windows Provider141/141（新增一case覆盖18族cold事实）、CPU12通过/1旧skip、Graph17/17、header1/1，
 strict compilation普通Direct/Graph结果/变化输入/close通过；零metadata预算、限制ATen后的strict
 invocation未知预算和prepared-only未被放宽。Linux与两平台installed/static尚未签PASS。
+
+## 终审：CP1–2 CLOSED
+
+候选后无产品/fixture变化或纠正；[当前完整收据](../../../../evidence/correctness/cpu-aten-compilation-storage/README.md)
+证明两平台各Provider141/141、CPU12通过/1旧skip、Graph17/17、header1/1；同ordinary strict-budget
+Direct/Graph source shared/static、installed shared/static全部通过。上方CANDIDATE段的未运行项
+现以terminal收据为准；未变D5/数学/生命周期由三段源码逐字节与1331其它输入身份复用，不假称重跑。
+1337个当前输入前向hash匹配，旧unknown造成的假资源缺口已消除；没有改原数学或Node/Queue架构。
+
+| 七门 | Verdict |
+|---|---|
+| 第三方 | PASS：同已锁Torch2.8 CPU/许可证，无新增依赖或原数学变化 |
+| 能力 | PASS，CP域：18族cold声明、strict编译普通Graph实际结果/变化输入/完成；total metadata仍计费 |
+| 复用 | PASS：supplied allocator/Program/描述与原lifecycle；managed/private invocation边界不变 |
+| 性能 | PASS P0：常态执行/成本相同，只修冷事实与预算准入；无自研P1/WIN |
+| 边界 | PASS：无公开头/API/factor/Graph planner/对象布局/治理工具改动 |
+| 构建 | PASS：两平台同source/static/shared消费者和1337身份；公开头实测，未变SDK-off接缝复用 |
+| 易用文档 | PASS：普通CPU路线自动匹配成熟域，无排序/timing；零总metadata预算、unknown invocation/prepared-only限制真实 |
+
+统一实现LOC61,519/249，不含tests/vendor；consumer清理625,342,086 logical bytes，保留cache/SDK/
+producer。所有actual命令/XML/源码/反例/proof/driver/selector/LOC/cleanup归档。重开限具名cold
+分配/预算绑定/交付反例、依赖升级或真实新消费；不借本卡扩张算子或自研优化。
+本卡关闭不表示CPU goal完成；剩余工作为冻结自研逐精确域的有限裁决，SIMD基础与GPU暂停保持。
