@@ -5,7 +5,7 @@
 - baseline：`155d1385c2b9a50eaa66a6c069b569f11daf4b03`，Windows canonical。用户要求：有成熟替代的所有自研算子都要裁决，
   不能因为低优先级后备就永久保留；只有唯一实现的精确域才直接保留。SIMD基础不删除。
 - owner：本卡保留SCOPED的冻结自研裁决ledger，不是当前产品owner授权。`compute_provider_native`
-  当前绑定[TM卡](cpu-aten-transformer-matrix-admission.md) CLOSED；ggml仍[TC卡](cpu-aten-cast-stable-route.md) CLOSED；`compute_route_cpu`、`graph_route_cpu`
+  当前绑定[AS卡](cpu-aten-scatter-add-admission.md)，阶段以registry为准；[TM卡](cpu-aten-transformer-matrix-admission.md)已CLOSED；ggml仍[TC卡](cpu-aten-cast-stable-route.md) CLOSED；`compute_route_cpu`、`graph_route_cpu`
   当前绑定[SI卡](cpu-aten-storage-index-admission.md)并独立CLOSED；
   后续自研逐域裁决或新成熟接线需按新事实重新绑定owner并固定有限FIX。
   [标准CPU构建](../build/cpu-standard-provider-build-v1.md)与ggml优化程序接入已独立关闭，不能代替本卡。涉及oneDNN/ggml的具体接入修复，
@@ -52,7 +52,7 @@
 Fill 与 unique I64 row-write 有实际 witness。未资格的特殊值/alias/duplicate/其它原 carrier 不冒充通过。
 下一批成熟接缝按普通 tensor、transformer、index/layout 三族处理；本卡仍 SCOPED，Native 继续冻结。
 
-## 当前源码域表（尚未裁决）
+## A1–TM阶段源码域表（历史；最新资源审计见下方）
 
 按实际已接同合同候选划界；不同 dtype、mask、alias、bounded shape、预算档位分别审计。
 下表的 `DECISION_REQUIRED` 仍是未完成，不把 vendor 尚未接入的能力虚报为可调用路线。
@@ -155,3 +155,26 @@ F32 I64/axis/layout/prefix RoPE、masked GQA/Dk-Dv/causal/emptykeys，以及norm
 段是历史审计进展，当前以本段与TM record为准。不能因宽storage/原fused名字签新数学支持。
 剩余bounded/prepared-only/严格内存资源档与其它具名语义域仍须精确裁决；Native/SIMD性能比较和
 清退仍冻结，SIMD本体不删。本批P0不签Native的WIN/LOSS。
+
+## 2026-10-06：剩余精确域与有限收口顺序
+
+[本批实际资源审计](../../../../evidence/correctness/cpu-resource-domain-audit/README.md)已完成：191个
+合法shape/storage案例×4factory=764条冷prepare；7种普通Graph消费×5政策=35次compile/invocation；
+3个bounded域×4factory=12条proposal。此为冷准入与成本事实，不是payload执行/性能WIN。
+原A1–TM表的I64位置/Bool-log/更高rank与布局等未接项已由各关闭卡解决，不再重复施工。
+
+| 当前边界 | 成熟事实 / Native事实 | 固定动作 |
+|---|---|---|
+| 普通 exact 数值/存储域 | SI/MN/TC/TM等真实资格；本批Native-only普通样例只剩三dtype I64 ScatterAdd | AS借用原ATen index_add，先接线资格，继续冻结自研比较 |
+| prepared-only | ggml普通程序与oneDNN MatMul已prepared；稳定gate/Bool Softmax等ATen managed | 按op/kind/资源单列，不能把全部prepared需求签Native唯一或把managed冒充prepared |
+| retained compiled预算 | ATen Program+descriptor retained已知；本批1MiB实际可选择ATen | 普通重叠域仍需裁决，不以“ATen所有内存unknown”保留自研 |
+| compilation峰值预算 | 原库额外private upper bound未知；本批64MiB+reject unknown只选Native | 保留具名资源域资格，与普通性能结论分开；1MiB先前失败是Graph自身metadata容量 |
+| invocation严格预算 | ATen/普通ggml/oneDNN私有原库storage未知；Native caller workspace+已知0额外private | 本批1MiB实际Native可创建；不等于任何预算皆可用，不外推physical RSS/zero allocation |
+| whole declared shape domain | Native仅有derived-dense RMSNorm固定hidden与Copy；三个成熟factory exact-only | 保留现有已资格化整域能力，不能扩成其它bounded算子；动态Exp全拒绝 |
+| alias | 已资格化ATen dense-equal input0 norm/Unary/Binary/Softmax/RoPE/Assign、oneDNN限定norm | 精确重叠仍裁决；其余public允许与provider拒绝分开，不 blanket UNIQUE |
+| 原Torch/ds4、standard Scan/TopK、View metadata | 属于原版借用或schema，不是HYLE payload math | 保留原库/标准接缝，SIMD基础保留；不得加入自研LOSS目录 |
+
+最后的具名普通缺口AS：I64 ScatterAdd是adapter尚未接，已锁原ATen对I32/I64、三floating、两轴、
+重复/empty的156断言通过；未完成产品执行/失败/两平台三交付资格，不能先写完成或UNIQUE。
+AS关闭后进入本卡原定有限普通域比较/清退，不重开整个CPU能力研究。strict资源/whole-domain仍有
+实际产品用途，性能裁决不能把相应能力一起删除，也不能为普通重叠永久保留未经裁决的fallback。

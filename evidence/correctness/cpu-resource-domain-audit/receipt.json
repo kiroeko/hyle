@@ -1,0 +1,13 @@
+{
+  "candidate": "214cb3d48cb39416e8540f7188249105cde58b10",
+  "kind": "cold-resource-audit-and-original-mature-program-witness",
+  "qualified_product_candidate": "3fc528dae5a25b7ac3f0bcc9606b112ee23b7c6d",
+  "unchanged_forward_inputs": 1337,
+  "provider_rows": 764,
+  "graph_cold_rows": 35,
+  "bounded_proposals": 12,
+  "original_scatter_assertions": 156,
+  "archive_sha256": "e3c97af995a21cad5faac0060af89617cc4d222d3f9ca1112dda76785d6c8495",
+  "payload_qualification": false,
+  "performance_measurement": false
+}

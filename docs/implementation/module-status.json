@@ -423,14 +423,9 @@
     },
     {
       "module": "compute_provider_native",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/compute/cpu-aten-transformer-matrix-admission.md",
-      "summary": "TM1–4 CLOSED：原Tensor matrix/Bool-log-softmax/long RoPE/masked GQA/norm成熟接线；两平台134/134、CPU12/1skip、Graph33/6skip、头1/1、同ordinary Direct/Graph三交付及P0完成。仅本批，剩余资源域/Native自研裁决未完，SIMD本体保留。",
-      "candidate": "3fc528dae5a25b7ac3f0bcc9606b112ee23b7c6d",
-      "performance": {
-        "tier": "P0",
-        "evidence": "evidence/correctness/cpu-aten-transformer-matrix/README.md"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/cpu-aten-scatter-add-admission.md",
+      "summary": "AS SCOPED：资源域批量冷审计已完成；I64 ScatterAdd三浮点adapter遗漏由原ATen156断言证实，固定原index_add有限接线/生命周期/普通三交付范围；未改产品，Native/SIMD性能与清退仍冻结。"
     },
     {
       "module": "compute_sched",
