@@ -8,6 +8,11 @@
 用户随后要求的CPU接入顺序已写入[新计划](cpu-quant-mtp-coverage-expansion-plan.md)及五张计划卡；
 本页仍只作需求输入，不转成新的运行状态或产品资格。
 
+**执行期C1纠正：**真实header证明Q09–Q11所对应UD-Q1_0/UD-TQ档实际为Unsloth
+IQ1_XXXS/XXS/XS（type66/65/64），不按标准Q1/TQ映射；文件名Q4_0的Qwen MTP也实际混用
+已接Q3_K/Q4_K/Q6_K/F32。下文初始列表保留作为名字盘点，当前施工输入以
+[C1实际发现](cpu-quant-mtp-c1-demand-and-carriers.md)及header事实为准，不能复用初始名字推断。
+
 ## 结论与统计口径
 
 ### CPU 待接数量：按什么计数

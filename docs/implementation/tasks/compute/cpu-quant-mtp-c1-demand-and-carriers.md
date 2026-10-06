@@ -50,3 +50,19 @@
 - Native只审计已借用ATen/原版CPU程序与旧规则软件边界，冻结全部HYLE自研算子；没有性能优化授权。
 - compute/graph core、CPU facade以及全部GPU状态保持，不把审计顺手扩大到这些已关闭/阻塞模块。
 - D1–D4一次审计，现有快照/metadata parser/cache优先复用；head/index只取必要metadata，不下载大权重。
+
+## 实际发现（C1进行中，未签产品资格）
+
+1. 复用12个完整GGUF画像/223分片；其余603个分片/sidecar在同一metadata批次补齐。
+2. Qwen3.8-27B文件名Q4_0的MTP实际18 tensors，Q3_K/Q4_K/Q6_K/F32；不需要因为文件名额外
+   重写Q4_0 MTP数学，仍需完整精确分支验收。
+3. Qwen2.4T/Kimi的UD-Q1_0、UD-TQ1_0、UD-TQ2_0使用type66/65/64，不是标准Q1_0/TQ1_0/TQ2_0。
+   固定Unsloth `iq1-narrow-grids-b10775` SHA `46cbf0e95786fe8f5b7c0e86d57aaf8f8eceea7f`
+   定义为IQ1_XXXS/IQ1_XXS/IQ1_XS，实际block38/42/46 bytes每256值，CPU原vec_dot与解码源已找到。
+   C2必须为该成熟扩展定版本/ABI，不能只升级stock core再猜映射。原Q09–Q11名称候选依法修正，
+   仍为三个格式接缝；标准Q1/TQ仅在header真正出现时准入。
+4. 已锁LibTorch2.8 CPU的packed-int4原操作在Windows实际24个案例通过：F32/F16/BF16，
+   group32/64/128/256，M1/M5。它是原库carrier探针，不是HYLE接线/RUN_PASS；NF4/MLX的公式与
+   packing/precision仍需独立核对，不凭“4-bit”外推。
+5. 用户最新口径已更新总计划：单一合格成熟carrier正确接入/P0；多家合格成熟重叠域批量比较；
+   不比较自研或逐档位重建/计时。

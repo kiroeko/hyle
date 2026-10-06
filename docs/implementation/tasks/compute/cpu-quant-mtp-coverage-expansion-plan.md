@@ -81,11 +81,14 @@ Provider可保留完整融合片段，禁止为了HYLE逐核调度拆开成熟re
   MTP共享参数、DSpark cache wrap/reset、独立slot、完成失败/close/OOM；不把理论可表达签为RUN_PASS。
 - 交付：Windows/Linux source、installed-static、installed-shared普通C++，DLL邻置、SDK搬移/offline
   与依赖资产完整；header/API/packaging影响由现有selector选择，适用风险/跳过理由保留。
-- 性能以**P0成本结构**为主：不逐算子/档位进行赢家比赛；prepare一次，热路径无编译/搜索，
-  无整库专家/权重每轮解包，保留融合和workspace/原库资源复用，必要转换、copy和同步真实记录。
-- 若仅P0不能裁决具名接入成本，C4固定最多两个代表完整程序（量化MoE与DSpark），同原成熟调用
-  比较完整完成边界；API固定后一次P1 bundle，沿原5%工程门和统一资格，算法优化0、最多一批接缝纠正。
-  没有明确风险不自动启动P1；不以n31、换姿势或新仪器无限采样。必要但未运行仍为未验。
+- 用户最新明确：只有一家合格成熟Provider时，正确接入、资源/成本审计即可，不做赢家P1；
+  oneDNN/ggml等多家都能执行同语义/格式/资源合同的重叠域，可集中比较并固定默认选择。
+- P0始终查prepare一次、热路径无编译/搜索、无整库专家/权重每轮解包，保留融合和资源复用；
+  必要转换、copy/同步真实记录。单carrier不制造竞争peer，也不复活自研作为对照。
+- C3/C4审计时归并实际成熟重叠域与具名接入成本风险，最多两个代表完整消费族、同完成边界；
+  API稳定后共用一份P1 bundle，沿既有5%工程门/资格规则，固定winner所需语义不苹果对橘子。
+  一批采样、一批定向接缝纠正，算法优化0；不逐格式/档位计时，不以换姿势/n31或新仪器无限采样。
+  无重叠/未决成本风险不启动P1；有明确适用门但未运行仍为未验。
 - docs/state/已证明格式变化不构建、不跑P1；不重写selector、closure或性能统计核心。
 - 每包阶段变化用既有closure/docs检查；提交推送`[skip ci]`。Windows唯一产品真相，WSL仅前向副本。
   每包完成按统一29路径`loc-report.py`统计Compute+Graph实现代码（不含tests/vendor/bench），
