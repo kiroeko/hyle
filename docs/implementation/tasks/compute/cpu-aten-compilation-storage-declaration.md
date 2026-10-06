@@ -1,6 +1,6 @@
 # CPU ATen：冷编译存储声明
 
-<!-- MODULE REVIEW: AUDITED -->
+<!-- MODULE REVIEW: CANDIDATE -->
 
 - owner `compute_provider_native`；baseline `e6a34210731f7d0e957f5470eab8e0a3988029c8`，Windows canonical。
 - trigger：[实际资源审计](../../../../evidence/correctness/cpu-resource-domain-audit/README.md)的严格
@@ -39,3 +39,14 @@
 destroy闭包已核对，无native Tensor/JIT/packing或额外private scratch；诊断Status分配按既有quota
 合同排除，Context/Queue/driver控制与invocation另计。实际普通Graph baseline counterexample返回
 预期5（未绑定ATen），不是PASS或原库数学失败。实现不得改变数学、布局、typed lane或invocation。
+
+## 不可变候选与首批事实
+
+candidate `a527dd73dcc21a5b4b89979d43339d67becabe86`：只修改propose的额外cold bounds与版本身份。
+源码三个完整受保护片段（Program/全部数学与执行/invocation/mapping/lifecycle、prepare、SDK-off）
+逐字节相同；1331个既有非fixture输入SHA256相同。AS未变数学/lifecycle/D5/关闭分支资格可复用，
+新cold facts、预算规划与更新binary三交付仍需要本卡实际验收，不用复用声明替代它们。
+
+Windows Provider141/141（新增一case覆盖18族cold事实）、CPU12通过/1旧skip、Graph17/17、header1/1，
+strict compilation普通Direct/Graph结果/变化输入/close通过；零metadata预算、限制ATen后的strict
+invocation未知预算和prepared-only未被放宽。Linux与两平台installed/static尚未签PASS。
