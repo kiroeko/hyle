@@ -6,7 +6,8 @@
 - baseline `5b0044e2a10d11fdfce54893020cfcaaed47b0c0`，执行时解析完整commit并核对HEAD/worktree；Windows canonical，不回退。
 - 本计划对应[缺口清单](cpu-popular-quant-mtp-gap-list.md)及[固定元数据](cpu-popular-quant-mtp-gap-list.json)，
   是新的CPU扩覆盖计划，不恢复旧M/C/D施工队列、旧goal、旧进度或GPU阻塞项。
-- 当前模块状态仍只在[module-status](../../module-status.json)。C1审计已完成，C2/C3证据保留；三CPU owner已交接C4 AUDITED，C5仍是**待激活计划卡**；
+- 当前模块状态仍只在[module-status](../../module-status.json)。C1审计已完成，C2/C3证据保留；C4有限资格已完成，
+  三CPU owner暂保留C4 AUDITED记录，C5进入**SCOPED范围审计**，有限FIX固定后交接其AUDITED记录；
   开始每包时绑定其真实owner，合法进入SCOPED，审计后AUDITED固定有限FIX，再写产品。
   现有CLOSED不因本页自动重开；现有AUDITED范围改变必须重新定界；BLOCKED不自动恢复。
 
