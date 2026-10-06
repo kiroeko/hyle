@@ -66,3 +66,8 @@
    packing/precision仍需独立核对，不凭“4-bit”外推。
 5. 用户最新口径已更新总计划：单一合格成熟carrier正确接入/P0；多家合格成熟重叠域批量比较；
    不比较自研或逐档位重建/计时。
+6. 用户明确每个模型算子有不同实际量化精度。D1输出必须按tensor角色分别保存权重storage、
+   activation、accumulation、state和output精度；header只证明存储，forward证明执行边界。
+   文件整体Q4/Q8标签、相同名字的MTP/DSpark和“4-bit”不得授予单算子资格。
+7. Unsloth IQ1扩展源基于ggml0.22，不能整树替换当前0.24并声称升级。C2需在固定新版core上
+   借入原版IQ1扩展或给同等明确的版本方案；原数学不改，不把65/66重解释为标准Q1/TQ。
