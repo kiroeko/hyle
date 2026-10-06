@@ -298,6 +298,71 @@ TEST(AtenCpuTransformer, RopeLongIndicesLayoutsPrefixAndTailBits) {
             }
       }
 }
+
+template <class T> void lowp_integer_rope() {
+  auto ctx = context();
+  for (bool odd : {false, true})
+    for (auto index_type : {DataType::kInt32, DataType::kInt64})
+      for (auto layout : {RopeLayout::kInterleaved, RopeLayout::kHalfSplit}) {
+        const auto d =
+            description(half_test::data_type<T>(),
+                        std::array<std::int64_t, 4>{1, 2, 1, 6}, odd);
+        const auto p =
+            description(index_type, std::array<std::int64_t, 1>{2}, odd);
+        const auto f = description(DataType::kFloat32,
+                                   std::array<std::int64_t, 1>{2}, odd);
+        const std::array ds{d, p, f};
+        std::array bs{storage(d), storage(p), storage(f)};
+        std::vector<T> x(12);
+        for (std::size_t i = 0; i < x.size(); ++i)
+          x[i] = half_test::encode<T>(static_cast<float>(i + 1));
+        for (int row = 0; row < 2; ++row) {
+          x[row * 6 + 4] = T::from_bits(
+              std::is_same_v<T, hyle::simd::float16_t> ? 0x7c11 : 0x7f81);
+          x[row * 6 + 5] = T::from_bits(0x8000);
+        }
+        const std::int64_t n =
+            index_type == DataType::kInt32 ? 1073741827LL : 2147483651LL;
+        const std::array<std::int64_t, 2> positions{n, -n};
+        const std::array<float, 2> frequencies{.125F, .25F};
+        write<T>(bs[0], d, x);
+        write<float>(bs[2], f, frequencies);
+        if (index_type == DataType::kInt64)
+          write<std::int64_t>(bs[1], p, positions);
+        else {
+          const std::array<std::int32_t, 2> short_positions{
+              static_cast<std::int32_t>(n), static_cast<std::int32_t>(-n)};
+          write<std::int32_t>(bs[1], p, short_positions);
+        }
+        const auto actual = run<T>(ctx,
+                                   Operation(RoPE{.rotary_dimensions = 4,
+                                                  .sequence_axis = 1,
+                                                  .layout = layout}),
+                                   ds, bs);
+        for (int row = 0; row < 2; ++row) {
+          for (int pair = 0; pair < 2; ++pair) {
+            const int a =
+                row * 6 +
+                (layout == RopeLayout::kInterleaved ? pair * 2 : pair);
+            const int b = a + (layout == RopeLayout::kInterleaved ? 1 : 2);
+            const double phase =
+                double(positions[row]) * double(frequencies[pair]);
+            const double first = half_test::decode(x[a]),
+                         second = half_test::decode(x[b]);
+            half_test::expect_near(actual[a], first * std::cos(phase) -
+                                                  second * std::sin(phase));
+            half_test::expect_near(actual[b], first * std::sin(phase) +
+                                                  second * std::cos(phase));
+          }
+          EXPECT_EQ(actual[row * 6 + 4].bits, x[row * 6 + 4].bits);
+          EXPECT_EQ(actual[row * 6 + 5].bits, x[row * 6 + 5].bits);
+        }
+      }
+}
+TEST(AtenCpuTransformer, LowPrecisionIntegerRopePreservesPhaseAndTailBits) {
+  lowp_integer_rope<hyle::simd::float16_t>();
+  lowp_integer_rope<hyle::simd::bfloat16_t>();
+}
 template <class T> void attention_batch() {
   auto ctx = context();
   auto type = half_test::data_type<T>();

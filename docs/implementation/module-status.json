@@ -374,8 +374,8 @@
     {
       "module": "compute_provider_ggml",
       "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/cpu-residual-scatter-rope-numeric-retirement.md",
-      "summary": "RN1–4 AUDITED：实际重复half ScatterAdd与I32 RoPE反例已固定有限FIX；撤不合格Native/ggml普通域并接原ATen低精度Double phase RoPE，不优化/不计时/SIMD不改。数学、普通入口、资源与两平台三交付仍待产品验收。"
+      "record": "docs/implementation/tasks/compute/cpu-rope-phase-contract-audit.md",
+      "summary": "RoPE精度AUDITED无产品FIX：官方模型Float32 phase与Double oracle不同，原诊断不签原模型数值FAIL；ggml源码逐字未改，保留原程序，按同中间精度比较。"
     },
     {
       "module": "graph_provider_onednn",
@@ -420,7 +420,7 @@
       "module": "compute_provider_native",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/cpu-residual-scatter-rope-numeric-retirement.md",
-      "summary": "RN1–4 AUDITED：实际重复half ScatterAdd与I32 RoPE反例已固定有限FIX；撤不合格Native/ggml普通域并接原ATen低精度Double phase RoPE，不优化/不计时/SIMD不改。数学、普通入口、资源与两平台三交付仍待产品验收。"
+      "summary": "RN1/RN4 AUDITED：退役错误half ScatterAdd，接原ATen lowp整数RoPE；RN2/RN3因Float32/Double phase不同比较撤回，不删除有效Native/ggml RoPE。两平台产品/资源/普通三交付仍待验收。"
     },
     {
       "module": "compute_sched",

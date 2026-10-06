@@ -207,7 +207,10 @@ template <class Value> void expect_half_scatter() {
       ConstTensorView::create(update_desc, update_storage.view()).value();
   const auto index_view =
       ConstTensorView::create(index_desc, index_storage.view()).value();
-  auto context = hyle::compute::test::native_context().value();
+  auto context =
+      hyle::compute::Context::create(hyle::compute::cpu::device(),
+                                     hyle::compute::aten_cpu::provider())
+          .value();
   auto queue = context.create_queue().value();
   auto prepared =
       hyle::compute::prepare(context, Scatter{.kind = ScatterKind::kAdd}, desc,
@@ -222,7 +225,10 @@ template <class Value> void expect_half_scatter() {
   const auto actual = half_test::read<Value>(storage);
   for (std::size_t index = 0; index < actual.size(); ++index)
     EXPECT_EQ(actual[index].bits,
-              half_test::encode<Value>(index == 0 ? 5.0 : 1.0).bits);
+              half_test::encode<Value>(index == 0   ? 5.0
+                                       : index == 2 ? 1.0 + 3 * half_ulp
+                                                    : 1.0)
+                  .bits);
 
   indices.back() = 8;
   ASSERT_TRUE(
@@ -236,7 +242,10 @@ template <class Value> void expect_half_scatter() {
     EXPECT_EQ(unchanged[index].bits, actual[index].bits);
 }
 
-TEST(NativeIndexing, HalfScatterUsesOrderedRoundingAndChecksBeforeWriting) {
+TEST(AtenCpuIndexing,
+     HalfScatterAccumulatesBeforeStorageAndChecksBeforeWriting) {
+  if (!hyle::compute::aten_cpu::provider().valid())
+    GTEST_SKIP() << "ATen CPU SDK is not enabled";
   expect_half_scatter<hyle::simd::float16_t>();
   expect_half_scatter<hyle::simd::bfloat16_t>();
 }

@@ -1440,4 +1440,37 @@ TEST(NativeNumericRetirement, BothColdStagesDeclineAllRetiredDomains) {
   }
 }
 
+TEST(NativeNumericRetirement, BothColdStagesDeclineLowPrecisionScatterAdd) {
+  auto context = test::native_context().value();
+  for (auto type : {DataType::kFloat16, DataType::kBFloat16})
+    for (auto index_type : {DataType::kInt32, DataType::kInt64})
+      for (std::int32_t axis : {0, 1}) {
+        const auto base =
+            TensorDesc::dense(type, std::array<std::int64_t, 2>{2, 3}).value();
+        const auto index =
+            TensorDesc::dense(index_type, std::array<std::int64_t, 1>{3})
+                .value();
+        const auto update =
+            TensorDesc::dense(type, axis == 0
+                                        ? std::array<std::int64_t, 2>{3, 3}
+                                        : std::array<std::int64_t, 2>{2, 3})
+                .value();
+        const Operation operation(
+            Scatter{.axis = axis, .kind = ScatterKind::kAdd});
+        const std::array inputs{base, index, update};
+        const auto output = infer_single_output(operation, inputs).value();
+        std::array<ResourceBindingRequirement, 3> ir{};
+        std::array<ResourceBindingRequirement, 1> orq{};
+        const auto proposal = OperationPreparationAccess::propose(
+            context, 0, operation, inputs, std::span(&output, 1), ir, orq);
+        ASSERT_FALSE(proposal);
+        EXPECT_TRUE(proposal.error().IsUnimplemented());
+        const auto prepared =
+            prepare(context, operation, inputs, std::span(&output, 1),
+                    hyle::mem::system_resource());
+        ASSERT_FALSE(prepared);
+        EXPECT_TRUE(prepared.error().IsUnimplemented());
+      }
+}
+
 } // namespace

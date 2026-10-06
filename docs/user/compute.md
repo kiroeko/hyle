@@ -454,7 +454,7 @@ Context、MemoryResource、外部 tensor/压缩权重 owner 必须覆盖各自�
 | gated activation | `GatedActivation` | f32/f16/bf16 packed `[...,2*d]` 或 separate gate/value；成熟ATen三种激活保持F32 activation/mul后一次storage舍入；Native仅保留F16 SiLU待有限裁决 |
 | 索引读写 | `Gather` / `Scatter` | plain scalar storage、i32/i64 indices、dense output；Scatter assign 支持任意标量位宽，add 支持 f32/f16/bf16，并可精确原地更新 input0 |
 | 张量拼接 | `Concat` | 同 dtype/rank 的 variadic plain inputs，沿显式 axis 产生 dense output；dense 输入按连续后缀块复制 |
-| 旋转位置编码 | `RoPE` | f32 data、i32/i64 positions、显式frequency、interleaved/half-split与未旋转tail；I64普通CPU匹配ATen，Native只保留I32域 |
+| 旋转位置编码 | `RoPE` | f32/f16/bf16 data、i32/i64 positions、显式F32 frequency、interleaved/half-split与未旋转tail；I64普通CPU匹配ATen，Native只保留F32 data/I32域 |
 | 概率归一化 | `Softmax` | f32/f16/bf16 任意 axis、scale、LogSoftmax，以及可广播 Bool/同类型 additive mask；F32 accumulation，半精度使用显式 F32 行工作区；允许精确 input/output in-place；无有效值的 row 产生 NaN |
 | 候选筛选 | `TopK` | f32/f16/bf16 任意 axis，largest/smallest、sorted/stable 语义，返回同类型 values + i32 indices；显式 caller-owned workspace，不隐藏分配 |
 | 注意力 | `ScaledDotProductAttention` | f32 rank-4 BSHD/BHSD，Q/K depth 与 V/output depth 可不同；可选 bottom-right causal、Bool/additive 广播 mask，分块 online softmax 与显式 caller-owned workspace |
@@ -512,9 +512,12 @@ ATen factory 还接 plain F32/F16/BF16 的 MatMul、Softmax／LogSoftmax、RMSNo
 和完整 SDPA math 程序：合法 byte stride、inferred dense output，矩阵 batch 广播和 K0，任意
 Softmax axis／scale、非零 Bool 或 floating additive mask，以及 SDPA 的 GQA、两种 layout、
 独立 Q/K 与 V depth、bottom-right causal 和零 key 无效行。累加保持 F32；窄 storage 显式
-声明 F32。RoPE 当前接 F32 data/frequency、I32/I64 positions、两种 pair layout 和完整 prefix／axis，
+声明 F32。ATen RoPE 接 F32/F16/BF16 data、F32 frequency、I32/I64 positions、两种 pair layout 和完整 prefix／axis，
 未旋转 tail 保留原 bits。依赖和 SDK 平台同上，具体资格见
 [Transformer／矩阵接入](../implementation/tasks/compute/cpu-aten-transformer-matrix-admission.md)。
+低精度data的增量验收见[当前接缝卡](../implementation/tasks/compute/cpu-residual-scatter-rope-numeric-retirement.md)。
+ATen沿原Double phase程序；普通I32模型路径仍可使用ggml的Float32 phase程序。两种中间精度
+应按实际消费者区分，不能拿Double reference代替明确的Float32模型程序或直接签同合同性能胜负。
 
 这是 managed 原库程序，包含所有 packing、Float／Double 转换、GQA repeat、score/mask 与临时
 Tensor，内存上界未知。Torch 原 fused SDPA 的全 mask 行为不同，因此该通用候选使用满足
@@ -701,7 +704,7 @@ kernel arguments 及其 resource owner 都必须活到 Completion 真正终态�
 浮点add是base与所有updates的归约，允许重结合、不同累加顺序及存储精度或更宽的中间值；
 不承诺逐项舍入、行主序fold或跨调用逐位一致。模型要求F32中间值时，使用已有Cast与F32端口
 明确表达，再在规定的存储边界转换。模型精度档和最终误差门仍适用，不能丢更新或静默降精度。
-当前CPU reference采用逐次storage舍入，这是实现特征。Scatter本身不提供不同invocation之间
+CPU低精度Add使用已资格化成熟累加程序，Native只保留F32 Add。Scatter本身不提供不同invocation之间
 对同一状态的并发原子更新保证，调用方仍负责资源排序。
 
 ## View、Copy、Fill 与 Cast

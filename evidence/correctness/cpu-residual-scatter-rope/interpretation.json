@@ -1,0 +1,8 @@
+{
+  "interpretation": "ScatterAdd: two proven Native defects; RoPE: Float32 versus Double phase, NOT_COMPARABLE",
+  "official_source": "https://github.com/huggingface/transformers/blob/main/src/transformers/models/qwen3_5/modeling_qwen3_5.py",
+  "official_function": "Qwen3_5TextRotaryEmbedding.forward",
+  "retrieved": "2026-10-06",
+  "ggml_source_unchanged": "a2e22426ce2d85327b780c22e472171071d2bf05e4f87b0229a58100f2e67596",
+  "baseline_ggml_sha256": "a2e22426ce2d85327b780c22e472171071d2bf05e4f87b0229a58100f2e67596"
+}

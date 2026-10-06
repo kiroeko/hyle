@@ -6,6 +6,7 @@
 #include <cstdint>
 #include <cstring>
 #include <span>
+#include <type_traits>
 #include <utility>
 
 #include "hyle/math/scalar.h"
@@ -412,7 +413,7 @@ submit_scatter(const NativePlan &plan, std::span<const ConstTensorView> inputs,
     if (plan.scatter_kind == ScatterKind::kAssign) {
       std::memcpy(output + output_offset, updates + update_offset,
                   element_size);
-    } else {
+    } else if constexpr (std::is_same_v<Value, float>) {
       const float destination = numeric::load<Value>(output + output_offset);
       const float addition = numeric::load<Value>(updates + update_offset);
       numeric::store<Value>(output + output_offset, destination + addition);
@@ -582,10 +583,9 @@ Status prepare_indexing(Operation operation,
                  : status;
     const Scatter *scatter = operation.get_if<Scatter>();
     const DataType type = inputs[0].data_type();
-    if (scatter->kind == ScatterKind::kAdd && type != DataType::kFloat32 &&
-        type != DataType::kFloat16 && type != DataType::kBFloat16) {
-      return Status::Unimplemented(
-          "native Scatter add supports float32/float16/bfloat16 tensors");
+    if (scatter->kind == ScatterKind::kAdd && type != DataType::kFloat32) {
+      return Status::Unimplemented("native Scatter add retains float32; low "
+                                   "precision uses mature accumulation");
     }
     auto axis = normalized_axis(scatter->axis, inputs[0].rank());
     if (!axis)

@@ -178,10 +178,8 @@ Status select(Operation operation, std::span<const TensorDesc> inputs,
         return Status::Unimplemented(
             "ATen CPU numerical input is not admitted");
     }
-    if (operation.get_if<RoPE>() &&
-        (inputs[0].data_type() != DataType::kFloat32 ||
-         inputs[2].data_type() != DataType::kFloat32))
-      return Status::Unimplemented("ATen CPU RoPE requires F32 data/frequency");
+    if (operation.get_if<RoPE>() && inputs[2].data_type() != DataType::kFloat32)
+      return Status::Unimplemented("ATen CPU RoPE requires F32 frequency");
     auto accumulation = DataType::kFloat32;
     if (const auto *op = operation.get_if<MatMul>())
       accumulation = op->accumulation_type;
@@ -1025,7 +1023,7 @@ const detail::ProviderVTable kProviderVTable{
     .identity = {.id = kProviderId,
                  .name = "ATen CPU programs",
                  .version =
-                     "libtorch-2.8.0-cpu+programs-5+compilation-bounds-1"},
+                     "libtorch-2.8.0-cpu+programs-6+compilation-bounds-1"},
     .create_context = &create_context,
     .destroy_context = &destroy_context,
     .propose = &propose,

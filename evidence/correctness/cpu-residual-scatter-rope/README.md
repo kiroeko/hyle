@@ -27,3 +27,12 @@ sin/cos/stack/cat 与输入 clone 保尾；低精度输入尚被准入 guard 挡
 完整源输入、独立 reference、所有 compile/执行原件及 driver 在 [diagnostic.zip](diagnostic.zip)，
 摘要/hash 见 [receipt.json](receipt.json)。第二次诊断仅补 F16/BF16 RoPE 和更正 I32 日志标签；
 首次原件保留，没有调整数据、数值阈值或优化算法。
+
+## 同合同审计纠正（当前裁决）
+
+上面的330条与raw bad_rows是相对于Double oracle的原件，不改写。产品错误已证仅Native的两个
+half ScatterAdd域。RoPE一项在不同phase精度之间比较，当前改判NOT_COMPARABLE，不能据它签
+原Float32模型程序FAIL或删除成熟RoPE。官方Qwen3.5 text rotary明确使用Float32 phase，见
+[官方源码](https://github.com/huggingface/transformers/blob/main/src/transformers/models/qwen3_5/modeling_qwen3_5.py)。
+RN2/RN3方案与未提交产品改动撤回；原ggml/Native I32 RoPE保持。低精度data/I64端口的ATen原Double
+程序接入仍有意义，作为具名数据域资格，不冒充模型Float32程序或签二者同合同性能胜负。
