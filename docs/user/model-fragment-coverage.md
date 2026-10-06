@@ -102,3 +102,9 @@ CUDA官方FP4/FP8 MoE，以及本次CPU官方GLM FP8/DeepSeek FP4/FP8 MoE；
 [CPU官方四画像](../../evidence/correctness/llm-moe-d5-real-fragments/cpu-official-torch-binding/receipt.json)、
 [DeepSeek GGUF](../../evidence/correctness/llm-moe-d5-real-fragments/deepseek-gguf-three-route/README.md)。
 Vulkan GGUF的后续逐画像裁决以上方当前收据为准。历史失败和撤回资格仍保留，不能覆盖当前ledger。
+
+## CPU 热门量化与新版扩展缺口
+
+面向更多 GGUF 档位、独立 MTP 和 DeepSeek Pro-0813/Flash-0731 DSpark 的
+[具体缺口清单](../implementation/tasks/compute/cpu-popular-quant-mtp-gap-list.md)已单独盘点。
+它区分公开格式接线缺失、已有格式的新制品资格、完整分支接线及身份对账，不改变本页当前通过数。

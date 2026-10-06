@@ -1,0 +1,2085 @@
+{
+  "schema_version": 1,
+  "kind": "CPU missing coverage inventory; not module registry, not admitted FIX or RUN_PASS ledger",
+  "baseline": "653a91d1eb28f65dbeda380ebeb0a9c400162f80",
+  "observed_at": "2026-10-06T11:08:39.495607+00:00",
+  "scope": "8 target model families, CPU route, official plus observed Unsloth GGUF variants and actual published sidecars",
+  "authority": {
+    "current_module_state": "module-status.json",
+    "current_execution_ledger": "llm-moe-d5-acceptance-ledger.json",
+    "human_summary": "cpu-popular-quant-mtp-gap-list.md"
+  },
+  "counts": {
+    "confirmed_primary_physical_format_gaps": 11,
+    "observed_main_gguf_variants": 104,
+    "without_exact_prior_profile_revision_receipt": 94,
+    "observed_sidecar_files": 3,
+    "confirmed_missing_self_written_math_required": 0
+  },
+  "missing_physical_formats": [
+    {
+      "id": "Q01",
+      "format": "Q4_0",
+      "source_enum": "GGML_TYPE_Q4_0",
+      "status": "PUBLIC_FORMAT_AND_ADAPTER_MAPPING_MISSING",
+      "target_evidence": "Qwen3.5/3.8 standard Q4 and Qwen3.8-27B MTP sidecar",
+      "required_bindings": [
+        "physical block description",
+        "quantized MatMul",
+        "GroupedMatMul when target uses MoE",
+        "quantized Gather/embedding when target uses quantized embedding"
+      ],
+      "carrier": "BORROW_GGML_CPU",
+      "scope_note": "upstream enum is source evidence, not CPU execution or per-profile header qualification"
+    },
+    {
+      "id": "Q02",
+      "format": "Q4_1",
+      "source_enum": "GGML_TYPE_Q4_1",
+      "status": "PUBLIC_FORMAT_AND_ADAPTER_MAPPING_MISSING",
+      "target_evidence": "Qwen3.5/3.8 standard Q4_1",
+      "required_bindings": [
+        "physical block description",
+        "quantized MatMul",
+        "GroupedMatMul when target uses MoE",
+        "quantized Gather/embedding when target uses quantized embedding"
+      ],
+      "carrier": "BORROW_GGML_CPU",
+      "scope_note": "upstream enum is source evidence, not CPU execution or per-profile header qualification"
+    },
+    {
+      "id": "Q03",
+      "format": "Q2_K",
+      "source_enum": "GGML_TYPE_Q2_K",
+      "status": "PUBLIC_FORMAT_AND_ADAPTER_MAPPING_MISSING",
+      "target_evidence": "UD-Q2_K_XL role mixtures; physical tensor header remains required",
+      "required_bindings": [
+        "physical block description",
+        "quantized MatMul",
+        "GroupedMatMul when target uses MoE",
+        "quantized Gather/embedding when target uses quantized embedding"
+      ],
+      "carrier": "BORROW_GGML_CPU",
+      "scope_note": "upstream enum is source evidence, not CPU execution or per-profile header qualification"
+    },
+    {
+      "id": "Q04",
+      "format": "IQ2_XXS",
+      "source_enum": "GGML_TYPE_IQ2_XXS",
+      "status": "PUBLIC_FORMAT_AND_ADAPTER_MAPPING_MISSING",
+      "target_evidence": "published UD-IQ2 families; exact mixture requires header",
+      "required_bindings": [
+        "physical block description",
+        "quantized MatMul",
+        "GroupedMatMul when target uses MoE",
+        "quantized Gather/embedding when target uses quantized embedding"
+      ],
+      "carrier": "BORROW_GGML_CPU",
+      "scope_note": "upstream enum is source evidence, not CPU execution or per-profile header qualification"
+    },
+    {
+      "id": "Q05",
+      "format": "IQ2_XS",
+      "source_enum": "GGML_TYPE_IQ2_XS",
+      "status": "PUBLIC_FORMAT_AND_ADAPTER_MAPPING_MISSING",
+      "target_evidence": "published UD-IQ2_XS; exact mixture requires header",
+      "required_bindings": [
+        "physical block description",
+        "quantized MatMul",
+        "GroupedMatMul when target uses MoE",
+        "quantized Gather/embedding when target uses quantized embedding"
+      ],
+      "carrier": "BORROW_GGML_CPU",
+      "scope_note": "upstream enum is source evidence, not CPU execution or per-profile header qualification"
+    },
+    {
+      "id": "Q06",
+      "format": "IQ2_S",
+      "source_enum": "GGML_TYPE_IQ2_S",
+      "status": "PUBLIC_FORMAT_AND_ADAPTER_MAPPING_MISSING",
+      "target_evidence": "published UD-IQ2_S/M families; M is a profile label, not necessarily a ggml dtype",
+      "required_bindings": [
+        "physical block description",
+        "quantized MatMul",
+        "GroupedMatMul when target uses MoE",
+        "quantized Gather/embedding when target uses quantized embedding"
+      ],
+      "carrier": "BORROW_GGML_CPU",
+      "scope_note": "upstream enum is source evidence, not CPU execution or per-profile header qualification"
+    },
+    {
+      "id": "Q07",
+      "format": "IQ1_S",
+      "source_enum": "GGML_TYPE_IQ1_S",
+      "status": "PUBLIC_FORMAT_AND_ADAPTER_MAPPING_MISSING",
+      "target_evidence": "published UD-IQ1_S/M role mixtures",
+      "required_bindings": [
+        "physical block description",
+        "quantized MatMul",
+        "GroupedMatMul when target uses MoE",
+        "quantized Gather/embedding when target uses quantized embedding"
+      ],
+      "carrier": "BORROW_GGML_CPU",
+      "scope_note": "upstream enum is source evidence, not CPU execution or per-profile header qualification"
+    },
+    {
+      "id": "Q08",
+      "format": "IQ1_M",
+      "source_enum": "GGML_TYPE_IQ1_M",
+      "status": "PUBLIC_FORMAT_AND_ADAPTER_MAPPING_MISSING",
+      "target_evidence": "published UD-IQ1_M role mixtures",
+      "required_bindings": [
+        "physical block description",
+        "quantized MatMul",
+        "GroupedMatMul when target uses MoE",
+        "quantized Gather/embedding when target uses quantized embedding"
+      ],
+      "carrier": "BORROW_GGML_CPU",
+      "scope_note": "upstream enum is source evidence, not CPU execution or per-profile header qualification"
+    },
+    {
+      "id": "Q09",
+      "format": "Q1_0",
+      "source_enum": "GGML_TYPE_Q1_0",
+      "status": "PUBLIC_FORMAT_AND_ADAPTER_MAPPING_MISSING",
+      "target_evidence": "Qwen3.8-2.4T and Kimi published UD-Q1_0",
+      "required_bindings": [
+        "physical block description",
+        "quantized MatMul",
+        "GroupedMatMul when target uses MoE",
+        "quantized Gather/embedding when target uses quantized embedding"
+      ],
+      "carrier": "BORROW_GGML_CPU",
+      "scope_note": "upstream enum is source evidence, not CPU execution or per-profile header qualification"
+    },
+    {
+      "id": "Q10",
+      "format": "TQ1_0",
+      "source_enum": "GGML_TYPE_TQ1_0",
+      "status": "PUBLIC_FORMAT_AND_ADAPTER_MAPPING_MISSING",
+      "target_evidence": "Kimi published UD-TQ1_0",
+      "required_bindings": [
+        "physical block description",
+        "quantized MatMul",
+        "GroupedMatMul when target uses MoE",
+        "quantized Gather/embedding when target uses quantized embedding"
+      ],
+      "carrier": "BORROW_GGML_CPU",
+      "scope_note": "upstream enum is source evidence, not CPU execution or per-profile header qualification"
+    },
+    {
+      "id": "Q11",
+      "format": "TQ2_0",
+      "source_enum": "GGML_TYPE_TQ2_0",
+      "status": "PUBLIC_FORMAT_AND_ADAPTER_MAPPING_MISSING",
+      "target_evidence": "Kimi published UD-TQ2_0",
+      "required_bindings": [
+        "physical block description",
+        "quantized MatMul",
+        "GroupedMatMul when target uses MoE",
+        "quantized Gather/embedding when target uses quantized embedding"
+      ],
+      "carrier": "BORROW_GGML_CPU",
+      "scope_note": "upstream enum is source evidence, not CPU execution or per-profile header qualification"
+    }
+  ],
+  "optional_source_types_not_admitted_by_current_target_headers": [
+    "Q5_0",
+    "Q5_1",
+    "Q2_0",
+    "NVFP4"
+  ],
+  "already_mapped_formats": [
+    "Q3_K",
+    "Q4_K",
+    "Q5_K",
+    "Q6_K",
+    "Q8_0",
+    "IQ3_XXS",
+    "IQ3_S",
+    "IQ4_NL",
+    "IQ4_XS",
+    "MXFP4"
+  ],
+  "missing_complete_branches": [
+    {
+      "id": "B01",
+      "branch": "Qwen3.8-27B Q4_0 MTP sidecar",
+      "gap": "mixed encoded MTP projections, norms, embedding/hidden merge, decoder, head and carry; ordinary MTP qualification does not sign this sidecar",
+      "carrier": "existing mature primitives/ggml region"
+    },
+    {
+      "id": "B02",
+      "branch": "DeepSeek Pro-0813 official and GGUF main body",
+      "gap": "new revision roles/dtypes/scales/state and complete main-body qualification; preview evidence is a crosswalk only",
+      "carrier": "ggml/ATen original programs"
+    },
+    {
+      "id": "B03",
+      "branch": "DeepSeek Flash-0731 official and GGUF main body",
+      "gap": "new revision roles/dtypes/scales/state and complete main-body qualification",
+      "carrier": "ggml/ATen original programs"
+    },
+    {
+      "id": "B04",
+      "branch": "DSpark target hidden projection and draft input",
+      "gap": "gather/concat target layer hiddens; main_proj/main_norm; shared embedding and noise block input; HC expansion",
+      "carrier": "existing mature MatMul/RMSNorm/Gather/Concat/Repeat or original upstream region"
+    },
+    {
+      "id": "B05",
+      "branch": "DSpark sparse attention and separate cache",
+      "gap": "target KV prefill, sliding cache update, draft-block index selection, sink sparse attention, tail RoPE/inverse RoPE, activation quantization and output projection",
+      "carrier": "original mature attention/cache composition; eligibility requires exact ports and state"
+    },
+    {
+      "id": "B06",
+      "branch": "DSpark Markov and confidence heads",
+      "gap": "token embedding and Markov vocabulary projection/logit bias; concatenate hidden+Markov embedding; FP32 confidence projection preserving BF16 source weight boundary",
+      "carrier": "existing mature Gather/MatMul/Add/Concat/Cast"
+    },
+    {
+      "id": "B07",
+      "branch": "DSpark complete mixed-precision block and shared head",
+      "gap": "HC/MoE block and final HC/RMSNorm/head plus logits/confidence outputs, changed inputs, independent invocation slots and cache reset",
+      "carrier": "original mature primitives/regions; sampling and speculative token acceptance stay in consumer"
+    },
+    {
+      "id": "B08",
+      "branch": "Flash-0731 DSpark Q8_0/BF16 sidecars",
+      "gap": "exact matching to main artifact, physical tensor header, shared weights and complete DSpark qualification",
+      "carrier": "original ggml programs"
+    },
+    {
+      "id": "B09",
+      "branch": "Non-GGUF mainstream candidate admission",
+      "gap": "the listed NF4/AWQ/GPTQ/MLX artifacts need pinned role/packing metadata and a mature CPU carrier before exact qualification",
+      "carrier": "BORROW/ROUTED pending source and CPU admission; no SELF authorization"
+    }
+  ],
+  "model_and_profile_inventory": [
+    {
+      "repository": "unsloth/Qwen3.5-2B-GGUF",
+      "observed_revision": "f6d5376be1edb4d416d56da11e5397a961aca8ae",
+      "metadata_url": "https://huggingface.co/api/models/unsloth/Qwen3.5-2B-GGUF",
+      "downloads_repository_only": 327911,
+      "observed_variants": [
+        {
+          "variant": "BF16",
+          "files": [
+            "Qwen3.5-2B-BF16.gguf"
+          ],
+          "status": "PROFILE_OR_REVISION_RECONCILIATION_PENDING",
+          "tensor_format_status": "HEADER_PENDING_FOR_NEW_VARIANT",
+          "rule": "variant name is not a physical tensor dtype; shard names alone do not sign coverage"
+        },
+        {
+          "variant": "IQ4_NL",
+          "files": [
+            "Qwen3.5-2B-IQ4_NL.gguf"
+          ],
+          "status": "PROFILE_OR_REVISION_RECONCILIATION_PENDING",
+          "tensor_format_status": "HEADER_PENDING_FOR_NEW_VARIANT",
+          "rule": "variant name is not a physical tensor dtype; shard names alone do not sign coverage"
+        },
+        {
+          "variant": "IQ4_XS",
+          "files": [
+            "Qwen3.5-2B-IQ4_XS.gguf"
+          ],
+          "status": "PROFILE_OR_REVISION_RECONCILIATION_PENDING",
+          "tensor_format_status": "HEADER_PENDING_FOR_NEW_VARIANT",
+          "rule": "variant name is not a physical tensor dtype; shard names alone do not sign coverage"
+        },
+        {
+          "variant": "Q3_K_M",
+          "files": [
+            "Qwen3.5-2B-Q3_K_M.gguf"
+          ],
+          "status": "PROFILE_OR_REVISION_RECONCILIATION_PENDING",
+          "tensor_format_status": "HEADER_PENDING_FOR_NEW_VARIANT",
+          "rule": "variant name is not a physical tensor dtype; shard names alone do not sign coverage"
+        },
+        {
+          "variant": "Q3_K_S",
+          "files": [
+            "Qwen3.5-2B-Q3_K_S.gguf"
+          ],
+          "status": "PROFILE_OR_REVISION_RECONCILIATION_PENDING",
+          "tensor_format_status": "HEADER_PENDING_FOR_NEW_VARIANT",
+          "rule": "variant name is not a physical tensor dtype; shard names alone do not sign coverage"
+        },
+        {
+          "variant": "Q4_0",
+          "files": [
+            "Qwen3.5-2B-Q4_0.gguf"
+          ],
+          "status": "PROFILE_OR_REVISION_RECONCILIATION_PENDING",
+          "tensor_format_status": "HEADER_PENDING_FOR_NEW_VARIANT",
+          "rule": "variant name is not a physical tensor dtype; shard names alone do not sign coverage"
+        },
+        {
+          "variant": "Q4_1",
+          "files": [
+            "Qwen3.5-2B-Q4_1.gguf"
+          ],
+          "status": "PROFILE_OR_REVISION_RECONCILIATION_PENDING",
+          "tensor_format_status": "HEADER_PENDING_FOR_NEW_VARIANT",
+          "rule": "variant name is not a physical tensor dtype; shard names alone do not sign coverage"
+        },
+        {
+          "variant": "Q4_K_M",
+          "files": [
+            "Qwen3.5-2B-Q4_K_M.gguf"
+          ],
+          "status": "PROFILE_OR_REVISION_RECONCILIATION_PENDING",
+          "tensor_format_status": "HEADER_PENDING_FOR_NEW_VARIANT",
+          "rule": "variant name is not a physical tensor dtype; shard names alone do not sign coverage"
+        },
+        {
+          "variant": "Q4_K_S",
+          "files": [
+            "Qwen3.5-2B-Q4_K_S.gguf"
+          ],
+          "status": "PROFILE_OR_REVISION_RECONCILIATION_PENDING",
+          "tensor_format_status": "HEADER_PENDING_FOR_NEW_VARIANT",
+          "rule": "variant name is not a physical tensor dtype; shard names alone do not sign coverage"
+        },
+        {
+          "variant": "Q5_K_M",
+          "files": [
+            "Qwen3.5-2B-Q5_K_M.gguf"
+          ],
+          "status": "PROFILE_OR_REVISION_RECONCILIATION_PENDING",
+          "tensor_format_status": "HEADER_PENDING_FOR_NEW_VARIANT",
+          "rule": "variant name is not a physical tensor dtype; shard names alone do not sign coverage"
+        },
+        {
+          "variant": "Q5_K_S",
+          "files": [
+            "Qwen3.5-2B-Q5_K_S.gguf"
+          ],
+          "status": "PROFILE_OR_REVISION_RECONCILIATION_PENDING",
+          "tensor_format_status": "HEADER_PENDING_FOR_NEW_VARIANT",
+          "rule": "variant name is not a physical tensor dtype; shard names alone do not sign coverage"
+        },
+        {
+          "variant": "Q6_K",
+          "files": [
+            "Qwen3.5-2B-Q6_K.gguf"
+          ],
+          "status": "PROFILE_OR_REVISION_RECONCILIATION_PENDING",
+          "tensor_format_status": "HEADER_PENDING_FOR_NEW_VARIANT",
+          "rule": "variant name is not a physical tensor dtype; shard names alone do not sign coverage"
+        },
+        {
+          "variant": "Q8_0",
+          "files": [
+            "Qwen3.5-2B-Q8_0.gguf"
+          ],
+          "status": "PROFILE_OR_REVISION_RECONCILIATION_PENDING",
+          "tensor_format_status": "HEADER_PENDING_FOR_NEW_VARIANT",
+          "rule": "variant name is not a physical tensor dtype; shard names alone do not sign coverage"
+        },
+        {
+          "variant": "UD-IQ2_M",
+          "files": [
+            "Qwen3.5-2B-UD-IQ2_M.gguf"
+          ],
+          "status": "PROFILE_OR_REVISION_RECONCILIATION_PENDING",
+          "tensor_format_status": "HEADER_PENDING_FOR_NEW_VARIANT",
+          "rule": "variant name is not a physical tensor dtype; shard names alone do not sign coverage"
+        },
+        {
+          "variant": "UD-IQ2_XXS",
+          "files": [
+            "Qwen3.5-2B-UD-IQ2_XXS.gguf"
+          ],
+          "status": "PROFILE_OR_REVISION_RECONCILIATION_PENDING",
+          "tensor_format_status": "HEADER_PENDING_FOR_NEW_VARIANT",
+          "rule": "variant name is not a physical tensor dtype; shard names alone do not sign coverage"
+        },
+        {
+          "variant": "UD-IQ3_XXS",
+          "files": [
+            "Qwen3.5-2B-UD-IQ3_XXS.gguf"
+          ],
+          "status": "PROFILE_OR_REVISION_RECONCILIATION_PENDING",
+          "tensor_format_status": "HEADER_PENDING_FOR_NEW_VARIANT",
+          "rule": "variant name is not a physical tensor dtype; shard names alone do not sign coverage"
+        },
+        {
+          "variant": "UD-Q2_K_XL",
+          "files": [
+            "Qwen3.5-2B-UD-Q2_K_XL.gguf"
+          ],
+          "status": "PROFILE_OR_REVISION_RECONCILIATION_PENDING",
+          "tensor_format_status": "HEADER_PENDING_FOR_NEW_VARIANT",
+          "rule": "variant name is not a physical tensor dtype; shard names alone do not sign coverage"
+        },
+        {
+          "variant": "UD-Q3_K_XL",
+          "files": [
+            "Qwen3.5-2B-UD-Q3_K_XL.gguf"
+          ],
+          "status": "PROFILE_OR_REVISION_RECONCILIATION_PENDING",
+          "tensor_format_status": "HEADER_PENDING_FOR_NEW_VARIANT",
+          "rule": "variant name is not a physical tensor dtype; shard names alone do not sign coverage"
+        },
+        {
+          "variant": "UD-Q4_K_XL",
+          "files": [
+            "Qwen3.5-2B-UD-Q4_K_XL.gguf"
+          ],
+          "status": "PRIOR_EXACT_PROFILE_QUALIFIED",
+          "tensor_format_status": "HEADER_PENDING_FOR_NEW_VARIANT",
+          "rule": "variant name is not a physical tensor dtype; shard names alone do not sign coverage"
+        },
+        {
+          "variant": "UD-Q5_K_XL",
+          "files": [
+            "Qwen3.5-2B-UD-Q5_K_XL.gguf"
+          ],
+          "status": "PROFILE_OR_REVISION_RECONCILIATION_PENDING",
+          "tensor_format_status": "HEADER_PENDING_FOR_NEW_VARIANT",
+          "rule": "variant name is not a physical tensor dtype; shard names alone do not sign coverage"
+        },
+        {
+          "variant": "UD-Q6_K_XL",
+          "files": [
+            "Qwen3.5-2B-UD-Q6_K_XL.gguf"
+          ],
+          "status": "PROFILE_OR_REVISION_RECONCILIATION_PENDING",
+          "tensor_format_status": "HEADER_PENDING_FOR_NEW_VARIANT",
+          "rule": "variant name is not a physical tensor dtype; shard names alone do not sign coverage"
+        },
+        {
+          "variant": "UD-Q8_K_XL",
+          "files": [
+            "Qwen3.5-2B-UD-Q8_K_XL.gguf"
+          ],
+          "status": "PRIOR_EXACT_PROFILE_QUALIFIED",
+          "tensor_format_status": "HEADER_PENDING_FOR_NEW_VARIANT",
+          "rule": "variant name is not a physical tensor dtype; shard names alone do not sign coverage"
+        }
+      ],
+      "sidecars": []
+    },
+    {
+      "repository": "unsloth/Qwen3.8-27B-GGUF",
+      "observed_revision": "4ca720788d1e01f1bff70c033e0d0028fd02e502",
+      "metadata_url": "https://huggingface.co/api/models/unsloth/Qwen3.8-27B-GGUF",
+      "downloads_repository_only": 6566855,
+      "observed_variants": [
+        {
+          "variant": "BF16",
+          "files": [
+            "BF16/Qwen3.8-27B-BF16-00001-of-00002.gguf",
+            "BF16/Qwen3.8-27B-BF16-00002-of-00002.gguf"
+          ],
+          "status": "PROFILE_OR_REVISION_RECONCILIATION_PENDING",
+          "tensor_format_status": "HEADER_PENDING_FOR_NEW_VARIANT",
+          "rule": "variant name is not a physical tensor dtype; shard names alone do not sign coverage"
+        },
+        {
+          "variant": "Q4_0",
+          "files": [
+            "Qwen3.8-27B-Q4_0.gguf"
+          ],
+          "status": "PROFILE_OR_REVISION_RECONCILIATION_PENDING",
+          "tensor_format_status": "HEADER_PENDING_FOR_NEW_VARIANT",
+          "rule": "variant name is not a physical tensor dtype; shard names alone do not sign coverage"
+        },
+        {
+          "variant": "Q4_1",
+          "files": [
+            "Qwen3.8-27B-Q4_1.gguf"
+          ],
+          "status": "PROFILE_OR_REVISION_RECONCILIATION_PENDING",
+          "tensor_format_status": "HEADER_PENDING_FOR_NEW_VARIANT",
+          "rule": "variant name is not a physical tensor dtype; shard names alone do not sign coverage"
+        },
+        {
+          "variant": "Q8_0",
+          "files": [
+            "Qwen3.8-27B-Q8_0.gguf"
+          ],
+          "status": "PROFILE_OR_REVISION_RECONCILIATION_PENDING",
+          "tensor_format_status": "HEADER_PENDING_FOR_NEW_VARIANT",
+          "rule": "variant name is not a physical tensor dtype; shard names alone do not sign coverage"
+        },
+        {
+          "variant": "UD-IQ1_M",
+          "files": [
+            "Qwen3.8-27B-UD-IQ1_M.gguf"
+          ],
+          "status": "PROFILE_OR_REVISION_RECONCILIATION_PENDING",
+          "tensor_format_status": "HEADER_PENDING_FOR_NEW_VARIANT",
+          "rule": "variant name is not a physical tensor dtype; shard names alone do not sign coverage"
+        },
+        {
+          "variant": "UD-IQ1_S",
+          "files": [
+            "Qwen3.8-27B-UD-IQ1_S.gguf"
+          ],
+          "status": "PROFILE_OR_REVISION_RECONCILIATION_PENDING",
+          "tensor_format_status": "HEADER_PENDING_FOR_NEW_VARIANT",
+          "rule": "variant name is not a physical tensor dtype; shard names alone do not sign coverage"
+        },
+        {
+          "variant": "UD-IQ2_S",
+          "files": [
+            "Qwen3.8-27B-UD-IQ2_S.gguf"
+          ],
+          "status": "PROFILE_OR_REVISION_RECONCILIATION_PENDING",
+          "tensor_format_status": "HEADER_PENDING_FOR_NEW_VARIANT",
+          "rule": "variant name is not a physical tensor dtype; shard names alone do not sign coverage"
+        },
+        {
+          "variant": "UD-IQ2_XXS",
+          "files": [
+            "Qwen3.8-27B-UD-IQ2_XXS.gguf"
+          ],
+          "status": "PROFILE_OR_REVISION_RECONCILIATION_PENDING",
+          "tensor_format_status": "HEADER_PENDING_FOR_NEW_VARIANT",
+          "rule": "variant name is not a physical tensor dtype; shard names alone do not sign coverage"
+        },
+        {
+          "variant": "UD-IQ3_S",
+          "files": [
+            "Qwen3.8-27B-UD-IQ3_S.gguf"
+          ],
+          "status": "PROFILE_OR_REVISION_RECONCILIATION_PENDING",
+          "tensor_format_status": "HEADER_PENDING_FOR_NEW_VARIANT",
+          "rule": "variant name is not a physical tensor dtype; shard names alone do not sign coverage"
+        },
+        {
+          "variant": "UD-IQ3_XXS",
+          "files": [
+            "Qwen3.8-27B-UD-IQ3_XXS.gguf"
+          ],
+          "status": "PROFILE_OR_REVISION_RECONCILIATION_PENDING",
+          "tensor_format_status": "HEADER_PENDING_FOR_NEW_VARIANT",
+          "rule": "variant name is not a physical tensor dtype; shard names alone do not sign coverage"
+        },
+        {
+          "variant": "UD-IQ4_XS",
+          "files": [
+            "Qwen3.8-27B-UD-IQ4_XS.gguf"
+          ],
+          "status": "PROFILE_OR_REVISION_RECONCILIATION_PENDING",
+          "tensor_format_status": "HEADER_PENDING_FOR_NEW_VARIANT",
+          "rule": "variant name is not a physical tensor dtype; shard names alone do not sign coverage"
+        },
+        {
+          "variant": "UD-Q2_K_XL",
+          "files": [
+            "Qwen3.8-27B-UD-Q2_K_XL.gguf"
+          ],
+          "status": "PROFILE_OR_REVISION_RECONCILIATION_PENDING",
+          "tensor_format_status": "HEADER_PENDING_FOR_NEW_VARIANT",
+          "rule": "variant name is not a physical tensor dtype; shard names alone do not sign coverage"
+        },
+        {
+          "variant": "UD-Q3_K_XL",
+          "files": [
+            "Qwen3.8-27B-UD-Q3_K_XL.gguf"
+          ],
+          "status": "PROFILE_OR_REVISION_RECONCILIATION_PENDING",
+          "tensor_format_status": "HEADER_PENDING_FOR_NEW_VARIANT",
+          "rule": "variant name is not a physical tensor dtype; shard names alone do not sign coverage"
+        },
+        {
+          "variant": "UD-Q4_K_M",
+          "files": [
+            "Qwen3.8-27B-UD-Q4_K_M.gguf"
+          ],
+          "status": "PRIOR_EXACT_PROFILE_QUALIFIED",
+          "tensor_format_status": "HEADER_PENDING_FOR_NEW_VARIANT",
+          "rule": "variant name is not a physical tensor dtype; shard names alone do not sign coverage"
+        },
+        {
+          "variant": "UD-Q4_K_S",
+          "files": [
+            "Qwen3.8-27B-UD-Q4_K_S.gguf"
+          ],
+          "status": "PROFILE_OR_REVISION_RECONCILIATION_PENDING",
+          "tensor_format_status": "HEADER_PENDING_FOR_NEW_VARIANT",
+          "rule": "variant name is not a physical tensor dtype; shard names alone do not sign coverage"
+        },
+        {
+          "variant": "UD-Q4_K_XL",
+          "files": [
+            "Qwen3.8-27B-UD-Q4_K_XL.gguf"
+          ],
+          "status": "PROFILE_OR_REVISION_RECONCILIATION_PENDING",
+          "tensor_format_status": "HEADER_PENDING_FOR_NEW_VARIANT",
+          "rule": "variant name is not a physical tensor dtype; shard names alone do not sign coverage"
+        },
+        {
+          "variant": "UD-Q5_K_M",
+          "files": [
+            "Qwen3.8-27B-UD-Q5_K_M.gguf"
+          ],
+          "status": "PROFILE_OR_REVISION_RECONCILIATION_PENDING",
+          "tensor_format_status": "HEADER_PENDING_FOR_NEW_VARIANT",
+          "rule": "variant name is not a physical tensor dtype; shard names alone do not sign coverage"
+        },
+        {
+          "variant": "UD-Q5_K_S",
+          "files": [
+            "Qwen3.8-27B-UD-Q5_K_S.gguf"
+          ],
+          "status": "PROFILE_OR_REVISION_RECONCILIATION_PENDING",
+          "tensor_format_status": "HEADER_PENDING_FOR_NEW_VARIANT",
+          "rule": "variant name is not a physical tensor dtype; shard names alone do not sign coverage"
+        },
+        {
+          "variant": "UD-Q5_K_XL",
+          "files": [
+            "Qwen3.8-27B-UD-Q5_K_XL.gguf"
+          ],
+          "status": "PROFILE_OR_REVISION_RECONCILIATION_PENDING",
+          "tensor_format_status": "HEADER_PENDING_FOR_NEW_VARIANT",
+          "rule": "variant name is not a physical tensor dtype; shard names alone do not sign coverage"
+        },
+        {
+          "variant": "UD-Q6_K",
+          "files": [
+            "Qwen3.8-27B-UD-Q6_K.gguf"
+          ],
+          "status": "PROFILE_OR_REVISION_RECONCILIATION_PENDING",
+          "tensor_format_status": "HEADER_PENDING_FOR_NEW_VARIANT",
+          "rule": "variant name is not a physical tensor dtype; shard names alone do not sign coverage"
+        },
+        {
+          "variant": "UD-Q6_K_L",
+          "files": [
+            "Qwen3.8-27B-UD-Q6_K_L.gguf"
+          ],
+          "status": "PROFILE_OR_REVISION_RECONCILIATION_PENDING",
+          "tensor_format_status": "HEADER_PENDING_FOR_NEW_VARIANT",
+          "rule": "variant name is not a physical tensor dtype; shard names alone do not sign coverage"
+        },
+        {
+          "variant": "UD-Q6_K_M",
+          "files": [
+            "Qwen3.8-27B-UD-Q6_K_M.gguf"
+          ],
+          "status": "PROFILE_OR_REVISION_RECONCILIATION_PENDING",
+          "tensor_format_status": "HEADER_PENDING_FOR_NEW_VARIANT",
+          "rule": "variant name is not a physical tensor dtype; shard names alone do not sign coverage"
+        },
+        {
+          "variant": "UD-Q6_K_XL",
+          "files": [
+            "Qwen3.8-27B-UD-Q6_K_XL.gguf"
+          ],
+          "status": "PROFILE_OR_REVISION_RECONCILIATION_PENDING",
+          "tensor_format_status": "HEADER_PENDING_FOR_NEW_VARIANT",
+          "rule": "variant name is not a physical tensor dtype; shard names alone do not sign coverage"
+        },
+        {
+          "variant": "UD-Q8_K_L",
+          "files": [
+            "Qwen3.8-27B-UD-Q8_K_L.gguf"
+          ],
+          "status": "PROFILE_OR_REVISION_RECONCILIATION_PENDING",
+          "tensor_format_status": "HEADER_PENDING_FOR_NEW_VARIANT",
+          "rule": "variant name is not a physical tensor dtype; shard names alone do not sign coverage"
+        },
+        {
+          "variant": "UD-Q8_K_XL",
+          "files": [
+            "Qwen3.8-27B-UD-Q8_K_XL.gguf"
+          ],
+          "status": "PRIOR_EXACT_PROFILE_QUALIFIED",
+          "tensor_format_status": "HEADER_PENDING_FOR_NEW_VARIANT",
+          "rule": "variant name is not a physical tensor dtype; shard names alone do not sign coverage"
+        }
+      ],
+      "sidecars": [
+        {
+          "file": "MTP/mtp-Qwen3.8-27B-Q4_0.gguf",
+          "url": "https://huggingface.co/unsloth/Qwen3.8-27B-GGUF/blob/4ca720788d1e01f1bff70c033e0d0028fd02e502/MTP/mtp-Qwen3.8-27B-Q4_0.gguf",
+          "status": "COMPLETE_BRANCH_NOT_QUALIFIED"
+        }
+      ]
+    },
+    {
+      "repository": "unsloth/Qwen3.8-2.4T-A95B-GGUF",
+      "observed_revision": "567d3e6ac26c5474b18311e619c04350fb9a5556",
+      "metadata_url": "https://huggingface.co/api/models/unsloth/Qwen3.8-2.4T-A95B-GGUF",
+      "downloads_repository_only": 8255,
+      "observed_variants": [
+        {
+          "variant": "BF16",
+          "files": [
+            "BF16/Qwen3.8-2.4T-A95B-BF16-00001-of-00140.gguf",
+            "BF16/Qwen3.8-2.4T-A95B-BF16-00002-of-00140.gguf",
+            "BF16/Qwen3.8-2.4T-A95B-BF16-00003-of-00140.gguf",
+            "BF16/Qwen3.8-2.4T-A95B-BF16-00004-of-00140.gguf",
+            "BF16/Qwen3.8-2.4T-A95B-BF16-00005-of-00140.gguf",
+            "BF16/Qwen3.8-2.4T-A95B-BF16-00006-of-00140.gguf",
+            "BF16/Qwen3.8-2.4T-A95B-BF16-00007-of-00140.gguf",
+            "BF16/Qwen3.8-2.4T-A95B-BF16-00008-of-00140.gguf",
+            "BF16/Qwen3.8-2.4T-A95B-BF16-00009-of-00140.gguf",
+            "BF16/Qwen3.8-2.4T-A95B-BF16-00010-of-00140.gguf",
+            "BF16/Qwen3.8-2.4T-A95B-BF16-00011-of-00140.gguf",
+            "BF16/Qwen3.8-2.4T-A95B-BF16-00012-of-00140.gguf",
+            "BF16/Qwen3.8-2.4T-A95B-BF16-00013-of-00140.gguf",
+            "BF16/Qwen3.8-2.4T-A95B-BF16-00014-of-00140.gguf",
+            "BF16/Qwen3.8-2.4T-A95B-BF16-00015-of-00140.gguf",
+            "BF16/Qwen3.8-2.4T-A95B-BF16-00016-of-00140.gguf",
+            "BF16/Qwen3.8-2.4T-A95B-BF16-00017-of-00140.gguf",
+            "BF16/Qwen3.8-2.4T-A95B-BF16-00018-of-00140.gguf",
+            "BF16/Qwen3.8-2.4T-A95B-BF16-00019-of-00140.gguf",
+            "BF16/Qwen3.8-2.4T-A95B-BF16-00020-of-00140.gguf",
+            "BF16/Qwen3.8-2.4T-A95B-BF16-00021-of-00140.gguf",
+            "BF16/Qwen3.8-2.4T-A95B-BF16-00022-of-00140.gguf",
+            "BF16/Qwen3.8-2.4T-A95B-BF16-00023-of-00140.gguf",
+            "BF16/Qwen3.8-2.4T-A95B-BF16-00024-of-00140.gguf",
+            "BF16/Qwen3.8-2.4T-A95B-BF16-00025-of-00140.gguf",
+            "BF16/Qwen3.8-2.4T-A95B-BF16-00026-of-00140.gguf",
+            "BF16/Qwen3.8-2.4T-A95B-BF16-00027-of-00140.gguf",
+            "BF16/Qwen3.8-2.4T-A95B-BF16-00028-of-00140.gguf",
+            "BF16/Qwen3.8-2.4T-A95B-BF16-00029-of-00140.gguf",
+            "BF16/Qwen3.8-2.4T-A95B-BF16-00030-of-00140.gguf",
+            "BF16/Qwen3.8-2.4T-A95B-BF16-00031-of-00140.gguf",
+            "BF16/Qwen3.8-2.4T-A95B-BF16-00032-of-00140.gguf",
+            "BF16/Qwen3.8-2.4T-A95B-BF16-00033-of-00140.gguf",
+            "BF16/Qwen3.8-2.4T-A95B-BF16-00034-of-00140.gguf",
+            "BF16/Qwen3.8-2.4T-A95B-BF16-00035-of-00140.gguf",
+            "BF16/Qwen3.8-2.4T-A95B-BF16-00036-of-00140.gguf",
+            "BF16/Qwen3.8-2.4T-A95B-BF16-00037-of-00140.gguf",
+            "BF16/Qwen3.8-2.4T-A95B-BF16-00038-of-00140.gguf",
+            "BF16/Qwen3.8-2.4T-A95B-BF16-00039-of-00140.gguf",
+            "BF16/Qwen3.8-2.4T-A95B-BF16-00040-of-00140.gguf",
+            "BF16/Qwen3.8-2.4T-A95B-BF16-00041-of-00140.gguf",
+            "BF16/Qwen3.8-2.4T-A95B-BF16-00042-of-00140.gguf",
+            "BF16/Qwen3.8-2.4T-A95B-BF16-00043-of-00140.gguf",
+            "BF16/Qwen3.8-2.4T-A95B-BF16-00044-of-00140.gguf",
+            "BF16/Qwen3.8-2.4T-A95B-BF16-00045-of-00140.gguf",
+            "BF16/Qwen3.8-2.4T-A95B-BF16-00046-of-00140.gguf",
+            "BF16/Qwen3.8-2.4T-A95B-BF16-00047-of-00140.gguf",
+            "BF16/Qwen3.8-2.4T-A95B-BF16-00048-of-00140.gguf",
+            "BF16/Qwen3.8-2.4T-A95B-BF16-00049-of-00140.gguf",
+            "BF16/Qwen3.8-2.4T-A95B-BF16-00050-of-00140.gguf",
+            "BF16/Qwen3.8-2.4T-A95B-BF16-00051-of-00140.gguf",
+            "BF16/Qwen3.8-2.4T-A95B-BF16-00052-of-00140.gguf",
+            "BF16/Qwen3.8-2.4T-A95B-BF16-00053-of-00140.gguf",
+            "BF16/Qwen3.8-2.4T-A95B-BF16-00054-of-00140.gguf",
+            "BF16/Qwen3.8-2.4T-A95B-BF16-00055-of-00140.gguf",
+            "BF16/Qwen3.8-2.4T-A95B-BF16-00056-of-00140.gguf",
+            "BF16/Qwen3.8-2.4T-A95B-BF16-00057-of-00140.gguf",
+            "BF16/Qwen3.8-2.4T-A95B-BF16-00058-of-00140.gguf",
+            "BF16/Qwen3.8-2.4T-A95B-BF16-00059-of-00140.gguf",
+            "BF16/Qwen3.8-2.4T-A95B-BF16-00060-of-00140.gguf",
+            "BF16/Qwen3.8-2.4T-A95B-BF16-00061-of-00140.gguf",
+            "BF16/Qwen3.8-2.4T-A95B-BF16-00062-of-00140.gguf",
+            "BF16/Qwen3.8-2.4T-A95B-BF16-00063-of-00140.gguf",
+            "BF16/Qwen3.8-2.4T-A95B-BF16-00064-of-00140.gguf",
+            "BF16/Qwen3.8-2.4T-A95B-BF16-00065-of-00140.gguf",
+            "BF16/Qwen3.8-2.4T-A95B-BF16-00066-of-00140.gguf",
+            "BF16/Qwen3.8-2.4T-A95B-BF16-00067-of-00140.gguf",
+            "BF16/Qwen3.8-2.4T-A95B-BF16-00068-of-00140.gguf",
+            "BF16/Qwen3.8-2.4T-A95B-BF16-00069-of-00140.gguf",
+            "BF16/Qwen3.8-2.4T-A95B-BF16-00070-of-00140.gguf",
+            "BF16/Qwen3.8-2.4T-A95B-BF16-00071-of-00140.gguf",
+            "BF16/Qwen3.8-2.4T-A95B-BF16-00072-of-00140.gguf",
+            "BF16/Qwen3.8-2.4T-A95B-BF16-00073-of-00140.gguf",
+            "BF16/Qwen3.8-2.4T-A95B-BF16-00074-of-00140.gguf",
+            "BF16/Qwen3.8-2.4T-A95B-BF16-00075-of-00140.gguf",
+            "BF16/Qwen3.8-2.4T-A95B-BF16-00076-of-00140.gguf",
+            "BF16/Qwen3.8-2.4T-A95B-BF16-00077-of-00140.gguf",
+            "BF16/Qwen3.8-2.4T-A95B-BF16-00078-of-00140.gguf",
+            "BF16/Qwen3.8-2.4T-A95B-BF16-00079-of-00140.gguf",
+            "BF16/Qwen3.8-2.4T-A95B-BF16-00080-of-00140.gguf",
+            "BF16/Qwen3.8-2.4T-A95B-BF16-00081-of-00140.gguf",
+            "BF16/Qwen3.8-2.4T-A95B-BF16-00082-of-00140.gguf",
+            "BF16/Qwen3.8-2.4T-A95B-BF16-00083-of-00140.gguf",
+            "BF16/Qwen3.8-2.4T-A95B-BF16-00084-of-00140.gguf",
+            "BF16/Qwen3.8-2.4T-A95B-BF16-00085-of-00140.gguf",
+            "BF16/Qwen3.8-2.4T-A95B-BF16-00086-of-00140.gguf",
+            "BF16/Qwen3.8-2.4T-A95B-BF16-00087-of-00140.gguf",
+            "BF16/Qwen3.8-2.4T-A95B-BF16-00088-of-00140.gguf",
+            "BF16/Qwen3.8-2.4T-A95B-BF16-00089-of-00140.gguf",
+            "BF16/Qwen3.8-2.4T-A95B-BF16-00090-of-00140.gguf",
+            "BF16/Qwen3.8-2.4T-A95B-BF16-00091-of-00140.gguf",
+            "BF16/Qwen3.8-2.4T-A95B-BF16-00092-of-00140.gguf",
+            "BF16/Qwen3.8-2.4T-A95B-BF16-00093-of-00140.gguf",
+            "BF16/Qwen3.8-2.4T-A95B-BF16-00094-of-00140.gguf",
+            "BF16/Qwen3.8-2.4T-A95B-BF16-00095-of-00140.gguf",
+            "BF16/Qwen3.8-2.4T-A95B-BF16-00096-of-00140.gguf",
+            "BF16/Qwen3.8-2.4T-A95B-BF16-00097-of-00140.gguf",
+            "BF16/Qwen3.8-2.4T-A95B-BF16-00098-of-00140.gguf",
+            "BF16/Qwen3.8-2.4T-A95B-BF16-00099-of-00140.gguf",
+            "BF16/Qwen3.8-2.4T-A95B-BF16-00100-of-00140.gguf",
+            "BF16/Qwen3.8-2.4T-A95B-BF16-00101-of-00140.gguf",
+            "BF16/Qwen3.8-2.4T-A95B-BF16-00102-of-00140.gguf",
+            "BF16/Qwen3.8-2.4T-A95B-BF16-00103-of-00140.gguf",
+            "BF16/Qwen3.8-2.4T-A95B-BF16-00104-of-00140.gguf",
+            "BF16/Qwen3.8-2.4T-A95B-BF16-00105-of-00140.gguf",
+            "BF16/Qwen3.8-2.4T-A95B-BF16-00106-of-00140.gguf",
+            "BF16/Qwen3.8-2.4T-A95B-BF16-00107-of-00140.gguf",
+            "BF16/Qwen3.8-2.4T-A95B-BF16-00108-of-00140.gguf",
+            "BF16/Qwen3.8-2.4T-A95B-BF16-00109-of-00140.gguf",
+            "BF16/Qwen3.8-2.4T-A95B-BF16-00110-of-00140.gguf",
+            "BF16/Qwen3.8-2.4T-A95B-BF16-00111-of-00140.gguf",
+            "BF16/Qwen3.8-2.4T-A95B-BF16-00112-of-00140.gguf",
+            "BF16/Qwen3.8-2.4T-A95B-BF16-00113-of-00140.gguf",
+            "BF16/Qwen3.8-2.4T-A95B-BF16-00114-of-00140.gguf",
+            "BF16/Qwen3.8-2.4T-A95B-BF16-00115-of-00140.gguf",
+            "BF16/Qwen3.8-2.4T-A95B-BF16-00116-of-00140.gguf",
+            "BF16/Qwen3.8-2.4T-A95B-BF16-00117-of-00140.gguf",
+            "BF16/Qwen3.8-2.4T-A95B-BF16-00118-of-00140.gguf",
+            "BF16/Qwen3.8-2.4T-A95B-BF16-00119-of-00140.gguf",
+            "BF16/Qwen3.8-2.4T-A95B-BF16-00120-of-00140.gguf",
+            "BF16/Qwen3.8-2.4T-A95B-BF16-00121-of-00140.gguf",
+            "BF16/Qwen3.8-2.4T-A95B-BF16-00122-of-00140.gguf",
+            "BF16/Qwen3.8-2.4T-A95B-BF16-00123-of-00140.gguf",
+            "BF16/Qwen3.8-2.4T-A95B-BF16-00124-of-00140.gguf",
+            "BF16/Qwen3.8-2.4T-A95B-BF16-00125-of-00140.gguf",
+            "BF16/Qwen3.8-2.4T-A95B-BF16-00126-of-00140.gguf",
+            "BF16/Qwen3.8-2.4T-A95B-BF16-00127-of-00140.gguf",
+            "BF16/Qwen3.8-2.4T-A95B-BF16-00128-of-00140.gguf",
+            "BF16/Qwen3.8-2.4T-A95B-BF16-00129-of-00140.gguf",
+            "BF16/Qwen3.8-2.4T-A95B-BF16-00130-of-00140.gguf",
+            "BF16/Qwen3.8-2.4T-A95B-BF16-00131-of-00140.gguf",
+            "BF16/Qwen3.8-2.4T-A95B-BF16-00132-of-00140.gguf",
+            "BF16/Qwen3.8-2.4T-A95B-BF16-00133-of-00140.gguf",
+            "BF16/Qwen3.8-2.4T-A95B-BF16-00134-of-00140.gguf",
+            "BF16/Qwen3.8-2.4T-A95B-BF16-00135-of-00140.gguf",
+            "BF16/Qwen3.8-2.4T-A95B-BF16-00136-of-00140.gguf",
+            "BF16/Qwen3.8-2.4T-A95B-BF16-00137-of-00140.gguf",
+            "BF16/Qwen3.8-2.4T-A95B-BF16-00138-of-00140.gguf",
+            "BF16/Qwen3.8-2.4T-A95B-BF16-00139-of-00140.gguf",
+            "BF16/Qwen3.8-2.4T-A95B-BF16-00140-of-00140.gguf"
+          ],
+          "status": "PROFILE_OR_REVISION_RECONCILIATION_PENDING",
+          "tensor_format_status": "HEADER_PENDING_FOR_NEW_VARIANT",
+          "rule": "variant name is not a physical tensor dtype; shard names alone do not sign coverage"
+        },
+        {
+          "variant": "Q8_0",
+          "files": [
+            "Q8_0/Qwen3.8-2.4T-A95B-Q8_0-00001-of-00056.gguf",
+            "Q8_0/Qwen3.8-2.4T-A95B-Q8_0-00002-of-00056.gguf",
+            "Q8_0/Qwen3.8-2.4T-A95B-Q8_0-00003-of-00056.gguf",
+            "Q8_0/Qwen3.8-2.4T-A95B-Q8_0-00004-of-00056.gguf",
+            "Q8_0/Qwen3.8-2.4T-A95B-Q8_0-00005-of-00056.gguf",
+            "Q8_0/Qwen3.8-2.4T-A95B-Q8_0-00006-of-00056.gguf",
+            "Q8_0/Qwen3.8-2.4T-A95B-Q8_0-00007-of-00056.gguf",
+            "Q8_0/Qwen3.8-2.4T-A95B-Q8_0-00008-of-00056.gguf",
+            "Q8_0/Qwen3.8-2.4T-A95B-Q8_0-00009-of-00056.gguf",
+            "Q8_0/Qwen3.8-2.4T-A95B-Q8_0-00010-of-00056.gguf",
+            "Q8_0/Qwen3.8-2.4T-A95B-Q8_0-00011-of-00056.gguf",
+            "Q8_0/Qwen3.8-2.4T-A95B-Q8_0-00012-of-00056.gguf",
+            "Q8_0/Qwen3.8-2.4T-A95B-Q8_0-00013-of-00056.gguf",
+            "Q8_0/Qwen3.8-2.4T-A95B-Q8_0-00014-of-00056.gguf",
+            "Q8_0/Qwen3.8-2.4T-A95B-Q8_0-00015-of-00056.gguf",
+            "Q8_0/Qwen3.8-2.4T-A95B-Q8_0-00016-of-00056.gguf",
+            "Q8_0/Qwen3.8-2.4T-A95B-Q8_0-00017-of-00056.gguf",
+            "Q8_0/Qwen3.8-2.4T-A95B-Q8_0-00018-of-00056.gguf",
+            "Q8_0/Qwen3.8-2.4T-A95B-Q8_0-00019-of-00056.gguf",
+            "Q8_0/Qwen3.8-2.4T-A95B-Q8_0-00020-of-00056.gguf",
+            "Q8_0/Qwen3.8-2.4T-A95B-Q8_0-00021-of-00056.gguf",
+            "Q8_0/Qwen3.8-2.4T-A95B-Q8_0-00022-of-00056.gguf",
+            "Q8_0/Qwen3.8-2.4T-A95B-Q8_0-00023-of-00056.gguf",
+            "Q8_0/Qwen3.8-2.4T-A95B-Q8_0-00024-of-00056.gguf",
+            "Q8_0/Qwen3.8-2.4T-A95B-Q8_0-00025-of-00056.gguf",
+            "Q8_0/Qwen3.8-2.4T-A95B-Q8_0-00026-of-00056.gguf",
+            "Q8_0/Qwen3.8-2.4T-A95B-Q8_0-00027-of-00056.gguf",
+            "Q8_0/Qwen3.8-2.4T-A95B-Q8_0-00028-of-00056.gguf",
+            "Q8_0/Qwen3.8-2.4T-A95B-Q8_0-00029-of-00056.gguf",
+            "Q8_0/Qwen3.8-2.4T-A95B-Q8_0-00030-of-00056.gguf",
+            "Q8_0/Qwen3.8-2.4T-A95B-Q8_0-00031-of-00056.gguf",
+            "Q8_0/Qwen3.8-2.4T-A95B-Q8_0-00032-of-00056.gguf",
+            "Q8_0/Qwen3.8-2.4T-A95B-Q8_0-00033-of-00056.gguf",
+            "Q8_0/Qwen3.8-2.4T-A95B-Q8_0-00034-of-00056.gguf",
+            "Q8_0/Qwen3.8-2.4T-A95B-Q8_0-00035-of-00056.gguf",
+            "Q8_0/Qwen3.8-2.4T-A95B-Q8_0-00036-of-00056.gguf",
+            "Q8_0/Qwen3.8-2.4T-A95B-Q8_0-00037-of-00056.gguf",
+            "Q8_0/Qwen3.8-2.4T-A95B-Q8_0-00038-of-00056.gguf",
+            "Q8_0/Qwen3.8-2.4T-A95B-Q8_0-00039-of-00056.gguf",
+            "Q8_0/Qwen3.8-2.4T-A95B-Q8_0-00040-of-00056.gguf",
+            "Q8_0/Qwen3.8-2.4T-A95B-Q8_0-00041-of-00056.gguf",
+            "Q8_0/Qwen3.8-2.4T-A95B-Q8_0-00042-of-00056.gguf",
+            "Q8_0/Qwen3.8-2.4T-A95B-Q8_0-00043-of-00056.gguf",
+            "Q8_0/Qwen3.8-2.4T-A95B-Q8_0-00044-of-00056.gguf",
+            "Q8_0/Qwen3.8-2.4T-A95B-Q8_0-00045-of-00056.gguf",
+            "Q8_0/Qwen3.8-2.4T-A95B-Q8_0-00046-of-00056.gguf",
+            "Q8_0/Qwen3.8-2.4T-A95B-Q8_0-00047-of-00056.gguf",
+            "Q8_0/Qwen3.8-2.4T-A95B-Q8_0-00048-of-00056.gguf",
+            "Q8_0/Qwen3.8-2.4T-A95B-Q8_0-00049-of-00056.gguf",
+            "Q8_0/Qwen3.8-2.4T-A95B-Q8_0-00050-of-00056.gguf",
+            "Q8_0/Qwen3.8-2.4T-A95B-Q8_0-00051-of-00056.gguf",
+            "Q8_0/Qwen3.8-2.4T-A95B-Q8_0-00052-of-00056.gguf",
+            "Q8_0/Qwen3.8-2.4T-A95B-Q8_0-00053-of-00056.gguf",
+            "Q8_0/Qwen3.8-2.4T-A95B-Q8_0-00054-of-00056.gguf",
+            "Q8_0/Qwen3.8-2.4T-A95B-Q8_0-00055-of-00056.gguf",
+            "Q8_0/Qwen3.8-2.4T-A95B-Q8_0-00056-of-00056.gguf"
+          ],
+          "status": "PRIOR_EXACT_PROFILE_QUALIFIED",
+          "tensor_format_status": "HEADER_PENDING_FOR_NEW_VARIANT",
+          "rule": "variant name is not a physical tensor dtype; shard names alone do not sign coverage"
+        },
+        {
+          "variant": "UD-IQ1_M",
+          "files": [
+            "UD-IQ1_M/Qwen3.8-2.4T-A95B-UD-IQ1_M-00001-of-00013.gguf",
+            "UD-IQ1_M/Qwen3.8-2.4T-A95B-UD-IQ1_M-00002-of-00013.gguf",
+            "UD-IQ1_M/Qwen3.8-2.4T-A95B-UD-IQ1_M-00003-of-00013.gguf",
+            "UD-IQ1_M/Qwen3.8-2.4T-A95B-UD-IQ1_M-00004-of-00013.gguf",
+            "UD-IQ1_M/Qwen3.8-2.4T-A95B-UD-IQ1_M-00005-of-00013.gguf",
+            "UD-IQ1_M/Qwen3.8-2.4T-A95B-UD-IQ1_M-00006-of-00013.gguf",
+            "UD-IQ1_M/Qwen3.8-2.4T-A95B-UD-IQ1_M-00007-of-00013.gguf",
+            "UD-IQ1_M/Qwen3.8-2.4T-A95B-UD-IQ1_M-00008-of-00013.gguf",
+            "UD-IQ1_M/Qwen3.8-2.4T-A95B-UD-IQ1_M-00009-of-00013.gguf",
+            "UD-IQ1_M/Qwen3.8-2.4T-A95B-UD-IQ1_M-00010-of-00013.gguf",
+            "UD-IQ1_M/Qwen3.8-2.4T-A95B-UD-IQ1_M-00011-of-00013.gguf",
+            "UD-IQ1_M/Qwen3.8-2.4T-A95B-UD-IQ1_M-00012-of-00013.gguf",
+            "UD-IQ1_M/Qwen3.8-2.4T-A95B-UD-IQ1_M-00013-of-00013.gguf"
+          ],
+          "status": "PROFILE_OR_REVISION_RECONCILIATION_PENDING",
+          "tensor_format_status": "HEADER_PENDING_FOR_NEW_VARIANT",
+          "rule": "variant name is not a physical tensor dtype; shard names alone do not sign coverage"
+        },
+        {
+          "variant": "UD-IQ1_S",
+          "files": [
+            "UD-IQ1_S/Qwen3.8-2.4T-A95B-UD-IQ1_S-00001-of-00012.gguf",
+            "UD-IQ1_S/Qwen3.8-2.4T-A95B-UD-IQ1_S-00002-of-00012.gguf",
+            "UD-IQ1_S/Qwen3.8-2.4T-A95B-UD-IQ1_S-00003-of-00012.gguf",
+            "UD-IQ1_S/Qwen3.8-2.4T-A95B-UD-IQ1_S-00004-of-00012.gguf",
+            "UD-IQ1_S/Qwen3.8-2.4T-A95B-UD-IQ1_S-00005-of-00012.gguf",
+            "UD-IQ1_S/Qwen3.8-2.4T-A95B-UD-IQ1_S-00006-of-00012.gguf",
+            "UD-IQ1_S/Qwen3.8-2.4T-A95B-UD-IQ1_S-00007-of-00012.gguf",
+            "UD-IQ1_S/Qwen3.8-2.4T-A95B-UD-IQ1_S-00008-of-00012.gguf",
+            "UD-IQ1_S/Qwen3.8-2.4T-A95B-UD-IQ1_S-00009-of-00012.gguf",
+            "UD-IQ1_S/Qwen3.8-2.4T-A95B-UD-IQ1_S-00010-of-00012.gguf",
+            "UD-IQ1_S/Qwen3.8-2.4T-A95B-UD-IQ1_S-00011-of-00012.gguf",
+            "UD-IQ1_S/Qwen3.8-2.4T-A95B-UD-IQ1_S-00012-of-00012.gguf"
+          ],
+          "status": "PROFILE_OR_REVISION_RECONCILIATION_PENDING",
+          "tensor_format_status": "HEADER_PENDING_FOR_NEW_VARIANT",
+          "rule": "variant name is not a physical tensor dtype; shard names alone do not sign coverage"
+        },
+        {
+          "variant": "UD-IQ2_XS",
+          "files": [
+            "UD-IQ2_XS/Qwen3.8-2.4T-A95B-UD-IQ2_XS-00001-of-00016.gguf",
+            "UD-IQ2_XS/Qwen3.8-2.4T-A95B-UD-IQ2_XS-00002-of-00016.gguf",
+            "UD-IQ2_XS/Qwen3.8-2.4T-A95B-UD-IQ2_XS-00003-of-00016.gguf",
+            "UD-IQ2_XS/Qwen3.8-2.4T-A95B-UD-IQ2_XS-00004-of-00016.gguf",
+            "UD-IQ2_XS/Qwen3.8-2.4T-A95B-UD-IQ2_XS-00005-of-00016.gguf",
+            "UD-IQ2_XS/Qwen3.8-2.4T-A95B-UD-IQ2_XS-00006-of-00016.gguf",
+            "UD-IQ2_XS/Qwen3.8-2.4T-A95B-UD-IQ2_XS-00007-of-00016.gguf",
+            "UD-IQ2_XS/Qwen3.8-2.4T-A95B-UD-IQ2_XS-00008-of-00016.gguf",
+            "UD-IQ2_XS/Qwen3.8-2.4T-A95B-UD-IQ2_XS-00009-of-00016.gguf",
+            "UD-IQ2_XS/Qwen3.8-2.4T-A95B-UD-IQ2_XS-00010-of-00016.gguf",
+            "UD-IQ2_XS/Qwen3.8-2.4T-A95B-UD-IQ2_XS-00011-of-00016.gguf",
+            "UD-IQ2_XS/Qwen3.8-2.4T-A95B-UD-IQ2_XS-00012-of-00016.gguf",
+            "UD-IQ2_XS/Qwen3.8-2.4T-A95B-UD-IQ2_XS-00013-of-00016.gguf",
+            "UD-IQ2_XS/Qwen3.8-2.4T-A95B-UD-IQ2_XS-00014-of-00016.gguf",
+            "UD-IQ2_XS/Qwen3.8-2.4T-A95B-UD-IQ2_XS-00015-of-00016.gguf",
+            "UD-IQ2_XS/Qwen3.8-2.4T-A95B-UD-IQ2_XS-00016-of-00016.gguf"
+          ],
+          "status": "PROFILE_OR_REVISION_RECONCILIATION_PENDING",
+          "tensor_format_status": "HEADER_PENDING_FOR_NEW_VARIANT",
+          "rule": "variant name is not a physical tensor dtype; shard names alone do not sign coverage"
+        },
+        {
+          "variant": "UD-IQ2_XXS",
+          "files": [
+            "UD-IQ2_XXS/Qwen3.8-2.4T-A95B-UD-IQ2_XXS-00001-of-00015.gguf",
+            "UD-IQ2_XXS/Qwen3.8-2.4T-A95B-UD-IQ2_XXS-00002-of-00015.gguf",
+            "UD-IQ2_XXS/Qwen3.8-2.4T-A95B-UD-IQ2_XXS-00003-of-00015.gguf",
+            "UD-IQ2_XXS/Qwen3.8-2.4T-A95B-UD-IQ2_XXS-00004-of-00015.gguf",
+            "UD-IQ2_XXS/Qwen3.8-2.4T-A95B-UD-IQ2_XXS-00005-of-00015.gguf",
+            "UD-IQ2_XXS/Qwen3.8-2.4T-A95B-UD-IQ2_XXS-00006-of-00015.gguf",
+            "UD-IQ2_XXS/Qwen3.8-2.4T-A95B-UD-IQ2_XXS-00007-of-00015.gguf",
+            "UD-IQ2_XXS/Qwen3.8-2.4T-A95B-UD-IQ2_XXS-00008-of-00015.gguf",
+            "UD-IQ2_XXS/Qwen3.8-2.4T-A95B-UD-IQ2_XXS-00009-of-00015.gguf",
+            "UD-IQ2_XXS/Qwen3.8-2.4T-A95B-UD-IQ2_XXS-00010-of-00015.gguf",
+            "UD-IQ2_XXS/Qwen3.8-2.4T-A95B-UD-IQ2_XXS-00011-of-00015.gguf",
+            "UD-IQ2_XXS/Qwen3.8-2.4T-A95B-UD-IQ2_XXS-00012-of-00015.gguf",
+            "UD-IQ2_XXS/Qwen3.8-2.4T-A95B-UD-IQ2_XXS-00013-of-00015.gguf",
+            "UD-IQ2_XXS/Qwen3.8-2.4T-A95B-UD-IQ2_XXS-00014-of-00015.gguf",
+            "UD-IQ2_XXS/Qwen3.8-2.4T-A95B-UD-IQ2_XXS-00015-of-00015.gguf"
+          ],
+          "status": "PROFILE_OR_REVISION_RECONCILIATION_PENDING",
+          "tensor_format_status": "HEADER_PENDING_FOR_NEW_VARIANT",
+          "rule": "variant name is not a physical tensor dtype; shard names alone do not sign coverage"
+        },
+        {
+          "variant": "UD-IQ3_XXS",
+          "files": [
+            "UD-IQ3_XXS/Qwen3.8-2.4T-A95B-UD-IQ3_XXS-00001-of-00021.gguf",
+            "UD-IQ3_XXS/Qwen3.8-2.4T-A95B-UD-IQ3_XXS-00002-of-00021.gguf",
+            "UD-IQ3_XXS/Qwen3.8-2.4T-A95B-UD-IQ3_XXS-00003-of-00021.gguf",
+            "UD-IQ3_XXS/Qwen3.8-2.4T-A95B-UD-IQ3_XXS-00004-of-00021.gguf",
+            "UD-IQ3_XXS/Qwen3.8-2.4T-A95B-UD-IQ3_XXS-00005-of-00021.gguf",
+            "UD-IQ3_XXS/Qwen3.8-2.4T-A95B-UD-IQ3_XXS-00006-of-00021.gguf",
+            "UD-IQ3_XXS/Qwen3.8-2.4T-A95B-UD-IQ3_XXS-00007-of-00021.gguf",
+            "UD-IQ3_XXS/Qwen3.8-2.4T-A95B-UD-IQ3_XXS-00008-of-00021.gguf",
+            "UD-IQ3_XXS/Qwen3.8-2.4T-A95B-UD-IQ3_XXS-00009-of-00021.gguf",
+            "UD-IQ3_XXS/Qwen3.8-2.4T-A95B-UD-IQ3_XXS-00010-of-00021.gguf",
+            "UD-IQ3_XXS/Qwen3.8-2.4T-A95B-UD-IQ3_XXS-00011-of-00021.gguf",
+            "UD-IQ3_XXS/Qwen3.8-2.4T-A95B-UD-IQ3_XXS-00012-of-00021.gguf",
+            "UD-IQ3_XXS/Qwen3.8-2.4T-A95B-UD-IQ3_XXS-00013-of-00021.gguf",
+            "UD-IQ3_XXS/Qwen3.8-2.4T-A95B-UD-IQ3_XXS-00014-of-00021.gguf",
+            "UD-IQ3_XXS/Qwen3.8-2.4T-A95B-UD-IQ3_XXS-00015-of-00021.gguf",
+            "UD-IQ3_XXS/Qwen3.8-2.4T-A95B-UD-IQ3_XXS-00016-of-00021.gguf",
+            "UD-IQ3_XXS/Qwen3.8-2.4T-A95B-UD-IQ3_XXS-00017-of-00021.gguf",
+            "UD-IQ3_XXS/Qwen3.8-2.4T-A95B-UD-IQ3_XXS-00018-of-00021.gguf",
+            "UD-IQ3_XXS/Qwen3.8-2.4T-A95B-UD-IQ3_XXS-00019-of-00021.gguf",
+            "UD-IQ3_XXS/Qwen3.8-2.4T-A95B-UD-IQ3_XXS-00020-of-00021.gguf",
+            "UD-IQ3_XXS/Qwen3.8-2.4T-A95B-UD-IQ3_XXS-00021-of-00021.gguf"
+          ],
+          "status": "PROFILE_OR_REVISION_RECONCILIATION_PENDING",
+          "tensor_format_status": "HEADER_PENDING_FOR_NEW_VARIANT",
+          "rule": "variant name is not a physical tensor dtype; shard names alone do not sign coverage"
+        },
+        {
+          "variant": "UD-IQ4_XS",
+          "files": [
+            "UD-IQ4_XS/Qwen3.8-2.4T-A95B-UD-IQ4_XS-00001-of-00029.gguf",
+            "UD-IQ4_XS/Qwen3.8-2.4T-A95B-UD-IQ4_XS-00002-of-00029.gguf",
+            "UD-IQ4_XS/Qwen3.8-2.4T-A95B-UD-IQ4_XS-00003-of-00029.gguf",
+            "UD-IQ4_XS/Qwen3.8-2.4T-A95B-UD-IQ4_XS-00004-of-00029.gguf",
+            "UD-IQ4_XS/Qwen3.8-2.4T-A95B-UD-IQ4_XS-00005-of-00029.gguf",
+            "UD-IQ4_XS/Qwen3.8-2.4T-A95B-UD-IQ4_XS-00006-of-00029.gguf",
+            "UD-IQ4_XS/Qwen3.8-2.4T-A95B-UD-IQ4_XS-00007-of-00029.gguf",
+            "UD-IQ4_XS/Qwen3.8-2.4T-A95B-UD-IQ4_XS-00008-of-00029.gguf",
+            "UD-IQ4_XS/Qwen3.8-2.4T-A95B-UD-IQ4_XS-00009-of-00029.gguf",
+            "UD-IQ4_XS/Qwen3.8-2.4T-A95B-UD-IQ4_XS-00010-of-00029.gguf",
+            "UD-IQ4_XS/Qwen3.8-2.4T-A95B-UD-IQ4_XS-00011-of-00029.gguf",
+            "UD-IQ4_XS/Qwen3.8-2.4T-A95B-UD-IQ4_XS-00012-of-00029.gguf",
+            "UD-IQ4_XS/Qwen3.8-2.4T-A95B-UD-IQ4_XS-00013-of-00029.gguf",
+            "UD-IQ4_XS/Qwen3.8-2.4T-A95B-UD-IQ4_XS-00014-of-00029.gguf",
+            "UD-IQ4_XS/Qwen3.8-2.4T-A95B-UD-IQ4_XS-00015-of-00029.gguf",
+            "UD-IQ4_XS/Qwen3.8-2.4T-A95B-UD-IQ4_XS-00016-of-00029.gguf",
+            "UD-IQ4_XS/Qwen3.8-2.4T-A95B-UD-IQ4_XS-00017-of-00029.gguf",
+            "UD-IQ4_XS/Qwen3.8-2.4T-A95B-UD-IQ4_XS-00018-of-00029.gguf",
+            "UD-IQ4_XS/Qwen3.8-2.4T-A95B-UD-IQ4_XS-00019-of-00029.gguf",
+            "UD-IQ4_XS/Qwen3.8-2.4T-A95B-UD-IQ4_XS-00020-of-00029.gguf",
+            "UD-IQ4_XS/Qwen3.8-2.4T-A95B-UD-IQ4_XS-00021-of-00029.gguf",
+            "UD-IQ4_XS/Qwen3.8-2.4T-A95B-UD-IQ4_XS-00022-of-00029.gguf",
+            "UD-IQ4_XS/Qwen3.8-2.4T-A95B-UD-IQ4_XS-00023-of-00029.gguf",
+            "UD-IQ4_XS/Qwen3.8-2.4T-A95B-UD-IQ4_XS-00024-of-00029.gguf",
+            "UD-IQ4_XS/Qwen3.8-2.4T-A95B-UD-IQ4_XS-00025-of-00029.gguf",
+            "UD-IQ4_XS/Qwen3.8-2.4T-A95B-UD-IQ4_XS-00026-of-00029.gguf",
+            "UD-IQ4_XS/Qwen3.8-2.4T-A95B-UD-IQ4_XS-00027-of-00029.gguf",
+            "UD-IQ4_XS/Qwen3.8-2.4T-A95B-UD-IQ4_XS-00028-of-00029.gguf",
+            "UD-IQ4_XS/Qwen3.8-2.4T-A95B-UD-IQ4_XS-00029-of-00029.gguf"
+          ],
+          "status": "PRIOR_EXACT_PROFILE_QUALIFIED",
+          "tensor_format_status": "HEADER_PENDING_FOR_NEW_VARIANT",
+          "rule": "variant name is not a physical tensor dtype; shard names alone do not sign coverage"
+        },
+        {
+          "variant": "UD-Q1_0",
+          "files": [
+            "UD-Q1_0/Qwen3.8-2.4T-A95B-UD-Q1_0-00001-of-00010.gguf",
+            "UD-Q1_0/Qwen3.8-2.4T-A95B-UD-Q1_0-00002-of-00010.gguf",
+            "UD-Q1_0/Qwen3.8-2.4T-A95B-UD-Q1_0-00003-of-00010.gguf",
+            "UD-Q1_0/Qwen3.8-2.4T-A95B-UD-Q1_0-00004-of-00010.gguf",
+            "UD-Q1_0/Qwen3.8-2.4T-A95B-UD-Q1_0-00005-of-00010.gguf",
+            "UD-Q1_0/Qwen3.8-2.4T-A95B-UD-Q1_0-00006-of-00010.gguf",
+            "UD-Q1_0/Qwen3.8-2.4T-A95B-UD-Q1_0-00007-of-00010.gguf",
+            "UD-Q1_0/Qwen3.8-2.4T-A95B-UD-Q1_0-00008-of-00010.gguf",
+            "UD-Q1_0/Qwen3.8-2.4T-A95B-UD-Q1_0-00009-of-00010.gguf",
+            "UD-Q1_0/Qwen3.8-2.4T-A95B-UD-Q1_0-00010-of-00010.gguf"
+          ],
+          "status": "PROFILE_OR_REVISION_RECONCILIATION_PENDING",
+          "tensor_format_status": "HEADER_PENDING_FOR_NEW_VARIANT",
+          "rule": "variant name is not a physical tensor dtype; shard names alone do not sign coverage"
+        }
+      ],
+      "sidecars": []
+    },
+    {
+      "repository": "unsloth/Kimi-K3-GGUF",
+      "observed_revision": "a0836360ce58dfec088d966a97f2ddc8a606279b",
+      "metadata_url": "https://huggingface.co/api/models/unsloth/Kimi-K3-GGUF",
+      "downloads_repository_only": 347756,
+      "observed_variants": [
+        {
+          "variant": "UD-IQ1_M",
+          "files": [
+            "UD-IQ1_M/Kimi-K3-UD-IQ1_M-00001-of-00015.gguf",
+            "UD-IQ1_M/Kimi-K3-UD-IQ1_M-00002-of-00015.gguf",
+            "UD-IQ1_M/Kimi-K3-UD-IQ1_M-00003-of-00015.gguf",
+            "UD-IQ1_M/Kimi-K3-UD-IQ1_M-00004-of-00015.gguf",
+            "UD-IQ1_M/Kimi-K3-UD-IQ1_M-00005-of-00015.gguf",
+            "UD-IQ1_M/Kimi-K3-UD-IQ1_M-00006-of-00015.gguf",
+            "UD-IQ1_M/Kimi-K3-UD-IQ1_M-00007-of-00015.gguf",
+            "UD-IQ1_M/Kimi-K3-UD-IQ1_M-00008-of-00015.gguf",
+            "UD-IQ1_M/Kimi-K3-UD-IQ1_M-00009-of-00015.gguf",
+            "UD-IQ1_M/Kimi-K3-UD-IQ1_M-00010-of-00015.gguf",
+            "UD-IQ1_M/Kimi-K3-UD-IQ1_M-00011-of-00015.gguf",
+            "UD-IQ1_M/Kimi-K3-UD-IQ1_M-00012-of-00015.gguf",
+            "UD-IQ1_M/Kimi-K3-UD-IQ1_M-00013-of-00015.gguf",
+            "UD-IQ1_M/Kimi-K3-UD-IQ1_M-00014-of-00015.gguf",
+            "UD-IQ1_M/Kimi-K3-UD-IQ1_M-00015-of-00015.gguf"
+          ],
+          "status": "PROFILE_OR_REVISION_RECONCILIATION_PENDING",
+          "tensor_format_status": "HEADER_PENDING_FOR_NEW_VARIANT",
+          "rule": "variant name is not a physical tensor dtype; shard names alone do not sign coverage"
+        },
+        {
+          "variant": "UD-IQ1_S",
+          "files": [
+            "UD-IQ1_S/Kimi-K3-UD-IQ1_S-00001-of-00014.gguf",
+            "UD-IQ1_S/Kimi-K3-UD-IQ1_S-00002-of-00014.gguf",
+            "UD-IQ1_S/Kimi-K3-UD-IQ1_S-00003-of-00014.gguf",
+            "UD-IQ1_S/Kimi-K3-UD-IQ1_S-00004-of-00014.gguf",
+            "UD-IQ1_S/Kimi-K3-UD-IQ1_S-00005-of-00014.gguf",
+            "UD-IQ1_S/Kimi-K3-UD-IQ1_S-00006-of-00014.gguf",
+            "UD-IQ1_S/Kimi-K3-UD-IQ1_S-00007-of-00014.gguf",
+            "UD-IQ1_S/Kimi-K3-UD-IQ1_S-00008-of-00014.gguf",
+            "UD-IQ1_S/Kimi-K3-UD-IQ1_S-00009-of-00014.gguf",
+            "UD-IQ1_S/Kimi-K3-UD-IQ1_S-00010-of-00014.gguf",
+            "UD-IQ1_S/Kimi-K3-UD-IQ1_S-00011-of-00014.gguf",
+            "UD-IQ1_S/Kimi-K3-UD-IQ1_S-00012-of-00014.gguf",
+            "UD-IQ1_S/Kimi-K3-UD-IQ1_S-00013-of-00014.gguf",
+            "UD-IQ1_S/Kimi-K3-UD-IQ1_S-00014-of-00014.gguf"
+          ],
+          "status": "PROFILE_OR_REVISION_RECONCILIATION_PENDING",
+          "tensor_format_status": "HEADER_PENDING_FOR_NEW_VARIANT",
+          "rule": "variant name is not a physical tensor dtype; shard names alone do not sign coverage"
+        },
+        {
+          "variant": "UD-IQ2_XXS",
+          "files": [
+            "UD-IQ2_XXS/Kimi-K3-UD-IQ2_XXS-00001-of-00016.gguf",
+            "UD-IQ2_XXS/Kimi-K3-UD-IQ2_XXS-00002-of-00016.gguf",
+            "UD-IQ2_XXS/Kimi-K3-UD-IQ2_XXS-00003-of-00016.gguf",
+            "UD-IQ2_XXS/Kimi-K3-UD-IQ2_XXS-00004-of-00016.gguf",
+            "UD-IQ2_XXS/Kimi-K3-UD-IQ2_XXS-00005-of-00016.gguf",
+            "UD-IQ2_XXS/Kimi-K3-UD-IQ2_XXS-00006-of-00016.gguf",
+            "UD-IQ2_XXS/Kimi-K3-UD-IQ2_XXS-00007-of-00016.gguf",
+            "UD-IQ2_XXS/Kimi-K3-UD-IQ2_XXS-00008-of-00016.gguf",
+            "UD-IQ2_XXS/Kimi-K3-UD-IQ2_XXS-00009-of-00016.gguf",
+            "UD-IQ2_XXS/Kimi-K3-UD-IQ2_XXS-00010-of-00016.gguf",
+            "UD-IQ2_XXS/Kimi-K3-UD-IQ2_XXS-00011-of-00016.gguf",
+            "UD-IQ2_XXS/Kimi-K3-UD-IQ2_XXS-00012-of-00016.gguf",
+            "UD-IQ2_XXS/Kimi-K3-UD-IQ2_XXS-00013-of-00016.gguf",
+            "UD-IQ2_XXS/Kimi-K3-UD-IQ2_XXS-00014-of-00016.gguf",
+            "UD-IQ2_XXS/Kimi-K3-UD-IQ2_XXS-00015-of-00016.gguf",
+            "UD-IQ2_XXS/Kimi-K3-UD-IQ2_XXS-00016-of-00016.gguf"
+          ],
+          "status": "PROFILE_OR_REVISION_RECONCILIATION_PENDING",
+          "tensor_format_status": "HEADER_PENDING_FOR_NEW_VARIANT",
+          "rule": "variant name is not a physical tensor dtype; shard names alone do not sign coverage"
+        },
+        {
+          "variant": "UD-Q1_0",
+          "files": [
+            "UD-Q1_0/Kimi-K3-UD-Q1_0-00001-of-00011.gguf",
+            "UD-Q1_0/Kimi-K3-UD-Q1_0-00002-of-00011.gguf",
+            "UD-Q1_0/Kimi-K3-UD-Q1_0-00003-of-00011.gguf",
+            "UD-Q1_0/Kimi-K3-UD-Q1_0-00004-of-00011.gguf",
+            "UD-Q1_0/Kimi-K3-UD-Q1_0-00005-of-00011.gguf",
+            "UD-Q1_0/Kimi-K3-UD-Q1_0-00006-of-00011.gguf",
+            "UD-Q1_0/Kimi-K3-UD-Q1_0-00007-of-00011.gguf",
+            "UD-Q1_0/Kimi-K3-UD-Q1_0-00008-of-00011.gguf",
+            "UD-Q1_0/Kimi-K3-UD-Q1_0-00009-of-00011.gguf",
+            "UD-Q1_0/Kimi-K3-UD-Q1_0-00010-of-00011.gguf",
+            "UD-Q1_0/Kimi-K3-UD-Q1_0-00011-of-00011.gguf"
+          ],
+          "status": "PROFILE_OR_REVISION_RECONCILIATION_PENDING",
+          "tensor_format_status": "HEADER_PENDING_FOR_NEW_VARIANT",
+          "rule": "variant name is not a physical tensor dtype; shard names alone do not sign coverage"
+        },
+        {
+          "variant": "UD-Q2_K_XL",
+          "files": [
+            "UD-Q2_K_XL/Kimi-K3-UD-Q2_K_XL-00001-of-00019.gguf",
+            "UD-Q2_K_XL/Kimi-K3-UD-Q2_K_XL-00002-of-00019.gguf",
+            "UD-Q2_K_XL/Kimi-K3-UD-Q2_K_XL-00003-of-00019.gguf",
+            "UD-Q2_K_XL/Kimi-K3-UD-Q2_K_XL-00004-of-00019.gguf",
+            "UD-Q2_K_XL/Kimi-K3-UD-Q2_K_XL-00005-of-00019.gguf",
+            "UD-Q2_K_XL/Kimi-K3-UD-Q2_K_XL-00006-of-00019.gguf",
+            "UD-Q2_K_XL/Kimi-K3-UD-Q2_K_XL-00007-of-00019.gguf",
+            "UD-Q2_K_XL/Kimi-K3-UD-Q2_K_XL-00008-of-00019.gguf",
+            "UD-Q2_K_XL/Kimi-K3-UD-Q2_K_XL-00009-of-00019.gguf",
+            "UD-Q2_K_XL/Kimi-K3-UD-Q2_K_XL-00010-of-00019.gguf",
+            "UD-Q2_K_XL/Kimi-K3-UD-Q2_K_XL-00011-of-00019.gguf",
+            "UD-Q2_K_XL/Kimi-K3-UD-Q2_K_XL-00012-of-00019.gguf",
+            "UD-Q2_K_XL/Kimi-K3-UD-Q2_K_XL-00013-of-00019.gguf",
+            "UD-Q2_K_XL/Kimi-K3-UD-Q2_K_XL-00014-of-00019.gguf",
+            "UD-Q2_K_XL/Kimi-K3-UD-Q2_K_XL-00015-of-00019.gguf",
+            "UD-Q2_K_XL/Kimi-K3-UD-Q2_K_XL-00016-of-00019.gguf",
+            "UD-Q2_K_XL/Kimi-K3-UD-Q2_K_XL-00017-of-00019.gguf",
+            "UD-Q2_K_XL/Kimi-K3-UD-Q2_K_XL-00018-of-00019.gguf",
+            "UD-Q2_K_XL/Kimi-K3-UD-Q2_K_XL-00019-of-00019.gguf"
+          ],
+          "status": "PROFILE_OR_REVISION_RECONCILIATION_PENDING",
+          "tensor_format_status": "HEADER_PENDING_FOR_NEW_VARIANT",
+          "rule": "variant name is not a physical tensor dtype; shard names alone do not sign coverage"
+        },
+        {
+          "variant": "UD-Q4_K_XL",
+          "files": [
+            "UD-Q4_K_XL/Kimi-K3-UD-Q4_K_XL-00001-of-00032.gguf",
+            "UD-Q4_K_XL/Kimi-K3-UD-Q4_K_XL-00002-of-00032.gguf",
+            "UD-Q4_K_XL/Kimi-K3-UD-Q4_K_XL-00003-of-00032.gguf",
+            "UD-Q4_K_XL/Kimi-K3-UD-Q4_K_XL-00004-of-00032.gguf",
+            "UD-Q4_K_XL/Kimi-K3-UD-Q4_K_XL-00005-of-00032.gguf",
+            "UD-Q4_K_XL/Kimi-K3-UD-Q4_K_XL-00006-of-00032.gguf",
+            "UD-Q4_K_XL/Kimi-K3-UD-Q4_K_XL-00007-of-00032.gguf",
+            "UD-Q4_K_XL/Kimi-K3-UD-Q4_K_XL-00008-of-00032.gguf",
+            "UD-Q4_K_XL/Kimi-K3-UD-Q4_K_XL-00009-of-00032.gguf",
+            "UD-Q4_K_XL/Kimi-K3-UD-Q4_K_XL-00010-of-00032.gguf",
+            "UD-Q4_K_XL/Kimi-K3-UD-Q4_K_XL-00011-of-00032.gguf",
+            "UD-Q4_K_XL/Kimi-K3-UD-Q4_K_XL-00012-of-00032.gguf",
+            "UD-Q4_K_XL/Kimi-K3-UD-Q4_K_XL-00013-of-00032.gguf",
+            "UD-Q4_K_XL/Kimi-K3-UD-Q4_K_XL-00014-of-00032.gguf",
+            "UD-Q4_K_XL/Kimi-K3-UD-Q4_K_XL-00015-of-00032.gguf",
+            "UD-Q4_K_XL/Kimi-K3-UD-Q4_K_XL-00016-of-00032.gguf",
+            "UD-Q4_K_XL/Kimi-K3-UD-Q4_K_XL-00017-of-00032.gguf",
+            "UD-Q4_K_XL/Kimi-K3-UD-Q4_K_XL-00018-of-00032.gguf",
+            "UD-Q4_K_XL/Kimi-K3-UD-Q4_K_XL-00019-of-00032.gguf",
+            "UD-Q4_K_XL/Kimi-K3-UD-Q4_K_XL-00020-of-00032.gguf",
+            "UD-Q4_K_XL/Kimi-K3-UD-Q4_K_XL-00021-of-00032.gguf",
+            "UD-Q4_K_XL/Kimi-K3-UD-Q4_K_XL-00022-of-00032.gguf",
+            "UD-Q4_K_XL/Kimi-K3-UD-Q4_K_XL-00023-of-00032.gguf",
+            "UD-Q4_K_XL/Kimi-K3-UD-Q4_K_XL-00024-of-00032.gguf",
+            "UD-Q4_K_XL/Kimi-K3-UD-Q4_K_XL-00025-of-00032.gguf",
+            "UD-Q4_K_XL/Kimi-K3-UD-Q4_K_XL-00026-of-00032.gguf",
+            "UD-Q4_K_XL/Kimi-K3-UD-Q4_K_XL-00027-of-00032.gguf",
+            "UD-Q4_K_XL/Kimi-K3-UD-Q4_K_XL-00028-of-00032.gguf",
+            "UD-Q4_K_XL/Kimi-K3-UD-Q4_K_XL-00029-of-00032.gguf",
+            "UD-Q4_K_XL/Kimi-K3-UD-Q4_K_XL-00030-of-00032.gguf",
+            "UD-Q4_K_XL/Kimi-K3-UD-Q4_K_XL-00031-of-00032.gguf",
+            "UD-Q4_K_XL/Kimi-K3-UD-Q4_K_XL-00032-of-00032.gguf"
+          ],
+          "status": "PRIOR_EXACT_PROFILE_QUALIFIED",
+          "tensor_format_status": "HEADER_PENDING_FOR_NEW_VARIANT",
+          "rule": "variant name is not a physical tensor dtype; shard names alone do not sign coverage"
+        },
+        {
+          "variant": "UD-Q8_K_XL",
+          "files": [
+            "UD-Q8_K_XL/Kimi-K3-UD-Q8_K_XL-00001-of-00034.gguf",
+            "UD-Q8_K_XL/Kimi-K3-UD-Q8_K_XL-00002-of-00034.gguf",
+            "UD-Q8_K_XL/Kimi-K3-UD-Q8_K_XL-00003-of-00034.gguf",
+            "UD-Q8_K_XL/Kimi-K3-UD-Q8_K_XL-00004-of-00034.gguf",
+            "UD-Q8_K_XL/Kimi-K3-UD-Q8_K_XL-00005-of-00034.gguf",
+            "UD-Q8_K_XL/Kimi-K3-UD-Q8_K_XL-00006-of-00034.gguf",
+            "UD-Q8_K_XL/Kimi-K3-UD-Q8_K_XL-00007-of-00034.gguf",
+            "UD-Q8_K_XL/Kimi-K3-UD-Q8_K_XL-00008-of-00034.gguf",
+            "UD-Q8_K_XL/Kimi-K3-UD-Q8_K_XL-00009-of-00034.gguf",
+            "UD-Q8_K_XL/Kimi-K3-UD-Q8_K_XL-00010-of-00034.gguf",
+            "UD-Q8_K_XL/Kimi-K3-UD-Q8_K_XL-00011-of-00034.gguf",
+            "UD-Q8_K_XL/Kimi-K3-UD-Q8_K_XL-00012-of-00034.gguf",
+            "UD-Q8_K_XL/Kimi-K3-UD-Q8_K_XL-00013-of-00034.gguf",
+            "UD-Q8_K_XL/Kimi-K3-UD-Q8_K_XL-00014-of-00034.gguf",
+            "UD-Q8_K_XL/Kimi-K3-UD-Q8_K_XL-00015-of-00034.gguf",
+            "UD-Q8_K_XL/Kimi-K3-UD-Q8_K_XL-00016-of-00034.gguf",
+            "UD-Q8_K_XL/Kimi-K3-UD-Q8_K_XL-00017-of-00034.gguf",
+            "UD-Q8_K_XL/Kimi-K3-UD-Q8_K_XL-00018-of-00034.gguf",
+            "UD-Q8_K_XL/Kimi-K3-UD-Q8_K_XL-00019-of-00034.gguf",
+            "UD-Q8_K_XL/Kimi-K3-UD-Q8_K_XL-00020-of-00034.gguf",
+            "UD-Q8_K_XL/Kimi-K3-UD-Q8_K_XL-00021-of-00034.gguf",
+            "UD-Q8_K_XL/Kimi-K3-UD-Q8_K_XL-00022-of-00034.gguf",
+            "UD-Q8_K_XL/Kimi-K3-UD-Q8_K_XL-00023-of-00034.gguf",
+            "UD-Q8_K_XL/Kimi-K3-UD-Q8_K_XL-00024-of-00034.gguf",
+            "UD-Q8_K_XL/Kimi-K3-UD-Q8_K_XL-00025-of-00034.gguf",
+            "UD-Q8_K_XL/Kimi-K3-UD-Q8_K_XL-00026-of-00034.gguf",
+            "UD-Q8_K_XL/Kimi-K3-UD-Q8_K_XL-00027-of-00034.gguf",
+            "UD-Q8_K_XL/Kimi-K3-UD-Q8_K_XL-00028-of-00034.gguf",
+            "UD-Q8_K_XL/Kimi-K3-UD-Q8_K_XL-00029-of-00034.gguf",
+            "UD-Q8_K_XL/Kimi-K3-UD-Q8_K_XL-00030-of-00034.gguf",
+            "UD-Q8_K_XL/Kimi-K3-UD-Q8_K_XL-00031-of-00034.gguf",
+            "UD-Q8_K_XL/Kimi-K3-UD-Q8_K_XL-00032-of-00034.gguf",
+            "UD-Q8_K_XL/Kimi-K3-UD-Q8_K_XL-00033-of-00034.gguf",
+            "UD-Q8_K_XL/Kimi-K3-UD-Q8_K_XL-00034-of-00034.gguf"
+          ],
+          "status": "PRIOR_EXACT_PROFILE_QUALIFIED",
+          "tensor_format_status": "HEADER_PENDING_FOR_NEW_VARIANT",
+          "rule": "variant name is not a physical tensor dtype; shard names alone do not sign coverage"
+        },
+        {
+          "variant": "UD-TQ1_0",
+          "files": [
+            "UD-TQ1_0/Kimi-K3-UD-TQ1_0-00001-of-00012.gguf",
+            "UD-TQ1_0/Kimi-K3-UD-TQ1_0-00002-of-00012.gguf",
+            "UD-TQ1_0/Kimi-K3-UD-TQ1_0-00003-of-00012.gguf",
+            "UD-TQ1_0/Kimi-K3-UD-TQ1_0-00004-of-00012.gguf",
+            "UD-TQ1_0/Kimi-K3-UD-TQ1_0-00005-of-00012.gguf",
+            "UD-TQ1_0/Kimi-K3-UD-TQ1_0-00006-of-00012.gguf",
+            "UD-TQ1_0/Kimi-K3-UD-TQ1_0-00007-of-00012.gguf",
+            "UD-TQ1_0/Kimi-K3-UD-TQ1_0-00008-of-00012.gguf",
+            "UD-TQ1_0/Kimi-K3-UD-TQ1_0-00009-of-00012.gguf",
+            "UD-TQ1_0/Kimi-K3-UD-TQ1_0-00010-of-00012.gguf",
+            "UD-TQ1_0/Kimi-K3-UD-TQ1_0-00011-of-00012.gguf",
+            "UD-TQ1_0/Kimi-K3-UD-TQ1_0-00012-of-00012.gguf"
+          ],
+          "status": "PROFILE_OR_REVISION_RECONCILIATION_PENDING",
+          "tensor_format_status": "HEADER_PENDING_FOR_NEW_VARIANT",
+          "rule": "variant name is not a physical tensor dtype; shard names alone do not sign coverage"
+        },
+        {
+          "variant": "UD-TQ2_0",
+          "files": [
+            "UD-TQ2_0/Kimi-K3-UD-TQ2_0-00001-of-00013.gguf",
+            "UD-TQ2_0/Kimi-K3-UD-TQ2_0-00002-of-00013.gguf",
+            "UD-TQ2_0/Kimi-K3-UD-TQ2_0-00003-of-00013.gguf",
+            "UD-TQ2_0/Kimi-K3-UD-TQ2_0-00004-of-00013.gguf",
+            "UD-TQ2_0/Kimi-K3-UD-TQ2_0-00005-of-00013.gguf",
+            "UD-TQ2_0/Kimi-K3-UD-TQ2_0-00006-of-00013.gguf",
+            "UD-TQ2_0/Kimi-K3-UD-TQ2_0-00007-of-00013.gguf",
+            "UD-TQ2_0/Kimi-K3-UD-TQ2_0-00008-of-00013.gguf",
+            "UD-TQ2_0/Kimi-K3-UD-TQ2_0-00009-of-00013.gguf",
+            "UD-TQ2_0/Kimi-K3-UD-TQ2_0-00010-of-00013.gguf",
+            "UD-TQ2_0/Kimi-K3-UD-TQ2_0-00011-of-00013.gguf",
+            "UD-TQ2_0/Kimi-K3-UD-TQ2_0-00012-of-00013.gguf",
+            "UD-TQ2_0/Kimi-K3-UD-TQ2_0-00013-of-00013.gguf"
+          ],
+          "status": "PROFILE_OR_REVISION_RECONCILIATION_PENDING",
+          "tensor_format_status": "HEADER_PENDING_FOR_NEW_VARIANT",
+          "rule": "variant name is not a physical tensor dtype; shard names alone do not sign coverage"
+        }
+      ],
+      "sidecars": []
+    },
+    {
+      "repository": "unsloth/GLM-5.3-GGUF",
+      "observed_revision": "346b3591c7f28d1a23716f97a065ecf12ec14771",
+      "metadata_url": "https://huggingface.co/api/models/unsloth/GLM-5.3-GGUF",
+      "downloads_repository_only": 512884,
+      "observed_variants": [
+        {
+          "variant": "BF16",
+          "files": [
+            "BF16/GLM-5.3-BF16-00001-of-00033.gguf",
+            "BF16/GLM-5.3-BF16-00002-of-00033.gguf",
+            "BF16/GLM-5.3-BF16-00003-of-00033.gguf",
+            "BF16/GLM-5.3-BF16-00004-of-00033.gguf",
+            "BF16/GLM-5.3-BF16-00005-of-00033.gguf",
+            "BF16/GLM-5.3-BF16-00006-of-00033.gguf",
+            "BF16/GLM-5.3-BF16-00007-of-00033.gguf",
+            "BF16/GLM-5.3-BF16-00008-of-00033.gguf",
+            "BF16/GLM-5.3-BF16-00009-of-00033.gguf",
+            "BF16/GLM-5.3-BF16-00010-of-00033.gguf",
+            "BF16/GLM-5.3-BF16-00011-of-00033.gguf",
+            "BF16/GLM-5.3-BF16-00012-of-00033.gguf",
+            "BF16/GLM-5.3-BF16-00013-of-00033.gguf",
+            "BF16/GLM-5.3-BF16-00014-of-00033.gguf",
+            "BF16/GLM-5.3-BF16-00015-of-00033.gguf",
+            "BF16/GLM-5.3-BF16-00016-of-00033.gguf",
+            "BF16/GLM-5.3-BF16-00017-of-00033.gguf",
+            "BF16/GLM-5.3-BF16-00018-of-00033.gguf",
+            "BF16/GLM-5.3-BF16-00019-of-00033.gguf",
+            "BF16/GLM-5.3-BF16-00020-of-00033.gguf",
+            "BF16/GLM-5.3-BF16-00021-of-00033.gguf",
+            "BF16/GLM-5.3-BF16-00022-of-00033.gguf",
+            "BF16/GLM-5.3-BF16-00023-of-00033.gguf",
+            "BF16/GLM-5.3-BF16-00024-of-00033.gguf",
+            "BF16/GLM-5.3-BF16-00025-of-00033.gguf",
+            "BF16/GLM-5.3-BF16-00026-of-00033.gguf",
+            "BF16/GLM-5.3-BF16-00027-of-00033.gguf",
+            "BF16/GLM-5.3-BF16-00028-of-00033.gguf",
+            "BF16/GLM-5.3-BF16-00029-of-00033.gguf",
+            "BF16/GLM-5.3-BF16-00030-of-00033.gguf",
+            "BF16/GLM-5.3-BF16-00031-of-00033.gguf",
+            "BF16/GLM-5.3-BF16-00032-of-00033.gguf",
+            "BF16/GLM-5.3-BF16-00033-of-00033.gguf"
+          ],
+          "status": "PROFILE_OR_REVISION_RECONCILIATION_PENDING",
+          "tensor_format_status": "HEADER_PENDING_FOR_NEW_VARIANT",
+          "rule": "variant name is not a physical tensor dtype; shard names alone do not sign coverage"
+        },
+        {
+          "variant": "Q8_0",
+          "files": [
+            "Q8_0/GLM-5.3-Q8_0-00001-of-00017.gguf",
+            "Q8_0/GLM-5.3-Q8_0-00002-of-00017.gguf",
+            "Q8_0/GLM-5.3-Q8_0-00003-of-00017.gguf",
+            "Q8_0/GLM-5.3-Q8_0-00004-of-00017.gguf",
+            "Q8_0/GLM-5.3-Q8_0-00005-of-00017.gguf",
+            "Q8_0/GLM-5.3-Q8_0-00006-of-00017.gguf",
+            "Q8_0/GLM-5.3-Q8_0-00007-of-00017.gguf",
+            "Q8_0/GLM-5.3-Q8_0-00008-of-00017.gguf",
+            "Q8_0/GLM-5.3-Q8_0-00009-of-00017.gguf",
+            "Q8_0/GLM-5.3-Q8_0-00010-of-00017.gguf",
+            "Q8_0/GLM-5.3-Q8_0-00011-of-00017.gguf",
+            "Q8_0/GLM-5.3-Q8_0-00012-of-00017.gguf",
+            "Q8_0/GLM-5.3-Q8_0-00013-of-00017.gguf",
+            "Q8_0/GLM-5.3-Q8_0-00014-of-00017.gguf",
+            "Q8_0/GLM-5.3-Q8_0-00015-of-00017.gguf",
+            "Q8_0/GLM-5.3-Q8_0-00016-of-00017.gguf",
+            "Q8_0/GLM-5.3-Q8_0-00017-of-00017.gguf"
+          ],
+          "status": "PRIOR_EXACT_PROFILE_QUALIFIED",
+          "tensor_format_status": "HEADER_PENDING_FOR_NEW_VARIANT",
+          "rule": "variant name is not a physical tensor dtype; shard names alone do not sign coverage"
+        },
+        {
+          "variant": "UD-IQ1_M",
+          "files": [
+            "UD-IQ1_M/GLM-5.3-UD-IQ1_M-00001-of-00006.gguf",
+            "UD-IQ1_M/GLM-5.3-UD-IQ1_M-00002-of-00006.gguf",
+            "UD-IQ1_M/GLM-5.3-UD-IQ1_M-00003-of-00006.gguf",
+            "UD-IQ1_M/GLM-5.3-UD-IQ1_M-00004-of-00006.gguf",
+            "UD-IQ1_M/GLM-5.3-UD-IQ1_M-00005-of-00006.gguf",
+            "UD-IQ1_M/GLM-5.3-UD-IQ1_M-00006-of-00006.gguf"
+          ],
+          "status": "PROFILE_OR_REVISION_RECONCILIATION_PENDING",
+          "tensor_format_status": "HEADER_PENDING_FOR_NEW_VARIANT",
+          "rule": "variant name is not a physical tensor dtype; shard names alone do not sign coverage"
+        },
+        {
+          "variant": "UD-IQ1_S",
+          "files": [
+            "UD-IQ1_S/GLM-5.3-UD-IQ1_S-00001-of-00006.gguf",
+            "UD-IQ1_S/GLM-5.3-UD-IQ1_S-00002-of-00006.gguf",
+            "UD-IQ1_S/GLM-5.3-UD-IQ1_S-00003-of-00006.gguf",
+            "UD-IQ1_S/GLM-5.3-UD-IQ1_S-00004-of-00006.gguf",
+            "UD-IQ1_S/GLM-5.3-UD-IQ1_S-00005-of-00006.gguf",
+            "UD-IQ1_S/GLM-5.3-UD-IQ1_S-00006-of-00006.gguf"
+          ],
+          "status": "PROFILE_OR_REVISION_RECONCILIATION_PENDING",
+          "tensor_format_status": "HEADER_PENDING_FOR_NEW_VARIANT",
+          "rule": "variant name is not a physical tensor dtype; shard names alone do not sign coverage"
+        },
+        {
+          "variant": "UD-IQ2_M",
+          "files": [
+            "UD-IQ2_M/GLM-5.3-UD-IQ2_M-00001-of-00006.gguf",
+            "UD-IQ2_M/GLM-5.3-UD-IQ2_M-00002-of-00006.gguf",
+            "UD-IQ2_M/GLM-5.3-UD-IQ2_M-00003-of-00006.gguf",
+            "UD-IQ2_M/GLM-5.3-UD-IQ2_M-00004-of-00006.gguf",
+            "UD-IQ2_M/GLM-5.3-UD-IQ2_M-00005-of-00006.gguf",
+            "UD-IQ2_M/GLM-5.3-UD-IQ2_M-00006-of-00006.gguf"
+          ],
+          "status": "PROFILE_OR_REVISION_RECONCILIATION_PENDING",
+          "tensor_format_status": "HEADER_PENDING_FOR_NEW_VARIANT",
+          "rule": "variant name is not a physical tensor dtype; shard names alone do not sign coverage"
+        },
+        {
+          "variant": "UD-IQ3_XXS",
+          "files": [
+            "UD-IQ3_XXS/GLM-5.3-UD-IQ3_XXS-00001-of-00007.gguf",
+            "UD-IQ3_XXS/GLM-5.3-UD-IQ3_XXS-00002-of-00007.gguf",
+            "UD-IQ3_XXS/GLM-5.3-UD-IQ3_XXS-00003-of-00007.gguf",
+            "UD-IQ3_XXS/GLM-5.3-UD-IQ3_XXS-00004-of-00007.gguf",
+            "UD-IQ3_XXS/GLM-5.3-UD-IQ3_XXS-00005-of-00007.gguf",
+            "UD-IQ3_XXS/GLM-5.3-UD-IQ3_XXS-00006-of-00007.gguf",
+            "UD-IQ3_XXS/GLM-5.3-UD-IQ3_XXS-00007-of-00007.gguf"
+          ],
+          "status": "PROFILE_OR_REVISION_RECONCILIATION_PENDING",
+          "tensor_format_status": "HEADER_PENDING_FOR_NEW_VARIANT",
+          "rule": "variant name is not a physical tensor dtype; shard names alone do not sign coverage"
+        },
+        {
+          "variant": "UD-IQ4_XS",
+          "files": [
+            "UD-IQ4_XS/GLM-5.3-UD-IQ4_XS-00001-of-00009.gguf",
+            "UD-IQ4_XS/GLM-5.3-UD-IQ4_XS-00002-of-00009.gguf",
+            "UD-IQ4_XS/GLM-5.3-UD-IQ4_XS-00003-of-00009.gguf",
+            "UD-IQ4_XS/GLM-5.3-UD-IQ4_XS-00004-of-00009.gguf",
+            "UD-IQ4_XS/GLM-5.3-UD-IQ4_XS-00005-of-00009.gguf",
+            "UD-IQ4_XS/GLM-5.3-UD-IQ4_XS-00006-of-00009.gguf",
+            "UD-IQ4_XS/GLM-5.3-UD-IQ4_XS-00007-of-00009.gguf",
+            "UD-IQ4_XS/GLM-5.3-UD-IQ4_XS-00008-of-00009.gguf",
+            "UD-IQ4_XS/GLM-5.3-UD-IQ4_XS-00009-of-00009.gguf"
+          ],
+          "status": "PROFILE_OR_REVISION_RECONCILIATION_PENDING",
+          "tensor_format_status": "HEADER_PENDING_FOR_NEW_VARIANT",
+          "rule": "variant name is not a physical tensor dtype; shard names alone do not sign coverage"
+        },
+        {
+          "variant": "UD-Q2_K_XL",
+          "files": [
+            "UD-Q2_K_XL/GLM-5.3-UD-Q2_K_XL-00001-of-00007.gguf",
+            "UD-Q2_K_XL/GLM-5.3-UD-Q2_K_XL-00002-of-00007.gguf",
+            "UD-Q2_K_XL/GLM-5.3-UD-Q2_K_XL-00003-of-00007.gguf",
+            "UD-Q2_K_XL/GLM-5.3-UD-Q2_K_XL-00004-of-00007.gguf",
+            "UD-Q2_K_XL/GLM-5.3-UD-Q2_K_XL-00005-of-00007.gguf",
+            "UD-Q2_K_XL/GLM-5.3-UD-Q2_K_XL-00006-of-00007.gguf",
+            "UD-Q2_K_XL/GLM-5.3-UD-Q2_K_XL-00007-of-00007.gguf"
+          ],
+          "status": "PROFILE_OR_REVISION_RECONCILIATION_PENDING",
+          "tensor_format_status": "HEADER_PENDING_FOR_NEW_VARIANT",
+          "rule": "variant name is not a physical tensor dtype; shard names alone do not sign coverage"
+        },
+        {
+          "variant": "UD-Q3_K_XL",
+          "files": [
+            "UD-Q3_K_XL/GLM-5.3-UD-Q3_K_XL-00001-of-00009.gguf",
+            "UD-Q3_K_XL/GLM-5.3-UD-Q3_K_XL-00002-of-00009.gguf",
+            "UD-Q3_K_XL/GLM-5.3-UD-Q3_K_XL-00003-of-00009.gguf",
+            "UD-Q3_K_XL/GLM-5.3-UD-Q3_K_XL-00004-of-00009.gguf",
+            "UD-Q3_K_XL/GLM-5.3-UD-Q3_K_XL-00005-of-00009.gguf",
+            "UD-Q3_K_XL/GLM-5.3-UD-Q3_K_XL-00006-of-00009.gguf",
+            "UD-Q3_K_XL/GLM-5.3-UD-Q3_K_XL-00007-of-00009.gguf",
+            "UD-Q3_K_XL/GLM-5.3-UD-Q3_K_XL-00008-of-00009.gguf",
+            "UD-Q3_K_XL/GLM-5.3-UD-Q3_K_XL-00009-of-00009.gguf"
+          ],
+          "status": "PROFILE_OR_REVISION_RECONCILIATION_PENDING",
+          "tensor_format_status": "HEADER_PENDING_FOR_NEW_VARIANT",
+          "rule": "variant name is not a physical tensor dtype; shard names alone do not sign coverage"
+        },
+        {
+          "variant": "UD-Q4_K_XL",
+          "files": [
+            "UD-Q4_K_XL/GLM-5.3-UD-Q4_K_XL-00001-of-00011.gguf",
+            "UD-Q4_K_XL/GLM-5.3-UD-Q4_K_XL-00002-of-00011.gguf",
+            "UD-Q4_K_XL/GLM-5.3-UD-Q4_K_XL-00003-of-00011.gguf",
+            "UD-Q4_K_XL/GLM-5.3-UD-Q4_K_XL-00004-of-00011.gguf",
+            "UD-Q4_K_XL/GLM-5.3-UD-Q4_K_XL-00005-of-00011.gguf",
+            "UD-Q4_K_XL/GLM-5.3-UD-Q4_K_XL-00006-of-00011.gguf",
+            "UD-Q4_K_XL/GLM-5.3-UD-Q4_K_XL-00007-of-00011.gguf",
+            "UD-Q4_K_XL/GLM-5.3-UD-Q4_K_XL-00008-of-00011.gguf",
+            "UD-Q4_K_XL/GLM-5.3-UD-Q4_K_XL-00009-of-00011.gguf",
+            "UD-Q4_K_XL/GLM-5.3-UD-Q4_K_XL-00010-of-00011.gguf",
+            "UD-Q4_K_XL/GLM-5.3-UD-Q4_K_XL-00011-of-00011.gguf"
+          ],
+          "status": "PRIOR_EXACT_PROFILE_QUALIFIED",
+          "tensor_format_status": "HEADER_PENDING_FOR_NEW_VARIANT",
+          "rule": "variant name is not a physical tensor dtype; shard names alone do not sign coverage"
+        },
+        {
+          "variant": "UD-Q5_K_XL",
+          "files": [
+            "UD-Q5_K_XL/GLM-5.3-UD-Q5_K_XL-00001-of-00013.gguf",
+            "UD-Q5_K_XL/GLM-5.3-UD-Q5_K_XL-00002-of-00013.gguf",
+            "UD-Q5_K_XL/GLM-5.3-UD-Q5_K_XL-00003-of-00013.gguf",
+            "UD-Q5_K_XL/GLM-5.3-UD-Q5_K_XL-00004-of-00013.gguf",
+            "UD-Q5_K_XL/GLM-5.3-UD-Q5_K_XL-00005-of-00013.gguf",
+            "UD-Q5_K_XL/GLM-5.3-UD-Q5_K_XL-00006-of-00013.gguf",
+            "UD-Q5_K_XL/GLM-5.3-UD-Q5_K_XL-00007-of-00013.gguf",
+            "UD-Q5_K_XL/GLM-5.3-UD-Q5_K_XL-00008-of-00013.gguf",
+            "UD-Q5_K_XL/GLM-5.3-UD-Q5_K_XL-00009-of-00013.gguf",
+            "UD-Q5_K_XL/GLM-5.3-UD-Q5_K_XL-00010-of-00013.gguf",
+            "UD-Q5_K_XL/GLM-5.3-UD-Q5_K_XL-00011-of-00013.gguf",
+            "UD-Q5_K_XL/GLM-5.3-UD-Q5_K_XL-00012-of-00013.gguf",
+            "UD-Q5_K_XL/GLM-5.3-UD-Q5_K_XL-00013-of-00013.gguf"
+          ],
+          "status": "PROFILE_OR_REVISION_RECONCILIATION_PENDING",
+          "tensor_format_status": "HEADER_PENDING_FOR_NEW_VARIANT",
+          "rule": "variant name is not a physical tensor dtype; shard names alone do not sign coverage"
+        },
+        {
+          "variant": "UD-Q6_K_XL",
+          "files": [
+            "UD-Q6_K_XL/GLM-5.3-UD-Q6_K_XL-00001-of-00016.gguf",
+            "UD-Q6_K_XL/GLM-5.3-UD-Q6_K_XL-00002-of-00016.gguf",
+            "UD-Q6_K_XL/GLM-5.3-UD-Q6_K_XL-00003-of-00016.gguf",
+            "UD-Q6_K_XL/GLM-5.3-UD-Q6_K_XL-00004-of-00016.gguf",
+            "UD-Q6_K_XL/GLM-5.3-UD-Q6_K_XL-00005-of-00016.gguf",
+            "UD-Q6_K_XL/GLM-5.3-UD-Q6_K_XL-00006-of-00016.gguf",
+            "UD-Q6_K_XL/GLM-5.3-UD-Q6_K_XL-00007-of-00016.gguf",
+            "UD-Q6_K_XL/GLM-5.3-UD-Q6_K_XL-00008-of-00016.gguf",
+            "UD-Q6_K_XL/GLM-5.3-UD-Q6_K_XL-00009-of-00016.gguf",
+            "UD-Q6_K_XL/GLM-5.3-UD-Q6_K_XL-00010-of-00016.gguf",
+            "UD-Q6_K_XL/GLM-5.3-UD-Q6_K_XL-00011-of-00016.gguf",
+            "UD-Q6_K_XL/GLM-5.3-UD-Q6_K_XL-00012-of-00016.gguf",
+            "UD-Q6_K_XL/GLM-5.3-UD-Q6_K_XL-00013-of-00016.gguf",
+            "UD-Q6_K_XL/GLM-5.3-UD-Q6_K_XL-00014-of-00016.gguf",
+            "UD-Q6_K_XL/GLM-5.3-UD-Q6_K_XL-00015-of-00016.gguf",
+            "UD-Q6_K_XL/GLM-5.3-UD-Q6_K_XL-00016-of-00016.gguf"
+          ],
+          "status": "PROFILE_OR_REVISION_RECONCILIATION_PENDING",
+          "tensor_format_status": "HEADER_PENDING_FOR_NEW_VARIANT",
+          "rule": "variant name is not a physical tensor dtype; shard names alone do not sign coverage"
+        }
+      ],
+      "sidecars": []
+    },
+    {
+      "repository": "unsloth/GLM-5.3-Flash-GGUF",
+      "observed_revision": "a38483c8cd5df544f53d70fb281afe97369d5ab6",
+      "metadata_url": "https://huggingface.co/api/models/unsloth/GLM-5.3-Flash-GGUF",
+      "downloads_repository_only": 1075570,
+      "observed_variants": [
+        {
+          "variant": "BF16",
+          "files": [
+            "BF16/GLM-5.3-Flash-BF16-00001-of-00014.gguf",
+            "BF16/GLM-5.3-Flash-BF16-00002-of-00014.gguf",
+            "BF16/GLM-5.3-Flash-BF16-00003-of-00014.gguf",
+            "BF16/GLM-5.3-Flash-BF16-00004-of-00014.gguf",
+            "BF16/GLM-5.3-Flash-BF16-00005-of-00014.gguf",
+            "BF16/GLM-5.3-Flash-BF16-00006-of-00014.gguf",
+            "BF16/GLM-5.3-Flash-BF16-00007-of-00014.gguf",
+            "BF16/GLM-5.3-Flash-BF16-00008-of-00014.gguf",
+            "BF16/GLM-5.3-Flash-BF16-00009-of-00014.gguf",
+            "BF16/GLM-5.3-Flash-BF16-00010-of-00014.gguf",
+            "BF16/GLM-5.3-Flash-BF16-00011-of-00014.gguf",
+            "BF16/GLM-5.3-Flash-BF16-00012-of-00014.gguf",
+            "BF16/GLM-5.3-Flash-BF16-00013-of-00014.gguf",
+            "BF16/GLM-5.3-Flash-BF16-00014-of-00014.gguf"
+          ],
+          "status": "PROFILE_OR_REVISION_RECONCILIATION_PENDING",
+          "tensor_format_status": "HEADER_PENDING_FOR_NEW_VARIANT",
+          "rule": "variant name is not a physical tensor dtype; shard names alone do not sign coverage"
+        },
+        {
+          "variant": "Q8_0",
+          "files": [
+            "Q8_0/GLM-5.3-Flash-Q8_0-00001-of-00008.gguf",
+            "Q8_0/GLM-5.3-Flash-Q8_0-00002-of-00008.gguf",
+            "Q8_0/GLM-5.3-Flash-Q8_0-00003-of-00008.gguf",
+            "Q8_0/GLM-5.3-Flash-Q8_0-00004-of-00008.gguf",
+            "Q8_0/GLM-5.3-Flash-Q8_0-00005-of-00008.gguf",
+            "Q8_0/GLM-5.3-Flash-Q8_0-00006-of-00008.gguf",
+            "Q8_0/GLM-5.3-Flash-Q8_0-00007-of-00008.gguf",
+            "Q8_0/GLM-5.3-Flash-Q8_0-00008-of-00008.gguf"
+          ],
+          "status": "PROFILE_OR_REVISION_RECONCILIATION_PENDING",
+          "tensor_format_status": "HEADER_PENDING_FOR_NEW_VARIANT",
+          "rule": "variant name is not a physical tensor dtype; shard names alone do not sign coverage"
+        },
+        {
+          "variant": "UD-IQ1_M",
+          "files": [
+            "UD-IQ1_M/GLM-5.3-Flash-UD-IQ1_M-00001-of-00003.gguf",
+            "UD-IQ1_M/GLM-5.3-Flash-UD-IQ1_M-00002-of-00003.gguf",
+            "UD-IQ1_M/GLM-5.3-Flash-UD-IQ1_M-00003-of-00003.gguf"
+          ],
+          "status": "PROFILE_OR_REVISION_RECONCILIATION_PENDING",
+          "tensor_format_status": "HEADER_PENDING_FOR_NEW_VARIANT",
+          "rule": "variant name is not a physical tensor dtype; shard names alone do not sign coverage"
+        },
+        {
+          "variant": "UD-IQ1_S",
+          "files": [
+            "UD-IQ1_S/GLM-5.3-Flash-UD-IQ1_S-00001-of-00003.gguf",
+            "UD-IQ1_S/GLM-5.3-Flash-UD-IQ1_S-00002-of-00003.gguf",
+            "UD-IQ1_S/GLM-5.3-Flash-UD-IQ1_S-00003-of-00003.gguf"
+          ],
+          "status": "PROFILE_OR_REVISION_RECONCILIATION_PENDING",
+          "tensor_format_status": "HEADER_PENDING_FOR_NEW_VARIANT",
+          "rule": "variant name is not a physical tensor dtype; shard names alone do not sign coverage"
+        },
+        {
+          "variant": "UD-IQ2_XXS",
+          "files": [
+            "UD-IQ2_XXS/GLM-5.3-Flash-UD-IQ2_XXS-00001-of-00004.gguf",
+            "UD-IQ2_XXS/GLM-5.3-Flash-UD-IQ2_XXS-00002-of-00004.gguf",
+            "UD-IQ2_XXS/GLM-5.3-Flash-UD-IQ2_XXS-00003-of-00004.gguf",
+            "UD-IQ2_XXS/GLM-5.3-Flash-UD-IQ2_XXS-00004-of-00004.gguf"
+          ],
+          "status": "PROFILE_OR_REVISION_RECONCILIATION_PENDING",
+          "tensor_format_status": "HEADER_PENDING_FOR_NEW_VARIANT",
+          "rule": "variant name is not a physical tensor dtype; shard names alone do not sign coverage"
+        },
+        {
+          "variant": "UD-IQ3_XXS",
+          "files": [
+            "UD-IQ3_XXS/GLM-5.3-Flash-UD-IQ3_XXS-00001-of-00004.gguf",
+            "UD-IQ3_XXS/GLM-5.3-Flash-UD-IQ3_XXS-00002-of-00004.gguf",
+            "UD-IQ3_XXS/GLM-5.3-Flash-UD-IQ3_XXS-00003-of-00004.gguf",
+            "UD-IQ3_XXS/GLM-5.3-Flash-UD-IQ3_XXS-00004-of-00004.gguf"
+          ],
+          "status": "PROFILE_OR_REVISION_RECONCILIATION_PENDING",
+          "tensor_format_status": "HEADER_PENDING_FOR_NEW_VARIANT",
+          "rule": "variant name is not a physical tensor dtype; shard names alone do not sign coverage"
+        },
+        {
+          "variant": "UD-IQ4_XS",
+          "files": [
+            "UD-IQ4_XS/GLM-5.3-Flash-UD-IQ4_XS-00001-of-00005.gguf",
+            "UD-IQ4_XS/GLM-5.3-Flash-UD-IQ4_XS-00002-of-00005.gguf",
+            "UD-IQ4_XS/GLM-5.3-Flash-UD-IQ4_XS-00003-of-00005.gguf",
+            "UD-IQ4_XS/GLM-5.3-Flash-UD-IQ4_XS-00004-of-00005.gguf",
+            "UD-IQ4_XS/GLM-5.3-Flash-UD-IQ4_XS-00005-of-00005.gguf"
+          ],
+          "status": "PROFILE_OR_REVISION_RECONCILIATION_PENDING",
+          "tensor_format_status": "HEADER_PENDING_FOR_NEW_VARIANT",
+          "rule": "variant name is not a physical tensor dtype; shard names alone do not sign coverage"
+        },
+        {
+          "variant": "UD-Q2_K_XL",
+          "files": [
+            "UD-Q2_K_XL/GLM-5.3-Flash-UD-Q2_K_XL-00001-of-00004.gguf",
+            "UD-Q2_K_XL/GLM-5.3-Flash-UD-Q2_K_XL-00002-of-00004.gguf",
+            "UD-Q2_K_XL/GLM-5.3-Flash-UD-Q2_K_XL-00003-of-00004.gguf",
+            "UD-Q2_K_XL/GLM-5.3-Flash-UD-Q2_K_XL-00004-of-00004.gguf"
+          ],
+          "status": "PROFILE_OR_REVISION_RECONCILIATION_PENDING",
+          "tensor_format_status": "HEADER_PENDING_FOR_NEW_VARIANT",
+          "rule": "variant name is not a physical tensor dtype; shard names alone do not sign coverage"
+        },
+        {
+          "variant": "UD-Q3_K_XL",
+          "files": [
+            "UD-Q3_K_XL/GLM-5.3-Flash-UD-Q3_K_XL-00001-of-00004.gguf",
+            "UD-Q3_K_XL/GLM-5.3-Flash-UD-Q3_K_XL-00002-of-00004.gguf",
+            "UD-Q3_K_XL/GLM-5.3-Flash-UD-Q3_K_XL-00003-of-00004.gguf",
+            "UD-Q3_K_XL/GLM-5.3-Flash-UD-Q3_K_XL-00004-of-00004.gguf"
+          ],
+          "status": "PROFILE_OR_REVISION_RECONCILIATION_PENDING",
+          "tensor_format_status": "HEADER_PENDING_FOR_NEW_VARIANT",
+          "rule": "variant name is not a physical tensor dtype; shard names alone do not sign coverage"
+        },
+        {
+          "variant": "UD-Q4_K_XL",
+          "files": [
+            "UD-Q4_K_XL/GLM-5.3-Flash-UD-Q4_K_XL-00001-of-00006.gguf",
+            "UD-Q4_K_XL/GLM-5.3-Flash-UD-Q4_K_XL-00002-of-00006.gguf",
+            "UD-Q4_K_XL/GLM-5.3-Flash-UD-Q4_K_XL-00003-of-00006.gguf",
+            "UD-Q4_K_XL/GLM-5.3-Flash-UD-Q4_K_XL-00004-of-00006.gguf",
+            "UD-Q4_K_XL/GLM-5.3-Flash-UD-Q4_K_XL-00005-of-00006.gguf",
+            "UD-Q4_K_XL/GLM-5.3-Flash-UD-Q4_K_XL-00006-of-00006.gguf"
+          ],
+          "status": "PROFILE_OR_REVISION_RECONCILIATION_PENDING",
+          "tensor_format_status": "HEADER_PENDING_FOR_NEW_VARIANT",
+          "rule": "variant name is not a physical tensor dtype; shard names alone do not sign coverage"
+        },
+        {
+          "variant": "UD-Q5_K_XL",
+          "files": [
+            "UD-Q5_K_XL/GLM-5.3-Flash-UD-Q5_K_XL-00001-of-00006.gguf",
+            "UD-Q5_K_XL/GLM-5.3-Flash-UD-Q5_K_XL-00002-of-00006.gguf",
+            "UD-Q5_K_XL/GLM-5.3-Flash-UD-Q5_K_XL-00003-of-00006.gguf",
+            "UD-Q5_K_XL/GLM-5.3-Flash-UD-Q5_K_XL-00004-of-00006.gguf",
+            "UD-Q5_K_XL/GLM-5.3-Flash-UD-Q5_K_XL-00005-of-00006.gguf",
+            "UD-Q5_K_XL/GLM-5.3-Flash-UD-Q5_K_XL-00006-of-00006.gguf"
+          ],
+          "status": "PROFILE_OR_REVISION_RECONCILIATION_PENDING",
+          "tensor_format_status": "HEADER_PENDING_FOR_NEW_VARIANT",
+          "rule": "variant name is not a physical tensor dtype; shard names alone do not sign coverage"
+        },
+        {
+          "variant": "UD-Q6_K_XL",
+          "files": [
+            "UD-Q6_K_XL/GLM-5.3-Flash-UD-Q6_K_XL-00001-of-00007.gguf",
+            "UD-Q6_K_XL/GLM-5.3-Flash-UD-Q6_K_XL-00002-of-00007.gguf",
+            "UD-Q6_K_XL/GLM-5.3-Flash-UD-Q6_K_XL-00003-of-00007.gguf",
+            "UD-Q6_K_XL/GLM-5.3-Flash-UD-Q6_K_XL-00004-of-00007.gguf",
+            "UD-Q6_K_XL/GLM-5.3-Flash-UD-Q6_K_XL-00005-of-00007.gguf",
+            "UD-Q6_K_XL/GLM-5.3-Flash-UD-Q6_K_XL-00006-of-00007.gguf",
+            "UD-Q6_K_XL/GLM-5.3-Flash-UD-Q6_K_XL-00007-of-00007.gguf"
+          ],
+          "status": "PROFILE_OR_REVISION_RECONCILIATION_PENDING",
+          "tensor_format_status": "HEADER_PENDING_FOR_NEW_VARIANT",
+          "rule": "variant name is not a physical tensor dtype; shard names alone do not sign coverage"
+        }
+      ],
+      "sidecars": []
+    },
+    {
+      "repository": "unsloth/DeepSeek-V4-Pro-0813-GGUF",
+      "observed_revision": "6d053616d152293da72569f56b861466f10ace7d",
+      "metadata_url": "https://huggingface.co/api/models/unsloth/DeepSeek-V4-Pro-0813-GGUF",
+      "downloads_repository_only": 109186,
+      "observed_variants": [
+        {
+          "variant": "UD-Q4_K_XL",
+          "files": [
+            "UD-Q4_K_XL/DeepSeek-V4-Pro-0813-UD-Q4_K_XL-00001-of-00020.gguf",
+            "UD-Q4_K_XL/DeepSeek-V4-Pro-0813-UD-Q4_K_XL-00002-of-00020.gguf",
+            "UD-Q4_K_XL/DeepSeek-V4-Pro-0813-UD-Q4_K_XL-00003-of-00020.gguf",
+            "UD-Q4_K_XL/DeepSeek-V4-Pro-0813-UD-Q4_K_XL-00004-of-00020.gguf",
+            "UD-Q4_K_XL/DeepSeek-V4-Pro-0813-UD-Q4_K_XL-00005-of-00020.gguf",
+            "UD-Q4_K_XL/DeepSeek-V4-Pro-0813-UD-Q4_K_XL-00006-of-00020.gguf",
+            "UD-Q4_K_XL/DeepSeek-V4-Pro-0813-UD-Q4_K_XL-00007-of-00020.gguf",
+            "UD-Q4_K_XL/DeepSeek-V4-Pro-0813-UD-Q4_K_XL-00008-of-00020.gguf",
+            "UD-Q4_K_XL/DeepSeek-V4-Pro-0813-UD-Q4_K_XL-00009-of-00020.gguf",
+            "UD-Q4_K_XL/DeepSeek-V4-Pro-0813-UD-Q4_K_XL-00010-of-00020.gguf",
+            "UD-Q4_K_XL/DeepSeek-V4-Pro-0813-UD-Q4_K_XL-00011-of-00020.gguf",
+            "UD-Q4_K_XL/DeepSeek-V4-Pro-0813-UD-Q4_K_XL-00012-of-00020.gguf",
+            "UD-Q4_K_XL/DeepSeek-V4-Pro-0813-UD-Q4_K_XL-00013-of-00020.gguf",
+            "UD-Q4_K_XL/DeepSeek-V4-Pro-0813-UD-Q4_K_XL-00014-of-00020.gguf",
+            "UD-Q4_K_XL/DeepSeek-V4-Pro-0813-UD-Q4_K_XL-00015-of-00020.gguf",
+            "UD-Q4_K_XL/DeepSeek-V4-Pro-0813-UD-Q4_K_XL-00016-of-00020.gguf",
+            "UD-Q4_K_XL/DeepSeek-V4-Pro-0813-UD-Q4_K_XL-00017-of-00020.gguf",
+            "UD-Q4_K_XL/DeepSeek-V4-Pro-0813-UD-Q4_K_XL-00018-of-00020.gguf",
+            "UD-Q4_K_XL/DeepSeek-V4-Pro-0813-UD-Q4_K_XL-00019-of-00020.gguf",
+            "UD-Q4_K_XL/DeepSeek-V4-Pro-0813-UD-Q4_K_XL-00020-of-00020.gguf"
+          ],
+          "status": "PROFILE_OR_REVISION_RECONCILIATION_PENDING",
+          "tensor_format_status": "HEADER_PENDING_FOR_NEW_VARIANT",
+          "rule": "variant name is not a physical tensor dtype; shard names alone do not sign coverage"
+        },
+        {
+          "variant": "UD-Q8_K_XL",
+          "files": [
+            "UD-Q8_K_XL/DeepSeek-V4-Pro-0813-UD-Q8_K_XL-00001-of-00020.gguf",
+            "UD-Q8_K_XL/DeepSeek-V4-Pro-0813-UD-Q8_K_XL-00002-of-00020.gguf",
+            "UD-Q8_K_XL/DeepSeek-V4-Pro-0813-UD-Q8_K_XL-00003-of-00020.gguf",
+            "UD-Q8_K_XL/DeepSeek-V4-Pro-0813-UD-Q8_K_XL-00004-of-00020.gguf",
+            "UD-Q8_K_XL/DeepSeek-V4-Pro-0813-UD-Q8_K_XL-00005-of-00020.gguf",
+            "UD-Q8_K_XL/DeepSeek-V4-Pro-0813-UD-Q8_K_XL-00006-of-00020.gguf",
+            "UD-Q8_K_XL/DeepSeek-V4-Pro-0813-UD-Q8_K_XL-00007-of-00020.gguf",
+            "UD-Q8_K_XL/DeepSeek-V4-Pro-0813-UD-Q8_K_XL-00008-of-00020.gguf",
+            "UD-Q8_K_XL/DeepSeek-V4-Pro-0813-UD-Q8_K_XL-00009-of-00020.gguf",
+            "UD-Q8_K_XL/DeepSeek-V4-Pro-0813-UD-Q8_K_XL-00010-of-00020.gguf",
+            "UD-Q8_K_XL/DeepSeek-V4-Pro-0813-UD-Q8_K_XL-00011-of-00020.gguf",
+            "UD-Q8_K_XL/DeepSeek-V4-Pro-0813-UD-Q8_K_XL-00012-of-00020.gguf",
+            "UD-Q8_K_XL/DeepSeek-V4-Pro-0813-UD-Q8_K_XL-00013-of-00020.gguf",
+            "UD-Q8_K_XL/DeepSeek-V4-Pro-0813-UD-Q8_K_XL-00014-of-00020.gguf",
+            "UD-Q8_K_XL/DeepSeek-V4-Pro-0813-UD-Q8_K_XL-00015-of-00020.gguf",
+            "UD-Q8_K_XL/DeepSeek-V4-Pro-0813-UD-Q8_K_XL-00016-of-00020.gguf",
+            "UD-Q8_K_XL/DeepSeek-V4-Pro-0813-UD-Q8_K_XL-00017-of-00020.gguf",
+            "UD-Q8_K_XL/DeepSeek-V4-Pro-0813-UD-Q8_K_XL-00018-of-00020.gguf",
+            "UD-Q8_K_XL/DeepSeek-V4-Pro-0813-UD-Q8_K_XL-00019-of-00020.gguf",
+            "UD-Q8_K_XL/DeepSeek-V4-Pro-0813-UD-Q8_K_XL-00020-of-00020.gguf"
+          ],
+          "status": "PROFILE_OR_REVISION_RECONCILIATION_PENDING",
+          "tensor_format_status": "HEADER_PENDING_FOR_NEW_VARIANT",
+          "rule": "variant name is not a physical tensor dtype; shard names alone do not sign coverage"
+        }
+      ],
+      "sidecars": []
+    },
+    {
+      "repository": "unsloth/DeepSeek-V4-Flash-0731-GGUF",
+      "observed_revision": "fbbb5b93fb787c21338159b0af3318bb3f4d9768",
+      "metadata_url": "https://huggingface.co/api/models/unsloth/DeepSeek-V4-Flash-0731-GGUF",
+      "downloads_repository_only": 142337,
+      "observed_variants": [
+        {
+          "variant": "UD-IQ1_M",
+          "files": [
+            "UD-IQ1_M/DeepSeek-V4-Flash-0731-UD-IQ1_M-00001-of-00003.gguf",
+            "UD-IQ1_M/DeepSeek-V4-Flash-0731-UD-IQ1_M-00002-of-00003.gguf",
+            "UD-IQ1_M/DeepSeek-V4-Flash-0731-UD-IQ1_M-00003-of-00003.gguf"
+          ],
+          "status": "PROFILE_OR_REVISION_RECONCILIATION_PENDING",
+          "tensor_format_status": "HEADER_PENDING_FOR_NEW_VARIANT",
+          "rule": "variant name is not a physical tensor dtype; shard names alone do not sign coverage"
+        },
+        {
+          "variant": "UD-IQ1_S",
+          "files": [
+            "UD-IQ1_S/DeepSeek-V4-Flash-0731-UD-IQ1_S-00001-of-00003.gguf",
+            "UD-IQ1_S/DeepSeek-V4-Flash-0731-UD-IQ1_S-00002-of-00003.gguf",
+            "UD-IQ1_S/DeepSeek-V4-Flash-0731-UD-IQ1_S-00003-of-00003.gguf"
+          ],
+          "status": "PROFILE_OR_REVISION_RECONCILIATION_PENDING",
+          "tensor_format_status": "HEADER_PENDING_FOR_NEW_VARIANT",
+          "rule": "variant name is not a physical tensor dtype; shard names alone do not sign coverage"
+        },
+        {
+          "variant": "UD-IQ2_M",
+          "files": [
+            "UD-IQ2_M/DeepSeek-V4-Flash-0731-UD-IQ2_M-00001-of-00003.gguf",
+            "UD-IQ2_M/DeepSeek-V4-Flash-0731-UD-IQ2_M-00002-of-00003.gguf",
+            "UD-IQ2_M/DeepSeek-V4-Flash-0731-UD-IQ2_M-00003-of-00003.gguf"
+          ],
+          "status": "PROFILE_OR_REVISION_RECONCILIATION_PENDING",
+          "tensor_format_status": "HEADER_PENDING_FOR_NEW_VARIANT",
+          "rule": "variant name is not a physical tensor dtype; shard names alone do not sign coverage"
+        },
+        {
+          "variant": "UD-IQ2_XXS",
+          "files": [
+            "UD-IQ2_XXS/DeepSeek-V4-Flash-0731-UD-IQ2_XXS-00001-of-00003.gguf",
+            "UD-IQ2_XXS/DeepSeek-V4-Flash-0731-UD-IQ2_XXS-00002-of-00003.gguf",
+            "UD-IQ2_XXS/DeepSeek-V4-Flash-0731-UD-IQ2_XXS-00003-of-00003.gguf"
+          ],
+          "status": "PROFILE_OR_REVISION_RECONCILIATION_PENDING",
+          "tensor_format_status": "HEADER_PENDING_FOR_NEW_VARIANT",
+          "rule": "variant name is not a physical tensor dtype; shard names alone do not sign coverage"
+        },
+        {
+          "variant": "UD-IQ3_S",
+          "files": [
+            "UD-IQ3_S/DeepSeek-V4-Flash-0731-UD-IQ3_S-00001-of-00004.gguf",
+            "UD-IQ3_S/DeepSeek-V4-Flash-0731-UD-IQ3_S-00002-of-00004.gguf",
+            "UD-IQ3_S/DeepSeek-V4-Flash-0731-UD-IQ3_S-00003-of-00004.gguf",
+            "UD-IQ3_S/DeepSeek-V4-Flash-0731-UD-IQ3_S-00004-of-00004.gguf"
+          ],
+          "status": "PROFILE_OR_REVISION_RECONCILIATION_PENDING",
+          "tensor_format_status": "HEADER_PENDING_FOR_NEW_VARIANT",
+          "rule": "variant name is not a physical tensor dtype; shard names alone do not sign coverage"
+        },
+        {
+          "variant": "UD-IQ3_XXS",
+          "files": [
+            "UD-IQ3_XXS/DeepSeek-V4-Flash-0731-UD-IQ3_XXS-00001-of-00004.gguf",
+            "UD-IQ3_XXS/DeepSeek-V4-Flash-0731-UD-IQ3_XXS-00002-of-00004.gguf",
+            "UD-IQ3_XXS/DeepSeek-V4-Flash-0731-UD-IQ3_XXS-00003-of-00004.gguf",
+            "UD-IQ3_XXS/DeepSeek-V4-Flash-0731-UD-IQ3_XXS-00004-of-00004.gguf"
+          ],
+          "status": "PROFILE_OR_REVISION_RECONCILIATION_PENDING",
+          "tensor_format_status": "HEADER_PENDING_FOR_NEW_VARIANT",
+          "rule": "variant name is not a physical tensor dtype; shard names alone do not sign coverage"
+        },
+        {
+          "variant": "UD-IQ4_NL",
+          "files": [
+            "UD-IQ4_NL/DeepSeek-V4-Flash-0731-UD-IQ4_NL-00001-of-00004.gguf",
+            "UD-IQ4_NL/DeepSeek-V4-Flash-0731-UD-IQ4_NL-00002-of-00004.gguf",
+            "UD-IQ4_NL/DeepSeek-V4-Flash-0731-UD-IQ4_NL-00003-of-00004.gguf",
+            "UD-IQ4_NL/DeepSeek-V4-Flash-0731-UD-IQ4_NL-00004-of-00004.gguf"
+          ],
+          "status": "PROFILE_OR_REVISION_RECONCILIATION_PENDING",
+          "tensor_format_status": "HEADER_PENDING_FOR_NEW_VARIANT",
+          "rule": "variant name is not a physical tensor dtype; shard names alone do not sign coverage"
+        },
+        {
+          "variant": "UD-IQ4_XS",
+          "files": [
+            "UD-IQ4_XS/DeepSeek-V4-Flash-0731-UD-IQ4_XS-00001-of-00004.gguf",
+            "UD-IQ4_XS/DeepSeek-V4-Flash-0731-UD-IQ4_XS-00002-of-00004.gguf",
+            "UD-IQ4_XS/DeepSeek-V4-Flash-0731-UD-IQ4_XS-00003-of-00004.gguf",
+            "UD-IQ4_XS/DeepSeek-V4-Flash-0731-UD-IQ4_XS-00004-of-00004.gguf"
+          ],
+          "status": "PROFILE_OR_REVISION_RECONCILIATION_PENDING",
+          "tensor_format_status": "HEADER_PENDING_FOR_NEW_VARIANT",
+          "rule": "variant name is not a physical tensor dtype; shard names alone do not sign coverage"
+        },
+        {
+          "variant": "UD-Q2_K_XL",
+          "files": [
+            "UD-Q2_K_XL/DeepSeek-V4-Flash-0731-UD-Q2_K_XL-00001-of-00003.gguf",
+            "UD-Q2_K_XL/DeepSeek-V4-Flash-0731-UD-Q2_K_XL-00002-of-00003.gguf",
+            "UD-Q2_K_XL/DeepSeek-V4-Flash-0731-UD-Q2_K_XL-00003-of-00003.gguf"
+          ],
+          "status": "PROFILE_OR_REVISION_RECONCILIATION_PENDING",
+          "tensor_format_status": "HEADER_PENDING_FOR_NEW_VARIANT",
+          "rule": "variant name is not a physical tensor dtype; shard names alone do not sign coverage"
+        },
+        {
+          "variant": "UD-Q3_K_M",
+          "files": [
+            "UD-Q3_K_M/DeepSeek-V4-Flash-0731-UD-Q3_K_M-00001-of-00004.gguf",
+            "UD-Q3_K_M/DeepSeek-V4-Flash-0731-UD-Q3_K_M-00002-of-00004.gguf",
+            "UD-Q3_K_M/DeepSeek-V4-Flash-0731-UD-Q3_K_M-00003-of-00004.gguf",
+            "UD-Q3_K_M/DeepSeek-V4-Flash-0731-UD-Q3_K_M-00004-of-00004.gguf"
+          ],
+          "status": "PROFILE_OR_REVISION_RECONCILIATION_PENDING",
+          "tensor_format_status": "HEADER_PENDING_FOR_NEW_VARIANT",
+          "rule": "variant name is not a physical tensor dtype; shard names alone do not sign coverage"
+        },
+        {
+          "variant": "UD-Q3_K_XL",
+          "files": [
+            "UD-Q3_K_XL/DeepSeek-V4-Flash-0731-UD-Q3_K_XL-00001-of-00004.gguf",
+            "UD-Q3_K_XL/DeepSeek-V4-Flash-0731-UD-Q3_K_XL-00002-of-00004.gguf",
+            "UD-Q3_K_XL/DeepSeek-V4-Flash-0731-UD-Q3_K_XL-00003-of-00004.gguf",
+            "UD-Q3_K_XL/DeepSeek-V4-Flash-0731-UD-Q3_K_XL-00004-of-00004.gguf"
+          ],
+          "status": "PROFILE_OR_REVISION_RECONCILIATION_PENDING",
+          "tensor_format_status": "HEADER_PENDING_FOR_NEW_VARIANT",
+          "rule": "variant name is not a physical tensor dtype; shard names alone do not sign coverage"
+        },
+        {
+          "variant": "UD-Q4_K_XL",
+          "files": [
+            "UD-Q4_K_XL/DeepSeek-V4-Flash-0731-UD-Q4_K_XL-00001-of-00005.gguf",
+            "UD-Q4_K_XL/DeepSeek-V4-Flash-0731-UD-Q4_K_XL-00002-of-00005.gguf",
+            "UD-Q4_K_XL/DeepSeek-V4-Flash-0731-UD-Q4_K_XL-00003-of-00005.gguf",
+            "UD-Q4_K_XL/DeepSeek-V4-Flash-0731-UD-Q4_K_XL-00004-of-00005.gguf",
+            "UD-Q4_K_XL/DeepSeek-V4-Flash-0731-UD-Q4_K_XL-00005-of-00005.gguf"
+          ],
+          "status": "PROFILE_OR_REVISION_RECONCILIATION_PENDING",
+          "tensor_format_status": "HEADER_PENDING_FOR_NEW_VARIANT",
+          "rule": "variant name is not a physical tensor dtype; shard names alone do not sign coverage"
+        },
+        {
+          "variant": "UD-Q8_K_XL",
+          "files": [
+            "UD-Q8_K_XL/DeepSeek-V4-Flash-0731-UD-Q8_K_XL-00001-of-00005.gguf",
+            "UD-Q8_K_XL/DeepSeek-V4-Flash-0731-UD-Q8_K_XL-00002-of-00005.gguf",
+            "UD-Q8_K_XL/DeepSeek-V4-Flash-0731-UD-Q8_K_XL-00003-of-00005.gguf",
+            "UD-Q8_K_XL/DeepSeek-V4-Flash-0731-UD-Q8_K_XL-00004-of-00005.gguf",
+            "UD-Q8_K_XL/DeepSeek-V4-Flash-0731-UD-Q8_K_XL-00005-of-00005.gguf"
+          ],
+          "status": "PROFILE_OR_REVISION_RECONCILIATION_PENDING",
+          "tensor_format_status": "HEADER_PENDING_FOR_NEW_VARIANT",
+          "rule": "variant name is not a physical tensor dtype; shard names alone do not sign coverage"
+        }
+      ],
+      "sidecars": [
+        {
+          "file": "dspark-DeepSeek-V4-Flash-0731-Q8_0.gguf",
+          "url": "https://huggingface.co/unsloth/DeepSeek-V4-Flash-0731-GGUF/blob/fbbb5b93fb787c21338159b0af3318bb3f4d9768/dspark-DeepSeek-V4-Flash-0731-Q8_0.gguf",
+          "status": "COMPLETE_BRANCH_NOT_QUALIFIED"
+        },
+        {
+          "file": "dspark/dspark-DeepSeek-V4-Flash-0731-BF16.gguf",
+          "url": "https://huggingface.co/unsloth/DeepSeek-V4-Flash-0731-GGUF/blob/fbbb5b93fb787c21338159b0af3318bb3f4d9768/dspark/dspark-DeepSeek-V4-Flash-0731-BF16.gguf",
+          "status": "COMPLETE_BRANCH_NOT_QUALIFIED"
+        }
+      ]
+    },
+    {
+      "repository": "deepseek-ai/DeepSeek-V4-Pro-0813",
+      "observed_revision": "72e1d3230f6c080a530b0a1d46f8eb4602340597",
+      "metadata_url": "https://huggingface.co/api/models/deepseek-ai/DeepSeek-V4-Pro-0813",
+      "downloads_repository_only": 88451,
+      "observed_variants": [],
+      "sidecars": []
+    },
+    {
+      "repository": "deepseek-ai/DeepSeek-V4-Flash-0731",
+      "observed_revision": "7872f01b1d1fe23eabc4c98b48bffcef5a386062",
+      "metadata_url": "https://huggingface.co/api/models/deepseek-ai/DeepSeek-V4-Flash-0731",
+      "downloads_repository_only": 4542356,
+      "observed_variants": [],
+      "sidecars": []
+    }
+  ],
+  "upstream_update": {
+    "locked_ggml": "456172ec733a135778adcd32d00e576a58232e45",
+    "observed_candidate_ggml": "ffa4e8b80930029a35991f94e7c8a93cd67730ab",
+    "observed_candidate_llama_cpp": "d7a695ef679138c13d86359b84c1731d36213d32",
+    "status": "NOT_UPDATED_OR_QUALIFIED",
+    "rules": [
+      "CPU resource/ISA/ABI/patch compatibility must be audited before update",
+      "shared ggml source affects other routes; GPU existing qualifications must not be silently signed",
+      "old Native WIN is relative to locked mature peer; updating peer requires version fencing/reconciliation, not forced self-kernel benchmarking"
+    ]
+  },
+  "evidence_limits": [
+    "public API and source metadata only; no new weight payload download or model execution",
+    "repository downloads do not establish per-variant popularity rank",
+    "new variant physical mixtures have not all been header-audited",
+    "file list absence does not prove no embedded MTP/DSpark tensors",
+    "revision mismatch may be reconciled via immutable per-file/header identities rather than rerunning unchanged math",
+    "no upstream-missing verdict or self-written math authorization is inferred"
+  ],
+  "performance_policy": {
+    "new_self_math": false,
+    "per_operator_provider_winner_P1": "not required for a single mature carrier when no optimization/SOTA claim is made",
+    "P0": "required: no hidden hot compilation, repeated full dequantization, per-submit metadata/weight packing, global serialization or unnecessary conversions",
+    "delegation_cost": "one batched ordinary Direct/Graph versus same upstream complete program acceptance after immutable candidate, if required by closure card; no per-variant repeated races",
+    "reuse": "identical tensor/program/ABI/toolchain scope may reuse qualified evidence",
+    "defer": "new self-provider contests and instrument redesign"
+  },
+  "other_container_candidates": [
+    {
+      "family": "bitsandbytes NF4/double quant",
+      "repository": "techwithsergiu/Qwen3.5-2B-bnb-4bit",
+      "status": "SOURCE_PUBLISHED_HEADER_AND_CPU_CARRIER_PENDING",
+      "gap": [
+        "codebook",
+        "absmax/double quant metadata",
+        "BF16 exclusions",
+        "CPU execution carrier"
+      ]
+    },
+    {
+      "family": "AWQ/GPTQ/compressed-tensors W4A16",
+      "repositories": [
+        "mattbucci/Qwen3.8-27B-AWQ",
+        "soyrsoyr/Qwen3.8-27B-W4A16-AWQ-GPTQ"
+      ],
+      "status": "SOURCE_PUBLISHED_HEADER_AND_CPU_CARRIER_PENDING",
+      "gap": [
+        "packing",
+        "group/zero point/permutation",
+        "unquantized roles",
+        "MTP applicability"
+      ]
+    },
+    {
+      "family": "MLX int4 artifact",
+      "repository": "ToPo-ToPo/DeepSeek-V4-Flash-0731-mlx-4bit",
+      "status": "SOURCE_PUBLISHED_HEADER_AND_CPU_CARRIER_PENDING",
+      "gap": [
+        "packing/scale/bias",
+        "CPU carrier; Apple MLX qualification is not CPU qualification"
+      ]
+    }
+  ]
+}

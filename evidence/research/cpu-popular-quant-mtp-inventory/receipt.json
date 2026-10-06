@@ -1,0 +1,26 @@
+{
+  "baseline": "653a91d1eb28f65dbeda380ebeb0a9c400162f80",
+  "kind": "read-only public metadata/source inventory; not correctness/performance coverage",
+  "inputs": {
+    "deepseek-ai--DeepSeek-V4-Flash-0731--config.json": "6c8f3d2d3b48707541b88f32f22ef3f0f8a6b57d8523281e2b8d3cdb0ae9a023",
+    "deepseek-ai--DeepSeek-V4-Flash-0731--inference--model.py": "c0c19e6c9fa439bac7fbb1c5bc1868232dfd5aa2f439a548d0e33dcc2a9edd3f",
+    "deepseek-ai--DeepSeek-V4-Flash-0731.json": "f1bcf7349553b940df69f437ae6e4ea3450b9d926a34b349e92e264c52d7786c",
+    "deepseek-ai--DeepSeek-V4-Pro-0813--config.json": "9dd2a89255469e120b333668ef5a169b7ae46c00f6bbab786bf0be457546aec0",
+    "deepseek-ai--DeepSeek-V4-Pro-0813--inference--model.py": "c0c19e6c9fa439bac7fbb1c5bc1868232dfd5aa2f439a548d0e33dcc2a9edd3f",
+    "deepseek-ai--DeepSeek-V4-Pro-0813.json": "8a38cbba2ec184f9b8c7d2236e9c711a55e4b08a660a176d5a84ea699e1ecb77",
+    "DeepSeek-MIT-LICENSE": "f2c6c602815669d292889e5be8c802f2ed950653b77999b1584e8e6aed25d040",
+    "ggml-ffa4e8b80930029a35991f94e7c8a93cd67730ab.h": "12ee71f99db7db9b353bc02b1fbb57c344ee17c01ac5fb7952b41a637a747ea9",
+    "inventory.json": "42f22a05326b5c08bf352440edc6650552c18c340176e1aaeb0304ac1cf449bb",
+    "source-receipt.json": "752a4d18b2626836441059e53ef4cebf865046ae3f5936da61634cbee63b9604",
+    "unsloth--DeepSeek-V4-Flash-0731-GGUF.json": "a9379ce609787e65c11b9ce40b88369e652c72efd687901a86b7ba1d713b08a3",
+    "unsloth--DeepSeek-V4-Pro-0813-GGUF.json": "e5b84956ca7298357f550baa9da5dad448675b9059e30924ab164e0e17a17b41",
+    "unsloth--GLM-5.3-Flash-GGUF.json": "59128d4ffad87cf0f7056fd46e585c3b45ffdd8fd5845751370dc19348cf8c49",
+    "unsloth--GLM-5.3-GGUF.json": "ad5c38d20be3635c875897e0cdb56bd7342bbc611203514c5601188a868796ca",
+    "unsloth--Kimi-K3-GGUF.json": "8a0387fd4005d5b4f5c8daaf3d4b1a0a2fcd2c548051dab1039c9aece10b03d1",
+    "unsloth--Qwen3.5-2B-GGUF.json": "8408f926138ef8c7277c81b4f10253d4cb45230e868336f89a6ea364c8094725",
+    "unsloth--Qwen3.8-2.4T-A95B-GGUF.json": "621b1224d6231e6594d4ed0edab3f45c5b9c11947c4ce84a8e54407f9a21cc10",
+    "unsloth--Qwen3.8-27B-GGUF.json": "429544f7b3561ad9508e4307d93072de844a6ad1691dd955fe1a719721901090"
+  },
+  "archive_bytes": 92882,
+  "archive_sha256": "fd7c1a7d6a7a84f521dce293842a1a22888886b2c6ffc34fa0d884d2743f3a8c"
+}
