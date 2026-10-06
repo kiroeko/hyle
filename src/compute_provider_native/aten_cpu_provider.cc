@@ -639,7 +639,10 @@ void execute_numeric(const Program &p, Invocation &inv, at::Tensor &output) {
   if (p.operation.get_if<Cast>()) {
     result = storage_cast(first, native_type(p.output.data_type()));
   } else {
-    first = first.to(at::kFloat);
+    // RoPE clones the original typed input to preserve untouched tail bits.
+    // Its rotated prefix and phase already use the original Double kernels.
+    if (!p.operation.get_if<RoPE>())
+      first = first.to(at::kFloat);
     if (const auto *unary = p.operation.get_if<Unary>()) {
       if (unary->kind == UnaryKind::kSigmoid)
         result = at::sigmoid(first.to(at::kDouble)).to(at::kFloat);

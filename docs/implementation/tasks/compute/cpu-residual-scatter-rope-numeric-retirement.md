@@ -35,3 +35,8 @@ RN2/RN3明确REJECT_NOT_SAME_PHASE_CONTRACT，非延期自研优化。ggml无产
 七问：原ATen pin/许可证/SDK闭包复用；已有lowp能力接原库；复用runtime与checked资源；P0含
 完整原库成本；无公共API或C/FFI；普通入口及三交付实际验收；guide说明成熟Add和两种phase边界。
 适用门仍待运行，当前AUDITED不签完成。旧ND-R1已验收事实不变，CPU整个goal仍活动。
+
+候选e4f4bd44已停止变化后启动Windows批次：首次编译通过，Provider143/144。新增lowp RoPE的
+未旋转sNaN tail bits暴露公共numeric入口先转F32的接缝，原件保存为provider-first-failed.xml。
+RN4定向保持RoPE的原typed Tensor，再交原Double prefix程序；其它numeric程序仍转F32，不放宽
+数学/bit门、不写新payload算法。这是本轮具名一次产品纠正，之后只增量编译及必要批次。

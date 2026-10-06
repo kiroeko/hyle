@@ -1,0 +1,26 @@
+{
+  "baseline": "e80cf22ccf285934693f40da9cc558b457283d7b",
+  "matched_files": 19,
+  "sha256": {
+    "include/hyle/compute/providers/ggml_cpu.h": "85961136fa490c9cfc05988ad908788c8a541457878e46618b59dd18f36e9724",
+    "src/compute_ggml_runtime/CMakeLists.txt": "64897b46ab77aae7d395b98365f6abfa7d63dc962dad2e412eb615432c8c4911",
+    "src/compute_ggml_runtime/HyleGgmlCpuRuntimeConfig.cmake.in": "334aaf14d001bf33d963976091a4aa111dff37160d83f2ddfb3d815def2751da",
+    "src/compute_ggml_runtime/cpu_execution.cc": "d339fffa2ff29ce5da56c342adaed6fe7dcb165e3142a486c857f38717339fc9",
+    "src/compute_ggml_runtime/cpu_execution.h": "0ca5a22a3c5aefe9c01e2384ea363b7f9252674040b5f6e2aafd0bcff3eccd98",
+    "src/compute_ggml_runtime/cpu_program.cc": "a8b3377e42a9744d5b4e94a0dd455d3c665ead167ed9d1f378b144759fca0d91",
+    "src/compute_ggml_runtime/cpu_program.cmake": "b6a93c4c384561589a77932d19a62e15019c3379c0c2e948fa8141d8feb3181e",
+    "src/compute_ggml_runtime/cpu_program.h": "8dabcd5b7f57c768c8cd317058f6958c685d462f548cac3b2248be2597b40065",
+    "src/compute_ggml_runtime/cpu_program_abi.h": "2268eef8042a00ec5dbffdf38ce4d9c5f27454cfa163cec56d51138bf3ba0004",
+    "src/compute_ggml_runtime/cpu_program_export.cc": "17a790ecfab461284e54f7c8566d87a87a343d7508bde9e52ec002ae1750b7a2",
+    "src/compute_ggml_runtime/explicit_rope.h": "eb3adc26db7641a35c433e83492c74c1d5316b32433c799a161d8a8b31289e8e",
+    "src/compute_ggml_runtime/metadata_arena.cc": "0b1cbdc5d063593a1f780df92ed9420ba6905ec02f1f492ae486e3046fde1d09",
+    "src/compute_ggml_runtime/metadata_arena.h": "27d9639094db0f0fc72a7dd9c8b767d6e5b63f5bfd4cafe849cf0f97ec719dfb",
+    "src/compute_ggml_runtime/prepare_source.py": "ccde3399d6a65ecb68f3ecc6886522ff559df2eb7e5da405ae71612372615c7c",
+    "src/compute_provider_ggml/CMakeLists.txt": "f3014ef88f5ecd42336b6100d8b9fdc3b552a8523a8afe84101482da8f85cfe3",
+    "src/compute_provider_ggml/ggml_cpu_provider.cc": "a2e22426ce2d85327b780c22e472171071d2bf05e4f87b0229a58100f2e67596",
+    "src/compute_provider_ggml/program.h": "cfe6389cb783a6ca238f752048462d62da4c6c0520637fa6afa44a1348b295ee",
+    "src/compute_provider_ggml/standard_index.cc": "a069b7ec6b4eb06851c60e8140db7226903c0821e2a6e63f3cb4f245a0c4e3e8",
+    "src/compute_provider_ggml/standard_index.h": "9a760f757eafad3aa86ff8d08110a80e37b8ebffa9595e963d26f4f4699ea2a2"
+  },
+  "scope": "No ggml product change; Float32/Double phase comparison rejected"
+}
