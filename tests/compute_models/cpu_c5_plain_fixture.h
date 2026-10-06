@@ -25,35 +25,44 @@ inline std::vector<float> values(std::int64_t n,int seed) {
 inline Fragment projection(const Case &item,const c::ModelArtifactProfileDescription *identity,
                            std::int64_t n,std::int64_t first=0) {
   const auto k=item.shape[1];Fragment f{.profile=identity,.region=0x0c052001};
-  auto input=f.input(dense({1,k},item.type));std::vector<float> weight(n*k);
-  for(std::int64_t row=0;row<n;++row)for(std::int64_t col=0;col<k;++col)weight[row*k+col]=float(((row+first)*3+col*7)%17-8)/32;
-  auto stored=f.constant(dense({n,k},item.type),mixed::floating_bytes(item.type,weight));
+  constexpr std::int64_t period=17;
+  auto input=f.input(dense({1,k},item.type));std::vector<float> weight(period*k);
+  for(std::int64_t row=0;row<period;++row)for(std::int64_t col=0;col<k;++col)weight[row*k+col]=float(((row+first)*3+col*7)%17-8)/32;
+  auto prototypes=mixed::floating_bytes(item.type,weight);const auto stride=prototypes.size()/period;
+  std::vector<std::byte> storage(n*stride);
+  for(std::int64_t row=0;row<n;++row)std::memcpy(storage.data()+row*stride,prototypes.data()+(row%period)*stride,stride);
+  auto stored=f.constant(dense({n,k},item.type),std::move(storage));
   auto rhs=f.one(c::Operation(c::View::permute(std::array<std::int32_t,2>{1,0}).value()),{stored});
   f.outputs={publish_float(f,f.one(c::Operation(c::MatMul{}),{input,rhs}))};
   for(int pass:{0,1}) {
     auto activation=mixed::activation(1,k,pass);std::vector<float> output(n);
-    for(std::int64_t row=0;row<n;++row) {
+    std::array<float,period> dots{};
+    for(std::int64_t row=0;row<period;++row) {
       double sum=0;for(std::int64_t col=0;col<k;++col)sum+=double(activation[col])*weight[row*k+col];
-      output[row]=mixed::rounded(item.type,float(sum));
+      dots[row]=mixed::rounded(item.type,float(sum));
     }
+    for(std::int64_t row=0;row<n;++row)output[row]=dots[row%period];
     f.replays.push_back({{mixed::floating_bytes(item.type,activation)},{std::move(output)}});
   }
   return f;
 }
 inline Fragment lookup(const Case &item,const c::ModelArtifactProfileDescription *identity) {
   const auto n=item.shape[0],k=item.shape[1];Fragment f{.profile=identity,.region=0x0c052002};
-  auto indices=f.input(dense({4},c::DataType::kInt32));std::vector<float> table(n*k);
-  for(std::int64_t row=0;row<n;++row)for(std::int64_t col=0;col<k;++col)
+  const std::int64_t period=item.type==c::DataType::kInt32?256:17;
+  auto indices=f.input(dense({4},c::DataType::kInt32));std::vector<float> table(period*k);
+  for(std::int64_t row=0;row<period;++row)for(std::int64_t col=0;col<k;++col)
     table[row*k+col]=item.type==c::DataType::kInt32?float((row*3+col)%256):float((row*3+col*7)%17-8)/32;
-  std::vector<std::byte> storage;
-  if(item.type==c::DataType::kInt32) {std::vector<std::int32_t> data;data.reserve(table.size());for(auto v:table)data.push_back(std::int32_t(v));storage=bytes(data);}
-  else storage=mixed::floating_bytes(item.type,table);
+  std::vector<std::byte> prototypes;
+  if(item.type==c::DataType::kInt32) {std::vector<std::int32_t> data;data.reserve(table.size());for(auto v:table)data.push_back(std::int32_t(v));prototypes=bytes(data);}
+  else prototypes=mixed::floating_bytes(item.type,table);
+  const auto stride=prototypes.size()/period;std::vector<std::byte> storage(n*stride);
+  for(std::int64_t row=0;row<n;++row)std::memcpy(storage.data()+row*stride,prototypes.data()+(row%period)*stride,stride);
   auto weight=f.constant(dense({n,k},item.type),std::move(storage));
   f.outputs={publish_float(f,f.one(c::Operation(c::Gather{}),{weight,indices}))};
   f.exact_outputs={0};f.invalid_index_input=0;
   for(int pass:{0,1}) {
     const std::array<std::int32_t,4> ids{pass?1:0,std::int32_t(n-1),std::int32_t(n/2),std::int32_t(n/2)};
-    std::vector<float> output(4*k);for(int row=0;row<4;++row)std::copy_n(table.data()+ids[row]*k,k,output.data()+row*k);
+    std::vector<float> output(4*k);for(int row=0;row<4;++row)std::copy_n(table.data()+(ids[row]%period)*k,k,output.data()+row*k);
     f.replays.push_back({{bytes<std::int32_t>(ids)},{std::move(output)}});
   }
   return f;
