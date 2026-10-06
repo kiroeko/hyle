@@ -131,8 +131,8 @@ inline Fragment moe_chain(const moe::Case &model, bool use_hash = false,
   for (int replay = 0; replay < 3; ++replay) {
     auto values = moe::activation(model, replay);
     if (use_hash) {
-      const std::array<std::int64_t, 3> tokens{0, moe::kHashVocabulary - 1, 37};
-      const std::array token{tokens[replay]};
+      const std::array<std::int64_t, 3> hash_tokens{0, moe::kHashVocabulary - 1, 37};
+      const std::array token{hash_tokens[replay]};
       auto table = moe::hash_table(resident, replay);
       auto expected = evaluate(values, std::span<const std::int32_t>(table).subspan(token[0] * 6, 6));
       f.replays.push_back({{sem::bytes(values), moe::hash_tokens(token, native_routing), sem::bytes(table)},
