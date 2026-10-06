@@ -22,14 +22,15 @@ void check(Format format, std::uint32_t group,
     std::span<const float> expected) {
   auto context = c::cpu::create_context().value();
   const auto op = c::model_ops::artifact_weight_decode(format, group, c::DataType::kFloat32);
-  auto prepared = c::prepare(context, op, descriptions);
-  ASSERT_TRUE(prepared) << prepared.error().message();
-  const auto output = prepared->output_description(0);
-  auto result = m::Buffer::create(m::system_resource(), output->required_bytes().value(), 64).value();
-  auto target = c::TensorView::create(*output, result.view()).value();
+  std::array<c::TensorDesc, 1> inferred;
+  ASSERT_TRUE(c::infer_output_descriptions(op, descriptions, inferred).ok());
+  auto result = m::Buffer::create(m::system_resource(), inferred[0].required_bytes().value(), 64).value();
+  auto target = c::TensorView::create(inferred[0], result.view()).value();
   std::vector<c::ConstTensorView> sources;
   for (std::size_t i = 0; i < buffers.size(); ++i)
     sources.push_back(c::ConstTensorView::create(descriptions[i], buffers[i].view()).value());
+  auto prepared = c::prepare(context, op, sources, std::span(&target, 1));
+  ASSERT_TRUE(prepared) << prepared.error().message();
   auto invocation = prepared->create_invocation().value();
   auto queue = context.create_queue().value();
   for (int repeat = 0; repeat < 2; ++repeat) {

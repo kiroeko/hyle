@@ -59,7 +59,7 @@ void check(c::Operation op, std::span<const c::TensorDesc> descriptions,
   };
 #else
   auto context = c::cpu::create_context().value();
-  auto prepared = c::prepare(context, op, descriptions);
+  auto prepared = c::prepare(context, op, inputs, std::span(&destination, 1));
   ASSERT_TRUE(prepared) << prepared.error().message();
   EXPECT_EQ(prepared->provider().id, c::ggml_cpu::kProviderId);
   auto invocation = prepared->create_invocation().value();
