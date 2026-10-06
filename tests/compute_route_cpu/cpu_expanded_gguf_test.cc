@@ -52,9 +52,10 @@ void check(c::Operation op, std::span<const c::TensorDesc> descriptions,
   auto queue = context.create_queue().value();
   const std::array queues{g::QueueBinding{.lane = g::ExecutionLaneId{0}, .queue = &queue}};
   ASSERT_TRUE(invocation.prepare_replay(queues).ok());
-  const auto run = [&] {
+  const auto run = [&]() -> hyle::Status {
     auto done = invocation.submit(queue);
-    return done ? done->wait() : done.error();
+    if (!done) return std::move(done).error();
+    return done->wait();
   };
 #else
   auto context = c::cpu::create_context().value();
@@ -63,9 +64,10 @@ void check(c::Operation op, std::span<const c::TensorDesc> descriptions,
   EXPECT_EQ(prepared->provider().id, c::ggml_cpu::kProviderId);
   auto invocation = prepared->create_invocation().value();
   auto queue = context.create_queue().value();
-  const auto run = [&] {
+  const auto run = [&]() -> hyle::Status {
     auto done = invocation.submit(queue, inputs, std::span(&destination, 1));
-    return done ? done->wait() : done.error();
+    if (!done) return std::move(done).error();
+    return done->wait();
   };
 #endif
   for (int pass = 0; pass < 2; ++pass) {
