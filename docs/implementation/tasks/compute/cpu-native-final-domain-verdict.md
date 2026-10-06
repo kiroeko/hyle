@@ -54,3 +54,16 @@ callback，保留F16 SiLU gate及I32 RoPE等待后续裁决；public operation�
 ND1/ND2以此前全族/source/resource审计及本批反例固定这一实现子批，owner AUDITED。后续发现
 新具体域或结果需要扩张产品FIX时须退回SCOPED/AUDITED，不无限扩大本次修正。生命周期/默认
 Direct/Graph、受影响测试与两平台三交付仍适用；当前未运行，不签ND-R1产品完成。
+
+### ND-R1实施进展（未终审）
+
+`cde6fb3a`批量删除Native GELU/GELU-tanh公式/注册、F32 gate callback、BF16及非SiLU half gate
+分支、I64 RoPE读载体/准入，原SIMD函数/模块与ATen不改。Windows owning binary低并行增量编译
+通过。首次整批再执行发现退役Unary沿旧select失败返回InvalidArgument，导致普通context中止
+成熟匹配；`f32d261a`定向改为Unimplemented冷拒绝，没有数学优化。原失败保留。
+
+同一322条witness最终Native31明确拒绝、剩余已执行行0误差失败；普通成熟161全部执行通过，
+没有把拒绝算PASS。只证明本批样例和冷迁移，不代签完整factor/Graph/两平台三交付；旧Native-only
+测试对已退役域须按需求迁移并保留专家拒绝回归。ND3仍未计时/未裁决，模块仍AUDITED、goal活动。
+统一脚本在`cde6fb3a`计Compute+Graph实现61,387/249，不含tests/vendor；`f32d261a`单行Status
+替换不改代码行数。必要回归/交付完成前不关闭ND-R1，不把源码删除当完整CPU收口。
