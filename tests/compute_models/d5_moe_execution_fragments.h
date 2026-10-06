@@ -164,9 +164,17 @@ inline Routing routing(Fragment &f, const Case &model, ValueId input,
   auto selection = binary(f, c::BinaryKind::kAdd, scores, correction);
   auto top = f.append(c::Operation(c::TopK{.count = std::size_t(model.top_k)}),
                        {selection}, 2);
-  auto score_rows = reshape(f, scores, {model.experts, 1});
+  const auto tokens=f.description(scores).dimensions()[0];
+  auto score_rows = reshape(f, scores, {tokens*model.experts, 1});
+  auto selected_ids=top[1];
+  if(tokens>1) {
+    std::vector<std::int32_t> offsets(tokens);
+    for(std::int64_t row=0;row<tokens;++row)offsets[row]=std::int32_t(row*model.experts);
+    selected_ids=binary(f,c::BinaryKind::kAdd,selected_ids,
+        f.constant(dense({tokens,1},c::DataType::kInt32),bytes(offsets)));
+  }
   auto selected = reshape(f, f.one(c::Operation(c::Gather{}),
-                                    {score_rows, top[1]}), {1, model.top_k});
+                                    {score_rows, selected_ids}), {tokens, model.top_k});
   auto total = sum(f, selected, -1);
   // DeepSeek's positive-sum normalization retains tiny nonzero scores.
   // sqrt(nonzero F32 softplus) exceeds the F32 normal floor; zero stays zero.

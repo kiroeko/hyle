@@ -596,14 +596,20 @@ struct Hyper final {
   std::int64_t hidden;
   std::vector<float> scales{0.125F, 0.25F, 0.5F}, bases = std::vector<float>(24);
   moe::ReferenceOutputs reference(std::span<const float> state, std::span<const float> branch) const {
-    auto mixes = fn.reference(state);
-    double square = 0;
-    for (auto x : state) square += double(x)*x;
-    const float inverse = 1.0F/std::sqrt(float(square/state.size())+1.0e-6F);
-    for (auto &x : mixes) x *= inverse;
-    auto result = core::hyper_reference(mixes, state, branch, hidden, scales, bases);
-    result[1] = bfloat_boundary(std::move(result[1]));
-    result[2] = bfloat_boundary(std::move(result[2]));
+    moe::ReferenceOutputs result(3);
+    for(std::size_t first=0;first<state.size();first+=4*hidden) {
+      const auto local=state.subspan(first,4*hidden);
+      auto mixes = fn.reference(local);
+      double square = 0;
+      for (auto x : local) square += double(x)*x;
+      const float inverse = 1.0F/std::sqrt(float(square/local.size())+1.0e-6F);
+      for (auto &x : mixes) x *= inverse;
+      auto row = core::hyper_reference(mixes, local, branch.subspan(first/4,hidden), hidden, scales, bases);
+      row[1] = bfloat_boundary(std::move(row[1]));
+      row[2] = bfloat_boundary(std::move(row[2]));
+      for(std::size_t port=0;port<row.size();++port)
+        result[port].insert(result[port].end(),row[port].begin(),row[port].end());
+    }
     return result;
   }
 };
@@ -613,7 +619,8 @@ inline ValueId inverse_rms(Fragment &f, ValueId input) {
       mean(f, square), filled(f, dense({1}), 1.0e-6F)));
 }
 inline Hyper hyper_pre(Fragment &f, ValueId state, std::int64_t hidden, int seed) {
-  auto flat = reshape(f, state, {1, 4*hidden});
+  const auto tokens=f.description(state).dimensions()[0];
+  auto flat = reshape(f, state, {tokens, 4*hidden});
   auto fn = linear::projection(f, flat, 24, 4*hidden, linear::Storage::kF32, seed);
   auto mixes = binary(f, c::BinaryKind::kMultiply, fn.output, inverse_rms(f, flat));
   Hyper result{{}, {}, {}, std::move(fn), hidden};

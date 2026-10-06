@@ -31,16 +31,16 @@ inline ValueId roundtrip(Fragment &f, ValueId value, quant::Format format) {
 // shared block128 FP8. The route weight belongs before down's quantization.
 inline Fragment moe_chain(const moe::Case &model, bool use_hash = false,
                            moe::MoeReference *reference_out = nullptr,
-                           bool native_routing = true) {
+                           bool native_routing = true,std::int64_t tokens=1) {
   const bool pro=model.hidden==7168 && model.experts==384 && model.intermediate==3072;
   const bool flash=model.hidden==4096 && model.experts==256 && model.intermediate==2048;
   if (model.gguf || !model.profile || model.profile->model_family!="deepseek_v4" ||
       model.profile->format_family!="safetensors" || (!pro && !flash) || model.top_k!=6 ||
-      (use_hash && reference_out))
+      (use_hash && reference_out) || tokens<=0 || (tokens>1 && !reference_out))
     throw std::runtime_error("official DeepSeek MoE profile/replay mismatch");
   Fragment f{.profile = model.profile, .region = use_hash ? 0x0a0b0602u : 0x0a0b0601u,
               .quantized = true};
-  const auto input = f.input(sem::dense({1, model.hidden}));
+  const auto input = f.input(sem::dense({tokens, model.hidden}));
   auto x = bfloat_boundary(f, input);
   std::optional<moe::HashInputs> lookup;
   if (use_hash)
@@ -50,7 +50,7 @@ inline Fragment moe_chain(const moe::Case &model, bool use_hash = false,
         f.input(sem::dense({moe::kHashVocabulary, 6}, c::DataType::kInt32))};
   auto route = moe::routing(f, model, x, native_routing, 64.0F, lookup);
   const auto resident = model.top_k + 1;
-  auto slots = core::reshape(f, x, {1, 1, model.hidden});
+  auto slots = core::reshape(f, x, {tokens, 1, model.hidden});
   auto wg = d5_official_fp4_storage::weight(resident, model.intermediate, model.hidden, 71, true);
   auto wu = d5_official_fp4_storage::weight(resident, model.intermediate, model.hidden, 79, true);
   auto wd = d5_official_fp4_storage::weight(resident, model.hidden, model.intermediate, 83, true);
@@ -62,10 +62,10 @@ inline Fragment moe_chain(const moe::Case &model, bool use_hash = false,
   auto gate = grouped(wg, slots), up = grouped(wu, slots);
   auto activated = moe::gated(f, model, gate, up);
   auto weighted = core::binary(f, c::BinaryKind::kMultiply, activated,
-                               core::reshape(f, route.weights, {1, model.top_k, 1}));
+                               core::reshape(f, route.weights, {tokens, model.top_k, 1}));
   auto routed = grouped(wd, weighted);
   auto combined = f.one(c::Operation(c::Copy{}),
-      {core::reshape(f, moe::sum(f, routed, 1), {1, model.hidden})});
+      {core::reshape(f, moe::sum(f, routed, 1), {tokens, model.hidden})});
 
   auto sg = fp8::model_linear(f, x, model.shared_intermediate, model.hidden, 113, true);
   auto su = fp8::model_linear(f, x, model.shared_intermediate, model.hidden, 127, true);
@@ -116,8 +116,15 @@ inline Fragment moe_chain(const moe::Case &model, bool use_hash = false,
             std::move(shared_act)};
   };
   if (reference_out) {
-    *reference_out = [evaluate = std::move(evaluate)](std::span<const float> values) {
-      return evaluate(values, {});
+    *reference_out = [evaluate = std::move(evaluate),hidden=model.hidden](std::span<const float> values) {
+      moe::ReferenceOutputs result;
+      for(std::size_t first=0;first<values.size();first+=hidden) {
+        auto row=evaluate(values.subspan(first,hidden),{});
+        if(result.empty())result.resize(row.size());
+        for(std::size_t port=0;port<row.size();++port)
+          result[port].insert(result[port].end(),row[port].begin(),row[port].end());
+      }
+      return result;
     };
     return f;
   }

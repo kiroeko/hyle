@@ -35,4 +35,11 @@ TEST(HYLE_C4_CPU_SUITE, NewOfficialMainAttentionCompressionAndMoe) {
     run_q24_semantic_fragment(d5_deepseek_official_fragments::moe_chain(shape,true,nullptr,false));
   }
 }
+TEST(HYLE_C4_CPU_SUITE, CompleteThreeStageDsparkWithSharedEmbeddingAndConfidence) {
+  for(const auto &model:cpu_c4_model_branches::models) {
+    SCOPED_TRACE(model.profile->model_name);
+    auto program=cpu_c4_model_branches::complete_draft(model);
+    run_q24_semantic_fragment(std::move(program.fragment));
+  }
+}
 #undef HYLE_C4_CPU_SUITE

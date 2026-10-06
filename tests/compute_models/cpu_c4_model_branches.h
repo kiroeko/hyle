@@ -205,8 +205,10 @@ inline Fragment cache_prefill(const Model &model,std::int64_t tokens) {
   return f;
 }
 
+using DraftReference=std::function<ds::moe::ReferenceOutputs(std::span<const float>,
+    std::span<const float>,std::span<const float>,std::int32_t)>;
 inline Fragment draft_attention(const Model &model,std::span<const float> initial_actual,
-                                 std::span<const float> initial_expected) {
+                                 std::span<const float> initial_expected,DraftReference *reference_out=nullptr) {
   Fragment f{.profile=model.profile,.region=0x0c040102,.quantized=true};
   auto x=f.input(dense({block,model.hidden})),main=f.input(dense({1,model.hidden}));
   auto old_cache=f.input(dense({window,512}));
@@ -248,6 +250,28 @@ inline Fragment draft_attention(const Model &model,std::span<const float> initia
                           model.hidden,model.groups*1024,457,true);
   f.outputs={cache,attended,inverse,oa,ob.output};f.state_ports={{2,0}};
   f.bfloat_chain_outputs={0,1,2,3,4};
+  auto evaluate=[model,qa,qb,kv,ob,wa,qscale,kscale,sinks,scale,group_ids]
+      (std::span<const float> activation,std::span<const float> main_x,
+       std::span<const float> incoming_cache,std::int32_t position)->ds::moe::ReferenceOutputs {
+    std::array<std::int32_t,1> mp{position};
+    std::vector<std::int32_t> dp(block);std::iota(dp.begin(),dp.end(),position+1);
+    auto query=rotary_rows(ds::query_norm_reference(
+        qb.reference(ds::norm_reference(qa.reference(activation),qscale)),512),model.heads,dp);
+    std::vector<float> both(main_x.begin(),main_x.end());both.insert(both.end(),activation.begin(),activation.end());
+    auto kv_reference=ds::norm_reference(kv.reference(both),kscale);
+    auto main_k=ds::cache_reference(rotary_rows(std::vector<float>(kv_reference.begin(),kv_reference.begin()+512),1,mp),512,false);
+    auto draft_k=ds::cache_reference(rotary_rows(std::vector<float>(kv_reference.begin()+512,kv_reference.end()),1,dp),512,false);
+    std::vector<float> cache_reference(incoming_cache.begin(),incoming_cache.end());
+    std::copy(main_k.begin(),main_k.end(),cache_reference.begin()+(position%window)*512);
+    auto keys_reference=cache_reference;keys_reference.insert(keys_reference.end(),draft_k.begin(),draft_k.end());
+    auto attention=ds::bfloat_boundary(ds::old::sink_reference(query,keys_reference,keys_reference,
+        std::vector<float>(block*(window+block),0),sinks,block,window+block,scale));
+    auto derotated=rotary_rows(attention,model.heads,dp,true);
+    auto grouped_output=ds::bfloat_boundary(ds::moe::project(derotated,wa,group_ids,1024,4096));
+    auto result=ob.reference(grouped_output);
+    return {std::move(cache_reference),std::move(attention),std::move(derotated),std::move(grouped_output),std::move(result)};
+  };
+  if(reference_out) {*reference_out=std::move(evaluate);return f;}
   auto cache_reference=std::vector<float>(initial_expected.begin(),initial_expected.end());
   for(int step=0;step<6;++step) {
     const bool reset=step%3==0;
@@ -259,21 +283,11 @@ inline Fragment draft_attention(const Model &model,std::span<const float> initia
     std::vector<float> masks(block*(window+block),0);
     auto activation=ds::bfloat_boundary(d5_gguf_test::activation(block*model.hidden,11+step*13));
     auto main_x=ds::bfloat_boundary(d5_gguf_test::activation(model.hidden,31+step*7));
-    auto query=rotary_rows(ds::query_norm_reference(
-        qb.reference(ds::norm_reference(qa.reference(activation),qscale)),512),model.heads,dp);
-    auto both=main_x;both.insert(both.end(),activation.begin(),activation.end());
-    auto kv_reference=ds::norm_reference(kv.reference(both),kscale);
-    auto main_k=ds::cache_reference(rotary_rows(std::vector<float>(kv_reference.begin(),kv_reference.begin()+512),1,mp),512,false);
-    auto draft_k=ds::cache_reference(rotary_rows(std::vector<float>(kv_reference.begin()+512,kv_reference.end()),1,dp),512,false);
-    std::copy(main_k.begin(),main_k.end(),cache_reference.begin()+(position%window)*512);
-    auto keys_reference=cache_reference;keys_reference.insert(keys_reference.end(),draft_k.begin(),draft_k.end());
-    auto attention=ds::bfloat_boundary(ds::old::sink_reference(query,keys_reference,keys_reference,masks,sinks,block,window+block,scale));
-    auto derotated=rotary_rows(attention,model.heads,dp,true);
-    auto grouped_output=ds::bfloat_boundary(ds::moe::project(derotated,wa,group_ids,1024,4096));
-    auto result=ob.reference(grouped_output);
+    auto expected=evaluate(activation,main_x,cache_reference,position);
+    cache_reference=expected[0];
     sem::Replay replay{{bytes(activation),bytes(main_x),reset?bytes<float>(initial_actual):bytes(std::vector<float>(initial_actual.size(),23)),
                         bytes<std::int32_t>(mp),bytes(dp),bytes(write),bytes(masks)},
-                       {cache_reference,std::move(attention),std::move(derotated),std::move(grouped_output),std::move(result)}};
+                       std::move(expected)};
     replay.reset_state=reset;f.replays.push_back(std::move(replay));
   }
   struct RotaryObservation {std::vector<float> attention;std::size_t step=0;};
@@ -306,5 +320,149 @@ template<class Run> void check_attention(const Model &model,Run run) {
   run(std::move(prefill));ASSERT_FALSE(::testing::Test::HasFailure());ASSERT_EQ(actual.size(),window*512);
   run(cache_prefill(model,129));ASSERT_FALSE(::testing::Test::HasFailure());
   run(draft_attention(model,actual,expected));
+}
+
+// Merge only this consumer's cold preparation programs. All hot nodes remain
+// ordinary public operations; each stage has one parameter bank for five rows.
+inline std::vector<ValueId> attach_branch(Fragment &parent,Fragment child,
+                                         std::initializer_list<ValueId> inputs) {
+  if(child.preparation) {
+    auto cold=std::make_shared<Fragment>(Fragment{.profile=parent.profile,.region=0x0c040107});
+    if(parent.preparation) {
+      auto outputs=ds::glm::attach(*cold,*parent.preparation,{});
+      cold->outputs.insert(cold->outputs.end(),outputs.begin(),outputs.end());
+    }
+    auto outputs=ds::glm::attach(*cold,*child.preparation,{});
+    cold->outputs.insert(cold->outputs.end(),outputs.begin(),outputs.end());
+    parent.preparation=std::move(cold);
+    for(auto slot:child.prepared_constants)parent.prepared_constants.push_back(parent.constants.size()+slot);
+    child.preparation.reset();child.prepared_constants.clear();
+  }
+  return ds::glm::attach(parent,std::move(child),inputs);
+}
+
+struct DraftProgram {
+  Fragment fragment;
+  linear::Projection head;
+  std::vector<float> head_base{-0.25F,0.125F,0.375F,-0.5F},norm_scale;
+};
+inline DraftProgram complete_draft(const Model &model) {
+  DraftProgram result{Fragment{.profile=model.profile,.region=0x0c040108,.quantized=true},{}};
+  auto &f=result.fragment;
+  auto main=f.input(dense({1,model.hidden}));
+  auto token=f.input(dense({1},c::DataType::kInt32));
+  auto markov_ids=f.input(dense({block},c::DataType::kInt32));
+  auto position=f.input(dense({1},c::DataType::kInt32));
+  auto draft_positions=f.input(dense({block},c::DataType::kInt32));
+  auto writing=f.input(dense({window,1},c::DataType::kBool));
+  auto mask=f.input(dense({block,window+block}));
+  std::array<ValueId,3> caches;
+  for(auto &cache:caches)cache=f.input(dense({window,512}));
+  std::vector<std::byte> embedding(dense({vocabulary,model.hidden},c::DataType::kBFloat16).required_bytes().value());
+  for(std::int64_t row:std::array<std::int64_t,4>{3,5,7,noise_token})for(std::int64_t col=0;col<model.hidden;++col) {
+    const auto value=sem::q::encode(0.25+double((col+row)%11)/64);
+    std::memcpy(embedding.data()+(row*model.hidden+col)*sizeof(value),&value,sizeof(value));
+  }
+  auto table=f.constant(dense({vocabulary,model.hidden},c::DataType::kBFloat16),std::move(embedding));
+  auto noise=f.constant(dense({block-1},c::DataType::kInt32),bytes(std::vector<std::int32_t>(block-1,int(noise_token))));
+  auto ids=ds::concat(f,token,noise,0);
+  auto embedded=f.one(c::Operation(c::Gather{}),{table,ids});
+  auto plain=f.one(c::Operation(c::Cast{.output_type=c::DataType::kFloat32}),{embedded});
+  auto state=core::binary(f,c::BinaryKind::kMultiply,core::reshape(f,plain,{block,1,model.hidden}),
+                         core::filled(f,dense({1,4,1}),1));
+  std::array<ds::Hyper,3> attention_mix,moe_mix;
+  std::array<DraftReference,3> attention_reference;
+  std::array<ds::moe::MoeReference,3> moe_reference;
+  auto attn_scale=sem::oracle::scale(model.hidden),ffn_scale=attn_scale;
+  std::array<ValueId,3> next_cache;
+  for(int stage=0;stage<3;++stage) {
+    attention_mix[stage]=ds::hyper_pre(f,state,model.hidden,467+stage*19);
+    auto collapsed=ds::norm(f,attention_mix[stage].collapsed,attn_scale);
+    auto recipe=draft_attention(model,{}, {},&attention_reference[stage]);
+    auto attention=attach_branch(f,std::move(recipe),{collapsed,main,caches[stage],position,draft_positions,writing,mask});
+    next_cache[stage]=attention[0];
+    state=ds::hyper_post(f,attention_mix[stage],state,attention.back());
+    moe_mix[stage]=ds::hyper_pre(f,state,model.hidden,473+stage*23);
+    auto moe_input=ds::norm(f,moe_mix[stage].collapsed,ffn_scale);
+    auto moe_recipe=ds::official::moe_chain(model.main_case(),false,&moe_reference[stage],false,block);
+    auto moe_outputs=attach_branch(f,std::move(moe_recipe),{moe_input});
+    state=ds::hyper_post(f,moe_mix[stage],state,moe_outputs[5]);
+  }
+  auto flat=core::reshape(f,state,{block,4*model.hidden});
+  result.head=linear::projection(f,flat,4,4*model.hidden,linear::Storage::kF32,487);
+  auto mixes=core::binary(f,c::BinaryKind::kMultiply,result.head.output,ds::inverse_rms(f,flat));
+  auto gate=core::binary(f,c::BinaryKind::kAdd,
+      core::unary(f,c::UnaryKind::kSigmoid,core::binary(f,c::BinaryKind::kAdd,
+          core::binary(f,c::BinaryKind::kMultiply,mixes,core::filled(f,dense({1}),0.125F)),
+          f.constant(dense({4}),bytes(result.head_base)))),core::filled(f,dense({1}),1.0e-6F));
+  auto hidden=ds::bfloat_boundary(f,f.one(c::model_ops::hyper_connection_pre(),{state,gate}));
+  result.norm_scale=sem::oracle::scale(model.hidden);
+  auto normalized=ds::norm(f,hidden,result.norm_scale);
+  auto markov_recipe=markov_embedding(model);
+  auto markov=attach_branch(f,std::move(markov_recipe),{markov_ids})[0];
+  auto confidence_recipe=confidence(model);
+  auto confidence_output=attach_branch(f,std::move(confidence_recipe),{hidden,markov})[0];
+  f.outputs={state,next_cache[0],next_cache[1],next_cache[2],hidden,normalized,markov,confidence_output};
+  f.state_ports={{7,1},{8,2},{9,3}};f.bfloat_chain_outputs={0,1,2,3,4,5};f.exact_outputs={6};
+  std::array<std::vector<float>,3> history;
+  for(auto &h:history)h=ds::cache_reference(ds::bfloat_boundary(d5_gguf_test::activation(window*512,23)),512,false);
+  const auto initial=history;
+  for(int step=0;step<3;++step) {
+    const bool reset=step==0 || step==2;
+    if(reset)history=initial;
+    const std::int32_t pos=128+step%2;
+    const std::int32_t first_token=step==0?3:step==1?5:7;
+    std::vector<std::int32_t> draft_pos(block);std::iota(draft_pos.begin(),draft_pos.end(),pos+1);
+    std::vector<std::uint8_t> write(window);write[pos%window]=1;
+    auto main_x=ds::bfloat_boundary(d5_gguf_test::activation(model.hidden,31+step*7));
+    std::vector<std::int32_t> tokens{first_token,int(noise_token),first_token,128,129279};
+    std::vector<float> state_reference(block*4*model.hidden);
+    for(std::int64_t row=0;row<block;++row)for(int stream=0;stream<4;++stream)
+      for(std::int64_t col=0;col<model.hidden;++col)
+        state_reference[(row*4+stream)*model.hidden+col]=fp8::bfloat(float(0.25+double((col+(row?noise_token:first_token))%11)/64));
+    for(int stage=0;stage<3;++stage) {
+      auto pre=attention_mix[stage].reference(state_reference,std::vector<float>(block*model.hidden));
+      auto x=ds::norm_reference(pre[1],attn_scale);
+      auto attention=attention_reference[stage](x,main_x,history[stage],pos);
+      history[stage]=attention[0];
+      state_reference=attention_mix[stage].reference(state_reference,attention.back())[2];
+      auto pm=moe_mix[stage].reference(state_reference,std::vector<float>(block*model.hidden));
+      auto mv=moe_reference[stage](ds::norm_reference(pm[1],ffn_scale));
+      state_reference=moe_mix[stage].reference(state_reference,mv[5])[2];
+    }
+    std::vector<float> hidden_reference(block*model.hidden);
+    for(std::int64_t row=0;row<block;++row) {
+      const auto s=std::span(state_reference).subspan(row*4*model.hidden,4*model.hidden);
+      auto hm=result.head.reference(s);double square=0;
+      for(auto value:s)square+=double(value)*value;
+      const auto inv=1.0F/std::sqrt(float(square/s.size())+1.0e-6F);
+      for(std::int64_t col=0;col<model.hidden;++col) {
+        double sum=0;for(int stream=0;stream<4;++stream)
+          sum+=s[stream*model.hidden+col]*(core::sigmoid(hm[stream]*inv*0.125F+result.head_base[stream])+1.0e-6);
+        hidden_reference[row*model.hidden+col]=fp8::bfloat(float(sum));
+      }
+    }
+    auto normalized_reference=ds::norm_reference(hidden_reference,result.norm_scale);
+    std::vector<float> markov_reference(block*model.markov);
+    for(std::int64_t row=0;row<block;++row)
+      markov_reference[row*model.markov+MarkovWeight::column(tokens[row],model.markov)]=MarkovWeight::coefficient(tokens[row]);
+    // The fixed sparse confidence parameter follows compressor_projection's
+    // BF16-source/F32 weight recipe. Its independent source terms are
+    // evaluated below using the same immutable parameter description.
+    auto confidence_values=std::vector<float>(block);
+    auto cw=sem::weight(1,model.hidden+model.markov,c::GgufQuantizedType::kQ8_0,true,409);
+    for(auto &terms:cw.decoded)for(auto &[column,value]:terms){(void)column;value=fp8::bfloat(value);}
+    for(std::int64_t row=0;row<block;++row) {
+      std::vector<float> joined(hidden_reference.begin()+row*model.hidden,hidden_reference.begin()+(row+1)*model.hidden);
+      joined.insert(joined.end(),markov_reference.begin()+row*model.markov,markov_reference.begin()+(row+1)*model.markov);
+      confidence_values[row]=sem::project(joined,cw)[0];
+    }
+    sem::Replay replay{{bytes(main_x),bytes(std::vector<std::int32_t>{first_token}),bytes(tokens),
+        bytes(std::vector<std::int32_t>{pos}),bytes(draft_pos),bytes(write),bytes(std::vector<float>(block*(window+block),0))},
+        {state_reference,history[0],history[1],history[2],hidden_reference,normalized_reference,markov_reference,confidence_values}};
+    for(const auto &h:initial)replay.inputs.push_back(bytes(reset?h:std::vector<float>(h.size(),23)));
+    replay.reset_state=reset;f.replays.push_back(std::move(replay));
+  }
+  return result;
 }
 } // namespace cpu_c4_model_branches
