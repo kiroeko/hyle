@@ -130,6 +130,10 @@ stride与重复Assign的确切域见[CPU ATen资格](../../evidence/correctness/
 五种浮点storage之间的全部25种Cast也可接普通Graph下游，Cast拒绝alias；ggml混合浮点Cast
 保持原转换/region，仅附加NaN storage位语义边界。资格与限制见
 [Cast与稳定路由](../../evidence/correctness/cpu-aten-cast-stable-route/README.md)，不外推到未锁SDK平台。
+同一 ATen leaf 补上高 rank／byte-stride MatMul、Bool／log-softmax、I64 位置 RoPE、masked GQA
+与 norm 布局域，可以直接接普通 Graph 下游。它保留原 Tensor 程序的 score／mask／转换资源，
+不把不同全 mask 定义的 fused SDPA 当成公共同合同实现；完整范围与验收见
+[Transformer／矩阵接入](../implementation/tasks/compute/cpu-aten-transformer-matrix-admission.md)。
 固定画像的当前运行结果及Windows三交付、代表片段性能资格见[覆盖表](model-fragment-coverage.md)，
 不外推到所有模型、形状或平台。
 

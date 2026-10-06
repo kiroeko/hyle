@@ -1,0 +1,327 @@
+{
+  "candidate": "3fc528dae5a25b7ac3f0bcc9606b112ee23b7c6d",
+  "fixture_commit": "96945887d68fbd7cbd75f51b53b967f6ecb4cb4a",
+  "scope": "TM1-4; original matrix/Softmax/I64 RoPE/masked GQA/norm programs",
+  "performance": "P0; no self operator performance comparison",
+  "platforms": {
+    "windows": {
+      "commands": 28,
+      "actual_validation_commits": [
+        "3fc528dae5a25b7ac3f0bcc9606b112ee23b7c6d",
+        "46e435737f12ec05e9b3009619f6437275e80120",
+        "7ee7baf03cf3f5e1df72167d8e1cf30f9526ed13"
+      ],
+      "tests": {
+        "provider": {
+          "registered": 134,
+          "passed": 134,
+          "skipped": []
+        },
+        "compute_route_cpu": {
+          "registered": 13,
+          "passed": 12,
+          "skipped": [
+            "CpuDefaultContext.D5RealQwenProjectionUsesExactProfileAndReplays"
+          ]
+        },
+        "graph_route_cpu": {
+          "registered": 39,
+          "passed": 33,
+          "skipped": [
+            "CpuDefaultGraph.D5Qwen35OfficialEmbeddingNormHeadAndFailureUseOnePreparedGraph",
+            "CpuDefaultGraph.D5Qwen35OfficialBfloatFfnUsesMatureRegionsAndRealWeights",
+            "CpuDefaultGraph.D5Qwen35OfficialGqaNormRopeAndAttentionUseExactProfileAndReplay",
+            "CpuDefaultGraph.D5Qwen35OfficialCausalConvAndGdnUseExactProfileAndReplay",
+            "CpuDefaultGraph.D5Qwen35OfficialMtpAndBfloatBoundaryUseExactWeightsAndReplay",
+            "CpuDefaultGraph.D5RealQwenProjectionUsesExactProfileAndReplays"
+          ]
+        },
+        "header": {
+          "registered": 1,
+          "passed": 1,
+          "skipped": []
+        }
+      },
+      "source_identity": {
+        "candidate": "3fc528dae5a25b7ac3f0bcc9606b112ee23b7c6d",
+        "checked": 1337,
+        "forward_updated": [
+          "src/compute_provider_native/aten_cpu_provider.cc",
+          "tests/compute_provider_native/CMakeLists.txt",
+          "tests/compute_provider_native/aten_transformer_test.cc",
+          ".scratch/validation/cpu-aten-transformer-matrix/consumer.cc",
+          ".scratch/validation/cpu-aten-transformer-matrix/windows-overlay.cmake",
+          ".scratch/validation/cpu-aten-transformer-matrix/linux-overlay.cmake",
+          ".scratch/validation/cpu-aten-transformer-matrix/consumer/CMakeLists.txt"
+        ]
+      },
+      "latest_commands_passed": [
+        "batch-build",
+        "compute_route_cpu-affected-tests",
+        "configure",
+        "graph_route_cpu-affected-tests",
+        "provider-tests",
+        "public-header",
+        "shared-consumer-build",
+        "shared-consumer-configure",
+        "shared-install",
+        "shared-installed-ordinary",
+        "shared-producer-build",
+        "shared-producer-configure",
+        "shared-source-ordinary",
+        "static-consumer-build",
+        "static-consumer-configure",
+        "static-install",
+        "static-installed-ordinary",
+        "static-producer-build",
+        "static-producer-configure",
+        "static-source-ordinary"
+      ],
+      "cleanup": [
+        {
+          "files": 52,
+          "adjacent_runtime_dlls": [
+            {
+              "name": "asmjit.dll",
+              "bytes": 367104
+            },
+            {
+              "name": "c10.dll",
+              "bytes": 1046528
+            },
+            {
+              "name": "fbgemm.dll",
+              "bytes": 5721600
+            },
+            {
+              "name": "hyle_compute_backend_cpu.dll",
+              "bytes": 16384
+            },
+            {
+              "name": "hyle_compute_ggml_runtime.dll",
+              "bytes": 1136640
+            },
+            {
+              "name": "hyle_compute_ops.dll",
+              "bytes": 70144
+            },
+            {
+              "name": "hyle_compute_provider_ggml.dll",
+              "bytes": 404480
+            },
+            {
+              "name": "hyle_compute_provider_native.dll",
+              "bytes": 452096
+            },
+            {
+              "name": "hyle_compute_provider_onednn.dll",
+              "bytes": 16674304
+            },
+            {
+              "name": "hyle_compute_route_cpu.dll",
+              "bytes": 11776
+            },
+            {
+              "name": "hyle_compute.dll",
+              "bytes": 189440
+            },
+            {
+              "name": "hyle_container.dll",
+              "bytes": 41472
+            },
+            {
+              "name": "hyle_error.dll",
+              "bytes": 28160
+            },
+            {
+              "name": "hyle_ggml_cpu_avx2_456172ec.dll",
+              "bytes": 1153536
+            },
+            {
+              "name": "hyle_graph_provider_onednn.dll",
+              "bytes": 34816
+            },
+            {
+              "name": "hyle_graph_route_cpu.dll",
+              "bytes": 45056
+            },
+            {
+              "name": "hyle_graph.dll",
+              "bytes": 509952
+            },
+            {
+              "name": "hyle_mem.dll",
+              "bytes": 230912
+            },
+            {
+              "name": "hyle_platform.dll",
+              "bytes": 85504
+            },
+            {
+              "name": "hyle_simd.dll",
+              "bytes": 1571328
+            },
+            {
+              "name": "libiomp5md.dll",
+              "bytes": 1613680
+            },
+            {
+              "name": "torch_cpu.dll",
+              "bytes": 255948800
+            },
+            {
+              "name": "torch.dll",
+              "bytes": 9728
+            },
+            {
+              "name": "uv.dll",
+              "bytes": 195072
+            }
+          ],
+          "removed": true,
+          "logical_bytes": 288829506.0,
+          "path": "C:\\hv\\cpu-tm-shared-consumer",
+          "original_probe_hardlinks": false
+        },
+        {
+          "files": 38,
+          "adjacent_runtime_dlls": [
+            {
+              "name": "asmjit.dll",
+              "bytes": 367104
+            },
+            {
+              "name": "c10.dll",
+              "bytes": 1046528
+            },
+            {
+              "name": "fbgemm.dll",
+              "bytes": 5721600
+            },
+            {
+              "name": "hyle_ggml_cpu_avx2_456172ec.dll",
+              "bytes": 1153024
+            },
+            {
+              "name": "libiomp5md.dll",
+              "bytes": 1613680
+            },
+            {
+              "name": "torch_cpu.dll",
+              "bytes": 255948800
+            },
+            {
+              "name": "torch.dll",
+              "bytes": 9728
+            },
+            {
+              "name": "uv.dll",
+              "bytes": 195072
+            }
+          ],
+          "removed": true,
+          "logical_bytes": 287621038.0,
+          "path": "C:\\hv\\cpu-tm-static-consumer",
+          "original_probe_hardlinks": false
+        }
+      ]
+    },
+    "linux": {
+      "commands": 21,
+      "actual_validation_commits": [
+        "3fc528dae5a25b7ac3f0bcc9606b112ee23b7c6d"
+      ],
+      "tests": {
+        "provider": {
+          "registered": 134,
+          "passed": 134,
+          "skipped": []
+        },
+        "compute_route_cpu": {
+          "registered": 13,
+          "passed": 12,
+          "skipped": [
+            "CpuDefaultContext.D5RealQwenProjectionUsesExactProfileAndReplays"
+          ]
+        },
+        "graph_route_cpu": {
+          "registered": 39,
+          "passed": 33,
+          "skipped": [
+            "CpuDefaultGraph.D5Qwen35OfficialEmbeddingNormHeadAndFailureUseOnePreparedGraph",
+            "CpuDefaultGraph.D5Qwen35OfficialBfloatFfnUsesMatureRegionsAndRealWeights",
+            "CpuDefaultGraph.D5Qwen35OfficialGqaNormRopeAndAttentionUseExactProfileAndReplay",
+            "CpuDefaultGraph.D5Qwen35OfficialCausalConvAndGdnUseExactProfileAndReplay",
+            "CpuDefaultGraph.D5Qwen35OfficialMtpAndBfloatBoundaryUseExactWeightsAndReplay",
+            "CpuDefaultGraph.D5RealQwenProjectionUsesExactProfileAndReplays"
+          ]
+        },
+        "header": {
+          "registered": 1,
+          "passed": 1,
+          "skipped": []
+        }
+      },
+      "source_identity": {
+        "candidate": "3fc528dae5a25b7ac3f0bcc9606b112ee23b7c6d",
+        "checked": 1337,
+        "forward_updated": [
+          "src/compute_provider_native/aten_cpu_provider.cc",
+          "tests/compute_provider_native/CMakeLists.txt",
+          "tests/compute_provider_native/aten_transformer_test.cc",
+          ".scratch/validation/cpu-aten-transformer-matrix/consumer.cc",
+          ".scratch/validation/cpu-aten-transformer-matrix/windows-overlay.cmake",
+          ".scratch/validation/cpu-aten-transformer-matrix/linux-overlay.cmake",
+          ".scratch/validation/cpu-aten-transformer-matrix/consumer/CMakeLists.txt"
+        ]
+      },
+      "latest_commands_passed": [
+        "batch-build",
+        "compute_route_cpu-affected-tests",
+        "configure",
+        "graph_route_cpu-affected-tests",
+        "provider-tests",
+        "public-header",
+        "shared-consumer-build",
+        "shared-consumer-configure",
+        "shared-install",
+        "shared-installed-ordinary",
+        "shared-producer-build",
+        "shared-producer-configure",
+        "shared-source-ordinary",
+        "static-consumer-build",
+        "static-consumer-configure",
+        "static-install",
+        "static-installed-ordinary",
+        "static-producer-build",
+        "static-producer-configure",
+        "static-source-ordinary"
+      ],
+      "cleanup": [
+        {
+          "path": "/root/hyle-scratch/cpu-ggml-isa-delivery/shared-tm-consumer",
+          "files": 24,
+          "logical_bytes": 3582872,
+          "removed": true
+        },
+        {
+          "path": "/root/hyle-scratch/cpu-ggml-isa-delivery/static-tm-consumer",
+          "files": 24,
+          "logical_bytes": 45624448,
+          "removed": true
+        }
+      ]
+    }
+  },
+  "loc": {
+    "code": 61493,
+    "files": 249,
+    "commit": "3fc528dae5a25b7ac3f0bcc9606b112ee23b7c6d"
+  },
+  "artifact": {
+    "file": "qualification.zip",
+    "entries": 95,
+    "bytes": 242867,
+    "sha256": "c653d281d96fede0161f2c023d7365030f4c32f6a1aad6d59d55aa59a2c2f08f"
+  }
+}

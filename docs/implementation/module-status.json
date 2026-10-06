@@ -423,10 +423,14 @@
     },
     {
       "module": "compute_provider_native",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/compute/cpu-aten-transformer-matrix-admission.md",
-      "summary": "TM1–4 CANDIDATE：原Tensor matrix/Bool-log-softmax/long RoPE/masked GQA/norm接线固定；Windows130/130、CPU12/1skip、Graph33/6skip。原库managed完整成本已显式，后续边界/两平台三交付未验，不CLOSED，自研性能冻结。",
-      "candidate": "3fc528dae5a25b7ac3f0bcc9606b112ee23b7c6d"
+      "summary": "TM1–4 CLOSED：原Tensor matrix/Bool-log-softmax/long RoPE/masked GQA/norm成熟接线；两平台134/134、CPU12/1skip、Graph33/6skip、头1/1、同ordinary Direct/Graph三交付及P0完成。仅本批，剩余资源域/Native自研裁决未完，SIMD本体保留。",
+      "candidate": "3fc528dae5a25b7ac3f0bcc9606b112ee23b7c6d",
+      "performance": {
+        "tier": "P0",
+        "evidence": "evidence/correctness/cpu-aten-transformer-matrix/README.md"
+      }
     },
     {
       "module": "compute_sched",

@@ -5,7 +5,7 @@
 - baseline：`155d1385c2b9a50eaa66a6c069b569f11daf4b03`，Windows canonical。用户要求：有成熟替代的所有自研算子都要裁决，
   不能因为低优先级后备就永久保留；只有唯一实现的精确域才直接保留。SIMD基础不删除。
 - owner：本卡保留SCOPED的冻结自研裁决ledger，不是当前产品owner授权。`compute_provider_native`
-  当前绑定[TM卡](cpu-aten-transformer-matrix-admission.md) CANDIDATE；ggml仍[TC卡](cpu-aten-cast-stable-route.md) CLOSED；`compute_route_cpu`、`graph_route_cpu`
+  当前绑定[TM卡](cpu-aten-transformer-matrix-admission.md) CLOSED；ggml仍[TC卡](cpu-aten-cast-stable-route.md) CLOSED；`compute_route_cpu`、`graph_route_cpu`
   当前绑定[SI卡](cpu-aten-storage-index-admission.md)并独立CLOSED；
   后续自研逐域裁决或新成熟接线需按新事实重新绑定owner并固定有限FIX。
   [标准CPU构建](../build/cpu-standard-provider-build-v1.md)与ggml优化程序接入已独立关闭，不能代替本卡。涉及oneDNN/ggml的具体接入修复，
@@ -147,3 +147,11 @@ NX已真实CLOSED：原oneDNN-labelled generic混合FFN route/artifact/执行和
 两平台同ordinary Direct/Graph FFN三交付、norm保留/并发/close/逐点cold OOM回滚通过。该缺陷属于
 HYLE SIMD提前舍入与错误成熟分类，不是oneDNN kernel性能或数学FAIL；未改SIMD本体/函数，
 也不宣布新的Native LOSS。旧NX CANDIDATE段为历史进展，当前以registry CLOSED为准。
+
+
+TM四族+norm已真实CLOSED：plain三floating显式F32的rank/stride MatMul、Bool/log/非dense Softmax，
+F32 I64/axis/layout/prefix RoPE、masked GQA/Dk-Dv/causal/emptykeys，以及norm byte-stride成熟候选均
+已接ATen并完成两平台普通Direct/Graph三交付。本页早期RoPE-I64/Bool-log/strided matrix等“待接”
+段是历史审计进展，当前以本段与TM record为准。不能因宽storage/原fused名字签新数学支持。
+剩余bounded/prepared-only/严格内存资源档与其它具名语义域仍须精确裁决；Native/SIMD性能比较和
+清退仍冻结，SIMD本体不删。本批P0不签Native的WIN/LOSS。

@@ -505,6 +505,19 @@ FP8有限saturation、Inf及NaN映射转换，不能把位copy当数值转换。
 稳定Sigmoid使用原Double kernel后F32/storage舍入。限定已锁Windows/Linux x86_64 SDK，
 当前批次资格见[Cast与稳定路由](../../evidence/correctness/cpu-aten-cast-stable-route/README.md)。
 
+ATen factory 还接 plain F32/F16/BF16 的 MatMul、Softmax／LogSoftmax、RMSNorm／LayerNorm
+和完整 SDPA math 程序：合法 byte stride、inferred dense output，矩阵 batch 广播和 K0，任意
+Softmax axis／scale、非零 Bool 或 floating additive mask，以及 SDPA 的 GQA、两种 layout、
+独立 Q/K 与 V depth、bottom-right causal 和零 key 无效行。累加保持 F32；窄 storage 显式
+声明 F32。RoPE 当前接 F32 data/frequency、I32/I64 positions、两种 pair layout 和完整 prefix／axis，
+未旋转 tail 保留原 bits。依赖和 SDK 平台同上，具体资格见
+[Transformer／矩阵接入](../implementation/tasks/compute/cpu-aten-transformer-matrix-admission.md)。
+
+这是 managed 原库程序，包含所有 packing、Float／Double 转换、GQA repeat、score/mask 与临时
+Tensor，内存上界未知。Torch 原 fused SDPA 的全 mask 行为不同，因此该通用候选使用满足
+公共合同的原 Tensor math 程序。Softmax／norm／RoPE 只接 equal-dense input0 的精确 alias；
+MatMul／SDPA 拒绝 alias，默认 prepare 仍绑定已有合法成熟域，不在执行时计时或搜索。
+
 CPU 默认入口也支持 `model_ops::block_quantization_roundtrip()` 的
 `kFloat8E4M3Block64` 与 `kFloat4E2M1Block32`，调用固定原版 ds4 CPU 程序。
 输入/输出是相同形状、独立存储的 dense BF16 矩阵，最后一维必须是相应分组的正整数倍；
