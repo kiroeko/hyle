@@ -1,6 +1,6 @@
 # CPU 成熟接线：ScatterAdd 索引域
 
-<!-- MODULE REVIEW: SCOPED -->
+<!-- MODULE REVIEW: AUDITED -->
 
 - owner `compute_provider_native`；baseline `214cb3d48cb39416e8540f7188249105cde58b10`，Windows canonical。
 - trigger：[资源域审计](../../../../evidence/correctness/cpu-resource-domain-audit/README.md)实证：
@@ -29,7 +29,7 @@
   同普通Direct/Graph变化输入与下游结果、source/static/shared Win/Linux；公开头沿既有边界检查，
   selector/closure/docs/diff与统一LOC。native物理OOM和noncoherent故障只审计传播，不虚构注入PASS。
 
-## 有限 FIX（待审计固定）
+## 有限 FIX（审计固定）
 
 | ID | 允许接缝 | 必需验收 |
 |---|---|---|
@@ -37,4 +37,9 @@
 | AS2 | private lifecycle与equal-dense input0 alias，checked失败终态 | 变化输入、独立invocation、越界无写/恢复、close/OOM/资源平衡 |
 | AS3 | 已有普通默认候选与Direct/Graph普通三交付 | mature身份、最终结果、完整managed成本/限制文档 |
 
-当前 SCOPED 不授权产品修改；审计固定后才进入 AUDITED。本卡不代签全CPU goal或性能WIN。
+原库156断言与公共合同/既有生命周期源码已核对。AS1–3固定BORROW/FIX，owner进入AUDITED；
+准入仅三floating数值，索引I32/I64。完整public rank/byte stride由已有packing承载，输出保持dense。
+Add使用F32 base/update与原index_add之后一次输出storage舍入，符合公共允许的更宽累加；没有排序、
+逐更新HYLE数学或alias扩大。empty indices直接原Byte copy，避免无计算时破坏base特殊值存储bits。
+现有legacy Gather/Assign index scratch不为Add重复分配；Add已有typed index lane足够，所有检查和
+原kernel/metadata成本仍归managed。本卡不代签全CPU goal或性能WIN。

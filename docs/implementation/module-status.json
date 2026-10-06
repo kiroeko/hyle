@@ -423,9 +423,9 @@
     },
     {
       "module": "compute_provider_native",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/cpu-aten-scatter-add-admission.md",
-      "summary": "AS SCOPED：资源域批量冷审计已完成；I64 ScatterAdd三浮点adapter遗漏由原ATen156断言证实，固定原index_add有限接线/生命周期/普通三交付范围；未改产品，Native/SIMD性能与清退仍冻结。"
+      "summary": "AS AUDITED：原ATen156断言、公共更宽Add语义与private packing/lifecycle已核对，AS1–3有限BORROW/FIX固定；三浮点I32/I64/axis/stride/duplicate/empty、checked失败/alias与普通两平台三交付为适用验收；自研比较清退冻结。"
     },
     {
       "module": "compute_sched",
