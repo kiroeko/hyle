@@ -30,7 +30,13 @@ struct Linear {ValueId output;Reference reference;};
 inline Linear linear(Fragment &f,ValueId input,std::int64_t n,std::int64_t k,bool bf16,int seed) {
   if(!bf16) {
     auto p=q::projection(f,input,n,k,c::GgufQuantizedType::kQ8_0,seed);
-    return {p.output,[p=std::move(p)](std::span<const float> x){return p.reference(x);}};
+    return {p.output,[p=std::move(p)](std::span<const float> x){
+      auto result=p.reference(x);
+      if(std::all_of(result.begin(),result.end(),[](float value){return value==0;}))
+        std::fprintf(stderr,"sidecar reference all zero: n=%lld k=%lld inputs=%zu weights=%zu first=%g\n",
+            static_cast<long long>(p.n),static_cast<long long>(p.k),x.size(),p.weight.storage.size(),x.empty()?0:x[0]);
+      return result;
+    }};
   }
   auto p=ds::linear::projection(f,input,n,k,ds::linear::Storage::kBFloat16,seed);
   return {p.output,[p=std::move(p),k](std::span<const float> x){
@@ -163,7 +169,10 @@ inline Fragment expert(const Model &model,int stage,moe::MoeReference *reference
 }
 
 struct Program {Fragment fragment;std::vector<std::vector<float>> hidden_reference{},normalized_reference{},markov_reference{};};
-inline Program complete(const Model &model) {
+inline Program complete(const Model &model,std::span<const float> embedding_actual,
+                         std::span<const float> embedding_expected,
+                         const std::array<std::vector<float>,3>& initial_actual,
+                         const std::array<std::vector<float>,3>& initial_expected) {
   Program result{Fragment{.profile=model.profile,.region=0x0c040122,.quantized=true}};auto &f=result.fragment;
   auto target=f.input(dense({1,3*h})),embedding=f.input(dense({t,h}));
   auto token=f.input(dense({t},c::DataType::kInt32));
@@ -200,14 +209,13 @@ inline Program complete(const Model &model) {
   f.outputs={state,next[0],next[1],next[2],collapsed,normalized,markov,confidence};f.exact_outputs={6};
   f.state_ports={{7,1},{8,2},{9,3}};
   std::array<std::vector<float>,3> cache;
-  for(auto &entry:cache)entry=d5_gguf_test::activation(window*512,23);
-  const auto initial=cache;
+  const auto initial=initial_expected;cache=initial;
   for(int step=0;step<3;++step) {
     const bool reset=step!=1;if(reset)cache=initial;
-    const std::int32_t position=128+step%2;std::vector<std::int32_t> dp(t);std::iota(dp.begin(),dp.end(),position+1);
+    const std::int32_t position=129+step%2;std::vector<std::int32_t> dp(t);std::iota(dp.begin(),dp.end(),position+1);
     std::vector<std::uint8_t> write(window);write[position%window]=1;
     auto targets=d5_gguf_test::activation(3*h,17+step*7);
-    std::vector<float> embed(t*h);for(std::size_t i=0;i<embed.size();++i)embed[i]=0.25F+float((i+step)%11)/64;
+    std::vector<float> embed(embedding_expected.begin(),embedding_expected.end());
     std::vector<float> states(t*4*h);for(std::int64_t row=0;row<t;++row)for(int stream=0;stream<4;++stream)
       std::copy_n(embed.data()+row*h,h,states.data()+(row*4+stream)*h);
     auto main_ref=norm_ref(main_proj.reference(targets),scale);
@@ -235,9 +243,9 @@ inline Program complete(const Model &model) {
       joined.insert(joined.end(),m.begin()+row*r,m.begin()+(row+1)*r);
     }
     auto confidence_ref=conf.reference(joined);for(auto &value:confidence_ref)value=float(core::sigmoid(value));
-    sem::Replay replay{{bytes(targets),bytes(embed),bytes(tokens),bytes(std::vector<std::int32_t>{position}),bytes(dp),bytes(write),bytes(std::vector<float>(t*(window+t)))},
+    sem::Replay replay{{bytes(targets),bytes<float>(embedding_actual),bytes(tokens),bytes(std::vector<std::int32_t>{position}),bytes(dp),bytes(write),bytes(std::vector<float>(t*(window+t)))},
         {states,cache[0],cache[1],cache[2],collapsed_ref,normed,m,confidence_ref}};
-    for(const auto &entry:initial)replay.inputs.push_back(bytes(reset?entry:std::vector<float>(entry.size(),23)));
+    for(const auto &entry:initial_actual)replay.inputs.push_back(bytes(reset?entry:std::vector<float>(entry.size(),23)));
     replay.reset_state=reset;f.replays.push_back(std::move(replay));
     result.hidden_reference.push_back(std::move(collapsed_ref));result.normalized_reference.push_back(std::move(normed));result.markov_reference.push_back(std::move(m));
   }return result;
@@ -297,9 +305,15 @@ inline Fragment target_embedding(const Model &model) {
 }
 
 template<class Run> void check(const Model &model,Run run) {
-  run(prefill(model));ASSERT_FALSE(::testing::Test::HasFailure());
-  run(target_embedding(model));ASSERT_FALSE(::testing::Test::HasFailure());
-  auto program=complete(model);std::vector<std::vector<float>> observed,markov;
+  auto p=prefill(model);std::array<std::vector<float>,3> cache_actual,cache_expected;
+  for(std::size_t port=0;port<3;++port)cache_expected[port]=p.replays[0].outputs[port];
+  p.observe=[&](std::size_t port,std::span<const float> values){cache_actual[port].assign(values.begin(),values.end());};
+  run(std::move(p));ASSERT_FALSE(::testing::Test::HasFailure());
+  auto e=target_embedding(model);auto embedding_expected=e.replays[0].outputs[0];std::vector<float> embedding_actual;
+  e.observe=[&](std::size_t,std::span<const float> values){embedding_actual.assign(values.begin(),values.end());};
+  run(std::move(e));ASSERT_FALSE(::testing::Test::HasFailure());
+  auto program=complete(model,embedding_actual,embedding_expected,cache_actual,cache_expected);
+  std::vector<std::vector<float>> observed,markov;
   program.fragment.observe=[&](std::size_t port,std::span<const float> values){
     if(port==5)observed.emplace_back(values.begin(),values.end());
     if(port==6)markov.emplace_back(values.begin(),values.end());
