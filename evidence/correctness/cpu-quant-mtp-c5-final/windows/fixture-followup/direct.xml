@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites tests="7" failures="0" disabled="0" errors="0" time="1.687" timestamp="2026-10-07T04:13:01.235" name="AllTests">
+  <testsuite name="CpuDefaultContext" tests="1" failures="0" disabled="0" skipped="0" errors="0" time="0.011" timestamp="2026-10-07T04:13:01.235">
+    <testcase name="D5RealQwenProjectionUsesExactProfileAndReplays" file="C:\public\project-hyle\hyle\tests\compute_route_cpu\context_test.cc" line="427" status="run" result="completed" time="0.01" timestamp="2026-10-07T04:13:01.235" classname="CpuDefaultContext" />
+  </testsuite>
+  <testsuite name="CpuDefaultDirect" tests="5" failures="0" disabled="0" skipped="0" errors="0" time="0.104" timestamp="2026-10-07T04:13:01.246">
+    <testcase name="D5Qwen35OfficialEmbeddingNormHeadAndFailureUsePreparedCalls" file="C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen35_profile_test.cc" line="264" status="run" result="completed" time="0.001" timestamp="2026-10-07T04:13:01.246" classname="CpuDefaultDirect" />
+    <testcase name="D5Qwen35OfficialFfnUsesMaturePreparedCalls" file="C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen35_profile_test.cc" line="406" status="run" result="completed" time="0.079" timestamp="2026-10-07T04:13:01.248" classname="CpuDefaultDirect" />
+    <testcase name="D5Qwen35OfficialGqaNormRopeAndAttentionUsePreparedCalls" file="C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen35_profile_test.cc" line="514" status="run" result="completed" time="0." timestamp="2026-10-07T04:13:01.328" classname="CpuDefaultDirect" />
+    <testcase name="D5Qwen35OfficialCausalConvAndGdnUsePreparedCalls" file="C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen35_profile_test.cc" line="652" status="run" result="completed" time="0.006" timestamp="2026-10-07T04:13:01.329" classname="CpuDefaultDirect" />
+    <testcase name="D5Qwen35OfficialMtpAndBfloatBoundaryUsePreparedCalls" file="C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen35_profile_test.cc" line="809" status="run" result="completed" time="0.015" timestamp="2026-10-07T04:13:01.335" classname="CpuDefaultDirect" />
+  </testsuite>
+  <testsuite name="CpuQwenRecurrent" tests="1" failures="0" disabled="0" skipped="0" errors="0" time="1.571" timestamp="2026-10-07T04:13:01.351">
+    <testcase name="D5NineProfilesUseCompleteGateAndActualStateFeedback" file="C:\public\project-hyle\hyle\tests\compute_route_cpu\d5_qwen38_official_test.cc" line="1328" status="run" result="completed" time="1.571" timestamp="2026-10-07T04:13:01.351" classname="CpuQwenRecurrent" />
+  </testsuite>
+</testsuites>

@@ -23,6 +23,7 @@
 #include "../compute_models/cpu_c4_flash_sidecars.h"
 #include "../compute_models/cpu_c5_gguf_fixture.h"
 #include "../compute_models/cpu_c5_non_gguf_fixture.h"
+#include "../compute_models/cpu_c5_parameter_fragments.h"
 #include "../compute_models/d5_kda_full_fragments.h"
 #include "../compute_models/d5_kimi_remaining_fragments.h"
 #include "../compute_models/d5_glm_remaining_fragments.h"
@@ -1100,6 +1101,7 @@ TEST(CpuMoeFragments, D5OfficialFullMoeColdBoundary) {
 #include "../compute_models/cpu_c4_model_branch_tests.h"
 #include "../compute_models/cpu_c5_gguf_tests.h"
 #include "../compute_models/cpu_c5_non_gguf_tests.h"
+#include "../compute_models/cpu_c5_parameter_tests.h"
 #endif
 
 TEST(CpuMoeFragments, D5OfficialFp4ExpertBatch) {

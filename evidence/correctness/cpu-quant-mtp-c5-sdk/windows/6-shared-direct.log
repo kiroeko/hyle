@@ -1,0 +1,29 @@
+Running main() from C:\Users\kiro\AppData\Local\hyle\dependencies\v1\sources\googletest-063de7e9578f-162765170ae6\googletest\src\gtest_main.cc
+Note: Google Test filter = *CpuC5ActualGguf*.ActualRoleAndWidthUseOriginalCodecAcrossReplay/g2fcad3816188464a:*CpuC5ActualGguf*.ActualRoleAndWidthUseOriginalCodecAcrossReplay/g9d504e80cbfefb7f:*CpuC5ActualNonGguf*.ActualPackingAndWidthUseOriginalProgramAcrossReplay/n2af37225831ba519:*CpuC5ActualNonGguf*.ActualPackingAndWidthUseOriginalProgramAcrossReplay/n2208fbb06e447168:*CpuC5ActualNonGguf*.ActualPackingAndWidthUseOriginalProgramAcrossReplay/n33d5fe29fed560af:*CpuC5ActualNonGguf*.ActualPackingAndWidthUseOriginalProgramAcrossReplay/n85a9768ce0cfbe9d:*CpuC5ActualNonGguf*.ActualPackingAndWidthUseOriginalProgramAcrossReplay/n11ac28dbeaa21a76:*CpuC5ActualNonGguf*.ActualPackingAndWidthUseOriginalProgramAcrossReplay/n1a02d912dccfbfcc
+[==========] Running 8 tests from 2 test suites.
+[----------] Global test environment set-up.
+[----------] 2 tests from C5HeaderContracts/CpuC5ActualGguf
+[ RUN      ] C5HeaderContracts/CpuC5ActualGguf.ActualRoleAndWidthUseOriginalCodecAcrossReplay/g2fcad3816188464a
+[       OK ] C5HeaderContracts/CpuC5ActualGguf.ActualRoleAndWidthUseOriginalCodecAcrossReplay/g2fcad3816188464a (17 ms)
+[ RUN      ] C5HeaderContracts/CpuC5ActualGguf.ActualRoleAndWidthUseOriginalCodecAcrossReplay/g9d504e80cbfefb7f
+[       OK ] C5HeaderContracts/CpuC5ActualGguf.ActualRoleAndWidthUseOriginalCodecAcrossReplay/g9d504e80cbfefb7f (849 ms)
+[----------] 2 tests from C5HeaderContracts/CpuC5ActualGguf (867 ms total)
+
+[----------] 6 tests from C5PackedContracts/CpuC5ActualNonGguf
+[ RUN      ] C5PackedContracts/CpuC5ActualNonGguf.ActualPackingAndWidthUseOriginalProgramAcrossReplay/n11ac28dbeaa21a76
+[       OK ] C5PackedContracts/CpuC5ActualNonGguf.ActualPackingAndWidthUseOriginalProgramAcrossReplay/n11ac28dbeaa21a76 (202 ms)
+[ RUN      ] C5PackedContracts/CpuC5ActualNonGguf.ActualPackingAndWidthUseOriginalProgramAcrossReplay/n1a02d912dccfbfcc
+[       OK ] C5PackedContracts/CpuC5ActualNonGguf.ActualPackingAndWidthUseOriginalProgramAcrossReplay/n1a02d912dccfbfcc (36 ms)
+[ RUN      ] C5PackedContracts/CpuC5ActualNonGguf.ActualPackingAndWidthUseOriginalProgramAcrossReplay/n2208fbb06e447168
+[       OK ] C5PackedContracts/CpuC5ActualNonGguf.ActualPackingAndWidthUseOriginalProgramAcrossReplay/n2208fbb06e447168 (808 ms)
+[ RUN      ] C5PackedContracts/CpuC5ActualNonGguf.ActualPackingAndWidthUseOriginalProgramAcrossReplay/n2af37225831ba519
+[       OK ] C5PackedContracts/CpuC5ActualNonGguf.ActualPackingAndWidthUseOriginalProgramAcrossReplay/n2af37225831ba519 (0 ms)
+[ RUN      ] C5PackedContracts/CpuC5ActualNonGguf.ActualPackingAndWidthUseOriginalProgramAcrossReplay/n33d5fe29fed560af
+[       OK ] C5PackedContracts/CpuC5ActualNonGguf.ActualPackingAndWidthUseOriginalProgramAcrossReplay/n33d5fe29fed560af (267 ms)
+[ RUN      ] C5PackedContracts/CpuC5ActualNonGguf.ActualPackingAndWidthUseOriginalProgramAcrossReplay/n85a9768ce0cfbe9d
+[       OK ] C5PackedContracts/CpuC5ActualNonGguf.ActualPackingAndWidthUseOriginalProgramAcrossReplay/n85a9768ce0cfbe9d (6 ms)
+[----------] 6 tests from C5PackedContracts/CpuC5ActualNonGguf (1321 ms total)
+
+[----------] Global test environment tear-down
+[==========] 8 tests from 2 test suites ran. (2188 ms total)
+[  PASSED  ] 8 tests.

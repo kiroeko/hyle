@@ -1,0 +1,21 @@
+{
+  "candidate": "46a55325a465a94da3d79d2e5e92b0cb6b2cfb62",
+  "platform": "windows",
+  "checks": 32,
+  "SDK": "reinstalled static/shared CPU-only0.26 for the changed large-encoded-table admission",
+  "linkage": "find_package installed Hyle only; static oracle uses installed exported ggml, shared oracle uses matching original static archives",
+  "scope": [
+    "real2.16GB Q8_0 embedding with full vocabulary bounds/replay/failure recovery",
+    "I32 hash table remains integer",
+    "six original compressed-format families at actual reduction/output width"
+  ],
+  "reused": [
+    "unmodified C3 SDK relocated paths/asset/cache contracts",
+    "C4 source full branch and installed composition qualification"
+  ],
+  "remaining": [
+    "other platform updated SDK",
+    "required-region/parameter reconciliation",
+    "full applicable gates and final closure"
+  ]
+}

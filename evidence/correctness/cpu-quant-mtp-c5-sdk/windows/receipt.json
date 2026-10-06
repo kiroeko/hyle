@@ -1,0 +1,216 @@
+[
+  {
+    "name": "shared-producer-configure",
+    "args": [
+      "cmake",
+      "-S",
+      "C:\\public\\project-hyle\\hyle",
+      "-B",
+      "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+      "-DHYLE_BUILD_TESTS=OFF",
+      "-DHYLE_INSTALL=ON",
+      "-DHYLE_STATIC=OFF",
+      "-DFETCHCONTENT_FULLY_DISCONNECTED=ON"
+    ],
+    "candidate": "46a55325a465a94da3d79d2e5e92b0cb6b2cfb62",
+    "log": "1-shared-producer-configure.log",
+    "returncode": 0,
+    "seconds": 28.906
+  },
+  {
+    "name": "shared-producer-build",
+    "args": [
+      "cmake",
+      "--build",
+      "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+      "--parallel",
+      "2"
+    ],
+    "candidate": "46a55325a465a94da3d79d2e5e92b0cb6b2cfb62",
+    "log": "2-shared-producer-build.log",
+    "returncode": 0,
+    "seconds": 140.828
+  },
+  {
+    "name": "shared-install",
+    "args": [
+      "cmake",
+      "--install",
+      "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+      "--prefix",
+      "C:\\public\\project-hyle\\hyle\\.scratch\\install-cpu-coverage-c3\\shared-relocated"
+    ],
+    "candidate": "46a55325a465a94da3d79d2e5e92b0cb6b2cfb62",
+    "log": "3-shared-install.log",
+    "returncode": 0,
+    "seconds": 2.25
+  },
+  {
+    "name": "shared-consumer-configure",
+    "args": [
+      "cmake",
+      "-S",
+      "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\cpu-coverage-c5-sdk",
+      "-B",
+      "C:\\public\\project-hyle\\hyle\\.scratch\\build-cpu-coverage-c5-sdk\\shared",
+      "-G",
+      "Ninja",
+      "-DCMAKE_BUILD_TYPE=Release",
+      "-DCMAKE_PREFIX_PATH=C:\\public\\project-hyle\\hyle\\.scratch\\install-cpu-coverage-c3\\shared-relocated",
+      "-DHYLE_TEST_REPO=C:\\public\\project-hyle\\hyle",
+      "-DHYLE_ORACLE_BUILD=C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+      "-DHYLE_ORACLE_SOURCE=C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\src\\compute_ggml_runtime\\source-bdae1e43311ee486",
+      "-DHYLE_GTEST_SOURCE=C:\\Users\\kiro\\AppData\\Local\\hyle\\dependencies\\v1\\sources\\googletest-063de7e9578f-162765170ae6",
+      "-DFETCHCONTENT_FULLY_DISCONNECTED=ON"
+    ],
+    "candidate": "46a55325a465a94da3d79d2e5e92b0cb6b2cfb62",
+    "log": "4-shared-consumer-configure.log",
+    "returncode": 0,
+    "seconds": 13.125
+  },
+  {
+    "name": "shared-consumer-build",
+    "args": [
+      "cmake",
+      "--build",
+      "C:\\public\\project-hyle\\hyle\\.scratch\\build-cpu-coverage-c5-sdk\\shared",
+      "--parallel",
+      "2"
+    ],
+    "candidate": "46a55325a465a94da3d79d2e5e92b0cb6b2cfb62",
+    "log": "5-shared-consumer-build.log",
+    "returncode": 0,
+    "seconds": 13.016
+  },
+  {
+    "name": "shared-direct",
+    "args": [
+      "C:\\public\\project-hyle\\hyle\\.scratch\\build-cpu-coverage-c5-sdk\\shared\\direct\\cpu_branch_direct.exe",
+      "--gtest_filter=*CpuC5ActualGguf*.ActualRoleAndWidthUseOriginalCodecAcrossReplay/g2fcad3816188464a:*CpuC5ActualGguf*.ActualRoleAndWidthUseOriginalCodecAcrossReplay/g9d504e80cbfefb7f:*CpuC5ActualNonGguf*.ActualPackingAndWidthUseOriginalProgramAcrossReplay/n2af37225831ba519:*CpuC5ActualNonGguf*.ActualPackingAndWidthUseOriginalProgramAcrossReplay/n2208fbb06e447168:*CpuC5ActualNonGguf*.ActualPackingAndWidthUseOriginalProgramAcrossReplay/n33d5fe29fed560af:*CpuC5ActualNonGguf*.ActualPackingAndWidthUseOriginalProgramAcrossReplay/n85a9768ce0cfbe9d:*CpuC5ActualNonGguf*.ActualPackingAndWidthUseOriginalProgramAcrossReplay/n11ac28dbeaa21a76:*CpuC5ActualNonGguf*.ActualPackingAndWidthUseOriginalProgramAcrossReplay/n1a02d912dccfbfcc",
+      "--gtest_output=xml:C:\\public\\project-hyle\\hyle\\.scratch\\validation\\cpu-coverage-c5-sdk\\windows\\46a55325a465\\shared-direct.xml"
+    ],
+    "candidate": "46a55325a465a94da3d79d2e5e92b0cb6b2cfb62",
+    "log": "6-shared-direct.log",
+    "returncode": 0,
+    "seconds": 3.156
+  },
+  {
+    "name": "shared-graph",
+    "args": [
+      "C:\\public\\project-hyle\\hyle\\.scratch\\build-cpu-coverage-c5-sdk\\shared\\graph\\cpu_branch_graph.exe",
+      "--gtest_filter=*CpuGraphC5ActualGguf*.ActualRoleAndWidthUseOriginalCodecAcrossReplay/g2fcad3816188464a:*CpuGraphC5ActualGguf*.ActualRoleAndWidthUseOriginalCodecAcrossReplay/g9d504e80cbfefb7f:*CpuGraphC5ActualNonGguf*.ActualPackingAndWidthUseOriginalProgramAcrossReplay/n2af37225831ba519:*CpuGraphC5ActualNonGguf*.ActualPackingAndWidthUseOriginalProgramAcrossReplay/n2208fbb06e447168:*CpuGraphC5ActualNonGguf*.ActualPackingAndWidthUseOriginalProgramAcrossReplay/n33d5fe29fed560af:*CpuGraphC5ActualNonGguf*.ActualPackingAndWidthUseOriginalProgramAcrossReplay/n85a9768ce0cfbe9d:*CpuGraphC5ActualNonGguf*.ActualPackingAndWidthUseOriginalProgramAcrossReplay/n11ac28dbeaa21a76:*CpuGraphC5ActualNonGguf*.ActualPackingAndWidthUseOriginalProgramAcrossReplay/n1a02d912dccfbfcc",
+      "--gtest_output=xml:C:\\public\\project-hyle\\hyle\\.scratch\\validation\\cpu-coverage-c5-sdk\\windows\\46a55325a465\\shared-graph.xml"
+    ],
+    "candidate": "46a55325a465a94da3d79d2e5e92b0cb6b2cfb62",
+    "log": "7-shared-graph.log",
+    "returncode": 0,
+    "seconds": 3.109
+  },
+  {
+    "name": "static-producer-configure",
+    "args": [
+      "cmake",
+      "-S",
+      "C:\\public\\project-hyle\\hyle",
+      "-B",
+      "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+      "-DHYLE_BUILD_TESTS=OFF",
+      "-DHYLE_INSTALL=ON",
+      "-DHYLE_STATIC=ON",
+      "-DFETCHCONTENT_FULLY_DISCONNECTED=ON"
+    ],
+    "candidate": "46a55325a465a94da3d79d2e5e92b0cb6b2cfb62",
+    "log": "8-static-producer-configure.log",
+    "returncode": 0,
+    "seconds": 42.328
+  },
+  {
+    "name": "static-producer-build",
+    "args": [
+      "cmake",
+      "--build",
+      "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+      "--parallel",
+      "2"
+    ],
+    "candidate": "46a55325a465a94da3d79d2e5e92b0cb6b2cfb62",
+    "log": "9-static-producer-build.log",
+    "returncode": 0,
+    "seconds": 141.547
+  },
+  {
+    "name": "static-install",
+    "args": [
+      "cmake",
+      "--install",
+      "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+      "--prefix",
+      "C:\\public\\project-hyle\\hyle\\.scratch\\install-cpu-coverage-c3\\static-relocated"
+    ],
+    "candidate": "46a55325a465a94da3d79d2e5e92b0cb6b2cfb62",
+    "log": "10-static-install.log",
+    "returncode": 0,
+    "seconds": 1.687
+  },
+  {
+    "name": "static-consumer-configure",
+    "args": [
+      "cmake",
+      "-S",
+      "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\cpu-coverage-c5-sdk",
+      "-B",
+      "C:\\public\\project-hyle\\hyle\\.scratch\\build-cpu-coverage-c5-sdk\\static",
+      "-G",
+      "Ninja",
+      "-DCMAKE_BUILD_TYPE=Release",
+      "-DCMAKE_PREFIX_PATH=C:\\public\\project-hyle\\hyle\\.scratch\\install-cpu-coverage-c3\\static-relocated",
+      "-DHYLE_TEST_REPO=C:\\public\\project-hyle\\hyle",
+      "-DHYLE_ORACLE_BUILD=C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+      "-DHYLE_ORACLE_SOURCE=C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\src\\compute_ggml_runtime\\source-bdae1e43311ee486",
+      "-DHYLE_GTEST_SOURCE=C:\\Users\\kiro\\AppData\\Local\\hyle\\dependencies\\v1\\sources\\googletest-063de7e9578f-162765170ae6",
+      "-DFETCHCONTENT_FULLY_DISCONNECTED=ON"
+    ],
+    "candidate": "46a55325a465a94da3d79d2e5e92b0cb6b2cfb62",
+    "log": "11-static-consumer-configure.log",
+    "returncode": 0,
+    "seconds": 12.985
+  },
+  {
+    "name": "static-consumer-build",
+    "args": [
+      "cmake",
+      "--build",
+      "C:\\public\\project-hyle\\hyle\\.scratch\\build-cpu-coverage-c5-sdk\\static",
+      "--parallel",
+      "2"
+    ],
+    "candidate": "46a55325a465a94da3d79d2e5e92b0cb6b2cfb62",
+    "log": "12-static-consumer-build.log",
+    "returncode": 0,
+    "seconds": 13.687
+  },
+  {
+    "name": "static-direct",
+    "args": [
+      "C:\\public\\project-hyle\\hyle\\.scratch\\build-cpu-coverage-c5-sdk\\static\\direct\\cpu_branch_direct.exe",
+      "--gtest_filter=*CpuC5ActualGguf*.ActualRoleAndWidthUseOriginalCodecAcrossReplay/g2fcad3816188464a:*CpuC5ActualGguf*.ActualRoleAndWidthUseOriginalCodecAcrossReplay/g9d504e80cbfefb7f:*CpuC5ActualNonGguf*.ActualPackingAndWidthUseOriginalProgramAcrossReplay/n2af37225831ba519:*CpuC5ActualNonGguf*.ActualPackingAndWidthUseOriginalProgramAcrossReplay/n2208fbb06e447168:*CpuC5ActualNonGguf*.ActualPackingAndWidthUseOriginalProgramAcrossReplay/n33d5fe29fed560af:*CpuC5ActualNonGguf*.ActualPackingAndWidthUseOriginalProgramAcrossReplay/n85a9768ce0cfbe9d:*CpuC5ActualNonGguf*.ActualPackingAndWidthUseOriginalProgramAcrossReplay/n11ac28dbeaa21a76:*CpuC5ActualNonGguf*.ActualPackingAndWidthUseOriginalProgramAcrossReplay/n1a02d912dccfbfcc",
+      "--gtest_output=xml:C:\\public\\project-hyle\\hyle\\.scratch\\validation\\cpu-coverage-c5-sdk\\windows\\46a55325a465\\static-direct.xml"
+    ],
+    "candidate": "46a55325a465a94da3d79d2e5e92b0cb6b2cfb62",
+    "log": "13-static-direct.log",
+    "returncode": 0,
+    "seconds": 3.141
+  },
+  {
+    "name": "static-graph",
+    "args": [
+      "C:\\public\\project-hyle\\hyle\\.scratch\\build-cpu-coverage-c5-sdk\\static\\graph\\cpu_branch_graph.exe",
+      "--gtest_filter=*CpuGraphC5ActualGguf*.ActualRoleAndWidthUseOriginalCodecAcrossReplay/g2fcad3816188464a:*CpuGraphC5ActualGguf*.ActualRoleAndWidthUseOriginalCodecAcrossReplay/g9d504e80cbfefb7f:*CpuGraphC5ActualNonGguf*.ActualPackingAndWidthUseOriginalProgramAcrossReplay/n2af37225831ba519:*CpuGraphC5ActualNonGguf*.ActualPackingAndWidthUseOriginalProgramAcrossReplay/n2208fbb06e447168:*CpuGraphC5ActualNonGguf*.ActualPackingAndWidthUseOriginalProgramAcrossReplay/n33d5fe29fed560af:*CpuGraphC5ActualNonGguf*.ActualPackingAndWidthUseOriginalProgramAcrossReplay/n85a9768ce0cfbe9d:*CpuGraphC5ActualNonGguf*.ActualPackingAndWidthUseOriginalProgramAcrossReplay/n11ac28dbeaa21a76:*CpuGraphC5ActualNonGguf*.ActualPackingAndWidthUseOriginalProgramAcrossReplay/n1a02d912dccfbfcc",
+      "--gtest_output=xml:C:\\public\\project-hyle\\hyle\\.scratch\\validation\\cpu-coverage-c5-sdk\\windows\\46a55325a465\\static-graph.xml"
+    ],
+    "candidate": "46a55325a465a94da3d79d2e5e92b0cb6b2cfb62",
+    "log": "14-static-graph.log",
+    "returncode": 0,
+    "seconds": 3.0
+  }
+]

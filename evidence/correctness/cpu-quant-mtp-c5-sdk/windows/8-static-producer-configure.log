@@ -1,0 +1,58 @@
+-- HYLE products: requested='compute,graph,simd' available='core,error,simd,math,compute,graph' factors='core,container_intrusive,util_core,error,time,math,platform,platform_thread,mem,simd,container,compute_ops,compute,graph,compute_provider_onednn,compute_backend_cpu,compute_ggml_runtime,compute_provider_ggml,graph_provider_onednn,compute_backend_cuda,compute_provider_native,compute_route_cpu,graph_route_cpu,compute_provider_cublas,compute_provider_cuda,compute_provider_flashinfer,compute_provider_ggml_cuda,compute_route_cuda,graph_provider_ggml_cuda,graph_route_cuda,compute_provider_ggml_metal,compute_route_apple,graph_route_apple,compute_provider_ggml_vulkan,compute_provider_iree_vulkan,compute_route_vulkan,graph_route_vulkan'
+-- HYLE_SANITIZER = off
+-- HYLE_TESTING = OFF (test-only interfaces stripped -- zero in shipped lib)
+CMake Warning (deprecated) at C:/Users/kiro/AppData/Local/hyle/dependencies/v1/sources/onednn-71094df45190-7ee703ecda81/CMakeLists.txt:36 (cmake_policy):
+  The OLD behavior for policy CMP0146 will be removed from a future version
+  of CMake.
+
+  The cmake-policies(7) manual explains that the OLD behaviors of all
+  policies are deprecated and that a policy should be set to OLD only under
+  specific short-term circumstances.  Projects should be ported to the NEW
+  behavior and not rely on setting a policy to OLD.
+This warning is for project developers.  Use -Wno-author or -Wno-deprecated
+to suppress it.
+
+-- DNNL_TARGET_ARCH: X64
+-- ONEDNN_LIBRARY_TYPE: STATIC (default: SHARED)
+-- ONEDNN_BUILD_GRAPH: OFF (default: ON)
+-- ONEDNN_ENABLE_CONCURRENT_EXEC: ON (default: OFF)
+-- ONEDNN_ENABLE_PRIMITIVE_CACHE: OFF (default: ON)
+-- ONEDNN_ENABLE_WORKLOAD: INFERENCE (default: TRAINING)
+-- ONEDNN_ENABLE_PRIMITIVE: MATMUL;LAYER_NORMALIZATION;BINARY;ELTWISE;REORDER (default: ALL)
+-- ONEDNN_EXPERIMENTAL_UKERNEL: ON (default: OFF)
+-- ONEDNN_ENABLE_JIT_PROFILING: OFF (default: ON)
+-- ONEDNN_ENABLE_ITT_TASKS: OFF (default: ON)
+-- ONEDNN_VERBOSE: OFF (default: ON)
+-- ONEDNN_CPU_RUNTIME: THREADPOOL (default: OMP)
+-- ONEDNN_ENABLE_MAX_CPU_ISA: OFF (default: ON)
+-- ONEDNN_ENABLE_CPU_ISA_HINTS: OFF (default: ON)
+-- Threadpool testing: standalone
+-- Found OpenCL headers: C:/Users/kiro/AppData/Local/hyle/dependencies/v1/sources/onednn-71094df45190-7ee703ecda81/third_party/opencl
+-- Enabled testing coverage: CI
+-- Enabled workload: INFERENCE
+-- Enabled primitives: MATMUL;LAYER_NORMALIZATION;BINARY;ELTWISE;REORDER
+-- Enabled primitive CPU ISA: ALL
+-- Enabled primitive GPU ISA: ALL
+-- Enabled GeMM kernels ISA: ALL
+-- Primitive cache is disabled
+-- Experimental functionality for ukernels is enabled
+-- HYLE: oneDNN v3.13.2 -- x64 BRGEMM, normalization and tensor primitives enabled
+-- HYLE: CUDA backend OFF -- system SDK probe skipped
+-- HYLE: Apple route OFF -- MLX and Metal probe/download skipped
+-- HYLE: Vulkan route OFF -- SDK and shader probes/downloads skipped
+-- ggml source: 2319 files, 11 exact patches
+
+-- CMAKE_SYSTEM_PROCESSOR: AMD64
+-- CMAKE_GENERATOR_PLATFORM: 
+-- GGML_SYSTEM_ARCH: x86
+-- Including CPU backend
+-- x86 detected
+-- Adding CPU backend variant ggml-cpu:  
+-- ggml version: 0.26.0
+-- ggml commit:  ffa4e8b80930029a35991f94e7c8a93cd67730ab-hyle
+-- HYLE: original TorchAO/ATen CPU low precision -- LibTorch 2.8.0+cpu
+-- HYLE_TRACE = OFF (hooks compile to nothing -- zero cost)
+-- HYLE 0.1.0 | MSVC 19.50.35728.0 | C++23 | sanitizer=off | linkage=static | products=core,error,simd,math,compute,graph | factors=core,container_intrusive,util_core,error,time,math,platform,platform_thread,mem,simd,container,compute_ops,compute,graph,compute_provider_onednn,compute_backend_cpu,compute_ggml_runtime,compute_provider_ggml,graph_provider_onednn,compute_backend_cuda,compute_provider_native,compute_route_cpu,graph_route_cpu,compute_provider_cublas,compute_provider_cuda,compute_provider_flashinfer,compute_provider_ggml_cuda,compute_route_cuda,graph_provider_ggml_cuda,graph_route_cuda,compute_provider_ggml_metal,compute_route_apple,graph_route_apple,compute_provider_ggml_vulkan,compute_provider_iree_vulkan,compute_route_vulkan,graph_route_vulkan
+-- Configuring done (41.9s)
+-- Generating done (0.4s)
+-- Build files have been written to: C:/public/project-hyle/hyle/.scratch/build-compute-v2-dev

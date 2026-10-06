@@ -1,0 +1,30 @@
+Running main() from C:\Users\kiro\AppData\Local\hyle\dependencies\v1\sources\googletest-063de7e9578f-162765170ae6\googletest\src\gtest_main.cc
+Note: Google Test filter = CpuDefaultContext.D5RealQwenProjectionUsesExactProfileAndReplays:CpuDefaultDirect.D5Qwen35OfficialEmbeddingNormHeadAndFailureUsePreparedCalls:CpuDefaultDirect.D5Qwen35OfficialFfnUsesMaturePreparedCalls:CpuDefaultDirect.D5Qwen35OfficialGqaNormRopeAndAttentionUsePreparedCalls:CpuDefaultDirect.D5Qwen35OfficialCausalConvAndGdnUsePreparedCalls:CpuDefaultDirect.D5Qwen35OfficialMtpAndBfloatBoundaryUsePreparedCalls:CpuQwenRecurrent.D5NineProfilesUseCompleteGateAndActualStateFeedback
+[==========] Running 7 tests from 3 test suites.
+[----------] Global test environment set-up.
+[----------] 1 test from CpuDefaultContext
+[ RUN      ] CpuDefaultContext.D5RealQwenProjectionUsesExactProfileAndReplays
+[       OK ] CpuDefaultContext.D5RealQwenProjectionUsesExactProfileAndReplays (10 ms)
+[----------] 1 test from CpuDefaultContext (11 ms total)
+
+[----------] 5 tests from CpuDefaultDirect
+[ RUN      ] CpuDefaultDirect.D5Qwen35OfficialEmbeddingNormHeadAndFailureUsePreparedCalls
+[       OK ] CpuDefaultDirect.D5Qwen35OfficialEmbeddingNormHeadAndFailureUsePreparedCalls (1 ms)
+[ RUN      ] CpuDefaultDirect.D5Qwen35OfficialFfnUsesMaturePreparedCalls
+[       OK ] CpuDefaultDirect.D5Qwen35OfficialFfnUsesMaturePreparedCalls (79 ms)
+[ RUN      ] CpuDefaultDirect.D5Qwen35OfficialGqaNormRopeAndAttentionUsePreparedCalls
+[       OK ] CpuDefaultDirect.D5Qwen35OfficialGqaNormRopeAndAttentionUsePreparedCalls (0 ms)
+[ RUN      ] CpuDefaultDirect.D5Qwen35OfficialCausalConvAndGdnUsePreparedCalls
+[       OK ] CpuDefaultDirect.D5Qwen35OfficialCausalConvAndGdnUsePreparedCalls (6 ms)
+[ RUN      ] CpuDefaultDirect.D5Qwen35OfficialMtpAndBfloatBoundaryUsePreparedCalls
+[       OK ] CpuDefaultDirect.D5Qwen35OfficialMtpAndBfloatBoundaryUsePreparedCalls (15 ms)
+[----------] 5 tests from CpuDefaultDirect (104 ms total)
+
+[----------] 1 test from CpuQwenRecurrent
+[ RUN      ] CpuQwenRecurrent.D5NineProfilesUseCompleteGateAndActualStateFeedback
+[       OK ] CpuQwenRecurrent.D5NineProfilesUseCompleteGateAndActualStateFeedback (1571 ms)
+[----------] 1 test from CpuQwenRecurrent (1571 ms total)
+
+[----------] Global test environment tear-down
+[==========] 7 tests from 3 test suites ran. (1687 ms total)
+[  PASSED  ] 7 tests.

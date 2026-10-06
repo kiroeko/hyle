@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="(empty)"
+	tests="1"
+	failures="0"
+	disabled="0"
+	skipped="0"
+	hostname=""
+	time="0"
+	timestamp="2026-10-07T03:10:32"
+	>
+	<testcase name="hyle_compute_provider_ggml_test" classname="hyle_compute_provider_ggml_test" time="0.11925" status="run">
+		<properties>
+			<property name="cmake_labels" value="compute_provider_ggml"/>
+		</properties>
+		<system-out>Running main() from C:\Users\kiro\AppData\Local\hyle\dependencies\v1\sources\googletest-063de7e9578f-162765170ae6\googletest\src\gtest_main.cc
+[==========] Running 58 tests from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 58 tests from GgmlCpuProvider
+[ RUN      ] GgmlCpuProvider.NormsUseIndependentOracleAcrossStorageTypes
+[       OK ] GgmlCpuProvider.NormsUseIndependentOracleAcrossStorageTypes (3 ms)
+[ RUN      ] GgmlCpuProvider.GenericSwiGluRequiresStableTailCarrier
+[       OK ] GgmlCpuProvider.GenericSwiGluRequiresStableTailCarrier (0 ms)
+[ RUN      ] GgmlCpuProvider.MatureCausalConvUsesNaturalSequenceLayout
+[       OK ] GgmlCpuProvider.MatureCausalConvUsesNaturalSequenceLayout (0 ms)
+[ RUN      ] GgmlCpuProvider.MatureKdaPublishesScoresAndStateIndependently
+[       OK ] GgmlCpuProvider.MatureKdaPublishesScoresAndStateIndependently (0 ms)
+[ RUN      ] GgmlCpuProvider.D5Qwen38GroupedHeadsUseMatureGatedDeltaNet
+[       OK ] GgmlCpuProvider.D5Qwen38GroupedHeadsUseMatureGatedDeltaNe...
+[This part of the test output was removed since it exceeds the threshold of 1024 bytes.]
+</system-out>
+	</testcase>
+</testsuite>

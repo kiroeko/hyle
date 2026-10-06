@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites tests="7" failures="0" disabled="0" errors="0" time="1.5" timestamp="2026-10-07T04:13:03.137" name="AllTests">
+  <testsuite name="CpuDefaultGraph" tests="6" failures="0" disabled="0" skipped="0" errors="0" time="0.115" timestamp="2026-10-07T04:13:03.138">
+    <testcase name="D5Qwen35OfficialEmbeddingNormHeadAndFailureUseOnePreparedGraph" file="C:\public\project-hyle\hyle\tests\graph_route_cpu\d5_qwen35_profile_test.cc" line="278" status="run" result="completed" time="0.004" timestamp="2026-10-07T04:13:03.138" classname="CpuDefaultGraph" />
+    <testcase name="D5Qwen35OfficialBfloatFfnUsesMatureRegionsAndRealWeights" file="C:\public\project-hyle\hyle\tests\graph_route_cpu\d5_qwen35_profile_test.cc" line="419" status="run" result="completed" time="0.078" timestamp="2026-10-07T04:13:03.142" classname="CpuDefaultGraph" />
+    <testcase name="D5Qwen35OfficialGqaNormRopeAndAttentionUseExactProfileAndReplay" file="C:\public\project-hyle\hyle\tests\graph_route_cpu\d5_qwen35_profile_test.cc" line="522" status="run" result="completed" time="0." timestamp="2026-10-07T04:13:03.221" classname="CpuDefaultGraph" />
+    <testcase name="D5Qwen35OfficialCausalConvAndGdnUseExactProfileAndReplay" file="C:\public\project-hyle\hyle\tests\graph_route_cpu\d5_qwen35_profile_test.cc" line="664" status="run" result="completed" time="0.006" timestamp="2026-10-07T04:13:03.221" classname="CpuDefaultGraph" />
+    <testcase name="D5Qwen35OfficialMtpAndBfloatBoundaryUseExactWeightsAndReplay" file="C:\public\project-hyle\hyle\tests\graph_route_cpu\d5_qwen35_profile_test.cc" line="884" status="run" result="completed" time="0.016" timestamp="2026-10-07T04:13:03.228" classname="CpuDefaultGraph" />
+    <testcase name="D5RealQwenProjectionUsesExactProfileAndReplays" file="C:\public\project-hyle\hyle\tests\graph_route_cpu\graph_test.cc" line="313" status="run" result="completed" time="0.008" timestamp="2026-10-07T04:13:03.245" classname="CpuDefaultGraph" />
+  </testsuite>
+  <testsuite name="CpuGraphQwenRecurrent" tests="1" failures="0" disabled="0" skipped="0" errors="0" time="1.385" timestamp="2026-10-07T04:13:03.253">
+    <testcase name="D5NineProfilesUseCompleteGateAndActualStateFeedback" file="C:\public\project-hyle\hyle\tests\graph_route_cpu\d5_qwen38_official_test.cc" line="1042" status="run" result="completed" time="1.385" timestamp="2026-10-07T04:13:03.253" classname="CpuGraphQwenRecurrent" />
+  </testsuite>
+</testsuites>

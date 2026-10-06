@@ -104,3 +104,16 @@ HYLE已保留元素数、维度、stride、输出及checked索引边界，原库
 [准确收据](../../../../evidence/correctness/cpu-quant-mtp-c5-matrix/README.md)不把2,413需求关联冒称完整混合模型运行。
 F3完整required-region与30类参数对账、F4更新SDK和最终聚合仍未完成；owner保持AUDITED。
 首次故障注入写4字节违反Buffer完整视图合同，修正为完整索引payload；没有产品错误/数值门放宽。
+
+### F3/F4 第二批与有限存储接缝
+
+[更新SDK](../../../../evidence/correctness/cpu-quant-mtp-c5-sdk/README.md)：两系统static/shared普通两入口64项通过，
+包含修复后的2.16GB Q8_0真实表；其余包装/资产/缓存合同按未变身份复用C3/C4。
+[源代码消费者](../../../../evidence/correctness/cpu-quant-mtp-c5-final/README.md)：Windows剩余两入口362项完成，
+首次14项fixture环境skip保留，设置已校验的本地fixture后全部补跑通过。Linux同批仍执行，不签PASS。
+
+[参数精确对账](../../../../evidence/correctness/cpu-quant-mtp-c5-parameters/README.md)把30类shape/storage细分为
+80类真实role/shape、1,354制品关联，不是80个新算子。F3发现旧完整消费者已经归一化卷积权重，
+不足以证明原GGUF singleton物理形状接入。固定本批有限补验：六个实际卷积形状经公共View/Concat
+进入原完整GDN/KDA消费者；独立oracle、实际state宽度及反馈不变，没有新增数学或产品改动。
+这六项尚未运行；其余参数完整用途/required-region仍须裁决，owner保持AUDITED。

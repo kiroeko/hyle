@@ -1,0 +1,86 @@
+[
+  {
+    "name": "configure-tests",
+    "args": [
+      "cmake",
+      "-S",
+      "C:\\public\\project-hyle\\hyle",
+      "-B",
+      "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+      "-DHYLE_BUILD_TESTS=ON",
+      "-DHYLE_INSTALL=OFF",
+      "-DHYLE_STATIC=ON",
+      "-DFETCHCONTENT_FULLY_DISCONNECTED=ON",
+      "-U",
+      "CMAKE_PROJECT_INCLUDE"
+    ],
+    "candidate": "182f5d036ae214d13beba23d65646a3064545b0b",
+    "log": "1-configure-tests.log",
+    "returncode": 0,
+    "seconds": 43.593
+  },
+  {
+    "name": "selected-build",
+    "args": [
+      "cmake",
+      "--build",
+      "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+      "--target",
+      "hyle_compute_provider_ggml_tests",
+      "hyle_compute_route_cpu_tests",
+      "hyle_graph_route_cpu_tests",
+      "--parallel",
+      "2"
+    ],
+    "candidate": "182f5d036ae214d13beba23d65646a3064545b0b",
+    "log": "2-selected-build.log",
+    "returncode": 0,
+    "seconds": 122.829
+  },
+  {
+    "name": "ggml-factor",
+    "args": [
+      "ctest",
+      "--test-dir",
+      "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+      "--output-on-failure",
+      "--no-tests=error",
+      "-L",
+      "^compute_provider_ggml$",
+      "-LE",
+      "headers",
+      "-j",
+      "1",
+      "--output-junit",
+      "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\cpu-coverage-c5-final-windows\\182f5d036ae2\\ggml-factor.xml"
+    ],
+    "candidate": "182f5d036ae214d13beba23d65646a3064545b0b",
+    "log": "3-ggml-factor.log",
+    "returncode": 0,
+    "seconds": 0.406
+  },
+  {
+    "name": "direct-remaining-suite",
+    "args": [
+      "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_compute_route_cpu_test.exe",
+      "--gtest_filter=*-*C5Actual*",
+      "--gtest_output=xml:C:\\public\\project-hyle\\hyle\\.scratch\\validation\\cpu-coverage-c5-final-windows\\182f5d036ae2\\direct.xml"
+    ],
+    "candidate": "182f5d036ae214d13beba23d65646a3064545b0b",
+    "log": "4-direct-remaining-suite.log",
+    "returncode": 0,
+    "seconds": 572.844
+  },
+  {
+    "name": "graph-remaining-suite",
+    "args": [
+      "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_graph_route_cpu_test.exe",
+      "--gtest_filter=*-*C5Actual*",
+      "--gtest_output=xml:C:\\public\\project-hyle\\hyle\\.scratch\\validation\\cpu-coverage-c5-final-windows\\182f5d036ae2\\graph.xml"
+    ],
+    "candidate": "182f5d036ae214d13beba23d65646a3064545b0b",
+    "log": "5-graph-remaining-suite.log",
+    "returncode": 0,
+    "seconds": 572.359
+  }
+]
