@@ -10,7 +10,7 @@
 
 **执行期C1纠正：**真实header证明Q09–Q11所对应UD-Q1_0/UD-TQ档实际为Unsloth
 IQ1_XXXS/XXS/XS（type66/65/64），不按标准Q1/TQ映射；文件名Q4_0的Qwen MTP也实际混用
-已接Q3_K/Q4_K/Q6_K/F32。下文初始列表保留作为名字盘点，当前施工输入以
+已接Q3_K/Q4_K/Q6_K/F32。下文格式表已按真实header纠正，当前施工输入以
 [C1实际发现](cpu-quant-mtp-c1-demand-and-carriers.md)及header事实为准，不能复用初始名字推断。
 
 ## 结论与统计口径
@@ -62,16 +62,16 @@ MatMul，以及压缩embedding的Gather/GetRows。不自行反量化再展开全
 
 | ID | 缺少物理格式 | 目标制品或角色 | 承载 |
 |---|---|---|---|
-| Q01–Q02 | Q4_0、Q4_1 | Qwen3.5/3.8普通4-bit；Qwen3.8-27B Q4_0 MTP | ggml原版block/MatMul/GetRows |
+| Q01–Q02 | Q4_0、Q4_1 | Qwen3.5/3.8主模型普通4-bit；命名Q4_0的MTP实际使用已有K格式 | ggml原版block/MatMul/GetRows |
 | Q03 | Q2_K | 多模型UD-Q2_K_XL混合权重；具体tensor需header确认 | ggml |
 | Q04–Q06 | IQ2_XXS、IQ2_XS、IQ2_S | Qwen/Kimi/GLM/Flash低内存档；UD-IQ2_M是混合档位名，不是一个独立IQ2_M物理类型 | ggml |
 | Q07–Q08 | IQ1_S、IQ1_M | 多个大MoE模型公开的UD-IQ1档 | ggml |
-| Q09 | Q1_0 | Qwen3.8-2.4T、Kimi的UD-Q1_0档 | ggml |
-| Q10–Q11 | TQ1_0、TQ2_0 | Kimi发布的UD-TQ1_0/UD-TQ2_0档 | ggml |
+| Q09 | IQ1_XXXS（type66，38B/256值） | Qwen3.8-2.4T、Kimi的UD-Q1_0专家 | Unsloth原版CPU扩展 |
+| Q10–Q11 | IQ1_XXS / IQ1_XS（type65/64，42/46B每256值） | Kimi发布的UD-TQ1_0/UD-TQ2_0专家 | Unsloth原版CPU扩展 |
 
 [已核对的上游类型定义](https://github.com/ggml-org/ggml/blob/ffa4e8b80930029a35991f94e7c8a93cd67730ab/include/ggml.h)
 是源码证据，不代替CPU backend实际运行资格。
-Q5_0/Q5_1、Q2_0、NVFP4同样未在当前GGUF公开目录中，但这次目标仓库文件名未证明它们是必需物理类型；
+标准Q1_0/TQ1_0/TQ2_0、Q5_0/Q5_1、Q2_0、NVFP4同样未在当前GGUF公开目录中，但这次目标仓库文件名未证明它们是必需物理类型；
 放在条件候选，只有实际header出现才纳入，避免扩成全量ggml类型大全。
 Q8_1/Q8_K等内部dot-product载体也不因上游enum存在就变成必须公开的权重格式。
 

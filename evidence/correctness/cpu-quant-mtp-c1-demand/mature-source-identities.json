@@ -1,0 +1,65 @@
+[
+  {
+    "path": "bnb-cpu-ops.py",
+    "url": "https://raw.githubusercontent.com/bitsandbytes-foundation/bitsandbytes/833649043474794b8fe7a4136e0c40faf077b2e0/bitsandbytes/backends/cpu/ops.py",
+    "bytes": 20911,
+    "sha256": "d4bfca8b4ce6a6a368aeccdd1516f98f505bf374f6e66d64fb22e6229eb1ff67"
+  },
+  {
+    "path": "bnb-default-ops.py",
+    "url": "https://raw.githubusercontent.com/bitsandbytes-foundation/bitsandbytes/833649043474794b8fe7a4136e0c40faf077b2e0/bitsandbytes/backends/default/ops.py",
+    "bytes": 19802,
+    "sha256": "e39afd16dca6e6f34a14305ade0ba4acbb49dc2c7a9baf937341d7e33b682819"
+  },
+  {
+    "path": "bnb-cmake.txt",
+    "url": "https://raw.githubusercontent.com/bitsandbytes-foundation/bitsandbytes/833649043474794b8fe7a4136e0c40faf077b2e0/CMakeLists.txt",
+    "bytes": 20610,
+    "sha256": "b248579ea0feba8f3c7dc1c3aef15cd50163080c599db7df8a8766d739d450d0"
+  },
+  {
+    "path": "mlx-cpu-quantized.cpp",
+    "url": "https://raw.githubusercontent.com/ml-explore/mlx/2b2bb49790158ecd008d1685c94e3ef119792a00/mlx/backend/cpu/quantized.cpp",
+    "bytes": 40348,
+    "sha256": "8890160da0a884b559aad18ce20a2b08170b721c38ce1c800229ae9998ed846d"
+  },
+  {
+    "path": "mlx-quantized.py",
+    "url": "https://raw.githubusercontent.com/ml-explore/mlx/2b2bb49790158ecd008d1685c94e3ef119792a00/python/mlx/nn/layers/quantized.py",
+    "bytes": 15026,
+    "sha256": "8ca4574a212f14cbec4c446826474583ef0bf1e2cb1630574fd730c77af03b33"
+  },
+  {
+    "path": "torch-int4mm.cpp",
+    "url": "https://raw.githubusercontent.com/pytorch/pytorch/v2.8.0/aten/src/ATen/native/cpu/int4mm_kernel.cpp",
+    "bytes": 39889,
+    "sha256": "2b7b68261ae45c8ed951dfe94be173b1fa599ba36884ccc190103236ea0d3dae"
+  },
+  {
+    "path": "torch-quantized.cpp",
+    "url": "https://raw.githubusercontent.com/pytorch/pytorch/v2.8.0/aten/src/ATen/native/LinearAlgebra.cpp",
+    "bytes": 139364,
+    "sha256": "e3cde69aecfcbf0eea7be0571342deb9f4b663780a48271e831a0e3c8732f1dc"
+  },
+  {
+    "path": "awq-packing.py",
+    "url": "https://raw.githubusercontent.com/casper-hansen/AutoAWQ/88e4c76b20755db275574e6a03c83c84ba3bece5/awq/utils/packing_utils.py",
+    "revision": "88e4c76b20755db275574e6a03c83c84ba3bece5",
+    "bytes": 3283,
+    "sha256": "65eab3eabe3f55e300ffbab5feac59c49322d985f42dcda4e2288859fb9a4abe"
+  },
+  {
+    "path": "ct-pack-quantized.py",
+    "url": "https://raw.githubusercontent.com/vllm-project/compressed-tensors/ac8e2ba82f4e0d5eaa40069f8fc642738f124cd4/src/compressed_tensors/compressors/pack_quantized/base.py",
+    "revision": "ac8e2ba82f4e0d5eaa40069f8fc642738f124cd4",
+    "bytes": 6753,
+    "sha256": "c0a8e902efb2069e34eb823157696a575193897069f70587150c59cdbe414d68"
+  },
+  {
+    "path": "ct-pack-helpers.py",
+    "url": "https://raw.githubusercontent.com/vllm-project/compressed-tensors/ac8e2ba82f4e0d5eaa40069f8fc642738f124cd4/src/compressed_tensors/compressors/pack_quantized/helpers.py",
+    "revision": "ac8e2ba82f4e0d5eaa40069f8fc642738f124cd4",
+    "bytes": 5644,
+    "sha256": "3fe695db3e38ee665d5c459ddce366df3e2dfed51be70058bcc6a9838117477d"
+  }
+]

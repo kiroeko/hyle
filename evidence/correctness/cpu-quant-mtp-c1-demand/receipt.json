@@ -1,0 +1,45 @@
+[
+  {
+    "name": "configure",
+    "args": [
+      "cmake",
+      "-S",
+      "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\cpu-quant-mtp-c1\\aten-probe",
+      "-B",
+      "C:\\hv\\cpu-c1-aten-probe",
+      "-G",
+      "Ninja",
+      "-DCMAKE_BUILD_TYPE=Release",
+      "-DCMAKE_PREFIX_PATH=C:\\hv\\cpu-matmul-retirement-shared-sdk",
+      "-DFETCHCONTENT_FULLY_DISCONNECTED=ON"
+    ],
+    "candidate": "8873f963492635f5da1ffac52b6e3f8173e24e45",
+    "log": "1-configure.log",
+    "returncode": 0,
+    "seconds": 12.61
+  },
+  {
+    "name": "source-carrier-build",
+    "args": [
+      "cmake",
+      "--build",
+      "C:\\hv\\cpu-c1-aten-probe",
+      "--parallel",
+      "2"
+    ],
+    "candidate": "8873f963492635f5da1ffac52b6e3f8173e24e45",
+    "log": "2-source-carrier-build.log",
+    "returncode": 0,
+    "seconds": 6.359
+  },
+  {
+    "name": "original-aten-int4-execution",
+    "args": [
+      "C:\\hv\\cpu-c1-aten-probe\\c1_aten_cpu_carrier.exe"
+    ],
+    "candidate": "8873f963492635f5da1ffac52b6e3f8173e24e45",
+    "log": "3-original-aten-int4-execution.log",
+    "returncode": 0,
+    "seconds": 0.969
+  }
+]

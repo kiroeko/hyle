@@ -1,0 +1,1 @@
+PASS original ATen CPU packed-int4 cases=24, F32/F16/BF16 group32/64/128/256, M1/M5

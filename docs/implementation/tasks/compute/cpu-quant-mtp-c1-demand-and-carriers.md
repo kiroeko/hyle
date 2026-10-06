@@ -1,10 +1,11 @@
 # C1：CPU 制品需求与成熟承载定界
 
-<!-- MODULE REVIEW: SCOPED -->
+<!-- MODULE REVIEW: AUDITED -->
 
 ## 当前施工身份
 
-- 状态：SCOPED，绑定compute_ggml_runtime、compute_provider_ggml、compute_provider_native；compute_ops只作源审计依赖，保留原AUDITED记录；当前只审计，未授权产品代码。
+- 状态：AUDITED；C1审计输出已完成，runtime/native交接C2，ggml adapter保持本卡有限审计。
+  compute_ops保留原记录，C3产品修改前单独重新绑定。这里不签产品执行/性能/交付完成。
 - baseline：`a09e9642d91e5c13227bd68462ab426f2e69c462`；已核对Windows HEAD/worktree干净，不回退计划基线后的提交。
 - owner范围：compute_ops、compute_ggml_runtime、compute_provider_ggml；涉及已借用程序时compute_provider_native，仅审计，不授权产品修改。
 - 总合同：[CPU扩覆盖计划](cpu-quant-mtp-coverage-expansion-plan.md)；事实：[缺口清单](cpu-popular-quant-mtp-gap-list.md)。
@@ -71,3 +72,19 @@
    文件整体Q4/Q8标签、相同名字的MTP/DSpark和“4-bit”不得授予单算子资格。
 7. Unsloth IQ1扩展源基于ggml0.22，不能整树替换当前0.24并声称升级。C2需在固定新版core上
    借入原版IQ1扩展或给同等明确的版本方案；原数学不改，不把65/66重解释为标准Q1/TQ。
+
+## C1 完成裁决与有限交接
+
+- D1：104/104主档位、826/826分片及sidecar、152/152 Safetensors分片完整读取；精确revision、
+  文件、tensor shape、角色/物理dtype与例子见[实际存储矩阵](../../../../evidence/correctness/cpu-quant-mtp-c1-demand/actual-storage-matrix.json)。
+- D2：Qwen sidecar为18个已有K格式/F32 tensors；两新版官方DSpark main projection是FP8＋E8M0，
+  Markov/confidence存储BF16，confidence执行F32。Flash两DSpark sidecar均取得完整81-tensor头。
+- D3：NF4原bitsandbytes CPU/ATen组合、AWQ原逆packing、compressed-tensors0.18原packing与
+  MLX原混合CPU计算均有具名源码承载。C3须保留各自精度、端口和资源边界；这不是接线RUN_PASS。
+- D4：C2有限FIX U1–U4已冻结；C3按原11个格式接缝（纠正Q09–Q11）及上述成熟非GGUF承载，
+  C4按原4个DSpark片段和完整分支。C3/C4激活时再冻结具体公开端口，不用旧D5卡授权新代码。
+
+完整来源、边界和探针限制见[证据](../../../../evidence/correctness/cpu-quant-mtp-c1-demand/README.md)。
+准入/承载为BORROW；自研数学0，GPU状态未变。metadata不签执行PASS，不下载完整大权重。
+工程规模沿统一29路径仍为61,109实现行/249文件，C1没有产品实现修改。
+调查已结束；后续只有具名接线反例才恢复所需源码查询，不再重扫104档位。

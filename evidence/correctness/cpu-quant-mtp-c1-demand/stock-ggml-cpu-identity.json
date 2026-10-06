@@ -1,0 +1,11 @@
+{
+  "revision": "ffa4e8b80930029a35991f94e7c8a93cd67730ab",
+  "url": "https://codeload.github.com/ggml-org/ggml/tar.gz/ffa4e8b80930029a35991f94e7c8a93cd67730ab",
+  "archive_sha256": "2adae8335f09b75d05158ee32104f0b562929b8470e6d5858ecb513d325636f4",
+  "archive_bytes": 4216234,
+  "source_files": 2318,
+  "license_sha256": "94f29bbed6a22c35b992c5c6ebf0e7c92f13b836b90f36f461c9cf2f0f1d010d",
+  "scope": "read-only C2 source audit; no product qualification",
+  "git_tree": "e8e4626f9017d3b2e486a74bfbdb9bd258e7236d",
+  "expanded_tree_sha256": "ac5706fbc134d25b54b083ebfa96e1a4656827e0ab363dab6ca3b50b16ddec6a"
+}

@@ -22,7 +22,7 @@
       "format": "Q4_0",
       "source_enum": "GGML_TYPE_Q4_0",
       "status": "PUBLIC_FORMAT_AND_ADAPTER_MAPPING_MISSING",
-      "target_evidence": "Qwen3.5/3.8 standard Q4 and Qwen3.8-27B MTP sidecar",
+      "target_evidence": "actual Qwen main Q4_0 tensors; the named Q4_0 MTP sidecar uses Q3_K/Q4_K/Q6_K/F32 instead",
       "required_bindings": [
         "physical block description",
         "quantized MatMul",
@@ -139,8 +139,8 @@
     },
     {
       "id": "Q09",
-      "format": "Q1_0",
-      "source_enum": "GGML_TYPE_Q1_0",
+      "format": "IQ1_XXXS",
+      "source_enum": "GGML_TYPE_IQ1_XXXS",
       "status": "PUBLIC_FORMAT_AND_ADAPTER_MAPPING_MISSING",
       "target_evidence": "Qwen3.8-2.4T and Kimi published UD-Q1_0",
       "required_bindings": [
@@ -149,13 +149,17 @@
         "GroupedMatMul when target uses MoE",
         "quantized Gather/embedding when target uses quantized embedding"
       ],
-      "carrier": "BORROW_GGML_CPU",
-      "scope_note": "upstream enum is source evidence, not CPU execution or per-profile header qualification"
+      "carrier": "BORROW_UNSLOTH_ORIGINAL_CPU_EXTENSION",
+      "scope_note": "exact actual header code; original grids/dequantize/CPU dot. Do not reinterpret UD file label as stock Q1/TQ.",
+      "source_dtype_code": 66,
+      "block_elements": 256,
+      "block_bytes": 38,
+      "source_revision": "46cbf0e95786fe8f5b7c0e86d57aaf8f8eceea7f"
     },
     {
       "id": "Q10",
-      "format": "TQ1_0",
-      "source_enum": "GGML_TYPE_TQ1_0",
+      "format": "IQ1_XXS",
+      "source_enum": "GGML_TYPE_IQ1_XXS",
       "status": "PUBLIC_FORMAT_AND_ADAPTER_MAPPING_MISSING",
       "target_evidence": "Kimi published UD-TQ1_0",
       "required_bindings": [
@@ -164,13 +168,17 @@
         "GroupedMatMul when target uses MoE",
         "quantized Gather/embedding when target uses quantized embedding"
       ],
-      "carrier": "BORROW_GGML_CPU",
-      "scope_note": "upstream enum is source evidence, not CPU execution or per-profile header qualification"
+      "carrier": "BORROW_UNSLOTH_ORIGINAL_CPU_EXTENSION",
+      "scope_note": "exact actual header code; original grids/dequantize/CPU dot. Do not reinterpret UD file label as stock Q1/TQ.",
+      "source_dtype_code": 65,
+      "block_elements": 256,
+      "block_bytes": 42,
+      "source_revision": "46cbf0e95786fe8f5b7c0e86d57aaf8f8eceea7f"
     },
     {
       "id": "Q11",
-      "format": "TQ2_0",
-      "source_enum": "GGML_TYPE_TQ2_0",
+      "format": "IQ1_XS",
+      "source_enum": "GGML_TYPE_IQ1_XS",
       "status": "PUBLIC_FORMAT_AND_ADAPTER_MAPPING_MISSING",
       "target_evidence": "Kimi published UD-TQ2_0",
       "required_bindings": [
@@ -179,8 +187,12 @@
         "GroupedMatMul when target uses MoE",
         "quantized Gather/embedding when target uses quantized embedding"
       ],
-      "carrier": "BORROW_GGML_CPU",
-      "scope_note": "upstream enum is source evidence, not CPU execution or per-profile header qualification"
+      "carrier": "BORROW_UNSLOTH_ORIGINAL_CPU_EXTENSION",
+      "scope_note": "exact actual header code; original grids/dequantize/CPU dot. Do not reinterpret UD file label as stock Q1/TQ.",
+      "source_dtype_code": 64,
+      "block_elements": 256,
+      "block_bytes": 46,
+      "source_revision": "46cbf0e95786fe8f5b7c0e86d57aaf8f8eceea7f"
     }
   ],
   "optional_source_types_not_admitted_by_current_target_headers": [
@@ -2028,7 +2040,8 @@
       "CPU resource/ISA/ABI/patch compatibility must be audited before update",
       "shared ggml source affects other routes; GPU existing qualifications must not be silently signed",
       "old Native WIN is relative to locked mature peer; updating peer requires version fencing/reconciliation, not forced self-kernel benchmarking"
-    ]
+    ],
+    "cpu_source_strategy": "CPU-only stock ffa4 + immutable original IQ1 inference extension; GPU-containing envelope retains 456172 and its patches; one SDK one core"
   },
   "evidence_limits": [
     "public API and source metadata only; no new weight payload download or model execution",
@@ -2050,7 +2063,7 @@
     {
       "family": "bitsandbytes NF4/double quant",
       "repository": "techwithsergiu/Qwen3.5-2B-bnb-4bit",
-      "status": "SOURCE_PUBLISHED_HEADER_AND_CPU_CARRIER_PENDING",
+      "status": "HEADER_OBSERVED_MATURE_CPU_CARRIER_IDENTIFIED_NOT_PRODUCT_QUALIFIED",
       "gap": [
         "codebook",
         "absmax/double quant metadata",
@@ -2064,7 +2077,7 @@
         "mattbucci/Qwen3.8-27B-AWQ",
         "soyrsoyr/Qwen3.8-27B-W4A16-AWQ-GPTQ"
       ],
-      "status": "SOURCE_PUBLISHED_HEADER_AND_CPU_CARRIER_PENDING",
+      "status": "HEADER_OBSERVED_MATURE_CPU_CARRIER_IDENTIFIED_NOT_PRODUCT_QUALIFIED",
       "gap": [
         "packing",
         "group/zero point/permutation",
@@ -2075,11 +2088,17 @@
     {
       "family": "MLX int4 artifact",
       "repository": "ToPo-ToPo/DeepSeek-V4-Flash-0731-mlx-4bit",
-      "status": "SOURCE_PUBLISHED_HEADER_AND_CPU_CARRIER_PENDING",
+      "status": "HEADER_OBSERVED_MATURE_CPU_CARRIER_IDENTIFIED_NOT_PRODUCT_QUALIFIED",
       "gap": [
         "packing/scale/bias",
         "CPU carrier; Apple MLX qualification is not CPU qualification"
-      ]
+      ],
+      "actual_modes": [
+        "mxfp4 group32",
+        "mxfp8 group32",
+        "affine int4 group64"
+      ],
+      "scope_note": "mixed artifact; no MTP/DSpark/Markov/confidence tensor entries in complete index/header set"
     }
   ],
   "counting_contract": {
@@ -2123,5 +2142,7 @@
       "94 variant/revision qualification instances",
       "unobserved format-role cross products"
     ]
-  }
+  },
+  "c1_actual_storage_matrix": "../../../../evidence/correctness/cpu-quant-mtp-c1-demand/actual-storage-matrix.json",
+  "execution_precision_contract": "storage header, activation, accumulation, state and output are distinct facts; forward/carrier source and later actual product qualification determine execution. Header completeness is not RUN_PASS."
 }

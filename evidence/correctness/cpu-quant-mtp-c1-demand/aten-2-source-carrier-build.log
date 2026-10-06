@@ -1,0 +1,5 @@
+[1/5] C:\WINDOWS\system32\cmd.exe /C "cd /D C:\hv\cpu-c1-aten-probe && "C:\Program Files\CMake\bin\cmake.exe" -P C:/hv/cpu-c1-aten-probe/hyle-runtime/c1_aten_cpu_carrier-Release.cmake"
+[2/5] Scanning C:\public\project-hyle\hyle\.scratch\validation\cpu-quant-mtp-c1\aten-probe\main.cc for CXX dependencies
+[3/5] Generating CXX dyndep file CMakeFiles\c1_aten_cpu_carrier.dir\CXX.dd
+[4/5] Building CXX object CMakeFiles\c1_aten_cpu_carrier.dir\main.cc.obj
+[5/5] Linking CXX executable c1_aten_cpu_carrier.exe

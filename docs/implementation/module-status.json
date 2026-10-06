@@ -372,9 +372,9 @@
     },
     {
       "module": "compute_provider_ggml",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/cpu-quant-mtp-c1-demand-and-carriers.md",
-      "summary": "CPU扩覆盖C1 SCOPED：104 GGUF档位/3 sidecar/2新版/3非GGUF族的角色与成熟CPU承载定界；只审计，无产品代码/P1/新增RUN_PASS，自研冻结，GPU旧范围与阻塞保持。"
+      "summary": "CPU扩覆盖C1 AUDITED：104主档位/826 GGUF分片及sidecar/152 Safetensors头已对账，真实11格式与成熟承载交接已固定；当前产品资格未增加，C3接线前绑定具体卡。"
     },
     {
       "module": "graph_provider_onednn",
@@ -417,9 +417,9 @@
     },
     {
       "module": "compute_provider_native",
-      "state": "SCOPED",
-      "record": "docs/implementation/tasks/compute/cpu-quant-mtp-c1-demand-and-carriers.md",
-      "summary": "CPU扩覆盖C1 SCOPED：104 GGUF档位/3 sidecar/2新版/3非GGUF族的角色与成熟CPU承载定界；只审计，无产品代码/P1/新增RUN_PASS，自研冻结，GPU旧范围与阻塞保持。"
+      "state": "AUDITED",
+      "record": "docs/implementation/tasks/compute/cpu-quant-mtp-c2-ggml-upgrade.md",
+      "summary": "CPU扩覆盖C2 AUDITED：C1完整头/成熟承载审计完成；固定CPU-only新版core+原IQ1推理扩展、GPU envelope旧core、同源CPU程序与Native peer版本约束，U1–U4有限FIX；未签产品执行/交付。"
     },
     {
       "module": "compute_sched",
@@ -533,9 +533,9 @@
     },
     {
       "module": "compute_ggml_runtime",
-      "state": "SCOPED",
-      "record": "docs/implementation/tasks/compute/cpu-quant-mtp-c1-demand-and-carriers.md",
-      "summary": "CPU扩覆盖C1 SCOPED：104 GGUF档位/3 sidecar/2新版/3非GGUF族的角色与成熟CPU承载定界；只审计，无产品代码/P1/新增RUN_PASS，自研冻结，GPU旧范围与阻塞保持。"
+      "state": "AUDITED",
+      "record": "docs/implementation/tasks/compute/cpu-quant-mtp-c2-ggml-upgrade.md",
+      "summary": "CPU扩覆盖C2 AUDITED：C1完整头/成熟承载审计完成；固定CPU-only新版core+原IQ1推理扩展、GPU envelope旧core、同源CPU程序与Native peer版本约束，U1–U4有限FIX；未签产品执行/交付。"
     },
     {
       "module": "compute_provider_ggml_cuda",

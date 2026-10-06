@@ -1,10 +1,13 @@
 # C2：ggml 固定升级、CPU 编译与软件资格
 
+<!-- MODULE REVIEW: AUDITED -->
+
 ## 计划身份
 
-- 状态：PLANNED，未激活、未绑定registry；没有SCOPED/AUDITED产品授权或执行PASS。
-- baseline：`5b0044e2a10d11fdfce54893020cfcaaed47b0c0`；激活时核对Windows实际HEAD/worktree，保留后续及用户修改。
-- owner范围：compute_ggml_runtime；旧规则peer版本隔离涉及compute_provider_native、compute_route_cpu、graph_route_cpu；公共构建接缝按已有owner合同绑定。
+- 状态：AUDITED，绑定compute_ggml_runtime、compute_provider_native；两owner由C1 SCOPED审计交接，有限FIX如下。
+- baseline：`ac9bc40006e1caaa9e42b812f6e5a832e66ee034`；Windows实际HEAD核对，无用户产品修改，不回退。
+- owner范围：compute_ggml_runtime、compute_provider_native。软件约束在Native私有默认规则完成，
+  无需修改已CLOSED CPU facade；GPU owner和Graph阻塞保持。
 - 总合同：[CPU扩覆盖计划](cpu-quant-mtp-coverage-expansion-plan.md)；事实：[缺口清单](cpu-popular-quant-mtp-gap-list.md)。
 - 本卡是一个批次，不是逐算子/逐模型队列。CLOSED按真实trigger新开；AUDITED范围变化重新定界。
 - 性能：P0为主，唯一可选完整程序P1只按总计划条件固定；无自研竞赛或新数学。
@@ -17,9 +20,10 @@
 - 不静默升级GPU source/patch/资格，不把不支持新域隐藏为成功，不制造未隔离双ggml版本。
 - 普通入口仍cpu/graph::cpu；普通用户只选compute-cpu，复杂依赖和版本策略由构建/Context拥有。
 
-## 待审计的有限输出
+## 已审计的有限 FIX
 
-以下是计划输出，激活时须完成源码/生命周期审计并冻结实际FIX；不以本表假写AUDITED。
+来源/固定制品/源码审计见[C1证据](../../../../evidence/correctness/cpu-quant-mtp-c1-demand/README.md)。
+所有现有资源修改before上下文在新版各出现一次；没有批准新数学或原资源合同撤回。
 
 | ID | 本包动作 | 结束条件 |
 |---|---|---|
@@ -27,6 +31,33 @@
 | U2 | 优先评估CPU-only新锁/含GPU原锁的构建envelope方案；合法修改有限lock/patch/CMake/profile输入 | 对实际SDK能力诚实，既有GPU构建不被撤回；异常ABI问题有明确替代方案再实施 |
 | U3 | 旧Native优选绑定原成熟peer软件身份；变化域成熟默认，submit不增加查询 | 不拿旧WIN压新版ggml，不运行自研竞赛，原独有资源/整域和MatMul退役保留 |
 | U4 | 编译/部署固定CPU基线与优化整程序，source/static/shared、搬移/offline、失败/close | CPU真实quant+普通Direct/Graph已实跑，DLL邻exe；未验GPU版本不签资格 |
+
+### 固定实现决定
+
+- CPU-only选择stock ggml `ffa4e8b80930029a35991f94e7c8a93cd67730ab`；archive SHA
+  `2adae8335f09b75d05158ee32104f0b562929b8470e6d5858ecb513d325636f4`，expanded tree
+  `ac5706fbc134d25b54b083ebfa96e1a4656827e0ab363dab6ca3b50b16ddec6a`，MIT。
+- 借入Unsloth `46cbf0e95786fe8f5b7c0e86d57aaf8f8eceea7f` 的3个原推理类型、blocks/grids、
+  dequantize、原CPU dot、type traits及row validation；不加入编码器或修改数学。
+  合并资源patch后11个具名文件/32处有限接缝；CPU generic原dot在baseline/AVX2完整程序中均可用。
+- 新dependency/patch在runtime owning CMake登记；源cache不可变，只有build-local exact patch副本。
+  包含任何CUDA/Apple/Vulkan路线时仍取原456172与原patch；一个SDK一个core，不传跨版本tensor/pool。
+- CPU完整程序文件名带所选core身份，baseline/AVX2同源同patch；loader的原ABI/size检查保留。
+  原版tensor/cplan/graph由对应SDK编译，不跨旧/新SDK混用。
+- Native旧WIN的环境资格加私有编译期peer版本条件；新版默认使用成熟实现，专家Native入口不因此撤回。
+  新约束不在submit查询、不重跑187项自研比较、不改变SIMD。
+
+### API、资源与验证冻结
+
+自然入口仍`compute::cpu::create_context()`与`graph::cpu::create_context()`；用户无需选ggml版本。
+公开对象/张量生命周期不变；prepare创建原pool/plan，slot拥有work buffer，close等待原执行完成后释放。
+OOM/threadpool启动失败保留Status边界，原库数学故障不被catch吞掉。C2不改压缩格式公开枚举，交接C3。
+
+适用验证：dependency/source-patch/package机器合同；runtime与ggml/native直接消费者suite；
+Windows/Linux x86_64 baseline/AVX2、普通Direct/Graph、source/static/shared及搬移/offline/DLL邻置。
+复用同一CPU producer，C2–C4接线稳定后集中签最终delivery；C2先运行最小原压缩MatMul接缝，
+未运行的后续完整格标未验。P0核对编译期envelope、冷load、同源program和无热搜索；无适用P1。
+发布头/API未改，按selector实际扩展适用gate；不改公共治理工具。
 
 ## 验证、预算与停止
 
