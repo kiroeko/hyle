@@ -1,0 +1,38 @@
+[
+  {
+    "name": "canonical-forward-build",
+    "args": [
+      "python3",
+      "/mnt/c/public/project-hyle/hyle/.scratch/cpu-coverage-c3-linux.py",
+      "--resume-build"
+    ],
+    "candidate": "46a55325a465a94da3d79d2e5e92b0cb6b2cfb62",
+    "log": "1-canonical-forward-build.log",
+    "returncode": 0,
+    "seconds": 42.396
+  },
+  {
+    "name": "direct",
+    "args": [
+      "/root/hyle-scratch/active-cpu-z/build/bin/hyle_compute_route_cpu_test",
+      "--gtest_filter=*CpuC5Actual*.*",
+      "--gtest_output=xml:/mnt/c/public/project-hyle/hyle/.scratch/validation/cpu-coverage-c5-matrix-linux/46a55325a465/direct.xml"
+    ],
+    "candidate": "46a55325a465a94da3d79d2e5e92b0cb6b2cfb62",
+    "log": "2-direct.log",
+    "returncode": 0,
+    "seconds": 90.865
+  },
+  {
+    "name": "graph",
+    "args": [
+      "/root/hyle-scratch/active-cpu-z/build/bin/hyle_graph_route_cpu_test",
+      "--gtest_filter=*CpuGraphC5Actual*.*",
+      "--gtest_output=xml:/mnt/c/public/project-hyle/hyle/.scratch/validation/cpu-coverage-c5-matrix-linux/46a55325a465/graph.xml"
+    ],
+    "candidate": "46a55325a465a94da3d79d2e5e92b0cb6b2cfb62",
+    "log": "3-graph.log",
+    "returncode": 0,
+    "seconds": 90.044
+  }
+]

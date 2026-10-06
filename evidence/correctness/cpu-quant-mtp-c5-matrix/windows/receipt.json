@@ -1,0 +1,43 @@
+[
+  {
+    "name": "batch-build",
+    "args": [
+      "cmake",
+      "--build",
+      "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+      "--target",
+      "hyle_compute_route_cpu_tests",
+      "hyle_graph_route_cpu_tests",
+      "--parallel",
+      "2"
+    ],
+    "candidate": "46a55325a465a94da3d79d2e5e92b0cb6b2cfb62",
+    "log": "1-batch-build.log",
+    "returncode": 0,
+    "seconds": 14.234
+  },
+  {
+    "name": "direct",
+    "args": [
+      "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_compute_route_cpu_test.exe",
+      "--gtest_filter=*CpuC5ActualGguf*.*:*CpuC5ActualNonGguf*.*",
+      "--gtest_output=xml:C:\\public\\project-hyle\\hyle\\.scratch\\validation\\cpu-coverage-c5-gguf\\46a55325a465\\direct.xml"
+    ],
+    "candidate": "46a55325a465a94da3d79d2e5e92b0cb6b2cfb62",
+    "log": "2-direct.log",
+    "returncode": 0,
+    "seconds": 113.735
+  },
+  {
+    "name": "graph",
+    "args": [
+      "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_graph_route_cpu_test.exe",
+      "--gtest_filter=*CpuGraphC5ActualGguf*.*:*CpuGraphC5ActualNonGguf*.*",
+      "--gtest_output=xml:C:\\public\\project-hyle\\hyle\\.scratch\\validation\\cpu-coverage-c5-gguf\\46a55325a465\\graph.xml"
+    ],
+    "candidate": "46a55325a465a94da3d79d2e5e92b0cb6b2cfb62",
+    "log": "3-graph.log",
+    "returncode": 0,
+    "seconds": 114.593
+  }
+]

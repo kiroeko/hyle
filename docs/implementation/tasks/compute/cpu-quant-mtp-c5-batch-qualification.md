@@ -95,3 +95,12 @@ HYLE已保留元素数、维度、stride、输出及checked索引边界，原库
 不能仅引用C4旧SDK的代表入口PASS。
 另一失败`g2fcad3816188464a`是测试误加I32→F32 Cast；实际hash/专家ids保留I32，
 按既有host checker读取整数，不修改产品Cast能力或放宽数值门。
+
+### F1/F2 第一批实际执行
+
+候选`46a55325a465a94da3d79d2e5e92b0cb6b2cfb62`的Windows/Linux普通Direct/Graph各594项通过：
+559实际GGUF合同、104精确身份的真实最小projection旅程，以及34实际非GGUF合同；
+全部本批indexed消费执行越界/写保护、slot退役及新slot恢复。
+[准确收据](../../../../evidence/correctness/cpu-quant-mtp-c5-matrix/README.md)不把2,413需求关联冒称完整混合模型运行。
+F3完整required-region与30类参数对账、F4更新SDK和最终聚合仍未完成；owner保持AUDITED。
+首次故障注入写4字节违反Buffer完整视图合同，修正为完整索引payload；没有产品错误/数值门放宽。

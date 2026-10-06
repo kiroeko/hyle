@@ -1,0 +1,34 @@
+{
+  "candidate": "46a55325a465a94da3d79d2e5e92b0cb6b2cfb62",
+  "platform": "windows",
+  "numeric_contracts": {
+    "gguf": 559,
+    "non_gguf": 34
+  },
+  "ordinary_entries": [
+    "Direct",
+    "Graph"
+  ],
+  "tests_per_entry": 594,
+  "identity_journey": "all104 exact GGUF artifacts execute a real smallest actual projection",
+  "indexed_failure": "all C5 indexed cases check OutOfRange, unchanged published outputs, retired slot and fresh-slot recovery",
+  "scope": [
+    "actual reduction/output widths",
+    "full vocabulary embedding and all head rows in resident shards",
+    "non-expert head groups retained, expert resident capacity reduced to at most8 as the plan permits",
+    "original GGUF activation codec/vec-dot and original packed port rules",
+    "NF4/AWQ/CT original output precision, one cold decode followed by ordinary replayable MatMul",
+    "MLX actual BF16 linear/selected-group/embedding, original K-group sequence"
+  ],
+  "limitations": [
+    "synthetic legal nonzero payload, no entire real-weight inference engine",
+    "2413 profile-to-contract associations retain demand provenance; not2413 separate full mixed-model runs",
+    "nonlinear/conv parameter and complete required-region reconciliation still pending"
+  ],
+  "remaining": [
+    "other platform matrix",
+    "complete required-region reconciliation",
+    "updated installed SDK for changed large-table admission",
+    "selected/full applicable gates, final costs/docs/status/red-team/LOC/cleanup"
+  ]
+}
