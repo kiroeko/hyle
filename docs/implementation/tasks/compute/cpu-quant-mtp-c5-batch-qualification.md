@@ -186,3 +186,19 @@ Direct4已通过，只补未执行Graph，没有重复build/Direct或改产品�
 80条参数的有限源码/合同复核已完成，见[复核表](../../../../evidence/correctness/cpu-quant-mtp-c5-parameters/contract-review.md)。
 八模型族/104档位required-region收据已建[聚合索引](../../../../evidence/correctness/cpu-quant-mtp-c5-required/README.md)，
 仍须完成跨证据完整作用域裁决、两新官版/三sidecar/四非GGUF及资源/三交付/七门终审；不提前签goal完成。
+
+### F2/F3非GGUF未压缩text合同与有限成熟接缝
+
+聚合确认四制品未压缩text参数不是GGUF的F32域。按kind/dtype/shape去重45合同：
+13 projection、10 norm、3 conv、2 head、3 embedding、3 position lookup、3 log-decay、3 time-bias，
+以及HC/sink/router/I32 lookup。963个视觉参数仍在既定语言范围外；487个packing companion由F2已有端口证明。
+固定同一参数化批次，实际原dtype/完整K/N、词表跨度与changed replay；不按tensor逐个建target。
+
+真实源码反例：公开CausalConv1d可推断F16/BF16/F32，但CPU ggml仅接F32，当前ATen/native源码没有低dtype
+成熟承载。C1需要BF16[6144,1,4]、BF16/F16[10240,1,4]，不能把F32 conv PASS直接代签。
+固定产品FIX owner compute_provider_native（当前AUDITED）：现有Torch CPU program增加窄F16/BF16 conv接缝，
+只调用原ATen conv1d，布局permute/reshape，明确F32 accumulation后回原output dtype；无新数学核。
+使用原managed runtime/accepted failure/slot退役/metadata回收，转换/原库临时为真实热成本，未知私有上界不写0。
+原F32 ggml路径不变，输入元素/原F32临时int64容量检查；不添加全局线程、JIT搜索或Provider排序。
+新原库程序采用追加的私有implementation ID，既有ID不重排。新增45合同及原资源边界、两系统更新SDK
+须完成资格后才签PASS；该dtype只有此具名成熟承载，无新赢家P1或自研对比。

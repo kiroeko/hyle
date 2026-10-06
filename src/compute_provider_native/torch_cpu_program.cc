@@ -31,7 +31,7 @@
 namespace hyle::compute::native::internal {
 namespace {
 enum class Kind { kDecode, kLinear, kEncodedMatMul, kGrouped8, kGrouped4, kRoundtrip,
-                  kArtifactDecode, kMlx };
+                  kArtifactDecode, kMlx, kCausalConv };
 struct Shape final {
   Kind kind{};
   std::int64_t e = 1, n = 0, k = 0, tokens = 0, slots = 1, activations = 1;
@@ -84,7 +84,15 @@ Result<Shape> select(const Operation &op, std::span<const TensorDesc> inputs,
   Shape s;
   s.output = outputs[0].data_type() == DataType::kBFloat16 ? at::kBFloat16 :
       (outputs[0].data_type() == DataType::kFloat16 ? at::kHalf : at::kFloat);
-  if (const auto mlx = op.custom_as<model_ops::MlxQuantized>()) {
+  if (op.custom_as<model_ops::CausalConv1d>()) {
+    s.kind = Kind::kCausalConv;
+    s.n = inputs[0].dimensions()[2]; s.k = inputs[1].dimensions()[1];
+    for (const auto &desc : inputs)
+      if (desc.element_count().value() > static_cast<std::uint64_t>(INT64_MAX) / sizeof(float))
+        return std::unexpected(Status::OutOfRange("ATen CPU convolution F32 temporary capacity overflows"));
+    if (outputs[0].element_count().value() > static_cast<std::uint64_t>(INT64_MAX) / sizeof(float))
+      return std::unexpected(Status::OutOfRange("ATen CPU convolution result capacity overflows"));
+  } else if (const auto mlx = op.custom_as<model_ops::MlxQuantized>()) {
     s.kind = Kind::kMlx;s.mlx = *mlx;
     const auto &w = inputs[mlx->kind == model_ops::MlxQuantizedKind::kEmbedding ? 0 : 1];
     s.k = w.dimensions().back() * (mlx->format == model_ops::MlxWeightFormat::kMxfp8 ? 4 : 8);
@@ -138,7 +146,7 @@ Result<Shape> select(const Operation &op, std::span<const TensorDesc> inputs,
   auto rows = product(s.tokens, s.slots);
   auto matrix = product(s.n, s.k);
   auto elements = rows && matrix ? math::try_multiply(*rows, *matrix) : std::nullopt;
-  if (!matrix || (s.kind != Kind::kDecode && s.kind != Kind::kArtifactDecode && s.kind != Kind::kMlx &&
+  if (!matrix || (s.kind != Kind::kDecode && s.kind != Kind::kArtifactDecode && s.kind != Kind::kMlx && s.kind != Kind::kCausalConv &&
                   (!elements || *elements > INT64_MAX / 32)))
     return std::unexpected(Status::OutOfRange("ATen CPU selected tensor capacity overflows"));
   return s;
@@ -218,11 +226,18 @@ Status execute(const Program &p, std::span<const std::byte *const> pointers,
     const auto &s = p.shape;
     constexpr auto activation_index = (Selected == Kind::kGrouped8 || Selected == Kind::kGrouped4) ? 1u : 0u;
     if (Selected != Kind::kDecode && Selected != Kind::kArtifactDecode && Selected != Kind::kMlx &&
-        Selected != Kind::kEncodedMatMul &&
+        Selected != Kind::kEncodedMatMul && Selected != Kind::kCausalConv &&
         !at::isfinite(input[activation_index]).all().item<bool>())
       return Status::InvalidArgument("original ATen CPU quantization requires finite activation");
     at::Tensor result;
-    if constexpr (Selected == Kind::kMlx) {
+    if constexpr (Selected == Kind::kCausalConv) {
+      // Keep the declared F32 accumulator and one final storage rounding.
+      // Layout/casts are original ATen operations; no HYLE numerical kernel.
+      auto samples = input[0].permute({0, 2, 1}).to(at::kFloat).contiguous();
+      auto weights = input[1].to(at::kFloat).reshape({s.n, 1, s.k});
+      result = at::conv1d(samples, weights, std::nullopt, {1}, {0}, {1}, s.n)
+                   .permute({0, 2, 1}).to(s.output).contiguous();
+    } else if constexpr (Selected == Kind::kMlx) {
       const bool embedding = s.mlx.kind == model_ops::MlxQuantizedKind::kEmbedding;
       const bool grouped = s.mlx.kind == model_ops::MlxQuantizedKind::kGrouped;
       const bool affine = s.mlx.format == model_ops::MlxWeightFormat::kAffine4;
@@ -368,6 +383,9 @@ detail::ResourceBindingRequirement host(const TensorDesc &desc) noexcept {
 
 bool is_torch_cpu_operation(const Operation &operation,
                            std::span<const TensorDesc> inputs) noexcept {
+  if (operation.custom_as<model_ops::CausalConv1d>())
+    return inputs.size() == 2 &&
+        (inputs[0].data_type() == DataType::kFloat16 || inputs[0].data_type() == DataType::kBFloat16);
   if (const auto q = operation.custom_as<model_ops::BlockQuantizationRoundtrip>())
     return q->format == model_ops::BlockQuantizationFormat::kFloat8E4M3Block128;
   return operation.custom_as<model_ops::MlxQuantized>() ||
@@ -436,6 +454,7 @@ ProviderPrepareOutcome prepare_torch_cpu(const detail::ProviderPrepareRequest &r
   case Kind::kRoundtrip: p->run = &execute<Kind::kRoundtrip>; break;
   case Kind::kArtifactDecode: p->run = &execute<Kind::kArtifactDecode>; break;
   case Kind::kMlx: p->run = &execute<Kind::kMlx>; break;
+  case Kind::kCausalConv: p->run = &execute<Kind::kCausalConv>; break;
   }
   for (std::size_t i = 0; i < p->input_count; ++i) p->inputs[i] = request.inputs[i];
   *out = {.vtable = &kVTable, .state = p, .workspace = {}, .runtime = kRuntime,

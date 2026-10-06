@@ -26,6 +26,7 @@
 #include "../compute_models/cpu_c5_parameter_fragments.h"
 #include "../compute_models/cpu_c5_qwen_attention.h"
 #include "../compute_models/cpu_c5_qwen_nextn.h"
+#include "../compute_models/cpu_c5_plain_fixture.h"
 #include "../compute_models/d5_kda_full_fragments.h"
 #include "../compute_models/d5_kimi_remaining_fragments.h"
 #include "../compute_models/d5_glm_remaining_fragments.h"
@@ -118,7 +119,7 @@ void expect_mature(const DirectCall &call, const c::WorkloadContext &workload) {
   mature = mature || provider == c::aten_cpu::kProviderId;
   mature = mature || (provider == c::native::kProviderId &&
                      call.prepared.implementation().value() >= 0x544f524348000001ULL &&
-                     call.prepared.implementation().value() <= 0x544f524348000008ULL);
+                     call.prepared.implementation().value() <= 0x544f524348000009ULL);
 #endif
   EXPECT_TRUE(mature)
       << c::operation_name(call.prepared.kind()) << ": "
@@ -1104,6 +1105,7 @@ TEST(CpuMoeFragments, D5OfficialFullMoeColdBoundary) {
 #include "../compute_models/cpu_c5_gguf_tests.h"
 #include "../compute_models/cpu_c5_non_gguf_tests.h"
 #include "../compute_models/cpu_c5_parameter_tests.h"
+#include "../compute_models/cpu_c5_plain_tests.h"
 #endif
 
 TEST(CpuMoeFragments, D5OfficialFp4ExpertBatch) {

@@ -1,0 +1,713 @@
+{
+  "candidate": "bbf6be65040ea669a11730ce2e613fac7e0a465c",
+  "count": 45,
+  "by_kind": {
+    "projection": 13,
+    "norm": 5,
+    "hc_base": 2,
+    "conv": 3,
+    "head": 2,
+    "norm_zero_centered": 5,
+    "log_decay": 3,
+    "position_lookup": 3,
+    "embedding": 3,
+    "time_bias": 3,
+    "sink": 1,
+    "router_bias": 1,
+    "integer_lookup": 1
+  },
+  "skipped": {
+    "vision_outside_language_scope": 963,
+    "packing_companion_already_F2": 487
+  },
+  "cases": [
+    {
+      "id": "p033ae23672c4671a",
+      "kind": "projection",
+      "dtype": "BF16",
+      "shape": [
+        17408,
+        5120
+      ],
+      "aliases": [
+        2
+      ],
+      "examples": [
+        "mtp.layers.*.mlp.gate_proj.weight",
+        "mtp.layers.*.mlp.up_proj.weight"
+      ]
+    },
+    {
+      "id": "p0afd29f5ba0d80fe",
+      "kind": "norm",
+      "dtype": "BF16",
+      "shape": [
+        1024
+      ],
+      "aliases": [
+        3
+      ],
+      "examples": [
+        "language_model.model.layers.*.attn.q_norm.weight"
+      ]
+    },
+    {
+      "id": "p0bd7aad8df2d52de",
+      "kind": "norm",
+      "dtype": "BF16",
+      "shape": [
+        512
+      ],
+      "aliases": [
+        3
+      ],
+      "examples": [
+        "language_model.model.layers.*.attn.kv_norm.weight",
+        "language_model.model.layers.*.attn.compressor.norm.weight"
+      ]
+    },
+    {
+      "id": "p17277e53d2d86a4c",
+      "kind": "hc_base",
+      "dtype": "F32",
+      "shape": [
+        4
+      ],
+      "aliases": [
+        3
+      ],
+      "examples": [
+        "language_model.model.hc_head.base"
+      ]
+    },
+    {
+      "id": "p1e385a41b1182a6a",
+      "kind": "conv",
+      "dtype": "BF16",
+      "shape": [
+        6144,
+        1,
+        4
+      ],
+      "aliases": [
+        0
+      ],
+      "examples": [
+        "model.language_model.layers.*.linear_attn.conv1d.weight"
+      ]
+    },
+    {
+      "id": "p1ee2dd3f7e4dba6e",
+      "kind": "head",
+      "dtype": "BF16",
+      "shape": [
+        248320,
+        5120
+      ],
+      "aliases": [
+        2
+      ],
+      "examples": [
+        "lm_head.weight"
+      ]
+    },
+    {
+      "id": "p25de7cab6d16489e",
+      "kind": "conv",
+      "dtype": "F16",
+      "shape": [
+        10240,
+        1,
+        4
+      ],
+      "aliases": [
+        1
+      ],
+      "examples": [
+        "model.language_model.layers.*.linear_attn.conv1d.weight"
+      ]
+    },
+    {
+      "id": "p2e309ecbb28e6116",
+      "kind": "norm_zero_centered",
+      "dtype": "F16",
+      "shape": [
+        5120
+      ],
+      "aliases": [
+        1
+      ],
+      "examples": [
+        "model.language_model.layers.*.input_layernorm.weight",
+        "model.language_model.layers.*.post_attention_layernorm.weight",
+        "model.language_model.norm.weight"
+      ]
+    },
+    {
+      "id": "p2f522eea94460483",
+      "kind": "projection",
+      "dtype": "BF16",
+      "shape": [
+        1024,
+        5120
+      ],
+      "aliases": [
+        2
+      ],
+      "examples": [
+        "mtp.layers.*.self_attn.k_proj.weight",
+        "mtp.layers.*.self_attn.v_proj.weight"
+      ]
+    },
+    {
+      "id": "p393f3bca8bb96741",
+      "kind": "projection",
+      "dtype": "F16",
+      "shape": [
+        48,
+        5120
+      ],
+      "aliases": [
+        1
+      ],
+      "examples": [
+        "model.language_model.layers.*.linear_attn.in_proj_a.weight",
+        "model.language_model.layers.*.linear_attn.in_proj_b.weight"
+      ]
+    },
+    {
+      "id": "p395036291851d773",
+      "kind": "projection",
+      "dtype": "F32",
+      "shape": [
+        4,
+        16384
+      ],
+      "aliases": [
+        3
+      ],
+      "examples": [
+        "language_model.model.hc_head.fn"
+      ]
+    },
+    {
+      "id": "p401603e31391cadf",
+      "kind": "norm_zero_centered",
+      "dtype": "BF16",
+      "shape": [
+        2048
+      ],
+      "aliases": [
+        0
+      ],
+      "examples": [
+        "model.language_model.layers.*.input_layernorm.weight",
+        "model.language_model.layers.*.post_attention_layernorm.weight",
+        "model.language_model.norm.weight"
+      ]
+    },
+    {
+      "id": "p4952faefad3c4446",
+      "kind": "log_decay",
+      "dtype": "BF16",
+      "shape": [
+        48
+      ],
+      "aliases": [
+        2
+      ],
+      "examples": [
+        "model.language_model.layers.*.linear_attn.A_log"
+      ]
+    },
+    {
+      "id": "p4b14bc81a1f54ccb",
+      "kind": "position_lookup",
+      "dtype": "BF16",
+      "shape": [
+        4,
+        256
+      ],
+      "aliases": [
+        3
+      ],
+      "examples": [
+        "language_model.model.layers.*.attn.indexer.compressor.ape"
+      ]
+    },
+    {
+      "id": "p4dc6f44efc136a4f",
+      "kind": "norm_zero_centered",
+      "dtype": "F16",
+      "shape": [
+        256
+      ],
+      "aliases": [
+        1
+      ],
+      "examples": [
+        "model.language_model.layers.*.self_attn.k_norm.weight",
+        "model.language_model.layers.*.self_attn.q_norm.weight"
+      ]
+    },
+    {
+      "id": "p6521e759968a3577",
+      "kind": "embedding",
+      "dtype": "F16",
+      "shape": [
+        248320,
+        5120
+      ],
+      "aliases": [
+        1
+      ],
+      "examples": [
+        "model.language_model.embed_tokens.weight"
+      ]
+    },
+    {
+      "id": "p6656a11cafc1dac0",
+      "kind": "projection",
+      "dtype": "BF16",
+      "shape": [
+        12288,
+        5120
+      ],
+      "aliases": [
+        2
+      ],
+      "examples": [
+        "mtp.layers.*.self_attn.q_proj.weight"
+      ]
+    },
+    {
+      "id": "p67911b255e95f6ce",
+      "kind": "time_bias",
+      "dtype": "F16",
+      "shape": [
+        48
+      ],
+      "aliases": [
+        1
+      ],
+      "examples": [
+        "model.language_model.layers.*.linear_attn.dt_bias"
+      ]
+    },
+    {
+      "id": "p6cad3b2609a46d21",
+      "kind": "embedding",
+      "dtype": "BF16",
+      "shape": [
+        248320,
+        5120
+      ],
+      "aliases": [
+        2
+      ],
+      "examples": [
+        "model.language_model.embed_tokens.weight"
+      ]
+    },
+    {
+      "id": "p7075e074f5c559c6",
+      "kind": "sink",
+      "dtype": "F32",
+      "shape": [
+        64
+      ],
+      "aliases": [
+        3
+      ],
+      "examples": [
+        "language_model.model.layers.*.attn.attn_sink"
+      ]
+    },
+    {
+      "id": "p73b1be8a81f60682",
+      "kind": "norm_zero_centered",
+      "dtype": "BF16",
+      "shape": [
+        256
+      ],
+      "aliases": [
+        0,
+        2
+      ],
+      "examples": [
+        "model.language_model.layers.*.self_attn.k_norm.weight",
+        "model.language_model.layers.*.self_attn.q_norm.weight",
+        "mtp.layers.*.self_attn.k_norm.weight",
+        "mtp.layers.*.self_attn.q_norm.weight"
+      ]
+    },
+    {
+      "id": "p77a635b55664287f",
+      "kind": "projection",
+      "dtype": "BF16",
+      "shape": [
+        6144,
+        5120
+      ],
+      "aliases": [
+        2
+      ],
+      "examples": [
+        "model.language_model.layers.*.linear_attn.in_proj_z.weight"
+      ]
+    },
+    {
+      "id": "p78cfb55fb5085d3a",
+      "kind": "norm",
+      "dtype": "BF16",
+      "shape": [
+        128
+      ],
+      "aliases": [
+        0,
+        2,
+        3
+      ],
+      "examples": [
+        "model.language_model.layers.*.linear_attn.norm.weight",
+        "language_model.model.layers.*.attn.indexer.compressor.norm.weight"
+      ]
+    },
+    {
+      "id": "p893cd9940b6cedd0",
+      "kind": "time_bias",
+      "dtype": "BF16",
+      "shape": [
+        16
+      ],
+      "aliases": [
+        0
+      ],
+      "examples": [
+        "model.language_model.layers.*.linear_attn.dt_bias"
+      ]
+    },
+    {
+      "id": "p89a9ec4743c9107b",
+      "kind": "position_lookup",
+      "dtype": "BF16",
+      "shape": [
+        4,
+        1024
+      ],
+      "aliases": [
+        3
+      ],
+      "examples": [
+        "language_model.model.layers.*.attn.compressor.ape"
+      ]
+    },
+    {
+      "id": "p89c23f07a68ea22a",
+      "kind": "embedding",
+      "dtype": "BF16",
+      "shape": [
+        248320,
+        2048
+      ],
+      "aliases": [
+        0
+      ],
+      "examples": [
+        "model.language_model.embed_tokens.weight"
+      ]
+    },
+    {
+      "id": "p8f3f00196aec37da",
+      "kind": "head",
+      "dtype": "F16",
+      "shape": [
+        248320,
+        5120
+      ],
+      "aliases": [
+        1
+      ],
+      "examples": [
+        "lm_head.weight"
+      ]
+    },
+    {
+      "id": "p91a52869c4190996",
+      "kind": "projection",
+      "dtype": "BF16",
+      "shape": [
+        256,
+        4096
+      ],
+      "aliases": [
+        3
+      ],
+      "examples": [
+        "language_model.model.layers.*.ffn.gate.weight"
+      ]
+    },
+    {
+      "id": "p938bcf88666f5aa4",
+      "kind": "projection",
+      "dtype": "BF16",
+      "shape": [
+        5120,
+        17408
+      ],
+      "aliases": [
+        2
+      ],
+      "examples": [
+        "mtp.layers.*.mlp.down_proj.weight"
+      ]
+    },
+    {
+      "id": "p968d0881539dd7a3",
+      "kind": "hc_base",
+      "dtype": "F32",
+      "shape": [
+        24
+      ],
+      "aliases": [
+        3
+      ],
+      "examples": [
+        "language_model.model.layers.*.attn_hc.base",
+        "language_model.model.layers.*.ffn_hc.base"
+      ]
+    },
+    {
+      "id": "p9e4bbe139a148cc5",
+      "kind": "projection",
+      "dtype": "BF16",
+      "shape": [
+        10240,
+        5120
+      ],
+      "aliases": [
+        2
+      ],
+      "examples": [
+        "model.language_model.layers.*.linear_attn.in_proj_qkv.weight"
+      ]
+    },
+    {
+      "id": "pa2a7b9ba93a5c9c2",
+      "kind": "router_bias",
+      "dtype": "F32",
+      "shape": [
+        256
+      ],
+      "aliases": [
+        3
+      ],
+      "examples": [
+        "language_model.model.layers.*.ffn.gate.e_score_correction_bias"
+      ]
+    },
+    {
+      "id": "paac32a736c36ec89",
+      "kind": "log_decay",
+      "dtype": "F16",
+      "shape": [
+        48
+      ],
+      "aliases": [
+        1
+      ],
+      "examples": [
+        "model.language_model.layers.*.linear_attn.A_log"
+      ]
+    },
+    {
+      "id": "pac94ec1bf56a019b",
+      "kind": "projection",
+      "dtype": "BF16",
+      "shape": [
+        5120,
+        6144
+      ],
+      "aliases": [
+        2
+      ],
+      "examples": [
+        "model.language_model.layers.*.linear_attn.out_proj.weight",
+        "mtp.layers.*.self_attn.o_proj.weight"
+      ]
+    },
+    {
+      "id": "pb2ff1ec2df5e4a16",
+      "kind": "integer_lookup",
+      "dtype": "I32",
+      "shape": [
+        129280,
+        6
+      ],
+      "aliases": [
+        3
+      ],
+      "examples": [
+        "language_model.model.layers.*.ffn.gate.tid2eid"
+      ]
+    },
+    {
+      "id": "pb3839cd7a67d8b9e",
+      "kind": "projection",
+      "dtype": "BF16",
+      "shape": [
+        5120,
+        10240
+      ],
+      "aliases": [
+        2
+      ],
+      "examples": [
+        "mtp.fc.weight"
+      ]
+    },
+    {
+      "id": "pb76b261976613ec5",
+      "kind": "conv",
+      "dtype": "BF16",
+      "shape": [
+        10240,
+        1,
+        4
+      ],
+      "aliases": [
+        2
+      ],
+      "examples": [
+        "model.language_model.layers.*.linear_attn.conv1d.weight"
+      ]
+    },
+    {
+      "id": "pbe853152955b7d0c",
+      "kind": "projection",
+      "dtype": "F32",
+      "shape": [
+        24,
+        16384
+      ],
+      "aliases": [
+        3
+      ],
+      "examples": [
+        "language_model.model.layers.*.attn_hc.fn",
+        "language_model.model.layers.*.ffn_hc.fn"
+      ]
+    },
+    {
+      "id": "pc5b6491635fce0b8",
+      "kind": "time_bias",
+      "dtype": "BF16",
+      "shape": [
+        48
+      ],
+      "aliases": [
+        2
+      ],
+      "examples": [
+        "model.language_model.layers.*.linear_attn.dt_bias"
+      ]
+    },
+    {
+      "id": "pcd4216fa4b5222b9",
+      "kind": "projection",
+      "dtype": "BF16",
+      "shape": [
+        48,
+        5120
+      ],
+      "aliases": [
+        2
+      ],
+      "examples": [
+        "model.language_model.layers.*.linear_attn.in_proj_a.weight",
+        "model.language_model.layers.*.linear_attn.in_proj_b.weight"
+      ]
+    },
+    {
+      "id": "pd349b6da7bece4a8",
+      "kind": "norm",
+      "dtype": "BF16",
+      "shape": [
+        4096
+      ],
+      "aliases": [
+        3
+      ],
+      "examples": [
+        "language_model.model.layers.*.attn_norm.weight",
+        "language_model.model.layers.*.ffn_norm.weight",
+        "language_model.model.norm.weight"
+      ]
+    },
+    {
+      "id": "pd75430a907622b9e",
+      "kind": "position_lookup",
+      "dtype": "BF16",
+      "shape": [
+        128,
+        512
+      ],
+      "aliases": [
+        3
+      ],
+      "examples": [
+        "language_model.model.layers.*.attn.compressor.ape"
+      ]
+    },
+    {
+      "id": "pdacb7536905755fa",
+      "kind": "log_decay",
+      "dtype": "BF16",
+      "shape": [
+        16
+      ],
+      "aliases": [
+        0
+      ],
+      "examples": [
+        "model.language_model.layers.*.linear_attn.A_log"
+      ]
+    },
+    {
+      "id": "pdc1efdcf1673bd32",
+      "kind": "norm_zero_centered",
+      "dtype": "BF16",
+      "shape": [
+        5120
+      ],
+      "aliases": [
+        2
+      ],
+      "examples": [
+        "model.language_model.layers.*.input_layernorm.weight",
+        "model.language_model.layers.*.post_attention_layernorm.weight",
+        "model.language_model.norm.weight",
+        "mtp.layers.*.input_layernorm.weight",
+        "mtp.layers.*.post_attention_layernorm.weight",
+        "mtp.norm.weight",
+        "mtp.pre_fc_norm_embedding.weight",
+        "mtp.pre_fc_norm_hidden.weight"
+      ]
+    },
+    {
+      "id": "pf0d7ebdd2f4776da",
+      "kind": "norm",
+      "dtype": "F16",
+      "shape": [
+        128
+      ],
+      "aliases": [
+        1
+      ],
+      "examples": [
+        "model.language_model.layers.*.linear_attn.norm.weight"
+      ]
+    }
+  ],
+  "status": "AUDITED_DEMAND_NOT_RUN_PASS"
+}
