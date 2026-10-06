@@ -624,7 +624,7 @@ Status prepare_elementwise(Operation operation,
     const Unary *unary = operation.get_if<Unary>();
     if (unary == nullptr ||
         !select_unary(unary->kind, inputs[0].data_type(), plan))
-      return Status::InvalidArgument("native Unary kind is invalid");
+      return Status::Unimplemented("native Unary kind/dtype is not retained");
     linear = dense_same_shape(inputs[0], outputs[0]);
     break;
   }
