@@ -1,9 +1,11 @@
 # C4：CPU 新版主干、MTP 与 DSpark 组合接线
 
+<!-- MODULE REVIEW: SCOPED -->
+
 ## 计划身份
 
-- 状态：PLANNED，未激活、未绑定registry；没有SCOPED/AUDITED产品授权或执行PASS。
-- baseline：`5b0044e2a10d11fdfce54893020cfcaaed47b0c0`；激活时核对Windows实际HEAD/worktree，保留后续及用户修改。
+- 状态：SCOPED，当前审计真实新版组合消费者；未将产品owner从C3交接，没有新产品修改授权或执行PASS。
+- baseline：`2d1d787396f1f2798fe14c7ff3cece9bbebbbbda`；Windows实际HEAD/worktree已核对，保留全部后续提交。
 - owner范围：compute_provider_ggml、compute_ops；原ATen/借用计算涉及compute_provider_native；CPU Direct/Graph facade按实际产品变化绑定。
 - 总合同：[CPU扩覆盖计划](cpu-quant-mtp-coverage-expansion-plan.md)；事实：[缺口清单](cpu-popular-quant-mtp-gap-list.md)。
 - 本卡是一个批次，不是逐算子/逐模型队列。CLOSED按真实trigger新开；AUDITED范围变化重新定界。
@@ -44,3 +46,19 @@
 
 单一合格成熟carrier完成正确接入与P0；多家成熟库具备同合同重叠域时按总计划批量比较固定默认规则。
 不比较自研，不为每个算子/档位重建或计时，最多两个代表消费族共用一份稳定候选P1。
+
+## 本轮有限审计边界
+
+- 依据C1完整header/index与固定官方`model.py`；本轮不再查其它版本或扩大模型范围。
+- Pro H7168/R512、Flash H4096/R256，均为vocab129280、HC4、window128、draft block5。
+  main_proj分别[7168,21504]/[4096,12288]，原FP8/E8M0 block128；confidence源BF16而F32执行。
+- 实际checkpoint有mtp.0/1/2三阶段、head在mtp.2；config中旧num_nextn_predict_layers=1不能替代
+  DSpark实际阶段。三条末尾compress ratio0和官方DSpark类与实际tensor互相对账。
+- 固定有限输出：新版精确profile与实际角色绑定；target hidden归并/main projection/norm；
+  target KV prefill/wrap与draft五token sink attention；Markov全词表与confidence；完整HC/MoE/head；
+  Qwen sidecar实际Q3_K/Q4_K/Q6_K与Flash Q8_0/BF16 sidecar消费。
+- 可复用既有成熟MatMul/Gather/Concat/Cast/Reduce/Scatter/RMSNorm/RoPE/sink attention、
+  FP8/FP4原程序与共享Fragment消费形状；仅测试组合不伪造产品reopen。
+  若发现公开语义或成熟承载真缺口，须先固定具名FIX并绑定owner，不能写新的数学核补洞。
+- 缩小token/batch/驻留专家与头部常量分片；保留实际hidden/latent/head/rank/block/词表跨度。
+  采样/接受策略留给consumer，head输入显式提供前一token，不省略Markov偏置或confidence。
