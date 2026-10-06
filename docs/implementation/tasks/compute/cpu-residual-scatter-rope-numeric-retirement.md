@@ -1,6 +1,6 @@
 # CPU 剩余数值接缝：重复 ScatterAdd 与 RoPE 数据域
 
-<!-- MODULE REVIEW: CANDIDATE -->
+<!-- MODULE REVIEW: CLOSED -->
 
 - owner `compute_provider_native`；baseline `e80cf22ccf285934693f40da9cc558b457283d7b`，Windows canonical。
 - 主消费：公开 F16/BF16 重复索引聚合，及已有整数 positions/F32 frequency RoPE 的低精度 data。
@@ -55,3 +55,10 @@ RN4定向保持RoPE的原typed Tensor，再交原Double prefix程序；其它num
 实际通过，两个低精度storage的alias/empty/两条独立并发Queue/变化重放/close/所供冷OOM回滚也通过。
 完整原件和限制见[本批证据](../../../../evidence/correctness/cpu-residual-scatter-rope-qualification/README.md)。
 只关闭RN1/RN4，不签整模型或剩余Native性能裁决。当前CANDIDATE不可变，终审登记后结束本子批。
+
+终审RN1/RN4七门与P0通过：审计/fix与本卡一致；原库/typed边界/managed未知资源不变；两平台新
+数值/原始尾部位、cold拒绝、生命周期和ordinary完整旅程实际通过；三交付、guide与头一致；红队
+独立核对两处产品diff、错误旧预期迁移、Float32/Double误比纠正、原件/skips和DLL/cleanup边界。
+没有公共API、原库pin/算法优化、GPU或SIMD本体改动。未跑P1，不签自研性能方向。
+现按协议CLOSED；具体新数值/布局/资源/交付反例或原依赖/接口变化才可重开。剩余自研域的用户
+要求以新卡定界，旧父卡仅提供已发生的证据，不授权继续改CLOSED源码。

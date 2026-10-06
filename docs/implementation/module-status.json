@@ -423,10 +423,14 @@
     },
     {
       "module": "compute_provider_native",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/compute/cpu-residual-scatter-rope-numeric-retirement.md",
-      "summary": "RN1/RN4固定候选：两平台144/144、Graph22/22、普通低精度Direct/Graph三交付与alias/empty/并发/close/所供冷OOM通过；两个旧fixture skip不算PASS。SIMD/有效Float32模型RoPE保留，剩余合格自研性能与路由仍未裁决。",
-      "candidate": "775b2bedace019de423edc5d8a6477772b8ef3ec"
+      "summary": "RN1/RN4 CLOSED：错误half ScatterAdd退役，原ATen lowp整数RoPE接入且尾部位保持；两平台144/144、Graph22/22、普通Direct/Graph三交付及alias/empty/并发/close/所供冷OOM通过，2旧fixture skip不算PASS。SIMD/有效Float32模型RoPE保留；仅本子批关闭，剩余自研性能/路由仍待新卡有限裁决。",
+      "candidate": "775b2bedace019de423edc5d8a6477772b8ef3ec",
+      "performance": {
+        "tier": "P0",
+        "evidence": "evidence/correctness/cpu-residual-scatter-rope-qualification/README.md"
+      }
     },
     {
       "module": "compute_sched",
