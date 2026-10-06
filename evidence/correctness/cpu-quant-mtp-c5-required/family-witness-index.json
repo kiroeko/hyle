@@ -1,0 +1,3549 @@
+{
+  "candidate": "c1b0250ed4bb93ea4a052aa8ed3d018fa238363d",
+  "families": [
+    {
+      "family": "Qwen3.5-2B-GGUF",
+      "profiles": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21
+      ],
+      "semantic_regions": [
+        {
+          "region": "R02",
+          "witness": {
+            "source": "tests/compute_models/cpu_c5_qwen_attention.h",
+            "anchor": "inline Fragment norm_residual(",
+            "sha256": "9ff6f43529b87a77f31524814721ff62168899a1740d0bee5c2fc64500b25333",
+            "results": [
+              {
+                "platform": "windows",
+                "entry": "direct",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/windows/direct.xml",
+                    "testcase": "CpuC5Parameters.QwenActualWidthsUseDeclaredFloatNormEpsilon"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/expanded-windows/direct.xml",
+                    "testcase": "CpuC5Parameters.QwenActualWidthsUseDeclaredFloatNormEpsilon"
+                  }
+                ]
+              },
+              {
+                "platform": "windows",
+                "entry": "graph",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/windows/graph.xml",
+                    "testcase": "CpuGraphC5Parameters.QwenActualWidthsUseDeclaredFloatNormEpsilon"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/expanded-windows/graph.xml",
+                    "testcase": "CpuGraphC5Parameters.QwenActualWidthsUseDeclaredFloatNormEpsilon"
+                  }
+                ]
+              },
+              {
+                "platform": "linux",
+                "entry": "direct",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/linux/direct.xml",
+                    "testcase": "CpuC5Parameters.QwenActualWidthsUseDeclaredFloatNormEpsilon"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/expanded-linux/direct.xml",
+                    "testcase": "CpuC5Parameters.QwenActualWidthsUseDeclaredFloatNormEpsilon"
+                  }
+                ]
+              },
+              {
+                "platform": "linux",
+                "entry": "graph",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/linux/graph.xml",
+                    "testcase": "CpuGraphC5Parameters.QwenActualWidthsUseDeclaredFloatNormEpsilon"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/expanded-linux/graph.xml",
+                    "testcase": "CpuGraphC5Parameters.QwenActualWidthsUseDeclaredFloatNormEpsilon"
+                  }
+                ]
+              }
+            ]
+          },
+          "verdict": "ASSOCIATED_PENDING_AGGREGATE_CONTRACT_REVIEW"
+        },
+        {
+          "region": "R04",
+          "witness": {
+            "source": "tests/compute_models/cpu_c5_qwen_attention.h",
+            "anchor": "inline Fragment make(",
+            "sha256": "9ff6f43529b87a77f31524814721ff62168899a1740d0bee5c2fc64500b25333",
+            "results": [
+              {
+                "platform": "windows",
+                "entry": "direct",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/windows/direct.xml",
+                    "testcase": "CpuC5Parameters.Qwen24ActualHalfSplitFrequencyNormAndKvFeedback"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/expanded-windows/direct.xml",
+                    "testcase": "CpuC5Parameters.Qwen24ActualHalfSplitFrequencyNormAndKvFeedback"
+                  }
+                ]
+              },
+              {
+                "platform": "windows",
+                "entry": "graph",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/windows/graph.xml",
+                    "testcase": "CpuGraphC5Parameters.Qwen24ActualHalfSplitFrequencyNormAndKvFeedback"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/expanded-windows/graph.xml",
+                    "testcase": "CpuGraphC5Parameters.Qwen24ActualHalfSplitFrequencyNormAndKvFeedback"
+                  }
+                ]
+              },
+              {
+                "platform": "linux",
+                "entry": "direct",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/linux/direct.xml",
+                    "testcase": "CpuC5Parameters.Qwen24ActualHalfSplitFrequencyNormAndKvFeedback"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/expanded-linux/direct.xml",
+                    "testcase": "CpuC5Parameters.Qwen24ActualHalfSplitFrequencyNormAndKvFeedback"
+                  }
+                ]
+              },
+              {
+                "platform": "linux",
+                "entry": "graph",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/linux/graph.xml",
+                    "testcase": "CpuGraphC5Parameters.Qwen24ActualHalfSplitFrequencyNormAndKvFeedback"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/expanded-linux/graph.xml",
+                    "testcase": "CpuGraphC5Parameters.Qwen24ActualHalfSplitFrequencyNormAndKvFeedback"
+                  }
+                ]
+              }
+            ]
+          },
+          "verdict": "ASSOCIATED_PENDING_AGGREGATE_CONTRACT_REVIEW"
+        },
+        {
+          "region": "R05",
+          "witness": {
+            "source": "tests/compute_models/d5_qwen38_24t_semantic_fragments.h",
+            "anchor": "inline Fragment gdn(",
+            "sha256": "b419ccdab0d23da5ff1db51d6e2c9c504bcae02f83666885cb5bb457b62d2736",
+            "results": [
+              {
+                "platform": "windows",
+                "entry": "direct",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-final/windows/fixture-followup/direct.xml",
+                    "testcase": "CpuQwenRecurrent.D5NineProfilesUseCompleteGateAndActualStateFeedback"
+                  }
+                ]
+              },
+              {
+                "platform": "windows",
+                "entry": "graph",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-final/windows/fixture-followup/graph.xml",
+                    "testcase": "CpuGraphQwenRecurrent.D5NineProfilesUseCompleteGateAndActualStateFeedback"
+                  }
+                ]
+              },
+              {
+                "platform": "linux",
+                "entry": "direct",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-final/linux/direct.xml",
+                    "testcase": "CpuQwenRecurrent.D5NineProfilesUseCompleteGateAndActualStateFeedback"
+                  }
+                ]
+              },
+              {
+                "platform": "linux",
+                "entry": "graph",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-final/linux/graph.xml",
+                    "testcase": "CpuGraphQwenRecurrent.D5NineProfilesUseCompleteGateAndActualStateFeedback"
+                  }
+                ]
+              }
+            ]
+          },
+          "verdict": "ASSOCIATED_PENDING_AGGREGATE_CONTRACT_REVIEW"
+        }
+      ],
+      "numeric_regions": [
+        "R01",
+        "R03",
+        "R14"
+      ],
+      "resources_region": "R15",
+      "numeric_evidence": "evidence/correctness/cpu-quant-mtp-c5-matrix/README.md",
+      "parameter_evidence": "evidence/correctness/cpu-quant-mtp-c5-parameters/contract-review.md"
+    },
+    {
+      "family": "Qwen3.8-27B-GGUF",
+      "profiles": [
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40,
+        41,
+        42,
+        43,
+        44,
+        45,
+        46
+      ],
+      "semantic_regions": [
+        {
+          "region": "R02",
+          "witness": {
+            "source": "tests/compute_models/cpu_c5_qwen_attention.h",
+            "anchor": "inline Fragment norm_residual(",
+            "sha256": "9ff6f43529b87a77f31524814721ff62168899a1740d0bee5c2fc64500b25333",
+            "results": [
+              {
+                "platform": "windows",
+                "entry": "direct",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/windows/direct.xml",
+                    "testcase": "CpuC5Parameters.QwenActualWidthsUseDeclaredFloatNormEpsilon"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/expanded-windows/direct.xml",
+                    "testcase": "CpuC5Parameters.QwenActualWidthsUseDeclaredFloatNormEpsilon"
+                  }
+                ]
+              },
+              {
+                "platform": "windows",
+                "entry": "graph",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/windows/graph.xml",
+                    "testcase": "CpuGraphC5Parameters.QwenActualWidthsUseDeclaredFloatNormEpsilon"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/expanded-windows/graph.xml",
+                    "testcase": "CpuGraphC5Parameters.QwenActualWidthsUseDeclaredFloatNormEpsilon"
+                  }
+                ]
+              },
+              {
+                "platform": "linux",
+                "entry": "direct",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/linux/direct.xml",
+                    "testcase": "CpuC5Parameters.QwenActualWidthsUseDeclaredFloatNormEpsilon"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/expanded-linux/direct.xml",
+                    "testcase": "CpuC5Parameters.QwenActualWidthsUseDeclaredFloatNormEpsilon"
+                  }
+                ]
+              },
+              {
+                "platform": "linux",
+                "entry": "graph",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/linux/graph.xml",
+                    "testcase": "CpuGraphC5Parameters.QwenActualWidthsUseDeclaredFloatNormEpsilon"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/expanded-linux/graph.xml",
+                    "testcase": "CpuGraphC5Parameters.QwenActualWidthsUseDeclaredFloatNormEpsilon"
+                  }
+                ]
+              }
+            ]
+          },
+          "verdict": "ASSOCIATED_PENDING_AGGREGATE_CONTRACT_REVIEW"
+        },
+        {
+          "region": "R04",
+          "witness": {
+            "source": "tests/compute_models/cpu_c5_qwen_attention.h",
+            "anchor": "inline Fragment make(",
+            "sha256": "9ff6f43529b87a77f31524814721ff62168899a1740d0bee5c2fc64500b25333",
+            "results": [
+              {
+                "platform": "windows",
+                "entry": "direct",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/windows/direct.xml",
+                    "testcase": "CpuC5Parameters.Qwen24ActualHalfSplitFrequencyNormAndKvFeedback"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/expanded-windows/direct.xml",
+                    "testcase": "CpuC5Parameters.Qwen24ActualHalfSplitFrequencyNormAndKvFeedback"
+                  }
+                ]
+              },
+              {
+                "platform": "windows",
+                "entry": "graph",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/windows/graph.xml",
+                    "testcase": "CpuGraphC5Parameters.Qwen24ActualHalfSplitFrequencyNormAndKvFeedback"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/expanded-windows/graph.xml",
+                    "testcase": "CpuGraphC5Parameters.Qwen24ActualHalfSplitFrequencyNormAndKvFeedback"
+                  }
+                ]
+              },
+              {
+                "platform": "linux",
+                "entry": "direct",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/linux/direct.xml",
+                    "testcase": "CpuC5Parameters.Qwen24ActualHalfSplitFrequencyNormAndKvFeedback"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/expanded-linux/direct.xml",
+                    "testcase": "CpuC5Parameters.Qwen24ActualHalfSplitFrequencyNormAndKvFeedback"
+                  }
+                ]
+              },
+              {
+                "platform": "linux",
+                "entry": "graph",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/linux/graph.xml",
+                    "testcase": "CpuGraphC5Parameters.Qwen24ActualHalfSplitFrequencyNormAndKvFeedback"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/expanded-linux/graph.xml",
+                    "testcase": "CpuGraphC5Parameters.Qwen24ActualHalfSplitFrequencyNormAndKvFeedback"
+                  }
+                ]
+              }
+            ]
+          },
+          "verdict": "ASSOCIATED_PENDING_AGGREGATE_CONTRACT_REVIEW"
+        },
+        {
+          "region": "R05",
+          "witness": {
+            "source": "tests/compute_models/d5_qwen38_24t_semantic_fragments.h",
+            "anchor": "inline Fragment gdn(",
+            "sha256": "b419ccdab0d23da5ff1db51d6e2c9c504bcae02f83666885cb5bb457b62d2736",
+            "results": [
+              {
+                "platform": "windows",
+                "entry": "direct",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-final/windows/fixture-followup/direct.xml",
+                    "testcase": "CpuQwenRecurrent.D5NineProfilesUseCompleteGateAndActualStateFeedback"
+                  }
+                ]
+              },
+              {
+                "platform": "windows",
+                "entry": "graph",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-final/windows/fixture-followup/graph.xml",
+                    "testcase": "CpuGraphQwenRecurrent.D5NineProfilesUseCompleteGateAndActualStateFeedback"
+                  }
+                ]
+              },
+              {
+                "platform": "linux",
+                "entry": "direct",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-final/linux/direct.xml",
+                    "testcase": "CpuQwenRecurrent.D5NineProfilesUseCompleteGateAndActualStateFeedback"
+                  }
+                ]
+              },
+              {
+                "platform": "linux",
+                "entry": "graph",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-final/linux/graph.xml",
+                    "testcase": "CpuGraphQwenRecurrent.D5NineProfilesUseCompleteGateAndActualStateFeedback"
+                  }
+                ]
+              }
+            ]
+          },
+          "verdict": "ASSOCIATED_PENDING_AGGREGATE_CONTRACT_REVIEW"
+        },
+        {
+          "region": "R13",
+          "witness": {
+            "source": "tests/compute_models/cpu_c4_qwen_mtp.h",
+            "anchor": "inline Fragment decoder(",
+            "sha256": "a7cd7d23abed91ddd9537d64874f0bff4fb285b699a4fb3f9f2c9328e9b2552a",
+            "results": [
+              {
+                "platform": "windows",
+                "entry": "direct",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-final/windows/direct.xml",
+                    "testcase": "CpuC4Branches.QwenQ4NamedSidecarUsesActualQ3Q4Q6AndCompleteMtp"
+                  }
+                ]
+              },
+              {
+                "platform": "windows",
+                "entry": "graph",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-final/windows/graph.xml",
+                    "testcase": "CpuGraphC4Branches.QwenQ4NamedSidecarUsesActualQ3Q4Q6AndCompleteMtp"
+                  }
+                ]
+              },
+              {
+                "platform": "linux",
+                "entry": "direct",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-final/linux/direct.xml",
+                    "testcase": "CpuC4Branches.QwenQ4NamedSidecarUsesActualQ3Q4Q6AndCompleteMtp"
+                  }
+                ]
+              },
+              {
+                "platform": "linux",
+                "entry": "graph",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-final/linux/graph.xml",
+                    "testcase": "CpuGraphC4Branches.QwenQ4NamedSidecarUsesActualQ3Q4Q6AndCompleteMtp"
+                  }
+                ]
+              }
+            ]
+          },
+          "verdict": "ASSOCIATED_PENDING_AGGREGATE_CONTRACT_REVIEW"
+        }
+      ],
+      "numeric_regions": [
+        "R01",
+        "R03",
+        "R14"
+      ],
+      "resources_region": "R15",
+      "numeric_evidence": "evidence/correctness/cpu-quant-mtp-c5-matrix/README.md",
+      "parameter_evidence": "evidence/correctness/cpu-quant-mtp-c5-parameters/contract-review.md"
+    },
+    {
+      "family": "Qwen3.8-2.4T-A95B-GGUF",
+      "profiles": [
+        47,
+        48,
+        49,
+        50,
+        51,
+        52,
+        53,
+        54,
+        55
+      ],
+      "semantic_regions": [
+        {
+          "region": "R02",
+          "witness": {
+            "source": "tests/compute_models/cpu_c5_qwen_attention.h",
+            "anchor": "inline Fragment norm_residual(",
+            "sha256": "9ff6f43529b87a77f31524814721ff62168899a1740d0bee5c2fc64500b25333",
+            "results": [
+              {
+                "platform": "windows",
+                "entry": "direct",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/windows/direct.xml",
+                    "testcase": "CpuC5Parameters.QwenActualWidthsUseDeclaredFloatNormEpsilon"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/expanded-windows/direct.xml",
+                    "testcase": "CpuC5Parameters.QwenActualWidthsUseDeclaredFloatNormEpsilon"
+                  }
+                ]
+              },
+              {
+                "platform": "windows",
+                "entry": "graph",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/windows/graph.xml",
+                    "testcase": "CpuGraphC5Parameters.QwenActualWidthsUseDeclaredFloatNormEpsilon"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/expanded-windows/graph.xml",
+                    "testcase": "CpuGraphC5Parameters.QwenActualWidthsUseDeclaredFloatNormEpsilon"
+                  }
+                ]
+              },
+              {
+                "platform": "linux",
+                "entry": "direct",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/linux/direct.xml",
+                    "testcase": "CpuC5Parameters.QwenActualWidthsUseDeclaredFloatNormEpsilon"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/expanded-linux/direct.xml",
+                    "testcase": "CpuC5Parameters.QwenActualWidthsUseDeclaredFloatNormEpsilon"
+                  }
+                ]
+              },
+              {
+                "platform": "linux",
+                "entry": "graph",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/linux/graph.xml",
+                    "testcase": "CpuGraphC5Parameters.QwenActualWidthsUseDeclaredFloatNormEpsilon"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/expanded-linux/graph.xml",
+                    "testcase": "CpuGraphC5Parameters.QwenActualWidthsUseDeclaredFloatNormEpsilon"
+                  }
+                ]
+              }
+            ]
+          },
+          "verdict": "ASSOCIATED_PENDING_AGGREGATE_CONTRACT_REVIEW"
+        },
+        {
+          "region": "R04",
+          "witness": {
+            "source": "tests/compute_models/cpu_c5_qwen_attention.h",
+            "anchor": "inline Fragment make(",
+            "sha256": "9ff6f43529b87a77f31524814721ff62168899a1740d0bee5c2fc64500b25333",
+            "results": [
+              {
+                "platform": "windows",
+                "entry": "direct",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/windows/direct.xml",
+                    "testcase": "CpuC5Parameters.Qwen24ActualHalfSplitFrequencyNormAndKvFeedback"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/expanded-windows/direct.xml",
+                    "testcase": "CpuC5Parameters.Qwen24ActualHalfSplitFrequencyNormAndKvFeedback"
+                  }
+                ]
+              },
+              {
+                "platform": "windows",
+                "entry": "graph",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/windows/graph.xml",
+                    "testcase": "CpuGraphC5Parameters.Qwen24ActualHalfSplitFrequencyNormAndKvFeedback"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/expanded-windows/graph.xml",
+                    "testcase": "CpuGraphC5Parameters.Qwen24ActualHalfSplitFrequencyNormAndKvFeedback"
+                  }
+                ]
+              },
+              {
+                "platform": "linux",
+                "entry": "direct",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/linux/direct.xml",
+                    "testcase": "CpuC5Parameters.Qwen24ActualHalfSplitFrequencyNormAndKvFeedback"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/expanded-linux/direct.xml",
+                    "testcase": "CpuC5Parameters.Qwen24ActualHalfSplitFrequencyNormAndKvFeedback"
+                  }
+                ]
+              },
+              {
+                "platform": "linux",
+                "entry": "graph",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/linux/graph.xml",
+                    "testcase": "CpuGraphC5Parameters.Qwen24ActualHalfSplitFrequencyNormAndKvFeedback"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/expanded-linux/graph.xml",
+                    "testcase": "CpuGraphC5Parameters.Qwen24ActualHalfSplitFrequencyNormAndKvFeedback"
+                  }
+                ]
+              }
+            ]
+          },
+          "verdict": "ASSOCIATED_PENDING_AGGREGATE_CONTRACT_REVIEW"
+        },
+        {
+          "region": "R05",
+          "witness": {
+            "source": "tests/compute_models/d5_qwen38_24t_semantic_fragments.h",
+            "anchor": "inline Fragment gdn(",
+            "sha256": "b419ccdab0d23da5ff1db51d6e2c9c504bcae02f83666885cb5bb457b62d2736",
+            "results": [
+              {
+                "platform": "windows",
+                "entry": "direct",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-final/windows/fixture-followup/direct.xml",
+                    "testcase": "CpuQwenRecurrent.D5NineProfilesUseCompleteGateAndActualStateFeedback"
+                  }
+                ]
+              },
+              {
+                "platform": "windows",
+                "entry": "graph",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-final/windows/fixture-followup/graph.xml",
+                    "testcase": "CpuGraphQwenRecurrent.D5NineProfilesUseCompleteGateAndActualStateFeedback"
+                  }
+                ]
+              },
+              {
+                "platform": "linux",
+                "entry": "direct",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-final/linux/direct.xml",
+                    "testcase": "CpuQwenRecurrent.D5NineProfilesUseCompleteGateAndActualStateFeedback"
+                  }
+                ]
+              },
+              {
+                "platform": "linux",
+                "entry": "graph",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-final/linux/graph.xml",
+                    "testcase": "CpuGraphQwenRecurrent.D5NineProfilesUseCompleteGateAndActualStateFeedback"
+                  }
+                ]
+              }
+            ]
+          },
+          "verdict": "ASSOCIATED_PENDING_AGGREGATE_CONTRACT_REVIEW"
+        },
+        {
+          "region": "R10",
+          "witness": {
+            "source": "tests/compute_models/cpu_c5_qwen_nextn.h",
+            "anchor": "Grouped eg(",
+            "sha256": "6e2e2a93f01a7fc65d5b4a59ce55f5996e4814181eaceb9cec24ea92276cb340",
+            "results": [
+              {
+                "platform": "windows",
+                "entry": "direct",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/expanded-windows/direct.xml",
+                    "testcase": "CpuC5Parameters.Qwen24CompleteNextNUsesMixedRolesCacheMoeAndFullHead"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-nextn/windows/direct.xml",
+                    "testcase": "CpuC5Parameters.Qwen24CompleteNextNUsesMixedRolesCacheMoeAndFullHead"
+                  }
+                ]
+              },
+              {
+                "platform": "windows",
+                "entry": "graph",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/expanded-windows/graph.xml",
+                    "testcase": "CpuGraphC5Parameters.Qwen24CompleteNextNUsesMixedRolesCacheMoeAndFullHead"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-nextn/windows/graph.xml",
+                    "testcase": "CpuGraphC5Parameters.Qwen24CompleteNextNUsesMixedRolesCacheMoeAndFullHead"
+                  }
+                ]
+              },
+              {
+                "platform": "linux",
+                "entry": "direct",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/expanded-linux/direct.xml",
+                    "testcase": "CpuC5Parameters.Qwen24CompleteNextNUsesMixedRolesCacheMoeAndFullHead"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-nextn/linux/direct.xml",
+                    "testcase": "CpuC5Parameters.Qwen24CompleteNextNUsesMixedRolesCacheMoeAndFullHead"
+                  }
+                ]
+              },
+              {
+                "platform": "linux",
+                "entry": "graph",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/expanded-linux/graph.xml",
+                    "testcase": "CpuGraphC5Parameters.Qwen24CompleteNextNUsesMixedRolesCacheMoeAndFullHead"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-nextn/linux/graph.xml",
+                    "testcase": "CpuGraphC5Parameters.Qwen24CompleteNextNUsesMixedRolesCacheMoeAndFullHead"
+                  }
+                ]
+              }
+            ]
+          },
+          "verdict": "ASSOCIATED_PENDING_AGGREGATE_CONTRACT_REVIEW"
+        },
+        {
+          "region": "R11",
+          "witness": {
+            "source": "tests/compute_models/cpu_c5_qwen_nextn.h",
+            "anchor": "Grouped ed(",
+            "sha256": "6e2e2a93f01a7fc65d5b4a59ce55f5996e4814181eaceb9cec24ea92276cb340",
+            "results": [
+              {
+                "platform": "windows",
+                "entry": "direct",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/expanded-windows/direct.xml",
+                    "testcase": "CpuC5Parameters.Qwen24CompleteNextNUsesMixedRolesCacheMoeAndFullHead"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-nextn/windows/direct.xml",
+                    "testcase": "CpuC5Parameters.Qwen24CompleteNextNUsesMixedRolesCacheMoeAndFullHead"
+                  }
+                ]
+              },
+              {
+                "platform": "windows",
+                "entry": "graph",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/expanded-windows/graph.xml",
+                    "testcase": "CpuGraphC5Parameters.Qwen24CompleteNextNUsesMixedRolesCacheMoeAndFullHead"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-nextn/windows/graph.xml",
+                    "testcase": "CpuGraphC5Parameters.Qwen24CompleteNextNUsesMixedRolesCacheMoeAndFullHead"
+                  }
+                ]
+              },
+              {
+                "platform": "linux",
+                "entry": "direct",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/expanded-linux/direct.xml",
+                    "testcase": "CpuC5Parameters.Qwen24CompleteNextNUsesMixedRolesCacheMoeAndFullHead"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-nextn/linux/direct.xml",
+                    "testcase": "CpuC5Parameters.Qwen24CompleteNextNUsesMixedRolesCacheMoeAndFullHead"
+                  }
+                ]
+              },
+              {
+                "platform": "linux",
+                "entry": "graph",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/expanded-linux/graph.xml",
+                    "testcase": "CpuGraphC5Parameters.Qwen24CompleteNextNUsesMixedRolesCacheMoeAndFullHead"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-nextn/linux/graph.xml",
+                    "testcase": "CpuGraphC5Parameters.Qwen24CompleteNextNUsesMixedRolesCacheMoeAndFullHead"
+                  }
+                ]
+              }
+            ]
+          },
+          "verdict": "ASSOCIATED_PENDING_AGGREGATE_CONTRACT_REVIEW"
+        },
+        {
+          "region": "R13",
+          "witness": {
+            "source": "tests/compute_models/cpu_c5_qwen_nextn.h",
+            "anchor": "inline Fragment decoder(",
+            "sha256": "6e2e2a93f01a7fc65d5b4a59ce55f5996e4814181eaceb9cec24ea92276cb340",
+            "results": [
+              {
+                "platform": "windows",
+                "entry": "direct",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/expanded-windows/direct.xml",
+                    "testcase": "CpuC5Parameters.Qwen24CompleteNextNUsesMixedRolesCacheMoeAndFullHead"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-nextn/windows/direct.xml",
+                    "testcase": "CpuC5Parameters.Qwen24CompleteNextNUsesMixedRolesCacheMoeAndFullHead"
+                  }
+                ]
+              },
+              {
+                "platform": "windows",
+                "entry": "graph",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/expanded-windows/graph.xml",
+                    "testcase": "CpuGraphC5Parameters.Qwen24CompleteNextNUsesMixedRolesCacheMoeAndFullHead"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-nextn/windows/graph.xml",
+                    "testcase": "CpuGraphC5Parameters.Qwen24CompleteNextNUsesMixedRolesCacheMoeAndFullHead"
+                  }
+                ]
+              },
+              {
+                "platform": "linux",
+                "entry": "direct",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/expanded-linux/direct.xml",
+                    "testcase": "CpuC5Parameters.Qwen24CompleteNextNUsesMixedRolesCacheMoeAndFullHead"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-nextn/linux/direct.xml",
+                    "testcase": "CpuC5Parameters.Qwen24CompleteNextNUsesMixedRolesCacheMoeAndFullHead"
+                  }
+                ]
+              },
+              {
+                "platform": "linux",
+                "entry": "graph",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/expanded-linux/graph.xml",
+                    "testcase": "CpuGraphC5Parameters.Qwen24CompleteNextNUsesMixedRolesCacheMoeAndFullHead"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-nextn/linux/graph.xml",
+                    "testcase": "CpuGraphC5Parameters.Qwen24CompleteNextNUsesMixedRolesCacheMoeAndFullHead"
+                  }
+                ]
+              }
+            ]
+          },
+          "verdict": "ASSOCIATED_PENDING_AGGREGATE_CONTRACT_REVIEW"
+        }
+      ],
+      "numeric_regions": [
+        "R01",
+        "R03",
+        "R14"
+      ],
+      "resources_region": "R15",
+      "numeric_evidence": "evidence/correctness/cpu-quant-mtp-c5-matrix/README.md",
+      "parameter_evidence": "evidence/correctness/cpu-quant-mtp-c5-parameters/contract-review.md"
+    },
+    {
+      "family": "Kimi-K3-GGUF",
+      "profiles": [
+        56,
+        57,
+        58,
+        59,
+        60,
+        61,
+        62,
+        63,
+        64
+      ],
+      "semantic_regions": [
+        {
+          "region": "R02",
+          "witness": {
+            "source": "tests/compute_models/d5_kimi_remaining_fragments.h",
+            "anchor": "inline Fragment dense_ffn(",
+            "sha256": "edc6aaeb8d05c1f848447849b45bf3f908b77a737823ce6dfbf737feedeb2218",
+            "results": [
+              {
+                "platform": "windows",
+                "entry": "direct",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-final/windows/direct.xml",
+                    "testcase": "CpuMoeFragments.D5KimiDenseFfn"
+                  }
+                ]
+              },
+              {
+                "platform": "windows",
+                "entry": "graph",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-final/windows/graph.xml",
+                    "testcase": "CpuGraphMoeFragments.D5KimiDenseFfn"
+                  }
+                ]
+              },
+              {
+                "platform": "linux",
+                "entry": "direct",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-final/linux/direct.xml",
+                    "testcase": "CpuMoeFragments.D5KimiDenseFfn"
+                  }
+                ]
+              },
+              {
+                "platform": "linux",
+                "entry": "graph",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-final/linux/graph.xml",
+                    "testcase": "CpuGraphMoeFragments.D5KimiDenseFfn"
+                  }
+                ]
+              }
+            ]
+          },
+          "verdict": "ASSOCIATED_PENDING_AGGREGATE_CONTRACT_REVIEW"
+        },
+        {
+          "region": "R06",
+          "witness": {
+            "source": "tests/compute_models/d5_kda_full_fragments.h",
+            "anchor": "inline Fragment complete(",
+            "sha256": "fab310b39195f960106d61e9d5a5ea03a31c56b81d83fa32608592f31ffa2cb0",
+            "results": [
+              {
+                "platform": "windows",
+                "entry": "direct",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-final/windows/direct.xml",
+                    "testcase": "CpuMoeFragments.D5SixProfilesFullKdaChainAndTwoStates"
+                  }
+                ]
+              },
+              {
+                "platform": "windows",
+                "entry": "graph",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-final/windows/graph.xml",
+                    "testcase": "CpuGraphMoeFragments.D5SixProfilesFullKdaChainAndTwoStates"
+                  }
+                ]
+              },
+              {
+                "platform": "linux",
+                "entry": "direct",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-final/linux/direct.xml",
+                    "testcase": "CpuMoeFragments.D5SixProfilesFullKdaChainAndTwoStates"
+                  }
+                ]
+              },
+              {
+                "platform": "linux",
+                "entry": "graph",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-final/linux/graph.xml",
+                    "testcase": "CpuGraphMoeFragments.D5SixProfilesFullKdaChainAndTwoStates"
+                  }
+                ]
+              }
+            ]
+          },
+          "verdict": "ASSOCIATED_PENDING_AGGREGATE_CONTRACT_REVIEW"
+        },
+        {
+          "region": "R07",
+          "witness": {
+            "source": "tests/compute_models/d5_kimi_remaining_fragments.h",
+            "anchor": "inline Fragment mla(",
+            "sha256": "edc6aaeb8d05c1f848447849b45bf3f908b77a737823ce6dfbf737feedeb2218",
+            "results": [
+              {
+                "platform": "windows",
+                "entry": "direct",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-final/windows/direct.xml",
+                    "testcase": "CpuMoeFragments.D5KimiAbsorbedMlaWithCache"
+                  }
+                ]
+              },
+              {
+                "platform": "windows",
+                "entry": "graph",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-final/windows/graph.xml",
+                    "testcase": "CpuGraphMoeFragments.D5KimiAbsorbedMlaWithCache"
+                  }
+                ]
+              },
+              {
+                "platform": "linux",
+                "entry": "direct",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-final/linux/direct.xml",
+                    "testcase": "CpuMoeFragments.D5KimiAbsorbedMlaWithCache"
+                  }
+                ]
+              },
+              {
+                "platform": "linux",
+                "entry": "graph",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-final/linux/graph.xml",
+                    "testcase": "CpuGraphMoeFragments.D5KimiAbsorbedMlaWithCache"
+                  }
+                ]
+              }
+            ]
+          },
+          "verdict": "ASSOCIATED_PENDING_AGGREGATE_CONTRACT_REVIEW"
+        },
+        {
+          "region": "R10",
+          "witness": {
+            "source": "tests/compute_models/d5_moe_execution_fragments.h",
+            "anchor": "inline Fragment moe_chain(",
+            "sha256": "2f7119b5e31507c1197309a86b87f85aaf419495602117ab000363118fe57db3",
+            "results": [
+              {
+                "platform": "windows",
+                "entry": "direct",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-final/windows/direct.xml",
+                    "testcase": "CpuMoeFragments.D5EightGgufProfilesFullMoe"
+                  }
+                ]
+              },
+              {
+                "platform": "windows",
+                "entry": "graph",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-final/windows/graph.xml",
+                    "testcase": "CpuGraphMoeFragments.D5EightGgufProfilesFullMoe"
+                  }
+                ]
+              },
+              {
+                "platform": "linux",
+                "entry": "direct",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-final/linux/direct.xml",
+                    "testcase": "CpuMoeFragments.D5EightGgufProfilesFullMoe"
+                  }
+                ]
+              },
+              {
+                "platform": "linux",
+                "entry": "graph",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-final/linux/graph.xml",
+                    "testcase": "CpuGraphMoeFragments.D5EightGgufProfilesFullMoe"
+                  }
+                ]
+              }
+            ]
+          },
+          "verdict": "ASSOCIATED_PENDING_AGGREGATE_CONTRACT_REVIEW"
+        },
+        {
+          "region": "R11",
+          "witness": {
+            "source": "tests/compute_models/d5_moe_execution_fragments.h",
+            "anchor": "inline Fragment moe_chain(",
+            "sha256": "2f7119b5e31507c1197309a86b87f85aaf419495602117ab000363118fe57db3",
+            "results": [
+              {
+                "platform": "windows",
+                "entry": "direct",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-final/windows/direct.xml",
+                    "testcase": "CpuMoeFragments.D5EightGgufProfilesFullMoe"
+                  }
+                ]
+              },
+              {
+                "platform": "windows",
+                "entry": "graph",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-final/windows/graph.xml",
+                    "testcase": "CpuGraphMoeFragments.D5EightGgufProfilesFullMoe"
+                  }
+                ]
+              },
+              {
+                "platform": "linux",
+                "entry": "direct",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-final/linux/direct.xml",
+                    "testcase": "CpuMoeFragments.D5EightGgufProfilesFullMoe"
+                  }
+                ]
+              },
+              {
+                "platform": "linux",
+                "entry": "graph",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-final/linux/graph.xml",
+                    "testcase": "CpuGraphMoeFragments.D5EightGgufProfilesFullMoe"
+                  }
+                ]
+              }
+            ]
+          },
+          "verdict": "ASSOCIATED_PENDING_AGGREGATE_CONTRACT_REVIEW"
+        },
+        {
+          "region": "R12",
+          "witness": {
+            "source": "tests/compute_models/d5_kimi_remaining_fragments.h",
+            "anchor": "inline Fragment attention_residual(",
+            "sha256": "edc6aaeb8d05c1f848447849b45bf3f908b77a737823ce6dfbf737feedeb2218",
+            "results": [
+              {
+                "platform": "windows",
+                "entry": "direct",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-final/windows/direct.xml",
+                    "testcase": "CpuMoeFragments.D5KimiAttentionResidualBanking"
+                  }
+                ]
+              },
+              {
+                "platform": "windows",
+                "entry": "graph",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-final/windows/graph.xml",
+                    "testcase": "CpuGraphMoeFragments.D5KimiAttentionResidualBanking"
+                  }
+                ]
+              },
+              {
+                "platform": "linux",
+                "entry": "direct",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-final/linux/direct.xml",
+                    "testcase": "CpuMoeFragments.D5KimiAttentionResidualBanking"
+                  }
+                ]
+              },
+              {
+                "platform": "linux",
+                "entry": "graph",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-final/linux/graph.xml",
+                    "testcase": "CpuGraphMoeFragments.D5KimiAttentionResidualBanking"
+                  }
+                ]
+              }
+            ]
+          },
+          "verdict": "ASSOCIATED_PENDING_AGGREGATE_CONTRACT_REVIEW"
+        }
+      ],
+      "numeric_regions": [
+        "R01",
+        "R03",
+        "R14"
+      ],
+      "resources_region": "R15",
+      "numeric_evidence": "evidence/correctness/cpu-quant-mtp-c5-matrix/README.md",
+      "parameter_evidence": "evidence/correctness/cpu-quant-mtp-c5-parameters/contract-review.md"
+    },
+    {
+      "family": "GLM-5.3-GGUF",
+      "profiles": [
+        65,
+        66,
+        67,
+        68,
+        69,
+        70,
+        71,
+        72,
+        73,
+        74,
+        75,
+        76
+      ],
+      "semantic_regions": [
+        {
+          "region": "R02",
+          "witness": {
+            "source": "tests/compute_models/d5_glm_remaining_fragments.h",
+            "anchor": "inline Fragment dense_ffn(",
+            "sha256": "12dbf546cb1050470dd6db65fe4d1f0a70364781a22d9df466699e7b10cde742",
+            "results": [
+              {
+                "platform": "windows",
+                "entry": "direct",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-final/windows/direct.xml",
+                    "testcase": "CpuMoeFragments.D5GlmGgufDenseFfn"
+                  }
+                ]
+              },
+              {
+                "platform": "windows",
+                "entry": "graph",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-final/windows/graph.xml",
+                    "testcase": "CpuGraphMoeFragments.D5GlmGgufDenseFfn"
+                  }
+                ]
+              },
+              {
+                "platform": "linux",
+                "entry": "direct",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-final/linux/direct.xml",
+                    "testcase": "CpuMoeFragments.D5GlmGgufDenseFfn"
+                  }
+                ]
+              },
+              {
+                "platform": "linux",
+                "entry": "graph",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-final/linux/graph.xml",
+                    "testcase": "CpuGraphMoeFragments.D5GlmGgufDenseFfn"
+                  }
+                ]
+              }
+            ]
+          },
+          "verdict": "ASSOCIATED_PENDING_AGGREGATE_CONTRACT_REVIEW"
+        },
+        {
+          "region": "R07",
+          "witness": {
+            "source": "tests/compute_models/d5_glm_remaining_fragments.h",
+            "anchor": "inline Fragment mla(",
+            "sha256": "12dbf546cb1050470dd6db65fe4d1f0a70364781a22d9df466699e7b10cde742",
+            "results": [
+              {
+                "platform": "windows",
+                "entry": "direct",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-final/windows/direct.xml",
+                    "testcase": "CpuMoeFragments.D5GlmGgufAbsorbedMlaWithCache"
+                  }
+                ]
+              },
+              {
+                "platform": "windows",
+                "entry": "graph",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-final/windows/graph.xml",
+                    "testcase": "CpuGraphMoeFragments.D5GlmGgufAbsorbedMlaWithCache"
+                  }
+                ]
+              },
+              {
+                "platform": "linux",
+                "entry": "direct",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-final/linux/direct.xml",
+                    "testcase": "CpuMoeFragments.D5GlmGgufAbsorbedMlaWithCache"
+                  }
+                ]
+              },
+              {
+                "platform": "linux",
+                "entry": "graph",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-final/linux/graph.xml",
+                    "testcase": "CpuGraphMoeFragments.D5GlmGgufAbsorbedMlaWithCache"
+                  }
+                ]
+              }
+            ]
+          },
+          "verdict": "ASSOCIATED_PENDING_AGGREGATE_CONTRACT_REVIEW"
+        },
+        {
+          "region": "R08",
+          "witness": {
+            "source": "tests/compute_models/d5_glm_remaining_fragments.h",
+            "anchor": "inline Fragment sparse_attention(",
+            "sha256": "12dbf546cb1050470dd6db65fe4d1f0a70364781a22d9df466699e7b10cde742",
+            "results": [
+              {
+                "platform": "windows",
+                "entry": "direct",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-final/windows/direct.xml",
+                    "testcase": "CpuMoeFragments.D5GlmGgufDsaSelectionConsumesMlaCache"
+                  }
+                ]
+              },
+              {
+                "platform": "windows",
+                "entry": "graph",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-final/windows/graph.xml",
+                    "testcase": "CpuGraphMoeFragments.D5GlmGgufDsaSelectionConsumesMlaCache"
+                  }
+                ]
+              },
+              {
+                "platform": "linux",
+                "entry": "direct",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-final/linux/direct.xml",
+                    "testcase": "CpuMoeFragments.D5GlmGgufDsaSelectionConsumesMlaCache"
+                  }
+                ]
+              },
+              {
+                "platform": "linux",
+                "entry": "graph",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-final/linux/graph.xml",
+                    "testcase": "CpuGraphMoeFragments.D5GlmGgufDsaSelectionConsumesMlaCache"
+                  }
+                ]
+              }
+            ]
+          },
+          "verdict": "ASSOCIATED_PENDING_AGGREGATE_CONTRACT_REVIEW"
+        },
+        {
+          "region": "R09",
+          "witness": {
+            "source": "tests/compute_models/d5_glm_remaining_fragments.h",
+            "anchor": "inline Fragment sparse_attention(",
+            "sha256": "12dbf546cb1050470dd6db65fe4d1f0a70364781a22d9df466699e7b10cde742",
+            "results": [
+              {
+                "platform": "windows",
+                "entry": "direct",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-final/windows/direct.xml",
+                    "testcase": "CpuMoeFragments.D5GlmGgufMtpIndexCarryReset"
+                  }
+                ]
+              },
+              {
+                "platform": "windows",
+                "entry": "graph",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-final/windows/graph.xml",
+                    "testcase": "CpuGraphMoeFragments.D5GlmGgufMtpIndexCarryReset"
+                  }
+                ]
+              },
+              {
+                "platform": "linux",
+                "entry": "direct",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-final/linux/direct.xml",
+                    "testcase": "CpuMoeFragments.D5GlmGgufMtpIndexCarryReset"
+                  }
+                ]
+              },
+              {
+                "platform": "linux",
+                "entry": "graph",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-final/linux/graph.xml",
+                    "testcase": "CpuGraphMoeFragments.D5GlmGgufMtpIndexCarryReset"
+                  }
+                ]
+              }
+            ]
+          },
+          "verdict": "ASSOCIATED_PENDING_AGGREGATE_CONTRACT_REVIEW"
+        },
+        {
+          "region": "R10",
+          "witness": {
+            "source": "tests/compute_models/d5_moe_execution_fragments.h",
+            "anchor": "inline Fragment moe_chain(",
+            "sha256": "2f7119b5e31507c1197309a86b87f85aaf419495602117ab000363118fe57db3",
+            "results": [
+              {
+                "platform": "windows",
+                "entry": "direct",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-final/windows/direct.xml",
+                    "testcase": "CpuMoeFragments.D5EightGgufProfilesFullMoe"
+                  }
+                ]
+              },
+              {
+                "platform": "windows",
+                "entry": "graph",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-final/windows/graph.xml",
+                    "testcase": "CpuGraphMoeFragments.D5EightGgufProfilesFullMoe"
+                  }
+                ]
+              },
+              {
+                "platform": "linux",
+                "entry": "direct",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-final/linux/direct.xml",
+                    "testcase": "CpuMoeFragments.D5EightGgufProfilesFullMoe"
+                  }
+                ]
+              },
+              {
+                "platform": "linux",
+                "entry": "graph",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-final/linux/graph.xml",
+                    "testcase": "CpuGraphMoeFragments.D5EightGgufProfilesFullMoe"
+                  }
+                ]
+              }
+            ]
+          },
+          "verdict": "ASSOCIATED_PENDING_AGGREGATE_CONTRACT_REVIEW"
+        },
+        {
+          "region": "R11",
+          "witness": {
+            "source": "tests/compute_models/d5_moe_execution_fragments.h",
+            "anchor": "inline Fragment moe_chain(",
+            "sha256": "2f7119b5e31507c1197309a86b87f85aaf419495602117ab000363118fe57db3",
+            "results": [
+              {
+                "platform": "windows",
+                "entry": "direct",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-final/windows/direct.xml",
+                    "testcase": "CpuMoeFragments.D5EightGgufProfilesFullMoe"
+                  }
+                ]
+              },
+              {
+                "platform": "windows",
+                "entry": "graph",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-final/windows/graph.xml",
+                    "testcase": "CpuGraphMoeFragments.D5EightGgufProfilesFullMoe"
+                  }
+                ]
+              },
+              {
+                "platform": "linux",
+                "entry": "direct",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-final/linux/direct.xml",
+                    "testcase": "CpuMoeFragments.D5EightGgufProfilesFullMoe"
+                  }
+                ]
+              },
+              {
+                "platform": "linux",
+                "entry": "graph",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-final/linux/graph.xml",
+                    "testcase": "CpuGraphMoeFragments.D5EightGgufProfilesFullMoe"
+                  }
+                ]
+              }
+            ]
+          },
+          "verdict": "ASSOCIATED_PENDING_AGGREGATE_CONTRACT_REVIEW"
+        },
+        {
+          "region": "R13",
+          "witness": {
+            "source": "tests/compute_models/d5_glm_remaining_fragments.h",
+            "anchor": "inline Fragment mtp_decoder(",
+            "sha256": "12dbf546cb1050470dd6db65fe4d1f0a70364781a22d9df466699e7b10cde742",
+            "results": [
+              {
+                "platform": "windows",
+                "entry": "direct",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-final/windows/direct.xml",
+                    "testcase": "CpuMoeFragments.D5GlmGgufNextNDecoderWithCarryAndFullHead"
+                  }
+                ]
+              },
+              {
+                "platform": "windows",
+                "entry": "graph",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-final/windows/graph.xml",
+                    "testcase": "CpuGraphMoeFragments.D5GlmGgufNextNDecoderWithCarryAndFullHead"
+                  }
+                ]
+              },
+              {
+                "platform": "linux",
+                "entry": "direct",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-final/linux/direct.xml",
+                    "testcase": "CpuMoeFragments.D5GlmGgufNextNDecoderWithCarryAndFullHead"
+                  }
+                ]
+              },
+              {
+                "platform": "linux",
+                "entry": "graph",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-final/linux/graph.xml",
+                    "testcase": "CpuGraphMoeFragments.D5GlmGgufNextNDecoderWithCarryAndFullHead"
+                  }
+                ]
+              }
+            ]
+          },
+          "verdict": "ASSOCIATED_PENDING_AGGREGATE_CONTRACT_REVIEW"
+        }
+      ],
+      "numeric_regions": [
+        "R01",
+        "R03",
+        "R14"
+      ],
+      "resources_region": "R15",
+      "numeric_evidence": "evidence/correctness/cpu-quant-mtp-c5-matrix/README.md",
+      "parameter_evidence": "evidence/correctness/cpu-quant-mtp-c5-parameters/contract-review.md"
+    },
+    {
+      "family": "GLM-5.3-Flash-GGUF",
+      "profiles": [
+        77,
+        78,
+        79,
+        80,
+        81,
+        82,
+        83,
+        84,
+        85,
+        86,
+        87,
+        88
+      ],
+      "semantic_regions": [
+        {
+          "region": "R02",
+          "witness": {
+            "source": "tests/compute_models/d5_glm_remaining_fragments.h",
+            "anchor": "inline Fragment dense_ffn(",
+            "sha256": "12dbf546cb1050470dd6db65fe4d1f0a70364781a22d9df466699e7b10cde742",
+            "results": [
+              {
+                "platform": "windows",
+                "entry": "direct",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-final/windows/direct.xml",
+                    "testcase": "CpuMoeFragments.D5GlmGgufDenseFfn"
+                  }
+                ]
+              },
+              {
+                "platform": "windows",
+                "entry": "graph",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-final/windows/graph.xml",
+                    "testcase": "CpuGraphMoeFragments.D5GlmGgufDenseFfn"
+                  }
+                ]
+              },
+              {
+                "platform": "linux",
+                "entry": "direct",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-final/linux/direct.xml",
+                    "testcase": "CpuMoeFragments.D5GlmGgufDenseFfn"
+                  }
+                ]
+              },
+              {
+                "platform": "linux",
+                "entry": "graph",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-final/linux/graph.xml",
+                    "testcase": "CpuGraphMoeFragments.D5GlmGgufDenseFfn"
+                  }
+                ]
+              }
+            ]
+          },
+          "verdict": "ASSOCIATED_PENDING_AGGREGATE_CONTRACT_REVIEW"
+        },
+        {
+          "region": "R06",
+          "witness": {
+            "source": "tests/compute_models/d5_kda_full_fragments.h",
+            "anchor": "inline Fragment complete(",
+            "sha256": "fab310b39195f960106d61e9d5a5ea03a31c56b81d83fa32608592f31ffa2cb0",
+            "results": [
+              {
+                "platform": "windows",
+                "entry": "direct",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-final/windows/direct.xml",
+                    "testcase": "CpuMoeFragments.D5SixProfilesFullKdaChainAndTwoStates"
+                  }
+                ]
+              },
+              {
+                "platform": "windows",
+                "entry": "graph",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-final/windows/graph.xml",
+                    "testcase": "CpuGraphMoeFragments.D5SixProfilesFullKdaChainAndTwoStates"
+                  }
+                ]
+              },
+              {
+                "platform": "linux",
+                "entry": "direct",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-final/linux/direct.xml",
+                    "testcase": "CpuMoeFragments.D5SixProfilesFullKdaChainAndTwoStates"
+                  }
+                ]
+              },
+              {
+                "platform": "linux",
+                "entry": "graph",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-final/linux/graph.xml",
+                    "testcase": "CpuGraphMoeFragments.D5SixProfilesFullKdaChainAndTwoStates"
+                  }
+                ]
+              }
+            ]
+          },
+          "verdict": "ASSOCIATED_PENDING_AGGREGATE_CONTRACT_REVIEW"
+        },
+        {
+          "region": "R07",
+          "witness": {
+            "source": "tests/compute_models/d5_glm_remaining_fragments.h",
+            "anchor": "inline Fragment mla(",
+            "sha256": "12dbf546cb1050470dd6db65fe4d1f0a70364781a22d9df466699e7b10cde742",
+            "results": [
+              {
+                "platform": "windows",
+                "entry": "direct",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-final/windows/direct.xml",
+                    "testcase": "CpuMoeFragments.D5GlmGgufAbsorbedMlaWithCache"
+                  }
+                ]
+              },
+              {
+                "platform": "windows",
+                "entry": "graph",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-final/windows/graph.xml",
+                    "testcase": "CpuGraphMoeFragments.D5GlmGgufAbsorbedMlaWithCache"
+                  }
+                ]
+              },
+              {
+                "platform": "linux",
+                "entry": "direct",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-final/linux/direct.xml",
+                    "testcase": "CpuMoeFragments.D5GlmGgufAbsorbedMlaWithCache"
+                  }
+                ]
+              },
+              {
+                "platform": "linux",
+                "entry": "graph",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-final/linux/graph.xml",
+                    "testcase": "CpuGraphMoeFragments.D5GlmGgufAbsorbedMlaWithCache"
+                  }
+                ]
+              }
+            ]
+          },
+          "verdict": "ASSOCIATED_PENDING_AGGREGATE_CONTRACT_REVIEW"
+        },
+        {
+          "region": "R08",
+          "witness": {
+            "source": "tests/compute_models/d5_glm_remaining_fragments.h",
+            "anchor": "inline Fragment sparse_attention(",
+            "sha256": "12dbf546cb1050470dd6db65fe4d1f0a70364781a22d9df466699e7b10cde742",
+            "results": [
+              {
+                "platform": "windows",
+                "entry": "direct",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-final/windows/direct.xml",
+                    "testcase": "CpuMoeFragments.D5GlmGgufDsaSelectionConsumesMlaCache"
+                  }
+                ]
+              },
+              {
+                "platform": "windows",
+                "entry": "graph",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-final/windows/graph.xml",
+                    "testcase": "CpuGraphMoeFragments.D5GlmGgufDsaSelectionConsumesMlaCache"
+                  }
+                ]
+              },
+              {
+                "platform": "linux",
+                "entry": "direct",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-final/linux/direct.xml",
+                    "testcase": "CpuMoeFragments.D5GlmGgufDsaSelectionConsumesMlaCache"
+                  }
+                ]
+              },
+              {
+                "platform": "linux",
+                "entry": "graph",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-final/linux/graph.xml",
+                    "testcase": "CpuGraphMoeFragments.D5GlmGgufDsaSelectionConsumesMlaCache"
+                  }
+                ]
+              }
+            ]
+          },
+          "verdict": "ASSOCIATED_PENDING_AGGREGATE_CONTRACT_REVIEW"
+        },
+        {
+          "region": "R09",
+          "witness": {
+            "source": "tests/compute_models/d5_glm_remaining_fragments.h",
+            "anchor": "inline Fragment indexer(",
+            "sha256": "12dbf546cb1050470dd6db65fe4d1f0a70364781a22d9df466699e7b10cde742",
+            "results": [
+              {
+                "platform": "windows",
+                "entry": "direct",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-final/windows/direct.xml",
+                    "testcase": "CpuMoeFragments.D5GlmFlashPooledIndexerWithTail"
+                  }
+                ]
+              },
+              {
+                "platform": "windows",
+                "entry": "graph",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-final/windows/graph.xml",
+                    "testcase": "CpuGraphMoeFragments.D5GlmFlashPooledIndexerWithTail"
+                  }
+                ]
+              },
+              {
+                "platform": "linux",
+                "entry": "direct",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-final/linux/direct.xml",
+                    "testcase": "CpuMoeFragments.D5GlmFlashPooledIndexerWithTail"
+                  }
+                ]
+              },
+              {
+                "platform": "linux",
+                "entry": "graph",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-final/linux/graph.xml",
+                    "testcase": "CpuGraphMoeFragments.D5GlmFlashPooledIndexerWithTail"
+                  }
+                ]
+              }
+            ]
+          },
+          "verdict": "ASSOCIATED_PENDING_AGGREGATE_CONTRACT_REVIEW"
+        },
+        {
+          "region": "R10",
+          "witness": {
+            "source": "tests/compute_models/d5_moe_execution_fragments.h",
+            "anchor": "inline Fragment moe_chain(",
+            "sha256": "2f7119b5e31507c1197309a86b87f85aaf419495602117ab000363118fe57db3",
+            "results": [
+              {
+                "platform": "windows",
+                "entry": "direct",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-final/windows/direct.xml",
+                    "testcase": "CpuMoeFragments.D5EightGgufProfilesFullMoe"
+                  }
+                ]
+              },
+              {
+                "platform": "windows",
+                "entry": "graph",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-final/windows/graph.xml",
+                    "testcase": "CpuGraphMoeFragments.D5EightGgufProfilesFullMoe"
+                  }
+                ]
+              },
+              {
+                "platform": "linux",
+                "entry": "direct",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-final/linux/direct.xml",
+                    "testcase": "CpuMoeFragments.D5EightGgufProfilesFullMoe"
+                  }
+                ]
+              },
+              {
+                "platform": "linux",
+                "entry": "graph",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-final/linux/graph.xml",
+                    "testcase": "CpuGraphMoeFragments.D5EightGgufProfilesFullMoe"
+                  }
+                ]
+              }
+            ]
+          },
+          "verdict": "ASSOCIATED_PENDING_AGGREGATE_CONTRACT_REVIEW"
+        },
+        {
+          "region": "R11",
+          "witness": {
+            "source": "tests/compute_models/d5_moe_execution_fragments.h",
+            "anchor": "inline Fragment moe_chain(",
+            "sha256": "2f7119b5e31507c1197309a86b87f85aaf419495602117ab000363118fe57db3",
+            "results": [
+              {
+                "platform": "windows",
+                "entry": "direct",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-final/windows/direct.xml",
+                    "testcase": "CpuMoeFragments.D5EightGgufProfilesFullMoe"
+                  }
+                ]
+              },
+              {
+                "platform": "windows",
+                "entry": "graph",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-final/windows/graph.xml",
+                    "testcase": "CpuGraphMoeFragments.D5EightGgufProfilesFullMoe"
+                  }
+                ]
+              },
+              {
+                "platform": "linux",
+                "entry": "direct",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-final/linux/direct.xml",
+                    "testcase": "CpuMoeFragments.D5EightGgufProfilesFullMoe"
+                  }
+                ]
+              },
+              {
+                "platform": "linux",
+                "entry": "graph",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-final/linux/graph.xml",
+                    "testcase": "CpuGraphMoeFragments.D5EightGgufProfilesFullMoe"
+                  }
+                ]
+              }
+            ]
+          },
+          "verdict": "ASSOCIATED_PENDING_AGGREGATE_CONTRACT_REVIEW"
+        },
+        {
+          "region": "R12",
+          "witness": {
+            "source": "tests/compute_models/d5_glm_remaining_fragments.h",
+            "anchor": "inline Fragment hyper_connection(",
+            "sha256": "12dbf546cb1050470dd6db65fe4d1f0a70364781a22d9df466699e7b10cde742",
+            "results": [
+              {
+                "platform": "windows",
+                "entry": "direct",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-final/windows/direct.xml",
+                    "testcase": "CpuMoeFragments.D5GlmFlashWeightedHyperConnection"
+                  }
+                ]
+              },
+              {
+                "platform": "windows",
+                "entry": "graph",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-final/windows/graph.xml",
+                    "testcase": "CpuGraphMoeFragments.D5GlmFlashWeightedHyperConnection"
+                  }
+                ]
+              },
+              {
+                "platform": "linux",
+                "entry": "direct",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-final/linux/direct.xml",
+                    "testcase": "CpuMoeFragments.D5GlmFlashWeightedHyperConnection"
+                  }
+                ]
+              },
+              {
+                "platform": "linux",
+                "entry": "graph",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-final/linux/graph.xml",
+                    "testcase": "CpuGraphMoeFragments.D5GlmFlashWeightedHyperConnection"
+                  }
+                ]
+              }
+            ]
+          },
+          "verdict": "ASSOCIATED_PENDING_AGGREGATE_CONTRACT_REVIEW"
+        },
+        {
+          "region": "R13",
+          "witness": {
+            "source": "tests/compute_models/d5_glm_remaining_fragments.h",
+            "anchor": "inline Fragment mtp_decoder(",
+            "sha256": "12dbf546cb1050470dd6db65fe4d1f0a70364781a22d9df466699e7b10cde742",
+            "results": [
+              {
+                "platform": "windows",
+                "entry": "direct",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-final/windows/direct.xml",
+                    "testcase": "CpuMoeFragments.D5GlmGgufNextNDecoderWithCarryAndFullHead"
+                  }
+                ]
+              },
+              {
+                "platform": "windows",
+                "entry": "graph",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-final/windows/graph.xml",
+                    "testcase": "CpuGraphMoeFragments.D5GlmGgufNextNDecoderWithCarryAndFullHead"
+                  }
+                ]
+              },
+              {
+                "platform": "linux",
+                "entry": "direct",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-final/linux/direct.xml",
+                    "testcase": "CpuMoeFragments.D5GlmGgufNextNDecoderWithCarryAndFullHead"
+                  }
+                ]
+              },
+              {
+                "platform": "linux",
+                "entry": "graph",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-final/linux/graph.xml",
+                    "testcase": "CpuGraphMoeFragments.D5GlmGgufNextNDecoderWithCarryAndFullHead"
+                  }
+                ]
+              }
+            ]
+          },
+          "verdict": "ASSOCIATED_PENDING_AGGREGATE_CONTRACT_REVIEW"
+        }
+      ],
+      "numeric_regions": [
+        "R01",
+        "R03",
+        "R14"
+      ],
+      "resources_region": "R15",
+      "numeric_evidence": "evidence/correctness/cpu-quant-mtp-c5-matrix/README.md",
+      "parameter_evidence": "evidence/correctness/cpu-quant-mtp-c5-parameters/contract-review.md"
+    },
+    {
+      "family": "DeepSeek-V4-Pro-0813-GGUF",
+      "profiles": [
+        89,
+        90
+      ],
+      "semantic_regions": [
+        {
+          "region": "R02",
+          "witness": {
+            "source": "tests/compute_models/cpu_c5_parameter_fragments.h",
+            "anchor": "inline d5_moe_execution_cases::Case new_deepseek_case(",
+            "sha256": "ae3b7d6973680370638ec37b1515a614f55818d514aae958b7692cdce3b873ac",
+            "results": [
+              {
+                "platform": "windows",
+                "entry": "direct",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/windows/direct.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile89"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/windows/direct.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile90"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/windows/direct.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile102"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/windows/direct.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile103"
+                  }
+                ]
+              },
+              {
+                "platform": "windows",
+                "entry": "graph",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/windows/graph.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile89"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/windows/graph.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile90"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/windows/graph.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile102"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/windows/graph.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile103"
+                  }
+                ]
+              },
+              {
+                "platform": "linux",
+                "entry": "direct",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/linux/direct.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile89"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/linux/direct.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile90"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/linux/direct.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile102"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/linux/direct.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile103"
+                  }
+                ]
+              },
+              {
+                "platform": "linux",
+                "entry": "graph",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/linux/graph.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile89"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/linux/graph.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile90"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/linux/graph.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile102"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/linux/graph.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile103"
+                  }
+                ]
+              }
+            ]
+          },
+          "verdict": "ASSOCIATED_PENDING_AGGREGATE_CONTRACT_REVIEW"
+        },
+        {
+          "region": "R07",
+          "witness": {
+            "source": "tests/compute_models/cpu_c5_parameter_fragments.h",
+            "anchor": "inline d5_moe_execution_cases::Case new_deepseek_case(",
+            "sha256": "ae3b7d6973680370638ec37b1515a614f55818d514aae958b7692cdce3b873ac",
+            "results": [
+              {
+                "platform": "windows",
+                "entry": "direct",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/windows/direct.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile89"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/windows/direct.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile90"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/windows/direct.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile102"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/windows/direct.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile103"
+                  }
+                ]
+              },
+              {
+                "platform": "windows",
+                "entry": "graph",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/windows/graph.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile89"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/windows/graph.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile90"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/windows/graph.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile102"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/windows/graph.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile103"
+                  }
+                ]
+              },
+              {
+                "platform": "linux",
+                "entry": "direct",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/linux/direct.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile89"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/linux/direct.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile90"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/linux/direct.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile102"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/linux/direct.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile103"
+                  }
+                ]
+              },
+              {
+                "platform": "linux",
+                "entry": "graph",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/linux/graph.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile89"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/linux/graph.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile90"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/linux/graph.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile102"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/linux/graph.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile103"
+                  }
+                ]
+              }
+            ]
+          },
+          "verdict": "ASSOCIATED_PENDING_AGGREGATE_CONTRACT_REVIEW"
+        },
+        {
+          "region": "R08",
+          "witness": {
+            "source": "tests/compute_models/cpu_c5_parameter_fragments.h",
+            "anchor": "inline d5_moe_execution_cases::Case new_deepseek_case(",
+            "sha256": "ae3b7d6973680370638ec37b1515a614f55818d514aae958b7692cdce3b873ac",
+            "results": [
+              {
+                "platform": "windows",
+                "entry": "direct",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/windows/direct.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile89"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/windows/direct.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile90"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/windows/direct.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile102"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/windows/direct.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile103"
+                  }
+                ]
+              },
+              {
+                "platform": "windows",
+                "entry": "graph",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/windows/graph.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile89"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/windows/graph.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile90"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/windows/graph.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile102"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/windows/graph.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile103"
+                  }
+                ]
+              },
+              {
+                "platform": "linux",
+                "entry": "direct",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/linux/direct.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile89"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/linux/direct.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile90"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/linux/direct.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile102"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/linux/direct.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile103"
+                  }
+                ]
+              },
+              {
+                "platform": "linux",
+                "entry": "graph",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/linux/graph.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile89"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/linux/graph.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile90"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/linux/graph.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile102"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/linux/graph.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile103"
+                  }
+                ]
+              }
+            ]
+          },
+          "verdict": "ASSOCIATED_PENDING_AGGREGATE_CONTRACT_REVIEW"
+        },
+        {
+          "region": "R09",
+          "witness": {
+            "source": "tests/compute_models/cpu_c5_parameter_fragments.h",
+            "anchor": "inline d5_moe_execution_cases::Case new_deepseek_case(",
+            "sha256": "ae3b7d6973680370638ec37b1515a614f55818d514aae958b7692cdce3b873ac",
+            "results": [
+              {
+                "platform": "windows",
+                "entry": "direct",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/windows/direct.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile89"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/windows/direct.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile90"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/windows/direct.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile102"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/windows/direct.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile103"
+                  }
+                ]
+              },
+              {
+                "platform": "windows",
+                "entry": "graph",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/windows/graph.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile89"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/windows/graph.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile90"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/windows/graph.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile102"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/windows/graph.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile103"
+                  }
+                ]
+              },
+              {
+                "platform": "linux",
+                "entry": "direct",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/linux/direct.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile89"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/linux/direct.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile90"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/linux/direct.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile102"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/linux/direct.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile103"
+                  }
+                ]
+              },
+              {
+                "platform": "linux",
+                "entry": "graph",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/linux/graph.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile89"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/linux/graph.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile90"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/linux/graph.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile102"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/linux/graph.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile103"
+                  }
+                ]
+              }
+            ]
+          },
+          "verdict": "ASSOCIATED_PENDING_AGGREGATE_CONTRACT_REVIEW"
+        },
+        {
+          "region": "R10",
+          "witness": {
+            "source": "tests/compute_models/cpu_c5_parameter_fragments.h",
+            "anchor": "inline d5_moe_execution_cases::Case new_deepseek_case(",
+            "sha256": "ae3b7d6973680370638ec37b1515a614f55818d514aae958b7692cdce3b873ac",
+            "results": [
+              {
+                "platform": "windows",
+                "entry": "direct",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/windows/direct.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile89"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/windows/direct.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile90"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/windows/direct.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile102"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/windows/direct.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile103"
+                  }
+                ]
+              },
+              {
+                "platform": "windows",
+                "entry": "graph",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/windows/graph.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile89"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/windows/graph.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile90"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/windows/graph.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile102"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/windows/graph.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile103"
+                  }
+                ]
+              },
+              {
+                "platform": "linux",
+                "entry": "direct",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/linux/direct.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile89"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/linux/direct.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile90"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/linux/direct.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile102"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/linux/direct.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile103"
+                  }
+                ]
+              },
+              {
+                "platform": "linux",
+                "entry": "graph",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/linux/graph.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile89"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/linux/graph.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile90"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/linux/graph.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile102"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/linux/graph.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile103"
+                  }
+                ]
+              }
+            ]
+          },
+          "verdict": "ASSOCIATED_PENDING_AGGREGATE_CONTRACT_REVIEW"
+        },
+        {
+          "region": "R11",
+          "witness": {
+            "source": "tests/compute_models/cpu_c5_parameter_fragments.h",
+            "anchor": "inline d5_moe_execution_cases::Case new_deepseek_case(",
+            "sha256": "ae3b7d6973680370638ec37b1515a614f55818d514aae958b7692cdce3b873ac",
+            "results": [
+              {
+                "platform": "windows",
+                "entry": "direct",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/windows/direct.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile89"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/windows/direct.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile90"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/windows/direct.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile102"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/windows/direct.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile103"
+                  }
+                ]
+              },
+              {
+                "platform": "windows",
+                "entry": "graph",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/windows/graph.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile89"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/windows/graph.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile90"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/windows/graph.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile102"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/windows/graph.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile103"
+                  }
+                ]
+              },
+              {
+                "platform": "linux",
+                "entry": "direct",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/linux/direct.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile89"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/linux/direct.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile90"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/linux/direct.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile102"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/linux/direct.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile103"
+                  }
+                ]
+              },
+              {
+                "platform": "linux",
+                "entry": "graph",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/linux/graph.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile89"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/linux/graph.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile90"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/linux/graph.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile102"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/linux/graph.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile103"
+                  }
+                ]
+              }
+            ]
+          },
+          "verdict": "ASSOCIATED_PENDING_AGGREGATE_CONTRACT_REVIEW"
+        },
+        {
+          "region": "R12",
+          "witness": {
+            "source": "tests/compute_models/cpu_c5_parameter_fragments.h",
+            "anchor": "inline d5_moe_execution_cases::Case new_deepseek_case(",
+            "sha256": "ae3b7d6973680370638ec37b1515a614f55818d514aae958b7692cdce3b873ac",
+            "results": [
+              {
+                "platform": "windows",
+                "entry": "direct",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/windows/direct.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile89"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/windows/direct.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile90"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/windows/direct.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile102"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/windows/direct.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile103"
+                  }
+                ]
+              },
+              {
+                "platform": "windows",
+                "entry": "graph",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/windows/graph.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile89"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/windows/graph.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile90"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/windows/graph.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile102"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/windows/graph.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile103"
+                  }
+                ]
+              },
+              {
+                "platform": "linux",
+                "entry": "direct",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/linux/direct.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile89"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/linux/direct.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile90"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/linux/direct.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile102"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/linux/direct.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile103"
+                  }
+                ]
+              },
+              {
+                "platform": "linux",
+                "entry": "graph",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/linux/graph.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile89"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/linux/graph.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile90"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/linux/graph.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile102"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/linux/graph.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile103"
+                  }
+                ]
+              }
+            ]
+          },
+          "verdict": "ASSOCIATED_PENDING_AGGREGATE_CONTRACT_REVIEW"
+        }
+      ],
+      "numeric_regions": [
+        "R01",
+        "R03",
+        "R14"
+      ],
+      "resources_region": "R15",
+      "numeric_evidence": "evidence/correctness/cpu-quant-mtp-c5-matrix/README.md",
+      "parameter_evidence": "evidence/correctness/cpu-quant-mtp-c5-parameters/contract-review.md"
+    },
+    {
+      "family": "DeepSeek-V4-Flash-0731-GGUF",
+      "profiles": [
+        91,
+        92,
+        93,
+        94,
+        95,
+        96,
+        97,
+        98,
+        99,
+        100,
+        101,
+        102,
+        103
+      ],
+      "semantic_regions": [
+        {
+          "region": "R02",
+          "witness": {
+            "source": "tests/compute_models/cpu_c5_parameter_fragments.h",
+            "anchor": "inline d5_moe_execution_cases::Case new_deepseek_case(",
+            "sha256": "ae3b7d6973680370638ec37b1515a614f55818d514aae958b7692cdce3b873ac",
+            "results": [
+              {
+                "platform": "windows",
+                "entry": "direct",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/windows/direct.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile89"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/windows/direct.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile90"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/windows/direct.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile102"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/windows/direct.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile103"
+                  }
+                ]
+              },
+              {
+                "platform": "windows",
+                "entry": "graph",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/windows/graph.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile89"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/windows/graph.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile90"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/windows/graph.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile102"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/windows/graph.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile103"
+                  }
+                ]
+              },
+              {
+                "platform": "linux",
+                "entry": "direct",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/linux/direct.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile89"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/linux/direct.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile90"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/linux/direct.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile102"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/linux/direct.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile103"
+                  }
+                ]
+              },
+              {
+                "platform": "linux",
+                "entry": "graph",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/linux/graph.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile89"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/linux/graph.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile90"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/linux/graph.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile102"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/linux/graph.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile103"
+                  }
+                ]
+              }
+            ]
+          },
+          "verdict": "ASSOCIATED_PENDING_AGGREGATE_CONTRACT_REVIEW"
+        },
+        {
+          "region": "R07",
+          "witness": {
+            "source": "tests/compute_models/cpu_c5_parameter_fragments.h",
+            "anchor": "inline d5_moe_execution_cases::Case new_deepseek_case(",
+            "sha256": "ae3b7d6973680370638ec37b1515a614f55818d514aae958b7692cdce3b873ac",
+            "results": [
+              {
+                "platform": "windows",
+                "entry": "direct",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/windows/direct.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile89"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/windows/direct.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile90"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/windows/direct.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile102"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/windows/direct.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile103"
+                  }
+                ]
+              },
+              {
+                "platform": "windows",
+                "entry": "graph",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/windows/graph.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile89"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/windows/graph.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile90"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/windows/graph.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile102"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/windows/graph.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile103"
+                  }
+                ]
+              },
+              {
+                "platform": "linux",
+                "entry": "direct",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/linux/direct.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile89"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/linux/direct.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile90"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/linux/direct.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile102"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/linux/direct.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile103"
+                  }
+                ]
+              },
+              {
+                "platform": "linux",
+                "entry": "graph",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/linux/graph.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile89"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/linux/graph.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile90"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/linux/graph.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile102"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/linux/graph.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile103"
+                  }
+                ]
+              }
+            ]
+          },
+          "verdict": "ASSOCIATED_PENDING_AGGREGATE_CONTRACT_REVIEW"
+        },
+        {
+          "region": "R08",
+          "witness": {
+            "source": "tests/compute_models/cpu_c5_parameter_fragments.h",
+            "anchor": "inline d5_moe_execution_cases::Case new_deepseek_case(",
+            "sha256": "ae3b7d6973680370638ec37b1515a614f55818d514aae958b7692cdce3b873ac",
+            "results": [
+              {
+                "platform": "windows",
+                "entry": "direct",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/windows/direct.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile89"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/windows/direct.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile90"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/windows/direct.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile102"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/windows/direct.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile103"
+                  }
+                ]
+              },
+              {
+                "platform": "windows",
+                "entry": "graph",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/windows/graph.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile89"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/windows/graph.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile90"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/windows/graph.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile102"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/windows/graph.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile103"
+                  }
+                ]
+              },
+              {
+                "platform": "linux",
+                "entry": "direct",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/linux/direct.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile89"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/linux/direct.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile90"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/linux/direct.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile102"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/linux/direct.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile103"
+                  }
+                ]
+              },
+              {
+                "platform": "linux",
+                "entry": "graph",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/linux/graph.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile89"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/linux/graph.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile90"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/linux/graph.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile102"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/linux/graph.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile103"
+                  }
+                ]
+              }
+            ]
+          },
+          "verdict": "ASSOCIATED_PENDING_AGGREGATE_CONTRACT_REVIEW"
+        },
+        {
+          "region": "R09",
+          "witness": {
+            "source": "tests/compute_models/cpu_c5_parameter_fragments.h",
+            "anchor": "inline d5_moe_execution_cases::Case new_deepseek_case(",
+            "sha256": "ae3b7d6973680370638ec37b1515a614f55818d514aae958b7692cdce3b873ac",
+            "results": [
+              {
+                "platform": "windows",
+                "entry": "direct",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/windows/direct.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile89"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/windows/direct.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile90"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/windows/direct.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile102"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/windows/direct.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile103"
+                  }
+                ]
+              },
+              {
+                "platform": "windows",
+                "entry": "graph",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/windows/graph.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile89"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/windows/graph.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile90"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/windows/graph.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile102"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/windows/graph.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile103"
+                  }
+                ]
+              },
+              {
+                "platform": "linux",
+                "entry": "direct",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/linux/direct.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile89"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/linux/direct.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile90"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/linux/direct.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile102"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/linux/direct.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile103"
+                  }
+                ]
+              },
+              {
+                "platform": "linux",
+                "entry": "graph",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/linux/graph.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile89"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/linux/graph.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile90"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/linux/graph.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile102"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/linux/graph.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile103"
+                  }
+                ]
+              }
+            ]
+          },
+          "verdict": "ASSOCIATED_PENDING_AGGREGATE_CONTRACT_REVIEW"
+        },
+        {
+          "region": "R10",
+          "witness": {
+            "source": "tests/compute_models/cpu_c5_parameter_fragments.h",
+            "anchor": "inline d5_moe_execution_cases::Case new_deepseek_case(",
+            "sha256": "ae3b7d6973680370638ec37b1515a614f55818d514aae958b7692cdce3b873ac",
+            "results": [
+              {
+                "platform": "windows",
+                "entry": "direct",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/windows/direct.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile89"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/windows/direct.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile90"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/windows/direct.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile102"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/windows/direct.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile103"
+                  }
+                ]
+              },
+              {
+                "platform": "windows",
+                "entry": "graph",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/windows/graph.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile89"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/windows/graph.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile90"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/windows/graph.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile102"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/windows/graph.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile103"
+                  }
+                ]
+              },
+              {
+                "platform": "linux",
+                "entry": "direct",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/linux/direct.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile89"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/linux/direct.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile90"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/linux/direct.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile102"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/linux/direct.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile103"
+                  }
+                ]
+              },
+              {
+                "platform": "linux",
+                "entry": "graph",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/linux/graph.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile89"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/linux/graph.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile90"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/linux/graph.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile102"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/linux/graph.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile103"
+                  }
+                ]
+              }
+            ]
+          },
+          "verdict": "ASSOCIATED_PENDING_AGGREGATE_CONTRACT_REVIEW"
+        },
+        {
+          "region": "R11",
+          "witness": {
+            "source": "tests/compute_models/cpu_c5_parameter_fragments.h",
+            "anchor": "inline d5_moe_execution_cases::Case new_deepseek_case(",
+            "sha256": "ae3b7d6973680370638ec37b1515a614f55818d514aae958b7692cdce3b873ac",
+            "results": [
+              {
+                "platform": "windows",
+                "entry": "direct",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/windows/direct.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile89"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/windows/direct.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile90"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/windows/direct.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile102"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/windows/direct.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile103"
+                  }
+                ]
+              },
+              {
+                "platform": "windows",
+                "entry": "graph",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/windows/graph.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile89"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/windows/graph.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile90"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/windows/graph.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile102"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/windows/graph.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile103"
+                  }
+                ]
+              },
+              {
+                "platform": "linux",
+                "entry": "direct",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/linux/direct.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile89"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/linux/direct.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile90"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/linux/direct.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile102"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/linux/direct.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile103"
+                  }
+                ]
+              },
+              {
+                "platform": "linux",
+                "entry": "graph",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/linux/graph.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile89"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/linux/graph.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile90"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/linux/graph.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile102"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/linux/graph.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile103"
+                  }
+                ]
+              }
+            ]
+          },
+          "verdict": "ASSOCIATED_PENDING_AGGREGATE_CONTRACT_REVIEW"
+        },
+        {
+          "region": "R12",
+          "witness": {
+            "source": "tests/compute_models/cpu_c5_parameter_fragments.h",
+            "anchor": "inline d5_moe_execution_cases::Case new_deepseek_case(",
+            "sha256": "ae3b7d6973680370638ec37b1515a614f55818d514aae958b7692cdce3b873ac",
+            "results": [
+              {
+                "platform": "windows",
+                "entry": "direct",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/windows/direct.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile89"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/windows/direct.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile90"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/windows/direct.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile102"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/windows/direct.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile103"
+                  }
+                ]
+              },
+              {
+                "platform": "windows",
+                "entry": "graph",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/windows/graph.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile89"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/windows/graph.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile90"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/windows/graph.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile102"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/windows/graph.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile103"
+                  }
+                ]
+              },
+              {
+                "platform": "linux",
+                "entry": "direct",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/linux/direct.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile89"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/linux/direct.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile90"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/linux/direct.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile102"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/linux/direct.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile103"
+                  }
+                ]
+              },
+              {
+                "platform": "linux",
+                "entry": "graph",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/linux/graph.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile89"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/linux/graph.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile90"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/linux/graph.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile102"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-parameters/linux/graph.xml",
+                    "testcase": "C5ExactNewGgufMain/CpuGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile103"
+                  }
+                ]
+              }
+            ]
+          },
+          "verdict": "ASSOCIATED_PENDING_AGGREGATE_CONTRACT_REVIEW"
+        }
+      ],
+      "numeric_regions": [
+        "R01",
+        "R03",
+        "R14"
+      ],
+      "resources_region": "R15",
+      "numeric_evidence": "evidence/correctness/cpu-quant-mtp-c5-matrix/README.md",
+      "parameter_evidence": "evidence/correctness/cpu-quant-mtp-c5-parameters/contract-review.md"
+    }
+  ],
+  "limits": [
+    "This is an evidence index, not104 complete mixed-model RUN_PASS cells.",
+    "Exact weight ports, state/semantic contracts, identity and resources must jointly satisfy aggregate acceptance.",
+    "New official/sidecar and nonGGUF objects remain separately required."
+  ]
+}

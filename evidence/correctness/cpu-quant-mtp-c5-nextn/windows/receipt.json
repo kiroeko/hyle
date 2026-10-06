@@ -1,0 +1,43 @@
+[
+  {
+    "name": "selected-build",
+    "args": [
+      "cmake",
+      "--build",
+      "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+      "--target",
+      "hyle_compute_route_cpu_tests",
+      "hyle_graph_route_cpu_tests",
+      "--parallel",
+      "2"
+    ],
+    "candidate": "61155eed2a739ddbd08d8e3bfc79d0f067132ae6",
+    "log": "1-selected-build.log",
+    "returncode": 0,
+    "seconds": 12.672
+  },
+  {
+    "name": "direct-complete-nextn",
+    "args": [
+      "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_compute_route_cpu_test.exe",
+      "--gtest_filter=*C5Parameters*.Qwen24CompleteNextNUsesMixedRolesCacheMoeAndFullHead",
+      "--gtest_output=xml:C:\\public\\project-hyle\\hyle\\.scratch\\validation\\cpu-coverage-c5-nextn-windows\\61155eed2a73\\direct.xml"
+    ],
+    "candidate": "61155eed2a739ddbd08d8e3bfc79d0f067132ae6",
+    "log": "2-direct-complete-nextn.log",
+    "returncode": 0,
+    "seconds": 4.375
+  },
+  {
+    "name": "graph-complete-nextn",
+    "args": [
+      "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\hyle_graph_route_cpu_test.exe",
+      "--gtest_filter=*C5Parameters*.Qwen24CompleteNextNUsesMixedRolesCacheMoeAndFullHead",
+      "--gtest_output=xml:C:\\public\\project-hyle\\hyle\\.scratch\\validation\\cpu-coverage-c5-nextn-windows\\61155eed2a73\\graph.xml"
+    ],
+    "candidate": "61155eed2a739ddbd08d8e3bfc79d0f067132ae6",
+    "log": "3-graph-complete-nextn.log",
+    "returncode": 0,
+    "seconds": 4.437
+  }
+]

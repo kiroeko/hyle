@@ -40,5 +40,9 @@ mHC输出后全词表head消费者，原完整oracle/cache反馈保留。两系�
 全部角色/required-region的最终关联与聚合仍由当前C5卡负责。
 
 [80条参数的收据索引](parameter-witness-map.json)包含按模型族的源码anchor/SHA与两系统两入口testcase。
-它只是可追踪索引，状态仍为待最后源码/合同复核；测试名匹配本身不能改变verdict。
+它是可追踪索引，保留生成时的待复核状态；当前源码/合同复核结论见下方复核表，
+测试名匹配本身不能改变verdict。
 此复核已发现并补验Qwen实际RoPE/epsilon/MTP输入边界，见[准确资格](../cpu-quant-mtp-c5-qwen-actual/README.md)。
+
+上述有限源码/合同复核现已完成，见[逐类结论与复用边界](contract-review.md)。
+索引不是1,354次完整模型运行；required-region最终聚合与七门终审仍未关闭。

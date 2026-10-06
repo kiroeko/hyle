@@ -1,0 +1,13 @@
+{
+  "candidate": "c1b0250ed4bb93ea4a052aa8ed3d018fa238363d",
+  "platform": "linux",
+  "tests_per_entry": 4,
+  "scope": [
+    "actual Qwen2B Q8/KV2,27B Q24/KV4,2.4T Q64/KV4;D256/HalfSplit64/theta1e7/epsilon1e-6/KV feedback",
+    "strict three-width F32 norm/residual",
+    "two exact original Q8 MTP input/carry profiles",
+    "two exact complete2.4T NextN profiles with actual mixed roles and full vocabulary"
+  ],
+  "unchanged": "product/source SDKs, prior numeric matrices, GPU qualification, numeric gates",
+  "wrapper_followup": null
+}

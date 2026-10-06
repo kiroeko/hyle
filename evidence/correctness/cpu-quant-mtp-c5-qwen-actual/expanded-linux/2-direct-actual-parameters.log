@@ -1,0 +1,18 @@
+Running main() from /root/.cache/hyle/dependencies/v1/sources/googletest-063de7e9578f-162765170ae6/googletest/src/gtest_main.cc
+Note: Google Test filter = *C5Parameters*.Qwen*
+[==========] Running 4 tests from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 4 tests from CpuC5Parameters
+[ RUN      ] CpuC5Parameters.Qwen24ActualHalfSplitFrequencyNormAndKvFeedback
+[       OK ] CpuC5Parameters.Qwen24ActualHalfSplitFrequencyNormAndKvFeedback (238 ms)
+[ RUN      ] CpuC5Parameters.QwenActualWidthsUseDeclaredFloatNormEpsilon
+[       OK ] CpuC5Parameters.QwenActualWidthsUseDeclaredFloatNormEpsilon (1 ms)
+[ RUN      ] CpuC5Parameters.Qwen24OriginalMtpCodecNormOrderAndCarry
+[       OK ] CpuC5Parameters.Qwen24OriginalMtpCodecNormOrderAndCarry (213 ms)
+[ RUN      ] CpuC5Parameters.Qwen24CompleteNextNUsesMixedRolesCacheMoeAndFullHead
+[       OK ] CpuC5Parameters.Qwen24CompleteNextNUsesMixedRolesCacheMoeAndFullHead (5067 ms)
+[----------] 4 tests from CpuC5Parameters (5527 ms total)
+
+[----------] Global test environment tear-down
+[==========] 4 tests from 1 test suite ran. (5529 ms total)
+[  PASSED  ] 4 tests.

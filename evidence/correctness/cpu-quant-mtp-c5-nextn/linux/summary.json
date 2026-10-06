@@ -1,0 +1,33 @@
+{
+  "candidate": "61155eed2a739ddbd08d8e3bfc79d0f067132ae6",
+  "platform": "linux",
+  "tests": 2,
+  "profiles_per_test": 2,
+  "scope": "Complete Qwen2.4T NextN with actual Q8_0 and UD-IQ1_M mixed role formats",
+  "dimensions": {
+    "H": 8192,
+    "Q": 64,
+    "KV": 4,
+    "D": 256,
+    "E": 512,
+    "top": 10,
+    "I": 2048,
+    "shared": 2048,
+    "V": 248320
+  },
+  "program": [
+    "shared real-span embedding",
+    "embedding-first norm and Q8 eh_proj",
+    "norm/GQA/HalfSplit64/theta1e7/cache/gate/output/residual",
+    "norm/softmax router512/top10/grouped experts/gated shared expert/ordered combine/FFN residual",
+    "shared-head norm/carry/actual KV feedback/full vocabulary shared head"
+  ],
+  "error_contract": "unchanged whole-quantized-fragment gate; original activation codecs/dots; independent full oracle",
+  "residency": "eight synthetic expert classes with explicit I32 actual-id-to-resident mapping; K/N/router512/top10 retained",
+  "limits": [
+    "synthetic nonzero legal weights, not real-weight inference engine",
+    "text MRoPE axes coincide",
+    "full head uses4096-row resident shards",
+    "two exact profile programs, not104 full-model runs"
+  ]
+}

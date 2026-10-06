@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites tests="1" failures="0" disabled="0" errors="0" time="5.097" timestamp="2026-10-07T05:02:50.101" name="AllTests">
+  <testsuite name="CpuGraphC5Parameters" tests="1" failures="0" disabled="0" skipped="0" errors="0" time="5.094" timestamp="2026-10-07T05:02:50.103">
+    <testcase name="Qwen24CompleteNextNUsesMixedRolesCacheMoeAndFullHead" file="/root/hyle-scratch/active-cpu-z/source/tests/graph_route_cpu/../compute_models/cpu_c5_parameter_tests.h" line="71" status="run" result="completed" time="5.092" timestamp="2026-10-07T05:02:50.103" classname="CpuGraphC5Parameters" />
+  </testsuite>
+</testsuites>

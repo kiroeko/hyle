@@ -1,5 +1,5 @@
 {
-  "candidate": "a68f8ed7a5ead29cd418c4642388a7a02a2f6009",
+  "candidate": "c1b0250ed4bb93ea4a052aa8ed3d018fa238363d",
   "count": 80,
   "roles": [
     {
@@ -744,7 +744,7 @@
           "witness": {
             "source": "tests/compute_models/cpu_c5_qwen_attention.h",
             "anchor": "inline Fragment norm_residual(",
-            "sha256": "b5c79c2dea4074e0292bebc5641b71295b9399cfd91fbb822a045db95218a209",
+            "sha256": "9ff6f43529b87a77f31524814721ff62168899a1740d0bee5c2fc64500b25333",
             "results": [
               {
                 "platform": "windows",
@@ -752,6 +752,10 @@
                 "passed": [
                   {
                     "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/windows/direct.xml",
+                    "testcase": "CpuC5Parameters.QwenActualWidthsUseDeclaredFloatNormEpsilon"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/expanded-windows/direct.xml",
                     "testcase": "CpuC5Parameters.QwenActualWidthsUseDeclaredFloatNormEpsilon"
                   }
                 ]
@@ -763,6 +767,10 @@
                   {
                     "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/windows/graph.xml",
                     "testcase": "CpuGraphC5Parameters.QwenActualWidthsUseDeclaredFloatNormEpsilon"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/expanded-windows/graph.xml",
+                    "testcase": "CpuGraphC5Parameters.QwenActualWidthsUseDeclaredFloatNormEpsilon"
                   }
                 ]
               },
@@ -773,6 +781,10 @@
                   {
                     "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/linux/direct.xml",
                     "testcase": "CpuC5Parameters.QwenActualWidthsUseDeclaredFloatNormEpsilon"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/expanded-linux/direct.xml",
+                    "testcase": "CpuC5Parameters.QwenActualWidthsUseDeclaredFloatNormEpsilon"
                   }
                 ]
               },
@@ -782,6 +794,10 @@
                 "passed": [
                   {
                     "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/linux/graph.xml",
+                    "testcase": "CpuGraphC5Parameters.QwenActualWidthsUseDeclaredFloatNormEpsilon"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/expanded-linux/graph.xml",
                     "testcase": "CpuGraphC5Parameters.QwenActualWidthsUseDeclaredFloatNormEpsilon"
                   }
                 ]
@@ -868,7 +884,7 @@
           "witness": {
             "source": "tests/compute_models/cpu_c5_qwen_attention.h",
             "anchor": "inline Fragment norm_residual(",
-            "sha256": "b5c79c2dea4074e0292bebc5641b71295b9399cfd91fbb822a045db95218a209",
+            "sha256": "9ff6f43529b87a77f31524814721ff62168899a1740d0bee5c2fc64500b25333",
             "results": [
               {
                 "platform": "windows",
@@ -876,6 +892,10 @@
                 "passed": [
                   {
                     "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/windows/direct.xml",
+                    "testcase": "CpuC5Parameters.QwenActualWidthsUseDeclaredFloatNormEpsilon"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/expanded-windows/direct.xml",
                     "testcase": "CpuC5Parameters.QwenActualWidthsUseDeclaredFloatNormEpsilon"
                   }
                 ]
@@ -887,6 +907,10 @@
                   {
                     "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/windows/graph.xml",
                     "testcase": "CpuGraphC5Parameters.QwenActualWidthsUseDeclaredFloatNormEpsilon"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/expanded-windows/graph.xml",
+                    "testcase": "CpuGraphC5Parameters.QwenActualWidthsUseDeclaredFloatNormEpsilon"
                   }
                 ]
               },
@@ -897,6 +921,10 @@
                   {
                     "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/linux/direct.xml",
                     "testcase": "CpuC5Parameters.QwenActualWidthsUseDeclaredFloatNormEpsilon"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/expanded-linux/direct.xml",
+                    "testcase": "CpuC5Parameters.QwenActualWidthsUseDeclaredFloatNormEpsilon"
                   }
                 ]
               },
@@ -906,6 +934,10 @@
                 "passed": [
                   {
                     "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/linux/graph.xml",
+                    "testcase": "CpuGraphC5Parameters.QwenActualWidthsUseDeclaredFloatNormEpsilon"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/expanded-linux/graph.xml",
                     "testcase": "CpuGraphC5Parameters.QwenActualWidthsUseDeclaredFloatNormEpsilon"
                   }
                 ]
@@ -930,7 +962,7 @@
           "witness": {
             "source": "tests/compute_models/cpu_c5_qwen_attention.h",
             "anchor": "inline Fragment norm_residual(",
-            "sha256": "b5c79c2dea4074e0292bebc5641b71295b9399cfd91fbb822a045db95218a209",
+            "sha256": "9ff6f43529b87a77f31524814721ff62168899a1740d0bee5c2fc64500b25333",
             "results": [
               {
                 "platform": "windows",
@@ -938,6 +970,10 @@
                 "passed": [
                   {
                     "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/windows/direct.xml",
+                    "testcase": "CpuC5Parameters.QwenActualWidthsUseDeclaredFloatNormEpsilon"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/expanded-windows/direct.xml",
                     "testcase": "CpuC5Parameters.QwenActualWidthsUseDeclaredFloatNormEpsilon"
                   }
                 ]
@@ -949,6 +985,10 @@
                   {
                     "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/windows/graph.xml",
                     "testcase": "CpuGraphC5Parameters.QwenActualWidthsUseDeclaredFloatNormEpsilon"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/expanded-windows/graph.xml",
+                    "testcase": "CpuGraphC5Parameters.QwenActualWidthsUseDeclaredFloatNormEpsilon"
                   }
                 ]
               },
@@ -959,6 +999,10 @@
                   {
                     "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/linux/direct.xml",
                     "testcase": "CpuC5Parameters.QwenActualWidthsUseDeclaredFloatNormEpsilon"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/expanded-linux/direct.xml",
+                    "testcase": "CpuC5Parameters.QwenActualWidthsUseDeclaredFloatNormEpsilon"
                   }
                 ]
               },
@@ -968,6 +1012,10 @@
                 "passed": [
                   {
                     "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/linux/graph.xml",
+                    "testcase": "CpuGraphC5Parameters.QwenActualWidthsUseDeclaredFloatNormEpsilon"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/expanded-linux/graph.xml",
                     "testcase": "CpuGraphC5Parameters.QwenActualWidthsUseDeclaredFloatNormEpsilon"
                   }
                 ]
@@ -1767,7 +1815,7 @@
           "witness": {
             "source": "tests/compute_models/cpu_c5_qwen_attention.h",
             "anchor": "inline Fragment norm_residual(",
-            "sha256": "b5c79c2dea4074e0292bebc5641b71295b9399cfd91fbb822a045db95218a209",
+            "sha256": "9ff6f43529b87a77f31524814721ff62168899a1740d0bee5c2fc64500b25333",
             "results": [
               {
                 "platform": "windows",
@@ -1775,6 +1823,10 @@
                 "passed": [
                   {
                     "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/windows/direct.xml",
+                    "testcase": "CpuC5Parameters.QwenActualWidthsUseDeclaredFloatNormEpsilon"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/expanded-windows/direct.xml",
                     "testcase": "CpuC5Parameters.QwenActualWidthsUseDeclaredFloatNormEpsilon"
                   }
                 ]
@@ -1786,6 +1838,10 @@
                   {
                     "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/windows/graph.xml",
                     "testcase": "CpuGraphC5Parameters.QwenActualWidthsUseDeclaredFloatNormEpsilon"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/expanded-windows/graph.xml",
+                    "testcase": "CpuGraphC5Parameters.QwenActualWidthsUseDeclaredFloatNormEpsilon"
                   }
                 ]
               },
@@ -1796,6 +1852,10 @@
                   {
                     "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/linux/direct.xml",
                     "testcase": "CpuC5Parameters.QwenActualWidthsUseDeclaredFloatNormEpsilon"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/expanded-linux/direct.xml",
+                    "testcase": "CpuC5Parameters.QwenActualWidthsUseDeclaredFloatNormEpsilon"
                   }
                 ]
               },
@@ -1805,6 +1865,10 @@
                 "passed": [
                   {
                     "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/linux/graph.xml",
+                    "testcase": "CpuGraphC5Parameters.QwenActualWidthsUseDeclaredFloatNormEpsilon"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/expanded-linux/graph.xml",
                     "testcase": "CpuGraphC5Parameters.QwenActualWidthsUseDeclaredFloatNormEpsilon"
                   }
                 ]
@@ -1889,17 +1953,21 @@
         {
           "family": "Qwen3.8-2.4T-A95B-GGUF",
           "witness": {
-            "source": "tests/compute_models/cpu_c5_qwen_attention.h",
-            "anchor": "inline Fragment mtp(",
-            "sha256": "b5c79c2dea4074e0292bebc5641b71295b9399cfd91fbb822a045db95218a209",
+            "source": "tests/compute_models/cpu_c5_qwen_nextn.h",
+            "anchor": "inline Fragment decoder(",
+            "sha256": "6e2e2a93f01a7fc65d5b4a59ce55f5996e4814181eaceb9cec24ea92276cb340",
             "results": [
               {
                 "platform": "windows",
                 "entry": "direct",
                 "passed": [
                   {
-                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/windows/direct.xml",
-                    "testcase": "CpuC5Parameters.Qwen24OriginalMtpCodecNormOrderAndCarry"
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/expanded-windows/direct.xml",
+                    "testcase": "CpuC5Parameters.Qwen24CompleteNextNUsesMixedRolesCacheMoeAndFullHead"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-nextn/windows/direct.xml",
+                    "testcase": "CpuC5Parameters.Qwen24CompleteNextNUsesMixedRolesCacheMoeAndFullHead"
                   }
                 ]
               },
@@ -1908,8 +1976,12 @@
                 "entry": "graph",
                 "passed": [
                   {
-                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/windows/graph.xml",
-                    "testcase": "CpuGraphC5Parameters.Qwen24OriginalMtpCodecNormOrderAndCarry"
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/expanded-windows/graph.xml",
+                    "testcase": "CpuGraphC5Parameters.Qwen24CompleteNextNUsesMixedRolesCacheMoeAndFullHead"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-nextn/windows/graph.xml",
+                    "testcase": "CpuGraphC5Parameters.Qwen24CompleteNextNUsesMixedRolesCacheMoeAndFullHead"
                   }
                 ]
               },
@@ -1918,8 +1990,12 @@
                 "entry": "direct",
                 "passed": [
                   {
-                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/linux/direct.xml",
-                    "testcase": "CpuC5Parameters.Qwen24OriginalMtpCodecNormOrderAndCarry"
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/expanded-linux/direct.xml",
+                    "testcase": "CpuC5Parameters.Qwen24CompleteNextNUsesMixedRolesCacheMoeAndFullHead"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-nextn/linux/direct.xml",
+                    "testcase": "CpuC5Parameters.Qwen24CompleteNextNUsesMixedRolesCacheMoeAndFullHead"
                   }
                 ]
               },
@@ -1928,8 +2004,12 @@
                 "entry": "graph",
                 "passed": [
                   {
-                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/linux/graph.xml",
-                    "testcase": "CpuGraphC5Parameters.Qwen24OriginalMtpCodecNormOrderAndCarry"
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/expanded-linux/graph.xml",
+                    "testcase": "CpuGraphC5Parameters.Qwen24CompleteNextNUsesMixedRolesCacheMoeAndFullHead"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-nextn/linux/graph.xml",
+                    "testcase": "CpuGraphC5Parameters.Qwen24CompleteNextNUsesMixedRolesCacheMoeAndFullHead"
                   }
                 ]
               }
@@ -1951,17 +2031,21 @@
         {
           "family": "Qwen3.8-2.4T-A95B-GGUF",
           "witness": {
-            "source": "tests/compute_models/cpu_c5_qwen_attention.h",
-            "anchor": "inline Fragment mtp(",
-            "sha256": "b5c79c2dea4074e0292bebc5641b71295b9399cfd91fbb822a045db95218a209",
+            "source": "tests/compute_models/cpu_c5_qwen_nextn.h",
+            "anchor": "inline Fragment decoder(",
+            "sha256": "6e2e2a93f01a7fc65d5b4a59ce55f5996e4814181eaceb9cec24ea92276cb340",
             "results": [
               {
                 "platform": "windows",
                 "entry": "direct",
                 "passed": [
                   {
-                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/windows/direct.xml",
-                    "testcase": "CpuC5Parameters.Qwen24OriginalMtpCodecNormOrderAndCarry"
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/expanded-windows/direct.xml",
+                    "testcase": "CpuC5Parameters.Qwen24CompleteNextNUsesMixedRolesCacheMoeAndFullHead"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-nextn/windows/direct.xml",
+                    "testcase": "CpuC5Parameters.Qwen24CompleteNextNUsesMixedRolesCacheMoeAndFullHead"
                   }
                 ]
               },
@@ -1970,8 +2054,12 @@
                 "entry": "graph",
                 "passed": [
                   {
-                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/windows/graph.xml",
-                    "testcase": "CpuGraphC5Parameters.Qwen24OriginalMtpCodecNormOrderAndCarry"
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/expanded-windows/graph.xml",
+                    "testcase": "CpuGraphC5Parameters.Qwen24CompleteNextNUsesMixedRolesCacheMoeAndFullHead"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-nextn/windows/graph.xml",
+                    "testcase": "CpuGraphC5Parameters.Qwen24CompleteNextNUsesMixedRolesCacheMoeAndFullHead"
                   }
                 ]
               },
@@ -1980,8 +2068,12 @@
                 "entry": "direct",
                 "passed": [
                   {
-                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/linux/direct.xml",
-                    "testcase": "CpuC5Parameters.Qwen24OriginalMtpCodecNormOrderAndCarry"
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/expanded-linux/direct.xml",
+                    "testcase": "CpuC5Parameters.Qwen24CompleteNextNUsesMixedRolesCacheMoeAndFullHead"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-nextn/linux/direct.xml",
+                    "testcase": "CpuC5Parameters.Qwen24CompleteNextNUsesMixedRolesCacheMoeAndFullHead"
                   }
                 ]
               },
@@ -1990,8 +2082,12 @@
                 "entry": "graph",
                 "passed": [
                   {
-                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/linux/graph.xml",
-                    "testcase": "CpuGraphC5Parameters.Qwen24OriginalMtpCodecNormOrderAndCarry"
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/expanded-linux/graph.xml",
+                    "testcase": "CpuGraphC5Parameters.Qwen24CompleteNextNUsesMixedRolesCacheMoeAndFullHead"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-nextn/linux/graph.xml",
+                    "testcase": "CpuGraphC5Parameters.Qwen24CompleteNextNUsesMixedRolesCacheMoeAndFullHead"
                   }
                 ]
               }
@@ -2013,17 +2109,21 @@
         {
           "family": "Qwen3.8-2.4T-A95B-GGUF",
           "witness": {
-            "source": "tests/compute_models/cpu_c5_qwen_attention.h",
-            "anchor": "inline Fragment mtp(",
-            "sha256": "b5c79c2dea4074e0292bebc5641b71295b9399cfd91fbb822a045db95218a209",
+            "source": "tests/compute_models/cpu_c5_qwen_nextn.h",
+            "anchor": "inline Fragment decoder(",
+            "sha256": "6e2e2a93f01a7fc65d5b4a59ce55f5996e4814181eaceb9cec24ea92276cb340",
             "results": [
               {
                 "platform": "windows",
                 "entry": "direct",
                 "passed": [
                   {
-                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/windows/direct.xml",
-                    "testcase": "CpuC5Parameters.Qwen24OriginalMtpCodecNormOrderAndCarry"
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/expanded-windows/direct.xml",
+                    "testcase": "CpuC5Parameters.Qwen24CompleteNextNUsesMixedRolesCacheMoeAndFullHead"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-nextn/windows/direct.xml",
+                    "testcase": "CpuC5Parameters.Qwen24CompleteNextNUsesMixedRolesCacheMoeAndFullHead"
                   }
                 ]
               },
@@ -2032,8 +2132,12 @@
                 "entry": "graph",
                 "passed": [
                   {
-                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/windows/graph.xml",
-                    "testcase": "CpuGraphC5Parameters.Qwen24OriginalMtpCodecNormOrderAndCarry"
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/expanded-windows/graph.xml",
+                    "testcase": "CpuGraphC5Parameters.Qwen24CompleteNextNUsesMixedRolesCacheMoeAndFullHead"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-nextn/windows/graph.xml",
+                    "testcase": "CpuGraphC5Parameters.Qwen24CompleteNextNUsesMixedRolesCacheMoeAndFullHead"
                   }
                 ]
               },
@@ -2042,8 +2146,12 @@
                 "entry": "direct",
                 "passed": [
                   {
-                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/linux/direct.xml",
-                    "testcase": "CpuC5Parameters.Qwen24OriginalMtpCodecNormOrderAndCarry"
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/expanded-linux/direct.xml",
+                    "testcase": "CpuC5Parameters.Qwen24CompleteNextNUsesMixedRolesCacheMoeAndFullHead"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-nextn/linux/direct.xml",
+                    "testcase": "CpuC5Parameters.Qwen24CompleteNextNUsesMixedRolesCacheMoeAndFullHead"
                   }
                 ]
               },
@@ -2052,8 +2160,12 @@
                 "entry": "graph",
                 "passed": [
                   {
-                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/linux/graph.xml",
-                    "testcase": "CpuGraphC5Parameters.Qwen24OriginalMtpCodecNormOrderAndCarry"
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/expanded-linux/graph.xml",
+                    "testcase": "CpuGraphC5Parameters.Qwen24CompleteNextNUsesMixedRolesCacheMoeAndFullHead"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-nextn/linux/graph.xml",
+                    "testcase": "CpuGraphC5Parameters.Qwen24CompleteNextNUsesMixedRolesCacheMoeAndFullHead"
                   }
                 ]
               }
@@ -2077,7 +2189,7 @@
           "witness": {
             "source": "tests/compute_models/cpu_c5_qwen_attention.h",
             "anchor": "inline Fragment norm_residual(",
-            "sha256": "b5c79c2dea4074e0292bebc5641b71295b9399cfd91fbb822a045db95218a209",
+            "sha256": "9ff6f43529b87a77f31524814721ff62168899a1740d0bee5c2fc64500b25333",
             "results": [
               {
                 "platform": "windows",
@@ -2085,6 +2197,10 @@
                 "passed": [
                   {
                     "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/windows/direct.xml",
+                    "testcase": "CpuC5Parameters.QwenActualWidthsUseDeclaredFloatNormEpsilon"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/expanded-windows/direct.xml",
                     "testcase": "CpuC5Parameters.QwenActualWidthsUseDeclaredFloatNormEpsilon"
                   }
                 ]
@@ -2096,6 +2212,10 @@
                   {
                     "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/windows/graph.xml",
                     "testcase": "CpuGraphC5Parameters.QwenActualWidthsUseDeclaredFloatNormEpsilon"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/expanded-windows/graph.xml",
+                    "testcase": "CpuGraphC5Parameters.QwenActualWidthsUseDeclaredFloatNormEpsilon"
                   }
                 ]
               },
@@ -2106,6 +2226,10 @@
                   {
                     "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/linux/direct.xml",
                     "testcase": "CpuC5Parameters.QwenActualWidthsUseDeclaredFloatNormEpsilon"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/expanded-linux/direct.xml",
+                    "testcase": "CpuC5Parameters.QwenActualWidthsUseDeclaredFloatNormEpsilon"
                   }
                 ]
               },
@@ -2115,6 +2239,10 @@
                 "passed": [
                   {
                     "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/linux/graph.xml",
+                    "testcase": "CpuGraphC5Parameters.QwenActualWidthsUseDeclaredFloatNormEpsilon"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/expanded-linux/graph.xml",
                     "testcase": "CpuGraphC5Parameters.QwenActualWidthsUseDeclaredFloatNormEpsilon"
                   }
                 ]
@@ -2139,7 +2267,7 @@
           "witness": {
             "source": "tests/compute_models/cpu_c5_qwen_attention.h",
             "anchor": "inline Fragment norm_residual(",
-            "sha256": "b5c79c2dea4074e0292bebc5641b71295b9399cfd91fbb822a045db95218a209",
+            "sha256": "9ff6f43529b87a77f31524814721ff62168899a1740d0bee5c2fc64500b25333",
             "results": [
               {
                 "platform": "windows",
@@ -2147,6 +2275,10 @@
                 "passed": [
                   {
                     "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/windows/direct.xml",
+                    "testcase": "CpuC5Parameters.QwenActualWidthsUseDeclaredFloatNormEpsilon"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/expanded-windows/direct.xml",
                     "testcase": "CpuC5Parameters.QwenActualWidthsUseDeclaredFloatNormEpsilon"
                   }
                 ]
@@ -2158,6 +2290,10 @@
                   {
                     "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/windows/graph.xml",
                     "testcase": "CpuGraphC5Parameters.QwenActualWidthsUseDeclaredFloatNormEpsilon"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/expanded-windows/graph.xml",
+                    "testcase": "CpuGraphC5Parameters.QwenActualWidthsUseDeclaredFloatNormEpsilon"
                   }
                 ]
               },
@@ -2168,6 +2304,10 @@
                   {
                     "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/linux/direct.xml",
                     "testcase": "CpuC5Parameters.QwenActualWidthsUseDeclaredFloatNormEpsilon"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/expanded-linux/direct.xml",
+                    "testcase": "CpuC5Parameters.QwenActualWidthsUseDeclaredFloatNormEpsilon"
                   }
                 ]
               },
@@ -2177,6 +2317,10 @@
                 "passed": [
                   {
                     "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/linux/graph.xml",
+                    "testcase": "CpuGraphC5Parameters.QwenActualWidthsUseDeclaredFloatNormEpsilon"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/expanded-linux/graph.xml",
                     "testcase": "CpuGraphC5Parameters.QwenActualWidthsUseDeclaredFloatNormEpsilon"
                   }
                 ]
@@ -3015,7 +3159,7 @@
           "witness": {
             "source": "tests/compute_models/cpu_c5_qwen_attention.h",
             "anchor": "inline Fragment norm_residual(",
-            "sha256": "b5c79c2dea4074e0292bebc5641b71295b9399cfd91fbb822a045db95218a209",
+            "sha256": "9ff6f43529b87a77f31524814721ff62168899a1740d0bee5c2fc64500b25333",
             "results": [
               {
                 "platform": "windows",
@@ -3023,6 +3167,10 @@
                 "passed": [
                   {
                     "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/windows/direct.xml",
+                    "testcase": "CpuC5Parameters.QwenActualWidthsUseDeclaredFloatNormEpsilon"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/expanded-windows/direct.xml",
                     "testcase": "CpuC5Parameters.QwenActualWidthsUseDeclaredFloatNormEpsilon"
                   }
                 ]
@@ -3034,6 +3182,10 @@
                   {
                     "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/windows/graph.xml",
                     "testcase": "CpuGraphC5Parameters.QwenActualWidthsUseDeclaredFloatNormEpsilon"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/expanded-windows/graph.xml",
+                    "testcase": "CpuGraphC5Parameters.QwenActualWidthsUseDeclaredFloatNormEpsilon"
                   }
                 ]
               },
@@ -3044,6 +3196,10 @@
                   {
                     "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/linux/direct.xml",
                     "testcase": "CpuC5Parameters.QwenActualWidthsUseDeclaredFloatNormEpsilon"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/expanded-linux/direct.xml",
+                    "testcase": "CpuC5Parameters.QwenActualWidthsUseDeclaredFloatNormEpsilon"
                   }
                 ]
               },
@@ -3053,6 +3209,10 @@
                 "passed": [
                   {
                     "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/linux/graph.xml",
+                    "testcase": "CpuGraphC5Parameters.QwenActualWidthsUseDeclaredFloatNormEpsilon"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/expanded-linux/graph.xml",
                     "testcase": "CpuGraphC5Parameters.QwenActualWidthsUseDeclaredFloatNormEpsilon"
                   }
                 ]
@@ -3263,7 +3423,7 @@
           "witness": {
             "source": "tests/compute_models/cpu_c5_qwen_attention.h",
             "anchor": "inline Fragment norm_residual(",
-            "sha256": "b5c79c2dea4074e0292bebc5641b71295b9399cfd91fbb822a045db95218a209",
+            "sha256": "9ff6f43529b87a77f31524814721ff62168899a1740d0bee5c2fc64500b25333",
             "results": [
               {
                 "platform": "windows",
@@ -3271,6 +3431,10 @@
                 "passed": [
                   {
                     "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/windows/direct.xml",
+                    "testcase": "CpuC5Parameters.QwenActualWidthsUseDeclaredFloatNormEpsilon"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/expanded-windows/direct.xml",
                     "testcase": "CpuC5Parameters.QwenActualWidthsUseDeclaredFloatNormEpsilon"
                   }
                 ]
@@ -3282,6 +3446,10 @@
                   {
                     "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/windows/graph.xml",
                     "testcase": "CpuGraphC5Parameters.QwenActualWidthsUseDeclaredFloatNormEpsilon"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/expanded-windows/graph.xml",
+                    "testcase": "CpuGraphC5Parameters.QwenActualWidthsUseDeclaredFloatNormEpsilon"
                   }
                 ]
               },
@@ -3292,6 +3460,10 @@
                   {
                     "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/linux/direct.xml",
                     "testcase": "CpuC5Parameters.QwenActualWidthsUseDeclaredFloatNormEpsilon"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/expanded-linux/direct.xml",
+                    "testcase": "CpuC5Parameters.QwenActualWidthsUseDeclaredFloatNormEpsilon"
                   }
                 ]
               },
@@ -3301,6 +3473,10 @@
                 "passed": [
                   {
                     "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/linux/graph.xml",
+                    "testcase": "CpuGraphC5Parameters.QwenActualWidthsUseDeclaredFloatNormEpsilon"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/expanded-linux/graph.xml",
                     "testcase": "CpuGraphC5Parameters.QwenActualWidthsUseDeclaredFloatNormEpsilon"
                   }
                 ]
@@ -3325,7 +3501,7 @@
           "witness": {
             "source": "tests/compute_models/cpu_c5_qwen_attention.h",
             "anchor": "inline Fragment norm_residual(",
-            "sha256": "b5c79c2dea4074e0292bebc5641b71295b9399cfd91fbb822a045db95218a209",
+            "sha256": "9ff6f43529b87a77f31524814721ff62168899a1740d0bee5c2fc64500b25333",
             "results": [
               {
                 "platform": "windows",
@@ -3333,6 +3509,10 @@
                 "passed": [
                   {
                     "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/windows/direct.xml",
+                    "testcase": "CpuC5Parameters.QwenActualWidthsUseDeclaredFloatNormEpsilon"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/expanded-windows/direct.xml",
                     "testcase": "CpuC5Parameters.QwenActualWidthsUseDeclaredFloatNormEpsilon"
                   }
                 ]
@@ -3344,6 +3524,10 @@
                   {
                     "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/windows/graph.xml",
                     "testcase": "CpuGraphC5Parameters.QwenActualWidthsUseDeclaredFloatNormEpsilon"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/expanded-windows/graph.xml",
+                    "testcase": "CpuGraphC5Parameters.QwenActualWidthsUseDeclaredFloatNormEpsilon"
                   }
                 ]
               },
@@ -3354,6 +3538,10 @@
                   {
                     "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/linux/direct.xml",
                     "testcase": "CpuC5Parameters.QwenActualWidthsUseDeclaredFloatNormEpsilon"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/expanded-linux/direct.xml",
+                    "testcase": "CpuC5Parameters.QwenActualWidthsUseDeclaredFloatNormEpsilon"
                   }
                 ]
               },
@@ -3363,6 +3551,10 @@
                 "passed": [
                   {
                     "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/linux/graph.xml",
+                    "testcase": "CpuGraphC5Parameters.QwenActualWidthsUseDeclaredFloatNormEpsilon"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/expanded-linux/graph.xml",
                     "testcase": "CpuGraphC5Parameters.QwenActualWidthsUseDeclaredFloatNormEpsilon"
                   }
                 ]
@@ -7320,59 +7512,9 @@
         {
           "family": "Qwen3.5-2B-GGUF",
           "witness": {
-            "source": "tests/compute_route_cpu/d5_qwen35_gguf_fragment_test.cc",
-            "anchor": "auto query_norm = prepare(",
-            "sha256": "d9ebfe0766e3c63410f225cd51aa3fac074ad137d9fa76c4adcc3c275ef02608",
-            "results": [
-              {
-                "platform": "windows",
-                "entry": "direct",
-                "passed": [
-                  {
-                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-final/windows/direct.xml",
-                    "testcase": "CpuDefaultDirect.D5Qwen35PrimaryGgufAttentionSemanticsUseMaturePreparedCalls"
-                  }
-                ]
-              },
-              {
-                "platform": "windows",
-                "entry": "graph",
-                "passed": [
-                  {
-                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-final/windows/graph.xml",
-                    "testcase": "CpuDefaultGraph.D5Qwen35PrimaryGgufAttentionSemanticsUseMatureRegionsAndReplay"
-                  }
-                ]
-              },
-              {
-                "platform": "linux",
-                "entry": "direct",
-                "passed": [
-                  {
-                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-final/linux/direct.xml",
-                    "testcase": "CpuDefaultDirect.D5Qwen35PrimaryGgufAttentionSemanticsUseMaturePreparedCalls"
-                  }
-                ]
-              },
-              {
-                "platform": "linux",
-                "entry": "graph",
-                "passed": [
-                  {
-                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-final/linux/graph.xml",
-                    "testcase": "CpuDefaultGraph.D5Qwen35PrimaryGgufAttentionSemanticsUseMatureRegionsAndReplay"
-                  }
-                ]
-              }
-            ]
-          }
-        },
-        {
-          "family": "Qwen3.8-2.4T-A95B-GGUF",
-          "witness": {
             "source": "tests/compute_models/cpu_c5_qwen_attention.h",
             "anchor": "auto weight = f.constant(dense({depth})",
-            "sha256": "b5c79c2dea4074e0292bebc5641b71295b9399cfd91fbb822a045db95218a209",
+            "sha256": "9ff6f43529b87a77f31524814721ff62168899a1740d0bee5c2fc64500b25333",
             "results": [
               {
                 "platform": "windows",
@@ -7380,6 +7522,10 @@
                 "passed": [
                   {
                     "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/windows/direct.xml",
+                    "testcase": "CpuC5Parameters.Qwen24ActualHalfSplitFrequencyNormAndKvFeedback"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/expanded-windows/direct.xml",
                     "testcase": "CpuC5Parameters.Qwen24ActualHalfSplitFrequencyNormAndKvFeedback"
                   }
                 ]
@@ -7391,6 +7537,10 @@
                   {
                     "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/windows/graph.xml",
                     "testcase": "CpuGraphC5Parameters.Qwen24ActualHalfSplitFrequencyNormAndKvFeedback"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/expanded-windows/graph.xml",
+                    "testcase": "CpuGraphC5Parameters.Qwen24ActualHalfSplitFrequencyNormAndKvFeedback"
                   }
                 ]
               },
@@ -7400,6 +7550,10 @@
                 "passed": [
                   {
                     "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/linux/direct.xml",
+                    "testcase": "CpuC5Parameters.Qwen24ActualHalfSplitFrequencyNormAndKvFeedback"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/expanded-linux/direct.xml",
                     "testcase": "CpuC5Parameters.Qwen24ActualHalfSplitFrequencyNormAndKvFeedback"
                   }
                 ]
@@ -7411,6 +7565,76 @@
                   {
                     "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/linux/graph.xml",
                     "testcase": "CpuGraphC5Parameters.Qwen24ActualHalfSplitFrequencyNormAndKvFeedback"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/expanded-linux/graph.xml",
+                    "testcase": "CpuGraphC5Parameters.Qwen24ActualHalfSplitFrequencyNormAndKvFeedback"
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "family": "Qwen3.8-2.4T-A95B-GGUF",
+          "witness": {
+            "source": "tests/compute_models/cpu_c5_qwen_attention.h",
+            "anchor": "auto weight = f.constant(dense({depth})",
+            "sha256": "9ff6f43529b87a77f31524814721ff62168899a1740d0bee5c2fc64500b25333",
+            "results": [
+              {
+                "platform": "windows",
+                "entry": "direct",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/windows/direct.xml",
+                    "testcase": "CpuC5Parameters.Qwen24ActualHalfSplitFrequencyNormAndKvFeedback"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/expanded-windows/direct.xml",
+                    "testcase": "CpuC5Parameters.Qwen24ActualHalfSplitFrequencyNormAndKvFeedback"
+                  }
+                ]
+              },
+              {
+                "platform": "windows",
+                "entry": "graph",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/windows/graph.xml",
+                    "testcase": "CpuGraphC5Parameters.Qwen24ActualHalfSplitFrequencyNormAndKvFeedback"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/expanded-windows/graph.xml",
+                    "testcase": "CpuGraphC5Parameters.Qwen24ActualHalfSplitFrequencyNormAndKvFeedback"
+                  }
+                ]
+              },
+              {
+                "platform": "linux",
+                "entry": "direct",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/linux/direct.xml",
+                    "testcase": "CpuC5Parameters.Qwen24ActualHalfSplitFrequencyNormAndKvFeedback"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/expanded-linux/direct.xml",
+                    "testcase": "CpuC5Parameters.Qwen24ActualHalfSplitFrequencyNormAndKvFeedback"
+                  }
+                ]
+              },
+              {
+                "platform": "linux",
+                "entry": "graph",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/linux/graph.xml",
+                    "testcase": "CpuGraphC5Parameters.Qwen24ActualHalfSplitFrequencyNormAndKvFeedback"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/expanded-linux/graph.xml",
+                    "testcase": "CpuGraphC5Parameters.Qwen24ActualHalfSplitFrequencyNormAndKvFeedback"
                   }
                 ]
               }
@@ -7420,17 +7644,21 @@
         {
           "family": "Qwen3.8-27B-GGUF",
           "witness": {
-            "source": "tests/compute_models/cpu_c4_qwen_mtp.h",
-            "anchor": "q=rope_ref(norm_ref(q,qs)",
-            "sha256": "a7cd7d23abed91ddd9537d64874f0bff4fb285b699a4fb3f9f2c9328e9b2552a",
+            "source": "tests/compute_models/cpu_c5_qwen_attention.h",
+            "anchor": "auto weight = f.constant(dense({depth})",
+            "sha256": "9ff6f43529b87a77f31524814721ff62168899a1740d0bee5c2fc64500b25333",
             "results": [
               {
                 "platform": "windows",
                 "entry": "direct",
                 "passed": [
                   {
-                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-final/windows/direct.xml",
-                    "testcase": "CpuC4Branches.QwenQ4NamedSidecarUsesActualQ3Q4Q6AndCompleteMtp"
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/windows/direct.xml",
+                    "testcase": "CpuC5Parameters.Qwen24ActualHalfSplitFrequencyNormAndKvFeedback"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/expanded-windows/direct.xml",
+                    "testcase": "CpuC5Parameters.Qwen24ActualHalfSplitFrequencyNormAndKvFeedback"
                   }
                 ]
               },
@@ -7439,8 +7667,12 @@
                 "entry": "graph",
                 "passed": [
                   {
-                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-final/windows/graph.xml",
-                    "testcase": "CpuGraphC4Branches.QwenQ4NamedSidecarUsesActualQ3Q4Q6AndCompleteMtp"
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/windows/graph.xml",
+                    "testcase": "CpuGraphC5Parameters.Qwen24ActualHalfSplitFrequencyNormAndKvFeedback"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/expanded-windows/graph.xml",
+                    "testcase": "CpuGraphC5Parameters.Qwen24ActualHalfSplitFrequencyNormAndKvFeedback"
                   }
                 ]
               },
@@ -7449,8 +7681,12 @@
                 "entry": "direct",
                 "passed": [
                   {
-                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-final/linux/direct.xml",
-                    "testcase": "CpuC4Branches.QwenQ4NamedSidecarUsesActualQ3Q4Q6AndCompleteMtp"
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/linux/direct.xml",
+                    "testcase": "CpuC5Parameters.Qwen24ActualHalfSplitFrequencyNormAndKvFeedback"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/expanded-linux/direct.xml",
+                    "testcase": "CpuC5Parameters.Qwen24ActualHalfSplitFrequencyNormAndKvFeedback"
                   }
                 ]
               },
@@ -7459,8 +7695,12 @@
                 "entry": "graph",
                 "passed": [
                   {
-                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-final/linux/graph.xml",
-                    "testcase": "CpuGraphC4Branches.QwenQ4NamedSidecarUsesActualQ3Q4Q6AndCompleteMtp"
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/linux/graph.xml",
+                    "testcase": "CpuGraphC5Parameters.Qwen24ActualHalfSplitFrequencyNormAndKvFeedback"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/expanded-linux/graph.xml",
+                    "testcase": "CpuGraphC5Parameters.Qwen24ActualHalfSplitFrequencyNormAndKvFeedback"
                   }
                 ]
               }
@@ -7482,59 +7722,9 @@
         {
           "family": "Qwen3.5-2B-GGUF",
           "witness": {
-            "source": "tests/compute_route_cpu/d5_qwen35_gguf_fragment_test.cc",
-            "anchor": "auto query_norm = prepare(",
-            "sha256": "d9ebfe0766e3c63410f225cd51aa3fac074ad137d9fa76c4adcc3c275ef02608",
-            "results": [
-              {
-                "platform": "windows",
-                "entry": "direct",
-                "passed": [
-                  {
-                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-final/windows/direct.xml",
-                    "testcase": "CpuDefaultDirect.D5Qwen35PrimaryGgufAttentionSemanticsUseMaturePreparedCalls"
-                  }
-                ]
-              },
-              {
-                "platform": "windows",
-                "entry": "graph",
-                "passed": [
-                  {
-                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-final/windows/graph.xml",
-                    "testcase": "CpuDefaultGraph.D5Qwen35PrimaryGgufAttentionSemanticsUseMatureRegionsAndReplay"
-                  }
-                ]
-              },
-              {
-                "platform": "linux",
-                "entry": "direct",
-                "passed": [
-                  {
-                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-final/linux/direct.xml",
-                    "testcase": "CpuDefaultDirect.D5Qwen35PrimaryGgufAttentionSemanticsUseMaturePreparedCalls"
-                  }
-                ]
-              },
-              {
-                "platform": "linux",
-                "entry": "graph",
-                "passed": [
-                  {
-                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-final/linux/graph.xml",
-                    "testcase": "CpuDefaultGraph.D5Qwen35PrimaryGgufAttentionSemanticsUseMatureRegionsAndReplay"
-                  }
-                ]
-              }
-            ]
-          }
-        },
-        {
-          "family": "Qwen3.8-2.4T-A95B-GGUF",
-          "witness": {
             "source": "tests/compute_models/cpu_c5_qwen_attention.h",
             "anchor": "auto weight = f.constant(dense({depth})",
-            "sha256": "b5c79c2dea4074e0292bebc5641b71295b9399cfd91fbb822a045db95218a209",
+            "sha256": "9ff6f43529b87a77f31524814721ff62168899a1740d0bee5c2fc64500b25333",
             "results": [
               {
                 "platform": "windows",
@@ -7542,6 +7732,10 @@
                 "passed": [
                   {
                     "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/windows/direct.xml",
+                    "testcase": "CpuC5Parameters.Qwen24ActualHalfSplitFrequencyNormAndKvFeedback"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/expanded-windows/direct.xml",
                     "testcase": "CpuC5Parameters.Qwen24ActualHalfSplitFrequencyNormAndKvFeedback"
                   }
                 ]
@@ -7553,6 +7747,10 @@
                   {
                     "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/windows/graph.xml",
                     "testcase": "CpuGraphC5Parameters.Qwen24ActualHalfSplitFrequencyNormAndKvFeedback"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/expanded-windows/graph.xml",
+                    "testcase": "CpuGraphC5Parameters.Qwen24ActualHalfSplitFrequencyNormAndKvFeedback"
                   }
                 ]
               },
@@ -7562,6 +7760,10 @@
                 "passed": [
                   {
                     "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/linux/direct.xml",
+                    "testcase": "CpuC5Parameters.Qwen24ActualHalfSplitFrequencyNormAndKvFeedback"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/expanded-linux/direct.xml",
                     "testcase": "CpuC5Parameters.Qwen24ActualHalfSplitFrequencyNormAndKvFeedback"
                   }
                 ]
@@ -7573,6 +7775,76 @@
                   {
                     "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/linux/graph.xml",
                     "testcase": "CpuGraphC5Parameters.Qwen24ActualHalfSplitFrequencyNormAndKvFeedback"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/expanded-linux/graph.xml",
+                    "testcase": "CpuGraphC5Parameters.Qwen24ActualHalfSplitFrequencyNormAndKvFeedback"
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "family": "Qwen3.8-2.4T-A95B-GGUF",
+          "witness": {
+            "source": "tests/compute_models/cpu_c5_qwen_attention.h",
+            "anchor": "auto weight = f.constant(dense({depth})",
+            "sha256": "9ff6f43529b87a77f31524814721ff62168899a1740d0bee5c2fc64500b25333",
+            "results": [
+              {
+                "platform": "windows",
+                "entry": "direct",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/windows/direct.xml",
+                    "testcase": "CpuC5Parameters.Qwen24ActualHalfSplitFrequencyNormAndKvFeedback"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/expanded-windows/direct.xml",
+                    "testcase": "CpuC5Parameters.Qwen24ActualHalfSplitFrequencyNormAndKvFeedback"
+                  }
+                ]
+              },
+              {
+                "platform": "windows",
+                "entry": "graph",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/windows/graph.xml",
+                    "testcase": "CpuGraphC5Parameters.Qwen24ActualHalfSplitFrequencyNormAndKvFeedback"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/expanded-windows/graph.xml",
+                    "testcase": "CpuGraphC5Parameters.Qwen24ActualHalfSplitFrequencyNormAndKvFeedback"
+                  }
+                ]
+              },
+              {
+                "platform": "linux",
+                "entry": "direct",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/linux/direct.xml",
+                    "testcase": "CpuC5Parameters.Qwen24ActualHalfSplitFrequencyNormAndKvFeedback"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/expanded-linux/direct.xml",
+                    "testcase": "CpuC5Parameters.Qwen24ActualHalfSplitFrequencyNormAndKvFeedback"
+                  }
+                ]
+              },
+              {
+                "platform": "linux",
+                "entry": "graph",
+                "passed": [
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/linux/graph.xml",
+                    "testcase": "CpuGraphC5Parameters.Qwen24ActualHalfSplitFrequencyNormAndKvFeedback"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/expanded-linux/graph.xml",
+                    "testcase": "CpuGraphC5Parameters.Qwen24ActualHalfSplitFrequencyNormAndKvFeedback"
                   }
                 ]
               }
@@ -7582,17 +7854,21 @@
         {
           "family": "Qwen3.8-27B-GGUF",
           "witness": {
-            "source": "tests/compute_models/cpu_c4_qwen_mtp.h",
-            "anchor": "q=rope_ref(norm_ref(q,qs)",
-            "sha256": "a7cd7d23abed91ddd9537d64874f0bff4fb285b699a4fb3f9f2c9328e9b2552a",
+            "source": "tests/compute_models/cpu_c5_qwen_attention.h",
+            "anchor": "auto weight = f.constant(dense({depth})",
+            "sha256": "9ff6f43529b87a77f31524814721ff62168899a1740d0bee5c2fc64500b25333",
             "results": [
               {
                 "platform": "windows",
                 "entry": "direct",
                 "passed": [
                   {
-                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-final/windows/direct.xml",
-                    "testcase": "CpuC4Branches.QwenQ4NamedSidecarUsesActualQ3Q4Q6AndCompleteMtp"
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/windows/direct.xml",
+                    "testcase": "CpuC5Parameters.Qwen24ActualHalfSplitFrequencyNormAndKvFeedback"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/expanded-windows/direct.xml",
+                    "testcase": "CpuC5Parameters.Qwen24ActualHalfSplitFrequencyNormAndKvFeedback"
                   }
                 ]
               },
@@ -7601,8 +7877,12 @@
                 "entry": "graph",
                 "passed": [
                   {
-                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-final/windows/graph.xml",
-                    "testcase": "CpuGraphC4Branches.QwenQ4NamedSidecarUsesActualQ3Q4Q6AndCompleteMtp"
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/windows/graph.xml",
+                    "testcase": "CpuGraphC5Parameters.Qwen24ActualHalfSplitFrequencyNormAndKvFeedback"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/expanded-windows/graph.xml",
+                    "testcase": "CpuGraphC5Parameters.Qwen24ActualHalfSplitFrequencyNormAndKvFeedback"
                   }
                 ]
               },
@@ -7611,8 +7891,12 @@
                 "entry": "direct",
                 "passed": [
                   {
-                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-final/linux/direct.xml",
-                    "testcase": "CpuC4Branches.QwenQ4NamedSidecarUsesActualQ3Q4Q6AndCompleteMtp"
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/linux/direct.xml",
+                    "testcase": "CpuC5Parameters.Qwen24ActualHalfSplitFrequencyNormAndKvFeedback"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/expanded-linux/direct.xml",
+                    "testcase": "CpuC5Parameters.Qwen24ActualHalfSplitFrequencyNormAndKvFeedback"
                   }
                 ]
               },
@@ -7621,8 +7905,12 @@
                 "entry": "graph",
                 "passed": [
                   {
-                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-final/linux/graph.xml",
-                    "testcase": "CpuGraphC4Branches.QwenQ4NamedSidecarUsesActualQ3Q4Q6AndCompleteMtp"
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/linux/graph.xml",
+                    "testcase": "CpuGraphC5Parameters.Qwen24ActualHalfSplitFrequencyNormAndKvFeedback"
+                  },
+                  {
+                    "receipt": "evidence/correctness/cpu-quant-mtp-c5-qwen-actual/expanded-linux/graph.xml",
+                    "testcase": "CpuGraphC5Parameters.Qwen24ActualHalfSplitFrequencyNormAndKvFeedback"
                   }
                 ]
               }

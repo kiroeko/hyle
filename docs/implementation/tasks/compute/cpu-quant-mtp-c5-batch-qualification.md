@@ -179,3 +179,10 @@ expert512/top10/I2048/shared2048、完整V248320，四次carry/cache反馈；普
 required-region对账另确认旧2B GQA夹具虽为HalfSplit，却旋转完整256并用默认epsilon；
 同一CPU-only实际GQA消费者按固定配置统一覆盖Q8/KV2、Q24/KV4、Q64/KV4（三者D256、rotary64），
 保留theta1e7/epsilon1e-6与KV反馈。只补三个真实几何，无新kernel、GPU改动或通用API默认值修改。
+
+后续`c1b0250ed4bb`两系统普通两入口各4项通过：三实际GQA几何、三宽度严格norm、
+输入Q8 MTP与两完整NextN程序。详见实际Qwen目录expanded收据；Windows wrapper数量预期由3改4，
+Direct4已通过，只补未执行Graph，没有重复build/Direct或改产品。
+80条参数的有限源码/合同复核已完成，见[复核表](../../../../evidence/correctness/cpu-quant-mtp-c5-parameters/contract-review.md)。
+八模型族/104档位required-region收据已建[聚合索引](../../../../evidence/correctness/cpu-quant-mtp-c5-required/README.md)，
+仍须完成跨证据完整作用域裁决、两新官版/三sidecar/四非GGUF及资源/三交付/七门终审；不提前签goal完成。

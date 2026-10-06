@@ -30,3 +30,12 @@ rms_norm_eps1e-6、MRoPE sections11/11/10/0。旧交错RoPE和默认1e-5 norm不
 [原失败收据](first-failure/receipt.json)未改写；原log/XML无损gzip归档，解压SHA已核验，
 [原始大小与SHA](first-failure/lossless-archive.json)保留。删除已核验的重复原文件325,473,374 bytes，
 compressed归档11,233,414 bytes保留。
+
+## 三实际GQA几何与完整NextN的后续批次
+
+[expanded Windows](expanded-windows/receipt.json)、[expanded Linux](expanded-linux/receipt.json)在
+`c1b0250ed4bb93ea4a052aa8ed3d018fa238363d`普通两入口各4项通过，无失败/skip。
+同一实际GQA消费者新增2B Q8/KV2及27B Q24/KV4，保留2.4T Q64/KV4；均D256/rotary64/theta1e7/epsilon1e-6。
+原2B full256旋转和默认epsilon夹具只保留其自身历史，不能代签这些实际域。
+完整NextN收据与容量/编码边界见[完整程序](../cpu-quant-mtp-c5-nextn/README.md)。
+Windows wrapper原预期3项在新增NextN后变4；Direct实际4项通过，补跑仅执行未运行Graph，没有重建或重跑Direct。
