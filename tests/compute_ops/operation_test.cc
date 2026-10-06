@@ -1458,6 +1458,47 @@ TEST(OperationModelOps, LightningIndexerKeepsSparseModelLayout) {
   EXPECT_FALSE(infer_single_output(model_ops::lightning_indexer(), invalid));
 }
 
+TEST(OperationModelOps, ArtifactDecodeRejectsWrongPackingAndPrecisionPorts) {
+  using F=model_ops::WeightArtifactFormat;
+  const std::array nf4{tensor(DataType::kUInt8,2,128),tensor(DataType::kFloat32,8),tensor(DataType::kFloat32,16)};
+  EXPECT_EQ(infer_one(model_ops::artifact_weight_decode(F::kNf4,64),nf4),tensor(DataType::kBFloat16,2,256));
+  auto bad=nf4;bad[0]=tensor(DataType::kInt32,2,128);
+  EXPECT_FALSE(infer_single_output(model_ops::artifact_weight_decode(F::kNf4,64),bad));
+  bad=nf4;bad[2]=tensor(DataType::kFloat32,15);
+  EXPECT_FALSE(infer_single_output(model_ops::artifact_weight_decode(F::kNf4,64),bad));
+  EXPECT_FALSE(infer_single_output(model_ops::artifact_weight_decode(F::kNf4,0),nf4));
+  EXPECT_FALSE(infer_single_output(model_ops::artifact_weight_decode(F::kNf4,64,DataType::kInt8),nf4));
+  EXPECT_FALSE(infer_single_output(model_ops::artifact_weight_decode(static_cast<F>(99),64),nf4));
+  const std::array awq{tensor(DataType::kInt32,256,1),tensor(DataType::kInt32,2,1),tensor(DataType::kFloat16,2,8)};
+  EXPECT_EQ(infer_one(model_ops::artifact_weight_decode(F::kAwqGemm4,128),awq),tensor(DataType::kFloat16,8,256));
+  auto wrong_scale=awq;wrong_scale[2]=tensor(DataType::kFloat16,8,2);
+  EXPECT_FALSE(infer_single_output(model_ops::artifact_weight_decode(F::kAwqGemm4,128),wrong_scale));
+  EXPECT_FALSE(infer_single_output(model_ops::artifact_weight_decode(F::kCompressedTensorsSymmetric4,128),awq));
+}
+
+TEST(OperationModelOps, MlxPackedIdentityKeepsGroupsPromotionAndSelectedExpertPorts) {
+  using F=model_ops::MlxWeightFormat;
+  const std::array linear{tensor(DataType::kBFloat16,2,64),tensor(DataType::kUInt32,3,8),
+                         tensor(DataType::kBFloat16,3,1),tensor(DataType::kBFloat16,3,1)};
+  const auto affine=model_ops::mlx_quantized_matmul(F::kAffine4,64);
+  EXPECT_EQ(infer_one(affine,linear),tensor(DataType::kBFloat16,2,3));
+  auto mixed=linear;mixed[2]=tensor(DataType::kFloat32,3,1);mixed[3]=mixed[2];
+  EXPECT_EQ(infer_one(affine,mixed),tensor(DataType::kFloat32,2,3));
+  auto wrong=linear;wrong[3]=tensor(DataType::kFloat32,3,1);
+  EXPECT_FALSE(infer_single_output(affine,wrong));
+  EXPECT_FALSE(infer_single_output(model_ops::mlx_quantized_matmul(F::kAffine4,0),linear));
+  EXPECT_FALSE(infer_single_output(model_ops::mlx_quantized_matmul(static_cast<F>(99),64),linear));
+  const std::array grouped{tensor(DataType::kFloat16,2,2,64),tensor(DataType::kUInt32,3,5,16),
+                           tensor(DataType::kUInt8,3,5,2),tensor(DataType::kInt32,2,2)};
+  const auto mx=model_ops::mlx_grouped_matmul(F::kMxfp8,32);
+  EXPECT_EQ(infer_one(mx,grouped),tensor(DataType::kFloat16,2,2,5));
+  auto bad_ids=grouped;bad_ids[3]=tensor(DataType::kInt32,2,1);
+  EXPECT_FALSE(infer_single_output(mx,bad_ids));
+  auto bad_scale=grouped;bad_scale[2]=tensor(DataType::kFloat32,3,5,2);
+  EXPECT_FALSE(infer_single_output(mx,bad_scale));
+  EXPECT_FALSE(infer_single_output(model_ops::mlx_grouped_matmul(F::kMxfp8,64),grouped));
+}
+
 TEST(OperationValidation, RequiresExactInputAndOutputSpans) {
   const Operation operation(Binary{});
   const TensorDesc input = tensor(DataType::kFloat32, 4);
