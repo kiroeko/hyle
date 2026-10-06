@@ -115,3 +115,28 @@ MLX仍须借入原压缩CPU调用/selected expert边界后才签范围。
   没有性能P1、自研算子扩充或SIMD删除。
 
 统一29路径当前实现61,341行/250文件；不含测试/vendor/bench，完整LOC收据在第一组证据。
+
+## MLX 有限审计与 N4–N6 冻结
+
+固定MLX `2b2bb49790158ecd008d1685c94e3ef119792a00`，原`ops.cpp`与
+`backend/cpu/quantized.cpp`、QuantizedEmbedding源码已读取。实际制品需要affine4/group64、
+mxfp4/group32、mxfp8/group32；172份rank3压缩权重涉及专家或分组projection，不能全库解包。
+
+- N4：`model_ops::MlxQuantized`具名纯计算接口/工厂支持linear、grouped expert、affine embedding。
+  Raw U32 packed weights与float scales/bias或U8 E8M0 scales分别作为端口；A为F16/BF16/F32。
+  Linear/grouped以原CPU SIMD/F32 accumulation公式执行，affine输出为A/scale共同浮点dtype，
+  MX输出保持A dtype；MX scale先按原CPU转换到该dtype，再F32累加，不隐去低精度scale溢出/下溢。
+- N5：保留原MLX CPU公式，ATen承载block dot/编码读入/矩阵与cast；原K group顺序累加，
+  MF先group dot再scale，affine先q*scale+bias再dot。只展开当前K group和选中expert，
+  不构造完整[E,N,K]浮点库。Embedding沿原take→affine_dequantize，只展开选择的rows。
+- N6：普通Direct/Graph三格式＋grouped/repeated ids＋embedding原dtype、source oracle、changed replay、
+  bounds/OOM/独立slot/close；与dense cold-decoder默认dtype与完整constant消费一起签下一批。
+
+接口input顺序：linear A[M,K], U32 W[N,K/(32/bits)], scales[N,K/group], optional affine biases；
+grouped A[T,S,K], W[E,N,K/(32/bits)], scales[E,N,K/group], optional bias, I32 ids[T,S]；
+embedding W[N,K/8], scales/bias[N,K/group], I32 ids[M]。所有storage plain dense。
+输出为linear[M,N]、grouped[T,S,N]、embedding[M,K]；浮点精度和真实storage分开记录。
+无模型loader、sampler、Provider排序、新自研数学/优化或GPU能力扩充。
+
+一次有界port；不以MLX的Apple现有资格代签CPU。同次序source reference与F32 arithmetic关联误差
+分别记录，不能拿未量化matrix或不同accumulation合同签胜负。新Provider/格式全部适用门仍待验。
