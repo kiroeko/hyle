@@ -202,3 +202,9 @@ Direct4已通过，只补未执行Graph，没有重复build/Direct或改产品�
 原F32 ggml路径不变，输入元素/原F32临时int64容量检查；不添加全局线程、JIT搜索或Provider排序。
 新原库程序采用追加的私有implementation ID，既有ID不重排。新增45合同及原资源边界、两系统更新SDK
 须完成资格后才签PASS；该dtype只有此具名成熟承载，无新赢家P1或自研对比。
+
+本批输入Norm分开Qwen zero-centered（原低dtype→F32、1+weight、RMS、一次回原storage）与其它gamma，
+保持F16/BF16参数；不把GGUF已fold的F32gamma代签。原数据周期17/256，payload改为同字节周期行生成，
+仍原完整K/N/词表与原库计算；原45批次被具名停止，日志保留未完成，不计PASS。
+新conv资源诊断发现测试allocator代理未转发raw_deleter，原小conv raw_deallocate因此退出；
+按原接口补齐代理，OOM/退役/恢复/并发诊断已通过，产品原库无需数学修复。移除诊断输出后须正式补验。

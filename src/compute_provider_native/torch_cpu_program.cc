@@ -235,7 +235,8 @@ Status execute(const Program &p, std::span<const std::byte *const> pointers,
       // Layout/casts are original ATen operations; no HYLE numerical kernel.
       auto samples = input[0].permute({0, 2, 1}).to(at::kFloat).contiguous();
       auto weights = input[1].to(at::kFloat).reshape({s.n, 1, s.k});
-      result = at::conv1d(samples, weights, std::nullopt, {1}, {0}, {1}, s.n)
+      const std::array<std::int64_t,1> stride{1}, padding{0}, dilation{1};
+      result = at::conv1d(samples, weights, std::nullopt, stride, padding, dilation, s.n)
                    .permute({0, 2, 1}).to(s.output).contiguous();
     } else if constexpr (Selected == Kind::kMlx) {
       const bool embedding = s.mlx.kind == model_ops::MlxQuantizedKind::kEmbedding;

@@ -32,6 +32,7 @@ public:
   void copy_data(void *dest, const void *src, std::size_t bytes) const override {
     original->copy_data(dest, src, bytes);
   }
+  at::DeleterFnPtr raw_deleter() const override { return original->raw_deleter(); }
 };
 
 AllocationFailure &allocation_failure() {
@@ -116,12 +117,17 @@ TEST(NativeTorchCpu, LowPrecisionConvolutionHasRealFailureRecoveryAndIndependent
       const std::array inputs{c::ConstTensorView::create(samples,x.view()).value(),c::ConstTensorView::create(weights,w.view()).value()};
       auto ya=c::TensorView::create(result,a.view()).value(),yb=c::TensorView::create(result,b.view()).value();
       auto queue=context.create_queue().value();auto lane=prepared.create_invocation().value();
-      allocation.fail=true;auto failed=lane.submit(queue,inputs,std::span(&ya,1));ASSERT_TRUE(failed);
+      { auto warm=lane.submit(queue,inputs,std::span(&ya,1));ASSERT_TRUE(warm);EXPECT_TRUE(warm->wait().ok()); }
+      const auto untouched=half_test::read<std::uint16_t>(a);
+      allocation.fail=true;
+      { auto failed=lane.submit(queue,inputs,std::span(&ya,1));ASSERT_TRUE(failed);
       EXPECT_TRUE(failed->wait().IsResourceExhausted());EXPECT_FALSE(allocation.fail.load());
+      }
       EXPECT_TRUE(lane.submit(queue,inputs,std::span(&ya,1)).error().IsFailedPrecondition());
-      for(auto value:half_test::read<std::uint16_t>(a))EXPECT_EQ(value,0);
+      EXPECT_EQ(half_test::read<std::uint16_t>(a),untouched);
       lane=prepared.create_invocation().value();
-      auto done=lane.submit(queue,inputs,std::span(&ya,1));ASSERT_TRUE(done);EXPECT_TRUE(done->wait().ok());
+      { auto done=lane.submit(queue,inputs,std::span(&ya,1));
+      ASSERT_TRUE(done);EXPECT_TRUE(done->wait().ok()); }
       std::thread first([&]{auto q=context.create_queue().value();auto run=prepared.create_invocation().value();
         auto completion=run.submit(q,inputs,std::span(&ya,1));EXPECT_TRUE(completion&&completion->wait().ok());});
       std::thread second([&]{auto q=context.create_queue().value();auto run=prepared.create_invocation().value();
