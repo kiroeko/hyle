@@ -1,0 +1,64 @@
+{
+  "repository": "techwithsergiu/Qwen3.5-2B-bnb-4bit",
+  "revision": "97fb2bcc0255f1d5b36f07daa54b76cb29444df6",
+  "header_sha256": "1caeff17cbb3a50c0c5ea39967ce56d7ec82eed8472116424dd4172f16fedfa5",
+  "rows": [
+    {
+      "tensor": "model.language_model.layers.0.linear_attn.in_proj_a.weight.quant_state.bitsandbytes__nf4",
+      "metadata": {
+        "quant_type": "nf4",
+        "blocksize": 64,
+        "dtype": "bfloat16",
+        "shape": [
+          16,
+          2048
+        ],
+        "nested_blocksize": 256,
+        "nested_dtype": "float32",
+        "nested_offset": 0.0757596492767334
+      }
+    },
+    {
+      "tensor": "model.language_model.layers.0.mlp.gate_proj.weight.quant_state.bitsandbytes__nf4",
+      "metadata": {
+        "quant_type": "nf4",
+        "blocksize": 64,
+        "dtype": "bfloat16",
+        "shape": [
+          6144,
+          2048
+        ],
+        "nested_blocksize": 256,
+        "nested_dtype": "float32",
+        "nested_offset": 0.02622504159808159
+      }
+    }
+  ],
+  "receipt": [
+    {
+      "url": "https://huggingface.co/techwithsergiu/Qwen3.5-2B-bnb-4bit/resolve/97fb2bcc0255f1d5b36f07daa54b76cb29444df6/model.safetensors",
+      "range": "bytes 0-7/2389628457",
+      "bytes": 8,
+      "sha256": "7d0a8b4063ba11cb5aea36d77e9ebc9cb060cda32923ea4bc424de970aae7f22"
+    },
+    {
+      "url": "https://huggingface.co/techwithsergiu/Qwen3.5-2B-bnb-4bit/resolve/97fb2bcc0255f1d5b36f07daa54b76cb29444df6/model.safetensors",
+      "range": "bytes 8-202527/2389628457",
+      "bytes": 202520,
+      "sha256": "1caeff17cbb3a50c0c5ea39967ce56d7ec82eed8472116424dd4172f16fedfa5"
+    },
+    {
+      "url": "https://huggingface.co/techwithsergiu/Qwen3.5-2B-bnb-4bit/resolve/97fb2bcc0255f1d5b36f07daa54b76cb29444df6/model.safetensors",
+      "range": "bytes 1681806144-1681806312/2389628457",
+      "bytes": 169,
+      "sha256": "2e873e382991f1807279d086e39e91ab6675fb66293d626047452c9363c085aa"
+    },
+    {
+      "url": "https://huggingface.co/techwithsergiu/Qwen3.5-2B-bnb-4bit/resolve/97fb2bcc0255f1d5b36f07daa54b76cb29444df6/model.safetensors",
+      "range": "bytes 1705613636-1705613807/2389628457",
+      "bytes": 172,
+      "sha256": "71ff18781a545fc3162fb56e4a216d0048c3f6de4155ce00183d44f1fb79c318"
+    }
+  ],
+  "scope": "two distinct text-projection metadata witnesses only; no large weight data downloaded"
+}

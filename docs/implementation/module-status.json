@@ -373,8 +373,8 @@
     {
       "module": "compute_provider_ggml",
       "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/cpu-quant-mtp-c4-model-branches.md",
-      "summary": "CPU扩覆盖C4 AUDITED：新版精确身份、target hidden、独立DSpark cache/sink attention、Markov/confidence及完整主干/sidecar有限F1-F4固定；原C3证据保留，禁止新自研数学，未签本包运行资格。"
+      "record": "docs/implementation/tasks/compute/cpu-quant-mtp-c5-batch-qualification.md",
+      "summary": "CPU扩覆盖C5 AUDITED：104实际GGUF档位/589消费合同、34非GGUFpacking几何、完整模型族/branch与两系统资格聚合有限F1-F4固定；C3/C4证据保留，只借成熟实现，无新数学，未签本包运行PASS。"
     },
     {
       "module": "graph_provider_onednn",
@@ -390,8 +390,8 @@
     {
       "module": "compute_ops",
       "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/cpu-quant-mtp-c4-model-branches.md",
-      "summary": "CPU扩覆盖C4 AUDITED：新版精确身份、target hidden、独立DSpark cache/sink attention、Markov/confidence及完整主干/sidecar有限F1-F4固定；原C3证据保留，禁止新自研数学，未签本包运行资格。"
+      "record": "docs/implementation/tasks/compute/cpu-quant-mtp-c5-batch-qualification.md",
+      "summary": "CPU扩覆盖C5 AUDITED：104实际GGUF档位/589消费合同、34非GGUFpacking几何、完整模型族/branch与两系统资格聚合有限F1-F4固定；C3/C4证据保留，只借成熟实现，无新数学，未签本包运行PASS。"
     },
     {
       "module": "compute_backend_cpu",
@@ -418,8 +418,8 @@
     {
       "module": "compute_provider_native",
       "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/cpu-quant-mtp-c4-model-branches.md",
-      "summary": "CPU扩覆盖C4 AUDITED：新版精确身份、target hidden、独立DSpark cache/sink attention、Markov/confidence及完整主干/sidecar有限F1-F4固定；原C3证据保留，禁止新自研数学，未签本包运行资格。"
+      "record": "docs/implementation/tasks/compute/cpu-quant-mtp-c5-batch-qualification.md",
+      "summary": "CPU扩覆盖C5 AUDITED：104实际GGUF档位/589消费合同、34非GGUFpacking几何、完整模型族/branch与两系统资格聚合有限F1-F4固定；C3/C4证据保留，只借成熟实现，无新数学，未签本包运行PASS。"
     },
     {
       "module": "compute_sched",

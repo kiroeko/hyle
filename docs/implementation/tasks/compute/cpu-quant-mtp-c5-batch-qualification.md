@@ -1,13 +1,14 @@
 # C5：CPU 全批验收、文档与停止
 
-<!-- MODULE REVIEW: SCOPED -->
+<!-- MODULE REVIEW: AUDITED -->
 
 ## 计划身份
 
-- 状态：SCOPED，C4有限资格已交接，开始全准入矩阵与证据审计；本卡尚未授权产品实施或签执行PASS。
-- baseline：`400927ff7`；Windows实际HEAD与干净工作树已核对，保留C1–C4全部后续提交。
-- owner范围：compute_ops、compute_provider_ggml、compute_provider_native。registry当前C4 AUDITED资格保持；
-  本卡完成有限审计后再按AUDITED交接，不伪造AUDITED→SCOPED状态跳转或重开其它CLOSED/BLOCKED。
+- 状态：AUDITED，真实角色/几何与既有承载已对账，固定下方有限F1–F4；尚未签本包执行PASS。
+- baseline：`400927ff7af0b150432b830ce47b3aa7ac5fd3c9`；SCOPED提交`39ea36847d679900537375eefb2b7ac9368e9002`。
+  Windows实际HEAD与干净工作树已核对，保留C1–C4全部后续提交。
+- owner范围：compute_ops、compute_provider_ggml、compute_provider_native；以本卡交接其AUDITED记录，
+  不伪造AUDITED→SCOPED状态跳转或重开其它CLOSED/BLOCKED。
   CPU/Graph facade、公共头与交付直接消费者按实际未变身份复用；没有新增产品owner。
 - 总合同：[CPU扩覆盖计划](cpu-quant-mtp-coverage-expansion-plan.md)；事实：[缺口清单](cpu-popular-quant-mtp-gap-list.md)。
 - 本卡是一个批次，不是逐算子/逐模型队列。CLOSED按真实trigger新开；AUDITED范围变化重新定界。
@@ -60,3 +61,21 @@
   新数学或必须改变长期合同的缺口须具名定界，不能用自研或缩小必需集合补齐PASS。
 - 每个系统一个稳定候选批次，构建j2、测试j1；只补缺失适用格。已有SDK与资源身份相同则复用，
   不逐档位构建、重复三交付或重跑性能。最终范围裁决、用户文档与红队属于本卡，不跳CLOSED。
+
+## 有限审计与固定FIX
+
+[实际需求收据](../../../../evidence/correctness/cpu-quant-mtp-c5-demand-audit/README.md)保存全部制品到合同的关联。
+现有原ggml、oneDNN与原ATen/codec组合能表达已查合同；没有新数学核或Provider升级授权。
+BF16原F32输出使用既有bfloat_linear_f32/grouped语义；F16原乘法可由显式cold权重cast及activation
+原F16舍入后F32成熟MatMul表达，转换成本必须记录，不伪装为原packed热程序或性能优势。
+
+| FIX | 当前有限差异 | 本包动作与结束证据 |
+|---|---|---|
+| F1 | 新制品缺完整typed角色/几何运行资格 | 参数化559类GGUF权重/lookup合同，真实K/N、原codec/reference、changed replay与indexed失败；保留104身份映射 |
+| F2 | 非GGUF小夹具不能代签真实内宽 | 参数化34类实际packed/scale/zero/bias合同；保留原dtype/group、显式cold decode消费与selected group；不全库专家热展开 |
+| F3 | 参数/版本身份不能仅靠dtype推断完整region | 30类非线性/卷积参数及全部准入family required regions逐项映射；补未验形状/组合与精确身份，C4 branch复用不越界 |
+| F4 | 全域聚合、文档/终审仍未裁决 | 两系统同产品因子/普通入口批次与匹配三交付/资源收据；P0和具名适用P1、七门、LOC、清理、逐状态关闭 |
+
+预算：一份稳定候选集中构建/验收，一批定向测试/接缝纠正；新数学/算法优化0、逐格式性能竞赛0。
+只有真实失败反例可以在F1–F4内新增产品接缝FIX，先写明影响owner/合同再改产品；不能默默扩大到新模型或新API。
+执行consumer是测试/示例组合，允许使用原库codec作为参考，不是新的产品模型loader或推理引擎。
