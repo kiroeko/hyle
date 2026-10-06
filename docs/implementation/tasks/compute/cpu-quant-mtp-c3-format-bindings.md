@@ -76,3 +76,27 @@ MatMul/Grouped/Gather从现有普通入口自动绑定mature provider，用户�
 非GGUF后续有限审计须固定packing、codebook/nested scale/zero-point/permutation端口和cold转换边界，
 才能把Native从C2绑定本卡。现有Float8WeightDecode提供“显式执行一次→作为constant复用”的自然先例；
 不得把每轮全库解包、未资格化的4bit等价替换或放宽精度写成完成。
+
+## 非GGUF第一组有限审计（N1–N3）
+
+Native仅对下列原CPU解码路径追加AUDITED范围；MLX压缩矩阵/专家仍独立审计，不以本组替代。
+
+- N1：新增`model_ops::ArtifactWeightDecode`纯计算接口。它接受原始typed tensor，输出原数据类型的
+  [N,K]权重；没有文件读写/模型解析。NF4默认BF16（本制品原quant-state dtype），AWQ/CT默认scale dtype。
+  显式运行一次再绑定constant，沿已有Float8WeightDecode自然路径；不能藏到每次MatMul或解包整个模型。
+- N2：borrow pinned bitsandbytes/AutoAWQ/compressed-tensors原ATen计算次序，保留codebook、offset、
+  逆AWQ排列和原int4 signed offset；Native原ATen boundary扩至6输入，无新自研decoder/GEMM。
+- N3：Direct/Graph cold-decode→普通成熟MatMul/Gather完整消费；checked形状/溢出、OOM、changed replay、
+  共享参数/独立slot/close和精度差分；API稳定后与GGUF共用批量验证。
+
+| 格式 | 输入端口与实际源 | 输出/成本 |
+|---|---|---|
+| NF4 | U8[N,K/2]，F32[N*K/group] absmax，F32[16] codebook；高nibble在前 | F32 codebook/scale乘后转原dtype；caller显式持有decoded weight |
+| NF4 double quant | U8[N,K/2]，U8[G] absmax，F32[ceil(G/256)] nested absmax，F32[256] nested codebook，F32 scalar offset，F32[16] codebook；G=N*K/group | 原nested scale算式＋offset，再原NF4解码；不把U8 scales当F32 |
+| AWQ GEMM int4 | I32[K,N/8]，I32[K/group,N/8] zero，floating[K/group,N] scale | 原列unpack＋[0,4,1,5,2,6,3,7]逆序，(q-zero)*scale，再转[N,K]；默认F16 |
+| CT symmetric int4 | I32[N,K/8]，floating[N,K/group] scale | 原dense low-first pack减8并应用scale；默认BF16；完整头证明本制品无g_idx/zero-point，不扩未需求格式 |
+
+NF4 group64、AWQ/CT group128为实际目标；参数只控制原数学分组与输出dtype，不控制Provider选择。
+所有输入要求plain dense，K完整group/packing，invalid shape/enum/type/overflow显式失败。
+Decoded weight驻留和cold临时量明确记账；这组只面向实际dense Qwen制品，不能用于MLX全专家热展开。
+MLX仍须借入原压缩CPU调用/selected expert边界后才签范围。

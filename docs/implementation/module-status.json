@@ -418,8 +418,8 @@
     {
       "module": "compute_provider_native",
       "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/cpu-quant-mtp-c2-ggml-upgrade.md",
-      "summary": "CPU扩覆盖C2 AUDITED：C1完整头/成熟承载审计完成；固定CPU-only新版core+原IQ1推理扩展、GPU envelope旧core、同源CPU程序与Native peer版本约束，U1–U4有限FIX；未签产品执行/交付。"
+      "record": "docs/implementation/tasks/compute/cpu-quant-mtp-c3-format-bindings.md",
+      "summary": "CPU扩覆盖C3 AUDITED：非GGUF N1–N3原NF4/double-quant、AWQ、CT cold CPU解码端口与成熟ATen次序固定；MLX压缩执行仍审计未授权新数学，原自研冻结，未签运行/三交付。"
     },
     {
       "module": "compute_sched",
