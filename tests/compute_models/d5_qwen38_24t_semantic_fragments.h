@@ -69,6 +69,9 @@ struct Fragment final {
   // constant slots; no host-generated payload is uploaded into those slots.
   std::shared_ptr<const Fragment> preparation{};
   std::vector<std::size_t> prepared_constants{};
+  // A checked-index consumer can exercise accepted failure and fresh-slot
+  // recovery after its ordinary changed-input replays.
+  std::optional<std::size_t> invalid_index_input{};
 
   const UnorderedIds *id_validation(std::size_t port) const {
     return unordered_ids && unordered_ids->port == port ? &*unordered_ids : nullptr;

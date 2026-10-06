@@ -79,3 +79,19 @@ BF16原F32输出使用既有bfloat_linear_f32/grouped语义；F16原乘法可由
 预算：一份稳定候选集中构建/验收，一批定向测试/接缝纠正；新数学/算法优化0、逐格式性能竞赛0。
 只有真实失败反例可以在F1–F4内新增产品接缝FIX，先写明影响owner/合同再改产品；不能默默扩大到新模型或新API。
 执行consumer是测试/示例组合，允许使用原库codec作为参考，不是新的产品模型loader或推理引擎。
+
+### F1.a：Q8_0 大词表的真实准入缺陷
+
+候选`f618b5178fb16fa9a1c84b815a2bb51922ab4bf8`的Windows两入口各558/560通过。
+`g9d504e80cbfefb7f`是实际Qwen2.4T Q8_0 embedding [248320,8192]，元素数仍小于INT32_MAX，
+总编码字节约2.16GB却被ggml CPU representable的INT32_MAX总字节上界拒绝。
+原固定core的get_rows_q按int64行号与size_t byte stride定位，线程分块仍有int调度变量；
+HYLE已保留元素数、维度、stride、输出及checked索引边界，原库无需新数学或新接口。
+
+本FIX只扩CPU-only新版envelope的native-encoded Gather第一个输入总字节准入；
+维度/元素数/stride及其它operation边界保持。owner为compute_provider_ggml，当前AUDITED授权。
+真实全跨度末端/重复行、changed replay和旧有限矩阵用于验证，GPU/旧core资格不扩大。
+产品shim变更使旧安装SDK无法覆盖本格；C5须重新安装两系统static/shared并验证此真实大表，
+不能仅引用C4旧SDK的代表入口PASS。
+另一失败`g2fcad3816188464a`是测试误加I32→F32 Cast；实际hash/专家ids保留I32，
+按既有host checker读取整数，不修改产品Cast能力或放宽数值门。

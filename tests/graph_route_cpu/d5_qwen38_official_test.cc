@@ -654,6 +654,27 @@ void run_q24_semantic_fragment(
                          fixture.bfloat_chain_output(output),output);
     }
   }
+  if(fixture.invalid_index_input) {
+    const auto port=*fixture.invalid_index_input;
+    ASSERT_EQ(fixture.description(fixture.inputs[port]).data_type(),c::DataType::kInt32);
+    std::vector<std::vector<std::byte>> before;
+    for(const auto &output:outputs)before.push_back(read_bytes(output));
+    const std::array<std::int32_t,1> bad{-1};
+    ASSERT_TRUE(inputs[port].view().write(std::as_bytes(std::span(bad))).ok());
+    auto failed=invocation.submit(queue);ASSERT_TRUE(failed);
+    EXPECT_TRUE(failed->wait().IsOutOfRange());
+    EXPECT_TRUE(invocation.submit(queue).error().IsFailedPrecondition());
+    for(std::size_t output=0;output<outputs.size();++output)EXPECT_EQ(read_bytes(outputs[output]),before[output]);
+    ASSERT_TRUE(inputs[port].view().write(fixture.replays.back().inputs[port]).ok());
+    invocation=compiled.executable.create_invocation().value();
+    for(std::size_t input=0;input<inputs.size();++input)
+      ASSERT_TRUE(invocation.bind(full.inputs[input],c::ConstTensorView::create(fixture.description(fixture.inputs[input]),inputs[input].view()).value()).ok());
+    for(std::size_t output=0;output<outputs.size();++output)
+      ASSERT_TRUE(invocation.bind(full.outputs[output],c::TensorView::create(fixture.description(fixture.outputs[output]),outputs[output].view()).value()).ok());
+    ASSERT_TRUE(invocation.prepare_replay(queues).ok());
+    auto recovered=invocation.submit(queue);ASSERT_TRUE(recovered);ASSERT_TRUE(recovered->wait().ok());
+    for(std::size_t output=0;output<outputs.size();++output)EXPECT_EQ(read_bytes(outputs[output]),before[output]);
+  }
 }
 
 TEST(CpuGraphMoeFragments, D5MatureClampBoundaries) {

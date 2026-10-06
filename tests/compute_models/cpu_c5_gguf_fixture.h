@@ -154,8 +154,8 @@ inline Fragment lookup(const in::Case &item,const Bank &bank,const c::ModelArtif
       (item.native==GGML_TYPE_F16?c::DataType::kFloat16:(item.native==GGML_TYPE_BF16?c::DataType::kBFloat16:c::DataType::kFloat32));
   auto desc=item.packed?c::gguf_weight_description(item.quant,c::DataType::kFloat32,item.k,item.n).value().transposed().value():dense({item.n,item.k},type);
   auto w=f.constant(desc,bank.rows(item.n));auto gathered=f.one(c::Operation(c::Gather{}),{w,ids});
-  f.outputs={type==c::DataType::kFloat32||item.packed?gathered:f.one(c::Operation(c::Cast{.output_type=c::DataType::kFloat32}),{gathered})};
-  f.exact_outputs={0};
+  f.outputs={type==c::DataType::kFloat32||type==c::DataType::kInt32||item.packed?gathered:f.one(c::Operation(c::Cast{.output_type=c::DataType::kFloat32}),{gathered})};
+  f.exact_outputs={0};f.invalid_index_input=0;
   for(int pass:{0,1}) {
     const std::array<std::int32_t,4> selected{pass?1:0,std::int32_t(item.n-1),std::int32_t(item.n/2),std::int32_t(item.n/2)};
     std::vector<float> expected(4*item.k);
@@ -175,6 +175,7 @@ inline Fragment grouped(const in::Case &item,const Bank &bank,const c::ModelArti
   const auto type=item.native==GGML_TYPE_BF16?c::DataType::kBFloat16:c::DataType::kFloat32;
   auto desc=item.packed?c::gguf_grouped_weight_description(item.quant,c::DataType::kFloat32,e,item.n,item.k).value():dense({e,item.n,item.k},type);
   auto w=f.constant(desc,bank.rows(e*item.n));f.outputs={f.one(c::model_ops::grouped_matmul(),{w,a,ids})};
+  f.invalid_index_input=1;
   for(int pass:{0,1}) {
     auto input=activation(slots,item.k,3+pass*16);std::vector<std::int32_t> selected(slots);
     std::vector<float> expected(slots*item.n);

@@ -185,13 +185,15 @@ std::int64_t rows(const TensorDesc &description) noexcept {
   return width == 0 ? 0
                     : static_cast<std::int64_t>(elements(description)) / width;
 }
-bool representable(const TensorDesc &description) noexcept {
+bool representable(const TensorDesc &description,
+                   bool large_encoded_gather = false) noexcept {
   const auto count = description.element_count();
   if (!description.valid() || !count || *count > INT32_MAX)
     return false;
   if (native_quantized(description)) {
     const auto bytes = description.required_bytes();
-    return bytes && *bytes <= INT32_MAX && description.rank() > 0 &&
+    return bytes && (*bytes <= INT32_MAX || large_encoded_gather) &&
+           description.rank() > 0 &&
            description.rank() <= GGML_MAX_DIMS &&
            description.storage_format().kind() == StorageFormatKind::kBlocked &&
            description.block_axis().has_value() &&
@@ -1269,8 +1271,15 @@ bool supports(void *context, Operation operation,
         return description.is_dense() && representable(description);
       }))
     return false;
-  for (const auto &description : inputs)
-    if (!representable(description))
+  bool large_encoded_gather = false;
+#if defined(HYLE_GGML_CPU_IQ1_EXTENSIONS)
+  // The fixed CPU-only core addresses GET_ROWS source bytes with int64 row
+  // indices and size_t strides. Keep all existing element/stride/output bounds;
+  // only the first encoded table may span more than INT32_MAX bytes.
+  large_encoded_gather = operation.get_if<Gather>() != nullptr;
+#endif
+  for (std::size_t i = 0; i < inputs.size(); ++i)
+    if (!representable(inputs[i], large_encoded_gather && i == 0))
       return false;
   const bool has_quantized = std::ranges::any_of(inputs, native_quantized);
   if (has_quantized && !operation.get_if<MatMul>() &&

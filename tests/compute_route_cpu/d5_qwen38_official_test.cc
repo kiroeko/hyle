@@ -916,6 +916,36 @@ void run_q24_semantic_fragment(
                          fixture.bfloat_chain_output(output),output);
     }
   }
+  if (fixture.invalid_index_input) {
+    const auto port=*fixture.invalid_index_input;
+    const auto id=fixture.inputs[port];
+    ASSERT_EQ(fixture.description(id).data_type(),c::DataType::kInt32);
+    std::vector<std::vector<std::byte>> before;
+    for(auto output:fixture.outputs)before.push_back(read_bytes(buffers[output.ordinal()]));
+    const std::array<std::int32_t,1> bad{-1};
+    ASSERT_TRUE(views[id.ordinal()].write(std::as_bytes(std::span(bad))).ok());
+    const auto &step=fixture.nodes.front();
+    std::vector<c::ConstTensorView> inputs;std::vector<c::TensorView> outputs;
+    for(auto input:step.inputs)inputs.push_back(c::ConstTensorView::create(fixture.description(input),views[input.ordinal()]).value());
+    for(auto output:step.outputs)outputs.push_back(c::TensorView::create(fixture.description(output),views[output.ordinal()]).value());
+    auto failed=calls.front().invocation.submit(queue,inputs,outputs);
+    ASSERT_TRUE(failed);EXPECT_TRUE(failed->wait().IsOutOfRange());
+    EXPECT_TRUE(calls.front().invocation.submit(queue,inputs,outputs).error().IsFailedPrecondition());
+    for(std::size_t output=0;output<before.size();++output)
+      EXPECT_EQ(read_bytes(buffers[fixture.outputs[output].ordinal()]),before[output]);
+    ASSERT_TRUE(views[id.ordinal()].write(fixture.replays.back().inputs[port]).ok());
+    calls.front().invocation=calls.front().prepared.create_invocation(calls.front().workspace.view()).value();
+    run(calls.front(),queue,inputs,outputs);
+    // C5 indexed consumers have one arithmetic node followed, at most, by a cast.
+    if(calls.size()>1) {
+      const auto &last=fixture.nodes.back();inputs.clear();outputs.clear();
+      for(auto input:last.inputs)inputs.push_back(c::ConstTensorView::create(fixture.description(input),views[input.ordinal()]).value());
+      for(auto output:last.outputs)outputs.push_back(c::TensorView::create(fixture.description(output),views[output.ordinal()]).value());
+      ASSERT_EQ(calls.size(),2u);run(calls.back(),queue,inputs,outputs);
+    }
+    for(std::size_t output=0;output<before.size();++output)
+      EXPECT_EQ(read_bytes(buffers[fixture.outputs[output].ordinal()]),before[output]);
+  }
 }
 
 TEST(CpuMoeFragments, D5MatureClampBoundaries) {
