@@ -39,6 +39,8 @@ inline ggml_type native_type(c::GgufQuantizedType type) {
     return GGML_TYPE_IQ4_XS;
   case c::GgufQuantizedType::kMxfp4:
     return GGML_TYPE_MXFP4;
+  default:
+    break; // This fixture covers the original D5 catalog only.
   }
   return GGML_TYPE_COUNT;
 }
