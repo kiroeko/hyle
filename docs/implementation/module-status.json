@@ -423,9 +423,10 @@
     },
     {
       "module": "compute_provider_native",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/cpu-native-domain-performance-verdict-v1.md",
-      "summary": "CPU自研有限裁决：18个数值失格域已退役；278场景数值前置通过，206项固定P1资格批，72项对照失格按成熟优先审计；SIMD基础与独有资源域分开，不追加优化"
+      "summary": "CPU自研有限裁决：固定206项同合同P1候选，72项对照失格原样保留；产品数学仍775b2bed，尚无正式WIN/LOSS或新删除",
+      "candidate": "481fc3ea2bd2bc9ab50e6b4185c7daa64111ddb3"
     },
     {
       "module": "compute_sched",

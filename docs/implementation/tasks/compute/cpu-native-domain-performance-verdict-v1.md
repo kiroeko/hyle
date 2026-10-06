@@ -1,6 +1,6 @@
 # CPU 自研精确域：一次有限批量性能裁决
 
-<!-- MODULE REVIEW: AUDITED -->
+<!-- MODULE REVIEW: CANDIDATE -->
 
 - owner `compute_provider_native`；baseline `db77f16fa`（完整identity由Git导出），Windows canonical。
   SI/MN/TC/TM/AS/CP、ND-R1及RN1/RN4已实际关闭，两个fixture skip也已两平台补跑通过。
@@ -57,3 +57,10 @@ Native O(elements)/矩阵乘与各原库程序；Native热私有分配0、成熟
 统一合同仅206项，原278 catalog合同另存，C++仍执行全部数值和固定catalog；额外行不参加产品门。
 rows1/32的token/small batch与正交存储消费只绑定精确op/kind/dtype/shape/layout/资源/平台版本，
 无图融合或整个模型频率外推。SIMD基础与原版 borrowing 不在删除候选内。
+
+## 固定采样候选
+
+- benchmark/合同/资格输入：`481fc3ea2bd2bc9ab50e6b4185c7daa64111ddb3`；产品数学固定 `775b2bedace019de423edc5d8a6477772b8ef3ec` 的已验收SDK。
+- 52个SDK安装输入、8个运行DLL和244个同源码peer输入由资格器核对；每项实际mature身份另记。
+- 没有产品/API/layout/算法修改；候选后仅状态/证据，不因此重编译产品或重跑旧验收。
+- 正式统一采样尚未运行；只能在同loaded code与SDK资格复用成立后开始，适用control未PASS不能签方向。
