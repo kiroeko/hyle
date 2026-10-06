@@ -1,0 +1,21 @@
+{
+  "identity": {
+    "product_candidate": "a527dd73dcc21a5b4b89979d43339d67becabe86",
+    "canonical_head": "35114b83f4c2e94b1931adfdf821f4a4c758aba5",
+    "unchanged_product_fixture_inputs": 1337,
+    "timing": false,
+    "source_scope": "Frozen Native and current mature default; no product edits or new performance measurement"
+  },
+  "rows": 322,
+  "native_rows": 161,
+  "mature_rows": 161,
+  "native_bad_rows": 31,
+  "mature_bad_rows": 0,
+  "prepare_rejects": 0,
+  "not_inferred": "Not P1/whole model/all-input correctness; failed public qualified numeric domains cannot enter SOTA comparison. No product retirement yet.",
+  "artifact": {
+    "entries": 19,
+    "bytes": 21456,
+    "sha256": "2b01d0d82cc1357f3c794abb2a4b602c1563dff1852d2dd2be6acf8e11fd1bcf"
+  }
+}

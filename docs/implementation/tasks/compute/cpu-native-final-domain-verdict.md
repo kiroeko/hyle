@@ -1,6 +1,6 @@
 # CPU 冻结自研算子：有限精确域裁决
 
-<!-- MODULE REVIEW: SCOPED -->
+<!-- MODULE REVIEW: AUDITED -->
 
 - owner `compute_provider_native`；baseline `3bf9aa99e18a96fe46ab07e9b84aba97ef7dec49`，Windows canonical。
 - trigger：SI/MN/TC/TM/AS/CP已实际关闭，成熟普通域及资源声明固定；用户要求所有有成熟替代的
@@ -31,8 +31,26 @@
 | ID | 必需输出 | 当前 |
 |---|---|---|
 | ND1 | 12族当前具名成熟候选/资源边界/borrow vs self，valid旧证据与实际P0成本 | 待固定；历史宽泛KEEP_RESIDUAL不授权保留 |
-| ND2 | 一批同端口/同reference/同checked执行数值与资源witness，不计时 | 待执行；prepare成功不代签数学 |
+| ND2 | 一批同端口/同reference/同checked执行数值与资源witness，不计时 | 数值322条实际完成；Native31未资格、成熟0失败；16个域固定退場，不能入竞速 |
 | ND3 | 固定有限P1消费/peer/采样与严格方向；无优化，结果驱动有限FIX | ND2之后，不让错误实现赢性能 |
 
 各普通域、strict资源与模型port条件的最终KEEP_WIN/KEEP_UNIQUE/RETIRE_OVERLAP须写明可复核
 依据。所有私有算子数学与SIMD通用primitive分开，后者不因Provider输而删除。
+
+## 已固定数值退场 FIX：ND-R1
+
+[同合同实际witness](../../../../evidence/correctness/cpu-native-final-semantic-audit/README.md)固定下列
+16个op/kind×dtype/position域为RETIRE_NUMERIC_INELIGIBLE，不签性能LOSS，不尝试优化：
+Unary GELU/GELU-tanh三floating、F32 Unary SiLU；GELU/GELU-tanh gate三floating及F32/BF16 SiLU
+gate；长I64公共RoPE原F32实现。generic descriptor无法低成本表达“输入值恰好避开负尾部/大位置”，
+不靠随机输入或模型名掩盖通用问题。原ATen相同端口与既有资格可完整替代这些普通域。
+
+允许的产品改动只为ND-R1：删除上述Native准入与其无其它Native用途的专用tensor执行分支/公式/
+callback，保留F16 SiLU gate及I32 RoPE等待后续裁决；public operation、原ATen/ggml/oneDNN、SIMD
+基础/函数、其它Native数学与原Torch/ds4 borrowing不改。不因为strict资源唯一保留错误数学；在
+仅允许Native的strict域明确拒绝，不能偷偷调用managed路线或放宽预算/精度。源级删除和正交回归
+批量完成后，再处理ND3合格重叠域；ND3 benchmark/rule/deletion集合未固定，当前不授权其产品改动。
+
+ND1/ND2以此前全族/source/resource审计及本批反例固定这一实现子批，owner AUDITED。后续发现
+新具体域或结果需要扩张产品FIX时须退回SCOPED/AUDITED，不无限扩大本次修正。生命周期/默认
+Direct/Graph、受影响测试与两平台三交付仍适用；当前未运行，不签ND-R1产品完成。

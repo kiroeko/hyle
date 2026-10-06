@@ -423,9 +423,9 @@
     },
     {
       "module": "compute_provider_native",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/cpu-native-final-domain-verdict.md",
-      "summary": "ND SCOPED：成熟接线/资源声明已关闭，冻结Native12族按当前同合同成熟候选做一批数值/资源与有限P1裁决；先审计固定有限FIX，不优化自研，不用fallback保留依据，SIMD基础/原版借用保留，GPU暂停。"
+      "summary": "ND AUDITED，ND-R1有限实现子批：322条同合同执行中Native31数值未资格、成熟0失败，16个Unary/gate/I64 RoPE通用域固定退场；只删具名Native分支，不优化/不改SIMD或原库，不用strict资源保留错误数学；剩余合格域ND3尚待有限性能裁决。"
     },
     {
       "module": "compute_sched",
