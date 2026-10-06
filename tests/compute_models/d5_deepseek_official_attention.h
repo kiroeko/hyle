@@ -595,6 +595,7 @@ struct Hyper final {
   linear::Projection fn;
   std::int64_t hidden;
   std::vector<float> scales{0.125F, 0.25F, 0.5F}, bases = std::vector<float>(24);
+  bool bfloat_outputs=true;
   moe::ReferenceOutputs reference(std::span<const float> state, std::span<const float> branch) const {
     moe::ReferenceOutputs result(3);
     for(std::size_t first=0;first<state.size();first+=4*hidden) {
@@ -605,8 +606,10 @@ struct Hyper final {
       const float inverse = 1.0F/std::sqrt(float(square/local.size())+1.0e-6F);
       for (auto &x : mixes) x *= inverse;
       auto row = core::hyper_reference(mixes, local, branch.subspan(first/4,hidden), hidden, scales, bases);
-      row[1] = bfloat_boundary(std::move(row[1]));
-      row[2] = bfloat_boundary(std::move(row[2]));
+      if(bfloat_outputs) {
+        row[1] = bfloat_boundary(std::move(row[1]));
+        row[2] = bfloat_boundary(std::move(row[2]));
+      }
       for(std::size_t port=0;port<row.size();++port)
         result[port].insert(result[port].end(),row[port].begin(),row[port].end());
     }
@@ -618,12 +621,13 @@ inline ValueId inverse_rms(Fragment &f, ValueId input) {
   return unary(f, c::UnaryKind::kRsqrt, binary(f, c::BinaryKind::kAdd,
       mean(f, square), filled(f, dense({1}), 1.0e-6F)));
 }
-inline Hyper hyper_pre(Fragment &f, ValueId state, std::int64_t hidden, int seed) {
+inline Hyper hyper_pre(Fragment &f, ValueId state, std::int64_t hidden, int seed,bool bfloat=true) {
   const auto tokens=f.description(state).dimensions()[0];
   auto flat = reshape(f, state, {tokens, 4*hidden});
   auto fn = linear::projection(f, flat, 24, 4*hidden, linear::Storage::kF32, seed);
   auto mixes = binary(f, c::BinaryKind::kMultiply, fn.output, inverse_rms(f, flat));
   Hyper result{{}, {}, {}, std::move(fn), hidden};
+  result.bfloat_outputs=bfloat;
   for (int i = 0; i < 24; ++i) result.bases[i] = float(i%7-3)/8.0F;
   auto scale = f.constant(dense({3}), bytes(result.scales));
   auto base = f.constant(dense({24}), bytes(result.bases));
@@ -639,11 +643,13 @@ inline Hyper hyper_pre(Fragment &f, ValueId state, std::int64_t hidden, int seed
         filled(f, dense({1}), offset));
   };
   result.post = gate(4, 2, 0);
-  result.collapsed = bfloat_boundary(f, f.one(c::model_ops::hyper_connection_pre(), {state, gate(0, 1, 1.0e-6F)}));
+  result.collapsed = f.one(c::model_ops::hyper_connection_pre(), {state, gate(0, 1, 1.0e-6F)});
+  if(bfloat)result.collapsed=bfloat_boundary(f,result.collapsed);
   return result;
 }
 inline ValueId hyper_post(Fragment &f, const Hyper &mix, ValueId state, ValueId branch) {
-  return bfloat_boundary(f, f.one(c::model_ops::hyper_connection_post(), {branch, state, mix.post, mix.combination}));
+  auto result=f.one(c::model_ops::hyper_connection_post(), {branch, state, mix.post, mix.combination});
+  return mix.bfloat_outputs?bfloat_boundary(f,result):result;
 }
 
 // The fixed official config appends ratio0 for mtp.0 on both Pro and Flash.
