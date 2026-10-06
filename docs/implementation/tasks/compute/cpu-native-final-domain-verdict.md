@@ -67,3 +67,10 @@ Direct/Graph、受影响测试与两平台三交付仍适用；当前未运行�
 测试对已退役域须按需求迁移并保留专家拒绝回归。ND3仍未计时/未裁决，模块仍AUDITED、goal活动。
 统一脚本在`cde6fb3a`计Compute+Graph实现61,387/249，不含tests/vendor；`f32d261a`单行Status
 替换不改代码行数。必要回归/交付完成前不关闭ND-R1，不把源码删除当完整CPU收口。
+
+ND-R1 fixture `f83aa9f1`已迁移旧Native-only预期：retired Unary/gate在expert冷阶段明确拒绝，
+保留Native F16 SiLU/I32 RoPE与其它数学实测；旧F32 gate执行/alias旅程迁成熟ATen；新增单case
+同时验证propose/prepare对16个退役域及两种gate输入布局的拒绝。普通consumer核对稳定Unary、
+放大gate和长I64位置的Direct/op→Copy Graph变化输入/真实wait/close，且Native-only Graph拒绝。
+Windows Provider142/142、CPU12通过/1旧skip、Graph17/17、header1/1及source ordinary通过；
+Linux与installed/static尚未签PASS。产品仍固定`f32d261a`，模块AUDITED不自动签ND3裁决。
