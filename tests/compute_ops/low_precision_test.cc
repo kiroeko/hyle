@@ -114,6 +114,7 @@ TEST(ComputeOpsLowPrecision, GgufCatalogPreservesExactNativeBlocks) {
     GgufQuantizedType type;
     StorageFormatId id;
     std::size_t bytes;
+    std::size_t elements = 256;
   };
   constexpr std::array cases{Case{GgufQuantizedType::kQ3K, kGgufQ3K, 110},
                              Case{GgufQuantizedType::kQ4K, kGgufQ4K, 144},
@@ -121,16 +122,29 @@ TEST(ComputeOpsLowPrecision, GgufCatalogPreservesExactNativeBlocks) {
                              Case{GgufQuantizedType::kQ6K, kGgufQ6K, 210},
                              Case{GgufQuantizedType::kIq3Xxs, kGgufIq3Xxs, 98},
                              Case{GgufQuantizedType::kIq3S, kGgufIq3S, 110},
-                             Case{GgufQuantizedType::kIq4Xs, kGgufIq4Xs, 136}};
-  for (const auto &[type, id, bytes] : cases) {
+                             Case{GgufQuantizedType::kIq4Xs, kGgufIq4Xs, 136},
+                             Case{GgufQuantizedType::kQ4_0, kGgufQ4_0, 18, 32},
+                             Case{GgufQuantizedType::kQ4_1, kGgufQ4_1, 20, 32},
+                             Case{GgufQuantizedType::kQ2K, kGgufQ2K, 84},
+                             Case{GgufQuantizedType::kIq2Xxs, kGgufIq2Xxs, 66},
+                             Case{GgufQuantizedType::kIq2Xs, kGgufIq2Xs, 74},
+                             Case{GgufQuantizedType::kIq2S, kGgufIq2S, 82},
+                             Case{GgufQuantizedType::kIq1S, kGgufIq1S, 50},
+                             Case{GgufQuantizedType::kIq1M, kGgufIq1M, 56},
+                             Case{GgufQuantizedType::kIq1Xxxs, kGgufIq1Xxxs, 38},
+                             Case{GgufQuantizedType::kIq1Xxs, kGgufIq1Xxs, 42},
+                             Case{GgufQuantizedType::kIq1Xs, kGgufIq1Xs, 46}};
+  for (const auto &[type, id, bytes, elements] : cases) {
     const auto weight =
-        gguf_weight_description(type, DataType::kFloat32, 256, 3);
+        gguf_weight_description(type, DataType::kFloat32,
+                                static_cast<std::int64_t>(elements), 3);
     ASSERT_TRUE(weight);
     EXPECT_EQ(weight->storage_format().id(), id);
     EXPECT_EQ(*weight->required_bytes(), bytes * 3);
     EXPECT_EQ(gguf_quantized_type(id), type);
     EXPECT_EQ(gguf_quantized_type(weight->storage_format()), type);
     EXPECT_EQ(weight->block_axis(), 0u);
+    EXPECT_EQ(weight->storage_format().elements_per_block(), elements);
   }
   const auto q8 = gguf_weight_description(GgufQuantizedType::kQ8_0,
                                           DataType::kBFloat16, 64, 3);

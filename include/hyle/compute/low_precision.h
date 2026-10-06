@@ -43,6 +43,17 @@ enum class GgufQuantizedType : std::uint8_t {
   kIq4Nl,
   kIq4Xs,
   kMxfp4,
+  kQ4_0,
+  kQ4_1,
+  kQ2K,
+  kIq2Xxs,
+  kIq2Xs,
+  kIq2S,
+  kIq1S,
+  kIq1M,
+  kIq1Xxxs,
+  kIq1Xxs,
+  kIq1Xs,
 };
 
 inline constexpr StorageFormatId kGgufQ3K{0x48594c4547475546ULL, 1};
@@ -54,6 +65,17 @@ inline constexpr StorageFormatId kGgufIq3Xxs{0x48594c4547475546ULL, 6};
 inline constexpr StorageFormatId kGgufIq3S{0x48594c4547475546ULL, 7};
 inline constexpr StorageFormatId kGgufIq4Nl{0x48594c4547475546ULL, 8};
 inline constexpr StorageFormatId kGgufIq4Xs{0x48594c4547475546ULL, 9};
+inline constexpr StorageFormatId kGgufQ4_0{0x48594c4547475546ULL, 10};
+inline constexpr StorageFormatId kGgufQ4_1{0x48594c4547475546ULL, 11};
+inline constexpr StorageFormatId kGgufQ2K{0x48594c4547475546ULL, 12};
+inline constexpr StorageFormatId kGgufIq2Xxs{0x48594c4547475546ULL, 13};
+inline constexpr StorageFormatId kGgufIq2Xs{0x48594c4547475546ULL, 14};
+inline constexpr StorageFormatId kGgufIq2S{0x48594c4547475546ULL, 15};
+inline constexpr StorageFormatId kGgufIq1S{0x48594c4547475546ULL, 16};
+inline constexpr StorageFormatId kGgufIq1M{0x48594c4547475546ULL, 17};
+inline constexpr StorageFormatId kGgufIq1Xxxs{0x48594c4547475546ULL, 18};
+inline constexpr StorageFormatId kGgufIq1Xxs{0x48594c4547475546ULL, 19};
+inline constexpr StorageFormatId kGgufIq1Xs{0x48594c4547475546ULL, 20};
 
 HYLE_COMPUTE_OPS_API std::optional<GgufQuantizedType>
 gguf_quantized_type(StorageFormatId id) noexcept;

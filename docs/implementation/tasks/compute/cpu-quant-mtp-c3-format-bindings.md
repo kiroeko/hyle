@@ -56,7 +56,7 @@
 | FIX | 原问题/源码 | 固定产品动作 | 验收 |
 |---|---|---|---|
 | G1 | low_precision.h/.cc只列10编码 | 批量追加Q4_0、Q4_1、Q2_K、IQ2_XXS/XS/S、IQ1_S/M、IQ1_XXXS/XXS/XS，原bytes/block/alignment | 原编码描述、非法/溢出/伪造格式、checked import |
-| G2 | CPU native_quantized_type无11格式；embedding仅Q4K/Q6K/Q8 | 对应原ggml type；IQ1扩展只在C2新core feature下接受；embedding依实际decoder能力接受 | 一批参数化MatMul、GroupedMatMul、GetRows；重复/越界ids、changed replay |
+| G2 | CPU native_quantized_type无11格式；embedding仅Q4K/Q6K/Q8 | 对应原ggml type；全部新增格式只在C2新CPU envelope下接受，旧GPU SDK不代签其CPU新域；embedding依实际decoder能力接受 | 一批参数化MatMul、GroupedMatMul、GetRows；重复/越界ids、changed replay |
 | G3 | 三GPU helper的enum switch封闭 | 仅添加default返回COUNT，拒绝新增未验格式；不接新GPU数学/数据布局 | 编译期consumer seam/source合同；既有能力与GPU状态不变 |
 | G4 | 需要普通入口真实消费 | 普通CPU Direct和Graph参数化fixture，保留原压缩bytes、F32/Q8_K内部转换边界 | 原编码参考、多个slots、资源/失败/close、批末两系统三交付 |
 

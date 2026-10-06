@@ -117,6 +117,43 @@ ggml_type native_quantized_type(const TensorDesc &description) noexcept {
     return GGML_TYPE_IQ4_XS;
   case GgufQuantizedType::kMxfp4:
     return GGML_TYPE_MXFP4;
+#if defined(HYLE_GGML_CPU_IQ1_EXTENSIONS)
+  case GgufQuantizedType::kQ4_0:
+    return GGML_TYPE_Q4_0;
+  case GgufQuantizedType::kQ4_1:
+    return GGML_TYPE_Q4_1;
+  case GgufQuantizedType::kQ2K:
+    return GGML_TYPE_Q2_K;
+  case GgufQuantizedType::kIq2Xxs:
+    return GGML_TYPE_IQ2_XXS;
+  case GgufQuantizedType::kIq2Xs:
+    return GGML_TYPE_IQ2_XS;
+  case GgufQuantizedType::kIq2S:
+    return GGML_TYPE_IQ2_S;
+  case GgufQuantizedType::kIq1S:
+    return GGML_TYPE_IQ1_S;
+  case GgufQuantizedType::kIq1M:
+    return GGML_TYPE_IQ1_M;
+  case GgufQuantizedType::kIq1Xxxs:
+    return GGML_TYPE_IQ1_XXXS;
+  case GgufQuantizedType::kIq1Xxs:
+    return GGML_TYPE_IQ1_XXS;
+  case GgufQuantizedType::kIq1Xs:
+    return GGML_TYPE_IQ1_XS;
+#else
+  case GgufQuantizedType::kQ4_0:
+  case GgufQuantizedType::kQ4_1:
+  case GgufQuantizedType::kQ2K:
+  case GgufQuantizedType::kIq2Xxs:
+  case GgufQuantizedType::kIq2Xs:
+  case GgufQuantizedType::kIq2S:
+  case GgufQuantizedType::kIq1S:
+  case GgufQuantizedType::kIq1M:
+  case GgufQuantizedType::kIq1Xxxs:
+  case GgufQuantizedType::kIq1Xxs:
+  case GgufQuantizedType::kIq1Xs:
+    return GGML_TYPE_COUNT;
+#endif
   }
   return GGML_TYPE_COUNT;
 }
@@ -129,10 +166,7 @@ bool native_quantized(const TensorDesc &description) noexcept {
   return native_quantized_type(description) != GGML_TYPE_COUNT;
 }
 bool native_embedding_table(const TensorDesc &description) noexcept {
-  const auto type = gguf_quantized_type(description.storage_format());
-  return type && (*type == GgufQuantizedType::kQ4K ||
-                  *type == GgufQuantizedType::kQ6K ||
-                  *type == GgufQuantizedType::kQ8_0) &&
+  return native_quantized(description) &&
          description.data_type() == DataType::kFloat32 &&
          description.rank() == 2 && description.block_axis() == 1;
 }

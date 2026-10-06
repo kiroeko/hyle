@@ -49,6 +49,8 @@ ggml_type native_quantized_type(const TensorDesc &description) noexcept {
     return GGML_TYPE_IQ4_XS;
   case GgufQuantizedType::kMxfp4:
     return GGML_TYPE_MXFP4;
+  default:
+    break; // Newly declared CPU formats have no GPU qualification.
   }
   return GGML_TYPE_COUNT;
 }

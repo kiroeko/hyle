@@ -36,6 +36,28 @@ std::optional<GgufBlock> gguf_block(GgufQuantizedType type) noexcept {
     return GgufBlock{kGgufIq4Xs, 256, 136};
   case GgufQuantizedType::kMxfp4:
     return GgufBlock{kMxfp4Weight, 32, 17};
+  case GgufQuantizedType::kQ4_0:
+    return GgufBlock{kGgufQ4_0, 32, 18};
+  case GgufQuantizedType::kQ4_1:
+    return GgufBlock{kGgufQ4_1, 32, 20};
+  case GgufQuantizedType::kQ2K:
+    return GgufBlock{kGgufQ2K, 256, 84};
+  case GgufQuantizedType::kIq2Xxs:
+    return GgufBlock{kGgufIq2Xxs, 256, 66};
+  case GgufQuantizedType::kIq2Xs:
+    return GgufBlock{kGgufIq2Xs, 256, 74};
+  case GgufQuantizedType::kIq2S:
+    return GgufBlock{kGgufIq2S, 256, 82};
+  case GgufQuantizedType::kIq1S:
+    return GgufBlock{kGgufIq1S, 256, 50};
+  case GgufQuantizedType::kIq1M:
+    return GgufBlock{kGgufIq1M, 256, 56};
+  case GgufQuantizedType::kIq1Xxxs:
+    return GgufBlock{kGgufIq1Xxxs, 256, 38};
+  case GgufQuantizedType::kIq1Xxs:
+    return GgufBlock{kGgufIq1Xxs, 256, 42};
+  case GgufQuantizedType::kIq1Xs:
+    return GgufBlock{kGgufIq1Xs, 256, 46};
   }
   return std::nullopt;
 }
@@ -125,7 +147,13 @@ gguf_quantized_type(StorageFormatId id) noexcept {
       GgufQuantizedType::kQ5K,   GgufQuantizedType::kQ6K,
       GgufQuantizedType::kQ8_0,  GgufQuantizedType::kIq3Xxs,
       GgufQuantizedType::kIq3S,  GgufQuantizedType::kIq4Nl,
-      GgufQuantizedType::kIq4Xs, GgufQuantizedType::kMxfp4};
+      GgufQuantizedType::kIq4Xs, GgufQuantizedType::kMxfp4,
+      GgufQuantizedType::kQ4_0, GgufQuantizedType::kQ4_1,
+      GgufQuantizedType::kQ2K, GgufQuantizedType::kIq2Xxs,
+      GgufQuantizedType::kIq2Xs, GgufQuantizedType::kIq2S,
+      GgufQuantizedType::kIq1S, GgufQuantizedType::kIq1M,
+      GgufQuantizedType::kIq1Xxxs, GgufQuantizedType::kIq1Xxs,
+      GgufQuantizedType::kIq1Xs};
   for (const auto type : types)
     if (gguf_block(type)->id == id)
       return type;

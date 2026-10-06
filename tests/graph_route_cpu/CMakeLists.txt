@@ -1,6 +1,7 @@
 hyle_add_header_self_contained_test(graph_route_cpu
   HEADER_DIR graph HEADERS cpu.h)
 hyle_add_test(graph_route_cpu SOURCES
+  ../compute_route_cpu/cpu_expanded_gguf_test.cc
   ../compute_route_cpu/ds4_roundtrip_test.cc
   ../compute_route_cpu/context_test.cc d5_qwen35_profile_test.cc
   d5_qwen_gguf_vocabulary_test.cc
@@ -16,6 +17,8 @@ if(_hyle_torch_cpu)
 endif()
 if(HYLE_GGML_CPU_ENABLED)
   target_link_libraries(hyle_graph_route_cpu_test PRIVATE ggml)
+  target_include_directories(hyle_graph_route_cpu_test SYSTEM PRIVATE
+    "${HYLE_GGML_SOURCE_DIR}/src")
 endif()
 hyle_stage_runtime_dependencies(hyle_graph_route_cpu_test)
 
