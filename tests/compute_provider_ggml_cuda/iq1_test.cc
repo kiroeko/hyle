@@ -25,7 +25,7 @@ TEST(GgmlCudaIq1, OriginalDecodeMmvqAndMmqExecuteAndReplay) {
       const std::array inputs{ConstTensorView::create(a, activation.view()).value(),
                               ConstTensorView::create(desc, weights.view()).value()};
       const auto view = TensorView::create(y, output.view()).value();
-      auto prepared = prepare(ctx, MatMul{}, inputs, std::span(&view, 1));
+      auto prepared = prepare(ctx, Operation(MatMul{}), inputs, std::span(&view, 1));
       ASSERT_TRUE(prepared) << prepared.error().message();
       EXPECT_EQ(prepared->provider().id, ggml_cuda::kProviderId);
       auto invocation = prepared->create_invocation().value();
