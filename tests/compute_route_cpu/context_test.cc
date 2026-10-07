@@ -315,16 +315,16 @@ TEST(CpuDefaultContext, MatMulRulesAndChangedInputReplay) {
           EXPECT_TRUE(
               prepared->workload().profile.matches(workload_test::kModel));
         }
-        ProviderId expected = native::kProviderId;
+        ProviderId expected = aten_cpu::kProviderId;
+#if defined(HYLE_COMPUTE_GGML_CPU)
+        expected = ggml_cpu::kProviderId;
+#endif
 #if defined(HYLE_COMPUTE_ONEDNN)
         if (!transposed)
           expected = onednn::kProviderId;
 #endif
-#if defined(HYLE_COMPUTE_GGML_CPU)
-        if (transposed)
-          expected = ggml_cpu::kProviderId;
-#endif
         EXPECT_EQ(prepared->provider().id, expected);
+        EXPECT_NE(prepared->provider().id, native::kProviderId);
         auto left =
             hyle::mem::Buffer::create(hyle::mem::system_resource(),
                                       left_desc.required_bytes().value(), 64)
