@@ -63,6 +63,30 @@ F2的原源码账单：ggml `456172ec` CUDA MMF的BF16分支用`ggml_cuda_cast<n
 更改全局tolerance或把CPU约定降成BF16乘数来签通过。原cast+MUL_MAT_ID的完整资源/搬运成本
 属于本program，U4公平比较必须计入。这个cast不是HYLE新codec或自研GEMM。
 
+## 联合交付批次的复用与停止规则
+
+2026-10-08 用户要求避免小调整反复重跑全集。本轮交付执行采用下面可检查的合同，
+不改公共 selector、closure checker 或性能统计核心：
+
+- 固定候选、consumer 输入、工具链、配置、机器与实际 executable／runtime 身份；
+  按 artifacts、fixed、current、families、lifecycle 分组保存原日志、XML、哈希与结果。
+  分组用例并集必须与请求全集逐名相等，失败／skip 不得作为已完成组复用。
+- 每次先写 RUN／REUSE／STOP 及理由。同身份已通过组复用，驱动中断从未完成组继续；
+  失败组先查源码／资源／参考合同，重跑须具名因果与有限理由，不能靠重跑变绿注销原失败。
+- 文档／状态不 build／P1。fixture 或驱动变化只验其受影响组；产品变更按 selector／本卡
+  直接消费者扩展，并记录证据失效范围。公共 API／ABI、依赖版本或跨组资源机制变化才能
+  扩大到其全部适用合同；重新配置本身不能触发无理由的全集重跑。
+- source、relocated static、relocated shared、CUDA-only／mixed 的身份分别记录，不能互相
+  冒充交付证明；相同合同数学资格可引用已封存 native 证据，实际 link／loader／配置边界仍须运行。
+
+首个独立源码 consumer 整批650项中649项通过；Q3_K expert `g3560f36d25c826bd` 在
+replay1第二slot出现大误差。原失败保留；相同未变 executable 的单例和560项物理编码组
+均通过，尚不能唯一定位产品／reference／跨carrier状态原因，不签该原失败已解决。
+当前仅做具名 carrier-transition 定向诊断，不重跑650项全集，也不放宽误差门。
+该35项 transition（原N1／N2加失败单例）亦通过，仍不能唯一归因。联合交付的专用
+[驱动与边界记录](../../../../evidence/correctness/cuda-final-u3-joint-delivery/README.md)
+保存执行约束；整批中完全通过的组可独立引用，原失败 aggregate 不因此注销。
+
 ## 七问与冻结
 
 第三方依旧原ggml／ATen源、pin和license；当前模型完整需求不扩画像；backend、Graph adapter、
