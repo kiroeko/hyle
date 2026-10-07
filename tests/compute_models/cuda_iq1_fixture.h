@@ -1,6 +1,13 @@
 #pragma once
 
+#if defined(_MSC_VER)
+#pragma warning(push)
+#pragma warning(disable : 4201) // Original ggml block ABI uses anonymous unions.
+#endif
 #include <ggml-quants.h>
+#if defined(_MSC_VER)
+#pragma warning(pop)
+#endif
 
 #include <algorithm>
 #include <array>
