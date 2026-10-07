@@ -189,6 +189,8 @@ Mac受管stage修正原CPU dylib的libomp加载边并保留原archive身份，�
 [CPU F3证据](../../evidence/correctness/cpu-final-f3/README.md)。
 
 Compute/Graph 包含可选 CUDA 默认路线。`HYLE_COMPUTE_CUDA=OFF|ON|AUTO` 只在相应产品闭包中出现，
+普通 `compute-cuda` configure/build preset 选择 CUDA-only Compute+Graph、Release、tests/bench OFF，
+build 并行度 2；`HYLE_COMPUTE_CPU=ON` 可显式取得 mixed SDK，三交付仍用既有 install/static 参数。
 默认 OFF；ON 要求用户预装 CUDA Toolkit 13.3+ 并在缺失时失败，AUTO 只用于本地探测，OFF 完全不探测。
 CUDA Toolkit 是机器 SDK，不进入 FetchContent cache，也不会由 HYLE 下载。启用后的 source/static/shared
 都传播 `CUDAToolkit` package requirement；安装包消费者同样必须能被 `find_package(CUDAToolkit 13.3)`

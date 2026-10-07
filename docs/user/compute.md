@@ -369,8 +369,25 @@ dtype、shape、layout 与资源是否可执行；此时无需分配 tensor payl
 
 ### 创建 CUDA 程序
 
-选择 `HYLE_COMPONENTS=compute`、`HYLE_COMPUTE_CUDA=ON`；CUDA-only 再设
-`HYLE_COMPUTE_CPU=OFF`。源码与安装包均链接 `hyle::compute`：
+普通构建选择 `compute-cuda` preset，取得 CUDA-only Compute 与 Graph；它组装路线的现有成熟 Provider，
+关闭其它路线、tests 和 bench，Release build 的并行度为 2。系统须预装受支持的 C++ 工具链、Ninja 与
+CUDA Toolkit 13.3+；缺 Toolkit 时 configure 明确失败。
+
+```text
+cmake --preset compute-cuda
+cmake --build --preset compute-cuda
+```
+
+Windows 从已初始化的 developer shell 执行上述命令，或用既有
+`scripts/hyle-windows.ps1 -Action Configure -Preset compute-cuda` 与
+`scripts/hyle-windows.ps1 -Action Build -Preset compute-cuda` 导入受支持的 MSVC 环境。
+CPU+CUDA SDK 可在 configure 时显式覆盖 `-DHYLE_COMPUTE_CPU=ON`；static、install、目标 arch
+按普通 CMake 参数选，不需要内部 Provider flags 或排序。源码与安装包均链接 `hyle::compute`，
+应用链接后调用 `hyle_stage_runtime_dependencies(app)`，Windows 把依赖 DLL 邻置 exe。
+构建选择不代替具体模型／格式／精度请求的准备与运行资格，当前新增合同仍按 owner 卡验收。
+
+不用 preset 时选择 `HYLE_COMPONENTS=compute`、`HYLE_COMPUTE_CUDA=ON`；CUDA-only 再设
+`HYLE_COMPUTE_CPU=OFF`。自然 C++ 入口如下：
 
 ```cpp
 #include <hyle/compute/cuda.h>
