@@ -129,3 +129,10 @@ availability检查，未改安装政策。shared与Linux/Mac三交付、Vulkan o
 Windows shared源码和搬移SDK也已完成48项普通Direct/Graph消费，三交付均通过，静态／共享
 标志与GPU-OFF负空间一致。Linux三交付批次已串行启动，Mac随后；本段是交付进展，不签CUDA的
 新carrier、性能或完整路线验收。原producer／sealed证据／模型均保留，没有创建逐算子producer。
+
+## 有限范围验收完成
+
+以上阶段日志是历史进展；当前三平台三交付、Graph缺口／Mac fixture及F16测试迁移、两个Vulkan owner
+实际编译／五门均已完成。完整命令、原失败和七门见 [宏专题验收](../../../../evidence/correctness/compute-graph-macro-normalization/README.md)。
+产品候选仍为`026d40bcfdde389c9f69b2458b55d8157774ebda`，后续产品没有变化；P0无热成本变化，
+CPU原数学与43规则保持，不跑P1。状态按实际owner分别关闭本有限轮或恢复已活动父轮，不假关CUDA goal。

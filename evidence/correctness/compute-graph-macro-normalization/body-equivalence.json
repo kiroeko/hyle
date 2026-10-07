@@ -1,0 +1,57 @@
+{
+  "baseline": "a3e6046b053c7a40dc52c703ea049a38ec7795d5",
+  "product_candidate": "026d40bcfdde389c9f69b2458b55d8157774ebda",
+  "scope": "Every changed implementation body except the separately proven export spelling; macro truth checked by real compiler probes.",
+  "files": [
+    {
+      "path": "src/compute_provider_native/aten_cpu_provider.cc",
+      "non_preprocessor_body_sha256": "67a6f5e9b80c35b62da443e1f1673a94d3291a7c4a6d720d609e750dcc505d0d",
+      "unchanged": true
+    },
+    {
+      "path": "src/compute_provider_native/torch_cpu_program.cc",
+      "non_preprocessor_body_sha256": "a541c241a5e4477273a9fa4d34f225fe8eb129f7aa36dea0f10b84c5f7b2050d",
+      "unchanged": true
+    },
+    {
+      "path": "src/compute_provider_native/default_rules.cc",
+      "non_preprocessor_body_sha256": "d6ed2fd753f615747dc3353d6209abb8989b5568cb36d36ab4ba6837ddcc5433",
+      "unchanged": true
+    },
+    {
+      "path": "src/compute_provider_ggml/ggml_cpu_provider.cc",
+      "non_preprocessor_body_sha256": "087c12fa100c1b09a22b8002d58d0f73cfc93724c65967bf9ba5a0d75ebd45fe",
+      "unchanged": true
+    },
+    {
+      "path": "src/compute_ggml_runtime/cpu_program.cc",
+      "non_preprocessor_body_sha256": "f2dcc8d06e1f8b009d419ca3019d72c584eb5af77b6848e404e6aaacfe7a58bf",
+      "unchanged": true
+    },
+    {
+      "path": "src/compute_ggml_runtime/cpu_execution.cc",
+      "non_preprocessor_body_sha256": "5060bc2c8eb694bb3aafbb74c754ff339d10532f10779dbc46c8635ec44adff1",
+      "unchanged": true
+    },
+    {
+      "path": "src/compute_provider_ggml_cuda/ggml_cuda_provider.cc",
+      "non_preprocessor_body_sha256": "0d8bc338b688db604546dd579d763c6ba3661944860390fc92b9c6dc7b5296e2",
+      "unchanged": true
+    },
+    {
+      "path": "src/compute_provider_ggml_vulkan/native_device.cc",
+      "non_preprocessor_body_sha256": "8f49f1ec6667ada0b795835c2ed2ebca83d1ae876182fc87e74ecb74a4c1d4ad",
+      "unchanged": true
+    },
+    {
+      "path": "src/compute_provider_iree_vulkan/runtime_internal.h",
+      "non_preprocessor_body_sha256": "ec6c6792a868c1cd2713fb4e410b8fb29383bd0e7b0c79cd7b002e7f8091afe8",
+      "unchanged": true
+    },
+    {
+      "path": "include/hyle/compute/route_policy.h",
+      "non_preprocessor_body_sha256": "0e8b11e1132dd4bf8239b3a3839c1bc6ae6bc36ac3c12129270d4008c20bfcd7",
+      "unchanged": true
+    }
+  ]
+}

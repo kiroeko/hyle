@@ -1,0 +1,50 @@
+{
+  "product_candidate": "026d40bcfdde389c9f69b2458b55d8157774ebda",
+  "baseline": "a3e6046b053c7a40dc52c703ea049a38ec7795d5",
+  "test_deltas": [
+    "7c85a977",
+    "d1ea2845"
+  ],
+  "scope": "Compute/Graph macro normalization only; inherited model capability/performance limits preserved",
+  "platform_compile": [
+    "Windows MSVC x64 Debug/Release",
+    "Windows clang-cl20.1 x64 Debug/Release",
+    "Linux GCC14 x64 Debug/Release",
+    "Mac AppleClang21 ARM64 Debug/Release"
+  ],
+  "delivery": {
+    "Windows": [
+      "source",
+      "relocated static",
+      "relocated shared"
+    ],
+    "Linux": [
+      "source",
+      "relocated static",
+      "relocated shared"
+    ],
+    "Mac": [
+      "source",
+      "relocated static",
+      "relocated shared"
+    ],
+    "checks_per_consumer": 48,
+    "gpu_off_negative_space": true
+  },
+  "structure": {
+    "preprocessor_conditions": 432,
+    "cmake_conditions": 440,
+    "feature_macros": 11,
+    "unreviewed_raw_product_facts": 0,
+    "integer_fact_presence_misuse": 0,
+    "non_preprocessor_bodies_unchanged": 10
+  },
+  "performance": "P0 unchanged code/cost; no P1 and no new winner",
+  "boundaries": [
+    "No CUDA Mac qualification",
+    "No completion of pending CUDA U2/U3/U4/U5/U6",
+    "Graph and Vulkan historical performance blockers unchanged",
+    "Third-party math unchanged"
+  ],
+  "archive_sha256": "9bc42b0703050386a1c6a162a5dd89d18cac3b92a8a2dd93ebf51620367196c9"
+}

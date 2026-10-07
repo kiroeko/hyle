@@ -270,9 +270,10 @@
     },
     {
       "module": "compute",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/compute-graph-macro-normalization.md",
-      "summary": "宏规范 AUDITED：M1-M8等价目标facts/显式include/原export拼写已固定；原数学/路由/资源/限值及43 CPU规则不变；完整跨平台/宏传播验收待验。"
+      "summary": "宏规范 CANDIDATE：有限等价facts/include/export已完成三平台编译、消费者与三交付；原数学/43 CPU规则与能力限制保留，P0无新热成本；不代签CUDA剩余任务或旧Vulkan性能。",
+      "candidate": "026d40bcfdde389c9f69b2458b55d8157774ebda"
     },
     {
       "module": "graph",
@@ -367,9 +368,10 @@
     },
     {
       "module": "compute_provider_ggml",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/compute-graph-macro-normalization.md",
-      "summary": "宏规范 AUDITED：M1-M8等价目标facts/显式include/原export拼写已固定；原数学/路由/资源/限值及43 CPU规则不变；完整跨平台/宏传播验收待验。"
+      "summary": "宏规范 CANDIDATE：有限等价facts/include/export已完成三平台编译、消费者与三交付；原数学/43 CPU规则与能力限制保留，P0无新热成本；不代签CUDA剩余任务或旧Vulkan性能。",
+      "candidate": "026d40bcfdde389c9f69b2458b55d8157774ebda"
     },
     {
       "module": "graph_provider_onednn",
@@ -412,9 +414,10 @@
     },
     {
       "module": "compute_provider_native",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/compute-graph-macro-normalization.md",
-      "summary": "宏规范 AUDITED：M1-M8等价目标facts/显式include/原export拼写已固定；原数学/路由/资源/限值及43 CPU规则不变；完整跨平台/宏传播验收待验。"
+      "summary": "宏规范 CANDIDATE：有限等价facts/include/export已完成三平台编译、消费者与三交付；原数学/43 CPU规则与能力限制保留，P0无新热成本；不代签CUDA剩余任务或旧Vulkan性能。",
+      "candidate": "026d40bcfdde389c9f69b2458b55d8157774ebda"
     },
     {
       "module": "compute_sched",
@@ -560,9 +563,10 @@
     },
     {
       "module": "compute_provider_iree_vulkan",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/compute-graph-macro-normalization.md",
-      "summary": "宏规范 AUDITED：M1-M8等价目标facts/显式include/原export拼写已固定；原数学/路由/资源/限值及43 CPU规则不变；完整跨平台/宏传播验收待验。"
+      "summary": "宏规范 CANDIDATE：有限等价facts/include/export已完成三平台编译、消费者与三交付；原数学/43 CPU规则与能力限制保留，P0无新热成本；不代签CUDA剩余任务或旧Vulkan性能。",
+      "candidate": "026d40bcfdde389c9f69b2458b55d8157774ebda"
     },
     {
       "module": "compute_provider_torch_cuda",
