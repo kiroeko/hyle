@@ -111,10 +111,10 @@ TEST_P(CudaMlxPrecision, SourceF32EquationAndGroupScaleArePreservedUnderForeignT
     for(float value:result)EXPECT_NEAR(value,expected,8*std::numeric_limits<float>::epsilon()*magnitude);
   } else EXPECT_EQ(actual,expected_bytes);
   if(!affine) {
-    for(const std::uint8_t exponent:{0,143,255}) {
+    for(const int exponent:{0,143,255}) {
       SCOPED_TRACE(int(exponent));
       std::vector<std::uint8_t> codes(n*k/group,127);
-      for(std::int64_t row=0;row<n;++row)codes[row*(k/group)]=exponent;
+      for(std::int64_t row=0;row<n;++row)codes[row*(k/group)]=static_cast<std::uint8_t>(exponent);
       ASSERT_TRUE(buffers[2].view().write(bytes(codes)).ok());
       auto submitted=invocation.submit(queue,inputs,destinations);
       ASSERT_TRUE(submitted)<<submitted.error().message();
