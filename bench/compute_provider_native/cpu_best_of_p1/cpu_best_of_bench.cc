@@ -423,7 +423,7 @@ bool equal(Data &d, const std::vector<std::byte> &a,
                           : 1e-8;
     if (d.spec.kind == Kind::Norm)
       absolute = 2e-5;
-    if (d.spec.kind == Kind::MatMul) {
+    if (d.spec.kind == Kind::MatMul && type == c::DataType::kFloat32) {
       absolute = 2e-5;
       relative = 3e-5;
     }
