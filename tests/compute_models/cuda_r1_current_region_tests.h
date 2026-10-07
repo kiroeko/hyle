@@ -1,5 +1,4 @@
 #pragma once
-#include <cstdio>
 #if defined(HYLE_TEST_GRAPH_ROUTE_CUDA)
 #define HYLE_R1_SUITE CudaGraphCurrentRegions
 #else
@@ -40,28 +39,35 @@ TEST(HYLE_R1_SUITE, DsparkTargetPrefillAndFiveTokenAttentionCache) {
     // source equation the same initial bytes; prefill keeps its own full gate.
     auto draft=cpu_c4_model_branches::draft_attention(model,actual_cache,actual_cache);
     const auto source_observer=draft.observe;
+    const auto source_validator=draft.validate_intermediate;
     const auto weights=draft.preparation;
-    const auto reference_inverse=draft.replays.front().outputs[2];
+    constexpr std::size_t k=4096,n=1024;
+    // Use the independently generated source weight bank, not provider output.
+    // This original projection has sparse weights; retain only its source
+    // terms in the oracle rather than scan the whole bank on every replay.
+    std::vector<std::vector<std::pair<std::size_t,float>>> terms(model.groups*n);
+    const auto &source_weights=weights->replays.front().outputs[0];
+    for(std::size_t row=0;row<terms.size();++row)
+      for(std::size_t col=0;col<k;++col)
+        if(source_weights[row*k+col]!=0)terms[row].emplace_back(col,source_weights[row*k+col]);
     std::vector<float> inverse;
-    draft.observe=[&,source_observer,weights,reference_inverse](std::size_t port,std::span<const float> values) {
+    draft.observe=[&,source_observer](std::size_t port,std::span<const float> values) {
       if(source_observer)source_observer(port,values);
       if(port==2)inverse.assign(values.begin(),values.end());
-      if(port==3 && model.groups==16) {
-        constexpr std::size_t target=71280,k=4096,n=1024;
-        const auto token=target/(model.groups*n),expert=(target/n)%model.groups,row=target%n;
-        const auto &w=weights->replays.front().outputs[0];
-        double actual_dot=0,reference_dot=0;
-        for(std::size_t col=0;col<k;++col) {
-          const auto weight=w[(expert*n+row)*k+col];
-          const auto index=(token*model.groups+expert)*k+col;
-          actual_dot+=weight*double(inverse[index]);
-          reference_dot+=weight*double(reference_inverse[index]);
-          if(weight!=0)std::fprintf(stderr,"R1 TERM w=%g actual_x=%.9g reference_x=%.9g\n",
-              weight,inverse[index],reference_inverse[index]);
+    };
+    draft.validate_intermediate=[&,source_validator](std::size_t port,std::span<const float> values) {
+      if(port!=3)return source_validator?source_validator(port,values):false;
+      EXPECT_EQ(values.size(),std::size_t(cpu_c4_model_branches::block*model.groups*n));
+      for(std::size_t index=0;index<values.size();++index) {
+        const auto token=index/(model.groups*n),expert=(index/n)%model.groups,row=index%n;
+        double dot=0;
+        for(const auto &[col,weight]:terms[expert*n+row]) {
+          dot+=weight*double(inverse[(token*model.groups+expert)*k+col]);
         }
-        std::fprintf(stderr,"R1 DOT actual-input=%.9g reference-input=%.9g gpu-out=%.9g\n",
-            actual_dot,reference_dot,values[target]);
+        const auto expected=float(half_test::decode(half_test::encode<hyle::simd::bfloat16_t>(float(dot))));
+        EXPECT_EQ(values[index],expected)<<index;
       }
+      return true;
     };
     run_q24_semantic_fragment(std::move(draft));
     ASSERT_FALSE(::testing::Test::HasFailure());
