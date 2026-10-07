@@ -146,3 +146,15 @@ mean/rsqrt/normalization/weight乘法各显式F32，不借actual中间值替代o
 Double高精度误差对照的旧FAIL/两个probe完整保留；四percent片段门、全词表/三stage/cache反馈/原权重/输入完全不改。
 这是两probe找到的具体参考精度FIX，不增加第三次探针；一个不可变候选上完整sidecar两入口正式重验。
 若仍失败按原门保留未决，不继续改参考/阈值寻找通过。现FP16准入修复与其它已过资格独立保留。
+
+## T6–T9正式结果
+
+产品`6bf82ba8`的ARM FP16错误准入已撤；owning旧广播断言按实际拒绝迁移后通过。
+受影响23个F16合同：Direct26项中的artifact精确反例、默认metadata与23项通过；
+该批唯一仍失败sidecar作为独立未决保留，不改该旧aggregate。Graph24项受影响合同通过。
+参考候选`3c62c77b9b93f127fb8f71d265cbc89247f427c0`保留原FP32 norm边界后，
+完整Q8/BF16两sidecar Direct1项、Graph5个失败case名（过滤命中6项）全部通过，原4%门不变。
+两probe只归因不签资格；原Direct157/159与Graph171/176的成功格复用，所有旧失败/缺include编译错误仍保留。
+[完整收据/原失败/两probe/正式纠正](../../../../evidence/correctness/cpu-final-f3/README.md)已归档。
+当前源代码Compute+Graph61,246行/251文件；4行有效cold准入胶水，自研数学新增0。
+新ARM准入修复的三交付增量、Windows全批和Linux当前安装仍待完成，F3不关闭。

@@ -81,3 +81,30 @@ build or duplicate full Direct run was performed. WSL is a correctness environme
 and not an independent physical formal performance machine. Current installed
 Linux journeys, remaining Mac model branches and the current full Windows route
 batch/delivery audit are still pending.
+
+## Mac remaining model branches and precision repair
+
+[Precision/composition receipt](mac-precision-composition-receipt.json) and
+[raw failures, two bounded probes and final qualifications](mac-precision-composition.zip)
+record the remaining Direct 159 / Graph 176 cases. Initially 157 / 171 pass. The
+actual ARM half-dot path accumulates in F16 despite the requested F32 metadata;
+the product now declines only ARM plain F16 MatMul so the qualified original
+ATen F32 program handles ordinary calls. Packed codecs and x86 remain unchanged.
+Owning checks and both entries' affected 23 F16 contracts qualify this admission.
+
+The Q8 sidecar's two bounded probes locate error growth from its first projection
+through the three stages. The independent norm oracle used Double intermediate
+arithmetic where the original model operation crosses explicit F32 square,
+mean/rsqrt and multiplication boundaries before Q8 encoding. Test candidate
+`3c62c77b9b93f127fb8f71d265cbc89247f427c0` retains those original boundaries and
+passes the complete Q8/BF16 sidecars in both entries under the unchanged **4%**
+whole-fragment gate. Prefix stages still have independent oracles; internal
+reference/state advances independently and actual state feedback/reset remain.
+
+All original aggregate failures and diagnostic-only runs remain in the archive.
+The final Graph targeted run also passes the migrated provider/fusion assertions
+and full half-storage vocabulary head. Successful earlier cases are reused;
+the aggregate failures are not rewritten as full passing reruns. The current
+unified implementation is **61,246 lines / 251 files**. New ARM delivery-delta,
+Windows full-route and Linux current installed checks remain pending; no new
+performance winner or goal closure is claimed.

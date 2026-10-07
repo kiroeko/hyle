@@ -1,0 +1,50 @@
+{
+  "product_candidate": "6bf82ba8",
+  "test_candidate": "3c62c77b9b93f127fb8f71d265cbc89247f427c0",
+  "fixes": [
+    "ARM plain F16 ggml dot uses actual half accumulation; cold admission declines, qualified ATen F32 math handles ordinary calls",
+    "Former ggml-only provider/fusion assertions migrate to actual valid provider boundaries",
+    "Sidecar independent oracle retains same actual validated prefix input and original FP32 norm boundaries; original 4% gate preserved"
+  ],
+  "gates": {
+    "mac-remaining-direct.xml": {
+      "tests": 159,
+      "failures": 2,
+      "skips": 0
+    },
+    "mac-remaining-graph-first.xml": {
+      "tests": 176,
+      "failures": 5,
+      "skips": 0
+    },
+    "mac-precision-direct.xml": {
+      "tests": 26,
+      "failures": 1,
+      "skips": 0
+    },
+    "mac-precision-graph-affected.xml": {
+      "tests": 24,
+      "failures": 0,
+      "skips": 0
+    },
+    "mac-final-numeric-direct.xml": {
+      "tests": 1,
+      "failures": 0,
+      "skips": 0
+    },
+    "mac-final-numeric-graph.xml": {
+      "tests": 6,
+      "failures": 0,
+      "skips": 0
+    }
+  },
+  "composition": "Direct remaining 157 original PASS plus artifact exact correction and final complete sidecar PASS. Graph remaining 171 original PASS plus all five failed case names corrected in six targeted PASS (one extra matching vocabulary case). Prior C5 unaffected proof reused; affected F16 23 IDs qualified per entry.",
+  "diagnostics": "Exactly two bounded probes, neither counted as qualification; canonical header restored before final batch. Raw Double-oracle failures retained.",
+  "limits": [
+    "All-current three-delivery delta requalification pending",
+    "Windows current full batch and Linux installed journeys pending",
+    "No new P1 or performance WIN"
+  ],
+  "archive_sha256": "d991272b5a116a804902685286223d84d35f5e9372a0adbccdfe8802c47f3981",
+  "archive_bytes": 82825
+}
