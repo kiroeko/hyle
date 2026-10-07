@@ -416,14 +416,9 @@
     },
     {
       "module": "compute_backend_cuda",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/build/cuda-sdk-runtime-staging-v1.md",
-      "summary": "D5-A5 CLOSED：系统CUDA DLL身份与Provider私有runtime导出已补齐；三交付24项、459项模块测试（含一次旧名单断言纠正）、3组独立头通过。仅CMake修复，P0无热路径变化；不代签D5-A6。",
-      "candidate": "9273bc71017a1febb69db240b6ea8970b88dd77c",
-      "performance": {
-        "tier": "P0",
-        "evidence": "evidence/correctness/llm-moe-d5-real-fragments/cuda-delivery/README.md"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/cuda-final-u2-build-contract.md",
+      "summary": "CUDA U2 B4 SCOPED：普通 compute-cuda 实际配置证明局部默认 arch 未传播，ggml 自行扩大编译组合；仅定界共同默认/显式覆盖/OFF 架构传播，不改变 CPU 数学或 GPU runtime 资格。"
     },
     {
       "module": "compute_provider_native",
@@ -550,14 +545,9 @@
     },
     {
       "module": "compute_ggml_runtime",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/compute/cpu-final-f1-build-contract.md",
-      "summary": "CPU最终F1 CLOSED：recipe/软件资格、同core原CPU端口、预编译程序与安全ISA/重放、逐合同成熟默认、oneDNN3.13.4和三平台单/具名混合三交付已验；原失败/skip保留。未签新的WIN，F4/F5/F6及GPU旧状态不变。",
-      "candidate": "560eb1d2332bb69ee5148e899b000fae85d80074",
-      "performance": {
-        "tier": "P0",
-        "evidence": "docs/implementation/tasks/compute/cpu-final-f1-build-contract.md"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/cuda-final-u2-build-contract.md",
+      "summary": "CUDA U2 B4 SCOPED：普通 compute-cuda 实际配置证明局部默认 arch 未传播，ggml 自行扩大编译组合；仅定界共同默认/显式覆盖/OFF 架构传播，不改变 CPU 数学或 GPU runtime 资格。"
     },
     {
       "module": "compute_provider_ggml_cuda",

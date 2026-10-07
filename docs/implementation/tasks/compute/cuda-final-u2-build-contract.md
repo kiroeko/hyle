@@ -63,3 +63,18 @@ Toolkit 路径、内部宏、fastmath、全局 CUDA flags 或用户 performance 
 
 本子批预声明：CMake list-presets／JSON 实际投影、docs／closure／diff；实际 configure/build 与
 source/static/shared loader 随 B3/U3 稳定候选集中运行，未运行保持 UNVERIFIED。此低风险编辑不新增镜像测试。
+
+## B4 架构传播子批 SCOPED
+
+B1 产品候选 `f1937b272c60d29e4027e262feeb6942767b4fcf` 的实际普通 preset configure 通过，
+Toolkit13.3.73／MSVC19.50，CPU／Apple／Vulkan／tests／bench 均 OFF，CUDA ON。
+但 ggml 日志实际选了 `75-virtual;80-virtual;86-real;89-real;90-virtual;120a-real;121a-real`，
+没有继承 backend 的 `80;89-real`。日志与 receipt 保留在 `.scratch/validation/cuda-final-u2/preset-configure/`。
+backend/provider 子目录里的普通变量默认不传播给 ggml 所在兄弟目录，导致同一路线没有统一目标架构，
+并扩大原版 CUDA 源文件的编译组合。用户指定架构才避开此问题，是具体构建接缝反例。
+
+compute_backend_cuda／compute_ggml_runtime 由这项公开交付／编译范围变化依法 CLOSED→SCOPED，
+绑定本卡**仅 B4 架构传播子批**，不重开 CPU 数学／资格、不借此改 resource overlay 或其它 GPU core。
+预算一次源账单、一次 default／explicit／CUDA-OFF 参数化配置检查；运行资格及三交付集中后验。
+允许方案待 AUDITED 冻结：选中 CUDA SDK 的配置入口向共同父作用域传播现有 `80;89-real` 默认，
+保留用户 `CMAKE_CUDA_ARCHITECTURES`／`CUDAARCHS` 选择；CUDA OFF 不设置、不探测。
