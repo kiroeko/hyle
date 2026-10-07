@@ -90,13 +90,16 @@ TEST_P(CudaOriginalAllocationFailure, CompletionReportsOriginalOomAndRouteRecove
   ASSERT_TRUE(g::cuda::prepare_replay(invocation,queue).ok());
   {
     OriginalAllocatorLimit limit;
-    auto submitted = graph ? invocation.submit(queue) : direct.submit(queue,bindings,destinations);
-    ASSERT_TRUE(submitted) << submitted.error().message();
     // A possibly accepted library prefix completes before its translated
     // error is observed. Tensor/Queue owners stay live through that terminal.
-    const auto status = submitted->wait();
-    EXPECT_TRUE(status.IsResourceExhausted()) << status.message();
-    EXPECT_NE(status.message().find("out of memory"),std::string_view::npos);
+    const auto check_failure = [](auto submitted) {
+      ASSERT_TRUE(submitted) << submitted.error().message();
+      const auto status = submitted->wait();
+      EXPECT_TRUE(status.IsResourceExhausted()) << status.message();
+      EXPECT_NE(status.message().find("out of memory"),std::string_view::npos);
+    };
+    if (graph) check_failure(invocation.submit(queue));
+    else check_failure(direct.submit(queue,bindings,destinations));
   }
   // Do not consume failed output. Fresh invocation state remains usable after
   // restoring the original allocator limit; the same Context is still live.
