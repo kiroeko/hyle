@@ -53,4 +53,18 @@ Copy 按实际 strides materialize，不能用 View 代替。Native workspace �
 24/24 数值对照通过；两真实路线各四种执行/分配顺序的 fresh A/A 全部满足既有资格门。
 完整原始前置与 loaded `.text`/DLL/SDK 身份固定在 benchmark 的 `preflight.json`。
 Copy 的实际成熟 peer 是 oneDNN；F32 RMSNorm 是 oneDNN，F16/BF16 RMSNorm 与四个 SDPA 格是新版 ggml。
-前置不是 A/B 性能结果；唯一完整 P1 尚待运行。无产品修改、无新优选规则。
+前置不是 A/B 性能结果。无产品修改、无新优选规则。
+
+## 本轮复比完成
+
+[实际结果与原始证据](../../../../evidence/performance/cpu-three-operator-current/README.md)：
+唯一595.578秒P1、60 product/30 controls，资格QUALIFIED，18 WIN/6 LOSS；全部 controls/validators/manifest verify通过。
+performance聚合FAIL是真实六格劣势，不是仪器或correctness FAIL，也不由此重开全CPU施工。
+Copy dense 有完整调用优势，strided两格输；RMS七格赢、一格F32 rows32输。
+SDPA三格输、一格D256/Q1/causal赢，但终审发现原库F32 fused尚未接入：当前WIN只对已交付组合接法成立，
+不能签最终KEEP_WIN。原版支持源码锚点和后续有限资格需求见证据，未跑fused不写PASS/更快。
+本次用户要求的三个当前路径复比已完成，源码去留/新规则未实施；SIMD、产品registry与GPU状态保持。
+统一脚本实际统计Compute+Graph实现61,499行/250文件，self_without_tests156,726行；LOC在原始归档。
+docs（777 Markdown/3458 links）、closure（57 components）、selector（docs+closure/130 skipped）与diff check通过。
+原始归档含真正benchmark/control exe、raw、CI、verify和身份；SHA256核对后清理两临时消费者583,395,232 bytes
+（约556MiB），清理本轮新建disposable peer；原SDK/cache及不相关工作树保留，详见证据cleanup.json。
