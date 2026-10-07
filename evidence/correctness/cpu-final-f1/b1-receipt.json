@@ -1,0 +1,28 @@
+{
+  "kind": "B1 partial qualification; not F1 terminal",
+  "tested_product": "adc794aa3384499d23b6c9b054570b017b236fae",
+  "later_recipe_version_fix": "688d28f1",
+  "config_cases": 20,
+  "windows_shared_default_cases": 24,
+  "native_win_labels": 0,
+  "mature_regions": 24,
+  "changed_replays": 2,
+  "mismatch_cases": 9,
+  "dynamic_concurrency_close": "PASS",
+  "p1": "NOT_RUN; no new mathematics or winner",
+  "archive_sha256": "6de8b505d3edfcebfe9ae161b3e83ea1d28fa27d9677949da2a4da4729c84ee7",
+  "archive_bytes": 27976,
+  "remaining": [
+    "B2 mixed SDK",
+    "B3 precompiled contract",
+    "B4 reasonable defaults",
+    "B5 oneDNN upgrade qualification",
+    "Linux/macOS and final delivery"
+  ],
+  "observed_artifact_sha256_before_b5_link": {
+    "hyle_compute_provider_native.dll": "6967183e845173f93e8162449c9382e99d78c5251f7a9f00da4788b05144c913",
+    "f1_cpu_consumer.exe": "aaac5434a783be29ab66d553d05c6f0191dcb092c08f39a31e064a3d5b124b70",
+    "f1_dynamic_consumer.exe": "5199d44654d3ed95a26fa7a985bf5a078c94ec2a171157ac9cff48222fc8944c"
+  },
+  "artifact_identity_note": "Hashes were observed during later B5 build; B1 test provenance is its immutable candidate and raw configure/build/run logs, not a fresh replay of these hashes."
+}

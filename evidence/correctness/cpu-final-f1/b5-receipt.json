@@ -1,0 +1,35 @@
+{
+  "kind": "B5 Windows source/shared partial qualification; not all-platform or all-delivery verdict",
+  "product_candidate": "688d28f15361ed33de1c528fd865377c1742749c",
+  "corrected_test_candidate": "d2ffda17793cfef84eb9be2a29652aee8eb198f5",
+  "upstream": {
+    "version": "v3.13.4",
+    "commit": "c531fe1a5cd631b7f60277cdf6675c588cadbc28",
+    "archive_url": "https://codeload.github.com/uxlfoundation/oneDNN/tar.gz/c531fe1a5cd631b7f60277cdf6675c588cadbc28",
+    "archive_sha256": "ac75d4a771492ff8e5996f0daace71de7d40a23c2527705bb8dbca60a17f7ba9",
+    "archive_bytes": 14301529,
+    "source": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\cpu-final-f1\\onednn-upgrade\\source\\oneDNN-c531fe1a5cd631b7f60277cdf6675c588cadbc28",
+    "git_tree": "65c08c66fb85c5c68f4f04807b906514af420b59",
+    "expanded_tree_sha256": "5c0c833df87c71a31ac82489e56650f0197fa38f3dec85a9988a404ec532fdba"
+  },
+  "owning_ctest_groups": 4,
+  "owning_testcases": 4,
+  "owning_failures": 0,
+  "ordinary_direct_graph_cases": 24,
+  "changed_replays": 2,
+  "dynamic_concurrency_close": "PASS",
+  "original_owning_failure": "retired Native MatMul expectation; original failure retained",
+  "p1": "NOT_RUN; this batch upgrades mature carrier, not a winner comparison",
+  "archive_sha256": "40fd03ca773f8fbbd0f193a6af8811fd79e0970abd39a16de5288733d4f01109",
+  "archive_bytes": 51559,
+  "artifact_sha256": {
+    "hyle_compute_provider_onednn.dll": "29f43444739f9b3dd8869deb0ce020cfc390cd310c1fdf9f666d9e5acf2d43c0",
+    "hyle_graph_provider_onednn.dll": "90b7d2bd42d44e972e9e13a251aa8e3eb3e7c026a4cce20e64eff3c0bb1a707d",
+    "f1_cpu_consumer.exe": "9af764570e7bac0293481f860ef8e55bfeb73e2dd616a494f57c6608d5f00bfe"
+  },
+  "remaining": [
+    "Linux/macOS",
+    "installed static/shared updated SDK",
+    "F1 B2-B4"
+  ]
+}

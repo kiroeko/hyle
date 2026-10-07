@@ -33,7 +33,7 @@ B2/B3稳定后集中三交付/selected package/相应CPU直接消费者。P0，�
 docs/state只closure/docs；未运行不签PASS。涉及公共package seam再定向选择，不能扩大治理工具。
 完成后CANDIDATE→七门CLOSED；若B2依赖未接齐，保留实际未完成，不能以B1已修关闭本包。
 
-当前：SCOPED，B1–B4均待AUDITED；产品改动0，新验收0。
+启动时：SCOPED，B1–B4待AUDITED；产品改动0，新验收0。后续子批实际进展见下节。
 
 ## B1子批AUDITED：性能recipe不匹配撤资格
 
@@ -51,7 +51,7 @@ macro和`qualified_default_environment()`未核对flags/IPO/linkage，构成明�
 用户明确要求升级oneDNN，真实owner compute_provider_onednn、graph_provider_onednn绑定本卡；
 原v3.13.2及硬编码identity不能给新候选签资格。只审计一个官方最新稳定候选及当前原threadpool/BRGEMM接缝，
 最多一批API/overlay纠正，不转为自研优化或全库升级；新版本先完成接线/正确性/资源/三交付再进入F4。
-Native B1资格门继续只按已测peer，升级后不自动携带旧17/187 WIN。当前B5未AUDITED，不改其产品。
+Native B1资格门继续只按已测peer，升级后不自动携带旧17/187 WIN。此为B5启动SCOPED事实，后续审计见下节。
 
 ## B5子批AUDITED：v3.13.4
 
@@ -77,3 +77,13 @@ B5 selector把中央lock文件变化展开为全库superset；原计划保留，
 本包执行oneDNN/Native/CPU Direct/Graph消费者、component/lock与Compute/Graph package；
 没有oneDNN链接边、没有实际产品/依赖变化的IO/Container等非CPU目标保留语义不适用原因，
 不重编无关模块、不改selector核心、不把未运行superset写PASS。
+
+## B5 Windows子批已执行（非整包关闭）
+
+产品`688d28f15361ed33de1c528fd865377c1742749c`，oneDNN3.13.4集中低并行build454.672秒，
+原四组owning有一项旧Native MatMul后备断言失败，原记录保留；未发现新版数学失败。
+测试`d2ffda17793cfef84eb9be2a29652aee8eb198f5`改为实际ATen转置MatMul两次变输入；
+显式裁剪时要求拒绝，不能复活自研。修正build1.875秒，四组owning、24格普通Direct/Graph、
+动态物化/并发/close均通过。没有P1；Linux/macOS与最终安装SDK仍待验。
+归档见[F1部分证据](../../../../evidence/correctness/cpu-final-f1/README.md)，不能解释为F1完成。
+统一Compute+Graph实现61,084行/249文件，不含tests/vendor/bench，新增自研数学0。
