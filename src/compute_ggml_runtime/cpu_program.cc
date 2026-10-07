@@ -1,6 +1,7 @@
 #include "cpu_program.h"
+#include "hyle/core/environment.h"
 
-#if defined(HYLE_GGML_CPU_AVX2_PROGRAM) && defined(_WIN32)
+#if defined(HYLE_GGML_CPU_AVX2_PROGRAM) && HYLE_OS_WINDOWS
 #ifndef NOMINMAX
 #define NOMINMAX
 #endif
@@ -25,7 +26,7 @@ const CpuProgram kBaseline{
 #if defined(HYLE_GGML_CPU_AVX2_PROGRAM)
 Result<const CpuProgram *> load_avx2_program() noexcept {
   using Entry = const CpuProgram *(*)() noexcept;
-#if defined(_WIN32)
+#if HYLE_OS_WINDOWS
   const auto library = LoadLibraryExA(HYLE_GGML_CPU_PROGRAM_LIBRARY, nullptr,
                                     LOAD_LIBRARY_SEARCH_DEFAULT_DIRS);
   if (library == nullptr)
@@ -48,7 +49,7 @@ Result<const CpuProgram *> load_avx2_program() noexcept {
       program->plan_bytes != sizeof(ggml_cplan) || !program->initialize ||
       !program->create_pool || !program->plan || !program->compute ||
       !program->free_pool) {
-#if defined(_WIN32)
+#if HYLE_OS_WINDOWS
     FreeLibrary(library);
 #else
     dlclose(library);

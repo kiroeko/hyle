@@ -1,4 +1,5 @@
 #include "program.h"
+#include "hyle/core/environment.h"
 
 #include <algorithm>
 #include <array>
@@ -35,7 +36,7 @@ inline constexpr RouteSelector kHardwareRule{
     .environment = kHardwarePredicates};
 
 bool default_cublas_precision() noexcept {
-#if defined(_WIN32)
+#if HYLE_OS_WINDOWS
   std::size_t bytes = 0;
   return ::getenv_s(&bytes, nullptr, 0, "GGML_CUDA_CUBLAS_COMPUTE_TYPE") == 0 &&
          bytes == 0;
@@ -368,7 +369,7 @@ Status create_context(const Provider &provider, Device device, void *backend,
   cuda::detail::ScopedPrimaryContext scope(primary);
   HYLE_RETURN_IF_ERROR(scope.status());
   try {
-#if defined(_WIN32)
+#if HYLE_OS_WINDOWS
     // This DLL embeds its own ggml copy. MetadataArena initializes a separate
     // copy; native graph-cache timestamps need this copy's thread-safe timer.
     ggml_time_init();

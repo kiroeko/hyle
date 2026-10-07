@@ -1,4 +1,5 @@
 #include "native_device.h"
+#include "hyle/core/environment.h"
 
 #include <exception>
 #include <new>
@@ -59,9 +60,9 @@ void release(void *token) noexcept {
   delete static_cast<mem::QuotaAllocator::Reservation *>(token);
 }
 const char *default_loader() noexcept {
-#if defined(_WIN32)
+#if HYLE_OS_WINDOWS
   return "vulkan-1.dll";
-#elif defined(__APPLE__)
+#elif HYLE_OS_MACOS
   return "libvulkan.1.dylib";
 #else
   return "libvulkan.so.1";

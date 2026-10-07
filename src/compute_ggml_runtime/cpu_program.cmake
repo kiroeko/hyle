@@ -16,6 +16,7 @@ set_target_properties(hyle_ggml_cpu_avx2 PROPERTIES
   C_STANDARD 11 CXX_STANDARD 17 POSITION_INDEPENDENT_CODE ON
   C_VISIBILITY_PRESET hidden CXX_VISIBILITY_PRESET hidden VISIBILITY_INLINES_HIDDEN ON)
 target_include_directories(hyle_ggml_cpu_avx2 PRIVATE
+  "${HYLE_SOURCE_DIR}/include"
   "$<TARGET_PROPERTY:ggml-cpu,INCLUDE_DIRECTORIES>")
 target_compile_definitions(hyle_ggml_cpu_avx2 PRIVATE
   "$<TARGET_PROPERTY:ggml-cpu,COMPILE_DEFINITIONS>"

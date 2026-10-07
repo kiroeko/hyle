@@ -1,9 +1,10 @@
 #include "hyle/compute/providers/native.h"
+#include "hyle/core/environment.h"
 
 #include "../compute/provider_internal.h"
 
 #if defined(HYLE_COMPUTE_TORCH_CPU)
-#if defined(_MSC_VER)
+#if HYLE_COMPILER_MSVC || HYLE_COMPILER_CLANG_CL
 #pragma warning(push)
 #pragma warning(disable : 4702)
 #endif
@@ -1067,7 +1068,7 @@ Provider provider() noexcept {
   return detail::ProviderAccess::make(&kProviderVTable, std::uint8_t{0});
 }
 } // namespace hyle::compute::aten_cpu
-#if defined(_MSC_VER)
+#if HYLE_COMPILER_MSVC || HYLE_COMPILER_CLANG_CL
 #pragma warning(pop)
 #endif
 #else

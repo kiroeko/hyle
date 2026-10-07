@@ -1,4 +1,5 @@
 #include "program.h"
+#include "hyle/core/environment.h"
 #include "standard_index.h"
 
 #include <algorithm>
@@ -1444,7 +1445,7 @@ bool supports(void *context, Operation operation,
            output.data_type() == inputs[0].data_type();
   if (const auto *matmul = operation.get_if<MatMul>()) {
     const bool quantized_rhs = native_quantized(inputs[1]);
-#if defined(__aarch64__) || defined(_M_ARM64)
+#if HYLE_ARCH_ARM64
     // The locked ARM half dot accumulates with vfmaq_f16/vaddq_f16.
     // Its precision metadata does not widen that kernel. Keep the F32
     // contract by letting a qualified mature provider handle this domain.

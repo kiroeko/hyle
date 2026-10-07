@@ -1,4 +1,5 @@
 #pragma once
+#include "hyle/core/environment.h"
 
 #include <cstddef>
 #include <cstdint>
@@ -28,11 +29,11 @@ enum class NativeRoute : std::uint8_t {
   kVulkan,
 };
 
-#if defined(_WIN32)
+#if HYLE_OS_WINDOWS
 inline constexpr RoutePlatform kBuildRoutePlatform = RoutePlatform::kWindows;
-#elif defined(__APPLE__)
+#elif HYLE_OS_MACOS
 inline constexpr RoutePlatform kBuildRoutePlatform = RoutePlatform::kMacOS;
-#elif defined(__linux__)
+#elif HYLE_OS_LINUX
 inline constexpr RoutePlatform kBuildRoutePlatform = RoutePlatform::kLinux;
 #else
 inline constexpr RoutePlatform kBuildRoutePlatform = RoutePlatform::kUnknown;

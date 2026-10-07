@@ -1,4 +1,5 @@
 #pragma once
+#include "hyle/core/environment.h"
 
 #include <array>
 #include <atomic>
@@ -10,7 +11,7 @@
 
 // Original C headers use C99 aggregate initializers accepted by MSVC. Keep
 // this vendor-specific warning boundary private to the provider implementation.
-#if defined(_MSC_VER)
+#if HYLE_COMPILER_MSVC || HYLE_COMPILER_CLANG_CL
 #pragma warning(push, 0)
 #pragma warning(disable : 4576)
 #endif
@@ -22,7 +23,7 @@
 #include "iree/modules/hal/module.h"
 #include "iree/runtime/api.h"
 #include "iree/vm/bytecode/module.h"
-#if defined(_MSC_VER)
+#if HYLE_COMPILER_MSVC || HYLE_COMPILER_CLANG_CL
 #pragma warning(pop)
 #endif
 

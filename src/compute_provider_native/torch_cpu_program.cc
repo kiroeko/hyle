@@ -1,6 +1,7 @@
 #include "torch_cpu_program.h"
+#include "hyle/core/environment.h"
 
-#if defined(_MSC_VER)
+#if HYLE_COMPILER_MSVC || HYLE_COMPILER_CLANG_CL
 // c10 2.8 irange's inlined iterator produces C4702 under MSVC /O2, even with
 // SYSTEM headers. Keep this SDK diagnostic local to its adapter translation unit.
 #pragma warning(push)
@@ -464,6 +465,6 @@ ProviderPrepareOutcome prepare_torch_cpu(const detail::ProviderPrepareRequest &r
 }
 } // namespace hyle::compute::native::internal
 
-#if defined(_MSC_VER)
+#if HYLE_COMPILER_MSVC || HYLE_COMPILER_CLANG_CL
 #pragma warning(pop)
 #endif

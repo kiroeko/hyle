@@ -10,6 +10,12 @@
 namespace {
 using namespace hyle::compute;
 
+static_assert(HYLE_OS_WINDOWS + HYLE_OS_LINUX + HYLE_OS_MACOS + HYLE_OS_UNKNOWN == 1);
+static_assert(kBuildRoutePlatform ==
+              (HYLE_OS_WINDOWS ? RoutePlatform::kWindows :
+               HYLE_OS_LINUX ? RoutePlatform::kLinux :
+               HYLE_OS_MACOS ? RoutePlatform::kMacOS : RoutePlatform::kUnknown));
+
 inline constexpr auto kProfile = workload_test::kModel;
 inline constexpr ProviderIdentity kProvider{
     {0x524f555445544553ULL, 1}, "route-test", "7.2"};

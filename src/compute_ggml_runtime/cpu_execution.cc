@@ -1,4 +1,5 @@
 #include "cpu_execution.h"
+#include "hyle/core/environment.h"
 #include "cpu_program.h"
 
 #include <limits>
@@ -31,7 +32,7 @@ Result<CpuExecution> CpuExecution::prepare(ggml_cgraph *graph, int threads,
   if (pool == nullptr) {
     if (native_error == 0)
       return std::unexpected(Status::ResourceExhausted("ggml CPU pool"));
-#if defined(_WIN32)
+#if HYLE_OS_WINDOWS
     return std::unexpected(status_from_win32(
         static_cast<std::uint32_t>(native_error), "ggml CPU pool"));
 #else
