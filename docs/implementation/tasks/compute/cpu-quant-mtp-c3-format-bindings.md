@@ -136,6 +136,17 @@ CPU三owner已在完成有限格式/资源/交付与精度尾项后交接C4 AUDI
 
 ## MLX 有限审计与 N4–N6 冻结
 
+### G3具名Linux编译尾项：原索引角色条件加括号
+
+2026-10-07 CPU最终F1的Linux mixed实际编译在`tensor_program.cc:282–284`失败：
+GCC14 `-Werror=parentheses`拒绝RoPE/Gather/GroupedMatMul的原整数输入角色条件。
+owner compute_provider_ggml_cuda 当前仍AUDITED，本补充只将G3公共enum消费边界的Linux编译反例定界。
+有限FIX只给三个`pointer && index`合取各加括号，保留原C++优先级/短路/准入值；
+不关Werror、不改变GPU格式、算子数学、资源、公开API或热成本，不恢复GPU性能队列。
+源码语义由原`&&`高于`||`及三支逐项对账证明；一次Linux增量compile、CPU mixed既定40格/资源、
+四个既有GPU原数学/新格式拒绝回归。原425步编译失败日志保留，成功依赖复用，不重跑已合格P1。
+F1的CPU产品候选不因此改变；此GPU等价语法delta单独记录到实际验证输入，不签全部GPU或C3关闭。
+
 固定MLX `2b2bb49790158ecd008d1685c94e3ef119792a00`，原`ops.cpp`与
 `backend/cpu/quantized.cpp`、QuantizedEmbedding源码已读取。实际制品需要affine4/group64、
 mxfp4/group32、mxfp8/group32；172份rank3压缩权重涉及专家或分组projection，不能全库解包。
