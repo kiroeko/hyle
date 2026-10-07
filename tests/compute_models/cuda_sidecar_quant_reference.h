@@ -7,6 +7,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <cstdio>
 #include <span>
 #include <stdexcept>
 #include <vector>
@@ -21,6 +22,11 @@ namespace cuda_sidecar_quant_reference {
 class Backend final {
 public:
   Backend():value_(ggml_backend_cuda_init(0)) {
+    // Preserve a fatal source diagnostic even if another runtime has installed
+    // an abort callback. This is a test-process hook, not product recovery.
+    ggml_set_abort_callback([](const char *message) {
+      std::fprintf(stderr,"SIDE_REFERENCE_GGML_ABORT: %s\n",message);std::fflush(stderr);
+    });
     if(!value_ || !ggml_backend_is_cuda(value_))
       throw std::runtime_error("sidecar reference requires the original CUDA backend");
   }

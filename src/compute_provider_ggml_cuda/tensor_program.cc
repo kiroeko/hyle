@@ -118,13 +118,16 @@ bool native_matmul_rhs(const TensorDesc &description) noexcept {
   return physical && physical->is_dense();
 }
 bool representable(const TensorDesc &description,
-                   bool integer_concat = false) noexcept {
+                   bool integer_concat = false,
+                   bool native_embedding_source = false) noexcept {
   const auto count = description.element_count();
   const auto bytes = description.required_bytes();
   // Native kernels use int element counts and unsigned 32-bit byte strides.
   // Leave room for rounded launch sizes and FP32 conversion intermediates.
+  const auto element_limit = native_embedding_source ? std::size_t(INT32_MAX - 1024)
+      : std::size_t(INT32_MAX - 1024) / sizeof(float);
   if (!description.valid() || !count || !bytes || *count == 0 ||
-      *count > (INT32_MAX - 1024) / sizeof(float) || *bytes > INT32_MAX ||
+      *count > element_limit || *bytes > INT32_MAX ||
       !(floating(description.data_type()) ||
         (integer_concat && description.is_dense() &&
          description.data_type() == DataType::kInt32)))
@@ -305,7 +308,8 @@ bool tensor_operation_supports(Operation operation,
       }))
     return false;
   for (std::size_t i = 0; i < inputs.size(); ++i)
-    if (!representable(inputs[i], integer_concat) &&
+    if (!representable(inputs[i], integer_concat,
+            i == 0 && operation.get_if<Gather>() && native_embedding_table(inputs[i])) &&
         !(((operation.get_if<RoPE>() && i == 1) ||
            (operation.get_if<Gather>() && i == 1) ||
            (operation.custom_as<model_ops::GroupedMatMul>() && i == 2)) &&
