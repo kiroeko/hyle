@@ -1,0 +1,14 @@
+[
+  {
+    "path": ".scratch\\validation\\cpu-final-f1\\runtime-walk-old-trace.json",
+    "bytes": 84841318,
+    "sha256": "fde74efec67d7b2d8be148a5960d2fa6a215365ff2d0a9baf85bf3eb081e67f3",
+    "archive": "trace.zip"
+  },
+  {
+    "path": ".scratch\\validation\\cpu-final-f1\\runtime-walk-new-trace.json",
+    "bytes": 799878,
+    "sha256": "c87f972697bbc937bf381a0b5fd9bb0a9e43c3ce9bfe79dce04289a791ebd644",
+    "archive": "trace.zip"
+  }
+]

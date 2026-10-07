@@ -56,3 +56,14 @@ T5只修测试组合：上游mHC仍独立reference、原误差与实际state反�
 独立oracle消费相同observed上游f32值。没有阈值放宽、不换dtype、不预计算actual输入、不删除分支/反馈/全head。
 Float32允许的实现误差不承诺跨BF16舍入阈值后与另一reference bit-identical；这是逐精度边界组合验收。
 单case纠正重验+Graph全部C5首次验；Direct其它652复用实际通过XML，原aggregate FAIL不重写PASS。
+
+## 当前实际验收（shared/source部分）
+
+Windows不可变产品`42898c37ef90005944b73f4bf174f9b7f1070550`前向同步至Air，
+CPU配置中Apple/CUDA/Vulkan关闭；managed原ARM64 SDK身份/版本与loader修正通过。
+原Provider owning组通过，普通Direct12/Graph11均无skip；本地Qwen原权重投影fixture已绑定。
+C5 Direct原652项通过，T5候选`6359804abc6e0543f3fef9a4b6b622f01a8b98db`具名单case完整head重验通过；
+Graph全部653项首次运行通过、无skip。原Direct aggregate FAIL及诊断边界保留。
+[原日志/XML/来源与receipt](../../../../evidence/correctness/cpu-final-f3/README.md)归档，不改原误差门。
+installed static/shared/搬移、Linux当前版本及其它完整旅程仍待运行，本包不关闭、不签新性能WIN。
+统一Compute+Graph实现61,242行/251文件，新增自研数学0。

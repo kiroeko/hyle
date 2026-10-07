@@ -1,0 +1,12 @@
+{
+  "candidate": "b2ad8084b4fcc996301e45426413817e62c27b8f",
+  "prior_negative": "FAIL retained; layout domain bypassed the existing qualified-format mapping",
+  "corrected": {
+    "tests": 25,
+    "failures": 0,
+    "skips": 1
+  },
+  "scope": "Original Vulkan regressions plus eleven CPU-format MatMul and GroupedMatMul explicit rejection; no added GPU format or P1 qualification",
+  "archive_sha256": "a081ee5b076aff33ca971b54eea41acedd85f84f6773dc2fd27e73e7df0d98e5",
+  "archive_bytes": 25004
+}

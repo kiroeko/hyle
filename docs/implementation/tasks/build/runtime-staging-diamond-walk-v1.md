@@ -14,3 +14,11 @@
 - 预算：一批函数修正/一批定向纠正；只修线性遍历并保留条件，不扩第二套依赖图/构建系统。
 
 允许停止已核对exe/argv的本轮configure以使用修正，原中断保留；不因观察超时重启其它任务。
+
+## 已执行的工具结果
+
+同一十层菱形图由4093次路径遍历减至41次target/condition访问，资产集合仍为一个；
+Debug/Release的条件、重复、wrapper、alias、循环与独立collect检查通过。
+真实CPU+Vulkan configure52.297秒通过，原976.375秒中断仍不签PASS。
+[原始trace与receipt](../../../../evidence/correctness/runtime-staging-diamond/README.md)已归档。
+本页不签CPU三交付或Darwin loader资格，owner仍只负责这项有界构建工具纠正。

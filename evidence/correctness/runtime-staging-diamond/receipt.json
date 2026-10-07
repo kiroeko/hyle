@@ -1,0 +1,11 @@
+{
+  "kind": "Runtime graph collection tool correctness/P0, not compute or P1 verdict",
+  "old_invocations": 4093,
+  "new_invocations": 41,
+  "unique_assets": 1,
+  "negative_contracts": "Debug/Release diamond, nested literal wrappers, duplicate links, alias, false/config edges, cycles and independent collections passed",
+  "real_mixed_configure_seconds": 52.297,
+  "prior_owned_configure": "Stopped after reproduced traversal defect at 976.375s, not PASS",
+  "archive_sha256": "2acc054955a4278bc114aaf5f0d479e02318035fd2eb500ef5f6d9c5a17e57b2",
+  "archive_bytes": 1813135
+}

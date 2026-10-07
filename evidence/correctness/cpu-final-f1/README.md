@@ -56,3 +56,21 @@ CPU+Vulkan标准产品组合仍在configure/build验收中，原失败保留，�
 `be0642231d2008c7b90071fc0898d82a0c002d47f38350ebf3ed779fc01972d7`；
 版本标签`2.8.0`与Win/Linux的`2.8.0+cpu`不同。只有获取/身份盘点，尚无HYLE Mac CPU资格。
 当前统一实现LOC为**61,242行/251文件**（新增cold默认与身份胶水，数学新增0）；本节覆盖前面的旧子批计数。
+
+## B2 Windows实际混合SDK子批
+
+候选`afba74122c26d49489bee895c8b14dc5381426d2`的CPU+Vulkan标准shared源码组合已完成：
+configure52.297秒、build611.562秒；CPU原格式owning、Direct默认16项、24格两入口/成熟region/两次变输入重放、
+动态物化/并发/close通过。原GPU九项回归通过；十一种新增CPU格式没有取得GPU资格。
+[混合子批receipt](b2-mixed-receipt.json)、[原配置错误/中断及成功日志](b2-mixed-windows.zip)。
+具名GPU新格式拒绝测试已加入但在此receipt时尚未运行；不将该未验项写PASS。
+这只补签Windows源码shared组合，不代表CPU+CUDA/Apple、安装static/shared或其它平台已完成。
+Mac当前资格见F3，前文候选库存记录保持其原时间边界。
+
+### B2负空间实际纠正
+
+新增测试最初FAIL：Vulkan原格式映射拒绝CPU新格式，但布局domain绕过映射并错误准入。
+候选`b2ad8084b4fcc996301e45426413817e62c27b8f`只在普通/分组矩阵domain复用原映射门；
+十一CPU新格式两种矩阵拒绝通过。全fixture25项中24通过、0失败、1个显式validation-layer实例测试skip，
+该skip未签PASS、不影响本次不依赖validation-layer的格式拒绝结论。原GPU数学未扩张、无P1。
+[负空间receipt](b2-gpu-format-negative-receipt.json)、[原失败与纠正完整日志/XML](b2-gpu-format-negative.zip)。

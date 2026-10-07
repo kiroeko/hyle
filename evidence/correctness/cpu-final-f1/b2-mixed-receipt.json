@@ -1,0 +1,42 @@
+{
+  "kind": "B2 Windows CPU+Vulkan source/shared partial; not all-platform/all-delivery verdict",
+  "product_candidate": "afba74122c26d49489bee895c8b14dc5381426d2",
+  "gates": [
+    {
+      "name": "configure",
+      "exit": 0
+    },
+    {
+      "name": "build",
+      "exit": 0
+    },
+    {
+      "name": "cpu-format-owning",
+      "exit": 0
+    },
+    {
+      "name": "default-direct",
+      "exit": 0
+    },
+    {
+      "name": "ordinary-24",
+      "exit": 0
+    },
+    {
+      "name": "dynamic-materialization",
+      "exit": 0
+    }
+  ],
+  "ordinary_cases": 24,
+  "mature_regions": 24,
+  "native_win_labels": 0,
+  "gpu_original_regressions": 9,
+  "new_gpu_types": "Not qualified; explicit negative test added and awaits build",
+  "archive_sha256": "f97e3f3d1fe17548537a8735b39f6b828d4e1d730cb75bc64d6b8db7bd22cb64",
+  "archive_bytes": 27983,
+  "limits": [
+    "Old maintenance root option and notice staging failures retained.",
+    "Prior configure stopped after reproduced exponential runtime traversal; not PASS.",
+    "Mac and installed static/shared complete qualification pending."
+  ]
+}

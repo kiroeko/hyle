@@ -153,3 +153,7 @@ CPU+Vulkan标准shared/source候选`afba74122c26d49489bee895c8b14dc5381426d2`集
 有限FIX仅在两个domain检查同一native_quantized门；扩现具名负测试为普通/分组两种矩阵。
 原算法、支持旧格式与state/API不改变；一批compile、十一格式拒绝与原GPU九项回归，不跑P1、不重开GPU队列。
 原负测试FAIL完整保留；改后成功不能回写该旧结果。
+
+纠正候选`b2ad8084b4fcc996301e45426413817e62c27b8f`单目标build4.375秒，具名格式拒绝与原GPU回归通过。
+全fixture25项：24 PASS、0 FAIL、1显式validation-layer实例skip保留未验；不签该skip或完整GPU资格。
+证据归入F1部分页，混合SDK其它平台/交付仍未签完成。

@@ -1,0 +1,148 @@
+{
+  "kind": "Mac ARM64 CPU mature carriers / ordinary entry / C5 source-shared partial qualification; not platform or goal closure",
+  "product_candidate": "42898c37ef90005944b73f4bf174f9b7f1070550",
+  "test_corrections": [
+    "91baaa604",
+    "6359804abc6e0543f3fef9a4b6b622f01a8b98db"
+  ],
+  "ordinary_direct": {
+    "tests": 12,
+    "failures": 0,
+    "skips": 0
+  },
+  "ordinary_graph": {
+    "tests": 11,
+    "failures": 0,
+    "skips": 0
+  },
+  "c5_original_direct": {
+    "tests": 653,
+    "failures": 1,
+    "skips": 0
+  },
+  "c5_corrected_direct_case": {
+    "tests": 1,
+    "failures": 0,
+    "skips": 0
+  },
+  "c5_graph": {
+    "tests": 653,
+    "failures": 0,
+    "skips": 0
+  },
+  "c5_direct_composition": "652 previously passing cases plus one corrected full case; original aggregate FAIL retained, not overwritten",
+  "scope": "Original target contracts, genuine local Qwen projection fixture and complete state/quantization fragments; no whole-model resident inference claim",
+  "limits": [
+    "Installed static/shared and relocation journeys pending",
+    "Linux current-version qualification pending",
+    "No new best-of/P1 verdict",
+    "Diagnostic first-head-shard PASS not a qualification gate"
+  ],
+  "archive": {
+    "path": "mac-carriers-c5.zip",
+    "bytes": 591627,
+    "sha256": "578384ae9e7565034f8a8998d71a8f2f2bf75a1b16d6c9c73d99e16ff1739ee4",
+    "members": {
+      "fixture-transfer.json": {
+        "bytes": 221,
+        "sha256": "749773d32812e4f7af2565f7afdd062cfc0cfb3265c568311264603ed4eab7ba"
+      },
+      "loc.json": {
+        "bytes": 2378,
+        "sha256": "a67d816a3dc01f17300acec803e20a1d1915c470ad71688c38dd9afb48df820f"
+      },
+      "mac-build.log": {
+        "bytes": 27745,
+        "sha256": "84db231f912f74de2fbeb148f2e816b05c17c5f92794366047be0d1dfb00b653"
+      },
+      "mac-c5-direct-t5.log": {
+        "bytes": 842,
+        "sha256": "cc481c1ed7c66a332c9b882c3486c56bdd35b42f6a099f65e10f4969a8b8d7d2"
+      },
+      "mac-c5-direct-t5.xml": {
+        "bytes": 718,
+        "sha256": "933bf57205290ded46b9cf8cca5b880b710362c6396e157f1721ac2d8ee256e4"
+      },
+      "mac-c5-direct.log": {
+        "bytes": 21367156,
+        "sha256": "5149cb4965e580c322eaac198e0c7748c8000e54eb727b02484a7e311bc6ef85"
+      },
+      "mac-c5-direct.xml": {
+        "bytes": 44319272,
+        "sha256": "e65447a556aef6cfd725c6b3d612ba959e044456f198d0eebc98525fb6c1692c"
+      },
+      "mac-c5-graph-t5.log": {
+        "bytes": 159952,
+        "sha256": "43f8cd9b35432841386da892e0cdea67922e7c539d66252769a708293c2f659f"
+      },
+      "mac-c5-graph-t5.xml": {
+        "bytes": 245718,
+        "sha256": "e6c88867ff0cde2b300eb8c8b63291f0aa8b1a013b611e6ee98c3aff7cb866a7"
+      },
+      "mac-c5-receipt.json": {
+        "bytes": 89,
+        "sha256": "4e5ee577e94a996390c6a22e7e3d674500f2dd0c04c73dbfe7c496a494ae3e87"
+      },
+      "mac-c5-t5-receipt.json": {
+        "bytes": 939,
+        "sha256": "d49fd3f9a485fa83364797fd293b620508dbba1a198c5095b9ae4aa9e6ecc58e"
+      },
+      "mac-configure.log": {
+        "bytes": 1626,
+        "sha256": "c9208e355404ecd9088bae9091a88a8af1be8e5c7070cb2e9ef90571e0399c05"
+      },
+      "mac-defaults-corrected-receipt.json": {
+        "bytes": 126,
+        "sha256": "79956b6fc2281ba8d1095e11f7c4849b6dab9887185440525d6259cbac7e12cc"
+      },
+      "mac-defaults-corrected.log": {
+        "bytes": 5256,
+        "sha256": "2d02c4695045d4d4e2f77c5aca237a74916428f67867d2b83ec56a0502c37999"
+      },
+      "mac-direct-corrected.xml": {
+        "bytes": 3745,
+        "sha256": "5dde0bb2d661d4baf31017d5ca32555725a624c92872ffba7b6e621b6c5e6360"
+      },
+      "mac-graph-corrected.xml": {
+        "bytes": 3455,
+        "sha256": "9b0e1aeba79863b4f52f5568da74906960e817b5a14b70e12772f75f38841daa"
+      },
+      "mac-matmul-test-corrected.log": {
+        "bytes": 5003,
+        "sha256": "26d6cabd998ded0012816b5db3400ab86ac2a9076ea6e2353ac51e264c313bd3"
+      },
+      "mac-owning-defaults-receipt.json": {
+        "bytes": 160,
+        "sha256": "c24ef60c97b418a0d69c9b346395d979dfd00e4ebc3734c5247d6048963cea56"
+      },
+      "mac-owning-defaults.log": {
+        "bytes": 766,
+        "sha256": "0cf433e5e58dd353f3b491a78d1768e05aefa3d7b1291da6ec8b864dfaefdcc3"
+      },
+      "mac-owning.xml": {
+        "bytes": 3877,
+        "sha256": "bea6b0d0e86bbc31716dd787f2cd2624e5a86d6475906a5b39641039699a8331"
+      },
+      "mac-sdk-resolve.log": {
+        "bytes": 561,
+        "sha256": "f7ca09f560df1f1c352daf05b840e5d3cb739677608573795a281ddcf2e880a4"
+      },
+      "mac-source-configure.log": {
+        "bytes": 4275,
+        "sha256": "710542cc7aa22dd706c0ac648c1da4fea17a4617f4726438dfed7ee6062ef630"
+      },
+      "mac-t5-build.log": {
+        "bytes": 4040,
+        "sha256": "c99c137a9f95bb6ff919ff5e432bbf5127879a18a4b086dca71c8508b8ba28dd"
+      },
+      "selected-immutable.json": {
+        "bytes": 224206,
+        "sha256": "0b8b64e142b9ad2387d7f9d32032a866b391cb709e9bb2a1b52da365a428915d"
+      },
+      "source-bundle.json": {
+        "bytes": 310,
+        "sha256": "79827d617a922c526fd2435bea887c2db640559ace9aab03aa052f3501a82116"
+      }
+    }
+  }
+}
