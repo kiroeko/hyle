@@ -32,8 +32,14 @@ native/executor预算1及进程只允许已测逻辑CPU2。未匹配条件采用
 不继承此Windows测量的WIN。应用若改变被规则读取的运行条件，应重新prepare/compile。
 Graph的成熟完整region优先于这些leaf规则，避免破坏融合；执行和重复执行不重新选路。
 严格资源准入仍由Provider真实能力决定，数学候选不等于零private allocation或可捕获。
-当前[CPU收口](../implementation/tasks/compute/cpu-final-closure-plan.md)的规则交付验收与F5自研清退仍在进行，
-SIMD/Mem基础和借入成熟原程序保留。
+当前[CPU收口](../implementation/tasks/compute/cpu-final-closure-plan.md)的F4规则交付已验收；
+F5已物理清退14种冗余自研数学，其删除后的差异验收仍在进行。SIMD/Mem基础和借入成熟原程序保留。
+
+Native expert只提供当前保留的21种数学／存储机制，不能期待已退役算子的Native后备。
+逐种源码去留、必要dtype／variant和精确性能点见
+[清退账本](../implementation/tasks/compute/cpu-final-f5-source-ledger.json)。普通CPU入口继续使用成熟实现；
+旧Native-only／prepared-only／零私有内存域随退役数学撤回，严格请求没有合格成熟承载时明确拒绝。
+具名F32 RMSNorm和Copy的动态／资源能力保留。
 
 普通入口的工程默认与性能WIN分开记录。候选必须先通过自己的真实精度、布局、资源与状态资格；
 没有专门硬件规则时仍能执行，准备后不再搜索。当前默认如下，F4可按合格完整成本证据修订：
@@ -1055,7 +1061,7 @@ operation、全部端口、资源和完成边界。旧 `RouteProfile`、运行�
 oneDNN 的 MatMul 路线接收 **plain** dense row-major f32 rank-2 MatMul。它适合普通
 `[M,K] * [K,N]`；模型常见的
 物理 `[...,N,K]`、逻辑转置为 `[...,K,N]` 的连续-K权重在满足ggml rank-2..4 F32准入时选择ggml；
-其余域继续匹配具名Native残余，不能将所有转置权重都描述为HYLE SIMD执行。
+其余域继续匹配已构建且合格的ATen；Native MatMul已退役。
 泛型Sigmoid和SiLU packed/separate门控需要保留有限负尾部；原ggml泛型程序因具名反例
 撤回资格，在已构建ATen的合法域由稳定原程序承载。完整Graph在此必要边界组合后续成熟
 MatMul，packing、临时存储和融合损失计入成本。具名模型原program仍按自己的数值合同资格，
@@ -1063,7 +1069,7 @@ MatMul，packing、临时存储和融合损失计入成本。具名模型原prog
 oneDNN的非空exact dense F32 MatMul也接收单任务`M < 16`，不以未裁决的Native成本推断拒绝成熟能力；
 F32 MatMul 的 rank2..4 dense activation 可配 row-major 或 contiguous-K 转置权重，支持共享/
 逐批及两 leading axes 的双向 NumPy 广播；必要 RHS repack 和 LHS 原repeat展开均包含在执行成本。
-K0非空输出使用原零identity/repeat；rank>4、空输出混合region或未兼容布局继续匹配具名残余。
+K0非空输出使用原零identity/repeat；rank>4、空输出混合region或未兼容布局继续匹配已构建且合格的成熟leaf。
 ggml ReLU 使用原 kernel 加内部原位 NaN 传播边界，覆盖 F32/F16/BF16，外部 alias 仍拒绝。
 CPU ggml 的 dense F32/F16/BF16 Softmax 支持任意 axis、有限scale和同类型dense additive广播；
 Bool mask、LogSoftmax和非dense/外部alias仍拒绝。非末轴使用原reshape/permute/cont并恢复布局，
@@ -1077,13 +1083,14 @@ Copy/Concat的15种plain scalar借ggml的位复制载体，element-aligned strid
 合法空输入且非空输出的K0 MatMul/Concat等按同一已验supports进入完整region；空输出仍走leaf。
 这些具名域通过Windows/Linux普通Direct/Graph、变化输入和source/static/shared消费；
 范围、成本及剩余域见[当前接入卡](../implementation/tasks/compute/cpu-ggml-layout-broadcast-admission.md)。
-这些接线不表示剩余 Native 胜负已经裁决，当前资格与限制以 registry 的接入卡为准。真实并行executor
+当前Native保留分支的精确资格和通用成熟默认见本页开头与清退账本。真实并行executor
 可让oneDNN沿N维分成不重叠tile。所有选择均在准备期固定，submit不重选。
 
 oneDNN 另接入原版 RMSNorm/LayerNorm primitive：dense 非空 `[..., hidden]`，显式 F32
 accumulation，可选 scale/bias；scale 和 bias 同时存在时需同类型。F16/BF16 原生执行受
 oneDNN 的 CPU ISA 要求限制；该 Provider 不隐式转换整个 tensor。不满足时普通 CPU context
-继续匹配 ggml，再匹配现有 Native。F32 norm 后的最多4个 Add/Mul 可由 oneDNN region 绑定原生 post-ops，支持 scalar、
+继续匹配ggml／ATen；Native只保留必要RMSNorm分支，LayerNorm已退役。
+F32 norm 后的最多4个 Add/Mul 可由 oneDNN region 绑定原生 post-ops，支持 scalar、
 末轴向量及单行的完整同形状操作数。批量完整同形状 Add/Mul 保留为后续节点，使此前的归一化/
 广播前缀继续使用优化内核；冷准备拒绝已识别的通用慢速融合实现。中间输出被发布或分叉时
 保留边界。半精度跨节点链保留中间舍入。融合接入不代表每个形状已获性能优选资格，当前验收

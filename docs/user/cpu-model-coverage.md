@@ -8,7 +8,8 @@
 当前三平台成熟承载和source/static/shared计算/状态/精度资格见
 [CPU最终F3证据](../../evidence/correctness/cpu-final-f3/README.md)。原Windows/Linux联合合同、当前升级候选和
 Mac首次资格分别按真实输入/软件身份对账；默认规则仍有工程默认与已测优选的区别。
-全面best-of与剩余自研清退属于[当前最终收口任务](../implementation/tasks/compute/cpu-final-closure-plan.md)，尚未完成。
+当前版本的有限全候选优选与工程默认已完成F4验收；F5已物理清退14种冗余自研数学。
+删除后的差异验收和最终终审属于[当前最终收口任务](../implementation/tasks/compute/cpu-final-closure-plan.md)，尚未完成。
 
 ## 固定制品与范围
 
@@ -46,7 +47,8 @@ Qwen27B命名Q4_0的实际Q3/Q4/Q6 MTP sidecar、Flash Q8/BF16两份实际MXFP4�
 ## 需要保留的成本与限制
 
 - CPU-only锁定ggml0.26＋原Unsloth IQ1扩展；mixed SDK保留原GPU core，并在同core接入原CPU格式端口。
-  当前Windows CPU+Vulkan组合已验，其他组合/交付仍待本轮资格；这不增加GPU格式支持。
+  当前Windows CPU+CUDA／Vulkan、Linux CPU+CUDA和Mac CPU+Apple组合的CPU三交付已完成F1／F4验收；
+  F5清退后的CPU差异另行验证。这不增加GPU格式支持。
   具体边界见[CPU最终F1证据](../../evidence/correctness/cpu-final-f1/README.md)。同进程不要混用未隔离的SDK原库对象。
 - 原quantized dot的activation转换、累加及输出storage都属于合同。NF4/AWQ/CT显式cold解码后缓存，
   F16原权重必要cold转换真实计费；MLX只current K group/selected experts，不能每轮全库展开。

@@ -1,0 +1,522 @@
+{
+  "schema": 1,
+  "scope": "F5 current source retirement, not whole goal terminal",
+  "product_candidate": "507bad9698f9988d371c59e5661a69e4394c580a",
+  "baseline": "0d96c635040e70b1ee561e51e4cb1a74169870f0",
+  "before_kinds": 35,
+  "physically_retired_kinds": 14,
+  "remaining_kinds": 21,
+  "qualified_semantic_kinds": 20,
+  "additional_named_unique_kind": "Copy",
+  "removed_files": [
+    "src/compute/rope_kernel_impl.h",
+    "src/compute/rope_kernels.h"
+  ],
+  "protected": [
+    "SIMD standalone",
+    "Mem standalone",
+    "View alias",
+    "original borrowed TorchAO/ATen/MLX/DS4 programs and codecs"
+  ],
+  "edge_replacement": "Original ATen basic Unary/Binary only for non-dense, empty, rank0 or rank>4; F4 dense rank2 candidate set unchanged.",
+  "entries": [
+    {
+      "operation": "Abs",
+      "source": "src/compute_provider_native/elementwise.cc",
+      "decision": "PHYSICALLY_RETIRED",
+      "retained_domain": null,
+      "qualified_win_requests": [],
+      "mature_candidates_from_f4": [
+        "ggml"
+      ],
+      "unique_demand": null,
+      "boundary": "Exact F4 WIN remains conditional; expert availability is not a WIN claim. Generic old Native-only strict domains of retired math are withdrawn. Managed unknown storage is not zero."
+    },
+    {
+      "operation": "Neg",
+      "source": "src/compute_provider_native/elementwise.cc",
+      "decision": "RETAIN_NECESSARY_BRANCHES",
+      "retained_domain": "BF16",
+      "qualified_win_requests": [
+        "unary-1-t5-r1-h2048-o6",
+        "unary-1-t5-r32-h2048-o6"
+      ],
+      "mature_candidates_from_f4": [
+        "ggml"
+      ],
+      "unique_demand": null,
+      "boundary": "Exact F4 WIN remains conditional; expert availability is not a WIN claim. Generic old Native-only strict domains of retired math are withdrawn. Managed unknown storage is not zero."
+    },
+    {
+      "operation": "Exp",
+      "source": "src/compute_provider_native/elementwise.cc",
+      "decision": "RETAIN_NECESSARY_BRANCHES",
+      "retained_domain": "F32/F16/BF16",
+      "qualified_win_requests": [
+        "unary-2-t4-r1-h2048-o6",
+        "unary-2-t4-r32-h2048-o6",
+        "unary-2-t5-r32-h2048-o6",
+        "unary-2-t6-r1-h2048-o6",
+        "unary-2-t6-r1-h4096-o6",
+        "unary-2-t6-r32-h2048-o6"
+      ],
+      "mature_candidates_from_f4": [
+        "ggml"
+      ],
+      "unique_demand": null,
+      "boundary": "Exact F4 WIN remains conditional; expert availability is not a WIN claim. Generic old Native-only strict domains of retired math are withdrawn. Managed unknown storage is not zero."
+    },
+    {
+      "operation": "Log",
+      "source": "src/compute_provider_native/elementwise.cc",
+      "decision": "RETAIN_NECESSARY_BRANCHES",
+      "retained_domain": "F16",
+      "qualified_win_requests": [
+        "unary-3-t4-r1-h2048-o6"
+      ],
+      "mature_candidates_from_f4": [
+        "ggml"
+      ],
+      "unique_demand": null,
+      "boundary": "Exact F4 WIN remains conditional; expert availability is not a WIN claim. Generic old Native-only strict domains of retired math are withdrawn. Managed unknown storage is not zero."
+    },
+    {
+      "operation": "Sqrt",
+      "source": "src/compute_provider_native/elementwise.cc",
+      "decision": "RETAIN_NECESSARY_BRANCHES",
+      "retained_domain": "F16/BF16",
+      "qualified_win_requests": [
+        "unary-4-t4-r1-h2048-o6",
+        "unary-4-t5-r32-h2048-o6"
+      ],
+      "mature_candidates_from_f4": [
+        "ggml"
+      ],
+      "unique_demand": null,
+      "boundary": "Exact F4 WIN remains conditional; expert availability is not a WIN claim. Generic old Native-only strict domains of retired math are withdrawn. Managed unknown storage is not zero."
+    },
+    {
+      "operation": "Rsqrt",
+      "source": "src/compute_provider_native/elementwise.cc",
+      "decision": "RETAIN_NECESSARY_BRANCHES",
+      "retained_domain": "F16/BF16",
+      "qualified_win_requests": [
+        "unary-5-t4-r1-h2048-o6",
+        "unary-5-t4-r32-h2048-o6",
+        "unary-5-t5-r32-h2048-o6"
+      ],
+      "mature_candidates_from_f4": [
+        "ggml"
+      ],
+      "unique_demand": null,
+      "boundary": "Exact F4 WIN remains conditional; expert availability is not a WIN claim. Generic old Native-only strict domains of retired math are withdrawn. Managed unknown storage is not zero."
+    },
+    {
+      "operation": "Tanh",
+      "source": "src/compute_provider_native/elementwise.cc",
+      "decision": "RETAIN_NECESSARY_BRANCHES",
+      "retained_domain": "F16",
+      "qualified_win_requests": [
+        "unary-6-t4-r1-h4096-o6"
+      ],
+      "mature_candidates_from_f4": [
+        "ggml"
+      ],
+      "unique_demand": null,
+      "boundary": "Exact F4 WIN remains conditional; expert availability is not a WIN claim. Generic old Native-only strict domains of retired math are withdrawn. Managed unknown storage is not zero."
+    },
+    {
+      "operation": "Sigmoid",
+      "source": "src/compute_provider_native/elementwise.cc",
+      "decision": "PHYSICALLY_RETIRED",
+      "retained_domain": null,
+      "qualified_win_requests": [],
+      "mature_candidates_from_f4": [
+        "ATen"
+      ],
+      "unique_demand": null,
+      "boundary": "Exact F4 WIN remains conditional; expert availability is not a WIN claim. Generic old Native-only strict domains of retired math are withdrawn. Managed unknown storage is not zero."
+    },
+    {
+      "operation": "Relu",
+      "source": "src/compute_provider_native/elementwise.cc",
+      "decision": "RETAIN_NECESSARY_BRANCHES",
+      "retained_domain": "BF16",
+      "qualified_win_requests": [
+        "unary-8-t5-r1-h2048-o6",
+        "unary-8-t5-r32-h2048-o6"
+      ],
+      "mature_candidates_from_f4": [
+        "ggml"
+      ],
+      "unique_demand": null,
+      "boundary": "Exact F4 WIN remains conditional; expert availability is not a WIN claim. Generic old Native-only strict domains of retired math are withdrawn. Managed unknown storage is not zero."
+    },
+    {
+      "operation": "Silu",
+      "source": "src/compute_provider_native/elementwise.cc",
+      "decision": "RETAIN_NECESSARY_BRANCHES",
+      "retained_domain": "F16",
+      "qualified_win_requests": [
+        "unary-11-t4-r32-h2048-o6"
+      ],
+      "mature_candidates_from_f4": [
+        "ATen"
+      ],
+      "unique_demand": null,
+      "boundary": "Exact F4 WIN remains conditional; expert availability is not a WIN claim. Generic old Native-only strict domains of retired math are withdrawn. Managed unknown storage is not zero."
+    },
+    {
+      "operation": "Softplus",
+      "source": "src/compute_provider_native/elementwise.cc",
+      "decision": "PHYSICALLY_RETIRED",
+      "retained_domain": null,
+      "qualified_win_requests": [],
+      "mature_candidates_from_f4": [
+        "oneDNN",
+        "ATen"
+      ],
+      "unique_demand": null,
+      "boundary": "Exact F4 WIN remains conditional; expert availability is not a WIN claim. Generic old Native-only strict domains of retired math are withdrawn. Managed unknown storage is not zero."
+    },
+    {
+      "operation": "Add",
+      "source": "src/compute_provider_native/elementwise.cc",
+      "decision": "RETAIN_NECESSARY_BRANCHES",
+      "retained_domain": "F32",
+      "qualified_win_requests": [
+        "binary-0-t6-r32-h2048-o6"
+      ],
+      "mature_candidates_from_f4": [
+        "ggml"
+      ],
+      "unique_demand": null,
+      "boundary": "Exact F4 WIN remains conditional; expert availability is not a WIN claim. Generic old Native-only strict domains of retired math are withdrawn. Managed unknown storage is not zero."
+    },
+    {
+      "operation": "Subtract",
+      "source": "src/compute_provider_native/elementwise.cc",
+      "decision": "RETAIN_NECESSARY_BRANCHES",
+      "retained_domain": "F32/F16",
+      "qualified_win_requests": [
+        "binary-1-t4-r32-h2048-o6",
+        "binary-1-t6-r1-h2048-o6"
+      ],
+      "mature_candidates_from_f4": [
+        "ggml"
+      ],
+      "unique_demand": null,
+      "boundary": "Exact F4 WIN remains conditional; expert availability is not a WIN claim. Generic old Native-only strict domains of retired math are withdrawn. Managed unknown storage is not zero."
+    },
+    {
+      "operation": "Multiply",
+      "source": "src/compute_provider_native/elementwise.cc",
+      "decision": "PHYSICALLY_RETIRED",
+      "retained_domain": null,
+      "qualified_win_requests": [],
+      "mature_candidates_from_f4": [
+        "ggml"
+      ],
+      "unique_demand": null,
+      "boundary": "Exact F4 WIN remains conditional; expert availability is not a WIN claim. Generic old Native-only strict domains of retired math are withdrawn. Managed unknown storage is not zero."
+    },
+    {
+      "operation": "Divide",
+      "source": "src/compute_provider_native/elementwise.cc",
+      "decision": "RETAIN_NECESSARY_BRANCHES",
+      "retained_domain": "F32/F16",
+      "qualified_win_requests": [
+        "binary-3-t4-r1-h2048-o6",
+        "binary-3-t4-r1-h4096-o6",
+        "binary-3-t4-r32-h2048-o6",
+        "binary-3-t6-r1-h4096-o6"
+      ],
+      "mature_candidates_from_f4": [
+        "ggml"
+      ],
+      "unique_demand": null,
+      "boundary": "Exact F4 WIN remains conditional; expert availability is not a WIN claim. Generic old Native-only strict domains of retired math are withdrawn. Managed unknown storage is not zero."
+    },
+    {
+      "operation": "Minimum",
+      "source": "src/compute_provider_native/elementwise.cc",
+      "decision": "RETAIN_NECESSARY_BRANCHES",
+      "retained_domain": "F16",
+      "qualified_win_requests": [
+        "binary-4-t4-r1-h2048-o6"
+      ],
+      "mature_candidates_from_f4": [
+        "ATen"
+      ],
+      "unique_demand": null,
+      "boundary": "Exact F4 WIN remains conditional; expert availability is not a WIN claim. Generic old Native-only strict domains of retired math are withdrawn. Managed unknown storage is not zero."
+    },
+    {
+      "operation": "Maximum",
+      "source": "src/compute_provider_native/elementwise.cc",
+      "decision": "PHYSICALLY_RETIRED",
+      "retained_domain": null,
+      "qualified_win_requests": [],
+      "mature_candidates_from_f4": [
+        "ATen"
+      ],
+      "unique_demand": null,
+      "boundary": "Exact F4 WIN remains conditional; expert availability is not a WIN claim. Generic old Native-only strict domains of retired math are withdrawn. Managed unknown storage is not zero."
+    },
+    {
+      "operation": "ReduceSum",
+      "source": "src/compute_provider_native/reduction.cc",
+      "decision": "PHYSICALLY_RETIRED",
+      "retained_domain": null,
+      "qualified_win_requests": [],
+      "mature_candidates_from_f4": [
+        "ggml",
+        "ATen"
+      ],
+      "unique_demand": null,
+      "boundary": "Exact F4 WIN remains conditional; expert availability is not a WIN claim. Generic old Native-only strict domains of retired math are withdrawn. Managed unknown storage is not zero."
+    },
+    {
+      "operation": "ReduceMean",
+      "source": "src/compute_provider_native/reduction.cc",
+      "decision": "PHYSICALLY_RETIRED",
+      "retained_domain": null,
+      "qualified_win_requests": [],
+      "mature_candidates_from_f4": [
+        "ggml",
+        "ATen"
+      ],
+      "unique_demand": null,
+      "boundary": "Exact F4 WIN remains conditional; expert availability is not a WIN claim. Generic old Native-only strict domains of retired math are withdrawn. Managed unknown storage is not zero."
+    },
+    {
+      "operation": "ReduceMinimum",
+      "source": "src/compute_provider_native/reduction.cc",
+      "decision": "RETAIN_NECESSARY_BRANCHES",
+      "retained_domain": "F16",
+      "qualified_win_requests": [
+        "reduce-2-t4-r32-h2048-o6"
+      ],
+      "mature_candidates_from_f4": [
+        "ATen"
+      ],
+      "unique_demand": null,
+      "boundary": "Exact F4 WIN remains conditional; expert availability is not a WIN claim. Generic old Native-only strict domains of retired math are withdrawn. Managed unknown storage is not zero."
+    },
+    {
+      "operation": "ReduceMaximum",
+      "source": "src/compute_provider_native/reduction.cc",
+      "decision": "RETAIN_NECESSARY_BRANCHES",
+      "retained_domain": "F16/BF16",
+      "qualified_win_requests": [
+        "reduce-3-t4-r1-h2048-o6",
+        "reduce-3-t5-r1-h4096-o6"
+      ],
+      "mature_candidates_from_f4": [
+        "ATen"
+      ],
+      "unique_demand": null,
+      "boundary": "Exact F4 WIN remains conditional; expert availability is not a WIN claim. Generic old Native-only strict domains of retired math are withdrawn. Managed unknown storage is not zero."
+    },
+    {
+      "operation": "RmsNorm",
+      "source": "src/compute_provider_native/native_provider.cc + normalization.cc",
+      "decision": "RETAIN_NECESSARY_BRANCHES",
+      "retained_domain": "qualified BF16; named F32 declared-domain/strict-resource",
+      "qualified_win_requests": [
+        "norm-0-t5-r1-h4096-o6"
+      ],
+      "mature_candidates_from_f4": [
+        "oneDNN",
+        "ggml",
+        "ATen"
+      ],
+      "unique_demand": "Declared-domain F32 prepared RMSNorm and exact bounded compiled/private storage; F1/F3 actual consumer qualification.",
+      "boundary": "Exact F4 WIN remains conditional; expert availability is not a WIN claim. Generic old Native-only strict domains of retired math are withdrawn. Managed unknown storage is not zero."
+    },
+    {
+      "operation": "LayerNorm",
+      "source": "src/compute_provider_native/normalization.cc",
+      "decision": "PHYSICALLY_RETIRED",
+      "retained_domain": null,
+      "qualified_win_requests": [],
+      "mature_candidates_from_f4": [
+        "oneDNN",
+        "ggml",
+        "ATen"
+      ],
+      "unique_demand": null,
+      "boundary": "Exact F4 WIN remains conditional; expert availability is not a WIN claim. Generic old Native-only strict domains of retired math are withdrawn. Managed unknown storage is not zero."
+    },
+    {
+      "operation": "Softmax",
+      "source": "src/compute_provider_native/transformer.cc",
+      "decision": "RETAIN_NECESSARY_BRANCHES",
+      "retained_domain": "F16 Bool mask, non-log only",
+      "qualified_win_requests": [
+        "softmax-2-t4-r1-h2048-o6"
+      ],
+      "mature_candidates_from_f4": [
+        "ggml",
+        "ATen"
+      ],
+      "unique_demand": null,
+      "boundary": "Exact F4 WIN remains conditional; expert availability is not a WIN claim. Generic old Native-only strict domains of retired math are withdrawn. Managed unknown storage is not zero."
+    },
+    {
+      "operation": "LogSoftmax",
+      "source": "src/compute_provider_native/transformer.cc",
+      "decision": "PHYSICALLY_RETIRED",
+      "retained_domain": null,
+      "qualified_win_requests": [],
+      "mature_candidates_from_f4": [
+        "ATen"
+      ],
+      "unique_demand": null,
+      "boundary": "Exact F4 WIN remains conditional; expert availability is not a WIN claim. Generic old Native-only strict domains of retired math are withdrawn. Managed unknown storage is not zero."
+    },
+    {
+      "operation": "GatedActivation",
+      "source": "src/compute_provider_native/elementwise.cc",
+      "decision": "RETAIN_NECESSARY_BRANCHES",
+      "retained_domain": "F16 separate SiLU only",
+      "qualified_win_requests": [
+        "silu-gate-0-t4-r32-h2048-o6"
+      ],
+      "mature_candidates_from_f4": [
+        "ATen"
+      ],
+      "unique_demand": null,
+      "boundary": "Exact F4 WIN remains conditional; expert availability is not a WIN claim. Generic old Native-only strict domains of retired math are withdrawn. Managed unknown storage is not zero."
+    },
+    {
+      "operation": "Copy",
+      "source": "src/compute_provider_native/transform.cc",
+      "decision": "RETAIN_NECESSARY_BRANCHES",
+      "retained_domain": "named dynamic/strict-resource; plain bit-storage mechanism",
+      "qualified_win_requests": [],
+      "mature_candidates_from_f4": [
+        "oneDNN",
+        "ggml",
+        "ATen"
+      ],
+      "unique_demand": "Declared-domain view/broadcast materialization and exact caller-owned/private resource budgets; retain Mem mechanism separately.",
+      "boundary": "Exact F4 WIN remains conditional; expert availability is not a WIN claim. Generic old Native-only strict domains of retired math are withdrawn. Managed unknown storage is not zero."
+    },
+    {
+      "operation": "Cast",
+      "source": "src/compute_provider_native/cast.cc",
+      "decision": "RETAIN_NECESSARY_BRANCHES",
+      "retained_domain": "E4M3->F16; E5M2->BF16/E4M3/E5M2",
+      "qualified_win_requests": [
+        "cast-t2-r1-h4096-o4",
+        "cast-t3-r1-h2048-o5",
+        "cast-t3-r1-h4096-o3",
+        "cast-t3-r32-h2048-o2"
+      ],
+      "mature_candidates_from_f4": [
+        "ggml",
+        "ATen"
+      ],
+      "unique_demand": null,
+      "boundary": "Exact F4 WIN remains conditional; expert availability is not a WIN claim. Generic old Native-only strict domains of retired math are withdrawn. Managed unknown storage is not zero."
+    },
+    {
+      "operation": "Fill",
+      "source": "src/compute_provider_native/transform.cc",
+      "decision": "RETAIN_NECESSARY_BRANCHES",
+      "retained_domain": "F32 bit-write only",
+      "qualified_win_requests": [
+        "fill-t6-r1-h2048-o6"
+      ],
+      "mature_candidates_from_f4": [
+        "ggml",
+        "ATen"
+      ],
+      "unique_demand": null,
+      "boundary": "Exact F4 WIN remains conditional; expert availability is not a WIN claim. Generic old Native-only strict domains of retired math are withdrawn. Managed unknown storage is not zero."
+    },
+    {
+      "operation": "Gather",
+      "source": "src/compute_provider_native/indexing.cc",
+      "decision": "RETAIN_NECESSARY_BRANCHES",
+      "retained_domain": "qualified requests; shared checked I32/I64 index and bit-storage mechanism",
+      "qualified_win_requests": [
+        "gather-t4-r1-h4096-o12",
+        "gather-t4-r1-h4096-o14",
+        "gather-t5-r1-h4096-o14",
+        "gather-t6-r1-h2048-o12"
+      ],
+      "mature_candidates_from_f4": [
+        "ggml",
+        "ATen"
+      ],
+      "unique_demand": null,
+      "boundary": "Exact F4 WIN remains conditional; expert availability is not a WIN claim. Generic old Native-only strict domains of retired math are withdrawn. Managed unknown storage is not zero."
+    },
+    {
+      "operation": "ScatterAssign",
+      "source": "src/compute_provider_native/indexing.cc",
+      "decision": "PHYSICALLY_RETIRED",
+      "retained_domain": null,
+      "qualified_win_requests": [],
+      "mature_candidates_from_f4": [
+        "ATen"
+      ],
+      "unique_demand": null,
+      "boundary": "Exact F4 WIN remains conditional; expert availability is not a WIN claim. Generic old Native-only strict domains of retired math are withdrawn. Managed unknown storage is not zero."
+    },
+    {
+      "operation": "ScatterAdd",
+      "source": "src/compute_provider_native/indexing.cc",
+      "decision": "PHYSICALLY_RETIRED",
+      "retained_domain": null,
+      "qualified_win_requests": [],
+      "mature_candidates_from_f4": [
+        "ggml",
+        "ATen"
+      ],
+      "unique_demand": null,
+      "boundary": "Exact F4 WIN remains conditional; expert availability is not a WIN claim. Generic old Native-only strict domains of retired math are withdrawn. Managed unknown storage is not zero."
+    },
+    {
+      "operation": "Concat",
+      "source": "src/compute_provider_native/indexing.cc",
+      "decision": "PHYSICALLY_RETIRED",
+      "retained_domain": null,
+      "qualified_win_requests": [],
+      "mature_candidates_from_f4": [
+        "ggml",
+        "ATen"
+      ],
+      "unique_demand": null,
+      "boundary": "Exact F4 WIN remains conditional; expert availability is not a WIN claim. Generic old Native-only strict domains of retired math are withdrawn. Managed unknown storage is not zero."
+    },
+    {
+      "operation": "RoPE",
+      "source": "src/compute_provider_native/transformer.cc",
+      "decision": "PHYSICALLY_RETIRED",
+      "retained_domain": null,
+      "qualified_win_requests": [],
+      "mature_candidates_from_f4": [
+        "ggml",
+        "ATen"
+      ],
+      "unique_demand": null,
+      "boundary": "Exact F4 WIN remains conditional; expert availability is not a WIN claim. Generic old Native-only strict domains of retired math are withdrawn. Managed unknown storage is not zero."
+    },
+    {
+      "operation": "Select",
+      "source": "src/compute_provider_native/elementwise.cc",
+      "decision": "PHYSICALLY_RETIRED",
+      "retained_domain": null,
+      "qualified_win_requests": [],
+      "mature_candidates_from_f4": [
+        "oneDNN",
+        "ATen"
+      ],
+      "unique_demand": null,
+      "boundary": "Exact F4 WIN remains conditional; expert availability is not a WIN claim. Generic old Native-only strict domains of retired math are withdrawn. Managed unknown storage is not zero."
+    }
+  ]
+}

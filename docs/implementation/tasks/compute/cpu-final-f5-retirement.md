@@ -1,6 +1,6 @@
 # F5 CPU自研源码清退
 
-<!-- MODULE REVIEW: AUDITED -->
+<!-- MODULE REVIEW: CANDIDATE -->
 
 当前owner `compute_provider_native`；`compute`仅绑定两份私有RoPE生成文件的有限删除，不重审runtime。
 baseline `0d96c635040e70b1ee561e51e4cb1a74169870f0`；总合同[CPU最终收口](cpu-final-closure-plan.md)。
@@ -102,3 +102,15 @@ F16 Min/Max、BF16 Max的dense／odd-stride／多axes实际数学检查；RMS／
 补充测试首次namespace编译FAIL原log均保留，修正后全部通过。测试迁移未改产品数学／43规则。
 原始记录在`.scratch/validation/cpu-final-f5/receipt.json`与owning XML，最终将集中归档。
 普通两入口／C5／三平台三交付差异与source ledger仍待验，F5保持AUDITED。
+
+## CANDIDATE：产品固定、差异验收继续
+
+产品candidate `507bad9698f9988d371c59e5661a69e4394c580a`；D1／D4源码与43规则已停止变化。
+owning144项无skip通过，逐源码族去留见[35→21账本](cpu-final-f5-source-ledger.json)。
+后续只迁移测试／完善说明和集中差异验收；若发现需要改变数学、正常准入或产品成本的新事实，
+依法退回AUDITED，不能在候选状态暗改产品。Compute owner仍仅覆盖两私有RoPE文件删除。
+首批普通consumer已编译通过；generic Graph有70项仍固定旧Native Neg／Abs／旧MatMul等的夹具FAIL。
+这些按D2迁移到真实成熟调用；严格已知资源测试保留RMS／Add残差管线和原限额／OOM断言，
+没有以成熟unknown资源冒充零字节。不是新增自研数学，也不启动P1。
+本机完整普通CPU／Graph模型合同串行批、Graph夹具纠正、三平台source/static/shared与受影响mixed
+交付差异仍待最终记录，未完成的项不签PASS、不关闭F5／goal。
