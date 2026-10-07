@@ -46,6 +46,13 @@ function(hyle_configure_cuda_dependency)
   endforeach()
   unset(_hyle_cuda_target)
 
+  # Establish the route default before sibling native projects are entered.
+  # A default local to the backend cannot reach ggml's CUDA build. Explicit
+  # CMake/CUDAARCHS selections retain their normal precedence.
+  if(NOT DEFINED CMAKE_CUDA_ARCHITECTURES AND "$ENV{CUDAARCHS}" STREQUAL "")
+    set(CMAKE_CUDA_ARCHITECTURES 80 89-real PARENT_SCOPE)
+  endif()
+
   # FindCUDAToolkit is intentionally called inside this function so its
   # implementation variables do not leak into the project namespace.  Export
   # the one public-header requirement under a HYLE-owned name for isolated
