@@ -130,3 +130,15 @@ compute_provider_flashinfer 由 backend private API 变化触发 CLOSED→SCOPED
 及 source/static/shared/headers 验证，与 U3 稳定接线候选合并重型构建；至多一次具名纠正，P0，无此项 P1。
 预声明：原 NVML 差分身份、snapshot copy/move/close、缺 release 的稀疏匹配、API/release 不混淆、
 selected headers/backend/provider/普通消费者及三交付；未运行 UNVERIFIED，不以查询探针签产品 PASS。
+
+### B2 AUDITED：独立 release/API 与未知事实
+
+SCOPED 提交 `fa22b275`。本机 Windows 系统 NVML 与 WSL 原 driver shim 的 init/query/shutdown
+实际返回0，release 都为 `617.14`；CUDA API13040仍是另一个事实。原 SDK 文档确认查询是线程安全，
+init_v2 不初始化 GPU 设备，初始化引用按 shutdown 配对。本探针只证明原 carrier，不签 HYLE 入口。
+固定接口是 Environment 的80字节 owned release 文本，空表示未知；不解析成伪 CUDA 编码、不增加全局 cache。
+Windows 只加载 System32 的系统 NVML，临时关闭当前线程的 loader 弹窗后恢复；Linux 用系统 soname。
+固定有限 FIX：一个 backend 冷读取 helper、snapshot 字段、私有有效 span 投影、三个当前消费者访问迁移、
+中央已有 Platform 直接依赖声明与 public guide。NVML不链接为必需 DLL、不复制 driver 文件。
+已有数学、SM/runtime/toolkit 资格与错误/资源程序保持；缺 NVML 不形成 CUDA Context 错误。
+补具名测试覆盖稀疏缺 release、API/release 区分与实际 snapshot 差分，不写镜像实现的测试。

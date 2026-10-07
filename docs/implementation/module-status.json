@@ -418,7 +418,7 @@
       "module": "compute_backend_cuda",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/cuda-final-u2-build-contract.md",
-      "summary": "CUDA U2 B4 AUDITED：有限 FIX 仅在成功选中 CUDA SDK 且未指定 arch 时向根调用作用域传播原 80/89-real 默认；显式架构与 CUDA-OFF 保持。CPU数学/资格、ggml资源overlay与其它GPU不改，当前运行/交付待验。"
+      "summary": "CUDA U2 B2 AUDITED：有限授权 backend 真实 driver release 冷快照/API独立事实与有效span、当前ggml/CCCL/FlashInfer冷消费者迁移；NVML可选、未知不禁用正常CUDA，不改数学/pin/资格阈值/热路径。"
     },
     {
       "module": "compute_provider_native",
@@ -485,8 +485,8 @@
     {
       "module": "compute_provider_cuda",
       "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/llm-moe-d5-original-fp4-expert-binding.md",
-      "summary": "D5 AUDITED：F44原版专家与资源、F43官方完整消费已验，CUDA正确性44/44且A5完成；CUDA完整BF16 FFN/官方FP4-FP8 MoE P1已在n15合格通过，旧A/A失败保留。D6未关闭。"
+      "record": "docs/implementation/tasks/compute/cuda-final-u2-build-contract.md",
+      "summary": "CUDA U2 B2 AUDITED：有限授权 backend 真实 driver release 冷快照/API独立事实与有效span、当前ggml/CCCL/FlashInfer冷消费者迁移；NVML可选、未知不禁用正常CUDA，不改数学/pin/资格阈值/热路径。"
     },
     {
       "module": "compute_route_cuda",
@@ -552,8 +552,8 @@
     {
       "module": "compute_provider_ggml_cuda",
       "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/cpu-quant-mtp-c3-format-bindings.md",
-      "summary": "C3公共GGUF enum消费者有限迁移AUDITED：只明确拒绝新增CPU格式，原D5资格/算法/限制不变，不恢复GPU队列；不签新增GPU能力。"
+      "record": "docs/implementation/tasks/compute/cuda-final-u2-build-contract.md",
+      "summary": "CUDA U2 B2 AUDITED：有限授权 backend 真实 driver release 冷快照/API独立事实与有效span、当前ggml/CCCL/FlashInfer冷消费者迁移；NVML可选、未知不禁用正常CUDA，不改数学/pin/资格阈值/热路径。"
     },
     {
       "module": "graph_provider_ggml_cuda",
@@ -564,9 +564,9 @@
     },
     {
       "module": "compute_provider_flashinfer",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/cuda-final-u2-build-contract.md",
-      "summary": "CUDA U2 B2 SCOPED：backend 冷软件事实的原 API/release 语义变更需要迁移 FlashInfer 消费；仅有界审计私有 RouteFacts 消费，不改原数学、pin、Linux-only资格及热路径。"
+      "summary": "CUDA U2 B2 AUDITED：有限授权 backend 真实 driver release 冷快照/API独立事实与有效span、当前ggml/CCCL/FlashInfer冷消费者迁移；NVML可选、未知不禁用正常CUDA，不改数学/pin/资格阈值/热路径。"
     },
     {
       "module": "compute_provider_ggml_metal",
