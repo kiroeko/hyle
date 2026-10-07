@@ -1,0 +1,21 @@
+{
+  "scope": "Owned rejected F4 transport/entry builds only; original evidence archives checked present; resolved C:/hv targets and absence of live producers verified before removal. Final sealed/P1 programs, current SDKs, producers and dependency caches retained.",
+  "freed_bytes": 873358962,
+  "removed": [
+    {
+      "path": "C:\\hv\\cpu-final-f4-p1",
+      "bytes": 290985648,
+      "removed": true
+    },
+    {
+      "path": "C:\\hv\\cpu-final-f4-p1-qualified-entry",
+      "bytes": 291146126,
+      "removed": true
+    },
+    {
+      "path": "C:\\hv\\cpu-final-f4-transport",
+      "bytes": 291227188,
+      "removed": true
+    }
+  ]
+}
