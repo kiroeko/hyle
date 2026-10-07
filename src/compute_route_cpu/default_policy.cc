@@ -37,8 +37,9 @@ Family baseline(Operation operation) noexcept {
       return Family::kAten;
     return Family::kGgml;
   case OperationKind::kGatedActivation:
-  case OperationKind::kRoPE:
     return Family::kAten;
+  case OperationKind::kRoPE:
+    return Family::kGgml;
   case OperationKind::kSoftmax: {
     const auto &softmax = *operation.get_if<Softmax>();
     return softmax.kind == SoftmaxKind::kLogSoftmax ||
@@ -47,9 +48,9 @@ Family baseline(Operation operation) noexcept {
                : Family::kGgml;
   }
   case OperationKind::kScatter:
-    return operation.get_if<Scatter>()->kind == ScatterKind::kAdd
-               ? Family::kAten
-               : Family::kGgml;
+    // The checked original ggml indexed program has prepared replay. Preserve
+    // it before a managed tensor alternative when both satisfy the contract.
+    return Family::kGgml;
   default:
     return Family::kGgml;
   }

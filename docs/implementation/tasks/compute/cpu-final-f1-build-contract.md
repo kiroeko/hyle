@@ -93,7 +93,8 @@ B5 selector把中央lock文件变化展开为全库superset；原计划保留，
 有限FIX：CPU route拥有静态工程默认表，普通Direct/Graph的成熟leaf在成功冷proposal后投影policy/preference；
 规则不绕过原provider的dtype/layout/precision/resource准入，不因Unknown硬件失去可用实现。
 plain MatMul与norm以oneDNN为首选，原packed/原生tensor程序以ggml为首选；
-稳定激活、布尔/LogSoftmax、scatter-add等以现有已验ATen数学为首选。替代候选仍按真实资格可用，
+稳定激活、布尔/LogSoftmax等以现有已验ATen数学为首选；RoPE与checked scatter保留已验ggml程序与prepared重放。
+替代候选仍按真实资格可用，
 唯一承载不制造赢家标签，完整Graph region仍先于leaf。F4允许按实际比较修订表，当前全部为工程默认、非性能WIN。
 
 只装饰成功的cold propose，保留原ProviderIdentity/Options/create/destroy/prepare/drain/extension与原PreparedVTable，
