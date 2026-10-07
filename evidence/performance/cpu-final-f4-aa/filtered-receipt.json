@@ -1,0 +1,16 @@
+{
+  "archive": "evidence/performance/cpu-final-f4-aa/raw-filtered-aa.zip",
+  "archive_sha256": "46878e33794b8ba1a40c46583214ac0f3642ac100482160171151b8a6f973a0b",
+  "artifact": {
+    "executable_sha256": "8292c36c0c43a91576aaa8155fadf79200a68fe323e4cef064ff43eabb4f1b4c",
+    "consumer_sha256": "eae42af32c027103023d9d19e03171c8d0b18f0d1f9370dd89cc01550349b7bd",
+    "pair_header_sha256": "d4b8b66e571d0060f7d0acd716eab855a3acefd49becc6b1b1b163f7d3414142"
+  },
+  "selection_sha256": "1cb9f201912d6492c41a6110a964e0eaaa8c16e76e60516c13a8ce2ec7a599e4",
+  "runs": 8,
+  "pairs": 334,
+  "qualified": 128,
+  "inconclusive": 206,
+  "gate": "INCONCLUSIVE",
+  "scope": "One bounded V1/V2 same-process entry correction; prior 433 not replayed, no n escalation, no performance winner"
+}

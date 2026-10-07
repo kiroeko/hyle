@@ -22,3 +22,11 @@ nanobench paired adapter. Allocation/order strata use existing environment
 controls. It may only run under the frozen F4 contract and unified runner after
 preflight; the CLI alone does not produce a WIN, PASS or product certificate.
 Single-carrier domains receive correctness/resources/P0, not a timing race.
+
+The final same-process batch reads a fixed pair-list input asset. Its exact path
+and SHA are bound by the contract and module validator, as with a model fixture;
+it is not an online provider search or measurement-control override. Common
+runner policy still owns OMP/MKL and caller affinity. The runner copies the
+already qualified batch image/DLLs and validates their hashes before sampling.
+The retired per-pair process transport is retained only in evidence; its changed
+process lifecycle and 99.281-second cost did not acquire performance qualification.

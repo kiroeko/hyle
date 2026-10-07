@@ -1,5 +1,6 @@
 cmake_minimum_required(VERSION 3.28)
 project(hyle_cpu_best_of_consumer LANGUAGES CXX)
+set(HYLE_CPU_CURRENT_PEER_ROOT "" CACHE PATH "Immutable current CPU source corresponding to the bound SDK")
 find_package(Hyle CONFIG REQUIRED COMPONENTS compute graph)
 set(_hyle_root "${CMAKE_CURRENT_LIST_DIR}/../../..")
 add_library(nanobench STATIC "${_hyle_root}/bench/nanobench_impl.cc")
@@ -29,3 +30,16 @@ add_executable(hyle_perf_control_bench "${_hyle_root}/bench/integration/perf_con
 target_compile_features(hyle_perf_control_bench PRIVATE cxx_std_23)
 target_link_libraries(hyle_perf_control_bench PRIVATE hyle::compute nanobench)
 set_property(TARGET hyle_perf_control_bench PROPERTY INTERPROCEDURAL_OPTIMIZATION FALSE)
+set(HYLE_CPU_BESTOF_SEALED_DIR "" CACHE PATH "Developer qualified batch and exact staged runtime")
+if(WIN32 AND HYLE_CPU_BESTOF_SEALED_DIR)
+  add_custom_target(hyle_cpu_best_of_sealed_copy
+    COMMAND "${CMAKE_COMMAND}" -E copy_if_different
+      "${HYLE_CPU_BESTOF_SEALED_DIR}/hyle_cpu_best_of_batch.exe"
+      "${CMAKE_CURRENT_BINARY_DIR}/hyle_cpu_best_of_sealed.exe" VERBATIM)
+  file(GLOB _f4_sealed_dlls "${HYLE_CPU_BESTOF_SEALED_DIR}/*.dll")
+  foreach(_f4_dll IN LISTS _f4_sealed_dlls)
+    add_custom_command(TARGET hyle_cpu_best_of_sealed_copy POST_BUILD
+      COMMAND "${CMAKE_COMMAND}" -E copy_if_different "${_f4_dll}"
+        "${CMAKE_CURRENT_BINARY_DIR}" VERBATIM)
+  endforeach()
+endif()
