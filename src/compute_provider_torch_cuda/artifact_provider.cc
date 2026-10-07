@@ -101,15 +101,9 @@ Status create_context(const Provider &, Device device, void *backend,
   auto *storage = allocator.allocate(sizeof(Context), alignof(Context));
   if (!storage)
     return Status::ResourceExhausted("CUDA ATen context allocation failed");
-  cuda::detail::ScopedPrimaryContext scope(primary);
-  if (!scope) { allocator.deallocate(storage, sizeof(Context), alignof(Context)); return scope.status(); }
-  CUdevice ordinal = 0;
-  const auto status = cuCtxGetDevice(&ordinal);
-  if (status != CUDA_SUCCESS) {
-    allocator.deallocate(storage, sizeof(Context), alignof(Context));
-    return cuda::status(status);
-  }
-  *output = ::new (storage) Context{primary, ordinal};
+  // The backend already owns and validates this cold fact. Do not create a
+  // second SDK device query or driver dependency for the same ordinal.
+  *output = ::new (storage) Context{primary, environment->device_ordinal};
   return Status::Ok();
 }
 void destroy_context(void *state, mem::AllocatorRef allocator) noexcept {
