@@ -1,6 +1,6 @@
 # F4 CPU全重复域批量best-of
 
-<!-- MODULE REVIEW: SCOPED -->
+<!-- MODULE REVIEW: AUDITED -->
 
 当前包SCOPED，baseline `83240ab43ba80cd549dcf03933e3d69e8f94c2b8`（登记完整revision），F1/F2/F3已完成。
 owner compute_provider_native、compute_route_cpu、graph_route_cpu；总合同[CPU最终收口](cpu-final-closure-plan.md)。输入F2重叠域与F3当前合格承载。
@@ -62,3 +62,37 @@ Native与CPU route原F3 CLOSED、Graph CPU route原F1 CLOSED按此新版本/完�
 公开API/layout、Provider资源与原执行程序不变；SCOPED只授权有界审计，AUDITED有限FIX冻结前不改产品。
 current source/static/shared与三平台资格沿F1/F3对账，规则新命中/失配及新默认在本包完成两入口/资源/三交付验证。
 无新依赖升级、无自研优化、无模型loader或GPU资格队列；F4结束前不启动F5删除。
+
+## AUDITED：真实候选交集与有限FIX冻结
+
+源码对账：`ggml_cpu_provider.cc:1278`的真实supports/standard_index、
+`aten_cpu_provider.cc:126`的select、oneDNN的BRGEMM/normalization/tensor准入与
+Native的build_plan/propose/borrowed torch分支。F2需求保留；候选表不能仅沿旧F2暂定名字推断。
+
+| 当前交集/独有需求 | 具体结论 |
+|---|---|
+| oneDNN与ggml | 实际plain F32 dense rank2 MatMul、RMSNorm、LayerNorm、Copy；Select不在ggml普通承载，旧暂定表此项撤回 |
+| oneDNN与ATen | 上述实际合格交集、Select和F32稳定Softplus；Mac oneDNN不存在不制造失败竞争 |
+| ggml与ATen | Cast/Fill/Concat/Gather/Scatter/Reduce/Softmax/RoPE/SDPA/MatMul/norm的具体precision/layout/index交集，真实prepare还须确认 |
+| stable/checked差异 | ggml普通gate/稳定Sigmoid/SiLU/GELU/Softplus、Bool或LogSoftmax不是原融合模型程序的数值合同，不强行视为同候选 |
+| ARM F16 MatMul | ggml原half dot已由F3拒绝F32 accumulation；ATen承载，不能用低精度dot签性能胜利 |
+| self | 11 Unary、6 Binary、4 Reduce、2 norm、Softmax/LogSoftmax、Gate、Copy/Cast/Fill/Gather/Scatter assign/add/Concat/RoPE/Select共35种/15族；Gelu/MatMul/SDPA不是现self候选 |
+| borrowed | Native前置is_torch_cpu_operation及ds4原程序不是self；433原GGUF端口等单承载不逐格式竞速 |
+| 真实资源差异 | Native bounded RMSNorm/Copy、caller-owned prepared与严格private边界需独立保留/替代裁决；managed exact/private unknown不能仅凭数学接近算同合同替代 |
+
+成本账单：Native是原caller-owned程序与plan/workspace；ggml固定原graph/pool及必要cast/codec；oneDNN原
+threadpool/BRGEMM/primitive资源；ATen managed含每次numeric_input byte copy、dtype转换、临时与可能私有线程。
+计费统一从Invocation.submit至真实Completion.wait，cold准备/常量转换另记录。Graph必须保留完整region和已发布边界。
+
+| 有限FIX | 允许产品/consumer动作 |
+|---|---|
+| V1 | 新有限benchmark consumer复用旧Data/Session，参数化具名Provider与F2实际normal/holdout；逐候选明确decline/error及资源事实，原retired种从self集排除；不改统一统计/runner |
+| V2 | 更新本包contract/SDK/provenance，冻结真正可比pair和完整region；一轮预资格与适用P1，不继承旧206/72或187/17，不扩大采样预算 |
+| R1 | 仅按已资格证据更新Native/private CPU冷规则和逐合同成熟工程默认；保留原create/prepare/submit/销毁，不改API/对象/数学 |
+| R2 | 普通两入口的命中/失配/未知回退、资源/状态/三交付差异集中验证；历史规则/未测域不假签WIN |
+| L1 | 去留ledger区分self、borrowed、unique资源与成熟接替；F5才物理删除，SIMD/Mem基础保护 |
+
+normal/holdout固定真实内宽（Qwen3.5-2B2048与F2 norm4096）、token1/小prefill32及原端口K/N与原布局；
+MatMul保留同一实际weight布局，oneDNN拒绝原转置域就记录非候选，不用免费转换制造竞速。
+非覆盖点采用已资格成熟工程默认，不把样本外推成通用统计冠军。默认caller预算1，记录原库实际线程/私有资源。
+三owner从SCOPED进入AUDITED，仅V1/V2/R1/R2/L1，原成熟Provider owner保持CLOSED；具体接线反例另依法定界。

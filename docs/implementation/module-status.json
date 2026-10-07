@@ -427,9 +427,9 @@
     },
     {
       "module": "compute_provider_native",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/cpu-final-f4-best-of.md",
-      "summary": "CPU最终F4 SCOPED：基于已完成F1/F3当前SDK和F2真实合同审计全部成熟/self重叠域，固定批量consumer/成本/有预算裁决/冷规则与F5去留；未AUDITED前不改产品，不恢复旧WIN或GPU队列。"
+      "summary": "CPU最终F4 AUDITED：固定实际四候选precision/layout/resource交集、self35种15族与borrowed/unique边界，有限V1/V2批量consumer+资格、R1/R2冷规则/普通验收、L1退役ledger；不优化self、不复活旧WIN、不改公共仪器。"
     },
     {
       "module": "compute_sched",
@@ -438,15 +438,15 @@
     },
     {
       "module": "compute_route_cpu",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/cpu-final-f4-best-of.md",
-      "summary": "CPU最终F4 SCOPED：基于已完成F1/F3当前SDK和F2真实合同审计全部成熟/self重叠域，固定批量consumer/成本/有预算裁决/冷规则与F5去留；未AUDITED前不改产品，不恢复旧WIN或GPU队列。"
+      "summary": "CPU最终F4 AUDITED：固定实际四候选precision/layout/resource交集、self35种15族与borrowed/unique边界，有限V1/V2批量consumer+资格、R1/R2冷规则/普通验收、L1退役ledger；不优化self、不复活旧WIN、不改公共仪器。"
     },
     {
       "module": "graph_route_cpu",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/cpu-final-f4-best-of.md",
-      "summary": "CPU最终F4 SCOPED：基于已完成F1/F3当前SDK和F2真实合同审计全部成熟/self重叠域，固定批量consumer/成本/有预算裁决/冷规则与F5去留；未AUDITED前不改产品，不恢复旧WIN或GPU队列。"
+      "summary": "CPU最终F4 AUDITED：固定实际四候选precision/layout/resource交集、self35种15族与borrowed/unique边界，有限V1/V2批量consumer+资格、R1/R2冷规则/普通验收、L1退役ledger；不优化self、不复活旧WIN、不改公共仪器。"
     },
     {
       "module": "compute_provider_cublas",
