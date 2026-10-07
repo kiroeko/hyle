@@ -1,11 +1,13 @@
 if(HYLE_COMPUTE_CUDA_ENABLED)
   hyle_add_module(compute_route_cuda SOURCES cuda_context.cc)
-  get_target_property(_torch_features hyle_compute_provider_torch_cuda INTERFACE_COMPILE_DEFINITIONS)
-  if(_torch_features)
-    # Ordinary Direct/Graph consumers see the actual assembled capability.
-    # Keep the installed value literal; no build-tree target leaks into it.
-    target_compile_definitions(hyle_compute_route_cuda PUBLIC ${_torch_features})
-  endif()
+  foreach(_provider IN ITEMS torch_cuda flashinfer)
+    get_target_property(_provider_features hyle_compute_provider_${_provider} INTERFACE_COMPILE_DEFINITIONS)
+    if(_provider_features)
+      # Ordinary Direct/Graph consumers see the actual assembled capability.
+      # Keep installed values literal; absent targets do not invent features.
+      target_compile_definitions(hyle_compute_route_cuda PUBLIC ${_provider_features})
+    endif()
+  endforeach()
   get_target_property(_torch_absent hyle_compute_provider_torch_cuda HYLE_INTERNAL_ONLY_ABSENT)
   if(HYLE_STATIC AND _torch_absent)
     get_target_property(_cuda_interface hyle_compute_route_cuda INTERFACE_LINK_LIBRARIES)
