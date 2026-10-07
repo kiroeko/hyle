@@ -25,7 +25,7 @@ def main():
     assert 'HYLE_CPU_BESTOF_AA' not in os.environ,'A/A substitution must not reach A/B sampling'
     assert Path(os.environ.get(asset['environment_name'],'')).resolve()==Path(asset['path']).resolve()
     assert digest(Path(asset['path']))==asset['sha256']
-    print(json.dumps({'gate':'PASS','sdk_files':len(sdk['files']),'runtime_files':len(sdk['runtime_files']),'pairs':len(selected),'AA':'exact filtered image and only individually qualified rows; no rerun or inherited old version'},sort_keys=True))
+    print(json.dumps({'gate':'PASS','sdk_files':len(sdk['files']),'runtime_files':len(sdk['runtime_files']),'pairs':len(selected),'AA':'exact filtered image and only individually qualified rows; no rerun or inherited old version','order_proof':'exact source SHA and runner-controlled HYLE_BENCH_RIVAL_FIRST/HYLE_BENCH_PEER_ALLOCATION_FIRST; common process-policy canary remains required'},sort_keys=True))
 if __name__=='__main__':
     try:main()
     except Exception as error:print(str(error),file=sys.stderr);raise SystemExit(2)

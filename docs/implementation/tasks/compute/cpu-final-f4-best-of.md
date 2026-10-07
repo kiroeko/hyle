@@ -106,3 +106,9 @@ MatMul保留同一实际weight布局，oneDNN拒绝原转置域就记录非候�
 只对原334集合做一次固定8轮的纠正入口检查；不重测原433、不增加n、不移植公共runner/统计代码。
 此次为V1/V2唯一具名性能consumer拓扑纠正；后续仍无法裁决按成熟工程默认/具名独有资源边界处理，
 不得继续搭建仪器或追加A/A循环。最终P1只固定适用资格清单，n15/四strata，不升级n31。
+
+同进程纠正8轮完成后最终128个pair资格，206未裁决；原两份INCONCLUSIVE均保留。
+P1第一次启动在首样本被可选telemetry-prefix拒绝：现有marker仅有caller/affinity，不报告order。
+不新增或伪造字段、不改测量image/公共runner；合同去掉该不适配的可选要求，order以已绑定source SHA、
+runner受控双顺序/分配环境与原nanobench调用分支证明，实际process affinity/priority仍由公共canary验证。
+原启动失败/raw保留；P1固定128/n15/四strata，正常/holdout数据不因v1的experiment.holdout=false改动。

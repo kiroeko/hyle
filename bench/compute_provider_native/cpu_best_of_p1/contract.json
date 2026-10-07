@@ -8875,9 +8875,6 @@
           "stem": "hyle_cpu_best_of_sealed",
           "target_variant": "primary",
           "measurement_batch": 1,
-          "telemetry_prefixes": [
-            "# CPU_BEST_OF "
-          ],
           "workloads": [
             {
               "id": "unary-2-t6-r1-h2048-o6-native-vs-ggml",
