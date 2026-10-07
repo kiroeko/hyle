@@ -67,3 +67,14 @@ Graph全部653项首次运行通过、无skip。原Direct aggregate FAIL及诊�
 [原日志/XML/来源与receipt](../../../../evidence/correctness/cpu-final-f3/README.md)归档，不改原误差门。
 installed static/shared/搬移、Linux当前版本及其它完整旅程仍待运行，本包不关闭、不签新性能WIN。
 统一Compute+Graph实现61,242行/251文件，新增自研数学0。
+
+## Mac三种C++普通交付已验
+
+候选`9a9936e8271fc834f4b090316bc0a5d7f9b25982`由Windows现有source-package脚本生成完整带manifest/SHA的源码包，
+Air只消费前向副本。两个公开consumer按每种交付共用一个producer：source嵌入2项、
+shared搬移后Direct/Graph各1项、static搬移后各1项均通过，无skip；shared出口检查16库/1262出口通过。
+唯一环境纠正为SSH非登录PATH缺Ninja，原失败保留，只续失败步骤，不重建已通过producer。
+四原ARM64 CPU dylib的lipo/otool已审；torch_cpu的libomp边为loader-relative。
+机器SDK仍按installed shim单独解析，不冒称LibTorch随HYLE SDK完整打包。
+[交付receipt/日志](../../../../evidence/correctness/cpu-final-f3/README.md)有原archive、manifest、runtime与consumer身份。
+此为普通两入口交付，不签全部C5在installed形态重跑；Linux当前升级候选集中验证中。

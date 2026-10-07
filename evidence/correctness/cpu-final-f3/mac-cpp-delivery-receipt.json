@@ -1,0 +1,44 @@
+{
+  "candidate": "9a9936e8271fc834f4b090316bc0a5d7f9b25982",
+  "gates": {
+    "source": {
+      "tests": "2",
+      "failures": "0",
+      "skipped": "0"
+    },
+    "shared-compute": {
+      "tests": "1",
+      "failures": "0",
+      "skipped": "0"
+    },
+    "shared-graph": {
+      "tests": "1",
+      "failures": "0",
+      "skipped": "0"
+    },
+    "static-compute": {
+      "tests": "1",
+      "failures": "0",
+      "skipped": "0"
+    },
+    "static-graph": {
+      "tests": "1",
+      "failures": "0",
+      "skipped": "0"
+    }
+  },
+  "source_archive": {
+    "sha256": "e56e364f74cbeefb392decfcd5bad5d760cd44c5bb07a893989e9cf2afbb758c",
+    "bytes": 124549970
+  },
+  "runtime_contract": "HYLE SDK moved before independent consumers; external original CPU SDK remains separately resolved by installed shim. Four ARM64 dylibs audited; torch_cpu uses adjacent libomp. Not a self-contained LibTorch-bundled binary.",
+  "export_hygiene": "16 HYLE shared libraries / 1262 exports checked",
+  "prior_failure": "Shared consumer configure lacked Homebrew Ninja PATH; retained and resumed only failed step, no successful producer rerun",
+  "limits": [
+    "Full C5/official-model matrix on installed shapes not yet rerun",
+    "Other platforms pending",
+    "No new P1"
+  ],
+  "archive_sha256": "62b78c4c2972cf1e09e6e28701ec6081a7d5577f72b11acea9cc4287b5a1b8b7",
+  "archive_bytes": 31114
+}

@@ -38,3 +38,21 @@ files**, excluding tests/vendor/bench.
 [Cleanup receipt](cleanup.json): original 62.6 MiB Direct failure log/XML now remain
 in the verified archive; redundant scratch copies were removed after matching
 each member hash. Active source, producer and fixture inputs remain available.
+
+## Mac three C++ deliveries
+
+Candidate `9a9936e8271fc834f4b090316bc0a5d7f9b25982` is packaged by the existing
+Windows complete-source script with a commit manifest and archive digest. Source
+embedding runs both ordinary public consumers. Each shared/static SDK is moved
+before independent Direct and Graph consumers configure and execute. All six
+consumer checks pass without skips; the shared scan checks 16 HYLE libraries and
+1,262 exports.
+
+[Delivery receipt](mac-cpp-delivery-receipt.json) and
+[raw delivery logs/XML/loader inspection](mac-cpp-delivery.zip) retain the one
+missing-Ninja-PATH environment failure and its bounded continuation. Successful
+producers were not rebuilt for it. Four ARM64 Torch CPU dylibs were inspected;
+torch_cpu loads its adjacent libomp. The original machine CPU SDK is a separately
+resolved dependency of the installed shim, not bundled into the HYLE binary
+package. Full C5 on installed shapes and Linux current-version results remain
+pending, so this section does not close F3.
