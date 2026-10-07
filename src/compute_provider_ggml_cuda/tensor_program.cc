@@ -279,9 +279,9 @@ bool tensor_operation_supports(Operation operation,
     return false;
   for (std::size_t i = 0; i < inputs.size(); ++i)
     if (!representable(inputs[i], integer_concat) &&
-        !((operation.get_if<RoPE>() && i == 1 ||
-           operation.get_if<Gather>() && i == 1 ||
-           operation.custom_as<model_ops::GroupedMatMul>() && i == 2) &&
+        !(((operation.get_if<RoPE>() && i == 1) ||
+           (operation.get_if<Gather>() && i == 1) ||
+           (operation.custom_as<model_ops::GroupedMatMul>() && i == 2)) &&
           inputs[i].valid() && inputs[i].is_plain() && inputs[i].is_dense() &&
           inputs[i].data_type() == DataType::kInt32 &&
           inputs[i].element_count() &&
