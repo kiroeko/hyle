@@ -67,3 +67,14 @@ Native borrowed TorchAO/ATen/MLX/DS4程序、generic schema/Graph/mature provide
 
 预算为一批删除＋一批具名测试迁移纠正；任何成熟数值/资源新缺陷依法另定向绑定，不能在此自研补洞。
 不重跑P1／AA，不增加新Provider／依赖，不把旧GPU状态或公共治理纳入。
+
+### D1具名接线反例与D4边界补齐
+
+删除前的正交反证：`NativeElementwise.HalfStorageSupportsOddByteStridesAndBroadcast`和
+`[2,3]` F32 byte-strides`[10,4]`实际消费，旧Native scalar路径可执行；ggml native描述要求element-aligned
+strides，ATen原math存在但其selected/numeric_program只接稳定Unary和Min/Max，基础Unary/Binary未接。
+这是真实接线缺口，不能删除后把原合法布局签成完整替代；不因此保留一整套自研数学。
+D4限定现有ATen原abs/neg/exp/log/sqrt/rsqrt/tanh/relu和add/sub/mul/div的edge布局／empty／rank0或高rank
+接线与对应alias／checked稳定语义。只在非dense、empty、rank0或rank>4的原语义请求准入；
+F4全部dense rank2准入集合和43 WIN候选不扩大，不新增数学loop、Provider、依赖或采样。
+适用V1新增真实edge正确性／三交付差异，原失败保留；发现此反例后本轮不再宣称原14种无条件全布局接线齐全。
