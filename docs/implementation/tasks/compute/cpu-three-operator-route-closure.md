@@ -1,6 +1,6 @@
 # CPU 三项成熟接缝、规则绑定与有限清退
 
-<!-- MODULE REVIEW: CANDIDATE -->
+<!-- MODULE REVIEW: AUDITED -->
 
 - owners：compute_provider_ggml、compute_provider_native；baseline `a98bdbf239d2854fa04acbbf2d43793b13cb311e`。
 - trigger：用户批准有限接线/清退；[合格新版复比](../../../../evidence/performance/cpu-three-operator-current/README.md)
@@ -72,3 +72,14 @@ exact strided拒绝/declared-domain保留及旧身份断言迁移均固定。Win
 未改Native数学、公共layout、Graph region优先级或原Copy/RMS hot路径；17格刚完成的合格P1按相同数学/peer合同复用，
 不伪称新候选刚重测了这些格。交付/Linux/F32融合唯一四格P1与N3去留仍待验。
 N3是预声明的条件去留：若需源级清退，先退回AUDITED；融合/规则已固定的证据不因文档状态重跑。
+
+## N3有限清退已裁决
+
+四格唯一P1已结束，431.187秒，fresh AA/controls/validators/manifest verify全部通过，QUALIFIED；
+Native四格全LOSS/LOSE（原D256/Q1“WIN”相对接对的融合程序也LOSS），不优化、不重测。
+N3固定为删除 `attention.cc` 和其CMake/prepare/并行workspace/私有plan字段，删除已退役执行器测试，
+新增Native显式拒绝；普通SDPA由已验ggml/ATen数学接替。撤回Native-only、caller-workspace/零额外private和其strided/mask执行档，
+公共SDPA schema、CPU成熟mask/GQA/空keys能力不撤回，SIMD和其它Native数学不删。
+NativePlan仅删除无使用字段，减少冷metadata；其它数学/公共layout不改，适用P0成本与实际规则/资源重验，
+不据此宣称刚重测Copy/RMS或扩大17格范围。旧4格/24格原始证据分别保留。
+两owners退回AUDITED只授权以上N3，最终候选与两平台三交付仍须实际验收。

@@ -372,10 +372,9 @@
     },
     {
       "module": "compute_provider_ggml",
-      "state": "CANDIDATE",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/cpu-three-operator-route-closure.md",
-      "summary": "CPU三项CANDIDATE：原F32融合、17格规则及exact strided退役固定，Windows owning/实际规则/dynamic/七模型修正通过；交付/Linux/唯一SDPA复比与条件N3待验",
-      "candidate": "10c7d784d62d6e656b60e533e0f9329a9cb55827"
+      "summary": "CPU三项N3 AUDITED：唯一合格融合复比Native SDPA四格全LOSS，固定整项清退与能力撤回；不优化/重测，最终交付待验"
     },
     {
       "module": "graph_provider_onednn",
@@ -423,10 +422,9 @@
     },
     {
       "module": "compute_provider_native",
-      "state": "CANDIDATE",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/cpu-three-operator-route-closure.md",
-      "summary": "CPU三项CANDIDATE：原F32融合、17格规则及exact strided退役固定，Windows owning/实际规则/dynamic/七模型修正通过；交付/Linux/唯一SDPA复比与条件N3待验",
-      "candidate": "10c7d784d62d6e656b60e533e0f9329a9cb55827"
+      "summary": "CPU三项N3 AUDITED：唯一合格融合复比Native SDPA四格全LOSS，固定整项清退与能力撤回；不优化/重测，最终交付待验"
     },
     {
       "module": "compute_sched",
