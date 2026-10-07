@@ -96,3 +96,18 @@ N1还已提供实际feature传播反例：Provider私有边不能自动让普通
 首次配置检出Native适配器没有声明对Core的直接边；原来只间接依赖其事实。
 补显式Core include时按中央依赖合同同时补PRIVATE core，闭包中Core本来已存在，无新增runtime依赖或成本。
 这是M2 owning include的必要声明，有限FIX不扩张；其它适配器／runtime已声明Core的条目保持。
+
+## 当前候选与验证进展
+
+产品候选 `026d40bcfdde389c9f69b2458b55d8157774ebda`：12个owning文件已批量迁移，
+CPU program借已有export宏，Native直接Core依赖已声明；源数学／43 CPU规则／实际软件资格不变。
+完整当前分类账为432条预处理条件、440条CMake条件、11个feature定义；未归一原生产品facts为0，
+HYLE整数fact的presence误用为0，未选中feature继续未定义，没有把0误当作开启。
+
+Windows MSVC与clang-cl20.1 x64 Debug／Release平台、compiler ABI、ARM准入、公开枚举等价编译通过。
+Windows mixed实际批次：12个owning CTests、7个直接consumer CTests、2个ggml CUDA CTests通过，
+其native stdout合计277＋223＋32项；一个Graph过滤器实际匹配0用例，不记功能PASS，须补未过滤门。
+Linux GCC14 Debug／Release等价编译通过，owner批次仍在串行构建；Mac仅完成Windows canonical
+前向同步。Vulkan owner、三平台三交付、Graph缺口门尚未完成，不签本专题CLOSED，不跑P1。
+
+统一非测试Compute＋Graph实现为60,561行／253文件，自检PASS；第三方与测试不计。
