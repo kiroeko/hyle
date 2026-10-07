@@ -878,7 +878,7 @@ void run_q24_semantic_fragment(
       feedback.observe(output, actual);
       sem::expect_output(fixture, actual, expected.outputs[output], {},
                          fixture.exact_output(output), fixture.id_validation(output),
-                         fixture.bfloat_chain_output(output));
+                         fixture.bfloat_chain_output(output),output);
     }
   }
 }

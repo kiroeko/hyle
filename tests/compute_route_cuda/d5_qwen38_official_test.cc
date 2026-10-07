@@ -867,7 +867,7 @@ void run_q24_semantic_fragment(
       feedback.observe(output, actual);
       sem::expect_output(fixture, actual, expected.outputs[output], {},
                          fixture.exact_output(output), fixture.id_validation(output),
-                         fixture.bfloat_chain_output(output));
+                         fixture.bfloat_chain_output(output),output);
     }
   }
 }
@@ -1612,6 +1612,9 @@ void run_full_moe_profile(const c::ModelArtifactProfileDescription *profile) {
     }
     calls.push_back(make_call(context, resource, step.operation, inputs,
                               outputs, workload));
+    SCOPED_TRACE("region=" + std::to_string(fixture.region));
+    SCOPED_TRACE("unary subtype=" + std::to_string(step.operation.get_if<c::Unary>()
+        ? int(step.operation.get_if<c::Unary>()->kind) : -1));
     expect_mature(calls.back(), workload);
   }
 

@@ -668,8 +668,18 @@ lower_tensor_operation(ggml_context *context, const Recipe &recipe,
         context, ggml_permute(context, values[node.inputs[0]], 1, 0, 2, 3));
     result = ggml_ssm_conv(context, samples, values[node.inputs[1]]);
   } else if (node.operation.custom_as<model_ops::GroupedMatMul>()) {
-    result = ggml_mul_mat_id(context, values[node.inputs[0]],
+    auto *weights = values[node.inputs[0]];
+    // Native BF16 MMF casts its F32 RHS to BF16 tensor-core tiles. This
+    // plain-weight contract retains F32 activations; use the original cast
+    // and F32 program. Quantized storage keeps its declared activation codec.
+    if (recipe.values[node.inputs[0]].is_plain() &&
+        recipe.values[node.inputs[0]].data_type() == DataType::kBFloat16)
+      weights = ggml_cast(context, weights, GGML_TYPE_F32);
+    result = ggml_mul_mat_id(context, weights,
                              values[node.inputs[1]], values[node.inputs[2]]);
+    if (!ggml_prec_set_acc(result, GGML_PREC_F32) ||
+        !ggml_prec_set_src(result, GGML_PREC_F32, 1))
+      return {};
   } else if (const auto descriptor =
                  node.operation
                      .custom_as<model_ops::HyperConnectionCombine>()) {

@@ -43,6 +43,7 @@ struct Program final {
   model_ops::ArtifactWeightDecode operation;
   model_ops::MlxQuantized mlx{};
   bool is_mlx = false;
+  bool is_softplus = false;
   std::array<TensorDesc, 6> inputs;
   TensorDesc output;
   std::size_t count = 0;
@@ -74,8 +75,17 @@ at::ScalarType scalar(DataType type) noexcept {
 Status select(const Operation &operation, std::span<const TensorDesc> inputs,
               std::span<const TensorDesc> outputs) noexcept {
   const auto mlx = operation.custom_as<model_ops::MlxQuantized>();
-  if (!operation.custom_as<model_ops::ArtifactWeightDecode>() && !mlx)
+  const auto *unary = operation.get_if<Unary>();
+  const bool softplus = unary && unary->kind == UnaryKind::kSoftplus;
+  if (!operation.custom_as<model_ops::ArtifactWeightDecode>() && !mlx && !softplus)
     return Status::Unimplemented("CUDA ATen carrier requires an original artifact or MLX operation");
+  if (softplus && (inputs.size() != 1 || outputs.size() != 1 ||
+      !inputs[0].is_plain() || !inputs[0].is_dense() ||
+      !outputs[0].is_plain() || !outputs[0].is_dense() ||
+      (inputs[0].data_type() != DataType::kFloat32 &&
+       inputs[0].data_type() != DataType::kFloat16 &&
+       inputs[0].data_type() != DataType::kBFloat16)))
+    return Status::Unimplemented("CUDA ATen stable Softplus requires dense floating storage");
   std::array<TensorDesc, 1> inferred;
   HYLE_RETURN_IF_ERROR(infer_output_descriptions(operation, inputs, inferred));
   if (outputs.size() != 1 || outputs[0] != inferred[0])
@@ -134,7 +144,8 @@ Status propose(void *state, const detail::ProviderOperationRequest &request,
   for (std::size_t i = 0; i < inputs.size(); ++i) inputs[i] = device_binding(request.inputs[i]);
   outputs[0] = device_binding(request.outputs[0]);
   const auto mlx = request.operation.custom_as<model_ops::MlxQuantized>();
-  const auto route = mlx ? 0x100ULL + static_cast<std::uint64_t>(mlx->kind) * 3 +
+  const auto *unary = request.operation.get_if<Unary>();
+  const auto route = unary ? 0x200ULL : mlx ? 0x100ULL + static_cast<std::uint64_t>(mlx->kind) * 3 +
                              static_cast<std::uint64_t>(mlx->format)
       : static_cast<std::uint64_t>(request.operation.custom_as<model_ops::ArtifactWeightDecode>()->format) + 1;
   *proposal = {.route = route,
@@ -197,7 +208,9 @@ detail::EnqueueResult submit(void *state, void *slot, Queue &queue,
           at::TensorOptions().dtype(scalar(desc.data_type())).device(at::kCUDA, program.context.device));
     }
     const auto type = scalar(program.output.data_type());
-    if (program.is_mlx) {
+    if (program.is_softplus) {
+      invocation.result = at::softplus(tensors[0]);
+    } else if (program.is_mlx) {
       // The source equation accumulates F32. Respect that contract even when
       // another consumer enables TF32 on this process's original library.
       at::NoTF32Guard full_precision;
@@ -268,9 +281,11 @@ ProviderPrepareOutcome prepare(void *state, const detail::ProviderPrepareRequest
   if (!storage) return ProviderPrepareOutcome::resource_declined(Status::ResourceExhausted("CUDA ATen program allocation failed"));
   const auto artifact = request.operation.custom_as<model_ops::ArtifactWeightDecode>();
   const auto mlx = request.operation.custom_as<model_ops::MlxQuantized>();
+  const auto *unary = request.operation.get_if<Unary>();
   auto *program = ::new (storage) Program{.context = context,
       .operation = artifact ? *artifact : model_ops::ArtifactWeightDecode{},
       .mlx = mlx ? *mlx : model_ops::MlxQuantized{}, .is_mlx = mlx.has_value(),
+      .is_softplus = unary != nullptr,
       .inputs = {}, .output = request.outputs[0], .count = request.inputs.size(),
       .shifts = {}, .order = {}, .fp4_table = {}};
   for (std::size_t i = 0; i < program->count; ++i) program->inputs[i] = request.inputs[i];
@@ -294,10 +309,10 @@ ProviderPrepareOutcome prepare(void *state, const detail::ProviderPrepareRequest
         program->fp4_table = at::tensor({+0.0f,+0.5f,+1.0f,+1.5f,+2.0f,+3.0f,+4.0f,+6.0f,
                                        -0.0f,-0.5f,-1.0f,-1.5f,-2.0f,-3.0f,-4.0f,-6.0f},
                                       at::kFloat).to(options.dtype(at::kFloat), false, true);
-    } else if (program->operation.format == model_ops::WeightArtifactFormat::kAwqGemm4 ||
-        program->operation.format == model_ops::WeightArtifactFormat::kCompressedTensorsSymmetric4)
+    } else if (!program->is_softplus && (program->operation.format == model_ops::WeightArtifactFormat::kAwqGemm4 ||
+        program->operation.format == model_ops::WeightArtifactFormat::kCompressedTensorsSymmetric4))
       program->shifts = at::arange(0, 32, 4, options);
-    if (!program->is_mlx && program->operation.format == model_ops::WeightArtifactFormat::kAwqGemm4)
+    if (!program->is_mlx && !program->is_softplus && program->operation.format == model_ops::WeightArtifactFormat::kAwqGemm4)
       program->order = at::tensor({0, 4, 1, 5, 2, 6, 3, 7}, at::kLong).to(options, false, true);
     // Publish constants only after their original library stream has finished.
     status = cuda::status(cudaStreamSynchronize(c10::cuda::getCurrentCUDAStream(index).stream()));
@@ -314,7 +329,7 @@ ProviderPrepareOutcome prepare(void *state, const detail::ProviderPrepareRequest
 Status drain(void *) noexcept { return Status::Ok(); }
 const detail::ProviderVTable kProvider{
     .identity = {.id = kProviderId, .name = "original-artifacts-cuda",
-        .version = "libtorch-2.8.0+cu129+bnb-83364904+awq-88e4c76b+ct-ac8e2ba8+mlx-2b2bb497"},
+        .version = "libtorch-2.8.0+cu129+bnb-83364904+awq-88e4c76b+ct-ac8e2ba8+mlx-2b2bb497+stable-softplus"},
     .create_context = &create_context, .destroy_context = &destroy_context,
     .propose = &propose, .prepare = &prepare, .drain_context = &drain};
 } // namespace

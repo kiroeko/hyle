@@ -16,7 +16,8 @@ inline constexpr ProviderId kProviderId{0x48594c4500000001ULL,
                                        0x544f524355444101ULL};
 // Original NF4/nested, AutoAWQ and compressed-tensors weight preparation plus
 // MLX packed equations (F32 accumulation and original group-scale order) on
-// the caller's CUDA stream. Private ATen allocations are managed replay;
+// the caller's CUDA stream, plus original stable Softplus. Private ATen
+// allocations are managed replay;
 // strict caller budgets and external capture are unsupported. Borrowed input
 // and output resources must cover Completion, including a failed prefix.
 #if defined(HYLE_COMPUTE_TORCH_CUDA)
