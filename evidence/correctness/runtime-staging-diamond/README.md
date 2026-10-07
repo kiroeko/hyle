@@ -22,3 +22,10 @@ by this tool result.
 [Cleanup record](cleanup.json): both redundant scratch traces, totaling
 85,641,196 bytes, were removed only after archive/member hash verification.
 Their original content remains in `trace.zip`.
+
+The finite tool task is CLOSED. At `e0388fbda` the normalized collector section
+still matches candidate `61ad57fb6c054e8b1b46844e8aea75dbbdbc8948` exactly
+(SHA256 `ce0a7f714570d5ee093473b52081ae52320a91a3491b3e52e36f6f5a4df14029`).
+Archive SHA and every member were rechecked; no product rebuild or P1 was run
+for this documentation-only terminal audit. CPU SDK and Darwin qualification
+remain governed by their own cards.
