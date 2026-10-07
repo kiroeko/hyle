@@ -97,3 +97,8 @@ Q8_K／vec-dot程序当成CUDA Q8_1参考。此差分证明单成熟carrier的ad
 现representable统一按全F32转换预留的INT32/4逻辑上限误拒绝。只对原native quant Gather source
 将logical count门调整至INT32，保留physical bytes/strides、输出、checked IDs与其它op旧上限。
 不扩大其它route/格式，不通过裁小词表或copy冒充覆盖。
+
+F4后续具名SDPA形态：Qwen MTP明确请求non-causal／无mask的BSHD cache attention。当前CUDA
+route只允许causal并固定写diag mask，原ggml程序已有null-mask flash及无diag的F32路径。
+仅按现operation.causal选择原mask/无mask，保留dtype/scale/GQA/index/score容量资格，不改公共
+schema或写attention kernel；case仍用原query/key/cache，不篡改consumer的causal标记。
