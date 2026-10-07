@@ -33,6 +33,8 @@
 
 - [CPU SDPA、Copy、RMSNorm 当前成熟实现复比](tasks/compute/cpu-three-operator-recomparison.md)：
   有界性能证据任务，固定新版 peer、同合同和一次批量采样，产品状态不变。
+- [CPU 三项成熟接缝、规则绑定与有限清退](tasks/compute/cpu-three-operator-route-closure.md)：
+  基于实际复比修复 F32 fused、绑定适用规则并裁决重复实现。
 
 被当前状态链替代的旧 task/evidence 会从工作树删除，以免搜索结果冒充待办。需要追溯时使用
 `git log --all --name-status -- <path>` 定位 revision，再用 `git show <revision>:<path>` 读取；删除不等于

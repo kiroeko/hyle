@@ -372,14 +372,9 @@
     },
     {
       "module": "compute_provider_ggml",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/compute/cpu-quant-mtp-coverage-terminal.md",
-      "summary": "CPU热门量化/MTP/DSpark原准入合同CLOSED：固定104 GGUF及两新官方/三sidecar/四非GGUF typed+semantic/state联合资格、Windows/Linux三交付/真实失败并发资源、文档/独立终审与P0通过；不称整模型推理/SOTA、不改GPU旧状态。",
-      "candidate": "c740abc74a5a62ffacf60b26798228ca484317df",
-      "performance": {
-        "tier": "P0",
-        "evidence": "evidence/correctness/cpu-quant-mtp-c5-plain/cost-audit.md"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/cpu-three-operator-route-closure.md",
+      "summary": "CPU三项SCOPED：用户批准成熟F32 fused接线、新版Copy/RMS规则及有限清退；按实际合同验收，GPU不改"
     },
     {
       "module": "graph_provider_onednn",
@@ -427,14 +422,9 @@
     },
     {
       "module": "compute_provider_native",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/compute/cpu-quant-mtp-coverage-terminal.md",
-      "summary": "CPU热门量化/MTP/DSpark原准入合同CLOSED：固定104 GGUF及两新官方/三sidecar/四非GGUF typed+semantic/state联合资格、Windows/Linux三交付/真实失败并发资源、文档/独立终审与P0通过；不称整模型推理/SOTA、不改GPU旧状态。",
-      "candidate": "c740abc74a5a62ffacf60b26798228ca484317df",
-      "performance": {
-        "tier": "P0",
-        "evidence": "evidence/correctness/cpu-quant-mtp-c5-plain/cost-audit.md"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/cpu-three-operator-route-closure.md",
+      "summary": "CPU三项SCOPED：用户批准成熟F32 fused接线、新版Copy/RMS规则及有限清退；按实际合同验收，GPU不改"
     },
     {
       "module": "compute_sched",
