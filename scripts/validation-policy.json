@@ -94,6 +94,10 @@
   },
   "tool_suites": [
     {
+      "paths": ["cmake/HyleRuntimeStaging.cmake", "tests/tooling/runtime_staging_graph_test.py", "tests/tooling/torch_cpu_sdk_platform_test.py"],
+      "tests": ["tests/tooling/runtime_staging_graph_test.py", "tests/tooling/torch_cpu_sdk_platform_test.py"]
+    },
+    {
       "paths": ["cmake/HyleDependencyVersions.cmake", "tests/tooling/huggingface_dependency_test.py"],
       "tests": ["tests/tooling/huggingface_dependency_test.py"]
     },
