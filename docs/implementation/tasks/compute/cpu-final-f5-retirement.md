@@ -114,3 +114,19 @@ owning144项无skip通过，逐源码族去留见[35→21账本](cpu-final-f5-so
 没有以成熟unknown资源冒充零字节。不是新增自研数学，也不启动P1。
 本机完整普通CPU／Graph模型合同串行批、Graph夹具纠正、三平台source/static/shared与受影响mixed
 交付差异仍待最终记录，未完成的项不签PASS、不关闭F5／goal。
+
+### V1本机完整consumer与Graph夹具差异
+
+Windows完整consumer批实际串行执行1903.641秒：Compute、CPU backend、oneDNN三个owning
+consumer／region、ggml、Graph logical、普通CPU Direct完整批与CPU executor均通过。
+普通Graph完整851项中849项通过、无skip；两项只因旧断言仍要求oneDNN Select而FAIL，
+F4当前工程默认实为ATen。精度／原bits／独立invocation／变输入重放均通过；修正两处identity断言后
+定向2项通过，未重跑其余849项，也未回写最初aggregate FAIL。
+
+Generic Graph最初70项旧Native数学依赖FAIL；本批实际迁移到ggml／ATen，保留原数字oracle。
+未依赖退役数学的66项继续用Native context；strict资源测试使用保留的RMS／Add残差管线，
+已撤回MatMul／宽数学strict域不借成熟unknown私有量冒充0。
+异步protocol夹具的测试backend不是CPU backend，保留真实Native RMS／Copy和具名Exp尾部；
+不把ggml强接到不兼容backend。mock region仅验Graph调度／完成协议，不签成熟数学或完整路线资格。
+原27项／随后1项迁移FAIL均保留；最终Generic Graph283项全PASS、无skip。
+本轮没有产品数学修改／新的性能采样；三平台owning及source/static/shared／mixed差异仍待。

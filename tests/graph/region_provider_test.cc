@@ -21,6 +21,7 @@
 #include "hyle/compute/backends/cpu.h"
 #include "hyle/compute/detail/command_capture.h"
 #include "hyle/compute/detail/completion_access.h"
+#include "hyle/compute/providers/ggml_cpu.h"
 #include "hyle/compute/providers/native.h"
 #include "hyle/compute/route_policy.h"
 #include "hyle/graph/region_provider.h"
@@ -1846,7 +1847,8 @@ struct NegationGraph final {
   ValueId output{};
 };
 
-NegationGraph make_negations(std::size_t count, bool finish_with_abs = false) {
+NegationGraph make_negations(std::size_t count, bool finish_with_abs = false,
+                            UnaryKind tail = UnaryKind::kAbs) {
   GraphBuilder builder = GraphBuilder::create().value();
   NegationGraph result;
   result.input = builder.input(row(8)).value();
@@ -1854,7 +1856,7 @@ NegationGraph make_negations(std::size_t count, bool finish_with_abs = false) {
   for (std::size_t index = 0; index < count; ++index)
     value = builder.add(Unary{UnaryKind::kNeg}, value).value();
   if (finish_with_abs)
-    value = builder.add(Unary{UnaryKind::kAbs}, value).value();
+    value = builder.add(Unary{tail}, value).value();
   result.output = value;
   EXPECT_TRUE(builder.publish(value).ok());
   result.graph = std::move(builder).finish().value();
@@ -1900,14 +1902,21 @@ Graph make_reordered_non_contiguous_negations() {
 }
 
 Context make_context(RegionProbe &probe) {
-  const std::array providers{
-      hyle::compute::ProviderBinding{region_provider(probe), 100},
-      hyle::compute::ProviderBinding{hyle::compute::native::provider(), 200}};
   const bool asynchronous = probe.asynchronous_backend ||
                             probe.mode == ProposalMode::kAsyncPairs ||
                             probe.mode == ProposalMode::kAsyncRejectSecond;
-  return Context::create(asynchronous ? async_device(probe)
-                                      : hyle::compute::cpu::device(),
+  if (asynchronous) {
+    const std::array providers{
+        hyle::compute::ProviderBinding{region_provider(probe), 100},
+        hyle::compute::ProviderBinding{hyle::compute::native::provider(), 200}};
+    return Context::create(async_device(probe), {.providers = providers})
+        .value();
+  }
+  const std::array providers{
+      hyle::compute::ProviderBinding{region_provider(probe), 100},
+      hyle::compute::ProviderBinding{hyle::compute::ggml_cpu::provider(), 200},
+      hyle::compute::ProviderBinding{hyle::compute::native::provider(), 300}};
+  return Context::create(hyle::compute::cpu::device(),
                          {.providers = providers})
       .value();
 }
@@ -1916,7 +1925,8 @@ Context make_context(RegionProbe &first, RegionProbe &second) {
   const std::array providers{
       hyle::compute::ProviderBinding{region_provider(first), 100},
       hyle::compute::ProviderBinding{region_provider(second), 200},
-      hyle::compute::ProviderBinding{hyle::compute::native::provider(), 300}};
+      hyle::compute::ProviderBinding{hyle::compute::ggml_cpu::provider(), 300},
+      hyle::compute::ProviderBinding{hyle::compute::native::provider(), 400}};
   return Context::create(hyle::compute::cpu::device(), {.providers = providers})
       .value();
 }
@@ -2298,12 +2308,12 @@ TEST(GraphResources, LaneSearchSharesStateAndPrepareLimitsWithNodeCover) {
 }
 
 TEST(GraphResources,
-     NativeIntermediateMovesToFeasibleStorageAndPreservesAliasRules) {
+     MatureIntermediateMovesToFeasibleStorageAndPreservesAliasRules) {
   const auto logical = make_negations(2);
   HostResource other;
   const auto host = hyle::mem::system_resource();
   const std::array providers{
-      hyle::compute::ProviderBinding{hyle::compute::native::provider(), 100}};
+      hyle::compute::ProviderBinding{hyle::compute::ggml_cpu::provider(), 100}};
   auto context =
       Context::create(hyle::compute::cpu::device(), {.providers = providers})
           .value();
@@ -3620,7 +3630,7 @@ TEST(GraphRegions, ReplayFilteringPrecedesTargetSelection) {
       Context::create(hyle::compute::cpu::device(), {.providers = providers})
           .value();
   const std::array native_providers{
-      hyle::compute::ProviderBinding{hyle::compute::native::provider(), 100}};
+      hyle::compute::ProviderBinding{hyle::compute::ggml_cpu::provider(), 100}};
   Context second = Context::create(hyle::compute::cpu::device(),
                                    {.providers = native_providers})
                        .value();
@@ -3936,7 +3946,7 @@ TEST(GraphRegions, ImportsASharedQueuePrefixIntoADelegatedRegion) {
 TEST(GraphRegions, ImportsADelegatedRegionIntoASharedQueue) {
   RegionProbe probe{.mode = ProposalMode::kAsyncPairs};
   use_delegated_runtime(probe);
-  const NegationGraph logical = make_negations(2, true);
+  const NegationGraph logical = make_negations(2, true, UnaryKind::kExp);
   Context context = make_context(probe);
   auto compiled = hyle::graph::compile(logical.graph, context).value();
   ASSERT_EQ(compiled.report.step_count(), 2u);
@@ -3946,7 +3956,6 @@ TEST(GraphRegions, ImportsADelegatedRegionIntoASharedQueue) {
   OwnedTensor input = make_tensor(row(8));
   OwnedTensor output = make_tensor(row(8));
   const std::array<float, 8> values{-4, -3, -2, -1, 1, 2, 3, 4};
-  const std::array<float, 8> expected{4, 3, 2, 1, 1, 2, 3, 4};
   write(input, values);
   auto invocation = compiled.executable.create_invocation().value();
   ASSERT_TRUE(invocation.bind(logical.input, input.view).ok());
@@ -3956,8 +3965,10 @@ TEST(GraphRegions, ImportsADelegatedRegionIntoASharedQueue) {
   ASSERT_TRUE(completion.has_value()) << completion.error().message();
   EXPECT_TRUE(completion->wait().ok());
   EXPECT_EQ(probe.device_wait_count, 1u);
-  EXPECT_EQ(read(output, expected.size()),
-            std::vector<float>(expected.begin(), expected.end()));
+  const auto actual = read(output, values.size());
+  for (std::size_t index = 0; index < values.size(); ++index)
+    EXPECT_NEAR(actual[index], std::exp(values[index]),
+                1.0e-5F * std::exp(values[index]));
 }
 
 TEST(GraphRegions, ChainsDelegatedRegionsWithOneProviderDependency) {
@@ -4339,9 +4350,8 @@ TEST(GraphRegions, MixesACompiledRegionWithSingleOperationFallback) {
   EXPECT_EQ(fallback->kind, CompileStepKind::kOperationFallback);
   EXPECT_EQ(fallback->fallback_reason,
             CompileFallbackReason::kNoEligibleRegion);
-  ASSERT_TRUE(fallback->persistent_bytes.has_value());
-  EXPECT_GT(*fallback->persistent_bytes,
-            0U); // Native's actual prepared artifact
+  EXPECT_FALSE(fallback->persistent_bytes.has_value());
+  EXPECT_EQ(fallback->provider.id, hyle::compute::ggml_cpu::kProviderId);
 
   auto invocation = compiled.executable.create_invocation().value();
   OwnedTensor input = make_tensor(row(8));
@@ -4668,7 +4678,7 @@ TEST(GraphRegions, RelocatesAnUnselectedRegionNodeToAWorkingFallbackTarget) {
       Context::create(hyle::compute::cpu::device(), {.providers = region_only})
           .value();
   const std::array native_only{
-      hyle::compute::ProviderBinding{hyle::compute::native::provider(), 100}};
+      hyle::compute::ProviderBinding{hyle::compute::ggml_cpu::provider(), 100}};
   Context fallback_context =
       Context::create(hyle::compute::cpu::device(), {.providers = native_only})
           .value();
@@ -4731,7 +4741,7 @@ TEST(GraphRegions, IgnoresUnusedSameDeviceContextsInPlanSummary) {
       Context::create(hyle::compute::cpu::device(), region_provider(probe))
           .value();
   const std::array native_only{
-      hyle::compute::ProviderBinding{hyle::compute::native::provider(), 100}};
+      hyle::compute::ProviderBinding{hyle::compute::ggml_cpu::provider(), 100}};
   Context active =
       Context::create(hyle::compute::cpu::device(), {.providers = native_only})
           .value();
@@ -4788,7 +4798,7 @@ TEST(GraphRegions, MixedUnknownCountsUseATransitiveDeterministicFallback) {
         hyle::compute::ProviderBinding{region_provider(first), 100},
         hyle::compute::ProviderBinding{region_provider(unknown), 200},
         hyle::compute::ProviderBinding{region_provider(third), 300},
-        hyle::compute::ProviderBinding{hyle::compute::native::provider(), 400}};
+        hyle::compute::ProviderBinding{hyle::compute::ggml_cpu::provider(), 400}};
     Context context =
         Context::create(hyle::compute::cpu::device(), {.providers = providers})
             .value();
@@ -4840,7 +4850,7 @@ TEST(GraphRegions, LeafAndRegionProvidersShareExplicitPreference) {
   for (const bool region_first : {false, true}) {
     RegionProbe probe;
     std::array providers{
-        hyle::compute::ProviderBinding{hyle::compute::native::provider(),
+        hyle::compute::ProviderBinding{hyle::compute::ggml_cpu::provider(),
                                        region_first ? 200u : 100u},
         hyle::compute::ProviderBinding{region_provider(probe),
                                        region_first ? 100u : 200u}};
@@ -4876,7 +4886,7 @@ TEST(GraphRegions, EqualPreferenceUsesPlanFactsBeforeRegistrationOrder) {
     const auto region =
         hyle::compute::ProviderBinding{region_provider(probe), 100};
     const auto leaf =
-        hyle::compute::ProviderBinding{hyle::compute::native::provider(), 100};
+        hyle::compute::ProviderBinding{hyle::compute::ggml_cpu::provider(), 100};
     Context context;
     if (leaf_registered_first) {
       const std::array providers{leaf, region};
@@ -5859,7 +5869,7 @@ TEST(GraphStorage, StorageLimitCanReselectACompleteRegionBeforePublishing) {
   }
 }
 
-TEST(GraphStorage, StorageRejectionCanUseLeafFallbackButCannotWaiveTheLimit) {
+TEST(GraphStorage, MatureLeafFallbackCannotTurnUnknownStorageIntoZero) {
   const auto logical = make_negations(2);
   RegionProbe probe;
   probe.artifact_properties.persistent_bytes = SIZE_MAX;
@@ -5869,20 +5879,31 @@ TEST(GraphStorage, StorageRejectionCanUseLeafFallbackButCannotWaiveTheLimit) {
                       {.region_selection = RegionSelectionPolicy::kDisabled})
                       .value();
   const auto required = baseline.report.compiled_storage().total_bytes();
-  ASSERT_TRUE(required);
+  EXPECT_FALSE(required);
+  const auto known = baseline.report.compiled_storage().known_bytes();
+  auto strict = hyle::graph::compile(
+      logical.graph, context, {.compiled_storage = {.max_bytes = known}});
+  ASSERT_FALSE(strict);
+  EXPECT_TRUE(strict.error().IsFailedPrecondition() ||
+              strict.error().IsResourceExhausted());
   auto compiled = hyle::graph::compile(
-      logical.graph, context, {.compiled_storage = {.max_bytes = *required}});
+      logical.graph, context,
+      {.compiled_storage = {.max_bytes = known,
+                            .unknown = hyle::graph::UnknownStoragePolicy::kAllow}});
   ASSERT_TRUE(compiled) << compiled.error().message();
   EXPECT_EQ(compiled->report.region_count(), 0U);
   EXPECT_EQ(compiled->report.fallback_operation_count(), 2U);
-  EXPECT_EQ(compiled->report.compiled_storage().total_bytes(), required);
+  EXPECT_FALSE(compiled->report.compiled_storage().total_bytes());
+  EXPECT_EQ(compiled->report.compiled_storage().known_bytes(), known);
   EXPECT_EQ(probe.destroy_prepared_count, probe.compile_count);
   auto failed = hyle::graph::compile(
       logical.graph, context,
       {.compiled_storage = {.max_bytes = 0},
        .search_policy = CompileSearchPolicy::kAllowLimited});
   ASSERT_FALSE(failed);
-  EXPECT_TRUE(failed.error().IsResourceExhausted()) << failed.error().message();
+  EXPECT_TRUE(failed.error().IsResourceExhausted() ||
+              failed.error().IsFailedPrecondition())
+      << failed.error().message();
 }
 
 TEST(GraphStorage, CompiledStorageOverflowRollsBackInsteadOfSaturating) {
@@ -6693,7 +6714,7 @@ TEST(GraphRegions, ExplicitLeafDeclinesCanSelectAnotherTarget) {
         Context::create(hyle::compute::cpu::device(), {.providers = providers})
             .value();
     auto second = Context::create(hyle::compute::cpu::device(),
-                                  hyle::compute::native::provider())
+                                  hyle::compute::ggml_cpu::provider())
                       .value();
     const Environment environment{
         {&first, probe.required_resource},
@@ -6816,7 +6837,7 @@ TEST(GraphRegions, LeafErrorDoesNotBecomeARetryAcrossProvidersOrTargets) {
     probe.single_outcome_override = ProviderPrepareOutcome::error(error);
     auto first = make_context(probe);
     auto second = Context::create(hyle::compute::cpu::device(),
-                                  hyle::compute::native::provider())
+                                  hyle::compute::ggml_cpu::provider())
                       .value();
     const Environment environment{{&first, probe.required_resource},
                                   {&second, probe.required_resource}};

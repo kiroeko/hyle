@@ -1732,9 +1732,10 @@ TEST(CpuGraph, StableSoftplusAndSelectKeepTwoPublishedResultsAcrossReplay) {
     auto compiled = graph::compile(logical, context);
     ASSERT_TRUE(compiled) << compiled.error().message();
     ASSERT_EQ(compiled->report.step_count(), 2U);
-    for (std::size_t i = 0; i < 2; ++i)
-      EXPECT_EQ(compiled->report.step(i)->provider.id,
-                compute::onednn::kProviderId);
+    EXPECT_EQ(compiled->report.step(0)->provider.id,
+              compute::onednn::kProviderId);
+    EXPECT_EQ(compiled->report.step(1)->provider.id,
+              compute::aten_cpu::kProviderId);
     std::array<float, 8> values{-90, -40, -20, -1, -0.F, 1, 20, 100};
     std::array<std::uint8_t, 8> masks{0, 1, 0, 1, 0, 1, 0, 1};
     auto source = half_test::buffer<float>(values);
@@ -1831,7 +1832,7 @@ TEST(CpuGraph, SelectRetainsBitsAndResultsAcrossTwoInvocations) {
   ASSERT_TRUE(compiled) << compiled.error().message();
   ASSERT_EQ(compiled->report.step_count(), 1U);
   EXPECT_EQ(compiled->report.step(0)->provider.id,
-            compute::onednn::kProviderId);
+            compute::aten_cpu::kProviderId);
   std::array<std::uint8_t, 4> masks{0, 1, 0, 1};
   const std::array<std::uint32_t, 4> left{0x7fa12345U, 0x80000000U, 0x00000001U,
                                           0xff800000U};

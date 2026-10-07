@@ -15,7 +15,7 @@
 #include <utility>
 #include <vector>
 
-#include "../compute/native_context_fixture.h"
+#include "cpu_context_fixture.h"
 #include "hyle/compute/providers/native.h"
 #include "hyle/graph/executable.h"
 #include "hyle/mem/buffer.h"
@@ -99,6 +99,21 @@ LogicalGraph make_rms_graph(TensorDesc description, bool weighted = false) {
   }
   EXPECT_TRUE(builder.publish(output).ok());
   result.outputs.push_back(output);
+  result.graph = std::move(builder).finish().value();
+  return result;
+}
+
+LogicalGraph make_resource_graph() {
+  GraphBuilder builder = GraphBuilder::create().value();
+  LogicalGraph result;
+  result.inputs.push_back(builder.input(matrix(2, 4)).value());
+  const auto normalized = builder.add(RmsNorm{}, result.inputs[0]).value();
+  const auto output =
+      builder.add(Binary{BinaryKind::kAdd}, normalized, result.inputs[0])
+          .value();
+  result.intermediates.push_back(normalized);
+  result.outputs.push_back(output);
+  EXPECT_TRUE(builder.publish(output).ok());
   result.graph = std::move(builder).finish().value();
   return result;
 }
@@ -504,7 +519,7 @@ TEST(GraphVariants,
                         std::array{Dimension(rows), Dimension::fixed(4)})
           .value();
   const auto input = builder.input(spec).value();
-  const auto output = builder.add(Unary{UnaryKind::kNeg}, spec, input).value();
+  const auto output = builder.add(Unary{UnaryKind::kExp}, spec, input).value();
   ASSERT_TRUE(builder.publish(output).ok());
   auto graph = std::move(builder).finish().value();
   const std::array point{ShapeBinding{rows, 2}};
@@ -1021,7 +1036,7 @@ TEST(GraphDomain, RejectsExactOnlyOperationsAndIndependentOutputSymbols) {
     const auto input = builder.input(spec(rows)).value();
     const auto output =
         exact_only
-            ? builder.add(Unary{UnaryKind::kNeg}, spec(rows), input).value()
+            ? builder.add(Unary{UnaryKind::kExp}, spec(rows), input).value()
             : builder.add(RmsNorm{}, spec(other), input).value();
     ASSERT_TRUE(builder.publish(output).ok());
     auto graph = std::move(builder).finish().value();
@@ -1141,7 +1156,7 @@ TEST(GraphDomain, FixedOperationsUseExactProvidersBesideDynamicNodes) {
   const auto fixed_input = builder.input(row(4)).value();
   const auto output = builder.add(RmsNorm{}, spec, input).value();
   const auto fixed_output =
-      builder.add(Unary{UnaryKind::kNeg}, fixed_input).value();
+      builder.add(Unary{UnaryKind::kExp}, fixed_input).value();
   ASSERT_TRUE(builder.publish(output).ok());
   ASSERT_TRUE(builder.publish(fixed_output).ok());
   auto context = hyle::compute::test::native_context().value();
@@ -1163,7 +1178,9 @@ TEST(GraphDomain, FixedOperationsUseExactProvidersBesideDynamicNodes) {
   ASSERT_TRUE(run.submit(queue)->wait().ok());
   expect_near(read(out, 8), std::vector<float>(
                                 8, 1.0F / std::sqrt(1.0F + RmsNorm{}.epsilon)));
-  expect_near(read(fixed_out, 4), std::array{-1.0F, -2.0F, -3.0F, -4.0F});
+  expect_near(read(fixed_out, 4),
+              std::array{std::exp(1.0F), std::exp(2.0F), std::exp(3.0F),
+                         std::exp(4.0F)});
 }
 
 TEST(GraphDomain, DynamicConstantsAreRejectedBeforePreparation) {
@@ -1271,7 +1288,7 @@ TEST(GraphDomain, DistinctShapesSharePlanButNotMutableRunState) {
 
 TEST(GraphCompile, CompilesEveryNodeAndReportsItsWorkspaceHonestly) {
   const LogicalGraph logical = make_transformer_graph(2, 4, 4);
-  Context context = hyle::compute::test::native_context().value();
+  Context context = hyle::graph::test::cpu_context().value();
   CompiledGraph compiled = hyle::graph::compile(logical.graph, context).value();
 
   EXPECT_TRUE(compiled.executable.valid());
@@ -1281,7 +1298,9 @@ TEST(GraphCompile, CompilesEveryNodeAndReportsItsWorkspaceHonestly) {
   EXPECT_EQ(compiled.executable.input_id(1).value(), logical.inputs[1]);
   EXPECT_EQ(compiled.executable.output_id().value(), logical.outputs[0]);
   EXPECT_EQ(compiled.report.backend(), hyle::compute::cpu::kBackendId);
-  EXPECT_EQ(compiled.report.provider().id, hyle::compute::native::kProviderId);
+  EXPECT_TRUE(compiled.report.mixed_providers());
+  EXPECT_EQ(compiled.report.step(0)->provider.id,
+            hyle::compute::native::kProviderId);
   EXPECT_EQ(compiled.report.node_count(), 3u);
   EXPECT_TRUE(
       hyle::graph::CompileReport{}.node(0).error().IsFailedPrecondition());
@@ -1318,7 +1337,7 @@ TEST(GraphCompile, CompilesEveryNodeAndReportsItsWorkspaceHonestly) {
             hyle::compute::ProviderRuntimeMode::kSharedQueue);
   EXPECT_EQ(compiled.report.copy_bytes(), 0u);
   EXPECT_EQ(compiled.report.synchronization_count(), 0u);
-  EXPECT_FALSE(compiled.report.mixed_providers());
+  EXPECT_TRUE(compiled.report.mixed_providers());
 
   Executable copied = compiled.executable;
   Executable moved = std::move(copied);
@@ -1333,7 +1352,7 @@ TEST(GraphCompilationStorage,
   auto context =
       hyle::compute::test::native_context({.metadata_allocator = stats.get()})
           .value();
-  const auto logical = make_transformer_graph(2, 4, 4);
+  const auto logical = make_resource_graph();
   EXPECT_FALSE(hyle::graph::CompileReport{}.compilation_storage());
   {
     auto plain = hyle::graph::compile(logical.graph, context).value();
@@ -1362,7 +1381,7 @@ TEST(GraphCompilationStorage,
 }
 
 TEST(GraphCompilationStorage, ExactLimitsAndRuntimeStorageAreIndependent) {
-  const auto logical = make_transformer_graph(2, 4, 4);
+  const auto logical = make_resource_graph();
   auto stats =
       hyle::mem::StatsAllocator::create(hyle::mem::system_allocator()).value();
   auto context =
@@ -1567,7 +1586,7 @@ TEST(GraphInvocationStorage, OptInCountsMetadataAndWorkspaceExactlyOnce) {
   HostResource storage;
   const Environment environment{
       {&context, hyle::mem::MemoryResourceRef(storage)}};
-  const auto logical = make_transformer_graph(2, 4, 4);
+  const auto logical = make_resource_graph();
   auto plain =
       hyle::graph::compile(logical.graph, environment.environment()).value();
   EXPECT_FALSE(plain.executable.invocation_storage_usage());
@@ -1597,7 +1616,7 @@ TEST(GraphInvocationStorage, OptInCountsMetadataAndWorkspaceExactlyOnce) {
 }
 
 TEST(GraphInvocationStorage, HardLimitRejectsConcurrentOwnersAndAllowsRetry) {
-  const auto logical = make_transformer_graph(2, 4, 4);
+  const auto logical = make_resource_graph();
   auto context = hyle::compute::test::native_context().value();
   auto measured =
       hyle::graph::compile(
@@ -1657,7 +1676,7 @@ TEST(GraphInvocationStorage, BackingFailureReturnsAllReservationsAndMetadata) {
   HostResource storage;
   const Environment environment{
       {&context, hyle::mem::MemoryResourceRef(storage)}};
-  auto logical = make_transformer_graph(2, 4, 4);
+  auto logical = make_resource_graph();
   auto compiled =
       hyle::graph::compile(
           logical.graph, environment.environment(),
@@ -1689,7 +1708,7 @@ TEST(GraphInvocationStorage, BackingFailureReturnsAllReservationsAndMetadata) {
 }
 
 TEST(GraphInvocationStorage, SmallKnownWorkspaceLimitRejectsAtCompile) {
-  auto logical = make_transformer_graph(2, 4, 4);
+  auto logical = make_resource_graph();
   auto context = hyle::compute::test::native_context().value();
   auto plain = hyle::graph::compile(logical.graph, context).value();
   const auto bytes = plain.executable.workspace_bytes();
@@ -1950,7 +1969,7 @@ TEST(GraphCompile, RejectsSymbolicOutputThatFailsConcreteInference) {
           .IsInvalidArgument());
 }
 
-TEST(GraphCompile, NativeConcatEvaluatesSumAndRunsMultipleSpecializations) {
+TEST(GraphCompile, MatureConcatEvaluatesSumAndRunsMultipleSpecializations) {
   auto builder = GraphBuilder::create().value();
   const auto left_rows = builder.dimension({1, 4, 1}).value();
   const auto right_rows = builder.dimension({1, 8, 1}).value();
@@ -1974,7 +1993,7 @@ TEST(GraphCompile, NativeConcatEvaluatesSumAndRunsMultipleSpecializations) {
                              .value();
   ASSERT_TRUE(builder.publish(output_id).ok());
   const Graph graph = std::move(builder).finish().value();
-  auto context = hyle::compute::test::native_context().value();
+  auto context = hyle::graph::test::cpu_context().value();
   auto queue = context.create_queue().value();
   const std::array invalid_guard{ShapeBinding{left_rows, 4},
                                  ShapeBinding{right_rows, 8}};
@@ -2090,8 +2109,8 @@ TEST(GraphCompile, DerivedQuotientAndBroadcastRejectIncompatibleBindings) {
 
 TEST(GraphCompile, PlacesAcrossTargetsWithoutFalseStorageCopies) {
   const LogicalGraph logical = make_transformer_graph(2, 4, 4);
-  Context first = hyle::compute::test::native_context().value();
-  Context second = hyle::compute::test::native_context().value();
+  Context first = hyle::graph::test::cpu_context().value();
+  Context second = hyle::graph::test::cpu_context().value();
   const auto host = hyle::mem::system_resource();
   const Environment environment{{
       ExecutionSpec{.context = &first, .storage = host},
@@ -2201,8 +2220,8 @@ TEST(GraphCompile,
   ASSERT_TRUE(builder.publish(second_output).ok());
   Graph graph = std::move(builder).finish().value();
 
-  Context first = hyle::compute::test::native_context().value();
-  Context second = hyle::compute::test::native_context().value();
+  Context first = hyle::graph::test::cpu_context().value();
+  Context second = hyle::graph::test::cpu_context().value();
   const auto host = hyle::mem::system_resource();
   const Environment environment{{
       ExecutionSpec{.context = &first, .storage = host},
@@ -2289,8 +2308,8 @@ TEST(GraphCompile, MakesWorkspaceSerializationAnExplicitBudgetTradeoff) {
   ASSERT_TRUE(builder.publish(second_output).ok());
   Graph graph = std::move(builder).finish().value();
 
-  Context first = hyle::compute::test::native_context().value();
-  Context second = hyle::compute::test::native_context().value();
+  Context first = hyle::graph::test::cpu_context().value();
+  Context second = hyle::graph::test::cpu_context().value();
   const auto host = hyle::mem::system_resource();
   const std::array targets{
       hyle::graph::ExecutionTarget{.context = &first,
@@ -2753,7 +2772,7 @@ TEST(Invocation, RunsNaturalTransformerFragmentAndReusesIt) {
   constexpr std::size_t kHidden = 4;
   constexpr std::size_t kFfn = 4;
   const LogicalGraph logical = make_transformer_graph(kRows, kHidden, kFfn);
-  Context context = hyle::compute::test::native_context().value();
+  Context context = hyle::graph::test::cpu_context().value();
   Queue queue = context.create_queue().value();
   Invocation invocation = hyle::graph::compile(logical.graph, context)
                               ->executable.create_invocation()
@@ -2855,7 +2874,7 @@ TEST(Invocation, RunsBroadcastMatMulIntoSeparateGatedActivation) {
   write(right, right_values);
   write(value, value_values);
 
-  Context context = hyle::compute::test::native_context().value();
+  Context context = hyle::graph::test::cpu_context().value();
   Queue queue = context.create_queue().value();
   Invocation invocation = hyle::graph::compile(graph, context)
                               ->executable.create_invocation()
@@ -2870,7 +2889,7 @@ TEST(Invocation, RunsBroadcastMatMulIntoSeparateGatedActivation) {
 
 TEST(Invocation, ExecutesSharedInputBranchesWithIndependentOutputs) {
   const LogicalGraph logical = make_branch_graph();
-  Context context = hyle::compute::test::native_context().value();
+  Context context = hyle::graph::test::cpu_context().value();
   Queue queue = context.create_queue().value();
   Invocation invocation = hyle::graph::compile(logical.graph, context)
                               ->executable.create_invocation()
@@ -2899,7 +2918,7 @@ TEST(Invocation, ExecutesSharedInputBranchesWithIndependentOutputs) {
 TEST(Invocation, RejectsForeignInternalConstOutputAndWrongShapeBindings) {
   const LogicalGraph logical = make_transformer_graph(2, 4, 4);
   const LogicalGraph other = make_rms_graph(matrix(2, 4));
-  Context context = hyle::compute::test::native_context().value();
+  Context context = hyle::graph::test::cpu_context().value();
   Invocation invocation = hyle::graph::compile(logical.graph, context)
                               ->executable.create_invocation()
                               .value();
@@ -2965,7 +2984,7 @@ TEST(GraphCompile, DefersEncodedWeightExecutionToAFutureProvider) {
   ASSERT_TRUE(builder.publish(output).ok());
   Graph graph = std::move(builder).finish().value();
 
-  Context context = hyle::compute::test::native_context().value();
+  Context context = hyle::graph::test::cpu_context().value();
   auto compiled = hyle::graph::compile(graph, context);
   ASSERT_FALSE(compiled.has_value());
   EXPECT_TRUE(compiled.error().IsUnimplemented());
@@ -2976,7 +2995,7 @@ TEST(GraphCompile, EveryMetadataAllocationFailureRollsBackAndCanRetry) {
   Context context = hyle::compute::test::native_context(
                         {.metadata_allocator = probe_allocator(probe)})
                         .value();
-  const LogicalGraph logical = make_transformer_graph(2, 4, 4);
+  const LogicalGraph logical = make_resource_graph();
   const auto retained_allocations =
       probe.allocations.load() - probe.deallocations.load();
 
@@ -3017,7 +3036,7 @@ TEST(GraphCompile, ProviderPolicyAllocationsRollBackAndDoNotReachReplay) {
   const auto input = builder.input(row(8)).value();
   auto output = input;
   for (std::size_t index = 0; index < 18; ++index)
-    output = builder.add(Unary{UnaryKind::kNeg}, output).value();
+    output = builder.add(hyle::compute::Copy{}, output).value();
   ASSERT_TRUE(builder.publish(output).ok());
   auto graph = std::move(builder).finish().value();
   using hyle::compute::ProviderId;
@@ -3074,7 +3093,7 @@ TEST(GraphCompile, ProviderPolicyAllocationsRollBackAndDoNotReachReplay) {
 
 TEST(Invocation, SubmitDoesNotAllocatePlanMetadata) {
   AllocatorProbe probe;
-  Context context = hyle::compute::test::native_context(
+  Context context = hyle::graph::test::cpu_context(
                         {.metadata_allocator = probe_allocator(probe)})
                         .value();
   const LogicalGraph logical = make_transformer_graph(2, 4, 4);
@@ -3151,7 +3170,7 @@ TEST(Invocation, PlanAndRunStateRetainTheirContextOwnedArtifacts) {
 
 TEST(Invocation, ZeroExtentIntermediateWorkspaceRemainsAValidRun) {
   const LogicalGraph logical = make_transformer_graph(0, 4, 4);
-  Context context = hyle::compute::test::native_context().value();
+  Context context = hyle::graph::test::cpu_context().value();
   Queue queue = context.create_queue().value();
   CompiledGraph compiled = hyle::graph::compile(logical.graph, context).value();
   EXPECT_EQ(compiled.report.node_count(), 3u);
@@ -3241,10 +3260,10 @@ TEST(GraphCompile, ReusesInternalStorageForLifetimeSafeInPlaceOperations) {
   GraphBuilder builder = GraphBuilder::create().value();
   const TensorDesc description = row(4);
   const ValueId input = builder.input(description).value();
-  const ValueId negated = builder.add(Unary{UnaryKind::kNeg}, input).value();
+  const ValueId negated = builder.add(Unary{UnaryKind::kExp}, input).value();
   const ValueId magnitude =
-      builder.add(Unary{UnaryKind::kAbs}, negated).value();
-  const ValueId output = builder.add(Unary{UnaryKind::kNeg}, magnitude).value();
+      builder.add(Unary{UnaryKind::kExp}, negated).value();
+  const ValueId output = builder.add(Unary{UnaryKind::kExp}, magnitude).value();
   ASSERT_TRUE(builder.publish(output).ok());
   Graph graph = std::move(builder).finish().value();
 
@@ -3255,13 +3274,16 @@ TEST(GraphCompile, ReusesInternalStorageForLifetimeSafeInPlaceOperations) {
   Invocation invocation = compiled.executable.create_invocation().value();
   OwnedTensor input_tensor = make_tensor(description);
   OwnedTensor output_tensor = make_tensor(description);
-  const std::array<float, 4> values{-1, 2, -3, 4};
+  const std::array<float, 4> values{-3, -2, -1, 0};
   write(input_tensor, values);
   ASSERT_TRUE(invocation.bind(input, input_tensor.view).ok());
   ASSERT_TRUE(invocation.bind(output, output_tensor.view).ok());
   Queue queue = context.create_queue().value();
   ASSERT_TRUE(invocation.submit(queue)->wait().ok());
-  expect_near(read(output_tensor, 4), std::array<float, 4>{-1, -2, -3, -4});
+  std::array<float, 4> expected{};
+  for (std::size_t index = 0; index < values.size(); ++index)
+    expected[index] = std::exp(std::exp(std::exp(values[index])));
+  expect_near(read(output_tensor, 4), expected);
 }
 
 TEST(GraphViews, MetadataOnlyChainNeedsNoProviderOrPreparationBudget) {
@@ -3339,7 +3361,7 @@ TEST(GraphViews, MetadataDoesNotConsumeTheAdjacentKernelBudget) {
   auto builder = GraphBuilder::create().value();
   const auto input = builder.input(row(4)).value();
   const auto slice = builder.add(View::slice(0, 1, 2).value(), input).value();
-  const auto kernel = builder.add(Unary{UnaryKind::kNeg}, slice).value();
+  const auto kernel = builder.add(Unary{UnaryKind::kExp}, slice).value();
   const auto output =
       builder
           .add(View::reshape(hyle::compute::TensorShape::create(
@@ -3367,7 +3389,7 @@ TEST(GraphViews, MetadataDoesNotConsumeTheAdjacentKernelBudget) {
   auto queue = context.create_queue().value();
   ASSERT_TRUE(run.submit(queue)->wait().ok());
   expect_near(read(run.output(output).value(), 2),
-              std::array<float, 2>{-2, -3});
+              std::array<float, 2>{std::exp(2.0F), std::exp(3.0F)});
   options.max_placement_attempts = 0;
   auto rejected = hyle::graph::compile(graph, context, options);
   ASSERT_FALSE(rejected.has_value());
@@ -3392,8 +3414,8 @@ TEST(GraphViews, MetadataControlDependencyOrdersCommandsAcrossTargets) {
       builder.add(Unary{UnaryKind::kAbs}, builder.result(view).value()).value();
   ASSERT_TRUE(builder.publish(output).ok());
   const auto graph = std::move(builder).finish().value();
-  auto first_context = hyle::compute::test::native_context().value();
-  auto second_context = hyle::compute::test::native_context().value();
+  auto first_context = hyle::graph::test::cpu_context().value();
+  auto second_context = hyle::graph::test::cpu_context().value();
   const auto resource =
       hyle::compute::cpu::memory_resource(first_context.device()).value();
   const Environment environment{{&first_context, resource},
@@ -3439,7 +3461,7 @@ TEST(Invocation, ResolvesAnInternalSliceViewWithoutMaterializingIt) {
   ASSERT_TRUE(builder.publish(output).ok());
   Graph graph = std::move(builder).finish().value();
 
-  Context context = hyle::compute::test::native_context().value();
+  Context context = hyle::graph::test::cpu_context().value();
   CompiledGraph compiled = hyle::graph::compile(graph, context).value();
   EXPECT_EQ(compiled.report.workspace_bytes(), 0u);
   Invocation invocation = compiled.executable.create_invocation().value();
@@ -3464,7 +3486,7 @@ TEST(Invocation, OwnsAPublishedViewRootedInPrivateWorkspace) {
   ASSERT_TRUE(builder.publish(output).ok());
   Graph graph = std::move(builder).finish().value();
 
-  Context context = hyle::compute::test::native_context().value();
+  Context context = hyle::graph::test::cpu_context().value();
   auto compile_result = hyle::graph::compile(graph, context);
   ASSERT_TRUE(compile_result.has_value()) << compile_result.error().message();
   CompiledGraph compiled = std::move(*compile_result);
@@ -3551,8 +3573,8 @@ TEST(Invocation, RequiresQueuesOnlyForLanesThatEmitRuntimeCommands) {
   ASSERT_TRUE(builder.publish(output).ok());
   Graph graph = std::move(builder).finish().value();
 
-  Context unused = hyle::compute::test::native_context().value();
-  Context active = hyle::compute::test::native_context().value();
+  Context unused = hyle::graph::test::cpu_context().value();
+  Context active = hyle::graph::test::cpu_context().value();
   const auto host = hyle::mem::system_resource();
   const Environment environment{{
       ExecutionSpec{.context = &unused, .storage = host},
@@ -3714,7 +3736,7 @@ TEST(GraphCompile, DoesNotInPlaceABroadcastProviderRoute) {
   ASSERT_TRUE(builder.publish(output).ok());
   Graph graph = std::move(builder).finish().value();
 
-  Context context = hyle::compute::test::native_context().value();
+  Context context = hyle::graph::test::cpu_context().value();
   Invocation invocation = hyle::graph::compile(graph, context)
                               ->executable.create_invocation()
                               .value();
@@ -3765,7 +3787,7 @@ TEST(Invocation, RejectsAQueueFromAnotherContext) {
   EXPECT_TRUE(invocation.submit(wrong_queue).error().IsInvalidArgument());
 }
 
-TEST(GraphCompile, ExecutesNativeAttentionWithPlannedInvocationWorkspace) {
+TEST(GraphCompile, ExecutesMatureAttentionWithHonestPrivateStorage) {
   constexpr std::array<std::int64_t, 4> query_shape{1, 1, 1, 1};
   constexpr std::array<std::int64_t, 4> key_shape{1, 1, 3, 1};
   const TensorDesc query_desc =
@@ -3787,9 +3809,10 @@ TEST(GraphCompile, ExecutesNativeAttentionWithPlannedInvocationWorkspace) {
   ASSERT_TRUE(builder.publish(output).ok());
   Graph graph = std::move(builder).finish().value();
 
-  Context context = hyle::compute::test::native_context().value();
+  Context context = hyle::graph::test::cpu_context().value();
   CompiledGraph compiled = hyle::graph::compile(graph, context).value();
-  EXPECT_GT(compiled.report.workspace_bytes(), 0U);
+  EXPECT_FALSE(compiled.executable.invocation_storage_usage());
+  EXPECT_FALSE(compiled.report.compiled_storage().total_bytes());
   Invocation invocation = compiled.executable.create_invocation().value();
   OwnedTensor query_tensor = make_tensor(query_desc);
   OwnedTensor key_tensor = make_tensor(key_desc);
@@ -3917,7 +3940,7 @@ TEST(GraphViews, SlicePermuteCopyPreservesStridesAndDynamicStart) {
                           .value();
   ASSERT_TRUE(builder.publish(output).ok());
   auto graph = std::move(builder).finish().value();
-  auto context = hyle::compute::test::native_context().value();
+  auto context = hyle::graph::test::cpu_context().value();
   auto queue = context.create_queue().value();
   for (const std::int64_t first : {0, 1, 3, 5}) {
     const auto n = first == 5 ? 0 : (5 - 1 - first) / 2 + 1;
@@ -3964,7 +3987,7 @@ TEST(GraphViews, BroadcastUsesZeroStridesAndAnExplicitCopyMaterializes) {
   ASSERT_TRUE(builder.publish(output).ok());
   ASSERT_TRUE(builder.publish(expanded).ok());
   auto graph = std::move(builder).finish().value();
-  auto context = hyle::compute::test::native_context().value();
+  auto context = hyle::graph::test::cpu_context().value();
   auto queue = context.create_queue().value();
   auto general = hyle::graph::compile(
       graph, context, {.shape_policy = CompileShapePolicy::kDeclaredDomain});
@@ -4299,7 +4322,7 @@ TEST(GraphViewDomain, GuardedNestedSlicesUseOnePlanAndActualWorkspaceOffsets) {
   ASSERT_TRUE(builder.publish(output).ok());
   ASSERT_TRUE(builder.publish(transposed).ok());
   auto graph = std::move(builder).finish().value();
-  auto context = hyle::compute::test::native_context().value();
+  auto context = hyle::graph::test::cpu_context().value();
   auto queue = context.create_queue().value();
   auto compiled = hyle::graph::compile(
       graph, context, {.shape_policy = CompileShapePolicy::kDeclaredDomain});
@@ -4418,7 +4441,7 @@ TEST(GraphViewDomain, EqualEnvelopesAndUnguardedSliceDoNotProveRelationships) {
 
 TEST(GraphViewDomain, ColdAllocationFailuresReleaseSharedPlanAndCanRetry) {
   AllocatorProbe probe;
-  auto context = hyle::compute::test::native_context(
+  auto context = hyle::graph::test::cpu_context(
                      {.metadata_allocator = probe_allocator(probe)})
                      .value();
   auto builder = GraphBuilder::create().value();
