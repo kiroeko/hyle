@@ -188,3 +188,11 @@ CPU原程序/安全ISA/工作区/独立槽/取消与原IQ1编码6项、Graph有�
 均无skip。原资源与原数学保留，没有GPU新格式资格或性能WIN。
 [收据与原失败/纠正日志](../../../../evidence/correctness/cpu-final-f1/README.md)已归档；
 这只是shared源码组合与B3定向检查，installed static/shared和Apple组合仍待，不关闭F1。
+
+Windows CPU+CUDA installed三交付子批也已完成：同producer的shared/static源码消费者各40格，
+搬移后安装消费者各同40格均通过；执行PATH仅系统目录，Torch/c10与具名旧core原CPU程序DLL邻exe。
+15个configure/build/install/consumer/export步骤均成功，shared实际出口检查通过；
+shared增量124.594秒、static增量192.500秒，原ggml GPU和oneDNN依赖复用。
+[安装收据/日志与实际runtime布局](../../../../evidence/correctness/cpu-final-f1/README.md)已归档。
+CPU+Apple的不可变Windows archive `e0388fbda`已在Air配置通过并开始j2集中编译；
+Apple三交付及Vulkan安装形态仍未签PASS，本包不关闭。

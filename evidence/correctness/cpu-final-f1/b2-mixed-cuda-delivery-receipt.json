@@ -1,0 +1,76 @@
+{
+  "candidate": "b041e792194ec1d1fd3367855d58d14562e6b11e",
+  "scope": "Windows CPU+CUDA source/shared/static; identical 40 Direct/Graph numeric checks per source and relocated installed consumer; j2 build, serialized, DLL beside executable, no developer PATH fallback",
+  "steps": 15,
+  "result": "PASS",
+  "runtime_layout": {
+    "shared": {
+      "prefix": "C:\\hv\\cpu-final-mixed-cuda-b041e792\\shared-relocated",
+      "consumer": "C:\\hv\\cpu-final-mixed-cuda-b041e792\\shared-consumer",
+      "dlls_next_to_executable": [
+        "asmjit.dll",
+        "c10.dll",
+        "cublas64_13.dll",
+        "cublasLt64_13.dll",
+        "cudart64_13.dll",
+        "fbgemm.dll",
+        "hyle_compute.dll",
+        "hyle_compute_backend_cpu.dll",
+        "hyle_compute_backend_cuda.dll",
+        "hyle_compute_ggml_runtime.dll",
+        "hyle_compute_ops.dll",
+        "hyle_compute_provider_cublas.dll",
+        "hyle_compute_provider_cuda.dll",
+        "hyle_compute_provider_ggml.dll",
+        "hyle_compute_provider_ggml_cuda.dll",
+        "hyle_compute_provider_native.dll",
+        "hyle_compute_provider_onednn.dll",
+        "hyle_compute_route_cpu.dll",
+        "hyle_compute_route_cuda.dll",
+        "hyle_container.dll",
+        "hyle_error.dll",
+        "hyle_ggml_cpu_avx2_456172ec_b6531b1353c25f54.dll",
+        "hyle_graph.dll",
+        "hyle_graph_provider_ggml_cuda.dll",
+        "hyle_graph_provider_onednn.dll",
+        "hyle_graph_route_cpu.dll",
+        "hyle_graph_route_cuda.dll",
+        "hyle_mem.dll",
+        "hyle_platform.dll",
+        "hyle_platform_thread.dll",
+        "hyle_simd.dll",
+        "hyle_time.dll",
+        "libiomp5md.dll",
+        "torch.dll",
+        "torch_cpu.dll",
+        "uv.dll"
+      ],
+      "developer_PATH": "not used; only Windows/System32 and Windows during consumer execution"
+    },
+    "static": {
+      "prefix": "C:\\hv\\cpu-final-mixed-cuda-b041e792\\static-relocated",
+      "consumer": "C:\\hv\\cpu-final-mixed-cuda-b041e792\\static-consumer",
+      "dlls_next_to_executable": [
+        "asmjit.dll",
+        "c10.dll",
+        "cublas64_13.dll",
+        "cublasLt64_13.dll",
+        "cudart64_13.dll",
+        "fbgemm.dll",
+        "hyle_ggml_cpu_avx2_456172ec_b6531b1353c25f54.dll",
+        "libiomp5md.dll",
+        "torch.dll",
+        "torch_cpu.dll",
+        "uv.dll"
+      ],
+      "developer_PATH": "not used; only Windows/System32 and Windows during consumer execution"
+    }
+  },
+  "limits": [
+    "Apple and Vulkan mixed delivery remain pending",
+    "no full GPU new-format coverage or performance WIN",
+    "F1 and final CPU goal not closed"
+  ],
+  "archive_sha256": "667ba57f8d525e9b9d5003ea00abdcd6dd403abf9926f82d9c0c20d26549be8e",
+  "archive_bytes": 44828
+}

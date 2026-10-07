@@ -91,3 +91,15 @@ compiled dependencies. [Receipt](b2-mixed-cuda-source-receipt.json) and
 [original failure/corrected logs, XML and drivers](b2-mixed-cuda-source.zip)
 bind both candidates. Mixed installed static/shared and Apple still await
 qualification; no F1 closure or performance WIN is claimed.
+
+### CPU+CUDA installed source/static/shared completed
+
+The same producer completed all 15 delivery steps. Both shared/static source
+consumers and both relocated installed consumers passed the same 40 numerical
+checks. Installed execution used only Windows system directories in PATH;
+Torch/c10 and the exact `hyle_ggml_cpu_avx2_456172ec_...` program were beside
+the executable. Actual shared export hygiene passed. The ggml GPU and oneDNN
+dependencies were reused; shared/static increments took 124.594/192.500 seconds.
+[Delivery receipt and runtime layout](b2-mixed-cuda-delivery-receipt.json),
+[logs, consumer/driver and final build/install identity](b2-mixed-cuda-delivery.zip).
+Apple and Vulkan installed mixtures remain pending; this does not close F1.
