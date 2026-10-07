@@ -425,7 +425,8 @@ constexpr ProviderRuntimeProperties kRuntimeProperties{
 
 Status build_plan(Operation operation, std::span<const TensorDesc> inputs,
                   std::span<const TensorDesc> outputs, NativePlan &plan,
-                  ParallelExecutorRef executor = {}) noexcept {
+                  ParallelExecutorRef executor = {},
+                  bool domain_copy = false) noexcept {
   if (outputs.size() != operation_traits(operation).outputs)
     return Status::Internal("native route output arity is invalid");
 
@@ -435,7 +436,8 @@ Status build_plan(Operation operation, std::span<const TensorDesc> inputs,
   case OperationKind::kCopy:
   case OperationKind::kFill: {
     Status status =
-        internal::prepare_transform(operation, inputs, outputs, plan);
+        internal::prepare_transform(operation, inputs, outputs, plan,
+                                     domain_copy);
     if (!status.ok())
       return status;
     break;
@@ -775,12 +777,16 @@ propose(void *context_value, const detail::ProviderOperationRequest &request,
                                        output_requirements, proposal);
 #endif
   if (request.shape.exact() && context->qualified_environment &&
+#if defined(HYLE_NATIVE_DEFAULT_PEER_FFA4E8B8)
+      context->scope != internal::DefaultRuleScope::kExpert &&
+#endif
       internal::retired_default_domain(operation, inputs, outputs))
     return Status::Unimplemented(
         "native domain retired; use mature CPU program");
   NativePlan plan{};
   Status status =
-      build_plan(operation, inputs, outputs, plan, context->executor);
+      build_plan(operation, inputs, outputs, plan, context->executor,
+                   !request.shape.exact());
   if (!status.ok())
     return status;
   for (std::size_t index = 0; index < inputs.size(); ++index)
@@ -856,13 +862,16 @@ prepare(void *context_value, const detail::ProviderPrepareRequest &request,
                  : ProviderPrepareOutcome::error(status);
   }
   if (request.shape.exact() && context->qualified_environment &&
+#if defined(HYLE_NATIVE_DEFAULT_PEER_FFA4E8B8)
+      context->scope != internal::DefaultRuleScope::kExpert &&
+#endif
       internal::retired_default_domain(request.operation, request.inputs,
                                        request.outputs))
     return ProviderPrepareOutcome::unsupported(
         Status::Unimplemented("native domain retired; use mature CPU program"));
   NativePlan plan{};
   Status status = build_plan(request.operation, request.inputs, request.outputs,
-                             plan, context->executor);
+                             plan, context->executor, !request.shape.exact());
   if (!status.ok()) {
     return status.IsUnimplemented()
                ? ProviderPrepareOutcome::unsupported(std::move(status))

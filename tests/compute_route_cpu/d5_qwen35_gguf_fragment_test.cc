@@ -140,7 +140,11 @@ void run_qwen35_gguf_ffn(const c::ModelArtifactProfileDescription &profile,
                       activation_output, workload);
 
   EXPECT_TRUE(norm.prepared.provider().id == c::onednn::kProviderId ||
-              norm.prepared.provider().id == c::ggml_cpu::kProviderId);
+              norm.prepared.provider().id == c::ggml_cpu::kProviderId ||
+              (norm.prepared.provider().id == c::native::kProviderId &&
+               norm.prepared.route_policy().namespace_id == 0x48594c4543505552ULL &&
+               norm.prepared.route_policy().version == 2 &&
+               norm.prepared.route_policy().valid()));
   EXPECT_EQ(gate.prepared.provider().id, c::ggml_cpu::kProviderId);
   EXPECT_EQ(up.prepared.provider().id, c::ggml_cpu::kProviderId);
   EXPECT_EQ(gated.prepared.provider().id, c::aten_cpu::kProviderId);

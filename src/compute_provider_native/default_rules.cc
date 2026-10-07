@@ -43,6 +43,7 @@ struct Rule {
   DataType other;
   unsigned rows_mask;
 };
+#if !defined(HYLE_NATIVE_DEFAULT_PEER_FFA4E8B8)
 constexpr std::array kWins{
     Rule{Family::Assign, 0, DataType(4), DataType(12), 1},
     Rule{Family::Assign, 0, DataType(4), DataType(14), 1},
@@ -180,6 +181,21 @@ constexpr std::array kLosses{
     Rule{Family::Unary, 12, DataType(4), DataType(6), 2},
     Rule{Family::Unary, 12, DataType(5), DataType(6), 2},
 };
+#else
+// Frozen current-peer complete-call wins. Do not inherit the old 187 cases
+// across a ggml upgrade or extrapolate to another epsilon/layout/geometry.
+constexpr std::array kCurrentWins{
+    Rule{Family::Copy, 0, DataType::kFloat32, DataType::kFloat32, 3},
+    Rule{Family::Copy, 0, DataType::kFloat16, DataType::kFloat32, 3},
+    Rule{Family::Copy, 0, DataType::kBFloat16, DataType::kFloat32, 3},
+    Rule{Family::Copy, 0, DataType::kFloat8E4M3FN, DataType::kFloat32, 3},
+    Rule{Family::Copy, 0, DataType::kFloat8E5M2, DataType::kFloat32, 3},
+    Rule{Family::Norm, 0, DataType::kFloat32, DataType::kFloat32, 1},
+    Rule{Family::Norm, 0, DataType::kFloat16, DataType::kFloat32, 3},
+    Rule{Family::Norm, 0, DataType::kBFloat16, DataType::kFloat32, 3},
+    Rule{Family::Norm, 2, DataType::kBFloat16, DataType::kFloat32, 3},
+};
+#endif
 
 bool shape(const TensorDesc &d, std::initializer_list<std::int64_t> dims,
            DataType type) noexcept {
@@ -213,8 +229,10 @@ std::optional<Domain> domain(Operation op, std::span<const TensorDesc> in,
     return result(Family::Binary, int(p->kind));
   if (auto p = op.get_if<RmsNorm>();
       p && r && in.size() == 2 && tensor(0) && shape(in[1], {2048}, t) &&
-      p->epsilon == 1e-5F && p->accumulation_type == DataType::kFloat32)
-    return result(Family::Norm);
+      (p->epsilon == 1e-5F ||
+       (t == DataType::kBFloat16 && p->epsilon == 1e-6F)) &&
+      p->accumulation_type == DataType::kFloat32)
+    return result(Family::Norm, p->epsilon == 1e-6F ? 2 : 0);
   if (auto p = op.get_if<LayerNorm>();
       p && r && in.size() == 2 && tensor(0) && shape(in[1], {2048}, t) &&
       p->epsilon == 1e-5F && p->accumulation_type == DataType::kFloat32)
@@ -320,7 +338,8 @@ bool contains(const std::array<Rule, N> &rules, const Domain &d) noexcept {
 } // namespace
 
 bool qualified_default_environment() noexcept {
-#if defined(HYLE_NATIVE_DEFAULT_PEER_456172EC) && defined(_WIN32) && \
+#if (defined(HYLE_NATIVE_DEFAULT_PEER_456172EC) || \
+     defined(HYLE_NATIVE_DEFAULT_PEER_FFA4E8B8)) && defined(_WIN32) && \
     defined(NDEBUG) && defined(_MSC_FULL_VER) && \
     _MSC_FULL_VER == 195035728
   const auto &identity = platform::cpu_identity();
@@ -341,18 +360,32 @@ bool qualified_default_environment() noexcept {
 bool retired_default_domain(Operation op, std::span<const TensorDesc> in,
                             std::span<const TensorDesc> out) noexcept {
   const auto d = domain(op, in, out);
+#if defined(HYLE_NATIVE_DEFAULT_PEER_FFA4E8B8)
+  return d && d->family == Family::Norm && d->variant == 0 &&
+         d->type == DataType::kFloat32 && d->rows == 32;
+#else
   return d && contains(kLosses, *d);
+#endif
 }
 RoutePolicyId
 qualified_default_policy(Operation op, std::span<const TensorDesc> in,
                          std::span<const TensorDesc> out) noexcept {
   const auto d = domain(op, in, out);
+#if defined(HYLE_NATIVE_DEFAULT_PEER_FFA4E8B8)
+  if (!d || !contains(kCurrentWins, *d))
+#else
   if (!d || !contains(kWins, *d))
+#endif
     return {};
   const auto key = (std::uint64_t(d->family) << 40) |
                    (std::uint64_t(d->variant) << 32) |
                    (std::uint64_t(d->type) << 24) |
                    (std::uint64_t(d->other) << 16) | std::uint64_t(d->rows);
-  return {0x48594c4543505552ULL, key + 1, 1};
+#if defined(HYLE_NATIVE_DEFAULT_PEER_FFA4E8B8)
+  constexpr std::uint32_t version = 2;
+#else
+  constexpr std::uint32_t version = 1;
+#endif
+  return {0x48594c4543505552ULL, key + 1, version};
 }
 } // namespace hyle::compute::native::internal

@@ -86,9 +86,14 @@ DirectCall make_call(const c::Context &context, c::Operation operation,
 
 void expect_mature(const DirectCall &call, const c::WorkloadContext &workload) {
   const auto provider = call.prepared.provider().id;
+  const auto policy = call.prepared.route_policy();
+  const bool qualified_norm = provider == c::native::kProviderId &&
+      call.prepared.kind() == c::OperationKind::kRmsNorm &&
+      policy.namespace_id == 0x48594c4543505552ULL && policy.version == 2 &&
+      policy.valid();
   EXPECT_TRUE(provider == c::ggml_cpu::kProviderId ||
               provider == c::onednn::kProviderId ||
-              provider == c::aten_cpu::kProviderId)
+              provider == c::aten_cpu::kProviderId || qualified_norm)
       << c::operation_name(call.prepared.kind()) << ": "
       << call.prepared.provider().name;
   EXPECT_EQ(call.prepared.workload(), workload);

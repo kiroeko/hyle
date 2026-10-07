@@ -224,4 +224,52 @@ TEST(GgmlCpuProvider, NoncausalAttentionUsesOriginalRegionForGroupedHeadsAndLong
   noncausal_attention<hyle::simd::float16_t>();
   noncausal_attention<hyle::simd::bfloat16_t>();
 }
+
+TEST(GgmlCpuProvider, F32AttentionUndefinedRowsAndFreshReplayKeepTheContract) {
+  auto context = Context::create(cpu::device(), ggml_cpu::provider()).value();
+  auto queue = context.create_queue().value();
+  const auto qd = TensorDesc::dense(DataType::kFloat32,
+                                   std::array<std::int64_t, 4>{1, 1, 1, 64}).value();
+  const auto kd = TensorDesc::dense(DataType::kFloat32,
+                                   std::array<std::int64_t, 4>{1, 2, 1, 64}).value();
+  auto qb = half_test::buffer<float>(std::vector<float>(64));
+  auto kb = half_test::buffer<float>(std::vector<float>(128));
+  auto vb = half_test::buffer<float>(std::vector<float>(128, 1.F));
+  auto out = half_test::buffer<float>(std::vector<float>(64));
+  const std::array inputs{ConstTensorView::create(qd, qb.view()).value(),
+                          ConstTensorView::create(kd, kb.view()).value(),
+                          ConstTensorView::create(kd, vb.view()).value()};
+  const auto output = TensorView::create(qd, out.view()).value();
+  for (bool causal : {false, true})
+    for (float scale : {.125F, 0.F}) {
+      auto prepared = prepare(context, ScaledDotProductAttention{
+          .scale = scale, .causal = causal}, qd, kd, kd).value();
+      auto invocation = prepared.create_invocation().value();
+      for (int sample : {0, 1, 0, 2, 0, 3, 0, 4, 0, 5, 0}) {
+        std::vector<float> q(64, .5F), k(128, .25F);
+        if (sample == 1)
+          q[0] = std::numeric_limits<float>::quiet_NaN();
+        if (sample == 2 || sample == 3)
+          std::fill(k.begin(), k.end(), sample == 2 ? -INFINITY : INFINITY);
+        if (sample == 4) {
+          std::fill(q.begin(), q.end(), std::numeric_limits<float>::max());
+          std::fill(k.begin(), k.end(), -std::numeric_limits<float>::max());
+        }
+        if (sample == 5)
+          q[0] = INFINITY;
+        ASSERT_TRUE(qb.view().write(std::as_bytes(std::span(q))).ok());
+        ASSERT_TRUE(kb.view().write(std::as_bytes(std::span(k))).ok());
+        auto done = invocation.submit(queue, inputs, std::span(&output, 1));
+        ASSERT_TRUE(done);
+        ASSERT_TRUE(done->wait().ok());
+        for (float value : half_test::read<float>(out)) {
+          if (sample == 0)
+            EXPECT_NEAR(value, 1.F, 3.e-6F);
+          else
+            EXPECT_TRUE(std::isnan(value));
+        }
+      }
+    }
+  ASSERT_TRUE(context.close().ok());
+}
 } // namespace

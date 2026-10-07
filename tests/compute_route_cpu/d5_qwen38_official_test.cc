@@ -112,6 +112,11 @@ void expect_mature(const DirectCall &call, const c::WorkloadContext &workload) {
   const auto provider = call.prepared.provider().id;
   bool mature = provider == c::ggml_cpu::kProviderId ||
                 provider == c::onednn::kProviderId;
+  const auto policy = call.prepared.route_policy();
+  mature = mature || (provider == c::native::kProviderId &&
+      call.prepared.kind() == c::OperationKind::kRmsNorm &&
+      policy.namespace_id == 0x48594c4543505552ULL && policy.version == 2 &&
+      policy.valid());
   mature = mature || (provider == c::native::kProviderId &&
       call.original_ds4_roundtrip && call.prepared.implementation().value() ==
           static_cast<std::uint64_t>(c::OperationKind::kCustom) + 1);

@@ -198,7 +198,7 @@ logical_broadcast_byte_offset(const TensorDesc &input,
 Status prepare_transform(Operation operation,
                          std::span<const TensorDesc> inputs,
                          std::span<const TensorDesc> outputs,
-                         NativePlan &plan) noexcept;
+                         NativePlan &plan, bool domain_copy = false) noexcept;
 Status prepare_cast(Operation operation, std::span<const TensorDesc> inputs,
                     std::span<const TensorDesc> outputs,
                     NativePlan &plan) noexcept;

@@ -22,6 +22,11 @@ hyle_add_module(compute_provider_native SOURCES
 if(HYLE_GGML_CPU_PEER_REVISION STREQUAL "456172ec733a135778adcd32d00e576a58232e45")
   target_compile_definitions(hyle_compute_provider_native PRIVATE
     HYLE_NATIVE_DEFAULT_PEER_456172EC=1)
+elseif(HYLE_GGML_CPU_PEER_REVISION STREQUAL "ffa4e8b80930029a35991f94e7c8a93cd67730ab"
+    AND HYLE_GGML_CPU_PROVIDER_VERSION STREQUAL "ffa4e8b80930029a35991f94e7c8a93cd67730ab+hyle-resource-iq1-bdae1e43311ee486"
+    AND HYLE_DEP_ONEDNN_COMMIT STREQUAL "71094df451909e95ceeefc8f64c275cdcbbcdff5")
+  target_compile_definitions(hyle_compute_provider_native PRIVATE
+    HYLE_NATIVE_DEFAULT_PEER_FFA4E8B8=1)
 endif()
 target_include_directories(hyle_compute_provider_native PRIVATE
   "${CMAKE_CURRENT_SOURCE_DIR}/../compute"

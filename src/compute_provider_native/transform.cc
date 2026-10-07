@@ -170,7 +170,7 @@ detail::EnqueueResult submit_fill(const NativePlan &plan,
 Status prepare_transform(Operation operation,
                          std::span<const TensorDesc> inputs,
                          std::span<const TensorDesc> outputs,
-                         NativePlan &plan) noexcept {
+                         NativePlan &plan, bool domain_copy) noexcept {
   switch (operation.kind()) {
   case OperationKind::kView: {
     const View *view = operation.get_if<View>();
@@ -186,6 +186,10 @@ Status prepare_transform(Operation operation,
   case OperationKind::kCopy:
     if (!inputs[0].is_plain() || !outputs[0].is_plain())
       return Status::Unimplemented("native Copy requires plain storage");
+    if (!inputs[0].is_dense() && !domain_copy)
+      return Status::Unimplemented(
+          "native strided Copy is reserved for a declared shape domain; "
+          "exact materialization uses a mature CPU provider");
     plan.submit_route = &submit_copy;
     return Status::Ok();
   case OperationKind::kFill: {

@@ -231,8 +231,11 @@ TEST(GgmlCpuProvider, SoftmaxRestoresArbitraryAxesMasksAndUndefinedRows) {
   axis_softmax<hyle::simd::bfloat16_t>();
 }
 
-template <class T> void attention_layouts() {
-  constexpr std::int64_t nb = 2, nq = 3, hq = 4, hk = 2, dk = 7, dv = 5;
+template <class T>
+void attention_layouts(std::int64_t nq = 3, std::int64_t dk = 7,
+                        std::int64_t dv = 5, std::int64_t keys = 0,
+                        std::int64_t nb = 2) {
+  constexpr std::int64_t hq = 4, hk = 2;
   const auto type = half_test::data_type<T>();
   auto context =
       Context::create(cpu::device(), ggml_cpu::provider({.native_threads = 3}))
@@ -240,7 +243,7 @@ template <class T> void attention_layouts() {
   auto queue = context.create_queue().value();
   for (bool bshd : {false, true})
     for (bool causal : {false, true}) {
-      const std::int64_t nk = causal ? 4 : 2;
+      const std::int64_t nk = keys != 0 ? keys : causal ? 4 : 2;
       const auto shape = [=](std::int64_t length, std::int64_t heads,
                              std::int64_t depth) {
         return bshd ? std::array{nb, length, heads, depth}
@@ -329,6 +332,13 @@ TEST(GgmlCpuProvider, AttentionPreservesBothLayoutsAndIndependentValueDepth) {
   attention_layouts<float>();
   attention_layouts<hyle::simd::float16_t>();
   attention_layouts<hyle::simd::bfloat16_t>();
+}
+TEST(GgmlCpuProvider, F32AttentionActualWidthsReplayAndLongKv) {
+  for (const auto rows : {1, 32}) {
+    attention_layouts<float>(rows, 64, 64, 128);
+    attention_layouts<float>(rows, 256, 256, 128);
+  }
+  attention_layouts<float>(1, 256, 256, 1024, 1);
 }
 
 TEST(GgmlCpuProvider, PlainStorageCopyConcatPreservesAllScalarBitsAndStrides) {

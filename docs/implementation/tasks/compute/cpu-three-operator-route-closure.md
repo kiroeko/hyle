@@ -54,3 +54,13 @@
   用户批准的有限删除可撤回Native-only严格资源域并迁移旧因子测试，不能删除SIMD。
 
 G1–N3有限FIX已AUDITED，七门待实际验证。
+
+### 风险选择纠正
+
+第一轮Windows两个factor、24格精确规则/两入口变输入replay、真实dynamic样例已通过。
+宽泛CPU facade sweep出现7个旧“必须成熟Provider”断言失败，实为新增资格RMS规则；数值断言继续通过。
+只允许Native RMS + 正确namespace/version2有效policy，不放开任意fallback，并由24格consumer独立验证17格匹配和错配拒绝。
+源码终审确认巨型DSpark共享LM/Markov head分片循环不消费新SDPA分支（DSparkattention用原matmul/softmax），
+其hidden也不匹配新2048规则。停止已核对exe/argv的本轮进程，原sweep记INCOMPLETE，不伪写全suite PASS。
+改为7项失败重验、Graph默认/attention/shape/view/copy/norm与executor、两owning factor/24格；
+未变大矩阵/head/packing数学复用c740匹配证据，不重测。公共selector/统计核心不改。

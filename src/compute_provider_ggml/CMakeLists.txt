@@ -11,3 +11,7 @@ target_link_libraries(hyle_compute_provider_ggml PRIVATE ggml)
 target_compile_definitions(hyle_compute_provider_ggml PUBLIC HYLE_COMPUTE_GGML_CPU=1)
 target_compile_definitions(hyle_compute_provider_ggml PRIVATE
   HYLE_GGML_CPU_PROVIDER_VERSION="${HYLE_GGML_CPU_PROVIDER_VERSION}")
+if(HYLE_GGML_CPU_PEER_REVISION STREQUAL "ffa4e8b80930029a35991f94e7c8a93cd67730ab")
+  target_compile_definitions(hyle_compute_provider_ggml PRIVATE
+    HYLE_GGML_CPU_F32_FLASH=1)
+endif()

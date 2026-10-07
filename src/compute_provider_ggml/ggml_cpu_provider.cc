@@ -174,6 +174,14 @@ bool floating(DataType type) noexcept {
   return type == DataType::kFloat32 || type == DataType::kFloat16 ||
          type == DataType::kBFloat16;
 }
+bool f32_flash(DataType type) noexcept {
+#if defined(HYLE_GGML_CPU_F32_FLASH)
+  return type == DataType::kFloat32;
+#else
+  (void)type;
+  return false;
+#endif
+}
 std::size_t elements(const TensorDesc &description) noexcept {
   return description.element_count().value();
 }
@@ -821,13 +829,17 @@ std::vector<ggml_tensor *> lower(Program &program, Invocation &invocation,
       key = ggml_permute(context, key, 0, 2, 1, 3);
       value = ggml_permute(context, value, 0, 2, 1, 3);
     }
-    if (type == GGML_TYPE_F16 && attention->causal) {
-      const auto &mask_values = program.attention_masks[node_index];
-      if (mask_values.empty())
-        return {};
-      auto *mask =
-          ggml_new_tensor_2d(context, GGML_TYPE_F16, key->ne[1], query->ne[1]);
-      mask->data = const_cast<ggml_fp16_t *>(mask_values.data());
+    if (f32_flash(recipe.values[node.inputs[0]].data_type()) ||
+        (type == GGML_TYPE_F16 && attention->causal)) {
+      ggml_tensor *mask = nullptr;
+      if (attention->causal) {
+        const auto &mask_values = program.attention_masks[node_index];
+        if (mask_values.empty())
+          return {};
+        mask = ggml_new_tensor_2d(context, GGML_TYPE_F16, key->ne[1],
+                                  query->ne[1]);
+        mask->data = const_cast<ggml_fp16_t *>(mask_values.data());
+      }
       result = ggml_flash_attn_ext(context, query, key, value, mask,
                                    attention->scale, 0.0F, 0.0F);
       if (!ggml_prec_set_acc(result, GGML_PREC_F32))
@@ -1624,7 +1636,8 @@ ProviderPrepareOutcome compile(void *context, Recipe recipe,
       }
       if (const auto *attention = node.operation.get_if<ScaledDotProductAttention>();
           attention && attention->causal &&
-          recipe.values[node.inputs[0]].data_type() == DataType::kFloat16) {
+          (recipe.values[node.inputs[0]].data_type() == DataType::kFloat16 ||
+           f32_flash(recipe.values[node.inputs[0]].data_type()))) {
         const auto sequence =
             attention->layout == AttentionLayout::kBatchSequenceHeadDepth ? 1U
                                                                           : 2U;

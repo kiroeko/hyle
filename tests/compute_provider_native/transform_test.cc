@@ -73,7 +73,7 @@ TEST(NativeTransform, ValidatesAndExecutesZeroKernelSliceView) {
   EXPECT_TRUE(rejected.error().IsInvalidArgument());
 }
 
-TEST(NativeTransform, MaterializesPlainStridedCopy) {
+TEST(NativeTransform, ExactStridedCopyRejectsNativeAndUsesMatureMaterialization) {
   constexpr std::array<std::int64_t, 2> shape{2, 2};
   constexpr std::array<std::int64_t, 2> strides{12, 4};
   constexpr std::array<std::int32_t, 6> physical{1, 2, 99, 3, 4, 98};
@@ -98,8 +98,15 @@ TEST(NativeTransform, MaterializesPlainStridedCopy) {
       TensorView::create(output_descriptions[0], output_storage.view()).value();
 
   auto context = hyle::compute::test::native_context().value();
-  auto queue = context.create_queue().value();
-  auto prepared = hyle::compute::prepare(context, Copy{}, input_desc).value();
+  const auto rejected = hyle::compute::prepare(context, Copy{}, input_desc);
+  ASSERT_FALSE(rejected);
+  EXPECT_TRUE(rejected.error().IsUnimplemented());
+  if (!hyle::compute::aten_cpu::provider())
+    return;
+  auto mature = hyle::compute::Context::create(hyle::compute::cpu::device(),
+                                hyle::compute::aten_cpu::provider()).value();
+  auto queue = mature.create_queue().value();
+  auto prepared = hyle::compute::prepare(mature, Copy{}, input_desc).value();
   ASSERT_EQ(prepared.output_description().value(), output_descriptions[0]);
   auto invocation = prepared.create_invocation().value();
   ASSERT_TRUE(invocation
