@@ -1,0 +1,13 @@
+{
+  "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\cpu-final-f1\\mixed-linux\\source.tar",
+  "removed_bytes": 248350720,
+  "source_identity": {
+    "candidate": "a3b621ca85853164ce48d133b2fde06c1fca1c0b",
+    "archive_sha256": "511c869c881c1330cd57f18925c2cf2202c7d84a7a555af39ee5834cfeb3f7ae",
+    "archive_bytes": 248350720,
+    "remote_root": "/root/hyle-scratch/active-cpu-z",
+    "scope": "Linux mixed old-core CPU loader delta; reuse owned producer, no new GPU P1 or algorithm"
+  },
+  "verified_raw_archive": "2713560072468fa303ad1ff18a2297944058e3ff85b470f6addd05b4adc1e7aa",
+  "retained": "canonical Git, ext4 validation source/build, all installed CPU-only/mixed SDKs, dependency cache and complete original/corrected evidence"
+}

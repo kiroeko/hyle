@@ -40,8 +40,8 @@
     "GPU full model/format and P1 qualification not reopened",
     "CPU final best-of/retirement/terminal audit still pending"
   ],
-  "archive_sha256": "1026134c7d4d08790ef3a8b2bee3b04e175d78480febdbd041292d1ac0ccc86e",
-  "archive_bytes": 76394,
+  "archive_sha256": "2713560072468fa303ad1ff18a2297944058e3ff85b470f6addd05b4adc1e7aa",
+  "archive_bytes": 76779,
   "initial_failure": "Original source build failed on GCC parentheses warning; unmodified failure retained. Equivalent guard-parentheses delta qualified by the corrected build and four GPU regressions.",
   "driver_boundary": "Initial Windows summary encoding and first continuation common-variable errors retained in driver logs; already passing source tests were not repeated."
 }

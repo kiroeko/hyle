@@ -158,3 +158,10 @@ remains `560eb1d2332bb69ee5148e899b000fae85d80074`, with the separately audited
 equivalent CUDA syntax delta bound to Linux evidence. F4/F5/F6 and old GPU/Graph
 states remain outside this closure. Current implementation LOC: 61,246/251 files,
 excluding tests/vendor/bench; no new self-written math or performance WIN.
+
+[Linux transfer cleanup](cleanup-linux-mixed-transfer.json) removes the verified
+duplicate Windows source tar (248,350,720 bytes) after raw archive/member checks.
+Both initial and corrected source identities are archived; ext4 sources/build,
+all SDKs/cache and original failures remain. Together with the Apple transfer
+cleanup this releases 744,540,160 bytes, about 710 MiB, without deleting any
+current producer or SDK needed by F4.

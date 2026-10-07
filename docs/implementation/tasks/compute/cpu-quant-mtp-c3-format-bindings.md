@@ -134,8 +134,6 @@ MLX仍须借入原压缩CPU调用/selected expert边界后才签范围。
 CPU三owner已在完成有限格式/资源/交付与精度尾项后交接C4 AUDITED；C3不是整包CLOSED，
 全部准入画像与组合资格由当前C4/C5收口。三GPU enum拒绝范围仍只保留C3补充合同与旧资格。
 
-## MLX 有限审计与 N4–N6 冻结
-
 ### G3具名Linux编译尾项：原索引角色条件加括号
 
 2026-10-07 CPU最终F1的Linux mixed实际编译在`tensor_program.cc:282–284`失败：
@@ -146,6 +144,12 @@ owner compute_provider_ggml_cuda 当前仍AUDITED，本补充只将G3公共enum�
 源码语义由原`&&`高于`||`及三支逐项对账证明；一次Linux增量compile、CPU mixed既定40格/资源、
 四个既有GPU原数学/新格式拒绝回归。原425步编译失败日志保留，成功依赖复用，不重跑已合格P1。
 F1的CPU产品候选不因此改变；此GPU等价语法delta单独记录到实际验证输入，不签全部GPU或C3关闭。
+
+纠正候选 `a3b621ca85853164ce48d133b2fde06c1fca1c0b` 的Linux增量compile与四个GPU回归通过，
+原CPU mixed40格/资源及三交付也通过，见[原失败与纠正记录](../../../../evidence/correctness/cpu-final-f1/README.md)。
+原warning FAIL不回写；本卡与GPU owner继续只保留既有AUDITED有限范围。
+
+## MLX 有限审计与 N4–N6 冻结
 
 固定MLX `2b2bb49790158ecd008d1685c94e3ef119792a00`，原`ops.cpp`与
 `backend/cpu/quantized.cpp`、QuantizedEmbedding源码已读取。实际制品需要affine4/group64、
