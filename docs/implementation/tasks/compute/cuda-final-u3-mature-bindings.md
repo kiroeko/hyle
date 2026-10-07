@@ -88,3 +88,22 @@ compute_provider_ggml_cuda（mapping／原prepare资格）与 graph_provider_ggm
 预算一次原源码／ABI账单、一次原port组合和差分自检、一个稳定candidate的Windows/Linux两入口／
 原8个expert合同与model内宽／state／三交付／mixed CPU差异。至多一批具名接缝纠正；不扩自研或反复换peer。
 未来产品修改前G2独立AUDITED；暂不把本scope当实现授权。
+
+### G2 AUDITED：保持单核 ABI 的原版增量
+
+SCOPED 提交 `e1ed0253`；原diff为新增IQ1函数／分发，两个替换只涉及新增traits及slow-type集合扩容。
+冻结有限 FIX：
+
+1. `third_party/ggml_cuda_runtime` 增原IQ1有界context manifest／来源SHA、三个原template实例及NOTICE；
+   只借 CUDA/通用NVIDIA配置，AMD/HIP文件不引入。template唯一include路径接缝适配，数学正文不改。
+2. owning runtime 的私有 manifest composer归并原mixed CPU types/codec、原CUDA resource与IQ1补丁，
+   一文件一次before/after校验；现 `prepare_source.py` 与公共治理不改。新增template通过target_sources编入原ggml-cuda。
+3. CUDA-only也借已资格化的原physical types/codecs（CPU target仍OFF）；CPU-only0.26与Apple/Vulkan-only
+   源选择/patch/身份不变。mixed CPU原数学不改，GPU修订后的SDK/Provider身份如实更新，不继承未测性能证书。
+4. 原21个GGUF格式的CUDA mapping全接，Graph同源，三narrow类型只用于共同原8个expert合同；
+   不扩embedding到无需求格式、不改精度/rank/资源/SM资格。新Provider版本含原IQ1来源及实际source id。
+5. 原format字节、每类型解码/MMVQ/MMQ/Grouped与变化输入、坏IDs、两入口/原模型内宽，
+   Windows/Linux/三交付/mixed CPU资源、source差分与P0按同一稳定候选资格化；未运行不签PASS。
+
+runtime、Compute/Graph ggml CUDA owner依法重定界至本卡G1/G2；U2已实现冷事实与架构接缝保留并随最终
+候选交付验证。没有新公共数学API或自研CUDA算法，没有全库依赖升级或新的Provider family。
