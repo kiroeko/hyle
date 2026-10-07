@@ -1,6 +1,6 @@
 # CPU 三项成熟接缝、规则绑定与有限清退
 
-<!-- MODULE REVIEW: CANDIDATE -->
+<!-- MODULE REVIEW: CLOSED -->
 
 - owners：compute_provider_ggml、compute_provider_native；baseline `a98bdbf239d2854fa04acbbf2d43793b13cb311e`。
 - trigger：用户批准有限接线/清退；[合格新版复比](../../../../evidence/performance/cpu-three-operator-current/README.md)
@@ -91,3 +91,16 @@ Windows删除后两factor/24格/dynamic通过；Linux第一次Git HEAD实际来�
 该次结果失效。随后按Windows immutable内容核对1654个源码/头/构建/测试/依赖输入，只前向更新17项并删除attention.cc，
 真实Linux/GCC14两factor/24格（Native WIN=0，不外推Windows资格）/dynamic均通过。未反向覆盖产品。
 源级删除没有新数学，不继续P1；最终静态/共享SDK、文档状态/终审/清理仍待验。
+
+## CLOSED：本轮完成
+
+[最终资格与限制](../../../../evidence/correctness/cpu-three-operator-route/README.md)和
+[四格正式性能去留](../../../../evidence/performance/cpu-fused-sdpa-current/README.md)。最终产品11913768不再改。
+两OS source/public-facade及installed static/shared的24格、动态Graph/并发/close均通过；
+Windows17格优选、Linux成熟默认正确，SDPA原F32 fused接对且自研整项源级删除。
+七门PASS：scope/architecture/correctness/delivery/usability_docs/red_team/engineering_performance(P0和有界P1裁决)。
+统一Compute+Graph实现61,073行/249文件（self excluding tests156,300行）。旧FAIL、INCOMPLETE和额外DSO/PIC限制保留。
+无本轮产品blocker；不恢复旧187域到新core，不删除SIMD/Mem，不扩GPU或其它自研比较队列。
+本轮17格比较对象是默认成熟peer，不是全部Provider组合；oneDNN/ggml重叠域全面best-of不在本轮完成范围。
+已清理本轮Windows/Linux临时产物约2.01 GiB，保留原始归档及现用缓存/SDK。
+reopen：实际数值/资源/绑定反例、锁定相关依赖升级，或合格同合同证据要求扩条件；不因旧卡/未知点值重开。

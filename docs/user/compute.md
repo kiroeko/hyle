@@ -499,7 +499,7 @@ Context、MemoryResource、外部 tensor/压缩权重 owner 必须覆盖各自�
 | tensor schema | `dense/strided_bytes/blocked_dense/blocked_strided/opaque` | rank <= 8；logical dtype 与 physical encoding 分离；stride 明确以 byte 为单位；view 借用 Mem storage |
 | operation schema | typed operation families + inline custom | 含 grouped Q4 的完整 scale/bias schema；可做 arity/shape/layout/alias/effect/precision 检查，schema 存在不等于已有可执行 provider |
 | 零拷贝 tensor 变换 | `View::reshape/slice/permute/broadcast_to` | submit 不映射或搬运数据；输出必须绑定到输入中由 view 推导出的精确起始位置 |
-| materialize / 初始化 | `Copy` / `Fill` | Copy 支持 plain dense/strided 输入并产生 dense 输出；Fill 对全部已登记 scalar dtype 写入精确 bit pattern |
+| materialize / 初始化 | `Copy` / `Fill` | 普通 CPU 的 plain strided Copy 由成熟接缝物化；Native exact 仅保留 dense Mem 拷贝，完整声明动态域仍支持 view/broadcast 物化；Fill 写入精确 bit pattern |
 | 推理浮点 storage 转换 | `Cast` | f32/f16/bf16/E4M3/E5M2 的完整互转；dense 复用 SIMD whole-buffer 路线，strided 输入显式 materialize |
 | 单目计算/激活 | `Unary` | f32/f16/bf16 Abs/Neg/Exp/Log/Sqrt/Rsqrt/Tanh/Sigmoid/ReLU/GELU/GELU-tanh/SiLU/Softplus；稳定GELU/GELU-tanh与F32 SiLU由已构建ATen承载，Native明确拒绝这些已退场域 |
 | 双目计算 | `Binary` | f32/f16/bf16 Add/Sub/Mul/Div/Min/Max 与 NumPy-style broadcast；Min/Max 使用 `fmin/fmax` 语义 |
@@ -1067,6 +1067,16 @@ oneDNN 的 CPU ISA 要求限制；该 Provider 不隐式转换整个 tensor。�
 广播前缀继续使用优化内核；冷准备拒绝已识别的通用慢速融合实现。中间输出被发布或分叉时
 保留边界。半精度跨节点链保留中间舍入。融合接入不代表每个形状已获性能优选资格，当前验收
 状态见模块 registry 和对应任务记录。
+
+当前 CPU-only ggml 0.26 SDK 有17个已测条件的 Native 优选：dense Copy 的五种浮点 storage
+`[1或32,2048]`；带同dtype gamma的 RMSNorm（F32只rows1；F16/BF16 rows1/32，epsilon1e-5；
+另BF16 epsilon1e-6）。优选只限已测i9-13900K/AVX2、MSVC195035728、Release、单线程及锁定
+ggml/oneDNN版本，prepare匹配、submit不搜索；其它条件成熟优先，Graph不会为叶规则拆成熟region。
+Native SDPA已源级退役，旧严格workspace保证不再提供。CPU-only新core的F32 dense无显式mask SDPA
+使用原F32 fused（含两layout/GQA/causal）；原BF16及旧mixed SDK路径保持已验规则。完整条件与证据见
+[三项最终裁决](../implementation/tasks/compute/cpu-three-operator-route-closure.md)。
+这17格仅证明对已测默认成熟实现的优势；oneDNN/ggml/ATen全部重叠域尚未完成性能裁决，
+其它成熟默认顺序不能解释为每个形状的全Provider最优。
 
 归一化 primitive 每次执行有 oneDNN 内部 metadata 分配，报告 `ProviderReplayClass::kManaged`；
 其数量不冒充 HYLE allocator 可计量的零字节。Graph 的 prepared-only 约束会排除该 managed

@@ -1,5 +1,14 @@
 # CPU 数学域最终去留与默认绑定
 
+2026-10-07补充：[三项新peer接线与清退](cpu-three-operator-route-closure.md)已替代本文中SDPA的保留决定：
+Native SDPA整项源级删除，普通strided Copy转成熟接缝、真实declared-domain view物化保留；
+CPU-only新core只应用17格新资格Copy/RMS规则。下文187/274及资源决定是原轮事实，不得作为新版当前优选。
+
+这些比较是Native对当时默认选中的成熟完整调用，不是oneDNN/ggml/ATen所有重叠域的全组合比较。
+当前Direct成熟叶顺序为oneDNN→ggml→ATen；Graph先匹配ggml/oneDNN完整region，再匹配成熟叶与有资格的Native叶。
+17格规则只证明对已测成熟peer的优势，不证明全Provider最优；其它剩余自研族的历史依据也不自动取得新版资格。
+CPU全重叠域best-of仍未完成，不能将本轮三项CLOSED解释为该项完成。
+
 本账本归属 [当前 CPU 施工卡](cpu-default-domain-routing-final.md) 的 F4。
 性能输入是 [已结束的 ND3 比较](../../../../evidence/performance/cpu-native-domain-verdict/README.md)，
 不增加测量、算法优化或新的算子。原样本、置信区间和 AA 失败记录保留。

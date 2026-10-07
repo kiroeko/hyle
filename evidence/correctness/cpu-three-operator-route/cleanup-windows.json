@@ -1,0 +1,27 @@
+﻿[
+    {
+        "path":  "C:\\public\\project-hyle\\hyle\\.scratch\\build-three-fused-probe",
+        "bytes":  268320746,
+        "removed":  true
+    },
+    {
+        "path":  "C:\\public\\project-hyle\\hyle\\.scratch\\build-three-route-sdk",
+        "bytes":  577465711,
+        "removed":  true
+    },
+    {
+        "path":  "C:\\public\\project-hyle\\hyle\\.scratch\\build-three-route-dynamic-sdk",
+        "bytes":  577379312,
+        "removed":  true
+    },
+    {
+        "path":  "C:\\public\\project-hyle\\hyle\\.scratch\\build-three-sdpa-preflight",
+        "bytes":  291632941,
+        "removed":  true
+    },
+    {
+        "path":  "C:\\public\\project-hyle\\hyle\\.scratch\\build-three-sdpa-qualified",
+        "bytes":  291601797,
+        "removed":  true
+    }
+]

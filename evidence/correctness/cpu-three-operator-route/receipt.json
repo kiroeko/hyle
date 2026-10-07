@@ -1,0 +1,194 @@
+{
+  "schema": "hyle.cpu-three-route-qualification/v1",
+  "candidate": "119137681ed03f58e3e193a97c969be4e45ccb34",
+  "ordinary_cases_per_journey": 24,
+  "windows_native_rules": 17,
+  "linux_native_rules": 0,
+  "source_static_shared_systems": [
+    "Windows",
+    "Linux/GCC14"
+  ],
+  "gates": {
+    "windows-retirement": [
+      {
+        "gate": "configure",
+        "exit": 0
+      },
+      {
+        "gate": "build",
+        "exit": 0
+      },
+      {
+        "gate": "owning",
+        "exit": 0
+      },
+      {
+        "gate": "ordinary-24",
+        "exit": 0
+      },
+      {
+        "gate": "dynamic",
+        "exit": 0
+      }
+    ],
+    "windows-static": [
+      {
+        "gate": "producer-configure",
+        "exit": 0
+      },
+      {
+        "gate": "producer-build",
+        "exit": 0
+      },
+      {
+        "gate": "install",
+        "exit": 0
+      },
+      {
+        "gate": "consumer-configure",
+        "exit": 0
+      },
+      {
+        "gate": "consumer-build",
+        "exit": 0
+      },
+      {
+        "gate": "installed-ordinary-24",
+        "exit": 0
+      },
+      {
+        "gate": "dynamic-configure",
+        "exit": 0
+      },
+      {
+        "gate": "dynamic-build",
+        "exit": 0
+      },
+      {
+        "gate": "installed-dynamic",
+        "exit": 0
+      }
+    ],
+    "windows-shared": [
+      {
+        "gate": "producer-configure",
+        "exit": 0
+      },
+      {
+        "gate": "producer-build",
+        "exit": 0
+      },
+      {
+        "gate": "install",
+        "exit": 0
+      },
+      {
+        "gate": "consumer-configure",
+        "exit": 0
+      },
+      {
+        "gate": "consumer-build",
+        "exit": 0
+      },
+      {
+        "gate": "installed-ordinary-24",
+        "exit": 0
+      },
+      {
+        "gate": "dynamic-configure",
+        "exit": 0
+      },
+      {
+        "gate": "dynamic-build",
+        "exit": 0
+      },
+      {
+        "gate": "installed-dynamic",
+        "exit": 0
+      }
+    ],
+    "linux-source": [
+      {
+        "gate": "configure",
+        "exit": 0
+      },
+      {
+        "gate": "build",
+        "exit": 0
+      },
+      {
+        "gate": "owning",
+        "exit": 0
+      },
+      {
+        "gate": "ordinary-24",
+        "exit": 0
+      },
+      {
+        "gate": "dynamic",
+        "exit": 0
+      }
+    ],
+    "linux-static-corrected": [
+      {
+        "gate": "configure",
+        "exit": 0
+      },
+      {
+        "gate": "build",
+        "exit": 0
+      },
+      {
+        "gate": "ordinary",
+        "exit": 0
+      },
+      {
+        "gate": "dynamic",
+        "exit": 0
+      }
+    ],
+    "linux-shared": [
+      {
+        "gate": "configure-shared",
+        "exit": 0
+      },
+      {
+        "gate": "build-shared",
+        "exit": 0
+      },
+      {
+        "gate": "install-shared",
+        "exit": 0
+      },
+      {
+        "gate": "consumer-configure-shared",
+        "exit": 0
+      },
+      {
+        "gate": "consumer-build-shared",
+        "exit": 0
+      },
+      {
+        "gate": "installed-ordinary-shared",
+        "exit": 0
+      },
+      {
+        "gate": "installed-dynamic-shared",
+        "exit": 0
+      }
+    ]
+  },
+  "archive": "qualification.zip",
+  "archive_sha256": "68fe051fa4ef73a1b495360694e7b9b5dc4572305d4d88c492d3a3e038d7cf51",
+  "archive_bytes": 195731,
+  "loc": {
+    "compute_graph": 61073,
+    "implementation_files": 249,
+    "self_without_tests": 156300
+  },
+  "limitations": [
+    "The Linux first root Git HEAD did not identify the archive; content-qualified forward sync supersedes it.",
+    "The first Linux static custom-DSO journey requires PIC and was not applicable to the ordinary static C++ executable; GCC14 same-process dynamic consumer passed.",
+    "Public API/embedding/package glue is unchanged; actual source-linked public facade and installed static/shared consumers are tested."
+  ]
+}

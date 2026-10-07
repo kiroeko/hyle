@@ -1,0 +1,126 @@
+{
+  "schema": "hyle.cpu-fused-sdpa-verdict/v1",
+  "product_candidate": "10c7d784d62d6e656b60e533e0f9329a9cb55827",
+  "benchmark_candidate": "d96a30c6501573f4ad99116eea43a30c51556e5e",
+  "qualification": "QUALIFIED",
+  "machine": "W1-WIN",
+  "independent_runs_per_stratum": 15,
+  "strata": 4,
+  "archive": "qualified.zip",
+  "archive_bytes": 5530630,
+  "archive_sha256": "a12499e437df2cb1ebda637eea02fd9048b1bbbb45245c2c8b4c66f3d33dc1e9",
+  "rows": [
+    {
+      "id": "equal-head-sdpa-t6-r1-o6",
+      "direction_relative_to_one": "LOSS",
+      "practical_verdict": "LOSE",
+      "noninferiority_gate": "FAIL",
+      "ratio_range": [
+        0.08917170566121234,
+        0.0895800310759442
+      ],
+      "intervals": [
+        [
+          0.0877452258169264,
+          0.09195971331399001
+        ],
+        [
+          0.08746305864431628,
+          0.09195260216282733
+        ],
+        [
+          0.08804147558728707,
+          0.09096967090969671
+        ],
+        [
+          0.08741225285997238,
+          0.0911491026087587
+        ]
+      ]
+    },
+    {
+      "id": "equal-head-sdpa-t6-r32-o6",
+      "direction_relative_to_one": "LOSS",
+      "practical_verdict": "LOSE",
+      "noninferiority_gate": "FAIL",
+      "ratio_range": [
+        0.08601489939708946,
+        0.0876534494055026
+      ],
+      "intervals": [
+        [
+          0.08515200450284442,
+          0.09100114400090306
+        ],
+        [
+          0.08420280911440424,
+          0.08802755355647629
+        ],
+        [
+          0.08558547997601879,
+          0.08958063238564624
+        ],
+        [
+          0.08499270355739144,
+          0.08786398688526799
+        ]
+      ]
+    },
+    {
+      "id": "causal-sdpa-d256-t6-r1-o6",
+      "direction_relative_to_one": "LOSS",
+      "practical_verdict": "LOSE",
+      "noninferiority_gate": "FAIL",
+      "ratio_range": [
+        0.21259038166893562,
+        0.21764845737994443
+      ],
+      "intervals": [
+        [
+          0.20995289932425112,
+          0.22272228451221132
+        ],
+        [
+          0.2132660681906948,
+          0.22368721115136905
+        ],
+        [
+          0.20747483511183282,
+          0.2186019722142226
+        ],
+        [
+          0.20985392326825958,
+          0.22927596104515766
+        ]
+      ]
+    },
+    {
+      "id": "causal-sdpa-d256-t6-r32-o6",
+      "direction_relative_to_one": "LOSS",
+      "practical_verdict": "LOSE",
+      "noninferiority_gate": "FAIL",
+      "ratio_range": [
+        0.205065731548107,
+        0.21055881909926194
+      ],
+      "intervals": [
+        [
+          0.20412491100205937,
+          0.21159542623117386
+        ],
+        [
+          0.2041946209107641,
+          0.21285713178715063
+        ],
+        [
+          0.2017872542897077,
+          0.21036528400597906
+        ],
+        [
+          0.20161321387024952,
+          0.20953914975152102
+        ]
+      ]
+    }
+  ]
+}
