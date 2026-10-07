@@ -106,3 +106,17 @@ Graph完整region复用同一supports，不另写旁路，合法ATen leaf承接�
 已有ggml owner在F1 AUDITED，T6定界后绑定本卡；新增一个ggml拒绝/普通两入口精确反例和实际artifact composition重验，
 迁移旧F16“必须ggml”metadata断言。单批构建/定向补验/原remaining Graph首次全批，不重跑成功C5、不跑P1。
 不升级或改原vendor数学、不扩自研、不撤回标准CPU F16算子可用性；原FAIL保留。
+
+T6改后C5只补受影响plain F16的GGUF/非GGUF端口与相关默认metadata；其他成功C5保持复用，
+不是重跑整批。普通artifact composition维持原精确门与两次变输入。
+
+## T7 sidecar片段同输入组合修正（测试）
+
+同Mac Direct剩余159项中157通过，另一个失败为Flash Q8 sidecar完整片段；
+源码明确前置prefill已经独立通过，但complete的实际输入是cache_actual，oracle初始化却是cache_expected。
+这仍是两个不同输入跨量化边界的比较，不能签为同合同实现失败。
+有限测试FIX：prefill/embedding各自保持独立oracle与原精度门；下一complete片段的独立数学对照
+从其相同实际prefill cache/embedding初始化，完整三stage、replay反馈/reset、head与所有分支不变。
+complete内部仍以独立reference推进并受原全片段误差门，不能逐node用actual替换reference来消除误差。
+只运行一次具名完整sidecar Direct重验及原remaining Graph首次批；如果仍失败，保留真实数值反例再定界，
+不放宽阈值、不削小词表/状态、不无限换输入重测。原159项FAIL保留。

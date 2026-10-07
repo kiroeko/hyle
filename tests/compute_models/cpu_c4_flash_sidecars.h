@@ -308,7 +308,12 @@ template<class Run> void check(const Model &model,Run run) {
   auto e=target_embedding(model);auto embedding_expected=e.replays[0].outputs[0];std::vector<float> embedding_actual;
   e.observe=[&](std::size_t,std::span<const float> values){embedding_actual.assign(values.begin(),values.end());};
   run(std::move(e));ASSERT_FALSE(::testing::Test::HasFailure());
-  auto program=complete(model,embedding_actual,embedding_expected,cache_actual,cache_expected);
+  // Prefill and embedding retain their independent oracles above. The next
+  // complete program and its oracle must start from the same actual inputs:
+  // legal upstream F32 differences can cross a later quantization boundary.
+  // The complete program still advances its independent reference and uses
+  // the unchanged whole-fragment error and state/reset checks.
+  auto program=complete(model,embedding_actual,embedding_actual,cache_actual,cache_actual);
   std::vector<std::vector<float>> observed,markov;
   program.fragment.observe=[&](std::size_t port,std::span<const float> values){
     if(port==5)observed.emplace_back(values.begin(),values.end());
