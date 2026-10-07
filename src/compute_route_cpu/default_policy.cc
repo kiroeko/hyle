@@ -56,6 +56,28 @@ Family baseline(Operation operation) noexcept {
   }
 }
 
+bool original_q8_sidecar_norm(const ProviderOperationRequest &request) noexcept {
+  const auto *norm = request.operation.get_if<RmsNorm>();
+  if (!norm || norm->epsilon != 1.0e-6F ||
+      norm->accumulation_type != DataType::kFloat32 ||
+      request.inputs.size() != 2 || request.outputs.size() != 1)
+    return false;
+  for (const auto &input : request.inputs)
+    if (!input.is_plain() || !input.is_dense() ||
+        input.data_type() != DataType::kFloat32)
+      return false;
+  const auto artifact = request.workload.profile.description();
+  return artifact.format_family == "gguf" &&
+         artifact.model_repository == "deepseek-ai/DeepSeek-V4-Flash-0731" &&
+         artifact.model_name == "DeepSeek-V4-Flash-0731" &&
+         artifact.model_revision == "7872f01b1d1fe23eabc4c98b48bffcef5a386062" &&
+         artifact.artifact_repository == "unsloth/DeepSeek-V4-Flash-0731-GGUF" &&
+         artifact.artifact_revision == "fbbb5b93fb787c21338159b0af3318bb3f4d9768" &&
+         artifact.variant == "sidecar:dspark-DeepSeek-V4-Flash-0731-Q8_0.gguf" &&
+         artifact.manifest_digest ==
+             "b77793866ec63e166212f588ce5b74d9edb464bdd0787f54bc6cab2779ad8eb1";
+}
+
 Family baseline(const ProviderOperationRequest &request) noexcept {
   // Packed/blocked matrices preserve the original mature codec rather than
   // preferring a plain GEMM merely because both requests say MatMul.
@@ -92,14 +114,18 @@ Status propose(void *context, const ProviderOperationRequest &request,
                                                 outputs, proposal);
   if (!status.ok() || !proposal->policy.empty())
     return status;
-  const auto primary = baseline(request);
+  // Keep the original model's quantization-sensitive boundary. This is a
+  // cold engineering rule; submission retains the prepared provider path.
+  const bool original_norm = original_q8_sidecar_norm(request);
+  const auto primary = original_norm ? Family::kGgml : baseline(request);
   proposal->preference = rank(F, primary) + (S == Scope::kGraph ? 200 : 0);
   proposal->policy = {
       0x48594c4543505544ULL,
       1 + (static_cast<std::uint64_t>(request.operation.kind()) << 16) +
           (static_cast<std::uint64_t>(primary) << 8) +
-          static_cast<std::uint64_t>(F),
-      1};
+          static_cast<std::uint64_t>(F) +
+          (original_norm ? (std::uint64_t{1} << 32) : 0),
+      original_norm ? 2U : 1U};
   return status;
 }
 

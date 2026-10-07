@@ -14,6 +14,7 @@
 #include "../compute_models/d5_qwen35_fixture.h"
 #include "../compute_models/d5_qwen38_gdn_fixture.h"
 #include "../compute_models/d5_qwen38_profile_cases.h"
+#include "../compute_models/d5_moe_profile_cases.h"
 #include "../compute_provider_native/half_test_support.h"
 
 #include "hyle/compute/cpu.h"
@@ -45,6 +46,50 @@ TensorDesc matrix(std::int64_t rows, std::int64_t columns) {
   return TensorDesc::dense(DataType::kFloat32, std::array{rows, columns})
       .value();
 }
+
+#if defined(HYLE_COMPUTE_GGML_CPU)
+TEST(CpuDefaultContext, FixedQ8SidecarNormUsesOriginalBoundaryAndRejectsIdentityMismatch) {
+  auto profile = d5_moe_profile_cases::deepseek_v4_flash_official;
+  profile.model_repository = "deepseek-ai/DeepSeek-V4-Flash-0731";
+  profile.model_name = "DeepSeek-V4-Flash-0731";
+  profile.model_revision = "7872f01b1d1fe23eabc4c98b48bffcef5a386062";
+  profile.configuration_digest = "6c8f3d2d3b48707541b88f32f22ef3f0f8a6b57d8523281e2b8d3cdb0ae9a023";
+  profile.artifact_repository = "unsloth/DeepSeek-V4-Flash-0731-GGUF";
+  profile.artifact_revision = "fbbb5b93fb787c21338159b0af3318bb3f4d9768";
+  profile.variant = "sidecar:dspark-DeepSeek-V4-Flash-0731-Q8_0.gguf";
+  profile.manifest_digest = "b77793866ec63e166212f588ce5b74d9edb464bdd0787f54bc6cab2779ad8eb1";
+  profile.format_family = "gguf";
+  auto context = create_context().value();
+  const auto input = matrix(5, 4096);
+  const auto gamma = TensorDesc::dense(DataType::kFloat32,
+      std::array<std::int64_t, 1>{4096}).value();
+  for (int mismatch = 0; mismatch < 7; ++mismatch) {
+    auto changed = profile;
+    if (mismatch == 1) changed.artifact_revision = workload_test::kModel.artifact_revision;
+    if (mismatch == 2) changed.manifest_digest = workload_test::kModel.manifest_digest;
+    if (mismatch == 3) changed.variant = "sidecar:dspark/DeepSeek-V4-Flash-0731-BF16.gguf";
+    if (mismatch == 4) changed.model_name = "DeepSeek-V4-Pro-0813";
+    if (mismatch == 5) changed.format_family = "safetensors";
+    WorkloadContext workload;
+    if (mismatch != 6) workload.profile = ModelArtifactProfile::create(changed).value();
+    auto prepared = prepare(context, RmsNorm{.epsilon = 1.0e-6F}, input,
+                            gamma, hyle::mem::system_resource(), workload);
+    ASSERT_TRUE(prepared) << prepared.error().message();
+    const auto policy = prepared->route_policy();
+    if (mismatch == 0) {
+      EXPECT_EQ(prepared->provider().id, ggml_cpu::kProviderId);
+      EXPECT_EQ(policy.version, 2U);
+      EXPECT_NE(policy.policy_id & (std::uint64_t{1} << 32), 0U);
+    } else {
+      EXPECT_EQ(policy.version, 1U);
+      EXPECT_EQ(policy.policy_id & (std::uint64_t{1} << 32), 0U);
+#if defined(HYLE_COMPUTE_ONEDNN)
+      EXPECT_EQ(prepared->provider().id, onednn::kProviderId);
+#endif
+    }
+  }
+}
+#endif
 
 TEST(CpuDefaultContext, MatureDefaultsHavePolicyWithoutModelOrHardwareProfile) {
   auto context = create_context().value();
