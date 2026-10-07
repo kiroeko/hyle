@@ -101,3 +101,32 @@ Windows 的普通配置、生成架构／显式覆盖／OFF 检查已有精确�
 默认 GGML/native 编译集合得到统一，CPU 数学及闭合证据未改；B2／B3／完整 B4 仍须本包实际验收。
 选中的公共 package/头/产品 gates 在稳定接线候选集中执行，不能把 CMake configure 成功当产品完成。
 所有 Compute+Graph 实现仍由统一 LOC 脚本计数；本子批仅改构建输入，不增加自研算子。
+
+## B2 冷软件事实子批 SCOPED
+
+baseline `8cbfef5c347eff30bf171cf225bbd585876cfe9f`。公开 CUDA Environment 已正确注明
+driver_cuda_version 是 API 号，但内部 RouteFacts 把它投影到 kDriverVersion，缺少真实驱动发行版。
+这是用户要求按驱动发行版组合路由的具体缺口；不把它改称 Toolkit 或用户手填 timing/profile。
+
+有限范围：backend 冷快照增加独立原始 driver release 文本；复用 Platform DynLib 动态读取系统 NVML，
+创建 Context 时读取、完成后释放原库引用，准备／提交无额外 NVML 查询。系统 NVML 不打包／复制，
+不要求普通用户启用新 feature；缺库／符号／权限／初始化／查询失败只缺该可选事实，不禁用 CUDA 正常路径。
+kDriverVersion 只发布真实 release 文本，CUDA API 整数改由 kApiVersion 发布，runtime/toolkit 仍独立。
+原 private RouteFacts 改为拥有数组＋实际有效 span，缺 release 时省略该 fact，不能用空 string 或伪数字污染 subject。
+三个实际消费者为 ggml CUDA、CCCL 与 Linux FlashInfer，只迁移冷事实入口，不改数学／资格阈值／热程序。
+
+正常纵切为普通 CUDA Context/Direct/Graph 的软件适用域绑定，正交为无 NVML 仍能正常匹配 SM/runtime 条件。
+寿命：snapshot owned/copyable，调用原 NVML 的初始化引用与 shutdown 平衡，不保留库 handle 或全局可变 cache。
+版本查询使用 NVIDIA 官方 nvmlSystemGetDriverVersion/Init_v2 的现有合同，
+见 [System Queries](https://docs.nvidia.com/deploy/nvml-api/latest/api/group__nvmlSystemQueries.html) 与本机 Toolkit13.3 nvml.h。
+
+owner：compute_backend_cuda 已 AUDITED 但先重新定界 B2；compute_provider_ggml_cuda 的旧 enum 保护卡不授权该迁移，
+本卡先 SCOPED 重新定界。compute_provider_cuda 当前旧 FP4 卡同样先定界冷事实入口；
+compute_provider_flashinfer 由 backend private API 变化触发 CLOSED→SCOPED，只冷事实消费，不升级 pin。
+不重开 Compute／CPU／Graph 公共机制。直接使用 DynLib 的 backend 在中央图显式列 Platform private dep，
+其闭包已由 PlatformThread 取得，不引入新的产品 feature。
+
+预算：一次原 SDK／库入口核对，一批产品／消费者迁移，一批实际 backend/sparse matcher/Provider 两入口
+及 source/static/shared/headers 验证，与 U3 稳定接线候选合并重型构建；至多一次具名纠正，P0，无此项 P1。
+预声明：原 NVML 差分身份、snapshot copy/move/close、缺 release 的稀疏匹配、API/release 不混淆、
+selected headers/backend/provider/普通消费者及三交付；未运行 UNVERIFIED，不以查询探针签产品 PASS。

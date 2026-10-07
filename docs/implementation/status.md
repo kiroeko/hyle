@@ -66,7 +66,7 @@
 | compute_ggml_runtime | AUDITED | — | [record](tasks/compute/cuda-final-u2-build-contract.md) | CUDA U2 B4 AUDITED：有限 FIX 仅在成功选中 CUDA SDK 且未指定 arch 时向根调用作用域传播原 80/89-real 默认；显式架构与 CUDA-OFF 保持。CPU数学/资格、ggml资源overlay与其它GPU不改，当前运行/交付待验。 |
 | compute_provider_ggml_cuda | AUDITED | — | [record](tasks/compute/cpu-quant-mtp-c3-format-bindings.md) | C3公共GGUF enum消费者有限迁移AUDITED：只明确拒绝新增CPU格式，原D5资格/算法/限制不变，不恢复GPU队列；不签新增GPU能力。 |
 | graph_provider_ggml_cuda | CANDIDATE | — | [record](tasks/compute/llm-moe-d3-ggml-native-binding.md) | M3-D3 CANDIDATE 08b8e2f1：十种真实ggml/GGUF storage接缝、CUDA22画像两入口、三交付A5和两完整片段A6已有收据；D6残余覆盖和终审未完成，不提前CLOSED。 |
-| compute_provider_flashinfer | CLOSED | P0 / [PASS](../../evidence/correctness/model-profile-routing-refactor/README.md) | [record](tasks/compute/llm-moe-model-profile-routing-refactor.md) | MR CLOSED：compute_provider_flashinfer 的真实模型制品画像、任意端口规则、确定性冷绑定和四路线单轨迁移已通过正确性、三交付、红队及 P0；M3 覆盖保持独立。 |
+| compute_provider_flashinfer | SCOPED | — | [record](tasks/compute/cuda-final-u2-build-contract.md) | CUDA U2 B2 SCOPED：backend 冷软件事实的原 API/release 语义变更需要迁移 FlashInfer 消费；仅有界审计私有 RouteFacts 消费，不改原数学、pin、Linux-only资格及热路径。 |
 | compute_provider_ggml_metal | AUDITED | — | [record](tasks/compute/cpu-quant-mtp-c3-format-bindings.md) | C3公共GGUF enum消费者有限迁移AUDITED：只明确拒绝新增CPU格式，原D5资格/算法/限制不变，不恢复GPU队列；不签新增GPU能力。 |
 | compute_provider_iree_vulkan | CANDIDATE | — | [record](tasks/compute/llm-moe-d3-ggml-vulkan-native-binding.md) | M3-D3 CANDIDATE 2757ecc：checked Scan、BF16 conversion和具名FP8 MatMul限定域已有收据，Vulkan A5完成；不代签官方grouped FP8/FP4或Q8数值失败域。D5-A6及D6未关闭。 |
 
