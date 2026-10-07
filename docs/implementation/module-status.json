@@ -419,8 +419,8 @@
     {
       "module": "compute_route_cpu",
       "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/cpu-final-f1-build-contract.md",
-      "summary": "F1/B4 AUDITED：静态逐合同成熟工程默认、冷proposal policy投影，保留完整region/原资源与Prepared执行；无性能WIN声明，普通unknown条件仍可执行。"
+      "record": "docs/implementation/tasks/compute/cpu-final-f3-platform-carriers.md",
+      "summary": "CPU最终F3/T10 AUDITED：仅锁定Flash Q8 sidecar的F32 RMSNorm/epsilon/原format冷规则优先ggml，保持量化前原程序；不改generic默认/执行/公开API，不签性能WIN。"
     },
     {
       "module": "graph_route_cpu",

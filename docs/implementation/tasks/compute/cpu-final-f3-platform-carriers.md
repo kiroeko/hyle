@@ -168,3 +168,13 @@ Windows当前Direct全批唯一失败为同Flash Q8 sidecar；原FP32参考门ma
 真实owner compute_route_cpu仍AUDITED于F1；先审计本具名规则，绑定本卡后才实施。
 一次增量构建与Windows具名Direct/Graph正式重验；其它成功全批复用，不再开探针或换参考。
 若仍失败保存具体结果，不追加新norm方案。其它平台同规则的资格按产品实际影响补验，不假称自动通过。
+
+### T10 AUDITED
+
+原接缝确认：Request已有不可变WorkloadContext/profile，cold默认仅decorate成功proposal，
+不改变provider准入、原execution/lifetime或Graph完整region。ggml RMSNorm原F32边界与该原GGUF sidecar一致；
+oneDNN generic仍是合法数学，但此既定量化敏感片段没有通过完整状态门。
+固定FIX为上述repo/revision/variant/manifest四项一致、format_family=gguf与RMSNorm F32/epsilon/两plain dense端口匹配；
+给此具名工程规则独立entry/version，不借旧WIN，Unknown/失配不带该entry。无新常态metadata/alloc。
+现Direct827项通过、唯一sidecar FAIL，原记录保留；不重跑827。Graph原full尚未运行，rule后的首次全批不伪PASS。
+风险验收含正确软件/真实profile命中、revision/manifest/variant失配、普通unknown沿generic、Direct/Graph同数值与资源。
