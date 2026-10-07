@@ -2,6 +2,7 @@
 
 #include <array>
 #include <cstdint>
+#include <initializer_list>
 #include <span>
 #include <string_view>
 #include <utility>
@@ -20,6 +21,10 @@ namespace {
 namespace c = hyle::compute;
 namespace g = hyle::graph;
 namespace mem = hyle::mem;
+
+c::TensorDesc dense(c::DataType type,std::initializer_list<std::int64_t> dimensions) {
+  return c::TensorDesc::dense(type,{dimensions.begin(),dimensions.size()}).value();
+}
 
 // This is a private SDK fault qualification in an isolated test process.
 // Use the original allocator's limit, not an allocation mock or physical
@@ -47,9 +52,9 @@ TEST_P(CudaOriginalAllocationFailure, CompletionReportsOriginalOomAndRouteRecove
   auto memory = c::cuda::MemoryResource::create(context,c::cuda::MemoryKind::kDevice).value();
   auto queue = context.create_queue().value();
   const std::array inputs{
-      c::TensorDesc::dense(c::DataType::kUInt8,{16,128}).value(),
-      c::TensorDesc::dense(c::DataType::kFloat32,{64}).value(),
-      c::TensorDesc::dense(c::DataType::kFloat32,{16}).value()};
+      dense(c::DataType::kUInt8,{16,128}),
+      dense(c::DataType::kFloat32,{64}),
+      dense(c::DataType::kFloat32,{16})};
   const auto operation = c::model_ops::artifact_weight_decode(
       c::model_ops::WeightArtifactFormat::kNf4,64,c::DataType::kFloat32);
   std::array<c::TensorDesc,1> outputs;
