@@ -166,8 +166,11 @@ inline HeadProjection head_projection(Fragment &f, ValueId input, bool key,
 // ggml Metal mul_mv_id_bf16_f32 retains F32 activations; CPU vec-dot
 // converts them to BF16. Match that source-defined boundary in the oracle,
 // while leaving the identical public operation graph and accuracy gate intact.
+using MlaReference = std::function<std::vector<std::vector<float>>(
+    std::span<const float>,std::span<const float>)>;
 inline Fragment mla(const c::ModelArtifactProfileDescription *profile,
-                      bool round_grouped_input_to_bfloat = true) {
+                      bool round_grouped_input_to_bfloat = true,
+                      MlaReference *reference_out = nullptr) {
   Fragment f{.profile = profile, .region = 0x070701,
              .quantized = storage(profile) == Storage::kQ8_0};
   auto x = f.input(dense({1, kHidden}));
@@ -206,19 +209,19 @@ inline Fragment mla(const c::ModelArtifactProfileDescription *profile,
   if (storage(profile) == Storage::kBFloat16)
     f.bfloat_chain_outputs = {0, 1, 2, 3, 4, 5, 6, 8};
   f.state_ports = {{1, 0}};
-  auto cache_values = d5_gguf_test::activation(3 * 576, 23);
-  for (int step = 0; step < 4; ++step) {
-    auto values = d5_gguf_test::activation(kHidden, 3 + 14 * step);
-    sem::Replay replay{{bytes(values), bytes(cache_values)}, {}};
+  MlaReference reference=[qa=std::move(qa),qb=std::move(qb),kva=std::move(kva),
+      kb=std::move(kb),vb=std::move(vb),gate=std::move(gate),out=std::move(out),
+      input_scale,qscale,kvscale,round_grouped_input_to_bfloat](
+      std::span<const float> values,std::span<const float> past) {
     auto nx = sem::oracle::rms_norm_rows(values, input_scale, kHidden, kEpsilon);
     auto aq = qa.reference(nx);
     aq = sem::oracle::rms_norm_rows(aq, qscale, 1536, kEpsilon);
     auto bq = qb.reference(aq), kv = kva.reference(nx);
     auto l = sem::oracle::rms_norm_rows(std::span(kv).first(512), kvscale, 512, kEpsilon);
     l.insert(l.end(), kv.begin() + 512, kv.end());
-    auto full_cache = cache_values;
+    std::vector<float> full_cache(past.begin(),past.end());
     full_cache.insert(full_cache.end(), l.begin(), l.end());
-    cache_values.assign(full_cache.begin() + 576, full_cache.end());
+    std::vector<float> cache_values(full_cache.begin() + 576,full_cache.end());
     auto no_pe = slice(bq, kHeads, 192, 0, 128);
     auto absorbed = kb.reference(no_pe, round_grouped_input_to_bfloat);
     std::vector<float> attended(kHeads * 512);
@@ -245,7 +248,14 @@ inline Fragment mla(const c::ModelArtifactProfileDescription *profile,
     auto gv = projected;
     for (std::size_t i = 0; i < gv.size(); ++i) gv[i] *= float(core::sigmoid(gate_values[i]));
     auto result = out.reference(gv);
-    replay.outputs = {cache_values, bq, absorbed, attended, projected, gv, result, nx, gate_values};
+    return std::vector<std::vector<float>>{cache_values,bq,absorbed,attended,projected,gv,result,nx,gate_values};
+  };
+  if(reference_out)*reference_out=reference;
+  auto cache_values=d5_gguf_test::activation(3*576,23);
+  for(int step=0;step<4;++step) {
+    auto values=d5_gguf_test::activation(kHidden,3+14*step);
+    sem::Replay replay{{bytes(values),bytes(cache_values)},reference(values,cache_values)};
+    cache_values=replay.outputs[0];
     f.replays.push_back(std::move(replay));
   }
   return f;
