@@ -232,3 +232,23 @@ Windows产品候选`44e116b91cee2d4a5d042491812d11ec9dd9b4f3`当前source/shared
 Torch/私有原CPU程序DLL邻exe，无开发PATH兜底。实际shared出口通过。
 [Windows交付收据](../../../../evidence/correctness/cpu-final-f3/README.md)绑定27个成功步骤；不签性能WIN或F4/F5。
 当前三平台此交付批已齐，仅T11 test-seam差异与F3终审待结；F1 mixed envelopes按F1独立处理。
+
+## F3候选冻结与终审输入
+
+最后产品变化为T6 ARM准入修复；T10未合格规则已源级删除，产品默认表与原B4一致。
+API/布局/数学不再变化，当前产品快照`560eb1d2332bb69ee5148e899b000fae85d80074`；后续仅此证据/状态整理。
+T11 test候选859b758b的Linux/Mac各Direct2/Graph2全部通过，无skip，固定同原ISA编码/完整三stage/词表/状态和原门。
+[定向差异receipt](../../../../evidence/correctness/cpu-final-f3/README.md)已归档，不启动其它探针。
+
+| 七门 | F3证据与范围 |
+|---|---|
+| scope | F2的104 GGUF/官方/非GGUF/sidecar固定需求未删；前置与原精度都保留，非全模型实权重常驻 |
+| architecture | 原库承载/一core/路线独立、private managed SDK/loader、cold资格拒绝；无万能执行器或新自研数学 |
+| correctness | 三平台owning、ordinary两入口、全semantic/state/全部端口/格式及失败修正，原失败不回写 |
+| delivery | 三平台源码、搬移static/shared和40格、普通样例实际数值/replay，Win DLL邻exe、Unix实际RPATH/loader |
+| usability_docs | 普通CPU/Graph入口/默认AUTO、机器SDK的版本与独立依赖、未测WIN/严格资源拒绝明确 |
+| red_team | 独立对账看未运行/skip、错误精度准入/不同oracle输入和ISA、compile-only样例，具名修正/阴性边界均保留 |
+| engineering_performance | P0：无新数学/常态对象或submit indirection；cold资格判断，managed临时/codec/cast/资源成本如原范围公开；F4比较另行，不签WIN |
+
+candidate冻结不关闭整个Compute/Graph，F1/B2/B3仍按自己未决交付格执行；CPU冗余自研去留待F4/F5。
+Native/ggml/CPU route owner先合法CANDIDATE，再仅对F3范围作terminal；本页不能自动解除公共Graph/GPU状态。

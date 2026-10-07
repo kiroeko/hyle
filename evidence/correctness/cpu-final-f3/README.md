@@ -163,3 +163,9 @@ CPU DLLs reside beside the executable. All 27 recorded steps pass, including
 the actual shared export scan. No dependency rebuild or performance race is
 introduced by this delivery verdict. T11 Linux/Mac test-seam qualification,
 F1 mixed envelopes and the remaining goal phases remain separate.
+
+[Current Linux/Mac ISA-delta receipt](current-isa-deltas-receipt.json) and
+[targeted compile/log/XML/source identities](current-isa-deltas.zip) pass both
+full sidecars and midpoint definition in exactly two tests per entry/platform,
+without skips. These complete the T11 test-seam deltas. The product snapshot
+remains unchanged; no further model/quantization/runtime probe was run.

@@ -1,0 +1,33 @@
+{
+  "test_candidate": "859b758b60b27422d722e9e4db1a62051e772e71",
+  "gates": {
+    "mac-direct-isa-delta": {
+      "tests": 2,
+      "failures": 0,
+      "skips": 0
+    },
+    "mac-graph-isa-delta": {
+      "tests": 2,
+      "failures": 0,
+      "skips": 0
+    },
+    "linux-direct": {
+      "tests": 2,
+      "failures": 0,
+      "skips": 0
+    },
+    "linux-graph": {
+      "tests": 2,
+      "failures": 0,
+      "skips": 0
+    }
+  },
+  "scope": "Exactly original full Q8/BF16 sidecar and selected native Q8 midpoint per entry; no full-suite duplicate or new runtime probe",
+  "product": "No changed math/API/software dependencies from previously qualified candidate; current test oracle captures actual native ISA boundaries",
+  "limits": [
+    "F1 mixed envelopes remain separate",
+    "Best-of/retirement/final goal audit not completed"
+  ],
+  "archive_sha256": "dd14f98579cfffd27af5644d47b9d150f20c32ec82048a9ec89183759ee12c63",
+  "archive_bytes": 9141
+}
