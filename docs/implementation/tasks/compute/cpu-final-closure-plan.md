@@ -7,6 +7,9 @@
 ## 目标与固定范围
 
 - 用户只选CPU路线；同一普通Direct/Graph接口在Windows x86_64、Linux x86_64与MacBook Air ARM64有完整成熟计算承载。
+- 标准`compute-cpu`在三个支持平台正常构建后必须可执行固定目标集合的全部必需CPU合同。
+  无硬件特化只影响性能资格，不影响可用性；所需依赖缺失在configure明确失败，不允许AUTO静默减去必需算子。
+  高级显式裁剪可以缩小能力，但不能冒充标准配置。Mac当前差距作为MUST补齐，不因可编译就签完成。
 - 固定需求来自[104 GGUF及原版/非GGUF/分支覆盖](../../../user/cpu-model-coverage.md)与
   [逐制品联合合同](../../../../evidence/correctness/cpu-quant-mtp-c5-required/joint-verdict.md)：
   Qwen3.5-2B、Qwen3.8-27B/2.4T、Kimi K3、GLM5.3/Flash、DeepSeek V4 Pro-0813/Flash-0731及已发布MTP/DSpark。

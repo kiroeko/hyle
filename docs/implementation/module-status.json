@@ -427,9 +427,9 @@
     },
     {
       "module": "compute_provider_native",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/cpu-final-f1-build-contract.md",
-      "summary": "CPU最终F1 SCOPED：用户要求三平台CPU/构建与预编译一致、全重复域best-of和合理默认；核对flags/LTO资格、mixed core及默认回退，有限审计未写产品。旧GPU/Graph阻塞不解除。"
+      "summary": "CPU最终F1/B1 AUDITED：只固定Native性能recipe flags/IPO/linkage/feature失配撤资格，保持成熟默认与正常数学；B2–B4继续审计，不签完整CPU收口。"
     },
     {
       "module": "compute_sched",

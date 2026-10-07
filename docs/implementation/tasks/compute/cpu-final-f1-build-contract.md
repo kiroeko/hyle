@@ -19,6 +19,8 @@
 | B4 | 无特化规则时只用全局Provider顺序，默认依据不完整 | 已测优选→逐op/format/precision/resource/region成熟默认→合法兜底；规则低成本冷绑定 | 未知硬件/版本/线程、feature裁剪、完整region与普通叶、错误不伪fallback |
 
 scope只授权审计；B2的ABI/源码反证与F2/F3能力冻结后才写该部分产品。
+标准`compute-cpu`必须交付固定目标全部合同，未匹配性能特化仍可执行成熟默认；必需依赖缺失configure失败，
+Mac的AUTO关闭不是本goal可接受的最终标准能力。高级显式裁剪与完整标准配置分别记录。
 构建获取/安装复用现有中央锁与package registry，不另造第二构建系统。普通用户仍只选CPU，不给timing或Provider顺序。
 公开对象/ownership/失败/并发/完成不变；提交前owner必须AUDITED且有限FIX固定。
 
@@ -31,3 +33,14 @@ docs/state只closure/docs；未运行不签PASS。涉及公共package seam再定
 完成后CANDIDATE→七门CLOSED；若B2依赖未接齐，保留实际未完成，不能以B1已修关闭本包。
 
 当前：SCOPED，B1–B4均待AUDITED；产品改动0，新验收0。
+
+## B1子批AUDITED：性能recipe不匹配撤资格
+
+Native owner单独完成B1审计，其它owner继续SCOPED；本卡整体仍未冻结B2–B4产品方案。
+现两份实际P1都为MSVC19.50、Release `/O2 /Ob2 /DNDEBUG`、portable ISA、static、LTO off；
+macro和`qualified_default_environment()`未核对flags/IPO/linkage，构成明确证书误投影。
+有限FIX只在Native owning CMake增加recipe条件与Release配置投影，原peer/CPU/线程/端口条件继续；
+非matching flags、IPO、shared、sanitizer、exact ISA/trace、相关feature变化撤优选资格，保持原正常数学与成熟默认。
+无新API、layout或热字段；冷metadata同条件匹配，不给未测shared标签。当前17/187是历史有证格而非通用冠军。
+低成本私有CMake合同检查覆盖正例/失配/多config，正常shared默认two-entry consumer按F1选定验证；
+匹配static旧数学与P1复用，不因资格保守缩小重测。B1不算B2–B4已完成。
