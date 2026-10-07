@@ -714,7 +714,11 @@ TEST(CpuDefaultContext, SelectUsesMatureProviderWithoutManualOrdering) {
   const std::array outputs{TensorView::create(values, out.view()).value()};
   auto prepared = prepare(context, Select{}, condition, values, values);
   ASSERT_TRUE(prepared) << prepared.error().message();
+#if defined(HYLE_TEST_TORCH_CPU)
+  EXPECT_EQ(prepared->provider().id, aten_cpu::kProviderId);
+#else
   EXPECT_EQ(prepared->provider().id, onednn::kProviderId);
+#endif
   const auto requirement = prepared->workspace_requirement();
   auto workspace =
       requirement.size == 0

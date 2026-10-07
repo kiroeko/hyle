@@ -10,6 +10,7 @@ enum class DefaultScope : std::uint8_t { kDirect, kGraph };
 // Private ordinary-facade factory seam. Original capability/resource admission
 // and prepared execution remain in the mature provider. No timing takes place.
 HYLE_COMPUTE_ROUTE_CPU_API Provider
-with_defaults(Provider, DefaultProvider, DefaultScope) noexcept;
+with_defaults(Provider, DefaultProvider, DefaultScope,
+              bool single_native_thread) noexcept;
 
 } // namespace hyle::compute::cpu::internal

@@ -16,9 +16,11 @@ namespace hyle::compute::cpu {
 
 Result<Context> create_context(DefaultContextOptions options) noexcept {
   using internal::DefaultProvider;
-  const auto configured = [](Provider provider, DefaultProvider family) {
+  const bool single_thread = options.native_threads == 1 &&
+                             options.executor.concurrency() <= 1;
+  const auto configured = [single_thread](Provider provider, DefaultProvider family) {
     return internal::with_defaults(std::move(provider), family,
-                                   internal::DefaultScope::kDirect);
+                                   internal::DefaultScope::kDirect, single_thread);
   };
   std::array providers{
 #if defined(HYLE_COMPUTE_ONEDNN)

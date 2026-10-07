@@ -20,9 +20,12 @@ namespace hyle::graph::cpu {
 Result<compute::Context>
 create_context(compute::cpu::DefaultContextOptions options) noexcept {
   using compute::cpu::internal::DefaultProvider;
-  const auto configured = [](compute::Provider provider, DefaultProvider family) {
+  const bool single_thread = options.native_threads == 1 &&
+                             options.executor.concurrency() <= 1;
+  const auto configured = [single_thread](compute::Provider provider, DefaultProvider family) {
     return compute::cpu::internal::with_defaults(
-        std::move(provider), family, compute::cpu::internal::DefaultScope::kGraph);
+        std::move(provider), family, compute::cpu::internal::DefaultScope::kGraph,
+        single_thread);
   };
   std::array providers{
 #if defined(HYLE_COMPUTE_GGML_CPU)

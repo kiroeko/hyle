@@ -127,3 +127,20 @@ P1第一次启动在首样本被telemetry-prefix拒绝：现有marker仅有calle
 R1以这些精确点、当前软件/static recipe/硬件/单线程绑定新冷规则，删除失效旧187/17规则投影；
 shared/Linux/Mac/未知身份继续成熟工程默认。完整region保留原成熟融合与资源准入，不继承leaf WIN。
 R2两入口、规则失配/资源/三交付及L1源码族交接尚未完成，三owner保持AUDITED，本包未关闭。
+
+R1的成熟默认取舍：当前Select的oneDNN byte primitive相对ATen两项qualified LOSE，
+F32约18倍／BF16约11.5倍耗时；Copy的具名布局也有对ggml约5–6.7倍耗时。
+源码成本对账为oneDNN原byte reorder/binary primitive及managed执行成本，并非漏记对手转换或拆融合；
+不修改CLOSED oneDNN数学、不自研优化。普通Select选择已资格ATen bit-preserving程序，
+Copy优先ggml prepared storage路径，原真实准入继续决定其它布局／资源／类型的合格替代。
+这是逐合同ENGINEERING_DEFAULT；尚无完整候选比较的域不签统计WIN，旧数学/失败资格仍保留。
+
+R1/R2 Windows源码增量：已接入41 Native＋2成熟完整候选选择的version3冷表，旧187/17软件投影移除。
+新资格还读取进程available CPU singleton=2，避免把本次P-core placement的WIN泛化到hybrid任意核；
+Native/executor预算、CPU-only当前core、static/Release/原recipe/软件条件同时匹配。
+prepare记录选择，submit/重放无新增搜索、计时、allocation或provider-vtable层。
+Windows43点两普通context的命中／两线程／相邻shape／epsilon／physical-layout失配、
+变输入prepared replay与实际Graph leaf lowering／完整成熟region优先通过；XML分别证明pinned资格1与unrestricted资格0。
+当前普通Direct19、Graph20与Native owner2项回归通过，无skip；首次test gate输入误用packed-halves默认
+导致fixture schema失败，仅改测试为原qualified separate输入，原FAIL保留，产品数学没有纠正或优化。
+shared/static安装、Linux/Mac差异和L1交接尚待，不能提前关闭F4。

@@ -1,6 +1,7 @@
 #include "default_policy.h"
 
 #include "../compute/provider_internal.h"
+#include "../compute_provider_native/default_rules.h"
 
 namespace hyle::compute::cpu::internal {
 namespace {
@@ -16,9 +17,15 @@ Family baseline(Operation operation) noexcept {
   case OperationKind::kMatMul:
   case OperationKind::kRmsNorm:
   case OperationKind::kLayerNorm:
-  case OperationKind::kCopy:
-  case OperationKind::kSelect:
     return Family::kOneDnn;
+  case OperationKind::kCopy:
+    // Original prepared storage copy avoids primitive/managed replay costs.
+    // Actual stride/storage admission still selects a qualified alternative.
+    return Family::kGgml;
+  case OperationKind::kSelect:
+    // Current complete-cost evidence rejects the slower oneDNN byte primitive;
+    // ATen's qualified original byte selection preserves all scalar payloads.
+    return Family::kAten;
   case OperationKind::kUnary:
     switch (operation.get_if<Unary>()->kind) {
     case UnaryKind::kSigmoid:
@@ -80,18 +87,31 @@ struct Tables final {
   const ProviderVTable *original;
   ProviderVTable configured;
 };
-template <Family F, Scope S>
+template <Family F, Scope S, bool Q>
 const Tables &tables(const Provider &provider = {}) noexcept;
 
-template <Family F, Scope S>
+template <Family F, Scope S, bool Q>
 Status propose(void *context, const ProviderOperationRequest &request,
                std::span<detail::ResourceBindingRequirement> inputs,
                std::span<detail::ResourceBindingRequirement> outputs,
                ProviderOperationProposal *proposal) noexcept {
-  auto status = tables<F, S>().original->propose(context, request, inputs,
+  auto status = tables<F, S, Q>().original->propose(context, request, inputs,
                                                 outputs, proposal);
   if (!status.ok() || !proposal->policy.empty())
     return status;
+  if (Q && request.shape.exact() &&
+      native::internal::qualified_default_environment()) {
+    const auto choice = native::internal::qualified_default_selection(
+        request.operation, request.inputs, request.outputs);
+    using Choice = native::internal::DefaultRuleProvider;
+    if (((F == Family::kGgml && choice.provider == Choice::kGgml) ||
+         (F == Family::kAten && choice.provider == Choice::kAten)) &&
+        choice.policy.valid()) {
+      proposal->preference = S == Scope::kDirect ? 50 : 175;
+      proposal->policy = choice.policy;
+      return status;
+    }
+  }
   const auto primary = baseline(request);
   proposal->preference = rank(F, primary) + (S == Scope::kGraph ? 200 : 0);
   proposal->policy = {
@@ -103,43 +123,49 @@ Status propose(void *context, const ProviderOperationRequest &request,
   return status;
 }
 
-template <Family F, Scope S>
+template <Family F, Scope S, bool Q>
 const Tables &tables(const Provider &provider) noexcept {
   static const Tables value = [&]() noexcept {
     const auto *original = detail::ProviderAccess::vtable(provider);
     auto configured = *original;
-    configured.propose = &propose<F, S>;
+    configured.propose = &propose<F, S, Q>;
     return Tables{original, configured};
   }();
   return value;
 }
 
-template <Family F, Scope S>
+template <Family F, Scope S, bool Q>
 Provider decorate(const Provider &provider) noexcept {
-  const auto &table = tables<F, S>(provider);
+  const auto &table = tables<F, S, Q>(provider);
   // A different implementation loaded into this process gets its own original
   // behavior, never a stale callback table from an earlier implementation.
   if (detail::ProviderAccess::vtable(provider) != table.original)
     return provider;
   return detail::ProviderAccess::with_vtable(provider, &table.configured);
 }
-template <Family F>
+template <Family F, bool Q>
 Provider decorate(const Provider &provider, Scope scope) noexcept {
-  return scope == Scope::kDirect ? decorate<F, Scope::kDirect>(provider)
-                                : decorate<F, Scope::kGraph>(provider);
+  return scope == Scope::kDirect ? decorate<F, Scope::kDirect, Q>(provider)
+                                : decorate<F, Scope::kGraph, Q>(provider);
+}
+template <Family F>
+Provider decorate(const Provider &provider, Scope scope, bool qualified) noexcept {
+  return qualified ? decorate<F, true>(provider, scope)
+                   : decorate<F, false>(provider, scope);
 }
 } // namespace
 
-Provider with_defaults(Provider provider, Family family, Scope scope) noexcept {
+Provider with_defaults(Provider provider, Family family, Scope scope,
+                       bool single_native_thread) noexcept {
   if (!provider.valid())
     return provider;
   switch (family) {
   case Family::kOneDnn:
-    return decorate<Family::kOneDnn>(provider, scope);
+    return decorate<Family::kOneDnn>(provider, scope, single_native_thread);
   case Family::kGgml:
-    return decorate<Family::kGgml>(provider, scope);
+    return decorate<Family::kGgml>(provider, scope, single_native_thread);
   case Family::kAten:
-    return decorate<Family::kAten>(provider, scope);
+    return decorate<Family::kAten>(provider, scope, single_native_thread);
   }
   return provider;
 }

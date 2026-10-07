@@ -22,30 +22,33 @@ CPU-only新版的104 GGUF档位、非GGUF与MTP/DSpark原计算合同覆盖另�
 路线原则见[开发期优选规则](../architecture/compute-design.md#41-开发时验证-best-of准备时应用规则)。
 
 CPU 优选规则在冷准备时匹配构建recipe、硬件、编译器、线程合同及完整操作参数。
-旧core的187个历史优势域与CPU-only新core的17格分别要求对应peer；还限定已测static、Release、LTO off、
-原优化flags与i9-13900K（family 6/model 183/stepping 1、AVX2）/MSVC19.50.35728/单线程。
-这些条件不匹配时按以下逐合同成熟默认绑定，不撤回正常数学能力。
-Graph 的成熟完整 region 优先于 Native 单算子，避免破坏融合。执行和重复执行不重新选路。
-相同资格条件下的 13 个已测劣势域拒绝 Native exact 请求，改由成熟实现承接。
-这些 Native 优选还要求相同的成熟 peer 软件版本（含当时oneDNN3.13.2）。oneDNN现锁3.13.4，
-新版SDK不继承旧187或17格WIN；[本轮](../implementation/tasks/compute/cpu-final-closure-plan.md)重新裁决前采用成熟默认。
-不把旧版 ggml 对照下的187条优势自动沿用到新版；SIMD基础与已保留的专家能力不因此删除。
-这些证据是相对当时默认成熟调用的比较，不表示全部硬件、形状或所有 Provider 的全局最优。
-逐操作保留与退役边界见[CPU 域账本](../implementation/tasks/compute/cpu-default-domain-ledger.md)。
+旧187／17规则已从当前实现移除。当前版本的
+[有限比较](../../evidence/performance/cpu-final-f4-p1/README.md)给出43个完整候选优选请求，
+其中41个Native、1个ggml、1个ATen；规则身份版本为3。只绑定表中的精确dtype、物理布局、
+shape与属性，不把部分候选比较的WIN外推为完整优选。
+资格限定CPU-only SDK的oneDNN3.13.4、ggml ffa4e8b8＋原IQ1程序、LibTorch2.8 CPU、static Release原优化recipe、
+LTO off、MSVC19.50.35728、i9-13900K（family6/model183/stepping1、AVX2），
+native/executor预算1及进程只允许已测逻辑CPU2。未匹配条件采用下表成熟工程默认；shared/Linux/Mac
+不继承此Windows测量的WIN。应用若改变被规则读取的运行条件，应重新prepare/compile。
+Graph的成熟完整region优先于这些leaf规则，避免破坏融合；执行和重复执行不重新选路。
+严格资源准入仍由Provider真实能力决定，数学候选不等于零private allocation或可捕获。
+当前[CPU收口](../implementation/tasks/compute/cpu-final-closure-plan.md)的规则交付验收与F5自研清退仍在进行，
+SIMD/Mem基础和借入成熟原程序保留。
 
 普通入口的工程默认与性能WIN分开记录。候选必须先通过自己的真实精度、布局、资源与状态资格；
 没有专门硬件规则时仍能执行，准备后不再搜索。当前默认如下，F4可按合格完整成本证据修订：
 
 | 合同 | 成熟默认与理由 |
 |---|---|
-| 普通plain MatMul、norm、Copy、Select、稳定Softplus | 合格oneDNN；不满足布局/精度/资源时保留ggml/ATen成熟替代 |
+| 普通plain MatMul、norm、稳定Softplus | 合格oneDNN；不满足布局/精度/资源时保留ggml/ATen成熟替代 |
+| Copy／Select | Copy优先原ggml prepared storage程序；Select优先合格ATen字节选择。原准入决定布局／类型／资源替代，不将工程默认称统计WIN |
 | 原GGUF/blocked压缩矩阵及其它原生tensor程序 | ggml，保留原格式、实际codec与库自己的ISA/资源管理 |
 | Sigmoid/SiLU/GELU及门控、Min/Max、Bool或LogSoftmax | 合格ATen的稳定/checked数学；其它满足同合同的成熟程序仍可承接 |
 | RoPE、checked索引程序 | 已验ggml prepared路径优先，避免无理由替换为managed临时路线 |
 | Graph完整region | 完整ggml/oneDNN region先于leaf，不为上述默认表拆成熟程序 |
 
 这些是合理基线而非每个硬件/形状的统计冠军。显式expert工厂保留原行为，不附加普通默认policy。
-仅在全SDK已交付并验收的能力内可用；Mac CPU及混合SDK的最终完整资格仍按当前goal完成。
+三平台CPU成熟承载与CPU-only／具名mixed SDK已按F1/F3验收；新规则及最终清退按当前goal继续验收。
 
 Apple 与 Vulkan 各自使用原生 Program、运行槽和资源；普通 Direct/Graph 用法分别见
 [Apple MLX/Metal](apple-compute.md) 与 [Vulkan](vulkan-compute.md)。本文后续 Queue/Provider 的
@@ -1086,17 +1089,14 @@ oneDNN 的 CPU ISA 要求限制；该 Provider 不隐式转换整个 tensor。�
 保留边界。半精度跨节点链保留中间舍入。融合接入不代表每个形状已获性能优选资格，当前验收
 状态见模块 registry 和对应任务记录。
 
-ggml0.26与oneDNN3.13.2原SDK有17个已测条件的 Native 优选：dense Copy 的五种浮点 storage
-`[1或32,2048]`；带同dtype gamma的 RMSNorm（F32只rows1；F16/BF16 rows1/32，epsilon1e-5；
-另BF16 epsilon1e-6）。优选只限已测i9-13900K/AVX2、MSVC195035728、static、Release的原优化recipe、LTO off、单线程及锁定
-ggml/oneDNN版本，prepare匹配、submit不搜索；其它条件成熟优先，Graph不会为叶规则拆成熟region。
+旧ggml0.26／oneDNN3.13.2的17格证书不属于当前规则。当前全候选比较和适用条件见本页开头；
+Copy的partial WIN不足以证明相对全部成熟候选的完整优势，独有动态／严格资源消费另按实际能力裁决。
 Native SDPA已源级退役，旧严格workspace保证不再提供。CPU-only新core的F32 dense无显式mask SDPA
 使用原F32 fused（含两layout/GQA/causal）；原BF16及旧mixed SDK路径保持已验规则。完整条件与证据见
 [三项最终裁决](../implementation/tasks/compute/cpu-three-operator-route-closure.md)。
-这17格仅证明对已测默认成熟实现的优势；oneDNN/ggml/ATen全部重叠域尚未完成性能裁决，
-其它成熟默认顺序不能解释为每个形状的全Provider最优。
-flags/IPO、shared、编译器、ISA、所需peer或配置不匹配时不继承这些WIN标签，仍可执行已构建成熟默认；
-完整三平台默认与覆盖正在[CPU最终收口](../implementation/tasks/compute/cpu-final-closure-plan.md)中完成。
+当前有限表之外的重叠域按具名成本和可用性选择成熟工程默认，不声称统计冠军；
+未知硬件、软件、flags/IPO、shared、线程或配置仍可执行已构建且合格的成熟数学。
+完整规则交付与清退终审正在[CPU最终收口](../implementation/tasks/compute/cpu-final-closure-plan.md)中完成。
 
 归一化 primitive 每次执行有 oneDNN 内部 metadata 分配，报告 `ProviderReplayClass::kManaged`；
 其数量不冒充 HYLE allocator 可计量的零字节。Graph 的 prepared-only 约束会排除该 managed

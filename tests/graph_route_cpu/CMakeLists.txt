@@ -1,6 +1,7 @@
 hyle_add_header_self_contained_test(graph_route_cpu
   HEADER_DIR graph HEADERS cpu.h)
 hyle_add_test(graph_route_cpu SOURCES
+  ../compute_route_cpu/current_rules_test.cc
   ../compute_route_cpu/cpu_expanded_gguf_test.cc
   ../compute_route_cpu/cpu_mlx_quantized_test.cc
   ../compute_route_cpu/cpu_artifact_decode_test.cc

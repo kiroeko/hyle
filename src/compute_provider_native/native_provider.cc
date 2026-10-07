@@ -741,13 +741,6 @@ propose(void *context_value, const detail::ProviderOperationRequest &request,
     return internal::propose_torch_cpu(request, input_requirements,
                                        output_requirements, proposal);
 #endif
-  if (request.shape.exact() && context->qualified_environment &&
-#if defined(HYLE_NATIVE_DEFAULT_PEER_FFA4E8B8)
-      context->scope != internal::DefaultRuleScope::kExpert &&
-#endif
-      internal::retired_default_domain(operation, inputs, outputs))
-    return Status::Unimplemented(
-        "native domain retired; use mature CPU program");
   NativePlan plan{};
   Status status =
       build_plan(operation, inputs, outputs, plan, context->executor,
@@ -826,14 +819,6 @@ prepare(void *context_value, const detail::ProviderPrepareRequest &request,
                  ? ProviderPrepareOutcome::unsupported(status)
                  : ProviderPrepareOutcome::error(status);
   }
-  if (request.shape.exact() && context->qualified_environment &&
-#if defined(HYLE_NATIVE_DEFAULT_PEER_FFA4E8B8)
-      context->scope != internal::DefaultRuleScope::kExpert &&
-#endif
-      internal::retired_default_domain(request.operation, request.inputs,
-                                       request.outputs))
-    return ProviderPrepareOutcome::unsupported(
-        Status::Unimplemented("native domain retired; use mature CPU program"));
   NativePlan plan{};
   Status status = build_plan(request.operation, request.inputs, request.outputs,
                              plan, context->executor, !request.shape.exact());
