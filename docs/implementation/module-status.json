@@ -372,9 +372,9 @@
     },
     {
       "module": "compute_provider_ggml",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/cpu-three-operator-route-closure.md",
-      "summary": "CPU三项SCOPED：用户批准成熟F32 fused接线、新版Copy/RMS规则及有限清退；按实际合同验收，GPU不改"
+      "summary": "CPU三项AUDITED：固定G1-N3；原F32 fused6探针已验证，新版17格规则、exact strided清退且保留真实dynamic consumer，SDPA待唯一复比裁决"
     },
     {
       "module": "graph_provider_onednn",
@@ -422,9 +422,9 @@
     },
     {
       "module": "compute_provider_native",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/cpu-three-operator-route-closure.md",
-      "summary": "CPU三项SCOPED：用户批准成熟F32 fused接线、新版Copy/RMS规则及有限清退；按实际合同验收，GPU不改"
+      "summary": "CPU三项AUDITED：固定G1-N3；原F32 fused6探针已验证，新版17格规则、exact strided清退且保留真实dynamic consumer，SDPA待唯一复比裁决"
     },
     {
       "module": "compute_sched",
