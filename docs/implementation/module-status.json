@@ -270,14 +270,9 @@
     },
     {
       "module": "compute",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/compute/cpu-final-f1-build-contract.md",
-      "summary": "CPU最终F1 CLOSED：recipe/软件资格、同core原CPU端口、预编译程序与安全ISA/重放、逐合同成熟默认、oneDNN3.13.4和三平台单/具名混合三交付已验；原失败/skip保留。未签新的WIN，F4/F5/F6及GPU旧状态不变。",
-      "candidate": "560eb1d2332bb69ee5148e899b000fae85d80074",
-      "performance": {
-        "tier": "P0",
-        "evidence": "docs/implementation/tasks/compute/cpu-final-f1-build-contract.md"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/cpu-final-f5-retirement.md",
+      "summary": "CPU最终F5 SCOPED：按F4当前全候选证据对14冗余种／20有优势种必要分支／具名独有及borrowed作有限审计；Compute仅两私有RoPE文件的有限owner，不改runtime；AUDITED前不改产品。"
     },
     {
       "module": "graph",
@@ -427,15 +422,9 @@
     },
     {
       "module": "compute_provider_native",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/compute/cpu-final-f4-best-of.md",
-      "summary": "CPU最终F4 CLOSED：当前43精确完整候选优选／成熟工程默认固定，资格P1与两入口/资源/CPU-only三平台及四mixed三交付delta通过；旧187/17移除，失败/未知保留；F5清退与F6终审仍待。",
-      "candidate": "a7ccfc6639483aee4a76403a35fb32d1732441ec",
-      "performance": {
-        "tier": "P1",
-        "evidence": "evidence/performance/cpu-final-f4-p1/README.md",
-        "material_margin_pct": 5
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/cpu-final-f5-retirement.md",
+      "summary": "CPU最终F5 SCOPED：按F4当前全候选证据对14冗余种／20有优势种必要分支／具名独有及borrowed作有限审计；Compute仅两私有RoPE文件的有限owner，不改runtime；AUDITED前不改产品。"
     },
     {
       "module": "compute_sched",
