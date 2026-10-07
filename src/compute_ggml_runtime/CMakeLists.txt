@@ -57,7 +57,7 @@ set(_licenses
   "${ggml_SOURCE_DIR}/LICENSE|${CMAKE_INSTALL_DATADIR}/licenses/Hyle|ggml-runtime-LICENSE"
   "${_patch_root}/LICENSE|${CMAKE_INSTALL_DATADIR}/licenses/Hyle|ggml-runtime-patches-LICENSE"
   "${_patch_root}/NOTICE.md|${CMAKE_INSTALL_DATADIR}/licenses/Hyle|ggml-runtime-patches-NOTICE.md")
-if(_cpu AND NOT _cpu_upgrade)
+if((_cpu OR HYLE_COMPUTE_CUDA_ENABLED) AND NOT _cpu_upgrade)
   hyle_audit_in_tree_dependencies(ggml_cpu_runtime_patches)
   set(_cpu_port "${HYLE_SOURCE_DIR}/third_party/ggml_cpu_runtime")
   set(_mixed_manifest "${CMAKE_CURRENT_BINARY_DIR}/mixed-cpu-patches.json")
@@ -79,8 +79,10 @@ if(_cpu AND NOT _cpu_upgrade)
   list(APPEND _licenses
     "${_cpu_port}/LICENSE|${CMAKE_INSTALL_DATADIR}/licenses/Hyle|ggml-cpu-IQ1-LICENSE"
     "${_cpu_port}/NOTICE.md|${CMAKE_INSTALL_DATADIR}/licenses/Hyle|ggml-cpu-IQ1-original-NOTICE.md")
-  set(_cpu_notice_registration DEVELOPMENT_FILE_SPECS
-    "${CMAKE_CURRENT_SOURCE_DIR}/CPU_SOURCE_NOTICE.txt|${CMAKE_INSTALL_DATADIR}/doc/Hyle|ggml-mixed-CPU-NOTICE.txt")
+  if(_cpu)
+    set(_cpu_notice_registration DEVELOPMENT_FILE_SPECS
+      "${CMAKE_CURRENT_SOURCE_DIR}/CPU_SOURCE_NOTICE.txt|${CMAKE_INSTALL_DATADIR}/doc/Hyle|ggml-mixed-CPU-NOTICE.txt")
+  endif()
   set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS
     "${_cpu_port}/patches.json" "${CMAKE_CURRENT_SOURCE_DIR}/prepare_mixed_cpu_manifest.py")
 endif()
@@ -102,8 +104,24 @@ endif()
 if(HYLE_COMPUTE_CUDA_ENABLED)
   hyle_audit_in_tree_dependencies(ggml_cuda_runtime_patches)
   set(_cuda_patches "${HYLE_SOURCE_DIR}/third_party/ggml_cuda_runtime")
-  list(APPEND _manifests "${_cuda_patches}/patches.json")
-  list(APPEND _patch_args --manifest "${_cuda_patches}/patches.json")
+  set(_cuda_manifest "${CMAKE_CURRENT_BINARY_DIR}/cuda-iq1-patches.json")
+  execute_process(COMMAND "${Python3_EXECUTABLE}"
+    "${CMAKE_CURRENT_SOURCE_DIR}/prepare_cuda_iq1_manifest.py"
+    --source "${ggml_SOURCE_DIR}" --base-manifest "${_mixed_manifest}"
+    --cuda-manifest "${_cuda_patches}/patches.json"
+    --iq1-manifest "${_cuda_patches}/iq1-patches.json" --output "${_cuda_manifest}"
+    RESULT_VARIABLE _cuda_iq1_result ERROR_VARIABLE _cuda_iq1_error)
+  if(NOT _cuda_iq1_result EQUAL 0)
+    message(FATAL_ERROR "Original CUDA IQ1 port preparation failed: ${_cuda_iq1_error}")
+  endif()
+  list(REMOVE_ITEM _manifests "${_mixed_manifest}")
+  list(APPEND _manifests "${_cuda_manifest}")
+  set(_patch_args "")
+  foreach(_manifest IN LISTS _manifests)
+    list(APPEND _patch_args --manifest "${_manifest}")
+  endforeach()
+  file(SHA256 "${CMAKE_CURRENT_SOURCE_DIR}/prepare_cuda_iq1_manifest.py" _cuda_iq1_tool_sha)
+  string(APPEND _source_identity "${_cuda_iq1_tool_sha}")
   string(APPEND _source_identity "${HYLE_DEP_GGML_CUDA_RUNTIME_PATCHES_VENDORED_TREE_SHA256}")
   list(APPEND _locked ggml_cuda_runtime_patches)
   list(APPEND _licenses
@@ -112,6 +130,10 @@ if(HYLE_COMPUTE_CUDA_ENABLED)
 endif()
 string(SHA256 _source_identity "${_source_identity}")
 string(SUBSTRING "${_source_identity}" 0 16 _source_id)
+if(HYLE_COMPUTE_CUDA_ENABLED)
+  set(HYLE_GGML_CUDA_PROVIDER_VERSION
+    "456172ec+iq1-46cbf0e9-resource-${_source_id}" PARENT_SCOPE)
+endif()
 set(_cpu_provider_version "456172ec+hyle-resource-v1")
 if(_cpu)
   set(_cpu_provider_version "${_selected_commit}+hyle-resource-iq1-${_source_id}")
@@ -180,6 +202,12 @@ if(_cpu)
 endif()
 if(HYLE_COMPUTE_CUDA_ENABLED)
   list(APPEND _vendor_targets ggml-cuda)
+  target_sources(ggml-cuda PRIVATE
+    "${_cuda_patches}/mmq-instance-iq1_xs.cu"
+    "${_cuda_patches}/mmq-instance-iq1_xxs.cu"
+    "${_cuda_patches}/mmq-instance-iq1_xxxs.cu")
+  target_include_directories(ggml-cuda PRIVATE "${_patched_source}/src/ggml-cuda")
+  target_compile_definitions(ggml INTERFACE HYLE_GGML_CUDA_IQ1_EXTENSIONS=1)
   target_include_directories(ggml-cuda PRIVATE
     "${HYLE_SOURCE_DIR}/src/compute_provider_ggml_cuda")
   target_compile_options(ggml-cuda PRIVATE

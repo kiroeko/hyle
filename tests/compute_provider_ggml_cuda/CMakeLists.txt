@@ -1,8 +1,9 @@
 hyle_add_header_self_contained_test(compute_provider_ggml_cuda
   HEADER_DIR compute/providers HEADERS ggml_cuda.h)
 if(HYLE_COMPUTE_CUDA_ENABLED)
-  hyle_add_test(compute_provider_ggml_cuda SOURCES provider_test.cc allocation_test.cc attention_test.cc tensor_test.cc
+  hyle_add_test(compute_provider_ggml_cuda SOURCES provider_test.cc allocation_test.cc attention_test.cc tensor_test.cc iq1_test.cc
     DEPS hyle_compute_backend_cuda)
+  target_include_directories(hyle_compute_provider_ggml_cuda_test PRIVATE "${HYLE_GGML_SOURCE_DIR}/src")
   target_link_libraries(hyle_compute_provider_ggml_cuda_test PRIVATE ggml)
   if(HYLE_STATIC AND CMAKE_SYSTEM_NAME STREQUAL "Linux")
     target_compile_definitions(hyle_compute_provider_ggml_cuda_test PRIVATE

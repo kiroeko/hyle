@@ -45,6 +45,12 @@ ggml_type native_quantized_type(const TensorDesc &description) noexcept {
     return GGML_TYPE_IQ1_S;
   case GgufQuantizedType::kIq1M:
     return GGML_TYPE_IQ1_M;
+  case GgufQuantizedType::kIq1Xs:
+    return GGML_TYPE_IQ1_XS;
+  case GgufQuantizedType::kIq1Xxs:
+    return GGML_TYPE_IQ1_XXS;
+  case GgufQuantizedType::kIq1Xxxs:
+    return GGML_TYPE_IQ1_XXXS;
   case GgufQuantizedType::kQ3K:
     return GGML_TYPE_Q3_K;
   case GgufQuantizedType::kQ4K:
@@ -66,7 +72,7 @@ ggml_type native_quantized_type(const TensorDesc &description) noexcept {
   case GgufQuantizedType::kMxfp4:
     return GGML_TYPE_MXFP4;
   default:
-    break; // The three narrow IQ1 extensions require their original CUDA port.
+    break;
   }
   return GGML_TYPE_COUNT;
 }

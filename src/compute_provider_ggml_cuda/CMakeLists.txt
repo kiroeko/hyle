@@ -14,3 +14,5 @@ if(TARGET HyleCudaSdk::cublas_runtime)
   target_link_libraries(hyle_compute_provider_ggml_cuda PRIVATE HyleCudaSdk::cublas_runtime)
 endif()
 target_compile_definitions(hyle_compute_provider_ggml_cuda PUBLIC HYLE_COMPUTE_GGML_CUDA=1)
+target_compile_definitions(hyle_compute_provider_ggml_cuda PRIVATE
+  "HYLE_GGML_CUDA_PROVIDER_VERSION=\"${HYLE_GGML_CUDA_PROVIDER_VERSION}\"")

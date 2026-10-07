@@ -24,7 +24,7 @@ namespace hyle::compute::ggml_cuda {
 namespace {
 
 inline constexpr std::string_view kProviderVersion =
-    "456172ec+hyle-resource-v1";
+    HYLE_GGML_CUDA_PROVIDER_VERSION;
 inline constexpr std::array kHardwarePredicates{
     RouteFactPredicate::number(route_fact::kArchitectureMajor, 8),
     RouteFactPredicate::number(route_fact::kArchitectureMinor, 9)};

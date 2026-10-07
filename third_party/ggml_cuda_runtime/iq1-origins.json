@@ -1,0 +1,161 @@
+{
+  "revision": "46cbf0e95786fe8f5b7c0e86d57aaf8f8eceea7f",
+  "borrowed_blocks": [
+    {
+      "origin_path": "src/ggml-cuda/common.cuh",
+      "text_sha256": "65790679ec9ac63d295d301a03077170ba76ad5d1463785c9b640fdf397b0906"
+    },
+    {
+      "origin_path": "src/ggml-cuda/common.cuh",
+      "text_sha256": "e602d751341fb68ef33adc6b944e76d2b2bd98bdfcd81380904d9b1be729eef4"
+    },
+    {
+      "origin_path": "src/ggml-cuda/common.cuh",
+      "text_sha256": "3d06edf5ecd08848e8603eb76a7e1a08af7083e8a74b56f4f9baf848e2a37204"
+    },
+    {
+      "origin_path": "src/ggml-cuda/convert.cu",
+      "text_sha256": "d881a9ca160ae3b8849570a6bd2bdcc2b9c1ac55a00ff5c02db1bc6a180f3803"
+    },
+    {
+      "origin_path": "src/ggml-cuda/convert.cu",
+      "text_sha256": "d881a9ca160ae3b8849570a6bd2bdcc2b9c1ac55a00ff5c02db1bc6a180f3803"
+    },
+    {
+      "origin_path": "src/ggml-cuda/convert.cu",
+      "text_sha256": "b6b0daa39943bf931dd393b9516278cbee7a68fd2b98189e74212604b49ba702"
+    },
+    {
+      "origin_path": "src/ggml-cuda/convert.cu",
+      "text_sha256": "68f861af2c02c51c5a7d784ab8c7f2a8547782706f392c1067254a66eb924a73"
+    },
+    {
+      "origin_path": "src/ggml-cuda/ggml-cuda.cu",
+      "text_sha256": "64ede4289cda7e082946dd42a8b51763dcee4ceb68fb49d6884421b19a627aa9"
+    },
+    {
+      "origin_path": "src/ggml-cuda/mmq-config-ampere.cuh",
+      "text_sha256": "8377a139ea043323f205235e8c87d69b2659a62db715592ee423399c34aef5db"
+    },
+    {
+      "origin_path": "src/ggml-cuda/mmq-config-pascal-dp4a.cuh",
+      "text_sha256": "ad8f7242eed95482a628903697241b8ad07c4df17b8d59b0619570f79af56091"
+    },
+    {
+      "origin_path": "src/ggml-cuda/mmq-load-tiles.cuh",
+      "text_sha256": "76cc0bfb834d0a05098c95aabcd4e2c47269a0eab53ff61c8375acf478304b78"
+    },
+    {
+      "origin_path": "src/ggml-cuda/mmq.cu",
+      "text_sha256": "02edc51f9d56ee86f289a30708b70a42469b935a7d2f7dbb4f676b88c2487c1a"
+    },
+    {
+      "origin_path": "src/ggml-cuda/mmq.cu",
+      "text_sha256": "37da01bdcafc3378e21f60a097c3c773394d02bcf95cd59dbfdbe06239376256"
+    },
+    {
+      "origin_path": "src/ggml-cuda/mmq.cuh",
+      "text_sha256": "e6711157024c787bd2805bc676195a4c162e60e2a3487eebcbe64e7814e60390"
+    },
+    {
+      "origin_path": "src/ggml-cuda/mmq.cuh",
+      "text_sha256": "6c43a20ff56219a95945c59a3960596726cb486e3f9f4353b32c0dd4fa7a532a"
+    },
+    {
+      "origin_path": "src/ggml-cuda/mmq.cuh",
+      "text_sha256": "1d7efb6ab8ac26a2f109ffbefbfad92c0ed5d35981f85bd6a1808b81f994e540"
+    },
+    {
+      "origin_path": "src/ggml-cuda/mmq.cuh",
+      "text_sha256": "0f299aad408c0c59a4cb6ad6255fbd801734a37d440162cc6ed6d48f877326a7"
+    },
+    {
+      "origin_path": "src/ggml-cuda/mmq.cuh",
+      "text_sha256": "02edc51f9d56ee86f289a30708b70a42469b935a7d2f7dbb4f676b88c2487c1a"
+    },
+    {
+      "origin_path": "src/ggml-cuda/mmvq.cu",
+      "text_sha256": "d21588f4d1f774fe01b19dae07cc877010da89c320036caa1570e23b3b1c5ada"
+    },
+    {
+      "origin_path": "src/ggml-cuda/mmvq.cu",
+      "text_sha256": "8a4ea4cf40cb9e046b0186a9de6e7ae893919d6f517c5a5048b6249e8f4fcd66"
+    },
+    {
+      "origin_path": "src/ggml-cuda/mmvq.cu",
+      "text_sha256": "8bc7404c3d38f3830da52397208bfbe4cd848358718af5ab6d1724c1ee6296e4"
+    },
+    {
+      "origin_path": "src/ggml-cuda/mmvq.cu",
+      "text_sha256": "5313a2615c4237956ef4f7ac0aecbc5acb5fe0c4bc9ccf06cc4b2e0826c154d7"
+    },
+    {
+      "origin_path": "src/ggml-cuda/mmvq.cu",
+      "text_sha256": "469f32296f95d126540a971f81a28257aa3936c1f8ef56c7a5e9914cd8b8b86a"
+    },
+    {
+      "origin_path": "src/ggml-cuda/mmvq.cu",
+      "text_sha256": "5cf6f5575f06eb7a896aa0e652569861f125504be346a045b2d18e9bed17a439"
+    },
+    {
+      "origin_path": "src/ggml-cuda/mmvq.cu",
+      "text_sha256": "469f32296f95d126540a971f81a28257aa3936c1f8ef56c7a5e9914cd8b8b86a"
+    },
+    {
+      "origin_path": "src/ggml-cuda/mmvq.cu",
+      "text_sha256": "4b2ac84543cc183e9fae52a969295fe8475863080e78e144148f9860409d1774"
+    },
+    {
+      "origin_path": "src/ggml-cuda/template-instances/mmq-instance-iq1_xs.cu",
+      "text_sha256": "17ac90941c666e53ced7800d042719e6bb46a584379b2c4e830609ffcf319c60"
+    },
+    {
+      "origin_path": "src/ggml-cuda/template-instances/mmq-instance-iq1_xxs.cu",
+      "text_sha256": "8a3bab45ca5411a13c89dda8a7ed34aab03939475c53cc4c61f8f56640db10d9"
+    },
+    {
+      "origin_path": "src/ggml-cuda/template-instances/mmq-instance-iq1_xxxs.cu",
+      "text_sha256": "16a6d006e2aa554765f1d5c1c1ef3446ca3f0bfd444aa7cabe97455ad701c11e"
+    },
+    {
+      "origin_path": "src/ggml-cuda/vecdotq.cuh",
+      "text_sha256": "038585ce326193e2208a029ad8682efc2437ddd6a91500b9384127aad5eb5844"
+    },
+    {
+      "origin_path": "src/ggml-common.h",
+      "text_sha256": "c1d38f33403b291a944eeeeec15b5686f5cee4f9c9ef3a74a528f4f9621c6dda"
+    },
+    {
+      "origin_path": "src/ggml-common.h",
+      "text_sha256": "70de68d5118b13ff586f9dcba8658ce148978d71f564a485e2c39db836ebac9e"
+    },
+    {
+      "origin_path": "src/ggml-common.h",
+      "text_sha256": "732e1c3a95620d6887fca715cc21a4cd886da500e6c1e129aa86c50d7026a97c"
+    }
+  ],
+  "template_files": [
+    {
+      "destination": "mmq-instance-iq1_xs.cu",
+      "origin_path": "src/ggml-cuda/template-instances/mmq-instance-iq1_xs.cu",
+      "origin_sha256": "17ac90941c666e53ced7800d042719e6bb46a584379b2c4e830609ffcf319c60",
+      "adapted_sha256": "7d505e321d999e1b942c2b7d2eadd14ffc4168e0ec56812ef46f6c31a76893b5",
+      "adaptation": "include path only"
+    },
+    {
+      "destination": "mmq-instance-iq1_xxs.cu",
+      "origin_path": "src/ggml-cuda/template-instances/mmq-instance-iq1_xxs.cu",
+      "origin_sha256": "8a3bab45ca5411a13c89dda8a7ed34aab03939475c53cc4c61f8f56640db10d9",
+      "adapted_sha256": "c93b2eeea58d699994fdb9cac80bc006aab6aa4eecccd373b8f485981c09a420",
+      "adaptation": "include path only"
+    },
+    {
+      "destination": "mmq-instance-iq1_xxxs.cu",
+      "origin_path": "src/ggml-cuda/template-instances/mmq-instance-iq1_xxxs.cu",
+      "origin_sha256": "16a6d006e2aa554765f1d5c1c1ef3446ca3f0bfd444aa7cabe97455ad701c11e",
+      "adapted_sha256": "f4152b0f7a184b6f1cbd528f9a5b8ed299f6c1fbb6bf6d348c966075d0c52a1f",
+      "adaptation": "include path only"
+    }
+  ],
+  "abi_adaptation": "Three current-core sizeof bs traits only; mathematical bodies unchanged."
+}
