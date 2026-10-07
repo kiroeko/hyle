@@ -1,4 +1,5 @@
 #include "hyle/graph/cpu.h"
+#include "../compute_route_cpu/default_policy.h"
 
 #include "../compute_provider_native/default_rules.h"
 #include <array>
@@ -18,6 +19,11 @@ namespace hyle::graph::cpu {
 
 Result<compute::Context>
 create_context(compute::cpu::DefaultContextOptions options) noexcept {
+  using compute::cpu::internal::DefaultProvider;
+  const auto configured = [](compute::Provider provider, DefaultProvider family) {
+    return compute::cpu::internal::with_defaults(
+        std::move(provider), family, compute::cpu::internal::DefaultScope::kGraph);
+  };
   std::array providers{
 #if defined(HYLE_COMPUTE_GGML_CPU)
       compute::ProviderBinding{
@@ -31,15 +37,17 @@ create_context(compute::cpu::DefaultContextOptions options) noexcept {
 #endif
 #if defined(HYLE_COMPUTE_ONEDNN)
       compute::ProviderBinding{
-          compute::onednn::provider({.executor = options.executor}), 200},
+          configured(compute::onednn::provider({.executor = options.executor}),
+                     DefaultProvider::kOneDnn), 900},
 #endif
 #if defined(HYLE_COMPUTE_GGML_CPU)
-      compute::ProviderBinding{compute::ggml_cpu::provider(
+      compute::ProviderBinding{configured(compute::ggml_cpu::provider(
                                    {.executor = options.executor,
                                     .native_threads = options.native_threads}),
-                               300},
+                                   DefaultProvider::kGgml), 900},
 #endif
-      compute::ProviderBinding{compute::aten_cpu::provider(), 400},
+      compute::ProviderBinding{configured(compute::aten_cpu::provider(),
+                                          DefaultProvider::kAten), 900},
       compute::ProviderBinding{
           compute::native::internal::default_provider(
               {.executor = options.executor},

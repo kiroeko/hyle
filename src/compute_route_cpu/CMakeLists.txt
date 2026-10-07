@@ -1,4 +1,4 @@
-hyle_add_module(compute_route_cpu SOURCES cpu_context.cc)
+hyle_add_module(compute_route_cpu SOURCES cpu_context.cc default_policy.cc)
 
 if(HYLE_STATIC AND NOT HYLE_COMPUTE_ONEDNN_ENABLED)
   # The absent provider keeps its source-graph identity but contributes no

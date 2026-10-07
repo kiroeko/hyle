@@ -199,6 +199,15 @@ struct OperationPreparationAccess final {
 };
 
 struct ProviderAccess final {
+  // Same-build cold decoration. Configuration copy/teardown must keep the
+  // original hooks; prepared artifacts retain their original execution table.
+  static Provider with_vtable(const Provider &provider,
+                              const ProviderVTable *vtable) noexcept {
+    Provider result(provider);
+    result.vtable_ = vtable;
+    return result;
+  }
+
   template <class Payload>
     requires(std::is_trivially_copyable_v<Payload> &&
              sizeof(Payload) <= Provider::kInlineBytes &&

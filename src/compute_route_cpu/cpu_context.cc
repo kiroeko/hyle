@@ -1,4 +1,5 @@
 #include "hyle/compute/cpu.h"
+#include "default_policy.h"
 
 #include "../compute_provider_native/default_rules.h"
 #include <array>
@@ -14,17 +15,24 @@
 namespace hyle::compute::cpu {
 
 Result<Context> create_context(DefaultContextOptions options) noexcept {
+  using internal::DefaultProvider;
+  const auto configured = [](Provider provider, DefaultProvider family) {
+    return internal::with_defaults(std::move(provider), family,
+                                   internal::DefaultScope::kDirect);
+  };
   std::array providers{
 #if defined(HYLE_COMPUTE_ONEDNN)
-      ProviderBinding{onednn::provider({.executor = options.executor}), 100},
+      ProviderBinding{configured(onednn::provider({.executor = options.executor}),
+                                 DefaultProvider::kOneDnn), 900},
 #endif
 #if defined(HYLE_COMPUTE_GGML_CPU)
       ProviderBinding{
-          ggml_cpu::provider({.executor = options.executor,
-                              .native_threads = options.native_threads}),
-          200},
+          configured(ggml_cpu::provider({.executor = options.executor,
+                                        .native_threads = options.native_threads}),
+                     DefaultProvider::kGgml),
+          900},
 #endif
-      ProviderBinding{aten_cpu::provider(), 350},
+      ProviderBinding{configured(aten_cpu::provider(), DefaultProvider::kAten), 900},
       ProviderBinding{native::internal::default_provider(
                           {.executor = options.executor},
                           native::internal::DefaultRuleScope::kDirect,

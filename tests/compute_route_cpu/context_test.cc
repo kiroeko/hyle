@@ -46,6 +46,52 @@ TensorDesc matrix(std::int64_t rows, std::int64_t columns) {
       .value();
 }
 
+TEST(CpuDefaultContext, MatureDefaultsHavePolicyWithoutModelOrHardwareProfile) {
+  auto context = create_context().value();
+  const auto tensor = matrix(2, 64);
+  const auto prepared = prepare(context, Unary{UnaryKind::kExp}, tensor);
+  ASSERT_TRUE(prepared.has_value()) << prepared.error().message();
+  EXPECT_EQ(prepared->provider().id, ggml_cpu::kProviderId);
+  EXPECT_EQ(prepared->route_policy().namespace_id, 0x48594c4543505544ULL);
+  EXPECT_EQ(prepared->route_policy().version, 1u);
+  EXPECT_TRUE(prepared->route_policy().valid());
+
+  // Expert factories keep their original capabilities and no ordinary-default
+  // claim. The context-specific policy must not leak into the library factory.
+  auto expert = Context::create(cpu::device(), ggml_cpu::provider()).value();
+  auto explicit_program = prepare(expert, Unary{UnaryKind::kExp}, tensor);
+  ASSERT_TRUE(explicit_program.has_value());
+  EXPECT_TRUE(explicit_program->route_policy().empty());
+  EXPECT_EQ(prepared->runtime_properties().replay_class,
+            explicit_program->runtime_properties().replay_class);
+}
+
+#if defined(HYLE_COMPUTE_ONEDNN)
+TEST(CpuDefaultContext, PlainAndTransposedMatricesKeepQualifiedDefaults) {
+  auto context = create_context().value();
+  auto plain = prepare(context, MatMul{}, matrix(1, 17), matrix(17, 65));
+  ASSERT_TRUE(plain.has_value()) << plain.error().message();
+  EXPECT_EQ(plain->provider().id, onednn::kProviderId);
+  EXPECT_EQ(plain->route_policy().namespace_id, 0x48594c4543505544ULL);
+  auto transposed = prepare(context, MatMul{}, matrix(1, 17),
+                            matrix(65, 17).transposed().value());
+  ASSERT_TRUE(transposed.has_value()) << transposed.error().message();
+  EXPECT_NE(transposed->provider().id, native::kProviderId);
+  EXPECT_TRUE(transposed->route_policy().valid());
+}
+#endif
+
+#if defined(HYLE_TEST_TORCH_CPU)
+TEST(CpuDefaultContext, StableActivationDefaultUsesOriginalAtenProgram) {
+  auto context = create_context().value();
+  auto prepared = prepare(context, Unary{UnaryKind::kSigmoid}, matrix(2, 64));
+  ASSERT_TRUE(prepared.has_value()) << prepared.error().message();
+  EXPECT_EQ(prepared->provider().id, aten_cpu::kProviderId);
+  EXPECT_EQ(prepared->route_policy().namespace_id, 0x48594c4543505544ULL);
+  EXPECT_TRUE(prepared->route_policy().valid());
+}
+#endif
+
 TEST(CpuDefaultContext, ColdFailureReleasesPartialProviderAssembly) {
   auto stats =
       hyle::mem::StatsAllocator::create(hyle::mem::system_allocator()).value();
