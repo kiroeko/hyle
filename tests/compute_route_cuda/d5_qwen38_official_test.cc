@@ -151,7 +151,8 @@ void run(DirectCall &call, c::Queue &queue,
          std::span<const c::TensorView> outputs) {
   auto completion = call.invocation.submit(queue, inputs, outputs);
   ASSERT_TRUE(completion) << completion.error().message();
-  ASSERT_TRUE(completion->wait().ok());
+  const auto status = completion->wait();
+  ASSERT_TRUE(status.ok()) << status.message();
 }
 
 void expect_near(std::span<const BF16> actual,
@@ -1637,6 +1638,7 @@ void run_full_moe_profile(const c::ModelArtifactProfileDescription *profile) {
                               direct.description(id), views[id.ordinal()])
                               .value());
       run(calls[call_index++], queue, inputs, outputs);
+      ASSERT_FALSE(::testing::Test::HasFatalFailure());
     }
     const auto ids = half_test::read<std::int32_t>(
         buffers[direct.full.outputs[0].ordinal()]);
