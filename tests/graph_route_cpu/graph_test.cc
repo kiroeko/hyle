@@ -67,7 +67,12 @@ template <class T> void stable_gate_region() {
 #if defined(HYLE_TEST_TORCH_CPU)
   EXPECT_EQ(compiled->report.step(0)->provider.id, compute::aten_cpu::kProviderId);
 #endif
-  EXPECT_EQ(compiled->report.step(1)->provider.id, compute::ggml_cpu::kProviderId);
+#if defined(__aarch64__) || defined(_M_ARM64)
+  if constexpr (std::is_same_v<T, hyle::simd::float16_t>)
+    EXPECT_EQ(compiled->report.step(1)->provider.id, compute::aten_cpu::kProviderId);
+  else
+#endif
+    EXPECT_EQ(compiled->report.step(1)->provider.id, compute::ggml_cpu::kProviderId);
   EXPECT_EQ(compiled->report.step(0)->node_count, 1U);
   EXPECT_EQ(compiled->report.step(1)->node_count, 1U);
   auto queue = context.create_queue().value();
@@ -731,6 +736,13 @@ TEST(CpuDefaultGraph, MatureHalfLinearAndHadamardCompileAsOneReplayableRegion) {
   const auto workload = workload_test::known(compute::WorkloadPhase::kDecode);
   auto compiled = graph::compile(logical, context, {.workload = workload});
   ASSERT_TRUE(compiled) << compiled.error().message();
+#if defined(__aarch64__) || defined(_M_ARM64)
+  ASSERT_EQ(compiled->report.step_count(), 2U);
+  EXPECT_EQ(compiled->report.step(0)->provider.id, compute::aten_cpu::kProviderId);
+  EXPECT_EQ(compiled->report.step(0)->node_count, 1U);
+  EXPECT_EQ(compiled->report.step(1)->provider.id, compute::ggml_cpu::kProviderId);
+  EXPECT_EQ(compiled->report.step(1)->node_count, 1U);
+#else
   ASSERT_EQ(compiled->report.step_count(), 1U);
   ASSERT_EQ(compiled->report.region_count(), 1U);
   EXPECT_EQ(compiled->report.step(0)->provider.id,
@@ -738,6 +750,7 @@ TEST(CpuDefaultGraph, MatureHalfLinearAndHadamardCompileAsOneReplayableRegion) {
   EXPECT_EQ(compiled->report.step(0)->node_count, 2U);
   EXPECT_EQ(compiled->report.step(0)->copy_bytes,
             right_desc.required_bytes().value());
+#endif
   EXPECT_EQ(compiled->executable.workload(), workload);
 
   std::array<F16, 6> left_values{};

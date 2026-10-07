@@ -110,6 +110,10 @@ Graph完整region复用同一supports，不另写旁路，合法ATen leaf承接�
 T6改后C5只补受影响plain F16的GGUF/非GGUF端口与相关默认metadata；其他成功C5保持复用，
 不是重跑整批。普通artifact composition维持原精确门与两次变输入。
 
+Graph旧身份/融合断言也随T6迁移：ARM F16普通linear明确ATen，Hadamard仍ggml，保留实际变输入/独立slot数学；
+F16全宽投影仍用该ARM用例原有max2.5e-3与relative-RMS1e-3门，门属于同输入/半精度输出而非“允许半精度累加”。
+不因换provider把near-zero改成不含F32 reduction舍入预算的纯relative门；阈值不变，另由精确累加反例排除非法half累加。
+
 ## T7 sidecar片段同输入组合修正（测试）
 
 同Mac Direct剩余159项中157通过，另一个失败为Flash Q8 sidecar完整片段；

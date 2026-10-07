@@ -222,13 +222,17 @@ TEST(CpuDefaultGraph,
     ASSERT_EQ(compiled.report.step_count(), 1U);
     const auto provider = compiled.report.step(0)->provider.id;
     EXPECT_TRUE(provider == c::ggml_cpu::kProviderId ||
-                provider == c::onednn::kProviderId)
+                provider == c::onednn::kProviderId ||
+                provider == c::aten_cpu::kProviderId)
         << compiled.report.step(0)->provider.name;
 #if defined(__aarch64__) || defined(_M_ARM64)
-    const bool native_half_accumulation =
-        provider == c::ggml_cpu::kProviderId;
+    EXPECT_EQ(provider, c::aten_cpu::kProviderId);
+    // Retain this full-width ARM half-storage error gate across qualified
+    // providers. Near-zero cancellation includes F32 reduction roundoff;
+    // the exact artifact regression separately rejects half accumulation.
+    const bool arm_half_storage = true;
 #else
-    const bool native_half_accumulation = false;
+    const bool arm_half_storage = false;
 #endif
 
     auto invocation = compiled.executable.create_invocation().value();
@@ -260,7 +264,7 @@ TEST(CpuDefaultGraph,
       const auto expected = d5_gguf_test::matmul(
           decoded_activation, decoded_weights, test.columns, test.reduction);
       ASSERT_EQ(actual.size(), expected.size());
-      if (native_half_accumulation) {
+      if (arm_half_storage) {
         double squared_error = 0.0;
         double squared_reference = 0.0;
         double max_error = 0.0;
