@@ -107,3 +107,8 @@ SCOPED 提交 `e1ed0253`；原diff为新增IQ1函数／分发，两个替换只�
 
 runtime、Compute/Graph ggml CUDA owner依法重定界至本卡G1/G2；U2已实现冷事实与架构接缝保留并随最终
 候选交付验证。没有新公共数学API或自研CUDA算法，没有全库依赖升级或新的Provider family。
+
+G2已实现并在Windows完成原carrier/MMVQ/MMQ与8个共同真实expert形状的普通Direct/Graph局部资格，
+见 [IQ1证据](../../../../evidence/correctness/cuda-final-u23/IQ1.md)。原F32解码点积与CUDA Q8激活codec的
+初版参考不等价已按源码纠正；产品数学/精度/共同门不变，原失败保留。
+全104制品、其它payload/完整region/state、Linux、三交付/mixed差异仍待后续适用验证，不能据此CLOSED。
