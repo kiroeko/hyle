@@ -100,6 +100,9 @@ inline ValueId grouped(Fragment &f,const Grouped &w,ValueId x,ValueId ids) {
 }
 inline std::vector<float> grouped_reference(const Grouped &w,std::span<const float> input,
                                             std::span<const std::int32_t> ids) {
+#if defined(HYLE_C4_GROUPED_REFERENCE)
+  return HYLE_C4_GROUPED_REFERENCE(w.weight.description,w.weight.storage,w.n,w.k,input,ids,t);
+#else
   ggml_cpu_init();
   std::vector<float> result(ids.size()*w.n);
   const bool bf16=w.weight.description.is_plain();
@@ -113,6 +116,7 @@ inline std::vector<float> grouped_reference(const Grouped &w,std::span<const flo
     for(std::int64_t row=0;row<w.n;++row)
       traits->vec_dot(int(w.k),&result[slot*w.n+row],0,w.weight.storage.data()+(ids[slot]*w.n+row)*bytes,0,encoded.data(),0,1);
   }return result;
+#endif
 }
 inline ValueId norm(Fragment &f,ValueId x,std::vector<float>& scale) {return q::norm(f,x,scale);}
 inline std::vector<float> norm_ref(std::span<const float> x,std::span<const float> scale) {
