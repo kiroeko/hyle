@@ -1137,7 +1137,6 @@ TEST(CudaDefaultGraph,
   constexpr auto hidden = d5_qwen35_fixture::kHidden;
   constexpr auto input = d5_qwen35_fixture::kMtpInput;
   const auto half_desc = dense(c::DataType::kBFloat16, {1, hidden});
-  const auto joined_desc = dense(c::DataType::kBFloat16, {1, input});
   const auto stored_weight_desc =
       dense(c::DataType::kBFloat16, {hidden, input});
   const auto weight_desc = stored_weight_desc.transposed().value();
