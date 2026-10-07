@@ -23,6 +23,7 @@
 #endif
 
 #include <array>
+#include <cmath>
 #include <cstddef>
 #include <cstdint>
 #include <span>
@@ -140,79 +141,32 @@ int main() {
       !invocation->bind(*output_id, *output).ok()) {
     return 12;
   }
-  auto completion = invocation->submit(*queue);
-  if (!completion || !completion->wait().ok())
+  const std::array queues{QueueBinding{.lane = ExecutionLaneId{0}, .queue = &*queue}};
+  if (!invocation->prepare_replay(queues).ok())
     return 13;
+  for (int replay = 0; replay < 2; ++replay) {
+    auto values = activations;
+    if (replay != 0)
+      for (auto &value : values) value = value * 0.5F + 0.25F;
+    if (!activation_storage->view().write(std::as_bytes(std::span(values))).ok())
+      return 13;
+    auto completion = invocation->submit(*queue);
+    std::array<float, 4> actual{};
+    if (!completion || !completion->wait().ok() ||
+        !output_storage->view().read(std::as_writable_bytes(std::span(actual))).ok())
+      return 13;
+    double sum = 0, squares = 0;
+    for (const auto value : values) { sum += value; squares += double(value) * value; }
+    const double projected = 0.25 * sum / std::sqrt(squares / 4 + RmsNorm{}.epsilon);
+    const double expected = projected * projected / (1 + std::exp(-projected));
+    for (const auto value : actual)
+      if (std::abs(value - expected) > 2.0e-5)
+        return 13;
+  }
 
 #if defined(HYLE_GRAPH_ONEDNN)
   if (!sample_cpu_normalization::run().ok())
     return 29;
-  constexpr std::array<std::int64_t, 2> region_activation_shape{16, 4};
-  constexpr std::array<std::int64_t, 2> region_weight_shape{4, 8};
-  constexpr std::array<std::int64_t, 2> region_down_shape{8, 4};
-  auto region_activation_desc =
-      TensorDesc::dense(DataType::kFloat32, region_activation_shape);
-  auto region_weight_desc =
-      TensorDesc::dense(DataType::kFloat32, region_weight_shape);
-  auto region_down_desc =
-      TensorDesc::dense(DataType::kFloat32, region_down_shape);
-  if (!region_activation_desc || !region_weight_desc || !region_down_desc) {
-    return 14;
-  }
-
-  auto region_builder_result = GraphBuilder::create();
-  if (!region_builder_result)
-    return 15;
-  GraphBuilder region_builder = std::move(*region_builder_result);
-  auto region_activation = region_builder.input(*region_activation_desc);
-  auto gate_weight = region_builder.constant(*region_weight_desc);
-  auto up_weight = region_builder.constant(*region_weight_desc);
-  auto down_weight = region_builder.constant(*region_down_desc);
-  if (!region_activation || !gate_weight || !up_weight || !down_weight)
-    return 16;
-  auto gate = region_builder.add(MatMul{}, *region_activation, *gate_weight);
-  auto up = region_builder.add(MatMul{}, *region_activation, *up_weight);
-  if (!gate || !up)
-    return 17;
-  auto gated = region_builder.add(
-      GatedActivation{.activation = GatedActivationKind::kSilu,
-                      .inputs = GatedInputKind::kSeparate},
-      *gate, *up);
-  if (!gated)
-    return 18;
-  auto region_output = region_builder.add(MatMul{}, *gated, *down_weight);
-  if (!region_output || !region_builder.publish(*region_output).ok())
-    return 19;
-  auto region_graph = std::move(region_builder).finish();
-  auto gate_storage = make_buffer(*region_weight_desc);
-  auto up_storage = make_buffer(*region_weight_desc);
-  auto down_storage = make_buffer(*region_down_desc);
-  if (!region_graph || !gate_storage || !up_storage || !down_storage)
-    return 20;
-  auto gate_tensor =
-      TensorView::create(*region_weight_desc, gate_storage->view());
-  auto up_tensor = TensorView::create(*region_weight_desc, up_storage->view());
-  auto down_tensor =
-      TensorView::create(*region_down_desc, down_storage->view());
-  if (!gate_tensor || !up_tensor || !down_tensor)
-    return 21;
-  const std::array region_constants{
-      ConstantBinding{*gate_weight, gate_tensor->as_const()},
-      ConstantBinding{*up_weight, up_tensor->as_const()},
-      ConstantBinding{*down_weight, down_tensor->as_const()},
-  };
-  auto region_context = Context::create(hyle::compute::cpu::device(),
-                                        hyle::graph::onednn::provider());
-  if (!region_context)
-    return 22;
-  auto region_compiled = compile(*region_graph, *region_context,
-                                 CompileOptions{.constants = region_constants});
-  if (!region_compiled || region_compiled->report.region_count() != 1 ||
-      region_compiled->report.step_count() != 1 ||
-      region_compiled->report.provider().id !=
-          hyle::graph::onednn::kProviderId) {
-    return 23;
-  }
 #endif
 #endif // HYLE_COMPUTE_CPU
 

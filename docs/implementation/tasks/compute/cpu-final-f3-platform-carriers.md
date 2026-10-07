@@ -208,3 +208,8 @@ Linux installed/static/shared、Mac新准入的三交付增量与ISA对照差异
 Linux三交付中source/shared已通过新增精确F16门的40个普通Direct/Graph格式数值格；
 当前普通Direct sample退出9为oneDNN升级后仍硬编码3.13.2。只迁移当前sample为3.13.4，
 原失败保留、成功producer/40格不重跑；补编小consumer后继续static发布形态。
+
+Graph普通sample的退出23来自历史compile-only oneDNN-only FFN/单region断言；当前oneDNN Graph adapter只有具名norm程序，
+它不能代签全部stable gate/FFN。有限sample迁移：删除无执行的旧FFN资格块，保留并加强已存在的普通
+RMSNorm→MatMul→stable gate公开Graph为两次变输入、实际数值检查；独立oneDNN norm consumer原验证保留。
+不改变产品Graph/planning/provider，不为样例新增旧FFN兼容实现；源/两安装消费者小文件重编，旧FAIL保留。
