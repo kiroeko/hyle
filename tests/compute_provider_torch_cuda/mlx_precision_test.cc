@@ -120,7 +120,10 @@ TEST_P(CudaMlxPrecision, SourceF32EquationAndGroupScaleArePreservedUnderForeignT
       ASSERT_TRUE(submitted)<<submitted.error().message();
       const auto status=submitted->wait();ASSERT_TRUE(status.ok())<<status.message();
       const auto source_scale=rounded(type,std::ldexp(1.0f,int(exponent)-127));
-      const auto boundary=rounded(type,(format==Format::kMxfp8?-1.75f:1.875f)*source_scale);
+      auto boundary=rounded(type,(format==Format::kMxfp8?-1.75f:1.875f)*source_scale);
+      // The source reduction starts at positive zero. Adding a negative-zero
+      // group contribution therefore leaves positive zero in the result.
+      if(boundary==0)boundary=0;
       std::vector<std::byte> result(output.size());ASSERT_TRUE(output.view().read(result).ok());
       EXPECT_EQ(result,floating(type,std::vector<float>(n,boundary)));
     }
