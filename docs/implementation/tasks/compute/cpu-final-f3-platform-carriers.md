@@ -1,6 +1,6 @@
 # F3 三平台成熟CPU承载
 
-<!-- MODULE REVIEW: AUDITED -->
+<!-- MODULE REVIEW: CLOSED -->
 
 Native原ATen/Torch程序owner的F3范围重新定界；baseline `2792b79f`（实施前记录完整revision）。
 此SCOPED只冻结范围，旧F1 AUDITED不授权本批新产品；独立审计固定下表后再绑定registry至本卡。
@@ -252,3 +252,23 @@ T11 test候选859b758b的Linux/Mac各Direct2/Graph2全部通过，无skip，固�
 
 candidate冻结不关闭整个Compute/Graph，F1/B2/B3仍按自己未决交付格执行；CPU冗余自研去留待F4/F5。
 Native/ggml/CPU route owner先合法CANDIDATE，再仅对F3范围作terminal；本页不能自动解除公共Graph/GPU状态。
+
+## F3 CLOSED：成熟CPU承载本包完成
+
+candidate `560eb1d2332bb69ee5148e899b000fae85d80074`；其后仅测试对账/证据、样例与独立工具修正，
+产品源代码与本页冻结一致。owner为compute_provider_native、compute_provider_ggml、compute_route_cpu，
+已在aab6001c合法CANDIDATE，再按本节关闭；F1其它owner和公共Graph/GPU旧状态不动。
+终审逐项核对上述七门，F3的适用门通过；全部固定需求的当前成熟承载、普通两入口、失败/OOM/并发/close、
+原格式/precision/state/完整分支与三平台三交付有实际或身份匹配的证据链，无未决F3 MUST。
+原有pipeline失败、诊断、unsupported及legacy skip仍按对应原record保留，不改历史aggregate为PASS。
+原CPU未知硬件仍有合法成熟默认；本包没有把Native旧17/187复活或签新冠军。
+
+P0：新产品为Mac平台SDK/loader接缝、4行ARM cold准入；公开对象/常态submit不增字段或回调，
+没有新增自研数学。原库cold转换、workspace/pool与managed private allocation/可能私有线程成本仍显式收费；
+严格内存/捕获等不能满足的请求明确拒绝。原精度链以独立reference与同编码/同输入资格证明，不拿不同ISA误判。
+统一Compute+Graph实现61,246行/251文件；self excluding tests156,473行/602文件。
+
+限制与下一包：本节不是“Compute+Graph CPU最终收口完成”。F1 mixed/B3尾项、全面best-of(F4)、
+冗余自研退役(F5)、完整总账/终审(F6)仍待；不扩算子、不启动模型loader/引擎或全部实权重常驻大模型推理。
+reopen：新的可复现数值/生命周期/平台装载反例、此处固定依赖/公开合同变化、当前固定需求的缺失承载，
+或合格同合同证据显示材料回归；不因旧卡/“再看一次”重开。

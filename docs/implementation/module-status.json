@@ -362,10 +362,14 @@
     },
     {
       "module": "compute_provider_ggml",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/compute/cpu-final-f3-platform-carriers.md",
-      "summary": "CPU最终F3 CANDIDATE：三平台成熟CPU承载、原格式/状态/失败与source/static/shared资格已齐，精度/同输入/同ISA对照修正有原FAIL；产品冻结，F3终审与terminal记录中；不签全面best-of或自研清退。",
-      "candidate": "560eb1d2332bb69ee5148e899b000fae85d80074"
+      "summary": "CPU最终F3 CLOSED：三平台成熟承载/精度与同输入同ISA对照修复、原格式/状态/失败生命周期和source/static/shared资格齐；無新自研数学/性能WIN。F1 mixed、F4最佳Provider与F5清退、F6终审仍待。",
+      "candidate": "560eb1d2332bb69ee5148e899b000fae85d80074",
+      "performance": {
+        "tier": "P0",
+        "evidence": "docs/implementation/tasks/compute/cpu-final-f3-platform-carriers.md"
+      }
     },
     {
       "module": "graph_provider_onednn",
@@ -408,10 +412,14 @@
     },
     {
       "module": "compute_provider_native",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/compute/cpu-final-f3-platform-carriers.md",
-      "summary": "CPU最终F3 CANDIDATE：三平台成熟CPU承载、原格式/状态/失败与source/static/shared资格已齐，精度/同输入/同ISA对照修正有原FAIL；产品冻结，F3终审与terminal记录中；不签全面best-of或自研清退。",
-      "candidate": "560eb1d2332bb69ee5148e899b000fae85d80074"
+      "summary": "CPU最终F3 CLOSED：三平台成熟承载/精度与同输入同ISA对照修复、原格式/状态/失败生命周期和source/static/shared资格齐；無新自研数学/性能WIN。F1 mixed、F4最佳Provider与F5清退、F6终审仍待。",
+      "candidate": "560eb1d2332bb69ee5148e899b000fae85d80074",
+      "performance": {
+        "tier": "P0",
+        "evidence": "docs/implementation/tasks/compute/cpu-final-f3-platform-carriers.md"
+      }
     },
     {
       "module": "compute_sched",
@@ -420,10 +428,14 @@
     },
     {
       "module": "compute_route_cpu",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/compute/cpu-final-f3-platform-carriers.md",
-      "summary": "CPU最终F3 CANDIDATE：三平台成熟CPU承载、原格式/状态/失败与source/static/shared资格已齐，精度/同输入/同ISA对照修正有原FAIL；产品冻结，F3终审与terminal记录中；不签全面best-of或自研清退。",
-      "candidate": "560eb1d2332bb69ee5148e899b000fae85d80074"
+      "summary": "CPU最终F3 CLOSED：三平台成熟承载/精度与同输入同ISA对照修复、原格式/状态/失败生命周期和source/static/shared资格齐；無新自研数学/性能WIN。F1 mixed、F4最佳Provider与F5清退、F6终审仍待。",
+      "candidate": "560eb1d2332bb69ee5148e899b000fae85d80074",
+      "performance": {
+        "tier": "P0",
+        "evidence": "docs/implementation/tasks/compute/cpu-final-f3-platform-carriers.md"
+      }
     },
     {
       "module": "graph_route_cpu",
