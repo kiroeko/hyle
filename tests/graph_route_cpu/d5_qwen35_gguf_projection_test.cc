@@ -12,6 +12,7 @@
 #include "../compute_models/d5_qwen_gguf_vocabulary_cases.h"
 #include "../compute_provider_native/half_test_support.h"
 #include "hyle/compute/providers/ggml_cpu.h"
+#include "hyle/compute/providers/native.h"
 #include "hyle/compute/providers/onednn.h"
 #include "hyle/graph/cpu.h"
 
