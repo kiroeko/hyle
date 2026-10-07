@@ -1,0 +1,37 @@
+{
+  "scope": "F5 Mac ARM64 / Linux x86_64 retained-math and mature edge owning delta",
+  "results": [
+    {
+      "platform": "mac",
+      "product_candidate": "507bad9698f9988d371c59e5661a69e4394c580a",
+      "tests": 144,
+      "failures": 0,
+      "skips": 0,
+      "successful_steps": 5,
+      "original_failures_retained": 0
+    },
+    {
+      "platform": "linux",
+      "product_candidate": "64b454fa23404d26bead60d495eda9475c802e32",
+      "tests": 144,
+      "failures": 0,
+      "skips": 0,
+      "successful_steps": 4,
+      "original_failures_retained": 3
+    }
+  ],
+  "equivalent_cleanup": {
+    "base_archive_candidate": "507bad9698f9988d371c59e5661a69e4394c580a",
+    "product_candidate": "64b454fa23404d26bead60d495eda9475c802e32",
+    "scope": "two uncalled private functions removed and equivalent existing NaN/return default exits; math/rules/ABI unchanged",
+    "files": {
+      "src/compute_provider_native/indexing.cc": "c30844646e56cf0d24188960f67f5a0d090f7130427ddece7faf8bd245d6a37b",
+      "src/compute_provider_native/reduction.cc": "b855d6adcb8f388606a401d008d51fd16ffec81102c054b94f5ef1d2fb0ada28",
+      "src/compute_provider_native/transformer.cc": "2d70dc3595b146f6e2648dda4bdcc6030b47903eaaf11b9e42e3ace24fa43c11"
+    }
+  },
+  "reuse": "Windows/Mac pre-cleanup math/delivery proofs retained: only two uncalled helpers and equivalent private default exits changed.",
+  "p1": "NOT_RUN; no math, ABI, data layout or qualified rules changed",
+  "bundle": "portable-owning.zip",
+  "bundle_sha256": "3fa186f6e2b2486b2b3c8abfdbe4cd01fcd3ca00720e2cf2d266568439bddcfc"
+}

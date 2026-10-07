@@ -1,0 +1,238 @@
+{
+  "envelope": "windows-cuda",
+  "product_candidate": "64b454fa23404d26bead60d495eda9475c802e32",
+  "steps": [
+    {
+      "name": "static-configure",
+      "args": [
+        "cmake",
+        "-S",
+        "C:\\public\\project-hyle\\hyle",
+        "-B",
+        "C:\\hv\\m2b1-cuda",
+        "-DHYLE_COMPONENTS=compute,graph",
+        "-U",
+        "HYLE_DEV_FACTORS",
+        "-DHYLE_COMPUTE_CPU=ON",
+        "-DHYLE_COMPUTE_CUDA=ON",
+        "-DHYLE_COMPUTE_VULKAN=OFF",
+        "-DHYLE_COMPUTE_APPLE=OFF",
+        "-DHYLE_BUILD_TESTS=OFF",
+        "-DHYLE_INSTALL=ON",
+        "-DHYLE_STATIC=ON",
+        "-DCMAKE_INSTALL_PREFIX=C:\\hv\\cpu-final-f5-mixed-cuda\\static-staging",
+        "-DCMAKE_PROJECT_INCLUDE=C:\\public\\project-hyle\\hyle\\.scratch\\validation\\cpu-final-f5\\mixed-cuda-windows\\source-overlay.cmake",
+        "-DFETCHCONTENT_FULLY_DISCONNECTED=ON",
+        "-DHYLE_DEP_SOURCE_CACHE=C:/Users/kiro/AppData/Local/hyle/dependencies/v1"
+      ],
+      "candidate": "8e8ee7105a118d7c9c64e3339d7c2560e2c48657",
+      "log": "1-static-configure.log",
+      "returncode": 0,
+      "seconds": 26.203
+    },
+    {
+      "name": "static-build",
+      "args": [
+        "cmake",
+        "--build",
+        "C:\\hv\\m2b1-cuda",
+        "--parallel",
+        "2"
+      ],
+      "candidate": "8e8ee7105a118d7c9c64e3339d7c2560e2c48657",
+      "log": "2-static-build.log",
+      "returncode": 0,
+      "seconds": 193.954
+    },
+    {
+      "name": "static-source-43-48",
+      "args": [
+        "C:\\hv\\m2b1-cuda\\bin\\f5_mixed_source.exe"
+      ],
+      "candidate": "8e8ee7105a118d7c9c64e3339d7c2560e2c48657",
+      "log": "3-static-source-43-48.log",
+      "returncode": 0,
+      "seconds": 0.265
+    },
+    {
+      "name": "static-install",
+      "args": [
+        "cmake",
+        "--install",
+        "C:\\hv\\m2b1-cuda"
+      ],
+      "candidate": "8e8ee7105a118d7c9c64e3339d7c2560e2c48657",
+      "log": "4-static-install.log",
+      "returncode": 0,
+      "seconds": 2.141
+    },
+    {
+      "name": "static-consumer-configure",
+      "args": [
+        "cmake",
+        "-S",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\cpu-final-f5\\delivery-consumer",
+        "-B",
+        "C:\\hv\\cpu-final-f5-mixed-cuda\\static-consumer",
+        "-G",
+        "Ninja",
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DCMAKE_PREFIX_PATH=C:\\hv\\cpu-final-f5-mixed-cuda\\static-relocated",
+        "-DFETCHCONTENT_FULLY_DISCONNECTED=ON"
+      ],
+      "candidate": "8e8ee7105a118d7c9c64e3339d7c2560e2c48657",
+      "log": "5-static-consumer-configure.log",
+      "returncode": 0,
+      "seconds": 14.828
+    },
+    {
+      "name": "static-consumer-build",
+      "args": [
+        "cmake",
+        "--build",
+        "C:\\hv\\cpu-final-f5-mixed-cuda\\static-consumer",
+        "--parallel",
+        "2"
+      ],
+      "candidate": "8e8ee7105a118d7c9c64e3339d7c2560e2c48657",
+      "log": "6-static-consumer-build.log",
+      "returncode": 0,
+      "seconds": 4.391
+    },
+    {
+      "name": "static-consumer-43-48",
+      "args": [
+        "C:\\hv\\cpu-final-f5-mixed-cuda\\static-consumer\\cpu_final_delivery.exe"
+      ],
+      "candidate": "8e8ee7105a118d7c9c64e3339d7c2560e2c48657",
+      "log": "7-static-consumer-43-48.log",
+      "returncode": 0,
+      "seconds": 0.812
+    },
+    {
+      "name": "shared-configure",
+      "args": [
+        "cmake",
+        "-S",
+        "C:\\public\\project-hyle\\hyle",
+        "-B",
+        "C:\\hv\\m2b1-cuda",
+        "-DHYLE_COMPONENTS=compute,graph",
+        "-U",
+        "HYLE_DEV_FACTORS",
+        "-DHYLE_COMPUTE_CPU=ON",
+        "-DHYLE_COMPUTE_CUDA=ON",
+        "-DHYLE_COMPUTE_VULKAN=OFF",
+        "-DHYLE_COMPUTE_APPLE=OFF",
+        "-DHYLE_BUILD_TESTS=OFF",
+        "-DHYLE_INSTALL=ON",
+        "-DHYLE_STATIC=OFF",
+        "-DCMAKE_INSTALL_PREFIX=C:\\hv\\cpu-final-f5-mixed-cuda\\shared-staging",
+        "-DCMAKE_PROJECT_INCLUDE=C:\\public\\project-hyle\\hyle\\.scratch\\validation\\cpu-final-f5\\mixed-cuda-windows\\source-overlay.cmake",
+        "-DFETCHCONTENT_FULLY_DISCONNECTED=ON",
+        "-DHYLE_DEP_SOURCE_CACHE=C:/Users/kiro/AppData/Local/hyle/dependencies/v1"
+      ],
+      "candidate": "8e8ee7105a118d7c9c64e3339d7c2560e2c48657",
+      "log": "8-shared-configure.log",
+      "returncode": 0,
+      "seconds": 25.422
+    },
+    {
+      "name": "shared-build",
+      "args": [
+        "cmake",
+        "--build",
+        "C:\\hv\\m2b1-cuda",
+        "--parallel",
+        "2"
+      ],
+      "candidate": "8e8ee7105a118d7c9c64e3339d7c2560e2c48657",
+      "log": "9-shared-build.log",
+      "returncode": 0,
+      "seconds": 193.422
+    },
+    {
+      "name": "shared-source-43-48",
+      "args": [
+        "C:\\hv\\m2b1-cuda\\bin\\f5_mixed_source.exe"
+      ],
+      "candidate": "8e8ee7105a118d7c9c64e3339d7c2560e2c48657",
+      "log": "10-shared-source-43-48.log",
+      "returncode": 0,
+      "seconds": 0.297
+    },
+    {
+      "name": "shared-install",
+      "args": [
+        "cmake",
+        "--install",
+        "C:\\hv\\m2b1-cuda"
+      ],
+      "candidate": "8e8ee7105a118d7c9c64e3339d7c2560e2c48657",
+      "log": "11-shared-install.log",
+      "returncode": 0,
+      "seconds": 0.937
+    },
+    {
+      "name": "shared-consumer-configure",
+      "args": [
+        "cmake",
+        "-S",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\cpu-final-f5\\delivery-consumer",
+        "-B",
+        "C:\\hv\\cpu-final-f5-mixed-cuda\\shared-consumer",
+        "-G",
+        "Ninja",
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DCMAKE_PREFIX_PATH=C:\\hv\\cpu-final-f5-mixed-cuda\\shared-relocated",
+        "-DFETCHCONTENT_FULLY_DISCONNECTED=ON"
+      ],
+      "candidate": "8e8ee7105a118d7c9c64e3339d7c2560e2c48657",
+      "log": "12-shared-consumer-configure.log",
+      "returncode": 0,
+      "seconds": 14.219
+    },
+    {
+      "name": "shared-consumer-build",
+      "args": [
+        "cmake",
+        "--build",
+        "C:\\hv\\cpu-final-f5-mixed-cuda\\shared-consumer",
+        "--parallel",
+        "2"
+      ],
+      "candidate": "8e8ee7105a118d7c9c64e3339d7c2560e2c48657",
+      "log": "13-shared-consumer-build.log",
+      "returncode": 0,
+      "seconds": 3.969
+    },
+    {
+      "name": "shared-consumer-43-48",
+      "args": [
+        "C:\\hv\\cpu-final-f5-mixed-cuda\\shared-consumer\\cpu_final_delivery.exe"
+      ],
+      "candidate": "8e8ee7105a118d7c9c64e3339d7c2560e2c48657",
+      "log": "14-shared-consumer-43-48.log",
+      "returncode": 0,
+      "seconds": 0.922
+    },
+    {
+      "name": "shared-export",
+      "args": [
+        "python",
+        "C:\\public\\project-hyle\\hyle\\scripts\\check-shared-export-hygiene.py",
+        "--root",
+        "C:\\hv\\cpu-final-f5-mixed-cuda\\shared-relocated"
+      ],
+      "candidate": "8e8ee7105a118d7c9c64e3339d7c2560e2c48657",
+      "log": "15-shared-export.log",
+      "returncode": 0,
+      "seconds": 0.14
+    }
+  ],
+  "successful_steps": 15,
+  "consumer_contract": "43 exact cold requests x2 ordinary contexts; 48 numeric/replay checks per actual source/SDK consumer",
+  "limits": "CPU seam delta only; no CPU-only WIN leak, no new GPU mathematical/performance/format qualification.",
+  "bundle": "windows-cuda-mixed-delivery.zip",
+  "bundle_sha256": "d1184bae6e833783c11a564b28331ed9de80659fff788d6c5ef2dce37914fa88"
+}

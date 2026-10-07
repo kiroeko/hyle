@@ -46,3 +46,32 @@ installed runs use only System32/Windows PATH. Shared export scan passes.
 Other-platform source/static/shared and mixed-envelope deltas remain pending.
 Unchanged qualified mathematics and rule conditions reuse F4 evidence; no additional
 timing race, sample-budget increase or self optimization is performed.
+
+## Portable owning and equivalent cleanup
+
+[Mac/Linux receipt](portable-owning-receipt.json) and
+[complete logs/XML, original failures and input delta](portable-owning.zip)
+pass 144 owning cases on each platform without skips. Mac uses the original
+507bad96 product; Linux uses `64b454fa23404d26bead60d495eda9475c802e32`.
+
+The exact canonical product delta removes two uncalled private helpers and moves
+the existing reduction NaN/return exits into explicit defaults. It changes no
+admitted math, resource protocol, ABI or qualified rule. Three original GCC Werror
+failures remain; only the finite cleanup was implemented. Windows/Mac mathematical
+and delivery evidence is retained under this explicit equivalence, while pending
+Linux/mixed delivery uses the updated input. Implementation LOC is 60,161 / 249
+files by the unified script, excluding tests/vendor/bench.
+
+## CPU-only three-platform delivery complete
+
+[Mac receipt](mac-delivery-receipt.json) and [raw/source archive](mac-delivery.zip)
+record 20 successful steps; [Linux receipt](linux-delivery-receipt.json) and
+[raw/source archive](linux-delivery.zip) record 18 successful steps. Both run
+the same 43 requests through two contexts and 48 numerical/replay checks in
+source/static/shared, with relocated runtime loading and actual exports.
+Mac's whole cached delta takes 61.329 seconds; Linux's takes 216.922 seconds.
+Mac preserves the 507bad96 input under D5 equivalence; Linux binds updated
+64b454fa and records the original archive plus exact three-file delta.
+
+This finishes CPU-only platform delivery. Four mixed-envelope CPU deltas and
+F5/F6 terminal audit remain pending; GPU mathematical/performance states are unchanged.

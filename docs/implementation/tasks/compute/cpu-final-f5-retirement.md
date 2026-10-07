@@ -163,3 +163,20 @@ GCC Werror拒绝；仅删除该匿名未调用helper，保留F16 Bool Softmax实
 GCC14完整Native owning构建和144项测试通过，无skip；三个原编译FAIL和摘要编码FAIL均保留。
 新候选不需要新的数学／43规则／P1资格；原Win/Mac数学与三交付按该等价差异复用。
 Linux三交付与四mixed envelope差异绑定新输入，尚待完成；仍不能关闭F5／goal。
+
+### V1 CPU-only三平台交付全部完成
+
+Mac本包20成功步骤、Linux18成功步骤分别完成源码／搬移static／搬移shared的43×两context与
+48数值／重放检查，真实loader与shared出口通过；原消耗方SDK／cached producer复用，未下载新库。
+Mac交付61.329秒，Linux交付216.922秒；Linux三私有文件等价D5差异绑定64b454fa，
+Win/Mac原交付身份和Math证明按上述等价边界保留，不重跑同数学P1。
+三平台owning各144项通过，无skip。当前待验只剩本包四mixed envelope的CPU差异与F5终审；
+F6仍需逐原目标复核、文档／统一LOC与归档清理，不能提前关闭整个goal。
+
+### V1 Windows mixed CPU差异完成
+
+CPU+CUDA与CPU+Vulkan各15成功步骤完成source/static/shared；每个真实source／SDK消费者
+执行43规则×两context和48数值／replay检查，qualified为false，未泄露CPU-only统计WIN。
+DLL邻exe／精简PATH与shared实际出口通过；产品候选64b454fa，实际Windows输入8e8ee710仅多状态说明。
+两个envelope原始receipt／log／consumer集中归档；没有GPU数学、格式或性能新资格。
+Mac CPU+Apple及Linux CPU+CUDA、已声明Native独立头门仍待；F5保持CANDIDATE。
