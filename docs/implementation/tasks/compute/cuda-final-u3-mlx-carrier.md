@@ -4,7 +4,8 @@
 
 ## Closure card
 
-- owner：既有 `compute_provider_torch_cuda`；不建立重复 runtime 或新数学 Provider。
+- owner：既有 `compute_provider_torch_cuda`；具名capability接缝由 `compute_route_cuda` 拥有。
+  不建立重复 runtime 或新数学 Provider。
 - baseline：`bf70470a4a8501e94fb4f1e2102680e1a79fd850`，Windows canonical。
 - trigger：[U3 N2](cuda-final-u3-mature-bindings.md) 的16个原 affine4／MX4／MX8 计算合同在 CUDA 无 hook。
   需求继承共同模型目录，不重新画像；旧CPU资格只证明合同，不签GPU通过。
@@ -71,6 +72,18 @@ BF16 scale=0.10009765625、bias=0.030029296875、code=7/5、activation=1/-1.375�
 | 现N1 SDK／context／stream／异常／result lifetime | 已资格 | KEEP，不重复runtime或driver查询 |
 | 原CUDA BF16 QMM／QQMM替代当前完整语义 | 无同合同资格 | REJECT直接替代；F32版本具体资格另行有限审计 |
 | 自研CUDA codec／GEMM／SIMD | 无授权 | REJECT，继续冻结 |
+
+## 具名有限补充：已组装 capability 传播
+
+`f4c95ca0` Linux已实际通过32个N2合同与9项precision/边界，旧默认FFN数学入口也可准备，
+但roster回归报实际8个Provider、consumer宏只显示7个：FlashInfer原PUBLIC宏止于route PRIVATE边。
+当前route只转发Torch CUDA capability。普通installed consumer必须按feature决定是否包含Linux-only
+Provider头，不能重新改成OS猜测或从producer偶然补头。
+
+追加唯一 FIX 4：route从实际已选Torch CUDA／FlashInfer target转发原literal capability，absent／
+CUDA-OFF不造宏；现static absent出口规则保持。重定界既有AUDITED route owner至本卡，并保留
+U2冷facts／arch／preset、N1原功能及mixed交付余项。源／SDK一致性由联合U3三交付证明；
+此具体事实不修改数学、性能资格、Provider顺序或公共构建框架。
 
 第三方pin／MIT／vendor owner由本factor唯一登记；16固定contract驱动而非benchmark；Compute／
 backend／Graph operation adapter复用；P0成本明确、无本批P1；无FFI；三交付／软件身份沿N1接缝及U3
