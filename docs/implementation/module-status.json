@@ -427,14 +427,9 @@
     },
     {
       "module": "compute_provider_native",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/compute/cpu-three-operator-route-closure.md",
-      "summary": "CPU三项CLOSED：原F32融合接对、17格限定Copy/RMS规则、Native SDPA整项删除；Windows/Linux实际两入口与三交付、资源/动态域/终审及有限P1裁决通过。不是全部CPU重叠域best-of；SIMD/GPU不变。",
-      "candidate": "119137681ed03f58e3e193a97c969be4e45ccb34",
-      "performance": {
-        "tier": "P0",
-        "evidence": "evidence/correctness/cpu-three-operator-route/README.md"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/cpu-final-f1-build-contract.md",
+      "summary": "CPU最终F1 SCOPED：用户要求三平台CPU/构建与预编译一致、全重复域best-of和合理默认；核对flags/LTO资格、mixed core及默认回退，有限审计未写产品。旧GPU/Graph阻塞不解除。"
     },
     {
       "module": "compute_sched",
@@ -443,25 +438,15 @@
     },
     {
       "module": "compute_route_cpu",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/compute/cpu-default-domain-routing-final.md",
-      "summary": "CPU最终收口CLOSED：缓存硬件身份、187精确优势规则、13劣势冷拒绝与成熟region优先完成；两平台正确性/普通Direct+Graph/三交付通过。复用冻结比较，不跑新P1；去留有WIN/资源依据，SIMD不删，GPU暂停。",
-      "candidate": "393c7545b06f599001a4066876f03595d0bb0b15",
-      "performance": {
-        "tier": "P0",
-        "evidence": "evidence/correctness/cpu-default-domain-routing/README.md"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/cpu-final-f1-build-contract.md",
+      "summary": "CPU最终F1 SCOPED：用户要求三平台CPU/构建与预编译一致、全重复域best-of和合理默认；核对flags/LTO资格、mixed core及默认回退，有限审计未写产品。旧GPU/Graph阻塞不解除。"
     },
     {
       "module": "graph_route_cpu",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/compute/cpu-default-domain-routing-final.md",
-      "summary": "CPU最终收口CLOSED：缓存硬件身份、187精确优势规则、13劣势冷拒绝与成熟region优先完成；两平台正确性/普通Direct+Graph/三交付通过。复用冻结比较，不跑新P1；去留有WIN/资源依据，SIMD不删，GPU暂停。",
-      "candidate": "393c7545b06f599001a4066876f03595d0bb0b15",
-      "performance": {
-        "tier": "P0",
-        "evidence": "evidence/correctness/cpu-default-domain-routing/README.md"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/cpu-final-f1-build-contract.md",
+      "summary": "CPU最终F1 SCOPED：用户要求三平台CPU/构建与预编译一致、全重复域best-of和合理默认；核对flags/LTO资格、mixed core及默认回退，有限审计未写产品。旧GPU/Graph阻塞不解除。"
     },
     {
       "module": "compute_provider_cublas",
@@ -548,14 +533,9 @@
     },
     {
       "module": "compute_ggml_runtime",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/compute/cpu-quant-mtp-coverage-terminal.md",
-      "summary": "CPU热门量化/MTP/DSpark原准入合同CLOSED：固定104 GGUF及两新官方/三sidecar/四非GGUF typed+semantic/state联合资格、Windows/Linux三交付/真实失败并发资源、文档/独立终审与P0通过；不称整模型推理/SOTA、不改GPU旧状态。",
-      "candidate": "c740abc74a5a62ffacf60b26798228ca484317df",
-      "performance": {
-        "tier": "P0",
-        "evidence": "evidence/correctness/cpu-quant-mtp-c5-plain/cost-audit.md"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/cpu-final-f1-build-contract.md",
+      "summary": "CPU最终F1 SCOPED：用户要求三平台CPU/构建与预编译一致、全重复域best-of和合理默认；核对flags/LTO资格、mixed core及默认回退，有限审计未写产品。旧GPU/Graph阻塞不解除。"
     },
     {
       "module": "compute_provider_ggml_cuda",
