@@ -113,6 +113,21 @@ consumer3项PASS，独立static SDK的Direct／Graph fixed组各560项PASS，无
 只改test reference寿命及其回归，无产品／原数学／误差门变更；未重跑其它651/649原生全集或P1。
 后续SDK current组因用户要求优先排查而中断，已有完成组保留；该中断不记产品FAIL，也不记PASS。
 
+### 最终交付续跑的有限范围
+
+U1审计已结束，八族49个family-region关联现在与封存的两平台native用例逐项对应；
+Qwen named-Q4 MTP的CPU／CUDA用例名不同，但都直接调用`cpu_c4_qwen_mtp::check`，
+不是新程序。完整mapping随交付证据封存，不用测试总数替代该对应关系。
+
+两个普通shape/provider admission用例首次独立SDK编译时无条件包含Linux专属FlashInfer头；
+Windows关闭该Provider的SDK正确地没有该头。test-only纠正复用已有
+`d5_optional_cuda_provider::is_flashinfer`，不把未选Provider补装进SDK。
+只重编该一个TU，source／relocated static SDK各2项通过，未重跑大executable。
+
+SDK current续跑保留原21个完整用例，每个完整program独立进程，避免多个不相关模型shape
+的原库private allocator缓存叠加。已完成编码／artifact组复用；families与普通入口／生命周期
+按未完成项补验。此分组不删除程序内部stage、权重精度、真实内宽、state或完整词表。
+
 ## 七问与冻结
 
 第三方依旧原ggml／ATen源、pin和license；当前模型完整需求不扩画像；backend、Graph adapter、

@@ -7,13 +7,13 @@
 #include <utility>
 
 #include "../compute_models/d5_qwen35_fixture.h"
+#include "../compute_models/d5_optional_cuda_provider.h"
 #include "hyle/compute/backends/cuda.h"
 #include "hyle/compute/cuda.h"
 #include "hyle/compute/model_ops.h"
 #include "hyle/compute/prepared_operation.h"
 #include "hyle/compute/providers/cublas.h"
 #include "hyle/compute/providers/cuda.h"
-#include "hyle/compute/providers/flashinfer.h"
 #include "hyle/compute/providers/ggml_cuda.h"
 
 namespace {
@@ -31,7 +31,7 @@ bool mature(c::ProviderId provider) {
          provider == c::cublas::kProviderId ||
          provider == c::cuda_native::kSglangProviderId ||
          provider == c::cuda_native::kCcclProviderId ||
-         provider == c::flashinfer::kProviderId;
+         d5_optional_cuda_provider::is_flashinfer(provider);
 }
 
 TEST(CudaDefaultCompute,
