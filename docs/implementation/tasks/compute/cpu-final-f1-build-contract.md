@@ -17,6 +17,7 @@
 | B2 | 标准CPU及mixed SDK实际core/格式能力不一致 | 固定同进程runtime/core ABI与能力合同，优先同一CPU能力；不可保持时具体决策，不静默降级 | 单/混合路线配置、能力说明、实际新格式负/正消费 |
 | B3 | 预编译SDK与Graph变体容易被误称全部best-of | 区分构建期存在集/冷规则/Invocation尺寸选择，投影真实已编入程序与身份 | safe baseline/ISA、规则失配、变体命中/回退、source/static/shared |
 | B4 | 无特化规则时只用全局Provider顺序，默认依据不完整 | 已测优选→逐op/format/precision/resource/region成熟默认→合法兜底；规则低成本冷绑定 | 未知硬件/版本/线程、feature裁剪、完整region与普通叶、错误不伪fallback |
+| B5 | 用户要求oneDNN升级后再比较，当前锁v3.13.2且identity硬编码 | 核对官方最新稳定版/实际API与overlay，固定commit/archive/hash；两adapter身份随实际依赖投影，旧WIN不继承 | owning/真实默认两入口、资源/线程/错误、source/static/shared及许可/offline资产 |
 
 scope只授权审计；B2的ABI/源码反证与F2/F3能力冻结后才写该部分产品。
 标准`compute-cpu`必须交付固定目标全部合同，未匹配性能特化仍可执行成熟默认；必需依赖缺失configure失败，
@@ -44,3 +45,10 @@ macro和`qualified_default_environment()`未核对flags/IPO/linkage，构成明�
 无新API、layout或热字段；冷metadata同条件匹配，不给未测shared标签。当前17/187是历史有证格而非通用冠军。
 低成本私有CMake合同检查覆盖正例/失配/多config，正常shared默认two-entry consumer按F1选定验证；
 匹配static旧数学与P1复用，不因资格保守缩小重测。B1不算B2–B4已完成。
+
+## B5升级子批SCOPED
+
+用户明确要求升级oneDNN，真实owner compute_provider_onednn、graph_provider_onednn绑定本卡；
+原v3.13.2及硬编码identity不能给新候选签资格。只审计一个官方最新稳定候选及当前原threadpool/BRGEMM接缝，
+最多一批API/overlay纠正，不转为自研优化或全库升级；新版本先完成接线/正确性/资源/三交付再进入F4。
+Native B1资格门继续只按已测peer，升级后不自动携带旧17/187 WIN。当前B5未AUDITED，不改其产品。

@@ -361,14 +361,9 @@
     },
     {
       "module": "compute_provider_onednn",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/compute/cpu-onednn-small-matmul-admission.md",
-      "summary": "CPU小矩阵准入CLOSED：OM1/OM2原BRGEMM准入、正确性/重放、Windows/Linux三交付与P0已验。删除无资格M<16过滤，不签Native WIN；CPU逐域裁决仍SCOPED。",
-      "candidate": "65a02982ac108d57b13769029f56a6a6903895be",
-      "performance": {
-        "tier": "P0",
-        "evidence": "evidence/correctness/cpu-mature-admission-batch-v1/README.md"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/cpu-final-f1-build-contract.md",
+      "summary": "CPU最终F1/B5 SCOPED：用户授权升级oneDNN固定稳定版后再best-of；审计原threadpool/BRGEMM/资源与版本identity，未改产品，不继承旧性能资格。"
     },
     {
       "module": "compute_provider_ggml",
@@ -383,14 +378,9 @@
     },
     {
       "module": "graph_provider_onednn",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/compute/cpu-onednn-hybrid-ffn-retirement.md",
-      "summary": "NX1–3 CLOSED：错误generic oneDNN/SIMD FFN资格及artifact/执行退役，valid norm/MatMul与SIMD保留；两平台3/3、Graph4通过/2skip、头1/1、同ordinary mature FFN三交付和P0通过。CPU剩余接缝/自研裁决仍未完成。",
-      "candidate": "80c9ab0075c667bd16255d43d46a21d46df234ac",
-      "performance": {
-        "tier": "P0",
-        "evidence": "evidence/correctness/cpu-onednn-hybrid-ffn/README.md"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/cpu-final-f1-build-contract.md",
+      "summary": "CPU最终F1/B5 SCOPED：用户授权升级oneDNN固定稳定版后再best-of；审计原threadpool/BRGEMM/资源与版本identity，未改产品，不继承旧性能资格。"
     },
     {
       "module": "compute_ops",
