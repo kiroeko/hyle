@@ -216,3 +216,13 @@ RMSNorm→MatMul→stable gate公开Graph为两次变输入、实际数值检查
 
 Linux普通sample修正后通过；shared出口工具把私有CPU程序入口错认公共FFI，按
 [独立有限工具卡](../build/private-cpu-program-export-v1.md)纠正，不在模块内扩仪器。
+
+## 当前Linux/Mac交付增量完成
+
+产品包候选`28fd52d27f2052399b249b1db56da124f5510476`＋具名sample/tool delta：Linux源码消费者与搬移后
+shared/static每形态40个Direct/Graph数值/精度格、普通样例（Graph变输入两次）、loader无缺失通过。
+shared实际出口19库/1391项通过。样例退出9/23和private入口工具误判旧FAIL均保留，只续失败小步骤。
+Mac当前T6产品同候选三交付的40格全部通过，现sample各小文件重编后数值/replay也通过；
+源码parent与两安装形态复用已有producer，无新数学或P1。
+[Linux与Mac当前交付收据](../../../../evidence/correctness/cpu-final-f3/README.md)绑定source archive和late delta身份。
+Windows当前安装批运行中，T11 test-ISA变化在Linux/Mac的定向编译/sidecar中点资格尚待，不提前签F3完成。

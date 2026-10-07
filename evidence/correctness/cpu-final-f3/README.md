@@ -133,3 +133,23 @@ The first full Windows Graph run subsequently passes **847 cases without
 skips** in 759.797 seconds. The receipt/archive now include its complete XML and
 log. The product's generic defaults remain restored; installed-delivery and
 the corresponding Linux/Mac test-seam deltas remain pending.
+
+## Linux and Mac current C++ delivery deltas
+
+[Linux delivery receipt](linux-cpp-delivery-receipt.json) and
+[full logs/XML, original failures and consumer source](linux-cpp-delivery.zip)
+qualify source consumption and relocated installed shared/static. Each shape
+passes 40 Direct/Graph format/precision checks. Current ordinary samples also
+pass, with actual numeric results and two changed-input Graph replays. Loader
+audits have no unresolved libraries and no LD_LIBRARY_PATH dependency; the
+original managed CPU runtime remains separate. The actual shared export check
+passes 19 libraries / 1,391 exports after the bounded private-entry tool fix.
+
+[Mac current delivery receipt](mac-current-cpp-delivery-receipt.json) and
+[incremental producer/consumer/XML/source identities](mac-current-cpp-delivery.zip)
+qualify the ARM precision admission repair in source/static/shared with the same
+40 checks. Current ordinary samples were recompiled before counting their runs;
+their matrix/gate output and changed-input replays pass. Original source archive
+and late sample/tool deltas are separately bound, never claimed to be one unchanged
+Git tree. Windows current installed and Linux/Mac T11 test-seam checks remain
+pending, and F3/whole-goal closure is not claimed.

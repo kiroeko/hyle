@@ -1,0 +1,55 @@
+{
+  "product_candidate": "28fd52d27f2052399b249b1db56da124f5510476",
+  "sample_delta": [
+    "521293bb",
+    "5fefc3d7"
+  ],
+  "export_tool_delta": "44e116b9",
+  "gates": {
+    "shared": {
+      "tests": "1",
+      "failures": "0",
+      "skipped": "0"
+    },
+    "static": {
+      "tests": "1",
+      "failures": "0",
+      "skipped": "0"
+    },
+    "shared-direct-corrected": {
+      "tests": "1",
+      "failures": "0",
+      "skipped": "0"
+    },
+    "shared-graph-corrected": {
+      "tests": "1",
+      "failures": "0",
+      "skipped": "0"
+    },
+    "static-direct": {
+      "tests": "1",
+      "failures": "0",
+      "skipped": "0"
+    },
+    "static-graph": {
+      "tests": "1",
+      "failures": "0",
+      "skipped": "0"
+    }
+  },
+  "source_numeric": "Source/shared and source/static ordinary facade consumer each pass 40 Direct/Graph format/precision checks; original oneDNN objects reused",
+  "runtime": "Both HYLE prefixes moved before independent consumers; loader resolves original separately managed CPU Torch/ggml program assets, no LD_LIBRARY_PATH",
+  "export_hygiene": "19 HYLE libraries / 1391 exports; exact private program entry only, public FFI rejection retained",
+  "prior_failures": [
+    "Old oneDNN3.13.2 sample assertion",
+    "Obsolete compile-only oneDNN-only FFN claim",
+    "Private CPU entry misclassified as public C export"
+  ],
+  "limits": [
+    "Current T11 ISA test-seam delta on Linux/Mac still needs targeted qualification",
+    "Windows final installed SDK and Mac delta ongoing",
+    "No new best-of/P1 winner"
+  ],
+  "archive_sha256": "654a403f55c5dfd2ccdd9191d5aec60dc6389fc1b48f17189a8d3ad7f590231f",
+  "archive_bytes": 53899
+}

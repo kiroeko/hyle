@@ -1,0 +1,67 @@
+{
+  "product_candidate": "28fd52d27f2052399b249b1db56da124f5510476",
+  "sample_tool_delta": {
+    "candidate": "44e116b91cee2d4a5d042491812d11ec9dd9b4f3",
+    "files": [
+      {
+        "path": "samples/package/compute/cpp/main.cc",
+        "sha256": "a9503d0eca1743399bf21727db526b52137c0e5101eeb99b07d9d7029e43ef5e"
+      },
+      {
+        "path": "samples/package/graph/cpp/main.cc",
+        "sha256": "7deadde7bf732c67341aaace7d241dfb72d84c859bc82c9bddc009e4f6290d00"
+      },
+      {
+        "path": "scripts/check-shared-export-hygiene.py",
+        "sha256": "f5db555fc197fc96d964b5d9d94b6580942293058fb8a29ea58402e0df18420d"
+      }
+    ],
+    "scope": "Windows canonical sample/tool delta only; product remains package identity"
+  },
+  "gates": {
+    "source": {
+      "tests": "3",
+      "failures": "0",
+      "skipped": "0"
+    },
+    "shared": {
+      "tests": "1",
+      "failures": "0",
+      "skipped": "0"
+    },
+    "static": {
+      "tests": "1",
+      "failures": "0",
+      "skipped": "0"
+    },
+    "current-shared-compute": {
+      "tests": "1",
+      "failures": "0",
+      "skipped": "0"
+    },
+    "current-shared-graph": {
+      "tests": "1",
+      "failures": "0",
+      "skipped": "0"
+    },
+    "current-static-compute": {
+      "tests": "1",
+      "failures": "0",
+      "skipped": "0"
+    },
+    "current-static-graph": {
+      "tests": "1",
+      "failures": "0",
+      "skipped": "0"
+    }
+  },
+  "scope": "Mac canonical ARM half-dot admission fix: source/static/shared 40 numerical format/precision checks, current ordinary samples two changed Graph replays, actual installed/relocated loader paths",
+  "build": "Incremental owned producers; no repeated dependencies or new P1",
+  "limits": [
+    "T11 ISA test-seam is unchanged on ARM but new midpoint/base branch needs targeted test compilation",
+    "Windows installed SDK batch ongoing",
+    "No best-of/retirement closure"
+  ],
+  "archive_sha256": "0bf0b8f9973c4af5289f2d446b9f60b9d4b437803723164326f20638dad9d036",
+  "archive_bytes": 25341
+}
