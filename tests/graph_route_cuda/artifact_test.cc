@@ -80,7 +80,9 @@ TEST_P(CudaArtifactLifecycle, ChangedPayloadTwoSlotsAndRetainedOwnersUseOriginal
   const auto operation = c::model_ops::artifact_weight_decode(format,group,type);
   std::array<c::TensorDesc,1> output_desc;
   ASSERT_TRUE(c::infer_output_descriptions(operation,descriptors,output_desc).ok());
-  auto prepared = c::prepare(context,operation,descriptors,output_desc,memory.ref()).value();
+  auto prepare_result = c::prepare(context,operation,descriptors,output_desc,memory.ref());
+  ASSERT_TRUE(prepare_result) << prepare_result.error().message();
+  auto prepared = std::move(*prepare_result);
   EXPECT_EQ(prepared.provider().id,c::torch_cuda::kProviderId);
   EXPECT_EQ(prepared.runtime_properties().replay_class,c::ProviderReplayClass::kManaged);
   EXPECT_FALSE(prepared.runtime_properties().capture_compatible);
@@ -92,7 +94,9 @@ TEST_P(CudaArtifactLifecycle, ChangedPayloadTwoSlotsAndRetainedOwnersUseOriginal
   const auto result_id = builder.result(node).value();
   ASSERT_TRUE(builder.publish(result_id).ok());
   auto logical = std::move(builder).finish().value();
-  auto compiled = g::cuda::compile(logical,context,memory.ref()).value();
+  auto compile_result = g::cuda::compile(logical,context,memory.ref());
+  ASSERT_TRUE(compile_result) << compile_result.error().message();
+  auto compiled = std::move(*compile_result);
   EXPECT_EQ(compiled.report.step(0)->provider.id,c::torch_cuda::kProviderId);
   auto slot = compiled.executable.create_invocation().value();
   auto second = compiled.executable.create_invocation().value();
@@ -118,8 +122,12 @@ TEST_P(CudaArtifactLifecycle, ChangedPayloadTwoSlotsAndRetainedOwnersUseOriginal
       }
     }
     const std::array destination{c::TensorView::create(output_desc[0],outputs[0].view()).value()};
-    auto done=direct.submit(queue,views,destination).value(); ASSERT_TRUE(done.wait().ok());
-    auto first_done=slot.submit(queue).value(); auto second_done=second.submit(queue).value();
+    auto direct_result=direct.submit(queue,views,destination);
+    ASSERT_TRUE(direct_result) << direct_result.error().message();
+    auto done=std::move(*direct_result); ASSERT_TRUE(done.wait().ok());
+    auto first_result=slot.submit(queue); ASSERT_TRUE(first_result) << first_result.error().message();
+    auto second_result=second.submit(queue); ASSERT_TRUE(second_result) << second_result.error().message();
+    auto first_done=std::move(*first_result); auto second_done=std::move(*second_result);
     ASSERT_TRUE(first_done.wait().ok()); ASSERT_TRUE(second_done.wait().ok());
     std::vector<float> expected(n*k);
     constexpr std::array<int,8> order{0,4,1,5,2,6,3,7};
