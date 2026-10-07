@@ -56,3 +56,9 @@ torch_cpu loads its adjacent libomp. The original machine CPU SDK is a separatel
 resolved dependency of the installed shim, not bundled into the HYLE binary
 package. Full C5 on installed shapes and Linux current-version results remain
 pending, so this section does not close F3.
+
+The same relocated shared/static SDKs each pass the reused C3 numerical format
+consumer's 36 Direct/Graph checks: eleven GGUF additions, NF4/nested/AWQ/CT decode
+and projection, plus affine4/MXFP4/MXFP8 selected experts. Its exact source hash is
+recorded in the delivery archive. These are format/delivery checks; complete model
+state qualification remains the separate C5/official fragment proof.

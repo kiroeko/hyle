@@ -574,8 +574,10 @@ gate、number Min/Max和四种Reduce；exact/rank<=8、合法byte stride、dense
 accumulation（F32也允许Unknown）。稳定activation用原Double Tensor程序后显式F32，gate在F32
 乘法后一次storage舍入；输入必须原Byte packing到冷私有对齐native槽。Unary/Binary只有dense
 equal-desc端口允许精确alias；Gate/Reduce无alias。Double转换/原Tensor节点/临时数据均收费，
-仍为managed leaf，不承诺零热分配或性能WIN。已锁SDK仅Windows/Linux x86_64；其他平台不继承
-这项资格。[数值范围和两平台交付](../../evidence/correctness/cpu-aten-numeric/README.md)。
+仍为managed leaf，不承诺零热分配或性能WIN。锁定SDK支持Windows/Linux x86_64的`2.8.0+cpu`和
+macOS ARM64的`2.8.0`；Mac标准CPU构建接入原ATen，HYLE Apple路线可保持OFF。
+[原数值范围和两平台交付](../../evidence/correctness/cpu-aten-numeric/README.md)与
+[Mac当前CPU/三交付证据及未完成边界](../../evidence/correctness/cpu-final-f3/README.md)分别记录，不移植性能WIN。
 
 同一factory增加五种浮点storage间的全部25种`Cast`：F32/F16/BF16/E4M3FN/E5M2，
 rank0..8、合法byte stride和dense output。相同dtype保留原bits；不同dtype按公开RNE、

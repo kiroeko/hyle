@@ -25,8 +25,19 @@
       "tests": "1",
       "failures": "0",
       "skipped": "0"
+    },
+    "shared-formats": {
+      "tests": "1",
+      "failures": "0",
+      "skipped": "0"
+    },
+    "static-formats": {
+      "tests": "1",
+      "failures": "0",
+      "skipped": "0"
     }
   },
+  "format_consumer": "Existing C3 numerical Direct/Graph consumer reused byte-identically for all eleven GGUF additions, NF4/nested/AWQ/CT decode plus projected output, and affine4/MXFP4/MXFP8 selected experts; source SHA in archive",
   "source_archive": {
     "sha256": "e56e364f74cbeefb392decfcd5bad5d760cd44c5bb07a893989e9cf2afbb758c",
     "bytes": 124549970
@@ -39,6 +50,6 @@
     "Other platforms pending",
     "No new P1"
   ],
-  "archive_sha256": "62b78c4c2972cf1e09e6e28701ec6081a7d5577f72b11acea9cc4287b5a1b8b7",
-  "archive_bytes": 31114
+  "archive_sha256": "888508179e34f40e6a7e83b7b7baa303f9ce7cb215fcdffa7fdca10e6702adb8",
+  "archive_bytes": 34949
 }

@@ -36,12 +36,13 @@ Qwen27B命名Q4_0的实际Q3/Q4/Q6 MTP sidecar、Flash Q8/BF16两份实际MXFP4�
 4. Direct准备并复用Invocation；Graph编译并准备独立执行槽。重复调用更新activation/cache/ids，
    等真实Completion完成后读输出；借用权重活到最后一次完成。
 5. source/static/shared均为C++交付，安装消费用find_package；调用 `hyle_stage_runtime_dependencies`。
-   Windows将依赖DLL邻置exe，Linux保留实际loader路径。HYLE static仍含外部shared CPU runtime资产。
+   Windows将依赖DLL邻置exe，Linux/macOS保留实际loader路径。HYLE static仍含外部shared CPU runtime资产。
 
 ## 需要保留的成本与限制
 
-- CPU-only锁定ggml0.26＋原Unsloth IQ1扩展，包含任意GPU路线的旧SDK仍用原core/资格。
-  同进程不要混用未隔离的新旧SDK原库对象。
+- CPU-only锁定ggml0.26＋原Unsloth IQ1扩展；mixed SDK保留原GPU core，并在同core接入原CPU格式端口。
+  当前Windows CPU+Vulkan组合已验，其他组合/交付仍待本轮资格；这不增加GPU格式支持。
+  具体边界见[CPU最终F1证据](../../evidence/correctness/cpu-final-f1/README.md)。同进程不要混用未隔离的SDK原库对象。
 - 原quantized dot的activation转换、累加及输出storage都属于合同。NF4/AWQ/CT显式cold解码后缓存，
   F16原权重必要cold转换真实计费；MLX只current K group/selected experts，不能每轮全库展开。
 - managed原库有临时、copy、可能私有线程，私有上界unknown，capture/prepared-only/严格内存域可明确拒绝。

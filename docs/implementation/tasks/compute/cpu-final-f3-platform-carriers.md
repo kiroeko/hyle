@@ -78,3 +78,7 @@ shared搬移后Direct/Graph各1项、static搬移后各1项均通过，无skip�
 机器SDK仍按installed shim单独解析，不冒称LibTorch随HYLE SDK完整打包。
 [交付receipt/日志](../../../../evidence/correctness/cpu-final-f3/README.md)有原archive、manifest、runtime与consumer身份。
 此为普通两入口交付，不签全部C5在installed形态重跑；Linux当前升级候选集中验证中。
+
+同候选的installed shared/static另复用原C3格式consumer（原文件SHA不变），每形态36个Direct/Graph数值检查通过：
+十一GGUF CPU新增格式、NF4/nested/AWQ/CT原解码及真实projection、affine4/MXFP4/MXFP8选中专家。
+只各编一个consumer文件约1秒，不重建producer；全模型语义/状态仍由具名C5/官方片段独立验。

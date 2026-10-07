@@ -172,12 +172,21 @@ GPU 所需的 host 控制、准备和传输机制。配置示例：
 
 CPU 路线可带独立的 x86-64 oneDNN provider factor；
 `HYLE_COMPUTE_ONEDNN=ON|OFF|AUTO` 只在相应 CPU 产品/因子闭包出现，默认 AUTO：支持的 x86-64
-目标接入锁定 oneDNN，AArch64 自动保留 Native。ON 在不支持目标明确失败；OFF 可显式裁剪该实现。
+目标接入锁定 oneDNN；macOS ARM64使用原ggml/ATen CPU程序。ON 在不支持目标明确失败；OFF 可显式裁剪该实现。
 普通 Direct 使用 `hyle::compute::cpu::create_context()`，普通 Graph 使用
 `hyle::graph::cpu::create_context()`；用户不需要排列 Provider。专家仍可显式限定 Provider。
 static SDK 传递锁定 oneDNN archive/header 闭包，shared SDK 把实现私有链接进 provider library，
 二者安装 Apache-2.0 notice。CPU OFF + oneDNN ON 明确配置失败；CPU OFF + oneDNN AUTO
 不探测、不下载。构建 feature 只记录可用实现；默认规则的性能验收由 CPU 路线任务记录。
+
+标准CPU配置还通过`HYLE_COMPUTE_TORCH_CPU=AUTO`取得锁定原LibTorch CPU SDK：
+Windows/Linux x86_64为`2.8.0+cpu`，macOS ARM64为`2.8.0`。source/static/shared复用同一锁与本机cache，
+安装消费者由依赖shim解析SDK，不要求用户列第三方target。HYLE static仍需要外部shared CPU runtime；
+二进制HYLE prefix不包含整个LibTorch开发包。离线迁移需同时带已验证的本机依赖cache，
+或显式`HYLE_COMPUTE_TORCH_CPU_ROOT`指向同版本、CPU-only、可搬移的外部SDK。
+Mac受管stage修正原CPU dylib的libomp加载边并保留原archive身份，不修改用户外部SDK；
+用户声明不匹配版本/目标或非可搬移SDK时configure明确失败。当前Mac资格与未完成项见
+[CPU F3证据](../../evidence/correctness/cpu-final-f3/README.md)。
 
 Compute/Graph 包含可选 CUDA 默认路线。`HYLE_COMPUTE_CUDA=OFF|ON|AUTO` 只在相应产品闭包中出现，
 默认 OFF；ON 要求用户预装 CUDA Toolkit 13.3+ 并在缺失时失败，AUTO 只用于本地探测，OFF 完全不探测。
