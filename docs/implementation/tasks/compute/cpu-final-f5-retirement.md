@@ -152,4 +152,4 @@ Linux续编译和后续平台／mixed差异绑定新不可变输入，原GCC FAI
 
 D5同批第二个精确反例：`reduction.cc`的identity／accumulate／dense三个私有switch已只执行
 Min/Max，公共ReductionKind仍含成熟库承载的Sum/Mean，GCC `-Wswitch`要求显式默认出口。
-仅将原switch后的0／return出口放入default；准入仍先拒绝非Min/Max，不恢复Sum/Mean执行或改变算术。
+仅将原switch后的NaN／return出口放入default；准入仍先拒绝非Min/Max，不恢复Sum/Mean执行或改变算术。

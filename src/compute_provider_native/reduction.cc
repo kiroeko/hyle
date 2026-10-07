@@ -26,8 +26,9 @@ float reduction_identity(ReductionKind kind) noexcept {
     return std::numeric_limits<float>::infinity();
   case ReductionKind::kMaximum:
     return -std::numeric_limits<float>::infinity();
+  default:
+    return std::numeric_limits<float>::quiet_NaN();
   }
-  return std::numeric_limits<float>::quiet_NaN();
 }
 
 void accumulate(ReductionKind kind, float value, float &result) noexcept {
@@ -40,6 +41,8 @@ void accumulate(ReductionKind kind, float value, float &result) noexcept {
     if (!std::isnan(result))
       result = std::isnan(value) ? value : std::fmax(result, value);
     return;
+  default:
+    return;
   }
 }
 
@@ -50,8 +53,9 @@ float reduce_dense(ReductionKind kind, const float *input,
     return simd::min_value(input, count);
   case ReductionKind::kMaximum:
     return simd::max_value(input, count);
+  default:
+    return std::numeric_limits<float>::quiet_NaN();
   }
-  return std::numeric_limits<float>::quiet_NaN();
 }
 
 template <class Value>
