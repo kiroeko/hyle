@@ -192,3 +192,11 @@ T11有限测试FIX：只此sidecar的Q8_0 activation编码用独立scalar表达�
 用既有cpu_avx2_program_eligible事实选择（不造新probe），冻结source anchors并补一个中点语义检查，
 一个不可变候选上具名Direct纠正与Graph首次全批；原gate/权重/三stage/词表/输入不变。
 两runtime probe预算仍已耗尽，T11不是第三probe或新产品优化。若仍失败停止这项纠正链并说明精确未决。
+
+### T11 Windows正式Direct结果
+
+候选`5d5dffcfc9b98178bdfea6ef90e7f2405d4c4a71`恢复generic产品默认，独立scalar oracle按实际AVX2编码定义后，
+完整Q8/BF16 sidecar、原中点定义与16项普通入口18项全部通过。原4%门未变，产品/用户Provider选择不增加规则。
+Direct资格组成仍为原827成功格＋同原输入的完整sidecar纠正，原828项aggregate FAIL不回写。
+首次Graph full正在运行，不能提前签PASS；[ISA纠正收据/原失败/已清退实验](../../../../evidence/correctness/cpu-final-f3/README.md)已保留。
+这里不是“换姿势重测”：从明确source/程序ISA发现不同编码的对照合同错误，纠正后一次正式验收，无第三探针。

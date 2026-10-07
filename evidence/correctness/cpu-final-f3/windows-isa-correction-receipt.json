@@ -1,0 +1,28 @@
+{
+  "candidate": "5d5dffcfc9b98178bdfea6ef90e7f2405d4c4a71",
+  "original_direct": {
+    "tests": 828,
+    "failures": 1,
+    "skips": 0
+  },
+  "unqualified_norm_experiment": {
+    "tests": 18,
+    "failures": 1,
+    "skips": 0
+  },
+  "corrected_direct": {
+    "tests": 18,
+    "failures": 0,
+    "skips": 0
+  },
+  "cause": "Original selected AVX2 Q8_0 activation uses 127/max and nearest-even; linked baseline oracle uses reciprocal of max/127 and roundf tie-away. Different encoded inputs are not same-contract math.",
+  "action": "Unqualified model norm rule physically removed. Scalar sidecar activation oracle follows selected original ISA; original scalar/traits dot and entire original 4% state gate retained.",
+  "composition": "827 initial Direct PASS plus corrected full sidecar PASS; new midpoint and generic regressions PASS. Original aggregate FAIL and failed rule preserved; Graph first full batch still running.",
+  "archive_sha256": "caf97751473bf4e678033eb5f6a5fa47a9e48363f4af7fca0d507614a34a8ef0",
+  "archive_bytes": 83451,
+  "limits": [
+    "Graph full verdict not yet present in this partial receipt",
+    "Linux/Mac current test ISA seam and delivery delta pending",
+    "No new P1/WIN"
+  ]
+}

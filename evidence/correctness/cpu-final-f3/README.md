@@ -108,3 +108,23 @@ the aggregate failures are not rewritten as full passing reruns. The current
 unified implementation is **61,246 lines / 251 files**. New ARM delivery-delta,
 Windows full-route and Linux current installed checks remain pending; no new
 performance winner or goal closure is claimed.
+
+## Windows original-program ISA oracle correction
+
+[ISA receipt](windows-isa-correction-receipt.json) and
+[original full Direct failure, removed norm experiment and corrected qualification](windows-isa-correction.zip)
+retain the initial 827/828 Direct result. A narrow norm routing experiment did
+not pass the full gate and was physically removed; no unqualified model rule
+remains in the product.
+
+Source audit found that the product's selected original AVX2 program encodes
+Q8_0 activation with `127/max` and nearest-even rounding. The test's linked
+baseline used `1/(max/127)` and `roundf` (ties away). These can encode different
+inputs, so the baseline is not a same-contract oracle for the selected program.
+The sidecar now expresses its selected native activation definition with an
+independent scalar oracle; the independent dot, original weights, inputs,
+three stages, state feedback and **4%** gate remain. The new midpoint check,
+complete Q8/BF16 sidecar and sixteen generic entry regressions pass (18 cases).
+The original aggregate failure is retained and the 827 successful cases reused.
+Graph's first full batch is still pending in this partial receipt. This is not
+a performance WIN or a new product codec implementation.

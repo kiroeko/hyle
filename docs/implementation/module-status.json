@@ -420,7 +420,7 @@
       "module": "compute_route_cpu",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/cpu-final-f3-platform-carriers.md",
-      "summary": "CPU最终F3/T10 AUDITED：仅锁定Flash Q8 sidecar的F32 RMSNorm/epsilon/原format冷规则优先ggml，保持量化前原程序；不改generic默认/执行/公开API，不签性能WIN。"
+      "summary": "CPU最终F3/T10已裁决：未合格的模型norm实验源级移除，保留F1逐合同generic成熟默认；T11修正仅测试ISA/量化oracle，不改产品数学/执行或性能WIN，三平台最终交付仍待。"
     },
     {
       "module": "graph_route_cpu",
