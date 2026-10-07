@@ -78,3 +78,12 @@ compute_backend_cuda／compute_ggml_runtime 由这项公开交付／编译范围
 预算一次源账单、一次 default／explicit／CUDA-OFF 参数化配置检查；运行资格及三交付集中后验。
 允许方案待 AUDITED 冻结：选中 CUDA SDK 的配置入口向共同父作用域传播现有 `80;89-real` 默认，
 保留用户 `CMAKE_CUDA_ARCHITECTURES`／`CUDAARCHS` 选择；CUDA OFF 不设置、不探测。
+
+### B4 架构传播 AUDITED
+
+SCOPED 提交 `bb55d8b7`；源账单确认 `hyle_configure_cuda_dependency()` 在根目录、全部 src 子目录之前调用。
+因此仅在它成功发现 CUDA SDK、且无显式 CMake arch／CUDAARCHS 时，把原 backend 默认
+`80;89-real` 传至调用方作用域；两兄弟 native target 与原 ggml 都继承该值。
+无需改 ggml 数学／patch、target 依赖／新公开对象、CPU 构建或其它路线。显式值和 CUDA-OFF 早返保留。
+有限 FIX 是这一个 SDK 配置接缝；三个局部默认防御保留，不要求普通用户多传架构 flag。
+当前只允许 B4 此项产品变更，B2 的真实驱动发行版 facts／B3 三交付与其它 B4 core 能力仍未验收。

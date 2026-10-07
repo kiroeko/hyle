@@ -416,9 +416,9 @@
     },
     {
       "module": "compute_backend_cuda",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/cuda-final-u2-build-contract.md",
-      "summary": "CUDA U2 B4 SCOPED：普通 compute-cuda 实际配置证明局部默认 arch 未传播，ggml 自行扩大编译组合；仅定界共同默认/显式覆盖/OFF 架构传播，不改变 CPU 数学或 GPU runtime 资格。"
+      "summary": "CUDA U2 B4 AUDITED：有限 FIX 仅在成功选中 CUDA SDK 且未指定 arch 时向根调用作用域传播原 80/89-real 默认；显式架构与 CUDA-OFF 保持。CPU数学/资格、ggml资源overlay与其它GPU不改，当前运行/交付待验。"
     },
     {
       "module": "compute_provider_native",
@@ -545,9 +545,9 @@
     },
     {
       "module": "compute_ggml_runtime",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/cuda-final-u2-build-contract.md",
-      "summary": "CUDA U2 B4 SCOPED：普通 compute-cuda 实际配置证明局部默认 arch 未传播，ggml 自行扩大编译组合；仅定界共同默认/显式覆盖/OFF 架构传播，不改变 CPU 数学或 GPU runtime 资格。"
+      "summary": "CUDA U2 B4 AUDITED：有限 FIX 仅在成功选中 CUDA SDK 且未指定 arch 时向根调用作用域传播原 80/89-real 默认；显式架构与 CUDA-OFF 保持。CPU数学/资格、ggml资源overlay与其它GPU不改，当前运行/交付待验。"
     },
     {
       "module": "compute_provider_ggml_cuda",
