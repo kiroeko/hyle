@@ -1,0 +1,69 @@
+{
+  "schema": 1,
+  "candidate": "374bf4654f7a25f20932ee430395d64713780168",
+  "scope": "Fixed GGUF 559 numeric contracts and actual parameter/current program batch; native only",
+  "platforms": {
+    "Windows": {
+      "candidate": "374bf4654f7a25f20932ee430395d64713780168",
+      "gtests_per_entry": 581,
+      "duplicate_source_equation": 1,
+      "ctests": 3,
+      "skipped": 0
+    },
+    "WSL Linux": {
+      "candidate": "374bf4654f7a25f20932ee430395d64713780168",
+      "gtests_per_entry": 581,
+      "duplicate_source_equation": 1,
+      "ctests": 3,
+      "skipped": 0
+    }
+  },
+  "fixed_numeric_contracts": 559,
+  "packed_contracts": 433,
+  "plain_contracts": 126,
+  "artifact_identities": 104,
+  "current_programs": "Qwen actual norm/attention/convolution/complete NextN, current mixed DeepSeek main/cache/MoE/hyper/full-head and current official/three quantized sidecars",
+  "source_sha256": {
+    "src/compute_provider_ggml_cuda/tensor_program.cc": "c25c915b548b48298388ad0ffdf796aafbf0a2508ce7808f29bd96e4acf098e0",
+    "src/compute_provider_ggml_cuda/native_bridge_impl.h": "d72e81b4e4047012d03e313c8a0ae78c3894fbf6c2c27bf6ba9aeb3e2c42537c",
+    "tests/compute_models/cuda_sidecar_quant_reference.h": "481785a4c127b755fabe9200abb43d3b4482938532de8d1261dfa1a239a4c8ea",
+    "tests/compute_models/cpu_c5_gguf_fixture.h": "c1915da33657c13581c9894b162764163f3171d256e264e3e39a7b51dd0d68f0",
+    "tests/compute_models/cpu_c5_gguf_tests.h": "df69b367c0dfd1688c118749054c42433a6e8ce1e2b69e53268e8a75436be5e6",
+    "tests/compute_models/cpu_c5_gguf_inputs.h": "3dfc45a33ccd7c7938016336681decce0e8f74ba6891067e3fb4395dbfa9c964",
+    "tests/compute_models/cpu_c5_parameter_tests.h": "979659caae47a3b7fbe88c7d8dfa0baf70156c723023ef68e89afb9f16769be8",
+    "tests/compute_models/cpu_c5_qwen_nextn.h": "0af76eca31c35a3bc3c56d0be354588dbdf530580398470599b04b6328d50231",
+    "tests/compute_route_cuda/d5_qwen38_official_test.cc": "695d16ce9ad66d60452e68bd6de0d3e48bcb59ebb433b06d6789fb2a2025811e",
+    "tests/graph_route_cuda/d5_qwen38_official_test.cc": "26a9afa99d3a447a10c1ad2ea962948aa24a4e7889e31847758b139ea934c935"
+  },
+  "archive_sha256": "62e038e499c3a1fab5ba8298851924bf275aea4f333556734c71db7f5e5e97ee",
+  "inputs": {
+    "before/windows-c5-first/first.xml": "d9c473fba62bb621b86d8d2d5cadd0f45f1c34b9a9fd5907723ad75462e90509",
+    "before/windows-c5-first/receipt.json": "aeab3ac3f4521b6aee47bf3040d17a81c11dbbcff3c9466aa9a78f64ea0b6cf7",
+    "before/windows-c5-fixed/fixed.xml": "f6f31141ab484c70847bdd71211c82467835017376fb9d4b9333cc8af7332d77",
+    "before/windows-c5-fixed/original-failure-log.json": "db0d68f0c7cd7a487e99c14ba3d3c3dc9238e0dd79795820cea172ea125bb17a",
+    "before/windows-c5-fixed/original-failure-log.zip": "d7d1bef14c576f54b2a2073f5fdb27a914646751f042c7c30f9f433c3a40d230",
+    "before/windows-c5-fixed/receipt.json": "bef458d4702a704b129e240a60b3c17b861c61e37ce1b2ea649065df28f1fa0f",
+    "linux-c5-correction/build.log": "70829050ab6d1ef0f0e2721c9b2fd13c70ce1c235843c4d1869a9dc30c31ac07",
+    "linux-c5-correction/duplicate-source-equation.log": "92b3ddb3ad67c7eca351675d456b4b0042192da40688be9e5c43e3f049a576b9",
+    "linux-c5-correction/duplicates.xml": "0c9f56e8edb05e1daed243dd803e6a4b8ca81b37bac4aa16c2e2f7e0c6f80dcf",
+    "linux-c5-correction/fixed.xml": "e12c839aaad7fa9cff900fc83f324b4da18420b542df038457cd7de4287943dc",
+    "linux-c5-correction/full-corrected-contracts-and-current-programs.log": "b6daa2b28842290b8ae1de545fcc9a3d0d19d8be36dafa77dbb30e6e4fc6345b",
+    "linux-c5-correction/receipt.json": "e44534b42073b6f4c2033b30d5c12dd90e55676204ff031410a8018f3b825f8f",
+    "windows-c5-correction/build.log": "d78b2143fb57e2a184d89ef9ffaa97fcee822baa2f9a4801eb891267d7bec8c2",
+    "windows-c5-correction/duplicate-source-equation.log": "f7b9511084ec5cd70cd0b3879faa3eb887e43fdf03ecd8b4dc179c3a192c826d",
+    "windows-c5-correction/duplicates.xml": "8104d76a882b29664b09ebb50a09fbf3315106d7a2138ee1303d54f85ea4cdf0",
+    "windows-c5-correction/fixed.xml": "524a09b967945b6bb33de2a52ebb8d1c723df4b00e61a17cbff368bb507b85c2",
+    "windows-c5-correction/full-corrected-contracts-and-current-programs.log": "575936c062501d0cf1e0ee92f916f70b6e55ffddca7d50bd8729dd24cd725d99",
+    "windows-c5-correction/receipt.json": "21e7cfb9dbd097fba5476a8a71932d1a38dcd95971149e8eab61de7e1a14d616"
+  },
+  "implementation_loc": {
+    "code": 60658,
+    "files": 253
+  },
+  "unverified": [
+    "remaining family-region associations and original local Qwen actual weights",
+    "final joint U3 source/static/shared CUDA-only/mixed delivery",
+    "U4 best-of/defaults and U5 self-operator retirement"
+  ],
+  "limits": "Same original GPU carrier references its activation codec; separate equation/codec primitive qualification remains required. No P1, SOTA or entire model residency claim. CPU product and reference default remain unchanged."
+}

@@ -146,3 +146,9 @@ GPU codec reference接缝仅为test，当前尚未编译/运行，不算通过�
 两项只在当前AUDITED ggml CUDA owner的既有lowering内修复；不是新数学或扩大公共schema。
 固定批次完成后一次集中纠正验证，并补同址/重复ID的小型source方程回归；同候选再资格化当前
 official/sidecar资源。其余族仍以完整需求映射为准，未运行不能PASS，不启动P1。
+
+纠正后`374bf465`已在Windows/Linux Direct/Graph各通过581项：全559数值合同（433 packed／
+126 plain）、104制品身份、当前参数／完整NextN和本候选official／三sidecar；重复expert/F32
+独立方程回归亦通过。原失败已无损归档，见[固定GGUF资格](../../../../evidence/correctness/cuda-final-u3-fixed-gguf/README.md)。
+其余family-region／本地真实权重与最终联合三交付仍未完成，本包保持AUDITED；不要外推为
+U3或整个CUDA收口，U4/U5未因correctness通过自动完成。

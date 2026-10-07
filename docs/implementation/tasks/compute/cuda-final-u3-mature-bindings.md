@@ -119,3 +119,9 @@ G2已实现并在Windows完成原carrier/MMVQ/MMQ与8个共同真实expert形状
 见 [IQ1证据](../../../../evidence/correctness/cuda-final-u23/IQ1.md)。原F32解码点积与CUDA Q8激活codec的
 初版参考不等价已按源码纠正；产品数学/精度/共同门不变，原失败保留。
 全104制品、其它payload/完整region/state、Linux、三交付/mixed差异仍待后续适用验证，不能据此CLOSED。
+
+后续同候选`374bf465`已在Windows/Linux两入口完成全559固定GGUF数值合同／104制品身份与
+当前参数程序的native资格，见[固定GGUF批次](../../../../evidence/correctness/cuda-final-u3-fixed-gguf/README.md)。
+原当前official与三量化sidecar亦通过。本批解决原native pool地址预留、重复plain expert IDs及
+大型Q8 embedding误拒绝；其余family-region／本地实际权重／最终joint CUDA-only/mixed三交付
+仍待。本更新不签G1/G2/U3 CLOSED，不把原源检出、GPU同载体差分或native PASS写成性能胜利。
