@@ -62,3 +62,22 @@ consumer's 36 Direct/Graph checks: eleven GGUF additions, NF4/nested/AWQ/CT deco
 and projection, plus affine4/MXFP4/MXFP8 selected experts. Its exact source hash is
 recorded in the delivery archive. These are format/delivery checks; complete model
 state qualification remains the separate C5/official fragment proof.
+
+## Linux current mature carriers
+
+The same Windows candidate/archive is forwarded to an idle ext4 verification
+copy, with GCC 14.2, oneDNN 3.13.4, ggml 0.26 and LibTorch 2.8.0+cpu. Eleven owning
+groups pass. Direct's original full run passes 821 of 828 cases; all seven failures
+are the same fixture-directory error. Correcting only the environment to the
+archive's `fixture/` child passes those seven cases in 1.561 seconds. The original
+aggregate FAIL is retained, and the other 821 cases are reused.
+
+Graph's first full run passes **846 cases without skips**, including the current
+official mixed-precision main programs, three-stage DSpark/MTP sidecars and C5
+quantized/state contracts. [Linux receipt](linux-current-carriers-receipt.json)
+and [raw logs/XML/source identity](linux-current-carriers.zip) bind this evidence.
+No product, tolerance or fixture-byte change was needed, and no second producer
+build or duplicate full Direct run was performed. WSL is a correctness environment
+and not an independent physical formal performance machine. Current installed
+Linux journeys, remaining Mac model branches and the current full Windows route
+batch/delivery audit are still pending.

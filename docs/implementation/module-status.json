@@ -363,8 +363,8 @@
     {
       "module": "compute_provider_ggml",
       "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/cpu-final-f1-build-contract.md",
-      "summary": "F1/B2 AUDITED：保留原adapter数学和资源，仅让同core原IQ1扩展投影完整CPU格式/真实版本；mixed CPU/GPU及三交付待验，不签新GPU能力。"
+      "record": "docs/implementation/tasks/compute/cpu-final-f3-platform-carriers.md",
+      "summary": "CPU最终F3/T6 AUDITED：ARM原ggml half dot不兑现plain F16 FP32累加，cold准入拒绝该域，由已验ATen承接；packed/x86/其它原程序不变，不新增数学或性能WIN。"
     },
     {
       "module": "graph_provider_onednn",

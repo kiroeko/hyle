@@ -1,0 +1,42 @@
+{
+  "candidate": "9a9936e8271fc834f4b090316bc0a5d7f9b25982",
+  "platform": "WSL Ubuntu24.04 x86_64 / GCC14.2; native ext4 source/build/cache; correctness role, not independent formal performance machine",
+  "source": "e56e364f74cbeefb392decfcd5bad5d760cd44c5bb07a893989e9cf2afbb758c",
+  "gates": {
+    "owning": {
+      "tests": 11,
+      "failures": 0,
+      "skips": 0
+    },
+    "direct_original": {
+      "tests": 828,
+      "failures": 7,
+      "skips": 0
+    },
+    "direct_fixture_corrected": {
+      "tests": 7,
+      "failures": 0,
+      "skips": 0
+    },
+    "graph": {
+      "tests": 846,
+      "failures": 0,
+      "skips": 0
+    }
+  },
+  "composition": "Direct 821 passing cases plus 7 targeted fixture-path corrected cases; original aggregate FAIL retained. Graph first complete run 846 PASS.",
+  "failure_cause": "Fixture archive had a fixture/ prefix; initial environment pointed at outer extraction directory. No product/tolerance/input-byte change, no producer rebuild or duplicate Direct full rerun.",
+  "versions": {
+    "onednn": "3.13.4 / c531fe1a5cd631b7f60277cdf6675c588cadbc28",
+    "ggml": "0.26 / ffa4e8b80930029a35991f94e7c8a93cd67730ab",
+    "torch": "2.8.0+cpu"
+  },
+  "limits": [
+    "Linux current installed static/shared journeys pending",
+    "Mac remaining official/model branch batch pending",
+    "Windows current complete route batch and final delivery audit pending",
+    "No new P1/best-of WIN"
+  ],
+  "archive_sha256": "11c5eee30ffd02a27509edf9776215d59eb372eba0b1c6c7d5b7a56aea6af502",
+  "archive_bytes": 114001
+}
