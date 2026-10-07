@@ -270,9 +270,10 @@
     },
     {
       "module": "compute",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/cpu-final-f1-build-contract.md",
-      "summary": "F1/B4 AUDITED：私有ProviderAccess重绑定仅保留原配置生命周期并换同build静态表；不改公开对象/contract14/算法/热成本，不恢复退役MatMul。"
+      "summary": "CPU最终F1产品冻结：recipe/同core CPU port/程序身份/逐合同成熟默认/oneDNN3.13.4已固定，Win/Mac混合三交付通过；Linux旧core混合loader批待验，不签F1关闭或性能WIN。",
+      "candidate": "560eb1d2332bb69ee5148e899b000fae85d80074"
     },
     {
       "module": "graph",
@@ -356,9 +357,10 @@
     },
     {
       "module": "compute_provider_onednn",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/cpu-final-f1-build-contract.md",
-      "summary": "CPU最终F1/B5 AUDITED：固定oneDNN v3.13.4/source/hash，实际C/BRGEMM/threadpool/overlay/许可证seam一致；只锁升级、真实identity与旧WIN失配，集中资格未运行。"
+      "summary": "CPU最终F1产品冻结：recipe/同core CPU port/程序身份/逐合同成熟默认/oneDNN3.13.4已固定，Win/Mac混合三交付通过；Linux旧core混合loader批待验，不签F1关闭或性能WIN。",
+      "candidate": "560eb1d2332bb69ee5148e899b000fae85d80074"
     },
     {
       "module": "compute_provider_ggml",
@@ -373,9 +375,10 @@
     },
     {
       "module": "graph_provider_onednn",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/cpu-final-f1-build-contract.md",
-      "summary": "CPU最终F1/B5 AUDITED：固定oneDNN v3.13.4/source/hash，实际C/BRGEMM/threadpool/overlay/许可证seam一致；只锁升级、真实identity与旧WIN失配，集中资格未运行。"
+      "summary": "CPU最终F1产品冻结：recipe/同core CPU port/程序身份/逐合同成熟默认/oneDNN3.13.4已固定，Win/Mac混合三交付通过；Linux旧core混合loader批待验，不签F1关闭或性能WIN。",
+      "candidate": "560eb1d2332bb69ee5148e899b000fae85d80074"
     },
     {
       "module": "compute_ops",
@@ -439,9 +442,10 @@
     },
     {
       "module": "graph_route_cpu",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/cpu-final-f1-build-contract.md",
-      "summary": "F1/B4 AUDITED：静态逐合同成熟工程默认、冷proposal policy投影，保留完整region/原资源与Prepared执行；无性能WIN声明，普通unknown条件仍可执行。"
+      "summary": "CPU最终F1产品冻结：recipe/同core CPU port/程序身份/逐合同成熟默认/oneDNN3.13.4已固定，Win/Mac混合三交付通过；Linux旧core混合loader批待验，不签F1关闭或性能WIN。",
+      "candidate": "560eb1d2332bb69ee5148e899b000fae85d80074"
     },
     {
       "module": "compute_provider_cublas",
@@ -528,9 +532,10 @@
     },
     {
       "module": "compute_ggml_runtime",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/cpu-final-f1-build-contract.md",
-      "summary": "F1/B2 AUDITED：同core精确合并原CPU IQ1/旧资源patch，既有enum值/tensor336/plan56不变，真实3格式MatMul/Gather探针通过；固定有限源码/身份/交付FIX，mixed资格未完成。"
+      "summary": "CPU最终F1产品冻结：recipe/同core CPU port/程序身份/逐合同成熟默认/oneDNN3.13.4已固定，Win/Mac混合三交付通过；Linux旧core混合loader批待验，不签F1关闭或性能WIN。",
+      "candidate": "560eb1d2332bb69ee5148e899b000fae85d80074"
     },
     {
       "module": "compute_provider_ggml_cuda",

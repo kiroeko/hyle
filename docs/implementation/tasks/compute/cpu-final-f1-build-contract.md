@@ -1,6 +1,6 @@
 # F1 CPU构建、软件资格与预编译合同
 
-<!-- MODULE REVIEW: SCOPED -->
+<!-- MODULE REVIEW: CANDIDATE -->
 
 - 当前owner：compute_provider_native、compute_ggml_runtime、compute_route_cpu、graph_route_cpu；baseline `167cb5ff6f9edac8a9aaa77c41e6720bd3c377d2`。
 - 总合同：[CPU最终收口](cpu-final-closure-plan.md)；用户新增三平台/全重叠域与构建一致性要求构成新的公开交付trigger。
@@ -221,3 +221,15 @@ shared/static增量144.266/187.297秒，没有GPU性能或全模型GPU重新资�
 [安装收据与实际runtime布局](../../../../evidence/correctness/cpu-final-f1/README.md)归档。
 先前Vulkan validation-layer实例skip仍按旧record保留，不因本批CPU SDK通过而改PASS。
 Linux混合loader尾项已启动，当前F1仍未关闭；compute/Graph公开产品源代码没有本批新变化。
+
+## F1 CANDIDATE：产品冻结，最后平台批待验
+
+复用产品快照 `560eb1d2332bb69ee5148e899b000fae85d80074`。当前include/src/cmake/third_party
+与该快照逐Git diff一致；后续只有测试迁移、证据、文档和状态，不因这些提交创建新产品候选或重测P1。
+五个当前F1 owner（compute、compute_ggml_runtime、compute_provider_onednn、graph_provider_onednn、
+graph_route_cpu）由AUDITED进入CANDIDATE；Native/ggml/CPU route的F3 CLOSED及公共Graph/GPU状态不动。
+
+B1实际recipe撤资格、B2同core原CPU port与资源身份、B3程序/有限Graph变体、B4逐合同成熟默认及
+B5 oneDNN3.13.4的产品FIX已经固定，公开API/layout/数学/常态submit不再变化。Win/Mac混合三交付已验，
+CPU-only三平台交付复用F3；最后Linux旧core混合loader批仍在运行，未签PASS、没有F1 terminal结论。
+该批完成后逐原B1–B5与七门对账；若出现具体产品反例，依法退回AUDITED并定界，不能更换scope签完成。
