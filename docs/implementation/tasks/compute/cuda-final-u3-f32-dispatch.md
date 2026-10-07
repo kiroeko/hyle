@@ -46,3 +46,15 @@ owner不变。P1等待U4，本批只修正原生选择合同和资格验证，�
 IQ1 manifests，单独`cmake --build`没有重新组装新精度patch。首次大shape回归实际命中旧TF32
 source并FAIL，不能计作新候选产品结果。有限FIX同时将这两个原manifest与权威dependency lock
 加入本owner的configure dependency，使后续正常增量构建取得真实source-id；不改公共selector。
+
+## Windows 已运行结果与待验
+
+产品`7b15b62f`实际configure／生成`source-f99368c68335266b`后重编译通过，大尺寸F32／重复ID
+独立方程两项通过。临时actual-cache包装已在test-only`7f6c9107`移除；恢复原独立完整四replay
+轨迹与全部九输出、原误差门后，Kimi三profile在普通Direct/Graph均通过。没有换shape、舍弃
+状态反馈、以actual输入验证替掉最终轨迹，或放宽数值门。
+
+原源审计将三个dispatch条件逆变换后，与上一版composed source逐字相同；数学kernel、原IQ1
+和其它分发保持。早先“仅reference/cache”的解释被原TF32指令和新精度回归证伪，已删除临时
+诊断代码与reference factory，保留失败原日志。当前Windows更大联合回归正在运行；Linux与
+最终U3联合三交付仍未验证，不签本卡CLOSED／新版本性能WIN。
