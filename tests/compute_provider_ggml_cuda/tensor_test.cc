@@ -908,6 +908,45 @@ TEST(GgmlCudaTensor, DenseBfloatGroupedExpertsUseNativeMulMatIdAndReplay) {
   }
 }
 
+TEST(GgmlCudaTensor, LargeGroupedF32RowsRetainNonTf32OperandsAndRepeatedIds) {
+  constexpr std::int64_t experts=3,n=512,k=128,slots=3;
+  const auto wdesc=dense(DataType::kFloat32,{experts,n,k});
+  const auto adesc=dense(DataType::kFloat32,{1,slots,k});
+  const auto idesc=dense(DataType::kInt32,{1,slots});
+  const std::array descs{wdesc,adesc,idesc};
+  const auto ydesc=infer_single_output(model_ops::grouped_matmul(),descs).value();
+  std::vector<float> weights(experts*n*k);
+  for(std::int64_t e=0;e<experts;++e)for(std::int64_t row=0;row<n;++row) {
+    weights[(e*n+row)*k+row%k]=0.5F+float(e)/8;
+    weights[(e*n+row)*k+(row+17)%k]=-0.125F;
+  }
+  auto ctx=context();auto memory=cuda::MemoryResource::create(ctx,cuda::MemoryKind::kDevice).value();
+  auto wb=upload<float>(memory.ref(),weights),ab=output_buffer(memory.ref(),adesc);
+  auto ib=output_buffer(memory.ref(),idesc),yb=output_buffer(memory.ref(),ydesc);
+  const std::array in{ConstTensorView::create(wdesc,wb.view()).value(),
+    ConstTensorView::create(adesc,ab.view()).value(),ConstTensorView::create(idesc,ib.view()).value()};
+  const auto out=TensorView::create(ydesc,yb.view()).value();
+  auto prepared=prepare(ctx,model_ops::grouped_matmul(),in,std::span(&out,1));
+  ASSERT_TRUE(prepared)<<prepared.error().message();
+  auto call=prepared->create_invocation().value();auto queue=ctx.create_queue().value();
+  for(int replay=0;replay<2;++replay) {
+    const std::array<std::int32_t,slots> ids=replay?std::array<std::int32_t,slots>{0,2,0}:
+                                                    std::array<std::int32_t,slots>{2,0,2};
+    std::vector<float> activation(slots*k);
+    for(std::int64_t i=0;i<slots*k;++i)activation[i]=float((i*7+replay*13)%41-20)*0.01337F+0.00013F;
+    ASSERT_TRUE(ab.view().write(std::as_bytes(std::span(activation))).ok());
+    ASSERT_TRUE(ib.view().write(std::as_bytes(std::span(ids))).ok());
+    auto done=call.submit(queue,in,std::span(&out,1));ASSERT_TRUE(done)<<done.error().message();
+    const auto status=done->wait();ASSERT_TRUE(status.ok())<<status.message();
+    const auto actual=half_test::read<float>(yb);ASSERT_EQ(actual.size(),std::size_t(slots*n));
+    for(std::int64_t slot=0;slot<slots;++slot)for(std::int64_t row=0;row<n;++row) {
+      const auto expected=double(0.5F+float(ids[slot])/8)*activation[slot*k+row%k]
+                          -0.125*activation[slot*k+(row+17)%k];
+      EXPECT_NEAR(actual[slot*n+row],expected,1.0e-6)<<slot<<" "<<row;
+    }
+  }
+}
+
 TEST(GgmlCudaTensor, BfloatRouterMatMulRetainsNativeF32Score) {
   using BF16 = hyle::simd::bfloat16_t;
   const auto activation_desc = dense(DataType::kBFloat16, {1, 2});

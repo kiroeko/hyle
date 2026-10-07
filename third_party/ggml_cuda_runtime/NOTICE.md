@@ -31,3 +31,10 @@ the original block and template SHA-256 identities. They share the existing
 physical types/codecs with the original CPU port, not a second ggml runtime.
 Only the CUDA route compiles these programs; CPU-only/Metal/Vulkan pins and
 math remain unchanged. This source port is not runtime or performance proof.
+
+The F32 MMF tiles in this pin execute TF32 multiplication. The original regular
+MUL_MAT, MUL_MAT_ID and corresponding capture-suitability selection are guarded
+so a requested native F32 operand contract on F32 weights reaches the original
+F32 cuBLAS/sorting program instead. Default precision, quantized and F16/BF16
+dispatch and every mathematical kernel remain upstream. This is a private
+precision-selection integration change, not a new GEMM implementation.

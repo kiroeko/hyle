@@ -35,7 +35,7 @@
     {
       "path": "src/ggml-cuda/ggml-cuda.cu",
       "before_sha256": "523470d6604755b82d0208414ce40f1378941b10bc1349763bbdf02edaab9634",
-      "after_sha256": "766f024a0439fc6f5a28f2ad2930e341bdffea48503ce3b7136c706f7ce85974",
+      "after_sha256": "6a3c15f17cbeb94028e85641d2f2a28c966326d0be24b359afcafcb738719c11",
       "edits": [
         {
           "before": "    void clear_pool() {\n        ggml_cuda_set_device(device);\n        for (int i = 0; i < MAX_BUFFERS; ++i) {\n            ggml_cuda_buffer & b = buffer_pool[i];\n            if (b.ptr != nullptr) {\n                CUDA_CHECK(cudaFree(b.ptr));\n                pool_size -= b.size;\n                b.ptr  = nullptr;\n                b.size = 0;\n            }\n        }\n    }\n\n",
@@ -112,6 +112,18 @@
         {
           "before": "GGML_BACKEND_DL_IMPL(ggml_backend_cuda_reg)",
           "after": "#include \"native_bridge_impl.h\"\n\nGGML_BACKEND_DL_IMPL(ggml_backend_cuda_reg)"
+        },
+        {
+          "before": "\n    if (ggml_cuda_should_use_mmf(src0->type, cc, warp_size, src0->ne, src0->nb, ne11, /*mul_mat_id =*/ false)) {\n",
+          "after": "\n    // F32 MMF uses TF32 operands; native F32 precision belongs to the original cuBLAS path.\n    if (!(src0->type == GGML_TYPE_F32 && dst->op_params[0] == GGML_PREC_F32) &&\n        ggml_cuda_should_use_mmf(src0->type, cc, warp_size, src0->ne, src0->nb, ne11, /*mul_mat_id =*/ false)) {\n"
+        },
+        {
+          "before": "\n    if (ggml_cuda_should_use_mmf(src0->type, cc, WARP_SIZE, src0->ne, src0->nb, src1->ne[2], /*mul_mat_id=*/true)) {\n",
+          "after": "\n    // F32 MMF uses TF32 operands; native F32 precision belongs to the original cuBLAS path.\n    if (!(src0->type == GGML_TYPE_F32 && dst->op_params[0] == GGML_PREC_F32) &&\n        ggml_cuda_should_use_mmf(src0->type, cc, WARP_SIZE, src0->ne, src0->nb, src1->ne[2], /*mul_mat_id=*/true)) {\n"
+        },
+        {
+          "before": "\n        if (ggml_cuda_should_use_mmf(src0->type, cc, WARP_SIZE, src0->ne, src0->nb, src1->ne[2], /*mul_mat_id=*/true)) {\n",
+          "after": "\n        // F32 MMF uses TF32 operands; native F32 precision belongs to the original cuBLAS path.\n        if (!(src0->type == GGML_TYPE_F32 && dst->op_params[0] == GGML_PREC_F32) &&\n            ggml_cuda_should_use_mmf(src0->type, cc, WARP_SIZE, src0->ne, src0->nb, src1->ne[2], /*mul_mat_id=*/true)) {\n"
         }
       ]
     }
