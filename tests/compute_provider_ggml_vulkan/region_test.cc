@@ -143,6 +143,23 @@ TEST(GgmlVulkanRegion, TargetEmbeddingFormatsAdmitOnlyInternalUncheckedRows) {
       other_inputs, other_outputs));
 }
 
+TEST(GgmlVulkanRegion, CpuFormatPortDoesNotQualifyGpuMatrices) {
+  const auto activation = c::TensorDesc::dense(
+      c::DataType::kFloat32, std::array<std::int64_t, 2>{2, 256}).value();
+  for (const auto type : {c::GgufQuantizedType::kQ4_0, c::GgufQuantizedType::kQ4_1,
+       c::GgufQuantizedType::kQ2K, c::GgufQuantizedType::kIq2Xxs,
+       c::GgufQuantizedType::kIq2Xs, c::GgufQuantizedType::kIq2S,
+       c::GgufQuantizedType::kIq1S, c::GgufQuantizedType::kIq1M,
+       c::GgufQuantizedType::kIq1Xs, c::GgufQuantizedType::kIq1Xxs,
+       c::GgufQuantizedType::kIq1Xxxs}) {
+    const auto weight = c::gguf_weight_description(type, c::DataType::kFloat32,
+                                                  256, 3).value();
+    const std::array inputs{activation, weight};
+    const std::array outputs{c::infer_single_output(c::Operation(c::MatMul{}), inputs).value()};
+    EXPECT_FALSE(region_supports(c::Operation(c::MatMul{}), inputs, outputs));
+  }
+}
+
 TEST(GgmlVulkanRegion, DenseBfloatGroupedExpertsRequireF32Activations) {
   const auto operation = c::model_ops::grouped_matmul();
   const auto weights = c::TensorDesc::dense(
