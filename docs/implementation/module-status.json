@@ -362,9 +362,9 @@
     },
     {
       "module": "compute_provider_ggml",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/cpu-final-f1-build-contract.md",
-      "summary": "F1/B2 SCOPED：混合SDK原core CPU格式组误拒绝；唯一匹配原IQ1端口/资源，先定界不写adapter算法。"
+      "summary": "F1/B2 AUDITED：保留原adapter数学和资源，仅让同core原IQ1扩展投影完整CPU格式/真实版本；mixed CPU/GPU及三交付待验，不签新GPU能力。"
     },
     {
       "module": "graph_provider_onednn",
