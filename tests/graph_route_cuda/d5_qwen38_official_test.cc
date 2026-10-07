@@ -1981,5 +1981,6 @@ TEST(CudaGraphIq1ModelContracts, EightCurrentExpertShapesUseOrdinaryGraphAndRepl
 }
 #define HYLE_TEST_GRAPH_ROUTE_CUDA
 #include "../compute_models/cuda_n1_non_gguf_tests.h"
+#include "../compute_models/cuda_n2_mlx_tests.h"
 #undef HYLE_TEST_GRAPH_ROUTE_CUDA
 } // namespace

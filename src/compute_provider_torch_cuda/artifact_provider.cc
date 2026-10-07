@@ -22,6 +22,7 @@
 #include "awq_cuda.h"
 #include "bitsandbytes_cuda.h"
 #include "compressed_tensors_cuda.h"
+#include "mlx_cuda_quant.h"
 #include "hyle/compute/model_ops.h"
 #include "native_context.h"
 #include "provider_internal.h"
@@ -40,10 +41,12 @@ struct Context final { CUcontext primary = nullptr; int device = -1; };
 struct Program final {
   Context context;
   model_ops::ArtifactWeightDecode operation;
+  model_ops::MlxQuantized mlx{};
+  bool is_mlx = false;
   std::array<TensorDesc, 6> inputs;
   TensorDesc output;
   std::size_t count = 0;
-  at::Tensor shifts, order;
+  at::Tensor shifts, order, fp4_table;
 };
 struct Invocation final { at::Tensor result; };
 
@@ -62,6 +65,7 @@ at::ScalarType scalar(DataType type) noexcept {
   switch (type) {
   case DataType::kUInt8: return at::kByte;
   case DataType::kInt32: return at::kInt;
+  case DataType::kUInt32: return at::kUInt32;
   case DataType::kFloat16: return at::kHalf;
   case DataType::kBFloat16: return at::kBFloat16;
   default: return at::kFloat;
@@ -69,8 +73,9 @@ at::ScalarType scalar(DataType type) noexcept {
 }
 Status select(const Operation &operation, std::span<const TensorDesc> inputs,
               std::span<const TensorDesc> outputs) noexcept {
-  if (!operation.custom_as<model_ops::ArtifactWeightDecode>())
-    return Status::Unimplemented("CUDA ATen carrier requires artifact weight decode");
+  const auto *mlx = operation.custom_as<model_ops::MlxQuantized>();
+  if (!operation.custom_as<model_ops::ArtifactWeightDecode>() && !mlx)
+    return Status::Unimplemented("CUDA ATen carrier requires an original artifact or MLX operation");
   std::array<TensorDesc, 1> inferred;
   HYLE_RETURN_IF_ERROR(infer_output_descriptions(operation, inputs, inferred));
   if (outputs.size() != 1 || outputs[0] != inferred[0])
@@ -83,6 +88,12 @@ Status select(const Operation &operation, std::span<const TensorDesc> inputs,
   HYLE_ASSIGN_OR_RETURN(const auto elements, outputs[0].element_count());
   if (elements > INT64_MAX / 32)
     return Status::OutOfRange("CUDA ATen decoded temporary capacity overflows");
+  if (mlx) {
+    const auto factor = mlx->kind == model_ops::MlxQuantizedKind::kEmbedding
+        ? std::uint64_t{32} : std::uint64_t{32} * mlx->group_size;
+    if (elements > static_cast<std::uint64_t>(INT64_MAX) / factor)
+      return Status::OutOfRange("CUDA MLX selected-group temporary capacity overflows");
+  }
   return Status::Ok();
 }
 detail::ResourceBindingRequirement device_binding(const TensorDesc &desc) noexcept {
@@ -122,13 +133,16 @@ Status propose(void *state, const detail::ProviderOperationRequest &request,
   HYLE_RETURN_IF_ERROR(select(request.operation, request.inputs, request.outputs));
   for (std::size_t i = 0; i < inputs.size(); ++i) inputs[i] = device_binding(request.inputs[i]);
   outputs[0] = device_binding(request.outputs[0]);
-  const auto format = request.operation.custom_as<model_ops::ArtifactWeightDecode>()->format;
-  *proposal = {.route = static_cast<std::uint64_t>(format) + 1,
+  const auto *mlx = request.operation.custom_as<model_ops::MlxQuantized>();
+  const auto route = mlx ? 0x100ULL + static_cast<std::uint64_t>(mlx->kind) * 3 +
+                             static_cast<std::uint64_t>(mlx->format)
+      : static_cast<std::uint64_t>(request.operation.custom_as<model_ops::ArtifactWeightDecode>()->format) + 1;
+  *proposal = {.route = route,
       .runtime = kRuntime, .workspace_resource = device_binding(request.outputs[0]),
       .cost = {.workspace = {}, .persistent_bytes = std::nullopt,
                .copy_bytes = std::nullopt, .repack_bytes = std::nullopt,
                .synchronization_count = std::nullopt, .dispatch_count = std::nullopt},
-      .implementation = ProviderImplementationId{0x5443415254000001ULL + static_cast<std::uint64_t>(format)}};
+      .implementation = ProviderImplementationId{0x5443415254000000ULL + route}};
   return Status::Ok();
 }
 void destroy_program(void *state, mem::AllocatorRef allocator) noexcept {
@@ -183,22 +197,52 @@ detail::EnqueueResult submit(void *state, void *slot, Queue &queue,
           at::TensorOptions().dtype(scalar(desc.data_type())).device(at::kCUDA, program.context.device));
     }
     const auto type = scalar(program.output.data_type());
-    const auto rows = program.output.dimensions()[0], columns = program.output.dimensions()[1];
-    switch (program.operation.format) {
-    case model_ops::WeightArtifactFormat::kNf4:
-      invocation.result = borrowed::bitsandbytes_cuda::decode_nf4(tensors[0], tensors[1], tensors[2],
-          program.operation.group_size, rows, columns, type); break;
-    case model_ops::WeightArtifactFormat::kNf4DoubleQuant: {
-      auto scales = borrowed::bitsandbytes_cuda::nested_scales(tensors[1], tensors[2], tensors[3], tensors[4]);
-      invocation.result = borrowed::bitsandbytes_cuda::decode_nf4(tensors[0], scales, tensors[5],
-          program.operation.group_size, rows, columns, type); break;
-    }
-    case model_ops::WeightArtifactFormat::kAwqGemm4:
-      invocation.result = borrowed::awq_cuda::decode_gemm4(tensors[0], tensors[1], tensors[2],
-          program.operation.group_size, program.shifts, program.order).to(type); break;
-    case model_ops::WeightArtifactFormat::kCompressedTensorsSymmetric4:
-      invocation.result = borrowed::compressed_tensors_cuda::decode_symmetric4(tensors[0], tensors[1],
-          program.operation.group_size, program.shifts).to(type); break;
+    if (program.is_mlx) {
+      // The source equation accumulates F32. Respect that contract even when
+      // another consumer enables TF32 on this process's original library.
+      at::NoTF32Guard full_precision;
+      const bool embedding = program.mlx.kind == model_ops::MlxQuantizedKind::kEmbedding;
+      const bool grouped = program.mlx.kind == model_ops::MlxQuantizedKind::kGrouped;
+      const bool affine = program.mlx.format == model_ops::MlxWeightFormat::kAffine4;
+      at::Tensor ids;
+      if (embedding || grouped) {
+        ids = tensors[program.count - 1].reshape({-1}).to(at::kLong);
+        const auto limit = embedding ? tensors[0].size(0) : tensors[1].size(0);
+        // The original reduction/item is a checked GPU-to-host control step.
+        // It completes on this external stream before index_select sees IDs.
+        if (at::logical_or(ids < 0, ids >= limit).any().item<bool>())
+          return detail::EnqueueResult::accepted_command(Status::OutOfRange(
+              "CUDA MLX selected row/expert id is outside its source"));
+      }
+      if (embedding) {
+        invocation.result = borrowed::mlx_cuda_quant::embedding(tensors[0], tensors[1],
+            tensors[2], ids, program.mlx.group_size, program.shifts);
+      } else {
+        using Format = borrowed::mlx_cuda_quant::Format;
+        const auto format = affine ? Format::affine4 :
+            (program.mlx.format == model_ops::MlxWeightFormat::kMxfp4 ? Format::mxfp4 : Format::mxfp8);
+        invocation.result = borrowed::mlx_cuda_quant::matmul(tensors[0], tensors[1], tensors[2],
+            affine ? tensors[3] : at::Tensor{}, ids, format, program.mlx.group_size, type,
+            program.shifts, program.fp4_table);
+      }
+    } else {
+      const auto rows = program.output.dimensions()[0], columns = program.output.dimensions()[1];
+      switch (program.operation.format) {
+      case model_ops::WeightArtifactFormat::kNf4:
+        invocation.result = borrowed::bitsandbytes_cuda::decode_nf4(tensors[0], tensors[1], tensors[2],
+            program.operation.group_size, rows, columns, type); break;
+      case model_ops::WeightArtifactFormat::kNf4DoubleQuant: {
+        auto scales = borrowed::bitsandbytes_cuda::nested_scales(tensors[1], tensors[2], tensors[3], tensors[4]);
+        invocation.result = borrowed::bitsandbytes_cuda::decode_nf4(tensors[0], scales, tensors[5],
+            program.operation.group_size, rows, columns, type); break;
+      }
+      case model_ops::WeightArtifactFormat::kAwqGemm4:
+        invocation.result = borrowed::awq_cuda::decode_gemm4(tensors[0], tensors[1], tensors[2],
+            program.operation.group_size, program.shifts, program.order).to(type); break;
+      case model_ops::WeightArtifactFormat::kCompressedTensorsSymmetric4:
+        invocation.result = borrowed::compressed_tensors_cuda::decode_symmetric4(tensors[0], tensors[1],
+            program.operation.group_size, program.shifts).to(type); break;
+      }
     }
     auto destination = at::from_blob(*output,
         at::IntArrayRef(program.output.dimensions().data(), program.output.rank()),
@@ -222,10 +266,13 @@ ProviderPrepareOutcome prepare(void *state, const detail::ProviderPrepareRequest
     return ProviderPrepareOutcome::unsupported(Status::Unimplemented("CUDA ATen device index capacity exceeded"));
   auto *storage = allocator.allocate(sizeof(Program), alignof(Program));
   if (!storage) return ProviderPrepareOutcome::resource_declined(Status::ResourceExhausted("CUDA ATen program allocation failed"));
+  const auto *artifact = request.operation.custom_as<model_ops::ArtifactWeightDecode>();
+  const auto *mlx = request.operation.custom_as<model_ops::MlxQuantized>();
   auto *program = ::new (storage) Program{.context = context,
-      .operation = *request.operation.custom_as<model_ops::ArtifactWeightDecode>(),
+      .operation = artifact ? *artifact : model_ops::ArtifactWeightDecode{},
+      .mlx = mlx ? *mlx : model_ops::MlxQuantized{}, .is_mlx = mlx != nullptr,
       .inputs = {}, .output = request.outputs[0], .count = request.inputs.size(),
-      .shifts = {}, .order = {}};
+      .shifts = {}, .order = {}, .fp4_table = {}};
   for (std::size_t i = 0; i < program->count; ++i) program->inputs[i] = request.inputs[i];
   cuda::detail::ScopedPrimaryContext scope(context.primary);
   if (!scope) { destroy_program(program, allocator); return ProviderPrepareOutcome::error(scope.status()); }
@@ -240,10 +287,17 @@ ProviderPrepareOutcome prepare(void *state, const detail::ProviderPrepareRequest
     // CPU common DLLs remain the immutable locked host dispatch runtime.
     (void)at::cuda::getCurrentCUDABlasHandle();
     const auto options = at::TensorOptions().dtype(at::kLong).device(at::kCUDA, context.device);
-    if (program->operation.format == model_ops::WeightArtifactFormat::kAwqGemm4 ||
+    if (program->is_mlx) {
+      const auto bits = program->mlx.format == model_ops::MlxWeightFormat::kMxfp8 ? 8 : 4;
+      program->shifts = at::arange(0, 32, bits, options);
+      if (program->mlx.format == model_ops::MlxWeightFormat::kMxfp4)
+        program->fp4_table = at::tensor({+0.0f,+0.5f,+1.0f,+1.5f,+2.0f,+3.0f,+4.0f,+6.0f,
+                                       -0.0f,-0.5f,-1.0f,-1.5f,-2.0f,-3.0f,-4.0f,-6.0f},
+                                      at::kFloat).to(options.dtype(at::kFloat), false, true);
+    } else if (program->operation.format == model_ops::WeightArtifactFormat::kAwqGemm4 ||
         program->operation.format == model_ops::WeightArtifactFormat::kCompressedTensorsSymmetric4)
       program->shifts = at::arange(0, 32, 4, options);
-    if (program->operation.format == model_ops::WeightArtifactFormat::kAwqGemm4)
+    if (!program->is_mlx && program->operation.format == model_ops::WeightArtifactFormat::kAwqGemm4)
       program->order = at::tensor({0, 4, 1, 5, 2, 6, 3, 7}, at::kLong).to(options, false, true);
     // Publish constants only after their original library stream has finished.
     status = cuda::status(cudaStreamSynchronize(c10::cuda::getCurrentCUDAStream(index).stream()));
@@ -260,7 +314,7 @@ ProviderPrepareOutcome prepare(void *state, const detail::ProviderPrepareRequest
 Status drain(void *) noexcept { return Status::Ok(); }
 const detail::ProviderVTable kProvider{
     .identity = {.id = kProviderId, .name = "original-artifacts-cuda",
-        .version = "libtorch-2.8.0+cu129+bnb-83364904+awq-88e4c76b+ct-ac8e2ba8"},
+        .version = "libtorch-2.8.0+cu129+bnb-83364904+awq-88e4c76b+ct-ac8e2ba8+mlx-2b2bb497"},
     .create_context = &create_context, .destroy_context = &destroy_context,
     .propose = &propose, .prepare = &prepare, .drain_context = &drain};
 } // namespace

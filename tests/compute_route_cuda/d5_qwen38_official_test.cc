@@ -2043,4 +2043,5 @@ TEST(CudaIq1ModelContracts, EightCurrentExpertShapesUseOrdinaryDirectAndReplay) 
   EXPECT_EQ(count, 8U);
 }
 #include "../compute_models/cuda_n1_non_gguf_tests.h"
+#include "../compute_models/cuda_n2_mlx_tests.h"
 } // namespace

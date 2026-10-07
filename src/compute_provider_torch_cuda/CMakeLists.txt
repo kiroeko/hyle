@@ -21,14 +21,15 @@ endif()
 include("${CMAKE_CURRENT_SOURCE_DIR}/torch_cuda_fetch.cmake")
 hyle_resolve_torch_cuda_leaf("${HYLE_SOURCE_DIR}/cmake/HyleDependencyLock.json" _cuda_root)
 hyle_import_torch_cuda_leaf("${_cuda_root}" "${_cpu_root}")
-hyle_audit_in_tree_dependencies(bitsandbytes_cuda awq_cuda compressed_tensors_cuda)
+hyle_audit_in_tree_dependencies(bitsandbytes_cuda awq_cuda compressed_tensors_cuda mlx_cuda_quant)
 hyle_add_module(compute_provider_torch_cuda SOURCES artifact_provider.cc)
 target_compile_definitions(hyle_compute_provider_torch_cuda PUBLIC HYLE_COMPUTE_TORCH_CUDA=1)
 target_include_directories(hyle_compute_provider_torch_cuda PRIVATE
   "${HYLE_SOURCE_DIR}/src/compute" "${HYLE_SOURCE_DIR}/src/compute_backend_cuda"
   "${HYLE_SOURCE_DIR}/third_party/bitsandbytes_cuda"
   "${HYLE_SOURCE_DIR}/third_party/awq_cuda"
-  "${HYLE_SOURCE_DIR}/third_party/compressed_tensors_cuda")
+  "${HYLE_SOURCE_DIR}/third_party/compressed_tensors_cuda"
+  "${HYLE_SOURCE_DIR}/third_party/mlx_cuda_quant")
 target_include_directories(hyle_compute_provider_torch_cuda SYSTEM PRIVATE
   "${_cpu_root}/include" "${_cpu_root}/include/torch/csrc/api/include" "${_cuda_root}/include")
 target_link_libraries(hyle_compute_provider_torch_cuda PRIVATE
@@ -67,7 +68,7 @@ hyle_register_package_dependency(NAME torch_cuda_sdk OWNER compute_provider_torc
     "${HYLE_SOURCE_DIR}/src/compute_provider_native/torch_cpu_fetch.cmake|${CMAKE_INSTALL_LIBDIR}/cmake/HyleTorchCudaSdk|torch_cpu_fetch.cmake"
     "${HYLE_SOURCE_DIR}/src/compute_provider_native/HyleTorchCpuSdkConfig.cmake|${CMAKE_INSTALL_LIBDIR}/cmake/HyleTorchCudaSdk|HyleTorchCpuSdkConfig.cmake"
     "${HYLE_SOURCE_DIR}/cmake/HyleDependencyLock.json|${CMAKE_INSTALL_LIBDIR}/cmake/HyleTorchCudaSdk|HyleDependencyLock.json")
-foreach(_recipe IN ITEMS bitsandbytes_cuda awq_cuda compressed_tensors_cuda)
+foreach(_recipe IN ITEMS bitsandbytes_cuda awq_cuda compressed_tensors_cuda mlx_cuda_quant)
   hyle_register_package_dependency(NAME ${_recipe} OWNER compute_provider_torch_cuda
     LOCKED_DEPENDENCIES ${_recipe} RUNTIME_FILE_SPECS
     "${HYLE_SOURCE_DIR}/third_party/${_recipe}/LICENSE|${CMAKE_INSTALL_DATADIR}/licenses/Hyle|${_recipe}-LICENSE"
