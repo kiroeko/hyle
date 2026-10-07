@@ -157,3 +157,21 @@ CPU+Vulkan标准shared/source候选`afba74122c26d49489bee895c8b14dc5381426d2`集
 纠正候选`b2ad8084b4fcc996301e45426413817e62c27b8f`单目标build4.375秒，具名格式拒绝与原GPU回归通过。
 全fixture25项：24 PASS、0 FAIL、1显式validation-layer实例skip保留未验；不签该skip或完整GPU资格。
 证据归入F1部分页，混合SDK其它平台/交付仍未签完成。
+
+## F1剩余B2/B3有限验收批
+
+baseline `1207968c5`，Windows工作树干净，F3已关闭；本批不借此重开F3产品或恢复GPU性能队列。
+源码对账CUDA/Metal原tensor-domain先native格式映射后要求plain/合法native packed，
+新增CPU格式不能绕过，当前没有产品FIX证据。增加两组负空间test而非mock provider：
+十一新增CPU格式的MatMul/GroupedMatMul必须在GPU原边界明确拒绝，已有原GPU数学/完成/错误回归同批保留。
+
+| 剩余项 | 本批动作/证据 |
+|---|---|
+| CPU+CUDA | 复用现C:/hv/m2b1-cuda，清互斥旧DEV_FACTORS，标准CPU+CUDA配置；集中编译CPU普通两入口/格式、原ggml CUDA，原格式数学与新格式拒绝 |
+| CPU+Apple | Windows不可变source前向Air；启用CPU+Apple原MLX/Metal，CPU新格式两入口/原Metal计算/新格式拒绝；不以设备枚举签路线 |
+| mixed交付 | 源码及同SDK的static/shared两CPU消费者/40格；GPU本批原能力只做适用delta/资源装载，不重测P1或全算子 |
+| B3预编译 | 复用F3现CPU三交付与native CPUprogram实际身份/安全ISA gate；对旧mixed core重复40格，绑定actual software/core/patch，unknown规则不带旧WIN |
+| 清理/停止 | 每共享producer每形态一次，j2/tests j1；原失败/skip保持，不顺手重写工具。完整适用格齐后候选/七门关闭F1 |
+
+不新增自研数学、不比较赢家、不升级GPU源码/驱动/Toolkit或任意模型。若实际混合暴露具体产品缺陷，
+先记录精确owner并重新AUDITED有限FIX，现GPU CLOSED/BLOCKED不自动解除。

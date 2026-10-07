@@ -23,6 +23,29 @@ namespace {
 namespace c = hyle::compute;
 namespace metal = c::ggml_metal;
 
+TEST(GgmlMetalProgram, CpuFormatPortDoesNotQualifyGpuMatrices) {
+  const auto activation = c::TensorDesc::dense(c::DataType::kFloat32,
+      std::array<std::int64_t, 2>{2, 256}).value();
+  const auto grouped_activation = c::TensorDesc::dense(c::DataType::kFloat32,
+      std::array<std::int64_t, 3>{1, 2, 256}).value();
+  const auto ids = c::TensorDesc::dense(c::DataType::kInt32,
+      std::array<std::int64_t, 2>{1, 2}).value();
+  for (const auto type : {c::GgufQuantizedType::kQ4_0, c::GgufQuantizedType::kQ4_1,
+       c::GgufQuantizedType::kQ2K, c::GgufQuantizedType::kIq2Xxs,
+       c::GgufQuantizedType::kIq2Xs, c::GgufQuantizedType::kIq2S,
+       c::GgufQuantizedType::kIq1S, c::GgufQuantizedType::kIq1M,
+       c::GgufQuantizedType::kIq1Xs, c::GgufQuantizedType::kIq1Xxs,
+       c::GgufQuantizedType::kIq1Xxxs}) {
+    SCOPED_TRACE(static_cast<int>(type));
+    const auto weight = c::gguf_weight_description(type, c::DataType::kFloat32, 256, 3).value();
+    const std::array inputs{activation, weight};
+    EXPECT_TRUE(metal::NativeProgram::validate(c::Operation(c::MatMul{}), inputs).IsUnimplemented());
+    const auto grouped = c::gguf_grouped_weight_description(type, c::DataType::kFloat32, 2, 3, 256).value();
+    const std::array group_inputs{grouped, grouped_activation, ids};
+    EXPECT_TRUE(metal::NativeProgram::validate(c::model_ops::grouped_matmul(), group_inputs).IsUnimplemented());
+  }
+}
+
 struct Buffer final {
   id<MTLBuffer> value = nil;
   Buffer() = default;

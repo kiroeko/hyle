@@ -494,6 +494,32 @@ TEST(GgmlCudaTensor, UnsupportedNumericDomainsDeclineBeforeNativeExecution) {
       prepare(ctx, Softmax{.kind = SoftmaxKind::kLogSoftmax}, description));
 }
 
+TEST(GgmlCudaTensor, CpuFormatPortDoesNotQualifyGpuMatrices) {
+  auto ctx = context();
+  const auto activation = dense(DataType::kFloat32, {2, 256});
+  const auto grouped_activation = dense(DataType::kFloat32, {1, 2, 256});
+  const auto ids = dense(DataType::kInt32, {1, 2});
+  for (const auto type : {GgufQuantizedType::kQ4_0, GgufQuantizedType::kQ4_1,
+       GgufQuantizedType::kQ2K, GgufQuantizedType::kIq2Xxs,
+       GgufQuantizedType::kIq2Xs, GgufQuantizedType::kIq2S,
+       GgufQuantizedType::kIq1S, GgufQuantizedType::kIq1M,
+       GgufQuantizedType::kIq1Xs, GgufQuantizedType::kIq1Xxs,
+       GgufQuantizedType::kIq1Xxxs}) {
+    SCOPED_TRACE(static_cast<int>(type));
+    const auto weight = gguf_weight_description(type, DataType::kFloat32, 256, 3).value();
+    auto rejected = prepare(ctx, MatMul{}, activation, weight);
+    ASSERT_FALSE(rejected);
+    EXPECT_TRUE(rejected.error().IsUnimplemented());
+    const auto grouped = gguf_grouped_weight_description(type, DataType::kFloat32, 2, 3, 256).value();
+    const std::array inputs{grouped, grouped_activation, ids};
+    const auto op = model_ops::grouped_matmul();
+    const auto output = infer_single_output(op, inputs).value();
+    auto grouped_rejected = prepare(ctx, op, inputs, std::span(&output, 1));
+    ASSERT_FALSE(grouped_rejected);
+    EXPECT_TRUE(grouped_rejected.error().IsUnimplemented());
+  }
+}
+
 TEST(GgmlCudaTensor, IntegerConcatPreservesIndexBitsAcrossReplays) {
   auto ctx = context();
   auto memory = cuda::MemoryResource::create(ctx, cuda::MemoryKind::kDevice).value();
