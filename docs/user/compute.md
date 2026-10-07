@@ -1172,7 +1172,7 @@ span 只需活到调用返回。序列没有人为四项上限，也不会自动
 `cpu::DefaultContextOptions::executor`、`native::Options::executor` 或 `onednn::Options::executor` 传入借用的
 `ParallelExecutorRef`。其 `parallel_for` 必须在返回前完成全部任务、不得失败或抛异常，并在嵌套调用时
 保证进展；executor backing 必须活过由 provider 创建的 Context 及其 retained artifacts。Native 在 prepare
-冷路径按总工作量固定 task count，目前为足够大的 Norm、dense gated activation 与 SDPA row 做
+冷路径按总工作量固定 task count，目前为足够大的 Norm 与 dense gated activation 做
 至多一次同步 fan-out；默认、小工作量与可检测的 nested episode 保持 caller-thread 串行。
 
 并行分片由 HYLE 在 prepare 冷路径决定，不是 oneDNN 的隐藏线程池：正常 tile 宽度至少为 64 columns，
