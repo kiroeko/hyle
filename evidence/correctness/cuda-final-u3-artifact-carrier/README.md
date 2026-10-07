@@ -1,4 +1,4 @@
-# CUDA U3 N1 Windows 接线批次
+# CUDA U3 N1 成熟权重准备接线批次
 
 当前任务：[原量化准备载体](../../../docs/implementation/tasks/compute/cuda-final-u3-artifact-carrier.md)。
 产品候选 `0cd39365339e75a2d0bdce15a8fa065a8f5408ba`；Windows canonical，RTX4070、
@@ -42,11 +42,35 @@ MSVC19.50.35728、CUDA Toolkit13.3.73。原 carrier 是 LibTorch2.8.0+cu129 CUDA
 
 ## 尚未签署
 
-Linux ABI／carrier／CUDA leaf依赖、CUDA-only与mixed的source/static/shared/offline/搬移、
-剩余OOM／严格资源／capture失败项、所有其它格式／完整模型region、U4性能／best-of尚未完成。
-Linux官方wheel只读取了metadata并固定原NVIDIA发布依赖身份；没有下载运行，不签Linux PASS。
+Windows 的 CUDA-only source/static/shared/offline/搬移、原库 OOM 与恢复、其它格式／完整模型region、
+U4性能／best-of尚未完成。Linux 当前资格与剩余项见下节，不从 Windows 旧批次继承通过。
 native Python／隔离C++探针只证明接缝，不算新的HYLE覆盖或性能赢家；本记录不能签N1或整个CUDA CLOSED。
 
 [机器摘要](windows-receipt.json)与归档保存精确candidate、native及原失败、测试／XML、环境、
 selector计划／skipped理由、原官方archive metadata、宏只读扫描和LOC。
 selector因中央图／lock seam选择的广泛交付仍待执行；批次只证明上列实际门，不能把READY写成PASS。
+
+## Linux 实际资格与三交付
+
+原 Torch CUDA 2.8.0+cu129 Linux wheel 和其 metadata 指定的14个 NVIDIA runtime archive 均已
+按固定 SHA 取得、组装并校验。只接原 GPU leaf，CPU common SDK 保持原身份；没有 Python／Triton
+运行环境、CPU 推理 fallback 或新数学。原 ELF SONAME／RPATH 保持，许可证按原实际路径交付。
+
+- `4d571e1d` 的 mixed producer：50项 native tests、三个公开头检查和12项精度预检通过，无跳过。
+- `c8db9033` 的普通 CUDA-only preset：shared/static 两种源码消费各50项通过；两种安装 SDK
+  搬移后，以独立 C++ 工程离线消费，各50项通过，无跳过。独立夹具复制原扩展 codec 源码并记录
+  逐文件 SHA；SDK 消费不使用 producer 的 include/library 路径。
+- loader 检查通过，无 `LD_LIBRARY_PATH` 补偿。固定原 CUDA12叶子与系统 Toolkit13.3叶子同时加载；
+  原链接器跨版本提示保留，当前同进程解码→projection 与生命周期已实际验证，不据此签其它版本资格。
+- 严格 retained-storage 预算拒绝未知库私有内存，强制 prepared replay／capture 拒绝，普通 command
+  replay、两 slot／变化 payload、已接受工作在 Context close 后完成均通过。
+- 原库OOM与恢复另外2项通过：在隔离native进程收紧原CUDA allocator额度，真实 Direct／Graph
+  submit 都返回 Completion，终态报告原 ResourceExhausted；恢复原额度后正常计算通过。
+  不耗尽物理显存，不用mock错误，不消费失败输出。metadata quota 拒绝不代签原库OOM。
+- 七门、50项资格和三交付仅签 N1 这18合同。单载体不跑 P1、不宣称性能赢家。
+- 全 Compute+Graph 非测试实现 **60,562行／253文件**；统一脚本自检通过。
+
+见[精确摘要](linux-receipt.json)和[完整原失败／修正／资格日志](linux-batch.zip)。首次 GCC 严格编译
+暴露了新 prepared 两个 tensor 的显式初始化和旧测试 assertion 括号／borrowed Result／未使用描述符；
+前者只补空 tensor 初始化，后者只修测试，数学和误差门未改。实际 install 同时修正 owning license
+directory asset 的登记，未修改公共 package registry 或性能仪器。

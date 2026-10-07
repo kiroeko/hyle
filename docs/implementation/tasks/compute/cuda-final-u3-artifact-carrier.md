@@ -86,3 +86,13 @@ Direct／Graph decode→projection、12精度／资源寿命样例、默认FFN�
 见 [原始批次与失败记录](../../../../evidence/correctness/cuda-final-u3-artifact-carrier/README.md)。
 原allocator cold初始化／capability传播已修复；无新数学，CPU common／CPU-only resolver未改。
 当前仅Windows mixed producer资格，不签Linux、三交付、剩余OOM／严格资源／capture、全模型或性能。
+
+## Linux 批次进展
+
+固定原 Torch cu129 leaf 与14个原 NVIDIA runtime archive 已实际组装；原 CPU common、原 ELF
+SONAME／RPATH 与许可证保持。`4d571e1d` mixed producer 的18实际合同两入口＋12精度／生命周期＋
+metadata OOM拒绝＋默认FFN共50项、三个公开头及精度预检通过。
+`c8db9033` 普通 CUDA-only 的 shared/static 源码和搬移后独立 SDK 各50项通过，离线／loader通过。
+严格未知 private-storage预算、require-prepared／require-capture拒绝及普通command重放实际通过；
+隔离原库OOM／恢复另2项已通过；Windows三交付及原库OOM尚待，不签本卡整体CLOSED。精确输入与原失败见
+[Linux资格](../../../../evidence/correctness/cuda-final-u3-artifact-carrier/README.md#linux-实际资格与三交付)。
