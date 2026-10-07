@@ -1,6 +1,6 @@
 # CPU 三项成熟接缝、规则绑定与有限清退
 
-<!-- MODULE REVIEW: AUDITED -->
+<!-- MODULE REVIEW: CANDIDATE -->
 
 - owners：compute_provider_ggml、compute_provider_native；baseline `a98bdbf239d2854fa04acbbf2d43793b13cb311e`。
 - trigger：用户批准有限接线/清退；[合格新版复比](../../../../evidence/performance/cpu-three-operator-current/README.md)
@@ -83,3 +83,11 @@ N3固定为删除 `attention.cc` 和其CMake/prepare/并行workspace/私有plan�
 NativePlan仅删除无使用字段，减少冷metadata；其它数学/公共layout不改，适用P0成本与实际规则/资源重验，
 不据此宣称刚重测Copy/RMS或扩大17格范围。旧4格/24格原始证据分别保留。
 两owners退回AUDITED只授权以上N3，最终候选与两平台三交付仍须实际验收。
+
+## 最终产品候选
+
+`119137681ed03f58e3e193a97c969be4e45ccb34`：N3源级删除完成；其后仅文档/测试/证据。
+Windows删除后两factor/24格/dynamic通过；Linux第一次Git HEAD实际来自父级`/`，不代表source archive，
+该次结果失效。随后按Windows immutable内容核对1654个源码/头/构建/测试/依赖输入，只前向更新17项并删除attention.cc，
+真实Linux/GCC14两factor/24格（Native WIN=0，不外推Windows资格）/dynamic均通过。未反向覆盖产品。
+源级删除没有新数学，不继续P1；最终静态/共享SDK、文档状态/终审/清理仍待验。
