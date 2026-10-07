@@ -57,16 +57,22 @@ function(hyle_resolve_torch_cuda_leaf lock_file output)
     endif()
     set(_stage "${_directory}.stage")
     if(EXISTS "${_stage}")
-      # Never silently delete an interrupted/foreign cache. The owner can
-      # inspect this exact identity; successful construction renames it once.
-      message(FATAL_ERROR "Incomplete CUDA leaf SDK stage: ${_stage}")
+      if(IS_SYMLINK "${_stage}" OR NOT EXISTS "${_stage}/archive-sha256.txt")
+        message(FATAL_ERROR "Foreign CUDA leaf SDK stage: ${_stage}")
+      endif()
+      file(READ "${_stage}/archive-sha256.txt" _owner)
+      if(NOT _owner STREQUAL "${_digest}\n")
+        message(FATAL_ERROR "CUDA leaf SDK stage has a different archive identity")
+      endif()
+      # Re-extract the complete fixed selection from the verified archive.
+      # No recursive deletion and no acceptance of an incomplete extraction.
     endif()
     file(MAKE_DIRECTORY "${_stage}")
     file(WRITE "${_stage}/archive-sha256.txt" "${_digest}\n")
     file(ARCHIVE_EXTRACT INPUT "${_archive}" DESTINATION "${_stage}"
       PATTERNS "torch/include/*" "torch/lib/*.dll" "torch/lib/c10_cuda.lib"
-               "torch/lib/torch_cuda.lib" "torch-*.dist-info/LICENSE*"
-               "torch-*.dist-info/licenses/*")
+               "torch/lib/torch_cuda.lib" "torch-*.dist-info/LICENSE"
+               "torch-*.dist-info/NOTICE")
     # These names belong exclusively to the CPU common SDK. The two math
     # providers may coexist without overwriting any of its DLLs.
     foreach(_name IN ITEMS asmjit c10 fbgemm libiomp5md torch torch_cpu uv torch_python shm)

@@ -41,6 +41,7 @@
 #include "hyle/compute/providers/cuda.h"
 #include "../compute_models/d5_optional_cuda_provider.h"
 #include "../compute_models/cuda_iq1_model_contracts.h"
+#include "../compute_models/cpu_c4_model_branches.h"
 #include "../compute_models/cpu_c5_non_gguf_fixture.h"
 #include "hyle/compute/providers/torch_cuda.h"
 #include "hyle/compute/providers/ggml_cuda.h"
