@@ -47,9 +47,8 @@ get_filename_component(_cuda_sdk_directory "${_cuda_root}" DIRECTORY)
 file(GLOB _cuda_licenses "${_cuda_sdk_directory}/*.dist-info")
 set(_cuda_license_specs "")
 foreach(_directory IN LISTS _cuda_licenses)
-  get_filename_component(_name "${_directory}" NAME)
   list(APPEND _cuda_license_specs
-    "${_directory}|${CMAKE_INSTALL_DATADIR}/licenses/Hyle/torch-cuda-sdk|${_name}")
+    "${_directory}|${CMAKE_INSTALL_DATADIR}/licenses/Hyle/torch-cuda-sdk")
 endforeach()
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
   # This original cusparselt wheel locates its notice beside the runtime,
