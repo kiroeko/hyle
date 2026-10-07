@@ -10,7 +10,7 @@ using namespace flashinfer_test;
 template <class T>
 void exercise_attention(compute::DataType type, int query_length, int kv_length,
                         double tolerance, float scale = 0.0625F,
-                        bool wide_exponent = false) {
+                        bool wide_exponent = false, bool causal = true) {
   auto context = compute::Context::create(cuda::device(0).value(),
                                           compute::ggml_cuda::provider())
                      .value();
@@ -25,7 +25,7 @@ void exercise_attention(compute::DataType type, int query_length, int kv_length,
   Tensor output(type, {2, query_length, 8, 256}, memory.ref());
   Tensor other_output(type, {2, query_length, 8, 256}, memory.ref());
   const compute::ScaledDotProductAttention operation{.scale = scale,
-                                                     .causal = true};
+                                                     .causal = causal};
   const std::array inputs{query.view.as_const(), key.view.as_const(),
                           value.view.as_const()};
   const std::array other_inputs{other_query.view.as_const(),
@@ -68,17 +68,17 @@ void exercise_attention(compute::DataType type, int query_length, int kv_length,
     ASSERT_TRUE(second_done) << second_done.error().message();
     ASSERT_TRUE(second_done->wait().ok());
     ASSERT_TRUE(first_done->wait().ok());
-    check_output(output, q, k, v, query_length, kv_length, tolerance, scale);
+    check_output(output, q, k, v, query_length, kv_length, tolerance, scale, causal);
     check_output(other_output, oq, ok, ov, query_length, kv_length,
-                 wide_exponent ? 0.01 : tolerance, scale);
+                 wide_exponent ? 0.01 : tolerance, scale, causal);
     ASSERT_FALSE(::testing::Test::HasFatalFailure());
     // A compiled graph's derived views must follow all changed port addresses.
     auto rebound = first->submit(first_queue, other_inputs, other_outputs);
     ASSERT_TRUE(rebound) << rebound.error().message();
     ASSERT_TRUE(rebound->wait().ok());
     check_output(other_output, oq, ok, ov, query_length, kv_length,
-                 wide_exponent ? 0.01 : tolerance, scale);
-    check_output(output, q, k, v, query_length, kv_length, tolerance, scale);
+                 wide_exponent ? 0.01 : tolerance, scale, causal);
+    check_output(output, q, k, v, query_length, kv_length, tolerance, scale, causal);
   }
   {
     auto abandoned = first->submit(first_queue, inputs, outputs);
@@ -99,6 +99,16 @@ TEST(GgmlCudaAttention, ZeroAndNegativeScalePreserveCausalMask) {
                                scale);
     exercise_attention<__nv_bfloat16>(compute::DataType::kBFloat16, 17, 31,
                                       0.01, scale);
+  }
+}
+
+TEST(GgmlCudaAttention, NoncausalMtpUsesEveryKeyAndIndependentReplays) {
+  for (float scale : {0.0625F, 0.0F, -0.0625F}) {
+    // More queries than keys distinguishes this domain from causal admission.
+    exercise_attention<__half>(compute::DataType::kFloat16, 5, 3, 0.002,
+                              scale, false, false);
+    exercise_attention<__nv_bfloat16>(compute::DataType::kBFloat16, 5, 3, 0.01,
+                                    scale, false, false);
   }
 }
 

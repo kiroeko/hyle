@@ -67,7 +67,7 @@ template <class T>
 void check_output(Tensor &output, const std::vector<T> &q,
                   const std::vector<T> &k, const std::vector<T> &v,
                   int query_length, int kv_length, double tolerance,
-                  float scale = 0.0625F) {
+                  float scale = 0.0625F, bool causal = true) {
   std::vector<T> actual(q.size());
   ASSERT_TRUE(output.storage.view()
                   .read(std::as_writable_bytes(std::span(actual)))
@@ -76,7 +76,7 @@ void check_output(Tensor &output, const std::vector<T> &q,
   for (std::int64_t batch = 0; batch < batches; ++batch) {
     for (int n = 0; n < query_length; ++n) {
       for (int head = 0; head < 8; ++head) {
-        const int count = kv_length - query_length + n + 1;
+        const int count = causal ? kv_length - query_length + n + 1 : kv_length;
         std::vector<double> weights(static_cast<std::size_t>(count));
         const auto qo_offset = static_cast<std::size_t>(
             ((batch * query_length + n) * 8 + head) * 256);
