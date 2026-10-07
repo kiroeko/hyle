@@ -1,6 +1,6 @@
 # Compute + Graph 宏规范专题
 
-<!-- MODULE REVIEW: SCOPED -->
+<!-- MODULE REVIEW: AUDITED -->
 
 2026-10-08 用户要求加入任务，使全部 Compute + Graph 的宏使用规范。
 这是当前 [CUDA goal](cuda-final-closure-plan.md) 的附加横切任务，执行时按实际文件 owner
@@ -90,4 +90,5 @@ N1还已提供实际feature传播反例：Provider私有边不能自动让普通
 | K3 | CMake WIN32／MSVC／CMAKE_SYSTEM_NAME／ISA flags | CMake目标OS／ABI与源码facts分层 | KEEP目标条件；无新增宿主探测或统一宏系统 |
 
 上述owner原record的能力与限制都仍有效，只有本轮有限宏变化获得施工范围；旧terminal不自动重新签绿。
-新scope先独立提交，AUDITED后才写产品。
+新scope已独立提交；M1-M8／K1-K3经现Core facts、owning CMake和原条件审计固定，当前AUDITED。
+不新增宏／语义档位，不触碰vendor，私有CPU program借HYLE_EXPORT的真实DLL/SO export/load随批次验收。

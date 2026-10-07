@@ -270,9 +270,9 @@
     },
     {
       "module": "compute",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/compute-graph-macro-normalization.md",
-      "summary": "宏规范 SCOPED：用户新要求的有限等价OS/compiler/ARM/visibility归一；保留原数学/性能/能力与活动CUDA FIX，不解除旧Graph/Vulkan blocker。"
+      "summary": "宏规范 AUDITED：M1-M8等价目标facts/显式include/原export拼写已固定；原数学/路由/资源/限值及43 CPU规则不变；完整跨平台/宏传播验收待验。"
     },
     {
       "module": "graph",
@@ -367,9 +367,9 @@
     },
     {
       "module": "compute_provider_ggml",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/compute-graph-macro-normalization.md",
-      "summary": "宏规范 SCOPED：用户新要求的有限等价OS/compiler/ARM/visibility归一；保留原数学/性能/能力与活动CUDA FIX，不解除旧Graph/Vulkan blocker。"
+      "summary": "宏规范 AUDITED：M1-M8等价目标facts/显式include/原export拼写已固定；原数学/路由/资源/限值及43 CPU规则不变；完整跨平台/宏传播验收待验。"
     },
     {
       "module": "graph_provider_onednn",
@@ -412,9 +412,9 @@
     },
     {
       "module": "compute_provider_native",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/compute-graph-macro-normalization.md",
-      "summary": "宏规范 SCOPED：用户新要求的有限等价OS/compiler/ARM/visibility归一；保留原数学/性能/能力与活动CUDA FIX，不解除旧Graph/Vulkan blocker。"
+      "summary": "宏规范 AUDITED：M1-M8等价目标facts/显式include/原export拼写已固定；原数学/路由/资源/限值及43 CPU规则不变；完整跨平台/宏传播验收待验。"
     },
     {
       "module": "compute_sched",
@@ -526,19 +526,19 @@
       "module": "compute_provider_ggml_vulkan",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/compute-graph-macro-normalization.md",
-      "summary": "宏规范 AUDITED：用户新要求的有限等价OS/compiler/ARM/visibility归一；保留原数学/性能/能力与活动CUDA FIX，不解除旧Graph/Vulkan blocker。"
+      "summary": "宏规范 AUDITED：M1-M8等价目标facts/显式include/原export拼写已固定；原数学/路由/资源/限值及43 CPU规则不变；完整跨平台/宏传播验收待验。"
     },
     {
       "module": "compute_ggml_runtime",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/compute-graph-macro-normalization.md",
-      "summary": "宏规范 AUDITED：用户新要求的有限等价OS/compiler/ARM/visibility归一；保留原数学/性能/能力与活动CUDA FIX，不解除旧Graph/Vulkan blocker。"
+      "summary": "宏规范 AUDITED：M1-M8等价目标facts/显式include/原export拼写已固定；原数学/路由/资源/限值及43 CPU规则不变；完整跨平台/宏传播验收待验。"
     },
     {
       "module": "compute_provider_ggml_cuda",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/compute-graph-macro-normalization.md",
-      "summary": "宏规范 AUDITED：用户新要求的有限等价OS/compiler/ARM/visibility归一；保留原数学/性能/能力与活动CUDA FIX，不解除旧Graph/Vulkan blocker。"
+      "summary": "宏规范 AUDITED：M1-M8等价目标facts/显式include/原export拼写已固定；原数学/路由/资源/限值及43 CPU规则不变；完整跨平台/宏传播验收待验。"
     },
     {
       "module": "graph_provider_ggml_cuda",
@@ -562,7 +562,7 @@
       "module": "compute_provider_iree_vulkan",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/compute-graph-macro-normalization.md",
-      "summary": "宏规范 AUDITED：用户新要求的有限等价OS/compiler/ARM/visibility归一；保留原数学/性能/能力与活动CUDA FIX，不解除旧Graph/Vulkan blocker。"
+      "summary": "宏规范 AUDITED：M1-M8等价目标facts/显式include/原export拼写已固定；原数学/路由/资源/限值及43 CPU规则不变；完整跨平台/宏传播验收待验。"
     },
     {
       "module": "compute_provider_torch_cuda",
