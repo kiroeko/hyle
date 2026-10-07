@@ -1,6 +1,6 @@
 # CUDA U2：普通构建、软件身份与三交付
 
-<!-- MODULE REVIEW: SCOPED -->
+<!-- MODULE REVIEW: AUDITED -->
 
 ## Closure card
 
@@ -48,3 +48,18 @@ B1 的低风险 preset 编辑先用 CMake CLI 解析；稳定候选后 source co
 
 七问：版本／license 用既有唯一 lock；共同目录驱动完整能力；复用 backend／Graph／staging；P0 冷热账单；
 无新 FFI；三交付与实际软件身份同源；用户只选路线／正常资源。七门最终须逐项引用实际收据，当前不签 PASS。
+
+## B1 子批 AUDITED：只有普通 preset
+
+SCOPED 卡已独立提交 `27aaef0c`，当前 compute_route_cuda 依法从旧 AUDITED record 重定界至本卡。
+只授权 B1 的 preset 与普通用法；B2–B4 仍待具体 owner／接口审计，不能用本子项签整包完成。
+旧 F41 入口／数学／资格保持，本轮全目标两入口与软件／交付验收仍须覆盖实际现有能力。
+
+源码已确认：现有普通 `HYLE_COMPONENTS=compute;graph` 与四 route flags 能组装 CUDA-only，
+CUDA OFF 跳过探测；cuBLAS、ggml、原 SGLang／DeepSeek／CCCL 由 façade 组装，FlashInfer 只 Linux。
+系统 Toolkit13.3+ 必需，既有 backend 拥有默认 arch80＋89-real；不向普通用户加入 Provider 选项、
+Toolkit 路径、内部宏、fastmath、全局 CUDA flags 或用户 performance profile。
+新 preset 只把已存在选项固定为自然 CUDA-only 组合，mixed 可显式覆盖 CPU=ON。
+
+本子批预声明：CMake list-presets／JSON 实际投影、docs／closure／diff；实际 configure/build 与
+source/static/shared loader 随 B3/U3 稳定候选集中运行，未运行保持 UNVERIFIED。此低风险编辑不新增镜像测试。

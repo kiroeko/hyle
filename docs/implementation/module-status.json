@@ -496,8 +496,8 @@
     {
       "module": "compute_route_cuda",
       "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/llm-moe-d5-fp8-weight-preparation.md",
-      "summary": "D5 AUDITED：F41冷准备和F43/F44官方完整消费已验，CUDA正确性44/44、三交付A5完成；CUDA两完整形状A6在n15 PARITY/非劣PASS，严格重放通过；D6未关闭。"
+      "record": "docs/implementation/tasks/compute/cuda-final-u2-build-contract.md",
+      "summary": "CUDA U2 B1 AUDITED：共同模型/算子需求不变，有限授权标准 compute-cuda preset 与普通用法；B2-B4 软件事实、三交付/loader与mixed能力仍待审计验收，旧数学/Provider资格保持。"
     },
     {
       "module": "graph_route_cuda",
