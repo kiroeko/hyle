@@ -1,8 +1,10 @@
 #include <gtest/gtest.h>
 
 #include <array>
+#include <cmath>
 #include <cstdint>
 #include <initializer_list>
+#include <limits>
 #include <span>
 #include <tuple>
 #include <utility>
@@ -101,7 +103,28 @@ TEST_P(CudaMlxPrecision, SourceF32EquationAndGroupScaleArePreservedUnderForeignT
       rounded(type,format==Format::kMxfp8?1-1.375f*2:6-1.375f*3);
   const auto expected_bytes=floating(type,std::vector<float>(n,expected));
   std::vector<std::byte> actual(output.size());ASSERT_TRUE(output.view().read(actual).ok());
-  EXPECT_EQ(actual,expected_bytes);
+  if(type==c::DataType::kFloat32) {
+    // The original contract permits F32 reduction association, not bitwise
+    // SIMD lane order. Charge cancellation against the two source terms.
+    std::vector<float> result(n);ASSERT_TRUE(output.view().read(std::as_writable_bytes(std::span(result))).ok());
+    const auto magnitude=affine?std::abs(7*scale+bias)+1.375f*std::abs(5*scale+bias):8.0f;
+    for(float value:result)EXPECT_NEAR(value,expected,8*std::numeric_limits<float>::epsilon()*magnitude);
+  } else EXPECT_EQ(actual,expected_bytes);
+  if(!affine) {
+    for(const std::uint8_t exponent:{0,143,255}) {
+      SCOPED_TRACE(int(exponent));
+      std::vector<std::uint8_t> codes(n*k/group,127);
+      for(std::int64_t row=0;row<n;++row)codes[row*(k/group)]=exponent;
+      ASSERT_TRUE(buffers[2].view().write(bytes(codes)).ok());
+      auto submitted=invocation.submit(queue,inputs,destinations);
+      ASSERT_TRUE(submitted)<<submitted.error().message();
+      const auto status=submitted->wait();ASSERT_TRUE(status.ok())<<status.message();
+      const auto source_scale=rounded(type,std::ldexp(1.0f,int(exponent)-127));
+      const auto boundary=rounded(type,(format==Format::kMxfp8?-1.75f:1.875f)*source_scale);
+      std::vector<std::byte> result(output.size());ASSERT_TRUE(output.view().read(result).ok());
+      EXPECT_EQ(result,floating(type,std::vector<float>(n,boundary)));
+    }
+  }
 }
 INSTANTIATE_TEST_SUITE_P(OriginalDtypes,CudaMlxPrecision,
   ::testing::Combine(::testing::Values(Format::kAffine4,Format::kMxfp4,Format::kMxfp8),
