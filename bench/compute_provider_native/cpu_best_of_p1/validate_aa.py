@@ -10,6 +10,7 @@ def main():
     parser=argparse.ArgumentParser()
     parser.add_argument('--build',type=Path,required=True)
     parser.add_argument('--output',type=Path,required=True)
+    parser.add_argument('--selection',type=Path)
     args=parser.parse_args();build=args.build.resolve();out=args.output.resolve();out.mkdir(parents=True,exist_ok=True)
     exe=build/('hyle_cpu_best_of_batch.exe' if os.name=='nt' else 'hyle_cpu_best_of_batch')
     assert exe.is_file()
@@ -18,12 +19,18 @@ def main():
     for case,left,right in re.findall(r'\{"([^"\n]+)", Family::(\w+), Family::(\w+)\}',(HERE/'qualified_pairs.h').read_text()):
         pairs.append(case+'-'+family[left]+'-vs-'+family[right])
     assert len(pairs)==767 and len(set(pairs))==767
+    if args.selection:
+        selected=args.selection.read_text().splitlines()
+        assert selected and len(set(selected))==len(selected) and set(selected)<=set(pairs)
+        pairs=selected
     artifact={'executable_sha256':hashlib.sha256(exe.read_bytes()).hexdigest(),'consumer_sha256':hashlib.sha256((HERE/'cpu_best_of_bench.cc').read_bytes()).hexdigest(),'pair_header_sha256':hashlib.sha256((HERE/'qualified_pairs.h').read_bytes()).hexdigest()}
     runs=[]
     for side in ('candidate','peer'):
         for execution in ('candidate-first','peer-first'):
             for allocation in ('candidate-first','peer-first'):
                 env=dict(os.environ,OMP_NUM_THREADS='1',MKL_NUM_THREADS='1',HYLE_CPU_BESTOF_AA=side,HYLE_PERF_CALLER_CPU='2')
+                if args.selection:env['HYLE_CPU_BESTOF_PAIR_FILE']=str(args.selection.resolve())
+                else:env.pop('HYLE_CPU_BESTOF_PAIR_FILE',None)
                 for key in ('HYLE_BENCH_RIVAL_FIRST','HYLE_BENCH_PEER_ALLOCATION_FIRST'):env.pop(key,None)
                 if execution=='peer-first':env['HYLE_BENCH_RIVAL_FIRST']='1'
                 if allocation=='peer-first':env['HYLE_BENCH_PEER_ALLOCATION_FIRST']='1'
@@ -59,6 +66,7 @@ def main():
         if reasons:failed[title]=reasons
         else:qualified.append(title)
     receipt={'schema':'hyle.cpu-final-aa/v1','artifact':artifact,'runs':len(runs),'pairs':len(pairs),'qualified':qualified,'failed':failed,'summaries':summaries,'gate':'PASS' if not failed else 'INCONCLUSIVE','scope':'workload-matched AA, fixed eight runs/four order strata, shared nanobench parser, caller CPU2; not P1, no winner or loss','limits':['machine/profile/controls and immutable full P1 still required','failed AA domains use engineering-default decision or named blocker; no increased sample budget']}
+    if args.selection:receipt['selection_sha256']=hashlib.sha256(args.selection.read_bytes()).hexdigest()
     (out/'receipt.json').write_text(json.dumps(receipt,indent=2)+'\n')
     print({'pairs':len(pairs),'qualified':len(qualified),'inconclusive':len(failed),'gate':receipt['gate']},flush=True)
     return 0

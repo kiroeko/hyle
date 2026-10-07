@@ -96,3 +96,13 @@ normal/holdout固定真实内宽（Qwen3.5-2B2048与F2 norm4096）、token1/小p
 MatMul保留同一实际weight布局，oneDNN拒绝原转置域就记录非候选，不用免费转换制造竞速。
 非覆盖点采用已资格成熟工程默认，不把样本外推成通用统计冠军。默认caller预算1，记录原库实际线程/私有资源。
 三owner从SCOPED进入AUDITED，仅V1/V2/R1/R2/L1，原成熟Provider owner保持CLOSED；具体接线反例另依法定界。
+
+### V1/V2具名批次入口纠正与最终预算
+
+767准入pair的初批A/A固定8轮完成：334短资格、433未裁决，原聚合INCONCLUSIVE保留。
+统一runner不传CLI参数；尝试的逐pair sealed子进程传输一次99.281秒，源码证明它改变原batch进程生命周期，
+不能凭child文件SHA继承原A/A。因此该传输未签性能资格，source/CMake全部删除，不带进产品。
+纠正限定为benchmark冷入口读取固定pair清单，同进程保持原Data/Session/prepare/replay/完成与执行代码。
+只对原334集合做一次固定8轮的纠正入口检查；不重测原433、不增加n、不移植公共runner/统计代码。
+此次为V1/V2唯一具名性能consumer拓扑纠正；后续仍无法裁决按成熟工程默认/具名独有资源边界处理，
+不得继续搭建仪器或追加A/A循环。最终P1只固定适用资格清单，n15/四strata，不升级n31。

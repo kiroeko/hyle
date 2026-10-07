@@ -29,20 +29,3 @@ add_executable(hyle_perf_control_bench "${_hyle_root}/bench/integration/perf_con
 target_compile_features(hyle_perf_control_bench PRIVATE cxx_std_23)
 target_link_libraries(hyle_perf_control_bench PRIVATE hyle::compute nanobench)
 set_property(TARGET hyle_perf_control_bench PROPERTY INTERPROCEDURAL_OPTIMIZATION FALSE)
-set(HYLE_CPU_BESTOF_SEALED_DIR "" CACHE PATH "Frozen developer AA artifact and exact staged DLLs")
-if(WIN32 AND HYLE_CPU_BESTOF_SEALED_DIR AND EXISTS "${CMAKE_CURRENT_LIST_DIR}/p1_pairs.h")
-  add_executable(hyle_cpu_best_of_transport qualified_transport.cc)
-  target_compile_features(hyle_cpu_best_of_transport PRIVATE cxx_std_23)
-  set_property(TARGET hyle_cpu_best_of_transport PROPERTY INTERPROCEDURAL_OPTIMIZATION FALSE)
-  add_custom_command(TARGET hyle_cpu_best_of_transport POST_BUILD
-    COMMAND "${CMAKE_COMMAND}" -E copy_if_different
-      "${HYLE_CPU_BESTOF_SEALED_DIR}/hyle_cpu_best_of_batch.exe"
-      "$<TARGET_FILE_DIR:hyle_cpu_best_of_transport>/hyle_cpu_best_of_sealed.exe"
-    VERBATIM)
-  file(GLOB _f4_sealed_dlls "${HYLE_CPU_BESTOF_SEALED_DIR}/*.dll")
-  foreach(_f4_dll IN LISTS _f4_sealed_dlls)
-    add_custom_command(TARGET hyle_cpu_best_of_transport POST_BUILD
-      COMMAND "${CMAKE_COMMAND}" -E copy_if_different "${_f4_dll}"
-        "$<TARGET_FILE_DIR:hyle_cpu_best_of_transport>" VERBATIM)
-  endforeach()
-endif()

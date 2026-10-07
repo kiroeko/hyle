@@ -13,6 +13,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <fstream>
 #include <memory>
 #include <nanobench.h>
 #include <span>
@@ -494,11 +495,28 @@ int main(int argc,char **argv) {
   const auto cases=catalog();
 #if defined(HYLE_CPU_BESTOF_QUALIFIED_BATCH)
   if(argc==1) {
+    std::vector<std::string> selected;
+    const auto *selection=std::getenv("HYLE_CPU_BESTOF_PAIR_FILE");
+    if(selection) {
+      std::ifstream input(selection);
+      if(!input)return 66;
+      for(std::string line;std::getline(input,line);) {
+        if(!line.empty() && line.back()=='\r')line.pop_back();
+        if(line.empty() || std::find(selected.begin(),selected.end(),line)!=selected.end())return 66;
+        selected.push_back(std::move(line));
+      }
+      if(selected.empty())return 66;
+    }
+    std::size_t measured=0;
     for(const auto &pair:kQualifiedPairs) {
+      const auto title=std::string(pair.case_id)+"-"+family_name(pair.candidate)+"-vs-"+family_name(pair.peer);
+      if(selection && std::find(selected.begin(),selected.end(),title)==selected.end())continue;
       const auto match=std::find_if(cases.begin(),cases.end(),[&](const auto &c){return c.id==pair.case_id;});
       if(match==cases.end())return 65;
       measure_pair(*match,pair.candidate,pair.peer);
+      ++measured;
     }
+    if(selection && measured!=selected.size())return 66;
     return 0;
   }
 #endif
