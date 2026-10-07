@@ -1,0 +1,47 @@
+{
+  "candidate": "a3b621ca85853164ce48d133b2fde06c1fca1c0b",
+  "source": {
+    "candidate": "a3b621ca85853164ce48d133b2fde06c1fca1c0b",
+    "archive_sha256": "511c869c881c1330cd57f18925c2cf2202c7d84a7a555af39ee5834cfeb3f7ae",
+    "archive_bytes": 248350720,
+    "remote_root": "/root/hyle-scratch/active-cpu-z",
+    "scope": "Linux mixed old-core CPU loader delta; reuse owned producer, no new GPU P1 or algorithm"
+  },
+  "scope": "Linux x86_64 CPU+CUDA old-core mixed source/static/shared loader delta, original CPU port, safe ISA/resource replay and 40 ordinary Direct/Graph checks in all delivery runs; no new GPU algorithm or P1",
+  "steps": 24,
+  "gates": {
+    "gpu.xml": {
+      "tests": 4,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "runtime.xml": {
+      "tests": 6,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    }
+  },
+  "ordinary_numeric_checks": {
+    "source-cpu-40": 40,
+    "shared-source-40": 40,
+    "shared-consumer-40": 40,
+    "static-source-40": 40,
+    "static-consumer-40": 40
+  },
+  "build_seconds": {
+    "build": 93.859,
+    "shared-build": 50.586,
+    "static-build": 135.019
+  },
+  "result": "Corrected current scope PASS; original failure retained",
+  "limits": [
+    "GPU full model/format and P1 qualification not reopened",
+    "CPU final best-of/retirement/terminal audit still pending"
+  ],
+  "archive_sha256": "1026134c7d4d08790ef3a8b2bee3b04e175d78480febdbd041292d1ac0ccc86e",
+  "archive_bytes": 76394,
+  "initial_failure": "Original source build failed on GCC parentheses warning; unmodified failure retained. Equivalent guard-parentheses delta qualified by the corrected build and four GPU regressions.",
+  "driver_boundary": "Initial Windows summary encoding and first continuation common-variable errors retained in driver logs; already passing source tests were not repeated."
+}

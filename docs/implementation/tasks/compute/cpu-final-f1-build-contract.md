@@ -1,6 +1,6 @@
 # F1 CPU构建、软件资格与预编译合同
 
-<!-- MODULE REVIEW: CANDIDATE -->
+<!-- MODULE REVIEW: CLOSED -->
 
 - 当前owner：compute_provider_native、compute_ggml_runtime、compute_route_cpu、graph_route_cpu；baseline `167cb5ff6f9edac8a9aaa77c41e6720bd3c377d2`。
 - 总合同：[CPU最终收口](cpu-final-closure-plan.md)；用户新增三平台/全重叠域与构建一致性要求构成新的公开交付trigger。
@@ -233,3 +233,40 @@ B1实际recipe撤资格、B2同core原CPU port与资源身份、B3程序/有限G
 B5 oneDNN3.13.4的产品FIX已经固定，公开API/layout/数学/常态submit不再变化。Win/Mac混合三交付已验，
 CPU-only三平台交付复用F3；最后Linux旧core混合loader批仍在运行，未签PASS、没有F1 terminal结论。
 该批完成后逐原B1–B5与七门对账；若出现具体产品反例，依法退回AUDITED并定界，不能更换scope签完成。
+
+## F1 CLOSED：构建与预编译本包完成
+
+CPU产品候选仍为 `560eb1d2332bb69ee5148e899b000fae85d80074`；五个F1 owner已在
+`2066f18865e9693082e7a0577dff313ca0e5ae37`合法进入CANDIDATE。
+最后Linux实际输入 `a3b621ca85853164ce48d133b2fde06c1fca1c0b` 只多具名CUDA冷边界的
+等价括号修复：GCC14 Werror编译、四个原GPU数学/拒绝回归通过，GPU owner仍按C3 AUDITED，不恢复其旧队列。
+F1各CPU owner源代码与冻结快照一致，语义、API、layout及常态submit成本未变。
+
+Linux mixed完成21步成功续跑：原程序ISA/资源6项、GPU回归4项无fail/skip；五次源码／搬移安装消费者
+各40格通过，实际loader无缺失及shared出口通过。初次GCC编译FAIL、Windows摘要编码与续跑变量错误
+原日志都保留；93.859秒增量接完，shared/static增量50.586/135.019秒，成功源测试没有重跑。
+[Linux原始证据](../../../../evidence/correctness/cpu-final-f1/README.md)绑定原/纠正快照、完整archive与driver。
+
+| 原有限项 | 最终对账 |
+|---|---|
+| B1 recipe与资格 | 20格编译投影及普通两入口实际通过；flags/IPO/linkage/feature/版本失配不携带旧WIN，数学仍可用 |
+| B2 单/混合core | CPU-only三平台沿F3；Win CUDA/Vulkan、Air Apple、Linux CUDA的同core原CPU端口实际消费与三交付通过，GPU新格式拒绝保留 |
+| B3 预编译 | actual core/patch具名程序、CPU/OS ISA前提、程序/slot/workspace复用、有限Graph exact/general/replay/OOM/并发已验；源码/搬移SDK同40格 |
+| B4 通用默认 | 真实Provider准入后逐合同冷绑定；未知条件合法成熟默认、完整region优先；不在线计时，不签新的性能WIN |
+| B5 oneDNN | 3.13.4锁/source/hash/license、实际header身份、原threadpool/BRGEMM接缝、owning/两入口/三交付有本轮与F3证据 |
+
+| 七门 | 本包结论与边界 |
+|---|---|
+| scope | 原B1–B5与固定CPU能力保留，无新模型/数学/引擎；没有以CPU-only结果代签Linux混合loader |
+| architecture | 一SDK一ggml core，原CPU port精确派生；路线资源/程序与原Prepared执行保留，cold默认不增加Context allocation |
+| correctness | own/ordinary两入口、原编码/重放、规则失配、ISA/资源/slot/失败及具名GPU负空间；原FAIL/skip不回写 |
+| delivery | CPU-only三平台source/static/shared复用F3；各具名mixed组合三交付实际数值及搬移loader，Win DLL邻exe/精简PATH，Unix实际loader |
+| usability_docs | 普通用户只选路线，默认依赖与版本/软件资格、工程默认/未测WIN、SDK与高级裁剪边界具名说明 |
+| red_team | 核对未验矩阵、旧WIN版本、不同core/ABI与原CPU程序身份；发现Vulkan越界准入与GCC编译反例，限定修正并保留原记录 |
+| engineering_performance | P0：静态cold表、单次程序选择/准备，submit不新增搜索/计时；collector有限工具修复已独立关闭；无本包新P1赢家 |
+
+本包适用验收已完成，五个当前F1 owner进入CLOSED。F3三个owner的原CLOSED和公共Graph/GPU旧状态不变。
+实现Compute+Graph **61,246行/251文件**（统一脚本，不含测试/vendor/bench）；本轮新增自研数学0。
+这不是CPU最终收口：F4当前全候选best-of/工程默认裁决、F5冗余自研物理删除与F6完整终审仍待。
+旧187/17仍无新版本资格，现默认不可宣称全域统计最佳。
+reopen：可复现构建/装载/格式/生命周期缺陷、固定依赖或ABI/公开合同变化、recipe资格误投影；不因旧卡重开。

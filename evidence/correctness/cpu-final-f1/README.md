@@ -136,3 +136,25 @@ dependencies were reused; shared/static increments took 144.266/187.297 seconds.
 The earlier Vulkan validation-layer skip is unchanged; this CPU SDK batch does
 not qualify that test, all GPU formats or P1. The Linux mixed loader batch is the
 remaining F1 platform delta, not yet PASS.
+
+## Linux old-core mixed loader delta completed
+
+The corrected input `a3b621ca85853164ce48d133b2fde06c1fca1c0b` passed 21
+continuation steps: six original CPU-program/ISA/resource checks, four original
+GPU/rejection checks and all five source/installed consumer runs with 40
+numerical checks each. Relocated shared/static loader checks found no missing
+dependency; shared export inspection passed. Builds reused the dependencies:
+93.859 seconds to finish the corrected source batch, then 50.586/135.019 seconds
+for shared/static increments.
+[Receipt and current immutable source identity](b2-mixed-linux-three-shape-receipt.json),
+[original failure, correction, driver errors, numerical XML and delivery logs](b2-mixed-linux-three-shape.zip).
+The original GCC warning failure is retained; the only product delta is equivalent
+parentheses in the existing CUDA integer-role guard. Windows summary encoding
+and continuation-variable errors are also retained; passing source tests were
+not repeated for those driver repairs.
+
+F1 is CLOSED within its build/precompiled/P0 scope. Its CPU product candidate
+remains `560eb1d2332bb69ee5148e899b000fae85d80074`, with the separately audited
+equivalent CUDA syntax delta bound to Linux evidence. F4/F5/F6 and old GPU/Graph
+states remain outside this closure. Current implementation LOC: 61,246/251 files,
+excluding tests/vendor/bench; no new self-written math or performance WIN.
