@@ -362,9 +362,10 @@
     },
     {
       "module": "compute_provider_ggml",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/cpu-final-f3-platform-carriers.md",
-      "summary": "CPU最终F3/T6 AUDITED：ARM原ggml half dot不兑现plain F16 FP32累加，cold准入拒绝该域，由已验ATen承接；packed/x86/其它原程序不变，不新增数学或性能WIN。"
+      "summary": "CPU最终F3 CANDIDATE：三平台成熟CPU承载、原格式/状态/失败与source/static/shared资格已齐，精度/同输入/同ISA对照修正有原FAIL；产品冻结，F3终审与terminal记录中；不签全面best-of或自研清退。",
+      "candidate": "560eb1d2332bb69ee5148e899b000fae85d80074"
     },
     {
       "module": "graph_provider_onednn",
@@ -407,9 +408,10 @@
     },
     {
       "module": "compute_provider_native",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/cpu-final-f3-platform-carriers.md",
-      "summary": "CPU最终F3重新定界并AUDITED：Mac ARM64原ATen/codec SDK锁、平台version/loader-relative libomp及派生manifest、四dylib/RPATH有限FIX；无新数学，三平台最终资格未完成。"
+      "summary": "CPU最终F3 CANDIDATE：三平台成熟CPU承载、原格式/状态/失败与source/static/shared资格已齐，精度/同输入/同ISA对照修正有原FAIL；产品冻结，F3终审与terminal记录中；不签全面best-of或自研清退。",
+      "candidate": "560eb1d2332bb69ee5148e899b000fae85d80074"
     },
     {
       "module": "compute_sched",
@@ -418,9 +420,10 @@
     },
     {
       "module": "compute_route_cpu",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/cpu-final-f3-platform-carriers.md",
-      "summary": "CPU最终F3/T10已裁决：未合格的模型norm实验源级移除，保留F1逐合同generic成熟默认；T11修正仅测试ISA/量化oracle，不改产品数学/执行或性能WIN，三平台最终交付仍待。"
+      "summary": "CPU最终F3 CANDIDATE：三平台成熟CPU承载、原格式/状态/失败与source/static/shared资格已齐，精度/同输入/同ISA对照修正有原FAIL；产品冻结，F3终审与terminal记录中；不签全面best-of或自研清退。",
+      "candidate": "560eb1d2332bb69ee5148e899b000fae85d80074"
     },
     {
       "module": "graph_route_cpu",

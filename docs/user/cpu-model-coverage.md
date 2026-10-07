@@ -1,9 +1,14 @@
 # CPU 热门量化与MTP计算覆盖
 
 普通入口为 `compute::cpu::create_context()` 和 `graph::cpu::create_context()`。
-本页说明Windows/Linux x86_64 **CPU-only SDK** 的固定计算合同覆盖，不提供模型loader、tokenizer或采样器。
+本页说明Windows/Linux x86_64和macOS ARM64 **CPU-only SDK** 的固定计算合同覆盖，不提供模型loader、tokenizer或采样器。
 资格由原格式端口、参数及相同边界的完整semantic/state程序共同证明，
 `LIBRARY_CONTRACT_PASS`不能读作104次整模型实权重推理通过。
+
+当前三平台成熟承载和source/static/shared计算/状态/精度资格见
+[CPU最终F3证据](../../evidence/correctness/cpu-final-f3/README.md)。原Windows/Linux联合合同、当前升级候选和
+Mac首次资格分别按真实输入/软件身份对账；默认规则仍有工程默认与已测优选的区别。
+全面best-of与剩余自研清退属于[当前最终收口任务](../implementation/tasks/compute/cpu-final-closure-plan.md)，尚未完成。
 
 ## 固定制品与范围
 
