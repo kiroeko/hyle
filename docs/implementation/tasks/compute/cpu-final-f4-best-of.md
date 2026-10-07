@@ -108,7 +108,9 @@ MatMul保留同一实际weight布局，oneDNN拒绝原转置域就记录非候�
 不得继续搭建仪器或追加A/A循环。最终P1只固定适用资格清单，n15/四strata，不升级n31。
 
 同进程纠正8轮完成后最终128个pair资格，206未裁决；原两份INCONCLUSIVE均保留。
-P1第一次启动在首样本被可选telemetry-prefix拒绝：现有marker仅有caller/affinity，不报告order。
-不新增或伪造字段、不改测量image/公共runner；合同去掉该不适配的可选要求，order以已绑定source SHA、
-runner受控双顺序/分配环境与原nanobench调用分支证明，实际process affinity/priority仍由公共canary验证。
-原启动失败/raw保留；P1固定128/n15/四strata，正常/holdout数据不因v1的experiment.holdout=false改动。
+P1第一次启动在首样本被telemetry-prefix拒绝：现有marker仅有caller/affinity，不报告order。
+尝试省略后validator证明产品marker为必需，该配置也被拒绝；两次原失败/未资格raw保留，不写PASS。
+最终入口采用一次完整batch的薄adapter，继承受控环境，实际核对父/子CPU mask与priority，报告order/nonce，
+转发原sealed image的独立stdout/stderr。它不做数学或计时，不改变同进程内部Data/Session及原资源/算法；
+不再使用逐pair子进程。测量image/原DLL SHA、SDK/源码/输入asset资格继续由module validator验证。
+公共runner/统计不改；P1固定128/n15/四strata，正常/holdout数据不因v1的experiment.holdout=false改动。

@@ -32,10 +32,14 @@ target_link_libraries(hyle_perf_control_bench PRIVATE hyle::compute nanobench)
 set_property(TARGET hyle_perf_control_bench PROPERTY INTERPROCEDURAL_OPTIMIZATION FALSE)
 set(HYLE_CPU_BESTOF_SEALED_DIR "" CACHE PATH "Developer qualified batch and exact staged runtime")
 if(WIN32 AND HYLE_CPU_BESTOF_SEALED_DIR)
+  add_executable(hyle_cpu_best_of_adapter batch_adapter.cc)
+  target_compile_features(hyle_cpu_best_of_adapter PRIVATE cxx_std_23)
+  set_property(TARGET hyle_cpu_best_of_adapter PROPERTY INTERPROCEDURAL_OPTIMIZATION FALSE)
   add_custom_target(hyle_cpu_best_of_sealed_copy
     COMMAND "${CMAKE_COMMAND}" -E copy_if_different
       "${HYLE_CPU_BESTOF_SEALED_DIR}/hyle_cpu_best_of_batch.exe"
       "${CMAKE_CURRENT_BINARY_DIR}/hyle_cpu_best_of_sealed.exe" VERBATIM)
+  add_dependencies(hyle_cpu_best_of_adapter hyle_cpu_best_of_sealed_copy)
   file(GLOB _f4_sealed_dlls "${HYLE_CPU_BESTOF_SEALED_DIR}/*.dll")
   foreach(_f4_dll IN LISTS _f4_sealed_dlls)
     add_custom_command(TARGET hyle_cpu_best_of_sealed_copy POST_BUILD

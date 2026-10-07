@@ -4,7 +4,7 @@
   "module": "compute_route_cpu",
   "claim": "Bounded current CPU same-request four-provider whole-cost comparison. Only numerically admitted, workload-AA-qualified pairs enter product rules; unknown/failed AA uses engineering defaults. Fixed n15, no escalation or self optimization.",
   "candidate": {
-    "target": "hyle_cpu_best_of_sealed_copy",
+    "target": "hyle_cpu_best_of_adapter",
     "delivery_shape": "static",
     "revision": "runtime-bound",
     "component": "compute_route_cpu",
@@ -8871,10 +8871,13 @@
       "executables": [
         {
           "id": "cpu-current-qualified-batch",
-          "target": "hyle_cpu_best_of_sealed_copy",
-          "stem": "hyle_cpu_best_of_sealed",
+          "target": "hyle_cpu_best_of_adapter",
+          "stem": "hyle_cpu_best_of_adapter",
           "target_variant": "primary",
           "measurement_batch": 1,
+          "telemetry_prefixes": [
+            "# CPU_BEST_OF_ADAPTER "
+          ],
           "workloads": [
             {
               "id": "unary-2-t6-r1-h2048-o6-native-vs-ggml",
