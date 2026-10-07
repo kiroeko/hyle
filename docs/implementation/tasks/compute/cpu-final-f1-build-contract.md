@@ -87,3 +87,19 @@ B5 selector把中央lock文件变化展开为全库superset；原计划保留，
 动态物化/并发/close均通过。没有P1；Linux/macOS与最终安装SDK仍待验。
 归档见[F1部分证据](../../../../evidence/correctness/cpu-final-f1/README.md)，不能解释为F1完成。
 统一Compute+Graph实现61,084行/249文件，不含tests/vendor/bench，新增自研数学0。
+
+## B4子批AUDITED：具名成熟默认
+
+有限FIX：CPU route拥有静态工程默认表，普通Direct/Graph的成熟leaf在成功冷proposal后投影policy/preference；
+规则不绕过原provider的dtype/layout/precision/resource准入，不因Unknown硬件失去可用实现。
+plain MatMul与norm以oneDNN为首选，原packed/原生tensor程序以ggml为首选；
+稳定激活、布尔/LogSoftmax、scatter-add等以现有已验ATen数学为首选。替代候选仍按真实资格可用，
+唯一承载不制造赢家标签，完整Graph region仍先于leaf。F4允许按实际比较修订表，当前全部为工程默认、非性能WIN。
+
+只装饰成功的cold propose，保留原ProviderIdentity/Options/create/destroy/prepare/drain/extension与原PreparedVTable，
+submit不经过装饰器。静态同build vtable副本共享原trivial/owned配置语义；Core私有ProviderAccess仅增加保留配置的重绑定操作，
+公开Provider/Prepared对象与合同version14不变，无额外Context allocation、hot字段或逐kernel回调。
+compute、compute_route_cpu、graph_route_cpu按此有限FIX AUDITED；其它owner不因本批进入实施。
+验收：normal/未知模型、三种mature角色、feature缺席、失败/OOM/close、expert仍无默认policy、Direct/Graph一致、
+完整region与原执行/资源沿用；原24格批量consumer更新为工程默认policy有效且Native旧WIN=0。
+两入口/公开头与source/static/shared在本包集中验证，P0，无新赢家P1。

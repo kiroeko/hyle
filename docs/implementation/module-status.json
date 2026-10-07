@@ -270,14 +270,9 @@
     },
     {
       "module": "compute",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/compute/cpu-native-matmul-private-kernel-cleanup.md",
-      "summary": "MM/K1 CLOSED：自研MatMul执行/准备/两私有kernel及七fat路线已源级删除；两平台实际144/13/19与三交付、executor和Core通过；strict能力明确撤回，SIMD/原库保留；其余CPU路由裁决独立待办",
-      "candidate": "7157655201df3b63619a4e5b11dfe272bcf35273",
-      "performance": {
-        "tier": "P0",
-        "evidence": "evidence/correctness/cpu-native-matmul-retirement/README.md"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/cpu-final-f1-build-contract.md",
+      "summary": "F1/B4 SCOPED：CPU成熟默认需要配置保留的私有ProviderAccess重绑定；公开对象/ABI/执行合同不变，先冻结有限FIX，不恢复MatMul。"
     },
     {
       "module": "graph",
@@ -428,15 +423,15 @@
     },
     {
       "module": "compute_route_cpu",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/cpu-final-f1-build-contract.md",
-      "summary": "CPU最终F1 SCOPED：用户要求三平台CPU/构建与预编译一致、全重复域best-of和合理默认；核对flags/LTO资格、mixed core及默认回退，有限审计未写产品。旧GPU/Graph阻塞不解除。"
+      "summary": "F1/B4 AUDITED：静态逐合同成熟工程默认、冷proposal policy投影，保留完整region/原资源与Prepared执行；无性能WIN声明，普通unknown条件仍可执行。"
     },
     {
       "module": "graph_route_cpu",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/cpu-final-f1-build-contract.md",
-      "summary": "CPU最终F1 SCOPED：用户要求三平台CPU/构建与预编译一致、全重复域best-of和合理默认；核对flags/LTO资格、mixed core及默认回退，有限审计未写产品。旧GPU/Graph阻塞不解除。"
+      "summary": "F1/B4 AUDITED：静态逐合同成熟工程默认、冷proposal policy投影，保留完整region/原资源与Prepared执行；无性能WIN声明，普通unknown条件仍可执行。"
     },
     {
       "module": "compute_provider_cublas",
