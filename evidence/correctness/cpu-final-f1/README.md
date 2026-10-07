@@ -123,3 +123,16 @@ SHA-verified duplicate Apple source tar files (496,189,440 bytes). Their exact
 Git candidate and SHA remain archived; validation sources, SDK prefixes,
 producers/cache and raw results remain. Reproduction can regenerate the archive
 from the recorded canonical Git revision rather than retaining duplicate tars.
+
+## B2 Windows CPU+Vulkan installed delivery completed
+
+Candidate `7060cf257e1f8e90a1cd0a79e837f40fb9eaa034` completed 15 steps;
+shared/static source and relocated installed consumers each passed 40 numerical
+checks, with system-only PATH and Torch/c10 plus the exact old-core CPU-program
+DLL beside the executable. Shared export inspection passed. Original ggml/IREE
+dependencies were reused; shared/static increments took 144.266/187.297 seconds.
+[Delivery receipt and layout](b2-mixed-vulkan-delivery-receipt.json),
+[logs, exact consumer/driver and final static build identity](b2-mixed-vulkan-delivery.zip).
+The earlier Vulkan validation-layer skip is unchanged; this CPU SDK batch does
+not qualify that test, all GPU formats or P1. The Linux mixed loader batch is the
+remaining F1 platform delta, not yet PASS.

@@ -211,3 +211,13 @@ F1终审还需具名验证Linux混合旧core的实际loader，而不是用CPU-on
 原CPU程序资源/ISA检查；GPU原算法不升级，不做GPU P1、不重新签全模型GPU覆盖。
 这是B2/B3原交付风险的具体平台尾项，产品FIX=0；由不可变Windows完整archive前向ext4验证，
 j2、重型串行，成功producer复用。未知特化不带旧WIN，未验不能关闭F1。
+
+## B2 Windows CPU+Vulkan三交付已验
+
+候选 `7060cf257e1f8e90a1cd0a79e837f40fb9eaa034` 的同producer shared/static源码各40格、
+搬移后安装消费者各40格均通过；15个交付步骤成功，实际shared出口检查通过。
+执行PATH仅Windows系统目录，Torch/c10与具名旧core原CPU程序DLL邻exe；原ggml/IREE依赖复用，
+shared/static增量144.266/187.297秒，没有GPU性能或全模型GPU重新资格。
+[安装收据与实际runtime布局](../../../../evidence/correctness/cpu-final-f1/README.md)归档。
+先前Vulkan validation-layer实例skip仍按旧record保留，不因本批CPU SDK通过而改PASS。
+Linux混合loader尾项已启动，当前F1仍未关闭；compute/Graph公开产品源代码没有本批新变化。
