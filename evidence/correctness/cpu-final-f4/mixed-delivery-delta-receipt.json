@@ -1,0 +1,46 @@
+{
+  "product_candidate": "a7ccfc6639483aee4a76403a35fb32d1732441ec",
+  "environments": [
+    {
+      "environment": "Windows CPU+CUDA",
+      "candidate": "a06b27e08f1443e43f55c04eaf589cb7b432f8ff",
+      "successful_steps": 15,
+      "retained_failed_steps": 0,
+      "source_and_sdk_consumers": 4,
+      "all43_and40_pass": true,
+      "win_inheritance": false
+    },
+    {
+      "environment": "Windows CPU+Vulkan",
+      "candidate": "a06b27e08f1443e43f55c04eaf589cb7b432f8ff",
+      "successful_steps": 15,
+      "retained_failed_steps": 0,
+      "source_and_sdk_consumers": 4,
+      "all43_and40_pass": true,
+      "win_inheritance": false
+    },
+    {
+      "environment": "Mac16,12 CPU+Apple",
+      "candidate": "64304e9e691cc78d2ead05a7c88fa485f9b8adc4",
+      "successful_steps": 20,
+      "retained_failed_steps": 0,
+      "source_and_sdk_consumers": 4,
+      "all43_and40_pass": true,
+      "win_inheritance": false
+    },
+    {
+      "environment": "Linux CPU+CUDA",
+      "candidate": "64304e9e691cc78d2ead05a7c88fa485f9b8adc4",
+      "successful_steps": 17,
+      "retained_failed_steps": 2,
+      "source_and_sdk_consumers": 4,
+      "all43_and40_pass": true,
+      "win_inheritance": false
+    }
+  ],
+  "scope": "Current CPU private factory/rule seam in four existing mixed envelopes; original GPU math/qualification unchanged. Cached source/static/shared, ordinary CPU two contexts,43 rule requests and40 original numeric/replay checks; actual loader/exports where applicable.",
+  "archive": "evidence/correctness/cpu-final-f4/mixed-delivery-delta.zip",
+  "archive_sha256": "f80960ed8019f60b14497868523abdf94bbfe9aed4e093f86929a489079e3a1a",
+  "archive_bytes": 109850,
+  "performance": "P0/delivery delta only, no P1 and no GPU performance claim."
+}

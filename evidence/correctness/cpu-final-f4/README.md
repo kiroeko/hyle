@@ -72,3 +72,18 @@ separates20 kinds with qualified subdomains, one additional unique-only kind and
 14 finite retirement audits. This is not deletion or a full-family WIN claim.
 Current mixed-envelope private-seam deltas and F4 terminal audit remain pending;
 old GPU states and math are preserved. No additional P1 was run.
+
+## Mixed-envelope delta completed
+
+[Mixed receipt](mixed-delivery-delta-receipt.json) and
+[complete raw/consumer/driver archive](mixed-delivery-delta.zip) finish the current
+CPU private-seam delta in Win CPU+CUDA, Win CPU+Vulkan, Mac CPU+Apple and Linux
+CPU+CUDA. Each has four source/relocated SDK consumers, all43 requests through
+both contexts and original40 numeric/replay format checks. No CPU-only WIN leaks
+into these envelopes. Actual loader/export checks pass; GPU math is unchanged.
+Successful steps are15/15/20/17; Linux's two initial consumer configuration
+failures (toolkit path and compiler cache reset) remain recorded. Existing
+consumer environment parameters were restored; successful library steps were reused.
+
+F4 terminal scope is recorded in its current card. Native source retirement and
+the final CPU goal audit remain F5/F6; this archive does not claim their completion.

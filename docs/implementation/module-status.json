@@ -427,10 +427,15 @@
     },
     {
       "module": "compute_provider_native",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/compute/cpu-final-f4-best-of.md",
-      "summary": "CPU最终F4 CANDIDATE：当前43精确全候选优选及逐合同成熟默认固定，旧187/17已移除；CPU-only三平台三交付与Win/Mac mixed delta通过，Linux mixed static批次待结；不新增数学或P1。",
-      "candidate": "a7ccfc6639483aee4a76403a35fb32d1732441ec"
+      "summary": "CPU最终F4 CLOSED：当前43精确完整候选优选／成熟工程默认固定，资格P1与两入口/资源/CPU-only三平台及四mixed三交付delta通过；旧187/17移除，失败/未知保留；F5清退与F6终审仍待。",
+      "candidate": "a7ccfc6639483aee4a76403a35fb32d1732441ec",
+      "performance": {
+        "tier": "P1",
+        "evidence": "evidence/performance/cpu-final-f4-p1/README.md",
+        "material_margin_pct": 5
+      }
     },
     {
       "module": "compute_sched",
@@ -439,17 +444,27 @@
     },
     {
       "module": "compute_route_cpu",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/compute/cpu-final-f4-best-of.md",
-      "summary": "CPU最终F4 CANDIDATE：当前43精确全候选优选及逐合同成熟默认固定，旧187/17已移除；CPU-only三平台三交付与Win/Mac mixed delta通过，Linux mixed static批次待结；不新增数学或P1。",
-      "candidate": "a7ccfc6639483aee4a76403a35fb32d1732441ec"
+      "summary": "CPU最终F4 CLOSED：当前43精确完整候选优选／成熟工程默认固定，资格P1与两入口/资源/CPU-only三平台及四mixed三交付delta通过；旧187/17移除，失败/未知保留；F5清退与F6终审仍待。",
+      "candidate": "a7ccfc6639483aee4a76403a35fb32d1732441ec",
+      "performance": {
+        "tier": "P1",
+        "evidence": "evidence/performance/cpu-final-f4-p1/README.md",
+        "material_margin_pct": 5
+      }
     },
     {
       "module": "graph_route_cpu",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/compute/cpu-final-f4-best-of.md",
-      "summary": "CPU最终F4 CANDIDATE：当前43精确全候选优选及逐合同成熟默认固定，旧187/17已移除；CPU-only三平台三交付与Win/Mac mixed delta通过，Linux mixed static批次待结；不新增数学或P1。",
-      "candidate": "a7ccfc6639483aee4a76403a35fb32d1732441ec"
+      "summary": "CPU最终F4 CLOSED：当前43精确完整候选优选／成熟工程默认固定，资格P1与两入口/资源/CPU-only三平台及四mixed三交付delta通过；旧187/17移除，失败/未知保留；F5清退与F6终审仍待。",
+      "candidate": "a7ccfc6639483aee4a76403a35fb32d1732441ec",
+      "performance": {
+        "tier": "P1",
+        "evidence": "evidence/performance/cpu-final-f4-p1/README.md",
+        "material_margin_pct": 5
+      }
     },
     {
       "module": "compute_provider_cublas",

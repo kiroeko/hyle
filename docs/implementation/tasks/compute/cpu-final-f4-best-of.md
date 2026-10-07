@@ -1,8 +1,8 @@
 # F4 CPU全重复域批量best-of
 
-<!-- MODULE REVIEW: CANDIDATE -->
+<!-- MODULE REVIEW: CLOSED -->
 
-当前包CANDIDATE，baseline `83240ab43ba80cd549dcf03933e3d69e8f94c2b8`，F1/F2/F3已完成。
+当前包CLOSED，baseline `83240ab43ba80cd549dcf03933e3d69e8f94c2b8`，candidate `a7ccfc6639483aee4a76403a35fb32d1732441ec`。
 owner compute_provider_native、compute_route_cpu、graph_route_cpu；总合同[CPU最终收口](cpu-final-closure-plan.md)。输入F2重叠域与F3当前合格承载。
 只比较实际可执行且同语义/精度/资源/完成边界的候选，覆盖oneDNN/ggml/ATen及剩余Native，
 完整region与等价完整程序比较，保留融合。单承载只正确性/资源/P0，能力差异不能算loss。
@@ -175,3 +175,30 @@ Native／CPU route／Graph CPU route按协议进入CANDIDATE，算法、对象�
 CPU-only三平台及Win CUDA/Vulkan、Mac Apple mixed的当前接缝三交付已实际通过；
 Linux CUDA mixed source/shared已过，static仍在原串行批次中。未结束项不提前签PASS或CLOSED。
 旧GPU owner／公共Graph状态保持；有限L1输入只交给后续F5，不在本包源级删除算子。
+
+## F4 CLOSED：当前版本规则与本包验收完成
+
+三owner已在 `aad75af9` 合法CANDIDATE；产品冻结后没有任何src/include/cmake差异。
+CPU-only三平台三交付，以及Win CPU+CUDA、Win CPU+Vulkan、Mac CPU+Apple、Linux CPU+CUDA的
+source/static/shared接缝增量全部完成。四mixed环境分别15/15/20/17个成功步骤，
+每环境四个真实源码／SDK消费者均执行43请求×两context和40原格式数值／重放检查。
+[mixed完整原始证据](../../../../evidence/correctness/cpu-final-f4/mixed-delivery-delta-receipt.json)
+保留Linux消费者漏toolkit路径和编译器cache重置的两次原FAIL；仅纠正消费方既有环境参数，
+未改产品、公共治理、GPU数学或仪器，未重跑已成功库步骤／P1。
+
+| 七门 | 当前本包结果与证据范围 |
+|---|---|
+| scope | F2固定需求不删；453有限同合同请求、43完整优选、377工程默认、33单承载；L1交35种源码给F5，不以本包声称已退役 |
+| architecture | 原Provider资源／程序保留；冷规则固定版本/recipe/硬件/CPU2/线程/真实port，普通用户不排序或计时；成熟完整region保留原边界与融合 |
+| correctness | 全767准入pair无数值失配；新规则命中/失配、原精度/别名/变输入重放、Graph leaf与完整region优先、失败清理／Native owner回归；F1/F3未改变数学与状态资格按源身份复用 |
+| delivery | CPU-only三平台与四mixed envelope源码/搬移static/shared实际43/40格；Win DLL邻exe/精简PATH，Unix标准runtime staging/rpath及真实loader/exports |
+| usability_docs | 当前43规则与历史187/17分清；未知条件合法成熟默认／无WIN；Select/Copy的工程取舍、严格未知资源与无完整模型常驻声明具名公开 |
+| red_team | 对账partial WIN、旧软件证书、self与borrowed、不同精度/物理layout/private storage、错误测试gate输入和缺runtime/toolchain的消费者；原FAIL/INCONCLUSIVE不回写 |
+| engineering_performance | 当前qualified128固定n15/四strata及controls；114 WIN/12 LOSE/2未裁决原聚合FAIL保留，选43完整资格点；其它按授权工程默认／P0，不追加AA/n或self优化；冷规则不增加hot搜索/分配/执行层 |
+
+完整region选择是保留原资格融合/资源的ENGINEERING_DEFAULT，不把leaf性能外推region或宣称统计冠军。
+WIN只对本页固定条件适用；未测hardware/shared/Linux/Mac/mixed不继承，不因此撤数学能力。
+Native冗余源码仍在，F5按当前handoff先有限成熟替代／资源审计再删；SIMD/Mem和具名独有消费保留。
+统一Compute+Graph实现 **61,110行/251文件**，不含tests/vendor/bench；本轮新增自研数学0。
+这不是CPU goal最终完成：F5物理清退与F6完整旅程终审仍待。
+reopen：真实同合同路由/交付/资源缺陷、当前软件/recipe变化或WIN资格条件误匹配；旧卡／未验点不授权自动重开。
