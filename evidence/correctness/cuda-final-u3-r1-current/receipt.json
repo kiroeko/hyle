@@ -1,0 +1,86 @@
+{
+  "schema": 1,
+  "scope": "R1 current official DSpark programs only; not all 49 region associations/sidecars/route delivery",
+  "product_candidate": "3922e3ed3cfbf495aafeb774e80caa15630d000c",
+  "test_candidate": "3aff1ac2854ad4b80f66e644e350e48bc1ec6227",
+  "platforms": [
+    "Windows",
+    "WSL Linux"
+  ],
+  "each_platform_each_entry_tests": 5,
+  "programs": [
+    "target hidden/confidence",
+    "full Markov vocabulary",
+    "prefill/cache/five-token attention",
+    "current Pro/Flash main attention compression/MoE",
+    "complete three-stage DSpark/shared embedding/head/confidence"
+  ],
+  "limits": "Native only; head sharding retains complete vocabulary. No full weight residency claim or model engine.",
+  "unverified": [
+    "three quantized sidecars",
+    "remaining family-region associations",
+    "complete GGUF/precision catalogue",
+    "final U3 CUDA-only/mixed three delivery",
+    "U4 best-of/performance and U5 retirement"
+  ],
+  "precision_facts": {
+    "bf16_grouped_activation": "Original MMF casts F32 RHS to BF16. Original cast weights to F32 retains the public F32 RHS contract.",
+    "cancellation_diagnostic": {
+      "source_weight_terms": [
+        0.0625,
+        0.03125
+      ],
+      "actual_inverse_terms": [
+        -0.2138671875,
+        0.47265625
+      ],
+      "reference_inverse_terms": [
+        -0.2138671875,
+        0.470703125
+      ],
+      "source_dot_on_actual_inputs": 0.00140380859375,
+      "source_dot_on_reference_inputs": 0.0013427734375,
+      "gpu_output": 0.00140380859375
+    },
+    "validation": "Independent source equation on actual public operands at the cancelling projection, matching existing inverse validator. Upstream cache/attention/state and final-output gates retained; no global tolerance change."
+  },
+  "performance": "P0 only. Whole-weight F32 cast cost charged; original stable Softplus on mature CUDA tensor runtime.",
+  "archive_sha256": "b7a87bd8b0f5036d3ed328273f3d0a2ec58359ad1489c6f8d2866e816ac83d82",
+  "inputs": {
+    "linux-current/build.log": "370aff1bcc29dd25e8cd9883467521be5c766f06535d13eb9b15aa8d6815b97c",
+    "linux-current/configure.log": "3d0bd8e7e6ea115f2567c0d4b0f0a36341a8f80d7d0aba3e293395bfb873ae63",
+    "linux-current/current-model-programs.log": "1572a5f696360d0e5d1da4364971312bd1a9f03ccf3b7a935c92c97f1a881a19",
+    "linux-current/native.log": "e084102e4ab38f20f743645c7446d0e146607baf6a7a06594ff7faf54c329e1e",
+    "linux-current/receipt.json": "45bbc41e049483792b38453e1bcd0f3e3dda7c9c8e4d530557996d4fe7c36cf3",
+    "linux-current/tests.xml": "f9f1bfd64aa365bbf0715c3e477bc42cbfbf76dceb184ef39e382d95c535715f",
+    "product-plan.json": "2da7f22b1cff2c851e4091b1fbae9563ba639b2ebce72bcf52c7df6bab51b4ae",
+    "windows-audit/build.log": "a1301d03a36845fe5a1458f7bd774b7360c954c46f333e1326d576f16e962078",
+    "windows-audit/first-current-program.log": "192fe4059207dc8a12151e6e793b5a79b42770144f6b6b16d75afca884dc0a41",
+    "windows-audit/native.log": "8db37d5ec268476fb002e9ebdcf22c766bf6805d0e247993666d83317a677533",
+    "windows-audit/preflight.xml": "4ec90d2f3fbcccb9ce4f2646cdeeddca1d56edf71baae3e8768bb3ce68d02989",
+    "windows-audit/receipt.json": "8057709486f7f20363ae1f9b83bcbf0b62cfe4f7d730755bf2bd3d44aded6799",
+    "windows-cache-input-diagnostic/build.log": "a1301d03a36845fe5a1458f7bd774b7360c954c46f333e1326d576f16e962078",
+    "windows-cache-input-diagnostic/first-current-program.log": "62a1cb1d1ca0074868da6937b1ad8d310ee851c8a5a68c1bdc13973494089113",
+    "windows-cache-input-diagnostic/preflight.xml": "2387096fea9fa5c1ff209b786b2884e2cc654a50a4f575f7da69c345e1eb4558",
+    "windows-cache-input-diagnostic/receipt.json": "d5ef4135564b14181148b8317f7aae0e7159742240efebf6ac9046aa37dcb89a",
+    "windows-cache-r3/build.log": "25832f77913758c38acc586a4aef93a9f64707cf927ef4c3b91825f9ecf51fd6",
+    "windows-cache-r3/first-current-program.log": "ac8e080105379a1c5628a09d596d419931f37bea407018e4377923d5765cd119",
+    "windows-cache-r3/preflight.xml": "70baeb243ebe88b0431f2722ac0cc370de2982aa65245449ccbee7316a76331f",
+    "windows-cache-r3/receipt.json": "bdecb2dc2f970114cacb39fb52253b83cdc1db61e7ebc4e6616abcfd5cf29977",
+    "windows-cache-source-equation/build.log": "d005f6bc65169a3c9a77049f321c61e94c39229c32765f7755d337ee1f239ab3",
+    "windows-cache-source-equation/first-current-program.log": "4b64e0031de923f550c7b4ed92c7ea9aabc5690c434cf8c1b05aca4d1e31f53e",
+    "windows-cache-source-equation/native.log": "a831432a9d1c02e40808af4da74d55cf2e78f2171539b83d26e10b6fb11e86cd",
+    "windows-cache-source-equation/preflight.xml": "01be8a15f0ce5b78656d77b50b71866ee90efa4b75022dc184da32f5d30d214a",
+    "windows-cache-source-equation/receipt.json": "391d76cce72acbebaf81776bafdf308d167e9604e48225b5b2a4c0e511753f30",
+    "windows-current-programs/native.log": "9bfb490ade4262b9bd06496dfc185e69858d91ce125d53371a92976ce978566b",
+    "windows-current-programs/receipt.json": "ee51417090d5a52191a7f6a52825ecfaa38ca9cc9bf7b73682a6486c1ad20aa3",
+    "windows-current-programs/run.log": "9c4e173dd061e697d95084f97adff77e29627a8e0d913591856f0a85e3234e32",
+    "windows-current-programs/tests.xml": "9330c0a0a709db8c1127d226021b8901013547bd9c31ec5743781dd6d472f80c",
+    "windows-fix-r2/build.log": "4140de4c228804d02fdb4b559041aaff4d5b467922e7a701ce7e8a00ede5a72e",
+    "windows-fix-r2/first-current-program.log": "95dbac9eb861e4319fdaba5b02fd339217dcc6532054f025aaeae5f58ffcee5d",
+    "windows-fix-r2/preflight.xml": "84a9a7435682c3edc607a356d1a0909e62d2760883d29a9959565df1b2fec9fe",
+    "windows-fix-r2/receipt.json": "2fc4bfad40bdb61a5ffbad138827f3960c19795ba9d0c0e5c2b67467c9ab8e00",
+    "windows-fix/build.log": "d88aa37adce7e736ebb03a5120a4cfcf25aeb2d161f25ea74aff249b0b9db85f",
+    "windows-fix/receipt.json": "320223d650d375d64816671198530ecb6e217812799abeb45a712a36a968ebe4"
+  }
+}

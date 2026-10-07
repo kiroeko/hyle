@@ -69,3 +69,16 @@ F2的原源码账单：ggml `456172ec` CUDA MMF的BF16分支用`ggml_cuda_cast<n
 Mem/Completion复用；P0记F32转换／index同步／私有分配账单，单成熟补洞不跑P1；无FFI；
 三交付以既有SDK/owning package规则联合验收；用户仍只选CUDA与自然Direct/Graph入口。
 CPU已闭数学/性能、通用SIMD、其它GPU与public schema不改，自研CUDA继续冻结。
+
+## 当前官方链路第一批结果
+
+产品修复`3922e3ed`（test-only继承至`3aff1ac2`）：两当前official profile的target/confidence、
+Markov完整词表、prefill/五tokencache、ratio0/4/128主干attention/MoE、完整三stage/shared
+embedding/confidence/head在Windows/Linux Direct/Graph通过。Linux同候选10项native无skip，
+Windows数学／输入身份匹配证据复用及最终cache consumer验证通过。范围和原失败见
+[当前资格](../../../../evidence/correctness/cuda-final-u3-r1-current/README.md)。
+
+F3具体Source误差账单：prefill引用actual cache后的projection，source dot对actual输入等于GPU输出；
+相消使已admitted BF16输入误差的点值relative比值放大。GPU consumer沿common validator机制
+对actual public inverse验证独立grouped方程/原BF16边界，其它完整gate保持，不改global tolerance。
+F4及F5、全49关联与其它族尚未完成；本包仍AUDITED，不代签全R1或CUDA CLOSED。
