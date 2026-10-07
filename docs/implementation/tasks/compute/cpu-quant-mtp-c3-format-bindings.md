@@ -2,6 +2,9 @@
 
 <!-- MODULE REVIEW: AUDITED -->
 
+GPU owning宏的有限等价轮已完成 [宏专题](compute-graph-macro-normalization.md) 验收，候选026d40bc；
+ggml Vulkan owner恢复本卡既有明确拒绝／原限制范围，不恢复旧GPU施工或性能队列。
+
 ## 计划身份
 
 - 状态：AUDITED，已固定G1–G4、N1–N6范围；Native已绑定本卡的原CPU解码/MLX组合接缝。

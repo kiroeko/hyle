@@ -270,10 +270,14 @@
     },
     {
       "module": "compute",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/compute/compute-graph-macro-normalization.md",
-      "summary": "宏规范 CANDIDATE：有限等价facts/include/export已完成三平台编译、消费者与三交付；原数学/43 CPU规则与能力限制保留，P0无新热成本；不代签CUDA剩余任务或旧Vulkan性能。",
-      "candidate": "026d40bcfdde389c9f69b2458b55d8157774ebda"
+      "summary": "宏规范 CLOSED：目标facts/显式include/export/直接Core声明、三平台实际编译与三交付完成；原CPU数学、清退与43规则保持；不新签性能赢家，CUDA goal及旧Graph/Vulkan blocker未关闭。",
+      "candidate": "026d40bcfdde389c9f69b2458b55d8157774ebda",
+      "performance": {
+        "tier": "P0",
+        "evidence": "evidence/correctness/compute-graph-macro-normalization/README.md"
+      }
     },
     {
       "module": "graph",
@@ -368,10 +372,14 @@
     },
     {
       "module": "compute_provider_ggml",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/compute/compute-graph-macro-normalization.md",
-      "summary": "宏规范 CANDIDATE：有限等价facts/include/export已完成三平台编译、消费者与三交付；原数学/43 CPU规则与能力限制保留，P0无新热成本；不代签CUDA剩余任务或旧Vulkan性能。",
-      "candidate": "026d40bcfdde389c9f69b2458b55d8157774ebda"
+      "summary": "宏规范 CLOSED：目标facts/显式include/export/直接Core声明、三平台实际编译与三交付完成；原CPU数学、清退与43规则保持；不新签性能赢家，CUDA goal及旧Graph/Vulkan blocker未关闭。",
+      "candidate": "026d40bcfdde389c9f69b2458b55d8157774ebda",
+      "performance": {
+        "tier": "P0",
+        "evidence": "evidence/correctness/compute-graph-macro-normalization/README.md"
+      }
     },
     {
       "module": "graph_provider_onednn",
@@ -414,10 +422,14 @@
     },
     {
       "module": "compute_provider_native",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/compute/compute-graph-macro-normalization.md",
-      "summary": "宏规范 CANDIDATE：有限等价facts/include/export已完成三平台编译、消费者与三交付；原数学/43 CPU规则与能力限制保留，P0无新热成本；不代签CUDA剩余任务或旧Vulkan性能。",
-      "candidate": "026d40bcfdde389c9f69b2458b55d8157774ebda"
+      "summary": "宏规范 CLOSED：目标facts/显式include/export/直接Core声明、三平台实际编译与三交付完成；原CPU数学、清退与43规则保持；不新签性能赢家，CUDA goal及旧Graph/Vulkan blocker未关闭。",
+      "candidate": "026d40bcfdde389c9f69b2458b55d8157774ebda",
+      "performance": {
+        "tier": "P0",
+        "evidence": "evidence/correctness/compute-graph-macro-normalization/README.md"
+      }
     },
     {
       "module": "compute_sched",
@@ -528,20 +540,20 @@
     {
       "module": "compute_provider_ggml_vulkan",
       "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/compute-graph-macro-normalization.md",
-      "summary": "宏规范 AUDITED：M1-M8等价目标facts/显式include/原export拼写已固定；原数学/路由/资源/限值及43 CPU规则不变；完整跨平台/宏传播验收待验。"
+      "record": "docs/implementation/tasks/compute/cpu-quant-mtp-c3-format-bindings.md",
+      "summary": "C3公共GGUF enum消费者有限迁移AUDITED：只明确拒绝新增CPU格式，原D5资格/算法/限制不变，不恢复GPU队列；不签新增GPU能力。 宏有限轮已验收CLOSED，继续原父轮有限FIX/限制，无新数学或资格扩张。"
     },
     {
       "module": "compute_ggml_runtime",
       "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/compute-graph-macro-normalization.md",
-      "summary": "宏规范 AUDITED：M1-M8等价目标facts/显式include/原export拼写已固定；原数学/路由/资源/限值及43 CPU规则不变；完整跨平台/宏传播验收待验。"
+      "record": "docs/implementation/tasks/compute/cuda-final-u3-mature-bindings.md",
+      "summary": "CUDA U3 G1/G2 AUDITED：原stock接线Windows局部已验；有限借入原Unsloth narrow IQ1 CUDA/math/table/dispatch与单core ABI/manifest/template，保留CPU-only及其它GPU源码选择；新资格/三交付/mixed差异待验，零新自研数学。 宏有限轮已验收CLOSED，继续原父轮有限FIX/限制，无新数学或资格扩张。"
     },
     {
       "module": "compute_provider_ggml_cuda",
       "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/compute-graph-macro-normalization.md",
-      "summary": "宏规范 AUDITED：M1-M8等价目标facts/显式include/原export拼写已固定；原数学/路由/资源/限值及43 CPU规则不变；完整跨平台/宏传播验收待验。"
+      "record": "docs/implementation/tasks/compute/cuda-final-u3-mature-bindings.md",
+      "summary": "CUDA U3 G1/G2 AUDITED：原stock接线Windows局部已验；有限借入原Unsloth narrow IQ1 CUDA/math/table/dispatch与单core ABI/manifest/template，保留CPU-only及其它GPU源码选择；新资格/三交付/mixed差异待验，零新自研数学。 宏有限轮已验收CLOSED，继续原父轮有限FIX/限制，无新数学或资格扩张。"
     },
     {
       "module": "graph_provider_ggml_cuda",
@@ -564,8 +576,8 @@
     {
       "module": "compute_provider_iree_vulkan",
       "state": "CANDIDATE",
-      "record": "docs/implementation/tasks/compute/compute-graph-macro-normalization.md",
-      "summary": "宏规范 CANDIDATE：有限等价facts/include/export已完成三平台编译、消费者与三交付；原数学/43 CPU规则与能力限制保留，P0无新热成本；不代签CUDA剩余任务或旧Vulkan性能。",
+      "record": "docs/implementation/tasks/compute/llm-moe-d3-ggml-vulkan-native-binding.md",
+      "summary": "IREE原D3能力仍CANDIDATE；宏等价改动026d40bc经实际owner编译、32 native及三平台宏/交付验收，原功能/精度/资源/性能限制保持，不签Vulkan路线CLOSED。",
       "candidate": "026d40bcfdde389c9f69b2458b55d8157774ebda"
     },
     {

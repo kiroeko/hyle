@@ -42,6 +42,9 @@ G2/N1/N2/R1 在实际方案 AUDITED 前不从 G1 获得实现授权。公共 sch
 
 ## 普通 API、资源与冷／热边界
 
+runtime／ggml CUDA owning宏已完成 [宏专题](compute-graph-macro-normalization.md) 的等价迁移与实际验收；
+产品候选026d40bc，原数学／资源／资格不变。owner恢复本卡G1/G2有限FIX，不能因宏轮结束签本包完成。
+
 N1 独立范围与资格记录见 [成熟 GPU 权重准备载体](cuda-final-u3-artifact-carrier.md)。
 
 普通用户只选路线，原 checked descriptor、ModelArtifactProfile／WorkloadContext／resource 不变。

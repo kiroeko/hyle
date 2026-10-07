@@ -2,6 +2,9 @@
 
 <!-- MODULE REVIEW: CANDIDATE -->
 
+HYLE owning compiler宏的等价delta由 [宏专题](compute-graph-macro-normalization.md) 完成验收，
+当前等价产品候选026d40bc；本D3能力／资源／精度与后续D5限制保持CANDIDATE，不签完整Vulkan收口。
+
 ## Closure card
 
 - owners：`compute_route_vulkan`、`graph_route_vulkan`、`compute_provider_ggml_vulkan`、

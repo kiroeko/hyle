@@ -1,6 +1,6 @@
 # Compute + Graph 宏规范专题
 
-<!-- MODULE REVIEW: AUDITED -->
+<!-- MODULE REVIEW: CLOSED -->
 
 2026-10-08 用户要求加入任务，使全部 Compute + Graph 的宏使用规范。
 这是当前 [CUDA goal](cuda-final-closure-plan.md) 的附加横切任务，执行时按实际文件 owner
@@ -136,3 +136,7 @@ Windows shared源码和搬移SDK也已完成48项普通Direct/Graph消费，三�
 实际编译／五门均已完成。完整命令、原失败和七门见 [宏专题验收](../../../../evidence/correctness/compute-graph-macro-normalization/README.md)。
 产品候选仍为`026d40bcfdde389c9f69b2458b55d8157774ebda`，后续产品没有变化；P0无热成本变化，
 CPU原数学与43规则保持，不跑P1。状态按实际owner分别关闭本有限轮或恢复已活动父轮，不假关CUDA goal。
+
+2026-10-08 本专题CLOSED：CPU三个本轮owner经独立CANDIDATE后关闭；runtime／ggml CUDA／Vulkan
+活动owner恢复原有限父轮，IREE恢复原D3 CANDIDATE并绑定等价宏候选；公共Graph及Vulkan旧blocker保持。
+没有未运行门写PASS。CUDA剩余原范围继续，不自动增加其它算子或性能课题。
