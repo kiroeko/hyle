@@ -1697,7 +1697,6 @@ TEST_P(CudaGraphQwen38Profiles,
   const auto &shape = *GetParam();
   constexpr int weight_seed = 67;
   const auto half_desc = dense(c::DataType::kBFloat16, {1, shape.hidden});
-  const auto joined_desc = dense(c::DataType::kBFloat16, {1, (2 * shape.hidden)});
   const auto stored_weight_desc =
       dense(c::DataType::kBFloat16, {shape.hidden, (2 * shape.hidden)});
   const auto weight_desc = stored_weight_desc.transposed().value();
