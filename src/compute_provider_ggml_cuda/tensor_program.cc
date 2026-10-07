@@ -126,8 +126,13 @@ bool representable(const TensorDesc &description,
   // Leave room for rounded launch sizes and FP32 conversion intermediates.
   const auto element_limit = native_embedding_source ? std::size_t(INT32_MAX - 1024)
       : std::size_t(INT32_MAX - 1024) / sizeof(float);
+  // Selected-row decode never materializes the full source as F32. Its
+  // original kernel uses size_t offsets; keep the existing uint32 stride
+  // domain while admitting Q8 tables larger than the generic scratch bound.
+  const auto byte_limit = native_embedding_source ? std::size_t(UINT32_MAX)
+                                                  : std::size_t(INT32_MAX);
   if (!description.valid() || !count || !bytes || *count == 0 ||
-      *count > element_limit || *bytes > INT32_MAX ||
+      *count > element_limit || *bytes > byte_limit ||
       !(floating(description.data_type()) ||
         (integer_concat && description.is_dense() &&
          description.data_type() == DataType::kInt32)))
@@ -679,11 +684,23 @@ lower_tensor_operation(ggml_context *context, const Recipe &recipe,
     if (recipe.values[node.inputs[0]].is_plain() &&
         recipe.values[node.inputs[0]].data_type() == DataType::kBFloat16)
       weights = ggml_cast(context, weights, GGML_TYPE_F32);
-    result = ggml_mul_mat_id(context, weights,
-                             values[node.inputs[1]], values[node.inputs[2]]);
+    auto *activations = values[node.inputs[1]];
+    auto *ids = values[node.inputs[2]];
+    const auto slots = activations->ne[1], tokens = activations->ne[2];
+    if (recipe.values[node.inputs[0]].is_plain()) {
+      // Original F32 MMID sorting assumes distinct experts per token. Make
+      // each public slot its own native token, so repeated IDs stay legal
+      // without selected-weight copies or any replacement math.
+      activations = ggml_reshape_3d(context, activations, activations->ne[0],
+                                    1, slots * tokens);
+      ids = ggml_reshape_2d(context, ids, 1, slots * tokens);
+    }
+    result = ggml_mul_mat_id(context, weights, activations, ids);
     if (!ggml_prec_set_acc(result, GGML_PREC_F32) ||
         !ggml_prec_set_src(result, GGML_PREC_F32, 1))
       return {};
+    if (recipe.values[node.inputs[0]].is_plain())
+      result = ggml_reshape_3d(context, result, result->ne[0], slots, tokens);
   } else if (const auto descriptor =
                  node.operation
                      .custom_as<model_ops::HyperConnectionCombine>()) {
