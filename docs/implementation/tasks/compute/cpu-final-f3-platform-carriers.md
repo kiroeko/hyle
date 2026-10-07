@@ -178,3 +178,17 @@ oneDNN generic仍是合法数学，但此既定量化敏感片段没有通过完
 给此具名工程规则独立entry/version，不借旧WIN，Unknown/失配不带该entry。无新常态metadata/alloc。
 现Direct827项通过、唯一sidecar FAIL，原记录保留；不重跑827。Graph原full尚未运行，rule后的首次全批不伪PASS。
 风险验收含正确软件/真实profile命中、revision/manifest/variant失配、普通unknown沿generic、Direct/Graph同数值与资源。
+
+### T10裁决与T11 ISA对照接缝
+
+T10 metadata17项通过，但完整片段仍4.02904749% > 原4%；没有完整合格收益，规则与新增测试整项清退，
+不把冷绑定命中当资格，不改原始FAIL。本轮产品保留T6精度修复，generic默认恢复原表。
+具名源码反例已定位：x86产品select_cpu_program按既有AVX/AVX2/FMA/F16C/BMI2事实执行私有完整AVX2程序；
+oracle Projection.reference/grouped_reference却调用链接baseline ggml的from_float。
+原AVX2 Q8_0为127/max、_MM_ROUND_NEAREST；baseline为1/(max/127)、roundf（tie-away）；
+Mac原NEON为1/(max/127)、vcvtn（nearest-even）。同输入在中点可生成不同编码，不能互代同合同oracle。
+T11有限测试FIX：只此sidecar的Q8_0 activation编码用独立scalar表达实际已选原ISA的定义，
+其余dtype/codec仍原接口，dot继续独立原库scalar/traits对照；产品不增加vtable/ABI或改vendor算法。
+用既有cpu_avx2_program_eligible事实选择（不造新probe），冻结source anchors并补一个中点语义检查，
+一个不可变候选上具名Direct纠正与Graph首次全批；原gate/权重/三stage/词表/输入不变。
+两runtime probe预算仍已耗尽，T11不是第三probe或新产品优化。若仍失败停止这项纠正链并说明精确未决。
