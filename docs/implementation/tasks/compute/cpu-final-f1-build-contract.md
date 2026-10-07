@@ -133,3 +133,6 @@ B4候选`6216e6d0651ad2684950abec036d8749ccc3c3a1`：Direct16/Graph15全部通�
 B2产品与派生19处原port已固定、源码/CPU MatMul/Gather探针通过，真实CPU+Vulkan标准产品组合正在验证；
 首两次configure的maintenance-root缓存及notice分发类型错误保留，分别清除互斥旧root与改为SDK说明后重试。
 没有修改公共package checker来绕过锁，原实际许可证仍按中央锁安装。
+
+标准mixed配置暴露运行库collector按路径指数遍历，另开[有限工具修复](../build/runtime-staging-diamond-walk-v1.md)。
+只对同target/condition去重，条件/循环/独立collect保留；原本轮运行与中断不改PASS，不扩性能统计/治理。
