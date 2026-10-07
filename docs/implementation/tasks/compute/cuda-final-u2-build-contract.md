@@ -92,3 +92,12 @@ B4 同一源码审计的具名纠正：ggml 在 enable_language(CUDA) **之前**
 所以不能只在存在 CUDAARCHS 时放弃默认；必须将该显式环境值同样传至共同父作用域。
 若 CMake 变量已显式定义仍优先，不改 empty/invalid 值的 CMake 诊断。追加一次环境值／显式变量优先级
 配置检查；不是新的能力或性能姿势。
+
+## 当前子批结果
+
+B1 产品 `f1937b27`、B4 default 产品 `76929103`、显式环境优先级产品 `7217b109`。
+Windows 的普通配置、生成架构／显式覆盖／OFF 检查已有精确候选收据，
+见 [U2 配置证据](../../../../evidence/correctness/cuda-final-u2/README.md)。没有新增构建／运行／交付／性能 PASS。
+默认 GGML/native 编译集合得到统一，CPU 数学及闭合证据未改；B2／B3／完整 B4 仍须本包实际验收。
+选中的公共 package/头/产品 gates 在稳定接线候选集中执行，不能把 CMake configure 成功当产品完成。
+所有 Compute+Graph 实现仍由统一 LOC 脚本计数；本子批仅改构建输入，不增加自研算子。
