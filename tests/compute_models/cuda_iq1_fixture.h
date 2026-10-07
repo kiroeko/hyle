@@ -59,4 +59,19 @@ inline std::vector<float> sums(Format format, std::span<const std::byte> packed,
   }
   return result;
 }
+
+// Original CUDA IQ1 dot: d1q * (ds.x * sumi + ds.y * delta).
+// Our legal blocks have zero scale/sign nibbles, hence delta = -1 + 0.125.
+// q8_1 rounds d and the original (unquantized) 32-value sum independently.
+inline float original_cuda_uniform_dot(float decoded_quarter_sum,
+                                        std::int64_t row, std::int64_t k,
+                                        float activation) {
+  const float weight_scale = float(1 + row % 3) / 256.0F;
+  const float quantized_value = ggml_fp16_to_fp32(
+      ggml_fp32_to_fp16(activation / 127.0F)) * 127.0F;
+  const float partial_sum = ggml_fp16_to_fp32(ggml_fp32_to_fp16(activation * 32));
+  return decoded_quarter_sum * (quantized_value / 0.25F) +
+      weight_scale * (-1.0F + 0.125F) * (partial_sum - quantized_value * 32) *
+      float(k / 32);
+}
 } // namespace cuda_iq1_fixture

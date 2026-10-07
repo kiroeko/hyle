@@ -36,9 +36,12 @@ TEST(GgmlCudaIq1, OriginalDecodeMmvqAndMmqExecuteAndReplay) {
         ASSERT_TRUE(done->wait().ok());
         const auto observed = half_test::read<float>(output);
         for (std::int64_t row = 0; row < m; ++row)
-          for (std::int64_t column = 0; column < n; ++column)
-            EXPECT_NEAR(observed[row * n + column], expected[column] * (replay ? 2 : 1),
-                         std::abs(expected[column]) * 0.002F + 1.0e-5F);
+          for (std::int64_t column = 0; column < n; ++column) {
+            const auto reference = cuda_iq1_fixture::original_cuda_uniform_dot(
+                expected[column], column, k, replay ? 0.5F : 0.25F);
+            EXPECT_NEAR(observed[row * n + column], reference,
+                         std::abs(reference) * 0.002F + 1.0e-5F);
+          }
         std::fill(values.begin(), values.end(), 0.5F);
         ASSERT_TRUE(activation.view().write(std::as_bytes(std::span(values))).ok());
       }
