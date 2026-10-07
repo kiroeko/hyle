@@ -125,3 +125,7 @@ expanded GGUF的16×F32 epsilon×activation maximum×row L1舍入界加输出sto
 WindowsCPU-only源码与搬移static SDK的普通Direct/Graph48项消费已通过，静态flag和GPU关闭
 负空间检查到位。初版consumer错误要求CPU-only SDK包含未选GPU头，现按现交付合同用header
 availability检查，未改安装政策。shared与Linux/Mac三交付、Vulkan owner仍待；不提前签终审。
+
+Windows shared源码和搬移SDK也已完成48项普通Direct/Graph消费，三交付均通过，静态／共享
+标志与GPU-OFF负空间一致。Linux三交付批次已串行启动，Mac随后；本段是交付进展，不签CUDA的
+新carrier、性能或完整路线验收。原producer／sealed证据／模型均保留，没有创建逐算子producer。
