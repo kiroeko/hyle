@@ -103,3 +103,17 @@ dependencies were reused; shared/static increments took 124.594/192.500 seconds.
 [Delivery receipt and runtime layout](b2-mixed-cuda-delivery-receipt.json),
 [logs, consumer/driver and final build/install identity](b2-mixed-cuda-delivery.zip).
 Apple and Vulkan installed mixtures remain pending; this does not close F1.
+
+## B2/B3 Mac CPU+Apple three deliveries
+
+Candidate `e0388fbda7fec39e98bee0757f5ab4f91f1cc625` completed 27 steps on
+MacBook Air ARM64: CPU owning fixture, Direct16/Graph15, five original
+Metal/rejection checks, six native CPU-program/resource/ISA checks and eight
+Graph variant/cold-rule checks passed without skips. All five source/installed
+consumer runs passed their 40 numerical checks; relocated shared/static loader
+inspection and shared export hygiene passed.
+[Receipt and immutable source identity](b2-mixed-apple-three-shape-receipt.json),
+[logs/XML, consumer and exact drivers](b2-mixed-apple-three-shape.zip).
+Initial/shared/static builds took 130.598/13.927/73.534 seconds; no P1 or new GPU
+format qualification was run. Vulkan installation and the Linux mixed old-core
+loader delta remain pending, so F1 is still open.

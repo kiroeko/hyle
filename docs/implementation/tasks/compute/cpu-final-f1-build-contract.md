@@ -196,3 +196,18 @@ shared增量124.594秒、static增量192.500秒，原ggml GPU和oneDNN依赖复�
 [安装收据/日志与实际runtime布局](../../../../evidence/correctness/cpu-final-f1/README.md)已归档。
 CPU+Apple的不可变Windows archive `e0388fbda`已在Air配置通过并开始j2集中编译；
 Apple三交付及Vulkan安装形态仍未签PASS，本包不关闭。
+
+## B2/B3 Apple三交付已验及Linux混合loader尾项
+
+Air候选 `e0388fbda7fec39e98bee0757f5ab4f91f1cc625` 完成27步：CPU owning fixture、Direct16/Graph15、
+原Metal数学/十一CPU格式拒绝5项、CPU原程序与ISA/资源6项、Graph变体/冷资格8项无fail/skip。
+源码、shared/static源码及两搬移安装消费者各40格通过；实际loader与shared出口通过。
+初编130.598秒、shared增量13.927秒、static增量73.534秒，没有重跑P1。
+[原始收据与完整日志](../../../../evidence/correctness/cpu-final-f1/README.md)绑定完整Windows archive/SHA。
+当前HEAD与该archive的include/src/cmake/third_party无产品差异；后续CUDA测试调用修正不影响Apple。
+
+F1终审还需具名验证Linux混合旧core的实际loader，而不是用CPU-only新版core的安装结果代签。
+沿原Linux CUDA工具链/同机GPU与锁定cache，只增加一批CPU+CUDA的源码/搬移static/shared40格和
+原CPU程序资源/ISA检查；GPU原算法不升级，不做GPU P1、不重新签全模型GPU覆盖。
+这是B2/B3原交付风险的具体平台尾项，产品FIX=0；由不可变Windows完整archive前向ext4验证，
+j2、重型串行，成功producer复用。未知特化不带旧WIN，未验不能关闭F1。

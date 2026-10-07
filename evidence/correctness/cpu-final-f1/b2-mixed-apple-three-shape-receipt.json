@@ -1,0 +1,74 @@
+{
+  "candidate": "e0388fbda7fec39e98bee0757f5ab4f91f1cc625",
+  "source": {
+    "candidate": "e0388fbda7fec39e98bee0757f5ab4f91f1cc625",
+    "archive_sha256": "89a69f5541c3c5be72c5595b8b8c6e4b9fdba290caf435c27c0f5e95c8914032",
+    "archive_bytes": 248094720,
+    "remote_root": "/Users/kiro/hyle-verify/cpu-final-mixed-e0388fbd"
+  },
+  "scope": "MacBook Air ARM64 CPU+Apple source/static/shared: original MLX/Metal GPU, old ggml core plus original CPU IQ1 port, CPU numerical/ISA/resources/Graph replay, original GPU math and CPU-only format rejection, relocated installed consumers and loader/export inspection",
+  "steps": 27,
+  "gates": {
+    "cpu-owning.xml": {
+      "tests": 1,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "disabled": 0
+    },
+    "direct.xml": {
+      "tests": 16,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "disabled": 0
+    },
+    "gpu.xml": {
+      "tests": 5,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "disabled": 0
+    },
+    "graph.xml": {
+      "tests": 15,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "disabled": 0
+    },
+    "runtime.xml": {
+      "tests": 6,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "disabled": 0
+    },
+    "variants.xml": {
+      "tests": 8,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "disabled": 0
+    }
+  },
+  "ordinary_numeric_checks": {
+    "ordinary-cpu-40": 40,
+    "shared-source-40": 40,
+    "shared-consumer-40": 40,
+    "static-source-40": 40,
+    "static-consumer-40": 40
+  },
+  "build_seconds": {
+    "build": 130.598,
+    "shared-build": 13.927,
+    "static-build": 73.534
+  },
+  "limits": [
+    "Vulkan installed mixtures still pending",
+    "no new GPU format qualification or performance WIN",
+    "F1 and final CPU goal not yet closed"
+  ],
+  "archive_sha256": "cf9d080b782b595c0dbb6df4987b06e611343f80dcf70c924a646baa468171ec",
+  "archive_bytes": 52283
+}
