@@ -270,9 +270,9 @@
     },
     {
       "module": "compute",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/cpu-final-f1-build-contract.md",
-      "summary": "F1/B4 SCOPED：CPU成熟默认需要配置保留的私有ProviderAccess重绑定；公开对象/ABI/执行合同不变，先冻结有限FIX，不恢复MatMul。"
+      "summary": "F1/B4 AUDITED：私有ProviderAccess重绑定仅保留原配置生命周期并换同build静态表；不改公开对象/contract14/算法/热成本，不恢复退役MatMul。"
     },
     {
       "module": "graph",
