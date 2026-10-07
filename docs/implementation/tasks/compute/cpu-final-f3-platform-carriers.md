@@ -1,6 +1,6 @@
 # F3 三平台成熟CPU承载
 
-<!-- MODULE REVIEW: SCOPED -->
+<!-- MODULE REVIEW: AUDITED -->
 
 Native原ATen/Torch程序owner的F3范围重新定界；baseline `2792b79f`（实施前记录完整revision）。
 此SCOPED只冻结范围，旧F1 AUDITED不授权本批新产品；独立审计固定下表后再绑定registry至本卡。
@@ -33,3 +33,15 @@ otool发现CPU dylib的libomp依赖硬编码Homebrew路径：不能靠本机已�
 预算：一个锁定SDK、一次批量接线/构建及至多一批具名工具链/loader纠正；不换版本寻找通过。
 C1/F2合同全部仍适用；缺数学、模板/SDK ABI无法适配时记录具体反例，不缩范围、不开自研。
 本卡不等于F1已完成；已稳定F1事实按精确身份复用，最终交付在本批完成不首次留给F6。
+
+## 审计完成与实施冻结
+
+baseline完整revision `2792b79fabd9439341517edf3f44b1762faa22c0`，T1–T4已AUDITED。
+原代码不含x86-only数学/ISA要求；既有ATen/借入量化程序按CPU Tensor执行，原SDK ARM64提供所用接口。
+runtime闭包为torch/torch_cpu/c10/libomp四dylib。SDK原压缩包SHA固定，managed stage独占地修正
+CPU dylib的绝对libomp依赖为`@loader_path/libomp.dylib`，必要ad-hoc重签只作用于该派生stage；
+原archive永不改、派生文件重新进完整manifest。外部用户root不修改，必须符合可装载/版本/架构合同。
+installed shim同样按平台key判断版本，Win/Linux2.8.0+cpu条件不放宽；CUDA Torch始终拒绝。
+现runtime helper只有Linux RPATH分支，T4有限补Darwin路径，保持Linux专用linker flag不传Apple。
+公开API/对象/原数字程序不改；Native owner重新审计后合法绑定本卡，不继承旧F1有限FIX授权。
+F2/Mac缺口由此实际施工，shared/static/source批量验收与负空间均需运行，不以SDK获取签覆盖。

@@ -408,8 +408,8 @@
     {
       "module": "compute_provider_native",
       "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/cpu-final-f1-build-contract.md",
-      "summary": "CPU最终F1/B1 AUDITED：只固定Native性能recipe flags/IPO/linkage/feature失配撤资格，保持成熟默认与正常数学；B2–B4继续审计，不签完整CPU收口。"
+      "record": "docs/implementation/tasks/compute/cpu-final-f3-platform-carriers.md",
+      "summary": "CPU最终F3重新定界并AUDITED：Mac ARM64原ATen/codec SDK锁、平台version/loader-relative libomp及派生manifest、四dylib/RPATH有限FIX；无新数学，三平台最终资格未完成。"
     },
     {
       "module": "compute_sched",
