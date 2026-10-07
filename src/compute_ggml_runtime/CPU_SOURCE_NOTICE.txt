@@ -1,0 +1,17 @@
+HYLE F1 mixed CPU source policy
+
+CPU-only SDKs keep ggml ffa4e8b80930029a35991f94e7c8a93cd67730ab.
+SDKs containing GPU routes keep ggml 456172ec733a135778adcd32d00e576a58232e45.
+When CPU is selected, both cores borrow the same original Unsloth IQ1_XS,
+IQ1_XXS and IQ1_XXXS inference extension from
+46cbf0e95786fe8f5b7c0e86d57aaf8f8eceea7f (MIT).
+
+The mixed-core manifest is derived from the locked resource manifest and the
+existing original CPU port. Mathematical bodies/tables remain unchanged;
+only original CPU traits and switch cases are connected. No encoder, GPU
+implementation, or GPU qualification for these formats is added. The older
+CPU port notice describes its initial CPU-only deployment; this policy records
+the subsequent mixed-core deployment boundary; qualification is recorded
+separately by the current HYLE task and evidence.
+
+One SDK still has one core. No ggml tensor, plan, or threadpool crosses versions.

@@ -57,6 +57,32 @@ set(_licenses
   "${ggml_SOURCE_DIR}/LICENSE|${CMAKE_INSTALL_DATADIR}/licenses/Hyle|ggml-runtime-LICENSE"
   "${_patch_root}/LICENSE|${CMAKE_INSTALL_DATADIR}/licenses/Hyle|ggml-runtime-patches-LICENSE"
   "${_patch_root}/NOTICE.md|${CMAKE_INSTALL_DATADIR}/licenses/Hyle|ggml-runtime-patches-NOTICE.md")
+if(_cpu AND NOT _cpu_upgrade)
+  hyle_audit_in_tree_dependencies(ggml_cpu_runtime_patches)
+  set(_cpu_port "${HYLE_SOURCE_DIR}/third_party/ggml_cpu_runtime")
+  set(_mixed_manifest "${CMAKE_CURRENT_BINARY_DIR}/mixed-cpu-patches.json")
+  execute_process(COMMAND "${Python3_EXECUTABLE}"
+    "${CMAKE_CURRENT_SOURCE_DIR}/prepare_mixed_cpu_manifest.py"
+    --source "${ggml_SOURCE_DIR}"
+    --resource-manifest "${_patch_root}/patches.json"
+    --cpu-manifest "${_cpu_port}/patches.json" --output "${_mixed_manifest}"
+    RESULT_VARIABLE _mixed_result ERROR_VARIABLE _mixed_error)
+  if(NOT _mixed_result EQUAL 0)
+    message(FATAL_ERROR "Mixed CPU IQ1 port preparation failed: ${_mixed_error}")
+  endif()
+  set(_manifests "${_mixed_manifest}")
+  set(_patch_args --manifest "${_mixed_manifest}")
+  file(SHA256 "${CMAKE_CURRENT_SOURCE_DIR}/prepare_mixed_cpu_manifest.py" _mixed_tool_sha)
+  string(APPEND _source_identity
+    "${HYLE_DEP_GGML_CPU_RUNTIME_PATCHES_VENDORED_TREE_SHA256}${_mixed_tool_sha}")
+  list(APPEND _locked ggml_cpu_runtime_patches)
+  list(APPEND _licenses
+    "${_cpu_port}/LICENSE|${CMAKE_INSTALL_DATADIR}/licenses/Hyle|ggml-cpu-IQ1-LICENSE"
+    "${_cpu_port}/NOTICE.md|${CMAKE_INSTALL_DATADIR}/licenses/Hyle|ggml-cpu-IQ1-original-NOTICE.md"
+    "${CMAKE_CURRENT_SOURCE_DIR}/CPU_SOURCE_NOTICE.txt|${CMAKE_INSTALL_DATADIR}/licenses/Hyle|ggml-mixed-CPU-NOTICE.txt")
+  set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS
+    "${_cpu_port}/patches.json" "${CMAKE_CURRENT_SOURCE_DIR}/prepare_mixed_cpu_manifest.py")
+endif()
 if(HYLE_COMPUTE_APPLE_ENABLED)
   list(APPEND _manifests "${_patch_root}/metal-patches.json")
   list(APPEND _patch_args --manifest "${_patch_root}/metal-patches.json")
@@ -86,7 +112,7 @@ endif()
 string(SHA256 _source_identity "${_source_identity}")
 string(SUBSTRING "${_source_identity}" 0 16 _source_id)
 set(_cpu_provider_version "456172ec+hyle-resource-v1")
-if(_cpu_upgrade)
+if(_cpu)
   set(_cpu_provider_version "${_selected_commit}+hyle-resource-iq1-${_source_id}")
 endif()
 set(HYLE_GGML_CPU_PROVIDER_VERSION "${_cpu_provider_version}" PARENT_SCOPE)
@@ -138,7 +164,7 @@ block()
   add_subdirectory("${_patched_source}" vendor EXCLUDE_FROM_ALL)
 endblock()
 
-if(_cpu_upgrade)
+if(_cpu)
   target_compile_definitions(ggml INTERFACE HYLE_GGML_CPU_IQ1_EXTENSIONS=1)
 endif()
 
@@ -229,11 +255,8 @@ hyle_add_module(compute_ggml_runtime SOURCES ${_sources})
 target_link_libraries(hyle_compute_ggml_runtime PRIVATE ggml)
 if(_cpu AND HYLE_TARGET_PROCESSOR STREQUAL "x86_64" AND
    CMAKE_SYSTEM_NAME MATCHES "^(Windows|Linux)$")
-  set(_cpu_program_basename hyle_ggml_cpu_avx2_456172ec)
-  if(_cpu_upgrade)
-    string(SUBSTRING "${_selected_commit}" 0 8 _cpu_commit_short)
-    set(_cpu_program_basename "hyle_ggml_cpu_avx2_${_cpu_commit_short}_${_source_id}")
-  endif()
+  string(SUBSTRING "${_selected_commit}" 0 8 _cpu_commit_short)
+  set(_cpu_program_basename "hyle_ggml_cpu_avx2_${_cpu_commit_short}_${_source_id}")
   include("${CMAKE_CURRENT_SOURCE_DIR}/cpu_program.cmake")
   target_link_libraries(hyle_compute_ggml_runtime PRIVATE ${CMAKE_DL_LIBS})
 endif()
