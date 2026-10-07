@@ -175,3 +175,16 @@ baseline `1207968c5`，Windows工作树干净，F3已关闭；本批不借此重
 
 不新增自研数学、不比较赢家、不升级GPU源码/驱动/Toolkit或任意模型。若实际混合暴露具体产品缺陷，
 先记录精确owner并重新AUDITED有限FIX，现GPU CLOSED/BLOCKED不自动解除。
+
+## B2/B3 Windows CPU+CUDA源码批已验
+
+源码候选 `e0388fbda7fec39e98bee0757f5ab4f91f1cc625`，测试纠正候选
+`b041e792194ec1d1fd3367855d58d14562e6b11e`：初次1253.719秒构建仅因新增GPU拒绝测试
+漏传描述符prepare的显式resource而失败，原失败保留；以真实CUDA resource纠正后，依赖不重编，
+增量29步18.703秒通过。
+
+CPU owning fixture、Direct20/Graph19、普通两入口40个数值格、原GPU数学与十一格式的两种矩阵拒绝4项、
+CPU原程序/安全ISA/工作区/独立槽/取消与原IQ1编码6项、Graph有限变体/回退/并发及模型冷资格8项全部通过，
+均无skip。原资源与原数学保留，没有GPU新格式资格或性能WIN。
+[收据与原失败/纠正日志](../../../../evidence/correctness/cpu-final-f1/README.md)已归档；
+这只是shared源码组合与B3定向检查，installed static/shared和Apple组合仍待，不关闭F1。

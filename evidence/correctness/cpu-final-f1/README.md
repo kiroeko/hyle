@@ -74,3 +74,20 @@ Mac当前资格见F3，前文候选库存记录保持其原时间边界。
 十一CPU新格式两种矩阵拒绝通过。全fixture25项中24通过、0失败、1个显式validation-layer实例测试skip，
 该skip未签PASS、不影响本次不依赖validation-layer的格式拒绝结论。原GPU数学未扩张、无P1。
 [负空间receipt](b2-gpu-format-negative-receipt.json)、[原失败与纠正完整日志/XML](b2-gpu-format-negative.zip)。
+
+## B2/B3 Windows CPU+CUDA source
+
+Source `e0388fbda7fec39e98bee0757f5ab4f91f1cc625`, corrected test
+`b041e792194ec1d1fd3367855d58d14562e6b11e`: CPU owning fixture, Direct20/Graph19,
+40 ordinary numerical checks, four original GPU/rejection checks, six native
+CPU-program/ISA/resource checks and eight finite Graph variant/cold-rule checks
+passed without skips. The original GPU math remains unchanged; eleven new CPU
+formats are rejected for both GPU matrix operations.
+
+The first build failed in the new test because descriptor preparation lacked its
+explicit resource argument. The original 1253.719-second log is retained; the
+resource correction and remaining 29 steps took 18.703 seconds, reusing all
+compiled dependencies. [Receipt](b2-mixed-cuda-source-receipt.json) and
+[original failure/corrected logs, XML and drivers](b2-mixed-cuda-source.zip)
+bind both candidates. Mixed installed static/shared and Apple still await
+qualification; no F1 closure or performance WIN is claimed.

@@ -1,0 +1,59 @@
+{
+  "product_source_candidate": "e0388fbda7fec39e98bee0757f5ab4f91f1cc625",
+  "test_correction_candidate": "b041e792194ec1d1fd3367855d58d14562e6b11e",
+  "gates": {
+    "cpu-owning.xml": {
+      "tests": 1,
+      "failures": 0,
+      "errors": 0,
+      "disabled": 0,
+      "skipped": 0
+    },
+    "direct.xml": {
+      "tests": 20,
+      "failures": 0,
+      "errors": 0,
+      "disabled": 0,
+      "skipped": 0
+    },
+    "gpu.xml": {
+      "tests": 4,
+      "failures": 0,
+      "errors": 0,
+      "disabled": 0,
+      "skipped": 0
+    },
+    "graph-variants.xml": {
+      "tests": 8,
+      "failures": 0,
+      "errors": 0,
+      "disabled": 0,
+      "skipped": 0
+    },
+    "graph.xml": {
+      "tests": 19,
+      "failures": 0,
+      "errors": 0,
+      "disabled": 0,
+      "skipped": 0
+    },
+    "runtime.xml": {
+      "tests": 6,
+      "failures": 0,
+      "errors": 0,
+      "disabled": 0,
+      "skipped": 0
+    }
+  },
+  "ordinary_numeric_checks": 40,
+  "build_seconds": 18.703,
+  "initial_build": "1253.719s, failed only in newly added descriptor-test call missing the explicit resource; original log retained",
+  "scope": "Windows CPU+CUDA shared source, old GPU core plus original CPU IQ1 port, safe ISA/resources/finite Graph variant replay; no GPU coverage expansion or new performance WIN",
+  "limits": [
+    "mixed installed static/shared still pending",
+    "Apple mixed batch still pending",
+    "F1 and final CPU goal not closed"
+  ],
+  "archive_sha256": "13a8cf06e7bd3096b1c96eee3ba837baf6567ccbb63c3b9f91fd937f467dfa0c",
+  "archive_bytes": 87134
+}
