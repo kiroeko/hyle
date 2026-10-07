@@ -41,7 +41,7 @@ Input input(c::DataType type, std::initializer_list<std::int64_t> dims, std::vec
   return {c::TensorDesc::dense(type, {dims.begin(), dims.size()}).value(), std::move(payload)};
 }
 class CudaArtifactLifecycle : public ::testing::TestWithParam<std::tuple<Format,c::DataType>> {};
-TEST_P(CudaArtifactLifecycle, ChangedPayloadTwoSlotsAndRetainedOwnersUseOriginalPrecision) {
+TEST_P(CudaArtifactLifecycle, ChangedPayloadTwoSlotsAndAcceptedWorkSurvivesOwnerClose) {
   const auto [format, type] = GetParam();
   constexpr std::int64_t n = 16, k = 256, group = 64, groups = n*k/group;
   auto context = g::cuda::create_context().value();
@@ -109,8 +109,6 @@ TEST_P(CudaArtifactLifecycle, ChangedPayloadTwoSlotsAndRetainedOwnersUseOriginal
   ASSERT_TRUE(second.bind(result_id,c::TensorView::create(output_desc[0],outputs[2].view()).value()).ok());
   ASSERT_TRUE(g::cuda::prepare_replay(slot,queue).ok());
   EXPECT_EQ(slot.replay_route(),g::ReplayRoute::kCommands);
-  // Context handle can disappear; program/queue/resource keep its backend alive.
-  context = {};
   for (int pass : {0,1}) {
     if (pass) {
       if (nf4) {
@@ -128,6 +126,9 @@ TEST_P(CudaArtifactLifecycle, ChangedPayloadTwoSlotsAndRetainedOwnersUseOriginal
     auto first_result=slot.submit(queue); ASSERT_TRUE(first_result) << first_result.error().message();
     auto second_result=second.submit(queue); ASSERT_TRUE(second_result) << second_result.error().message();
     auto first_done=std::move(*first_result); auto second_done=std::move(*second_result);
+    // close rejects new work; accepted work and its payload remain valid
+    // through the real Completion. Do not submit after logical Context close.
+    if (pass == 1) context = {};
     ASSERT_TRUE(first_done.wait().ok()); ASSERT_TRUE(second_done.wait().ok());
     std::vector<float> expected(n*k);
     constexpr std::array<int,8> order{0,4,1,5,2,6,3,7};
