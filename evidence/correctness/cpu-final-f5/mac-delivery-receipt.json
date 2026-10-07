@@ -1,0 +1,278 @@
+{
+  "scope": "F5 CPU-only source/static/shared retirement and mature edge delta",
+  "platform": "mac",
+  "product_candidate": "507bad9698f9988d371c59e5661a69e4394c580a",
+  "checks": "43 exact rule requests in both contexts, 48 numeric/replay checks including 8 mature edge checks",
+  "qualified_win": "Windows static singleton CPU2 only; other conditions use engineering defaults",
+  "successful_steps": 20,
+  "original_failures_retained": 0,
+  "steps": [
+    {
+      "name": "machine",
+      "candidate": "507bad9698f9988d371c59e5661a69e4394c580a",
+      "args": [
+        "sh",
+        "-c",
+        "sysctl -n hw.model; sw_vers; clang++ --version; cmake --version"
+      ],
+      "exit": 0,
+      "seconds": 0.235
+    },
+    {
+      "name": "reuse-source-consumer-cache",
+      "candidate": "507bad9698f9988d371c59e5661a69e4394c580a",
+      "args": [
+        "python3",
+        "-c",
+        "from pathlib import Path;import shutil;a=Path('/Users/kiro/hyle-verify/cpu-final-delivery-9a9936e8/f5-consumer');b=a.with_name('f4-consumer');assert b.is_dir();[shutil.copyfile(a/n,b/n) for n in ('CMakeLists.txt','main.cc')]"
+      ],
+      "exit": 0,
+      "seconds": 0.203
+    },
+    {
+      "name": "shared-configure",
+      "candidate": "507bad9698f9988d371c59e5661a69e4394c580a",
+      "args": [
+        "cmake",
+        "-S",
+        "/Users/kiro/hyle-verify/cpu-final-delivery-9a9936e8/hyle-0.1.0-source",
+        "-B",
+        "/Users/kiro/hyle-verify/cpu-final-delivery-9a9936e8/shared-build",
+        "-DHYLE_BUILD_TESTS=OFF",
+        "-DHYLE_STATIC=OFF",
+        "-DHYLE_INSTALL=ON",
+        "-DCMAKE_INSTALL_PREFIX=/Users/kiro/hyle-verify/cpu-final-delivery-9a9936e8/f5-shared-staging",
+        "-DFETCHCONTENT_FULLY_DISCONNECTED=ON"
+      ],
+      "exit": 0,
+      "seconds": 3.031
+    },
+    {
+      "name": "shared-build",
+      "candidate": "507bad9698f9988d371c59e5661a69e4394c580a",
+      "args": [
+        "cmake",
+        "--build",
+        "/Users/kiro/hyle-verify/cpu-final-delivery-9a9936e8/shared-build",
+        "--parallel",
+        "2"
+      ],
+      "exit": 0,
+      "seconds": 12.719
+    },
+    {
+      "name": "shared-install",
+      "candidate": "507bad9698f9988d371c59e5661a69e4394c580a",
+      "args": [
+        "cmake",
+        "--install",
+        "/Users/kiro/hyle-verify/cpu-final-delivery-9a9936e8/shared-build"
+      ],
+      "exit": 0,
+      "seconds": 0.39
+    },
+    {
+      "name": "shared-relocate",
+      "candidate": "507bad9698f9988d371c59e5661a69e4394c580a",
+      "args": [
+        "python3",
+        "-c",
+        "from pathlib import Path; a=Path('/Users/kiro/hyle-verify/cpu-final-delivery-9a9936e8/f5-shared-staging'); b=Path('/Users/kiro/hyle-verify/cpu-final-delivery-9a9936e8/f5-shared-relocated'); root=Path('/Users/kiro/hyle-verify/cpu-final-delivery-9a9936e8').resolve(); assert a.resolve().parent==root and b.resolve().parent==root and a.is_dir() and not b.exists(); a.rename(b)"
+      ],
+      "exit": 0,
+      "seconds": 0.235
+    },
+    {
+      "name": "shared-consumer-configure",
+      "candidate": "507bad9698f9988d371c59e5661a69e4394c580a",
+      "args": [
+        "cmake",
+        "-S",
+        "/Users/kiro/hyle-verify/cpu-final-delivery-9a9936e8/f4-consumer",
+        "-B",
+        "/Users/kiro/hyle-verify/cpu-final-delivery-9a9936e8/f5-shared-consumer",
+        "-G",
+        "Ninja",
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DCMAKE_PREFIX_PATH=/Users/kiro/hyle-verify/cpu-final-delivery-9a9936e8/f5-shared-relocated",
+        "-DFETCHCONTENT_FULLY_DISCONNECTED=ON"
+      ],
+      "exit": 0,
+      "seconds": 1.422
+    },
+    {
+      "name": "shared-consumer-build",
+      "candidate": "507bad9698f9988d371c59e5661a69e4394c580a",
+      "args": [
+        "cmake",
+        "--build",
+        "/Users/kiro/hyle-verify/cpu-final-delivery-9a9936e8/f5-shared-consumer",
+        "--parallel",
+        "2"
+      ],
+      "exit": 0,
+      "seconds": 1.218
+    },
+    {
+      "name": "shared-consumer-run",
+      "candidate": "507bad9698f9988d371c59e5661a69e4394c580a",
+      "args": [
+        "/Users/kiro/hyle-verify/cpu-final-delivery-9a9936e8/f5-shared-consumer/cpu_final_delivery"
+      ],
+      "exit": 0,
+      "seconds": 4.375
+    },
+    {
+      "name": "shared-export",
+      "candidate": "507bad9698f9988d371c59e5661a69e4394c580a",
+      "args": [
+        "python3",
+        "/Users/kiro/hyle-verify/cpu-final-delivery-9a9936e8/hyle-0.1.0-source/scripts/check-shared-export-hygiene.py",
+        "--root",
+        "/Users/kiro/hyle-verify/cpu-final-delivery-9a9936e8/f5-shared-relocated"
+      ],
+      "exit": 0,
+      "seconds": 0.344
+    },
+    {
+      "name": "static-configure",
+      "candidate": "507bad9698f9988d371c59e5661a69e4394c580a",
+      "args": [
+        "cmake",
+        "-S",
+        "/Users/kiro/hyle-verify/cpu-final-delivery-9a9936e8/hyle-0.1.0-source",
+        "-B",
+        "/Users/kiro/hyle-verify/cpu-final-delivery-9a9936e8/static-build",
+        "-DHYLE_BUILD_TESTS=OFF",
+        "-DHYLE_STATIC=ON",
+        "-DHYLE_INSTALL=ON",
+        "-DCMAKE_INSTALL_PREFIX=/Users/kiro/hyle-verify/cpu-final-delivery-9a9936e8/f5-static-staging",
+        "-DFETCHCONTENT_FULLY_DISCONNECTED=ON"
+      ],
+      "exit": 0,
+      "seconds": 2.985
+    },
+    {
+      "name": "static-build",
+      "candidate": "507bad9698f9988d371c59e5661a69e4394c580a",
+      "args": [
+        "cmake",
+        "--build",
+        "/Users/kiro/hyle-verify/cpu-final-delivery-9a9936e8/static-build",
+        "--parallel",
+        "2"
+      ],
+      "exit": 0,
+      "seconds": 12.609
+    },
+    {
+      "name": "static-install",
+      "candidate": "507bad9698f9988d371c59e5661a69e4394c580a",
+      "args": [
+        "cmake",
+        "--install",
+        "/Users/kiro/hyle-verify/cpu-final-delivery-9a9936e8/static-build"
+      ],
+      "exit": 0,
+      "seconds": 0.437
+    },
+    {
+      "name": "static-relocate",
+      "candidate": "507bad9698f9988d371c59e5661a69e4394c580a",
+      "args": [
+        "python3",
+        "-c",
+        "from pathlib import Path; a=Path('/Users/kiro/hyle-verify/cpu-final-delivery-9a9936e8/f5-static-staging'); b=Path('/Users/kiro/hyle-verify/cpu-final-delivery-9a9936e8/f5-static-relocated'); root=Path('/Users/kiro/hyle-verify/cpu-final-delivery-9a9936e8').resolve(); assert a.resolve().parent==root and b.resolve().parent==root and a.is_dir() and not b.exists(); a.rename(b)"
+      ],
+      "exit": 0,
+      "seconds": 0.219
+    },
+    {
+      "name": "static-consumer-configure",
+      "candidate": "507bad9698f9988d371c59e5661a69e4394c580a",
+      "args": [
+        "cmake",
+        "-S",
+        "/Users/kiro/hyle-verify/cpu-final-delivery-9a9936e8/f4-consumer",
+        "-B",
+        "/Users/kiro/hyle-verify/cpu-final-delivery-9a9936e8/f5-static-consumer",
+        "-G",
+        "Ninja",
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DCMAKE_PREFIX_PATH=/Users/kiro/hyle-verify/cpu-final-delivery-9a9936e8/f5-static-relocated",
+        "-DFETCHCONTENT_FULLY_DISCONNECTED=ON"
+      ],
+      "exit": 0,
+      "seconds": 1.547
+    },
+    {
+      "name": "static-consumer-build",
+      "candidate": "507bad9698f9988d371c59e5661a69e4394c580a",
+      "args": [
+        "cmake",
+        "--build",
+        "/Users/kiro/hyle-verify/cpu-final-delivery-9a9936e8/f5-static-consumer",
+        "--parallel",
+        "2"
+      ],
+      "exit": 0,
+      "seconds": 1.234
+    },
+    {
+      "name": "static-consumer-run",
+      "candidate": "507bad9698f9988d371c59e5661a69e4394c580a",
+      "args": [
+        "/Users/kiro/hyle-verify/cpu-final-delivery-9a9936e8/f5-static-consumer/cpu_final_delivery"
+      ],
+      "exit": 0,
+      "seconds": 0.672
+    },
+    {
+      "name": "source-consumer-configure",
+      "candidate": "507bad9698f9988d371c59e5661a69e4394c580a",
+      "args": [
+        "cmake",
+        "-S",
+        "/Users/kiro/hyle-verify/cpu-final-delivery-9a9936e8/f4-consumer",
+        "-B",
+        "/Users/kiro/hyle-verify/cpu-final-delivery-9a9936e8/f4-source-consumer",
+        "-G",
+        "Ninja",
+        "-DHYLE_EMBED_SOURCE=/Users/kiro/hyle-verify/cpu-final-delivery-9a9936e8/hyle-0.1.0-source",
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DHYLE_COMPUTE_CPU=ON",
+        "-DHYLE_COMPUTE_CUDA=OFF",
+        "-DHYLE_COMPUTE_APPLE=OFF",
+        "-DHYLE_COMPUTE_VULKAN=OFF",
+        "-DHYLE_COMPUTE_TORCH_CPU=AUTO",
+        "-DFETCHCONTENT_FULLY_DISCONNECTED=ON"
+      ],
+      "exit": 0,
+      "seconds": 2.907
+    },
+    {
+      "name": "source-consumer-build",
+      "candidate": "507bad9698f9988d371c59e5661a69e4394c580a",
+      "args": [
+        "cmake",
+        "--build",
+        "/Users/kiro/hyle-verify/cpu-final-delivery-9a9936e8/f4-source-consumer",
+        "--parallel",
+        "2"
+      ],
+      "exit": 0,
+      "seconds": 12.781
+    },
+    {
+      "name": "source-consumer-run",
+      "candidate": "507bad9698f9988d371c59e5661a69e4394c580a",
+      "args": [
+        "/Users/kiro/hyle-verify/cpu-final-delivery-9a9936e8/f4-source-consumer/cpu_final_delivery"
+      ],
+      "exit": 0,
+      "seconds": 1.719
+    }
+  ],
+  "bundle": "mac-delivery.zip",
+  "bundle_sha256": "b8bb1b7a351ccead310f48d482eb607c80dae72bd71f016a62081fd2272082b1"
+}

@@ -270,10 +270,9 @@
     },
     {
       "module": "compute",
-      "state": "CANDIDATE",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/cpu-final-f5-retirement.md",
-      "summary": "F5 CANDIDATE：仅两份Compute私有RoPE生成文件删除，产品候选507bad96；runtime／公开API不变，Native owner owning144项通过，受影响消费与交付差异待验。",
-      "candidate": "507bad9698f9988d371c59e5661a69e4394c580a"
+      "summary": "F5 AUDITED：与Native同卡依法退回D5编译残留清理；Compute仍仅两私有RoPE文件删除，runtime／public API不重审，成功证据保留。"
     },
     {
       "module": "graph",
@@ -423,10 +422,9 @@
     },
     {
       "module": "compute_provider_native",
-      "state": "CANDIDATE",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/cpu-final-f5-retirement.md",
-      "summary": "F5 CANDIDATE：冗余14种与未需要dtype／variant已物理清退，21种必要机制和SIMD/Mem／原借入程序保留；产品固定507bad96，owning144项无skip通过。普通两入口／Graph旧夹具迁移／三平台及mixed三交付差异和终审仍待，不签goal完成。",
-      "candidate": "507bad9698f9988d371c59e5661a69e4394c580a"
+      "summary": "F5 AUDITED D5：Linux GCC14 Werror定位Scatter清退后的未调用same_storage私有函数，有限删除死代码；原数学／资源／43规则和成功证据保留，未完成Linux／mixed差异继续，禁止自研优化／新P1。"
     },
     {
       "module": "compute_sched",

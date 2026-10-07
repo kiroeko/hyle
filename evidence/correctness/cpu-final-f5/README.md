@@ -28,6 +28,21 @@ preserve the original failed aggregate and subsequent bounded fixture correction
   the actual CPU executor consumer pass. Unknown mature private storage stays
   unknown; complete finite-budget tests use retained RMS/Add resource mechanisms.
 
-Platform owning, source/static/shared and mixed-envelope deltas remain pending.
+## Windows CPU-only delivery delta
+
+[Delivery receipt](windows-delivery-receipt.json) and
+[producer/relocation/loader/export logs and actual consumer](windows-delivery.zip)
+record 17 successful steps and one retained standalone-consumer compile failure.
+Four new calls omitted their explicit `Operation` wrapper; only that consumer
+was corrected. Product source and rule conditions were unchanged.
+
+Source and relocated shared/static execute all 43 cold requests in both ordinary
+contexts and 48 numeric/replay checks. The eight added cases exercise actual
+retired-math odd-byte Unary/Binary and stable Softplus through Direct/Graph.
+Windows static singleton CPU2 hits all qualified exact choices; unrestricted
+and shared use legitimate defaults. Required DLLs neighbour the executable;
+installed runs use only System32/Windows PATH. Shared export scan passes.
+
+Other-platform source/static/shared and mixed-envelope deltas remain pending.
 Unchanged qualified mathematics and rule conditions reuse F4 evidence; no additional
 timing race, sample-budget increase or self optimization is performed.

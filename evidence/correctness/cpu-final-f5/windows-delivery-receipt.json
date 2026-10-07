@@ -1,0 +1,260 @@
+{
+  "scope": "F5 CPU-only source/static/shared retirement and mature edge delta",
+  "platform": "windows",
+  "product_candidate": "507bad9698f9988d371c59e5661a69e4394c580a",
+  "checks": "43 exact rule requests in both contexts, 48 numeric/replay checks including 8 mature edge checks",
+  "qualified_win": "Windows static singleton CPU2 only; other conditions use engineering defaults",
+  "successful_steps": 17,
+  "original_failures_retained": 1,
+  "steps": [
+    {
+      "name": "shared-configure",
+      "args": [
+        "cmake",
+        "-S",
+        "C:\\public\\project-hyle\\hyle",
+        "-B",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+        "-DHYLE_BUILD_TESTS=OFF",
+        "-DHYLE_INSTALL=ON",
+        "-DHYLE_STATIC=OFF",
+        "-DCMAKE_INSTALL_PREFIX=C:\\hv\\cpu-final-f5-sdk\\shared-staging",
+        "-DCMAKE_PROJECT_INCLUDE=C:\\public\\project-hyle\\hyle\\.scratch\\validation\\cpu-final-f5\\delivery-windows\\source-overlay.cmake",
+        "-DFETCHCONTENT_FULLY_DISCONNECTED=ON"
+      ],
+      "candidate": "4ac3d81cf075c4423837cbeff75de355a759195d",
+      "log": "1-shared-configure.log",
+      "returncode": 0,
+      "seconds": 19.204
+    },
+    {
+      "name": "shared-build",
+      "args": [
+        "cmake",
+        "--build",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+        "--parallel",
+        "2"
+      ],
+      "candidate": "4ac3d81cf075c4423837cbeff75de355a759195d",
+      "log": "2-shared-build.log",
+      "returncode": 2,
+      "seconds": 125.781
+    },
+    {
+      "name": "shared-build-corrected",
+      "args": [
+        "cmake",
+        "--build",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+        "--parallel",
+        "2"
+      ],
+      "candidate": "4ac3d81cf075c4423837cbeff75de355a759195d",
+      "log": "3-shared-build-corrected.log",
+      "returncode": 0,
+      "seconds": 59.422
+    },
+    {
+      "name": "shared-source-default",
+      "args": [
+        "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\cpu_f5_source_delivery.exe"
+      ],
+      "candidate": "4ac3d81cf075c4423837cbeff75de355a759195d",
+      "log": "4-shared-source-default.log",
+      "returncode": 0,
+      "seconds": 0.359
+    },
+    {
+      "name": "shared-install",
+      "args": [
+        "cmake",
+        "--install",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev"
+      ],
+      "candidate": "4ac3d81cf075c4423837cbeff75de355a759195d",
+      "log": "5-shared-install.log",
+      "returncode": 0,
+      "seconds": 0.719
+    },
+    {
+      "name": "shared-consumer-configure",
+      "args": [
+        "cmake",
+        "-S",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\cpu-final-f5\\delivery-consumer",
+        "-B",
+        "C:\\hv\\cpu-final-f5-sdk\\shared-consumer",
+        "-G",
+        "Ninja",
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DCMAKE_PREFIX_PATH=C:\\hv\\cpu-final-f5-sdk\\shared-relocated",
+        "-DFETCHCONTENT_FULLY_DISCONNECTED=ON"
+      ],
+      "candidate": "4ac3d81cf075c4423837cbeff75de355a759195d",
+      "log": "6-shared-consumer-configure.log",
+      "returncode": 0,
+      "seconds": 12.125
+    },
+    {
+      "name": "shared-consumer-build",
+      "args": [
+        "cmake",
+        "--build",
+        "C:\\hv\\cpu-final-f5-sdk\\shared-consumer",
+        "--parallel",
+        "2"
+      ],
+      "candidate": "4ac3d81cf075c4423837cbeff75de355a759195d",
+      "log": "7-shared-consumer-build.log",
+      "returncode": 0,
+      "seconds": 3.015
+    },
+    {
+      "name": "shared-consumer-default",
+      "args": [
+        "C:\\hv\\cpu-final-f5-sdk\\shared-consumer\\cpu_final_delivery.exe"
+      ],
+      "candidate": "4ac3d81cf075c4423837cbeff75de355a759195d",
+      "log": "8-shared-consumer-default.log",
+      "returncode": 0,
+      "seconds": 0.891
+    },
+    {
+      "name": "shared-export",
+      "args": [
+        "python",
+        "C:\\public\\project-hyle\\hyle\\scripts\\check-shared-export-hygiene.py",
+        "--root",
+        "C:\\hv\\cpu-final-f5-sdk\\shared-relocated"
+      ],
+      "candidate": "4ac3d81cf075c4423837cbeff75de355a759195d",
+      "log": "9-shared-export.log",
+      "returncode": 0,
+      "seconds": 0.125
+    },
+    {
+      "name": "static-configure",
+      "args": [
+        "cmake",
+        "-S",
+        "C:\\public\\project-hyle\\hyle",
+        "-B",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+        "-DHYLE_BUILD_TESTS=OFF",
+        "-DHYLE_INSTALL=ON",
+        "-DHYLE_STATIC=ON",
+        "-DCMAKE_INSTALL_PREFIX=C:\\hv\\cpu-final-f5-sdk\\static-staging",
+        "-DCMAKE_PROJECT_INCLUDE=C:\\public\\project-hyle\\hyle\\.scratch\\validation\\cpu-final-f5\\delivery-windows\\source-overlay.cmake",
+        "-DFETCHCONTENT_FULLY_DISCONNECTED=ON"
+      ],
+      "candidate": "4ac3d81cf075c4423837cbeff75de355a759195d",
+      "log": "10-static-configure.log",
+      "returncode": 0,
+      "seconds": 19.421
+    },
+    {
+      "name": "static-build",
+      "args": [
+        "cmake",
+        "--build",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev",
+        "--parallel",
+        "2"
+      ],
+      "candidate": "4ac3d81cf075c4423837cbeff75de355a759195d",
+      "log": "11-static-build.log",
+      "returncode": 0,
+      "seconds": 143.454
+    },
+    {
+      "name": "static-source-default",
+      "args": [
+        "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\cpu_f5_source_delivery.exe"
+      ],
+      "candidate": "4ac3d81cf075c4423837cbeff75de355a759195d",
+      "log": "12-static-source-default.log",
+      "returncode": 0,
+      "seconds": 0.25
+    },
+    {
+      "name": "static-source-qualified",
+      "args": [
+        "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev\\bin\\cpu_f5_source_delivery.exe",
+        "--qualified"
+      ],
+      "candidate": "4ac3d81cf075c4423837cbeff75de355a759195d",
+      "log": "13-static-source-qualified.log",
+      "returncode": 0,
+      "seconds": 0.234
+    },
+    {
+      "name": "static-install",
+      "args": [
+        "cmake",
+        "--install",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\build-compute-v2-dev"
+      ],
+      "candidate": "4ac3d81cf075c4423837cbeff75de355a759195d",
+      "log": "14-static-install.log",
+      "returncode": 0,
+      "seconds": 1.969
+    },
+    {
+      "name": "static-consumer-configure",
+      "args": [
+        "cmake",
+        "-S",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\cpu-final-f5\\delivery-consumer",
+        "-B",
+        "C:\\hv\\cpu-final-f5-sdk\\static-consumer",
+        "-G",
+        "Ninja",
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DCMAKE_PREFIX_PATH=C:\\hv\\cpu-final-f5-sdk\\static-relocated",
+        "-DFETCHCONTENT_FULLY_DISCONNECTED=ON"
+      ],
+      "candidate": "4ac3d81cf075c4423837cbeff75de355a759195d",
+      "log": "15-static-consumer-configure.log",
+      "returncode": 0,
+      "seconds": 12.125
+    },
+    {
+      "name": "static-consumer-build",
+      "args": [
+        "cmake",
+        "--build",
+        "C:\\hv\\cpu-final-f5-sdk\\static-consumer",
+        "--parallel",
+        "2"
+      ],
+      "candidate": "4ac3d81cf075c4423837cbeff75de355a759195d",
+      "log": "16-static-consumer-build.log",
+      "returncode": 0,
+      "seconds": 3.672
+    },
+    {
+      "name": "static-consumer-default",
+      "args": [
+        "C:\\hv\\cpu-final-f5-sdk\\static-consumer\\cpu_final_delivery.exe"
+      ],
+      "candidate": "4ac3d81cf075c4423837cbeff75de355a759195d",
+      "log": "17-static-consumer-default.log",
+      "returncode": 0,
+      "seconds": 0.953
+    },
+    {
+      "name": "static-consumer-qualified",
+      "args": [
+        "C:\\hv\\cpu-final-f5-sdk\\static-consumer\\cpu_final_delivery.exe",
+        "--qualified"
+      ],
+      "candidate": "4ac3d81cf075c4423837cbeff75de355a759195d",
+      "log": "18-static-consumer-qualified.log",
+      "returncode": 0,
+      "seconds": 0.235
+    }
+  ],
+  "bundle": "windows-delivery.zip",
+  "bundle_sha256": "97bbb1dd09326f564d2f7db625d9183d8ec47892a9de92dffa1499ca70154361"
+}

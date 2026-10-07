@@ -1,6 +1,6 @@
 # F5 CPU自研源码清退
 
-<!-- MODULE REVIEW: CANDIDATE -->
+<!-- MODULE REVIEW: AUDITED -->
 
 当前owner `compute_provider_native`；`compute`仅绑定两份私有RoPE生成文件的有限删除，不重审runtime。
 baseline `0d96c635040e70b1ee561e51e4cb1a74169870f0`；总合同[CPU最终收口](cpu-final-closure-plan.md)。
@@ -130,3 +130,22 @@ Generic Graph最初70项旧Native数学依赖FAIL；本批实际迁移到ggml／
 不把ggml强接到不兼容backend。mock region仅验Graph调度／完成协议，不签成熟数学或完整路线资格。
 原27项／随后1项迁移FAIL均保留；最终Generic Graph283项全PASS、无skip。
 本轮没有产品数学修改／新的性能采样；三平台owning及source/static/shared／mixed差异仍待。
+
+### V1 Windows三交付差异完成
+
+source／搬移static／搬移shared分别实际运行43规则请求×两普通context和48数值／重放检查；
+新增8项是普通两入口的odd-byte Abs／Neg／Multiply及稳定Softplus。static进程只允许CPU2时
+43精确规则全部命中；unrestricted／shared按成熟工程默认，不外推WIN。
+DLL邻exe、installed精简PATH及shared实际出口通过，共17成功步骤；四处consumer的
+显式Operation包装遗漏造成的原编译FAIL保留，仅修测试consumer，产品未变。
+[实际交付记录](../../../../evidence/correctness/cpu-final-f5/README.md)已归档。
+MacBook Air144项owning全通过；其三交付与Linux／mixed差异仍在串行队列，不签未完成项。
+
+### D5 GCC具名死代码残留：退回AUDITED
+
+Linux GCC14当前Werror编译拒绝`indexing.cc:46 same_storage`：原Scatter删除后该匿名私有
+函数无调用。Windows／Mac现有测试和三交付通过；本反例不是数学／资源缺口。
+候选退回AUDITED，有限D5只删除这一未调用函数及同批编译若精确定位的其它清退残留；
+不新增数学、放宽warnings、调整公共构建或延长性能预算。先提交本协议再删除。
+原candidate507bad96与全部成功证据保留；新输入按未调用代码等价差异复用数学／43规则／已验交付，
+Linux续编译和后续平台／mixed差异绑定新不可变输入，原GCC FAIL保留，不重复完整P1／模型长批。
