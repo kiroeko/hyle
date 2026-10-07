@@ -270,9 +270,9 @@
     },
     {
       "module": "compute",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/cpu-final-f5-retirement.md",
-      "summary": "CPU最终F5 SCOPED：按F4当前全候选证据对14冗余种／20有优势种必要分支／具名独有及borrowed作有限审计；Compute仅两私有RoPE文件的有限owner，不改runtime；AUDITED前不改产品。"
+      "summary": "CPU最终F5 AUDITED：成熟完整数学／具名RMS-Copy资源与borrowed分清，D1-D3物理清退14整种及非必要实例，保留21种必要分支；V1批量后集中差异验收，无self优化/P1/公共治理改动。"
     },
     {
       "module": "graph",
@@ -422,9 +422,9 @@
     },
     {
       "module": "compute_provider_native",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/cpu-final-f5-retirement.md",
-      "summary": "CPU最终F5 SCOPED：按F4当前全候选证据对14冗余种／20有优势种必要分支／具名独有及borrowed作有限审计；Compute仅两私有RoPE文件的有限owner，不改runtime；AUDITED前不改产品。"
+      "summary": "CPU最终F5 AUDITED：成熟完整数学／具名RMS-Copy资源与borrowed分清，D1-D3物理清退14整种及非必要实例，保留21种必要分支；V1批量后集中差异验收，无self优化/P1/公共治理改动。"
     },
     {
       "module": "compute_sched",

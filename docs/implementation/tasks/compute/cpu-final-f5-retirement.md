@@ -1,6 +1,6 @@
 # F5 CPU自研源码清退
 
-<!-- MODULE REVIEW: SCOPED -->
+<!-- MODULE REVIEW: AUDITED -->
 
 当前owner `compute_provider_native`；`compute`仅绑定两份私有RoPE生成文件的有限删除，不重审runtime。
 baseline `0d96c635040e70b1ee561e51e4cb1a74169870f0`；总合同[CPU最终收口](cpu-final-closure-plan.md)。
@@ -31,3 +31,39 @@ MatMul/SDPA及其它已退役能力不复活；图语义、public descriptors、
 实现前依法AUDITED固定有限FIX；真实缺成熟语义／资源或不能合法撤回的具名能力必须说明，不用删除后skip冒充完成。
 需要用户取舍时先给具体源级方案和保留／撤回能力，不把所有旧benchmark严格域自动当新的必需consumer。
 stop：有限FIX与适用差异验收全部结束裁决CLOSED；真正缺实现／资源取舍按协议明确，不无限研究。
+
+## AUDITED：成熟完整数学与有限FIX
+
+源码对账：ggml普通supports的Unary/Multiply/Reduce/Norm/Concat/Scatter/RoPE，
+ATen `select`／`numeric_program`／原byte-storage和稳定math、现有AtenNumeric/Storage/Transformer资格，
+以及Native各源族/dispatch/plan。F4每个Native准入点已有成熟数值承载；未重新采样。
+成熟ATen补齐ggml的stable tail、I64/odd-stride/全scalar位存储、LogSoftmax/Bool和rank/布局边界；
+没有新增数学缺口，唯一准入者不造性能竞争。原NaN／signed zero／F32累积／checked写前拒绝必须保留。
+
+| 源族 | 冻结动作 |
+|---|---|
+| elementwise | 源级删Abs/Sigmoid/Softplus、Multiply/Maximum和Select；保留F4资格需要的Neg/Exp/Log/Sqrt/Rsqrt/Tanh/Relu/SiLU、Add/Subtract/Divide/Minimum必要dtype实例；Gated仅已资格F16 separate-SiLU |
+| reduction | 删Sum/Mean执行／finish helpers；保留已资格F16 Min/Max、BF16 Max所需共享算术与axes/layout逻辑 |
+| normalization | 删LayerNorm／bias／非RMS分支；保留F32动态／严格RMS与BF16已资格RMS必要共享分支 |
+| indexing | 删ScatterAssign/ScatterAdd/Concat执行及字段；保留有资格Gather必要共享checked/I32/I64和bit-storage路径 |
+| transformer | 删RoPE全部执行/准备、两私有生成文件和CMake fat target；删LogSoftmax及未资格Softmax dtype/mask分支，保留F16 Bool Softmax必要共享执行 |
+| cast/transform | Cast保留4个资格dtype对的必要共享转换，Copy保留具名动态／严格资源与Mem机制，Fill保留F32 bit-write；View别名保留 |
+
+自研数学从35种归到20有资格种＋独有Copy；分支不因为unmeasured或优先级1000永久保留。
+SIMD通用abs/multiply/sum/LayerNorm/RoPE等独立基础不在删除范围；仅删Compute私有RoPE生成kernel。
+Native borrowed TorchAO/ATen/MLX/DS4程序、generic schema/Graph/mature providers不改。
+
+用户已有明确“落后／没有完整优势且成熟接替就删除，SIMD本身保留”的源级清退授权。
+本批对应Native-only及其旧0-private/prepared-only数学域随冗余实现撤回，严格请求若没有合格成熟
+资源承载就明确Unimplemented／ResourceExhausted，不把unknown写0、不放宽预算。
+这些不是当前固定模型必需的独有数学；具名F32 declared-domain RMSNorm／Copy资源consumer仍保留并验收。
+
+| 有限FIX | 实施／验收 |
+|---|---|
+| D1 | 上表14整种与未需要实例物理删除、dispatch／CMake／NativePlan字段清理；Native expert明确拒绝，不仅降优先级 |
+| D2 | 原Native-only math tests迁普通成熟入口／明确拒绝；保留资源／算法必要测试，不能用skip或简单删除覆盖替代真实数学验收 |
+| D3 | 文档与35种→21种／必要dtype source ledger；当前43规则保持，数学代码没有优化改写，旧P1身份按保留算术源码对账复用 |
+| V1 | 批量完成后集中owning/普通两入口、43规则、14成熟替代特殊值/layout/alias/index/empty、RMS/Copy动态/预算/OOM/close/并发、固定C5完整旅程及受影响source/static/shared三平台差异；按selector保留适用与复用理由 |
+
+预算为一批删除＋一批具名测试迁移纠正；任何成熟数值/资源新缺陷依法另定向绑定，不能在此自研补洞。
+不重跑P1／AA，不增加新Provider／依赖，不把旧GPU状态或公共治理纳入。
