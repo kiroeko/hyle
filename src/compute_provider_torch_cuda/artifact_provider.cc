@@ -10,6 +10,7 @@
 #include <array>
 #include <climits>
 #include <exception>
+#include <limits>
 #include <new>
 
 #include <ATen/ATen.h>
@@ -115,10 +116,13 @@ void destroy_context(void *state, mem::AllocatorRef allocator) noexcept {
   auto *context = static_cast<Context *>(state);
   context->~Context(); allocator.deallocate(context, sizeof(Context), alignof(Context));
 }
-Status propose(void *, const detail::ProviderOperationRequest &request,
+Status propose(void *state, const detail::ProviderOperationRequest &request,
                std::span<detail::ResourceBindingRequirement> inputs,
                std::span<detail::ResourceBindingRequirement> outputs,
                detail::ProviderOperationProposal *proposal) noexcept {
+  const auto device = static_cast<const Context *>(state)->device;
+  if (device < 0 || device > (std::numeric_limits<c10::DeviceIndex>::max)())
+    return Status::Unimplemented("CUDA ATen device ordinal exceeds the original SDK index capacity");
   if (!request.shape.exact())
     return Status::Unimplemented("CUDA ATen artifact decode requires exact shapes");
   HYLE_RETURN_IF_ERROR(select(request.operation, request.inputs, request.outputs));
@@ -174,7 +178,8 @@ detail::EnqueueResult submit(void *state, void *slot, Queue &queue,
   // The real Queue Completion retains all borrowed payload until terminal.
   try {
     at::NoGradGuard no_grad;
-    const auto external = c10::cuda::getStreamFromExternal(*stream, program.context.device);
+    const auto index = static_cast<c10::DeviceIndex>(program.context.device);
+    const auto external = c10::cuda::getStreamFromExternal(*stream, index);
     c10::cuda::CUDAStreamGuard stream_guard(external);
     std::array<at::Tensor, 6> tensors;
     for (std::size_t i = 0; i < inputs.size(); ++i) {
@@ -219,6 +224,8 @@ ProviderPrepareOutcome prepare(void *state, const detail::ProviderPrepareRequest
   if (!status.ok()) return status.IsUnimplemented() ? ProviderPrepareOutcome::unsupported(std::move(status))
                                                    : ProviderPrepareOutcome::error(std::move(status));
   const auto &context = *static_cast<const Context *>(state);
+  if (context.device < 0 || context.device > (std::numeric_limits<c10::DeviceIndex>::max)())
+    return ProviderPrepareOutcome::unsupported(Status::Unimplemented("CUDA ATen device index capacity exceeded"));
   auto *storage = allocator.allocate(sizeof(Program), alignof(Program));
   if (!storage) return ProviderPrepareOutcome::resource_declined(Status::ResourceExhausted("CUDA ATen program allocation failed"));
   auto *program = ::new (storage) Program{.context = context,
@@ -228,7 +235,8 @@ ProviderPrepareOutcome prepare(void *state, const detail::ProviderPrepareRequest
   cuda::detail::ScopedPrimaryContext scope(context.primary);
   if (!scope) { destroy_program(program, allocator); return ProviderPrepareOutcome::error(scope.status()); }
   try {
-    c10::cuda::CUDAGuard device_guard(context.device);
+    const auto index = static_cast<c10::DeviceIndex>(context.device);
+    c10::cuda::CUDAGuard device_guard(index);
     at::NoGradGuard no_grad;
     // Real torch_cuda import keeps the original dispatcher registration live;
     // CPU common DLLs remain the immutable locked host dispatch runtime.
@@ -240,7 +248,7 @@ ProviderPrepareOutcome prepare(void *state, const detail::ProviderPrepareRequest
     if (program->operation.format == model_ops::WeightArtifactFormat::kAwqGemm4)
       program->order = at::tensor({0, 4, 1, 5, 2, 6, 3, 7}, at::kLong).to(options, false, true);
     // Publish constants only after their original library stream has finished.
-    status = cuda::status(cudaStreamSynchronize(c10::cuda::getCurrentCUDAStream(context.device).stream()));
+    status = cuda::status(cudaStreamSynchronize(c10::cuda::getCurrentCUDAStream(index).stream()));
     if (!status.ok()) { destroy_program(program, allocator); return ProviderPrepareOutcome::error(std::move(status)); }
   } catch (...) {
     status = failure(); destroy_program(program, allocator);
