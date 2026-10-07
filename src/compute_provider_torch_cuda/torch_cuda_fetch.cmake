@@ -3,7 +3,12 @@ include_guard(GLOBAL)
 # One private CUDA-leaf SDK, sharing the locked CPU host dispatch runtime.
 # The original archives and CPU SDK are immutable; no Python runtime is used.
 function(hyle_resolve_torch_cuda_leaf lock_file output)
-  if(NOT WIN32)
+  if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+    include("${CMAKE_CURRENT_FUNCTION_LIST_DIR}/torch_cuda_linux.cmake")
+    hyle_resolve_torch_cuda_linux("${lock_file}" _root)
+    set(${output} "${_root}" PARENT_SCOPE)
+    return()
+  elseif(NOT WIN32)
     message(FATAL_ERROR "The CUDA ATen leaf SDK for this platform is not yet qualified")
   endif()
   set(HYLE_COMPUTE_TORCH_CUDA_ARCHIVE "" CACHE FILEPATH "Advanced: locked original CUDA Torch wheel")
@@ -115,12 +120,24 @@ function(hyle_import_torch_cuda_leaf root cpu_root)
   foreach(_name IN ITEMS c10_cuda torch_cuda)
     if(NOT TARGET hyle_vendor_${_name})
       add_library(hyle_vendor_${_name} SHARED IMPORTED GLOBAL)
-      set_target_properties(hyle_vendor_${_name} PROPERTIES
-        IMPORTED_LOCATION "${root}/lib/${_name}.dll"
-        IMPORTED_IMPLIB "${root}/lib/${_name}.lib")
+      if(WIN32)
+        set_target_properties(hyle_vendor_${_name} PROPERTIES
+          IMPORTED_LOCATION "${root}/lib/${_name}.dll"
+          IMPORTED_IMPLIB "${root}/lib/${_name}.lib")
+      else()
+        set_target_properties(hyle_vendor_${_name} PROPERTIES
+          IMPORTED_LOCATION "${root}/lib/lib${_name}.so")
+      endif()
     endif()
   endforeach()
-  file(GLOB _runtime "${root}/lib/*.dll" "${cpu_root}/lib/*.dll")
+  if(WIN32)
+    file(GLOB _runtime "${root}/lib/*.dll" "${cpu_root}/lib/*.dll")
+  else()
+    get_filename_component(_bundle "${root}" DIRECTORY)
+    file(GLOB_RECURSE _runtime "${root}/lib/*.so*" "${_bundle}/nvidia/*/lib/*.so*")
+    file(GLOB _common "${cpu_root}/lib/*.so*")
+    list(APPEND _runtime ${_common})
+  endif()
   # Installed dependency configs run before HyleRuntimeStaging is included.
   foreach(_owner IN ITEMS hyle_compute_provider_torch_cuda hyle::_factor_compute_provider_torch_cuda)
     string(SHA256 _key "${_owner}")

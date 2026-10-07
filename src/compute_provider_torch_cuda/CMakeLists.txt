@@ -1,4 +1,4 @@
-if(NOT HYLE_COMPUTE_CUDA_ENABLED OR NOT WIN32)
+if(NOT HYLE_COMPUTE_CUDA_ENABLED)
   hyle_add_module(compute_provider_torch_cuda OPTIONAL_ABSENT)
   set_property(TARGET hyle_compute_provider_torch_cuda PROPERTY HYLE_INTERNAL_ONLY_ABSENT TRUE)
   return()
@@ -37,20 +37,32 @@ if(TORCH_CXX_FLAGS)
   separate_arguments(_torch_flags NATIVE_COMMAND "${TORCH_CXX_FLAGS}")
   target_compile_options(hyle_compute_provider_torch_cuda PRIVATE ${_torch_flags})
 endif()
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+  # Installed consumers' explicit SDK RPATH covers the private original leaf
+  # and unchanged CPU common runtime transitively, as for the CPU adapter.
+  target_link_options(hyle_compute_provider_torch_cuda PRIVATE LINKER:--disable-new-dtags)
+endif()
 get_filename_component(_cuda_sdk_directory "${_cuda_root}" DIRECTORY)
-file(GLOB _cuda_licenses "${_cuda_sdk_directory}/torch-*.dist-info")
+file(GLOB _cuda_licenses "${_cuda_sdk_directory}/*.dist-info")
 set(_cuda_license_specs "")
 foreach(_directory IN LISTS _cuda_licenses)
   get_filename_component(_name "${_directory}" NAME)
   list(APPEND _cuda_license_specs
     "${_directory}|${CMAKE_INSTALL_DATADIR}/licenses/Hyle/torch-cuda-sdk|${_name}")
 endforeach()
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+  # This original cusparselt wheel locates its notice beside the runtime,
+  # rather than in dist-info. Preserve that original file in every SDK.
+  list(APPEND _cuda_license_specs
+    "${_cuda_sdk_directory}/nvidia/cusparselt|${CMAKE_INSTALL_DATADIR}/licenses/Hyle/torch-cuda-sdk|cusparselt")
+endif()
 hyle_register_package_dependency(NAME torch_cuda_sdk OWNER compute_provider_torch_cuda
   FEATURES compute_cuda FIND_DEPENDENCIES HyleTorchCudaSdk
   DEVELOPMENT_DIRECTORY_SPECS ${_cuda_license_specs}
   DEVELOPMENT_FILE_SPECS
     "${CMAKE_CURRENT_SOURCE_DIR}/HyleTorchCudaSdkConfig.cmake|${CMAKE_INSTALL_LIBDIR}/cmake/HyleTorchCudaSdk|HyleTorchCudaSdkConfig.cmake"
     "${CMAKE_CURRENT_SOURCE_DIR}/torch_cuda_fetch.cmake|${CMAKE_INSTALL_LIBDIR}/cmake/HyleTorchCudaSdk|torch_cuda_fetch.cmake"
+    "${CMAKE_CURRENT_SOURCE_DIR}/torch_cuda_linux.cmake|${CMAKE_INSTALL_LIBDIR}/cmake/HyleTorchCudaSdk|torch_cuda_linux.cmake"
     "${HYLE_SOURCE_DIR}/src/compute_provider_native/torch_cpu_fetch.cmake|${CMAKE_INSTALL_LIBDIR}/cmake/HyleTorchCudaSdk|torch_cpu_fetch.cmake"
     "${HYLE_SOURCE_DIR}/src/compute_provider_native/HyleTorchCpuSdkConfig.cmake|${CMAKE_INSTALL_LIBDIR}/cmake/HyleTorchCudaSdk|HyleTorchCpuSdkConfig.cmake"
     "${HYLE_SOURCE_DIR}/cmake/HyleDependencyLock.json|${CMAKE_INSTALL_LIBDIR}/cmake/HyleTorchCudaSdk|HyleDependencyLock.json")
