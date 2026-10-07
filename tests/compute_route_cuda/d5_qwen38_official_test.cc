@@ -858,7 +858,10 @@ void run_q24_semantic_fragment(
         outputs.push_back(
             c::TensorView::create(fixture.description(id), views[id.ordinal()])
                 .value());
+      SCOPED_TRACE(std::string(c::operation_name(step.operation.kind())) +
+                   " call " + std::to_string(call_index));
       run(calls[call_index++], queue, inputs, outputs);
+      ASSERT_FALSE(::testing::Test::HasFatalFailure());
     }
     for (std::size_t output = 0; output < fixture.outputs.size(); ++output) {
       SCOPED_TRACE("output " + std::to_string(output));

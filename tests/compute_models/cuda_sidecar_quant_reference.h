@@ -16,6 +16,7 @@
 #include <vector>
 
 #include "d5_gguf_test_support.h"
+#include "../../src/compute_provider_ggml_cuda/native_bridge.h"
 
 namespace cuda_sidecar_quant_reference {
 // Integration oracle for a single mature CUDA carrier: original native
@@ -33,6 +34,10 @@ public:
     std::set_terminate([] {
       try {
         if(auto error=std::current_exception())std::rethrow_exception(error);
+      } catch(const hyle::compute::ggml_cuda::bridge::NativeFailure<CUresult> &error) {
+        std::fprintf(stderr,"SIDE_REFERENCE_TERMINATE driver: %d %s\n",int(error.code),error.operation);
+      } catch(const hyle::compute::ggml_cuda::bridge::NativeFailure<cudaError_t> &error) {
+        std::fprintf(stderr,"SIDE_REFERENCE_TERMINATE runtime: %d %s\n",int(error.code),error.operation);
       } catch(const std::exception &error) {
         std::fprintf(stderr,"SIDE_REFERENCE_TERMINATE: %s\n",error.what());
       } catch(const std::string &error) {
