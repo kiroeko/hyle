@@ -120,3 +120,12 @@ T6改后C5只补受影响plain F16的GGUF/非GGUF端口与相关默认metadata�
 complete内部仍以独立reference推进并受原全片段误差门，不能逐node用actual替换reference来消除误差。
 只运行一次具名完整sidecar Direct重验及原remaining Graph首次批；如果仍失败，保留真实数值反例再定界，
 不放宽阈值、不削小词表/状态、不无限换输入重测。原159项FAIL保留。
+
+### T8 sidecar数值原因有界调查
+
+T7同输入修正未消除Q8 sidecar首replay state反例（归一化max4.2128861% > 原4%）；
+同片段Windows/Linux已过而Mac未过，不能记工程默认PASS或删除需求。
+先完成独立Graph首次批。调查预算两次定向probe：第一只暴露完整三stage的attention/post-MoE状态与独立reference，
+找出首次偏离；第二只查第一probe定位的一个原库/组合接缝。probe不签资格、不改产品API/算法/误差门，
+不换模型输入、样本数或量化。只有具体源码/准入反例再审计有限产品FIX；预算内无法裁决就说明精确未决边界，
+不给不合格形态签完成，也不扩全库/所有算子性能调查。
