@@ -113,3 +113,15 @@ Linux GCC14 Debug／Release等价编译通过，owner批次仍在串行构建；
 前向同步。Vulkan owner、三平台三交付、Graph缺口门尚未完成，不签本专题CLOSED，不跑P1。
 
 统一非测试Compute＋Graph实现为60,561行／253文件，自检PASS；第三方与测试不计。
+
+Linux补齐测试层GCC dangling-else花括号后，11个owner门、CPU Direct/Graph及未过滤Graph均通过。
+Mac11个owner门通过；旧F16投影测试误排除ATen且对double求和的近零输出使用相对误差，仍包含
+已撤回的ARM半精度累加宽松档。十个改动文件非预处理正文SHA与baseline完全相同，实际旧／新ARM
+条件编译等价，ATen原两输入先转F32再MatMul未变。因此仅迁移此测试：接纳原成熟ATen、采用已有
+expanded GGUF的16×F32 epsilon×activation maximum×row L1舍入界加输出storage ULP，删除低精度
+例外；测试candidate `d1ea28454605340d30b677057e6e8becbf195d01`，Mac该项与六个fixture skip补跑通过。
+全局half helper／产品数学／F32累加合同／性能规则不变。原失败、skip和纠正保留，不扩大产品scope。
+
+WindowsCPU-only源码与搬移static SDK的普通Direct/Graph48项消费已通过，静态flag和GPU关闭
+负空间检查到位。初版consumer错误要求CPU-only SDK包含未选GPU头，现按现交付合同用header
+availability检查，未改安装政策。shared与Linux/Mac三交付、Vulkan owner仍待；不提前签终审。
