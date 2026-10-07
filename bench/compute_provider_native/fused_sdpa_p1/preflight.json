@@ -1,0 +1,172 @@
+{
+  "schema": "hyle.cpu-three-operator-aa/v1",
+  "gate": "PASS",
+  "passed": [
+    "equal-head-sdpa-t6-r1-o6",
+    "equal-head-sdpa-t6-r32-o6",
+    "causal-sdpa-d256-t6-r1-o6",
+    "causal-sdpa-d256-t6-r32-o6"
+  ],
+  "failed": {},
+  "runs": [
+    {
+      "route": "native",
+      "execution_order": "candidate-first",
+      "allocation_order": "candidate-first",
+      "ratios": {
+        "equal-head-sdpa-t6-r1-o6": 0.971417917240448,
+        "equal-head-sdpa-t6-r32-o6": 0.9945707629810748,
+        "causal-sdpa-d256-t6-r1-o6": 0.9917435620550438,
+        "causal-sdpa-d256-t6-r32-o6": 0.9835303894534053
+      }
+    },
+    {
+      "route": "native",
+      "execution_order": "candidate-first",
+      "allocation_order": "peer-first",
+      "ratios": {
+        "equal-head-sdpa-t6-r1-o6": 1.0254191087926225,
+        "equal-head-sdpa-t6-r32-o6": 1.003694942425368,
+        "causal-sdpa-d256-t6-r1-o6": 1.0529751895954154,
+        "causal-sdpa-d256-t6-r32-o6": 1.0292448085075807
+      }
+    },
+    {
+      "route": "native",
+      "execution_order": "peer-first",
+      "allocation_order": "candidate-first",
+      "ratios": {
+        "equal-head-sdpa-t6-r1-o6": 1.0064866450057255,
+        "equal-head-sdpa-t6-r32-o6": 1.016618180369027,
+        "causal-sdpa-d256-t6-r1-o6": 0.9541413122506862,
+        "causal-sdpa-d256-t6-r32-o6": 0.958871528413041
+      }
+    },
+    {
+      "route": "native",
+      "execution_order": "peer-first",
+      "allocation_order": "peer-first",
+      "ratios": {
+        "equal-head-sdpa-t6-r1-o6": 0.9952878290429515,
+        "equal-head-sdpa-t6-r32-o6": 0.9841935547686403,
+        "causal-sdpa-d256-t6-r1-o6": 1.0086820909289742,
+        "causal-sdpa-d256-t6-r32-o6": 0.9890288186664605
+      }
+    },
+    {
+      "route": "selected",
+      "execution_order": "candidate-first",
+      "allocation_order": "candidate-first",
+      "ratios": {
+        "equal-head-sdpa-t6-r1-o6": 0.9808504433956243,
+        "equal-head-sdpa-t6-r32-o6": 1.0072121337006645,
+        "causal-sdpa-d256-t6-r1-o6": 1.0442664143989624,
+        "causal-sdpa-d256-t6-r32-o6": 0.9955746546950273
+      }
+    },
+    {
+      "route": "selected",
+      "execution_order": "candidate-first",
+      "allocation_order": "peer-first",
+      "ratios": {
+        "equal-head-sdpa-t6-r1-o6": 0.9847599172092799,
+        "equal-head-sdpa-t6-r32-o6": 1.012280417120556,
+        "causal-sdpa-d256-t6-r1-o6": 0.9761625143389299,
+        "causal-sdpa-d256-t6-r32-o6": 1.0119950650694474
+      }
+    },
+    {
+      "route": "selected",
+      "execution_order": "peer-first",
+      "allocation_order": "candidate-first",
+      "ratios": {
+        "equal-head-sdpa-t6-r1-o6": 1.0139989899310562,
+        "equal-head-sdpa-t6-r32-o6": 1.0026559820037948,
+        "causal-sdpa-d256-t6-r1-o6": 0.9969608635116279,
+        "causal-sdpa-d256-t6-r32-o6": 0.9742001904216369
+      }
+    },
+    {
+      "route": "selected",
+      "execution_order": "peer-first",
+      "allocation_order": "peer-first",
+      "ratios": {
+        "equal-head-sdpa-t6-r1-o6": 0.9782309198277752,
+        "equal-head-sdpa-t6-r32-o6": 0.9948893267697619,
+        "causal-sdpa-d256-t6-r1-o6": 0.9644818658824187,
+        "causal-sdpa-d256-t6-r32-o6": 1.0048512651651986
+      }
+    }
+  ],
+  "summaries": {
+    "native:equal-head-sdpa-t6-r1-o6": {
+      "all": 1.0008872370243385,
+      "execution_order=peer-first": 1.0008872370243385,
+      "execution_order=candidate-first": 0.9984185130165353,
+      "allocation_order=peer-first": 1.010353468917787,
+      "allocation_order=candidate-first": 0.9889522811230868
+    },
+    "selected:equal-head-sdpa-t6-r1-o6": {
+      "all": 0.9828051803024521,
+      "execution_order=peer-first": 0.9961149548794157,
+      "execution_order=candidate-first": 0.9828051803024521,
+      "allocation_order=peer-first": 0.9814954185185276,
+      "allocation_order=candidate-first": 0.9974247166633403
+    },
+    "native:equal-head-sdpa-t6-r32-o6": {
+      "all": 0.9991328527032215,
+      "execution_order=peer-first": 1.0004058675688337,
+      "execution_order=candidate-first": 0.9991328527032215,
+      "allocation_order=peer-first": 0.9939442485970043,
+      "allocation_order=candidate-first": 1.005594471675051
+    },
+    "selected:equal-head-sdpa-t6-r32-o6": {
+      "all": 1.0049340578522297,
+      "execution_order=peer-first": 0.9987726543867783,
+      "execution_order=candidate-first": 1.0097462754106101,
+      "allocation_order=peer-first": 1.003584871945159,
+      "allocation_order=candidate-first": 1.0049340578522297
+    },
+    "native:causal-sdpa-d256-t6-r1-o6": {
+      "all": 1.000212826492009,
+      "execution_order=peer-first": 0.9814117015898303,
+      "execution_order=candidate-first": 1.0223593758252296,
+      "allocation_order=peer-first": 1.030828640262195,
+      "allocation_order=candidate-first": 0.972942437152865
+    },
+    "selected:causal-sdpa-d256-t6-r1-o6": {
+      "all": 0.9865616889252788,
+      "execution_order=peer-first": 0.9807213646970233,
+      "execution_order=candidate-first": 1.0102144643689461,
+      "allocation_order=peer-first": 0.9703221901106742,
+      "allocation_order=candidate-first": 1.020613638955295
+    },
+    "native:causal-sdpa-d256-t6-r32-o6": {
+      "all": 0.9862796040599329,
+      "execution_order=peer-first": 0.9739501735397508,
+      "execution_order=candidate-first": 1.006387598980493,
+      "allocation_order=peer-first": 1.0091368135870207,
+      "allocation_order=candidate-first": 0.9712009589332231
+    },
+    "selected:causal-sdpa-d256-t6-r32-o6": {
+      "all": 1.000212959930113,
+      "execution_order=peer-first": 0.9895257277934177,
+      "execution_order=candidate-first": 1.0037848598822374,
+      "allocation_order=peer-first": 1.008423165117323,
+      "allocation_order=candidate-first": 0.9848874225583321
+    }
+  },
+  "artifacts": {
+    "asmjit.dll": "eb8f9c478bfc4b671f83b630c97424c60b4c948c0a8645fe588aed4f6bab5df5",
+    "c10.dll": "93bff2548e330df0f94ce3c71c531887d049ae645d1e38e3c08689e2d86a7888",
+    "fbgemm.dll": "250dc6f79b26e022ca3088e9b71a023598c7e997c96b62ef350a74fa1b501d81",
+    "hyle_ggml_cpu_avx2_ffa4e8b8_bdae1e43311ee486.dll": "fe36f50da454cce149993b58c468d072c59e85bba0ed42334886778ec781b9cb",
+    "libiomp5md.dll": "d9d66ed25f1a0ea725fa3a41b22cfd5d182c19dbe4771d9c90ca02ad7466f6a1",
+    "torch.dll": "16a220e55b35fbfd946c26663eb3eefc76782872280cdc47ab0caea1babf0613",
+    "torch_cpu.dll": "2cb91cf2ba957fad5a17eab5bb7af6b3d73bbc98d94e2deeadc9fb9294eea809",
+    "uv.dll": "fa569e682fc5fb7a8eb94c6829af9f30a569748dbbc6bce39735d48bc960bcf8",
+    "hyle_native_domain_bench.exe.text": "08aab567907163bd3e1964e37dbcc0b13825aa37a66e2e624bfbde62b1b8975f"
+  },
+  "raw_directory": "C:\\public\\project-hyle\\hyle\\.scratch\\build-three-sdpa-preflight\\three-preflight-1791339978545736800",
+  "source_sha256": "3b8b296b1b97d539630f101cb69a2a2cc84df2d703cd1287dd5a26b814b80175"
+}

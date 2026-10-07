@@ -1,0 +1,17 @@
+{
+  "kind": "PROVISIONAL_ARCHETYPE",
+  "consumer": "qualified equal-head SDPA CPU attention subdomain; mature current F32 fused program, complete submit/wait",
+  "model_config_sha256": "ed1c1723241f23f7f4e23430759cbd7dcfb4103cbdfe052bfe7626b57c2615b4",
+  "hidden": 2048,
+  "rows": [
+    1,
+    32
+  ],
+  "cases": [
+    "causal-sdpa-d256-t6-r1-o6",
+    "causal-sdpa-d256-t6-r32-o6",
+    "equal-head-sdpa-t6-r1-o6",
+    "equal-head-sdpa-t6-r32-o6"
+  ],
+  "whole_model_claim": false
+}
