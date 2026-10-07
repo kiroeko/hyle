@@ -152,11 +152,22 @@ TEST(GgmlVulkanRegion, CpuFormatPortDoesNotQualifyGpuMatrices) {
        c::GgufQuantizedType::kIq1S, c::GgufQuantizedType::kIq1M,
        c::GgufQuantizedType::kIq1Xs, c::GgufQuantizedType::kIq1Xxs,
        c::GgufQuantizedType::kIq1Xxxs}) {
+    SCOPED_TRACE(static_cast<int>(type));
     const auto weight = c::gguf_weight_description(type, c::DataType::kFloat32,
                                                   256, 3).value();
     const std::array inputs{activation, weight};
     const std::array outputs{c::infer_single_output(c::Operation(c::MatMul{}), inputs).value()};
     EXPECT_FALSE(region_supports(c::Operation(c::MatMul{}), inputs, outputs));
+    const auto grouped_weights = c::gguf_grouped_weight_description(
+        type, c::DataType::kFloat32, 2, 3, 256).value();
+    const auto grouped_activation = c::TensorDesc::dense(
+        c::DataType::kFloat32, std::array<std::int64_t, 3>{1, 2, 256}).value();
+    const auto ids = c::TensorDesc::dense(
+        c::DataType::kInt32, std::array<std::int64_t, 2>{1, 2}).value();
+    const std::array grouped_inputs{grouped_weights, grouped_activation, ids};
+    const auto grouped = c::model_ops::grouped_matmul();
+    const std::array grouped_outputs{c::infer_single_output(grouped, grouped_inputs).value()};
+    EXPECT_FALSE(region_supports(grouped, grouped_inputs, grouped_outputs));
   }
 }
 

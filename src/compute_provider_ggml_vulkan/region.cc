@@ -61,7 +61,7 @@ bool native_quantized(const TensorDesc &description) noexcept {
 }
 bool quantized_weight_domain(const TensorDesc &description) noexcept {
   const auto type = gguf_quantized_type(description.storage_format());
-  if (!type || description.rank() != 2 ||
+  if (!type || !native_quantized(description) || description.rank() != 2 ||
       (description.data_type() != DataType::kFloat32 &&
        description.data_type() != DataType::kFloat16))
     return false;
@@ -72,7 +72,7 @@ bool quantized_weight_domain(const TensorDesc &description) noexcept {
 }
 bool quantized_grouped_weight_domain(const TensorDesc &description) noexcept {
   const auto type = gguf_quantized_type(description.storage_format());
-  if (!type || description.rank() != 3 ||
+  if (!type || !native_quantized(description) || description.rank() != 3 ||
       description.data_type() != DataType::kFloat32)
     return false;
   const auto shape = description.dimensions();

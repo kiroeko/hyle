@@ -136,3 +136,20 @@ B2产品与派生19处原port已固定、源码/CPU MatMul/Gather探针通过，
 
 标准mixed配置暴露运行库collector按路径指数遍历，另开[有限工具修复](../build/runtime-staging-diamond-walk-v1.md)。
 只对同target/condition去重，条件/循环/独立collect保留；原本轮运行与中断不改PASS，不扩性能统计/治理。
+
+## B2 Windows真实组合已验（部分）
+
+CPU+Vulkan标准shared/source候选`afba74122c26d49489bee895c8b14dc5381426d2`集中build611.562秒，
+原CPU格式owning、默认Direct16项、24格Direct/Graph与成熟region、变输入重放、动态物化/并发/close通过。
+原GPU九项回归通过，新CPU格式仍不取得GPU资格；新增负空间测试待运行。
+[混合子批证据](../../../../evidence/correctness/cpu-final-f1/README.md)保留原配置错误与工具缺陷中断。
+其它混合路线/平台和installed static/shared未验，F1不关闭。
+
+### B2具名负空间纠正已审计
+
+候选6359804a新增测试实际发现：Vulkan的native_quantized_type已拒绝十一CPU新格式，
+但quantized_weight_domain/grouped只核对公共canonical布局，绕过原格式映射并在proposal错误准入。
+真实owner compute_provider_ggml_vulkan仍AUDITED，当前C3卡已授权这项原GPU格式不扩张的有限拒绝修复。
+有限FIX仅在两个domain检查同一native_quantized门；扩现具名负测试为普通/分组两种矩阵。
+原算法、支持旧格式与state/API不改变；一批compile、十一格式拒绝与原GPU九项回归，不跑P1、不重开GPU队列。
+原负测试FAIL完整保留；改后成功不能回写该旧结果。
