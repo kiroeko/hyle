@@ -124,7 +124,8 @@ void expect_mature(const DirectCall &call, const c::WorkloadContext &workload) {
   // D4 retained these exact structural boundaries; no arithmetic fallback.
   bool retained_storage = false;
   if (provider == c::cuda_native::kProviderId && call.prepared.input_count() > 0) {
-    const auto &input = call.prepared.input_description().value();
+    const auto input_result = call.prepared.input_description();
+    const auto &input = input_result.value();
     retained_storage =
         (kind == c::OperationKind::kCopy && input.data_type() == c::DataType::kInt32) ||
         (kind == c::OperationKind::kSelect && input.data_type() == c::DataType::kBool &&
@@ -860,8 +861,9 @@ void run_q24_semantic_fragment(
       const auto actual = sem::decode_output(fixture, output, half_test::read<float>(buffers[fixture.outputs[output].ordinal()]));
       ASSERT_EQ(actual.size(), expected.outputs[output].size());
       for (std::size_t i = 0; i < actual.size(); ++i)
-        if (std::isfinite(expected.outputs[output][i]))
+        if (std::isfinite(expected.outputs[output][i])) {
           ASSERT_TRUE(std::isfinite(actual[i])) << "non-finite output at " << i;
+        }
       feedback.observe(output, actual);
       sem::expect_output(fixture, actual, expected.outputs[output], {},
                          fixture.exact_output(output), fixture.id_validation(output),
