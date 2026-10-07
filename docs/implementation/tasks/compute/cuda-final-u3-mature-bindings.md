@@ -1,6 +1,6 @@
 # CUDA U3：共同需求的成熟承载批量接线
 
-<!-- MODULE REVIEW: SCOPED -->
+<!-- MODULE REVIEW: AUDITED -->
 
 ## Closure card
 
@@ -53,3 +53,15 @@ Direct 与 Graph 共用真实 operation supports／lowering；prepare匹配一�
 版本／许可证取原唯一锁与 U1 逐文件 SHA；真实 tensor/region 共同目录决定能力；资源/完成复用下层；
 P0先查cost，U4只同合同竞争；无新FFI；三交付/依赖/staging 同候选；用户自然两入口、无需Provider排序。
 全部门在各子批实际验收后签，不因本施工卡存在签 CLOSED。
+
+## G1 子批 AUDITED
+
+SCOPED 卡已独立提交。原 ggml CUDA type/support/convert/mmvq/mmq/GET_ROWS 的已锁源码
+由 U1 逐文件检出并固定。本子批只接八个已有 stock 类型、目标八种 quant embedding 格式；
+IQ1_XS/XXS/XXXS 仍属 G2，不因 source 存在授予编译／运行资格。
+有限 FIX：mapping＋embedding准入；扩展同原 codec 测试格式并迁移旧 blanket decline 为只拒绝 G2；
+普通 Direct／Graph 原格式、正／负 IDs、失败输出、变化激活／重放及 full region 对应资格。
+精度、rank、storage/strides、SM/runtime/driver数值资格、资源拒绝和原 math/source/core 不改。
+Graph Provider 当前 CANDIDATE 依法退回 AUDITED，因为同源 operation 支持集／正常 workload 改变，
+不是重新修改原 Graph API。两个 owner 绑定本卡仅 G1，保持 U2 冷事实迁移并在联合稳定候选运行验证。
+N1/N2/G2/R1 仍待各自接缝 AUDITED；没有自研扩张授权。
