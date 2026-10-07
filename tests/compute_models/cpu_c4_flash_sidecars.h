@@ -1,5 +1,6 @@
 #pragma once
 #include "cpu_c4_qwen_mtp.h"
+#include "../../src/compute_ggml_runtime/cpu_program.h"
 
 // The pinned Unsloth dflash.cpp uses F32 graph state and native GGUF codecs.
 // This is a model consumer and source oracle, not a product executor/kernel.
@@ -26,11 +27,51 @@ inline constexpr auto bf16_profile=[] {
 }();
 inline constexpr std::array models{Model{&q8_profile,false},Model{&bf16_profile,true}};
 using Reference=std::function<std::vector<float>(std::span<const float>)>;
+inline void activation_encode(ggml_type type,std::span<const float> values,void *output) {
+#if (defined(_M_X64) || defined(__x86_64__)) && (defined(_WIN32) || defined(__linux__))
+  if(type==GGML_TYPE_Q8_0 && c::ggml_runtime::cpu_avx2_program_eligible(hyle::platform::cpu_features())) {
+    // Scalar oracle for the selected original AVX2 program's Q8_0 definition.
+    // The linked baseline uses tie-away and a different reciprocal; it is not
+    // an oracle for this program. The subsequent dot remains independent.
+    auto *bytes=static_cast<std::byte *>(output);
+    for(std::size_t first=0;first<values.size();first+=32) {
+      float maximum=0;for(std::size_t i=0;i<32;++i)maximum=std::max(maximum,std::abs(values[first+i]));
+      const float scale=maximum/127.0F,multiplier=maximum?127.0F/maximum:0.0F;
+      const auto stored=half_test::encode<hyle::simd::float16_t>(scale);
+      std::memcpy(bytes,&stored,sizeof(stored));
+      for(std::size_t i=0;i<32;++i) {
+        const float scaled=values[first+i]*multiplier,magnitude=std::abs(scaled);
+        const float lower=std::floor(magnitude),fraction=magnitude-lower;
+        int integer=static_cast<int>(lower);
+        if(fraction>0.5F || (fraction==0.5F && (integer&1)))++integer;
+        const auto code=static_cast<std::int8_t>(scaled<0?-integer:integer);
+        std::memcpy(bytes+sizeof(stored)+i,&code,sizeof(code));
+      }
+      bytes+=std::size_t(ggml_row_size(type,32));
+    }
+    return;
+  }
+#endif
+  ggml_get_type_traits_cpu(type)->from_float(values.data(),output,values.size());
+}
+inline std::vector<float> projection_reference(const q::Projection &p,std::span<const float> x) {
+  ggml_cpu_init();const auto native=d5_gguf_test::native_type(p.type);
+  const auto *traits=ggml_get_type_traits_cpu(native);
+  const auto stride=std::size_t(ggml_row_size(native,p.k));
+  std::vector<std::uint64_t> encoded((ggml_row_size(traits->vec_dot_type,p.k)+7)/8);
+  std::vector<float> result(x.size()/p.k*p.n);
+  for(std::size_t row=0;row<x.size()/p.k;++row) {
+    activation_encode(traits->vec_dot_type,x.subspan(row*p.k,p.k),encoded.data());
+    for(std::int64_t col=0;col<p.n;++col)
+      traits->vec_dot(int(p.k),&result[row*p.n+col],0,p.weight.storage.data()+col*stride,0,encoded.data(),0,1);
+  }
+  return result;
+}
 struct Linear {ValueId output;Reference reference;};
 inline Linear linear(Fragment &f,ValueId input,std::int64_t n,std::int64_t k,bool bf16,int seed) {
   if(!bf16) {
     auto p=q::projection(f,input,n,k,c::GgufQuantizedType::kQ8_0,seed);
-    return {p.output,[p=std::move(p)](std::span<const float> x){return p.reference(x);}};
+    return {p.output,[p=std::move(p)](std::span<const float> x){return projection_reference(p,x);}};
   }
   auto p=ds::linear::projection(f,input,n,k,ds::linear::Storage::kBFloat16,seed);
   return {p.output,[p=std::move(p),k](std::span<const float> x){
@@ -60,7 +101,7 @@ inline std::vector<float> grouped_reference(const Grouped &w,std::span<const flo
   const auto encoded_bytes=std::size_t(ggml_row_size(traits->vec_dot_type,w.k));
   std::vector<std::uint64_t> encoded((encoded_bytes+7)/8);
   for(std::size_t slot=0;slot<ids.size();++slot) {
-    ggml_get_type_traits_cpu(traits->vec_dot_type)->from_float(input.data()+slot*w.k,encoded.data(),w.k);
+    activation_encode(traits->vec_dot_type,input.subspan(slot*w.k,w.k),encoded.data());
     for(std::int64_t row=0;row<w.n;++row)
       traits->vec_dot(int(w.k),&result[slot*w.n+row],0,w.weight.storage.data()+(ids[slot]*w.n+row)*bytes,0,encoded.data(),0,1);
   }return result;
