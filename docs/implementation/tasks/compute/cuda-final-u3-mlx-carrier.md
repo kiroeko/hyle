@@ -1,6 +1,6 @@
 # CUDA U3 N2：原 MLX packed 语义的 GPU 接线
 
-<!-- MODULE REVIEW: SCOPED -->
+<!-- MODULE REVIEW: AUDITED -->
 
 ## Closure card
 
@@ -30,7 +30,7 @@
   生命周期／原OOM／资源及capture拒绝；headers／真实消费者。N1／N2／R1的最终U3 candidate集中
   source/static/shared、CUDA-only／mixed、offline／relocation／DLL邻exe，必须在U2／U3关闭前完成。
   单载体只P0，不制造P1竞争；未运行不签PASS。docs／closure／selector及统一LOC。
-- stop：上述有限接线与适用资格后进入候选／联合验收；本scope本身不授权产品实现。
+- stop：上述有限接线与适用资格后进入候选／联合验收；实现只限下面已固定三项FIX。
 
 ## 有界审计输入
 
@@ -48,10 +48,30 @@ U1原71必要文件已经固定；本次仅补原CUDA device／quantized header�
 device／checked ids是接缝，代码算术／rounding保持。原GPU融合候选留待具体等价合同资格，
 不通过调整误差门、撤公共precision或省检查来接线。
 
-## 待固定有限 FIX
+## AUDITED 有限 FIX
 
 1. 原MLX GPU tensor recipe的source identity／只适配device及cold常量；CPU源不改。
 2. 现mature CUDA carrier绑定Mlx三种operation、overflow／checked indices／dtype／错误与保活。
 3. 16原合同两入口及小型精度／失败／资源／生命周期批量资格；三交付沿上述联合批次。
 
-这三项仍须下一提交AUDITED并将当前owner record绑定本卡后，才允许产品施工。
+SCOPED独立提交 `e7dc0497`。本提交固定三项FIX并重定界既有AUDITED owner的当前record，
+不制造非法AUDITED→SCOPED状态跳转，不以旧N1卡授权新数学；N1已证明输入和联合mixed交付余项保持。
+
+## 审计裁决与七问
+
+见[源精度账单](../../../../evidence/correctness/cuda-final-u3-mlx/source-audit.json)。具名静态反例：
+BF16 scale=0.10009765625、bias=0.030029296875、code=7/5、activation=1/-1.375时，
+原F32公式的BF16输出0.001251220703125，而Element-BF16先舍入权重的公式输出0。
+这只是原源码方程反证，不是GPU运行或性能资格。不能据native名字省略这一精度边界。
+
+| 能力／入口 | 当前 | 裁决 |
+|---|---|---|
+| affine linear／embedding，原group／scale／bias | CUDA缺失 | BORROW原MLX公式，由原GPU tensor库执行 |
+| MX4／MX8 linear／selected grouped，E8M0与F32 group-dot顺序 | CUDA缺失 | BORROW，保留原scale先cast到activation dtype |
+| 现N1 SDK／context／stream／异常／result lifetime | 已资格 | KEEP，不重复runtime或driver查询 |
+| 原CUDA BF16 QMM／QQMM替代当前完整语义 | 无同合同资格 | REJECT直接替代；F32版本具体资格另行有限审计 |
+| 自研CUDA codec／GEMM／SIMD | 无授权 | REJECT，继续冻结 |
+
+第三方pin／MIT／vendor owner由本factor唯一登记；16固定contract驱动而非benchmark；Compute／
+backend／Graph operation adapter复用；P0成本明确、无本批P1；无FFI；三交付／软件身份沿N1接缝及U3
+联合候选；普通用户既有API／错误／生命周期不变。尚未运行的GPU correctness／delivery不签PASS。

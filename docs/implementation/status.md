@@ -69,7 +69,7 @@
 | compute_provider_flashinfer | AUDITED | — | [record](tasks/compute/cuda-final-u2-build-contract.md) | CUDA U2 B2 AUDITED：有限授权 backend 真实 driver release 冷快照/API独立事实与有效span、当前ggml/CCCL/FlashInfer冷消费者迁移；NVML可选、未知不禁用正常CUDA，不改数学/pin/资格阈值/热路径。 |
 | compute_provider_ggml_metal | AUDITED | — | [record](tasks/compute/cpu-quant-mtp-c3-format-bindings.md) | C3公共GGUF enum消费者有限迁移AUDITED：只明确拒绝新增CPU格式，原D5资格/算法/限制不变，不恢复GPU队列；不签新增GPU能力。 |
 | compute_provider_iree_vulkan | CANDIDATE | — | [record](tasks/compute/llm-moe-d3-ggml-vulkan-native-binding.md) | IREE原D3能力仍CANDIDATE；宏等价改动026d40bc经实际owner编译、32 native及三平台宏/交付验收，原功能/精度/资源/性能限制保持，不签Vulkan路线CLOSED。 |
-| compute_provider_torch_cuda | AUDITED | — | [record](tasks/compute/cuda-final-u3-artifact-carrier.md) | CUDA U3 N1 AUDITED：原 NF4/nested、AWQ/CT GPU 张量程序；保留 locked CPU common runtime，附加原 CUDA leaf SDK；自然 Direct/Graph、资源/失败/三交付批量资格化，零新数学。 |
+| compute_provider_torch_cuda | AUDITED | — | [record](tasks/compute/cuda-final-u3-mlx-carrier.md) | CUDA U3 N2 AUDITED：保留已资格N1；有限接原MLX affine/MX4/MX8 GPU tensor公式、cold常量/checked ids/资源/失败，CPU数学/SDK不改，三交付与mixed余项联合U3验收，零新数学。 |
 
 <!-- END GENERATED MODULE STATUS -->
 

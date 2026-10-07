@@ -1,0 +1,47 @@
+{
+  "scope": "N2 finite source/precision audit; diagnostic equations only, not GPU kernel qualification or performance",
+  "revision": "2b2bb49790158ecd008d1685c94e3ef119792a00",
+  "source_sha256": {
+    "mlx/backend/cpu/quantized.cpp": "8890160da0a884b559aad18ce20a2b08170b721c38ce1c800229ae9998ed846d",
+    "mlx/backend/cuda/device/qmm_naive.cuh": "d00a1771dc7323c9bcc1d119259141e64d8be2ca7901ae1b6851c0a0c33a0376",
+    "mlx/backend/cuda/device/cute_dequant.cuh": "ccf3eef0112dae9127cc8b198ba4868ec246b4a53ffd14a6a6c10e13d8b6445c",
+    "mlx/backend/cuda/device/gemm_sm70.cuh": "4f82fed1446c747441982c10e351ffc9e6c79bac22f64ade20e4d9af6a0a7007",
+    "mlx/backend/cuda/quantized/qqmm.cpp": "f8efcf6591a7ac13ef4f464545c6b8642f24af35a3518b64f0032b931825e0c3"
+  },
+  "bf16_weight_round_counterexample": {
+    "scale": 0.10009765625,
+    "bias": 0.030029296875,
+    "activation": [
+      1.0,
+      -1.375
+    ],
+    "codes": [
+      7,
+      5
+    ],
+    "f32_formula_weights": [
+      0.730712890625,
+      0.530517578125
+    ],
+    "element_bf16_weights": [
+      0.73046875,
+      0.53125
+    ],
+    "f32_formula_bf16_output": 0.001251220703125,
+    "element_bf16_bf16_output": 0.0
+  },
+  "rejected_substitution": "Original CUDA BF16 Element dequant rounds each weight before F32 MMA; source F32 equation contract does not.",
+  "f32_candidate": "Original UniversalFMA, not TF32; source-scale casting/group order/extremes still need qualification.",
+  "carrier": "Original MLX equations in qualified ATen CUDA tensor operations; no new codec/GEMM, CPU fallback, or claimed CUDA fusion",
+  "cold_constants": [
+    "GPU shift tensor",
+    "original FP4 LUT"
+  ],
+  "temporary_bound": "One K group of selected experts; embedding only selected rows. No full float expert library.",
+  "runtime": "N1 shared external CUDA stream and invocation-owned result; managed private allocations, checked indices sync charged.",
+  "unverified": [
+    "16 contracts Direct/Graph",
+    "GPU numeric/lifecycle/failure gates",
+    "final U3 source/static/shared/mixed delivery"
+  ]
+}

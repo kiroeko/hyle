@@ -583,8 +583,8 @@
     {
       "module": "compute_provider_torch_cuda",
       "state": "AUDITED",
-      "summary": "CUDA U3 N1 AUDITED：原 NF4/nested、AWQ/CT GPU 张量程序；保留 locked CPU common runtime，附加原 CUDA leaf SDK；自然 Direct/Graph、资源/失败/三交付批量资格化，零新数学。",
-      "record": "docs/implementation/tasks/compute/cuda-final-u3-artifact-carrier.md"
+      "summary": "CUDA U3 N2 AUDITED：保留已资格N1；有限接原MLX affine/MX4/MX8 GPU tensor公式、cold常量/checked ids/资源/失败，CPU数学/SDK不改，三交付与mixed余项联合U3验收，零新数学。",
+      "record": "docs/implementation/tasks/compute/cuda-final-u3-mlx-carrier.md"
     }
   ]
 }
