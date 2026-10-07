@@ -102,3 +102,22 @@ F4后续具名SDPA形态：Qwen MTP明确请求non-causal／无mask的BSHD cache
 route只允许causal并固定写diag mask，原ggml程序已有null-mask flash及无diag的F32路径。
 仅按现operation.causal选择原mask/无mask，保留dtype/scale/GQA/index/score容量资格，不改公共
 schema或写attention kernel；case仍用原query/key/cache，不篡改consumer的causal标记。
+
+## F4 原生临时池资源接入审计
+
+候选`22069f25`的Windows Direct/Graph均报告driver code 2，operation为
+`cuMemAddressReserve(&pool_addr, CUDA_POOL_VMM_MAX_SIZE, 0, 0, 0)`；Linux同候选前驱的
+live backtrace停在同一原生调用。原ggml `456172ec`每个backend/stream的VMM池预留32 GiB
+虚拟地址，而Direct多个prepared operation与Graph片段分别保留独立backend。完整Flash
+三stage是实际消费者，不能通过缩小shape、删stage或重新排序测试签资格。
+
+本接缝有限FIX：冷建invocation时选择原ggml `ggml_cuda_pool_leg`（原cudaMalloc缓存池），
+由原backend独占各stream的池；不修改kernel/codec/融合、公共Queue、slot独立性或模型数学。
+只在private native resource bridge中绑定现成原池；不全局关闭CUDA VMM、不要求用户加开关。
+原同址reuse、graph warmup/capture与析构保持原程序。资源成本从每stream固定32 GiB地址预留
+改为实际临时容量，原cached payload/私有分配仍为managed未知上界，不冒称无分配prepared。
+Windows的首错和Linux栈已保留；历史失败不签PASS。新的适用验证为三sidecar两入口、原两slot/
+close/失败/replay/capture负空间与完整region。先验证单一不可变候选；资源接入不启动P1。
+
+该F4资源事实及原池源码已AUDITED，owner仍为当前`compute_provider_ggml_cuda`；native bridge
+编入已AUDITED的`compute_ggml_runtime`原源，但不修改其composer、pin、CPU执行或公共治理。
