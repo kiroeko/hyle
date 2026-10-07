@@ -135,9 +135,7 @@ void expect_mature(const DirectCall &call, const c::WorkloadContext &workload) {
               provider == c::cuda_native::kSglangProviderId ||
               provider == c::cuda_native::kDeepSeekProviderId ||
               provider == c::cuda_native::kCcclProviderId ||
-#if defined(HYLE_COMPUTE_TORCH_CUDA)
               provider == c::torch_cuda::kProviderId ||
-#endif
               d5_optional_cuda_provider::is_flashinfer(provider) || retained_storage)
       << c::operation_name(call.prepared.kind()) << ": "
       << call.prepared.provider().name;

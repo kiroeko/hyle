@@ -106,9 +106,7 @@ template <class Compiled> void expect_mature(const Compiled &compiled) {
                 provider == c::cuda_native::kSglangProviderId ||
               provider == c::cuda_native::kDeepSeekProviderId ||
                 provider == c::cuda_native::kCcclProviderId ||
-#if defined(HYLE_COMPUTE_TORCH_CUDA)
               provider == c::torch_cuda::kProviderId ||
-#endif
                 d5_optional_cuda_provider::is_flashinfer(provider) || retained_storage)
         << "step=" << step << " node=" << report.node_begin
         << " operation=" << c::operation_name(node.kind)

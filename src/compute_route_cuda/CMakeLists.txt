@@ -1,5 +1,11 @@
 if(HYLE_COMPUTE_CUDA_ENABLED)
   hyle_add_module(compute_route_cuda SOURCES cuda_context.cc)
+  get_target_property(_torch_features hyle_compute_provider_torch_cuda INTERFACE_COMPILE_DEFINITIONS)
+  if(_torch_features)
+    # Ordinary Direct/Graph consumers see the actual assembled capability.
+    # Keep the installed value literal; no build-tree target leaks into it.
+    target_compile_definitions(hyle_compute_route_cuda PUBLIC ${_torch_features})
+  endif()
   if(HYLE_STATIC AND NOT WIN32)
     get_target_property(_cuda_interface hyle_compute_route_cuda INTERFACE_LINK_LIBRARIES)
     list(REMOVE_ITEM _cuda_interface "$<LINK_ONLY:hyle_compute_provider_torch_cuda>")
