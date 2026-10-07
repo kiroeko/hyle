@@ -452,10 +452,10 @@ void probe(const Case &spec) {
   }
   for(std::size_t i=0;i<eligible.size();++i) for(std::size_t j=i+1;j<eligible.size();++j) {
     const auto same=equal(data,results[i],results[j]);
-    std::printf("PAIR\t%s\t%s\t%s\t%s\n",spec.id.c_str(),family_name(eligible[i]->family),
+    std::fprintf(stderr,"PAIR\t%s\t%s\t%s\t%s\n",spec.id.c_str(),family_name(eligible[i]->family),
         family_name(eligible[j]->family),same?"NUMERIC_MATCH":"NUMERIC_MISMATCH");
   }
-  std::printf("CARRIER_COUNT\t%s\t%zu\n",spec.id.c_str(),eligible.size());
+  std::fprintf(stderr,"CARRIER_COUNT\t%s\t%zu\n",spec.id.c_str(),eligible.size());
 }
 void measure_pair(const Case &spec,Family left,Family right) {
   Data data(spec);
