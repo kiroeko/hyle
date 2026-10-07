@@ -50,6 +50,9 @@
 
 Compute/Graph 研究与追溯：
 
+- [CUDA 最终收口 goal](compute/cuda-final-closure-plan.md)：继承 CPU 已固定的新模型／混合量化／MTP 共同需求，
+  六包处理 CUDA 接线、构建交付、条件规则与冗余自研；[U1 当前只读审计](compute/cuda-final-u1-demand-wiring.md)。
+  这份协调计划不替代 registry 的产品 owner／状态。
 - [LLM/MoE 成熟 Provider 完成计划](compute/llm-moe-coverage-completion-plan.md)：以七个大模型与
   本地 Qwen3.5-2B 确定需求、Provider 和接入方式，按 M0–M6 成批接四路线；
   [M0 当前卡](compute/llm-moe-m0-provider-scope.md)；旧 C1 队列撤回，

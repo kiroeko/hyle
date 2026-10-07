@@ -1,0 +1,66 @@
+{
+  "kind": "U1 initial read-only snapshot; not U1 terminal or product qualification",
+  "baseline": "f5f137f1b3e48bdd56acd42f7471d3c412c7b6e3",
+  "selector_verdict": "PASS",
+  "selected": [
+    {
+      "id": "docs",
+      "status": "PASS"
+    },
+    {
+      "id": "closure",
+      "status": "PASS"
+    }
+  ],
+  "skipped_count": 130,
+  "product_changed": false,
+  "new_runtime_pass": 0,
+  "new_p1_pass": 0,
+  "loc": {
+    "id": "module",
+    "label": "module implementation (compute-graph-all)",
+    "code": 60161,
+    "files": 249,
+    "selected_files": 292,
+    "paths": [
+      "include/hyle/compute",
+      "include/hyle/graph",
+      "src/compute",
+      "src/compute_backend_cpu",
+      "src/compute_backend_cuda",
+      "src/compute_ggml_runtime",
+      "src/compute_ops",
+      "src/compute_provider_cublas",
+      "src/compute_provider_cuda",
+      "src/compute_provider_flashinfer",
+      "src/compute_provider_ggml",
+      "src/compute_provider_ggml_cuda",
+      "src/compute_provider_ggml_metal",
+      "src/compute_provider_ggml_vulkan",
+      "src/compute_provider_iree_vulkan",
+      "src/compute_provider_marlin",
+      "src/compute_provider_native",
+      "src/compute_provider_onednn",
+      "src/compute_route_apple",
+      "src/compute_route_cpu",
+      "src/compute_route_cuda",
+      "src/compute_route_vulkan",
+      "src/graph",
+      "src/graph_provider_ggml_cuda",
+      "src/graph_provider_onednn",
+      "src/graph_route_apple",
+      "src/graph_route_cpu",
+      "src/graph_route_cuda",
+      "src/graph_route_vulkan"
+    ],
+    "languages": [
+      "C++",
+      "C/C++ Header",
+      "C",
+      "CUDA",
+      "Objective-C++",
+      "GLSL"
+    ]
+  },
+  "loc_self_check": "pass"
+}

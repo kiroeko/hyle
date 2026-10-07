@@ -1,0 +1,126 @@
+{
+  "scope": "User-mentioned 0816 release identity lookup only; no computation coverage",
+  "observed_utc": "2026-10-07T14:03:47.394702+00:00",
+  "lists": [
+    {
+      "url": "https://huggingface.co/api/models?author=deepseek-ai&search=DeepSeek-V4&limit=100",
+      "status": 200,
+      "response_sha256": "33df7c1ceb07717e001be2132f6a54e8a8a2599a56887ee0be005c941338ac1b",
+      "models": [
+        {
+          "id": "deepseek-ai/DeepSeek-V4.1-Flash",
+          "downloads": 1255513,
+          "likes": 4207
+        },
+        {
+          "id": "deepseek-ai/DeepSeek-V4-Pro",
+          "downloads": 436474,
+          "likes": 5635
+        },
+        {
+          "id": "deepseek-ai/DeepSeek-V4-Flash-0731",
+          "downloads": 4528516,
+          "likes": 4021
+        },
+        {
+          "id": "deepseek-ai/DeepSeek-V4-Flash",
+          "downloads": 995874,
+          "likes": 2279
+        },
+        {
+          "id": "deepseek-ai/DeepSeek-V4-Pro-0813",
+          "downloads": 85812,
+          "likes": 860
+        },
+        {
+          "id": "deepseek-ai/DeepSeek-V4-Flash-Vision-Exp",
+          "downloads": 783133,
+          "likes": 932
+        },
+        {
+          "id": "deepseek-ai/DeepSeek-V4-Pro-Base",
+          "downloads": 29118,
+          "likes": 345
+        },
+        {
+          "id": "deepseek-ai/DeepSeek-V4-Flash-Base",
+          "downloads": 167093,
+          "likes": 329
+        },
+        {
+          "id": "deepseek-ai/DeepSeek-V4-Flash-DSpark",
+          "downloads": 583542,
+          "likes": 284
+        },
+        {
+          "id": "deepseek-ai/DeepSeek-V4-Pro-DSpark",
+          "downloads": 4127,
+          "likes": 543
+        }
+      ]
+    },
+    {
+      "url": "https://huggingface.co/api/models?author=unsloth&search=DeepSeek-V4&limit=100",
+      "status": 200,
+      "response_sha256": "a1aea00e513737cf72401dee7ae69734ed46d51e94cc93578632ca2dbb2ca0d5",
+      "models": [
+        {
+          "id": "unsloth/DeepSeek-V4-Flash-0731-GGUF",
+          "downloads": 136724,
+          "likes": 780
+        },
+        {
+          "id": "unsloth/DeepSeek-V4-Flash-GGUF",
+          "downloads": 21717,
+          "likes": 255
+        },
+        {
+          "id": "unsloth/DeepSeek-V4-Flash-Vision-Exp-GGUF",
+          "downloads": 20928,
+          "likes": 92
+        },
+        {
+          "id": "unsloth/DeepSeek-V4-Pro",
+          "downloads": 165,
+          "likes": 60
+        },
+        {
+          "id": "unsloth/DeepSeek-V4-Pro-Base",
+          "downloads": 31,
+          "likes": 4
+        },
+        {
+          "id": "unsloth/DeepSeek-V4-Flash",
+          "downloads": 451,
+          "likes": 78
+        },
+        {
+          "id": "unsloth/DeepSeek-V4-Flash-Base",
+          "downloads": 40,
+          "likes": 4
+        },
+        {
+          "id": "unsloth/DeepSeek-V4-Flash-0731",
+          "downloads": 3145,
+          "likes": 34
+        },
+        {
+          "id": "unsloth/DeepSeek-V4-Pro-0813-GGUF",
+          "downloads": 106559,
+          "likes": 66
+        },
+        {
+          "id": "unsloth/DeepSeek-V4-Pro-0813",
+          "downloads": 564,
+          "likes": 5
+        },
+        {
+          "id": "unsloth/DeepSeek-V4-Flash-Vision-Exp",
+          "downloads": 528,
+          "likes": 9
+        }
+      ]
+    }
+  ],
+  "limit": "Listing does not establish a dated checkpoint revision or tensor contract."
+}
