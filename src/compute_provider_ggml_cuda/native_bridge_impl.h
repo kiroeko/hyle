@@ -16,6 +16,14 @@ int device_index(int physical_device) {
 
 cudaStream_t root_stream(ggml_backend *backend) {
   auto *context = static_cast<ggml_backend_cuda_context *>(backend->context);
+  // This cold accessor runs before the invocation's first graph execution.
+  // Original caching allocator and stream ownership; only the pool choice
+  // changes. Large native regions can create additional upstream streams.
+  for (int stream = 0; stream < GGML_CUDA_MAX_STREAMS; ++stream) {
+    auto &pool = context->pools[context->device][stream];
+    GGML_ASSERT(pool == nullptr);
+    pool = std::make_unique<ggml_cuda_pool_leg>(context->device);
+  }
   return context->stream(context->device, 0);
 }
 
