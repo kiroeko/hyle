@@ -1,0 +1,304 @@
+{
+  "envelope": "mac-apple",
+  "product_candidate": "64b454fa23404d26bead60d495eda9475c802e32",
+  "steps": [
+    {
+      "name": "overlay",
+      "args": [
+        "python3",
+        "-c",
+        "from pathlib import Path;Path('/Users/kiro/hyle-verify/cpu-final-mixed-e0388fbd/f5-overlay.cmake').write_text('function(f5_mixed_hook)\\nadd_executable(f5_mixed_source \"/Users/kiro/hyle-verify/cpu-final-mixed-e0388fbd/f5-consumer/main.cc\")\\ntarget_compile_features(f5_mixed_source PRIVATE cxx_std_23)\\ntarget_link_libraries(f5_mixed_source PRIVATE hyle::compute hyle::graph)\\nhyle_stage_runtime_dependencies(f5_mixed_source)\\nendfunction()\\nif(CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)\\ncmake_language(DEFER CALL f5_mixed_hook)\\nendif()\\n')"
+      ],
+      "candidate": "64b454fa23404d26bead60d495eda9475c802e32",
+      "exit": 0,
+      "seconds": 0.25,
+      "log": "1-overlay.log"
+    },
+    {
+      "name": "static-configure",
+      "args": [
+        "cmake",
+        "-S",
+        "/Users/kiro/hyle-verify/cpu-final-mixed-e0388fbd/source",
+        "-B",
+        "/Users/kiro/hyle-verify/cpu-final-mixed-e0388fbd/build",
+        "-DHYLE_COMPONENTS=compute,graph",
+        "-DHYLE_COMPUTE_CPU=ON",
+        "-DHYLE_COMPUTE_CUDA=OFF",
+        "-DHYLE_COMPUTE_APPLE=ON",
+        "-DHYLE_COMPUTE_VULKAN=OFF",
+        "-DHYLE_COMPUTE_ONEDNN=AUTO",
+        "-DHYLE_COMPUTE_TORCH_CPU=AUTO",
+        "-DHYLE_BUILD_TESTS=OFF",
+        "-DHYLE_BUILD_BENCH=OFF",
+        "-DHYLE_INSTALL=ON",
+        "-DFETCHCONTENT_FULLY_DISCONNECTED=ON",
+        "-DCMAKE_OSX_DEPLOYMENT_TARGET=14.4",
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DCMAKE_PROJECT_INCLUDE=/Users/kiro/hyle-verify/cpu-final-mixed-e0388fbd/f5-overlay.cmake",
+        "-DHYLE_STATIC=ON",
+        "-DCMAKE_INSTALL_PREFIX=/Users/kiro/hyle-verify/cpu-final-mixed-e0388fbd/f5-static-staging"
+      ],
+      "candidate": "64b454fa23404d26bead60d495eda9475c802e32",
+      "exit": 0,
+      "seconds": 3.922,
+      "log": "2-static-configure.log"
+    },
+    {
+      "name": "static-build",
+      "args": [
+        "cmake",
+        "--build",
+        "/Users/kiro/hyle-verify/cpu-final-mixed-e0388fbd/build",
+        "--parallel",
+        "2"
+      ],
+      "candidate": "64b454fa23404d26bead60d495eda9475c802e32",
+      "exit": 0,
+      "seconds": 72.609,
+      "log": "3-static-build.log"
+    },
+    {
+      "name": "static-source-43-48",
+      "args": [
+        "/Users/kiro/hyle-verify/cpu-final-mixed-e0388fbd/build/bin/f5_mixed_source"
+      ],
+      "candidate": "64b454fa23404d26bead60d495eda9475c802e32",
+      "exit": 0,
+      "seconds": 0.829,
+      "log": "4-static-source-43-48.log"
+    },
+    {
+      "name": "static-install",
+      "args": [
+        "cmake",
+        "--install",
+        "/Users/kiro/hyle-verify/cpu-final-mixed-e0388fbd/build"
+      ],
+      "candidate": "64b454fa23404d26bead60d495eda9475c802e32",
+      "exit": 0,
+      "seconds": 0.578,
+      "log": "5-static-install.log"
+    },
+    {
+      "name": "static-relocate",
+      "args": [
+        "python3",
+        "-c",
+        "from pathlib import Path; a=Path('/Users/kiro/hyle-verify/cpu-final-mixed-e0388fbd/f5-static-staging'); b=Path('/Users/kiro/hyle-verify/cpu-final-mixed-e0388fbd/f5-static-relocated'); root=Path('/Users/kiro/hyle-verify/cpu-final-mixed-e0388fbd').resolve();assert a.resolve().parent==root and b.resolve().parent==root and a.is_dir() and not b.exists();a.rename(b)"
+      ],
+      "candidate": "64b454fa23404d26bead60d495eda9475c802e32",
+      "exit": 0,
+      "seconds": 0.25,
+      "log": "6-static-relocate.log"
+    },
+    {
+      "name": "static-consumer-configure",
+      "args": [
+        "cmake",
+        "-S",
+        "/Users/kiro/hyle-verify/cpu-final-mixed-e0388fbd/f5-consumer",
+        "-B",
+        "/Users/kiro/hyle-verify/cpu-final-mixed-e0388fbd/f5-static-consumer",
+        "-G",
+        "Ninja",
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DCMAKE_OSX_DEPLOYMENT_TARGET=14.4",
+        "-DCMAKE_PREFIX_PATH=/Users/kiro/hyle-verify/cpu-final-mixed-e0388fbd/f5-static-relocated",
+        "-DFETCHCONTENT_FULLY_DISCONNECTED=ON"
+      ],
+      "candidate": "64b454fa23404d26bead60d495eda9475c802e32",
+      "exit": 0,
+      "seconds": 1.75,
+      "log": "7-static-consumer-configure.log"
+    },
+    {
+      "name": "static-consumer-build",
+      "args": [
+        "cmake",
+        "--build",
+        "/Users/kiro/hyle-verify/cpu-final-mixed-e0388fbd/f5-static-consumer",
+        "--parallel",
+        "2"
+      ],
+      "candidate": "64b454fa23404d26bead60d495eda9475c802e32",
+      "exit": 0,
+      "seconds": 1.265,
+      "log": "8-static-consumer-build.log"
+    },
+    {
+      "name": "static-consumer-43-48",
+      "args": [
+        "/Users/kiro/hyle-verify/cpu-final-mixed-e0388fbd/f5-static-consumer/cpu_final_delivery"
+      ],
+      "candidate": "64b454fa23404d26bead60d495eda9475c802e32",
+      "exit": 0,
+      "seconds": 0.828,
+      "log": "9-static-consumer-43-48.log"
+    },
+    {
+      "name": "static-loader",
+      "args": [
+        "otool",
+        "-L",
+        "/Users/kiro/hyle-verify/cpu-final-mixed-e0388fbd/f5-static-consumer/cpu_final_delivery"
+      ],
+      "candidate": "64b454fa23404d26bead60d495eda9475c802e32",
+      "exit": 0,
+      "seconds": 0.204,
+      "log": "10-static-loader.log"
+    },
+    {
+      "name": "shared-configure",
+      "args": [
+        "cmake",
+        "-S",
+        "/Users/kiro/hyle-verify/cpu-final-mixed-e0388fbd/source",
+        "-B",
+        "/Users/kiro/hyle-verify/cpu-final-mixed-e0388fbd/build",
+        "-DHYLE_COMPONENTS=compute,graph",
+        "-DHYLE_COMPUTE_CPU=ON",
+        "-DHYLE_COMPUTE_CUDA=OFF",
+        "-DHYLE_COMPUTE_APPLE=ON",
+        "-DHYLE_COMPUTE_VULKAN=OFF",
+        "-DHYLE_COMPUTE_ONEDNN=AUTO",
+        "-DHYLE_COMPUTE_TORCH_CPU=AUTO",
+        "-DHYLE_BUILD_TESTS=OFF",
+        "-DHYLE_BUILD_BENCH=OFF",
+        "-DHYLE_INSTALL=ON",
+        "-DFETCHCONTENT_FULLY_DISCONNECTED=ON",
+        "-DCMAKE_OSX_DEPLOYMENT_TARGET=14.4",
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DCMAKE_PROJECT_INCLUDE=/Users/kiro/hyle-verify/cpu-final-mixed-e0388fbd/f5-overlay.cmake",
+        "-DHYLE_STATIC=OFF",
+        "-DCMAKE_INSTALL_PREFIX=/Users/kiro/hyle-verify/cpu-final-mixed-e0388fbd/f5-shared-staging"
+      ],
+      "candidate": "64b454fa23404d26bead60d495eda9475c802e32",
+      "exit": 0,
+      "seconds": 3.812,
+      "log": "11-shared-configure.log"
+    },
+    {
+      "name": "shared-build",
+      "args": [
+        "cmake",
+        "--build",
+        "/Users/kiro/hyle-verify/cpu-final-mixed-e0388fbd/build",
+        "--parallel",
+        "2"
+      ],
+      "candidate": "64b454fa23404d26bead60d495eda9475c802e32",
+      "exit": 0,
+      "seconds": 73.984,
+      "log": "12-shared-build.log"
+    },
+    {
+      "name": "shared-source-43-48",
+      "args": [
+        "/Users/kiro/hyle-verify/cpu-final-mixed-e0388fbd/build/bin/f5_mixed_source"
+      ],
+      "candidate": "64b454fa23404d26bead60d495eda9475c802e32",
+      "exit": 0,
+      "seconds": 6.407,
+      "log": "13-shared-source-43-48.log"
+    },
+    {
+      "name": "shared-install",
+      "args": [
+        "cmake",
+        "--install",
+        "/Users/kiro/hyle-verify/cpu-final-mixed-e0388fbd/build"
+      ],
+      "candidate": "64b454fa23404d26bead60d495eda9475c802e32",
+      "exit": 0,
+      "seconds": 0.531,
+      "log": "14-shared-install.log"
+    },
+    {
+      "name": "shared-relocate",
+      "args": [
+        "python3",
+        "-c",
+        "from pathlib import Path; a=Path('/Users/kiro/hyle-verify/cpu-final-mixed-e0388fbd/f5-shared-staging'); b=Path('/Users/kiro/hyle-verify/cpu-final-mixed-e0388fbd/f5-shared-relocated'); root=Path('/Users/kiro/hyle-verify/cpu-final-mixed-e0388fbd').resolve();assert a.resolve().parent==root and b.resolve().parent==root and a.is_dir() and not b.exists();a.rename(b)"
+      ],
+      "candidate": "64b454fa23404d26bead60d495eda9475c802e32",
+      "exit": 0,
+      "seconds": 0.234,
+      "log": "15-shared-relocate.log"
+    },
+    {
+      "name": "shared-consumer-configure",
+      "args": [
+        "cmake",
+        "-S",
+        "/Users/kiro/hyle-verify/cpu-final-mixed-e0388fbd/f5-consumer",
+        "-B",
+        "/Users/kiro/hyle-verify/cpu-final-mixed-e0388fbd/f5-shared-consumer",
+        "-G",
+        "Ninja",
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DCMAKE_OSX_DEPLOYMENT_TARGET=14.4",
+        "-DCMAKE_PREFIX_PATH=/Users/kiro/hyle-verify/cpu-final-mixed-e0388fbd/f5-shared-relocated",
+        "-DFETCHCONTENT_FULLY_DISCONNECTED=ON"
+      ],
+      "candidate": "64b454fa23404d26bead60d495eda9475c802e32",
+      "exit": 0,
+      "seconds": 1.453,
+      "log": "16-shared-consumer-configure.log"
+    },
+    {
+      "name": "shared-consumer-build",
+      "args": [
+        "cmake",
+        "--build",
+        "/Users/kiro/hyle-verify/cpu-final-mixed-e0388fbd/f5-shared-consumer",
+        "--parallel",
+        "2"
+      ],
+      "candidate": "64b454fa23404d26bead60d495eda9475c802e32",
+      "exit": 0,
+      "seconds": 1.25,
+      "log": "17-shared-consumer-build.log"
+    },
+    {
+      "name": "shared-consumer-43-48",
+      "args": [
+        "/Users/kiro/hyle-verify/cpu-final-mixed-e0388fbd/f5-shared-consumer/cpu_final_delivery"
+      ],
+      "candidate": "64b454fa23404d26bead60d495eda9475c802e32",
+      "exit": 0,
+      "seconds": 7.016,
+      "log": "18-shared-consumer-43-48.log"
+    },
+    {
+      "name": "shared-loader",
+      "args": [
+        "otool",
+        "-L",
+        "/Users/kiro/hyle-verify/cpu-final-mixed-e0388fbd/f5-shared-consumer/cpu_final_delivery"
+      ],
+      "candidate": "64b454fa23404d26bead60d495eda9475c802e32",
+      "exit": 0,
+      "seconds": 0.203,
+      "log": "19-shared-loader.log"
+    },
+    {
+      "name": "shared-export",
+      "args": [
+        "python3",
+        "/Users/kiro/hyle-verify/cpu-final-mixed-e0388fbd/source/scripts/check-shared-export-hygiene.py",
+        "--root",
+        "/Users/kiro/hyle-verify/cpu-final-mixed-e0388fbd/f5-shared-relocated"
+      ],
+      "candidate": "64b454fa23404d26bead60d495eda9475c802e32",
+      "exit": 0,
+      "seconds": 0.36,
+      "log": "20-shared-export.log"
+    }
+  ],
+  "successful_steps": 20,
+  "consumer_contract": "43 exact cold requests x2 ordinary contexts; 48 numeric/replay checks per actual source/SDK consumer",
+  "limits": "CPU seam delta only; no CPU-only WIN leak, no new GPU mathematical/performance/format qualification.",
+  "bundle": "mac-apple-mixed-delivery.zip",
+  "bundle_sha256": "d33a11a9762840d23005134f381b75d8640a293bda899a50934e5ac676daa18b"
+}

@@ -1,0 +1,280 @@
+{
+  "envelope": "linux-cuda",
+  "product_candidate": "64b454fa23404d26bead60d495eda9475c802e32",
+  "steps": [
+    {
+      "name": "machine",
+      "candidate": "64b454fa23404d26bead60d495eda9475c802e32",
+      "args": [
+        "sh",
+        "-c",
+        "uname -a; g++-14 --version; cmake --version"
+      ],
+      "exit": 0,
+      "seconds": 0.021,
+      "log": "1-machine.log"
+    },
+    {
+      "name": "shared-configure",
+      "candidate": "64b454fa23404d26bead60d495eda9475c802e32",
+      "args": [
+        "cmake",
+        "-S",
+        "/root/hyle-scratch/active-cpu-z/source",
+        "-B",
+        "/root/hyle-scratch/active-cpu-z/build",
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DHYLE_COMPONENTS=compute,graph",
+        "-DCUDAToolkit_ROOT=/usr/local/cuda-13.3",
+        "-DCMAKE_CUDA_HOST_COMPILER=/usr/bin/g++-13",
+        "-DHYLE_COMPUTE_CPU=ON",
+        "-DHYLE_COMPUTE_CUDA=ON",
+        "-DHYLE_COMPUTE_APPLE=OFF",
+        "-DHYLE_COMPUTE_VULKAN=OFF",
+        "-DHYLE_COMPUTE_ONEDNN=AUTO",
+        "-DHYLE_COMPUTE_TORCH_CPU=AUTO",
+        "-DHYLE_BUILD_TESTS=OFF",
+        "-DHYLE_INSTALL=ON",
+        "-DHYLE_STATIC=OFF",
+        "-DCMAKE_INSTALL_PREFIX=/root/hyle-scratch/active-cpu-z/f5-mixed-shared-staging",
+        "-DCMAKE_PROJECT_INCLUDE=/root/hyle-scratch/active-cpu-z/f5-overlay.cmake",
+        "-DFETCHCONTENT_FULLY_DISCONNECTED=ON"
+      ],
+      "exit": 0,
+      "seconds": 42.813,
+      "log": "2-shared-configure.log"
+    },
+    {
+      "name": "shared-build",
+      "candidate": "64b454fa23404d26bead60d495eda9475c802e32",
+      "args": [
+        "cmake",
+        "--build",
+        "/root/hyle-scratch/active-cpu-z/build",
+        "--parallel",
+        "2"
+      ],
+      "exit": 0,
+      "seconds": 91.064,
+      "log": "3-shared-build.log"
+    },
+    {
+      "name": "shared-source",
+      "candidate": "64b454fa23404d26bead60d495eda9475c802e32",
+      "args": [
+        "/root/hyle-scratch/active-cpu-z/build/bin/cpu_f5_source_delivery"
+      ],
+      "exit": 0,
+      "seconds": 0.157,
+      "log": "4-shared-source.log"
+    },
+    {
+      "name": "shared-install",
+      "candidate": "64b454fa23404d26bead60d495eda9475c802e32",
+      "args": [
+        "cmake",
+        "--install",
+        "/root/hyle-scratch/active-cpu-z/build"
+      ],
+      "exit": 0,
+      "seconds": 0.084,
+      "log": "5-shared-install.log"
+    },
+    {
+      "name": "shared-consumer-configure",
+      "candidate": "64b454fa23404d26bead60d495eda9475c802e32",
+      "args": [
+        "cmake",
+        "-S",
+        "/root/hyle-scratch/active-cpu-z/f5-consumer",
+        "-B",
+        "/root/hyle-scratch/active-cpu-z/f5-mixed-shared-consumer",
+        "-G",
+        "Ninja",
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DCMAKE_PREFIX_PATH=/root/hyle-scratch/active-cpu-z/f5-mixed-shared-relocated",
+        "-DCUDAToolkit_ROOT=/usr/local/cuda-13.3",
+        "-DCMAKE_CXX_COMPILER=/usr/bin/g++-14",
+        "-DFETCHCONTENT_FULLY_DISCONNECTED=ON"
+      ],
+      "exit": 0,
+      "seconds": 19.512,
+      "log": "6-shared-consumer-configure.log"
+    },
+    {
+      "name": "shared-consumer-build",
+      "candidate": "64b454fa23404d26bead60d495eda9475c802e32",
+      "args": [
+        "cmake",
+        "--build",
+        "/root/hyle-scratch/active-cpu-z/f5-mixed-shared-consumer",
+        "--parallel",
+        "2"
+      ],
+      "exit": 0,
+      "seconds": 2.545,
+      "log": "7-shared-consumer-build.log"
+    },
+    {
+      "name": "shared-consumer-run",
+      "candidate": "64b454fa23404d26bead60d495eda9475c802e32",
+      "args": [
+        "/root/hyle-scratch/active-cpu-z/f5-mixed-shared-consumer/cpu_final_delivery"
+      ],
+      "exit": 0,
+      "seconds": 0.147,
+      "log": "8-shared-consumer-run.log"
+    },
+    {
+      "name": "shared-loader",
+      "candidate": "64b454fa23404d26bead60d495eda9475c802e32",
+      "args": [
+        "ldd",
+        "/root/hyle-scratch/active-cpu-z/f5-mixed-shared-consumer/cpu_final_delivery"
+      ],
+      "exit": 0,
+      "seconds": 0.005,
+      "log": "9-shared-loader.log"
+    },
+    {
+      "name": "shared-export",
+      "candidate": "64b454fa23404d26bead60d495eda9475c802e32",
+      "args": [
+        "python3",
+        "/root/hyle-scratch/active-cpu-z/source/scripts/check-shared-export-hygiene.py",
+        "--root",
+        "/root/hyle-scratch/active-cpu-z/f5-mixed-shared-relocated"
+      ],
+      "exit": 0,
+      "seconds": 2.324,
+      "log": "10-shared-export.log"
+    },
+    {
+      "name": "static-configure",
+      "candidate": "64b454fa23404d26bead60d495eda9475c802e32",
+      "args": [
+        "cmake",
+        "-S",
+        "/root/hyle-scratch/active-cpu-z/source",
+        "-B",
+        "/root/hyle-scratch/active-cpu-z/build",
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DHYLE_COMPONENTS=compute,graph",
+        "-DCUDAToolkit_ROOT=/usr/local/cuda-13.3",
+        "-DCMAKE_CUDA_HOST_COMPILER=/usr/bin/g++-13",
+        "-DHYLE_COMPUTE_CPU=ON",
+        "-DHYLE_COMPUTE_CUDA=ON",
+        "-DHYLE_COMPUTE_APPLE=OFF",
+        "-DHYLE_COMPUTE_VULKAN=OFF",
+        "-DHYLE_COMPUTE_ONEDNN=AUTO",
+        "-DHYLE_COMPUTE_TORCH_CPU=AUTO",
+        "-DHYLE_BUILD_TESTS=OFF",
+        "-DHYLE_INSTALL=ON",
+        "-DHYLE_STATIC=ON",
+        "-DCMAKE_INSTALL_PREFIX=/root/hyle-scratch/active-cpu-z/f5-mixed-static-staging",
+        "-DCMAKE_PROJECT_INCLUDE=/root/hyle-scratch/active-cpu-z/f5-overlay.cmake",
+        "-DFETCHCONTENT_FULLY_DISCONNECTED=ON"
+      ],
+      "exit": 0,
+      "seconds": 35.811,
+      "log": "11-static-configure.log"
+    },
+    {
+      "name": "static-build",
+      "candidate": "64b454fa23404d26bead60d495eda9475c802e32",
+      "args": [
+        "cmake",
+        "--build",
+        "/root/hyle-scratch/active-cpu-z/build",
+        "--parallel",
+        "2"
+      ],
+      "exit": 0,
+      "seconds": 129.938,
+      "log": "12-static-build.log"
+    },
+    {
+      "name": "static-source",
+      "candidate": "64b454fa23404d26bead60d495eda9475c802e32",
+      "args": [
+        "/root/hyle-scratch/active-cpu-z/build/bin/cpu_f5_source_delivery"
+      ],
+      "exit": 0,
+      "seconds": 0.156,
+      "log": "13-static-source.log"
+    },
+    {
+      "name": "static-install",
+      "candidate": "64b454fa23404d26bead60d495eda9475c802e32",
+      "args": [
+        "cmake",
+        "--install",
+        "/root/hyle-scratch/active-cpu-z/build"
+      ],
+      "exit": 0,
+      "seconds": 0.115,
+      "log": "14-static-install.log"
+    },
+    {
+      "name": "static-consumer-configure",
+      "candidate": "64b454fa23404d26bead60d495eda9475c802e32",
+      "args": [
+        "cmake",
+        "-S",
+        "/root/hyle-scratch/active-cpu-z/f5-consumer",
+        "-B",
+        "/root/hyle-scratch/active-cpu-z/f5-mixed-static-consumer",
+        "-G",
+        "Ninja",
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DCMAKE_PREFIX_PATH=/root/hyle-scratch/active-cpu-z/f5-mixed-static-relocated",
+        "-DCUDAToolkit_ROOT=/usr/local/cuda-13.3",
+        "-DCMAKE_CXX_COMPILER=/usr/bin/g++-14",
+        "-DFETCHCONTENT_FULLY_DISCONNECTED=ON"
+      ],
+      "exit": 0,
+      "seconds": 19.713,
+      "log": "15-static-consumer-configure.log"
+    },
+    {
+      "name": "static-consumer-build",
+      "candidate": "64b454fa23404d26bead60d495eda9475c802e32",
+      "args": [
+        "cmake",
+        "--build",
+        "/root/hyle-scratch/active-cpu-z/f5-mixed-static-consumer",
+        "--parallel",
+        "2"
+      ],
+      "exit": 0,
+      "seconds": 3.051,
+      "log": "16-static-consumer-build.log"
+    },
+    {
+      "name": "static-consumer-run",
+      "candidate": "64b454fa23404d26bead60d495eda9475c802e32",
+      "args": [
+        "/root/hyle-scratch/active-cpu-z/f5-mixed-static-consumer/cpu_final_delivery"
+      ],
+      "exit": 0,
+      "seconds": 0.151,
+      "log": "17-static-consumer-run.log"
+    },
+    {
+      "name": "static-loader",
+      "candidate": "64b454fa23404d26bead60d495eda9475c802e32",
+      "args": [
+        "ldd",
+        "/root/hyle-scratch/active-cpu-z/f5-mixed-static-consumer/cpu_final_delivery"
+      ],
+      "exit": 0,
+      "seconds": 0.018,
+      "log": "18-static-loader.log"
+    }
+  ],
+  "successful_steps": 18,
+  "consumer_contract": "43 exact cold requests x2 ordinary contexts; 48 numeric/replay checks per actual source/SDK consumer",
+  "limits": "CPU seam delta only; no CPU-only WIN leak, no new GPU mathematical/performance/format qualification.",
+  "bundle": "linux-cuda-mixed-delivery.zip",
+  "bundle_sha256": "a74936a3150816f2da151aa679d1c20b0f9f17fc6191e35b7d0d2102387e2929"
+}

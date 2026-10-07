@@ -234,5 +234,5 @@
   "consumer_contract": "43 exact cold requests x2 ordinary contexts; 48 numeric/replay checks per actual source/SDK consumer",
   "limits": "CPU seam delta only; no CPU-only WIN leak, no new GPU mathematical/performance/format qualification.",
   "bundle": "windows-cuda-mixed-delivery.zip",
-  "bundle_sha256": "d1184bae6e833783c11a564b28331ed9de80659fff788d6c5ef2dce37914fa88"
+  "bundle_sha256": "7b1800b1c9cb93bb80798169431ebce34e4dd63c12d0fb3a5096f3ee9b609522"
 }

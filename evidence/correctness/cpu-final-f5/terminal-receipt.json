@@ -1,0 +1,120 @@
+{
+  "scope": "F5 terminal finite retirement/CPU seam acceptance; not F6 or whole-goal terminal",
+  "candidate": "64b454fa23404d26bead60d495eda9475c802e32",
+  "header_checks": [
+    {
+      "name": "windows-native-header",
+      "args": [
+        "python",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\cpu-final-f5\\header\\hidden-header-driver.py",
+        "C:\\public\\project-hyle\\hyle\\scripts\\header-self-contained.py",
+        "--module",
+        "compute_provider_native",
+        "--header-dir",
+        "compute",
+        "--header",
+        "providers/native.h",
+        "--include-dir",
+        "C:\\public\\project-hyle\\hyle\\include",
+        "--cxx",
+        "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\bin\\Hostx64\\x64\\cl.exe",
+        "--cxx-compiler-id",
+        "MSVC",
+        "--cxx-frontend",
+        "MSVC"
+      ],
+      "candidate": "15bd6701c4133ab5e6f100edb2ec97160bfb5ad2",
+      "log": "1-windows-native-header.log",
+      "returncode": 0,
+      "seconds": 0.313
+    },
+    {
+      "name": "linux-native-header",
+      "args": [
+        "wsl.exe",
+        "-d",
+        "Ubuntu-24.04",
+        "--",
+        "python3",
+        "/root/hyle-scratch/active-cpu-z/source/scripts/header-self-contained.py",
+        "--module",
+        "compute_provider_native",
+        "--header-dir",
+        "compute",
+        "--header",
+        "providers/native.h",
+        "--include-dir",
+        "/root/hyle-scratch/active-cpu-z/source/include",
+        "--cxx",
+        "/usr/bin/g++-14",
+        "--cxx-compiler-id",
+        "GNU"
+      ],
+      "candidate": "15bd6701c4133ab5e6f100edb2ec97160bfb5ad2",
+      "log": "2-linux-native-header.log",
+      "returncode": 0,
+      "seconds": 0.172
+    },
+    {
+      "name": "mac-native-header",
+      "args": [
+        "C:/Windows/System32/OpenSSH/ssh.exe",
+        "-o",
+        "BatchMode=yes",
+        "kiro@172.22.10.198",
+        "export PATH=/opt/homebrew/bin:$PATH; python3 /Users/kiro/hyle-verify/cpu-final-delivery-9a9936e8/hyle-0.1.0-source/scripts/header-self-contained.py --module compute_provider_native --header-dir compute --header providers/native.h --include-dir /Users/kiro/hyle-verify/cpu-final-delivery-9a9936e8/hyle-0.1.0-source/include --cxx /usr/bin/clang++ --cxx-compiler-id AppleClang"
+      ],
+      "candidate": "15bd6701c4133ab5e6f100edb2ec97160bfb5ad2",
+      "log": "3-mac-native-header.log",
+      "returncode": 0,
+      "seconds": 0.312
+    }
+  ],
+  "mixed_envelopes": [
+    {
+      "envelope": "windows-cuda",
+      "receipt": "evidence/correctness/cpu-final-f5/windows-cuda-mixed-delivery-receipt.json",
+      "steps": 15
+    },
+    {
+      "envelope": "windows-vulkan",
+      "receipt": "evidence/correctness/cpu-final-f5/windows-vulkan-mixed-delivery-receipt.json",
+      "steps": 15
+    },
+    {
+      "envelope": "mac-apple",
+      "receipt": "evidence/correctness/cpu-final-f5/mac-apple-mixed-delivery-receipt.json",
+      "steps": 20
+    },
+    {
+      "envelope": "linux-cuda",
+      "receipt": "evidence/correctness/cpu-final-f5/linux-cuda-mixed-delivery-receipt.json",
+      "steps": 18
+    }
+  ],
+  "cpu_only_platforms": [
+    "windows",
+    "linux",
+    "mac"
+  ],
+  "native_owning_each_platform": 144,
+  "ordinary_windows_direct": 832,
+  "ordinary_windows_graph": 851,
+  "generic_graph": 283,
+  "retired_kinds": 14,
+  "remaining_qualified_semantic_kinds": 20,
+  "additional_named_unique_kind": "Copy",
+  "limits": [
+    "41 Native exact WIN requests are conditional F4 evidence, not general all-hardware superiority.",
+    "Original failed aggregates retained; successful unchanged cases plus exact corrections compose current acceptance.",
+    "GPU math/formats/performance and old BLOCKED states unchanged."
+  ],
+  "loc": {
+    "code": 60161,
+    "files": 249,
+    "excludes": "tests/vendor/bench"
+  },
+  "p1": "F4 reuse; no new sampling",
+  "bundle": "terminal-delta.zip",
+  "bundle_sha256": "642648dc403806b3f4e8ca0b9cb47896d739637e2c922f56ed8c57c3aed0ebe1"
+}

@@ -1,6 +1,6 @@
 # F5 CPU自研源码清退
 
-<!-- MODULE REVIEW: CANDIDATE -->
+<!-- MODULE REVIEW: CLOSED -->
 
 当前owner `compute_provider_native`；`compute`仅绑定两份私有RoPE生成文件的有限删除，不重审runtime。
 baseline `0d96c635040e70b1ee561e51e4cb1a74169870f0`；总合同[CPU最终收口](cpu-final-closure-plan.md)。
@@ -180,3 +180,29 @@ CPU+CUDA与CPU+Vulkan各15成功步骤完成source/static/shared；每个真实s
 DLL邻exe／精简PATH与shared实际出口通过；产品候选64b454fa，实际Windows输入8e8ee710仅多状态说明。
 两个envelope原始receipt／log／consumer集中归档；没有GPU数学、格式或性能新资格。
 Mac CPU+Apple及Linux CPU+CUDA、已声明Native独立头门仍待；F5保持CANDIDATE。
+
+## F5 CLOSED：源码清退及适用差异验收完成
+
+candidate `64b454fa23404d26bead60d495eda9475c802e32`，已在8e8ee710合法重新进入CANDIDATE；
+其后只有证据／文档／状态，没有产品变化。全部本包有限D1–D5与V1完成。
+[终审收据](../../../../evidence/correctness/cpu-final-f5/terminal-receipt.json)与
+[头／impact／原日志及执行身份](../../../../evidence/correctness/cpu-final-f5/terminal-delta.zip)保存实际范围。
+四mixed环境Win CUDA／Win Vulkan／Mac Apple／Linux CUDA分别15／15／20／18成功步骤，
+全部真实source／搬移static/shared均执行43请求×两context及48数值／重放检查，无CPU-only WIN泄露。
+三平台Native独立头门实际通过；没有重新编库签doc PASS，没有新P1。
+
+| 七门 | 本包结论与证据边界 |
+|---|---|
+| scope | 固定104 GGUF／官方／非GGUF／MTP／DSpark不删，14冗余种物理清退，20有资格种＋独有Copy保留；SIMD/Mem／View与原借入程序保护 |
+| architecture | 冷期按完整合同与适用硬件／软件／线程绑定，原资源／执行／完成及完整成熟region保留；无新执行器、公共API／layout或热搜索 |
+| correctness | 三平台owning各144无skip；普通Direct832、Graph851按原849＋两处旧identity纠正组成，无skip；GenericGraph283及实际CPU executor／OOM／close／alias／checked-index／独立槽通过 |
+| delivery | CPU-only三平台三交付与四mixed CPU接缝43／48格实际通过，搬移／offline缓存／DLL邻置／真实loader／exports及三平台独立Native头通过 |
+| usability_docs | 清退账本与严格旧域撤回、具名RMS／Copy保留、普通成熟默认、性能WIN条件与未测限制明确，消费者不排序Provider |
+| red_team | 原编译／数学fixture／身份／环境／编码FAIL全保留；mock仅验Graph协议，unknown不写0，不以不同dtype／格式或metadata冒充数学资格；具体GCC残留有限处理 |
+| engineering_performance | P0删除冗余源码／无新数学优化、资源税或submit间接层；保留分支算术及43规则不变，F4当前限定证据复用，不扩n／AA／P1或挽留输家 |
+
+Compute owner仅覆盖两私有RoPE文件删除，不重审runtime；Native本包CLOSED，其他CPU／GPU／公共Graph旧状态保持。
+实现Compute＋Graph **60,161行／249文件**，不含测试／vendor／bench；相对F4清退949行、2文件。
+这不是整个CPU goal的最终通知：F6逐原目标终审、公开完成口径和归档产物清理仍待。
+reopen：新的可复现正确性／生命周期／编译／交付／能力缺失反例，或已资格条件误绑定；
+不因旧卡、doc提交、未知硬件无统计WIN或“再看一次”重开。

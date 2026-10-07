@@ -270,10 +270,14 @@
     },
     {
       "module": "compute",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/compute/cpu-final-f5-retirement.md",
-      "summary": "F5 CANDIDATE64b454fa：Compute仅两私有RoPE文件删除；D5只Native未调用helper／等价switch出口，runtime／public API不变。成功证据保留，Linux／mixed消费差异待验。",
-      "candidate": "64b454fa23404d26bead60d495eda9475c802e32"
+      "summary": "F5 CLOSED：仅两私有RoPE生成文件源级删除；runtime／public API不变。三平台及四mixed CPU接缝三交付、真实消费者／头门与有限GCC清理通过；无GPU新资格，F6总审待。",
+      "candidate": "64b454fa23404d26bead60d495eda9475c802e32",
+      "performance": {
+        "tier": "P0",
+        "evidence": "docs/implementation/tasks/compute/cpu-final-f5-retirement.md"
+      }
     },
     {
       "module": "graph",
@@ -423,10 +427,14 @@
     },
     {
       "module": "compute_provider_native",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/compute/cpu-final-f5-retirement.md",
-      "summary": "F5 CANDIDATE64b454fa：14种冗余自研物理退役，21种必要机制／SIMD／Mem与借入程序保留；D5 GCC残留等价清理，三平台144 owning及本机832 Direct／851 Graph差异／283机制通过，Win/Mac三交付通过。Linux三交付／mixed差异与终审仍待，无新P1。",
-      "candidate": "64b454fa23404d26bead60d495eda9475c802e32"
+      "summary": "F5 CLOSED：14冗余自研种与无需求实例物理清退，20有资格种＋独有Copy／RMS、SIMD/Mem／原借入程序保留；三平台owning144、普通两入口／GenericGraph／资源、三平台及四mixed三交付／43规则／48数值与头门通过。F4性能复用无新P1，F6总审／清理仍待。",
+      "candidate": "64b454fa23404d26bead60d495eda9475c802e32",
+      "performance": {
+        "tier": "P0",
+        "evidence": "docs/implementation/tasks/compute/cpu-final-f5-retirement.md"
+      }
     },
     {
       "module": "compute_sched",

@@ -75,3 +75,13 @@ Mac preserves the 507bad96 input under D5 equivalence; Linux binds updated
 
 This finishes CPU-only platform delivery. Four mixed-envelope CPU deltas and
 F5/F6 terminal audit remain pending; GPU mathematical/performance states are unchanged.
+
+## F5 terminal acceptance
+
+[Terminal receipt](terminal-receipt.json) and [complete terminal delta](terminal-delta.zip)
+finish all applicable F5 gates. Win CUDA/Vulkan, Mac Apple and Linux CUDA mixed
+CPU envelopes pass 15/15/20/18 steps, all actual source/static/shared 43/48 checks.
+Three native header self-containment gates pass with the real platform compilers.
+The [current card](../../../docs/implementation/tasks/compute/cpu-final-f5-retirement.md)
+records seven-gate closure at product 64b454fa. F6 final goal audit/cleanup remains
+separate; no new GPU mathematical/performance claim or performance sampling.

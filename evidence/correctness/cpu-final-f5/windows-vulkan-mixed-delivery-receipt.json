@@ -234,5 +234,5 @@
   "consumer_contract": "43 exact cold requests x2 ordinary contexts; 48 numeric/replay checks per actual source/SDK consumer",
   "limits": "CPU seam delta only; no CPU-only WIN leak, no new GPU mathematical/performance/format qualification.",
   "bundle": "windows-vulkan-mixed-delivery.zip",
-  "bundle_sha256": "dff3cf67981790d1f7369ae6f93605535e623602967029912fe50f7b052cee37"
+  "bundle_sha256": "e269573f1d087d31b3ccab45c99e9f44c6ced82c0376fd195b336ff950a6357c"
 }
