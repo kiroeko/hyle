@@ -1,0 +1,45 @@
+{
+  "candidate": "6877b5bda93b58cab824317fb1b40f61fee656d9",
+  "sdk": "C:/hv/cpu-final-sdk/static-relocated",
+  "scope": "Windows four named-provider capability/numerical preflight only, OMP/MKL budget1, original same encoded inputs/output and true completion",
+  "summary": {
+    "scope": "actual Windows static SDK named-provider capability/numerical preflight, no P1 or WIN",
+    "cases": 453,
+    "carrier_count_histogram": {
+      "2": 278,
+      "1": 33,
+      "3": 121,
+      "4": 21
+    },
+    "admission_histogram": {
+      "native:ACCEPTED": 408,
+      "onednn:DECLINED": 416,
+      "ggml:ACCEPTED": 246,
+      "aten:DECLINED": 108,
+      "ggml:DECLINED": 207,
+      "aten:ACCEPTED": 345,
+      "native:DECLINED": 45,
+      "onednn:ACCEPTED": 37
+    },
+    "pairs": 767,
+    "pair_family_histogram": {
+      "native-ggml": 234,
+      "native-aten": 300,
+      "native-onednn": 33,
+      "onednn-aten": 37,
+      "ggml-aten": 138,
+      "onednn-ggml": 25
+    },
+    "numeric_mismatches": [],
+    "no_carrier_cases": [],
+    "self_accepted_cases": 408
+  },
+  "all_single_carrier": "33 ATen cases, no timing race",
+  "prior_driver_limits": [
+    "Initial metadata mixed stdout/stderr; retained, no complete qualification claim",
+    "Initial explicit ggml consumer missed the exported implementation target; retained, not a ggml capability decline"
+  ],
+  "performance": "No A/A qualification, P1, WIN or retirement verdict yet",
+  "archive_sha256": "018112af70008cde46b0c6e8fe370662ffb2129194547f6978ebd552b87561f5",
+  "archive_bytes": 75711
+}
