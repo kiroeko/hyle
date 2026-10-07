@@ -49,6 +49,11 @@ U1 先做只读协调审计，不批量改 registry 来假装所有 owner 已经
 
 ## 执行与性能预算
 
+2026-10-08 用户追加 [Compute + Graph 宏规范专题](compute-graph-macro-normalization.md)：
+全部 Compute/Graph 的 OS／arch／compiler／feature／visibility 和 GPU 条件分层核对、批量规范，
+不改借入原数学、不自动解除其它路线 blocker；N1 当前批次验证后独立扫描并按真实 owner 定界。
+这是额外横切任务，保留原 U1–U6 和全部验收范围，不能以规范工作代签 CUDA 覆盖／性能完成。
+
 批量接线后集中构建／验证；重型串行，build j2、test j1，复用当前 producer、锁定依赖 cache 与身份相符证据。
 Windows 是唯一产品真相，WSL 只前向同步不可变候选。工具隐藏启动，无 UAC／Terminal／缺 DLL 弹窗；
 普通 Windows consumer 调用既有 runtime staging，让 DLL 邻 exe。
