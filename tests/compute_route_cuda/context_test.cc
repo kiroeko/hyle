@@ -4,7 +4,9 @@
 #include "../compute_models/d5_qwen38_profile_cases.h"
 #include "../compute_provider_native/half_test_support.h"
 #include "ffn_support.h"
+#if defined(HYLE_COMPUTE_FLASHINFER)
 #include "hyle/compute/providers/flashinfer.h"
+#endif
 #include "hyle/compute/providers/ggml_cuda.h"
 #include "hyle/compute/providers/torch_cuda.h"
 
@@ -17,7 +19,7 @@ void run_ffn(compute::DataType type, std::int64_t rows) {
     auto owner =
         cuda::create_context({.metadata_allocator = stats.get()}).value();
     const std::array expected{
-#if defined(__linux__)
+#if defined(HYLE_COMPUTE_FLASHINFER)
         compute::flashinfer::kProviderId,
 #endif
         compute::ggml_cuda::kProviderId,
