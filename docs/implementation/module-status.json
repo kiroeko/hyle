@@ -372,9 +372,10 @@
     },
     {
       "module": "compute_provider_ggml",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/cpu-three-operator-route-closure.md",
-      "summary": "CPU三项AUDITED：固定G1-N3；原F32 fused6探针已验证，新版17格规则、exact strided清退且保留真实dynamic consumer，SDPA待唯一复比裁决"
+      "summary": "CPU三项CANDIDATE：原F32融合、17格规则及exact strided退役固定，Windows owning/实际规则/dynamic/七模型修正通过；交付/Linux/唯一SDPA复比与条件N3待验",
+      "candidate": "10c7d784d62d6e656b60e533e0f9329a9cb55827"
     },
     {
       "module": "graph_provider_onednn",
@@ -422,9 +423,10 @@
     },
     {
       "module": "compute_provider_native",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/cpu-three-operator-route-closure.md",
-      "summary": "CPU三项AUDITED：固定G1-N3；原F32 fused6探针已验证，新版17格规则、exact strided清退且保留真实dynamic consumer，SDPA待唯一复比裁决"
+      "summary": "CPU三项CANDIDATE：原F32融合、17格规则及exact strided退役固定，Windows owning/实际规则/dynamic/七模型修正通过；交付/Linux/唯一SDPA复比与条件N3待验",
+      "candidate": "10c7d784d62d6e656b60e533e0f9329a9cb55827"
     },
     {
       "module": "compute_sched",

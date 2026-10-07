@@ -1,6 +1,6 @@
 # CPU 三项成熟接缝、规则绑定与有限清退
 
-<!-- MODULE REVIEW: AUDITED -->
+<!-- MODULE REVIEW: CANDIDATE -->
 
 - owners：compute_provider_ggml、compute_provider_native；baseline `a98bdbf239d2854fa04acbbf2d43793b13cb311e`。
 - trigger：用户批准有限接线/清退；[合格新版复比](../../../../evidence/performance/cpu-three-operator-current/README.md)
@@ -64,3 +64,11 @@ G1–N3有限FIX已AUDITED，七门待实际验证。
 其hidden也不匹配新2048规则。停止已核对exe/argv的本轮进程，原sweep记INCOMPLETE，不伪写全suite PASS。
 改为7项失败重验、Graph默认/attention/shape/view/copy/norm与executor、两owning factor/24格；
 未变大矩阵/head/packing数学复用c740匹配证据，不重测。公共selector/统计核心不改。
+
+## 固定产品候选
+
+G1/N1/N2候选 `10c7d784d62d6e656b60e533e0f9329a9cb55827`：F32原融合、17格新peer冷规则、
+exact strided拒绝/declared-domain保留及旧身份断言迁移均固定。Windows owning/24格/真实dynamic和七项修正模型消费实际通过。
+未改Native数学、公共layout、Graph region优先级或原Copy/RMS hot路径；17格刚完成的合格P1按相同数学/peer合同复用，
+不伪称新候选刚重测了这些格。交付/Linux/F32融合唯一四格P1与N3去留仍待验。
+N3是预声明的条件去留：若需源级清退，先退回AUDITED；融合/规则已固定的证据不因文档状态重跑。
