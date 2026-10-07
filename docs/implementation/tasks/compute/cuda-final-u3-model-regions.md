@@ -121,3 +121,9 @@ close/失败/replay/capture负空间与完整region。先验证单一不可变�
 
 该F4资源事实及原池源码已AUDITED，owner仍为当前`compute_provider_ggml_cuda`；native bridge
 编入已AUDITED的`compute_ggml_runtime`原源，但不修改其composer、pin、CPU执行或公共治理。
+
+同候选`da67204e`的当前五official程序与三sidecar已在Windows/Linux普通两入口通过，
+原Provider资源、编码、两slot、重放、noncausal源方程以及Linux capture失败注入通过。
+精确范围与保留原失败见[sidecar资格](../../../../evidence/correctness/cuda-final-u3-r1-sidecars/README.md)。
+全固定GGUF与其余family-region仍需完成；`93792dd4`批量注册共同C5原合同/参数/完整NextN，
+GPU codec reference接缝仅为test，当前尚未编译/运行，不算通过或本包完成。三交付联合项仍待。

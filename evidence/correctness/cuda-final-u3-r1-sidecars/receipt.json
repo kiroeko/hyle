@@ -1,0 +1,89 @@
+{
+  "schema": 1,
+  "scope": "R1 current official Pro/Flash and three quantized sidecars; native execution and applicable original provider resources only",
+  "candidate": "da67204ecae4d3a347ab6c52992ed06c76529517",
+  "platforms": {
+    "Windows": {
+      "candidate": "da67204ecae4d3a347ab6c52992ed06c76529517",
+      "passed_gtests": {
+        "native-resource-and-codec": [
+          33,
+          8
+        ],
+        "all-current-programs": [
+          7,
+          7
+        ]
+      },
+      "ctests": 4,
+      "skipped": 0
+    },
+    "WSL Linux": {
+      "candidate": "da67204ecae4d3a347ab6c52992ed06c76529517",
+      "passed_gtests": {
+        "native-resource-and-codec": [
+          34,
+          8
+        ],
+        "all-current-programs": [
+          7,
+          7
+        ]
+      },
+      "ctests": 4,
+      "skipped": 0
+    }
+  },
+  "sidecars": [
+    "Qwen3.8-27B Q3_K/Q4_K/Q6_K complete MTP",
+    "DeepSeek V4 Flash Q8_0/MXFP4/BF16 complete DSpark",
+    "DeepSeek V4 Flash BF16/MXFP4 complete DSpark"
+  ],
+  "fixes": [
+    "selected quantized embedding logical source bound",
+    "original noncausal SDPA",
+    "original per-stream cudaMalloc caching pools instead of fixed 32 GiB VMM reservations"
+  ],
+  "source_sha256": {
+    "src/compute_provider_ggml_cuda/native_bridge_impl.h": "d72e81b4e4047012d03e313c8a0ae78c3894fbf6c2c27bf6ba9aeb3e2c42537c",
+    "src/compute_provider_ggml_cuda/ggml_cuda_provider.cc": "bd10d0d99c0a15a3a786f943a855e2ff906f76c7d0b9aa39321aa80cc27db43d",
+    "src/compute_provider_ggml_cuda/tensor_program.cc": "5624474ba2ce8d46200ea2b7ff157c401b8b75bec1cd4228f8541e0b7bca037a",
+    "tests/compute_models/cuda_sidecar_quant_reference.h": "77fcc152384ea25585495ed5ab6a90e99ef323600e96a443090edfbe55ba0da3",
+    "tests/compute_models/cuda_r1_current_region_tests.h": "fe5ba55a77d32cb32c5d5d1e0dfed81cfb39d4b821f786aabc03e9e35032f698",
+    "tests/compute_models/cpu_c4_qwen_mtp.h": "bd3d62d9bac7b4e1c39ee8960ead54436769560652463e09ad91625b4026cd07",
+    "tests/compute_models/cpu_c4_flash_sidecars.h": "e631547e5014de3414b2d554eae61503d06394566625dcfacc6055931dcb18c4",
+    "tests/compute_route_cuda/d5_qwen38_official_test.cc": "10e747056c25e127e9ebb97c0ab21698bff9c9e11ee6cb098c5604d7a0a111aa",
+    "tests/graph_route_cuda/d5_qwen38_official_test.cc": "eb5b1325f04dd2ff4c57917c94f2d823407a812943f700c11ee6358238028c0e",
+    "tests/compute_provider_ggml_cuda/attention_test.cc": "ce9a88229c114b075b91ebc54b25b8e2e3636dbb48c7d3b3ac1de9a1e056b378"
+  },
+  "archive_sha256": "8041b60499c78ac4c8ec4c8dd3c1648c7c1979b84374ea4e686b2c069b9d30a6",
+  "inputs": {
+    "before/linux-sidecars-status/hang-backtrace.log": "92ee4e1ff7562395e3f16be57b5220502690787332e7c4f78433ed0ebd47c130",
+    "before/linux-sidecars-status/receipt.json": "73794ccdac998f6fcdb1d87b32b3d65514ea0ea789a0c97717be8af45edcddde",
+    "before/windows-flash-native-code/first-current-program.log": "de9f93136b13f95429dcaeb4893616c03f55f863a99dc072fe10d45ec6008b66",
+    "before/windows-flash-native-code/receipt.json": "e22d6b3db82e8ced523084c9f8a62e0d15bef6630f5c32eddc15d81590306602",
+    "linux-native-pool/all-current-programs.log": "3c53a74ef78be28c42ded0e986062d950bdb8faf8140ebf9aaa0d2bf03275374",
+    "linux-native-pool/build.log": "821be46bdb1069875718a7d56c3c8876cc22ae0a75e1e62d0faf90f0e88d1b3d",
+    "linux-native-pool/models.xml": "32fa2f12f529f0b193a15bad203e6b83010ef10e5f088847e2da9abaab17afdf",
+    "linux-native-pool/native-resource-and-codec.log": "335a1a5a43e0795ea50f45a94f1d070311d45a85d427e1d16e03759aa7ada604",
+    "linux-native-pool/receipt.json": "16d73f509c78c11178e5ca93d3f0dfae6091470017c49e0310e82a949deb034e",
+    "linux-native-pool/resources.xml": "b7d93ce4049171c67c98a2db711d26f84cecdb9fe715fb545961d570beb6736c",
+    "windows-native-pool-joint/all-current-programs.log": "7931638610d894e4166bec49d0c45b332f92169bdd3c6c23f253611751986bdf",
+    "windows-native-pool-joint/build.log": "dcd1274b244ab1963a7aa1127db593a42d55833124582213d0c76ff195b541f6",
+    "windows-native-pool-joint/models.xml": "171e0f9ae4029ea7f7f1528d39b55da5f4af25ef2942d5f06891a033b0aba336",
+    "windows-native-pool-joint/native-resource-and-codec.log": "e5dee3ebf3d57ecca7aa72d70288e1fad7c53e1b3f7ba50bc30dca42788f9e01",
+    "windows-native-pool-joint/receipt.json": "0a1e153cf98c7f2421a28919936c22b6c615a028dd4d519f7ee26ef16e5c0bd0",
+    "windows-native-pool-joint/resources.xml": "9dc23a9c4b6d7b80c07401b916f95c182c78f3d5c967201f3658164c293e675a"
+  },
+  "implementation_loc": {
+    "code": 60647,
+    "files": 253
+  },
+  "unverified": [
+    "remaining fixed GGUF numeric contracts and 49 family-region associations",
+    "final joint U3 source/static/shared CUDA-only/mixed delivery",
+    "U4 conditional best-of and engineering defaults",
+    "U5 self-operator retirement"
+  ],
+  "limits": "GPU codec integration oracle directly invokes the same original mature carrier. Primitive equation/codec qualification remains separate. Native head shards retain all vocabulary; no whole model residency or inference engine claim. No P1 or winner claim."
+}
