@@ -22,6 +22,7 @@ def main():
     selected=(HERE/'p1-qualified-pairs.txt').read_text().splitlines()
     assert selected and len(selected)==len(set(selected)) and set(selected)<=set(aa['qualified'])
     asset=json.loads((HERE/'contract.json').read_text())['extensions']['cpu_pair_asset']
+    assert 'HYLE_CPU_BESTOF_AA' not in os.environ,'A/A substitution must not reach A/B sampling'
     assert Path(os.environ.get(asset['environment_name'],'')).resolve()==Path(asset['path']).resolve()
     assert digest(Path(asset['path']))==asset['sha256']
     print(json.dumps({'gate':'PASS','sdk_files':len(sdk['files']),'runtime_files':len(sdk['runtime_files']),'pairs':len(selected),'AA':'exact filtered image and only individually qualified rows; no rerun or inherited old version'},sort_keys=True))
