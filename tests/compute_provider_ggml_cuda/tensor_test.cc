@@ -851,8 +851,9 @@ TEST(GgmlCudaTensor, DenseBfloatGroupedExpertsUseNativeMulMatIdAndReplay) {
   constexpr std::int64_t reduction = 32;
   const auto weights_desc =
       dense(DataType::kBFloat16, {experts, columns, reduction});
-  const auto activations_desc = dense(DataType::kFloat32, {1, 2, reduction});
-  const auto ids_desc = dense(DataType::kInt32, {1, 2});
+  constexpr std::int64_t slots = 3;
+  const auto activations_desc = dense(DataType::kFloat32, {1, slots, reduction});
+  const auto ids_desc = dense(DataType::kInt32, {1, slots});
   const std::array descriptions{weights_desc, activations_desc, ids_desc};
   const auto output_desc =
       infer_single_output(model_ops::grouped_matmul(), descriptions).value();
@@ -862,8 +863,8 @@ TEST(GgmlCudaTensor, DenseBfloatGroupedExpertsUseNativeMulMatIdAndReplay) {
   for (std::size_t row = 0; row < row_values.size(); ++row)
     std::fill_n(weights.begin() + row * reduction, reduction,
                 half_test::encode<BF16>(row_values[row]));
-  std::vector<float> activations(2 * reduction, 0.25F);
-  constexpr std::array<std::int32_t, 2> ids{0, 2};
+  std::vector<float> activations(slots * reduction, 0.25F);
+  std::array<std::int32_t, slots> ids{0, 2, 2};
   auto ctx = context();
   auto memory =
       cuda::MemoryResource::create(ctx, cuda::MemoryKind::kDevice).value();
@@ -883,19 +884,27 @@ TEST(GgmlCudaTensor, DenseBfloatGroupedExpertsUseNativeMulMatIdAndReplay) {
   auto invocation = prepared->create_invocation().value();
   auto queue = ctx.create_queue().value();
   for (int replay = 1; replay <= 2; ++replay) {
-    std::fill(activations.begin(), activations.end(), 0.25F * replay);
+    ids = replay == 1 ? std::array<std::int32_t, slots>{0, 2, 2}
+                      : std::array<std::int32_t, slots>{2, 0, 0};
+    for (std::int64_t slot = 0; slot < slots; ++slot)
+      std::fill_n(activations.begin() + slot * reduction, reduction,
+                  0.25F * replay + 0.03125F * slot + 0.00137F);
     ASSERT_TRUE(activation_buffer.view()
                     .write(std::as_bytes(std::span(activations)))
                     .ok());
+    ASSERT_TRUE(id_buffer.view().write(std::as_bytes(std::span(ids))).ok());
     auto done = invocation.submit(queue, inputs, std::span(&output_view, 1));
     ASSERT_TRUE(done) << done.error().message();
     ASSERT_TRUE(done->wait().ok());
     const auto actual = half_test::read<float>(output);
-    const std::array expected{8.0F * replay, 16.0F * replay,
-                              -8.0F * replay, 4.0F * replay};
-    ASSERT_EQ(actual.size(), expected.size());
-    for (std::size_t i = 0; i < actual.size(); ++i)
-      EXPECT_NEAR(actual[i], expected[i], 1.0e-5F) << i;
+    ASSERT_EQ(actual.size(), std::size_t(slots * columns));
+    for (std::int64_t slot = 0; slot < slots; ++slot)
+      for (std::int64_t column = 0; column < columns; ++column) {
+        const auto expected = float(row_values[ids[slot] * columns + column]) *
+                              activations[slot * reduction] * reduction;
+        EXPECT_NEAR(actual[slot * columns + column], expected, 1.0e-5F)
+            << "slot=" << slot << " column=" << column;
+      }
   }
 }
 
