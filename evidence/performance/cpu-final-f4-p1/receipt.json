@@ -1,0 +1,59 @@
+{
+  "candidate": "dc52cbcc5fd99695a23441a32f9ef4bd570eaf2a",
+  "product_candidate": "560eb1d2332bb69ee5148e899b000fae85d80074",
+  "contract_sha256": "7b40f27e2e9253d4ba6355a38236f44e3d453c21d5a851c875114c83d68b773f",
+  "qualification": "QUALIFIED",
+  "qualification_gate": "PASS",
+  "performance_gate": "FAIL",
+  "exact_counts": {
+    "WIN": 114,
+    "LOSE": 12,
+    "INCONCLUSIVE": 2
+  },
+  "noninferiority_counts": {
+    "PASS": 116,
+    "FAIL": 12
+  },
+  "inputs_stable": true,
+  "artifacts_stable": true,
+  "host_stable": true,
+  "controls": [
+    {
+      "id": "aa",
+      "gate": "PASS"
+    },
+    {
+      "id": "delta5",
+      "gate": "PASS"
+    },
+    {
+      "id": "delta10",
+      "gate": "PASS"
+    },
+    {
+      "id": "timer-floor",
+      "gate": "PASS"
+    }
+  ],
+  "validators": [
+    {
+      "id": "artifact-identity",
+      "gate": "PASS"
+    },
+    {
+      "id": "build-contract",
+      "gate": "PASS"
+    },
+    {
+      "id": "current-sdk-and-aa",
+      "gate": "PASS"
+    }
+  ],
+  "pairs": 128,
+  "runs": 15,
+  "strata": 4,
+  "archive": "evidence/performance/cpu-final-f4-p1/raw-windows.zip",
+  "archive_sha256": "41390a518b0eaef68a975d840665ef5777909c22199b9c64557a39093ad9a15e",
+  "archive_bytes": 1241421,
+  "limits": "Exact current Windows static SDK qualified leaf scope only. Aggregate comparison gate may fail because named candidates include losers; selecting winners is separate. No region, shared, Linux or Mac WIN inheritance."
+}

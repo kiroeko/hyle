@@ -114,3 +114,16 @@ P1第一次启动在首样本被telemetry-prefix拒绝：现有marker仅有calle
 转发原sealed image的独立stdout/stderr。它不做数学或计时，不改变同进程内部Data/Session及原资源/算法；
 不再使用逐pair子进程。测量image/原DLL SHA、SDK/源码/输入asset资格继续由module validator验证。
 公共runner/统计不改；P1固定128/n15/四strata，正常/holdout数据不因v1的experiment.holdout=false改动。
+
+### V2当前批次完成，R1/R2/L1继续
+
+不可变candidate `dc52cbcc5fd99695a23441a32f9ef4bd570eaf2a`的统一P1已完成：资格PASS，
+全部common controls与SDK/build/artifact/source/host身份通过。128 pair的114 WIN、12 LOSE、
+2 INCONCLUSIVE均按原结果保留，聚合performance FAIL不改写；失败候选不因批次比较目的而获PASS。
+[完整原始证据和裁决表](../../../../evidence/performance/cpu-final-f4-p1/README.md)固定四strata/n15，无追加采样。
+
+453请求中33单承载、43完整候选优选（41 Native、1 ggml、1 ATen）、377需明确工程默认。
+只有相同请求的全部合格候选已被资格WIN路径覆盖才称完整优选；其余partial WIN不外推。
+R1以这些精确点、当前软件/static recipe/硬件/单线程绑定新冷规则，删除失效旧187/17规则投影；
+shared/Linux/Mac/未知身份继续成熟工程默认。完整region保留原成熟融合与资源准入，不继承leaf WIN。
+R2两入口、规则失配/资源/三交付及L1源码族交接尚未完成，三owner保持AUDITED，本包未关闭。

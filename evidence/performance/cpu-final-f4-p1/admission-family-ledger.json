@@ -1,0 +1,524 @@
+{
+  "scope": "read-only fixed Windows preflight, not retirement or WIN",
+  "families": [
+    {
+      "family": "assign",
+      "requests": 18,
+      "native_admitted": 18,
+      "native_with_mature_math_candidate": 18,
+      "native_only_requests": [],
+      "mature_admission": {
+        "aten": 18
+      },
+      "limits": "Admission/math overlap only. Strict resources and full graph regions need their own ledger."
+    },
+    {
+      "family": "binary-0",
+      "requests": 9,
+      "native_admitted": 9,
+      "native_with_mature_math_candidate": 9,
+      "native_only_requests": [],
+      "mature_admission": {
+        "ggml": 9
+      },
+      "limits": "Admission/math overlap only. Strict resources and full graph regions need their own ledger."
+    },
+    {
+      "family": "binary-1",
+      "requests": 9,
+      "native_admitted": 9,
+      "native_with_mature_math_candidate": 9,
+      "native_only_requests": [],
+      "mature_admission": {
+        "ggml": 9
+      },
+      "limits": "Admission/math overlap only. Strict resources and full graph regions need their own ledger."
+    },
+    {
+      "family": "binary-2",
+      "requests": 9,
+      "native_admitted": 9,
+      "native_with_mature_math_candidate": 9,
+      "native_only_requests": [],
+      "mature_admission": {
+        "ggml": 9
+      },
+      "limits": "Admission/math overlap only. Strict resources and full graph regions need their own ledger."
+    },
+    {
+      "family": "binary-3",
+      "requests": 9,
+      "native_admitted": 9,
+      "native_with_mature_math_candidate": 9,
+      "native_only_requests": [],
+      "mature_admission": {
+        "ggml": 9
+      },
+      "limits": "Admission/math overlap only. Strict resources and full graph regions need their own ledger."
+    },
+    {
+      "family": "binary-4",
+      "requests": 9,
+      "native_admitted": 9,
+      "native_with_mature_math_candidate": 9,
+      "native_only_requests": [],
+      "mature_admission": {
+        "aten": 9
+      },
+      "limits": "Admission/math overlap only. Strict resources and full graph regions need their own ledger."
+    },
+    {
+      "family": "binary-5",
+      "requests": 9,
+      "native_admitted": 9,
+      "native_with_mature_math_candidate": 9,
+      "native_only_requests": [],
+      "mature_admission": {
+        "aten": 9
+      },
+      "limits": "Admission/math overlap only. Strict resources and full graph regions need their own ledger."
+    },
+    {
+      "family": "cast",
+      "requests": 75,
+      "native_admitted": 75,
+      "native_with_mature_math_candidate": 75,
+      "native_only_requests": [],
+      "mature_admission": {
+        "ggml": 33,
+        "aten": 75
+      },
+      "limits": "Admission/math overlap only. Strict resources and full graph regions need their own ledger."
+    },
+    {
+      "family": "concat",
+      "requests": 9,
+      "native_admitted": 9,
+      "native_with_mature_math_candidate": 9,
+      "native_only_requests": [],
+      "mature_admission": {
+        "ggml": 9,
+        "aten": 9
+      },
+      "limits": "Admission/math overlap only. Strict resources and full graph regions need their own ledger."
+    },
+    {
+      "family": "copy",
+      "requests": 15,
+      "native_admitted": 15,
+      "native_with_mature_math_candidate": 15,
+      "native_only_requests": [],
+      "mature_admission": {
+        "onednn": 15,
+        "ggml": 15,
+        "aten": 15
+      },
+      "limits": "Admission/math overlap only. Strict resources and full graph regions need their own ledger."
+    },
+    {
+      "family": "fill",
+      "requests": 9,
+      "native_admitted": 9,
+      "native_with_mature_math_candidate": 9,
+      "native_only_requests": [],
+      "mature_admission": {
+        "ggml": 9,
+        "aten": 9
+      },
+      "limits": "Admission/math overlap only. Strict resources and full graph regions need their own ledger."
+    },
+    {
+      "family": "gather",
+      "requests": 18,
+      "native_admitted": 18,
+      "native_with_mature_math_candidate": 18,
+      "native_only_requests": [],
+      "mature_admission": {
+        "ggml": 9,
+        "aten": 18
+      },
+      "limits": "Admission/math overlap only. Strict resources and full graph regions need their own ledger."
+    },
+    {
+      "family": "matmul-f32-k16384-n24",
+      "requests": 4,
+      "native_admitted": 0,
+      "native_with_mature_math_candidate": 0,
+      "native_only_requests": [],
+      "mature_admission": {
+        "onednn": 2,
+        "ggml": 4,
+        "aten": 4
+      },
+      "limits": "Admission/math overlap only. Strict resources and full graph regions need their own ledger."
+    },
+    {
+      "family": "matmul-f32-k16384-n4",
+      "requests": 4,
+      "native_admitted": 0,
+      "native_with_mature_math_candidate": 0,
+      "native_only_requests": [],
+      "mature_admission": {
+        "onednn": 2,
+        "ggml": 4,
+        "aten": 4
+      },
+      "limits": "Admission/math overlap only. Strict resources and full graph regions need their own ledger."
+    },
+    {
+      "family": "matmul-qwen-bf16-k2048-n6144",
+      "requests": 2,
+      "native_admitted": 0,
+      "native_with_mature_math_candidate": 0,
+      "native_only_requests": [],
+      "mature_admission": {
+        "ggml": 2,
+        "aten": 2
+      },
+      "limits": "Admission/math overlap only. Strict resources and full graph regions need their own ledger."
+    },
+    {
+      "family": "norm-0",
+      "requests": 9,
+      "native_admitted": 9,
+      "native_with_mature_math_candidate": 9,
+      "native_only_requests": [],
+      "mature_admission": {
+        "onednn": 3,
+        "ggml": 9,
+        "aten": 9
+      },
+      "limits": "Admission/math overlap only. Strict resources and full graph regions need their own ledger."
+    },
+    {
+      "family": "norm-1",
+      "requests": 9,
+      "native_admitted": 9,
+      "native_with_mature_math_candidate": 9,
+      "native_only_requests": [],
+      "mature_admission": {
+        "onednn": 3,
+        "ggml": 9,
+        "aten": 9
+      },
+      "limits": "Admission/math overlap only. Strict resources and full graph regions need their own ledger."
+    },
+    {
+      "family": "reduce-0",
+      "requests": 9,
+      "native_admitted": 9,
+      "native_with_mature_math_candidate": 9,
+      "native_only_requests": [],
+      "mature_admission": {
+        "ggml": 9,
+        "aten": 9
+      },
+      "limits": "Admission/math overlap only. Strict resources and full graph regions need their own ledger."
+    },
+    {
+      "family": "reduce-1",
+      "requests": 9,
+      "native_admitted": 9,
+      "native_with_mature_math_candidate": 9,
+      "native_only_requests": [],
+      "mature_admission": {
+        "ggml": 9,
+        "aten": 9
+      },
+      "limits": "Admission/math overlap only. Strict resources and full graph regions need their own ledger."
+    },
+    {
+      "family": "reduce-2",
+      "requests": 9,
+      "native_admitted": 9,
+      "native_with_mature_math_candidate": 9,
+      "native_only_requests": [],
+      "mature_admission": {
+        "aten": 9
+      },
+      "limits": "Admission/math overlap only. Strict resources and full graph regions need their own ledger."
+    },
+    {
+      "family": "reduce-3",
+      "requests": 9,
+      "native_admitted": 9,
+      "native_with_mature_math_candidate": 9,
+      "native_only_requests": [],
+      "mature_admission": {
+        "aten": 9
+      },
+      "limits": "Admission/math overlap only. Strict resources and full graph regions need their own ledger."
+    },
+    {
+      "family": "rope-f32-phase",
+      "requests": 3,
+      "native_admitted": 3,
+      "native_with_mature_math_candidate": 3,
+      "native_only_requests": [],
+      "mature_admission": {
+        "ggml": 3,
+        "aten": 3
+      },
+      "limits": "Admission/math overlap only. Strict resources and full graph regions need their own ledger."
+    },
+    {
+      "family": "scatter-add",
+      "requests": 6,
+      "native_admitted": 6,
+      "native_with_mature_math_candidate": 6,
+      "native_only_requests": [],
+      "mature_admission": {
+        "ggml": 3,
+        "aten": 6
+      },
+      "limits": "Admission/math overlap only. Strict resources and full graph regions need their own ledger."
+    },
+    {
+      "family": "sdpa-f32-q1",
+      "requests": 1,
+      "native_admitted": 0,
+      "native_with_mature_math_candidate": 0,
+      "native_only_requests": [],
+      "mature_admission": {
+        "ggml": 1,
+        "aten": 1
+      },
+      "limits": "Admission/math overlap only. Strict resources and full graph regions need their own ledger."
+    },
+    {
+      "family": "sdpa-f32-q32",
+      "requests": 1,
+      "native_admitted": 0,
+      "native_with_mature_math_candidate": 0,
+      "native_only_requests": [],
+      "mature_admission": {
+        "ggml": 1,
+        "aten": 1
+      },
+      "limits": "Admission/math overlap only. Strict resources and full graph regions need their own ledger."
+    },
+    {
+      "family": "select",
+      "requests": 9,
+      "native_admitted": 9,
+      "native_with_mature_math_candidate": 9,
+      "native_only_requests": [],
+      "mature_admission": {
+        "onednn": 9,
+        "aten": 9
+      },
+      "limits": "Admission/math overlap only. Strict resources and full graph regions need their own ledger."
+    },
+    {
+      "family": "silu-gate-0",
+      "requests": 9,
+      "native_admitted": 3,
+      "native_with_mature_math_candidate": 3,
+      "native_only_requests": [],
+      "mature_admission": {
+        "aten": 9
+      },
+      "limits": "Admission/math overlap only. Strict resources and full graph regions need their own ledger."
+    },
+    {
+      "family": "silu-gate-1",
+      "requests": 9,
+      "native_admitted": 3,
+      "native_with_mature_math_candidate": 3,
+      "native_only_requests": [],
+      "mature_admission": {
+        "aten": 9
+      },
+      "limits": "Admission/math overlap only. Strict resources and full graph regions need their own ledger."
+    },
+    {
+      "family": "softmax-0",
+      "requests": 9,
+      "native_admitted": 9,
+      "native_with_mature_math_candidate": 9,
+      "native_only_requests": [],
+      "mature_admission": {
+        "ggml": 9,
+        "aten": 9
+      },
+      "limits": "Admission/math overlap only. Strict resources and full graph regions need their own ledger."
+    },
+    {
+      "family": "softmax-1",
+      "requests": 9,
+      "native_admitted": 9,
+      "native_with_mature_math_candidate": 9,
+      "native_only_requests": [],
+      "mature_admission": {
+        "aten": 9
+      },
+      "limits": "Admission/math overlap only. Strict resources and full graph regions need their own ledger."
+    },
+    {
+      "family": "softmax-2",
+      "requests": 9,
+      "native_admitted": 9,
+      "native_with_mature_math_candidate": 9,
+      "native_only_requests": [],
+      "mature_admission": {
+        "aten": 9
+      },
+      "limits": "Admission/math overlap only. Strict resources and full graph regions need their own ledger."
+    },
+    {
+      "family": "softmax-3",
+      "requests": 9,
+      "native_admitted": 9,
+      "native_with_mature_math_candidate": 9,
+      "native_only_requests": [],
+      "mature_admission": {
+        "aten": 9
+      },
+      "limits": "Admission/math overlap only. Strict resources and full graph regions need their own ledger."
+    },
+    {
+      "family": "unary-0",
+      "requests": 9,
+      "native_admitted": 9,
+      "native_with_mature_math_candidate": 9,
+      "native_only_requests": [],
+      "mature_admission": {
+        "ggml": 9
+      },
+      "limits": "Admission/math overlap only. Strict resources and full graph regions need their own ledger."
+    },
+    {
+      "family": "unary-1",
+      "requests": 9,
+      "native_admitted": 9,
+      "native_with_mature_math_candidate": 9,
+      "native_only_requests": [],
+      "mature_admission": {
+        "ggml": 9
+      },
+      "limits": "Admission/math overlap only. Strict resources and full graph regions need their own ledger."
+    },
+    {
+      "family": "unary-10",
+      "requests": 9,
+      "native_admitted": 0,
+      "native_with_mature_math_candidate": 0,
+      "native_only_requests": [],
+      "mature_admission": {
+        "aten": 9
+      },
+      "limits": "Admission/math overlap only. Strict resources and full graph regions need their own ledger."
+    },
+    {
+      "family": "unary-11",
+      "requests": 9,
+      "native_admitted": 6,
+      "native_with_mature_math_candidate": 6,
+      "native_only_requests": [],
+      "mature_admission": {
+        "aten": 9
+      },
+      "limits": "Admission/math overlap only. Strict resources and full graph regions need their own ledger."
+    },
+    {
+      "family": "unary-12",
+      "requests": 9,
+      "native_admitted": 9,
+      "native_with_mature_math_candidate": 9,
+      "native_only_requests": [],
+      "mature_admission": {
+        "onednn": 3,
+        "aten": 9
+      },
+      "limits": "Admission/math overlap only. Strict resources and full graph regions need their own ledger."
+    },
+    {
+      "family": "unary-2",
+      "requests": 9,
+      "native_admitted": 9,
+      "native_with_mature_math_candidate": 9,
+      "native_only_requests": [],
+      "mature_admission": {
+        "ggml": 9
+      },
+      "limits": "Admission/math overlap only. Strict resources and full graph regions need their own ledger."
+    },
+    {
+      "family": "unary-3",
+      "requests": 9,
+      "native_admitted": 9,
+      "native_with_mature_math_candidate": 9,
+      "native_only_requests": [],
+      "mature_admission": {
+        "ggml": 9
+      },
+      "limits": "Admission/math overlap only. Strict resources and full graph regions need their own ledger."
+    },
+    {
+      "family": "unary-4",
+      "requests": 9,
+      "native_admitted": 9,
+      "native_with_mature_math_candidate": 9,
+      "native_only_requests": [],
+      "mature_admission": {
+        "ggml": 9
+      },
+      "limits": "Admission/math overlap only. Strict resources and full graph regions need their own ledger."
+    },
+    {
+      "family": "unary-5",
+      "requests": 9,
+      "native_admitted": 9,
+      "native_with_mature_math_candidate": 9,
+      "native_only_requests": [],
+      "mature_admission": {
+        "ggml": 9
+      },
+      "limits": "Admission/math overlap only. Strict resources and full graph regions need their own ledger."
+    },
+    {
+      "family": "unary-6",
+      "requests": 9,
+      "native_admitted": 9,
+      "native_with_mature_math_candidate": 9,
+      "native_only_requests": [],
+      "mature_admission": {
+        "ggml": 9
+      },
+      "limits": "Admission/math overlap only. Strict resources and full graph regions need their own ledger."
+    },
+    {
+      "family": "unary-7",
+      "requests": 9,
+      "native_admitted": 9,
+      "native_with_mature_math_candidate": 9,
+      "native_only_requests": [],
+      "mature_admission": {
+        "aten": 9
+      },
+      "limits": "Admission/math overlap only. Strict resources and full graph regions need their own ledger."
+    },
+    {
+      "family": "unary-8",
+      "requests": 9,
+      "native_admitted": 9,
+      "native_with_mature_math_candidate": 9,
+      "native_only_requests": [],
+      "mature_admission": {
+        "ggml": 9
+      },
+      "limits": "Admission/math overlap only. Strict resources and full graph regions need their own ledger."
+    },
+    {
+      "family": "unary-9",
+      "requests": 9,
+      "native_admitted": 0,
+      "native_with_mature_math_candidate": 0,
+      "native_only_requests": [],
+      "mature_admission": {
+        "aten": 9
+      },
+      "limits": "Admission/math overlap only. Strict resources and full graph regions need their own ledger."
+    }
+  ]
+}

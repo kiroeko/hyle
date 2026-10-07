@@ -1,0 +1,4996 @@
+{
+  "scope": "Exact Windows leaf requests only; paths must consist entirely of qualified same-request wins.",
+  "counts": {
+    "ENGINEERING_DEFAULT_REQUIRED": 377,
+    "COMPLETE_QUALIFIED_CHOICE": 43,
+    "SINGLE_CARRIER": 33
+  },
+  "requests": [
+    {
+      "request": "assign-t4-r1-h2048-o12",
+      "candidates": [
+        "aten",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "assign-t4-r1-h2048-o14",
+      "candidates": [
+        "aten",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "assign-t4-r1-h4096-o12",
+      "candidates": [
+        "aten",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "assign-t4-r1-h4096-o14",
+      "candidates": [
+        "aten",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "assign-t4-r32-h2048-o12",
+      "candidates": [
+        "aten",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "assign-t4-r32-h2048-o14",
+      "candidates": [
+        "aten",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "assign-t5-r1-h2048-o12",
+      "candidates": [
+        "aten",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "assign-t5-r1-h2048-o14",
+      "candidates": [
+        "aten",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "assign-t5-r1-h4096-o12",
+      "candidates": [
+        "aten",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "assign-t5-r1-h4096-o14",
+      "candidates": [
+        "aten",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "assign-t5-r32-h2048-o12",
+      "candidates": [
+        "aten",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "assign-t5-r32-h2048-o14",
+      "candidates": [
+        "aten",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "assign-t6-r1-h2048-o12",
+      "candidates": [
+        "aten",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "assign-t6-r1-h2048-o14",
+      "candidates": [
+        "aten",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "assign-t6-r1-h4096-o12",
+      "candidates": [
+        "aten",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "assign-t6-r1-h4096-o14",
+      "candidates": [
+        "aten",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "assign-t6-r32-h2048-o12",
+      "candidates": [
+        "aten",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "assign-t6-r32-h2048-o14",
+      "candidates": [
+        "aten",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "binary-0-t4-r1-h2048-o6",
+      "candidates": [
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "binary-0-t4-r1-h4096-o6",
+      "candidates": [
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "binary-0-t4-r32-h2048-o6",
+      "candidates": [
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "binary-0-t5-r1-h2048-o6",
+      "candidates": [
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "binary-0-t5-r1-h4096-o6",
+      "candidates": [
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "binary-0-t5-r32-h2048-o6",
+      "candidates": [
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "binary-0-t6-r1-h2048-o6",
+      "candidates": [
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "binary-0-t6-r1-h4096-o6",
+      "candidates": [
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "binary-0-t6-r32-h2048-o6",
+      "candidates": [
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [
+        "native"
+      ],
+      "pair_evidence": [
+        "binary-0-t6-r32-h2048-o6-native-vs-ggml"
+      ],
+      "status": "COMPLETE_QUALIFIED_CHOICE"
+    },
+    {
+      "request": "binary-1-t4-r1-h2048-o6",
+      "candidates": [
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "binary-1-t4-r1-h4096-o6",
+      "candidates": [
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "binary-1-t4-r32-h2048-o6",
+      "candidates": [
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [
+        "native"
+      ],
+      "pair_evidence": [
+        "binary-1-t4-r32-h2048-o6-native-vs-ggml"
+      ],
+      "status": "COMPLETE_QUALIFIED_CHOICE"
+    },
+    {
+      "request": "binary-1-t5-r1-h2048-o6",
+      "candidates": [
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "binary-1-t5-r1-h4096-o6",
+      "candidates": [
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "binary-1-t5-r32-h2048-o6",
+      "candidates": [
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "binary-1-t6-r1-h2048-o6",
+      "candidates": [
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [
+        "native"
+      ],
+      "pair_evidence": [
+        "binary-1-t6-r1-h2048-o6-native-vs-ggml"
+      ],
+      "status": "COMPLETE_QUALIFIED_CHOICE"
+    },
+    {
+      "request": "binary-1-t6-r1-h4096-o6",
+      "candidates": [
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "binary-1-t6-r32-h2048-o6",
+      "candidates": [
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "binary-2-t4-r1-h2048-o6",
+      "candidates": [
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "binary-2-t4-r1-h4096-o6",
+      "candidates": [
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "binary-2-t4-r32-h2048-o6",
+      "candidates": [
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "binary-2-t5-r1-h2048-o6",
+      "candidates": [
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "binary-2-t5-r1-h4096-o6",
+      "candidates": [
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "binary-2-t5-r32-h2048-o6",
+      "candidates": [
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "binary-2-t6-r1-h2048-o6",
+      "candidates": [
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "binary-2-t6-r1-h4096-o6",
+      "candidates": [
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "binary-2-t6-r32-h2048-o6",
+      "candidates": [
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "binary-3-t4-r1-h2048-o6",
+      "candidates": [
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [
+        "native"
+      ],
+      "pair_evidence": [
+        "binary-3-t4-r1-h2048-o6-native-vs-ggml"
+      ],
+      "status": "COMPLETE_QUALIFIED_CHOICE"
+    },
+    {
+      "request": "binary-3-t4-r1-h4096-o6",
+      "candidates": [
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [
+        "native"
+      ],
+      "pair_evidence": [
+        "binary-3-t4-r1-h4096-o6-native-vs-ggml"
+      ],
+      "status": "COMPLETE_QUALIFIED_CHOICE"
+    },
+    {
+      "request": "binary-3-t4-r32-h2048-o6",
+      "candidates": [
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [
+        "native"
+      ],
+      "pair_evidence": [
+        "binary-3-t4-r32-h2048-o6-native-vs-ggml"
+      ],
+      "status": "COMPLETE_QUALIFIED_CHOICE"
+    },
+    {
+      "request": "binary-3-t5-r1-h2048-o6",
+      "candidates": [
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "binary-3-t5-r1-h4096-o6",
+      "candidates": [
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "binary-3-t5-r32-h2048-o6",
+      "candidates": [
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "binary-3-t6-r1-h2048-o6",
+      "candidates": [
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "binary-3-t6-r1-h4096-o6",
+      "candidates": [
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [
+        "native"
+      ],
+      "pair_evidence": [
+        "binary-3-t6-r1-h4096-o6-native-vs-ggml"
+      ],
+      "status": "COMPLETE_QUALIFIED_CHOICE"
+    },
+    {
+      "request": "binary-3-t6-r32-h2048-o6",
+      "candidates": [
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "binary-4-t4-r1-h2048-o6",
+      "candidates": [
+        "aten",
+        "native"
+      ],
+      "complete_qualified_dominators": [
+        "native"
+      ],
+      "pair_evidence": [
+        "binary-4-t4-r1-h2048-o6-native-vs-aten"
+      ],
+      "status": "COMPLETE_QUALIFIED_CHOICE"
+    },
+    {
+      "request": "binary-4-t4-r1-h4096-o6",
+      "candidates": [
+        "aten",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "binary-4-t4-r32-h2048-o6",
+      "candidates": [
+        "aten",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "binary-4-t5-r1-h2048-o6",
+      "candidates": [
+        "aten",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "binary-4-t5-r1-h4096-o6",
+      "candidates": [
+        "aten",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "binary-4-t5-r32-h2048-o6",
+      "candidates": [
+        "aten",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "binary-4-t6-r1-h2048-o6",
+      "candidates": [
+        "aten",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "binary-4-t6-r1-h4096-o6",
+      "candidates": [
+        "aten",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "binary-4-t6-r32-h2048-o6",
+      "candidates": [
+        "aten",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "binary-5-t4-r1-h2048-o6",
+      "candidates": [
+        "aten",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "binary-5-t4-r1-h4096-o6",
+      "candidates": [
+        "aten",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "binary-5-t4-r32-h2048-o6",
+      "candidates": [
+        "aten",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "binary-5-t5-r1-h2048-o6",
+      "candidates": [
+        "aten",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "binary-5-t5-r1-h4096-o6",
+      "candidates": [
+        "aten",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "binary-5-t5-r32-h2048-o6",
+      "candidates": [
+        "aten",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "binary-5-t6-r1-h2048-o6",
+      "candidates": [
+        "aten",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "binary-5-t6-r1-h4096-o6",
+      "candidates": [
+        "aten",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "binary-5-t6-r32-h2048-o6",
+      "candidates": [
+        "aten",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "cast-t2-r1-h2048-o2",
+      "candidates": [
+        "aten",
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "cast-t2-r1-h2048-o3",
+      "candidates": [
+        "aten",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "cast-t2-r1-h2048-o4",
+      "candidates": [
+        "aten",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "cast-t2-r1-h2048-o5",
+      "candidates": [
+        "aten",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "cast-t2-r1-h2048-o6",
+      "candidates": [
+        "aten",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "cast-t2-r1-h4096-o2",
+      "candidates": [
+        "aten",
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [
+        "cast-t2-r1-h4096-o2-native-vs-ggml"
+      ],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "cast-t2-r1-h4096-o3",
+      "candidates": [
+        "aten",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "cast-t2-r1-h4096-o4",
+      "candidates": [
+        "aten",
+        "native"
+      ],
+      "complete_qualified_dominators": [
+        "native"
+      ],
+      "pair_evidence": [
+        "cast-t2-r1-h4096-o4-native-vs-aten"
+      ],
+      "status": "COMPLETE_QUALIFIED_CHOICE"
+    },
+    {
+      "request": "cast-t2-r1-h4096-o5",
+      "candidates": [
+        "aten",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "cast-t2-r1-h4096-o6",
+      "candidates": [
+        "aten",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "cast-t2-r32-h2048-o2",
+      "candidates": [
+        "aten",
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "cast-t2-r32-h2048-o3",
+      "candidates": [
+        "aten",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "cast-t2-r32-h2048-o4",
+      "candidates": [
+        "aten",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "cast-t2-r32-h2048-o5",
+      "candidates": [
+        "aten",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "cast-t2-r32-h2048-o6",
+      "candidates": [
+        "aten",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "cast-t3-r1-h2048-o2",
+      "candidates": [
+        "aten",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "cast-t3-r1-h2048-o3",
+      "candidates": [
+        "aten",
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "cast-t3-r1-h2048-o4",
+      "candidates": [
+        "aten",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "cast-t3-r1-h2048-o5",
+      "candidates": [
+        "aten",
+        "native"
+      ],
+      "complete_qualified_dominators": [
+        "native"
+      ],
+      "pair_evidence": [
+        "cast-t3-r1-h2048-o5-native-vs-aten"
+      ],
+      "status": "COMPLETE_QUALIFIED_CHOICE"
+    },
+    {
+      "request": "cast-t3-r1-h2048-o6",
+      "candidates": [
+        "aten",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "cast-t3-r1-h4096-o2",
+      "candidates": [
+        "aten",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "cast-t3-r1-h4096-o3",
+      "candidates": [
+        "aten",
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [
+        "native"
+      ],
+      "pair_evidence": [
+        "cast-t3-r1-h4096-o3-native-vs-ggml",
+        "cast-t3-r1-h4096-o3-native-vs-aten",
+        "cast-t3-r1-h4096-o3-ggml-vs-aten"
+      ],
+      "status": "COMPLETE_QUALIFIED_CHOICE"
+    },
+    {
+      "request": "cast-t3-r1-h4096-o4",
+      "candidates": [
+        "aten",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "cast-t3-r1-h4096-o5",
+      "candidates": [
+        "aten",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "cast-t3-r1-h4096-o6",
+      "candidates": [
+        "aten",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "cast-t3-r32-h2048-o2",
+      "candidates": [
+        "aten",
+        "native"
+      ],
+      "complete_qualified_dominators": [
+        "native"
+      ],
+      "pair_evidence": [
+        "cast-t3-r32-h2048-o2-native-vs-aten"
+      ],
+      "status": "COMPLETE_QUALIFIED_CHOICE"
+    },
+    {
+      "request": "cast-t3-r32-h2048-o3",
+      "candidates": [
+        "aten",
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [
+        "cast-t3-r32-h2048-o3-native-vs-aten"
+      ],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "cast-t3-r32-h2048-o4",
+      "candidates": [
+        "aten",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "cast-t3-r32-h2048-o5",
+      "candidates": [
+        "aten",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "cast-t3-r32-h2048-o6",
+      "candidates": [
+        "aten",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "cast-t4-r1-h2048-o2",
+      "candidates": [
+        "aten",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "cast-t4-r1-h2048-o3",
+      "candidates": [
+        "aten",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "cast-t4-r1-h2048-o4",
+      "candidates": [
+        "aten",
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "cast-t4-r1-h2048-o5",
+      "candidates": [
+        "aten",
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "cast-t4-r1-h2048-o6",
+      "candidates": [
+        "aten",
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "cast-t4-r1-h4096-o2",
+      "candidates": [
+        "aten",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "cast-t4-r1-h4096-o3",
+      "candidates": [
+        "aten",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "cast-t4-r1-h4096-o4",
+      "candidates": [
+        "aten",
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [
+        "cast-t4-r1-h4096-o4-ggml-vs-aten"
+      ],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "cast-t4-r1-h4096-o5",
+      "candidates": [
+        "aten",
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "cast-t4-r1-h4096-o6",
+      "candidates": [
+        "aten",
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "cast-t4-r32-h2048-o2",
+      "candidates": [
+        "aten",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "cast-t4-r32-h2048-o3",
+      "candidates": [
+        "aten",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "cast-t4-r32-h2048-o4",
+      "candidates": [
+        "aten",
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [
+        "cast-t4-r32-h2048-o4-native-vs-ggml"
+      ],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "cast-t4-r32-h2048-o5",
+      "candidates": [
+        "aten",
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "cast-t4-r32-h2048-o6",
+      "candidates": [
+        "aten",
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "cast-t5-r1-h2048-o2",
+      "candidates": [
+        "aten",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "cast-t5-r1-h2048-o3",
+      "candidates": [
+        "aten",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "cast-t5-r1-h2048-o4",
+      "candidates": [
+        "aten",
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [
+        "cast-t5-r1-h2048-o4-native-vs-ggml"
+      ],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "cast-t5-r1-h2048-o5",
+      "candidates": [
+        "aten",
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "cast-t5-r1-h2048-o6",
+      "candidates": [
+        "aten",
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [
+        "cast-t5-r1-h2048-o6-ggml-vs-aten"
+      ],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "cast-t5-r1-h4096-o2",
+      "candidates": [
+        "aten",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "cast-t5-r1-h4096-o3",
+      "candidates": [
+        "aten",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "cast-t5-r1-h4096-o4",
+      "candidates": [
+        "aten",
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [
+        "cast-t5-r1-h4096-o4-native-vs-ggml"
+      ],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "cast-t5-r1-h4096-o5",
+      "candidates": [
+        "aten",
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "cast-t5-r1-h4096-o6",
+      "candidates": [
+        "aten",
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "cast-t5-r32-h2048-o2",
+      "candidates": [
+        "aten",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "cast-t5-r32-h2048-o3",
+      "candidates": [
+        "aten",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "cast-t5-r32-h2048-o4",
+      "candidates": [
+        "aten",
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "cast-t5-r32-h2048-o5",
+      "candidates": [
+        "aten",
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "cast-t5-r32-h2048-o6",
+      "candidates": [
+        "aten",
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "cast-t6-r1-h2048-o2",
+      "candidates": [
+        "aten",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "cast-t6-r1-h2048-o3",
+      "candidates": [
+        "aten",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "cast-t6-r1-h2048-o4",
+      "candidates": [
+        "aten",
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "cast-t6-r1-h2048-o5",
+      "candidates": [
+        "aten",
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "cast-t6-r1-h2048-o6",
+      "candidates": [
+        "aten",
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [
+        "cast-t6-r1-h2048-o6-ggml-vs-aten"
+      ],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "cast-t6-r1-h4096-o2",
+      "candidates": [
+        "aten",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "cast-t6-r1-h4096-o3",
+      "candidates": [
+        "aten",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "cast-t6-r1-h4096-o4",
+      "candidates": [
+        "aten",
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [
+        "cast-t6-r1-h4096-o4-ggml-vs-aten"
+      ],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "cast-t6-r1-h4096-o5",
+      "candidates": [
+        "aten",
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "cast-t6-r1-h4096-o6",
+      "candidates": [
+        "aten",
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "cast-t6-r32-h2048-o2",
+      "candidates": [
+        "aten",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "cast-t6-r32-h2048-o3",
+      "candidates": [
+        "aten",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "cast-t6-r32-h2048-o4",
+      "candidates": [
+        "aten",
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "cast-t6-r32-h2048-o5",
+      "candidates": [
+        "aten",
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "cast-t6-r32-h2048-o6",
+      "candidates": [
+        "aten",
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [
+        "cast-t6-r32-h2048-o6-ggml-vs-aten"
+      ],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "concat-t4-r1-h2048-o6",
+      "candidates": [
+        "aten",
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "concat-t4-r1-h4096-o6",
+      "candidates": [
+        "aten",
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "concat-t4-r32-h2048-o6",
+      "candidates": [
+        "aten",
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "concat-t5-r1-h2048-o6",
+      "candidates": [
+        "aten",
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "concat-t5-r1-h4096-o6",
+      "candidates": [
+        "aten",
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "concat-t5-r32-h2048-o6",
+      "candidates": [
+        "aten",
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [
+        "concat-t5-r32-h2048-o6-native-vs-aten"
+      ],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "concat-t6-r1-h2048-o6",
+      "candidates": [
+        "aten",
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "concat-t6-r1-h4096-o6",
+      "candidates": [
+        "aten",
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [
+        "concat-t6-r1-h4096-o6-native-vs-ggml"
+      ],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "concat-t6-r32-h2048-o6",
+      "candidates": [
+        "aten",
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "copy-t2-r1-h2048-o6",
+      "candidates": [
+        "aten",
+        "ggml",
+        "native",
+        "onednn"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [
+        "copy-t2-r1-h2048-o6-native-vs-onednn"
+      ],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "copy-t2-r1-h4096-o6",
+      "candidates": [
+        "aten",
+        "ggml",
+        "native",
+        "onednn"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [
+        "copy-t2-r1-h4096-o6-native-vs-onednn",
+        "copy-t2-r1-h4096-o6-onednn-vs-aten"
+      ],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "copy-t2-r32-h2048-o6",
+      "candidates": [
+        "aten",
+        "ggml",
+        "native",
+        "onednn"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "copy-t3-r1-h2048-o6",
+      "candidates": [
+        "aten",
+        "ggml",
+        "native",
+        "onednn"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [
+        "copy-t3-r1-h2048-o6-ggml-vs-aten"
+      ],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "copy-t3-r1-h4096-o6",
+      "candidates": [
+        "aten",
+        "ggml",
+        "native",
+        "onednn"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "copy-t3-r32-h2048-o6",
+      "candidates": [
+        "aten",
+        "ggml",
+        "native",
+        "onednn"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [
+        "copy-t3-r32-h2048-o6-native-vs-aten",
+        "copy-t3-r32-h2048-o6-onednn-vs-ggml",
+        "copy-t3-r32-h2048-o6-ggml-vs-aten"
+      ],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "copy-t4-r1-h2048-o6",
+      "candidates": [
+        "aten",
+        "ggml",
+        "native",
+        "onednn"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "copy-t4-r1-h4096-o6",
+      "candidates": [
+        "aten",
+        "ggml",
+        "native",
+        "onednn"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [
+        "copy-t4-r1-h4096-o6-onednn-vs-ggml"
+      ],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "copy-t4-r32-h2048-o6",
+      "candidates": [
+        "aten",
+        "ggml",
+        "native",
+        "onednn"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "copy-t5-r1-h2048-o6",
+      "candidates": [
+        "aten",
+        "ggml",
+        "native",
+        "onednn"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [
+        "copy-t5-r1-h2048-o6-native-vs-ggml",
+        "copy-t5-r1-h2048-o6-native-vs-aten"
+      ],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "copy-t5-r1-h4096-o6",
+      "candidates": [
+        "aten",
+        "ggml",
+        "native",
+        "onednn"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [
+        "copy-t5-r1-h4096-o6-ggml-vs-aten"
+      ],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "copy-t5-r32-h2048-o6",
+      "candidates": [
+        "aten",
+        "ggml",
+        "native",
+        "onednn"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [
+        "copy-t5-r32-h2048-o6-ggml-vs-aten"
+      ],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "copy-t6-r1-h2048-o6",
+      "candidates": [
+        "aten",
+        "ggml",
+        "native",
+        "onednn"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [
+        "copy-t6-r1-h2048-o6-onednn-vs-aten"
+      ],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "copy-t6-r1-h4096-o6",
+      "candidates": [
+        "aten",
+        "ggml",
+        "native",
+        "onednn"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [
+        "copy-t6-r1-h4096-o6-native-vs-onednn",
+        "copy-t6-r1-h4096-o6-onednn-vs-ggml",
+        "copy-t6-r1-h4096-o6-onednn-vs-aten"
+      ],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "copy-t6-r32-h2048-o6",
+      "candidates": [
+        "aten",
+        "ggml",
+        "native",
+        "onednn"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [
+        "copy-t6-r32-h2048-o6-onednn-vs-aten"
+      ],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "fill-t4-r1-h2048-o6",
+      "candidates": [
+        "aten",
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "fill-t4-r1-h4096-o6",
+      "candidates": [
+        "aten",
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [
+        "fill-t4-r1-h4096-o6-native-vs-aten"
+      ],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "fill-t4-r32-h2048-o6",
+      "candidates": [
+        "aten",
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "fill-t5-r1-h2048-o6",
+      "candidates": [
+        "aten",
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [
+        "fill-t5-r1-h2048-o6-native-vs-ggml"
+      ],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "fill-t5-r1-h4096-o6",
+      "candidates": [
+        "aten",
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [
+        "fill-t5-r1-h4096-o6-native-vs-ggml"
+      ],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "fill-t5-r32-h2048-o6",
+      "candidates": [
+        "aten",
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [
+        "fill-t5-r32-h2048-o6-native-vs-ggml"
+      ],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "fill-t6-r1-h2048-o6",
+      "candidates": [
+        "aten",
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [
+        "native"
+      ],
+      "pair_evidence": [
+        "fill-t6-r1-h2048-o6-native-vs-ggml",
+        "fill-t6-r1-h2048-o6-ggml-vs-aten"
+      ],
+      "status": "COMPLETE_QUALIFIED_CHOICE"
+    },
+    {
+      "request": "fill-t6-r1-h4096-o6",
+      "candidates": [
+        "aten",
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [
+        "fill-t6-r1-h4096-o6-native-vs-aten",
+        "fill-t6-r1-h4096-o6-ggml-vs-aten"
+      ],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "fill-t6-r32-h2048-o6",
+      "candidates": [
+        "aten",
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "gather-t4-r1-h2048-o12",
+      "candidates": [
+        "aten",
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "gather-t4-r1-h2048-o14",
+      "candidates": [
+        "aten",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "gather-t4-r1-h4096-o12",
+      "candidates": [
+        "aten",
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [
+        "native"
+      ],
+      "pair_evidence": [
+        "gather-t4-r1-h4096-o12-native-vs-aten",
+        "gather-t4-r1-h4096-o12-ggml-vs-aten"
+      ],
+      "status": "COMPLETE_QUALIFIED_CHOICE"
+    },
+    {
+      "request": "gather-t4-r1-h4096-o14",
+      "candidates": [
+        "aten",
+        "native"
+      ],
+      "complete_qualified_dominators": [
+        "native"
+      ],
+      "pair_evidence": [
+        "gather-t4-r1-h4096-o14-native-vs-aten"
+      ],
+      "status": "COMPLETE_QUALIFIED_CHOICE"
+    },
+    {
+      "request": "gather-t4-r32-h2048-o12",
+      "candidates": [
+        "aten",
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [
+        "gather-t4-r32-h2048-o12-ggml-vs-aten"
+      ],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "gather-t4-r32-h2048-o14",
+      "candidates": [
+        "aten",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "gather-t5-r1-h2048-o12",
+      "candidates": [
+        "aten",
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [
+        "gather-t5-r1-h2048-o12-native-vs-ggml"
+      ],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "gather-t5-r1-h2048-o14",
+      "candidates": [
+        "aten",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "gather-t5-r1-h4096-o12",
+      "candidates": [
+        "aten",
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [
+        "gather-t5-r1-h4096-o12-native-vs-ggml"
+      ],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "gather-t5-r1-h4096-o14",
+      "candidates": [
+        "aten",
+        "native"
+      ],
+      "complete_qualified_dominators": [
+        "native"
+      ],
+      "pair_evidence": [
+        "gather-t5-r1-h4096-o14-native-vs-aten"
+      ],
+      "status": "COMPLETE_QUALIFIED_CHOICE"
+    },
+    {
+      "request": "gather-t5-r32-h2048-o12",
+      "candidates": [
+        "aten",
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "gather-t5-r32-h2048-o14",
+      "candidates": [
+        "aten",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "gather-t6-r1-h2048-o12",
+      "candidates": [
+        "aten",
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [
+        "native"
+      ],
+      "pair_evidence": [
+        "gather-t6-r1-h2048-o12-native-vs-ggml",
+        "gather-t6-r1-h2048-o12-native-vs-aten"
+      ],
+      "status": "COMPLETE_QUALIFIED_CHOICE"
+    },
+    {
+      "request": "gather-t6-r1-h2048-o14",
+      "candidates": [
+        "aten",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "gather-t6-r1-h4096-o12",
+      "candidates": [
+        "aten",
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "gather-t6-r1-h4096-o14",
+      "candidates": [
+        "aten",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "gather-t6-r32-h2048-o12",
+      "candidates": [
+        "aten",
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [
+        "gather-t6-r32-h2048-o12-native-vs-aten",
+        "gather-t6-r32-h2048-o12-ggml-vs-aten"
+      ],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "gather-t6-r32-h2048-o14",
+      "candidates": [
+        "aten",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "matmul-f32-k16384-n24-r1-l0",
+      "candidates": [
+        "aten",
+        "ggml",
+        "onednn"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "matmul-f32-k16384-n24-r1-l1",
+      "candidates": [
+        "aten",
+        "ggml"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "matmul-f32-k16384-n24-r32-l0",
+      "candidates": [
+        "aten",
+        "ggml",
+        "onednn"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "matmul-f32-k16384-n24-r32-l1",
+      "candidates": [
+        "aten",
+        "ggml"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "matmul-f32-k16384-n4-r1-l0",
+      "candidates": [
+        "aten",
+        "ggml",
+        "onednn"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "matmul-f32-k16384-n4-r1-l1",
+      "candidates": [
+        "aten",
+        "ggml"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "matmul-f32-k16384-n4-r32-l0",
+      "candidates": [
+        "aten",
+        "ggml",
+        "onednn"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [
+        "matmul-f32-k16384-n4-r32-l0-onednn-vs-ggml"
+      ],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "matmul-f32-k16384-n4-r32-l1",
+      "candidates": [
+        "aten",
+        "ggml"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "matmul-qwen-bf16-k2048-n6144-r1",
+      "candidates": [
+        "aten",
+        "ggml"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "matmul-qwen-bf16-k2048-n6144-r32",
+      "candidates": [
+        "aten",
+        "ggml"
+      ],
+      "complete_qualified_dominators": [
+        "ggml"
+      ],
+      "pair_evidence": [
+        "matmul-qwen-bf16-k2048-n6144-r32-ggml-vs-aten"
+      ],
+      "status": "COMPLETE_QUALIFIED_CHOICE"
+    },
+    {
+      "request": "norm-0-t4-r1-h2048-o6",
+      "candidates": [
+        "aten",
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "norm-0-t4-r1-h4096-o6",
+      "candidates": [
+        "aten",
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "norm-0-t4-r32-h2048-o6",
+      "candidates": [
+        "aten",
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [
+        "norm-0-t4-r32-h2048-o6-native-vs-ggml"
+      ],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "norm-0-t5-r1-h2048-o6",
+      "candidates": [
+        "aten",
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [
+        "norm-0-t5-r1-h2048-o6-native-vs-ggml"
+      ],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "norm-0-t5-r1-h4096-o6",
+      "candidates": [
+        "aten",
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [
+        "native"
+      ],
+      "pair_evidence": [
+        "norm-0-t5-r1-h4096-o6-native-vs-ggml",
+        "norm-0-t5-r1-h4096-o6-native-vs-aten"
+      ],
+      "status": "COMPLETE_QUALIFIED_CHOICE"
+    },
+    {
+      "request": "norm-0-t5-r32-h2048-o6",
+      "candidates": [
+        "aten",
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [
+        "norm-0-t5-r32-h2048-o6-ggml-vs-aten"
+      ],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "norm-0-t6-r1-h2048-o6",
+      "candidates": [
+        "aten",
+        "ggml",
+        "native",
+        "onednn"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [
+        "norm-0-t6-r1-h2048-o6-native-vs-ggml"
+      ],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "norm-0-t6-r1-h4096-o6",
+      "candidates": [
+        "aten",
+        "ggml",
+        "native",
+        "onednn"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [
+        "norm-0-t6-r1-h4096-o6-native-vs-onednn"
+      ],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "norm-0-t6-r32-h2048-o6",
+      "candidates": [
+        "aten",
+        "ggml",
+        "native",
+        "onednn"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [
+        "norm-0-t6-r32-h2048-o6-ggml-vs-aten"
+      ],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "norm-1-t4-r1-h2048-o6",
+      "candidates": [
+        "aten",
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [
+        "norm-1-t4-r1-h2048-o6-native-vs-ggml"
+      ],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "norm-1-t4-r1-h4096-o6",
+      "candidates": [
+        "aten",
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [
+        "norm-1-t4-r1-h4096-o6-ggml-vs-aten"
+      ],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "norm-1-t4-r32-h2048-o6",
+      "candidates": [
+        "aten",
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [
+        "norm-1-t4-r32-h2048-o6-native-vs-ggml"
+      ],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "norm-1-t5-r1-h2048-o6",
+      "candidates": [
+        "aten",
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "norm-1-t5-r1-h4096-o6",
+      "candidates": [
+        "aten",
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "norm-1-t5-r32-h2048-o6",
+      "candidates": [
+        "aten",
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "norm-1-t6-r1-h2048-o6",
+      "candidates": [
+        "aten",
+        "ggml",
+        "native",
+        "onednn"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "norm-1-t6-r1-h4096-o6",
+      "candidates": [
+        "aten",
+        "ggml",
+        "native",
+        "onednn"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [
+        "norm-1-t6-r1-h4096-o6-native-vs-ggml",
+        "norm-1-t6-r1-h4096-o6-onednn-vs-aten"
+      ],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "norm-1-t6-r32-h2048-o6",
+      "candidates": [
+        "aten",
+        "ggml",
+        "native",
+        "onednn"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [
+        "norm-1-t6-r32-h2048-o6-onednn-vs-ggml"
+      ],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "reduce-0-t4-r1-h2048-o6",
+      "candidates": [
+        "aten",
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "reduce-0-t4-r1-h4096-o6",
+      "candidates": [
+        "aten",
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [
+        "reduce-0-t4-r1-h4096-o6-ggml-vs-aten"
+      ],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "reduce-0-t4-r32-h2048-o6",
+      "candidates": [
+        "aten",
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "reduce-0-t5-r1-h2048-o6",
+      "candidates": [
+        "aten",
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [
+        "reduce-0-t5-r1-h2048-o6-native-vs-aten"
+      ],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "reduce-0-t5-r1-h4096-o6",
+      "candidates": [
+        "aten",
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "reduce-0-t5-r32-h2048-o6",
+      "candidates": [
+        "aten",
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "reduce-0-t6-r1-h2048-o6",
+      "candidates": [
+        "aten",
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [
+        "reduce-0-t6-r1-h2048-o6-ggml-vs-aten"
+      ],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "reduce-0-t6-r1-h4096-o6",
+      "candidates": [
+        "aten",
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "reduce-0-t6-r32-h2048-o6",
+      "candidates": [
+        "aten",
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "reduce-1-t4-r1-h2048-o6",
+      "candidates": [
+        "aten",
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [
+        "reduce-1-t4-r1-h2048-o6-native-vs-ggml"
+      ],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "reduce-1-t4-r1-h4096-o6",
+      "candidates": [
+        "aten",
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [
+        "reduce-1-t4-r1-h4096-o6-native-vs-ggml"
+      ],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "reduce-1-t4-r32-h2048-o6",
+      "candidates": [
+        "aten",
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "reduce-1-t5-r1-h2048-o6",
+      "candidates": [
+        "aten",
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [
+        "reduce-1-t5-r1-h2048-o6-native-vs-ggml"
+      ],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "reduce-1-t5-r1-h4096-o6",
+      "candidates": [
+        "aten",
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "reduce-1-t5-r32-h2048-o6",
+      "candidates": [
+        "aten",
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [
+        "reduce-1-t5-r32-h2048-o6-native-vs-aten"
+      ],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "reduce-1-t6-r1-h2048-o6",
+      "candidates": [
+        "aten",
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [
+        "reduce-1-t6-r1-h2048-o6-native-vs-aten"
+      ],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "reduce-1-t6-r1-h4096-o6",
+      "candidates": [
+        "aten",
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [
+        "reduce-1-t6-r1-h4096-o6-native-vs-ggml"
+      ],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "reduce-1-t6-r32-h2048-o6",
+      "candidates": [
+        "aten",
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [
+        "reduce-1-t6-r32-h2048-o6-native-vs-ggml"
+      ],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "reduce-2-t4-r1-h2048-o6",
+      "candidates": [
+        "aten",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "reduce-2-t4-r1-h4096-o6",
+      "candidates": [
+        "aten",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "reduce-2-t4-r32-h2048-o6",
+      "candidates": [
+        "aten",
+        "native"
+      ],
+      "complete_qualified_dominators": [
+        "native"
+      ],
+      "pair_evidence": [
+        "reduce-2-t4-r32-h2048-o6-native-vs-aten"
+      ],
+      "status": "COMPLETE_QUALIFIED_CHOICE"
+    },
+    {
+      "request": "reduce-2-t5-r1-h2048-o6",
+      "candidates": [
+        "aten",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "reduce-2-t5-r1-h4096-o6",
+      "candidates": [
+        "aten",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "reduce-2-t5-r32-h2048-o6",
+      "candidates": [
+        "aten",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "reduce-2-t6-r1-h2048-o6",
+      "candidates": [
+        "aten",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "reduce-2-t6-r1-h4096-o6",
+      "candidates": [
+        "aten",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "reduce-2-t6-r32-h2048-o6",
+      "candidates": [
+        "aten",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "reduce-3-t4-r1-h2048-o6",
+      "candidates": [
+        "aten",
+        "native"
+      ],
+      "complete_qualified_dominators": [
+        "native"
+      ],
+      "pair_evidence": [
+        "reduce-3-t4-r1-h2048-o6-native-vs-aten"
+      ],
+      "status": "COMPLETE_QUALIFIED_CHOICE"
+    },
+    {
+      "request": "reduce-3-t4-r1-h4096-o6",
+      "candidates": [
+        "aten",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "reduce-3-t4-r32-h2048-o6",
+      "candidates": [
+        "aten",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "reduce-3-t5-r1-h2048-o6",
+      "candidates": [
+        "aten",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "reduce-3-t5-r1-h4096-o6",
+      "candidates": [
+        "aten",
+        "native"
+      ],
+      "complete_qualified_dominators": [
+        "native"
+      ],
+      "pair_evidence": [
+        "reduce-3-t5-r1-h4096-o6-native-vs-aten"
+      ],
+      "status": "COMPLETE_QUALIFIED_CHOICE"
+    },
+    {
+      "request": "reduce-3-t5-r32-h2048-o6",
+      "candidates": [
+        "aten",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "reduce-3-t6-r1-h2048-o6",
+      "candidates": [
+        "aten",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "reduce-3-t6-r1-h4096-o6",
+      "candidates": [
+        "aten",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "reduce-3-t6-r32-h2048-o6",
+      "candidates": [
+        "aten",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "rope-f32-phase-t6-r1-h2048-o6",
+      "candidates": [
+        "aten",
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "rope-f32-phase-t6-r1-h4096-o6",
+      "candidates": [
+        "aten",
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "rope-f32-phase-t6-r32-h2048-o6",
+      "candidates": [
+        "aten",
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "scatter-add-t6-r1-h2048-o12",
+      "candidates": [
+        "aten",
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [
+        "scatter-add-t6-r1-h2048-o12-native-vs-ggml"
+      ],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "scatter-add-t6-r1-h2048-o14",
+      "candidates": [
+        "aten",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "scatter-add-t6-r1-h4096-o12",
+      "candidates": [
+        "aten",
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "scatter-add-t6-r1-h4096-o14",
+      "candidates": [
+        "aten",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "scatter-add-t6-r32-h2048-o12",
+      "candidates": [
+        "aten",
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [
+        "scatter-add-t6-r32-h2048-o12-native-vs-ggml"
+      ],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "scatter-add-t6-r32-h2048-o14",
+      "candidates": [
+        "aten",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "sdpa-f32-q1",
+      "candidates": [
+        "aten",
+        "ggml"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "sdpa-f32-q32",
+      "candidates": [
+        "aten",
+        "ggml"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "select-t4-r1-h2048-o6",
+      "candidates": [
+        "aten",
+        "native",
+        "onednn"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [
+        "select-t4-r1-h2048-o6-native-vs-onednn"
+      ],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "select-t4-r1-h4096-o6",
+      "candidates": [
+        "aten",
+        "native",
+        "onednn"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [
+        "select-t4-r1-h4096-o6-native-vs-onednn"
+      ],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "select-t4-r32-h2048-o6",
+      "candidates": [
+        "aten",
+        "native",
+        "onednn"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [
+        "select-t4-r32-h2048-o6-native-vs-onednn"
+      ],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "select-t5-r1-h2048-o6",
+      "candidates": [
+        "aten",
+        "native",
+        "onednn"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [
+        "select-t5-r1-h2048-o6-native-vs-onednn",
+        "select-t5-r1-h2048-o6-onednn-vs-aten"
+      ],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "select-t5-r1-h4096-o6",
+      "candidates": [
+        "aten",
+        "native",
+        "onednn"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "select-t5-r32-h2048-o6",
+      "candidates": [
+        "aten",
+        "native",
+        "onednn"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [
+        "select-t5-r32-h2048-o6-native-vs-onednn"
+      ],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "select-t6-r1-h2048-o6",
+      "candidates": [
+        "aten",
+        "native",
+        "onednn"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [
+        "select-t6-r1-h2048-o6-onednn-vs-aten"
+      ],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "select-t6-r1-h4096-o6",
+      "candidates": [
+        "aten",
+        "native",
+        "onednn"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "select-t6-r32-h2048-o6",
+      "candidates": [
+        "aten",
+        "native",
+        "onednn"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "silu-gate-0-t4-r1-h2048-o6",
+      "candidates": [
+        "aten",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "silu-gate-0-t4-r1-h4096-o6",
+      "candidates": [
+        "aten",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "silu-gate-0-t4-r32-h2048-o6",
+      "candidates": [
+        "aten",
+        "native"
+      ],
+      "complete_qualified_dominators": [
+        "native"
+      ],
+      "pair_evidence": [
+        "silu-gate-0-t4-r32-h2048-o6-native-vs-aten"
+      ],
+      "status": "COMPLETE_QUALIFIED_CHOICE"
+    },
+    {
+      "request": "silu-gate-0-t5-r1-h2048-o6",
+      "candidates": [
+        "aten"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "SINGLE_CARRIER"
+    },
+    {
+      "request": "silu-gate-0-t5-r1-h4096-o6",
+      "candidates": [
+        "aten"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "SINGLE_CARRIER"
+    },
+    {
+      "request": "silu-gate-0-t5-r32-h2048-o6",
+      "candidates": [
+        "aten"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "SINGLE_CARRIER"
+    },
+    {
+      "request": "silu-gate-0-t6-r1-h2048-o6",
+      "candidates": [
+        "aten"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "SINGLE_CARRIER"
+    },
+    {
+      "request": "silu-gate-0-t6-r1-h4096-o6",
+      "candidates": [
+        "aten"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "SINGLE_CARRIER"
+    },
+    {
+      "request": "silu-gate-0-t6-r32-h2048-o6",
+      "candidates": [
+        "aten"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "SINGLE_CARRIER"
+    },
+    {
+      "request": "silu-gate-1-t4-r1-h2048-o6",
+      "candidates": [
+        "aten",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "silu-gate-1-t4-r1-h4096-o6",
+      "candidates": [
+        "aten",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "silu-gate-1-t4-r32-h2048-o6",
+      "candidates": [
+        "aten",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "silu-gate-1-t5-r1-h2048-o6",
+      "candidates": [
+        "aten"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "SINGLE_CARRIER"
+    },
+    {
+      "request": "silu-gate-1-t5-r1-h4096-o6",
+      "candidates": [
+        "aten"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "SINGLE_CARRIER"
+    },
+    {
+      "request": "silu-gate-1-t5-r32-h2048-o6",
+      "candidates": [
+        "aten"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "SINGLE_CARRIER"
+    },
+    {
+      "request": "silu-gate-1-t6-r1-h2048-o6",
+      "candidates": [
+        "aten"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "SINGLE_CARRIER"
+    },
+    {
+      "request": "silu-gate-1-t6-r1-h4096-o6",
+      "candidates": [
+        "aten"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "SINGLE_CARRIER"
+    },
+    {
+      "request": "silu-gate-1-t6-r32-h2048-o6",
+      "candidates": [
+        "aten"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "SINGLE_CARRIER"
+    },
+    {
+      "request": "softmax-0-t4-r1-h2048-o6",
+      "candidates": [
+        "aten",
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "softmax-0-t4-r1-h4096-o6",
+      "candidates": [
+        "aten",
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "softmax-0-t4-r32-h2048-o6",
+      "candidates": [
+        "aten",
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [
+        "softmax-0-t4-r32-h2048-o6-native-vs-ggml"
+      ],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "softmax-0-t5-r1-h2048-o6",
+      "candidates": [
+        "aten",
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "softmax-0-t5-r1-h4096-o6",
+      "candidates": [
+        "aten",
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "softmax-0-t5-r32-h2048-o6",
+      "candidates": [
+        "aten",
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [
+        "softmax-0-t5-r32-h2048-o6-native-vs-ggml"
+      ],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "softmax-0-t6-r1-h2048-o6",
+      "candidates": [
+        "aten",
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [
+        "softmax-0-t6-r1-h2048-o6-native-vs-ggml"
+      ],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "softmax-0-t6-r1-h4096-o6",
+      "candidates": [
+        "aten",
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [
+        "softmax-0-t6-r1-h4096-o6-ggml-vs-aten"
+      ],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "softmax-0-t6-r32-h2048-o6",
+      "candidates": [
+        "aten",
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [
+        "softmax-0-t6-r32-h2048-o6-native-vs-ggml"
+      ],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "softmax-1-t4-r1-h2048-o6",
+      "candidates": [
+        "aten",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "softmax-1-t4-r1-h4096-o6",
+      "candidates": [
+        "aten",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "softmax-1-t4-r32-h2048-o6",
+      "candidates": [
+        "aten",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "softmax-1-t5-r1-h2048-o6",
+      "candidates": [
+        "aten",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "softmax-1-t5-r1-h4096-o6",
+      "candidates": [
+        "aten",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "softmax-1-t5-r32-h2048-o6",
+      "candidates": [
+        "aten",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "softmax-1-t6-r1-h2048-o6",
+      "candidates": [
+        "aten",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "softmax-1-t6-r1-h4096-o6",
+      "candidates": [
+        "aten",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "softmax-1-t6-r32-h2048-o6",
+      "candidates": [
+        "aten",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "softmax-2-t4-r1-h2048-o6",
+      "candidates": [
+        "aten",
+        "native"
+      ],
+      "complete_qualified_dominators": [
+        "native"
+      ],
+      "pair_evidence": [
+        "softmax-2-t4-r1-h2048-o6-native-vs-aten"
+      ],
+      "status": "COMPLETE_QUALIFIED_CHOICE"
+    },
+    {
+      "request": "softmax-2-t4-r1-h4096-o6",
+      "candidates": [
+        "aten",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "softmax-2-t4-r32-h2048-o6",
+      "candidates": [
+        "aten",
+        "native"
+      ],
+      "complete_qualified_dominators": [
+        "aten"
+      ],
+      "pair_evidence": [
+        "softmax-2-t4-r32-h2048-o6-native-vs-aten"
+      ],
+      "status": "COMPLETE_QUALIFIED_CHOICE"
+    },
+    {
+      "request": "softmax-2-t5-r1-h2048-o6",
+      "candidates": [
+        "aten",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "softmax-2-t5-r1-h4096-o6",
+      "candidates": [
+        "aten",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "softmax-2-t5-r32-h2048-o6",
+      "candidates": [
+        "aten",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "softmax-2-t6-r1-h2048-o6",
+      "candidates": [
+        "aten",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "softmax-2-t6-r1-h4096-o6",
+      "candidates": [
+        "aten",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "softmax-2-t6-r32-h2048-o6",
+      "candidates": [
+        "aten",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "softmax-3-t4-r1-h2048-o6",
+      "candidates": [
+        "aten",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "softmax-3-t4-r1-h4096-o6",
+      "candidates": [
+        "aten",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "softmax-3-t4-r32-h2048-o6",
+      "candidates": [
+        "aten",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "softmax-3-t5-r1-h2048-o6",
+      "candidates": [
+        "aten",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "softmax-3-t5-r1-h4096-o6",
+      "candidates": [
+        "aten",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "softmax-3-t5-r32-h2048-o6",
+      "candidates": [
+        "aten",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "softmax-3-t6-r1-h2048-o6",
+      "candidates": [
+        "aten",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "softmax-3-t6-r1-h4096-o6",
+      "candidates": [
+        "aten",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "softmax-3-t6-r32-h2048-o6",
+      "candidates": [
+        "aten",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "unary-0-t4-r1-h2048-o6",
+      "candidates": [
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "unary-0-t4-r1-h4096-o6",
+      "candidates": [
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "unary-0-t4-r32-h2048-o6",
+      "candidates": [
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "unary-0-t5-r1-h2048-o6",
+      "candidates": [
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "unary-0-t5-r1-h4096-o6",
+      "candidates": [
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "unary-0-t5-r32-h2048-o6",
+      "candidates": [
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "unary-0-t6-r1-h2048-o6",
+      "candidates": [
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "unary-0-t6-r1-h4096-o6",
+      "candidates": [
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "unary-0-t6-r32-h2048-o6",
+      "candidates": [
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "unary-1-t4-r1-h2048-o6",
+      "candidates": [
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "unary-1-t4-r1-h4096-o6",
+      "candidates": [
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "unary-1-t4-r32-h2048-o6",
+      "candidates": [
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "unary-1-t5-r1-h2048-o6",
+      "candidates": [
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [
+        "native"
+      ],
+      "pair_evidence": [
+        "unary-1-t5-r1-h2048-o6-native-vs-ggml"
+      ],
+      "status": "COMPLETE_QUALIFIED_CHOICE"
+    },
+    {
+      "request": "unary-1-t5-r1-h4096-o6",
+      "candidates": [
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "unary-1-t5-r32-h2048-o6",
+      "candidates": [
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [
+        "native"
+      ],
+      "pair_evidence": [
+        "unary-1-t5-r32-h2048-o6-native-vs-ggml"
+      ],
+      "status": "COMPLETE_QUALIFIED_CHOICE"
+    },
+    {
+      "request": "unary-1-t6-r1-h2048-o6",
+      "candidates": [
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "unary-1-t6-r1-h4096-o6",
+      "candidates": [
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "unary-1-t6-r32-h2048-o6",
+      "candidates": [
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "unary-10-t4-r1-h2048-o6",
+      "candidates": [
+        "aten"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "SINGLE_CARRIER"
+    },
+    {
+      "request": "unary-10-t4-r1-h4096-o6",
+      "candidates": [
+        "aten"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "SINGLE_CARRIER"
+    },
+    {
+      "request": "unary-10-t4-r32-h2048-o6",
+      "candidates": [
+        "aten"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "SINGLE_CARRIER"
+    },
+    {
+      "request": "unary-10-t5-r1-h2048-o6",
+      "candidates": [
+        "aten"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "SINGLE_CARRIER"
+    },
+    {
+      "request": "unary-10-t5-r1-h4096-o6",
+      "candidates": [
+        "aten"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "SINGLE_CARRIER"
+    },
+    {
+      "request": "unary-10-t5-r32-h2048-o6",
+      "candidates": [
+        "aten"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "SINGLE_CARRIER"
+    },
+    {
+      "request": "unary-10-t6-r1-h2048-o6",
+      "candidates": [
+        "aten"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "SINGLE_CARRIER"
+    },
+    {
+      "request": "unary-10-t6-r1-h4096-o6",
+      "candidates": [
+        "aten"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "SINGLE_CARRIER"
+    },
+    {
+      "request": "unary-10-t6-r32-h2048-o6",
+      "candidates": [
+        "aten"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "SINGLE_CARRIER"
+    },
+    {
+      "request": "unary-11-t4-r1-h2048-o6",
+      "candidates": [
+        "aten",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "unary-11-t4-r1-h4096-o6",
+      "candidates": [
+        "aten",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "unary-11-t4-r32-h2048-o6",
+      "candidates": [
+        "aten",
+        "native"
+      ],
+      "complete_qualified_dominators": [
+        "native"
+      ],
+      "pair_evidence": [
+        "unary-11-t4-r32-h2048-o6-native-vs-aten"
+      ],
+      "status": "COMPLETE_QUALIFIED_CHOICE"
+    },
+    {
+      "request": "unary-11-t5-r1-h2048-o6",
+      "candidates": [
+        "aten",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "unary-11-t5-r1-h4096-o6",
+      "candidates": [
+        "aten",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "unary-11-t5-r32-h2048-o6",
+      "candidates": [
+        "aten",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "unary-11-t6-r1-h2048-o6",
+      "candidates": [
+        "aten"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "SINGLE_CARRIER"
+    },
+    {
+      "request": "unary-11-t6-r1-h4096-o6",
+      "candidates": [
+        "aten"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "SINGLE_CARRIER"
+    },
+    {
+      "request": "unary-11-t6-r32-h2048-o6",
+      "candidates": [
+        "aten"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "SINGLE_CARRIER"
+    },
+    {
+      "request": "unary-12-t4-r1-h2048-o6",
+      "candidates": [
+        "aten",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "unary-12-t4-r1-h4096-o6",
+      "candidates": [
+        "aten",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "unary-12-t4-r32-h2048-o6",
+      "candidates": [
+        "aten",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "unary-12-t5-r1-h2048-o6",
+      "candidates": [
+        "aten",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "unary-12-t5-r1-h4096-o6",
+      "candidates": [
+        "aten",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "unary-12-t5-r32-h2048-o6",
+      "candidates": [
+        "aten",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "unary-12-t6-r1-h2048-o6",
+      "candidates": [
+        "aten",
+        "native",
+        "onednn"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "unary-12-t6-r1-h4096-o6",
+      "candidates": [
+        "aten",
+        "native",
+        "onednn"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [
+        "unary-12-t6-r1-h4096-o6-native-vs-aten"
+      ],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "unary-12-t6-r32-h2048-o6",
+      "candidates": [
+        "aten",
+        "native",
+        "onednn"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [
+        "unary-12-t6-r32-h2048-o6-native-vs-onednn"
+      ],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "unary-2-t4-r1-h2048-o6",
+      "candidates": [
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [
+        "native"
+      ],
+      "pair_evidence": [
+        "unary-2-t4-r1-h2048-o6-native-vs-ggml"
+      ],
+      "status": "COMPLETE_QUALIFIED_CHOICE"
+    },
+    {
+      "request": "unary-2-t4-r1-h4096-o6",
+      "candidates": [
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "unary-2-t4-r32-h2048-o6",
+      "candidates": [
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [
+        "native"
+      ],
+      "pair_evidence": [
+        "unary-2-t4-r32-h2048-o6-native-vs-ggml"
+      ],
+      "status": "COMPLETE_QUALIFIED_CHOICE"
+    },
+    {
+      "request": "unary-2-t5-r1-h2048-o6",
+      "candidates": [
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "unary-2-t5-r1-h4096-o6",
+      "candidates": [
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "unary-2-t5-r32-h2048-o6",
+      "candidates": [
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [
+        "native"
+      ],
+      "pair_evidence": [
+        "unary-2-t5-r32-h2048-o6-native-vs-ggml"
+      ],
+      "status": "COMPLETE_QUALIFIED_CHOICE"
+    },
+    {
+      "request": "unary-2-t6-r1-h2048-o6",
+      "candidates": [
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [
+        "native"
+      ],
+      "pair_evidence": [
+        "unary-2-t6-r1-h2048-o6-native-vs-ggml"
+      ],
+      "status": "COMPLETE_QUALIFIED_CHOICE"
+    },
+    {
+      "request": "unary-2-t6-r1-h4096-o6",
+      "candidates": [
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [
+        "native"
+      ],
+      "pair_evidence": [
+        "unary-2-t6-r1-h4096-o6-native-vs-ggml"
+      ],
+      "status": "COMPLETE_QUALIFIED_CHOICE"
+    },
+    {
+      "request": "unary-2-t6-r32-h2048-o6",
+      "candidates": [
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [
+        "native"
+      ],
+      "pair_evidence": [
+        "unary-2-t6-r32-h2048-o6-native-vs-ggml"
+      ],
+      "status": "COMPLETE_QUALIFIED_CHOICE"
+    },
+    {
+      "request": "unary-3-t4-r1-h2048-o6",
+      "candidates": [
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [
+        "native"
+      ],
+      "pair_evidence": [
+        "unary-3-t4-r1-h2048-o6-native-vs-ggml"
+      ],
+      "status": "COMPLETE_QUALIFIED_CHOICE"
+    },
+    {
+      "request": "unary-3-t4-r1-h4096-o6",
+      "candidates": [
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "unary-3-t4-r32-h2048-o6",
+      "candidates": [
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "unary-3-t5-r1-h2048-o6",
+      "candidates": [
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "unary-3-t5-r1-h4096-o6",
+      "candidates": [
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "unary-3-t5-r32-h2048-o6",
+      "candidates": [
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "unary-3-t6-r1-h2048-o6",
+      "candidates": [
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "unary-3-t6-r1-h4096-o6",
+      "candidates": [
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "unary-3-t6-r32-h2048-o6",
+      "candidates": [
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "unary-4-t4-r1-h2048-o6",
+      "candidates": [
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [
+        "native"
+      ],
+      "pair_evidence": [
+        "unary-4-t4-r1-h2048-o6-native-vs-ggml"
+      ],
+      "status": "COMPLETE_QUALIFIED_CHOICE"
+    },
+    {
+      "request": "unary-4-t4-r1-h4096-o6",
+      "candidates": [
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "unary-4-t4-r32-h2048-o6",
+      "candidates": [
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "unary-4-t5-r1-h2048-o6",
+      "candidates": [
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "unary-4-t5-r1-h4096-o6",
+      "candidates": [
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "unary-4-t5-r32-h2048-o6",
+      "candidates": [
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [
+        "native"
+      ],
+      "pair_evidence": [
+        "unary-4-t5-r32-h2048-o6-native-vs-ggml"
+      ],
+      "status": "COMPLETE_QUALIFIED_CHOICE"
+    },
+    {
+      "request": "unary-4-t6-r1-h2048-o6",
+      "candidates": [
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "unary-4-t6-r1-h4096-o6",
+      "candidates": [
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "unary-4-t6-r32-h2048-o6",
+      "candidates": [
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "unary-5-t4-r1-h2048-o6",
+      "candidates": [
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [
+        "native"
+      ],
+      "pair_evidence": [
+        "unary-5-t4-r1-h2048-o6-native-vs-ggml"
+      ],
+      "status": "COMPLETE_QUALIFIED_CHOICE"
+    },
+    {
+      "request": "unary-5-t4-r1-h4096-o6",
+      "candidates": [
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "unary-5-t4-r32-h2048-o6",
+      "candidates": [
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [
+        "native"
+      ],
+      "pair_evidence": [
+        "unary-5-t4-r32-h2048-o6-native-vs-ggml"
+      ],
+      "status": "COMPLETE_QUALIFIED_CHOICE"
+    },
+    {
+      "request": "unary-5-t5-r1-h2048-o6",
+      "candidates": [
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "unary-5-t5-r1-h4096-o6",
+      "candidates": [
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "unary-5-t5-r32-h2048-o6",
+      "candidates": [
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [
+        "native"
+      ],
+      "pair_evidence": [
+        "unary-5-t5-r32-h2048-o6-native-vs-ggml"
+      ],
+      "status": "COMPLETE_QUALIFIED_CHOICE"
+    },
+    {
+      "request": "unary-5-t6-r1-h2048-o6",
+      "candidates": [
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "unary-5-t6-r1-h4096-o6",
+      "candidates": [
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "unary-5-t6-r32-h2048-o6",
+      "candidates": [
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "unary-6-t4-r1-h2048-o6",
+      "candidates": [
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "unary-6-t4-r1-h4096-o6",
+      "candidates": [
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [
+        "native"
+      ],
+      "pair_evidence": [
+        "unary-6-t4-r1-h4096-o6-native-vs-ggml"
+      ],
+      "status": "COMPLETE_QUALIFIED_CHOICE"
+    },
+    {
+      "request": "unary-6-t4-r32-h2048-o6",
+      "candidates": [
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "unary-6-t5-r1-h2048-o6",
+      "candidates": [
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "unary-6-t5-r1-h4096-o6",
+      "candidates": [
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "unary-6-t5-r32-h2048-o6",
+      "candidates": [
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "unary-6-t6-r1-h2048-o6",
+      "candidates": [
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "unary-6-t6-r1-h4096-o6",
+      "candidates": [
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "unary-6-t6-r32-h2048-o6",
+      "candidates": [
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "unary-7-t4-r1-h2048-o6",
+      "candidates": [
+        "aten",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "unary-7-t4-r1-h4096-o6",
+      "candidates": [
+        "aten",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "unary-7-t4-r32-h2048-o6",
+      "candidates": [
+        "aten",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "unary-7-t5-r1-h2048-o6",
+      "candidates": [
+        "aten",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "unary-7-t5-r1-h4096-o6",
+      "candidates": [
+        "aten",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "unary-7-t5-r32-h2048-o6",
+      "candidates": [
+        "aten",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "unary-7-t6-r1-h2048-o6",
+      "candidates": [
+        "aten",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "unary-7-t6-r1-h4096-o6",
+      "candidates": [
+        "aten",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "unary-7-t6-r32-h2048-o6",
+      "candidates": [
+        "aten",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "unary-8-t4-r1-h2048-o6",
+      "candidates": [
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "unary-8-t4-r1-h4096-o6",
+      "candidates": [
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "unary-8-t4-r32-h2048-o6",
+      "candidates": [
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "unary-8-t5-r1-h2048-o6",
+      "candidates": [
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [
+        "native"
+      ],
+      "pair_evidence": [
+        "unary-8-t5-r1-h2048-o6-native-vs-ggml"
+      ],
+      "status": "COMPLETE_QUALIFIED_CHOICE"
+    },
+    {
+      "request": "unary-8-t5-r1-h4096-o6",
+      "candidates": [
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "unary-8-t5-r32-h2048-o6",
+      "candidates": [
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [
+        "native"
+      ],
+      "pair_evidence": [
+        "unary-8-t5-r32-h2048-o6-native-vs-ggml"
+      ],
+      "status": "COMPLETE_QUALIFIED_CHOICE"
+    },
+    {
+      "request": "unary-8-t6-r1-h2048-o6",
+      "candidates": [
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "unary-8-t6-r1-h4096-o6",
+      "candidates": [
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "unary-8-t6-r32-h2048-o6",
+      "candidates": [
+        "ggml",
+        "native"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "ENGINEERING_DEFAULT_REQUIRED"
+    },
+    {
+      "request": "unary-9-t4-r1-h2048-o6",
+      "candidates": [
+        "aten"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "SINGLE_CARRIER"
+    },
+    {
+      "request": "unary-9-t4-r1-h4096-o6",
+      "candidates": [
+        "aten"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "SINGLE_CARRIER"
+    },
+    {
+      "request": "unary-9-t4-r32-h2048-o6",
+      "candidates": [
+        "aten"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "SINGLE_CARRIER"
+    },
+    {
+      "request": "unary-9-t5-r1-h2048-o6",
+      "candidates": [
+        "aten"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "SINGLE_CARRIER"
+    },
+    {
+      "request": "unary-9-t5-r1-h4096-o6",
+      "candidates": [
+        "aten"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "SINGLE_CARRIER"
+    },
+    {
+      "request": "unary-9-t5-r32-h2048-o6",
+      "candidates": [
+        "aten"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "SINGLE_CARRIER"
+    },
+    {
+      "request": "unary-9-t6-r1-h2048-o6",
+      "candidates": [
+        "aten"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "SINGLE_CARRIER"
+    },
+    {
+      "request": "unary-9-t6-r1-h4096-o6",
+      "candidates": [
+        "aten"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "SINGLE_CARRIER"
+    },
+    {
+      "request": "unary-9-t6-r32-h2048-o6",
+      "candidates": [
+        "aten"
+      ],
+      "complete_qualified_dominators": [],
+      "pair_evidence": [],
+      "status": "SINGLE_CARRIER"
+    }
+  ]
+}
