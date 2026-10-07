@@ -41,3 +41,8 @@ SCOPED `23f86716`；已锁定原文件／F32指令／精度参数，固定下面
 
 当前 runtime owner绑定本卡AUDITED，保留G1/G2原IQ1/runtime与三交付尾项；R1 Compute/Graph
 owner不变。P1等待U4，本批只修正原生选择合同和资格验证，无新self数学。
+
+明确build接缝：原owner仅watch生成的build-local manifest，未watchcanonical CUDA resource/
+IQ1 manifests，单独`cmake --build`没有重新组装新精度patch。首次大shape回归实际命中旧TF32
+source并FAIL，不能计作新候选产品结果。有限FIX同时将这两个原manifest与权威dependency lock
+加入本owner的configure dependency，使后续正常增量构建取得真实source-id；不改公共selector。

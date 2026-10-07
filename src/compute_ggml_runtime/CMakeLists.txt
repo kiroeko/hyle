@@ -104,6 +104,11 @@ endif()
 if(HYLE_COMPUTE_CUDA_ENABLED)
   hyle_audit_in_tree_dependencies(ggml_cuda_runtime_patches)
   set(_cuda_patches "${HYLE_SOURCE_DIR}/third_party/ggml_cuda_runtime")
+  # The generated combined manifest cannot invalidate configure when its
+  # canonical inputs change. Track the owning pins and source patch inputs.
+  set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS
+    "${HYLE_SOURCE_DIR}/cmake/HyleDependencyLock.json"
+    "${_cuda_patches}/patches.json" "${_cuda_patches}/iq1-patches.json")
   set(_cuda_manifest "${CMAKE_CURRENT_BINARY_DIR}/cuda-iq1-patches.json")
   execute_process(COMMAND "${Python3_EXECUTABLE}"
     "${CMAKE_CURRENT_SOURCE_DIR}/prepare_cuda_iq1_manifest.py"
