@@ -54,6 +54,8 @@ N1还已提供实际feature传播反例：Provider私有边不能自动让普通
 - baseline：`a3e6046b053c7a40dc52c703ea049a38ec7795d5`；Windows工作树干净，后续修改保留。
 - owner：compute（route_policy公开平台事实）、compute_provider_native、compute_provider_ggml、
   compute_ggml_runtime、compute_provider_ggml_cuda、compute_provider_ggml_vulkan、compute_provider_iree_vulkan。
+- 平台边界：CUDA goal的执行资格仅Windows／WSL Linux；本专题的Mac验收只证明公共facts／头／CPU ARM
+  宏未被跨模块规范破坏，不是CUDA能力、性能或交付要求，不混入CUDA进度统计。
 - trigger：用户明确要求全部Compute/Graph宏规范；扫描找到下表具体原生OS／compiler／ARM重复条件。
   已闭CPU owner仅为逻辑等价宏／include规范重定界，不重审数学、清退或性能，不解除公共Graph或Vulkan旧blocker。
 - 已活动runtime／ggml CUDA保留 [U3 G1/G2](cuda-final-u3-mature-bindings.md) 全部有限FIX；本专题只增加宏规范。
