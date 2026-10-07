@@ -47,6 +47,7 @@ runtime／ggml CUDA owning宏已完成 [宏专题](compute-graph-macro-normaliza
 
 N1 独立范围与资格记录见 [成熟 GPU 权重准备载体](cuda-final-u3-artifact-carrier.md)。
 N2 的原精度、runtime复用与有限施工范围见 [MLX GPU接线](cuda-final-u3-mlx-carrier.md)。
+R1 的当前完整program／状态／sidecar范围见 [模型片段接缝](cuda-final-u3-model-regions.md)。
 
 普通用户只选路线，原 checked descriptor、ModelArtifactProfile／WorkloadContext／resource 不变。
 成熟图 region 的原 metadata／pool／stream 由 Provider 持有；调用方权重／resource 覆盖最后 Completion。
