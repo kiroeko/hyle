@@ -149,3 +149,7 @@ Linux GCC14当前Werror编译拒绝`indexing.cc:46 same_storage`：原Scatter删
 不新增数学、放宽warnings、调整公共构建或延长性能预算。先提交本协议再删除。
 原candidate507bad96与全部成功证据保留；新输入按未调用代码等价差异复用数学／43规则／已验交付，
 Linux续编译和后续平台／mixed差异绑定新不可变输入，原GCC FAIL保留，不重复完整P1／模型长批。
+
+D5同批第二个精确反例：`reduction.cc`的identity／accumulate／dense三个私有switch已只执行
+Min/Max，公共ReductionKind仍含成熟库承载的Sum/Mean，GCC `-Wswitch`要求显式默认出口。
+仅将原switch后的0／return出口放入default；准入仍先拒绝非Min/Max，不恢复Sum/Mean执行或改变算术。
