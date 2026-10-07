@@ -8,6 +8,8 @@
 #include <cstddef>
 #include <cstdint>
 #include <cstdio>
+#include <cstdlib>
+#include <exception>
 #include <span>
 #include <stdexcept>
 #include <vector>
@@ -26,6 +28,16 @@ public:
     // an abort callback. This is a test-process hook, not product recovery.
     ggml_set_abort_callback([](const char *message) {
       std::fprintf(stderr,"SIDE_REFERENCE_GGML_ABORT: %s\n",message);std::fflush(stderr);
+    });
+    std::set_terminate([] {
+      try {
+        if(auto error=std::current_exception())std::rethrow_exception(error);
+      } catch(const std::exception &error) {
+        std::fprintf(stderr,"SIDE_REFERENCE_TERMINATE: %s\n",error.what());
+      } catch(...) {
+        std::fprintf(stderr,"SIDE_REFERENCE_TERMINATE: unknown exception\n");
+      }
+      std::fflush(stderr);std::abort();
     });
     if(!value_ || !ggml_backend_is_cuda(value_))
       throw std::runtime_error("sidecar reference requires the original CUDA backend");
