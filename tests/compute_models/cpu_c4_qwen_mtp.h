@@ -19,6 +19,9 @@ inline constexpr auto profile=[] {
 struct Projection {
   sem::Weight weight;ValueId output;c::GgufQuantizedType type;std::int64_t n,k;
   std::vector<float> reference(std::span<const float> input) const {
+#if defined(HYLE_C4_QUANTIZED_REFERENCE)
+    return HYLE_C4_QUANTIZED_REFERENCE(type,weight.storage,n,k,input);
+#else
     ggml_cpu_init(); // Original CPU scale lookup tables precede direct vec-dot.
     const auto native=d5_gguf_test::native_type(type);
     const auto *traits=ggml_get_type_traits_cpu(native);
@@ -33,6 +36,7 @@ struct Projection {
         traits->vec_dot(int(k),&result[row*n+col],0,weight.storage.data()+col*row_bytes,0,encoded.data(),0,1);
     }
     return result;
+#endif
   }
 };
 inline Projection projection(Fragment &f,ValueId x,std::int64_t n,std::int64_t k,c::GgufQuantizedType type,int seed) {

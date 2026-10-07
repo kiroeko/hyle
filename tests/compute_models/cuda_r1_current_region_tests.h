@@ -95,4 +95,14 @@ TEST(HYLE_R1_SUITE, CompleteThreeStageDsparkWithSharedEmbeddingAndConfidence) {
     ASSERT_FALSE(::testing::Test::HasFailure());
   }
 }
+TEST(HYLE_R1_SUITE, QwenNamedQ4SidecarUsesQ3Q4Q6AndCompleteMtp) {
+  cpu_c4_qwen_mtp::check(run_q24_semantic_fragment);
+}
+TEST(HYLE_R1_SUITE, FlashSidecarsKeepMixedMxfp4BfloatAndQ8ThreeStagePrograms) {
+  for(const auto &model:cpu_c4_flash_sidecars::models) {
+    SCOPED_TRACE(model.profile->variant);
+    cpu_c4_flash_sidecars::check(model,run_q24_semantic_fragment);
+    ASSERT_FALSE(::testing::Test::HasFailure());
+  }
+}
 #undef HYLE_R1_SUITE

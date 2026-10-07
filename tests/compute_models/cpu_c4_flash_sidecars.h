@@ -1,6 +1,8 @@
 #pragma once
 #include "cpu_c4_qwen_mtp.h"
+#if !defined(HYLE_C4_QUANTIZED_REFERENCE)
 #include "../../src/compute_ggml_runtime/cpu_program.h"
+#endif
 
 // The pinned Unsloth dflash.cpp uses F32 graph state and native GGUF codecs.
 // This is a model consumer and source oracle, not a product executor/kernel.
@@ -27,6 +29,7 @@ inline constexpr auto bf16_profile=[] {
 }();
 inline constexpr std::array models{Model{&q8_profile,false},Model{&bf16_profile,true}};
 using Reference=std::function<std::vector<float>(std::span<const float>)>;
+#if !defined(HYLE_C4_QUANTIZED_REFERENCE)
 inline void activation_encode(ggml_type type,std::span<const float> values,void *output) {
 #if (defined(_M_X64) || defined(__x86_64__)) && (defined(_WIN32) || defined(__linux__))
   if(type==GGML_TYPE_Q8_0 && c::ggml_runtime::cpu_avx2_program_eligible(hyle::platform::cpu_features())) {
@@ -54,7 +57,11 @@ inline void activation_encode(ggml_type type,std::span<const float> values,void 
 #endif
   ggml_get_type_traits_cpu(type)->from_float(values.data(),output,values.size());
 }
+#endif
 inline std::vector<float> projection_reference(const q::Projection &p,std::span<const float> x) {
+#if defined(HYLE_C4_QUANTIZED_REFERENCE)
+  return HYLE_C4_QUANTIZED_REFERENCE(p.type,p.weight.storage,p.n,p.k,x);
+#else
   ggml_cpu_init();const auto native=d5_gguf_test::native_type(p.type);
   const auto *traits=ggml_get_type_traits_cpu(native);
   const auto stride=std::size_t(ggml_row_size(native,p.k));
@@ -66,6 +73,7 @@ inline std::vector<float> projection_reference(const q::Projection &p,std::span<
       traits->vec_dot(int(p.k),&result[row*p.n+col],0,p.weight.storage.data()+col*stride,0,encoded.data(),0,1);
   }
   return result;
+#endif
 }
 struct Linear {ValueId output;Reference reference;};
 inline Linear linear(Fragment &f,ValueId input,std::int64_t n,std::int64_t k,bool bf16,int seed) {

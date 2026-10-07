@@ -82,3 +82,12 @@ F3具体Source误差账单：prefill引用actual cache后的projection，source 
 相消使已admitted BF16输入误差的点值relative比值放大。GPU consumer沿common validator机制
 对actual public inverse验证独立grouped方程/原BF16边界，其它完整gate保持，不改global tolerance。
 F4及F5、全49关联与其它族尚未完成；本包仍AUDITED，不代签全R1或CUDA CLOSED。
+
+## F4 三sidecar的GPU reference接缝
+
+当前common sidecar program保持原数学／profile／head/state；只增加test-only量化projection
+reference替换点。CPU默认分支逐行原样保留；CUDA fixture用原ggml CUDA backend直接MatMul，
+相同packed bytes／F32 accumulation／原GPU A8路径，拒绝CPU backend。不能把CPU AVX2／
+Q8_K／vec-dot程序当成CUDA Q8_1参考。此差分证明单成熟carrier的adapter接线；原codec/方程
+独立资格仍由G1/G2与逐物理格式测试承担，不宣称新数学／性能peer／SOTA。
+差分参考独立拥有原CUDA backend／buffer／graph，普通HYLE入口仍完整运行三sidecar和原cache/head。
