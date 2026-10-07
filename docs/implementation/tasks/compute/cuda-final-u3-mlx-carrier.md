@@ -85,6 +85,15 @@ CUDA-OFF不造宏；现static absent出口规则保持。重定界既有AUDITED 
 U2冷facts／arch／preset、N1原功能及mixed交付余项。源／SDK一致性由联合U3三交付证明；
 此具体事实不修改数学、性能资格、Provider顺序或公共构建框架。
 
+## 当前批次进展
+
+原GPU tensor接线已实现；16固定合同两入口在Windows／Linux各32项通过，F16／BF16／F32与
+MX0／143／255 scale边界、BF16反例和外部TF32 policy的precision9项通过；原OOM／恢复／
+N1生命周期与默认入口回归通过。Linux最终57 native tests及三个公开头通过，Windows相同产品
+数学证据依法复用且实际capability定义／默认FFN复核通过。原失败／纠正／精确candidate见
+[资格记录](../../../../evidence/correctness/cuda-final-u3-mlx/README.md)。
+N2仍AUDITED，联合U3三交付/mixed、其它region及性能未签；不以测试数量签整条路线。
+
 第三方pin／MIT／vendor owner由本factor唯一登记；16固定contract驱动而非benchmark；Compute／
 backend／Graph operation adapter复用；P0成本明确、无本批P1；无FFI；三交付／软件身份沿N1接缝及U3
 联合候选；普通用户既有API／错误／生命周期不变。尚未运行的GPU correctness／delivery不签PASS。
