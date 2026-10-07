@@ -41,17 +41,6 @@ std::size_t product(std::span<const std::int64_t> dimensions, std::size_t first,
   return result;
 }
 
-void coordinates(std::span<const std::int64_t> dimensions, std::size_t linear,
-                 std::array<std::size_t, kMaxTensorRank> &result) noexcept {
-  result.fill(0);
-  for (std::size_t reverse = 0; reverse < dimensions.size(); ++reverse) {
-    const std::size_t axis = dimensions.size() - 1 - reverse;
-    const std::size_t extent = static_cast<std::size_t>(dimensions[axis]);
-    result[axis] = linear % extent;
-    linear /= extent;
-  }
-}
-
 template <class Value>
 float masked_softmax_value(const NativePlan &plan, const std::byte *input,
                            const TensorDesc &input_desc, const std::byte *mask,
