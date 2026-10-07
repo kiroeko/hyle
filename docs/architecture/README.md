@@ -13,6 +13,7 @@ HYLE 是面向 AI 推理、异构渲染/资源流送、低延迟服务和工程�
 
 - [动机与消费者纵切](motivation.md)
 - [推理引擎需求锚](inference-engine-north-star.md)
+- [目标模型／算子／实际量化格式共同目录](model-compute-catalogue.md)：CPU 与各 GPU 路线共用的固定需求与 MTP／DSpark，不代签路线支持。
 - [已收口单元的推理能力观察清单](inference-engine-capability-watchlist.md)
 - [项目范围](hyle-scope.md)
 - [架构方向与依赖原则](roadmap.md)

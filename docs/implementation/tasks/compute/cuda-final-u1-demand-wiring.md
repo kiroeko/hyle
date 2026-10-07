@@ -55,3 +55,17 @@
 34 non-GGUF 公共操作在 CUDA 没有 hook。全部保留 UNVERIFIED，没有增加运行资格。
 region／原版精度／资源审计及固定成熟 GPU 程序检出尚未完成，U1 未签结束；具体 W1–W6／B1–B3
 见上述 evidence。无另一个“0816”画像调研或待用户确认阻塞。
+
+## U1 只读审计结束与有限交接
+
+A1–A5 的源码／合同审计已在有限预算内完成；对应 [共同人读目录](../../../architecture/model-compute-catalogue.md)
+与 evidence 的原 GPU 来源身份／原承载结论、W1–W6／B1–B3 构成有限交接。
+Unsloth 原 IQ1 CUDA 的 18 个相关文件与 C1 固定 SHA 完全一致，已有 convert/MMVQ/MMQ；
+其它四固定成熟源共取 71 个必要文件，archive SHA 校验，没有再调查模型或下载大权重。
+NF4／AWQ／CT 原准备序列已有 GPU 承载，MLX 原 CUDA 有 affine／MX4／MX8、gather-QMM；
+与原 FP8/FP4／新版 DSpark 同样都须 U3 冻结实际接缝并运行资格，不以原源码存在签支持。
+
+新 DSpark／三 sidecar 与八族 49 个 family-region 关联复用共同已定义完整程序，不增加公共数学语义。
+接线完整度、原 dtype／rounding／selected group／生命周期／失败、Windows／Linux 交付和性能仍 UNVERIFIED。
+不能把源库可以做与 HYLE 当前真正做到混为一谈；U1 完成的是审计，产品验收未完成。
+U2 从 B1 preset 子项开始，其他 owner 只按具名实际 FIX 绑定；U3 先成熟接线，自研冻结。

@@ -8,6 +8,7 @@
 ## 固定需求与边界
 
 - 要求来自 [固定制品与 tensor 需求](cpu-final-demand-carriers.json)，其中 CPU 的候选／状态不签 CUDA。
+  人读总表见 [模型／算子／实际量化格式共同目录](../../../architecture/model-compute-catalogue.md)。
   保留 104 GGUF、559 数值合同、80 参数角色／形状类、45 plain 与 34 non-GGUF packed 合同，
   八模型族、官方混合 dtype、Pro-0813／Flash-0731、三项 MTP／DSpark 和本地 Qwen3.5-2B 原版。
 - 用户明确：CPU 那轮已根据新增模型、MTP／DSpark 与真实混合权重推导新算子需求；本轮 CUDA
@@ -32,7 +33,7 @@
 | 包 | 权重 | 完成条件 |
 |---|---:|---|
 | [U1 覆盖与接线审计](cuda-final-u1-demand-wiring.md) | 10% | 全部固定需求与当前真实候选／硬限制／接线／缺口／成本逐项映射，形成有限 owner FIX；静态检出与运行资格分开 |
-| U2 构建与交付合同 | 15% | 普通 compute-cuda 配置必要依赖默认齐备，CUDA-only／CPU+CUDA、架构与软件身份清楚；source/static/shared、离线／搬移／DLL 邻置实际验收 |
+| [U2 构建与交付合同](cuda-final-u2-build-contract.md) | 15% | 普通 compute-cuda 配置必要依赖默认齐备，CUDA-only／CPU+CUDA、架构与软件身份清楚；source/static/shared、离线／搬移／DLL 邻置实际验收 |
 | U3 成熟承载批量接线 | 30% | 先接齐原版成熟承载，修正格式／布局／精度／融合／资源错误；普通两入口、生命周期、三交付随本包资格化 |
 | U4 重叠域比较与规则 | 20% | 合格重复域有同合同完整成本裁决与冷规则；单 Provider 正确性／资源／P0；未知身份默认合理、热阶段不裁判 |
 | U5 自研清退 | 15% | 无完整优势且有完整成熟替代的自研 CUDA 算子物理删除；必要资源控制、通用基础和具名独有需求保留 |

@@ -48,3 +48,20 @@ Provider admission／资源映射仍须在本包有限预算内完成，再交 U
 本轮没有产品修改、registry 重开、构建或 P1。旧 CPU CLOSED、公共 Graph 的旧 Vulkan BLOCKED 保持。
 先前 HF “0816” [身份查询](release-lookup.json)只作历史诊断，用户已明确复用 CPU 目录，
 它不是另一个画像任务、待答问题或 blocking condition。
+
+## 有限成熟来源检出结束
+
+[原 GPU 来源身份](original-gpu-source-identities.json)保留 revision、archive SHA 和逐文件 SHA。
+没有新模型需求、源码数学改写、产品构建或运行资格。
+
+| 当前缺口 | 已检出的固定成熟 GPU 承载 | 接入／资格边界 |
+|---|---|---|
+| 8 个 narrow IQ1 合同 | Unsloth `46cbf0e9` 的 common／convert／MMVQ／MMQ 原 CUDA，18 文件匹配 C1 固定 SHA | 借入原数学／traits／codebook，保留当前 core ABI；CUDA admission／Group／原 A8／F32 accumulation 尚待运行 |
+| 6 个 NF4/nested | bitsandbytes `83364904` 的 CUDA ops、dequantizeBlockwise 原 stream 入口及原 nested scale 序列 | 原码表与 group，二级 scale/offset；只准备一次，不每 token 全权重展开；非默认 codebook 不擅自当原 NF4 |
+| 7 个 AWQ GEMM | AutoAWQ `88e4c76b` 原 unpack/reverse/dequant tensor 序列可在 CUDA tensor 执行；原原生 CUDA/Triton路径有调用点 | 实际 GEMM zero/scales／逆 permutation／F16 round，原程序承载须 U3 选定；CPU-only ATen 不算 GPU |
+| 5 个 CT symmetric | compressed-tensors `ac8e2ba8` 的 unpack_from_int32 与原 dequant tensor 程序保留 device，从 ATen CUDA 执行 | 低位-first／signed offset8／原 group/scale dtype，不重解释为 AWQ 或要求新数学；GPU runtime/交付接缝待定 |
+| 16 个 MLX affine/MX4/MX8 | MLX `2b2bb497` 原 CUDA QuantizedMatmul／GatherQMM、affine/fp dequant；SM80/naive 原 carrier及原类型映射 | 原 packed＋scale/bias／E8M0、selected rows/experts、F32 accumulate；直接 qmm fast path与共同精度必须先等价，不为性能改合同 |
+| 新版 DSpark／三 sidecar | 共同 cpu_c4_model_branches／cpu_c4_qwen_mtp／cpu_c4_flash_sidecars 程序；所用原基础算子已存在于公共 schema | target hidden/main projection/Markov/confidence/三 stage、state/carry/head，按 CUDA 实际 admission／原 dtype 逐完整程序验证 |
+
+U1 到此结束只读审计，有限交接 W1–W6／B1–B3；source 检出不自动授予新 Provider 身份或产品支持。
+实际 GPU 准备程序／新 runtime 的 owner、软件／资源寿命、三交付方案必须在 U3 产品修改前冻结。

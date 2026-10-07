@@ -1,0 +1,494 @@
+{
+  "scope": "Original mature GPU carrier inspection only, not build or HYLE run qualification",
+  "sources": [
+    {
+      "name": "bitsandbytes_cpu",
+      "revision": "833649043474794b8fe7a4136e0c40faf077b2e0",
+      "archive_url": "https://codeload.github.com/bitsandbytes-foundation/bitsandbytes/tar.gz/833649043474794b8fe7a4136e0c40faf077b2e0",
+      "archive_sha256": "be02cdc9d8b7c73462a93629e7d8c7522742c90606014bd0b92c33794985c570",
+      "selected_files": [
+        {
+          "origin_path": "bitsandbytes/backends/cuda/ops.py",
+          "sha256": "d58fa0a0c053d5a0ecd1e93d847531d5e0226a0bd8048472ee0ca632464cc20f",
+          "bytes": 42583
+        },
+        {
+          "origin_path": "bitsandbytes/backends/default/ops.py",
+          "sha256": "e39afd16dca6e6f34a14305ade0ba4acbb49dc2c7a9baf937341d7e33b682819",
+          "bytes": 19802
+        },
+        {
+          "origin_path": "CMakeLists.txt",
+          "sha256": "b248579ea0feba8f3c7dc1c3aef15cd50163080c599db7df8a8766d739d450d0",
+          "bytes": 20610
+        },
+        {
+          "origin_path": "csrc/kernels.cu",
+          "sha256": "a88d7a522b21b3d6e50cacad890c0c3ac44ad17b5f205c4b34ae91995ba1e5d6",
+          "bytes": 78676
+        },
+        {
+          "origin_path": "csrc/kernels.cuh",
+          "sha256": "41537d007472e235c48250d84ce9c177dedcdf9453af74b90b56584c8324c1bb",
+          "bytes": 4153
+        },
+        {
+          "origin_path": "csrc/ops.cu",
+          "sha256": "8e49f02cb671dba082d1c32b2c7fbea3ca943211038acdd8c95acefaea3e5113",
+          "bytes": 27183
+        },
+        {
+          "origin_path": "csrc/ops.cuh",
+          "sha256": "8b148248634eeb4ff78833e35c92a318a79192c5405d2952d7dcfd568755c826",
+          "bytes": 4153
+        }
+      ],
+      "reuse": "Previous bounded fetch completed archive hash verification and extraction."
+    },
+    {
+      "name": "awq_cpu",
+      "revision": "88e4c76b20755db275574e6a03c83c84ba3bece5",
+      "archive_url": "https://codeload.github.com/casper-hansen/AutoAWQ/tar.gz/88e4c76b20755db275574e6a03c83c84ba3bece5",
+      "archive_sha256": "525f90b888389bd437a4c9c70bcebb177799be0fa195666987c7341dc713ea27",
+      "selected_files": [
+        {
+          "origin_path": "awq/modules/linear/gemm.py",
+          "sha256": "a3ff4f116e01cfaa905440af4606c61089c788bf0dad7442314e0ad074843cf2",
+          "bytes": 9983
+        },
+        {
+          "origin_path": "awq/utils/packing_utils.py",
+          "sha256": "65eab3eabe3f55e300ffbab5feac59c49322d985f42dcda4e2288859fb9a4abe",
+          "bytes": 3283
+        },
+        {
+          "origin_path": "setup.py",
+          "sha256": "76f99ed1b2d04f602b9599bad9956804a9a048ce8ba8b58fcc51df90243535a9",
+          "bytes": 1809
+        }
+      ],
+      "reuse": "Previous bounded fetch completed archive hash verification and extraction."
+    },
+    {
+      "name": "compressed_tensors_cpu",
+      "revision": "ac8e2ba82f4e0d5eaa40069f8fc642738f124cd4",
+      "archive_url": "https://codeload.github.com/vllm-project/compressed-tensors/tar.gz/ac8e2ba82f4e0d5eaa40069f8fc642738f124cd4",
+      "archive_sha256": "658df62507e53454c77ec998dce9f82c8d8d434ebfc123ec85ffb21f0f7b2f06",
+      "selected_files": [
+        {
+          "origin_path": "src/compressed_tensors/compressors/pack_quantized/helpers.py",
+          "sha256": "3fe695db3e38ee665d5c459ddce366df3e2dfed51be70058bcc6a9838117477d",
+          "bytes": 5644
+        },
+        {
+          "origin_path": "src/compressed_tensors/quantization/lifecycle/forward_helpers.py",
+          "sha256": "ed0411b24577ce1df427ff091ab34e3c8d8e61a6be19deb95a3aac97b48e4443",
+          "bytes": 17360
+        }
+      ],
+      "reuse": "Previous bounded fetch completed archive hash verification and extraction."
+    },
+    {
+      "name": "mlx_cpu_quant",
+      "revision": "2b2bb49790158ecd008d1685c94e3ef119792a00",
+      "archive_url": "https://codeload.github.com/ml-explore/mlx/tar.gz/2b2bb49790158ecd008d1685c94e3ef119792a00",
+      "archive_sha256": "486e8b0626ab6bbc0a905bdcc47aa7db8b9a258a958ffefd4898aacaf1f7d396",
+      "selected_files": [
+        {
+          "origin_path": "CMakeLists.txt",
+          "sha256": "2f00891709ef72b5eefbb233444c12759d69b242b853eb65213c4f96c8d074fa",
+          "bytes": 17188
+        },
+        {
+          "origin_path": "mlx/backend/cuda/conv/gemm_conv.cu",
+          "sha256": "22eb2a8e2e1a79a32e3b783da9ce3a255d5c75e8a9536b1c74f42b476a3fab0c",
+          "bytes": 6031
+        },
+        {
+          "origin_path": "mlx/backend/cuda/conv/gemm_grouped_conv.cu",
+          "sha256": "72f96fbe37d1d7dc994fe621169fca9256ecc0a8e9c6201aa85256a3a8f9e6a4",
+          "bytes": 6789
+        },
+        {
+          "origin_path": "mlx/backend/cuda/cublas_utils.cpp",
+          "sha256": "1f2d6f0fdde5be8f45f6ee0b1703a3ba07310adfba2624bd11da5c5df5353227",
+          "bytes": 6763
+        },
+        {
+          "origin_path": "mlx/backend/cuda/cublas_utils.h",
+          "sha256": "64fa5ab1f7bc4b9cc66e357a6303a1f52fd0ff878e10aff5e90557c9c03f7e65",
+          "bytes": 2387
+        },
+        {
+          "origin_path": "mlx/backend/cuda/cuda_utils.h",
+          "sha256": "46e67dd486ccc6f2ff352950eb6a964a0ebb4546ae91760ba50086e65fae3c2a",
+          "bytes": 2007
+        },
+        {
+          "origin_path": "mlx/backend/cuda/cudnn_utils.cpp",
+          "sha256": "d86202ec9a7c3f441f7ff8d434bb3c0dfadcd68159ecb512243403b1597e5342",
+          "bytes": 5951
+        },
+        {
+          "origin_path": "mlx/backend/cuda/cudnn_utils.h",
+          "sha256": "134dc7e73d3be6f85083048fa3c22940691d2adb7b01145ca71a1fb1cb4409ea",
+          "bytes": 5904
+        },
+        {
+          "origin_path": "mlx/backend/cuda/cusolver_utils.cpp",
+          "sha256": "4f067b339801ac117f5346c6c121b08eaab57c26518d865317c5fa5e8619f382",
+          "bytes": 1157
+        },
+        {
+          "origin_path": "mlx/backend/cuda/cusolver_utils.h",
+          "sha256": "a504a08536234c20e2edb5723320c44f22064475d771e83b8694f108f59c449f",
+          "bytes": 392
+        },
+        {
+          "origin_path": "mlx/backend/cuda/custom_kernel.cpp",
+          "sha256": "e83ef45137cbc64e0e418a849a713c652dc130430e22ef7dd3b860252533ecf4",
+          "bytes": 11647
+        },
+        {
+          "origin_path": "mlx/backend/cuda/cutlass_utils.cuh",
+          "sha256": "8933402dff26f3d19b49b0eff94f74377c64dcc405ef11140d7ca82e617a8fdd",
+          "bytes": 1675
+        },
+        {
+          "origin_path": "mlx/backend/cuda/device/cute_dequant.cuh",
+          "sha256": "ccf3eef0112dae9127cc8b198ba4868ec246b4a53ffd14a6a6c10e13d8b6445c",
+          "bytes": 6032
+        },
+        {
+          "origin_path": "mlx/backend/cuda/device/gemm_sm70.cuh",
+          "sha256": "4f82fed1446c747441982c10e351ffc9e6c79bac22f64ade20e4d9af6a0a7007",
+          "bytes": 10403
+        },
+        {
+          "origin_path": "mlx/backend/cuda/device/utils.cuh",
+          "sha256": "b05f2bc090825e0258e4c393cc50250ecc04b5835b2bb03e52a74e00ce0df625",
+          "bytes": 12692
+        },
+        {
+          "origin_path": "mlx/backend/cuda/gemms/block_mask.cu",
+          "sha256": "c738ca2ced64b73beb45f5ac7dd0c1eab489f9e7cdf4092c489422707135170c",
+          "bytes": 4563
+        },
+        {
+          "origin_path": "mlx/backend/cuda/gemms/block_mask.h",
+          "sha256": "9bd78a341618ac24d3880535ba94e8e18a4e4f5e2ea820fcf8ee7fa64cb18bd3",
+          "bytes": 524
+        },
+        {
+          "origin_path": "mlx/backend/cuda/gemms/cublas_gemm.cpp",
+          "sha256": "94cc930c32d31909071b91defba00d3d8476bb2c5b1315d91163318dda1257c0",
+          "bytes": 5401
+        },
+        {
+          "origin_path": "mlx/backend/cuda/gemms/cublas_gemm.h",
+          "sha256": "2ae2ab855aa2ec96261fa0c0bf567b99e3ffc671c5286c3cf11158f01a0fcd6d",
+          "bytes": 2583
+        },
+        {
+          "origin_path": "mlx/backend/cuda/gemms/cublas_gemm_batched_12_0.cpp",
+          "sha256": "079f0b41a53522780c15a2458c7cf221c9f0f9ea41125bccb0ffc1c2a1e39821",
+          "bytes": 2361
+        },
+        {
+          "origin_path": "mlx/backend/cuda/gemms/cublas_gemm_batched_12_9.cu",
+          "sha256": "516db4fb9df68d0cc29e1d5424977d4a2cab0c943bfeda1212085e217070ec7a",
+          "bytes": 9738
+        },
+        {
+          "origin_path": "mlx/backend/cuda/gemms/gather_gemm.cu",
+          "sha256": "409a3ef94ba9dd8d1cf3ddc38238a59d7f62d57719610b7457458c87995d3ccd",
+          "bytes": 3093
+        },
+        {
+          "origin_path": "mlx/backend/cuda/gemms/gather_gemm.h",
+          "sha256": "65cd8ff5c836944cdfad742c337ce4d3f767db7de43514c1832d9cd31bb6cd61",
+          "bytes": 362
+        },
+        {
+          "origin_path": "mlx/backend/cuda/gemms/gemv.cu",
+          "sha256": "dd8e63e7b766dfb8176699b5b19b47de27fc2c3c855bb2105d75645e2a282692",
+          "bytes": 9889
+        },
+        {
+          "origin_path": "mlx/backend/cuda/gemms/gemv.h",
+          "sha256": "e33ea8260d1d2f7287a11933cfe42a0f5603df3f851d285897974173172ef9eb",
+          "bytes": 701
+        },
+        {
+          "origin_path": "mlx/backend/cuda/gemms/grouped_gemm.h",
+          "sha256": "aad27ad3bdfb771bdfd2b9cac8529b4cc42dba4964eeaf19cce61481d5ba9c69",
+          "bytes": 657
+        },
+        {
+          "origin_path": "mlx/backend/cuda/gemms/grouped_gemm_unaligned.cu",
+          "sha256": "dd9f18298b45d68c6875be368b5577dc1f781dac6341748da27ae1e31a3e8279",
+          "bytes": 15016
+        },
+        {
+          "origin_path": "mlx/backend/cuda/kernel_utils.cu",
+          "sha256": "240c1b0a105f400a8a8fe1427a6cc3c7409b6529997eaa7d9a5c051e8caca532",
+          "bytes": 2274
+        },
+        {
+          "origin_path": "mlx/backend/cuda/kernel_utils.cuh",
+          "sha256": "4501e4017e1c7dacee30c34d2bf4ffc3edd2c7b3cd4ddb0bad9081fdaff95dc1",
+          "bytes": 4155
+        },
+        {
+          "origin_path": "mlx/backend/cuda/quantized/affine_quantize.cu",
+          "sha256": "869f13786f63e96b2ea8dd8f2ec4bbcdc46fc9945bd00c52e65e510b88db668a",
+          "bytes": 11187
+        },
+        {
+          "origin_path": "mlx/backend/cuda/quantized/convert_fp8.cu",
+          "sha256": "2abde7e85dfdf0c37779cbc7f3529a71ff5251eda88e15773450464f3b4569c1",
+          "bytes": 542
+        },
+        {
+          "origin_path": "mlx/backend/cuda/quantized/cublas_qqmm.cpp",
+          "sha256": "192c1e9391f4169483102c9a77a47e65bb47370fdbc243dc88a6214071e59202",
+          "bytes": 6387
+        },
+        {
+          "origin_path": "mlx/backend/cuda/quantized/cublas_qqmm.h",
+          "sha256": "3a680e3693cd4cea4a8a4330d5a3213f4a493c29b589e6510a493a91f4197147",
+          "bytes": 2258
+        },
+        {
+          "origin_path": "mlx/backend/cuda/quantized/fp_quantize.cu",
+          "sha256": "e3b96b29a87ed1361af3da4b130df27f64c30c9837b572949fe4289dd04c46c4",
+          "bytes": 12520
+        },
+        {
+          "origin_path": "mlx/backend/cuda/quantized/fp_quantize.cuh",
+          "sha256": "debc32435215c6f1a760b523d192d943b320baf2db470937b14c484592102eb7",
+          "bytes": 19958
+        },
+        {
+          "origin_path": "mlx/backend/cuda/quantized/mxfp8_quantize.cuh",
+          "sha256": "8a6c231bbf4d7915fcafda95d06de7c38d6fc69417d6f86b3fd249de1db00b30",
+          "bytes": 687
+        },
+        {
+          "origin_path": "mlx/backend/cuda/quantized/no_qqmm_impl.cpp",
+          "sha256": "a3aa3264188e35a2523603ec75c5bdea29416817e648bdc3ca57e2aeb5d3dcbf",
+          "bytes": 487
+        },
+        {
+          "origin_path": "mlx/backend/cuda/quantized/nvfp4_quantize.cuh",
+          "sha256": "732226be8a1d6b12cd0f6d33d69030bb0cee7111edb22500570eea598c52471f",
+          "bytes": 10945
+        },
+        {
+          "origin_path": "mlx/backend/cuda/quantized/qmm/fp_qmv.cu",
+          "sha256": "b4d3cb9e0a7ea45d77454203fbfeeb07b25b411008c91fafd6150f9d2dddadc6",
+          "bytes": 13945
+        },
+        {
+          "origin_path": "mlx/backend/cuda/quantized/qmm/qmm.cu",
+          "sha256": "ca61e819800d6ee1054f771cd132cfa084a2ef9e0b6b45334e0862bb5e4d3309",
+          "bytes": 4168
+        },
+        {
+          "origin_path": "mlx/backend/cuda/quantized/qmm/qmm.h",
+          "sha256": "dcb674c8e504c3ebdc70d4493ad6bf9bd53a7b6d01ec963c7317838bb9578b8c",
+          "bytes": 4252
+        },
+        {
+          "origin_path": "mlx/backend/cuda/quantized/qmm/qmm_naive.cu",
+          "sha256": "e206d50d1af926c051b48511770a84b055fa9ea14606b42e4bcec3e35e425744",
+          "bytes": 3543
+        },
+        {
+          "origin_path": "mlx/backend/cuda/quantized/qmm/qmm_sm80.cu",
+          "sha256": "df1053ef7306f97d8e496c42b7a454e7027228a988cc09d96d97a28e50473fb7",
+          "bytes": 6567
+        },
+        {
+          "origin_path": "mlx/backend/cuda/quantized/qmm/qmm_sm90.cu",
+          "sha256": "f1edd90c9a87742dfba6627c15e6df11c6b5b47c2568769d78c6de297a489535",
+          "bytes": 5993
+        },
+        {
+          "origin_path": "mlx/backend/cuda/quantized/qmm/qmm_utils.h",
+          "sha256": "1db30c1cd4e83719c29aa40edb805ca41cab17abc40be455a69c548cb3878691",
+          "bytes": 2251
+        },
+        {
+          "origin_path": "mlx/backend/cuda/quantized/qmm/qmv.cu",
+          "sha256": "023d967bdab912ee954258153ee9b200bdc9f7ed690f3ecd3b9d3b1eac74171d",
+          "bytes": 15358
+        },
+        {
+          "origin_path": "mlx/backend/cuda/quantized/qqmm.cpp",
+          "sha256": "f8efcf6591a7ac13ef4f464545c6b8642f24af35a3518b64f0032b931825e0c3",
+          "bytes": 8270
+        },
+        {
+          "origin_path": "mlx/backend/cuda/quantized/qqmm_impl.cpp",
+          "sha256": "8d6ffe3c5bd25f8254fc216f0961710d4832b5050905706e810a57dd6962c153",
+          "bytes": 1088
+        },
+        {
+          "origin_path": "mlx/backend/cuda/quantized/qqmm_impl.h",
+          "sha256": "01f239e61fa106dccc493e67ca55863808192363229d2d6a83d0ecd509e46a43",
+          "bytes": 685
+        },
+        {
+          "origin_path": "mlx/backend/cuda/quantized/qqmm_utils.cu",
+          "sha256": "c0fca47fbedb6212d72d9a79633ccfc1f808af0fa52c52b9dfa91aabf9ce90d0",
+          "bytes": 8900
+        },
+        {
+          "origin_path": "mlx/backend/cuda/quantized/qqmm_utils.h",
+          "sha256": "db852080c9687208b7baf708ae2a4e366ba776791f1f90d2d392ff8e3e6a2ec1",
+          "bytes": 1931
+        },
+        {
+          "origin_path": "mlx/backend/cuda/quantized/quantized.cpp",
+          "sha256": "0ad5f65f1d9c363964e6bebffd999bb5ef686494145e554785fc84e8d80b7288",
+          "bytes": 9295
+        },
+        {
+          "origin_path": "mlx/backend/cuda/quantized/quantized.h",
+          "sha256": "623e4b309325949fd57b223348d138266798745df3248514a4d9b11074007f0f",
+          "bytes": 1133
+        },
+        {
+          "origin_path": "mlx/backend/cuda/quantized/quantized_utils.h",
+          "sha256": "41d725d97498f7ceca039354dcca7f02a3b13dc1a9e7dc0b491df18e40ade2fd",
+          "bytes": 1153
+        },
+        {
+          "origin_path": "mlx/backend/cuda/reduce/reduce_utils.cuh",
+          "sha256": "adda117d6f8ca925993fa3dcc9aef42c6bdc38f64cfa902b89265dafb094ed83",
+          "bytes": 3858
+        },
+        {
+          "origin_path": "mlx/backend/cuda/steel/gemm.cuh",
+          "sha256": "fc2ad38a3f1d6a917dabf5d4bdf78050c373bb37dbc6484bd1306b03f50292b9",
+          "bytes": 2737
+        },
+        {
+          "origin_path": "mlx/backend/cuda/steel/utils.cuh",
+          "sha256": "ece899a5f148c634074a19137f91126dc3d471df988371838fba707abefe7440",
+          "bytes": 2447
+        },
+        {
+          "origin_path": "mlx/backend/cuda/utils.cpp",
+          "sha256": "cd7c175a56aca3f0fb59a7692963b9e3834e113f405753d4e9e9ceaf57fbe99d",
+          "bytes": 2648
+        },
+        {
+          "origin_path": "mlx/backend/cuda/utils.h",
+          "sha256": "803ca8b824e976ba08ddcc87e12653d9c25c0de2282b7b2bb99d1287ba635efc",
+          "bytes": 1325
+        }
+      ],
+      "reuse": "Previous bounded fetch completed archive hash verification and extraction."
+    },
+    {
+      "name": "unsloth_original_iq1_cuda",
+      "revision": "46cbf0e95786fe8f5b7c0e86d57aaf8f8eceea7f",
+      "archive_sha256": "2527ac1b14331ea6b38ffbf36eaf622f5a6e1b3d8a580787ab15567cfcf68500",
+      "selected_files": [
+        {
+          "origin_path": "ggml/src/ggml-cuda/common.cuh",
+          "sha256": "7c7fc31e0d82a88e980852107c2a115411bf7b065d982d0b801b58ac2c9ded12",
+          "bytes": 63743
+        },
+        {
+          "origin_path": "ggml/src/ggml-cuda/convert.cu",
+          "sha256": "529645b905c8c8beb67ffb15906ef4169635f90fc3c93d0e9d2d1798a598f22f",
+          "bytes": 29712
+        },
+        {
+          "origin_path": "ggml/src/ggml-cuda/ggml-cuda.cu",
+          "sha256": "99a257b294bae8b2699be3ef0431d7a8f8b3642bb17d5328afe9d963959a1d65",
+          "bytes": 236570
+        },
+        {
+          "origin_path": "ggml/src/ggml-cuda/mmq-config-ampere.cuh",
+          "sha256": "ec9b25d0a3b8564dde88c30fc4a3545ae1ba97060623c0347d6ef1778fc7df4b",
+          "bytes": 41275
+        },
+        {
+          "origin_path": "ggml/src/ggml-cuda/mmq-config-cdna.cuh",
+          "sha256": "36e62951d19ae9418cf0760bb00d0a42a19431970c52849da4e4b5cf17e16365",
+          "bytes": 18355
+        },
+        {
+          "origin_path": "ggml/src/ggml-cuda/mmq-config-pascal-dp4a.cuh",
+          "sha256": "97686d29951d45da9252b231fe874335f6ad9ef66eb2b70bb8ea7448d7d5c452",
+          "bytes": 28545
+        },
+        {
+          "origin_path": "ggml/src/ggml-cuda/mmq-config-rdna2.cuh",
+          "sha256": "2c49106e2f52f809ebb464760526dc28650b704b5c48cee5d26d1d461d73bccd",
+          "bytes": 28814
+        },
+        {
+          "origin_path": "ggml/src/ggml-cuda/mmq-config-rdna3-5.cuh",
+          "sha256": "6de995a81a80dca1fab98aaa95e435a3e44768c37b0d0be6d5c816027010f7af",
+          "bytes": 30985
+        },
+        {
+          "origin_path": "ggml/src/ggml-cuda/mmq-config-rdna3.cuh",
+          "sha256": "68fd33dbc81b0a1e897f5a33ff5ff4bf4bf11a73dc01f795b675a69b5d0cf398",
+          "bytes": 29210
+        },
+        {
+          "origin_path": "ggml/src/ggml-cuda/mmq-config-rdna4.cuh",
+          "sha256": "2ffc6e7ddc554dc3feea75c14e21dceb5b959bd64903082f574acec94bfb1f02",
+          "bytes": 30983
+        },
+        {
+          "origin_path": "ggml/src/ggml-cuda/mmq-load-tiles.cuh",
+          "sha256": "e8a6e6f42faf43469c350fe61816ed9204fec71f4e6f9efab83b35bf668fb89d",
+          "bytes": 89888
+        },
+        {
+          "origin_path": "ggml/src/ggml-cuda/mmq.cu",
+          "sha256": "6c280eac4aacd1a3ade22f9eacd6d77fb675454b8af74ffc18cc3a5c10b9ce05",
+          "bytes": 16221
+        },
+        {
+          "origin_path": "ggml/src/ggml-cuda/mmq.cuh",
+          "sha256": "86f7d3aa7107c116b9cab70df3258f18e99352801b0f5ff5f1b2caba7855084d",
+          "bytes": 73874
+        },
+        {
+          "origin_path": "ggml/src/ggml-cuda/mmvq.cu",
+          "sha256": "03556ad69bb9e04ab3a514c4eb744dec9cdbbd0917cf450cdae2009af45ef000",
+          "bytes": 73274
+        },
+        {
+          "origin_path": "ggml/src/ggml-cuda/template-instances/mmq-instance-iq1_xs.cu",
+          "sha256": "17ac90941c666e53ced7800d042719e6bb46a584379b2c4e830609ffcf319c60",
+          "bytes": 140
+        },
+        {
+          "origin_path": "ggml/src/ggml-cuda/template-instances/mmq-instance-iq1_xxs.cu",
+          "sha256": "8a3bab45ca5411a13c89dda8a7ed34aab03939475c53cc4c61f8f56640db10d9",
+          "bytes": 141
+        },
+        {
+          "origin_path": "ggml/src/ggml-cuda/template-instances/mmq-instance-iq1_xxxs.cu",
+          "sha256": "16a6d006e2aa554765f1d5c1c1ef3446ca3f0bfd444aa7cabe97455ad701c11e",
+          "bytes": 142
+        },
+        {
+          "origin_path": "ggml/src/ggml-cuda/vecdotq.cuh",
+          "sha256": "1984a7c0228b96244d0701930285b9ff6d3971d65acbd4db516c8123b379d5e8",
+          "bytes": 53272
+        }
+      ],
+      "reuse": "Exact fixed original source from CPU C1 cache; no redownload or model research."
+    }
+  ]
+}
