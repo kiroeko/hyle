@@ -158,3 +158,10 @@ F3后续reference接缝：其余family批次的Kimi MLA仍用common fixture的�
 fixture已有false独立源方程（原Metal consumer已使用），CUDA两调用应显式传false；只改test
 caller，不改CPU默认／产品数学、whole-fragment误差门或相应state/cache验证。初版失败保留，
 本caller纠正未运行前不能PASS；不把这种不同乘数边界的参考差异记成性能胜负。
+
+`7a9531ce`的必要caller修正已编译并运行，两入口仍FAIL；首差仍在replay1的attention port3。
+该F32来源事实不是完整根因结论，不据此外推修正PASS。其余family批次Windows Direct36中35、
+Graph34中33通过，无skip（包括本地原版程序与完整recurrent）；Kimi MLA三profile整项保留
+未资格化，下一步仅对actual query/cache/state与独立源方程进行有限因果对账。原结果保存在
+本轮`.scratch/validation/cuda-final-u3-r1/windows-family-programs`及`windows-family-correction`，
+之后随本子批归档；不盲测、不改whole-fragment门，不把已sealed559合同批次撤回为未运行。
