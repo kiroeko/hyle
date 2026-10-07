@@ -1021,7 +1021,7 @@
       "class": "in_tree",
       "vendored": {
         "path": "third_party/bitsandbytes_cuda",
-        "tree_sha256": "5aed28a42cb70ed703dc74bb6f126eb4bf1f2ebc2d80c23bb48293c139855d73"
+        "tree_sha256": "5ead8b651ec07d58acf066426adb6dac0f6feafae6fcee983daff243da4e2e65"
       },
       "license": {
         "expression": "MIT",
@@ -1052,7 +1052,7 @@
       "class": "in_tree",
       "vendored": {
         "path": "third_party/awq_cuda",
-        "tree_sha256": "9ac4f00a5b005e16e39f61e5b6840c9b9c2d9ffdd3d44f724e9789b07bc1537e"
+        "tree_sha256": "5b1259cb51fffc7fb7f8cc833ffacdf086a1c92375584951bfc3fbe3f22d3030"
       },
       "license": {
         "expression": "MIT",
@@ -1083,7 +1083,7 @@
       "class": "in_tree",
       "vendored": {
         "path": "third_party/compressed_tensors_cuda",
-        "tree_sha256": "966dd4d9c72a9074b11ad53a20dc8364b6fbec09eb77320039ccdbfe0a785595"
+        "tree_sha256": "410d4295652e0d8e8905d721990b60e5b0844f7e634b8fef8574e69c4e89dffd"
       },
       "license": {
         "expression": "Apache-2.0",
