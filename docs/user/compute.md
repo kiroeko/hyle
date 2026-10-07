@@ -514,7 +514,7 @@ Context、MemoryResource、外部 tensor/压缩权重 owner 必须覆盖各自�
 | 旋转位置编码 | `RoPE` | f32/f16/bf16 data、i32/i64 positions、显式F32 frequency、interleaved/half-split与未旋转tail；I64普通CPU匹配ATen，Native只保留F32 data/I32域 |
 | 概率归一化 | `Softmax` | f32/f16/bf16 任意 axis、scale、LogSoftmax，以及可广播 Bool/同类型 additive mask；F32 accumulation，半精度使用显式 F32 行工作区；允许精确 input/output in-place；无有效值的 row 产生 NaN |
 | 候选筛选 | `TopK` | f32/f16/bf16 任意 axis，largest/smallest、sorted/stable 语义，返回同类型 values + i32 indices；显式 caller-owned workspace，不隐藏分配 |
-| 注意力 | `ScaledDotProductAttention` | f32 rank-4 BSHD/BHSD，Q/K depth 与 V/output depth 可不同；可选 bottom-right causal、Bool/additive 广播 mask，分块 online softmax 与显式 caller-owned workspace |
+| 注意力 | `ScaledDotProductAttention` | Native 自研执行器已退役；普通 CPU 使用成熟 ggml/ATen 接缝，Native-only 请求明确拒绝 |
 
 公共 SDPA 描述也接受 GQA/MQA：Q head 数必须是正 KV head 数的整数倍，K/V head 数相同；
 Q head `h` 使用 KV head `h / (Qheads / KVheads)`，输出与 mask 的 head 轴仍按 Q。

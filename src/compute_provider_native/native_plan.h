@@ -59,18 +59,9 @@ struct NativePlan final {
   RopeLayout rope_layout = RopeLayout::kInterleaved;
   SoftmaxKind softmax_kind = SoftmaxKind::kSoftmax;
   MaskKind mask_kind = MaskKind::kNone;
-  AttentionLayout attention_layout = AttentionLayout::kBatchSequenceHeadDepth;
   bool largest = true;
   bool sorted = true;
   bool stable = true;
-  bool causal = false;
-  std::size_t attention_batches = 0;
-  std::size_t attention_heads = 0;
-  std::size_t attention_queries = 0;
-  std::size_t attention_keys = 0;
-  std::size_t attention_query_depth = 0;
-  std::size_t attention_value_depth = 0;
-  std::size_t attention_workspace_stride = 0;
   WorkspaceRequirement workspace{};
   detail::NativeRoute route = nullptr;
   LinearElementwiseRoute linear_elementwise_route = nullptr;
@@ -229,9 +220,5 @@ Status prepare_transformer(Operation operation,
                            std::span<const TensorDesc> inputs,
                            std::span<const TensorDesc> outputs,
                            NativePlan &plan) noexcept;
-Status prepare_attention(Operation operation,
-                         std::span<const TensorDesc> inputs,
-                         std::span<const TensorDesc> outputs,
-                         NativePlan &plan) noexcept;
 
 } // namespace hyle::compute::native::internal

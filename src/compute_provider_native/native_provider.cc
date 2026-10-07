@@ -56,12 +56,6 @@ std::size_t saturating_product(std::size_t left, std::size_t right) noexcept {
   return left * right;
 }
 
-std::size_t saturating_sum(std::size_t left, std::size_t right) noexcept {
-  if (left > (std::numeric_limits<std::size_t>::max)() - right)
-    return (std::numeric_limits<std::size_t>::max)();
-  return left + right;
-}
-
 std::size_t recommended_parallel_tasks(ParallelExecutorRef executor,
                                        std::size_t units,
                                        std::size_t work_per_unit) noexcept {
@@ -541,24 +535,9 @@ Status build_plan(Operation operation, std::span<const TensorDesc> inputs,
       return status;
     break;
   }
-  case OperationKind::kScaledDotProductAttention: {
-    const auto *attention = operation.get_if<ScaledDotProductAttention>();
-    const std::size_t head_axis =
-        attention->layout == AttentionLayout::kBatchSequenceHeadDepth ? 2 : 1;
-    if (inputs.size() < 3 || inputs[0].rank() != 4 || inputs[1].rank() != 4 ||
-        inputs[2].rank() != 4 ||
-        inputs[0].dimensions()[head_axis] !=
-            inputs[1].dimensions()[head_axis] ||
-        inputs[0].dimensions()[head_axis] !=
-            inputs[2].dimensions()[head_axis]) {
-      return Status::Unimplemented("native SDPA requires equal Q/K/V heads");
-    }
-    Status status =
-        internal::prepare_attention(operation, inputs, outputs, plan);
-    if (!status.ok())
-      return status;
-    break;
-  }
+  case OperationKind::kScaledDotProductAttention:
+    return Status::Unimplemented(
+        "native SDPA retired; use a mature CPU provider");
   default:
     return Status::Unimplemented(
         "operation has no current HYLE native executable route");
@@ -573,25 +552,11 @@ Status build_plan(Operation operation, std::span<const TensorDesc> inputs,
   case OperationKind::kLayerNorm:
     work_per_unit = plan.parameters[1];
     break;
-  case OperationKind::kScaledDotProductAttention:
-    work_per_unit = saturating_product(
-        plan.attention_keys,
-        saturating_sum(
-            saturating_product(std::size_t{2}, plan.attention_query_depth),
-            plan.attention_value_depth));
-    break;
   default:
     break;
   }
   plan.parallel_tasks =
       recommended_parallel_tasks(executor, parallel_units, work_per_unit);
-  if (operation.kind() == OperationKind::kScaledDotProductAttention) {
-    auto workspace = math::try_multiply(plan.attention_workspace_stride,
-                                        plan.parallel_tasks);
-    if (!workspace)
-      return Status::OutOfRange("native SDPA workspace size overflows");
-    plan.workspace.size = *workspace;
-  }
   return Status::Ok();
 }
 

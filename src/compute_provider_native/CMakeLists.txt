@@ -6,7 +6,6 @@ include("${CMAKE_CURRENT_SOURCE_DIR}/torch_cpu_sdk.cmake")
 
 hyle_add_module(compute_provider_native SOURCES
   aten_cpu_provider.cc
-  attention.cc
   cast.cc
   default_rules.cc
   ds4_quantization.cc

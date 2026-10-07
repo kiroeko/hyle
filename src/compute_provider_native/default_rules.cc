@@ -26,8 +26,7 @@ enum class Family : std::uint8_t {
   ScatterAdd,
   Copy,
   Cast,
-  Rope,
-  Attention
+  Rope
 };
 struct Domain {
   Family family;
@@ -170,7 +169,6 @@ constexpr std::array kLosses{
     Rule{Family::Assign, 0, DataType(4), DataType(14), 2},
     Rule{Family::Assign, 0, DataType(5), DataType(12), 2},
     Rule{Family::Assign, 0, DataType(6), DataType(12), 2},
-    Rule{Family::Attention, 0, DataType(6), DataType(6), 2},
     Rule{Family::Norm, 0, DataType(6), DataType(6), 2},
     Rule{Family::Softmax, 2, DataType(4), DataType(6), 2},
     Rule{Family::Softmax, 2, DataType(5), DataType(6), 2},
@@ -314,16 +312,6 @@ std::optional<Domain> domain(Operation op, std::span<const TensorDesc> in,
           shape(in[1], {rows}, DataType::kInt32) &&
           shape(in[2], {32}, DataType::kFloat32))
         return Domain{Family::Rope, 0, t, DataType::kFloat32, rows};
-  }
-  if (auto p = op.get_if<ScaledDotProductAttention>();
-      p && p->layout == AttentionLayout::kBatchSequenceHeadDepth &&
-      p->mask == MaskKind::kNone && p->scale == .125F && !p->causal &&
-      p->accumulation_type == DataType::kFloat32 && in.size() == 3) {
-    for (int rows : {1, 32})
-      if (shape(in[0], {1, rows, 4, 64}, t) &&
-          shape(out[0], {1, rows, 4, 64}, t) &&
-          shape(in[1], {1, 128, 4, 64}, t) && shape(in[2], {1, 128, 4, 64}, t))
-        return Domain{Family::Attention, 0, t, DataType::kFloat32, rows};
   }
   return {};
 }
