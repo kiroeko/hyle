@@ -165,8 +165,9 @@ TEST(CpuCurrentRules, MatureProjectionWinnerAndPhysicalLayoutMissKeepPrecision) 
   ASSERT_TRUE(program) << program.error().message();
   EXPECT_EQ(program->provider().id, ggml_cpu::kProviderId);
   EXPECT_EQ(program->output_description()->data_type(), DataType::kBFloat16);
-  if (native::internal::qualified_default_environment())
+  if (native::internal::qualified_default_environment()) {
     EXPECT_EQ(program->route_policy().version, 3u);
+  }
   auto layout_miss = prepare(context, MatMul{}, left, dense(DataType::kBFloat16, {2048, 6144}));
   ASSERT_TRUE(layout_miss);
   EXPECT_NE(layout_miss->route_policy().namespace_id, 0x48594c4543505552ULL);
