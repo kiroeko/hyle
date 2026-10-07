@@ -33,3 +33,6 @@ C++ header增加verbose查询、options增加默认OFF的SYCL profiling，原资
 
 Mac Air已读取当前真实身份且可达，尚未运行新版CPU产品；macOS覆盖仍未资格。
 当前统一Compute+Graph实现**61,084行/249文件**，不含测试/vendor/bench；新增版本身份胶水，新增自研数学0。
+
+[清理记录](cleanup.json)：已校验归档与锁定cache后，删除本轮重复oneDNN源码/下载约87.8 MiB；
+保留当前producer、统一锁定source/archive cache与全部原始资格记录。
