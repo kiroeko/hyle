@@ -579,6 +579,11 @@
       "candidate": "2757ecc96815fd12c3050faab176cc2ddad02ccd",
       "record": "docs/implementation/tasks/compute/llm-moe-d3-ggml-vulkan-native-binding.md",
       "summary": "M3-D3 CANDIDATE 2757ecc：checked Scan、BF16 conversion和具名FP8 MatMul限定域已有收据，Vulkan A5完成；不代签官方grouped FP8/FP4或Q8数值失败域。D5-A6及D6未关闭。"
+    },
+    {
+      "module": "compute_provider_torch_cuda",
+      "state": "QUEUED",
+      "summary": "CUDA U3 N1：预留成熟 ATen GPU artifact carrier 身份，尚无产品实现或资格。"
     }
   ]
 }

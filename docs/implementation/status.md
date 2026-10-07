@@ -69,6 +69,7 @@
 | compute_provider_flashinfer | AUDITED | — | [record](tasks/compute/cuda-final-u2-build-contract.md) | CUDA U2 B2 AUDITED：有限授权 backend 真实 driver release 冷快照/API独立事实与有效span、当前ggml/CCCL/FlashInfer冷消费者迁移；NVML可选、未知不禁用正常CUDA，不改数学/pin/资格阈值/热路径。 |
 | compute_provider_ggml_metal | AUDITED | — | [record](tasks/compute/cpu-quant-mtp-c3-format-bindings.md) | C3公共GGUF enum消费者有限迁移AUDITED：只明确拒绝新增CPU格式，原D5资格/算法/限制不变，不恢复GPU队列；不签新增GPU能力。 |
 | compute_provider_iree_vulkan | CANDIDATE | — | [record](tasks/compute/llm-moe-d3-ggml-vulkan-native-binding.md) | M3-D3 CANDIDATE 2757ecc：checked Scan、BF16 conversion和具名FP8 MatMul限定域已有收据，Vulkan A5完成；不代签官方grouped FP8/FP4或Q8数值失败域。D5-A6及D6未关闭。 |
+| compute_provider_torch_cuda | QUEUED | — | — | CUDA U3 N1：预留成熟 ATen GPU artifact carrier 身份，尚无产品实现或资格。 |
 
 <!-- END GENERATED MODULE STATUS -->
 

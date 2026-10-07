@@ -505,6 +505,9 @@ _hyle_declare_component(compute_provider_ggml_metal
 _hyle_declare_component(compute_provider_iree_vulkan
   PRIVATE_DEPS core error mem compute_ops compute_provider_ggml_vulkan)
 
+# Mature CUDA ATen artifact carrier; reserve identity before its closure round.
+_hyle_declare_component(compute_provider_torch_cuda QUEUED)
+
 # Product facades are deliberately outside the factor DAG. They have no source,
 # module status, or decision authority and must never be used by an internal
 # factor edge. A facade only selects the exact factor roots that make one
