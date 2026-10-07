@@ -1,0 +1,36 @@
+{
+  "candidate": "0cd39365339e75a2d0bdce15a8fa065a8f5408ba",
+  "scope": "Windows original CUDA artifact carrier local qualification only",
+  "ctest_cases": 5,
+  "gtest_cases": 49,
+  "gtest_run_counts": [
+    19,
+    30
+  ],
+  "fixture_skips": 0,
+  "contracts": {
+    "nf4_nested": 6,
+    "awq_gemm4": 7,
+    "compressed_tensors_symmetric4": 5,
+    "direct_and_graph": true,
+    "float_precision_lifecycle_cases": 12,
+    "default_ffn_regression": 1
+  },
+  "unverified": [
+    "Linux carrier/ABI/runtime",
+    "source/static/shared CUDA-only and mixed relocation/offline",
+    "all target model regions",
+    "remaining OOM/resource/capture failure qualifications",
+    "U4 performance/best-of"
+  ],
+  "loc": {
+    "implementation_code": 60555,
+    "files": 253,
+    "self_check": "pass",
+    "excludes": [
+      "tests",
+      "bench",
+      "third_party"
+    ]
+  }
+}

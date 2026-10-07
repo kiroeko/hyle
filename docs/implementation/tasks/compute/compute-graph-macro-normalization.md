@@ -39,3 +39,12 @@
 
 预算为一次扫描、一个批量修复、至多一次具名纠正；不对本专题展开全库算法审查。
 完成须有全范围分类账和实际适用验收，未运行项不签 PASS；本页存在不计作已完成工作。
+
+## 初次只读扫描
+
+扫描当前全部上述C++／GPU源码／测试条件，110个文件含437条条件／定义：OS48、架构10、
+编译器／ABI11、feature/version81、visibility154、其它133；未见将HYLE恒定义整数fact用presence判真。
+这只是原条件分类，不签规范完成；CMake及借入补丁接缝还须按具体语义审计。
+原inventory保留于 [N1归档](../../../../evidence/correctness/cuda-final-u3-artifact-carrier/README.md)。
+N1还已提供实际feature传播反例：Provider私有边不能自动让普通route consumer看到其组装能力，
+现已在 owning route修复；此专题要核对其它路线同类合同，不能用宏名替换代替传播检查。

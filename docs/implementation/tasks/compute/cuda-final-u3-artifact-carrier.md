@@ -78,3 +78,11 @@ Linux 同版本官方 wheel 身份已核对：
 
 第三方路径、需求完整、内部资源复用、P0 成本、C++ 边界、三交付与普通使用均适用；当前全部
 UNVERIFIED。不以组件注册或本卡完成冒充产品覆盖。
+
+## Windows 批次进展
+
+`0cd39365339e75a2d0bdce15a8fa065a8f5408ba` 已实现普通默认成熟GPU接线，18原packed合同的
+Direct／Graph decode→projection、12精度／资源寿命样例、默认FFN回归及三个公开头检查通过；
+见 [原始批次与失败记录](../../../../evidence/correctness/cuda-final-u3-artifact-carrier/README.md)。
+原allocator cold初始化／capability传播已修复；无新数学，CPU common／CPU-only resolver未改。
+当前仅Windows mixed producer资格，不签Linux、三交付、剩余OOM／严格资源／capture、全模型或性能。
