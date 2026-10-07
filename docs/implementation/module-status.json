@@ -552,14 +552,14 @@
     {
       "module": "compute_provider_ggml_cuda",
       "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/cuda-final-u3-mature-bindings.md",
-      "summary": "CUDA U3 G1/G2 AUDITED：原stock接线Windows局部已验；有限借入原Unsloth narrow IQ1 CUDA/math/table/dispatch与单core ABI/manifest/template，保留CPU-only及其它GPU源码选择；新资格/三交付/mixed差异待验，零新自研数学。 宏有限轮已验收CLOSED，继续原父轮有限FIX/限制，无新数学或资格扩张。"
+      "record": "docs/implementation/tasks/compute/cuda-final-u3-model-regions.md",
+      "summary": "CUDA U3 R1 AUDITED：保留G1/G2/N1/N2；有限接原stable Softplus及修plain BF16 grouped F32 activation精度；current region/state/sidecar与原GPU codec、最终联合三交付验收，自研数学冻结，CPU/其它GPU不重开。"
     },
     {
       "module": "graph_provider_ggml_cuda",
       "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/cuda-final-u3-mature-bindings.md",
-      "summary": "CUDA U3 G1/G2 AUDITED：原stock接线Windows局部已验；有限借入原Unsloth narrow IQ1 CUDA/math/table/dispatch与单core ABI/manifest/template，保留CPU-only及其它GPU源码选择；新资格/三交付/mixed差异待验，零新自研数学。"
+      "record": "docs/implementation/tasks/compute/cuda-final-u3-model-regions.md",
+      "summary": "CUDA U3 R1 AUDITED：保留G1/G2/N1/N2；有限接原stable Softplus及修plain BF16 grouped F32 activation精度；current region/state/sidecar与原GPU codec、最终联合三交付验收，自研数学冻结，CPU/其它GPU不重开。"
     },
     {
       "module": "compute_provider_flashinfer",
@@ -583,8 +583,8 @@
     {
       "module": "compute_provider_torch_cuda",
       "state": "AUDITED",
-      "summary": "CUDA U3 N2 AUDITED：保留已资格N1；有限接原MLX affine/MX4/MX8 GPU tensor公式、cold常量/checked ids/资源/失败，CPU数学/SDK不改，三交付与mixed余项联合U3验收，零新数学。",
-      "record": "docs/implementation/tasks/compute/cuda-final-u3-mlx-carrier.md"
+      "summary": "CUDA U3 R1 AUDITED：保留G1/G2/N1/N2；有限接原stable Softplus及修plain BF16 grouped F32 activation精度；current region/state/sidecar与原GPU codec、最终联合三交付验收，自研数学冻结，CPU/其它GPU不重开。",
+      "record": "docs/implementation/tasks/compute/cuda-final-u3-model-regions.md"
     }
   ]
 }

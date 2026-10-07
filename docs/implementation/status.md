@@ -64,12 +64,12 @@
 | graph_route_vulkan | BLOCKED | — | [record](tasks/compute/llm-moe-d5-vulkan-performance-blocker.md) | D5 BLOCKED：Vulkan两入口合计34通过/8冷拒绝/2数值失败，A5三交付完成。唯一A6恢复的自比较不合格，guard阻止正式采样，聚合INCONCLUSIVE；非产品性能FAIL。原Q4通过、Q8数值失败和官方低精度拒绝均保留。 |
 | compute_provider_ggml_vulkan | AUDITED | — | [record](tasks/compute/cpu-quant-mtp-c3-format-bindings.md) | C3公共GGUF enum消费者有限迁移AUDITED：只明确拒绝新增CPU格式，原D5资格/算法/限制不变，不恢复GPU队列；不签新增GPU能力。 宏有限轮已验收CLOSED，继续原父轮有限FIX/限制，无新数学或资格扩张。 |
 | compute_ggml_runtime | AUDITED | — | [record](tasks/compute/cuda-final-u3-mature-bindings.md) | CUDA U3 G1/G2 AUDITED：原stock接线Windows局部已验；有限借入原Unsloth narrow IQ1 CUDA/math/table/dispatch与单core ABI/manifest/template，保留CPU-only及其它GPU源码选择；新资格/三交付/mixed差异待验，零新自研数学。 宏有限轮已验收CLOSED，继续原父轮有限FIX/限制，无新数学或资格扩张。 |
-| compute_provider_ggml_cuda | AUDITED | — | [record](tasks/compute/cuda-final-u3-mature-bindings.md) | CUDA U3 G1/G2 AUDITED：原stock接线Windows局部已验；有限借入原Unsloth narrow IQ1 CUDA/math/table/dispatch与单core ABI/manifest/template，保留CPU-only及其它GPU源码选择；新资格/三交付/mixed差异待验，零新自研数学。 宏有限轮已验收CLOSED，继续原父轮有限FIX/限制，无新数学或资格扩张。 |
-| graph_provider_ggml_cuda | AUDITED | — | [record](tasks/compute/cuda-final-u3-mature-bindings.md) | CUDA U3 G1/G2 AUDITED：原stock接线Windows局部已验；有限借入原Unsloth narrow IQ1 CUDA/math/table/dispatch与单core ABI/manifest/template，保留CPU-only及其它GPU源码选择；新资格/三交付/mixed差异待验，零新自研数学。 |
+| compute_provider_ggml_cuda | AUDITED | — | [record](tasks/compute/cuda-final-u3-model-regions.md) | CUDA U3 R1 AUDITED：保留G1/G2/N1/N2；有限接原stable Softplus及修plain BF16 grouped F32 activation精度；current region/state/sidecar与原GPU codec、最终联合三交付验收，自研数学冻结，CPU/其它GPU不重开。 |
+| graph_provider_ggml_cuda | AUDITED | — | [record](tasks/compute/cuda-final-u3-model-regions.md) | CUDA U3 R1 AUDITED：保留G1/G2/N1/N2；有限接原stable Softplus及修plain BF16 grouped F32 activation精度；current region/state/sidecar与原GPU codec、最终联合三交付验收，自研数学冻结，CPU/其它GPU不重开。 |
 | compute_provider_flashinfer | AUDITED | — | [record](tasks/compute/cuda-final-u2-build-contract.md) | CUDA U2 B2 AUDITED：有限授权 backend 真实 driver release 冷快照/API独立事实与有效span、当前ggml/CCCL/FlashInfer冷消费者迁移；NVML可选、未知不禁用正常CUDA，不改数学/pin/资格阈值/热路径。 |
 | compute_provider_ggml_metal | AUDITED | — | [record](tasks/compute/cpu-quant-mtp-c3-format-bindings.md) | C3公共GGUF enum消费者有限迁移AUDITED：只明确拒绝新增CPU格式，原D5资格/算法/限制不变，不恢复GPU队列；不签新增GPU能力。 |
 | compute_provider_iree_vulkan | CANDIDATE | — | [record](tasks/compute/llm-moe-d3-ggml-vulkan-native-binding.md) | IREE原D3能力仍CANDIDATE；宏等价改动026d40bc经实际owner编译、32 native及三平台宏/交付验收，原功能/精度/资源/性能限制保持，不签Vulkan路线CLOSED。 |
-| compute_provider_torch_cuda | AUDITED | — | [record](tasks/compute/cuda-final-u3-mlx-carrier.md) | CUDA U3 N2 AUDITED：保留已资格N1；有限接原MLX affine/MX4/MX8 GPU tensor公式、cold常量/checked ids/资源/失败，CPU数学/SDK不改，三交付与mixed余项联合U3验收，零新数学。 |
+| compute_provider_torch_cuda | AUDITED | — | [record](tasks/compute/cuda-final-u3-model-regions.md) | CUDA U3 R1 AUDITED：保留G1/G2/N1/N2；有限接原stable Softplus及修plain BF16 grouped F32 activation精度；current region/state/sidecar与原GPU codec、最终联合三交付验收，自研数学冻结，CPU/其它GPU不重开。 |
 
 <!-- END GENERATED MODULE STATUS -->
 

@@ -1,12 +1,12 @@
 # CUDA U3 R1：当前模型片段、状态与 MTP 接缝
 
-<!-- MODULE REVIEW: SCOPED -->
+<!-- MODULE REVIEW: AUDITED -->
 
 ## Closure card
 
 - baseline：`c0150bc93ffa099ada45ac401bba15a36a9ec996`；Windows唯一产品真相。
-- 协调owner：`compute_route_cuda`；实际FIX才绑定Torch CUDA／ggml CUDA／Graph ggml CUDA等owner。
-  本scope不授予数学产品修改；现AUDITED旧卡不能替代下面有限审计。
+- 当前owner：`compute_provider_torch_cuda`、`compute_provider_ggml_cuda`、`graph_provider_ggml_cuda`；
+  route仍保留N2 capability／U2合同。只允许下面已固定FIX，不从旧卡取得新数学授权。
 - trigger：[U3 R1](cuda-final-u3-mature-bindings.md) 要求继承CPU当前完整需求。
   CUDA测试已include `cpu_c4_model_branches.h`却未接当前Pro0813／Flash0731完整DSpark及三sidecar
   runner；旧preview测试、原矩阵32项不能代签当前state／carry／完整head。
@@ -42,3 +42,30 @@
 
 旧CPU已闭数学与性能只作为当前需求／源对照；本卡不重开CPU。原源研究以U1已有固定输入为准，
 只为具体step反例做有界查证。审计后KEEP/FIX/BORROW/DEFER/REJECT写在本卡与小型coverage map。
+
+## AUDITED 有限 FIX
+
+SCOPED提交`f3a3a697`，原common程序测试绑定候选`fd08e31a`；两平台目标仍不扩大。
+current Pro/Flash的target_hidden／confidence和Markov完整词表两入口通过，cache/主干/三stage
+审计暴露下面具名事实。原失败保存于本轮evidence，不由绿原子或旧CPU PASS代签。
+
+| FIX | 证据／问题 | 有限动作 |
+|---|---|---|
+| F1 | 原Softplus在当前router/三stage落到hyle-cuda，ggml无通用stable precision资格 | 现Torch CUDA carrier接原ATen stable Softplus；原SDK／shape／dtype／Completion复用，不写新数学 |
+| F2 | plain BF16 GroupedMatMul明确要求F32 activation；原CUDA MMF在mmf.cuh把float2 activation cast成nv_bfloat162 | owning lowering先用原ggml cast把BF16 weights变F32，再原MUL_MAT_ID；量化权重/A8原格式路径不变。当前source精度标志不能改变MMF的RHS cast，不能假设设flag已兑现 |
+| F3 | CUDA runner漏传expect_output的port index，current source validator收不到真实port；硬写decode忽略prefill | 只迁移test runner，phase/observe/validate/state来自原common程序；不放宽误差或修改CPU fixture |
+| F4 | CUDA未接三sidecar与当前49 family-region的必要consumer | 批量接原program与GPU codec资格；CPU AVX2/vec-dot oracle不能外推CUDA Q8路径，具名复用原GPU codec参考后才签 |
+| F5 | 最终状态/资源与全部基础格式/软件事实/三交付未联合 | 同一最终U3 candidate按既定输入批量验证，Windows/Linux/source/static/shared/CUDA-only/mixed/失败/replay；未运行UNVERIFIED |
+
+F2的原源码账单：ggml `456172ec` CUDA MMF的BF16分支用`ggml_cuda_cast<nv_bfloat162>(float2)`
+构造tensor-core tile，F32 accumulation并不保留F32乘数。public GroupedMatMul的plain BF16合同
+要求F32乘数。原fixture输出3在0.0013427734附近出现6.1035e-5偏差，仍保留当前门；不通过
+更改全局tolerance或把CPU约定降成BF16乘数来签通过。原cast+MUL_MAT_ID的完整资源/搬运成本
+属于本program，U4公平比较必须计入。这个cast不是HYLE新codec或自研GEMM。
+
+## 七问与冻结
+
+第三方依旧原ggml／ATen源、pin和license；当前模型完整需求不扩画像；backend、Graph adapter、
+Mem/Completion复用；P0记F32转换／index同步／私有分配账单，单成熟补洞不跑P1；无FFI；
+三交付以既有SDK/owning package规则联合验收；用户仍只选CUDA与自然Direct/Graph入口。
+CPU已闭数学/性能、通用SIMD、其它GPU与public schema不改，自研CUDA继续冻结。
