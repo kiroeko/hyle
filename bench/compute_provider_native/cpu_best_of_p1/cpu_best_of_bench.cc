@@ -441,6 +441,10 @@ bool equal(Data &d, const std::vector<std::byte> &a,
 bool present(const char *name) { return std::getenv(name) != nullptr; }
 
 constexpr std::array families{Family::Native,Family::OneDnn,Family::Ggml,Family::Aten};
+struct QualifiedPair final {const char *case_id;Family candidate;Family peer;};
+#if defined(HYLE_CPU_BESTOF_QUALIFIED_BATCH)
+#include "qualified_pairs.h"
+#endif
 void probe(const Case &spec) {
   Data data(spec);
   std::vector<std::unique_ptr<Session>> eligible;
@@ -460,9 +464,17 @@ void probe(const Case &spec) {
 void measure_pair(const Case &spec,Family left,Family right) {
   Data data(spec);
   std::unique_ptr<Session> candidate,peer;
+  // Workload-matched A/A substitutes the same original program, preserving
+  // allocation/order, resources and the original stable measurement labels.
+  auto candidate_family=left,peer_family=right;
+  if(const auto *aa=std::getenv("HYLE_CPU_BESTOF_AA")) {
+    if(std::strcmp(aa,"candidate")==0)peer_family=left;
+    else if(std::strcmp(aa,"peer")==0)candidate_family=right;
+    else std::exit(64);
+  }
   const bool allocation_first=present("HYLE_BENCH_PEER_ALLOCATION_FIRST");
-  if(allocation_first){peer=std::make_unique<Session>(data,right);candidate=std::make_unique<Session>(data,left);}
-  else{candidate=std::make_unique<Session>(data,left);peer=std::make_unique<Session>(data,right);}
+  if(allocation_first){peer=std::make_unique<Session>(data,peer_family);candidate=std::make_unique<Session>(data,candidate_family);}
+  else{candidate=std::make_unique<Session>(data,candidate_family);peer=std::make_unique<Session>(data,peer_family);}
   if(!candidate->available || !peer->available)std::exit(5);
   candidate->run();auto a=data.read();peer->run();auto b=data.read();
   if(!equal(data,a,b))std::exit(6);
@@ -480,6 +492,16 @@ int main(int argc,char **argv) {
   std::fprintf(stderr,"# CPU_BEST_OF affinity_topology=%s caller_cpu=%s affinity_ok=%s run_nonce=%s\n",
       affinity.topology,affinity.cpu,affinity.ok,hyle::bench::perf::run_nonce());
   const auto cases=catalog();
+#if defined(HYLE_CPU_BESTOF_QUALIFIED_BATCH)
+  if(argc==1) {
+    for(const auto &pair:kQualifiedPairs) {
+      const auto match=std::find_if(cases.begin(),cases.end(),[&](const auto &c){return c.id==pair.case_id;});
+      if(match==cases.end())return 65;
+      measure_pair(*match,pair.candidate,pair.peer);
+    }
+    return 0;
+  }
+#endif
   if(argc==1 || std::strcmp(argv[1],"--probe")==0) {
     for(const auto &spec:cases)probe(spec);
     return 0;
