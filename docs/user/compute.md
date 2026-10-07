@@ -27,7 +27,8 @@ CPU 优选规则在冷准备时匹配构建recipe、硬件、编译器、线程�
 这些条件不匹配时沿已构建成熟默认绑定，不撤回正常数学能力。
 Graph 的成熟完整 region 优先于 Native 单算子，避免破坏融合。执行和重复执行不重新选路。
 相同资格条件下的 13 个已测劣势域拒绝 Native exact 请求，改由成熟实现承接。
-这些 Native 优选还要求相同的成熟 peer 软件版本。当前新版 CPU-only SDK仅匹配17格优选，其余成熟默认，
+这些 Native 优选还要求相同的成熟 peer 软件版本（含当时oneDNN3.13.2）。oneDNN现锁3.13.4，
+新版SDK不继承旧187或17格WIN；[本轮](../implementation/tasks/compute/cpu-final-closure-plan.md)重新裁决前采用成熟默认。
 不把旧版 ggml 对照下的187条优势自动沿用到新版；SIMD基础与已保留的专家能力不因此删除。
 这些证据是相对当时默认成熟调用的比较，不表示全部硬件、形状或所有 Provider 的全局最优。
 逐操作保留与退役边界见[CPU 域账本](../implementation/tasks/compute/cpu-default-domain-ledger.md)。
@@ -1069,7 +1070,7 @@ oneDNN 的 CPU ISA 要求限制；该 Provider 不隐式转换整个 tensor。�
 保留边界。半精度跨节点链保留中间舍入。融合接入不代表每个形状已获性能优选资格，当前验收
 状态见模块 registry 和对应任务记录。
 
-当前 CPU-only ggml 0.26 SDK 有17个已测条件的 Native 优选：dense Copy 的五种浮点 storage
+ggml0.26与oneDNN3.13.2原SDK有17个已测条件的 Native 优选：dense Copy 的五种浮点 storage
 `[1或32,2048]`；带同dtype gamma的 RMSNorm（F32只rows1；F16/BF16 rows1/32，epsilon1e-5；
 另BF16 epsilon1e-6）。优选只限已测i9-13900K/AVX2、MSVC195035728、static、Release的原优化recipe、LTO off、单线程及锁定
 ggml/oneDNN版本，prepare匹配、submit不搜索；其它条件成熟优先，Graph不会为叶规则拆成熟region。

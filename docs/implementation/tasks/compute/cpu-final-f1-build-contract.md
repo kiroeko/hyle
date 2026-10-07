@@ -72,3 +72,8 @@ flags/IPO/target IPO/shared/peer feature/sanitizer/ISA/trace/编译器/平台/CR
 Windows shared source/public-facade实际24格成熟默认、两次变输入replay、24成熟region、9错配、独立并发与close通过；
 声明动态view物化通过。configure35.828秒、build48.516秒，未重跑P1。B2–B5及最终SDK仍待本包验收。
 Mac Air已可达：Mac16,12/arm64/macOS27.0.1/AppleClang21/CMake4.3.4，只盘点无远端修改；不代签CPU覆盖。
+
+B5 selector把中央lock文件变化展开为全库superset；原计划保留，逐依赖对账只有oneDNN条目变化。
+本包执行oneDNN/Native/CPU Direct/Graph消费者、component/lock与Compute/Graph package；
+没有oneDNN链接边、没有实际产品/依赖变化的IO/Container等非CPU目标保留语义不适用原因，
+不重编无关模块、不改selector核心、不把未运行superset写PASS。

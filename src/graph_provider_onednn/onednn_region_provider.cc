@@ -11,6 +11,7 @@
 #include <utility>
 
 #include "hyle/compute/operation.h"
+#include "hyle/compute/providers/onednn.h"
 #include "hyle/error/result.h"
 #include "hyle/graph/region_provider.h"
 #include "hyle/mem/allocator.h"
@@ -515,7 +516,7 @@ const void *query_extension(void *, compute::ProviderExtensionId id) noexcept {
 const compute::detail::ProviderVTable kProviderVTable{
     .identity = {.id = kProviderId,
                  .name = "onednn-graph-region",
-                 .version = "3.13.2"},
+                 .version = compute::onednn::version()},
     .create_context = &create_context,
     .destroy_context = &destroy_context,
     .propose = &propose_single,

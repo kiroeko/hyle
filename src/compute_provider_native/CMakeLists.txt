@@ -21,7 +21,8 @@ hyle_add_module(compute_provider_native SOURCES
 include("${CMAKE_CURRENT_SOURCE_DIR}/default_rule_build.cmake")
 hyle_native_default_rule_recipe(_native_rule_recipe)
 if(_native_rule_recipe AND
-    HYLE_GGML_CPU_PEER_REVISION STREQUAL "456172ec733a135778adcd32d00e576a58232e45")
+    HYLE_GGML_CPU_PEER_REVISION STREQUAL "456172ec733a135778adcd32d00e576a58232e45"
+    AND HYLE_DEP_ONEDNN_COMMIT STREQUAL "71094df451909e95ceeefc8f64c275cdcbbcdff5")
   target_compile_definitions(hyle_compute_provider_native PRIVATE
     "$<$<CONFIG:Release>:HYLE_NATIVE_DEFAULT_PEER_456172EC=1>")
 elseif(_native_rule_recipe AND

@@ -164,10 +164,10 @@
     },
     {
       "name": "onednn", "class": "fetchcontent",
-      "repository": "https://github.com/oneapi-src/oneDNN.git", "version": "v3.13.2",
-      "revision": "71094df451909e95ceeefc8f64c275cdcbbcdff5", "git_tree": "7396fa9f41db34ffcd5de8f725aba138427f9595",
-      "archive": { "url": "https://codeload.github.com/oneapi-src/oneDNN/tar.gz/71094df451909e95ceeefc8f64c275cdcbbcdff5", "sha256": "719c827879851a9a5de2be20f424c830ccfc1d14ef00df80ece5ec407c747e1a" },
-      "expanded_tree_sha256": "7ee703ecda81e8246f1fecdf9ec1dac223d64b2f061902e82e8097d791e26e38",
+      "repository": "https://github.com/uxlfoundation/oneDNN.git", "version": "v3.13.4",
+      "revision": "c531fe1a5cd631b7f60277cdf6675c588cadbc28", "git_tree": "65c08c66fb85c5c68f4f04807b906514af420b59",
+      "archive": { "url": "https://codeload.github.com/uxlfoundation/oneDNN/tar.gz/c531fe1a5cd631b7f60277cdf6675c588cadbc28", "sha256": "ac75d4a771492ff8e5996f0daace71de7d40a23c2527705bb8dbca60a17f7ba9" },
+      "expanded_tree_sha256": "5c0c833df87c71a31ac82489e56650f0197fa38f3dec85a9988a404ec532fdba",
       "license": { "expression": "Apache-2.0", "files": [
         { "root": "dependency", "path": "LICENSE", "sha256": "e9fc874fc09801b9acf3411ba72394098473704d832d713404b6c4861a086318" }
       ] }

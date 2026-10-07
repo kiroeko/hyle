@@ -149,7 +149,7 @@ TEST(OneDnnProvider, ExposesStableIdentity) {
   EXPECT_TRUE(provider.valid());
   EXPECT_EQ(provider.id(), hyle::compute::onednn::kProviderId);
   EXPECT_EQ(provider.name(), "onednn");
-  EXPECT_EQ(hyle::compute::onednn::version(), "3.13.2");
+  EXPECT_EQ(hyle::compute::onednn::version(), "3.13.4");
 
   auto context = Context::create(hyle::compute::cpu::device(), provider);
   EXPECT_TRUE(context.has_value());

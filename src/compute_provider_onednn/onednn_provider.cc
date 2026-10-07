@@ -5,15 +5,26 @@
 #include <new>
 #include <optional>
 #include <span>
+#include <string_view>
 #include <utility>
 
 #include "brgemm_internal.h"
 #include "normalization_internal.h"
+#include "oneapi/dnnl/dnnl_version.h"
 #include "provider_internal.h"
 #include "tensor_internal.h"
 
 namespace hyle::compute::onednn {
 namespace {
+
+#define HYLE_ONEDNN_STRINGIFY_IMPL(value) #value
+#define HYLE_ONEDNN_STRINGIFY(value) HYLE_ONEDNN_STRINGIFY_IMPL(value)
+constexpr std::string_view kVersion =
+    HYLE_ONEDNN_STRINGIFY(DNNL_VERSION_MAJOR) "."
+    HYLE_ONEDNN_STRINGIFY(DNNL_VERSION_MINOR) "."
+    HYLE_ONEDNN_STRINGIFY(DNNL_VERSION_PATCH);
+#undef HYLE_ONEDNN_STRINGIFY
+#undef HYLE_ONEDNN_STRINGIFY_IMPL
 
 struct OneDnnContext final {
   ParallelExecutorRef executor{};
@@ -463,7 +474,7 @@ Status drain_context(void *) noexcept { return Status::Ok(); }
 const detail::ProviderVTable kProviderVTable{
     .identity = ProviderIdentity{.id = kProviderId,
                                  .name = "onednn",
-                                 .version = "3.13.2"},
+                                 .version = kVersion},
     .create_context = &create_context,
     .destroy_context = &destroy_context,
     .propose = &propose,
@@ -477,6 +488,6 @@ Provider provider(Options options) noexcept {
   return detail::ProviderAccess::make(&kProviderVTable, options);
 }
 
-std::string_view version() noexcept { return "3.13.2"; }
+std::string_view version() noexcept { return kVersion; }
 
 } // namespace hyle::compute::onednn

@@ -17,7 +17,7 @@ namespace hyle::compute::onednn::internal {
 namespace {
 
 static_assert(DNNL_VERSION_MAJOR == 3 && DNNL_VERSION_MINOR == 13 &&
-                  DNNL_VERSION_PATCH == 2,
+                  DNNL_VERSION_PATCH == 4,
               "update the HYLE oneDNN provider identity with its source lock");
 
 inline constexpr std::size_t kMinParallelTileColumns = 64;
