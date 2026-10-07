@@ -28,3 +28,12 @@ Windows SDK 运行使用 `--minimal-path`，测试进程的 PATH 仅为系统目
 
 原数据暂在 Windows canonical 的 `.scratch/validation/cuda-final-u3-delivery/`；
 阶段完成时按原日志／XML哈希封存。没有放宽误差门、改用例输入或追加自研数学。
+
+## 后续根因裁决
+
+原整批失败已查清为reference跨已销毁program保留IQ3_S capture并误用于Q3_K；
+同址反例与原八输出指纹一致。reference改为各逻辑program局部backend后，回归／两codec
+3项及独立static SDK Direct／Graph fixed组各560项通过。详见
+[根因与纠正资格](../cuda-u3-reference-codec-lifetime/README.md)。
+本目录`partial-batch.zip`／`receipt.json`保留首次未决checkpoint，不重写成PASS。
+后续SDK current组因优先排查而中断，未完成不PASS；联合交付总范围仍未关闭。

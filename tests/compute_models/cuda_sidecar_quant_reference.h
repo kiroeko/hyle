@@ -50,7 +50,9 @@ inline std::vector<float> projection(hyle::compute::GgufQuantizedType type,
     std::span<const std::byte> packed,std::int64_t n,std::int64_t k,std::span<const float> input) {
   if(k<=0 || n<=0 || input.size()%std::size_t(k)!=0)
     throw std::runtime_error("sidecar reference has invalid original geometry");
-  thread_local Backend backend;
+  // A backend's capture cache belongs to this logical program. Recycled
+  // tensor/data addresses must not retain another weight codec's capture.
+  Backend backend;
   Storage storage;
   storage.context=ggml_init({ggml_tensor_overhead()*4+ggml_graph_overhead_custom(8,false),nullptr,true});
   if(!storage.context)throw std::runtime_error("sidecar reference context allocation failed");
@@ -83,7 +85,7 @@ inline std::vector<float> grouped(const hyle::compute::TensorDesc &description,
     throw std::runtime_error("sidecar grouped reference id is outside its source");
   const auto type=description.is_plain()?GGML_TYPE_BF16:
       native_type(hyle::compute::gguf_quantized_type(description.storage_format()).value());
-  thread_local Backend backend;
+  Backend backend;
   Storage storage;
   storage.context=ggml_init({ggml_tensor_overhead()*6+ggml_graph_overhead_custom(8,false),nullptr,true});
   if(!storage.context)throw std::runtime_error("sidecar grouped reference context allocation failed");

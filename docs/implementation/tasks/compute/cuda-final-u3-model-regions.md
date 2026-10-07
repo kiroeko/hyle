@@ -87,6 +87,32 @@ replay1第二slot出现大误差。原失败保留；相同未变 executable 的
 [驱动与边界记录](../../../../evidence/correctness/cuda-final-u3-joint-delivery/README.md)
 保存执行约束；整批中完全通过的组可独立引用，原失败 aggregate 不因此注销。
 
+### Q3_K 整批失败的具名根因与有限纠正
+
+后续原日志逐值审计：4096个失败全部是replay1的slot1，actual／expected都按8个prototype
+重复。fresh原CUDA Q3_K结果与原actual八个prototype全部吻合；相同Q3_K bytes按IQ3_S
+执行的原CUDA结果与原expected全部吻合（JSON打印误差分别约5.7e-11／4.7e-7）。
+Q3_K与IQ3_S每256元素均为110 bytes，K=2048时shape／nb相同。原`common.cuh`
+capture properties保存src data／ne／nb，未保存src type；`ggml-cuda.cu`以首node地址为key。
+固定同址、IQ3_S暖机两次后将source type换Q3_K的最小原程序复现仍返回IQ3_S结果，
+与旧expected吻合。因此不是HYLE输出或误差门问题，而是test-only thread_local reference
+backend跨已销毁逻辑program复用capture身份。产品每Invocation独占backend／immutable recipe，
+不受这个reference跨program寿命错误约束；没有授权修改原kernel或产品cache。
+
+有限纠正只有共享CUDA reference的projection／grouped backend改为本逻辑program的局部owner，
+并加等步长codec切换回归。保持原physical bytes、CUDA activation codec、点值门和原完整
+consumer不变。预声明定向：该回归／IQ3_S与Q3_K原失败consumer、fixed物理编码组两入口，
+既有reference直接消费者按selector；不重跑无关P1或全路线。原失败与反例封存，纠正尚未验证
+前不签根因解决；本包／交付总体仍AUDITED。
+
+纠正验收已完成：原thread_local owner回归FAIL；局部owner的回归／原IQ3_S和Q3_K
+consumer3项PASS，独立static SDK的Direct／Graph fixed组各560项PASS，无skip。
+原整批失败现分类为错误reference的误报，原日志保留，不把旧650项日志改成PASS。
+源码指纹、同址capture反例、初版短序列PASS、旧owner FAIL、新结果和哈希见
+[根因与资格](../../../../evidence/correctness/cuda-u3-reference-codec-lifetime/README.md)。
+只改test reference寿命及其回归，无产品／原数学／误差门变更；未重跑其它651/649原生全集或P1。
+后续SDK current组因用户要求优先排查而中断，已有完成组保留；该中断不记产品FAIL，也不记PASS。
+
 ## 七问与冻结
 
 第三方依旧原ggml／ATen源、pin和license；当前模型完整需求不扩画像；backend、Graph adapter、

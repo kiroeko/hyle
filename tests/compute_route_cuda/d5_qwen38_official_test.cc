@@ -2059,4 +2059,5 @@ TEST(CudaIq1ModelContracts, EightCurrentExpertShapesUseOrdinaryDirectAndReplay) 
 #include "../compute_models/cuda_r1_current_region_tests.h"
 #include "../compute_models/cpu_c5_gguf_tests.h"
 #include "../compute_models/cpu_c5_parameter_tests.h"
+#include "../compute_models/cuda_sidecar_reference_lifecycle_tests.h"
 } // namespace
