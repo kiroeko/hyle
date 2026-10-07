@@ -6,6 +6,7 @@
 #include "../compute_models/d5_moe_profile_cases.h"
 #include "../compute_models/d5_qwen_gguf_vocabulary_graph_test.h"
 #include "hyle/compute/providers/ggml_cpu.h"
+#include "hyle/compute/providers/native.h"
 #include "hyle/compute/providers/onednn.h"
 #include "hyle/graph/cpu.h"
 #include "hyle/graph/providers/onednn.h"
@@ -17,6 +18,7 @@ namespace cases = d5_qwen_gguf_vocabulary_cases;
 namespace graph_test = d5_qwen_gguf_vocabulary_graph_test;
 inline constexpr std::array kMatureProviders{
     c::ggml_cpu::kProviderId, c::onednn::kProviderId,
+    c::aten_cpu::kProviderId,
     g::onednn::kProviderId};
 
 class CpuGraphQwenGgufVocabulary
