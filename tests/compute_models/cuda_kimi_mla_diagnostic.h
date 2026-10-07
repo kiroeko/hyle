@@ -10,7 +10,10 @@ void check(const hyle::compute::ModelArtifactProfileDescription *profile,Run run
     return node.operation.template get_if<hyle::compute::ScaledDotProductAttention>()!=nullptr;
   });
   ASSERT_NE(node,fixture.nodes.end());
-  const std::array extra{node->inputs[0],node->inputs[1]};
+  const std::array operands{node->inputs[0],node->inputs[1]};
+  const std::array extra{
+    fixture.one(hyle::compute::Operation(hyle::compute::Copy{}),{operands[0]}),
+    fixture.one(hyle::compute::Operation(hyle::compute::Copy{}),{operands[1]})};
   fixture.outputs.insert(fixture.outputs.begin(),extra.begin(),extra.end());
   for(auto &port:fixture.bfloat_chain_outputs)port+=2;
   for(auto &ports:fixture.state_ports)ports.second+=2;
