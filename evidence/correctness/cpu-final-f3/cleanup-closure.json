@@ -1,0 +1,19 @@
+[
+  {
+    "path": ".scratch\\validation\\cpu-final-f3\\qwen35-fixture.tar",
+    "bytes": 117667840,
+    "basis": "Verified same original extracted Windows fixture retained; transfer SHA preserved"
+  },
+  {
+    "path": ".scratch\\validation\\cpu-final-f3\\mac-delivery\\hyle-0.1.0-source.zip",
+    "bytes": 124549970,
+    "sha256": "e56e364f74cbeefb392decfcd5bad5d760cd44c5bb07a893989e9cf2afbb758c",
+    "basis": "Identity/manifest retained; current canonical Git and verified validation extracts/SDKs retained"
+  },
+  {
+    "path": ".scratch\\validation\\cpu-final-f3\\delivery-final\\hyle-0.1.0-source.zip",
+    "bytes": 124784724,
+    "sha256": "0d7c8cc356c7195241c645f8fa613ece9f4842d446442dbcb3895fd67ca5c904",
+    "basis": "Identity/manifest retained; current canonical Git and verified validation extracts/SDKs retained"
+  }
+]

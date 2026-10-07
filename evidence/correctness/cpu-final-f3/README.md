@@ -169,3 +169,15 @@ F1 mixed envelopes and the remaining goal phases remain separate.
 full sidecars and midpoint definition in exactly two tests per entry/platform,
 without skips. These complete the T11 test-seam deltas. The product snapshot
 remains unchanged; no further model/quantization/runtime probe was run.
+
+## Closure and cleanup
+
+F3 is closed at the [current carrier record](../../../docs/implementation/tasks/compute/cpu-final-f3-platform-carriers.md)
+with immutable product snapshot `560eb1d2332bb69ee5148e899b000fae85d80074`.
+This closes the mature-carrier package, not the complete CPU goal or a global
+best-of claim. F1 mixed/precompile and F4/F5/F6 remain explicit work.
+
+[Closure cleanup](cleanup-closure.json) removes 367,002,534 bytes of redundant
+fixture/source transfer archives only after member/manifest/hash checks. The
+canonical Git source, extracted original fixture, current dependency caches,
+validation extracts and SDKs remain available for the following work.
