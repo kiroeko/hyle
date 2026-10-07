@@ -427,14 +427,9 @@
     },
     {
       "module": "compute_provider_native",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/compute/cpu-final-f3-platform-carriers.md",
-      "summary": "CPU最终F3 CLOSED：三平台成熟承载/精度与同输入同ISA对照修复、原格式/状态/失败生命周期和source/static/shared资格齐；無新自研数学/性能WIN。F1 mixed、F4最佳Provider与F5清退、F6终审仍待。",
-      "candidate": "560eb1d2332bb69ee5148e899b000fae85d80074",
-      "performance": {
-        "tier": "P0",
-        "evidence": "docs/implementation/tasks/compute/cpu-final-f3-platform-carriers.md"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/cpu-final-f4-best-of.md",
+      "summary": "CPU最终F4 SCOPED：基于已完成F1/F3当前SDK和F2真实合同审计全部成熟/self重叠域，固定批量consumer/成本/有预算裁决/冷规则与F5去留；未AUDITED前不改产品，不恢复旧WIN或GPU队列。"
     },
     {
       "module": "compute_sched",
@@ -443,25 +438,15 @@
     },
     {
       "module": "compute_route_cpu",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/compute/cpu-final-f3-platform-carriers.md",
-      "summary": "CPU最终F3 CLOSED：三平台成熟承载/精度与同输入同ISA对照修复、原格式/状态/失败生命周期和source/static/shared资格齐；無新自研数学/性能WIN。F1 mixed、F4最佳Provider与F5清退、F6终审仍待。",
-      "candidate": "560eb1d2332bb69ee5148e899b000fae85d80074",
-      "performance": {
-        "tier": "P0",
-        "evidence": "docs/implementation/tasks/compute/cpu-final-f3-platform-carriers.md"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/cpu-final-f4-best-of.md",
+      "summary": "CPU最终F4 SCOPED：基于已完成F1/F3当前SDK和F2真实合同审计全部成熟/self重叠域，固定批量consumer/成本/有预算裁决/冷规则与F5去留；未AUDITED前不改产品，不恢复旧WIN或GPU队列。"
     },
     {
       "module": "graph_route_cpu",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/compute/cpu-final-f1-build-contract.md",
-      "summary": "CPU最终F1 CLOSED：recipe/软件资格、同core原CPU端口、预编译程序与安全ISA/重放、逐合同成熟默认、oneDNN3.13.4和三平台单/具名混合三交付已验；原失败/skip保留。未签新的WIN，F4/F5/F6及GPU旧状态不变。",
-      "candidate": "560eb1d2332bb69ee5148e899b000fae85d80074",
-      "performance": {
-        "tier": "P0",
-        "evidence": "docs/implementation/tasks/compute/cpu-final-f1-build-contract.md"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/cpu-final-f4-best-of.md",
+      "summary": "CPU最终F4 SCOPED：基于已完成F1/F3当前SDK和F2真实合同审计全部成熟/self重叠域，固定批量consumer/成本/有预算裁决/冷规则与F5去留；未AUDITED前不改产品，不恢复旧WIN或GPU队列。"
     },
     {
       "module": "compute_provider_cublas",

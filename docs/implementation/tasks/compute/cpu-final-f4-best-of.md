@@ -1,6 +1,9 @@
 # F4 CPU全重复域批量best-of
 
-计划包，尚未绑定owner；总合同[CPU最终收口](cpu-final-closure-plan.md)。输入F2重叠域与F3当前合格承载。
+<!-- MODULE REVIEW: SCOPED -->
+
+当前包SCOPED，baseline `83240ab43ba80cd549dcf03933e3d69e8f94c2b8`（登记完整revision），F1/F2/F3已完成。
+owner compute_provider_native、compute_route_cpu、graph_route_cpu；总合同[CPU最终收口](cpu-final-closure-plan.md)。输入F2重叠域与F3当前合格承载。
 只比较实际可执行且同语义/精度/资源/完成边界的候选，覆盖oneDNN/ggml/ATen及剩余Native，
 完整region与等价完整程序比较，保留融合。单承载只正确性/资源/P0，能力差异不能算loss。
 按真实模型角色、原格式、dtype、布局、attrs、shape、线程与软件/硬件身份归并，normal/holdout预冻结。
@@ -37,3 +40,25 @@ API/算法稳定后每批一个不可变候选，原仪器四strata/AA/controls/
 转换/packing/临时与完成成本，Graph完整region单独同合同对账，不把拆叶子结果外推融合。
 复用现Data/Session、统一仪器/controls/四strata和固定n15，只迁移具体benchmark consumer与contract，
 不重写公共性能核心；具名新接线缺陷最多一批纠正，近似或噪声按既定工程默认快速裁决。
+
+## 本轮SCOPED：固定owner与有限审计
+
+真实trigger：F1固定oneDNN3.13.4与单/混合CPU core交付后，旧187/17证书不适用；普通模型CPU两入口
+需要当前真实同合同候选裁决、未知条件合理默认，并向F5提供源码族去留依据。旧harness的具名限制见上节。
+Native与CPU route原F3 CLOSED、Graph CPU route原F1 CLOSED按此新版本/完整候选消费要求重开；
+成熟oneDNN/ggml承载owner保留原CLOSED，只有具体接线反例才另按协议定向绑定，不能泛化重审。
+
+| 有限审计 | 固定输出/允许后续FIX边界 |
+|---|---|
+| A1 实际重复合同 | F2→当前源码的dtype/precision/layout/shape/attrs/资源/状态交集与完整region；单承载不跑P1，self与借入程序分清 |
+| A2 批量consumer | 复用原Data/Session与仪器，改具名候选/当前SDK身份与有限normal/holdout，不复活退役MatMul/SDPA，不写新数学 |
+| A3 准备与执行账单 | 准备、转换、packing、临时、线程、checks、同步/完成与融合损失同边界；资格差异排除，不计LOSS |
+| A4 有预算裁决 | 一批preflight，固定四strata/AA/controls/n15/5%；明确差距与方向分别记录，接近/噪声快速成熟工程默认，不追加长循环 |
+| A5 普通规则 | 既有冷规则/private表按真实格式/模型/硬件/软件/线程/recipe绑定；完整region优先，未知合法默认、无在线计时、submit不搜索 |
+| A6 退役交接 | 35种/15源码族逐项映射；没有完整优势且成熟完整替代的self交F5物理删除，独有资源域明确，SIMD/Mem基础不删 |
+
+主consumer：固定目标模型的projection/norm/index/state/完整片段普通Direct与Graph；正交consumer为
+无模型身份的tensor批处理及相同操作的不同真实role/布局/holdout，不由旧benchmark宽度定义API。
+公开API/layout、Provider资源与原执行程序不变；SCOPED只授权有界审计，AUDITED有限FIX冻结前不改产品。
+current source/static/shared与三平台资格沿F1/F3对账，规则新命中/失配及新默认在本包完成两入口/资源/三交付验证。
+无新依赖升级、无自研优化、无模型loader或GPU资格队列；F4结束前不启动F5删除。
