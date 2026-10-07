@@ -76,8 +76,9 @@ Linux 同版本官方 wheel 身份已核对：
 
 ## 七门
 
-第三方路径、需求完整、内部资源复用、P0 成本、C++ 边界、三交付与普通使用均适用；当前全部
-UNVERIFIED。不以组件注册或本卡完成冒充产品覆盖。
+第三方路径、N1这18合同需求、内部资源复用、P0成本、C++边界、普通两入口已由下面两平台批次资格化。
+CUDA-only三交付通过；mixed shipping SDK仍UNVERIFIED，随U3余下成熟接线以最终候选集中验收。
+本卡保持AUDITED，不代签整条路线／其它格式、模型region或U4性能。不以组件注册或绿CTest冒充覆盖。
 
 ## Windows 批次进展
 
@@ -96,3 +97,14 @@ metadata OOM拒绝＋默认FFN共50项、三个公开头及精度预检通过。
 严格未知 private-storage预算、require-prepared／require-capture拒绝及普通command重放实际通过；
 隔离原库OOM／恢复另2项已通过；Windows三交付及原库OOM尚待，不签本卡整体CLOSED。精确输入与原失败见
 [Linux资格](../../../../evidence/correctness/cuda-final-u3-artifact-carrier/README.md#linux-实际资格与三交付)。
+
+## Windows 当前批次与联合余项
+
+`486e2aea` mixed producer 50项实际tests＋三个公开头及原库OOM／恢复2项通过。
+`c8f6f954`完成普通CUDA-only static/shared源码及搬移SDK，每种消费50项通过，离线及DLL邻exe／
+精简PATH启动通过。原SDK只因测试头修正而复用；原失败和零GTest过滤边界均保留于
+[当前Windows资格](../../../../evidence/correctness/cuda-final-u3-artifact-carrier/README.md#windows-当前资格与三交付)。
+
+用户要求批量接线、延迟集中验证；N1的mixed shipping三交付保留为U2／U3联合余项，在余下N2／R1
+接线稳定后用一次不可变路线候选集中完成，不重跑闭合CPU性能、不推到U6首次验收。
+本轮没有新增自研、P1或benchmark胜负。全Compute+Graph非测试实现60,562行／253文件，自检通过。

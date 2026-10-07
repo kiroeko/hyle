@@ -42,8 +42,8 @@ MSVC19.50.35728、CUDA Toolkit13.3.73。原 carrier 是 LibTorch2.8.0+cu129 CUDA
 
 ## 尚未签署
 
-Windows 的 CUDA-only source/static/shared/offline/搬移、原库 OOM 与恢复、其它格式／完整模型region、
-U4性能／best-of尚未完成。Linux 当前资格与剩余项见下节，不从 Windows 旧批次继承通过。
+mixed shipping SDK、其它格式／完整模型region、U4性能／best-of尚未完成。当前 N1 普通 CUDA-only
+三交付及两平台原库 OOM 的实际资格见下节，不从旧批次继承通过。
 native Python／隔离C++探针只证明接缝，不算新的HYLE覆盖或性能赢家；本记录不能签N1或整个CUDA CLOSED。
 
 [机器摘要](windows-receipt.json)与归档保存精确candidate、native及原失败、测试／XML、环境、
@@ -74,3 +74,20 @@ selector因中央图／lock seam选择的广泛交付仍待执行；批次只证
 暴露了新 prepared 两个 tensor 的显式初始化和旧测试 assertion 括号／borrowed Result／未使用描述符；
 前者只补空 tensor 初始化，后者只修测试，数学和误差门未改。实际 install 同时修正 owning license
 directory asset 的登记，未修改公共 package registry 或性能仪器。
+
+## Windows 当前资格与三交付
+
+`486e2aea` mixed producer 的50项实际 N1 tests、三个公开头检查及隔离原库OOM／恢复2项通过。
+原6项CTest汇总包含一项因matrix filter执行0个GTest的OOM fixture；该空fixture不计入资格，
+OOM资格只来自同候选隔离进程实际运行的2项。原始stdout保留，不用绿CTest冒充执行覆盖。
+
+普通 CUDA-only shared源码消费50项通过；安装SDK只改位置后，独立C++工程以
+System32／Windows-only PATH运行50项通过，DLL全在exe旁。消费夹具原来无条件include
+Linux-only FlashInfer头；`c8f6f954`按真实feature宏修正该测试。复用原SDK时已证明diff仅tests／docs／
+evidence，产品／package输入相同；未重建或重复源端50项来补测试头。static源码与搬移SDK各50项
+通过，离线配置成功，无fixture skip、无新数学或新性能比较。
+
+[精确当前摘要](windows-complete-receipt.json)和[本批原失败／纠正／原始资格日志](windows-complete-batch.zip)
+保留完整身份和复用边界。两平台CUDA-only三交付完成；mixed shipping三交付随N2／R1等余下U3接线
+以最终不可变路线候选一次集中验收，须在U2／U3关闭前完成，不能首次留到U6。
+目前仍不签N1／整条CUDA CLOSED，不将上述50项代签全部模型、格式或best-of。
