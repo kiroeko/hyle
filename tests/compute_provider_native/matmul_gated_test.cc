@@ -524,7 +524,7 @@ template <class Value> void expect_half_gated(std::size_t hidden) {
       auto prepared =
           is_packed ? hyle::compute::prepare(context, operation, packed_desc)
                     : hyle::compute::prepare(context, operation, desc, desc);
-      if (type != DataType::kFloat16 || kind != GatedActivationKind::kSilu) {
+      if (type != DataType::kFloat16 || kind != GatedActivationKind::kSilu || is_packed) {
         ASSERT_FALSE(prepared);
         EXPECT_TRUE(prepared.error().IsUnimplemented());
         continue;

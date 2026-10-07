@@ -90,3 +90,15 @@ UInt32 Fill的旧Native-only测试迁原ATen bit-write，domain反偏置由仍�
 初次两项旧fixture FAIL仍保留。本轮没有P1或自研优化。
 其余旧Native-only目录的迁移、保留20种全部必要算术重放、两普通入口／C5／三平台三交付差异与
 source ledger／终审仍未完成，owner保持AUDITED，不能据首批PASS关闭F5。
+
+### D2 owning测试迁移批
+
+旧全域Cast／基础elementwise／LayerNorm／Reduce／Scatter／Concat／RoPE和宽Softmax数值测试
+迁现有ATen原程序，保留独立oracle、特殊值、odd byte stride、checked index、empty与变输入重放。
+被撤回的dense Select exact-alias明确在提交前拒绝且原位数据不变；没有以skip替代旧能力取舍。
+Native测试限定保留dtype／variant，新增4个Cast资格对、BF16 RMS参数精度／独立invocation和
+F16 Min/Max、BF16 Max的dense／odd-stride／多axes实际数学检查；RMS／Copy资源测试保留。
+当前Windows owning全部144项PASS、无skip；原142项首次迁移4项FAIL、随后1项FAIL以及
+补充测试首次namespace编译FAIL原log均保留，修正后全部通过。测试迁移未改产品数学／43规则。
+原始记录在`.scratch/validation/cpu-final-f5/receipt.json`与owning XML，最终将集中归档。
+普通两入口／C5／三平台三交付差异与source ledger仍待验，F5保持AUDITED。

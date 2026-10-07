@@ -43,7 +43,7 @@ std::array<Value, Size> read_buffer(const Buffer &buffer) {
   return result;
 }
 
-TEST(NativeReduction, ExecutesEveryModeAcrossTheLastAxis) {
+TEST(MatureReduction, ExecutesEveryModeAcrossTheLastAxis) {
   constexpr std::array<std::int64_t, 2> shape{2, 3};
   constexpr std::array<std::int64_t, 1> output_shape{2};
   constexpr std::array<std::int32_t, 1> axis{1};
@@ -65,7 +65,7 @@ TEST(NativeReduction, ExecutesEveryModeAcrossTheLastAxis) {
       ConstTensorView::create(input_desc, input_storage.view()).value();
   const TensorView output =
       TensorView::create(output_desc, output_storage.view()).value();
-  auto context = hyle::compute::test::native_context().value();
+  auto context = hyle::compute::Context::create(hyle::compute::cpu::device(), hyle::compute::aten_cpu::provider()).value();
   auto queue = context.create_queue().value();
 
   for (std::size_t index = 0; index < kinds.size(); ++index) {
@@ -79,7 +79,7 @@ TEST(NativeReduction, ExecutesEveryModeAcrossTheLastAxis) {
   }
 }
 
-TEST(NativeReduction, ReducesMultipleAxesWithAndWithoutKeptDimensions) {
+TEST(MatureReduction, ReducesMultipleAxesWithAndWithoutKeptDimensions) {
   constexpr std::array<std::int64_t, 3> shape{2, 2, 2};
   constexpr std::array<std::int64_t, 1> compact_shape{2};
   constexpr std::array<std::int64_t, 3> kept_shape{1, 2, 1};
@@ -102,7 +102,7 @@ TEST(NativeReduction, ReducesMultipleAxesWithAndWithoutKeptDimensions) {
       TensorView::create(compact_desc, compact_storage.view()).value();
   const TensorView kept =
       TensorView::create(kept_desc, kept_storage.view()).value();
-  auto context = hyle::compute::test::native_context().value();
+  auto context = hyle::compute::Context::create(hyle::compute::cpu::device(), hyle::compute::aten_cpu::provider()).value();
   auto queue = context.create_queue().value();
 
   auto compact_prepared =
@@ -127,7 +127,7 @@ TEST(NativeReduction, ReducesMultipleAxesWithAndWithoutKeptDimensions) {
   EXPECT_EQ((read_buffer<float, 2>(kept_storage)), expected);
 }
 
-TEST(NativeReduction, HandlesUnalignedStrideNaNAndSignedZero) {
+TEST(MatureReduction, HandlesUnalignedStrideNaNAndSignedZero) {
   constexpr std::array<std::int64_t, 2> shape{2, 2};
   constexpr std::array<std::int64_t, 2> strides{10, 4};
   constexpr std::array<std::size_t, 4> offsets{0, 4, 10, 14};
@@ -152,7 +152,7 @@ TEST(NativeReduction, HandlesUnalignedStrideNaNAndSignedZero) {
       ConstTensorView::create(input_desc, input_storage.view()).value();
   const TensorView output =
       TensorView::create(output_desc, output_storage.view()).value();
-  auto context = hyle::compute::test::native_context().value();
+  auto context = hyle::compute::Context::create(hyle::compute::cpu::device(), hyle::compute::aten_cpu::provider()).value();
   auto queue = context.create_queue().value();
 
   auto prepared =
@@ -180,7 +180,7 @@ TEST(NativeReduction, HandlesUnalignedStrideNaNAndSignedZero) {
   EXPECT_TRUE(std::signbit(read_buffer<float, 1>(output_storage)[0]));
 }
 
-TEST(NativeReduction, DefinesEmptyReductionIdentities) {
+TEST(MatureReduction, DefinesEmptyReductionIdentities) {
   constexpr std::array<std::int64_t, 2> shape{2, 0};
   constexpr std::array<std::int64_t, 1> output_shape{2};
   constexpr std::array<std::int32_t, 1> axis{1};
@@ -196,7 +196,7 @@ TEST(NativeReduction, DefinesEmptyReductionIdentities) {
       ConstTensorView::create(input_desc, input_storage.view()).value();
   const TensorView output =
       TensorView::create(output_desc, output_storage.view()).value();
-  auto context = hyle::compute::test::native_context().value();
+  auto context = hyle::compute::Context::create(hyle::compute::cpu::device(), hyle::compute::aten_cpu::provider()).value();
   auto queue = context.create_queue().value();
 
   constexpr std::array kinds{ReductionKind::kSum, ReductionKind::kMean,
@@ -221,11 +221,11 @@ TEST(NativeReduction, DefinesEmptyReductionIdentities) {
   }
 }
 
-TEST(NativeReduction, RejectsUnsupportedStorageAndAccumulation) {
+TEST(MatureReduction, RejectsUnsupportedStorageAndAccumulation) {
   constexpr std::array<std::int64_t, 1> shape{4};
   const TensorDesc f16 = TensorDesc::dense(DataType::kFloat16, shape).value();
   const TensorDesc f32 = TensorDesc::dense(DataType::kFloat32, shape).value();
-  auto context = hyle::compute::test::native_context().value();
+  auto context = hyle::compute::Context::create(hyle::compute::cpu::device(), hyle::compute::aten_cpu::provider()).value();
 
   auto storage =
       hyle::compute::prepare(context, Reduce{.kind = ReductionKind::kSum}, f16);
@@ -242,7 +242,8 @@ TEST(NativeReduction, RejectsUnsupportedStorageAndAccumulation) {
 }
 
 template <class Value>
-void expect_half_reduction(bool general, bool padded, bool last_axis) {
+void expect_half_reduction(bool general, bool padded, bool last_axis,
+                           bool native = false) {
   constexpr std::size_t width = 129;
   const std::size_t groups = general ? 3 : 1;
   std::vector<Value> source(2 * groups * width);
@@ -269,10 +270,19 @@ void expect_half_reduction(bool general, bool padded, bool last_axis) {
   Buffer input = half_test::buffer<std::byte>(physical);
   const auto input_view =
       ConstTensorView::create(input_desc, input.view()).value();
-  auto context = hyle::compute::test::native_context().value();
+  auto context = native
+                     ? hyle::compute::test::native_context().value()
+                     : hyle::compute::Context::create(
+                           hyle::compute::cpu::device(),
+                           hyle::compute::aten_cpu::provider())
+                           .value();
   auto queue = context.create_queue().value();
   for (const auto kind : {ReductionKind::kSum, ReductionKind::kMean,
                           ReductionKind::kMinimum, ReductionKind::kMaximum}) {
+    if (native &&
+        !(kind == ReductionKind::kMaximum ||
+          (type == DataType::kFloat16 && kind == ReductionKind::kMinimum)))
+      continue;
     const Axes axes =
         last_axis ? Axes::from(std::array<std::int32_t, 1>{-1}).value()
         : general ? Axes::from(std::array<std::int32_t, 2>{0, 2}).value()
@@ -308,7 +318,7 @@ void expect_half_reduction(bool general, bool padded, bool last_axis) {
   }
 }
 
-TEST(NativeReduction, HalfAccumulatesInFloat32AcrossDenseAndStridedAxes) {
+TEST(MatureReduction, HalfAccumulatesInFloat32AcrossDenseAndStridedAxes) {
   for (const bool general : {false, true})
     for (const bool padded : {false, true})
       for (const bool last : {false, true}) {
@@ -317,8 +327,20 @@ TEST(NativeReduction, HalfAccumulatesInFloat32AcrossDenseAndStridedAxes) {
       }
 }
 
+TEST(NativeReduction, QualifiedNarrowExtremaKeepDenseAndOddStrideSemantics) {
+  for (const bool general : {false, true})
+    for (const bool padded : {false, true})
+      for (const bool last : {false, true}) {
+        SCOPED_TRACE(general);
+        SCOPED_TRACE(padded);
+        SCOPED_TRACE(last);
+        expect_half_reduction<hyle::simd::float16_t>(general, padded, last, true);
+        expect_half_reduction<hyle::simd::bfloat16_t>(general, padded, last, true);
+      }
+}
+
 template <class Value> void expect_half_reduction_edges() {
-  auto context = hyle::compute::test::native_context().value();
+  auto context = hyle::compute::Context::create(hyle::compute::cpu::device(), hyle::compute::aten_cpu::provider()).value();
   auto queue = context.create_queue().value();
   for (const bool empty : {false, true}) {
     const auto desc =
@@ -373,7 +395,7 @@ template <class Value> void expect_half_reduction_edges() {
   }
 }
 
-TEST(NativeReduction, HalfPreservesEmptyAndNonFiniteRules) {
+TEST(MatureReduction, HalfPreservesEmptyAndNonFiniteRules) {
   expect_half_reduction_edges<hyle::simd::float16_t>();
   expect_half_reduction_edges<hyle::simd::bfloat16_t>();
 }

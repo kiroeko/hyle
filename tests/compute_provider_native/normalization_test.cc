@@ -66,7 +66,7 @@ bool probe_in_parallel(void *context) noexcept {
   return static_cast<ParallelProbe *>(context)->nested;
 }
 
-TEST(NativeLayerNorm, ExecutesNonAffineScaleOnlyAndAffineRows) {
+TEST(MatureLayerNorm, ExecutesNonAffineScaleOnlyAndAffineRows) {
   constexpr std::array<std::int64_t, 2> shape{2, 3};
   constexpr std::array<std::int64_t, 1> parameter_shape{3};
   constexpr std::array<float, 6> values{1, 2, 3, 2, 4, 6};
@@ -98,7 +98,7 @@ TEST(NativeLayerNorm, ExecutesNonAffineScaleOnlyAndAffineRows) {
       ConstTensorView::create(parameter_desc, bias_storage.view()).value();
   const TensorView output =
       TensorView::create(input_desc, output_storage.view()).value();
-  auto context = hyle::compute::test::native_context().value();
+  auto context = hyle::compute::Context::create(hyle::compute::cpu::device(), hyle::compute::aten_cpu::provider()).value();
   auto queue = context.create_queue().value();
   const LayerNorm operation{.epsilon = epsilon};
 
@@ -126,7 +126,7 @@ TEST(NativeLayerNorm, ExecutesNonAffineScaleOnlyAndAffineRows) {
   expect_near(read_buffer<6>(output_storage), affine);
 }
 
-TEST(NativeLayerNorm, SupportsExactInputOutputAlias) {
+TEST(MatureLayerNorm, SupportsExactInputOutputAlias) {
   constexpr std::array<std::int64_t, 2> shape{1, 3};
   constexpr std::array<float, 3> values{1, 2, 3};
   constexpr float root = 1.2247357F;
@@ -137,7 +137,7 @@ TEST(NativeLayerNorm, SupportsExactInputOutputAlias) {
       ConstTensorView::create(description, storage.view()).value();
   const TensorView output =
       TensorView::create(description, storage.view()).value();
-  auto context = hyle::compute::test::native_context().value();
+  auto context = hyle::compute::Context::create(hyle::compute::cpu::device(), hyle::compute::aten_cpu::provider()).value();
   auto queue = context.create_queue().value();
   auto prepared =
       hyle::compute::prepare(context, LayerNorm{}, description).value();
@@ -147,7 +147,7 @@ TEST(NativeLayerNorm, SupportsExactInputOutputAlias) {
   expect_near(read_buffer<3>(storage), std::array<float, 3>{-root, 0, root});
 }
 
-TEST(NativeLayerNorm, AcceptsAnEmptyLastDimension) {
+TEST(MatureLayerNorm, AcceptsAnEmptyLastDimension) {
   constexpr std::array<std::int64_t, 2> shape{3, 0};
   const TensorDesc description =
       TensorDesc::dense(DataType::kFloat32, shape).value();
@@ -156,7 +156,7 @@ TEST(NativeLayerNorm, AcceptsAnEmptyLastDimension) {
       ConstTensorView::create(description, storage.view()).value();
   const TensorView output =
       TensorView::create(description, storage.view()).value();
-  auto context = hyle::compute::test::native_context().value();
+  auto context = hyle::compute::Context::create(hyle::compute::cpu::device(), hyle::compute::aten_cpu::provider()).value();
   auto queue = context.create_queue().value();
   auto prepared =
       hyle::compute::prepare(context, LayerNorm{}, description).value();
@@ -167,7 +167,7 @@ TEST(NativeLayerNorm, AcceptsAnEmptyLastDimension) {
 
 template <class Value, class Scale, class Bias>
 void expect_half_norm(std::size_t hidden, bool rms, std::size_t arity,
-                      float epsilon = 1.0e-6F) {
+                      float epsilon = 1.0e-6F, bool native = false) {
   constexpr std::size_t rows = 3;
   const auto width = static_cast<std::int64_t>(hidden);
   const auto desc = TensorDesc::dense(half_test::data_type<Value>(),
@@ -217,7 +217,12 @@ void expect_half_norm(std::size_t hidden, bool rms, std::size_t arity,
       ConstTensorView::create(scale_desc, scale_buffer.view()).value();
   const auto bias_view =
       ConstTensorView::create(bias_desc, bias_buffer.view()).value();
-  auto context = hyle::compute::test::native_context().value();
+  auto context = native
+                     ? hyle::compute::test::native_context().value()
+                     : hyle::compute::Context::create(
+                           hyle::compute::cpu::device(),
+                           hyle::compute::aten_cpu::provider())
+                           .value();
   auto queue = context.create_queue().value();
   auto prepared = [&] {
     if (rms) {
@@ -302,16 +307,26 @@ template <class Value> void expect_half_norm_domains() {
   expect_half_norm<Value, Value, Value>(1, false, 1, 0.0F);
 }
 
-TEST(NativeNormalization, HalfStorageKeepsParametersAndIndependentInvocations) {
+TEST(MatureNormalization, HalfStorageKeepsParametersAndIndependentInvocations) {
   expect_half_norm_domains<hyle::simd::float16_t>();
   expect_half_norm_domains<hyle::simd::bfloat16_t>();
 }
 
-TEST(NativeLayerNorm, RejectsUnsupportedStorageAndAccumulation) {
+TEST(NativeRmsNorm, QualifiedBfloatKeepsScaleAndIndependentReplays) {
+  using Value = hyle::simd::bfloat16_t;
+  for (const std::size_t hidden : {0, 1, 127, 128, 129, 2048, 4096}) {
+    SCOPED_TRACE(hidden);
+    expect_half_norm<Value, Value, Value>(hidden, true, 1, 1.0e-5F, true);
+    expect_half_norm<Value, Value, Value>(hidden, true, 2, 1.0e-5F, true);
+    expect_half_norm<Value, float, Value>(hidden, true, 2, 1.0e-5F, true);
+  }
+}
+
+TEST(MatureLayerNorm, RejectsUnsupportedStorageAndAccumulation) {
   constexpr std::array<std::int64_t, 2> shape{2, 3};
   const TensorDesc f64 = TensorDesc::dense(DataType::kFloat64, shape).value();
   const TensorDesc f32 = TensorDesc::dense(DataType::kFloat32, shape).value();
-  auto context = hyle::compute::test::native_context().value();
+  auto context = hyle::compute::Context::create(hyle::compute::cpu::device(), hyle::compute::aten_cpu::provider()).value();
 
   auto storage = hyle::compute::prepare(context, LayerNorm{}, f64);
   ASSERT_FALSE(storage.has_value());
@@ -328,7 +343,7 @@ TEST(NativeLayerNorm, RejectsUnsupportedStorageAndAccumulation) {
   EXPECT_TRUE(rms_accumulation.error().IsUnimplemented());
 }
 
-TEST(NativeLayerNorm, PinsExecutorAndUsesOneBoundedSynchronousFanOut) {
+TEST(NativeRmsNorm, PinsExecutorAndUsesOneBoundedSynchronousFanOut) {
   constexpr std::array<std::int64_t, 2> shape{8, 8192};
   const TensorDesc description =
       TensorDesc::dense(DataType::kFloat32, shape).value();
@@ -350,7 +365,7 @@ TEST(NativeLayerNorm, PinsExecutorAndUsesOneBoundedSynchronousFanOut) {
       hyle::compute::test::native_context({.executor = executor}).value();
   auto queue = context.create_queue().value();
   auto prepared =
-      hyle::compute::prepare(context, LayerNorm{}, description).value();
+      hyle::compute::prepare(context, hyle::compute::RmsNorm{}, description).value();
   auto invocation = prepared.create_invocation().value();
   const ConstTensorView input_view =
       ConstTensorView::create(description, input.view()).value();

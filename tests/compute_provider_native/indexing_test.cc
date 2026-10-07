@@ -91,7 +91,7 @@ TEST(NativeIndexing, GatherCopiesDenseSuffixBlocksAndChecksIndices) {
   EXPECT_EQ((read_buffer<std::int32_t, poison.size()>(output_storage)), poison);
 }
 
-TEST(NativeIndexing, ScatterAssignsOrAddsAndSupportsExactSourceAlias) {
+TEST(MatureIndexing, ScatterAssignsOrAddsAndSupportsExactSourceAlias) {
   constexpr std::array<std::int64_t, 2> source_shape{2, 3};
   constexpr std::array<std::int64_t, 1> index_shape{2};
   constexpr std::array<std::int64_t, 2> update_shape{2, 2};
@@ -119,7 +119,7 @@ TEST(NativeIndexing, ScatterAssignsOrAddsAndSupportsExactSourceAlias) {
   const std::array outputs{
       TensorView::create(source_desc, output_storage.view()).value()};
 
-  auto context = hyle::compute::test::native_context().value();
+  auto context = hyle::compute::Context::create(hyle::compute::cpu::device(), hyle::compute::aten_cpu::provider()).value();
   auto queue = context.create_queue().value();
   auto assign =
       hyle::compute::prepare(
@@ -147,7 +147,7 @@ TEST(NativeIndexing, ScatterAssignsOrAddsAndSupportsExactSourceAlias) {
   EXPECT_EQ((read_buffer<float, added.size()>(source_storage)), added);
 }
 
-TEST(NativeIndexing, ConcatenatesVariadicDenseInputsAlongMiddleAxis) {
+TEST(MatureIndexing, ConcatenatesVariadicDenseInputsAlongMiddleAxis) {
   constexpr std::array<std::int64_t, 2> first_shape{2, 2};
   constexpr std::array<std::int64_t, 2> second_shape{2, 1};
   constexpr std::array<std::int64_t, 2> output_shape{2, 3};
@@ -171,7 +171,7 @@ TEST(NativeIndexing, ConcatenatesVariadicDenseInputsAlongMiddleAxis) {
   const std::array outputs{
       TensorView::create(output_desc, output_storage.view()).value()};
 
-  auto context = hyle::compute::test::native_context().value();
+  auto context = hyle::compute::Context::create(hyle::compute::cpu::device(), hyle::compute::aten_cpu::provider()).value();
   auto queue = context.create_queue().value();
   const std::array descriptions{first_desc, second_desc};
   auto prepared =

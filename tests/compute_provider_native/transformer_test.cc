@@ -68,7 +68,7 @@ std::array<float, 3> reference_softmax(std::array<float, 3> values) {
   return values;
 }
 
-TEST(NativeTransformer, ExecutesBothRopeLayoutsAndPreservesTheTail) {
+TEST(MatureTransformer, ExecutesBothRopeLayoutsAndPreservesTheTail) {
   constexpr float half_pi = 1.57079632679489661923F;
   constexpr float pi = 3.14159265358979323846F;
   constexpr std::array<std::int64_t, 3> data_shape{1, 2, 6};
@@ -99,13 +99,12 @@ TEST(NativeTransformer, ExecutesBothRopeLayoutsAndPreservesTheTail) {
           .value()};
   const std::array outputs{
       TensorView::create(data_desc, output_storage.view()).value()};
-  auto context = hyle::compute::test::native_context().value();
+  auto context = hyle::compute::Context::create(hyle::compute::cpu::device(), hyle::compute::aten_cpu::provider()).value();
   const auto i64 = TensorDesc::dense(DataType::kInt64, position_shape).value();
-  auto retired = hyle::compute::prepare(
+  auto wide_positions = hyle::compute::prepare(
       context, RoPE{.rotary_dimensions = 4, .sequence_axis = 1}, data_desc, i64,
       frequency_desc);
-  ASSERT_FALSE(retired);
-  EXPECT_TRUE(retired.error().IsUnimplemented());
+  ASSERT_TRUE(wide_positions) << wide_positions.error().message();
   auto queue = context.create_queue().value();
 
   auto interleaved =
@@ -142,7 +141,7 @@ TEST(NativeTransformer, ExecutesBothRopeLayoutsAndPreservesTheTail) {
   expect_near(read_buffer<float, values.size()>(data_storage), split_expected);
 }
 
-TEST(NativeTransformer, RopeExercisesVectorBlocksAndPairTail) {
+TEST(MatureTransformer, RopeExercisesVectorBlocksAndPairTail) {
   constexpr std::size_t pairs = 65;
   constexpr std::size_t rotary = pairs * 2;
   constexpr std::size_t depth = rotary + 3;
@@ -176,7 +175,7 @@ TEST(NativeTransformer, RopeExercisesVectorBlocksAndPairTail) {
           .value()};
   const std::array outputs{
       TensorView::create(data_desc, output_storage.view()).value()};
-  auto context = hyle::compute::test::native_context().value();
+  auto context = hyle::compute::Context::create(hyle::compute::cpu::device(), hyle::compute::aten_cpu::provider()).value();
   auto queue = context.create_queue().value();
 
   for (RopeLayout layout : {RopeLayout::kInterleaved, RopeLayout::kHalfSplit}) {
@@ -205,7 +204,7 @@ TEST(NativeTransformer, RopeExercisesVectorBlocksAndPairTail) {
   }
 }
 
-TEST(NativeTransformer, RopeMaterializesPlainStridedInputs) {
+TEST(MatureTransformer, RopeMaterializesPlainStridedInputs) {
   constexpr float half_pi = 1.57079632679489661923F;
   constexpr float pi = 3.14159265358979323846F;
   constexpr std::array<std::int64_t, 3> data_shape{1, 2, 6};
@@ -243,7 +242,7 @@ TEST(NativeTransformer, RopeMaterializesPlainStridedInputs) {
           .value()};
   const std::array outputs{
       TensorView::create(output_desc, output_storage.view()).value()};
-  auto context = hyle::compute::test::native_context().value();
+  auto context = hyle::compute::Context::create(hyle::compute::cpu::device(), hyle::compute::aten_cpu::provider()).value();
   auto queue = context.create_queue().value();
   auto prepared = hyle::compute::prepare(
                       context,
@@ -257,7 +256,7 @@ TEST(NativeTransformer, RopeMaterializesPlainStridedInputs) {
   expect_near(read_buffer<float, expected.size()>(output_storage), expected);
 }
 
-TEST(NativeTransformer, SoftmaxSupportsBroadcastMasksScaleAndExactAlias) {
+TEST(MatureTransformer, SoftmaxSupportsBroadcastMasksScaleAndExactAlias) {
   constexpr std::array<std::int64_t, 2> shape{2, 3};
   constexpr std::array<std::int64_t, 2> mask_shape{1, 3};
   constexpr std::array<float, 6> values{1, 2, 3, 4, 5, 6};
@@ -276,7 +275,7 @@ TEST(NativeTransformer, SoftmaxSupportsBroadcastMasksScaleAndExactAlias) {
       TensorView::create(data_desc, data_storage.view()).value();
   const std::array inputs{data, mask_view};
   const std::array outputs{output};
-  auto context = hyle::compute::test::native_context().value();
+  auto context = hyle::compute::Context::create(hyle::compute::cpu::device(), hyle::compute::aten_cpu::provider()).value();
   auto queue = context.create_queue().value();
   auto prepared =
       hyle::compute::prepare(
@@ -301,7 +300,7 @@ TEST(NativeTransformer, SoftmaxSupportsBroadcastMasksScaleAndExactAlias) {
   expect_near(read_buffer<float, values.size()>(data_storage), expected);
 }
 
-TEST(NativeTransformer, LogSoftmaxSupportsANonTrailingAxis) {
+TEST(MatureTransformer, LogSoftmaxSupportsANonTrailingAxis) {
   constexpr std::array<std::int64_t, 3> shape{1, 3, 2};
   constexpr std::array<float, 6> values{1, 10, 2, 20, 3, 30};
   std::array<float, values.size()> zero{};
@@ -313,7 +312,7 @@ TEST(NativeTransformer, LogSoftmaxSupportsANonTrailingAxis) {
       ConstTensorView::create(data_desc, input_storage.view()).value()};
   const std::array outputs{
       TensorView::create(data_desc, output_storage.view()).value()};
-  auto context = hyle::compute::test::native_context().value();
+  auto context = hyle::compute::Context::create(hyle::compute::cpu::device(), hyle::compute::aten_cpu::provider()).value();
   auto queue = context.create_queue().value();
   auto prepared =
       hyle::compute::prepare(
@@ -335,7 +334,7 @@ TEST(NativeTransformer, LogSoftmaxSupportsANonTrailingAxis) {
   expect_near(read_buffer<float, values.size()>(output_storage), expected);
 }
 
-TEST(NativeTransformer, SoftmaxSupportsAdditiveMasksAndUndefinedRows) {
+TEST(MatureTransformer, SoftmaxSupportsAdditiveMasksAndUndefinedRows) {
   constexpr std::array<std::int64_t, 2> shape{2, 3};
   constexpr std::array<std::int64_t, 2> mask_shape{1, 3};
   constexpr std::array<float, 6> values{1, 2, 3, 4, 5, 6};
@@ -353,7 +352,7 @@ TEST(NativeTransformer, SoftmaxSupportsAdditiveMasksAndUndefinedRows) {
       ConstTensorView::create(mask_desc, mask_storage.view()).value()};
   const std::array outputs{
       TensorView::create(data_desc, output_storage.view()).value()};
-  auto context = hyle::compute::test::native_context().value();
+  auto context = hyle::compute::Context::create(hyle::compute::cpu::device(), hyle::compute::aten_cpu::provider()).value();
   auto queue = context.create_queue().value();
   auto prepared =
       hyle::compute::prepare(
@@ -444,7 +443,7 @@ void expect_half_softmax(bool strided, MaskKind mask_kind) {
       ConstTensorView::create(mask_desc, mask.view()).value();
   auto context = hyle::compute::test::native_context().value();
   auto queue = context.create_queue().value();
-  for (const auto kind : {SoftmaxKind::kSoftmax, SoftmaxKind::kLogSoftmax}) {
+  for (const auto kind : {SoftmaxKind::kSoftmax}) {
     const float scale = mask_kind == MaskKind::kNone ? 1.0F : 0.75F;
     const Softmax operation{
         .axis = 1, .scale = scale, .kind = kind, .mask = mask_kind};
@@ -545,11 +544,7 @@ void expect_half_softmax(bool strided, MaskKind mask_kind) {
 
 TEST(NativeTransformer, HalfSoftmaxUsesDeclaredWorkspaceAndMaskSemantics) {
   for (const bool strided : {false, true})
-    for (const auto mask :
-         {MaskKind::kNone, MaskKind::kBoolean, MaskKind::kAdditive}) {
-      expect_half_softmax<hyle::simd::float16_t>(strided, mask);
-      expect_half_softmax<hyle::simd::bfloat16_t>(strided, mask);
-    }
+    expect_half_softmax<hyle::simd::float16_t>(strided, MaskKind::kBoolean);
 }
 
 template <class Value> void expect_half_empty_transformer() {
@@ -560,16 +555,17 @@ template <class Value> void expect_half_empty_transformer() {
   auto queue = context.create_queue().value();
   Buffer empty = Buffer::create(hyle::mem::system_resource(), 0).value();
   const auto input = ConstTensorView::create(desc, empty.view()).value();
-  auto softmax = hyle::compute::prepare(context, Softmax{}, desc).value();
+  const auto boolean = TensorDesc::dense(DataType::kBool, std::array<std::int64_t, 2>{0, 129}).value();
+  auto softmax = hyle::compute::prepare(context, Softmax{.mask = MaskKind::kBoolean}, desc, boolean).value();
   EXPECT_EQ(softmax.workspace_requirement().size, 0U);
   auto invocation = softmax.create_invocation().value();
   const auto output = TensorView::create(desc, empty.view()).value();
-  ASSERT_TRUE(invocation.submit(queue, input, output)->wait().ok());
+  const auto mask = ConstTensorView::create(boolean, empty.view()).value();
+  ASSERT_TRUE(invocation.submit(queue, input, mask, output)->wait().ok());
 }
 
 TEST(NativeTransformer, EmptyHalfWorkloadRequiresNoWorkspace) {
   expect_half_empty_transformer<hyle::simd::float16_t>();
-  expect_half_empty_transformer<hyle::simd::bfloat16_t>();
 }
 
 } // namespace

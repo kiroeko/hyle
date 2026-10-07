@@ -67,7 +67,7 @@ template <class Value> float decode(Value value) noexcept {
   }
 }
 
-template <class Source, class Destination> void expect_dense_cast() {
+template <class Source, class Destination> void expect_dense_cast(bool native = false) {
   constexpr std::array<std::int64_t, 1> shape{7};
   constexpr std::array<float, 7> values{-32.0F, -2.0F, -0.0F, 0.25F,
                                         1.0F,   3.5F,  64.0F};
@@ -94,7 +94,8 @@ template <class Source, class Destination> void expect_dense_cast() {
       ConstTensorView::create(input_desc, input_storage.view()).value();
   const TensorView output =
       TensorView::create(output_desc, output_storage.view()).value();
-  auto context = hyle::compute::test::native_context().value();
+  auto context = (native ? hyle::compute::test::native_context()
+                        : hyle::compute::Context::create(hyle::compute::cpu::device(), hyle::compute::aten_cpu::provider())).value();
   auto queue = context.create_queue().value();
   auto prepared = hyle::compute::prepare(
       context, Cast{data_type<Destination>()}, input_desc);
@@ -117,7 +118,14 @@ template <class Source> void expect_all_destinations() {
   expect_dense_cast<Source, hyle::simd::float8_e5m2_t>();
 }
 
-TEST(NativeCast, CoversCompleteInferenceStorageConversionGraph) {
+TEST(NativeCast, ReplaysAllFourQualifiedStoragePairs) {
+  expect_dense_cast<hyle::simd::float8_e4m3_t, hyle::simd::float16_t>(true);
+  expect_dense_cast<hyle::simd::float8_e5m2_t, hyle::simd::bfloat16_t>(true);
+  expect_dense_cast<hyle::simd::float8_e5m2_t, hyle::simd::float8_e4m3_t>(true);
+  expect_dense_cast<hyle::simd::float8_e5m2_t, hyle::simd::float8_e5m2_t>(true);
+}
+
+TEST(MatureCast, CoversCompleteInferenceStorageConversionGraph) {
   expect_all_destinations<float>();
   expect_all_destinations<hyle::simd::float16_t>();
   expect_all_destinations<hyle::simd::bfloat16_t>();
@@ -125,7 +133,7 @@ TEST(NativeCast, CoversCompleteInferenceStorageConversionGraph) {
   expect_all_destinations<hyle::simd::float8_e5m2_t>();
 }
 
-TEST(NativeCast, ConvertsDenseFloat32ToFloat16Bits) {
+TEST(MatureCast, ConvertsDenseFloat32ToFloat16Bits) {
   constexpr std::array<std::int64_t, 1> shape{5};
   constexpr std::array<float, 5> values{0.0F, 1.0F, -2.0F, 0.5F, 65504.0F};
   constexpr std::array<std::uint16_t, 5> expected{0x0000, 0x3c00, 0xc000,
@@ -148,7 +156,7 @@ TEST(NativeCast, ConvertsDenseFloat32ToFloat16Bits) {
   const TensorView output =
       TensorView::create(output_desc, output_storage.view()).value();
 
-  auto context = hyle::compute::test::native_context().value();
+  auto context = hyle::compute::Context::create(hyle::compute::cpu::device(), hyle::compute::aten_cpu::provider()).value();
   auto queue = context.create_queue().value();
   auto prepared =
       hyle::compute::prepare(context, Cast{DataType::kFloat16}, input_desc)
@@ -164,7 +172,7 @@ TEST(NativeCast, ConvertsDenseFloat32ToFloat16Bits) {
   EXPECT_EQ(actual, expected);
 }
 
-TEST(NativeCast, MaterializesStridedFloat16ToFloat32) {
+TEST(MatureCast, MaterializesStridedFloat16ToFloat32) {
   constexpr std::array<std::int64_t, 2> shape{2, 2};
   constexpr std::array<std::int64_t, 2> strides{5, 2};
   constexpr std::array<std::uint16_t, 4> bits{0x3c00, 0x4000, 0x4200, 0x4400};
@@ -192,7 +200,7 @@ TEST(NativeCast, MaterializesStridedFloat16ToFloat32) {
   const TensorView output =
       TensorView::create(output_desc, output_storage.view()).value();
 
-  auto context = hyle::compute::test::native_context().value();
+  auto context = hyle::compute::Context::create(hyle::compute::cpu::device(), hyle::compute::aten_cpu::provider()).value();
   auto queue = context.create_queue().value();
   auto prepared =
       hyle::compute::prepare(context, Cast{DataType::kFloat32}, input_desc)
@@ -207,18 +215,18 @@ TEST(NativeCast, MaterializesStridedFloat16ToFloat32) {
   EXPECT_EQ(actual, expected);
 }
 
-TEST(NativeCast, RejectsUnfrozenIntegerConversionSemantics) {
+TEST(MatureCast, RejectsUnfrozenIntegerConversionSemantics) {
   constexpr std::array<std::int64_t, 1> shape{4};
   const TensorDesc input_desc =
       TensorDesc::dense(DataType::kInt32, shape).value();
-  auto context = hyle::compute::test::native_context().value();
+  auto context = hyle::compute::Context::create(hyle::compute::cpu::device(), hyle::compute::aten_cpu::provider()).value();
   auto prepared =
       hyle::compute::prepare(context, Cast{DataType::kFloat32}, input_desc);
   ASSERT_FALSE(prepared.has_value());
   EXPECT_TRUE(prepared.error().IsUnimplemented());
 }
 
-TEST(NativeCast, RejectsOverlappingInputAndOutputStorage) {
+TEST(MatureCast, RejectsOverlappingInputAndOutputStorage) {
   constexpr std::array<std::int64_t, 1> shape{4};
   const TensorDesc input_desc =
       TensorDesc::dense(DataType::kFloat16, shape).value();
@@ -232,7 +240,7 @@ TEST(NativeCast, RejectsOverlappingInputAndOutputStorage) {
   const TensorView output =
       TensorView::create(output_desc, storage.view()).value();
 
-  auto context = hyle::compute::test::native_context().value();
+  auto context = hyle::compute::Context::create(hyle::compute::cpu::device(), hyle::compute::aten_cpu::provider()).value();
   auto queue = context.create_queue().value();
   auto prepared =
       hyle::compute::prepare(context, Cast{DataType::kBFloat16}, input_desc)

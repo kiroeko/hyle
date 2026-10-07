@@ -152,8 +152,7 @@ TEST(NativeElementwise, ExecutesRetainedUnaryModesAndDeclinesRetiredDomains) {
 
   for (UnaryKind kind : kinds) {
     auto prepared = hyle::compute::prepare(context, Unary{kind}, description);
-    if (kind == UnaryKind::kGelu || kind == UnaryKind::kGeluTanh ||
-        kind == UnaryKind::kSilu) {
+    if (kind != UnaryKind::kExp) {
       ASSERT_FALSE(prepared);
       EXPECT_TRUE(prepared.error().IsUnimplemented());
       continue;
@@ -171,16 +170,16 @@ TEST(NativeElementwise, ExecutesRetainedUnaryModesAndDeclinesRetiredDomains) {
   const TensorView alias =
       TensorView::create(description, input_storage.view()).value();
   auto prepared =
-      hyle::compute::prepare(context, Unary{UnaryKind::kNeg}, description)
+      hyle::compute::prepare(context, Unary{UnaryKind::kExp}, description)
           .value();
   auto invocation = prepared.create_invocation().value();
   ASSERT_TRUE(invocation.submit(queue, alias.as_const(), alias)->wait().ok());
   const auto actual = read_buffer<float, values.size()>(input_storage);
   for (std::size_t index = 0; index < values.size(); ++index)
-    EXPECT_FLOAT_EQ(actual[index], -values[index]);
+    EXPECT_NEAR(actual[index], std::exp(values[index]), 3e-5F);
 }
 
-TEST(NativeElementwise, SoftplusHasStableTailsSpecialValuesAndExactAlias) {
+TEST(MatureElementwise, SoftplusHasStableTailsSpecialValuesAndExactAlias) {
   constexpr std::size_t count = 257;
   std::array<float, count> values{};
   for (std::size_t index = 0; index < count; ++index)
@@ -192,7 +191,7 @@ TEST(NativeElementwise, SoftplusHasStableTailsSpecialValuesAndExactAlias) {
   const TensorDesc description =
       TensorDesc::dense(DataType::kFloat32, std::array<std::int64_t, 1>{count})
           .value();
-  auto context = hyle::compute::test::native_context().value();
+  auto context = hyle::compute::Context::create(hyle::compute::cpu::device(), hyle::compute::aten_cpu::provider()).value();
   auto queue = context.create_queue().value();
   auto prepared =
       hyle::compute::prepare(context, Unary{UnaryKind::kSoftplus}, description)
@@ -325,7 +324,12 @@ template <class Value> void expect_half_elementwise(std::size_t count) {
         UnaryKind::kGeluTanh, UnaryKind::kSilu, UnaryKind::kSoftplus}) {
     ASSERT_TRUE(storage.view().write(std::as_bytes(std::span(values))).ok());
     auto prepared = hyle::compute::prepare(context, Unary{kind}, description);
-    if (kind == UnaryKind::kGelu || kind == UnaryKind::kGeluTanh) {
+    const bool retained = std::is_same_v<Value, hyle::simd::float16_t>
+        ? (kind == UnaryKind::kExp || kind == UnaryKind::kLog || kind == UnaryKind::kSqrt ||
+           kind == UnaryKind::kRsqrt || kind == UnaryKind::kTanh || kind == UnaryKind::kSilu)
+        : (kind == UnaryKind::kNeg || kind == UnaryKind::kExp || kind == UnaryKind::kSqrt ||
+           kind == UnaryKind::kRsqrt || kind == UnaryKind::kRelu);
+    if (!retained) {
       ASSERT_FALSE(prepared);
       EXPECT_TRUE(prepared.error().IsUnimplemented());
       continue;
@@ -348,6 +352,10 @@ template <class Value> void expect_half_elementwise(std::size_t count) {
     ASSERT_TRUE(storage.view().write(std::as_bytes(std::span(values))).ok());
     auto prepared =
         hyle::compute::prepare(context, Binary{kind}, description, description);
+    if (!std::is_same_v<Value, hyle::simd::float16_t> ||
+        (kind != BinaryKind::kSubtract && kind != BinaryKind::kDivide && kind != BinaryKind::kMinimum)) {
+      ASSERT_FALSE(prepared); EXPECT_TRUE(prepared.error().IsUnimplemented()); continue;
+    }
     ASSERT_TRUE(prepared.has_value());
     auto invocation = prepared->create_invocation().value();
     ASSERT_TRUE(invocation.submit(queue, alias.as_const(), right_view, alias)
@@ -401,7 +409,7 @@ template <class Value> void expect_half_strided_broadcast() {
   const auto right_view =
       ConstTensorView::create(right_desc, rhs.view()).value();
   const auto output = TensorView::create(out_desc, result.view()).value();
-  auto context = hyle::compute::test::native_context().value();
+  auto context = hyle::compute::Context::create(hyle::compute::cpu::device(), hyle::compute::aten_cpu::provider()).value();
   auto queue = context.create_queue().value();
   auto prepared = hyle::compute::prepare(context, Binary{BinaryKind::kAdd},
                                          left_desc, right_desc)
@@ -427,12 +435,12 @@ template <class Value> void expect_half_strided_broadcast() {
         std::log1p(std::exp(static_cast<double>(index) / 2)));
 }
 
-TEST(NativeElementwise, HalfStorageSupportsOddByteStridesAndBroadcast) {
+TEST(MatureElementwise, HalfStorageSupportsOddByteStridesAndBroadcast) {
   expect_half_strided_broadcast<hyle::simd::float16_t>();
   expect_half_strided_broadcast<hyle::simd::bfloat16_t>();
 }
 
-TEST(NativeElementwise, MaterializesUnalignedStridedUnary) {
+TEST(MatureElementwise, MaterializesUnalignedStridedUnary) {
   constexpr std::array<std::int64_t, 2> shape{2, 2};
   constexpr std::array<std::int64_t, 2> strides{10, 4};
   constexpr std::array<float, 4> values{-1.0F, 2.0F, -3.0F, 4.0F};
@@ -459,7 +467,7 @@ TEST(NativeElementwise, MaterializesUnalignedStridedUnary) {
   const TensorView output =
       TensorView::create(output_desc, output_storage.view()).value();
 
-  auto context = hyle::compute::test::native_context().value();
+  auto context = hyle::compute::Context::create(hyle::compute::cpu::device(), hyle::compute::aten_cpu::provider()).value();
   auto queue = context.create_queue().value();
   auto prepared =
       hyle::compute::prepare(context, Unary{UnaryKind::kAbs}, input_desc)
@@ -495,6 +503,7 @@ TEST(NativeElementwise, ExecutesEveryDenseBinaryModeAndAliasesSecondInput) {
   for (BinaryKind kind : kinds) {
     auto prepared =
         hyle::compute::prepare(context, Binary{kind}, description, description);
+    if (kind != BinaryKind::kAdd && kind != BinaryKind::kSubtract && kind != BinaryKind::kDivide) { ASSERT_FALSE(prepared); EXPECT_TRUE(prepared.error().IsUnimplemented()); continue; }
     ASSERT_TRUE(prepared.has_value());
     auto invocation = prepared->create_invocation().value();
     ASSERT_TRUE(
@@ -525,7 +534,7 @@ TEST(NativeElementwise, BroadcastsBinaryOperands) {
   constexpr std::array<std::int64_t, 1> right_shape{3};
   constexpr std::array<float, 6> left{1, 2, 3, 4, 5, 6};
   constexpr std::array<float, 3> right{10, 20, 30};
-  constexpr std::array<float, 6> expected{10, 40, 90, 40, 100, 180};
+  constexpr std::array<float, 6> expected{11, 22, 33, 14, 25, 36};
   const TensorDesc left_desc =
       TensorDesc::dense(DataType::kFloat32, left_shape).value();
   const TensorDesc right_desc =
@@ -545,7 +554,7 @@ TEST(NativeElementwise, BroadcastsBinaryOperands) {
 
   auto context = hyle::compute::test::native_context().value();
   auto queue = context.create_queue().value();
-  auto prepared = hyle::compute::prepare(context, Binary{BinaryKind::kMultiply},
+  auto prepared = hyle::compute::prepare(context, Binary{BinaryKind::kAdd},
                                          left_desc, right_desc);
   ASSERT_TRUE(prepared.has_value());
   ASSERT_EQ(prepared->output_description().value(), output_desc);
@@ -555,7 +564,7 @@ TEST(NativeElementwise, BroadcastsBinaryOperands) {
   EXPECT_EQ((read_buffer<float, expected.size()>(output_storage)), expected);
 }
 
-TEST(NativeElementwise, BroadcastsSelectWithoutChangingBranchBits) {
+TEST(MatureElementwise, BroadcastsSelectWithoutChangingBranchBits) {
   constexpr std::array<std::int64_t, 2> condition_shape{2, 1};
   constexpr std::array<std::int64_t, 2> true_shape{2, 3};
   constexpr std::array<std::int64_t, 1> false_shape{3};
@@ -585,7 +594,7 @@ TEST(NativeElementwise, BroadcastsSelectWithoutChangingBranchBits) {
   const TensorView output =
       TensorView::create(output_desc, output_storage.view()).value();
 
-  auto context = hyle::compute::test::native_context().value();
+  auto context = hyle::compute::Context::create(hyle::compute::cpu::device(), hyle::compute::aten_cpu::provider()).value();
   auto queue = context.create_queue().value();
   auto prepared = hyle::compute::prepare(context, Select{}, condition_desc,
                                          true_desc, false_desc);
@@ -600,7 +609,7 @@ TEST(NativeElementwise, BroadcastsSelectWithoutChangingBranchBits) {
             expected);
 }
 
-TEST(NativeElementwise, SupportsDenseSelectAliasingABranch) {
+TEST(MatureElementwise, RejectsUnqualifiedDenseSelectAliasAndKeepsBits) {
   constexpr std::array<std::int64_t, 1> shape{4};
   constexpr std::array<std::uint8_t, 4> condition{1, 0, 1, 0};
   constexpr std::array<std::uint32_t, 4> when_true{10, 11, 12, 13};
@@ -620,22 +629,20 @@ TEST(NativeElementwise, SupportsDenseSelectAliasingABranch) {
   const ConstTensorView false_view =
       ConstTensorView::create(branch_desc, false_storage.view()).value();
 
-  auto context = hyle::compute::test::native_context().value();
+  auto context = hyle::compute::Context::create(hyle::compute::cpu::device(), hyle::compute::aten_cpu::provider()).value();
   auto queue = context.create_queue().value();
   auto prepared = hyle::compute::prepare(context, Select{}, condition_desc,
                                          branch_desc, branch_desc)
                       .value();
   auto invocation = prepared.create_invocation().value();
-  ASSERT_TRUE(invocation
-                  .submit(queue, condition_view, true_alias.as_const(),
-                          false_view, true_alias)
-                  ->wait()
-                  .ok());
-  EXPECT_EQ((read_buffer<std::uint32_t, expected.size()>(true_storage)),
-            expected);
+  auto completion = invocation.submit(queue, condition_view,
+                                      true_alias.as_const(), false_view, true_alias);
+  ASSERT_FALSE(completion);
+  EXPECT_TRUE(completion.error().IsInvalidArgument());
+  EXPECT_EQ((read_buffer<std::uint32_t, expected.size()>(true_storage)), when_true);
 }
 
-TEST(NativeElementwise, ExecutesDenseF32SelectAcrossVectorBlocksAndTail) {
+TEST(MatureElementwise, ExecutesDenseF32SelectAcrossVectorBlocksAndTail) {
   constexpr std::size_t kCount = 19;
   constexpr std::array<std::int64_t, 1> shape{
       static_cast<std::int64_t>(kCount)};
@@ -667,7 +674,7 @@ TEST(NativeElementwise, ExecutesDenseF32SelectAcrossVectorBlocksAndTail) {
   const TensorView output =
       TensorView::create(branch_desc, output_storage.view()).value();
 
-  auto context = hyle::compute::test::native_context().value();
+  auto context = hyle::compute::Context::create(hyle::compute::cpu::device(), hyle::compute::aten_cpu::provider()).value();
   auto queue = context.create_queue().value();
   auto prepared = hyle::compute::prepare(context, Select{}, condition_desc,
                                          branch_desc, branch_desc)
@@ -695,7 +702,7 @@ TEST(NativeElementwise, RejectsUnsafeStridedAliasAndUnsupportedArithmeticType) {
   auto context = hyle::compute::test::native_context().value();
   auto queue = context.create_queue().value();
   auto prepared =
-      hyle::compute::prepare(context, Unary{UnaryKind::kAbs}, transposed)
+      hyle::compute::prepare(context, Unary{UnaryKind::kExp}, transposed)
           .value();
   auto invocation = prepared.create_invocation().value();
   auto completion = invocation.submit(queue, input, output);
@@ -715,7 +722,7 @@ TEST(NativeElementwise, RejectsUnsafeStridedAliasAndUnsupportedArithmeticType) {
   EXPECT_TRUE(unsupported_binary.error().IsUnimplemented());
 }
 
-TEST(NativeElementwise, ExecutesZeroElementFamiliesWithoutTouchingStorage) {
+TEST(MatureElementwise, ExecutesZeroElementFamiliesWithoutTouchingStorage) {
   constexpr std::array<std::int64_t, 2> shape{0, 4};
   const TensorDesc values =
       TensorDesc::dense(DataType::kFloat32, shape).value();
@@ -727,7 +734,7 @@ TEST(NativeElementwise, ExecutesZeroElementFamiliesWithoutTouchingStorage) {
   const ConstTensorView condition_input =
       ConstTensorView::create(condition, empty.view()).value();
   const TensorView output = TensorView::create(values, empty.view()).value();
-  auto context = hyle::compute::test::native_context().value();
+  auto context = hyle::compute::Context::create(hyle::compute::cpu::device(), hyle::compute::aten_cpu::provider()).value();
   auto queue = context.create_queue().value();
 
   auto unary =
