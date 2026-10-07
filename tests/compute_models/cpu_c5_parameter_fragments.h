@@ -123,9 +123,11 @@ void new_deepseek_hyper_head(const d5_moe_execution_cases::Case &model, Run run)
     auto head = cpu_c5_gguf_fixture::projection(item, bank, model.profile, count, first);
     head.replays.clear();
     for (std::size_t replay = 0; replay < observed.size(); ++replay) {
-      // The independent complete mHC oracle supplies the expected activation;
-      // the product output supplies the actual activation to the next program.
-      const auto dot = bank.dots(reference[replay]);
+      // mHC already passed its independent complete oracle above. Preserve its
+      // actual feedback into the next program, and test that program against
+      // the same input: legal F32 reduction differences can cross a BF16 RNE
+      // boundary, so a different reference activation is not a head oracle.
+      const auto dot = bank.dots(observed[replay]);
       std::vector<float> expected(count);
       for (std::int64_t row = 0; row < count; ++row)
         expected[row] = dot[(first + row) % cpu_c5_gguf_fixture::prototypes];

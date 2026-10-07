@@ -45,3 +45,14 @@ installed shim同样按平台key判断版本，Win/Linux2.8.0+cpu条件不放宽
 现runtime helper只有Linux RPATH分支，T4有限补Darwin路径，保持Linux专用linker flag不传Apple。
 公开API/对象/原数字程序不改；Native owner重新审计后合法绑定本卡，不继承旧F1有限FIX授权。
 F2/Mac缺口由此实际施工，shared/static/source批量验收与负空间均需运行，不以SDK获取签覆盖。
+
+## T5组合oracle有界纠正（测试，不改数学/误差门）
+
+Mac原C5 Direct653项中652通过；Pro0813 Q8的mHC→BF16 head失败。
+定向同输入探针证明mHC所有原输出门已通过，最大f32差异4.768e-7，但一个值跨BF16 RNE阈值；
+原head actual使用observed mHC、oracle却使用另一reference mHC，两个不同输入不能签head数学失败。
+actual输入的原codec/dot独立对照通过；不据诊断PASS签原完整批，原失败/全部数值差异保留。
+T5只修测试组合：上游mHC仍独立reference、原误差与实际state反馈全验；下游head保持原BF16转换/权重/真实K/V分片，
+独立oracle消费相同observed上游f32值。没有阈值放宽、不换dtype、不预计算actual输入、不删除分支/反馈/全head。
+Float32允许的实现误差不承诺跨BF16舍入阈值后与另一reference bit-identical；这是逐精度边界组合验收。
+单case纠正重验+Graph全部C5首次验；Direct其它652复用实际通过XML，原aggregate FAIL不重写PASS。
