@@ -79,14 +79,8 @@ Result<std::size_t> allocation_size(std::size_t header, std::size_t count,
 bool numeric_program(Operation operation) noexcept {
   if (const auto *scatter = operation.get_if<Scatter>())
     return scatter->kind == ScatterKind::kAdd;
-  if (const auto *unary = operation.get_if<Unary>())
-    return unary->kind == UnaryKind::kSigmoid ||
-           unary->kind == UnaryKind::kSilu || unary->kind == UnaryKind::kGelu ||
-           unary->kind == UnaryKind::kGeluTanh ||
-           unary->kind == UnaryKind::kSoftplus;
-  if (const auto *binary = operation.get_if<Binary>())
-    return binary->kind == BinaryKind::kMinimum ||
-           binary->kind == BinaryKind::kMaximum;
+  if (operation.get_if<Unary>() || operation.get_if<Binary>())
+    return true;
   return operation.get_if<Cast>() || operation.get_if<GatedActivation>() ||
          operation.get_if<Reduce>() || operation.get_if<MatMul>() ||
          operation.get_if<Softmax>() || operation.get_if<RoPE>() ||
@@ -124,6 +118,17 @@ at::ScalarType native_type(DataType type) noexcept {
 
 Status select(Operation operation, std::span<const TensorDesc> inputs,
               std::span<const TensorDesc> outputs) noexcept {
+  const bool edge = std::any_of(inputs.begin(), inputs.end(), [](const TensorDesc &input) {
+    return !input.is_dense() || input.rank() == 0 || input.rank() > 4 ||
+           (input.valid() && input.element_count().value() == 0);
+  });
+  const auto *unary = operation.get_if<Unary>();
+  const auto *binary = operation.get_if<Binary>();
+  const bool basic_unary = unary && unary->kind <= UnaryKind::kRelu &&
+                           unary->kind != UnaryKind::kSigmoid;
+  const bool basic_binary = binary && binary->kind <= BinaryKind::kDivide;
+  if ((basic_unary || basic_binary) && !edge)
+    return Status::Unimplemented("ATen basic tensor math is an edge-layout carrier");
   const bool supported =
       operation.get_if<Select>() || operation.get_if<Gather>() ||
       operation.get_if<Fill>() || operation.get_if<Copy>() ||
@@ -644,7 +649,24 @@ void execute_numeric(const Program &p, Invocation &inv, at::Tensor &output) {
     if (!p.operation.get_if<RoPE>())
       first = first.to(at::kFloat);
     if (const auto *unary = p.operation.get_if<Unary>()) {
-      if (unary->kind == UnaryKind::kSigmoid)
+      if (unary->kind == UnaryKind::kAbs)
+        result = at::abs(first);
+      else if (unary->kind == UnaryKind::kNeg)
+        result = at::neg(first);
+      else if (unary->kind == UnaryKind::kExp)
+        result = at::exp(first);
+      else if (unary->kind == UnaryKind::kLog)
+        result = at::log(first);
+      else if (unary->kind == UnaryKind::kSqrt)
+        result = at::sqrt(first);
+      else if (unary->kind == UnaryKind::kRsqrt)
+        result = at::rsqrt(first);
+      else if (unary->kind == UnaryKind::kTanh)
+        result = at::tanh(first);
+      else if (unary->kind == UnaryKind::kRelu)
+        result = at::where(first.isnan().logical_or(first.gt(0)), first,
+                           at::zeros_like(first));
+      else if (unary->kind == UnaryKind::kSigmoid)
         result = at::sigmoid(first.to(at::kDouble)).to(at::kFloat);
       else if (unary->kind == UnaryKind::kSoftplus)
         result = at::softplus(first, 1, 20);
@@ -655,8 +677,16 @@ void execute_numeric(const Program &p, Invocation &inv, at::Tensor &output) {
                                        ? GatedActivationKind::kGelu
                                        : GatedActivationKind::kGeluTanh);
     } else if (const auto *binary = p.operation.get_if<Binary>()) {
-      result = number_minmax(first, numeric_input(p, inv, 1).to(at::kFloat),
-                             binary->kind == BinaryKind::kMinimum);
+      const auto second = numeric_input(p, inv, 1).to(at::kFloat);
+      switch (binary->kind) {
+      case BinaryKind::kAdd: result = first.add(second); break;
+      case BinaryKind::kSubtract: result = first.sub(second); break;
+      case BinaryKind::kMultiply: result = first.mul(second); break;
+      case BinaryKind::kDivide: result = first.div(second); break;
+      default:
+        result = number_minmax(first, second, binary->kind == BinaryKind::kMinimum);
+        break;
+      }
     } else if (const auto *gate = p.operation.get_if<GatedActivation>()) {
       at::Tensor values;
       if (gate->inputs == GatedInputKind::kSeparate)

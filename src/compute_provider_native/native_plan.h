@@ -31,9 +31,6 @@ using ScalarElementwiseRoute = void (*)(const std::byte *first,
                                         const std::byte *second,
                                         const std::byte *third,
                                         std::byte *output) noexcept;
-using RopeKernelRoute = void (*)(const float *input, const float *frequencies,
-                                 float *output, std::size_t pairs,
-                                 float position) noexcept;
 using ParallelRangeRoute = void (*)(void *context, std::size_t task_index,
                                     std::size_t begin,
                                     std::size_t end) noexcept;
@@ -51,22 +48,12 @@ struct NativePlan final {
   ReductionRoute reduction_route = ReductionRoute::kGeneral;
   std::uint8_t reduction_axes_mask = 0;
   std::size_t axis = 0;
-  std::size_t count = 0;
-  std::size_t rotary_dimensions = 0;
-  std::size_t sequence_axis = 0;
   IndexBoundsPolicy index_bounds = IndexBoundsPolicy::kChecked;
-  ScatterKind scatter_kind = ScatterKind::kAssign;
-  RopeLayout rope_layout = RopeLayout::kInterleaved;
-  SoftmaxKind softmax_kind = SoftmaxKind::kSoftmax;
   MaskKind mask_kind = MaskKind::kNone;
-  bool largest = true;
-  bool sorted = true;
-  bool stable = true;
   WorkspaceRequirement workspace{};
   detail::NativeRoute route = nullptr;
   LinearElementwiseRoute linear_elementwise_route = nullptr;
   ScalarElementwiseRoute scalar_elementwise_route = nullptr;
-  RopeKernelRoute rope_kernel_route = nullptr;
   SubmitRoute submit_route = nullptr;
   WorkspaceSubmitRoute workspace_submit_route = nullptr;
   std::size_t parallel_tasks = 1;

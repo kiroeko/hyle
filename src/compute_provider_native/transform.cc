@@ -114,7 +114,6 @@ detail::EnqueueResult submit_fill(const NativePlan &plan,
     return completed(Status::Internal("native fill plan is invalid"));
   const mem::BufferView output = outputs[0].storage();
   const std::size_t elements = plan.parameters[0];
-  const std::size_t element_size = plan.parameters[1];
   if (elements == 0)
     return completed(Status::Ok());
 
@@ -134,27 +133,8 @@ detail::EnqueueResult submit_fill(const NativePlan &plan,
         "CPU fill mapping does not satisfy tensor alignment"));
   }
 
-  switch (element_size) {
-  case sizeof(std::uint8_t):
-    std::fill_n(reinterpret_cast<std::uint8_t *>(writable->data()), elements,
-                static_cast<std::uint8_t>(plan.scalar_bits));
-    break;
-  case sizeof(std::uint16_t):
-    std::fill_n(reinterpret_cast<std::uint16_t *>(writable->data()), elements,
-                static_cast<std::uint16_t>(plan.scalar_bits));
-    break;
-  case sizeof(std::uint32_t):
-    std::fill_n(reinterpret_cast<std::uint32_t *>(writable->data()), elements,
-                static_cast<std::uint32_t>(plan.scalar_bits));
-    break;
-  case sizeof(std::uint64_t):
-    std::fill_n(reinterpret_cast<std::uint64_t *>(writable->data()), elements,
-                plan.scalar_bits);
-    break;
-  default:
-    mapping.close().IgnoreError();
-    return completed(Status::Internal("native fill scalar width is invalid"));
-  }
+  std::fill_n(reinterpret_cast<std::uint32_t *>(writable->data()), elements,
+              static_cast<std::uint32_t>(plan.scalar_bits));
 
   Status terminal = Status::Ok();
   if (!output.resource().properties().has(
@@ -194,6 +174,8 @@ Status prepare_transform(Operation operation,
     return Status::Ok();
   case OperationKind::kFill: {
     const Fill *fill = operation.get_if<Fill>();
+    if (fill->output_type != DataType::kFloat32)
+      return Status::Unimplemented("native Fill retains qualified F32 storage only");
     auto elements = outputs[0].element_count();
     if (!elements)
       return std::move(elements).error();

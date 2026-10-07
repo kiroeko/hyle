@@ -450,8 +450,7 @@ Status build_plan(Operation operation, std::span<const TensorDesc> inputs,
     break;
   }
   case OperationKind::kUnary:
-  case OperationKind::kBinary:
-  case OperationKind::kSelect: {
+  case OperationKind::kBinary: {
     Status status =
         internal::prepare_elementwise(operation, inputs, outputs, plan);
     if (!status.ok())
@@ -461,13 +460,6 @@ Status build_plan(Operation operation, std::span<const TensorDesc> inputs,
   case OperationKind::kReduce: {
     Status status =
         internal::prepare_reduction(operation, inputs, outputs, plan);
-    if (!status.ok())
-      return status;
-    break;
-  }
-  case OperationKind::kLayerNorm: {
-    Status status =
-        internal::prepare_normalization(operation, inputs, outputs, plan);
     if (!status.ok())
       return status;
     break;
@@ -518,16 +510,13 @@ Status build_plan(Operation operation, std::span<const TensorDesc> inputs,
         internal::prepare_half_gated(operation, inputs, outputs, plan));
     break;
   }
-  case OperationKind::kGather:
-  case OperationKind::kScatter:
-  case OperationKind::kConcat: {
+  case OperationKind::kGather: {
     Status status =
         internal::prepare_indexing(operation, inputs, outputs, plan);
     if (!status.ok())
       return status;
     break;
   }
-  case OperationKind::kRoPE:
   case OperationKind::kSoftmax: {
     Status status =
         internal::prepare_transformer(operation, inputs, outputs, plan);
@@ -549,7 +538,6 @@ Status build_plan(Operation operation, std::span<const TensorDesc> inputs,
   switch (operation.kind()) {
   case OperationKind::kRmsNorm:
   case OperationKind::kGatedActivation:
-  case OperationKind::kLayerNorm:
     work_per_unit = plan.parameters[1];
     break;
   default:

@@ -22,9 +22,6 @@ namespace {
 
 float reduction_identity(ReductionKind kind) noexcept {
   switch (kind) {
-  case ReductionKind::kSum:
-  case ReductionKind::kMean:
-    return 0.0F;
   case ReductionKind::kMinimum:
     return std::numeric_limits<float>::infinity();
   case ReductionKind::kMaximum:
@@ -35,10 +32,6 @@ float reduction_identity(ReductionKind kind) noexcept {
 
 void accumulate(ReductionKind kind, float value, float &result) noexcept {
   switch (kind) {
-  case ReductionKind::kSum:
-  case ReductionKind::kMean:
-    result += value;
-    return;
   case ReductionKind::kMinimum:
     if (!std::isnan(result))
       result = std::isnan(value) ? value : std::fmin(result, value);
@@ -50,23 +43,9 @@ void accumulate(ReductionKind kind, float value, float &result) noexcept {
   }
 }
 
-void finish_mean(float *output, std::size_t count,
-                 std::size_t reduced_elements) noexcept {
-  if (reduced_elements == 0) {
-    std::fill_n(output, count, std::numeric_limits<float>::quiet_NaN());
-    return;
-  }
-  const float divisor = static_cast<float>(reduced_elements);
-  for (std::size_t index = 0; index < count; ++index)
-    output[index] /= divisor;
-}
-
 float reduce_dense(ReductionKind kind, const float *input,
                    std::size_t count) noexcept {
   switch (kind) {
-  case ReductionKind::kSum:
-  case ReductionKind::kMean:
-    return simd::sum(input, count);
   case ReductionKind::kMinimum:
     return simd::min_value(input, count);
   case ReductionKind::kMaximum:
@@ -122,9 +101,6 @@ void reduce_narrow(const NativePlan &plan, const TensorDesc &description,
                    accumulator);
       }
     }
-    if (plan.reduction_kind == ReductionKind::kMean)
-      accumulator = count == 0 ? std::numeric_limits<float>::quiet_NaN()
-                               : accumulator / static_cast<float>(count);
     output[result] = numeric::encode<Value>(accumulator);
   }
 }
@@ -183,53 +159,9 @@ submit_reduction(const NativePlan &plan,
         "CPU reduction mapping does not satisfy tensor alignment"));
   }
 
-  if constexpr (!std::is_same_v<Value, float>) {
-    reduce_narrow(plan, inputs[0].description(), input_data, output_data);
-  } else {
-    const std::size_t reduced_elements = plan.parameters[2];
-    std::fill_n(output_data, output_elements,
-                reduction_identity(plan.reduction_kind));
-    const auto *dense_input = reinterpret_cast<const float *>(input_data);
-    if (plan.reduction_route == ReductionRoute::kAllDense) {
-      output_data[0] =
-          reduce_dense(plan.reduction_kind, dense_input, input_elements);
-    } else if (plan.reduction_route == ReductionRoute::kLastAxisDense) {
-      for (std::size_t row = 0; row < output_elements; ++row) {
-        const float *row_input = dense_input == nullptr
-                                     ? nullptr
-                                     : dense_input + row * reduced_elements;
-        output_data[row] =
-            reduce_dense(plan.reduction_kind, row_input, reduced_elements);
-      }
-    } else {
-      const TensorDesc &input_description = inputs[0].description();
-      const auto dimensions = input_description.dimensions();
-      const auto strides = input_description.byte_strides();
-      for (std::size_t linear = 0; linear < input_elements; ++linear) {
-        std::size_t remaining = linear;
-        std::size_t input_offset = 0;
-        std::size_t output_index = 0;
-        std::size_t output_stride = 1;
-        for (std::size_t reverse = 0; reverse < dimensions.size(); ++reverse) {
-          const std::size_t axis = dimensions.size() - 1 - reverse;
-          const std::size_t extent = static_cast<std::size_t>(dimensions[axis]);
-          const std::size_t coordinate = remaining % extent;
-          remaining /= extent;
-          input_offset += coordinate * static_cast<std::size_t>(strides[axis]);
-          if ((plan.reduction_axes_mask & (std::uint8_t{1} << axis)) == 0) {
-            output_index += coordinate * output_stride;
-            output_stride *= extent;
-          }
-        }
-        float value = 0.0F;
-        std::memcpy(&value, input_data + input_offset, sizeof(value));
-        accumulate(plan.reduction_kind, value, output_data[output_index]);
-      }
-    }
 
-    if (plan.reduction_kind == ReductionKind::kMean)
-      finish_mean(output_data, output_elements, reduced_elements);
-  }
+    reduce_narrow(plan, inputs[0].description(), input_data, output_data);
+
 
   Status terminal = Status::Ok();
   if (!output_storage.resource().properties().has(
@@ -280,6 +212,11 @@ Status prepare_reduction(Operation operation,
                                  "float32/float16/bfloat16 and dense output");
   }
   const Reduce *reduce = operation.get_if<Reduce>();
+  if (reduce == nullptr ||
+      (reduce->kind != ReductionKind::kMinimum && reduce->kind != ReductionKind::kMaximum) ||
+      (inputs[0].data_type() != DataType::kFloat16 &&
+       !(inputs[0].data_type() == DataType::kBFloat16 && reduce->kind == ReductionKind::kMaximum)))
+    return Status::Unimplemented("native Reduce retains qualified narrow Min/Max only");
   if (reduce == nullptr)
     return Status::Internal("native Reduce descriptor is missing");
   if (reduce->accumulation_type != DataType::kUnknown &&
@@ -329,10 +266,9 @@ Status prepare_reduction(Operation operation,
   plan.reduction_kind = reduce->kind;
   plan.reduction_route = route;
   plan.reduction_axes_mask = axes;
-  plan.submit_route =
-      type == DataType::kFloat16    ? &submit_reduction<simd::float16_t>
-      : type == DataType::kBFloat16 ? &submit_reduction<simd::bfloat16_t>
-                                    : &submit_reduction<float>;
+  plan.submit_route = type == DataType::kFloat16
+                          ? &submit_reduction<simd::float16_t>
+                          : &submit_reduction<simd::bfloat16_t>;
   return Status::Ok();
 }
 

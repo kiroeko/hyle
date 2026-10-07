@@ -122,7 +122,7 @@ TEST(NativeTransform, ExactStridedCopyRejectsNativeAndUsesMatureMaterialization)
   EXPECT_EQ(actual, expected);
 }
 
-TEST(NativeTransform, FillsExactTypedScalarBits) {
+TEST(MatureTransform, FillsExactTypedScalarBits) {
   constexpr std::array<std::int64_t, 2> dimensions{2, 3};
   const TensorShape shape = TensorShape::create(dimensions).value();
   const Fill fill{.output_shape = shape,
@@ -141,7 +141,8 @@ TEST(NativeTransform, FillsExactTypedScalarBits) {
       Buffer::create(hyle::mem::system_resource(), sizeof(expected), 4).value();
   const TensorView output =
       TensorView::create(output_descriptions[0], storage.view()).value();
-  auto context = hyle::compute::test::native_context().value();
+  auto context = hyle::compute::Context::create(
+      hyle::compute::cpu::device(), hyle::compute::aten_cpu::provider()).value();
   auto queue = context.create_queue().value();
   auto prepared = hyle::compute::prepare(context, fill).value();
   ASSERT_EQ(prepared.output_description().value(), output_descriptions[0]);

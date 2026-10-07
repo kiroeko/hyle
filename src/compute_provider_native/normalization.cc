@@ -35,32 +35,10 @@ struct NormEpisode final {
   const NativePlan *plan = nullptr;
   const void *input = nullptr;
   const void *scale = nullptr;
-  const void *bias = nullptr;
   void *output = nullptr;
 };
 
-void run_layer_norm_range(void *context, std::size_t, std::size_t begin,
-                          std::size_t end) noexcept {
-  auto &episode = *static_cast<NormEpisode *>(context);
-  const std::size_t hidden = episode.plan->parameters[1];
-  const auto *scale = static_cast<const float *>(episode.scale);
-  const auto *bias = static_cast<const float *>(episode.bias);
-  for (std::size_t row = begin; row < end; ++row) {
-    const auto *row_input =
-        static_cast<const float *>(episode.input) + row * hidden;
-    auto *row_output = static_cast<float *>(episode.output) + row * hidden;
-    if (bias != nullptr) {
-      simd::layer_norm_f32(row_input, scale, bias, row_output, hidden,
-                           episode.plan->scalar);
-    } else {
-      simd::layer_norm_f32(row_input, row_output, hidden, episode.plan->scalar);
-      if (scale != nullptr)
-        simd::multiply(row_output, scale, row_output, hidden);
-    }
-  }
-}
-
-template <class Value, class Scale, class Bias, bool Rms>
+template <class Value, class Scale>
 void run_narrow_norm_range(void *context, std::size_t, std::size_t begin,
                            std::size_t end) noexcept {
   auto &episode = *static_cast<NormEpisode *>(context);
@@ -69,25 +47,12 @@ void run_narrow_norm_range(void *context, std::size_t, std::size_t begin,
   std::array<float, 128> parameter;
   for (std::size_t row = begin; row < end; ++row) {
     const std::size_t offset = row * hidden;
-    float mean = 0.0F;
-    if constexpr (!Rms) {
-      float sum = 0.0F;
-      for (std::size_t column = 0; column < hidden; column += values.size()) {
-        const std::size_t size = (std::min)(values.size(), hidden - column);
-        numeric::load_tile<Value>(episode.input, offset + column, values.data(),
-                                  size);
-        sum += simd::sum(values.data(), size);
-      }
-      mean = sum / static_cast<float>(hidden);
-    }
+
     float squares = 0.0F;
     for (std::size_t column = 0; column < hidden; column += values.size()) {
       const std::size_t size = (std::min)(values.size(), hidden - column);
       numeric::load_tile<Value>(episode.input, offset + column, values.data(),
                                 size);
-      if constexpr (!Rms)
-        for (std::size_t index = 0; index < size; ++index)
-          values[index] -= mean;
       squares += simd::dot(values.data(), values.data(), size);
     }
     const float inverse =
@@ -101,28 +66,25 @@ void run_narrow_norm_range(void *context, std::size_t, std::size_t begin,
       numeric::load_tile<Value>(episode.input, offset + column, values.data(),
                                 size);
       for (std::size_t index = 0; index < size; ++index)
-        values[index] = (values[index] - mean) * inverse;
+        values[index] = (values[index] - 0.0F) * inverse;
       if (episode.scale != nullptr) {
         numeric::load_tile<Scale>(episode.scale, column, parameter.data(),
                                   size);
         simd::multiply(values.data(), parameter.data(), values.data(), size);
       }
-      if (episode.bias != nullptr) {
-        numeric::load_tile<Bias>(episode.bias, column, parameter.data(), size);
-        simd::add(values.data(), parameter.data(), values.data(), size);
-      }
+
       numeric::store_tile<Value>(values.data(), episode.output, offset + column,
                                  size);
     }
   }
 }
 
-template <class Value, class Scale, class Bias, bool Rms>
+template <class Value, class Scale>
 detail::EnqueueResult
 submit_normalization(const NativePlan &plan,
                      std::span<const ConstTensorView> inputs,
                      std::span<const TensorView> outputs) noexcept {
-  if (inputs.empty() || inputs.size() > 3 || outputs.size() != 1)
+  if (inputs.empty() || inputs.size() > 2 || outputs.size() != 1)
     return completed(Status::Internal("native normalization plan is invalid"));
   const std::size_t rows = plan.parameters[0];
   const std::size_t hidden = plan.parameters[1];
@@ -220,16 +182,9 @@ submit_normalization(const NativePlan &plan,
       .plan = &plan,
       .input = source_data[0],
       .scale = inputs.size() > 1 ? source_data[1] : nullptr,
-      .bias = inputs.size() > 2 ? source_data[2] : nullptr,
       .output = output_data,
   };
-  if constexpr (std::is_same_v<Value, float>) {
-    static_assert(!Rms);
-    parallel_for_ranges(plan, rows, &run_layer_norm_range, &episode);
-  } else {
-    parallel_for_ranges(
-        plan, rows, &run_narrow_norm_range<Value, Scale, Bias, Rms>, &episode);
-  }
+  parallel_for_ranges(plan, rows, &run_narrow_norm_range<Value, Scale>, &episode);
 
   Status terminal = Status::Ok();
   if (!output_storage.resource().properties().has(
@@ -270,22 +225,14 @@ Status validate_dense_arithmetic(const TensorDesc &description) noexcept {
   return Status::Ok();
 }
 
-template <class Value, bool Rms>
+template <class Value>
 SubmitRoute select_narrow_norm(std::span<const TensorDesc> inputs) noexcept {
   const bool scale_f32 =
       inputs.size() > 1 && inputs[1].data_type() == DataType::kFloat32;
-  if constexpr (Rms) {
-    return scale_f32 ? &submit_normalization<Value, float, Value, true>
-                     : &submit_normalization<Value, Value, Value, true>;
-  }
-  const bool bias_f32 =
-      inputs.size() > 2 && inputs[2].data_type() == DataType::kFloat32;
-  if (scale_f32) {
-    return bias_f32 ? &submit_normalization<Value, float, float, Rms>
-                    : &submit_normalization<Value, float, Value, Rms>;
-  }
-  return bias_f32 ? &submit_normalization<Value, Value, float, Rms>
-                  : &submit_normalization<Value, Value, Value, Rms>;
+
+  return scale_f32 ? &submit_normalization<Value, float>
+                   : &submit_normalization<Value, Value>;
+
 }
 
 } // namespace
@@ -294,14 +241,12 @@ Status prepare_normalization(Operation operation,
                              std::span<const TensorDesc> inputs,
                              std::span<const TensorDesc> outputs,
                              NativePlan &plan) noexcept {
-  if (inputs.empty() || inputs.size() > 3 || outputs.size() != 1)
+  if (inputs.empty() || inputs.size() > 2 || outputs.size() != 1)
     return Status::Internal("native normalization arity is invalid");
-  const LayerNorm *layer = operation.get_if<LayerNorm>();
   const RmsNorm *rms = operation.get_if<RmsNorm>();
-  if (layer == nullptr && rms == nullptr)
+  if (rms == nullptr)
     return Status::Internal("native normalization descriptor is missing");
-  const DataType accumulation =
-      layer != nullptr ? layer->accumulation_type : rms->accumulation_type;
+  const DataType accumulation = rms->accumulation_type;
   if (accumulation != DataType::kFloat32) {
     return Status::Unimplemented(
         "native normalization supports float32 accumulation");
@@ -323,23 +268,13 @@ Status prepare_normalization(Operation operation,
   if (!hidden)
     return Status::OutOfRange("normalization hidden dimension exceeds size_t");
   plan.parameters = {*rows, *hidden, 0};
-  plan.scalar = layer != nullptr ? layer->epsilon : rms->epsilon;
+  plan.scalar = rms->epsilon;
   plan.alias_input_mask = 1;
   switch (inputs[0].data_type()) {
   case DataType::kFloat32:
-    if (rms != nullptr)
-      return Status::Internal("float32 RMSNorm uses its native float route");
-    plan.submit_route = &submit_normalization<float, float, float, false>;
-    break;
-  case DataType::kFloat16:
-    plan.submit_route =
-        rms != nullptr ? select_narrow_norm<simd::float16_t, true>(inputs)
-                       : select_narrow_norm<simd::float16_t, false>(inputs);
-    break;
+    return Status::Internal("float32 RMSNorm uses its native float route");
   case DataType::kBFloat16:
-    plan.submit_route =
-        rms != nullptr ? select_narrow_norm<simd::bfloat16_t, true>(inputs)
-                       : select_narrow_norm<simd::bfloat16_t, false>(inputs);
+    plan.submit_route = select_narrow_norm<simd::bfloat16_t>(inputs);
     break;
   default:
     return Status::Unimplemented("unsupported native normalization data type");

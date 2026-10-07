@@ -78,3 +78,15 @@ D4限定现有ATen原abs/neg/exp/log/sqrt/rsqrt/tanh/relu和add/sub/mul/div的ed
 接线与对应alias／checked稳定语义。只在非dense、empty、rank0或rank>4的原语义请求准入；
 F4全部dense rank2准入集合和43 WIN候选不扩大，不新增数学loop、Provider、依赖或采样。
 适用V1新增真实edge正确性／三交付差异，原失败保留；发现此反例后本轮不再宣称原14种无条件全布局接线齐全。
+
+### D1产品删除批与V1首批
+
+14整种执行／准备／dispatch已源级清退；Compute两私有RoPE文件与fat target移除。
+保留族按F4必要dtype实例收窄，RMS/Copy具名资源、View、SIMD/Mem及借入codec／程序保持。
+产品库编译通过；清理中误删的Softmax共有axis/mask helpers已恢复，原编译FAIL保留。
+当前owning首批62项全部通过、无skip，包含14种明确Native拒绝、成熟odd-byte基础Unary/Binary
+真实数值和变输入重放、原ATen稳定函数／storage／transformer／资源与Native RMS/Copy动态／OOM／owner边界。
+UInt32 Fill的旧Native-only测试迁原ATen bit-write，domain反偏置由仍保留的F32 Exp作exact反例；
+初次两项旧fixture FAIL仍保留。本轮没有P1或自研优化。
+其余旧Native-only目录的迁移、保留20种全部必要算术重放、两普通入口／C5／三平台三交付差异与
+source ledger／终审仍未完成，owner保持AUDITED，不能据首批PASS关闭F5。

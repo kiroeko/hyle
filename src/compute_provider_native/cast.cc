@@ -67,43 +67,27 @@ void convert_scalar(const std::byte *source, const std::byte *,
   std::memcpy(destination, &output, sizeof(output));
 }
 
-template <class Source>
-bool select_destination(DataType destination, NativePlan &plan) noexcept {
-#define HYLE_NATIVE_SELECT_CAST(data_type, cpp_type)                           \
-  case DataType::data_type:                                                    \
-    plan.linear_elementwise_route = &convert_linear<Source, cpp_type>;         \
-    plan.scalar_elementwise_route = &convert_scalar<Source, cpp_type>;         \
-    return true
-
-  switch (destination) {
-    HYLE_NATIVE_SELECT_CAST(kFloat8E4M3FN, simd::float8_e4m3_t);
-    HYLE_NATIVE_SELECT_CAST(kFloat8E5M2, simd::float8_e5m2_t);
-    HYLE_NATIVE_SELECT_CAST(kFloat16, simd::float16_t);
-    HYLE_NATIVE_SELECT_CAST(kBFloat16, simd::bfloat16_t);
-    HYLE_NATIVE_SELECT_CAST(kFloat32, float);
-  default:
-    return false;
-  }
-
-#undef HYLE_NATIVE_SELECT_CAST
+template <class Source, class Destination>
+void select_pair(NativePlan &plan) noexcept {
+  plan.linear_elementwise_route = &convert_linear<Source, Destination>;
+  plan.scalar_elementwise_route = &convert_scalar<Source, Destination>;
 }
-
-bool select_cast(DataType source, DataType destination,
-                 NativePlan &plan) noexcept {
-  switch (source) {
-  case DataType::kFloat8E4M3FN:
-    return select_destination<simd::float8_e4m3_t>(destination, plan);
-  case DataType::kFloat8E5M2:
-    return select_destination<simd::float8_e5m2_t>(destination, plan);
-  case DataType::kFloat16:
-    return select_destination<simd::float16_t>(destination, plan);
-  case DataType::kBFloat16:
-    return select_destination<simd::bfloat16_t>(destination, plan);
-  case DataType::kFloat32:
-    return select_destination<float>(destination, plan);
-  default:
-    return false;
+bool select_cast(DataType source, DataType destination, NativePlan &plan) noexcept {
+  if (source == DataType::kFloat8E4M3FN && destination == DataType::kFloat16) {
+    select_pair<simd::float8_e4m3_t, simd::float16_t>(plan);
+    return true;
   }
+  if (source != DataType::kFloat8E5M2)
+    return false;
+  if (destination == DataType::kBFloat16) {
+    select_pair<simd::float8_e5m2_t, simd::bfloat16_t>(plan);
+    return true;
+  }
+  if (destination == DataType::kFloat8E4M3FN) {
+    select_pair<simd::float8_e5m2_t, simd::float8_e4m3_t>(plan);
+    return true;
+  }
+  return destination == DataType::kFloat8E5M2;
 }
 
 detail::EnqueueResult submit_cast(const NativePlan &plan,
@@ -193,12 +177,12 @@ Status prepare_cast(Operation operation, std::span<const TensorDesc> inputs,
   const Cast *cast = operation.get_if<Cast>();
   if (cast == nullptr)
     return Status::Internal("native Cast descriptor is missing");
-  if (inputs[0].data_type() == cast->output_type)
-    return prepare_transform(Operation(Copy{}), inputs, outputs, plan);
   if (!select_cast(inputs[0].data_type(), cast->output_type, plan)) {
     return Status::Unimplemented(
         "native Cast currently supports f32/f16/bf16/fp8 storage types");
   }
+  if (inputs[0].data_type() == cast->output_type)
+    return prepare_transform(Operation(Copy{}), inputs, outputs, plan);
   auto elements = outputs[0].element_count();
   if (!elements)
     return std::move(elements).error();

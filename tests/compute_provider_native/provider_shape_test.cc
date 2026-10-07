@@ -307,7 +307,7 @@ TEST(NativeProviderShape, DoesNotMistakeUpperPointSupportForABoundedArtifact) {
   std::array<ResourceBindingRequirement, 1> inputs{}, outputs{};
   const auto propose = [&]() {
     return OperationPreparationAccess::propose(
-        context, 0, Operation(Unary{UnaryKind::kNeg}), descriptions,
+        context, 0, Operation(Unary{UnaryKind::kExp}), descriptions,
         descriptions, inputs, outputs, domain);
   };
   auto bounded = propose();

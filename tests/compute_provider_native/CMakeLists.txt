@@ -19,6 +19,7 @@ hyle_add_test(compute_provider_native SOURCES
   matmul_gated_test.cc
   normalization_test.cc
   provider_shape_test.cc
+  retirement_test.cc
   reduction_test.cc
   transform_test.cc
   transformer_test.cc

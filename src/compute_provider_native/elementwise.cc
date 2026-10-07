@@ -28,9 +28,7 @@ float sigmoid(float value) noexcept {
 }
 
 template <UnaryKind Kind> float evaluate_unary(float value) noexcept {
-  if constexpr (Kind == UnaryKind::kAbs) {
-    return std::fabs(value);
-  } else if constexpr (Kind == UnaryKind::kNeg) {
+  if constexpr (Kind == UnaryKind::kNeg) {
     return -value;
   } else if constexpr (Kind == UnaryKind::kExp) {
     return std::exp(value);
@@ -42,14 +40,12 @@ template <UnaryKind Kind> float evaluate_unary(float value) noexcept {
     return 1.0F / std::sqrt(value);
   } else if constexpr (Kind == UnaryKind::kTanh) {
     return std::tanh(value);
-  } else if constexpr (Kind == UnaryKind::kSigmoid) {
-    return sigmoid(value);
+
   } else if constexpr (Kind == UnaryKind::kRelu) {
     if (std::isnan(value))
       return value;
     return value > 0.0F ? value : 0.0F;
-  } else if constexpr (Kind == UnaryKind::kSoftplus) {
-    return std::fmax(value, 0.0F) + std::log1p(std::exp(-std::abs(value)));
+
   } else {
     static_assert(Kind == UnaryKind::kSilu);
     if (value == -std::numeric_limits<float>::infinity())
@@ -63,9 +59,7 @@ void unary_linear(const void *first, const void *, const void *, void *output,
                   std::size_t count) noexcept {
   const auto *source = static_cast<const float *>(first);
   auto *destination = static_cast<float *>(output);
-  if constexpr (Kind == UnaryKind::kAbs) {
-    simd::abs(source, destination, count);
-  } else if constexpr (Kind == UnaryKind::kNeg) {
+  if constexpr (Kind == UnaryKind::kNeg) {
     simd::negate(source, destination, count);
   } else if constexpr (Kind == UnaryKind::kExp) {
     simd::exp_f32_batch(source, destination, count);
@@ -75,26 +69,11 @@ void unary_linear(const void *first, const void *, const void *, void *output,
     simd::sqrt(source, destination, count);
   } else if constexpr (Kind == UnaryKind::kTanh) {
     simd::tanh_f32_batch(source, destination, count);
-  } else if constexpr (Kind == UnaryKind::kSigmoid) {
-    simd::sigmoid_f32_batch(source, destination, count);
+
   } else if constexpr (Kind == UnaryKind::kRelu) {
     simd::relu_f32_batch(source, destination, count);
   } else if constexpr (Kind == UnaryKind::kSilu) {
     simd::silu_f32_batch(source, destination, count);
-  } else if constexpr (Kind == UnaryKind::kSoftplus) {
-    // Reuse the qualified math kernels in bounded stack tiles. Capturing the
-    // exponential before writing the result also preserves exact input alias.
-    std::array<float, 128> scratch;
-    for (std::size_t begin = 0; begin < count; begin += scratch.size()) {
-      const std::size_t size = (std::min)(scratch.size(), count - begin);
-      simd::abs(source + begin, scratch.data(), size);
-      simd::negate(scratch.data(), scratch.data(), size);
-      simd::exp_f32_batch(scratch.data(), scratch.data(), size);
-      simd::log1p_f32_batch(scratch.data(), scratch.data(), size);
-      for (std::size_t index = 0; index < size; ++index)
-        destination[begin + index] =
-            std::fmax(source[begin + index], 0.0F) + scratch[index];
-    }
   } else {
     static_assert(Kind == UnaryKind::kRsqrt);
     simd::reciprocal_sqrt(source, destination, count);
@@ -126,15 +105,11 @@ float evaluate_binary(float left, float right) noexcept {
     return left + right;
   else if constexpr (Kind == BinaryKind::kSubtract)
     return left - right;
-  else if constexpr (Kind == BinaryKind::kMultiply)
-    return left * right;
   else if constexpr (Kind == BinaryKind::kDivide)
     return left / right;
-  else if constexpr (Kind == BinaryKind::kMinimum)
-    return std::fmin(left, right);
   else {
-    static_assert(Kind == BinaryKind::kMaximum);
-    return std::fmax(left, right);
+    static_assert(Kind == BinaryKind::kMinimum);
+    return std::fmin(left, right);
   }
 }
 
@@ -148,15 +123,12 @@ void binary_linear(const void *first, const void *second, const void *,
     simd::add(left, right, destination, count);
   } else if constexpr (Kind == BinaryKind::kSubtract) {
     simd::subtract(left, right, destination, count);
-  } else if constexpr (Kind == BinaryKind::kMultiply) {
-    simd::multiply(left, right, destination, count);
+
   } else if constexpr (Kind == BinaryKind::kDivide) {
     simd::divide(left, right, destination, count);
-  } else if constexpr (Kind == BinaryKind::kMinimum) {
-    simd::fmin(left, right, destination, count);
   } else {
-    static_assert(Kind == BinaryKind::kMaximum);
-    simd::fmax(left, right, destination, count);
+    static_assert(Kind == BinaryKind::kMinimum);
+    simd::fmin(left, right, destination, count);
   }
 }
 
@@ -194,39 +166,6 @@ void gated_narrow_linear(const void *first, const void *second, const void *,
     simd::swiglu_f32_batch(gate.data(), value.data(), gate.data(), size);
     numeric::store_tile<Value>(gate.data(), output, begin, size);
   }
-}
-
-template <std::size_t ElementSize>
-void select_linear(const void *first, const void *second, const void *third,
-                   void *output, std::size_t count) noexcept {
-  const auto *condition = static_cast<const std::byte *>(first);
-  const auto *when_true = static_cast<const std::byte *>(second);
-  const auto *when_false = static_cast<const std::byte *>(third);
-  auto *destination = static_cast<std::byte *>(output);
-  for (std::size_t index = 0; index < count; ++index) {
-    const std::byte *source = condition[index] != std::byte{0}
-                                  ? when_true + index * ElementSize
-                                  : when_false + index * ElementSize;
-    std::byte *target = destination + index * ElementSize;
-    if (source != target)
-      std::memcpy(target, source, ElementSize);
-  }
-}
-
-template <std::size_t ElementSize>
-void select_scalar(const std::byte *first, const std::byte *second,
-                   const std::byte *third, std::byte *output) noexcept {
-  const std::byte *source = *first != std::byte{0} ? second : third;
-  if (source != output)
-    std::memcpy(output, source, ElementSize);
-}
-
-void select_f32_linear(const void *first, const void *second, const void *third,
-                       void *output, std::size_t count) noexcept {
-  simd::select_values(static_cast<const std::uint8_t *>(first),
-                      static_cast<const float *>(second),
-                      static_cast<const float *>(third),
-                      static_cast<float *>(output), count);
 }
 
 template <class Left, class Right>
@@ -438,63 +377,132 @@ submit_elementwise(const NativePlan &plan,
 
 template <class Value>
 bool select_unary(UnaryKind kind, NativePlan &plan) noexcept {
-  if constexpr (std::is_same_v<Value, float>)
-    if (kind == UnaryKind::kSilu)
-      return false;
-#define HYLE_NATIVE_SELECT_UNARY(name)                                         \
-  case UnaryKind::name:                                                        \
-    if constexpr (std::is_same_v<Value, float>)                                \
-      plan.linear_elementwise_route = &unary_linear<UnaryKind::name>;          \
-    else                                                                       \
-      plan.linear_elementwise_route =                                          \
-          &unary_narrow_linear<UnaryKind::name, Value>;                        \
-    plan.scalar_elementwise_route = &unary_scalar<UnaryKind::name, Value>;     \
-    return true
-
-  switch (kind) {
-    HYLE_NATIVE_SELECT_UNARY(kAbs);
-    HYLE_NATIVE_SELECT_UNARY(kNeg);
-    HYLE_NATIVE_SELECT_UNARY(kExp);
-    HYLE_NATIVE_SELECT_UNARY(kLog);
-    HYLE_NATIVE_SELECT_UNARY(kSqrt);
-    HYLE_NATIVE_SELECT_UNARY(kRsqrt);
-    HYLE_NATIVE_SELECT_UNARY(kTanh);
-    HYLE_NATIVE_SELECT_UNARY(kSigmoid);
-    HYLE_NATIVE_SELECT_UNARY(kRelu);
-    HYLE_NATIVE_SELECT_UNARY(kSilu);
-    HYLE_NATIVE_SELECT_UNARY(kSoftplus);
-  case UnaryKind::kGelu:
-  case UnaryKind::kGeluTanh:
-    return false;
+  if constexpr (std::is_same_v<Value, simd::bfloat16_t>) {
+    if (kind == UnaryKind::kNeg) {
+      if constexpr (std::is_same_v<Value, float>)
+        plan.linear_elementwise_route = &unary_linear<UnaryKind::kNeg>;
+      else
+        plan.linear_elementwise_route = &unary_narrow_linear<UnaryKind::kNeg, Value>;
+      plan.scalar_elementwise_route = &unary_scalar<UnaryKind::kNeg, Value>;
+      return true;
+    }
+  }
+  if constexpr (true) {
+    if (kind == UnaryKind::kExp) {
+      if constexpr (std::is_same_v<Value, float>)
+        plan.linear_elementwise_route = &unary_linear<UnaryKind::kExp>;
+      else
+        plan.linear_elementwise_route = &unary_narrow_linear<UnaryKind::kExp, Value>;
+      plan.scalar_elementwise_route = &unary_scalar<UnaryKind::kExp, Value>;
+      return true;
+    }
+  }
+  if constexpr (std::is_same_v<Value, simd::float16_t>) {
+    if (kind == UnaryKind::kLog) {
+      if constexpr (std::is_same_v<Value, float>)
+        plan.linear_elementwise_route = &unary_linear<UnaryKind::kLog>;
+      else
+        plan.linear_elementwise_route = &unary_narrow_linear<UnaryKind::kLog, Value>;
+      plan.scalar_elementwise_route = &unary_scalar<UnaryKind::kLog, Value>;
+      return true;
+    }
+  }
+  if constexpr (!std::is_same_v<Value, float>) {
+    if (kind == UnaryKind::kSqrt) {
+      if constexpr (std::is_same_v<Value, float>)
+        plan.linear_elementwise_route = &unary_linear<UnaryKind::kSqrt>;
+      else
+        plan.linear_elementwise_route = &unary_narrow_linear<UnaryKind::kSqrt, Value>;
+      plan.scalar_elementwise_route = &unary_scalar<UnaryKind::kSqrt, Value>;
+      return true;
+    }
+  }
+  if constexpr (!std::is_same_v<Value, float>) {
+    if (kind == UnaryKind::kRsqrt) {
+      if constexpr (std::is_same_v<Value, float>)
+        plan.linear_elementwise_route = &unary_linear<UnaryKind::kRsqrt>;
+      else
+        plan.linear_elementwise_route = &unary_narrow_linear<UnaryKind::kRsqrt, Value>;
+      plan.scalar_elementwise_route = &unary_scalar<UnaryKind::kRsqrt, Value>;
+      return true;
+    }
+  }
+  if constexpr (std::is_same_v<Value, simd::float16_t>) {
+    if (kind == UnaryKind::kTanh) {
+      if constexpr (std::is_same_v<Value, float>)
+        plan.linear_elementwise_route = &unary_linear<UnaryKind::kTanh>;
+      else
+        plan.linear_elementwise_route = &unary_narrow_linear<UnaryKind::kTanh, Value>;
+      plan.scalar_elementwise_route = &unary_scalar<UnaryKind::kTanh, Value>;
+      return true;
+    }
+  }
+  if constexpr (std::is_same_v<Value, simd::bfloat16_t>) {
+    if (kind == UnaryKind::kRelu) {
+      if constexpr (std::is_same_v<Value, float>)
+        plan.linear_elementwise_route = &unary_linear<UnaryKind::kRelu>;
+      else
+        plan.linear_elementwise_route = &unary_narrow_linear<UnaryKind::kRelu, Value>;
+      plan.scalar_elementwise_route = &unary_scalar<UnaryKind::kRelu, Value>;
+      return true;
+    }
+  }
+  if constexpr (std::is_same_v<Value, simd::float16_t>) {
+    if (kind == UnaryKind::kSilu) {
+      if constexpr (std::is_same_v<Value, float>)
+        plan.linear_elementwise_route = &unary_linear<UnaryKind::kSilu>;
+      else
+        plan.linear_elementwise_route = &unary_narrow_linear<UnaryKind::kSilu, Value>;
+      plan.scalar_elementwise_route = &unary_scalar<UnaryKind::kSilu, Value>;
+      return true;
+    }
   }
   return false;
-
-#undef HYLE_NATIVE_SELECT_UNARY
 }
 
 template <class Value>
 bool select_binary(BinaryKind kind, NativePlan &plan) noexcept {
-#define HYLE_NATIVE_SELECT_BINARY(name)                                        \
-  case BinaryKind::name:                                                       \
-    if constexpr (std::is_same_v<Value, float>)                                \
-      plan.linear_elementwise_route = &binary_linear<BinaryKind::name>;        \
-    else                                                                       \
-      plan.linear_elementwise_route =                                          \
-          &binary_narrow_linear<BinaryKind::name, Value>;                      \
-    plan.scalar_elementwise_route = &binary_scalar<BinaryKind::name, Value>;   \
-    return true
-
-  switch (kind) {
-    HYLE_NATIVE_SELECT_BINARY(kAdd);
-    HYLE_NATIVE_SELECT_BINARY(kSubtract);
-    HYLE_NATIVE_SELECT_BINARY(kMultiply);
-    HYLE_NATIVE_SELECT_BINARY(kDivide);
-    HYLE_NATIVE_SELECT_BINARY(kMinimum);
-    HYLE_NATIVE_SELECT_BINARY(kMaximum);
+  if constexpr (std::is_same_v<Value, float>) {
+    if (kind == BinaryKind::kAdd) {
+      if constexpr (std::is_same_v<Value, float>)
+        plan.linear_elementwise_route = &binary_linear<BinaryKind::kAdd>;
+      else
+        plan.linear_elementwise_route = &binary_narrow_linear<BinaryKind::kAdd, Value>;
+      plan.scalar_elementwise_route = &binary_scalar<BinaryKind::kAdd, Value>;
+      return true;
+    }
+  }
+  if constexpr (!std::is_same_v<Value, simd::bfloat16_t>) {
+    if (kind == BinaryKind::kSubtract) {
+      if constexpr (std::is_same_v<Value, float>)
+        plan.linear_elementwise_route = &binary_linear<BinaryKind::kSubtract>;
+      else
+        plan.linear_elementwise_route = &binary_narrow_linear<BinaryKind::kSubtract, Value>;
+      plan.scalar_elementwise_route = &binary_scalar<BinaryKind::kSubtract, Value>;
+      return true;
+    }
+  }
+  if constexpr (!std::is_same_v<Value, simd::bfloat16_t>) {
+    if (kind == BinaryKind::kDivide) {
+      if constexpr (std::is_same_v<Value, float>)
+        plan.linear_elementwise_route = &binary_linear<BinaryKind::kDivide>;
+      else
+        plan.linear_elementwise_route = &binary_narrow_linear<BinaryKind::kDivide, Value>;
+      plan.scalar_elementwise_route = &binary_scalar<BinaryKind::kDivide, Value>;
+      return true;
+    }
+  }
+  if constexpr (std::is_same_v<Value, simd::float16_t>) {
+    if (kind == BinaryKind::kMinimum) {
+      if constexpr (std::is_same_v<Value, float>)
+        plan.linear_elementwise_route = &binary_linear<BinaryKind::kMinimum>;
+      else
+        plan.linear_elementwise_route = &binary_narrow_linear<BinaryKind::kMinimum, Value>;
+      plan.scalar_elementwise_route = &binary_scalar<BinaryKind::kMinimum, Value>;
+      return true;
+    }
   }
   return false;
-
-#undef HYLE_NATIVE_SELECT_BINARY
 }
 
 bool select_unary(UnaryKind kind, DataType type, NativePlan &plan) noexcept {
@@ -521,31 +529,6 @@ bool select_binary(BinaryKind kind, DataType type, NativePlan &plan) noexcept {
   default:
     return false;
   }
-}
-
-bool select_select(DataType data_type, std::size_t element_size,
-                   NativePlan &plan) noexcept {
-  if (data_type == DataType::kFloat32) {
-    plan.linear_elementwise_route = &select_f32_linear;
-    plan.scalar_elementwise_route = &select_scalar<sizeof(float)>;
-    return true;
-  }
-#define HYLE_NATIVE_SELECT_WIDTH(width)                                        \
-  case width:                                                                  \
-    plan.linear_elementwise_route = &select_linear<width>;                     \
-    plan.scalar_elementwise_route = &select_scalar<width>;                     \
-    return true
-
-  switch (element_size) {
-    HYLE_NATIVE_SELECT_WIDTH(1);
-    HYLE_NATIVE_SELECT_WIDTH(2);
-    HYLE_NATIVE_SELECT_WIDTH(4);
-    HYLE_NATIVE_SELECT_WIDTH(8);
-  default:
-    return false;
-  }
-
-#undef HYLE_NATIVE_SELECT_WIDTH
 }
 
 bool dense_same_shape(const TensorDesc &input,
@@ -642,29 +625,11 @@ Status prepare_elementwise(Operation operation,
     const Binary *binary = operation.get_if<Binary>();
     if (binary == nullptr ||
         !select_binary(binary->kind, inputs[0].data_type(), plan))
-      return Status::InvalidArgument("native Binary kind is invalid");
+      return Status::Unimplemented("native Binary kind/dtype is not retained");
     linear = dense_same_shape(inputs[0], outputs[0]) &&
              dense_same_shape(inputs[1], outputs[0]);
     if (!linear)
       broadcast_chunk = dense_broadcast_suffix(inputs, outputs[0]);
-    break;
-  }
-  case OperationKind::kSelect: {
-    if (inputs.size() != 3)
-      return Status::Internal("native Select arity is invalid");
-    if (inputs[0].data_type() != DataType::kBool || !inputs[0].is_plain() ||
-        !inputs[1].is_plain() || !inputs[2].is_plain()) {
-      return Status::Unimplemented(
-          "native Select requires plain Bool condition and branch storage");
-    }
-    const std::size_t element_size = data_type_size(outputs[0].data_type());
-    if (!select_select(outputs[0].data_type(), element_size, plan)) {
-      return Status::Unimplemented(
-          "native Select branch scalar width is unsupported");
-    }
-    linear = dense_same_shape(inputs[0], outputs[0]) &&
-             dense_same_shape(inputs[1], outputs[0]) &&
-             dense_same_shape(inputs[2], outputs[0]);
     break;
   }
   default:
@@ -703,7 +668,8 @@ Status prepare_half_gated(Operation operation,
     return Status::Internal("native half gated activation arity is invalid");
   const DataType type = inputs[0].data_type();
   if (type != DataType::kFloat16 ||
-      gated->activation != GatedActivationKind::kSilu)
+      gated->activation != GatedActivationKind::kSilu ||
+      gated->inputs != GatedInputKind::kSeparate)
     return Status::Unimplemented(
         "native gated activation retains only qualified float16 SiLU");
   for (const TensorDesc &input : inputs)
