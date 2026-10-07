@@ -24,7 +24,7 @@ CPU-only新版的104 GGUF档位、非GGUF与MTP/DSpark原计算合同覆盖另�
 CPU 优选规则在冷准备时匹配构建recipe、硬件、编译器、线程合同及完整操作参数。
 旧core的187个历史优势域与CPU-only新core的17格分别要求对应peer；还限定已测static、Release、LTO off、
 原优化flags与i9-13900K（family 6/model 183/stepping 1、AVX2）/MSVC19.50.35728/单线程。
-这些条件不匹配时沿已构建成熟默认绑定，不撤回正常数学能力。
+这些条件不匹配时按以下逐合同成熟默认绑定，不撤回正常数学能力。
 Graph 的成熟完整 region 优先于 Native 单算子，避免破坏融合。执行和重复执行不重新选路。
 相同资格条件下的 13 个已测劣势域拒绝 Native exact 请求，改由成熟实现承接。
 这些 Native 优选还要求相同的成熟 peer 软件版本（含当时oneDNN3.13.2）。oneDNN现锁3.13.4，
@@ -32,6 +32,20 @@ Graph 的成熟完整 region 优先于 Native 单算子，避免破坏融合。�
 不把旧版 ggml 对照下的187条优势自动沿用到新版；SIMD基础与已保留的专家能力不因此删除。
 这些证据是相对当时默认成熟调用的比较，不表示全部硬件、形状或所有 Provider 的全局最优。
 逐操作保留与退役边界见[CPU 域账本](../implementation/tasks/compute/cpu-default-domain-ledger.md)。
+
+普通入口的工程默认与性能WIN分开记录。候选必须先通过自己的真实精度、布局、资源与状态资格；
+没有专门硬件规则时仍能执行，准备后不再搜索。当前默认如下，F4可按合格完整成本证据修订：
+
+| 合同 | 成熟默认与理由 |
+|---|---|
+| 普通plain MatMul、norm、Copy、Select、稳定Softplus | 合格oneDNN；不满足布局/精度/资源时保留ggml/ATen成熟替代 |
+| 原GGUF/blocked压缩矩阵及其它原生tensor程序 | ggml，保留原格式、实际codec与库自己的ISA/资源管理 |
+| Sigmoid/SiLU/GELU及门控、Min/Max、Bool或LogSoftmax | 合格ATen的稳定/checked数学；其它满足同合同的成熟程序仍可承接 |
+| RoPE、checked索引程序 | 已验ggml prepared路径优先，避免无理由替换为managed临时路线 |
+| Graph完整region | 完整ggml/oneDNN region先于leaf，不为上述默认表拆成熟程序 |
+
+这些是合理基线而非每个硬件/形状的统计冠军。显式expert工厂保留原行为，不附加普通默认policy。
+仅在全SDK已交付并验收的能力内可用；Mac CPU及混合SDK的最终完整资格仍按当前goal完成。
 
 Apple 与 Vulkan 各自使用原生 Program、运行槽和资源；普通 Direct/Graph 用法分别见
 [Apple MLX/Metal](apple-compute.md) 与 [Vulkan](vulkan-compute.md)。本文后续 Queue/Provider 的

@@ -123,3 +123,13 @@ F32 flash优化仍只新版core，旧core用已验同精度数学，不把它冒
 compute_ggml_runtime、compute_provider_ggml绑定此有限B2；普通CPU+实际CUDA/Vulkan/Apple组合的配置、
 CPU新格式/模型分支、GPU原格式和新格式拒绝、三交付适用验收待运行，探针不算完整路线资格。
 保留一个core/原GPU能力，旧Graph Vulkan性能blocker不解除，不启动GPU性能或自研优化。
+
+## B4 Windows已验／B2组合待验
+
+B4候选`6216e6d0651ad2684950abec036d8749ccc3c3a1`：Direct16/Graph15全部通过、fixture已绑定无skip；
+原24格两次重放、24成熟region、9错配、动态物化/并发/close通过。首次不必要的managed Scatter/RoPE选择
+已按真实prepared资源合同纠正，失败记录保留，未放宽数值/资源门。静态cold表无新增Context allocation，submit沿原表。
+证据见[F1部分证据](../../../../evidence/correctness/cpu-final-f1/README.md)，不签性能WIN或整包完成。
+B2产品与派生19处原port已固定、源码/CPU MatMul/Gather探针通过，真实CPU+Vulkan标准产品组合正在验证；
+首两次configure的maintenance-root缓存及notice分发类型错误保留，分别清除互斥旧root与改为SDK说明后重试。
+没有修改公共package checker来绕过锁，原实际许可证仍按中央锁安装。

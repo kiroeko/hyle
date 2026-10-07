@@ -1,0 +1,24 @@
+{
+  "kind": "B4 Windows partial; not full F1 or all-platform winner",
+  "candidate": "6216e6d0651ad2684950abec036d8749ccc3c3a1",
+  "scope": "per-contract engineering defaults; original library execution and lifecycle retained",
+  "suites": {
+    "direct": {
+      "tests": 16,
+      "skipped": 0
+    },
+    "graph": {
+      "tests": 15,
+      "skipped": 0
+    }
+  },
+  "ordinary_cases": 24,
+  "mature_regions": 24,
+  "replays": 2,
+  "native_win_labels": 0,
+  "allocation": "No extra Context allocations; static cold tables only, original PreparedVTable",
+  "p1": "NOT_RUN; engineering baseline, not a performance WIN",
+  "archive_sha256": "6c85230111558756661981cfd923f922700cee2b0e33d8b082b56102c3a91c0a",
+  "archive_bytes": 29364,
+  "initial_failures": "Two prior tests exposed unnecessary managed Scatter/RoPE choice; baseline corrected to original prepared ggml; original failures retained."
+}

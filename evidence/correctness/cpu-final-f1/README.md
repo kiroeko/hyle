@@ -36,3 +36,11 @@ Mac Air已读取当前真实身份且可达，尚未运行新版CPU产品；macO
 
 [清理记录](cleanup.json)：已校验归档与锁定cache后，删除本轮重复oneDNN源码/下载约87.8 MiB；
 保留当前producer、统一锁定source/archive cache与全部原始资格记录。
+
+## B4逐合同工程默认
+
+候选`6216e6d0651ad2684950abec036d8749ccc3c3a1`，Windows Direct16/Graph15无skip、无fail；
+原24格/变输入重放、完整region、错配/并发/close与动态物化通过。
+[receipt](b4-receipt.json)、[原失败/纠正与完整日志](b4-engineering-defaults.zip)。
+原库能力/配置/生命周期及PreparedVTable保留，静态cold表不增加Context allocation；expert不带普通默认policy。
+这是工程默认，不是新性能WIN；其它平台和最终交付未验，本包仍未关闭。
