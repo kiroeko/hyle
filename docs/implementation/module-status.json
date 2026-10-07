@@ -491,8 +491,8 @@
     {
       "module": "compute_route_cuda",
       "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/cuda-final-u2-build-contract.md",
-      "summary": "CUDA U2 B1 AUDITED：共同模型/算子需求不变，有限授权标准 compute-cuda preset 与普通用法；B2-B4 软件事实、三交付/loader与mixed能力仍待审计验收，旧数学/Provider资格保持。"
+      "record": "docs/implementation/tasks/compute/cuda-final-u3-artifact-carrier.md",
+      "summary": "CUDA U2/U3 SCOPED：保留已审计 preset/架构/冷事实；N1 有限加入成熟 artifact GPU 默认 Provider，原数学/资格不变，交付验证待验。"
     },
     {
       "module": "graph_route_cuda",
@@ -582,8 +582,9 @@
     },
     {
       "module": "compute_provider_torch_cuda",
-      "state": "QUEUED",
-      "summary": "CUDA U3 N1：预留成熟 ATen GPU artifact carrier 身份，尚无产品实现或资格。"
+      "state": "SCOPED",
+      "summary": "CUDA U3 N1 SCOPED：原 NF4/nested、AWQ/CT GPU 张量程序；保留 locked CPU common runtime，附加原 CUDA leaf SDK；自然 Direct/Graph、资源/失败/三交付批量资格化，零新数学。",
+      "record": "docs/implementation/tasks/compute/cuda-final-u3-artifact-carrier.md"
     }
   ]
 }
