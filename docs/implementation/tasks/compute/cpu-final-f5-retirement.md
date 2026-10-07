@@ -153,3 +153,5 @@ Linux续编译和后续平台／mixed差异绑定新不可变输入，原GCC FAI
 D5同批第二个精确反例：`reduction.cc`的identity／accumulate／dense三个私有switch已只执行
 Min/Max，公共ReductionKind仍含成熟库承载的Sum/Mean，GCC `-Wswitch`要求显式默认出口。
 仅将原switch后的NaN／return出口放入default；准入仍先拒绝非Min/Max，不恢复Sum/Mean执行或改变算术。
+D5第三个精确位置：`transformer.cc:44 coordinates`原RoPE／宽Softmax删除后无调用，
+GCC Werror拒绝；仅删除该匿名未调用helper，保留F16 Bool Softmax实际坐标路径与axis/mask helpers。
