@@ -21,12 +21,13 @@ CPU-only新版的104 GGUF档位、非GGUF与MTP/DSpark原计算合同覆盖另�
 普通用户不排列 Provider 或提供性能资料；规则与性能验收状态由当前 CPU 任务卡记录。
 路线原则见[开发期优选规则](../architecture/compute-design.md#41-开发时验证-best-of准备时应用规则)。
 
-CPU 优选规则在冷准备时匹配硬件、编译器、线程合同及完整操作参数。当前 Native 优选仅覆盖
-已测 i9-13900K（family 6/model 183/stepping 1、AVX2）、Windows MSVC 19.50.35728、Release（NDEBUG）、
-单线程及固定 dense 形状的 187 个完整调用优势域；不匹配时沿成熟 Provider 顺序绑定。
+CPU 优选规则在冷准备时匹配构建recipe、硬件、编译器、线程合同及完整操作参数。
+旧core的187个历史优势域与CPU-only新core的17格分别要求对应peer；还限定已测static、Release、LTO off、
+原优化flags与i9-13900K（family 6/model 183/stepping 1、AVX2）/MSVC19.50.35728/单线程。
+这些条件不匹配时沿已构建成熟默认绑定，不撤回正常数学能力。
 Graph 的成熟完整 region 优先于 Native 单算子，避免破坏融合。执行和重复执行不重新选路。
 相同资格条件下的 13 个已测劣势域拒绝 Native exact 请求，改由成熟实现承接。
-这些 Native 优选还要求相同的成熟 peer 软件版本。当前新版 CPU-only SDK 使用成熟实现默认，
+这些 Native 优选还要求相同的成熟 peer 软件版本。当前新版 CPU-only SDK仅匹配17格优选，其余成熟默认，
 不把旧版 ggml 对照下的187条优势自动沿用到新版；SIMD基础与已保留的专家能力不因此删除。
 这些证据是相对当时默认成熟调用的比较，不表示全部硬件、形状或所有 Provider 的全局最优。
 逐操作保留与退役边界见[CPU 域账本](../implementation/tasks/compute/cpu-default-domain-ledger.md)。
@@ -1070,13 +1071,15 @@ oneDNN 的 CPU ISA 要求限制；该 Provider 不隐式转换整个 tensor。�
 
 当前 CPU-only ggml 0.26 SDK 有17个已测条件的 Native 优选：dense Copy 的五种浮点 storage
 `[1或32,2048]`；带同dtype gamma的 RMSNorm（F32只rows1；F16/BF16 rows1/32，epsilon1e-5；
-另BF16 epsilon1e-6）。优选只限已测i9-13900K/AVX2、MSVC195035728、Release、单线程及锁定
+另BF16 epsilon1e-6）。优选只限已测i9-13900K/AVX2、MSVC195035728、static、Release的原优化recipe、LTO off、单线程及锁定
 ggml/oneDNN版本，prepare匹配、submit不搜索；其它条件成熟优先，Graph不会为叶规则拆成熟region。
 Native SDPA已源级退役，旧严格workspace保证不再提供。CPU-only新core的F32 dense无显式mask SDPA
 使用原F32 fused（含两layout/GQA/causal）；原BF16及旧mixed SDK路径保持已验规则。完整条件与证据见
 [三项最终裁决](../implementation/tasks/compute/cpu-three-operator-route-closure.md)。
 这17格仅证明对已测默认成熟实现的优势；oneDNN/ggml/ATen全部重叠域尚未完成性能裁决，
 其它成熟默认顺序不能解释为每个形状的全Provider最优。
+flags/IPO、shared、编译器、ISA、所需peer或配置不匹配时不继承这些WIN标签，仍可执行已构建成熟默认；
+完整三平台默认与覆盖正在[CPU最终收口](../implementation/tasks/compute/cpu-final-closure-plan.md)中完成。
 
 归一化 primitive 每次执行有 oneDNN 内部 metadata 分配，报告 `ProviderReplayClass::kManaged`；
 其数量不冒充 HYLE allocator 可计量的零字节。Graph 的 prepared-only 约束会排除该 managed

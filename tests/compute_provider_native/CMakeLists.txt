@@ -1,6 +1,12 @@
 hyle_add_header_self_contained_test(compute_provider_native
   HEADER_DIR compute
   HEADERS providers/native.h)
+add_test(NAME compute_provider_native_default_rule_build_contract
+  COMMAND "${CMAKE_COMMAND}"
+    -S "${CMAKE_CURRENT_SOURCE_DIR}/default_rule_build_contract"
+    -B "${CMAKE_CURRENT_BINARY_DIR}/default-rule-build-contract")
+set_tests_properties(compute_provider_native_default_rule_build_contract PROPERTIES
+  LABELS "compute_provider_native")
 hyle_add_test(compute_provider_native SOURCES
   aten_cast_test.cc
   aten_numeric_test.cc
