@@ -19,14 +19,18 @@ bool forward(const std::filesystem::path &path,FILE *out) {
 }
 int main() {
   SetErrorMode(SEM_FAILCRITICALERRORS|SEM_NOGPFAULTERRORBOX|SEM_NOOPENFILEERRORBOX);
-  const auto *cpu=std::getenv("HYLE_PERF_CALLER_CPU");
   const auto *nonce=std::getenv("HYLE_PERF_RUN_NONCE");
-  if(!cpu || !nonce)return 70;
-  const auto caller=std::strtoul(cpu,nullptr,10);if(caller>=64)return 70;
+  if(!nonce)return 70;
   DWORD_PTR process_mask=0,system_mask=0;
-  const auto mask=DWORD_PTR{1}<<caller;
-  if(!GetProcessAffinityMask(GetCurrentProcess(),&process_mask,&system_mask) || process_mask!=mask ||
+  if(!GetProcessAffinityMask(GetCurrentProcess(),&process_mask,&system_mask) || !process_mask ||
+      (process_mask&(process_mask-1))!=0)return 71;
+  const auto mask=process_mask;
+  unsigned long caller=0;
+  while((DWORD_PTR{1}<<caller)!=mask)++caller;
+  if(
       !SetThreadAffinityMask(GetCurrentThread(),mask) || GetCurrentProcessorNumber()!=caller)return 71;
+  const auto cpu=std::to_string(caller);
+  if(!SetEnvironmentVariableA("HYLE_PERF_CALLER_CPU",cpu.c_str()))return 71;
   const auto priority=GetPriorityClass(GetCurrentProcess());if(!priority)return 72;
   std::array<wchar_t,32768> name{};const auto size=GetModuleFileNameW(nullptr,name.data(),static_cast<DWORD>(name.size()));
   if(!size || size==name.size())return 73;
@@ -53,7 +57,7 @@ int main() {
   }
   std::fprintf(stderr,"# CPU_BEST_OF_ADAPTER execution_order=%s allocation_order=%s affinity_topology=instrument caller_cpu=%s affinity_ok=1 run_nonce=%s one_batch=1 child_policy_verified=1\n",
       std::getenv("HYLE_BENCH_RIVAL_FIRST")?"peer-first":"candidate-first",
-      std::getenv("HYLE_BENCH_PEER_ALLOCATION_FIRST")?"peer-first":"candidate-first",cpu,nonce);
+      std::getenv("HYLE_BENCH_PEER_ALLOCATION_FIRST")?"peer-first":"candidate-first",cpu.c_str(),nonce);
   const auto waited=WaitForSingleObject(process.hProcess,INFINITE);DWORD code=78;const auto read=GetExitCodeProcess(process.hProcess,&code);
   CloseHandle(process.hThread);CloseHandle(process.hProcess);
   if(!forward(stdout_path,stdout) || !forward(stderr_path,stderr))return 79;
