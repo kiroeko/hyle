@@ -58,3 +58,9 @@ source并FAIL，不能计作新候选产品结果。有限FIX同时将这两个�
 和其它分发保持。早先“仅reference/cache”的解释被原TF32指令和新精度回归证伪，已删除临时
 诊断代码与reference factory，保留失败原日志。当前Windows更大联合回归正在运行；Linux与
 最终U3联合三交付仍未验证，不签本卡CLOSED／新版本性能WIN。
+
+后续同产品／test-only清理候选`7f6c9107`的Windows与Linux联合请求全集651/649项均通过，
+原Provider资源／编码／精度亦通过。Linux单进程timeout保留为失败，分carrier/合同族原case
+全集逐名相等后通过；没有新产品修补或放宽门。精确边界、原失败与source差分见
+[完整native资格](../../../../evidence/correctness/cuda-final-u3-f32-native/README.md)。
+最终联合三交付、U4／U5仍待，本卡继续AUDITED。

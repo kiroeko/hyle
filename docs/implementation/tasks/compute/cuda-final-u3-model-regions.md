@@ -169,3 +169,8 @@ Graph34中33通过，无skip（包括本地原版程序与完整recurrent）；K
 实际源码反例已定位到原 F32 MMF 的 TF32 指令与未消费精度要求的 dispatch；定向 runtime
 接缝单独按[原 F32 分发卡](cuda-final-u3-f32-dispatch.md)审计。前述仅 reference／cache 的推断
 不足以解释全部误差，原FAIL保持，禁止以近零点值／整体误差较小直接撤门签PASS。
+
+原F32精度分发实际修复后，临时reference包装移除，Kimi原完整独立轨迹通过；两平台651/649
+联合请求全集及原资源门已完成[native资格](../../../../evidence/correctness/cuda-final-u3-f32-native/README.md)。
+Linux单进程资源饱和timeout没有改写为PASS；新分组case全集逐名核对后通过。当前native
+成熟接线批次已取得资格；最终joint三交付/route facts负空间与U4/U5仍需完成，不自动CLOSED。
