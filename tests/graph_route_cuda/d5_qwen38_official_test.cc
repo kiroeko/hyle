@@ -1329,7 +1329,8 @@ TEST(CudaGraphMoeFragments, D5KimiAbsorbedMlaWithCache) {
   for (int i = 0; i < 3; ++i) {
     auto profile = d5_moe_semantic_fragments::kKdaProfiles[i];
     SCOPED_TRACE(profile->variant);
-    run_q24_semantic_fragment(d5_kimi_remaining_fragments::mla(profile));
+    // CUDA's admitted plain grouped contract preserves F32 activations.
+    run_q24_semantic_fragment(d5_kimi_remaining_fragments::mla(profile, false));
   }
 }
 

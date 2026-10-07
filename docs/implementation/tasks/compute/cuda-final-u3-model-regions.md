@@ -152,3 +152,9 @@ official/sidecar资源。其余族仍以完整需求映射为准，未运行不�
 独立方程回归亦通过。原失败已无损归档，见[固定GGUF资格](../../../../evidence/correctness/cuda-final-u3-fixed-gguf/README.md)。
 其余family-region／本地真实权重与最终联合三交付仍未完成，本包保持AUDITED；不要外推为
 U3或整个CUDA收口，U4/U5未因correctness通过自动完成。
+
+F3后续reference接缝：其余family批次的Kimi MLA仍用common fixture的默认
+`round_grouped_input_to_bfloat=true`，与本CUDA plain grouped F32输入合同不一致。
+fixture已有false独立源方程（原Metal consumer已使用），CUDA两调用应显式传false；只改test
+caller，不改CPU默认／产品数学、whole-fragment误差门或相应state/cache验证。初版失败保留，
+本caller纠正未运行前不能PASS；不把这种不同乘数边界的参考差异记成性能胜负。
