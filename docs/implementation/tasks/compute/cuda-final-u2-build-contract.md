@@ -87,3 +87,8 @@ SCOPED 提交 `bb55d8b7`；源账单确认 `hyle_configure_cuda_dependency()` �
 无需改 ggml 数学／patch、target 依赖／新公开对象、CPU 构建或其它路线。显式值和 CUDA-OFF 早返保留。
 有限 FIX 是这一个 SDK 配置接缝；三个局部默认防御保留，不要求普通用户多传架构 flag。
 当前只允许 B4 此项产品变更，B2 的真实驱动发行版 facts／B3 三交付与其它 B4 core 能力仍未验收。
+
+B4 同一源码审计的具名纠正：ggml 在 enable_language(CUDA) **之前**设置自己的 arch，
+所以不能只在存在 CUDAARCHS 时放弃默认；必须将该显式环境值同样传至共同父作用域。
+若 CMake 变量已显式定义仍优先，不改 empty/invalid 值的 CMake 诊断。追加一次环境值／显式变量优先级
+配置检查；不是新的能力或性能姿势。
