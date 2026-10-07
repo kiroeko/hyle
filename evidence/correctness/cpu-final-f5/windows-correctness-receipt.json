@@ -1,0 +1,131 @@
+{
+  "scope": "F5 Windows owning/ordinary/generic Graph correctness; platform delivery and terminal are still pending",
+  "product_candidate": "507bad9698f9988d371c59e5661a69e4394c580a",
+  "test_candidate": "4ac3d81cf075c4423837cbeff75de355a759195d",
+  "original_batch_verdict": "FAIL retained; generic retired-math fixtures and two stale Select provider identities",
+  "original_programs": [
+    {
+      "program": "hyle_compute_test",
+      "ctest_status": "run",
+      "initial_failure": false,
+      "gtest_cases": 63,
+      "gtest_passed": 63,
+      "gtest_skipped": 0
+    },
+    {
+      "program": "hyle_graph_test",
+      "ctest_status": "run",
+      "initial_failure": false,
+      "gtest_cases": 31,
+      "gtest_passed": 31,
+      "gtest_skipped": 0
+    },
+    {
+      "program": "hyle_graph_executable_test",
+      "ctest_status": "fail",
+      "initial_failure": true,
+      "gtest_cases": 283,
+      "gtest_passed": 213,
+      "gtest_skipped": 0
+    },
+    {
+      "program": "hyle_compute_provider_onednn_test",
+      "ctest_status": "run",
+      "initial_failure": false,
+      "gtest_cases": 29,
+      "gtest_passed": 29,
+      "gtest_skipped": 0
+    },
+    {
+      "program": "hyle_compute_provider_onednn_composition_test",
+      "ctest_status": "run",
+      "initial_failure": false,
+      "gtest_cases": 1,
+      "gtest_passed": 1,
+      "gtest_skipped": 0
+    },
+    {
+      "program": "hyle_compute_provider_onednn_graph_test",
+      "ctest_status": "run",
+      "initial_failure": false,
+      "gtest_cases": 1,
+      "gtest_passed": 1,
+      "gtest_skipped": 0
+    },
+    {
+      "program": "hyle_compute_provider_ggml_test",
+      "ctest_status": "run",
+      "initial_failure": false,
+      "gtest_cases": 60,
+      "gtest_passed": 60,
+      "gtest_skipped": 0
+    },
+    {
+      "program": "hyle_graph_provider_onednn_test",
+      "ctest_status": "run",
+      "initial_failure": false,
+      "gtest_cases": 3,
+      "gtest_passed": 3,
+      "gtest_skipped": 0
+    },
+    {
+      "program": "hyle_compute_backend_cpu_test",
+      "ctest_status": "run",
+      "initial_failure": false,
+      "gtest_cases": 54,
+      "gtest_passed": 54,
+      "gtest_skipped": 0
+    },
+    {
+      "program": "hyle_compute_route_cpu_test",
+      "ctest_status": "run",
+      "initial_failure": false,
+      "gtest_cases": 832,
+      "gtest_passed": 832,
+      "gtest_skipped": 0
+    },
+    {
+      "program": "hyle_graph_route_cpu_test",
+      "ctest_status": "fail",
+      "initial_failure": true,
+      "gtest_cases": 851,
+      "gtest_passed": 849,
+      "gtest_skipped": 0
+    },
+    {
+      "program": "hyle_graph_route_cpu_cpu_executor_test",
+      "ctest_status": "run",
+      "initial_failure": false,
+      "gtest_cases": null,
+      "gtest_passed": null,
+      "gtest_skipped": 0
+    }
+  ],
+  "successful_correction_receipts": [
+    {
+      "xml": "owning-migration-corrected.xml",
+      "tests": 144,
+      "failures": 0,
+      "skips": 0,
+      "sha256": "8ddc458037a624e2ed946536eb7caefe02b9dbf7b98241787643c882204b687f"
+    },
+    {
+      "xml": "ordinary-select-policy-corrected.xml",
+      "tests": 2,
+      "failures": 0,
+      "skips": 0,
+      "sha256": "19d4ac226920c762b8a7d080636eba49e07205675c40d77e6c671c55e8147aa2"
+    },
+    {
+      "xml": "graph-migration-final.xml",
+      "tests": 283,
+      "failures": 0,
+      "skips": 0,
+      "sha256": "b9346d594fa2c7126be057f6be3e94eebebe539395a80b14270278ee70ef2108"
+    }
+  ],
+  "reuse": "Successful unchanged cases in the original complete batch are retained; only affected Graph fixtures/2 identity expectations rerun.",
+  "p1": "NOT_RUN; retained mathematics/default rule qualification unchanged",
+  "bundle": "windows-correctness.zip",
+  "bundle_sha256": "2602224e2ea9b10d7065e5ee5ae3770af911a494150ace850282da929ba56380"
+}
