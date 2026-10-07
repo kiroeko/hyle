@@ -133,3 +133,16 @@ T7同输入修正未消除Q8 sidecar首replay state反例（归一化max4.212886
 找出首次偏离；第二只查第一probe定位的一个原库/组合接缝。probe不签资格、不改产品API/算法/误差门，
 不换模型输入、样本数或量化。只有具体源码/准入反例再审计有限产品FIX；预算内无法裁决就说明精确未决边界，
 不给不合格形态签完成，也不扩全库/所有算子性能调查。
+
+### T8结果与T9参考FP32边界纠正
+
+两probe均已用完：第一attention/post-MoE偏差逐stage增大；第二首qa/Q8投影max-scaled0.439%，
+sink局部0.0763%，最终约4.21%。Direct/Graph反例完全相同；没有证据指向图调度或宽精度累加失败。
+具体源码反例：sidecar norm_ref复用Double平方/mean/sqrt/两次乘积后一次F32舍入；
+原GGUF/公开RMSNorm链路是F32 square、F32 mean/rsqrt结果与F32乘法边界。
+量化之前多保留的Double位数改变下一Q8编码，不能用最终storage同为F32证明中间精度相同。
+T9只修sidecar测试norm_ref为独立scalar原F32边界；square在F32、累加按原ggml的double sum，
+mean/rsqrt/normalization/weight乘法各显式F32，不借actual中间值替代oracle、不修改product/provider。
+Double高精度误差对照的旧FAIL/两个probe完整保留；四percent片段门、全词表/三stage/cache反馈/原权重/输入完全不改。
+这是两probe找到的具体参考精度FIX，不增加第三次探针；一个不可变候选上完整sidecar两入口正式重验。
+若仍失败按原门保留未决，不继续改参考/阈值寻找通过。现FP16准入修复与其它已过资格独立保留。

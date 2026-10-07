@@ -66,7 +66,25 @@ inline std::vector<float> grouped_reference(const Grouped &w,std::span<const flo
   }return result;
 }
 inline ValueId norm(Fragment &f,ValueId x,std::vector<float>& scale) {return q::norm(f,x,scale);}
-inline std::vector<float> norm_ref(std::span<const float> x,std::span<const float> scale) {return q::norm_ref(x,scale);}
+inline std::vector<float> norm_ref(std::span<const float> x,std::span<const float> scale) {
+  // Preserve the original F32 RMSNorm boundaries before the next Q8 codec.
+  // A Double inverse and one final rounding describe a different input to
+  // that codec, even though both norm outputs have F32 storage.
+  std::vector<float> result(x.size());
+  for(std::size_t first=0;first<x.size();first+=scale.size()) {
+    double squares=0;
+    for(std::size_t col=0;col<scale.size();++col) {
+      const float square=x[first+col]*x[first+col];squares+=square;
+    }
+    const float mean=static_cast<float>(squares/scale.size());
+    const float inverse=1.0F/std::sqrt(mean+1.0e-6F);
+    for(std::size_t col=0;col<scale.size();++col) {
+      const float normalized=x[first+col]*inverse;
+      result[first+col]=normalized*scale[col];
+    }
+  }
+  return result;
+}
 inline ValueId rope(Fragment &f,ValueId x,ValueId pos,bool inverse=false) {
   auto prefix=ds::slice(f,x,3,0,448),tail=ds::slice(f,x,3,448,64);
   auto frequency=f.constant(dense({32}),bytes(ds::rope_frequencies(false,inverse)));
