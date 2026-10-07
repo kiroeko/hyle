@@ -10,6 +10,7 @@
 #include "hyle/compute/providers/torch_cuda.h"
 #include "hyle/graph/cuda.h"
 #include "hyle/compute/backends/cuda.h"
+#include "hyle/mem/quota_allocator.h"
 
 #if defined(HYLE_COMPUTE_TORCH_CUDA)
 namespace {
@@ -94,6 +95,15 @@ TEST_P(CudaArtifactLifecycle, ChangedPayloadTwoSlotsAndAcceptedWorkSurvivesOwner
   const auto result_id = builder.result(node).value();
   ASSERT_TRUE(builder.publish(result_id).ok());
   auto logical = std::move(builder).finish().value();
+  // The original library owns unbounded private storage. A strict caller
+  // budget or allocation-free replay must reject it before preparing work.
+  auto strict = g::cuda::compile(logical,context,memory.ref(),
+      {.compiled_storage = {.max_bytes = 1U << 20}});
+  ASSERT_FALSE(strict);
+  EXPECT_TRUE(strict.error().IsResourceExhausted()) << strict.error().message();
+  auto prepared_only = g::cuda::compile(logical,context,memory.ref(),
+      {.provider_replay = g::ProviderReplayPolicy::kRequirePrepared});
+  ASSERT_FALSE(prepared_only);
   auto compile_result = g::cuda::compile(logical,context,memory.ref());
   ASSERT_TRUE(compile_result) << compile_result.error().message();
   auto compiled = std::move(*compile_result);
@@ -107,6 +117,9 @@ TEST_P(CudaArtifactLifecycle, ChangedPayloadTwoSlotsAndAcceptedWorkSurvivesOwner
   }
   ASSERT_TRUE(slot.bind(result_id,c::TensorView::create(output_desc[0],outputs[1].view()).value()).ok());
   ASSERT_TRUE(second.bind(result_id,c::TensorView::create(output_desc[0],outputs[2].view()).value()).ok());
+  const auto capture = g::cuda::prepare_replay(slot,queue,
+      {.mode = g::ReplayMode::kRequireCapture, .host_wait = g::HostWaitPolicy::kReject});
+  EXPECT_FALSE(capture.ok());
   ASSERT_TRUE(g::cuda::prepare_replay(slot,queue).ok());
   EXPECT_EQ(slot.replay_route(),g::ReplayRoute::kCommands);
   for (int pass : {0,1}) {
@@ -149,5 +162,15 @@ TEST_P(CudaArtifactLifecycle, ChangedPayloadTwoSlotsAndAcceptedWorkSurvivesOwner
 INSTANTIATE_TEST_SUITE_P(OriginalPrecision,CudaArtifactLifecycle,
   ::testing::Combine(::testing::Values(Format::kNf4,Format::kNf4DoubleQuant,Format::kAwqGemm4,Format::kCompressedTensorsSymmetric4),
                     ::testing::Values(c::DataType::kFloat16,c::DataType::kBFloat16,c::DataType::kFloat32)));
+TEST(CudaArtifactAdmission, MetadataExhaustionReturnsErrorWithoutLeaking) {
+  mem::QuotaAllocator quota(mem::system_allocator(), 0);
+  auto rejected = g::cuda::create_context({.metadata_allocator = quota.get()});
+  ASSERT_FALSE(rejected);
+  EXPECT_TRUE(rejected.error().IsResourceExhausted()) << rejected.error().message();
+  EXPECT_EQ(quota.used(), 0U);
+  EXPECT_EQ(quota.peak(), 0U);
+  auto recovered = g::cuda::create_context();
+  ASSERT_TRUE(recovered) << recovered.error().message();
+}
 } // namespace
 #endif
