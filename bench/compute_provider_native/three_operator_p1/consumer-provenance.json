@@ -1,0 +1,37 @@
+{
+  "kind": "PROVISIONAL_ARCHETYPE",
+  "consumer": "Qwen3.5-2B fixed hidden norm and orthogonal plain tensor materialization; qualified equal-head attention subdomain",
+  "model_config_sha256": "ed1c1723241f23f7f4e23430759cbd7dcfb4103cbdfe052bfe7626b57c2615b4",
+  "hidden": 2048,
+  "rows": [
+    1,
+    32
+  ],
+  "cases": [
+    "copy-t6-r1-o6",
+    "copy-t6-r32-o6",
+    "copy-t4-r1-o6",
+    "copy-t4-r32-o6",
+    "copy-t5-r1-o6",
+    "copy-t5-r32-o6",
+    "copy-t2-r1-o6",
+    "copy-t2-r32-o6",
+    "copy-t3-r1-o6",
+    "copy-t3-r32-o6",
+    "norm-0-t6-r1-o6",
+    "norm-0-t6-r32-o6",
+    "norm-0-t4-r1-o6",
+    "norm-0-t4-r32-o6",
+    "norm-0-t5-r1-o6",
+    "norm-0-t5-r32-o6",
+    "equal-head-sdpa-t6-r1-o6",
+    "equal-head-sdpa-t6-r32-o6",
+    "copy-strided-t6-r1-o6",
+    "copy-strided-t6-r32-o6",
+    "rms-model-eps6-t5-r1-o6",
+    "rms-model-eps6-t5-r32-o6",
+    "causal-sdpa-d256-t6-r1-o6",
+    "causal-sdpa-d256-t6-r32-o6"
+  ],
+  "whole_model_claim": false
+}

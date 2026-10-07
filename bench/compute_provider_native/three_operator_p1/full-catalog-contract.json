@@ -1,0 +1,1896 @@
+{
+  "schema": "hyle.perf.contract/v1",
+  "id": "cpu-three-operator-current-peer-p1-v1",
+  "module": "compute_provider_native",
+  "claim": "Current CPU-only mature stack versus retained Native Copy/RMSNorm/SDPA; same complete public operation, finite 24-case batch, no own math optimization. Fresh A/A before A/B; unqualified cases are retained as inconclusive.",
+  "candidate": {
+    "target": "hyle_native_domain_bench",
+    "delivery_shape": "static",
+    "revision": "runtime-bound",
+    "component": "compute_provider_native",
+    "entrypoint": "native_domain_bench.cc"
+  },
+  "peers": [
+    {
+      "id": "mature-cpu-stack",
+      "revision": "d283aae73b5547fdd2833ef1bf43ab3d00c729ec",
+      "configuration": {
+        "role": "original oneDNN/ggml/ATen selected once by the fixed CPU SDK; actual provider identity recorded per case",
+        "product_candidate": "c740abc74a5a62ffacf60b26798228ca484317df",
+        "libtorch": "2.8.0-cpu",
+        "ggml": "ffa4e8b80930029a35991f94e7c8a93cd67730ab",
+        "onednn": "3.13.2",
+        "resources": "all necessary hot work charged; cold ownership facts retained separately"
+      }
+    }
+  ],
+  "strata": [
+    {
+      "id": "primary-candidate-first-candidate-allocation-first",
+      "dimensions": {
+        "placement": "primary",
+        "execution_order": "candidate-first",
+        "allocation_order": "candidate-first"
+      },
+      "target_variant": "primary"
+    },
+    {
+      "id": "primary-candidate-first-peer-allocation-first",
+      "dimensions": {
+        "placement": "primary",
+        "execution_order": "candidate-first",
+        "allocation_order": "peer-first"
+      },
+      "environment": {
+        "HYLE_BENCH_PEER_ALLOCATION_FIRST": "1"
+      },
+      "target_variant": "primary"
+    },
+    {
+      "id": "primary-peer-first-candidate-allocation-first",
+      "dimensions": {
+        "placement": "primary",
+        "execution_order": "peer-first",
+        "allocation_order": "candidate-first"
+      },
+      "environment": {
+        "HYLE_BENCH_RIVAL_FIRST": "1"
+      },
+      "target_variant": "primary"
+    },
+    {
+      "id": "primary-peer-first-peer-allocation-first",
+      "dimensions": {
+        "placement": "primary",
+        "execution_order": "peer-first",
+        "allocation_order": "peer-first"
+      },
+      "environment": {
+        "HYLE_BENCH_RIVAL_FIRST": "1",
+        "HYLE_BENCH_PEER_ALLOCATION_FIRST": "1"
+      },
+      "target_variant": "primary"
+    }
+  ],
+  "controls": [
+    {
+      "id": "aa",
+      "kind": "aa",
+      "parameters": {
+        "maximum_bias_percent": 5
+      }
+    },
+    {
+      "id": "delta5",
+      "kind": "known-delta",
+      "parameters": {
+        "nominal_percent": 5
+      }
+    },
+    {
+      "id": "delta10",
+      "kind": "known-delta",
+      "parameters": {
+        "nominal_percent": 10
+      }
+    },
+    {
+      "id": "timer-floor",
+      "kind": "timer-floor",
+      "parameters": {
+        "minimum_workload_floor_multiple": 20
+      }
+    }
+  ],
+  "workloads": [
+    {
+      "id": "copy-t6-r1-o6",
+      "tier": "replay",
+      "gate_role": "product",
+      "consumer_key": "cpu-three-operator/copy-t6-r1-o6",
+      "provenance": {
+        "path": "consumer-provenance.json",
+        "sha256": "e0b5ab82bc4973bb3938791aededf6c9dfa749d9ae50d17bc3ea107cdd62bb9f"
+      },
+      "ownership_topology": {
+        "candidate": "Explicit Native context with caller-owned tensors and any required workspace; exclusive repeated invocation",
+        "peer": "Ordinary CPU default cold-binds a real mature program with the same caller tensors; own native scratch charged at execution",
+        "equivalence": "Same public request, checked ownership, serial single caller, shared physical data and output, complete host-observable return; no weakened alias/concurrency guarantee is used"
+      },
+      "material_contribution": {
+        "frequency": 1,
+        "value": 1,
+        "unit": "complete-public-operation",
+        "budget": 5,
+        "denominator": "one repeated math/storage step in the provisional numerical consumer",
+        "derivation": "bounded replay comparison; not inferred model frequency or an end-to-end speed claim"
+      },
+      "semantic_contract": "Same exact operation, physical layout, dtype, precision and terminal output: copy-t6-r1-o6",
+      "comparability": "COMPARABLE",
+      "peer_id": "mature-cpu-stack",
+      "metric": {
+        "name": "operations-per-second",
+        "unit": "op/s",
+        "direction": "higher-is-better"
+      },
+      "input": {
+        "distribution": "shared immutable deterministic normal finite data, no input transformation omitted from repeated execution",
+        "scale": {
+          "case": "copy-t6-r1-o6"
+        }
+      },
+      "setup": "Two cold prepared routes, shared inputs and output, alternating first-touch/warm operations; preparation and persistent allocation outside steady measurement",
+      "charged_phases": [
+        "complete public submit + wait",
+        "all provider hot packing, numeric conversion and native allocation",
+        "complete output materialization and public checks"
+      ],
+      "pair": {
+        "candidate": "Native copy-t6-r1-o6",
+        "peer": "Mature copy-t6-r1-o6"
+      },
+      "practical_margin_percent": 5,
+      "noninferiority_margin_percent": 5,
+      "estimator": {
+        "kind": "process-median",
+        "minimum_independent_samples": 15,
+        "tail_alpha": 0.01
+      },
+      "required_strata": [
+        "primary-candidate-first-candidate-allocation-first",
+        "primary-candidate-first-peer-allocation-first",
+        "primary-peer-first-candidate-allocation-first",
+        "primary-peer-first-peer-allocation-first"
+      ],
+      "required_controls": [
+        "aa",
+        "delta5",
+        "delta10",
+        "timer-floor"
+      ]
+    },
+    {
+      "id": "copy-t6-r32-o6",
+      "tier": "replay",
+      "gate_role": "product",
+      "consumer_key": "cpu-three-operator/copy-t6-r32-o6",
+      "provenance": {
+        "path": "consumer-provenance.json",
+        "sha256": "e0b5ab82bc4973bb3938791aededf6c9dfa749d9ae50d17bc3ea107cdd62bb9f"
+      },
+      "ownership_topology": {
+        "candidate": "Explicit Native context with caller-owned tensors and any required workspace; exclusive repeated invocation",
+        "peer": "Ordinary CPU default cold-binds a real mature program with the same caller tensors; own native scratch charged at execution",
+        "equivalence": "Same public request, checked ownership, serial single caller, shared physical data and output, complete host-observable return; no weakened alias/concurrency guarantee is used"
+      },
+      "material_contribution": {
+        "frequency": 1,
+        "value": 1,
+        "unit": "complete-public-operation",
+        "budget": 5,
+        "denominator": "one repeated math/storage step in the provisional numerical consumer",
+        "derivation": "bounded replay comparison; not inferred model frequency or an end-to-end speed claim"
+      },
+      "semantic_contract": "Same exact operation, physical layout, dtype, precision and terminal output: copy-t6-r32-o6",
+      "comparability": "COMPARABLE",
+      "peer_id": "mature-cpu-stack",
+      "metric": {
+        "name": "operations-per-second",
+        "unit": "op/s",
+        "direction": "higher-is-better"
+      },
+      "input": {
+        "distribution": "shared immutable deterministic normal finite data, no input transformation omitted from repeated execution",
+        "scale": {
+          "case": "copy-t6-r32-o6"
+        }
+      },
+      "setup": "Two cold prepared routes, shared inputs and output, alternating first-touch/warm operations; preparation and persistent allocation outside steady measurement",
+      "charged_phases": [
+        "complete public submit + wait",
+        "all provider hot packing, numeric conversion and native allocation",
+        "complete output materialization and public checks"
+      ],
+      "pair": {
+        "candidate": "Native copy-t6-r32-o6",
+        "peer": "Mature copy-t6-r32-o6"
+      },
+      "practical_margin_percent": 5,
+      "noninferiority_margin_percent": 5,
+      "estimator": {
+        "kind": "process-median",
+        "minimum_independent_samples": 15,
+        "tail_alpha": 0.01
+      },
+      "required_strata": [
+        "primary-candidate-first-candidate-allocation-first",
+        "primary-candidate-first-peer-allocation-first",
+        "primary-peer-first-candidate-allocation-first",
+        "primary-peer-first-peer-allocation-first"
+      ],
+      "required_controls": [
+        "aa",
+        "delta5",
+        "delta10",
+        "timer-floor"
+      ]
+    },
+    {
+      "id": "copy-t4-r1-o6",
+      "tier": "replay",
+      "gate_role": "product",
+      "consumer_key": "cpu-three-operator/copy-t4-r1-o6",
+      "provenance": {
+        "path": "consumer-provenance.json",
+        "sha256": "e0b5ab82bc4973bb3938791aededf6c9dfa749d9ae50d17bc3ea107cdd62bb9f"
+      },
+      "ownership_topology": {
+        "candidate": "Explicit Native context with caller-owned tensors and any required workspace; exclusive repeated invocation",
+        "peer": "Ordinary CPU default cold-binds a real mature program with the same caller tensors; own native scratch charged at execution",
+        "equivalence": "Same public request, checked ownership, serial single caller, shared physical data and output, complete host-observable return; no weakened alias/concurrency guarantee is used"
+      },
+      "material_contribution": {
+        "frequency": 1,
+        "value": 1,
+        "unit": "complete-public-operation",
+        "budget": 5,
+        "denominator": "one repeated math/storage step in the provisional numerical consumer",
+        "derivation": "bounded replay comparison; not inferred model frequency or an end-to-end speed claim"
+      },
+      "semantic_contract": "Same exact operation, physical layout, dtype, precision and terminal output: copy-t4-r1-o6",
+      "comparability": "COMPARABLE",
+      "peer_id": "mature-cpu-stack",
+      "metric": {
+        "name": "operations-per-second",
+        "unit": "op/s",
+        "direction": "higher-is-better"
+      },
+      "input": {
+        "distribution": "shared immutable deterministic normal finite data, no input transformation omitted from repeated execution",
+        "scale": {
+          "case": "copy-t4-r1-o6"
+        }
+      },
+      "setup": "Two cold prepared routes, shared inputs and output, alternating first-touch/warm operations; preparation and persistent allocation outside steady measurement",
+      "charged_phases": [
+        "complete public submit + wait",
+        "all provider hot packing, numeric conversion and native allocation",
+        "complete output materialization and public checks"
+      ],
+      "pair": {
+        "candidate": "Native copy-t4-r1-o6",
+        "peer": "Mature copy-t4-r1-o6"
+      },
+      "practical_margin_percent": 5,
+      "noninferiority_margin_percent": 5,
+      "estimator": {
+        "kind": "process-median",
+        "minimum_independent_samples": 15,
+        "tail_alpha": 0.01
+      },
+      "required_strata": [
+        "primary-candidate-first-candidate-allocation-first",
+        "primary-candidate-first-peer-allocation-first",
+        "primary-peer-first-candidate-allocation-first",
+        "primary-peer-first-peer-allocation-first"
+      ],
+      "required_controls": [
+        "aa",
+        "delta5",
+        "delta10",
+        "timer-floor"
+      ]
+    },
+    {
+      "id": "copy-t4-r32-o6",
+      "tier": "replay",
+      "gate_role": "product",
+      "consumer_key": "cpu-three-operator/copy-t4-r32-o6",
+      "provenance": {
+        "path": "consumer-provenance.json",
+        "sha256": "e0b5ab82bc4973bb3938791aededf6c9dfa749d9ae50d17bc3ea107cdd62bb9f"
+      },
+      "ownership_topology": {
+        "candidate": "Explicit Native context with caller-owned tensors and any required workspace; exclusive repeated invocation",
+        "peer": "Ordinary CPU default cold-binds a real mature program with the same caller tensors; own native scratch charged at execution",
+        "equivalence": "Same public request, checked ownership, serial single caller, shared physical data and output, complete host-observable return; no weakened alias/concurrency guarantee is used"
+      },
+      "material_contribution": {
+        "frequency": 1,
+        "value": 1,
+        "unit": "complete-public-operation",
+        "budget": 5,
+        "denominator": "one repeated math/storage step in the provisional numerical consumer",
+        "derivation": "bounded replay comparison; not inferred model frequency or an end-to-end speed claim"
+      },
+      "semantic_contract": "Same exact operation, physical layout, dtype, precision and terminal output: copy-t4-r32-o6",
+      "comparability": "COMPARABLE",
+      "peer_id": "mature-cpu-stack",
+      "metric": {
+        "name": "operations-per-second",
+        "unit": "op/s",
+        "direction": "higher-is-better"
+      },
+      "input": {
+        "distribution": "shared immutable deterministic normal finite data, no input transformation omitted from repeated execution",
+        "scale": {
+          "case": "copy-t4-r32-o6"
+        }
+      },
+      "setup": "Two cold prepared routes, shared inputs and output, alternating first-touch/warm operations; preparation and persistent allocation outside steady measurement",
+      "charged_phases": [
+        "complete public submit + wait",
+        "all provider hot packing, numeric conversion and native allocation",
+        "complete output materialization and public checks"
+      ],
+      "pair": {
+        "candidate": "Native copy-t4-r32-o6",
+        "peer": "Mature copy-t4-r32-o6"
+      },
+      "practical_margin_percent": 5,
+      "noninferiority_margin_percent": 5,
+      "estimator": {
+        "kind": "process-median",
+        "minimum_independent_samples": 15,
+        "tail_alpha": 0.01
+      },
+      "required_strata": [
+        "primary-candidate-first-candidate-allocation-first",
+        "primary-candidate-first-peer-allocation-first",
+        "primary-peer-first-candidate-allocation-first",
+        "primary-peer-first-peer-allocation-first"
+      ],
+      "required_controls": [
+        "aa",
+        "delta5",
+        "delta10",
+        "timer-floor"
+      ]
+    },
+    {
+      "id": "copy-t5-r1-o6",
+      "tier": "replay",
+      "gate_role": "product",
+      "consumer_key": "cpu-three-operator/copy-t5-r1-o6",
+      "provenance": {
+        "path": "consumer-provenance.json",
+        "sha256": "e0b5ab82bc4973bb3938791aededf6c9dfa749d9ae50d17bc3ea107cdd62bb9f"
+      },
+      "ownership_topology": {
+        "candidate": "Explicit Native context with caller-owned tensors and any required workspace; exclusive repeated invocation",
+        "peer": "Ordinary CPU default cold-binds a real mature program with the same caller tensors; own native scratch charged at execution",
+        "equivalence": "Same public request, checked ownership, serial single caller, shared physical data and output, complete host-observable return; no weakened alias/concurrency guarantee is used"
+      },
+      "material_contribution": {
+        "frequency": 1,
+        "value": 1,
+        "unit": "complete-public-operation",
+        "budget": 5,
+        "denominator": "one repeated math/storage step in the provisional numerical consumer",
+        "derivation": "bounded replay comparison; not inferred model frequency or an end-to-end speed claim"
+      },
+      "semantic_contract": "Same exact operation, physical layout, dtype, precision and terminal output: copy-t5-r1-o6",
+      "comparability": "COMPARABLE",
+      "peer_id": "mature-cpu-stack",
+      "metric": {
+        "name": "operations-per-second",
+        "unit": "op/s",
+        "direction": "higher-is-better"
+      },
+      "input": {
+        "distribution": "shared immutable deterministic normal finite data, no input transformation omitted from repeated execution",
+        "scale": {
+          "case": "copy-t5-r1-o6"
+        }
+      },
+      "setup": "Two cold prepared routes, shared inputs and output, alternating first-touch/warm operations; preparation and persistent allocation outside steady measurement",
+      "charged_phases": [
+        "complete public submit + wait",
+        "all provider hot packing, numeric conversion and native allocation",
+        "complete output materialization and public checks"
+      ],
+      "pair": {
+        "candidate": "Native copy-t5-r1-o6",
+        "peer": "Mature copy-t5-r1-o6"
+      },
+      "practical_margin_percent": 5,
+      "noninferiority_margin_percent": 5,
+      "estimator": {
+        "kind": "process-median",
+        "minimum_independent_samples": 15,
+        "tail_alpha": 0.01
+      },
+      "required_strata": [
+        "primary-candidate-first-candidate-allocation-first",
+        "primary-candidate-first-peer-allocation-first",
+        "primary-peer-first-candidate-allocation-first",
+        "primary-peer-first-peer-allocation-first"
+      ],
+      "required_controls": [
+        "aa",
+        "delta5",
+        "delta10",
+        "timer-floor"
+      ]
+    },
+    {
+      "id": "copy-t5-r32-o6",
+      "tier": "replay",
+      "gate_role": "product",
+      "consumer_key": "cpu-three-operator/copy-t5-r32-o6",
+      "provenance": {
+        "path": "consumer-provenance.json",
+        "sha256": "e0b5ab82bc4973bb3938791aededf6c9dfa749d9ae50d17bc3ea107cdd62bb9f"
+      },
+      "ownership_topology": {
+        "candidate": "Explicit Native context with caller-owned tensors and any required workspace; exclusive repeated invocation",
+        "peer": "Ordinary CPU default cold-binds a real mature program with the same caller tensors; own native scratch charged at execution",
+        "equivalence": "Same public request, checked ownership, serial single caller, shared physical data and output, complete host-observable return; no weakened alias/concurrency guarantee is used"
+      },
+      "material_contribution": {
+        "frequency": 1,
+        "value": 1,
+        "unit": "complete-public-operation",
+        "budget": 5,
+        "denominator": "one repeated math/storage step in the provisional numerical consumer",
+        "derivation": "bounded replay comparison; not inferred model frequency or an end-to-end speed claim"
+      },
+      "semantic_contract": "Same exact operation, physical layout, dtype, precision and terminal output: copy-t5-r32-o6",
+      "comparability": "COMPARABLE",
+      "peer_id": "mature-cpu-stack",
+      "metric": {
+        "name": "operations-per-second",
+        "unit": "op/s",
+        "direction": "higher-is-better"
+      },
+      "input": {
+        "distribution": "shared immutable deterministic normal finite data, no input transformation omitted from repeated execution",
+        "scale": {
+          "case": "copy-t5-r32-o6"
+        }
+      },
+      "setup": "Two cold prepared routes, shared inputs and output, alternating first-touch/warm operations; preparation and persistent allocation outside steady measurement",
+      "charged_phases": [
+        "complete public submit + wait",
+        "all provider hot packing, numeric conversion and native allocation",
+        "complete output materialization and public checks"
+      ],
+      "pair": {
+        "candidate": "Native copy-t5-r32-o6",
+        "peer": "Mature copy-t5-r32-o6"
+      },
+      "practical_margin_percent": 5,
+      "noninferiority_margin_percent": 5,
+      "estimator": {
+        "kind": "process-median",
+        "minimum_independent_samples": 15,
+        "tail_alpha": 0.01
+      },
+      "required_strata": [
+        "primary-candidate-first-candidate-allocation-first",
+        "primary-candidate-first-peer-allocation-first",
+        "primary-peer-first-candidate-allocation-first",
+        "primary-peer-first-peer-allocation-first"
+      ],
+      "required_controls": [
+        "aa",
+        "delta5",
+        "delta10",
+        "timer-floor"
+      ]
+    },
+    {
+      "id": "copy-t2-r1-o6",
+      "tier": "replay",
+      "gate_role": "product",
+      "consumer_key": "cpu-three-operator/copy-t2-r1-o6",
+      "provenance": {
+        "path": "consumer-provenance.json",
+        "sha256": "e0b5ab82bc4973bb3938791aededf6c9dfa749d9ae50d17bc3ea107cdd62bb9f"
+      },
+      "ownership_topology": {
+        "candidate": "Explicit Native context with caller-owned tensors and any required workspace; exclusive repeated invocation",
+        "peer": "Ordinary CPU default cold-binds a real mature program with the same caller tensors; own native scratch charged at execution",
+        "equivalence": "Same public request, checked ownership, serial single caller, shared physical data and output, complete host-observable return; no weakened alias/concurrency guarantee is used"
+      },
+      "material_contribution": {
+        "frequency": 1,
+        "value": 1,
+        "unit": "complete-public-operation",
+        "budget": 5,
+        "denominator": "one repeated math/storage step in the provisional numerical consumer",
+        "derivation": "bounded replay comparison; not inferred model frequency or an end-to-end speed claim"
+      },
+      "semantic_contract": "Same exact operation, physical layout, dtype, precision and terminal output: copy-t2-r1-o6",
+      "comparability": "COMPARABLE",
+      "peer_id": "mature-cpu-stack",
+      "metric": {
+        "name": "operations-per-second",
+        "unit": "op/s",
+        "direction": "higher-is-better"
+      },
+      "input": {
+        "distribution": "shared immutable deterministic normal finite data, no input transformation omitted from repeated execution",
+        "scale": {
+          "case": "copy-t2-r1-o6"
+        }
+      },
+      "setup": "Two cold prepared routes, shared inputs and output, alternating first-touch/warm operations; preparation and persistent allocation outside steady measurement",
+      "charged_phases": [
+        "complete public submit + wait",
+        "all provider hot packing, numeric conversion and native allocation",
+        "complete output materialization and public checks"
+      ],
+      "pair": {
+        "candidate": "Native copy-t2-r1-o6",
+        "peer": "Mature copy-t2-r1-o6"
+      },
+      "practical_margin_percent": 5,
+      "noninferiority_margin_percent": 5,
+      "estimator": {
+        "kind": "process-median",
+        "minimum_independent_samples": 15,
+        "tail_alpha": 0.01
+      },
+      "required_strata": [
+        "primary-candidate-first-candidate-allocation-first",
+        "primary-candidate-first-peer-allocation-first",
+        "primary-peer-first-candidate-allocation-first",
+        "primary-peer-first-peer-allocation-first"
+      ],
+      "required_controls": [
+        "aa",
+        "delta5",
+        "delta10",
+        "timer-floor"
+      ]
+    },
+    {
+      "id": "copy-t2-r32-o6",
+      "tier": "replay",
+      "gate_role": "product",
+      "consumer_key": "cpu-three-operator/copy-t2-r32-o6",
+      "provenance": {
+        "path": "consumer-provenance.json",
+        "sha256": "e0b5ab82bc4973bb3938791aededf6c9dfa749d9ae50d17bc3ea107cdd62bb9f"
+      },
+      "ownership_topology": {
+        "candidate": "Explicit Native context with caller-owned tensors and any required workspace; exclusive repeated invocation",
+        "peer": "Ordinary CPU default cold-binds a real mature program with the same caller tensors; own native scratch charged at execution",
+        "equivalence": "Same public request, checked ownership, serial single caller, shared physical data and output, complete host-observable return; no weakened alias/concurrency guarantee is used"
+      },
+      "material_contribution": {
+        "frequency": 1,
+        "value": 1,
+        "unit": "complete-public-operation",
+        "budget": 5,
+        "denominator": "one repeated math/storage step in the provisional numerical consumer",
+        "derivation": "bounded replay comparison; not inferred model frequency or an end-to-end speed claim"
+      },
+      "semantic_contract": "Same exact operation, physical layout, dtype, precision and terminal output: copy-t2-r32-o6",
+      "comparability": "COMPARABLE",
+      "peer_id": "mature-cpu-stack",
+      "metric": {
+        "name": "operations-per-second",
+        "unit": "op/s",
+        "direction": "higher-is-better"
+      },
+      "input": {
+        "distribution": "shared immutable deterministic normal finite data, no input transformation omitted from repeated execution",
+        "scale": {
+          "case": "copy-t2-r32-o6"
+        }
+      },
+      "setup": "Two cold prepared routes, shared inputs and output, alternating first-touch/warm operations; preparation and persistent allocation outside steady measurement",
+      "charged_phases": [
+        "complete public submit + wait",
+        "all provider hot packing, numeric conversion and native allocation",
+        "complete output materialization and public checks"
+      ],
+      "pair": {
+        "candidate": "Native copy-t2-r32-o6",
+        "peer": "Mature copy-t2-r32-o6"
+      },
+      "practical_margin_percent": 5,
+      "noninferiority_margin_percent": 5,
+      "estimator": {
+        "kind": "process-median",
+        "minimum_independent_samples": 15,
+        "tail_alpha": 0.01
+      },
+      "required_strata": [
+        "primary-candidate-first-candidate-allocation-first",
+        "primary-candidate-first-peer-allocation-first",
+        "primary-peer-first-candidate-allocation-first",
+        "primary-peer-first-peer-allocation-first"
+      ],
+      "required_controls": [
+        "aa",
+        "delta5",
+        "delta10",
+        "timer-floor"
+      ]
+    },
+    {
+      "id": "copy-t3-r1-o6",
+      "tier": "replay",
+      "gate_role": "product",
+      "consumer_key": "cpu-three-operator/copy-t3-r1-o6",
+      "provenance": {
+        "path": "consumer-provenance.json",
+        "sha256": "e0b5ab82bc4973bb3938791aededf6c9dfa749d9ae50d17bc3ea107cdd62bb9f"
+      },
+      "ownership_topology": {
+        "candidate": "Explicit Native context with caller-owned tensors and any required workspace; exclusive repeated invocation",
+        "peer": "Ordinary CPU default cold-binds a real mature program with the same caller tensors; own native scratch charged at execution",
+        "equivalence": "Same public request, checked ownership, serial single caller, shared physical data and output, complete host-observable return; no weakened alias/concurrency guarantee is used"
+      },
+      "material_contribution": {
+        "frequency": 1,
+        "value": 1,
+        "unit": "complete-public-operation",
+        "budget": 5,
+        "denominator": "one repeated math/storage step in the provisional numerical consumer",
+        "derivation": "bounded replay comparison; not inferred model frequency or an end-to-end speed claim"
+      },
+      "semantic_contract": "Same exact operation, physical layout, dtype, precision and terminal output: copy-t3-r1-o6",
+      "comparability": "COMPARABLE",
+      "peer_id": "mature-cpu-stack",
+      "metric": {
+        "name": "operations-per-second",
+        "unit": "op/s",
+        "direction": "higher-is-better"
+      },
+      "input": {
+        "distribution": "shared immutable deterministic normal finite data, no input transformation omitted from repeated execution",
+        "scale": {
+          "case": "copy-t3-r1-o6"
+        }
+      },
+      "setup": "Two cold prepared routes, shared inputs and output, alternating first-touch/warm operations; preparation and persistent allocation outside steady measurement",
+      "charged_phases": [
+        "complete public submit + wait",
+        "all provider hot packing, numeric conversion and native allocation",
+        "complete output materialization and public checks"
+      ],
+      "pair": {
+        "candidate": "Native copy-t3-r1-o6",
+        "peer": "Mature copy-t3-r1-o6"
+      },
+      "practical_margin_percent": 5,
+      "noninferiority_margin_percent": 5,
+      "estimator": {
+        "kind": "process-median",
+        "minimum_independent_samples": 15,
+        "tail_alpha": 0.01
+      },
+      "required_strata": [
+        "primary-candidate-first-candidate-allocation-first",
+        "primary-candidate-first-peer-allocation-first",
+        "primary-peer-first-candidate-allocation-first",
+        "primary-peer-first-peer-allocation-first"
+      ],
+      "required_controls": [
+        "aa",
+        "delta5",
+        "delta10",
+        "timer-floor"
+      ]
+    },
+    {
+      "id": "copy-t3-r32-o6",
+      "tier": "replay",
+      "gate_role": "product",
+      "consumer_key": "cpu-three-operator/copy-t3-r32-o6",
+      "provenance": {
+        "path": "consumer-provenance.json",
+        "sha256": "e0b5ab82bc4973bb3938791aededf6c9dfa749d9ae50d17bc3ea107cdd62bb9f"
+      },
+      "ownership_topology": {
+        "candidate": "Explicit Native context with caller-owned tensors and any required workspace; exclusive repeated invocation",
+        "peer": "Ordinary CPU default cold-binds a real mature program with the same caller tensors; own native scratch charged at execution",
+        "equivalence": "Same public request, checked ownership, serial single caller, shared physical data and output, complete host-observable return; no weakened alias/concurrency guarantee is used"
+      },
+      "material_contribution": {
+        "frequency": 1,
+        "value": 1,
+        "unit": "complete-public-operation",
+        "budget": 5,
+        "denominator": "one repeated math/storage step in the provisional numerical consumer",
+        "derivation": "bounded replay comparison; not inferred model frequency or an end-to-end speed claim"
+      },
+      "semantic_contract": "Same exact operation, physical layout, dtype, precision and terminal output: copy-t3-r32-o6",
+      "comparability": "COMPARABLE",
+      "peer_id": "mature-cpu-stack",
+      "metric": {
+        "name": "operations-per-second",
+        "unit": "op/s",
+        "direction": "higher-is-better"
+      },
+      "input": {
+        "distribution": "shared immutable deterministic normal finite data, no input transformation omitted from repeated execution",
+        "scale": {
+          "case": "copy-t3-r32-o6"
+        }
+      },
+      "setup": "Two cold prepared routes, shared inputs and output, alternating first-touch/warm operations; preparation and persistent allocation outside steady measurement",
+      "charged_phases": [
+        "complete public submit + wait",
+        "all provider hot packing, numeric conversion and native allocation",
+        "complete output materialization and public checks"
+      ],
+      "pair": {
+        "candidate": "Native copy-t3-r32-o6",
+        "peer": "Mature copy-t3-r32-o6"
+      },
+      "practical_margin_percent": 5,
+      "noninferiority_margin_percent": 5,
+      "estimator": {
+        "kind": "process-median",
+        "minimum_independent_samples": 15,
+        "tail_alpha": 0.01
+      },
+      "required_strata": [
+        "primary-candidate-first-candidate-allocation-first",
+        "primary-candidate-first-peer-allocation-first",
+        "primary-peer-first-candidate-allocation-first",
+        "primary-peer-first-peer-allocation-first"
+      ],
+      "required_controls": [
+        "aa",
+        "delta5",
+        "delta10",
+        "timer-floor"
+      ]
+    },
+    {
+      "id": "norm-0-t6-r1-o6",
+      "tier": "replay",
+      "gate_role": "product",
+      "consumer_key": "cpu-three-operator/norm-0-t6-r1-o6",
+      "provenance": {
+        "path": "consumer-provenance.json",
+        "sha256": "e0b5ab82bc4973bb3938791aededf6c9dfa749d9ae50d17bc3ea107cdd62bb9f"
+      },
+      "ownership_topology": {
+        "candidate": "Explicit Native context with caller-owned tensors and any required workspace; exclusive repeated invocation",
+        "peer": "Ordinary CPU default cold-binds a real mature program with the same caller tensors; own native scratch charged at execution",
+        "equivalence": "Same public request, checked ownership, serial single caller, shared physical data and output, complete host-observable return; no weakened alias/concurrency guarantee is used"
+      },
+      "material_contribution": {
+        "frequency": 1,
+        "value": 1,
+        "unit": "complete-public-operation",
+        "budget": 5,
+        "denominator": "one repeated math/storage step in the provisional numerical consumer",
+        "derivation": "bounded replay comparison; not inferred model frequency or an end-to-end speed claim"
+      },
+      "semantic_contract": "Same exact operation, physical layout, dtype, precision and terminal output: norm-0-t6-r1-o6",
+      "comparability": "COMPARABLE",
+      "peer_id": "mature-cpu-stack",
+      "metric": {
+        "name": "operations-per-second",
+        "unit": "op/s",
+        "direction": "higher-is-better"
+      },
+      "input": {
+        "distribution": "shared immutable deterministic normal finite data, no input transformation omitted from repeated execution",
+        "scale": {
+          "case": "norm-0-t6-r1-o6"
+        }
+      },
+      "setup": "Two cold prepared routes, shared inputs and output, alternating first-touch/warm operations; preparation and persistent allocation outside steady measurement",
+      "charged_phases": [
+        "complete public submit + wait",
+        "all provider hot packing, numeric conversion and native allocation",
+        "complete output materialization and public checks"
+      ],
+      "pair": {
+        "candidate": "Native norm-0-t6-r1-o6",
+        "peer": "Mature norm-0-t6-r1-o6"
+      },
+      "practical_margin_percent": 5,
+      "noninferiority_margin_percent": 5,
+      "estimator": {
+        "kind": "process-median",
+        "minimum_independent_samples": 15,
+        "tail_alpha": 0.01
+      },
+      "required_strata": [
+        "primary-candidate-first-candidate-allocation-first",
+        "primary-candidate-first-peer-allocation-first",
+        "primary-peer-first-candidate-allocation-first",
+        "primary-peer-first-peer-allocation-first"
+      ],
+      "required_controls": [
+        "aa",
+        "delta5",
+        "delta10",
+        "timer-floor"
+      ]
+    },
+    {
+      "id": "norm-0-t6-r32-o6",
+      "tier": "replay",
+      "gate_role": "product",
+      "consumer_key": "cpu-three-operator/norm-0-t6-r32-o6",
+      "provenance": {
+        "path": "consumer-provenance.json",
+        "sha256": "e0b5ab82bc4973bb3938791aededf6c9dfa749d9ae50d17bc3ea107cdd62bb9f"
+      },
+      "ownership_topology": {
+        "candidate": "Explicit Native context with caller-owned tensors and any required workspace; exclusive repeated invocation",
+        "peer": "Ordinary CPU default cold-binds a real mature program with the same caller tensors; own native scratch charged at execution",
+        "equivalence": "Same public request, checked ownership, serial single caller, shared physical data and output, complete host-observable return; no weakened alias/concurrency guarantee is used"
+      },
+      "material_contribution": {
+        "frequency": 1,
+        "value": 1,
+        "unit": "complete-public-operation",
+        "budget": 5,
+        "denominator": "one repeated math/storage step in the provisional numerical consumer",
+        "derivation": "bounded replay comparison; not inferred model frequency or an end-to-end speed claim"
+      },
+      "semantic_contract": "Same exact operation, physical layout, dtype, precision and terminal output: norm-0-t6-r32-o6",
+      "comparability": "COMPARABLE",
+      "peer_id": "mature-cpu-stack",
+      "metric": {
+        "name": "operations-per-second",
+        "unit": "op/s",
+        "direction": "higher-is-better"
+      },
+      "input": {
+        "distribution": "shared immutable deterministic normal finite data, no input transformation omitted from repeated execution",
+        "scale": {
+          "case": "norm-0-t6-r32-o6"
+        }
+      },
+      "setup": "Two cold prepared routes, shared inputs and output, alternating first-touch/warm operations; preparation and persistent allocation outside steady measurement",
+      "charged_phases": [
+        "complete public submit + wait",
+        "all provider hot packing, numeric conversion and native allocation",
+        "complete output materialization and public checks"
+      ],
+      "pair": {
+        "candidate": "Native norm-0-t6-r32-o6",
+        "peer": "Mature norm-0-t6-r32-o6"
+      },
+      "practical_margin_percent": 5,
+      "noninferiority_margin_percent": 5,
+      "estimator": {
+        "kind": "process-median",
+        "minimum_independent_samples": 15,
+        "tail_alpha": 0.01
+      },
+      "required_strata": [
+        "primary-candidate-first-candidate-allocation-first",
+        "primary-candidate-first-peer-allocation-first",
+        "primary-peer-first-candidate-allocation-first",
+        "primary-peer-first-peer-allocation-first"
+      ],
+      "required_controls": [
+        "aa",
+        "delta5",
+        "delta10",
+        "timer-floor"
+      ]
+    },
+    {
+      "id": "norm-0-t4-r1-o6",
+      "tier": "replay",
+      "gate_role": "product",
+      "consumer_key": "cpu-three-operator/norm-0-t4-r1-o6",
+      "provenance": {
+        "path": "consumer-provenance.json",
+        "sha256": "e0b5ab82bc4973bb3938791aededf6c9dfa749d9ae50d17bc3ea107cdd62bb9f"
+      },
+      "ownership_topology": {
+        "candidate": "Explicit Native context with caller-owned tensors and any required workspace; exclusive repeated invocation",
+        "peer": "Ordinary CPU default cold-binds a real mature program with the same caller tensors; own native scratch charged at execution",
+        "equivalence": "Same public request, checked ownership, serial single caller, shared physical data and output, complete host-observable return; no weakened alias/concurrency guarantee is used"
+      },
+      "material_contribution": {
+        "frequency": 1,
+        "value": 1,
+        "unit": "complete-public-operation",
+        "budget": 5,
+        "denominator": "one repeated math/storage step in the provisional numerical consumer",
+        "derivation": "bounded replay comparison; not inferred model frequency or an end-to-end speed claim"
+      },
+      "semantic_contract": "Same exact operation, physical layout, dtype, precision and terminal output: norm-0-t4-r1-o6",
+      "comparability": "COMPARABLE",
+      "peer_id": "mature-cpu-stack",
+      "metric": {
+        "name": "operations-per-second",
+        "unit": "op/s",
+        "direction": "higher-is-better"
+      },
+      "input": {
+        "distribution": "shared immutable deterministic normal finite data, no input transformation omitted from repeated execution",
+        "scale": {
+          "case": "norm-0-t4-r1-o6"
+        }
+      },
+      "setup": "Two cold prepared routes, shared inputs and output, alternating first-touch/warm operations; preparation and persistent allocation outside steady measurement",
+      "charged_phases": [
+        "complete public submit + wait",
+        "all provider hot packing, numeric conversion and native allocation",
+        "complete output materialization and public checks"
+      ],
+      "pair": {
+        "candidate": "Native norm-0-t4-r1-o6",
+        "peer": "Mature norm-0-t4-r1-o6"
+      },
+      "practical_margin_percent": 5,
+      "noninferiority_margin_percent": 5,
+      "estimator": {
+        "kind": "process-median",
+        "minimum_independent_samples": 15,
+        "tail_alpha": 0.01
+      },
+      "required_strata": [
+        "primary-candidate-first-candidate-allocation-first",
+        "primary-candidate-first-peer-allocation-first",
+        "primary-peer-first-candidate-allocation-first",
+        "primary-peer-first-peer-allocation-first"
+      ],
+      "required_controls": [
+        "aa",
+        "delta5",
+        "delta10",
+        "timer-floor"
+      ]
+    },
+    {
+      "id": "norm-0-t4-r32-o6",
+      "tier": "replay",
+      "gate_role": "product",
+      "consumer_key": "cpu-three-operator/norm-0-t4-r32-o6",
+      "provenance": {
+        "path": "consumer-provenance.json",
+        "sha256": "e0b5ab82bc4973bb3938791aededf6c9dfa749d9ae50d17bc3ea107cdd62bb9f"
+      },
+      "ownership_topology": {
+        "candidate": "Explicit Native context with caller-owned tensors and any required workspace; exclusive repeated invocation",
+        "peer": "Ordinary CPU default cold-binds a real mature program with the same caller tensors; own native scratch charged at execution",
+        "equivalence": "Same public request, checked ownership, serial single caller, shared physical data and output, complete host-observable return; no weakened alias/concurrency guarantee is used"
+      },
+      "material_contribution": {
+        "frequency": 1,
+        "value": 1,
+        "unit": "complete-public-operation",
+        "budget": 5,
+        "denominator": "one repeated math/storage step in the provisional numerical consumer",
+        "derivation": "bounded replay comparison; not inferred model frequency or an end-to-end speed claim"
+      },
+      "semantic_contract": "Same exact operation, physical layout, dtype, precision and terminal output: norm-0-t4-r32-o6",
+      "comparability": "COMPARABLE",
+      "peer_id": "mature-cpu-stack",
+      "metric": {
+        "name": "operations-per-second",
+        "unit": "op/s",
+        "direction": "higher-is-better"
+      },
+      "input": {
+        "distribution": "shared immutable deterministic normal finite data, no input transformation omitted from repeated execution",
+        "scale": {
+          "case": "norm-0-t4-r32-o6"
+        }
+      },
+      "setup": "Two cold prepared routes, shared inputs and output, alternating first-touch/warm operations; preparation and persistent allocation outside steady measurement",
+      "charged_phases": [
+        "complete public submit + wait",
+        "all provider hot packing, numeric conversion and native allocation",
+        "complete output materialization and public checks"
+      ],
+      "pair": {
+        "candidate": "Native norm-0-t4-r32-o6",
+        "peer": "Mature norm-0-t4-r32-o6"
+      },
+      "practical_margin_percent": 5,
+      "noninferiority_margin_percent": 5,
+      "estimator": {
+        "kind": "process-median",
+        "minimum_independent_samples": 15,
+        "tail_alpha": 0.01
+      },
+      "required_strata": [
+        "primary-candidate-first-candidate-allocation-first",
+        "primary-candidate-first-peer-allocation-first",
+        "primary-peer-first-candidate-allocation-first",
+        "primary-peer-first-peer-allocation-first"
+      ],
+      "required_controls": [
+        "aa",
+        "delta5",
+        "delta10",
+        "timer-floor"
+      ]
+    },
+    {
+      "id": "norm-0-t5-r1-o6",
+      "tier": "replay",
+      "gate_role": "product",
+      "consumer_key": "cpu-three-operator/norm-0-t5-r1-o6",
+      "provenance": {
+        "path": "consumer-provenance.json",
+        "sha256": "e0b5ab82bc4973bb3938791aededf6c9dfa749d9ae50d17bc3ea107cdd62bb9f"
+      },
+      "ownership_topology": {
+        "candidate": "Explicit Native context with caller-owned tensors and any required workspace; exclusive repeated invocation",
+        "peer": "Ordinary CPU default cold-binds a real mature program with the same caller tensors; own native scratch charged at execution",
+        "equivalence": "Same public request, checked ownership, serial single caller, shared physical data and output, complete host-observable return; no weakened alias/concurrency guarantee is used"
+      },
+      "material_contribution": {
+        "frequency": 1,
+        "value": 1,
+        "unit": "complete-public-operation",
+        "budget": 5,
+        "denominator": "one repeated math/storage step in the provisional numerical consumer",
+        "derivation": "bounded replay comparison; not inferred model frequency or an end-to-end speed claim"
+      },
+      "semantic_contract": "Same exact operation, physical layout, dtype, precision and terminal output: norm-0-t5-r1-o6",
+      "comparability": "COMPARABLE",
+      "peer_id": "mature-cpu-stack",
+      "metric": {
+        "name": "operations-per-second",
+        "unit": "op/s",
+        "direction": "higher-is-better"
+      },
+      "input": {
+        "distribution": "shared immutable deterministic normal finite data, no input transformation omitted from repeated execution",
+        "scale": {
+          "case": "norm-0-t5-r1-o6"
+        }
+      },
+      "setup": "Two cold prepared routes, shared inputs and output, alternating first-touch/warm operations; preparation and persistent allocation outside steady measurement",
+      "charged_phases": [
+        "complete public submit + wait",
+        "all provider hot packing, numeric conversion and native allocation",
+        "complete output materialization and public checks"
+      ],
+      "pair": {
+        "candidate": "Native norm-0-t5-r1-o6",
+        "peer": "Mature norm-0-t5-r1-o6"
+      },
+      "practical_margin_percent": 5,
+      "noninferiority_margin_percent": 5,
+      "estimator": {
+        "kind": "process-median",
+        "minimum_independent_samples": 15,
+        "tail_alpha": 0.01
+      },
+      "required_strata": [
+        "primary-candidate-first-candidate-allocation-first",
+        "primary-candidate-first-peer-allocation-first",
+        "primary-peer-first-candidate-allocation-first",
+        "primary-peer-first-peer-allocation-first"
+      ],
+      "required_controls": [
+        "aa",
+        "delta5",
+        "delta10",
+        "timer-floor"
+      ]
+    },
+    {
+      "id": "norm-0-t5-r32-o6",
+      "tier": "replay",
+      "gate_role": "product",
+      "consumer_key": "cpu-three-operator/norm-0-t5-r32-o6",
+      "provenance": {
+        "path": "consumer-provenance.json",
+        "sha256": "e0b5ab82bc4973bb3938791aededf6c9dfa749d9ae50d17bc3ea107cdd62bb9f"
+      },
+      "ownership_topology": {
+        "candidate": "Explicit Native context with caller-owned tensors and any required workspace; exclusive repeated invocation",
+        "peer": "Ordinary CPU default cold-binds a real mature program with the same caller tensors; own native scratch charged at execution",
+        "equivalence": "Same public request, checked ownership, serial single caller, shared physical data and output, complete host-observable return; no weakened alias/concurrency guarantee is used"
+      },
+      "material_contribution": {
+        "frequency": 1,
+        "value": 1,
+        "unit": "complete-public-operation",
+        "budget": 5,
+        "denominator": "one repeated math/storage step in the provisional numerical consumer",
+        "derivation": "bounded replay comparison; not inferred model frequency or an end-to-end speed claim"
+      },
+      "semantic_contract": "Same exact operation, physical layout, dtype, precision and terminal output: norm-0-t5-r32-o6",
+      "comparability": "COMPARABLE",
+      "peer_id": "mature-cpu-stack",
+      "metric": {
+        "name": "operations-per-second",
+        "unit": "op/s",
+        "direction": "higher-is-better"
+      },
+      "input": {
+        "distribution": "shared immutable deterministic normal finite data, no input transformation omitted from repeated execution",
+        "scale": {
+          "case": "norm-0-t5-r32-o6"
+        }
+      },
+      "setup": "Two cold prepared routes, shared inputs and output, alternating first-touch/warm operations; preparation and persistent allocation outside steady measurement",
+      "charged_phases": [
+        "complete public submit + wait",
+        "all provider hot packing, numeric conversion and native allocation",
+        "complete output materialization and public checks"
+      ],
+      "pair": {
+        "candidate": "Native norm-0-t5-r32-o6",
+        "peer": "Mature norm-0-t5-r32-o6"
+      },
+      "practical_margin_percent": 5,
+      "noninferiority_margin_percent": 5,
+      "estimator": {
+        "kind": "process-median",
+        "minimum_independent_samples": 15,
+        "tail_alpha": 0.01
+      },
+      "required_strata": [
+        "primary-candidate-first-candidate-allocation-first",
+        "primary-candidate-first-peer-allocation-first",
+        "primary-peer-first-candidate-allocation-first",
+        "primary-peer-first-peer-allocation-first"
+      ],
+      "required_controls": [
+        "aa",
+        "delta5",
+        "delta10",
+        "timer-floor"
+      ]
+    },
+    {
+      "id": "equal-head-sdpa-t6-r1-o6",
+      "tier": "replay",
+      "gate_role": "product",
+      "consumer_key": "cpu-three-operator/equal-head-sdpa-t6-r1-o6",
+      "provenance": {
+        "path": "consumer-provenance.json",
+        "sha256": "e0b5ab82bc4973bb3938791aededf6c9dfa749d9ae50d17bc3ea107cdd62bb9f"
+      },
+      "ownership_topology": {
+        "candidate": "Explicit Native context with caller-owned tensors and any required workspace; exclusive repeated invocation",
+        "peer": "Ordinary CPU default cold-binds a real mature program with the same caller tensors; own native scratch charged at execution",
+        "equivalence": "Same public request, checked ownership, serial single caller, shared physical data and output, complete host-observable return; no weakened alias/concurrency guarantee is used"
+      },
+      "material_contribution": {
+        "frequency": 1,
+        "value": 1,
+        "unit": "complete-public-operation",
+        "budget": 5,
+        "denominator": "one repeated math/storage step in the provisional numerical consumer",
+        "derivation": "bounded replay comparison; not inferred model frequency or an end-to-end speed claim"
+      },
+      "semantic_contract": "Same exact operation, physical layout, dtype, precision and terminal output: equal-head-sdpa-t6-r1-o6",
+      "comparability": "COMPARABLE",
+      "peer_id": "mature-cpu-stack",
+      "metric": {
+        "name": "operations-per-second",
+        "unit": "op/s",
+        "direction": "higher-is-better"
+      },
+      "input": {
+        "distribution": "shared immutable deterministic normal finite data, no input transformation omitted from repeated execution",
+        "scale": {
+          "case": "equal-head-sdpa-t6-r1-o6"
+        }
+      },
+      "setup": "Two cold prepared routes, shared inputs and output, alternating first-touch/warm operations; preparation and persistent allocation outside steady measurement",
+      "charged_phases": [
+        "complete public submit + wait",
+        "all provider hot packing, numeric conversion and native allocation",
+        "complete output materialization and public checks"
+      ],
+      "pair": {
+        "candidate": "Native equal-head-sdpa-t6-r1-o6",
+        "peer": "Mature equal-head-sdpa-t6-r1-o6"
+      },
+      "practical_margin_percent": 5,
+      "noninferiority_margin_percent": 5,
+      "estimator": {
+        "kind": "process-median",
+        "minimum_independent_samples": 15,
+        "tail_alpha": 0.01
+      },
+      "required_strata": [
+        "primary-candidate-first-candidate-allocation-first",
+        "primary-candidate-first-peer-allocation-first",
+        "primary-peer-first-candidate-allocation-first",
+        "primary-peer-first-peer-allocation-first"
+      ],
+      "required_controls": [
+        "aa",
+        "delta5",
+        "delta10",
+        "timer-floor"
+      ]
+    },
+    {
+      "id": "equal-head-sdpa-t6-r32-o6",
+      "tier": "replay",
+      "gate_role": "product",
+      "consumer_key": "cpu-three-operator/equal-head-sdpa-t6-r32-o6",
+      "provenance": {
+        "path": "consumer-provenance.json",
+        "sha256": "e0b5ab82bc4973bb3938791aededf6c9dfa749d9ae50d17bc3ea107cdd62bb9f"
+      },
+      "ownership_topology": {
+        "candidate": "Explicit Native context with caller-owned tensors and any required workspace; exclusive repeated invocation",
+        "peer": "Ordinary CPU default cold-binds a real mature program with the same caller tensors; own native scratch charged at execution",
+        "equivalence": "Same public request, checked ownership, serial single caller, shared physical data and output, complete host-observable return; no weakened alias/concurrency guarantee is used"
+      },
+      "material_contribution": {
+        "frequency": 1,
+        "value": 1,
+        "unit": "complete-public-operation",
+        "budget": 5,
+        "denominator": "one repeated math/storage step in the provisional numerical consumer",
+        "derivation": "bounded replay comparison; not inferred model frequency or an end-to-end speed claim"
+      },
+      "semantic_contract": "Same exact operation, physical layout, dtype, precision and terminal output: equal-head-sdpa-t6-r32-o6",
+      "comparability": "COMPARABLE",
+      "peer_id": "mature-cpu-stack",
+      "metric": {
+        "name": "operations-per-second",
+        "unit": "op/s",
+        "direction": "higher-is-better"
+      },
+      "input": {
+        "distribution": "shared immutable deterministic normal finite data, no input transformation omitted from repeated execution",
+        "scale": {
+          "case": "equal-head-sdpa-t6-r32-o6"
+        }
+      },
+      "setup": "Two cold prepared routes, shared inputs and output, alternating first-touch/warm operations; preparation and persistent allocation outside steady measurement",
+      "charged_phases": [
+        "complete public submit + wait",
+        "all provider hot packing, numeric conversion and native allocation",
+        "complete output materialization and public checks"
+      ],
+      "pair": {
+        "candidate": "Native equal-head-sdpa-t6-r32-o6",
+        "peer": "Mature equal-head-sdpa-t6-r32-o6"
+      },
+      "practical_margin_percent": 5,
+      "noninferiority_margin_percent": 5,
+      "estimator": {
+        "kind": "process-median",
+        "minimum_independent_samples": 15,
+        "tail_alpha": 0.01
+      },
+      "required_strata": [
+        "primary-candidate-first-candidate-allocation-first",
+        "primary-candidate-first-peer-allocation-first",
+        "primary-peer-first-candidate-allocation-first",
+        "primary-peer-first-peer-allocation-first"
+      ],
+      "required_controls": [
+        "aa",
+        "delta5",
+        "delta10",
+        "timer-floor"
+      ]
+    },
+    {
+      "id": "copy-strided-t6-r1-o6",
+      "tier": "replay",
+      "gate_role": "product",
+      "consumer_key": "cpu-three-operator/copy-strided-t6-r1-o6",
+      "provenance": {
+        "path": "consumer-provenance.json",
+        "sha256": "e0b5ab82bc4973bb3938791aededf6c9dfa749d9ae50d17bc3ea107cdd62bb9f"
+      },
+      "ownership_topology": {
+        "candidate": "Explicit Native context with caller-owned tensors and any required workspace; exclusive repeated invocation",
+        "peer": "Ordinary CPU default cold-binds a real mature program with the same caller tensors; own native scratch charged at execution",
+        "equivalence": "Same public request, checked ownership, serial single caller, shared physical data and output, complete host-observable return; no weakened alias/concurrency guarantee is used"
+      },
+      "material_contribution": {
+        "frequency": 1,
+        "value": 1,
+        "unit": "complete-public-operation",
+        "budget": 5,
+        "denominator": "one repeated math/storage step in the provisional numerical consumer",
+        "derivation": "bounded replay comparison; not inferred model frequency or an end-to-end speed claim"
+      },
+      "semantic_contract": "Same exact operation, physical layout, dtype, precision and terminal output: copy-strided-t6-r1-o6",
+      "comparability": "COMPARABLE",
+      "peer_id": "mature-cpu-stack",
+      "metric": {
+        "name": "operations-per-second",
+        "unit": "op/s",
+        "direction": "higher-is-better"
+      },
+      "input": {
+        "distribution": "shared immutable deterministic normal finite data, no input transformation omitted from repeated execution",
+        "scale": {
+          "case": "copy-strided-t6-r1-o6"
+        }
+      },
+      "setup": "Two cold prepared routes, shared inputs and output, alternating first-touch/warm operations; preparation and persistent allocation outside steady measurement",
+      "charged_phases": [
+        "complete public submit + wait",
+        "all provider hot packing, numeric conversion and native allocation",
+        "complete output materialization and public checks"
+      ],
+      "pair": {
+        "candidate": "Native copy-strided-t6-r1-o6",
+        "peer": "Mature copy-strided-t6-r1-o6"
+      },
+      "practical_margin_percent": 5,
+      "noninferiority_margin_percent": 5,
+      "estimator": {
+        "kind": "process-median",
+        "minimum_independent_samples": 15,
+        "tail_alpha": 0.01
+      },
+      "required_strata": [
+        "primary-candidate-first-candidate-allocation-first",
+        "primary-candidate-first-peer-allocation-first",
+        "primary-peer-first-candidate-allocation-first",
+        "primary-peer-first-peer-allocation-first"
+      ],
+      "required_controls": [
+        "aa",
+        "delta5",
+        "delta10",
+        "timer-floor"
+      ]
+    },
+    {
+      "id": "copy-strided-t6-r32-o6",
+      "tier": "replay",
+      "gate_role": "product",
+      "consumer_key": "cpu-three-operator/copy-strided-t6-r32-o6",
+      "provenance": {
+        "path": "consumer-provenance.json",
+        "sha256": "e0b5ab82bc4973bb3938791aededf6c9dfa749d9ae50d17bc3ea107cdd62bb9f"
+      },
+      "ownership_topology": {
+        "candidate": "Explicit Native context with caller-owned tensors and any required workspace; exclusive repeated invocation",
+        "peer": "Ordinary CPU default cold-binds a real mature program with the same caller tensors; own native scratch charged at execution",
+        "equivalence": "Same public request, checked ownership, serial single caller, shared physical data and output, complete host-observable return; no weakened alias/concurrency guarantee is used"
+      },
+      "material_contribution": {
+        "frequency": 1,
+        "value": 1,
+        "unit": "complete-public-operation",
+        "budget": 5,
+        "denominator": "one repeated math/storage step in the provisional numerical consumer",
+        "derivation": "bounded replay comparison; not inferred model frequency or an end-to-end speed claim"
+      },
+      "semantic_contract": "Same exact operation, physical layout, dtype, precision and terminal output: copy-strided-t6-r32-o6",
+      "comparability": "COMPARABLE",
+      "peer_id": "mature-cpu-stack",
+      "metric": {
+        "name": "operations-per-second",
+        "unit": "op/s",
+        "direction": "higher-is-better"
+      },
+      "input": {
+        "distribution": "shared immutable deterministic normal finite data, no input transformation omitted from repeated execution",
+        "scale": {
+          "case": "copy-strided-t6-r32-o6"
+        }
+      },
+      "setup": "Two cold prepared routes, shared inputs and output, alternating first-touch/warm operations; preparation and persistent allocation outside steady measurement",
+      "charged_phases": [
+        "complete public submit + wait",
+        "all provider hot packing, numeric conversion and native allocation",
+        "complete output materialization and public checks"
+      ],
+      "pair": {
+        "candidate": "Native copy-strided-t6-r32-o6",
+        "peer": "Mature copy-strided-t6-r32-o6"
+      },
+      "practical_margin_percent": 5,
+      "noninferiority_margin_percent": 5,
+      "estimator": {
+        "kind": "process-median",
+        "minimum_independent_samples": 15,
+        "tail_alpha": 0.01
+      },
+      "required_strata": [
+        "primary-candidate-first-candidate-allocation-first",
+        "primary-candidate-first-peer-allocation-first",
+        "primary-peer-first-candidate-allocation-first",
+        "primary-peer-first-peer-allocation-first"
+      ],
+      "required_controls": [
+        "aa",
+        "delta5",
+        "delta10",
+        "timer-floor"
+      ]
+    },
+    {
+      "id": "rms-model-eps6-t5-r1-o6",
+      "tier": "replay",
+      "gate_role": "product",
+      "consumer_key": "cpu-three-operator/rms-model-eps6-t5-r1-o6",
+      "provenance": {
+        "path": "consumer-provenance.json",
+        "sha256": "e0b5ab82bc4973bb3938791aededf6c9dfa749d9ae50d17bc3ea107cdd62bb9f"
+      },
+      "ownership_topology": {
+        "candidate": "Explicit Native context with caller-owned tensors and any required workspace; exclusive repeated invocation",
+        "peer": "Ordinary CPU default cold-binds a real mature program with the same caller tensors; own native scratch charged at execution",
+        "equivalence": "Same public request, checked ownership, serial single caller, shared physical data and output, complete host-observable return; no weakened alias/concurrency guarantee is used"
+      },
+      "material_contribution": {
+        "frequency": 1,
+        "value": 1,
+        "unit": "complete-public-operation",
+        "budget": 5,
+        "denominator": "one repeated math/storage step in the provisional numerical consumer",
+        "derivation": "bounded replay comparison; not inferred model frequency or an end-to-end speed claim"
+      },
+      "semantic_contract": "Same exact operation, physical layout, dtype, precision and terminal output: rms-model-eps6-t5-r1-o6",
+      "comparability": "COMPARABLE",
+      "peer_id": "mature-cpu-stack",
+      "metric": {
+        "name": "operations-per-second",
+        "unit": "op/s",
+        "direction": "higher-is-better"
+      },
+      "input": {
+        "distribution": "shared immutable deterministic normal finite data, no input transformation omitted from repeated execution",
+        "scale": {
+          "case": "rms-model-eps6-t5-r1-o6"
+        }
+      },
+      "setup": "Two cold prepared routes, shared inputs and output, alternating first-touch/warm operations; preparation and persistent allocation outside steady measurement",
+      "charged_phases": [
+        "complete public submit + wait",
+        "all provider hot packing, numeric conversion and native allocation",
+        "complete output materialization and public checks"
+      ],
+      "pair": {
+        "candidate": "Native rms-model-eps6-t5-r1-o6",
+        "peer": "Mature rms-model-eps6-t5-r1-o6"
+      },
+      "practical_margin_percent": 5,
+      "noninferiority_margin_percent": 5,
+      "estimator": {
+        "kind": "process-median",
+        "minimum_independent_samples": 15,
+        "tail_alpha": 0.01
+      },
+      "required_strata": [
+        "primary-candidate-first-candidate-allocation-first",
+        "primary-candidate-first-peer-allocation-first",
+        "primary-peer-first-candidate-allocation-first",
+        "primary-peer-first-peer-allocation-first"
+      ],
+      "required_controls": [
+        "aa",
+        "delta5",
+        "delta10",
+        "timer-floor"
+      ]
+    },
+    {
+      "id": "rms-model-eps6-t5-r32-o6",
+      "tier": "replay",
+      "gate_role": "product",
+      "consumer_key": "cpu-three-operator/rms-model-eps6-t5-r32-o6",
+      "provenance": {
+        "path": "consumer-provenance.json",
+        "sha256": "e0b5ab82bc4973bb3938791aededf6c9dfa749d9ae50d17bc3ea107cdd62bb9f"
+      },
+      "ownership_topology": {
+        "candidate": "Explicit Native context with caller-owned tensors and any required workspace; exclusive repeated invocation",
+        "peer": "Ordinary CPU default cold-binds a real mature program with the same caller tensors; own native scratch charged at execution",
+        "equivalence": "Same public request, checked ownership, serial single caller, shared physical data and output, complete host-observable return; no weakened alias/concurrency guarantee is used"
+      },
+      "material_contribution": {
+        "frequency": 1,
+        "value": 1,
+        "unit": "complete-public-operation",
+        "budget": 5,
+        "denominator": "one repeated math/storage step in the provisional numerical consumer",
+        "derivation": "bounded replay comparison; not inferred model frequency or an end-to-end speed claim"
+      },
+      "semantic_contract": "Same exact operation, physical layout, dtype, precision and terminal output: rms-model-eps6-t5-r32-o6",
+      "comparability": "COMPARABLE",
+      "peer_id": "mature-cpu-stack",
+      "metric": {
+        "name": "operations-per-second",
+        "unit": "op/s",
+        "direction": "higher-is-better"
+      },
+      "input": {
+        "distribution": "shared immutable deterministic normal finite data, no input transformation omitted from repeated execution",
+        "scale": {
+          "case": "rms-model-eps6-t5-r32-o6"
+        }
+      },
+      "setup": "Two cold prepared routes, shared inputs and output, alternating first-touch/warm operations; preparation and persistent allocation outside steady measurement",
+      "charged_phases": [
+        "complete public submit + wait",
+        "all provider hot packing, numeric conversion and native allocation",
+        "complete output materialization and public checks"
+      ],
+      "pair": {
+        "candidate": "Native rms-model-eps6-t5-r32-o6",
+        "peer": "Mature rms-model-eps6-t5-r32-o6"
+      },
+      "practical_margin_percent": 5,
+      "noninferiority_margin_percent": 5,
+      "estimator": {
+        "kind": "process-median",
+        "minimum_independent_samples": 15,
+        "tail_alpha": 0.01
+      },
+      "required_strata": [
+        "primary-candidate-first-candidate-allocation-first",
+        "primary-candidate-first-peer-allocation-first",
+        "primary-peer-first-candidate-allocation-first",
+        "primary-peer-first-peer-allocation-first"
+      ],
+      "required_controls": [
+        "aa",
+        "delta5",
+        "delta10",
+        "timer-floor"
+      ]
+    },
+    {
+      "id": "causal-sdpa-d256-t6-r1-o6",
+      "tier": "replay",
+      "gate_role": "product",
+      "consumer_key": "cpu-three-operator/causal-sdpa-d256-t6-r1-o6",
+      "provenance": {
+        "path": "consumer-provenance.json",
+        "sha256": "e0b5ab82bc4973bb3938791aededf6c9dfa749d9ae50d17bc3ea107cdd62bb9f"
+      },
+      "ownership_topology": {
+        "candidate": "Explicit Native context with caller-owned tensors and any required workspace; exclusive repeated invocation",
+        "peer": "Ordinary CPU default cold-binds a real mature program with the same caller tensors; own native scratch charged at execution",
+        "equivalence": "Same public request, checked ownership, serial single caller, shared physical data and output, complete host-observable return; no weakened alias/concurrency guarantee is used"
+      },
+      "material_contribution": {
+        "frequency": 1,
+        "value": 1,
+        "unit": "complete-public-operation",
+        "budget": 5,
+        "denominator": "one repeated math/storage step in the provisional numerical consumer",
+        "derivation": "bounded replay comparison; not inferred model frequency or an end-to-end speed claim"
+      },
+      "semantic_contract": "Same exact operation, physical layout, dtype, precision and terminal output: causal-sdpa-d256-t6-r1-o6",
+      "comparability": "COMPARABLE",
+      "peer_id": "mature-cpu-stack",
+      "metric": {
+        "name": "operations-per-second",
+        "unit": "op/s",
+        "direction": "higher-is-better"
+      },
+      "input": {
+        "distribution": "shared immutable deterministic normal finite data, no input transformation omitted from repeated execution",
+        "scale": {
+          "case": "causal-sdpa-d256-t6-r1-o6"
+        }
+      },
+      "setup": "Two cold prepared routes, shared inputs and output, alternating first-touch/warm operations; preparation and persistent allocation outside steady measurement",
+      "charged_phases": [
+        "complete public submit + wait",
+        "all provider hot packing, numeric conversion and native allocation",
+        "complete output materialization and public checks"
+      ],
+      "pair": {
+        "candidate": "Native causal-sdpa-d256-t6-r1-o6",
+        "peer": "Mature causal-sdpa-d256-t6-r1-o6"
+      },
+      "practical_margin_percent": 5,
+      "noninferiority_margin_percent": 5,
+      "estimator": {
+        "kind": "process-median",
+        "minimum_independent_samples": 15,
+        "tail_alpha": 0.01
+      },
+      "required_strata": [
+        "primary-candidate-first-candidate-allocation-first",
+        "primary-candidate-first-peer-allocation-first",
+        "primary-peer-first-candidate-allocation-first",
+        "primary-peer-first-peer-allocation-first"
+      ],
+      "required_controls": [
+        "aa",
+        "delta5",
+        "delta10",
+        "timer-floor"
+      ]
+    },
+    {
+      "id": "causal-sdpa-d256-t6-r32-o6",
+      "tier": "replay",
+      "gate_role": "product",
+      "consumer_key": "cpu-three-operator/causal-sdpa-d256-t6-r32-o6",
+      "provenance": {
+        "path": "consumer-provenance.json",
+        "sha256": "e0b5ab82bc4973bb3938791aededf6c9dfa749d9ae50d17bc3ea107cdd62bb9f"
+      },
+      "ownership_topology": {
+        "candidate": "Explicit Native context with caller-owned tensors and any required workspace; exclusive repeated invocation",
+        "peer": "Ordinary CPU default cold-binds a real mature program with the same caller tensors; own native scratch charged at execution",
+        "equivalence": "Same public request, checked ownership, serial single caller, shared physical data and output, complete host-observable return; no weakened alias/concurrency guarantee is used"
+      },
+      "material_contribution": {
+        "frequency": 1,
+        "value": 1,
+        "unit": "complete-public-operation",
+        "budget": 5,
+        "denominator": "one repeated math/storage step in the provisional numerical consumer",
+        "derivation": "bounded replay comparison; not inferred model frequency or an end-to-end speed claim"
+      },
+      "semantic_contract": "Same exact operation, physical layout, dtype, precision and terminal output: causal-sdpa-d256-t6-r32-o6",
+      "comparability": "COMPARABLE",
+      "peer_id": "mature-cpu-stack",
+      "metric": {
+        "name": "operations-per-second",
+        "unit": "op/s",
+        "direction": "higher-is-better"
+      },
+      "input": {
+        "distribution": "shared immutable deterministic normal finite data, no input transformation omitted from repeated execution",
+        "scale": {
+          "case": "causal-sdpa-d256-t6-r32-o6"
+        }
+      },
+      "setup": "Two cold prepared routes, shared inputs and output, alternating first-touch/warm operations; preparation and persistent allocation outside steady measurement",
+      "charged_phases": [
+        "complete public submit + wait",
+        "all provider hot packing, numeric conversion and native allocation",
+        "complete output materialization and public checks"
+      ],
+      "pair": {
+        "candidate": "Native causal-sdpa-d256-t6-r32-o6",
+        "peer": "Mature causal-sdpa-d256-t6-r32-o6"
+      },
+      "practical_margin_percent": 5,
+      "noninferiority_margin_percent": 5,
+      "estimator": {
+        "kind": "process-median",
+        "minimum_independent_samples": 15,
+        "tail_alpha": 0.01
+      },
+      "required_strata": [
+        "primary-candidate-first-candidate-allocation-first",
+        "primary-candidate-first-peer-allocation-first",
+        "primary-peer-first-candidate-allocation-first",
+        "primary-peer-first-peer-allocation-first"
+      ],
+      "required_controls": [
+        "aa",
+        "delta5",
+        "delta10",
+        "timer-floor"
+      ]
+    }
+  ],
+  "experiment": {
+    "sample_schedule": [
+      15
+    ],
+    "order_policy": "fixed-dual",
+    "holdout": false
+  },
+  "build": {
+    "configuration": "Release",
+    "fresh": true,
+    "linkage": "static",
+    "lto": "off",
+    "isa": "portable",
+    "toolchain": "machine-profile-bound"
+  },
+  "artifacts": {
+    "validators": [
+      "artifact-identity",
+      "build-contract",
+      "native-domain-sdk-and-aa"
+    ]
+  },
+  "hosts": {
+    "allowed_platforms": [
+      "windows"
+    ],
+    "certification_platforms": [
+      "windows"
+    ],
+    "requirements": {
+      "machine_profiles": [
+        "W1-WIN"
+      ],
+      "qualified_role": "engineering",
+      "formal_independent_hardware": true
+    }
+  },
+  "extensions": {
+    "runner": {
+      "schema": "hyle.perf.nanobench-runner/v1",
+      "sampling_topology": "single-logical-cpu",
+      "cmake": {
+        "cache": {
+          "CMAKE_INTERPROCEDURAL_OPTIMIZATION": "OFF",
+          "HYLE_STATIC": "ON",
+          "HYLE_SIMD_EXACT_TARGET": "",
+          "CMAKE_PREFIX_PATH": "C:/public/project-hyle/hyle/.scratch/install-cpu-coverage-c3/static-relocated",
+          "FETCHCONTENT_FULLY_DISCONNECTED": "ON"
+        },
+        "peer_cache": {
+          "mature-cpu-stack": "HYLE_MATURE_PEER_ROOT"
+        }
+      },
+      "profiles": {
+        "W1-WIN": {
+          "generator": "Ninja",
+          "compiler_id": "MSVC",
+          "compiler_version_prefix": "19.50",
+          "cache": {}
+        }
+      },
+      "executables": [
+        {
+          "id": "native-domain-primary",
+          "target": "hyle_native_domain_bench",
+          "stem": "hyle_native_domain_bench",
+          "target_variant": "primary",
+          "measurement_batch": 1,
+          "telemetry_prefixes": [
+            "# HYLE_NATIVE_DOMAIN_RUN "
+          ],
+          "workloads": [
+            {
+              "id": "copy-t6-r1-o6",
+              "title": "copy-t6-r1-o6"
+            },
+            {
+              "id": "copy-t6-r32-o6",
+              "title": "copy-t6-r32-o6"
+            },
+            {
+              "id": "copy-t4-r1-o6",
+              "title": "copy-t4-r1-o6"
+            },
+            {
+              "id": "copy-t4-r32-o6",
+              "title": "copy-t4-r32-o6"
+            },
+            {
+              "id": "copy-t5-r1-o6",
+              "title": "copy-t5-r1-o6"
+            },
+            {
+              "id": "copy-t5-r32-o6",
+              "title": "copy-t5-r32-o6"
+            },
+            {
+              "id": "copy-t2-r1-o6",
+              "title": "copy-t2-r1-o6"
+            },
+            {
+              "id": "copy-t2-r32-o6",
+              "title": "copy-t2-r32-o6"
+            },
+            {
+              "id": "copy-t3-r1-o6",
+              "title": "copy-t3-r1-o6"
+            },
+            {
+              "id": "copy-t3-r32-o6",
+              "title": "copy-t3-r32-o6"
+            },
+            {
+              "id": "norm-0-t6-r1-o6",
+              "title": "norm-0-t6-r1-o6"
+            },
+            {
+              "id": "norm-0-t6-r32-o6",
+              "title": "norm-0-t6-r32-o6"
+            },
+            {
+              "id": "norm-0-t4-r1-o6",
+              "title": "norm-0-t4-r1-o6"
+            },
+            {
+              "id": "norm-0-t4-r32-o6",
+              "title": "norm-0-t4-r32-o6"
+            },
+            {
+              "id": "norm-0-t5-r1-o6",
+              "title": "norm-0-t5-r1-o6"
+            },
+            {
+              "id": "norm-0-t5-r32-o6",
+              "title": "norm-0-t5-r32-o6"
+            },
+            {
+              "id": "equal-head-sdpa-t6-r1-o6",
+              "title": "equal-head-sdpa-t6-r1-o6"
+            },
+            {
+              "id": "equal-head-sdpa-t6-r32-o6",
+              "title": "equal-head-sdpa-t6-r32-o6"
+            },
+            {
+              "id": "copy-strided-t6-r1-o6",
+              "title": "copy-strided-t6-r1-o6"
+            },
+            {
+              "id": "copy-strided-t6-r32-o6",
+              "title": "copy-strided-t6-r32-o6"
+            },
+            {
+              "id": "rms-model-eps6-t5-r1-o6",
+              "title": "rms-model-eps6-t5-r1-o6"
+            },
+            {
+              "id": "rms-model-eps6-t5-r32-o6",
+              "title": "rms-model-eps6-t5-r32-o6"
+            },
+            {
+              "id": "causal-sdpa-d256-t6-r1-o6",
+              "title": "causal-sdpa-d256-t6-r1-o6"
+            },
+            {
+              "id": "causal-sdpa-d256-t6-r32-o6",
+              "title": "causal-sdpa-d256-t6-r32-o6"
+            }
+          ]
+        }
+      ],
+      "control_executable": {
+        "target": "hyle_perf_control_bench",
+        "stem": "hyle_perf_control_bench"
+      },
+      "controlled_environment": [
+        "HYLE_BENCH_RIVAL_FIRST",
+        "HYLE_BENCH_PEER_ALLOCATION_FIRST",
+        "HYLE_BENCH_APPLE_QOS",
+        "HYLE_PERF_APPLE_QOS",
+        "HYLE_BENCH_AA_ROUTE"
+      ],
+      "validators": [
+        {
+          "id": "artifact-identity",
+          "kind": "artifact-identity"
+        },
+        {
+          "id": "build-contract",
+          "kind": "build-contract"
+        },
+        {
+          "id": "native-domain-sdk-and-aa",
+          "kind": "command",
+          "command": [
+            "{python}",
+            "validate_bundle.py",
+            "--build",
+            "{build}"
+          ]
+        }
+      ],
+      "measurement_adapter": "nanobench-paired-rows-v1"
+    }
+  }
+}

@@ -1,0 +1,632 @@
+{
+  "schema": "hyle.cpu-three-operator-aa/v1",
+  "gate": "PASS",
+  "passed": [
+    "copy-t6-r1-o6",
+    "copy-t6-r32-o6",
+    "copy-t4-r1-o6",
+    "copy-t4-r32-o6",
+    "copy-t5-r1-o6",
+    "copy-t5-r32-o6",
+    "copy-t2-r1-o6",
+    "copy-t2-r32-o6",
+    "copy-t3-r1-o6",
+    "copy-t3-r32-o6",
+    "norm-0-t6-r1-o6",
+    "norm-0-t6-r32-o6",
+    "norm-0-t4-r1-o6",
+    "norm-0-t4-r32-o6",
+    "norm-0-t5-r1-o6",
+    "norm-0-t5-r32-o6",
+    "equal-head-sdpa-t6-r1-o6",
+    "equal-head-sdpa-t6-r32-o6",
+    "copy-strided-t6-r1-o6",
+    "copy-strided-t6-r32-o6",
+    "rms-model-eps6-t5-r1-o6",
+    "rms-model-eps6-t5-r32-o6",
+    "causal-sdpa-d256-t6-r1-o6",
+    "causal-sdpa-d256-t6-r32-o6"
+  ],
+  "failed": {},
+  "runs": [
+    {
+      "route": "native",
+      "execution_order": "candidate-first",
+      "allocation_order": "candidate-first",
+      "ratios": {
+        "copy-t6-r1-o6": 1.0099835213077264,
+        "copy-t6-r32-o6": 1.0066442961810305,
+        "copy-t4-r1-o6": 0.9726950667756262,
+        "copy-t4-r32-o6": 1.0236470686554093,
+        "copy-t5-r1-o6": 1.0018700609622182,
+        "copy-t5-r32-o6": 1.017473416887236,
+        "copy-t2-r1-o6": 0.9923936160381278,
+        "copy-t2-r32-o6": 1.0073881545432235,
+        "copy-t3-r1-o6": 0.98365541279859,
+        "copy-t3-r32-o6": 0.9905901582747585,
+        "norm-0-t6-r1-o6": 1.0037603246676754,
+        "norm-0-t6-r32-o6": 1.006540782445157,
+        "norm-0-t4-r1-o6": 1.0172055568242335,
+        "norm-0-t4-r32-o6": 0.9979306334288464,
+        "norm-0-t5-r1-o6": 1.0019482521510894,
+        "norm-0-t5-r32-o6": 0.9913657996139723,
+        "equal-head-sdpa-t6-r1-o6": 1.0083976639249024,
+        "equal-head-sdpa-t6-r32-o6": 1.0216993516050759,
+        "copy-strided-t6-r1-o6": 1.0176207817153653,
+        "copy-strided-t6-r32-o6": 1.0010699702300803,
+        "rms-model-eps6-t5-r1-o6": 1.0080788426771938,
+        "rms-model-eps6-t5-r32-o6": 1.0017851867599108,
+        "causal-sdpa-d256-t6-r1-o6": 1.0194076668462781,
+        "causal-sdpa-d256-t6-r32-o6": 0.9875694873378628
+      }
+    },
+    {
+      "route": "native",
+      "execution_order": "candidate-first",
+      "allocation_order": "peer-first",
+      "ratios": {
+        "copy-t6-r1-o6": 0.9990419070833998,
+        "copy-t6-r32-o6": 1.0021696484589164,
+        "copy-t4-r1-o6": 1.0269982339892454,
+        "copy-t4-r32-o6": 0.9970372666185369,
+        "copy-t5-r1-o6": 1.0089997134191833,
+        "copy-t5-r32-o6": 1.0323694512665023,
+        "copy-t2-r1-o6": 0.9891919809049272,
+        "copy-t2-r32-o6": 0.9872568461582408,
+        "copy-t3-r1-o6": 1.0180930902272192,
+        "copy-t3-r32-o6": 0.9907262611284305,
+        "norm-0-t6-r1-o6": 1.0338493951113612,
+        "norm-0-t6-r32-o6": 0.9832635352971767,
+        "norm-0-t4-r1-o6": 1.0016040042908594,
+        "norm-0-t4-r32-o6": 1.00768649359536,
+        "norm-0-t5-r1-o6": 1.0105641151222289,
+        "norm-0-t5-r32-o6": 1.0019051927592206,
+        "equal-head-sdpa-t6-r1-o6": 1.0138174273324516,
+        "equal-head-sdpa-t6-r32-o6": 1.0129329329329329,
+        "copy-strided-t6-r1-o6": 1.0147722849341767,
+        "copy-strided-t6-r32-o6": 0.9992404755635671,
+        "rms-model-eps6-t5-r1-o6": 1.0255752623208327,
+        "rms-model-eps6-t5-r32-o6": 1.0194555915647991,
+        "causal-sdpa-d256-t6-r1-o6": 1.0083486685040073,
+        "causal-sdpa-d256-t6-r32-o6": 1.0109236510651531
+      }
+    },
+    {
+      "route": "native",
+      "execution_order": "peer-first",
+      "allocation_order": "candidate-first",
+      "ratios": {
+        "copy-t6-r1-o6": 1.0077583457234858,
+        "copy-t6-r32-o6": 1.0063605429703646,
+        "copy-t4-r1-o6": 1.0097271035230113,
+        "copy-t4-r32-o6": 1.0095705648868591,
+        "copy-t5-r1-o6": 1.0073709248297686,
+        "copy-t5-r32-o6": 1.0134798941493788,
+        "copy-t2-r1-o6": 0.9710074542968179,
+        "copy-t2-r32-o6": 0.9783611968702025,
+        "copy-t3-r1-o6": 0.9873433138625045,
+        "copy-t3-r32-o6": 1.0146982123671104,
+        "norm-0-t6-r1-o6": 0.9777463165402691,
+        "norm-0-t6-r32-o6": 1.0020872582480318,
+        "norm-0-t4-r1-o6": 0.9889892950783995,
+        "norm-0-t4-r32-o6": 0.996222185624041,
+        "norm-0-t5-r1-o6": 1.020474031088726,
+        "norm-0-t5-r32-o6": 1.0025820590907135,
+        "equal-head-sdpa-t6-r1-o6": 1.0097961366536952,
+        "equal-head-sdpa-t6-r32-o6": 1.0106070559140616,
+        "copy-strided-t6-r1-o6": 1.0009554178066689,
+        "copy-strided-t6-r32-o6": 1.0095287322740858,
+        "rms-model-eps6-t5-r1-o6": 1.0059985996724068,
+        "rms-model-eps6-t5-r32-o6": 1.0200973702991303,
+        "causal-sdpa-d256-t6-r1-o6": 0.9637281274214885,
+        "causal-sdpa-d256-t6-r32-o6": 0.999763816721776
+      }
+    },
+    {
+      "route": "native",
+      "execution_order": "peer-first",
+      "allocation_order": "peer-first",
+      "ratios": {
+        "copy-t6-r1-o6": 1.0001885392413348,
+        "copy-t6-r32-o6": 1.0028708740701253,
+        "copy-t4-r1-o6": 1.0186389768793196,
+        "copy-t4-r32-o6": 1.00713820266522,
+        "copy-t5-r1-o6": 1.0016765021516403,
+        "copy-t5-r32-o6": 1.0274980235898024,
+        "copy-t2-r1-o6": 0.9980149121310185,
+        "copy-t2-r32-o6": 0.9965081072788194,
+        "copy-t3-r1-o6": 1.00120901171978,
+        "copy-t3-r32-o6": 0.979059338102395,
+        "norm-0-t6-r1-o6": 1.0096547123199053,
+        "norm-0-t6-r32-o6": 1.010957197835365,
+        "norm-0-t4-r1-o6": 1.0125090010054725,
+        "norm-0-t4-r32-o6": 0.9980291279439116,
+        "norm-0-t5-r1-o6": 0.9926639723847833,
+        "norm-0-t5-r32-o6": 1.0088593229134672,
+        "equal-head-sdpa-t6-r1-o6": 0.9964185122926683,
+        "equal-head-sdpa-t6-r32-o6": 1.0116204648185927,
+        "copy-strided-t6-r1-o6": 0.9962501643837872,
+        "copy-strided-t6-r32-o6": 0.9876776031341803,
+        "rms-model-eps6-t5-r1-o6": 0.9964284663966568,
+        "rms-model-eps6-t5-r32-o6": 1.0380219030923183,
+        "causal-sdpa-d256-t6-r1-o6": 1.0185703730477738,
+        "causal-sdpa-d256-t6-r32-o6": 0.9778448374651437
+      }
+    },
+    {
+      "route": "selected",
+      "execution_order": "candidate-first",
+      "allocation_order": "candidate-first",
+      "ratios": {
+        "copy-t6-r1-o6": 1.010753003277024,
+        "copy-t6-r32-o6": 1.0000884721099434,
+        "copy-t4-r1-o6": 1.0179188650855808,
+        "copy-t4-r32-o6": 1.0062509505886204,
+        "copy-t5-r1-o6": 1.018045307445971,
+        "copy-t5-r32-o6": 0.9933476983883679,
+        "copy-t2-r1-o6": 0.9864746923754675,
+        "copy-t2-r32-o6": 0.9857573996140342,
+        "copy-t3-r1-o6": 1.0125013971906316,
+        "copy-t3-r32-o6": 1.0126317686497641,
+        "norm-0-t6-r1-o6": 1.0297170310456014,
+        "norm-0-t6-r32-o6": 0.9848594318939816,
+        "norm-0-t4-r1-o6": 0.9741733051447586,
+        "norm-0-t4-r32-o6": 0.9730444172045785,
+        "norm-0-t5-r1-o6": 1.019645609441697,
+        "norm-0-t5-r32-o6": 0.9952460529209819,
+        "equal-head-sdpa-t6-r1-o6": 1.0030982527479224,
+        "equal-head-sdpa-t6-r32-o6": 0.9888321096426823,
+        "copy-strided-t6-r1-o6": 1.0018423259960074,
+        "copy-strided-t6-r32-o6": 0.9971157398846507,
+        "rms-model-eps6-t5-r1-o6": 1.0064536149936072,
+        "rms-model-eps6-t5-r32-o6": 0.9898378091451195,
+        "causal-sdpa-d256-t6-r1-o6": 0.9991442058778742,
+        "causal-sdpa-d256-t6-r32-o6": 1.0252975384715348
+      }
+    },
+    {
+      "route": "selected",
+      "execution_order": "candidate-first",
+      "allocation_order": "peer-first",
+      "ratios": {
+        "copy-t6-r1-o6": 0.9955948394177467,
+        "copy-t6-r32-o6": 1.0116057088601216,
+        "copy-t4-r1-o6": 1.0020062232199496,
+        "copy-t4-r32-o6": 1.0027315231909435,
+        "copy-t5-r1-o6": 0.9791450138988248,
+        "copy-t5-r32-o6": 0.99823691876461,
+        "copy-t2-r1-o6": 1.0217886740640545,
+        "copy-t2-r32-o6": 0.9839421747353586,
+        "copy-t3-r1-o6": 1.009893274017563,
+        "copy-t3-r32-o6": 1.015116011400474,
+        "norm-0-t6-r1-o6": 1.0142983728004271,
+        "norm-0-t6-r32-o6": 0.994581725479029,
+        "norm-0-t4-r1-o6": 1.0303652540984871,
+        "norm-0-t4-r32-o6": 1.0058676576641856,
+        "norm-0-t5-r1-o6": 0.9970646980754435,
+        "norm-0-t5-r32-o6": 1.0197676256427786,
+        "equal-head-sdpa-t6-r1-o6": 1.0065057225274652,
+        "equal-head-sdpa-t6-r32-o6": 0.9753362117008217,
+        "copy-strided-t6-r1-o6": 1.0075169100270012,
+        "copy-strided-t6-r32-o6": 0.9955396634058971,
+        "rms-model-eps6-t5-r1-o6": 0.9791692551913486,
+        "rms-model-eps6-t5-r32-o6": 1.0167448050791572,
+        "causal-sdpa-d256-t6-r1-o6": 1.0071899895749632,
+        "causal-sdpa-d256-t6-r32-o6": 0.9846292372881356
+      }
+    },
+    {
+      "route": "selected",
+      "execution_order": "peer-first",
+      "allocation_order": "candidate-first",
+      "ratios": {
+        "copy-t6-r1-o6": 0.9763412152060618,
+        "copy-t6-r32-o6": 0.9912405712040875,
+        "copy-t4-r1-o6": 0.9994347299823357,
+        "copy-t4-r32-o6": 0.9965197350286943,
+        "copy-t5-r1-o6": 1.0001467448987704,
+        "copy-t5-r32-o6": 1.0032741573487278,
+        "copy-t2-r1-o6": 0.9910048124127905,
+        "copy-t2-r32-o6": 0.9783390886814851,
+        "copy-t3-r1-o6": 1.0058907865584894,
+        "copy-t3-r32-o6": 0.9932834619801971,
+        "norm-0-t6-r1-o6": 0.9967251523245317,
+        "norm-0-t6-r32-o6": 1.0264832229018523,
+        "norm-0-t4-r1-o6": 1.003036091412308,
+        "norm-0-t4-r32-o6": 1.0347659175374624,
+        "norm-0-t5-r1-o6": 0.9967895522252356,
+        "norm-0-t5-r32-o6": 1.009028748857643,
+        "equal-head-sdpa-t6-r1-o6": 1.0077258745260749,
+        "equal-head-sdpa-t6-r32-o6": 0.9963362829704102,
+        "copy-strided-t6-r1-o6": 0.9882831418996586,
+        "copy-strided-t6-r32-o6": 0.9954065627075175,
+        "rms-model-eps6-t5-r1-o6": 0.9846638300654307,
+        "rms-model-eps6-t5-r32-o6": 0.9868758156446655,
+        "causal-sdpa-d256-t6-r1-o6": 1.022619579522624,
+        "causal-sdpa-d256-t6-r32-o6": 1.0056910482783517
+      }
+    },
+    {
+      "route": "selected",
+      "execution_order": "peer-first",
+      "allocation_order": "peer-first",
+      "ratios": {
+        "copy-t6-r1-o6": 1.002169781395163,
+        "copy-t6-r32-o6": 1.0059969475192403,
+        "copy-t4-r1-o6": 1.024084121235204,
+        "copy-t4-r32-o6": 1.0236433921666483,
+        "copy-t5-r1-o6": 0.9999286593881356,
+        "copy-t5-r32-o6": 0.9771136327946126,
+        "copy-t2-r1-o6": 1.0024585522348575,
+        "copy-t2-r32-o6": 1.0023284445727811,
+        "copy-t3-r1-o6": 1.0027739528234216,
+        "copy-t3-r32-o6": 0.9877123475740427,
+        "norm-0-t6-r1-o6": 0.9946221449926768,
+        "norm-0-t6-r32-o6": 1.0086666304161462,
+        "norm-0-t4-r1-o6": 0.9959590392197086,
+        "norm-0-t4-r32-o6": 1.0114395599630412,
+        "norm-0-t5-r1-o6": 0.9852192349359797,
+        "norm-0-t5-r32-o6": 1.0226110683463818,
+        "equal-head-sdpa-t6-r1-o6": 0.9643699791032319,
+        "equal-head-sdpa-t6-r32-o6": 1.001885560212018,
+        "copy-strided-t6-r1-o6": 0.9838969194211614,
+        "copy-strided-t6-r32-o6": 1.017508043251831,
+        "rms-model-eps6-t5-r1-o6": 1.0049654672658839,
+        "rms-model-eps6-t5-r32-o6": 1.005324361046319,
+        "causal-sdpa-d256-t6-r1-o6": 1.0070560922506724,
+        "causal-sdpa-d256-t6-r32-o6": 1.0300814841057684
+      }
+    }
+  ],
+  "summaries": {
+    "native:copy-t6-r1-o6": {
+      "all": 1.0039734424824103,
+      "execution_order=peer-first": 1.0039734424824103,
+      "execution_order=candidate-first": 1.0045127141955632,
+      "allocation_order=peer-first": 0.9996152231623673,
+      "allocation_order=candidate-first": 1.008870933515606
+    },
+    "selected:copy-t6-r1-o6": {
+      "all": 0.9988823104064549,
+      "execution_order=peer-first": 0.9892554983006124,
+      "execution_order=candidate-first": 1.0031739213473854,
+      "allocation_order=peer-first": 0.9988823104064549,
+      "allocation_order=candidate-first": 0.9935471092415429
+    },
+    "native:copy-t6-r32-o6": {
+      "all": 1.004615708520245,
+      "execution_order=peer-first": 1.004615708520245,
+      "execution_order=candidate-first": 1.0044069723199733,
+      "allocation_order=peer-first": 1.0025202612645208,
+      "allocation_order=candidate-first": 1.0065024195756975
+    },
+    "selected:copy-t6-r32-o6": {
+      "all": 1.0030427098145918,
+      "execution_order=peer-first": 0.9986187593616639,
+      "execution_order=candidate-first": 1.0058470904850325,
+      "allocation_order=peer-first": 1.0088013281896808,
+      "allocation_order=candidate-first": 0.9956645216570155
+    },
+    "native:copy-t4-r1-o6": {
+      "all": 1.0141830402011656,
+      "execution_order=peer-first": 1.0141830402011656,
+      "execution_order=candidate-first": 0.9998466503824358,
+      "allocation_order=peer-first": 1.0228186054342825,
+      "allocation_order=candidate-first": 0.9912110851493188
+    },
+    "selected:copy-t4-r1-o6": {
+      "all": 1.0099625441527653,
+      "execution_order=peer-first": 1.0117594256087699,
+      "execution_order=candidate-first": 1.0099625441527653,
+      "allocation_order=peer-first": 1.0130451722275768,
+      "allocation_order=candidate-first": 1.0086767975339583
+    },
+    "native:copy-t4-r32-o6": {
+      "all": 1.0083543837760396,
+      "execution_order=peer-first": 1.0083543837760396,
+      "execution_order=candidate-first": 1.010342167636973,
+      "allocation_order=peer-first": 1.0020877346418784,
+      "allocation_order=candidate-first": 1.0166088167711342
+    },
+    "selected:copy-t4-r32-o6": {
+      "all": 1.0044912368897818,
+      "execution_order=peer-first": 1.0100815635976712,
+      "execution_order=candidate-first": 1.0044912368897818,
+      "allocation_order=peer-first": 1.013187457678796,
+      "allocation_order=candidate-first": 1.0013853428086574
+    },
+    "native:copy-t5-r1-o6": {
+      "all": 1.0046204928959934,
+      "execution_order=peer-first": 1.0045237134907046,
+      "execution_order=candidate-first": 1.0054348871907006,
+      "allocation_order=peer-first": 1.0053381077854118,
+      "allocation_order=candidate-first": 1.0046204928959934
+    },
+    "selected:copy-t5-r1-o6": {
+      "all": 1.000037702143453,
+      "execution_order=peer-first": 1.000037702143453,
+      "execution_order=candidate-first": 0.998595160672398,
+      "allocation_order=peer-first": 0.9895368366434802,
+      "allocation_order=candidate-first": 1.0090960261723707
+    },
+    "native:copy-t5-r32-o6": {
+      "all": 1.0224857202385191,
+      "execution_order=peer-first": 1.0204889588695907,
+      "execution_order=candidate-first": 1.024921434076869,
+      "allocation_order=peer-first": 1.0299337374281523,
+      "allocation_order=candidate-first": 1.0154766555183072
+    },
+    "selected:copy-t5-r32-o6": {
+      "all": 0.9957923085764889,
+      "execution_order=peer-first": 0.9901938950716702,
+      "execution_order=candidate-first": 0.9957923085764889,
+      "allocation_order=peer-first": 0.9876752757796112,
+      "allocation_order=candidate-first": 0.9983109278685478
+    },
+    "native:copy-t2-r1-o6": {
+      "all": 0.9907927984715275,
+      "execution_order=peer-first": 0.9845111832139182,
+      "execution_order=candidate-first": 0.9907927984715275,
+      "allocation_order=peer-first": 0.9936034465179728,
+      "allocation_order=candidate-first": 0.9817005351674728
+    },
+    "selected:copy-t2-r1-o6": {
+      "all": 0.9967316823238239,
+      "execution_order=peer-first": 0.9967316823238239,
+      "execution_order=candidate-first": 1.0041316832197609,
+      "allocation_order=peer-first": 1.012123613149456,
+      "allocation_order=candidate-first": 0.988739752394129
+    },
+    "native:copy-t2-r32-o6": {
+      "all": 0.9918824767185301,
+      "execution_order=peer-first": 0.987434652074511,
+      "execution_order=candidate-first": 0.9973225003507322,
+      "allocation_order=peer-first": 0.9918824767185301,
+      "allocation_order=candidate-first": 0.9928746757067131
+    },
+    "selected:copy-t2-r32-o6": {
+      "all": 0.9848497871746964,
+      "execution_order=peer-first": 0.9903337666271331,
+      "execution_order=candidate-first": 0.9848497871746964,
+      "allocation_order=peer-first": 0.9931353096540698,
+      "allocation_order=candidate-first": 0.9820482441477596
+    },
+    "native:copy-t3-r1-o6": {
+      "all": 0.9942761627911423,
+      "execution_order=peer-first": 0.9942761627911423,
+      "execution_order=candidate-first": 1.0008742515129045,
+      "allocation_order=peer-first": 1.0096510509734995,
+      "allocation_order=candidate-first": 0.9854993633305473
+    },
+    "selected:copy-t3-r1-o6": {
+      "all": 1.0078920302880263,
+      "execution_order=peer-first": 1.0043323696909554,
+      "execution_order=candidate-first": 1.0111973356040973,
+      "allocation_order=peer-first": 1.0063336134204923,
+      "allocation_order=candidate-first": 1.0091960918745606
+    },
+    "native:copy-t3-r32-o6": {
+      "all": 0.9906582097015946,
+      "execution_order=peer-first": 0.9968787752347528,
+      "execution_order=candidate-first": 0.9906582097015946,
+      "allocation_order=peer-first": 0.9848927996154128,
+      "allocation_order=candidate-first": 1.0026441853209345
+    },
+    "selected:copy-t3-r32-o6": {
+      "all": 1.0029576153149806,
+      "execution_order=peer-first": 0.9904979047771199,
+      "execution_order=candidate-first": 1.0138738900251192,
+      "allocation_order=peer-first": 1.0014141794872584,
+      "allocation_order=candidate-first": 1.0029576153149806
+    },
+    "native:norm-0-t6-r1-o6": {
+      "all": 1.0067075184937904,
+      "execution_order=peer-first": 0.9937005144300872,
+      "execution_order=candidate-first": 1.0188048598895183,
+      "allocation_order=peer-first": 1.0217520537156333,
+      "allocation_order=candidate-first": 0.9907533206039723
+    },
+    "selected:norm-0-t6-r1-o6": {
+      "all": 1.0055117625624794,
+      "execution_order=peer-first": 0.9956736486586042,
+      "execution_order=candidate-first": 1.0220077019230143,
+      "allocation_order=peer-first": 1.0044602588965519,
+      "allocation_order=candidate-first": 1.0132210916850666
+    },
+    "native:norm-0-t6-r32-o6": {
+      "all": 1.0043140203465946,
+      "execution_order=peer-first": 1.0065222280416983,
+      "execution_order=candidate-first": 0.9949021588711668,
+      "allocation_order=peer-first": 0.9971103665662708,
+      "allocation_order=candidate-first": 1.0043140203465946
+    },
+    "selected:norm-0-t6-r32-o6": {
+      "all": 1.0016241779475876,
+      "execution_order=peer-first": 1.0175749266589993,
+      "execution_order=candidate-first": 0.9897205786865053,
+      "allocation_order=peer-first": 1.0016241779475876,
+      "allocation_order=candidate-first": 1.005671327397917
+    },
+    "native:norm-0-t4-r1-o6": {
+      "all": 1.007056502648166,
+      "execution_order=peer-first": 1.000749148041936,
+      "execution_order=candidate-first": 1.0094047805575466,
+      "allocation_order=peer-first": 1.007056502648166,
+      "allocation_order=candidate-first": 1.0030974259513166
+    },
+    "selected:norm-0-t4-r1-o6": {
+      "all": 0.9994975653160083,
+      "execution_order=peer-first": 0.9994975653160083,
+      "execution_order=candidate-first": 1.0022692796216228,
+      "allocation_order=peer-first": 1.0131621466590979,
+      "allocation_order=candidate-first": 0.9886046982785333
+    },
+    "native:norm-0-t4-r32-o6": {
+      "all": 0.997979880686379,
+      "execution_order=peer-first": 0.9971256567839764,
+      "execution_order=candidate-first": 1.0028085635121031,
+      "allocation_order=peer-first": 1.0028578107696358,
+      "allocation_order=candidate-first": 0.9970764095264437
+    },
+    "selected:norm-0-t4-r32-o6": {
+      "all": 1.0086536088136135,
+      "execution_order=peer-first": 1.0231027387502518,
+      "execution_order=candidate-first": 0.989456037434382,
+      "allocation_order=peer-first": 1.0086536088136135,
+      "allocation_order=candidate-first": 1.0039051673710204
+    },
+    "native:norm-0-t5-r1-o6": {
+      "all": 1.0062561836366593,
+      "execution_order=peer-first": 1.0065690017367546,
+      "execution_order=candidate-first": 1.0062561836366593,
+      "allocation_order=peer-first": 1.0016140437535062,
+      "allocation_order=candidate-first": 1.0112111416199077
+    },
+    "selected:norm-0-t5-r1-o6": {
+      "all": 0.9969271251503395,
+      "execution_order=peer-first": 0.9910043935806077,
+      "execution_order=candidate-first": 1.0083551537585702,
+      "allocation_order=peer-first": 0.9911419665057116,
+      "allocation_order=candidate-first": 1.0082175808334664
+    },
+    "native:norm-0-t5-r32-o6": {
+      "all": 1.002243625924967,
+      "execution_order=peer-first": 1.0057206910020904,
+      "execution_order=candidate-first": 0.9966354961865964,
+      "allocation_order=peer-first": 1.0053822578363438,
+      "allocation_order=candidate-first": 0.996973929352343
+    },
+    "selected:norm-0-t5-r32-o6": {
+      "all": 1.0143981872502108,
+      "execution_order=peer-first": 1.0158199086020123,
+      "execution_order=candidate-first": 1.0075068392818802,
+      "allocation_order=peer-first": 1.0211893469945803,
+      "allocation_order=candidate-first": 1.0021374008893125
+    },
+    "native:equal-head-sdpa-t6-r1-o6": {
+      "all": 1.0090969002892987,
+      "execution_order=peer-first": 1.0031073244731816,
+      "execution_order=candidate-first": 1.0111075456286769,
+      "allocation_order=peer-first": 1.0051179698125599,
+      "allocation_order=candidate-first": 1.0090969002892987
+    },
+    "selected:equal-head-sdpa-t6-r1-o6": {
+      "all": 1.004801987637694,
+      "execution_order=peer-first": 0.9860479268146534,
+      "execution_order=candidate-first": 1.004801987637694,
+      "allocation_order=peer-first": 0.9854378508153485,
+      "allocation_order=candidate-first": 1.0054120636369985
+    },
+    "native:equal-head-sdpa-t6-r32-o6": {
+      "all": 1.0122766988757628,
+      "execution_order=peer-first": 1.0111137603663272,
+      "execution_order=candidate-first": 1.0173161422690042,
+      "allocation_order=peer-first": 1.0122766988757628,
+      "allocation_order=candidate-first": 1.0161532037595689
+    },
+    "selected:equal-head-sdpa-t6-r32-o6": {
+      "all": 0.9925841963065463,
+      "execution_order=peer-first": 0.9991109215912142,
+      "execution_order=candidate-first": 0.9820841606717521,
+      "allocation_order=peer-first": 0.9886108859564199,
+      "allocation_order=candidate-first": 0.9925841963065463
+    },
+    "native:copy-strided-t6-r1-o6": {
+      "all": 1.0078638513704228,
+      "execution_order=peer-first": 0.998602791095228,
+      "execution_order=candidate-first": 1.016196533324771,
+      "allocation_order=peer-first": 1.005511224658982,
+      "allocation_order=candidate-first": 1.009288099761017
+    },
+    "selected:copy-strided-t6-r1-o6": {
+      "all": 0.9950627339478331,
+      "execution_order=peer-first": 0.98609003066041,
+      "execution_order=candidate-first": 1.0046796180115043,
+      "allocation_order=peer-first": 0.9957069147240813,
+      "allocation_order=candidate-first": 0.9950627339478331
+    },
+    "native:copy-strided-t6-r32-o6": {
+      "all": 1.0001552228968236,
+      "execution_order=peer-first": 0.998603167704133,
+      "execution_order=candidate-first": 1.0001552228968236,
+      "allocation_order=peer-first": 0.9934590393488737,
+      "allocation_order=candidate-first": 1.005299351252083
+    },
+    "selected:copy-strided-t6-r32-o6": {
+      "all": 0.9963277016452738,
+      "execution_order=peer-first": 1.0064573029796744,
+      "execution_order=candidate-first": 0.9963277016452738,
+      "allocation_order=peer-first": 1.006523853328864,
+      "allocation_order=candidate-first": 0.9962611512960842
+    },
+    "native:rms-model-eps6-t5-r1-o6": {
+      "all": 1.0070387211748004,
+      "execution_order=peer-first": 1.0012135330345318,
+      "execution_order=candidate-first": 1.0168270524990133,
+      "allocation_order=peer-first": 1.0110018643587448,
+      "allocation_order=candidate-first": 1.0070387211748004
+    },
+    "selected:rms-model-eps6-t5-r1-o6": {
+      "all": 0.9948146486656573,
+      "execution_order=peer-first": 0.9948146486656573,
+      "execution_order=candidate-first": 0.9928114350924779,
+      "allocation_order=peer-first": 0.9920673612286162,
+      "allocation_order=candidate-first": 0.9955587225295189
+    },
+    "native:rms-model-eps6-t5-r32-o6": {
+      "all": 1.0197764809319647,
+      "execution_order=peer-first": 1.0290596366957243,
+      "execution_order=candidate-first": 1.010620389162355,
+      "allocation_order=peer-first": 1.0287387473285587,
+      "allocation_order=candidate-first": 1.0109412785295206
+    },
+    "selected:rms-model-eps6-t5-r32-o6": {
+      "all": 0.9975810850957192,
+      "execution_order=peer-first": 0.9961000883454922,
+      "execution_order=candidate-first": 1.0032913071121383,
+      "allocation_order=peer-first": 1.011034583062738,
+      "allocation_order=candidate-first": 0.9883568123948925
+    },
+    "native:causal-sdpa-d256-t6-r1-o6": {
+      "all": 1.0134595207758905,
+      "execution_order=peer-first": 0.9911492502346311,
+      "execution_order=candidate-first": 1.0138781676751427,
+      "allocation_order=peer-first": 1.0134595207758905,
+      "allocation_order=candidate-first": 0.9915678971338833
+    },
+    "selected:causal-sdpa-d256-t6-r1-o6": {
+      "all": 1.0071230409128178,
+      "execution_order=peer-first": 1.0148378358866483,
+      "execution_order=candidate-first": 1.0031670977264187,
+      "allocation_order=peer-first": 1.0071230409128178,
+      "allocation_order=candidate-first": 1.0108818927002492
+    },
+    "native:causal-sdpa-d256-t6-r32-o6": {
+      "all": 0.9936666520298194,
+      "execution_order=peer-first": 0.9888043270934599,
+      "execution_order=candidate-first": 0.999246569201508,
+      "allocation_order=peer-first": 0.9943842442651485,
+      "allocation_order=candidate-first": 0.9936666520298194
+    },
+    "selected:causal-sdpa-d256-t6-r32-o6": {
+      "all": 1.0154942933749433,
+      "execution_order=peer-first": 1.01788626619206,
+      "execution_order=candidate-first": 1.0049633878798352,
+      "allocation_order=peer-first": 1.0073553606969519,
+      "allocation_order=candidate-first": 1.0154942933749433
+    }
+  },
+  "artifacts": {
+    "asmjit.dll": "eb8f9c478bfc4b671f83b630c97424c60b4c948c0a8645fe588aed4f6bab5df5",
+    "c10.dll": "93bff2548e330df0f94ce3c71c531887d049ae645d1e38e3c08689e2d86a7888",
+    "fbgemm.dll": "250dc6f79b26e022ca3088e9b71a023598c7e997c96b62ef350a74fa1b501d81",
+    "hyle_ggml_cpu_avx2_ffa4e8b8_bdae1e43311ee486.dll": "fe36f50da454cce149993b58c468d072c59e85bba0ed42334886778ec781b9cb",
+    "libiomp5md.dll": "d9d66ed25f1a0ea725fa3a41b22cfd5d182c19dbe4771d9c90ca02ad7466f6a1",
+    "torch.dll": "16a220e55b35fbfd946c26663eb3eefc76782872280cdc47ab0caea1babf0613",
+    "torch_cpu.dll": "2cb91cf2ba957fad5a17eab5bb7af6b3d73bbc98d94e2deeadc9fb9294eea809",
+    "uv.dll": "fa569e682fc5fb7a8eb94c6829af9f30a569748dbbc6bce39735d48bc960bcf8",
+    "hyle_native_domain_bench.exe.text": "b810f77e433029e67bbcaf2b9428efdeb4dad31af32e746f2cae44ce4796d5c0"
+  },
+  "raw_directory": "C:\\public\\project-hyle\\hyle\\.scratch\\build-cpu-three-operator\\three-preflight-1791336666671031800",
+  "source_sha256": "4eee7ce3bd46a489189dd54bca0a912f5f56ef5e84340a89da5a902d85d8f46c"
+}
