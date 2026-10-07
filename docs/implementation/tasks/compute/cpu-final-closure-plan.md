@@ -71,3 +71,11 @@ Mac先读取真实硬件/工具链，macOS CPU不以Metal执行替代。远端�
 不能自行删范围后签完整，也不能无限研究。每包以当前卡状态裁决，goal工具状态不替代registry。
 
 启动只激活F1审计；基线实现Compute+Graph **61,073行/249文件**（统一脚本、不含测试/vendor/bench）。
+
+## 最终交付
+
+F1–F5各包已按自己的适用范围验收，F6[逐原目标终审](cpu-final-f6-final-qualification.md)已核对
+原始要求、完整计算合同、资源／三交付／条件规则／源码清退与清理；不存在未完成适用技术项。
+当前产品候选64b454fa，CPU相关owner全部CLOSED；公开当前覆盖见[CPU使用合同](../../../user/cpu-model-coverage.md)。
+新goal目标已实现，最后docs／closure与提交推送后明确通知“Compute + Graph CPU 最终收口完成”并停止。
+不是整个HYLE／全部GPU／推理引擎完成，不自动扩下一阶段。最终实现60,161行／249文件，不含测试。

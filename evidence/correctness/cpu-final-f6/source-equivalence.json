@@ -1,0 +1,90 @@
+{
+  "product_candidate": "64b454fa23404d26bead60d495eda9475c802e32",
+  "verified_groups": [
+    {
+      "base": "560eb1d2332bb69ee5148e899b000fae85d80074",
+      "scope": [
+        "src/compute_provider_ggml",
+        "src/compute_provider_onednn",
+        "src/compute_ggml_runtime",
+        "src/compute_ops",
+        "include/hyle",
+        "cmake/HyleDependencyLock.json",
+        "third_party"
+      ],
+      "reuse": "F3 current mature codec/math/precision/lifecycle and actual model witness proof; no source/dependency/public API changes.",
+      "exact_product_diff": [],
+      "trees": {
+        "src/compute_provider_ggml": {
+          "base": "01755932eae92990556f3997cba437c6c623142f",
+          "candidate": "01755932eae92990556f3997cba437c6c623142f"
+        },
+        "src/compute_provider_onednn": {
+          "base": "ec5cc51d380b26be8e9f0acb8a00acac009df1fa",
+          "candidate": "ec5cc51d380b26be8e9f0acb8a00acac009df1fa"
+        },
+        "src/compute_ggml_runtime": {
+          "base": "c63943fd69874d210aff91da9ff5801c045cefeb",
+          "candidate": "c63943fd69874d210aff91da9ff5801c045cefeb"
+        },
+        "src/compute_ops": {
+          "base": "7aa62a0e84be8e4bee9125440d5b9c47c541c827",
+          "candidate": "7aa62a0e84be8e4bee9125440d5b9c47c541c827"
+        },
+        "include/hyle": {
+          "base": "d9a29c8e77454f659881d8bdad43ebe1ac45072c",
+          "candidate": "d9a29c8e77454f659881d8bdad43ebe1ac45072c"
+        },
+        "cmake/HyleDependencyLock.json": {
+          "base": "047060201188d27674655d6b7fc88f1e62d90dd3",
+          "candidate": "047060201188d27674655d6b7fc88f1e62d90dd3"
+        },
+        "third_party": {
+          "base": "04a736867efccb50e165b5c066aabda0cee0f42a",
+          "candidate": "04a736867efccb50e165b5c066aabda0cee0f42a"
+        }
+      }
+    },
+    {
+      "base": "a7ccfc6639483aee4a76403a35fb32d1732441ec",
+      "scope": [
+        "src/compute_route_cpu",
+        "src/graph_route_cpu",
+        "src/compute_provider_native/default_rules.cc",
+        "src/compute_provider_native/default_rules.h"
+      ],
+      "reuse": "F4 cold rule/software/hardware/thread matching and mature defaults; no added execution-time search or timing.",
+      "exact_product_diff": [],
+      "trees": {
+        "src/compute_route_cpu": {
+          "base": "51fac24eda33284946d8059750b09c1b72c065cc",
+          "candidate": "51fac24eda33284946d8059750b09c1b72c065cc"
+        },
+        "src/graph_route_cpu": {
+          "base": "574fcc2afd4770e502f4259f35a53ebe628b251b",
+          "candidate": "574fcc2afd4770e502f4259f35a53ebe628b251b"
+        },
+        "src/compute_provider_native/default_rules.cc": {
+          "base": "1bd1763443823b193b725dff5eda2e65be8a6d74",
+          "candidate": "1bd1763443823b193b725dff5eda2e65be8a6d74"
+        },
+        "src/compute_provider_native/default_rules.h": {
+          "base": "287581da1c15eec818a85a933edec3c6105967c2",
+          "candidate": "287581da1c15eec818a85a933edec3c6105967c2"
+        }
+      }
+    }
+  ],
+  "retirement_difference": "Native 14 kinds and unsupported instances physically deleted; required edge math connected to original ATen. Native owning/ordinary/model/delivery deltas signed separately in F5.",
+  "equivalent_gcc_cleanup": {
+    "base_archive_candidate": "507bad9698f9988d371c59e5661a69e4394c580a",
+    "product_candidate": "64b454fa23404d26bead60d495eda9475c802e32",
+    "scope": "two uncalled private functions removed and equivalent existing NaN/return default exits; math/rules/ABI unchanged",
+    "files": {
+      "src/compute_provider_native/indexing.cc": "c30844646e56cf0d24188960f67f5a0d090f7130427ddece7faf8bd245d6a37b",
+      "src/compute_provider_native/reduction.cc": "b855d6adcb8f388606a401d008d51fd16ffec81102c054b94f5ef1d2fb0ada28",
+      "src/compute_provider_native/transformer.cc": "2d70dc3595b146f6e2648dda4bdcc6030b47903eaaf11b9e42e3ace24fa43c11"
+    }
+  },
+  "limits": "Source equality is a reuse prerequisite, not a substitute for newly changed platform/runtime seams or unrun F5 gates."
+}

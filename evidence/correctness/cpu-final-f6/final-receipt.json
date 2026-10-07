@@ -1,0 +1,269 @@
+{
+  "scope": "HYLE Compute+Graph CPU final closure of the exact original six-package goal",
+  "baseline": "167cb5ff6f9edac8a9aaa77c41e6720bd3c377d2",
+  "product_candidate": "64b454fa23404d26bead60d495eda9475c802e32",
+  "current_head": "b97caf32d8fcd1ffbf5f10c666dc2c05424ec0bb",
+  "requirements": [
+    {
+      "id": "scope",
+      "verdict": "PASS",
+      "evidence_boundary": "Fixed 104 GGUF plus official/non-GGUF/MTP/DSpark demand and six input hashes unchanged."
+    },
+    {
+      "id": "three-platform-cpu",
+      "verdict": "PASS",
+      "evidence_boundary": "Mac ARM64 and Windows/Linux x86_64 actual CPU witnesses, source/private runtime and delivery; Metal not substituted."
+    },
+    {
+      "id": "two-entry-points",
+      "verdict": "PASS",
+      "evidence_boundary": "All 559/34/45 port IDs and exact complete semantic/state/official/sidecar names joined in six platform-entry sets."
+    },
+    {
+      "id": "model-programs",
+      "verdict": "PASS",
+      "evidence_boundary": "Actual original inner widths, format/precision/state, changed replay and complete branch proofs from inspected source and qualified witnesses; sharded residency limits preserved."
+    },
+    {
+      "id": "resource-lifetime",
+      "verdict": "PASS",
+      "evidence_boundary": "Three-platform owning144 and original qualified mature/Graph/runtime evidence prove real OOM, accepted failures, independent slots, alias/index protection, close and source lifetime."
+    },
+    {
+      "id": "three-deliveries",
+      "verdict": "PASS",
+      "evidence_boundary": "CPU-only three-platform source/static/shared 43/48 consumers; real loader, offline cached dependency version and Windows DLL neighbour checks."
+    },
+    {
+      "id": "fixed-rules",
+      "verdict": "PASS",
+      "evidence_boundary": "43 qualified complete choices, 377 engineering defaults, 33 single carrier; conditional W1 static/CPU2 WIN and unknown-condition mature defaults tested, no hot search/timing."
+    },
+    {
+      "id": "precompile-mixed",
+      "verdict": "PASS",
+      "evidence_boundary": "F1 program/precompile/current versions and F4/F5 rule/CPU mixed envelopes; four actual source/static/shared 43/48 sets and no CPU-only WIN leak."
+    },
+    {
+      "id": "retirement",
+      "verdict": "PASS",
+      "evidence_boundary": "14 redundant Native kinds physically gone, 20 qualified necessary kinds plus named Copy retained; SIMD/Mem/View and original borrowed programs preserved; strict retired domains explicit."
+    },
+    {
+      "id": "governance",
+      "verdict": "PASS",
+      "evidence_boundary": "Legal AUDITED commits and CANDIDATE/CLOSED transitions, actual closure/docs checks, finite impact/source identities and no new P1 after unchanged math."
+    },
+    {
+      "id": "cleanup",
+      "verdict": "PASS",
+      "evidence_boundary": "11 owned superseded SDK directories removed after path/process/replacement/archive checks; current producers/cache/sealed P1/models/canonical source retained."
+    },
+    {
+      "id": "final-stop",
+      "verdict": "READY_FOR_FINAL_NOTICE",
+      "evidence_boundary": "All required technical work verified; final public record/push/check then mark active CPU goal complete and stop."
+    }
+  ],
+  "fixed_counts": {
+    "gguf_profiles": 104,
+    "gguf_numeric": 559,
+    "packed_non_gguf": 34,
+    "plain_non_gguf": 45,
+    "gguf_parameter_role_shape": 80
+  },
+  "qualification_sources": [
+    {
+      "path": "evidence/correctness/cpu-final-f5/terminal-receipt.json",
+      "sha256": "759216a71e3d0ad985c7d5b2781aa3b4824eebb12a0849c23996d2e50fb1b31f",
+      "archive": "evidence/correctness/cpu-final-f5/terminal-delta.zip",
+      "archive_sha256": "642648dc403806b3f4e8ca0b9cb47896d739637e2c922f56ed8c57c3aed0ebe1"
+    },
+    {
+      "path": "evidence/correctness/cpu-final-f5/windows-correctness-receipt.json",
+      "sha256": "54f059874c47029a0693f034eebeef7f9677a4d4a717892ea53cb0cc5b3da9b8",
+      "archive": "evidence/correctness/cpu-final-f5/windows-correctness.zip",
+      "archive_sha256": "2602224e2ea9b10d7065e5ee5ae3770af911a494150ace850282da929ba56380"
+    },
+    {
+      "path": "evidence/correctness/cpu-final-f5/portable-owning-receipt.json",
+      "sha256": "849b9e7183d54893195482973c793d26eec21985de2666e1b255e3c84220823f",
+      "archive": "evidence/correctness/cpu-final-f5/portable-owning.zip",
+      "archive_sha256": "3fa186f6e2b2486b2b3c8abfdbe4cd01fcd3ca00720e2cf2d266568439bddcfc"
+    },
+    {
+      "path": "evidence/correctness/cpu-final-f5/windows-delivery-receipt.json",
+      "sha256": "8c7411555e02e75f783deeb5829643da0b4a90c8e8e5703fbbbdb04ed11bcbf9",
+      "archive": "evidence/correctness/cpu-final-f5/windows-delivery.zip",
+      "archive_sha256": "0d1c64add33b75404db7438f87c1892312e9f9952591632fce0924d9e084e5f0"
+    },
+    {
+      "path": "evidence/correctness/cpu-final-f5/mac-delivery-receipt.json",
+      "sha256": "8871bc7867cb29d8d07b1e609e5bae25db17752be64355393bec14a9b545b4cc",
+      "archive": "evidence/correctness/cpu-final-f5/mac-delivery.zip",
+      "archive_sha256": "b44de4183bd470795601e033f70739ed89302cb2e8ba1d97947a912ece31a581"
+    },
+    {
+      "path": "evidence/correctness/cpu-final-f5/linux-delivery-receipt.json",
+      "sha256": "642d799741d0a80a4a5424a12b088b81aa9af0be0f6dc19e042b0f1301f3196f",
+      "archive": "evidence/correctness/cpu-final-f5/linux-delivery.zip",
+      "archive_sha256": "3430d195c5756a7322159cdac573843df594acacf89a5d91e8dfab4ea9acdf45"
+    },
+    {
+      "path": "evidence/correctness/cpu-final-f5/windows-cuda-mixed-delivery-receipt.json",
+      "sha256": "9bbcc66157215a5641fd09584ccadc96ec8c389debfb4d11015764413ac6b8b5",
+      "archive": "evidence/correctness/cpu-final-f5/windows-cuda-mixed-delivery.zip",
+      "archive_sha256": "7b1800b1c9cb93bb80798169431ebce34e4dd63c12d0fb3a5096f3ee9b609522"
+    },
+    {
+      "path": "evidence/correctness/cpu-final-f5/windows-vulkan-mixed-delivery-receipt.json",
+      "sha256": "147ef6f72610eaf951bb1e40c482766c4dcba3b12513fef90a69705032e11b8e",
+      "archive": "evidence/correctness/cpu-final-f5/windows-vulkan-mixed-delivery.zip",
+      "archive_sha256": "e269573f1d087d31b3ccab45c99e9f44c6ced82c0376fd195b336ff950a6357c"
+    },
+    {
+      "path": "evidence/correctness/cpu-final-f5/mac-apple-mixed-delivery-receipt.json",
+      "sha256": "940136a2e61a164a48501ab1d697abc719e10791c850a97d539fac2ac2f506b8",
+      "archive": "evidence/correctness/cpu-final-f5/mac-apple-mixed-delivery.zip",
+      "archive_sha256": "d33a11a9762840d23005134f381b75d8640a293bda899a50934e5ac676daa18b"
+    },
+    {
+      "path": "evidence/correctness/cpu-final-f5/linux-cuda-mixed-delivery-receipt.json",
+      "sha256": "7664069dc8ffd35956cc87dd2d5c19e348f417573c3f91c9674d40e0443a1c2d",
+      "archive": "evidence/correctness/cpu-final-f5/linux-cuda-mixed-delivery.zip",
+      "archive_sha256": "a74936a3150816f2da151aa679d1c20b0f9f17fc6191e35b7d0d2102387e2929"
+    }
+  ],
+  "cpu_module_states": {
+    "compute": "CLOSED",
+    "compute_provider_onednn": "CLOSED",
+    "compute_provider_ggml": "CLOSED",
+    "graph_provider_onednn": "CLOSED",
+    "compute_provider_native": "CLOSED",
+    "compute_route_cpu": "CLOSED",
+    "graph_route_cpu": "CLOSED",
+    "compute_ggml_runtime": "CLOSED"
+  },
+  "best_of": {
+    "ENGINEERING_DEFAULT_REQUIRED": 377,
+    "COMPLETE_QUALIFIED_CHOICE": 43,
+    "SINGLE_CARRIER": 33
+  },
+  "loc": {
+    "code": 60161,
+    "files": 249,
+    "excludes": "tests/vendor/bench"
+  },
+  "cleanup": [
+    {
+      "path": "C:\\hv\\cpu-final-f4-sdk",
+      "removed": true,
+      "logical_bytes": 1514769665,
+      "files": 973,
+      "replacement": "C:\\hv\\cpu-final-f5-sdk",
+      "owner": "F4/F6 superseded delivery SDKs",
+      "archive_verified": "C:\\public\\project-hyle\\hyle\\evidence\\correctness\\cpu-final-f5\\windows-delivery.zip"
+    },
+    {
+      "path": "C:\\hv\\cpu-final-f4-mixed-cuda",
+      "removed": true,
+      "logical_bytes": 2788827328,
+      "files": 1056,
+      "replacement": "C:\\hv\\cpu-final-f5-mixed-cuda",
+      "owner": "F4/F6 superseded delivery SDKs",
+      "archive_verified": "C:\\public\\project-hyle\\hyle\\evidence\\correctness\\cpu-final-f5\\windows-cuda-mixed-delivery.zip"
+    },
+    {
+      "path": "C:\\hv\\cpu-final-f4-mixed-vulkan",
+      "removed": true,
+      "logical_bytes": 1715406228,
+      "files": 1137,
+      "replacement": "C:\\hv\\cpu-final-f5-mixed-vulkan",
+      "owner": "F4/F6 superseded delivery SDKs",
+      "archive_verified": "C:\\public\\project-hyle\\hyle\\evidence\\correctness\\cpu-final-f5\\windows-vulkan-mixed-delivery.zip"
+    },
+    {
+      "path": "/Users/kiro/hyle-verify/cpu-final-delivery-9a9936e8/f4-static-relocated",
+      "removed": true,
+      "logical_bytes": 15668541,
+      "files": 414,
+      "replacement": "/Users/kiro/hyle-verify/cpu-final-delivery-9a9936e8/f5-static-relocated",
+      "owner": "F4/F6 superseded verification SDK",
+      "root_checked": "/Users/kiro/hyle-verify/cpu-final-delivery-9a9936e8"
+    },
+    {
+      "path": "/Users/kiro/hyle-verify/cpu-final-delivery-9a9936e8/f4-shared-relocated",
+      "removed": true,
+      "logical_bytes": 14955971,
+      "files": 410,
+      "replacement": "/Users/kiro/hyle-verify/cpu-final-delivery-9a9936e8/f5-shared-relocated",
+      "owner": "F4/F6 superseded verification SDK",
+      "root_checked": "/Users/kiro/hyle-verify/cpu-final-delivery-9a9936e8"
+    },
+    {
+      "path": "/Users/kiro/hyle-verify/cpu-final-mixed-e0388fbd/f4-static-relocated",
+      "removed": true,
+      "logical_bytes": 34679850,
+      "files": 795,
+      "replacement": "/Users/kiro/hyle-verify/cpu-final-mixed-e0388fbd/f5-static-relocated",
+      "owner": "F4/F6 superseded verification SDK",
+      "root_checked": "/Users/kiro/hyle-verify/cpu-final-mixed-e0388fbd"
+    },
+    {
+      "path": "/Users/kiro/hyle-verify/cpu-final-mixed-e0388fbd/f4-shared-relocated",
+      "removed": true,
+      "logical_bytes": 29045387,
+      "files": 790,
+      "replacement": "/Users/kiro/hyle-verify/cpu-final-mixed-e0388fbd/f5-shared-relocated",
+      "owner": "F4/F6 superseded verification SDK",
+      "root_checked": "/Users/kiro/hyle-verify/cpu-final-mixed-e0388fbd"
+    },
+    {
+      "path": "/root/hyle-scratch/active-cpu-z/f4-static-relocated",
+      "removed": true,
+      "logical_bytes": 177366977,
+      "files": 456,
+      "replacement": "/root/hyle-scratch/active-cpu-z/f5-static-relocated",
+      "owner": "F4/F6 superseded verification SDK",
+      "root_checked": "/root/hyle-scratch/active-cpu-z"
+    },
+    {
+      "path": "/root/hyle-scratch/active-cpu-z/f4-shared-relocated",
+      "removed": true,
+      "logical_bytes": 55194307,
+      "files": 417,
+      "replacement": "/root/hyle-scratch/active-cpu-z/f5-shared-relocated",
+      "owner": "F4/F6 superseded verification SDK",
+      "root_checked": "/root/hyle-scratch/active-cpu-z"
+    },
+    {
+      "path": "/root/hyle-scratch/active-cpu-z/f4-mixed-static-relocated",
+      "removed": true,
+      "logical_bytes": 255095061,
+      "files": 490,
+      "replacement": "/root/hyle-scratch/active-cpu-z/f5-mixed-static-relocated",
+      "owner": "F4/F6 superseded verification SDK",
+      "root_checked": "/root/hyle-scratch/active-cpu-z"
+    },
+    {
+      "path": "/root/hyle-scratch/active-cpu-z/f4-mixed-shared-relocated",
+      "removed": true,
+      "logical_bytes": 117860334,
+      "files": 450,
+      "replacement": "/root/hyle-scratch/active-cpu-z/f5-mixed-shared-relocated",
+      "owner": "F4/F6 superseded verification SDK",
+      "root_checked": "/root/hyle-scratch/active-cpu-z"
+    }
+  ],
+  "removed_logical_bytes": 6718869649,
+  "unresolved_required_technical_work": [],
+  "limits": [
+    "Fixed checkpoint/packing/quant-state set; arbitrary new releases/vision are not automatically qualified.",
+    "This is base computation/graph execution, not model loading/tokenizer/sampling/server engine or full resident large-model inference.",
+    "Unknown hardware/software/thread/linkage domains use mature defaults; conditional WIN is not a universal SOTA claim.",
+    "Managed private allocation upper bounds may be unknown; strict policies/capture can reject and graph failure does not roll back completed outputs.",
+    "GPU states/mathematical/performance/format qualifications and old BLOCKED records unchanged."
+  ],
+  "bundle": "final-audit.zip",
+  "bundle_sha256": "6786f9606e63daa6d2085c75c50c8837adfc8428e307fa057fc93a84654f180a"
+}

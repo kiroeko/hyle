@@ -33,7 +33,7 @@ native/executor预算1及进程只允许已测逻辑CPU2。未匹配条件采用
 Graph的成熟完整region优先于这些leaf规则，避免破坏融合；执行和重复执行不重新选路。
 严格资源准入仍由Provider真实能力决定，数学候选不等于零private allocation或可捕获。
 当前[CPU收口](../implementation/tasks/compute/cpu-final-closure-plan.md)的F4规则交付已验收；
-F5已物理清退14种冗余自研数学，其删除后的差异验收仍在进行。SIMD/Mem基础和借入成熟原程序保留。
+F5已物理清退14种冗余自研数学，其三平台与mixed差异验收已完成。SIMD/Mem基础和借入成熟原程序保留。
 
 Native expert只提供当前保留的21种数学／存储机制，不能期待已退役算子的Native后备。
 逐种源码去留、必要dtype／variant和精确性能点见
@@ -54,7 +54,8 @@ Native expert只提供当前保留的21种数学／存储机制，不能期待�
 | Graph完整region | 完整ggml/oneDNN region先于leaf，不为上述默认表拆成熟程序 |
 
 这些是合理基线而非每个硬件/形状的统计冠军。显式expert工厂保留原行为，不附加普通默认policy。
-三平台CPU成熟承载与CPU-only／具名mixed SDK已按F1/F3验收；新规则及最终清退按当前goal继续验收。
+三平台CPU成熟承载、当前规则、CPU-only／具名mixed SDK与最终清退已按F1–F6验收。
+固定模型／量化／MTP范围与限制见[CPU当前覆盖](cpu-model-coverage.md)，没有任意新制品或全硬件统计最优承诺。
 
 Apple 与 Vulkan 各自使用原生 Program、运行槽和资源；普通 Direct/Graph 用法分别见
 [Apple MLX/Metal](apple-compute.md) 与 [Vulkan](vulkan-compute.md)。本文后续 Queue/Provider 的
@@ -1103,7 +1104,7 @@ Native SDPA已源级退役，旧严格workspace保证不再提供。CPU-only新c
 [三项最终裁决](../implementation/tasks/compute/cpu-three-operator-route-closure.md)。
 当前有限表之外的重叠域按具名成本和可用性选择成熟工程默认，不声称统计冠军；
 未知硬件、软件、flags/IPO、shared、线程或配置仍可执行已构建且合格的成熟数学。
-完整规则交付与清退终审正在[CPU最终收口](../implementation/tasks/compute/cpu-final-closure-plan.md)中完成。
+完整规则交付与清退终审已在[CPU最终收口](../implementation/tasks/compute/cpu-final-closure-plan.md)中完成。
 
 归一化 primitive 每次执行有 oneDNN 内部 metadata 分配，报告 `ProviderReplayClass::kManaged`；
 其数量不冒充 HYLE allocator 可计量的零字节。Graph 的 prepared-only 约束会排除该 managed
