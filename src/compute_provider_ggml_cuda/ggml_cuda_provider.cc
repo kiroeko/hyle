@@ -168,9 +168,11 @@ struct Invocation final {
     if (type == GGML_TYPE_F16) {
       key = ggml_permute(context, key, 0, 2, 1, 3);
       value = ggml_permute(context, value, 0, 2, 1, 3);
-      auto *mask =
-          ggml_new_tensor_2d(context, GGML_TYPE_F16, key->ne[1], query->ne[1]);
-      masks.push_back(mask);
+      ggml_tensor *mask = nullptr;
+      if (operation.causal) {
+        mask = ggml_new_tensor_2d(context, GGML_TYPE_F16, key->ne[1], query->ne[1]);
+        masks.push_back(mask);
+      }
       auto *result = ggml_flash_attn_ext(context, query, key, value, mask,
                                          operation.scale, 0, 0);
       (void)ggml_prec_set_acc(result, GGML_PREC_F32);
@@ -188,8 +190,9 @@ struct Invocation final {
     // Scale before masking: a zero or negative scale must not turn -inf
     // into NaN or +inf. Bottom-right causal offset is KV length - Q length.
     scores = ggml_scale(context, scores, operation.scale);
-    scores = ggml_diag_mask_inf(context, scores,
-                                static_cast<int>(key->ne[1] - query->ne[1]));
+    if (operation.causal)
+      scores = ggml_diag_mask_inf(context, scores,
+                                  static_cast<int>(key->ne[1] - query->ne[1]));
     auto *probabilities = ggml_soft_max(context, scores);
     value = ggml_cont(context, ggml_transpose(context, value));
     auto *result = ggml_mul_mat(context, value, probabilities);
@@ -624,7 +627,7 @@ bool supports(void *value, Operation operation,
   if (!value || !static_cast<Context *>(value)->qualified || outputs.empty())
     return false;
   if (const auto *attention = operation.get_if<ScaledDotProductAttention>()) {
-    if (outputs.size() != 1 || inputs.size() != 3 || !attention->causal ||
+    if (outputs.size() != 1 || inputs.size() != 3 ||
         attention->layout != AttentionLayout::kBatchSequenceHeadDepth ||
         attention->mask != MaskKind::kNone ||
         attention->accumulation_type != DataType::kFloat32 ||
@@ -651,7 +654,8 @@ bool supports(void *value, Operation operation,
         (q[2] == 64 || q[2] == 96) &&
         k[2] == 1 && q[3] == 576 && v[3] == 512 && v[0] == k[0] &&
         v[1] == k[1] && v[2] == k[2] && mla_output && outputs[0] == *mla_output;
-    if (q[0] <= 0 || q[0] > 65535 || q[1] <= 0 || k[1] < q[1] ||
+    if (q[0] <= 0 || q[0] > 65535 || q[1] <= 0 || k[1] <= 0 ||
+        (attention->causal && k[1] < q[1]) ||
         q[2] <= 0 || k[2] <= 0 || q[2] % k[2] != 0 || q[3] <= 0 ||
         q[3] != k[3] || q[0] != k[0] ||
         (!(inputs[1] == inputs[2] && outputs[0] == inputs[0]) && !absorbed_mla))

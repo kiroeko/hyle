@@ -12,6 +12,7 @@
 #include <exception>
 #include <span>
 #include <stdexcept>
+#include <string>
 #include <vector>
 
 #include "d5_gguf_test_support.h"
@@ -34,6 +35,12 @@ public:
         if(auto error=std::current_exception())std::rethrow_exception(error);
       } catch(const std::exception &error) {
         std::fprintf(stderr,"SIDE_REFERENCE_TERMINATE: %s\n",error.what());
+      } catch(const std::string &error) {
+        std::fprintf(stderr,"SIDE_REFERENCE_TERMINATE string: %s\n",error.c_str());
+      } catch(const char *error) {
+        std::fprintf(stderr,"SIDE_REFERENCE_TERMINATE text: %s\n",error);
+      } catch(int error) {
+        std::fprintf(stderr,"SIDE_REFERENCE_TERMINATE code: %d\n",error);
       } catch(...) {
         std::fprintf(stderr,"SIDE_REFERENCE_TERMINATE: unknown exception\n");
       }
@@ -57,6 +64,9 @@ inline std::vector<float> projection(hyle::compute::GgufQuantizedType type,
   if(k<=0 || n<=0 || input.size()%std::size_t(k)!=0)
     throw std::runtime_error("sidecar reference has invalid original geometry");
   thread_local Backend backend;
+  std::fprintf(stderr,"SIDE_REFERENCE projection n=%lld k=%lld rows=%zu type=%u\n",
+      static_cast<long long>(n),static_cast<long long>(k),input.size()/k,static_cast<unsigned>(type));
+  std::fflush(stderr);
   Storage storage;
   storage.context=ggml_init({ggml_tensor_overhead()*4+ggml_graph_overhead_custom(8,false),nullptr,true});
   if(!storage.context)throw std::runtime_error("sidecar reference context allocation failed");
@@ -90,6 +100,9 @@ inline std::vector<float> grouped(const hyle::compute::TensorDesc &description,
   const auto type=description.is_plain()?GGML_TYPE_BF16:
       d5_gguf_test::native_type(hyle::compute::gguf_quantized_type(description.storage_format()).value());
   thread_local Backend backend;
+  std::fprintf(stderr,"SIDE_REFERENCE grouped n=%lld k=%lld tokens=%lld slots=%lld type=%d\n",
+      static_cast<long long>(n),static_cast<long long>(k),static_cast<long long>(tokens),
+      static_cast<long long>(slots),int(type));std::fflush(stderr);
   Storage storage;
   storage.context=ggml_init({ggml_tensor_overhead()*6+ggml_graph_overhead_custom(8,false),nullptr,true});
   if(!storage.context)throw std::runtime_error("sidecar grouped reference context allocation failed");
