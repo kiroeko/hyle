@@ -142,3 +142,8 @@ Windows 只加载 System32 的系统 NVML，临时关闭当前线程的 loader �
 中央已有 Platform 直接依赖声明与 public guide。NVML不链接为必需 DLL、不复制 driver 文件。
 已有数学、SM/runtime/toolkit 资格与错误/资源程序保持；缺 NVML 不形成 CUDA Context 错误。
 补具名测试覆盖稀疏缺 release、API/release 区分与实际 snapshot 差分，不写镜像实现的测试。
+
+B2 产品 `ffeb224ed`，namespace 纠正后的批次 `45a1d4a8` 已通过 Windows backend 与原 Provider／普通
+两入口接线验证。实际快照与原NVML均为617.14；API整数独立，未知release不阻断硬件/API匹配。
+原主批的fixture SKIP已只补缺项，未重跑主批。完整[批次证据](../../../../evidence/correctness/cuda-final-u23/README.md)
+保留失败与补验边界；本包三交付／Linux／全部能力仍待验，不提前CLOSED。

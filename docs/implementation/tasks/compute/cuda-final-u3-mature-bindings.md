@@ -65,3 +65,26 @@ IQ1_XS/XXS/XXXS 仍属 G2，不因 source 存在授予编译／运行资格。
 Graph Provider 当前 CANDIDATE 依法退回 AUDITED，因为同源 operation 支持集／正常 workload 改变，
 不是重新修改原 Graph API。两个 owner 绑定本卡仅 G1，保持 U2 冷事实迁移并在联合稳定候选运行验证。
 N1/N2/G2/R1 仍待各自接缝 AUDITED；没有自研扩张授权。
+
+G1 局部接线批次 `45a1d4a8` 的 stock格式／embedding／grouped／Graph replay及既有普通消费者
+已通过 Windows 验证，见[U2/U3 批次](../../../../evidence/correctness/cuda-final-u23/README.md)。
+这不是当前104制品全部精确数值合同、Linux或三交付的完成结论，G1仍需随完整路线补齐这些适用项。
+
+## G2 子批 SCOPED：原 narrow IQ1 CUDA port
+
+U1/C1固定原Unsloth `46cbf0e9` 的源码已在本地，三个物理格式与当前CPU端口完全相同。
+源diff只取对应新增traits、convert、vecdot、MMVQ、MMQ／config／分发、三个原模板实例，以及GPU表和QI/QR定义。
+不复制全部0.22 GPU core、不升级当前0.24 GPU pin，不引入AMD/HIP数学。
+真实ABI差异只见新版type traits需要 `bs=sizeof(block)`，不是新算法。数学/表/原模板正文保持原SHA。
+source audit已生成11个文件的有界context补丁＋3个原实例，无产品修改或运行资格。
+
+scope owner：compute_ggml_runtime（源manifest组合／原程序／license/build identity）、
+compute_provider_ggml_cuda（mapping／原prepare资格）与 graph_provider_ggml_cuda（同源region）。
+原CPU port和CUDA resource edits需由 owning helper归并为单一旧core manifest，满足现prepare_source的
+唯一路径／before/after hash，不扩公共治理。CUDA-only也须取得原物理types／codec，但CPU执行target仍OFF。
+三个模板原文件可作为owning target sources加到已有ggml-cuda，唯一include接缝改为同一build-local mmq.cuh，
+不为新文件扩prepare_source通用协议，不维护第二源码缓存。
+
+预算一次原源码／ABI账单、一次原port组合和差分自检、一个稳定candidate的Windows/Linux两入口／
+原8个expert合同与model内宽／state／三交付／mixed CPU差异。至多一批具名接缝纠正；不扩自研或反复换peer。
+未来产品修改前G2独立AUDITED；暂不把本scope当实现授权。
