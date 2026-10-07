@@ -165,3 +165,7 @@ Graph34中33通过，无skip（包括本地原版程序与完整recurrent）；K
 未资格化，下一步仅对actual query/cache/state与独立源方程进行有限因果对账。原结果保存在
 本轮`.scratch/validation/cuda-final-u3-r1/windows-family-programs`及`windows-family-correction`，
 之后随本子批归档；不盲测、不改whole-fragment门，不把已sealed559合同批次撤回为未运行。
+
+实际源码反例已定位到原 F32 MMF 的 TF32 指令与未消费精度要求的 dispatch；定向 runtime
+接缝单独按[原 F32 分发卡](cuda-final-u3-f32-dispatch.md)审计。前述仅 reference／cache 的推断
+不足以解释全部误差，原FAIL保持，禁止以近零点值／整体误差较小直接撤门签PASS。
