@@ -59,7 +59,8 @@ int main() {
     CloseHandle(process.hThread);CloseHandle(process.hProcess);
     if(!forward(stdout_path,stdout) || !forward(stderr_path,stderr))return 74;
     DeleteFileW(stdout_path.c_str());DeleteFileW(stderr_path.c_str());
-    if(waited!=WAIT_OBJECT_0 || !read || code!=0)return static_cast<int>(code);
+    if(waited!=WAIT_OBJECT_0 || !read)return 73;
+    if(code!=0)return static_cast<int>(code);
   }
   return 0;
 }
