@@ -7,6 +7,11 @@ target_include_directories(nanobench SYSTEM PUBLIC "${_hyle_root}/third_party/na
 add_executable(hyle_cpu_best_of_bench cpu_best_of_bench.cc)
 target_compile_features(hyle_cpu_best_of_bench PRIVATE cxx_std_23)
 target_link_libraries(hyle_cpu_best_of_bench PRIVATE hyle::compute hyle::graph nanobench)
+# Developer qualification explicitly selects this implementation. Its feature
+# definition remains private to the ordinary CPU route's implementation closure.
+if(TARGET hyle::_factor_compute_provider_ggml)
+  target_link_libraries(hyle_cpu_best_of_bench PRIVATE hyle::_factor_compute_provider_ggml)
+endif()
 set_property(TARGET hyle_cpu_best_of_bench PROPERTY INTERPROCEDURAL_OPTIMIZATION FALSE)
 hyle_stage_runtime_dependencies(hyle_cpu_best_of_bench)
 add_executable(hyle_perf_control_bench "${_hyle_root}/bench/integration/perf_control_bench.cc")

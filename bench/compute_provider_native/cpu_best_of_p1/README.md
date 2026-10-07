@@ -2,6 +2,9 @@
 
 Owning task: [F4](../../../docs/implementation/tasks/compute/cpu-final-f4-best-of.md).
 This is development qualification code; ordinary users still select CPU only.
+The development consumer explicitly links the SDK's already exported ggml
+implementation target to receive its factory feature definition; ordinary
+CPU routing already includes that implementation through its private closure.
 
 `--probe` prepares the exact same descriptions and data with independently named
 Native/oneDNN/ggml/ATen factories, records real declines and resource facts, runs
