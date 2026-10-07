@@ -78,8 +78,9 @@ if(_cpu AND NOT _cpu_upgrade)
   list(APPEND _locked ggml_cpu_runtime_patches)
   list(APPEND _licenses
     "${_cpu_port}/LICENSE|${CMAKE_INSTALL_DATADIR}/licenses/Hyle|ggml-cpu-IQ1-LICENSE"
-    "${_cpu_port}/NOTICE.md|${CMAKE_INSTALL_DATADIR}/licenses/Hyle|ggml-cpu-IQ1-original-NOTICE.md"
-    "${CMAKE_CURRENT_SOURCE_DIR}/CPU_SOURCE_NOTICE.txt|${CMAKE_INSTALL_DATADIR}/licenses/Hyle|ggml-mixed-CPU-NOTICE.txt")
+    "${_cpu_port}/NOTICE.md|${CMAKE_INSTALL_DATADIR}/licenses/Hyle|ggml-cpu-IQ1-original-NOTICE.md")
+  set(_cpu_notice_registration DEVELOPMENT_FILE_SPECS
+    "${CMAKE_CURRENT_SOURCE_DIR}/CPU_SOURCE_NOTICE.txt|${CMAKE_INSTALL_DATADIR}/doc/Hyle|ggml-mixed-CPU-NOTICE.txt")
   set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS
     "${_cpu_port}/patches.json" "${CMAKE_CURRENT_SOURCE_DIR}/prepare_mixed_cpu_manifest.py")
 endif()
@@ -267,7 +268,8 @@ hyle_register_package_dependency(
   STATIC_EXPORT_TARGETS ${_vendor_targets}
   STATIC_FIND_DEPENDENCIES Threads
   LOCKED_DEPENDENCIES ${_locked}
-  RUNTIME_FILE_SPECS ${_licenses})
+  RUNTIME_FILE_SPECS ${_licenses}
+  ${_cpu_notice_registration})
 if(HYLE_COMPUTE_CUDA_ENABLED)
   hyle_register_package_dependency(
     NAME ggml_cuda_sdk OWNER compute_ggml_runtime
