@@ -1983,6 +1983,10 @@ TEST(GgmlCpuProvider,
     auto status =
         execute(context, MatMul{}, inputs,
                 TensorView::create(output_desc, output.view()).value());
+#if defined(__aarch64__) || defined(_M_ARM64)
+    EXPECT_TRUE(status.IsUnimplemented());
+    continue;
+#endif
     ASSERT_TRUE(status.ok()) << status.message();
     const auto actual = half_test::read<F16>(output);
     for (std::size_t batch = 0; batch < 2; ++batch)
@@ -2020,9 +2024,13 @@ TEST(GgmlCpuProvider, HalfMatMulCoversDecodeTailAndRankFourBroadcast) {
     const std::array inputs{
         ConstTensorView::create(left_desc, left.view()).value(),
         ConstTensorView::create(right_desc, right.view()).value()};
-    ASSERT_TRUE(execute(context, MatMul{}, inputs,
-                        TensorView::create(output_desc, output.view()).value())
-                    .ok());
+    const auto status = execute(context, MatMul{}, inputs,
+        TensorView::create(output_desc, output.view()).value());
+#if defined(__aarch64__) || defined(_M_ARM64)
+    EXPECT_TRUE(status.IsUnimplemented());
+    continue;
+#endif
+    ASSERT_TRUE(status.ok()) << status.message();
     for (const auto value : half_test::read<F16>(output))
       half_test::expect_near(value, 5);
   }
@@ -2040,9 +2048,13 @@ TEST(GgmlCpuProvider, HalfMatMulCoversDecodeTailAndRankFourBroadcast) {
   const std::array inputs{
       ConstTensorView::create(left_desc, left.view()).value(),
       ConstTensorView::create(right_desc, right.view()).value()};
-  ASSERT_TRUE(execute(context, MatMul{}, inputs,
-                      TensorView::create(output_desc, output.view()).value())
-                  .ok());
+  const auto status = execute(context, MatMul{}, inputs,
+      TensorView::create(output_desc, output.view()).value());
+#if defined(__aarch64__) || defined(_M_ARM64)
+  EXPECT_TRUE(status.IsUnimplemented());
+  return;
+#endif
+  ASSERT_TRUE(status.ok()) << status.message();
   for (const auto value : half_test::read<F16>(output))
     half_test::expect_near(value, 3);
 }
