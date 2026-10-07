@@ -43,13 +43,6 @@ Status invalidate_for_read(mem::ConstBufferView storage) noexcept {
   return storage.invalidate();
 }
 
-bool same_storage(mem::ConstBufferView left,
-                  mem::BufferView right) noexcept {
-  return left.resource() == right.resource() &&
-         left.native_handle() == right.native_handle() &&
-         left.offset() == right.offset() && left.size() == right.size();
-}
-
 void coordinates(std::span<const std::int64_t> dimensions,
                  std::size_t linear,
                  std::array<std::size_t, kMaxTensorRank> &result) noexcept {
