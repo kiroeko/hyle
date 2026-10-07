@@ -1,0 +1,23 @@
+{
+  "kind": "CPU core carrier audit only; no mixed-route qualification",
+  "original_core": "456172ec733a135778adcd32d00e576a58232e45",
+  "iq1_original": "46cbf0e95786fe8f5b7c0e86d57aaf8f8eceea7f",
+  "edits": 19,
+  "files": 11,
+  "tensor_bytes_before_after": 336,
+  "plan_bytes_before_after": 56,
+  "old_enum_values_preserved": true,
+  "types": [
+    64,
+    65,
+    66
+  ],
+  "row_bytes": [
+    46,
+    42,
+    38
+  ],
+  "matmul_and_gather": "PASS including varied physical rows/scales",
+  "archive_sha256": "e6be39c92527b829cc9cb117f4d2df6a4e74f6844e092676467be697c9bba8cb",
+  "archive_bytes": 30553
+}

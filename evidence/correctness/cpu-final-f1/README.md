@@ -44,3 +44,15 @@ Mac Air已读取当前真实身份且可达，尚未运行新版CPU产品；macO
 [receipt](b4-receipt.json)、[原失败/纠正与完整日志](b4-engineering-defaults.zip)。
 原库能力/配置/生命周期及PreparedVTable保留，静态cold表不增加Context allocation；expert不带普通默认policy。
 这是工程默认，不是新性能WIN；其它平台和最终交付未验，本包仍未关闭。
+
+## B2同core原CPU端口
+
+[原port探针receipt](b2-probe-receipt.json)、[11文件/19接缝manifest、布局与MatMul/Gather日志](b2-original-port-probe.zip)。
+旧core保持既有enum数值及tensor336/plan56，只添加CPU原IQ1 traits/编码；三格式不同row/scale实际输出通过。
+无自研数学、无双core、无新GPU格式资格。产品生成器与实际探针的派生manifest逐项一致。
+CPU+Vulkan标准产品组合仍在configure/build验收中，原失败保留，本页不把探针写成该组合PASS。
+
+归档同时含官方Mac ARM64 LibTorch2.8候选库存：原包71,787,762字节，SHA
+`be0642231d2008c7b90071fc0898d82a0c002d47f38350ebf3ed779fc01972d7`；
+版本标签`2.8.0`与Win/Linux的`2.8.0+cpu`不同。只有获取/身份盘点，尚无HYLE Mac CPU资格。
+当前统一实现LOC为**61,242行/251文件**（新增cold默认与身份胶水，数学新增0）；本节覆盖前面的旧子批计数。
