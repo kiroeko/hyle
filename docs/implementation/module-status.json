@@ -427,9 +427,10 @@
     },
     {
       "module": "compute_provider_native",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/cpu-final-f4-best-of.md",
-      "summary": "CPU最终F4 AUDITED：固定实际四候选precision/layout/resource交集、self35种15族与borrowed/unique边界，有限V1/V2批量consumer+资格、R1/R2冷规则/普通验收、L1退役ledger；不优化self、不复活旧WIN、不改公共仪器。"
+      "summary": "CPU最终F4 CANDIDATE：当前43精确全候选优选及逐合同成熟默认固定，旧187/17已移除；CPU-only三平台三交付与Win/Mac mixed delta通过，Linux mixed static批次待结；不新增数学或P1。",
+      "candidate": "a7ccfc6639483aee4a76403a35fb32d1732441ec"
     },
     {
       "module": "compute_sched",
@@ -438,15 +439,17 @@
     },
     {
       "module": "compute_route_cpu",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/cpu-final-f4-best-of.md",
-      "summary": "CPU最终F4 AUDITED：固定实际四候选precision/layout/resource交集、self35种15族与borrowed/unique边界，有限V1/V2批量consumer+资格、R1/R2冷规则/普通验收、L1退役ledger；不优化self、不复活旧WIN、不改公共仪器。"
+      "summary": "CPU最终F4 CANDIDATE：当前43精确全候选优选及逐合同成熟默认固定，旧187/17已移除；CPU-only三平台三交付与Win/Mac mixed delta通过，Linux mixed static批次待结；不新增数学或P1。",
+      "candidate": "a7ccfc6639483aee4a76403a35fb32d1732441ec"
     },
     {
       "module": "graph_route_cpu",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/cpu-final-f4-best-of.md",
-      "summary": "CPU最终F4 AUDITED：固定实际四候选precision/layout/resource交集、self35种15族与borrowed/unique边界，有限V1/V2批量consumer+资格、R1/R2冷规则/普通验收、L1退役ledger；不优化self、不复活旧WIN、不改公共仪器。"
+      "summary": "CPU最终F4 CANDIDATE：当前43精确全候选优选及逐合同成熟默认固定，旧187/17已移除；CPU-only三平台三交付与Win/Mac mixed delta通过，Linux mixed static批次待结；不新增数学或P1。",
+      "candidate": "a7ccfc6639483aee4a76403a35fb32d1732441ec"
     },
     {
       "module": "compute_provider_cublas",

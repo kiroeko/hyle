@@ -1,8 +1,8 @@
 # F4 CPU全重复域批量best-of
 
-<!-- MODULE REVIEW: AUDITED -->
+<!-- MODULE REVIEW: CANDIDATE -->
 
-当前包SCOPED，baseline `83240ab43ba80cd549dcf03933e3d69e8f94c2b8`（登记完整revision），F1/F2/F3已完成。
+当前包CANDIDATE，baseline `83240ab43ba80cd549dcf03933e3d69e8f94c2b8`，F1/F2/F3已完成。
 owner compute_provider_native、compute_route_cpu、graph_route_cpu；总合同[CPU最终收口](cpu-final-closure-plan.md)。输入F2重叠域与F3当前合格承载。
 只比较实际可执行且同语义/精度/资源/完成边界的候选，覆盖oneDNN/ggml/ATen及剩余Native，
 完整region与等价完整程序比较，保留融合。单承载只正确性/资源/P0，能力差异不能算loss。
@@ -167,3 +167,11 @@ R2剩余有限交付差异：本轮改变CPU facade私有factory/rule seam，F1�
 普通CPU context／工程默认／43点不泄露CPU-only WIN及原40格。只用缓存producer与同一consumer，
 重型串行、j2，不重测GPU性能／扩GPU格式／变更旧GPU状态。完成后终审F4并按协议关闭，再开F5。
 当前产品/API/数学/常态形状已停止变化；新证据/SDK验证不改变冻结产品，不签CPU goal全完成。
+
+### CANDIDATE冻结
+
+candidate `a7ccfc6639483aee4a76403a35fb32d1732441ec`；后续commit仅文档、状态和原始证据。
+Native／CPU route／Graph CPU route按协议进入CANDIDATE，算法、对象、普通入口和冷规则不再变化。
+CPU-only三平台及Win CUDA/Vulkan、Mac Apple mixed的当前接缝三交付已实际通过；
+Linux CUDA mixed source/shared已过，static仍在原串行批次中。未结束项不提前签PASS或CLOSED。
+旧GPU owner／公共Graph状态保持；有限L1输入只交给后续F5，不在本包源级删除算子。
