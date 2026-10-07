@@ -101,7 +101,7 @@ function(hyle_stage_runtime_dependencies target)
     return()
   endif()
 
-  if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+  if(CMAKE_SYSTEM_NAME MATCHES "^(Linux|Darwin)$")
     _hyle_collect_runtime_files("${target}" _runtime_files)
     if(_runtime_files)
       set(_runtime_paths "")
@@ -113,8 +113,10 @@ function(hyle_stage_runtime_dependencies target)
       # RUNPATH is not transitive: the HYLE shared adapter, rather than the
       # executable, needs torch_cpu. Opt-in RPATH also covers its SDK-local
       # dependencies, without making a second SDK copy for every application.
-      target_link_options(${target} PRIVATE
-        "$<$<BOOL:$<JOIN:${_runtime_paths},>>:LINKER:--disable-new-dtags>")
+      if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+        target_link_options(${target} PRIVATE
+          "$<$<BOOL:$<JOIN:${_runtime_paths},>>:LINKER:--disable-new-dtags>")
+      endif()
     endif()
     set_property(TARGET ${target} PROPERTY HYLE_RUNTIME_STAGING_TARGET TRUE)
     return()

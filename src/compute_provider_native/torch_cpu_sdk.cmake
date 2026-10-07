@@ -6,10 +6,12 @@ set(HYLE_COMPUTE_TORCH_CPU_ENABLED OFF)
 if(HYLE_COMPUTE_TORCH_CPU STREQUAL "OFF")
   return()
 endif()
-if(NOT CMAKE_SYSTEM_NAME MATCHES "^(Windows|Linux)$" OR
-   NOT HYLE_TARGET_PROCESSOR STREQUAL "x86_64")
+if(NOT (CMAKE_SYSTEM_NAME MATCHES "^(Windows|Linux)$" AND
+        HYLE_TARGET_PROCESSOR STREQUAL "x86_64") AND
+   NOT (CMAKE_SYSTEM_NAME STREQUAL "Darwin" AND
+        HYLE_TARGET_PROCESSOR STREQUAL "aarch64"))
   if(HYLE_COMPUTE_TORCH_CPU STREQUAL "ON")
-    message(FATAL_ERROR "The qualified TorchAO CPU adapter requires Windows/Linux x86_64")
+    message(FATAL_ERROR "The TorchAO CPU adapter requires Windows/Linux x86_64 or macOS ARM64")
   endif()
   return()
 endif()
@@ -35,4 +37,4 @@ foreach(_hyle_torch_target IN ITEMS torch torch_cpu c10)
   endif()
 endforeach()
 set(HYLE_COMPUTE_TORCH_CPU_ENABLED ON)
-message(STATUS "HYLE: original TorchAO/ATen CPU low precision -- LibTorch 2.8.0+cpu")
+message(STATUS "HYLE: original TorchAO/ATen CPU low precision -- locked LibTorch 2.8.0")
