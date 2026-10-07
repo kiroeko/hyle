@@ -224,7 +224,8 @@ ProviderPrepareOutcome prepare(void *state, const detail::ProviderPrepareRequest
   if (!storage) return ProviderPrepareOutcome::resource_declined(Status::ResourceExhausted("CUDA ATen program allocation failed"));
   auto *program = ::new (storage) Program{.context = context,
       .operation = *request.operation.custom_as<model_ops::ArtifactWeightDecode>(),
-      .inputs = {}, .output = request.outputs[0], .count = request.inputs.size()};
+      .inputs = {}, .output = request.outputs[0], .count = request.inputs.size(),
+      .shifts = {}, .order = {}};
   for (std::size_t i = 0; i < program->count; ++i) program->inputs[i] = request.inputs[i];
   cuda::detail::ScopedPrimaryContext scope(context.primary);
   if (!scope) { destroy_program(program, allocator); return ProviderPrepareOutcome::error(scope.status()); }
