@@ -1,0 +1,21 @@
+{
+  "candidate": "1d14f6dbe4a52baadad4170886ec4931bb94a629",
+  "scope": "workload-matched AA, fixed eight runs/four order strata, shared nanobench parser, caller CPU2; not P1, no winner or loss",
+  "artifact": {
+    "executable_sha256": "bd595cb7b171ab986e04c38fc597dfdae07dab4080eb831577198c43709ab13e",
+    "consumer_sha256": "f666369f0a5c3f07adae9d6c640ec53e11f14db539f04b6c11249307072fad39",
+    "pair_header_sha256": "d4b8b66e571d0060f7d0acd716eab855a3acefd49becc6b1b1b163f7d3414142"
+  },
+  "runs": 8,
+  "pairs": 767,
+  "qualified": 334,
+  "inconclusive": 433,
+  "gate": "INCONCLUSIVE",
+  "performance": "No A/B sampled; no WIN/LOSS/PARITY or self-retirement conclusion",
+  "limits": [
+    "machine/profile/controls and immutable full P1 still required",
+    "failed AA domains use engineering-default decision or named blocker; no increased sample budget"
+  ],
+  "archive_sha256": "63cf0d7dd7b8849734f9b5ae7ff3edecf13a43953c7cc5ce22bef36e0440240f",
+  "archive_bytes": 672129
+}

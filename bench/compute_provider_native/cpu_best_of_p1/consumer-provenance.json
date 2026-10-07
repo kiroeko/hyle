@@ -1,0 +1,28 @@
+{
+  "kind": "NAMED_PRODUCT_JOURNEY",
+  "task": "docs/implementation/tasks/compute/cpu-final-f4-best-of.md",
+  "demand": "docs/implementation/tasks/compute/cpu-final-demand-carriers.json",
+  "normal": {
+    "source": "Qwen/Qwen3.5-2B original text config and fixed operator/state journeys",
+    "hidden_width": 2048,
+    "tokens": [1, 32],
+    "matrix": "BF16 original [6144,2048] physical weights; no free transposition"
+  },
+  "holdout": {
+    "source": "F2 fixed original norm/projection roles plus ordinary model-free tensor pipeline",
+    "hidden_width": 4096,
+    "tokens": [1],
+    "matrix": "F2 F32 [4,16384] and [24,16384] physical layouts; dense is a separate ordinary tensor request"
+  },
+  "input_distribution": "shared deterministic finite bytes, original dtype/physical strides/precision; preflight does not expand prior correctness qualification",
+  "ownership": "caller retains mutable input/output and any requested workspace through true completion; separate cold prepared programs and exclusive invocations",
+  "comparison": "same exact public math request and user-observable complete overwrite under a caller budget of one; private allocation/packing/checking/runtime costs are charged",
+  "cost": {
+    "cold": "context creation, metadata, compile, persistent/slot/workspace allocation recorded separately",
+    "hot": "Invocation.submit through true Completion.wait, all numeric input copy, cast/packing, managed temporary allocation, checked indices, completion and output write",
+    "private_resources": "actual prepared facts retained; managed unknown cannot satisfy a strict private-memory contract merely by mathematical equivalence",
+    "graph": "complete original regions and observable boundaries require separate qualification; these leaf measurements cannot claim their fusion cost"
+  },
+  "scope": "finite four named-provider overlap, not model frequency or full-model inference throughput",
+  "limits": "unknown hardware/model/software domains use legal mature engineering defaults; no online timing or user provider ranking"
+}

@@ -1,0 +1,1616 @@
+{
+  "unary-0-t6-r32-h2048-o6-native-vs-ggml": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "unary-1-t6-r1-h2048-o6-native-vs-ggml": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "unary-1-t6-r32-h2048-o6-native-vs-ggml": [
+    "peer:fixed-bias"
+  ],
+  "unary-3-t6-r32-h2048-o6-native-vs-ggml": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "unary-4-t6-r1-h2048-o6-native-vs-ggml": [
+    "peer:fixed-bias"
+  ],
+  "unary-5-t6-r32-h2048-o6-native-vs-ggml": [
+    "peer:fixed-bias"
+  ],
+  "unary-5-t6-r1-h4096-o6-native-vs-ggml": [
+    "peer:fixed-bias"
+  ],
+  "unary-6-t6-r1-h2048-o6-native-vs-ggml": [
+    "peer:fixed-bias"
+  ],
+  "unary-7-t6-r32-h2048-o6-native-vs-aten": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "unary-7-t6-r1-h4096-o6-native-vs-aten": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "unary-8-t6-r32-h2048-o6-native-vs-ggml": [
+    "peer:fixed-bias"
+  ],
+  "unary-8-t6-r1-h4096-o6-native-vs-ggml": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "unary-12-t6-r1-h2048-o6-onednn-vs-aten": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "unary-12-t6-r32-h2048-o6-native-vs-aten": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "unary-12-t6-r32-h2048-o6-onednn-vs-aten": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "unary-12-t6-r1-h4096-o6-native-vs-onednn": [
+    "peer:fixed-bias"
+  ],
+  "unary-12-t6-r1-h4096-o6-onednn-vs-aten": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "binary-2-t6-r1-h2048-o6-native-vs-ggml": [
+    "peer:fixed-bias"
+  ],
+  "binary-2-t6-r32-h2048-o6-native-vs-ggml": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "binary-3-t6-r1-h2048-o6-native-vs-ggml": [
+    "peer:gross-instability"
+  ],
+  "binary-3-t6-r32-h2048-o6-native-vs-ggml": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "binary-4-t6-r1-h2048-o6-native-vs-aten": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "binary-4-t6-r32-h2048-o6-native-vs-aten": [
+    "peer:fixed-bias"
+  ],
+  "binary-4-t6-r1-h4096-o6-native-vs-aten": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "binary-5-t6-r32-h2048-o6-native-vs-aten": [
+    "candidate:fixed-bias"
+  ],
+  "reduce-0-t6-r1-h2048-o6-native-vs-ggml": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "reduce-0-t6-r1-h2048-o6-native-vs-aten": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "reduce-0-t6-r32-h2048-o6-native-vs-ggml": [
+    "peer:fixed-bias"
+  ],
+  "reduce-0-t6-r32-h2048-o6-native-vs-aten": [
+    "peer:fixed-bias"
+  ],
+  "reduce-0-t6-r32-h2048-o6-ggml-vs-aten": [
+    "peer:fixed-bias"
+  ],
+  "reduce-0-t6-r1-h4096-o6-ggml-vs-aten": [
+    "peer:gross-instability"
+  ],
+  "reduce-1-t6-r1-h2048-o6-ggml-vs-aten": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "reduce-1-t6-r32-h2048-o6-ggml-vs-aten": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "reduce-1-t6-r1-h4096-o6-native-vs-aten": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "reduce-1-t6-r1-h4096-o6-ggml-vs-aten": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "reduce-2-t6-r1-h2048-o6-native-vs-aten": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "reduce-2-t6-r1-h4096-o6-native-vs-aten": [
+    "candidate:gross-instability",
+    "candidate:fixed-bias",
+    "peer:fixed-bias"
+  ],
+  "reduce-3-t6-r1-h2048-o6-native-vs-aten": [
+    "peer:fixed-bias"
+  ],
+  "reduce-3-t6-r32-h2048-o6-native-vs-aten": [
+    "peer:fixed-bias"
+  ],
+  "reduce-3-t6-r1-h4096-o6-native-vs-aten": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "norm-0-t6-r1-h2048-o6-native-vs-onednn": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "norm-0-t6-r1-h2048-o6-native-vs-aten": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "norm-0-t6-r1-h2048-o6-onednn-vs-aten": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "norm-0-t6-r32-h2048-o6-native-vs-onednn": [
+    "peer:fixed-bias"
+  ],
+  "norm-0-t6-r32-h2048-o6-native-vs-ggml": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "norm-0-t6-r32-h2048-o6-native-vs-aten": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "norm-0-t6-r32-h2048-o6-onednn-vs-aten": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "norm-0-t6-r1-h4096-o6-native-vs-ggml": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "norm-0-t6-r1-h4096-o6-native-vs-aten": [
+    "peer:gross-instability"
+  ],
+  "norm-0-t6-r1-h4096-o6-onednn-vs-aten": [
+    "peer:fixed-bias"
+  ],
+  "norm-0-t6-r1-h4096-o6-ggml-vs-aten": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "norm-1-t6-r1-h2048-o6-native-vs-onednn": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "norm-1-t6-r1-h2048-o6-native-vs-aten": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "norm-1-t6-r1-h2048-o6-onednn-vs-ggml": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "norm-1-t6-r1-h2048-o6-onednn-vs-aten": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "norm-1-t6-r1-h2048-o6-ggml-vs-aten": [
+    "peer:fixed-bias"
+  ],
+  "norm-1-t6-r1-h4096-o6-native-vs-onednn": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "select-t6-r1-h2048-o6-native-vs-aten": [
+    "candidate:fixed-bias"
+  ],
+  "select-t6-r1-h4096-o6-native-vs-onednn": [
+    "candidate:gross-instability",
+    "candidate:fixed-bias"
+  ],
+  "select-t6-r1-h4096-o6-native-vs-aten": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "concat-t6-r1-h2048-o6-native-vs-ggml": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "concat-t6-r1-h2048-o6-native-vs-aten": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "concat-t6-r1-h2048-o6-ggml-vs-aten": [
+    "peer:fixed-bias"
+  ],
+  "concat-t6-r32-h2048-o6-native-vs-ggml": [
+    "peer:fixed-bias"
+  ],
+  "concat-t6-r32-h2048-o6-ggml-vs-aten": [
+    "peer:fixed-bias"
+  ],
+  "concat-t6-r1-h4096-o6-native-vs-aten": [
+    "peer:fixed-bias"
+  ],
+  "fill-t6-r32-h2048-o6-native-vs-ggml": [
+    "candidate:fixed-bias"
+  ],
+  "fill-t6-r32-h2048-o6-native-vs-aten": [
+    "peer:fixed-bias"
+  ],
+  "fill-t6-r1-h4096-o6-native-vs-ggml": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "gather-t6-r32-h2048-o12-native-vs-ggml": [
+    "candidate:fixed-bias",
+    "peer:gross-instability"
+  ],
+  "gather-t6-r1-h4096-o12-native-vs-ggml": [
+    "peer:fixed-bias"
+  ],
+  "gather-t6-r1-h4096-o12-ggml-vs-aten": [
+    "peer:fixed-bias"
+  ],
+  "assign-t6-r32-h2048-o12-native-vs-aten": [
+    "peer:fixed-bias"
+  ],
+  "assign-t6-r1-h4096-o12-native-vs-aten": [
+    "candidate:fixed-bias",
+    "peer:gross-instability"
+  ],
+  "scatter-add-t6-r1-h2048-o12-native-vs-aten": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "scatter-add-t6-r1-h2048-o12-ggml-vs-aten": [
+    "candidate:gross-instability",
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "scatter-add-t6-r32-h2048-o12-native-vs-aten": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "scatter-add-t6-r32-h2048-o12-ggml-vs-aten": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "scatter-add-t6-r1-h4096-o12-native-vs-ggml": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "scatter-add-t6-r1-h4096-o12-native-vs-aten": [
+    "peer:fixed-bias"
+  ],
+  "scatter-add-t6-r1-h4096-o12-ggml-vs-aten": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "gather-t6-r1-h2048-o14-native-vs-aten": [
+    "peer:fixed-bias"
+  ],
+  "gather-t6-r32-h2048-o14-native-vs-aten": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "assign-t6-r1-h2048-o14-native-vs-aten": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "assign-t6-r32-h2048-o14-native-vs-aten": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "scatter-add-t6-r1-h2048-o14-native-vs-aten": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "scatter-add-t6-r32-h2048-o14-native-vs-aten": [
+    "peer:gross-instability"
+  ],
+  "softmax-0-t6-r1-h2048-o6-native-vs-aten": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "softmax-0-t6-r1-h2048-o6-ggml-vs-aten": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "softmax-0-t6-r32-h2048-o6-native-vs-aten": [
+    "peer:fixed-bias"
+  ],
+  "softmax-0-t6-r32-h2048-o6-ggml-vs-aten": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "softmax-0-t6-r1-h4096-o6-native-vs-ggml": [
+    "peer:fixed-bias"
+  ],
+  "softmax-0-t6-r1-h4096-o6-native-vs-aten": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "softmax-1-t6-r1-h2048-o6-native-vs-aten": [
+    "peer:fixed-bias"
+  ],
+  "softmax-1-t6-r32-h2048-o6-native-vs-aten": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "softmax-1-t6-r1-h4096-o6-native-vs-aten": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "softmax-2-t6-r1-h2048-o6-native-vs-aten": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "softmax-2-t6-r1-h4096-o6-native-vs-aten": [
+    "peer:fixed-bias"
+  ],
+  "softmax-3-t6-r1-h2048-o6-native-vs-aten": [
+    "peer:fixed-bias"
+  ],
+  "softmax-3-t6-r32-h2048-o6-native-vs-aten": [
+    "peer:gross-instability"
+  ],
+  "softmax-3-t6-r1-h4096-o6-native-vs-aten": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "unary-0-t4-r1-h2048-o6-native-vs-ggml": [
+    "peer:fixed-bias"
+  ],
+  "unary-0-t4-r32-h2048-o6-native-vs-ggml": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "unary-1-t4-r1-h2048-o6-native-vs-ggml": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "unary-2-t4-r1-h4096-o6-native-vs-ggml": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "unary-3-t4-r1-h4096-o6-native-vs-ggml": [
+    "peer:fixed-bias"
+  ],
+  "unary-5-t4-r1-h4096-o6-native-vs-ggml": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "unary-7-t4-r1-h2048-o6-native-vs-aten": [
+    "peer:fixed-bias"
+  ],
+  "unary-7-t4-r1-h4096-o6-native-vs-aten": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "unary-8-t4-r1-h2048-o6-native-vs-ggml": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "unary-8-t4-r32-h2048-o6-native-vs-ggml": [
+    "candidate:fixed-bias"
+  ],
+  "unary-11-t4-r1-h2048-o6-native-vs-aten": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "unary-11-t4-r1-h4096-o6-native-vs-aten": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "unary-12-t4-r1-h2048-o6-native-vs-aten": [
+    "candidate:fixed-bias",
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "unary-12-t4-r32-h2048-o6-native-vs-aten": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "unary-12-t4-r1-h4096-o6-native-vs-aten": [
+    "candidate:fixed-bias"
+  ],
+  "binary-0-t4-r1-h2048-o6-native-vs-ggml": [
+    "peer:gross-instability"
+  ],
+  "binary-0-t4-r32-h2048-o6-native-vs-ggml": [
+    "peer:fixed-bias"
+  ],
+  "binary-0-t4-r1-h4096-o6-native-vs-ggml": [
+    "peer:gross-instability"
+  ],
+  "binary-1-t4-r1-h2048-o6-native-vs-ggml": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "binary-1-t4-r1-h4096-o6-native-vs-ggml": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "binary-2-t4-r1-h4096-o6-native-vs-ggml": [
+    "candidate:gross-instability",
+    "candidate:fixed-bias",
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "binary-4-t4-r32-h2048-o6-native-vs-aten": [
+    "candidate:fixed-bias",
+    "peer:gross-instability"
+  ],
+  "binary-4-t4-r1-h4096-o6-native-vs-aten": [
+    "candidate:fixed-bias"
+  ],
+  "binary-5-t4-r1-h2048-o6-native-vs-aten": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "binary-5-t4-r32-h2048-o6-native-vs-aten": [
+    "peer:gross-instability"
+  ],
+  "reduce-0-t4-r1-h2048-o6-ggml-vs-aten": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "reduce-0-t4-r32-h2048-o6-native-vs-ggml": [
+    "peer:fixed-bias"
+  ],
+  "reduce-0-t4-r32-h2048-o6-native-vs-aten": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "reduce-0-t4-r32-h2048-o6-ggml-vs-aten": [
+    "peer:fixed-bias"
+  ],
+  "reduce-0-t4-r1-h4096-o6-native-vs-ggml": [
+    "peer:gross-instability"
+  ],
+  "reduce-0-t4-r1-h4096-o6-native-vs-aten": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "reduce-1-t4-r1-h2048-o6-native-vs-aten": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "reduce-1-t4-r1-h2048-o6-ggml-vs-aten": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "reduce-1-t4-r32-h2048-o6-ggml-vs-aten": [
+    "peer:fixed-bias"
+  ],
+  "reduce-2-t4-r1-h2048-o6-native-vs-aten": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "reduce-2-t4-r1-h4096-o6-native-vs-aten": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "reduce-3-t4-r32-h2048-o6-native-vs-aten": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "reduce-3-t4-r1-h4096-o6-native-vs-aten": [
+    "peer:fixed-bias"
+  ],
+  "norm-0-t4-r1-h2048-o6-native-vs-ggml": [
+    "candidate:gross-instability",
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "norm-0-t4-r1-h2048-o6-native-vs-aten": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "norm-0-t4-r1-h2048-o6-ggml-vs-aten": [
+    "peer:fixed-bias"
+  ],
+  "norm-0-t4-r32-h2048-o6-native-vs-aten": [
+    "candidate:fixed-bias",
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "norm-0-t4-r32-h2048-o6-ggml-vs-aten": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "norm-0-t4-r1-h4096-o6-ggml-vs-aten": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "norm-1-t4-r1-h2048-o6-native-vs-aten": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "norm-1-t4-r1-h2048-o6-ggml-vs-aten": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "norm-1-t4-r1-h4096-o6-native-vs-aten": [
+    "peer:fixed-bias"
+  ],
+  "select-t4-r1-h2048-o6-onednn-vs-aten": [
+    "candidate:gross-instability",
+    "candidate:fixed-bias"
+  ],
+  "select-t4-r1-h4096-o6-native-vs-aten": [
+    "candidate:fixed-bias",
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "select-t4-r1-h4096-o6-onednn-vs-aten": [
+    "candidate:fixed-bias"
+  ],
+  "concat-t4-r1-h2048-o6-native-vs-ggml": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "concat-t4-r1-h2048-o6-native-vs-aten": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "concat-t4-r1-h2048-o6-ggml-vs-aten": [
+    "candidate:fixed-bias"
+  ],
+  "concat-t4-r32-h2048-o6-native-vs-ggml": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "concat-t4-r32-h2048-o6-native-vs-aten": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "concat-t4-r32-h2048-o6-ggml-vs-aten": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "concat-t4-r1-h4096-o6-native-vs-ggml": [
+    "peer:fixed-bias"
+  ],
+  "concat-t4-r1-h4096-o6-ggml-vs-aten": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "fill-t4-r1-h2048-o6-native-vs-ggml": [
+    "peer:fixed-bias"
+  ],
+  "fill-t4-r1-h2048-o6-native-vs-aten": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "fill-t4-r32-h2048-o6-native-vs-aten": [
+    "peer:fixed-bias"
+  ],
+  "fill-t4-r32-h2048-o6-ggml-vs-aten": [
+    "peer:fixed-bias"
+  ],
+  "gather-t4-r1-h2048-o12-native-vs-ggml": [
+    "peer:fixed-bias"
+  ],
+  "gather-t4-r32-h2048-o12-native-vs-ggml": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "gather-t4-r32-h2048-o12-native-vs-aten": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "gather-t4-r1-h4096-o12-native-vs-ggml": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "assign-t4-r1-h2048-o12-native-vs-aten": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "assign-t4-r32-h2048-o12-native-vs-aten": [
+    "peer:fixed-bias"
+  ],
+  "assign-t4-r1-h4096-o12-native-vs-aten": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "gather-t4-r1-h2048-o14-native-vs-aten": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "gather-t4-r32-h2048-o14-native-vs-aten": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "assign-t4-r32-h2048-o14-native-vs-aten": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "assign-t4-r1-h4096-o14-native-vs-aten": [
+    "peer:fixed-bias"
+  ],
+  "softmax-0-t4-r1-h2048-o6-native-vs-aten": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "softmax-0-t4-r1-h2048-o6-ggml-vs-aten": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "softmax-0-t4-r32-h2048-o6-ggml-vs-aten": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "softmax-0-t4-r1-h4096-o6-native-vs-ggml": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "softmax-0-t4-r1-h4096-o6-native-vs-aten": [
+    "peer:fixed-bias"
+  ],
+  "softmax-0-t4-r1-h4096-o6-ggml-vs-aten": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "softmax-1-t4-r1-h2048-o6-native-vs-aten": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "softmax-1-t4-r32-h2048-o6-native-vs-aten": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "softmax-1-t4-r1-h4096-o6-native-vs-aten": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "softmax-2-t4-r1-h4096-o6-native-vs-aten": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "softmax-3-t4-r1-h2048-o6-native-vs-aten": [
+    "candidate:fixed-bias",
+    "peer:fixed-bias"
+  ],
+  "softmax-3-t4-r32-h2048-o6-native-vs-aten": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "softmax-3-t4-r1-h4096-o6-native-vs-aten": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "silu-gate-0-t4-r1-h2048-o6-native-vs-aten": [
+    "peer:fixed-bias"
+  ],
+  "silu-gate-0-t4-r1-h4096-o6-native-vs-aten": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "silu-gate-1-t4-r1-h2048-o6-native-vs-aten": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "silu-gate-1-t4-r32-h2048-o6-native-vs-aten": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "silu-gate-1-t4-r1-h4096-o6-native-vs-aten": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "unary-0-t5-r32-h2048-o6-native-vs-ggml": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "unary-1-t5-r1-h4096-o6-native-vs-ggml": [
+    "peer:fixed-bias"
+  ],
+  "unary-2-t5-r1-h2048-o6-native-vs-ggml": [
+    "candidate:gross-instability",
+    "candidate:fixed-bias"
+  ],
+  "unary-3-t5-r1-h2048-o6-native-vs-ggml": [
+    "peer:fixed-bias"
+  ],
+  "unary-3-t5-r32-h2048-o6-native-vs-ggml": [
+    "peer:fixed-bias"
+  ],
+  "unary-3-t5-r1-h4096-o6-native-vs-ggml": [
+    "candidate:gross-instability",
+    "candidate:fixed-bias",
+    "peer:fixed-bias"
+  ],
+  "unary-4-t5-r1-h4096-o6-native-vs-ggml": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "unary-5-t5-r1-h2048-o6-native-vs-ggml": [
+    "candidate:gross-instability",
+    "candidate:fixed-bias",
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "unary-5-t5-r1-h4096-o6-native-vs-ggml": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "unary-6-t5-r32-h2048-o6-native-vs-ggml": [
+    "peer:fixed-bias"
+  ],
+  "unary-6-t5-r1-h4096-o6-native-vs-ggml": [
+    "peer:fixed-bias"
+  ],
+  "unary-7-t5-r1-h2048-o6-native-vs-aten": [
+    "peer:fixed-bias"
+  ],
+  "unary-7-t5-r32-h2048-o6-native-vs-aten": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "unary-8-t5-r1-h4096-o6-native-vs-ggml": [
+    "candidate:gross-instability",
+    "candidate:fixed-bias"
+  ],
+  "unary-11-t5-r1-h2048-o6-native-vs-aten": [
+    "candidate:gross-instability",
+    "candidate:fixed-bias",
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "unary-11-t5-r32-h2048-o6-native-vs-aten": [
+    "peer:fixed-bias"
+  ],
+  "unary-11-t5-r1-h4096-o6-native-vs-aten": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "unary-12-t5-r1-h2048-o6-native-vs-aten": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "unary-12-t5-r32-h2048-o6-native-vs-aten": [
+    "candidate:fixed-bias",
+    "peer:gross-instability"
+  ],
+  "unary-12-t5-r1-h4096-o6-native-vs-aten": [
+    "peer:fixed-bias"
+  ],
+  "binary-0-t5-r32-h2048-o6-native-vs-ggml": [
+    "candidate:fixed-bias"
+  ],
+  "binary-0-t5-r1-h4096-o6-native-vs-ggml": [
+    "candidate:gross-instability",
+    "candidate:fixed-bias"
+  ],
+  "binary-1-t5-r1-h4096-o6-native-vs-ggml": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "binary-2-t5-r1-h2048-o6-native-vs-ggml": [
+    "peer:fixed-bias"
+  ],
+  "binary-2-t5-r32-h2048-o6-native-vs-ggml": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "binary-2-t5-r1-h4096-o6-native-vs-ggml": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "binary-3-t5-r1-h2048-o6-native-vs-ggml": [
+    "peer:fixed-bias"
+  ],
+  "binary-4-t5-r1-h2048-o6-native-vs-aten": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "binary-4-t5-r1-h4096-o6-native-vs-aten": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "binary-5-t5-r1-h2048-o6-native-vs-aten": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "binary-5-t5-r32-h2048-o6-native-vs-aten": [
+    "peer:fixed-bias"
+  ],
+  "binary-5-t5-r1-h4096-o6-native-vs-aten": [
+    "peer:fixed-bias"
+  ],
+  "reduce-0-t5-r1-h2048-o6-native-vs-ggml": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "reduce-0-t5-r32-h2048-o6-native-vs-ggml": [
+    "peer:fixed-bias"
+  ],
+  "reduce-0-t5-r32-h2048-o6-native-vs-aten": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "reduce-0-t5-r32-h2048-o6-ggml-vs-aten": [
+    "candidate:fixed-bias",
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "reduce-0-t5-r1-h4096-o6-native-vs-ggml": [
+    "peer:fixed-bias"
+  ],
+  "reduce-0-t5-r1-h4096-o6-native-vs-aten": [
+    "peer:fixed-bias"
+  ],
+  "reduce-0-t5-r1-h4096-o6-ggml-vs-aten": [
+    "candidate:gross-instability",
+    "candidate:fixed-bias"
+  ],
+  "reduce-1-t5-r1-h2048-o6-native-vs-aten": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "reduce-1-t5-r1-h2048-o6-ggml-vs-aten": [
+    "peer:gross-instability"
+  ],
+  "reduce-1-t5-r32-h2048-o6-native-vs-ggml": [
+    "peer:fixed-bias"
+  ],
+  "reduce-1-t5-r32-h2048-o6-ggml-vs-aten": [
+    "candidate:fixed-bias",
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "reduce-1-t5-r1-h4096-o6-native-vs-ggml": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "reduce-1-t5-r1-h4096-o6-native-vs-aten": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "reduce-1-t5-r1-h4096-o6-ggml-vs-aten": [
+    "candidate:gross-instability",
+    "candidate:fixed-bias",
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "reduce-2-t5-r1-h2048-o6-native-vs-aten": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "reduce-2-t5-r32-h2048-o6-native-vs-aten": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "norm-0-t5-r1-h2048-o6-native-vs-aten": [
+    "peer:fixed-bias"
+  ],
+  "norm-0-t5-r1-h2048-o6-ggml-vs-aten": [
+    "candidate:fixed-bias",
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "norm-0-t5-r32-h2048-o6-native-vs-ggml": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "norm-0-t5-r32-h2048-o6-native-vs-aten": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "norm-0-t5-r1-h4096-o6-ggml-vs-aten": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "norm-1-t5-r1-h2048-o6-native-vs-ggml": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "norm-1-t5-r1-h2048-o6-native-vs-aten": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "norm-1-t5-r1-h2048-o6-ggml-vs-aten": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "norm-1-t5-r32-h2048-o6-native-vs-aten": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "norm-1-t5-r1-h4096-o6-native-vs-ggml": [
+    "peer:gross-instability"
+  ],
+  "norm-1-t5-r1-h4096-o6-native-vs-aten": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "select-t5-r32-h2048-o6-onednn-vs-aten": [
+    "peer:fixed-bias"
+  ],
+  "select-t5-r1-h4096-o6-onednn-vs-aten": [
+    "candidate:gross-instability",
+    "candidate:fixed-bias"
+  ],
+  "concat-t5-r1-h2048-o6-ggml-vs-aten": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "concat-t5-r32-h2048-o6-ggml-vs-aten": [
+    "peer:fixed-bias"
+  ],
+  "concat-t5-r1-h4096-o6-native-vs-ggml": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "concat-t5-r1-h4096-o6-native-vs-aten": [
+    "peer:fixed-bias"
+  ],
+  "concat-t5-r1-h4096-o6-ggml-vs-aten": [
+    "candidate:fixed-bias",
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "fill-t5-r1-h2048-o6-native-vs-aten": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "fill-t5-r32-h2048-o6-native-vs-aten": [
+    "candidate:gross-instability",
+    "candidate:fixed-bias",
+    "peer:fixed-bias"
+  ],
+  "fill-t5-r32-h2048-o6-ggml-vs-aten": [
+    "peer:fixed-bias"
+  ],
+  "fill-t5-r1-h4096-o6-ggml-vs-aten": [
+    "peer:fixed-bias"
+  ],
+  "gather-t5-r32-h2048-o12-native-vs-aten": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "assign-t5-r1-h2048-o12-native-vs-aten": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "assign-t5-r32-h2048-o12-native-vs-aten": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "assign-t5-r1-h4096-o12-native-vs-aten": [
+    "candidate:gross-instability",
+    "candidate:fixed-bias",
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "gather-t5-r1-h2048-o14-native-vs-aten": [
+    "peer:fixed-bias"
+  ],
+  "assign-t5-r32-h2048-o14-native-vs-aten": [
+    "candidate:fixed-bias"
+  ],
+  "assign-t5-r1-h4096-o14-native-vs-aten": [
+    "peer:fixed-bias"
+  ],
+  "softmax-0-t5-r1-h2048-o6-native-vs-aten": [
+    "candidate:gross-instability",
+    "candidate:fixed-bias",
+    "peer:gross-instability"
+  ],
+  "softmax-0-t5-r1-h2048-o6-ggml-vs-aten": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "softmax-0-t5-r32-h2048-o6-native-vs-aten": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "softmax-0-t5-r32-h2048-o6-ggml-vs-aten": [
+    "peer:fixed-bias"
+  ],
+  "softmax-0-t5-r1-h4096-o6-native-vs-aten": [
+    "candidate:fixed-bias",
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "softmax-0-t5-r1-h4096-o6-ggml-vs-aten": [
+    "peer:fixed-bias"
+  ],
+  "softmax-1-t5-r1-h2048-o6-native-vs-aten": [
+    "candidate:gross-instability",
+    "candidate:fixed-bias",
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "softmax-1-t5-r32-h2048-o6-native-vs-aten": [
+    "peer:fixed-bias"
+  ],
+  "softmax-1-t5-r1-h4096-o6-native-vs-aten": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "softmax-2-t5-r32-h2048-o6-native-vs-aten": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "softmax-2-t5-r1-h4096-o6-native-vs-aten": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "softmax-3-t5-r1-h2048-o6-native-vs-aten": [
+    "peer:fixed-bias"
+  ],
+  "softmax-3-t5-r32-h2048-o6-native-vs-aten": [
+    "peer:fixed-bias"
+  ],
+  "copy-t6-r1-h2048-o6-native-vs-onednn": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "copy-t6-r1-h2048-o6-native-vs-ggml": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "copy-t6-r1-h2048-o6-native-vs-aten": [
+    "peer:fixed-bias"
+  ],
+  "copy-t6-r1-h2048-o6-onednn-vs-ggml": [
+    "peer:fixed-bias"
+  ],
+  "copy-t6-r32-h2048-o6-native-vs-onednn": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "copy-t6-r32-h2048-o6-onednn-vs-ggml": [
+    "candidate:gross-instability",
+    "candidate:fixed-bias"
+  ],
+  "copy-t6-r32-h2048-o6-ggml-vs-aten": [
+    "candidate:gross-instability",
+    "candidate:fixed-bias"
+  ],
+  "copy-t6-r1-h4096-o6-native-vs-ggml": [
+    "candidate:gross-instability",
+    "candidate:fixed-bias"
+  ],
+  "copy-t6-r1-h4096-o6-native-vs-aten": [
+    "peer:fixed-bias"
+  ],
+  "cast-t6-r1-h2048-o6-native-vs-ggml": [
+    "peer:fixed-bias"
+  ],
+  "cast-t6-r1-h2048-o6-native-vs-aten": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "cast-t6-r32-h2048-o6-native-vs-ggml": [
+    "peer:fixed-bias"
+  ],
+  "cast-t6-r32-h2048-o6-native-vs-aten": [
+    "peer:fixed-bias"
+  ],
+  "cast-t6-r1-h4096-o6-native-vs-ggml": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "cast-t6-r1-h4096-o6-native-vs-aten": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "cast-t6-r1-h4096-o6-ggml-vs-aten": [
+    "candidate:fixed-bias"
+  ],
+  "cast-t6-r1-h2048-o4-native-vs-ggml": [
+    "peer:fixed-bias"
+  ],
+  "cast-t6-r1-h2048-o4-native-vs-aten": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "cast-t6-r1-h2048-o4-ggml-vs-aten": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "cast-t6-r32-h2048-o4-native-vs-ggml": [
+    "candidate:fixed-bias"
+  ],
+  "cast-t6-r32-h2048-o4-native-vs-aten": [
+    "candidate:gross-instability",
+    "candidate:fixed-bias"
+  ],
+  "cast-t6-r32-h2048-o4-ggml-vs-aten": [
+    "candidate:gross-instability",
+    "candidate:fixed-bias"
+  ],
+  "cast-t6-r1-h4096-o4-native-vs-ggml": [
+    "peer:fixed-bias"
+  ],
+  "cast-t6-r1-h4096-o4-native-vs-aten": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "cast-t6-r1-h2048-o5-native-vs-aten": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "cast-t6-r1-h2048-o5-ggml-vs-aten": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "cast-t6-r32-h2048-o5-native-vs-aten": [
+    "candidate:fixed-bias"
+  ],
+  "cast-t6-r32-h2048-o5-ggml-vs-aten": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "cast-t6-r1-h4096-o5-native-vs-ggml": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "cast-t6-r1-h4096-o5-native-vs-aten": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "cast-t6-r1-h4096-o5-ggml-vs-aten": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "cast-t6-r1-h2048-o2-native-vs-aten": [
+    "peer:fixed-bias"
+  ],
+  "cast-t6-r32-h2048-o2-native-vs-aten": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "cast-t6-r1-h4096-o2-native-vs-aten": [
+    "candidate:fixed-bias"
+  ],
+  "cast-t6-r32-h2048-o3-native-vs-aten": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "copy-t4-r1-h2048-o6-native-vs-onednn": [
+    "peer:fixed-bias"
+  ],
+  "copy-t4-r1-h2048-o6-native-vs-ggml": [
+    "peer:fixed-bias"
+  ],
+  "copy-t4-r1-h2048-o6-native-vs-aten": [
+    "candidate:fixed-bias"
+  ],
+  "copy-t4-r1-h2048-o6-onednn-vs-aten": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "copy-t4-r32-h2048-o6-native-vs-ggml": [
+    "peer:fixed-bias"
+  ],
+  "copy-t4-r32-h2048-o6-native-vs-aten": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "copy-t4-r32-h2048-o6-onednn-vs-aten": [
+    "peer:fixed-bias"
+  ],
+  "copy-t4-r32-h2048-o6-ggml-vs-aten": [
+    "candidate:fixed-bias",
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "copy-t4-r1-h4096-o6-native-vs-ggml": [
+    "candidate:fixed-bias"
+  ],
+  "copy-t4-r1-h4096-o6-native-vs-aten": [
+    "peer:fixed-bias"
+  ],
+  "copy-t4-r1-h4096-o6-onednn-vs-aten": [
+    "candidate:gross-instability",
+    "candidate:fixed-bias"
+  ],
+  "copy-t4-r1-h4096-o6-ggml-vs-aten": [
+    "candidate:gross-instability",
+    "candidate:fixed-bias"
+  ],
+  "cast-t4-r1-h2048-o6-native-vs-ggml": [
+    "candidate:fixed-bias"
+  ],
+  "cast-t4-r1-h2048-o6-native-vs-aten": [
+    "peer:gross-instability"
+  ],
+  "cast-t4-r1-h2048-o6-ggml-vs-aten": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "cast-t4-r32-h2048-o6-native-vs-ggml": [
+    "candidate:fixed-bias"
+  ],
+  "cast-t4-r32-h2048-o6-ggml-vs-aten": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "cast-t4-r1-h4096-o6-native-vs-ggml": [
+    "peer:fixed-bias"
+  ],
+  "cast-t4-r1-h2048-o4-native-vs-aten": [
+    "candidate:gross-instability",
+    "candidate:fixed-bias",
+    "peer:fixed-bias"
+  ],
+  "cast-t4-r1-h2048-o4-ggml-vs-aten": [
+    "candidate:gross-instability",
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "cast-t4-r32-h2048-o4-native-vs-aten": [
+    "peer:fixed-bias"
+  ],
+  "cast-t4-r1-h4096-o4-native-vs-aten": [
+    "peer:fixed-bias"
+  ],
+  "cast-t4-r1-h2048-o5-native-vs-ggml": [
+    "candidate:fixed-bias"
+  ],
+  "cast-t4-r1-h2048-o5-native-vs-aten": [
+    "candidate:gross-instability",
+    "candidate:fixed-bias"
+  ],
+  "cast-t4-r32-h2048-o5-native-vs-ggml": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "cast-t4-r32-h2048-o5-native-vs-aten": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "cast-t4-r32-h2048-o5-ggml-vs-aten": [
+    "peer:fixed-bias"
+  ],
+  "cast-t4-r1-h4096-o5-ggml-vs-aten": [
+    "peer:fixed-bias"
+  ],
+  "cast-t4-r1-h2048-o2-native-vs-aten": [
+    "candidate:fixed-bias",
+    "peer:gross-instability"
+  ],
+  "cast-t4-r32-h2048-o2-native-vs-aten": [
+    "peer:fixed-bias"
+  ],
+  "cast-t4-r1-h4096-o2-native-vs-aten": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "cast-t4-r1-h2048-o3-native-vs-aten": [
+    "peer:fixed-bias"
+  ],
+  "cast-t4-r32-h2048-o3-native-vs-aten": [
+    "candidate:fixed-bias",
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "cast-t4-r1-h4096-o3-native-vs-aten": [
+    "candidate:gross-instability",
+    "candidate:fixed-bias"
+  ],
+  "copy-t5-r1-h2048-o6-onednn-vs-aten": [
+    "candidate:fixed-bias"
+  ],
+  "copy-t5-r32-h2048-o6-native-vs-aten": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "copy-t5-r32-h2048-o6-onednn-vs-ggml": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "copy-t5-r32-h2048-o6-onednn-vs-aten": [
+    "candidate:gross-instability",
+    "candidate:fixed-bias",
+    "peer:fixed-bias"
+  ],
+  "copy-t5-r1-h4096-o6-native-vs-onednn": [
+    "candidate:gross-instability",
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "copy-t5-r1-h4096-o6-native-vs-ggml": [
+    "candidate:gross-instability",
+    "candidate:fixed-bias"
+  ],
+  "cast-t5-r32-h2048-o6-native-vs-aten": [
+    "peer:fixed-bias"
+  ],
+  "cast-t5-r32-h2048-o6-ggml-vs-aten": [
+    "peer:fixed-bias"
+  ],
+  "cast-t5-r1-h4096-o6-native-vs-aten": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "cast-t5-r1-h4096-o6-ggml-vs-aten": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "cast-t5-r1-h2048-o4-native-vs-aten": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "cast-t5-r1-h2048-o4-ggml-vs-aten": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "cast-t5-r32-h2048-o4-native-vs-ggml": [
+    "peer:fixed-bias"
+  ],
+  "cast-t5-r32-h2048-o4-native-vs-aten": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "cast-t5-r32-h2048-o4-ggml-vs-aten": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "cast-t5-r1-h4096-o4-ggml-vs-aten": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "cast-t5-r1-h2048-o5-native-vs-ggml": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "cast-t5-r1-h2048-o5-native-vs-aten": [
+    "candidate:gross-instability",
+    "candidate:fixed-bias"
+  ],
+  "cast-t5-r1-h2048-o5-ggml-vs-aten": [
+    "peer:fixed-bias"
+  ],
+  "cast-t5-r32-h2048-o5-native-vs-ggml": [
+    "candidate:fixed-bias",
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "cast-t5-r32-h2048-o5-ggml-vs-aten": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "cast-t5-r1-h4096-o5-native-vs-ggml": [
+    "peer:fixed-bias"
+  ],
+  "cast-t5-r1-h4096-o5-ggml-vs-aten": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "cast-t5-r1-h2048-o2-native-vs-aten": [
+    "candidate:fixed-bias",
+    "peer:fixed-bias"
+  ],
+  "cast-t5-r32-h2048-o2-native-vs-aten": [
+    "peer:gross-instability"
+  ],
+  "cast-t5-r1-h4096-o2-native-vs-aten": [
+    "candidate:gross-instability",
+    "candidate:fixed-bias"
+  ],
+  "cast-t5-r1-h2048-o3-native-vs-aten": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "cast-t5-r32-h2048-o3-native-vs-aten": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "copy-t2-r1-h2048-o6-native-vs-ggml": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "copy-t2-r1-h2048-o6-native-vs-aten": [
+    "candidate:gross-instability",
+    "candidate:fixed-bias"
+  ],
+  "copy-t2-r1-h2048-o6-onednn-vs-aten": [
+    "peer:fixed-bias"
+  ],
+  "copy-t2-r1-h2048-o6-ggml-vs-aten": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "copy-t2-r32-h2048-o6-onednn-vs-aten": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "copy-t2-r32-h2048-o6-ggml-vs-aten": [
+    "peer:fixed-bias"
+  ],
+  "copy-t2-r1-h4096-o6-native-vs-ggml": [
+    "candidate:gross-instability"
+  ],
+  "copy-t2-r1-h4096-o6-native-vs-aten": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "copy-t2-r1-h4096-o6-ggml-vs-aten": [
+    "candidate:fixed-bias"
+  ],
+  "cast-t2-r1-h4096-o6-native-vs-aten": [
+    "candidate:fixed-bias",
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "cast-t2-r1-h2048-o4-native-vs-aten": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "cast-t2-r32-h2048-o4-native-vs-aten": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "cast-t2-r1-h2048-o5-native-vs-aten": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "cast-t2-r32-h2048-o5-native-vs-aten": [
+    "peer:fixed-bias"
+  ],
+  "cast-t2-r1-h4096-o5-native-vs-aten": [
+    "peer:fixed-bias"
+  ],
+  "cast-t2-r1-h2048-o2-native-vs-ggml": [
+    "peer:fixed-bias"
+  ],
+  "cast-t2-r1-h2048-o2-native-vs-aten": [
+    "candidate:fixed-bias",
+    "peer:fixed-bias"
+  ],
+  "cast-t2-r1-h2048-o2-ggml-vs-aten": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "cast-t2-r32-h2048-o2-native-vs-aten": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "cast-t2-r32-h2048-o2-ggml-vs-aten": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "cast-t2-r1-h4096-o2-ggml-vs-aten": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "cast-t2-r1-h2048-o3-native-vs-aten": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "cast-t2-r32-h2048-o3-native-vs-aten": [
+    "candidate:fixed-bias"
+  ],
+  "cast-t2-r1-h4096-o3-native-vs-aten": [
+    "peer:fixed-bias"
+  ],
+  "copy-t3-r1-h2048-o6-native-vs-onednn": [
+    "peer:fixed-bias"
+  ],
+  "copy-t3-r1-h2048-o6-onednn-vs-aten": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "copy-t3-r1-h4096-o6-native-vs-ggml": [
+    "candidate:fixed-bias"
+  ],
+  "copy-t3-r1-h4096-o6-native-vs-aten": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "cast-t3-r1-h2048-o6-native-vs-aten": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "cast-t3-r32-h2048-o6-native-vs-aten": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "cast-t3-r1-h2048-o4-native-vs-aten": [
+    "peer:fixed-bias"
+  ],
+  "cast-t3-r1-h4096-o4-native-vs-aten": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "cast-t3-r32-h2048-o5-native-vs-aten": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "cast-t3-r1-h2048-o3-native-vs-aten": [
+    "candidate:gross-instability",
+    "candidate:fixed-bias",
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "cast-t3-r1-h2048-o3-ggml-vs-aten": [
+    "candidate:gross-instability",
+    "candidate:fixed-bias",
+    "peer:fixed-bias"
+  ],
+  "cast-t3-r32-h2048-o3-native-vs-ggml": [
+    "candidate:gross-instability",
+    "candidate:fixed-bias"
+  ],
+  "cast-t3-r32-h2048-o3-ggml-vs-aten": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "rope-f32-phase-t6-r1-h2048-o6-native-vs-ggml": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "rope-f32-phase-t6-r1-h2048-o6-native-vs-aten": [
+    "peer:fixed-bias"
+  ],
+  "rope-f32-phase-t6-r32-h2048-o6-native-vs-ggml": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "rope-f32-phase-t6-r1-h4096-o6-native-vs-ggml": [
+    "peer:gross-instability"
+  ],
+  "rope-f32-phase-t6-r1-h4096-o6-native-vs-aten": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "matmul-f32-k16384-n4-r1-l0-ggml-vs-aten": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "matmul-f32-k16384-n4-r32-l0-onednn-vs-aten": [
+    "candidate:gross-instability",
+    "candidate:fixed-bias"
+  ],
+  "matmul-f32-k16384-n4-r32-l0-ggml-vs-aten": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "matmul-f32-k16384-n4-r32-l1-ggml-vs-aten": [
+    "candidate:gross-instability",
+    "candidate:fixed-bias"
+  ],
+  "matmul-f32-k16384-n24-r1-l0-ggml-vs-aten": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "matmul-f32-k16384-n24-r1-l1-ggml-vs-aten": [
+    "peer:fixed-bias"
+  ],
+  "matmul-f32-k16384-n24-r32-l0-onednn-vs-ggml": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "matmul-f32-k16384-n24-r32-l0-onednn-vs-aten": [
+    "peer:fixed-bias"
+  ],
+  "matmul-f32-k16384-n24-r32-l0-ggml-vs-aten": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ],
+  "matmul-f32-k16384-n24-r32-l1-ggml-vs-aten": [
+    "candidate:gross-instability",
+    "candidate:fixed-bias"
+  ],
+  "matmul-qwen-bf16-k2048-n6144-r1-ggml-vs-aten": [
+    "candidate:gross-instability",
+    "candidate:fixed-bias"
+  ],
+  "sdpa-f32-q32-ggml-vs-aten": [
+    "peer:gross-instability",
+    "peer:fixed-bias"
+  ]
+}
