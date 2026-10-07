@@ -37,6 +37,7 @@ if(TORCH_CXX_FLAGS)
   separate_arguments(_torch_flags NATIVE_COMMAND "${TORCH_CXX_FLAGS}")
   target_compile_options(hyle_compute_provider_torch_cuda PRIVATE ${_torch_flags})
 endif()
+set(_cuda_extra_license_specs "")
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
   # Installed consumers' explicit SDK RPATH covers the private original leaf
   # and unchanged CPU common runtime transitively, as for the CPU adapter.
@@ -53,13 +54,14 @@ endforeach()
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
   # This original cusparselt wheel locates its notice beside the runtime,
   # rather than in dist-info. Preserve that original file in every SDK.
-  list(APPEND _cuda_license_specs
-    "${_cuda_sdk_directory}/nvidia/cusparselt|${CMAKE_INSTALL_DATADIR}/licenses/Hyle/torch-cuda-sdk|cusparselt")
+  list(APPEND _cuda_extra_license_specs
+    "${_cuda_sdk_directory}/nvidia/cusparselt/LICENSE.txt|${CMAKE_INSTALL_DATADIR}/licenses/Hyle/torch-cuda-sdk|cusparselt-LICENSE.txt")
 endif()
 hyle_register_package_dependency(NAME torch_cuda_sdk OWNER compute_provider_torch_cuda
   FEATURES compute_cuda FIND_DEPENDENCIES HyleTorchCudaSdk
   DEVELOPMENT_DIRECTORY_SPECS ${_cuda_license_specs}
   DEVELOPMENT_FILE_SPECS
+    ${_cuda_extra_license_specs}
     "${CMAKE_CURRENT_SOURCE_DIR}/HyleTorchCudaSdkConfig.cmake|${CMAKE_INSTALL_LIBDIR}/cmake/HyleTorchCudaSdk|HyleTorchCudaSdkConfig.cmake"
     "${CMAKE_CURRENT_SOURCE_DIR}/torch_cuda_fetch.cmake|${CMAKE_INSTALL_LIBDIR}/cmake/HyleTorchCudaSdk|torch_cuda_fetch.cmake"
     "${CMAKE_CURRENT_SOURCE_DIR}/torch_cuda_linux.cmake|${CMAKE_INSTALL_LIBDIR}/cmake/HyleTorchCudaSdk|torch_cuda_linux.cmake"
