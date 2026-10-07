@@ -1,0 +1,31 @@
+{
+  "product_candidate": "a7ccfc6639483aee4a76403a35fb32d1732441ec",
+  "source_sha256": {
+    "src/compute_provider_native/CMakeLists.txt": "d4435df00dba2412f86c14a1d04c561f177404373bae337e668565387a415e3d",
+    "src/compute_provider_native/default_rules.cc": "c53cdda70e68b1b3b3d99bc5304e935eea543cf9320c9e1623392003f9d76c6f",
+    "src/compute_provider_native/default_rules.h": "f03a0048eacd1cabee3a45667041405bf474e47a88b276eef1a54b4a4c4b7839",
+    "src/compute_provider_native/native_provider.cc": "2484559a849af17386d7fb6f5d2b7d33aff29a3ac2e78ec17a9cb44065888479",
+    "src/compute_route_cpu/cpu_context.cc": "20146823875d3c9cdde2de3ac6574a61cf46c297d667335b1f823379e762f4f6",
+    "src/compute_route_cpu/default_policy.cc": "3b0d5aca67390514cce2d4ede5749ce567cb5debd0219811976ad420167d603a",
+    "src/compute_route_cpu/default_policy.h": "0d872e7aef7509f84bc089e4786ca37512e06edab171477cd6e17d88c39ad3b1",
+    "src/graph_route_cpu/cpu_context.cc": "cd658c0c917a1f79df9a4869449808ecda44f48bdbe6c91f281b5c932b8b4138",
+    "tests/compute_route_cpu/CMakeLists.txt": "2514555b847d4f3c0c972e2009c5a6c21a4ec3b4e63146526dc86dd587984771",
+    "tests/compute_route_cpu/context_test.cc": "3745ab9a58cc0a1ad6298aaa80f739b5a2ff193532306c1af242c51dcc07307c",
+    "tests/compute_route_cpu/current_rules_test.cc": "3c7c40a14f014a62d9fee9daac9c3f285b3879d4c46de15fefcb8fabc299fd60",
+    "tests/graph_route_cpu/CMakeLists.txt": "a022c87adfe6e3b9b1043b5136e3555a7aa68239ed2993b0d54e737c05c4dff4"
+  },
+  "scope": "Windows worktree correctness, not P1. Final content was committed after validation and equals this product snapshot.",
+  "driver_candidate_field": "Original step records captured baseline HEAD 26fbc8555 while R1 was a working-tree change; that field is not an immutable source claim.",
+  "pinned_scope": "43 exact requests, default context/thread/shape/attribute/layout misses, selected replay and actual Graph leaf/whole-region priority; positive property=1.",
+  "unrestricted_scope": "ordinary Direct19/Graph20, original full constant FFN two changed replays, native owner2; property=0, mature math available.",
+  "failure_retained": "Initial packed-halves default in test fixture was corrected to the prequalified separate-gate request. First Direct FAIL remains in raw log/XML.",
+  "configure_failure_limit": "First include-owner rejection is preserved as a tool-transcript reconstruction because its raw filename was reused, not as original raw output.",
+  "pending": [
+    "Windows source/static/shared installed delta",
+    "Linux/Mac rule delta",
+    "F4 source-family handoff"
+  ],
+  "archive": "evidence/correctness/cpu-final-f4/windows-rule-delta.zip",
+  "archive_sha256": "7f7f7f2f23f124e74d35bb857d1bf3cf87f7cf017b21f92cf062c8630a2ca8e8",
+  "archive_bytes": 55471
+}

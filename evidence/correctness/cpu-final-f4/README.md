@@ -19,6 +19,29 @@ Those incomplete rows never qualified a WIN or ggml loss.
 
 [Receipt and exact scope](windows-named-provider-preflight-receipt.json),
 [initial/current raw logs, admissions/pairs, consumer and drivers](windows-named-provider-preflight.zip).
-F4 A/A/controls, immutable P1 and full region/other-platform verdicts remain
-pending. F1/F3 proof supplies the existing carrier correctness boundary;
+F4's bounded [immutable P1](../../performance/cpu-final-f4-p1/README.md) is now
+complete; full rule delivery/other-platform verdicts remain pending.
+F1/F3 proof supplies the existing carrier correctness boundary;
 this short preflight does not expand it or qualify arbitrary input values.
+
+## Windows cold-rule delta
+
+Product `a7ccfc6639483aee4a76403a35fb32d1732441ec` binds the 43 complete choices
+to the measured software/static recipe/hardware/single logical CPU2/one-thread
+conditions. Old 187/17 tables are removed. Unknown conditions keep mature math;
+Copy uses qualified ggml prepared storage first and Select qualified ATen byte
+selection first, with real capability/resource admission determining alternatives.
+
+[Rule receipt](windows-rule-delta-receipt.json) and
+[source/driver/raw archive](windows-rule-delta.zip) preserve working-tree
+validation identity and its limits. Pinned property=1 and unrestricted property=0
+are both observed. All exact rule requests, thread/shape/epsilon/layout misses,
+changed-input replay and actual Graph leaf/whole-region priority pass. Final
+ordinary Direct19/Graph20 and Native owner2 regressions pass without skips.
+The original test-fixture schema FAIL is retained; only the separate-gate test
+input was corrected. The initial include-owner rejection is a transcript
+reconstruction, explicitly not original raw output.
+
+No math, hot execution/objects, P1 repetition or public governance changed.
+Windows installed static/shared delta, Linux/Mac rule delta and F4 retirement
+handoff remain incomplete; this evidence does not close F4 or the CPU goal.
