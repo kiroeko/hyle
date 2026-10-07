@@ -19,6 +19,22 @@ namespace c = hyle::compute;
 
 inline ggml_type native_type(c::GgufQuantizedType type) {
   switch (type) {
+  case c::GgufQuantizedType::kQ4_0:
+    return GGML_TYPE_Q4_0;
+  case c::GgufQuantizedType::kQ4_1:
+    return GGML_TYPE_Q4_1;
+  case c::GgufQuantizedType::kQ2K:
+    return GGML_TYPE_Q2_K;
+  case c::GgufQuantizedType::kIq2Xxs:
+    return GGML_TYPE_IQ2_XXS;
+  case c::GgufQuantizedType::kIq2Xs:
+    return GGML_TYPE_IQ2_XS;
+  case c::GgufQuantizedType::kIq2S:
+    return GGML_TYPE_IQ2_S;
+  case c::GgufQuantizedType::kIq1S:
+    return GGML_TYPE_IQ1_S;
+  case c::GgufQuantizedType::kIq1M:
+    return GGML_TYPE_IQ1_M;
   case c::GgufQuantizedType::kQ3K:
     return GGML_TYPE_Q3_K;
   case c::GgufQuantizedType::kQ4K:
@@ -40,7 +56,7 @@ inline ggml_type native_type(c::GgufQuantizedType type) {
   case c::GgufQuantizedType::kMxfp4:
     return GGML_TYPE_MXFP4;
   default:
-    break; // This fixture covers the original D5 catalog only.
+    break; // Narrow IQ1 extensions use the separately pinned original port.
   }
   return GGML_TYPE_COUNT;
 }
