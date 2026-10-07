@@ -128,3 +128,8 @@ complete Q8/BF16 sidecar and sixteen generic entry regressions pass (18 cases).
 The original aggregate failure is retained and the 827 successful cases reused.
 Graph's first full batch is still pending in this partial receipt. This is not
 a performance WIN or a new product codec implementation.
+
+The first full Windows Graph run subsequently passes **847 cases without
+skips** in 759.797 seconds. The receipt/archive now include its complete XML and
+log. The product's generic defaults remain restored; installed-delivery and
+the corresponding Linux/Mac test-seam deltas remain pending.

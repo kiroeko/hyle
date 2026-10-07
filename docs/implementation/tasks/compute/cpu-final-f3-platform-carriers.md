@@ -200,3 +200,11 @@ T11有限测试FIX：只此sidecar的Q8_0 activation编码用独立scalar表达�
 Direct资格组成仍为原827成功格＋同原输入的完整sidecar纠正，原828项aggregate FAIL不回写。
 首次Graph full正在运行，不能提前签PASS；[ISA纠正收据/原失败/已清退实验](../../../../evidence/correctness/cpu-final-f3/README.md)已保留。
 这里不是“换姿势重测”：从明确source/程序ISA发现不同编码的对照合同错误，纠正后一次正式验收，无第三探针。
+
+同候选Windows Graph首次full847项全部通过、无skip，759.797秒；原Direct827＋具名完整纠正和中点定义已过。
+没有恢复未合格norm规则，产品默认与T10前逐合同表相同，统一实现61,246行/251文件。
+Linux installed/static/shared、Mac新准入的三交付增量与ISA对照差异仍待，不能关闭F3。
+
+Linux三交付中source/shared已通过新增精确F16门的40个普通Direct/Graph格式数值格；
+当前普通Direct sample退出9为oneDNN升级后仍硬编码3.13.2。只迁移当前sample为3.13.4，
+原失败保留、成功producer/40格不重跑；补编小consumer后继续static发布形态。
