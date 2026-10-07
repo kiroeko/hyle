@@ -443,7 +443,7 @@ _hyle_declare_component(compute_provider_cuda
 # Compiled CUDA defaults compose native implementations without a CPU route.
 _hyle_declare_component(compute_route_cuda
   PRIVATE_DEPS compute_backend_cuda compute_provider_cublas compute_provider_cuda
-               compute_provider_flashinfer compute_provider_ggml_cuda
+               compute_provider_flashinfer compute_provider_ggml_cuda compute_provider_torch_cuda
   PUBLIC_DEPS core compute
   SPLIT_PUBLIC_HEADERS hyle/compute/cuda.h)
 _hyle_declare_component(graph_route_cuda
@@ -506,7 +506,10 @@ _hyle_declare_component(compute_provider_iree_vulkan
   PRIVATE_DEPS core error mem compute_ops compute_provider_ggml_vulkan)
 
 # Mature CUDA ATen artifact carrier; reserve identity before its closure round.
-_hyle_declare_component(compute_provider_torch_cuda QUEUED)
+_hyle_declare_component(compute_provider_torch_cuda
+  PRIVATE_DEPS compute_backend_cuda compute_ops error mem
+  PUBLIC_DEPS core compute
+  SPLIT_PUBLIC_HEADERS hyle/compute/providers/torch_cuda.h)
 
 # Product facades are deliberately outside the factor DAG. They have no source,
 # module status, or decision authority and must never be used by an internal

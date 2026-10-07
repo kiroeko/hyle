@@ -41,6 +41,8 @@
 #include "hyle/compute/providers/cuda.h"
 #include "../compute_models/d5_optional_cuda_provider.h"
 #include "../compute_models/cuda_iq1_model_contracts.h"
+#include "../compute_models/cpu_c5_non_gguf_fixture.h"
+#include "hyle/compute/providers/torch_cuda.h"
 #include "hyle/compute/providers/ggml_cuda.h"
 #include "hyle/compute/prepared_operation.h"
 #include "hyle/mem/stats.h"
@@ -132,6 +134,9 @@ void expect_mature(const DirectCall &call, const c::WorkloadContext &workload) {
               provider == c::cuda_native::kSglangProviderId ||
               provider == c::cuda_native::kDeepSeekProviderId ||
               provider == c::cuda_native::kCcclProviderId ||
+#if defined(HYLE_COMPUTE_TORCH_CUDA)
+              provider == c::torch_cuda::kProviderId ||
+#endif
               d5_optional_cuda_provider::is_flashinfer(provider) || retained_storage)
       << c::operation_name(call.prepared.kind()) << ": "
       << call.prepared.provider().name;
@@ -2036,4 +2041,5 @@ TEST(CudaIq1ModelContracts, EightCurrentExpertShapesUseOrdinaryDirectAndReplay) 
   }
   EXPECT_EQ(count, 8U);
 }
+#include "../compute_models/cuda_n1_non_gguf_tests.h"
 } // namespace

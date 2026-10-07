@@ -1,0 +1,12 @@
+include(CMakeFindDependencyMacro)
+include("${CMAKE_CURRENT_LIST_DIR}/torch_cpu_fetch.cmake")
+hyle_resolve_torch_cpu_sdk("${CMAKE_CURRENT_LIST_DIR}/HyleDependencyLock.json" _hyle_cpu_root)
+set(Torch_DIR "${_hyle_cpu_root}/share/cmake/Torch")
+set(Caffe2_DIR "${_hyle_cpu_root}/share/cmake/Caffe2")
+find_dependency(Torch 2.8.0 EXACT CONFIG
+  PATHS "${_hyle_cpu_root}/share/cmake/Torch" NO_DEFAULT_PATH)
+include("${CMAKE_CURRENT_LIST_DIR}/HyleTorchCpuSdkConfig.cmake")
+include("${CMAKE_CURRENT_LIST_DIR}/torch_cuda_fetch.cmake")
+hyle_resolve_torch_cuda_leaf("${CMAKE_CURRENT_LIST_DIR}/HyleDependencyLock.json" _hyle_cuda_root)
+hyle_import_torch_cuda_leaf("${_hyle_cuda_root}" "${_hyle_cpu_root}")
+set(HyleTorchCudaSdk_FOUND TRUE)

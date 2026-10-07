@@ -21,6 +21,18 @@
           "version": "2.8.0"
         }
       }
+    },
+    "torch_cuda_leaf": {
+      "owner": "compute_provider_torch_cuda",
+      "version": "2.8.0+cu129",
+      "license": "BSD-3-Clause; retain all licenses of the bundled CUDA leaf dependencies",
+      "platforms": {
+        "Windows-x86_64": {
+          "url": "https://download-r2.pytorch.org/whl/cu129/torch-2.8.0%2Bcu129-cp312-cp312-win_amd64.whl",
+          "sha256": "2bc729898e422b9f3da54349eed98f2f0b5dd415434508ee2ab2a13fb021815d",
+          "archive_root": "torch"
+        }
+      }
     }
   },
   "dependencies": [
@@ -992,6 +1004,99 @@
             "root": "hyle",
             "path": "third_party/mlx_cpu_quant/NOTICE.md",
             "sha256": "d388f6652116b8e8a5603a3061ccb97dcccda991deb7694c8ca66bf22b40e3c4"
+          }
+        ]
+      }
+    },
+    {
+      "name": "bitsandbytes_cuda",
+      "repository": "https://github.com/bitsandbytes-foundation/bitsandbytes.git",
+      "revision": "833649043474794b8fe7a4136e0c40faf077b2e0",
+      "git_tree": "7eb993be924aa9fb875fa1fd99c92f4a0e37faae",
+      "archive": {
+        "url": "https://codeload.github.com/bitsandbytes-foundation/bitsandbytes/tar.gz/833649043474794b8fe7a4136e0c40faf077b2e0",
+        "sha256": "be02cdc9d8b7c73462a93629e7d8c7522742c90606014bd0b92c33794985c570"
+      },
+      "version": "original-cuda-recipes-833649043474",
+      "class": "in_tree",
+      "vendored": {
+        "path": "third_party/bitsandbytes_cuda",
+        "tree_sha256": "5aed28a42cb70ed703dc74bb6f126eb4bf1f2ebc2d80c23bb48293c139855d73"
+      },
+      "license": {
+        "expression": "MIT",
+        "files": [
+          {
+            "root": "hyle",
+            "path": "third_party/bitsandbytes_cuda/LICENSE",
+            "sha256": "52412d7bc7ce4157ea628bbaacb8829e0a9cb3c58f57f99176126bc8cf2bfc85"
+          },
+          {
+            "root": "hyle",
+            "path": "third_party/bitsandbytes_cuda/NOTICE.md",
+            "sha256": "faef7ebcf4950d738ebebfec82f80ecf6c2423cdd841f9a4d4d834c8da67aca5"
+          }
+        ]
+      }
+    },
+    {
+      "name": "awq_cuda",
+      "repository": "https://github.com/casper-hansen/AutoAWQ.git",
+      "revision": "88e4c76b20755db275574e6a03c83c84ba3bece5",
+      "git_tree": "25b64783617d2ddda337abab631dd99dc619e825",
+      "archive": {
+        "url": "https://codeload.github.com/casper-hansen/AutoAWQ/tar.gz/88e4c76b20755db275574e6a03c83c84ba3bece5",
+        "sha256": "525f90b888389bd437a4c9c70bcebb177799be0fa195666987c7341dc713ea27"
+      },
+      "version": "original-cuda-recipes-88e4c76b2075",
+      "class": "in_tree",
+      "vendored": {
+        "path": "third_party/awq_cuda",
+        "tree_sha256": "9ac4f00a5b005e16e39f61e5b6840c9b9c2d9ffdd3d44f724e9789b07bc1537e"
+      },
+      "license": {
+        "expression": "MIT",
+        "files": [
+          {
+            "root": "hyle",
+            "path": "third_party/awq_cuda/LICENSE",
+            "sha256": "2af485d269071b583c62c20250a63349f8313312cc9df0bd9007ca39c6d57bd9"
+          },
+          {
+            "root": "hyle",
+            "path": "third_party/awq_cuda/NOTICE.md",
+            "sha256": "95e617ff0a0e08850d0c51c0bac56dc59adc57d90943bd902d766ca9fcc0ae5f"
+          }
+        ]
+      }
+    },
+    {
+      "name": "compressed_tensors_cuda",
+      "repository": "https://github.com/vllm-project/compressed-tensors.git",
+      "revision": "ac8e2ba82f4e0d5eaa40069f8fc642738f124cd4",
+      "git_tree": "3d02bd5c03a948ec9b08200b8e5c91355d4f2820",
+      "archive": {
+        "url": "https://codeload.github.com/vllm-project/compressed-tensors/tar.gz/ac8e2ba82f4e0d5eaa40069f8fc642738f124cd4",
+        "sha256": "658df62507e53454c77ec998dce9f82c8d8d434ebfc123ec85ffb21f0f7b2f06"
+      },
+      "version": "original-cuda-recipes-ac8e2ba82f4e",
+      "class": "in_tree",
+      "vendored": {
+        "path": "third_party/compressed_tensors_cuda",
+        "tree_sha256": "966dd4d9c72a9074b11ad53a20dc8364b6fbec09eb77320039ccdbfe0a785595"
+      },
+      "license": {
+        "expression": "Apache-2.0",
+        "files": [
+          {
+            "root": "hyle",
+            "path": "third_party/compressed_tensors_cuda/LICENSE",
+            "sha256": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4"
+          },
+          {
+            "root": "hyle",
+            "path": "third_party/compressed_tensors_cuda/NOTICE.md",
+            "sha256": "b4e4bad8f6420ad9c92bd0550014405c2d998dc1ba431ab40f3eafa5192ede08"
           }
         ]
       }

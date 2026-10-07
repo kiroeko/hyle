@@ -1,0 +1,2 @@
+hyle_add_header_self_contained_test(compute_provider_torch_cuda
+  HEADER_DIR compute/providers HEADERS torch_cuda.h)

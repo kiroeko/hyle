@@ -1,4 +1,5 @@
 #include "driver_release.h"
+#include "hyle/core/environment.h"
 
 #include <algorithm>
 #include <iterator>
@@ -7,7 +8,7 @@
 
 #include "hyle/platform/dynlib.h"
 
-#if defined(_WIN32)
+#if HYLE_OS_WINDOWS
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #endif
@@ -15,7 +16,7 @@
 namespace hyle::compute::cuda::detail {
 namespace {
 
-#if defined(_WIN32)
+#if HYLE_OS_WINDOWS
 struct LoaderErrorMode final {
   DWORD previous = 0;
   bool changed = false;
@@ -34,7 +35,7 @@ struct LoaderErrorMode final {
 #endif
 
 Result<platform::DynLib> open_driver_library() noexcept {
-#if defined(_WIN32)
+#if HYLE_OS_WINDOWS
   std::array<wchar_t, 512> directory{};
   const auto length = ::GetSystemDirectoryW(directory.data(),
                                             static_cast<UINT>(directory.size()));
@@ -57,7 +58,7 @@ Result<platform::DynLib> open_driver_library() noexcept {
 std::array<char, 80> read_driver_release() noexcept {
   static_assert(NVML_SYSTEM_DRIVER_VERSION_BUFFER_SIZE <= 80);
   std::array<char, 80> release{};
-#if defined(_WIN32)
+#if HYLE_OS_WINDOWS
   LoaderErrorMode silent_loader;
 #endif
   auto library = open_driver_library();

@@ -38,6 +38,8 @@
 #include "hyle/compute/providers/cuda.h"
 #include "../compute_models/d5_optional_cuda_provider.h"
 #include "../compute_models/cuda_iq1_model_contracts.h"
+#include "../compute_models/cpu_c5_non_gguf_fixture.h"
+#include "hyle/compute/providers/torch_cuda.h"
 #include "hyle/compute/providers/ggml_cuda.h"
 #include "hyle/graph/cuda.h"
 #include "hyle/mem/stats.h"
@@ -103,6 +105,9 @@ template <class Compiled> void expect_mature(const Compiled &compiled) {
                 provider == c::cuda_native::kSglangProviderId ||
               provider == c::cuda_native::kDeepSeekProviderId ||
                 provider == c::cuda_native::kCcclProviderId ||
+#if defined(HYLE_COMPUTE_TORCH_CUDA)
+              provider == c::torch_cuda::kProviderId ||
+#endif
                 d5_optional_cuda_provider::is_flashinfer(provider) || retained_storage)
         << "step=" << step << " node=" << report.node_begin
         << " operation=" << c::operation_name(node.kind)
@@ -1975,4 +1980,7 @@ TEST(CudaGraphIq1ModelContracts, EightCurrentExpertShapesUseOrdinaryGraphAndRepl
   }
   EXPECT_EQ(count, 8U);
 }
+#define HYLE_TEST_GRAPH_ROUTE_CUDA
+#include "../compute_models/cuda_n1_non_gguf_tests.h"
+#undef HYLE_TEST_GRAPH_ROUTE_CUDA
 } // namespace

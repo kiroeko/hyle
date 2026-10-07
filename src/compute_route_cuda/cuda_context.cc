@@ -8,6 +8,7 @@
 #include "hyle/compute/providers/cuda.h"
 #include "hyle/compute/providers/flashinfer.h"
 #include "hyle/compute/providers/ggml_cuda.h"
+#include "hyle/compute/providers/torch_cuda.h"
 
 namespace hyle::compute::cuda {
 
@@ -25,6 +26,9 @@ Result<Context> internal::create_context(DefaultContextOptions options,
       ProviderBinding{flashinfer::provider(), 100},
 #endif
       ProviderBinding{ggml, 200},
+#if defined(HYLE_COMPUTE_TORCH_CUDA)
+      ProviderBinding{torch_cuda::provider(), 200},
+#endif
       ProviderBinding{cublas::provider(), 100},
       ProviderBinding{cuda_native::sglang_provider(), 100},
       ProviderBinding{cuda_native::deepseek_provider(), 100},
