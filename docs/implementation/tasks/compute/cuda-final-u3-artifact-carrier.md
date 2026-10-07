@@ -1,6 +1,6 @@
 # CUDA U3 N1：成熟 GPU 权重准备载体
 
-<!-- MODULE REVIEW: SCOPED -->
+<!-- MODULE REVIEW: AUDITED -->
 
 ## Closure card
 
@@ -46,12 +46,33 @@ Windows 官方 archive SHA256：
 `2bc729898e422b9f3da54349eed98f2f0b5dd415434508ee2ab2a13fb021815d`；
 现 pip cache 原 archive 与官方身份相同，无需重下 3.57GB。
 
-## 待冻结有限 FIX
+## AUDITED 有限 FIX
 
 1. GPU leaf SDK/source/runtime 及许可证 owning description；原 CPU resolver/shim 保持。
 2. 原 GPU tensor 程序，仅 tensor factory 的 device 与已有外部 stream/context 接缝。
 3. Provider prepare/propose/submit、原异常翻译、异步保活、严格资源／capture 明确拒绝。
 4. 普通 CUDA 默认组合、Direct／Graph／精度／18合同与三交付批量资格，原 driver/SM guards 不盲删。
+
+SCOPED 提交 `76b9f9db`。上述四项已冻结，允许 owning 产品施工；新 component 从 QUEUED／SCOPED
+逐级进入 AUDITED，已有 route 的 AUDITED 范围在本卡有限重定界，旧 U2 架构／事实修复保持。
+
+Windows SDK 只从原 wheel 抽取 CUDA leaf import libraries、GPU headers、原 bundled CUDA DLL 与
+原许可证；同名 CPU common 与 torch_python／Python运行环境不引入。通过实际引用原
+`at::cuda::getCurrentCUDABlasHandle` 强制加载 torch_cuda 并注册原 dispatch，不依赖 Python import。
+该初始化发生在 cold prepare；常量 shift/order 也在 cold prepare 创建、完成后复用，不热上传常量。
+原 CPU resolver／config 原文件直接复用，GPU shim 将 CPU common runtime 注册给 GPU owning target，
+不改旧 CPU owner 或原 CPU-only 合同。SDK acquisition 是本 factor 的私有机制，不扩公共下载框架。
+
+GPU original math 与 CPU tensor translation 的区别只在原 device propagation：GPU factory 与 inputs
+同设备，shift/order 冷驻留；decode 的算术／舍入／原 dtype 完全保持。Prepared 无 payload 缓存；
+每次 submit 保留结果在 invocation 至真实 terminal，原 CUDA 外部 stream guard 还原调用方状态。
+ATen 原临时释放遵守该 stream 的 allocator 次序；exception 发生后即使有已提交前缀也标 accepted，
+让真实 Queue Completion 等待并报告失败，禁止提前释放 borrowed 输入或消费失败输出。
+严格 caller workspace／quota 或外部 capture 合同明确拒绝，不伪造资源能力。
+
+Linux 同版本官方 wheel 身份已核对：
+`02c7258e917f3043c978b53acf6f02b818db0d0d85db0e58ae578af333b9b4e2`；
+其 NVIDIA leaf 依赖仍须原 metadata/pin/hash 固定并实际资格，未运行不签支持或交付通过。
 
 ## 七门
 

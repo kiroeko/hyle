@@ -492,7 +492,7 @@
       "module": "compute_route_cuda",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/cuda-final-u3-artifact-carrier.md",
-      "summary": "CUDA U2/U3 SCOPED：保留已审计 preset/架构/冷事实；N1 有限加入成熟 artifact GPU 默认 Provider，原数学/资格不变，交付验证待验。"
+      "summary": "CUDA U2/U3 AUDITED：保留已审计 preset/架构/冷事实；N1 有限加入成熟 artifact GPU 默认 Provider，原数学/资格不变，交付验证待验。"
     },
     {
       "module": "graph_route_cuda",
@@ -582,8 +582,8 @@
     },
     {
       "module": "compute_provider_torch_cuda",
-      "state": "SCOPED",
-      "summary": "CUDA U3 N1 SCOPED：原 NF4/nested、AWQ/CT GPU 张量程序；保留 locked CPU common runtime，附加原 CUDA leaf SDK；自然 Direct/Graph、资源/失败/三交付批量资格化，零新数学。",
+      "state": "AUDITED",
+      "summary": "CUDA U3 N1 AUDITED：原 NF4/nested、AWQ/CT GPU 张量程序；保留 locked CPU common runtime，附加原 CUDA leaf SDK；自然 Direct/Graph、资源/失败/三交付批量资格化，零新数学。",
       "record": "docs/implementation/tasks/compute/cuda-final-u3-artifact-carrier.md"
     }
   ]

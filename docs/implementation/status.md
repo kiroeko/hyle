@@ -56,7 +56,7 @@
 | compute_provider_cublas | CLOSED | P0 / [PASS](../../evidence/correctness/llm-moe-d5-real-fragments/cuda-delivery/README.md) | [record](tasks/build/cuda-provider-runtime-exports-v1.md) | D5-A5 CLOSED：系统CUDA DLL身份与Provider私有runtime导出已补齐；三交付24项、459项模块测试（含一次旧名单断言纠正）、3组独立头通过。仅CMake修复，P0无热路径变化；不代签D5-A6。 |
 | compute_provider_marlin | CLOSED | P0 / [PASS](../../evidence/correctness/llm-moe-d4-self-operator-retirement/README.md) | [record](tasks/compute/llm-moe-d4-self-operator-retirement.md) | M3-D4 CLOSED 91c2fb4d：无合格优势且由成熟 Provider 覆盖的 Marlin、CPU/CUDA/Apple/Vulkan 自有算子域已批量退场；四路线正确性、组件合同与 Compute/Graph 三交付通过，D5 继续真实模型片段验收。 |
 | compute_provider_cuda | AUDITED | — | [record](tasks/compute/cuda-final-u2-build-contract.md) | CUDA U2 B2 AUDITED：有限授权 backend 真实 driver release 冷快照/API独立事实与有效span、当前ggml/CCCL/FlashInfer冷消费者迁移；NVML可选、未知不禁用正常CUDA，不改数学/pin/资格阈值/热路径。 |
-| compute_route_cuda | AUDITED | — | [record](tasks/compute/cuda-final-u3-artifact-carrier.md) | CUDA U2/U3 SCOPED：保留已审计 preset/架构/冷事实；N1 有限加入成熟 artifact GPU 默认 Provider，原数学/资格不变，交付验证待验。 |
+| compute_route_cuda | AUDITED | — | [record](tasks/compute/cuda-final-u3-artifact-carrier.md) | CUDA U2/U3 AUDITED：保留已审计 preset/架构/冷事实；N1 有限加入成熟 artifact GPU 默认 Provider，原数学/资格不变，交付验证待验。 |
 | graph_route_cuda | CLOSED | P0 / [PASS](../../evidence/correctness/llm-moe-d4-self-operator-retirement/README.md) | [record](tasks/compute/llm-moe-d4-self-operator-retirement.md) | M3-D4 CLOSED 91c2fb4d：无合格优势且由成熟 Provider 覆盖的 Marlin、CPU/CUDA/Apple/Vulkan 自有算子域已批量退场；四路线正确性、组件合同与 Compute/Graph 三交付通过，D5 继续真实模型片段验收。 |
 | compute_route_apple | AUDITED | — | [record](tasks/compute/llm-moe-d5-portable-float-native-qualification.md) | D5-F45 AUDITED：Apple40格运行通过、DeepSeek官方FP4四格准备拒绝。三交付与BF16 FFN/GGUF MoE代表片段P1已通过；未外推官方FP4或其它形状性能，残余能力与D6未关闭，无新数学。 |
 | graph_route_apple | AUDITED | — | [record](tasks/compute/llm-moe-d5-portable-float-native-qualification.md) | D5-F45 AUDITED：Apple40格运行通过、DeepSeek官方FP4四格准备拒绝。三交付与BF16 FFN/GGUF MoE代表片段P1已通过；未外推官方FP4或其它形状性能，残余能力与D6未关闭，无新数学。 |
@@ -69,7 +69,7 @@
 | compute_provider_flashinfer | AUDITED | — | [record](tasks/compute/cuda-final-u2-build-contract.md) | CUDA U2 B2 AUDITED：有限授权 backend 真实 driver release 冷快照/API独立事实与有效span、当前ggml/CCCL/FlashInfer冷消费者迁移；NVML可选、未知不禁用正常CUDA，不改数学/pin/资格阈值/热路径。 |
 | compute_provider_ggml_metal | AUDITED | — | [record](tasks/compute/cpu-quant-mtp-c3-format-bindings.md) | C3公共GGUF enum消费者有限迁移AUDITED：只明确拒绝新增CPU格式，原D5资格/算法/限制不变，不恢复GPU队列；不签新增GPU能力。 |
 | compute_provider_iree_vulkan | CANDIDATE | — | [record](tasks/compute/llm-moe-d3-ggml-vulkan-native-binding.md) | M3-D3 CANDIDATE 2757ecc：checked Scan、BF16 conversion和具名FP8 MatMul限定域已有收据，Vulkan A5完成；不代签官方grouped FP8/FP4或Q8数值失败域。D5-A6及D6未关闭。 |
-| compute_provider_torch_cuda | SCOPED | — | [record](tasks/compute/cuda-final-u3-artifact-carrier.md) | CUDA U3 N1 SCOPED：原 NF4/nested、AWQ/CT GPU 张量程序；保留 locked CPU common runtime，附加原 CUDA leaf SDK；自然 Direct/Graph、资源/失败/三交付批量资格化，零新数学。 |
+| compute_provider_torch_cuda | AUDITED | — | [record](tasks/compute/cuda-final-u3-artifact-carrier.md) | CUDA U3 N1 AUDITED：原 NF4/nested、AWQ/CT GPU 张量程序；保留 locked CPU common runtime，附加原 CUDA leaf SDK；自然 Direct/Graph、资源/失败/三交付批量资格化，零新数学。 |
 
 <!-- END GENERATED MODULE STATUS -->
 
