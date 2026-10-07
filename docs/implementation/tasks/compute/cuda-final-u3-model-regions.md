@@ -127,3 +127,22 @@ close/失败/replay/capture负空间与完整region。先验证单一不可变�
 精确范围与保留原失败见[sidecar资格](../../../../evidence/correctness/cuda-final-u3-r1-sidecars/README.md)。
 全固定GGUF与其余family-region仍需完成；`93792dd4`批量注册共同C5原合同/参数/完整NextN，
 GPU codec reference接缝仅为test，当前尚未编译/运行，不算通过或本包完成。三交付联合项仍待。
+
+### 固定C5批次的两项准入／布局纠正（AUDITED）
+
+`0ba0586e`已实际编译；104制品身份的projection及原Qwen参数形状在Windows两入口通过。
+完整559数值合同批次检出两类有限FIX，旧失败保留：
+
+1. Qwen2.4T NextN的Q8_0 embedding是248320×8192，压缩source bytes约2.16 GiB，选中row
+   decoder使用size_t byte offset／int64 width；现source门仍用INT32 bytes而误拒绝。
+   只把已admitted quantized Gather source的physical byte上限改为UINT32，其logical/stride/
+   checked IDs/输出/其它op限制不变，不裁词表。原CUDA getrows.cu的模板参数与row地址证明此域。
+2. 七个plain BF16 expert合同的同token重复ID产生第三slot零输出。原ggml F32 MUL_MAT_ID
+   fallback的expert/token/slot循环命中后`break`，假设token内专家不重复。HYLE GroupedMatMul
+   合同允许重复ID。对plain权重采用原reshape，把[T,S,K]当[T*S,1,K]、IDs当[T*S,1]，原
+   MUL_MAT_ID后reshape回[T,S,N]；每原token/slot成为独立native token，保留原F32 operands/
+   checked IDs/物理权重和输出位置，避免复制selected权重或更改原kernel。原量化路径不变。
+
+两项只在当前AUDITED ggml CUDA owner的既有lowering内修复；不是新数学或扩大公共schema。
+固定批次完成后一次集中纠正验证，并补同址/重复ID的小型source方程回归；同候选再资格化当前
+official/sidecar资源。其余族仍以完整需求映射为准，未运行不能PASS，不启动P1。
