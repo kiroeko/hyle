@@ -82,3 +82,27 @@ shared搬移后Direct/Graph各1项、static搬移后各1项均通过，无skip�
 同候选的installed shared/static另复用原C3格式consumer（原文件SHA不变），每形态36个Direct/Graph数值检查通过：
 十一GGUF CPU新增格式、NF4/nested/AWQ/CT原解码及真实projection、affine4/MXFP4/MXFP8选中专家。
 只各编一个consumer文件约1秒，不重建producer；全模型语义/状态仍由具名C5/官方片段独立验。
+
+## Linux当前成熟承载已验（source/shared，交付仍待）
+
+同Windows不可变source archive候选`9a9936e8271fc834f4b090316bc0a5d7f9b25982`只前向覆盖已空闲的ext4验证副本；
+Linux GCC14.2、原LibTorch2.8.0+cpu、ggml0.26和oneDNN3.13.4。oneDNN新版本低并行集中build777.711秒，
+11组Provider/原runtime owning验收通过。Direct全批828项原821通过、7个本地fixture读取失败；
+原因是archive有fixture/目录而env指外层。只改env到真实目录后7项1.561秒补验通过，原FAIL保留。
+Graph首次全批846项通过，无skip；完整官方混合precision/新DeepSeek主干、三stage DSpark/MTP sidecar与C5端口/状态均实际运行。
+[原配置/构建/失败/补验/XML](../../../../evidence/correctness/cpu-final-f3/README.md)归档；没有产品/误差/fixture字节变化，
+不重复成功Direct或重编producer。Linux installed static/shared、Mac剩余官方分支与Windows当前全批/最终交付仍待验。
+WSL只签Linux correctness角色，不冒称独立formal性能机；本包不关闭。
+
+## T6 ARM FP16 MatMul累加准入纠正已审计
+
+Mac剩余批出现OriginalScaleDtypeRoundsBeforeExplicitFloat32Output失败：原artifact decode逐值精确门通过，
+随后plain F16 MatMul输出6.40234375而独立F32累加/一次F16舍入应为6.3984375。
+原ggml vec.cpp的ggml_vec_dot_f16经GGML_F16_DOT映射进入ARM FP16 vfmaq_f16/vaddq_f16，
+GGML_PREC_F32 metadata没有使该实际dot宽化。不能以half输出误差门掩盖FP32累加合同。
+成熟ATen已有显式F32输入/MatMul/一次输出舍入和Mac owning资格，普通CPU路线不需要新数学。
+有限FIX：compute_provider_ggml在ARM64 cold supports拒绝plain F16 MatMul FP32请求；
+Graph完整region复用同一supports，不另写旁路，合法ATen leaf承接。x86、packed原codec与其它原op不改变。
+已有ggml owner在F1 AUDITED，T6定界后绑定本卡；新增一个ggml拒绝/普通两入口精确反例和实际artifact composition重验，
+迁移旧F16“必须ggml”metadata断言。单批构建/定向补验/原remaining Graph首次全批，不重跑成功C5、不跑P1。
+不升级或改原vendor数学、不扩自研、不撤回标准CPU F16算子可用性；原FAIL保留。
