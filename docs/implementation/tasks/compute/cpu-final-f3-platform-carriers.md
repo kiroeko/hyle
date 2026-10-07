@@ -158,3 +158,13 @@ Double高精度误差对照的旧FAIL/两个probe完整保留；四percent片段
 [完整收据/原失败/两probe/正式纠正](../../../../evidence/correctness/cpu-final-f3/README.md)已归档。
 当前源代码Compute+Graph61,246行/251文件；4行有效cold准入胶水，自研数学新增0。
 新ARM准入修复的三交付增量、Windows全批和Linux当前安装仍待完成，F3不关闭。
+
+## T10固定Q8 sidecar的量化前原norm规则（SCOPED）
+
+Windows当前Direct全批唯一失败为同Flash Q8 sidecar；原FP32参考门max约4.20% > 4%，
+该平台普通RMSNorm优先oneDNN，而Mac使用原ggml。不能按平台更换reference或放宽门。
+范围只为已固定repo/revision/manifest/variant的Q8 sidecar、plain dense F32 RMSNorm、原epsilon1e-6/F32累加，
+冷匹配优先原ggml以保持量化前原GGUF程序边界；不是性能WIN、不改变generic默认、数学、对象、热路径或公开API。
+真实owner compute_route_cpu仍AUDITED于F1；先审计本具名规则，绑定本卡后才实施。
+一次增量构建与Windows具名Direct/Graph正式重验；其它成功全批复用，不再开探针或换参考。
+若仍失败保存具体结果，不追加新norm方案。其它平台同规则的资格按产品实际影响补验，不假称自动通过。
