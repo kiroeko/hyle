@@ -1,4 +1,5 @@
 #pragma once
+#include <cstdio>
 
 namespace cuda_kimi_mla_test {
 template<class Run>
@@ -30,6 +31,9 @@ void check(const hyle::compute::ModelArtifactProfileDescription *profile,Run run
   fixture.validate_intermediate=[&](std::size_t port,std::span<const float> values) {
     EXPECT_LT(port,expected.size());
     if(port>=expected.size())return true;
+    std::fprintf(stderr,"KIMI_MLA_CHAIN profile=%.*s replay=%zu port=%zu %s\n",
+      int(profile->variant.size()),profile->variant.data(),replay,port,
+      sem::error_summary(values,expected[port]).c_str());
     sem::expect_output(policy,values,expected[port],{},policy.exact_output(port),
                        nullptr,policy.bfloat_chain_output(port),port);
     if(port+1==expected.size())++replay;
