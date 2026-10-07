@@ -1,0 +1,12 @@
+{
+  "candidate": "64304e9e691cc78d2ead05a7c88fa485f9b8adc4",
+  "successful_steps": 20,
+  "retained_failed_steps": 1,
+  "scope": "Linux CPU-only source/static/shared delta: all43 requests x two contexts and original40 format/numerical/replay checks; mature defaults, no Windows WIN inheritance.",
+  "correction": "Custom source consumer omitted existing hyle_stage_runtime_dependencies; missing AVX2 capsule at invocation. Added that public staging helper, restored unchanged consumer, continued original failed step. No product/instrument/math changes.",
+  "loader": "Actual ldd has no missing libraries in static/shared consumers; shared export hygiene passes.",
+  "archive": "evidence/correctness/cpu-final-f4/linux-delivery-delta.zip",
+  "archive_sha256": "2172bf90a5ef3df8e29dbf7d8c1b9d28551193d2381361853e8e96950b880de8",
+  "archive_bytes": 45358,
+  "performance": "No additional P1 or timing claim."
+}

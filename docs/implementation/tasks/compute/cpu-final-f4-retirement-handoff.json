@@ -1,0 +1,479 @@
+{
+  "scope": "F4 L1 handoff, not F5 AUDITED/deletion authorization or general WIN",
+  "native_math_kinds": 35,
+  "with_qualified_subdomains": 20,
+  "additional_unique_only": 1,
+  "finite_retirement_audit_kinds": 14,
+  "entries": [
+    {
+      "operation": "Abs",
+      "source": "elementwise.cc",
+      "qualified_win_requests": [],
+      "mature_candidates": [
+        "ggml"
+      ],
+      "unique_demand": null,
+      "handoff": "F5_FINITE_RETIREMENT_AUDIT",
+      "limits": "Only exact qualified points are WIN. Full semantic/resource replacement must be audited before deletion."
+    },
+    {
+      "operation": "Neg",
+      "source": "elementwise.cc",
+      "qualified_win_requests": [
+        "unary-1-t5-r1-h2048-o6",
+        "unary-1-t5-r32-h2048-o6"
+      ],
+      "mature_candidates": [
+        "ggml"
+      ],
+      "unique_demand": null,
+      "handoff": "RETAIN_NEEDED_QUALIFIED_BRANCHES",
+      "limits": "Only exact qualified points are WIN. Full semantic/resource replacement must be audited before deletion."
+    },
+    {
+      "operation": "Exp",
+      "source": "elementwise.cc",
+      "qualified_win_requests": [
+        "unary-2-t4-r1-h2048-o6",
+        "unary-2-t4-r32-h2048-o6",
+        "unary-2-t5-r32-h2048-o6",
+        "unary-2-t6-r1-h2048-o6",
+        "unary-2-t6-r1-h4096-o6",
+        "unary-2-t6-r32-h2048-o6"
+      ],
+      "mature_candidates": [
+        "ggml"
+      ],
+      "unique_demand": null,
+      "handoff": "RETAIN_NEEDED_QUALIFIED_BRANCHES",
+      "limits": "Only exact qualified points are WIN. Full semantic/resource replacement must be audited before deletion."
+    },
+    {
+      "operation": "Log",
+      "source": "elementwise.cc",
+      "qualified_win_requests": [
+        "unary-3-t4-r1-h2048-o6"
+      ],
+      "mature_candidates": [
+        "ggml"
+      ],
+      "unique_demand": null,
+      "handoff": "RETAIN_NEEDED_QUALIFIED_BRANCHES",
+      "limits": "Only exact qualified points are WIN. Full semantic/resource replacement must be audited before deletion."
+    },
+    {
+      "operation": "Sqrt",
+      "source": "elementwise.cc",
+      "qualified_win_requests": [
+        "unary-4-t4-r1-h2048-o6",
+        "unary-4-t5-r32-h2048-o6"
+      ],
+      "mature_candidates": [
+        "ggml"
+      ],
+      "unique_demand": null,
+      "handoff": "RETAIN_NEEDED_QUALIFIED_BRANCHES",
+      "limits": "Only exact qualified points are WIN. Full semantic/resource replacement must be audited before deletion."
+    },
+    {
+      "operation": "Rsqrt",
+      "source": "elementwise.cc",
+      "qualified_win_requests": [
+        "unary-5-t4-r1-h2048-o6",
+        "unary-5-t4-r32-h2048-o6",
+        "unary-5-t5-r32-h2048-o6"
+      ],
+      "mature_candidates": [
+        "ggml"
+      ],
+      "unique_demand": null,
+      "handoff": "RETAIN_NEEDED_QUALIFIED_BRANCHES",
+      "limits": "Only exact qualified points are WIN. Full semantic/resource replacement must be audited before deletion."
+    },
+    {
+      "operation": "Tanh",
+      "source": "elementwise.cc",
+      "qualified_win_requests": [
+        "unary-6-t4-r1-h4096-o6"
+      ],
+      "mature_candidates": [
+        "ggml"
+      ],
+      "unique_demand": null,
+      "handoff": "RETAIN_NEEDED_QUALIFIED_BRANCHES",
+      "limits": "Only exact qualified points are WIN. Full semantic/resource replacement must be audited before deletion."
+    },
+    {
+      "operation": "Sigmoid",
+      "source": "elementwise.cc",
+      "qualified_win_requests": [],
+      "mature_candidates": [
+        "ATen"
+      ],
+      "unique_demand": null,
+      "handoff": "F5_FINITE_RETIREMENT_AUDIT",
+      "limits": "Only exact qualified points are WIN. Full semantic/resource replacement must be audited before deletion."
+    },
+    {
+      "operation": "Relu",
+      "source": "elementwise.cc",
+      "qualified_win_requests": [
+        "unary-8-t5-r1-h2048-o6",
+        "unary-8-t5-r32-h2048-o6"
+      ],
+      "mature_candidates": [
+        "ggml"
+      ],
+      "unique_demand": null,
+      "handoff": "RETAIN_NEEDED_QUALIFIED_BRANCHES",
+      "limits": "Only exact qualified points are WIN. Full semantic/resource replacement must be audited before deletion."
+    },
+    {
+      "operation": "Silu",
+      "source": "elementwise.cc",
+      "qualified_win_requests": [
+        "unary-11-t4-r32-h2048-o6"
+      ],
+      "mature_candidates": [
+        "ATen"
+      ],
+      "unique_demand": null,
+      "handoff": "RETAIN_NEEDED_QUALIFIED_BRANCHES",
+      "limits": "Only exact qualified points are WIN. Full semantic/resource replacement must be audited before deletion."
+    },
+    {
+      "operation": "Softplus",
+      "source": "elementwise.cc",
+      "qualified_win_requests": [],
+      "mature_candidates": [
+        "oneDNN",
+        "ATen"
+      ],
+      "unique_demand": null,
+      "handoff": "F5_FINITE_RETIREMENT_AUDIT",
+      "limits": "Only exact qualified points are WIN. Full semantic/resource replacement must be audited before deletion."
+    },
+    {
+      "operation": "Add",
+      "source": "elementwise.cc",
+      "qualified_win_requests": [
+        "binary-0-t6-r32-h2048-o6"
+      ],
+      "mature_candidates": [
+        "ggml"
+      ],
+      "unique_demand": null,
+      "handoff": "RETAIN_NEEDED_QUALIFIED_BRANCHES",
+      "limits": "Only exact qualified points are WIN. Full semantic/resource replacement must be audited before deletion."
+    },
+    {
+      "operation": "Subtract",
+      "source": "elementwise.cc",
+      "qualified_win_requests": [
+        "binary-1-t4-r32-h2048-o6",
+        "binary-1-t6-r1-h2048-o6"
+      ],
+      "mature_candidates": [
+        "ggml"
+      ],
+      "unique_demand": null,
+      "handoff": "RETAIN_NEEDED_QUALIFIED_BRANCHES",
+      "limits": "Only exact qualified points are WIN. Full semantic/resource replacement must be audited before deletion."
+    },
+    {
+      "operation": "Multiply",
+      "source": "elementwise.cc",
+      "qualified_win_requests": [],
+      "mature_candidates": [
+        "ggml"
+      ],
+      "unique_demand": null,
+      "handoff": "F5_FINITE_RETIREMENT_AUDIT",
+      "limits": "Only exact qualified points are WIN. Full semantic/resource replacement must be audited before deletion."
+    },
+    {
+      "operation": "Divide",
+      "source": "elementwise.cc",
+      "qualified_win_requests": [
+        "binary-3-t4-r1-h2048-o6",
+        "binary-3-t4-r1-h4096-o6",
+        "binary-3-t4-r32-h2048-o6",
+        "binary-3-t6-r1-h4096-o6"
+      ],
+      "mature_candidates": [
+        "ggml"
+      ],
+      "unique_demand": null,
+      "handoff": "RETAIN_NEEDED_QUALIFIED_BRANCHES",
+      "limits": "Only exact qualified points are WIN. Full semantic/resource replacement must be audited before deletion."
+    },
+    {
+      "operation": "Minimum",
+      "source": "elementwise.cc",
+      "qualified_win_requests": [
+        "binary-4-t4-r1-h2048-o6"
+      ],
+      "mature_candidates": [
+        "ATen"
+      ],
+      "unique_demand": null,
+      "handoff": "RETAIN_NEEDED_QUALIFIED_BRANCHES",
+      "limits": "Only exact qualified points are WIN. Full semantic/resource replacement must be audited before deletion."
+    },
+    {
+      "operation": "Maximum",
+      "source": "elementwise.cc",
+      "qualified_win_requests": [],
+      "mature_candidates": [
+        "ATen"
+      ],
+      "unique_demand": null,
+      "handoff": "F5_FINITE_RETIREMENT_AUDIT",
+      "limits": "Only exact qualified points are WIN. Full semantic/resource replacement must be audited before deletion."
+    },
+    {
+      "operation": "ReduceSum",
+      "source": "reduction.cc",
+      "qualified_win_requests": [],
+      "mature_candidates": [
+        "ggml",
+        "ATen"
+      ],
+      "unique_demand": null,
+      "handoff": "F5_FINITE_RETIREMENT_AUDIT",
+      "limits": "Only exact qualified points are WIN. Full semantic/resource replacement must be audited before deletion."
+    },
+    {
+      "operation": "ReduceMean",
+      "source": "reduction.cc",
+      "qualified_win_requests": [],
+      "mature_candidates": [
+        "ggml",
+        "ATen"
+      ],
+      "unique_demand": null,
+      "handoff": "F5_FINITE_RETIREMENT_AUDIT",
+      "limits": "Only exact qualified points are WIN. Full semantic/resource replacement must be audited before deletion."
+    },
+    {
+      "operation": "ReduceMinimum",
+      "source": "reduction.cc",
+      "qualified_win_requests": [
+        "reduce-2-t4-r32-h2048-o6"
+      ],
+      "mature_candidates": [
+        "ATen"
+      ],
+      "unique_demand": null,
+      "handoff": "RETAIN_NEEDED_QUALIFIED_BRANCHES",
+      "limits": "Only exact qualified points are WIN. Full semantic/resource replacement must be audited before deletion."
+    },
+    {
+      "operation": "ReduceMaximum",
+      "source": "reduction.cc",
+      "qualified_win_requests": [
+        "reduce-3-t4-r1-h2048-o6",
+        "reduce-3-t5-r1-h4096-o6"
+      ],
+      "mature_candidates": [
+        "ATen"
+      ],
+      "unique_demand": null,
+      "handoff": "RETAIN_NEEDED_QUALIFIED_BRANCHES",
+      "limits": "Only exact qualified points are WIN. Full semantic/resource replacement must be audited before deletion."
+    },
+    {
+      "operation": "RmsNorm",
+      "source": "native_provider.cc + normalization.cc",
+      "qualified_win_requests": [
+        "norm-0-t5-r1-h4096-o6"
+      ],
+      "mature_candidates": [
+        "oneDNN",
+        "ggml",
+        "ATen"
+      ],
+      "unique_demand": "Declared-domain F32 prepared RMSNorm and exact bounded compiled/private storage; F1/F3 actual consumer qualification.",
+      "handoff": "RETAIN_NEEDED_QUALIFIED_BRANCHES",
+      "limits": "Only exact qualified points are WIN. Full semantic/resource replacement must be audited before deletion."
+    },
+    {
+      "operation": "LayerNorm",
+      "source": "normalization.cc",
+      "qualified_win_requests": [],
+      "mature_candidates": [
+        "oneDNN",
+        "ggml",
+        "ATen"
+      ],
+      "unique_demand": null,
+      "handoff": "F5_FINITE_RETIREMENT_AUDIT",
+      "limits": "Only exact qualified points are WIN. Full semantic/resource replacement must be audited before deletion."
+    },
+    {
+      "operation": "Softmax",
+      "source": "transformer.cc",
+      "qualified_win_requests": [
+        "softmax-2-t4-r1-h2048-o6"
+      ],
+      "mature_candidates": [
+        "ggml",
+        "ATen"
+      ],
+      "unique_demand": null,
+      "handoff": "RETAIN_NEEDED_QUALIFIED_BRANCHES",
+      "limits": "Only exact qualified points are WIN. Full semantic/resource replacement must be audited before deletion."
+    },
+    {
+      "operation": "LogSoftmax",
+      "source": "transformer.cc",
+      "qualified_win_requests": [],
+      "mature_candidates": [
+        "ATen"
+      ],
+      "unique_demand": null,
+      "handoff": "F5_FINITE_RETIREMENT_AUDIT",
+      "limits": "Only exact qualified points are WIN. Full semantic/resource replacement must be audited before deletion."
+    },
+    {
+      "operation": "GatedActivation",
+      "source": "elementwise.cc",
+      "qualified_win_requests": [
+        "silu-gate-0-t4-r32-h2048-o6"
+      ],
+      "mature_candidates": [
+        "ATen"
+      ],
+      "unique_demand": null,
+      "handoff": "RETAIN_NEEDED_QUALIFIED_BRANCHES",
+      "limits": "Only exact qualified points are WIN. Full semantic/resource replacement must be audited before deletion."
+    },
+    {
+      "operation": "Copy",
+      "source": "transform.cc",
+      "qualified_win_requests": [],
+      "mature_candidates": [
+        "oneDNN",
+        "ggml",
+        "ATen"
+      ],
+      "unique_demand": "Declared-domain view/broadcast materialization and exact caller-owned/private resource budgets; retain Mem mechanism separately.",
+      "handoff": "RETAIN_NAMED_UNIQUE_DEMAND",
+      "limits": "Only exact qualified points are WIN. Full semantic/resource replacement must be audited before deletion."
+    },
+    {
+      "operation": "Cast",
+      "source": "cast.cc",
+      "qualified_win_requests": [
+        "cast-t2-r1-h4096-o4",
+        "cast-t3-r1-h2048-o5",
+        "cast-t3-r1-h4096-o3",
+        "cast-t3-r32-h2048-o2"
+      ],
+      "mature_candidates": [
+        "ggml",
+        "ATen"
+      ],
+      "unique_demand": null,
+      "handoff": "RETAIN_NEEDED_QUALIFIED_BRANCHES",
+      "limits": "Only exact qualified points are WIN. Full semantic/resource replacement must be audited before deletion."
+    },
+    {
+      "operation": "Fill",
+      "source": "transform.cc",
+      "qualified_win_requests": [
+        "fill-t6-r1-h2048-o6"
+      ],
+      "mature_candidates": [
+        "ggml",
+        "ATen"
+      ],
+      "unique_demand": null,
+      "handoff": "RETAIN_NEEDED_QUALIFIED_BRANCHES",
+      "limits": "Only exact qualified points are WIN. Full semantic/resource replacement must be audited before deletion."
+    },
+    {
+      "operation": "Gather",
+      "source": "indexing.cc",
+      "qualified_win_requests": [
+        "gather-t4-r1-h4096-o12",
+        "gather-t4-r1-h4096-o14",
+        "gather-t5-r1-h4096-o14",
+        "gather-t6-r1-h2048-o12"
+      ],
+      "mature_candidates": [
+        "ggml",
+        "ATen"
+      ],
+      "unique_demand": null,
+      "handoff": "RETAIN_NEEDED_QUALIFIED_BRANCHES",
+      "limits": "Only exact qualified points are WIN. Full semantic/resource replacement must be audited before deletion."
+    },
+    {
+      "operation": "ScatterAssign",
+      "source": "indexing.cc",
+      "qualified_win_requests": [],
+      "mature_candidates": [
+        "ATen"
+      ],
+      "unique_demand": null,
+      "handoff": "F5_FINITE_RETIREMENT_AUDIT",
+      "limits": "Only exact qualified points are WIN. Full semantic/resource replacement must be audited before deletion."
+    },
+    {
+      "operation": "ScatterAdd",
+      "source": "indexing.cc",
+      "qualified_win_requests": [],
+      "mature_candidates": [
+        "ggml",
+        "ATen"
+      ],
+      "unique_demand": null,
+      "handoff": "F5_FINITE_RETIREMENT_AUDIT",
+      "limits": "Only exact qualified points are WIN. Full semantic/resource replacement must be audited before deletion."
+    },
+    {
+      "operation": "Concat",
+      "source": "indexing.cc",
+      "qualified_win_requests": [],
+      "mature_candidates": [
+        "ggml",
+        "ATen"
+      ],
+      "unique_demand": null,
+      "handoff": "F5_FINITE_RETIREMENT_AUDIT",
+      "limits": "Only exact qualified points are WIN. Full semantic/resource replacement must be audited before deletion."
+    },
+    {
+      "operation": "RoPE",
+      "source": "transformer.cc",
+      "qualified_win_requests": [],
+      "mature_candidates": [
+        "ggml",
+        "ATen"
+      ],
+      "unique_demand": null,
+      "handoff": "F5_FINITE_RETIREMENT_AUDIT",
+      "limits": "Only exact qualified points are WIN. Full semantic/resource replacement must be audited before deletion."
+    },
+    {
+      "operation": "Select",
+      "source": "elementwise.cc",
+      "qualified_win_requests": [],
+      "mature_candidates": [
+        "oneDNN",
+        "ATen"
+      ],
+      "unique_demand": null,
+      "handoff": "F5_FINITE_RETIREMENT_AUDIT",
+      "limits": "Only exact qualified points are WIN. Full semantic/resource replacement must be audited before deletion."
+    }
+  ],
+  "protected": [
+    "SIMD and Mem foundations",
+    "borrowed TorchAO/ATen/MLX/DS4 codec and model programs",
+    "View alias/graph semantics, not an arithmetic operator",
+    "named bounded RMSNorm/Copy consumers"
+  ],
+  "budget": "No self optimization or additional P1/AA. F5 checks complete mature replacement, then physically removes redundant branches."
+}

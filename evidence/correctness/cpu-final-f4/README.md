@@ -43,5 +43,32 @@ input was corrected. The initial include-owner rejection is a transcript
 reconstruction, explicitly not original raw output.
 
 No math, hot execution/objects, P1 repetition or public governance changed.
-Windows installed static/shared delta, Linux/Mac rule delta and F4 retirement
-handoff remain incomplete; this evidence does not close F4 or the CPU goal.
+At this point installed/platform delta and the retirement handoff were incomplete.
+The completed follow-up is recorded below; F4 and the CPU goal are still open.
+
+## CPU-only three-platform delivery delta
+
+- [Windows receipt](windows-delivery-delta-receipt.json), [raw archive](windows-delivery-delta.zip):
+  17 successful steps, source and relocated static/shared, all43 requests through
+  both ordinary contexts and original40 numerical/replay format checks. Actual
+  static CPU2 rules hit; unrestricted/shared fall back without WIN. DLLs neighbour
+  the executable; installed execution PATH uses System32/Windows only. Exports pass.
+- [Mac receipt](mac-delivery-delta-receipt.json), [raw archive](mac-delivery-delta.zip):
+  Mac16,12/macOS27.0.1/Apple clang21, 20 successful steps, real source embedding
+  and relocated static/shared with the same43/40 checks and no inherited Windows WIN.
+- [Linux receipt](linux-delivery-delta-receipt.json), [raw archive](linux-delivery-delta.zip):
+  20 successful continuation steps and one original retained source failure;
+  same43/40 checks in source/static/shared, actual loader and exports pass.
+  The custom source overlay omitted the existing runtime-staging helper, so the
+  AVX2 capsule was not discoverable at invocation. The consumer seam was corrected;
+  product/math/instrument inputs were unchanged and the original failure continued.
+
+Product snapshot is `a7ccfc6639483aee4a76403a35fb32d1732441ec`; forward validation
+archive is `64304e9e691cc78d2ead05a7c88fa485f9b8adc4`, differing only by Windows
+evidence. Windows remains canonical. No platform copies supplied product changes.
+
+The [source-family handoff](../../../docs/implementation/tasks/compute/cpu-final-f4-retirement-handoff.json)
+separates20 kinds with qualified subdomains, one additional unique-only kind and
+14 finite retirement audits. This is not deletion or a full-family WIN claim.
+Current mixed-envelope private-seam deltas and F4 terminal audit remain pending;
+old GPU states and math are preserved. No additional P1 was run.

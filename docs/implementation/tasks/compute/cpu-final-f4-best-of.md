@@ -143,4 +143,27 @@ Windows43点两普通context的命中／两线程／相邻shape／epsilon／phys
 变输入prepared replay与实际Graph leaf lowering／完整成熟region优先通过；XML分别证明pinned资格1与unrestricted资格0。
 当前普通Direct19、Graph20与Native owner2项回归通过，无skip；首次test gate输入误用packed-halves默认
 导致fixture schema失败，仅改测试为原qualified separate输入，原FAIL保留，产品数学没有纠正或优化。
-shared/static安装、Linux/Mac差异和L1交接尚待，不能提前关闭F4。
+此时shared/static安装、Linux/Mac差异和L1交接尚待，不能提前关闭F4。
+
+### R2 CPU-only三平台交付与L1交接已完成，mixed差异待验
+
+产品冻结为 `a7ccfc6639483aee4a76403a35fb32d1732441ec`，验证archive/candidate为
+`64304e9e691cc78d2ead05a7c88fa485f9b8adc4`（后者仅多Windows证据）。
+Windows17步、Mac20步、Linux20成功步的CPU-only source/static/shared增量均完成。
+每形态实际验证43请求×两context、40原格式数值／重放格；Windows source/static资格命中，
+unrestricted/shared/Linux/Mac采用合法成熟默认而不继承WIN；实际loader及shared出口通过。
+[三平台交付原始证据](../../../../evidence/correctness/cpu-final-f4/README.md)保留全部初始失败。
+Linux首次source invocation的AVX2程序NotFound来自自定义验证overlay漏调用已有
+`hyle_stage_runtime_dependencies`；仅补消费工程标准loader配置、恢复同一consumer后续原失败步骤，
+不改产品、公共治理、算子或性能仪器，不启动P1重测。
+
+[35种源码交接](cpu-final-f4-retirement-handoff.json)：20种有完整候选资格的必要子域，
+另Copy有具名独有动态／资源消费；14种进入F5有限成熟替代／资源审计后清退。
+SIMD/Mem基础、View别名机制、借入TorchAO/ATen/MLX/DS4原程序不误删。
+本节不授权F5先改产品，也不把有部分WIN的未资格子域假记完整优势。
+
+R2剩余有限交付差异：本轮改变CPU facade私有factory/rule seam，F1旧mixed CPU资格虽可复用原数学，
+仍须在既有Win CUDA/Vulkan、Mac Apple、Linux CUDA envelope集中补当前source/static/shared的
+普通CPU context／工程默认／43点不泄露CPU-only WIN及原40格。只用缓存producer与同一consumer，
+重型串行、j2，不重测GPU性能／扩GPU格式／变更旧GPU状态。完成后终审F4并按协议关闭，再开F5。
+当前产品/API/数学/常态形状已停止变化；新证据/SDK验证不改变冻结产品，不签CPU goal全完成。

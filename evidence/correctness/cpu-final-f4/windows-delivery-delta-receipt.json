@@ -1,0 +1,19 @@
+{
+  "candidate": "64304e9e691cc78d2ead05a7c88fa485f9b8adc4",
+  "product_candidate": "a7ccfc6639483aee4a76403a35fb32d1732441ec",
+  "successful_steps": 17,
+  "scope": "Windows current cold rules and mature default delta, CPU-only source/static/shared, 43 exact requests x two contexts and original40 numeric/replay format checks per consumer.",
+  "static_positive": "Source and relocated static SDK use actual singleton CPU2; all43 qualified selections match.",
+  "unknown": "Unrestricted source/static and source/shared/relocated shared retain mature math without inherited WIN.",
+  "loader": "Torch and HYLE DLLs staged beside exe; installed execution PATH only System32/Windows; actual shared export hygiene passes.",
+  "sdk_root": "C:/hv/cpu-final-f4-sdk",
+  "archive": "evidence/correctness/cpu-final-f4/windows-delivery-delta.zip",
+  "archive_sha256": "fd7ec522d188c1eb39c307348476f4ebd550176e1246faa3ada9b0415c2462d5",
+  "archive_bytes": 25866,
+  "pending": [
+    "Linux/Mac current rule/default delta",
+    "L1 handoff publication",
+    "F4 terminal audit"
+  ],
+  "performance": "No new P1 or statistical qualification."
+}

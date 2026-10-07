@@ -1,0 +1,12 @@
+{
+  "candidate": "64304e9e691cc78d2ead05a7c88fa485f9b8adc4",
+  "machine": "Mac16,12 / macOS27.0.1 / Apple clang21.0.0 / CMake4.3.4",
+  "successful_steps": 20,
+  "scope": "CPU-only source add_subdirectory and relocated static/shared, 43 rule requests x two contexts and original40 numerical/replay format checks in each shape; mature defaults, no Windows WIN inheritance.",
+  "source_archive_sha256": "f6ace0efcc5433b974baf8d5e3af7065b7e2afd906eca8a897e6e5ee6ac5dd87",
+  "loader": "Current managed Torch SDK with original F3 loader/rpath seam; actual shared exports pass.",
+  "archive": "evidence/correctness/cpu-final-f4/mac-delivery-delta.zip",
+  "archive_sha256": "1ce6a42e6e0f4704840e4e0160ed93fc72dc3682377d69f5374a1351755f0c2e",
+  "archive_bytes": 30907,
+  "performance": "P0/delta only; no Mac P1 or WIN."
+}
