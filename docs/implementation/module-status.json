@@ -361,9 +361,9 @@
     },
     {
       "module": "compute_provider_onednn",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/cpu-final-f1-build-contract.md",
-      "summary": "CPU最终F1/B5 SCOPED：用户授权升级oneDNN固定稳定版后再best-of；审计原threadpool/BRGEMM/资源与版本identity，未改产品，不继承旧性能资格。"
+      "summary": "CPU最终F1/B5 AUDITED：固定oneDNN v3.13.4/source/hash，实际C/BRGEMM/threadpool/overlay/许可证seam一致；只锁升级、真实identity与旧WIN失配，集中资格未运行。"
     },
     {
       "module": "compute_provider_ggml",
@@ -378,9 +378,9 @@
     },
     {
       "module": "graph_provider_onednn",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/cpu-final-f1-build-contract.md",
-      "summary": "CPU最终F1/B5 SCOPED：用户授权升级oneDNN固定稳定版后再best-of；审计原threadpool/BRGEMM/资源与版本identity，未改产品，不继承旧性能资格。"
+      "summary": "CPU最终F1/B5 AUDITED：固定oneDNN v3.13.4/source/hash，实际C/BRGEMM/threadpool/overlay/许可证seam一致；只锁升级、真实identity与旧WIN失配，集中资格未运行。"
     },
     {
       "module": "compute_ops",

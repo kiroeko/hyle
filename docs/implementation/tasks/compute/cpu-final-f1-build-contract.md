@@ -52,3 +52,23 @@ macro和`qualified_default_environment()`未核对flags/IPO/linkage，构成明�
 原v3.13.2及硬编码identity不能给新候选签资格。只审计一个官方最新稳定候选及当前原threadpool/BRGEMM接缝，
 最多一批API/overlay纠正，不转为自研优化或全库升级；新版本先完成接线/正确性/资源/三交付再进入F4。
 Native B1资格门继续只按已测peer，升级后不自动携带旧17/187 WIN。当前B5未AUDITED，不改其产品。
+
+## B5子批AUDITED：v3.13.4
+
+固定官方稳定版`c531fe1a5cd631b7f60277cdf6675c588cadbc28`、Git tree `65c08c66fb85c5c68f4f04807b906514af420b59`；
+codeload archive SHA `ac75d4a771492ff8e5996f0daace71de7d40a23c2527705bb8dbca60a17f7ba9`，
+中央算法expanded tree SHA `5c0c833df87c71a31ac82489e56650f0197fa38f3dec85a9988a404ec532fdba`。
+11个具名seam文件逐SHA比较：C API、BRGEMM ukernel、threadpool/stream、primitive runtime与LICENSE完全相同；
+C++ header只增加verbose查询，options只新增默认OFF的SYCL profiling。原runtime overlay SHA匹配，不修改overlay数学/线程合同。
+有限FIX：更新oneDNN唯一锁；CPU身份与version()由实际生成version header投影，Graph引用同一version owner；
+BRGEMM编译断言和identity测试更新；Native旧/新core两组WIN都必须对应原oneDNN commit，升级后默认成熟。
+owning/onetime默认两入口/失败并发资源、三交付与锁/许可/offline差异集中验证；P0，本包不比较赢家。
+compute_provider_onednn、graph_provider_onednn合法AUDITED；runtime/routes的B2–B4仍SCOPED，不借本批升级整个GPU或改公共仪器。
+
+## B1已执行（子批，非F1完成）
+
+产品`adc794aa3384499d23b6c9b054570b017b236fae`，私有CMake合同20格通过；matching static只Release配置启用，
+flags/IPO/target IPO/shared/peer feature/sanitizer/ISA/trace/编译器/平台/CRT/parent options失配撤资格。
+Windows shared source/public-facade实际24格成熟默认、两次变输入replay、24成熟region、9错配、独立并发与close通过；
+声明动态view物化通过。configure35.828秒、build48.516秒，未重跑P1。B2–B5及最终SDK仍待本包验收。
+Mac Air已可达：Mac16,12/arm64/macOS27.0.1/AppleClang21/CMake4.3.4，只盘点无远端修改；不代签CPU覆盖。
