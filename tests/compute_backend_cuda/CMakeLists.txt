@@ -10,6 +10,8 @@ if(HYLE_COMPUTE_CUDA_ENABLED)
     cuda_backend_test.cc
     device_status_test.cc
     cuda_test_kernel.cu)
+  target_include_directories(hyle_compute_backend_cuda_test PRIVATE
+    "${HYLE_SOURCE_DIR}/src/compute_backend_cuda")
   hyle_add_test(compute_backend_cuda NAME late_failure SOURCES
     cuda_failure_test.cc
     cuda_failure_kernel.cu)

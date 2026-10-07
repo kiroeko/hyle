@@ -398,7 +398,7 @@ _hyle_declare_component(compute_backend_cpu
 # implementation is optional because CUDA is a machine-supplied SDK, while the
 # factor's internal dependency closure remains explicit before implementation.
 _hyle_declare_component(compute_backend_cuda
-  PRIVATE_DEPS core platform_thread util_core
+  PRIVATE_DEPS core platform platform_thread util_core
   PUBLIC_DEPS compute error mem
   PUBLIC_TYPE_DEPS compute error mem
   SPLIT_PUBLIC_HEADERS hyle/compute/backends/cuda.h)

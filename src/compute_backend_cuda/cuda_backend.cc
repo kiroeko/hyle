@@ -12,6 +12,7 @@
 
 #include "../compute/backend_internal.h"
 #include "cuda_internal.h"
+#include "driver_release.h"
 #include "hyle/compute/detail/backend_extension.h"
 #include "hyle/core/assert.h"
 
@@ -662,6 +663,7 @@ Status create_context_impl(const Device &value, mem::AllocatorRef allocator,
   Environment environment;
   environment.device_ordinal = payload.ordinal;
   environment.build_toolkit_version = CUDART_VERSION;
+  environment.driver_release = read_driver_release();
   cudaDeviceProp properties{};
   HYLE_RETURN_IF_ERROR(
       status(cudaGetDeviceProperties(&properties, payload.ordinal)));

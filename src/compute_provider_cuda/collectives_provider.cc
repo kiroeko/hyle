@@ -171,7 +171,7 @@ Status create_context(const Provider &provider, Device device, void *backend,
   const RouteMatchInput input{.platform = kBuildRoutePlatform,
                               .route = NativeRoute::kCuda,
                               .provider = provider.identity(),
-                              .environment = facts.environment};
+                              .environment = facts.environment()};
   *output = ::new (storage)
       Context{primary, match_route_selector(rule, input).matched()};
   return Status::Ok();

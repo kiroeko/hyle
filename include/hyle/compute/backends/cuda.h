@@ -37,14 +37,15 @@ device(std::size_t ordinal) noexcept;
 HYLE_COMPUTE_BACKEND_CUDA_API Result<int>
 device_ordinal(Device device) noexcept;
 
-// Captured once for this Context. Driver version is the CUDA API version
-// supported by the installed driver (cuDriverGetVersion), not its vendor
-// package/build number. Versions use CUDA's native integer encoding; the
-// runtime and compiled toolkit versions are separate facts. No SDK query is
-// performed by environment() or by submission. Reprepare for changed facts.
+// Captured once for this Context. driver_cuda_version is the CUDA API version
+// supported by the installed driver (cuDriverGetVersion). driver_release is
+// the independent NVIDIA release text, or empty when optional system NVML is
+// unavailable. Runtime/toolkit versions use CUDA's native integer encoding.
+// environment() and submission perform no SDK query. Reprepare for changed facts.
 struct Environment final {
   std::array<char, 256> device_name{};
   std::array<std::byte, 16> device_uuid{};
+  std::array<char, 80> driver_release{};
   int device_ordinal = -1;
   int sm_major = 0;
   int sm_minor = 0;

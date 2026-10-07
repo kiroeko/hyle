@@ -9,6 +9,7 @@ if(HYLE_COMPUTE_CUDA_ENABLED)
   # implementation-private.
   hyle_add_module(compute_backend_cuda SOURCES
     cuda_backend.cc
+    driver_release.cc
     cuda_memory.cc
     cuda_device_status.cc
     device_status_kernel.cu)

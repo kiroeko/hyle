@@ -383,7 +383,7 @@ Status create_context(const Provider &provider, Device device, void *backend,
     const RouteMatchInput route_input{.platform = kBuildRoutePlatform,
                                       .route = NativeRoute::kCuda,
                                       .provider = provider.identity(),
-                                      .environment = facts.environment};
+                                      .environment = facts.environment()};
     *output = ::new (storage)
         Context{primary, native_device,
                 match_route_selector(kHardwareRule, route_input).matched(),

@@ -227,8 +227,11 @@ HYLE 的规则匹配在运行期不读取模型字符串、查询设备版本或
 managed 派发成本另外声明。
 
 CUDA 的 `cuda::environment(context)` 返回 Context 创建时采集的设备名、UUID、SM major/minor、
-驱动支持的 CUDA API 版本、runtime 版本与编译 Toolkit 版本。`driver_cuda_version` 对应
-`cuDriverGetVersion`，**不是 NVIDIA 驱动安装包版本号**。固定规则只能匹配实际具备的事实；
+驱动支持的 CUDA API 版本、独立 `driver_release` 文本、runtime 版本与编译 Toolkit 版本。
+`driver_cuda_version` 对应 `cuDriverGetVersion`，**不是 NVIDIA 驱动安装包版本号**；
+`driver_release` 来自可选系统 NVML，缺少时为空、不禁用 CUDA 路线。冷规则的 `kApiVersion` 为前者，
+`kDriverVersion` 为实际 NVIDIA release 文本，`kDriverName` 为 nvidia。系统 driver DLL 不随 SDK 复制。
+固定规则只能匹配实际具备的事实；
 不能把该字段当作驱动补丁版本。Apple/Vulkan 使用各自原生 `Environment`，Provider 版本来自
 对应实现/锁定依赖；它们不共用一个万能设备结构。
 

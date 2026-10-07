@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <array>
 #include <atomic>
 #include <chrono>
@@ -18,6 +19,7 @@
 #include "hyle/compute/transfer.h"
 #include "hyle/error/status.h"
 #include "hyle/mem/stats.h"
+#include "native_context.h"
 
 cudaError_t launch_increment_kernel(cudaStream_t stream, void *data,
                                     std::size_t size) noexcept;
@@ -59,6 +61,8 @@ TEST(CudaBackend, ContextEnvironmentMatchesNativeFactsAndOwnsItsSnapshot) {
     EXPECT_EQ(facts->driver_cuda_version, driver);
     EXPECT_EQ(facts->runtime_version, runtime);
     EXPECT_EQ(facts->build_toolkit_version, CUDART_VERSION);
+    EXPECT_EQ(facts->driver_release.back(), '\0');
+    RecordProperty("nvidia_driver_release", facts->driver_release.data());
     retained = *facts;
     auto moved = std::move(context);
     EXPECT_FALSE(cuda::environment(context));
@@ -73,6 +77,61 @@ TEST(CudaBackend, ContextEnvironmentMatchesNativeFactsAndOwnsItsSnapshot) {
   other = retained;
   ++other.sm_minor;
   EXPECT_NE(other, retained);
+  other = retained;
+  other.driver_release[0] = retained.driver_release[0] == 'x' ? 'y' : 'x';
+  EXPECT_NE(other, retained);
+}
+
+TEST(CudaBackend, ColdRouteFactsKeepDriverReleaseAndApiSeparateAndSparse) {
+  using namespace hyle::compute;
+  cuda::Environment native;
+  native.device_name = {'R', 'T', 'X'};
+  native.sm_major = 8;
+  native.sm_minor = 9;
+  native.driver_cuda_version = 13040;
+  native.runtime_version = 13030;
+  native.build_toolkit_version = 13030;
+  const auto missing = cuda::detail::route_facts(native);
+  EXPECT_EQ(missing.environment().size(), 7);
+  const auto find = [](const auto &facts, RouteFactId id) {
+    const auto values = facts.environment();
+    return std::find_if(values.begin(), values.end(),
+                        [&](const auto &fact) { return fact.id == id; });
+  };
+  EXPECT_EQ(find(missing, route_fact::kDriverVersion), missing.environment().end());
+  const auto api = find(missing, route_fact::kApiVersion);
+  ASSERT_NE(api, missing.environment().end());
+  EXPECT_EQ(api->unsigned_value, 13040);
+  EXPECT_TRUE(std::all_of(missing.environment().begin(),
+                          missing.environment().end(),
+                          [](const auto &fact) { return fact.valid(); }));
+  const std::array hardware{
+      RouteFactPredicate::number(route_fact::kArchitectureMajor, 8),
+      RouteFactPredicate::number(route_fact::kApiVersion, 13040)};
+  const RouteSelector hardware_rule{.route = NativeRoute::kCuda,
+                                    .environment = hardware};
+  EXPECT_TRUE(match_route_selector(hardware_rule,
+      {.route = NativeRoute::kCuda, .environment = missing.environment()}).matched());
+  const std::array release_predicate{
+      RouteFactPredicate::string(route_fact::kDriverVersion, "617.14")};
+  const RouteSelector release_rule{.route = NativeRoute::kCuda,
+                                   .environment = release_predicate};
+  EXPECT_EQ(match_route_selector(release_rule,
+      {.route = NativeRoute::kCuda, .environment = missing.environment()}).mismatch,
+      RouteMismatch::kEnvironmentMissing);
+  std::memcpy(native.driver_release.data(), "617.14", 7);
+  const auto present = cuda::detail::route_facts(native);
+  EXPECT_EQ(present.environment().size(), 8);
+  const auto driver = find(present, route_fact::kDriverVersion);
+  ASSERT_NE(driver, present.environment().end());
+  EXPECT_EQ(driver->kind, RouteFactKind::kText);
+  EXPECT_EQ(driver->text, "617.14");
+  EXPECT_EQ(find(present, route_fact::kApiVersion)->unsigned_value, 13040);
+  EXPECT_TRUE(match_route_selector(release_rule,
+      {.route = NativeRoute::kCuda, .environment = present.environment()}).matched());
+  auto moved = present;
+  EXPECT_EQ(find(moved, route_fact::kDriverVersion)->text, "617.14");
+  EXPECT_NE(moved.environment().data(), present.environment().data());
 }
 
 struct HostStreamGate final {

@@ -1,6 +1,8 @@
 #pragma once
 
 #include <array>
+#include <cstddef>
+#include <span>
 
 #include <cuda.h>
 
@@ -26,11 +28,16 @@ borrow_environment(void *backend_state) noexcept;
 // returned strings only while the Environment lives and keep no matcher state
 // in prepared artifacts or submissions.
 struct RouteFacts final {
-  std::array<RouteFact, 6> environment;
+  std::array<RouteFact, 8> storage;
+  std::size_t count = 7;
+
+  std::span<const RouteFact> environment() const noexcept {
+    return {storage.data(), count};
+  }
 };
 
 inline RouteFacts route_facts(const Environment &environment) noexcept {
-  return {{
+  RouteFacts facts{{
       RouteFact::string(route_fact::kDeviceName,
                         environment.device_name.data()),
       RouteFact::number(route_fact::kArchitectureMajor,
@@ -38,7 +45,7 @@ inline RouteFacts route_facts(const Environment &environment) noexcept {
       RouteFact::number(route_fact::kArchitectureMinor,
                         static_cast<std::uint64_t>(environment.sm_minor)),
       RouteFact::number(
-          route_fact::kDriverVersion,
+          route_fact::kApiVersion,
           static_cast<std::uint64_t>(environment.driver_cuda_version)),
       RouteFact::number(
           route_fact::kRuntimeVersion,
@@ -46,7 +53,13 @@ inline RouteFacts route_facts(const Environment &environment) noexcept {
       RouteFact::number(
           route_fact::kToolkitVersion,
           static_cast<std::uint64_t>(environment.build_toolkit_version)),
+      RouteFact::string(route_fact::kDriverName, "nvidia"),
   }};
+  if (environment.driver_release[0] != '\0') {
+    facts.storage[facts.count++] = RouteFact::string(
+        route_fact::kDriverVersion, environment.driver_release.data());
+  }
+  return facts;
 }
 
 // Inside one already-admitted QueueSequence only. The first use records a
