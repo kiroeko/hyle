@@ -1612,9 +1612,6 @@ void run_full_moe_profile(const c::ModelArtifactProfileDescription *profile) {
     }
     calls.push_back(make_call(context, resource, step.operation, inputs,
                               outputs, workload));
-    SCOPED_TRACE("region=" + std::to_string(fixture.region));
-    SCOPED_TRACE("unary subtype=" + std::to_string(step.operation.get_if<c::Unary>()
-        ? int(step.operation.get_if<c::Unary>()->kind) : -1));
     expect_mature(calls.back(), workload);
   }
 
