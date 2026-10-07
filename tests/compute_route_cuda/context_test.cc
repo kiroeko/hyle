@@ -6,6 +6,7 @@
 #include "ffn_support.h"
 #include "hyle/compute/providers/flashinfer.h"
 #include "hyle/compute/providers/ggml_cuda.h"
+#include "hyle/compute/providers/torch_cuda.h"
 
 namespace {
 using namespace cuda_route_test;
@@ -20,6 +21,9 @@ void run_ffn(compute::DataType type, std::int64_t rows) {
         compute::flashinfer::kProviderId,
 #endif
         compute::ggml_cuda::kProviderId,
+#if defined(HYLE_COMPUTE_TORCH_CUDA)
+        compute::torch_cuda::kProviderId,
+#endif
         compute::cublas::kProviderId,
         compute::cuda_native::kSglangProviderId,
         compute::cuda_native::kDeepSeekProviderId,
