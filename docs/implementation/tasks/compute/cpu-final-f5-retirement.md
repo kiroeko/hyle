@@ -1,6 +1,6 @@
 # F5 CPU自研源码清退
 
-<!-- MODULE REVIEW: AUDITED -->
+<!-- MODULE REVIEW: CANDIDATE -->
 
 当前owner `compute_provider_native`；`compute`仅绑定两份私有RoPE生成文件的有限删除，不重审runtime。
 baseline `0d96c635040e70b1ee561e51e4cb1a74169870f0`；总合同[CPU最终收口](cpu-final-closure-plan.md)。
@@ -155,3 +155,11 @@ Min/Max，公共ReductionKind仍含成熟库承载的Sum/Mean，GCC `-Wswitch`�
 仅将原switch后的NaN／return出口放入default；准入仍先拒绝非Min/Max，不恢复Sum/Mean执行或改变算术。
 D5第三个精确位置：`transformer.cc:44 coordinates`原RoPE／宽Softmax删除后无调用，
 GCC Werror拒绝；仅删除该匿名未调用helper，保留F16 Bool Softmax实际坐标路径与axis/mask helpers。
+
+### D5完成并重新固定候选
+
+产品candidate `64b454fa23404d26bead60d495eda9475c802e32`：相对507bad96仅indexing／transformer
+两个未调用私有helper删除，以及reduction原NaN／return出口移入default，Min/Max算术／准入不变。
+GCC14完整Native owning构建和144项测试通过，无skip；三个原编译FAIL和摘要编码FAIL均保留。
+新候选不需要新的数学／43规则／P1资格；原Win/Mac数学与三交付按该等价差异复用。
+Linux三交付与四mixed envelope差异绑定新输入，尚待完成；仍不能关闭F5／goal。

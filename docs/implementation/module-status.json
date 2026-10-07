@@ -270,9 +270,10 @@
     },
     {
       "module": "compute",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/cpu-final-f5-retirement.md",
-      "summary": "F5 AUDITED：与Native同卡依法退回D5编译残留清理；Compute仍仅两私有RoPE文件删除，runtime／public API不重审，成功证据保留。"
+      "summary": "F5 CANDIDATE64b454fa：Compute仅两私有RoPE文件删除；D5只Native未调用helper／等价switch出口，runtime／public API不变。成功证据保留，Linux／mixed消费差异待验。",
+      "candidate": "64b454fa23404d26bead60d495eda9475c802e32"
     },
     {
       "module": "graph",
@@ -422,9 +423,10 @@
     },
     {
       "module": "compute_provider_native",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/cpu-final-f5-retirement.md",
-      "summary": "F5 AUDITED D5：Linux GCC14 Werror定位Scatter清退后的未调用same_storage私有函数，有限删除死代码；原数学／资源／43规则和成功证据保留，未完成Linux／mixed差异继续，禁止自研优化／新P1。"
+      "summary": "F5 CANDIDATE64b454fa：14种冗余自研物理退役，21种必要机制／SIMD／Mem与借入程序保留；D5 GCC残留等价清理，三平台144 owning及本机832 Direct／851 Graph差异／283机制通过，Win/Mac三交付通过。Linux三交付／mixed差异与终审仍待，无新P1。",
+      "candidate": "64b454fa23404d26bead60d495eda9475c802e32"
     },
     {
       "module": "compute_sched",
