@@ -270,14 +270,9 @@
     },
     {
       "module": "compute",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/compute/cpu-final-f5-retirement.md",
-      "summary": "F5 CLOSED：仅两私有RoPE生成文件源级删除；runtime／public API不变。三平台及四mixed CPU接缝三交付、真实消费者／头门与有限GCC清理通过；无GPU新资格，F6总审待。",
-      "candidate": "64b454fa23404d26bead60d495eda9475c802e32",
-      "performance": {
-        "tier": "P0",
-        "evidence": "docs/implementation/tasks/compute/cpu-final-f5-retirement.md"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/compute-graph-macro-normalization.md",
+      "summary": "宏规范 SCOPED：用户新要求的有限等价OS/compiler/ARM/visibility归一；保留原数学/性能/能力与活动CUDA FIX，不解除旧Graph/Vulkan blocker。"
     },
     {
       "module": "graph",
@@ -372,14 +367,9 @@
     },
     {
       "module": "compute_provider_ggml",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/compute/cpu-final-f3-platform-carriers.md",
-      "summary": "CPU最终F3 CLOSED：三平台成熟承载/精度与同输入同ISA对照修复、原格式/状态/失败生命周期和source/static/shared资格齐；無新自研数学/性能WIN。F1 mixed、F4最佳Provider与F5清退、F6终审仍待。",
-      "candidate": "560eb1d2332bb69ee5148e899b000fae85d80074",
-      "performance": {
-        "tier": "P0",
-        "evidence": "docs/implementation/tasks/compute/cpu-final-f3-platform-carriers.md"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/compute-graph-macro-normalization.md",
+      "summary": "宏规范 SCOPED：用户新要求的有限等价OS/compiler/ARM/visibility归一；保留原数学/性能/能力与活动CUDA FIX，不解除旧Graph/Vulkan blocker。"
     },
     {
       "module": "graph_provider_onednn",
@@ -422,14 +412,9 @@
     },
     {
       "module": "compute_provider_native",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/compute/cpu-final-f5-retirement.md",
-      "summary": "F5 CLOSED：14冗余自研种与无需求实例物理清退，20有资格种＋独有Copy／RMS、SIMD/Mem／原借入程序保留；三平台owning144、普通两入口／GenericGraph／资源、三平台及四mixed三交付／43规则／48数值与头门通过。F4性能复用无新P1，F6总审／清理仍待。",
-      "candidate": "64b454fa23404d26bead60d495eda9475c802e32",
-      "performance": {
-        "tier": "P0",
-        "evidence": "docs/implementation/tasks/compute/cpu-final-f5-retirement.md"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/compute-graph-macro-normalization.md",
+      "summary": "宏规范 SCOPED：用户新要求的有限等价OS/compiler/ARM/visibility归一；保留原数学/性能/能力与活动CUDA FIX，不解除旧Graph/Vulkan blocker。"
     },
     {
       "module": "compute_sched",
@@ -540,20 +525,20 @@
     {
       "module": "compute_provider_ggml_vulkan",
       "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/cpu-quant-mtp-c3-format-bindings.md",
-      "summary": "C3公共GGUF enum消费者有限迁移AUDITED：只明确拒绝新增CPU格式，原D5资格/算法/限制不变，不恢复GPU队列；不签新增GPU能力。"
+      "record": "docs/implementation/tasks/compute/compute-graph-macro-normalization.md",
+      "summary": "宏规范 AUDITED：用户新要求的有限等价OS/compiler/ARM/visibility归一；保留原数学/性能/能力与活动CUDA FIX，不解除旧Graph/Vulkan blocker。"
     },
     {
       "module": "compute_ggml_runtime",
       "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/cuda-final-u3-mature-bindings.md",
-      "summary": "CUDA U3 G1/G2 AUDITED：原stock接线Windows局部已验；有限借入原Unsloth narrow IQ1 CUDA/math/table/dispatch与单core ABI/manifest/template，保留CPU-only及其它GPU源码选择；新资格/三交付/mixed差异待验，零新自研数学。"
+      "record": "docs/implementation/tasks/compute/compute-graph-macro-normalization.md",
+      "summary": "宏规范 AUDITED：用户新要求的有限等价OS/compiler/ARM/visibility归一；保留原数学/性能/能力与活动CUDA FIX，不解除旧Graph/Vulkan blocker。"
     },
     {
       "module": "compute_provider_ggml_cuda",
       "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/cuda-final-u3-mature-bindings.md",
-      "summary": "CUDA U3 G1/G2 AUDITED：原stock接线Windows局部已验；有限借入原Unsloth narrow IQ1 CUDA/math/table/dispatch与单core ABI/manifest/template，保留CPU-only及其它GPU源码选择；新资格/三交付/mixed差异待验，零新自研数学。"
+      "record": "docs/implementation/tasks/compute/compute-graph-macro-normalization.md",
+      "summary": "宏规范 AUDITED：用户新要求的有限等价OS/compiler/ARM/visibility归一；保留原数学/性能/能力与活动CUDA FIX，不解除旧Graph/Vulkan blocker。"
     },
     {
       "module": "graph_provider_ggml_cuda",
@@ -575,10 +560,9 @@
     },
     {
       "module": "compute_provider_iree_vulkan",
-      "state": "CANDIDATE",
-      "candidate": "2757ecc96815fd12c3050faab176cc2ddad02ccd",
-      "record": "docs/implementation/tasks/compute/llm-moe-d3-ggml-vulkan-native-binding.md",
-      "summary": "M3-D3 CANDIDATE 2757ecc：checked Scan、BF16 conversion和具名FP8 MatMul限定域已有收据，Vulkan A5完成；不代签官方grouped FP8/FP4或Q8数值失败域。D5-A6及D6未关闭。"
+      "state": "AUDITED",
+      "record": "docs/implementation/tasks/compute/compute-graph-macro-normalization.md",
+      "summary": "宏规范 AUDITED：用户新要求的有限等价OS/compiler/ARM/visibility归一；保留原数学/性能/能力与活动CUDA FIX，不解除旧Graph/Vulkan blocker。"
     },
     {
       "module": "compute_provider_torch_cuda",

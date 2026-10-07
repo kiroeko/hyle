@@ -1,6 +1,6 @@
 # Compute + Graph 宏规范专题
 
-<!-- MODULE REVIEW: QUEUED -->
+<!-- MODULE REVIEW: SCOPED -->
 
 2026-10-08 用户要求加入任务，使全部 Compute + Graph 的宏使用规范。
 这是当前 [CUDA goal](cuda-final-closure-plan.md) 的附加横切任务，执行时按实际文件 owner
@@ -48,3 +48,46 @@
 原inventory保留于 [N1归档](../../../../evidence/correctness/cuda-final-u3-artifact-carrier/README.md)。
 N1还已提供实际feature传播反例：Provider私有边不能自动让普通route consumer看到其组装能力，
 现已在 owning route修复；此专题要核对其它路线同类合同，不能用宏名替换代替传播检查。
+
+## Closure card：宏与现有目标事实的统一
+
+- baseline：`a3e6046b053c7a40dc52c703ea049a38ec7795d5`；Windows工作树干净，后续修改保留。
+- owner：compute（route_policy公开平台事实）、compute_provider_native、compute_provider_ggml、
+  compute_ggml_runtime、compute_provider_ggml_cuda、compute_provider_ggml_vulkan、compute_provider_iree_vulkan。
+- trigger：用户明确要求全部Compute/Graph宏规范；扫描找到下表具体原生OS／compiler／ARM重复条件。
+  已闭CPU owner仅为逻辑等价宏／include规范重定界，不重审数学、清退或性能，不解除公共Graph或Vulkan旧blocker。
+- 已活动runtime／ggml CUDA保留 [U3 G1/G2](cuda-final-u3-mature-bindings.md) 全部有限FIX；本专题只增加宏规范。
+  ggml Vulkan保留 [新增格式明确拒绝](cpu-quant-mtp-c3-format-bindings.md) 范围和原限制；
+  IREE当前candidate只因其HYLE编译器条件修改退回AUDITED，原能力／资源／性能限制不变。
+- 主consumer：同一Compute/Graph源代码经Windows／Linux／macOS源码／static／shared消费时的平台、
+  provider availability、符号可见性一致；反偏置：CPU-only／GPU-OFF及clang-cl的MSVC ABI。
+- Scope：目标事实、明确include、必要owning CMake include路径、同等编译条件与验证分类账。
+  API／layout／新数学／provider顺序／限值／driver资格／队列、资源、完成和错误行为不变。
+- deps：只复用已有Core environment／visibility；不改Core，不新定义事实。所有GPU原版vendor条件KEEP。
+- P0：预处理条件与已有0/1事实相同，不增加运行字段、分支、分配或查询；无P1。
+  原有限性能资格条件包括`_MSC_FULL_VER`精确版本继续保留，不扩大任何证书。
+- 验证：全范围条件账、真实Windows MSVC及clang-cl事实、Linux GCC／Mac ARM Clang平台与公开头；
+  selected owning factors和直接consumer、四路线feature／GPU-OFF公开头、source/static/shared宏传播，
+  CPU独立AVX2 program真实export/load。未运行项UNVERIFIED，等价宏不重跑P1。
+- API/owner/成本冻结：常态二进制语义不变，只有预处理事实来源与私有导出拼写统一；
+  include路径只补CPU program直接消费既有HYLE visibility的必要头。
+- 停止：有限FIX与适用编译／条件／交付验证完成后关闭本专题；新能力问题单独具名，不无限扩张。
+
+## 有限 FIX / KEEP 账
+
+| ID | 文件／owner | 当前事实 | 动作 |
+|---|---|---|---|
+| M1 | include/hyle/compute/route_policy.h；compute | 公开build platform重复识别三OS | 显式Core environment；HYLE_OS值条件；枚举不变 |
+| M2 | native/aten_cpu_provider.cc、torch_cpu_program.cc、default_rules.cc | `_MSC_VER`含clang-cl；默认证书精确Windows／release／MSVC版本 | 显式environment；MSVC或clang-cl warning条件，OS／build事实统一；版本常数KEEP |
+| M3 | ggml/ggml_cpu_provider.cc | ARM F16内核不是F32累加，需要保留准入拒绝 | HYLE_ARCH_ARM64同target条件；数学与拒绝KEEP |
+| M4 | ggml_runtime/cpu_program.cc、cpu_execution.cc | Windows loader／Win32错误域 | HYLE_OS_WINDOWS，loader与错误不变 |
+| M5 | ggml_runtime/cpu_program_export.cc、cpu_program.cmake | 私有同revisionCPU程序独立export重复平台拼写 | 借HYLE_EXPORT；owning target补既有include目录；ABI／visibility相同 |
+| M6 | ggml_cuda/ggml_cuda_provider.cc | Windows getenv_s与原DLL timer初始化 | HYLE_OS_WINDOWS，SDK动作原样 |
+| M7 | ggml_vulkan/native_device.cc | 原平台loader文件名 | HYLE_OS_WINDOWS/MACOS，三个原字符串不变 |
+| M8 | iree_vulkan/runtime_internal.h | 原C头warning范围包含MSVC兼容前端 | 显式environment；MSVC或clang-cl；原警告范围KEEP |
+| K1 | 所有HYLE_STATIC／*_BUILD／feature宏 | owning CMake仅选中时定义；factory有显式guard或disabled返回invalid合同 | KEEP presence-only，核对定义／消费／安装传播；不把关闭未定义改成定义0 |
+| K2 | GPU／vendor／原dtype／版本条件、WIN32_LEAN_AND_MEAN／NOMINMAX | SDK或device编译合同，不是目标事实重复实现 | KEEP；原数学／SM／shader／SDK阈值不改 |
+| K3 | CMake WIN32／MSVC／CMAKE_SYSTEM_NAME／ISA flags | CMake目标OS／ABI与源码facts分层 | KEEP目标条件；无新增宿主探测或统一宏系统 |
+
+上述owner原record的能力与限制都仍有效，只有本轮有限宏变化获得施工范围；旧terminal不自动重新签绿。
+新scope先独立提交，AUDITED后才写产品。
