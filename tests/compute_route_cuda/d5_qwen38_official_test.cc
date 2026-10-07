@@ -49,6 +49,7 @@
 #include "../compute_models/cpu_c4_qwen_mtp.h"
 #include "../compute_models/cpu_c4_flash_sidecars.h"
 #include "../compute_models/cpu_c5_non_gguf_fixture.h"
+#include "../compute_models/cuda_kimi_mla_diagnostic.h"
 #include "hyle/compute/providers/torch_cuda.h"
 #include "hyle/compute/providers/ggml_cuda.h"
 #include "hyle/compute/prepared_operation.h"
@@ -1459,7 +1460,7 @@ TEST(CudaMoeFragments, D5KimiAbsorbedMlaWithCache) {
     auto profile = d5_moe_semantic_fragments::kKdaProfiles[i];
     SCOPED_TRACE(profile->variant);
     // CUDA's admitted plain grouped contract preserves F32 activations.
-    run_q24_semantic_fragment(d5_kimi_remaining_fragments::mla(profile, false));
+    cuda_kimi_mla_diagnostic::check(profile,run_q24_semantic_fragment);
   }
 }
 
