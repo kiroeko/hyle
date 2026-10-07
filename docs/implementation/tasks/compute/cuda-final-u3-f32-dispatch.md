@@ -1,6 +1,6 @@
 # CUDA U3：原 F32 分发精度接缝
 
-<!-- MODULE REVIEW: SCOPED -->
+<!-- MODULE REVIEW: AUDITED -->
 
 ## Closure card
 
@@ -27,3 +27,17 @@
 来源事实：实际 query/cache 上的独立 attention 方程误差仅约1e-7～4e-7；head grouped误差
 relative-L2约2.3e-4符合 TF32 乘数截断量级。后者只是线索；原指令和未消费精度 flag 的 dispatch
 才是可复现源码反例。旧误判为“仅 cache reference”的推断不足，当前模型FAIL不撤。
+
+## AUDITED 有限 FIX
+
+SCOPED `23f86716`；已锁定原文件／F32指令／精度参数，固定下面单一批次：
+
+1. 在原普通MUL_MAT／MMID／MMID-needs-sync三个MMF条件添加同一完整F32条件：
+   F32权重且`op_params[0]==GGML_PREC_F32`时不进入MMF。数学、默认native精度、量化分发不变。
+2. 原context manifest更新精确after SHA、NOTICE、在树dependency hash及版本；SDK/source-id
+   如实变更，旧版本性能证书不可外推。CPU-only source选择与数学不变。
+3. 以K=128,N=512的独立F32乘数方程覆盖MMF可达形状；测试值不可TF32精确表示，不能只用
+   0.25或小N绕开实际分支。保留重复ID、actual state、完整Kimi链和既有捕获/资源门。
+
+当前 runtime owner绑定本卡AUDITED，保留G1/G2原IQ1/runtime与三交付尾项；R1 Compute/Graph
+owner不变。P1等待U4，本批只修正原生选择合同和资格验证，无新self数学。

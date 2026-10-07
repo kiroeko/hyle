@@ -546,8 +546,8 @@
     {
       "module": "compute_ggml_runtime",
       "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/cuda-final-u3-mature-bindings.md",
-      "summary": "CUDA U3 G1/G2 AUDITED：原stock接线Windows局部已验；有限借入原Unsloth narrow IQ1 CUDA/math/table/dispatch与单core ABI/manifest/template，保留CPU-only及其它GPU源码选择；新资格/三交付/mixed差异待验，零新自研数学。 宏有限轮已验收CLOSED，继续原父轮有限FIX/限制，无新数学或资格扩张。"
+      "record": "docs/implementation/tasks/compute/cuda-final-u3-f32-dispatch.md",
+      "summary": "CUDA U3 F32 dispatch AUDITED：原MMF的TF32乘数忽略F32精度要求，固定三处选择/捕获资格修复；保留G1/G2原IQ1/runtime与三交付尾项，CPU-only数学及其它路线不变。"
     },
     {
       "module": "compute_provider_ggml_cuda",
