@@ -362,14 +362,9 @@
     },
     {
       "module": "compute_provider_ggml",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/compute/cpu-three-operator-route-closure.md",
-      "summary": "CPU三项CLOSED：原F32融合接对、17格限定Copy/RMS规则、Native SDPA整项删除；Windows/Linux实际两入口与三交付、资源/动态域/终审及有限P1裁决通过。不是全部CPU重叠域best-of；SIMD/GPU不变。",
-      "candidate": "119137681ed03f58e3e193a97c969be4e45ccb34",
-      "performance": {
-        "tier": "P0",
-        "evidence": "evidence/correctness/cpu-three-operator-route/README.md"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/cpu-final-f1-build-contract.md",
+      "summary": "F1/B2 SCOPED：混合SDK原core CPU格式组误拒绝；唯一匹配原IQ1端口/资源，先定界不写adapter算法。"
     },
     {
       "module": "graph_provider_onednn",
@@ -518,9 +513,9 @@
     },
     {
       "module": "compute_ggml_runtime",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/cpu-final-f1-build-contract.md",
-      "summary": "CPU最终F1 SCOPED：用户要求三平台CPU/构建与预编译一致、全重复域best-of和合理默认；核对flags/LTO资格、mixed core及默认回退，有限审计未写产品。旧GPU/Graph阻塞不解除。"
+      "summary": "F1/B2 AUDITED：同core精确合并原CPU IQ1/旧资源patch，既有enum值/tensor336/plan56不变，真实3格式MatMul/Gather探针通过；固定有限源码/身份/交付FIX，mixed资格未完成。"
     },
     {
       "module": "compute_provider_ggml_cuda",

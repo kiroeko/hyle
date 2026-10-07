@@ -104,3 +104,22 @@ compute、compute_route_cpu、graph_route_cpu按此有限FIX AUDITED；其它own
 验收：normal/未知模型、三种mature角色、feature缺席、失败/OOM/close、expert仍无默认policy、Direct/Graph一致、
 完整region与原执行/资源沿用；原24格批量consumer更新为工程默认policy有效且Native旧WIN=0。
 两入口/公开头与source/static/shared在本包集中验证，P0，无新赢家P1。
+
+## B2子批AUDITED：同core原IQ1端口，不引入双core
+
+有界反证：旧456172ec core已有前八种新增GGUF原类型，但adapter受CPU-only宏整组拒绝；
+三个IQ1_XS/XXS/XXXS原port的19处新接缝全部能在旧core唯一匹配。探针保留旧资源patch、
+真实MatMul/Gather运行三种原格式且不同row内容/scale通过；旧/port后tensor=336、plan=56，
+既有F32/F16/BF16/IQ1_S/M类型数值不变，COUNT43→67。
+
+有限FIX：混合SDK保持已锁旧core/GPU源码，精确合并原IQ1 CPU扩展与旧资源manifest；
+不复制数学body，派生manifest由已有两个已登记输入生成并逐before/after SHA核验。
+CPU-only仍用现0.26；有CPU的两类SDK均投影完整原格式映射，GPU新格式拒绝不解除。
+独立CPU程序文件名统一含core/实际patch身份，避免旧ABI size相同而误装旧无IQ1 DLL；实际CPU版本标签含port身份。
+许可证/原source身份/程序/derived manifest进入安装与offline闭包，CPU OFF不引入CPU port。
+prepare_source工具/公共治理/Provider接口/CPU数学/旧GPU算法不改；差异是合法CPU承载与新枚举CPU类型。
+F32 flash优化仍只新版core，旧core用已验同精度数学，不把它冒称新版融合。F4分别裁决实际成本。
+
+compute_ggml_runtime、compute_provider_ggml绑定此有限B2；普通CPU+实际CUDA/Vulkan/Apple组合的配置、
+CPU新格式/模型分支、GPU原格式和新格式拒绝、三交付适用验收待运行，探针不算完整路线资格。
+保留一个core/原GPU能力，旧Graph Vulkan性能blocker不解除，不启动GPU性能或自研优化。
