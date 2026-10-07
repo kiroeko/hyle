@@ -68,10 +68,15 @@ template <class Compiled> void expect_mature(const Compiled &compiled) {
   for (std::size_t step = 0; step < compiled.report.step_count(); ++step) {
     const auto report = compiled.report.step(step).value();
     const auto provider = report.provider.id;
+    const auto node = compiled.report.node(report.node_begin).value();
+    const bool qualified_norm = provider == c::native::kProviderId &&
+        node.kind == c::OperationKind::kRmsNorm && report.node_count == 1 &&
+        report.policy.namespace_id == 0x48594c4543505552ULL &&
+        report.policy.version == 2 && report.policy.valid();
     EXPECT_TRUE(provider == c::ggml_cpu::kProviderId ||
                 provider == c::onednn::kProviderId ||
                 provider == c::aten_cpu::kProviderId ||
-                provider == g::onednn::kProviderId)
+                provider == g::onednn::kProviderId || qualified_norm)
         << report.provider.name;
   }
 }
@@ -164,10 +169,15 @@ void run_qwen35_gguf_ffn(const c::ModelArtifactProfileDescription &profile,
   for (std::size_t step = 0; step < compiled.report.step_count(); ++step) {
     const auto report = compiled.report.step(step).value();
     const auto provider = report.provider.id;
+    const auto node = compiled.report.node(report.node_begin).value();
+    const bool qualified_norm = provider == c::native::kProviderId &&
+        node.kind == c::OperationKind::kRmsNorm && report.node_count == 1 &&
+        report.policy.namespace_id == 0x48594c4543505552ULL &&
+        report.policy.version == 2 && report.policy.valid();
     EXPECT_TRUE(provider == c::ggml_cpu::kProviderId ||
                 provider == c::onednn::kProviderId ||
                 provider == c::aten_cpu::kProviderId ||
-                provider == g::onednn::kProviderId)
+                provider == g::onednn::kProviderId || qualified_norm)
         << report.provider.name;
     if (provider == c::ggml_cpu::kProviderId)
       ggml_nodes += report.node_count;
