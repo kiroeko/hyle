@@ -1,0 +1,21 @@
+{
+  "verified_archive_identity": {
+    "candidate": "e0388fbda7fec39e98bee0757f5ab4f91f1cc625",
+    "archive_sha256": "89a69f5541c3c5be72c5595b8b8c6e4b9fdba290caf435c27c0f5e95c8914032",
+    "archive_bytes": 248094720,
+    "remote_root": "/Users/kiro/hyle-verify/cpu-final-mixed-e0388fbd"
+  },
+  "paths": [
+    {
+      "path": "/Users/kiro/hyle-verify/cpu-final-mixed-e0388fbd/source.tar",
+      "removed_bytes": 248094720,
+      "retained": "verified source, producer, SDK prefixes and archived raw qualification"
+    },
+    {
+      "path": "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\cpu-final-f1\\mixed-apple\\source.tar",
+      "removed_bytes": 248094720
+    }
+  ],
+  "removed_bytes": 496189440,
+  "retained": "current canonical Git source, active Linux archive, all producers, SDK/cache and archived evidence; no source/SDK deletion"
+}

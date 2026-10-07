@@ -117,3 +117,9 @@ inspection and shared export hygiene passed.
 Initial/shared/static builds took 130.598/13.927/73.534 seconds; no P1 or new GPU
 format qualification was run. Vulkan installation and the Linux mixed old-core
 loader delta remain pending, so F1 is still open.
+
+[Transfer cleanup](cleanup-mac-mixed-transfer.json) records removal of the two
+SHA-verified duplicate Apple source tar files (496,189,440 bytes). Their exact
+Git candidate and SHA remain archived; validation sources, SDK prefixes,
+producers/cache and raw results remain. Reproduction can regenerate the archive
+from the recorded canonical Git revision rather than retaining duplicate tars.
