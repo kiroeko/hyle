@@ -92,3 +92,7 @@ N1还已提供实际feature传播反例：Provider私有边不能自动让普通
 上述owner原record的能力与限制都仍有效，只有本轮有限宏变化获得施工范围；旧terminal不自动重新签绿。
 新scope已独立提交；M1-M8／K1-K3经现Core facts、owning CMake和原条件审计固定，当前AUDITED。
 不新增宏／语义档位，不触碰vendor，私有CPU program借HYLE_EXPORT的真实DLL/SO export/load随批次验收。
+
+首次配置检出Native适配器没有声明对Core的直接边；原来只间接依赖其事实。
+补显式Core include时按中央依赖合同同时补PRIVATE core，闭包中Core本来已存在，无新增runtime依赖或成本。
+这是M2 owning include的必要声明，有限FIX不扩张；其它适配器／runtime已声明Core的条目保持。
