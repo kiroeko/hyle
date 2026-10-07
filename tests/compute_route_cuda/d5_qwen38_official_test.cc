@@ -40,6 +40,7 @@
 #include "hyle/compute/providers/cublas.h"
 #include "hyle/compute/providers/cuda.h"
 #include "../compute_models/d5_optional_cuda_provider.h"
+#include "../compute_models/cuda_iq1_model_contracts.h"
 #include "hyle/compute/providers/ggml_cuda.h"
 #include "hyle/compute/prepared_operation.h"
 #include "hyle/mem/stats.h"
@@ -2023,4 +2024,16 @@ INSTANTIATE_TEST_SUITE_P(
     ::testing::Values(&vocab::kOfficial2B, &vocab::kOfficial27B,
                       &vocab::kOfficial24T));
 
+TEST(CudaIq1ModelContracts, EightCurrentExpertShapesUseOrdinaryDirectAndReplay) {
+  std::size_t count = 0;
+  for (const auto &item : cpu_c5_inputs::cases) {
+    if (!cuda_iq1_model_contracts::required(item)) continue;
+    SCOPED_TRACE(item.id);
+    const auto profile = cuda_iq1_model_contracts::identity(item);
+    run_q24_semantic_fragment(cuda_iq1_model_contracts::make(item, profile));
+    ASSERT_FALSE(::testing::Test::HasFatalFailure());
+    ++count;
+  }
+  EXPECT_EQ(count, 8U);
+}
 } // namespace
