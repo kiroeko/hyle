@@ -62,6 +62,19 @@ def main() -> None:
         assert checker.pe_exports(clean) == ("?run@Scheduler@hyle@@QEAAXXZ",)
         assert checker.main(["--root", str(root)]) == 0
 
+        private = root / "hyle_ggml_cpu_avx2_ffa4e8b8_bdae1e43311ee486.dll"
+        synthetic_pe(private, ("hyle_ggml_cpu_program_v1",))
+        assert checker.main(["--binary", str(private)]) == 0
+        for name in ("hyle_compute.dll", "hyle_ggml_cpu_avx2.dll",
+                     "hyle_ggml_cpu_avx2_ffa4e8b8_wrong.dll"):
+            assert checker.forbidden_reason("hyle_ggml_cpu_program_v1", root / name)
+        assert checker.forbidden_reason("hyle_status_create", private)
+        assert checker.forbidden_reason("mi_malloc", private)
+        assert checker.forbidden_reason("dnnl_brgemm_execute", private)
+        synthetic_pe(private, ("hyle_ggml_cpu_program_v1", "hyle_status_create"))
+        assert checker.main(["--binary", str(private)]) == 1
+        private.unlink()
+
         dirty = root / "hyle_dirty.dll"
         synthetic_pe(
             dirty,

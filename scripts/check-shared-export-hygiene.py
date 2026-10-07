@@ -196,8 +196,17 @@ def policy_name(symbol: str) -> str:
     return name
 
 
-def forbidden_reason(symbol: str) -> str | None:
+def forbidden_reason(symbol: str, binary: Path | None = None) -> str | None:
     name = policy_name(symbol)
+    # This private ISA module is loaded by the C++ adapter, not a Native FFI
+    # product. Its sole descriptor entry must remain discoverable. Keep the
+    # allowance bound to the identified module and this exact symbol; all
+    # other exports still pass through the ordinary policy below.
+    if (name == "hyle_ggml_cpu_program_v1" and binary is not None and
+            re.fullmatch(
+                r"(?:lib)?hyle_ggml_cpu_avx2_[0-9a-f]{8}_[0-9a-f]{16}\.(?:dll|so|dylib)",
+                binary.name)):
+        return None
     if name in _RAW_FCONTEXT:
         return "raw fcontext implementation seam"
     if name == "hyle_signal_handler":
@@ -261,7 +270,7 @@ def main(argv: list[str] | None = None) -> int:
             result = scan_binary(binary)
             export_count += len(result.exports)
             for symbol in result.exports:
-                reason = forbidden_reason(symbol)
+                reason = forbidden_reason(symbol, binary)
                 if reason:
                     violations.append((binary, symbol, reason))
     except (OSError, ExportScanError) as exc:
