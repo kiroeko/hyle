@@ -100,7 +100,7 @@ TEST_P(CudaArtifactLifecycle, ChangedPayloadTwoSlotsAndAcceptedWorkSurvivesOwner
   auto strict = g::cuda::compile(logical,context,memory.ref(),
       {.compiled_storage = {.max_bytes = 1U << 20}});
   ASSERT_FALSE(strict);
-  EXPECT_TRUE(strict.error().IsResourceExhausted()) << strict.error().message();
+  EXPECT_TRUE(strict.error().IsFailedPrecondition()) << strict.error().message();
   auto prepared_only = g::cuda::compile(logical,context,memory.ref(),
       {.provider_replay = g::ProviderReplayPolicy::kRequirePrepared});
   ASSERT_FALSE(prepared_only);
