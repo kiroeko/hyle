@@ -1372,6 +1372,11 @@ TEST(GgmlCpuProvider, MatureLinearRopeAndHadamardUseOrdinaryEntry) {
     const auto left_desc = dense(DataType::kFloat16, {2, 3});
     const auto right_desc = dense(DataType::kFloat16, {3, 2});
     const auto output_desc = dense(DataType::kFloat16, {2, 2});
+#if defined(__aarch64__) || defined(_M_ARM64)
+    auto rejected = prepare(context, MatMul{}, left_desc, right_desc);
+    ASSERT_FALSE(rejected);
+    EXPECT_TRUE(rejected.error().IsUnimplemented());
+#else
     const std::array<float, 6> left_values{1, 2, 3, 4, 5, 6};
     const std::array<float, 6> right_values{1, 2, 3, 4, 5, 6};
     std::array<F16, 6> left_half{}, right_half{};
@@ -1392,6 +1397,7 @@ TEST(GgmlCpuProvider, MatureLinearRopeAndHadamardUseOrdinaryEntry) {
     const std::array expected{22.0F, 28.0F, 49.0F, 64.0F};
     for (std::size_t i = 0; i < actual.size(); ++i)
       half_test::expect_near(actual[i], expected[i]);
+#endif
   }
   {
     using B16 = hyle::simd::bfloat16_t;

@@ -421,7 +421,11 @@ TEST(CpuDefaultContext, B2MatureDomainsBindThroughDefaultRuleSet) {
           .value();
   auto linear = prepare(context, MatMul{}, f16_left, f16_weight);
   ASSERT_TRUE(linear) << linear.error().message();
+#if defined(__aarch64__) || defined(_M_ARM64)
+  EXPECT_EQ(linear->provider().id, aten_cpu::kProviderId);
+#else
   EXPECT_EQ(linear->provider().id, ggml_cpu::kProviderId);
+#endif
 
   const auto rope_data =
       TensorDesc::dense(DataType::kFloat16,
