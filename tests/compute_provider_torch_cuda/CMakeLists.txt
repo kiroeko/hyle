@@ -1,7 +1,7 @@
 hyle_add_header_self_contained_test(compute_provider_torch_cuda
   HEADER_DIR compute/providers HEADERS torch_cuda.h)
 if(HYLE_COMPUTE_CUDA_ENABLED)
-  hyle_add_test(compute_provider_torch_cuda SOURCES failure_test.cc
+  hyle_add_test(compute_provider_torch_cuda SOURCES failure_test.cc mlx_precision_test.cc
     DEPS hyle_compute_route_cuda hyle_graph_route_cuda hyle_compute_backend_cuda)
   get_target_property(_cuda_leaf hyle_vendor_c10_cuda IMPORTED_LOCATION)
   get_filename_component(_cuda_lib_directory "${_cuda_leaf}" DIRECTORY)

@@ -73,7 +73,7 @@ at::ScalarType scalar(DataType type) noexcept {
 }
 Status select(const Operation &operation, std::span<const TensorDesc> inputs,
               std::span<const TensorDesc> outputs) noexcept {
-  const auto *mlx = operation.custom_as<model_ops::MlxQuantized>();
+  const auto mlx = operation.custom_as<model_ops::MlxQuantized>();
   if (!operation.custom_as<model_ops::ArtifactWeightDecode>() && !mlx)
     return Status::Unimplemented("CUDA ATen carrier requires an original artifact or MLX operation");
   std::array<TensorDesc, 1> inferred;
@@ -133,7 +133,7 @@ Status propose(void *state, const detail::ProviderOperationRequest &request,
   HYLE_RETURN_IF_ERROR(select(request.operation, request.inputs, request.outputs));
   for (std::size_t i = 0; i < inputs.size(); ++i) inputs[i] = device_binding(request.inputs[i]);
   outputs[0] = device_binding(request.outputs[0]);
-  const auto *mlx = request.operation.custom_as<model_ops::MlxQuantized>();
+  const auto mlx = request.operation.custom_as<model_ops::MlxQuantized>();
   const auto route = mlx ? 0x100ULL + static_cast<std::uint64_t>(mlx->kind) * 3 +
                              static_cast<std::uint64_t>(mlx->format)
       : static_cast<std::uint64_t>(request.operation.custom_as<model_ops::ArtifactWeightDecode>()->format) + 1;
@@ -266,11 +266,11 @@ ProviderPrepareOutcome prepare(void *state, const detail::ProviderPrepareRequest
     return ProviderPrepareOutcome::unsupported(Status::Unimplemented("CUDA ATen device index capacity exceeded"));
   auto *storage = allocator.allocate(sizeof(Program), alignof(Program));
   if (!storage) return ProviderPrepareOutcome::resource_declined(Status::ResourceExhausted("CUDA ATen program allocation failed"));
-  const auto *artifact = request.operation.custom_as<model_ops::ArtifactWeightDecode>();
-  const auto *mlx = request.operation.custom_as<model_ops::MlxQuantized>();
+  const auto artifact = request.operation.custom_as<model_ops::ArtifactWeightDecode>();
+  const auto mlx = request.operation.custom_as<model_ops::MlxQuantized>();
   auto *program = ::new (storage) Program{.context = context,
       .operation = artifact ? *artifact : model_ops::ArtifactWeightDecode{},
-      .mlx = mlx ? *mlx : model_ops::MlxQuantized{}, .is_mlx = mlx != nullptr,
+      .mlx = mlx ? *mlx : model_ops::MlxQuantized{}, .is_mlx = mlx.has_value(),
       .inputs = {}, .output = request.outputs[0], .count = request.inputs.size(),
       .shifts = {}, .order = {}, .fp4_table = {}};
   for (std::size_t i = 0; i < program->count; ++i) program->inputs[i] = request.inputs[i];
