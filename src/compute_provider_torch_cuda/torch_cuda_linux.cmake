@@ -74,7 +74,7 @@ function(hyle_resolve_torch_cuda_linux lock_file output)
     # supplied by its unchanged SDK; no Python, CPU math DSO or model engine.
     file(ARCHIVE_EXTRACT INPUT "${_archive}" DESTINATION "${_stage}"
       PATTERNS "torch/include/*" "torch/lib/libc10_cuda.so" "torch/lib/libtorch_cuda.so"
-               "torch/lib/libcaffe2_nvrtc.so" "torch-*.dist-info/LICENSE" "torch-*.dist-info/NOTICE")
+               "torch/lib/libcaffe2_nvrtc.so" "torch-*.dist-info/licenses/LICENSE" "torch-*.dist-info/licenses/NOTICE")
     string(JSON _count LENGTH "${_record}" runtime_assets)
     math(EXPR _last "${_count}-1")
     foreach(_index RANGE 0 ${_last})
