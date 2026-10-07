@@ -226,3 +226,9 @@ Mac当前T6产品同候选三交付的40格全部通过，现sample各小文件�
 源码parent与两安装形态复用已有producer，无新数学或P1。
 [Linux与Mac当前交付收据](../../../../evidence/correctness/cpu-final-f3/README.md)绑定source archive和late delta身份。
 Windows当前安装批运行中，T11 test-ISA变化在Linux/Mac的定向编译/sidecar中点资格尚待，不提前签F3完成。
+
+Windows产品候选`44e116b91cee2d4a5d042491812d11ec9dd9b4f3`当前source/shared、source/static各40格，
+搬移后的两安装形态各同40格和普通Direct/Graph样例均通过；安装执行PATH只保留System32/Windows，
+Torch/私有原CPU程序DLL邻exe，无开发PATH兜底。实际shared出口通过。
+[Windows交付收据](../../../../evidence/correctness/cpu-final-f3/README.md)绑定27个成功步骤；不签性能WIN或F4/F5。
+当前三平台此交付批已齐，仅T11 test-seam差异与F3终审待结；F1 mixed envelopes按F1独立处理。

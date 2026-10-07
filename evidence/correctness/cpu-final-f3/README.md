@@ -153,3 +153,13 @@ their matrix/gate output and changed-input replays pass. Original source archive
 and late sample/tool deltas are separately bound, never claimed to be one unchanged
 Git tree. Windows current installed and Linux/Mac T11 test-seam checks remain
 pending, and F3/whole-goal closure is not claimed.
+
+[Windows current delivery receipt](windows-cpp-delivery-receipt.json) and
+[producer/install/relocation/consumer/raw DLL execution logs](windows-cpp-delivery.zip)
+qualify source/shared and source/static with 40 checks each, the corresponding
+relocated installed SDKs with the same checks, and current ordinary Direct/Graph
+samples. Installed execution uses only System32/Windows in PATH and required
+CPU DLLs reside beside the executable. All 27 recorded steps pass, including
+the actual shared export scan. No dependency rebuild or performance race is
+introduced by this delivery verdict. T11 Linux/Mac test-seam qualification,
+F1 mixed envelopes and the remaining goal phases remain separate.

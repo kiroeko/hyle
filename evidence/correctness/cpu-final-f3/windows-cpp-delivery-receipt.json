@@ -1,0 +1,35 @@
+{
+  "candidate": "44e116b91cee2d4a5d042491812d11ec9dd9b4f3",
+  "gates": {
+    "shared-compute": {
+      "tests": "1",
+      "failures": "0",
+      "skipped": "0"
+    },
+    "shared-graph": {
+      "tests": "1",
+      "failures": "0",
+      "skipped": "0"
+    },
+    "static-compute": {
+      "tests": "1",
+      "failures": "0",
+      "skipped": "0"
+    },
+    "static-graph": {
+      "tests": "1",
+      "failures": "0",
+      "skipped": "0"
+    }
+  },
+  "numerical": "Source/shared and source/static 40 numerical/format/precision checks each; relocated installed shared/static same 40 checks; separate ordinary Direct/Graph samples with actual outputs and changed Graph replay",
+  "runtime": "CPU DLLs staged beside exe; all installed executions run with System32/Windows-only PATH, no producer/compiler/SDK path fallback",
+  "build": "One producer toggled shared/static; original oneDNN/locked SDK reuse; j2, heavy serial; no new P1",
+  "limits": [
+    "Linux/Mac current ISA test-seam delta ongoing",
+    "F1 mixed envelopes and final full-goal audit remain separate",
+    "No best-of/retirement closure"
+  ],
+  "archive_sha256": "499561fe580cb8b462e861d8dae35235933411bceeef217ea0eff6ecadc70bff",
+  "archive_bytes": 28964
+}
