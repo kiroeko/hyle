@@ -213,3 +213,6 @@ Graph普通sample的退出23来自历史compile-only oneDNN-only FFN/单region�
 它不能代签全部stable gate/FFN。有限sample迁移：删除无执行的旧FFN资格块，保留并加强已存在的普通
 RMSNorm→MatMul→stable gate公开Graph为两次变输入、实际数值检查；独立oneDNN norm consumer原验证保留。
 不改变产品Graph/planning/provider，不为样例新增旧FFN兼容实现；源/两安装消费者小文件重编，旧FAIL保留。
+
+Linux普通sample修正后通过；shared出口工具把私有CPU程序入口错认公共FFI，按
+[独立有限工具卡](../build/private-cpu-program-export-v1.md)纠正，不在模块内扩仪器。
