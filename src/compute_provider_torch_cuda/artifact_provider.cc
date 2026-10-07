@@ -229,6 +229,9 @@ ProviderPrepareOutcome prepare(void *state, const detail::ProviderPrepareRequest
   cuda::detail::ScopedPrimaryContext scope(context.primary);
   if (!scope) { destroy_program(program, allocator); return ProviderPrepareOutcome::error(scope.status()); }
   try {
+    // The original CUDA hook initializes the device allocator before a BLAS
+    // handle requests workspace. Merely loading its DLL does not do this.
+    at::globalContext().lazyInitDevice(at::kCUDA);
     const auto index = static_cast<c10::DeviceIndex>(context.device);
     c10::cuda::CUDAGuard device_guard(index);
     at::NoGradGuard no_grad;
