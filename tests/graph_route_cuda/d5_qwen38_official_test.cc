@@ -825,7 +825,7 @@ void run_q24_semantic_fragment(
                                     constants[i].view())
              .value()});
   const auto workload =
-      q::workload(*fixture.profile, c::WorkloadPhase::kDecode, fixture.region);
+      q::workload(*fixture.profile, fixture.phase, fixture.region);
   auto compiled_result =
       g::cuda::compile(full.graph, context, resource,
                        {.constants = bindings, .workload = workload});
@@ -1982,5 +1982,6 @@ TEST(CudaGraphIq1ModelContracts, EightCurrentExpertShapesUseOrdinaryGraphAndRepl
 #define HYLE_TEST_GRAPH_ROUTE_CUDA
 #include "../compute_models/cuda_n1_non_gguf_tests.h"
 #include "../compute_models/cuda_n2_mlx_tests.h"
+#include "../compute_models/cuda_r1_current_region_tests.h"
 #undef HYLE_TEST_GRAPH_ROUTE_CUDA
 } // namespace

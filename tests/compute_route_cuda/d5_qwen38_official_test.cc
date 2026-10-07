@@ -763,7 +763,7 @@ void run_q24_semantic_fragment(
   const auto resource = memory.ref();
   auto queue = context.create_queue().value();
   const auto workload =
-      q::workload(*fixture.profile, c::WorkloadPhase::kDecode, fixture.region);
+      q::workload(*fixture.profile, fixture.phase, fixture.region);
   std::vector<hyle::mem::Buffer> buffers(fixture.descriptions.size());
   std::vector<hyle::mem::BufferView> views(fixture.descriptions.size());
   const auto allocate = [&](qfull::ValueId id) {
@@ -2044,4 +2044,5 @@ TEST(CudaIq1ModelContracts, EightCurrentExpertShapesUseOrdinaryDirectAndReplay) 
 }
 #include "../compute_models/cuda_n1_non_gguf_tests.h"
 #include "../compute_models/cuda_n2_mlx_tests.h"
+#include "../compute_models/cuda_r1_current_region_tests.h"
 } // namespace
