@@ -1,6 +1,12 @@
 #pragma once
-#if defined(HYLE_GGML_CPU_IQ1_EXTENSIONS)
-#if defined(HYLE_TEST_GRAPH_ROUTE_CPU)
+#if defined(HYLE_GGML_CPU_IQ1_EXTENSIONS) || defined(HYLE_GGML_CUDA_IQ1_EXTENSIONS)
+#if defined(HYLE_TEST_GRAPH_ROUTE_CUDA)
+#define HYLE_C5_PARAMETER_SUITE CudaGraphC5Parameters
+#define HYLE_C5_DEEPSEEK_SUITE CudaGraphC5NewDeepSeek
+#elif defined(HYLE_C5_GGUF_DOT_REFERENCE)
+#define HYLE_C5_PARAMETER_SUITE CudaDirectC5Parameters
+#define HYLE_C5_DEEPSEEK_SUITE CudaDirectC5NewDeepSeek
+#elif defined(HYLE_TEST_GRAPH_ROUTE_CPU)
 #define HYLE_C5_PARAMETER_SUITE CpuGraphC5Parameters
 #define HYLE_C5_DEEPSEEK_SUITE CpuGraphC5NewDeepSeek
 #else

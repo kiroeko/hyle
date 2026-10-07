@@ -1,5 +1,5 @@
 #pragma once
-#if defined(HYLE_GGML_CPU_IQ1_EXTENSIONS)
+#if defined(HYLE_GGML_CPU_IQ1_EXTENSIONS) || defined(HYLE_GGML_CUDA_IQ1_EXTENSIONS)
 #include "cpu_c5_qwen_attention.h"
 
 namespace cpu_c5_qwen_nextn {

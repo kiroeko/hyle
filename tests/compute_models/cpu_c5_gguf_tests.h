@@ -1,6 +1,10 @@
 #pragma once
-#if defined(HYLE_GGML_CPU_IQ1_EXTENSIONS)
-#if defined(HYLE_TEST_GRAPH_ROUTE_CPU)
+#if defined(HYLE_GGML_CPU_IQ1_EXTENSIONS) || defined(HYLE_GGML_CUDA_IQ1_EXTENSIONS)
+#if defined(HYLE_TEST_GRAPH_ROUTE_CUDA)
+#define HYLE_C5_GGUF_SUITE CudaGraphC5ActualGguf
+#elif defined(HYLE_C5_GGUF_DOT_REFERENCE)
+#define HYLE_C5_GGUF_SUITE CudaDirectC5ActualGguf
+#elif defined(HYLE_TEST_GRAPH_ROUTE_CPU)
 #define HYLE_C5_GGUF_SUITE CpuGraphC5ActualGguf
 #else
 #define HYLE_C5_GGUF_SUITE CpuC5ActualGguf

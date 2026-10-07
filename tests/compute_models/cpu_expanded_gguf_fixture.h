@@ -26,7 +26,7 @@ inline constexpr std::array cases{
     Case{c::GgufQuantizedType::kIq2S, GGML_TYPE_IQ2_S},
     Case{c::GgufQuantizedType::kIq1S, GGML_TYPE_IQ1_S},
     Case{c::GgufQuantizedType::kIq1M, GGML_TYPE_IQ1_M},
-#if defined(HYLE_GGML_CPU_IQ1_EXTENSIONS)
+#if defined(HYLE_GGML_CPU_IQ1_EXTENSIONS) || defined(HYLE_GGML_CUDA_IQ1_EXTENSIONS)
     Case{c::GgufQuantizedType::kIq1Xxxs, GGML_TYPE_IQ1_XXXS},
     Case{c::GgufQuantizedType::kIq1Xxs, GGML_TYPE_IQ1_XXS},
     Case{c::GgufQuantizedType::kIq1Xs, GGML_TYPE_IQ1_XS},
@@ -44,7 +44,11 @@ void block(std::byte *destination, Initialize initialize) {
 // Valid pre-encoded bytes, not a HYLE quantizer. Original block structs bind
 // each field; original decoders/dot callbacks provide the numerical reference.
 inline std::vector<std::byte> weights(Case item, std::int64_t rows) {
+#if defined(HYLE_C5_GGUF_DOT_REFERENCE)
+  ggml_quantize_init(item.native);
+#else
   ggml_cpu_init();
+#endif
   const auto width = ggml_blck_size(item.native);
   const auto bytes = ggml_type_size(item.native);
   std::vector<std::byte> result(static_cast<std::size_t>(rows) * ggml_row_size(item.native, k));
@@ -77,7 +81,7 @@ inline std::vector<std::byte> weights(Case item, std::int64_t rows) {
               static_cast<std::uint16_t>(scale & 0xf000)};
           std::memcpy(b.scales, sc.data(), sizeof(sc));
         }); break;
-#if defined(HYLE_GGML_CPU_IQ1_EXTENSIONS)
+#if defined(HYLE_GGML_CPU_IQ1_EXTENSIONS) || defined(HYLE_GGML_CUDA_IQ1_EXTENSIONS)
       case GGML_TYPE_IQ1_XXXS:
         block<block_iq1_xxxs>(p, [&](auto &b) { b.d = scale; std::fill(std::begin(b.qs), std::end(b.qs), 0x12); }); break;
       case GGML_TYPE_IQ1_XXS:

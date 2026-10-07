@@ -1,5 +1,5 @@
 #pragma once
-#if defined(HYLE_GGML_CPU_IQ1_EXTENSIONS)
+#if defined(HYLE_GGML_CPU_IQ1_EXTENSIONS) || defined(HYLE_GGML_CUDA_IQ1_EXTENSIONS)
 #include "cpu_c5_gguf_fixture.h"
 #include "d5_kda_full_fragments.h"
 #include "d5_deepseek_remaining_fragments.h"

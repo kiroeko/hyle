@@ -5,6 +5,8 @@
 #include <ggml-backend.h>
 #include <ggml-cuda.h>
 
+#include <algorithm>
+#include <array>
 #include <cstddef>
 #include <cstdint>
 #include <span>
@@ -15,6 +17,15 @@
 #include "d5_gguf_test_support.h"
 
 namespace cuda_sidecar_quant_reference {
+inline ggml_type native_type(hyle::compute::GgufQuantizedType type) {
+  using Q=hyle::compute::GgufQuantizedType;
+  switch(type) {
+  case Q::kIq1Xs:return GGML_TYPE_IQ1_XS;
+  case Q::kIq1Xxs:return GGML_TYPE_IQ1_XXS;
+  case Q::kIq1Xxxs:return GGML_TYPE_IQ1_XXXS;
+  default:return d5_gguf_test::native_type(type);
+  }
+}
 // Integration oracle for a single mature CUDA carrier: original native
 // ggml invocation, matching physical weights/activation codec/precision.
 // Independent equation/codec gates remain in the qualified primitive tests;
@@ -43,7 +54,7 @@ inline std::vector<float> projection(hyle::compute::GgufQuantizedType type,
   Storage storage;
   storage.context=ggml_init({ggml_tensor_overhead()*4+ggml_graph_overhead_custom(8,false),nullptr,true});
   if(!storage.context)throw std::runtime_error("sidecar reference context allocation failed");
-  auto *w=ggml_new_tensor_2d(storage.context,d5_gguf_test::native_type(type),k,n);
+  auto *w=ggml_new_tensor_2d(storage.context,native_type(type),k,n);
   auto *a=ggml_new_tensor_2d(storage.context,GGML_TYPE_F32,k,std::int64_t(input.size()/k));
   auto *output=ggml_mul_mat(storage.context,w,a);
   if(!ggml_prec_set_acc(output,GGML_PREC_F32))
@@ -71,7 +82,7 @@ inline std::vector<float> grouped(const hyle::compute::TensorDesc &description,
   for(const auto id:ids)if(id<0 || id>=experts)
     throw std::runtime_error("sidecar grouped reference id is outside its source");
   const auto type=description.is_plain()?GGML_TYPE_BF16:
-      d5_gguf_test::native_type(hyle::compute::gguf_quantized_type(description.storage_format()).value());
+      native_type(hyle::compute::gguf_quantized_type(description.storage_format()).value());
   thread_local Backend backend;
   Storage storage;
   storage.context=ggml_init({ggml_tensor_overhead()*6+ggml_graph_overhead_custom(8,false),nullptr,true});
@@ -97,7 +108,42 @@ inline std::vector<float> grouped(const hyle::compute::TensorDesc &description,
   std::vector<float> result(ids.size()*n);ggml_backend_tensor_get(output,result.data(),0,result.size()*sizeof(float));
   return result;
 }
+
+// Exact physical prototype rows from the fixed catalogue. Native quantized
+// dots use the original GPU activation codec; plain dots remain an independent
+// source equation with the declared input rounding boundary.
+inline std::array<float,8> catalogue_dots(ggml_type type,std::int64_t k,
+    std::span<const std::byte> packed,std::span<const float> decoded,
+    std::span<const float> input,bool f32_activation) {
+  if(input.size()!=std::size_t(k) || decoded.size()!=8*std::size_t(k))
+    throw std::runtime_error("catalogue prototype geometry differs");
+  std::array<float,8> result{};
+  if(ggml_is_quantized(type)) {
+    using Q=hyle::compute::GgufQuantizedType;
+    auto quant=Q::kQ4_0;
+    for(unsigned value=0;value<=unsigned(Q::kIq1Xs);++value)
+      if(native_type(Q(value))==type){quant=Q(value);break;}
+    if(native_type(quant)!=type)
+      throw std::runtime_error("catalogue native quantized type is unmapped");
+    const auto values=projection(quant,packed,8,k,input);
+    std::copy(values.begin(),values.end(),result.begin());return result;
+  }
+  for(std::size_t row=0;row<8;++row) {
+    double dot=0;
+    for(std::int64_t col=0;col<k;++col) {
+      float value=input[col];
+      if(!f32_activation && type==GGML_TYPE_BF16)
+        value=ggml_bf16_to_fp32(ggml_fp32_to_bf16(value));
+      if(!f32_activation && type==GGML_TYPE_F16)
+        value=ggml_fp16_to_fp32(ggml_fp32_to_fp16(value));
+      dot+=double(decoded[row*k+col])*value;
+    }
+    result[row]=float(dot);
+  }
+  return result;
+}
 } // namespace cuda_sidecar_quant_reference
 
 #define HYLE_C4_QUANTIZED_REFERENCE cuda_sidecar_quant_reference::projection
 #define HYLE_C4_GROUPED_REFERENCE cuda_sidecar_quant_reference::grouped
+#define HYLE_C5_GGUF_DOT_REFERENCE cuda_sidecar_quant_reference::catalogue_dots

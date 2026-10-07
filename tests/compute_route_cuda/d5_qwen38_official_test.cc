@@ -43,6 +43,9 @@
 #include "../compute_models/cuda_iq1_model_contracts.h"
 #include "../compute_models/cpu_c4_model_branches.h"
 #include "../compute_models/cuda_sidecar_quant_reference.h"
+#include "../compute_models/cpu_c5_gguf_fixture.h"
+#include "../compute_models/cpu_c5_qwen_attention.h"
+#include "../compute_models/cpu_c5_qwen_nextn.h"
 #include "../compute_models/cpu_c4_qwen_mtp.h"
 #include "../compute_models/cpu_c4_flash_sidecars.h"
 #include "../compute_models/cpu_c5_non_gguf_fixture.h"
@@ -2053,4 +2056,6 @@ TEST(CudaIq1ModelContracts, EightCurrentExpertShapesUseOrdinaryDirectAndReplay) 
 #include "../compute_models/cuda_n1_non_gguf_tests.h"
 #include "../compute_models/cuda_n2_mlx_tests.h"
 #include "../compute_models/cuda_r1_current_region_tests.h"
+#include "../compute_models/cpu_c5_gguf_tests.h"
+#include "../compute_models/cpu_c5_parameter_tests.h"
 } // namespace

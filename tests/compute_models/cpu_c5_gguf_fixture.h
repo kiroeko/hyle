@@ -1,5 +1,5 @@
 #pragma once
-#if defined(HYLE_GGML_CPU_IQ1_EXTENSIONS)
+#if defined(HYLE_GGML_CPU_IQ1_EXTENSIONS) || defined(HYLE_GGML_CUDA_IQ1_EXTENSIONS)
 #include "cpu_expanded_gguf_fixture.h"
 #include "cpu_c4_model_branches.h"
 #include "cpu_c5_gguf_inputs.h"
@@ -41,7 +41,11 @@ struct Bank {
 
   explicit Bank(const in::Case &item):type(item.native),k(item.k),stride(ggml_row_size(type,k)),
       packed(prototypes*stride),decoded(prototypes*k) {
+#if defined(HYLE_C5_GGUF_DOT_REFERENCE)
+    ggml_quantize_init(type);
+#else
     ggml_cpu_init();
+#endif
     const auto *traits=ggml_get_type_traits(type);
     if(item.packed && static_cast<unsigned>(item.quant)>=static_cast<unsigned>(c::GgufQuantizedType::kQ4_0)) {
       const auto seed=cpu_expanded_gguf_fixture::weights({item.quant,type},prototypes);
@@ -66,7 +70,13 @@ struct Bank {
             const auto value=std::int32_t((row*13+col*7)%256);
             std::memcpy(destination+col*4,&value,4);
           }
-        } else ggml_get_type_traits_cpu(type)->from_float(source.data(),destination,k);
+        } else {
+#if defined(HYLE_C5_GGUF_DOT_REFERENCE)
+          traits->from_float_ref(source.data(),destination,k);
+#else
+          ggml_get_type_traits_cpu(type)->from_float(source.data(),destination,k);
+#endif
+        }
       }
     }
     for(std::int64_t row=0;row<prototypes;++row) {
@@ -87,7 +97,12 @@ struct Bank {
       std::memcpy(result.data()+row*stride,packed.data()+((first+row)%prototypes)*stride,stride);
     return result;
   }
-  std::array<float,prototypes> dots(std::span<const float> activation) const {
+  std::array<float,prototypes> dots(std::span<const float> activation,
+                                  bool f32_activation=false) const {
+#if defined(HYLE_C5_GGUF_DOT_REFERENCE)
+    return HYLE_C5_GGUF_DOT_REFERENCE(type,k,packed,decoded,activation,f32_activation);
+#else
+    (void)f32_activation;
     const auto *traits=ggml_get_type_traits_cpu(type);
     const auto bytes=ggml_row_size(traits->vec_dot_type,k);
     std::vector<std::uint64_t> encoded((bytes+7)/8);
@@ -98,6 +113,7 @@ struct Bank {
     for(std::int64_t row=0;row<prototypes;++row)
       traits->vec_dot(int(k),&result[row],0,packed.data()+row*stride,0,encoded.data(),0,1);
     return result;
+#endif
   }
 };
 
@@ -181,7 +197,7 @@ inline Fragment grouped(const in::Case &item,const Bank &bank,const c::ModelArti
     std::vector<float> expected(slots*item.n);
     for(std::int64_t slot=0;slot<slots;++slot) {
       selected[slot]=std::int32_t(item.kind==in::Kind::kExpert?(slot?e-1:pass):((slot+pass)%e));
-      auto dot=bank.dots(std::span(input).subspan(slot*item.k,item.k));
+      auto dot=bank.dots(std::span(input).subspan(slot*item.k,item.k),true);
       for(std::int64_t row=0;row<item.n;++row)expected[slot*item.n+row]=dot[(selected[slot]*item.n+row)%prototypes];
     }
     f.replays.push_back({{bytes(input),bytes(selected)},{std::move(expected)}});
