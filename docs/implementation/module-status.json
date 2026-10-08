@@ -489,36 +489,21 @@
     },
     {
       "module": "compute_provider_cuda",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/compute/cuda-final-u6-audit.md",
-      "summary": "CUDA有限goal CLOSED：固定模型/量化/MTP完整原计算与状态、两OS CUDA-only/mixed三交付、cold成熟默认/真实能力门、六重复公式BORROW和具名unique保留、U5 42步/源码SDK增量及终审清理完成。AA原FAIL/性能INCONCLUSIVE无新WIN；按授权ENGINEERING_DEFAULT/P0关闭，不签全设备SOTA或推理engine，不解除旧Graph/Vulkan。",
-      "candidate": "657f291f6e4d50b0e1c14ca24cdbe7b1715066e4",
-      "performance": {
-        "tier": "P0",
-        "evidence": "docs/implementation/tasks/compute/cuda-final-u6-audit.md"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/cuda-best-of-completion.md",
+      "summary": "CUDA best-of补齐C1 SCOPED：用户明确追加同CPU级实测规则/对应清退，先完整同合同重叠矩阵及一次AA机制排查；近似直接选成熟，不无限比较。U23/U4/U5原覆盖交付复用，其它owner/CPU/Graph旧Vulkan状态保持。"
     },
     {
       "module": "compute_route_cuda",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/compute/cuda-final-u6-audit.md",
-      "summary": "CUDA有限goal CLOSED：固定模型/量化/MTP完整原计算与状态、两OS CUDA-only/mixed三交付、cold成熟默认/真实能力门、六重复公式BORROW和具名unique保留、U5 42步/源码SDK增量及终审清理完成。AA原FAIL/性能INCONCLUSIVE无新WIN；按授权ENGINEERING_DEFAULT/P0关闭，不签全设备SOTA或推理engine，不解除旧Graph/Vulkan。",
-      "candidate": "657f291f6e4d50b0e1c14ca24cdbe7b1715066e4",
-      "performance": {
-        "tier": "P0",
-        "evidence": "docs/implementation/tasks/compute/cuda-final-u6-audit.md"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/cuda-best-of-completion.md",
+      "summary": "CUDA best-of补齐C1 SCOPED：用户明确追加同CPU级实测规则/对应清退，先完整同合同重叠矩阵及一次AA机制排查；近似直接选成熟，不无限比较。U23/U4/U5原覆盖交付复用，其它owner/CPU/Graph旧Vulkan状态保持。"
     },
     {
       "module": "graph_route_cuda",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/compute/cuda-final-u6-audit.md",
-      "summary": "CUDA有限goal CLOSED：固定模型/量化/MTP完整原计算与状态、两OS CUDA-only/mixed三交付、cold成熟默认/真实能力门、六重复公式BORROW和具名unique保留、U5 42步/源码SDK增量及终审清理完成。AA原FAIL/性能INCONCLUSIVE无新WIN；按授权ENGINEERING_DEFAULT/P0关闭，不签全设备SOTA或推理engine，不解除旧Graph/Vulkan。",
-      "candidate": "657f291f6e4d50b0e1c14ca24cdbe7b1715066e4",
-      "performance": {
-        "tier": "P0",
-        "evidence": "docs/implementation/tasks/compute/cuda-final-u6-audit.md"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/cuda-best-of-completion.md",
+      "summary": "CUDA best-of补齐C1 SCOPED：用户明确追加同CPU级实测规则/对应清退，先完整同合同重叠矩阵及一次AA机制排查；近似直接选成熟，不无限比较。U23/U4/U5原覆盖交付复用，其它owner/CPU/Graph旧Vulkan状态保持。"
     },
     {
       "module": "compute_route_apple",

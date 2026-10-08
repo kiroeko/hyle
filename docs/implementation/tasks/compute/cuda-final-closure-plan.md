@@ -7,6 +7,9 @@
 
 ## 本 goal 完成
 
+后续：用户明确要求补齐与CPU同级的实测优选和对应清退，现活动计划为
+[CUDA性能补齐](cuda-best-of-completion.md)。下述100%是上一轮工程默认范围历史，不签新性能补齐完成。
+
 2026-10-08，U1--U6本次CUDA基础库冻结范围完成，整体100%，
 见[逐项终审与限制](cuda-final-u6-audit.md)。当前owner经独立CANDIDATE后按本goal预声明
 工程默认/P0裁决关闭；原U4 AA失败/未取得P1冠军保持INCONCLUSIVE，没有改成PASS/SOTA。
