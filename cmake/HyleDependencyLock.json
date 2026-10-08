@@ -1278,6 +1278,99 @@
           }
         ]
       }
+    },
+    {
+      "name": "bitsandbytes_apple",
+      "repository": "https://github.com/bitsandbytes-foundation/bitsandbytes.git",
+      "revision": "833649043474794b8fe7a4136e0c40faf077b2e0",
+      "git_tree": "7eb993be924aa9fb875fa1fd99c92f4a0e37faae",
+      "archive": {
+        "url": "https://codeload.github.com/bitsandbytes-foundation/bitsandbytes/tar.gz/833649043474794b8fe7a4136e0c40faf077b2e0",
+        "sha256": "be02cdc9d8b7c73462a93629e7d8c7522742c90606014bd0b92c33794985c570"
+      },
+      "version": "original-mlx-recipes-833649043474",
+      "class": "in_tree",
+      "vendored": {
+        "path": "third_party/bitsandbytes_apple",
+        "tree_sha256": "066957d1b5ba9b384fd9bbeb526fd4fdb333fdf18df17d8636f8c07e1c773ea7"
+      },
+      "license": {
+        "expression": "MIT",
+        "files": [
+          {
+            "root": "hyle",
+            "path": "third_party/bitsandbytes_apple/LICENSE",
+            "sha256": "52412d7bc7ce4157ea628bbaacb8829e0a9cb3c58f57f99176126bc8cf2bfc85"
+          },
+          {
+            "root": "hyle",
+            "path": "third_party/bitsandbytes_apple/NOTICE.md",
+            "sha256": "26d210c4b6e884ac29ecf9a05eddb80b80fd8f0c14f22ec3a5929dcddbd824ca"
+          }
+        ]
+      }
+    },
+    {
+      "name": "awq_apple",
+      "repository": "https://github.com/casper-hansen/AutoAWQ.git",
+      "revision": "88e4c76b20755db275574e6a03c83c84ba3bece5",
+      "git_tree": "25b64783617d2ddda337abab631dd99dc619e825",
+      "archive": {
+        "url": "https://codeload.github.com/casper-hansen/AutoAWQ/tar.gz/88e4c76b20755db275574e6a03c83c84ba3bece5",
+        "sha256": "525f90b888389bd437a4c9c70bcebb177799be0fa195666987c7341dc713ea27"
+      },
+      "version": "original-mlx-recipes-88e4c76b2075",
+      "class": "in_tree",
+      "vendored": {
+        "path": "third_party/awq_apple",
+        "tree_sha256": "89faed9df08963779e0e8d7a3b1964da7671ad513c7fa8a4533ce032a04c7774"
+      },
+      "license": {
+        "expression": "MIT",
+        "files": [
+          {
+            "root": "hyle",
+            "path": "third_party/awq_apple/LICENSE",
+            "sha256": "2af485d269071b583c62c20250a63349f8313312cc9df0bd9007ca39c6d57bd9"
+          },
+          {
+            "root": "hyle",
+            "path": "third_party/awq_apple/NOTICE.md",
+            "sha256": "12d39ebecf3dd0c3ed3293322a209e50ab9f037c4ea51885256dd243be248ac5"
+          }
+        ]
+      }
+    },
+    {
+      "name": "compressed_tensors_apple",
+      "repository": "https://github.com/vllm-project/compressed-tensors.git",
+      "revision": "ac8e2ba82f4e0d5eaa40069f8fc642738f124cd4",
+      "git_tree": "3d02bd5c03a948ec9b08200b8e5c91355d4f2820",
+      "archive": {
+        "url": "https://codeload.github.com/vllm-project/compressed-tensors/tar.gz/ac8e2ba82f4e0d5eaa40069f8fc642738f124cd4",
+        "sha256": "658df62507e53454c77ec998dce9f82c8d8d434ebfc123ec85ffb21f0f7b2f06"
+      },
+      "version": "original-mlx-recipes-ac8e2ba82f4e",
+      "class": "in_tree",
+      "vendored": {
+        "path": "third_party/compressed_tensors_apple",
+        "tree_sha256": "fbd33c3af8a1bb824768ea87851b5966d52b0b3e2e965bd23d0948c013ce2e00"
+      },
+      "license": {
+        "expression": "Apache-2.0",
+        "files": [
+          {
+            "root": "hyle",
+            "path": "third_party/compressed_tensors_apple/LICENSE",
+            "sha256": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4"
+          },
+          {
+            "root": "hyle",
+            "path": "third_party/compressed_tensors_apple/NOTICE.md",
+            "sha256": "160d5aaa48168cf69dfd6e5bfc6d6549948d730645e976e67ff367d5cd2931a2"
+          }
+        ]
+      }
     }
   ]
 }

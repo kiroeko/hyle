@@ -18,6 +18,7 @@
 #include "apple_internal.h"
 #include "apple_checks.h"
 #include "apple_mature_indexing.h"
+#include "apple_mature_artifact.h"
 #include "apple_mature_reduction.h"
 #include "hyle/compute/model_ops.h"
 
@@ -323,6 +324,7 @@ mx::array lower_attention(const ScaledDotProductAttention &attention,
 bool is_mlx_tensor_custom(const Operation &operation) noexcept {
   return operation.custom_as<model_ops::CausalConv1d>().has_value() ||
          operation.custom_as<model_ops::SinkAttention>().has_value() ||
+         operation.custom_as<model_ops::ArtifactWeightDecode>().has_value() ||
          operation.custom_as<model_ops::MlxQuantized>().has_value();
 }
 
@@ -332,6 +334,7 @@ Result<std::vector<mx::array>> lower_tensor(const Operation &operation,
   try {
     const auto causal_conv = operation.custom_as<model_ops::CausalConv1d>();
     const auto mlx_quantized = operation.custom_as<model_ops::MlxQuantized>();
+    const auto artifact_decode = operation.custom_as<model_ops::ArtifactWeightDecode>();
     const auto sink_attention = operation.custom_as<model_ops::SinkAttention>();
     if (!is_mlx_tensor_custom(operation) && !admitted(operation.kind()))
       return std::unexpected(Status::Unimplemented(
@@ -354,6 +357,12 @@ Result<std::vector<mx::array>> lower_tensor(const Operation &operation,
     const auto &output = outputs[0];
     HYLE_ASSIGN_OR_RETURN(auto type, native_type(output.data_type()));
     HYLE_ASSIGN_OR_RETURN(auto shape, native_shape(output));
+    if (artifact_decode) {
+      if (output.element_count().value() > static_cast<std::uint64_t>(INT32_MAX))
+        return std::unexpected(Status::OutOfRange(
+            "Apple artifact preparation exceeds native flat index range"));
+      return std::vector{lower_mature_artifact(*artifact_decode, inputs, shape, type, stream)};
+    }
     if (mlx_quantized) {
       const auto &op = *mlx_quantized;
       const bool affine = op.format == model_ops::MlxWeightFormat::kAffine4;

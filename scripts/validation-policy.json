@@ -65,6 +65,9 @@
     "compute_provider_ggml_vulkan": ["Windows", "Linux", "Darwin"]
   },
   "vendored_input_owners": {
+    "third_party/bitsandbytes_apple/": ["compute_route_apple"],
+    "third_party/awq_apple/": ["compute_route_apple"],
+    "third_party/compressed_tensors_apple/": ["compute_route_apple"],
     "third_party/mlx_cuda_quant/": ["compute_provider_torch_cuda"],
     "third_party/bitsandbytes_cuda/": ["compute_provider_torch_cuda"],
     "third_party/awq_cuda/": ["compute_provider_torch_cuda"],

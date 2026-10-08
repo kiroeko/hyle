@@ -1,5 +1,8 @@
 #pragma once
-#include "cpu_c5_gguf_fixture.h"
+#include "cpu_c4_model_branches.h"
+#include "d5_qwen35_fixture.h"
+#include "d5_qwen38_24t_semantic_fragments.h"
+#include "../compute_provider_native/half_test_support.h"
 #include "cpu_c5_non_gguf_inputs.h"
 
 namespace cpu_c5_non_gguf_fixture {

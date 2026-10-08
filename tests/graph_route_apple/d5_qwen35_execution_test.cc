@@ -42,6 +42,34 @@
 #include "../compute_route_apple/tensor_test_support.h"
 #include "hyle/compute/model_ops.h"
 #include "hyle/graph/apple.h"
+#include "../compute_models/cpu_c5_non_gguf_fixture.h"
+
+namespace {
+void run_q24_semantic_fragment(d5_qwen38_24t_semantic_fragments::Fragment fixture);
+void apple_parity_packed_demand(bool artifact) {
+  namespace in = cpu_c5_non_gguf_inputs;
+  namespace oracle = cpu_c5_non_gguf_fixture;
+  for (const auto &item : in::cases) {
+    const bool external = item.format == in::Format::kNf4 ||
+                          item.format == in::Format::kAwq || item.format == in::Format::kCt;
+    if (external != artifact) continue;
+    SCOPED_TRACE(item.id);
+    const auto profile = oracle::profile(item);
+    std::printf("[APPLE-PACKED] %s N=%lld K=%lld originalE=%lld verifiedE=%lld\n",
+        item.id, static_cast<long long>(item.n), static_cast<long long>(item.k),
+        static_cast<long long>(item.e), static_cast<long long>(std::min<std::int64_t>(item.e, 8)));
+    std::fflush(stdout);
+    run_q24_semantic_fragment(external ? oracle::artifact(item, &profile) :
+                                        oracle::mlx(item, &profile, item.n));
+  }
+}
+} // namespace
+TEST(AppleParityGraph, RealMlxPackedDemandUsesAllRowsAndRealK) {
+  apple_parity_packed_demand(false);
+}
+TEST(AppleParityGraph, RealArtifactPreparationFeedsMatureMatMul) {
+  apple_parity_packed_demand(true);
+}
 
 namespace {
 using namespace apple_tensor_test;
@@ -97,6 +125,16 @@ Tensor upload(const a::Context &, const c::TensorDesc &description,
   const auto shape = native_shape(description, transposed);
   mx::array result = [&]() -> mx::array {
     switch (description.data_type()) {
+    case c::DataType::kUInt8: {
+      std::vector<std::uint8_t> data(bytes.size());
+      std::memcpy(data.data(), bytes.data(), bytes.size());
+      return mx::array(data.data(), shape, mx::uint8);
+    }
+    case c::DataType::kUInt32: {
+      std::vector<std::uint32_t> data(bytes.size() / sizeof(std::uint32_t));
+      std::memcpy(data.data(), bytes.data(), bytes.size());
+      return mx::array(data.data(), shape, mx::uint32);
+    }
     case c::DataType::kBool: {
       std::vector<std::uint8_t> data(bytes.size());
       std::memcpy(data.data(), bytes.data(), bytes.size());
