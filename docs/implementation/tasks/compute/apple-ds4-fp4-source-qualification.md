@@ -90,3 +90,14 @@ replay的逐元素门失败（normalized max0.052632，门0.04）；另一个报
 固定一次Direct失败ID捕获：发布的grouped前驱与final输出，独立原FP8/scale方程分别
 检查local/whole fused与unfused差异。只作责任定位，保留完整原期望、容差、输入与状态；
 不取更近答案签PASS，不重跑旧矩阵/P1。捕获后按源码证据作唯一具名纠正或明确未决。
+
+`79c1d70f`一次捕获六replay：每次final在actual grouped前驱下都与独立原FP8方程逐值
+相等，fused/unfused均0差异；whole期望的grouped前驱在step0/3/4分别有23/11/35个
+BF16差异，step0进入动态量化后final两项不同（原值最大绝对差0.000976562）。末层
+没有接线错误证据，不能据此签whole PASS。该fixture仍用了CPU libm旋转/F64 sink参考，
+与本轮已定界的MLX原生精度路径不同；不是已修复的DSpark参考自动应用到了这里。
+唯一后续测试FIX：在完整main fixture构造前统一绑定原MLX GPU sin/cos与fast SinkAttention，
+保留独立source权重、FP8/FP4 codec、norm/压缩方程与自己的cache演进；原MLX block的
+unfused F32 scale选项同样预先固定。CPU/CUDA原默认不变，所有whole门不变，无产品改动。
+两个main模型的参考都变化，因此两入口只验此两ID（Pro的ratio128/MoE此前未运行）；
+已通过的DSpark/原语/expert/矩阵不重跑。正式一次；若仍失败，明确未决而不继续换参考。

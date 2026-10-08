@@ -87,4 +87,49 @@ inline void bind(base::Model &model) {
   };
   model.attention_reference = Native::attention;
 }
+inline base::ds::NativeReference main_reference() {
+  base::ds::NativeReference native;
+  native.fused_scale_accumulation = false;
+  native.rotation = [](std::span<const float> input, std::int64_t depth,
+      std::int32_t position, bool compressed, bool inverse) {
+    if (depth < 64 || input.size() % depth)
+      throw std::runtime_error("native main rotary geometry differs");
+    auto angles = base::ds::rope_frequencies(compressed, inverse);
+    for (auto &angle : angles) angle *= float(position);
+    const auto stream = mx::default_stream(mx::Device::gpu);
+    const mx::array x(angles.data(), {32});
+    auto cosine = mx::cos(x, stream), sine = mx::sin(x, stream);
+    mx::async_eval({cosine, sine});
+    mx::synchronize(stream);
+    cosine.wait(); sine.wait();
+    const auto *c = cosine.data<float>(), *s = sine.data<float>();
+    std::vector<float> result(input.begin(), input.end());
+    for (std::size_t row = 0; row < input.size(); row += depth)
+      for (int pair = 0; pair < 32; ++pair) {
+        const auto i = row + depth - 64 + 2 * pair;
+        volatile float ac = input[i] * c[pair], bs = input[i + 1] * s[pair];
+        volatile float as = input[i] * s[pair], bc = input[i + 1] * c[pair];
+        result[i] = ac - bs; result[i + 1] = as + bc;
+      }
+    return base::ds::bfloat_boundary(std::move(result));
+  };
+  native.sink = [](std::span<const float> query, std::span<const float> keys,
+      std::span<const float> values, std::span<const float> mask,
+      std::span<const float> sinks, float scale) {
+    const int heads = int(sinks.size()), length = int(mask.size());
+    if (query.size() != std::size_t(heads * 512) ||
+        keys.size() != std::size_t(length * 512) || values.size() != keys.size())
+      throw std::runtime_error("native main sink geometry differs");
+    const auto stream = mx::default_stream(mx::Device::gpu);
+    auto q = mx::array(query.data(), {1, heads, 1, 512});
+    auto k = mx::array(keys.data(), {1, 1, length, 512});
+    auto v = mx::array(values.data(), {1, 1, length, 512});
+    auto output = mx::fast::scaled_dot_product_attention(q, k, v, scale, "array",
+        mx::array(mask.data(), {1, length}), mx::array(sinks.data(), {heads}), false, stream);
+    mx::async_eval({output});
+    mx::synchronize(stream); output.wait();
+    return Native::copy(output);
+  };
+  return native;
+}
 } // namespace apple_dspark_native_reference

@@ -108,6 +108,28 @@ inline std::vector<float> rope_reference(std::span<const float> x, std::int64_t 
     }
   return bfloat_boundary(std::move(result));
 }
+// Integration references may bind a mature provider's declared F32 math
+// before constructing the fixture. Independent codecs, weights and state
+// evolution remain here; CPU/CUDA keep their original default reference.
+struct NativeReference final {
+  bool fused_scale_accumulation = true;
+  std::function<std::vector<float>(std::span<const float>, std::int64_t,
+      std::int32_t, bool, bool)> rotation{};
+  std::function<std::vector<float>(std::span<const float>, std::span<const float>,
+      std::span<const float>, std::span<const float>, std::span<const float>,
+      float)> sink{};
+  std::vector<float> rotate(std::span<const float> x, std::int64_t depth,
+      std::int32_t position, bool compressed, bool inverse = false) const {
+    return rotation ? rotation(x, depth, position, compressed, inverse)
+                    : rope_reference(x, depth, position, compressed, inverse);
+  }
+  std::vector<float> attend(std::span<const float> q, std::span<const float> k,
+      std::span<const float> v, std::span<const float> mask,
+      std::span<const float> sinks, std::int64_t length, float scale) const {
+    return sink ? sink(q, k, v, mask, sinks, scale)
+                : old::sink_reference(q, k, v, mask, sinks, 1, length, scale);
+  }
+};
 inline ValueId cache_quant(Fragment &f, ValueId x, bool indexer) {
   const auto width = f.description(x).dimensions()[1];
   if (indexer) {
@@ -170,7 +192,8 @@ inline ValueId compress(Fragment &f, ValueId previous_kv, ValueId previous_score
 inline std::vector<float> compress_reference(
     std::span<const float> previous_kv, std::span<const float> previous_score,
     std::span<const float> current_kv, std::span<const float> current_score,
-    std::span<const float> scales, std::int64_t ratio, std::int32_t position, bool indexer) {
+    std::span<const float> scales, std::int64_t ratio, std::int32_t position, bool indexer,
+    const NativeReference &native = {}) {
   const auto depth = std::int64_t(scales.size()), channels = ratio == 4 ? 2*depth : depth;
   const auto rows = ratio == 4 ? 4 : 64;
   std::vector<float> reduced(depth);
@@ -191,12 +214,13 @@ inline std::vector<float> compress_reference(
     }
     reduced[channel] = fp8::bfloat(float(numerator/denominator));
   }
-  return cache_reference(rope_reference(norm_reference(reduced, scales), depth, position, true), depth, indexer);
+  return cache_reference(native.rotate(norm_reference(reduced, scales), depth, position, true), depth, indexer);
 }
 
 // Batch recipes below retain actual output-to-input state feedback.
 inline Fragment compressor(const moe::Case &model, std::int64_t ratio,
-                             bool indexer = false, CompressorOptions options = {}) {
+                             bool indexer = false, CompressorOptions options = {},
+                             const NativeReference &native = {}) {
   if ((ratio != 4 && ratio != 128) || (indexer && ratio != 4))
     throw std::runtime_error("invalid DeepSeek compressor role");
   if (model.gguf) throw std::runtime_error("official compressor profile required");
@@ -285,7 +309,7 @@ inline Fragment compressor(const moe::Case &model, std::int64_t ratio,
     replay.inputs.push_back(bytes(std::vector<std::uint8_t>{std::uint8_t(update)}));
     if (update)
       old_cache = compress_reference(old_kv, old_score, kv, score, norm, ratio,
-                                      compressed_position, indexer);
+                                      compressed_position, indexer, native);
     replay.outputs = {old_cache, kv, score};
     f.replays.push_back(std::move(replay));
     old_kv = std::move(kv);
@@ -333,7 +357,8 @@ inline PreparedOutputWeight prepare_output_weight(Fragment &consumer, std::int64
 using WindowReference = std::function<moe::ReferenceOutputs(
     std::span<const float>, std::span<const float>, std::int32_t)>;
 
-inline Fragment attention(const moe::Case &model, std::int64_t ratio, WindowReference *reference = nullptr) {
+inline Fragment attention(const moe::Case &model, std::int64_t ratio,
+    WindowReference *reference = nullptr, NativeReference native = {}) {
   if (model.gguf || (ratio != 0 && ratio != 4 && ratio != 128) || (reference && ratio != 0))
     throw std::runtime_error("official attention profile or reference mismatch");
   const std::int64_t heads = model.experts == 384 ? 128 : 64;
@@ -348,8 +373,8 @@ inline Fragment attention(const moe::Case &model, std::int64_t ratio, WindowRefe
   Fragment f{.profile = model.profile, .region = 0x080a3404,
              .quantized = true};
   if (ratio) {
-    f = d5_deepseek_official_attention::compressor(model, ratio, false, options);
-    if (ratio == 4) join_compressor(f, d5_deepseek_official_attention::compressor(model, ratio, true, options));
+    f = d5_deepseek_official_attention::compressor(model, ratio, false, options, native);
+    if (ratio == 4) join_compressor(f, d5_deepseek_official_attention::compressor(model, ratio, true, options, native));
     f.region = ratio == 4 ? 0x080a3405 : 0x080a3406;
   } else {
     (void)f.input(dense({1, model.hidden}));
@@ -372,15 +397,18 @@ inline Fragment attention(const moe::Case &model, std::int64_t ratio, WindowRefe
   auto query_position = slice(f, positions, 0, chunk - 1, 1);
   auto hidden = slice(f, f.inputs[0], 0, chunk - 1, 1);
   auto qa = fp8::model_linear(f, hidden, rank, model.hidden, 263, true);
+  qa.fused_scale_accumulation = native.fused_scale_accumulation;
   std::vector<float> qnorm(rank), knorm(depth), sinks(heads);
   for (std::int64_t i = 0; i < rank; ++i) qnorm[i] = 0.75F + float(i % 7) / 32.0F;
   for (std::int64_t i = 0; i < depth; ++i) knorm[i] = 0.875F + float(i % 5) / 32.0F;
   for (std::int64_t i = 0; i < heads; ++i) sinks[i] = 0.75F + float(i % 11) / 16.0F;
   auto qr = norm(f, qa.output, qnorm);
   auto qb = fp8::model_linear(f, qr, heads * depth, rank, 269, true);
+  qb.fused_scale_accumulation = native.fused_scale_accumulation;
   auto q = query_norm(f, reshape(f, qb.output, {1, 1, heads, depth}));
   q = rope(f, q, query_position, ratio != 0);
   auto kv = fp8::model_linear(f, f.inputs[0], depth, model.hidden, 271, true);
+  kv.fused_scale_accumulation = native.fused_scale_accumulation;
   auto key = norm(f, kv.output, knorm);
   key = reshape(f, rope(f, reshape(f, key, {1, chunk, 1, depth}),
                              positions, ratio != 0), {chunk, depth});
@@ -417,6 +445,7 @@ inline Fragment attention(const moe::Case &model, std::int64_t ratio, WindowRefe
       f.outputs.push_back(index_keys);
       f.state_ports.push_back({index_port, index_output});
       index_q = fp8::model_linear(f, qr, 64 * 128, rank, 277, true);
+      index_q->fused_scale_accumulation = native.fused_scale_accumulation;
       auto iq = rope(f, reshape(f, index_q->output, {1, 1, 64, 128}),
                           query_position, true);
       iq = cache_quant(f, reshape(f, iq, {64, 128}), true);
@@ -457,22 +486,23 @@ inline Fragment attention(const moe::Case &model, std::int64_t ratio, WindowRefe
       {prepared.value, grouped, ids}));
   auto ob = fp8::model_linear(f, reshape(f, oa, {1, groups * out_rank}),
                                  model.hidden, groups * out_rank, 293, true);
+  ob.fused_scale_accumulation = native.fused_scale_accumulation;
   const auto context_output = f.outputs.size();
   f.outputs.push_back(context);
   f.outputs.push_back(derotated);
   f.outputs.push_back(oa);
   f.outputs.push_back(ob.output);
   if (reference) {
-    *reference = [qa, qb, kv, ob, wa, qnorm, knorm, sinks, group_ids]
+    *reference = [qa, qb, kv, ob, wa, qnorm, knorm, sinks, group_ids, native]
         (std::span<const float> input, std::span<const float> past, std::int32_t position) -> moe::ReferenceOutputs {
       auto x = bfloat_boundary(std::vector<float>(input.begin(), input.end()));
       auto qr = norm_reference(qa.reference(x), qnorm);
-      auto q = rope_reference(query_norm_reference(qb.reference(qr), 512), 512, position, false);
-      auto k = cache_reference(rope_reference(norm_reference(kv.reference(x), knorm), 512, position, false), 512, false);
+      auto q = native.rotate(query_norm_reference(qb.reference(qr), 512), 512, position, false);
+      auto k = cache_reference(native.rotate(norm_reference(kv.reference(x), knorm), 512, position, false), 512, false);
       std::vector<float> keys(past.begin(), past.end());
       keys.insert(keys.end(), k.begin(), k.end());
-      auto context = bfloat_boundary(old::sink_reference(q, keys, keys, std::vector<float>(128), sinks, 1, 128, 1.0F/std::sqrt(512.0F)));
-      auto inverse = rope_reference(context, 512, position, false, true);
+      auto context = bfloat_boundary(native.attend(q, keys, keys, std::vector<float>(128), sinks, 128, 1.0F/std::sqrt(512.0F)));
+      auto inverse = native.rotate(context, 512, position, false, true);
       auto oa = bfloat_boundary(moe::project(inverse, wa, group_ids, 1024, 4096));
       auto out = ob.reference(oa);
       keys.erase(keys.begin(), keys.begin()+512);
@@ -515,10 +545,10 @@ inline Fragment attention(const moe::Case &model, std::int64_t ratio, WindowRefe
     replay.inputs.push_back(bytes(token_positions));
     auto qr_values = norm_reference(qa.reference(last), qnorm);
     auto query = query_norm_reference(qb.reference(qr_values), depth);
-    query = rope_reference(query, depth, position, ratio != 0);
+    query = native.rotate(query, depth, position, ratio != 0);
     auto new_keys = norm_reference(kv.reference(x), knorm);
     for (std::int64_t t = 0; t < chunk; ++t) {
-      auto row = rope_reference(std::span<const float>(new_keys).subspan(t * depth, depth),
+      auto row = native.rotate(std::span<const float>(new_keys).subspan(t * depth, depth),
                                 depth, token_positions[t], ratio != 0);
       std::copy(row.begin(), row.end(), new_keys.begin() + t * depth);
     }
@@ -549,7 +579,7 @@ inline Fragment attention(const moe::Case &model, std::int64_t ratio, WindowRefe
         replay.inputs.push_back(bytes(replay.reset_state ? index_history : std::vector<float>(index_history.size(), 29)));
         std::copy(replay.outputs[3].begin(), replay.outputs[3].end(), index_history.begin() + (visible - 1) * 128);
         replay.outputs[index_output] = index_history;
-        auto iq = cache_reference(rope_reference(index_q->reference(qr_values), 128, position, true), 128, true);
+        auto iq = cache_reference(native.rotate(index_q->reference(qr_values), 128, position, true), 128, true);
         auto iw = bfloat_boundary(index_weight->reference(last));
         for (auto &value : iw) value = fp8::bfloat(value * (1.0F / std::sqrt(8192.0F)));
         std::vector<float> scores(capacity);
@@ -579,9 +609,9 @@ inline Fragment attention(const moe::Case &model, std::int64_t ratio, WindowRefe
         attention_mask.push_back(visibility[row]);
       }
     }
-    auto context_values = bfloat_boundary(old::sink_reference(query, attended_keys, attended_keys, attention_mask,
-                                          sinks, 1, key_count, scale));
-    auto derotated_values = rope_reference(context_values, depth, position, ratio != 0, true);
+    auto context_values = bfloat_boundary(native.attend(query, attended_keys, attended_keys, attention_mask,
+                                          sinks, key_count, scale));
+    auto derotated_values = native.rotate(context_values, depth, position, ratio != 0, true);
     auto grouped_values = bfloat_boundary(moe::project(derotated_values, wa, group_ids, out_rank, group_width));
     replay.outputs[context_output] = std::move(context_values);
     replay.outputs[context_output + 1] = std::move(derotated_values);
