@@ -4,7 +4,8 @@ if(HYLE_COMPUTE_APPLE_ENABLED)
     apple_context.cc apple_operations.cc apple_tensor.cc
     apple_environment.mm apple_recurrent.cc apple_mature_indexing.cc
     apple_mature_reduction.cc apple_mature_float.cc apple_mature_artifact.cc apple_mature_gguf.cc)
-  hyle_audit_in_tree_dependencies(bitsandbytes_apple awq_apple compressed_tensors_apple ggml_q4k_apple)
+  hyle_audit_in_tree_dependencies(bitsandbytes_apple awq_apple compressed_tensors_apple ggml_q4k_apple
+    ds4_quantization deepseek_quantization)
   target_include_directories(hyle_compute_route_apple PRIVATE
     "${CMAKE_CURRENT_SOURCE_DIR}/../compute" "${CMAKE_CURRENT_BINARY_DIR}"
     "${HYLE_SOURCE_DIR}/third_party/bitsandbytes_apple"
@@ -64,6 +65,11 @@ if(HYLE_COMPUTE_APPLE_ENABLED)
       FEATURES compute_apple LOCKED_DEPENDENCIES ${_recipe} RUNTIME_FILE_SPECS
       "${HYLE_SOURCE_DIR}/third_party/${_recipe}/LICENSE|${CMAKE_INSTALL_DATADIR}/licenses/Hyle|${_recipe}-LICENSE"
       "${HYLE_SOURCE_DIR}/third_party/${_recipe}/NOTICE.md|${CMAKE_INSTALL_DATADIR}/licenses/Hyle|${_recipe}-NOTICE.md")
+  endforeach()
+  foreach(_source_recipe IN ITEMS ds4_quantization deepseek_quantization)
+    hyle_register_package_dependency(NAME apple_${_source_recipe} OWNER compute_route_apple
+      FEATURES compute_apple LOCKED_DEPENDENCIES ${_source_recipe} RUNTIME_FILE_SPECS
+      "${HYLE_SOURCE_DIR}/third_party/${_source_recipe}/LICENSE|${CMAKE_INSTALL_DATADIR}/licenses/Hyle|apple-${_source_recipe}-LICENSE")
   endforeach()
 else()
   hyle_add_module(compute_route_apple OPTIONAL_ABSENT)

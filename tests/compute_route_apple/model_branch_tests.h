@@ -29,6 +29,25 @@ TEST_P(HYLE_APPLE_BRANCHES, DsparkTargetPrefillAndFiveTokenAttentionCache) {
   apple_dspark_native_reference::bind(model);
   cpu_c4_model_branches::check_attention(model, run_q24_semantic_fragment);
 }
+TEST_P(HYLE_APPLE_BRANCHES, OfficialMainCompressionAttentionAndFp4Moe) {
+  const auto &model=GetParam();
+  SCOPED_TRACE(model.profile->model_revision);
+  const auto shape=model.main_case();
+  for(std::int64_t ratio:{0,4,128}) {
+    SCOPED_TRACE(ratio);
+    run_q24_semantic_fragment(d5_deepseek_official_attention::attention(shape,ratio));
+    ASSERT_FALSE(::testing::Test::HasFailure());
+  }
+  run_q24_semantic_fragment(d5_deepseek_official_fragments::moe_chain(shape,false,nullptr,false));
+  ASSERT_FALSE(::testing::Test::HasFailure());
+  run_q24_semantic_fragment(d5_deepseek_official_fragments::moe_chain(shape,true,nullptr,false));
+}
+TEST_P(HYLE_APPLE_BRANCHES, CompleteOfficialThreeStageDsparkWithFp4Experts) {
+  auto model=GetParam();
+  SCOPED_TRACE(model.profile->model_revision);
+  apple_dspark_native_reference::bind(model);
+  cpu_c4_model_branches::check_complete_draft(model,run_q24_semantic_fragment);
+}
 INSTANTIATE_TEST_SUITE_P(CurrentOfficial, HYLE_APPLE_BRANCHES,
     ::testing::ValuesIn([] {
       auto models = cpu_c4_model_branches::models;
