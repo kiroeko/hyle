@@ -5,7 +5,8 @@
 > 标准 CPU 构建使用 `HYLE_COMPUTE_ONEDNN=AUTO`，在支持的 x86-64 目标接入已支持的 oneDNN 能力。
 > CUDA factor 提供 device/context/queue、memory resource、stream interop、byte transfer、Completion 与
 > command capture 基础运行时。普通路线已接入 ggml CUDA、cuBLASLt、SGLang、CCCL 与有限 HYLE CUDA Provider，
-> 普通 CUDA Direct/Graph 入口、真实 FFN/capture、Win/WSL 三交付与当前 SM89 工程性能验收已完成。
+> 普通 CUDA Direct/Graph、固定模型原计算与Win/WSL三交付已接通；当前新版本采用具名成熟工程默认，
+> U4同artifact A/A未取得测量资格，不声明新增SM89性能WIN。当前收口范围见[CUDA计划](../implementation/tasks/compute/cuda-final-closure-plan.md)。
 > Apple MLX/Metal 的原生 Direct/Graph、三交付和 M4 限定性能验收已完成；
 > Vulkan/SPIR-V 的 R6 也已完成真实计算、三交付与已测设备/版本域的有限性能验收。
 > HIP/ROCm 当前无限期不纳入产品，也没有空实现或构建开关。
@@ -421,6 +422,12 @@ half weighted RMSNorm与packed gate用SGLang、Scan/TopK/plain Gather用CCCL，a
 Graph优先保留已准入完整ggml region，叶默认不拆融合；准备后执行不搜索/计时/重新裁决。
 本轮三组重复域的实际A/A未过，因此没有新增性能WIN；默认依据和限制见
 [U4当前裁决](../implementation/tasks/compute/cuda-final-u4-default-and-best-of.md)。
+
+HYLE CUDA scalar gate及通用stride Unary中的SiLU/GELU/GELU-tanh算术复用同一份锁定的
+SGLang片段，六份重复本地公式已删除；HYLE只保留成熟vector入口不能表达的scalar索引、
+尾宽、separate输入和stride glue。其它Native fallback有具名的prepared/capture、低对齐、
+空张量、Bool mask/LogSoftmax/checked Scatter等未替代能力，保留理由与性能优势分开；
+详见[CUDA自研清退与独有能力](../implementation/tasks/compute/cuda-final-u5-native-retirement.md)。
 
 | 默认规则 | 支持域 |
 |---|---|
