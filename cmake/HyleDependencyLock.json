@@ -1292,7 +1292,7 @@
       "class": "in_tree",
       "vendored": {
         "path": "third_party/bitsandbytes_apple",
-        "tree_sha256": "066957d1b5ba9b384fd9bbeb526fd4fdb333fdf18df17d8636f8c07e1c773ea7"
+        "tree_sha256": "c754dabd4c261b21931582cc1052aea7f0167f68a212a9c3fe132cbf6a91649e"
       },
       "license": {
         "expression": "MIT",
@@ -1323,7 +1323,7 @@
       "class": "in_tree",
       "vendored": {
         "path": "third_party/awq_apple",
-        "tree_sha256": "89faed9df08963779e0e8d7a3b1964da7671ad513c7fa8a4533ce032a04c7774"
+        "tree_sha256": "dcadc41cac6184c48bcb7f2f6c0a165bf07cf8986e6861502aa5d659d23c04e8"
       },
       "license": {
         "expression": "MIT",
@@ -1354,7 +1354,7 @@
       "class": "in_tree",
       "vendored": {
         "path": "third_party/compressed_tensors_apple",
-        "tree_sha256": "fbd33c3af8a1bb824768ea87851b5966d52b0b3e2e965bd23d0948c013ce2e00"
+        "tree_sha256": "c1422b5abc47e3604041337b8af5fe49d7f4f41a10af09603236facf441742f0"
       },
       "license": {
         "expression": "Apache-2.0",
