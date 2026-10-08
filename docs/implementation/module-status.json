@@ -496,9 +496,9 @@
     },
     {
       "module": "graph_route_cuda",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/cuda-u4-graph-cold-default-scope.md",
-      "summary": "U4具体reopen：新leaf默认优先级拆散原ggml region，5个结构断言FAIL；只定界冷scope，不改原执行/数学或公共规划器。"
+      "summary": "U4 Graph冷scope有限FIX AUDITED：原资源/region200保持，leaf默认加200；private factory传scope，原数学/执行/公共规划器不变，只验原5个结构FAIL与适用组合。"
     },
     {
       "module": "compute_route_apple",

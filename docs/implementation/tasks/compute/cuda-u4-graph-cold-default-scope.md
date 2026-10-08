@@ -1,6 +1,6 @@
 # CUDA Graph：冷默认与完整 region
 
-<!-- MODULE REVIEW: SCOPED -->
+<!-- MODULE REVIEW: AUDITED -->
 
 - baseline：`71904172`；实际owner graph_route_cuda 的旧CLOSED不授权本修改。
 - trigger：U4 ordinary Graph51项中5个region结构断言FAIL，46项通过；原native region8项
@@ -11,3 +11,7 @@
 - 验收：5个原失败、原ggml region及Graph资源/replay/普通SGLang组合；Direct证据不重跑。
   新scope输入改变只增量编译相关factors，原51项日志保留，P1仍未启动。
 - 预算：一次源码定位、一次范围修复、一次具名纠正验收；不得更换输入/数值门或重跑全集。
+
+AUDITED：现CPU冷decorator的Graph scope已以leaf偏移200保留region，CUDA原region的
+准入/contractibility/资源仍适用。冻结只在Compute route私有factory和Graph route调用传scope，
+其余Context/provider ownership和callback不变，Unknown模型仍使用descriptor工程默认。
