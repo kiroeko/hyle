@@ -116,6 +116,10 @@ class DeliveryControl(unittest.TestCase):
             self.assertEqual(sum('.graph-current-' in j['id'] for j in selected), 21)
             self.assertTrue(all('.scratch/cuda-u3-' not in ' '.join(j.get('argv', [])) for j in selected))
             self.assertTrue(all(j.get('timeout', 0) > 0 for j in selected))
+            if profile['system'] == 'Linux':
+                runtime = next(j for j in selected if j['id'].endswith('.direct-gguf-pairs'))
+                self.assertIn('-relocated/lib/libhyle', runtime['inputs'][-1])
+                self.assertNotIn('-consumer/*.so', runtime['inputs'][-1])
 
     def test_paused_product_goal_cannot_launch_registered_build(self):
         private = self.root / 'isolated/evidence/correctness/batch'

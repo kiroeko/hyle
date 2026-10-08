@@ -109,7 +109,9 @@ def make_jobs(manifest):
             # New binary/runtime = a new delivery check, not a rerun of all mathematical shapes.
             add(group['name'], [target, '--gtest_filter=' + group['filter'], '--gtest_output=xml:' + xml],
                 xml=xml, timeout=300, system_path=not linux,
-                inputs=manifest['inputs'] + [target, sdk + ('/*.so*' if linux else '/*.dll')],
+                inputs=manifest['inputs'] + [target,
+                    relocated + ('/lib/libhyle*.a' if profile['static'] else '/lib/libhyle*.so*')
+                    if linux else sdk + '/*.dll'],
                 env={'OMP_NUM_THREADS': '1', 'MKL_NUM_THREADS': '1', 'HYLE_D5_QWEN35_FIXTURE': p['fixture']})
         if profile['cpu']:
             xml = '{logs}/' + profile['id'] + '.cpu.xml'
