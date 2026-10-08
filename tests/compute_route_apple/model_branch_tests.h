@@ -1,5 +1,7 @@
 #pragma once
 
+#include "fp4_main_numeric_capture.h"
+
 #if defined(HYLE_TEST_GRAPH_ROUTE_APPLE)
 #define HYLE_APPLE_BRANCHES AppleParityGraphBranches
 #define HYLE_APPLE_SIDECARS AppleParityGraphSidecars
@@ -35,7 +37,9 @@ TEST_P(HYLE_APPLE_BRANCHES, OfficialMainCompressionAttentionAndFp4Moe) {
   const auto shape=model.main_case();
   for(std::int64_t ratio:{0,4,128}) {
     SCOPED_TRACE(ratio);
-    run_q24_semantic_fragment(d5_deepseek_official_attention::attention(shape,ratio));
+    auto fragment = d5_deepseek_official_attention::attention(shape,ratio);
+    apple_fp4_main_numeric_capture::attach(fragment, model);
+    run_q24_semantic_fragment(std::move(fragment));
     ASSERT_FALSE(::testing::Test::HasFailure());
   }
   run_q24_semantic_fragment(d5_deepseek_official_fragments::moe_chain(shape,false,nullptr,false));

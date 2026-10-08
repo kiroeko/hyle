@@ -82,3 +82,11 @@ selected experts的原payload/scales，不全表decode或换Q8/BF16模型格式�
 custom predicate两入口同接；热期没有Provider搜索。保持原资源status/索引/lease。
 本批选现有官方FP4 projection的actual N/K、共享/独立activation、T1/T3、双replay，
 随后对应完整官方expert/indexer/main/DSpark验证。具名失败最多一次纠正，未跑不PASS。
+
+`b85125b0`原FP4 expert接线两入口各16个实际geometry/activation/replay组合通过。
+`885e354e`完整main/三stage DSpark两入口均3/4通过，Pro ratio4仅final输出14在首个
+replay的逐元素门失败（normalized max0.052632，门0.04）；另一个报错仅HasFailure传播。
+两个完整官方DSpark与Flash main均通过，不将局部PASS代签Pro main。
+固定一次Direct失败ID捕获：发布的grouped前驱与final输出，独立原FP8/scale方程分别
+检查local/whole fused与unfused差异。只作责任定位，保留完整原期望、容差、输入与状态；
+不取更近答案签PASS，不重跑旧矩阵/P1。捕获后按源码证据作唯一具名纠正或明确未决。
