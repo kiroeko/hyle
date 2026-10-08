@@ -1243,6 +1243,13 @@ prepare_for_mode(const Context &context, Operation operation,
     auto attempt = detail::OperationPreparationAccess::prepare_candidate(
         context, candidate.proposal, operation, inputs, outputs,
         input_requirements, output_requirements, resources);
+    if (!attempt && attempt.error().IsUnimplemented()) {
+      // A resource-specific miss is a cold candidate decline, not failure of
+      // the whole operation. Actual argument/internal failures still propagate.
+      unsupported = std::move(attempt).error();
+      unsupported_provider = candidate.proposal.provider.name;
+      continue;
+    }
     if (!attempt)
       return std::unexpected(std::move(attempt).error());
     if (attempt->succeeded())
