@@ -71,3 +71,7 @@ source math通过后交付只重验本改动的借入算术和实际link/load，
 复用现producer/cache，build2/test1串行；一个实现批次、至多一次具名纠正、不跑P1。
 公开合同/编译依赖图/产品select不变，原license随provider SDK已有交付。先独立提交本AUDITED
 记录并将compute_provider_cuda现AUDITED owner改绑后才实施。
+
+首次Win shared源码link检出U4新增expert-factory测试漏声明cuBLAS test依赖；static通过
+来自传递archive，shared不得继承。仅补测试DEPS，不改产品/公开依赖图/数学；原FAIL保留，
+同build ID一次具名纠正，configure proof复用，增量CMake自更新。其它无关模块不重验。
