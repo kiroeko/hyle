@@ -442,7 +442,7 @@ _hyle_declare_component(compute_provider_cuda
   SPLIT_PUBLIC_HEADERS hyle/compute/providers/cuda.h)
 # Compiled CUDA defaults compose native implementations without a CPU route.
 _hyle_declare_component(compute_route_cuda
-  PRIVATE_DEPS compute_ops compute_backend_cuda compute_provider_cublas compute_provider_cuda
+  PRIVATE_DEPS platform platform_thread compute_ops compute_backend_cuda compute_provider_cublas compute_provider_cuda
                compute_provider_flashinfer compute_provider_ggml_cuda compute_provider_torch_cuda
   PUBLIC_DEPS core compute
   SPLIT_PUBLIC_HEADERS hyle/compute/cuda.h)

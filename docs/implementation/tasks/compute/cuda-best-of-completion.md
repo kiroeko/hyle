@@ -131,8 +131,8 @@ platform/platform_thread依赖，借用现有CPU身份/调用线程亲和查询�
 
 R2最终源级清单：tensor/normalization中的23胜出请求保留原kernel体、grid、数学和完成表；
 未胜出且成熟库承载普通dense域的重复AOT specialization清退。tensor删除41个numeric dense
-实例和4个Copy dense实例；Reduce Sum/Mean与普通/加性mask Softmax删除24个dense实例；
-Concat删除16个dense实例。它们共85个重复程序，**不是85个算子，也不是整项数学删除**。
+实例和4个Copy dense实例；Reduce Sum/Mean与普通/加性mask Softmax删除18个dense实例；
+Concat删除16个dense实例。它们共79个重复程序，**不是79个算子，也不是整项数学删除**。
 原generic程序覆盖仍有效的stride/广播/低对齐/no-private/capture等独有域；唯一Relu、
 number Min/Max、NaN extrema、boolean/log Softmax、checked Scatter，以及borrowed激活尾部/
 separate GELU保留。Norm各共享数学体已有完整胜出或独有mixed-parameter资源域，不复制优化。

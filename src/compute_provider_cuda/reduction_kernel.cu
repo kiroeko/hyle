@@ -210,13 +210,13 @@ const void *bind_softmax(ReductionMask mask) noexcept {
   switch (mask) {
   case ReductionMask::kNone:
     return reinterpret_cast<const void *>(
-        softmax<T, Log, ReductionMask::kNone, Dense, Cached>);
+        softmax<T, Log, ReductionMask::kNone, Dense && Log, Cached>);
   case ReductionMask::kBoolean:
     return reinterpret_cast<const void *>(
         softmax<T, Log, ReductionMask::kBoolean, Dense, Cached>);
   case ReductionMask::kAdditive:
     return reinterpret_cast<const void *>(
-        softmax<T, Log, ReductionMask::kAdditive, Dense, Cached>);
+        softmax<T, Log, ReductionMask::kAdditive, Dense && Log, Cached>);
   }
   return nullptr;
 }
@@ -230,10 +230,10 @@ const void *bind(ReductionKind kind, ReductionMask mask, bool cached) noexcept {
   switch (kind) {
   case ReductionKind::kSum:
     return reinterpret_cast<const void *>(
-        reduce<T, ReductionKind::kSum, Dense>);
+        reduce<T, ReductionKind::kSum, false>);
   case ReductionKind::kMean:
     return reinterpret_cast<const void *>(
-        reduce<T, ReductionKind::kMean, Dense>);
+        reduce<T, ReductionKind::kMean, false>);
   case ReductionKind::kMinimum:
     return reinterpret_cast<const void *>(
         reduce<T, ReductionKind::kMinimum, Dense>);

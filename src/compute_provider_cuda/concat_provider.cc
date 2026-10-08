@@ -243,13 +243,11 @@ ProviderPrepareOutcome prepare(void *state,
     for (unsigned axis = 0; axis < layout.rank; ++axis)
       layout.dimensions[axis] =
           static_cast<unsigned>(description.dimensions()[axis]);
-    bool dense = true;
     unsigned chunk = 0;
     for (unsigned input = 0; input < layout.inputs; ++input) {
       chunk += static_cast<unsigned>(sources[input].dimensions()[layout.axis]) *
                layout.inner;
       layout.chunks[input] = chunk;
-      dense &= sources[input].is_dense();
       group.alignment[input] = sources[input].required_alignment();
       for (unsigned axis = 0; axis < layout.rank; ++axis)
         layout.strides[input][axis] =
@@ -259,7 +257,7 @@ ProviderPrepareOutcome prepare(void *state,
     offset += chunk;
     const auto configured =
         native::concat_prepare(static_cast<unsigned>(prepared->value_alignment),
-                               dense, layout, &group.program);
+                               layout, &group.program);
     if (configured != cudaSuccess) {
       destroy(prepared, allocator);
       return ProviderPrepareOutcome::error(cuda::status(configured));

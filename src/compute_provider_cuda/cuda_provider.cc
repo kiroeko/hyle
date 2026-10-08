@@ -390,7 +390,7 @@ template <bool Sglang>
 const detail::ProviderVTable kProviderVTable{
     .identity = {.id = Sglang ? kSglangProviderId : kProviderId,
                  .name = Sglang ? "sglang-cuda" : "hyle-cuda",
-                 .version = Sglang ? "06992c92-block128-aot" : "v11-borrowed-activation"},
+                 .version = Sglang ? "06992c92-block128-aot" : "v12-dense-retirement"},
     .create_context = &create_context,
     .destroy_context = &destroy_context,
     .propose = &propose<Sglang>,

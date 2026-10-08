@@ -4,6 +4,7 @@
 #include "../compute_models/d5_qwen38_profile_cases.h"
 #include "../compute_provider_native/half_test_support.h"
 #include "ffn_support.h"
+#include "../../src/compute_route_cuda/best_of.h"
 #if defined(HYLE_COMPUTE_FLASHINFER)
 #include "hyle/compute/providers/flashinfer.h"
 #endif
@@ -31,9 +32,12 @@ void run_ffn(compute::DataType type, std::int64_t rows) {
         compute::cuda_native::kDeepSeekProviderId,
         compute::cuda_native::kCcclProviderId,
         compute::cuda_native::kProviderId};
-    ASSERT_EQ(owner.provider_count(), expected.size());
+    const auto extra = owner.provider_count() - expected.size();
+    ASSERT_LE(extra, 1U);
+    if (extra)
+      EXPECT_EQ(owner.provider_identity(0)->id, compute::cuda_native::kProviderId);
     for (std::size_t i = 0; i < expected.size(); ++i)
-      EXPECT_EQ(owner.provider_identity(i)->id, expected[i]);
+      EXPECT_EQ(owner.provider_identity(i + extra)->id, expected[i]);
     auto resource =
         cuda::MemoryResource::create(owner, cuda::MemoryKind::kDevice).value();
     Linear first(resource.ref(), type, 128, 256, 1);

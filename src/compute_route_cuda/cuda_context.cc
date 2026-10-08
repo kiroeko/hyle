@@ -1,5 +1,6 @@
 #include "default_context.h"
 #include "default_policy.h"
+#include "best_of.h"
 #include "hyle/compute/cuda.h"
 
 #include <array>
@@ -26,7 +27,12 @@ Result<Context> internal::create_context(DefaultContextOptions options,
   const auto configured = [scope](Provider provider, DefaultProvider family) {
     return internal::with_defaults(std::move(provider), family, scope);
   };
+  const auto native = cuda_native::provider();
+  const auto qualified = ggml.identity().version ==
+          "456172ec+iq1-46cbf0e9-resource-f99368c68335266b"
+      ? internal::with_qualified_defaults(native, scope) : Provider{};
   const std::array providers{
+      ProviderBinding{qualified, 900},
 #if defined(HYLE_COMPUTE_FLASHINFER)
       ProviderBinding{configured(flashinfer::provider(), DefaultProvider::kFlashInfer), 900},
 #endif
@@ -38,10 +44,10 @@ Result<Context> internal::create_context(DefaultContextOptions options,
       ProviderBinding{configured(cuda_native::sglang_provider(), DefaultProvider::kSglang), 900},
       ProviderBinding{configured(cuda_native::deepseek_provider(), DefaultProvider::kDeepSeek), 900},
       ProviderBinding{configured(cuda_native::cccl_provider(), DefaultProvider::kCccl), 900},
-      ProviderBinding{configured(cuda_native::provider(), DefaultProvider::kNative), 1000}};
+      ProviderBinding{configured(native, DefaultProvider::kNative), 1000}};
   return Context::create(*selected,
                          {.metadata_allocator = options.metadata_allocator,
-                          .providers = providers});
+                          .providers = std::span(providers).subspan(qualified.valid() ? 0 : 1)});
 }
 
 } // namespace hyle::compute::cuda

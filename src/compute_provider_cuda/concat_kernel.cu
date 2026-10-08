@@ -5,7 +5,7 @@
 namespace hyle::compute::cuda_native::native {
 namespace {
 constexpr unsigned kThreads = 256;
-template <class T, unsigned Inputs, bool Dense>
+template <class T, unsigned Inputs>
 __global__ void concat(ConcatPointers inputs, T *output, ConcatLayout layout) {
   const unsigned index = blockIdx.x * blockDim.x + threadIdx.x;
   if (index >= layout.elements)
@@ -22,45 +22,38 @@ __global__ void concat(ConcatPointers inputs, T *output, ConcatLayout layout) {
   const unsigned source_chunk = layout.chunks[selected] - previous;
   const unsigned source_index = row * source_chunk + within - previous;
   T value;
-  if constexpr (Dense)
-    value = static_cast<const T *>(inputs.input[selected])[source_index];
-  else {
-    std::size_t offset = 0;
-    unsigned remaining = source_index;
-    for (unsigned axis = layout.rank; axis-- > 0;) {
-      const unsigned extent = axis == layout.axis ? source_chunk / layout.inner
-                                                  : layout.dimensions[axis];
-      offset += (remaining % extent) * layout.strides[selected][axis];
-      remaining /= extent;
-    }
-    const auto *source =
-        static_cast<const unsigned char *>(inputs.input[selected]) + offset;
-    auto *bytes = reinterpret_cast<unsigned char *>(&value);
-#pragma unroll
-    for (unsigned byte = 0; byte < sizeof(T); ++byte)
-      bytes[byte] = source[byte];
+  std::size_t offset = 0;
+  unsigned remaining = source_index;
+  for (unsigned axis = layout.rank; axis-- > 0;) {
+    const unsigned extent = axis == layout.axis ? source_chunk / layout.inner
+                                                : layout.dimensions[axis];
+    offset += (remaining % extent) * layout.strides[selected][axis];
+    remaining /= extent;
   }
+  const auto *source =
+      static_cast<const unsigned char *>(inputs.input[selected]) + offset;
+  auto *bytes = reinterpret_cast<unsigned char *>(&value);
+#pragma unroll
+  for (unsigned byte = 0; byte < sizeof(T); ++byte)
+    bytes[byte] = source[byte];
   output[static_cast<std::size_t>(row) * layout.output_row +
          layout.output_offset + within] = value;
 }
-template <class T, bool Dense> const void *bind(unsigned inputs) noexcept {
+template <class T> const void *bind(unsigned inputs) noexcept {
   switch (inputs) {
   case 1:
-    return reinterpret_cast<const void *>(concat<T, 1, Dense>);
+    return reinterpret_cast<const void *>(concat<T, 1>);
   case 2:
-    return reinterpret_cast<const void *>(concat<T, 2, Dense>);
+    return reinterpret_cast<const void *>(concat<T, 2>);
   case 3:
-    return reinterpret_cast<const void *>(concat<T, 3, Dense>);
+    return reinterpret_cast<const void *>(concat<T, 3>);
   case 4:
-    return reinterpret_cast<const void *>(concat<T, 4, Dense>);
+    return reinterpret_cast<const void *>(concat<T, 4>);
   }
   return nullptr;
 }
-template <class T> const void *bind(bool dense, unsigned inputs) noexcept {
-  return dense ? bind<T, true>(inputs) : bind<T, false>(inputs);
-}
 } // namespace
-cudaError_t concat_prepare(unsigned scalar_bytes, bool dense,
+cudaError_t concat_prepare(unsigned scalar_bytes,
                            const ConcatLayout &layout,
                            ConcatProgram *output) noexcept {
   if (output == nullptr)
@@ -68,16 +61,16 @@ cudaError_t concat_prepare(unsigned scalar_bytes, bool dense,
   const void *kernel = nullptr;
   switch (scalar_bytes) {
   case 1:
-    kernel = bind<unsigned char>(dense, layout.inputs);
+    kernel = bind<unsigned char>(layout.inputs);
     break;
   case 2:
-    kernel = bind<unsigned short>(dense, layout.inputs);
+    kernel = bind<unsigned short>(layout.inputs);
     break;
   case 4:
-    kernel = bind<unsigned>(dense, layout.inputs);
+    kernel = bind<unsigned>(layout.inputs);
     break;
   case 8:
-    kernel = bind<unsigned long long>(dense, layout.inputs);
+    kernel = bind<unsigned long long>(layout.inputs);
     break;
   }
   if (kernel == nullptr)

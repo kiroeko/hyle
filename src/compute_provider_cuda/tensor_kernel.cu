@@ -2,6 +2,7 @@
 
 #include <cuda_bf16.h>
 #include <cuda_fp16.h>
+#include <type_traits>
 
 #include "activation.cuh"
 
@@ -138,8 +139,24 @@ __global__ void tensor(const void *first, const void *second, const void *third,
 
 template <TensorKind Kind, class Out, class In = Out>
 const void *bind(bool dense) noexcept {
-  return dense ? reinterpret_cast<const void *>(tensor<Kind, Out, In, true>)
-               : reinterpret_cast<const void *>(tensor<Kind, Out, In, false>);
+  // Keep dedicated dense code only for a complete C2 winner or a genuinely
+  // single-carrier semantic. Other ordinary domains use the mature default;
+  // their unique stride/resource domains share the existing generic program.
+  constexpr bool unique = Kind == TensorKind::kFill || Kind == TensorKind::kSelect ||
+      Kind == TensorKind::kRelu || Kind == TensorKind::kMinimum || Kind == TensorKind::kMaximum;
+  constexpr bool f16 = std::is_same_v<Out, __half> &&
+      (Kind == TensorKind::kAbs || Kind == TensorKind::kNeg || Kind == TensorKind::kLog ||
+       Kind == TensorKind::kSoftplus || Kind == TensorKind::kAdd ||
+       Kind == TensorKind::kSubtract || Kind == TensorKind::kMultiply);
+  constexpr bool bf16 = std::is_same_v<Out, __nv_bfloat16> &&
+      (Kind == TensorKind::kNeg || Kind == TensorKind::kExp || Kind == TensorKind::kLog ||
+       Kind == TensorKind::kSqrt || Kind == TensorKind::kRsqrt || Kind == TensorKind::kSoftplus ||
+       Kind == TensorKind::kSubtract || Kind == TensorKind::kMultiply || Kind == TensorKind::kDivide);
+  if constexpr (unique || f16 || bf16)
+    return dense ? reinterpret_cast<const void *>(tensor<Kind, Out, In, true>)
+                 : reinterpret_cast<const void *>(tensor<Kind, Out, In, false>);
+  else
+    return reinterpret_cast<const void *>(tensor<Kind, Out, In, false>);
 }
 
 template <class T>

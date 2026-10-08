@@ -24,7 +24,7 @@ struct ConcatProgram final {
   const void *kernel = nullptr;
   ConcatLayout layout{};
 };
-cudaError_t concat_prepare(unsigned scalar_bytes, bool dense,
+cudaError_t concat_prepare(unsigned scalar_bytes,
                            const ConcatLayout &layout,
                            ConcatProgram *output) noexcept;
 cudaError_t concat_launch(const ConcatProgram &program,
