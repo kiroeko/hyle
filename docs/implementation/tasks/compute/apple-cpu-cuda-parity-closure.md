@@ -63,4 +63,8 @@ Apple实际QoS/交流电/low-power/机器身份收费；不冒称P核hard pin，
 Windows/Linux Apple-OFF独立公开头/构建合同按实际改动选择，不制造Apple binary journey。
 每包完成/重大scope变化报告实现/验证/未完/阻塞与Compute+Graph全实现LOC，文档/状态不build/P1。
 七门全部适用证据成立后关闭本轮并停止；其它路线/公共Graph旧Vulkan blocker保持。
-推送采用[skip ci]，不使用Actions。goal创建等待用户对独立持续goal的明确答复，审计继续。
+推送采用[skip ci]，不使用Actions。2026-10-08用户明确选择建立独立持续goal，现已创建；
+A1已实际产出[559合同静态映射](../../../../evidence/correctness/apple-parity-a1/gguf-static-binding.json)。
+其中127合同/11类型缺ggmlMetal类型绑定，432仅静态有映射，全部runtime仍UNVERIFIED；
+不把这一统计当Provider实际支持结论。下一有限动作检出现有成熟Metal codecs与完整操作的
+适用精度/资源后固定批量FIX，所有自研数学冻结。
