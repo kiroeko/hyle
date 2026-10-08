@@ -182,12 +182,12 @@ int main() {
     const unsigned long priority = 0;
 #endif
     const bool verify = !environment("HYLE_BENCH_VERIFY_ONLY").empty();
-    std::fprintf(stderr, "# HYLE_U4_CUDA_RUN execution_order=%s allocation_order=%s aa_route=%s paired_mode=nanobench-compare affinity_topology=%s caller_cpu=%s affinity_ok=%s parent_mask=%llu priority=%lu run_nonce=%s verify_only=%d\n",
+    std::fprintf(stderr, "# HYLE_U4_CUDA_RUN execution_order=%s allocation_order=%s aa_route=%s paired_mode=nanobench-compare affinity_topology=%s caller_cpu=%s affinity_ok=%s parent_mask=0x%llx priority=%s run_nonce=%s verify_only=%d\n",
         environment("HYLE_BENCH_RIVAL_FIRST").empty() ? "candidate-first" : "peer-first",
         environment("HYLE_BENCH_PEER_ALLOCATION_FIRST").empty() ? "candidate-first" : "peer-first",
         environment("HYLE_BENCH_AA_ROUTE").empty() ? "off" : environment("HYLE_BENCH_AA_ROUTE").c_str(),
         affinity.topology, affinity.cpu, affinity.ok, static_cast<unsigned long long>(parent),
-        static_cast<unsigned long>(priority), hyle::bench::perf::run_nonce(), verify ? 1 : 0);
+        priority == 32768 ? "above-normal" : "other", hyle::bench::perf::run_nonce(), verify ? 1 : 0);
     const std::array recipes{
         Recipe{"Qwen BF16 RMSNorm T1 H2048", 1, 2048, true, false, true, c::cuda_native::sglang_provider()},
         Recipe{"Qwen BF16 RMSNorm T32 H2048", 32, 2048, true, false, true, c::cuda_native::sglang_provider()},

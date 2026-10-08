@@ -157,3 +157,7 @@ D4 adapter的预编译两次失败属于明确接入错误：第一次普通faca
 修正为明确链接现有两个factor，不增用户宏、不改产品/数学/SDK。本具名build ID只追加最后
 一次纠正（累计3次、旧FAIL日志/消耗保留），不换ID/目录；仍失败则停止该P1而如实未裁决。
 包级两小时D1--D3/定界、n15/no escalation及总有限范围保持。
+
+D4首次仪器批次在telemetry准入停止：adapter把parent_mask/priority写十进制整数，原合同
+要求`0x14`/`above-normal`。只按现有D5格式纠正打印，数学、计费、样本/阈值不变；同ID
+第二次/最后一次具名批次允许，原A/A子进程及首个无资格product日志完整保留，不签性能输赢。
