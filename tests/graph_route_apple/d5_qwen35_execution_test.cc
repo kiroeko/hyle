@@ -1611,7 +1611,10 @@ void execute_q24_semantic_fragment(
                               {.report = &report, .workload = workload});
   ASSERT_TRUE(compiled) << compiled.error().message();
   ASSERT_TRUE(report.status.ok());
-  if (fixture.quantized)
+  if (fixture.quantized && std::ranges::any_of(fixture.descriptions,
+      [](const auto &description) {
+        return c::gguf_quantized_type(description.storage_format()).has_value();
+      }))
     EXPECT_NE(report.implementation_policy.find("ggml Metal"),
               std::string::npos);
   EXPECT_EQ(compiled->workload(), workload);
