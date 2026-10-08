@@ -1,0 +1,32 @@
+{
+  "revision": "a809594fd2035979ad2b7ef23398127c1d07e891",
+  "grids": [
+    {
+      "name": "iq1_xs_grid_gpu",
+      "entries": 1024,
+      "identical_to_original_cuda_grid": true,
+      "sha256": "156cd990beeedf41d879cbc3c834835c56b963ead6a8f2806426af43a915a960"
+    },
+    {
+      "name": "iq1_xxs_grid_gpu",
+      "entries": 512,
+      "identical_to_original_cuda_grid": true,
+      "sha256": "1e73670aec8534d0074dfd8e033cef1819de8301e547ae30177cdf1bd6e10902"
+    },
+    {
+      "name": "iq1_xxxs_grid_gpu",
+      "entries": 256,
+      "identical_to_original_cuda_grid": true,
+      "sha256": "a52ba9f6a7bae5bb54b45165df9f0f189f3fab4c23cec311d07570066783d65f"
+    }
+  ],
+  "files_sha256": {
+    "ggml-common.h": "73cb8027067c2de45670d1e09b3b76a38d665bed0f29cbb4417e3d70c0bc4bc8",
+    "ggml-metal-device.cpp": "e21d6e0fca6d8a0dceb8503e6f0ee31919f521b34a8c7dbc858e845540327ffd",
+    "ggml-metal-device.m": "f1cbb21041c8e95cf9beeb228b80049e8b12fda0df9ef39d4fe6f4df8fcaa55a",
+    "ggml-metal-impl.h": "755fe200344bedd8471e07640e673b2c50a088aaf7721582933bba30dec74c93",
+    "ggml-metal.metal": "9f713593554b0a2e5ad3c05f4ef75586c0a49e56f841b012a4e67e4823f68711",
+    "LICENSE": "94f29bbed6a22c35b992c5c6ebf0e7c92f13b836b90f36f461c9cf2f0f1d010d"
+  },
+  "runtime_qualification": "UNVERIFIED"
+}
