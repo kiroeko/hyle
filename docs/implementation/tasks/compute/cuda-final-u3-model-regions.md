@@ -135,6 +135,12 @@ Windows CUDA-only static SDK联合资格现已完成：完整native需求651／6
 [静态联合资格](../../../../evidence/correctness/cuda-final-u3-windows-static/README.md)。
 shared／mixed／Linux shipping矩阵及U4／U5仍待，本卡继续AUDITED，不以此子格签全包完成。
 
+Windows CUDA-only shared现亦完成source／relocated offline SDK运行资格，新交付检查166／151项：
+60角色／编码配对、全34 packed、必要完整族／current／本地权重与普通寿命边界。
+原全部形状数学证据按相同source／algorithm复用，不将角色配对冒称559全集重跑。
+边界及原writer失败见[shared资格](../../../../evidence/correctness/cuda-final-u3-windows-shared/README.md)。
+混合与Linux交付仍未完，U4未启动，本卡仍AUDITED。
+
 ## 七问与冻结
 
 第三方依旧原ggml／ATen源、pin和license；当前模型完整需求不扩画像；backend、Graph adapter、

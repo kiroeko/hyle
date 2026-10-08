@@ -159,3 +159,7 @@ B3／完整B4不因本子格提前关闭，不新增性能结论。
 shared实际构建检出公共邻置copy的同目录writer冲突，独立
 [tool task](../build/runtime-staging-directory-writer.md)固定有限目录锁修复；
 不是CUDA算子缺口，不在本模块改公共治理，原对象与通过组保留。
+
+该tool task已CLOSED；source和搬移shared SDK实际j2邻置、独立link／loader／完整程序边界通过，
+见[shared资格](../../../../evidence/correctness/cuda-final-u3-windows-shared/README.md)。
+mixed／Linux shipping仍未完成；不把已完成Windows CUDA-only三交付子格签作U2全包结束。
