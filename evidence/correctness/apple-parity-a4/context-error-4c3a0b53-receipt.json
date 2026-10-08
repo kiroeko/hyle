@@ -1,0 +1,57 @@
+{
+  "candidate": "4c3a0b53a611a9cbfb1ea3728a4fb4344ff5923d",
+  "steps": [
+    {
+      "name": "context-build",
+      "returncode": 0
+    },
+    {
+      "name": "context-tests",
+      "returncode": 0
+    },
+    {
+      "name": "shared-configure",
+      "returncode": 0
+    },
+    {
+      "name": "shared-build",
+      "returncode": 0
+    },
+    {
+      "name": "shared-install",
+      "returncode": 0
+    },
+    {
+      "name": "source-build",
+      "returncode": 0
+    },
+    {
+      "name": "static-install",
+      "returncode": 0
+    },
+    {
+      "name": "shared-consumer-build",
+      "returncode": 0
+    },
+    {
+      "name": "static-consumer-build",
+      "returncode": 0
+    },
+    {
+      "name": "source-positive",
+      "returncode": 0
+    },
+    {
+      "name": "static-positive",
+      "returncode": 0
+    },
+    {
+      "name": "shared-positive",
+      "returncode": 0
+    },
+    {
+      "name": "resource-negatives",
+      "returncode": 0
+    }
+  ]
+}

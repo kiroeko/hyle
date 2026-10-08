@@ -1,0 +1,7 @@
+START missing-resource source
+source exit=1 clear_missing=True
+START missing-resource static
+static exit=1 clear_missing=True
+START missing-resource shared
+shared exit=1 clear_missing=True
+PASS three explicit resource negatives and exact restoration

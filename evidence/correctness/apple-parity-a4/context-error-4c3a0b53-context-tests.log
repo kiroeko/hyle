@@ -1,0 +1,31 @@
+Running main() from /Users/kiro/Library/Caches/hyle/dependencies/v1/sources/googletest-063de7e9578f-162765170ae6/googletest/src/gtest_main.cc
+Note: Google Test filter = AppleRegion.*:AppleLifetime.*
+[==========] Running 9 tests from 2 test suites.
+[----------] Global test environment set-up.
+[----------] 3 tests from AppleRegion
+[ RUN      ] AppleRegion.ChangedInputsRetainedResultsAndNoRetrace
+[       OK ] AppleRegion.ChangedInputsRetainedResultsAndNoRetrace (38 ms)
+[ RUN      ] AppleRegion.RejectsForeignStreamPendingInputAndWrongShape
+[       OK ] AppleRegion.RejectsForeignStreamPendingInputAndWrongShape (4 ms)
+[ RUN      ] AppleRegion.AbandonAndConcurrentWaitSurviveContextClose
+[       OK ] AppleRegion.AbandonAndConcurrentWaitSurviveContextClose (121 ms)
+[----------] 3 tests from AppleRegion (164 ms total)
+
+[----------] 6 tests from AppleLifetime
+[ RUN      ] AppleLifetime.QueuedCancellationAndAbandonmentDrainBeforeClose
+[       OK ] AppleLifetime.QueuedCancellationAndAbandonmentDrainBeforeClose (2 ms)
+[ RUN      ] AppleLifetime.InFlightCancellationWaitsForNativeDrainAndRetiresOnlySlot
+[       OK ] AppleLifetime.InFlightCancellationWaitsForNativeDrainAndRetiresOnlySlot (2 ms)
+[ RUN      ] AppleLifetime.LateNativeFailureDrainsAndFailsAlreadyQueuedWork
+[       OK ] AppleLifetime.LateNativeFailureDrainsAndFailsAlreadyQueuedWork (2 ms)
+[ RUN      ] AppleLifetime.IndependentContextsOwnIndependentNativeSubmissionThreads
+[       OK ] AppleLifetime.IndependentContextsOwnIndependentNativeSubmissionThreads (2 ms)
+[ RUN      ] AppleLifetime.CheckedFailureRetainsAnAcceptedNativePrefixAfterOwnersGoAway
+[       OK ] AppleLifetime.CheckedFailureRetainsAnAcceptedNativePrefixAfterOwnersGoAway (8 ms)
+[ RUN      ] AppleLifetime.AllocationRefusalsPublishNoPartialProgramOrResult
+[       OK ] AppleLifetime.AllocationRefusalsPublishNoPartialProgramOrResult (2 ms)
+[----------] 6 tests from AppleLifetime (20 ms total)
+
+[----------] Global test environment tear-down
+[==========] 9 tests from 2 test suites ran. (185 ms total)
+[  PASSED  ] 9 tests.

@@ -41,6 +41,9 @@ hyle_stage_apple_runtime(my_app)
 更新；shared SDK 的 native dylib 旁也保有该文件。发布应用时保留邻置资源，不能只复制 executable。
 MLX JIT 仍需要部分预编译基础 kernel，缺文件不是可以忽略的 warning。
 
+运行时缺失该资源会通过`Context::create()`返回原native加载错误，不把缺文件误报为机器
+没有GPU；调用方应检查结果中的Status消息。HYLE不会自动退到CPU或下载替代资源。
+
 SDK 带锁定的 MLX v0.32.2、Metal-C++ 26 和对应许可证；其 CPU/CUDA/Python/GGUF/safetensors 功能
 关闭。MLX 的 F32→BF16 转换带一个复用上游转换函数的窄补丁，保留次正规数和最近偶数舍入；
 该转换保留一次实际存储边界，可能增加原生 dispatch 和中间数组，其余操作仍由 MLX 融合。

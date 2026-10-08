@@ -1,0 +1,5 @@
+[0/2] Re-checking globbed directories...
+[1/5] cd /Users/kiro/hyle-scratch/d5-apple-delivery/source-build && /opt/homebrew/bin/cmake -P /Users/kiro/hyle-scratch/d5-apple-delivery/source-build/hyle-apple-runtime/apple_parity_consumer-Release.cmake
+[2/5] Building CXX object hyle/src/compute_route_apple/CMakeFiles/hyle_compute_route_apple.dir/apple_context.cc.o
+[3/5] Linking CXX static library hyle/src/compute_route_apple/libhyle_compute_route_apple.a
+[4/5] Linking CXX executable apple_parity_consumer

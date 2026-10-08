@@ -1,0 +1,54 @@
+{
+  "assets": [
+    {
+      "path": "/Users/kiro/hyle-scratch/apple-parity-delivery/shared-consumer/mlx.metallib",
+      "sha256": "2ae3af693d8e941861063c9f3ae5249e17665e8761837a9d87ab6e07002f568c"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/apple-parity-delivery/shared-relocated/lib/mlx.metallib",
+      "sha256": "2ae3af693d8e941861063c9f3ae5249e17665e8761837a9d87ab6e07002f568c"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/apple-parity-delivery/static-consumer/mlx.metallib",
+      "sha256": "2ae3af693d8e941861063c9f3ae5249e17665e8761837a9d87ab6e07002f568c"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/apple-parity-delivery/static-relocated/lib/mlx.metallib",
+      "sha256": "2ae3af693d8e941861063c9f3ae5249e17665e8761837a9d87ab6e07002f568c"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/d5-apple-delivery/source-build/hyle/_deps/mlx-build/mlx/backend/metal/kernels/mlx.metallib",
+      "sha256": "2ae3af693d8e941861063c9f3ae5249e17665e8761837a9d87ab6e07002f568c"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/d5-apple-delivery/source-build/mlx.metallib",
+      "sha256": "2ae3af693d8e941861063c9f3ae5249e17665e8761837a9d87ab6e07002f568c"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/d5-graph-825c41f8/_deps/mlx-build/mlx/backend/metal/kernels/mlx.metallib",
+      "sha256": "2ae3af693d8e941861063c9f3ae5249e17665e8761837a9d87ab6e07002f568c"
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/d5-graph-825c41f8/bin/mlx.metallib",
+      "sha256": "2ae3af693d8e941861063c9f3ae5249e17665e8761837a9d87ab6e07002f568c"
+    }
+  ],
+  "results": [
+    {
+      "delivery": "source",
+      "returncode": 1,
+      "clear_missing_resource": false
+    },
+    {
+      "delivery": "static",
+      "returncode": 1,
+      "clear_missing_resource": false
+    },
+    {
+      "delivery": "shared",
+      "returncode": 1,
+      "clear_missing_resource": false
+    }
+  ],
+  "restored": true
+}

@@ -1,0 +1,36 @@
+-- HYLE products: requested='compute,graph,simd' available='core,error,simd,math,compute,graph' factors='core,container_intrusive,util_core,error,time,math,platform,platform_thread,mem,simd,container,compute_ops,compute,graph,compute_ggml_runtime,compute_backend_cuda,compute_provider_cublas,compute_provider_cuda,compute_provider_flashinfer,compute_provider_ggml_cuda,compute_provider_torch_cuda,compute_route_cuda,graph_provider_ggml_cuda,graph_route_cuda,compute_provider_ggml_metal,compute_route_apple,graph_route_apple,compute_provider_ggml_vulkan,compute_provider_iree_vulkan,compute_route_vulkan,graph_route_vulkan'
+-- HYLE_SANITIZER = off
+-- HYLE_TESTING = OFF (test-only interfaces stripped -- zero in shipped lib)
+-- HYLE: CPU route OFF -- oneDNN dependency probe/download skipped
+-- HYLE: CUDA backend OFF -- system SDK probe skipped
+-- Using the multi-header code from /Users/kiro/Library/Caches/hyle/dependencies/v1/sources/json-9cca280a4d0c-6fc345093434/include/
+-- {fmt} version: 12.1.0
+-- Build type: Release
+-- Building MLX for arm64 processor on Darwin
+-- Metal found /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/System/Library/Frameworks/Metal.framework
+-- Building on macOS 27.0.1
+-- Building with macOS 27.0 SDK
+-- Building for macOS 14.4
+-- Metal version: 310
+-- Downloading json
+CMake Warning at /Users/kiro/hyle-scratch/d5-graph-825c41f8/_deps/mlx-338da189e54c0743/source/mlx/backend/metal/CMakeLists.txt:107 (message):
+  NAX kernels require Metal 4, macOS SDK >= 26.2, and
+  MACOSX_DEPLOYMENT_TARGET >= 26.2 (SDK 27.0,
+  CMAKE_OSX_DEPLOYMENT_TARGET=14.4).  Building without NAX kernels.
+
+
+-- HYLE: MLX 0.32.2 Metal-only, cold JIT, native region enabled
+-- HYLE: Vulkan route OFF -- SDK and shader probes/downloads skipped
+-- ggml source: 2263 files, 23 exact patches
+
+-- CMAKE_SYSTEM_PROCESSOR: arm64
+-- GGML_SYSTEM_ARCH: ARM
+-- Metal framework found
+-- Including METAL backend
+-- ggml version: 0.24.0
+-- ggml commit:  456172ec733a135778adcd32d00e576a58232e45-hyle
+-- HYLE_TRACE = OFF (hooks compile to nothing -- zero cost)
+-- HYLE 0.1.0 | AppleClang 21.0.0.21000334 | C++23 | sanitizer=off | linkage=shared | products=core,error,simd,math,compute,graph | factors=core,container_intrusive,util_core,error,time,math,platform,platform_thread,mem,simd,container,compute_ops,compute,graph,compute_ggml_runtime,compute_backend_cuda,compute_provider_cublas,compute_provider_cuda,compute_provider_flashinfer,compute_provider_ggml_cuda,compute_provider_torch_cuda,compute_route_cuda,graph_provider_ggml_cuda,graph_route_cuda,compute_provider_ggml_metal,compute_route_apple,graph_route_apple,compute_provider_ggml_vulkan,compute_provider_iree_vulkan,compute_route_vulkan,graph_route_vulkan
+-- Configuring done (2.5s)
+-- Generating done (0.0s)
+-- Build files have been written to: /Users/kiro/hyle-scratch/d5-graph-825c41f8

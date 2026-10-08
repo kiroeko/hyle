@@ -287,3 +287,9 @@ Environment完成实际native初始化，保留原错误，再创建stream；不
 CPU fallback，不改数学/公共API/热执行。当前compute_route_apple仍AUDITED；其它owner
 状态不变。仅Context/Environment既有测试、三交付原consumer成功路径与缺资源负例、原hash
 恢复一次验收。适用selector/header/交付按该风险，不重跑全模型或P1；失败最多一次纠正。
+
+`4c3a0b53`F5诊断FIX验收通过：Context/生命周期9/9，原source/static/shared公开consumer
+成功路径3/3，fresh process缺resource负例3/3均明确报metallib无法加载而非GPU不存在，
+所有资源try/finally恢复后原hash一致。[原失败/修复raw](../../../../evidence/correctness/apple-parity-a4/README.md)
+保留。只增量编译一处cold initializer及重链必要consumer，未重跑矩阵/P1。公共API与数学
+不变，FP4取舍与A3正式成本仍未完成。

@@ -84,3 +84,38 @@ The [first configure](mixed-core-21bcb41f-configure-first.log) succeeded;
 the script then rejected multiple cached source directories before compiling.
 Source identity now comes from actual ggml-base Ninja commands, not every
 old cache directory. This task-local correction did not change product input.
+
+## Explicit missing-resource failure and corrected initialization
+
+One missing-resource batch on the existing three consumer binaries safely
+returned exit1 but concealed the cause as "MLX Metal GPU is unavailable":
+[source](missing-resource-first-source.log), [static](missing-resource-first-static.log),
+[shared](missing-resource-first-shared.log), [receipt](missing-resource-first-receipt.json).
+Original MLX gpu::device_count catches the missing-metallib exception and
+returns0. HYLE's initial is_available call therefore hid the actual error.
+All hidden resources were restored with their exact hashes; no system setting
+or mathematical algorithm was changed.
+
+Finite F5 correction `4c3a0b53` reads the already required GPU Environment
+first on the same cold owner, preserving the original native initialization
+error at its existing fallible boundary, then creates the owned stream.
+No extra path scan, caller timing or CPU fallback is introduced. The public
+API and hot program are unchanged. [Batch receipt](context-error-4c3a0b53-receipt.json)
+and [task-local driver](run-context-error-fix.py) record targeted Context9/9
+[tests](context-error-4c3a0b53-context-tests.log)/[XML](context-error-4c3a0b53-context.xml),
+shipping shared/source producer incremental builds and SDK updates.
+
+The same consumer's corrected [source](context-error-4c3a0b53-source-positive.log),
+[static](context-error-4c3a0b53-static-positive.log),
+[shared](context-error-4c3a0b53-shared-positive.log) successful Direct/Graph
+math/resources remain PASS. Only this initialization change justified these
+three targeted journeys; unrelated model matrices and P1 were not repeated.
+
+Corrected fresh-process resource negatives now clearly report failure to load
+the metallib, exit1 in all three deliveries:
+[source](missing-resource-source.log), [static](missing-resource-static.log),
+[shared](missing-resource-shared.log), [receipt](missing-resource-receipt.json).
+[Driver](run-missing-resource.py) hides every app/SDK/producer mlx.metallib
+inside the owned task directories, clears inherited DYLD, and restores all
+files in finally. All original asset hashes match after restoration. The
+negative verdict is3/3; it is not a missing-device or wrong-model diagnosis.

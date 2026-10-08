@@ -1,0 +1,7 @@
+[0/1] Re-running CMake...
+-- Configuring done (0.0s)
+-- Generating done (0.0s)
+-- Build files have been written to: /Users/kiro/hyle-scratch/apple-parity-delivery/shared-consumer
+[1/4] cd /Users/kiro/hyle-scratch/apple-parity-delivery/shared-consumer && /opt/homebrew/bin/cmake -P /Users/kiro/hyle-scratch/apple-parity-delivery/shared-consumer/hyle-apple-runtime/apple_parity_consumer-Release.cmake
+[2/4] Building CXX object CMakeFiles/apple_parity_consumer.dir/main.cc.o
+[3/4] Linking CXX executable apple_parity_consumer
