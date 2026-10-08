@@ -1,6 +1,6 @@
 # CUDA U4：合理默认与有条件 best-of
 
-<!-- MODULE REVIEW: SCOPED -->
+<!-- MODULE REVIEW: AUDITED -->
 
 baseline `c64185195d7e4968d802e8d53567a1095b0fa07f`，Windows工作树干净；
 U2/U3已取得联合资格，按用户“继续完成goal，避免无用重复”授权推进本包。
@@ -75,3 +75,34 @@ Direct与Graph用同一能力／默认依据；Graph保留成熟region资源/融
   未跑或preflight失效不签WIN/LOSS，不无界升级n或调仪器。
 
 完整U4审计前不启动P1；当前原源码/窗口有限事实仅作具名输入，最终逐合同默认表与适用实测规则必须分开交付。
+
+## AUDITED 有限 FIX
+
+SCOPED提交`c4cdf983`。原ggml已在invocation初始化对每个lowered node调用原
+`ggml_backend_supports_op`，并由原CUDA程序/loader返回实际设备/二进制错误；前面的全Provider
+SM89拒绝是重复且更窄的证据门。原CCCL是编译SDK的CUB/Thrust泛型程序，无SM89数学分支。
+NVIDIA[二进制/PTX兼容合同](https://docs.nvidia.com/cuda/cuda-programming-guide/01-introduction/cuda-platform.html)
+说明兼容由实际cubin/PTX及设备决定；[minor兼容](https://docs.nvidia.com/deploy/cuda-compatibility/minor-version-compatibility.html)
+不替代具体库/资源/precision检查，不为未跑设备签PASS。
+
+固定D1：在compute_route_cuda添加私有cold proposal装饰，先原准入/资源，再逐operation/port
+工程默认；plain GEMM优先cuBLAS，GGUF/完整native tensor优先ggml，合格vector SiLU/GELU/
+half weighted RMS优先原SGLang，artifact/MLX/稳定Softplus原Torch，collective原CCCL；真实
+DeepSeek/FlashInfer AOT条件保留。unique native资源域只作明确fallback，不能伪WIN。
+使用现ProviderAccess/RoutePolicyId，原执行表/扩展/context和Graph native region保持。
+
+固定D2：ggml Context不以SM89测量域禁用整个Provider；保留原device映射、precision/layout/
+索引/资源检查及逐native node能力检查，未测硬件只声明原库合法基线、不继承性能特化。
+固定D3：CCCL去掉SM89门，保留真实compile SDK/CUDART兼容边界、原managed workspace/
+checked IDs/overflow/capture拒绝；软件不兼容仍拒绝，不猜测支持未知版本。
+
+D4不制造不存在的比较：当前ggml主动decline plain rank2 MatMul，因此与cuBLAS尚无合格
+同域；本包不为benchmark扩大该能力。旧Marlin FFN证书仅历史，不代签当前ggml模型程序。
+native与ggml多数域有Prepared/capture/无private allocation的资源能力差异；先逐域记录
+完整同合同范围，固定少量真实consumer重叠后再P1，资格未成立用工程默认，不为自研挽留
+扩框架。其它语义缺口/新成熟接线不从本卡获取新数学授权，具名交U5能力取舍。
+
+本批实际产品owner只绑定compute_route_cuda、compute_provider_ggml_cuda、
+graph_provider_ggml_cuda及compute_provider_cuda。cuBLAS/Torch/FlashInfer不改产品，
+Compute/Graph公共selector、其它路线和CPU不改。D1--D3两入口/规则失配/硬资格/negative及
+对应small source/static/shared纵切验证，完整U2/U3原数学按具体不变域复用。
