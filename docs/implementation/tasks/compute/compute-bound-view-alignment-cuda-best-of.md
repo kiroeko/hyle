@@ -32,3 +32,9 @@ ggml版本在已有冷factory按真实Provider identity检查。仅测量候选�
 原CUDA tensor已保存input/output alignment；Norm output与input0同dtype，用同一已保存
 alignment即可。修改冷数据及复用原pointer检查，不加逐kernel vtable或新热搜索。
 FIX-A/B冻结；同ID失败纠正理由为此具名cold alignment及配方作用域修复。
+
+纠正构建已证实配方flag启用，Core/CUDA冷数据修改编译通过；route跨factor私有头缺少其
+API宏owner显式include，原build-2 C4430保留。只加该既有公开头include，不改数学/配方。
+原static configure/build同ID累计允许最后3次（包含初次PASS），不许第四次；其余未运行步骤
+预算不变，static数学首次FAIL仍只许原ID第二次。配置输入只应是CMake/参数，原task-local
+宽source目录导致不必要失配；本次不改公共治理/统计，也不重新做P1。

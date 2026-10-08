@@ -1,4 +1,5 @@
 #pragma once
+#include "hyle/compute/providers/cuda.h"
 #include "provider_internal.h"
 
 namespace hyle::compute::cuda_native::internal {
