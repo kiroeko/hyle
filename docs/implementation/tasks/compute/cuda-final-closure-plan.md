@@ -51,8 +51,8 @@ U1 先做只读协调审计，不批量改 registry 来假装所有 owner 已经
 
 2026-10-08 用户授权的执行纠正已经接到本 goal 的 U2/U3：
 [本批续跑入口与固定清单](../../../../evidence/correctness/cuda-final-u3-joint-delivery/delivery.py)
-及[有限工具卡](../build/cuda-delivery-execution-control.md)。当前产品 goal 暂停，清单
-`run_enabled=false`，入口拒绝重型 run；用户明确恢复后才启用，不创建另一个 CUDA goal。
+及[有限工具卡](../build/cuda-delivery-execution-control.md)。用户随后明确恢复 U2/U3，
+本轮从2026-10-08 09:59:04 +08:00计时，清单`run_enabled=true`；不创建另一个CUDA goal。
 仅用此入口执行剩余交付，旧本批启动脚本退出执行路径。它保留原数学全集，四个组合共享
 同一配方，命令通过后复用、失败后停止、记录/预算固定在 canonical task ID；换输出目录和
 文档提交不重置预算。不得用新脚本/ID 绕开失败停止。进度读 `delivery.py status` 与当前
@@ -63,7 +63,7 @@ U2/U3恢复后的本轮收尾目标约90分钟，总执行预算120分钟（从�
 交付60--80分钟、结果核对/收口10--15分钟、具名纠正最多20分钟。每30分钟报告已验收组合、
 剩余组合和累计时间；实际阻塞立即说明。到120分钟停止启动/追加工作，已有有界进程保留
 记录并安全结束，按当前owner协议裁决未完成项；不改ID、换目录或自行增加预算。时间预算
-不是降低验收门或承诺全部PASS，未验证项仍未完成。当前goal暂停，不开始计时或重型运行。
+不是降低验收门或承诺全部PASS，未验证项仍未完成。本轮预算终点为2026-10-08 11:59:04 +08:00。
 
 2026-10-08 用户追加 [Compute + Graph 宏规范专题](compute-graph-macro-normalization.md)：
 全部 Compute/Graph 的 OS／arch／compiler／feature／visibility 和 GPU 条件分层核对、批量规范，

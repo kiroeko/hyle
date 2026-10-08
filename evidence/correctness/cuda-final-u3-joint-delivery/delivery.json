@@ -1,5 +1,5 @@
 {
-  "run_enabled": false,
+  "run_enabled": true,
   "scope": "Only current CUDA U2/U3 delivery; U4/U5/U6 keep their existing cards",
   "inputs": [
     "include/hyle",

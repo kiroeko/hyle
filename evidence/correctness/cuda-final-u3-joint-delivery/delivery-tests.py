@@ -118,8 +118,13 @@ class DeliveryControl(unittest.TestCase):
             self.assertTrue(all(j.get('timeout', 0) > 0 for j in selected))
 
     def test_paused_product_goal_cannot_launch_registered_build(self):
+        private = self.root / 'isolated/evidence/correctness/batch'
+        private.mkdir(parents=True)
+        script = private / 'delivery.py'
+        script.write_bytes(Path(__file__).with_name('delivery.py').read_bytes())
+        (private / 'delivery.json').write_text(json.dumps({'run_enabled': False}))
         flags = {'creationflags': subprocess.CREATE_NO_WINDOW} if sys.platform == 'win32' else {}
-        result = subprocess.run([sys.executable, str(Path(__file__).with_name('delivery.py')),
+        result = subprocess.run([sys.executable, str(script),
             'run', '--task', 'win-mixed-static.build'], capture_output=True, text=True, **flags)
         self.assertNotEqual(result.returncode, 0)
         self.assertIn('goal is paused', result.stderr)
