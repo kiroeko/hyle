@@ -70,3 +70,22 @@ matmul/gather_mm；两者有同一真实owning async/completion/lease服务。gr
 两term double方程先验证，再比较两候选。只构建新测试源，不重跑原矩阵；原结果失败不能
 以宽容差或有限正常值样本覆盖。具名测试/接线失败最多一次纠正；产品缺陷需另固定FIX。
 该准入不是性能结果，两候选没有共同正确性域就不排名；不启动P1或调全局设置。
+
+### 正确性结果与成本事实
+
+`12e52172`原两候选4/4测试通过，含完整F32输出范围与checked IDs/旧lease；
+[原raw及结论](../../../../evidence/correctness/apple-parity-a2/README.md)保存。首个router
+N768是多测的形状，不能冒称目标目录几何；改为共同Qwen24T fixture的N512/K8192后，
+`fa53b31f`只定向复验该case，1/1通过。其余三个未变case复用，不重跑全部4项。
+两term独立方程保持逐值门；两种候选普通Context均实际执行、变权重/输入，非mock。
+
+| 实际数据域 | 原ggml Metal候选的必需转换 | 本MLX F32候选的必需转换 |
+|---|---|---|
+| BF16 [M,8192]与BF16 [512,8192]，F32输出 | activation widen，M1为32KiB、M16为512KiB；保留8MiB BF16权重 | 相同activation widen，加16MiB整权重F32数组 |
+| BF16 [8,1024,4096]与F32 [5,8,4096] | 原native BF16权重，64MiB payload | 另有128MiB整权重F32数组、checked IDs和原gather_mm |
+| 同形F32 grouped权重 | 原native F32权重 | dtype cast无转换，但仍有原gather_mm/必要布局/检查 |
+
+这些是明确数组尺寸的P0事实，不是总RSS、峰值或性能结论；原库private scratch仍unknown。
+动态weight的widen由hot input产生，不能当cold免费常量；immutable Graph常量必须另外
+按完整cold setup/资源/完整region终态口径裁决。当前没有WIN/default切换，仍保留既有
+合格成熟默认。正式P1等完整candidate固定，一次有预算，不因本批PASS扩成算子目录。

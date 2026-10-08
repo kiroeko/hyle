@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites tests="4" failures="0" disabled="0" errors="0" time="2.581" timestamp="2026-10-09T01:15:02.947" name="AllTests">
+  <testsuite name="AppleMatureOverlap" tests="4" failures="0" disabled="0" skipped="0" errors="0" time="2.581" timestamp="2026-10-09T01:15:02.947">
+    <testcase name="BfloatLinearRealRouterDecodeAndMultiToken" file="/Users/kiro/hyle/tests/compute_route_apple/mature_overlap_test.cc" line="59" status="run" result="completed" time="0.762" timestamp="2026-10-09T01:15:02.947" classname="AppleMatureOverlap" />
+    <testcase name="GroupedRealOutputProjectionF32AndBfloatWeights" file="/Users/kiro/hyle/tests/compute_route_apple/mature_overlap_test.cc" line="91" status="run" result="completed" time="1.737" timestamp="2026-10-09T01:15:03.709" classname="AppleMatureOverlap" />
+    <testcase name="BfloatLinearFullF32ExponentRange" file="/Users/kiro/hyle/tests/compute_route_apple/mature_overlap_test.cc" line="118" status="run" result="completed" time="0.062" timestamp="2026-10-09T01:15:05.447" classname="AppleMatureOverlap" />
+    <testcase name="GroupedCheckedIdsPreservePriorLease" file="/Users/kiro/hyle/tests/compute_route_apple/mature_overlap_test.cc" line="139" status="run" result="completed" time="0.019" timestamp="2026-10-09T01:15:05.509" classname="AppleMatureOverlap" />
+  </testsuite>
+</testsuites>

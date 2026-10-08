@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites tests="1" failures="0" disabled="0" errors="0" time="0.46" timestamp="2026-10-09T01:16:53.631" name="AllTests">
+  <testsuite name="AppleMatureOverlap" tests="1" failures="0" disabled="0" skipped="0" errors="0" time="0.46" timestamp="2026-10-09T01:16:53.631">
+    <testcase name="BfloatLinearRealRouterDecodeAndMultiToken" file="/Users/kiro/hyle/tests/compute_route_apple/mature_overlap_test.cc" line="60" status="run" result="completed" time="0.46" timestamp="2026-10-09T01:16:53.631" classname="AppleMatureOverlap" />
+  </testsuite>
+</testsuites>

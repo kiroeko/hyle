@@ -262,3 +262,8 @@ A3的[默认与有限成本范围](apple-default-cost-scope.md)已按当前产�
 packing域是单成熟carrier，不假造best-of竞赛；plain BF16/F32 linear与plain grouped的
 两成熟候选保留完整转换/内存/同步成本，最终稳定candidate后才做原生准入与一次P1。
 不存在本路线自研shader/GEMM/GDN/Hadamard kernel可虚报清退；语义/资源桥接不误删。
+
+两重叠域数学准入已完成：原Metal与原MLX候选同普通Context服务，4/4及共同router几何
+定向1/1通过（原N768只额外sample，不冒称目录；当前N512/K8192）。逐值精度、变输入/
+变权重、checked IDs/lease/close均通过；MLX动态BF16权重widen的16MiB/128MiB额外数组
+列入P0成本。不是性能WIN，不切默认，不重跑矩阵/交付/P1，正式采样等完整candidate稳定。

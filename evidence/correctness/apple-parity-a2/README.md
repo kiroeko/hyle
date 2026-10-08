@@ -353,3 +353,34 @@ All three Apple headers compile independently in enabled source/static/shared
 usage requirements,9/9: [per-header receipt](dspark-cause-4ac59a7e-headers.json).
 The [bounded cause record](../../../docs/implementation/tasks/compute/apple-dspark-numeric-cause.md)
 is resolved; official FP4 is separate and remains pending. No P1 started.
+
+## Mature-provider overlap admission
+
+The [fixed scope](../../../docs/implementation/tasks/compute/apple-default-cost-scope.md)
+compares two original mature mathematical carriers under the same public
+Context admission/completion/result lifetime. It is correctness admission,
+**not a performance ranking or a changed default**.
+
+[158a9689 first build](mature-overlap-158a9689-build.log) failed only because
+the test returned OwnedResult instead of the successful ResultLease; one
+test-handle correction. [12e52172 build](mature-overlap-12e52172-build.log) PASS;
+[batch](mature-overlap-12e52172.log)/[XML](mature-overlap-12e52172.xml)4/4 PASS,
+2.58s. Original ggml Metal and original MLX widen/matmul/gather_mm match the
+independent two-term source equations exactly. Tests cover BF16 linear
+decode/multi-token, full BF16 exponent range with F32 result, real
+E8/N1024/K4096/T5 grouped F32/BF16 banks, changed weights/inputs and checked
+IDs/retained results/close. MLX reuses only public checked Gather for its
+index service; its mathematical arm never calls product MatMul lowering.
+
+The initial N768 router sample was extra geometry, not the canonical Qwen24T
+router. It was explicitly bound to the shared model fixture N512/K8192;
+[fa53b31f build](mature-overlap-fa53b31f-build.log) PASS and only that changed
+[test](mature-overlap-fa53b31f.log)/[XML](mature-overlap-fa53b31f.xml)1/1 PASS.
+Other three unchanged tests retain their earlier evidence. No whole batch,
+model matrix, SDK or P1 was repeated for this correction.
+
+Necessary MLX weight widening costs are explicit:16MiB extra F32 array for
+the BF16 router,128MiB for the BF16 grouped bank. Dynamic weights incur that
+work in the hot program; constant/cold variants cannot silently erase their
+conversion/residency cost. Exact native private scratch/peak and performance
+remain unqualified. Neither candidate is called SOTA or WIN from these tests.
