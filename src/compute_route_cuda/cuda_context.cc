@@ -18,13 +18,13 @@ Result<Context> create_context(DefaultContextOptions options) noexcept {
 }
 
 Result<Context> internal::create_context(DefaultContextOptions options,
-                                         Provider ggml) noexcept {
+                                         Provider ggml, DefaultScope scope) noexcept {
   auto selected = device(options.device_ordinal);
   if (!selected)
     return std::unexpected(std::move(selected).error());
   using internal::DefaultProvider;
-  const auto configured = [](Provider provider, DefaultProvider family) {
-    return internal::with_defaults(std::move(provider), family);
+  const auto configured = [scope](Provider provider, DefaultProvider family) {
+    return internal::with_defaults(std::move(provider), family, scope);
   };
   const std::array providers{
 #if defined(HYLE_COMPUTE_FLASHINFER)

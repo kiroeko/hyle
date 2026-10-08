@@ -10,7 +10,8 @@ namespace hyle::graph::cuda {
 
 Result<compute::Context>
 create_context(compute::cuda::DefaultContextOptions options) noexcept {
-  return compute::cuda::internal::create_context(options, ggml_cuda::provider());
+  return compute::cuda::internal::create_context(options, ggml_cuda::provider(),
+      compute::cuda::internal::DefaultScope::kGraph);
 }
 
 Result<CompiledGraph> compile(const Graph &graph,

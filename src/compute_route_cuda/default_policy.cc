@@ -69,56 +69,61 @@ struct Tables final {
   const ProviderVTable *original;
   ProviderVTable configured;
 };
-template <Family F>
+template <Family F, DefaultScope S>
 const Tables &tables(const Provider &provider = {}) noexcept;
 
-template <Family F>
+template <Family F, DefaultScope S>
 Status propose(void *context, const ProviderOperationRequest &request,
                std::span<detail::ResourceBindingRequirement> inputs,
                std::span<detail::ResourceBindingRequirement> outputs,
                detail::ProviderOperationProposal *proposal) noexcept {
-  const auto status = tables<F>().original->propose(context, request, inputs, outputs, proposal);
+  const auto status = tables<F, S>().original->propose(context, request, inputs, outputs, proposal);
   if (!status.ok())
     return status;
   const auto primary = baseline(request);
-  proposal->preference = rank(F, primary);
+  proposal->preference = rank(F, primary) + (S == DefaultScope::kGraph ? 200 : 0);
   proposal->policy = {0x48594c4543554444ULL,
       1 + (static_cast<std::uint64_t>(request.operation.kind()) << 16) +
           (static_cast<std::uint64_t>(primary) << 8) + static_cast<std::uint64_t>(F), 1};
   return status;
 }
 
-template <Family F>
+template <Family F, DefaultScope S>
 const Tables &tables(const Provider &provider) noexcept {
   static const Tables value = [&]() noexcept {
     const auto *original = detail::ProviderAccess::vtable(provider);
     auto configured = *original;
-    configured.propose = &propose<F>;
+    configured.propose = &propose<F, S>;
     return Tables{original, configured};
   }();
   return value;
 }
-template <Family F>
+template <Family F, DefaultScope S>
 Provider decorate(const Provider &provider) noexcept {
-  const auto &table = tables<F>(provider);
+  const auto &table = tables<F, S>(provider);
   if (detail::ProviderAccess::vtable(provider) != table.original)
     return provider; // Another loaded implementation keeps its own table.
   return detail::ProviderAccess::with_vtable(provider, &table.configured);
 }
+template <Family F>
+Provider decorate(const Provider &provider, DefaultScope scope) noexcept {
+  return scope == DefaultScope::kGraph ? decorate<F, DefaultScope::kGraph>(provider)
+                                      : decorate<F, DefaultScope::kDirect>(provider);
+}
 } // namespace
 
-Provider with_defaults(Provider provider, Family family) noexcept {
+Provider with_defaults(Provider provider, Family family, DefaultScope scope) noexcept {
   if (!provider.valid())
     return provider;
   switch (family) {
-  case Family::kCublas: return decorate<Family::kCublas>(provider);
-  case Family::kGgml: return decorate<Family::kGgml>(provider);
-  case Family::kTorch: return decorate<Family::kTorch>(provider);
-  case Family::kSglang: return decorate<Family::kSglang>(provider);
-  case Family::kDeepSeek: return decorate<Family::kDeepSeek>(provider);
-  case Family::kCccl: return decorate<Family::kCccl>(provider);
-  case Family::kFlashInfer: return decorate<Family::kFlashInfer>(provider);
-  case Family::kNative: return decorate<Family::kNative>(provider);
+  case Family::kCublas: return decorate<Family::kCublas>(provider, scope);
+  case Family::kGgml: return decorate<Family::kGgml>(provider, scope);
+  case Family::kTorch: return decorate<Family::kTorch>(provider, scope);
+  case Family::kSglang: return decorate<Family::kSglang>(provider, scope);
+  case Family::kDeepSeek: return decorate<Family::kDeepSeek>(provider, scope);
+  case Family::kCccl: return decorate<Family::kCccl>(provider, scope);
+  case Family::kFlashInfer: return decorate<Family::kFlashInfer>(provider, scope);
+  case Family::kNative: return decorate<Family::kNative>(provider, scope);
   }
   return provider;
 }
