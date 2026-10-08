@@ -279,3 +279,11 @@ A4最后的资源失配负例只用已通过的source/static/shared公开consume
 原MLX source缺library路径抛runtime_error，不以设备枚举/mock代替。try/finally恢复全部
 文件并校验原hash，不改binary/系统设置，不重跑旧成功矩阵。三delivery各一次负例，未跑
 前不PASS；若异常终止或意外找到外部资源，记录具名失败，不无限藏路径重试。
+
+资源负例三形态均安全exit1、文件原hash已全部恢复，但消息仅“MLX Metal GPU is unavailable”，
+不是明确缺资源诊断。具名原因：原MLX gpu::device_count catch-all把缺metallib异常吞成0，
+HYLE先is_available使原错误不可见。F5固定唯一产品FIX：在同一cold owner先读取已有GPU
+Environment完成实际native初始化，保留原错误，再创建stream；不添加文件扫描/额外probe/
+CPU fallback，不改数学/公共API/热执行。当前compute_route_apple仍AUDITED；其它owner
+状态不变。仅Context/Environment既有测试、三交付原consumer成功路径与缺资源负例、原hash
+恢复一次验收。适用selector/header/交付按该风险，不重跑全模型或P1；失败最多一次纠正。
