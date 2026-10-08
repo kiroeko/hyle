@@ -1,6 +1,6 @@
 # Windows runtime 邻置：同目录 writer 协调
 
-<!-- MODULE REVIEW: AUDITED -->
+<!-- MODULE REVIEW: CLOSED -->
 
 ## 工具任务合同
 
@@ -28,3 +28,19 @@
 SCOPED提交`d7ec6b21`；原两个生成copy脚本指向同一目录，无live应用持有该目录DLL，
 复制清单相同且顺序稳定。固定唯一工具FIX为与Apple同形的build-time目录锁，
 测试只补同目录双consumer；不重写清单选择、冲突裁决或执行器。
+
+## 裁决
+
+产品工具`7a64df71`采用与Apple同形的build-time目录锁。既有合同增加同目录双consumer；
+source与真实搬移shared SDK均通过初次／DLL-only增量／无变化、两exe实际加载、owner／alias／
+conditional／empty／idempotent检查。实际CUDA shared的失败j2目标从原对象增量续跑通过，
+install／relocation／独立configure／link通过；原copy Permission denied失败保留。
+
+installed夹具首次仅用`find_package(... PATHS ...)`指定根，找不到该CUDA SDK内的具名依赖；
+按普通recipe把同一prefix加入`CMAKE_PREFIX_PATH`后通过。此纠正只改夹具，不改package resolver。
+Linux／Darwin分支逐行不变，NOT_APPLICABLE于Windows copy互斥；无运行时／数学改动，无P1。
+两项工具graph／平台测试与docs／closure亦通过，有限tool task CLOSED；CUDA整体仍未关闭。
+
+后续reopen仅由同目录writer冲突复现、锁失效／超时或当前copy边界新的实际失败触发。
+原记录在`.scratch/validation/cuda-final-u3-delivery/runtime-writer-check`、
+`runtime-writer-sdk-check`和`windows-cuda-shared-writer-corrected`；随U3 shared收据封存。

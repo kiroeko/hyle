@@ -38,6 +38,7 @@ project(runtime_staging_probe LANGUAGES CXX)
 if("@HYLE_STAGING_PREFIX@" STREQUAL "")
   include("@HYLE_SOURCE_DIR@/cmake/HyleModule.cmake")
 else()
+  list(PREPEND CMAKE_PREFIX_PATH "@HYLE_STAGING_PREFIX@")
   find_package(Hyle 0.1.0 EXACT REQUIRED COMPONENTS core
     PATHS "@HYLE_STAGING_PREFIX@" NO_DEFAULT_PATH)
 endif()
