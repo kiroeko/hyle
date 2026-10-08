@@ -1596,7 +1596,7 @@ void execute_q24_semantic_fragment(
       SCOPED_TRACE(sem::error_summary(actual, expected.outputs[output]));
       sem::expect_output(fixture, actual, expected.outputs[output], {},
                          fixture.exact_output(output), fixture.id_validation(output),
-                         fixture.bfloat_chain_output(output));
+                         fixture.bfloat_chain_output(output), output);
     }
   }
 }
