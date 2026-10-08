@@ -1,6 +1,6 @@
 # Apple MLX/Metal：覆盖、接线、默认优选与清退收口
 
-<!-- MODULE REVIEW: AUDITED -->
+<!-- MODULE REVIEW: CLOSED -->
 
 baseline `406cc3c23843ea9928e45970527ed2664f8f2728`，Windows工作树干净。
 2026-10-08用户要求Apple按已完成CPU/CUDA相同原则开始。产品真相仅Windows；Apple副本可丢弃。
@@ -308,3 +308,29 @@ indexer/MoE和三stage DSpark已Direct/Graph通过，原whole门/状态反馈不
 统一Compute+Graph实现61,413行/261文件，不含tests/vendor。有限产品FIX已固定，进入
 CANDIDATE，只余A3一次有限成熟重叠域资格和终审/清理；P1尚未PASS。CPU/CUDA CLOSED、
 Vulkan BLOCKED保持。
+
+## Terminal：Apple MLX/Metal收口完成（2026-10-09）
+
+产品candidate保持 `326a40ee9b2f01a760d8bbdc66974685ff8cfdb0`；性能快照 `7365f0fb9`
+只改局部bench遥测/文档，与该candidate的include/src/cmake/CMakeLists无diff。四包完成，
+scope/architecture/correctness/delivery/usability_docs/red_team/engineering_performance
+七门PASS。当前Air source/static/shared、资源失配/恢复、两普通入口、原编码、实际state
+反馈/reset、坏IDs/失败恢复和close后lease已验证；Windows Apple-OFF/原公开头及mixed
+core的selected验证成立，不制造别的平台Apple binary。
+
+本次[P1](../../../../evidence/performance/apple-parity-overlap-p1/README.md)资格和工程门PASS：
+16同路A/A、八strata×n15=120产品、30controls；四成熟重叠域合并WIN、32 NI PASS。
+现有GGML Metal冷默认保留，未匹配硬件/版本/shape/constant融合仍合法成熟default，不
+外推SOTA。旧原FP4/probe、接线和遥测失败保留且有具名后续裁决，没有未运行项写PASS。
+single-carrier借入不造竞赛；无待清退自研shader/GEMM/GDN/Hadamard，唯一必要且用户
+授权FP4位域保真桥接保留，不删除SIMD/资源控制。private native scratch仍unknown。
+
+独立终审发现覆盖用户页将旧FP4拒绝当当前范围，已区分历史快照与当前实际资格；没有
+新增产品FIX或重复全集。固定真实header/config/端口/形状和合法非零witness证明本scope，
+不承诺巨型模型驻留/无限KV、loader/engine、任意MTLBuffer零拷贝、M5/NAX或未来全部
+量化格式。原GPU shader不由host sanitizer代签，未变host框架证据按相同source/风险复用。
+
+统一Compute+Graph实现61,413行/261文件，不含tests/bench/vendor。CPU/CUDA CLOSED、
+Vulkan原BLOCKED保持。临时清理和推送后停止Apple本轮；reopen限可复现正确性/资源/
+交付缺陷、真实准入新需求、采用source相关升级、公开合同变化或合格同合同material回归。
+不自动扩算子大全。

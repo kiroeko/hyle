@@ -121,3 +121,17 @@ execution_order/allocation_order/apple_qos。这是模块局部性能consumer的
 不修改公共runner/统计核心或产品算法。唯一纠正改三字段名和对应A/A断言、更新本合同
 source provenance hash；原失败保留，正式n15并未完成。新artifact需本批A/A资格，使用唯一
 纠正producer后清前一producer；不重跑任何模型/交付，不增加n15预算或无限换测试方法。
+
+## 最终裁决
+
+`7365f0fb9`纠正批次资格与工程门PASS，当前Air16同路A/A、120产品、30controls完成，
+停止n15；原正式入口拒绝保留。四域32分层NI PASS、四个合并严格WIN；GGML Metal相对
+MLX分层吞吐比分别2.1995–2.2091、1.2465–1.2564、4.2981–4.3266、1.8420–1.8472。
+[raw/manifest/verify](../../../../evidence/performance/apple-parity-overlap-p1/README.md)归档。
+BF16原widen16MiB/128MiB成本支持部分差距，不将全部时间唯一归因于它。
+
+现有cold GGML Metal默认就是赢家，不改产品/重复交付。优选只限该机器/OS-driver/
+toolchain/原provider、真实dtype/shape/ready contiguous dynamic合同；未匹配或cold
+constant/完整融合region继续合法成熟ENGINEERING_DEFAULT，非SOTA。多数其它packing域
+只有一个完整carrier，不造竞赛。没有待清退HYLE shader/GEMM/GDN/Hadamard kernel；
+独有被授权FP4保真桥接与资源/checked组合保留，SIMD不动。A3完成。

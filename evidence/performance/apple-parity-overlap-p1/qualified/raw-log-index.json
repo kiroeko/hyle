@@ -1,0 +1,1779 @@
+{
+  "entries": [
+    {
+      "executable_id": "apple-overlap-primary",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/apple-overlap-p1-format-7365f0fb9/raw/n-15/product-primary-candidate-first-candidate-allocation-first-apple-overlap-primary-run-01.log",
+        "sha256": "6b15b3d17adb7b0a50a23f02b91fd795eac13cabee21a8a0a54916575e23b74a"
+      },
+      "kind": "product",
+      "run": 1,
+      "run_nonce": "e1628c54d65cd90abc334d4640ea49f2",
+      "stage": 15,
+      "stratum_id": "primary-candidate-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "apple-overlap-primary",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/apple-overlap-p1-format-7365f0fb9/raw/n-15/product-primary-candidate-first-candidate-allocation-first-apple-overlap-primary-run-02.log",
+        "sha256": "d63d685bc823b696825ea30aab11f1d9c4a0baef30a34fe636d96a8063166964"
+      },
+      "kind": "product",
+      "run": 2,
+      "run_nonce": "1383d5884a2f228c0d92347b1925207f",
+      "stage": 15,
+      "stratum_id": "primary-candidate-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "apple-overlap-primary",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/apple-overlap-p1-format-7365f0fb9/raw/n-15/product-primary-candidate-first-candidate-allocation-first-apple-overlap-primary-run-03.log",
+        "sha256": "ca0bafd6f3949da51b419245ea57a71dfacbf79b9a456166b42528a98905e10d"
+      },
+      "kind": "product",
+      "run": 3,
+      "run_nonce": "4fc3695be6339dd08cdaf73f8354f28b",
+      "stage": 15,
+      "stratum_id": "primary-candidate-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "apple-overlap-primary",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/apple-overlap-p1-format-7365f0fb9/raw/n-15/product-primary-candidate-first-candidate-allocation-first-apple-overlap-primary-run-04.log",
+        "sha256": "fa736db990155fde0b9ff71cbf72c06ac857532594bef718f8ac8736d9593a1c"
+      },
+      "kind": "product",
+      "run": 4,
+      "run_nonce": "db45fc53ec1ee75e16e20b08346c6f74",
+      "stage": 15,
+      "stratum_id": "primary-candidate-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "apple-overlap-primary",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/apple-overlap-p1-format-7365f0fb9/raw/n-15/product-primary-candidate-first-candidate-allocation-first-apple-overlap-primary-run-05.log",
+        "sha256": "22fd2ca0fdf9b94486278fc08c4a52868c9c21e56c38cf22d4ec3bbeb4f0bc28"
+      },
+      "kind": "product",
+      "run": 5,
+      "run_nonce": "d9b3970fe7275e61cb60e841c4bd8716",
+      "stage": 15,
+      "stratum_id": "primary-candidate-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "apple-overlap-primary",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/apple-overlap-p1-format-7365f0fb9/raw/n-15/product-primary-candidate-first-candidate-allocation-first-apple-overlap-primary-run-06.log",
+        "sha256": "575f1221768104574be2866c21d6c8440f895d8f063efcd5e733ff5d028c185b"
+      },
+      "kind": "product",
+      "run": 6,
+      "run_nonce": "00fc87b4c24c4089f5f57b97101e00ef",
+      "stage": 15,
+      "stratum_id": "primary-candidate-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "apple-overlap-primary",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/apple-overlap-p1-format-7365f0fb9/raw/n-15/product-primary-candidate-first-candidate-allocation-first-apple-overlap-primary-run-07.log",
+        "sha256": "7bcfacc65ba89792a204d86496b08bcb467bc9577d739376ad227b3d0656bd85"
+      },
+      "kind": "product",
+      "run": 7,
+      "run_nonce": "05ea710fe27b4aa9cf73a506c47c46ef",
+      "stage": 15,
+      "stratum_id": "primary-candidate-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "apple-overlap-primary",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/apple-overlap-p1-format-7365f0fb9/raw/n-15/product-primary-candidate-first-candidate-allocation-first-apple-overlap-primary-run-08.log",
+        "sha256": "45c396b8d57483c225f9544e76b4f11965870096065fe1b8983c5d2d481db05a"
+      },
+      "kind": "product",
+      "run": 8,
+      "run_nonce": "0279c4e3a3639af4b378339b1982d92e",
+      "stage": 15,
+      "stratum_id": "primary-candidate-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "apple-overlap-primary",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/apple-overlap-p1-format-7365f0fb9/raw/n-15/product-primary-candidate-first-candidate-allocation-first-apple-overlap-primary-run-09.log",
+        "sha256": "e6a47d4a341fdcf6ca5db63402f6f56f827f7802fc4180cef5340036f0fd9b97"
+      },
+      "kind": "product",
+      "run": 9,
+      "run_nonce": "c221053890bae9fa1bfcc106d016c1b4",
+      "stage": 15,
+      "stratum_id": "primary-candidate-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "apple-overlap-primary",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/apple-overlap-p1-format-7365f0fb9/raw/n-15/product-primary-candidate-first-candidate-allocation-first-apple-overlap-primary-run-10.log",
+        "sha256": "0d190268680e5802eccf94fa8f5b9076fa93fb1e44bd76da1ec377575f89b27d"
+      },
+      "kind": "product",
+      "run": 10,
+      "run_nonce": "196ad4f88a3958259526f62e307414a3",
+      "stage": 15,
+      "stratum_id": "primary-candidate-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "apple-overlap-primary",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/apple-overlap-p1-format-7365f0fb9/raw/n-15/product-primary-candidate-first-candidate-allocation-first-apple-overlap-primary-run-11.log",
+        "sha256": "3ef8ae3a00229e5b72187e7bbcf5eb1cb794047b1fd115414fa6c5176c2a15ac"
+      },
+      "kind": "product",
+      "run": 11,
+      "run_nonce": "a01039a962f60974c928af35bbf35286",
+      "stage": 15,
+      "stratum_id": "primary-candidate-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "apple-overlap-primary",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/apple-overlap-p1-format-7365f0fb9/raw/n-15/product-primary-candidate-first-candidate-allocation-first-apple-overlap-primary-run-12.log",
+        "sha256": "59e9ed6099c64f8d715b49c258eaaf556db6e449188ec6a7006686bb9b723551"
+      },
+      "kind": "product",
+      "run": 12,
+      "run_nonce": "297c4ac8cf0bf4e8c88fc38689f97fed",
+      "stage": 15,
+      "stratum_id": "primary-candidate-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "apple-overlap-primary",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/apple-overlap-p1-format-7365f0fb9/raw/n-15/product-primary-candidate-first-candidate-allocation-first-apple-overlap-primary-run-13.log",
+        "sha256": "8761205ac6b7be1e7e19b4913fe2b733c9f3b88b5ed55a1dbdd18f1275213a31"
+      },
+      "kind": "product",
+      "run": 13,
+      "run_nonce": "1fa30f64556962629c36f38fc788c055",
+      "stage": 15,
+      "stratum_id": "primary-candidate-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "apple-overlap-primary",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/apple-overlap-p1-format-7365f0fb9/raw/n-15/product-primary-candidate-first-candidate-allocation-first-apple-overlap-primary-run-14.log",
+        "sha256": "20ff64479b6712903919e2354cd7e94ed36744955eaad95756235e9d9666bf60"
+      },
+      "kind": "product",
+      "run": 14,
+      "run_nonce": "df76b0abecabd6db337a105cf24d77d6",
+      "stage": 15,
+      "stratum_id": "primary-candidate-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "apple-overlap-primary",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/apple-overlap-p1-format-7365f0fb9/raw/n-15/product-primary-candidate-first-candidate-allocation-first-apple-overlap-primary-run-15.log",
+        "sha256": "031b88bad235a7f1be25f56a574a717cb7a6643ce22f6f3407f9f24f81bf102a"
+      },
+      "kind": "product",
+      "run": 15,
+      "run_nonce": "b2b291ab88305b32deb69b813b0dbe2e",
+      "stage": 15,
+      "stratum_id": "primary-candidate-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "apple-overlap-primary",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/apple-overlap-p1-format-7365f0fb9/raw/n-15/product-primary-candidate-first-peer-allocation-first-apple-overlap-primary-run-01.log",
+        "sha256": "86390a05e7fa803ede262fa701eecbd2406d21ce7200564711a94144559f2330"
+      },
+      "kind": "product",
+      "run": 1,
+      "run_nonce": "97707ef394f7cf22938d46f5b6942ee4",
+      "stage": 15,
+      "stratum_id": "primary-candidate-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "apple-overlap-primary",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/apple-overlap-p1-format-7365f0fb9/raw/n-15/product-primary-candidate-first-peer-allocation-first-apple-overlap-primary-run-02.log",
+        "sha256": "8fa1a67c766bed5d3bd6b280c67e66b316cf1709786101d03f603ef7c7c57f6d"
+      },
+      "kind": "product",
+      "run": 2,
+      "run_nonce": "648dade159e069cc2154e5b2f3e9e524",
+      "stage": 15,
+      "stratum_id": "primary-candidate-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "apple-overlap-primary",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/apple-overlap-p1-format-7365f0fb9/raw/n-15/product-primary-candidate-first-peer-allocation-first-apple-overlap-primary-run-03.log",
+        "sha256": "44dba1e4da63f7769616dd5143919c3fdedcc38c6f746d25df932f0f3dfe050e"
+      },
+      "kind": "product",
+      "run": 3,
+      "run_nonce": "222ffa6af6f35ccaba0d2e5c20750e18",
+      "stage": 15,
+      "stratum_id": "primary-candidate-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "apple-overlap-primary",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/apple-overlap-p1-format-7365f0fb9/raw/n-15/product-primary-candidate-first-peer-allocation-first-apple-overlap-primary-run-04.log",
+        "sha256": "babba38fe2ba5db5e35f9d952c1430e05bd9428dbc51e3f42e66ada83ba5fd44"
+      },
+      "kind": "product",
+      "run": 4,
+      "run_nonce": "b757065985d032f1f863c78d2fe5e414",
+      "stage": 15,
+      "stratum_id": "primary-candidate-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "apple-overlap-primary",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/apple-overlap-p1-format-7365f0fb9/raw/n-15/product-primary-candidate-first-peer-allocation-first-apple-overlap-primary-run-05.log",
+        "sha256": "a7b60e21b13170e6fcb9d5aedddb7be5c064d4529bb3409801643596f0eb6ed9"
+      },
+      "kind": "product",
+      "run": 5,
+      "run_nonce": "53c8941a93c7bb49e4c1a4e4ed0734c8",
+      "stage": 15,
+      "stratum_id": "primary-candidate-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "apple-overlap-primary",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/apple-overlap-p1-format-7365f0fb9/raw/n-15/product-primary-candidate-first-peer-allocation-first-apple-overlap-primary-run-06.log",
+        "sha256": "04c3c116e73aec0abd8cdb1366ec103a309e51f700f6ff0b9fa795a522829cfd"
+      },
+      "kind": "product",
+      "run": 6,
+      "run_nonce": "c1d2f3262bc8cff7fb53665219869312",
+      "stage": 15,
+      "stratum_id": "primary-candidate-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "apple-overlap-primary",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/apple-overlap-p1-format-7365f0fb9/raw/n-15/product-primary-candidate-first-peer-allocation-first-apple-overlap-primary-run-07.log",
+        "sha256": "9894ea5611ddfa58a9c011bf95ee4d8593375b1d664d9d45a5cdd4775b9e11c9"
+      },
+      "kind": "product",
+      "run": 7,
+      "run_nonce": "2936e4bd5d70211ea0e00155c5d0d052",
+      "stage": 15,
+      "stratum_id": "primary-candidate-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "apple-overlap-primary",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/apple-overlap-p1-format-7365f0fb9/raw/n-15/product-primary-candidate-first-peer-allocation-first-apple-overlap-primary-run-08.log",
+        "sha256": "0320ea7a482fafa0f28cb6baaecb45af1172f5a9673b2b2f6b2ba31ac1ffc66b"
+      },
+      "kind": "product",
+      "run": 8,
+      "run_nonce": "fcf3a25df4ec673ff679f4109683584a",
+      "stage": 15,
+      "stratum_id": "primary-candidate-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "apple-overlap-primary",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/apple-overlap-p1-format-7365f0fb9/raw/n-15/product-primary-candidate-first-peer-allocation-first-apple-overlap-primary-run-09.log",
+        "sha256": "05e04f0d73b5dc378d6359bf06fdd0177da937243888e7d61b12573536da5f30"
+      },
+      "kind": "product",
+      "run": 9,
+      "run_nonce": "df2352ace2461bc832f7d61b9e65a4f4",
+      "stage": 15,
+      "stratum_id": "primary-candidate-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "apple-overlap-primary",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/apple-overlap-p1-format-7365f0fb9/raw/n-15/product-primary-candidate-first-peer-allocation-first-apple-overlap-primary-run-10.log",
+        "sha256": "06838aabafb6093f18e4d49888ce89d704f2716c52b7aec5a0f50ad201f36f56"
+      },
+      "kind": "product",
+      "run": 10,
+      "run_nonce": "27b2a461af3423101062896480479ffd",
+      "stage": 15,
+      "stratum_id": "primary-candidate-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "apple-overlap-primary",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/apple-overlap-p1-format-7365f0fb9/raw/n-15/product-primary-candidate-first-peer-allocation-first-apple-overlap-primary-run-11.log",
+        "sha256": "d0bc11f4c7a48f124bf3ae1ea5cd9166f665dffc7c365ea09fa7e230ebc04a87"
+      },
+      "kind": "product",
+      "run": 11,
+      "run_nonce": "f981d43fd9853e7bf5bb12e46f9d87ec",
+      "stage": 15,
+      "stratum_id": "primary-candidate-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "apple-overlap-primary",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/apple-overlap-p1-format-7365f0fb9/raw/n-15/product-primary-candidate-first-peer-allocation-first-apple-overlap-primary-run-12.log",
+        "sha256": "ed3819c4ff42d8828b6dae6b7a5b7f1779a4b3912689971c50ffe0acad0c0b30"
+      },
+      "kind": "product",
+      "run": 12,
+      "run_nonce": "54062018709750324c50f9500599a8e2",
+      "stage": 15,
+      "stratum_id": "primary-candidate-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "apple-overlap-primary",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/apple-overlap-p1-format-7365f0fb9/raw/n-15/product-primary-candidate-first-peer-allocation-first-apple-overlap-primary-run-13.log",
+        "sha256": "1847ee9b327ac09dfe32d474edcf00a16925cec010dc3228c8ab1e4e504ba23a"
+      },
+      "kind": "product",
+      "run": 13,
+      "run_nonce": "1596173096888c8c4773f3006245ab17",
+      "stage": 15,
+      "stratum_id": "primary-candidate-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "apple-overlap-primary",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/apple-overlap-p1-format-7365f0fb9/raw/n-15/product-primary-candidate-first-peer-allocation-first-apple-overlap-primary-run-14.log",
+        "sha256": "f3924c898089474eafe59108d7b7de7b1e0eeebc3cc8ef17366f323d5de688e2"
+      },
+      "kind": "product",
+      "run": 14,
+      "run_nonce": "2204196bddc5f97b9d298953d761001d",
+      "stage": 15,
+      "stratum_id": "primary-candidate-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "apple-overlap-primary",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/apple-overlap-p1-format-7365f0fb9/raw/n-15/product-primary-candidate-first-peer-allocation-first-apple-overlap-primary-run-15.log",
+        "sha256": "af5b3ff0bb0d09789b527679955dea4fe6b2ccf689b3510a76410cbde7267e96"
+      },
+      "kind": "product",
+      "run": 15,
+      "run_nonce": "4e8d9716ac6fefa5625f31dc2e79eeb8",
+      "stage": 15,
+      "stratum_id": "primary-candidate-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "apple-overlap-primary",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/apple-overlap-p1-format-7365f0fb9/raw/n-15/product-primary-peer-first-candidate-allocation-first-apple-overlap-primary-run-01.log",
+        "sha256": "cb3ef22cd191493266af8041657e7e874140853dd21bf24b3dcfacd2451e7d51"
+      },
+      "kind": "product",
+      "run": 1,
+      "run_nonce": "684ea8222c2b67bea2f4ede26fa70e20",
+      "stage": 15,
+      "stratum_id": "primary-peer-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "apple-overlap-primary",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/apple-overlap-p1-format-7365f0fb9/raw/n-15/product-primary-peer-first-candidate-allocation-first-apple-overlap-primary-run-02.log",
+        "sha256": "b8c3c25316c1f4cd92604e58c2afebc90173e525c375959fb7cb233dc7d28270"
+      },
+      "kind": "product",
+      "run": 2,
+      "run_nonce": "5620f54e277568c26977cc21b515784f",
+      "stage": 15,
+      "stratum_id": "primary-peer-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "apple-overlap-primary",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/apple-overlap-p1-format-7365f0fb9/raw/n-15/product-primary-peer-first-candidate-allocation-first-apple-overlap-primary-run-03.log",
+        "sha256": "1cdacc9f2424af45c6958c7e0ef8ad233649b465d9179bd0e16d5d11c98c45a5"
+      },
+      "kind": "product",
+      "run": 3,
+      "run_nonce": "16bf94e493e27088d5347c22091ce3ec",
+      "stage": 15,
+      "stratum_id": "primary-peer-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "apple-overlap-primary",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/apple-overlap-p1-format-7365f0fb9/raw/n-15/product-primary-peer-first-candidate-allocation-first-apple-overlap-primary-run-04.log",
+        "sha256": "d09b02e20149ab52840f783757cee37f464d2384adc507a7849cedcb7d5fe22a"
+      },
+      "kind": "product",
+      "run": 4,
+      "run_nonce": "abf91e1dbbc477d3727b86b2ee5bc320",
+      "stage": 15,
+      "stratum_id": "primary-peer-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "apple-overlap-primary",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/apple-overlap-p1-format-7365f0fb9/raw/n-15/product-primary-peer-first-candidate-allocation-first-apple-overlap-primary-run-05.log",
+        "sha256": "d653e34184e9ae261c77256eecea101d319c265761e2849f7470e28b7be09583"
+      },
+      "kind": "product",
+      "run": 5,
+      "run_nonce": "b64b9399d90a4b150be47171606ccbb2",
+      "stage": 15,
+      "stratum_id": "primary-peer-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "apple-overlap-primary",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/apple-overlap-p1-format-7365f0fb9/raw/n-15/product-primary-peer-first-candidate-allocation-first-apple-overlap-primary-run-06.log",
+        "sha256": "e9febf2f0026964b119b27e8eb7b4122e72c9f957cdcb711ee1bbb83baf3d45a"
+      },
+      "kind": "product",
+      "run": 6,
+      "run_nonce": "ed9b681dfdac0273006d99f0131368b3",
+      "stage": 15,
+      "stratum_id": "primary-peer-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "apple-overlap-primary",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/apple-overlap-p1-format-7365f0fb9/raw/n-15/product-primary-peer-first-candidate-allocation-first-apple-overlap-primary-run-07.log",
+        "sha256": "a69bb154032041e652dda8cf9399dd1c308b53ca51c15c4a4af8882cd5045e82"
+      },
+      "kind": "product",
+      "run": 7,
+      "run_nonce": "23dd82419a92551ea8804162348d06b2",
+      "stage": 15,
+      "stratum_id": "primary-peer-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "apple-overlap-primary",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/apple-overlap-p1-format-7365f0fb9/raw/n-15/product-primary-peer-first-candidate-allocation-first-apple-overlap-primary-run-08.log",
+        "sha256": "b747ce488b7c0b83c777b31cff3b215e0fcfef110c5ed1e116ea33dc1647f220"
+      },
+      "kind": "product",
+      "run": 8,
+      "run_nonce": "740b525ad078988c64246955860b904f",
+      "stage": 15,
+      "stratum_id": "primary-peer-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "apple-overlap-primary",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/apple-overlap-p1-format-7365f0fb9/raw/n-15/product-primary-peer-first-candidate-allocation-first-apple-overlap-primary-run-09.log",
+        "sha256": "5daae539e98210f2d9ca41b8d30a6c12997c419c845077033cbe52ede4a9f18f"
+      },
+      "kind": "product",
+      "run": 9,
+      "run_nonce": "2c360fa2f7a5b3e9f4f18d0eac7acd30",
+      "stage": 15,
+      "stratum_id": "primary-peer-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "apple-overlap-primary",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/apple-overlap-p1-format-7365f0fb9/raw/n-15/product-primary-peer-first-candidate-allocation-first-apple-overlap-primary-run-10.log",
+        "sha256": "8f431de92a0487f14f5fddbea8c317a4b609d2d693c6c1ff3b761ee51dab761f"
+      },
+      "kind": "product",
+      "run": 10,
+      "run_nonce": "8e3b63d07c5e6069dfadaa182db811fe",
+      "stage": 15,
+      "stratum_id": "primary-peer-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "apple-overlap-primary",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/apple-overlap-p1-format-7365f0fb9/raw/n-15/product-primary-peer-first-candidate-allocation-first-apple-overlap-primary-run-11.log",
+        "sha256": "c9778f70b0e04db193609580b0aa2ac9d1e8f3b682b7b38b56d71e6cf3a1e9ef"
+      },
+      "kind": "product",
+      "run": 11,
+      "run_nonce": "1ed2bd3eca1cbf0af844cccff3f72abe",
+      "stage": 15,
+      "stratum_id": "primary-peer-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "apple-overlap-primary",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/apple-overlap-p1-format-7365f0fb9/raw/n-15/product-primary-peer-first-candidate-allocation-first-apple-overlap-primary-run-12.log",
+        "sha256": "d91aeb0f02919ef5a83143885c95c61b23573e8de0ce406813c16c1802398ddb"
+      },
+      "kind": "product",
+      "run": 12,
+      "run_nonce": "7c88e79d48d6973dbc2548e073489d41",
+      "stage": 15,
+      "stratum_id": "primary-peer-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "apple-overlap-primary",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/apple-overlap-p1-format-7365f0fb9/raw/n-15/product-primary-peer-first-candidate-allocation-first-apple-overlap-primary-run-13.log",
+        "sha256": "eaf47c53510e96d6145fdbee0253828c1428b92ddc630085f759acbd33b00c30"
+      },
+      "kind": "product",
+      "run": 13,
+      "run_nonce": "51fce8abc8c24f1020f012facd73679a",
+      "stage": 15,
+      "stratum_id": "primary-peer-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "apple-overlap-primary",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/apple-overlap-p1-format-7365f0fb9/raw/n-15/product-primary-peer-first-candidate-allocation-first-apple-overlap-primary-run-14.log",
+        "sha256": "699660b5fd984644891999f7d8043a6a047583c854218df64a850ef5b70f132e"
+      },
+      "kind": "product",
+      "run": 14,
+      "run_nonce": "da856e81877dde5dfe0f46b3ccb57b40",
+      "stage": 15,
+      "stratum_id": "primary-peer-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "apple-overlap-primary",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/apple-overlap-p1-format-7365f0fb9/raw/n-15/product-primary-peer-first-candidate-allocation-first-apple-overlap-primary-run-15.log",
+        "sha256": "3ff8773854af2d6e533041c4f71e3b851f0c52f825f3ac0a5b412d3ddcf6ebf6"
+      },
+      "kind": "product",
+      "run": 15,
+      "run_nonce": "e18a5e97d875018e342c11c86b84e898",
+      "stage": 15,
+      "stratum_id": "primary-peer-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "apple-overlap-primary",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/apple-overlap-p1-format-7365f0fb9/raw/n-15/product-primary-peer-first-peer-allocation-first-apple-overlap-primary-run-01.log",
+        "sha256": "b733ec1a30123f20afea8616167a5445763b69ca4d5855f3ad0cf652cadec0af"
+      },
+      "kind": "product",
+      "run": 1,
+      "run_nonce": "674ff28a934c70795a81c16ae9ca0598",
+      "stage": 15,
+      "stratum_id": "primary-peer-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "apple-overlap-primary",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/apple-overlap-p1-format-7365f0fb9/raw/n-15/product-primary-peer-first-peer-allocation-first-apple-overlap-primary-run-02.log",
+        "sha256": "e975f27c643fd43c0a94c8f6e9056f315cb252646656e4e32fc3296e53271a21"
+      },
+      "kind": "product",
+      "run": 2,
+      "run_nonce": "df9c22571dfe9aa9d258778af5427613",
+      "stage": 15,
+      "stratum_id": "primary-peer-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "apple-overlap-primary",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/apple-overlap-p1-format-7365f0fb9/raw/n-15/product-primary-peer-first-peer-allocation-first-apple-overlap-primary-run-03.log",
+        "sha256": "cbe7f59df9962041868e5bae873b4c1f9e421881d0ab063da596a1b0489e56d6"
+      },
+      "kind": "product",
+      "run": 3,
+      "run_nonce": "da4e725fb6833258410df433a3fd5559",
+      "stage": 15,
+      "stratum_id": "primary-peer-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "apple-overlap-primary",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/apple-overlap-p1-format-7365f0fb9/raw/n-15/product-primary-peer-first-peer-allocation-first-apple-overlap-primary-run-04.log",
+        "sha256": "a043fd6b310ce83c12c9d18f6972814747b0eecd3cf9ab4a540de259009d2927"
+      },
+      "kind": "product",
+      "run": 4,
+      "run_nonce": "738a7725e0f399f465706fb584d2d377",
+      "stage": 15,
+      "stratum_id": "primary-peer-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "apple-overlap-primary",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/apple-overlap-p1-format-7365f0fb9/raw/n-15/product-primary-peer-first-peer-allocation-first-apple-overlap-primary-run-05.log",
+        "sha256": "2853526caec30515f7a619ccb0576f6865e10e3a40c87ab2a13151093edf9bea"
+      },
+      "kind": "product",
+      "run": 5,
+      "run_nonce": "3a32e7e65475f2dc256111997dda44b2",
+      "stage": 15,
+      "stratum_id": "primary-peer-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "apple-overlap-primary",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/apple-overlap-p1-format-7365f0fb9/raw/n-15/product-primary-peer-first-peer-allocation-first-apple-overlap-primary-run-06.log",
+        "sha256": "0d80f76ca0330602b798116f4873956ee60b7f6f2a519cdd9fbd483308f86413"
+      },
+      "kind": "product",
+      "run": 6,
+      "run_nonce": "42059c153effd10d3ae49c8481620a56",
+      "stage": 15,
+      "stratum_id": "primary-peer-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "apple-overlap-primary",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/apple-overlap-p1-format-7365f0fb9/raw/n-15/product-primary-peer-first-peer-allocation-first-apple-overlap-primary-run-07.log",
+        "sha256": "3b75f9fb97b7fb468c7773d3e031e28ffb873a76818394ebff430969214cd306"
+      },
+      "kind": "product",
+      "run": 7,
+      "run_nonce": "c04f1bf840bb377979e958cd18f3358f",
+      "stage": 15,
+      "stratum_id": "primary-peer-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "apple-overlap-primary",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/apple-overlap-p1-format-7365f0fb9/raw/n-15/product-primary-peer-first-peer-allocation-first-apple-overlap-primary-run-08.log",
+        "sha256": "3eff8eb8874830592d50f9333d6cab543a93bbbb37cd2383327d4cf3291a1f28"
+      },
+      "kind": "product",
+      "run": 8,
+      "run_nonce": "ae2de1b429b42905a6d243ef9933e20a",
+      "stage": 15,
+      "stratum_id": "primary-peer-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "apple-overlap-primary",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/apple-overlap-p1-format-7365f0fb9/raw/n-15/product-primary-peer-first-peer-allocation-first-apple-overlap-primary-run-09.log",
+        "sha256": "75f2a381c424eac8bb420aafee983d315c36f1ee9efcb395373301d7975d60f9"
+      },
+      "kind": "product",
+      "run": 9,
+      "run_nonce": "722b41b1cb2763133378eba21f615a10",
+      "stage": 15,
+      "stratum_id": "primary-peer-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "apple-overlap-primary",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/apple-overlap-p1-format-7365f0fb9/raw/n-15/product-primary-peer-first-peer-allocation-first-apple-overlap-primary-run-10.log",
+        "sha256": "f489b6ff19df68d284b35e8ffcde2984471f74e53fc657e3ad129459a087f924"
+      },
+      "kind": "product",
+      "run": 10,
+      "run_nonce": "f01f974810c51a4ed95b03695301bd5c",
+      "stage": 15,
+      "stratum_id": "primary-peer-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "apple-overlap-primary",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/apple-overlap-p1-format-7365f0fb9/raw/n-15/product-primary-peer-first-peer-allocation-first-apple-overlap-primary-run-11.log",
+        "sha256": "f8c183e63cb6cf9976a46d0267ee1bfe5183e7b20d7c656a8330e770db56752e"
+      },
+      "kind": "product",
+      "run": 11,
+      "run_nonce": "85ce418f3df7dc9efb7835afeab34f9b",
+      "stage": 15,
+      "stratum_id": "primary-peer-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "apple-overlap-primary",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/apple-overlap-p1-format-7365f0fb9/raw/n-15/product-primary-peer-first-peer-allocation-first-apple-overlap-primary-run-12.log",
+        "sha256": "95b108fa2f930ee6a2f770038441f5634851b2aad554b15d4cccd5d26e04ccd6"
+      },
+      "kind": "product",
+      "run": 12,
+      "run_nonce": "53acebb68d40a98c4cb40111b147be7c",
+      "stage": 15,
+      "stratum_id": "primary-peer-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "apple-overlap-primary",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/apple-overlap-p1-format-7365f0fb9/raw/n-15/product-primary-peer-first-peer-allocation-first-apple-overlap-primary-run-13.log",
+        "sha256": "b95ae3b2e2d5249c8434247333ccc91592b58b1e1417dc08c3e934c9e42919a5"
+      },
+      "kind": "product",
+      "run": 13,
+      "run_nonce": "c74e08a223886f180aaf6100a1e3b6de",
+      "stage": 15,
+      "stratum_id": "primary-peer-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "apple-overlap-primary",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/apple-overlap-p1-format-7365f0fb9/raw/n-15/product-primary-peer-first-peer-allocation-first-apple-overlap-primary-run-14.log",
+        "sha256": "6de051bf173232111e12a99296751b820c6d5c10b61e2c0738700e31c27a9122"
+      },
+      "kind": "product",
+      "run": 14,
+      "run_nonce": "000164acd082cc46449b04fe6f65f2af",
+      "stage": 15,
+      "stratum_id": "primary-peer-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "apple-overlap-primary",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/apple-overlap-p1-format-7365f0fb9/raw/n-15/product-primary-peer-first-peer-allocation-first-apple-overlap-primary-run-15.log",
+        "sha256": "8d0d9311add653127f57b23c3579b53091a8fb904c2898ae28f69f4a3e33861d"
+      },
+      "kind": "product",
+      "run": 15,
+      "run_nonce": "36caf27e187d723b62ec0156623d2c0c",
+      "stage": 15,
+      "stratum_id": "primary-peer-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "apple-overlap-placement",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/apple-overlap-p1-format-7365f0fb9/raw/n-15/product-placement-candidate-first-candidate-allocation-first-apple-overlap-placement-run-01.log",
+        "sha256": "788c380e65cc89b31e082679c1e797b92c427fe71e8dfedc97a24ec7de2c9246"
+      },
+      "kind": "product",
+      "run": 1,
+      "run_nonce": "2ed730e0743d9b69ff21263ee5fe8c77",
+      "stage": 15,
+      "stratum_id": "placement-candidate-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "apple-overlap-placement",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/apple-overlap-p1-format-7365f0fb9/raw/n-15/product-placement-candidate-first-candidate-allocation-first-apple-overlap-placement-run-02.log",
+        "sha256": "283cdb694fd8b5f233b99fffadc83462af02e4d5b6c30d53e5b8e8e6e14dd7f5"
+      },
+      "kind": "product",
+      "run": 2,
+      "run_nonce": "065b20dcd76010e48e210ebd00a73dac",
+      "stage": 15,
+      "stratum_id": "placement-candidate-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "apple-overlap-placement",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/apple-overlap-p1-format-7365f0fb9/raw/n-15/product-placement-candidate-first-candidate-allocation-first-apple-overlap-placement-run-03.log",
+        "sha256": "e9565c28bb69ff9621198616f79166edc320ec73e973f5981a2e93387e9d4dec"
+      },
+      "kind": "product",
+      "run": 3,
+      "run_nonce": "4636294b840e6a0d04009a94f752bc78",
+      "stage": 15,
+      "stratum_id": "placement-candidate-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "apple-overlap-placement",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/apple-overlap-p1-format-7365f0fb9/raw/n-15/product-placement-candidate-first-candidate-allocation-first-apple-overlap-placement-run-04.log",
+        "sha256": "8dd8c8a41986fa1372f2e11451211c7d59553773a8e72d36b9b38ad9dedcd649"
+      },
+      "kind": "product",
+      "run": 4,
+      "run_nonce": "87c236c4b5aea009a75f8b8ccdc36a94",
+      "stage": 15,
+      "stratum_id": "placement-candidate-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "apple-overlap-placement",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/apple-overlap-p1-format-7365f0fb9/raw/n-15/product-placement-candidate-first-candidate-allocation-first-apple-overlap-placement-run-05.log",
+        "sha256": "5882c019b435ed387e72de63054ca5a6fa5c4ddf553aa82ac68ae8d7fcbb22a3"
+      },
+      "kind": "product",
+      "run": 5,
+      "run_nonce": "6a6d89f9e2d2a7ef4a5193cc4677d651",
+      "stage": 15,
+      "stratum_id": "placement-candidate-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "apple-overlap-placement",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/apple-overlap-p1-format-7365f0fb9/raw/n-15/product-placement-candidate-first-candidate-allocation-first-apple-overlap-placement-run-06.log",
+        "sha256": "51985a668883c0a3c691a4fad30b2ffe1a786ef27ce15fc0dcd2fc20d677f6fd"
+      },
+      "kind": "product",
+      "run": 6,
+      "run_nonce": "f2f1c65ed8476f000ba6706405a371e4",
+      "stage": 15,
+      "stratum_id": "placement-candidate-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "apple-overlap-placement",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/apple-overlap-p1-format-7365f0fb9/raw/n-15/product-placement-candidate-first-candidate-allocation-first-apple-overlap-placement-run-07.log",
+        "sha256": "717908af06812dffe89f1449b44b4053b7d662162dcc4b3f37ade8fac3721fac"
+      },
+      "kind": "product",
+      "run": 7,
+      "run_nonce": "f439f04cb9dd8fec2f71ab0452379ffb",
+      "stage": 15,
+      "stratum_id": "placement-candidate-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "apple-overlap-placement",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/apple-overlap-p1-format-7365f0fb9/raw/n-15/product-placement-candidate-first-candidate-allocation-first-apple-overlap-placement-run-08.log",
+        "sha256": "77e0e58f00acc2df66a09db3b25ed05d104bafaaa810ed241da1fceadd13fde5"
+      },
+      "kind": "product",
+      "run": 8,
+      "run_nonce": "3addc5c8912ccd0da583856dc6308b3e",
+      "stage": 15,
+      "stratum_id": "placement-candidate-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "apple-overlap-placement",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/apple-overlap-p1-format-7365f0fb9/raw/n-15/product-placement-candidate-first-candidate-allocation-first-apple-overlap-placement-run-09.log",
+        "sha256": "8990d2cb7e20f866858682e9cc4edef0952eda03598f352090b92b8705ce760d"
+      },
+      "kind": "product",
+      "run": 9,
+      "run_nonce": "b9b40be736259b1943536ae5ad082c64",
+      "stage": 15,
+      "stratum_id": "placement-candidate-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "apple-overlap-placement",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/apple-overlap-p1-format-7365f0fb9/raw/n-15/product-placement-candidate-first-candidate-allocation-first-apple-overlap-placement-run-10.log",
+        "sha256": "d51c21e55b689838ccdb6229cc07c6db5586180523c904e5f2672fd54461c9ea"
+      },
+      "kind": "product",
+      "run": 10,
+      "run_nonce": "4da3ebb6ee630c72768b2301721cd408",
+      "stage": 15,
+      "stratum_id": "placement-candidate-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "apple-overlap-placement",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/apple-overlap-p1-format-7365f0fb9/raw/n-15/product-placement-candidate-first-candidate-allocation-first-apple-overlap-placement-run-11.log",
+        "sha256": "d40126b82f0d1cf6e4c2b8ae7c96df28ce85aae450473411900f713910c61134"
+      },
+      "kind": "product",
+      "run": 11,
+      "run_nonce": "3b0f7558d314665176b4e2de648ad9fb",
+      "stage": 15,
+      "stratum_id": "placement-candidate-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "apple-overlap-placement",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/apple-overlap-p1-format-7365f0fb9/raw/n-15/product-placement-candidate-first-candidate-allocation-first-apple-overlap-placement-run-12.log",
+        "sha256": "d8cc7a25f0bf56d0137cbf2d0dec01d9959103eb9c168b87be89b3a802273ca4"
+      },
+      "kind": "product",
+      "run": 12,
+      "run_nonce": "4b72f84628e642a197f73ace990f3b67",
+      "stage": 15,
+      "stratum_id": "placement-candidate-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "apple-overlap-placement",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/apple-overlap-p1-format-7365f0fb9/raw/n-15/product-placement-candidate-first-candidate-allocation-first-apple-overlap-placement-run-13.log",
+        "sha256": "f0cf6057a9ede98c422340d408b9e5470e1e311580d96339d12df2c26339c857"
+      },
+      "kind": "product",
+      "run": 13,
+      "run_nonce": "41a70ae262d9558435b1ebd9f7886ee7",
+      "stage": 15,
+      "stratum_id": "placement-candidate-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "apple-overlap-placement",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/apple-overlap-p1-format-7365f0fb9/raw/n-15/product-placement-candidate-first-candidate-allocation-first-apple-overlap-placement-run-14.log",
+        "sha256": "3278995378d24532501fbd64b86cbb600c1ca9c10e56abc89911445f9ad87497"
+      },
+      "kind": "product",
+      "run": 14,
+      "run_nonce": "6b714bb4ad27c672c422832f56e405eb",
+      "stage": 15,
+      "stratum_id": "placement-candidate-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "apple-overlap-placement",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/apple-overlap-p1-format-7365f0fb9/raw/n-15/product-placement-candidate-first-candidate-allocation-first-apple-overlap-placement-run-15.log",
+        "sha256": "363c5e7314802ea480439bd9bc52444911b3cd1b45053330ff637a7e4565bbff"
+      },
+      "kind": "product",
+      "run": 15,
+      "run_nonce": "3a1b928fa9c2365ef048f2e08da0ae80",
+      "stage": 15,
+      "stratum_id": "placement-candidate-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "apple-overlap-placement",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/apple-overlap-p1-format-7365f0fb9/raw/n-15/product-placement-candidate-first-peer-allocation-first-apple-overlap-placement-run-01.log",
+        "sha256": "64f4d771f4613f5c38204557c6003ef6fabaa323e87847cb94442afe86b52de4"
+      },
+      "kind": "product",
+      "run": 1,
+      "run_nonce": "d65c04121d678bd7e3f989fc527f1671",
+      "stage": 15,
+      "stratum_id": "placement-candidate-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "apple-overlap-placement",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/apple-overlap-p1-format-7365f0fb9/raw/n-15/product-placement-candidate-first-peer-allocation-first-apple-overlap-placement-run-02.log",
+        "sha256": "bab7dcdcd2e3862a245e4d146e515b6631a1a93846dffa41da379c261e91f195"
+      },
+      "kind": "product",
+      "run": 2,
+      "run_nonce": "b40d97f885fe6b32bb4414d2c45604ad",
+      "stage": 15,
+      "stratum_id": "placement-candidate-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "apple-overlap-placement",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/apple-overlap-p1-format-7365f0fb9/raw/n-15/product-placement-candidate-first-peer-allocation-first-apple-overlap-placement-run-03.log",
+        "sha256": "91e72b0d1b55a863a84b23e8bb21b7354270d50b29523098195d0e8c19d96316"
+      },
+      "kind": "product",
+      "run": 3,
+      "run_nonce": "c31b57234079d3a34a502dc8d16c2634",
+      "stage": 15,
+      "stratum_id": "placement-candidate-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "apple-overlap-placement",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/apple-overlap-p1-format-7365f0fb9/raw/n-15/product-placement-candidate-first-peer-allocation-first-apple-overlap-placement-run-04.log",
+        "sha256": "10b83772e6c1183190b16f6cff2c9959d98db0dc2060843bd587a4cdc71174d2"
+      },
+      "kind": "product",
+      "run": 4,
+      "run_nonce": "09782fa1e641079135f323d049d68dad",
+      "stage": 15,
+      "stratum_id": "placement-candidate-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "apple-overlap-placement",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/apple-overlap-p1-format-7365f0fb9/raw/n-15/product-placement-candidate-first-peer-allocation-first-apple-overlap-placement-run-05.log",
+        "sha256": "6de80bed35ceef7873d0b7445ab556f43c20dec8ea4aa17e0aab75d221c1ea2d"
+      },
+      "kind": "product",
+      "run": 5,
+      "run_nonce": "b5cb4cbf6800ee57b4fba0f0c5fd0421",
+      "stage": 15,
+      "stratum_id": "placement-candidate-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "apple-overlap-placement",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/apple-overlap-p1-format-7365f0fb9/raw/n-15/product-placement-candidate-first-peer-allocation-first-apple-overlap-placement-run-06.log",
+        "sha256": "de847ad7d81aa7154b0c0ced15c45f387579452208755a9c671e364d9483eb49"
+      },
+      "kind": "product",
+      "run": 6,
+      "run_nonce": "93e5697fbe78ec87a9043f8cc97fde10",
+      "stage": 15,
+      "stratum_id": "placement-candidate-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "apple-overlap-placement",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/apple-overlap-p1-format-7365f0fb9/raw/n-15/product-placement-candidate-first-peer-allocation-first-apple-overlap-placement-run-07.log",
+        "sha256": "0264ae0cdcb9c3236606b9ea1b6054e586df6dd0b94dd857ff7d2eef99ad9419"
+      },
+      "kind": "product",
+      "run": 7,
+      "run_nonce": "f3ff5eecd612f142e8964e11cafa7042",
+      "stage": 15,
+      "stratum_id": "placement-candidate-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "apple-overlap-placement",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/apple-overlap-p1-format-7365f0fb9/raw/n-15/product-placement-candidate-first-peer-allocation-first-apple-overlap-placement-run-08.log",
+        "sha256": "67a2a3e273aacccbf78e6c1d520928df5f1c1694ccb0f54370469efc16436a4b"
+      },
+      "kind": "product",
+      "run": 8,
+      "run_nonce": "2ad51bf5dfb13ff330e083d15c5f14f9",
+      "stage": 15,
+      "stratum_id": "placement-candidate-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "apple-overlap-placement",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/apple-overlap-p1-format-7365f0fb9/raw/n-15/product-placement-candidate-first-peer-allocation-first-apple-overlap-placement-run-09.log",
+        "sha256": "fc1a1216fd4d9aa950e5092ec450a25f30a1295ac97c9dd8632cce635e590c65"
+      },
+      "kind": "product",
+      "run": 9,
+      "run_nonce": "80ed1f06561a87d2c8c7a155a33cffa9",
+      "stage": 15,
+      "stratum_id": "placement-candidate-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "apple-overlap-placement",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/apple-overlap-p1-format-7365f0fb9/raw/n-15/product-placement-candidate-first-peer-allocation-first-apple-overlap-placement-run-10.log",
+        "sha256": "377690322d8076e5e1fdf7cd48aa782134db81fa705d465f3aa129f231a3de1f"
+      },
+      "kind": "product",
+      "run": 10,
+      "run_nonce": "6b7ae8d4d9ac732a08e37a701b33c410",
+      "stage": 15,
+      "stratum_id": "placement-candidate-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "apple-overlap-placement",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/apple-overlap-p1-format-7365f0fb9/raw/n-15/product-placement-candidate-first-peer-allocation-first-apple-overlap-placement-run-11.log",
+        "sha256": "785ac0cb01dc8aad0a3e4a3c9a7822a658ef761d905445c5aaa96af4d9bd1cd0"
+      },
+      "kind": "product",
+      "run": 11,
+      "run_nonce": "e366fcc660a7681907f55acadb7281a0",
+      "stage": 15,
+      "stratum_id": "placement-candidate-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "apple-overlap-placement",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/apple-overlap-p1-format-7365f0fb9/raw/n-15/product-placement-candidate-first-peer-allocation-first-apple-overlap-placement-run-12.log",
+        "sha256": "f33b9b86b264d413041947d98f64516979a1a0ded41f6a8da3973f3b57e8153b"
+      },
+      "kind": "product",
+      "run": 12,
+      "run_nonce": "71c2ee1cea9bba911dfb7e618336f571",
+      "stage": 15,
+      "stratum_id": "placement-candidate-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "apple-overlap-placement",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/apple-overlap-p1-format-7365f0fb9/raw/n-15/product-placement-candidate-first-peer-allocation-first-apple-overlap-placement-run-13.log",
+        "sha256": "667c00168834a65250f3ed0717deee3908a472f61b79fc2b529859b9fac6e62c"
+      },
+      "kind": "product",
+      "run": 13,
+      "run_nonce": "f0e9c1402f66c966154a5a6768cf72a1",
+      "stage": 15,
+      "stratum_id": "placement-candidate-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "apple-overlap-placement",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/apple-overlap-p1-format-7365f0fb9/raw/n-15/product-placement-candidate-first-peer-allocation-first-apple-overlap-placement-run-14.log",
+        "sha256": "6837b24b3c8fb80d06e4c34092d3f77a7d5da0a77489a0ac804e2c6547e74b43"
+      },
+      "kind": "product",
+      "run": 14,
+      "run_nonce": "1e81e0f4913370df9602fd188d1f1afc",
+      "stage": 15,
+      "stratum_id": "placement-candidate-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "apple-overlap-placement",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/apple-overlap-p1-format-7365f0fb9/raw/n-15/product-placement-candidate-first-peer-allocation-first-apple-overlap-placement-run-15.log",
+        "sha256": "64d3d71f44978f23217f8175ad1870684c1970c0d2123e5c9a3ecb441ffe001b"
+      },
+      "kind": "product",
+      "run": 15,
+      "run_nonce": "9fce7833ec0e15c18fee1c2fb7f8ee67",
+      "stage": 15,
+      "stratum_id": "placement-candidate-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "apple-overlap-placement",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/apple-overlap-p1-format-7365f0fb9/raw/n-15/product-placement-peer-first-candidate-allocation-first-apple-overlap-placement-run-01.log",
+        "sha256": "2a239fb157c1263c5ba67724e61c2b1f81e23523a4f3dd6f46f56c99d630d86f"
+      },
+      "kind": "product",
+      "run": 1,
+      "run_nonce": "c766de1daaf35f6a6eb70eda60a6d228",
+      "stage": 15,
+      "stratum_id": "placement-peer-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "apple-overlap-placement",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/apple-overlap-p1-format-7365f0fb9/raw/n-15/product-placement-peer-first-candidate-allocation-first-apple-overlap-placement-run-02.log",
+        "sha256": "9697770041e50774f9b5cd3ad48040eb7f91e15bcacd803fb51bafce4eb6a665"
+      },
+      "kind": "product",
+      "run": 2,
+      "run_nonce": "4512f0c2d46d86cfbf97d7f91eb14489",
+      "stage": 15,
+      "stratum_id": "placement-peer-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "apple-overlap-placement",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/apple-overlap-p1-format-7365f0fb9/raw/n-15/product-placement-peer-first-candidate-allocation-first-apple-overlap-placement-run-03.log",
+        "sha256": "b353efe8a55d103c3fc2d7493f03eea0c98d5aa05c7ad88ec125e2d5acf351dc"
+      },
+      "kind": "product",
+      "run": 3,
+      "run_nonce": "b6bf17a4f2fb23e3062f66ec34ec2fe8",
+      "stage": 15,
+      "stratum_id": "placement-peer-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "apple-overlap-placement",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/apple-overlap-p1-format-7365f0fb9/raw/n-15/product-placement-peer-first-candidate-allocation-first-apple-overlap-placement-run-04.log",
+        "sha256": "ff37907bbd36dd751a22669cdca8eaac42f241381e2f593b7e1795fa588f1a72"
+      },
+      "kind": "product",
+      "run": 4,
+      "run_nonce": "61fb997e909d8ec40000f9e9666f5b2a",
+      "stage": 15,
+      "stratum_id": "placement-peer-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "apple-overlap-placement",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/apple-overlap-p1-format-7365f0fb9/raw/n-15/product-placement-peer-first-candidate-allocation-first-apple-overlap-placement-run-05.log",
+        "sha256": "14d934422a78b482488d8b999cf0cc8f6cd416dae2910581274a54736293e03a"
+      },
+      "kind": "product",
+      "run": 5,
+      "run_nonce": "0f8529b89378b9d30200615877d7e35e",
+      "stage": 15,
+      "stratum_id": "placement-peer-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "apple-overlap-placement",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/apple-overlap-p1-format-7365f0fb9/raw/n-15/product-placement-peer-first-candidate-allocation-first-apple-overlap-placement-run-06.log",
+        "sha256": "ad71cc0363c63fe99942784a957e24e49b0d5b402a421f905bb62b51c71cc82e"
+      },
+      "kind": "product",
+      "run": 6,
+      "run_nonce": "4ce49cd186d80e398c59f0777f5dd685",
+      "stage": 15,
+      "stratum_id": "placement-peer-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "apple-overlap-placement",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/apple-overlap-p1-format-7365f0fb9/raw/n-15/product-placement-peer-first-candidate-allocation-first-apple-overlap-placement-run-07.log",
+        "sha256": "cef88266e32f0a10583695eadf18c3a7216f7af7196331f60739ee344fad8df1"
+      },
+      "kind": "product",
+      "run": 7,
+      "run_nonce": "4bb960e9759c318df5729f1448b54090",
+      "stage": 15,
+      "stratum_id": "placement-peer-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "apple-overlap-placement",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/apple-overlap-p1-format-7365f0fb9/raw/n-15/product-placement-peer-first-candidate-allocation-first-apple-overlap-placement-run-08.log",
+        "sha256": "739e108addc35a18b42eb372c6bec9ccbe76f1180bbdc123d7c6db1cd46a8380"
+      },
+      "kind": "product",
+      "run": 8,
+      "run_nonce": "fae7451734d795efb82bfc012d464098",
+      "stage": 15,
+      "stratum_id": "placement-peer-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "apple-overlap-placement",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/apple-overlap-p1-format-7365f0fb9/raw/n-15/product-placement-peer-first-candidate-allocation-first-apple-overlap-placement-run-09.log",
+        "sha256": "b40b2ce38289845a990c6dc92a3ced600efbcf20751602156437d2ff3f8c0de0"
+      },
+      "kind": "product",
+      "run": 9,
+      "run_nonce": "32db583d0778c9d04f9287fed4cf2c02",
+      "stage": 15,
+      "stratum_id": "placement-peer-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "apple-overlap-placement",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/apple-overlap-p1-format-7365f0fb9/raw/n-15/product-placement-peer-first-candidate-allocation-first-apple-overlap-placement-run-10.log",
+        "sha256": "68cf99638e49bab0efb8bcc8b14d6e1c2f6e67495e1244305d73fb0d2d0a74e2"
+      },
+      "kind": "product",
+      "run": 10,
+      "run_nonce": "36bcff1863374c6432f83d6f8c7fe90f",
+      "stage": 15,
+      "stratum_id": "placement-peer-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "apple-overlap-placement",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/apple-overlap-p1-format-7365f0fb9/raw/n-15/product-placement-peer-first-candidate-allocation-first-apple-overlap-placement-run-11.log",
+        "sha256": "ec976cb286365383e7782f9ac41042420d37d360337c0ca157ae53019c9b7b64"
+      },
+      "kind": "product",
+      "run": 11,
+      "run_nonce": "2e208292d9b4dea5fb1e981292ce1ec0",
+      "stage": 15,
+      "stratum_id": "placement-peer-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "apple-overlap-placement",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/apple-overlap-p1-format-7365f0fb9/raw/n-15/product-placement-peer-first-candidate-allocation-first-apple-overlap-placement-run-12.log",
+        "sha256": "71f2d4e1fded1858ac48754a398c54d31156f5a3f520dfcd77a49f4fcf4f4c20"
+      },
+      "kind": "product",
+      "run": 12,
+      "run_nonce": "14af1427dfa1f87a9a8f0a8d180a0e41",
+      "stage": 15,
+      "stratum_id": "placement-peer-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "apple-overlap-placement",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/apple-overlap-p1-format-7365f0fb9/raw/n-15/product-placement-peer-first-candidate-allocation-first-apple-overlap-placement-run-13.log",
+        "sha256": "5407c460f28f2aad70a7446a483abeb8379b921d082ad31b4335a7565f8ace98"
+      },
+      "kind": "product",
+      "run": 13,
+      "run_nonce": "363eac62158de8dff2e88039c3fa872e",
+      "stage": 15,
+      "stratum_id": "placement-peer-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "apple-overlap-placement",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/apple-overlap-p1-format-7365f0fb9/raw/n-15/product-placement-peer-first-candidate-allocation-first-apple-overlap-placement-run-14.log",
+        "sha256": "433a1e8965c99310b05dfdce9feec7e3412c72915dd32f130effb3fa2756ec69"
+      },
+      "kind": "product",
+      "run": 14,
+      "run_nonce": "01786c945e0ac61ab18f353706271b3f",
+      "stage": 15,
+      "stratum_id": "placement-peer-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "apple-overlap-placement",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/apple-overlap-p1-format-7365f0fb9/raw/n-15/product-placement-peer-first-candidate-allocation-first-apple-overlap-placement-run-15.log",
+        "sha256": "8e495db26d5dc25009ed97ef998e7d745b96767d21fd7dc4aaf34d346aa38dff"
+      },
+      "kind": "product",
+      "run": 15,
+      "run_nonce": "3c04c0c0e501ee18f8780152da56833b",
+      "stage": 15,
+      "stratum_id": "placement-peer-first-candidate-allocation-first"
+    },
+    {
+      "executable_id": "apple-overlap-placement",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/apple-overlap-p1-format-7365f0fb9/raw/n-15/product-placement-peer-first-peer-allocation-first-apple-overlap-placement-run-01.log",
+        "sha256": "d71a6e8c0b8eb28012a7a256a1bed88ee0e24c48d4604fd0f23ea6872d9bc175"
+      },
+      "kind": "product",
+      "run": 1,
+      "run_nonce": "ee06e2796dbcae7d7369a706776f595b",
+      "stage": 15,
+      "stratum_id": "placement-peer-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "apple-overlap-placement",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/apple-overlap-p1-format-7365f0fb9/raw/n-15/product-placement-peer-first-peer-allocation-first-apple-overlap-placement-run-02.log",
+        "sha256": "b714fbb958813838c827d8bfa6858ea45ce338892ed9400c07b785f305a849b6"
+      },
+      "kind": "product",
+      "run": 2,
+      "run_nonce": "8eed0f520a404183cf3efb5272444344",
+      "stage": 15,
+      "stratum_id": "placement-peer-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "apple-overlap-placement",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/apple-overlap-p1-format-7365f0fb9/raw/n-15/product-placement-peer-first-peer-allocation-first-apple-overlap-placement-run-03.log",
+        "sha256": "e987c52d4a31488cc75ed555cd58c136f98152ec32016f7c212dc218a7f74e22"
+      },
+      "kind": "product",
+      "run": 3,
+      "run_nonce": "eeac5bdb02522d2242eb296ba9f230b5",
+      "stage": 15,
+      "stratum_id": "placement-peer-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "apple-overlap-placement",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/apple-overlap-p1-format-7365f0fb9/raw/n-15/product-placement-peer-first-peer-allocation-first-apple-overlap-placement-run-04.log",
+        "sha256": "ca69b8d540bb29ef701ceff8fec805469405a0ccfdb09ffd14ad4c7b511e68d0"
+      },
+      "kind": "product",
+      "run": 4,
+      "run_nonce": "5d03d50232b8cb6bf4bfc60397e4441d",
+      "stage": 15,
+      "stratum_id": "placement-peer-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "apple-overlap-placement",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/apple-overlap-p1-format-7365f0fb9/raw/n-15/product-placement-peer-first-peer-allocation-first-apple-overlap-placement-run-05.log",
+        "sha256": "9496f38415ace8fda47efa84656b181b51d37f67f0b13b262eea072af6013849"
+      },
+      "kind": "product",
+      "run": 5,
+      "run_nonce": "29f7860eb2276095a75bc96cea7c56c6",
+      "stage": 15,
+      "stratum_id": "placement-peer-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "apple-overlap-placement",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/apple-overlap-p1-format-7365f0fb9/raw/n-15/product-placement-peer-first-peer-allocation-first-apple-overlap-placement-run-06.log",
+        "sha256": "12171712c8d8e3a0fa2bab5cc7e164b3880a46f100e8ae36f9a96022bc32db71"
+      },
+      "kind": "product",
+      "run": 6,
+      "run_nonce": "561d778410860802875e74a9ff2edfca",
+      "stage": 15,
+      "stratum_id": "placement-peer-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "apple-overlap-placement",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/apple-overlap-p1-format-7365f0fb9/raw/n-15/product-placement-peer-first-peer-allocation-first-apple-overlap-placement-run-07.log",
+        "sha256": "65077c6ed863d3916054afda7ba54f7ae4dabff45f2522c63d23471b3aec41de"
+      },
+      "kind": "product",
+      "run": 7,
+      "run_nonce": "c28959de52b7766aabe949b2cd66d124",
+      "stage": 15,
+      "stratum_id": "placement-peer-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "apple-overlap-placement",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/apple-overlap-p1-format-7365f0fb9/raw/n-15/product-placement-peer-first-peer-allocation-first-apple-overlap-placement-run-08.log",
+        "sha256": "ce7acbc442fd4c6126ac5b61bd22992b38d773b000cb549eaf6cbf86d0790964"
+      },
+      "kind": "product",
+      "run": 8,
+      "run_nonce": "d0e523b6df15206aefde25473efc0bb1",
+      "stage": 15,
+      "stratum_id": "placement-peer-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "apple-overlap-placement",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/apple-overlap-p1-format-7365f0fb9/raw/n-15/product-placement-peer-first-peer-allocation-first-apple-overlap-placement-run-09.log",
+        "sha256": "bcf3d10fd347c1eddeeb46cc8c8f83fe967571cdbc9f85aa06815b5682fb34b9"
+      },
+      "kind": "product",
+      "run": 9,
+      "run_nonce": "cab07349f78f8272386d4459d89cdf2c",
+      "stage": 15,
+      "stratum_id": "placement-peer-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "apple-overlap-placement",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/apple-overlap-p1-format-7365f0fb9/raw/n-15/product-placement-peer-first-peer-allocation-first-apple-overlap-placement-run-10.log",
+        "sha256": "995017122d73e12f79596d1ea24ce71364b712e381dece8021510ccbc8c79ad7"
+      },
+      "kind": "product",
+      "run": 10,
+      "run_nonce": "c3ed617b1c53698c089724e59375456f",
+      "stage": 15,
+      "stratum_id": "placement-peer-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "apple-overlap-placement",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/apple-overlap-p1-format-7365f0fb9/raw/n-15/product-placement-peer-first-peer-allocation-first-apple-overlap-placement-run-11.log",
+        "sha256": "3db7b78a5a36ad6008a1292536d27adaefc51473c5e2c4fb826e6ae73d5259e2"
+      },
+      "kind": "product",
+      "run": 11,
+      "run_nonce": "863e612dbf0152695c95bc1b7f3057f3",
+      "stage": 15,
+      "stratum_id": "placement-peer-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "apple-overlap-placement",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/apple-overlap-p1-format-7365f0fb9/raw/n-15/product-placement-peer-first-peer-allocation-first-apple-overlap-placement-run-12.log",
+        "sha256": "5677f416f695c12c143b49daccb321cacf408241cbaf62bc3be0e7b46fdb4bc1"
+      },
+      "kind": "product",
+      "run": 12,
+      "run_nonce": "500710483d44ee4a06c5d5764d7857c8",
+      "stage": 15,
+      "stratum_id": "placement-peer-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "apple-overlap-placement",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/apple-overlap-p1-format-7365f0fb9/raw/n-15/product-placement-peer-first-peer-allocation-first-apple-overlap-placement-run-13.log",
+        "sha256": "86aadf96f32bec8f28201def303963af0244885142fa8775380dc2fce02fab36"
+      },
+      "kind": "product",
+      "run": 13,
+      "run_nonce": "a193f8c9e8fe3e904f864683e344715e",
+      "stage": 15,
+      "stratum_id": "placement-peer-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "apple-overlap-placement",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/apple-overlap-p1-format-7365f0fb9/raw/n-15/product-placement-peer-first-peer-allocation-first-apple-overlap-placement-run-14.log",
+        "sha256": "96bde0c8e20dbcdc7deaec6c8bc7db50fba7bdf5f2a800f216cdc0fbab36f1ae"
+      },
+      "kind": "product",
+      "run": 14,
+      "run_nonce": "2189842ae97fc40fc6844999cddbeb27",
+      "stage": 15,
+      "stratum_id": "placement-peer-first-peer-allocation-first"
+    },
+    {
+      "executable_id": "apple-overlap-placement",
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/apple-overlap-p1-format-7365f0fb9/raw/n-15/product-placement-peer-first-peer-allocation-first-apple-overlap-placement-run-15.log",
+        "sha256": "1532d17e3b2408eab95a7d92dc13d373b8360a08c93aebbd73ffe0a45c8881b2"
+      },
+      "kind": "product",
+      "run": 15,
+      "run_nonce": "c9cba1a3e910562935d1f4c9e66da5f7",
+      "stage": 15,
+      "stratum_id": "placement-peer-first-peer-allocation-first"
+    },
+    {
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/apple-overlap-p1-format-7365f0fb9/raw/n-15/control-candidate-first-run-01.log",
+        "sha256": "1221c505643cbb7b51f43a2fb0100e98d59f30819645b6c0f0ff8e60f7bc596f"
+      },
+      "kind": "control",
+      "order": "candidate-first",
+      "run": 1,
+      "run_nonce": "627dc1002c735172defda64dfd03c202",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/apple-overlap-p1-format-7365f0fb9/raw/n-15/control-candidate-first-run-02.log",
+        "sha256": "472750e47fa4d10601a577ed46d436a6f7cbf2172a9b478db90cb5c1659c2feb"
+      },
+      "kind": "control",
+      "order": "candidate-first",
+      "run": 2,
+      "run_nonce": "5574ee016ae199eae4497107e126b25c",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/apple-overlap-p1-format-7365f0fb9/raw/n-15/control-candidate-first-run-03.log",
+        "sha256": "db613924c2b396c1b2752fca68fb68c0d937756cdbed065433104fc7146be04f"
+      },
+      "kind": "control",
+      "order": "candidate-first",
+      "run": 3,
+      "run_nonce": "0e7c52e1800ac3e305ef42492f41ede3",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/apple-overlap-p1-format-7365f0fb9/raw/n-15/control-candidate-first-run-04.log",
+        "sha256": "e421731cb3b099fe74d94df8238ef62f47736ecca8338171cfbf65da0f260689"
+      },
+      "kind": "control",
+      "order": "candidate-first",
+      "run": 4,
+      "run_nonce": "aa3afed6d6ae1ddb7744cdb3c42ad00b",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/apple-overlap-p1-format-7365f0fb9/raw/n-15/control-candidate-first-run-05.log",
+        "sha256": "6dab28550a152d8686c572979eccfe41c0f260d1eb3c8fe605fba5b64eedcaf2"
+      },
+      "kind": "control",
+      "order": "candidate-first",
+      "run": 5,
+      "run_nonce": "e647d8aa9d36e5b08f7045e3b144671a",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/apple-overlap-p1-format-7365f0fb9/raw/n-15/control-candidate-first-run-06.log",
+        "sha256": "ec60ff4f742a17b2d96299f3a56b222bff2009cda442838784bf6545bc206094"
+      },
+      "kind": "control",
+      "order": "candidate-first",
+      "run": 6,
+      "run_nonce": "f37bf5379ed5928e3374a0aa06c7bc15",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/apple-overlap-p1-format-7365f0fb9/raw/n-15/control-candidate-first-run-07.log",
+        "sha256": "5f3af99f83748f373afb2f679478abc28c9cb34b55312c28bb0ad4d138429cba"
+      },
+      "kind": "control",
+      "order": "candidate-first",
+      "run": 7,
+      "run_nonce": "9b1cebcf0a837f2ab423dfea35dc73b2",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/apple-overlap-p1-format-7365f0fb9/raw/n-15/control-candidate-first-run-08.log",
+        "sha256": "3e604b4a9177e7e0b3e5e9a76eadef7395e0f1a4c8355ac3f44d84e1f94f5185"
+      },
+      "kind": "control",
+      "order": "candidate-first",
+      "run": 8,
+      "run_nonce": "1c204b23a406c001f717868b9a7ac2bd",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/apple-overlap-p1-format-7365f0fb9/raw/n-15/control-candidate-first-run-09.log",
+        "sha256": "7a00029385dc6f52886c009b183f2500106afb777c33136a2397c62c21cc67bd"
+      },
+      "kind": "control",
+      "order": "candidate-first",
+      "run": 9,
+      "run_nonce": "2ce3b8c876fad58d56576605b15c8a15",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/apple-overlap-p1-format-7365f0fb9/raw/n-15/control-candidate-first-run-10.log",
+        "sha256": "17584f08957e0b7104083d5ab7c6f13a218731626103de8425370b63d26c16b5"
+      },
+      "kind": "control",
+      "order": "candidate-first",
+      "run": 10,
+      "run_nonce": "2caa4b7c9b0b311c0d4d44791649b363",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/apple-overlap-p1-format-7365f0fb9/raw/n-15/control-candidate-first-run-11.log",
+        "sha256": "95a37a054a9f000f020a47f7cac328c7db5d862c1f462ec97deadbb9c4cf536c"
+      },
+      "kind": "control",
+      "order": "candidate-first",
+      "run": 11,
+      "run_nonce": "aef9dff44eb8eb9af46ffb04704fd4cb",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/apple-overlap-p1-format-7365f0fb9/raw/n-15/control-candidate-first-run-12.log",
+        "sha256": "5f707ea471489a20dede52633433d64d374160d00623f1d4c03ac49f74c06a0b"
+      },
+      "kind": "control",
+      "order": "candidate-first",
+      "run": 12,
+      "run_nonce": "e8d62893429205470d53cb98aa899b18",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/apple-overlap-p1-format-7365f0fb9/raw/n-15/control-candidate-first-run-13.log",
+        "sha256": "78ccd992f1be8c0cb2e95f4c081e308d4bde60273a14699a9279226a7decc5d7"
+      },
+      "kind": "control",
+      "order": "candidate-first",
+      "run": 13,
+      "run_nonce": "4f5b7a7d51d4da2669242c0d527b3a18",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/apple-overlap-p1-format-7365f0fb9/raw/n-15/control-candidate-first-run-14.log",
+        "sha256": "fbe641a8e79bbfb65cdc7b2062488c08384386618a8e77df43135c2dc7a4030a"
+      },
+      "kind": "control",
+      "order": "candidate-first",
+      "run": 14,
+      "run_nonce": "6d0d9a682925d7c1deefb582b6239a89",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/apple-overlap-p1-format-7365f0fb9/raw/n-15/control-candidate-first-run-15.log",
+        "sha256": "1fe79f9b5a01c937745280539912fe3fefbac1d64bc20c70e249a99a9fd5fadd"
+      },
+      "kind": "control",
+      "order": "candidate-first",
+      "run": 15,
+      "run_nonce": "49c2c591418cb6d011904ce02ae34430",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/apple-overlap-p1-format-7365f0fb9/raw/n-15/control-peer-first-run-01.log",
+        "sha256": "3329b40508066e2153e962c165c429721605e7de5cfab6ad77242f2486bdb108"
+      },
+      "kind": "control",
+      "order": "peer-first",
+      "run": 1,
+      "run_nonce": "cf9189d7eb69f4b723ed8362cc11eec5",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/apple-overlap-p1-format-7365f0fb9/raw/n-15/control-peer-first-run-02.log",
+        "sha256": "4c2e9286ff519b5b70b88aa76b818eada5fc1c5f08bea4d8958db4d5cee2feca"
+      },
+      "kind": "control",
+      "order": "peer-first",
+      "run": 2,
+      "run_nonce": "553b727d4369da228fabe7961ab10fb5",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/apple-overlap-p1-format-7365f0fb9/raw/n-15/control-peer-first-run-03.log",
+        "sha256": "974601dff44cf01a3ee2e256a5eae4c8b41a7ee3296acd7fdc48acbed391edd9"
+      },
+      "kind": "control",
+      "order": "peer-first",
+      "run": 3,
+      "run_nonce": "d4ff48e7030613dfb4bcc6172a5142b6",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/apple-overlap-p1-format-7365f0fb9/raw/n-15/control-peer-first-run-04.log",
+        "sha256": "8ef1784c0a908af43a7e1ec362f5ac6f9159d95a0ceee0dae5c6ebe7b33ed3e6"
+      },
+      "kind": "control",
+      "order": "peer-first",
+      "run": 4,
+      "run_nonce": "5869cd9d8834eca2baecd5488ec2d6d4",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/apple-overlap-p1-format-7365f0fb9/raw/n-15/control-peer-first-run-05.log",
+        "sha256": "a5ae5ccf7d8fa35be6e4e1018b7d892b5689351b7a33a9592bc7ef17275c3d78"
+      },
+      "kind": "control",
+      "order": "peer-first",
+      "run": 5,
+      "run_nonce": "755bccc2433907319787505ef179bf03",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/apple-overlap-p1-format-7365f0fb9/raw/n-15/control-peer-first-run-06.log",
+        "sha256": "88987b3c5d3891f09133443800529b66fe31a5dfe89c84b345260e02a63b7f04"
+      },
+      "kind": "control",
+      "order": "peer-first",
+      "run": 6,
+      "run_nonce": "2f815ba9906f4dca29d76f8b0bff730f",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/apple-overlap-p1-format-7365f0fb9/raw/n-15/control-peer-first-run-07.log",
+        "sha256": "f35cab2546746252e565695cca1c67d0425eb2fa7a31d0b774eb20b0c0331ac0"
+      },
+      "kind": "control",
+      "order": "peer-first",
+      "run": 7,
+      "run_nonce": "0df2464d88b0c3858548394422e98227",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/apple-overlap-p1-format-7365f0fb9/raw/n-15/control-peer-first-run-08.log",
+        "sha256": "caca2124b0fa9684cd33d19e8aeaf16c8d05c3330a77db85234330d299c9878e"
+      },
+      "kind": "control",
+      "order": "peer-first",
+      "run": 8,
+      "run_nonce": "7c65525ea557ee61bad29b9b00c830b9",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/apple-overlap-p1-format-7365f0fb9/raw/n-15/control-peer-first-run-09.log",
+        "sha256": "024f62d556ffccad85a56db64aa28c3a023af9e0ce39da300c2cb0dc4c826a24"
+      },
+      "kind": "control",
+      "order": "peer-first",
+      "run": 9,
+      "run_nonce": "8f2117187fcad1759e77de05c6335723",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/apple-overlap-p1-format-7365f0fb9/raw/n-15/control-peer-first-run-10.log",
+        "sha256": "c1d736515eca7f75d28255461174a268ac048e913e43d5f17188982042488016"
+      },
+      "kind": "control",
+      "order": "peer-first",
+      "run": 10,
+      "run_nonce": "1c92d6743fd1c70b79128fd2c2223205",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/apple-overlap-p1-format-7365f0fb9/raw/n-15/control-peer-first-run-11.log",
+        "sha256": "df54f209555460f1cfbf95bb287cc710fe4c3b1c4f32c06861de469c916b919f"
+      },
+      "kind": "control",
+      "order": "peer-first",
+      "run": 11,
+      "run_nonce": "81a371cb6fc46017bd69028e752ba6d8",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/apple-overlap-p1-format-7365f0fb9/raw/n-15/control-peer-first-run-12.log",
+        "sha256": "310a5604d54fbedbe146bd22d7cdc6225caa2c9a0bd7161aee5a592477e09015"
+      },
+      "kind": "control",
+      "order": "peer-first",
+      "run": 12,
+      "run_nonce": "a34951a0a1244cf7c60c88aa0dbf6264",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/apple-overlap-p1-format-7365f0fb9/raw/n-15/control-peer-first-run-13.log",
+        "sha256": "b18abd3af2c4d707c1a88510fa3c411c26cc5a8d8f5b7dac79d1c90d32593faa"
+      },
+      "kind": "control",
+      "order": "peer-first",
+      "run": 13,
+      "run_nonce": "49f919cbf011fd135bed2df41a91d461",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/apple-overlap-p1-format-7365f0fb9/raw/n-15/control-peer-first-run-14.log",
+        "sha256": "9e0b739dce0eae6423d22adcd81a28f1fc17ff77f94f48eb2df5978d56e298d9"
+      },
+      "kind": "control",
+      "order": "peer-first",
+      "run": 14,
+      "run_nonce": "28da398cf66c38d020e043b7a0c23703",
+      "stage": 15
+    },
+    {
+      "file": {
+        "path": "/Users/kiro/hyle-scratch/apple-overlap-p1-format-7365f0fb9/raw/n-15/control-peer-first-run-15.log",
+        "sha256": "659f85575f39cf5d2716357e9902d7dc38b2ec607bfff18ac3a5ff4234e17969"
+      },
+      "kind": "control",
+      "order": "peer-first",
+      "run": 15,
+      "run_nonce": "c921c26e48d1ecf1cd3019892b15ea46",
+      "stage": 15
+    }
+  ],
+  "record": "hyle_perf_nanobench_raw_index",
+  "sample_stages": [
+    15
+  ],
+  "schema": "hyle.perf.nanobench-raw-index/v1"
+}

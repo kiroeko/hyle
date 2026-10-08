@@ -1,11 +1,12 @@
 # 固定模型画像的 Compute / Graph 支持范围
 
-本页按2026-10-05的[当前验收账本](../implementation/tasks/compute/llm-moe-d5-acceptance-ledger.json)
+本页先保留2026-10-05的[D5验收快照](../implementation/tasks/compute/llm-moe-d5-acceptance-ledger.json)，
+Apple当前扩展与原FP4缺口的后续结果见文末[Apple当前资格](#apple-当前共同目录与官方fp4资格)。旧快照
 说明可依赖的**模型片段支持范围**。每个表格单元同时对应普通Direct和Graph两个入口；
 “通过”表示该固定画像的全部必需片段已运行，并通过原数值、状态反馈及资源/完成检查。
 它不表示整模型推理、完整上下文容量或任意硬件已经验收。HYLE不负责模型加载、tokenizer或采样。
 
-## 画像与路线
+## D5画像与路线快照
 
 画像链接固定到受审制品revision。`Q4`、`Q8`、官方版本都可能混合不同角色的编码，
 不能把整模型设为一种dtype；例如Kimi和DeepSeek的GGUF画像仍含MXFP4专家，norm/state等另用F32。
@@ -45,11 +46,11 @@ CPU为44/44通过，CUDA为44/44，Apple为40/44，Vulkan为34/44。这个计数
 不是整个Compute/Graph目标的完成百分比；CPU、Apple、CUDA的代表片段完整成本性能验收已通过，
 Vulkan仍因A/A资格失败而未完成。
 
-## 当前不能执行的精确域
+## D5拒绝与失败记录
 
 | 路线与画像 | 必需边界与结果 | 证据 |
 |---|---|---|
-| Apple：DeepSeek两个官方FP4/FP8画像 | grouped FP4权重在`input_spec`阶段拒绝；固定MLX/M4原调用还有scale floor及极小值差异 | [完整拒绝](../../evidence/correctness/llm-moe-d5-real-fragments/apple-delivery/README.md)、[原生反例](../../evidence/correctness/llm-moe-d5-real-fragments/apple-fp4-native-boundary/README.md) |
+| Apple：DeepSeek两个官方FP4/FP8画像 | 当时grouped FP4拒绝且原native有tiny差异；本轮对应原数学/实际形状已接入并资格化，见文末当前Apple结果 | [原完整拒绝](../../evidence/correctness/llm-moe-d5-real-fragments/apple-delivery/README.md)、[原生反例](../../evidence/correctness/llm-moe-d5-real-fragments/apple-fp4-native-boundary/README.md) |
 | Vulkan：GLM两个官方FP8、DeepSeek两个官方FP4/FP8画像 | 完整MoE分别在grouped FP8/FP4冷准备或完整Graph编译拒绝 | [Vulkan边界](../../evidence/correctness/llm-moe-d5-real-fragments/vulkan-delivery/README.md) |
 | Vulkan：DeepSeek Flash `UD-Q8_K_XL` | 长位置attention/压缩片段未通过原数值门；同模型`UD-Q4_K_XL`逐画像通过 | [逐画像裁决](../../evidence/correctness/llm-moe-d5-real-fragments/vulkan-delivery/README.md) |
 
@@ -115,3 +116,20 @@ CPU扩展已经进入实施：11种新增GGUF格式和已准入NF4/AWQ/CT/MLX接
 [当前C4资格](../implementation/tasks/compute/cpu-quant-mtp-c4-model-branches.md#本包交接资格)。
 精确软件/制品身份与资源限制以对应收据为准；104个GGUF档位及全部准入非GGUF角色
 仍待C5最终矩阵，不把基础格式接线计为这些新画像全部完成，也不改变本页旧ledger通过数。
+
+## Apple 当前共同目录与官方FP4资格
+
+当前Apple使用与CPU/CUDA相同的[模型算子目录](../architecture/model-compute-catalogue.md)和
+[逐制品端口](../implementation/tasks/compute/cpu-final-demand-carriers.json)。上述D5旧快照
+不会因扩展任务完成而回写；不能把其Apple40/44或旧FP4拒绝当成当前产品范围。
+
+| 当前需求 | 普通Direct／Graph资格 | 证据 |
+|---|---|---|
+| 104 GGUF制品归并的559合同、34packed、45plain，八模型族 | 两入口实际geometry/编码/变化输入与replay通过；完整词表按分片、驻留专家有界 | [A2实际矩阵](../../evidence/correctness/apple-parity-a2/README.md) |
+| Pro0813／Flash0731官方混合FP4/FP8主干 | 原group32 FP4精确BF16、原FP8 activation/专家、ratio0/4/128压缩attention/indexer和完整MoE通过 | [FP4资格](../implementation/tasks/compute/apple-ds4-fp4-source-qualification.md) |
+| 必要MTP与DSpark | 两个官方三stage DSpark、Qwen混合Q3/Q4/Q6 sidecar完整MTP、Flash Q8/BF16 sidecars完整DSpark通过 | [当前Apple卡](../implementation/tasks/compute/apple-cpu-cuda-parity-closure.md) |
+| source／static／shared | 同一公开consumer实际运行上述新FP4承载、重放/坏ID/恢复/lease；离线搬迁与资源失配检查通过 | [A4交付](../../evidence/correctness/apple-parity-a4/README.md) |
+
+机器为当前MacBook Air M4/16GiB；资格有实际工具链/原source版本边界，不等于巨型整模型
+驻留、loader或推理引擎。原native tiny失败保留；小段GPU位域桥接保持原数学与存储合同。
+性能仍仅对具名完整成本域裁决，不能由这些正确性/交付结果宣称全部硬件SOTA。

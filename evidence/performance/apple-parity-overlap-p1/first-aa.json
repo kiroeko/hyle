@@ -1,0 +1,446 @@
+{
+  "schema": "hyle.apple-overlap-aa/v1",
+  "identity": {
+    "artifacts": {
+      "primary": "842d6a49d4f4dd38e8fb6e2376afd18720f198f78b39fb210ae338f20d872b79",
+      "placement": "da0f1674bd388074e9951f8d4ab643ecb9d1a666b243a70e02a7ed94bf24abb8"
+    },
+    "reference": {
+      "revision": "1f8e74e3f12f31365464a6867c6579f0e9b29d85",
+      "tree": "05433bcb7241af2b3531e7ee94f1eed07d4bf15c",
+      "compiled_blob_count": 943,
+      "patch_manifest_sha256": "95af48cadc435640e1b6aa94dd72adf5d559a5f216fc7054a6b32bb68f4d01ac",
+      "patched_files": {
+        "mlx/backend/metal/jit_kernels.cpp": {
+          "before_sha256": "8201a166cc426cd7b1f6983e5e6f282d3ca7a1992cc4c3a80fa42cf8dd237c46",
+          "after_sha256": "5226035d4ad6dc02937f8e6a35d88c4dfc9fe627b03a3d8d2ddfa3f965f276b6"
+        },
+        "mlx/backend/metal/kernels/bf16.h": {
+          "before_sha256": "abd87446a310b77ac530ef52a324feae5cb285d03ec9613e3a88ebb71410fdcb",
+          "after_sha256": "78f0871b82a1157610867e02cbcee03a37620df032e53f0c1297541d113e164a"
+        },
+        "mlx/compile.cpp": {
+          "before_sha256": "b95efbcaa0a0173d6d2184f43e49b75af43c376ab2eb970012ef344d694358f7",
+          "after_sha256": "d228e64777bec074a04f37c7333bde88b53f33330063eb547768a75197f37a3c"
+        }
+      },
+      "metallib": "2ae3af693d8e941861063c9f3ae5249e17665e8761837a9d87ab6e07002f568c"
+    },
+    "machine": {
+      "schema": "hyle-perf-physical-host-identity-v1",
+      "profile_id": "M1-MAC",
+      "physical_host_id": "M1",
+      "physical_host_key_sha256": "467e328f5683bcc965253a3a28d112ef7e6b1abb351f0bf68d23be190e0b3f1e",
+      "environment": "macos",
+      "independent_hardware": true,
+      "profile_provisioned": true,
+      "registration_state": "UNREGISTERED",
+      "stable_machine_id_source": "macos-platform-uuid-sha256",
+      "stable_machine_id_sha256": "31e581d2399383332f2c47909fb4828f6c5f5ba6acbb29cf7ff82c7fce872c30",
+      "stable_machine_id_matches_registered": false,
+      "required_host_facts_match": false,
+      "mismatched_host_facts": [],
+      "registered_profile_contract_sha256": "460aae1525938a72ac5d64b20af70787fc8fdfc6f89d5f3ca0915a83f16faa14",
+      "raw_identifier_recorded": false
+    },
+    "validator": "ef40bca0a710f913884c94d28ca86ad285ed65581734f73e5fdcc360a9346e16"
+  },
+  "gate": "PASS",
+  "runs": [
+    {
+      "route": "selected",
+      "variant": "primary",
+      "rival": false,
+      "allocation": false,
+      "ratios": {
+        "BF16 router M1 N512 K8192": 0.9989482428286239,
+        "BF16 router M16 N512 K8192": 1.0025977628973883,
+        "BF16 grouped T5 S8 E8 N1024 K4096": 0.9992132611241219,
+        "F32 grouped T5 S8 E8 N1024 K4096": 1.001141588710956
+      },
+      "log": "/Users/kiro/hyle-scratch/apple-overlap-p1-326a40ee/apple-overlap-aa-raw/selected-primary-0-0.log",
+      "sha256": "0848d2c519e49a5d0802ef40aad38d25fb34ebe1949320d3fc63522a7ab80101"
+    },
+    {
+      "route": "selected",
+      "variant": "primary",
+      "rival": false,
+      "allocation": true,
+      "ratios": {
+        "BF16 router M1 N512 K8192": 0.9975310621778103,
+        "BF16 router M16 N512 K8192": 1.0003209343594843,
+        "BF16 grouped T5 S8 E8 N1024 K4096": 1.001938906164258,
+        "F32 grouped T5 S8 E8 N1024 K4096": 0.9986385080581325
+      },
+      "log": "/Users/kiro/hyle-scratch/apple-overlap-p1-326a40ee/apple-overlap-aa-raw/selected-primary-0-1.log",
+      "sha256": "8af022df5958c74e9e474c5d9f0437d82e390a2459b571f371eb47b63fb96883"
+    },
+    {
+      "route": "selected",
+      "variant": "primary",
+      "rival": true,
+      "allocation": false,
+      "ratios": {
+        "BF16 router M1 N512 K8192": 0.9991259146442405,
+        "BF16 router M16 N512 K8192": 1.0086526653861898,
+        "BF16 grouped T5 S8 E8 N1024 K4096": 0.9958556979588856,
+        "F32 grouped T5 S8 E8 N1024 K4096": 1.0002218348914593
+      },
+      "log": "/Users/kiro/hyle-scratch/apple-overlap-p1-326a40ee/apple-overlap-aa-raw/selected-primary-1-0.log",
+      "sha256": "5facb93c93d6bd041481f678e31ad045cc10a8ef62b0795a2dccdf167b649de2"
+    },
+    {
+      "route": "selected",
+      "variant": "primary",
+      "rival": true,
+      "allocation": true,
+      "ratios": {
+        "BF16 router M1 N512 K8192": 0.998409111278985,
+        "BF16 router M16 N512 K8192": 0.9997621733695156,
+        "BF16 grouped T5 S8 E8 N1024 K4096": 1.002825421549273,
+        "F32 grouped T5 S8 E8 N1024 K4096": 1.0008361741815142
+      },
+      "log": "/Users/kiro/hyle-scratch/apple-overlap-p1-326a40ee/apple-overlap-aa-raw/selected-primary-1-1.log",
+      "sha256": "290f0d00ca1cfd4d401404a791d5935e74af7fcd851c8003d3d8758703298e63"
+    },
+    {
+      "route": "selected",
+      "variant": "placement",
+      "rival": false,
+      "allocation": false,
+      "ratios": {
+        "BF16 router M1 N512 K8192": 1.0104144415341993,
+        "BF16 router M16 N512 K8192": 1.0049264978682253,
+        "BF16 grouped T5 S8 E8 N1024 K4096": 1.0007996074654262,
+        "F32 grouped T5 S8 E8 N1024 K4096": 1.0003855173964726
+      },
+      "log": "/Users/kiro/hyle-scratch/apple-overlap-p1-326a40ee/apple-overlap-aa-raw/selected-placement-0-0.log",
+      "sha256": "1dd381bf537dac4026e5a78cb421c0ae0be84eb8e51a0b36983695a573b8d41e"
+    },
+    {
+      "route": "selected",
+      "variant": "placement",
+      "rival": false,
+      "allocation": true,
+      "ratios": {
+        "BF16 router M1 N512 K8192": 0.9989133747664418,
+        "BF16 router M16 N512 K8192": 1.0030600294669503,
+        "BF16 grouped T5 S8 E8 N1024 K4096": 0.9993988304519703,
+        "F32 grouped T5 S8 E8 N1024 K4096": 0.999524760003802
+      },
+      "log": "/Users/kiro/hyle-scratch/apple-overlap-p1-326a40ee/apple-overlap-aa-raw/selected-placement-0-1.log",
+      "sha256": "3e44b6b72839e9e6e8569ab32799d52af4413fb7518326b3ebb12b8fc18f266a"
+    },
+    {
+      "route": "selected",
+      "variant": "placement",
+      "rival": true,
+      "allocation": false,
+      "ratios": {
+        "BF16 router M1 N512 K8192": 0.9986483412509767,
+        "BF16 router M16 N512 K8192": 0.9997418217310539,
+        "BF16 grouped T5 S8 E8 N1024 K4096": 0.995767118538926,
+        "F32 grouped T5 S8 E8 N1024 K4096": 0.9977797513321492
+      },
+      "log": "/Users/kiro/hyle-scratch/apple-overlap-p1-326a40ee/apple-overlap-aa-raw/selected-placement-1-0.log",
+      "sha256": "e58ecb0a0fed85d1ed882e7a5ad55511d743f9e175a906562e837b65b4a5f8e3"
+    },
+    {
+      "route": "selected",
+      "variant": "placement",
+      "rival": true,
+      "allocation": true,
+      "ratios": {
+        "BF16 router M1 N512 K8192": 0.9967323275578102,
+        "BF16 router M16 N512 K8192": 1.0073153855830923,
+        "BF16 grouped T5 S8 E8 N1024 K4096": 1.0004893343240844,
+        "F32 grouped T5 S8 E8 N1024 K4096": 1.0016158159870734
+      },
+      "log": "/Users/kiro/hyle-scratch/apple-overlap-p1-326a40ee/apple-overlap-aa-raw/selected-placement-1-1.log",
+      "sha256": "37e8f7cb4ee0aa31acd9bf17ff062ab7c3ba95cd4cb93012603ff9a279b8a6ba"
+    },
+    {
+      "route": "native",
+      "variant": "primary",
+      "rival": false,
+      "allocation": false,
+      "ratios": {
+        "BF16 router M1 N512 K8192": 1.0000072670721694,
+        "BF16 router M16 N512 K8192": 0.998141175726128,
+        "BF16 grouped T5 S8 E8 N1024 K4096": 1.0009332711152588,
+        "F32 grouped T5 S8 E8 N1024 K4096": 1.0013425169273875
+      },
+      "log": "/Users/kiro/hyle-scratch/apple-overlap-p1-326a40ee/apple-overlap-aa-raw/native-primary-0-0.log",
+      "sha256": "5eb168eb8b7e661315e7aca3371a5efbf0883d4b24631cfdc9b658030d16e4e0"
+    },
+    {
+      "route": "native",
+      "variant": "primary",
+      "rival": false,
+      "allocation": true,
+      "ratios": {
+        "BF16 router M1 N512 K8192": 0.998996232234038,
+        "BF16 router M16 N512 K8192": 1.0002047631048387,
+        "BF16 grouped T5 S8 E8 N1024 K4096": 1.0,
+        "F32 grouped T5 S8 E8 N1024 K4096": 1.0011631288165166
+      },
+      "log": "/Users/kiro/hyle-scratch/apple-overlap-p1-326a40ee/apple-overlap-aa-raw/native-primary-0-1.log",
+      "sha256": "737991bb299a0708b18fc86920bb619b5e4a19525f7acefe2f8935dcb32a9dc3"
+    },
+    {
+      "route": "native",
+      "variant": "primary",
+      "rival": true,
+      "allocation": false,
+      "ratios": {
+        "BF16 router M1 N512 K8192": 0.9985802797212979,
+        "BF16 router M16 N512 K8192": 0.9995671302308377,
+        "BF16 grouped T5 S8 E8 N1024 K4096": 1.0002320544554455,
+        "F32 grouped T5 S8 E8 N1024 K4096": 1.002909175539652
+      },
+      "log": "/Users/kiro/hyle-scratch/apple-overlap-p1-326a40ee/apple-overlap-aa-raw/native-primary-1-0.log",
+      "sha256": "65eb62254adb003014cc317afa5184097f81029a100f0b9b017feb4231cdba9b"
+    },
+    {
+      "route": "native",
+      "variant": "primary",
+      "rival": true,
+      "allocation": true,
+      "ratios": {
+        "BF16 router M1 N512 K8192": 1.0010191898896361,
+        "BF16 router M16 N512 K8192": 1.0025249536434293,
+        "BF16 grouped T5 S8 E8 N1024 K4096": 0.9985287285116927,
+        "F32 grouped T5 S8 E8 N1024 K4096": 1.0000583600817041
+      },
+      "log": "/Users/kiro/hyle-scratch/apple-overlap-p1-326a40ee/apple-overlap-aa-raw/native-primary-1-1.log",
+      "sha256": "f59cff9d29d64d8c89129ecf7aa0a5361135bbdc6a547a42155ff5c4a022e2d7"
+    },
+    {
+      "route": "native",
+      "variant": "placement",
+      "rival": false,
+      "allocation": false,
+      "ratios": {
+        "BF16 router M1 N512 K8192": 0.999102112931022,
+        "BF16 router M16 N512 K8192": 0.9976581163109458,
+        "BF16 grouped T5 S8 E8 N1024 K4096": 1.0012382942496711,
+        "F32 grouped T5 S8 E8 N1024 K4096": 0.9987799209853591
+      },
+      "log": "/Users/kiro/hyle-scratch/apple-overlap-p1-326a40ee/apple-overlap-aa-raw/native-placement-0-0.log",
+      "sha256": "91dbcaa579722858f1dc02aa0d5fab505e4dc2107b832a9ee0bcde2881611b7d"
+    },
+    {
+      "route": "native",
+      "variant": "placement",
+      "rival": false,
+      "allocation": true,
+      "ratios": {
+        "BF16 router M1 N512 K8192": 1.0012910244786946,
+        "BF16 router M16 N512 K8192": 1.0043432502905971,
+        "BF16 grouped T5 S8 E8 N1024 K4096": 0.9996901866625356,
+        "F32 grouped T5 S8 E8 N1024 K4096": 1.0013994985130328
+      },
+      "log": "/Users/kiro/hyle-scratch/apple-overlap-p1-326a40ee/apple-overlap-aa-raw/native-placement-0-1.log",
+      "sha256": "3e31d60e2d76db3d947e3809781cab137b9422168580271a0328d47567c675a9"
+    },
+    {
+      "route": "native",
+      "variant": "placement",
+      "rival": true,
+      "allocation": false,
+      "ratios": {
+        "BF16 router M1 N512 K8192": 1.0002544473766477,
+        "BF16 router M16 N512 K8192": 1.0,
+        "BF16 grouped T5 S8 E8 N1024 K4096": 1.000775434243176,
+        "F32 grouped T5 S8 E8 N1024 K4096": 1.0004082108700725
+      },
+      "log": "/Users/kiro/hyle-scratch/apple-overlap-p1-326a40ee/apple-overlap-aa-raw/native-placement-1-0.log",
+      "sha256": "e7f9ea0594398fa40375276d62c48657a4373247654b20dd8c351c7bd19779b0"
+    },
+    {
+      "route": "native",
+      "variant": "placement",
+      "rival": true,
+      "allocation": true,
+      "ratios": {
+        "BF16 router M1 N512 K8192": 1.0010532815167252,
+        "BF16 router M16 N512 K8192": 1.0023960402282543,
+        "BF16 grouped T5 S8 E8 N1024 K4096": 0.9994575325480471,
+        "F32 grouped T5 S8 E8 N1024 K4096": 1.0027989970260656
+      },
+      "log": "/Users/kiro/hyle-scratch/apple-overlap-p1-326a40ee/apple-overlap-aa-raw/native-placement-1-1.log",
+      "sha256": "978f6aba988a30646884eadfebf055f5b5e0ca6b80e9fc32b0b34be90e79a48b"
+    }
+  ],
+  "summaries": {
+    "selected:BF16 router M1 N512 K8192": {
+      "ratios": [
+        0.9989482428286239,
+        0.9975310621778103,
+        0.9991259146442405,
+        0.998409111278985,
+        1.0104144415341993,
+        0.9989133747664418,
+        0.9986483412509767,
+        0.9967323275578102
+      ],
+      "medians": {
+        "all": 0.9987808580087092,
+        "variant=primary": 0.9986786770538045,
+        "variant=placement": 0.9987808580087092,
+        "rival=False": 0.9989308087975328,
+        "rival=True": 0.9985287262649809,
+        "allocation=False": 0.9990370787364322,
+        "allocation=True": 0.9979700867283976
+      }
+    },
+    "selected:BF16 router M16 N512 K8192": {
+      "ratios": [
+        1.0025977628973883,
+        1.0003209343594843,
+        1.0086526653861898,
+        0.9997621733695156,
+        1.0049264978682253,
+        1.0030600294669503,
+        0.9997418217310539,
+        1.0073153855830923
+      ],
+      "medians": {
+        "all": 1.0028288961821694,
+        "variant=primary": 1.0014593486284364,
+        "variant=placement": 1.0039932636675877,
+        "rival=False": 1.0028288961821694,
+        "rival=True": 1.003538779476304,
+        "allocation=False": 1.0037621303828068,
+        "allocation=True": 1.0016904819132173
+      }
+    },
+    "selected:BF16 grouped T5 S8 E8 N1024 K4096": {
+      "ratios": [
+        0.9992132611241219,
+        1.001938906164258,
+        0.9958556979588856,
+        1.002825421549273,
+        1.0007996074654262,
+        0.9993988304519703,
+        0.995767118538926,
+        1.0004893343240844
+      ],
+      "medians": {
+        "all": 0.9999440823880273,
+        "variant=primary": 1.00057608364419,
+        "variant=placement": 0.9999440823880273,
+        "rival=False": 1.0000992189586984,
+        "rival=True": 0.998172516141485,
+        "allocation=False": 0.9975344795415038,
+        "allocation=True": 1.0012141202441711
+      }
+    },
+    "selected:F32 grouped T5 S8 E8 N1024 K4096": {
+      "ratios": [
+        1.001141588710956,
+        0.9986385080581325,
+        1.0002218348914593,
+        1.0008361741815142,
+        1.0003855173964726,
+        0.999524760003802,
+        0.9977797513321492,
+        1.0016158159870734
+      ],
+      "medians": {
+        "all": 1.0003036761439659,
+        "variant=primary": 1.0005290045364867,
+        "variant=placement": 0.9999551387001373,
+        "rival=False": 0.9999551387001373,
+        "rival=True": 1.0005290045364867,
+        "allocation=False": 1.0003036761439659,
+        "allocation=True": 1.0001804670926582
+      }
+    },
+    "native:BF16 router M1 N512 K8192": {
+      "ratios": [
+        1.0000072670721694,
+        0.998996232234038,
+        0.9985802797212979,
+        1.0010191898896361,
+        0.999102112931022,
+        1.0012910244786946,
+        1.0002544473766477,
+        1.0010532815167252
+      ],
+      "medians": {
+        "all": 1.0001308572244085,
+        "variant=primary": 0.9995017496531037,
+        "variant=placement": 1.0006538644466865,
+        "rival=False": 0.9995546900015957,
+        "rival=True": 1.0006368186331418,
+        "allocation=False": 0.9995546900015957,
+        "allocation=True": 1.0010362357031806
+      }
+    },
+    "native:BF16 router M16 N512 K8192": {
+      "ratios": [
+        0.998141175726128,
+        1.0002047631048387,
+        0.9995671302308377,
+        1.0025249536434293,
+        0.9976581163109458,
+        1.0043432502905971,
+        1.0,
+        1.0023960402282543
+      ],
+      "medians": {
+        "all": 1.0001023815524195,
+        "variant=primary": 0.9998859466678383,
+        "variant=placement": 1.0011980201141273,
+        "rival=False": 0.9991729694154834,
+        "rival=True": 1.0011980201141273,
+        "allocation=False": 0.9988541529784829,
+        "allocation=True": 1.002460496935842
+      }
+    },
+    "native:BF16 grouped T5 S8 E8 N1024 K4096": {
+      "ratios": [
+        1.0009332711152588,
+        1.0,
+        1.0002320544554455,
+        0.9985287285116927,
+        1.0012382942496711,
+        0.9996901866625356,
+        1.000775434243176,
+        0.9994575325480471
+      ],
+      "medians": {
+        "all": 1.0001160272277227,
+        "variant=primary": 1.0001160272277227,
+        "variant=placement": 1.000232810452856,
+        "rival=False": 1.0004666355576295,
+        "rival=True": 0.9998447935017463,
+        "allocation=False": 1.0008543526792173,
+        "allocation=True": 0.9995738596052914
+      }
+    },
+    "native:F32 grouped T5 S8 E8 N1024 K4096": {
+      "ratios": [
+        1.0013425169273875,
+        1.0011631288165166,
+        1.002909175539652,
+        1.0000583600817041,
+        0.9987799209853591,
+        1.0013994985130328,
+        1.0004082108700725,
+        1.0027989970260656
+      ],
+      "medians": {
+        "all": 1.001252822871952,
+        "variant=primary": 1.001252822871952,
+        "variant=placement": 1.0009038546915527,
+        "rival=False": 1.001252822871952,
+        "rival=True": 1.0016036039480691,
+        "allocation=False": 1.00087536389873,
+        "allocation=True": 1.0012813136647747
+      }
+    }
+  },
+  "errors": []
+}

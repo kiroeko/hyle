@@ -1,6 +1,6 @@
 # Apple 成熟 codec：IQ1 三类型与精确 Q4_K row decode
 
-<!-- MODULE REVIEW: AUDITED -->
+<!-- MODULE REVIEW: CLOSED -->
 
 baseline `ce7f52f6`，Windows canonical。父轮是
 [Apple parity](apple-cpu-cuda-parity-closure.md)。旧runtime
@@ -72,3 +72,17 @@ grouped/索引及OOM边界。[raw/源码hash](../../../../evidence/correctness/a
 分别真实执行；不把测试名GgmlVulkanMetadata冒称Vulkan GPU验收，它仅共享arena测试。
 首个task脚本误把缓存旧source目录计入active identity，已改为实际ggml-base Ninja命令取
 active source；编译前的脚本拒绝不是产品FAIL。不重复已验矩阵/P1，C1 mixed风险已验收。
+
+## Terminal：本轮窄借入完成
+
+candidate `326a40ee9b2f01a760d8bbdc66974685ff8cfdb0`。C1 mixed shared-core、C2原三IQ1
+MV/grouped与8实际合同、C3五个Q4_K精确所选行/坏IDs/生命周期，两入口与三交付通过，
+见[A2](../../../../evidence/correctness/apple-parity-a2/README.md)和
+[A4](../../../../evidence/correctness/apple-parity-a4/README.md)。scope/architecture/correctness/
+delivery/usability_docs/red_team/engineering_performance七门PASS。此窄owner以P0裁决：
+原core表/codec/MV body/静态ABI适配保持源身份，按selected行/专家处理、不全表热decode，
+无新数学或hot仲裁；父轮真实重叠另有P1，不为single-carrier IQ1造benchmark。公开enum/
+头、Apple-only隔离、mixed CPU实际codec和资源已验，不重审CPU/CUDA。统一Compute+Graph
+全实现61,413行/261文件，不含tests/vendor，不折算本owner完成度。
+停止本卡；reopen只由本scope可复现缺陷、真实新格式/consumer、依赖相关升级或合格
+同合同material回归触发；未知硬件性能不自动reopen。

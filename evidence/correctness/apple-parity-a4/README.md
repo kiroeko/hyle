@@ -134,3 +134,29 @@ TileLang/CUTLASS licenses are present. The first driver expected incorrect
 filenames/nonexistent NOTICE files; only that assertion was corrected, and
 completed build/cold/static configuration steps were reused. No product fix
 or repeated model matrix resulted. Old missing-resource tests still apply.
+
+Final directed Apple-OFF Windows configure also PASS:
+[environment-corrected log](win-off-fp4-configure.log). No MLX/Metal probe or
+download occurs. The [first call](win-off-fp4-configure-first.log) lacked the
+MSVC standard-library environment; using the existing Windows entry fixed
+only that process environment. No Windows full build/model test was run.
+
+The final source review rechecked new FP4 finite-BF16 inference guards,
+canonical carrier extents/selected-expert decode, checked completion status,
+old-result lifetime, shared original core/route isolation, and delivery
+resource ownership. No further product FIX arose. The user coverage page
+still described the D5 FP4 rejection as current; it now explicitly separates
+that historical snapshot from current559/34/45 and official FP4/MTP evidence.
+No CPU/CUDA/Vulkan state or old FAIL was changed. Performance remains a
+separate gate; these reviews do not sign an unrun P1.
+
+P1 is now separately qualified PASS in the
+[final performance record](../../performance/apple-parity-overlap-p1/README.md).
+Task-owned cleanup [Windows script](cleanup-owned-temporaries.ps1)/
+[receipt](cleanup-windows.json) removed21,183,219bytes of consumed transfer
+bundles and the temporary Windows MLX reference. The exact rejected Air
+producer [script](cleanup-failed-producer.py)/[receipt](cleanup-air.json)
+removed98,771,171bytes after its complete raw archive was copied to Windows.
+Successful producer/SDKs, model fixtures, source cache and qualified MLX peer
+remain. Complete canonical raw copies retain every observation; duplicate
+compressed transfer packages were removed after extraction.

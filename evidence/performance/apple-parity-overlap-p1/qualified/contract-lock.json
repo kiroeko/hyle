@@ -1,0 +1,612 @@
+{
+  "contract": {
+    "artifacts": {
+      "validators": [
+        "artifact-identity",
+        "build-contract",
+        "apple-overlap-aa"
+      ]
+    },
+    "build": {
+      "configuration": "Release",
+      "fresh": true,
+      "isa": "portable",
+      "linkage": "static",
+      "lto": "off",
+      "toolchain": "machine-profile-bound"
+    },
+    "candidate": {
+      "component": "compute_route_apple",
+      "delivery_shape": "static",
+      "entrypoint": "include/hyle/compute/apple.h",
+      "revision": "runtime-bound",
+      "target": "hyle_compute_route_apple_overlap_bench"
+    },
+    "claim": "Bounded original ggml Metal versus original MLX full managed dynamic-weight projection cost on the registered Air; physical BF16/F32 inputs, all widening/checking/terminal/result release charged. No HYLE algorithm win or whole-model throughput.",
+    "controls": [
+      {
+        "id": "aa",
+        "kind": "aa",
+        "parameters": {
+          "maximum_bias_percent": 5
+        }
+      },
+      {
+        "id": "delta5",
+        "kind": "known-delta",
+        "parameters": {
+          "nominal_percent": 5
+        }
+      },
+      {
+        "id": "delta10",
+        "kind": "known-delta",
+        "parameters": {
+          "nominal_percent": 10
+        }
+      },
+      {
+        "id": "timer-floor",
+        "kind": "timer-floor",
+        "parameters": {
+          "minimum_workload_floor_multiple": 20
+        }
+      }
+    ],
+    "experiment": {
+      "holdout": false,
+      "order_policy": "fixed-dual",
+      "sample_schedule": [
+        15
+      ]
+    },
+    "extensions": {
+      "runner": {
+        "cmake": {
+          "cache": {
+            "BUILD_SHARED_LIBS": "OFF",
+            "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
+            "CMAKE_INTERPROCEDURAL_OPTIMIZATION": "OFF",
+            "CMAKE_OSX_DEPLOYMENT_TARGET": "14.4",
+            "FETCHCONTENT_FULLY_DISCONNECTED": "ON",
+            "HYLE_BUILD_BENCH": "ON",
+            "HYLE_BUILD_TESTS": "OFF",
+            "HYLE_COMPUTE_APPLE": "ON",
+            "HYLE_COMPUTE_CPU": "OFF",
+            "HYLE_COMPUTE_CUDA": "OFF",
+            "HYLE_COMPUTE_ONEDNN": "OFF",
+            "HYLE_DEV_FACTORS": "compute_route_apple",
+            "HYLE_INSTALL": "OFF",
+            "HYLE_SANITIZER": "off",
+            "HYLE_SIMD_EXACT_TARGET": "",
+            "HYLE_STATIC": "ON",
+            "HYLE_TEST_INSTRUMENTATION": "OFF",
+            "HYLE_TRACE": "OFF",
+            "HYLE_WERROR": "ON"
+          },
+          "peer_cache": {
+            "mlx-native": "HYLE_APPLE_REFERENCE_SOURCE_DIR"
+          }
+        },
+        "control_executable": {
+          "stem": "hyle_perf_control_bench",
+          "target": "hyle_perf_control_bench"
+        },
+        "controlled_environment": [
+          "HYLE_BENCH_RIVAL_FIRST",
+          "HYLE_BENCH_PEER_ALLOCATION_FIRST",
+          "HYLE_BENCH_APPLE_QOS",
+          "HYLE_PERF_APPLE_QOS",
+          "HYLE_BENCH_AA_ROUTE",
+          "HYLE_BENCH_VERIFY_ONLY"
+        ],
+        "executables": [
+          {
+            "id": "apple-overlap-primary",
+            "measurement_batch": 1,
+            "stem": "hyle_compute_route_apple_overlap_bench",
+            "target": "hyle_compute_route_apple_overlap_bench",
+            "target_variant": "primary",
+            "telemetry_prefixes": [
+              "# HYLE_APPLE_OVERLAP_RUN "
+            ],
+            "workloads": [
+              {
+                "id": "bf16-router-m1",
+                "title": "BF16 router M1 N512 K8192"
+              },
+              {
+                "id": "bf16-router-m16",
+                "title": "BF16 router M16 N512 K8192"
+              },
+              {
+                "id": "bf16-grouped-t5",
+                "title": "BF16 grouped T5 S8 E8 N1024 K4096"
+              },
+              {
+                "id": "f32-grouped-t5",
+                "title": "F32 grouped T5 S8 E8 N1024 K4096"
+              }
+            ]
+          },
+          {
+            "id": "apple-overlap-placement",
+            "measurement_batch": 1,
+            "stem": "hyle_compute_route_apple_overlap_bench_placement",
+            "target": "hyle_compute_route_apple_overlap_bench_placement",
+            "target_variant": "placement",
+            "telemetry_prefixes": [
+              "# HYLE_APPLE_OVERLAP_RUN "
+            ],
+            "workloads": [
+              {
+                "id": "bf16-router-m1",
+                "title": "BF16 router M1 N512 K8192"
+              },
+              {
+                "id": "bf16-router-m16",
+                "title": "BF16 router M16 N512 K8192"
+              },
+              {
+                "id": "bf16-grouped-t5",
+                "title": "BF16 grouped T5 S8 E8 N1024 K4096"
+              },
+              {
+                "id": "f32-grouped-t5",
+                "title": "F32 grouped T5 S8 E8 N1024 K4096"
+              }
+            ]
+          }
+        ],
+        "measurement_adapter": "nanobench-paired-rows-v1",
+        "profiles": {
+          "M1-MAC": {
+            "cache": {},
+            "compiler_id": "AppleClang",
+            "compiler_version_prefix": "21.0",
+            "generator": "Ninja"
+          }
+        },
+        "sampling_topology": "single-logical-cpu",
+        "schema": "hyle.perf.nanobench-runner/v1",
+        "validators": [
+          {
+            "id": "artifact-identity",
+            "kind": "artifact-identity"
+          },
+          {
+            "id": "build-contract",
+            "kind": "build-contract"
+          },
+          {
+            "command": [
+              "{python}",
+              "bench/compute_route_apple/validate_overlap_aa.py",
+              "--build",
+              "{build}",
+              "--output",
+              "{output}"
+            ],
+            "id": "apple-overlap-aa",
+            "kind": "command"
+          }
+        ]
+      }
+    },
+    "hosts": {
+      "allowed_platforms": [
+        "macos"
+      ],
+      "certification_platforms": [
+        "macos"
+      ],
+      "requirements": {
+        "formal_independent_hardware": true,
+        "machine_profiles": [
+          "M1-MAC"
+        ],
+        "qualified_role": "engineering"
+      }
+    },
+    "id": "compute-apple-mature-overlap-p1-v1",
+    "module": "compute_route_apple",
+    "peers": [
+      {
+        "configuration": {
+          "delivery_shape": "source",
+          "flags": "Metal-only MLX, JIT enabled, BF16 storage/F32 accumulation, no LTO; actual tool versions recorded.",
+          "precision": "BF16 router input/weight to F32; F32 grouped activation with BF16/F32 stored weights and F32 output.",
+          "role": "Original MLX astype/matmul/gather_mm through independent Context, same dynamic weights/checked IDs/owning completion.",
+          "scope": "Four qualified actual model geometries with two ready resident weight/input banks and two reusable invocation slots."
+        },
+        "id": "mlx-native",
+        "revision": "1f8e74e3f12f31365464a6867c6579f0e9b29d85"
+      }
+    ],
+    "schema": "hyle.perf.contract/v1",
+    "strata": [
+      {
+        "dimensions": {
+          "allocation_order": "candidate-first",
+          "execution_order": "candidate-first",
+          "placement": "primary"
+        },
+        "id": "primary-candidate-first-candidate-allocation-first",
+        "target_variant": "primary"
+      },
+      {
+        "dimensions": {
+          "allocation_order": "peer-first",
+          "execution_order": "candidate-first",
+          "placement": "primary"
+        },
+        "environment": {
+          "HYLE_BENCH_PEER_ALLOCATION_FIRST": "1"
+        },
+        "id": "primary-candidate-first-peer-allocation-first",
+        "target_variant": "primary"
+      },
+      {
+        "dimensions": {
+          "allocation_order": "candidate-first",
+          "execution_order": "peer-first",
+          "placement": "primary"
+        },
+        "environment": {
+          "HYLE_BENCH_RIVAL_FIRST": "1"
+        },
+        "id": "primary-peer-first-candidate-allocation-first",
+        "target_variant": "primary"
+      },
+      {
+        "dimensions": {
+          "allocation_order": "peer-first",
+          "execution_order": "peer-first",
+          "placement": "primary"
+        },
+        "environment": {
+          "HYLE_BENCH_PEER_ALLOCATION_FIRST": "1",
+          "HYLE_BENCH_RIVAL_FIRST": "1"
+        },
+        "id": "primary-peer-first-peer-allocation-first",
+        "target_variant": "primary"
+      },
+      {
+        "dimensions": {
+          "allocation_order": "candidate-first",
+          "execution_order": "candidate-first",
+          "placement": "placement"
+        },
+        "id": "placement-candidate-first-candidate-allocation-first",
+        "target_variant": "placement"
+      },
+      {
+        "dimensions": {
+          "allocation_order": "peer-first",
+          "execution_order": "candidate-first",
+          "placement": "placement"
+        },
+        "environment": {
+          "HYLE_BENCH_PEER_ALLOCATION_FIRST": "1"
+        },
+        "id": "placement-candidate-first-peer-allocation-first",
+        "target_variant": "placement"
+      },
+      {
+        "dimensions": {
+          "allocation_order": "candidate-first",
+          "execution_order": "peer-first",
+          "placement": "placement"
+        },
+        "environment": {
+          "HYLE_BENCH_RIVAL_FIRST": "1"
+        },
+        "id": "placement-peer-first-candidate-allocation-first",
+        "target_variant": "placement"
+      },
+      {
+        "dimensions": {
+          "allocation_order": "peer-first",
+          "execution_order": "peer-first",
+          "placement": "placement"
+        },
+        "environment": {
+          "HYLE_BENCH_PEER_ALLOCATION_FIRST": "1",
+          "HYLE_BENCH_RIVAL_FIRST": "1"
+        },
+        "id": "placement-peer-first-peer-allocation-first",
+        "target_variant": "placement"
+      }
+    ],
+    "workloads": [
+      {
+        "charged_phases": [
+          "Ready bind, actual native submission, all casts/gather/check/layout/temporary work, checked terminal synchronization/status, result/Completion release."
+        ],
+        "comparability": "COMPARABLE",
+        "consumer_key": "llm-moe/apple/dynamic-weight/bf16-router-m1",
+        "estimator": {
+          "kind": "process-median",
+          "minimum_independent_samples": 15,
+          "tail_alpha": 0.01
+        },
+        "gate_role": "product",
+        "id": "bf16-router-m1",
+        "input": {
+          "distribution": "Two deterministic distinct ready source-encoded banks; source BF16 values are exact dyadic coefficients, selected expert IDs vary.",
+          "scale": {
+            "k": 8192,
+            "m": 1,
+            "n": 512
+          }
+        },
+        "material_contribution": {
+          "budget": 5,
+          "denominator": "one complete dynamic projection through checked terminal and result release",
+          "derivation": "Shared Qwen24T router and official DeepSeek Flash output-projection geometry; qualified finite operator witnesses.",
+          "frequency": 1,
+          "unit": "complete-region",
+          "value": 1
+        },
+        "metric": {
+          "direction": "higher-is-better",
+          "name": "operations-per-second",
+          "unit": "op/s"
+        },
+        "noninferiority_margin_percent": 5,
+        "ownership_topology": {
+          "candidate": "Ordinary Context.prepare original ggml Metal, two reusable slots.",
+          "equivalence": "Same ready physical input/weight banks, checked valid IDs, native owned async stream, bind/submit/checked terminal/result release; all dynamic widening/layout costs charged.",
+          "peer": "Ordinary Context.compile original MLX, two reusable slots."
+        },
+        "pair": {
+          "candidate": "Original Metal BF16 router M1 N512 K8192",
+          "peer": "Original MLX BF16 router M1 N512 K8192"
+        },
+        "peer_id": "mlx-native",
+        "practical_margin_percent": 5,
+        "provenance": {
+          "path": "bench/compute_route_apple/overlap_p1_bench.cc",
+          "sha256": "fb5a932a554e209a331c29c6bdb25be26f21333a1ce444a162ffe28e7f0bc7ef"
+        },
+        "required_controls": [
+          "aa",
+          "delta5",
+          "delta10",
+          "timer-floor"
+        ],
+        "required_strata": [
+          "primary-candidate-first-candidate-allocation-first",
+          "primary-candidate-first-peer-allocation-first",
+          "primary-peer-first-candidate-allocation-first",
+          "primary-peer-first-peer-allocation-first",
+          "placement-candidate-first-candidate-allocation-first",
+          "placement-candidate-first-peer-allocation-first",
+          "placement-peer-first-candidate-allocation-first",
+          "placement-peer-first-peer-allocation-first"
+        ],
+        "semantic_contract": "BF16 router M1 N512 K8192: original physical weights, declared F32 accumulation/output, changed ready inputs and weights; full independent exact sparse two-term source oracle before timing.",
+        "setup": "Separate Context/stream/Program, two slots per arm, shared immutable resident banks, full independent source oracle, observed native QoS; cold prepare/compile/memory recorded separately.",
+        "tier": "replay"
+      },
+      {
+        "charged_phases": [
+          "Ready bind, actual native submission, all casts/gather/check/layout/temporary work, checked terminal synchronization/status, result/Completion release."
+        ],
+        "comparability": "COMPARABLE",
+        "consumer_key": "llm-moe/apple/dynamic-weight/bf16-router-m16",
+        "estimator": {
+          "kind": "process-median",
+          "minimum_independent_samples": 15,
+          "tail_alpha": 0.01
+        },
+        "gate_role": "product",
+        "id": "bf16-router-m16",
+        "input": {
+          "distribution": "Two deterministic distinct ready source-encoded banks; source BF16 values are exact dyadic coefficients, selected expert IDs vary.",
+          "scale": {
+            "k": 8192,
+            "m": 16,
+            "n": 512
+          }
+        },
+        "material_contribution": {
+          "budget": 5,
+          "denominator": "one complete dynamic projection through checked terminal and result release",
+          "derivation": "Shared Qwen24T router and official DeepSeek Flash output-projection geometry; qualified finite operator witnesses.",
+          "frequency": 1,
+          "unit": "complete-region",
+          "value": 1
+        },
+        "metric": {
+          "direction": "higher-is-better",
+          "name": "operations-per-second",
+          "unit": "op/s"
+        },
+        "noninferiority_margin_percent": 5,
+        "ownership_topology": {
+          "candidate": "Ordinary Context.prepare original ggml Metal, two reusable slots.",
+          "equivalence": "Same ready physical input/weight banks, checked valid IDs, native owned async stream, bind/submit/checked terminal/result release; all dynamic widening/layout costs charged.",
+          "peer": "Ordinary Context.compile original MLX, two reusable slots."
+        },
+        "pair": {
+          "candidate": "Original Metal BF16 router M16 N512 K8192",
+          "peer": "Original MLX BF16 router M16 N512 K8192"
+        },
+        "peer_id": "mlx-native",
+        "practical_margin_percent": 5,
+        "provenance": {
+          "path": "bench/compute_route_apple/overlap_p1_bench.cc",
+          "sha256": "fb5a932a554e209a331c29c6bdb25be26f21333a1ce444a162ffe28e7f0bc7ef"
+        },
+        "required_controls": [
+          "aa",
+          "delta5",
+          "delta10",
+          "timer-floor"
+        ],
+        "required_strata": [
+          "primary-candidate-first-candidate-allocation-first",
+          "primary-candidate-first-peer-allocation-first",
+          "primary-peer-first-candidate-allocation-first",
+          "primary-peer-first-peer-allocation-first",
+          "placement-candidate-first-candidate-allocation-first",
+          "placement-candidate-first-peer-allocation-first",
+          "placement-peer-first-candidate-allocation-first",
+          "placement-peer-first-peer-allocation-first"
+        ],
+        "semantic_contract": "BF16 router M16 N512 K8192: original physical weights, declared F32 accumulation/output, changed ready inputs and weights; full independent exact sparse two-term source oracle before timing.",
+        "setup": "Separate Context/stream/Program, two slots per arm, shared immutable resident banks, full independent source oracle, observed native QoS; cold prepare/compile/memory recorded separately.",
+        "tier": "replay"
+      },
+      {
+        "charged_phases": [
+          "Ready bind, actual native submission, all casts/gather/check/layout/temporary work, checked terminal synchronization/status, result/Completion release."
+        ],
+        "comparability": "COMPARABLE",
+        "consumer_key": "llm-moe/apple/dynamic-weight/bf16-grouped-t5",
+        "estimator": {
+          "kind": "process-median",
+          "minimum_independent_samples": 15,
+          "tail_alpha": 0.01
+        },
+        "gate_role": "product",
+        "id": "bf16-grouped-t5",
+        "input": {
+          "distribution": "Two deterministic distinct ready source-encoded banks; source BF16 values are exact dyadic coefficients, selected expert IDs vary.",
+          "scale": {
+            "e": 8,
+            "k": 4096,
+            "n": 1024,
+            "s": 8,
+            "t": 5
+          }
+        },
+        "material_contribution": {
+          "budget": 5,
+          "denominator": "one complete dynamic projection through checked terminal and result release",
+          "derivation": "Shared Qwen24T router and official DeepSeek Flash output-projection geometry; qualified finite operator witnesses.",
+          "frequency": 1,
+          "unit": "complete-region",
+          "value": 1
+        },
+        "metric": {
+          "direction": "higher-is-better",
+          "name": "operations-per-second",
+          "unit": "op/s"
+        },
+        "noninferiority_margin_percent": 5,
+        "ownership_topology": {
+          "candidate": "Ordinary Context.prepare original ggml Metal, two reusable slots.",
+          "equivalence": "Same ready physical input/weight banks, checked valid IDs, native owned async stream, bind/submit/checked terminal/result release; all dynamic widening/layout costs charged.",
+          "peer": "Ordinary Context.compile original MLX, two reusable slots."
+        },
+        "pair": {
+          "candidate": "Original Metal BF16 grouped T5 S8 E8 N1024 K4096",
+          "peer": "Original MLX BF16 grouped T5 S8 E8 N1024 K4096"
+        },
+        "peer_id": "mlx-native",
+        "practical_margin_percent": 5,
+        "provenance": {
+          "path": "bench/compute_route_apple/overlap_p1_bench.cc",
+          "sha256": "fb5a932a554e209a331c29c6bdb25be26f21333a1ce444a162ffe28e7f0bc7ef"
+        },
+        "required_controls": [
+          "aa",
+          "delta5",
+          "delta10",
+          "timer-floor"
+        ],
+        "required_strata": [
+          "primary-candidate-first-candidate-allocation-first",
+          "primary-candidate-first-peer-allocation-first",
+          "primary-peer-first-candidate-allocation-first",
+          "primary-peer-first-peer-allocation-first",
+          "placement-candidate-first-candidate-allocation-first",
+          "placement-candidate-first-peer-allocation-first",
+          "placement-peer-first-candidate-allocation-first",
+          "placement-peer-first-peer-allocation-first"
+        ],
+        "semantic_contract": "BF16 grouped T5 S8 E8 N1024 K4096: original physical weights, declared F32 accumulation/output, changed ready inputs and weights; full independent exact sparse two-term source oracle before timing.",
+        "setup": "Separate Context/stream/Program, two slots per arm, shared immutable resident banks, full independent source oracle, observed native QoS; cold prepare/compile/memory recorded separately.",
+        "tier": "replay"
+      },
+      {
+        "charged_phases": [
+          "Ready bind, actual native submission, all casts/gather/check/layout/temporary work, checked terminal synchronization/status, result/Completion release."
+        ],
+        "comparability": "COMPARABLE",
+        "consumer_key": "llm-moe/apple/dynamic-weight/f32-grouped-t5",
+        "estimator": {
+          "kind": "process-median",
+          "minimum_independent_samples": 15,
+          "tail_alpha": 0.01
+        },
+        "gate_role": "product",
+        "id": "f32-grouped-t5",
+        "input": {
+          "distribution": "Two deterministic distinct ready source-encoded banks; source BF16 values are exact dyadic coefficients, selected expert IDs vary.",
+          "scale": {
+            "e": 8,
+            "k": 4096,
+            "n": 1024,
+            "s": 8,
+            "t": 5
+          }
+        },
+        "material_contribution": {
+          "budget": 5,
+          "denominator": "one complete dynamic projection through checked terminal and result release",
+          "derivation": "Shared Qwen24T router and official DeepSeek Flash output-projection geometry; qualified finite operator witnesses.",
+          "frequency": 1,
+          "unit": "complete-region",
+          "value": 1
+        },
+        "metric": {
+          "direction": "higher-is-better",
+          "name": "operations-per-second",
+          "unit": "op/s"
+        },
+        "noninferiority_margin_percent": 5,
+        "ownership_topology": {
+          "candidate": "Ordinary Context.prepare original ggml Metal, two reusable slots.",
+          "equivalence": "Same ready physical input/weight banks, checked valid IDs, native owned async stream, bind/submit/checked terminal/result release; all dynamic widening/layout costs charged.",
+          "peer": "Ordinary Context.compile original MLX, two reusable slots."
+        },
+        "pair": {
+          "candidate": "Original Metal F32 grouped T5 S8 E8 N1024 K4096",
+          "peer": "Original MLX F32 grouped T5 S8 E8 N1024 K4096"
+        },
+        "peer_id": "mlx-native",
+        "practical_margin_percent": 5,
+        "provenance": {
+          "path": "bench/compute_route_apple/overlap_p1_bench.cc",
+          "sha256": "fb5a932a554e209a331c29c6bdb25be26f21333a1ce444a162ffe28e7f0bc7ef"
+        },
+        "required_controls": [
+          "aa",
+          "delta5",
+          "delta10",
+          "timer-floor"
+        ],
+        "required_strata": [
+          "primary-candidate-first-candidate-allocation-first",
+          "primary-candidate-first-peer-allocation-first",
+          "primary-peer-first-candidate-allocation-first",
+          "primary-peer-first-peer-allocation-first",
+          "placement-candidate-first-candidate-allocation-first",
+          "placement-candidate-first-peer-allocation-first",
+          "placement-peer-first-candidate-allocation-first",
+          "placement-peer-first-peer-allocation-first"
+        ],
+        "semantic_contract": "F32 grouped T5 S8 E8 N1024 K4096: original physical weights, declared F32 accumulation/output, changed ready inputs and weights; full independent exact sparse two-term source oracle before timing.",
+        "setup": "Separate Context/stream/Program, two slots per arm, shared immutable resident banks, full independent source oracle, observed native QoS; cold prepare/compile/memory recorded separately.",
+        "tier": "replay"
+      }
+    ]
+  },
+  "contract_schema": "hyle.perf.contract/v1",
+  "contract_sha256": "e68ebd7627c79b8311b290d7c4e532f9e2c4cec4b5af59a64bb96107e010af57",
+  "record": "hyle_perf_contract_lock",
+  "schema": "hyle.perf.contract-lock/v1"
+}

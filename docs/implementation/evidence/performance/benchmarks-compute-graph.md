@@ -452,3 +452,21 @@ Graph 为 −3.995–8.393µs / −8.800–7.361µs。各范围只汇报独立�
 CPU 裸 Direct、六个 GPU native cost targets 和旧 Sched structured-spawn-join 不等责配对已退役；
 历史诊断不是同合同输赢。Windows/Air/WSL 共 36 条 OFF/ON 三交付、Windows/Mac fixture 数值门及
 host sanitizer 等适用验收实际完成。基础架构重构完成，停止本轮施工；未知设备与格式资格不外推。
+
+## Apple当前成熟重叠域（2026-10-09）
+
+[完整资格/raw](../../../../evidence/performance/apple-parity-overlap-p1/README.md)：当前Air M4、
+macOS27.0.1/26A434、AppleClang21/SDK27，原MLX1f8e74e3与GGML456172ec；16同路A/A、
+120产品（八strata×n15）、30controls，资格和5%工程门PASS；四域合并WIN、32 NI PASS。
+普通独立Context、ready动态weight银行/两slot、转换/checked/native终态/lease释放同收费。
+
+| GGML Metal相对原MLX完整动态域 | 分层吞吐中位比范围 | 严格方向 |
+|---|---:|---|
+| BF16 router M1/N512/K8192/F32 output | 2.1995–2.2091 | WIN |
+| 同域M16 | 1.2465–1.2564 | WIN |
+| BF16 grouped T5/S8/E8/N1024/K4096，F32 activation/output | 4.2981–4.3266 | WIN |
+| 同域F32 weights | 1.8420–1.8472 | WIN |
+
+现有cold GGML Metal默认保留，无产品/热路径改动。只为成熟Provider完整成本的条件选择，
+非HYLE算法胜利；不外推constant Graph融合/其它shape/硬件/模型吞吐。未匹配仍合法成熟
+ENGINEERING_DEFAULT。旧失败与首次遥测格式拒绝保留，没有追加n31。

@@ -1,0 +1,17 @@
+HYLE isolated configure: C:\public\project-hyle\hyle\.scratch\validation\apple-parity\win-off
+-- HYLE developer factors: requested='compute_provider_ggml_metal,compute_route_apple,graph_route_apple' resolved='core,container_intrusive,util_core,error,time,math,platform,platform_thread,mem,container,compute_ops,compute,graph,compute_ggml_runtime,compute_provider_ggml_metal,compute_route_apple,graph_route_apple' products=''
+-- HYLE_SANITIZER = off
+-- HYLE_TESTING = OFF (tests exercise the shipping layout/hot paths)
+-- HYLE: Apple route OFF -- MLX and Metal probe/download skipped
+-- HYLE_TRACE = OFF (hooks compile to nothing -- zero cost)
+-- HYLE 0.1.0 | MSVC 19.50.35728.0 | C++23 | sanitizer=off | linkage=shared | products= | factors=core,container_intrusive,util_core,error,time,math,platform,platform_thread,mem,container,compute_ops,compute,graph,compute_ggml_runtime,compute_provider_ggml_metal,compute_route_apple,graph_route_apple
+-- Configuring done (3.5s)
+-- Generating done (0.1s)
+CMake Warning (unused-cli):
+  Manually-specified variables were not used by the project:
+
+    HYLE_COMPUTE_CUDA
+    HYLE_COMPUTE_VULKAN
+
+
+-- Build files have been written to: C:/public/project-hyle/hyle/.scratch/validation/apple-parity/win-off

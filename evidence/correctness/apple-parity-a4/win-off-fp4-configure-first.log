@@ -1,0 +1,53 @@
+-- HYLE developer factors: requested='compute_provider_ggml_metal,compute_route_apple,graph_route_apple' resolved='core,container_intrusive,util_core,error,time,math,platform,platform_thread,mem,container,compute_ops,compute,graph,compute_ggml_runtime,compute_provider_ggml_metal,compute_route_apple,graph_route_apple' products=''
+-- HYLE_SANITIZER = off
+-- HYLE_TESTING = OFF (tests exercise the shipping layout/hot paths)
+-- HYLE: Apple route OFF -- MLX and Metal probe/download skipped
+-- HYLE_TRACE = OFF (hooks compile to nothing -- zero cost)
+CMake Error at tests/core/CMakeLists.txt:24 (message):
+  Core assertion compile contract assert_valid unexpectedly failed:
+
+  Change Dir:
+  'C:/public/project-hyle/hyle/.scratch/validation/apple-parity/win-off/CMakeFiles/CMakeScratch/TryCompile-kocrvw'
+
+
+
+  Run Build Command(s): C:/PROGRA~1/PYTHON~1/Scripts/ninja.exe -v cmTC_42308
+
+  [1/2] "C:\Program Files\Microsoft Visual
+  Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\bin\Hostx64\x64\cl.exe"
+  /nologo /TP -D_MBCS -IC:\public\project-hyle\hyle\include /DWIN32
+  /D_WINDOWS /EHsc /O2 /Ob2 /DNDEBUG -std:c++latest -MD /showIncludes
+  /FoCMakeFiles\cmTC_42308.dir\assert_valid.cc.obj
+  /FdCMakeFiles\cmTC_42308.dir\cmTC_42308.pdb /FS -c
+  C:\public\project-hyle\hyle\.scratch\validation\apple-parity\win-off\CMakeFiles\CMakeScratch\TryCompile-kocrvw\assert_valid.cc
+
+  FAILED: [code=2] CMakeFiles/cmTC_42308.dir/assert_valid.cc.obj 
+
+  "C:\Program Files\Microsoft Visual
+  Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\bin\Hostx64\x64\cl.exe"
+  /nologo /TP -D_MBCS -IC:\public\project-hyle\hyle\include /DWIN32
+  /D_WINDOWS /EHsc /O2 /Ob2 /DNDEBUG -std:c++latest -MD /showIncludes
+  /FoCMakeFiles\cmTC_42308.dir\assert_valid.cc.obj
+  /FdCMakeFiles\cmTC_42308.dir\cmTC_42308.pdb /FS -c
+  C:\public\project-hyle\hyle\.scratch\validation\apple-parity\win-off\CMakeFiles\CMakeScratch\TryCompile-kocrvw\assert_valid.cc
+
+  
+  C:\public\project-hyle\hyle\.scratch\validation\apple-parity\win-off\CMakeFiles\CMakeScratch\TryCompile-kocrvw\assert_valid.cc(1):
+  warning C4005: 'NDEBUG': macro redefinition
+
+  
+  C:\public\project-hyle\hyle\.scratch\validation\apple-parity\win-off\CMakeFiles\CMakeScratch\TryCompile-kocrvw\assert_valid.cc(1):
+  note: 'NDEBUG' previously declared on the command line
+
+  C:\public\project-hyle\hyle\include\hyle/core/assert.h(4): fatal error
+  C1083: Cannot open include file: 'array': No such file or directory
+
+  ninja: build stopped: subcommand failed.
+
+
+
+Call Stack (most recent call first):
+  tests/core/CMakeLists.txt:52 (hyle_core_expect_release_compile)
+
+
+-- Configuring incomplete, errors occurred!

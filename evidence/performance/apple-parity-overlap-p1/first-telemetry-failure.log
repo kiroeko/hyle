@@ -1,0 +1,1 @@
+hyle-perf: child telemetry '# HYLE_APPLE_OVERLAP_RUN ' does not match stratum: {'execution_order': {'expected': 'candidate-first', 'actual': None}, 'allocation_order': {'expected': 'candidate-first', 'actual': None}, 'apple_qos': {'expected': 'user-interactive', 'actual': None}}

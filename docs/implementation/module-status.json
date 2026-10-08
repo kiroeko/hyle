@@ -525,17 +525,27 @@
     },
     {
       "module": "compute_route_apple",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/compute/apple-cpu-cuda-parity-closure.md",
-      "summary": "Apple parity CANDIDATE: 559/45/34 actual carrier domains, current official FP4 main/DSpark and MTP, resources and source/static/shared verified; finite mature overlap P1 and final review remain.",
-      "candidate": "326a40ee9b2f01a760d8bbdc66974685ff8cfdb0"
+      "summary": "Apple parity CLOSED: 559/34/45 carrier domains, current official FP4 main/DSpark and MTP, resources and three deliveries verified; four mature overlap WINs at n15, legal unknown-condition defaults, no redundant self kernel; Vulkan blocker unchanged.",
+      "candidate": "326a40ee9b2f01a760d8bbdc66974685ff8cfdb0",
+      "performance": {
+        "tier": "P1",
+        "evidence": "evidence/performance/apple-parity-overlap-p1/README.md",
+        "material_margin_pct": 5
+      }
     },
     {
       "module": "graph_route_apple",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/compute/apple-cpu-cuda-parity-closure.md",
-      "summary": "Apple parity CANDIDATE: 559/45/34 actual carrier domains, current official FP4 main/DSpark and MTP, resources and source/static/shared verified; finite mature overlap P1 and final review remain.",
-      "candidate": "326a40ee9b2f01a760d8bbdc66974685ff8cfdb0"
+      "summary": "Apple parity CLOSED: 559/34/45 carrier domains, current official FP4 main/DSpark and MTP, resources and three deliveries verified; four mature overlap WINs at n15, legal unknown-condition defaults, no redundant self kernel; Vulkan blocker unchanged.",
+      "candidate": "326a40ee9b2f01a760d8bbdc66974685ff8cfdb0",
+      "performance": {
+        "tier": "P1",
+        "evidence": "evidence/performance/apple-parity-overlap-p1/README.md",
+        "material_margin_pct": 5
+      }
     },
     {
       "module": "compute_route_vulkan",
@@ -565,10 +575,14 @@
     },
     {
       "module": "compute_ggml_runtime",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/compute/apple-mature-codec-borrow.md",
-      "summary": "Apple narrow original IQ1 codec borrow candidate; exact shared source, CPU+Metal directed tests and delivery verified; final owner record remains.",
-      "candidate": "326a40ee9b2f01a760d8bbdc66974685ff8cfdb0"
+      "summary": "Apple narrow IQ1 shared core/codec borrow CLOSED: exact source, 8 actual contracts, mixed CPU+Metal directed tests, source/static/shared and resource boundaries verified; CPU/CUDA math unchanged.",
+      "candidate": "326a40ee9b2f01a760d8bbdc66974685ff8cfdb0",
+      "performance": {
+        "tier": "P0",
+        "evidence": "evidence/correctness/apple-parity-a4/README.md"
+      }
     },
     {
       "module": "compute_provider_ggml_cuda",
@@ -605,10 +619,15 @@
     },
     {
       "module": "compute_provider_ggml_metal",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/compute/apple-cpu-cuda-parity-closure.md",
-      "summary": "Apple parity CANDIDATE: 559/45/34 actual carrier domains, current official FP4 main/DSpark and MTP, resources and source/static/shared verified; finite mature overlap P1 and final review remain.",
-      "candidate": "326a40ee9b2f01a760d8bbdc66974685ff8cfdb0"
+      "summary": "Apple parity CLOSED: 559/34/45 carrier domains, current official FP4 main/DSpark and MTP, resources and three deliveries verified; four mature overlap WINs at n15, legal unknown-condition defaults, no redundant self kernel; Vulkan blocker unchanged.",
+      "candidate": "326a40ee9b2f01a760d8bbdc66974685ff8cfdb0",
+      "performance": {
+        "tier": "P1",
+        "evidence": "evidence/performance/apple-parity-overlap-p1/README.md",
+        "material_margin_pct": 5
+      }
     },
     {
       "module": "compute_provider_iree_vulkan",

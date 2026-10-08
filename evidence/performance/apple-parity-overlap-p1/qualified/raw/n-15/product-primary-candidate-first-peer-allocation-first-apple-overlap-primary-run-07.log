@@ -1,0 +1,187 @@
+
+| relative |              95% CI |               ns/op |                op/s |    err% |     total | BF16 router M1 N512 K8192
+|---------:|--------------------:|--------------------:|--------------------:|--------:|----------:|:--------------------------
+|   100.0% |                     |          329,711.83 |            3,032.95 |    1.0% |      0.21 | `Original Metal BF16 router M1 N512 K8192`
+|    45.1% |      44.9% .. 45.4% |          728,777.83 |            1,372.16 |    1.1% |      0.46 | `Original MLX BF16 router M1 N512 K8192`
+
+  Summary
+    `Original MLX BF16 router M1 N512 K8192` ran 2.22x slower than `Original Metal BF16 router M1 N512 K8192`
+    95% CI [2.20 .. 2.23], 104 paired rounds, interleaved
+
+| relative |              95% CI |               ns/op |                op/s |    err% |     total | BF16 router M16 N512 K8192
+|---------:|--------------------:|--------------------:|--------------------:|--------:|----------:|:---------------------------
+|   100.0% |                     |          625,160.71 |            1,599.59 |    1.4% |      0.45 | `Original Metal BF16 router M16 N512 K8192`
+|    79.8% |      79.3% .. 80.2% |          784,631.00 |            1,274.48 |    0.9% |      0.57 | `Original MLX BF16 router M16 N512 K8192`
+
+  Summary
+    `Original MLX BF16 router M16 N512 K8192` ran 1.25x slower than `Original Metal BF16 router M16 N512 K8192`
+    95% CI [1.25 .. 1.26], 104 paired rounds, interleaved
+
+| relative |              95% CI |               ns/op |                op/s |    err% |     total | BF16 grouped T5 S8 E8 N1024 K4096
+|---------:|--------------------:|--------------------:|--------------------:|--------:|----------:|:----------------------------------
+|   100.0% |                     |        1,818,708.50 |              549.84 |    0.9% |      0.38 | `Original Metal BF16 grouped T5 S8 E8 N1024 K4096`
+|    23.2% |      23.2% .. 23.3% |        7,821,677.00 |              127.85 |    0.4% |      1.63 | `Original MLX BF16 grouped T5 S8 E8 N1024 K4096`
+
+  Summary
+    `Original MLX BF16 grouped T5 S8 E8 N1024 K4096` ran 4.30x slower than `Original Metal BF16 grouped T5 S8 E8 N1024 K4096`
+    95% CI [4.28 .. 4.31], 104 paired rounds, interleaved
+
+| relative |              95% CI |               ns/op |                op/s |    err% |     total | F32 grouped T5 S8 E8 N1024 K4096
+|---------:|--------------------:|--------------------:|--------------------:|--------:|----------:|:---------------------------------
+|   100.0% |                     |        3,154,073.00 |              317.05 |    0.6% |      0.66 | `Original Metal F32 grouped T5 S8 E8 N1024 K4096`
+|    54.0% |      53.8% .. 54.2% |        5,835,708.50 |              171.36 |    0.6% |      1.22 | `Original MLX F32 grouped T5 S8 E8 N1024 K4096`
+
+  Summary
+    `Original MLX F32 grouped T5 S8 E8 N1024 K4096` ran 1.85x slower than `Original Metal F32 grouped T5 S8 E8 N1024 K4096`
+    95% CI [1.84 .. 1.86], 104 paired rounds, interleaved
+# HYLE_APPLE_OVERLAP_RUN apple_qos=user-interactive qos_ok=1 aa=none verify=0 execution_order=candidate-first allocation_order=peer-first run_nonce=2936e4bd5d70211ea0e00155c5d0d052
+# OVERLAP_ENV gpu=Apple M4 arch=applegpu_g16g os=Version 27.0.1 (Build 26A434) mlx=1f8e74e3f12f31365464a6867c6579f0e9b29d85 ggml=456172ec733a135778adcd32d00e576a58232e45 sdk=270000
+# OVERLAP_OWNER_QOS 21
+# OVERLAP_ENV gpu=Apple M4 arch=applegpu_g16g os=Version 27.0.1 (Build 26A434) mlx=1f8e74e3f12f31365464a6867c6579f0e9b29d85 ggml=456172ec733a135778adcd32d00e576a58232e45 sdk=270000
+# OVERLAP_OWNER_QOS 21
+ggml_metal_device_init: tensor API disabled for pre-M5 and pre-A19 devices
+ggml_metal_library_init: using embedded metal library
+ggml_metal_library_compile_all: compiled 'fa' library in 0.008 sec
+ggml_metal_library_compile_all: compiled 'mul_mv' library in 0.009 sec
+ggml_metal_library_compile_all: compiled 'mul_mm' library in 0.001 sec
+ggml_metal_library_compile_all: compiled 'quantize' library in 0.002 sec
+ggml_metal_library_compile_all: compiled 'softmax' library in 0.000 sec
+ggml_metal_library_compile_all: compiled 'norm' library in 0.000 sec
+ggml_metal_library_compile_all: compiled 'unary' library in 0.000 sec
+ggml_metal_library_compile_all: compiled 'binbcast' library in 0.001 sec
+ggml_metal_library_compile_all: compiled 'reduce' library in 0.001 sec
+ggml_metal_library_compile_all: compiled 'tri' library in 0.000 sec
+ggml_metal_library_compile_all: compiled 'ssm' library in 0.001 sec
+ggml_metal_library_compile_all: compiled 'wkv' library in 0.001 sec
+ggml_metal_library_compile_all: compiled 'gated_delta_net' library in 0.001 sec
+ggml_metal_library_compile_all: compiled 'solve_tri' library in 0.001 sec
+ggml_metal_library_compile_all: compiled 'rope' library in 0.001 sec
+ggml_metal_library_compile_all: compiled 'conv' library in 0.001 sec
+ggml_metal_library_compile_all: compiled 'upscale' library in 0.001 sec
+ggml_metal_library_compile_all: compiled 'argsort' library in 0.001 sec
+ggml_metal_library_compile_all: compiled 'pool' library in 0.001 sec
+ggml_metal_library_compile_all: compiled 'misc' library in 0.000 sec
+ggml_metal_library_compile_all: loaded 20 libraries from embedded data in 0.009 sec (max single = 0.009 sec)
+ggml_metal_rsets_init: creating a residency set collection (keep_alive = 180 s)
+ggml_metal_device_init: GPU name:   MTL0 (Apple M4)
+ggml_metal_device_init: GPU family: MTLGPUFamilyApple9  (1009)
+ggml_metal_device_init: GPU family: MTLGPUFamilyCommon3 (3003)
+ggml_metal_device_init: GPU family: MTLGPUFamilyMetal4  (5002)
+ggml_metal_device_init: simdgroup reduction   = true
+ggml_metal_device_init: simdgroup matrix mul. = true
+ggml_metal_device_init: has unified memory    = true
+ggml_metal_device_init: has bfloat            = true
+ggml_metal_device_init: has tensor            = false
+ggml_metal_device_init: use residency sets    = true
+ggml_metal_device_init: use shared buffers    = true
+ggml_metal_device_init: recommendedMaxWorkingSetSize  = 12713.12 MB
+ggml_metal_init: allocating
+ggml_metal_init: found device: Apple M4
+ggml_metal_init: picking default device: Apple M4
+ggml_metal_init: use fusion         = true
+ggml_metal_init: use concurrency    = true
+ggml_metal_init: use graph optimize = true
+ggml_metal_free: deallocating
+ggml_metal_init: allocating
+ggml_metal_init: found device: Apple M4
+ggml_metal_init: picking default device: Apple M4
+ggml_metal_init: use fusion         = true
+ggml_metal_init: use concurrency    = true
+ggml_metal_init: use graph optimize = true
+ggml_metal_init: allocating
+ggml_metal_init: found device: Apple M4
+ggml_metal_init: picking default device: Apple M4
+ggml_metal_init: use fusion         = true
+ggml_metal_init: use concurrency    = true
+ggml_metal_init: use graph optimize = true
+# OVERLAP_COLD title=BF16 router M1 N512 K8192 setup_ms=23.321 active=16809984 peak=42027008 cache=25217036
+ggml_metal_library_compile_pipeline: compiling pipeline: base = 'kernel_cpy_bf16_f32', name = 'kernel_cpy_bf16_f32'
+ggml_metal_library_compile_pipeline: loaded kernel_cpy_bf16_f32                          0x755d186d80 | th_max = 1024 | th_width =   32
+ggml_metal_library_compile_pipeline: compiling pipeline: base = 'kernel_mul_mv_bf16_f32_4', name = 'kernel_mul_mv_bf16_f32_4_nsg=4_ne12=1_r2=1_r3=1_split=0'
+ggml_metal_library_compile_pipeline: loaded kernel_mul_mv_bf16_f32_4_nsg=4_ne12=1_r2=1_r3=1_split=0     0x755d187100 | th_max = 1024 | th_width =   32
+ggml_metal_free: deallocating
+ggml_metal_free: deallocating
+# OVERLAP_ENV gpu=Apple M4 arch=applegpu_g16g os=Version 27.0.1 (Build 26A434) mlx=1f8e74e3f12f31365464a6867c6579f0e9b29d85 ggml=456172ec733a135778adcd32d00e576a58232e45 sdk=270000
+# OVERLAP_OWNER_QOS 21
+# OVERLAP_ENV gpu=Apple M4 arch=applegpu_g16g os=Version 27.0.1 (Build 26A434) mlx=1f8e74e3f12f31365464a6867c6579f0e9b29d85 ggml=456172ec733a135778adcd32d00e576a58232e45 sdk=270000
+# OVERLAP_OWNER_QOS 21
+ggml_metal_init: allocating
+ggml_metal_init: found device: Apple M4
+ggml_metal_init: picking default device: Apple M4
+ggml_metal_init: use fusion         = true
+ggml_metal_init: use concurrency    = true
+ggml_metal_init: use graph optimize = true
+ggml_metal_free: deallocating
+ggml_metal_init: allocating
+ggml_metal_init: found device: Apple M4
+ggml_metal_init: picking default device: Apple M4
+ggml_metal_init: use fusion         = true
+ggml_metal_init: use concurrency    = true
+ggml_metal_init: use graph optimize = true
+ggml_metal_init: allocating
+ggml_metal_init: found device: Apple M4
+ggml_metal_init: picking default device: Apple M4
+ggml_metal_init: use fusion         = true
+ggml_metal_init: use concurrency    = true
+ggml_metal_init: use graph optimize = true
+# OVERLAP_COLD title=BF16 router M16 N512 K8192 setup_ms=3.383 active=17301504 peak=44335104 cache=27090956
+ggml_metal_library_compile_pipeline: compiling pipeline: base = 'kernel_mul_mm_bf16_f32', name = 'kernel_mul_mm_bf16_f32_bci=0_bco=1_ne12=1_ne13=1_r2=1_r3=1'
+ggml_metal_library_compile_pipeline: loaded kernel_mul_mm_bf16_f32_bci=0_bco=1_ne12=1_ne13=1_r2=1_r3=1     0x755dd91500 | th_max = 1024 | th_width =   32
+ggml_metal_free: deallocating
+ggml_metal_free: deallocating
+# OVERLAP_ENV gpu=Apple M4 arch=applegpu_g16g os=Version 27.0.1 (Build 26A434) mlx=1f8e74e3f12f31365464a6867c6579f0e9b29d85 ggml=456172ec733a135778adcd32d00e576a58232e45 sdk=270000
+# OVERLAP_OWNER_QOS 21
+# OVERLAP_ENV gpu=Apple M4 arch=applegpu_g16g os=Version 27.0.1 (Build 26A434) mlx=1f8e74e3f12f31365464a6867c6579f0e9b29d85 ggml=456172ec733a135778adcd32d00e576a58232e45 sdk=270000
+# OVERLAP_OWNER_QOS 21
+ggml_metal_init: allocating
+ggml_metal_init: found device: Apple M4
+ggml_metal_init: picking default device: Apple M4
+ggml_metal_init: use fusion         = true
+ggml_metal_init: use concurrency    = true
+ggml_metal_init: use graph optimize = true
+ggml_metal_free: deallocating
+ggml_metal_init: allocating
+ggml_metal_init: found device: Apple M4
+ggml_metal_init: picking default device: Apple M4
+ggml_metal_init: use fusion         = true
+ggml_metal_init: use concurrency    = true
+ggml_metal_init: use graph optimize = true
+ggml_metal_init: allocating
+ggml_metal_init: found device: Apple M4
+ggml_metal_init: picking default device: Apple M4
+ggml_metal_init: use fusion         = true
+ggml_metal_init: use concurrency    = true
+ggml_metal_init: use graph optimize = true
+# OVERLAP_COLD title=BF16 grouped T5 S8 E8 N1024 K4096 setup_ms=12.398 active=135528780 peak=337675292 cache=246637268
+ggml_metal_library_compile_pipeline: compiling pipeline: base = 'kernel_mul_mv_id_bf16_f32_4', name = 'kernel_mul_mv_id_bf16_f32_4_nsg=4_split=0'
+ggml_metal_library_compile_pipeline: loaded kernel_mul_mv_id_bf16_f32_4_nsg=4_split=0     0x755d186300 | th_max = 1024 | th_width =   32
+ggml_metal_free: deallocating
+ggml_metal_free: deallocating
+# OVERLAP_ENV gpu=Apple M4 arch=applegpu_g16g os=Version 27.0.1 (Build 26A434) mlx=1f8e74e3f12f31365464a6867c6579f0e9b29d85 ggml=456172ec733a135778adcd32d00e576a58232e45 sdk=270000
+# OVERLAP_OWNER_QOS 21
+# OVERLAP_ENV gpu=Apple M4 arch=applegpu_g16g os=Version 27.0.1 (Build 26A434) mlx=1f8e74e3f12f31365464a6867c6579f0e9b29d85 ggml=456172ec733a135778adcd32d00e576a58232e45 sdk=270000
+# OVERLAP_OWNER_QOS 21
+ggml_metal_init: allocating
+ggml_metal_init: found device: Apple M4
+ggml_metal_init: picking default device: Apple M4
+ggml_metal_init: use fusion         = true
+ggml_metal_init: use concurrency    = true
+ggml_metal_init: use graph optimize = true
+ggml_metal_free: deallocating
+ggml_metal_init: allocating
+ggml_metal_init: found device: Apple M4
+ggml_metal_init: picking default device: Apple M4
+ggml_metal_init: use fusion         = true
+ggml_metal_init: use concurrency    = true
+ggml_metal_init: use graph optimize = true
+ggml_metal_init: allocating
+ggml_metal_init: found device: Apple M4
+ggml_metal_init: picking default device: Apple M4
+ggml_metal_init: use fusion         = true
+ggml_metal_init: use concurrency    = true
+ggml_metal_init: use graph optimize = true
+# OVERLAP_COLD title=F32 grouped T5 S8 E8 N1024 K4096 setup_ms=7.543 active=269746508 peak=404784156 cache=381346516
+ggml_metal_library_compile_pipeline: compiling pipeline: base = 'kernel_mul_mv_id_f32_f32_4', name = 'kernel_mul_mv_id_f32_f32_4_nsg=4_split=0'
+ggml_metal_library_compile_pipeline: loaded kernel_mul_mv_id_f32_f32_4_nsg=4_split=0     0x755d185f80 | th_max = 1024 | th_width =   32
+ggml_metal_free: deallocating
+ggml_metal_free: deallocating
