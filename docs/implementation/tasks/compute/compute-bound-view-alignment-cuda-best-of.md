@@ -38,3 +38,8 @@ API宏owner显式include，原build-2 C4430保留。只加该既有公开头incl
 原static configure/build同ID累计允许最后3次（包含初次PASS），不许第四次；其余未运行步骤
 预算不变，static数学首次FAIL仍只许原ID第二次。配置输入只应是CMake/参数，原task-local
 宽source目录导致不必要失配；本次不改公共治理/统计，也不重新做P1。
+
+最终编译PASS。第二次relocate因首次未资格SDK目标仍存在而拒绝（未执行move），此setup失败
+原样保留。核对C:/hv内明确SDK路径后移走首次目标，原relocate同ID只允许最后第三次；不重跑
+已PASS的configure/build/install，数学仍仅原ID第二次。后续三交付使用一次新prefix，避免复用
+初次失败目标导致无关重建；不把移动/脚本步骤计成算子完成。
