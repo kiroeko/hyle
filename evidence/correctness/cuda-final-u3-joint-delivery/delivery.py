@@ -129,6 +129,10 @@ class Runner:
         self.jobs = {job['id']: job for job in jobs}
         if len(self.jobs) != len(jobs):
             raise ValueError('Duplicate task ID')
+        if any(job.get('max_attempts', 2) not in (2, 3, 4) or
+               (job.get('max_attempts', 2) > 2 and not job.get('budget_exception'))
+               for job in jobs):
+            raise ValueError('Only a bounded explicitly audited setup/product correction is admitted')
         self.hashes = {}
 
     @contextlib.contextmanager
@@ -215,7 +219,7 @@ class Runner:
                    for p, value in previous.get('proofs', {}).items()):
                 return 'REUSE', 'Matching inputs and preserved result'
             return 'STOP', 'Saved result is missing or changed'
-        if len(history) >= 2:
+        if len(history) >= job.get('max_attempts', 2):
             return 'STOP', 'Task budget exhausted; output directory/commit does not reset it'
         if history:
             return 'STOP', 'Prior result needs changed inputs and an explicit correction reason'
@@ -233,7 +237,7 @@ class Runner:
             return action
         history = self.history(task); inputs = self.inputs(job)
         if history:
-            if len(history) >= 2 or not reason or history[-1]['inputs'] == inputs:
+            if len(history) >= job.get('max_attempts', 2) or not reason or history[-1]['inputs'] == inputs:
                 raise ValueError(detail)
         if any(value == 'MISSING' for value in inputs.values()):
             raise ValueError('Required input is missing: ' + task)
