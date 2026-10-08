@@ -1,4 +1,5 @@
 #include <gtest/gtest.h>
+#include <cstdlib>
 
 #include "../../src/compute_route_cuda/best_of.h"
 #include "../../bench/compute_route_cuda/u4/matrix_request.h"
@@ -163,5 +164,36 @@ TEST(CudaBestOf, ManagedStorageRetainsFallbackWithoutMeasuredLabel) {
   const auto r = request("log", D::kFloat16, 1, 2048);
   auto program = take(c::prepare(owner, r.operation, r.inputs, std::span(&r.output, 1), memory.ref()));
   EXPECT_NE(program.route_policy().namespace_id, 0x48594c4543555752ULL);
+}
+
+TEST(CudaBestOf, ShiftedViewsRetainCapabilityWithoutMeasuredAlignment) {
+  auto owner = take(c::cuda::create_context());
+  auto memory = take(c::cuda::MemoryResource::create(owner, c::cuda::MemoryKind::kDevice));
+  const auto r = request("log", D::kFloat16, 1, 2048);
+  const auto bytes = take(r.inputs[0].required_bytes());
+  auto input = take(hyle::mem::Buffer::create(memory.ref(), bytes + 2, 256));
+  auto output = take(hyle::mem::Buffer::create(memory.ref(), bytes + 2, 256));
+  auto input_view = take(c::ConstTensorView::create(r.inputs[0], take(input.view().subview(2, bytes))));
+  auto output_view = take(c::TensorView::create(r.output, take(output.view().subview(2, bytes))));
+  auto program = take(c::prepare(owner, r.operation, std::array{input_view},
+                                 std::array{output_view}, memory.ref()));
+  EXPECT_NE(program.route_policy().namespace_id, 0x48594c4543555752ULL);
+  const auto requirement = program.workspace_requirement();
+  auto workspace = take(hyle::mem::Buffer::create(memory.ref(), requirement.size, requirement.alignment));
+  auto invocation = take(requirement.size ? program.create_invocation(workspace.view())
+                                         : program.create_invocation());
+  auto queue = take(owner.create_queue());
+  for (int seed : {5, 17}) {
+    const auto values = payload(r, seed);
+    ASSERT_TRUE(take(input.view().subview(2, bytes)).write(pack(r.inputs[0], values[0])).ok());
+    auto done = take(invocation.submit(queue, input_view, output_view));
+    ASSERT_TRUE(done.wait().ok());
+    std::vector<std::byte> data(bytes);
+    ASSERT_TRUE(take(output.view().subview(2, bytes)).read(data).ok());
+    const auto actual = unpack(D::kFloat16, data);
+    const auto expected = oracle(r, values);
+    for (std::size_t i = 0; i < actual.size(); ++i)
+      ASSERT_LE(std::abs(actual[i] - expected[i]), .001 * (1 + std::abs(expected[i])));
+  }
 }
 } // namespace
