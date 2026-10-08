@@ -64,3 +64,6 @@ source并FAIL，不能计作新候选产品结果。有限FIX同时将这两个�
 全集逐名相等后通过；没有新产品修补或放宽门。精确边界、原失败与source差分见
 [完整native资格](../../../../evidence/correctness/cuda-final-u3-f32-native/README.md)。
 最终联合三交付、U4／U5仍待，本卡继续AUDITED。
+
+最新联合三交付/mixed已完成，见[U2/U3资格](cuda-final-u23-qualified.md)。本精度修复及资源
+当前验收齐备；U4新默认/性能仍待定界，本卡不因交付通过代签整个CUDA完成。

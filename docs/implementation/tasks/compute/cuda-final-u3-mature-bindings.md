@@ -42,6 +42,9 @@ G2/N1/N2/R1 在实际方案 AUDITED 前不从 G1 获得实现授权。公共 sch
 
 ## 普通 API、资源与冷／热边界
 
+最新：冻结接线/native数学资源/最终三交付mixed已取得[联合资格](cuda-final-u23-qualified.md)。
+本包验收结束，U4 defaults/best-of、U5清退、U6终审仍待，owner不自动CLOSED。
+
 最终联合交付沿[固定入口与清单](../../../../evidence/correctness/cuda-final-u3-joint-delivery/delivery.py)
 执行；见[有限工具卡](../build/cuda-delivery-execution-control.md)。原数学全集不重跑，
 交付模式只验已固定的 ABI/loader/生命周期和真实程序边界；通过复用，失败具名停止。

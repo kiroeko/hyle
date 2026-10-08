@@ -1,0 +1,45 @@
+{
+  "scope": "Remaining U2/U3 delivery batch, not whole CUDA goal",
+  "started_at": "2026-10-08T01:59:04+00:00",
+  "runtime_completed_at": "2026-10-08T03:15:13+00:00",
+  "elapsed_runtime_seconds": 4569,
+  "limit_seconds": 7200,
+  "profiles": [
+    {
+      "profile": "win-mixed-static",
+      "steps": 60,
+      "latest_all_pass": true,
+      "attempts": 60,
+      "recorded_seconds": 1156.031
+    },
+    {
+      "profile": "linux-cuda-shared",
+      "steps": 59,
+      "latest_all_pass": true,
+      "attempts": 61,
+      "recorded_seconds": 1114.564
+    },
+    {
+      "profile": "linux-mixed-shared",
+      "steps": 61,
+      "latest_all_pass": true,
+      "attempts": 61,
+      "recorded_seconds": 733.391
+    },
+    {
+      "profile": "linux-mixed-static",
+      "steps": 61,
+      "latest_all_pass": true,
+      "attempts": 61,
+      "recorded_seconds": 818.499
+    }
+  ],
+  "math_source": "f99368c68335266b",
+  "performance": "NOT_RUN",
+  "remaining": "U4 default/best-of; U5 retirement; U6 final audit",
+  "loc": {
+    "code": 60658,
+    "files": 253,
+    "excludes": "tests,bench,third-party source"
+  }
+}

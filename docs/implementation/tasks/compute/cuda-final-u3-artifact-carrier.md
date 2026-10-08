@@ -108,3 +108,6 @@ metadata OOM拒绝＋默认FFN共50项、三个公开头及精度预检通过。
 用户要求批量接线、延迟集中验证；N1的mixed shipping三交付保留为U2／U3联合余项，在余下N2／R1
 接线稳定后用一次不可变路线候选集中完成，不重跑闭合CPU性能、不推到U6首次验收。
 本轮没有新增自研、P1或benchmark胜负。全Compute+Graph非测试实现60,562行／253文件，自检通过。
+
+最新mixed shipping及全部联合三交付余项已完成，见[U2/U3资格](cuda-final-u23-qualified.md)。
+N1当前接口/原数学/资源/交付资格齐备；U4规则/性能仍待，不签整个CUDA完成。

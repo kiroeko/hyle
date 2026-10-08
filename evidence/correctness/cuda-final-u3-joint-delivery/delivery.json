@@ -404,6 +404,42 @@
           "sha256": "6d96078339c3d86fc190f8d3b40d95b5a9be5bdfa99f5e81d408b82468b82dd4"
         }
       ]
+    },
+    {
+      "id": "cuda-final-u3-windows-mixed-static",
+      "proofs": [
+        {
+          "path": "evidence/correctness/cuda-final-u3-windows-mixed-static/receipt.json",
+          "sha256": "1846cd69badab26dcaf8c02f9a36294196cd0ccd793c5a3e584a9456f89c437c"
+        }
+      ]
+    },
+    {
+      "id": "cuda-final-u3-linux-shared",
+      "proofs": [
+        {
+          "path": "evidence/correctness/cuda-final-u3-linux-shared/receipt.json",
+          "sha256": "894c2805de3033f024b8556091c1860af45786b9b5f6170e5269a8c4ce091383"
+        }
+      ]
+    },
+    {
+      "id": "cuda-final-u3-linux-mixed-shared",
+      "proofs": [
+        {
+          "path": "evidence/correctness/cuda-final-u3-linux-mixed-shared/receipt.json",
+          "sha256": "8f2061a3d340d4c75c42343baf125f1b12e24b691bc77c101d58704c1345d802"
+        }
+      ]
+    },
+    {
+      "id": "cuda-final-u3-linux-mixed-static",
+      "proofs": [
+        {
+          "path": "evidence/correctness/cuda-final-u3-linux-mixed-static/receipt.json",
+          "sha256": "5ba281c77854f1c31d8598f6e92844769b7009e349a0a600697f399c1071f04b"
+        }
+      ]
     }
   ],
   "packed_filters": {

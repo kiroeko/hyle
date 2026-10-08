@@ -418,7 +418,7 @@
       "module": "compute_backend_cuda",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/cuda-final-u2-build-contract.md",
-      "summary": "CUDA U2 B2 AUDITED：有限授权 backend 真实 driver release 冷快照/API独立事实与有效span、当前ggml/CCCL/FlashInfer冷消费者迁移；NVML可选、未知不禁用正常CUDA，不改数学/pin/资格阈值/热路径。"
+      "summary": "CUDA U2 B2 AUDITED：有限授权 backend 真实 driver release 冷快照/API独立事实与有效span、当前ggml/CCCL/FlashInfer冷消费者迁移；NVML可选、未知不禁用正常CUDA，不改数学/pin/资格阈值/热路径。 U2/U3最新联合数学/资源及Windows/Linux CUDA-only/mixed三交付资格已齐（cuda-final-u23-qualified.md）；U4合法默认/有限best-of、U5清退和U6仍待，当前owner不自动CLOSED。"
     },
     {
       "module": "compute_provider_native",
@@ -486,13 +486,13 @@
       "module": "compute_provider_cuda",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/cuda-final-u2-build-contract.md",
-      "summary": "CUDA U2 B2 AUDITED：有限授权 backend 真实 driver release 冷快照/API独立事实与有效span、当前ggml/CCCL/FlashInfer冷消费者迁移；NVML可选、未知不禁用正常CUDA，不改数学/pin/资格阈值/热路径。"
+      "summary": "CUDA U2 B2 AUDITED：有限授权 backend 真实 driver release 冷快照/API独立事实与有效span、当前ggml/CCCL/FlashInfer冷消费者迁移；NVML可选、未知不禁用正常CUDA，不改数学/pin/资格阈值/热路径。 U2/U3最新联合数学/资源及Windows/Linux CUDA-only/mixed三交付资格已齐（cuda-final-u23-qualified.md）；U4合法默认/有限best-of、U5清退和U6仍待，当前owner不自动CLOSED。"
     },
     {
       "module": "compute_route_cuda",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/cuda-final-u3-mlx-carrier.md",
-      "summary": "CUDA U2/U3 AUDITED：保留preset/arch/冷facts/N1；N2有限修正实际Torch CUDA/FlashInfer capability向普通consumer的literal传播，数学/顺序/资格不变，最终三交付/mixed联合验收。"
+      "summary": "CUDA U2/U3 AUDITED：保留preset/arch/冷facts/N1；N2有限修正实际Torch CUDA/FlashInfer capability向普通consumer的literal传播，数学/顺序/资格不变，最终三交付/mixed联合验收。 U2/U3最新联合数学/资源及Windows/Linux CUDA-only/mixed三交付资格已齐（cuda-final-u23-qualified.md）；U4合法默认/有限best-of、U5清退和U6仍待，当前owner不自动CLOSED。"
     },
     {
       "module": "graph_route_cuda",
@@ -547,25 +547,25 @@
       "module": "compute_ggml_runtime",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/cuda-final-u3-f32-dispatch.md",
-      "summary": "CUDA U3 F32 dispatch AUDITED：原MMF的TF32乘数忽略F32精度要求，固定三处选择/捕获资格修复；保留G1/G2原IQ1/runtime与三交付尾项，CPU-only数学及其它路线不变。"
+      "summary": "CUDA U3 F32 dispatch AUDITED：原MMF的TF32乘数忽略F32精度要求，固定三处选择/捕获资格修复；保留G1/G2原IQ1/runtime与三交付尾项，CPU-only数学及其它路线不变。 U2/U3最新联合数学/资源及Windows/Linux CUDA-only/mixed三交付资格已齐（cuda-final-u23-qualified.md）；U4合法默认/有限best-of、U5清退和U6仍待，当前owner不自动CLOSED。"
     },
     {
       "module": "compute_provider_ggml_cuda",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/cuda-final-u3-model-regions.md",
-      "summary": "CUDA U3 R1 AUDITED：保留G1/G2/N1/N2；有限接原stable Softplus及修plain BF16 grouped F32 activation精度；current region/state/sidecar与原GPU codec、最终联合三交付验收，自研数学冻结，CPU/其它GPU不重开。"
+      "summary": "CUDA U3 R1 AUDITED：保留G1/G2/N1/N2；有限接原stable Softplus及修plain BF16 grouped F32 activation精度；current region/state/sidecar与原GPU codec、最终联合三交付验收，自研数学冻结，CPU/其它GPU不重开。 U2/U3最新联合数学/资源及Windows/Linux CUDA-only/mixed三交付资格已齐（cuda-final-u23-qualified.md）；U4合法默认/有限best-of、U5清退和U6仍待，当前owner不自动CLOSED。"
     },
     {
       "module": "graph_provider_ggml_cuda",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/cuda-final-u3-model-regions.md",
-      "summary": "CUDA U3 R1 AUDITED：保留G1/G2/N1/N2；有限接原stable Softplus及修plain BF16 grouped F32 activation精度；current region/state/sidecar与原GPU codec、最终联合三交付验收，自研数学冻结，CPU/其它GPU不重开。"
+      "summary": "CUDA U3 R1 AUDITED：保留G1/G2/N1/N2；有限接原stable Softplus及修plain BF16 grouped F32 activation精度；current region/state/sidecar与原GPU codec、最终联合三交付验收，自研数学冻结，CPU/其它GPU不重开。 U2/U3最新联合数学/资源及Windows/Linux CUDA-only/mixed三交付资格已齐（cuda-final-u23-qualified.md）；U4合法默认/有限best-of、U5清退和U6仍待，当前owner不自动CLOSED。"
     },
     {
       "module": "compute_provider_flashinfer",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/cuda-final-u2-build-contract.md",
-      "summary": "CUDA U2 B2 AUDITED：有限授权 backend 真实 driver release 冷快照/API独立事实与有效span、当前ggml/CCCL/FlashInfer冷消费者迁移；NVML可选、未知不禁用正常CUDA，不改数学/pin/资格阈值/热路径。"
+      "summary": "CUDA U2 B2 AUDITED：有限授权 backend 真实 driver release 冷快照/API独立事实与有效span、当前ggml/CCCL/FlashInfer冷消费者迁移；NVML可选、未知不禁用正常CUDA，不改数学/pin/资格阈值/热路径。 U2/U3最新联合数学/资源及Windows/Linux CUDA-only/mixed三交付资格已齐（cuda-final-u23-qualified.md）；U4合法默认/有限best-of、U5清退和U6仍待，当前owner不自动CLOSED。"
     },
     {
       "module": "compute_provider_ggml_metal",
@@ -583,7 +583,7 @@
     {
       "module": "compute_provider_torch_cuda",
       "state": "AUDITED",
-      "summary": "CUDA U3 R1 AUDITED：保留G1/G2/N1/N2；有限接原stable Softplus及修plain BF16 grouped F32 activation精度；current region/state/sidecar与原GPU codec、最终联合三交付验收，自研数学冻结，CPU/其它GPU不重开。",
+      "summary": "CUDA U3 R1 AUDITED：保留G1/G2/N1/N2；有限接原stable Softplus及修plain BF16 grouped F32 activation精度；current region/state/sidecar与原GPU codec、最终联合三交付验收，自研数学冻结，CPU/其它GPU不重开。 U2/U3最新联合数学/资源及Windows/Linux CUDA-only/mixed三交付资格已齐（cuda-final-u23-qualified.md）；U4合法默认/有限best-of、U5清退和U6仍待，当前owner不自动CLOSED。",
       "record": "docs/implementation/tasks/compute/cuda-final-u3-model-regions.md"
     }
   ]

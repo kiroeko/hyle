@@ -258,3 +258,6 @@ Graph34中33通过，无skip（包括本地原版程序与完整recurrent）；K
 联合请求全集及原资源门已完成[native资格](../../../../evidence/correctness/cuda-final-u3-f32-native/README.md)。
 Linux单进程资源饱和timeout没有改写为PASS；新分组case全集逐名核对后通过。当前native
 成熟接线批次已取得资格；最终joint三交付/route facts负空间与U4/U5仍需完成，不自动CLOSED。
+
+最新joint三交付/软件事实/mixed余项已完成，见[联合资格](cuda-final-u23-qualified.md)。
+R1固定真实程序资格已齐，U4默认/性能和U5清退仍另行定界，不签整个CUDA结束。

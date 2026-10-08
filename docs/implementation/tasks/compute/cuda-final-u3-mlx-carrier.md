@@ -94,6 +94,9 @@ N1生命周期与默认入口回归通过。Linux最终57 native tests及三个�
 [资格记录](../../../../evidence/correctness/cuda-final-u3-mlx/README.md)。
 N2仍AUDITED，联合U3三交付/mixed、其它region及性能未签；不以测试数量签整条路线。
 
+最新本轮联合三交付/mixed/固定region已完成，见[U2/U3资格](cuda-final-u23-qualified.md)。
+N2原16合同及精度/资源/交付资格齐备；U4性能另待，不代签整条路线。
+
 第三方pin／MIT／vendor owner由本factor唯一登记；16固定contract驱动而非benchmark；Compute／
 backend／Graph operation adapter复用；P0成本明确、无本批P1；无FFI；三交付／软件身份沿N1接缝及U3
 联合候选；普通用户既有API／错误／生命周期不变。尚未运行的GPU correctness／delivery不签PASS。

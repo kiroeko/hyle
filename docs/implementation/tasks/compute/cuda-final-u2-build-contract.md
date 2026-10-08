@@ -154,6 +154,10 @@ B2 产品 `ffeb224ed`，namespace 纠正后的批次 `45a1d4a8` 已通过 Window
 
 ### 当前联合交付子格
 
+最新：Windows/Linux、CUDA-only/mixed、source/static/shared均完成，见
+[U2/U3联合资格](cuda-final-u23-qualified.md)。下面子格是过程事实，最终没有本包交付未验项；
+owner后续默认/性能资格沿U4定界，不从本包通过推断整个CUDA关闭。
+
 最终U3产品与test-only纠正后的Windows CUDA-only static SDK已完成实际install／prefix搬移、
 offline独立configure／link／运行及邻exe DLL。原完整651／649需求逐名无缺项，
 边界及复用见[联合资格](../../../../evidence/correctness/cuda-final-u3-windows-static/README.md)。
