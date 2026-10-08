@@ -98,3 +98,12 @@ T5/S8的BF16与F32权重。均为动态weight端口、两个ready resident输入
 仅本批consumer/contract与verify-only预检，暂不A/A或P1；immutable常量的cold方案不由
 dynamic结果外推。正式采用primary/placement、正反/分配序与固定n15/5%规则，原FP4
 决定并完整固定后才采样，不更改公共仪器。
+
+`8d8263a0`primary/placement consumer增量构建通过，verify-only四域完整两银行输出均
+逐值通过独立方程，actual owner QoS均21、caller user-interactive。固定
+[合同](../../../../bench/contracts/compute-apple-mature-overlap-p1-v1.json)经统一validate通过，
+n15、八strata、A/A/已知delta/timer-floor、5% margin；module-local A/A借用原parser/机器
+合同/reference identity，不扩公共统计。原静态producer仅Metal factor导致目标不存在的
+旧配置及一次Darwin QoS声明纠正均保存，未触发产品修改。raw见
+[A2记录](../../../../evidence/correctness/apple-parity-a2/README.md)。
+没有启动A/A、AB/P1或导入best-of，这四域仍只有correctness/cost结构资格，非性能PASS。

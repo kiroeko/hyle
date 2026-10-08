@@ -293,3 +293,7 @@ CPU fallback，不改数学/公共API/热执行。当前compute_route_apple仍AU
 所有资源try/finally恢复后原hash一致。[原失败/修复raw](../../../../evidence/correctness/apple-parity-a4/README.md)
 保留。只增量编译一处cold initializer及重链必要consumer，未重跑矩阵/P1。公共API与数学
 不变，FP4取舍与A3正式成本仍未完成。
+
+A3性能消费程序已准备：routerM1/M16、groupedBF16/F32四域完整两银行输出预检通过，
+primary/placement已构建、实际owner QoS21已观测，固定合同validate通过；A/A与正式n15
+P1都未运行，不签性能/default切换。待FP4取舍并固定完整candidate后只执行一次正式批次。

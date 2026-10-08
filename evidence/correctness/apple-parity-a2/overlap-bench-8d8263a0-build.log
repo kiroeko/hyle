@@ -1,0 +1,8 @@
+[0/2] Re-checking globbed directories...
+[1/8] cd /Users/kiro/hyle-scratch/d5-model-gate-metal-static/bench/compute_route_apple && /opt/homebrew/bin/cmake -P /Users/kiro/hyle-scratch/d5-model-gate-metal-static/bench/compute_route_apple/hyle-apple-runtime/hyle_compute_route_apple_overlap_bench_placement-Release.cmake
+[2/8] Linking CXX static library bin/libnanobench.a
+[3/8] cd /Users/kiro/hyle-scratch/d5-model-gate-metal-static/bench/compute_route_apple && /opt/homebrew/bin/cmake -P /Users/kiro/hyle-scratch/d5-model-gate-metal-static/bench/compute_route_apple/hyle-apple-runtime/hyle_compute_route_apple_overlap_bench-Release.cmake
+[4/8] Building CXX object bench/compute_route_apple/CMakeFiles/hyle_compute_route_apple_overlap_bench_placement.dir/overlap_p1_bench.cc.o
+[5/8] Linking CXX executable bin/hyle_compute_route_apple_overlap_bench_placement
+[6/8] Building CXX object bench/compute_route_apple/CMakeFiles/hyle_compute_route_apple_overlap_bench.dir/overlap_p1_bench.cc.o
+[7/8] Linking CXX executable bin/hyle_compute_route_apple_overlap_bench

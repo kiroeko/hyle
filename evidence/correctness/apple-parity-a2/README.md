@@ -384,3 +384,30 @@ the BF16 router,128MiB for the BF16 grouped bank. Dynamic weights incur that
 work in the hot program; constant/cold variants cannot silently erase their
 conversion/residency cost. Exact native private scratch/peak and performance
 remain unqualified. Neither candidate is called SOTA or WIN from these tests.
+
+## Prepared finite performance consumer: verification only
+
+The fixed [contract](../../../bench/contracts/compute-apple-mature-overlap-p1-v1.json)
+and original two-provider [consumer](../../../bench/compute_route_apple/overlap_p1_bench.cc)
+cover four dynamic-weight domains: routerM1/M16 and groupedBF16/F32,
+two ready resident input/weight banks, two reusable slots, separate Contexts,
+all casts/checks/layout/actual completion/result release charged. The same
+source is built in primary and independently aligned placement executables.
+No raw caller-thread/managed mismatch or untimed dynamic widening is used.
+
+[Initial configure](overlap-bench-77c92dd9-configure.log) retained an old
+provider-only developer selection, so [build](overlap-bench-77c92dd9-build.log)
+had no route benchmark target. One exact selection correction:
+[route configure](overlap-bench-77c92dd9-configure-route.log). Its
+[first route build](overlap-bench-77c92dd9-build-route.log) found a wrong
+Darwin QoS API declaration in new benchmark telemetry, corrected once with
+the actual3-argument API; no product algorithm changed.
+
+`8d8263a0` [build](overlap-bench-8d8263a0-build.log) PASS;
+[verify-only](overlap-bench-8d8263a0-verify.log) four full outputs/two banks
+PASS against the independent source oracle, actual native owner QoS21
+consistent across all eight Contexts, caller user-interactive. Contract
+validate PASS and module A/A script syntax checked. **A/A and formal P1
+have not run; no timing/default/WIN qualification is claimed.** Formal n15
+sampling waits for the complete immutable candidate after the pending FP4
+decision; this prep did not repeat numerical matrices or SDK journeys.

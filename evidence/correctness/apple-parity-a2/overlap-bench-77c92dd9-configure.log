@@ -1,0 +1,16 @@
+-- HYLE developer factors: requested='compute_provider_ggml_metal' resolved='core,error,math,platform,mem,compute_ops,compute_ggml_runtime,compute_provider_ggml_metal' products=''
+-- HYLE_SANITIZER = off
+-- HYLE_TESTING = OFF (test-only interfaces stripped -- zero in shipped lib)
+-- ggml source: 2263 files, 23 exact patches
+
+-- CMAKE_SYSTEM_PROCESSOR: arm64
+-- GGML_SYSTEM_ARCH: ARM
+-- Metal framework found
+-- Including METAL backend
+-- ggml version: 0.24.0
+-- ggml commit:  456172ec733a135778adcd32d00e576a58232e45-hyle
+-- HYLE_TRACE = OFF (hooks compile to nothing -- zero cost)
+-- HYLE 0.1.0 | AppleClang 21.0.0.21000334 | C++23 | sanitizer=off | linkage=static | products= | factors=core,error,math,platform,mem,compute_ops,compute_ggml_runtime,compute_provider_ggml_metal
+-- Configuring done (1.5s)
+-- Generating done (0.0s)
+-- Build files have been written to: /Users/kiro/hyle-scratch/d5-model-gate-metal-static
