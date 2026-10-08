@@ -485,8 +485,8 @@
     {
       "module": "compute_provider_cuda",
       "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/cuda-final-u4-default-and-best-of.md",
-      "summary": "CUDA U4默认/能力分离已实现，两平台source/static/shared增量通过；有限三组AA FAIL，性能INCONCLUSIVE无新WIN，采用成熟ENGINEERING_DEFAULT。owner仍AUDITED；U5新的scope卡只读定界，完整有限FIX审计后才改绑，不非法降为SCOPED。"
+      "record": "docs/implementation/tasks/compute/cuda-final-u5-native-retirement.md",
+      "summary": "CUDA U5 G4 AUDITED：删除gate/Unary六份重复activation公式，借原SGLang arithmetic；独有scalar索引/尾宽/stride/资源保持，其它五族具名unique KEEP无WIN；两平台受影响source/static/shared增量，不新增数学/采样。"
     },
     {
       "module": "compute_route_cuda",

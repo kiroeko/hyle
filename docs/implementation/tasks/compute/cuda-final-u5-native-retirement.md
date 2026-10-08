@@ -1,6 +1,6 @@
 # CUDA U5：冗余自研域清退与独有资源边界
 
-<!-- MODULE REVIEW: SCOPED -->
+<!-- MODULE REVIEW: AUDITED -->
 
 - baseline `fcad07ae0`；Windows唯一产品真相，工作树干净。用户已授权继续goal/删除有完整成熟替代且无完整优势的自研；不把CPU严格能力撤回决定移植CUDA。
 - owner：compute_provider_cuda；必要时compute_route_cuda仅默认/诊断迁移，不改公共Compute/Graph算法。
@@ -46,7 +46,28 @@ native_kernel.cu一套同shape scalar程序承载这项能力；高alignment能�
 是否撤回这些公开prepared/capture/stride/empty等域属于具体产品决定；先交付完整清单，
 不为“清退”顺手扩大ATen/新写adapter数学来跨过当前范围。
 
-固定实际FIX只有G3的文档/能力清单和残留别名误述纠正，暂无产品删除授权；G2未发现仅旧
+首次整族审计只有G3的文档/能力清单和残留别名误述纠正；G2未发现仅旧
 benchmark使用的独立public entry。普通Compute用户不选择内部self provider，路线控制/完成和
 borrowed库保留。本轮不建、不重跑P1；原U23/U4对应correctness/source/static/shared实际
 证据逐域复用，适用strict/alias/empty已在固定完整源批次运行。不把本次审计写成新的性能验收。
+
+## AUDITED：算术与索引分开清退
+
+baseline `6513a899c70ad62c148b216b2625afd1a32bccaa`。上面的整族结论不能反过来保护族内
+冗余数学：native_kernel.cu的三种gate activation公式与原SGLang apply_activation_f32逐表达式
+相同；tensor_kernel.cu的三种stable Unary公式与已明确适配的apply_unary_activation_f32相同。
+低alignment/stride/尾宽的独有需求来自索引及binding，不要求HYLE复制这六个公式。
+
+固定G4：物理删除六份重复公式，两个原scalar/index kernel直接复用已交付、锁定SGLang
+inline arithmetic；保留原索引、F32中间、一次RNE、alias/empty/资源/Prepared/capture/失败。
+不改vendor原文件，不新增runtime dispatch/状态或性能规则，provider身份的HYLE版本更新为
+本次math借入实现；原SGLang版本不变。这是BORROW，不是自研优化或性能挽留。
+其它五族具名unique KEEP，暂无可整族无损删除的完整成熟替代；不声称所有CUDA self已删除。
+
+G4验收固定：原gate三种storage/activation、packed/separate/tail/special值、scalar subview、
+独立slot/close/metadata失败，以及通用Unary strided/special/alias原测试；普通Direct/Graph
+FFN/capture对应消费者。Windows/WSL各source与relocated/offline static/shared小纵切，
+source math通过后交付只重验本改动的借入算术和实际link/load，不重复559合同或全部模型。
+复用现producer/cache，build2/test1串行；一个实现批次、至多一次具名纠正、不跑P1。
+公开合同/编译依赖图/产品select不变，原license随provider SDK已有交付。先独立提交本AUDITED
+记录并将compute_provider_cuda现AUDITED owner改绑后才实施。
