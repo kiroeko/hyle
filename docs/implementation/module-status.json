@@ -270,9 +270,9 @@
     },
     {
       "module": "compute",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/compute-bound-view-alignment-cuda-best-of.md",
-      "summary": "SCOPED：实际CUDA bound-view offset在冷选择被丢弃，有限对齐资格修复；不重开CPU数学/规则，不改公开API或hot dispatch。"
+      "summary": "AUDITED：已知view offset冷过滤FIX-A、CUDA配方/原alignment数据FIX-B冻结；公开ABI/热搜索/数学不改，原C4失败保留且同ID最后一次纠正。"
     },
     {
       "module": "graph",

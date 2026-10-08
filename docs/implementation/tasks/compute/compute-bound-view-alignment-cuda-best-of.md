@@ -1,6 +1,6 @@
 # 已知 TensorView 对齐的冷选择修复
 
-<!-- MODULE REVIEW: SCOPED -->
+<!-- MODULE REVIEW: AUDITED -->
 
 owner `compute`，baseline `c8dd92ac`，父任务[CUDA best-of](cuda-best-of-completion.md)。
 这是新的实际反例，重新定界旧CLOSED；原CPU规则/数学和宏验收不重开。
@@ -26,3 +26,9 @@ ggml版本在已有冷factory按真实Provider identity检查。仅测量候选�
 和未变路线不重跑；shader/原完整成本结构未变的WIN复用，未跑不PASS。
 一次具名修复、原C4 static失败同ID最后一次重试；不追加AA/P1/n或另起ID重置预算。
 其余C4首次步骤仍按原预算，先冷审计AUDITED再写Core产品；完成回到父轮终审。
+
+源码审计已确认：Mem view有offset/resource的不可变冷事实，原CUDA resource保证base256；
+私有candidate已有各端口minimum_alignment，新增过滤无需新metadata/ABI/Backend查询。
+原CUDA tensor已保存input/output alignment；Norm output与input0同dtype，用同一已保存
+alignment即可。修改冷数据及复用原pointer检查，不加逐kernel vtable或新热搜索。
+FIX-A/B冻结；同ID失败纠正理由为此具名cold alignment及配方作用域修复。
