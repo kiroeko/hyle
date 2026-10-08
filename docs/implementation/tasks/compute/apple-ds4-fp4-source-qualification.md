@@ -67,3 +67,18 @@ baseline `0905a2f74`，Windows干净；Apple route/Graph owners仍父轮AUDITED�
 按raw BF16位比较。具名实现失败最多一次纠正；通过后才批量接原FP4 grouped承载及官方
 expert/indexer/完整main/DSpark region、资源和三交付。它们尚未PASS，不由原语探针代签。
 代码/API稳定的完整candidate才进入已准备的A3正式成本，build2/test1重型串行。
+
+首批`80c01bdc`build与Direct/Graph各1/1通过：原65280有限BF16逐个覆盖、65280个
+uniform group32、mixed groups、中点邻域、signed-zero/tiny/max变化和反向replay/close
+后lease，全部raw BF16位相等。[raw](../../../../evidence/correctness/apple-parity-a2/README.md)
+保留。这里只关闭roundtrip精确原语缺口，尚未签完整专家/main/DSpark或性能。
+
+下一有限成熟接线不新增GEMM：沿已登记DeepSeek
+`third_party/deepseek_quantization/upstream_kernel.py::fp4_gemm_kernel`的原sub-K32程序，
+原FP4 nibble→F32→FP8精确转换、原activation group128量化/power2 floor、逐32 dot后
+先activation scale再weight scale与顺序F32累加，由原MLX matmul/数组表达。只取checked
+selected experts的原payload/scales，不全表decode或换Q8/BF16模型格式。原ATen承载已有
+同样group32分解仅作来源证据，Apple不调用CPU。Canonical float4 carrier/InputSpec与
+custom predicate两入口同接；热期没有Provider搜索。保持原资源status/索引/lease。
+本批选现有官方FP4 projection的actual N/K、共享/独立activation、T1/T3、双replay，
+随后对应完整官方expert/indexer/main/DSpark验证。具名失败最多一次纠正，未跑不PASS。
