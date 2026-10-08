@@ -246,3 +246,7 @@ producer，只有INSTALL选项改变时configure；relocation到独立prefix、m
 shared producer不随consumer修改重编或重装。source复用build耗时58.95s。A4其它公开头/
 boundary矩阵与最终清理尚未闭合；A2数值两项、官方FP4与A3资格仍待，不冒称整个交付/goal
 完成。统一实现仍61,328行/261文件；本轮新增均test/evidence，不计入产品实现行数。
+
+两项官方attention残余按[一次数值责任捕获](apple-dspark-numeric-cause.md)执行：只Direct
+两ID/原六replay，原门保持，逐层原source方程/原MLX trig诊断，不继续猜测FMA或调容差。
+三交付已通过consumer保持原候选；本批还独立检查三形态的三个Apple公开头，未变矩阵不跑。
