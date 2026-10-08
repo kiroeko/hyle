@@ -128,3 +128,14 @@ R1资源审计：私有proposal当前每Provider实例一个候选，描述符�
 platform/platform_thread依赖，借用现有CPU身份/调用线程亲和查询；系统优先级只在冷准备
 校验，执行不查询。CMake只在原static Release/MSVC/CUDA89-real/无LTO/原Provider配方允许
 该候选，shared/WSL/未知配方沿原默认。不复制环境探测或公共路由/治理系统。
+
+R2最终源级清单：tensor/normalization中的23胜出请求保留原kernel体、grid、数学和完成表；
+未胜出且成熟库承载普通dense域的重复AOT specialization清退。tensor删除41个numeric dense
+实例和4个Copy dense实例；Reduce Sum/Mean与普通/加性mask Softmax删除24个dense实例；
+Concat删除16个dense实例。它们共85个重复程序，**不是85个算子，也不是整项数学删除**。
+原generic程序覆盖仍有效的stride/广播/低对齐/no-private/capture等独有域；唯一Relu、
+number Min/Max、NaN extrema、boolean/log Softmax、checked Scatter，以及borrowed激活尾部/
+separate GELU保留。Norm各共享数学体已有完整胜出或独有mixed-parameter资源域，不复制优化。
+不把旧expert显式native当普通默认；169默认域继续优先合格成熟实现。Native版本递增到v12，
+23胜出kernel的兼容依据为未变源码/编译配方与实际device code对照，不重采性能。若对照出现
+真实winner body变化，不能继承该项WIN；先具名修正或撤掉该规则，不追加整批P1。
