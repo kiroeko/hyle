@@ -50,6 +50,7 @@
 
 Compute/Graph 研究与追溯：
 
+- [Apple MLX/Metal 当前收口](compute/apple-cpu-cuda-parity-closure.md)：沿共同模型目录核对接线、成熟承载、默认优选、冗余自研与当前 Air 三交付。
 - [CUDA 最终收口 goal](compute/cuda-final-closure-plan.md)：继承 CPU 已固定的新模型／混合量化／MTP 共同需求，
   六包处理 CUDA 接线、构建交付、条件规则与冗余自研；[U1 当前只读审计](compute/cuda-final-u1-demand-wiring.md)。
   这份协调计划不替代 registry 的产品 owner／状态。
