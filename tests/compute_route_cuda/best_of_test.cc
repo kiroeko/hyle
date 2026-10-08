@@ -5,6 +5,16 @@
 #include "hyle/compute/cuda.h"
 #include "hyle/mem/stats.h"
 
+#if HYLE_OS_WINDOWS
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
+#include <windows.h>
+#endif
+
 namespace {
 namespace policy = hyle::compute::cuda::internal;
 using D = c::DataType;
@@ -38,12 +48,28 @@ constexpr std::array kPoints{
 };
 
 TEST(CudaBestOf, CompletePointsBindOnceAndCheckChangedOutputs) {
+#if HYLE_OS_WINDOWS
+  // Only the dedicated static qualification child requests this placement.
+  // Normal source/shared consumers exercise the mature fallback as-is.
+  const bool require_measured = std::getenv("HYLE_CUDA_RULE_TEST_PROFILE") != nullptr;
+  if (require_measured) {
+    ASSERT_TRUE(::SetProcessAffinityMask(::GetCurrentProcess(), 0x14));
+    ASSERT_TRUE(::SetPriorityClass(::GetCurrentProcess(), ABOVE_NORMAL_PRIORITY_CLASS));
+    ASSERT_NE(::SetThreadAffinityMask(::GetCurrentThread(), 0x4), 0U);
+    ASSERT_TRUE(::SetThreadPriority(::GetCurrentThread(), THREAD_PRIORITY_NORMAL));
+    ASSERT_TRUE(policy::qualified_recipe());
+  }
+#endif
   auto stats = take(hyle::mem::StatsAllocator::create(hyle::mem::system_allocator()));
   {
     auto owner = take(c::cuda::create_context({.metadata_allocator = stats.get()}));
     auto memory = take(c::cuda::MemoryResource::create(owner, c::cuda::MemoryKind::kDevice));
     const bool measured = policy::qualified_environment(take(c::cuda::environment(owner))) &&
                           policy::qualified_caller();
+#if HYLE_OS_WINDOWS
+    if (require_measured)
+      ASSERT_TRUE(measured);
+#endif
     ::testing::Test::RecordProperty("measured_rule_environment", measured ? "1" : "0");
     auto queue = take(owner.create_queue());
     ASSERT_TRUE(queue.reserve_completions(2).ok());
