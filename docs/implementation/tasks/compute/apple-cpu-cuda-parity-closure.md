@@ -267,3 +267,9 @@ packing域是单成熟carrier，不假造best-of竞赛；plain BF16/F32 linear�
 定向1/1通过（原N768只额外sample，不冒称目录；当前N512/K8192）。逐值精度、变输入/
 变权重、checked IDs/lease/close均通过；MLX动态BF16权重widen的16MiB/128MiB额外数组
 列入P0成本。不是性能WIN，不切默认，不重跑矩阵/交付/P1，正式采样等完整candidate稳定。
+
+C1的CPU+Metal shared-core定向编译/实际分派已通过：runtime9/9、Metal provider8/8，
+六个active core/codec/Metal source文件与Apple-only同hash，原三类型CPU实际codec执行和
+Metal原有资源/数值边界成立。新八IQ1合同的同source旧数值复用，不反复重跑；CPU/CUDA/
+Vulkan模块状态未动。user Apple页同步当前21 GGUF/Mlx/artifact能力、checked行/容量和
+原FP4未决，清掉已过时“仅十类”的说明。仍不签FP4、正式成本或whole goal完成。

@@ -1,0 +1,47 @@
+{
+  "candidate": "21bcb41ff8d820dc4e79ee14cf44fc3c1e9c2d94",
+  "steps": [
+    {
+      "name": "configure",
+      "returncode": 0
+    },
+    {
+      "name": "build",
+      "returncode": 0
+    },
+    {
+      "name": "cpu",
+      "returncode": 0
+    },
+    {
+      "name": "metal",
+      "returncode": 0
+    }
+  ],
+  "source_equal": [
+    {
+      "path": "include/ggml.h",
+      "sha256": "bc70d20c63d0b155c8895e4933bc0e084970416ccbed6945e47df91084572940"
+    },
+    {
+      "path": "src/ggml-common.h",
+      "sha256": "07c8eae1b0a17fb66eba5d04c593acafc9e0bffd30c5360f3e8c0f923aae11d8"
+    },
+    {
+      "path": "src/ggml-quants.c",
+      "sha256": "e7d6e47918a934f272a8f7575ade221d245ef28184be67adba8bd2c6fd4cd8a6"
+    },
+    {
+      "path": "src/ggml-quants.h",
+      "sha256": "7bda800a5b6c5767665daf61230a93bccbb2d50062065f44f38a6cc0d9244a8d"
+    },
+    {
+      "path": "src/ggml-metal/kernels/mul_mv.metal",
+      "sha256": "aa6a190f2dacbeaf0fdfe57a1ccb3c1ba0ca395ab65411a46c920e5739b6e033"
+    },
+    {
+      "path": "src/ggml-metal/ggml-metal-device.cpp",
+      "sha256": "aa0a913eda70f19b105c36a703e57039c4e8e4a8f35ef49ef70820ba8c55a23d"
+    }
+  ]
+}

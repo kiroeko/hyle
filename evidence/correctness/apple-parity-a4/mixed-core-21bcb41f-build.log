@@ -1,0 +1,152 @@
+[0/2] Re-checking globbed directories...
+[1/130] Building CXX object src/error/CMakeFiles/hyle_error.dir/status.cc.o
+[2/130] Linking CXX shared library bin/libhyle_error.0.1.0.dylib
+[3/130] Building C object src/compute_ggml_runtime/vendor/src/CMakeFiles/ggml-base.dir/ggml.c.o
+[4/130] Building CXX object src/compute_ggml_runtime/vendor/src/CMakeFiles/ggml-base.dir/ggml.cpp.o
+[5/130] Building C object src/compute_ggml_runtime/vendor/src/CMakeFiles/ggml-base.dir/ggml-alloc.c.o
+[6/130] Building CXX object src/compute_ggml_runtime/vendor/src/CMakeFiles/ggml-base.dir/ggml-backend.cpp.o
+[7/130] Building CXX object src/compute_ggml_runtime/vendor/src/CMakeFiles/ggml-base.dir/ggml-opt.cpp.o
+[8/130] Building CXX object src/compute_ggml_runtime/vendor/src/CMakeFiles/ggml-base.dir/ggml-backend-meta.cpp.o
+[9/130] Building CXX object src/compute_ggml_runtime/vendor/src/CMakeFiles/ggml-base.dir/ggml-threading.cpp.o
+[10/130] Building CXX object src/compute_ggml_runtime/vendor/src/CMakeFiles/ggml-base.dir/gguf.cpp.o
+[11/130] Creating library symlink bin/libhyle_error.dylib
+[12/130] Building CXX object src/platform/CMakeFiles/hyle_platform_cpu_probe.dir/cpu.cc.o
+[13/130] Building CXX object src/platform/CMakeFiles/hyle_platform_cgroup_parser.dir/linux_cgroup.cc.o
+[14/130] Building C object src/compute_ggml_runtime/vendor/src/CMakeFiles/ggml-base.dir/ggml-quants.c.o
+[15/130] Building CXX object src/platform/CMakeFiles/hyle_platform.dir/cpu_resource.cc.o
+[16/130] Building CXX object src/platform/CMakeFiles/hyle_platform.dir/dynlib.cc.o
+[17/130] Building CXX object src/platform/CMakeFiles/hyle_platform.dir/environment.cc.o
+[18/130] Building CXX object src/platform/CMakeFiles/hyle_platform.dir/host_memory.cc.o
+[19/130] Building CXX object src/platform/CMakeFiles/hyle_platform.dir/process.cc.o
+[20/130] Building CXX object src/platform/CMakeFiles/hyle_platform.dir/numa.cc.o
+[21/130] Building CXX object src/platform/CMakeFiles/hyle_platform.dir/random.cc.o
+[22/130] Linking CXX static library bin/libggml-base.a
+[23/130] Building CXX object src/platform/CMakeFiles/hyle_platform.dir/virtual_memory.cc.o
+[24/130] Linking CXX shared library bin/libhyle_platform.0.1.0.dylib
+[25/130] Generate embedded Metal library for fa
+[26/130] Generate embedded Metal library for mul_mv
+[27/130] Generate embedded Metal library for mul_mm
+[28/130] Generate embedded Metal library for quantize
+[29/130] Generate embedded Metal library for softmax
+[30/130] Generate embedded Metal library for norm
+[31/130] Generate embedded Metal library for unary
+[32/130] Generate embedded Metal library for binbcast
+[33/130] Generate embedded Metal library for reduce
+[34/130] Generate embedded Metal library for tri
+[35/130] Generate embedded Metal library for ssm
+[36/130] Generate embedded Metal library for wkv
+[37/130] Generate embedded Metal library for gated_delta_net
+[38/130] Generate embedded Metal library for solve_tri
+[39/130] Generate embedded Metal library for rope
+[40/130] Generate embedded Metal library for conv
+[41/130] Generate embedded Metal library for upscale
+[42/130] Generate embedded Metal library for argsort
+[43/130] Generate embedded Metal library for pool
+[44/130] Generate embedded Metal library for misc
+[45/130] Creating library symlink bin/libhyle_platform.dylib
+[46/130] Building CXX object src/mem/CMakeFiles/hyle_mem.dir/buffer.cc.o
+[47/130] Building CXX object src/mem/CMakeFiles/hyle_mem.dir/buffer_pool.cc.o
+[48/130] Building C object src/mem/CMakeFiles/mimalloc_static.dir/__/__/third_party/mimalloc/src/static.c.o
+[49/130] Building CXX object src/mem/CMakeFiles/hyle_mem.dir/heap.cc.o
+[50/130] Building CXX object src/mem/CMakeFiles/hyle_mem.dir/composite_buffer.cc.o
+[51/130] Building CXX object src/mem/CMakeFiles/hyle_mem.dir/range_allocator.cc.o
+[52/130] Building CXX object src/mem/CMakeFiles/hyle_mem.dir/resource.cc.o
+[53/130] Building CXX object src/mem/CMakeFiles/hyle_mem.dir/lifetime_plan.cc.o
+[54/130] Building CXX object src/mem/CMakeFiles/hyle_mem.dir/system.cc.o
+[55/130] Linking C static library bin/libmimalloc_static.a
+[56/130] Building CXX object src/mem/CMakeFiles/hyle_mem.dir/stats.cc.o
+[57/130] Building C object src/compute_ggml_runtime/vendor/src/CMakeFiles/ggml-cpu.dir/ggml-cpu/ggml-cpu.c.o
+[58/130] Building CXX object src/compute_ggml_runtime/vendor/src/CMakeFiles/ggml-cpu.dir/ggml-cpu/ggml-cpu.cpp.o
+[59/130] Building CXX object src/compute_ggml_runtime/vendor/src/CMakeFiles/ggml-cpu.dir/ggml-cpu/iqp.cpp.o
+[60/130] Building CXX object src/compute_ggml_runtime/vendor/src/CMakeFiles/ggml-cpu.dir/ggml-cpu/hbm.cpp.o
+[61/130] Building C object src/compute_ggml_runtime/vendor/src/CMakeFiles/ggml-cpu.dir/ggml-cpu/quants.c.o
+[62/130] Building CXX object src/compute_ggml_runtime/vendor/src/CMakeFiles/ggml-cpu.dir/ggml-cpu/traits.cpp.o
+[63/130] Building CXX object src/compute_ggml_runtime/vendor/src/CMakeFiles/ggml-cpu.dir/ggml-cpu/repack.cpp.o
+[64/130] Building CXX object src/compute_ggml_runtime/vendor/src/CMakeFiles/ggml-cpu.dir/ggml-cpu/amx/amx.cpp.o
+[65/130] Building CXX object src/compute_ggml_runtime/vendor/src/CMakeFiles/ggml-cpu.dir/ggml-cpu/amx/mmq.cpp.o
+[66/130] Building CXX object src/compute_ggml_runtime/vendor/src/CMakeFiles/ggml-cpu.dir/ggml-cpu/binary-ops.cpp.o
+[67/130] Building CXX object src/compute_ggml_runtime/vendor/src/CMakeFiles/ggml-cpu.dir/ggml-cpu/vec.cpp.o
+[68/130] Building CXX object src/compute_ggml_runtime/vendor/src/CMakeFiles/ggml-cpu.dir/ggml-cpu/unary-ops.cpp.o
+[69/130] Building C object src/compute_ggml_runtime/vendor/src/CMakeFiles/ggml-cpu.dir/ggml-cpu/arch/arm/quants.c.o
+[70/130] Building CXX object src/compute_ggml_runtime/vendor/src/CMakeFiles/ggml-cpu.dir/ggml-cpu/arch/arm/repack.cpp.o
+[71/130] Building CXX object src/compute_ggml_runtime/vendor/src/ggml-metal/CMakeFiles/ggml-metal.dir/ggml-metal.cpp.o
+/Users/kiro/hyle-scratch/apple-parity/mixed-core/src/compute_ggml_runtime/source-da5abe30b13e6512/src/ggml-metal/ggml-metal.cpp:841:34: warning: no previous prototype for function 'ggml_hyle_metal_import' [-Wmissing-prototypes]
+  841 | extern "C" ggml_backend_buffer_t ggml_hyle_metal_import(ggml_backend_t backend, void * raw) {
+      |                                  ^
+/Users/kiro/hyle-scratch/apple-parity/mixed-core/src/compute_ggml_runtime/source-da5abe30b13e6512/src/ggml-metal/ggml-metal.cpp:841:12: note: declare 'static' if the function is not intended to be used outside of this translation unit
+  841 | extern "C" ggml_backend_buffer_t ggml_hyle_metal_import(ggml_backend_t backend, void * raw) {
+      |            ^
+      |            static 
+/Users/kiro/hyle-scratch/apple-parity/mixed-core/src/compute_ggml_runtime/source-da5abe30b13e6512/src/ggml-metal/ggml-metal.cpp:853:20: warning: no previous prototype for function 'ggml_hyle_metal_checked_sync' [-Wmissing-prototypes]
+  853 | extern "C" int64_t ggml_hyle_metal_checked_sync(ggml_backend_t backend) {
+      |                    ^
+/Users/kiro/hyle-scratch/apple-parity/mixed-core/src/compute_ggml_runtime/source-da5abe30b13e6512/src/ggml-metal/ggml-metal.cpp:853:12: note: declare 'static' if the function is not intended to be used outside of this translation unit
+  853 | extern "C" int64_t ggml_hyle_metal_checked_sync(ggml_backend_t backend) {
+      |            ^
+      |            static 
+/Users/kiro/hyle-scratch/apple-parity/mixed-core/src/compute_ggml_runtime/source-da5abe30b13e6512/src/ggml-metal/ggml-metal.cpp:856:17: warning: no previous prototype for function 'ggml_hyle_metal_prepare_gdn' [-Wmissing-prototypes]
+  856 | extern "C" bool ggml_hyle_metal_prepare_gdn(ggml_backend_t backend, const ggml_tensor * tensor) {
+      |                 ^
+/Users/kiro/hyle-scratch/apple-parity/mixed-core/src/compute_ggml_runtime/source-da5abe30b13e6512/src/ggml-metal/ggml-metal.cpp:856:12: note: declare 'static' if the function is not intended to be used outside of this translation unit
+  856 | extern "C" bool ggml_hyle_metal_prepare_gdn(ggml_backend_t backend, const ggml_tensor * tensor) {
+      |            ^
+      |            static 
+3 warnings generated.
+[72/130] Building OBJC object src/compute_ggml_runtime/vendor/src/ggml-metal/CMakeFiles/ggml-metal.dir/ggml-metal-device.m.o
+[73/130] Building CXX object src/compute_ggml_runtime/vendor/src/ggml-metal/CMakeFiles/ggml-metal.dir/ggml-metal-device.cpp.o
+[74/130] Building CXX object src/compute_ggml_runtime/vendor/src/ggml-metal/CMakeFiles/ggml-metal.dir/ggml-metal-common.cpp.o
+[75/130] Building OBJC object src/compute_ggml_runtime/vendor/src/ggml-metal/CMakeFiles/ggml-metal.dir/ggml-metal-context.m.o
+[76/130] Building CXX object src/compute_ggml_runtime/vendor/src/ggml-metal/CMakeFiles/ggml-metal.dir/ggml-metal-fusion.cpp.o
+[77/130] Building CXX object src/compute_ggml_runtime/vendor/src/CMakeFiles/ggml-cpu.dir/ggml-cpu/ops.cpp.o
+[78/130] Building CXX object src/compute_ggml_runtime/vendor/src/ggml-metal/CMakeFiles/ggml-metal.dir/ggml-metal-tuning.cpp.o
+[79/130] Building ASM object src/compute_ggml_runtime/vendor/src/ggml-metal/CMakeFiles/ggml-metal.dir/autogenerated/ggml-metal-embed-fa.s.o
+[80/130] Building ASM object src/compute_ggml_runtime/vendor/src/ggml-metal/CMakeFiles/ggml-metal.dir/autogenerated/ggml-metal-embed-mul_mv.s.o
+[81/130] Building ASM object src/compute_ggml_runtime/vendor/src/ggml-metal/CMakeFiles/ggml-metal.dir/autogenerated/ggml-metal-embed-mul_mm.s.o
+[82/130] Building ASM object src/compute_ggml_runtime/vendor/src/ggml-metal/CMakeFiles/ggml-metal.dir/autogenerated/ggml-metal-embed-quantize.s.o
+[83/130] Building ASM object src/compute_ggml_runtime/vendor/src/ggml-metal/CMakeFiles/ggml-metal.dir/autogenerated/ggml-metal-embed-softmax.s.o
+[84/130] Building ASM object src/compute_ggml_runtime/vendor/src/ggml-metal/CMakeFiles/ggml-metal.dir/autogenerated/ggml-metal-embed-norm.s.o
+[85/130] Building CXX object src/compute_ggml_runtime/vendor/src/ggml-metal/CMakeFiles/ggml-metal.dir/ggml-metal-ops.cpp.o
+[86/130] Building ASM object src/compute_ggml_runtime/vendor/src/ggml-metal/CMakeFiles/ggml-metal.dir/autogenerated/ggml-metal-embed-unary.s.o
+[87/130] Building ASM object src/compute_ggml_runtime/vendor/src/ggml-metal/CMakeFiles/ggml-metal.dir/autogenerated/ggml-metal-embed-binbcast.s.o
+[88/130] Building ASM object src/compute_ggml_runtime/vendor/src/ggml-metal/CMakeFiles/ggml-metal.dir/autogenerated/ggml-metal-embed-reduce.s.o
+[89/130] Building ASM object src/compute_ggml_runtime/vendor/src/ggml-metal/CMakeFiles/ggml-metal.dir/autogenerated/ggml-metal-embed-tri.s.o
+[90/130] Building ASM object src/compute_ggml_runtime/vendor/src/ggml-metal/CMakeFiles/ggml-metal.dir/autogenerated/ggml-metal-embed-ssm.s.o
+[91/130] Building ASM object src/compute_ggml_runtime/vendor/src/ggml-metal/CMakeFiles/ggml-metal.dir/autogenerated/ggml-metal-embed-wkv.s.o
+[92/130] Building ASM object src/compute_ggml_runtime/vendor/src/ggml-metal/CMakeFiles/ggml-metal.dir/autogenerated/ggml-metal-embed-gated_delta_net.s.o
+[93/130] Building ASM object src/compute_ggml_runtime/vendor/src/ggml-metal/CMakeFiles/ggml-metal.dir/autogenerated/ggml-metal-embed-solve_tri.s.o
+[94/130] Building ASM object src/compute_ggml_runtime/vendor/src/ggml-metal/CMakeFiles/ggml-metal.dir/autogenerated/ggml-metal-embed-rope.s.o
+[95/130] Building ASM object src/compute_ggml_runtime/vendor/src/ggml-metal/CMakeFiles/ggml-metal.dir/autogenerated/ggml-metal-embed-conv.s.o
+[96/130] Building ASM object src/compute_ggml_runtime/vendor/src/ggml-metal/CMakeFiles/ggml-metal.dir/autogenerated/ggml-metal-embed-upscale.s.o
+[97/130] Building ASM object src/compute_ggml_runtime/vendor/src/ggml-metal/CMakeFiles/ggml-metal.dir/autogenerated/ggml-metal-embed-argsort.s.o
+[98/130] Building ASM object src/compute_ggml_runtime/vendor/src/ggml-metal/CMakeFiles/ggml-metal.dir/autogenerated/ggml-metal-embed-pool.s.o
+[99/130] Building ASM object src/compute_ggml_runtime/vendor/src/ggml-metal/CMakeFiles/ggml-metal.dir/autogenerated/ggml-metal-embed-misc.s.o
+[100/130] Linking CXX shared library bin/libhyle_mem.0.1.0.dylib
+[101/130] Building CXX object src/compute_ggml_runtime/vendor/src/CMakeFiles/ggml.dir/ggml-backend-dl.cpp.o
+[102/130] Linking CXX static library bin/libggml-cpu.a
+[103/130] Linking CXX static library bin/libggml-metal.a
+[104/130] Creating library symlink bin/libhyle_mem.dylib
+[105/130] Building CXX object src/compute_ggml_runtime/vendor/src/CMakeFiles/ggml.dir/ggml-backend-reg.cpp.o
+[106/130] Building CXX object src/compute_ops/CMakeFiles/hyle_compute_ops.dir/tensor_desc.cc.o
+[107/130] Building CXX object src/compute_ops/CMakeFiles/hyle_compute_ops.dir/operation.cc.o
+[108/130] Building CXX object src/compute_ops/CMakeFiles/hyle_compute_ops.dir/low_precision.cc.o
+[109/130] Building CXX object src/compute_ops/CMakeFiles/hyle_compute_ops.dir/weight_decode.cc.o
+[110/130] Building CXX object src/compute_ggml_runtime/CMakeFiles/hyle_compute_ggml_runtime.dir/metadata_arena.cc.o
+[111/130] Building CXX object src/compute_ggml_runtime/CMakeFiles/hyle_compute_ggml_runtime.dir/cpu_execution.cc.o
+[112/130] Building CXX object src/compute_ggml_runtime/CMakeFiles/hyle_compute_ggml_runtime.dir/cpu_program.cc.o
+[113/130] Linking CXX static library bin/libggml.a
+[114/130] Linking CXX shared library bin/libhyle_compute_ops.0.1.0.dylib
+[115/130] Creating library symlink bin/libhyle_compute_ops.dylib
+[116/130] Linking CXX shared library bin/libhyle_compute_ggml_runtime.0.1.0.dylib
+[117/130] Creating library symlink bin/libhyle_compute_ggml_runtime.dylib
+[118/130] Building CXX object src/compute_provider_ggml_metal/CMakeFiles/hyle_compute_provider_ggml_metal.dir/native_program.cc.o
+[119/130] Linking CXX shared library bin/libhyle_compute_provider_ggml_metal.0.1.0.dylib
+[120/130] Building CXX object _deps/googletest-build/googletest/CMakeFiles/gtest_main.dir/src/gtest_main.cc.o
+[121/130] Creating library symlink bin/libhyle_compute_provider_ggml_metal.dylib
+[122/130] Building CXX object tests/compute_ggml_runtime/CMakeFiles/hyle_compute_ggml_runtime_test.dir/execution_test.cc.o
+[123/130] Building CXX object tests/compute_ggml_runtime/CMakeFiles/hyle_compute_ggml_runtime_test.dir/__/compute_provider_ggml_vulkan/metadata_test.cc.o
+[124/130] Building CXX object _deps/googletest-build/googletest/CMakeFiles/gtest.dir/src/gtest-all.cc.o
+[125/130] Linking CXX static library lib/libgtest.a
+[126/130] Linking CXX static library lib/libgtest_main.a
+[127/130] Linking CXX executable bin/hyle_compute_ggml_runtime_test
+[128/130] Building OBJCXX object tests/compute_provider_ggml_metal/CMakeFiles/hyle_compute_provider_ggml_metal_test.dir/native_program_test.mm.o
+[129/130] Linking CXX executable bin/hyle_compute_provider_ggml_metal_test

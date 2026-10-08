@@ -1,0 +1,20 @@
+-- HYLE developer factors: requested='compute_ggml_runtime,compute_provider_ggml_metal' resolved='core,error,math,platform,mem,compute_ops,compute_ggml_runtime,compute_provider_ggml_metal' products=''
+-- HYLE_SANITIZER = off
+-- HYLE_TESTING = OFF (tests exercise the shipping layout/hot paths)
+-- ggml source: 2263 files, 23 exact patches
+
+-- CMAKE_SYSTEM_PROCESSOR: arm64
+-- GGML_SYSTEM_ARCH: ARM
+-- Including CPU backend
+-- ARM detected
+-- Checking for ARM features using flags:
+-- Adding CPU backend variant ggml-cpu:  
+-- Metal framework found
+-- Including METAL backend
+-- ggml version: 0.24.0
+-- ggml commit:  456172ec733a135778adcd32d00e576a58232e45-hyle
+-- HYLE_TRACE = OFF (hooks compile to nothing -- zero cost)
+-- HYLE 0.1.0 | AppleClang 21.0.0.21000334 | C++23 | sanitizer=off | linkage=shared | products= | factors=core,error,math,platform,mem,compute_ops,compute_ggml_runtime,compute_provider_ggml_metal
+-- Configuring done (2.3s)
+-- Generating done (0.0s)
+-- Build files have been written to: /Users/kiro/hyle-scratch/apple-parity/mixed-core

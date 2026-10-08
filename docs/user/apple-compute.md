@@ -171,10 +171,35 @@ row-contiguous 且从自身 Metal buffer 起点开始。Invocation 保有 array 
 HYLE 不加载 GGUF、不量化、不解码成常驻浮点副本，也不在 submit 时重排或重新选 Provider。
 examples overload 只能看到 `uint8`，无法猜出 Q4_K/IQ4_XS 等语义；压缩权重必须用上述 spec overload。
 
-当前 ggml Metal 路线接入 Q3_K、Q4_K、Q5_K、Q6_K、Q8_0、IQ3_XXS、IQ3_S、IQ4_NL、
-IQ4_XS 和 MXFP4 的二维 MatMul，以及相同 storage catalog 的 `[E,N,K]` GroupedMatMul。
+当前 ggml Metal 路线接入 Q4_0、Q4_1、Q2_K、Q3_K、Q4_K、Q5_K、Q6_K、Q8_0、
+IQ2_XXS、IQ2_XS、IQ2_S、IQ3_XXS、IQ3_S、IQ4_NL、IQ4_XS、IQ1_S、IQ1_M、MXFP4，
+以及原Anemll IQ1_XS/IQ1_XXS/IQ1_XXXS的二维 MatMul 与 `[E,N,K]` GroupedMatMul。
+后三类保留原MV程序；无原MM时按原MV承载，不调用不存在的kernel。checked embedding
+接入上述前18类；窄IQ1三类没有原GetRows，不声明支持。Q4_K精确行选择使用原ggml
+F32 row-decode公式的MLX GPU承载，只取所选行，避免原Metal half高nibble精度损失。
 准备期调用固定上游 capability 检查；设备/形状不支持时明确拒绝，不展开到 F32 或转去 CPU。
 这些格式与前述 MLX affine Q4 的 `uint32 + scale/bias` 合同不同，不能交换 carrier。
+
+### 模型制品的 native packed 与冷准备
+
+`model_ops::MlxQuantized`表达原MLX affine4/MXFP4/MXFP8线性及grouped，affine4另有
+checked embedding；实际group、scale dtype、bias与端口以模型制品及公共schema为准。
+普通prepare和Graph均接原MLX qmm/gather_qmm/take/dequantize，无需选择内部Provider。
+U32 words按低bits在先存储；MX的U8 E8M0 scales与GGUF或官方F32 scales不同。
+
+NF4/nested NF4、AWQ GEMM4和compressed-tensors symmetric4使用
+`model_ops::artifact_weight_decode(format, group_size, output_type)`在GPU冷准备。
+输入按[公共端口合同](../../include/hyle/compute/model_ops.h)给出真实packing/scales/zeros/
+codebook；结果[N,K]保留为ready常量，再用于成熟MatMul或Gather。HYLE不加载模型、不按
+文件名猜格式，也不把该准备放在每次decode内。原NF4 codebook/nested offset、AWQ列顺序
+和zero、CT减8及源存储舍入均保留。
+
+当前共同目录的559 GGUF、34packed、45plain合同已在两普通入口取得样本数值/replay证据；
+大词表全行按4096-row shards验证，MoE仅共享有限专家witness，不代表巨型整模型驻留。
+新官方DSpark与Qwen/Flash量化MTP片段的准入见[当前Apple收口卡](../implementation/tasks/compute/apple-cpu-cuda-parity-closure.md)。
+官方F32-scale FP4 roundtrip极小值精确保真仍未准入，依赖它的完整官方片段也未完成；
+不能以已通过的GGUF/MLX MXFP4或量化侧车替代这项资格。默认为合法成熟承载，尚未实测的
+硬件/driver/模型组合不声明best-of或SOTA。
 
 ## 原版 Gated DeltaNet
 
@@ -221,9 +246,10 @@ Program 保有自己的原生 owner。HYLE 冷期检查并移除 dead pure nodes
 含递归的图只在原生 region 边界切分，热期按固定区域顺序执行。完整例见
 [Graph FFN](../../samples/package/graph/cpp/apple_ffn.h)。
 
-此 Graph lowering 接受固定 F32/F16/BF16/I32/Bool 逻辑 schema、View 派生描述、上述 MLX affine Q4，
-以及只作为 MatMul/GroupedMatMul weight 的十种 GGUF block storage。Graph 用同一 `apple::input_spec()`
-映射 constant/input carrier；纯 MLX 区域不会接收 packed GGUF bytes。
+此Graph lowering接受固定F32/F16/BF16/I32/I64/Bool及所需U8/U32 carrier逻辑schema、
+View派生描述、上述MLX native packed/冷准备与GGUF MatMul/Grouped/checked embedding域。
+Graph用同一`apple::input_spec()`映射constant/input carrier；GGUF bytes只进入对应已准入
+native程序或精确所选行lowering，不作为普通浮点数组计算。
 native arrays 的物理 stride、View 和必要布局整理仍由 MLX 管理；布局转换可能有成本，不能从
 HYLE 逻辑描述推断实际 MLX 分配或声称任意 native View 都零拷贝。符号维度、资源效果、显式 control edges 和
 未接入的 typed 操作会拒绝；需要这些能力时不能声称 Apple 已覆盖其它 Graph 路线的全部功能。
@@ -252,8 +278,8 @@ HYLE 逻辑描述推断实际 MLX 分配或声称任意 native View 都零拷贝
   可复用，形状改变需要重新准备。
 
 `context.environment()` 提供冷创建时记录的 GPU 名称/架构、macOS runtime/build、编译 SDK/部署下限、
-Metal compiler 和 MLX pin。规则可匹配这些事实；执行中不探测或计时选优。未知硬件采用合法的成熟
-MLX 基线，不外推 SOTA。默认 deployment 14.4 的构建未启用 NAX，不能拿 M4 验证声明 M5/NAX 资格。
+Metal compiler 和 MLX pin。规则可匹配这些事实；执行中不探测或计时选优。未知硬件采用对应
+格式合法的成熟基线，不外推SOTA。默认deployment14.4的构建未启用NAX，不能拿M4验证声明M5/NAX资格。
 
 ## 可选编译诊断
 

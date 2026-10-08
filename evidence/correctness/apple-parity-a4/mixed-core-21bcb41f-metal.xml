@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites tests="8" failures="0" disabled="0" errors="0" time="42.218" timestamp="2026-10-09T01:25:04.706" name="AllTests">
+  <testsuite name="GgmlMetalProgram" tests="8" failures="0" disabled="0" skipped="0" errors="0" time="42.218" timestamp="2026-10-09T01:25:04.706">
+    <testcase name="OriginalNarrowMetalCarrierAdmitsMatricesWithoutInventingGetRows" file="/Users/kiro/hyle/tests/compute_provider_ggml_metal/native_program_test.mm" line="26" status="run" result="completed" time="0." timestamp="2026-10-09T01:25:04.706" classname="GgmlMetalProgram" />
+    <testcase name="OriginalRecurrentRealModelShapeAndUnlabelledDomain" file="/Users/kiro/hyle/tests/compute_provider_ggml_metal/native_program_test.mm" line="227" status="run" result="completed" time="13.671" timestamp="2026-10-09T01:25:04.707" classname="GgmlMetalProgram" />
+    <testcase name="EveryCatalogFormatRunsPackedMatMulAndReplays" file="/Users/kiro/hyle/tests/compute_provider_ggml_metal/native_program_test.mm" line="233" status="run" result="completed" time="14.274" timestamp="2026-10-09T01:25:18.378" classname="GgmlMetalProgram" />
+    <testcase name="TargetEmbeddingFormatsUseNativeGetRowsAndCheckBoundsBeforeSubmit" file="/Users/kiro/hyle/tests/compute_provider_ggml_metal/native_program_test.mm" line="309" status="run" result="completed" time="14.268" timestamp="2026-10-09T01:25:32.653" classname="GgmlMetalProgram" />
+    <testcase name="PackedIq4XsGroupedExpertsUseNativeMulMatId" file="/Users/kiro/hyle/tests/compute_provider_ggml_metal/native_program_test.mm" line="396" status="run" result="completed" time="0.001" timestamp="2026-10-09T01:25:46.921" classname="GgmlMetalProgram" />
+    <testcase name="DenseBfloatGroupedExpertsUseNativeMulMatIdAndReplay" file="/Users/kiro/hyle/tests/compute_provider_ggml_metal/native_program_test.mm" line="465" status="run" result="completed" time="0.001" timestamp="2026-10-09T01:25:46.923" classname="GgmlMetalProgram" />
+    <testcase name="BfloatRouterLinearRetainsNativeF32Score" file="/Users/kiro/hyle/tests/compute_provider_ggml_metal/native_program_test.mm" line="531" status="run" result="completed" time="0." timestamp="2026-10-09T01:25:46.924" classname="GgmlMetalProgram" />
+    <testcase name="DeclinesUnqualifiedShapesAndMetadataOomIsRecoverable" file="/Users/kiro/hyle/tests/compute_provider_ggml_metal/native_program_test.mm" line="571" status="run" result="completed" time="0." timestamp="2026-10-09T01:25:46.925" classname="GgmlMetalProgram" />
+  </testsuite>
+</testsuites>

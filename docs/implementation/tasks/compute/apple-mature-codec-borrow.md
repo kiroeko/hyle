@@ -64,3 +64,11 @@ ggml Metal，CPU ON、Apple ON，其它GPU OFF，tests ON/instrumentation OFF；
 source关键文件hash与Apple-only的一致性；实际Metal选择与新codec准入必须成立。
 不把仅枚举或这次mixed基础测试代签全部CPU/Apple模型，已验数值同source时复用；不P1，
 不改全局instrument/系统设置。具名编译/接线问题最多一次纠正，原旧BLOCKED/CLOSED不解除。
+
+`21bcb41f`mixed configure/build通过，CPU runtime9/9与Metal provider8/8通过，含CPU
+原IQ1三类MatMul/GetRows、共享metadata资源、Metal原18codec/新3类型准入与真实递归/
+grouped/索引及OOM边界。[raw/源码hash](../../../../evidence/correctness/apple-parity-a4/README.md)
+证明实际Ninja所选六个core/codec/Metal关键文件与Apple-only逐文件同hash。CPU和Metal
+分别真实执行；不把测试名GgmlVulkanMetadata冒称Vulkan GPU验收，它仅共享arena测试。
+首个task脚本误把缓存旧source目录计入active identity，已改为实际ggml-base Ninja命令取
+active source；编译前的脚本拒绝不是产品FAIL。不重复已验矩阵/P1，C1 mixed风险已验收。

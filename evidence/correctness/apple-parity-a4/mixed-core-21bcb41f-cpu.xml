@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites tests="9" failures="0" disabled="0" errors="0" time="0.004" timestamp="2026-10-09T01:25:03.844" name="AllTests">
+  <testsuite name="GgmlCpuExecution" tests="6" failures="0" disabled="0" skipped="0" errors="0" time="0.004" timestamp="2026-10-09T01:25:03.844">
+    <testcase name="Avx2ProgramRequiresCpuAndOsEnabledPrerequisites" file="/Users/kiro/hyle/tests/compute_ggml_runtime/execution_test.cc" line="22" status="run" result="completed" time="0." timestamp="2026-10-09T01:25:03.844" classname="GgmlCpuExecution" />
+    <testcase name="ReusesGraphPoolWorkspaceAndRetiresExactBacking" file="/Users/kiro/hyle/tests/compute_ggml_runtime/execution_test.cc" line="102" status="run" result="completed" time="0.002" timestamp="2026-10-09T01:25:03.844" classname="GgmlCpuExecution" />
+    <testcase name="IndependentSlotsShareOnlyImmutableWeights" file="/Users/kiro/hyle/tests/compute_ggml_runtime/execution_test.cc" line="131" status="run" result="completed" time="0." timestamp="2026-10-09T01:25:03.847" classname="GgmlCpuExecution" />
+    <testcase name="CancellationJoinsWorkersAndAllowsReuse" file="/Users/kiro/hyle/tests/compute_ggml_runtime/execution_test.cc" line="161" status="run" result="completed" time="0." timestamp="2026-10-09T01:25:03.848" classname="GgmlCpuExecution" />
+    <testcase name="InvalidPreparationAndWorkspaceExhaustionAreRecoverable" file="/Users/kiro/hyle/tests/compute_ggml_runtime/execution_test.cc" line="178" status="run" result="completed" time="0." timestamp="2026-10-09T01:25:03.848" classname="GgmlCpuExecution" />
+    <testcase name="OriginalNarrowIq1MatMulAndGatherReplayEncodedBlocks" file="/Users/kiro/hyle/tests/compute_ggml_runtime/execution_test.cc" line="202" status="run" result="completed" time="0." timestamp="2026-10-09T01:25:03.848" classname="GgmlCpuExecution" />
+  </testsuite>
+  <testsuite name="GgmlVulkanMetadata" tests="3" failures="0" disabled="0" skipped="0" errors="0" time="0." timestamp="2026-10-09T01:25:03.849">
+    <testcase name="RejectsInvalidAndExhaustedBacking" file="/Users/kiro/hyle/tests/compute_provider_ggml_vulkan/metadata_test.cc" line="15" status="run" result="completed" time="0." timestamp="2026-10-09T01:25:03.849" classname="GgmlVulkanMetadata" />
+    <testcase name="MoveAndIndependentContextsRetireTheirExactAllocations" file="/Users/kiro/hyle/tests/compute_provider_ggml_vulkan/metadata_test.cc" line="30" status="run" result="completed" time="0." timestamp="2026-10-09T01:25:03.849" classname="GgmlVulkanMetadata" />
+    <testcase name="PatchedContextRejectsOverflowAndMisalignmentWithoutAbort" file="/Users/kiro/hyle/tests/compute_provider_ggml_vulkan/metadata_test.cc" line="57" status="run" result="completed" time="0." timestamp="2026-10-09T01:25:03.849" classname="GgmlVulkanMetadata" />
+  </testsuite>
+</testsuites>

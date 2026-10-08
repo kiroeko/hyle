@@ -1,0 +1,30 @@
+Running main() from /Users/kiro/Library/Caches/hyle/dependencies/v1/sources/googletest-063de7e9578f-162765170ae6/googletest/src/gtest_main.cc
+[==========] Running 9 tests from 2 test suites.
+[----------] Global test environment set-up.
+[----------] 6 tests from GgmlCpuExecution
+[ RUN      ] GgmlCpuExecution.Avx2ProgramRequiresCpuAndOsEnabledPrerequisites
+[       OK ] GgmlCpuExecution.Avx2ProgramRequiresCpuAndOsEnabledPrerequisites (0 ms)
+[ RUN      ] GgmlCpuExecution.ReusesGraphPoolWorkspaceAndRetiresExactBacking
+[       OK ] GgmlCpuExecution.ReusesGraphPoolWorkspaceAndRetiresExactBacking (2 ms)
+[ RUN      ] GgmlCpuExecution.IndependentSlotsShareOnlyImmutableWeights
+[       OK ] GgmlCpuExecution.IndependentSlotsShareOnlyImmutableWeights (0 ms)
+[ RUN      ] GgmlCpuExecution.CancellationJoinsWorkersAndAllowsReuse
+[       OK ] GgmlCpuExecution.CancellationJoinsWorkersAndAllowsReuse (0 ms)
+[ RUN      ] GgmlCpuExecution.InvalidPreparationAndWorkspaceExhaustionAreRecoverable
+[       OK ] GgmlCpuExecution.InvalidPreparationAndWorkspaceExhaustionAreRecoverable (0 ms)
+[ RUN      ] GgmlCpuExecution.OriginalNarrowIq1MatMulAndGatherReplayEncodedBlocks
+[       OK ] GgmlCpuExecution.OriginalNarrowIq1MatMulAndGatherReplayEncodedBlocks (0 ms)
+[----------] 6 tests from GgmlCpuExecution (4 ms total)
+
+[----------] 3 tests from GgmlVulkanMetadata
+[ RUN      ] GgmlVulkanMetadata.RejectsInvalidAndExhaustedBacking
+[       OK ] GgmlVulkanMetadata.RejectsInvalidAndExhaustedBacking (0 ms)
+[ RUN      ] GgmlVulkanMetadata.MoveAndIndependentContextsRetireTheirExactAllocations
+[       OK ] GgmlVulkanMetadata.MoveAndIndependentContextsRetireTheirExactAllocations (0 ms)
+[ RUN      ] GgmlVulkanMetadata.PatchedContextRejectsOverflowAndMisalignmentWithoutAbort
+[       OK ] GgmlVulkanMetadata.PatchedContextRejectsOverflowAndMisalignmentWithoutAbort (0 ms)
+[----------] 3 tests from GgmlVulkanMetadata (0 ms total)
+
+[----------] Global test environment tear-down
+[==========] 9 tests from 2 test suites ran. (4 ms total)
+[  PASSED  ] 9 tests.
