@@ -563,9 +563,9 @@
     },
     {
       "module": "compute_ggml_runtime",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/apple-mature-codec-borrow.md",
-      "summary": "Apple narrow mature codec SCOPED: 原Anemll三IQ1/既有Unslothcore精确定向接线；只在Apple条件消费，无新HYLE算法，CPU/CUDA/Vulkan数学与旧证据不变。"
+      "summary": "Apple narrow mature codec AUDITED: 原Anemll三IQ1/既有Unslothcore精确定向接线；只在Apple条件消费，无新HYLE算法，CPU/CUDA/Vulkan数学与旧证据不变。"
     },
     {
       "module": "compute_provider_ggml_cuda",
