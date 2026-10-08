@@ -270,14 +270,9 @@
     },
     {
       "module": "compute",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/compute/compute-graph-macro-normalization.md",
-      "summary": "宏规范 CLOSED：目标facts/显式include/export/直接Core声明、三平台实际编译与三交付完成；原CPU数学、清退与43规则保持；不新签性能赢家，CUDA goal及旧Graph/Vulkan blocker未关闭。",
-      "candidate": "026d40bcfdde389c9f69b2458b55d8157774ebda",
-      "performance": {
-        "tier": "P0",
-        "evidence": "evidence/correctness/compute-graph-macro-normalization/README.md"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/compute-bound-view-alignment-cuda-best-of.md",
+      "summary": "SCOPED：实际CUDA bound-view offset在冷选择被丢弃，有限对齐资格修复；不重开CPU数学/规则，不改公开API或hot dispatch。"
     },
     {
       "module": "graph",

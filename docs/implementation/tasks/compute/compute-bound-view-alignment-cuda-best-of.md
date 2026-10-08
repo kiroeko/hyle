@@ -1,0 +1,28 @@
+# 已知 TensorView 对齐的冷选择修复
+
+<!-- MODULE REVIEW: SCOPED -->
+
+owner `compute`，baseline `c8dd92ac`，父任务[CUDA best-of](cuda-best-of-completion.md)。
+这是新的实际反例，重新定界旧CLOSED；原CPU规则/数学和宏验收不重开。
+
+## 反例与有限边界
+
+Windows static普通CUDA入口，以F16 Log `[1,2048]`、device Buffer的2-byte偏移view准备：
+冷入口丢弃已知offset，只保留描述符/resource，选ggml的较强alignment，然后submit拒绝。
+CUDA规则新增的256约束也必须在已有view冷选择中生效，不能在执行时重搜Provider。
+原失败保留于CUDA C4 static首次日志；不是数值或性能FAIL，不重采P1。
+
+## 有限 FIX 与验收
+
+FIX-A：仅私有 `prepare_for_mode`/`prepare_views_for_mode`传递已知view，对具有明确resource
+base对齐保证的view，按offset排除不满足proposal alignment的候选。descriptor入口不猜地址；
+不解引用opaque handle、不读payload、不改公开API/对象/hot submit或公共治理。
+FIX-B（原CUDA owners）：从原native target读取真实编译器配方facts而非依赖兄弟目录变量；
+ggml版本在已有冷factory按真实Provider identity检查。仅测量候选把原native binding alignment
+数据提升至256，复用原执行表/检查，descriptor先准备后换不合格view必须拒绝，无热重路由。
+
+有限验证：原Compute单元门；Windows/WSL普通CUDA bound-view偏移与descriptor后换view拒绝；
+23规则命中/失配、原25数学/资源与7 Graph消费者、两OS source/static/shared。旧模型559合同
+和未变路线不重跑；shader/原完整成本结构未变的WIN复用，未跑不PASS。
+一次具名修复、原C4 static失败同ID最后一次重试；不追加AA/P1/n或另起ID重置预算。
+其余C4首次步骤仍按原预算，先冷审计AUDITED再写Core产品；完成回到父轮终审。
