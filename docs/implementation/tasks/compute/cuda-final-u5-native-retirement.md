@@ -13,7 +13,7 @@
 
 | 源码族 | 当前成熟重复域 | 真实未替代域／审计裁决 |
 |---|---|---|
-| native_kernel.cu：gated | SGLang精确packed向量三种activation，原Prepared/capture、零private一致 | separate、非完整向量宽度、scalar alignment仍unique；允许物理裁去完整向量高alignment子域，不能拿该域独有要求挽留重复实现 |
+| native_kernel.cu：gated | SGLang精确packed向量三种activation，原Prepared/capture、零private一致 | separate、非完整向量宽度、scalar alignment仍unique；原一个kernel实例同时接完整向量和低alignment，不能只按shape删资格 |
 | norm_kernel.cu：RMS/Layer | SGLang matching half weighted RMS；ggml普通F32/F16/BF16 affine norm | 混合F32参数、empty、prepared/capture/no-private与低alignment仍未完全替代；若同族共享模板不能无损切走数学，明确KEEP unique而非WIN |
 | tensor_kernel.cu | ggml Copy/Cast/算术，SGLang vector activation、Torch stable Softplus | View为通用alias机制；Fill/Select/number Min/Max、odd byte-stride、empty、rank8不可折叠及strict/capture仍unique |
 | reduction_kernel.cu | ggml普通Sum/Mean/Softmax | Bool mask/LogSoftmax/NaN min/max/empty identities/strict prepared及odd stride未替代 |
@@ -25,8 +25,28 @@
 
 ## 待固定有限 FIX
 
-- G1：gated族把packed且完整16-byte vector/alignment的同合同域改由原SGLang承载，去掉该域自研kernel实例/接入；scalar-alignment、tail、separate能力和真实失败诊断保持。未变原SGLang程序无需重新性能比较。
+- G1：核对gated同shape而不同绑定alignment的事实；不是每个shape都具备完整成熟替代。普通合格vector已优先SGLang，不为减少文件而重写cold/hot dispatch或新造scalar/vector双轨。
 - G2：norm/tensor/reduction/concat/scatter逐族核对上述unique事实，移除任何仅为旧benchmark保留的独立入口/分支；没有完整替代时显式KEEP并列具体缺口，不扩自研或签WIN。
 - G3：ordinary default与expert capability说明、对账/红队、Windows/WSL source/static/shared受影响小纵切；复用U23数学和U4 defaults不变域，重型串行j2/testj1，统一LOC/清理。
 
 本卡SCOPED；有限FIX最终AUDITED及registry改绑之前不改产品。U4原性能FAIL/INCONCLUSIVE保留，公开默认是工程取舍，未测硬件不PASS。
+
+## 有限审计结果：不能把部分替代写成完整替代
+
+六个源码族的每个独有域已沿select/prepare/submit核对。关键具名反例为
+`tests/compute_provider_cuda/cuda_provider_test.cc:VectorRejectionPreservesSlotAndScalarAlignmentCapability`：
+H128相同packed request在offset=sizeof(T) subview上SGLang拒绝而native实际可运行。
+ProviderOperationRequest只有descriptor、无actual pointer；同一个native Prepared必须仍可绑定
+这些低alignment指针，不能在propose按shape伪称全替代，或在每次submit以指针改变赢家。
+native_kernel.cu一套同shape scalar程序承载这项能力；高alignment能力不是独立可删math TU。
+
+本有限审计没有发现可**整族**无损删除且有完整成熟替代的自研族。六族KEEP均由上表明确
+未替代数学/资源需要支撑，**不是WIN/SOTA**。原默认已把成熟合格重叠优先、native1000 fallback；
+不因本结论继续挽留优化，也不将user的CPU MatMul strict撤回决定视作CUDA能力撤回授权。
+是否撤回这些公开prepared/capture/stride/empty等域属于具体产品决定；先交付完整清单，
+不为“清退”顺手扩大ATen/新写adapter数学来跨过当前范围。
+
+固定实际FIX只有G3的文档/能力清单和残留别名误述纠正，暂无产品删除授权；G2未发现仅旧
+benchmark使用的独立public entry。普通Compute用户不选择内部self provider，路线控制/完成和
+borrowed库保留。本轮不建、不重跑P1；原U23/U4对应correctness/source/static/shared实际
+证据逐域复用，适用strict/alias/empty已在固定完整源批次运行。不把本次审计写成新的性能验收。
