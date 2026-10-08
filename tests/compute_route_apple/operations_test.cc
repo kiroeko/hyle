@@ -3,6 +3,7 @@
 #include <array>
 #include <cmath>
 #include <cstring>
+#include <limits>
 #include <vector>
 
 #include <gtest/gtest.h>
@@ -19,6 +20,24 @@ namespace {
 namespace c = hyle::compute;
 namespace a = c::apple;
 namespace mx = mlx::core;
+
+TEST(AppleTyped, PackedCarrierPreservesExactLargeByteExtentWithoutAllocation) {
+  const auto large = c::gguf_weight_description(c::GgufQuantizedType::kQ8_0,
+      c::DataType::kFloat32, 8192, 248320).value();
+  const auto spec = a::input_spec(large);
+  ASSERT_TRUE(spec) << spec.error().message();
+  EXPECT_EQ(spec->shape, (mx::Shape{248320, 8704}));
+  EXPECT_EQ(spec->dtype, mx::uint8);
+  EXPECT_EQ(static_cast<std::uint64_t>(spec->shape[0]) * spec->shape[1], large.required_bytes().value());
+  const auto small = c::gguf_weight_description(c::GgufQuantizedType::kQ8_0,
+      c::DataType::kFloat32, 256, 8).value();
+  EXPECT_EQ(a::input_spec(small)->shape, (mx::Shape{2176}));
+  const auto huge = c::gguf_weight_description(c::GgufQuantizedType::kQ8_0,
+      c::DataType::kFloat32, 32, std::int64_t{(std::numeric_limits<int>::max)()} + 1).value();
+  const auto rejected = a::input_spec(huge);
+  ASSERT_FALSE(rejected);
+  EXPECT_TRUE(rejected.error().IsOutOfRange());
+}
 
 mx::array bf16_array(std::span<const std::byte> bytes, mx::Shape shape) {
   std::vector<std::uint16_t> bits(bytes.size() / sizeof(std::uint16_t));

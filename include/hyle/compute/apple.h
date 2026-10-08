@@ -61,7 +61,8 @@ struct InputSpec final {
 };
 
 // Maps a checked logical tensor description to its actual MLX carrier. GGUF
-// block encodings use a one-dimensional uint8 array of required_bytes(); MLX
+// block encodings use uint8 exact bytes: flat within INT_MAX, otherwise checked
+// [encoded_rows, row_bytes]. Use the returned shape for large payloads. MLX
 // affine Q4 keeps its existing uint32 [N,K/8] carrier. This describes existing
 // bytes and never quantizes, decodes or copies them.
 HYLE_COMPUTE_ROUTE_APPLE_API Result<InputSpec>

@@ -1472,11 +1472,8 @@ void execute_q24_semantic_fragment(
       continue;
     }
     const auto id = fixture.constants[index];
-    tensors[id.ordinal()] =
-        fixture.description(id).is_plain()
-            ? upload(context, fixture.description(id),
-                     std::span<const std::byte>(bytes[index]))
-            : packed_array(bytes[index]);
+    tensors[id.ordinal()] = upload(context, fixture.description(id),
+                                    std::span<const std::byte>(bytes[index]));
   }
   fixture.constant_bytes = {};
 

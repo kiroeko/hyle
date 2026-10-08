@@ -1550,12 +1550,8 @@ void execute_q24_semantic_fragment(
       constants.push_back(prepared[prepared_index]);
       continue;
     }
-    constants.push_back(
-        fixture.description(fixture.constants[index]).is_plain()
-            ? upload(context, fixture.description(fixture.constants[index]),
-                     std::span<const std::byte>(fixture.constant_bytes[index]))
-                  .native
-            : packed_array(fixture.constant_bytes[index]));
+    constants.push_back(upload(context, fixture.description(fixture.constants[index]),
+        std::span<const std::byte>(fixture.constant_bytes[index])).native);
   }
   fixture.constant_bytes = {};
   const auto workload =

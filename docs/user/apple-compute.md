@@ -164,7 +164,9 @@ std::array specs{apple::InputSpec{{m, k}, mx::float32}, packed};
 HYLE_ASSIGN_OR_RETURN(auto program, context.prepare(MatMul{}, specs));
 ```
 
-`packed.shape` 是一维 `uint8[logical->required_bytes()]`；bind 的 array 必须含原 GGUF bytes、
+`packed.shape` 在总字节数≤`INT_MAX`时为一维 `uint8[logical->required_bytes()]`；更大payload
+返回checked二维 `[encoded_rows,row_bytes]`，各axis须在native int范围内。上传和bind都使用
+实际返回shape，不能把大字节数强制cast成int。bind 的 array 必须含原 GGUF bytes、
 row-contiguous 且从自身 Metal buffer 起点开始。Invocation 保有 array owner 到 checked completion。
 HYLE 不加载 GGUF、不量化、不解码成常驻浮点副本，也不在 submit 时重排或重新选 Provider。
 examples overload 只能看到 `uint8`，无法猜出 Q4_K/IQ4_XS 等语义；压缩权重必须用上述 spec overload。

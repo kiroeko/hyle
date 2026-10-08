@@ -157,10 +157,21 @@ Result<InputSpec> input_spec(const TensorDesc &description) noexcept {
     return detail::mlx_float_input_spec(description);
   if (gguf_quantized_type(description.storage_format())) {
     HYLE_ASSIGN_OR_RETURN(auto bytes, description.required_bytes());
-    if (bytes > static_cast<std::size_t>((std::numeric_limits<int>::max)()))
-      return std::unexpected(
-          Status::OutOfRange("Apple packed input exceeds native shape range"));
-    result.shape = {static_cast<int>(bytes)};
+    const auto limit = static_cast<std::size_t>((std::numeric_limits<int>::max)());
+    if (bytes <= limit) {
+      result.shape = {static_cast<int>(bytes)};
+    } else {
+      const auto axis = description.block_axis();
+      if (!axis)
+        return std::unexpected(Status::InvalidArgument("Apple GGUF input requires a block axis"));
+      const auto format = description.storage_format();
+      const auto row_bytes = static_cast<std::uint64_t>(description.dimensions()[*axis]) /
+          format.elements_per_block() * format.bytes_per_block();
+      if (row_bytes == 0 || row_bytes > limit || bytes % row_bytes != 0 ||
+          bytes / row_bytes > limit)
+        return std::unexpected(Status::OutOfRange("Apple packed row axes exceed native shape range"));
+      result.shape = {static_cast<int>(bytes / row_bytes), static_cast<int>(row_bytes)};
+    }
     result.dtype = mx::uint8;
     return result;
   }
