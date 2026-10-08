@@ -74,3 +74,7 @@ python scripts/check-docs.py
 `check-module-closure.py --previous-ref <revision>`；普通命令只检查当前快照，不证明状态没有跳级。
 
 到达预算或停止条件后必须裁决为 `CLOSED`、`BLOCKED`，或按协议退回明确阶段；“继续研究”不是状态。
+
+当前 CUDA U2/U3 交付按[活动收口计划](docs/implementation/tasks/compute/cuda-final-closure-plan.md)
+中的固定入口续跑；不要恢复已停用的 `.scratch/cuda-u3-*` 交付启动脚本。该约束只适用于本批，
+通过结果及失败预算不随日志目录/文档提交重置；产品 goal 暂停时不得启动重型 run。

@@ -1,6 +1,6 @@
 # CUDA 联合交付执行纠正
 
-<!-- MODULE REVIEW: AUDITED -->
+<!-- MODULE REVIEW: CLOSED -->
 
 ## 工具任务合同
 
@@ -38,3 +38,32 @@ SCOPED 提交 `9dadab54`。用户明确要求避免治理继续膨胀；只服�
 首次失败后必须有具体输入变化及原因才能纠正；无变化的环境诊断在本批之外具名处理，
 不得重新起整批。仅文档变化不改变输入身份。轻量测试使用短 Python 子进程，不冒称 GPU
 资格；本轮不恢复暂停的 CUDA 产品 goal。
+
+## 实现与验收
+
+本批入口是[delivery.py](../../../../evidence/correctness/cuda-final-u3-joint-delivery/delivery.py)，
+四个剩余组合与既有通过格是[delivery.json](../../../../evidence/correctness/cuda-final-u3-joint-delivery/delivery.json)。
+配方共享 configure/build/source smoke/install/relocation/SDK/原 shipping 分组；不是新增241张
+任务卡，241是原交付命令的自动展开。数学全集仍复用；当前唯一已导入的待验组合步骤是
+Windows mixed static 已通过的 configure，未重跑、未导入失败。Linux static 原始8步/50组
+记录保留为已运行事实，尚未冒称封存或模块关闭。
+
+13项[轻量行为验收](../../../../evidence/correctness/cuda-final-u3-joint-delivery/delivery-tests.py)通过：
+同输入重复/跨日志目录无第二进程、docs不失效、部分输入只失效对应项、失败须变化+原因且
+两次预算不重置、未知任务拒绝、中断记录、缺失/改写证明停止、单writer、空XML不能PASS、
+四配方完整接线、暂停拒绝实际已登记build、既有configure只导入一次、11个旧启动器实际拒绝。
+旧启动器原文在[归档](../../../../evidence/correctness/cuda-final-u3-joint-delivery/retired-entrypoints.zip)，
+不是删除原失败或产品证据。当前固定记录路径是`.scratch/validation/cuda-final-u3-execution`。
+
+恢复后直接执行同一个入口的`run --profile <已登记组合>`，无需逐命令人工登记；失败即停止。
+用户明确恢复产品goal后才把清单`run_enabled`设为true；不存在通用开关或修改系统审批机制。
+`status`只报告本批交付，不生成整体goal百分比、不更新module registry。
+
+## 裁决
+
+工具任务CLOSED：只改本批维护工具与执行接线，产品/数学/ABI/性能仪器/公共治理未改。
+七问中产品数学、第三方升级和C++交付不适用于这个任务内Python入口；其实际消费者、
+状态寿命/中断/失败、串行成本、接线、易用性与红队由上述行为测试和清单审查验收。
+selector只选择docs/closure，轻量测试单独执行；不构建、不启动GPU或P1。
+未来仅凭此入口错误启动/复用、预算失效或真实已登记命令配方缺陷重开，不能扩成治理框架。
+产品goal仍暂停；U2/U3四个剩余交付组合及U4/U5/U6仍未完成。

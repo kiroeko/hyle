@@ -6,6 +6,21 @@
 
 ## 分组、证据复用与停止
 
+2026-10-08 执行纠正后的本批入口为[delivery.py](delivery.py)，组合与原shipping用例
+固定在[delivery.json](delivery.json)；工具验收和暂停边界见
+[有限工具卡](../../../docs/implementation/tasks/build/cuda-delivery-execution-control.md)。
+下面`run-groups.py`保留此前原记录，不再作为本批交付启动入口。
+
+```text
+python evidence/correctness/cuda-final-u3-joint-delivery/delivery.py status
+python evidence/correctness/cuda-final-u3-joint-delivery/delivery.py plan --profile win-mixed-static
+```
+
+用户明确恢复暂停产品goal后，清单启用run，执行`run --profile win-mixed-static`或其它
+已登记组合。入口串行续跑，通过复用、失败停止，换logs目录不换记录/预算；不自行给未验格PASS。
+行为验收命令为`python evidence/correctness/cuda-final-u3-joint-delivery/delivery-tests.py`，
+只启动短Python进程，不运行CUDA。工具纠正不能代签CUDA产品完成。
+
 任务驱动 [run-groups.py](run-groups.py) 是本轮专用入口，不改变公共验证治理。
 它按实际 executable、邻置 runtime、机器／驱动、fixture 哈希和影响执行的环境固定身份，
 保存各组原日志／XML／哈希；用例并集必须逐名等于请求全集。身份匹配的 PASS 复用，

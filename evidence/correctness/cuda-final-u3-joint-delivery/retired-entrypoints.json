@@ -1,0 +1,13 @@
+[
+  ".scratch/cuda-u3-linux-static-worker.py",
+  ".scratch/cuda-u3-linux-static-runtime.py",
+  ".scratch/cuda-u3-linux-static-resume.py",
+  ".scratch/cuda-u3-linux-static-launch.py",
+  ".scratch/cuda-u3-linux-runtime-launch.py",
+  ".scratch/cuda-u3-windows-static-delivery-resume.py",
+  ".scratch/cuda-u3-windows-shared-runtime.py",
+  ".scratch/cuda-u3-windows-mixed-static-resume.py",
+  ".scratch/cuda-u3-windows-mixed-static-build.py",
+  ".scratch/cuda-u3-windows-mixed-shared-build.py",
+  ".scratch/cuda-u3-mixed-runtime.py"
+]

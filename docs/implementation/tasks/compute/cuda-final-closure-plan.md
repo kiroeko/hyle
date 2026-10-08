@@ -49,6 +49,15 @@ U1 先做只读协调审计，不批量改 registry 来假装所有 owner 已经
 
 ## 执行与性能预算
 
+2026-10-08 用户授权的执行纠正已经接到本 goal 的 U2/U3：
+[本批续跑入口与固定清单](../../../../evidence/correctness/cuda-final-u3-joint-delivery/delivery.py)
+及[有限工具卡](../build/cuda-delivery-execution-control.md)。当前产品 goal 暂停，清单
+`run_enabled=false`，入口拒绝重型 run；用户明确恢复后才启用，不创建另一个 CUDA goal。
+仅用此入口执行剩余交付，旧本批启动脚本退出执行路径。它保留原数学全集，四个组合共享
+同一配方，命令通过后复用、失败后停止、记录/预算固定在 canonical task ID；换输出目录和
+文档提交不重置预算。不得用新脚本/ID 绕开失败停止。进度读 `delivery.py status` 与当前
+owner 卡，不能把工具任务完成算为 CUDA 产品完成；U4/U5/U6 的范围和权重保持。
+
 2026-10-08 用户追加 [Compute + Graph 宏规范专题](compute-graph-macro-normalization.md)：
 全部 Compute/Graph 的 OS／arch／compiler／feature／visibility 和 GPU 条件分层核对、批量规范，
 不改借入原数学、不自动解除其它路线 blocker；N1 当前批次验证后独立扫描并按真实 owner 定界。

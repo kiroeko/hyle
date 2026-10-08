@@ -1,0 +1,413 @@
+{
+  "run_enabled": false,
+  "scope": "Only current CUDA U2/U3 delivery; U4/U5/U6 keep their existing cards",
+  "inputs": [
+    "include/hyle",
+    "src",
+    "cmake",
+    "CMakeLists.txt",
+    "CMakePresets.json",
+    "third_party/ggml_cuda_runtime",
+    "third_party/ggml_cpu_runtime",
+    "third_party/ggml_runtime",
+    "third_party/awq_cuda",
+    "third_party/bitsandbytes_cuda",
+    "third_party/compressed_tensors_cuda",
+    "third_party/mlx_cuda_quant",
+    ".scratch/validation/cuda-final-u3-delivery/consumer",
+    ".scratch/validation/d5-cpu-apple-official-binding/3c22b7b9f230-tests/environment.cmd"
+  ],
+  "consumer": ".scratch/validation/cuda-final-u3-delivery/consumer",
+  "windows": {
+    "build": "C:/hv/m2b1-cuda",
+    "delivery": "C:/hv/cuda-u3-delivery",
+    "consumer": "{root}/.scratch/validation/cuda-final-u3-delivery/consumer",
+    "source": "{root}",
+    "reference": "{root}/.scratch/validation/cuda-final-u3-delivery/reference-windows",
+    "gtest": "C:/public/tools/hyle-dependencies/v1/sources/googletest-063de7e9578f-162765170ae6",
+    "fixture": "{root}/.scratch/d5-qwen35-six-profile-fixture",
+    "vs_env": ".scratch/validation/d5-cpu-apple-official-binding/3c22b7b9f230-tests/environment.cmd"
+  },
+  "linux": {
+    "build": "/root/hyle-scratch/active-cpu-z/build",
+    "delivery": "/root/hyle-scratch/active-cpu-z/cuda-u3-delivery",
+    "consumer": "/root/hyle-scratch/active-cpu-z/cuda-u3-delivery/consumer",
+    "source": "/root/hyle-scratch/active-cpu-z/source",
+    "reference": "/root/hyle-scratch/active-cpu-z/cuda-u3-delivery/reference",
+    "gtest": "/root/.cache/hyle/dependencies/v1/sources/googletest-063de7e9578f-162765170ae6",
+    "overlay": "/root/hyle-scratch/active-cpu-z/cuda-u3-delivery/overlay.cmake",
+    "fixture": "/root/hyle-scratch/active-cpu-z/cpu-final-qwen-fixture/fixture",
+    "environment": [
+      "CC=gcc-14",
+      "CXX=g++-14",
+      "CUDAHOSTCXX=/usr/bin/g++-13",
+      "PATH=/usr/local/cuda-13.3/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+      "OMP_NUM_THREADS=1",
+      "MKL_NUM_THREADS=1",
+      "HYLE_D5_QWEN35_FIXTURE=/root/hyle-scratch/active-cpu-z/cpu-final-qwen-fixture/fixture"
+    ]
+  },
+  "profiles": [
+    {
+      "id": "win-mixed-static",
+      "system": "Windows",
+      "directory": "mixed-static",
+      "static": true,
+      "cpu": true,
+      "legacy_configure": {
+        "receipt": ".scratch/validation/cuda-final-u3-delivery/windows-mixed-static/receipt.json",
+        "sha256": "7beecd89adcf0fd9d6a3d088a1d9d180a44f8efdd940f25553d28268144cca9b",
+        "name": "source-configure-mixed",
+        "inputs": {
+          "include/hyle": "483312d6db52a0b1d81a4324ada4ca3c320f108462618d4c4c2ca0d3956b0a37",
+          "src": "b472d93f0837d4e69e46b72753e6e2d80462e7d4f390eef3eceb6dcd46f43bd8",
+          "cmake": "70f98781299915fa6dc167f8eff8332cae34bb9b12f7d7c70d14bd8ca5b277f4",
+          "CMakeLists.txt": "5794998dbadf65ff958c9d7a946c1cd3df2d602c50226d13ea6e424d49b3133d",
+          "CMakePresets.json": "13fd7413a88a3cade3fed38fbe176615f1903be3fdf0b6252995acf02189ecaf",
+          "third_party/ggml_cuda_runtime": "c9f6ec390c0ebf38159aa0d1e56a1c9093e83a7415f9921881562124990d9e3d",
+          "third_party/ggml_cpu_runtime": "5ae2771325968ec733aa1ea61167ce8155fac302c0daba8c349682e4428cacd7",
+          "third_party/ggml_runtime": "8d45b347d5b3125a80d5f3cbb88f750b1ee3102b16d4a1a48e2533d661eca837",
+          "third_party/awq_cuda": "b616fea013104127ad1711db8cda6fc40293add0e9141153e5e70e07ca1928ec",
+          "third_party/bitsandbytes_cuda": "47b1df1c5bbcf7e4c0da3b2830110a743f76fbe1b3b439acdc01743feb864750",
+          "third_party/compressed_tensors_cuda": "4e6ef9de9617f0a3061efbf1af5403715b257bf7dd1fed5e92cef41ba3c36b5a",
+          "third_party/mlx_cuda_quant": "f6d532d2b2dcd6fbc3c575a862b0cc9a16be86d726c2e40931aa6d9c5da00d55",
+          ".scratch/validation/cuda-final-u3-delivery/consumer": "5cb2fec8e1d7473b329bb848fb3f7af9e4581a8818f2a0ea4fa158e1871db510",
+          ".scratch/validation/d5-cpu-apple-official-binding/3c22b7b9f230-tests/environment.cmd": "8047837c9d34af0e3f4ed3cb462251f0b31e451e20fef31b1467060180616119",
+          "recipe": "36bd35bbb37fcda50447d0a9c4b92e88f5e3133b25b189e43b383e8621f9ea0c"
+        }
+      }
+    },
+    {
+      "id": "linux-cuda-shared",
+      "system": "Linux",
+      "directory": "cuda-shared",
+      "static": false,
+      "cpu": false
+    },
+    {
+      "id": "linux-mixed-shared",
+      "system": "Linux",
+      "directory": "mixed-shared",
+      "static": false,
+      "cpu": true
+    },
+    {
+      "id": "linux-mixed-static",
+      "system": "Linux",
+      "directory": "mixed-static",
+      "static": true,
+      "cpu": true
+    }
+  ],
+  "source_checks": [
+    [
+      "source-direct",
+      "u3_direct",
+      "CudaDefaultCompute.DenseFfnUsesFixedRulesAndIndependentSlots"
+    ],
+    [
+      "source-graph",
+      "u3_graph_local",
+      "*D5Qwen35Official*:CudaDefaultGraph.DenseFfnCapturesTwoSlotsAndChangingInputs:CudaDefaultGraph.RejectsMissingResourcesAndUnsupportedOperations"
+    ],
+    [
+      "source-cpu",
+      "u3_mixed_cpu",
+      "MixedCpuDelivery.*"
+    ]
+  ],
+  "runtime_groups": [
+    {
+      "name": "direct-gguf-pairs",
+      "target": "u3_direct",
+      "filter": "*ActualRoleAndWidthUseOriginalCodecAcrossReplay/g00125aaea3282755:*ActualRoleAndWidthUseOriginalCodecAcrossReplay/gfe9f1d051f825cf8:*ActualRoleAndWidthUseOriginalCodecAcrossReplay/gf9be7e01b48380ac:*ActualRoleAndWidthUseOriginalCodecAcrossReplay/g6e5411768aa515ee:*ActualRoleAndWidthUseOriginalCodecAcrossReplay/g01fec23506b8ecba:*ActualRoleAndWidthUseOriginalCodecAcrossReplay/g020d5a4a1cca0e66:*ActualRoleAndWidthUseOriginalCodecAcrossReplay/g7bc50abcbc9c7ba8:*ActualRoleAndWidthUseOriginalCodecAcrossReplay/g9bd2a2d62dfdc963:*ActualRoleAndWidthUseOriginalCodecAcrossReplay/g77c6207da9dd84f6:*ActualRoleAndWidthUseOriginalCodecAcrossReplay/gaf6f99c25b5eefda:*ActualRoleAndWidthUseOriginalCodecAcrossReplay/g3633725453bb3ef0:*ActualRoleAndWidthUseOriginalCodecAcrossReplay/g67c58a8e90432579:*ActualRoleAndWidthUseOriginalCodecAcrossReplay/g05e7943e6a85af78:*ActualRoleAndWidthUseOriginalCodecAcrossReplay/g79186ac59ffbccec:*ActualRoleAndWidthUseOriginalCodecAcrossReplay/g48cc75ad554394cb:*ActualRoleAndWidthUseOriginalCodecAcrossReplay/gb16cf5de3f54020b:*ActualRoleAndWidthUseOriginalCodecAcrossReplay/g316e4801b7c444e9:*ActualRoleAndWidthUseOriginalCodecAcrossReplay/gf35c9be9f8d62fca:*ActualRoleAndWidthUseOriginalCodecAcrossReplay/g0c0470fb1e95e423:*ActualRoleAndWidthUseOriginalCodecAcrossReplay/g46da0e5c536771d6:*ActualRoleAndWidthUseOriginalCodecAcrossReplay/ge4349717a9fda78d:*ActualRoleAndWidthUseOriginalCodecAcrossReplay/gb8fca96e7eb5572a:*ActualRoleAndWidthUseOriginalCodecAcrossReplay/ga3521e9eda0f9d3b:*ActualRoleAndWidthUseOriginalCodecAcrossReplay/gda0be538a7302bff:*ActualRoleAndWidthUseOriginalCodecAcrossReplay/g159ed4d903dd76fb:*ActualRoleAndWidthUseOriginalCodecAcrossReplay/g6b2d86d3dc909725:*ActualRoleAndWidthUseOriginalCodecAcrossReplay/g1a4668bf2430f374:*ActualRoleAndWidthUseOriginalCodecAcrossReplay/g2e668b812d9d6ee5:*ActualRoleAndWidthUseOriginalCodecAcrossReplay/g1c3aab49330712a1:*ActualRoleAndWidthUseOriginalCodecAcrossReplay/g4e9e5a1609dbdce8:*ActualRoleAndWidthUseOriginalCodecAcrossReplay/g9c661cbdcb45fc05:*ActualRoleAndWidthUseOriginalCodecAcrossReplay/ge517ef628df603a0:*ActualRoleAndWidthUseOriginalCodecAcrossReplay/g21e73a30b744daf9:*ActualRoleAndWidthUseOriginalCodecAcrossReplay/g7162981aebd0abe4:*ActualRoleAndWidthUseOriginalCodecAcrossReplay/g2568c115c191fa67:*ActualRoleAndWidthUseOriginalCodecAcrossReplay/g2666b21c054f442b:*ActualRoleAndWidthUseOriginalCodecAcrossReplay/gacf44a6396133a0a:*ActualRoleAndWidthUseOriginalCodecAcrossReplay/gb0537de90fd43049:*ActualRoleAndWidthUseOriginalCodecAcrossReplay/g2bd2c6dd45e9c06c:*ActualRoleAndWidthUseOriginalCodecAcrossReplay/gd459fc4f92f346ef:*ActualRoleAndWidthUseOriginalCodecAcrossReplay/g2df751f640bc7c34:*ActualRoleAndWidthUseOriginalCodecAcrossReplay/g2f948e5bf5e68a7c:*ActualRoleAndWidthUseOriginalCodecAcrossReplay/g2fcad3816188464a:*ActualRoleAndWidthUseOriginalCodecAcrossReplay/g94d728c86275d6bb:*ActualRoleAndWidthUseOriginalCodecAcrossReplay/g395cdd5a9062e045:*ActualRoleAndWidthUseOriginalCodecAcrossReplay/g3d98a356719fec32:*ActualRoleAndWidthUseOriginalCodecAcrossReplay/g64b2778601fdfff0:*ActualRoleAndWidthUseOriginalCodecAcrossReplay/g6d0ee7c70b7a7254:*ActualRoleAndWidthUseOriginalCodecAcrossReplay/g52a7200343a83447:*ActualRoleAndWidthUseOriginalCodecAcrossReplay/g8d9ba57385e7836d:*ActualRoleAndWidthUseOriginalCodecAcrossReplay/g64b649142b8fea00:*ActualRoleAndWidthUseOriginalCodecAcrossReplay/g67726d00dbb43297:*ActualRoleAndWidthUseOriginalCodecAcrossReplay/gb5389f62d370dd86:*ActualRoleAndWidthUseOriginalCodecAcrossReplay/g866e328d605d0abe:*ActualRoleAndWidthUseOriginalCodecAcrossReplay/g928bf6ce5a12f293:*ActualRoleAndWidthUseOriginalCodecAcrossReplay/g986a545ca4d91187:*ActualRoleAndWidthUseOriginalCodecAcrossReplay/gad9506f5887fe543:*ActualRoleAndWidthUseOriginalCodecAcrossReplay/gbc6cead31c8f00ec:*ActualRoleAndWidthUseOriginalCodecAcrossReplay/gbf47eecb5069a663:*ActualRoleAndWidthUseOriginalCodecAcrossReplay/gde94017d0f472f4b"
+    },
+    {
+      "name": "direct-packed",
+      "target": "u3_direct",
+      "filter": "*N1*:*N2*"
+    },
+    {
+      "name": "direct-families",
+      "target": "u3_direct",
+      "filter": "*MoeFragments.D5Glm*:*MoeFragments.D5Kimi*:*MoeFragments.D5Kda*:*MoeFragments.D5SixProfiles*:*MoeFragments.D5EightGguf*:*MoeFragments.D5OfficialKimi*:*MoeFragments.D5Thirteen*:*QwenRecurrent.D5NineProfiles*:CudaDefaultCompute.*"
+    },
+    {
+      "name": "direct-current-0",
+      "target": "u3_direct",
+      "filter": "CudaDirectCurrentRegions.DsparkTargetHiddenAndFp32Confidence"
+    },
+    {
+      "name": "direct-current-1",
+      "target": "u3_direct",
+      "filter": "CudaDirectCurrentRegions.DsparkMarkovFullVocabularyWithLogitBias"
+    },
+    {
+      "name": "direct-current-2",
+      "target": "u3_direct",
+      "filter": "CudaDirectCurrentRegions.DsparkTargetPrefillAndFiveTokenAttentionCache"
+    },
+    {
+      "name": "direct-current-3",
+      "target": "u3_direct",
+      "filter": "CudaDirectCurrentRegions.NewOfficialMainAttentionCompressionAndMoe"
+    },
+    {
+      "name": "direct-current-4",
+      "target": "u3_direct",
+      "filter": "CudaDirectCurrentRegions.CompleteThreeStageDsparkWithSharedEmbeddingAndConfidence"
+    },
+    {
+      "name": "direct-current-5",
+      "target": "u3_direct",
+      "filter": "CudaDirectCurrentRegions.QwenNamedQ4SidecarUsesQ3Q4Q6AndCompleteMtp"
+    },
+    {
+      "name": "direct-current-6",
+      "target": "u3_direct",
+      "filter": "CudaDirectCurrentRegions.FlashSidecarsKeepMixedMxfp4BfloatAndQ8ThreeStagePrograms"
+    },
+    {
+      "name": "direct-current-7",
+      "target": "u3_direct",
+      "filter": "CudaDirectC5Parameters.Qwen24ActualHalfSplitFrequencyNormAndKvFeedback"
+    },
+    {
+      "name": "direct-current-8",
+      "target": "u3_direct",
+      "filter": "CudaDirectC5Parameters.QwenActualWidthsUseDeclaredFloatNormEpsilon"
+    },
+    {
+      "name": "direct-current-9",
+      "target": "u3_direct",
+      "filter": "CudaDirectC5Parameters.Qwen24OriginalMtpCodecNormOrderAndCarry"
+    },
+    {
+      "name": "direct-current-10",
+      "target": "u3_direct",
+      "filter": "CudaDirectC5Parameters.Qwen24CompleteNextNUsesMixedRolesCacheMoeAndFullHead"
+    },
+    {
+      "name": "direct-current-11",
+      "target": "u3_direct",
+      "filter": "C5ActualConvolutionParameters/CudaDirectC5Parameters.ActualGgufConvolutionStorageFeedsCompleteRecurrentState/gc3c587739220f12d"
+    },
+    {
+      "name": "direct-current-12",
+      "target": "u3_direct",
+      "filter": "C5ActualConvolutionParameters/CudaDirectC5Parameters.ActualGgufConvolutionStorageFeedsCompleteRecurrentState/gf4c46eb70564ef43"
+    },
+    {
+      "name": "direct-current-13",
+      "target": "u3_direct",
+      "filter": "C5ActualConvolutionParameters/CudaDirectC5Parameters.ActualGgufConvolutionStorageFeedsCompleteRecurrentState/g7651f3980ebb670e"
+    },
+    {
+      "name": "direct-current-14",
+      "target": "u3_direct",
+      "filter": "C5ActualConvolutionParameters/CudaDirectC5Parameters.ActualGgufConvolutionStorageFeedsCompleteRecurrentState/gd57295091e4ad903"
+    },
+    {
+      "name": "direct-current-15",
+      "target": "u3_direct",
+      "filter": "C5ActualConvolutionParameters/CudaDirectC5Parameters.ActualGgufConvolutionStorageFeedsCompleteRecurrentState/g31709c3de72cf996"
+    },
+    {
+      "name": "direct-current-16",
+      "target": "u3_direct",
+      "filter": "C5ActualConvolutionParameters/CudaDirectC5Parameters.ActualGgufConvolutionStorageFeedsCompleteRecurrentState/g89aa3265ac4fdf68"
+    },
+    {
+      "name": "direct-current-17",
+      "target": "u3_direct",
+      "filter": "C5ExactNewGgufMain/CudaDirectC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile89"
+    },
+    {
+      "name": "direct-current-18",
+      "target": "u3_direct",
+      "filter": "C5ExactNewGgufMain/CudaDirectC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile90"
+    },
+    {
+      "name": "direct-current-19",
+      "target": "u3_direct",
+      "filter": "C5ExactNewGgufMain/CudaDirectC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile102"
+    },
+    {
+      "name": "direct-current-20",
+      "target": "u3_direct",
+      "filter": "C5ExactNewGgufMain/CudaDirectC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile103"
+    },
+    {
+      "name": "graph-gguf-pairs",
+      "target": "u3_graph",
+      "filter": "*ActualRoleAndWidthUseOriginalCodecAcrossReplay/g00125aaea3282755:*ActualRoleAndWidthUseOriginalCodecAcrossReplay/gfe9f1d051f825cf8:*ActualRoleAndWidthUseOriginalCodecAcrossReplay/gf9be7e01b48380ac:*ActualRoleAndWidthUseOriginalCodecAcrossReplay/g6e5411768aa515ee:*ActualRoleAndWidthUseOriginalCodecAcrossReplay/g01fec23506b8ecba:*ActualRoleAndWidthUseOriginalCodecAcrossReplay/g020d5a4a1cca0e66:*ActualRoleAndWidthUseOriginalCodecAcrossReplay/g7bc50abcbc9c7ba8:*ActualRoleAndWidthUseOriginalCodecAcrossReplay/g9bd2a2d62dfdc963:*ActualRoleAndWidthUseOriginalCodecAcrossReplay/g77c6207da9dd84f6:*ActualRoleAndWidthUseOriginalCodecAcrossReplay/gaf6f99c25b5eefda:*ActualRoleAndWidthUseOriginalCodecAcrossReplay/g3633725453bb3ef0:*ActualRoleAndWidthUseOriginalCodecAcrossReplay/g67c58a8e90432579:*ActualRoleAndWidthUseOriginalCodecAcrossReplay/g05e7943e6a85af78:*ActualRoleAndWidthUseOriginalCodecAcrossReplay/g79186ac59ffbccec:*ActualRoleAndWidthUseOriginalCodecAcrossReplay/g48cc75ad554394cb:*ActualRoleAndWidthUseOriginalCodecAcrossReplay/gb16cf5de3f54020b:*ActualRoleAndWidthUseOriginalCodecAcrossReplay/g316e4801b7c444e9:*ActualRoleAndWidthUseOriginalCodecAcrossReplay/gf35c9be9f8d62fca:*ActualRoleAndWidthUseOriginalCodecAcrossReplay/g0c0470fb1e95e423:*ActualRoleAndWidthUseOriginalCodecAcrossReplay/g46da0e5c536771d6:*ActualRoleAndWidthUseOriginalCodecAcrossReplay/ge4349717a9fda78d:*ActualRoleAndWidthUseOriginalCodecAcrossReplay/gb8fca96e7eb5572a:*ActualRoleAndWidthUseOriginalCodecAcrossReplay/ga3521e9eda0f9d3b:*ActualRoleAndWidthUseOriginalCodecAcrossReplay/gda0be538a7302bff:*ActualRoleAndWidthUseOriginalCodecAcrossReplay/g159ed4d903dd76fb:*ActualRoleAndWidthUseOriginalCodecAcrossReplay/g6b2d86d3dc909725:*ActualRoleAndWidthUseOriginalCodecAcrossReplay/g1a4668bf2430f374:*ActualRoleAndWidthUseOriginalCodecAcrossReplay/g2e668b812d9d6ee5:*ActualRoleAndWidthUseOriginalCodecAcrossReplay/g1c3aab49330712a1:*ActualRoleAndWidthUseOriginalCodecAcrossReplay/g4e9e5a1609dbdce8:*ActualRoleAndWidthUseOriginalCodecAcrossReplay/g9c661cbdcb45fc05:*ActualRoleAndWidthUseOriginalCodecAcrossReplay/ge517ef628df603a0:*ActualRoleAndWidthUseOriginalCodecAcrossReplay/g21e73a30b744daf9:*ActualRoleAndWidthUseOriginalCodecAcrossReplay/g7162981aebd0abe4:*ActualRoleAndWidthUseOriginalCodecAcrossReplay/g2568c115c191fa67:*ActualRoleAndWidthUseOriginalCodecAcrossReplay/g2666b21c054f442b:*ActualRoleAndWidthUseOriginalCodecAcrossReplay/gacf44a6396133a0a:*ActualRoleAndWidthUseOriginalCodecAcrossReplay/gb0537de90fd43049:*ActualRoleAndWidthUseOriginalCodecAcrossReplay/g2bd2c6dd45e9c06c:*ActualRoleAndWidthUseOriginalCodecAcrossReplay/gd459fc4f92f346ef:*ActualRoleAndWidthUseOriginalCodecAcrossReplay/g2df751f640bc7c34:*ActualRoleAndWidthUseOriginalCodecAcrossReplay/g2f948e5bf5e68a7c:*ActualRoleAndWidthUseOriginalCodecAcrossReplay/g2fcad3816188464a:*ActualRoleAndWidthUseOriginalCodecAcrossReplay/g94d728c86275d6bb:*ActualRoleAndWidthUseOriginalCodecAcrossReplay/g395cdd5a9062e045:*ActualRoleAndWidthUseOriginalCodecAcrossReplay/g3d98a356719fec32:*ActualRoleAndWidthUseOriginalCodecAcrossReplay/g64b2778601fdfff0:*ActualRoleAndWidthUseOriginalCodecAcrossReplay/g6d0ee7c70b7a7254:*ActualRoleAndWidthUseOriginalCodecAcrossReplay/g52a7200343a83447:*ActualRoleAndWidthUseOriginalCodecAcrossReplay/g8d9ba57385e7836d:*ActualRoleAndWidthUseOriginalCodecAcrossReplay/g64b649142b8fea00:*ActualRoleAndWidthUseOriginalCodecAcrossReplay/g67726d00dbb43297:*ActualRoleAndWidthUseOriginalCodecAcrossReplay/gb5389f62d370dd86:*ActualRoleAndWidthUseOriginalCodecAcrossReplay/g866e328d605d0abe:*ActualRoleAndWidthUseOriginalCodecAcrossReplay/g928bf6ce5a12f293:*ActualRoleAndWidthUseOriginalCodecAcrossReplay/g986a545ca4d91187:*ActualRoleAndWidthUseOriginalCodecAcrossReplay/gad9506f5887fe543:*ActualRoleAndWidthUseOriginalCodecAcrossReplay/gbc6cead31c8f00ec:*ActualRoleAndWidthUseOriginalCodecAcrossReplay/gbf47eecb5069a663:*ActualRoleAndWidthUseOriginalCodecAcrossReplay/gde94017d0f472f4b"
+    },
+    {
+      "name": "graph-packed",
+      "target": "u3_graph",
+      "filter": "*N1*:*N2*"
+    },
+    {
+      "name": "graph-families",
+      "target": "u3_graph",
+      "filter": "*MoeFragments.D5Glm*:*MoeFragments.D5Kimi*:*MoeFragments.D5Kda*:*MoeFragments.D5SixProfiles*:*MoeFragments.D5EightGguf*:*MoeFragments.D5OfficialKimi*:*MoeFragments.D5Thirteen*:*QwenRecurrent.D5NineProfiles*:CudaDefaultCompute.*"
+    },
+    {
+      "name": "graph-current-0",
+      "target": "u3_graph",
+      "filter": "CudaGraphCurrentRegions.DsparkTargetHiddenAndFp32Confidence"
+    },
+    {
+      "name": "graph-current-1",
+      "target": "u3_graph",
+      "filter": "CudaGraphCurrentRegions.DsparkMarkovFullVocabularyWithLogitBias"
+    },
+    {
+      "name": "graph-current-2",
+      "target": "u3_graph",
+      "filter": "CudaGraphCurrentRegions.DsparkTargetPrefillAndFiveTokenAttentionCache"
+    },
+    {
+      "name": "graph-current-3",
+      "target": "u3_graph",
+      "filter": "CudaGraphCurrentRegions.NewOfficialMainAttentionCompressionAndMoe"
+    },
+    {
+      "name": "graph-current-4",
+      "target": "u3_graph",
+      "filter": "CudaGraphCurrentRegions.CompleteThreeStageDsparkWithSharedEmbeddingAndConfidence"
+    },
+    {
+      "name": "graph-current-5",
+      "target": "u3_graph",
+      "filter": "CudaGraphCurrentRegions.QwenNamedQ4SidecarUsesQ3Q4Q6AndCompleteMtp"
+    },
+    {
+      "name": "graph-current-6",
+      "target": "u3_graph",
+      "filter": "CudaGraphCurrentRegions.FlashSidecarsKeepMixedMxfp4BfloatAndQ8ThreeStagePrograms"
+    },
+    {
+      "name": "graph-current-7",
+      "target": "u3_graph",
+      "filter": "CudaGraphC5Parameters.Qwen24ActualHalfSplitFrequencyNormAndKvFeedback"
+    },
+    {
+      "name": "graph-current-8",
+      "target": "u3_graph",
+      "filter": "CudaGraphC5Parameters.QwenActualWidthsUseDeclaredFloatNormEpsilon"
+    },
+    {
+      "name": "graph-current-9",
+      "target": "u3_graph",
+      "filter": "CudaGraphC5Parameters.Qwen24OriginalMtpCodecNormOrderAndCarry"
+    },
+    {
+      "name": "graph-current-10",
+      "target": "u3_graph",
+      "filter": "CudaGraphC5Parameters.Qwen24CompleteNextNUsesMixedRolesCacheMoeAndFullHead"
+    },
+    {
+      "name": "graph-current-11",
+      "target": "u3_graph",
+      "filter": "C5ActualConvolutionParameters/CudaGraphC5Parameters.ActualGgufConvolutionStorageFeedsCompleteRecurrentState/gc3c587739220f12d"
+    },
+    {
+      "name": "graph-current-12",
+      "target": "u3_graph",
+      "filter": "C5ActualConvolutionParameters/CudaGraphC5Parameters.ActualGgufConvolutionStorageFeedsCompleteRecurrentState/gf4c46eb70564ef43"
+    },
+    {
+      "name": "graph-current-13",
+      "target": "u3_graph",
+      "filter": "C5ActualConvolutionParameters/CudaGraphC5Parameters.ActualGgufConvolutionStorageFeedsCompleteRecurrentState/g7651f3980ebb670e"
+    },
+    {
+      "name": "graph-current-14",
+      "target": "u3_graph",
+      "filter": "C5ActualConvolutionParameters/CudaGraphC5Parameters.ActualGgufConvolutionStorageFeedsCompleteRecurrentState/gd57295091e4ad903"
+    },
+    {
+      "name": "graph-current-15",
+      "target": "u3_graph",
+      "filter": "C5ActualConvolutionParameters/CudaGraphC5Parameters.ActualGgufConvolutionStorageFeedsCompleteRecurrentState/g31709c3de72cf996"
+    },
+    {
+      "name": "graph-current-16",
+      "target": "u3_graph",
+      "filter": "C5ActualConvolutionParameters/CudaGraphC5Parameters.ActualGgufConvolutionStorageFeedsCompleteRecurrentState/g89aa3265ac4fdf68"
+    },
+    {
+      "name": "graph-current-17",
+      "target": "u3_graph",
+      "filter": "C5ExactNewGgufMain/CudaGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile89"
+    },
+    {
+      "name": "graph-current-18",
+      "target": "u3_graph",
+      "filter": "C5ExactNewGgufMain/CudaGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile90"
+    },
+    {
+      "name": "graph-current-19",
+      "target": "u3_graph",
+      "filter": "C5ExactNewGgufMain/CudaGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile102"
+    },
+    {
+      "name": "graph-current-20",
+      "target": "u3_graph",
+      "filter": "C5ExactNewGgufMain/CudaGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile103"
+    },
+    {
+      "name": "admission",
+      "target": "u3_admission",
+      "filter": "*D5Qwen35Official*"
+    },
+    {
+      "name": "graph-local",
+      "target": "u3_graph_local",
+      "filter": "*D5Qwen35Official*:CudaDefaultGraph.DenseFfnCapturesTwoSlotsAndChangingInputs:CudaDefaultGraph.RejectsMissingResourcesAndUnsupportedOperations"
+    }
+  ],
+  "completed_cells": [
+    {
+      "id": "cuda-final-u3-windows-static",
+      "proofs": [
+        {
+          "path": "evidence/correctness/cuda-final-u3-windows-static/receipt.json",
+          "sha256": "b8a5a7c3d7c37540e8ea8ed70091dd613d655221802d4c833436f1f91a80eb34"
+        }
+      ]
+    },
+    {
+      "id": "cuda-final-u3-windows-shared",
+      "proofs": [
+        {
+          "path": "evidence/correctness/cuda-final-u3-windows-shared/receipt.json",
+          "sha256": "851a672578f779807bc35dc237fdb019e499b7f5520c124010fe5932879ed067"
+        }
+      ]
+    },
+    {
+      "id": "cuda-final-u3-windows-mixed-shared",
+      "proofs": [
+        {
+          "path": "evidence/correctness/cuda-final-u3-windows-mixed-shared/receipt.json",
+          "sha256": "685427342eac53e2a7714aa5409e5a3c7e144ef4312278d8610a411a844a1e13"
+        }
+      ]
+    },
+    {
+      "id": "linux-cuda-source-static-local-receipts-not-yet-sealed",
+      "proofs": [
+        {
+          "path": ".scratch/validation/cuda-final-u3-delivery/linux-cuda-static/receipt.json",
+          "sha256": "0e026b858a1af3201088e31207e4eedcec2810e0ea53d331798fcb491c4cf49d"
+        },
+        {
+          "path": ".scratch/validation/cuda-final-u3-delivery/linux-static-runtime/receipt.json",
+          "sha256": "bd773ccdcaf2468d109bc668bf3964bf20a7153a6f8d7ff02169e1f03b063b89"
+        }
+      ]
+    }
+  ]
+}

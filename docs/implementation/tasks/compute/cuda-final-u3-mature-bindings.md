@@ -42,6 +42,11 @@ G2/N1/N2/R1 在实际方案 AUDITED 前不从 G1 获得实现授权。公共 sch
 
 ## 普通 API、资源与冷／热边界
 
+最终联合交付沿[固定入口与清单](../../../../evidence/correctness/cuda-final-u3-joint-delivery/delivery.py)
+执行；见[有限工具卡](../build/cuda-delivery-execution-control.md)。原数学全集不重跑，
+交付模式只验已固定的 ABI/loader/生命周期和真实程序边界；通过复用，失败具名停止。
+本批工具验收不是 U3 产品验收，当前产品 goal 仍暂停。
+
 runtime／ggml CUDA owning宏已完成 [宏专题](compute-graph-macro-normalization.md) 的等价迁移与实际验收；
 产品候选026d40bc，原数学／资源／资格不变。owner恢复本卡G1/G2有限FIX，不能因宏轮结束签本包完成。
 

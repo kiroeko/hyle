@@ -95,6 +95,10 @@ B4 同一源码审计的具名纠正：ggml 在 enable_language(CUDA) **之前**
 
 ## 当前子批结果
 
+后续联合交付只通过[本批固定入口](../../../../evidence/correctness/cuda-final-u3-joint-delivery/delivery.py)
+续跑，绑定[有限执行纠正](../build/cuda-delivery-execution-control.md)。当前产品 goal 暂停，
+重型 run 禁用；通过项和当前未验格保持，不因工具任务关闭代签本包完成。
+
 B1 产品 `f1937b27`、B4 default 产品 `76929103`、显式环境优先级产品 `7217b109`。
 Windows 的普通配置、生成架构／显式覆盖／OFF 检查已有精确候选收据，
 见 [U2 配置证据](../../../../evidence/correctness/cuda-final-u2/README.md)。没有新增构建／运行／交付／性能 PASS。
