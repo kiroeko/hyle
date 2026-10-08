@@ -495,7 +495,8 @@
       "candidate": "cd53173946564155121819f1ccae7f6726b908ed",
       "performance": {
         "tier": "P1",
-        "evidence": "evidence/performance/cuda-best-of-c2/README.md"
+        "evidence": "evidence/performance/cuda-best-of-c2/README.md",
+        "material_margin_pct": 5
       }
     },
     {
@@ -506,7 +507,8 @@
       "candidate": "cd53173946564155121819f1ccae7f6726b908ed",
       "performance": {
         "tier": "P1",
-        "evidence": "evidence/performance/cuda-best-of-c2/README.md"
+        "evidence": "evidence/performance/cuda-best-of-c2/README.md",
+        "material_margin_pct": 5
       }
     },
     {
@@ -517,7 +519,8 @@
       "candidate": "cd53173946564155121819f1ccae7f6726b908ed",
       "performance": {
         "tier": "P1",
-        "evidence": "evidence/performance/cuda-best-of-c2/README.md"
+        "evidence": "evidence/performance/cuda-best-of-c2/README.md",
+        "material_margin_pct": 5
       }
     },
     {
