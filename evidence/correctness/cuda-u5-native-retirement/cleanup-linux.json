@@ -1,0 +1,22 @@
+[
+  {
+    "path": "/root/hyle-scratch/active-cpu-z/cuda-u4-static-relocated",
+    "bytes": 260284091,
+    "removed": true
+  },
+  {
+    "path": "/root/hyle-scratch/active-cpu-z/cuda-u4-static-consumer",
+    "bytes": 67673744,
+    "removed": true
+  },
+  {
+    "path": "/root/hyle-scratch/active-cpu-z/cuda-u4-shared-relocated",
+    "bytes": 122565519,
+    "removed": true
+  },
+  {
+    "path": "/root/hyle-scratch/active-cpu-z/cuda-u4-shared-consumer",
+    "bytes": 276772,
+    "removed": true
+  }
+]

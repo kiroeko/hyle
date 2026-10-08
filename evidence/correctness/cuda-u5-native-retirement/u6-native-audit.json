@@ -1,0 +1,55 @@
+{
+  "archive_sha256": "ed98eae241697ed9f5e12111159df44b6859783391d2c9f071ec3d22e9750346",
+  "input_hashes_verified": 61,
+  "errors": [],
+  "linux_union": [
+    {
+      "file": "linux-f32-grouped/direct-artifacts.xml",
+      "count": 34,
+      "failed": 0,
+      "skips": 0
+    },
+    {
+      "file": "linux-f32-grouped/direct-current.xml",
+      "count": 21,
+      "failed": 0,
+      "skips": 0
+    },
+    {
+      "file": "linux-f32-grouped/direct-families.xml",
+      "count": 36,
+      "failed": 0,
+      "skips": 0
+    },
+    {
+      "file": "linux-f32-grouped/direct-fixed.xml",
+      "count": 560,
+      "failed": 0,
+      "skips": 0
+    },
+    {
+      "file": "linux-f32-grouped/graph-artifacts.xml",
+      "count": 34,
+      "failed": 0,
+      "skips": 0
+    },
+    {
+      "file": "linux-f32-grouped/graph-current.xml",
+      "count": 21,
+      "failed": 0,
+      "skips": 0
+    },
+    {
+      "file": "linux-f32-grouped/graph-families.xml",
+      "count": 34,
+      "failed": 0,
+      "skips": 0
+    },
+    {
+      "file": "linux-f32-grouped/graph-fixed.xml",
+      "count": 560,
+      "failed": 0,
+      "skips": 0
+    }
+  ]
+}

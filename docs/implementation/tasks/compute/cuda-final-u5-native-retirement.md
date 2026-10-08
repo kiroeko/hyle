@@ -75,3 +75,17 @@ source math通过后交付只重验本改动的借入算术和实际link/load，
 首次Win shared源码link检出U4新增expert-factory测试漏声明cuBLAS test依赖；static通过
 来自传递archive，shared不得继承。仅补测试DEPS，不改产品/公开依赖图/数学；原FAIL保留，
 同build ID一次具名纠正，configure proof复用，增量CMake自更新。其它无关模块不重验。
+
+## U5 有限范围验收完成
+
+产品candidate `657f291f`；源码后不再改数学/API/常态形状。两平台source分别9个原算术/
+资源、Direct2、Graph3通过；两平台relocated/offline static/shared各9个相同原测试及普通
+Direct/完整Graph变化payload实际通过，42步骤最新全PASS、原shared test-link FAIL保留。
+原测试shape/精度/阈值/特殊值未改，Windows DLL邻exe/系统PATH，WSL无LD_LIBRARY_PATH。
+完整日志/XML/身份和终审复用边界见[验收](../../../../evidence/correctness/cuda-u5-native-retirement/README.md)。
+
+清退是六份重复公式的物理删除、原成熟算术BORROW；不是删除六个算子族。六族仍含具名
+独有索引/数学/资源，由原consumer与明确公共合同支持，未签性能优势。SIMD/CPU及其它GPU
+未改。P0成本为原prepared kernel、同索引/中间精度/一kernel/完成；只复用constexpr选定的
+inline math，无新heap状态/host查询/热route搜索。U4原P1资格INCONCLUSIVE仍保持。
+统一实现LOC60,774/255文件；本轮不追加采样或新算子目录。U6只复核约定范围与终止。

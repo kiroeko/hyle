@@ -1,0 +1,333 @@
+{
+  "candidate": "657f291f6e4d50b0e1c14ca24cdbe7b1715066e4",
+  "test_consumer_candidate": "b1f3fdc159ebe52797d4a1edcd06335b906eddd3",
+  "scope": "Borrow original mature SGLang arithmetic for six duplicated gate/Unary formulas; preserve scalar/index/resource contracts; no new math, timing or public API.",
+  "status": "PASS",
+  "checks": [
+    {
+      "id": "u5-win-source-configure",
+      "status": "PASS",
+      "attempts": 1,
+      "tests": null,
+      "seconds": 57.359
+    },
+    {
+      "id": "u5-win-source-build",
+      "status": "PASS",
+      "attempts": 2,
+      "tests": null,
+      "seconds": 67.937
+    },
+    {
+      "id": "u5-win-activation",
+      "status": "PASS",
+      "attempts": 1,
+      "tests": 9,
+      "seconds": 0.937
+    },
+    {
+      "id": "u5-win-direct",
+      "status": "PASS",
+      "attempts": 1,
+      "tests": 2,
+      "seconds": 0.829
+    },
+    {
+      "id": "u5-win-graph",
+      "status": "PASS",
+      "attempts": 1,
+      "tests": 3,
+      "seconds": 0.797
+    },
+    {
+      "id": "u5-linux-source-configure",
+      "status": "PASS",
+      "attempts": 1,
+      "tests": null,
+      "seconds": 20.125
+    },
+    {
+      "id": "u5-linux-source-build",
+      "status": "PASS",
+      "attempts": 1,
+      "tests": null,
+      "seconds": 90.062
+    },
+    {
+      "id": "u5-linux-activation",
+      "status": "PASS",
+      "attempts": 1,
+      "tests": 9,
+      "seconds": 1.641
+    },
+    {
+      "id": "u5-linux-direct",
+      "status": "PASS",
+      "attempts": 1,
+      "tests": 2,
+      "seconds": 1.0
+    },
+    {
+      "id": "u5-linux-graph",
+      "status": "PASS",
+      "attempts": 1,
+      "tests": 3,
+      "seconds": 0.782
+    },
+    {
+      "id": "u5-win-static-configure",
+      "status": "PASS",
+      "attempts": 1,
+      "tests": null,
+      "seconds": 52.422
+    },
+    {
+      "id": "u5-win-static-build",
+      "status": "PASS",
+      "attempts": 1,
+      "tests": null,
+      "seconds": 74.562
+    },
+    {
+      "id": "u5-win-static-install",
+      "status": "PASS",
+      "attempts": 1,
+      "tests": null,
+      "seconds": 4.0
+    },
+    {
+      "id": "u5-win-static-relocate",
+      "status": "PASS",
+      "attempts": 1,
+      "tests": null,
+      "seconds": 0.0
+    },
+    {
+      "id": "u5-win-static-consumer-configure",
+      "status": "PASS",
+      "attempts": 1,
+      "tests": null,
+      "seconds": 52.797
+    },
+    {
+      "id": "u5-win-static-consumer-build",
+      "status": "PASS",
+      "attempts": 1,
+      "tests": null,
+      "seconds": 20.672
+    },
+    {
+      "id": "u5-win-static-math",
+      "status": "PASS",
+      "attempts": 1,
+      "tests": 9,
+      "seconds": 0.953
+    },
+    {
+      "id": "u5-win-static-ordinary",
+      "status": "PASS",
+      "attempts": 1,
+      "tests": null,
+      "seconds": 1.015
+    },
+    {
+      "id": "u5-win-shared-configure",
+      "status": "PASS",
+      "attempts": 1,
+      "tests": null,
+      "seconds": 52.141
+    },
+    {
+      "id": "u5-win-shared-build",
+      "status": "PASS",
+      "attempts": 1,
+      "tests": null,
+      "seconds": 74.984
+    },
+    {
+      "id": "u5-win-shared-install",
+      "status": "PASS",
+      "attempts": 1,
+      "tests": null,
+      "seconds": 2.781
+    },
+    {
+      "id": "u5-win-shared-relocate",
+      "status": "PASS",
+      "attempts": 1,
+      "tests": null,
+      "seconds": 0.016
+    },
+    {
+      "id": "u5-win-shared-consumer-configure",
+      "status": "PASS",
+      "attempts": 1,
+      "tests": null,
+      "seconds": 52.203
+    },
+    {
+      "id": "u5-win-shared-consumer-build",
+      "status": "PASS",
+      "attempts": 1,
+      "tests": null,
+      "seconds": 21.578
+    },
+    {
+      "id": "u5-win-shared-math",
+      "status": "PASS",
+      "attempts": 1,
+      "tests": 9,
+      "seconds": 0.906
+    },
+    {
+      "id": "u5-win-shared-ordinary",
+      "status": "PASS",
+      "attempts": 1,
+      "tests": null,
+      "seconds": 0.812
+    },
+    {
+      "id": "u5-linux-static-configure",
+      "status": "PASS",
+      "attempts": 1,
+      "tests": null,
+      "seconds": 18.203
+    },
+    {
+      "id": "u5-linux-static-build",
+      "status": "PASS",
+      "attempts": 1,
+      "tests": null,
+      "seconds": 76.828
+    },
+    {
+      "id": "u5-linux-static-install",
+      "status": "PASS",
+      "attempts": 1,
+      "tests": null,
+      "seconds": 0.281
+    },
+    {
+      "id": "u5-linux-static-relocate",
+      "status": "PASS",
+      "attempts": 1,
+      "tests": null,
+      "seconds": 0.0
+    },
+    {
+      "id": "u5-linux-static-consumer-configure",
+      "status": "PASS",
+      "attempts": 1,
+      "tests": null,
+      "seconds": 5.125
+    },
+    {
+      "id": "u5-linux-static-consumer-build",
+      "status": "PASS",
+      "attempts": 1,
+      "tests": null,
+      "seconds": 13.844
+    },
+    {
+      "id": "u5-linux-static-math",
+      "status": "PASS",
+      "attempts": 1,
+      "tests": 9,
+      "seconds": 1.593
+    },
+    {
+      "id": "u5-linux-static-ordinary",
+      "status": "PASS",
+      "attempts": 1,
+      "tests": null,
+      "seconds": 0.734
+    },
+    {
+      "id": "u5-linux-shared-configure",
+      "status": "PASS",
+      "attempts": 1,
+      "tests": null,
+      "seconds": 10.328
+    },
+    {
+      "id": "u5-linux-shared-build",
+      "status": "PASS",
+      "attempts": 1,
+      "tests": null,
+      "seconds": 77.422
+    },
+    {
+      "id": "u5-linux-shared-install",
+      "status": "PASS",
+      "attempts": 1,
+      "tests": null,
+      "seconds": 0.187
+    },
+    {
+      "id": "u5-linux-shared-relocate",
+      "status": "PASS",
+      "attempts": 1,
+      "tests": null,
+      "seconds": 0.0
+    },
+    {
+      "id": "u5-linux-shared-consumer-configure",
+      "status": "PASS",
+      "attempts": 1,
+      "tests": null,
+      "seconds": 5.125
+    },
+    {
+      "id": "u5-linux-shared-consumer-build",
+      "status": "PASS",
+      "attempts": 1,
+      "tests": null,
+      "seconds": 13.906
+    },
+    {
+      "id": "u5-linux-shared-math",
+      "status": "PASS",
+      "attempts": 1,
+      "tests": 9,
+      "seconds": 1.329
+    },
+    {
+      "id": "u5-linux-shared-ordinary",
+      "status": "PASS",
+      "attempts": 1,
+      "tests": null,
+      "seconds": 0.594
+    }
+  ],
+  "skipped_duplicates": [
+    {
+      "id": "u5-win-graph-native",
+      "reason": "Exact requested two native-capability cases already in completed source graph3 union; no duplicated execution."
+    },
+    {
+      "id": "u5-linux-graph-native",
+      "reason": "Exact requested two native-capability cases already in completed source graph3 union; no duplicated execution."
+    }
+  ],
+  "source_math_resource_tests": 28,
+  "sdk_math_resource_tests": 36,
+  "sdk_ordinary_replay_consumers": 4,
+  "source_platforms": [
+    "Windows",
+    "WSL Linux"
+  ],
+  "sdk_forms": [
+    "Windows static",
+    "Windows shared",
+    "WSL static",
+    "WSL shared"
+  ],
+  "archive_sha256": "6f51f5282ba10270c27994337fcbc754b49851252cd803aa73dcec1898cdb49f",
+  "original_failures": "Windows shared source missing cuBLAS direct test link dependency preserved; corrected test DEPS only.",
+  "performance": "P0 arithmetic/ownership/indexing equivalence and no new hot dispatch/heap state. U4 AA FAIL remains DIAGNOSTIC/INCONCLUSIVE; no P1 or WIN claim.",
+  "loc": {
+    "code": 60774,
+    "files": 255,
+    "excludes": "tests,bench,third_party"
+  }
+}

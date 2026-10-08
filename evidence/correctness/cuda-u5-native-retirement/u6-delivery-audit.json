@@ -1,0 +1,135 @@
+[
+  {
+    "evidence": "cuda-final-u3-windows-static",
+    "status": "WINDOWS_CUDA_ONLY_STATIC_SDK_QUALIFIED",
+    "archive": "delivery.zip",
+    "archive_sha256": "c2bbdbb2dccb98e4fd2fdb2177cec1b2e130731726a4c521a7a6305548cbe8ae",
+    "internal_hashes_verified": 127,
+    "hash_errors": [],
+    "coverage": {
+      "direct": {
+        "required_native_union": 651,
+        "required_missing": [],
+        "qualified_independent_sdk_names": 667,
+        "extra_checks": [
+          "CudaDefaultCompute.D5Qwen35FidelityGgufExactQ8ProjectionsUseNativeRegionsAndReplay",
+          "CudaDefaultCompute.D5Qwen35FidelityGgufF16EmbeddingUsesMatureRowsAndReplays",
+          "CudaDefaultCompute.D5Qwen35FidelityGgufF16ProjectionsUseMatureRegionsAndReplay",
+          "CudaDefaultCompute.D5Qwen35PrimaryGgufExactMixedProjectionsUseNativeRegionsAndReplay",
+          "CudaDefaultCompute.D5Qwen35PrimaryGgufQuantizedEmbeddingUsesNativeRowsAndReplays",
+          "CudaDefaultCompute.D5Qwen38FidelityGgufQ8ProjectionRolesUseNativeRegionsAndReplay",
+          "CudaDefaultCompute.D5Qwen38FidelityGgufQuantizedEmbeddingUsesExactWidthAndReplays",
+          "CudaDefaultCompute.D5Qwen38PrimaryGgufEveryStoredProjectionTypeUsesNativeRegionsAndReplay",
+          "CudaDefaultCompute.D5Qwen38PrimaryGgufQuantizedEmbeddingUsesExactWidthAndReplays",
+          "CudaDefaultCompute.D5Qwen38_24TGgufMoeWeightRolesUseNativeRegions",
+          "CudaDefaultCompute.D5RealQwenProjectionUsesExactProfileAndReplays",
+          "CudaDefaultCompute.DefaultRulesRetainSeparateAndPackedTailCapability",
+          "CudaDefaultCompute.DenseFfnUsesFixedRulesAndIndependentSlots",
+          "CudaDefaultCompute.DescriptorPreparationChecksDeviceResourcesBeforePayload",
+          "CudaDefaultCompute.RejectsInvalidDeviceAndUnsupportedOperations",
+          "CudaSidecarReference.EqualStrideCodecsCannotReuseRetiredCapture"
+        ]
+      },
+      "graph": {
+        "required_native_union": 649,
+        "required_missing": [],
+        "qualified_independent_sdk_names": 652,
+        "extra_checks": [
+          "CudaDefaultGraph.DefaultRulesPrepareSeparateAndPackedTailCapability",
+          "CudaDefaultGraph.DenseFfnCapturesTwoSlotsAndChangingInputs",
+          "CudaDefaultGraph.RejectsMissingResourcesAndUnsupportedOperations"
+        ]
+      }
+    }
+  },
+  {
+    "evidence": "cuda-final-u3-windows-shared",
+    "status": "WINDOWS_CUDA_ONLY_SHARED_SHIPPING_QUALIFIED",
+    "archive": "delivery.zip",
+    "archive_sha256": "113f402fbfa1a4d3182de4439a91f0cd8f8dcc2b6503943a9d1f103e82077dec",
+    "internal_hashes_verified": 119,
+    "hash_errors": [],
+    "coverage": {}
+  },
+  {
+    "evidence": "cuda-final-u3-windows-mixed-static",
+    "status": "WINDOWS_CPU_CUDA_STATIC_SHIPPING_QUALIFIED",
+    "archive": "delivery.zip",
+    "archive_sha256": "9dc4c2146d49f8c5bc34cf33b7b2e8ca2bef7e00785452435f708280c334ce1e",
+    "internal_hashes_verified": 113,
+    "hash_errors": [],
+    "coverage": {
+      "direct": 166,
+      "graph": 151,
+      "cpu": 3
+    }
+  },
+  {
+    "evidence": "cuda-final-u3-windows-mixed-shared",
+    "status": "WINDOWS_CPU_CUDA_SHARED_SHIPPING_QUALIFIED",
+    "archive": "delivery.zip",
+    "archive_sha256": "19264e82e792cfc2383ddaa5b44015fbf5114ef1b0c0758be09c116c809b87af",
+    "internal_hashes_verified": 127,
+    "hash_errors": [],
+    "coverage": {}
+  },
+  {
+    "evidence": "cuda-final-u3-linux-static",
+    "status": "LINUX_CUDA_ONLY_STATIC_SHIPPING_QUALIFIED",
+    "archive": "delivery.zip",
+    "archive_sha256": "a42cd75e45af1e96bf49c465ecf138028ffb149fc1785ed68e96484983ccf520",
+    "internal_hashes_verified": 114,
+    "hash_errors": [],
+    "coverage": {
+      "direct": 166,
+      "graph": 151
+    }
+  },
+  {
+    "evidence": "cuda-final-u3-linux-shared",
+    "status": "LINUX_CUDA_ONLY_SHARED_SHIPPING_QUALIFIED",
+    "archive": "delivery.zip",
+    "archive_sha256": "c64986ece24cd611f153eef799d8f797dd6ca47394c89b71768f5dd1a591eb1b",
+    "internal_hashes_verified": 181,
+    "hash_errors": [],
+    "coverage": {
+      "direct": 166,
+      "graph": 151
+    }
+  },
+  {
+    "evidence": "cuda-final-u3-linux-mixed-static",
+    "status": "LINUX_CPU_CUDA_STATIC_SHIPPING_QUALIFIED",
+    "archive": "delivery.zip",
+    "archive_sha256": "ff72617a69e93422024d4c52556aeaed1dea0d3b5288cd08043ef657041901f0",
+    "internal_hashes_verified": 183,
+    "hash_errors": [],
+    "coverage": {
+      "direct": 166,
+      "graph": 151,
+      "cpu": 3
+    }
+  },
+  {
+    "evidence": "cuda-final-u3-linux-mixed-shared",
+    "status": "LINUX_CPU_CUDA_SHARED_SHIPPING_QUALIFIED",
+    "archive": "delivery.zip",
+    "archive_sha256": "50e5445ee09dfdcc4038359079e9b87538121affacf97dce56175230874a0cab",
+    "internal_hashes_verified": 183,
+    "hash_errors": [],
+    "coverage": {
+      "direct": 166,
+      "graph": 151,
+      "cpu": 3
+    }
+  },
+  {
+    "evidence": "cuda-u4-defaults",
+    "status": "PASS",
+    "archive": "sdk-validation.zip",
+    "archive_sha256": "b2ebc381d91867a866e28cbacbb1a237f629587b2415125c5b659be6a9a807c2",
+    "internal_hashes_verified": 0,
+    "hash_errors": [],
+    "coverage": {}
+  }
+]

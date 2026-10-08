@@ -1,0 +1,42 @@
+[
+  {
+    "path": "C:\\hv\\cuda-u4-static-relocated",
+    "bytes": 1044362749.0,
+    "removed": true
+  },
+  {
+    "path": "C:\\hv\\cuda-u4-static-consumer",
+    "bytes": 5168768978.0,
+    "removed": true
+  },
+  {
+    "path": "C:\\hv\\cuda-u4-shared-relocated",
+    "bytes": 116980257.0,
+    "removed": true
+  },
+  {
+    "path": "C:\\hv\\cuda-u4-shared-consumer",
+    "bytes": 5189856682.0,
+    "removed": true
+  },
+  {
+    "path": "C:\\hv\\cuda-u4-provider-preflight",
+    "bytes": 5168076134.0,
+    "removed": true
+  },
+  {
+    "path": "C:\\hv\\cuda-u4-provider-p1-attempt1",
+    "bytes": 5167899294.0,
+    "removed": true
+  },
+  {
+    "path": "C:\\hv\\cuda-u4-provider-p1",
+    "bytes": 5167899643.0,
+    "removed": true
+  },
+  {
+    "path": "C:\\hv\\cuda-u4-peer-identity",
+    "bytes": 257758299.0,
+    "removed": true
+  }
+]

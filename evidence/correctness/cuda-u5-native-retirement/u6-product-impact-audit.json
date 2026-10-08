@@ -1,0 +1,75 @@
+{
+  "native_math_candidate": "7f6c9107235868d63892d9117a293d1007ba3471",
+  "current": "3649d8f4881711843b831fd996ab35a41f6f546c",
+  "changed_product_files": {
+    "cmake/HyleCiRuntimeStagingContract.cmake": {
+      "class": "CLOSED runtime-staging directory writer fix; U23 all shipping logs",
+      "current_sha256": "dc2e17cc57b1c34c2217435a751a2d1bd0b42e4ce78a74b8e0f13b5b849731ee"
+    },
+    "cmake/HyleComponents.cmake": {
+      "class": "U4 private direct compute_ops edge; original graph closure already includes it",
+      "current_sha256": "8883f6ffb25c21a20bdf75d3f08c29c5d7a062b1faadf478157e3d5c36de73b7"
+    },
+    "cmake/HyleRuntimeStaging.cmake": {
+      "class": "CLOSED runtime-staging directory writer fix; U23 all shipping logs",
+      "current_sha256": "d95168b976ae1f45249d9ffba442920eb7e5e2002be6b2068ccd795d840b165d"
+    },
+    "include/hyle/compute/cuda.h": {
+      "class": "U4 cold default, capability/evidence separation and Graph scope; current U4 source/SDK checks",
+      "current_sha256": "17a151206986aefeb230065c5e27a989b58824c158bd2bdaad756fc7820a9246"
+    },
+    "include/hyle/compute/providers/cuda.h": {
+      "class": "U4 cold default, capability/evidence separation and Graph scope; current U4 source/SDK checks",
+      "current_sha256": "1b8c91cfd65b52b19503c3a8ddc31af9524093f35c1063071a2c0a56e4603106"
+    },
+    "include/hyle/compute/providers/ggml_cuda.h": {
+      "class": "U4 cold default, capability/evidence separation and Graph scope; current U4 source/SDK checks",
+      "current_sha256": "08b6ca997b48e4b1e4c8811669e62232b943a9364a77b10996341f5fb7e51e61"
+    },
+    "src/compute_provider_cuda/collectives_provider.cc": {
+      "class": "U4 cold default, capability/evidence separation and Graph scope; current U4 source/SDK checks",
+      "current_sha256": "c5d8bea4f5fae0fc32ca39d2f6f7da8eb55ecebe4bc8480f39943ec30031cb90"
+    },
+    "src/compute_provider_cuda/cuda_provider.cc": {
+      "class": "U5 borrowed activation arithmetic and self version; affected source/SDK checks",
+      "current_sha256": "e08690b5516c894fd1416dd9f819bd5ea1454b68631ca93832df90ef96ac2ac5"
+    },
+    "src/compute_provider_cuda/native_kernel.cu": {
+      "class": "U5 borrowed activation arithmetic and self version; affected source/SDK checks",
+      "current_sha256": "79af688b932494534f16d72e338ea0f74761ec438956904f7e4e1a01f67114da"
+    },
+    "src/compute_provider_cuda/tensor_kernel.cu": {
+      "class": "U5 borrowed activation arithmetic and self version; affected source/SDK checks",
+      "current_sha256": "0c514a523206a9ed1f982276c9a923d6dd341b65c7cc1ad32504638412e700d5"
+    },
+    "src/compute_provider_ggml_cuda/ggml_cuda_provider.cc": {
+      "class": "U4 cold default, capability/evidence separation and Graph scope; current U4 source/SDK checks",
+      "current_sha256": "f302339643036ff93d4424558bdbd723828670e45106aa1c98726bb711328941"
+    },
+    "src/compute_route_cuda/CMakeLists.txt": {
+      "class": "U4 cold default, capability/evidence separation and Graph scope; current U4 source/SDK checks",
+      "current_sha256": "0475ad06a789c4fd3cccb25135456b9ddc23dcaee44f26f76976753ddab4cdb5"
+    },
+    "src/compute_route_cuda/cuda_context.cc": {
+      "class": "U4 cold default, capability/evidence separation and Graph scope; current U4 source/SDK checks",
+      "current_sha256": "9d6d09fcc289f9bdc7e8dea0fa7b30eb5f9d15d601aee62d8473030341e7fe0a"
+    },
+    "src/compute_route_cuda/default_context.h": {
+      "class": "U4 cold default, capability/evidence separation and Graph scope; current U4 source/SDK checks",
+      "current_sha256": "6c56fe7cec25bed3c0a61d08eb0dcd637843b5bf0bb333650a72e7a5a3be8ba7"
+    },
+    "src/compute_route_cuda/default_policy.cc": {
+      "class": "U4 cold default, capability/evidence separation and Graph scope; current U4 source/SDK checks",
+      "current_sha256": "3c4eafe1a55b033fd703a01ebcba2511c2917401ccedc512c4f2b10000a65445"
+    },
+    "src/compute_route_cuda/default_policy.h": {
+      "class": "U4 cold default, capability/evidence separation and Graph scope; current U4 source/SDK checks",
+      "current_sha256": "b60d431ce4cf3594823e8f096db2c355b7f815725ac7f3c9108f44494fcb30e0"
+    },
+    "src/graph_route_cuda/cuda_context.cc": {
+      "class": "U4 cold default, capability/evidence separation and Graph scope; current U4 source/SDK checks",
+      "current_sha256": "cd43a2b586d34617a3a414cd490dfdc2a9cf81a6e8fcc26d64fd79bfef66b6a1"
+    }
+  },
+  "no_original_vendor_math_or_fixed_program_changes": true
+}
