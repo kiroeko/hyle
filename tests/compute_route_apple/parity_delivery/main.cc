@@ -82,7 +82,7 @@ void codecs(bool graph) {
   }
   // Half scales 1,2,4,8,16,32,64,128 are represented by their exact bits.
   const auto weight = take(c::gguf_weight_description(c::GgufQuantizedType::kQ4K,
-      c::DataType::kFloat32, 8, 256));
+      c::DataType::kFloat32, 256, 8));
   const auto carrier_spec = take(a::input_spec(weight));
   auto carrier = mx::array(packed.data(), carrier_spec.shape, mx::uint8);
   const std::array linear_desc{dense(c::DataType::kFloat32, {1, 256}), weight};
