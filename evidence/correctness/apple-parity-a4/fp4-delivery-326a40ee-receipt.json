@@ -1,0 +1,186 @@
+{
+  "candidate": "326a40ee9b2f01a760d8bbdc66974685ff8cfdb0",
+  "steps": [
+    {
+      "name": "cold-build",
+      "returncode": 0,
+      "seconds": 13.535680333,
+      "log": "/Users/kiro/hyle-scratch/apple-parity-delivery/fp4-delivery-326a40ee-cold-build.log",
+      "sha256": "273da7f1f3739774b169dc3f7c824f53054432c68523f89f11f40211737b7516"
+    },
+    {
+      "name": "cold-direct",
+      "returncode": 0,
+      "seconds": 0.9018450409999996,
+      "log": "/Users/kiro/hyle-scratch/apple-parity-delivery/fp4-delivery-326a40ee-cold-direct.log",
+      "sha256": "1c9777c4326d79e6575f5e5854d670ee8029cc925f6efd361fd03ffbc52ae090"
+    },
+    {
+      "name": "cold-graph",
+      "returncode": 0,
+      "seconds": 0.8019053340000006,
+      "log": "/Users/kiro/hyle-scratch/apple-parity-delivery/fp4-delivery-326a40ee-cold-graph.log",
+      "sha256": "361bded0fc61685f83c7287246d8bb4a51cc8583667210e0824957eed31c8376"
+    },
+    {
+      "name": "shared-configure",
+      "returncode": 0,
+      "seconds": 3.485032917,
+      "log": "/Users/kiro/hyle-scratch/apple-parity-delivery/fp4-delivery-326a40ee-shared-configure.log",
+      "sha256": "50a98c526bb53640b121efbac676dd8aada3b5409acd3539266e2d37cb287952"
+    },
+    {
+      "name": "shared-build",
+      "returncode": 0,
+      "seconds": 0.0362425420000001,
+      "log": "/Users/kiro/hyle-scratch/apple-parity-delivery/fp4-delivery-326a40ee-shared-build.log",
+      "sha256": "c2ed93ffd93c840755c0e91392ae593b1b52de9b7aaf6c208123feaceb1dde2e"
+    },
+    {
+      "name": "shared-install",
+      "returncode": 0,
+      "seconds": 0.15768404199999964,
+      "log": "/Users/kiro/hyle-scratch/apple-parity-delivery/fp4-delivery-326a40ee-shared-install.log",
+      "sha256": "08886088b5dd7277c9b6d68f3aeb5d804d97dc3d396363a1972c7650beb5ac30"
+    },
+    {
+      "name": "source-build",
+      "returncode": 0,
+      "seconds": 4.667603333000002,
+      "log": "/Users/kiro/hyle-scratch/apple-parity-delivery/fp4-delivery-326a40ee-source-build.log",
+      "sha256": "8ca786c91ed25d270142e910f51118ac6adf607cb2e59fc013fa6be78a62a97a"
+    },
+    {
+      "name": "static-install",
+      "returncode": 0,
+      "seconds": 0.19904283300000003,
+      "log": "/Users/kiro/hyle-scratch/apple-parity-delivery/fp4-delivery-326a40ee-static-install.log",
+      "sha256": "b582183e86d8115b6307cfcefff492fa71a2b141ff43bc4c6f739b41b55d2e69"
+    },
+    {
+      "name": "static-consumer-configure",
+      "returncode": 0,
+      "seconds": 0.044370582999999186,
+      "log": "/Users/kiro/hyle-scratch/apple-parity-delivery/fp4-delivery-326a40ee-static-consumer-configure.log",
+      "sha256": "cff5ef87d0268de021c568884a36a633f684b7b15b9037d6d5ef24b847af243d"
+    },
+    {
+      "name": "static-consumer-build",
+      "returncode": 0,
+      "seconds": 1.1043802079999985,
+      "log": "/Users/kiro/hyle-scratch/apple-parity-delivery/fp4-delivery-326a40ee-static-consumer-build.log",
+      "sha256": "7f290fdde2634479c6e1faf1d193ad49ab049c22546cc6cd415a64f05fe8f9ad"
+    },
+    {
+      "name": "shared-consumer-configure",
+      "returncode": 0,
+      "seconds": 0.042716833999999995,
+      "log": "/Users/kiro/hyle-scratch/apple-parity-delivery/fp4-delivery-326a40ee-shared-consumer-configure.log",
+      "sha256": "f26aec1247639fa7173ac6250d18c9a5954fd9c3bf5c41edd3259b0996ecf916"
+    },
+    {
+      "name": "shared-consumer-build",
+      "returncode": 0,
+      "seconds": 1.037230958,
+      "log": "/Users/kiro/hyle-scratch/apple-parity-delivery/fp4-delivery-326a40ee-shared-consumer-build.log",
+      "sha256": "6b7ec7c322e345ce0c8b5f42dcd546caa5c35058dfe9873557016aeb8bf60bac"
+    },
+    {
+      "name": "source-positive",
+      "returncode": 0,
+      "seconds": 20.532204667000002,
+      "log": "/Users/kiro/hyle-scratch/apple-parity-delivery/fp4-delivery-326a40ee-source-positive.log",
+      "sha256": "63ab9beaae22135962bbfa1fb821a6435ee14a71c9404fa40313e82bde091871"
+    },
+    {
+      "name": "static-positive",
+      "returncode": 0,
+      "seconds": 20.654687582999998,
+      "log": "/Users/kiro/hyle-scratch/apple-parity-delivery/fp4-delivery-326a40ee-static-positive.log",
+      "sha256": "949a938f6c5668eec6bba6e5450e9b037746fb6f8e46fba7fb586fdf7d675f31"
+    },
+    {
+      "name": "shared-positive",
+      "returncode": 0,
+      "seconds": 4.147645583999996,
+      "log": "/Users/kiro/hyle-scratch/apple-parity-delivery/fp4-delivery-326a40ee-shared-positive.log",
+      "sha256": "7409056357f2e4845b3263b99f057b534497d9cb1a359b9c8a9f460fa082a93a"
+    }
+  ],
+  "sdks": {
+    "static": {
+      "licenses": [
+        "HYLE-LICENSE",
+        "THIRD_PARTY-NOTICES.md",
+        "apple-deepseek-CUTLASS-LICENSE",
+        "apple-deepseek-TILELANG-LICENSE",
+        "apple-deepseek_quantization-LICENSE",
+        "apple-ds4_quantization-LICENSE",
+        "awq_apple-LICENSE",
+        "awq_apple-NOTICE.md",
+        "bitsandbytes_apple-LICENSE",
+        "bitsandbytes_apple-NOTICE.md",
+        "compressed_tensors_apple-LICENSE",
+        "compressed_tensors_apple-NOTICE.md",
+        "ggml-cpu-IQ1-LICENSE",
+        "ggml-cpu-IQ1-original-NOTICE.md",
+        "ggml-metal-IQ1-LICENSE",
+        "ggml-metal-IQ1-NOTICE.md",
+        "ggml-runtime-LICENSE",
+        "ggml-runtime-patches-LICENSE",
+        "ggml-runtime-patches-NOTICE.md",
+        "ggml_q4k_apple-LICENSE",
+        "ggml_q4k_apple-NOTICE.md",
+        "highway-upstream-LICENSE",
+        "metal-cpp-LICENSE",
+        "mimalloc-LICENSE",
+        "mlx-LICENSE",
+        "mlx-cast-LICENSE",
+        "mlx-cast-NOTICE.md",
+        "mlx-fmt-LICENSE",
+        "mlx-json-LICENSE",
+        "rust-parker-LICENSE-MIT",
+        "wyhash-LICENSE",
+        "xxhash-LICENSE"
+      ]
+    },
+    "shared": {
+      "licenses": [
+        "HYLE-LICENSE",
+        "THIRD_PARTY-NOTICES.md",
+        "apple-deepseek-CUTLASS-LICENSE",
+        "apple-deepseek-TILELANG-LICENSE",
+        "apple-deepseek_quantization-LICENSE",
+        "apple-ds4_quantization-LICENSE",
+        "awq_apple-LICENSE",
+        "awq_apple-NOTICE.md",
+        "bitsandbytes_apple-LICENSE",
+        "bitsandbytes_apple-NOTICE.md",
+        "compressed_tensors_apple-LICENSE",
+        "compressed_tensors_apple-NOTICE.md",
+        "ggml-cpu-IQ1-LICENSE",
+        "ggml-cpu-IQ1-original-NOTICE.md",
+        "ggml-metal-IQ1-LICENSE",
+        "ggml-metal-IQ1-NOTICE.md",
+        "ggml-runtime-LICENSE",
+        "ggml-runtime-patches-LICENSE",
+        "ggml-runtime-patches-NOTICE.md",
+        "ggml_q4k_apple-LICENSE",
+        "ggml_q4k_apple-NOTICE.md",
+        "highway-LICENSE",
+        "highway-upstream-LICENSE",
+        "metal-cpp-LICENSE",
+        "mimalloc-LICENSE",
+        "mlx-LICENSE",
+        "mlx-cast-LICENSE",
+        "mlx-cast-NOTICE.md",
+        "mlx-fmt-LICENSE",
+        "mlx-json-LICENSE",
+        "rust-parker-LICENSE-MIT",
+        "wyhash-LICENSE",
+        "xsimd-upstream-LICENSE",
+        "xxhash-LICENSE"
+      ]
+    }
+  }
+}

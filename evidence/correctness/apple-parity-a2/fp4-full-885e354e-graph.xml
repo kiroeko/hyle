@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites tests="4" failures="1" disabled="0" errors="0" time="38.715" timestamp="2026-10-09T02:55:51.965" name="AllTests">
+  <testsuite name="CurrentOfficial/AppleParityGraphBranches" tests="4" failures="1" disabled="0" skipped="0" errors="0" time="38.715" timestamp="2026-10-09T02:55:51.965">
+    <testcase name="OfficialMainCompressionAttentionAndFp4Moe/Pro0813" value_param="120-byte object &lt;10-DB 4D-02 01-00 00-00 00-1C 00-00 00-00 00-00 00-02 00-00 00-00 00-00 80-00 00-00 00-00 00-00 00-06 00-00 00-00 00-00 10-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00&gt;" file="/Users/kiro/hyle/tests/graph_route_apple/../compute_route_apple/model_branch_tests.h" line="32" status="run" result="completed" time="5.113" timestamp="2026-10-09T02:55:51.965" classname="CurrentOfficial/AppleParityGraphBranches">
+      <failure message="/Users/kiro/hyle/tests/graph_route_apple/../compute_models/d5_gguf_test_support.h:297&#x0A;Expected: (max_error) &lt;= (2.0e-2F + 2.0e-2F * max_reference), actual: 0.052631557 vs 0.04&#x0A;max_reference=1&#x0A;Google Test trace:&#x0A;/Users/kiro/hyle/tests/graph_route_apple/d5_qwen35_execution_test.cc:1667: relative_l2=0.003127 peak_normalized_max=0.052632&#x0A;/Users/kiro/hyle/tests/graph_route_apple/d5_qwen35_execution_test.cc:1650: replay=0&#x0A;/Users/kiro/hyle/tests/graph_route_apple/d5_qwen35_execution_test.cc:1605: region=134886405&#x0A;/Users/kiro/hyle/tests/graph_route_apple/../compute_route_apple/model_branch_tests.h:37: 4&#x0A;/Users/kiro/hyle/tests/graph_route_apple/../compute_route_apple/model_branch_tests.h:34: 72e1d3230f6c080a530b0a1d46f8eb4602340597&#x0A;" type=""><![CDATA[/Users/kiro/hyle/tests/graph_route_apple/../compute_models/d5_gguf_test_support.h:297
+Expected: (max_error) <= (2.0e-2F + 2.0e-2F * max_reference), actual: 0.052631557 vs 0.04
+max_reference=1
+Google Test trace:
+/Users/kiro/hyle/tests/graph_route_apple/d5_qwen35_execution_test.cc:1667: relative_l2=0.003127 peak_normalized_max=0.052632
+/Users/kiro/hyle/tests/graph_route_apple/d5_qwen35_execution_test.cc:1650: replay=0
+/Users/kiro/hyle/tests/graph_route_apple/d5_qwen35_execution_test.cc:1605: region=134886405
+/Users/kiro/hyle/tests/graph_route_apple/../compute_route_apple/model_branch_tests.h:37: 4
+/Users/kiro/hyle/tests/graph_route_apple/../compute_route_apple/model_branch_tests.h:34: 72e1d3230f6c080a530b0a1d46f8eb4602340597
+]]></failure>
+      <failure message="/Users/kiro/hyle/tests/graph_route_apple/../compute_route_apple/model_branch_tests.h:39&#x0A;Value of: ::testing::Test::HasFailure()&#x0A;  Actual: true&#x0A;Expected: false&#x0A;Google Test trace:&#x0A;/Users/kiro/hyle/tests/graph_route_apple/../compute_route_apple/model_branch_tests.h:37: 4&#x0A;/Users/kiro/hyle/tests/graph_route_apple/../compute_route_apple/model_branch_tests.h:34: 72e1d3230f6c080a530b0a1d46f8eb4602340597&#x0A;" type=""><![CDATA[/Users/kiro/hyle/tests/graph_route_apple/../compute_route_apple/model_branch_tests.h:39
+Value of: ::testing::Test::HasFailure()
+  Actual: true
+Expected: false
+Google Test trace:
+/Users/kiro/hyle/tests/graph_route_apple/../compute_route_apple/model_branch_tests.h:37: 4
+/Users/kiro/hyle/tests/graph_route_apple/../compute_route_apple/model_branch_tests.h:34: 72e1d3230f6c080a530b0a1d46f8eb4602340597
+]]></failure>
+    </testcase>
+    <testcase name="OfficialMainCompressionAttentionAndFp4Moe/Flash0731" value_param="120-byte object &lt;C0-DB 4D-02 01-00 00-00 00-10 00-00 00-00 00-00 00-01 00-00 00-00 00-00 40-00 00-00 00-00 00-00 00-04 00-00 00-00 00-00 08-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00&gt;" file="/Users/kiro/hyle/tests/graph_route_apple/../compute_route_apple/model_branch_tests.h" line="32" status="run" result="completed" time="5.209" timestamp="2026-10-09T02:55:57.079" classname="CurrentOfficial/AppleParityGraphBranches" />
+    <testcase name="CompleteOfficialThreeStageDsparkWithFp4Experts/Pro0813" value_param="120-byte object &lt;10-DB 4D-02 01-00 00-00 00-1C 00-00 00-00 00-00 00-02 00-00 00-00 00-00 80-00 00-00 00-00 00-00 00-06 00-00 00-00 00-00 10-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00&gt;" file="/Users/kiro/hyle/tests/graph_route_apple/../compute_route_apple/model_branch_tests.h" line="45" status="run" result="completed" time="19.791" timestamp="2026-10-09T02:56:02.288" classname="CurrentOfficial/AppleParityGraphBranches" />
+    <testcase name="CompleteOfficialThreeStageDsparkWithFp4Experts/Flash0731" value_param="120-byte object &lt;C0-DB 4D-02 01-00 00-00 00-10 00-00 00-00 00-00 00-01 00-00 00-00 00-00 40-00 00-00 00-00 00-00 00-04 00-00 00-00 00-00 08-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00&gt;" file="/Users/kiro/hyle/tests/graph_route_apple/../compute_route_apple/model_branch_tests.h" line="45" status="run" result="completed" time="8.6" timestamp="2026-10-09T02:56:22.080" classname="CurrentOfficial/AppleParityGraphBranches" />
+  </testsuite>
+</testsuites>

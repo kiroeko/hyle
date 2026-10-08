@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites tests="1" failures="0" disabled="0" errors="0" time="3.386" timestamp="2026-10-09T02:40:57.878" name="AllTests">
+  <testsuite name="AppleParityGraph" tests="1" failures="0" disabled="0" skipped="0" errors="0" time="3.386" timestamp="2026-10-09T02:40:57.879">
+    <testcase name="OfficialFp4ExpertsKeepOriginalFp8ActivationAndGroup32Weights" file="/Users/kiro/hyle/tests/graph_route_apple/d5_qwen35_execution_test.cc" line="166" status="run" result="completed" time="3.386" timestamp="2026-10-09T02:40:57.879" classname="AppleParityGraph" />
+  </testsuite>
+</testsuites>

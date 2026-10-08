@@ -119,3 +119,18 @@ the metallib, exit1 in all three deliveries:
 inside the owned task directories, clears inherited DYLD, and restores all
 files in finally. All original asset hashes match after restoration. The
 negative verdict is3/3; it is not a missing-device or wrong-model diagnosis.
+
+## Updated FP4 public deliveries
+
+`326a40ee` [driver](run-fp4-delivery.py)/
+[receipt](fp4-delivery-326a40ee-receipt.json): cold Direct1/1, Graph1/1 and
+source/static/shared public consumers all PASS. The consumer only links
+hyle::graph. It now includes tiny raw BF16/signed zeros, original FP4 experts
+with FP8 activation, duplicate IDs, changed-input replay, negative/upper
+invalid IDs, failure recovery in fresh slots and retained outputs after close.
+Both relocated SDKs configure offline; producer binaries/metallibs are
+hidden at runtime and restored in finally. Required original DS4, DeepSeek,
+TileLang/CUTLASS licenses are present. The first driver expected incorrect
+filenames/nonexistent NOTICE files; only that assertion was corrected, and
+completed build/cold/static configuration steps were reused. No product fix
+or repeated model matrix resulted. Old missing-resource tests still apply.

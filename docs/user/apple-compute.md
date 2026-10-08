@@ -151,7 +151,11 @@ DeepSeek 的 power2 scale 和1e-4 floor 由操作描述显式选择。grouped �
 这些程序由原版 MLX 编解码、MatMul、ReduceMax、Take 等原语在冷期编译。
 执行成本包括选中权重的 F32 解码、中间乘积、scale 广播和必要复制，不能视为零分配或
 硬件原生 FP8 GEMM。Graph 捕获常量时的折叠由 MLX 管理，HYLE 不提供隐式权重缓存。
-FP8 group64/128 roundtrip 也可用；FP4 roundtrip 的极小 scale 域尚不合格，会明确拒绝。
+FP8 group64/128 roundtrip 也可用。FP4 group32 roundtrip接BF16二维输入，保留原E2M1
+最近偶数舍入、power2 scale/floor及最终BF16存储；极小值和零符号由GPU位视图适配保真。
+`model_ops::grouped_float4_linear()`消费canonical原E2M1 nibble/F32 group32专家权重、
+BF16 activation和I32 IDs；activation按原group128 E4M3FN量化，F32逐block累加后存BF16。
+重复ID合法，越界在Completion返回OutOfRange，不发布失败结果；它与MXFP4格式不同。
 本批已完成普通入口、资源正确性及最终三交付。当前完整BF16 FFN与量化MoE的[Apple性能批次](../implementation/tasks/compute/llm-moe-d5-portable-fragment-performance.md)也已通过；该成绩不代签FP8所有形状的独立性能。
 
 ### GGUF/ggml 原生压缩权重
@@ -200,8 +204,10 @@ codebook；结果[N,K]保留为ready常量，再用于成熟MatMul或Gather。HY
 当前共同目录的559 GGUF、34packed、45plain合同已在两普通入口取得样本数值/replay证据；
 大词表全行按4096-row shards验证，MoE仅共享有限专家witness，不代表巨型整模型驻留。
 新官方DSpark与Qwen/Flash量化MTP片段的准入见[当前Apple收口卡](../implementation/tasks/compute/apple-cpu-cuda-parity-closure.md)。
-官方F32-scale FP4 roundtrip极小值精确保真仍未准入，依赖它的完整官方片段也未完成；
-不能以已通过的GGUF/MLX MXFP4或量化侧车替代这项资格。默认为合法成熟承载，尚未实测的
+官方F32-scale FP4的全部有限BF16存储值、正常/极小scale、中点邻域与符号零已通过精确保真
+验证；Pro0813/Flash0731完整压缩attention/indexer/FP4 MoE与三stage DSpark也已两入口验证。
+这些是实际算子/片段形状、状态与存储验收，不代表当前16GiB机器能驻留这些完整大模型。
+默认为合法成熟承载，尚未实测的
 硬件/driver/模型组合不声明best-of或SOTA。
 
 ## 原版 Gated DeltaNet

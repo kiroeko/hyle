@@ -1,0 +1,11 @@
+[0/2] Re-checking globbed directories...
+[1/11] cd /Users/kiro/hyle-scratch/d5-graph-825c41f8/src/compute_route_apple && /opt/homebrew/bin/cmake -E copy_if_different /Users/kiro/hyle-scratch/d5-graph-825c41f8/_deps/mlx-build/mlx/backend/metal/kernels/mlx.metallib /Users/kiro/hyle-scratch/d5-graph-825c41f8/bin/mlx.metallib
+[2/11] Building CXX object src/compute_route_apple/CMakeFiles/hyle_compute_route_apple.dir/apple_mature_float.cc.o
+[3/11] Linking CXX shared library bin/libhyle_compute_route_apple.0.1.0.dylib
+[4/11] Creating library symlink bin/libhyle_compute_route_apple.dylib
+[5/11] Linking CXX shared library bin/libhyle_graph_route_apple.0.1.0.dylib
+[6/11] Creating library symlink bin/libhyle_graph_route_apple.dylib
+[7/11] Building CXX object tests/compute_route_apple/CMakeFiles/hyle_compute_route_apple_test.dir/d5_qwen35_execution_test.cc.o
+[8/11] Linking CXX executable bin/hyle_compute_route_apple_test
+[9/11] Building CXX object tests/graph_route_apple/CMakeFiles/hyle_graph_route_apple_test.dir/d5_qwen35_execution_test.cc.o
+[10/11] Linking CXX executable bin/hyle_graph_route_apple_test

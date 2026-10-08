@@ -411,3 +411,32 @@ validate PASS and module A/A script syntax checked. **A/A and formal P1
 have not run; no timing/default/WIN qualification is claimed.** Formal n15
 sampling waits for the complete immutable candidate after the pending FP4
 decision; this prep did not repeat numerical matrices or SDK journeys.
+
+## Authorized FP4 qualification
+
+The user allowed the finite GPU fidelity bridge. `80c01bdc`
+[Direct](fp4-fidelity-80c01bdc-direct.xml)/[Graph](fp4-fidelity-80c01bdc-graph.xml)
+PASS: all65280 finite BF16 values in mixed/uniform groups, midpoint neighbors,
+tiny/signed zeros/varying maxima, raw bit equality, replay/close leases.
+Original native-source FAILs remain; this is a distinct authorized candidate.
+`b85125b0` original DeepSeek FP4 experts
+[Direct](fp4-experts-b85125b0-direct.xml)/[Graph](fp4-experts-b85125b0-graph.xml)
+PASS,16 real shape/activation combinations per entry and two replays.
+
+Full official main/DSpark `885e354e`
+[Direct](fp4-full-885e354e-direct.xml)/[Graph](fp4-full-885e354e-graph.xml)
+each3 PASS/1 FAIL. Only Pro ratio4 final output14 failed; the other failure
+propagates HasFailure. A single [capture](fp4_main_numeric_capture.h)/
+[raw](fp4-main-cause-79c1d70f-direct.log) proves every final output matches
+its independent original FP8 equation with the actual grouped predecessor.
+The full reference still used CPU trig/F64 sink math; early BF16 differences
+became observable after dynamic quantization. No local result substitutes PASS.
+
+`3e383611` fixes the complete reference to original MLX GPU trig/fast Sink,
+before constructing expectations, with independent weights/codecs/norm/cache:
+[Direct2/2](fp4-main-reference-3e383611-direct.xml)/
+[Graph2/2](fp4-main-reference-3e383611-graph.xml) PASS, ratio0/4/128 and both
+FP4 MoE branches. CPU/CUDA defaults, tolerances, every output, actual state
+feedback and resets are unchanged. Together with the two prior full DSpark
+passes, all four official witnesses now pass both entries. No whole matrix
+was repeated. Complete delivery/resources are recorded separately in A4.

@@ -525,15 +525,17 @@
     },
     {
       "module": "compute_route_apple",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/apple-cpu-cuda-parity-closure.md",
-      "summary": "Apple parity AUDITED：共同559/45/34/八族49关联与新官方/MTP已源级映射；F1现有Metal codec、F2原MLX16packed、F3具名成熟缺口、F4默认去留、F5集中交付冻结。runtime未签，旧FP4/预算保持，自研数学冻结。"
+      "summary": "Apple parity CANDIDATE: 559/45/34 actual carrier domains, current official FP4 main/DSpark and MTP, resources and source/static/shared verified; finite mature overlap P1 and final review remain.",
+      "candidate": "326a40ee9b2f01a760d8bbdc66974685ff8cfdb0"
     },
     {
       "module": "graph_route_apple",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/apple-cpu-cuda-parity-closure.md",
-      "summary": "Apple parity AUDITED：共同559/45/34/八族49关联与新官方/MTP已源级映射；F1现有Metal codec、F2原MLX16packed、F3具名成熟缺口、F4默认去留、F5集中交付冻结。runtime未签，旧FP4/预算保持，自研数学冻结。"
+      "summary": "Apple parity CANDIDATE: 559/45/34 actual carrier domains, current official FP4 main/DSpark and MTP, resources and source/static/shared verified; finite mature overlap P1 and final review remain.",
+      "candidate": "326a40ee9b2f01a760d8bbdc66974685ff8cfdb0"
     },
     {
       "module": "compute_route_vulkan",
@@ -563,9 +565,10 @@
     },
     {
       "module": "compute_ggml_runtime",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/apple-mature-codec-borrow.md",
-      "summary": "Apple narrow mature codec AUDITED: 原Anemll三IQ1/既有Unslothcore精确定向接线；只在Apple条件消费，无新HYLE算法，CPU/CUDA/Vulkan数学与旧证据不变。"
+      "summary": "Apple narrow original IQ1 codec borrow candidate; exact shared source, CPU+Metal directed tests and delivery verified; final owner record remains.",
+      "candidate": "326a40ee9b2f01a760d8bbdc66974685ff8cfdb0"
     },
     {
       "module": "compute_provider_ggml_cuda",
@@ -602,9 +605,10 @@
     },
     {
       "module": "compute_provider_ggml_metal",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/apple-cpu-cuda-parity-closure.md",
-      "summary": "Apple parity AUDITED：共同559/45/34/八族49关联与新官方/MTP已源级映射；F1现有Metal codec、F2原MLX16packed、F3具名成熟缺口、F4默认去留、F5集中交付冻结。runtime未签，旧FP4/预算保持，自研数学冻结。"
+      "summary": "Apple parity CANDIDATE: 559/45/34 actual carrier domains, current official FP4 main/DSpark and MTP, resources and source/static/shared verified; finite mature overlap P1 and final review remain.",
+      "candidate": "326a40ee9b2f01a760d8bbdc66974685ff8cfdb0"
     },
     {
       "module": "compute_provider_iree_vulkan",

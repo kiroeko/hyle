@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites tests="1" failures="0" disabled="0" errors="0" time="3.089" timestamp="2026-10-09T02:30:35.062" name="AllTests">
+  <testsuite name="AppleParityDirect" tests="1" failures="0" disabled="0" skipped="0" errors="0" time="3.089" timestamp="2026-10-09T02:30:35.062">
+    <testcase name="Fp4KeepsAllFiniteBfloatBitsMidpointsAndReplay" file="/Users/kiro/hyle/tests/compute_route_apple/d5_qwen35_execution_test.cc" line="149" status="run" result="completed" time="3.089" timestamp="2026-10-09T02:30:35.062" classname="AppleParityDirect" />
+  </testsuite>
+</testsuites>

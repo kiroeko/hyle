@@ -297,3 +297,14 @@ CPU fallback，不改数学/公共API/热执行。当前compute_route_apple仍AU
 A3性能消费程序已准备：routerM1/M16、groupedBF16/F32四域完整两银行输出预检通过，
 primary/placement已构建、实际owner QoS21已观测，固定合同validate通过；A/A与正式n15
 P1都未运行，不签性能/default切换。待FP4取舍并固定完整candidate后只执行一次正式批次。
+
+## 完整候选（2026-10-09）
+
+FP4原语全部finite raw BF16、原专家、官方Pro0813/Flash0731完整main/压缩attention/
+indexer/MoE和三stage DSpark已Direct/Graph通过，原whole门/状态反馈不放宽；见
+[具名FP4卡](apple-ds4-fp4-source-qualification.md)和[A2 raw](../../../../evidence/correctness/apple-parity-a2/README.md)。
+`326a40ee9b2f01a760d8bbdc66974685ff8cfdb0`新增FP4三交付/失败恢复/lease/离线搬迁/
+原source许可证通过，见[A4](../../../../evidence/correctness/apple-parity-a4/README.md)。
+统一Compute+Graph实现61,413行/261文件，不含tests/vendor。有限产品FIX已固定，进入
+CANDIDATE，只余A3一次有限成熟重叠域资格和终审/清理；P1尚未PASS。CPU/CUDA CLOSED、
+Vulkan BLOCKED保持。

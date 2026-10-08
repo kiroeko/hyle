@@ -4,7 +4,7 @@
 
 父轮[Apple parity](apple-cpu-cuda-parity-closure.md)，baseline `bdc60f88`。
 这是现有冷绑定的P0审计与后续有限比较范围；没有性能PASS或产品FIX。
-本轮先补第三方承载，原FP4桥接待用户决定；API/算法完整固定前不启动P1。
+FP4桥接已获用户授权并完成数值/资源/三交付；完整候选固定后启动一次P1。
 
 ## 现有合法默认
 
@@ -17,7 +17,7 @@
 | checked Q4_K精确所选行 | 原CPU row-decode公式在MLX GPU承载 | 原Metal half高nibble精度已FAIL；精确优先，不称性能WIN |
 | block128 FP8线性/grouped、权重准备与FP8 roundtrip | 原MLX GPU转换/乘法/原有source组合 | 真实FP8 codes/scales、原F32顺序与BF16边界；不同物理格式不互换 |
 | GDN/recurrent、mHC、模型原clamp/BF16-F32 linear/indexer | 原ggml Metal完整数学片段 | 各custom schema和native capability，不拆完整成熟片段 |
-| 官方F32-scale FP4 roundtrip/依赖完整region | 明确未准入 | 原native tiny资格失败；等待有限保真桥接取舍，不能用其它FP4代替 |
+| 官方F32-scale FP4 roundtrip/专家/完整region | 原DS4/DeepSeek数学的MLX GPU承载与已授权位域保真桥接 | 原packing/scale/RNE/BF16不变；全部finite原语与完整main/DSpark通过，不换格式 |
 
 当前普通入口先在prepare/compile做schema与上述冷匹配，固定MLX/ggml region；hot运行只
 调用已准备程序。用户无需排序Provider或提供timing。未知模型身份不删除合法通用数学；
@@ -107,3 +107,10 @@ n15、八strata、A/A/已知delta/timer-floor、5% margin；module-local A/A借�
 旧配置及一次Darwin QoS声明纠正均保存，未触发产品修改。raw见
 [A2记录](../../../../evidence/correctness/apple-parity-a2/README.md)。
 没有启动A/A、AB/P1或导入best-of，这四域仍只有correctness/cost结构资格，非性能PASS。
+
+当前完整产品candidate固定为`326a40ee9b2f01a760d8bbdc66974685ff8cfdb0`，FP4数值/
+资源/三交付均已通过。后续文档/状态不改变产品candidate。只启动上述四域一次当前Air
+工程资格：同路A/A16process，合格才固定n15八strata，不升n31；原MLX参考pin1f8e74e3
+和compiled窄patch逐文件核对。统一仪器要求fresh qualified producer，使用唯一新目录，
+build2/采样串行，既有模型/交付不重跑。未资格不导入winner，近似/噪声保留合法成熟
+工程default并明确方向未决；未运行的正式项不写PASS。
