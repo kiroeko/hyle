@@ -119,3 +119,12 @@ R2不再优化或计时自研：按实际完整替代域删除冗余数学，独
 需要撤回有效独有能力，先形成具体可审阅撤回方案，不能套用旧CPU MatMul决定。
 C4只对规则/清退影响运行两OS source/static/shared与原资源/失配/region消费者，不重跑未变
 559模型数学或再做P1。当前C1/C2完成，整体约55%；C3/C4尚未完成，不冒称CUDA收口。
+
+R1资源审计：私有proposal当前每Provider实例一个候选，描述符阶段没有实际resource。
+因此不把已测device/256对齐规则外推managed或低对齐资源：同一个原native实现另登记一个
+受条件约束的冷候选实例，原工程fallback实例保留。独立instance是现有Context支持的组合，
+不是新executor/API/数学；仅qualified实例限制device属性/256对齐并使用实测policy，失配由
+原实例保持完整能力。原ggml context/region扩展不改。只增加compute_route_cuda的私有
+platform/platform_thread依赖，借用现有CPU身份/调用线程亲和查询；系统优先级只在冷准备
+校验，执行不查询。CMake只在原static Release/MSVC/CUDA89-real/无LTO/原Provider配方允许
+该候选，shared/WSL/未知配方沿原默认。不复制环境探测或公共路由/治理系统。
