@@ -237,3 +237,12 @@ A4允许独立先验证新成熟借入的实际SDK闭包：新公开C++ consumer
 decode/失败/保留lease及NF4成熟decode，不使用私有HYLE/vendor头或mock。先复用当前shared
 producer，只有INSTALL选项改变时configure；relocation到独立prefix、metallib/许可证/dylib
 与两入口验收一次。它只证明相应交付，不代签待决FP4和两个失败官方witness，不启动P1。
+
+`8e95478c`同一公开consumer三交付样本全部PASS：
+[源码/static/shared receipt与raw](../../../../evidence/correctness/apple-parity-a4/README.md)。
+安装SDK搬迁、断网configure、隐藏producer bin/metallib后Direct/Graph真实Q4_K双replay/
+精确所选行/坏索引/close后lease以及成熟NF4运行通过，资源hash与新borrow许可证匹配。
+本批consumer声明/参数和CMake编译器cache刷新失败均保存；纠正仅消费/配置，不改产品，
+shared producer不随consumer修改重编或重装。source复用build耗时58.95s。A4其它公开头/
+boundary矩阵与最终清理尚未闭合；A2数值两项、官方FP4与A3资格仍待，不冒称整个交付/goal
+完成。统一实现仍61,328行/261文件；本轮新增均test/evidence，不计入产品实现行数。

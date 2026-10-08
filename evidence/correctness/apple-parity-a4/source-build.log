@@ -1,0 +1,335 @@
+[0/2] Re-checking globbed directories...
+[1/309] Building CXX object hyle/src/compute_ggml_runtime/vendor/src/CMakeFiles/ggml-base.dir/ggml.cpp.o
+[2/309] Building C object hyle/src/compute_ggml_runtime/vendor/src/CMakeFiles/ggml-base.dir/ggml-alloc.c.o
+[3/309] Building C object hyle/src/compute_ggml_runtime/vendor/src/CMakeFiles/ggml-base.dir/ggml.c.o
+[4/309] Building CXX object hyle/src/compute_ggml_runtime/vendor/src/CMakeFiles/ggml-base.dir/ggml-backend.cpp.o
+[5/309] Building CXX object hyle/src/compute_ggml_runtime/vendor/src/CMakeFiles/ggml-base.dir/ggml-opt.cpp.o
+[6/309] Building CXX object hyle/src/compute_ggml_runtime/vendor/src/CMakeFiles/ggml-base.dir/ggml-backend-meta.cpp.o
+[7/309] Building CXX object hyle/src/compute_ggml_runtime/vendor/src/CMakeFiles/ggml-base.dir/ggml-threading.cpp.o
+[8/309] Building CXX object hyle/src/compute_ggml_runtime/vendor/src/CMakeFiles/ggml-base.dir/gguf.cpp.o
+[9/309] Building CXX object hyle/src/error/CMakeFiles/hyle_error.dir/status.cc.o
+[10/309] Linking CXX static library hyle/src/error/libhyle_error.a
+[11/309] Building C object hyle/src/compute_ggml_runtime/vendor/src/CMakeFiles/ggml-base.dir/ggml-quants.c.o
+[12/309] Linking CXX static library hyle/src/compute_ggml_runtime/vendor/src/libggml-base.a
+[13/309] Generate embedded Metal library for fa
+[14/309] Generate embedded Metal library for mul_mv
+[15/309] Generate embedded Metal library for mul_mm
+[16/309] Generate embedded Metal library for quantize
+[17/309] Generate embedded Metal library for softmax
+[18/309] Generate embedded Metal library for norm
+[19/309] Generate embedded Metal library for unary
+[20/309] Generate embedded Metal library for binbcast
+[21/309] Generate embedded Metal library for reduce
+[22/309] Building CXX object hyle/src/platform/CMakeFiles/hyle_platform_cpu_probe.dir/cpu.cc.o
+[23/309] Generate embedded Metal library for tri
+[24/309] Generate embedded Metal library for ssm
+[25/309] Generate embedded Metal library for wkv
+[26/309] Generate embedded Metal library for gated_delta_net
+[27/309] Generate embedded Metal library for solve_tri
+[28/309] Generate embedded Metal library for rope
+[29/309] Generate embedded Metal library for conv
+[30/309] Generate embedded Metal library for upscale
+[31/309] Generate embedded Metal library for argsort
+[32/309] Generate embedded Metal library for pool
+[33/309] Generate embedded Metal library for misc
+[34/309] Building CXX object hyle/src/platform/CMakeFiles/hyle_platform_cgroup_parser.dir/linux_cgroup.cc.o
+[35/309] Building CXX object hyle/src/platform/CMakeFiles/hyle_platform.dir/cpu_resource.cc.o
+[36/309] Building CXX object hyle/src/platform/CMakeFiles/hyle_platform.dir/dynlib.cc.o
+[37/309] Building CXX object hyle/src/platform/CMakeFiles/hyle_platform.dir/environment.cc.o
+[38/309] Building CXX object hyle/src/platform/CMakeFiles/hyle_platform.dir/host_memory.cc.o
+[39/309] Building CXX object hyle/src/platform/CMakeFiles/hyle_platform.dir/process.cc.o
+[40/309] Building CXX object hyle/src/platform/CMakeFiles/hyle_platform.dir/numa.cc.o
+[41/309] Building CXX object hyle/src/platform/CMakeFiles/hyle_platform.dir/random.cc.o
+[42/309] Building CXX object hyle/src/platform/CMakeFiles/hyle_platform.dir/virtual_memory.cc.o
+[43/309] Building CXX object hyle/src/compute_ggml_runtime/vendor/src/ggml-metal/CMakeFiles/ggml-metal.dir/ggml-metal.cpp.o
+/Users/kiro/hyle-scratch/d5-apple-delivery/source-build/hyle/src/compute_ggml_runtime/source-da5abe30b13e6512/src/ggml-metal/ggml-metal.cpp:841:34: warning: no previous prototype for function 'ggml_hyle_metal_import' [-Wmissing-prototypes]
+  841 | extern "C" ggml_backend_buffer_t ggml_hyle_metal_import(ggml_backend_t backend, void * raw) {
+      |                                  ^
+/Users/kiro/hyle-scratch/d5-apple-delivery/source-build/hyle/src/compute_ggml_runtime/source-da5abe30b13e6512/src/ggml-metal/ggml-metal.cpp:841:12: note: declare 'static' if the function is not intended to be used outside of this translation unit
+  841 | extern "C" ggml_backend_buffer_t ggml_hyle_metal_import(ggml_backend_t backend, void * raw) {
+      |            ^
+      |            static 
+/Users/kiro/hyle-scratch/d5-apple-delivery/source-build/hyle/src/compute_ggml_runtime/source-da5abe30b13e6512/src/ggml-metal/ggml-metal.cpp:853:20: warning: no previous prototype for function 'ggml_hyle_metal_checked_sync' [-Wmissing-prototypes]
+  853 | extern "C" int64_t ggml_hyle_metal_checked_sync(ggml_backend_t backend) {
+      |                    ^
+/Users/kiro/hyle-scratch/d5-apple-delivery/source-build/hyle/src/compute_ggml_runtime/source-da5abe30b13e6512/src/ggml-metal/ggml-metal.cpp:853:12: note: declare 'static' if the function is not intended to be used outside of this translation unit
+  853 | extern "C" int64_t ggml_hyle_metal_checked_sync(ggml_backend_t backend) {
+      |            ^
+      |            static 
+/Users/kiro/hyle-scratch/d5-apple-delivery/source-build/hyle/src/compute_ggml_runtime/source-da5abe30b13e6512/src/ggml-metal/ggml-metal.cpp:856:17: warning: no previous prototype for function 'ggml_hyle_metal_prepare_gdn' [-Wmissing-prototypes]
+  856 | extern "C" bool ggml_hyle_metal_prepare_gdn(ggml_backend_t backend, const ggml_tensor * tensor) {
+      |                 ^
+/Users/kiro/hyle-scratch/d5-apple-delivery/source-build/hyle/src/compute_ggml_runtime/source-da5abe30b13e6512/src/ggml-metal/ggml-metal.cpp:856:12: note: declare 'static' if the function is not intended to be used outside of this translation unit
+  856 | extern "C" bool ggml_hyle_metal_prepare_gdn(ggml_backend_t backend, const ggml_tensor * tensor) {
+      |            ^
+      |            static 
+3 warnings generated.
+[44/309] Building OBJC object hyle/src/compute_ggml_runtime/vendor/src/ggml-metal/CMakeFiles/ggml-metal.dir/ggml-metal-device.m.o
+[45/309] Building C object hyle/src/mem/CMakeFiles/mimalloc_static.dir/Users/kiro/hyle/third_party/mimalloc/src/static.c.o
+[46/309] Building CXX object hyle/src/compute_ggml_runtime/vendor/src/ggml-metal/CMakeFiles/ggml-metal.dir/ggml-metal-device.cpp.o
+[47/309] Building CXX object hyle/src/compute_ggml_runtime/vendor/src/ggml-metal/CMakeFiles/ggml-metal.dir/ggml-metal-common.cpp.o
+[48/309] Building OBJC object hyle/src/compute_ggml_runtime/vendor/src/ggml-metal/CMakeFiles/ggml-metal.dir/ggml-metal-context.m.o
+[49/309] Building CXX object hyle/src/compute_ggml_runtime/vendor/src/ggml-metal/CMakeFiles/ggml-metal.dir/ggml-metal-fusion.cpp.o
+[50/309] Building CXX object hyle/src/compute_ggml_runtime/vendor/src/ggml-metal/CMakeFiles/ggml-metal.dir/ggml-metal-tuning.cpp.o
+[51/309] Building ASM object hyle/src/compute_ggml_runtime/vendor/src/ggml-metal/CMakeFiles/ggml-metal.dir/autogenerated/ggml-metal-embed-fa.s.o
+[52/309] Building ASM object hyle/src/compute_ggml_runtime/vendor/src/ggml-metal/CMakeFiles/ggml-metal.dir/autogenerated/ggml-metal-embed-mul_mv.s.o
+[53/309] Building ASM object hyle/src/compute_ggml_runtime/vendor/src/ggml-metal/CMakeFiles/ggml-metal.dir/autogenerated/ggml-metal-embed-mul_mm.s.o
+[54/309] Building ASM object hyle/src/compute_ggml_runtime/vendor/src/ggml-metal/CMakeFiles/ggml-metal.dir/autogenerated/ggml-metal-embed-quantize.s.o
+[55/309] Building ASM object hyle/src/compute_ggml_runtime/vendor/src/ggml-metal/CMakeFiles/ggml-metal.dir/autogenerated/ggml-metal-embed-softmax.s.o
+[56/309] Building ASM object hyle/src/compute_ggml_runtime/vendor/src/ggml-metal/CMakeFiles/ggml-metal.dir/autogenerated/ggml-metal-embed-norm.s.o
+[57/309] Building ASM object hyle/src/compute_ggml_runtime/vendor/src/ggml-metal/CMakeFiles/ggml-metal.dir/autogenerated/ggml-metal-embed-unary.s.o
+[58/309] Building ASM object hyle/src/compute_ggml_runtime/vendor/src/ggml-metal/CMakeFiles/ggml-metal.dir/autogenerated/ggml-metal-embed-binbcast.s.o
+[59/309] Building ASM object hyle/src/compute_ggml_runtime/vendor/src/ggml-metal/CMakeFiles/ggml-metal.dir/autogenerated/ggml-metal-embed-reduce.s.o
+[60/309] Building ASM object hyle/src/compute_ggml_runtime/vendor/src/ggml-metal/CMakeFiles/ggml-metal.dir/autogenerated/ggml-metal-embed-tri.s.o
+[61/309] Building CXX object hyle/src/compute_ggml_runtime/vendor/src/ggml-metal/CMakeFiles/ggml-metal.dir/ggml-metal-ops.cpp.o
+[62/309] Building ASM object hyle/src/compute_ggml_runtime/vendor/src/ggml-metal/CMakeFiles/ggml-metal.dir/autogenerated/ggml-metal-embed-ssm.s.o
+[63/309] Building ASM object hyle/src/compute_ggml_runtime/vendor/src/ggml-metal/CMakeFiles/ggml-metal.dir/autogenerated/ggml-metal-embed-wkv.s.o
+[64/309] Building ASM object hyle/src/compute_ggml_runtime/vendor/src/ggml-metal/CMakeFiles/ggml-metal.dir/autogenerated/ggml-metal-embed-gated_delta_net.s.o
+[65/309] Building ASM object hyle/src/compute_ggml_runtime/vendor/src/ggml-metal/CMakeFiles/ggml-metal.dir/autogenerated/ggml-metal-embed-solve_tri.s.o
+[66/309] Building ASM object hyle/src/compute_ggml_runtime/vendor/src/ggml-metal/CMakeFiles/ggml-metal.dir/autogenerated/ggml-metal-embed-rope.s.o
+[67/309] Building ASM object hyle/src/compute_ggml_runtime/vendor/src/ggml-metal/CMakeFiles/ggml-metal.dir/autogenerated/ggml-metal-embed-conv.s.o
+[68/309] Building ASM object hyle/src/compute_ggml_runtime/vendor/src/ggml-metal/CMakeFiles/ggml-metal.dir/autogenerated/ggml-metal-embed-upscale.s.o
+[69/309] Building ASM object hyle/src/compute_ggml_runtime/vendor/src/ggml-metal/CMakeFiles/ggml-metal.dir/autogenerated/ggml-metal-embed-argsort.s.o
+[70/309] Building ASM object hyle/src/compute_ggml_runtime/vendor/src/ggml-metal/CMakeFiles/ggml-metal.dir/autogenerated/ggml-metal-embed-pool.s.o
+[71/309] Building ASM object hyle/src/compute_ggml_runtime/vendor/src/ggml-metal/CMakeFiles/ggml-metal.dir/autogenerated/ggml-metal-embed-misc.s.o
+[72/309] Linking CXX static library hyle/src/platform/libhyle_platform.a
+[73/309] Building CXX object hyle/src/mem/CMakeFiles/hyle_mem.dir/buffer.cc.o
+[74/309] Building CXX object hyle/src/mem/CMakeFiles/hyle_mem.dir/buffer_pool.cc.o
+[75/309] Building CXX object hyle/src/mem/CMakeFiles/hyle_mem.dir/heap.cc.o
+[76/309] Building CXX object hyle/src/mem/CMakeFiles/hyle_mem.dir/composite_buffer.cc.o
+[77/309] Building CXX object hyle/src/mem/CMakeFiles/hyle_mem.dir/range_allocator.cc.o
+[78/309] Building CXX object hyle/src/mem/CMakeFiles/hyle_mem.dir/resource.cc.o
+[79/309] Building CXX object hyle/src/mem/CMakeFiles/hyle_mem.dir/lifetime_plan.cc.o
+[80/309] Building CXX object hyle/src/mem/CMakeFiles/hyle_mem.dir/system.cc.o
+[81/309] Linking C static library hyle/src/mem/libmimalloc_static.a
+[82/309] Building CXX object hyle/src/mem/CMakeFiles/hyle_mem.dir/stats.cc.o
+[83/309] Building CXX object hyle/src/compute_ggml_runtime/vendor/src/CMakeFiles/ggml.dir/ggml-backend-dl.cpp.o
+[84/309] Linking CXX static library hyle/src/compute_ggml_runtime/vendor/src/ggml-metal/libggml-metal.a
+[85/309] Generating jit/utils.cpp
+[86/309] Generating jit/unary_ops.cpp
+[87/309] Generating jit/binary_ops.cpp
+[88/309] Generating jit/ternary_ops.cpp
+[89/309] Building CXX object hyle/src/compute_ggml_runtime/vendor/src/CMakeFiles/ggml.dir/ggml-backend-reg.cpp.o
+[90/309] Generating jit/reduce_utils.cpp
+[91/309] Generating jit/scatter.cpp
+[92/309] Generating jit/masked_scatter.cpp
+[93/309] Generating jit/gather.cpp
+[94/309] Generating jit/gather_front.cpp
+[95/309] Generating jit/gather_axis.cpp
+[96/309] Generating jit/scatter_axis.cpp
+[97/309] Generating jit/hadamard.cpp
+[98/309] Generating jit/arange.cpp
+[99/309] Generating jit/copy.cpp
+[100/309] Generating jit/unary.cpp
+[101/309] Generating jit/binary.cpp
+[102/309] Generating jit/binary_two.cpp
+[103/309] Generating jit/logsumexp.cpp
+[104/309] Generating jit/fft.cpp
+[105/309] Generating jit/ternary.cpp
+[106/309] Generating jit/softmax.cpp
+[107/309] Generating jit/scan.cpp
+[108/309] Generating jit/sort.cpp
+[109/309] Generating jit/searchsorted.cpp
+[110/309] Generating jit/reduce.cpp
+[111/309] Generating jit/steel_gemm_fused.cpp
+[112/309] Generating jit/gemm.cpp
+[113/309] Generating jit/steel_gemm_masked.cpp
+[114/309] Generating jit/steel_gemm_gather.cpp
+[115/309] Generating jit/steel_gemm_splitk.cpp
+[116/309] Generating jit/steel_gemm_segmented.cpp
+[117/309] Generating jit/steel_conv.cpp
+[118/309] Generating jit/conv.cpp
+[119/309] Generating jit/steel_conv_3d.cpp
+[120/309] Generating jit/steel_conv_general.cpp
+[121/309] Generating jit/quantized_utils.cpp
+[122/309] Generating jit/quantized.cpp
+[123/309] Generating jit/fp_quantized.cpp
+[124/309] Generating jit/gemv.cpp
+[125/309] Generating jit/gemv_masked.cpp
+[126/309] Generating jit/steel_attention.cpp
+[127/309] Building CXX object hyle/src/time/CMakeFiles/hyle_time.dir/clock.cc.o
+[128/309] Linking CXX static library hyle/src/mem/libhyle_mem.a
+[129/309] Building CXX object hyle/src/time/CMakeFiles/hyle_time.dir/interop.cc.o
+[130/309] Building CXX object hyle/src/compute_ops/CMakeFiles/hyle_compute_ops.dir/tensor_desc.cc.o
+[131/309] Building CXX object hyle/src/compute_ops/CMakeFiles/hyle_compute_ops.dir/operation.cc.o
+[132/309] Building CXX object hyle/src/compute_ops/CMakeFiles/hyle_compute_ops.dir/low_precision.cc.o
+[133/309] Building CXX object hyle/src/compute_ggml_runtime/CMakeFiles/hyle_compute_ggml_runtime.dir/metadata_arena.cc.o
+[134/309] Linking CXX static library hyle/src/compute_ggml_runtime/vendor/src/libggml.a
+[135/309] Building CXX object hyle/_deps/mlx-build/mlx/CMakeFiles/mlx_version.dir/version.cpp.o
+[136/309] Building CXX object hyle/src/compute_ops/CMakeFiles/hyle_compute_ops.dir/weight_decode.cc.o
+[137/309] Building CXX object hyle/_deps/mlx-build/CMakeFiles/mlx.dir/mlx/array.cpp.o
+[138/309] Building CXX object hyle/_deps/mlx-build/CMakeFiles/mlx.dir/mlx/device.cpp.o
+[139/309] Building CXX object hyle/_deps/mlx-build/CMakeFiles/mlx.dir/mlx/dtype.cpp.o
+[140/309] Building CXX object hyle/_deps/mlx-build/CMakeFiles/mlx.dir/mlx/compile.cpp.o
+/Users/kiro/hyle-scratch/d5-apple-delivery/source-build/hyle/_deps/mlx-338da189e54c0743/source/mlx/compile.cpp:863:21: warning: expression with side effects will be evaluated despite being used as an operand to 'typeid' [-Wpotentially-evaluated-expression]
+  863 |           (typeid(a.primitive()) == typeid(AsType) &&
+      |                     ^
+1 warning generated.
+[141/309] Building CXX object hyle/_deps/mlx-build/CMakeFiles/mlx.dir/mlx/dtype_utils.cpp.o
+[142/309] Building CXX object hyle/_deps/mlx-build/CMakeFiles/mlx.dir/mlx/einsum.cpp.o
+[143/309] Building CXX object hyle/_deps/mlx-build/CMakeFiles/mlx.dir/mlx/fast.cpp.o
+[144/309] Building CXX object hyle/_deps/mlx-build/CMakeFiles/mlx.dir/mlx/fft.cpp.o
+[145/309] Building CXX object hyle/_deps/mlx-build/CMakeFiles/mlx.dir/mlx/export.cpp.o
+[146/309] Building CXX object hyle/_deps/mlx-build/CMakeFiles/mlx.dir/mlx/graph_utils.cpp.o
+[147/309] Building CXX object hyle/_deps/mlx-build/CMakeFiles/mlx.dir/mlx/ops.cpp.o
+[148/309] Building CXX object hyle/_deps/mlx-build/CMakeFiles/mlx.dir/mlx/primitives.cpp.o
+[149/309] Building CXX object hyle/_deps/mlx-build/CMakeFiles/mlx.dir/mlx/scheduler.cpp.o
+[150/309] Building CXX object hyle/_deps/mlx-build/CMakeFiles/mlx.dir/mlx/stream.cpp.o
+[151/309] Building CXX object hyle/_deps/mlx-build/CMakeFiles/mlx.dir/mlx/random.cpp.o
+[152/309] Building CXX object hyle/_deps/mlx-build/CMakeFiles/mlx.dir/mlx/utils.cpp.o
+[153/309] Building CXX object hyle/_deps/mlx-build/CMakeFiles/mlx.dir/mlx/linalg.cpp.o
+[154/309] Building CXX object hyle/_deps/mlx-build/CMakeFiles/mlx.dir/mlx/transforms.cpp.o
+[155/309] Building CXX object hyle/_deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/common/broadcasting.cpp.o
+[156/309] Building CXX object hyle/_deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/common/compiled.cpp.o
+[157/309] Building CXX object hyle/_deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/common/common.cpp.o
+[158/309] Building CXX object hyle/_deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/common/load.cpp.o
+[159/309] Building CXX object hyle/_deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/common/reduce.cpp.o
+[160/309] Building CXX object hyle/_deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/common/metal_kernel.cpp.o
+[161/309] Building CXX object hyle/_deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/common/slicing.cpp.o
+[162/309] Building CXX object hyle/_deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/common/utils.cpp.o
+[163/309] Building CXX object hyle/_deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/no_cpu/device_info.cpp.o
+[164/309] Building CXX object hyle/_deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/cpu/eval.cpp.o
+[165/309] Building CXX object hyle/_deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/no_cpu/primitives.cpp.o
+[166/309] Building CXX object hyle/_deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/no_cpu/compiled.cpp.o
+[167/309] Building CXX object hyle/_deps/mlx-build/CMakeFiles/mlx.dir/mlx/distributed/primitives.cpp.o
+[168/309] Building CXX object hyle/_deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/cpu/encoder.cpp.o
+[169/309] Building CXX object hyle/_deps/mlx-build/CMakeFiles/mlx.dir/mlx/distributed/distributed.cpp.o
+[170/309] Building CXX object hyle/_deps/mlx-build/CMakeFiles/mlx.dir/mlx/distributed/ops.cpp.o
+[171/309] Building CXX object hyle/_deps/mlx-build/CMakeFiles/mlx.dir/mlx/distributed/mpi/no_mpi.cpp.o
+[172/309] Building CXX object hyle/_deps/mlx-build/CMakeFiles/mlx.dir/mlx/distributed/ring/no_ring.cpp.o
+[173/309] Building CXX object hyle/_deps/mlx-build/CMakeFiles/mlx.dir/mlx/distributed/nccl/no_nccl.cpp.o
+[174/309] Building CXX object hyle/_deps/mlx-build/CMakeFiles/mlx.dir/mlx/distributed/jaccl/no_jaccl.cpp.o
+[175/309] Building CXX object hyle/_deps/mlx-build/CMakeFiles/mlx.dir/mlx/io/no_safetensors.cpp.o
+[176/309] Building CXX object hyle/_deps/mlx-build/CMakeFiles/mlx.dir/mlx/io/load.cpp.o
+[177/309] Building CXX object hyle/_deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/metal/jit/utils.cpp.o
+[178/309] Building CXX object hyle/_deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/metal/jit/unary_ops.cpp.o
+[179/309] Building CXX object hyle/_deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/metal/jit/binary_ops.cpp.o
+[180/309] Building CXX object hyle/_deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/metal/jit/ternary_ops.cpp.o
+[181/309] Building CXX object hyle/_deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/metal/jit/reduce_utils.cpp.o
+[182/309] Building CXX object hyle/_deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/metal/jit/scatter.cpp.o
+[183/309] Building CXX object hyle/_deps/mlx-build/CMakeFiles/mlx.dir/mlx/io/no_gguf.cpp.o
+[184/309] Building CXX object hyle/_deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/metal/jit/masked_scatter.cpp.o
+[185/309] Building CXX object hyle/_deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/metal/jit/gather.cpp.o
+[186/309] Building CXX object hyle/_deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/metal/jit/gather_front.cpp.o
+[187/309] Building CXX object hyle/_deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/metal/jit/gather_axis.cpp.o
+[188/309] Building CXX object hyle/_deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/metal/jit/scatter_axis.cpp.o
+[189/309] Building CXX object hyle/_deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/metal/jit/hadamard.cpp.o
+[190/309] Building CXX object hyle/_deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/metal/jit/arange.cpp.o
+[191/309] Building CXX object hyle/_deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/metal/jit/copy.cpp.o
+[192/309] Building CXX object hyle/_deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/metal/jit/unary.cpp.o
+[193/309] Building CXX object hyle/_deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/metal/jit/binary.cpp.o
+[194/309] Building CXX object hyle/_deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/metal/jit/binary_two.cpp.o
+[195/309] Building CXX object hyle/_deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/metal/jit/fft.cpp.o
+[196/309] Building CXX object hyle/_deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/metal/jit/logsumexp.cpp.o
+[197/309] Building CXX object hyle/_deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/metal/jit/ternary.cpp.o
+[198/309] Building CXX object hyle/_deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/metal/jit/softmax.cpp.o
+[199/309] Building CXX object hyle/_deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/metal/jit/scan.cpp.o
+[200/309] Building CXX object hyle/_deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/metal/jit/sort.cpp.o
+[201/309] Building CXX object hyle/_deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/metal/jit/searchsorted.cpp.o
+[202/309] Building CXX object hyle/_deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/metal/jit/reduce.cpp.o
+[203/309] Building CXX object hyle/_deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/metal/jit/gemm.cpp.o
+[204/309] Building CXX object hyle/_deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/metal/jit/steel_gemm_fused.cpp.o
+[205/309] Building CXX object hyle/_deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/metal/jit/steel_gemm_masked.cpp.o
+[206/309] Building CXX object hyle/_deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/metal/jit/steel_gemm_gather.cpp.o
+[207/309] Building CXX object hyle/_deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/metal/jit/steel_gemm_splitk.cpp.o
+[208/309] Building CXX object hyle/_deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/metal/jit/steel_gemm_segmented.cpp.o
+[209/309] Building CXX object hyle/_deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/metal/jit/conv.cpp.o
+[210/309] Building CXX object hyle/_deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/metal/jit/steel_conv.cpp.o
+[211/309] Building CXX object hyle/_deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/metal/jit/steel_conv_3d.cpp.o
+[212/309] Building CXX object hyle/_deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/metal/jit/steel_conv_general.cpp.o
+[213/309] Building CXX object hyle/_deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/metal/jit/quantized_utils.cpp.o
+[214/309] Building CXX object hyle/_deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/metal/jit/quantized.cpp.o
+[215/309] Building CXX object hyle/_deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/metal/jit/fp_quantized.cpp.o
+[216/309] Building CXX object hyle/_deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/metal/jit/gemv.cpp.o
+[217/309] Building CXX object hyle/_deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/metal/jit/gemv_masked.cpp.o
+[218/309] Building CXX object hyle/_deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/metal/jit/steel_attention.cpp.o
+[219/309] Building CXX object hyle/_deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/metal/allocator.cpp.o
+[220/309] Building CXX object hyle/_deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/metal/binary.cpp.o
+[221/309] Building CXX object hyle/_deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/metal/jit_kernels.cpp.o
+[222/309] Building CXX object hyle/_deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/metal/device_info.cpp.o
+[223/309] Building CXX object hyle/_deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/metal/compiled.cpp.o
+[224/309] Building CXX object hyle/_deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/metal/conv.cpp.o
+[225/309] Building CXX object hyle/_deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/metal/copy.cpp.o
+[226/309] Building CXX object hyle/_deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/metal/distributed.cpp.o
+[227/309] Building CXX object hyle/_deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/metal/custom_kernel.cpp.o
+[228/309] Building CXX object hyle/_deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/metal/event.cpp.o
+[229/309] Building CXX object hyle/_deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/metal/eval.cpp.o
+[230/309] Building CXX object hyle/_deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/metal/fence.cpp.o
+[231/309] Building CXX object hyle/_deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/metal/device.cpp.o
+[232/309] Building CXX object hyle/_deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/metal/hadamard.cpp.o
+[233/309] Building CXX object hyle/_deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/metal/indexing.cpp.o
+[234/309] Building CXX object hyle/_deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/metal/fft.cpp.o
+[235/309] Building CXX object hyle/_deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/metal/logsumexp.cpp.o
+[236/309] Building CXX object hyle/_deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/metal/matmul.cpp.o
+[237/309] Building CXX object hyle/_deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/metal/scaled_dot_product_attention.cpp.o
+[238/309] Building CXX object hyle/_deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/metal/metal.cpp.o
+[239/309] Building CXX object hyle/_deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/metal/primitives.cpp.o
+[240/309] Building CXX object hyle/_deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/metal/normalization.cpp.o
+[241/309] Building CXX object hyle/_deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/metal/rope.cpp.o
+[242/309] Building CXX object hyle/_deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/metal/quantized.cpp.o
+[243/309] Building CXX object hyle/_deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/metal/scan.cpp.o
+[244/309] Building CXX object hyle/_deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/metal/slicing.cpp.o
+[245/309] Building CXX object hyle/_deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/metal/softmax.cpp.o
+[246/309] Building CXX object hyle/_deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/metal/sort.cpp.o
+[247/309] Building CXX object hyle/_deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/metal/reduce.cpp.o
+[248/309] Building CXX object hyle/_deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/metal/unary.cpp.o
+[249/309] Building CXX object hyle/_deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/metal/ternary.cpp.o
+[250/309] Building CXX object hyle/_deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/metal/resident.cpp.o
+[251/309] Building CXX object hyle/_deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/metal/utils.cpp.o
+[252/309] Building CXX object hyle/_deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/cuda/no_cuda.cpp.o
+[253/309] Building CXX object hyle/_deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/gpu/copy.cpp.o
+[254/309] Building CXX object hyle/_deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/gpu/primitives.cpp.o
+[255/309] Linking CXX static library hyle/src/time/libhyle_time.a
+[256/309] Building CXX object hyle/_deps/mlx-build/CMakeFiles/mlx.dir/mlx/backend/gpu/slicing.cpp.o
+[257/309] Building CXX object hyle/src/platform_thread/CMakeFiles/hyle_platform_thread.dir/wait.cc.o
+[258/309] Building CXX object hyle/src/platform_thread/CMakeFiles/hyle_platform_thread.dir/thread.cc.o
+[259/309] Building CXX object hyle/src/container/CMakeFiles/hyle_container.dir/pod_vector.cc.o
+[260/309] Building CXX object hyle/src/container/CMakeFiles/hyle_container.dir/hash.cc.o
+[261/309] Building CXX object hyle/src/container/CMakeFiles/hyle_container.dir/flat_hash_map.cc.o
+[262/309] Building CXX object hyle/src/container/CMakeFiles/hyle_container.dir/bitset_ops_neon.cc.o
+[263/309] Building CXX object hyle/src/container/CMakeFiles/hyle_container.dir/dynamic_bitset.cc.o
+[264/309] Building CXX object hyle/src/container/CMakeFiles/hyle_container.dir/generated/simd-dispatch/container_bitset/container_bitset_scalar.cc.o
+[265/309] Linking CXX static library hyle/src/compute_ops/libhyle_compute_ops.a
+[266/309] Building CXX object hyle/src/compute/CMakeFiles/hyle_compute.dir/command_capture.cc.o
+[267/309] Building CXX object hyle/src/container/CMakeFiles/hyle_container.dir/generated/simd-dispatch/container_bitset/container_bitset_neon.cc.o
+[268/309] Building CXX object hyle/src/compute/CMakeFiles/hyle_compute.dir/completion.cc.o
+[269/309] Building CXX object hyle/src/compute/CMakeFiles/hyle_compute.dir/custom_kernel.cc.o
+[270/309] Building CXX object hyle/src/compute/CMakeFiles/hyle_compute.dir/device.cc.o
+[271/309] Building CXX object hyle/src/compute/CMakeFiles/hyle_compute.dir/provider.cc.o
+[272/309] Building CXX object hyle/src/compute/CMakeFiles/hyle_compute.dir/route_policy.cc.o
+[273/309] Building CXX object hyle/src/compute/CMakeFiles/hyle_compute.dir/operation.cc.o
+[274/309] Building CXX object hyle/src/compute/CMakeFiles/hyle_compute.dir/result.cc.o
+[275/309] Building CXX object hyle/src/compute/CMakeFiles/hyle_compute.dir/shape_domain.cc.o
+[276/309] Building CXX object hyle/src/compute/CMakeFiles/hyle_compute.dir/shape_program.cc.o
+[277/309] Building CXX object hyle/src/compute/CMakeFiles/hyle_compute.dir/tensor_view.cc.o
+[278/309] Building CXX object hyle/src/compute/CMakeFiles/hyle_compute.dir/transfer.cc.o
+[279/309] Building CXX object hyle/src/compute/CMakeFiles/hyle_compute.dir/workload.cc.o
+[280/309] Linking CXX static library hyle/src/compute_ggml_runtime/libhyle_compute_ggml_runtime.a
+[281/309] Linking CXX static library hyle/_deps/mlx-build/libmlx.a
+[282/309] Linking CXX static library hyle/src/platform_thread/libhyle_platform_thread.a
+[283/309] Linking CXX static library hyle/src/container/libhyle_container.a
+[284/309] Linking CXX static library hyle/src/compute/libhyle_compute.a
+[285/309] Building CXX object hyle/src/compute_provider_ggml_metal/CMakeFiles/hyle_compute_provider_ggml_metal.dir/native_program.cc.o
+[286/309] Building CXX object hyle/src/graph/CMakeFiles/hyle_graph.dir/effect_order.cc.o
+[287/309] Building CXX object hyle/src/graph/CMakeFiles/hyle_graph.dir/graph.cc.o
+[288/309] Building CXX object hyle/src/graph/CMakeFiles/hyle_graph.dir/view_domain.cc.o
+[289/309] Building CXX object hyle/src/graph/CMakeFiles/hyle_graph.dir/constant_artifact.cc.o
+[290/309] Linking CXX static library hyle/src/compute_provider_ggml_metal/libhyle_compute_provider_ggml_metal.a
+[291/309] Building CXX object hyle/src/compute_route_apple/CMakeFiles/hyle_compute_route_apple.dir/apple_context.cc.o
+[292/309] Building CXX object hyle/src/compute_route_apple/CMakeFiles/hyle_compute_route_apple.dir/apple_operations.cc.o
+[293/309] Building CXX object hyle/src/graph/CMakeFiles/hyle_graph.dir/executable.cc.o
+[294/309] Building OBJCXX object hyle/src/compute_route_apple/CMakeFiles/hyle_compute_route_apple.dir/apple_environment.mm.o
+[295/309] Building CXX object hyle/src/compute_route_apple/CMakeFiles/hyle_compute_route_apple.dir/apple_tensor.cc.o
+[296/309] Building CXX object hyle/src/compute_route_apple/CMakeFiles/hyle_compute_route_apple.dir/apple_recurrent.cc.o
+[297/309] Building CXX object hyle/src/compute_route_apple/CMakeFiles/hyle_compute_route_apple.dir/apple_mature_indexing.cc.o
+[298/309] Building CXX object hyle/src/compute_route_apple/CMakeFiles/hyle_compute_route_apple.dir/apple_mature_reduction.cc.o
+[299/309] Building CXX object hyle/src/compute_route_apple/CMakeFiles/hyle_compute_route_apple.dir/apple_mature_artifact.cc.o
+[300/309] Building CXX object hyle/src/compute_route_apple/CMakeFiles/hyle_compute_route_apple.dir/apple_mature_float.cc.o
+[301/309] cd /Users/kiro/hyle-scratch/d5-apple-delivery/source-build && /opt/homebrew/bin/cmake -P /Users/kiro/hyle-scratch/d5-apple-delivery/source-build/hyle-apple-runtime/apple_parity_consumer-Release.cmake
+[302/309] Linking CXX static library hyle/src/graph/libhyle_graph.a
+[303/309] Building CXX object hyle/src/compute_route_apple/CMakeFiles/hyle_compute_route_apple.dir/apple_mature_gguf.cc.o
+[304/309] Linking CXX static library hyle/src/compute_route_apple/libhyle_compute_route_apple.a
+[305/309] Building CXX object hyle/src/graph_route_apple/CMakeFiles/hyle_graph_route_apple.dir/apple_lowering.cc.o
+[306/309] Linking CXX static library hyle/src/graph_route_apple/libhyle_graph_route_apple.a
+[307/309] Building CXX object CMakeFiles/apple_parity_consumer.dir/main.cc.o
+[308/309] Linking CXX executable apple_parity_consumer

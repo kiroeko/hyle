@@ -1,0 +1,59 @@
+{
+  "candidate": "50d62a629eb8965585644f2d92e166d8a98c5d4a",
+  "steps": [
+    {
+      "name": "shared-consumer-configure",
+      "returncode": 0,
+      "seconds": 0.040222883224487305
+    },
+    {
+      "name": "shared-consumer-build",
+      "returncode": 0,
+      "seconds": 0.8764491081237793
+    },
+    {
+      "name": "shared-runtime",
+      "returncode": 1,
+      "seconds": 4.371237754821777
+    }
+  ],
+  "consumer": {
+    "CMakeLists.txt": "a3b46f786db45a1c665814461ac884603912906a76e933a811dc373756a2c99b",
+    "main.cc": "4cb7c4b9d1e3c907dcc2dd9d15d516d16192e8baf4eed2e16db2804429e5e045"
+  },
+  "shared-sdk": {
+    "licenses": [
+      "HYLE-LICENSE",
+      "THIRD_PARTY-NOTICES.md",
+      "awq_apple-LICENSE",
+      "awq_apple-NOTICE.md",
+      "bitsandbytes_apple-LICENSE",
+      "bitsandbytes_apple-NOTICE.md",
+      "compressed_tensors_apple-LICENSE",
+      "compressed_tensors_apple-NOTICE.md",
+      "ggml-cpu-IQ1-LICENSE",
+      "ggml-cpu-IQ1-original-NOTICE.md",
+      "ggml-metal-IQ1-LICENSE",
+      "ggml-metal-IQ1-NOTICE.md",
+      "ggml-runtime-LICENSE",
+      "ggml-runtime-patches-LICENSE",
+      "ggml-runtime-patches-NOTICE.md",
+      "ggml_q4k_apple-LICENSE",
+      "ggml_q4k_apple-NOTICE.md",
+      "highway-LICENSE",
+      "highway-upstream-LICENSE",
+      "metal-cpp-LICENSE",
+      "mimalloc-LICENSE",
+      "mlx-LICENSE",
+      "mlx-cast-LICENSE",
+      "mlx-cast-NOTICE.md",
+      "mlx-fmt-LICENSE",
+      "mlx-json-LICENSE",
+      "rust-parker-LICENSE-MIT",
+      "wyhash-LICENSE",
+      "xsimd-upstream-LICENSE",
+      "xxhash-LICENSE"
+    ],
+    "metallib_sha256": "2ae3af693d8e941861063c9f3ae5249e17665e8761837a9d87ab6e07002f568c"
+  }
+}

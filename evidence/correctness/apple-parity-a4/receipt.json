@@ -1,0 +1,77 @@
+{
+  "candidate": "8e95478c822326b0ddcb3ecb43acb511b8bef7f6",
+  "steps": [
+    {
+      "name": "source-configure",
+      "returncode": 0,
+      "seconds": 2.833698034286499
+    },
+    {
+      "name": "source-build",
+      "returncode": 0,
+      "seconds": 58.945873975753784
+    },
+    {
+      "name": "source-runtime",
+      "returncode": 0,
+      "seconds": 16.152544021606445
+    },
+    {
+      "name": "static-install",
+      "returncode": 0,
+      "seconds": 0.26187801361083984
+    },
+    {
+      "name": "static-consumer-configure",
+      "returncode": 0,
+      "seconds": 0.3988518714904785
+    },
+    {
+      "name": "static-consumer-build",
+      "returncode": 0,
+      "seconds": 0.9587419033050537
+    },
+    {
+      "name": "static-runtime",
+      "returncode": 0,
+      "seconds": 16.025200128555298
+    }
+  ],
+  "consumer": {
+    "CMakeLists.txt": "a3b46f786db45a1c665814461ac884603912906a76e933a811dc373756a2c99b",
+    "main.cc": "27a21ab46a94339d1f6dd1f038caaee419f224e9ffbaf47e29a3f95ee1f526d5"
+  },
+  "static-sdk": {
+    "licenses": [
+      "HYLE-LICENSE",
+      "THIRD_PARTY-NOTICES.md",
+      "awq_apple-LICENSE",
+      "awq_apple-NOTICE.md",
+      "bitsandbytes_apple-LICENSE",
+      "bitsandbytes_apple-NOTICE.md",
+      "compressed_tensors_apple-LICENSE",
+      "compressed_tensors_apple-NOTICE.md",
+      "ggml-cpu-IQ1-LICENSE",
+      "ggml-cpu-IQ1-original-NOTICE.md",
+      "ggml-metal-IQ1-LICENSE",
+      "ggml-metal-IQ1-NOTICE.md",
+      "ggml-runtime-LICENSE",
+      "ggml-runtime-patches-LICENSE",
+      "ggml-runtime-patches-NOTICE.md",
+      "ggml_q4k_apple-LICENSE",
+      "ggml_q4k_apple-NOTICE.md",
+      "highway-upstream-LICENSE",
+      "metal-cpp-LICENSE",
+      "mimalloc-LICENSE",
+      "mlx-LICENSE",
+      "mlx-cast-LICENSE",
+      "mlx-cast-NOTICE.md",
+      "mlx-fmt-LICENSE",
+      "mlx-json-LICENSE",
+      "rust-parker-LICENSE-MIT",
+      "wyhash-LICENSE",
+      "xxhash-LICENSE"
+    ],
+    "metallib_sha256": "2ae3af693d8e941861063c9f3ae5249e17665e8761837a9d87ab6e07002f568c"
+  }
+}

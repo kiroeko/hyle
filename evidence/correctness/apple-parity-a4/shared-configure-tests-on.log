@@ -1,0 +1,8 @@
+-- HYLE products: requested='compute,graph,simd' available='core,error,simd,math,compute,graph' factors='core,container_intrusive,util_core,error,time,math,platform,platform_thread,mem,simd,container,compute_ops,compute,graph,compute_ggml_runtime,compute_backend_cuda,compute_provider_cublas,compute_provider_cuda,compute_provider_flashinfer,compute_provider_ggml_cuda,compute_provider_torch_cuda,compute_route_cuda,graph_provider_ggml_cuda,graph_route_cuda,compute_provider_ggml_metal,compute_route_apple,graph_route_apple,compute_provider_ggml_vulkan,compute_provider_iree_vulkan,compute_route_vulkan,graph_route_vulkan'
+CMake Error at CMakeLists.txt:169 (message):
+  HYLE_INSTALL=ON requires HYLE_BUILD_TESTS=OFF.  Test configurations are
+  validation artifacts; the instrumented form may change layout, and neither
+  form is an SDK.
+
+
+-- Configuring incomplete, errors occurred!
