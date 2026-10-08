@@ -1,6 +1,6 @@
 # CUDA 性能优选补齐与对应清退
 
-<!-- MODULE REVIEW: CANDIDATE -->
+<!-- MODULE REVIEW: CLOSED -->
 
 baseline `3e9e71d0ab6a915d3682314e9102864638d1005e`，Windows工作树干净。
 2026-10-08用户要求CUDA补至CPU同级，并明确“差不多就选主流，不无限性能比较”。
@@ -172,10 +172,19 @@ WSL source25/6/7 PASS。Core原63单元在Win/WSL各PASS，FIX-C严格profile两
 | 三交付 | Win/WSL source/static/shared、SDK relocation/loader/邻exe DLL及真实两入口 PASS |
 | 依赖/构建 | 中央只增加两个已有闭包内private直接边；全部产品根/公共头/传递闭包相同，真实producer/SDK两OS PASS |
 | 性能 | C2 qualification PASS；25 WIN/2 LOSE/20未裁决聚合FAIL保留。只导入23完整赢家；169默认/14单承载，不追加采样 |
-| 文档/易用性 | 当前限制与入口文档更新；docs/closure待本候选冻结后最后检查，无新构建/P1 |
+| 文档/易用性 | 当前限制与入口文档更新；候选冻结后docs/closure PASS，无新构建/P1 |
 | 红队/生命周期 | managed/offset/descriptor换非法view拒绝、两slot/变输入、零热分配、关闭/失败及原特殊值资源域检查 PASS |
 
 统一Compute+Graph非测试实现 **61,100行/258文件**。已清理Win约10.72GiB、WSL约0.14GiB
 当前owner临时消费者/首次失败SDK，保留source、最新SDK、模型、缓存和P1验证输入。原公共
 Graph/Vulkan BLOCKED不变，其它路线/CPU旧状态不重开；本goal只关闭本轮CUDA规则/去留。
 完整模型数学104GGUF/559合同等复用原U23/U5明确不变域，不因文档收口重新全跑。
+
+## CLOSED 裁决
+
+2026-10-08，C1–C4完成。候选冻结后 docs/closure PASS，C2 canonical manifest严格重放
+QUALIFIED、EXACT provenance/paths成立；correctness归档SHA及139项归档完整性通过，原
+static失败XML与性能聚合FAIL仍存在。`component-proof.json`以中央CMake实际图证实
+两个private边不改变任何产品根、公共头或传递闭包，raw宽selector不冒称全库执行PASS。
+本轮有限CUDA冷规则/冗余程序及对应交付通过；不保证全部设备/版本冠军，不关闭其它路线
+或公共Graph旧Vulkan blocker。无新算子目录/模型engine，停止本goal，等待下一阶段讨论。

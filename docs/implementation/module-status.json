@@ -270,10 +270,14 @@
     },
     {
       "module": "compute",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/compute/compute-bound-view-alignment-cuda-best-of.md",
-      "summary": "CANDIDATE：23精确CUDA叶优选/169成熟默认/14单承载与79重复程序清退；两OS差分/三交付、Core63及严格profile资源回退通过，原性能聚合及static批次FAIL保留；最后文档/证据收口，无新P1。",
-      "candidate": "cd53173946564155121819f1ccae7f6726b908ed"
+      "summary": "CLOSED：23精确CUDA叶优选、169成熟默认、14单承载；79重复程序实例清退。两OS三交付/Core63/严格profile资源回退及终审通过；原性能聚合和static批次FAIL保留，不外推全硬件/完整region，原Graph/Vulkan blocker不变。",
+      "candidate": "cd53173946564155121819f1ccae7f6726b908ed",
+      "performance": {
+        "tier": "P0",
+        "evidence": "evidence/correctness/cuda-best-of-c3/README.md"
+      }
     },
     {
       "module": "graph",
@@ -485,24 +489,36 @@
     },
     {
       "module": "compute_provider_cuda",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/compute/cuda-best-of-completion.md",
-      "summary": "CANDIDATE：23精确CUDA叶优选/169成熟默认/14单承载与79重复程序清退；两OS差分/三交付、Core63及严格profile资源回退通过，原性能聚合及static批次FAIL保留；最后文档/证据收口，无新P1。",
-      "candidate": "cd53173946564155121819f1ccae7f6726b908ed"
+      "summary": "CLOSED：23精确CUDA叶优选、169成熟默认、14单承载；79重复程序实例清退。两OS三交付/Core63/严格profile资源回退及终审通过；原性能聚合和static批次FAIL保留，不外推全硬件/完整region，原Graph/Vulkan blocker不变。",
+      "candidate": "cd53173946564155121819f1ccae7f6726b908ed",
+      "performance": {
+        "tier": "P1",
+        "evidence": "evidence/performance/cuda-best-of-c2/README.md"
+      }
     },
     {
       "module": "compute_route_cuda",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/compute/cuda-best-of-completion.md",
-      "summary": "CANDIDATE：23精确CUDA叶优选/169成熟默认/14单承载与79重复程序清退；两OS差分/三交付、Core63及严格profile资源回退通过，原性能聚合及static批次FAIL保留；最后文档/证据收口，无新P1。",
-      "candidate": "cd53173946564155121819f1ccae7f6726b908ed"
+      "summary": "CLOSED：23精确CUDA叶优选、169成熟默认、14单承载；79重复程序实例清退。两OS三交付/Core63/严格profile资源回退及终审通过；原性能聚合和static批次FAIL保留，不外推全硬件/完整region，原Graph/Vulkan blocker不变。",
+      "candidate": "cd53173946564155121819f1ccae7f6726b908ed",
+      "performance": {
+        "tier": "P1",
+        "evidence": "evidence/performance/cuda-best-of-c2/README.md"
+      }
     },
     {
       "module": "graph_route_cuda",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/compute/cuda-best-of-completion.md",
-      "summary": "CANDIDATE：23精确CUDA叶优选/169成熟默认/14单承载与79重复程序清退；两OS差分/三交付、Core63及严格profile资源回退通过，原性能聚合及static批次FAIL保留；最后文档/证据收口，无新P1。",
-      "candidate": "cd53173946564155121819f1ccae7f6726b908ed"
+      "summary": "CLOSED：23精确CUDA叶优选、169成熟默认、14单承载；79重复程序实例清退。两OS三交付/Core63/严格profile资源回退及终审通过；原性能聚合和static批次FAIL保留，不外推全硬件/完整region，原Graph/Vulkan blocker不变。",
+      "candidate": "cd53173946564155121819f1ccae7f6726b908ed",
+      "performance": {
+        "tier": "P1",
+        "evidence": "evidence/performance/cuda-best-of-c2/README.md"
+      }
     },
     {
       "module": "compute_route_apple",

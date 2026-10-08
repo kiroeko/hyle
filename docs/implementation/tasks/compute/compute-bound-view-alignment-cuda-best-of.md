@@ -1,6 +1,6 @@
 # 已知 TensorView 对齐的冷选择修复
 
-<!-- MODULE REVIEW: CANDIDATE -->
+<!-- MODULE REVIEW: CLOSED -->
 
 owner `compute`，baseline `c8dd92ac`，父任务[CUDA best-of](cuda-best-of-completion.md)。
 这是新的实际反例，重新定界旧CLOSED；原CPU规则/数学和宏验收不重开。
@@ -66,3 +66,6 @@ candidate `cd53173946564155121819f1ccae7f6726b908ed`。FIX-C原普通默认窄�
 descriptor违规绑定拒绝两项PASS。Windows/WSL Core原单元各63 PASS；父轮source及三SDK
 交付差分PASS。公开API/ABI、shader数学及热submit表不变，只冷候选标准decline、已知offset
 与已有alignment数据。原static29 FAIL没有改写/第三次；后续只收口文档/证据。
+
+CLOSED：候选后docs/closure、归档完整性与父轮终审通过。FIX-A/B/C已验证；原失败记录保留，
+不扩到其它算子/路线重审，不变更CPU已闭数学与优选规则。
