@@ -12,7 +12,7 @@
 
 namespace {
 using namespace apple_tensor_test;
-using Lease = hyle::compute::OwnedResult<a::Results>;
+using Lease = hyle::compute::ResultLease<a::Results>;
 
 Lease execute(a::Program &program, std::span<const mx::array> inputs) {
   auto slot = program.create_invocation().value();
