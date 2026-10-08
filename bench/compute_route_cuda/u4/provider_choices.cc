@@ -6,6 +6,8 @@
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
+#include <filesystem>
+#include <fstream>
 #include <memory>
 #include <span>
 #include <stdexcept>
@@ -108,6 +110,7 @@ public:
     require(completion.wait());
     // Completion destruction and retained run-reference settlement are charged.
   }
+  void reserve() { require(queue_.reserve_completions(1)); }
   void verify() {
     for (auto &slot : slots_) {
       {
@@ -160,6 +163,18 @@ void measure(const Recipe &recipe, bool verify_only) {
   std::fprintf(stderr, "# U4_SETUP title=%s seconds=%.6f\n", recipe.title,
       std::chrono::duration<double>(std::chrono::steady_clock::now() - start).count());
   if (verify_only) return;
+  // C1 diagnostic compares the old cold entry with the already established
+  // CUDA runtime consumer's symmetric 2048-run warmup. Both still include
+  // submit, terminal wait and retained-reference settlement in every call.
+  const auto diagnostic = environment("HYLE_CUDA_C1_DIAGNOSTIC");
+  if (!diagnostic.empty() && diagnostic != "cold" && diagnostic != "warm")
+    throw std::runtime_error("invalid C1 diagnostic mode");
+  if (diagnostic == "warm") {
+    candidate->reserve(); peer->reserve();
+    for (int i = 0; i < 2048; ++i) {
+      candidate->run(); peer->run();
+    }
+  }
   nb::Bench bench;
   bench.title(recipe.title).relative(true).minEpochTime(std::chrono::milliseconds(8));
   auto selected = [&] { candidate->run(); };
@@ -170,8 +185,18 @@ void measure(const Recipe &recipe, bool verify_only) {
     (void)bench.compare("Mature provider", selected, "HYLE native", reference);
   candidate->verify(); peer->verify();
 }
-int main() {
+int main(int argc, char **argv) {
   try {
+    (void)argc;
+    const bool verify = !environment("HYLE_BENCH_VERIFY_ONLY").empty();
+    if (!verify && !environment("HYLE_PERF_RUN_NONCE").empty() &&
+        environment("HYLE_BENCH_AA_ROUTE").empty()) {
+      std::string ready;
+      std::ifstream(std::filesystem::absolute(argv[0]).parent_path() /
+                    "u4-cuda-choices-aa.ready") >> ready;
+      if (ready != "PASS")
+        throw std::runtime_error("this artifact has no passing workload A/A receipt");
+    }
     const auto affinity = hyle::bench::perf::configure_thread_affinity("HYLE_PERF_CALLER_CPU");
 #if HYLE_OS_WINDOWS
     DWORD_PTR parent = 0, system = 0;
@@ -181,7 +206,6 @@ int main() {
     const unsigned long long parent = 0;
     const unsigned long priority = 0;
 #endif
-    const bool verify = !environment("HYLE_BENCH_VERIFY_ONLY").empty();
     std::fprintf(stderr, "# HYLE_U4_CUDA_RUN execution_order=%s allocation_order=%s aa_route=%s paired_mode=nanobench-compare affinity_topology=%s caller_cpu=%s affinity_ok=%s parent_mask=0x%llx priority=%s run_nonce=%s verify_only=%d\n",
         environment("HYLE_BENCH_RIVAL_FIRST").empty() ? "candidate-first" : "peer-first",
         environment("HYLE_BENCH_PEER_ALLOCATION_FIRST").empty() ? "candidate-first" : "peer-first",
@@ -195,7 +219,12 @@ int main() {
         Recipe{"Qwen BF16 packed SiLU T32 H6144", 32, 6144, true, true, false, c::cuda_native::sglang_provider()},
         Recipe{"Qwen F32 RMSNorm T1 H2048", 1, 2048, false, false, false, c::ggml_cuda::provider()},
         Recipe{"Qwen F32 RMSNorm T32 H2048", 32, 2048, false, false, false, c::ggml_cuda::provider()}};
-    for (const auto &recipe : recipes) measure(recipe, verify);
+    for (const auto &recipe : recipes) {
+      if (!environment("HYLE_CUDA_C1_DIAGNOSTIC").empty() &&
+          std::string(recipe.title) != "Qwen BF16 RMSNorm T32 H2048")
+        continue;
+      measure(recipe, verify);
+    }
     return 0;
   } catch (const std::exception &error) {
     std::fprintf(stderr, "FAIL: %s\n", error.what());

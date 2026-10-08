@@ -49,4 +49,13 @@ C2适配器一次批量构建（至多一次具名setup纠正），一次短AA�
 完整终态等待仍收费，不能用纯CUDA event kernel时间替代完整consumer以获得漂亮比值。
 本轮只在具体机制依据上纠正adapter；不提高margin、改pair/尺寸、拿更多n掩盖偏差。
 
-完整C1审计及有限FIX前不改产品、不正式采样。当前旧CUDA owners继续CLOSED；本卡是新scope。
+完整C1审计及有限FIX前不改产品、不正式采样。三个本轮owner已依法CLOSED→SCOPED；其余CUDA owners保持旧CLOSED。
+
+C1一次入口诊断已完成，见[原始结果](../../../../evidence/performance/cuda-best-of-c1/README.md)。
+2048对称预热不足以消除同路径11/30us和7.4%差异，不反复增加预热/round或升级n。
+已证adapter缺少D5已有的AA ready guard，补此窄guard，公共runner/统计不改；其验证待执行。
+
+C1已冻结[206个有限请求](cuda-best-of-requests.json)的候选静态矩阵：32个语义variant、
+三种实际float storage、主decode/小prefill holdout、6种storage cast和2个plain Gather。
+这是8个重叠能力域的有界批量准入输入，不签206项已支持/已比较；每项仍须真实prepare与输出
+门，单承载/没有同合同的域明确不比。Linux attention独立同合同region，Windows不伪造该Provider。

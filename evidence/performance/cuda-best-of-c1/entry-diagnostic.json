@@ -1,0 +1,69 @@
+{
+  "scope": "One bounded same-artifact native/native diagnostic; not Provider winner or qualification. Old two-verify entry vs existing symmetric2048 reserve/warm entry, same full terminal completion.",
+  "executable_sha256": "b80c0a5409c61b17eacac03f63b79b2a02093517b56671efa1fc0ee82603dd07",
+  "policy": {
+    "environment": "windows",
+    "affinity_mask": "0x14",
+    "logical_cpu": 2,
+    "cpu_set_id": 258,
+    "required_efficiency_class": "maximum",
+    "smt_sibling_logical_cpu": 3,
+    "priority": "above-normal",
+    "applied_by": "benchmark-parent-mask-plus-caller-singleton",
+    "sampling_topology": "native-runtime-pair",
+    "logical_cpus": [
+      2,
+      4
+    ],
+    "cpu_set_ids": [
+      258,
+      260
+    ],
+    "physical_core_indices": [
+      2,
+      4
+    ],
+    "caller_logical_cpu": 2,
+    "distinct_physical_cores": true,
+    "reserved_physical_core_count": 2,
+    "helper_placement": "native-runtime-managed"
+  },
+  "rows": [
+    {
+      "mode": "cold",
+      "reverse": false,
+      "ratio": 1.143013398241055,
+      "candidate_us": 28.788609844092406,
+      "peer_us": 32.90576676853195,
+      "log": "C:/public/project-hyle/hyle/.scratch/validation/cuda-best-of/logs/c1-cold-0.log",
+      "sha256": "5023abddd52f4fdb9acd890b56777faf4a62139fbaa3dc61d476ec742d2b3255"
+    },
+    {
+      "mode": "warm",
+      "reverse": true,
+      "ratio": 0.9259855465639305,
+      "candidate_us": 11.675123347678168,
+      "peer_us": 10.810995474301075,
+      "log": "C:/public/project-hyle/hyle/.scratch/validation/cuda-best-of/logs/c1-warm-1.log",
+      "sha256": "f6820ad8db0d06f1bd5f019ff526c31c93cb7959a2838c7fa5cba9db7bbd2726"
+    },
+    {
+      "mode": "warm",
+      "reverse": false,
+      "ratio": 1.0038549533450174,
+      "candidate_us": 30.05517529079885,
+      "peer_us": 30.1710365893212,
+      "log": "C:/public/project-hyle/hyle/.scratch/validation/cuda-best-of/logs/c1-warm-0.log",
+      "sha256": "721c1961f1161fae981abe4d6d8edddfd1994854cd85bf3f8cf1216f9561e9ad"
+    },
+    {
+      "mode": "cold",
+      "reverse": true,
+      "ratio": 1.0157452075552325,
+      "candidate_us": 31.30152034614473,
+      "peer_us": 31.79436928078911,
+      "log": "C:/public/project-hyle/hyle/.scratch/validation/cuda-best-of/logs/c1-cold-1.log",
+      "sha256": "7c60ce352492d98d3d770f35463efc4cd64208ddf4f78b53bc946696a240f4b1"
+    }
+  ]
+}
