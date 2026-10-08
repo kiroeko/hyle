@@ -98,7 +98,7 @@ TEST(CudaDefault, EngineeringPolicyIsColdAndDoesNotLeakToExpertFactory) {
   auto context = cuda::create_context().value();
   auto memory = cuda::MemoryResource::create(context, cuda::MemoryKind::kDevice).value();
   for (auto phase : {WorkloadPhase::kUnspecified, WorkloadPhase::kPrefill, WorkloadPhase::kDecode}) {
-    const WorkloadContext workload{.phase = phase};
+    const WorkloadContext workload{.profile = {}, .phase = phase, .region = {}};
     auto prepared = prepare(context, Operation(Unary{UnaryKind::kExp}),
         std::span(&description, 1), std::span(&description, 1), memory.ref(), workload);
     ASSERT_TRUE(prepared) << prepared.error().message();
