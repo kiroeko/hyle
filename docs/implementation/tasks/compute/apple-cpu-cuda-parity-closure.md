@@ -206,3 +206,14 @@ Direct7/7、Graph8/8通过，无SKIP，合并185/185与157/157（不冒称第二
 原GPU数学没改，Q4旧松门反而收紧。新官方0813/0731与DSpark indexed完整region仍须对应
 witness，旧名字不代签。FP4原DS4候选实测222 mismatch/190非零变零，已请求按goal冻结规则
 决定必要GPU数值保真桥接；答复前产品FIX零。A2未关闭，A3/P1与A4交付仍待。
+
+下一批固定九项/入口：官方Pro0813、Flash0731各target-hidden/confidence、全词表Markov、
+128/129-token prefill与五token注意力/cache六次replay；Qwen Q4命名sidecar的真实Q3/Q4/Q6
+embedding/decoder/完整词表MTP；Flash Q8与BF16 sidecar各原MXFP4专家与三stage DSpark、
+共享embedding/cache/confidence/完整词表head。均复用共同C4模型形状、制品revision、oracle
+和whole-fragment门，不增加画像、格式或产品数学。量化dot integration oracle调用独立原
+ggml Metal backend并保持物理权重/F32 accumulation；不能借CPU vec-dot不同activation
+codec冒充Metal oracle。primitive codec/equation证据继续保留，原backend不作为产品fallback。
+两入口测试按fixture.phase绑定真实prefill/decode；本批只增测试，尚未PASS。仅新九项集中
+build2/test1，既有559/34/45和185/157证据不重跑。官方FP4 main/完整官方DSpark专家依赖
+待决精确保真方案，未被本批侧车MXFP4或FP8 attention替代。

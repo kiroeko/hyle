@@ -46,9 +46,17 @@
 #include "../compute_route_apple/gguf_coverage_fixture.h"
 #include "../compute_models/cpu_c5_plain_fixture.h"
 #include "../compute_route_apple/exact_row_resource_test_support.h"
+#include "../compute_route_apple/sidecar_quant_reference.h"
+#include "../compute_models/cpu_c4_qwen_mtp.h"
+#include "../compute_models/cpu_c4_flash_sidecars.h"
+#undef HYLE_C4_QUANTIZED_REFERENCE
+#undef HYLE_C4_GROUPED_REFERENCE
 
 namespace {
 void run_q24_semantic_fragment(d5_qwen38_24t_semantic_fragments::Fragment fixture);
+#define HYLE_TEST_GRAPH_ROUTE_APPLE
+#include "../compute_route_apple/model_branch_tests.h"
+#undef HYLE_TEST_GRAPH_ROUTE_APPLE
 void apple_parity_plain_demand(const cpu_c5_plain_inputs::Case &item) {
   namespace p = cpu_c5_plain_fixture;
   const auto identity = p::profile(item);
@@ -1597,7 +1605,7 @@ void execute_q24_semantic_fragment(
   }
   fixture.constant_bytes = {};
   const auto workload =
-      q::workload(*fixture.profile, c::WorkloadPhase::kDecode, fixture.region);
+      q::workload(*fixture.profile, fixture.phase, fixture.region);
   ga::CompileReport report;
   auto compiled = ga::compile(context, full.graph, constants,
                               {.report = &report, .workload = workload});
