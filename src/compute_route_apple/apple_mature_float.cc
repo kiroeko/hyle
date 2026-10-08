@@ -138,6 +138,29 @@ Quantized weight(const mx::array &carrier, int count, int n, int k,
   return {codes, mx::expand_dims(scales, -1, s)};
 }
 
+Quantized weight4(const mx::array &carrier, int count, int n, int k,
+                 const mx::array &ids, mx::Stream s) {
+  const int payload = count * n * (k / 2);
+  auto bytes = mx::reshape(mx::slice(carrier, {0}, {payload}, s), {count, n, k / 2}, s);
+  bytes = mx::take(bytes, ids, 0, s);
+  auto low = mx::bitwise_and(bytes, mx::array(std::uint8_t{15}), s);
+  auto high = mx::right_shift(bytes, mx::array(std::uint8_t{4}), s);
+  auto codes = mx::reshape(mx::concatenate({mx::expand_dims(low, -1, s),
+      mx::expand_dims(high, -1, s)}, -1, s), {int(ids.size()), n, k / 32, 32}, s);
+  // Original fp4_gemm_kernel casts E2M1 through F32 to E4M3FN. Every FP4
+  // code is exactly representable; preserve low-first packing and zero sign.
+  const mx::array e4m3({std::uint8_t{0}, std::uint8_t{0x30}, std::uint8_t{0x38},
+      std::uint8_t{0x3c}, std::uint8_t{0x40}, std::uint8_t{0x44}, std::uint8_t{0x48},
+      std::uint8_t{0x4c}, std::uint8_t{0x80}, std::uint8_t{0xb0}, std::uint8_t{0xb8},
+      std::uint8_t{0xbc}, std::uint8_t{0xc0}, std::uint8_t{0xc4}, std::uint8_t{0xc8}, std::uint8_t{0xcc}});
+  codes = mx::take(e4m3, codes, 0, s);
+  auto scales = mx::view(mx::contiguous(mx::slice(carrier, {payload},
+      {static_cast<int>(carrier.size())}, s), false, s), mx::float32, s);
+  scales = mx::reshape(scales, {count, n, k / 32}, s);
+  scales = mx::take(scales, ids, 0, s);
+  return {codes, mx::expand_dims(scales, -1, s)};
+}
+
 mx::array block_dot(const Quantized &a, const Quantized &b, mx::Stream s) {
   // [batch,M,Kblocks,128] x [batch,N,Kblocks,128]. Apply scales
   // after each original F32 dot, before reducing Kblocks.
@@ -168,6 +191,7 @@ bool is_mlx_float_operation(const Operation &operation,
   return operation.custom_as<model_ops::Float8BlockLinear>() ||
          operation.custom_as<model_ops::Float8WeightDecode>() ||
          operation.custom_as<model_ops::GroupedFloat8Linear>() ||
+         operation.custom_as<model_ops::GroupedFloat4Linear>() ||
          operation.custom_as<model_ops::BlockQuantizationRoundtrip>() ||
          (operation.get_if<MatMul>() && inputs.size() == 2 &&
           inputs[1].storage_format().id() == kFloat8WeightFloat32Block128);
@@ -185,6 +209,8 @@ Result<InputSpec> mlx_float_input_spec(const TensorDesc &description) noexcept {
       expected = float8_weight_description(dims[0], dims[1], kMode);
     else if (id == kFloat8GroupedWeightFloat32Block128 && dims.size() == 3)
       expected = float8_grouped_weight_description(dims[0], dims[1], dims[2]);
+    else if (id == kFloat4GroupedWeightFloat32Group32 && dims.size() == 3)
+      expected = float4_grouped_weight_description(dims[0], dims[1], dims[2]);
     if (!expected)
       return std::unexpected(std::move(expected).error());
     if (description != *expected)
@@ -229,7 +255,9 @@ Result<std::vector<mx::array>> lower_mlx_float(
       return std::vector{mx::astype(mx::reshape(
           mx::multiply(decode(w.codes, s), w.scales, s), {n, k}, s), type, s)};
     }
-    if (const auto grouped = operation.custom_as<model_ops::GroupedFloat8Linear>()) {
+    const auto grouped = operation.custom_as<model_ops::GroupedFloat8Linear>();
+    const bool four = operation.custom_as<model_ops::GroupedFloat4Linear>().has_value();
+    if (grouped || four) {
       const auto dims = descriptions[0].dimensions();
       const int e = static_cast<int>(dims[0]), n = static_cast<int>(dims[1]), k = static_cast<int>(dims[2]);
       const int t = inputs[1].shape(0), a = inputs[1].shape(1), slots = inputs[2].shape(1);
@@ -239,16 +267,23 @@ Result<std::vector<mx::array>> lower_mlx_float(
       auto invalid = mx::logical_or(mx::less(inputs[2], mx::array(0), s),
                                     mx::greater_equal(inputs[2], mx::array(e), s), s);
       auto ids = mx::reshape(mx::where(invalid, mx::array(0), inputs[2], s), {rows}, s);
-      auto w = weight(inputs[0], e, n, k, s);
-      w.codes = mx::take(w.codes, ids, 0, s);
-      w.scales = mx::take(w.scales, ids, 0, s);
-      auto q = quantize(inputs[1], 128, grouped->absmax_floor, false, s);
-      if (a == 1 && slots != 1) {
-        q.codes = mx::broadcast_to(q.codes, {t, slots, k / 128, 128}, s);
-        q.scales = mx::broadcast_to(q.scales, {t, slots, k / 128, 1}, s);
+      auto w = four ? weight4(inputs[0], e, n, k, ids, s) : weight(inputs[0], e, n, k, s);
+      if (!four) {
+        w.codes = mx::take(w.codes, ids, 0, s);
+        w.scales = mx::take(w.scales, ids, 0, s);
       }
-      q.codes = mx::reshape(q.codes, {rows, 1, k / 128, 128}, s);
-      q.scales = mx::reshape(q.scales, {rows, 1, k / 128, 1}, s);
+      auto q = quantize(inputs[1], 128, four ? 1.0e-4F : grouped->absmax_floor, four, s);
+      const int block = four ? 32 : 128;
+      if (four) {
+        q.codes = mx::reshape(q.codes, {t, a, k / 32, 32}, s);
+        q.scales = mx::repeat(q.scales, 4, 2, s);
+      }
+      if (a == 1 && slots != 1) {
+        q.codes = mx::broadcast_to(q.codes, {t, slots, k / block, block}, s);
+        q.scales = mx::broadcast_to(q.scales, {t, slots, k / block, 1}, s);
+      }
+      q.codes = mx::reshape(q.codes, {rows, 1, k / block, block}, s);
+      q.scales = mx::reshape(q.scales, {rows, 1, k / block, 1}, s);
       auto value = mx::astype(mx::reshape(block_dot(q, w, s), {t, slots, n}, s), type, s);
       auto status = mx::where(mx::any(invalid, s), mx::array(kIndexOutOfRange), mx::array(0), s);
       HYLE_ASSIGN_OR_RETURN(auto checked, with_device_status(std::move(value), std::move(status), s));

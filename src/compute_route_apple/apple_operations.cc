@@ -155,6 +155,8 @@ Result<InputSpec> input_spec(const TensorDesc &description) noexcept {
       description.storage_format().id() == kFloat8WeightFloat32Block128 ||
       description.storage_format().id() == kFloat8GroupedWeightFloat32Block128)
     return detail::mlx_float_input_spec(description);
+  if (description.storage_format().id() == kFloat4GroupedWeightFloat32Group32)
+    return detail::mlx_float_input_spec(description);
   if (gguf_quantized_type(description.storage_format())) {
     HYLE_ASSIGN_OR_RETURN(auto bytes, description.required_bytes());
     const auto limit = static_cast<std::size_t>((std::numeric_limits<int>::max)());
