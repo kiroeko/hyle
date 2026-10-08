@@ -39,6 +39,13 @@ struct ContextAccess final {
 // Direct lowering and both Graph validation/tracing use the same domain.
 HYLE_COMPUTE_ROUTE_APPLE_API bool
 is_mlx_tensor_custom(const Operation &operation) noexcept;
+HYLE_COMPUTE_ROUTE_APPLE_API bool
+is_mlx_exact_gguf_gather(const Operation &operation,
+                        std::span<const TensorDesc> inputs) noexcept;
+HYLE_COMPUTE_ROUTE_APPLE_API Result<std::vector<mlx::core::array>>
+lower_mlx_exact_gguf_gather(const Operation &operation,
+    std::span<const TensorDesc> descriptions, std::span<const mlx::core::array> inputs,
+    mlx::core::Stream stream) noexcept;
 
 // Cold lowering for model-native FP8 storage. Logical descriptions remain
 // distinct from the uint8 MLX carrier used at the native boundary.

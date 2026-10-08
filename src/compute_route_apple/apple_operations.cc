@@ -325,6 +325,10 @@ Context::prepare(const Operation &operation, std::span<const InputSpec> inputs,
       HYLE_ASSIGN_OR_RETURN(auto description, logical_description(input));
       descriptions.push_back(std::move(description));
     }
+    if (detail::is_mlx_exact_gguf_gather(operation, descriptions))
+      return compile([operation, descriptions](const auto &values, mx::Stream stream) {
+        return detail::lower_mlx_exact_gguf_gather(operation, descriptions, values, stream);
+      }, inputs, workload);
     if (detail::is_mlx_float_operation(operation, descriptions))
       return compile(
           [operation, descriptions](const auto &values, mx::Stream stream) {

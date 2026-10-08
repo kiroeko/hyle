@@ -1371,6 +1371,37 @@
           }
         ]
       }
+    },
+    {
+      "class": "in_tree",
+      "repository": "https://github.com/ggml-org/ggml.git",
+      "revision": "456172ec733a135778adcd32d00e576a58232e45",
+      "git_tree": "5cedba53daf44127495f9df9ac07bf0e56844868",
+      "archive": {
+        "url": "https://codeload.github.com/ggml-org/ggml/tar.gz/456172ec733a135778adcd32d00e576a58232e45",
+        "sha256": "77e3579b4f2a7059db03821899f78843f80756c831359805ab0db1e8c039fe34"
+      },
+      "name": "ggml_q4k_apple",
+      "version": "original-q4k-mlx-sequence-456172ec",
+      "vendored": {
+        "path": "third_party/ggml_q4k_apple",
+        "tree_sha256": "3798537925f3581c83c585d960710f73aec4700323e1dda8f215f96b38465b89"
+      },
+      "license": {
+        "expression": "MIT",
+        "files": [
+          {
+            "root": "hyle",
+            "path": "third_party/ggml_q4k_apple/LICENSE",
+            "sha256": "94f29bbed6a22c35b992c5c6ebf0e7c92f13b836b90f36f461c9cf2f0f1d010d"
+          },
+          {
+            "root": "hyle",
+            "path": "third_party/ggml_q4k_apple/NOTICE.md",
+            "sha256": "c214791e19e519c815066e1d154db70fa2374f5b84f5fd9dbe200dab551eeaa8"
+          }
+        ]
+      }
     }
   ]
 }

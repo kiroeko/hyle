@@ -6,6 +6,7 @@
 #include "hyle/obs/trace.h"
 
 #include <algorithm>
+#include <array>
 #include <cstddef>
 #include <cstdint>
 #include <exception>
@@ -54,6 +55,10 @@ Result<ca::InputSpec> native_spec(const compute::TensorDesc &description) {
 }
 
 bool ggml_model_operation(const Plan &plan, const Node &node) noexcept {
+  if (node.inputs.size() == 2) {
+    const std::array descriptions{plan.descriptions[node.inputs[0]], plan.descriptions[node.inputs[1]]};
+    if (ca::detail::is_mlx_exact_gguf_gather(node.operation, descriptions)) return false;
+  }
   return fixed_ggml_model_operation(node.operation) ||
          (node.operation.get_if<compute::MatMul>() && node.inputs.size() == 2 &&
           compute::gguf_quantized_type(
@@ -96,6 +101,9 @@ Result<std::vector<mx::array>> trace(const Plan &plan,
       descriptions.push_back(plan.descriptions[index]);
     }
     auto outputs =
+        ca::detail::is_mlx_exact_gguf_gather(node.operation, descriptions)
+            ? ca::detail::lower_mlx_exact_gguf_gather(node.operation, descriptions, arguments, stream)
+        :
         ca::detail::is_mlx_float_operation(node.operation, descriptions)
             ? ca::detail::lower_mlx_float(node.operation, descriptions, arguments, stream)
         : node.operation.kind() == compute::OperationKind::kCustom &&
@@ -343,7 +351,10 @@ static Result<ca::Program> compile_impl(const ca::Context &context,
                    plan->descriptions[id].storage_format())
             .has_value();
       });
-      if (has_gguf && !ggml_model_operation(*plan, node))
+      std::vector<compute::TensorDesc> descriptions;
+      for (auto id : node.inputs) descriptions.push_back(plan->descriptions[id]);
+      if (has_gguf && !ggml_model_operation(*plan, node) &&
+          !ca::detail::is_mlx_exact_gguf_gather(node.operation, descriptions))
         return std::unexpected(Status::Unimplemented(
             "Apple Graph GGUF carrier requires a qualified native model operation"));
     }
