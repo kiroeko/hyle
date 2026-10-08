@@ -394,15 +394,14 @@ void run_quantized_embedding(
   auto program = ga::compile(context, graph, constants,
                              {.report = &report, .workload = workload});
   ASSERT_TRUE(program) << program.error().message();
-  EXPECT_NE(report.implementation_policy.find("ggml Metal"), std::string::npos);
+  EXPECT_NE(report.implementation_policy.find(
+      type == c::GgufQuantizedType::kQ4K ? "MLX" : "ggml Metal"), std::string::npos);
   EXPECT_EQ(program->workload(), workload);
 
   auto invocation = program->create_invocation().value();
-  // ggml Metal's Q4_K get_rows path evaluates the high-nibble scale division
-  // in half precision before publishing F32. The independent oracle decodes
-  // the same packed bytes in F32, so bound that one provider conversion step.
-  const auto tolerance =
-      type == c::GgufQuantizedType::kQ4K ? 5.0e-4 : 1.0e-6;
+  // Q4_K now binds the original exact F32 row sequence on MLX. The other
+  // codecs retain their existing original Metal path and comparison bound.
+  const auto tolerance = 1.0e-6;
   constexpr std::array<std::array<std::int32_t, tokens>, 2> selections{
       {{{0, 5}}, {{6, 2}}}};
   std::optional<mx::array> retained;
