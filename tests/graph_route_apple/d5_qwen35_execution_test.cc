@@ -44,9 +44,32 @@
 #include "hyle/graph/apple.h"
 #include "../compute_models/cpu_c5_non_gguf_fixture.h"
 #include "../compute_route_apple/gguf_coverage_fixture.h"
+#include "../compute_models/cpu_c5_plain_fixture.h"
 
 namespace {
 void run_q24_semantic_fragment(d5_qwen38_24t_semantic_fragments::Fragment fixture);
+void apple_parity_plain_demand(const cpu_c5_plain_inputs::Case &item) {
+  namespace p = cpu_c5_plain_fixture;
+  const auto identity = p::profile(item);
+  SCOPED_TRACE(item.id);
+  const std::string_view kind = item.kind;
+  if (kind == "projection" || kind == "head") {
+    const auto rows = kind == "head" ? 4096 : item.shape[0];
+    for (std::int64_t first = 0; first < item.shape[0]; first += rows) {
+      run_q24_semantic_fragment(p::projection(item, &identity,
+          std::min<std::int64_t>(rows, item.shape[0] - first), first));
+      ASSERT_FALSE(::testing::Test::HasFailure());
+    }
+  } else if (kind == "embedding" || kind == "position_lookup" || kind == "integer_lookup") {
+    run_q24_semantic_fragment(p::lookup(item, &identity));
+  } else if (kind == "norm" || kind == "norm_zero_centered") {
+    run_q24_semantic_fragment(p::norm(item, &identity));
+  } else if (kind == "conv") {
+    run_q24_semantic_fragment(p::convolution(item, &identity));
+  } else {
+    run_q24_semantic_fragment(p::vector_parameter(item, &identity));
+  }
+}
 void apple_parity_gguf_demand(const cpu_c5_inputs::Case &item) {
   namespace in = cpu_c5_inputs;
   namespace oracle = cpu_c5_gguf_fixture;
@@ -95,6 +118,13 @@ TEST_P(AppleParityGraphGguf, CurrentGgufDemandUsesOriginalBytesAndAllRows) {
 }
 INSTANTIATE_TEST_SUITE_P(CurrentDemand, AppleParityGraphGguf,
     ::testing::ValuesIn(cpu_c5_inputs::cases),
+    [](const auto &info) { return std::string(info.param.id); });
+class AppleParityGraphPlain : public ::testing::TestWithParam<cpu_c5_plain_inputs::Case> {};
+TEST_P(AppleParityGraphPlain, CurrentPlainRolesRetainStorageAndReplay) {
+  apple_parity_plain_demand(GetParam());
+}
+INSTANTIATE_TEST_SUITE_P(CurrentDemand, AppleParityGraphPlain,
+    ::testing::ValuesIn(cpu_c5_plain_inputs::cases),
     [](const auto &info) { return std::string(info.param.id); });
 TEST(AppleParityGraph, RealArtifactPreparationFeedsMatureMatMul) {
   apple_parity_packed_demand(true);
