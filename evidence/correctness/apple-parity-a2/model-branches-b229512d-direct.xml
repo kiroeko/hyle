@@ -1,0 +1,215 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites tests="9" failures="2" disabled="0" errors="0" time="20.55" timestamp="2026-10-08T23:56:30.380" name="AllTests">
+  <testsuite name="AppleParityDirectMtp" tests="1" failures="0" disabled="0" skipped="0" errors="0" time="3.636" timestamp="2026-10-08T23:56:30.380">
+    <testcase name="QwenQ4NamedSidecarUsesActualQ3Q4Q6AndCompleteMtp" file="/Users/kiro/hyle/tests/compute_route_apple/model_branch_tests.h" line="35" status="run" result="completed" time="3.636" timestamp="2026-10-08T23:56:30.380" classname="AppleParityDirectMtp" />
+  </testsuite>
+  <testsuite name="CurrentOfficial/AppleParityDirectBranches" tests="6" failures="2" disabled="0" skipped="0" errors="0" time="8.038" timestamp="2026-10-08T23:56:34.016">
+    <testcase name="DsparkTargetHiddenAndFp32Confidence/Pro0813" value_param="48-byte object &lt;F8-57 39-02 01-00 00-00 00-1C 00-00 00-00 00-00 00-02 00-00 00-00 00-00 80-00 00-00 00-00 00-00 00-06 00-00 00-00 00-00 10-00 00-00 00-00 00-00&gt;" file="/Users/kiro/hyle/tests/compute_route_apple/model_branch_tests.h" line="14" status="run" result="completed" time="0.338" timestamp="2026-10-08T23:56:34.016" classname="CurrentOfficial/AppleParityDirectBranches" />
+    <testcase name="DsparkTargetHiddenAndFp32Confidence/Flash0731" value_param="48-byte object &lt;A8-58 39-02 01-00 00-00 00-10 00-00 00-00 00-00 00-01 00-00 00-00 00-00 40-00 00-00 00-00 00-00 00-04 00-00 00-00 00-00 08-00 00-00 00-00 00-00&gt;" file="/Users/kiro/hyle/tests/compute_route_apple/model_branch_tests.h" line="14" status="run" result="completed" time="0.081" timestamp="2026-10-08T23:56:34.354" classname="CurrentOfficial/AppleParityDirectBranches" />
+    <testcase name="DsparkMarkovFullVocabularyWithLogitBias/Pro0813" value_param="48-byte object &lt;F8-57 39-02 01-00 00-00 00-1C 00-00 00-00 00-00 00-02 00-00 00-00 00-00 80-00 00-00 00-00 00-00 00-06 00-00 00-00 00-00 10-00 00-00 00-00 00-00&gt;" file="/Users/kiro/hyle/tests/compute_route_apple/model_branch_tests.h" line="21" status="run" result="completed" time="0.241" timestamp="2026-10-08T23:56:34.436" classname="CurrentOfficial/AppleParityDirectBranches" />
+    <testcase name="DsparkMarkovFullVocabularyWithLogitBias/Flash0731" value_param="48-byte object &lt;A8-58 39-02 01-00 00-00 00-10 00-00 00-00 00-00 00-01 00-00 00-00 00-00 40-00 00-00 00-00 00-00 00-04 00-00 00-00 00-00 08-00 00-00 00-00 00-00&gt;" file="/Users/kiro/hyle/tests/compute_route_apple/model_branch_tests.h" line="21" status="run" result="completed" time="0.153" timestamp="2026-10-08T23:56:34.678" classname="CurrentOfficial/AppleParityDirectBranches" />
+    <testcase name="DsparkTargetPrefillAndFiveTokenAttentionCache/Pro0813" value_param="48-byte object &lt;F8-57 39-02 01-00 00-00 00-1C 00-00 00-00 00-00 00-02 00-00 00-00 00-00 80-00 00-00 00-00 00-00 00-06 00-00 00-00 00-00 10-00 00-00 00-00 00-00&gt;" file="/Users/kiro/hyle/tests/compute_route_apple/model_branch_tests.h" line="26" status="run" result="completed" time="4.604" timestamp="2026-10-08T23:56:34.831" classname="CurrentOfficial/AppleParityDirectBranches">
+      <failure message="/Users/kiro/hyle/tests/compute_route_apple/../compute_models/d5_qwen35_gguf_fragment_support.h:158&#x0A;The difference between actual[index] and expected[index] is 0.0001220703125, which exceeds absolute + relative * std::abs(expected[index]), where&#x0A;actual[index] evaluates to -0.001190185546875,&#x0A;expected[index] evaluates to -0.001068115234375, and&#x0A;absolute + relative * std::abs(expected[index]) evaluates to 4.6702880354132503e-05.&#x0A;2319&#x0A;Google Test trace:&#x0A;/Users/kiro/hyle/tests/compute_route_apple/d5_qwen35_execution_test.cc:1596: relative_l2=0.000020 peak_normalized_max=0.000772&#x0A;/Users/kiro/hyle/tests/compute_route_apple/d5_qwen35_execution_test.cc:1592: fragment output=3&#x0A;/Users/kiro/hyle/tests/compute_route_apple/d5_qwen35_execution_test.cc:1539: replay=0&#x0A;/Users/kiro/hyle/tests/compute_route_apple/d5_qwen35_execution_test.cc:1494: region=201588994&#x0A;/Users/kiro/hyle/tests/compute_route_apple/model_branch_tests.h:28: 72e1d3230f6c080a530b0a1d46f8eb4602340597&#x0A;" type=""><![CDATA[/Users/kiro/hyle/tests/compute_route_apple/../compute_models/d5_qwen35_gguf_fragment_support.h:158
+The difference between actual[index] and expected[index] is 0.0001220703125, which exceeds absolute + relative * std::abs(expected[index]), where
+actual[index] evaluates to -0.001190185546875,
+expected[index] evaluates to -0.001068115234375, and
+absolute + relative * std::abs(expected[index]) evaluates to 4.6702880354132503e-05.
+2319
+Google Test trace:
+/Users/kiro/hyle/tests/compute_route_apple/d5_qwen35_execution_test.cc:1596: relative_l2=0.000020 peak_normalized_max=0.000772
+/Users/kiro/hyle/tests/compute_route_apple/d5_qwen35_execution_test.cc:1592: fragment output=3
+/Users/kiro/hyle/tests/compute_route_apple/d5_qwen35_execution_test.cc:1539: replay=0
+/Users/kiro/hyle/tests/compute_route_apple/d5_qwen35_execution_test.cc:1494: region=201588994
+/Users/kiro/hyle/tests/compute_route_apple/model_branch_tests.h:28: 72e1d3230f6c080a530b0a1d46f8eb4602340597
+]]></failure>
+      <failure message="/Users/kiro/hyle/tests/compute_route_apple/../compute_models/d5_qwen35_gguf_fragment_support.h:158&#x0A;The difference between actual[index] and expected[index] is 0.000335693359375, which exceeds absolute + relative * std::abs(expected[index]), where&#x0A;actual[index] evaluates to 0.005096435546875,&#x0A;expected[index] evaluates to 0.00543212890625, and&#x0A;absolute + relative * std::abs(expected[index]) evaluates to 0.00015580322360619903.&#x0A;80349&#x0A;Google Test trace:&#x0A;/Users/kiro/hyle/tests/compute_route_apple/d5_qwen35_execution_test.cc:1596: relative_l2=0.000016 peak_normalized_max=0.000749&#x0A;/Users/kiro/hyle/tests/compute_route_apple/d5_qwen35_execution_test.cc:1592: fragment output=2&#x0A;/Users/kiro/hyle/tests/compute_route_apple/d5_qwen35_execution_test.cc:1539: replay=1&#x0A;/Users/kiro/hyle/tests/compute_route_apple/d5_qwen35_execution_test.cc:1494: region=201588994&#x0A;/Users/kiro/hyle/tests/compute_route_apple/model_branch_tests.h:28: 72e1d3230f6c080a530b0a1d46f8eb4602340597&#x0A;" type=""><![CDATA[/Users/kiro/hyle/tests/compute_route_apple/../compute_models/d5_qwen35_gguf_fragment_support.h:158
+The difference between actual[index] and expected[index] is 0.000335693359375, which exceeds absolute + relative * std::abs(expected[index]), where
+actual[index] evaluates to 0.005096435546875,
+expected[index] evaluates to 0.00543212890625, and
+absolute + relative * std::abs(expected[index]) evaluates to 0.00015580322360619903.
+80349
+Google Test trace:
+/Users/kiro/hyle/tests/compute_route_apple/d5_qwen35_execution_test.cc:1596: relative_l2=0.000016 peak_normalized_max=0.000749
+/Users/kiro/hyle/tests/compute_route_apple/d5_qwen35_execution_test.cc:1592: fragment output=2
+/Users/kiro/hyle/tests/compute_route_apple/d5_qwen35_execution_test.cc:1539: replay=1
+/Users/kiro/hyle/tests/compute_route_apple/d5_qwen35_execution_test.cc:1494: region=201588994
+/Users/kiro/hyle/tests/compute_route_apple/model_branch_tests.h:28: 72e1d3230f6c080a530b0a1d46f8eb4602340597
+]]></failure>
+      <failure message="/Users/kiro/hyle/tests/compute_route_apple/../compute_models/d5_qwen35_gguf_fragment_support.h:158&#x0A;The difference between actual[index] and expected[index] is 0.000335693359375, which exceeds absolute + relative * std::abs(expected[index]), where&#x0A;actual[index] evaluates to 0.005096435546875,&#x0A;expected[index] evaluates to 0.00543212890625, and&#x0A;absolute + relative * std::abs(expected[index]) evaluates to 0.00015580322360619903.&#x0A;97245&#x0A;Google Test trace:&#x0A;/Users/kiro/hyle/tests/compute_route_apple/d5_qwen35_execution_test.cc:1596: relative_l2=0.000016 peak_normalized_max=0.000749&#x0A;/Users/kiro/hyle/tests/compute_route_apple/d5_qwen35_execution_test.cc:1592: fragment output=2&#x0A;/Users/kiro/hyle/tests/compute_route_apple/d5_qwen35_execution_test.cc:1539: replay=1&#x0A;/Users/kiro/hyle/tests/compute_route_apple/d5_qwen35_execution_test.cc:1494: region=201588994&#x0A;/Users/kiro/hyle/tests/compute_route_apple/model_branch_tests.h:28: 72e1d3230f6c080a530b0a1d46f8eb4602340597&#x0A;" type=""><![CDATA[/Users/kiro/hyle/tests/compute_route_apple/../compute_models/d5_qwen35_gguf_fragment_support.h:158
+The difference between actual[index] and expected[index] is 0.000335693359375, which exceeds absolute + relative * std::abs(expected[index]), where
+actual[index] evaluates to 0.005096435546875,
+expected[index] evaluates to 0.00543212890625, and
+absolute + relative * std::abs(expected[index]) evaluates to 0.00015580322360619903.
+97245
+Google Test trace:
+/Users/kiro/hyle/tests/compute_route_apple/d5_qwen35_execution_test.cc:1596: relative_l2=0.000016 peak_normalized_max=0.000749
+/Users/kiro/hyle/tests/compute_route_apple/d5_qwen35_execution_test.cc:1592: fragment output=2
+/Users/kiro/hyle/tests/compute_route_apple/d5_qwen35_execution_test.cc:1539: replay=1
+/Users/kiro/hyle/tests/compute_route_apple/d5_qwen35_execution_test.cc:1494: region=201588994
+/Users/kiro/hyle/tests/compute_route_apple/model_branch_tests.h:28: 72e1d3230f6c080a530b0a1d46f8eb4602340597
+]]></failure>
+      <failure message="/Users/kiro/hyle/tests/compute_route_apple/../compute_models/d5_qwen35_gguf_fragment_support.h:158&#x0A;The difference between actual[index] and expected[index] is 0.000335693359375, which exceeds absolute + relative * std::abs(expected[index]), where&#x0A;actual[index] evaluates to 0.005096435546875,&#x0A;expected[index] evaluates to 0.00543212890625, and&#x0A;absolute + relative * std::abs(expected[index]) evaluates to 0.00015580322360619903.&#x0A;114141&#x0A;Google Test trace:&#x0A;/Users/kiro/hyle/tests/compute_route_apple/d5_qwen35_execution_test.cc:1596: relative_l2=0.000016 peak_normalized_max=0.000749&#x0A;/Users/kiro/hyle/tests/compute_route_apple/d5_qwen35_execution_test.cc:1592: fragment output=2&#x0A;/Users/kiro/hyle/tests/compute_route_apple/d5_qwen35_execution_test.cc:1539: replay=1&#x0A;/Users/kiro/hyle/tests/compute_route_apple/d5_qwen35_execution_test.cc:1494: region=201588994&#x0A;/Users/kiro/hyle/tests/compute_route_apple/model_branch_tests.h:28: 72e1d3230f6c080a530b0a1d46f8eb4602340597&#x0A;" type=""><![CDATA[/Users/kiro/hyle/tests/compute_route_apple/../compute_models/d5_qwen35_gguf_fragment_support.h:158
+The difference between actual[index] and expected[index] is 0.000335693359375, which exceeds absolute + relative * std::abs(expected[index]), where
+actual[index] evaluates to 0.005096435546875,
+expected[index] evaluates to 0.00543212890625, and
+absolute + relative * std::abs(expected[index]) evaluates to 0.00015580322360619903.
+114141
+Google Test trace:
+/Users/kiro/hyle/tests/compute_route_apple/d5_qwen35_execution_test.cc:1596: relative_l2=0.000016 peak_normalized_max=0.000749
+/Users/kiro/hyle/tests/compute_route_apple/d5_qwen35_execution_test.cc:1592: fragment output=2
+/Users/kiro/hyle/tests/compute_route_apple/d5_qwen35_execution_test.cc:1539: replay=1
+/Users/kiro/hyle/tests/compute_route_apple/d5_qwen35_execution_test.cc:1494: region=201588994
+/Users/kiro/hyle/tests/compute_route_apple/model_branch_tests.h:28: 72e1d3230f6c080a530b0a1d46f8eb4602340597
+]]></failure>
+      <failure message="/Users/kiro/hyle/tests/compute_route_apple/../compute_models/d5_qwen35_gguf_fragment_support.h:158&#x0A;The difference between actual[index] and expected[index] is 0.000335693359375, which exceeds absolute + relative * std::abs(expected[index]), where&#x0A;actual[index] evaluates to 0.005096435546875,&#x0A;expected[index] evaluates to 0.00543212890625, and&#x0A;absolute + relative * std::abs(expected[index]) evaluates to 0.00015580322360619903.&#x0A;131037&#x0A;Google Test trace:&#x0A;/Users/kiro/hyle/tests/compute_route_apple/d5_qwen35_execution_test.cc:1596: relative_l2=0.000016 peak_normalized_max=0.000749&#x0A;/Users/kiro/hyle/tests/compute_route_apple/d5_qwen35_execution_test.cc:1592: fragment output=2&#x0A;/Users/kiro/hyle/tests/compute_route_apple/d5_qwen35_execution_test.cc:1539: replay=1&#x0A;/Users/kiro/hyle/tests/compute_route_apple/d5_qwen35_execution_test.cc:1494: region=201588994&#x0A;/Users/kiro/hyle/tests/compute_route_apple/model_branch_tests.h:28: 72e1d3230f6c080a530b0a1d46f8eb4602340597&#x0A;" type=""><![CDATA[/Users/kiro/hyle/tests/compute_route_apple/../compute_models/d5_qwen35_gguf_fragment_support.h:158
+The difference between actual[index] and expected[index] is 0.000335693359375, which exceeds absolute + relative * std::abs(expected[index]), where
+actual[index] evaluates to 0.005096435546875,
+expected[index] evaluates to 0.00543212890625, and
+absolute + relative * std::abs(expected[index]) evaluates to 0.00015580322360619903.
+131037
+Google Test trace:
+/Users/kiro/hyle/tests/compute_route_apple/d5_qwen35_execution_test.cc:1596: relative_l2=0.000016 peak_normalized_max=0.000749
+/Users/kiro/hyle/tests/compute_route_apple/d5_qwen35_execution_test.cc:1592: fragment output=2
+/Users/kiro/hyle/tests/compute_route_apple/d5_qwen35_execution_test.cc:1539: replay=1
+/Users/kiro/hyle/tests/compute_route_apple/d5_qwen35_execution_test.cc:1494: region=201588994
+/Users/kiro/hyle/tests/compute_route_apple/model_branch_tests.h:28: 72e1d3230f6c080a530b0a1d46f8eb4602340597
+]]></failure>
+      <failure message="/Users/kiro/hyle/tests/compute_route_apple/../compute_models/d5_qwen35_gguf_fragment_support.h:158&#x0A;The difference between actual[index] and expected[index] is 0.00018310546875, which exceeds absolute + relative * std::abs(expected[index]), where&#x0A;actual[index] evaluates to 0.0057373046875,&#x0A;expected[index] evaluates to 0.00555419921875, and&#x0A;absolute + relative * std::abs(expected[index]) evaluates to 0.00015885497850831598.&#x0A;66111&#x0A;Google Test trace:&#x0A;/Users/kiro/hyle/tests/compute_route_apple/d5_qwen35_execution_test.cc:1596: relative_l2=0.000042 peak_normalized_max=0.001179&#x0A;/Users/kiro/hyle/tests/compute_route_apple/d5_qwen35_execution_test.cc:1592: fragment output=3&#x0A;/Users/kiro/hyle/tests/compute_route_apple/d5_qwen35_execution_test.cc:1539: replay=4&#x0A;/Users/kiro/hyle/tests/compute_route_apple/d5_qwen35_execution_test.cc:1494: region=201588994&#x0A;/Users/kiro/hyle/tests/compute_route_apple/model_branch_tests.h:28: 72e1d3230f6c080a530b0a1d46f8eb4602340597&#x0A;" type=""><![CDATA[/Users/kiro/hyle/tests/compute_route_apple/../compute_models/d5_qwen35_gguf_fragment_support.h:158
+The difference between actual[index] and expected[index] is 0.00018310546875, which exceeds absolute + relative * std::abs(expected[index]), where
+actual[index] evaluates to 0.0057373046875,
+expected[index] evaluates to 0.00555419921875, and
+absolute + relative * std::abs(expected[index]) evaluates to 0.00015885497850831598.
+66111
+Google Test trace:
+/Users/kiro/hyle/tests/compute_route_apple/d5_qwen35_execution_test.cc:1596: relative_l2=0.000042 peak_normalized_max=0.001179
+/Users/kiro/hyle/tests/compute_route_apple/d5_qwen35_execution_test.cc:1592: fragment output=3
+/Users/kiro/hyle/tests/compute_route_apple/d5_qwen35_execution_test.cc:1539: replay=4
+/Users/kiro/hyle/tests/compute_route_apple/d5_qwen35_execution_test.cc:1494: region=201588994
+/Users/kiro/hyle/tests/compute_route_apple/model_branch_tests.h:28: 72e1d3230f6c080a530b0a1d46f8eb4602340597
+]]></failure>
+      <failure message="/Users/kiro/hyle/tests/compute_route_apple/../compute_models/d5_qwen35_gguf_fragment_support.h:158&#x0A;The difference between actual[index] and expected[index] is 9.1552734375e-05, which exceeds absolute + relative * std::abs(expected[index]), where&#x0A;actual[index] evaluates to 0.0015869140625,&#x0A;expected[index] evaluates to 0.001495361328125, and&#x0A;absolute + relative * std::abs(expected[index]) evaluates to 5.7384033425478265e-05.&#x0A;70719&#x0A;Google Test trace:&#x0A;/Users/kiro/hyle/tests/compute_route_apple/d5_qwen35_execution_test.cc:1596: relative_l2=0.000042 peak_normalized_max=0.001179&#x0A;/Users/kiro/hyle/tests/compute_route_apple/d5_qwen35_execution_test.cc:1592: fragment output=3&#x0A;/Users/kiro/hyle/tests/compute_route_apple/d5_qwen35_execution_test.cc:1539: replay=4&#x0A;/Users/kiro/hyle/tests/compute_route_apple/d5_qwen35_execution_test.cc:1494: region=201588994&#x0A;/Users/kiro/hyle/tests/compute_route_apple/model_branch_tests.h:28: 72e1d3230f6c080a530b0a1d46f8eb4602340597&#x0A;" type=""><![CDATA[/Users/kiro/hyle/tests/compute_route_apple/../compute_models/d5_qwen35_gguf_fragment_support.h:158
+The difference between actual[index] and expected[index] is 9.1552734375e-05, which exceeds absolute + relative * std::abs(expected[index]), where
+actual[index] evaluates to 0.0015869140625,
+expected[index] evaluates to 0.001495361328125, and
+absolute + relative * std::abs(expected[index]) evaluates to 5.7384033425478265e-05.
+70719
+Google Test trace:
+/Users/kiro/hyle/tests/compute_route_apple/d5_qwen35_execution_test.cc:1596: relative_l2=0.000042 peak_normalized_max=0.001179
+/Users/kiro/hyle/tests/compute_route_apple/d5_qwen35_execution_test.cc:1592: fragment output=3
+/Users/kiro/hyle/tests/compute_route_apple/d5_qwen35_execution_test.cc:1539: replay=4
+/Users/kiro/hyle/tests/compute_route_apple/d5_qwen35_execution_test.cc:1494: region=201588994
+/Users/kiro/hyle/tests/compute_route_apple/model_branch_tests.h:28: 72e1d3230f6c080a530b0a1d46f8eb4602340597
+]]></failure>
+      <failure message="/Users/kiro/hyle/tests/compute_route_apple/../compute_models/d5_qwen35_gguf_fragment_support.h:158&#x0A;The difference between actual[index] and expected[index] is 6.103515625e-05, which exceeds absolute + relative * std::abs(expected[index]), where&#x0A;actual[index] evaluates to 0.00080108642578125,&#x0A;expected[index] evaluates to 0.00074005126953125, and&#x0A;absolute + relative * std::abs(expected[index]) evaluates to 3.8501282688230276e-05.&#x0A;32534&#x0A;Google Test trace:&#x0A;/Users/kiro/hyle/tests/compute_route_apple/d5_qwen35_execution_test.cc:1596: relative_l2=0.000164 peak_normalized_max=0.003448&#x0A;/Users/kiro/hyle/tests/compute_route_apple/d5_qwen35_execution_test.cc:1592: fragment output=4&#x0A;/Users/kiro/hyle/tests/compute_route_apple/d5_qwen35_execution_test.cc:1539: replay=4&#x0A;/Users/kiro/hyle/tests/compute_route_apple/d5_qwen35_execution_test.cc:1494: region=201588994&#x0A;/Users/kiro/hyle/tests/compute_route_apple/model_branch_tests.h:28: 72e1d3230f6c080a530b0a1d46f8eb4602340597&#x0A;" type=""><![CDATA[/Users/kiro/hyle/tests/compute_route_apple/../compute_models/d5_qwen35_gguf_fragment_support.h:158
+The difference between actual[index] and expected[index] is 6.103515625e-05, which exceeds absolute + relative * std::abs(expected[index]), where
+actual[index] evaluates to 0.00080108642578125,
+expected[index] evaluates to 0.00074005126953125, and
+absolute + relative * std::abs(expected[index]) evaluates to 3.8501282688230276e-05.
+32534
+Google Test trace:
+/Users/kiro/hyle/tests/compute_route_apple/d5_qwen35_execution_test.cc:1596: relative_l2=0.000164 peak_normalized_max=0.003448
+/Users/kiro/hyle/tests/compute_route_apple/d5_qwen35_execution_test.cc:1592: fragment output=4
+/Users/kiro/hyle/tests/compute_route_apple/d5_qwen35_execution_test.cc:1539: replay=4
+/Users/kiro/hyle/tests/compute_route_apple/d5_qwen35_execution_test.cc:1494: region=201588994
+/Users/kiro/hyle/tests/compute_route_apple/model_branch_tests.h:28: 72e1d3230f6c080a530b0a1d46f8eb4602340597
+]]></failure>
+    </testcase>
+    <testcase name="DsparkTargetPrefillAndFiveTokenAttentionCache/Flash0731" value_param="48-byte object &lt;A8-58 39-02 01-00 00-00 00-10 00-00 00-00 00-00 00-01 00-00 00-00 00-00 40-00 00-00 00-00 00-00 00-04 00-00 00-00 00-00 08-00 00-00 00-00 00-00&gt;" file="/Users/kiro/hyle/tests/compute_route_apple/model_branch_tests.h" line="26" status="run" result="completed" time="2.619" timestamp="2026-10-08T23:56:39.435" classname="CurrentOfficial/AppleParityDirectBranches">
+      <failure message="/Users/kiro/hyle/tests/compute_route_apple/../compute_models/d5_qwen35_gguf_fragment_support.h:158&#x0A;The difference between actual[index] and expected[index] is 0.0001983642578125, which exceeds absolute + relative * std::abs(expected[index]), where&#x0A;actual[index] evaluates to 0.0022735595703125,&#x0A;expected[index] evaluates to 0.0020751953125, and&#x0A;absolute + relative * std::abs(expected[index]) evaluates to 7.1879883762449026e-05.&#x0A;138191&#x0A;Google Test trace:&#x0A;/Users/kiro/hyle/tests/compute_route_apple/d5_qwen35_execution_test.cc:1596: relative_l2=0.000014 peak_normalized_max=0.000940&#x0A;/Users/kiro/hyle/tests/compute_route_apple/d5_qwen35_execution_test.cc:1592: fragment output=2&#x0A;/Users/kiro/hyle/tests/compute_route_apple/d5_qwen35_execution_test.cc:1539: replay=1&#x0A;/Users/kiro/hyle/tests/compute_route_apple/d5_qwen35_execution_test.cc:1494: region=201588994&#x0A;/Users/kiro/hyle/tests/compute_route_apple/model_branch_tests.h:28: 7872f01b1d1fe23eabc4c98b48bffcef5a386062&#x0A;" type=""><![CDATA[/Users/kiro/hyle/tests/compute_route_apple/../compute_models/d5_qwen35_gguf_fragment_support.h:158
+The difference between actual[index] and expected[index] is 0.0001983642578125, which exceeds absolute + relative * std::abs(expected[index]), where
+actual[index] evaluates to 0.0022735595703125,
+expected[index] evaluates to 0.0020751953125, and
+absolute + relative * std::abs(expected[index]) evaluates to 7.1879883762449026e-05.
+138191
+Google Test trace:
+/Users/kiro/hyle/tests/compute_route_apple/d5_qwen35_execution_test.cc:1596: relative_l2=0.000014 peak_normalized_max=0.000940
+/Users/kiro/hyle/tests/compute_route_apple/d5_qwen35_execution_test.cc:1592: fragment output=2
+/Users/kiro/hyle/tests/compute_route_apple/d5_qwen35_execution_test.cc:1539: replay=1
+/Users/kiro/hyle/tests/compute_route_apple/d5_qwen35_execution_test.cc:1494: region=201588994
+/Users/kiro/hyle/tests/compute_route_apple/model_branch_tests.h:28: 7872f01b1d1fe23eabc4c98b48bffcef5a386062
+]]></failure>
+      <failure message="/Users/kiro/hyle/tests/compute_route_apple/../compute_models/d5_qwen35_gguf_fragment_support.h:158&#x0A;The difference between actual[index] and expected[index] is 0.00140380859375, which exceeds absolute + relative * std::abs(expected[index]), where&#x0A;actual[index] evaluates to -0.0133056640625,&#x0A;expected[index] evaluates to -0.01190185546875, and&#x0A;absolute + relative * std::abs(expected[index]) evaluates to 0.00031754639348946512.&#x0A;93123&#x0A;Google Test trace:&#x0A;/Users/kiro/hyle/tests/compute_route_apple/d5_qwen35_execution_test.cc:1596: relative_l2=0.000021 peak_normalized_max=0.000906&#x0A;/Users/kiro/hyle/tests/compute_route_apple/d5_qwen35_execution_test.cc:1592: fragment output=2&#x0A;/Users/kiro/hyle/tests/compute_route_apple/d5_qwen35_execution_test.cc:1539: replay=2&#x0A;/Users/kiro/hyle/tests/compute_route_apple/d5_qwen35_execution_test.cc:1494: region=201588994&#x0A;/Users/kiro/hyle/tests/compute_route_apple/model_branch_tests.h:28: 7872f01b1d1fe23eabc4c98b48bffcef5a386062&#x0A;" type=""><![CDATA[/Users/kiro/hyle/tests/compute_route_apple/../compute_models/d5_qwen35_gguf_fragment_support.h:158
+The difference between actual[index] and expected[index] is 0.00140380859375, which exceeds absolute + relative * std::abs(expected[index]), where
+actual[index] evaluates to -0.0133056640625,
+expected[index] evaluates to -0.01190185546875, and
+absolute + relative * std::abs(expected[index]) evaluates to 0.00031754639348946512.
+93123
+Google Test trace:
+/Users/kiro/hyle/tests/compute_route_apple/d5_qwen35_execution_test.cc:1596: relative_l2=0.000021 peak_normalized_max=0.000906
+/Users/kiro/hyle/tests/compute_route_apple/d5_qwen35_execution_test.cc:1592: fragment output=2
+/Users/kiro/hyle/tests/compute_route_apple/d5_qwen35_execution_test.cc:1539: replay=2
+/Users/kiro/hyle/tests/compute_route_apple/d5_qwen35_execution_test.cc:1494: region=201588994
+/Users/kiro/hyle/tests/compute_route_apple/model_branch_tests.h:28: 7872f01b1d1fe23eabc4c98b48bffcef5a386062
+]]></failure>
+      <failure message="/Users/kiro/hyle/tests/compute_route_apple/../compute_models/d5_qwen35_gguf_fragment_support.h:158&#x0A;The difference between actual[index] and expected[index] is 2.86102294921875e-05, which exceeds absolute + relative * std::abs(expected[index]), where&#x0A;actual[index] evaluates to -0.00020885467529296875,&#x0A;expected[index] evaluates to -0.00023746490478515625, and&#x0A;absolute + relative * std::abs(expected[index]) evaluates to 2.593662247818429e-05.&#x0A;66516&#x0A;Google Test trace:&#x0A;/Users/kiro/hyle/tests/compute_route_apple/d5_qwen35_execution_test.cc:1596: relative_l2=0.000034 peak_normalized_max=0.001825&#x0A;/Users/kiro/hyle/tests/compute_route_apple/d5_qwen35_execution_test.cc:1592: fragment output=2&#x0A;/Users/kiro/hyle/tests/compute_route_apple/d5_qwen35_execution_test.cc:1539: replay=3&#x0A;/Users/kiro/hyle/tests/compute_route_apple/d5_qwen35_execution_test.cc:1494: region=201588994&#x0A;/Users/kiro/hyle/tests/compute_route_apple/model_branch_tests.h:28: 7872f01b1d1fe23eabc4c98b48bffcef5a386062&#x0A;" type=""><![CDATA[/Users/kiro/hyle/tests/compute_route_apple/../compute_models/d5_qwen35_gguf_fragment_support.h:158
+The difference between actual[index] and expected[index] is 2.86102294921875e-05, which exceeds absolute + relative * std::abs(expected[index]), where
+actual[index] evaluates to -0.00020885467529296875,
+expected[index] evaluates to -0.00023746490478515625, and
+absolute + relative * std::abs(expected[index]) evaluates to 2.593662247818429e-05.
+66516
+Google Test trace:
+/Users/kiro/hyle/tests/compute_route_apple/d5_qwen35_execution_test.cc:1596: relative_l2=0.000034 peak_normalized_max=0.001825
+/Users/kiro/hyle/tests/compute_route_apple/d5_qwen35_execution_test.cc:1592: fragment output=2
+/Users/kiro/hyle/tests/compute_route_apple/d5_qwen35_execution_test.cc:1539: replay=3
+/Users/kiro/hyle/tests/compute_route_apple/d5_qwen35_execution_test.cc:1494: region=201588994
+/Users/kiro/hyle/tests/compute_route_apple/model_branch_tests.h:28: 7872f01b1d1fe23eabc4c98b48bffcef5a386062
+]]></failure>
+      <failure message="/Users/kiro/hyle/tests/compute_route_apple/../compute_models/d5_qwen35_gguf_fragment_support.h:158&#x0A;The difference between actual[index] and expected[index] is 2.86102294921875e-05, which exceeds absolute + relative * std::abs(expected[index]), where&#x0A;actual[index] evaluates to -0.00018310546875,&#x0A;expected[index] evaluates to -0.0002117156982421875, and&#x0A;absolute + relative * std::abs(expected[index]) evaluates to 2.5292891223216429e-05.&#x0A;69588&#x0A;Google Test trace:&#x0A;/Users/kiro/hyle/tests/compute_route_apple/d5_qwen35_execution_test.cc:1596: relative_l2=0.000034 peak_normalized_max=0.001825&#x0A;/Users/kiro/hyle/tests/compute_route_apple/d5_qwen35_execution_test.cc:1592: fragment output=2&#x0A;/Users/kiro/hyle/tests/compute_route_apple/d5_qwen35_execution_test.cc:1539: replay=3&#x0A;/Users/kiro/hyle/tests/compute_route_apple/d5_qwen35_execution_test.cc:1494: region=201588994&#x0A;/Users/kiro/hyle/tests/compute_route_apple/model_branch_tests.h:28: 7872f01b1d1fe23eabc4c98b48bffcef5a386062&#x0A;" type=""><![CDATA[/Users/kiro/hyle/tests/compute_route_apple/../compute_models/d5_qwen35_gguf_fragment_support.h:158
+The difference between actual[index] and expected[index] is 2.86102294921875e-05, which exceeds absolute + relative * std::abs(expected[index]), where
+actual[index] evaluates to -0.00018310546875,
+expected[index] evaluates to -0.0002117156982421875, and
+absolute + relative * std::abs(expected[index]) evaluates to 2.5292891223216429e-05.
+69588
+Google Test trace:
+/Users/kiro/hyle/tests/compute_route_apple/d5_qwen35_execution_test.cc:1596: relative_l2=0.000034 peak_normalized_max=0.001825
+/Users/kiro/hyle/tests/compute_route_apple/d5_qwen35_execution_test.cc:1592: fragment output=2
+/Users/kiro/hyle/tests/compute_route_apple/d5_qwen35_execution_test.cc:1539: replay=3
+/Users/kiro/hyle/tests/compute_route_apple/d5_qwen35_execution_test.cc:1494: region=201588994
+/Users/kiro/hyle/tests/compute_route_apple/model_branch_tests.h:28: 7872f01b1d1fe23eabc4c98b48bffcef5a386062
+]]></failure>
+      <failure message="/Users/kiro/hyle/tests/compute_route_apple/../compute_models/d5_qwen35_gguf_fragment_support.h:158&#x0A;The difference between actual[index] and expected[index] is 2.86102294921875e-05, which exceeds absolute + relative * std::abs(expected[index]), where&#x0A;actual[index] evaluates to -0.00020885467529296875,&#x0A;expected[index] evaluates to -0.00023746490478515625, and&#x0A;absolute + relative * std::abs(expected[index]) evaluates to 2.593662247818429e-05.&#x0A;72660&#x0A;Google Test trace:&#x0A;/Users/kiro/hyle/tests/compute_route_apple/d5_qwen35_execution_test.cc:1596: relative_l2=0.000034 peak_normalized_max=0.001825&#x0A;/Users/kiro/hyle/tests/compute_route_apple/d5_qwen35_execution_test.cc:1592: fragment output=2&#x0A;/Users/kiro/hyle/tests/compute_route_apple/d5_qwen35_execution_test.cc:1539: replay=3&#x0A;/Users/kiro/hyle/tests/compute_route_apple/d5_qwen35_execution_test.cc:1494: region=201588994&#x0A;/Users/kiro/hyle/tests/compute_route_apple/model_branch_tests.h:28: 7872f01b1d1fe23eabc4c98b48bffcef5a386062&#x0A;" type=""><![CDATA[/Users/kiro/hyle/tests/compute_route_apple/../compute_models/d5_qwen35_gguf_fragment_support.h:158
+The difference between actual[index] and expected[index] is 2.86102294921875e-05, which exceeds absolute + relative * std::abs(expected[index]), where
+actual[index] evaluates to -0.00020885467529296875,
+expected[index] evaluates to -0.00023746490478515625, and
+absolute + relative * std::abs(expected[index]) evaluates to 2.593662247818429e-05.
+72660
+Google Test trace:
+/Users/kiro/hyle/tests/compute_route_apple/d5_qwen35_execution_test.cc:1596: relative_l2=0.000034 peak_normalized_max=0.001825
+/Users/kiro/hyle/tests/compute_route_apple/d5_qwen35_execution_test.cc:1592: fragment output=2
+/Users/kiro/hyle/tests/compute_route_apple/d5_qwen35_execution_test.cc:1539: replay=3
+/Users/kiro/hyle/tests/compute_route_apple/d5_qwen35_execution_test.cc:1494: region=201588994
+/Users/kiro/hyle/tests/compute_route_apple/model_branch_tests.h:28: 7872f01b1d1fe23eabc4c98b48bffcef5a386062
+]]></failure>
+      <failure message="/Users/kiro/hyle/tests/compute_route_apple/../compute_models/d5_qwen35_gguf_fragment_support.h:158&#x0A;The difference between actual[index] and expected[index] is 0.000335693359375, which exceeds absolute + relative * std::abs(expected[index]), where&#x0A;actual[index] evaluates to -0.006011962890625,&#x0A;expected[index] evaluates to -0.00634765625, and&#x0A;absolute + relative * std::abs(expected[index]) evaluates to 0.00017869140719994903.&#x0A;62934&#x0A;Google Test trace:&#x0A;/Users/kiro/hyle/tests/compute_route_apple/d5_qwen35_execution_test.cc:1596: relative_l2=0.000042 peak_normalized_max=0.001866&#x0A;/Users/kiro/hyle/tests/compute_route_apple/d5_qwen35_execution_test.cc:1592: fragment output=2&#x0A;/Users/kiro/hyle/tests/compute_route_apple/d5_qwen35_execution_test.cc:1539: replay=4&#x0A;/Users/kiro/hyle/tests/compute_route_apple/d5_qwen35_execution_test.cc:1494: region=201588994&#x0A;/Users/kiro/hyle/tests/compute_route_apple/model_branch_tests.h:28: 7872f01b1d1fe23eabc4c98b48bffcef5a386062&#x0A;" type=""><![CDATA[/Users/kiro/hyle/tests/compute_route_apple/../compute_models/d5_qwen35_gguf_fragment_support.h:158
+The difference between actual[index] and expected[index] is 0.000335693359375, which exceeds absolute + relative * std::abs(expected[index]), where
+actual[index] evaluates to -0.006011962890625,
+expected[index] evaluates to -0.00634765625, and
+absolute + relative * std::abs(expected[index]) evaluates to 0.00017869140719994903.
+62934
+Google Test trace:
+/Users/kiro/hyle/tests/compute_route_apple/d5_qwen35_execution_test.cc:1596: relative_l2=0.000042 peak_normalized_max=0.001866
+/Users/kiro/hyle/tests/compute_route_apple/d5_qwen35_execution_test.cc:1592: fragment output=2
+/Users/kiro/hyle/tests/compute_route_apple/d5_qwen35_execution_test.cc:1539: replay=4
+/Users/kiro/hyle/tests/compute_route_apple/d5_qwen35_execution_test.cc:1494: region=201588994
+/Users/kiro/hyle/tests/compute_route_apple/model_branch_tests.h:28: 7872f01b1d1fe23eabc4c98b48bffcef5a386062
+]]></failure>
+      <failure message="/Users/kiro/hyle/tests/compute_route_apple/../compute_models/d5_qwen35_gguf_fragment_support.h:158&#x0A;The difference between actual[index] and expected[index] is 0.001220703125, which exceeds absolute + relative * std::abs(expected[index]), where&#x0A;actual[index] evaluates to -0.031005859375,&#x0A;expected[index] evaluates to -0.0322265625, and&#x0A;absolute + relative * std::abs(expected[index]) evaluates to 0.00082566408673301339.&#x0A;32229&#x0A;Google Test trace:&#x0A;/Users/kiro/hyle/tests/compute_route_apple/d5_qwen35_execution_test.cc:1596: relative_l2=0.000073 peak_normalized_max=0.003704&#x0A;/Users/kiro/hyle/tests/compute_route_apple/d5_qwen35_execution_test.cc:1592: fragment output=2&#x0A;/Users/kiro/hyle/tests/compute_route_apple/d5_qwen35_execution_test.cc:1539: replay=5&#x0A;/Users/kiro/hyle/tests/compute_route_apple/d5_qwen35_execution_test.cc:1494: region=201588994&#x0A;/Users/kiro/hyle/tests/compute_route_apple/model_branch_tests.h:28: 7872f01b1d1fe23eabc4c98b48bffcef5a386062&#x0A;" type=""><![CDATA[/Users/kiro/hyle/tests/compute_route_apple/../compute_models/d5_qwen35_gguf_fragment_support.h:158
+The difference between actual[index] and expected[index] is 0.001220703125, which exceeds absolute + relative * std::abs(expected[index]), where
+actual[index] evaluates to -0.031005859375,
+expected[index] evaluates to -0.0322265625, and
+absolute + relative * std::abs(expected[index]) evaluates to 0.00082566408673301339.
+32229
+Google Test trace:
+/Users/kiro/hyle/tests/compute_route_apple/d5_qwen35_execution_test.cc:1596: relative_l2=0.000073 peak_normalized_max=0.003704
+/Users/kiro/hyle/tests/compute_route_apple/d5_qwen35_execution_test.cc:1592: fragment output=2
+/Users/kiro/hyle/tests/compute_route_apple/d5_qwen35_execution_test.cc:1539: replay=5
+/Users/kiro/hyle/tests/compute_route_apple/d5_qwen35_execution_test.cc:1494: region=201588994
+/Users/kiro/hyle/tests/compute_route_apple/model_branch_tests.h:28: 7872f01b1d1fe23eabc4c98b48bffcef5a386062
+]]></failure>
+    </testcase>
+  </testsuite>
+  <testsuite name="CurrentGguf/AppleParityDirectSidecars" tests="2" failures="0" disabled="0" skipped="0" errors="0" time="8.876" timestamp="2026-10-08T23:56:42.054">
+    <testcase name="FlashMixedMxfp4AndThreeStageDspark/Q8_0" value_param="16-byte object &lt;38-71 39-02 01-00 00-00 00-00 00-00 00-00 00-00&gt;" file="/Users/kiro/hyle/tests/compute_route_apple/model_branch_tests.h" line="39" status="run" result="completed" time="4.892" timestamp="2026-10-08T23:56:42.054" classname="CurrentGguf/AppleParityDirectSidecars" />
+    <testcase name="FlashMixedMxfp4AndThreeStageDspark/BF16" value_param="16-byte object &lt;E8-71 39-02 01-00 00-00 01-00 00-00 00-00 00-00&gt;" file="/Users/kiro/hyle/tests/compute_route_apple/model_branch_tests.h" line="39" status="run" result="completed" time="3.983" timestamp="2026-10-08T23:56:46.947" classname="CurrentGguf/AppleParityDirectSidecars" />
+  </testsuite>
+</testsuites>

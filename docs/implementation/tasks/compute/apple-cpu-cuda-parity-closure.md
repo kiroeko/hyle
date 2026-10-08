@@ -226,3 +226,14 @@ build2/test1，既有559/34/45和185/157证据不重跑。官方FP4 main/完整�
 model，CPU/CUDA仍默认fused，Apple在构造所有reference前固定unfused；不逐值选择答案，
 不改产品、不改FP8/BF16/storage/tolerance。只复验两个失败ID。inverse-RoPE的CPU trig
 逐位检查若仍不符合原GPU程序，则保存具名合同问题作有限source定界，不无限测法/放宽总门。
+
+`7da02640`具名delta仍2 FAIL/入口，Pro同4个pointwise比较、Flash同5个exact inverse-RoPE
+比较。FMA选择没有解决本witness，不据此归因或签PASS，停止盲改oracle。当前cache/attention
+其它输出成功不代签完整片段；后续只做具名源精度/存储边界定界。目标hidden参考受新显式
+舍入选项影响，终审前定向确认；其它Markov/confidence和三sidecar证据不变。
+
+A4允许独立先验证新成熟借入的实际SDK闭包：新公开C++ consumer仅链接hyle::graph，
+源码嵌入与static/shared find_package使用同一main；真实非零Q4_K MatMul双replay、原所选行
+decode/失败/保留lease及NF4成熟decode，不使用私有HYLE/vendor头或mock。先复用当前shared
+producer，只有INSTALL选项改变时configure；relocation到独立prefix、metallib/许可证/dylib
+与两入口验收一次。它只证明相应交付，不代签待决FP4和两个失败官方witness，不启动P1。

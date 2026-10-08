@@ -269,3 +269,45 @@ run across nine source profiles. New official0813/0731/DSpark sidecars still
 need their specifically indexed full-region witnesses; older region names do
 not silently certify all new revisions. Official FP4 decision and A3/A4 remain
 open; no P1 has started.
+
+## Current official and quantized MTP regions
+
+`b229512d` [build](model-branches-b229512d-build.log) PASS;
+[Direct](model-branches-b229512d-direct.log)/[XML](model-branches-b229512d-direct.xml)
+and [Graph](model-branches-b229512d-graph.log)/[XML](model-branches-b229512d-graph.xml)
+each7 PASS/2 FAIL of9, no SKIP. Both entries pass current Pro0813/Flash0731
+target-hidden/confidence and full-vocabulary Markov bias, Qwen Q4-named
+sidecar with actual Q3/Q4/Q6 complete MTP, and both Flash Q8/BF16 sidecars'
+three-stage DSpark with original MXFP4 expert banks, shared embedding,
+cache feedback/reset, confidence and full-vocabulary heads. The group bank
+uses the shared seven-expert witness, not giant complete-model residency.
+
+The two failures are the official five-token attention/cache witnesses.
+First, the Apple test runner omitted the output ordinal required to activate
+the existing local inverse-RoPE checker. This is test plumbing, not missing
+product operator support. [6aa5ca5f build](model-branches-6aa5ca5f-build.log)
+PASS; only the failed IDs were replayed in [Direct](model-branches-6aa5ca5f-direct.log)/
+[XML](model-branches-6aa5ca5f-direct.xml) and [Graph](model-branches-6aa5ca5f-graph.log)/
+[XML](model-branches-6aa5ca5f-graph.xml), still2 FAIL/entry. Pro has three
+grouped-projection comparisons and one final-projection comparison outside
+the pointwise chain gate; Flash has five exact inverse-RoPE comparisons.
+The already passing cache, attention and other outputs are not whole-witness PASS.
+
+The fixed source rounding option from the already qualified Apple F45.6
+FP8 program was then explicitly bound into these shared C4 model references.
+CPU/CUDA default FMA remains; Apple fixes separate F32 product/sum before
+building its independent references. [7da02640 build](model-branches-7da02640-build.log)
+PASS; [Direct](model-branches-7da02640-direct.log)/[XML](model-branches-7da02640-direct.xml)
+and [Graph](model-branches-7da02640-graph.log)/[XML](model-branches-7da02640-graph.xml)
+still have the same4 Pro/5 Flash comparisons. **FMA choice did not resolve
+this witness; it is not claimed as the cause.** No product math/tolerance,
+original FP4 contract or old source budget changed. Stop further blind
+oracle adjustments and keep this named numerical contract qualification open.
+Target-hidden reference also changed with the explicit rounding option, so
+its prior passing test must get a targeted confirmation before final closure.
+
+[Initial Clang build failure](model-branches-db8e8f99-build.log) came from
+ambiguous test loop indentation; [ba59c5df corrected build](model-branches-ba59c5df-build.log)
+PASS with explicit braces only. The task runner initially used the wrong
+binary output directory and stopped before numerical execution; the fixed
+bin path was used for the batch above. These are not product numerical FAIL.

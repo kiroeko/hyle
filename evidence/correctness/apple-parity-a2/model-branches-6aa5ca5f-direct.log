@@ -1,0 +1,277 @@
+Running main() from /Users/kiro/Library/Caches/hyle/dependencies/v1/sources/googletest-063de7e9578f-162765170ae6/googletest/src/gtest_main.cc
+Note: Google Test filter = *AppleParityDirectBranches.DsparkTargetPrefillAndFiveTokenAttentionCache*
+[==========] Running 2 tests from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 2 tests from CurrentOfficial/AppleParityDirectBranches
+[ RUN      ] CurrentOfficial/AppleParityDirectBranches.DsparkTargetPrefillAndFiveTokenAttentionCache/Pro0813
+ggml_metal_device_init: tensor API disabled for pre-M5 and pre-A19 devices
+ggml_metal_library_init: using embedded metal library
+ggml_metal_library_compile_all: compiled 'fa' library in 13.343 sec
+ggml_metal_library_compile_all: compiled 'mul_mv' library in 0.005 sec
+ggml_metal_library_compile_all: compiled 'mul_mm' library in 0.003 sec
+ggml_metal_library_compile_all: compiled 'quantize' library in 0.002 sec
+ggml_metal_library_compile_all: compiled 'softmax' library in 0.001 sec
+ggml_metal_library_compile_all: compiled 'norm' library in 0.001 sec
+ggml_metal_library_compile_all: compiled 'unary' library in 0.001 sec
+ggml_metal_library_compile_all: compiled 'binbcast' library in 0.001 sec
+ggml_metal_library_compile_all: compiled 'reduce' library in 0.001 sec
+ggml_metal_library_compile_all: compiled 'tri' library in 0.001 sec
+ggml_metal_library_compile_all: compiled 'ssm' library in 0.001 sec
+ggml_metal_library_compile_all: compiled 'wkv' library in 0.001 sec
+ggml_metal_library_compile_all: compiled 'gated_delta_net' library in 0.002 sec
+ggml_metal_library_compile_all: compiled 'solve_tri' library in 0.001 sec
+ggml_metal_library_compile_all: compiled 'rope' library in 0.001 sec
+ggml_metal_library_compile_all: compiled 'conv' library in 0.002 sec
+ggml_metal_library_compile_all: compiled 'upscale' library in 0.002 sec
+ggml_metal_library_compile_all: compiled 'argsort' library in 0.002 sec
+ggml_metal_library_compile_all: compiled 'pool' library in 0.002 sec
+ggml_metal_library_compile_all: compiled 'misc' library in 0.002 sec
+ggml_metal_library_compile_all: loaded 20 libraries from embedded data in 13.343 sec (max single = 13.343 sec)
+ggml_metal_rsets_init: creating a residency set collection (keep_alive = 180 s)
+ggml_metal_device_init: GPU name:   MTL0 (Apple M4)
+ggml_metal_device_init: GPU family: MTLGPUFamilyApple9  (1009)
+ggml_metal_device_init: GPU family: MTLGPUFamilyCommon3 (3003)
+ggml_metal_device_init: GPU family: MTLGPUFamilyMetal4  (5002)
+ggml_metal_device_init: simdgroup reduction   = true
+ggml_metal_device_init: simdgroup matrix mul. = true
+ggml_metal_device_init: has unified memory    = true
+ggml_metal_device_init: has bfloat            = true
+ggml_metal_device_init: has tensor            = false
+ggml_metal_device_init: use residency sets    = true
+ggml_metal_device_init: use shared buffers    = true
+ggml_metal_device_init: recommendedMaxWorkingSetSize  = 12713.12 MB
+ggml_metal_init: allocating
+ggml_metal_init: found device: Apple M4
+ggml_metal_init: picking default device: Apple M4
+ggml_metal_init: use fusion         = true
+ggml_metal_init: use concurrency    = true
+ggml_metal_init: use graph optimize = true
+ggml_metal_free: deallocating
+ggml_metal_init: allocating
+ggml_metal_init: found device: Apple M4
+ggml_metal_init: picking default device: Apple M4
+ggml_metal_init: use fusion         = true
+ggml_metal_init: use concurrency    = true
+ggml_metal_init: use graph optimize = true
+ggml_metal_library_compile_pipeline: compiling pipeline: base = 'kernel_mul_mv_id_bf16_f32_4', name = 'kernel_mul_mv_id_bf16_f32_4_nsg=4_split=0'
+ggml_metal_library_compile_pipeline: loaded kernel_mul_mv_id_bf16_f32_4_nsg=4_split=0     0x7c4e0b1180 | th_max = 1024 | th_width =   32
+ggml_metal_free: deallocating
+/Users/kiro/hyle/tests/compute_route_apple/../compute_models/d5_qwen35_gguf_fragment_support.h:158: Failure
+The difference between actual[index] and expected[index] is 0.0001220703125, which exceeds absolute + relative * std::abs(expected[index]), where
+actual[index] evaluates to -0.001190185546875,
+expected[index] evaluates to -0.001068115234375, and
+absolute + relative * std::abs(expected[index]) evaluates to 4.6702880354132503e-05.
+2319
+Google Test trace:
+/Users/kiro/hyle/tests/compute_route_apple/d5_qwen35_execution_test.cc:1596: relative_l2=0.000020 peak_normalized_max=0.000772
+/Users/kiro/hyle/tests/compute_route_apple/d5_qwen35_execution_test.cc:1592: fragment output=3
+/Users/kiro/hyle/tests/compute_route_apple/d5_qwen35_execution_test.cc:1539: replay=0
+/Users/kiro/hyle/tests/compute_route_apple/d5_qwen35_execution_test.cc:1494: region=201588994
+/Users/kiro/hyle/tests/compute_route_apple/model_branch_tests.h:28: 72e1d3230f6c080a530b0a1d46f8eb4602340597
+
+ggml_metal_init: allocating
+ggml_metal_init: found device: Apple M4
+ggml_metal_init: picking default device: Apple M4
+ggml_metal_init: use fusion         = true
+ggml_metal_init: use concurrency    = true
+ggml_metal_init: use graph optimize = true
+ggml_metal_free: deallocating
+ggml_metal_init: allocating
+ggml_metal_init: found device: Apple M4
+ggml_metal_init: picking default device: Apple M4
+ggml_metal_init: use fusion         = true
+ggml_metal_init: use concurrency    = true
+ggml_metal_init: use graph optimize = true
+ggml_metal_free: deallocating
+ggml_metal_init: allocating
+ggml_metal_init: found device: Apple M4
+ggml_metal_init: picking default device: Apple M4
+ggml_metal_init: use fusion         = true
+ggml_metal_init: use concurrency    = true
+ggml_metal_init: use graph optimize = true
+ggml_metal_free: deallocating
+ggml_metal_init: allocating
+ggml_metal_init: found device: Apple M4
+ggml_metal_init: picking default device: Apple M4
+ggml_metal_init: use fusion         = true
+ggml_metal_init: use concurrency    = true
+ggml_metal_init: use graph optimize = true
+ggml_metal_free: deallocating
+/Users/kiro/hyle/tests/compute_route_apple/../compute_models/d5_qwen35_gguf_fragment_support.h:158: Failure
+The difference between actual[index] and expected[index] is 0.00018310546875, which exceeds absolute + relative * std::abs(expected[index]), where
+actual[index] evaluates to 0.0057373046875,
+expected[index] evaluates to 0.00555419921875, and
+absolute + relative * std::abs(expected[index]) evaluates to 0.00015885497850831598.
+66111
+Google Test trace:
+/Users/kiro/hyle/tests/compute_route_apple/d5_qwen35_execution_test.cc:1596: relative_l2=0.000042 peak_normalized_max=0.001179
+/Users/kiro/hyle/tests/compute_route_apple/d5_qwen35_execution_test.cc:1592: fragment output=3
+/Users/kiro/hyle/tests/compute_route_apple/d5_qwen35_execution_test.cc:1539: replay=4
+/Users/kiro/hyle/tests/compute_route_apple/d5_qwen35_execution_test.cc:1494: region=201588994
+/Users/kiro/hyle/tests/compute_route_apple/model_branch_tests.h:28: 72e1d3230f6c080a530b0a1d46f8eb4602340597
+
+/Users/kiro/hyle/tests/compute_route_apple/../compute_models/d5_qwen35_gguf_fragment_support.h:158: Failure
+The difference between actual[index] and expected[index] is 9.1552734375e-05, which exceeds absolute + relative * std::abs(expected[index]), where
+actual[index] evaluates to 0.0015869140625,
+expected[index] evaluates to 0.001495361328125, and
+absolute + relative * std::abs(expected[index]) evaluates to 5.7384033425478265e-05.
+70719
+Google Test trace:
+/Users/kiro/hyle/tests/compute_route_apple/d5_qwen35_execution_test.cc:1596: relative_l2=0.000042 peak_normalized_max=0.001179
+/Users/kiro/hyle/tests/compute_route_apple/d5_qwen35_execution_test.cc:1592: fragment output=3
+/Users/kiro/hyle/tests/compute_route_apple/d5_qwen35_execution_test.cc:1539: replay=4
+/Users/kiro/hyle/tests/compute_route_apple/d5_qwen35_execution_test.cc:1494: region=201588994
+/Users/kiro/hyle/tests/compute_route_apple/model_branch_tests.h:28: 72e1d3230f6c080a530b0a1d46f8eb4602340597
+
+/Users/kiro/hyle/tests/compute_route_apple/../compute_models/d5_qwen35_gguf_fragment_support.h:158: Failure
+The difference between actual[index] and expected[index] is 6.103515625e-05, which exceeds absolute + relative * std::abs(expected[index]), where
+actual[index] evaluates to 0.00080108642578125,
+expected[index] evaluates to 0.00074005126953125, and
+absolute + relative * std::abs(expected[index]) evaluates to 3.8501282688230276e-05.
+32534
+Google Test trace:
+/Users/kiro/hyle/tests/compute_route_apple/d5_qwen35_execution_test.cc:1596: relative_l2=0.000164 peak_normalized_max=0.003448
+/Users/kiro/hyle/tests/compute_route_apple/d5_qwen35_execution_test.cc:1592: fragment output=4
+/Users/kiro/hyle/tests/compute_route_apple/d5_qwen35_execution_test.cc:1539: replay=4
+/Users/kiro/hyle/tests/compute_route_apple/d5_qwen35_execution_test.cc:1494: region=201588994
+/Users/kiro/hyle/tests/compute_route_apple/model_branch_tests.h:28: 72e1d3230f6c080a530b0a1d46f8eb4602340597
+
+ggml_metal_init: allocating
+ggml_metal_init: found device: Apple M4
+ggml_metal_init: picking default device: Apple M4
+ggml_metal_init: use fusion         = true
+ggml_metal_init: use concurrency    = true
+ggml_metal_init: use graph optimize = true
+ggml_metal_free: deallocating
+[  FAILED  ] CurrentOfficial/AppleParityDirectBranches.DsparkTargetPrefillAndFiveTokenAttentionCache/Pro0813, where GetParam() = 48-byte object <F8-57 2F-05 01-00 00-00 00-1C 00-00 00-00 00-00 00-02 00-00 00-00 00-00 80-00 00-00 00-00 00-00 00-06 00-00 00-00 00-00 10-00 00-00 00-00 00-00> (17988 ms)
+[ RUN      ] CurrentOfficial/AppleParityDirectBranches.DsparkTargetPrefillAndFiveTokenAttentionCache/Flash0731
+ggml_metal_init: allocating
+ggml_metal_init: found device: Apple M4
+ggml_metal_init: picking default device: Apple M4
+ggml_metal_init: use fusion         = true
+ggml_metal_init: use concurrency    = true
+ggml_metal_init: use graph optimize = true
+ggml_metal_free: deallocating
+ggml_metal_init: allocating
+ggml_metal_init: found device: Apple M4
+ggml_metal_init: picking default device: Apple M4
+ggml_metal_init: use fusion         = true
+ggml_metal_init: use concurrency    = true
+ggml_metal_init: use graph optimize = true
+ggml_metal_free: deallocating
+/Users/kiro/hyle/tests/compute_route_apple/../compute_models/cpu_c4_model_branches.h:310: Failure
+Expected equality of these values:
+  actual[i]
+    Which is: 0.00065612793
+  local[i]
+    Which is: 0.000659942627
+15320
+Google Test trace:
+/Users/kiro/hyle/tests/compute_route_apple/d5_qwen35_execution_test.cc:1596: relative_l2=0.000010 peak_normalized_max=0.000470
+/Users/kiro/hyle/tests/compute_route_apple/d5_qwen35_execution_test.cc:1592: fragment output=2
+/Users/kiro/hyle/tests/compute_route_apple/d5_qwen35_execution_test.cc:1539: replay=0
+/Users/kiro/hyle/tests/compute_route_apple/d5_qwen35_execution_test.cc:1494: region=201588994
+/Users/kiro/hyle/tests/compute_route_apple/model_branch_tests.h:28: 7872f01b1d1fe23eabc4c98b48bffcef5a386062
+
+/Users/kiro/hyle/tests/compute_route_apple/../compute_models/cpu_c4_model_branches.h:310: Failure
+Expected equality of these values:
+  actual[i]
+    Which is: 0.00065612793
+  local[i]
+    Which is: 0.000659942627
+21464
+Google Test trace:
+/Users/kiro/hyle/tests/compute_route_apple/d5_qwen35_execution_test.cc:1596: relative_l2=0.000010 peak_normalized_max=0.000470
+/Users/kiro/hyle/tests/compute_route_apple/d5_qwen35_execution_test.cc:1592: fragment output=2
+/Users/kiro/hyle/tests/compute_route_apple/d5_qwen35_execution_test.cc:1539: replay=0
+/Users/kiro/hyle/tests/compute_route_apple/d5_qwen35_execution_test.cc:1494: region=201588994
+/Users/kiro/hyle/tests/compute_route_apple/model_branch_tests.h:28: 7872f01b1d1fe23eabc4c98b48bffcef5a386062
+
+/Users/kiro/hyle/tests/compute_route_apple/../compute_models/cpu_c4_model_branches.h:310: Failure
+Expected equality of these values:
+  actual[i]
+    Which is: 0.00065612793
+  local[i]
+    Which is: 0.000659942627
+27608
+Google Test trace:
+/Users/kiro/hyle/tests/compute_route_apple/d5_qwen35_execution_test.cc:1596: relative_l2=0.000010 peak_normalized_max=0.000470
+/Users/kiro/hyle/tests/compute_route_apple/d5_qwen35_execution_test.cc:1592: fragment output=2
+/Users/kiro/hyle/tests/compute_route_apple/d5_qwen35_execution_test.cc:1539: replay=0
+/Users/kiro/hyle/tests/compute_route_apple/d5_qwen35_execution_test.cc:1494: region=201588994
+/Users/kiro/hyle/tests/compute_route_apple/model_branch_tests.h:28: 7872f01b1d1fe23eabc4c98b48bffcef5a386062
+
+/Users/kiro/hyle/tests/compute_route_apple/../compute_models/cpu_c4_model_branches.h:310: Failure
+Expected equality of these values:
+  actual[i]
+    Which is: -0.00537109375
+  local[i]
+    Which is: -0.00540161133
+158659
+Google Test trace:
+/Users/kiro/hyle/tests/compute_route_apple/d5_qwen35_execution_test.cc:1596: relative_l2=0.000010 peak_normalized_max=0.000470
+/Users/kiro/hyle/tests/compute_route_apple/d5_qwen35_execution_test.cc:1592: fragment output=2
+/Users/kiro/hyle/tests/compute_route_apple/d5_qwen35_execution_test.cc:1539: replay=0
+/Users/kiro/hyle/tests/compute_route_apple/d5_qwen35_execution_test.cc:1494: region=201588994
+/Users/kiro/hyle/tests/compute_route_apple/model_branch_tests.h:28: 7872f01b1d1fe23eabc4c98b48bffcef5a386062
+
+ggml_metal_init: allocating
+ggml_metal_init: found device: Apple M4
+ggml_metal_init: picking default device: Apple M4
+ggml_metal_init: use fusion         = true
+ggml_metal_init: use concurrency    = true
+ggml_metal_init: use graph optimize = true
+ggml_metal_free: deallocating
+ggml_metal_init: allocating
+ggml_metal_init: found device: Apple M4
+ggml_metal_init: picking default device: Apple M4
+ggml_metal_init: use fusion         = true
+ggml_metal_init: use concurrency    = true
+ggml_metal_init: use graph optimize = true
+ggml_metal_free: deallocating
+ggml_metal_init: allocating
+ggml_metal_init: found device: Apple M4
+ggml_metal_init: picking default device: Apple M4
+ggml_metal_init: use fusion         = true
+ggml_metal_init: use concurrency    = true
+ggml_metal_init: use graph optimize = true
+ggml_metal_free: deallocating
+ggml_metal_init: allocating
+ggml_metal_init: found device: Apple M4
+ggml_metal_init: picking default device: Apple M4
+ggml_metal_init: use fusion         = true
+ggml_metal_init: use concurrency    = true
+ggml_metal_init: use graph optimize = true
+ggml_metal_free: deallocating
+/Users/kiro/hyle/tests/compute_route_apple/../compute_models/cpu_c4_model_branches.h:310: Failure
+Expected equality of these values:
+  actual[i]
+    Which is: 0.194335938
+  local[i]
+    Which is: 0.193359375
+77301
+Google Test trace:
+/Users/kiro/hyle/tests/compute_route_apple/d5_qwen35_execution_test.cc:1596: relative_l2=0.000042 peak_normalized_max=0.001866
+/Users/kiro/hyle/tests/compute_route_apple/d5_qwen35_execution_test.cc:1592: fragment output=2
+/Users/kiro/hyle/tests/compute_route_apple/d5_qwen35_execution_test.cc:1539: replay=4
+/Users/kiro/hyle/tests/compute_route_apple/d5_qwen35_execution_test.cc:1494: region=201588994
+/Users/kiro/hyle/tests/compute_route_apple/model_branch_tests.h:28: 7872f01b1d1fe23eabc4c98b48bffcef5a386062
+
+ggml_metal_init: allocating
+ggml_metal_init: found device: Apple M4
+ggml_metal_init: picking default device: Apple M4
+ggml_metal_init: use fusion         = true
+ggml_metal_init: use concurrency    = true
+ggml_metal_init: use graph optimize = true
+ggml_metal_free: deallocating
+[  FAILED  ] CurrentOfficial/AppleParityDirectBranches.DsparkTargetPrefillAndFiveTokenAttentionCache/Flash0731, where GetParam() = 48-byte object <A8-58 2F-05 01-00 00-00 00-10 00-00 00-00 00-00 00-01 00-00 00-00 00-00 40-00 00-00 00-00 00-00 00-04 00-00 00-00 00-00 08-00 00-00 00-00 00-00> (2284 ms)
+[----------] 2 tests from CurrentOfficial/AppleParityDirectBranches (20272 ms total)
+
+[----------] Global test environment tear-down
+[==========] 2 tests from 1 test suite ran. (20272 ms total)
+[  PASSED  ] 0 tests.
+[  FAILED  ] 2 tests, listed below:
+[  FAILED  ] CurrentOfficial/AppleParityDirectBranches.DsparkTargetPrefillAndFiveTokenAttentionCache/Pro0813, where GetParam() = 48-byte object <F8-57 2F-05 01-00 00-00 00-1C 00-00 00-00 00-00 00-02 00-00 00-00 00-00 80-00 00-00 00-00 00-00 00-06 00-00 00-00 00-00 10-00 00-00 00-00 00-00>
+[  FAILED  ] CurrentOfficial/AppleParityDirectBranches.DsparkTargetPrefillAndFiveTokenAttentionCache/Flash0731, where GetParam() = 48-byte object <A8-58 2F-05 01-00 00-00 00-10 00-00 00-00 00-00 00-01 00-00 00-00 00-00 40-00 00-00 00-00 00-00 00-04 00-00 00-00 00-00 08-00 00-00 00-00 00-00>
+
+ 2 FAILED TESTS
