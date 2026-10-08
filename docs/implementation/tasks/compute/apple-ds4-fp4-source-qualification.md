@@ -50,3 +50,20 @@ BF16+mixed组/中点/符号与tiny独立oracle批次，具名实现失败仅一�
 expert/indexer片段、资源与三交付仍必须通过。正常域不作无限性能优化；同原定义、完整转换/
 同步/终态成本用父轮仪器。若仍失败或成本无合理界，列出真实缺口并停止，不继续微调。
 替代方案是继续坚持纯成熟native source，把官方FP4明确BLOCKED；whole goal不能据此完成。
+
+## 2026-10-09 用户授权与有限 FIX
+
+用户明确答复“可以补一小段 GPU 数值保真适配”，后续pause/resume不撤销该授权。
+baseline `0905a2f74`，Windows干净；Apple route/Graph owners仍父轮AUDITED。
+旧MLX/原DS4 probe失败与预算保持。本次新增被授权的保真方案，不重跑旧候选。
+
+唯一首批FIX：BF16 group32 roundtrip保持原max/floor、ceil-power2、饱和与E2M1 nearest-even。
+原DS4八值/距离/偶数tie公式仅翻译为原MLX GPU tensor ops；用原BF16位视图取得tiny/sign。
+当scale为最低两个normal power2时，只以位域/整数精确恢复可影响舍入的normalized值；
+最低scale的半单位结果用整数存储保留次正规值，零符号也从原位恢复。正常域仍是原浮点
+数学，输出保持BF16，无CPU模型计算/新shader/格式改动/新GEMM。
+
+先一批两入口全部finite BF16/变化组max/所有中点邻域/正负零/tiny/normal/overflow与replay，
+按raw BF16位比较。具名实现失败最多一次纠正；通过后才批量接原FP4 grouped承载及官方
+expert/indexer/完整main/DSpark region、资源和三交付。它们尚未PASS，不由原语探针代签。
+代码/API稳定的完整candidate才进入已准备的A3正式成本，build2/test1重型串行。
