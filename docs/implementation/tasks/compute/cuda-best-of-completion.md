@@ -102,3 +102,20 @@ C2原8进程AA批次完成：212 pair中47合格/165未资格，原误差/偏差
 2048对称warm/compare/完成边界不变，所以不是逐pair subprocess或其它生命周期改动。
 本subset只改变batch的非计费外侧项目数量，不继承不同shape/recipe/algorithm的资格。
 原全212 TSV及完整AA日志封存，新47 TSV/声明哈希受validator检查，不冒称旧完整file SHA相同。
+
+## C2 终态与 C3 有限规则
+
+一次n15/四strata已完成，仪器qualification及canonical manifest verify PASS；47 pair为
+25 WIN、2 LOSE、20 INCONCLUSIVE，聚合performance FAIL原样保留，不能因筛选赢家改成全批PASS。
+206请求逐项覆盖完整候选后只有23个native完整赢家；另2个weighted RMS pair WIN缺少第三候选
+资格，不导入完整winner。169请求成熟ENGINEERING_DEFAULT、14单承载；165个AA未资格pair
+不再采样、升级n或调shape。原日志、逐项裁决、完整候选清单见[C2证据](../../../../evidence/performance/cuda-best-of-c2/README.md)。
+
+R1冷规则只导入23个完整赢家的精确算子/端口dtype/shape/参数/资源及测量环境；失配按各算子
+成熟默认，不能拿部分WIN外推。native context冷包装只保存一次环境资格并向原prepare/drain
+转交原context；prepared执行表保持。ggml带Graph region扩展的context不包装，不破坏原region
+所有权/融合。Graph完整region优先于仅叶操作有证的选择；没有完整region优势不拆片段。
+R2不再优化或计时自研：按实际完整替代域删除冗余数学，独有语义/资源域具名保留；若整项删除
+需要撤回有效独有能力，先形成具体可审阅撤回方案，不能套用旧CPU MatMul决定。
+C4只对规则/清退影响运行两OS source/static/shared与原资源/失配/region消费者，不重跑未变
+559模型数学或再做P1。当前C1/C2完成，整体约55%；C3/C4尚未完成，不冒称CUDA收口。

@@ -1,0 +1,660 @@
+[
+  {
+    "pair": "copy-f32-t1-h2048-hyle-ggml",
+    "request": "copy-f32-t1-h2048",
+    "candidate": "hyle",
+    "peer": "ggml",
+    "verdict": "INCONCLUSIVE",
+    "noninferiority": "PASS",
+    "ratios": [
+      1.024333855967961,
+      1.0203453627038543,
+      1.0154555970606853,
+      1.0242555929565014
+    ]
+  },
+  {
+    "pair": "abs-f16-t1-h2048-hyle-ggml",
+    "request": "abs-f16-t1-h2048",
+    "candidate": "hyle",
+    "peer": "ggml",
+    "verdict": "WIN",
+    "noninferiority": "PASS",
+    "ratios": [
+      1.1030445889535991,
+      1.1491833677014738,
+      1.1277175576428906,
+      1.1240403703026827
+    ]
+  },
+  {
+    "pair": "neg-f32-t1-h2048-hyle-ggml",
+    "request": "neg-f32-t1-h2048",
+    "candidate": "hyle",
+    "peer": "ggml",
+    "verdict": "INCONCLUSIVE",
+    "noninferiority": "PASS",
+    "ratios": [
+      1.0181032189666621,
+      1.0036061773667817,
+      1.0181782177209129,
+      1.0153631406735812
+    ]
+  },
+  {
+    "pair": "neg-f16-t32-h4096-hyle-ggml",
+    "request": "neg-f16-t32-h4096",
+    "candidate": "hyle",
+    "peer": "ggml",
+    "verdict": "WIN",
+    "noninferiority": "PASS",
+    "ratios": [
+      1.2578468667478677,
+      1.2203837136758708,
+      1.2797686569132871,
+      1.2232965550636412
+    ]
+  },
+  {
+    "pair": "neg-bf16-t1-h2048-hyle-ggml",
+    "request": "neg-bf16-t1-h2048",
+    "candidate": "hyle",
+    "peer": "ggml",
+    "verdict": "INCONCLUSIVE",
+    "noninferiority": "PASS",
+    "ratios": [
+      1.677251816860406,
+      1.1109299130249184,
+      1.1279538555885569,
+      1.1373630958152912
+    ]
+  },
+  {
+    "pair": "neg-bf16-t32-h4096-hyle-ggml",
+    "request": "neg-bf16-t32-h4096",
+    "candidate": "hyle",
+    "peer": "ggml",
+    "verdict": "WIN",
+    "noninferiority": "PASS",
+    "ratios": [
+      1.6262973973817345,
+      1.2192036295750566,
+      1.206282887131171,
+      1.2277389966657708
+    ]
+  },
+  {
+    "pair": "exp-bf16-t32-h4096-hyle-ggml",
+    "request": "exp-bf16-t32-h4096",
+    "candidate": "hyle",
+    "peer": "ggml",
+    "verdict": "WIN",
+    "noninferiority": "PASS",
+    "ratios": [
+      1.2516787530163371,
+      1.5949007615972435,
+      1.1975092323481389,
+      1.513476389954153
+    ]
+  },
+  {
+    "pair": "log-f16-t1-h2048-hyle-ggml",
+    "request": "log-f16-t1-h2048",
+    "candidate": "hyle",
+    "peer": "ggml",
+    "verdict": "WIN",
+    "noninferiority": "PASS",
+    "ratios": [
+      1.1689260691363106,
+      1.3201413398456416,
+      1.094476019684522,
+      1.1166129106380664
+    ]
+  },
+  {
+    "pair": "log-bf16-t1-h2048-hyle-ggml",
+    "request": "log-bf16-t1-h2048",
+    "candidate": "hyle",
+    "peer": "ggml",
+    "verdict": "WIN",
+    "noninferiority": "PASS",
+    "ratios": [
+      1.1170710081805952,
+      1.1027939506792512,
+      1.1102145438510487,
+      1.3586211433171518
+    ]
+  },
+  {
+    "pair": "sqrt-bf16-t1-h2048-hyle-ggml",
+    "request": "sqrt-bf16-t1-h2048",
+    "candidate": "hyle",
+    "peer": "ggml",
+    "verdict": "WIN",
+    "noninferiority": "PASS",
+    "ratios": [
+      1.1077218690939792,
+      1.1276725243012087,
+      1.382081412858656,
+      1.3209026266954713
+    ]
+  },
+  {
+    "pair": "sqrt-bf16-t32-h4096-hyle-ggml",
+    "request": "sqrt-bf16-t32-h4096",
+    "candidate": "hyle",
+    "peer": "ggml",
+    "verdict": "WIN",
+    "noninferiority": "PASS",
+    "ratios": [
+      1.689783708460317,
+      1.4313116867824838,
+      1.223337577663997,
+      1.2227434147438083
+    ]
+  },
+  {
+    "pair": "rsqrt-bf16-t32-h4096-hyle-ggml",
+    "request": "rsqrt-bf16-t32-h4096",
+    "candidate": "hyle",
+    "peer": "ggml",
+    "verdict": "WIN",
+    "noninferiority": "PASS",
+    "ratios": [
+      1.4407954859349197,
+      1.4781588613545145,
+      1.3531076433230105,
+      1.3634356899541302
+    ]
+  },
+  {
+    "pair": "tanh-f32-t32-h4096-hyle-ggml",
+    "request": "tanh-f32-t32-h4096",
+    "candidate": "hyle",
+    "peer": "ggml",
+    "verdict": "INCONCLUSIVE",
+    "noninferiority": "PASS",
+    "ratios": [
+      1.0340711050815106,
+      1.036663258821882,
+      1.0445306916429216,
+      1.022650670279437
+    ]
+  },
+  {
+    "pair": "silu-f16-t1-h2048-hyle-sglang",
+    "request": "silu-f16-t1-h2048",
+    "candidate": "hyle",
+    "peer": "sglang",
+    "verdict": "INCONCLUSIVE",
+    "noninferiority": "UNRESOLVED",
+    "ratios": [
+      0.9964157682724005,
+      1.0031029297037453,
+      1.006869739882178,
+      1.021629745575183
+    ]
+  },
+  {
+    "pair": "silu-bf16-t1-h2048-hyle-sglang",
+    "request": "silu-bf16-t1-h2048",
+    "candidate": "hyle",
+    "peer": "sglang",
+    "verdict": "INCONCLUSIVE",
+    "noninferiority": "UNRESOLVED",
+    "ratios": [
+      1.0249501257314109,
+      0.9905297683785055,
+      1.0119879908092815,
+      1.0127889864917559
+    ]
+  },
+  {
+    "pair": "gelu_tanh-bf16-t32-h4096-hyle-sglang",
+    "request": "gelu_tanh-bf16-t32-h4096",
+    "candidate": "hyle",
+    "peer": "sglang",
+    "verdict": "INCONCLUSIVE",
+    "noninferiority": "UNRESOLVED",
+    "ratios": [
+      0.999390867608055,
+      1.0032494281269493,
+      0.9913506606495597,
+      1.0020604017101868
+    ]
+  },
+  {
+    "pair": "softplus-f16-t1-h2048-hyle-torch",
+    "request": "softplus-f16-t1-h2048",
+    "candidate": "hyle",
+    "peer": "torch",
+    "verdict": "WIN",
+    "noninferiority": "PASS",
+    "ratios": [
+      1.3788544850939455,
+      1.369292326822988,
+      1.563486267446333,
+      1.4220088564842779
+    ]
+  },
+  {
+    "pair": "softplus-bf16-t32-h4096-hyle-torch",
+    "request": "softplus-bf16-t32-h4096",
+    "candidate": "hyle",
+    "peer": "torch",
+    "verdict": "WIN",
+    "noninferiority": "PASS",
+    "ratios": [
+      1.3536158521959047,
+      1.336429016323503,
+      1.3468804281640736,
+      1.5292682869900311
+    ]
+  },
+  {
+    "pair": "add-f16-t1-h2048-hyle-ggml",
+    "request": "add-f16-t1-h2048",
+    "candidate": "hyle",
+    "peer": "ggml",
+    "verdict": "WIN",
+    "noninferiority": "PASS",
+    "ratios": [
+      1.1646892298113685,
+      1.187030659587698,
+      1.1345900786296443,
+      1.1841880552198254
+    ]
+  },
+  {
+    "pair": "sub-f16-t32-h4096-hyle-ggml",
+    "request": "sub-f16-t32-h4096",
+    "candidate": "hyle",
+    "peer": "ggml",
+    "verdict": "WIN",
+    "noninferiority": "PASS",
+    "ratios": [
+      1.3428408182281797,
+      1.693100764250039,
+      1.3457617312834484,
+      1.3756031112752645
+    ]
+  },
+  {
+    "pair": "sub-bf16-t1-h2048-hyle-ggml",
+    "request": "sub-bf16-t1-h2048",
+    "candidate": "hyle",
+    "peer": "ggml",
+    "verdict": "WIN",
+    "noninferiority": "PASS",
+    "ratios": [
+      1.1553013870324722,
+      1.151996157389449,
+      1.1661488813504615,
+      1.1864501994837922
+    ]
+  },
+  {
+    "pair": "mul-f32-t1-h2048-hyle-ggml",
+    "request": "mul-f32-t1-h2048",
+    "candidate": "hyle",
+    "peer": "ggml",
+    "verdict": "INCONCLUSIVE",
+    "noninferiority": "PASS",
+    "ratios": [
+      1.056385314018924,
+      1.0609344530543678,
+      1.068240158816042,
+      1.030210243202945
+    ]
+  },
+  {
+    "pair": "mul-f16-t32-h4096-hyle-ggml",
+    "request": "mul-f16-t32-h4096",
+    "candidate": "hyle",
+    "peer": "ggml",
+    "verdict": "WIN",
+    "noninferiority": "PASS",
+    "ratios": [
+      1.3495179953295466,
+      1.3192254085634023,
+      1.319253545287446,
+      1.3061224182879247
+    ]
+  },
+  {
+    "pair": "mul-bf16-t1-h2048-hyle-ggml",
+    "request": "mul-bf16-t1-h2048",
+    "candidate": "hyle",
+    "peer": "ggml",
+    "verdict": "WIN",
+    "noninferiority": "PASS",
+    "ratios": [
+      1.3675552687641546,
+      1.5880245661244912,
+      1.1481236437403755,
+      1.143670453723181
+    ]
+  },
+  {
+    "pair": "mul-bf16-t32-h4096-hyle-ggml",
+    "request": "mul-bf16-t32-h4096",
+    "candidate": "hyle",
+    "peer": "ggml",
+    "verdict": "WIN",
+    "noninferiority": "PASS",
+    "ratios": [
+      1.7467592864915737,
+      1.31960945879555,
+      1.357953735955943,
+      1.3331686211600497
+    ]
+  },
+  {
+    "pair": "div-bf16-t32-h4096-hyle-ggml",
+    "request": "div-bf16-t32-h4096",
+    "candidate": "hyle",
+    "peer": "ggml",
+    "verdict": "WIN",
+    "noninferiority": "PASS",
+    "ratios": [
+      1.6570492002328288,
+      1.4522375257727547,
+      1.341524946385817,
+      1.7184679433392107
+    ]
+  },
+  {
+    "pair": "rms-f32-t1-h2048-hyle-ggml",
+    "request": "rms-f32-t1-h2048",
+    "candidate": "hyle",
+    "peer": "ggml",
+    "verdict": "INCONCLUSIVE",
+    "noninferiority": "PASS",
+    "ratios": [
+      1.0397298249617228,
+      1.0296234376086975,
+      1.013037541575657,
+      1.236748877795083
+    ]
+  },
+  {
+    "pair": "rms-f16-t32-h4096-hyle-ggml",
+    "request": "rms-f16-t32-h4096",
+    "candidate": "hyle",
+    "peer": "ggml",
+    "verdict": "WIN",
+    "noninferiority": "PASS",
+    "ratios": [
+      1.2582451286695655,
+      1.2289645294742306,
+      1.2753947257051148,
+      1.1977184066637012
+    ]
+  },
+  {
+    "pair": "weighted_rms-f32-t32-h4096-hyle-ggml",
+    "request": "weighted_rms-f32-t32-h4096",
+    "candidate": "hyle",
+    "peer": "ggml",
+    "verdict": "INCONCLUSIVE",
+    "noninferiority": "UNRESOLVED",
+    "ratios": [
+      0.995321836549812,
+      1.0010913830294714,
+      0.9682917034370296,
+      0.9688410136730841
+    ]
+  },
+  {
+    "pair": "weighted_rms-f16-t1-h2048-hyle-ggml",
+    "request": "weighted_rms-f16-t1-h2048",
+    "candidate": "hyle",
+    "peer": "ggml",
+    "verdict": "WIN",
+    "noninferiority": "PASS",
+    "ratios": [
+      1.1545348282567787,
+      1.1452208926288836,
+      1.1460478690568192,
+      1.146535458657487
+    ]
+  },
+  {
+    "pair": "weighted_rms-bf16-t1-h2048-hyle-ggml",
+    "request": "weighted_rms-bf16-t1-h2048",
+    "candidate": "hyle",
+    "peer": "ggml",
+    "verdict": "WIN",
+    "noninferiority": "PASS",
+    "ratios": [
+      1.1880661379173025,
+      1.143563475385804,
+      1.1478389366260817,
+      1.1508523401657167
+    ]
+  },
+  {
+    "pair": "layer-f32-t1-h2048-hyle-ggml",
+    "request": "layer-f32-t1-h2048",
+    "candidate": "hyle",
+    "peer": "ggml",
+    "verdict": "WIN",
+    "noninferiority": "PASS",
+    "ratios": [
+      1.2195327216753529,
+      1.3727611507993334,
+      1.1986478645241756,
+      1.2041192978534179
+    ]
+  },
+  {
+    "pair": "layer-f32-t32-h4096-hyle-ggml",
+    "request": "layer-f32-t32-h4096",
+    "candidate": "hyle",
+    "peer": "ggml",
+    "verdict": "WIN",
+    "noninferiority": "PASS",
+    "ratios": [
+      1.2759872052499115,
+      1.2625183849372752,
+      1.315598057041814,
+      1.2647116284799722
+    ]
+  },
+  {
+    "pair": "affine_layer-f32-t32-h4096-hyle-ggml",
+    "request": "affine_layer-f32-t32-h4096",
+    "candidate": "hyle",
+    "peer": "ggml",
+    "verdict": "WIN",
+    "noninferiority": "PASS",
+    "ratios": [
+      1.2970206764734997,
+      1.35228111496227,
+      1.4540089742240387,
+      1.3458753484978763
+    ]
+  },
+  {
+    "pair": "affine_layer-bf16-t1-h2048-hyle-ggml",
+    "request": "affine_layer-bf16-t1-h2048",
+    "candidate": "hyle",
+    "peer": "ggml",
+    "verdict": "WIN",
+    "noninferiority": "PASS",
+    "ratios": [
+      1.3834140168067668,
+      1.4270048848531542,
+      1.3753073457867424,
+      1.3835052582289826
+    ]
+  },
+  {
+    "pair": "mean-bf16-t1-h2048-hyle-ggml",
+    "request": "mean-bf16-t1-h2048",
+    "candidate": "hyle",
+    "peer": "ggml",
+    "verdict": "INCONCLUSIVE",
+    "noninferiority": "PASS",
+    "ratios": [
+      1.142919397136476,
+      1.1082783307497137,
+      1.0718465656887441,
+      1.1018294263834523
+    ]
+  },
+  {
+    "pair": "masked_softmax-bf16-t1-h2048-hyle-ggml",
+    "request": "masked_softmax-bf16-t1-h2048",
+    "candidate": "hyle",
+    "peer": "ggml",
+    "verdict": "INCONCLUSIVE",
+    "noninferiority": "UNRESOLVED",
+    "ratios": [
+      0.9737197247466101,
+      0.9938589593786088,
+      0.997184455384298,
+      0.9874814841124806
+    ]
+  },
+  {
+    "pair": "concat-f32-t32-h4096-hyle-ggml",
+    "request": "concat-f32-t32-h4096",
+    "candidate": "hyle",
+    "peer": "ggml",
+    "verdict": "INCONCLUSIVE",
+    "noninferiority": "UNRESOLVED",
+    "ratios": [
+      0.9839025351673687,
+      1.0068681202665541,
+      0.9855715462607983,
+      1.0047449683604717
+    ]
+  },
+  {
+    "pair": "concat-bf16-t32-h4096-hyle-ggml",
+    "request": "concat-bf16-t32-h4096",
+    "candidate": "hyle",
+    "peer": "ggml",
+    "verdict": "INCONCLUSIVE",
+    "noninferiority": "PASS",
+    "ratios": [
+      0.9899005808341765,
+      1.0145763592555175,
+      1.012878889002645,
+      1.013494524132822
+    ]
+  },
+  {
+    "pair": "packed_silu-f32-t1-h6144-ggml-sglang",
+    "request": "packed_silu-f32-t1-h6144",
+    "candidate": "ggml",
+    "peer": "sglang",
+    "verdict": "INCONCLUSIVE",
+    "noninferiority": "UNRESOLVED",
+    "ratios": [
+      0.952551912920206,
+      0.9501966649743354,
+      0.9543261256577346,
+      0.9734885066051653
+    ]
+  },
+  {
+    "pair": "packed_silu-f16-t1-h6144-hyle-sglang",
+    "request": "packed_silu-f16-t1-h6144",
+    "candidate": "hyle",
+    "peer": "sglang",
+    "verdict": "INCONCLUSIVE",
+    "noninferiority": "UNRESOLVED",
+    "ratios": [
+      1.027394317945687,
+      1.0275045901682653,
+      1.0260974263014204,
+      1.0169823127535875
+    ]
+  },
+  {
+    "pair": "packed_silu-f16-t32-h6144-ggml-sglang",
+    "request": "packed_silu-f16-t32-h6144",
+    "candidate": "ggml",
+    "peer": "sglang",
+    "verdict": "INCONCLUSIVE",
+    "noninferiority": "UNRESOLVED",
+    "ratios": [
+      0.9150580803183804,
+      0.8384158948610182,
+      0.9371217373027576,
+      0.9255077699872242
+    ]
+  },
+  {
+    "pair": "packed_silu-bf16-t1-h6144-ggml-sglang",
+    "request": "packed_silu-bf16-t1-h6144",
+    "candidate": "ggml",
+    "peer": "sglang",
+    "verdict": "LOSE",
+    "noninferiority": "FAIL",
+    "ratios": [
+      0.8837950387193378,
+      0.65045362635402,
+      0.8972181535052158,
+      0.7794667911543339
+    ]
+  },
+  {
+    "pair": "packed_silu-bf16-t32-h6144-ggml-sglang",
+    "request": "packed_silu-bf16-t32-h6144",
+    "candidate": "ggml",
+    "peer": "sglang",
+    "verdict": "LOSE",
+    "noninferiority": "FAIL",
+    "ratios": [
+      0.7255130198761627,
+      0.7004044044405356,
+      0.7367350552951588,
+      0.7247937135628457
+    ]
+  },
+  {
+    "pair": "separate_silu-f16-t32-h6144-hyle-ggml",
+    "request": "separate_silu-f16-t32-h6144",
+    "candidate": "hyle",
+    "peer": "ggml",
+    "verdict": "INCONCLUSIVE",
+    "noninferiority": "PASS",
+    "ratios": [
+      1.0740824924232417,
+      1.066971984298993,
+      1.0894653886000583,
+      1.0604068256745152
+    ]
+  },
+  {
+    "pair": "packed_gelu_tanh-bf16-t32-h6144-hyle-sglang",
+    "request": "packed_gelu_tanh-bf16-t32-h6144",
+    "candidate": "hyle",
+    "peer": "sglang",
+    "verdict": "INCONCLUSIVE",
+    "noninferiority": "UNRESOLVED",
+    "ratios": [
+      0.9774816282337765,
+      0.9686704124139022,
+      0.9392136569576827,
+      0.9641062538474687
+    ]
+  },
+  {
+    "pair": "cast-bf16-f16-t1-h2048-hyle-ggml",
+    "request": "cast-bf16-f16-t1-h2048",
+    "candidate": "hyle",
+    "peer": "ggml",
+    "verdict": "INCONCLUSIVE",
+    "noninferiority": "PASS",
+    "ratios": [
+      1.0201649982349634,
+      1.0292887581139558,
+      1.0339181493932323,
+      1.027358327559415
+    ]
+  }
+]

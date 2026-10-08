@@ -1,0 +1,25 @@
+{
+  "qualification": "QUALIFIED",
+  "qualification_gate": "PASS",
+  "performance_gate": "FAIL",
+  "pair_counts": {
+    "INCONCLUSIVE": 20,
+    "WIN": 25,
+    "LOSE": 2
+  },
+  "noninferiority_counts": {
+    "PASS": 35,
+    "UNRESOLVED": 10,
+    "FAIL": 2
+  },
+  "complete_choice_requests": 23,
+  "engineering_default_requests": 169,
+  "single_carrier_requests": 14,
+  "native_complete_choices": 23,
+  "partial_native_wins_not_imported": 2,
+  "n": 15,
+  "strata": 4,
+  "no_sample_escalation": true,
+  "archive_sha256": "7abf9022f06a5d2e8b4bc9a26d23262666bb8b4cd016866521b1f6371e1f28cc",
+  "limitations": "Exact W1 Windows/static Release/i9 caller2 parent0x14/RTX4070 SM89/driver617.14/native CUDA13.3 recipe/runtime13.4/original Provider versions. No all-hardware or region WIN."
+}

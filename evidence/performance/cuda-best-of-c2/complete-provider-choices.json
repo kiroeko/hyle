@@ -1,0 +1,1905 @@
+{
+  "counts": {
+    "ENGINEERING_DEFAULT": 169,
+    "COMPLETE_QUALIFIED_CHOICE": 23,
+    "SINGLE_CARRIER": 14
+  },
+  "requests": [
+    {
+      "request": "copy-f32-t1-h2048",
+      "candidates": [
+        "ggml",
+        "hyle"
+      ],
+      "complete_qualified_winners": [],
+      "status": "ENGINEERING_DEFAULT"
+    },
+    {
+      "request": "copy-f32-t32-h4096",
+      "candidates": [
+        "ggml",
+        "hyle"
+      ],
+      "complete_qualified_winners": [],
+      "status": "ENGINEERING_DEFAULT"
+    },
+    {
+      "request": "copy-f16-t1-h2048",
+      "candidates": [
+        "ggml",
+        "hyle"
+      ],
+      "complete_qualified_winners": [],
+      "status": "ENGINEERING_DEFAULT"
+    },
+    {
+      "request": "copy-f16-t32-h4096",
+      "candidates": [
+        "ggml",
+        "hyle"
+      ],
+      "complete_qualified_winners": [],
+      "status": "ENGINEERING_DEFAULT"
+    },
+    {
+      "request": "copy-bf16-t1-h2048",
+      "candidates": [
+        "ggml",
+        "hyle"
+      ],
+      "complete_qualified_winners": [],
+      "status": "ENGINEERING_DEFAULT"
+    },
+    {
+      "request": "copy-bf16-t32-h4096",
+      "candidates": [
+        "ggml",
+        "hyle"
+      ],
+      "complete_qualified_winners": [],
+      "status": "ENGINEERING_DEFAULT"
+    },
+    {
+      "request": "abs-f32-t1-h2048",
+      "candidates": [
+        "ggml",
+        "hyle"
+      ],
+      "complete_qualified_winners": [],
+      "status": "ENGINEERING_DEFAULT"
+    },
+    {
+      "request": "abs-f32-t32-h4096",
+      "candidates": [
+        "ggml",
+        "hyle"
+      ],
+      "complete_qualified_winners": [],
+      "status": "ENGINEERING_DEFAULT"
+    },
+    {
+      "request": "abs-f16-t1-h2048",
+      "candidates": [
+        "ggml",
+        "hyle"
+      ],
+      "complete_qualified_winners": [
+        "hyle"
+      ],
+      "status": "COMPLETE_QUALIFIED_CHOICE"
+    },
+    {
+      "request": "abs-f16-t32-h4096",
+      "candidates": [
+        "ggml",
+        "hyle"
+      ],
+      "complete_qualified_winners": [],
+      "status": "ENGINEERING_DEFAULT"
+    },
+    {
+      "request": "abs-bf16-t1-h2048",
+      "candidates": [
+        "ggml",
+        "hyle"
+      ],
+      "complete_qualified_winners": [],
+      "status": "ENGINEERING_DEFAULT"
+    },
+    {
+      "request": "abs-bf16-t32-h4096",
+      "candidates": [
+        "ggml",
+        "hyle"
+      ],
+      "complete_qualified_winners": [],
+      "status": "ENGINEERING_DEFAULT"
+    },
+    {
+      "request": "neg-f32-t1-h2048",
+      "candidates": [
+        "ggml",
+        "hyle"
+      ],
+      "complete_qualified_winners": [],
+      "status": "ENGINEERING_DEFAULT"
+    },
+    {
+      "request": "neg-f32-t32-h4096",
+      "candidates": [
+        "ggml",
+        "hyle"
+      ],
+      "complete_qualified_winners": [],
+      "status": "ENGINEERING_DEFAULT"
+    },
+    {
+      "request": "neg-f16-t1-h2048",
+      "candidates": [
+        "ggml",
+        "hyle"
+      ],
+      "complete_qualified_winners": [],
+      "status": "ENGINEERING_DEFAULT"
+    },
+    {
+      "request": "neg-f16-t32-h4096",
+      "candidates": [
+        "ggml",
+        "hyle"
+      ],
+      "complete_qualified_winners": [
+        "hyle"
+      ],
+      "status": "COMPLETE_QUALIFIED_CHOICE"
+    },
+    {
+      "request": "neg-bf16-t1-h2048",
+      "candidates": [
+        "ggml",
+        "hyle"
+      ],
+      "complete_qualified_winners": [],
+      "status": "ENGINEERING_DEFAULT"
+    },
+    {
+      "request": "neg-bf16-t32-h4096",
+      "candidates": [
+        "ggml",
+        "hyle"
+      ],
+      "complete_qualified_winners": [
+        "hyle"
+      ],
+      "status": "COMPLETE_QUALIFIED_CHOICE"
+    },
+    {
+      "request": "exp-f32-t1-h2048",
+      "candidates": [
+        "ggml",
+        "hyle"
+      ],
+      "complete_qualified_winners": [],
+      "status": "ENGINEERING_DEFAULT"
+    },
+    {
+      "request": "exp-f32-t32-h4096",
+      "candidates": [
+        "ggml",
+        "hyle"
+      ],
+      "complete_qualified_winners": [],
+      "status": "ENGINEERING_DEFAULT"
+    },
+    {
+      "request": "exp-f16-t1-h2048",
+      "candidates": [
+        "ggml",
+        "hyle"
+      ],
+      "complete_qualified_winners": [],
+      "status": "ENGINEERING_DEFAULT"
+    },
+    {
+      "request": "exp-f16-t32-h4096",
+      "candidates": [
+        "ggml",
+        "hyle"
+      ],
+      "complete_qualified_winners": [],
+      "status": "ENGINEERING_DEFAULT"
+    },
+    {
+      "request": "exp-bf16-t1-h2048",
+      "candidates": [
+        "ggml",
+        "hyle"
+      ],
+      "complete_qualified_winners": [],
+      "status": "ENGINEERING_DEFAULT"
+    },
+    {
+      "request": "exp-bf16-t32-h4096",
+      "candidates": [
+        "ggml",
+        "hyle"
+      ],
+      "complete_qualified_winners": [
+        "hyle"
+      ],
+      "status": "COMPLETE_QUALIFIED_CHOICE"
+    },
+    {
+      "request": "log-f32-t1-h2048",
+      "candidates": [
+        "ggml",
+        "hyle"
+      ],
+      "complete_qualified_winners": [],
+      "status": "ENGINEERING_DEFAULT"
+    },
+    {
+      "request": "log-f32-t32-h4096",
+      "candidates": [
+        "ggml",
+        "hyle"
+      ],
+      "complete_qualified_winners": [],
+      "status": "ENGINEERING_DEFAULT"
+    },
+    {
+      "request": "log-f16-t1-h2048",
+      "candidates": [
+        "ggml",
+        "hyle"
+      ],
+      "complete_qualified_winners": [
+        "hyle"
+      ],
+      "status": "COMPLETE_QUALIFIED_CHOICE"
+    },
+    {
+      "request": "log-f16-t32-h4096",
+      "candidates": [
+        "ggml",
+        "hyle"
+      ],
+      "complete_qualified_winners": [],
+      "status": "ENGINEERING_DEFAULT"
+    },
+    {
+      "request": "log-bf16-t1-h2048",
+      "candidates": [
+        "ggml",
+        "hyle"
+      ],
+      "complete_qualified_winners": [
+        "hyle"
+      ],
+      "status": "COMPLETE_QUALIFIED_CHOICE"
+    },
+    {
+      "request": "log-bf16-t32-h4096",
+      "candidates": [
+        "ggml",
+        "hyle"
+      ],
+      "complete_qualified_winners": [],
+      "status": "ENGINEERING_DEFAULT"
+    },
+    {
+      "request": "sqrt-f32-t1-h2048",
+      "candidates": [
+        "ggml",
+        "hyle"
+      ],
+      "complete_qualified_winners": [],
+      "status": "ENGINEERING_DEFAULT"
+    },
+    {
+      "request": "sqrt-f32-t32-h4096",
+      "candidates": [
+        "ggml",
+        "hyle"
+      ],
+      "complete_qualified_winners": [],
+      "status": "ENGINEERING_DEFAULT"
+    },
+    {
+      "request": "sqrt-f16-t1-h2048",
+      "candidates": [
+        "ggml",
+        "hyle"
+      ],
+      "complete_qualified_winners": [],
+      "status": "ENGINEERING_DEFAULT"
+    },
+    {
+      "request": "sqrt-f16-t32-h4096",
+      "candidates": [
+        "ggml",
+        "hyle"
+      ],
+      "complete_qualified_winners": [],
+      "status": "ENGINEERING_DEFAULT"
+    },
+    {
+      "request": "sqrt-bf16-t1-h2048",
+      "candidates": [
+        "ggml",
+        "hyle"
+      ],
+      "complete_qualified_winners": [
+        "hyle"
+      ],
+      "status": "COMPLETE_QUALIFIED_CHOICE"
+    },
+    {
+      "request": "sqrt-bf16-t32-h4096",
+      "candidates": [
+        "ggml",
+        "hyle"
+      ],
+      "complete_qualified_winners": [
+        "hyle"
+      ],
+      "status": "COMPLETE_QUALIFIED_CHOICE"
+    },
+    {
+      "request": "rsqrt-f32-t1-h2048",
+      "candidates": [
+        "ggml",
+        "hyle"
+      ],
+      "complete_qualified_winners": [],
+      "status": "ENGINEERING_DEFAULT"
+    },
+    {
+      "request": "rsqrt-f32-t32-h4096",
+      "candidates": [
+        "ggml",
+        "hyle"
+      ],
+      "complete_qualified_winners": [],
+      "status": "ENGINEERING_DEFAULT"
+    },
+    {
+      "request": "rsqrt-f16-t1-h2048",
+      "candidates": [
+        "ggml",
+        "hyle"
+      ],
+      "complete_qualified_winners": [],
+      "status": "ENGINEERING_DEFAULT"
+    },
+    {
+      "request": "rsqrt-f16-t32-h4096",
+      "candidates": [
+        "ggml",
+        "hyle"
+      ],
+      "complete_qualified_winners": [],
+      "status": "ENGINEERING_DEFAULT"
+    },
+    {
+      "request": "rsqrt-bf16-t1-h2048",
+      "candidates": [
+        "ggml",
+        "hyle"
+      ],
+      "complete_qualified_winners": [],
+      "status": "ENGINEERING_DEFAULT"
+    },
+    {
+      "request": "rsqrt-bf16-t32-h4096",
+      "candidates": [
+        "ggml",
+        "hyle"
+      ],
+      "complete_qualified_winners": [
+        "hyle"
+      ],
+      "status": "COMPLETE_QUALIFIED_CHOICE"
+    },
+    {
+      "request": "tanh-f32-t1-h2048",
+      "candidates": [
+        "ggml",
+        "hyle"
+      ],
+      "complete_qualified_winners": [],
+      "status": "ENGINEERING_DEFAULT"
+    },
+    {
+      "request": "tanh-f32-t32-h4096",
+      "candidates": [
+        "ggml",
+        "hyle"
+      ],
+      "complete_qualified_winners": [],
+      "status": "ENGINEERING_DEFAULT"
+    },
+    {
+      "request": "tanh-f16-t1-h2048",
+      "candidates": [
+        "ggml",
+        "hyle"
+      ],
+      "complete_qualified_winners": [],
+      "status": "ENGINEERING_DEFAULT"
+    },
+    {
+      "request": "tanh-f16-t32-h4096",
+      "candidates": [
+        "ggml",
+        "hyle"
+      ],
+      "complete_qualified_winners": [],
+      "status": "ENGINEERING_DEFAULT"
+    },
+    {
+      "request": "tanh-bf16-t1-h2048",
+      "candidates": [
+        "ggml",
+        "hyle"
+      ],
+      "complete_qualified_winners": [],
+      "status": "ENGINEERING_DEFAULT"
+    },
+    {
+      "request": "tanh-bf16-t32-h4096",
+      "candidates": [
+        "ggml",
+        "hyle"
+      ],
+      "complete_qualified_winners": [],
+      "status": "ENGINEERING_DEFAULT"
+    },
+    {
+      "request": "sigmoid-f32-t1-h2048",
+      "candidates": [
+        "ggml",
+        "hyle"
+      ],
+      "complete_qualified_winners": [],
+      "status": "ENGINEERING_DEFAULT"
+    },
+    {
+      "request": "sigmoid-f32-t32-h4096",
+      "candidates": [
+        "ggml",
+        "hyle"
+      ],
+      "complete_qualified_winners": [],
+      "status": "ENGINEERING_DEFAULT"
+    },
+    {
+      "request": "sigmoid-f16-t1-h2048",
+      "candidates": [
+        "ggml",
+        "hyle"
+      ],
+      "complete_qualified_winners": [],
+      "status": "ENGINEERING_DEFAULT"
+    },
+    {
+      "request": "sigmoid-f16-t32-h4096",
+      "candidates": [
+        "ggml",
+        "hyle"
+      ],
+      "complete_qualified_winners": [],
+      "status": "ENGINEERING_DEFAULT"
+    },
+    {
+      "request": "sigmoid-bf16-t1-h2048",
+      "candidates": [
+        "ggml",
+        "hyle"
+      ],
+      "complete_qualified_winners": [],
+      "status": "ENGINEERING_DEFAULT"
+    },
+    {
+      "request": "sigmoid-bf16-t32-h4096",
+      "candidates": [
+        "ggml",
+        "hyle"
+      ],
+      "complete_qualified_winners": [],
+      "status": "ENGINEERING_DEFAULT"
+    },
+    {
+      "request": "silu-f32-t1-h2048",
+      "candidates": [
+        "hyle",
+        "sglang"
+      ],
+      "complete_qualified_winners": [],
+      "status": "ENGINEERING_DEFAULT"
+    },
+    {
+      "request": "silu-f32-t32-h4096",
+      "candidates": [
+        "hyle",
+        "sglang"
+      ],
+      "complete_qualified_winners": [],
+      "status": "ENGINEERING_DEFAULT"
+    },
+    {
+      "request": "silu-f16-t1-h2048",
+      "candidates": [
+        "hyle",
+        "sglang"
+      ],
+      "complete_qualified_winners": [],
+      "status": "ENGINEERING_DEFAULT"
+    },
+    {
+      "request": "silu-f16-t32-h4096",
+      "candidates": [
+        "hyle",
+        "sglang"
+      ],
+      "complete_qualified_winners": [],
+      "status": "ENGINEERING_DEFAULT"
+    },
+    {
+      "request": "silu-bf16-t1-h2048",
+      "candidates": [
+        "hyle",
+        "sglang"
+      ],
+      "complete_qualified_winners": [],
+      "status": "ENGINEERING_DEFAULT"
+    },
+    {
+      "request": "silu-bf16-t32-h4096",
+      "candidates": [
+        "hyle",
+        "sglang"
+      ],
+      "complete_qualified_winners": [],
+      "status": "ENGINEERING_DEFAULT"
+    },
+    {
+      "request": "gelu-f32-t1-h2048",
+      "candidates": [
+        "hyle",
+        "sglang"
+      ],
+      "complete_qualified_winners": [],
+      "status": "ENGINEERING_DEFAULT"
+    },
+    {
+      "request": "gelu-f32-t32-h4096",
+      "candidates": [
+        "hyle",
+        "sglang"
+      ],
+      "complete_qualified_winners": [],
+      "status": "ENGINEERING_DEFAULT"
+    },
+    {
+      "request": "gelu-f16-t1-h2048",
+      "candidates": [
+        "hyle",
+        "sglang"
+      ],
+      "complete_qualified_winners": [],
+      "status": "ENGINEERING_DEFAULT"
+    },
+    {
+      "request": "gelu-f16-t32-h4096",
+      "candidates": [
+        "hyle",
+        "sglang"
+      ],
+      "complete_qualified_winners": [],
+      "status": "ENGINEERING_DEFAULT"
+    },
+    {
+      "request": "gelu-bf16-t1-h2048",
+      "candidates": [
+        "hyle",
+        "sglang"
+      ],
+      "complete_qualified_winners": [],
+      "status": "ENGINEERING_DEFAULT"
+    },
+    {
+      "request": "gelu-bf16-t32-h4096",
+      "candidates": [
+        "hyle",
+        "sglang"
+      ],
+      "complete_qualified_winners": [],
+      "status": "ENGINEERING_DEFAULT"
+    },
+    {
+      "request": "gelu_tanh-f32-t1-h2048",
+      "candidates": [
+        "hyle",
+        "sglang"
+      ],
+      "complete_qualified_winners": [],
+      "status": "ENGINEERING_DEFAULT"
+    },
+    {
+      "request": "gelu_tanh-f32-t32-h4096",
+      "candidates": [
+        "hyle",
+        "sglang"
+      ],
+      "complete_qualified_winners": [],
+      "status": "ENGINEERING_DEFAULT"
+    },
+    {
+      "request": "gelu_tanh-f16-t1-h2048",
+      "candidates": [
+        "hyle",
+        "sglang"
+      ],
+      "complete_qualified_winners": [],
+      "status": "ENGINEERING_DEFAULT"
+    },
+    {
+      "request": "gelu_tanh-f16-t32-h4096",
+      "candidates": [
+        "hyle",
+        "sglang"
+      ],
+      "complete_qualified_winners": [],
+      "status": "ENGINEERING_DEFAULT"
+    },
+    {
+      "request": "gelu_tanh-bf16-t1-h2048",
+      "candidates": [
+        "hyle",
+        "sglang"
+      ],
+      "complete_qualified_winners": [],
+      "status": "ENGINEERING_DEFAULT"
+    },
+    {
+      "request": "gelu_tanh-bf16-t32-h4096",
+      "candidates": [
+        "hyle",
+        "sglang"
+      ],
+      "complete_qualified_winners": [],
+      "status": "ENGINEERING_DEFAULT"
+    },
+    {
+      "request": "softplus-f32-t1-h2048",
+      "candidates": [
+        "hyle",
+        "torch"
+      ],
+      "complete_qualified_winners": [],
+      "status": "ENGINEERING_DEFAULT"
+    },
+    {
+      "request": "softplus-f32-t32-h4096",
+      "candidates": [
+        "hyle",
+        "torch"
+      ],
+      "complete_qualified_winners": [],
+      "status": "ENGINEERING_DEFAULT"
+    },
+    {
+      "request": "softplus-f16-t1-h2048",
+      "candidates": [
+        "hyle",
+        "torch"
+      ],
+      "complete_qualified_winners": [
+        "hyle"
+      ],
+      "status": "COMPLETE_QUALIFIED_CHOICE"
+    },
+    {
+      "request": "softplus-f16-t32-h4096",
+      "candidates": [
+        "hyle",
+        "torch"
+      ],
+      "complete_qualified_winners": [],
+      "status": "ENGINEERING_DEFAULT"
+    },
+    {
+      "request": "softplus-bf16-t1-h2048",
+      "candidates": [
+        "hyle",
+        "torch"
+      ],
+      "complete_qualified_winners": [],
+      "status": "ENGINEERING_DEFAULT"
+    },
+    {
+      "request": "softplus-bf16-t32-h4096",
+      "candidates": [
+        "hyle",
+        "torch"
+      ],
+      "complete_qualified_winners": [
+        "hyle"
+      ],
+      "status": "COMPLETE_QUALIFIED_CHOICE"
+    },
+    {
+      "request": "add-f32-t1-h2048",
+      "candidates": [
+        "ggml",
+        "hyle"
+      ],
+      "complete_qualified_winners": [],
+      "status": "ENGINEERING_DEFAULT"
+    },
+    {
+      "request": "add-f32-t32-h4096",
+      "candidates": [
+        "ggml",
+        "hyle"
+      ],
+      "complete_qualified_winners": [],
+      "status": "ENGINEERING_DEFAULT"
+    },
+    {
+      "request": "add-f16-t1-h2048",
+      "candidates": [
+        "ggml",
+        "hyle"
+      ],
+      "complete_qualified_winners": [
+        "hyle"
+      ],
+      "status": "COMPLETE_QUALIFIED_CHOICE"
+    },
+    {
+      "request": "add-f16-t32-h4096",
+      "candidates": [
+        "ggml",
+        "hyle"
+      ],
+      "complete_qualified_winners": [],
+      "status": "ENGINEERING_DEFAULT"
+    },
+    {
+      "request": "add-bf16-t1-h2048",
+      "candidates": [
+        "ggml",
+        "hyle"
+      ],
+      "complete_qualified_winners": [],
+      "status": "ENGINEERING_DEFAULT"
+    },
+    {
+      "request": "add-bf16-t32-h4096",
+      "candidates": [
+        "ggml",
+        "hyle"
+      ],
+      "complete_qualified_winners": [],
+      "status": "ENGINEERING_DEFAULT"
+    },
+    {
+      "request": "sub-f32-t1-h2048",
+      "candidates": [
+        "ggml",
+        "hyle"
+      ],
+      "complete_qualified_winners": [],
+      "status": "ENGINEERING_DEFAULT"
+    },
+    {
+      "request": "sub-f32-t32-h4096",
+      "candidates": [
+        "ggml",
+        "hyle"
+      ],
+      "complete_qualified_winners": [],
+      "status": "ENGINEERING_DEFAULT"
+    },
+    {
+      "request": "sub-f16-t1-h2048",
+      "candidates": [
+        "ggml",
+        "hyle"
+      ],
+      "complete_qualified_winners": [],
+      "status": "ENGINEERING_DEFAULT"
+    },
+    {
+      "request": "sub-f16-t32-h4096",
+      "candidates": [
+        "ggml",
+        "hyle"
+      ],
+      "complete_qualified_winners": [
+        "hyle"
+      ],
+      "status": "COMPLETE_QUALIFIED_CHOICE"
+    },
+    {
+      "request": "sub-bf16-t1-h2048",
+      "candidates": [
+        "ggml",
+        "hyle"
+      ],
+      "complete_qualified_winners": [
+        "hyle"
+      ],
+      "status": "COMPLETE_QUALIFIED_CHOICE"
+    },
+    {
+      "request": "sub-bf16-t32-h4096",
+      "candidates": [
+        "ggml",
+        "hyle"
+      ],
+      "complete_qualified_winners": [],
+      "status": "ENGINEERING_DEFAULT"
+    },
+    {
+      "request": "mul-f32-t1-h2048",
+      "candidates": [
+        "ggml",
+        "hyle"
+      ],
+      "complete_qualified_winners": [],
+      "status": "ENGINEERING_DEFAULT"
+    },
+    {
+      "request": "mul-f32-t32-h4096",
+      "candidates": [
+        "ggml",
+        "hyle"
+      ],
+      "complete_qualified_winners": [],
+      "status": "ENGINEERING_DEFAULT"
+    },
+    {
+      "request": "mul-f16-t1-h2048",
+      "candidates": [
+        "ggml",
+        "hyle"
+      ],
+      "complete_qualified_winners": [],
+      "status": "ENGINEERING_DEFAULT"
+    },
+    {
+      "request": "mul-f16-t32-h4096",
+      "candidates": [
+        "ggml",
+        "hyle"
+      ],
+      "complete_qualified_winners": [
+        "hyle"
+      ],
+      "status": "COMPLETE_QUALIFIED_CHOICE"
+    },
+    {
+      "request": "mul-bf16-t1-h2048",
+      "candidates": [
+        "ggml",
+        "hyle"
+      ],
+      "complete_qualified_winners": [
+        "hyle"
+      ],
+      "status": "COMPLETE_QUALIFIED_CHOICE"
+    },
+    {
+      "request": "mul-bf16-t32-h4096",
+      "candidates": [
+        "ggml",
+        "hyle"
+      ],
+      "complete_qualified_winners": [
+        "hyle"
+      ],
+      "status": "COMPLETE_QUALIFIED_CHOICE"
+    },
+    {
+      "request": "div-f32-t1-h2048",
+      "candidates": [
+        "ggml",
+        "hyle"
+      ],
+      "complete_qualified_winners": [],
+      "status": "ENGINEERING_DEFAULT"
+    },
+    {
+      "request": "div-f32-t32-h4096",
+      "candidates": [
+        "ggml",
+        "hyle"
+      ],
+      "complete_qualified_winners": [],
+      "status": "ENGINEERING_DEFAULT"
+    },
+    {
+      "request": "div-f16-t1-h2048",
+      "candidates": [
+        "ggml",
+        "hyle"
+      ],
+      "complete_qualified_winners": [],
+      "status": "ENGINEERING_DEFAULT"
+    },
+    {
+      "request": "div-f16-t32-h4096",
+      "candidates": [
+        "ggml",
+        "hyle"
+      ],
+      "complete_qualified_winners": [],
+      "status": "ENGINEERING_DEFAULT"
+    },
+    {
+      "request": "div-bf16-t1-h2048",
+      "candidates": [
+        "ggml",
+        "hyle"
+      ],
+      "complete_qualified_winners": [],
+      "status": "ENGINEERING_DEFAULT"
+    },
+    {
+      "request": "div-bf16-t32-h4096",
+      "candidates": [
+        "ggml",
+        "hyle"
+      ],
+      "complete_qualified_winners": [
+        "hyle"
+      ],
+      "status": "COMPLETE_QUALIFIED_CHOICE"
+    },
+    {
+      "request": "rms-f32-t1-h2048",
+      "candidates": [
+        "ggml",
+        "hyle"
+      ],
+      "complete_qualified_winners": [],
+      "status": "ENGINEERING_DEFAULT"
+    },
+    {
+      "request": "rms-f32-t32-h4096",
+      "candidates": [
+        "ggml",
+        "hyle"
+      ],
+      "complete_qualified_winners": [],
+      "status": "ENGINEERING_DEFAULT"
+    },
+    {
+      "request": "rms-f16-t1-h2048",
+      "candidates": [
+        "ggml",
+        "hyle"
+      ],
+      "complete_qualified_winners": [],
+      "status": "ENGINEERING_DEFAULT"
+    },
+    {
+      "request": "rms-f16-t32-h4096",
+      "candidates": [
+        "ggml",
+        "hyle"
+      ],
+      "complete_qualified_winners": [
+        "hyle"
+      ],
+      "status": "COMPLETE_QUALIFIED_CHOICE"
+    },
+    {
+      "request": "rms-bf16-t1-h2048",
+      "candidates": [
+        "ggml",
+        "hyle"
+      ],
+      "complete_qualified_winners": [],
+      "status": "ENGINEERING_DEFAULT"
+    },
+    {
+      "request": "rms-bf16-t32-h4096",
+      "candidates": [
+        "ggml",
+        "hyle"
+      ],
+      "complete_qualified_winners": [],
+      "status": "ENGINEERING_DEFAULT"
+    },
+    {
+      "request": "weighted_rms-f32-t1-h2048",
+      "candidates": [
+        "ggml",
+        "hyle"
+      ],
+      "complete_qualified_winners": [],
+      "status": "ENGINEERING_DEFAULT"
+    },
+    {
+      "request": "weighted_rms-f32-t32-h4096",
+      "candidates": [
+        "ggml",
+        "hyle"
+      ],
+      "complete_qualified_winners": [],
+      "status": "ENGINEERING_DEFAULT"
+    },
+    {
+      "request": "weighted_rms-f16-t1-h2048",
+      "candidates": [
+        "ggml",
+        "hyle",
+        "sglang"
+      ],
+      "complete_qualified_winners": [],
+      "status": "ENGINEERING_DEFAULT"
+    },
+    {
+      "request": "weighted_rms-f16-t32-h4096",
+      "candidates": [
+        "ggml",
+        "hyle",
+        "sglang"
+      ],
+      "complete_qualified_winners": [],
+      "status": "ENGINEERING_DEFAULT"
+    },
+    {
+      "request": "weighted_rms-bf16-t1-h2048",
+      "candidates": [
+        "ggml",
+        "hyle",
+        "sglang"
+      ],
+      "complete_qualified_winners": [],
+      "status": "ENGINEERING_DEFAULT"
+    },
+    {
+      "request": "weighted_rms-bf16-t32-h4096",
+      "candidates": [
+        "ggml",
+        "hyle",
+        "sglang"
+      ],
+      "complete_qualified_winners": [],
+      "status": "ENGINEERING_DEFAULT"
+    },
+    {
+      "request": "layer-f32-t1-h2048",
+      "candidates": [
+        "ggml",
+        "hyle"
+      ],
+      "complete_qualified_winners": [
+        "hyle"
+      ],
+      "status": "COMPLETE_QUALIFIED_CHOICE"
+    },
+    {
+      "request": "layer-f32-t32-h4096",
+      "candidates": [
+        "ggml",
+        "hyle"
+      ],
+      "complete_qualified_winners": [
+        "hyle"
+      ],
+      "status": "COMPLETE_QUALIFIED_CHOICE"
+    },
+    {
+      "request": "layer-f16-t1-h2048",
+      "candidates": [
+        "ggml",
+        "hyle"
+      ],
+      "complete_qualified_winners": [],
+      "status": "ENGINEERING_DEFAULT"
+    },
+    {
+      "request": "layer-f16-t32-h4096",
+      "candidates": [
+        "ggml",
+        "hyle"
+      ],
+      "complete_qualified_winners": [],
+      "status": "ENGINEERING_DEFAULT"
+    },
+    {
+      "request": "layer-bf16-t1-h2048",
+      "candidates": [
+        "ggml",
+        "hyle"
+      ],
+      "complete_qualified_winners": [],
+      "status": "ENGINEERING_DEFAULT"
+    },
+    {
+      "request": "layer-bf16-t32-h4096",
+      "candidates": [
+        "ggml",
+        "hyle"
+      ],
+      "complete_qualified_winners": [],
+      "status": "ENGINEERING_DEFAULT"
+    },
+    {
+      "request": "affine_layer-f32-t1-h2048",
+      "candidates": [
+        "ggml",
+        "hyle"
+      ],
+      "complete_qualified_winners": [],
+      "status": "ENGINEERING_DEFAULT"
+    },
+    {
+      "request": "affine_layer-f32-t32-h4096",
+      "candidates": [
+        "ggml",
+        "hyle"
+      ],
+      "complete_qualified_winners": [
+        "hyle"
+      ],
+      "status": "COMPLETE_QUALIFIED_CHOICE"
+    },
+    {
+      "request": "affine_layer-f16-t1-h2048",
+      "candidates": [
+        "ggml",
+        "hyle"
+      ],
+      "complete_qualified_winners": [],
+      "status": "ENGINEERING_DEFAULT"
+    },
+    {
+      "request": "affine_layer-f16-t32-h4096",
+      "candidates": [
+        "ggml",
+        "hyle"
+      ],
+      "complete_qualified_winners": [],
+      "status": "ENGINEERING_DEFAULT"
+    },
+    {
+      "request": "affine_layer-bf16-t1-h2048",
+      "candidates": [
+        "ggml",
+        "hyle"
+      ],
+      "complete_qualified_winners": [
+        "hyle"
+      ],
+      "status": "COMPLETE_QUALIFIED_CHOICE"
+    },
+    {
+      "request": "affine_layer-bf16-t32-h4096",
+      "candidates": [
+        "ggml",
+        "hyle"
+      ],
+      "complete_qualified_winners": [],
+      "status": "ENGINEERING_DEFAULT"
+    },
+    {
+      "request": "sum-f32-t1-h2048",
+      "candidates": [
+        "ggml",
+        "hyle"
+      ],
+      "complete_qualified_winners": [],
+      "status": "ENGINEERING_DEFAULT"
+    },
+    {
+      "request": "sum-f32-t32-h4096",
+      "candidates": [
+        "ggml",
+        "hyle"
+      ],
+      "complete_qualified_winners": [],
+      "status": "ENGINEERING_DEFAULT"
+    },
+    {
+      "request": "sum-f16-t1-h2048",
+      "candidates": [
+        "ggml",
+        "hyle"
+      ],
+      "complete_qualified_winners": [],
+      "status": "ENGINEERING_DEFAULT"
+    },
+    {
+      "request": "sum-f16-t32-h4096",
+      "candidates": [
+        "ggml",
+        "hyle"
+      ],
+      "complete_qualified_winners": [],
+      "status": "ENGINEERING_DEFAULT"
+    },
+    {
+      "request": "sum-bf16-t1-h2048",
+      "candidates": [
+        "ggml",
+        "hyle"
+      ],
+      "complete_qualified_winners": [],
+      "status": "ENGINEERING_DEFAULT"
+    },
+    {
+      "request": "sum-bf16-t32-h4096",
+      "candidates": [
+        "ggml",
+        "hyle"
+      ],
+      "complete_qualified_winners": [],
+      "status": "ENGINEERING_DEFAULT"
+    },
+    {
+      "request": "mean-f32-t1-h2048",
+      "candidates": [
+        "ggml",
+        "hyle"
+      ],
+      "complete_qualified_winners": [],
+      "status": "ENGINEERING_DEFAULT"
+    },
+    {
+      "request": "mean-f32-t32-h4096",
+      "candidates": [
+        "ggml",
+        "hyle"
+      ],
+      "complete_qualified_winners": [],
+      "status": "ENGINEERING_DEFAULT"
+    },
+    {
+      "request": "mean-f16-t1-h2048",
+      "candidates": [
+        "ggml",
+        "hyle"
+      ],
+      "complete_qualified_winners": [],
+      "status": "ENGINEERING_DEFAULT"
+    },
+    {
+      "request": "mean-f16-t32-h4096",
+      "candidates": [
+        "ggml",
+        "hyle"
+      ],
+      "complete_qualified_winners": [],
+      "status": "ENGINEERING_DEFAULT"
+    },
+    {
+      "request": "mean-bf16-t1-h2048",
+      "candidates": [
+        "ggml",
+        "hyle"
+      ],
+      "complete_qualified_winners": [],
+      "status": "ENGINEERING_DEFAULT"
+    },
+    {
+      "request": "mean-bf16-t32-h4096",
+      "candidates": [
+        "ggml",
+        "hyle"
+      ],
+      "complete_qualified_winners": [],
+      "status": "ENGINEERING_DEFAULT"
+    },
+    {
+      "request": "softmax-f32-t1-h2048",
+      "candidates": [
+        "ggml",
+        "hyle"
+      ],
+      "complete_qualified_winners": [],
+      "status": "ENGINEERING_DEFAULT"
+    },
+    {
+      "request": "softmax-f32-t32-h4096",
+      "candidates": [
+        "ggml",
+        "hyle"
+      ],
+      "complete_qualified_winners": [],
+      "status": "ENGINEERING_DEFAULT"
+    },
+    {
+      "request": "softmax-f16-t1-h2048",
+      "candidates": [
+        "ggml",
+        "hyle"
+      ],
+      "complete_qualified_winners": [],
+      "status": "ENGINEERING_DEFAULT"
+    },
+    {
+      "request": "softmax-f16-t32-h4096",
+      "candidates": [
+        "ggml",
+        "hyle"
+      ],
+      "complete_qualified_winners": [],
+      "status": "ENGINEERING_DEFAULT"
+    },
+    {
+      "request": "softmax-bf16-t1-h2048",
+      "candidates": [
+        "ggml",
+        "hyle"
+      ],
+      "complete_qualified_winners": [],
+      "status": "ENGINEERING_DEFAULT"
+    },
+    {
+      "request": "softmax-bf16-t32-h4096",
+      "candidates": [
+        "ggml",
+        "hyle"
+      ],
+      "complete_qualified_winners": [],
+      "status": "ENGINEERING_DEFAULT"
+    },
+    {
+      "request": "masked_softmax-f32-t1-h2048",
+      "candidates": [
+        "ggml",
+        "hyle"
+      ],
+      "complete_qualified_winners": [],
+      "status": "ENGINEERING_DEFAULT"
+    },
+    {
+      "request": "masked_softmax-f32-t32-h4096",
+      "candidates": [
+        "ggml",
+        "hyle"
+      ],
+      "complete_qualified_winners": [],
+      "status": "ENGINEERING_DEFAULT"
+    },
+    {
+      "request": "masked_softmax-f16-t1-h2048",
+      "candidates": [
+        "ggml",
+        "hyle"
+      ],
+      "complete_qualified_winners": [],
+      "status": "ENGINEERING_DEFAULT"
+    },
+    {
+      "request": "masked_softmax-f16-t32-h4096",
+      "candidates": [
+        "ggml",
+        "hyle"
+      ],
+      "complete_qualified_winners": [],
+      "status": "ENGINEERING_DEFAULT"
+    },
+    {
+      "request": "masked_softmax-bf16-t1-h2048",
+      "candidates": [
+        "ggml",
+        "hyle"
+      ],
+      "complete_qualified_winners": [],
+      "status": "ENGINEERING_DEFAULT"
+    },
+    {
+      "request": "masked_softmax-bf16-t32-h4096",
+      "candidates": [
+        "ggml",
+        "hyle"
+      ],
+      "complete_qualified_winners": [],
+      "status": "ENGINEERING_DEFAULT"
+    },
+    {
+      "request": "concat-f32-t1-h2048",
+      "candidates": [
+        "ggml",
+        "hyle"
+      ],
+      "complete_qualified_winners": [],
+      "status": "ENGINEERING_DEFAULT"
+    },
+    {
+      "request": "concat-f32-t32-h4096",
+      "candidates": [
+        "ggml",
+        "hyle"
+      ],
+      "complete_qualified_winners": [],
+      "status": "ENGINEERING_DEFAULT"
+    },
+    {
+      "request": "concat-f16-t1-h2048",
+      "candidates": [
+        "ggml",
+        "hyle"
+      ],
+      "complete_qualified_winners": [],
+      "status": "ENGINEERING_DEFAULT"
+    },
+    {
+      "request": "concat-f16-t32-h4096",
+      "candidates": [
+        "ggml",
+        "hyle"
+      ],
+      "complete_qualified_winners": [],
+      "status": "ENGINEERING_DEFAULT"
+    },
+    {
+      "request": "concat-bf16-t1-h2048",
+      "candidates": [
+        "ggml",
+        "hyle"
+      ],
+      "complete_qualified_winners": [],
+      "status": "ENGINEERING_DEFAULT"
+    },
+    {
+      "request": "concat-bf16-t32-h4096",
+      "candidates": [
+        "ggml",
+        "hyle"
+      ],
+      "complete_qualified_winners": [],
+      "status": "ENGINEERING_DEFAULT"
+    },
+    {
+      "request": "packed_silu-f32-t1-h6144",
+      "candidates": [
+        "ggml",
+        "hyle",
+        "sglang"
+      ],
+      "complete_qualified_winners": [],
+      "status": "ENGINEERING_DEFAULT"
+    },
+    {
+      "request": "packed_silu-f32-t32-h6144",
+      "candidates": [
+        "ggml",
+        "hyle",
+        "sglang"
+      ],
+      "complete_qualified_winners": [],
+      "status": "ENGINEERING_DEFAULT"
+    },
+    {
+      "request": "packed_silu-f16-t1-h6144",
+      "candidates": [
+        "ggml",
+        "hyle",
+        "sglang"
+      ],
+      "complete_qualified_winners": [],
+      "status": "ENGINEERING_DEFAULT"
+    },
+    {
+      "request": "packed_silu-f16-t32-h6144",
+      "candidates": [
+        "ggml",
+        "hyle",
+        "sglang"
+      ],
+      "complete_qualified_winners": [],
+      "status": "ENGINEERING_DEFAULT"
+    },
+    {
+      "request": "packed_silu-bf16-t1-h6144",
+      "candidates": [
+        "ggml",
+        "hyle",
+        "sglang"
+      ],
+      "complete_qualified_winners": [],
+      "status": "ENGINEERING_DEFAULT"
+    },
+    {
+      "request": "packed_silu-bf16-t32-h6144",
+      "candidates": [
+        "ggml",
+        "hyle",
+        "sglang"
+      ],
+      "complete_qualified_winners": [],
+      "status": "ENGINEERING_DEFAULT"
+    },
+    {
+      "request": "separate_silu-f32-t1-h6144",
+      "candidates": [
+        "ggml",
+        "hyle"
+      ],
+      "complete_qualified_winners": [],
+      "status": "ENGINEERING_DEFAULT"
+    },
+    {
+      "request": "separate_silu-f32-t32-h6144",
+      "candidates": [
+        "ggml",
+        "hyle"
+      ],
+      "complete_qualified_winners": [],
+      "status": "ENGINEERING_DEFAULT"
+    },
+    {
+      "request": "separate_silu-f16-t1-h6144",
+      "candidates": [
+        "ggml",
+        "hyle"
+      ],
+      "complete_qualified_winners": [],
+      "status": "ENGINEERING_DEFAULT"
+    },
+    {
+      "request": "separate_silu-f16-t32-h6144",
+      "candidates": [
+        "ggml",
+        "hyle"
+      ],
+      "complete_qualified_winners": [],
+      "status": "ENGINEERING_DEFAULT"
+    },
+    {
+      "request": "separate_silu-bf16-t1-h6144",
+      "candidates": [
+        "ggml",
+        "hyle"
+      ],
+      "complete_qualified_winners": [],
+      "status": "ENGINEERING_DEFAULT"
+    },
+    {
+      "request": "separate_silu-bf16-t32-h6144",
+      "candidates": [
+        "ggml",
+        "hyle"
+      ],
+      "complete_qualified_winners": [],
+      "status": "ENGINEERING_DEFAULT"
+    },
+    {
+      "request": "packed_gelu-f32-t1-h6144",
+      "candidates": [
+        "hyle",
+        "sglang"
+      ],
+      "complete_qualified_winners": [],
+      "status": "ENGINEERING_DEFAULT"
+    },
+    {
+      "request": "packed_gelu-f32-t32-h6144",
+      "candidates": [
+        "hyle",
+        "sglang"
+      ],
+      "complete_qualified_winners": [],
+      "status": "ENGINEERING_DEFAULT"
+    },
+    {
+      "request": "packed_gelu-f16-t1-h6144",
+      "candidates": [
+        "hyle",
+        "sglang"
+      ],
+      "complete_qualified_winners": [],
+      "status": "ENGINEERING_DEFAULT"
+    },
+    {
+      "request": "packed_gelu-f16-t32-h6144",
+      "candidates": [
+        "hyle",
+        "sglang"
+      ],
+      "complete_qualified_winners": [],
+      "status": "ENGINEERING_DEFAULT"
+    },
+    {
+      "request": "packed_gelu-bf16-t1-h6144",
+      "candidates": [
+        "hyle",
+        "sglang"
+      ],
+      "complete_qualified_winners": [],
+      "status": "ENGINEERING_DEFAULT"
+    },
+    {
+      "request": "packed_gelu-bf16-t32-h6144",
+      "candidates": [
+        "hyle",
+        "sglang"
+      ],
+      "complete_qualified_winners": [],
+      "status": "ENGINEERING_DEFAULT"
+    },
+    {
+      "request": "separate_gelu-f32-t1-h6144",
+      "candidates": [
+        "hyle"
+      ],
+      "complete_qualified_winners": [],
+      "status": "SINGLE_CARRIER"
+    },
+    {
+      "request": "separate_gelu-f32-t32-h6144",
+      "candidates": [
+        "hyle"
+      ],
+      "complete_qualified_winners": [],
+      "status": "SINGLE_CARRIER"
+    },
+    {
+      "request": "separate_gelu-f16-t1-h6144",
+      "candidates": [
+        "hyle"
+      ],
+      "complete_qualified_winners": [],
+      "status": "SINGLE_CARRIER"
+    },
+    {
+      "request": "separate_gelu-f16-t32-h6144",
+      "candidates": [
+        "hyle"
+      ],
+      "complete_qualified_winners": [],
+      "status": "SINGLE_CARRIER"
+    },
+    {
+      "request": "separate_gelu-bf16-t1-h6144",
+      "candidates": [
+        "hyle"
+      ],
+      "complete_qualified_winners": [],
+      "status": "SINGLE_CARRIER"
+    },
+    {
+      "request": "separate_gelu-bf16-t32-h6144",
+      "candidates": [
+        "hyle"
+      ],
+      "complete_qualified_winners": [],
+      "status": "SINGLE_CARRIER"
+    },
+    {
+      "request": "packed_gelu_tanh-f32-t1-h6144",
+      "candidates": [
+        "hyle",
+        "sglang"
+      ],
+      "complete_qualified_winners": [],
+      "status": "ENGINEERING_DEFAULT"
+    },
+    {
+      "request": "packed_gelu_tanh-f32-t32-h6144",
+      "candidates": [
+        "hyle",
+        "sglang"
+      ],
+      "complete_qualified_winners": [],
+      "status": "ENGINEERING_DEFAULT"
+    },
+    {
+      "request": "packed_gelu_tanh-f16-t1-h6144",
+      "candidates": [
+        "hyle",
+        "sglang"
+      ],
+      "complete_qualified_winners": [],
+      "status": "ENGINEERING_DEFAULT"
+    },
+    {
+      "request": "packed_gelu_tanh-f16-t32-h6144",
+      "candidates": [
+        "hyle",
+        "sglang"
+      ],
+      "complete_qualified_winners": [],
+      "status": "ENGINEERING_DEFAULT"
+    },
+    {
+      "request": "packed_gelu_tanh-bf16-t1-h6144",
+      "candidates": [
+        "hyle",
+        "sglang"
+      ],
+      "complete_qualified_winners": [],
+      "status": "ENGINEERING_DEFAULT"
+    },
+    {
+      "request": "packed_gelu_tanh-bf16-t32-h6144",
+      "candidates": [
+        "hyle",
+        "sglang"
+      ],
+      "complete_qualified_winners": [],
+      "status": "ENGINEERING_DEFAULT"
+    },
+    {
+      "request": "separate_gelu_tanh-f32-t1-h6144",
+      "candidates": [
+        "hyle"
+      ],
+      "complete_qualified_winners": [],
+      "status": "SINGLE_CARRIER"
+    },
+    {
+      "request": "separate_gelu_tanh-f32-t32-h6144",
+      "candidates": [
+        "hyle"
+      ],
+      "complete_qualified_winners": [],
+      "status": "SINGLE_CARRIER"
+    },
+    {
+      "request": "separate_gelu_tanh-f16-t1-h6144",
+      "candidates": [
+        "hyle"
+      ],
+      "complete_qualified_winners": [],
+      "status": "SINGLE_CARRIER"
+    },
+    {
+      "request": "separate_gelu_tanh-f16-t32-h6144",
+      "candidates": [
+        "hyle"
+      ],
+      "complete_qualified_winners": [],
+      "status": "SINGLE_CARRIER"
+    },
+    {
+      "request": "separate_gelu_tanh-bf16-t1-h6144",
+      "candidates": [
+        "hyle"
+      ],
+      "complete_qualified_winners": [],
+      "status": "SINGLE_CARRIER"
+    },
+    {
+      "request": "separate_gelu_tanh-bf16-t32-h6144",
+      "candidates": [
+        "hyle"
+      ],
+      "complete_qualified_winners": [],
+      "status": "SINGLE_CARRIER"
+    },
+    {
+      "request": "cast-f32-f16-t1-h2048",
+      "candidates": [
+        "ggml",
+        "hyle"
+      ],
+      "complete_qualified_winners": [],
+      "status": "ENGINEERING_DEFAULT"
+    },
+    {
+      "request": "cast-f32-f16-t32-h4096",
+      "candidates": [
+        "ggml",
+        "hyle"
+      ],
+      "complete_qualified_winners": [],
+      "status": "ENGINEERING_DEFAULT"
+    },
+    {
+      "request": "cast-f32-bf16-t1-h2048",
+      "candidates": [
+        "ggml",
+        "hyle"
+      ],
+      "complete_qualified_winners": [],
+      "status": "ENGINEERING_DEFAULT"
+    },
+    {
+      "request": "cast-f32-bf16-t32-h4096",
+      "candidates": [
+        "ggml",
+        "hyle"
+      ],
+      "complete_qualified_winners": [],
+      "status": "ENGINEERING_DEFAULT"
+    },
+    {
+      "request": "cast-f16-f32-t1-h2048",
+      "candidates": [
+        "ggml",
+        "hyle"
+      ],
+      "complete_qualified_winners": [],
+      "status": "ENGINEERING_DEFAULT"
+    },
+    {
+      "request": "cast-f16-f32-t32-h4096",
+      "candidates": [
+        "ggml",
+        "hyle"
+      ],
+      "complete_qualified_winners": [],
+      "status": "ENGINEERING_DEFAULT"
+    },
+    {
+      "request": "cast-f16-bf16-t1-h2048",
+      "candidates": [
+        "ggml",
+        "hyle"
+      ],
+      "complete_qualified_winners": [],
+      "status": "ENGINEERING_DEFAULT"
+    },
+    {
+      "request": "cast-f16-bf16-t32-h4096",
+      "candidates": [
+        "ggml",
+        "hyle"
+      ],
+      "complete_qualified_winners": [],
+      "status": "ENGINEERING_DEFAULT"
+    },
+    {
+      "request": "cast-bf16-f32-t1-h2048",
+      "candidates": [
+        "ggml",
+        "hyle"
+      ],
+      "complete_qualified_winners": [],
+      "status": "ENGINEERING_DEFAULT"
+    },
+    {
+      "request": "cast-bf16-f32-t32-h4096",
+      "candidates": [
+        "ggml",
+        "hyle"
+      ],
+      "complete_qualified_winners": [],
+      "status": "ENGINEERING_DEFAULT"
+    },
+    {
+      "request": "cast-bf16-f16-t1-h2048",
+      "candidates": [
+        "ggml",
+        "hyle"
+      ],
+      "complete_qualified_winners": [],
+      "status": "ENGINEERING_DEFAULT"
+    },
+    {
+      "request": "cast-bf16-f16-t32-h4096",
+      "candidates": [
+        "ggml",
+        "hyle"
+      ],
+      "complete_qualified_winners": [],
+      "status": "ENGINEERING_DEFAULT"
+    },
+    {
+      "request": "gather-f32-t1-h2048",
+      "candidates": [
+        "cccl"
+      ],
+      "complete_qualified_winners": [],
+      "status": "SINGLE_CARRIER"
+    },
+    {
+      "request": "gather-f32-t32-h4096",
+      "candidates": [
+        "cccl"
+      ],
+      "complete_qualified_winners": [],
+      "status": "SINGLE_CARRIER"
+    }
+  ]
+}
