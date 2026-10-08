@@ -416,9 +416,10 @@
     },
     {
       "module": "compute_backend_cuda",
-      "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/cuda-final-u2-build-contract.md",
-      "summary": "CUDA U2 B2 AUDITED：有限授权 backend 真实 driver release 冷快照/API独立事实与有效span、当前ggml/CCCL/FlashInfer冷消费者迁移；NVML可选、未知不禁用正常CUDA，不改数学/pin/资格阈值/热路径。 U2/U3最新联合数学/资源及Windows/Linux CUDA-only/mixed三交付资格已齐（cuda-final-u23-qualified.md）；U4合法默认/有限best-of、U5清退和U6仍待，当前owner不自动CLOSED。"
+      "state": "CANDIDATE",
+      "record": "docs/implementation/tasks/compute/cuda-final-u6-audit.md",
+      "summary": "CUDA最终候选已冻结：U1/U23固定覆盖/原资源/完整三交付、U4成熟工程默认与能力门分离、U5借入六重复公式；source及前三SDK增量已过，最后WSL shared待；AA FAIL无新WIN，不假关闭旧Graph/Vulkan或CPU。",
+      "candidate": "657f291f6e4d50b0e1c14ca24cdbe7b1715066e4"
     },
     {
       "module": "compute_provider_native",
@@ -484,21 +485,24 @@
     },
     {
       "module": "compute_provider_cuda",
-      "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/cuda-final-u5-native-retirement.md",
-      "summary": "CUDA U5 G4 AUDITED：删除gate/Unary六份重复activation公式，借原SGLang arithmetic；独有scalar索引/尾宽/stride/资源保持，其它五族具名unique KEEP无WIN；两平台受影响source/static/shared增量，不新增数学/采样。"
+      "state": "CANDIDATE",
+      "record": "docs/implementation/tasks/compute/cuda-final-u6-audit.md",
+      "summary": "CUDA最终候选已冻结：U1/U23固定覆盖/原资源/完整三交付、U4成熟工程默认与能力门分离、U5借入六重复公式；source及前三SDK增量已过，最后WSL shared待；AA FAIL无新WIN，不假关闭旧Graph/Vulkan或CPU。",
+      "candidate": "657f291f6e4d50b0e1c14ca24cdbe7b1715066e4"
     },
     {
       "module": "compute_route_cuda",
-      "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/cuda-final-u4-default-and-best-of.md",
-      "summary": "CUDA U4默认/能力分离已实现，两平台source/static/shared增量通过；有限三组AA FAIL，性能INCONCLUSIVE无新WIN，采用成熟ENGINEERING_DEFAULT。owner仍AUDITED，U5只审计具名独有资源/冗余自研清退，不追加采样或数学优化。"
+      "state": "CANDIDATE",
+      "record": "docs/implementation/tasks/compute/cuda-final-u6-audit.md",
+      "summary": "CUDA最终候选已冻结：U1/U23固定覆盖/原资源/完整三交付、U4成熟工程默认与能力门分离、U5借入六重复公式；source及前三SDK增量已过，最后WSL shared待；AA FAIL无新WIN，不假关闭旧Graph/Vulkan或CPU。",
+      "candidate": "657f291f6e4d50b0e1c14ca24cdbe7b1715066e4"
     },
     {
       "module": "graph_route_cuda",
-      "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/cuda-u4-graph-cold-default-scope.md",
-      "summary": "U4 Graph冷scope修复已通过原失败5项+FFN capture以及WSL51项和四SDK小纵切；完整ggml region优先、数学/执行/公共规划器不变，待U6汇总，仍AUDITED。"
+      "state": "CANDIDATE",
+      "record": "docs/implementation/tasks/compute/cuda-final-u6-audit.md",
+      "summary": "CUDA最终候选已冻结：U1/U23固定覆盖/原资源/完整三交付、U4成熟工程默认与能力门分离、U5借入六重复公式；source及前三SDK增量已过，最后WSL shared待；AA FAIL无新WIN，不假关闭旧Graph/Vulkan或CPU。",
+      "candidate": "657f291f6e4d50b0e1c14ca24cdbe7b1715066e4"
     },
     {
       "module": "compute_route_apple",
@@ -540,27 +544,31 @@
     },
     {
       "module": "compute_ggml_runtime",
-      "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/cuda-final-u3-f32-dispatch.md",
-      "summary": "CUDA U3 F32 dispatch AUDITED：原MMF的TF32乘数忽略F32精度要求，固定三处选择/捕获资格修复；保留G1/G2原IQ1/runtime与三交付尾项，CPU-only数学及其它路线不变。 U2/U3最新联合数学/资源及Windows/Linux CUDA-only/mixed三交付资格已齐（cuda-final-u23-qualified.md）；U4合法默认/有限best-of、U5清退和U6仍待，当前owner不自动CLOSED。"
+      "state": "CANDIDATE",
+      "record": "docs/implementation/tasks/compute/cuda-final-u6-audit.md",
+      "summary": "CUDA最终候选已冻结：U1/U23固定覆盖/原资源/完整三交付、U4成熟工程默认与能力门分离、U5借入六重复公式；source及前三SDK增量已过，最后WSL shared待；AA FAIL无新WIN，不假关闭旧Graph/Vulkan或CPU。",
+      "candidate": "657f291f6e4d50b0e1c14ca24cdbe7b1715066e4"
     },
     {
       "module": "compute_provider_ggml_cuda",
-      "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/cuda-final-u4-default-and-best-of.md",
-      "summary": "CUDA U4默认/能力分离已实现，两平台source/static/shared增量通过；有限三组AA FAIL，性能INCONCLUSIVE无新WIN，采用成熟ENGINEERING_DEFAULT。owner仍AUDITED，U5只审计具名独有资源/冗余自研清退，不追加采样或数学优化。"
+      "state": "CANDIDATE",
+      "record": "docs/implementation/tasks/compute/cuda-final-u6-audit.md",
+      "summary": "CUDA最终候选已冻结：U1/U23固定覆盖/原资源/完整三交付、U4成熟工程默认与能力门分离、U5借入六重复公式；source及前三SDK增量已过，最后WSL shared待；AA FAIL无新WIN，不假关闭旧Graph/Vulkan或CPU。",
+      "candidate": "657f291f6e4d50b0e1c14ca24cdbe7b1715066e4"
     },
     {
       "module": "graph_provider_ggml_cuda",
-      "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/cuda-final-u4-default-and-best-of.md",
-      "summary": "CUDA U4默认/能力分离已实现，两平台source/static/shared增量通过；有限三组AA FAIL，性能INCONCLUSIVE无新WIN，采用成熟ENGINEERING_DEFAULT。owner仍AUDITED，U5只审计具名独有资源/冗余自研清退，不追加采样或数学优化。"
+      "state": "CANDIDATE",
+      "record": "docs/implementation/tasks/compute/cuda-final-u6-audit.md",
+      "summary": "CUDA最终候选已冻结：U1/U23固定覆盖/原资源/完整三交付、U4成熟工程默认与能力门分离、U5借入六重复公式；source及前三SDK增量已过，最后WSL shared待；AA FAIL无新WIN，不假关闭旧Graph/Vulkan或CPU。",
+      "candidate": "657f291f6e4d50b0e1c14ca24cdbe7b1715066e4"
     },
     {
       "module": "compute_provider_flashinfer",
-      "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/cuda-final-u2-build-contract.md",
-      "summary": "CUDA U2 B2 AUDITED：有限授权 backend 真实 driver release 冷快照/API独立事实与有效span、当前ggml/CCCL/FlashInfer冷消费者迁移；NVML可选、未知不禁用正常CUDA，不改数学/pin/资格阈值/热路径。 U2/U3最新联合数学/资源及Windows/Linux CUDA-only/mixed三交付资格已齐（cuda-final-u23-qualified.md）；U4合法默认/有限best-of、U5清退和U6仍待，当前owner不自动CLOSED。"
+      "state": "CANDIDATE",
+      "record": "docs/implementation/tasks/compute/cuda-final-u6-audit.md",
+      "summary": "CUDA最终候选已冻结：U1/U23固定覆盖/原资源/完整三交付、U4成熟工程默认与能力门分离、U5借入六重复公式；source及前三SDK增量已过，最后WSL shared待；AA FAIL无新WIN，不假关闭旧Graph/Vulkan或CPU。",
+      "candidate": "657f291f6e4d50b0e1c14ca24cdbe7b1715066e4"
     },
     {
       "module": "compute_provider_ggml_metal",
@@ -577,9 +585,10 @@
     },
     {
       "module": "compute_provider_torch_cuda",
-      "state": "AUDITED",
-      "summary": "CUDA U3 R1 AUDITED：保留G1/G2/N1/N2；有限接原stable Softplus及修plain BF16 grouped F32 activation精度；current region/state/sidecar与原GPU codec、最终联合三交付验收，自研数学冻结，CPU/其它GPU不重开。 U2/U3最新联合数学/资源及Windows/Linux CUDA-only/mixed三交付资格已齐（cuda-final-u23-qualified.md）；U4合法默认/有限best-of、U5清退和U6仍待，当前owner不自动CLOSED。",
-      "record": "docs/implementation/tasks/compute/cuda-final-u3-model-regions.md"
+      "state": "CANDIDATE",
+      "summary": "CUDA最终候选已冻结：U1/U23固定覆盖/原资源/完整三交付、U4成熟工程默认与能力门分离、U5借入六重复公式；source及前三SDK增量已过，最后WSL shared待；AA FAIL无新WIN，不假关闭旧Graph/Vulkan或CPU。",
+      "record": "docs/implementation/tasks/compute/cuda-final-u6-audit.md",
+      "candidate": "657f291f6e4d50b0e1c14ca24cdbe7b1715066e4"
     }
   ]
 }

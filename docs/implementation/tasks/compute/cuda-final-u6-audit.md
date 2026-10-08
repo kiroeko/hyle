@@ -31,3 +31,11 @@ Apple、Vulkan、公共Graph旧blocker。U5当前受影响SDK批次完成前，�
 
 预算是一遍有限终审；不新增算子/模型release、跨机器性能、全局治理或公共性能instrument。
 出现具体未覆盖/错误才具名回owner；没有证据不PASS。完成当前约定能力后停止等用户下一阶段。
+
+## Candidate 冻结
+
+产品candidate `657f291f`（registry保存完整commit）；之后仅测试链接依赖、consumer/文档/证据。
+八个当前CUDA owner及compute_ggml_runtime共同进入CANDIDATE，引用本终审作为父轮汇总：
+原owner任务的数学/硬资格/资源限制与原FAIL仍有效，本卡不授权修改它们。任何产品修复必须
+依法退回AUDITED，不能在候选后偷改算法或对象。Windows/WSL source和前三个SDK增量通过，
+最后WSL shared尚在固定批次，未完成不PASS/CLOSED。
