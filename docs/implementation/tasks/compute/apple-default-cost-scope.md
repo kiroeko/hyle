@@ -56,3 +56,17 @@ native内存、同步与融合损失全部收费，不能把它视作无成本ke
 
 当前A3尚未完成。原已验区不反复重测；FP4未决时先完成独立交付/边界复核，不能用文档
 或此P0表把whole goal签完成。
+
+## 两成熟候选的正确性批次（产品 FIX 零）
+
+只对linear的BF16输入/权重→F32输出，以及grouped的plain F32/BF16权重+F32 activation做
+原生数学准入。原ggml Metal通过普通prepare，MLX候选通过普通Context.compile原astype/
+matmul/gather_mm；两者有同一真实owning async/completion/lease服务。grouped的MLX候选
+复用HYLE公共checked Gather语义生成安全IDs，仅复用检查服务，不调用产品乘法lower。
+必要全权重F32转换按实际尺寸列cold/dynamic成本，不宣称零成本。
+
+一批真实K4096/8192和N1024/专家router、单/多token、两个变输入/变权重replay及复用lease，
+另有具名F32精度边界（BF16大指数与可表示的小值）和坏ID。独立source encoded BF16与
+两term double方程先验证，再比较两候选。只构建新测试源，不重跑原矩阵；原结果失败不能
+以宽容差或有限正常值样本覆盖。具名测试/接线失败最多一次纠正；产品缺陷需另固定FIX。
+该准入不是性能结果，两候选没有共同正确性域就不排名；不启动P1或调全局设置。
