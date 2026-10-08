@@ -43,9 +43,31 @@
 #include "hyle/compute/model_ops.h"
 #include "hyle/graph/apple.h"
 #include "../compute_models/cpu_c5_non_gguf_fixture.h"
+#include "../compute_route_apple/gguf_coverage_fixture.h"
 
 namespace {
 void run_q24_semantic_fragment(d5_qwen38_24t_semantic_fragments::Fragment fixture);
+void apple_parity_gguf_demand(const cpu_c5_inputs::Case &item) {
+  namespace in = cpu_c5_inputs;
+  namespace oracle = cpu_c5_gguf_fixture;
+    SCOPED_TRACE(item.id);
+    const auto profile = oracle::profile(in::aliases[item.alias_begin]);
+    if (item.native == GGML_TYPE_COUNT) {
+      std::printf("[APPLE-GGUF] %s NO_MATURE_NATIVE_CARRIER\n", item.id);
+      GTEST_SKIP() << "No original mature Metal carrier for this IQ1 format";
+    }
+    std::printf("[APPLE-GGUF] %s N=%lld K=%lld E=%lld\n", item.id,
+        static_cast<long long>(item.n), static_cast<long long>(item.k), static_cast<long long>(item.e));
+    std::fflush(stdout);
+    const oracle::Bank bank(item);
+    auto fixture = item.kind == in::Kind::kExpert || item.kind == in::Kind::kHeadGroup
+        ? oracle::grouped(item, bank, &profile)
+        : item.kind == in::Kind::kEmbedding || item.kind == in::Kind::kInteger ||
+          item.kind == in::Kind::kPosition
+        ? oracle::lookup(item, bank, &profile)
+        : oracle::projection(item, bank, &profile, item.n);
+    run_q24_semantic_fragment(std::move(fixture));
+}
 void apple_parity_packed_demand(bool artifact) {
   namespace in = cpu_c5_non_gguf_inputs;
   namespace oracle = cpu_c5_non_gguf_fixture;
@@ -67,6 +89,13 @@ void apple_parity_packed_demand(bool artifact) {
 TEST(AppleParityGraph, RealMlxPackedDemandUsesAllRowsAndRealK) {
   apple_parity_packed_demand(false);
 }
+class AppleParityGraphGguf : public ::testing::TestWithParam<cpu_c5_inputs::Case> {};
+TEST_P(AppleParityGraphGguf, CurrentGgufDemandUsesOriginalBytesAndAllRows) {
+  apple_parity_gguf_demand(GetParam());
+}
+INSTANTIATE_TEST_SUITE_P(CurrentDemand, AppleParityGraphGguf,
+    ::testing::ValuesIn(cpu_c5_inputs::cases),
+    [](const auto &info) { return std::string(info.param.id); });
 TEST(AppleParityGraph, RealArtifactPreparationFeedsMatureMatMul) {
   apple_parity_packed_demand(true);
 }

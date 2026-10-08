@@ -1,0 +1,74 @@
+[0/2] Re-checking globbed directories...
+-- GLOB mismatch!
+The following files were added:
+  +/Users/kiro/hyle/src/compute_route_apple/apple_mature_artifact.cc
+-- GLOB mismatch!
+The following files were added:
+  +/Users/kiro/hyle/src/compute_route_apple/apple_mature_artifact.h
+[1/2] Re-running CMake...
+-- HYLE products: requested='compute,graph,simd' available='core,error,simd,math,compute,graph' factors='core,container_intrusive,util_core,error,time,math,platform,platform_thread,mem,simd,container,compute_ops,compute,graph,compute_ggml_runtime,compute_backend_cuda,compute_provider_cublas,compute_provider_cuda,compute_provider_flashinfer,compute_provider_ggml_cuda,compute_provider_torch_cuda,compute_route_cuda,graph_provider_ggml_cuda,graph_route_cuda,compute_provider_ggml_metal,compute_route_apple,graph_route_apple,compute_provider_ggml_vulkan,compute_provider_iree_vulkan,compute_route_vulkan,graph_route_vulkan'
+-- HYLE_SANITIZER = off
+-- HYLE_TESTING = OFF (tests exercise the shipping layout/hot paths)
+-- HYLE: CPU route OFF -- oneDNN dependency probe/download skipped
+-- HYLE: CUDA backend OFF -- system SDK probe skipped
+-- Using the multi-header code from /Users/kiro/Library/Caches/hyle/dependencies/v1/sources/json-9cca280a4d0c-6fc345093434/include/
+-- {fmt} version: 12.1.0
+-- Build type: Release
+-- Building MLX for arm64 processor on Darwin
+-- Metal found /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/System/Library/Frameworks/Metal.framework
+-- Building on macOS 27.0.1
+-- Building with macOS 27.0 SDK
+-- Building for macOS 14.4
+-- Metal version: 310
+-- Downloading json
+CMake Warning at /Users/kiro/hyle-scratch/d5-graph-825c41f8/_deps/mlx-338da189e54c0743/source/mlx/backend/metal/CMakeLists.txt:107 (message):
+  NAX kernels require Metal 4, macOS SDK >= 26.2, and
+  MACOSX_DEPLOYMENT_TARGET >= 26.2 (SDK 27.0,
+  CMAKE_OSX_DEPLOYMENT_TARGET=14.4).  Building without NAX kernels.
+
+
+-- HYLE: MLX 0.32.2 Metal-only, cold JIT, native region enabled
+-- HYLE: Vulkan route OFF -- SDK and shader probes/downloads skipped
+-- ggml source: 2263 files, 12 exact patches
+
+-- CMAKE_SYSTEM_PROCESSOR: arm64
+-- GGML_SYSTEM_ARCH: ARM
+-- Metal framework found
+-- Including METAL backend
+-- ggml version: 0.24.0
+-- ggml commit:  456172ec733a135778adcd32d00e576a58232e45-hyle
+CMake Error at cmake/HyleDependencyVersions.cmake:887 (message):
+  HYLE in-tree dependency audit failed:
+
+  Vendored dependency 'bitsandbytes_apple' content does not match the lock.
+
+    path:     /Users/kiro/hyle/third_party/bitsandbytes_apple
+    expected: 066957d1b5ba9b384fd9bbeb526fd4fdb333fdf18df17d8636f8c07e1c773ea7
+    actual:   c754dabd4c261b21931582cc1052aea7f0167f68a212a9c3fe132cbf6a91649e
+
+
+
+  Vendored dependency 'awq_apple' content does not match the lock.
+
+    path:     /Users/kiro/hyle/third_party/awq_apple
+    expected: 89faed9df08963779e0e8d7a3b1964da7671ad513c7fa8a4533ce032a04c7774
+    actual:   dcadc41cac6184c48bcb7f2f6c0a165bf07cf8986e6861502aa5d659d23c04e8
+
+
+
+  Vendored dependency 'compressed_tensors_apple' content does not match the
+  lock.
+
+    path:     /Users/kiro/hyle/third_party/compressed_tensors_apple
+    expected: fbd33c3af8a1bb824768ea87851b5966d52b0b3e2e965bd23d0948c013ce2e00
+    actual:   c1422b5abc47e3604041337b8af5fe49d7f4f41a10af09603236facf441742f0
+
+  Refresh complete snapshots and their provenance atomically.
+Call Stack (most recent call first):
+  src/compute_route_apple/CMakeLists.txt:7 (hyle_audit_in_tree_dependencies)
+
+
+-- Configuring incomplete, errors occurred!
+FAILED: [code=1] build.ninja /Users/kiro/hyle-scratch/d5-graph-825c41f8/cmake_install.cmake /Users/kiro/hyle-scratch/d5-graph-825c41f8/_deps/json-build/cmake_install.cmake /Users/kiro/hyle-scratch/d5-graph-825c41f8/_deps/fmt-build/cmake_install.cmake /Users/kiro/hyle-scratch/d5-graph-825c41f8/_deps/mlx-build/cmake_install.cmake /Users/kiro/hyle-scratch/d5-graph-825c41f8/_deps/mlx-build/mlx/cmake_install.cmake /Users/kiro/hyle-scratch/d5-graph-825c41f8/_deps/mlx-build/mlx/backend/common/cmake_install.cmake /Users/kiro/hyle-scratch/d5-graph-825c41f8/_deps/mlx-build/mlx/backend/no_cpu/cmake_install.cmake /Users/kiro/hyle-scratch/d5-graph-825c41f8/_deps/mlx-build/mlx/distributed/cmake_install.cmake /Users/kiro/hyle-scratch/d5-graph-825c41f8/_deps/mlx-build/mlx/distributed/mpi/cmake_install.cmake /Users/kiro/hyle-scratch/d5-graph-825c41f8/_deps/mlx-build/mlx/distributed/ring/cmake_install.cmake /Users/kiro/hyle-scratch/d5-graph-825c41f8/_deps/mlx-build/mlx/distributed/nccl/cmake_install.cmake /Users/kiro/hyle-scratch/d5-graph-825c41f8/_deps/mlx-build/mlx/distributed/jaccl/cmake_install.cmake /Users/kiro/hyle-scratch/d5-graph-825c41f8/_deps/mlx-build/mlx/io/cmake_install.cmake /Users/kiro/hyle-scratch/d5-graph-825c41f8/_deps/mlx-build/mlx/backend/metal/cmake_install.cmake /Users/kiro/hyle-scratch/d5-graph-825c41f8/_deps/mlx-build/mlx/backend/metal/kernels/cmake_install.cmake /Users/kiro/hyle-scratch/d5-graph-825c41f8/_deps/mlx-build/mlx/backend/gpu/cmake_install.cmake /Users/kiro/hyle-scratch/d5-graph-825c41f8/src/core/cmake_install.cmake /Users/kiro/hyle-scratch/d5-graph-825c41f8/src/container_intrusive/cmake_install.cmake /Users/kiro/hyle-scratch/d5-graph-825c41f8/src/util_core/cmake_install.cmake /Users/kiro/hyle-scratch/d5-graph-825c41f8/src/error/cmake_install.cmake /Users/kiro/hyle-scratch/d5-graph-825c41f8/src/time/cmake_install.cmake /Users/kiro/hyle-scratch/d5-graph-825c41f8/src/math/cmake_install.cmake /Users/kiro/hyle-scratch/d5-graph-825c41f8/src/platform/cmake_install.cmake /Users/kiro/hyle-scratch/d5-graph-825c41f8/src/platform_thread/cmake_install.cmake /Users/kiro/hyle-scratch/d5-graph-825c41f8/src/mem/cmake_install.cmake /Users/kiro/hyle-scratch/d5-graph-825c41f8/src/simd/cmake_install.cmake /Users/kiro/hyle-scratch/d5-graph-825c41f8/src/container/cmake_install.cmake /Users/kiro/hyle-scratch/d5-graph-825c41f8/src/compute_ops/cmake_install.cmake /Users/kiro/hyle-scratch/d5-graph-825c41f8/src/compute/cmake_install.cmake /Users/kiro/hyle-scratch/d5-graph-825c41f8/src/graph/cmake_install.cmake /Users/kiro/hyle-scratch/d5-graph-825c41f8/src/compute_ggml_runtime/cmake_install.cmake /Users/kiro/hyle-scratch/d5-graph-825c41f8/src/compute_ggml_runtime/vendor/cmake_install.cmake /Users/kiro/hyle-scratch/d5-graph-825c41f8/src/compute_ggml_runtime/vendor/src/cmake_install.cmake /Users/kiro/hyle-scratch/d5-graph-825c41f8/src/compute_ggml_runtime/vendor/src/ggml-metal/cmake_install.cmake /Users/kiro/hyle-scratch/d5-graph-825c41f8/src/compute_backend_cuda/cmake_install.cmake /Users/kiro/hyle-scratch/d5-graph-825c41f8/src/compute_provider_cublas/cmake_install.cmake /Users/kiro/hyle-scratch/d5-graph-825c41f8/src/compute_provider_cuda/cmake_install.cmake /Users/kiro/hyle-scratch/d5-graph-825c41f8/src/compute_provider_flashinfer/cmake_install.cmake /Users/kiro/hyle-scratch/d5-graph-825c41f8/src/compute_provider_ggml_cuda/cmake_install.cmake /Users/kiro/hyle-scratch/d5-graph-825c41f8/src/compute_provider_torch_cuda/cmake_install.cmake /Users/kiro/hyle-scratch/d5-graph-825c41f8/src/compute_route_cuda/cmake_install.cmake /Users/kiro/hyle-scratch/d5-graph-825c41f8/src/graph_provider_ggml_cuda/cmake_install.cmake /Users/kiro/hyle-scratch/d5-graph-825c41f8/src/graph_route_cuda/cmake_install.cmake /Users/kiro/hyle-scratch/d5-graph-825c41f8/src/compute_provider_ggml_metal/cmake_install.cmake /Users/kiro/hyle-scratch/d5-graph-825c41f8/src/compute_route_apple/cmake_install.cmake /Users/kiro/hyle-scratch/d5-graph-825c41f8/src/graph_route_apple/cmake_install.cmake /Users/kiro/hyle-scratch/d5-graph-825c41f8/src/compute_provider_ggml_vulkan/cmake_install.cmake /Users/kiro/hyle-scratch/d5-graph-825c41f8/src/compute_provider_iree_vulkan/cmake_install.cmake /Users/kiro/hyle-scratch/d5-graph-825c41f8/src/compute_route_vulkan/cmake_install.cmake /Users/kiro/hyle-scratch/d5-graph-825c41f8/src/graph_route_vulkan/cmake_install.cmake /Users/kiro/hyle-scratch/d5-graph-825c41f8/tests/cmake_install.cmake /Users/kiro/hyle-scratch/d5-graph-825c41f8/_deps/googletest-build/cmake_install.cmake /Users/kiro/hyle-scratch/d5-graph-825c41f8/_deps/googletest-build/googletest/cmake_install.cmake /Users/kiro/hyle-scratch/d5-graph-825c41f8/tests/core/cmake_install.cmake /Users/kiro/hyle-scratch/d5-graph-825c41f8/tests/container_intrusive/cmake_install.cmake /Users/kiro/hyle-scratch/d5-graph-825c41f8/tests/util_core/cmake_install.cmake /Users/kiro/hyle-scratch/d5-graph-825c41f8/tests/error/cmake_install.cmake /Users/kiro/hyle-scratch/d5-graph-825c41f8/tests/math/cmake_install.cmake /Users/kiro/hyle-scratch/d5-graph-825c41f8/tests/time/cmake_install.cmake /Users/kiro/hyle-scratch/d5-graph-825c41f8/tests/platform/cmake_install.cmake /Users/kiro/hyle-scratch/d5-graph-825c41f8/tests/platform_thread/cmake_install.cmake /Users/kiro/hyle-scratch/d5-graph-825c41f8/tests/mem/cmake_install.cmake /Users/kiro/hyle-scratch/d5-graph-825c41f8/tests/simd/cmake_install.cmake /Users/kiro/hyle-scratch/d5-graph-825c41f8/tests/container/cmake_install.cmake /Users/kiro/hyle-scratch/d5-graph-825c41f8/tests/compute/cmake_install.cmake /Users/kiro/hyle-scratch/d5-graph-825c41f8/tests/graph/cmake_install.cmake /Users/kiro/hyle-scratch/d5-graph-825c41f8/tests/compute_ops/cmake_install.cmake /Users/kiro/hyle-scratch/d5-graph-825c41f8/tests/compute_backend_cuda/cmake_install.cmake /Users/kiro/hyle-scratch/d5-graph-825c41f8/tests/compute_provider_cublas/cmake_install.cmake /Users/kiro/hyle-scratch/d5-graph-825c41f8/tests/compute_provider_cuda/cmake_install.cmake /Users/kiro/hyle-scratch/d5-graph-825c41f8/tests/compute_route_cuda/cmake_install.cmake /Users/kiro/hyle-scratch/d5-graph-825c41f8/tests/graph_route_cuda/cmake_install.cmake /Users/kiro/hyle-scratch/d5-graph-825c41f8/tests/compute_route_apple/cmake_install.cmake /Users/kiro/hyle-scratch/d5-graph-825c41f8/tests/graph_route_apple/cmake_install.cmake /Users/kiro/hyle-scratch/d5-graph-825c41f8/tests/compute_route_vulkan/cmake_install.cmake /Users/kiro/hyle-scratch/d5-graph-825c41f8/tests/graph_route_vulkan/cmake_install.cmake /Users/kiro/hyle-scratch/d5-graph-825c41f8/tests/compute_provider_ggml_vulkan/cmake_install.cmake /Users/kiro/hyle-scratch/d5-graph-825c41f8/tests/compute_ggml_runtime/cmake_install.cmake /Users/kiro/hyle-scratch/d5-graph-825c41f8/tests/compute_provider_ggml_cuda/cmake_install.cmake /Users/kiro/hyle-scratch/d5-graph-825c41f8/tests/graph_provider_ggml_cuda/cmake_install.cmake /Users/kiro/hyle-scratch/d5-graph-825c41f8/tests/compute_provider_flashinfer/cmake_install.cmake /Users/kiro/hyle-scratch/d5-graph-825c41f8/tests/compute_provider_ggml_metal/cmake_install.cmake /Users/kiro/hyle-scratch/d5-graph-825c41f8/tests/compute_provider_iree_vulkan/cmake_install.cmake /Users/kiro/hyle-scratch/d5-graph-825c41f8/tests/compute_provider_torch_cuda/cmake_install.cmake /Users/kiro/hyle-scratch/d5-graph-825c41f8/tests/correctness/cmake_install.cmake /Users/kiro/hyle-scratch/d5-graph-825c41f8/CTestTestfile.cmake /Users/kiro/hyle-scratch/d5-graph-825c41f8/tests/CTestTestfile.cmake /Users/kiro/hyle-scratch/d5-graph-825c41f8/_deps/googletest-build/CTestTestfile.cmake /Users/kiro/hyle-scratch/d5-graph-825c41f8/_deps/googletest-build/googletest/CTestTestfile.cmake /Users/kiro/hyle-scratch/d5-graph-825c41f8/tests/core/CTestTestfile.cmake /Users/kiro/hyle-scratch/d5-graph-825c41f8/tests/container_intrusive/CTestTestfile.cmake /Users/kiro/hyle-scratch/d5-graph-825c41f8/tests/util_core/CTestTestfile.cmake /Users/kiro/hyle-scratch/d5-graph-825c41f8/tests/error/CTestTestfile.cmake /Users/kiro/hyle-scratch/d5-graph-825c41f8/tests/math/CTestTestfile.cmake /Users/kiro/hyle-scratch/d5-graph-825c41f8/tests/time/CTestTestfile.cmake /Users/kiro/hyle-scratch/d5-graph-825c41f8/tests/platform/CTestTestfile.cmake /Users/kiro/hyle-scratch/d5-graph-825c41f8/tests/platform_thread/CTestTestfile.cmake /Users/kiro/hyle-scratch/d5-graph-825c41f8/tests/mem/CTestTestfile.cmake /Users/kiro/hyle-scratch/d5-graph-825c41f8/tests/simd/CTestTestfile.cmake /Users/kiro/hyle-scratch/d5-graph-825c41f8/tests/container/CTestTestfile.cmake /Users/kiro/hyle-scratch/d5-graph-825c41f8/tests/compute/CTestTestfile.cmake /Users/kiro/hyle-scratch/d5-graph-825c41f8/tests/graph/CTestTestfile.cmake /Users/kiro/hyle-scratch/d5-graph-825c41f8/tests/compute_ops/CTestTestfile.cmake /Users/kiro/hyle-scratch/d5-graph-825c41f8/tests/compute_backend_cuda/CTestTestfile.cmake /Users/kiro/hyle-scratch/d5-graph-825c41f8/tests/compute_provider_cublas/CTestTestfile.cmake /Users/kiro/hyle-scratch/d5-graph-825c41f8/tests/compute_provider_cuda/CTestTestfile.cmake /Users/kiro/hyle-scratch/d5-graph-825c41f8/tests/compute_route_cuda/CTestTestfile.cmake /Users/kiro/hyle-scratch/d5-graph-825c41f8/tests/graph_route_cuda/CTestTestfile.cmake /Users/kiro/hyle-scratch/d5-graph-825c41f8/tests/compute_route_apple/CTestTestfile.cmake /Users/kiro/hyle-scratch/d5-graph-825c41f8/tests/graph_route_apple/CTestTestfile.cmake /Users/kiro/hyle-scratch/d5-graph-825c41f8/tests/compute_route_vulkan/CTestTestfile.cmake /Users/kiro/hyle-scratch/d5-graph-825c41f8/tests/graph_route_vulkan/CTestTestfile.cmake /Users/kiro/hyle-scratch/d5-graph-825c41f8/tests/compute_provider_ggml_vulkan/CTestTestfile.cmake /Users/kiro/hyle-scratch/d5-graph-825c41f8/tests/compute_ggml_runtime/CTestTestfile.cmake /Users/kiro/hyle-scratch/d5-graph-825c41f8/tests/compute_provider_ggml_cuda/CTestTestfile.cmake /Users/kiro/hyle-scratch/d5-graph-825c41f8/tests/graph_provider_ggml_cuda/CTestTestfile.cmake /Users/kiro/hyle-scratch/d5-graph-825c41f8/tests/compute_provider_flashinfer/CTestTestfile.cmake /Users/kiro/hyle-scratch/d5-graph-825c41f8/tests/compute_provider_ggml_metal/CTestTestfile.cmake /Users/kiro/hyle-scratch/d5-graph-825c41f8/tests/compute_provider_iree_vulkan/CTestTestfile.cmake /Users/kiro/hyle-scratch/d5-graph-825c41f8/tests/compute_provider_torch_cuda/CTestTestfile.cmake /Users/kiro/hyle-scratch/d5-graph-825c41f8/tests/correctness/CTestTestfile.cmake 
+/opt/homebrew/bin/cmake --regenerate-during-build -S/Users/kiro/hyle -B/Users/kiro/hyle-scratch/d5-graph-825c41f8
+ninja: error: rebuilding 'build.ninja': subcommand failed

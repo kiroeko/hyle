@@ -85,3 +85,30 @@ contracts,16 real MLX packed geometries,18 artifact requests,8 IQ1 extension
 contracts, current complete family/official/MTP regions, cold rules/P1 and
 source/static/shared remain open. Uniform canonical Compute+Graph code is
 61,190 implementation lines/258 files at this product tree (tests/vendors excluded).
+
+## Mature artifact and all34 packed-demand batch
+
+Candidate `516cff801` [first build](516cff801-build.log) stopped at dependency
+audit: the local metadata generator sorted WindowsPath objects case-insensitively,
+while the existing portable digest sorts exact relative path text. The single
+metadata correction at `1db9ad96` changes only the three new lock digests;
+original source/license bytes and all existing dependency entries are unchanged.
+[Corrected native build](1db9ad96-build.log) PASS, reusing the existing producer.
+
+[Direct](1db9ad96-direct34.log) and [Graph](1db9ad96-graph34.log) each PASS
+the16 real MLX packed requests and18 original NF4/AWQ/CT preparation requests.
+Every N/K output is checked, including the cold complete decoded matrix and
+its subsequent mature MatMul, two changed-input replays and applicable checked
+indices. MoE expert banks explicitly use the shared fixture's at-most8 expert
+sample; each log retains originalE and verifiedE. This proves those samples,
+not complete giant model residency or256 expert payloads on the16GiB Air.
+
+Native execution is GPU-only MLX; original tensor formulas/codebooks/packing/
+scale dtype come from the three locked mature sources. There is no new HYLE
+math kernel. SDK/offline/license consumption remains required in A4. Canonical
+Compute+Graph implementation is61,241 lines/260 files, tests/vendors excluded.
+Input tooling13/13 and validation-selector tooling59/59 PASS. The selector's
+wide plan for ownership/dependency metadata is retained; unchanged existing
+dependency records and unchanged non-Apple function bodies are not a reason to
+rebuild every closed module. Native owning/consumer checks run on Air; remaining
+applicable delivery gates are pending, not PASS. No P1 has run.

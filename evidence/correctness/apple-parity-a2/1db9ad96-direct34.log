@@ -1,0 +1,48 @@
+Running main() from /Users/kiro/Library/Caches/hyle/dependencies/v1/sources/googletest-063de7e9578f-162765170ae6/googletest/src/gtest_main.cc
+Note: Google Test filter = AppleParityDirect.*
+[==========] Running 2 tests from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 2 tests from AppleParityDirect
+[ RUN      ] AppleParityDirect.RealMlxPackedDemandUsesAllRowsAndRealK
+[APPLE-PACKED] n0bb663b75e961054 N=32768 K=1024 originalE=1 verifiedE=1
+[APPLE-PACKED] n11ac28dbeaa21a76 N=2048 K=4096 originalE=256 verifiedE=8
+[APPLE-PACKED] n1a02d912dccfbfcc N=512 K=4096 originalE=1 verifiedE=1
+[APPLE-PACKED] n202aedd266175231 N=4096 K=8192 originalE=1 verifiedE=1
+[APPLE-PACKED] n37e21568674f2571 N=2048 K=4096 originalE=1 verifiedE=1
+[APPLE-PACKED] n44af3ac14c76c678 N=1024 K=4096 originalE=1 verifiedE=1
+[APPLE-PACKED] n57f8346172bcde91 N=256 K=4096 originalE=1 verifiedE=1
+[APPLE-PACKED] n5b450b9128f9ddb4 N=512 K=4096 originalE=1 verifiedE=1
+[APPLE-PACKED] n7251e93056484f69 N=1024 K=4096 originalE=1 verifiedE=1
+[APPLE-PACKED] n827da62ad0daf7b8 N=8192 K=1024 originalE=1 verifiedE=1
+[APPLE-PACKED] n85a9768ce0cfbe9d N=64 K=4096 originalE=1 verifiedE=1
+[APPLE-PACKED] n9bfaa0e6dba16c70 N=4096 K=2048 originalE=1 verifiedE=1
+[APPLE-PACKED] na2bfd546f5de3726 N=129280 K=4096 originalE=1 verifiedE=1
+[APPLE-PACKED] nb696beddeed9063f N=129280 K=4096 originalE=1 verifiedE=1
+[APPLE-PACKED] nc801b7e28c4a66c0 N=4096 K=2048 originalE=256 verifiedE=8
+[APPLE-PACKED] ne3db6edc9b6e92ec N=1024 K=4096 originalE=8 verifiedE=8
+[       OK ] AppleParityDirect.RealMlxPackedDemandUsesAllRowsAndRealK (1771 ms)
+[ RUN      ] AppleParityDirect.RealArtifactPreparationFeedsMatureMatMul
+[APPLE-PACKED] n2208fbb06e447168 N=1024 K=5120 originalE=1 verifiedE=1
+[APPLE-PACKED] n2af37225831ba519 N=16 K=2048 originalE=1 verifiedE=1
+[APPLE-PACKED] n33d5fe29fed560af N=1024 K=5120 originalE=1 verifiedE=1
+[APPLE-PACKED] n39f10794d1034fdd N=17408 K=5120 originalE=1 verifiedE=1
+[APPLE-PACKED] n627e13f695902a6f N=5120 K=17408 originalE=1 verifiedE=1
+[APPLE-PACKED] n7b3b05721f557885 N=6144 K=5120 originalE=1 verifiedE=1
+[APPLE-PACKED] n7b87eddf86e971d2 N=2048 K=2048 originalE=1 verifiedE=1
+[APPLE-PACKED] n8c79bf7f55b10c01 N=12288 K=5120 originalE=1 verifiedE=1
+[APPLE-PACKED] na7b682381e9fa396 N=5120 K=17408 originalE=1 verifiedE=1
+[APPLE-PACKED] nab5612104243530d N=4096 K=2048 originalE=1 verifiedE=1
+[APPLE-PACKED] nad972a78d88299e9 N=5120 K=6144 originalE=1 verifiedE=1
+[APPLE-PACKED] nb0eb5191fc5bb45c N=512 K=2048 originalE=1 verifiedE=1
+[APPLE-PACKED] nb79fa3dba1813475 N=12288 K=5120 originalE=1 verifiedE=1
+[APPLE-PACKED] nc0c493d5f357c6f5 N=10240 K=5120 originalE=1 verifiedE=1
+[APPLE-PACKED] nc1901694d1ed5be9 N=2048 K=6144 originalE=1 verifiedE=1
+[APPLE-PACKED] ncb8979d217d13ad8 N=6144 K=2048 originalE=1 verifiedE=1
+[APPLE-PACKED] nf425aabf7fb25c64 N=17408 K=5120 originalE=1 verifiedE=1
+[APPLE-PACKED] nfab7af12a04d1cd9 N=5120 K=6144 originalE=1 verifiedE=1
+[       OK ] AppleParityDirect.RealArtifactPreparationFeedsMatureMatMul (51884 ms)
+[----------] 2 tests from AppleParityDirect (53656 ms total)
+
+[----------] Global test environment tear-down
+[==========] 2 tests from 1 test suite ran. (53656 ms total)
+[  PASSED  ] 2 tests.

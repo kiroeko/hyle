@@ -1,6 +1,18 @@
 #pragma once
 // Generated from fixed C5 C1-header audit; no execution qualification.
 namespace cpu_c5_inputs {
+
+// Demand data is shared. A missing vendor enum is an explicit unavailable
+// carrier, never a fabricated backend capability or executable COUNT tensor.
+#if defined(HYLE_GGML_CPU_IQ1_EXTENSIONS) || defined(HYLE_GGML_CUDA_IQ1_EXTENSIONS)
+inline constexpr ggml_type kIq1XsNative = GGML_TYPE_IQ1_XS;
+inline constexpr ggml_type kIq1XxsNative = GGML_TYPE_IQ1_XXS;
+inline constexpr ggml_type kIq1XxxsNative = GGML_TYPE_IQ1_XXXS;
+#else
+inline constexpr ggml_type kIq1XsNative = GGML_TYPE_COUNT;
+inline constexpr ggml_type kIq1XxsNative = GGML_TYPE_COUNT;
+inline constexpr ggml_type kIq1XxxsNative = GGML_TYPE_COUNT;
+#endif
 enum class Kind { kProjection, kEmbedding, kHead, kExpert, kHeadGroup, kPosition, kInteger };
 struct Profile { const char *repository, *revision, *variant, *digest; int family; };
 struct Case { const char *id; Kind kind; ggml_type native; hyle::compute::GgufQuantizedType quant; bool packed;
@@ -447,10 +459,10 @@ inline constexpr Case cases[]{
   {"g63849d4a40ba2714",Kind::kHead,GGML_TYPE_Q4_K,hyle::compute::GgufQuantizedType::kQ4K,true,5120,248320,1,992,3},
   {"g641200859f3ef6f0",Kind::kProjection,GGML_TYPE_IQ4_NL,hyle::compute::GgufQuantizedType::kIq4Nl,true,6144,5120,1,995,1},
   {"g64b2778601fdfff0",Kind::kProjection,GGML_TYPE_F16,hyle::compute::GgufQuantizedType::kQ3K,false,2048,16,1,996,6},
-  {"g64b649142b8fea00",Kind::kExpert,GGML_TYPE_IQ1_XS,hyle::compute::GgufQuantizedType::kIq1Xs,true,3072,3584,896,1002,1},
+  {"g64b649142b8fea00",Kind::kExpert,kIq1XsNative,hyle::compute::GgufQuantizedType::kIq1Xs,true,3072,3584,896,1002,1},
   {"g656f90ddceb8c63e",Kind::kProjection,GGML_TYPE_IQ3_S,hyle::compute::GgufQuantizedType::kIq3S,true,6144,5120,1,1003,5},
   {"g66ae1db62c6ddc0b",Kind::kProjection,GGML_TYPE_BF16,hyle::compute::GgufQuantizedType::kQ3K,false,7168,6144,1,1008,1},
-  {"g67726d00dbb43297",Kind::kExpert,GGML_TYPE_IQ1_XXXS,hyle::compute::GgufQuantizedType::kIq1Xxxs,true,3584,3072,896,1009,1},
+  {"g67726d00dbb43297",Kind::kExpert,kIq1XxxsNative,hyle::compute::GgufQuantizedType::kIq1Xxxs,true,3584,3072,896,1009,1},
   {"g67c58a8e90432579",Kind::kProjection,GGML_TYPE_Q2_K,hyle::compute::GgufQuantizedType::kQ2K,true,2048,512,1,1010,1},
   {"g67ef7d138690ea08",Kind::kProjection,GGML_TYPE_IQ2_XS,hyle::compute::GgufQuantizedType::kIq2Xs,true,17408,5120,1,1011,8},
   {"g6a292ed9a5666e57",Kind::kProjection,GGML_TYPE_BF16,hyle::compute::GgufQuantizedType::kQ3K,false,8192,128,1,1019,1},
@@ -504,7 +516,7 @@ inline constexpr Case cases[]{
   {"g7f2da86691126654",Kind::kProjection,GGML_TYPE_BF16,hyle::compute::GgufQuantizedType::kQ3K,false,2048,16384,1,1178,1},
   {"g7f54483f2a2a6ece",Kind::kProjection,GGML_TYPE_IQ2_XS,hyle::compute::GgufQuantizedType::kIq2Xs,true,5120,17408,1,1179,10},
   {"g80c35be8d1aed6d1",Kind::kProjection,GGML_TYPE_Q8_0,hyle::compute::GgufQuantizedType::kQ8_0,true,16384,7168,1,1189,1},
-  {"g80d5d1325cc09981",Kind::kExpert,GGML_TYPE_IQ1_XXXS,hyle::compute::GgufQuantizedType::kIq1Xxxs,true,3072,3584,896,1190,1},
+  {"g80d5d1325cc09981",Kind::kExpert,kIq1XxxsNative,hyle::compute::GgufQuantizedType::kIq1Xxxs,true,3072,3584,896,1190,1},
   {"g815ffc47686cbbb6",Kind::kProjection,GGML_TYPE_BF16,hyle::compute::GgufQuantizedType::kQ3K,false,7168,33792,1,1191,1},
   {"g823930bf19efadfd",Kind::kProjection,GGML_TYPE_Q5_K,hyle::compute::GgufQuantizedType::kQ5K,true,5120,1024,1,1192,16},
   {"g8339ba4c5ae49e39",Kind::kProjection,GGML_TYPE_Q8_0,hyle::compute::GgufQuantizedType::kQ8_0,true,4096,16384,1,1208,1},
@@ -536,7 +548,7 @@ inline constexpr Case cases[]{
   {"g92073071a28d877e",Kind::kProjection,GGML_TYPE_Q6_K,hyle::compute::GgufQuantizedType::kQ6K,true,5120,12288,1,1324,16},
   {"g9243e9e0f356bb2d",Kind::kExpert,GGML_TYPE_IQ3_S,hyle::compute::GgufQuantizedType::kIq3S,true,4096,2048,256,1340,4},
   {"g928be938b4e3b0a7",Kind::kExpert,GGML_TYPE_Q3_K,hyle::compute::GgufQuantizedType::kQ3K,true,2048,8192,512,1344,1},
-  {"g928bf6ce5a12f293",Kind::kExpert,GGML_TYPE_IQ1_XXS,hyle::compute::GgufQuantizedType::kIq1Xxs,true,3584,3072,896,1345,1},
+  {"g928bf6ce5a12f293",Kind::kExpert,kIq1XxsNative,hyle::compute::GgufQuantizedType::kIq1Xxs,true,3584,3072,896,1345,1},
   {"g92b81a6de1360969",Kind::kProjection,GGML_TYPE_IQ1_S,hyle::compute::GgufQuantizedType::kIq1S,true,5120,17408,1,1346,7},
   {"g92d7bbff0d13a24b",Kind::kProjection,GGML_TYPE_Q6_K,hyle::compute::GgufQuantizedType::kQ6K,true,4096,1536,1,1353,5},
   {"g933745c93683dfa6",Kind::kProjection,GGML_TYPE_IQ1_M,hyle::compute::GgufQuantizedType::kIq1M,true,5120,6144,1,1358,4},
@@ -583,7 +595,7 @@ inline constexpr Case cases[]{
   {"ga297626a8a430173",Kind::kProjection,GGML_TYPE_Q8_0,hyle::compute::GgufQuantizedType::kQ8_0,true,6144,5120,1,1549,11},
   {"ga2b6a6b523c2feab",Kind::kProjection,GGML_TYPE_Q8_0,hyle::compute::GgufQuantizedType::kQ8_0,true,4096,1024,1,1560,12},
   {"ga2bc6343f0eb56e9",Kind::kProjection,GGML_TYPE_IQ4_XS,hyle::compute::GgufQuantizedType::kIq4Xs,true,5120,17408,1,1572,14},
-  {"ga2be3eedcbdb56e2",Kind::kExpert,GGML_TYPE_IQ1_XXS,hyle::compute::GgufQuantizedType::kIq1Xxs,true,3072,3584,896,1586,1},
+  {"ga2be3eedcbdb56e2",Kind::kExpert,kIq1XxsNative,hyle::compute::GgufQuantizedType::kIq1Xxs,true,3072,3584,896,1586,1},
   {"ga310c38520e0aa26",Kind::kExpert,GGML_TYPE_IQ2_XXS,hyle::compute::GgufQuantizedType::kIq2Xxs,true,2048,8192,512,1587,1},
   {"ga3182557f51b9086",Kind::kProjection,GGML_TYPE_Q6_K,hyle::compute::GgufQuantizedType::kQ6K,true,4096,1024,1,1588,7},
   {"ga3521e9eda0f9d3b",Kind::kHead,GGML_TYPE_BF16,hyle::compute::GgufQuantizedType::kQ3K,false,4096,129280,1,1595,1},
@@ -594,7 +606,7 @@ inline constexpr Case cases[]{
   {"ga524ce1dfe673c75",Kind::kProjection,GGML_TYPE_F32,hyle::compute::GgufQuantizedType::kQ3K,false,6144,256,1,1622,12},
   {"ga5657615f19c4386",Kind::kProjection,GGML_TYPE_IQ2_S,hyle::compute::GgufQuantizedType::kIq2S,true,5120,10240,1,1634,4},
   {"ga57d16a02e1fb400",Kind::kProjection,GGML_TYPE_Q4_0,hyle::compute::GgufQuantizedType::kQ4_0,true,5120,1024,1,1638,1},
-  {"ga5ebd3ecae344292",Kind::kExpert,GGML_TYPE_IQ1_XXXS,hyle::compute::GgufQuantizedType::kIq1Xxxs,true,8192,2048,512,1639,1},
+  {"ga5ebd3ecae344292",Kind::kExpert,kIq1XxxsNative,hyle::compute::GgufQuantizedType::kIq1Xxxs,true,8192,2048,512,1639,1},
   {"ga62cbaf1daea5dfc",Kind::kProjection,GGML_TYPE_IQ1_M,hyle::compute::GgufQuantizedType::kIq1M,true,5120,10240,1,1640,5},
   {"ga692bfb6abc9e765",Kind::kProjection,GGML_TYPE_Q5_K,hyle::compute::GgufQuantizedType::kQ5K,true,4096,12288,1,1645,4},
   {"ga702c90b3cebb5d0",Kind::kProjection,GGML_TYPE_BF16,hyle::compute::GgufQuantizedType::kQ3K,false,4096,128,1,1649,1},
@@ -633,7 +645,7 @@ inline constexpr Case cases[]{
   {"gb3839cd7a67d8b9e",Kind::kProjection,GGML_TYPE_BF16,hyle::compute::GgufQuantizedType::kQ3K,false,5120,10240,1,1765,1},
   {"gb385250d022da1ea",Kind::kExpert,GGML_TYPE_IQ3_S,hyle::compute::GgufQuantizedType::kIq3S,true,6144,2048,256,1766,2},
   {"gb5389f62d370dd86",Kind::kHead,GGML_TYPE_Q6_K,hyle::compute::GgufQuantizedType::kQ6K,true,4096,129280,1,1768,6},
-  {"gb5954d4f5bb321cb",Kind::kExpert,GGML_TYPE_IQ1_XXXS,hyle::compute::GgufQuantizedType::kIq1Xxxs,true,2048,8192,512,1774,1},
+  {"gb5954d4f5bb321cb",Kind::kExpert,kIq1XxxsNative,hyle::compute::GgufQuantizedType::kIq1Xxxs,true,2048,8192,512,1774,1},
   {"gb60aa5095000c24a",Kind::kExpert,GGML_TYPE_IQ2_XXS,hyle::compute::GgufQuantizedType::kIq2Xxs,true,8192,2048,512,1775,1},
   {"gb62dde7975a55b7d",Kind::kProjection,GGML_TYPE_IQ2_XXS,hyle::compute::GgufQuantizedType::kIq2Xxs,true,2048,4096,1,1776,1},
   {"gb6c1312cc57abe91",Kind::kExpert,GGML_TYPE_IQ3_XXS,hyle::compute::GgufQuantizedType::kIq3Xxs,true,3584,3072,896,1777,1},
@@ -676,7 +688,7 @@ inline constexpr Case cases[]{
   {"gcb76cc3741143750",Kind::kProjection,GGML_TYPE_Q5_K,hyle::compute::GgufQuantizedType::kQ5K,true,4096,2048,1,1972,9},
   {"gcc055da4c2e49c93",Kind::kProjection,GGML_TYPE_Q5_K,hyle::compute::GgufQuantizedType::kQ5K,true,8192,20480,1,1981,7},
   {"gcca58eaf2f010df6",Kind::kProjection,GGML_TYPE_Q8_0,hyle::compute::GgufQuantizedType::kQ8_0,true,5120,1024,1,1988,17},
-  {"gcd102ff92aa448da",Kind::kExpert,GGML_TYPE_IQ1_XS,hyle::compute::GgufQuantizedType::kIq1Xs,true,3584,3072,896,2005,1},
+  {"gcd102ff92aa448da",Kind::kExpert,kIq1XsNative,hyle::compute::GgufQuantizedType::kIq1Xs,true,3584,3072,896,2005,1},
   {"gcd43d35739a51fd9",Kind::kProjection,GGML_TYPE_Q5_K,hyle::compute::GgufQuantizedType::kQ5K,true,8192,2048,1,2006,7},
   {"gcd6f16110644d63b",Kind::kProjection,GGML_TYPE_Q6_K,hyle::compute::GgufQuantizedType::kQ6K,true,5120,1024,1,2013,14},
   {"gcf14803b20ce4544",Kind::kExpert,GGML_TYPE_IQ2_XS,hyle::compute::GgufQuantizedType::kIq2Xs,true,3584,3072,896,2027,1},

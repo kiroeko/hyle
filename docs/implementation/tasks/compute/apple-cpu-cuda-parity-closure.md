@@ -145,3 +145,12 @@ PASS，也不先与自研比较。各具名新失败仅一次source纠正，不�
 消费真实存在的vendor enum；缺失的IQ1_XS/XXS/XXXS使用明确不可用标记并冷拒绝，绝不定义
 假的Metal capability宏或运行COUNT类型的oracle。原Unsloth固定版本的Metal分派也没有三类
 native case，继续具名成熟缺口调查；本批不签这8合同或旧官方FP4资格，不写对应新自研数学。
+
+F3首批`516cff801`只在dependency hash审计失败（本地WindowsPath排序与已有portable字符串
+排序不同）；一次元数据纠正`1db9ad96`后三新锁值匹配，无公共工具改写/原依赖变更。
+Air增量构建通过，[34packed两入口记录](../../../../evidence/correctness/apple-parity-a2/README.md)
+全部通过：原格式/实际N/K/完整cold decoded矩阵/后续MatMul/双replay与适用坏索引。
+MoE明确原始E与已验E<=8，保留共享样本口径，不代签巨型256专家payload驻留。Input13/13、
+selector59/59工具测试通过；宽selector仅因新ownership/dependency记录，保留计划并按当前
+owner/实际影响选择，不触发其它CLOSED模块全集。三交付/license/offline集中A4，未PASS。
+统一Compute+Graph实现61,241行/260文件（不含tests/vendor）；没有新增self kernel或P1。
