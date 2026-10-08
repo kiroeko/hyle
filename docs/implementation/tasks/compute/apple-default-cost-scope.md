@@ -89,3 +89,12 @@ N768是多测的形状，不能冒称目标目录几何；改为共同Qwen24T fi
 动态weight的widen由hot input产生，不能当cold免费常量；immutable Graph常量必须另外
 按完整cold setup/资源/完整region终态口径裁决。当前没有WIN/default切换，仍保留既有
 合格成熟默认。正式P1等完整candidate固定，一次有预算，不因本批PASS扩成算子目录。
+
+性能consumer固定四域：BF16 router N512/K8192的M1/M16、plain grouped E8/N1024/K4096/
+T5/S8的BF16与F32权重。均为动态weight端口、两个ready resident输入/weight银行、两个
+可复用slot；共享不可变原bytes，两侧独立Context/stream与同等completion/result lease。
+两candidate原prepare/原MLX compiled数学、checked IDs、必要widen/布局/同步全部收费。
+构造/compile/暖机冷成本单列，hot从bind到成功终态和lease释放；无热读模型/重选Provider。
+仅本批consumer/contract与verify-only预检，暂不A/A或P1；immutable常量的cold方案不由
+dynamic结果外推。正式采用primary/placement、正反/分配序与固定n15/5%规则，原FP4
+决定并完整固定后才采样，不更改公共仪器。
