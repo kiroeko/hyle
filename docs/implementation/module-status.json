@@ -486,7 +486,7 @@
       "module": "compute_provider_cuda",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/cuda-final-u4-default-and-best-of.md",
-      "summary": "CUDA U4默认/能力分离已实现，两平台source/static/shared增量通过；有限三组AA FAIL，性能INCONCLUSIVE无新WIN，采用成熟ENGINEERING_DEFAULT。owner仍AUDITED，U5只审计具名独有资源/冗余自研清退，不追加采样或数学优化。"
+      "summary": "CUDA U4默认/能力分离已实现，两平台source/static/shared增量通过；有限三组AA FAIL，性能INCONCLUSIVE无新WIN，采用成熟ENGINEERING_DEFAULT。owner仍AUDITED；U5新的scope卡只读定界，完整有限FIX审计后才改绑，不非法降为SCOPED。"
     },
     {
       "module": "compute_route_cuda",
