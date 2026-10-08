@@ -107,12 +107,14 @@ def make_jobs(manifest):
             xml = '{logs}/' + profile['id'] + '.' + group['name'] + '.xml'
             target = sdk + '/' + group['target'] + ('' if linux else '.exe')
             # New binary/runtime = a new delivery check, not a rerun of all mathematical shapes.
-            add(group['name'], [target, '--gtest_filter=' + group['filter'], '--gtest_output=xml:' + xml],
+            runtime_job = add(group['name'], [target, '--gtest_filter=' + group['filter'], '--gtest_output=xml:' + xml],
                 xml=xml, timeout=300, system_path=not linux,
                 inputs=manifest['inputs'] + [target,
-                    relocated + ('/lib/libhyle*.a' if profile['static'] else '/lib/libhyle*.so*')
+                    relocated + ('/lib/libhyle*.a' if profile['static'] else '/lib/libhyle*.so.0.1.0')
                     if linux else sdk + '/*.dll'],
                 env={'OMP_NUM_THREADS': '1', 'MKL_NUM_THREADS': '1', 'HYLE_D5_QWEN35_FIXTURE': p['fixture']})
+            if linux and group['name'].endswith('-packed'):
+                runtime_job['isolated_filters'] = manifest['packed_filters'][group['name']]
         if profile['cpu']:
             xml = '{logs}/' + profile['id'] + '.cpu.xml'
             target = sdk + '/u3_mixed_cpu' + ('' if linux else '.exe')
@@ -280,8 +282,35 @@ class Runner:
                 else:
                     argv = [part.replace('{root}', self.root.as_posix()).replace('{logs}', child_logs(job, logs))
                             for part in job['argv']]
-                    rc = subprocess.run(argv, cwd=self.root, env=environment, stdout=stream,
-                        stderr=subprocess.STDOUT, timeout=job['timeout'], **flags).returncode
+                    if job.get('isolated_filters'):
+                        combined = ET.Element('testsuites'); observed = set(); rc = 0
+                        for index, flt in enumerate(job['isolated_filters']):
+                            child_xml = str(logs / (task + '-' + str(attempt) + '-part-' + str(index) + '.xml'))
+                            child_argument = child_logs(job, Path(child_xml))
+                            command = [('--gtest_filter=' + flt if a.startswith('--gtest_filter=') else
+                                '--gtest_output=xml:' + child_argument if a.startswith('--gtest_output=xml:') else a)
+                                for a in argv]
+                            remaining = job['timeout'] - (time.monotonic() - start)
+                            if remaining <= 0:
+                                raise ValueError('Original group timeout budget exhausted')
+                            rc = subprocess.run(command, cwd=self.root, env=environment, stdout=stream,
+                                stderr=subprocess.STDOUT, timeout=remaining, **flags).returncode
+                            if rc:
+                                break
+                            part = Path(child_xml); tree = ET.parse(part).getroot()
+                            names = {t.attrib['classname'] + '.' + t.attrib['name'] for t in tree.iter('testcase')}
+                            if names != {flt} or observed.intersection(names):
+                                raise ValueError('Isolated process changed the declared test union')
+                            observed.update(names); combined.extend(list(tree))
+                            row['proofs'][str(part)] = self.digest(part)
+                        if rc == 0:
+                            if observed != set(job['isolated_filters']):
+                                raise ValueError('Incomplete isolated test union')
+                            merged = local(job['xml'].replace('{logs}', logs.as_posix()), self.root)
+                            ET.ElementTree(combined).write(merged, encoding='utf-8', xml_declaration=True)
+                    else:
+                        rc = subprocess.run(argv, cwd=self.root, env=environment, stdout=stream,
+                            stderr=subprocess.STDOUT, timeout=job['timeout'], **flags).returncode
             row['status'] = 'PASS' if rc == 0 else 'FAIL'; row['returncode'] = rc
             if rc == 0 and job.get('xml'):
                 xml = local(job['xml'].replace('{logs}', logs.as_posix()), self.root)

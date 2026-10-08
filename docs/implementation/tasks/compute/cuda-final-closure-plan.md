@@ -60,6 +60,12 @@ Linux首次configure的shell分号重解析由[原样参数修复](../build/cuda
 Linux shared SDK完成后，任务内输入检查错误假设`.so`邻exe，实际40个HYLE库在搬移SDK的
 `lib`目录、由原RPATH加载。只纠正任务内hash的路径（static对应archive），不复制/改库，
 不改公共仪器或数学；已通过build/configure复用，未启动的运行项保持待验。
+Windows的WSL UNC视图不能直接stat Linux `.so` symlink；本批Hyle0.1.0指纹只取原
+`.so.0.1.0`实体payload，不把symlink误报为缺库。原symlink/RPATH/loader由实际Linux运行验收。
+Linux shared的34个packed合同合并进程在大词表Affine用例触及显存11979/12282MiB，
+原300秒timeout已FAIL并保留；进程退出，无后台遗留。唯一纠正按原34个完整case分新进程，
+同ID累计两次预算/原300秒组预算、shape/精度/误差门/必需分支不变；并集逐名核对后才PASS。
+未重建产品、不放宽数学、不把原timeout记作性能输赢；纠正仍FAIL则停止该项，不追加采样。
 仅用此入口执行剩余交付，旧本批启动脚本退出执行路径。它保留原数学全集，四个组合共享
 同一配方，命令通过后复用、失败后停止、记录/预算固定在 canonical task ID；换输出目录和
 文档提交不重置预算。不得用新脚本/ID 绕开失败停止。进度读 `delivery.py status` 与当前

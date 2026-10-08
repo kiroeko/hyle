@@ -104,6 +104,17 @@ class DeliveryControl(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'failed'):
             runner.perform('xml', self.root / 'logs')
 
+    def test_isolated_group_keeps_exact_union_in_one_task_budget(self):
+        code = "import pathlib,sys,xml.etree.ElementTree as E; f=sys.argv[1].split('=',1)[1]; p=sys.argv[2].split('xml:',1)[1]; r=E.Element('testsuites'); s=E.SubElement(r,'testsuite'); E.SubElement(s,'testcase',classname='Probe',name=f.split('.')[1],status='run'); E.ElementTree(r).write(p)"
+        job = {'id': 'isolated', 'inputs': ['a.cc'], 'timeout': 5,
+            'argv': [sys.executable, '-c', code, '--gtest_filter=Probe.*', '--gtest_output=xml:{logs}/group.xml'],
+            'xml': '{logs}/group.xml', 'isolated_filters': ['Probe.A', 'Probe.B']}
+        runner = delivery.Runner(self.root, [job], self.state)
+        self.assertEqual(runner.perform('isolated', self.root / 'logs'), 'RUN')
+        self.assertEqual(runner.history('isolated')[-1]['tests'], 2)
+        self.assertEqual(len(runner.history('isolated')), 1)
+        self.assertEqual(runner.perform('isolated', self.root / 'other'), 'REUSE')
+
     def test_fixed_manifest_connects_all_four_remaining_recipes(self):
         manifest = delivery.read(Path(__file__).with_name('delivery.json'))
         jobs = delivery.make_jobs(manifest)
