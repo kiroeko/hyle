@@ -1902,44 +1902,21 @@ TEST(AppleMoeFragments, D5OfficialDeepSeekFullMoeColdBoundary) {
     const auto workload = q::workload(
         *fragment.profile, c::WorkloadPhase::kDecode, fragment.region);
     std::size_t prepared = 0;
-    bool rejected = false;
     for (const auto &node : fragment.nodes) {
       if (node.operation.kind() == c::OperationKind::kView)
         continue;
-      const auto record_rejection = [&](const hyle::Status &status,
-                                         const char *phase) {
-        ASSERT_TRUE(node.operation.custom_as<c::model_ops::GroupedFloat4Linear>()
-                        .has_value()) << status.message();
-        ASSERT_TRUE(status.IsUnimplemented()) << status.message();
-        const auto name = fragment.profile->model_name;
-        const auto message = status.message();
-        std::printf("OFFICIAL_APPLE_REJECT entry=direct model=%.*s region=%llu "
-                    "nodes=%zu prepared=%zu operation=GroupedFloat4Linear phase=%s code=%d message=%.*s\n",
-                    int(name.size()), name.data(),
-                    static_cast<unsigned long long>(fragment.region), fragment.nodes.size(),
-                    prepared, phase, int(status.code()), int(message.size()), message.data());
-        rejected = true;
-      };
       std::vector<a::InputSpec> specs;
       for (auto id : node.inputs) {
         auto spec = a::input_spec(fragment.description(id));
-        if (!spec) {
-          record_rejection(spec.error(), "input_spec");
-          break;
-        }
+        ASSERT_TRUE(spec) << spec.error().message();
         specs.push_back(std::move(*spec));
       }
-      if (rejected || ::testing::Test::HasFatalFailure())
-        break;
       auto result = context.prepare(node.operation, specs, workload);
-      if (!result) {
-        record_rejection(result.error(), "prepare");
-        break;
-      }
+      ASSERT_TRUE(result) << result.error().message();
       ++prepared;
     }
-    EXPECT_TRUE(rejected) << "Official Apple MoE now prepares; qualify execution "
-                             "before replacing its rejection record.";
+    EXPECT_GT(prepared, 0U);
+    EXPECT_TRUE(context.close().ok());
   }
 }
 

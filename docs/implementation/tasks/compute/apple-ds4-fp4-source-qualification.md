@@ -101,3 +101,13 @@ BF16差异，step0进入动态量化后final两项不同（原值最大绝对差
 unfused F32 scale选项同样预先固定。CPU/CUDA原默认不变，所有whole门不变，无产品改动。
 两个main模型的参考都变化，因此两入口只验此两ID（Pro的ratio128/MoE此前未运行）；
 已通过的DSpark/原语/expert/矩阵不重跑。正式一次；若仍失败，明确未决而不继续换参考。
+
+`3e383611`两个完整main Direct2/2、Graph2/2通过，ratio0/4/128、原FP4 indexer及完整
+两种MoE分支均实际执行；原门/实际state反馈/reset保持。结合`885e354e`两个已通过
+官方三stage DSpark，四项完整官方witness两入口已有增量PASS证据，不冒称第二次全批。
+捕获源码归档，不在常态测试中择近或追加探查。此完整数值缺口关闭；交付/资源/P1仍待。
+
+后续同一公开SDK样例只链接hyle::graph，新增原tiny BF16 bits/零符号、canonical FP4
+专家+原FP8 activation、重复IDs、变输入replay、坏IDs失败/新槽恢复、close后旧lease；
+三形态集中一次验收并检查新增原source/TILELANG/CUTLASS许可证。两旧cold拒绝测试迁移
+为完整prepare/compile成功，只定向跑这两项，不重跑已经通过的模型矩阵。

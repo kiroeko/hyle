@@ -1964,16 +1964,8 @@ TEST(AppleGraphMoeFragments, D5OfficialDeepSeekFullMoeColdBoundary) {
     const auto workload = q::workload(
         *fragment.profile, c::WorkloadPhase::kDecode, fragment.region);
     auto result = ga::compile(context, full.graph, constants, {.workload = workload});
-    ASSERT_FALSE(result) << "Official Apple MoE now compiles; qualify execution "
-                            "before replacing its rejection record.";
-    ASSERT_TRUE(result.error().IsUnimplemented()) << result.error().message();
-    const auto name = fragment.profile->model_name;
-    const auto message = result.error().message();
-    std::printf("OFFICIAL_APPLE_REJECT entry=graph model=%.*s region=%llu "
-                "nodes=%zu operation=complete_moe code=%d message=%.*s\n",
-                int(name.size()), name.data(),
-                static_cast<unsigned long long>(fragment.region), fragment.nodes.size(),
-                int(result.error().code()), int(message.size()), message.data());
+    ASSERT_TRUE(result) << result.error().message();
+    EXPECT_TRUE(context.close().ok());
   }
 }
 

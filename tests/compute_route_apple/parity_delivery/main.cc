@@ -9,6 +9,7 @@
 #include <cmath>
 #include <cstdint>
 #include <cstdio>
+#include <cstring>
 #include <stdexcept>
 #include <string>
 #include <utility>
@@ -138,10 +139,65 @@ void artifact(bool graph) {
   expect(decoded, expected);
 }
 
+void fp4(bool graph) {
+  auto context = take(a::Context::create());
+  const auto stream = mx::default_stream(mx::Device::gpu);
+  const std::array roundtrip_desc{dense(c::DataType::kBFloat16, {2, 32})};
+  auto roundtrip = prepare(context, graph, c::model_ops::block_quantization_roundtrip(
+      c::model_ops::BlockQuantizationFormat::kFloat4E2M1Block32), roundtrip_desc);
+  std::vector<std::uint16_t> bits(64, 0x3f80), expected_bits = bits;
+  std::fill_n(bits.begin(), 32, std::uint16_t{0x0040});
+  for (int i = 0; i < 32; ++i) if (i & 1) bits[i] |= 0x8000;
+  bits[0] = 0; bits[1] = 0x8000; bits[2] = 1; bits[3] = 0x8001;
+  expected_bits = bits; expected_bits[2] = 0; expected_bits[3] = 0x8000;
+  auto tiny = run(roundtrip, std::array{ready(mx::view(
+      mx::array(bits.data(), {2, 32}, mx::uint16), mx::bfloat16, stream))});
+  if (tiny.dtype() != mx::bfloat16) throw std::runtime_error("FP4 stored dtype differs");
+  const auto *stored = tiny.data<std::uint16_t>();
+  if (!std::equal(expected_bits.begin(), expected_bits.end(), stored))
+    throw std::runtime_error("FP4 tiny or signed-zero bits differ");
+
+  const auto weight = take(c::float4_grouped_weight_description(2, 1, 128));
+  const auto spec = take(a::input_spec(weight));
+  std::vector<std::uint8_t> payload(take(weight.required_bytes()));
+  std::fill_n(payload.begin(), 64, std::uint8_t{0x22});
+  std::fill_n(payload.begin() + 64, 64, std::uint8_t{0x44});
+  for (int block = 0; block < 8; ++block) {
+    const float scale = block < 4 ? 0.125F : 0.25F;
+    std::memcpy(payload.data() + 128 + block * sizeof(float), &scale, sizeof(float));
+  }
+  auto carrier = mx::array(payload.data(), spec.shape, mx::uint8);
+  const std::array descriptions{weight, dense(c::DataType::kBFloat16, {1, 1, 128}),
+      dense(c::DataType::kInt32, {1, 3})};
+  auto expert = prepare(context, graph, c::model_ops::grouped_float4_linear(), descriptions);
+  const std::array<std::int32_t, 3> ids{1, 0, 1};
+  auto input = ready(mx::ones({1, 1, 128}, mx::bfloat16, stream));
+  auto selected = mx::array(ids.data(), {1, 3});
+  auto retained = run(expert, std::array{carrier, input, selected});
+  expect(retained, {64, 16, 64});
+  auto doubled = ready(mx::multiply(input, mx::array(2, mx::bfloat16), stream));
+  expect(run(expert, std::array{carrier, doubled, selected}), {128, 32, 128});
+  expect(retained, {64, 16, 64});
+  for (std::int32_t bad : {-1, 2}) {
+    const std::array<std::int32_t, 3> invalid{0, bad, 1};
+    auto invocation = take(expert.create_invocation());
+    check(invocation.bind(std::array{carrier, input, mx::array(invalid.data(), {1, 3})}));
+    auto failed = take(invocation.submit()).wait();
+    if (failed || failed.error().code() != hyle::StatusCode::OutOfRange)
+      throw std::runtime_error("FP4 checked expert failure was not propagated");
+  }
+  expect(run(expert, std::array{carrier, input, selected}), {64, 16, 64});
+  check(context.close());
+  expect(retained, {64, 16, 64});
+  stored = tiny.data<std::uint16_t>();
+  if (!std::equal(expected_bits.begin(), expected_bits.end(), stored))
+    throw std::runtime_error("FP4 tiny result lifetime differs");
+}
+
 int main() {
   try {
-    for (bool graph : {false, true}) { codecs(graph); artifact(graph); }
-    std::puts("PASS ordinary Direct/Graph Q4_K native matmul/replay, exact rows/failure/leases and mature NF4");
+    for (bool graph : {false, true}) { codecs(graph); artifact(graph); fp4(graph); }
+    std::puts("PASS ordinary Direct/Graph Q4_K, mature NF4, FP4 tiny bits/experts/replay/failure/leases");
     return 0;
   } catch (const std::exception &error) {
     std::fprintf(stderr, "FAIL %s\n", error.what());
