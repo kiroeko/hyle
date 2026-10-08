@@ -1061,7 +1061,9 @@ TEST(DeepSeekFp8Decode, AllCodesTailAndOutputGuard) {
                          scales[((i / k) / 128) * 2 + (i % k) / 128];
         if (bf16) expected = __bfloat162float(__float2bfloat16(expected));
         ASSERT_EQ(value, expected) << i;
-        if (expected == 0) EXPECT_EQ(std::signbit(value), std::signbit(expected)) << i;
+        if (expected == 0) {
+          EXPECT_EQ(std::signbit(value), std::signbit(expected)) << i;
+        }
       }
     }
   }
