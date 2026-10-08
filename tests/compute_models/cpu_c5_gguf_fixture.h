@@ -1,6 +1,8 @@
 #pragma once
 #if defined(HYLE_GGML_CPU_IQ1_EXTENSIONS) || defined(HYLE_GGML_CUDA_IQ1_EXTENSIONS) || defined(HYLE_COMPUTE_APPLE)
+#if defined(HYLE_GGML_CPU_IQ1_EXTENSIONS) || defined(HYLE_GGML_CUDA_IQ1_EXTENSIONS)
 #include "cpu_expanded_gguf_fixture.h"
+#endif
 #include "cpu_c4_model_branches.h"
 #include "cpu_c5_gguf_inputs.h"
 #include <limits>
