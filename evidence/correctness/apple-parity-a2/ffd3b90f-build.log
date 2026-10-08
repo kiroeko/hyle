@@ -1,0 +1,23 @@
+[0/2] Re-checking globbed directories...
+[1/6] cd /Users/kiro/hyle-scratch/d5-graph-825c41f8/src/compute_route_apple && /opt/homebrew/bin/cmake -E copy_if_different /Users/kiro/hyle-scratch/d5-graph-825c41f8/_deps/mlx-build/mlx/backend/metal/kernels/mlx.metallib /Users/kiro/hyle-scratch/d5-graph-825c41f8/bin/mlx.metallib
+[2/6] Building CXX object tests/compute_route_apple/CMakeFiles/hyle_compute_route_apple_test.dir/d5_qwen35_execution_test.cc.o
+FAILED: [code=1] tests/compute_route_apple/CMakeFiles/hyle_compute_route_apple_test.dir/d5_qwen35_execution_test.cc.o 
+/usr/bin/clang++ -DGGML_USE_METAL -DHYLE_COMPUTE_APPLE=1 -I/Users/kiro/hyle/include -I/Users/kiro/hyle-scratch/d5-graph-825c41f8/src/compute_ggml_runtime/source-d8ea95b566c61d43/src/../include -isystem /Users/kiro/Library/Caches/hyle/dependencies/v1/sources/metal_cpp-f567ed836e4c-3874e9e28e8e -isystem /Users/kiro/hyle-scratch/d5-graph-825c41f8/_deps/mlx-338da189e54c0743/source -isystem /Users/kiro/Library/Caches/hyle/dependencies/v1/sources/googletest-063de7e9578f-162765170ae6/googletest/include -isystem /Users/kiro/Library/Caches/hyle/dependencies/v1/sources/googletest-063de7e9578f-162765170ae6/googletest -O3 -DNDEBUG -std=c++23 -arch arm64 -mmacosx-version-min=14.4 -Wall -Wextra -Wpedantic -Werror -MD -MT tests/compute_route_apple/CMakeFiles/hyle_compute_route_apple_test.dir/d5_qwen35_execution_test.cc.o -MF tests/compute_route_apple/CMakeFiles/hyle_compute_route_apple_test.dir/d5_qwen35_execution_test.cc.o.d -o tests/compute_route_apple/CMakeFiles/hyle_compute_route_apple_test.dir/d5_qwen35_execution_test.cc.o -c /Users/kiro/hyle/tests/compute_route_apple/d5_qwen35_execution_test.cc
+In file included from /Users/kiro/hyle/tests/compute_route_apple/d5_qwen35_execution_test.cc:46:
+In file included from /Users/kiro/hyle/tests/compute_route_apple/../compute_route_apple/gguf_coverage_fixture.h:29:
+In file included from /Users/kiro/hyle/tests/compute_route_apple/../compute_route_apple/../compute_models/cpu_c5_gguf_fixture.h:3:
+/Users/kiro/hyle/tests/compute_route_apple/../compute_route_apple/../compute_models/cpu_expanded_gguf_fixture.h:4:10: fatal error: 'ggml-quants.h' file not found
+    4 | #include <ggml-quants.h>
+      |          ^~~~~~~~~~~~~~~
+1 error generated.
+[3/6] Building CXX object tests/graph_route_apple/CMakeFiles/hyle_graph_route_apple_test.dir/d5_qwen35_execution_test.cc.o
+FAILED: [code=1] tests/graph_route_apple/CMakeFiles/hyle_graph_route_apple_test.dir/d5_qwen35_execution_test.cc.o 
+/usr/bin/clang++ -DGGML_USE_METAL -DHYLE_COMPUTE_APPLE=1 -I/Users/kiro/hyle/include -I/Users/kiro/hyle-scratch/d5-graph-825c41f8/src/compute_ggml_runtime/source-d8ea95b566c61d43/src/../include -isystem /Users/kiro/Library/Caches/hyle/dependencies/v1/sources/metal_cpp-f567ed836e4c-3874e9e28e8e -isystem /Users/kiro/hyle-scratch/d5-graph-825c41f8/_deps/mlx-338da189e54c0743/source -isystem /Users/kiro/Library/Caches/hyle/dependencies/v1/sources/googletest-063de7e9578f-162765170ae6/googletest/include -isystem /Users/kiro/Library/Caches/hyle/dependencies/v1/sources/googletest-063de7e9578f-162765170ae6/googletest -O3 -DNDEBUG -std=c++23 -arch arm64 -mmacosx-version-min=14.4 -Wall -Wextra -Wpedantic -Werror -MD -MT tests/graph_route_apple/CMakeFiles/hyle_graph_route_apple_test.dir/d5_qwen35_execution_test.cc.o -MF tests/graph_route_apple/CMakeFiles/hyle_graph_route_apple_test.dir/d5_qwen35_execution_test.cc.o.d -o tests/graph_route_apple/CMakeFiles/hyle_graph_route_apple_test.dir/d5_qwen35_execution_test.cc.o -c /Users/kiro/hyle/tests/graph_route_apple/d5_qwen35_execution_test.cc
+In file included from /Users/kiro/hyle/tests/graph_route_apple/d5_qwen35_execution_test.cc:46:
+In file included from /Users/kiro/hyle/tests/graph_route_apple/../compute_route_apple/gguf_coverage_fixture.h:29:
+In file included from /Users/kiro/hyle/tests/graph_route_apple/../compute_route_apple/../compute_models/cpu_c5_gguf_fixture.h:3:
+/Users/kiro/hyle/tests/graph_route_apple/../compute_route_apple/../compute_models/cpu_expanded_gguf_fixture.h:4:10: fatal error: 'ggml-quants.h' file not found
+    4 | #include <ggml-quants.h>
+      |          ^~~~~~~~~~~~~~~
+1 error generated.
+ninja: build stopped: subcommand failed.

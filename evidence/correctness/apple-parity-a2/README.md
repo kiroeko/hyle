@@ -112,3 +112,43 @@ wide plan for ownership/dependency metadata is retained; unchanged existing
 dependency records and unchanged non-Apple function bodies are not a reason to
 rebuild every closed module. Native owning/consumer checks run on Air; remaining
 applicable delivery gates are pending, not PASS. No P1 has run.
+
+## Current559 GGUF batch: explicit remaining failures
+
+`ffd3b90f` [test build](ffd3b90f-build.log) stopped at an unnecessary CPU-only
+fixture include (`ggml-quants.h`). The single test-header correction excludes
+that include when the actual Apple target has no CPU/CUDA IQ1 extension.
+No fake capability macro is defined. [Candidateefa1ef48 build](efa1ef48-build.log) PASS.
+
+[Machine-readable summary](efa1ef48-gguf-summary.json): each ordinary entry
+runs559 parameterized cases,544 PASS,7 FAIL and8 IQ1-extension SKIP. Direct
+takes116.212s, Graph101.567s. Per-case results allow only failed IDs to be
+selected after a concrete correction; the full batch is not repeated.
+Original [Direct XML](efa1ef48-direct559.xml.gz)/[log](efa1ef48-direct559.log.gz)
+and [Graph XML](efa1ef48-graph559.xml.gz)/[log](efa1ef48-graph559.log.gz) are
+compressed without losing any result; summary includes rawSHA256. Skip is
+unqualified native support, not numerical PASS.
+
+The seven failures are the same in both entries:
+
+- Five Q4_K embeddings (`g395cdd5a9062e045`, `g59bf8a30bf125c3b`,
+  `g7be6f59665a8f0f2`, `g9e2b2e4f1be96db6`, `gbb21248aeb6e572d`) violate
+  the shared catalogue's exact decoded output. Original Metal
+  `kernels/dequantize.h::dequantize_q4_K` performs high-nibble `xb->d / 16.h`
+  before F32 conversion, whereas original CPU `dequantize_row_q4_K` first
+  widens the half scale. The error pattern is consistent with loss of the
+  scale's half subnormal bits. No tolerance is relaxed; mature-source precision
+  investigation remains required before choosing a complete exact carrier.
+- Q8_0 embedding/head (`g9d504e80cbfefb7f`, `ga846e3d718ee259b`),
+  N248320/K8192, exceed INT32_MAX encoded bytes. The fixture's unchecked flat
+  U8 shape cast becomes negative; the product also cold-rejects this otherwise
+  representable payload through its flat carrier cap. Native logical tensor/
+  MTL buffer indexing is not thereby proved defective. The finite correction
+  will use a checked multidimensional U8 carrier and obtain it consistently
+  through `input_spec`, preserving exact bytes and logical native program.
+
+An additional original Metal IQ1_XXXS candidate was located in
+Anemll/anemll-flash-llama.cpp at `a809594fd2035979ad2b7ef23398127c1d07e891`;
+its source/encoding/API qualification is pending. A README claim is not runtime
+proof and is not a reason to write a HYLE IQ1 algorithm. Official FP4's old
+small-scale domain mismatch remains open. A2/whole-goal verdict stays incomplete.

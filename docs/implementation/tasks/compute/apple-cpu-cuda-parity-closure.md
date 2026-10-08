@@ -154,3 +154,22 @@ MoE明确原始E与已验E<=8，保留共享样本口径，不代签巨型256专
 selector59/59工具测试通过；宽selector仅因新ownership/dependency记录，保留计划并按当前
 owner/实际影响选择，不触发其它CLOSED模块全集。三交付/license/offline集中A4，未PASS。
 统一Compute+Graph实现61,241行/260文件（不含tests/vendor）；没有新增self kernel或P1。
+
+## 当前559 GGUF批次与下一具名纠正
+
+`efa1ef48`两入口各559项：544 PASS/7 FAIL/8 IQ1扩展SKIP，Direct116.212s、Graph101.567s。
+[原压缩日志/XML/逐项摘要](../../../../evidence/correctness/apple-parity-a2/README.md)保留，
+不能将SKIP计数或仅静态枚举当覆盖。共有两项具名问题，定向纠正后只重跑对应失败ID：
+
+1. Q8_0 N248320/K8192 embedding/head原encoded bytes>INT32_MAX；夹具直接cast flat U8
+   shape导致负值，产品input_spec也有同一1-D cap。F1追加有限carrier FIX：小payload维持
+   原形状，大payload按完整encoded row映射checked二维U8，各axis在native int内；真实byte
+   count/row-contiguous import/逻辑dtype/原ggml program不变，两入口统一从input_spec上传。
+   当axis仍不可表达才OutOfRange；不截数据、不偷偷解成F16、更不做CPU模型fallback。
+2. 五项Q4_K embedding精确输出FAIL。原Metal函数高nibble使用half `d/16.h`，CPU原函数
+   先F32 widen，scale精度损失与错误位置一致；当前正式ggml原源码仍有这个表达式。需具名
+   成熟精确承载，不修改容差，不在F1自造shader或数学补丁。此项尚未有合格替换。
+
+另定位Anemll原Metal IQ1_XXXS候选`a809594fd2035979ad2b7ef23398127c1d07e891`，限定查实际
+encoding/源码/API/许可证及另外两种IQ1，未准入，不扩研究面。旧官方FP4两边界/预算不变。
+A2与whole goal仍未完成；已通过域不因上述问题重跑全集或P1。

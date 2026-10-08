@@ -1,0 +1,113 @@
+{
+  "candidate": "efa1ef4867c19e530cce49f589d4ad6ae2282bbb",
+  "entries": {
+    "direct": {
+      "tests": 559,
+      "passed": 544,
+      "failed": [
+        {
+          "id": "g395cdd5a9062e045",
+          "failure_count": 14694,
+          "first_message": "/Users/kiro/hyle/tests/compute_route_apple/../compute_models/d5_qwen38_24t_semantic_fragments.h:727\nExpected equality of these values:\n  actual[i]\n    Which is: 0.00160884857\n  expected[i]\n    Which is: 0.00165766478\n32\nGoogle Test trace:\n/Users/kiro/hyle/tests/compute_route_apple/d5_qwen35_execution_test.cc:1554: relative_l2=0.001130 peak_normalized_max=0.003222\n/Users/kiro/hyle/tests/compute_route_apple/d5_qwen35_execution_test.cc:1550: fragment output=0\n/Users/kiro/hyle/tests/compute_route_apple/d5_qwen35_execution_test.cc:1497: replay=0\n/Users/kiro/hyle/tests/compute_route_apple/d5_qwen35_execution_test.cc:1449: region=201654275\n/Users/kiro/hyle/tests/compute_route_apple/d5_qwen35_execution_test.cc:53: g395cdd5a9062e045\n"
+        },
+        {
+          "id": "g59bf8a30bf125c3b",
+          "failure_count": 14694,
+          "first_message": "/Users/kiro/hyle/tests/compute_route_apple/../compute_models/d5_qwen38_24t_semantic_fragments.h:727\nExpected equality of these values:\n  actual[i]\n    Which is: 0.00160884857\n  expected[i]\n    Which is: 0.00165766478\n32\nGoogle Test trace:\n/Users/kiro/hyle/tests/compute_route_apple/d5_qwen35_execution_test.cc:1554: relative_l2=0.001130 peak_normalized_max=0.003222\n/Users/kiro/hyle/tests/compute_route_apple/d5_qwen35_execution_test.cc:1550: fragment output=0\n/Users/kiro/hyle/tests/compute_route_apple/d5_qwen35_execution_test.cc:1497: replay=0\n/Users/kiro/hyle/tests/compute_route_apple/d5_qwen35_execution_test.cc:1449: region=201654275\n/Users/kiro/hyle/tests/compute_route_apple/d5_qwen35_execution_test.cc:53: g59bf8a30bf125c3b\n"
+        },
+        {
+          "id": "g7be6f59665a8f0f2",
+          "failure_count": 21940,
+          "first_message": "/Users/kiro/hyle/tests/compute_route_apple/../compute_models/d5_qwen38_24t_semantic_fragments.h:727\nExpected equality of these values:\n  actual[i]\n    Which is: 0.00160884857\n  expected[i]\n    Which is: 0.00165766478\n32\nGoogle Test trace:\n/Users/kiro/hyle/tests/compute_route_apple/d5_qwen35_execution_test.cc:1554: relative_l2=0.001084 peak_normalized_max=0.003160\n/Users/kiro/hyle/tests/compute_route_apple/d5_qwen35_execution_test.cc:1550: fragment output=0\n/Users/kiro/hyle/tests/compute_route_apple/d5_qwen35_execution_test.cc:1497: replay=0\n/Users/kiro/hyle/tests/compute_route_apple/d5_qwen35_execution_test.cc:1449: region=201654275\n/Users/kiro/hyle/tests/compute_route_apple/d5_qwen35_execution_test.cc:53: g7be6f59665a8f0f2\n"
+        },
+        {
+          "id": "g9d504e80cbfefb7f",
+          "failure_count": 1,
+          "first_message": "unknown file\nC++ exception with description \"[metal::malloc] Attempting to allocate 18446744071575961600 bytes which is greater than the maximum allowed buffer size of 9534832640 bytes.\" thrown in the test body.\n"
+        },
+        {
+          "id": "g9e2b2e4f1be96db6",
+          "failure_count": 27570,
+          "first_message": "/Users/kiro/hyle/tests/compute_route_apple/../compute_models/d5_qwen38_24t_semantic_fragments.h:727\nExpected equality of these values:\n  actual[i]\n    Which is: 0.00160884857\n  expected[i]\n    Which is: 0.00165766478\n32\nGoogle Test trace:\n/Users/kiro/hyle/tests/compute_route_apple/d5_qwen35_execution_test.cc:1554: relative_l2=0.001115 peak_normalized_max=0.003208\n/Users/kiro/hyle/tests/compute_route_apple/d5_qwen35_execution_test.cc:1550: fragment output=0\n/Users/kiro/hyle/tests/compute_route_apple/d5_qwen35_execution_test.cc:1497: replay=0\n/Users/kiro/hyle/tests/compute_route_apple/d5_qwen35_execution_test.cc:1449: region=201654275\n/Users/kiro/hyle/tests/compute_route_apple/d5_qwen35_execution_test.cc:53: g9e2b2e4f1be96db6\n"
+        },
+        {
+          "id": "ga846e3d718ee259b",
+          "failure_count": 1,
+          "first_message": "unknown file\nC++ exception with description \"[metal::malloc] Attempting to allocate 18446744071575961600 bytes which is greater than the maximum allowed buffer size of 9534832640 bytes.\" thrown in the test body.\n"
+        },
+        {
+          "id": "gbb21248aeb6e572d",
+          "failure_count": 18185,
+          "first_message": "/Users/kiro/hyle/tests/compute_route_apple/../compute_models/d5_qwen38_24t_semantic_fragments.h:727\nExpected equality of these values:\n  actual[i]\n    Which is: 0.00160884857\n  expected[i]\n    Which is: 0.00165766478\n32\nGoogle Test trace:\n/Users/kiro/hyle/tests/compute_route_apple/d5_qwen35_execution_test.cc:1554: relative_l2=0.001115 peak_normalized_max=0.003213\n/Users/kiro/hyle/tests/compute_route_apple/d5_qwen35_execution_test.cc:1550: fragment output=0\n/Users/kiro/hyle/tests/compute_route_apple/d5_qwen35_execution_test.cc:1497: replay=0\n/Users/kiro/hyle/tests/compute_route_apple/d5_qwen35_execution_test.cc:1449: region=201654275\n/Users/kiro/hyle/tests/compute_route_apple/d5_qwen35_execution_test.cc:53: gbb21248aeb6e572d\n"
+        }
+      ],
+      "skipped": [
+        "g64b649142b8fea00",
+        "g67726d00dbb43297",
+        "g80d5d1325cc09981",
+        "g928bf6ce5a12f293",
+        "ga2be3eedcbdb56e2",
+        "ga5ebd3ecae344292",
+        "gb5954d4f5bb321cb",
+        "gcd102ff92aa448da"
+      ],
+      "time_seconds": "116.212",
+      "xml_raw_sha256": "803f6925bc7757247489e6a90b0b8ae3eed22e921178697a3f73959967fed920",
+      "log_raw_sha256": "2feb2ddfc3e85c6e1dac9d976688983655afc34f3800c5c320a94bf49e37fc31"
+    },
+    "graph": {
+      "tests": 559,
+      "passed": 544,
+      "failed": [
+        {
+          "id": "g395cdd5a9062e045",
+          "failure_count": 14694,
+          "first_message": "/Users/kiro/hyle/tests/graph_route_apple/../compute_models/d5_qwen38_24t_semantic_fragments.h:727\nExpected equality of these values:\n  actual[i]\n    Which is: 0.00160884857\n  expected[i]\n    Which is: 0.00165766478\n32\nGoogle Test trace:\n/Users/kiro/hyle/tests/graph_route_apple/d5_qwen35_execution_test.cc:1593: relative_l2=0.001130 peak_normalized_max=0.003222\n/Users/kiro/hyle/tests/graph_route_apple/d5_qwen35_execution_test.cc:1576: replay=0\n/Users/kiro/hyle/tests/graph_route_apple/d5_qwen35_execution_test.cc:1530: region=201654275\n/Users/kiro/hyle/tests/graph_route_apple/d5_qwen35_execution_test.cc:53: g395cdd5a9062e045\n"
+        },
+        {
+          "id": "g59bf8a30bf125c3b",
+          "failure_count": 14694,
+          "first_message": "/Users/kiro/hyle/tests/graph_route_apple/../compute_models/d5_qwen38_24t_semantic_fragments.h:727\nExpected equality of these values:\n  actual[i]\n    Which is: 0.00160884857\n  expected[i]\n    Which is: 0.00165766478\n32\nGoogle Test trace:\n/Users/kiro/hyle/tests/graph_route_apple/d5_qwen35_execution_test.cc:1593: relative_l2=0.001130 peak_normalized_max=0.003222\n/Users/kiro/hyle/tests/graph_route_apple/d5_qwen35_execution_test.cc:1576: replay=0\n/Users/kiro/hyle/tests/graph_route_apple/d5_qwen35_execution_test.cc:1530: region=201654275\n/Users/kiro/hyle/tests/graph_route_apple/d5_qwen35_execution_test.cc:53: g59bf8a30bf125c3b\n"
+        },
+        {
+          "id": "g7be6f59665a8f0f2",
+          "failure_count": 21940,
+          "first_message": "/Users/kiro/hyle/tests/graph_route_apple/../compute_models/d5_qwen38_24t_semantic_fragments.h:727\nExpected equality of these values:\n  actual[i]\n    Which is: 0.00160884857\n  expected[i]\n    Which is: 0.00165766478\n32\nGoogle Test trace:\n/Users/kiro/hyle/tests/graph_route_apple/d5_qwen35_execution_test.cc:1593: relative_l2=0.001084 peak_normalized_max=0.003160\n/Users/kiro/hyle/tests/graph_route_apple/d5_qwen35_execution_test.cc:1576: replay=0\n/Users/kiro/hyle/tests/graph_route_apple/d5_qwen35_execution_test.cc:1530: region=201654275\n/Users/kiro/hyle/tests/graph_route_apple/d5_qwen35_execution_test.cc:53: g7be6f59665a8f0f2\n"
+        },
+        {
+          "id": "g9d504e80cbfefb7f",
+          "failure_count": 1,
+          "first_message": "unknown file\nC++ exception with description \"[metal::malloc] Attempting to allocate 18446744071575961600 bytes which is greater than the maximum allowed buffer size of 9534832640 bytes.\" thrown in the test body.\n"
+        },
+        {
+          "id": "g9e2b2e4f1be96db6",
+          "failure_count": 27570,
+          "first_message": "/Users/kiro/hyle/tests/graph_route_apple/../compute_models/d5_qwen38_24t_semantic_fragments.h:727\nExpected equality of these values:\n  actual[i]\n    Which is: 0.00160884857\n  expected[i]\n    Which is: 0.00165766478\n32\nGoogle Test trace:\n/Users/kiro/hyle/tests/graph_route_apple/d5_qwen35_execution_test.cc:1593: relative_l2=0.001115 peak_normalized_max=0.003208\n/Users/kiro/hyle/tests/graph_route_apple/d5_qwen35_execution_test.cc:1576: replay=0\n/Users/kiro/hyle/tests/graph_route_apple/d5_qwen35_execution_test.cc:1530: region=201654275\n/Users/kiro/hyle/tests/graph_route_apple/d5_qwen35_execution_test.cc:53: g9e2b2e4f1be96db6\n"
+        },
+        {
+          "id": "ga846e3d718ee259b",
+          "failure_count": 1,
+          "first_message": "unknown file\nC++ exception with description \"[metal::malloc] Attempting to allocate 18446744071575961600 bytes which is greater than the maximum allowed buffer size of 9534832640 bytes.\" thrown in the test body.\n"
+        },
+        {
+          "id": "gbb21248aeb6e572d",
+          "failure_count": 18185,
+          "first_message": "/Users/kiro/hyle/tests/graph_route_apple/../compute_models/d5_qwen38_24t_semantic_fragments.h:727\nExpected equality of these values:\n  actual[i]\n    Which is: 0.00160884857\n  expected[i]\n    Which is: 0.00165766478\n32\nGoogle Test trace:\n/Users/kiro/hyle/tests/graph_route_apple/d5_qwen35_execution_test.cc:1593: relative_l2=0.001115 peak_normalized_max=0.003213\n/Users/kiro/hyle/tests/graph_route_apple/d5_qwen35_execution_test.cc:1576: replay=0\n/Users/kiro/hyle/tests/graph_route_apple/d5_qwen35_execution_test.cc:1530: region=201654275\n/Users/kiro/hyle/tests/graph_route_apple/d5_qwen35_execution_test.cc:53: gbb21248aeb6e572d\n"
+        }
+      ],
+      "skipped": [
+        "g64b649142b8fea00",
+        "g67726d00dbb43297",
+        "g80d5d1325cc09981",
+        "g928bf6ce5a12f293",
+        "ga2be3eedcbdb56e2",
+        "ga5ebd3ecae344292",
+        "gb5954d4f5bb321cb",
+        "gcd102ff92aa448da"
+      ],
+      "time_seconds": "101.567",
+      "xml_raw_sha256": "119dfb2bb50c26dd509129cbb7c313be9b0792d0c16e20f7c6c45020b5a3f6a5",
+      "log_raw_sha256": "8e088f6ae43d6d519d7fd8c323bbfc4e9caca8e0b8f39d56df7bab7ad2fbff42"
+    }
+  }
+}
