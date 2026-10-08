@@ -39,6 +39,7 @@ inline constexpr auto flash_profile=[] {
 struct Model {
   const c::ModelArtifactProfileDescription *profile;
   std::int64_t hidden,markov,heads,query_rank,groups;
+  bool fused_scale_accumulation = true;
   d5_moe_execution_cases::Case main_case() const {
     auto result=d5_moe_execution_cases::kCases[hidden==7168?3:4];
     result.profile=profile;return result;
@@ -60,6 +61,7 @@ inline Fragment target_hidden(const Model &model) {
   for(auto &mean:means)mean=hc_mean(f,f.input(dense({1,4,model.hidden})));
   auto joined=ds::concat(f,ds::concat(f,means[0],means[1],1),means[2],1);
   auto projection=fp8::model_linear(f,joined,model.hidden,3*model.hidden,401,true);
+  projection.fused_scale_accumulation = model.fused_scale_accumulation;
   auto scale=sem::oracle::scale(model.hidden);
   auto normalized=ds::norm(f,projection.output,scale);
   f.outputs={joined,projection.output,normalized};f.bfloat_chain_outputs={0,1,2};
@@ -183,6 +185,7 @@ inline Fragment cache_prefill(const Model &model,std::int64_t tokens) {
   std::vector<std::int32_t> positions(tokens);std::iota(positions.begin(),positions.end(),0);
   auto pos=f.constant(dense({tokens},c::DataType::kInt32),bytes(positions));
   auto projection=fp8::model_linear(f,x,512,model.hidden,443,true);
+  projection.fused_scale_accumulation = model.fused_scale_accumulation;
   auto scales=sem::oracle::scale(512);
   auto keys=ds::norm(f,projection.output,scales);
   keys=core::reshape(f,ds::rope(f,core::reshape(f,keys,{1,tokens,1,512}),pos,false),{tokens,512});
@@ -218,13 +221,16 @@ inline Fragment draft_attention(const Model &model,std::span<const float> initia
   auto mask=f.input(dense({block,window+block}));
   auto qscale=sem::oracle::scale(model.query_rank),kscale=sem::oracle::scale(512);
   auto qa=fp8::model_linear(f,x,model.query_rank,model.hidden,439,true);
+  qa.fused_scale_accumulation = model.fused_scale_accumulation;
   auto qr=ds::norm(f,qa.output,qscale);
   auto qb=fp8::model_linear(f,qr,model.heads*512,model.query_rank,449,true);
+  qb.fused_scale_accumulation = model.fused_scale_accumulation;
   auto q=ds::query_norm(f,core::reshape(f,qb.output,{1,block,model.heads,512}));
   q=ds::rope(f,q,draft_positions,false);
   // Main and draft use the same wkv parameter. One batched original linear
   // preserves per-row activation quantization while binding that weight once.
   auto kv=fp8::model_linear(f,ds::concat(f,main,x,0),512,model.hidden,443,true);
+  kv.fused_scale_accumulation = model.fused_scale_accumulation;
   auto all=ds::norm(f,kv.output,kscale);
   auto mk=ds::rope(f,core::reshape(f,ds::slice(f,all,0,0,1),{1,1,1,512}),main_position,false);
   mk=ds::cache_quant(f,core::reshape(f,mk,{1,512}),false);
@@ -248,6 +254,7 @@ inline Fragment draft_attention(const Model &model,std::span<const float> initia
   auto oa=ds::bfloat_boundary(f,f.one(c::model_ops::grouped_matmul(),{prepared.value,grouped,ids}));
   auto ob=fp8::model_linear(f,core::reshape(f,oa,{block,model.groups*1024}),
                           model.hidden,model.groups*1024,457,true);
+  ob.fused_scale_accumulation = model.fused_scale_accumulation;
   f.outputs={cache,attended,inverse,oa,ob.output};f.state_ports={{2,0}};
   f.bfloat_chain_outputs={0,1,2,3,4};
   auto evaluate=[model,qa,qb,kv,ob,wa,qscale,kscale,sinks,scale,group_ids]

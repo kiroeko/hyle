@@ -29,7 +29,14 @@ TEST_P(HYLE_APPLE_BRANCHES, DsparkTargetPrefillAndFiveTokenAttentionCache) {
   cpu_c4_model_branches::check_attention(model, run_q24_semantic_fragment);
 }
 INSTANTIATE_TEST_SUITE_P(CurrentOfficial, HYLE_APPLE_BRANCHES,
-    ::testing::ValuesIn(cpu_c4_model_branches::models),
+    ::testing::ValuesIn([] {
+      auto models = cpu_c4_model_branches::models;
+      // Same qualified native block program as the existing Apple GLM
+      // consumer: separate F32 product and sum, fixed before building all
+      // independent references; no per-element choice of a closer answer.
+      for (auto &model : models) model.fused_scale_accumulation = false;
+      return models;
+    }()),
     [](const auto &info) { return info.param.hidden == 7168 ? "Pro0813" : "Flash0731"; });
 
 TEST(HYLE_APPLE_MTP, QwenQ4NamedSidecarUsesActualQ3Q4Q6AndCompleteMtp) {

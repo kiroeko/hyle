@@ -217,3 +217,12 @@ codec冒充Metal oracle。primitive codec/equation证据继续保留，原backen
 两入口测试按fixture.phase绑定真实prefill/decode；本批只增测试，尚未PASS。仅新九项集中
 build2/test1，既有559/34/45和185/157证据不重跑。官方FP4 main/完整官方DSpark专家依赖
 待决精确保真方案，未被本批侧车MXFP4或FP8 attention替代。
+
+`b229512d`新九项两入口均7 PASS/2 FAIL，Qwen与Flash两sidecar完整MTP全部通过。具名
+测试接线漏传output ordinal，导致共享C4的inverse-RoPE检查未生效；`6aa5ca5f`只纠正
+这项并复跑两个失败ID，仍有残余。原结果保留；不将正确启用checker签数值PASS。
+固定源码差异：C4默认ModelLinear独立参考用了FMA，而本路线既有F45.6已经实测锁定
+同一原MLX block128程序的unfused F32 scale product/sum。有限纠正把该选项显式传入C4
+model，CPU/CUDA仍默认fused，Apple在构造所有reference前固定unfused；不逐值选择答案，
+不改产品、不改FP8/BF16/storage/tolerance。只复验两个失败ID。inverse-RoPE的CPU trig
+逐位检查若仍不符合原GPU程序，则保存具名合同问题作有限source定界，不无限测法/放宽总门。
