@@ -147,12 +147,14 @@ inline ValueId rope(Fragment &f,ValueId x,ValueId pos,bool inverse=false) {
 inline std::vector<float> rope_ref(std::vector<float> x,std::int64_t count,
                                   std::span<const std::int32_t> positions,bool inverse=false) {
   const auto freq=ds::rope_frequencies(false,inverse);
-  for(std::size_t token=0;token<positions.size();++token)for(std::int64_t head=0;head<count;++head)
+  for(std::size_t token=0;token<positions.size();++token)for(std::int64_t head=0;head<count;++head) {
     for(std::int64_t pair=0;pair<32;++pair) {
       const auto i=(token*count+head)*512+448+2*pair;
       const float angle=positions[token]*freq[pair],a=x[i],b=x[i+1];
       x[i]=a*std::cos(angle)-b*std::sin(angle);x[i+1]=a*std::sin(angle)+b*std::cos(angle);
-    }return x;
+    }
+  }
+  return x;
 }
 using AttentionReference=std::function<moe::ReferenceOutputs(std::span<const float>,std::span<const float>,
     std::span<const float>,std::int32_t)>;
@@ -230,7 +232,8 @@ inline Fragment expert(const Model &model,int stage,moe::MoeReference *reference
     for(std::int64_t token=0;token<t;++token)for(std::int64_t col=0;col<h;++col) {
       float sum=0;for(int slot=0;slot<6;++slot)sum+=routed[(token*6+slot)*h+col]*weights[token*6+slot];
       result[token*h+col]=sum+shared[token*h+col];
-    }return {std::move(result)};
+    }
+    return {std::move(result)};
   };return f;
 }
 
