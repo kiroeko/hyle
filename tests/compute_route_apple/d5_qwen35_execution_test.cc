@@ -50,6 +50,7 @@
 #include "../compute_models/cpu_c4_qwen_mtp.h"
 #include "../compute_models/cpu_c4_flash_sidecars.h"
 #include "dspark_native_reference.h"
+#include "fp4_fidelity_test_support.h"
 #undef HYLE_C4_QUANTIZED_REFERENCE
 #undef HYLE_C4_GROUPED_REFERENCE
 
@@ -143,6 +144,11 @@ TEST(AppleParityDirect, ExactQ4SelectedRowsKeepLeasesAndReportBadIndices) {
     std::vector<hyle::compute::apple::InputSpec> specs;
     for(const auto &description:descriptions) specs.push_back(hyle::compute::apple::input_spec(description).value());
     return context.prepare(operation,specs);
+  });
+}
+TEST(AppleParityDirect, Fp4KeepsAllFiniteBfloatBitsMidpointsAndReplay) {
+  apple_fp4_fidelity_test::check([](const auto &context, auto operation, const auto &description) {
+    return context.prepare(operation,std::array{hyle::compute::apple::input_spec(description).value()});
   });
 }
 

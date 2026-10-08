@@ -50,6 +50,7 @@
 #include "../compute_models/cpu_c4_qwen_mtp.h"
 #include "../compute_models/cpu_c4_flash_sidecars.h"
 #include "../compute_route_apple/dspark_native_reference.h"
+#include "../compute_route_apple/fp4_fidelity_test_support.h"
 #undef HYLE_C4_QUANTIZED_REFERENCE
 #undef HYLE_C4_GROUPED_REFERENCE
 
@@ -149,6 +150,17 @@ TEST(AppleParityGraph, ExactQ4SelectedRowsKeepLeasesAndReportBadIndices) {
     auto status=builder.publish(builder.result(node).value());
     if(!status.ok()) return hyle::Result<hyle::compute::apple::Program>{std::unexpected(std::move(status))};
     return hyle::graph::apple::compile(context,std::move(builder).finish().value());
+  });
+}
+TEST(AppleParityGraph, Fp4KeepsAllFiniteBfloatBitsMidpointsAndReplay) {
+  apple_fp4_fidelity_test::check([](const auto &context, auto operation, const auto &description) {
+    auto builder=hyle::graph::GraphBuilder::create().value();
+    auto input=builder.input(description).value();
+    auto node=builder.add_node(operation,std::array{input}).value();
+    auto output=builder.result(node,0).value();
+    builder.publish(output).IgnoreError();
+    auto graph=std::move(builder).finish().value();
+    return hyle::graph::apple::compile(context,graph);
   });
 }
 

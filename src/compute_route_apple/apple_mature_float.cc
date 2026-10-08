@@ -17,6 +17,68 @@ namespace mx = mlx::core;
 namespace {
 constexpr auto kMode = Float8ScaleMode::kFloat32Block128;
 
+mx::array fp4_roundtrip(const mx::array &input, mx::Stream s) {
+  auto shape = input.shape();
+  shape.back() /= 32;
+  shape.push_back(32);
+  auto bits = mx::reshape(mx::astype(mx::view(input, mx::uint16, s), mx::uint32, s), shape, s);
+  auto magnitude = mx::bitwise_and(bits, mx::array(std::uint32_t{0x7fff}), s);
+  // BF16 nonnegative finite bit order is numerical order. The floor is the
+  // original DS4 6*2^-126, exactly represented by BF16 0x01c0.
+  auto maximum = mx::maximum(mx::max(magnitude, -1, true, s),
+      mx::array(std::uint32_t{0x01c0}), s);
+  auto amax = mx::view(mx::left_shift(maximum, mx::array(std::uint32_t{16}), s), mx::float32, s);
+  auto scale_bits = mx::view(mx::divide(amax, mx::array(6.0F), s), mx::uint32, s);
+  auto exponent = mx::add(mx::right_shift(scale_bits, mx::array(std::uint32_t{23}), s),
+      mx::astype(mx::not_equal(mx::bitwise_and(scale_bits, mx::array(std::uint32_t{0x7fffff}), s),
+          mx::array(std::uint32_t{0}), s), mx::uint32, s), s);
+  auto scale = mx::view(mx::left_shift(exponent, mx::array(std::uint32_t{23}), s), mx::float32, s);
+  auto x = mx::view(mx::left_shift(magnitude, mx::array(std::uint32_t{16}), s), mx::float32, s);
+  auto normalized = mx::divide(x, scale, s);
+  // Preserve only the low-scale domain where flushing BF16 subnormal input
+  // changes E2M1 rounding. Integer significands remain small and exact.
+  auto source_exp = mx::right_shift(magnitude, mx::array(std::uint32_t{7}), s);
+  auto significand = mx::bitwise_or(mx::bitwise_and(magnitude, mx::array(std::uint32_t{127}), s),
+      mx::where(mx::equal(source_exp, mx::array(std::uint32_t{0}), s),
+          mx::array(std::uint32_t{0}), mx::array(std::uint32_t{128}), s), s);
+  auto shift = mx::subtract(mx::minimum(mx::maximum(source_exp, mx::array(std::uint32_t{1}), s),
+      mx::array(std::uint32_t{4}), s), mx::array(std::uint32_t{1}), s);
+  auto exact_low = mx::multiply(mx::astype(mx::left_shift(significand, shift, s), mx::float32, s),
+      mx::where(mx::equal(exponent, mx::array(std::uint32_t{1}), s),
+          mx::array(1.0F / 128), mx::array(1.0F / 256), s), s);
+  normalized = mx::minimum(mx::where(mx::less_equal(exponent, mx::array(std::uint32_t{2}), s),
+      exact_low, normalized, s), mx::array(6.0F), s);
+  // Original DS4 dsv4_e2m1fn_dequant: eight magnitudes, nearest distance,
+  // even-code tie. This is its tensor translation, not a new quantizer.
+  constexpr std::array<float, 8> values{0, .5F, 1, 1.5F, 2, 3, 4, 6};
+  auto best = mx::zeros(shape, mx::uint32, s);
+  auto distance = normalized;
+  for (std::uint32_t code = 1; code < values.size(); ++code) {
+    auto difference = mx::abs(mx::subtract(normalized, mx::array(values[code]), s), s);
+    auto choose = mx::less(difference, distance, s);
+    if ((code & 1) == 0)
+      choose = mx::logical_or(choose, mx::logical_and(mx::equal(difference, distance, s),
+          mx::not_equal(mx::bitwise_and(best, mx::array(std::uint32_t{1}), s),
+              mx::array(std::uint32_t{0}), s), s), s);
+    best = mx::where(choose, mx::array(code), best, s);
+    distance = mx::where(choose, difference, distance, s);
+  }
+  const mx::array table(values.data(), {8}, mx::float32);
+  auto dequant = mx::multiply(mx::take(table, best, 0, s), scale, s);
+  auto output = mx::view(dequant, mx::uint32, s);
+  auto half_minimum = mx::logical_and(mx::equal(exponent, mx::array(std::uint32_t{1}), s),
+      mx::equal(best, mx::array(std::uint32_t{1}), s), s);
+  output = mx::where(half_minimum, mx::array(std::uint32_t{0x00400000}), output, s);
+  output = mx::where(mx::equal(best, mx::array(std::uint32_t{0}), s), mx::array(std::uint32_t{0}), output, s);
+  auto sign = mx::left_shift(mx::bitwise_and(bits, mx::array(std::uint32_t{0x8000}), s),
+      mx::array(std::uint32_t{16}), s);
+  // E2M1 times a power2 is exactly BF16-representable (or infinity). Keep
+  // the original stored bits, including subnormals and zero sign, on GPU.
+  output = mx::astype(mx::right_shift(mx::bitwise_or(output, sign, s),
+      mx::array(std::uint32_t{16}), s), mx::uint16, s);
+  return mx::view(mx::reshape(output, input.shape(), s), mx::bfloat16, s);
+}
+
 // These are original MLX conversion/arithmetic nodes, traced once as part of
 // its native region. No HYLE conversion kernel or hot graph interpreter.
 mx::array decode(const mx::array &codes, mx::Stream s) {
@@ -154,7 +216,7 @@ Result<std::vector<mx::array>> lower_mlx_float(
     const auto type = output.data_type() == DataType::kBFloat16 ? mx::bfloat16 : mx::float32;
     if (const auto roundtrip = operation.custom_as<model_ops::BlockQuantizationRoundtrip>()) {
       if (roundtrip->format == model_ops::BlockQuantizationFormat::kFloat4E2M1Block32)
-        return std::unexpected(Status::Unimplemented("Apple MXFP4 small-scale roundtrip is not qualified"));
+        return std::vector{fp4_roundtrip(inputs[0], s)};
       const auto group = roundtrip->format == model_ops::BlockQuantizationFormat::kFloat8E4M3Block64 ? 64 : 128;
       auto q = quantize(inputs[0], group, 1.0e-4F, true, s);
       return std::vector{mx::astype(mx::reshape(
