@@ -1,6 +1,6 @@
 #pragma once
 #if defined(HYLE_GGML_CPU_IQ1_EXTENSIONS) || defined(HYLE_GGML_CUDA_IQ1_EXTENSIONS) || defined(HYLE_COMPUTE_APPLE)
-#if defined(HYLE_GGML_CPU_IQ1_EXTENSIONS) || defined(HYLE_GGML_CUDA_IQ1_EXTENSIONS)
+#if defined(HYLE_GGML_CPU_IQ1_EXTENSIONS) || defined(HYLE_GGML_CUDA_IQ1_EXTENSIONS) || defined(HYLE_GGML_METAL_IQ1_EXTENSIONS)
 #include "cpu_expanded_gguf_fixture.h"
 #endif
 #include "cpu_c4_model_branches.h"
@@ -51,11 +51,20 @@ struct Bank {
     const auto *traits=ggml_get_type_traits(type);
 #if defined(HYLE_COMPUTE_APPLE) && !defined(HYLE_GGML_CPU_IQ1_EXTENSIONS) && !defined(HYLE_GGML_CUDA_IQ1_EXTENSIONS)
     if(item.packed) {
+      if (item.native == GGML_TYPE_IQ1_XS || item.native == GGML_TYPE_IQ1_XXS ||
+          item.native == GGML_TYPE_IQ1_XXXS) {
+        const auto seed=cpu_expanded_gguf_fixture::weights({item.quant,type},prototypes);
+        const auto seed_stride=ggml_row_size(type,256);
+        for(std::int64_t row=0;row<prototypes;++row)
+          for(std::size_t offset=0;offset<stride;offset+=seed_stride)
+            std::memcpy(packed.data()+row*stride+offset,seed.data()+row*seed_stride,seed_stride);
+      } else {
       auto source=d5_gguf_test::values(prototypes,k,37);
       std::vector<float> importance(k,1.f);
       const auto written=ggml_quantize_chunk(type,source.data(),packed.data(),0,prototypes,k,
           ggml_quantize_requires_imatrix(type)?importance.data():nullptr);
       if(written!=packed.size())throw std::runtime_error("original Metal fixture codec size differs");
+      }
     } else {
 #else
     if(item.packed && static_cast<unsigned>(item.quant)>=static_cast<unsigned>(c::GgufQuantizedType::kQ4_0)) {

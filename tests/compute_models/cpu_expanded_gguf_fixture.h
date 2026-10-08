@@ -26,7 +26,7 @@ inline constexpr std::array cases{
     Case{c::GgufQuantizedType::kIq2S, GGML_TYPE_IQ2_S},
     Case{c::GgufQuantizedType::kIq1S, GGML_TYPE_IQ1_S},
     Case{c::GgufQuantizedType::kIq1M, GGML_TYPE_IQ1_M},
-#if defined(HYLE_GGML_CPU_IQ1_EXTENSIONS) || defined(HYLE_GGML_CUDA_IQ1_EXTENSIONS)
+#if defined(HYLE_GGML_CPU_IQ1_EXTENSIONS) || defined(HYLE_GGML_CUDA_IQ1_EXTENSIONS) || defined(HYLE_GGML_METAL_IQ1_EXTENSIONS)
     Case{c::GgufQuantizedType::kIq1Xxxs, GGML_TYPE_IQ1_XXXS},
     Case{c::GgufQuantizedType::kIq1Xxs, GGML_TYPE_IQ1_XXS},
     Case{c::GgufQuantizedType::kIq1Xs, GGML_TYPE_IQ1_XS},
@@ -81,7 +81,7 @@ inline std::vector<std::byte> weights(Case item, std::int64_t rows) {
               static_cast<std::uint16_t>(scale & 0xf000)};
           std::memcpy(b.scales, sc.data(), sizeof(sc));
         }); break;
-#if defined(HYLE_GGML_CPU_IQ1_EXTENSIONS) || defined(HYLE_GGML_CUDA_IQ1_EXTENSIONS)
+#if defined(HYLE_GGML_CPU_IQ1_EXTENSIONS) || defined(HYLE_GGML_CUDA_IQ1_EXTENSIONS) || defined(HYLE_GGML_METAL_IQ1_EXTENSIONS)
       case GGML_TYPE_IQ1_XXXS:
         block<block_iq1_xxxs>(p, [&](auto &b) { b.d = scale; std::fill(std::begin(b.qs), std::end(b.qs), 0x12); }); break;
       case GGML_TYPE_IQ1_XXS:

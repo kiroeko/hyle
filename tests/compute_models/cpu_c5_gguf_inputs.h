@@ -4,7 +4,7 @@ namespace cpu_c5_inputs {
 
 // Demand data is shared. A missing vendor enum is an explicit unavailable
 // carrier, never a fabricated backend capability or executable COUNT tensor.
-#if defined(HYLE_GGML_CPU_IQ1_EXTENSIONS) || defined(HYLE_GGML_CUDA_IQ1_EXTENSIONS)
+#if defined(HYLE_GGML_CPU_IQ1_EXTENSIONS) || defined(HYLE_GGML_CUDA_IQ1_EXTENSIONS) || defined(HYLE_GGML_METAL_IQ1_EXTENSIONS)
 inline constexpr ggml_type kIq1XsNative = GGML_TYPE_IQ1_XS;
 inline constexpr ggml_type kIq1XxsNative = GGML_TYPE_IQ1_XXS;
 inline constexpr ggml_type kIq1XxxsNative = GGML_TYPE_IQ1_XXXS;

@@ -23,7 +23,7 @@ namespace {
 namespace c = hyle::compute;
 namespace metal = c::ggml_metal;
 
-TEST(GgmlMetalProgram, CpuFormatPortDoesNotQualifyGpuMatrices) {
+TEST(GgmlMetalProgram, OriginalNarrowMetalCarrierAdmitsMatricesWithoutInventingGetRows) {
   const auto activation = c::TensorDesc::dense(c::DataType::kFloat32,
       std::array<std::int64_t, 2>{2, 256}).value();
   const auto grouped_activation = c::TensorDesc::dense(c::DataType::kFloat32,
@@ -35,10 +35,10 @@ TEST(GgmlMetalProgram, CpuFormatPortDoesNotQualifyGpuMatrices) {
     SCOPED_TRACE(static_cast<int>(type));
     const auto weight = c::gguf_weight_description(type, c::DataType::kFloat32, 256, 3).value();
     const std::array inputs{activation, weight};
-    EXPECT_TRUE(metal::NativeProgram::validate(c::Operation(c::MatMul{}), inputs).IsUnimplemented());
+    EXPECT_TRUE(metal::NativeProgram::validate(c::Operation(c::MatMul{}), inputs).ok());
     const auto grouped = c::gguf_grouped_weight_description(type, c::DataType::kFloat32, 2, 3, 256).value();
     const std::array group_inputs{grouped, grouped_activation, ids};
-    EXPECT_TRUE(metal::NativeProgram::validate(c::model_ops::grouped_matmul(), group_inputs).IsUnimplemented());
+    EXPECT_TRUE(metal::NativeProgram::validate(c::model_ops::grouped_matmul(), group_inputs).ok());
   }
 }
 

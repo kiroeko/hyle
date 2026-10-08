@@ -1,0 +1,30 @@
+{
+  "revision": "a809594fd2035979ad2b7ef23398127c1d07e891",
+  "fragments": [
+    {
+      "kind": "original-gpu-grid",
+      "name": "iq1_xs_grid_gpu",
+      "sha256": "c1d38f33403b291a944eeeeec15b5686f5cee4f9c9ef3a74a528f4f9621c6dda"
+    },
+    {
+      "kind": "original-gpu-grid",
+      "name": "iq1_xxs_grid_gpu",
+      "sha256": "70de68d5118b13ff586f9dcba8658ce148978d71f564a485e2c39db836ebac9e"
+    },
+    {
+      "kind": "original-gpu-grid",
+      "name": "iq1_xxxs_grid_gpu",
+      "sha256": "732e1c3a95620d6887fca715cc21a4cd886da500e6c1e129aa86c50d7026a97c"
+    },
+    {
+      "kind": "original-three-mv-programs",
+      "original_sha256": "00b2ae069ff71622809ac1a80bade3b8eacb048f7d217952672955737d0be2bc",
+      "adapted_sha256": "01027e74dc3835b7c90bfa372cb01fcb65c6be76d6a0bc668ef4b816abfaf572",
+      "adaptation": "already-bound buffer base pointer only"
+    },
+    {
+      "kind": "original-grouped-instances",
+      "sha256": "5efca0860fdf1e1259ab01d889f50440f4d152d7dfa68b15e8f75097b48212de"
+    }
+  ]
+}

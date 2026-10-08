@@ -57,7 +57,7 @@ set(_licenses
   "${ggml_SOURCE_DIR}/LICENSE|${CMAKE_INSTALL_DATADIR}/licenses/Hyle|ggml-runtime-LICENSE"
   "${_patch_root}/LICENSE|${CMAKE_INSTALL_DATADIR}/licenses/Hyle|ggml-runtime-patches-LICENSE"
   "${_patch_root}/NOTICE.md|${CMAKE_INSTALL_DATADIR}/licenses/Hyle|ggml-runtime-patches-NOTICE.md")
-if((_cpu OR HYLE_COMPUTE_CUDA_ENABLED) AND NOT _cpu_upgrade)
+if((_cpu OR HYLE_COMPUTE_CUDA_ENABLED OR HYLE_COMPUTE_APPLE_ENABLED) AND NOT _cpu_upgrade)
   hyle_audit_in_tree_dependencies(ggml_cpu_runtime_patches)
   set(_cpu_port "${HYLE_SOURCE_DIR}/third_party/ggml_cpu_runtime")
   set(_mixed_manifest "${CMAKE_CURRENT_BINARY_DIR}/mixed-cpu-patches.json")
@@ -89,6 +89,31 @@ endif()
 if(HYLE_COMPUTE_APPLE_ENABLED)
   list(APPEND _manifests "${_patch_root}/metal-patches.json")
   list(APPEND _patch_args --manifest "${_patch_root}/metal-patches.json")
+  hyle_audit_in_tree_dependencies(ggml_metal_iq1)
+  set(_metal_iq1_root "${HYLE_SOURCE_DIR}/third_party/ggml_metal_iq1")
+  set(_metal_manifest "${CMAKE_CURRENT_BINARY_DIR}/metal-iq1-patches.json")
+  set(_metal_args "")
+  foreach(_manifest IN LISTS _manifests)
+    list(APPEND _metal_args --manifest "${_manifest}")
+  endforeach()
+  execute_process(COMMAND "${Python3_EXECUTABLE}"
+    "${CMAKE_CURRENT_SOURCE_DIR}/prepare_metal_iq1_manifest.py"
+    --source "${ggml_SOURCE_DIR}" ${_metal_args}
+    --manifest "${_metal_iq1_root}/patches.json" --output "${_metal_manifest}"
+    RESULT_VARIABLE _metal_iq1_result ERROR_VARIABLE _metal_iq1_error)
+  if(NOT _metal_iq1_result EQUAL 0)
+    message(FATAL_ERROR "Original Metal IQ1 composition failed: ${_metal_iq1_error}")
+  endif()
+  set(_manifests "${_metal_manifest}")
+  set(_patch_args --manifest "${_metal_manifest}")
+  file(SHA256 "${CMAKE_CURRENT_SOURCE_DIR}/prepare_metal_iq1_manifest.py" _metal_tool_sha)
+  string(APPEND _source_identity "${HYLE_DEP_GGML_METAL_IQ1_VENDORED_TREE_SHA256}${_metal_tool_sha}")
+  list(APPEND _locked ggml_metal_iq1)
+  list(APPEND _licenses
+    "${_metal_iq1_root}/LICENSE|${CMAKE_INSTALL_DATADIR}/licenses/Hyle|ggml-metal-IQ1-LICENSE"
+    "${_metal_iq1_root}/NOTICE.md|${CMAKE_INSTALL_DATADIR}/licenses/Hyle|ggml-metal-IQ1-NOTICE.md")
+  set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS
+    "${_metal_iq1_root}/patches.json" "${CMAKE_CURRENT_SOURCE_DIR}/prepare_metal_iq1_manifest.py")
 endif()
 if(HYLE_COMPUTE_VULKAN_ENABLED)
   hyle_audit_in_tree_dependencies(ggml_vulkan_runtime_patches)
@@ -194,6 +219,9 @@ endblock()
 
 if(_cpu)
   target_compile_definitions(ggml INTERFACE HYLE_GGML_CPU_IQ1_EXTENSIONS=1)
+endif()
+if(HYLE_COMPUTE_APPLE_ENABLED)
+  target_compile_definitions(ggml INTERFACE HYLE_GGML_METAL_IQ1_EXTENSIONS=1)
 endif()
 
 set(_vendor_targets ggml ggml-base)

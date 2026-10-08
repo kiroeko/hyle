@@ -65,6 +65,7 @@
     "compute_provider_ggml_vulkan": ["Windows", "Linux", "Darwin"]
   },
   "vendored_input_owners": {
+    "third_party/ggml_metal_iq1/": ["compute_ggml_runtime"],
     "third_party/ggml_q4k_apple/": ["compute_route_apple"],
     "third_party/bitsandbytes_apple/": ["compute_route_apple"],
     "third_party/awq_apple/": ["compute_route_apple"],

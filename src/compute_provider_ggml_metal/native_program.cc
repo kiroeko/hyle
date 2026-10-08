@@ -109,6 +109,12 @@ ggml_type native_quantized_type(const TensorDesc &description) noexcept {
     return GGML_TYPE_IQ1_S;
   case GgufQuantizedType::kIq1M:
     return GGML_TYPE_IQ1_M;
+  case GgufQuantizedType::kIq1Xs:
+    return GGML_TYPE_IQ1_XS;
+  case GgufQuantizedType::kIq1Xxs:
+    return GGML_TYPE_IQ1_XXS;
+  case GgufQuantizedType::kIq1Xxxs:
+    return GGML_TYPE_IQ1_XXXS;
   case GgufQuantizedType::kMxfp4:
     return GGML_TYPE_MXFP4;
   default:
@@ -128,6 +134,10 @@ bool native_quantized(const TensorDesc &description) noexcept {
 }
 
 bool native_embedding_table(const TensorDesc &description) noexcept {
+  const auto type = gguf_quantized_type(description.storage_format());
+  if (type == GgufQuantizedType::kIq1Xs || type == GgufQuantizedType::kIq1Xxs ||
+      type == GgufQuantizedType::kIq1Xxxs)
+    return false; // This original borrow supplies MV/grouped, not GetRows.
   return native_quantized(description) &&
          description.data_type() == DataType::kFloat32 &&
          description.rank() == 2 && description.block_axis() == 1;

@@ -1402,6 +1402,37 @@
           }
         ]
       }
+    },
+    {
+      "name": "ggml_metal_iq1",
+      "repository": "https://github.com/Anemll/anemll-flash-llama.cpp.git",
+      "revision": "a809594fd2035979ad2b7ef23398127c1d07e891",
+      "git_tree": "5b5b141f4783d08af9107acc7ffe5ec1771bcb73",
+      "archive": {
+        "url": "https://codeload.github.com/Anemll/anemll-flash-llama.cpp/tar.gz/a809594fd2035979ad2b7ef23398127c1d07e891",
+        "sha256": "c7a33841a57557b99812049daad8ef53a62998fa97fb5dd2b75a1110f98a82ba"
+      },
+      "version": "original-iq1-metal-a809594fd203",
+      "class": "in_tree",
+      "vendored": {
+        "path": "third_party/ggml_metal_iq1",
+        "tree_sha256": "99be71bde724c98e51e0408c547fd32b232d412dd03eec0ff662cba4036a9191"
+      },
+      "license": {
+        "expression": "MIT",
+        "files": [
+          {
+            "root": "hyle",
+            "path": "third_party/ggml_metal_iq1/LICENSE",
+            "sha256": "94f29bbed6a22c35b992c5c6ebf0e7c92f13b836b90f36f461c9cf2f0f1d010d"
+          },
+          {
+            "root": "hyle",
+            "path": "third_party/ggml_metal_iq1/NOTICE.md",
+            "sha256": "661df5645b8311b4946a4ca6b3b9b51bc233d1bec241b24edb4f742ceccfcada"
+          }
+        ]
+      }
     }
   ]
 }
