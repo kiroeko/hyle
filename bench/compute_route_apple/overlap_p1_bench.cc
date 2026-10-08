@@ -120,7 +120,10 @@ struct Harness {
     // Cold telemetry on the actual native owner, never inferred from caller QoS.
     const std::array telemetry_spec{a::InputSpec{{1},mx::float32}};
     auto telemetry=take(context.compile([](const auto &input,mx::Stream) {
-      std::fprintf(stderr,"# OVERLAP_OWNER_QOS %u\n",unsigned(pthread_get_qos_class_np(pthread_self(),nullptr)));
+      qos_class_t qos=QOS_CLASS_UNSPECIFIED;
+      if(pthread_get_qos_class_np(pthread_self(),&qos,nullptr)!=0)
+        throw std::runtime_error("cannot observe native owner QoS");
+      std::fprintf(stderr,"# OVERLAP_OWNER_QOS %u\n",unsigned(qos));
       return input;
     },telemetry_spec));
     program=mlx?native_mlx(context,shape,data):take(context.prepare(shape.grouped?

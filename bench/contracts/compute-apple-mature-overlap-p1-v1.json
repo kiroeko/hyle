@@ -155,7 +155,7 @@
       "consumer_key": "llm-moe/apple/dynamic-weight/bf16-router-m1",
       "provenance": {
         "path": "bench/compute_route_apple/overlap_p1_bench.cc",
-        "sha256": "f05f21046360dcfcd569339863780eca63f3f39e9338dd442ebfc333b0535ac7"
+        "sha256": "0c2ac82bcb23ed9d5f007cc7f412e54b18d0210692870c57d929d987900dc47b"
       },
       "ownership_topology": {
         "candidate": "Ordinary Context.prepare original ggml Metal, two reusable slots.",
@@ -225,7 +225,7 @@
       "consumer_key": "llm-moe/apple/dynamic-weight/bf16-router-m16",
       "provenance": {
         "path": "bench/compute_route_apple/overlap_p1_bench.cc",
-        "sha256": "f05f21046360dcfcd569339863780eca63f3f39e9338dd442ebfc333b0535ac7"
+        "sha256": "0c2ac82bcb23ed9d5f007cc7f412e54b18d0210692870c57d929d987900dc47b"
       },
       "ownership_topology": {
         "candidate": "Ordinary Context.prepare original ggml Metal, two reusable slots.",
@@ -295,7 +295,7 @@
       "consumer_key": "llm-moe/apple/dynamic-weight/bf16-grouped-t5",
       "provenance": {
         "path": "bench/compute_route_apple/overlap_p1_bench.cc",
-        "sha256": "f05f21046360dcfcd569339863780eca63f3f39e9338dd442ebfc333b0535ac7"
+        "sha256": "0c2ac82bcb23ed9d5f007cc7f412e54b18d0210692870c57d929d987900dc47b"
       },
       "ownership_topology": {
         "candidate": "Ordinary Context.prepare original ggml Metal, two reusable slots.",
@@ -367,7 +367,7 @@
       "consumer_key": "llm-moe/apple/dynamic-weight/f32-grouped-t5",
       "provenance": {
         "path": "bench/compute_route_apple/overlap_p1_bench.cc",
-        "sha256": "f05f21046360dcfcd569339863780eca63f3f39e9338dd442ebfc333b0535ac7"
+        "sha256": "0c2ac82bcb23ed9d5f007cc7f412e54b18d0210692870c57d929d987900dc47b"
       },
       "ownership_topology": {
         "candidate": "Ordinary Context.prepare original ggml Metal, two reusable slots.",
