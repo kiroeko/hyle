@@ -43,3 +43,8 @@ API宏owner显式include，原build-2 C4430保留。只加该既有公开头incl
 原样保留。核对C:/hv内明确SDK路径后移走首次目标，原relocate同ID只允许最后第三次；不重跑
 已PASS的configure/build/install，数学仍仅原ID第二次。后续三交付使用一次新prefix，避免复用
 初次失败目标导致无关重建；不把移动/脚本步骤计成算子完成。
+
+最终consumer build仅测试缺少`<algorithm>`（新增guard核对的`std::all_of`），原build-2日志
+保留。显式加标准头，原consumer build同ID最后第三次。测试头include不改变consumer CMake、
+SDK或参数，已PASS的consumer configure-2按此具体配置等价证明复用，不再因宽源码hash重配。
+不改公共runner，build依赖以这条原配置证明代替宽hash；数学仍只有最后第二次，失败即停止。
