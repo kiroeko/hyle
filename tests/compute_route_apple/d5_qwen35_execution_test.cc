@@ -45,6 +45,7 @@
 #include "../compute_models/cpu_c5_non_gguf_fixture.h"
 #include "../compute_route_apple/gguf_coverage_fixture.h"
 #include "../compute_models/cpu_c5_plain_fixture.h"
+#include "../compute_route_apple/exact_row_resource_test_support.h"
 
 namespace {
 void run_q24_semantic_fragment(d5_qwen38_24t_semantic_fragments::Fragment fixture);
@@ -128,6 +129,14 @@ INSTANTIATE_TEST_SUITE_P(CurrentDemand, AppleParityDirectPlain,
     [](const auto &info) { return std::string(info.param.id); });
 TEST(AppleParityDirect, RealArtifactPreparationFeedsMatureMatMul) {
   apple_parity_packed_demand(true);
+}
+TEST(AppleParityDirect, ExactQ4SelectedRowsKeepLeasesAndReportBadIndices) {
+  apple_exact_row_resource_test::check([](const hyle::compute::apple::Context &context,
+      hyle::compute::Operation operation, std::span<const hyle::compute::TensorDesc> descriptions) {
+    std::vector<hyle::compute::apple::InputSpec> specs;
+    for(const auto &description:descriptions) specs.push_back(hyle::compute::apple::input_spec(description).value());
+    return context.prepare(operation,specs);
+  });
 }
 
 namespace {

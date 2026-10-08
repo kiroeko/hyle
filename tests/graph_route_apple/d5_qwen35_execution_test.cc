@@ -45,6 +45,7 @@
 #include "../compute_models/cpu_c5_non_gguf_fixture.h"
 #include "../compute_route_apple/gguf_coverage_fixture.h"
 #include "../compute_models/cpu_c5_plain_fixture.h"
+#include "../compute_route_apple/exact_row_resource_test_support.h"
 
 namespace {
 void run_q24_semantic_fragment(d5_qwen38_24t_semantic_fragments::Fragment fixture);
@@ -128,6 +129,18 @@ INSTANTIATE_TEST_SUITE_P(CurrentDemand, AppleParityGraphPlain,
     [](const auto &info) { return std::string(info.param.id); });
 TEST(AppleParityGraph, RealArtifactPreparationFeedsMatureMatMul) {
   apple_parity_packed_demand(true);
+}
+TEST(AppleParityGraph, ExactQ4SelectedRowsKeepLeasesAndReportBadIndices) {
+  apple_exact_row_resource_test::check([](const hyle::compute::apple::Context &context,
+      hyle::compute::Operation operation, std::span<const hyle::compute::TensorDesc> descriptions) {
+    auto builder=hyle::graph::GraphBuilder::create().value();
+    std::vector<hyle::graph::ValueId> ids;
+    for(const auto &description:descriptions) ids.push_back(builder.input(description).value());
+    auto node=builder.add_node(operation,ids).value();
+    auto status=builder.publish(builder.result(node).value());
+    if(!status.ok()) return hyle::Result<hyle::compute::apple::Program>{std::unexpected(std::move(status))};
+    return hyle::graph::apple::compile(context,std::move(builder).finish().value());
+  });
 }
 
 namespace {
