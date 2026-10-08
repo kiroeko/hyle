@@ -1,0 +1,69 @@
+{
+  "upstream": "ggml456172ec",
+  "source_sha256": "20df24211057951de7657e5d4dfbc42b6fdd5016d471e64631dbef7f175a43c5",
+  "types": {
+    "kIq1M": {
+      "contracts": 14,
+      "original_metal_type_dispatch": true,
+      "runtime_verdict": "UNVERIFIED"
+    },
+    "kIq1S": {
+      "contracts": 14,
+      "original_metal_type_dispatch": true,
+      "runtime_verdict": "UNVERIFIED"
+    },
+    "kIq1Xs": {
+      "contracts": 2,
+      "original_metal_type_dispatch": false,
+      "runtime_verdict": "UNVERIFIED"
+    },
+    "kIq1Xxs": {
+      "contracts": 2,
+      "original_metal_type_dispatch": false,
+      "runtime_verdict": "UNVERIFIED"
+    },
+    "kIq1Xxxs": {
+      "contracts": 4,
+      "original_metal_type_dispatch": false,
+      "runtime_verdict": "UNVERIFIED"
+    },
+    "kIq2S": {
+      "contracts": 14,
+      "original_metal_type_dispatch": true,
+      "runtime_verdict": "UNVERIFIED"
+    },
+    "kIq2Xs": {
+      "contracts": 16,
+      "original_metal_type_dispatch": true,
+      "runtime_verdict": "UNVERIFIED"
+    },
+    "kIq2Xxs": {
+      "contracts": 19,
+      "original_metal_type_dispatch": true,
+      "runtime_verdict": "UNVERIFIED"
+    },
+    "kQ2K": {
+      "contracts": 16,
+      "original_metal_type_dispatch": true,
+      "runtime_verdict": "UNVERIFIED"
+    },
+    "kQ4_0": {
+      "contracts": 13,
+      "original_metal_type_dispatch": true,
+      "runtime_verdict": "UNVERIFIED"
+    },
+    "kQ4_1": {
+      "contracts": 13,
+      "original_metal_type_dispatch": true,
+      "runtime_verdict": "UNVERIFIED"
+    }
+  },
+  "has_original_dispatch_contracts": 119,
+  "no_original_dispatch_contracts": 8,
+  "additional_wiring_constraints": [
+    "Current adapter admits F32 activation/logical weight/output only for encoded MatMul",
+    "Encoded embedding table restricts Q4K/Q6K/Q8_0 rather than catalogue union",
+    "Official DeepSeek E2M1 small-scale contract still requires distinct mature qualification"
+  ],
+  "limits": "Dispatch source discovery does not prove exact codec/program/precision/shape/complete cost or execution."
+}
