@@ -18,6 +18,7 @@
 #include "router_provider.h"
 #include "scatter_provider.h"
 #include "tensor_provider.h"
+#include "qualified_prepare.h"
 
 namespace hyle::compute::cuda_native {
 namespace {
@@ -406,6 +407,20 @@ Provider provider() noexcept {
 
 Provider sglang_provider() noexcept {
   return detail::ProviderAccess::make(&kProviderVTable<true>, std::uint8_t{0});
+}
+
+ProviderPrepareOutcome internal::prepare_qualified(void *context,
+    const detail::ProviderPrepareRequest &request, mem::AllocatorRef allocator,
+    detail::ProviderPrepared *output) noexcept {
+  auto result = prepare<false>(context, request, allocator, output);
+  if (output->state) {
+    if (request.operation.kind() == OperationKind::kRmsNorm ||
+        request.operation.kind() == OperationKind::kLayerNorm)
+      normalization::require_alignment(*output, 256);
+    else
+      tensor::require_alignment(*output, 256);
+  }
+  return result;
 }
 
 } // namespace hyle::compute::cuda_native

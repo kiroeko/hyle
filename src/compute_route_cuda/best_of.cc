@@ -7,6 +7,7 @@
 
 #include "../compute/provider_internal.h"
 #include "../compute_backend_cuda/native_context.h"
+#include "../compute_provider_cuda/qualified_prepare.h"
 #include "hyle/platform/cpu.h"
 #include "hyle/platform/thread.h"
 
@@ -164,8 +165,8 @@ template <DefaultScope S>
 ProviderPrepareOutcome prepare(void *context,
     const compute::detail::ProviderPrepareRequest &request,
     mem::AllocatorRef allocator, compute::detail::ProviderPrepared *output) noexcept {
-  return tables<S>().original->prepare(static_cast<State *>(context)->original,
-                                      request, allocator, output);
+  return cuda_native::internal::prepare_qualified(
+      static_cast<State *>(context)->original, request, allocator, output);
 }
 template <DefaultScope S> Status drain_context(void *context) noexcept {
   return tables<S>().original->drain_context(static_cast<State *>(context)->original);

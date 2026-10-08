@@ -1132,12 +1132,29 @@ struct DirectCandidate final {
   std::size_t requirement_offset = 0;
 };
 
+template <class View>
+bool known_offsets_match(std::span<const View> views,
+                         std::span<const detail::ResourceBindingRequirement> requirements) noexcept {
+  for (std::size_t i = 0; i < views.size(); ++i) {
+    const auto storage = views[i].storage();
+    const auto base = storage.resource().properties().minimum_alignment;
+    const auto needed = requirements[i].minimum_alignment;
+    // Only reject what the resource's base guarantee proves. Opaque handles
+    // are never interpreted, and descriptor-only preparation guesses nothing.
+    if (base >= needed && base % needed == 0 && storage.offset() % needed != 0)
+      return false;
+  }
+  return true;
+}
+
 Result<PreparedOperation>
 prepare_for_mode(const Context &context, Operation operation,
                  std::span<const TensorDesc> inputs,
                  std::span<const TensorDesc> outputs,
                  OperationResourceBindings resources, ProviderRuntimeMode mode,
-                 const WorkloadContext &workload) noexcept {
+                 const WorkloadContext &workload,
+                 std::span<const ConstTensorView> known_inputs = {},
+                 std::span<const TensorView> known_outputs = {}) noexcept {
   HYLE_TRACE_ZONE_NAMED("hyle.compute.prepare");
   if (!workload.valid())
     return std::unexpected(Status::InvalidArgument("compute workload context"));
@@ -1197,6 +1214,10 @@ prepare_for_mode(const Context &context, Operation operation,
     // Bind mode once at prepare, preserving each public invocation's type
     // invariant. Execution does not repeat this provider search.
     if (proposal->runtime.mode != mode)
+      continue;
+    if (known_inputs.size() == inputs.size() && known_outputs.size() == outputs.size() &&
+        (!known_offsets_match(known_inputs, std::span<const detail::ResourceBindingRequirement>(input_requirements)) ||
+         !known_offsets_match(known_outputs, std::span<const detail::ResourceBindingRequirement>(output_requirements))))
       continue;
     candidates[candidate_count++] = DirectCandidate{*proposal, offset};
   }
@@ -1348,7 +1369,7 @@ prepare_views_for_mode(const Context &context, Operation operation,
                               .outputs = output_resources.span(),
                               .workspace_resource = workspace_resource,
                           },
-                          mode, workload);
+                          mode, workload, inputs, outputs);
 }
 } // namespace
 

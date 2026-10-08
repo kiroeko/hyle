@@ -320,4 +320,10 @@ ProviderPrepareOutcome prepare(void *state,
              .invocation_private_bytes = 0};
   return ProviderPrepareOutcome::prepared();
 }
+void require_alignment(detail::ProviderPrepared &artifact, std::size_t alignment) noexcept {
+  auto &prepared = *static_cast<Prepared *>(artifact.state);
+  for (auto &value : prepared.input_alignment)
+    value = (std::max)(value, alignment);
+  prepared.output_alignment = (std::max)(prepared.output_alignment, alignment);
+}
 } // namespace hyle::compute::cuda_native::tensor

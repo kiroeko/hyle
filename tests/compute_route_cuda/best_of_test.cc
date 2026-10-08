@@ -195,5 +195,19 @@ TEST(CudaBestOf, ShiftedViewsRetainCapabilityWithoutMeasuredAlignment) {
     for (std::size_t i = 0; i < actual.size(); ++i)
       ASSERT_LE(std::abs(actual[i] - expected[i]), .001 * (1 + std::abs(expected[i])));
   }
+  // Descriptor preparation allocates no payload and cannot know a future
+  // view's offset. Its bound measured contract must reject a later violation,
+  // without an execution-time Provider search or any output write.
+  auto declared = take(c::prepare(owner, r.operation, r.inputs, std::span(&r.output, 1), memory.ref()));
+  if (declared.route_policy().namespace_id == 0x48594c4543555752ULL) {
+    auto slot = take(declared.create_invocation());
+    ASSERT_TRUE(output.view().fill(std::byte{0x6f}).ok());
+    auto rejected = slot.submit(queue, input_view, output_view);
+    ASSERT_FALSE(rejected);
+    EXPECT_TRUE(rejected.error().IsInvalidArgument());
+    std::vector<std::byte> guard(bytes + 2);
+    ASSERT_TRUE(output.view().read(guard).ok());
+    EXPECT_TRUE(std::all_of(guard.begin(), guard.end(), [](auto b) { return b == std::byte{0x6f}; }));
+  }
 }
 } // namespace

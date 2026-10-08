@@ -15,6 +15,10 @@ if(HYLE_COMPUTE_CUDA_ENABLED)
     scatter_provider.cc scatter_kernel.cu)
   set_target_properties(hyle_compute_provider_cuda PROPERTIES
     CUDA_STANDARD 20 CUDA_STANDARD_REQUIRED ON CUDA_RUNTIME_LIBRARY Shared)
+  # CUDA language variables belong to this enabled-language directory, not
+  # necessarily to the sibling compiled route directory.
+  set_property(TARGET hyle_compute_provider_cuda PROPERTY
+    HYLE_CUDA_COMPILER_VERSION "${CMAKE_CUDA_COMPILER_VERSION}")
   target_include_directories(hyle_compute_provider_cuda PRIVATE
     "${CMAKE_CURRENT_SOURCE_DIR}"
     "${CMAKE_CURRENT_SOURCE_DIR}/../compute"

@@ -1,6 +1,7 @@
 #include "norm_provider.h"
 
 #include <array>
+#include <algorithm>
 #include <climits>
 #include <new>
 #include <type_traits>
@@ -249,6 +250,11 @@ ProviderPrepareOutcome prepare(void *state,
                                mem::AllocatorRef allocator,
                                detail::ProviderPrepared *output) noexcept {
   return prepare_impl<false>(state, request, allocator, output);
+}
+void require_alignment(detail::ProviderPrepared &artifact, std::size_t alignment) noexcept {
+  auto &prepared = *static_cast<Prepared<false> *>(artifact.state);
+  for (auto &value : prepared.alignment)
+    value = (std::max)(value, alignment);
 }
 ProviderPrepareOutcome
 sglang_prepare(void *state, const detail::ProviderPrepareRequest &request,

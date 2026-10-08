@@ -13,6 +13,7 @@ ProviderPrepareOutcome prepare(void *state,
                                const detail::ProviderPrepareRequest &request,
                                mem::AllocatorRef allocator,
                                detail::ProviderPrepared *output) noexcept;
+void require_alignment(detail::ProviderPrepared &, std::size_t) noexcept;
 Status sglang_propose(const detail::ProviderOperationRequest &request,
                       std::span<detail::ResourceBindingRequirement> inputs,
                       std::span<detail::ResourceBindingRequirement> outputs,
