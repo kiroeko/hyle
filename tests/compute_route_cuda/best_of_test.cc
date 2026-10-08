@@ -66,7 +66,9 @@ void configure_profile() {
 
 TEST(CudaBestOf, CompletePointsBindOnceAndCheckChangedOutputs) {
   configure_profile();
+#if HYLE_OS_WINDOWS
   const bool require_measured = std::getenv("HYLE_CUDA_RULE_TEST_PROFILE") != nullptr;
+#endif
   auto stats = take(hyle::mem::StatsAllocator::create(hyle::mem::system_allocator()));
   {
     auto owner = take(c::cuda::create_context({.metadata_allocator = stats.get()}));
