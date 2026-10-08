@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites tests="2" failures="0" disabled="0" errors="0" time="0.294" timestamp="2026-10-09T00:34:13.038" name="AllTests">
+  <testsuite name="CurrentOfficial/AppleParityDirectBranches" tests="2" failures="0" disabled="0" skipped="0" errors="0" time="0.294" timestamp="2026-10-09T00:34:13.038">
+    <testcase name="DsparkTargetHiddenAndFp32Confidence/Pro0813" value_param="56-byte object &lt;E8-18 54-02 01-00 00-00 00-1C 00-00 00-00 00-00 00-02 00-00 00-00 00-00 80-00 00-00 00-00 00-00 00-06 00-00 00-00 00-00 10-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00&gt;" file="/Users/kiro/hyle/tests/compute_route_apple/model_branch_tests.h" line="14" status="run" result="completed" time="0.204" timestamp="2026-10-09T00:34:13.038" classname="CurrentOfficial/AppleParityDirectBranches" />
+    <testcase name="DsparkTargetHiddenAndFp32Confidence/Flash0731" value_param="56-byte object &lt;98-19 54-02 01-00 00-00 00-10 00-00 00-00 00-00 00-01 00-00 00-00 00-00 40-00 00-00 00-00 00-00 00-04 00-00 00-00 00-00 08-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00&gt;" file="/Users/kiro/hyle/tests/compute_route_apple/model_branch_tests.h" line="14" status="run" result="completed" time="0.089" timestamp="2026-10-09T00:34:13.243" classname="CurrentOfficial/AppleParityDirectBranches" />
+  </testsuite>
+</testsuites>

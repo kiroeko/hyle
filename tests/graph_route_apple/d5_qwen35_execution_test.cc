@@ -49,6 +49,7 @@
 #include "../compute_route_apple/sidecar_quant_reference.h"
 #include "../compute_models/cpu_c4_qwen_mtp.h"
 #include "../compute_models/cpu_c4_flash_sidecars.h"
+#include "../compute_route_apple/dspark_native_reference.h"
 #undef HYLE_C4_QUANTIZED_REFERENCE
 #undef HYLE_C4_GROUPED_REFERENCE
 

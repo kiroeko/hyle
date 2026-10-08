@@ -1,0 +1,179 @@
+[
+  {
+    "delivery": "source",
+    "header": "hyle/compute/apple.h",
+    "returncode": 0,
+    "flags": [
+      "-DHYLE_COMPUTE_APPLE=1",
+      "-DHYLE_STATIC",
+      "-DMLX_STATIC",
+      "-I/Users/kiro/hyle/include",
+      "-isystem",
+      "/Users/kiro/Library/Caches/hyle/dependencies/v1/sources/metal_cpp-f567ed836e4c-3874e9e28e8e",
+      "-isystem",
+      "/Users/kiro/hyle-scratch/d5-apple-delivery/source-build/hyle/_deps/mlx-338da189e54c0743/source",
+      "-DNDEBUG",
+      "-arch",
+      "arm64",
+      "-isysroot",
+      "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+      "-mmacosx-version-min=14.4"
+    ]
+  },
+  {
+    "delivery": "source",
+    "header": "hyle/compute/detail/apple_plan.h",
+    "returncode": 0,
+    "flags": [
+      "-DHYLE_COMPUTE_APPLE=1",
+      "-DHYLE_STATIC",
+      "-DMLX_STATIC",
+      "-I/Users/kiro/hyle/include",
+      "-isystem",
+      "/Users/kiro/Library/Caches/hyle/dependencies/v1/sources/metal_cpp-f567ed836e4c-3874e9e28e8e",
+      "-isystem",
+      "/Users/kiro/hyle-scratch/d5-apple-delivery/source-build/hyle/_deps/mlx-338da189e54c0743/source",
+      "-DNDEBUG",
+      "-arch",
+      "arm64",
+      "-isysroot",
+      "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+      "-mmacosx-version-min=14.4"
+    ]
+  },
+  {
+    "delivery": "source",
+    "header": "hyle/graph/apple.h",
+    "returncode": 0,
+    "flags": [
+      "-DHYLE_COMPUTE_APPLE=1",
+      "-DHYLE_STATIC",
+      "-DMLX_STATIC",
+      "-I/Users/kiro/hyle/include",
+      "-isystem",
+      "/Users/kiro/Library/Caches/hyle/dependencies/v1/sources/metal_cpp-f567ed836e4c-3874e9e28e8e",
+      "-isystem",
+      "/Users/kiro/hyle-scratch/d5-apple-delivery/source-build/hyle/_deps/mlx-338da189e54c0743/source",
+      "-DNDEBUG",
+      "-arch",
+      "arm64",
+      "-isysroot",
+      "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+      "-mmacosx-version-min=14.4"
+    ]
+  },
+  {
+    "delivery": "static",
+    "header": "hyle/compute/apple.h",
+    "returncode": 0,
+    "flags": [
+      "-DHYLE_COMPUTE_APPLE=1",
+      "-DHYLE_STATIC",
+      "-DMLX_STATIC",
+      "-isystem",
+      "/Users/kiro/hyle-scratch/apple-parity-delivery/static-relocated/include",
+      "-isystem",
+      "/Users/kiro/hyle-scratch/apple-parity-delivery/static-relocated/include/metal_cpp",
+      "-DNDEBUG",
+      "-arch",
+      "arm64",
+      "-isysroot",
+      "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+      "-mmacosx-version-min=14.4"
+    ]
+  },
+  {
+    "delivery": "static",
+    "header": "hyle/compute/detail/apple_plan.h",
+    "returncode": 0,
+    "flags": [
+      "-DHYLE_COMPUTE_APPLE=1",
+      "-DHYLE_STATIC",
+      "-DMLX_STATIC",
+      "-isystem",
+      "/Users/kiro/hyle-scratch/apple-parity-delivery/static-relocated/include",
+      "-isystem",
+      "/Users/kiro/hyle-scratch/apple-parity-delivery/static-relocated/include/metal_cpp",
+      "-DNDEBUG",
+      "-arch",
+      "arm64",
+      "-isysroot",
+      "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+      "-mmacosx-version-min=14.4"
+    ]
+  },
+  {
+    "delivery": "static",
+    "header": "hyle/graph/apple.h",
+    "returncode": 0,
+    "flags": [
+      "-DHYLE_COMPUTE_APPLE=1",
+      "-DHYLE_STATIC",
+      "-DMLX_STATIC",
+      "-isystem",
+      "/Users/kiro/hyle-scratch/apple-parity-delivery/static-relocated/include",
+      "-isystem",
+      "/Users/kiro/hyle-scratch/apple-parity-delivery/static-relocated/include/metal_cpp",
+      "-DNDEBUG",
+      "-arch",
+      "arm64",
+      "-isysroot",
+      "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+      "-mmacosx-version-min=14.4"
+    ]
+  },
+  {
+    "delivery": "shared",
+    "header": "hyle/compute/apple.h",
+    "returncode": 0,
+    "flags": [
+      "-DHYLE_COMPUTE_APPLE=1",
+      "-isystem",
+      "/Users/kiro/hyle-scratch/apple-parity-delivery/shared-relocated/include",
+      "-isystem",
+      "/Users/kiro/hyle-scratch/apple-parity-delivery/shared-relocated/include/metal_cpp",
+      "-DNDEBUG",
+      "-arch",
+      "arm64",
+      "-isysroot",
+      "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+      "-mmacosx-version-min=14.4"
+    ]
+  },
+  {
+    "delivery": "shared",
+    "header": "hyle/compute/detail/apple_plan.h",
+    "returncode": 0,
+    "flags": [
+      "-DHYLE_COMPUTE_APPLE=1",
+      "-isystem",
+      "/Users/kiro/hyle-scratch/apple-parity-delivery/shared-relocated/include",
+      "-isystem",
+      "/Users/kiro/hyle-scratch/apple-parity-delivery/shared-relocated/include/metal_cpp",
+      "-DNDEBUG",
+      "-arch",
+      "arm64",
+      "-isysroot",
+      "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+      "-mmacosx-version-min=14.4"
+    ]
+  },
+  {
+    "delivery": "shared",
+    "header": "hyle/graph/apple.h",
+    "returncode": 0,
+    "flags": [
+      "-DHYLE_COMPUTE_APPLE=1",
+      "-isystem",
+      "/Users/kiro/hyle-scratch/apple-parity-delivery/shared-relocated/include",
+      "-isystem",
+      "/Users/kiro/hyle-scratch/apple-parity-delivery/shared-relocated/include/metal_cpp",
+      "-DNDEBUG",
+      "-arch",
+      "arm64",
+      "-isysroot",
+      "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+      "-mmacosx-version-min=14.4"
+    ]
+  }
+]

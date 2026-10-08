@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites tests="2" failures="0" disabled="0" errors="0" time="0.278" timestamp="2026-10-09T00:34:13.808" name="AllTests">
+  <testsuite name="CurrentOfficial/AppleParityGraphBranches" tests="2" failures="0" disabled="0" skipped="0" errors="0" time="0.278" timestamp="2026-10-09T00:34:13.808">
+    <testcase name="DsparkTargetHiddenAndFp32Confidence/Pro0813" value_param="56-byte object &lt;18-27 07-01 01-00 00-00 00-1C 00-00 00-00 00-00 00-02 00-00 00-00 00-00 80-00 00-00 00-00 00-00 00-06 00-00 00-00 00-00 10-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00&gt;" file="/Users/kiro/hyle/tests/graph_route_apple/../compute_route_apple/model_branch_tests.h" line="14" status="run" result="completed" time="0.205" timestamp="2026-10-09T00:34:13.808" classname="CurrentOfficial/AppleParityGraphBranches" />
+    <testcase name="DsparkTargetHiddenAndFp32Confidence/Flash0731" value_param="56-byte object &lt;C8-27 07-01 01-00 00-00 00-10 00-00 00-00 00-00 00-01 00-00 00-00 00-00 40-00 00-00 00-00 00-00 00-04 00-00 00-00 00-00 08-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00&gt;" file="/Users/kiro/hyle/tests/graph_route_apple/../compute_route_apple/model_branch_tests.h" line="14" status="run" result="completed" time="0.073" timestamp="2026-10-09T00:34:14.013" classname="CurrentOfficial/AppleParityGraphBranches" />
+  </testsuite>
+</testsuites>

@@ -40,12 +40,16 @@ struct Model {
   const c::ModelArtifactProfileDescription *profile;
   std::int64_t hidden,markov,heads,query_rank,groups;
   bool fused_scale_accumulation = true;
+  std::function<std::vector<float>(std::span<const float>, std::int64_t,
+      std::span<const std::int32_t>, bool)> rotation_reference{};
+  std::function<std::vector<float>(std::span<const float>, std::span<const float>,
+      std::span<const float>, std::span<const float>, float)> attention_reference{};
   d5_moe_execution_cases::Case main_case() const {
     auto result=d5_moe_execution_cases::kCases[hidden==7168?3:4];
     result.profile=profile;return result;
   }
 };
-inline constexpr std::array models{Model{&pro_profile,7168,512,128,1536,16},
+inline const std::array models{Model{&pro_profile,7168,512,128,1536,16},
                                     Model{&flash_profile,4096,256,64,1024,8}};
 inline constexpr std::int64_t vocabulary=129280,window=128,block=5,noise_token=128799;
 
@@ -178,6 +182,11 @@ inline std::vector<float> rotary_rows(std::vector<float> data,std::int64_t heads
   }
   return data;
 }
+inline std::vector<float> model_rotary(const Model &model, std::vector<float> data,
+    std::int64_t heads, std::span<const std::int32_t> positions, bool inverse = false) {
+  return model.rotation_reference ? model.rotation_reference(data, heads, positions, inverse) :
+      rotary_rows(std::move(data), heads, positions, inverse);
+}
 inline Fragment cache_prefill(const Model &model,std::int64_t tokens) {
   Fragment f{.profile=model.profile,.region=0x0c040106,.quantized=true};
   f.phase=c::WorkloadPhase::kPrefill;
@@ -199,7 +208,7 @@ inline Fragment cache_prefill(const Model &model,std::int64_t tokens) {
   for(int seed:{3,19}) {
     auto input=ds::bfloat_boundary(d5_gguf_test::activation(tokens*model.hidden,seed));
     auto reference=projection.reference(input);
-    reference=ds::cache_reference(rotary_rows(ds::norm_reference(reference,scales),1,positions),512,false);
+    reference=ds::cache_reference(model_rotary(model,ds::norm_reference(reference,scales),1,positions),512,false);
     std::vector<float> cache(window*512);
     for(std::int64_t row=0;row<window;++row)
       std::copy_n(reference.data()+indices[row]*512,512,cache.data()+row*512);
@@ -262,18 +271,20 @@ inline Fragment draft_attention(const Model &model,std::span<const float> initia
        std::span<const float> incoming_cache,std::int32_t position)->ds::moe::ReferenceOutputs {
     std::array<std::int32_t,1> mp{position};
     std::vector<std::int32_t> dp(block);std::iota(dp.begin(),dp.end(),position+1);
-    auto query=rotary_rows(ds::query_norm_reference(
+    auto query=model_rotary(model,ds::query_norm_reference(
         qb.reference(ds::norm_reference(qa.reference(activation),qscale)),512),model.heads,dp);
     std::vector<float> both(main_x.begin(),main_x.end());both.insert(both.end(),activation.begin(),activation.end());
     auto kv_reference=ds::norm_reference(kv.reference(both),kscale);
-    auto main_k=ds::cache_reference(rotary_rows(std::vector<float>(kv_reference.begin(),kv_reference.begin()+512),1,mp),512,false);
-    auto draft_k=ds::cache_reference(rotary_rows(std::vector<float>(kv_reference.begin()+512,kv_reference.end()),1,dp),512,false);
+    auto main_k=ds::cache_reference(model_rotary(model,std::vector<float>(kv_reference.begin(),kv_reference.begin()+512),1,mp),512,false);
+    auto draft_k=ds::cache_reference(model_rotary(model,std::vector<float>(kv_reference.begin()+512,kv_reference.end()),1,dp),512,false);
     std::vector<float> cache_reference(incoming_cache.begin(),incoming_cache.end());
     std::copy(main_k.begin(),main_k.end(),cache_reference.begin()+(position%window)*512);
     auto keys_reference=cache_reference;keys_reference.insert(keys_reference.end(),draft_k.begin(),draft_k.end());
-    auto attention=ds::bfloat_boundary(ds::old::sink_reference(query,keys_reference,keys_reference,
-        std::vector<float>(block*(window+block),0),sinks,block,window+block,scale));
-    auto derotated=rotary_rows(attention,model.heads,dp,true);
+    auto attention=ds::bfloat_boundary(model.attention_reference ?
+        model.attention_reference(query,keys_reference,keys_reference,sinks,scale) :
+        ds::old::sink_reference(query,keys_reference,keys_reference,
+            std::vector<float>(block*(window+block),0),sinks,block,window+block,scale));
+    auto derotated=model_rotary(model,attention,model.heads,dp,true);
     auto grouped_output=ds::bfloat_boundary(ds::moe::project(derotated,wa,group_ids,1024,4096));
     auto result=ob.reference(grouped_output);
     return {std::move(cache_reference),std::move(attention),std::move(derotated),std::move(grouped_output),std::move(result)};
@@ -307,11 +318,11 @@ inline Fragment draft_attention(const Model &model,std::span<const float> initia
   // relative gate on the tiny result is not an error propagation bound.
   // Validate the original equation on the actual public attention output;
   // cache, attention, grouped projection and final output retain chain gates.
-  f.validate_intermediate=[observed,heads=model.heads](std::size_t port,std::span<const float> actual) {
+  f.validate_intermediate=[observed,model](std::size_t port,std::span<const float> actual) {
     if(port!=2)return false;
     std::vector<std::int32_t> positions(block);
     std::iota(positions.begin(),positions.end(),int(129+observed->step%3));
-    const auto local=rotary_rows(observed->attention,heads,positions,true);
+    const auto local=model_rotary(model,observed->attention,model.heads,positions,true);
     EXPECT_EQ(actual.size(),local.size());
     for(std::size_t i=0;i<actual.size() && i<local.size();++i)
       EXPECT_EQ(actual[i],local[i])<<i;

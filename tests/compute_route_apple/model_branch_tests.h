@@ -24,14 +24,10 @@ TEST_P(HYLE_APPLE_BRANCHES, DsparkMarkovFullVocabularyWithLogitBias) {
   cpu_c4_model_branches::check_markov(model, run_q24_semantic_fragment);
 }
 TEST_P(HYLE_APPLE_BRANCHES, DsparkTargetPrefillAndFiveTokenAttentionCache) {
-  const auto &model = GetParam();
+  auto model = GetParam();
   SCOPED_TRACE(model.profile->model_revision);
-  cpu_c4_model_branches::check_attention(model, [&](auto fragment) {
-#if !defined(HYLE_TEST_GRAPH_ROUTE_APPLE)
-    apple_dspark_numeric_capture::attach(fragment, model);
-#endif
-    run_q24_semantic_fragment(std::move(fragment));
-  });
+  apple_dspark_native_reference::bind(model);
+  cpu_c4_model_branches::check_attention(model, run_q24_semantic_fragment);
 }
 INSTANTIATE_TEST_SUITE_P(CurrentOfficial, HYLE_APPLE_BRANCHES,
     ::testing::ValuesIn([] {
