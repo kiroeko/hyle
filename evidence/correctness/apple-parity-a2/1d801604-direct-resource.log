@@ -1,0 +1,36 @@
+Running main() from /Users/kiro/Library/Caches/hyle/dependencies/v1/sources/googletest-063de7e9578f-162765170ae6/googletest/src/gtest_main.cc
+Note: Google Test filter = AppleParityDirect.ExactQ4SelectedRowsKeepLeasesAndReportBadIndices:AppleRegion.*:AppleLifetime.*
+[==========] Running 10 tests from 3 test suites.
+[----------] Global test environment set-up.
+[----------] 3 tests from AppleRegion
+[ RUN      ] AppleRegion.ChangedInputsRetainedResultsAndNoRetrace
+[       OK ] AppleRegion.ChangedInputsRetainedResultsAndNoRetrace (34 ms)
+[ RUN      ] AppleRegion.RejectsForeignStreamPendingInputAndWrongShape
+[       OK ] AppleRegion.RejectsForeignStreamPendingInputAndWrongShape (5 ms)
+[ RUN      ] AppleRegion.AbandonAndConcurrentWaitSurviveContextClose
+[       OK ] AppleRegion.AbandonAndConcurrentWaitSurviveContextClose (4 ms)
+[----------] 3 tests from AppleRegion (44 ms total)
+
+[----------] 1 test from AppleParityDirect
+[ RUN      ] AppleParityDirect.ExactQ4SelectedRowsKeepLeasesAndReportBadIndices
+[       OK ] AppleParityDirect.ExactQ4SelectedRowsKeepLeasesAndReportBadIndices (118 ms)
+[----------] 1 test from AppleParityDirect (118 ms total)
+
+[----------] 6 tests from AppleLifetime
+[ RUN      ] AppleLifetime.QueuedCancellationAndAbandonmentDrainBeforeClose
+[       OK ] AppleLifetime.QueuedCancellationAndAbandonmentDrainBeforeClose (3 ms)
+[ RUN      ] AppleLifetime.InFlightCancellationWaitsForNativeDrainAndRetiresOnlySlot
+[       OK ] AppleLifetime.InFlightCancellationWaitsForNativeDrainAndRetiresOnlySlot (3 ms)
+[ RUN      ] AppleLifetime.LateNativeFailureDrainsAndFailsAlreadyQueuedWork
+[       OK ] AppleLifetime.LateNativeFailureDrainsAndFailsAlreadyQueuedWork (2 ms)
+[ RUN      ] AppleLifetime.IndependentContextsOwnIndependentNativeSubmissionThreads
+[       OK ] AppleLifetime.IndependentContextsOwnIndependentNativeSubmissionThreads (3 ms)
+[ RUN      ] AppleLifetime.CheckedFailureRetainsAnAcceptedNativePrefixAfterOwnersGoAway
+[       OK ] AppleLifetime.CheckedFailureRetainsAnAcceptedNativePrefixAfterOwnersGoAway (8 ms)
+[ RUN      ] AppleLifetime.AllocationRefusalsPublishNoPartialProgramOrResult
+[       OK ] AppleLifetime.AllocationRefusalsPublishNoPartialProgramOrResult (3 ms)
+[----------] 6 tests from AppleLifetime (25 ms total)
+
+[----------] Global test environment tear-down
+[==========] 10 tests from 3 test suites ran. (188 ms total)
+[  PASSED  ] 10 tests.

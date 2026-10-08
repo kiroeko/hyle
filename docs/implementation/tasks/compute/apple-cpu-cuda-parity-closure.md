@@ -197,3 +197,12 @@ source/grids/ABI审计后再固定实现，不以README签GPU能力。Q4_K另借
 FP4新增[原DS4 Metal source资格](apple-ds4-fp4-source-qualification.md)：已有CPU来源对应的
 原GPU group32 pass实际包含floor，配合其原host Safe math具名设置检验tiny责任边界。
 只一批原source probe，产品FIX零，不恢复F46旧预算/命令；不换容差/模型数学或全局设置。
+
+新所选行资源Direct10/10、Graph2/2通过（坏ID/空ID/failed slot恢复/保留结果/close/OOM/
+晚到完成/取消），没有凭invalid_index_input元数据签PASS。既有region factor一批Direct178
+PASS/7真实输入SKIP、Graph149 PASS/7 SKIP/1旧provider-name断言FAIL；Windows已有真实
+117MB Qwen子集的25个hash复核后完整同步Air，给出fixture env，仅补七SKIP与一个诊断FAIL。
+Direct7/7、Graph8/8通过，无SKIP，合并185/185与157/157（不冒称第二次whole factor run）。
+原GPU数学没改，Q4旧松门反而收紧。新官方0813/0731与DSpark indexed完整region仍须对应
+witness，旧名字不代签。FP4原DS4候选实测222 mismatch/190非零变零，已请求按goal冻结规则
+决定必要GPU数值保真桥接；答复前产品FIX零。A2未关闭，A3/P1与A4交付仍待。

@@ -225,3 +225,47 @@ group32 pass at9139e2ae (including its floor) and original Safe-mode host choice
 both yield222/65280 mismatches,190 nonzero outputs lost. Raw evidence and a
 bounded decision are in [the qualification card](../../../docs/implementation/tasks/compute/apple-ds4-fp4-source-qualification.md).
 No tolerance, CPU-model fallback or model precision substitution is accepted.
+
+## Exact-row resources and full existing region delta
+
+`4d7dfb34` [resource test build](4d7dfb34-build.log) failed only because the
+test ignored the nodiscard Context::close Status. One assertion correction,
+no product/source math change: [1d801604 build](1d801604-build.log) PASS,
+[Direct resource](1d801604-direct-resource.log)10/10 and
+[Graph resource](1d801604-graph-resource.log)2/2 PASS. New exact Q4_K rows
+check negative/out-of-range IDs, no published failed result, unchanged retained
+leases, recovery in a fresh invocation, Context close and empty indices.
+Existing accepted-prefix, cancellation/drain, late native failure and allocation
+refusal tests were selected as owning lifetime consumers.
+
+The full existing owning region factors were then run once, excluding the
+already qualified current-demand batches:
+[Direct](1d801604-direct-regions.log)/[XML](1d801604-direct-regions.xml)
+178 PASS/7 missing-input SKIP of185; [Graph](1d801604-graph-regions.log)/
+[XML](1d801604-graph-regions.xml)149 PASS/7 SKIP/1 old diagnostic expectation
+FAIL of157. The sole failure expected the old ggml Metal carrier name for
+Q4_K, while the exact MLX carrier's numeric output succeeded. The expectation
+was corrected for the actual carrier; its old loose Q4 comparison was also
+tightened to the existing1e-6 bound, never relaxed.
+
+The seven skips were fixture plumbing, not evidence of missing math: canonical
+Windows already retained the117,609,568-byte25-file real Qwen3.5 subset.
+All25 file/oracle hashes match [the original receipt](qwen35-real-fixture-receipt.json).
+Its complete archive (93,349,615 bytes, SHA256
+`da8572c829499ab86fc3a80662cdc13a12527b4b4ecbd86b7b366e67b1cc7717`)
+was forwarded and checked on Air; source model was not redownloaded.
+The initial transfer runner stopped before any test because Air's Python3.9
+does not expose tarfile's newer filter argument. Manual exact-target/path/type
+validation on the same archive fixed that tooling call without a rebuild/rerun.
+
+`c8bfeb6b` [incremental Graph test build](c8bfeb6b-build.log) PASS;
+only seven skipped names and that one failed Graph diagnostic were selected:
+[Direct](c8bfeb6b-direct-real-qwen.log)/[XML](c8bfeb6b-direct-real-qwen.xml)
+7/7 and [Graph](c8bfeb6b-graph-real-qwen.log)/[XML](c8bfeb6b-graph-real-qwen.xml)
+8/8 PASS, no SKIP. Existing region factor evidence is therefore185/185 Direct
+and157/157 Graph under this explicit combined evidence, not a hidden second
+whole-factor run. The entire Qwen recurrent gate and actual state feedback also
+run across nine source profiles. New official0813/0731/DSpark sidecars still
+need their specifically indexed full-region witnesses; older region names do
+not silently certify all new revisions. Official FP4 decision and A3/A4 remain
+open; no P1 has started.
