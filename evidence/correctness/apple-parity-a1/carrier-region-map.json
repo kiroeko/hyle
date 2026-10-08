@@ -1,0 +1,1383 @@
+{
+  "baseline": "406cc3c23843ea9928e45970527ed2664f8f2728",
+  "plain": [
+    {
+      "id": "p033ae23672c4671a",
+      "role": "projection",
+      "storage": "kBFloat16",
+      "shape": [
+        17408,
+        5120
+      ],
+      "artifact": 2,
+      "candidate": "ATen/ggml according to primitive semantics, current qualification pending",
+      "mature_candidate": "Original MLX GPU primitives",
+      "runtime_verdict": "UNVERIFIED_CURRENT_SHAPE"
+    },
+    {
+      "id": "p0afd29f5ba0d80fe",
+      "role": "norm",
+      "storage": "kBFloat16",
+      "shape": [
+        1024
+      ],
+      "artifact": 3,
+      "candidate": "ATen/ggml according to primitive semantics, current qualification pending",
+      "mature_candidate": "Original MLX GPU primitives",
+      "runtime_verdict": "UNVERIFIED_CURRENT_SHAPE"
+    },
+    {
+      "id": "p0bd7aad8df2d52de",
+      "role": "norm",
+      "storage": "kBFloat16",
+      "shape": [
+        512
+      ],
+      "artifact": 3,
+      "candidate": "ATen/ggml according to primitive semantics, current qualification pending",
+      "mature_candidate": "Original MLX GPU primitives",
+      "runtime_verdict": "UNVERIFIED_CURRENT_SHAPE"
+    },
+    {
+      "id": "p17277e53d2d86a4c",
+      "role": "hc_base",
+      "storage": "kFloat32",
+      "shape": [
+        4
+      ],
+      "artifact": 3,
+      "candidate": "ATen/ggml according to primitive semantics, current qualification pending",
+      "mature_candidate": "Original ggml Metal HyperConnection region",
+      "runtime_verdict": "UNVERIFIED_CURRENT_SHAPE"
+    },
+    {
+      "id": "p1e385a41b1182a6a",
+      "role": "conv",
+      "storage": "kBFloat16",
+      "shape": [
+        6144,
+        1,
+        4
+      ],
+      "artifact": 0,
+      "candidate": "ATen/ggml according to primitive semantics, current qualification pending",
+      "mature_candidate": "Original MLX GPU primitives",
+      "runtime_verdict": "UNVERIFIED_CURRENT_SHAPE"
+    },
+    {
+      "id": "p1ee2dd3f7e4dba6e",
+      "role": "head",
+      "storage": "kBFloat16",
+      "shape": [
+        248320,
+        5120
+      ],
+      "artifact": 2,
+      "candidate": "ATen/ggml according to primitive semantics, current qualification pending",
+      "mature_candidate": "Original MLX GPU primitives",
+      "runtime_verdict": "UNVERIFIED_CURRENT_SHAPE"
+    },
+    {
+      "id": "p25de7cab6d16489e",
+      "role": "conv",
+      "storage": "kFloat16",
+      "shape": [
+        10240,
+        1,
+        4
+      ],
+      "artifact": 1,
+      "candidate": "ATen/ggml according to primitive semantics, current qualification pending",
+      "mature_candidate": "Original MLX GPU primitives",
+      "runtime_verdict": "UNVERIFIED_CURRENT_SHAPE"
+    },
+    {
+      "id": "p2e309ecbb28e6116",
+      "role": "norm_zero_centered",
+      "storage": "kFloat16",
+      "shape": [
+        5120
+      ],
+      "artifact": 1,
+      "candidate": "ATen/ggml according to primitive semantics, current qualification pending",
+      "mature_candidate": "Original MLX GPU primitives",
+      "runtime_verdict": "UNVERIFIED_CURRENT_SHAPE"
+    },
+    {
+      "id": "p2f522eea94460483",
+      "role": "projection",
+      "storage": "kBFloat16",
+      "shape": [
+        1024,
+        5120
+      ],
+      "artifact": 2,
+      "candidate": "ATen/ggml according to primitive semantics, current qualification pending",
+      "mature_candidate": "Original MLX GPU primitives",
+      "runtime_verdict": "UNVERIFIED_CURRENT_SHAPE"
+    },
+    {
+      "id": "p393f3bca8bb96741",
+      "role": "projection",
+      "storage": "kFloat16",
+      "shape": [
+        48,
+        5120
+      ],
+      "artifact": 1,
+      "candidate": "ATen/ggml according to primitive semantics, current qualification pending",
+      "mature_candidate": "Original MLX GPU primitives",
+      "runtime_verdict": "UNVERIFIED_CURRENT_SHAPE"
+    },
+    {
+      "id": "p395036291851d773",
+      "role": "projection",
+      "storage": "kFloat32",
+      "shape": [
+        4,
+        16384
+      ],
+      "artifact": 3,
+      "candidate": "ATen/ggml according to primitive semantics, current qualification pending",
+      "mature_candidate": "Original MLX GPU primitives",
+      "runtime_verdict": "UNVERIFIED_CURRENT_SHAPE"
+    },
+    {
+      "id": "p401603e31391cadf",
+      "role": "norm_zero_centered",
+      "storage": "kBFloat16",
+      "shape": [
+        2048
+      ],
+      "artifact": 0,
+      "candidate": "ATen/ggml according to primitive semantics, current qualification pending",
+      "mature_candidate": "Original MLX GPU primitives",
+      "runtime_verdict": "UNVERIFIED_CURRENT_SHAPE"
+    },
+    {
+      "id": "p4952faefad3c4446",
+      "role": "log_decay",
+      "storage": "kBFloat16",
+      "shape": [
+        48
+      ],
+      "artifact": 2,
+      "candidate": "ATen/ggml according to primitive semantics, current qualification pending",
+      "mature_candidate": "Original MLX GPU primitives",
+      "runtime_verdict": "UNVERIFIED_CURRENT_SHAPE"
+    },
+    {
+      "id": "p4b14bc81a1f54ccb",
+      "role": "position_lookup",
+      "storage": "kBFloat16",
+      "shape": [
+        4,
+        256
+      ],
+      "artifact": 3,
+      "candidate": "ATen/ggml according to primitive semantics, current qualification pending",
+      "mature_candidate": "Original MLX GPU primitives",
+      "runtime_verdict": "UNVERIFIED_CURRENT_SHAPE"
+    },
+    {
+      "id": "p4dc6f44efc136a4f",
+      "role": "norm_zero_centered",
+      "storage": "kFloat16",
+      "shape": [
+        256
+      ],
+      "artifact": 1,
+      "candidate": "ATen/ggml according to primitive semantics, current qualification pending",
+      "mature_candidate": "Original MLX GPU primitives",
+      "runtime_verdict": "UNVERIFIED_CURRENT_SHAPE"
+    },
+    {
+      "id": "p6521e759968a3577",
+      "role": "embedding",
+      "storage": "kFloat16",
+      "shape": [
+        248320,
+        5120
+      ],
+      "artifact": 1,
+      "candidate": "ATen/ggml according to primitive semantics, current qualification pending",
+      "mature_candidate": "Original MLX GPU primitives",
+      "runtime_verdict": "UNVERIFIED_CURRENT_SHAPE"
+    },
+    {
+      "id": "p6656a11cafc1dac0",
+      "role": "projection",
+      "storage": "kBFloat16",
+      "shape": [
+        12288,
+        5120
+      ],
+      "artifact": 2,
+      "candidate": "ATen/ggml according to primitive semantics, current qualification pending",
+      "mature_candidate": "Original MLX GPU primitives",
+      "runtime_verdict": "UNVERIFIED_CURRENT_SHAPE"
+    },
+    {
+      "id": "p67911b255e95f6ce",
+      "role": "time_bias",
+      "storage": "kFloat16",
+      "shape": [
+        48
+      ],
+      "artifact": 1,
+      "candidate": "ATen/ggml according to primitive semantics, current qualification pending",
+      "mature_candidate": "Original MLX GPU primitives",
+      "runtime_verdict": "UNVERIFIED_CURRENT_SHAPE"
+    },
+    {
+      "id": "p6cad3b2609a46d21",
+      "role": "embedding",
+      "storage": "kBFloat16",
+      "shape": [
+        248320,
+        5120
+      ],
+      "artifact": 2,
+      "candidate": "ATen/ggml according to primitive semantics, current qualification pending",
+      "mature_candidate": "Original MLX GPU primitives",
+      "runtime_verdict": "UNVERIFIED_CURRENT_SHAPE"
+    },
+    {
+      "id": "p7075e074f5c559c6",
+      "role": "sink",
+      "storage": "kFloat32",
+      "shape": [
+        64
+      ],
+      "artifact": 3,
+      "candidate": "ATen/ggml according to primitive semantics, current qualification pending",
+      "mature_candidate": "Original MLX GPU primitives",
+      "runtime_verdict": "UNVERIFIED_CURRENT_SHAPE"
+    },
+    {
+      "id": "p73b1be8a81f60682",
+      "role": "norm_zero_centered",
+      "storage": "kBFloat16",
+      "shape": [
+        256
+      ],
+      "artifact": 0,
+      "candidate": "ATen/ggml according to primitive semantics, current qualification pending",
+      "mature_candidate": "Original MLX GPU primitives",
+      "runtime_verdict": "UNVERIFIED_CURRENT_SHAPE"
+    },
+    {
+      "id": "p77a635b55664287f",
+      "role": "projection",
+      "storage": "kBFloat16",
+      "shape": [
+        6144,
+        5120
+      ],
+      "artifact": 2,
+      "candidate": "ATen/ggml according to primitive semantics, current qualification pending",
+      "mature_candidate": "Original MLX GPU primitives",
+      "runtime_verdict": "UNVERIFIED_CURRENT_SHAPE"
+    },
+    {
+      "id": "p78cfb55fb5085d3a",
+      "role": "norm",
+      "storage": "kBFloat16",
+      "shape": [
+        128
+      ],
+      "artifact": 0,
+      "candidate": "ATen/ggml according to primitive semantics, current qualification pending",
+      "mature_candidate": "Original MLX GPU primitives",
+      "runtime_verdict": "UNVERIFIED_CURRENT_SHAPE"
+    },
+    {
+      "id": "p893cd9940b6cedd0",
+      "role": "time_bias",
+      "storage": "kBFloat16",
+      "shape": [
+        16
+      ],
+      "artifact": 0,
+      "candidate": "ATen/ggml according to primitive semantics, current qualification pending",
+      "mature_candidate": "Original MLX GPU primitives",
+      "runtime_verdict": "UNVERIFIED_CURRENT_SHAPE"
+    },
+    {
+      "id": "p89a9ec4743c9107b",
+      "role": "position_lookup",
+      "storage": "kBFloat16",
+      "shape": [
+        4,
+        1024
+      ],
+      "artifact": 3,
+      "candidate": "ATen/ggml according to primitive semantics, current qualification pending",
+      "mature_candidate": "Original MLX GPU primitives",
+      "runtime_verdict": "UNVERIFIED_CURRENT_SHAPE"
+    },
+    {
+      "id": "p89c23f07a68ea22a",
+      "role": "embedding",
+      "storage": "kBFloat16",
+      "shape": [
+        248320,
+        2048
+      ],
+      "artifact": 0,
+      "candidate": "ATen/ggml according to primitive semantics, current qualification pending",
+      "mature_candidate": "Original MLX GPU primitives",
+      "runtime_verdict": "UNVERIFIED_CURRENT_SHAPE"
+    },
+    {
+      "id": "p8f3f00196aec37da",
+      "role": "head",
+      "storage": "kFloat16",
+      "shape": [
+        248320,
+        5120
+      ],
+      "artifact": 1,
+      "candidate": "ATen/ggml according to primitive semantics, current qualification pending",
+      "mature_candidate": "Original MLX GPU primitives",
+      "runtime_verdict": "UNVERIFIED_CURRENT_SHAPE"
+    },
+    {
+      "id": "p91a52869c4190996",
+      "role": "projection",
+      "storage": "kBFloat16",
+      "shape": [
+        256,
+        4096
+      ],
+      "artifact": 3,
+      "candidate": "ATen/ggml according to primitive semantics, current qualification pending",
+      "mature_candidate": "Original MLX GPU primitives",
+      "runtime_verdict": "UNVERIFIED_CURRENT_SHAPE"
+    },
+    {
+      "id": "p938bcf88666f5aa4",
+      "role": "projection",
+      "storage": "kBFloat16",
+      "shape": [
+        5120,
+        17408
+      ],
+      "artifact": 2,
+      "candidate": "ATen/ggml according to primitive semantics, current qualification pending",
+      "mature_candidate": "Original MLX GPU primitives",
+      "runtime_verdict": "UNVERIFIED_CURRENT_SHAPE"
+    },
+    {
+      "id": "p968d0881539dd7a3",
+      "role": "hc_base",
+      "storage": "kFloat32",
+      "shape": [
+        24
+      ],
+      "artifact": 3,
+      "candidate": "ATen/ggml according to primitive semantics, current qualification pending",
+      "mature_candidate": "Original ggml Metal HyperConnection region",
+      "runtime_verdict": "UNVERIFIED_CURRENT_SHAPE"
+    },
+    {
+      "id": "p9e4bbe139a148cc5",
+      "role": "projection",
+      "storage": "kBFloat16",
+      "shape": [
+        10240,
+        5120
+      ],
+      "artifact": 2,
+      "candidate": "ATen/ggml according to primitive semantics, current qualification pending",
+      "mature_candidate": "Original MLX GPU primitives",
+      "runtime_verdict": "UNVERIFIED_CURRENT_SHAPE"
+    },
+    {
+      "id": "pa2a7b9ba93a5c9c2",
+      "role": "router_bias",
+      "storage": "kFloat32",
+      "shape": [
+        256
+      ],
+      "artifact": 3,
+      "candidate": "ATen/ggml according to primitive semantics, current qualification pending",
+      "mature_candidate": "Original MLX GPU primitives",
+      "runtime_verdict": "UNVERIFIED_CURRENT_SHAPE"
+    },
+    {
+      "id": "paac32a736c36ec89",
+      "role": "log_decay",
+      "storage": "kFloat16",
+      "shape": [
+        48
+      ],
+      "artifact": 1,
+      "candidate": "ATen/ggml according to primitive semantics, current qualification pending",
+      "mature_candidate": "Original MLX GPU primitives",
+      "runtime_verdict": "UNVERIFIED_CURRENT_SHAPE"
+    },
+    {
+      "id": "pac94ec1bf56a019b",
+      "role": "projection",
+      "storage": "kBFloat16",
+      "shape": [
+        5120,
+        6144
+      ],
+      "artifact": 2,
+      "candidate": "ATen/ggml according to primitive semantics, current qualification pending",
+      "mature_candidate": "Original MLX GPU primitives",
+      "runtime_verdict": "UNVERIFIED_CURRENT_SHAPE"
+    },
+    {
+      "id": "pb2ff1ec2df5e4a16",
+      "role": "integer_lookup",
+      "storage": "kInt32",
+      "shape": [
+        129280,
+        6
+      ],
+      "artifact": 3,
+      "candidate": "ATen/ggml according to primitive semantics, current qualification pending",
+      "mature_candidate": "Original MLX GPU primitives",
+      "runtime_verdict": "UNVERIFIED_CURRENT_SHAPE"
+    },
+    {
+      "id": "pb3839cd7a67d8b9e",
+      "role": "projection",
+      "storage": "kBFloat16",
+      "shape": [
+        5120,
+        10240
+      ],
+      "artifact": 2,
+      "candidate": "ATen/ggml according to primitive semantics, current qualification pending",
+      "mature_candidate": "Original MLX GPU primitives",
+      "runtime_verdict": "UNVERIFIED_CURRENT_SHAPE"
+    },
+    {
+      "id": "pb76b261976613ec5",
+      "role": "conv",
+      "storage": "kBFloat16",
+      "shape": [
+        10240,
+        1,
+        4
+      ],
+      "artifact": 2,
+      "candidate": "ATen/ggml according to primitive semantics, current qualification pending",
+      "mature_candidate": "Original MLX GPU primitives",
+      "runtime_verdict": "UNVERIFIED_CURRENT_SHAPE"
+    },
+    {
+      "id": "pbe853152955b7d0c",
+      "role": "projection",
+      "storage": "kFloat32",
+      "shape": [
+        24,
+        16384
+      ],
+      "artifact": 3,
+      "candidate": "ATen/ggml according to primitive semantics, current qualification pending",
+      "mature_candidate": "Original MLX GPU primitives",
+      "runtime_verdict": "UNVERIFIED_CURRENT_SHAPE"
+    },
+    {
+      "id": "pc5b6491635fce0b8",
+      "role": "time_bias",
+      "storage": "kBFloat16",
+      "shape": [
+        48
+      ],
+      "artifact": 2,
+      "candidate": "ATen/ggml according to primitive semantics, current qualification pending",
+      "mature_candidate": "Original MLX GPU primitives",
+      "runtime_verdict": "UNVERIFIED_CURRENT_SHAPE"
+    },
+    {
+      "id": "pcd4216fa4b5222b9",
+      "role": "projection",
+      "storage": "kBFloat16",
+      "shape": [
+        48,
+        5120
+      ],
+      "artifact": 2,
+      "candidate": "ATen/ggml according to primitive semantics, current qualification pending",
+      "mature_candidate": "Original MLX GPU primitives",
+      "runtime_verdict": "UNVERIFIED_CURRENT_SHAPE"
+    },
+    {
+      "id": "pd349b6da7bece4a8",
+      "role": "norm",
+      "storage": "kBFloat16",
+      "shape": [
+        4096
+      ],
+      "artifact": 3,
+      "candidate": "ATen/ggml according to primitive semantics, current qualification pending",
+      "mature_candidate": "Original MLX GPU primitives",
+      "runtime_verdict": "UNVERIFIED_CURRENT_SHAPE"
+    },
+    {
+      "id": "pd75430a907622b9e",
+      "role": "position_lookup",
+      "storage": "kBFloat16",
+      "shape": [
+        128,
+        512
+      ],
+      "artifact": 3,
+      "candidate": "ATen/ggml according to primitive semantics, current qualification pending",
+      "mature_candidate": "Original MLX GPU primitives",
+      "runtime_verdict": "UNVERIFIED_CURRENT_SHAPE"
+    },
+    {
+      "id": "pdacb7536905755fa",
+      "role": "log_decay",
+      "storage": "kBFloat16",
+      "shape": [
+        16
+      ],
+      "artifact": 0,
+      "candidate": "ATen/ggml according to primitive semantics, current qualification pending",
+      "mature_candidate": "Original MLX GPU primitives",
+      "runtime_verdict": "UNVERIFIED_CURRENT_SHAPE"
+    },
+    {
+      "id": "pdc1efdcf1673bd32",
+      "role": "norm_zero_centered",
+      "storage": "kBFloat16",
+      "shape": [
+        5120
+      ],
+      "artifact": 2,
+      "candidate": "ATen/ggml according to primitive semantics, current qualification pending",
+      "mature_candidate": "Original MLX GPU primitives",
+      "runtime_verdict": "UNVERIFIED_CURRENT_SHAPE"
+    },
+    {
+      "id": "pf0d7ebdd2f4776da",
+      "role": "norm",
+      "storage": "kFloat16",
+      "shape": [
+        128
+      ],
+      "artifact": 1,
+      "candidate": "ATen/ggml according to primitive semantics, current qualification pending",
+      "mature_candidate": "Original MLX GPU primitives",
+      "runtime_verdict": "UNVERIFIED_CURRENT_SHAPE"
+    }
+  ],
+  "packed": [
+    {
+      "id": "n0bb663b75e961054",
+      "format": "kMx8",
+      "experts": 1,
+      "n": 32768,
+      "k": 1024,
+      "group": 32,
+      "grouped": false,
+      "embedding": false,
+      "artifact": 3,
+      "candidate": "Original borrowed codec + ATen CPU program; single current carrier",
+      "mature_candidate": "MLX quantized_matmul/gather_qmm/dequantize/take",
+      "apple_current_binding": "ABSENT: MlxQuantized custom op",
+      "runtime_verdict": "UNVERIFIED"
+    },
+    {
+      "id": "n11ac28dbeaa21a76",
+      "format": "kMx4",
+      "experts": 256,
+      "n": 2048,
+      "k": 4096,
+      "group": 32,
+      "grouped": true,
+      "embedding": false,
+      "artifact": 3,
+      "candidate": "Original borrowed codec + ATen CPU program; single current carrier",
+      "mature_candidate": "MLX quantized_matmul/gather_qmm/dequantize/take",
+      "apple_current_binding": "ABSENT: MlxQuantized custom op",
+      "runtime_verdict": "UNVERIFIED"
+    },
+    {
+      "id": "n1a02d912dccfbfcc",
+      "format": "kMx8",
+      "experts": 1,
+      "n": 512,
+      "k": 4096,
+      "group": 32,
+      "grouped": false,
+      "embedding": false,
+      "artifact": 3,
+      "candidate": "Original borrowed codec + ATen CPU program; single current carrier",
+      "mature_candidate": "MLX quantized_matmul/gather_qmm/dequantize/take",
+      "apple_current_binding": "ABSENT: MlxQuantized custom op",
+      "runtime_verdict": "UNVERIFIED"
+    },
+    {
+      "id": "n202aedd266175231",
+      "format": "kMx8",
+      "experts": 1,
+      "n": 4096,
+      "k": 8192,
+      "group": 32,
+      "grouped": false,
+      "embedding": false,
+      "artifact": 3,
+      "candidate": "Original borrowed codec + ATen CPU program; single current carrier",
+      "mature_candidate": "MLX quantized_matmul/gather_qmm/dequantize/take",
+      "apple_current_binding": "ABSENT: MlxQuantized custom op",
+      "runtime_verdict": "UNVERIFIED"
+    },
+    {
+      "id": "n2208fbb06e447168",
+      "format": "kAwq",
+      "experts": 1,
+      "n": 1024,
+      "k": 5120,
+      "group": 128,
+      "grouped": false,
+      "embedding": false,
+      "artifact": 1,
+      "candidate": "Original borrowed codec + ATen CPU program; single current carrier",
+      "mature_candidate": "Original registered NF4/AWQ/CT codec and MLX GPU tensor operations; exact mature API composition must be qualified",
+      "apple_current_binding": "ABSENT: ArtifactWeightDecode custom op",
+      "runtime_verdict": "UNVERIFIED"
+    },
+    {
+      "id": "n2af37225831ba519",
+      "format": "kNf4",
+      "experts": 1,
+      "n": 16,
+      "k": 2048,
+      "group": 64,
+      "grouped": false,
+      "embedding": false,
+      "artifact": 0,
+      "candidate": "Original borrowed codec + ATen CPU program; single current carrier",
+      "mature_candidate": "Original registered NF4/AWQ/CT codec and MLX GPU tensor operations; exact mature API composition must be qualified",
+      "apple_current_binding": "ABSENT: ArtifactWeightDecode custom op",
+      "runtime_verdict": "UNVERIFIED"
+    },
+    {
+      "id": "n33d5fe29fed560af",
+      "format": "kCt",
+      "experts": 1,
+      "n": 1024,
+      "k": 5120,
+      "group": 128,
+      "grouped": false,
+      "embedding": false,
+      "artifact": 2,
+      "candidate": "Original borrowed codec + ATen CPU program; single current carrier",
+      "mature_candidate": "Original registered NF4/AWQ/CT codec and MLX GPU tensor operations; exact mature API composition must be qualified",
+      "apple_current_binding": "ABSENT: ArtifactWeightDecode custom op",
+      "runtime_verdict": "UNVERIFIED"
+    },
+    {
+      "id": "n37e21568674f2571",
+      "format": "kMx8",
+      "experts": 1,
+      "n": 2048,
+      "k": 4096,
+      "group": 32,
+      "grouped": false,
+      "embedding": false,
+      "artifact": 3,
+      "candidate": "Original borrowed codec + ATen CPU program; single current carrier",
+      "mature_candidate": "MLX quantized_matmul/gather_qmm/dequantize/take",
+      "apple_current_binding": "ABSENT: MlxQuantized custom op",
+      "runtime_verdict": "UNVERIFIED"
+    },
+    {
+      "id": "n39f10794d1034fdd",
+      "format": "kCt",
+      "experts": 1,
+      "n": 17408,
+      "k": 5120,
+      "group": 128,
+      "grouped": false,
+      "embedding": false,
+      "artifact": 2,
+      "candidate": "Original borrowed codec + ATen CPU program; single current carrier",
+      "mature_candidate": "Original registered NF4/AWQ/CT codec and MLX GPU tensor operations; exact mature API composition must be qualified",
+      "apple_current_binding": "ABSENT: ArtifactWeightDecode custom op",
+      "runtime_verdict": "UNVERIFIED"
+    },
+    {
+      "id": "n44af3ac14c76c678",
+      "format": "kMx8",
+      "experts": 1,
+      "n": 1024,
+      "k": 4096,
+      "group": 32,
+      "grouped": false,
+      "embedding": false,
+      "artifact": 3,
+      "candidate": "Original borrowed codec + ATen CPU program; single current carrier",
+      "mature_candidate": "MLX quantized_matmul/gather_qmm/dequantize/take",
+      "apple_current_binding": "ABSENT: MlxQuantized custom op",
+      "runtime_verdict": "UNVERIFIED"
+    },
+    {
+      "id": "n57f8346172bcde91",
+      "format": "kAffine",
+      "experts": 1,
+      "n": 256,
+      "k": 4096,
+      "group": 64,
+      "grouped": false,
+      "embedding": false,
+      "artifact": 3,
+      "candidate": "Original borrowed codec + ATen CPU program; single current carrier",
+      "mature_candidate": "MLX quantized_matmul/gather_qmm/dequantize/take",
+      "apple_current_binding": "ABSENT: MlxQuantized custom op",
+      "runtime_verdict": "UNVERIFIED"
+    },
+    {
+      "id": "n5b450b9128f9ddb4",
+      "format": "kAffine",
+      "experts": 1,
+      "n": 512,
+      "k": 4096,
+      "group": 64,
+      "grouped": false,
+      "embedding": false,
+      "artifact": 3,
+      "candidate": "Original borrowed codec + ATen CPU program; single current carrier",
+      "mature_candidate": "MLX quantized_matmul/gather_qmm/dequantize/take",
+      "apple_current_binding": "ABSENT: MlxQuantized custom op",
+      "runtime_verdict": "UNVERIFIED"
+    },
+    {
+      "id": "n627e13f695902a6f",
+      "format": "kAwq",
+      "experts": 1,
+      "n": 5120,
+      "k": 17408,
+      "group": 128,
+      "grouped": false,
+      "embedding": false,
+      "artifact": 1,
+      "candidate": "Original borrowed codec + ATen CPU program; single current carrier",
+      "mature_candidate": "Original registered NF4/AWQ/CT codec and MLX GPU tensor operations; exact mature API composition must be qualified",
+      "apple_current_binding": "ABSENT: ArtifactWeightDecode custom op",
+      "runtime_verdict": "UNVERIFIED"
+    },
+    {
+      "id": "n7251e93056484f69",
+      "format": "kAffine",
+      "experts": 1,
+      "n": 1024,
+      "k": 4096,
+      "group": 64,
+      "grouped": false,
+      "embedding": false,
+      "artifact": 3,
+      "candidate": "Original borrowed codec + ATen CPU program; single current carrier",
+      "mature_candidate": "MLX quantized_matmul/gather_qmm/dequantize/take",
+      "apple_current_binding": "ABSENT: MlxQuantized custom op",
+      "runtime_verdict": "UNVERIFIED"
+    },
+    {
+      "id": "n7b3b05721f557885",
+      "format": "kAwq",
+      "experts": 1,
+      "n": 6144,
+      "k": 5120,
+      "group": 128,
+      "grouped": false,
+      "embedding": false,
+      "artifact": 1,
+      "candidate": "Original borrowed codec + ATen CPU program; single current carrier",
+      "mature_candidate": "Original registered NF4/AWQ/CT codec and MLX GPU tensor operations; exact mature API composition must be qualified",
+      "apple_current_binding": "ABSENT: ArtifactWeightDecode custom op",
+      "runtime_verdict": "UNVERIFIED"
+    },
+    {
+      "id": "n7b87eddf86e971d2",
+      "format": "kNf4",
+      "experts": 1,
+      "n": 2048,
+      "k": 2048,
+      "group": 64,
+      "grouped": false,
+      "embedding": false,
+      "artifact": 0,
+      "candidate": "Original borrowed codec + ATen CPU program; single current carrier",
+      "mature_candidate": "Original registered NF4/AWQ/CT codec and MLX GPU tensor operations; exact mature API composition must be qualified",
+      "apple_current_binding": "ABSENT: ArtifactWeightDecode custom op",
+      "runtime_verdict": "UNVERIFIED"
+    },
+    {
+      "id": "n827da62ad0daf7b8",
+      "format": "kMx8",
+      "experts": 1,
+      "n": 8192,
+      "k": 1024,
+      "group": 32,
+      "grouped": false,
+      "embedding": false,
+      "artifact": 3,
+      "candidate": "Original borrowed codec + ATen CPU program; single current carrier",
+      "mature_candidate": "MLX quantized_matmul/gather_qmm/dequantize/take",
+      "apple_current_binding": "ABSENT: MlxQuantized custom op",
+      "runtime_verdict": "UNVERIFIED"
+    },
+    {
+      "id": "n85a9768ce0cfbe9d",
+      "format": "kAffine",
+      "experts": 1,
+      "n": 64,
+      "k": 4096,
+      "group": 64,
+      "grouped": false,
+      "embedding": false,
+      "artifact": 3,
+      "candidate": "Original borrowed codec + ATen CPU program; single current carrier",
+      "mature_candidate": "MLX quantized_matmul/gather_qmm/dequantize/take",
+      "apple_current_binding": "ABSENT: MlxQuantized custom op",
+      "runtime_verdict": "UNVERIFIED"
+    },
+    {
+      "id": "n8c79bf7f55b10c01",
+      "format": "kAwq",
+      "experts": 1,
+      "n": 12288,
+      "k": 5120,
+      "group": 128,
+      "grouped": false,
+      "embedding": false,
+      "artifact": 1,
+      "candidate": "Original borrowed codec + ATen CPU program; single current carrier",
+      "mature_candidate": "Original registered NF4/AWQ/CT codec and MLX GPU tensor operations; exact mature API composition must be qualified",
+      "apple_current_binding": "ABSENT: ArtifactWeightDecode custom op",
+      "runtime_verdict": "UNVERIFIED"
+    },
+    {
+      "id": "n9bfaa0e6dba16c70",
+      "format": "kMx8",
+      "experts": 1,
+      "n": 4096,
+      "k": 2048,
+      "group": 32,
+      "grouped": false,
+      "embedding": false,
+      "artifact": 3,
+      "candidate": "Original borrowed codec + ATen CPU program; single current carrier",
+      "mature_candidate": "MLX quantized_matmul/gather_qmm/dequantize/take",
+      "apple_current_binding": "ABSENT: MlxQuantized custom op",
+      "runtime_verdict": "UNVERIFIED"
+    },
+    {
+      "id": "na2bfd546f5de3726",
+      "format": "kAffine",
+      "experts": 1,
+      "n": 129280,
+      "k": 4096,
+      "group": 64,
+      "grouped": false,
+      "embedding": true,
+      "artifact": 3,
+      "candidate": "Original borrowed codec + ATen CPU program; single current carrier",
+      "mature_candidate": "MLX quantized_matmul/gather_qmm/dequantize/take",
+      "apple_current_binding": "ABSENT: MlxQuantized custom op",
+      "runtime_verdict": "UNVERIFIED"
+    },
+    {
+      "id": "na7b682381e9fa396",
+      "format": "kCt",
+      "experts": 1,
+      "n": 5120,
+      "k": 17408,
+      "group": 128,
+      "grouped": false,
+      "embedding": false,
+      "artifact": 2,
+      "candidate": "Original borrowed codec + ATen CPU program; single current carrier",
+      "mature_candidate": "Original registered NF4/AWQ/CT codec and MLX GPU tensor operations; exact mature API composition must be qualified",
+      "apple_current_binding": "ABSENT: ArtifactWeightDecode custom op",
+      "runtime_verdict": "UNVERIFIED"
+    },
+    {
+      "id": "nab5612104243530d",
+      "format": "kNf4",
+      "experts": 1,
+      "n": 4096,
+      "k": 2048,
+      "group": 64,
+      "grouped": false,
+      "embedding": false,
+      "artifact": 0,
+      "candidate": "Original borrowed codec + ATen CPU program; single current carrier",
+      "mature_candidate": "Original registered NF4/AWQ/CT codec and MLX GPU tensor operations; exact mature API composition must be qualified",
+      "apple_current_binding": "ABSENT: ArtifactWeightDecode custom op",
+      "runtime_verdict": "UNVERIFIED"
+    },
+    {
+      "id": "nad972a78d88299e9",
+      "format": "kCt",
+      "experts": 1,
+      "n": 5120,
+      "k": 6144,
+      "group": 128,
+      "grouped": false,
+      "embedding": false,
+      "artifact": 2,
+      "candidate": "Original borrowed codec + ATen CPU program; single current carrier",
+      "mature_candidate": "Original registered NF4/AWQ/CT codec and MLX GPU tensor operations; exact mature API composition must be qualified",
+      "apple_current_binding": "ABSENT: ArtifactWeightDecode custom op",
+      "runtime_verdict": "UNVERIFIED"
+    },
+    {
+      "id": "nb0eb5191fc5bb45c",
+      "format": "kNf4",
+      "experts": 1,
+      "n": 512,
+      "k": 2048,
+      "group": 64,
+      "grouped": false,
+      "embedding": false,
+      "artifact": 0,
+      "candidate": "Original borrowed codec + ATen CPU program; single current carrier",
+      "mature_candidate": "Original registered NF4/AWQ/CT codec and MLX GPU tensor operations; exact mature API composition must be qualified",
+      "apple_current_binding": "ABSENT: ArtifactWeightDecode custom op",
+      "runtime_verdict": "UNVERIFIED"
+    },
+    {
+      "id": "nb696beddeed9063f",
+      "format": "kAffine",
+      "experts": 1,
+      "n": 129280,
+      "k": 4096,
+      "group": 64,
+      "grouped": false,
+      "embedding": false,
+      "artifact": 3,
+      "candidate": "Original borrowed codec + ATen CPU program; single current carrier",
+      "mature_candidate": "MLX quantized_matmul/gather_qmm/dequantize/take",
+      "apple_current_binding": "ABSENT: MlxQuantized custom op",
+      "runtime_verdict": "UNVERIFIED"
+    },
+    {
+      "id": "nb79fa3dba1813475",
+      "format": "kCt",
+      "experts": 1,
+      "n": 12288,
+      "k": 5120,
+      "group": 128,
+      "grouped": false,
+      "embedding": false,
+      "artifact": 2,
+      "candidate": "Original borrowed codec + ATen CPU program; single current carrier",
+      "mature_candidate": "Original registered NF4/AWQ/CT codec and MLX GPU tensor operations; exact mature API composition must be qualified",
+      "apple_current_binding": "ABSENT: ArtifactWeightDecode custom op",
+      "runtime_verdict": "UNVERIFIED"
+    },
+    {
+      "id": "nc0c493d5f357c6f5",
+      "format": "kAwq",
+      "experts": 1,
+      "n": 10240,
+      "k": 5120,
+      "group": 128,
+      "grouped": false,
+      "embedding": false,
+      "artifact": 1,
+      "candidate": "Original borrowed codec + ATen CPU program; single current carrier",
+      "mature_candidate": "Original registered NF4/AWQ/CT codec and MLX GPU tensor operations; exact mature API composition must be qualified",
+      "apple_current_binding": "ABSENT: ArtifactWeightDecode custom op",
+      "runtime_verdict": "UNVERIFIED"
+    },
+    {
+      "id": "nc1901694d1ed5be9",
+      "format": "kNf4",
+      "experts": 1,
+      "n": 2048,
+      "k": 6144,
+      "group": 64,
+      "grouped": false,
+      "embedding": false,
+      "artifact": 0,
+      "candidate": "Original borrowed codec + ATen CPU program; single current carrier",
+      "mature_candidate": "Original registered NF4/AWQ/CT codec and MLX GPU tensor operations; exact mature API composition must be qualified",
+      "apple_current_binding": "ABSENT: ArtifactWeightDecode custom op",
+      "runtime_verdict": "UNVERIFIED"
+    },
+    {
+      "id": "nc801b7e28c4a66c0",
+      "format": "kMx4",
+      "experts": 256,
+      "n": 4096,
+      "k": 2048,
+      "group": 32,
+      "grouped": true,
+      "embedding": false,
+      "artifact": 3,
+      "candidate": "Original borrowed codec + ATen CPU program; single current carrier",
+      "mature_candidate": "MLX quantized_matmul/gather_qmm/dequantize/take",
+      "apple_current_binding": "ABSENT: MlxQuantized custom op",
+      "runtime_verdict": "UNVERIFIED"
+    },
+    {
+      "id": "ncb8979d217d13ad8",
+      "format": "kNf4",
+      "experts": 1,
+      "n": 6144,
+      "k": 2048,
+      "group": 64,
+      "grouped": false,
+      "embedding": false,
+      "artifact": 0,
+      "candidate": "Original borrowed codec + ATen CPU program; single current carrier",
+      "mature_candidate": "Original registered NF4/AWQ/CT codec and MLX GPU tensor operations; exact mature API composition must be qualified",
+      "apple_current_binding": "ABSENT: ArtifactWeightDecode custom op",
+      "runtime_verdict": "UNVERIFIED"
+    },
+    {
+      "id": "ne3db6edc9b6e92ec",
+      "format": "kMx8",
+      "experts": 8,
+      "n": 1024,
+      "k": 4096,
+      "group": 32,
+      "grouped": true,
+      "embedding": false,
+      "artifact": 3,
+      "candidate": "Original borrowed codec + ATen CPU program; single current carrier",
+      "mature_candidate": "MLX quantized_matmul/gather_qmm/dequantize/take",
+      "apple_current_binding": "ABSENT: MlxQuantized custom op",
+      "runtime_verdict": "UNVERIFIED"
+    },
+    {
+      "id": "nf425aabf7fb25c64",
+      "format": "kAwq",
+      "experts": 1,
+      "n": 17408,
+      "k": 5120,
+      "group": 128,
+      "grouped": false,
+      "embedding": false,
+      "artifact": 1,
+      "candidate": "Original borrowed codec + ATen CPU program; single current carrier",
+      "mature_candidate": "Original registered NF4/AWQ/CT codec and MLX GPU tensor operations; exact mature API composition must be qualified",
+      "apple_current_binding": "ABSENT: ArtifactWeightDecode custom op",
+      "runtime_verdict": "UNVERIFIED"
+    },
+    {
+      "id": "nfab7af12a04d1cd9",
+      "format": "kAwq",
+      "experts": 1,
+      "n": 5120,
+      "k": 6144,
+      "group": 128,
+      "grouped": false,
+      "embedding": false,
+      "artifact": 1,
+      "candidate": "Original borrowed codec + ATen CPU program; single current carrier",
+      "mature_candidate": "Original registered NF4/AWQ/CT codec and MLX GPU tensor operations; exact mature API composition must be qualified",
+      "apple_current_binding": "ABSENT: ArtifactWeightDecode custom op",
+      "runtime_verdict": "UNVERIFIED"
+    }
+  ],
+  "families": [
+    {
+      "name": "Qwen3.5-2B-GGUF",
+      "profiles": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21
+      ],
+      "regions": [
+        "R02",
+        "R04",
+        "R05"
+      ]
+    },
+    {
+      "name": "Qwen3.8-27B-GGUF",
+      "profiles": [
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40,
+        41,
+        42,
+        43,
+        44,
+        45,
+        46
+      ],
+      "regions": [
+        "R02",
+        "R04",
+        "R05",
+        "R13"
+      ]
+    },
+    {
+      "name": "Qwen3.8-2.4T-A95B-GGUF",
+      "profiles": [
+        47,
+        48,
+        49,
+        50,
+        51,
+        52,
+        53,
+        54,
+        55
+      ],
+      "regions": [
+        "R02",
+        "R04",
+        "R05",
+        "R10",
+        "R11",
+        "R13"
+      ]
+    },
+    {
+      "name": "Kimi-K3-GGUF",
+      "profiles": [
+        56,
+        57,
+        58,
+        59,
+        60,
+        61,
+        62,
+        63,
+        64
+      ],
+      "regions": [
+        "R02",
+        "R06",
+        "R07",
+        "R10",
+        "R11",
+        "R12"
+      ]
+    },
+    {
+      "name": "GLM-5.3-GGUF",
+      "profiles": [
+        65,
+        66,
+        67,
+        68,
+        69,
+        70,
+        71,
+        72,
+        73,
+        74,
+        75,
+        76
+      ],
+      "regions": [
+        "R02",
+        "R07",
+        "R08",
+        "R09",
+        "R10",
+        "R11",
+        "R13"
+      ]
+    },
+    {
+      "name": "GLM-5.3-Flash-GGUF",
+      "profiles": [
+        77,
+        78,
+        79,
+        80,
+        81,
+        82,
+        83,
+        84,
+        85,
+        86,
+        87,
+        88
+      ],
+      "regions": [
+        "R02",
+        "R06",
+        "R07",
+        "R08",
+        "R09",
+        "R10",
+        "R11",
+        "R12",
+        "R13"
+      ]
+    },
+    {
+      "name": "DeepSeek-V4-Pro-0813-GGUF",
+      "profiles": [
+        89,
+        90
+      ],
+      "regions": [
+        "R02",
+        "R07",
+        "R08",
+        "R09",
+        "R10",
+        "R11",
+        "R12"
+      ]
+    },
+    {
+      "name": "DeepSeek-V4-Flash-0731-GGUF",
+      "profiles": [
+        91,
+        92,
+        93,
+        94,
+        95,
+        96,
+        97,
+        98,
+        99,
+        100,
+        101,
+        102,
+        103
+      ],
+      "regions": [
+        "R02",
+        "R07",
+        "R08",
+        "R09",
+        "R10",
+        "R11",
+        "R12"
+      ]
+    }
+  ],
+  "separate_required": {
+    "new_official": [
+      "Pro-0813",
+      "Flash-0731"
+    ],
+    "sidecars": [
+      "Qwen27B-Q4_0-MTP",
+      "Flash-0731-Q8-DSpark",
+      "Flash-0731-BF16-DSpark"
+    ],
+    "non_gguf_artifacts": [
+      {
+        "id": 0,
+        "repository": "techwithsergiu/Qwen3.5-2B-bnb-4bit",
+        "revision": "97fb2bcc0255f1d5b36f07daa54b76cb29444df6",
+        "packed_cases": [
+          "n2af37225831ba519",
+          "n7b87eddf86e971d2",
+          "nab5612104243530d",
+          "nb0eb5191fc5bb45c",
+          "nc1901694d1ed5be9",
+          "ncb8979d217d13ad8"
+        ]
+      },
+      {
+        "id": 1,
+        "repository": "mattbucci/Qwen3.8-27B-AWQ",
+        "revision": "2cc4cffb391645c9be52f3fe50ff595ac7df3e38",
+        "packed_cases": [
+          "n2208fbb06e447168",
+          "n627e13f695902a6f",
+          "n7b3b05721f557885",
+          "n8c79bf7f55b10c01",
+          "nc0c493d5f357c6f5",
+          "nf425aabf7fb25c64",
+          "nfab7af12a04d1cd9"
+        ]
+      },
+      {
+        "id": 2,
+        "repository": "soyrsoyr/Qwen3.8-27B-W4A16-AWQ-GPTQ",
+        "revision": "a1b8f1570ecc09758c8431fd536c88e3b209674f",
+        "packed_cases": [
+          "n33d5fe29fed560af",
+          "n39f10794d1034fdd",
+          "na7b682381e9fa396",
+          "nad972a78d88299e9",
+          "nb79fa3dba1813475"
+        ]
+      },
+      {
+        "id": 3,
+        "repository": "ToPo-ToPo/DeepSeek-V4-Flash-0731-mlx-4bit",
+        "revision": "c8b8f3fe9112cc5aa3b34d2aec9f771b68622902",
+        "packed_cases": [
+          "n0bb663b75e961054",
+          "n11ac28dbeaa21a76",
+          "n1a02d912dccfbfcc",
+          "n202aedd266175231",
+          "n37e21568674f2571",
+          "n44af3ac14c76c678",
+          "n57f8346172bcde91",
+          "n5b450b9128f9ddb4",
+          "n7251e93056484f69",
+          "n827da62ad0daf7b8",
+          "n85a9768ce0cfbe9d",
+          "n9bfaa0e6dba16c70",
+          "na2bfd546f5de3726",
+          "nb696beddeed9063f",
+          "nc801b7e28c4a66c0",
+          "ne3db6edc9b6e92ec"
+        ]
+      }
+    ]
+  },
+  "counts": {
+    "plain": 45,
+    "packed": 34,
+    "native_mlx_packed": 16,
+    "artifact_packed": 18,
+    "family_region_associations": 49
+  },
+  "source_facts": {
+    "custom_mlx_bound": false,
+    "custom_artifact_bound": false
+  },
+  "limits": "Whole demands retained. Original API/source discovery is not numerical support, current runtime or all-model proof. No self implementation permitted from a missing hook."
+}

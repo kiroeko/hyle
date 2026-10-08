@@ -1,6 +1,6 @@
 # Apple MLX/Metal：覆盖、接线、默认优选与清退收口
 
-<!-- MODULE REVIEW: SCOPED -->
+<!-- MODULE REVIEW: AUDITED -->
 
 baseline `406cc3c23843ea9928e45970527ed2664f8f2728`，Windows工作树干净。
 2026-10-08用户要求Apple按已完成CPU/CUDA相同原则开始。产品真相仅Windows；Apple副本可丢弃。
@@ -68,3 +68,24 @@ A1已实际产出[559合同静态映射](../../../../evidence/correctness/apple-
 其中127合同/11类型缺ggmlMetal类型绑定，432仅静态有映射，全部runtime仍UNVERIFIED；
 不把这一统计当Provider实际支持结论。下一有限动作检出现有成熟Metal codecs与完整操作的
 适用精度/资源后固定批量FIX，所有自研数学冻结。
+
+## A1 审计与有限 FIX（产品前独立提交）
+
+[carrier/region映射](../../../../evidence/correctness/apple-parity-a1/carrier-region-map.json)覆盖
+45plain/34packed/八族49关联及全部官方更新/sidecar。34中16原MLX affine/MX4/MX8请求
+没有MlxQuantized接线；18个NF4/AWQ/CT没有ArtifactWeightDecode接线。这里只确认源级缺口，
+不是runtime支持。先接原MLX公开quantized_matmul/gather_qmm/dequantize/take与已有Metal
+dispatch，所有实际精度/scale/状态和终态资格仍由A2验收。119合同的8种漏接类型已有原
+Metal分派；余8合同的IQ1_XS/XXS/XXXS须查已登记成熟来源，不能从新enum猜测GPU存在。
+
+| FIX | 有限允许变化 | 验收边界 |
+|---|---|---|
+| F1 | ggml Metal只接8种已存在原分派的codec；embedding/activation逻辑精度按原支持扩接，不改vendor数学 | 对应原encoded bytes/数值/索引/别名/终态，不能只prepare |
+| F2 | MLX自有16类packed，原公开qmm/gather_qmm/解码/行选择；InputSpec补必要U8/U32 carrier，共同Direct/Graph使用同一个冷lowering | 原group/mode/nibble、F32累加/最终dtype、选中专家/IDs/动态数据和Completion；不伪跨format |
+| F3 | NF4/AWQ/CT及IQ1扩展只在具名成熟source/API可完整承载后借入，官方FP4严格小scale独立资格 | 无完整成熟证明仍UNVERIFIED，新增self不授权；失败具体定界 |
+| F4 | 当前Apple默认冷绑定/条件、完整region边界及重复self去留，先成本/完整候选，再一次稳定批次P1 | 未匹配成熟默认；不得计时/热重选，不拆MLX/ggml成熟融合 |
+| F5 | owning target三交付/metallib/dylib/离线与失配、文档/LOC/清理 | 批量实现后集中当前Air验证，精确具名失败仅一次纠正 |
+
+前三个现有AUDITED owner依法重新绑定此有限scope，原F45/F46/CPU enum失败和预算保留；
+它们不是CLOSED reopen，不伪造AUDITED→SCOPED或BLOCKED。公共API/数据/执行仍原Apple
+native形状，F1/F2是成熟接线，F3原生资格前不写数学。各有限source疑问一轮follow-up即裁决。

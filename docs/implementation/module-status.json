@@ -526,14 +526,14 @@
     {
       "module": "compute_route_apple",
       "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/llm-moe-d5-portable-float-native-qualification.md",
-      "summary": "D5-F45 AUDITED：Apple40格运行通过、DeepSeek官方FP4四格准备拒绝。三交付与BF16 FFN/GGUF MoE代表片段P1已通过；未外推官方FP4或其它形状性能，残余能力与D6未关闭，无新数学。"
+      "record": "docs/implementation/tasks/compute/apple-cpu-cuda-parity-closure.md",
+      "summary": "Apple parity AUDITED：共同559/45/34/八族49关联与新官方/MTP已源级映射；F1现有Metal codec、F2原MLX16packed、F3具名成熟缺口、F4默认去留、F5集中交付冻结。runtime未签，旧FP4/预算保持，自研数学冻结。"
     },
     {
       "module": "graph_route_apple",
       "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/llm-moe-d5-portable-float-native-qualification.md",
-      "summary": "D5-F45 AUDITED：Apple40格运行通过、DeepSeek官方FP4四格准备拒绝。三交付与BF16 FFN/GGUF MoE代表片段P1已通过；未外推官方FP4或其它形状性能，残余能力与D6未关闭，无新数学。"
+      "record": "docs/implementation/tasks/compute/apple-cpu-cuda-parity-closure.md",
+      "summary": "Apple parity AUDITED：共同559/45/34/八族49关联与新官方/MTP已源级映射；F1现有Metal codec、F2原MLX16packed、F3具名成熟缺口、F4默认去留、F5集中交付冻结。runtime未签，旧FP4/预算保持，自研数学冻结。"
     },
     {
       "module": "compute_route_vulkan",
@@ -608,8 +608,8 @@
     {
       "module": "compute_provider_ggml_metal",
       "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/cpu-quant-mtp-c3-format-bindings.md",
-      "summary": "C3公共GGUF enum消费者有限迁移AUDITED：只明确拒绝新增CPU格式，原D5资格/算法/限制不变，不恢复GPU队列；不签新增GPU能力。"
+      "record": "docs/implementation/tasks/compute/apple-cpu-cuda-parity-closure.md",
+      "summary": "Apple parity AUDITED：共同559/45/34/八族49关联与新官方/MTP已源级映射；F1现有Metal codec、F2原MLX16packed、F3具名成熟缺口、F4默认去留、F5集中交付冻结。runtime未签，旧FP4/预算保持，自研数学冻结。"
     },
     {
       "module": "compute_provider_iree_vulkan",
