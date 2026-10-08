@@ -1,0 +1,176 @@
+{
+  "candidate": "8aa1c6796c9979ec2f24ce03f959b7095b70741f",
+  "gate": "PASS",
+  "scope": "Small ordinary Direct policy and ggml fused Graph resident replay via independently relocated offline static/shared SDK on Windows and WSL. Existing U23 full mathematical coverage reused only for unchanged programs.",
+  "checks": [
+    {
+      "id": "u4-linux-sdk-shared-build",
+      "status": "PASS",
+      "seconds": 75.922,
+      "attempts": 1
+    },
+    {
+      "id": "u4-linux-sdk-shared-configure",
+      "status": "PASS",
+      "seconds": 10.281,
+      "attempts": 1
+    },
+    {
+      "id": "u4-linux-sdk-shared-consumer-build",
+      "status": "PASS",
+      "seconds": 1.484,
+      "attempts": 1
+    },
+    {
+      "id": "u4-linux-sdk-shared-consumer-configure",
+      "status": "PASS",
+      "seconds": 5.203,
+      "attempts": 1
+    },
+    {
+      "id": "u4-linux-sdk-shared-install",
+      "status": "PASS",
+      "seconds": 0.171,
+      "attempts": 1
+    },
+    {
+      "id": "u4-linux-sdk-shared-relocate",
+      "status": "PASS",
+      "seconds": 0.0,
+      "attempts": 1
+    },
+    {
+      "id": "u4-linux-sdk-shared-runtime",
+      "status": "PASS",
+      "seconds": 0.563,
+      "attempts": 1
+    },
+    {
+      "id": "u4-linux-sdk-static-build",
+      "status": "PASS",
+      "seconds": 0.187,
+      "attempts": 1
+    },
+    {
+      "id": "u4-linux-sdk-static-configure",
+      "status": "PASS",
+      "seconds": 19.406,
+      "attempts": 1
+    },
+    {
+      "id": "u4-linux-sdk-static-consumer-build",
+      "status": "PASS",
+      "seconds": 1.922,
+      "attempts": 1
+    },
+    {
+      "id": "u4-linux-sdk-static-consumer-configure",
+      "status": "PASS",
+      "seconds": 5.0,
+      "attempts": 1
+    },
+    {
+      "id": "u4-linux-sdk-static-install",
+      "status": "PASS",
+      "seconds": 0.359,
+      "attempts": 1
+    },
+    {
+      "id": "u4-linux-sdk-static-relocate",
+      "status": "PASS",
+      "seconds": 0.0,
+      "attempts": 1
+    },
+    {
+      "id": "u4-linux-sdk-static-runtime",
+      "status": "PASS",
+      "seconds": 0.922,
+      "attempts": 1
+    },
+    {
+      "id": "u4-win-sdk-shared-build",
+      "status": "PASS",
+      "seconds": 75.547,
+      "attempts": 1
+    },
+    {
+      "id": "u4-win-sdk-shared-configure",
+      "status": "PASS",
+      "seconds": 52.406,
+      "attempts": 1
+    },
+    {
+      "id": "u4-win-sdk-shared-consumer-build",
+      "status": "PASS",
+      "seconds": 9.735,
+      "attempts": 1
+    },
+    {
+      "id": "u4-win-sdk-shared-consumer-configure",
+      "status": "PASS",
+      "seconds": 51.203,
+      "attempts": 1
+    },
+    {
+      "id": "u4-win-sdk-shared-install",
+      "status": "PASS",
+      "seconds": 2.703,
+      "attempts": 1
+    },
+    {
+      "id": "u4-win-sdk-shared-relocate",
+      "status": "PASS",
+      "seconds": 0.0,
+      "attempts": 1
+    },
+    {
+      "id": "u4-win-sdk-shared-runtime",
+      "status": "PASS",
+      "seconds": 1.453,
+      "attempts": 1
+    },
+    {
+      "id": "u4-win-sdk-static-build",
+      "status": "PASS",
+      "seconds": 1.75,
+      "attempts": 1
+    },
+    {
+      "id": "u4-win-sdk-static-configure",
+      "status": "PASS",
+      "seconds": 53.172,
+      "attempts": 1
+    },
+    {
+      "id": "u4-win-sdk-static-consumer-build",
+      "status": "PASS",
+      "seconds": 9.812,
+      "attempts": 1
+    },
+    {
+      "id": "u4-win-sdk-static-consumer-configure",
+      "status": "PASS",
+      "seconds": 52.266,
+      "attempts": 1
+    },
+    {
+      "id": "u4-win-sdk-static-install",
+      "status": "PASS",
+      "seconds": 3.641,
+      "attempts": 1
+    },
+    {
+      "id": "u4-win-sdk-static-relocate",
+      "status": "PASS",
+      "seconds": 0.0,
+      "attempts": 1
+    },
+    {
+      "id": "u4-win-sdk-static-runtime",
+      "status": "PASS",
+      "seconds": 1.718,
+      "attempts": 1
+    }
+  ],
+  "archive_sha256": "b2ebc381d91867a866e28cbacbb1a237f629587b2415125c5b659be6a9a807c2"
+}

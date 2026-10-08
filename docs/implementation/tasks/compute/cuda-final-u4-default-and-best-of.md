@@ -117,3 +117,37 @@ Compute/Graph公共selector、其它路线和CPU不改。D1--D3两入口/规则�
 测试配置另需INSTALL=OFF和移除旧fixture overlay，原公开构建合同已注明。两次无效入口
 加一次真实依赖失败都保留，同ID只准最后一次有完整前置检查的product纠正，总上限4次，
 其它项2次、包级两小时时间/一次真实产品纠正不变；若仍FAIL就停止配置项，不再增加预算。
+
+## D1--D3 实际批次与 D4 冻结范围
+
+候选 `8aa1c6796c9979ec2f24ce03f959b7095b70741f`：Windows/WSL 原CCCL、ggml
+tensor、ggml region、普通Direct默认及Graph默认的对应源码验证通过。Windows初始51项的
+5个region结构失败按[独立Graph卡](cuda-u4-graph-cold-default-scope.md)仅重验原失败及FFN
+capture；原46项数值通过和失败日志保留，不重跑全集。两平台relocated/offline static/shared
+独立小consumer实际link/load/执行变化payload及完整region通过；沿用U2/U3未变数学域。
+Windows邻exe DLL、WSL无LD_LIBRARY_PATH，两交付均不是仅配置或设备枚举。
+
+D4只冻结三组真实重叠，每组decode T1和prefill T32，不做provider全排列：
+
+| 组 | 完整同合同任务 | 两侧 | consumer形状来源 |
+|---|---|---|---|
+| R1 | BF16 weighted RMSNorm，F32 accumulation，最后一次BF16 rounding，H2048 | SGLang / HYLE native | 本地Qwen3.5-2B FFN norm |
+| R2 | BF16 packed SiLU gate，H6144，F32中间与一次输出rounding | SGLang / HYLE native | 同模型FFN中间宽度；packed为原成熟输入布局 |
+| R3 | F32 unweighted RMSNorm，H2048，F32 accumulation/output | ggml / HYLE native | 固定Qwen GGUF F32 norm消费形状 |
+
+peer预审：R1/R2共享normalization/gated原prepared/submit生命期、非默认CUDA stream、
+caller-owned resident inputs/outputs、无别名、两个独立Invocation；R3 ggml管理自己的
+native backend/streams/pool，用entry/exit事件把全部原程序完成转移到同一个HYLE Completion。
+R3普通合同允许private资源；其内部转换/事件/管理开销全部计费，不能拿strict no-private或
+外部capture域互判。冷prepare/upload/独立owner记录但不混入热重复；每次sample单位是一项
+实际tensor操作到terminal wait和Completion析构。失效/关闭/OOM的对应既有correctness证据
+保留，不通过删检查竞速。两侧同输入bits，变化payload轮换，计时前后完整output oracle。
+
+三组共用原nanobench compare和统一hyle-perf，原P核/caller策略、A/A两侧同artifact且正反
+allocation/order、n15/no escalation。只增加窄workload adapter/contract，不改统计核心。
+attention同语义还有不同完整cache/precision/AOT条件，本包按既有合法成熟基线固定工程默认，
+不为了比较新造attention shape/fixture；U5只删除有完整替代的自研，不扩大自研优化。
+性能适用未执行仍UNVERIFIED，不签WIN/LOSS；近似或预算内噪声只ENGINEERING_DEFAULT。
+
+本批源码与四个SDK小纵切归档见[实际证据](../../../../evidence/correctness/cuda-u4-defaults/README.md)。
+统一Compute+Graph实现LOC为60,779/255文件，不含测试；D4适配器不计产品LOC。

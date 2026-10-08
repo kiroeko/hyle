@@ -1,0 +1,28 @@
+{
+  "consumer": "Qwen3.5-2B FFN normalization and gating, and Qwen GGUF F32 normalization",
+  "provenance_class": "PROVISIONAL_ARCHETYPE",
+  "sources": [
+    "tests/compute_models/d5_qwen35_fixture.h",
+    "tests/compute_models/d5_qwen35_gguf_fragment_support.h"
+  ],
+  "shapes": {
+    "tokens": [
+      1,
+      32
+    ],
+    "norm_hidden": 2048,
+    "gate_hidden": 6144
+  },
+  "payload": "Two independently resident slots with exact representable input values 0.25 and -0.5; BF16 weight 1.0. This preserves compute shape and complete tensor cost, not downloaded full-model inference.",
+  "completion": "One accepted tensor operation through terminal Completion wait and destructor; all ggml entry/exit events, conversion, native graph execution and pool work remain charged.",
+  "ownership": "Independent Context, MemoryResource, Queue, buffers, prepared program and two Invocations on each side; resources are destroyed only after completion. Cold allocation, upload, preparation and warmup outside hot timing, cold elapsed separately reported.",
+  "comparability": "Ordinary resident operation permits native private scratch, blocking and internal streams. Neither side requests external capture or forbids private allocations. Strict domains are excluded, not withdrawn.",
+  "precision": "RMS F32 accumulation, epsilon 1e-6; BF16 gate F32 intermediate and one final BF16 rounding. Verify every output element before and after measurement; BF16 absolute tolerance one representable step (0.0078125), F32 2e-5.",
+  "scope": "Three same-contract pair domains at the declared shape/precision/software/resource identity only. No generic HYLE/ggml/SGLang superiority or full-model throughput claim.",
+  "cost_anchors": [
+    "src/compute_provider_cuda/norm_provider.cc:submit",
+    "src/compute_provider_cuda/cuda_provider.cc:submit",
+    "src/compute_provider_ggml_cuda/ggml_cuda_provider.cc:submit",
+    "src/compute/prepared_operation.cc"
+  ]
+}

@@ -1,0 +1,96 @@
+{
+  "scope": "U4 D1--D3 source partial checkpoint; SDK and D4 pending",
+  "candidate": "8aa1c679",
+  "tests": {
+    "u4-linux-cccl": {
+      "tests": 10,
+      "failed": 0,
+      "skipped": 0
+    },
+    "u4-linux-direct-default": {
+      "tests": 10,
+      "failed": 0,
+      "skipped": 0
+    },
+    "u4-linux-ggml": {
+      "tests": 35,
+      "failed": 0,
+      "skipped": 0
+    },
+    "u4-linux-graph-default": {
+      "tests": 51,
+      "failed": 0,
+      "skipped": 0
+    },
+    "u4-linux-region": {
+      "tests": 8,
+      "failed": 0,
+      "skipped": 0
+    },
+    "u4-win-cccl": {
+      "tests": 10,
+      "failed": 0,
+      "skipped": 0
+    },
+    "u4-win-direct-default": {
+      "tests": 10,
+      "failed": 0,
+      "skipped": 0
+    },
+    "u4-win-ggml": {
+      "tests": 34,
+      "failed": 0,
+      "skipped": 0
+    },
+    "u4-win-graph-default": {
+      "tests": 6,
+      "failed": 0,
+      "skipped": 0
+    },
+    "u4-win-region": {
+      "tests": 8,
+      "failed": 0,
+      "skipped": 0
+    }
+  },
+  "all_original_failures_retained": true,
+  "archive_sha256": "09d8f7e2d5ea73f303c201f866d638b01bfdd8dece7824711a40060ed7781665",
+  "files": {
+    "logs/u4-linux-build-1.log": "b275c41cc12ac1abd43beb7a59b72846210d4f21f0408adb226d1794c94a2c51",
+    "logs/u4-linux-build-2.log": "858ac548bf35a036ef7e8bc0757d49ef71840ba49f1fb3c5e058810ae879046f",
+    "logs/u4-linux-build-3.log": "fd43d5c937fbbac4c01b5996cf4ebfe24902ce5fd44b9fa95c4acc147e1ca47e",
+    "logs/u4-linux-cccl-1.log": "2e6a4970fbec47f2153012797f13e37565d4421ce48a95b862aef58a63d92749",
+    "logs/u4-linux-cccl.xml": "9cda45d5d0b4b2beec2e098da26a22f2f7520622377bfdba064f14da10837417",
+    "logs/u4-linux-configure-1.log": "3f136524a4702ca4ae907d00cef6fda3e06f47455706f8a054cd8c28640238bf",
+    "logs/u4-linux-configure-2.log": "2846c90a31f5611a49d0c9089366751c29593ec57b678243cb4547a0f804c847",
+    "logs/u4-linux-direct-default-1.log": "f6d858fb81c06f3eaf6ada21d1db1a17b5649a8910e6586c9cb3d393286c8415",
+    "logs/u4-linux-direct-default.xml": "f75ce4db5bfdc68f983afd6e77ceb342eff39df730902b23b4479b509c91c25d",
+    "logs/u4-linux-ggml-1.log": "4b172846b89196c0965890a2e1defabf73effa3f15e5dc07bb311b3d92eae3fa",
+    "logs/u4-linux-ggml.xml": "1ab31868c6b3a1b6c5e6f6270a27efec06c4c9265fb47b3989ee189557ca5cfe",
+    "logs/u4-linux-graph-default-1.log": "e38161aacc66a230c7eed2ee3d9a5f68a18506e36df5aa2c99089b7149f8617c",
+    "logs/u4-linux-graph-default.xml": "acc9af52e08cf9f7ec51da2029877765f2df3ff78bbd8adb90874226fe56b54c",
+    "logs/u4-linux-headers-1.log": "ec76e43be5d689f5203ab86e7b6e0e9a9964526fdb8a51b84558c6fd66a350f1",
+    "logs/u4-linux-region-1.log": "1edfa9d7cc5fd5553ed7f50882f063a34b1bc1c0e43392d38b3f021136ad10f7",
+    "logs/u4-linux-region.xml": "8fdbbabf9aeb388208cb1da2f5e35f4c32ce6856d1d91e313ac0d73445aa83ca",
+    "logs/u4-win-build-1.log": "3b0ff684429badac7dad74c0bdd2297dbdcbdae33c850b1662025fd3bfadcfb8",
+    "logs/u4-win-build-2.log": "45a2054eac91b6198cc8cc9f7d4ad5f1bec6a4b96a3524d63cecb076a85f2bc9",
+    "logs/u4-win-cccl-1.log": "99835f7936ccbace6008a1244b90ee6a9d8e35ea7c02cce2e9c87e86a2d6a6ce",
+    "logs/u4-win-cccl.xml": "c108bb670edc585cca360f05d645a87c0b31a49ce86e8a1205823b62f844a963",
+    "logs/u4-win-configure-1.log": "b79b8c9a96feb0a569099f961ff0f56b9a233a9f8cf30fefe1e4c3ed72b997de",
+    "logs/u4-win-configure-2.log": "b79b8c9a96feb0a569099f961ff0f56b9a233a9f8cf30fefe1e4c3ed72b997de",
+    "logs/u4-win-configure-3.log": "701d93596b1e7ff394ff11b17120888d600cb5aa597988c4c8f4aa32e7b74f4a",
+    "logs/u4-win-configure-4.log": "6646546a9f1426c7fa9c4dfef228ec79c51ee8f9a02781f6b52de363d00e8427",
+    "logs/u4-win-direct-default-1.log": "9135edaa223636318b69b04ed1825d17dc128dee05471fda61cd32a793052f45",
+    "logs/u4-win-direct-default.xml": "0116ae85b4bf324cf3eebadc2fefb8202dfb484cb201f1f4e0178375a3af6600",
+    "logs/u4-win-ggml-1.log": "311d998bbc3a7c807f748fbae72a25b1cfb7f972b5f0ef2805153c4331324cde",
+    "logs/u4-win-ggml.xml": "c9254d386f3a6f4cb3d563737c070a77b61c600444d06413cd54e19af919d2a5",
+    "logs/u4-win-graph-build-1.log": "cb7769bdb7271c6871f66e743fc7a0ff891e7412b7b205a04cdee7ce5526fc6e",
+    "logs/u4-win-graph-default-1.log": "49db93217d84913785e605b855d452e0bf9b207e61516ae6881a40b98bb88f1e",
+    "logs/u4-win-graph-default-2.log": "29bb8fc03bd48599f5d09851e65cea14bca2f24f6b3b60c598db56514a024c3b",
+    "logs/u4-win-graph-default.xml": "5c8dc4b39baf7b3d46123768368fb3ead61aa038836ade3eb60de6d6769424f2",
+    "logs/u4-win-headers-1.log": "b9df59ec324a5481b20d60f506424b69d36738fb6d8c9aa221f85310630f48ce",
+    "logs/u4-win-region-1.log": "be02f857baf62743ee381a0e01b83160c38be41ea9945edaa243717ed06f71d8",
+    "logs/u4-win-region.xml": "eb139e104aa7a189a1230eaa060b32715731ff29e893cb3c6a85530ee2b5e91b"
+  },
+  "performance": "NOT_RUN"
+}

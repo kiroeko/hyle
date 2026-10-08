@@ -1,0 +1,7 @@
+cmake_minimum_required(VERSION 3.25)
+project(hyle_cuda_default_sdk LANGUAGES CXX)
+find_package(Hyle 0.1.0 EXACT REQUIRED COMPONENTS compute graph)
+add_executable(cuda_default_sdk main.cc)
+target_compile_features(cuda_default_sdk PRIVATE cxx_std_23)
+target_link_libraries(cuda_default_sdk PRIVATE hyle::compute hyle::graph)
+hyle_stage_runtime_dependencies(cuda_default_sdk)
