@@ -273,3 +273,9 @@ C1的CPU+Metal shared-core定向编译/实际分派已通过：runtime9/9、Meta
 Metal原有资源/数值边界成立。新八IQ1合同的同source旧数值复用，不反复重跑；CPU/CUDA/
 Vulkan模块状态未动。user Apple页同步当前21 GGUF/Mlx/artifact能力、checked行/容量和
 原FP4未决，清掉已过时“仅十类”的说明。仍不签FP4、正式成本或whole goal完成。
+
+A4最后的资源失配负例只用已通过的source/static/shared公开consumer原binary：fresh process
+分别隐藏对应app/SDK与两个producer的metallib，清 inherited DYLD，要求明确缺resource错误。
+原MLX source缺library路径抛runtime_error，不以设备枚举/mock代替。try/finally恢复全部
+文件并校验原hash，不改binary/系统设置，不重跑旧成功矩阵。三delivery各一次负例，未跑
+前不PASS；若异常终止或意外找到外部资源，记录具名失败，不无限藏路径重试。
