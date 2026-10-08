@@ -106,3 +106,14 @@ native与ggml多数域有Prepared/capture/无private allocation的资源能力�
 graph_provider_ggml_cuda及compute_provider_cuda。cuBLAS/Torch/FlashInfer不改产品，
 Compute/Graph公共selector、其它路线和CPU不改。D1--D3两入口/规则失配/硬资格/negative及
 对应small source/static/shared纵切验证，完整U2/U3原数学按具体不变域复用。
+
+验证配置的具名有限例外：两次Win配置分别误传维护factor选择及空值；CMake按DEFINED检查，
+空值仍冲突，均未编译产品。原同ID/失败/消耗保持，只允许明确`-U HYLE_DEV_FACTORS`的最后
+一次配置修正（该setup项最大3次，其它项仍2次），不重置目录/历史或性能预算。入口只承认
+具名一次setup例外且拒绝更大次数；不扩公共selector，不以配置失败签产品FAIL/PASS。
+
+第三次到达产品审计后发现D1新增model_ops引用缺少compute_ops直接private边。本卡D1依法
+补该真实依赖（不重写公共图机制），并回到明确AUDITED纠正；既有install consumer tree的
+测试配置另需INSTALL=OFF和移除旧fixture overlay，原公开构建合同已注明。两次无效入口
+加一次真实依赖失败都保留，同ID只准最后一次有完整前置检查的product纠正，总上限4次，
+其它项2次、包级两小时时间/一次真实产品纠正不变；若仍FAIL就停止配置项，不再增加预算。
