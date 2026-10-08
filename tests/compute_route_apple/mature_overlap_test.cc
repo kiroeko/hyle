@@ -8,6 +8,7 @@
 #include <vector>
 
 #include "hyle/compute/model_ops.h"
+#include "../compute_models/d5_qwen38_24t_fixture.h"
 #include "tensor_test_support.h"
 
 namespace {
@@ -57,7 +58,7 @@ a::Program mlx_grouped(a::Context &context, std::span<const a::InputSpec> specs)
 }
 
 TEST(AppleMatureOverlap, BfloatLinearRealRouterDecodeAndMultiToken) {
-  constexpr int n = 768, k = 8192;
+  constexpr int n = int(d5_qwen38_24t_fixture::kExperts), k = int(d5_qwen38_24t_fixture::kHidden);
   for (int rows : {1, 16}) {
     SCOPED_TRACE(rows);
     auto metal_context = a::Context::create().value();
