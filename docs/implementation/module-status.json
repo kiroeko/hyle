@@ -496,14 +496,9 @@
     },
     {
       "module": "graph_route_cuda",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/compute/llm-moe-d4-self-operator-retirement.md",
-      "summary": "M3-D4 CLOSED 91c2fb4d：无合格优势且由成熟 Provider 覆盖的 Marlin、CPU/CUDA/Apple/Vulkan 自有算子域已批量退场；四路线正确性、组件合同与 Compute/Graph 三交付通过，D5 继续真实模型片段验收。",
-      "candidate": "91c2fb4df18f6937d64d195793a8c5b30b06a8ed",
-      "performance": {
-        "tier": "P0",
-        "evidence": "evidence/correctness/llm-moe-d4-self-operator-retirement/README.md"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/cuda-u4-graph-cold-default-scope.md",
+      "summary": "U4具体reopen：新leaf默认优先级拆散原ggml region，5个结构断言FAIL；只定界冷scope，不改原执行/数学或公共规划器。"
     },
     {
       "module": "compute_route_apple",
