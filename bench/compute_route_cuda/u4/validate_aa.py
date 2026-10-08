@@ -108,7 +108,7 @@ def main():
                                 'run_nonce': env['HYLE_PERF_RUN_NONCE'], 'verify_only': '0'}
                     _required_telemetry(text, [PREFIX], expected)
                     facts = [line for line in text.splitlines() if line.startswith('# U4_CUDA_ENV ')]
-                    if len(facts) != 12 or any('sm=89 driver=617.14 driver_api=13040 runtime=13030 toolkit=13030' not in f for f in facts):
+                    if len(facts) != 12 or any('sm=89 driver=617.14 driver_api=13040 runtime=13040 toolkit=13030' not in f for f in facts):
                         raise RuntimeError('actual CUDA identity outside frozen SM89/CUDA13.3 domain')
                     native_facts = sorted(set(facts))
                     rows = parse_nanobench(text)
