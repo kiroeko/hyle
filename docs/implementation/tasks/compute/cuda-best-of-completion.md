@@ -139,3 +139,19 @@ separate GELU保留。Norm各共享数学体已有完整胜出或独有mixed-par
 不把旧expert显式native当普通默认；169默认域继续优先合格成熟实现。Native版本递增到v12，
 23胜出kernel的兼容依据为未变源码/编译配方与实际device code对照，不重采性能。若对照出现
 真实winner body变化，不能继承该项WIN；先具名修正或撤掉该规则，不追加整批P1。
+
+## C3 当前结果与 C4 进行中
+
+candidate `bccdf231`：23完整选择已实现，native测量实例与原fallback共享同一数学/执行表；
+精确配方/硬件/调用线程/端口/shape及device256资源条件在冷路径绑定。GPU代码669→590，
+净减少79个重复程序（95旧symbol去掉、16generic Concat改名）；207个保留native同名程序
+SASS逐指令一致，未变成熟程序/模型算子不重采。不是删除79个算子，也不是全体自研删除。
+
+Windows source首次数学/资源25、普通规则5、受影响Graph4与完整region3均PASS。static原29项
+最后批次28 PASS/1 managed FAIL原样保留，23实测规则实际命中及变输入输出PASS。新增真实
+冷选择缺陷按[独立Core卡](compute-bound-view-alignment-cuda-best-of.md)修复：Unimplemented
+资源失配继续下个候选，已知view offset冷过滤，descriptor后换违规view拒绝。FIX-C第一
+窄检查只签普通默认；最终正确profile下2项（managed双输入/完整输出/Completion，偏移及
+descriptor违规绑定）PASS，源码与配方断言证实测量候选确实激活。原29项没有第三次。
+Windows static普通Direct/Graph独立消费者PASS。其余Windows shared与WSL source/static/shared
+正按38步差分批次串行运行；Core原单元门、证据归档、文档/终审/垃圾清理仍待，不签CLOSED。
