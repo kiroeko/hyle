@@ -35,7 +35,7 @@ void check(Prepare prepare) {
   inputs[1]=ready(mx::array({std::int32_t{1},std::int32_t{2}},{2}));
   ASSERT_TRUE(recovered.bind(inputs).ok());auto good_work=recovered.submit();ASSERT_TRUE(good_work);
   auto good=good_work->wait();ASSERT_TRUE(good)<<good.error().message();
-  context.close();EXPECT_EQ(values(retained),before);
+  ASSERT_TRUE(context.close().ok());EXPECT_EQ(values(retained),before);
   const auto empty=c::TensorDesc::dense(c::DataType::kInt32,std::array<std::int64_t,1>{0}).value();
   auto empty_context=a::Context::create().value();
   auto empty_program=prepare(empty_context,c::Operation(c::Gather{}),std::array{table,empty});
