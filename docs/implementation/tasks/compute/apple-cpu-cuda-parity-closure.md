@@ -123,3 +123,25 @@ I32→U32转换；接入处显式owned-stream cast，使原内部cast成为no-op
 编译。Native头/三交付selector门集中A4，尚未PASS。统一Compute+Graph实现61,190行/
 258文件，不含tests/vendor。剩余559真实合同/16实际MLX几何/18artifact/8IQ1扩展、当前
 完整模型/官方/MTP链、默认/有限优选/三交付都未被此首批结果代签。
+
+## F3 首批 source/API 定界（产品前固定）
+
+baseline `3b4e7a53`。18个NF4/AWQ/CT请求的数学来源沿用CPU/CUDA已登记的原tensor程序：
+bitsandbytes `833649043474` 的default `_dequantize_4bit_compute`/nested block256；AutoAWQ
+`88e4c76b2075` 的`unpack_awq`/八列reverse/GEMM zero与原scale dtype；compressed-tensors
+`ac8e2ba82f4e` 的complete symmetric4原offset8/scale dtype程序。MLX公开GPU take、bitwise、
+reshape、repeat、transpose、multiply与astype完整承载这些tensor步骤；只翻译原程序，不新增
+HYLE codebook、量化算法、GEMM或shader。F32 NF4 lookup/nested offset、AWQ high-column
+permutation/真正zeros、CT先cast到scale dtype的存储边界须保留，最终override另作cast。
+
+有限实现：各原source独立借入MLX carrier目录，沿中央lock/owning Apple target登记版本、
+许可证与三交付；只新增原`ArtifactWeightDecode`的native lowering，并由现有共同predicate
+同时连接两入口。原API/schema不扩张，CPU/CUDA源与资格不变，Apple-OFF不消费这些源码。
+冷decode生成明确[N,K]常量，MLX持有原临时数组/输出，不缓存可变payload，不按文件名猜format。
+实际完整矩阵/两入口/replay/rounding/失败/OOM与准备后MatMul消费一次批量验收，尚未runtime
+PASS，也不先与自研比较。各具名新失败仅一次source纠正，不换ID/目录重置预算。
+
+本批同时把34packed/559GGUF的共享**需求数据与oracle**从CPU扩展宏耦合中解开，Apple只
+消费真实存在的vendor enum；缺失的IQ1_XS/XXS/XXXS使用明确不可用标记并冷拒绝，绝不定义
+假的Metal capability宏或运行COUNT类型的oracle。原Unsloth固定版本的Metal分派也没有三类
+native case，继续具名成熟缺口调查；本批不签这8合同或旧官方FP4资格，不写对应新自研数学。
