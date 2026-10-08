@@ -49,7 +49,7 @@ constexpr std::array kPoints{
     Point{"affine_layer", D::kBFloat16, 1, 2048},
 };
 
-TEST(CudaBestOf, CompletePointsBindOnceAndCheckChangedOutputs) {
+void configure_profile() {
 #if HYLE_OS_WINDOWS
   // Only the dedicated static qualification child requests this placement.
   // Normal source/shared consumers exercise the mature fallback as-is.
@@ -62,6 +62,11 @@ TEST(CudaBestOf, CompletePointsBindOnceAndCheckChangedOutputs) {
     ASSERT_TRUE(policy::qualified_recipe());
   }
 #endif
+}
+
+TEST(CudaBestOf, CompletePointsBindOnceAndCheckChangedOutputs) {
+  configure_profile();
+  const bool require_measured = std::getenv("HYLE_CUDA_RULE_TEST_PROFILE") != nullptr;
   auto stats = take(hyle::mem::StatsAllocator::create(hyle::mem::system_allocator()));
   {
     auto owner = take(c::cuda::create_context({.metadata_allocator = stats.get()}));
@@ -160,7 +165,12 @@ TEST(CudaBestOf, ShapePortsAttributesAndPartialWinsDoNotInheritCertificates) {
 }
 
 TEST(CudaBestOf, ManagedStorageRetainsFallbackWithoutMeasuredLabel) {
+  configure_profile();
   auto owner = take(c::cuda::create_context());
+  if (std::getenv("HYLE_CUDA_RULE_TEST_PROFILE")) {
+    ASSERT_TRUE(policy::qualified_environment(take(c::cuda::environment(owner))));
+    ASSERT_TRUE(policy::qualified_caller());
+  }
   auto memory = take(c::cuda::MemoryResource::create(owner, c::cuda::MemoryKind::kManaged));
   const auto r = request("log", D::kFloat16, 1, 2048);
   auto program = take(c::prepare(owner, r.operation, r.inputs, std::span(&r.output, 1), memory.ref()));
@@ -189,7 +199,12 @@ TEST(CudaBestOf, ManagedStorageRetainsFallbackWithoutMeasuredLabel) {
 }
 
 TEST(CudaBestOf, ShiftedViewsRetainCapabilityWithoutMeasuredAlignment) {
+  configure_profile();
   auto owner = take(c::cuda::create_context());
+  if (std::getenv("HYLE_CUDA_RULE_TEST_PROFILE")) {
+    ASSERT_TRUE(policy::qualified_environment(take(c::cuda::environment(owner))));
+    ASSERT_TRUE(policy::qualified_caller());
+  }
   auto memory = take(c::cuda::MemoryResource::create(owner, c::cuda::MemoryKind::kDevice));
   const auto r = request("log", D::kFloat16, 1, 2048);
   const auto bytes = take(r.inputs[0].required_bytes());
