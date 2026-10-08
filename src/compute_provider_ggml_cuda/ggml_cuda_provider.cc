@@ -26,14 +26,6 @@ namespace {
 
 inline constexpr std::string_view kProviderVersion =
     HYLE_GGML_CUDA_PROVIDER_VERSION;
-inline constexpr std::array kHardwarePredicates{
-    RouteFactPredicate::number(route_fact::kArchitectureMajor, 8),
-    RouteFactPredicate::number(route_fact::kArchitectureMinor, 9)};
-inline constexpr RouteSelector kHardwareRule{
-    .route = NativeRoute::kCuda,
-    .provider = kProviderId,
-    .provider_version = kProviderVersion,
-    .environment = kHardwarePredicates};
 
 bool default_cublas_precision() noexcept {
 #if HYLE_OS_WINDOWS
@@ -52,7 +44,6 @@ struct Extension final {
 struct Context final {
   CUcontext primary = nullptr;
   int device = -1;
-  bool qualified = false;
   bool bfloat16_attention = false;
   Extension extension;
 };
@@ -383,14 +374,8 @@ Status create_context(const Provider &provider, Device device, void *backend,
     void *storage = allocator.allocate(sizeof(Context), alignof(Context));
     if (!storage)
       return Status::ResourceExhausted("ggml CUDA context allocation failed");
-    const auto facts = cuda::detail::route_facts(*environment);
-    const RouteMatchInput route_input{.platform = kBuildRoutePlatform,
-                                      .route = NativeRoute::kCuda,
-                                      .provider = provider.identity(),
-                                      .environment = facts.environment()};
     *output = ::new (storage)
         Context{primary, native_device,
-                match_route_selector(kHardwareRule, route_input).matched(),
                 default_cublas_precision(),
                 detail::ProviderAccess::payload<Extension>(provider)};
     return Status::Ok();
@@ -624,7 +609,7 @@ namespace internal {
 bool supports(void *value, Operation operation,
               std::span<const TensorDesc> inputs,
               std::span<const TensorDesc> outputs) noexcept {
-  if (!value || !static_cast<Context *>(value)->qualified || outputs.empty())
+  if (!value || outputs.empty())
     return false;
   if (const auto *attention = operation.get_if<ScaledDotProductAttention>()) {
     if (outputs.size() != 1 || inputs.size() != 3 ||

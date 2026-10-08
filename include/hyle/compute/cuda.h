@@ -22,12 +22,14 @@ struct DefaultContextOptions final {
 };
 
 #if defined(HYLE_COMPUTE_CUDA)
-// Fixed development rules: qualified Linux head256 GQA uses FlashInfer;
-// SM89 dense rank-2 F32 plain RMSNorm/Add use original ggml CUDA programs.
-// Dense FP16/FP32 MatMul uses cuBLASLt; native GGUF weights use ggml CUDA.
-// Packed FP16/FP32 SwiGLU uses pinned precise SGLang for
+// Cold ENGINEERING_DEFAULT rules apply after each original capability/resource
+// check; a missing performance certificate does not disable a legal program.
+// Admitted Linux head256 GQA uses the qualified FlashInfer AOT program;
+// native GGUF/tensor programs use ggml with its actual device/binary admission.
+// Plain rank-2 FP16/BF16/FP32 GEMM uses cuBLASLt. Packed SwiGLU uses SGLang for
 // complete 16-byte vectors (hidden % 8/4 == 0), with 16-byte tensor alignment.
-// Separate inputs and non-vector tails use HYLE CUDA kernels.
+// Separate SiLU and legal tails use native ggml; unreplaced semantic/resource
+// domains keep an explicit native fallback, without a performance WIN claim.
 // Prepare binds these implementations once. Unsupported domains are errors;
 // no timing search, CPU fallback, or caller-supplied Provider order is needed.
 // Native MemoryResource and stream interop live in compute/backends/cuda.h.

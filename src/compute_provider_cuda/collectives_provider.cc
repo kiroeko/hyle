@@ -27,8 +27,6 @@ struct Invocation final {
 };
 
 inline constexpr std::array kQualificationPredicates{
-    RouteFactPredicate::number(route_fact::kArchitectureMajor, 8),
-    RouteFactPredicate::number(route_fact::kArchitectureMinor, 9),
     RouteFactPredicate::range(route_fact::kRuntimeVersion, 13030, 13040),
     RouteFactPredicate::number(route_fact::kToolkitVersion, 13030)};
 
@@ -192,7 +190,7 @@ Status propose(void *value, const detail::ProviderOperationRequest &request,
   const auto &context = *static_cast<Context *>(value);
   if (!context.qualified || !request.shape.exact())
     return Status::Unimplemented(
-        "CCCL requires qualified SDK/SM89 exact shapes");
+        "CCCL requires compatible compiled SDK/runtime and exact shapes");
   collectives::Program program;
   HYLE_RETURN_IF_ERROR(
       describe(request.operation, request.inputs, request.outputs, &program));

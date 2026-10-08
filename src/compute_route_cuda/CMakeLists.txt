@@ -1,5 +1,6 @@
 if(HYLE_COMPUTE_CUDA_ENABLED)
-  hyle_add_module(compute_route_cuda SOURCES cuda_context.cc)
+  hyle_add_module(compute_route_cuda SOURCES cuda_context.cc default_policy.cc)
+  target_include_directories(hyle_compute_route_cuda PRIVATE "${HYLE_SOURCE_DIR}/src/compute")
   foreach(_provider IN ITEMS torch_cuda flashinfer)
     get_target_property(_provider_features hyle_compute_provider_${_provider} INTERFACE_COMPILE_DEFINITIONS)
     if(_provider_features)

@@ -102,9 +102,11 @@ HYLE_COMPUTE_PROVIDER_CUDA_API Provider sglang_provider() noexcept;
 // aligned4; invalid IDs fail Completion. Workspace lasts until completion.
 HYLE_COMPUTE_PROVIDER_CUDA_API Provider deepseek_provider() noexcept;
 
-// Original CCCL3.3.4 device collectives, qualified with CUDA13.3
-// toolkit/runtime on SM89. Other versions/architectures decline during cold
-// preparation. Scan accepts F32/I32; integer overflow, including the exclusive
+// Original CCCL3.3.4 device collectives with the admitted CUDA13.3 toolkit/
+// runtime. Actual compiled device code and original SDK checks govern GPU
+// availability; SM89 performance evidence is not a whole-provider capability
+// restriction. Other software contracts decline cold. Scan accepts F32/I32;
+// integer overflow, including the exclusive
 // final total, fails without writing output. TopK accepts F32/F16/BF16/I32,
 // preserves source bits, puts NaNs last and retains original index order for
 // equal keys. Both accept plain rank<=8 byte strides, dense outputs,

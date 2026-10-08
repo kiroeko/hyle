@@ -3,6 +3,7 @@
 #include "../compute_provider_ggml_cuda/tensor_test_support.h"
 #include "../compute_provider_ggml_cuda/test_support.h"
 #include "hyle/compute/cuda.h"
+#include "hyle/compute/providers/cublas.h"
 #include "hyle/compute/low_precision.h"
 #include <ggml.h>
 
@@ -64,6 +65,8 @@ TEST(CudaDefault, NativeQ8UsesOrdinaryDirectRouteAndReplays) {
       prepare(context, Operation(MatMul{}), inputs, std::span(&output_view, 1));
   ASSERT_TRUE(prepared) << prepared.error().message();
   EXPECT_EQ(prepared->provider().id, ggml_cuda::kProviderId);
+  EXPECT_EQ(prepared->route_policy().namespace_id, 0x48594c4543554444ULL);
+  EXPECT_EQ(prepared->route_preference(), 100u);
   auto invocation = prepared->create_invocation().value();
   auto queue = context.create_queue().value();
   for (int repeat = 1; repeat <= 2; ++repeat) {
@@ -86,6 +89,47 @@ TEST(CudaDefault, OriginalTensorBatchThroughOrdinaryDirectEntry) {
   auto context = hyle::compute::cuda::create_context().value();
   ggml_cuda_tensor_test::norms<float>(context);
   ggml_cuda_tensor_test::check_general_broadcast<float>(context);
+}
+
+TEST(CudaDefault, EngineeringPolicyIsColdAndDoesNotLeakToExpertFactory) {
+  using namespace hyle::compute;
+  const auto description = TensorDesc::dense(DataType::kFloat32,
+      std::array<std::int64_t, 2>{2, 64}).value();
+  auto context = cuda::create_context().value();
+  auto memory = cuda::MemoryResource::create(context, cuda::MemoryKind::kDevice).value();
+  for (auto phase : {WorkloadPhase::kUnspecified, WorkloadPhase::kPrefill, WorkloadPhase::kDecode}) {
+    const WorkloadContext workload{.phase = phase};
+    auto prepared = prepare(context, Operation(Unary{UnaryKind::kExp}),
+        std::span(&description, 1), std::span(&description, 1), memory.ref(), workload);
+    ASSERT_TRUE(prepared) << prepared.error().message();
+    EXPECT_EQ(prepared->provider().id, ggml_cuda::kProviderId);
+    EXPECT_EQ(prepared->route_policy().namespace_id, 0x48594c4543554444ULL);
+    EXPECT_EQ(prepared->route_preference(), 100u);
+    EXPECT_EQ(prepared->workload(), workload);
+  }
+  auto selected = cuda::device().value();
+  auto expert = Context::create(selected, ggml_cuda::provider()).value();
+  auto program = prepare(expert, Operation(Unary{UnaryKind::kExp}),
+      std::span(&description, 1), std::span(&description, 1), memory.ref());
+  ASSERT_TRUE(program) << program.error().message();
+  EXPECT_TRUE(program->route_policy().empty());
+}
+
+TEST(CudaDefault, PlainGemmEngineeringDefaultKeepsCublasResources) {
+  using namespace hyle::compute;
+  const auto lhs = TensorDesc::dense(DataType::kFloat32,
+      std::array<std::int64_t, 2>{1, 17}).value();
+  const auto rhs = TensorDesc::dense(DataType::kFloat32,
+      std::array<std::int64_t, 2>{17, 65}).value();
+  auto context = cuda::create_context().value();
+  auto memory = cuda::MemoryResource::create(context, cuda::MemoryKind::kDevice).value();
+  auto program = prepare(context, MatMul{}, lhs, rhs, memory.ref());
+  ASSERT_TRUE(program) << program.error().message();
+  EXPECT_EQ(program->provider().id, cublas::kProviderId);
+  EXPECT_EQ(program->route_policy().namespace_id, 0x48594c4543554444ULL);
+  EXPECT_EQ(program->route_preference(), 100u);
+  EXPECT_EQ(program->runtime_properties().workspace_owner, ProviderWorkspaceOwner::kCaller);
+  EXPECT_TRUE(program->runtime_properties().capture_compatible);
 }
 
 TEST(CudaDefault, OriginalSoftmaxThroughOrdinaryDirectEntry) {

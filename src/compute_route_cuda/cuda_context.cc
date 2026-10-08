@@ -1,4 +1,5 @@
 #include "default_context.h"
+#include "default_policy.h"
 #include "hyle/compute/cuda.h"
 
 #include <array>
@@ -21,19 +22,23 @@ Result<Context> internal::create_context(DefaultContextOptions options,
   auto selected = device(options.device_ordinal);
   if (!selected)
     return std::unexpected(std::move(selected).error());
+  using internal::DefaultProvider;
+  const auto configured = [](Provider provider, DefaultProvider family) {
+    return internal::with_defaults(std::move(provider), family);
+  };
   const std::array providers{
 #if defined(HYLE_COMPUTE_FLASHINFER)
-      ProviderBinding{flashinfer::provider(), 100},
+      ProviderBinding{configured(flashinfer::provider(), DefaultProvider::kFlashInfer), 900},
 #endif
-      ProviderBinding{ggml, 200},
+      ProviderBinding{configured(ggml, DefaultProvider::kGgml), 900},
 #if defined(HYLE_COMPUTE_TORCH_CUDA)
-      ProviderBinding{torch_cuda::provider(), 200},
+      ProviderBinding{configured(torch_cuda::provider(), DefaultProvider::kTorch), 900},
 #endif
-      ProviderBinding{cublas::provider(), 100},
-      ProviderBinding{cuda_native::sglang_provider(), 100},
-      ProviderBinding{cuda_native::deepseek_provider(), 100},
-      ProviderBinding{cuda_native::cccl_provider(), 100},
-      ProviderBinding{cuda_native::provider(), 1000}};
+      ProviderBinding{configured(cublas::provider(), DefaultProvider::kCublas), 900},
+      ProviderBinding{configured(cuda_native::sglang_provider(), DefaultProvider::kSglang), 900},
+      ProviderBinding{configured(cuda_native::deepseek_provider(), DefaultProvider::kDeepSeek), 900},
+      ProviderBinding{configured(cuda_native::cccl_provider(), DefaultProvider::kCccl), 900},
+      ProviderBinding{configured(cuda_native::provider(), DefaultProvider::kNative), 1000}};
   return Context::create(*selected,
                          {.metadata_allocator = options.metadata_allocator,
                           .providers = providers});
