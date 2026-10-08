@@ -2,6 +2,7 @@
 #include <hyle/compute/model_ops.h>
 #include <hyle/graph/apple.h>
 #include <mlx/ops.h>
+#include <mlx/transforms.h>
 
 #include <algorithm>
 #include <array>
@@ -85,7 +86,7 @@ void codecs(bool graph) {
   const auto carrier_spec = take(a::input_spec(weight));
   auto carrier = mx::array(packed.data(), carrier_spec.shape, mx::uint8);
   const std::array linear_desc{dense(c::DataType::kFloat32, {1, 256}), weight};
-  auto linear = prepare(context, graph, c::MatMul{}, linear_desc);
+  auto linear = prepare(context, graph, c::Operation(c::MatMul{}), linear_desc);
   std::vector<float> activation(256, 1);
   std::vector<float> expected;
   for (int row = 0; row < 8; ++row) expected.push_back(384.0F * std::ldexp(1.0F, row));
@@ -96,7 +97,7 @@ void codecs(bool graph) {
   expect(run(linear, std::array{mx::array(activation.data(), {1, 256}), carrier}), expected);
 
   const std::array row_desc{take(weight.transposed()), dense(c::DataType::kInt32, {2})};
-  auto gather = prepare(context, graph, c::Gather{}, row_desc);
+  auto gather = prepare(context, graph, c::Operation(c::Gather{}), row_desc);
   const std::array<std::int32_t, 2> ids{7, 0};
   expected.clear();
   for (int row : ids) for (int col = 0; col < 256; ++col)
