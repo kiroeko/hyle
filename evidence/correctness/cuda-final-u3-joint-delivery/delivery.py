@@ -53,7 +53,7 @@ def make_jobs(manifest):
         installed, relocated, sdk = (prefix + '-' + part for part in ('installed', 'relocated', 'consumer'))
         cpu, static = ('ON' if profile[k] else 'OFF' for k in ('cpu', 'static'))
         if linux:
-            launch = ['wsl.exe', '-d', 'Ubuntu-24.04', '--', 'env', '-u', 'LD_LIBRARY_PATH', *p['environment']]
+            launch = ['wsl.exe', '-d', 'Ubuntu-24.04', '--exec', 'env', '-u', 'LD_LIBRARY_PATH', *p['environment']]
         else:
             launch = []
         previous = []

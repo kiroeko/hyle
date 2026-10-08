@@ -152,15 +152,17 @@ class DeliveryControl(unittest.TestCase):
 
     @unittest.skipUnless(sys.platform == 'win32', 'Windows to WSL argument mapping')
     def test_real_wsl_child_writes_the_canonical_xml_path(self):
-        code = "import pathlib,sys; pathlib.Path(sys.argv[1]).write_text('<testsuites><testsuite><testcase classname=\"Probe\" name=\"Output\" status=\"run\"/></testsuite></testsuites>')"
+        code = "import pathlib,sys; pathlib.Path(sys.argv[1]).write_text('<testsuites><testsuite><testcase classname=\"Probe\" name=\"Output\" status=\"run\"/></testsuite></testsuites>'); pathlib.Path(sys.argv[1]+'.args').write_text(sys.argv[2])"
         job = {'id': 'wsl-proof', 'inputs': ['a.cc'], 'linux_output': True,
-            'argv': ['wsl.exe', '-d', 'Ubuntu-24.04', '--', 'python3', '-c', code, '{logs}/probe.xml'],
+            'argv': ['wsl.exe', '-d', 'Ubuntu-24.04', '--exec', 'python3', '-c', code,
+                     '{logs}/probe.xml', 'compute;graph;simd'],
             'xml': '{logs}/probe.xml', 'timeout': 20}
         runner = delivery.Runner(self.root, [job], self.state)
         self.assertTrue(delivery.child_logs(job, self.root).startswith('/mnt/'))
         self.assertEqual(delivery.child_logs({}, self.root), self.root.as_posix())
         self.assertEqual(runner.perform('wsl-proof', self.root / 'logs'), 'RUN')
         self.assertEqual(runner.history('wsl-proof')[-1]['tests'], 1)
+        self.assertEqual((self.root / 'logs/probe.xml.args').read_text(), 'compute;graph;simd')
 
 
 if __name__ == '__main__':
