@@ -34,8 +34,9 @@ void run_ffn(compute::DataType type, std::int64_t rows) {
         compute::cuda_native::kProviderId};
     const auto extra = owner.provider_count() - expected.size();
     ASSERT_LE(extra, 1U);
-    if (extra)
+    if (extra) {
       EXPECT_EQ(owner.provider_identity(0)->id, compute::cuda_native::kProviderId);
+    }
     for (std::size_t i = 0; i < expected.size(); ++i)
       EXPECT_EQ(owner.provider_identity(i + extra)->id, expected[i]);
     auto resource =
