@@ -184,3 +184,16 @@ encoded rows承载，原packed bytes/native program不变，未重跑559/P1。�
 新增[成熟codec定向卡](apple-mature-codec-borrow.md)只重开Apple实际所需的runtime enum/core
 接线；原CPU/CUDA/Vulkan状态不变。原Anemll源码已确认三IQ1的MV及grouped wrappers，
 source/grids/ABI审计后再固定实现，不以README签GPU能力。Q4_K另借原CPU数学到MLX所选行。
+
+当前A2新增实测：45plain两入口各45/45通过；五Q4_K精确失败在原source的MLX所选行承载
+下两入口5/5通过；原Anemll IQ1在实际8个合同两入口8/8通过。结合原通过和两大载体delta，
+三端口矩阵559/34/45已有成功数值/replay样本证据，限定实N/K/全输出、MoE E<=8、plain head
+全行4096-row tiling，不冒充整模型驻留。新core尚需对应provider/resource回归与三交付。
+[完整记录](../../../../evidence/correctness/apple-parity-a2/README.md)保留旧FAIL、SKIP与新delta，
+没有全集/P1反复启动。61,328实现行/261文件，不含tests/vendor。纠正表述：34/45 runner
+不自动使用invalid_index_input，坏索引暂复用同域小测试；新所选行及真实几何资源负例仍待。
+完整family/新官方/MTP片段、官方FP4、默认/有限优选与A4交付仍待，未关闭A2/goal。
+
+FP4新增[原DS4 Metal source资格](apple-ds4-fp4-source-qualification.md)：已有CPU来源对应的
+原GPU group32 pass实际包含floor，配合其原host Safe math具名设置检验tiny责任边界。
+只一批原source probe，产品FIX零，不恢复F46旧预算/命令；不换容差/模型数学或全局设置。
