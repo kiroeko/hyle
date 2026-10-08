@@ -134,6 +134,9 @@ set(_extra_dlls [==[@_extra_runtime_files@]==])
 list(APPEND _dlls ${_extra_dlls})
 list(REMOVE_DUPLICATES _dlls)
 file(MAKE_DIRECTORY "${_directory}")
+# Multiple application targets can share a bin directory. Coordinate only
+# their build-time writers, as the Apple resource staging helper does.
+file(LOCK "${_directory}/.hyle-runtime-staging.lock" GUARD PROCESS TIMEOUT 60)
 foreach(_dll IN LISTS _dlls)
   get_filename_component(_name "${_dll}" NAME)
   if(NOT _dll STREQUAL "${_directory}/${_name}")
