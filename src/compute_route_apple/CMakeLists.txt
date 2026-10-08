@@ -67,9 +67,16 @@ if(HYLE_COMPUTE_APPLE_ENABLED)
       "${HYLE_SOURCE_DIR}/third_party/${_recipe}/NOTICE.md|${CMAKE_INSTALL_DATADIR}/licenses/Hyle|${_recipe}-NOTICE.md")
   endforeach()
   foreach(_source_recipe IN ITEMS ds4_quantization deepseek_quantization)
+    set(_source_extra_licenses "")
+    if(_source_recipe STREQUAL "deepseek_quantization")
+      list(APPEND _source_extra_licenses
+        "${HYLE_SOURCE_DIR}/third_party/deepseek_quantization/TILELANG-LICENSE|${CMAKE_INSTALL_DATADIR}/licenses/Hyle|apple-deepseek-TILELANG-LICENSE"
+        "${HYLE_SOURCE_DIR}/third_party/deepseek_quantization/CUTLASS-LICENSE|${CMAKE_INSTALL_DATADIR}/licenses/Hyle|apple-deepseek-CUTLASS-LICENSE")
+    endif()
     hyle_register_package_dependency(NAME apple_${_source_recipe} OWNER compute_route_apple
       FEATURES compute_apple LOCKED_DEPENDENCIES ${_source_recipe} RUNTIME_FILE_SPECS
-      "${HYLE_SOURCE_DIR}/third_party/${_source_recipe}/LICENSE|${CMAKE_INSTALL_DATADIR}/licenses/Hyle|apple-${_source_recipe}-LICENSE")
+      "${HYLE_SOURCE_DIR}/third_party/${_source_recipe}/LICENSE|${CMAKE_INSTALL_DATADIR}/licenses/Hyle|apple-${_source_recipe}-LICENSE"
+      ${_source_extra_licenses})
   endforeach()
 else()
   hyle_add_module(compute_route_apple OPTIONAL_ABSENT)
