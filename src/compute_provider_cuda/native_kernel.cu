@@ -5,6 +5,8 @@
 #include <cuda_bf16.h>
 #include <cuda_fp16.h>
 
+#include "activation.cuh"
+
 namespace hyle::compute::cuda_native::native {
 namespace {
 
@@ -24,14 +26,11 @@ template <> __device__ __nv_bfloat16 store(float value) {
 }
 
 template <Activation Kind> __device__ float activate(float value) {
-  if constexpr (Kind == Activation::kSilu)
-    return value / (1.0F + expf(-value));
-  else if constexpr (Kind == Activation::kGelu)
-    return value * (0.5F * (1.0F + erff(value * 0.7071067811865475F)));
-  else
-    return value *
-           (0.5F * (1.0F + tanhf(0.7978845608028654F *
-                                 (value + 0.044715F * value * value * value))));
+  constexpr auto borrowed = Kind == Activation::kSilu
+      ? sglang_vendor::ActivationKind::kSiLU
+      : Kind == Activation::kGelu ? sglang_vendor::ActivationKind::kGELU
+                                 : sglang_vendor::ActivationKind::kGELUTanh;
+  return sglang_vendor::apply_activation_f32<borrowed>(value);
 }
 
 template <class T, bool Packed, Activation Kind>

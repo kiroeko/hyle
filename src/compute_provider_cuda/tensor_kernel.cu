@@ -3,6 +3,8 @@
 #include <cuda_bf16.h>
 #include <cuda_fp16.h>
 
+#include "activation.cuh"
+
 namespace hyle::compute::cuda_native::native {
 namespace {
 constexpr unsigned kThreads = 256;
@@ -64,20 +66,15 @@ template <TensorKind Kind> __device__ float unary(float x) {
   else if constexpr (Kind == TensorKind::kSoftplus)
     return fmaxf(x, 0.0F) + log1pf(expf(-fabsf(x)));
   else {
-    // The ordinary Unary contract includes the limiting value at -infinity.
-    if (isinf(x) && x < 0)
-      return 0;
-    if constexpr (Kind == TensorKind::kGelu)
-      // erfc retains the negative tail that 1 + erf rounds away in FP32.
-      return 0.5F * x * erfcf(-x * 0.7071067811865475F);
-    else if constexpr (Kind == TensorKind::kGeluTanh)
-      // (1 + tanh(z))/2 = sigmoid(2*z), without negative-tail cancellation.
-      return x *
-             sigmoid(1.5957691216057308F * x * fmaf(0.044715F, x * x, 1.0F));
-    else {
-      static_assert(Kind == TensorKind::kSilu);
-      return x * sigmoid(x);
-    }
+    static_assert(Kind == TensorKind::kSilu || Kind == TensorKind::kGelu ||
+                  Kind == TensorKind::kGeluTanh);
+    constexpr auto borrowed = Kind == TensorKind::kSilu
+        ? sglang_vendor::ActivationKind::kSiLU
+        : Kind == TensorKind::kGelu ? sglang_vendor::ActivationKind::kGELU
+                                   : sglang_vendor::ActivationKind::kGELUTanh;
+    // Borrow the same stable-tail/-Inf math as the mature vector program;
+    // this kernel only supplies the otherwise unsupported storage indexing.
+    return sglang_vendor::apply_unary_activation_f32<borrowed>(x);
   }
 }
 
