@@ -54,3 +54,13 @@ grouped wrappers均实际存在。source资格不是runtime PASS。
 route/Graph；三现有Apple owner仍父轮AUDITED。原half除法shader不改；C3属于原source借入，
 不作为HYLE优势算法。只在对应路线消费新锁和数学，A3单carrier不造竞赛，A4统一交付不延后
 初次正常入口接线。首次集中验证后，具名失败仅一次定向纠正；通过域按身份复用。
+
+## C1 mixed core 定向验收
+
+当前Apple-only数值/资源和三交付已经通过。余下mixed风险只检查CPU+Metal同时启用时的
+同一shared source/core与backend选择，不重审CPU算子。用maintainer factor选择runtime+
+ggml Metal，CPU ON、Apple ON，其它GPU OFF，tests ON/instrumentation OFF；build2/test1。
+一次对应runtime基础测试和原Metal provider测试，记录真实CPU/Metal target flags、原patched
+source关键文件hash与Apple-only的一致性；实际Metal选择与新codec准入必须成立。
+不把仅枚举或这次mixed基础测试代签全部CPU/Apple模型，已验数值同source时复用；不P1，
+不改全局instrument/系统设置。具名编译/接线问题最多一次纠正，原旧BLOCKED/CLOSED不解除。
