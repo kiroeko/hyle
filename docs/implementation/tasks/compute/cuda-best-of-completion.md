@@ -59,3 +59,12 @@ C1已冻结[206个有限请求](cuda-best-of-requests.json)的候选静态矩阵
 三种实际float storage、主decode/小prefill holdout、6种storage cast和2个plain Gather。
 这是8个重叠能力域的有界批量准入输入，不签206项已支持/已比较；每项仍须真实prepare与输出
 门，单承载/没有同合同的域明确不比。Linux attention独立同合同region，Windows不伪造该Provider。
+
+批量admission预编译发现adapter误用显式Operation构造，旧日志保留；只修adapter为既有
+显式typed Operation，不改API或产品。初始诊断build加批量build两次已用，允许原同ID最后
+一次这项具名纠正（累计3次），不再加预算/新ID；product/P1预算不变。
+
+C1首次冷准入在ggml caller-workspace检查停止：zero-byte BufferView仍有owner，
+不能传给provider-owned workspace；只修adapter在size0用默认空参数。首次HYLE Copy prepared
+不代签206项，原FAIL/三次build预算保留，不启动第四次C1 build；C2冻结完整slot/输出批次后
+统一编译/验收此必要接线及全部请求。C1明确交接此未验入口，不假签C1运行资格完成。

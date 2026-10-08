@@ -1,0 +1,9 @@
+{
+  "scope": "C1 entry audit only, original build/runtime failures retained; no206-request runtime pass claim.",
+  "matrix": "docs/implementation/tasks/compute/cuda-best-of-requests.json",
+  "request_count": 206,
+  "actual_observation": "First HYLE Copy prepared; next ggml slot rejects owner-bearing zero-length caller workspace.",
+  "fix": "Use default empty invocation argument when no caller workspace is required. Product/API/SDK unchanged.",
+  "validation": "PENDING in C2 fixed batch; original C1 build consumed its declared initial/one-batch/last-construction-correction budget. No fourth C1 build.",
+  "archive_sha256": "253b3df2f2c81cc5cad66dade7de586d13b667086dd0d9a1a3e1e183eba74f5e"
+}
