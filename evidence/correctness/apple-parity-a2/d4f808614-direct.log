@@ -1,0 +1,474 @@
+Running main() from /Users/kiro/Library/Caches/hyle/dependencies/v1/sources/googletest-063de7e9578f-162765170ae6/googletest/src/gtest_main.cc
+Note: Google Test filter = AppleMlxQuantized.*:AppleRegion.*:AppleTyped.*:AppleRecurrent.*:AppleLifetime.*
+[==========] Running 23 tests from 5 test suites.
+[----------] Global test environment set-up.
+[----------] 3 tests from AppleRegion
+[ RUN      ] AppleRegion.ChangedInputsRetainedResultsAndNoRetrace
+[       OK ] AppleRegion.ChangedInputsRetainedResultsAndNoRetrace (36 ms)
+[ RUN      ] AppleRegion.RejectsForeignStreamPendingInputAndWrongShape
+[       OK ] AppleRegion.RejectsForeignStreamPendingInputAndWrongShape (5 ms)
+[ RUN      ] AppleRegion.AbandonAndConcurrentWaitSurviveContextClose
+[       OK ] AppleRegion.AbandonAndConcurrentWaitSurviveContextClose (604 ms)
+[----------] 3 tests from AppleRegion (646 ms total)
+
+[----------] 6 tests from AppleTyped
+[ RUN      ] AppleTyped.D5RealQwenProjectionUsesExactProfileAndReplays
+/Users/kiro/hyle/tests/compute_route_apple/operations_test.cc:34: Skipped
+set HYLE_D5_QWEN35_FIXTURE to the prepared local fixture
+
+[  SKIPPED ] AppleTyped.D5RealQwenProjectionUsesExactProfileAndReplays (0 ms)
+[ RUN      ] AppleTyped.MatMulAndSiluGatesUseOrdinaryPreparation
+[       OK ] AppleTyped.MatMulAndSiluGatesUseOrdinaryPreparation (5 ms)
+[ RUN      ] AppleTyped.MlxBatchedLinearPositionAndGqaAttentionReplay
+[       OK ] AppleTyped.MlxBatchedLinearPositionAndGqaAttentionReplay (477 ms)
+[ RUN      ] AppleTyped.AffineQ4MatchesIndependentPackedOracleAndRejectsOtherModes
+[       OK ] AppleTyped.AffineQ4MatchesIndependentPackedOracleAndRejectsOtherModes (44 ms)
+[ RUN      ] AppleTyped.GgufPackedMatMulAndGroupedExpertsUseOrdinaryPreparation
+ggml_metal_device_init: tensor API disabled for pre-M5 and pre-A19 devices
+ggml_metal_library_init: using embedded metal library
+ggml_metal_library_compile_all: compiled 'fa' library in 0.043 sec
+ggml_metal_library_compile_all: compiled 'mul_mv' library in 0.012 sec
+ggml_metal_library_compile_all: compiled 'mul_mm' library in 0.006 sec
+ggml_metal_library_compile_all: compiled 'quantize' library in 0.007 sec
+ggml_metal_library_compile_all: compiled 'softmax' library in 0.001 sec
+ggml_metal_library_compile_all: compiled 'norm' library in 0.008 sec
+ggml_metal_library_compile_all: compiled 'unary' library in 0.002 sec
+ggml_metal_library_compile_all: compiled 'binbcast' library in 0.012 sec
+ggml_metal_library_compile_all: compiled 'reduce' library in 0.012 sec
+ggml_metal_library_compile_all: compiled 'tri' library in 0.013 sec
+ggml_metal_library_compile_all: compiled 'ssm' library in 0.001 sec
+ggml_metal_library_compile_all: compiled 'wkv' library in 0.007 sec
+ggml_metal_library_compile_all: compiled 'gated_delta_net' library in 0.012 sec
+ggml_metal_library_compile_all: compiled 'solve_tri' library in 0.007 sec
+ggml_metal_library_compile_all: compiled 'rope' library in 0.042 sec
+ggml_metal_library_compile_all: compiled 'conv' library in 0.013 sec
+ggml_metal_library_compile_all: compiled 'upscale' library in 0.012 sec
+ggml_metal_library_compile_all: compiled 'argsort' library in 0.011 sec
+ggml_metal_library_compile_all: compiled 'pool' library in 0.012 sec
+ggml_metal_library_compile_all: compiled 'misc' library in 0.000 sec
+ggml_metal_library_compile_all: loaded 20 libraries from embedded data in 0.043 sec (max single = 0.043 sec)
+ggml_metal_rsets_init: creating a residency set collection (keep_alive = 180 s)
+ggml_metal_device_init: GPU name:   MTL0 (Apple M4)
+ggml_metal_device_init: GPU family: MTLGPUFamilyApple9  (1009)
+ggml_metal_device_init: GPU family: MTLGPUFamilyCommon3 (3003)
+ggml_metal_device_init: GPU family: MTLGPUFamilyMetal4  (5002)
+ggml_metal_device_init: simdgroup reduction   = true
+ggml_metal_device_init: simdgroup matrix mul. = true
+ggml_metal_device_init: has unified memory    = true
+ggml_metal_device_init: has bfloat            = true
+ggml_metal_device_init: has tensor            = false
+ggml_metal_device_init: use residency sets    = true
+ggml_metal_device_init: use shared buffers    = true
+ggml_metal_device_init: recommendedMaxWorkingSetSize  = 12713.12 MB
+ggml_metal_init: allocating
+ggml_metal_init: found device: Apple M4
+ggml_metal_init: picking default device: Apple M4
+ggml_metal_init: use fusion         = true
+ggml_metal_init: use concurrency    = true
+ggml_metal_init: use graph optimize = true
+ggml_metal_free: deallocating
+ggml_metal_init: allocating
+ggml_metal_init: found device: Apple M4
+ggml_metal_init: picking default device: Apple M4
+ggml_metal_init: use fusion         = true
+ggml_metal_init: use concurrency    = true
+ggml_metal_init: use graph optimize = true
+ggml_metal_library_compile_pipeline: compiling pipeline: base = 'kernel_mul_mv_q4_K_f32', name = 'kernel_mul_mv_q4_K_f32_nsg=2_ne12=1_r2=1_r3=1_split=0'
+ggml_metal_library_compile_pipeline: loaded kernel_mul_mv_q4_K_f32_nsg=2_ne12=1_r2=1_r3=1_split=0     0x7542ae5c00 | th_max = 1024 | th_width =   32
+ggml_metal_free: deallocating
+ggml_metal_init: allocating
+ggml_metal_init: found device: Apple M4
+ggml_metal_init: picking default device: Apple M4
+ggml_metal_init: use fusion         = true
+ggml_metal_init: use concurrency    = true
+ggml_metal_init: use graph optimize = true
+ggml_metal_free: deallocating
+ggml_metal_init: allocating
+ggml_metal_init: found device: Apple M4
+ggml_metal_init: picking default device: Apple M4
+ggml_metal_init: use fusion         = true
+ggml_metal_init: use concurrency    = true
+ggml_metal_init: use graph optimize = true
+ggml_metal_library_compile_pipeline: compiling pipeline: base = 'kernel_mul_mv_iq4_xs_f32', name = 'kernel_mul_mv_iq4_xs_f32_nsg=2_ne12=1_r2=1_r3=1_split=0'
+ggml_metal_library_compile_pipeline: loaded kernel_mul_mv_iq4_xs_f32_nsg=2_ne12=1_r2=1_r3=1_split=0     0x7542ae6d80 | th_max = 1024 | th_width =   32
+ggml_metal_free: deallocating
+ggml_metal_init: allocating
+ggml_metal_init: found device: Apple M4
+ggml_metal_init: picking default device: Apple M4
+ggml_metal_init: use fusion         = true
+ggml_metal_init: use concurrency    = true
+ggml_metal_init: use graph optimize = true
+ggml_metal_free: deallocating
+ggml_metal_init: allocating
+ggml_metal_init: found device: Apple M4
+ggml_metal_init: picking default device: Apple M4
+ggml_metal_init: use fusion         = true
+ggml_metal_init: use concurrency    = true
+ggml_metal_init: use graph optimize = true
+ggml_metal_library_compile_pipeline: compiling pipeline: base = 'kernel_mul_mv_ext_mxfp4_f32_r1_2', name = 'kernel_mul_mv_ext_mxfp4_f32_r1_2_nsg=2_nxpsg=16_ne12=1_r2=1_r3=1'
+ggml_metal_library_compile_pipeline: loaded kernel_mul_mv_ext_mxfp4_f32_r1_2_nsg=2_nxpsg=16_ne12=1_r2=1_r3=1     0x7542ae7800 | th_max = 1024 | th_width =   32
+ggml_metal_free: deallocating
+ggml_metal_init: allocating
+ggml_metal_init: found device: Apple M4
+ggml_metal_init: picking default device: Apple M4
+ggml_metal_init: use fusion         = true
+ggml_metal_init: use concurrency    = true
+ggml_metal_init: use graph optimize = true
+ggml_metal_free: deallocating
+ggml_metal_init: allocating
+ggml_metal_init: found device: Apple M4
+ggml_metal_init: picking default device: Apple M4
+ggml_metal_init: use fusion         = true
+ggml_metal_init: use concurrency    = true
+ggml_metal_init: use graph optimize = true
+ggml_metal_library_compile_pipeline: compiling pipeline: base = 'kernel_mul_mv_id_iq4_xs_f32', name = 'kernel_mul_mv_id_iq4_xs_f32_nsg=2_split=0'
+ggml_metal_library_compile_pipeline: loaded kernel_mul_mv_id_iq4_xs_f32_nsg=2_split=0     0x7542a73b80 | th_max = 1024 | th_width =   32
+ggml_metal_free: deallocating
+[       OK ] AppleTyped.GgufPackedMatMulAndGroupedExpertsUseOrdinaryPreparation (57 ms)
+[ RUN      ] AppleTyped.MetadataPreparationAndCheckedRegionError
+[       OK ] AppleTyped.MetadataPreparationAndCheckedRegionError (1 ms)
+[----------] 6 tests from AppleTyped (585 ms total)
+
+[----------] 6 tests from AppleLifetime
+[ RUN      ] AppleLifetime.QueuedCancellationAndAbandonmentDrainBeforeClose
+[       OK ] AppleLifetime.QueuedCancellationAndAbandonmentDrainBeforeClose (1 ms)
+[ RUN      ] AppleLifetime.InFlightCancellationWaitsForNativeDrainAndRetiresOnlySlot
+[       OK ] AppleLifetime.InFlightCancellationWaitsForNativeDrainAndRetiresOnlySlot (1 ms)
+[ RUN      ] AppleLifetime.LateNativeFailureDrainsAndFailsAlreadyQueuedWork
+[       OK ] AppleLifetime.LateNativeFailureDrainsAndFailsAlreadyQueuedWork (1 ms)
+[ RUN      ] AppleLifetime.IndependentContextsOwnIndependentNativeSubmissionThreads
+[       OK ] AppleLifetime.IndependentContextsOwnIndependentNativeSubmissionThreads (2 ms)
+[ RUN      ] AppleLifetime.CheckedFailureRetainsAnAcceptedNativePrefixAfterOwnersGoAway
+[       OK ] AppleLifetime.CheckedFailureRetainsAnAcceptedNativePrefixAfterOwnersGoAway (66 ms)
+[ RUN      ] AppleLifetime.AllocationRefusalsPublishNoPartialProgramOrResult
+[       OK ] AppleLifetime.AllocationRefusalsPublishNoPartialProgramOrResult (2 ms)
+[----------] 6 tests from AppleLifetime (76 ms total)
+
+[----------] 7 tests from AppleRecurrent
+[ RUN      ] AppleRecurrent.OrdinaryPreparationInterleavedRequestsAndOldOutputOwner
+ggml_metal_init: allocating
+ggml_metal_init: found device: Apple M4
+ggml_metal_init: picking default device: Apple M4
+ggml_metal_init: use fusion         = true
+ggml_metal_init: use concurrency    = true
+ggml_metal_init: use graph optimize = true
+ggml_metal_library_compile_pipeline: compiling pipeline: base = 'kernel_gated_delta_net_f32_4', name = 'kernel_gated_delta_net_f32_4_ne20=128_ne30=1_K=1'
+ggml_metal_library_compile_pipeline: loaded kernel_gated_delta_net_f32_4_ne20=128_ne30=1_K=1     0x7542bfc380 | th_max = 1024 | th_width =   32
+ggml_metal_free: deallocating
+ggml_metal_init: allocating
+ggml_metal_init: found device: Apple M4
+ggml_metal_init: picking default device: Apple M4
+ggml_metal_init: use fusion         = true
+ggml_metal_init: use concurrency    = true
+ggml_metal_init: use graph optimize = true
+ggml_metal_init: allocating
+ggml_metal_init: found device: Apple M4
+ggml_metal_init: picking default device: Apple M4
+ggml_metal_init: use fusion         = true
+ggml_metal_init: use concurrency    = true
+ggml_metal_init: use graph optimize = true
+ggml_metal_free: deallocating
+ggml_metal_free: deallocating
+ggml_metal_init: allocating
+ggml_metal_init: found device: Apple M4
+ggml_metal_init: picking default device: Apple M4
+ggml_metal_init: use fusion         = true
+ggml_metal_init: use concurrency    = true
+ggml_metal_init: use graph optimize = true
+ggml_metal_free: deallocating
+ggml_metal_init: allocating
+ggml_metal_init: found device: Apple M4
+ggml_metal_init: picking default device: Apple M4
+ggml_metal_init: use fusion         = true
+ggml_metal_init: use concurrency    = true
+ggml_metal_init: use graph optimize = true
+ggml_metal_init: allocating
+ggml_metal_init: found device: Apple M4
+ggml_metal_init: picking default device: Apple M4
+ggml_metal_init: use fusion         = true
+ggml_metal_init: use concurrency    = true
+ggml_metal_init: use graph optimize = true
+ggml_metal_free: deallocating
+ggml_metal_free: deallocating
+[       OK ] AppleRecurrent.OrdinaryPreparationInterleavedRequestsAndOldOutputOwner (89 ms)
+[ RUN      ] AppleRecurrent.StridedMlxInputAndPreparationDiagnostics
+ggml_metal_init: allocating
+ggml_metal_init: found device: Apple M4
+ggml_metal_init: picking default device: Apple M4
+ggml_metal_init: use fusion         = true
+ggml_metal_init: use concurrency    = true
+ggml_metal_init: use graph optimize = true
+ggml_metal_library_compile_pipeline: compiling pipeline: base = 'kernel_gated_delta_net_f32_1', name = 'kernel_gated_delta_net_f32_1_ne20=32_ne30=1_K=1'
+ggml_metal_library_compile_pipeline: loaded kernel_gated_delta_net_f32_1_ne20=32_ne30=1_K=1     0x7542bfca80 | th_max = 1024 | th_width =   32
+ggml_metal_free: deallocating
+ggml_metal_init: allocating
+ggml_metal_init: found device: Apple M4
+ggml_metal_init: picking default device: Apple M4
+ggml_metal_init: use fusion         = true
+ggml_metal_init: use concurrency    = true
+ggml_metal_init: use graph optimize = true
+ggml_metal_free: deallocating
+[       OK ] AppleRecurrent.StridedMlxInputAndPreparationDiagnostics (3 ms)
+[ RUN      ] AppleRecurrent.AbandonedCompletionAndCancelCloseDrain
+ggml_metal_init: allocating
+ggml_metal_init: found device: Apple M4
+ggml_metal_init: picking default device: Apple M4
+ggml_metal_init: use fusion         = true
+ggml_metal_init: use concurrency    = true
+ggml_metal_init: use graph optimize = true
+ggml_metal_free: deallocating
+ggml_metal_init: allocating
+ggml_metal_init: found device: Apple M4
+ggml_metal_init: picking default device: Apple M4
+ggml_metal_init: use fusion         = true
+ggml_metal_init: use concurrency    = true
+ggml_metal_init: use graph optimize = true
+ggml_metal_init: allocating
+ggml_metal_init: found device: Apple M4
+ggml_metal_init: picking default device: Apple M4
+ggml_metal_init: use fusion         = true
+ggml_metal_init: use concurrency    = true
+ggml_metal_init: use graph optimize = true
+ggml_metal_free: deallocating
+ggml_metal_free: deallocating
+[       OK ] AppleRecurrent.AbandonedCompletionAndCancelCloseDrain (3 ms)
+[ RUN      ] AppleRecurrent.PerChannelKdaGateUsesOriginalMetalRegion
+ggml_metal_init: allocating
+ggml_metal_init: found device: Apple M4
+ggml_metal_init: picking default device: Apple M4
+ggml_metal_init: use fusion         = true
+ggml_metal_init: use concurrency    = true
+ggml_metal_init: use graph optimize = true
+ggml_metal_library_compile_pipeline: compiling pipeline: base = 'kernel_gated_delta_net_f32_1', name = 'kernel_gated_delta_net_f32_1_ne20=32_ne30=32_K=1'
+ggml_metal_library_compile_pipeline: loaded kernel_gated_delta_net_f32_1_ne20=32_ne30=32_K=1     0x7542bfdc00 | th_max = 1024 | th_width =   32
+ggml_metal_free: deallocating
+ggml_metal_init: allocating
+ggml_metal_init: found device: Apple M4
+ggml_metal_init: picking default device: Apple M4
+ggml_metal_init: use fusion         = true
+ggml_metal_init: use concurrency    = true
+ggml_metal_init: use graph optimize = true
+ggml_metal_free: deallocating
+[       OK ] AppleRecurrent.PerChannelKdaGateUsesOriginalMetalRegion (1 ms)
+[ RUN      ] AppleRecurrent.MatureCausalConvUsesMlxRegion
+[       OK ] AppleRecurrent.MatureCausalConvUsesMlxRegion (2 ms)
+[ RUN      ] AppleRecurrent.MatureMoeAndHyperConnectionBatchUsesOriginalMetal
+ggml_metal_init: allocating
+ggml_metal_init: found device: Apple M4
+ggml_metal_init: picking default device: Apple M4
+ggml_metal_init: use fusion         = true
+ggml_metal_init: use concurrency    = true
+ggml_metal_init: use graph optimize = true
+ggml_metal_free: deallocating
+ggml_metal_init: allocating
+ggml_metal_init: found device: Apple M4
+ggml_metal_init: picking default device: Apple M4
+ggml_metal_init: use fusion         = true
+ggml_metal_init: use concurrency    = true
+ggml_metal_init: use graph optimize = true
+ggml_metal_library_compile_pipeline: compiling pipeline: base = 'kernel_mul_mv_id_f32_f32', name = 'kernel_mul_mv_id_f32_f32_nsg=1_split=0'
+ggml_metal_library_compile_pipeline: loaded kernel_mul_mv_id_f32_f32_nsg=1_split=0       0x7542bfdf80 | th_max = 1024 | th_width =   32
+ggml_metal_free: deallocating
+ggml_metal_init: allocating
+ggml_metal_init: found device: Apple M4
+ggml_metal_init: picking default device: Apple M4
+ggml_metal_init: use fusion         = true
+ggml_metal_init: use concurrency    = true
+ggml_metal_init: use graph optimize = true
+ggml_metal_free: deallocating
+ggml_metal_init: allocating
+ggml_metal_init: found device: Apple M4
+ggml_metal_init: picking default device: Apple M4
+ggml_metal_init: use fusion         = true
+ggml_metal_init: use concurrency    = true
+ggml_metal_init: use graph optimize = true
+ggml_metal_library_compile_pipeline: compiling pipeline: base = 'kernel_dsv4_hc_comb_f32', name = 'kernel_dsv4_hc_comb_f32'
+ggml_metal_library_compile_pipeline: loaded kernel_dsv4_hc_comb_f32                      0x7542bfe680 | th_max = 1024 | th_width =   32
+ggml_metal_free: deallocating
+ggml_metal_init: allocating
+ggml_metal_init: found device: Apple M4
+ggml_metal_init: picking default device: Apple M4
+ggml_metal_init: use fusion         = true
+ggml_metal_init: use concurrency    = true
+ggml_metal_init: use graph optimize = true
+ggml_metal_free: deallocating
+ggml_metal_init: allocating
+ggml_metal_init: found device: Apple M4
+ggml_metal_init: picking default device: Apple M4
+ggml_metal_init: use fusion         = true
+ggml_metal_init: use concurrency    = true
+ggml_metal_init: use graph optimize = true
+ggml_metal_library_compile_pipeline: compiling pipeline: base = 'kernel_dsv4_hc_pre_f32', name = 'kernel_dsv4_hc_pre_f32'
+ggml_metal_library_compile_pipeline: loaded kernel_dsv4_hc_pre_f32                       0x7542bfea00 | th_max = 1024 | th_width =   32
+ggml_metal_free: deallocating
+ggml_metal_init: allocating
+ggml_metal_init: found device: Apple M4
+ggml_metal_init: picking default device: Apple M4
+ggml_metal_init: use fusion         = true
+ggml_metal_init: use concurrency    = true
+ggml_metal_init: use graph optimize = true
+ggml_metal_free: deallocating
+ggml_metal_init: allocating
+ggml_metal_init: found device: Apple M4
+ggml_metal_init: picking default device: Apple M4
+ggml_metal_init: use fusion         = true
+ggml_metal_init: use concurrency    = true
+ggml_metal_init: use graph optimize = true
+ggml_metal_library_compile_pipeline: compiling pipeline: base = 'kernel_dsv4_hc_post_f32', name = 'kernel_dsv4_hc_post_f32'
+ggml_metal_library_compile_pipeline: loaded kernel_dsv4_hc_post_f32                      0x7542bfed80 | th_max = 1024 | th_width =   32
+ggml_metal_free: deallocating
+[       OK ] AppleRecurrent.MatureMoeAndHyperConnectionBatchUsesOriginalMetal (2 ms)
+[ RUN      ] AppleRecurrent.MatureLightningIndexerUsesOriginalMetalAndReplays
+ggml_metal_init: allocating
+ggml_metal_init: found device: Apple M4
+ggml_metal_init: picking default device: Apple M4
+ggml_metal_init: use fusion         = true
+ggml_metal_init: use concurrency    = true
+ggml_metal_init: use graph optimize = true
+ggml_metal_free: deallocating
+ggml_metal_init: allocating
+ggml_metal_init: found device: Apple M4
+ggml_metal_init: picking default device: Apple M4
+ggml_metal_init: use fusion         = true
+ggml_metal_init: use concurrency    = true
+ggml_metal_init: use graph optimize = true
+ggml_metal_library_compile_pipeline: compiling pipeline: base = 'kernel_lightning_indexer_f32', name = 'kernel_lightning_indexer_f32'
+ggml_metal_library_compile_pipeline: loaded kernel_lightning_indexer_f32                 0x7542bff100 | th_max = 1024 | th_width =   32
+ggml_metal_free: deallocating
+[       OK ] AppleRecurrent.MatureLightningIndexerUsesOriginalMetalAndReplays (1 ms)
+[----------] 7 tests from AppleRecurrent (104 ms total)
+
+[----------] 1 test from AppleMlxQuantized
+[ RUN      ] AppleMlxQuantized.NativeFormatsUseOrdinaryEntryAndCheckedExperts
+/Users/kiro/hyle/tests/compute_route_apple/mlx_quantized_test.cc:37: Failure
+Value of: program
+  Actual: false
+Expected: true
+Apple typed operation has no admitted MLX lowering
+Google Test trace:
+/Users/kiro/hyle/tests/compute_route_apple/mlx_quantized_test.cc:77: float32
+/Users/kiro/hyle/tests/compute_route_apple/mlx_quantized_test.cc:76: false
+/Users/kiro/hyle/tests/compute_route_apple/mlx_quantized_test.cc:75: 0
+
+/Users/kiro/hyle/tests/compute_route_apple/mlx_quantized_test.cc:37: Failure
+Value of: program
+  Actual: false
+Expected: true
+Apple typed operation has no admitted MLX lowering
+Google Test trace:
+/Users/kiro/hyle/tests/compute_route_apple/mlx_quantized_test.cc:77: bfloat16
+/Users/kiro/hyle/tests/compute_route_apple/mlx_quantized_test.cc:76: false
+/Users/kiro/hyle/tests/compute_route_apple/mlx_quantized_test.cc:75: 0
+
+/Users/kiro/hyle/tests/compute_route_apple/mlx_quantized_test.cc:37: Failure
+Value of: program
+  Actual: false
+Expected: true
+Apple typed operation has no admitted MLX lowering
+Google Test trace:
+/Users/kiro/hyle/tests/compute_route_apple/mlx_quantized_test.cc:77: float32
+/Users/kiro/hyle/tests/compute_route_apple/mlx_quantized_test.cc:76: true
+/Users/kiro/hyle/tests/compute_route_apple/mlx_quantized_test.cc:75: 0
+
+/Users/kiro/hyle/tests/compute_route_apple/mlx_quantized_test.cc:37: Failure
+Value of: program
+  Actual: false
+Expected: true
+Apple typed operation has no admitted MLX lowering
+Google Test trace:
+/Users/kiro/hyle/tests/compute_route_apple/mlx_quantized_test.cc:77: bfloat16
+/Users/kiro/hyle/tests/compute_route_apple/mlx_quantized_test.cc:76: true
+/Users/kiro/hyle/tests/compute_route_apple/mlx_quantized_test.cc:75: 0
+
+/Users/kiro/hyle/tests/compute_route_apple/mlx_quantized_test.cc:37: Failure
+Value of: program
+  Actual: false
+Expected: true
+Apple typed operation has no admitted MLX lowering
+Google Test trace:
+/Users/kiro/hyle/tests/compute_route_apple/mlx_quantized_test.cc:77: float32
+/Users/kiro/hyle/tests/compute_route_apple/mlx_quantized_test.cc:76: false
+/Users/kiro/hyle/tests/compute_route_apple/mlx_quantized_test.cc:75: 1
+
+/Users/kiro/hyle/tests/compute_route_apple/mlx_quantized_test.cc:37: Failure
+Value of: program
+  Actual: false
+Expected: true
+Apple typed operation has no admitted MLX lowering
+Google Test trace:
+/Users/kiro/hyle/tests/compute_route_apple/mlx_quantized_test.cc:77: bfloat16
+/Users/kiro/hyle/tests/compute_route_apple/mlx_quantized_test.cc:76: false
+/Users/kiro/hyle/tests/compute_route_apple/mlx_quantized_test.cc:75: 1
+
+/Users/kiro/hyle/tests/compute_route_apple/mlx_quantized_test.cc:37: Failure
+Value of: program
+  Actual: false
+Expected: true
+Apple typed operation has no admitted MLX lowering
+Google Test trace:
+/Users/kiro/hyle/tests/compute_route_apple/mlx_quantized_test.cc:77: float32
+/Users/kiro/hyle/tests/compute_route_apple/mlx_quantized_test.cc:76: true
+/Users/kiro/hyle/tests/compute_route_apple/mlx_quantized_test.cc:75: 1
+
+/Users/kiro/hyle/tests/compute_route_apple/mlx_quantized_test.cc:37: Failure
+Value of: program
+  Actual: false
+Expected: true
+Apple typed operation has no admitted MLX lowering
+Google Test trace:
+/Users/kiro/hyle/tests/compute_route_apple/mlx_quantized_test.cc:77: bfloat16
+/Users/kiro/hyle/tests/compute_route_apple/mlx_quantized_test.cc:76: true
+/Users/kiro/hyle/tests/compute_route_apple/mlx_quantized_test.cc:75: 1
+
+/Users/kiro/hyle/tests/compute_route_apple/mlx_quantized_test.cc:37: Failure
+Value of: program
+  Actual: false
+Expected: true
+Apple typed operation has no admitted MLX lowering
+Google Test trace:
+/Users/kiro/hyle/tests/compute_route_apple/mlx_quantized_test.cc:77: float32
+/Users/kiro/hyle/tests/compute_route_apple/mlx_quantized_test.cc:76: false
+/Users/kiro/hyle/tests/compute_route_apple/mlx_quantized_test.cc:75: 2
+
+/Users/kiro/hyle/tests/compute_route_apple/mlx_quantized_test.cc:37: Failure
+Value of: program
+  Actual: false
+Expected: true
+Apple typed operation has no admitted MLX lowering
+Google Test trace:
+/Users/kiro/hyle/tests/compute_route_apple/mlx_quantized_test.cc:77: bfloat16
+/Users/kiro/hyle/tests/compute_route_apple/mlx_quantized_test.cc:76: false
+/Users/kiro/hyle/tests/compute_route_apple/mlx_quantized_test.cc:75: 2
+
+/Users/kiro/hyle/tests/compute_route_apple/mlx_quantized_test.cc:37: Failure
+Value of: program
+  Actual: false
+Expected: true
+Apple typed operation has no admitted MLX lowering
+Google Test trace:
+/Users/kiro/hyle/tests/compute_route_apple/mlx_quantized_test.cc:77: float32
+/Users/kiro/hyle/tests/compute_route_apple/mlx_quantized_test.cc:76: true
+/Users/kiro/hyle/tests/compute_route_apple/mlx_quantized_test.cc:75: 2
+
+/Users/kiro/hyle/tests/compute_route_apple/mlx_quantized_test.cc:37: Failure
+Value of: program
+  Actual: false
+Expected: true
+Apple typed operation has no admitted MLX lowering
+Google Test trace:
+/Users/kiro/hyle/tests/compute_route_apple/mlx_quantized_test.cc:77: bfloat16
+/Users/kiro/hyle/tests/compute_route_apple/mlx_quantized_test.cc:76: true
+/Users/kiro/hyle/tests/compute_route_apple/mlx_quantized_test.cc:75: 2
+
+[  FAILED  ] AppleMlxQuantized.NativeFormatsUseOrdinaryEntryAndCheckedExperts (12 ms)
+[----------] 1 test from AppleMlxQuantized (12 ms total)
+
+[----------] Global test environment tear-down
+[==========] 23 tests from 5 test suites ran. (1426 ms total)
+[  PASSED  ] 21 tests.
+[  SKIPPED ] 1 test, listed below:
+[  SKIPPED ] AppleTyped.D5RealQwenProjectionUsesExactProfileAndReplays
+[  FAILED  ] 1 test, listed below:
+[  FAILED  ] AppleMlxQuantized.NativeFormatsUseOrdinaryEntryAndCheckedExperts
+
+ 1 FAILED TEST

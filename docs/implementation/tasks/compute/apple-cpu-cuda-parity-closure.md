@@ -91,3 +91,13 @@ Metal分派；余8合同的IQ1_XS/XXS/XXXS须查已登记成熟来源，不能�
 [CPU enum迁移记录](cpu-quant-mtp-c3-format-bindings.md)仅作历史证据，不恢复旧施工队列。
 它们不是CLOSED reopen，不伪造AUDITED→SCOPED或BLOCKED。公共API/数据/执行仍原Apple
 native形状，F1/F2是成熟接线，F3原生资格前不写数学。各有限source疑问一轮follow-up即裁决。
+
+## A2 第一批真实验证
+
+`d4f808614` 经完整Git bundle正向同步到Air，复用producer一次configure/parallel2构建，
+三owning test target编译通过。[实测记录](../../../../evidence/correctness/apple-parity-a2/README.md)：
+Direct23项中21 PASS/1旧fixture SKIP/1新增packed FAIL；Graph20项19 PASS/1旧fixture SKIP。
+新增packed十二组合被旧admission guard拒绝，尚未进入原MLX数值执行；这是具名HYLE接线缺陷。
+有限纠正只补该准入条件，Metal测试把8种原码从旧decline迁至完整MatMul replay，并使原
+GetRows可承载当前全部已绑定native codec。修复后数字/状态待验，不把编译、旧通过或SKIP签
+新增能力PASS。原失败保留；没有启动P1或重跑全部模型。

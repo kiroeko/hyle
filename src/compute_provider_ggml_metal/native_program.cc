@@ -128,11 +128,7 @@ bool native_quantized(const TensorDesc &description) noexcept {
 }
 
 bool native_embedding_table(const TensorDesc &description) noexcept {
-  const auto type = gguf_quantized_type(description.storage_format());
-  return type &&
-         (*type == GgufQuantizedType::kQ4K ||
-          *type == GgufQuantizedType::kQ6K ||
-          *type == GgufQuantizedType::kQ8_0) &&
+  return native_quantized(description) &&
          description.data_type() == DataType::kFloat32 &&
          description.rank() == 2 && description.block_axis() == 1;
 }
@@ -254,7 +250,7 @@ Status NativeProgram::validate(Operation operation,
        inputs[1].data_type() != DataType::kInt32 || !inputs[1].is_plain() ||
        !inputs[1].is_dense() || inputs[1].rank() != 1))
     return Status::Unimplemented(
-        "ggml Metal Gather requires checked axis-0 I32 indices and a Q4_K/Q6_K/Q8_0 F32 embedding table");
+        "ggml Metal Gather requires checked axis-0 I32 indices and a native GGUF F32 embedding table");
   for (std::size_t i = 0; i < inputs.size(); ++i)
     if (native_quantized(inputs[i]) &&
         ((!matmul && !grouped && !gather) || (matmul && i != 1) ||

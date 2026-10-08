@@ -1,0 +1,61 @@
+[0/2] Re-checking globbed directories...
+[1/54] Building CXX object src/platform/CMakeFiles/hyle_platform.dir/cpu_resource.cc.o
+[2/54] Building CXX object src/platform/CMakeFiles/hyle_platform_cpu_probe.dir/cpu.cc.o
+[3/54] Building CXX object src/platform/CMakeFiles/hyle_platform.dir/numa.cc.o
+[4/54] Linking CXX shared library bin/libhyle_platform.0.1.0.dylib
+[5/54] Creating library symlink bin/libhyle_platform.dylib
+[6/54] Linking CXX shared library bin/libhyle_mem.0.1.0.dylib
+[7/54] Creating library symlink bin/libhyle_mem.dylib
+[8/54] Building CXX object src/compute_ops/CMakeFiles/hyle_compute_ops.dir/low_precision.cc.o
+[9/54] Linking CXX shared library bin/libhyle_compute_ggml_runtime.0.1.0.dylib
+[10/54] Building CXX object src/compute_ops/CMakeFiles/hyle_compute_ops.dir/weight_decode.cc.o
+[11/54] Linking CXX shared library bin/libhyle_compute_ops.0.1.0.dylib
+[12/54] Building CXX object src/platform_thread/CMakeFiles/hyle_platform_thread.dir/thread.cc.o
+[13/54] Building CXX object src/container/CMakeFiles/hyle_container.dir/dynamic_bitset.cc.o
+[14/54] Creating library symlink bin/libhyle_compute_ops.dylib
+[15/54] Building CXX object src/container/CMakeFiles/hyle_container.dir/hash.cc.o
+[16/54] Building CXX object src/compute/CMakeFiles/hyle_compute.dir/custom_kernel.cc.o
+[17/54] Building CXX object src/compute/CMakeFiles/hyle_compute.dir/device.cc.o
+[18/54] Building CXX object src/compute/CMakeFiles/hyle_compute.dir/provider.cc.o
+[19/54] Building CXX object src/compute/CMakeFiles/hyle_compute.dir/route_policy.cc.o
+[20/54] Creating library symlink bin/libhyle_compute_ggml_runtime.dylib
+[21/54] Building CXX object src/compute/CMakeFiles/hyle_compute.dir/operation.cc.o
+[22/54] Linking CXX shared library bin/libhyle_platform_thread.0.1.0.dylib
+[23/54] Linking CXX shared library bin/libhyle_container.0.1.0.dylib
+[24/54] Linking CXX shared library bin/libhyle_compute.0.1.0.dylib
+[25/54] cd /Users/kiro/hyle-scratch/d5-graph-825c41f8/src/compute_route_apple && /opt/homebrew/bin/cmake -E copy_if_different /Users/kiro/hyle-scratch/d5-graph-825c41f8/_deps/mlx-build/mlx/backend/metal/kernels/mlx.metallib /Users/kiro/hyle-scratch/d5-graph-825c41f8/bin/mlx.metallib
+[26/54] Creating library symlink bin/libhyle_platform_thread.dylib
+[27/54] Creating library symlink bin/libhyle_container.dylib
+[28/54] Creating library symlink bin/libhyle_compute.dylib
+[29/54] Building CXX object src/compute_provider_ggml_metal/CMakeFiles/hyle_compute_provider_ggml_metal.dir/native_program.cc.o
+[30/54] Linking CXX shared library bin/libhyle_compute_provider_ggml_metal.0.1.0.dylib
+[31/54] Creating library symlink bin/libhyle_compute_provider_ggml_metal.dylib
+[32/54] Building CXX object src/compute_route_apple/CMakeFiles/hyle_compute_route_apple.dir/apple_operations.cc.o
+[33/54] Building CXX object src/compute_route_apple/CMakeFiles/hyle_compute_route_apple.dir/apple_tensor.cc.o
+[34/54] Building CXX object src/compute_route_apple/CMakeFiles/hyle_compute_route_apple.dir/apple_mature_float.cc.o
+[35/54] Linking CXX shared library bin/libhyle_compute_route_apple.0.1.0.dylib
+[36/54] Creating library symlink bin/libhyle_compute_route_apple.dylib
+[37/54] Building CXX object src/graph/CMakeFiles/hyle_graph.dir/executable.cc.o
+[38/54] Linking CXX shared library bin/libhyle_graph.0.1.0.dylib
+[39/54] Creating library symlink bin/libhyle_graph.dylib
+[40/54] Building CXX object src/graph_route_apple/CMakeFiles/hyle_graph_route_apple.dir/apple_lowering.cc.o
+[41/54] Linking CXX shared library bin/libhyle_graph_route_apple.0.1.0.dylib
+[42/54] Creating library symlink bin/libhyle_graph_route_apple.dylib
+[43/54] Building CXX object tests/compute_route_apple/CMakeFiles/hyle_compute_route_apple_test.dir/operations_test.cc.o
+[44/54] Building CXX object tests/compute_route_apple/CMakeFiles/hyle_compute_route_apple_test.dir/recurrent_test.cc.o
+[45/54] Building CXX object tests/compute_route_apple/CMakeFiles/hyle_compute_route_apple_test.dir/mlx_quantized_test.cc.o
+[46/54] Building CXX object tests/graph_route_apple/CMakeFiles/hyle_graph_route_apple_test.dir/graph_test.cc.o
+[47/54] Building CXX object tests/graph_route_apple/CMakeFiles/hyle_graph_route_apple_test.dir/recurrent_test.cc.o
+[48/54] Building CXX object tests/compute_route_apple/CMakeFiles/hyle_compute_route_apple_test.dir/d5_qwen35_execution_test.cc.o
+[49/54] Building OBJCXX object tests/compute_provider_ggml_metal/CMakeFiles/hyle_compute_provider_ggml_metal_test.dir/native_program_test.mm.o
+/Users/kiro/hyle/tests/compute_provider_ggml_metal/native_program_test.mm:73:11: warning: 11 enumeration values not handled in switch: 'kQ4_0', 'kQ4_1', 'kQ2K'... [-Wswitch]
+   73 |   switch (type) {
+      |           ^~~~
+/Users/kiro/hyle/tests/compute_provider_ggml_metal/native_program_test.mm:73:11: note: add missing switch cases
+   73 |   switch (type) {
+      |           ^
+1 warning generated.
+[50/54] Linking CXX executable bin/hyle_compute_route_apple_test
+[51/54] Linking CXX executable bin/hyle_compute_provider_ggml_metal_test
+[52/54] Building CXX object tests/graph_route_apple/CMakeFiles/hyle_graph_route_apple_test.dir/d5_qwen35_execution_test.cc.o
+[53/54] Linking CXX executable bin/hyle_graph_route_apple_test

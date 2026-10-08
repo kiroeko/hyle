@@ -30,11 +30,7 @@ TEST(GgmlMetalProgram, CpuFormatPortDoesNotQualifyGpuMatrices) {
       std::array<std::int64_t, 3>{1, 2, 256}).value();
   const auto ids = c::TensorDesc::dense(c::DataType::kInt32,
       std::array<std::int64_t, 2>{1, 2}).value();
-  for (const auto type : {c::GgufQuantizedType::kQ4_0, c::GgufQuantizedType::kQ4_1,
-       c::GgufQuantizedType::kQ2K, c::GgufQuantizedType::kIq2Xxs,
-       c::GgufQuantizedType::kIq2Xs, c::GgufQuantizedType::kIq2S,
-       c::GgufQuantizedType::kIq1S, c::GgufQuantizedType::kIq1M,
-       c::GgufQuantizedType::kIq1Xs, c::GgufQuantizedType::kIq1Xxs,
+  for (const auto type : {c::GgufQuantizedType::kIq1Xs, c::GgufQuantizedType::kIq1Xxs,
        c::GgufQuantizedType::kIq1Xxxs}) {
     SCOPED_TRACE(static_cast<int>(type));
     const auto weight = c::gguf_weight_description(type, c::DataType::kFloat32, 256, 3).value();
@@ -71,6 +67,22 @@ std::array<c::TensorDesc, 6> schema(int tokens, int heads, int depth) {
 
 ggml_type native_type(c::GgufQuantizedType type) {
   switch (type) {
+  case c::GgufQuantizedType::kQ4_0:
+    return GGML_TYPE_Q4_0;
+  case c::GgufQuantizedType::kQ4_1:
+    return GGML_TYPE_Q4_1;
+  case c::GgufQuantizedType::kQ2K:
+    return GGML_TYPE_Q2_K;
+  case c::GgufQuantizedType::kIq2Xxs:
+    return GGML_TYPE_IQ2_XXS;
+  case c::GgufQuantizedType::kIq2Xs:
+    return GGML_TYPE_IQ2_XS;
+  case c::GgufQuantizedType::kIq2S:
+    return GGML_TYPE_IQ2_S;
+  case c::GgufQuantizedType::kIq1S:
+    return GGML_TYPE_IQ1_S;
+  case c::GgufQuantizedType::kIq1M:
+    return GGML_TYPE_IQ1_M;
   case c::GgufQuantizedType::kQ3K:
     return GGML_TYPE_Q3_K;
   case c::GgufQuantizedType::kQ4K:
@@ -91,6 +103,8 @@ ggml_type native_type(c::GgufQuantizedType type) {
     return GGML_TYPE_IQ4_XS;
   case c::GgufQuantizedType::kMxfp4:
     return GGML_TYPE_MXFP4;
+  default:
+    break;
   }
   return GGML_TYPE_COUNT;
 }
@@ -224,6 +238,10 @@ TEST(GgmlMetalProgram, EveryCatalogFormatRunsPackedMatMulAndReplays) {
     constexpr int n = 8;
     constexpr int m = 2;
     constexpr std::array types{
+        c::GgufQuantizedType::kQ4_0,  c::GgufQuantizedType::kQ4_1,
+        c::GgufQuantizedType::kQ2K,   c::GgufQuantizedType::kIq2Xxs,
+        c::GgufQuantizedType::kIq2Xs, c::GgufQuantizedType::kIq2S,
+        c::GgufQuantizedType::kIq1S,  c::GgufQuantizedType::kIq1M,
         c::GgufQuantizedType::kQ3K,   c::GgufQuantizedType::kQ4K,
         c::GgufQuantizedType::kQ5K,   c::GgufQuantizedType::kQ6K,
         c::GgufQuantizedType::kQ8_0,  c::GgufQuantizedType::kIq3Xxs,
@@ -294,9 +312,16 @@ TEST(GgmlMetalProgram,
     ASSERT_NE(device, nil);
     constexpr int rows = 3;
     constexpr int width = 256;
-    constexpr std::array types{c::GgufQuantizedType::kQ4K,
-                               c::GgufQuantizedType::kQ6K,
-                               c::GgufQuantizedType::kQ8_0};
+    constexpr std::array types{
+        c::GgufQuantizedType::kQ4_0,  c::GgufQuantizedType::kQ4_1,
+        c::GgufQuantizedType::kQ2K,   c::GgufQuantizedType::kIq2Xxs,
+        c::GgufQuantizedType::kIq2Xs, c::GgufQuantizedType::kIq2S,
+        c::GgufQuantizedType::kIq1S,  c::GgufQuantizedType::kIq1M,
+        c::GgufQuantizedType::kQ3K,   c::GgufQuantizedType::kQ4K,
+        c::GgufQuantizedType::kQ5K,   c::GgufQuantizedType::kQ6K,
+        c::GgufQuantizedType::kQ8_0,  c::GgufQuantizedType::kIq3Xxs,
+        c::GgufQuantizedType::kIq3S,  c::GgufQuantizedType::kIq4Nl,
+        c::GgufQuantizedType::kIq4Xs, c::GgufQuantizedType::kMxfp4};
     const auto ids_desc =
         c::TensorDesc::dense(c::DataType::kInt32,
                              std::array<std::int64_t, 1>{2})

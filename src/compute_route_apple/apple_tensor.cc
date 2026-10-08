@@ -326,7 +326,8 @@ Result<std::vector<mx::array>> lower_tensor(const Operation &operation,
     const auto causal_conv = operation.custom_as<model_ops::CausalConv1d>();
     const auto mlx_quantized = operation.custom_as<model_ops::MlxQuantized>();
     const auto sink_attention = operation.custom_as<model_ops::SinkAttention>();
-    if (!causal_conv && !sink_attention && !admitted(operation.kind()))
+    if (!causal_conv && !sink_attention && !mlx_quantized &&
+        !admitted(operation.kind()))
       return std::unexpected(Status::Unimplemented(
           "Apple typed operation has no admitted MLX lowering"));
     if (!operation_traits(operation).inputs.accepts(inputs.size()))
