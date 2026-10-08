@@ -60,3 +60,28 @@ all three duplicated typed-custom lists by one Compute-owned native admission
 predicate, so Direct/Graph prevalidation/Graph tracing cannot disagree about
 this domain. Actual schema, stream, port and runtime checks remain unchanged.
 Its first corrected Graph candidate is pending; the original FAIL is retained.
+
+## Candidate58c49dae9: first packed batch passed
+
+[Incremental shared build](58c49dae-build.log) PASS.
+[Direct](58c49dae-direct.log)2/2 and [Graph](58c49dae-graph.log)2/2 PASS:
+each uses the same twelve affine/MX4/MX8, F32/BF16, linear/grouped cases,
+both affine embedding precisions, full independent output oracle, changed
+activation/expert IDs, two replays and checked invalid indices. Neither
+entry needs a user custom lowering. The three concrete admission/stream
+integration defects found above are fixed; all original FAIL logs remain.
+
+[Windows Apple-OFF standalone headers](win-off-headers.log)2/2 PASS. This
+small local compiler check ran serially (50.84s+2.70s); it has finished and
+no HYLE local compiler/test process remained in the subsequent process check.
+User reported a local CPU peak, so further Apple build/numeric/performance
+verification stays on Air and no local compiler batch runs concurrently.
+Documentation/status checks do not build or run P1. Native Apple standalone
+headers and all three delivery seams are still required in A4; selector
+delivery gates are deferred, not claimed PASS from this test.
+
+Scope of this PASS is this first typed/native codec batch. All559 real GGUF
+contracts,16 real MLX packed geometries,18 artifact requests,8 IQ1 extension
+contracts, current complete family/official/MTP regions, cold rules/P1 and
+source/static/shared remain open. Uniform canonical Compute+Graph code is
+61,190 implementation lines/258 files at this product tree (tests/vendors excluded).

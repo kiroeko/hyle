@@ -115,3 +115,11 @@ I32→U32转换；接入处显式owned-stream cast，使原内部cast成为no-op
 旧custom准入名单拒绝，尚未数值执行。F2的具名定向纠正将Direct lower、Graph预检/trace的
 三份名单统一为Compute-owned native predicate；仅detail seam，无数学/stream/资源/公开
 用户入口改变。适用头/seam验收随selector扩展，Graph修复结果待验，原FAIL保留。
+
+`58c49dae9`增量构建和Direct2/2、Graph2/2全部通过，原codec18种数值/资源资格仍对应
+`02a573d3`未漂移实现。此首批十二packed组合+双embedding精度的三处准入/stream接线缺陷
+已解决，原FAIL不抹除，不签全目录。Windows Apple-OFF头2/2通过，用户报告本机CPU峰值后
+确认本地检查已结束、无HYLE编译/测试残留；后续Apple build/数值/P1只放Air，不并跑本机
+编译。Native头/三交付selector门集中A4，尚未PASS。统一Compute+Graph实现61,190行/
+258文件，不含tests/vendor。剩余559真实合同/16实际MLX几何/18artifact/8IQ1扩展、当前
+完整模型/官方/MTP链、默认/有限优选/三交付都未被此首批结果代签。

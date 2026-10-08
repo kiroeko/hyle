@@ -1,0 +1,42 @@
+Start testing: Oct 08 20:58 中国标准时间
+----------------------------------------------------------
+49/51 Testing: hyle_compute_route_apple_header_self_contained_test
+49/51 Test: hyle_compute_route_apple_header_self_contained_test
+Command: "C:/Program Files/Python312/python.exe" "C:/public/project-hyle/hyle/scripts/header-self-contained.py" "--module" "compute_route_apple" "--include-dir" "C:/public/project-hyle/hyle/include" "--cxx" "C:/Program Files/Microsoft Visual Studio/18/Enterprise/VC/Tools/MSVC/14.50.35717/bin/Hostx64/x64/cl.exe" "--cxx-compiler-id" "MSVC" "--cxx-frontend" "MSVC" "--header-dir" "compute" "--header" "apple.h" "--header" "detail/apple_plan.h"
+Directory: C:/public/project-hyle/hyle/.scratch/validation/apple-parity/win-off/tests/compute_route_apple
+"hyle_compute_route_apple_header_self_contained_test" start time: Oct 08 20:58 中国标准时间
+Output:
+----------------------------------------------------------
+compute_route_apple C++ headers self-contained: 2
+<end of output>
+Test time =  50.84 sec
+----------------------------------------------------------
+Test Passed.
+"hyle_compute_route_apple_header_self_contained_test" end time: Oct 08 20:59 中国标准时间
+"hyle_compute_route_apple_header_self_contained_test" time elapsed: 00:00:50
+----------------------------------------------------------
+
+50/51 Testing: hyle_graph_route_apple_header_self_contained_test
+50/51 Test: hyle_graph_route_apple_header_self_contained_test
+Command: "C:/Program Files/Python312/python.exe" "C:/public/project-hyle/hyle/scripts/header-self-contained.py" "--module" "graph_route_apple" "--include-dir" "C:/public/project-hyle/hyle/include" "--cxx" "C:/Program Files/Microsoft Visual Studio/18/Enterprise/VC/Tools/MSVC/14.50.35717/bin/Hostx64/x64/cl.exe" "--cxx-compiler-id" "MSVC" "--cxx-frontend" "MSVC" "--header-dir" "graph" "--header" "apple.h"
+Directory: C:/public/project-hyle/hyle/.scratch/validation/apple-parity/win-off/tests/graph_route_apple
+"hyle_graph_route_apple_header_self_contained_test" start time: Oct 08 20:59 中国标准时间
+Output:
+----------------------------------------------------------
+graph_route_apple C++ headers self-contained: 1
+<end of output>
+Test time =   2.70 sec
+----------------------------------------------------------
+Test Passed.
+"hyle_graph_route_apple_header_self_contained_test" end time: Oct 08 20:59 中国标准时间
+"hyle_graph_route_apple_header_self_contained_test" time elapsed: 00:00:02
+----------------------------------------------------------
+
+End testing: Oct 08 20:59 中国标准时间
+
+compute_route_apple =  50.84 sec*proc
+
+graph_route_apple =   2.70 sec*proc
+
+headers =  53.54 sec*proc
+
