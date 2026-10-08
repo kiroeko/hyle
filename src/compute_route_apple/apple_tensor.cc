@@ -390,7 +390,10 @@ Result<std::vector<mx::array>> lower_tensor(const Operation &operation,
             return std::unexpected(Status::OutOfRange("MLX selected expert batch exceeds native range"));
           const int count = static_cast<int>(count64);
           auto rows = mx::reshape(activation, {count, 1, activation.shape(2)}, stream);
-          auto selected = mx::reshape(*ids, {count}, stream);
+          // Upstream indices_or_default casts I32 without forwarding its
+          // stream. Supply U32 on this stream so that internal cast is a no-op.
+          auto selected = mx::astype(mx::reshape(*ids, {count}, stream),
+                                     mx::uint32, stream);
           result = mx::gather_qmm(rows, weights, scale, biases, std::nullopt,
               selected, true, static_cast<int>(op.group_size), bits, mode, false, stream);
           result = mx::reshape(result, shape, stream);

@@ -22,3 +22,26 @@ codec set. Numeric output, changed input replay, checked IDs and resource
 tests are required on the next immutable candidate. The original failure
 and its budget are preserved; no P1 has run. Full current demand, non-GGUF
 artifact decoding, official FP4, rules and three deliveries remain pending.
+
+## Correction candidate02a573d3
+
+[Incremental build](02a573d3-build.log) PASS, no explicit reconfigure.
+[Original Metal tests](02a573d3-metal.log):8/8 PASS, including18 physical
+codecs' MatMul/replay and GetRows/changed IDs/bounds. This qualifies their
+tested geometry and F32 domain, not all559 real contracts.
+
+[MLX tests](02a573d3-mlx.log): embedding PASS; linear combinations PASS
+within the mixed test, but all six grouped combinations fail cold stream
+validation. Original `mlx/ops.cpp::indices_or_default`, line99 in the pin,
+calls `astype(indices,uint32)` without `s`. The adapter passed checked I32
+indices, producing a foreign-stream primitive. The finite integration fix
+casts the already checked indices toU32 on the owned stream before the public
+call, making the upstream cast a no-op. The stream isolation check is retained.
+This is a separate, newly observed integration defect; the admission failure
+above is fixed and is not retried/reset. Direct and Graph reuse the same
+independent dyadic oracle with distinct expert scales, changed expert IDs,
+changed activations, embedding rows and checked failure.
+
+Windows Apple-OFF exact-factor configure PASS, SDK/probe/download skipped.
+No Apple runtime PASS is derived from that configure. Next candidate's new
+Graph coverage and grouped numeric execution remain unverified here.

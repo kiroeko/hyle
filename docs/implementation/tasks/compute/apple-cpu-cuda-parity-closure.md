@@ -101,3 +101,11 @@ Direct23项中21 PASS/1旧fixture SKIP/1新增packed FAIL；Graph20项19 PASS/1�
 有限纠正只补该准入条件，Metal测试把8种原码从旧decline迁至完整MatMul replay，并使原
 GetRows可承载当前全部已绑定native codec。修复后数字/状态待验，不把编译、旧通过或SKIP签
 新增能力PASS。原失败保留；没有启动P1或重跑全部模型。
+
+`02a573d3`增量构建通过，Metal8/8测试通过，含18codec真实MatMul/GetRows、replay/索引/资源。
+MLX线性/embedding实际通过，六grouped组合另发现原`indices_or_default`遗漏stream参数的
+I32→U32转换；接入处显式owned-stream cast，使原内部cast成为no-op，隔离检查不放宽。
+此新具名问题仅一次定向纠正；原admission FAIL保留且已经解决。两入口用同一独立oracle验证
+不同专家scale/变IDs/变activation和embedding，下一候选结果待验。18codec微型F32通过不
+冒充559完整合同；官方FP4/18artifact/8IQ1扩展与默认/交付仍未完成。Windows Apple-OFF
+精确factor configure通过，无SDK下载/探测，不代签Apple runtime。
