@@ -141,6 +141,12 @@ Windows CUDA-only shared现亦完成source／relocated offline SDK运行资格�
 边界及原writer失败见[shared资格](../../../../evidence/correctness/cuda-final-u3-windows-shared/README.md)。
 混合与Linux交付仍未完，U4未启动，本卡仍AUDITED。
 
+Windows CPU+CUDA shared现已完成：source／搬移offline SDK、同范围GPU166／151检查，
+以及独立CPU FP32／Q8编码／CPU Graph重放3项通过；两路线各自执行，没有模型分担。
+source和SDK真实consumer均有运行，CPU旧数学／路由／资格未变；夹具遗漏oneDNN caller
+workspace的失败与纠正保留于[混合shared资格](../../../../evidence/correctness/cuda-final-u3-windows-mixed-shared/README.md)。
+mixed static／Linux shipping及U4／U5仍未完，owner继续AUDITED。
+
 ## 七问与冻结
 
 第三方依旧原ggml／ATen源、pin和license；当前模型完整需求不扩画像；backend、Graph adapter、

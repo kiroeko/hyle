@@ -163,3 +163,8 @@ shared实际构建检出公共邻置copy的同目录writer冲突，独立
 该tool task已CLOSED；source和搬移shared SDK实际j2邻置、独立link／loader／完整程序边界通过，
 见[shared资格](../../../../evidence/correctness/cuda-final-u3-windows-shared/README.md)。
 mixed／Linux shipping仍未完成；不把已完成Windows CUDA-only三交付子格签作U2全包结束。
+
+Windows mixed shared子格亦完成，两独立路线source／搬移offline SDK的数学与加载检查通过，
+见[资格](../../../../evidence/correctness/cuda-final-u3-windows-mixed-shared/README.md)。
+只在CUDA preset基础上启CPU，未加入用户Provider排序、内部宏或模型联合推理。
+mixed static与Linux全部交付仍未完成，本包不提前关闭。
