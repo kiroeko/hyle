@@ -546,10 +546,12 @@ Result<Context> Context::create() noexcept {
     runtime->thread = std::move(*thread);
     Context context(runtime);
     auto initialize = std::make_shared<detail::ColdJob>([&]() -> Status {
-      if (!mx::is_available(mx::Device(mx::Device::gpu)))
-        return Status::Unavailable("MLX Metal GPU is unavailable");
-      runtime->stream = mx::new_stream(mx::Device::gpu);
+      // The native availability count catches initialization exceptions and
+      // turns a missing metallib into "no GPU". Initialize through the same
+      // environment query we already need, so the original error reaches the
+      // cold job's fallible boundary on this owner.
       runtime->environment = detail::read_environment();
+      runtime->stream = mx::new_stream(mx::Device::gpu);
       return Status::Ok();
     });
     const Status status = detail::run_cold(*runtime, initialize);
