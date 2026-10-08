@@ -1,0 +1,25 @@
+Running main() from /Users/kiro/Library/Caches/hyle/dependencies/v1/sources/googletest-063de7e9578f-162765170ae6/googletest/src/gtest_main.cc
+Note: Google Test filter = CurrentDemand/AppleParityGraphGguf.*/g395cdd5a9062e045:CurrentDemand/AppleParityGraphGguf.*/g59bf8a30bf125c3b:CurrentDemand/AppleParityGraphGguf.*/g7be6f59665a8f0f2:CurrentDemand/AppleParityGraphGguf.*/g9e2b2e4f1be96db6:CurrentDemand/AppleParityGraphGguf.*/gbb21248aeb6e572d
+[==========] Running 5 tests from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 5 tests from CurrentDemand/AppleParityGraphGguf
+[ RUN      ] CurrentDemand/AppleParityGraphGguf.CurrentGgufDemandUsesOriginalBytesAndAllRows/g395cdd5a9062e045
+[APPLE-GGUF] g395cdd5a9062e045 N=129280 K=4096 E=1
+[       OK ] CurrentDemand/AppleParityGraphGguf.CurrentGgufDemandUsesOriginalBytesAndAllRows/g395cdd5a9062e045 (96 ms)
+[ RUN      ] CurrentDemand/AppleParityGraphGguf.CurrentGgufDemandUsesOriginalBytesAndAllRows/g59bf8a30bf125c3b
+[APPLE-GGUF] g59bf8a30bf125c3b N=154880 K=4096 E=1
+[       OK ] CurrentDemand/AppleParityGraphGguf.CurrentGgufDemandUsesOriginalBytesAndAllRows/g59bf8a30bf125c3b (75 ms)
+[ RUN      ] CurrentDemand/AppleParityGraphGguf.CurrentGgufDemandUsesOriginalBytesAndAllRows/g7be6f59665a8f0f2
+[APPLE-GGUF] g7be6f59665a8f0f2 N=154880 K=6144 E=1
+[       OK ] CurrentDemand/AppleParityGraphGguf.CurrentGgufDemandUsesOriginalBytesAndAllRows/g7be6f59665a8f0f2 (110 ms)
+[ RUN      ] CurrentDemand/AppleParityGraphGguf.CurrentGgufDemandUsesOriginalBytesAndAllRows/g9e2b2e4f1be96db6
+[APPLE-GGUF] g9e2b2e4f1be96db6 N=248320 K=8192 E=1
+[       OK ] CurrentDemand/AppleParityGraphGguf.CurrentGgufDemandUsesOriginalBytesAndAllRows/g9e2b2e4f1be96db6 (232 ms)
+[ RUN      ] CurrentDemand/AppleParityGraphGguf.CurrentGgufDemandUsesOriginalBytesAndAllRows/gbb21248aeb6e572d
+[APPLE-GGUF] gbb21248aeb6e572d N=248320 K=5120 E=1
+[       OK ] CurrentDemand/AppleParityGraphGguf.CurrentGgufDemandUsesOriginalBytesAndAllRows/gbb21248aeb6e572d (92 ms)
+[----------] 5 tests from CurrentDemand/AppleParityGraphGguf (607 ms total)
+
+[----------] Global test environment tear-down
+[==========] 5 tests from 1 test suite ran. (607 ms total)
+[  PASSED  ] 5 tests.

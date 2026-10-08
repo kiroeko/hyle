@@ -1,0 +1,25 @@
+Running main() from /Users/kiro/Library/Caches/hyle/dependencies/v1/sources/googletest-063de7e9578f-162765170ae6/googletest/src/gtest_main.cc
+Note: Google Test filter = CurrentDemand/AppleParityDirectGguf.*/g395cdd5a9062e045:CurrentDemand/AppleParityDirectGguf.*/g59bf8a30bf125c3b:CurrentDemand/AppleParityDirectGguf.*/g7be6f59665a8f0f2:CurrentDemand/AppleParityDirectGguf.*/g9e2b2e4f1be96db6:CurrentDemand/AppleParityDirectGguf.*/gbb21248aeb6e572d
+[==========] Running 5 tests from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 5 tests from CurrentDemand/AppleParityDirectGguf
+[ RUN      ] CurrentDemand/AppleParityDirectGguf.CurrentGgufDemandUsesOriginalBytesAndAllRows/g395cdd5a9062e045
+[APPLE-GGUF] g395cdd5a9062e045 N=129280 K=4096 E=1
+[       OK ] CurrentDemand/AppleParityDirectGguf.CurrentGgufDemandUsesOriginalBytesAndAllRows/g395cdd5a9062e045 (998 ms)
+[ RUN      ] CurrentDemand/AppleParityDirectGguf.CurrentGgufDemandUsesOriginalBytesAndAllRows/g59bf8a30bf125c3b
+[APPLE-GGUF] g59bf8a30bf125c3b N=154880 K=4096 E=1
+[       OK ] CurrentDemand/AppleParityDirectGguf.CurrentGgufDemandUsesOriginalBytesAndAllRows/g59bf8a30bf125c3b (220 ms)
+[ RUN      ] CurrentDemand/AppleParityDirectGguf.CurrentGgufDemandUsesOriginalBytesAndAllRows/g7be6f59665a8f0f2
+[APPLE-GGUF] g7be6f59665a8f0f2 N=154880 K=6144 E=1
+[       OK ] CurrentDemand/AppleParityDirectGguf.CurrentGgufDemandUsesOriginalBytesAndAllRows/g7be6f59665a8f0f2 (127 ms)
+[ RUN      ] CurrentDemand/AppleParityDirectGguf.CurrentGgufDemandUsesOriginalBytesAndAllRows/g9e2b2e4f1be96db6
+[APPLE-GGUF] g9e2b2e4f1be96db6 N=248320 K=8192 E=1
+[       OK ] CurrentDemand/AppleParityDirectGguf.CurrentGgufDemandUsesOriginalBytesAndAllRows/g9e2b2e4f1be96db6 (401 ms)
+[ RUN      ] CurrentDemand/AppleParityDirectGguf.CurrentGgufDemandUsesOriginalBytesAndAllRows/gbb21248aeb6e572d
+[APPLE-GGUF] gbb21248aeb6e572d N=248320 K=5120 E=1
+[       OK ] CurrentDemand/AppleParityDirectGguf.CurrentGgufDemandUsesOriginalBytesAndAllRows/gbb21248aeb6e572d (145 ms)
+[----------] 5 tests from CurrentDemand/AppleParityDirectGguf (1892 ms total)
+
+[----------] Global test environment tear-down
+[==========] 5 tests from 1 test suite ran. (1892 ms total)
+[  PASSED  ] 5 tests.

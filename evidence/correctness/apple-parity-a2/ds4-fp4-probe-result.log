@@ -1,0 +1,19 @@
+device Apple M4
+index 33 in 210000 expected 400000 actual 0
+index 34 in 220000 expected 400000 actual 0
+index 35 in 230000 expected 400000 actual 0
+index 36 in 240000 expected 400000 actual 0
+index 37 in 250000 expected 400000 actual 0
+index 38 in 260000 expected 400000 actual 0
+index 39 in 270000 expected 400000 actual 0
+index 40 in 280000 expected 400000 actual 0
+mode default values 65280 mismatch 222 nonzero_lost 190
+index 33 in 210000 expected 400000 actual 0
+index 34 in 220000 expected 400000 actual 0
+index 35 in 230000 expected 400000 actual 0
+index 36 in 240000 expected 400000 actual 0
+index 37 in 250000 expected 400000 actual 0
+index 38 in 260000 expected 400000 actual 0
+index 39 in 270000 expected 400000 actual 0
+index 40 in 280000 expected 400000 actual 0
+mode safe values 65280 mismatch 222 nonzero_lost 190

@@ -171,3 +171,57 @@ qualified GGUF requests per entry,5 original Q4_K exact-output failures and
 260 files, tests/vendors excluded. Native/header/seam three-delivery validation,
 Q4_K exact carrier, narrow IQ1 and official FP4 remain required; no completion
 or universal hardware/performance claim is made.
+
+## Plain45 and exact-Q4_K delta
+
+`ce7f52f6` [native test build](ce7f52f6-build.log) PASS;
+[Direct45](ce7f52f6-direct45.log)/[XML](ce7f52f6-direct45.xml) and
+[Graph45](ce7f52f6-graph45.log)/[XML](ce7f52f6-graph45.xml)45/45 each PASS.
+Actual plain model roles preserve storage and both changed-input replays;
+large vocabulary heads use the shared CPU/CUDA all-row4096-row tiling policy.
+
+`a0fc488f` [build](a0fc488f-build.log) PASS. Only the five Q4_K exact
+embedding failures were rerun: [Direct](a0fc488f-direct-q4.log)5/5 and
+[Graph](a0fc488f-graph-q4.log)5/5 PASS, with exact output unchanged. The
+original ggml CPU row decoding sequence executes on MLX GPU tensor operations
+for only selected checked rows; original bytes/scale/min/nibble remain.
+The old half-arithmetic shader is untouched and no HYLE algorithm is invented.
+
+## Original IQ1 delta
+
+`d7c06ce74` [native build](d7c06ce74-build.log) PASS, including original
+Metal shader compilation. The previously unavailable eight contracts were
+selected once: [Direct](d7c06ce74-direct-iq1.log)/[XML](d7c06ce74-direct-iq1.xml)
+8/8 and [Graph](d7c06ce74-graph-iq1.log)/[XML](d7c06ce74-graph-iq1.xml)8/8
+PASS. Original pre-encoded fields, original host codec/double reference,
+real K/N/all-row outputs and explicit at-most8 expert sample policy apply.
+Original Anemll MV/grouped mathematics/grids are borrowed; only buffer-base
+ABI and selecting existing MV instead of absent MM are adapted. No engine,
+slot cache or second ggml runtime enters the product. New GetRows is explicitly
+not claimed for these formats. Old CPU/CUDA no-Apple conditions keep their
+existing source composition and numerical implementations.
+
+Combined evidence now covers559 GGUF,34 packed and45 plain requests at these
+sample/geometry boundaries in both entries. Source/core changes still require
+targeted provider/resource regression and A4 static/shared/source SDK closure;
+this is not a replacement full559 run on every candidate. Model family/full
+regions, official FP4, cold rules/bounded best-of and three deliveries remain
+open. Aggregate whole-goal verdict remains incomplete. Current implementation
+is61,328 lines/261 files, tests/vendors excluded.
+
+Clarification: the34/45 real-geometry runners verify successful output/replay;
+they do not each submit their `invalid_index_input` automatically. Checked
+failure evidence so far comes from the corresponding small ordinary native
+Direct/Graph tests. Geometry-specific negative IDs and new exact-row completion
+still need the declared targeted resource checks; they are not claimed PASS
+by the presence of fixture metadata alone.
+
+Provider/core delta: [d7c06ce74 original18-codec/resource regression](d7c06ce74-metal-regression.log)
+8/8 PASS. Source/old-case changes are covered by this targeted owning regression,
+not an unreported repeat of all559 requests.
+
+Official FP4 new-source qualification remains failed: original DS4 Metal
+group32 pass at9139e2ae (including its floor) and original Safe-mode host choice
+both yield222/65280 mismatches,190 nonzero outputs lost. Raw evidence and a
+bounded decision are in [the qualification card](../../../docs/implementation/tasks/compute/apple-ds4-fp4-source-qualification.md).
+No tolerance, CPU-model fallback or model precision substitution is accepted.

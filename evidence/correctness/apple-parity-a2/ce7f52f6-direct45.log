@@ -1,0 +1,100 @@
+Running main() from /Users/kiro/Library/Caches/hyle/dependencies/v1/sources/googletest-063de7e9578f-162765170ae6/googletest/src/gtest_main.cc
+Note: Google Test filter = CurrentDemand/AppleParityDirectPlain.*
+[==========] Running 45 tests from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 45 tests from CurrentDemand/AppleParityDirectPlain
+[ RUN      ] CurrentDemand/AppleParityDirectPlain.CurrentPlainRolesRetainStorageAndReplay/p033ae23672c4671a
+[       OK ] CurrentDemand/AppleParityDirectPlain.CurrentPlainRolesRetainStorageAndReplay/p033ae23672c4671a (95 ms)
+[ RUN      ] CurrentDemand/AppleParityDirectPlain.CurrentPlainRolesRetainStorageAndReplay/p0afd29f5ba0d80fe
+[       OK ] CurrentDemand/AppleParityDirectPlain.CurrentPlainRolesRetainStorageAndReplay/p0afd29f5ba0d80fe (7 ms)
+[ RUN      ] CurrentDemand/AppleParityDirectPlain.CurrentPlainRolesRetainStorageAndReplay/p0bd7aad8df2d52de
+[       OK ] CurrentDemand/AppleParityDirectPlain.CurrentPlainRolesRetainStorageAndReplay/p0bd7aad8df2d52de (5 ms)
+[ RUN      ] CurrentDemand/AppleParityDirectPlain.CurrentPlainRolesRetainStorageAndReplay/p17277e53d2d86a4c
+[       OK ] CurrentDemand/AppleParityDirectPlain.CurrentPlainRolesRetainStorageAndReplay/p17277e53d2d86a4c (2 ms)
+[ RUN      ] CurrentDemand/AppleParityDirectPlain.CurrentPlainRolesRetainStorageAndReplay/p1e385a41b1182a6a
+[       OK ] CurrentDemand/AppleParityDirectPlain.CurrentPlainRolesRetainStorageAndReplay/p1e385a41b1182a6a (52 ms)
+[ RUN      ] CurrentDemand/AppleParityDirectPlain.CurrentPlainRolesRetainStorageAndReplay/p1ee2dd3f7e4dba6e
+[       OK ] CurrentDemand/AppleParityDirectPlain.CurrentPlainRolesRetainStorageAndReplay/p1ee2dd3f7e4dba6e (712 ms)
+[ RUN      ] CurrentDemand/AppleParityDirectPlain.CurrentPlainRolesRetainStorageAndReplay/p25de7cab6d16489e
+[       OK ] CurrentDemand/AppleParityDirectPlain.CurrentPlainRolesRetainStorageAndReplay/p25de7cab6d16489e (19 ms)
+[ RUN      ] CurrentDemand/AppleParityDirectPlain.CurrentPlainRolesRetainStorageAndReplay/p2e309ecbb28e6116
+[       OK ] CurrentDemand/AppleParityDirectPlain.CurrentPlainRolesRetainStorageAndReplay/p2e309ecbb28e6116 (9 ms)
+[ RUN      ] CurrentDemand/AppleParityDirectPlain.CurrentPlainRolesRetainStorageAndReplay/p2f522eea94460483
+[       OK ] CurrentDemand/AppleParityDirectPlain.CurrentPlainRolesRetainStorageAndReplay/p2f522eea94460483 (9 ms)
+[ RUN      ] CurrentDemand/AppleParityDirectPlain.CurrentPlainRolesRetainStorageAndReplay/p393f3bca8bb96741
+[       OK ] CurrentDemand/AppleParityDirectPlain.CurrentPlainRolesRetainStorageAndReplay/p393f3bca8bb96741 (203 ms)
+[ RUN      ] CurrentDemand/AppleParityDirectPlain.CurrentPlainRolesRetainStorageAndReplay/p395036291851d773
+[       OK ] CurrentDemand/AppleParityDirectPlain.CurrentPlainRolesRetainStorageAndReplay/p395036291851d773 (6 ms)
+[ RUN      ] CurrentDemand/AppleParityDirectPlain.CurrentPlainRolesRetainStorageAndReplay/p401603e31391cadf
+[       OK ] CurrentDemand/AppleParityDirectPlain.CurrentPlainRolesRetainStorageAndReplay/p401603e31391cadf (8 ms)
+[ RUN      ] CurrentDemand/AppleParityDirectPlain.CurrentPlainRolesRetainStorageAndReplay/p4952faefad3c4446
+[       OK ] CurrentDemand/AppleParityDirectPlain.CurrentPlainRolesRetainStorageAndReplay/p4952faefad3c4446 (105 ms)
+[ RUN      ] CurrentDemand/AppleParityDirectPlain.CurrentPlainRolesRetainStorageAndReplay/p4b14bc81a1f54ccb
+[       OK ] CurrentDemand/AppleParityDirectPlain.CurrentPlainRolesRetainStorageAndReplay/p4b14bc81a1f54ccb (5 ms)
+[ RUN      ] CurrentDemand/AppleParityDirectPlain.CurrentPlainRolesRetainStorageAndReplay/p4dc6f44efc136a4f
+[       OK ] CurrentDemand/AppleParityDirectPlain.CurrentPlainRolesRetainStorageAndReplay/p4dc6f44efc136a4f (6 ms)
+[ RUN      ] CurrentDemand/AppleParityDirectPlain.CurrentPlainRolesRetainStorageAndReplay/p6521e759968a3577
+[       OK ] CurrentDemand/AppleParityDirectPlain.CurrentPlainRolesRetainStorageAndReplay/p6521e759968a3577 (2196 ms)
+[ RUN      ] CurrentDemand/AppleParityDirectPlain.CurrentPlainRolesRetainStorageAndReplay/p6656a11cafc1dac0
+[       OK ] CurrentDemand/AppleParityDirectPlain.CurrentPlainRolesRetainStorageAndReplay/p6656a11cafc1dac0 (142 ms)
+[ RUN      ] CurrentDemand/AppleParityDirectPlain.CurrentPlainRolesRetainStorageAndReplay/p67911b255e95f6ce
+[       OK ] CurrentDemand/AppleParityDirectPlain.CurrentPlainRolesRetainStorageAndReplay/p67911b255e95f6ce (3 ms)
+[ RUN      ] CurrentDemand/AppleParityDirectPlain.CurrentPlainRolesRetainStorageAndReplay/p6cad3b2609a46d21
+[       OK ] CurrentDemand/AppleParityDirectPlain.CurrentPlainRolesRetainStorageAndReplay/p6cad3b2609a46d21 (617 ms)
+[ RUN      ] CurrentDemand/AppleParityDirectPlain.CurrentPlainRolesRetainStorageAndReplay/p7075e074f5c559c6
+[       OK ] CurrentDemand/AppleParityDirectPlain.CurrentPlainRolesRetainStorageAndReplay/p7075e074f5c559c6 (8 ms)
+[ RUN      ] CurrentDemand/AppleParityDirectPlain.CurrentPlainRolesRetainStorageAndReplay/p73b1be8a81f60682
+[       OK ] CurrentDemand/AppleParityDirectPlain.CurrentPlainRolesRetainStorageAndReplay/p73b1be8a81f60682 (12 ms)
+[ RUN      ] CurrentDemand/AppleParityDirectPlain.CurrentPlainRolesRetainStorageAndReplay/p77a635b55664287f
+[       OK ] CurrentDemand/AppleParityDirectPlain.CurrentPlainRolesRetainStorageAndReplay/p77a635b55664287f (27 ms)
+[ RUN      ] CurrentDemand/AppleParityDirectPlain.CurrentPlainRolesRetainStorageAndReplay/p78cfb55fb5085d3a
+[       OK ] CurrentDemand/AppleParityDirectPlain.CurrentPlainRolesRetainStorageAndReplay/p78cfb55fb5085d3a (10 ms)
+[ RUN      ] CurrentDemand/AppleParityDirectPlain.CurrentPlainRolesRetainStorageAndReplay/p893cd9940b6cedd0
+[       OK ] CurrentDemand/AppleParityDirectPlain.CurrentPlainRolesRetainStorageAndReplay/p893cd9940b6cedd0 (6 ms)
+[ RUN      ] CurrentDemand/AppleParityDirectPlain.CurrentPlainRolesRetainStorageAndReplay/p89a9ec4743c9107b
+[       OK ] CurrentDemand/AppleParityDirectPlain.CurrentPlainRolesRetainStorageAndReplay/p89a9ec4743c9107b (5 ms)
+[ RUN      ] CurrentDemand/AppleParityDirectPlain.CurrentPlainRolesRetainStorageAndReplay/p89c23f07a68ea22a
+[       OK ] CurrentDemand/AppleParityDirectPlain.CurrentPlainRolesRetainStorageAndReplay/p89c23f07a68ea22a (2450 ms)
+[ RUN      ] CurrentDemand/AppleParityDirectPlain.CurrentPlainRolesRetainStorageAndReplay/p8f3f00196aec37da
+[       OK ] CurrentDemand/AppleParityDirectPlain.CurrentPlainRolesRetainStorageAndReplay/p8f3f00196aec37da (1542 ms)
+[ RUN      ] CurrentDemand/AppleParityDirectPlain.CurrentPlainRolesRetainStorageAndReplay/p91a52869c4190996
+[       OK ] CurrentDemand/AppleParityDirectPlain.CurrentPlainRolesRetainStorageAndReplay/p91a52869c4190996 (9 ms)
+[ RUN      ] CurrentDemand/AppleParityDirectPlain.CurrentPlainRolesRetainStorageAndReplay/p938bcf88666f5aa4
+[       OK ] CurrentDemand/AppleParityDirectPlain.CurrentPlainRolesRetainStorageAndReplay/p938bcf88666f5aa4 (648 ms)
+[ RUN      ] CurrentDemand/AppleParityDirectPlain.CurrentPlainRolesRetainStorageAndReplay/p968d0881539dd7a3
+[       OK ] CurrentDemand/AppleParityDirectPlain.CurrentPlainRolesRetainStorageAndReplay/p968d0881539dd7a3 (2 ms)
+[ RUN      ] CurrentDemand/AppleParityDirectPlain.CurrentPlainRolesRetainStorageAndReplay/p9e4bbe139a148cc5
+[       OK ] CurrentDemand/AppleParityDirectPlain.CurrentPlainRolesRetainStorageAndReplay/p9e4bbe139a148cc5 (26 ms)
+[ RUN      ] CurrentDemand/AppleParityDirectPlain.CurrentPlainRolesRetainStorageAndReplay/pa2a7b9ba93a5c9c2
+[       OK ] CurrentDemand/AppleParityDirectPlain.CurrentPlainRolesRetainStorageAndReplay/pa2a7b9ba93a5c9c2 (2 ms)
+[ RUN      ] CurrentDemand/AppleParityDirectPlain.CurrentPlainRolesRetainStorageAndReplay/paac32a736c36ec89
+[       OK ] CurrentDemand/AppleParityDirectPlain.CurrentPlainRolesRetainStorageAndReplay/paac32a736c36ec89 (4 ms)
+[ RUN      ] CurrentDemand/AppleParityDirectPlain.CurrentPlainRolesRetainStorageAndReplay/pac94ec1bf56a019b
+[       OK ] CurrentDemand/AppleParityDirectPlain.CurrentPlainRolesRetainStorageAndReplay/pac94ec1bf56a019b (29 ms)
+[ RUN      ] CurrentDemand/AppleParityDirectPlain.CurrentPlainRolesRetainStorageAndReplay/pb2ff1ec2df5e4a16
+[       OK ] CurrentDemand/AppleParityDirectPlain.CurrentPlainRolesRetainStorageAndReplay/pb2ff1ec2df5e4a16 (7 ms)
+[ RUN      ] CurrentDemand/AppleParityDirectPlain.CurrentPlainRolesRetainStorageAndReplay/pb3839cd7a67d8b9e
+[       OK ] CurrentDemand/AppleParityDirectPlain.CurrentPlainRolesRetainStorageAndReplay/pb3839cd7a67d8b9e (23 ms)
+[ RUN      ] CurrentDemand/AppleParityDirectPlain.CurrentPlainRolesRetainStorageAndReplay/pb76b261976613ec5
+[       OK ] CurrentDemand/AppleParityDirectPlain.CurrentPlainRolesRetainStorageAndReplay/pb76b261976613ec5 (7 ms)
+[ RUN      ] CurrentDemand/AppleParityDirectPlain.CurrentPlainRolesRetainStorageAndReplay/pbe853152955b7d0c
+[       OK ] CurrentDemand/AppleParityDirectPlain.CurrentPlainRolesRetainStorageAndReplay/pbe853152955b7d0c (3 ms)
+[ RUN      ] CurrentDemand/AppleParityDirectPlain.CurrentPlainRolesRetainStorageAndReplay/pc5b6491635fce0b8
+[       OK ] CurrentDemand/AppleParityDirectPlain.CurrentPlainRolesRetainStorageAndReplay/pc5b6491635fce0b8 (2 ms)
+[ RUN      ] CurrentDemand/AppleParityDirectPlain.CurrentPlainRolesRetainStorageAndReplay/pcd4216fa4b5222b9
+[       OK ] CurrentDemand/AppleParityDirectPlain.CurrentPlainRolesRetainStorageAndReplay/pcd4216fa4b5222b9 (7 ms)
+[ RUN      ] CurrentDemand/AppleParityDirectPlain.CurrentPlainRolesRetainStorageAndReplay/pd349b6da7bece4a8
+[       OK ] CurrentDemand/AppleParityDirectPlain.CurrentPlainRolesRetainStorageAndReplay/pd349b6da7bece4a8 (6 ms)
+[ RUN      ] CurrentDemand/AppleParityDirectPlain.CurrentPlainRolesRetainStorageAndReplay/pd75430a907622b9e
+[       OK ] CurrentDemand/AppleParityDirectPlain.CurrentPlainRolesRetainStorageAndReplay/pd75430a907622b9e (3 ms)
+[ RUN      ] CurrentDemand/AppleParityDirectPlain.CurrentPlainRolesRetainStorageAndReplay/pdacb7536905755fa
+[       OK ] CurrentDemand/AppleParityDirectPlain.CurrentPlainRolesRetainStorageAndReplay/pdacb7536905755fa (4 ms)
+[ RUN      ] CurrentDemand/AppleParityDirectPlain.CurrentPlainRolesRetainStorageAndReplay/pdc1efdcf1673bd32
+[       OK ] CurrentDemand/AppleParityDirectPlain.CurrentPlainRolesRetainStorageAndReplay/pdc1efdcf1673bd32 (7 ms)
+[ RUN      ] CurrentDemand/AppleParityDirectPlain.CurrentPlainRolesRetainStorageAndReplay/pf0d7ebdd2f4776da
+[       OK ] CurrentDemand/AppleParityDirectPlain.CurrentPlainRolesRetainStorageAndReplay/pf0d7ebdd2f4776da (5 ms)
+[----------] 45 tests from CurrentDemand/AppleParityDirectPlain (9076 ms total)
+
+[----------] Global test environment tear-down
+[==========] 45 tests from 1 test suite ran. (9076 ms total)
+[  PASSED  ] 45 tests.

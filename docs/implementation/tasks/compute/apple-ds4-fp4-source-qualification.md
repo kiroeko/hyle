@@ -22,3 +22,31 @@ rounding/floor/scale算法。先用只读临时probe在当前Air验证全部fini
 结果通过后才重新固定有限产品FIX、公开Direct/Graph、完整expert/indexer片段、资源与三
 交付；probe或floor存在本身不是路线PASS。若tiny仍不符，记录精确source/runtime边界并
 裁决成熟缺口，停止同候选微调；不能悄悄用CPU模型计算或换BF16模型数学。此轮产品FIX零。
+
+## 一批原source结果
+
+当前Air/M4、AppleClang21，原helper与原group32 quant pass配声明式buffer wrapper。
+[source/probe](../../../../evidence/correctness/apple-parity-a2/ds4-fp4-probe.mm)、
+[原pass](../../../../evidence/correctness/apple-parity-a2/ds4-original-pass.metal)、
+[身份](../../../../evidence/correctness/apple-parity-a2/ds4-source-identity.txt)、
+[build](../../../../evidence/correctness/apple-parity-a2/ds4-fp4-probe-build.log)和
+[完整结果](../../../../evidence/correctness/apple-parity-a2/ds4-fp4-probe-result.log)。
+全部65280有限BF16的F32展开、完整32组，以原ds4 CPU公式作reference。原默认和原Safe
+mode均222不符/190非零变零；其余32不符本批没有完整归因，不能擅自说都是符号零。
+floor已经对齐，Safe模式未解决残余，原source没有完整合同资格；不重跑同候选，不修改容差。
+此probe不是新产品能力，旧F46 FAIL与预算保留。GPU浮点路径的责任范围已定位，硬件/编译器
+具体分摊未唯一证明，不据此宣称Metal全部FP4不可用。
+
+## 待用户决定的有限方案
+
+推荐允许必要的GPU数值保真桥接，目标仍为原FP4数学：输入/scale/饱和/RNE及最终BF16存储
+定义都不变，正常域继续成熟原数学；针对原GPU不保真的次正规与零符号域，使用MLX原生
+integer/view操作表达精确的源存储语义。没有CPU模型执行、新量化格式、模型改精度或算子大全。
+这会新增一小段HYLE精度适配实现，而不再是原native程序直接借入；因此须按当前goal的冻结/
+无完整成熟同合同时请求取舍规则明确授权，未授权前产品FIX仍零。
+
+准入预算固定为：原source/原IEEE与已有storage转换复用审计；单个有限FIX；一次全部finite
+BF16+mixed组/中点/符号与tiny独立oracle批次，具名实现失败仅一次纠正；原Direct/Graph完整
+expert/indexer片段、资源与三交付仍必须通过。正常域不作无限性能优化；同原定义、完整转换/
+同步/终态成本用父轮仪器。若仍失败或成本无合理界，列出真实缺口并停止，不继续微调。
+替代方案是继续坚持纯成熟native source，把官方FP4明确BLOCKED；whole goal不能据此完成。
