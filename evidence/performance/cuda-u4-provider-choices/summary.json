@@ -1,0 +1,75 @@
+{
+  "schema": "hyle.cuda-u4-performance-decision/v1",
+  "product_candidate": "8aa1c6796c9979ec2f24ce03f959b7095b70741f",
+  "adapter_candidate": "ded0366406d7bcbfc07b2fbdaf251a7c4f9b47fb",
+  "qualification": "DIAGNOSTIC",
+  "workload_aa_gate": "FAIL",
+  "performance_verdict": "INCONCLUSIVE",
+  "product_sampling": "Stopped after observing failed workload A/A; 18 early product processes are diagnostic only, n15/four-strata batch incomplete. No winner or loser certificate.",
+  "decision": "ENGINEERING_DEFAULT: retain mature SGLang BF16 weighted RMSNorm and packed gate, ggml generic F32 norm. U5 may retain native only for explicit unique resources or future qualified full advantage, not on this noisy sample.",
+  "errors": [
+    "selected/Qwen BF16 RMSNorm T1 H2048: gross process instability over 10%",
+    "selected/Qwen BF16 RMSNorm T1 H2048: factor median bias over 5%",
+    "selected/Qwen BF16 RMSNorm T32 H2048: gross process instability over 10%",
+    "selected/Qwen BF16 RMSNorm T32 H2048: factor median bias over 5%",
+    "selected/Qwen BF16 packed SiLU T1 H6144: gross process instability over 10%",
+    "selected/Qwen BF16 packed SiLU T1 H6144: factor median bias over 5%",
+    "selected/Qwen BF16 packed SiLU T32 H6144: gross process instability over 10%",
+    "selected/Qwen BF16 packed SiLU T32 H6144: factor median bias over 5%",
+    "selected/Qwen F32 RMSNorm T1 H2048: gross process instability over 10%",
+    "selected/Qwen F32 RMSNorm T1 H2048: factor median bias over 5%",
+    "selected/Qwen F32 RMSNorm T32 H2048: gross process instability over 10%",
+    "selected/Qwen F32 RMSNorm T32 H2048: factor median bias over 5%",
+    "peer/Qwen BF16 RMSNorm T32 H2048: gross process instability over 10%",
+    "peer/Qwen BF16 RMSNorm T32 H2048: factor median bias over 5%",
+    "peer/Qwen BF16 packed SiLU T1 H6144: gross process instability over 10%",
+    "peer/Qwen BF16 packed SiLU T1 H6144: factor median bias over 5%",
+    "peer/Qwen BF16 packed SiLU T32 H6144: gross process instability over 10%",
+    "peer/Qwen BF16 packed SiLU T32 H6144: factor median bias over 5%",
+    "peer/Qwen F32 RMSNorm T32 H2048: gross process instability over 10%",
+    "peer/Qwen F32 RMSNorm T32 H2048: factor median bias over 5%"
+  ],
+  "policy": {
+    "environment": "windows",
+    "affinity_mask": "0x14",
+    "logical_cpu": 2,
+    "cpu_set_id": 258,
+    "required_efficiency_class": "maximum",
+    "smt_sibling_logical_cpu": 3,
+    "priority": "above-normal",
+    "applied_by": "benchmark-parent-mask-plus-caller-singleton",
+    "sampling_topology": "native-runtime-pair",
+    "logical_cpus": [
+      2,
+      4
+    ],
+    "cpu_set_ids": [
+      258,
+      260
+    ],
+    "physical_core_indices": [
+      2,
+      4
+    ],
+    "caller_logical_cpu": 2,
+    "distinct_physical_cores": true,
+    "reserved_physical_core_count": 2,
+    "helper_placement": "native-runtime-managed"
+  },
+  "groups": [
+    "selected/Qwen BF16 RMSNorm T1 H2048",
+    "selected/Qwen BF16 RMSNorm T32 H2048",
+    "selected/Qwen BF16 packed SiLU T1 H6144",
+    "selected/Qwen BF16 packed SiLU T32 H6144",
+    "selected/Qwen F32 RMSNorm T1 H2048",
+    "selected/Qwen F32 RMSNorm T32 H2048",
+    "peer/Qwen BF16 RMSNorm T1 H2048",
+    "peer/Qwen BF16 RMSNorm T32 H2048",
+    "peer/Qwen BF16 packed SiLU T1 H6144",
+    "peer/Qwen BF16 packed SiLU T32 H6144",
+    "peer/Qwen F32 RMSNorm T1 H2048",
+    "peer/Qwen F32 RMSNorm T32 H2048"
+  ],
+  "original_failures_retained": true,
+  "raw_archive_sha256": "23629744f59cc363c082ad6a5588109a773d00ffbab89e73ae2a90cf3d968484"
+}

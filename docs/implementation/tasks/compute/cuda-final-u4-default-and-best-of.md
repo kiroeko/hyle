@@ -161,3 +161,28 @@ D4 adapter的预编译两次失败属于明确接入错误：第一次普通faca
 D4首次仪器批次在telemetry准入停止：adapter把parent_mask/priority写十进制整数，原合同
 要求`0x14`/`above-normal`。只按现有D5格式纠正打印，数学、计费、样本/阈值不变；同ID
 第二次/最后一次具名批次允许，原A/A子进程及首个无资格product日志完整保留，不签性能输赢。
+
+## 有限批次裁决：默认完成，实测优选未取得资格
+
+2026-10-08 13:54 +08，D1--D3实现、普通两入口/完整region、两平台source/static/shared小纵切
+完成。产品candidate `8aa1c6796c9979ec2f24ce03f959b7095b70741f`，最后adapter候选
+`ded036640`；编译/模型数学/执行不因文档/证据更新重验。三组6形状原output/资源预验通过。
+
+纠正后的8个同artifact A/A（两侧各四order/allocation组合）FAIL：相同实现对自身也有
+超过5% factor bias和10%单次波动。全n15批次不能取得资格，观察到该事实后停止采样，
+原仪器在validator FAIL后已启动的18个product子进程均仅DIAGNOSTIC。没有P1 PASS、WIN、
+LOSS或native优势证书，未运行的余下样本不PASS。原两次失败/二进制身份/AA与早期日志见
+[完整性能记录](../../../../evidence/performance/cuda-u4-provider-choices/README.md)。
+
+按用户已授权“近似/预算内无法判断时具名成熟工程默认”，D4取舍是SGLang/ggml成熟默认，
+不再追加n、重测AA、改变完成边界或优化自研。性能证书状态为INCONCLUSIVE；普通cold默认
+的P0结构门通过：只装饰propose，原prepare/submit/完成和资源表保持，hot无新搜索/计时层。
+单provider只正确性/资源/P0，不伪竞争。真正strict/capture/无private等独有域交U5明确KEEP，
+有完整成熟替代且无合格优势的冗余域交U5清退，不能从本噪声批次自动签native保留。
+
+本包产品owner保持AUDITED用于U5交接；不把本轮未资格P1改成CLOSED/PASS。工程进度：
+U4默认/有限重复域取舍已实现及定界，测量冠军未确认；U5清退和U6终审仍待，整个goal未完成。
+七问复核：原依赖/许可证/版本未变；共同需求保持，native独有资源尚未撤回；复用原Provider/
+Mem/Completion；P0成立/P1无资格；无新FFI/API；六种交付小纵切实际通过；普通用户不排序，
+公开能力门与实测机器分清。红队发现SDK expert target误用与telemetry格式，均修adapter，
+旧FAIL保留；无precision放宽、删checked IDs或拆成熟region。统一LOC60,779/255文件。

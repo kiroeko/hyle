@@ -486,19 +486,19 @@
       "module": "compute_provider_cuda",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/cuda-final-u4-default-and-best-of.md",
-      "summary": "CUDA U4 D1--D3 AUDITED：原准入之后的逐operation/ports冷默认、ggml能力与SM89性能域分离、CCCL原SDK能力门；原执行/资源/完整region保持，U2/U3已资格，D4有限重复域尚未计时，自研仍冻结至U5。"
+      "summary": "CUDA U4默认/能力分离已实现，两平台source/static/shared增量通过；有限三组AA FAIL，性能INCONCLUSIVE无新WIN，采用成熟ENGINEERING_DEFAULT。owner仍AUDITED，U5只审计具名独有资源/冗余自研清退，不追加采样或数学优化。"
     },
     {
       "module": "compute_route_cuda",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/cuda-final-u4-default-and-best-of.md",
-      "summary": "CUDA U4 D1--D3 AUDITED：原准入之后的逐operation/ports冷默认、ggml能力与SM89性能域分离、CCCL原SDK能力门；原执行/资源/完整region保持，U2/U3已资格，D4有限重复域尚未计时，自研仍冻结至U5。"
+      "summary": "CUDA U4默认/能力分离已实现，两平台source/static/shared增量通过；有限三组AA FAIL，性能INCONCLUSIVE无新WIN，采用成熟ENGINEERING_DEFAULT。owner仍AUDITED，U5只审计具名独有资源/冗余自研清退，不追加采样或数学优化。"
     },
     {
       "module": "graph_route_cuda",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/cuda-u4-graph-cold-default-scope.md",
-      "summary": "U4 Graph冷scope有限FIX AUDITED：原资源/region200保持，leaf默认加200；private factory传scope，原数学/执行/公共规划器不变，只验原5个结构FAIL与适用组合。"
+      "summary": "U4 Graph冷scope修复已通过原失败5项+FFN capture以及WSL51项和四SDK小纵切；完整ggml region优先、数学/执行/公共规划器不变，待U6汇总，仍AUDITED。"
     },
     {
       "module": "compute_route_apple",
@@ -548,13 +548,13 @@
       "module": "compute_provider_ggml_cuda",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/cuda-final-u4-default-and-best-of.md",
-      "summary": "CUDA U4 D1--D3 AUDITED：原准入之后的逐operation/ports冷默认、ggml能力与SM89性能域分离、CCCL原SDK能力门；原执行/资源/完整region保持，U2/U3已资格，D4有限重复域尚未计时，自研仍冻结至U5。"
+      "summary": "CUDA U4默认/能力分离已实现，两平台source/static/shared增量通过；有限三组AA FAIL，性能INCONCLUSIVE无新WIN，采用成熟ENGINEERING_DEFAULT。owner仍AUDITED，U5只审计具名独有资源/冗余自研清退，不追加采样或数学优化。"
     },
     {
       "module": "graph_provider_ggml_cuda",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/cuda-final-u4-default-and-best-of.md",
-      "summary": "CUDA U4 D1--D3 AUDITED：原准入之后的逐operation/ports冷默认、ggml能力与SM89性能域分离、CCCL原SDK能力门；原执行/资源/完整region保持，U2/U3已资格，D4有限重复域尚未计时，自研仍冻结至U5。"
+      "summary": "CUDA U4默认/能力分离已实现，两平台source/static/shared增量通过；有限三组AA FAIL，性能INCONCLUSIVE无新WIN，采用成熟ENGINEERING_DEFAULT。owner仍AUDITED，U5只审计具名独有资源/冗余自研清退，不追加采样或数学优化。"
     },
     {
       "module": "compute_provider_flashinfer",

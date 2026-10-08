@@ -413,16 +413,25 @@ tensor，submit 后显式检查 Completion。完整 dense gate/up → SwiGLU →
 [CUDA Direct FFN](../../samples/package/compute/cpp/cuda_ffn.h)。该样例连续执行三组变化输入，
 没有 Provider 列表、计时资料或用户 kernel callback。
 
+当前CUDA普通入口按真实端口先检查原Provider能力/精度/资源，再绑定逐算子
+`ENGINEERING_DEFAULT`：plain rank2 GEMM用cuBLAS、GGUF/原tensor程序用ggml、合格
+half weighted RMSNorm与packed gate用SGLang、Scan/TopK/plain Gather用CCCL，artifact/MLX
+与稳定Softplus用Torch；原DeepSeek/FlashInfer AOT硬条件仍须成立。未知模型/driver或没有
+性能证书时不禁用仍合法的成熟基线。实际不可支持的设备/程序/版本仍返回明确错误。
+Graph优先保留已准入完整ggml region，叶默认不拆融合；准备后执行不搜索/计时/重新裁决。
+本轮三组重复域的实际A/A未过，因此没有新增性能WIN；默认依据和限制见
+[U4当前裁决](../implementation/tasks/compute/cuda-final-u4-default-and-best-of.md)。
+
 | 默认规则 | 支持域 |
 |---|---|
 | FlashInfer causal GQA | Linux CUDA SM89；dense BSHD FP16/BF16，Q/KV heads=8/2、Q/K/V depth=256，正 batch/sequence、KV length≥Q length，无额外 mask，FP32 累加；head256 prefill/decode 使用锁定原版实现 |
-| ggml CUDA 张量片段 | SM89；plain F32/F16/BF16，非空 dense rank0..8 或按元素对齐的 rank≤4 stride；Copy/Cast/Concat、Add/Sub/Mul/Div广播、Abs/Neg/Exp/Log/Sqrt/Rsqrt/Tanh、带affine的RMSNorm/LayerNorm、任意轴Sum/Mean与无mask/浮点additive mask的Softmax；FP32中间计算、最终cast；端口对齐与容量限制见下文 |
-| ggml CUDA causal GQA | Windows默认、Linux可显式组合；SM89，dense BSHD FP16/BF16，Q/KV heads=8/2、depth=256、KV length≥Q length、无额外mask、FP32累加；每tensor及score矩阵元素数≤INT32_MAX，batch≤65535，端口256字节对齐 |
+| ggml CUDA 张量片段 | 原node支持/编译device程序准入，实际验证SM89；plain F32/F16/BF16，非空 dense rank0..8 或按元素对齐的 rank≤4 stride；Copy/Cast/Concat、Add/Sub/Mul/Div广播、Abs/Neg/Exp/Log/Sqrt/Rsqrt/Tanh、带affine的RMSNorm/LayerNorm、任意轴Sum/Mean与无mask/浮点additive mask的Softmax；FP32中间计算、最终cast；端口对齐与容量限制见下文 |
+| ggml CUDA causal GQA | Windows默认、Linux可显式组合；原device/node准入，实际验证SM89；dense BSHD FP16/BF16，Q/KV heads=8/2、depth=256、KV length≥Q length、无额外mask、FP32累加；每tensor及score矩阵元素数≤INT32_MAX，batch≤65535，端口256字节对齐 |
 | cuBLASLt dense MatMul | 非空 FP16/FP32 rank-2，row/column-major 输入、dense row-major 输出；FP32 accumulation，FP32 不降为 TF32 |
 | SGLang precise gated activation | dense FP16/BF16/FP32 packed halves；SiLU/GELU/GELU-tanh 在 FP32 计算及乘法后一次舍入；FP16/BF16 hidden%8、FP32 hidden%4；输入输出16字节对齐，输出元素数<=INT32_MAX，不重叠 |
 | SGLang RMSNorm | dense 同类型 F16/BF16 输入和必需 scale，F32 累加、输出最终 RNE；宽度64/128/256、256倍数至8192、512倍数至16384；16字节对齐、允许精确 input0 原位；混合F32参数不先窄化，继续由下一合法候选承载 |
 | SGLang Unary | dense F32/F16/BF16 SiLU/GELU/GELU-tanh，完整16字节向量、对齐16字节、允许精确原位；普通 Unary 的稳定尾值和 -Inf 极限合同由明确数学适配保留；输出元素数<=INT32_MAX |
-| CCCL Scan / TopK / Gather | CUDA13.3 toolkit/runtime、CCCL3.3.4、SM89；Scan为F32/I32，TopK为F32/F16/BF16/I32，Gather为plain1/2/4/8字节storage与I32/I64索引；rank≤8、任意axis/byte stride、dense输出、不重叠；容量及caller workspace见下文，managed执行 |
+| CCCL Scan / TopK / Gather | CUDA13.3 toolkit/runtime、CCCL3.3.4与实际compiled device程序，实际验证SM89；Scan为F32/I32，TopK为F32/F16/BF16/I32，Gather为plain1/2/4/8字节storage与I32/I64索引；rank≤8、任意axis/byte stride、dense输出、不重叠；容量及caller workspace见下文，managed执行 |
 | HYLE gated activation | separate 输入或不满足上述向量宽度的 packed halves；dense FP16/BF16/FP32，同三种激活、精度与元素数/不重叠限制 |
 | HYLE 基本 tensor | plain View、Copy、Fill、Select；F32/F16/BF16 Cast、全部既有 Unary/Binary 模式；rank≤8，rank0/broadcast/非负及奇数 byte stride，非 View 输出 dense、元素数≤INT32_MAX |
 | HYLE CUDA norms | dense F32/F16/BF16 RMSNorm、LayerNorm，最后一轴、FP32 accumulation；scale/bias 各自为输入类型或 half 输入的 F32 参数，元素数≤INT32_MAX；LayerNorm 使用先均值再 centered variance |
