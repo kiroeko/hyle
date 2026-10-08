@@ -43,7 +43,7 @@
   "peers": [
     {
       "id": "native-cuda",
-      "revision": "8aa1c6796c9979ec2f24ce03f959b7095b70741f",
+      "revision": "30e20923f0ab73ac781971a0977fdf39291347ed",
       "configuration": {
         "role": "Same immutable product, explicit HYLE native CUDA provider with independent resources, full terminal completion."
       }
