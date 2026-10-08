@@ -167,7 +167,9 @@ TEST(AppleParityGraph, OfficialFp4ExpertsKeepOriginalFp8ActivationAndGroup32Weig
   for(const auto &identity:cpu_c4_model_branches::models) {
     const auto model=identity.main_case();SCOPED_TRACE(model.profile->model_name);
     for(bool down:{false,true}) for(bool shared:{false,true}) for(std::int64_t tokens:{1,3}) {
-      SCOPED_TRACE(down);SCOPED_TRACE(shared);SCOPED_TRACE(tokens);
+      SCOPED_TRACE(down);
+      SCOPED_TRACE(shared);
+      SCOPED_TRACE(tokens);
       run_q24_semantic_fragment(d5_deepseek_official_fragments::projection(model,down,shared,tokens));
       ASSERT_FALSE(::testing::Test::HasFailure());
     }
