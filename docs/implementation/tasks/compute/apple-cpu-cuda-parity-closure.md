@@ -180,3 +180,7 @@ encoded rows承载，原packed bytes/native program不变，未重跑559/P1。�
 的旧通过项，当前两入口各546 numeric qualified/5 Q4_K精确失败/8 IQ1 skip；这是证据复用
 与delta合并，不冒称新全集。34packed域不变。统一实现61,252行/260文件，不含tests/vendor。
 阶段仍A2；Q4_K/窄IQ1/官方FP4、45plain与新官方/MTP完整片段、默认/优选/三交付未完成。
+
+新增[成熟codec定向卡](apple-mature-codec-borrow.md)只重开Apple实际所需的runtime enum/core
+接线；原CPU/CUDA/Vulkan状态不变。原Anemll源码已确认三IQ1的MV及grouped wrappers，
+source/grids/ABI审计后再固定实现，不以README签GPU能力。Q4_K另借原CPU数学到MLX所选行。

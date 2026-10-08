@@ -563,14 +563,9 @@
     },
     {
       "module": "compute_ggml_runtime",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/compute/cuda-final-u6-audit.md",
-      "summary": "CUDA有限goal CLOSED：固定模型/量化/MTP完整原计算与状态、两OS CUDA-only/mixed三交付、cold成熟默认/真实能力门、六重复公式BORROW和具名unique保留、U5 42步/源码SDK增量及终审清理完成。AA原FAIL/性能INCONCLUSIVE无新WIN；按授权ENGINEERING_DEFAULT/P0关闭，不签全设备SOTA或推理engine，不解除旧Graph/Vulkan。",
-      "candidate": "657f291f6e4d50b0e1c14ca24cdbe7b1715066e4",
-      "performance": {
-        "tier": "P0",
-        "evidence": "docs/implementation/tasks/compute/cuda-final-u6-audit.md"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/apple-mature-codec-borrow.md",
+      "summary": "Apple narrow mature codec SCOPED: 原Anemll三IQ1/既有Unslothcore精确定向接线；只在Apple条件消费，无新HYLE算法，CPU/CUDA/Vulkan数学与旧证据不变。"
     },
     {
       "module": "compute_provider_ggml_cuda",
