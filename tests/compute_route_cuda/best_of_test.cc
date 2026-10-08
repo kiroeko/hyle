@@ -165,6 +165,27 @@ TEST(CudaBestOf, ManagedStorageRetainsFallbackWithoutMeasuredLabel) {
   const auto r = request("log", D::kFloat16, 1, 2048);
   auto program = take(c::prepare(owner, r.operation, r.inputs, std::span(&r.output, 1), memory.ref()));
   EXPECT_NE(program.route_policy().namespace_id, 0x48594c4543555752ULL);
+  const auto bytes = take(r.output.required_bytes());
+  auto input = take(hyle::mem::Buffer::create(memory.ref(), bytes, 256));
+  auto output = take(hyle::mem::Buffer::create(memory.ref(), bytes, 256));
+  auto iv = take(c::ConstTensorView::create(r.inputs[0], input.view()));
+  auto ov = take(c::TensorView::create(r.output, output.view()));
+  const auto requirement = program.workspace_requirement();
+  auto workspace = take(hyle::mem::Buffer::create(memory.ref(), requirement.size, requirement.alignment));
+  auto slot = take(requirement.size ? program.create_invocation(workspace.view()) : program.create_invocation());
+  auto queue = take(owner.create_queue());
+  for (int seed : {5, 17}) {
+    const auto values = payload(r, seed);
+    ASSERT_TRUE(input.view().write(pack(r.inputs[0], values[0])).ok());
+    auto done = take(slot.submit(queue, iv, ov));
+    ASSERT_TRUE(done.wait().ok());
+    std::vector<std::byte> data(bytes);
+    ASSERT_TRUE(output.view().read(data).ok());
+    const auto actual = unpack(D::kFloat16, data);
+    const auto expected = oracle(r, values);
+    for (std::size_t i = 0; i < actual.size(); ++i)
+      ASSERT_LE(std::abs(actual[i] - expected[i]), .001 * (1 + std::abs(expected[i])));
+  }
 }
 
 TEST(CudaBestOf, ShiftedViewsRetainCapabilityWithoutMeasuredAlignment) {
