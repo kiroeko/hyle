@@ -26,4 +26,10 @@ if(HYLE_STATIC AND HYLE_COMPUTE_APPLE_ENABLED)
   hyle_configure_apple_ffn_bench(hyle_compute_route_apple_bench_placement compute_route_apple 0 TRUE)
   hyle_register_benches(compute_route_apple hyle_compute_route_apple_bench
     hyle_compute_route_apple_bench_placement)
+  add_executable(hyle_compute_route_apple_overlap_bench overlap_p1_bench.cc)
+  hyle_configure_apple_ffn_bench(hyle_compute_route_apple_overlap_bench compute_route_apple 0 FALSE)
+  add_executable(hyle_compute_route_apple_overlap_bench_placement overlap_p1_bench.cc)
+  hyle_configure_apple_ffn_bench(hyle_compute_route_apple_overlap_bench_placement compute_route_apple 0 TRUE)
+  hyle_register_benches(compute_route_apple hyle_compute_route_apple_overlap_bench
+    hyle_compute_route_apple_overlap_bench_placement)
 endif()
