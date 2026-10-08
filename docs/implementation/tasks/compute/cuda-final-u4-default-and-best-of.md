@@ -1,8 +1,36 @@
 # CUDA U4：合理默认与有条件 best-of
 
-本卡先固定用户要求和验收面；当前没有重开其它 owner 或性能采样授权。
-实现前须按 [CUDA goal](cuda-final-closure-plan.md) 和 registry 绑定实际 owner、SCOPED→AUDITED 有限 FIX。
+<!-- MODULE REVIEW: SCOPED -->
+
+baseline `c64185195d7e4968d802e8d53567a1095b0fa07f`，Windows工作树干净；
+U2/U3已取得联合资格，按用户“继续完成goal，避免无用重复”授权推进本包。
+只读审计完成后绑定当前AUDITED owner；本scope不授权立即修改产品或采样。
 主需求为 [共同模型／格式／算子目录](../../../architecture/model-compute-catalogue.md)。
+
+## 本轮有限范围
+
+- consumer：普通CUDA Direct/Graph使用固定模型的原tensor/格式与完整region；正交消费为
+  缺性能证书、模型/revision/driver/compiler不匹配时仍可绑定合法成熟程序。
+- 实际反例：ggml Context.qualified由SM89 selector决定，supports整体拒绝其它SM；CUDA
+  façade只有全局ProviderBinding优先级，无法逐operation/ports/完整成本解释默认。
+  CCCL把SM89和有限runtime范围共同作为全能力门；真实AOT DeepSeek的SM89/Driver13040保持。
+- owner候选：compute_route_cuda、compute_provider_ggml_cuda、graph_provider_ggml_cuda，
+  必要时compute_provider_cuda的CCCL冷准入。现CU BLAS/Graph route CLOSED不因查看源码重开。
+  Torch/FlashInfer只有实际必要变化才纳入；CPU及其它GPU产品不改。
+- 有限FIX候选：D1同源冷默认装饰、D2原ggml能力与性能证书分离、D3CCCL真实能力/版本门
+  与旧SM性能域分离、D4有限重复域资格化与固定规则/文档。不增加公共Router或热vtable。
+- 私有默认策略复用ProviderAccess冷装饰与现RoutePolicyId，原资源准入先执行，热执行表保持。
+  模型/制品/phase/真实ports/软件hardware事实沿既有selector，不增用户rank/timing参数。
+- 性能先列真实重叠域/成本：原数学、precision、ownership、资源/完成边界相同才能计时；
+  单provider不比；unique resource域不伪输赢。优先复用严格相同输入身份的既有证据，
+  原Marlin/旧API benchmark不重跑、不签新规则。近似或未资格化采用具名成熟工程默认。
+- 预算：本包一次源码审计、一次批量实现与影响验证、一次稳定candidate的适用P1批次；
+  默认n15，无升级计划、至多一次具名接线纠正，不新增仪器。每30分钟报告实际产出。
+  前两小时至少完成D1--D3实现/适用验证并裁决D4范围，出现新公开合同问题停止该项定界。
+- 验收：冷匹配/unknown与失配、原precision/bounds/resources、普通两入口/provider/policy绑定、
+  原native硬资格拒绝、source/static/shared适用小纵切/公开头、docs/closure/统一LOC。
+  未影响的U2/U3完整数学及交付格按产品/依赖/合同身份复用，不因文档/测试小改重新全集。
+- stop：固定全部默认及适用重复域裁决完成后进入U5，不扩算子目录；适用未验不PASS。
 
 ## 用户要求：缺性能证书不等于缺能力
 
