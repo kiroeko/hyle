@@ -1,6 +1,6 @@
 # CUDA 性能优选补齐与对应清退
 
-<!-- MODULE REVIEW: SCOPED -->
+<!-- MODULE REVIEW: AUDITED -->
 
 baseline `3e9e71d0ab6a915d3682314e9102864638d1005e`，Windows工作树干净。
 2026-10-08用户要求CUDA补至CPU同级，并明确“差不多就选主流，不无限性能比较”。
@@ -68,3 +68,23 @@ C1首次冷准入在ggml caller-workspace检查停止：zero-byte BufferView仍�
 不能传给provider-owned workspace；只修adapter在size0用默认空参数。首次HYLE Copy prepared
 不代签206项，原FAIL/三次build预算保留，不启动第四次C1 build；C2冻结完整slot/输出批次后
 统一编译/验收此必要接线及全部请求。C1明确交接此未验入口，不假签C1运行资格完成。
+
+## C1 审计冻结与 C2 批量验收
+
+C1机制调查停止于原四诊断进程，未唯一归因的噪声不再循环研究。源合同和206请求有限矩阵
+固定，C2一次批量adapter完成零workspace正确绑定、原native slot、真实device payload/完整
+terminal输出核对，不能从prepare声明签数学资格。每项五候选实际检出，包括原Torch只接
+stable Softplus、SGLang仅相应vector/norm、ggml明确支持域与CCCL Gather。
+
+预冻结数值：两次seed5/17变化、列/行非均匀dyadic数据；norm gamma/beta、additive mask及
+重复Gather IDs显式端口。独立Double方程、逐输出核对，原本库F32/F16/BF16已有测试口径
+分别3e-5/0.001/0.008乘(1+abs(reference))；不把这个窄有限域外推极端值/全部public合同。
+独有资源/特殊值资格按旧原测试复用。失败项具名隔离且保留，不使未运行项变PASS。
+
+有限产品FIX冻结：R1依合格完整候选/成本裁决做私有cold规则，公共API/对象/语义和原热程序
+保持；R2按真实完整替代删除冗余self数学与对应默认，独有消费明确KEEP，不扩self/优化；
+R3相同两入口/资源/失配和source/static/shared差分验收。没有已测赢家的请求只工程默认，
+但仍必须完成本矩阵适用审查/准入/有预算裁决，不能用文档/default假签所有性能补齐。
+本AUDITED记录独立提交后才允许上述三owner产品变化；C2不改任何成熟数学或公共instrument。
+C2只用现adapter/SDK一次batch build，至多一次具名纠正（独立完整payload batch，不重置旧
+C1三次build/首次冷准入FAIL）。AA资格与P1之后只取实际CORRECT且同合同的候选组合。

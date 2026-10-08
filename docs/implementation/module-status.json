@@ -489,21 +489,21 @@
     },
     {
       "module": "compute_provider_cuda",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/cuda-best-of-completion.md",
-      "summary": "CUDA best-of补齐C1 SCOPED：用户明确追加同CPU级实测规则/对应清退，先完整同合同重叠矩阵及一次AA机制排查；近似直接选成熟，不无限比较。U23/U4/U5原覆盖交付复用，其它owner/CPU/Graph旧Vulkan状态保持。"
+      "summary": "CUDA best-of补齐AUDITED：C1一次诊断停止，206有限请求/原carrier/完整成本与R1冷规则R2冗余数学去留R3差分验收冻结；C2批量真实payload/输出/资源资格仍待，不追加n/优化，接近直接成熟默认。"
     },
     {
       "module": "compute_route_cuda",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/cuda-best-of-completion.md",
-      "summary": "CUDA best-of补齐C1 SCOPED：用户明确追加同CPU级实测规则/对应清退，先完整同合同重叠矩阵及一次AA机制排查；近似直接选成熟，不无限比较。U23/U4/U5原覆盖交付复用，其它owner/CPU/Graph旧Vulkan状态保持。"
+      "summary": "CUDA best-of补齐AUDITED：C1一次诊断停止，206有限请求/原carrier/完整成本与R1冷规则R2冗余数学去留R3差分验收冻结；C2批量真实payload/输出/资源资格仍待，不追加n/优化，接近直接成熟默认。"
     },
     {
       "module": "graph_route_cuda",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/cuda-best-of-completion.md",
-      "summary": "CUDA best-of补齐C1 SCOPED：用户明确追加同CPU级实测规则/对应清退，先完整同合同重叠矩阵及一次AA机制排查；近似直接选成熟，不无限比较。U23/U4/U5原覆盖交付复用，其它owner/CPU/Graph旧Vulkan状态保持。"
+      "summary": "CUDA best-of补齐AUDITED：C1一次诊断停止，206有限请求/原carrier/完整成本与R1冷规则R2冗余数学去留R3差分验收冻结；C2批量真实payload/输出/资源资格仍待，不追加n/优化，接近直接成熟默认。"
     },
     {
       "module": "compute_route_apple",
