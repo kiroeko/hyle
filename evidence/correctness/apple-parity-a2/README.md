@@ -45,3 +45,18 @@ changed activations, embedding rows and checked failure.
 Windows Apple-OFF exact-factor configure PASS, SDK/probe/download skipped.
 No Apple runtime PASS is derived from that configure. Next candidate's new
 Graph coverage and grouped numeric execution remain unverified here.
+
+## Candidate125b2209
+
+[Incremental build](125b2209-build.log) PASS.
+[Direct](125b2209-direct.log):2/2 PASS, containing all twelve formats/precision/
+linear/grouped combinations and both embedding precisions, two replays,
+different experts/IDs/activations and checked failures. Original native MLX
+math is used; no numerical tolerance was widened.
+[New Graph tests](125b2209-graph.log):2/2 FAIL at the second cold custom
+operation admission list, before native compilation or execution. The earlier
+trace list already recognizes the operation. The finite correction replaces
+all three duplicated typed-custom lists by one Compute-owned native admission
+predicate, so Direct/Graph prevalidation/Graph tracing cannot disagree about
+this domain. Actual schema, stream, port and runtime checks remain unchanged.
+Its first corrected Graph candidate is pending; the original FAIL is retained.

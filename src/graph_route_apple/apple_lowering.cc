@@ -95,17 +95,11 @@ Result<std::vector<mx::array>> trace(const Plan &plan,
       arguments.push_back(*values[index]);
       descriptions.push_back(plan.descriptions[index]);
     }
-    const bool mature_custom =
-        node.operation.custom_as<compute::model_ops::CausalConv1d>()
-            .has_value() ||
-        node.operation.custom_as<compute::model_ops::SinkAttention>().has_value();
-    const bool mlx_quantized =
-        node.operation.custom_as<compute::model_ops::MlxQuantized>().has_value();
     auto outputs =
         ca::detail::is_mlx_float_operation(node.operation, descriptions)
             ? ca::detail::lower_mlx_float(node.operation, descriptions, arguments, stream)
         : node.operation.kind() == compute::OperationKind::kCustom &&
-                !mature_custom && !mlx_quantized
+                !ca::detail::is_mlx_tensor_custom(node.operation)
             ? plan.custom(node.operation, arguments, stream)
             : ca::lower(node.operation, arguments, stream, plan.workload);
     if (!outputs)
@@ -311,8 +305,7 @@ static Result<ca::Program> compile_impl(const ca::Context &context,
       if (!needed)
         continue;
       if (operation.kind() == compute::OperationKind::kCustom &&
-          !operation.custom_as<compute::model_ops::CausalConv1d>() &&
-          !operation.custom_as<compute::model_ops::SinkAttention>() &&
+          !ca::detail::is_mlx_tensor_custom(operation) &&
           !ca::detail::is_mlx_float_operation(operation, {}) &&
           !fixed_ggml_model_operation(operation) &&
           !plan->custom)

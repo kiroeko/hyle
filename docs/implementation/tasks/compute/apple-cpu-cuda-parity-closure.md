@@ -109,3 +109,9 @@ I32→U32转换；接入处显式owned-stream cast，使原内部cast成为no-op
 不同专家scale/变IDs/变activation和embedding，下一候选结果待验。18codec微型F32通过不
 冒充559完整合同；官方FP4/18artifact/8IQ1扩展与默认/交付仍未完成。Windows Apple-OFF
 精确factor configure通过，无SDK下载/探测，不代签Apple runtime。
+
+`125b2209`增量构建通过；Direct新增2/2测试通过（含全部十二格式/精度/线性/grouped组合、
+双embedding精度、双replay、不同专家/变IDs/变activation与失败）。Graph新测试2/2被第二处
+旧custom准入名单拒绝，尚未数值执行。F2的具名定向纠正将Direct lower、Graph预检/trace的
+三份名单统一为Compute-owned native predicate；仅detail seam，无数学/stream/资源/公开
+用户入口改变。适用头/seam验收随selector扩展，Graph修复结果待验，原FAIL保留。

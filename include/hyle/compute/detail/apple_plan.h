@@ -35,6 +35,11 @@ struct ContextAccess final {
   compile(const Context &context, RegionPlan plan) noexcept;
 };
 
+// One cold admission predicate for typed model-native MLX custom lowering.
+// Direct lowering and both Graph validation/tracing use the same domain.
+HYLE_COMPUTE_ROUTE_APPLE_API bool
+is_mlx_tensor_custom(const Operation &operation) noexcept;
+
 // Cold lowering for model-native FP8 storage. Logical descriptions remain
 // distinct from the uint8 MLX carrier used at the native boundary.
 HYLE_COMPUTE_ROUTE_APPLE_API bool
