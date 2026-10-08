@@ -1,6 +1,6 @@
 # Windows runtime 邻置：同目录 writer 协调
 
-<!-- MODULE REVIEW: SCOPED -->
+<!-- MODULE REVIEW: AUDITED -->
 
 ## 工具任务合同
 
@@ -22,3 +22,9 @@
 - 预算：一次源码审计、一行工具修复、一批fixture与实际CUDA交付验证，不触发算子P1。
   若是应用持有目标DLL而非writer冲突，锁不授权杀用户进程；具名保留诊断。
 - stop：审计后固定上述有限FIX进入AUDITED，工具与实际构建验收完成即CLOSED。
+
+## AUDITED 有限 FIX
+
+SCOPED提交`d7ec6b21`；原两个生成copy脚本指向同一目录，无live应用持有该目录DLL，
+复制清单相同且顺序稳定。固定唯一工具FIX为与Apple同形的build-time目录锁，
+测试只补同目录双consumer；不重写清单选择、冲突裁决或执行器。

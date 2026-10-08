@@ -155,3 +155,7 @@ offline独立configure／link／运行及邻exe DLL。原完整651／649需求�
 边界及复用见[联合资格](../../../../evidence/correctness/cuda-final-u3-windows-static/README.md)。
 source普通links与具名纠正／admission亦通过；shared、CPU+CUDA mixed及Linux shipping仍未完，
 B3／完整B4不因本子格提前关闭，不新增性能结论。
+
+shared实际构建检出公共邻置copy的同目录writer冲突，独立
+[tool task](../build/runtime-staging-directory-writer.md)固定有限目录锁修复；
+不是CUDA算子缺口，不在本模块改公共治理，原对象与通过组保留。
