@@ -23,6 +23,6 @@
     "src/compute_provider_cuda/norm_provider.cc:submit",
     "src/compute_provider_cuda/cuda_provider.cc:submit",
     "src/compute_provider_ggml_cuda/ggml_cuda_provider.cc:submit",
-    "src/compute/prepared_operation.cc"
+    "src/compute/prepared_state.h"
   ]
 }

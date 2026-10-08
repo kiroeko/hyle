@@ -132,7 +132,7 @@
       "consumer_key": "qwen/resident-tensor/bf16-rms-t1",
       "provenance": {
         "path": "consumer.json",
-        "sha256": "7af91ee038e8bde28d7379a5ec527c7702baef6846ec52b699c74084de07c1b0"
+        "sha256": "bfc4150147a070bfddca98337f5c340abe2f2778509c9701e56ef339a849c12c"
       },
       "ownership_topology": {
         "candidate": "Independent original mature Provider Context/Queue/two resident slots; private pools admitted",
@@ -198,7 +198,7 @@
       "consumer_key": "qwen/resident-tensor/bf16-rms-t32",
       "provenance": {
         "path": "consumer.json",
-        "sha256": "7af91ee038e8bde28d7379a5ec527c7702baef6846ec52b699c74084de07c1b0"
+        "sha256": "bfc4150147a070bfddca98337f5c340abe2f2778509c9701e56ef339a849c12c"
       },
       "ownership_topology": {
         "candidate": "Independent original mature Provider Context/Queue/two resident slots; private pools admitted",
@@ -264,7 +264,7 @@
       "consumer_key": "qwen/resident-tensor/bf16-silu-t1",
       "provenance": {
         "path": "consumer.json",
-        "sha256": "7af91ee038e8bde28d7379a5ec527c7702baef6846ec52b699c74084de07c1b0"
+        "sha256": "bfc4150147a070bfddca98337f5c340abe2f2778509c9701e56ef339a849c12c"
       },
       "ownership_topology": {
         "candidate": "Independent original mature Provider Context/Queue/two resident slots; private pools admitted",
@@ -330,7 +330,7 @@
       "consumer_key": "qwen/resident-tensor/bf16-silu-t32",
       "provenance": {
         "path": "consumer.json",
-        "sha256": "7af91ee038e8bde28d7379a5ec527c7702baef6846ec52b699c74084de07c1b0"
+        "sha256": "bfc4150147a070bfddca98337f5c340abe2f2778509c9701e56ef339a849c12c"
       },
       "ownership_topology": {
         "candidate": "Independent original mature Provider Context/Queue/two resident slots; private pools admitted",
@@ -396,7 +396,7 @@
       "consumer_key": "qwen/resident-tensor/f32-rms-t1",
       "provenance": {
         "path": "consumer.json",
-        "sha256": "7af91ee038e8bde28d7379a5ec527c7702baef6846ec52b699c74084de07c1b0"
+        "sha256": "bfc4150147a070bfddca98337f5c340abe2f2778509c9701e56ef339a849c12c"
       },
       "ownership_topology": {
         "candidate": "Independent original mature Provider Context/Queue/two resident slots; private pools admitted",
@@ -462,7 +462,7 @@
       "consumer_key": "qwen/resident-tensor/f32-rms-t32",
       "provenance": {
         "path": "consumer.json",
-        "sha256": "7af91ee038e8bde28d7379a5ec527c7702baef6846ec52b699c74084de07c1b0"
+        "sha256": "bfc4150147a070bfddca98337f5c340abe2f2778509c9701e56ef339a849c12c"
       },
       "ownership_topology": {
         "candidate": "Independent original mature Provider Context/Queue/two resident slots; private pools admitted",

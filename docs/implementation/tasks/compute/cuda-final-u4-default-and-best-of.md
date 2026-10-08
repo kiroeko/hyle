@@ -151,3 +151,9 @@ attention同语义还有不同完整cache/precision/AOT条件，本包按既有�
 
 本批源码与四个SDK小纵切归档见[实际证据](../../../../evidence/correctness/cuda-u4-defaults/README.md)。
 统一Compute+Graph实现LOC为60,779/255文件，不含测试；D4适配器不计产品LOC。
+
+D4 adapter的预编译两次失败属于明确接入错误：第一次普通facade不导出expert ggml工厂宏，
+第二次误写未导出的`hyle::compute_provider_*`，实际SDK已导出`hyle::_factor_*`。
+修正为明确链接现有两个factor，不增用户宏、不改产品/数学/SDK。本具名build ID只追加最后
+一次纠正（累计3次、旧FAIL日志/消耗保留），不换ID/目录；仍失败则停止该P1而如实未裁决。
+包级两小时D1--D3/定界、n15/no escalation及总有限范围保持。
