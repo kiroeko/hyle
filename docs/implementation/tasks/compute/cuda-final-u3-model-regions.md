@@ -128,6 +128,13 @@ SDK current续跑保留原21个完整用例，每个完整program独立进程，
 的原库private allocator缓存叠加。已完成编码／artifact组复用；families与普通入口／生命周期
 按未完成项补验。此分组不删除程序内部stage、权重精度、真实内宽、state或完整词表。
 
+Windows CUDA-only static SDK联合资格现已完成：完整native需求651／649的用例并集逐名无缺项，
+加普通入口／负空间／reference回归实际不同用例667／652项通过；49关联完成逐项映射。
+漏带的五个本地Qwen Graph用例已用独立目标补齐，没有重跑通过的编码组。scope、原失败、
+复用与source／offline／relocation／DLL边界见
+[静态联合资格](../../../../evidence/correctness/cuda-final-u3-windows-static/README.md)。
+shared／mixed／Linux shipping矩阵及U4／U5仍待，本卡继续AUDITED，不以此子格签全包完成。
+
 ## 七问与冻结
 
 第三方依旧原ggml／ATen源、pin和license；当前模型完整需求不扩画像；backend、Graph adapter、

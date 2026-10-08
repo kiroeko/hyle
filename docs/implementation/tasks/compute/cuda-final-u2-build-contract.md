@@ -147,3 +147,11 @@ B2 产品 `ffeb224ed`，namespace 纠正后的批次 `45a1d4a8` 已通过 Window
 两入口接线验证。实际快照与原NVML均为617.14；API整数独立，未知release不阻断硬件/API匹配。
 原主批的fixture SKIP已只补缺项，未重跑主批。完整[批次证据](../../../../evidence/correctness/cuda-final-u23/README.md)
 保留失败与补验边界；本包三交付／Linux／全部能力仍待验，不提前CLOSED。
+
+### 当前联合交付子格
+
+最终U3产品与test-only纠正后的Windows CUDA-only static SDK已完成实际install／prefix搬移、
+offline独立configure／link／运行及邻exe DLL。原完整651／649需求逐名无缺项，
+边界及复用见[联合资格](../../../../evidence/correctness/cuda-final-u3-windows-static/README.md)。
+source普通links与具名纠正／admission亦通过；shared、CPU+CUDA mixed及Linux shipping仍未完，
+B3／完整B4不因本子格提前关闭，不新增性能结论。

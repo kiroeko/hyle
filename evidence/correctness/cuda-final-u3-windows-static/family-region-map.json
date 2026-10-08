@@ -1,0 +1,1199 @@
+[
+  {
+    "family": "Qwen3.5-2B-GGUF",
+    "region": "R02",
+    "source": "tests/compute_models/cpu_c5_qwen_attention.h",
+    "anchor": "inline Fragment norm_residual(",
+    "cpu_names": [
+      "CpuC5Parameters.QwenActualWidthsUseDeclaredFloatNormEpsilon",
+      "CpuGraphC5Parameters.QwenActualWidthsUseDeclaredFloatNormEpsilon"
+    ],
+    "cuda_named_equivalent": {
+      "direct": [
+        "CudaDirectC5Parameters.QwenActualWidthsUseDeclaredFloatNormEpsilon"
+      ],
+      "graph": [
+        "CudaGraphC5Parameters.QwenActualWidthsUseDeclaredFloatNormEpsilon"
+      ]
+    },
+    "canonical_builder_sha256": "bef69662d1b4024b1946279605da6ae4bc0bdd50ad33e750ba27af7fb01d60b6",
+    "binding": "Same canonical complete builder; CUDA runner replaces execution and declared activation-codec reference",
+    "classification": "NATIVE_QUALIFIED"
+  },
+  {
+    "family": "Qwen3.5-2B-GGUF",
+    "region": "R04",
+    "source": "tests/compute_models/cpu_c5_qwen_attention.h",
+    "anchor": "inline Fragment make(",
+    "cpu_names": [
+      "CpuC5Parameters.Qwen24ActualHalfSplitFrequencyNormAndKvFeedback",
+      "CpuGraphC5Parameters.Qwen24ActualHalfSplitFrequencyNormAndKvFeedback"
+    ],
+    "cuda_named_equivalent": {
+      "direct": [
+        "CudaDirectC5Parameters.Qwen24ActualHalfSplitFrequencyNormAndKvFeedback"
+      ],
+      "graph": [
+        "CudaGraphC5Parameters.Qwen24ActualHalfSplitFrequencyNormAndKvFeedback"
+      ]
+    },
+    "canonical_builder_sha256": "bef69662d1b4024b1946279605da6ae4bc0bdd50ad33e750ba27af7fb01d60b6",
+    "binding": "Same canonical complete builder; CUDA runner replaces execution and declared activation-codec reference",
+    "classification": "NATIVE_QUALIFIED"
+  },
+  {
+    "family": "Qwen3.5-2B-GGUF",
+    "region": "R05",
+    "source": "tests/compute_models/d5_qwen38_24t_semantic_fragments.h",
+    "anchor": "inline Fragment gdn(",
+    "cpu_names": [
+      "CpuGraphQwenRecurrent.D5NineProfilesUseCompleteGateAndActualStateFeedback",
+      "CpuQwenRecurrent.D5NineProfilesUseCompleteGateAndActualStateFeedback"
+    ],
+    "cuda_named_equivalent": {
+      "direct": [
+        "CudaQwenRecurrent.D5NineProfilesUseCompleteGateAndActualStateFeedback"
+      ],
+      "graph": [
+        "CudaGraphQwenRecurrent.D5NineProfilesUseCompleteGateAndActualStateFeedback"
+      ]
+    },
+    "canonical_builder_sha256": "b419ccdab0d23da5ff1db51d6e2c9c504bcae02f83666885cb5bb457b62d2736",
+    "binding": "Same canonical complete builder; CUDA runner replaces execution and declared activation-codec reference",
+    "classification": "NATIVE_QUALIFIED"
+  },
+  {
+    "family": "Qwen3.8-27B-GGUF",
+    "region": "R02",
+    "source": "tests/compute_models/cpu_c5_qwen_attention.h",
+    "anchor": "inline Fragment norm_residual(",
+    "cpu_names": [
+      "CpuC5Parameters.QwenActualWidthsUseDeclaredFloatNormEpsilon",
+      "CpuGraphC5Parameters.QwenActualWidthsUseDeclaredFloatNormEpsilon"
+    ],
+    "cuda_named_equivalent": {
+      "direct": [
+        "CudaDirectC5Parameters.QwenActualWidthsUseDeclaredFloatNormEpsilon"
+      ],
+      "graph": [
+        "CudaGraphC5Parameters.QwenActualWidthsUseDeclaredFloatNormEpsilon"
+      ]
+    },
+    "canonical_builder_sha256": "bef69662d1b4024b1946279605da6ae4bc0bdd50ad33e750ba27af7fb01d60b6",
+    "binding": "Same canonical complete builder; CUDA runner replaces execution and declared activation-codec reference",
+    "classification": "NATIVE_QUALIFIED"
+  },
+  {
+    "family": "Qwen3.8-27B-GGUF",
+    "region": "R04",
+    "source": "tests/compute_models/cpu_c5_qwen_attention.h",
+    "anchor": "inline Fragment make(",
+    "cpu_names": [
+      "CpuC5Parameters.Qwen24ActualHalfSplitFrequencyNormAndKvFeedback",
+      "CpuGraphC5Parameters.Qwen24ActualHalfSplitFrequencyNormAndKvFeedback"
+    ],
+    "cuda_named_equivalent": {
+      "direct": [
+        "CudaDirectC5Parameters.Qwen24ActualHalfSplitFrequencyNormAndKvFeedback"
+      ],
+      "graph": [
+        "CudaGraphC5Parameters.Qwen24ActualHalfSplitFrequencyNormAndKvFeedback"
+      ]
+    },
+    "canonical_builder_sha256": "bef69662d1b4024b1946279605da6ae4bc0bdd50ad33e750ba27af7fb01d60b6",
+    "binding": "Same canonical complete builder; CUDA runner replaces execution and declared activation-codec reference",
+    "classification": "NATIVE_QUALIFIED"
+  },
+  {
+    "family": "Qwen3.8-27B-GGUF",
+    "region": "R05",
+    "source": "tests/compute_models/d5_qwen38_24t_semantic_fragments.h",
+    "anchor": "inline Fragment gdn(",
+    "cpu_names": [
+      "CpuGraphQwenRecurrent.D5NineProfilesUseCompleteGateAndActualStateFeedback",
+      "CpuQwenRecurrent.D5NineProfilesUseCompleteGateAndActualStateFeedback"
+    ],
+    "cuda_named_equivalent": {
+      "direct": [
+        "CudaQwenRecurrent.D5NineProfilesUseCompleteGateAndActualStateFeedback"
+      ],
+      "graph": [
+        "CudaGraphQwenRecurrent.D5NineProfilesUseCompleteGateAndActualStateFeedback"
+      ]
+    },
+    "canonical_builder_sha256": "b419ccdab0d23da5ff1db51d6e2c9c504bcae02f83666885cb5bb457b62d2736",
+    "binding": "Same canonical complete builder; CUDA runner replaces execution and declared activation-codec reference",
+    "classification": "NATIVE_QUALIFIED"
+  },
+  {
+    "family": "Qwen3.8-27B-GGUF",
+    "region": "R13",
+    "source": "tests/compute_models/cpu_c4_qwen_mtp.h",
+    "anchor": "inline Fragment decoder(",
+    "cpu_names": [
+      "CpuC4Branches.QwenQ4NamedSidecarUsesActualQ3Q4Q6AndCompleteMtp",
+      "CpuGraphC4Branches.QwenQ4NamedSidecarUsesActualQ3Q4Q6AndCompleteMtp"
+    ],
+    "cuda_named_equivalent": {
+      "direct": [
+        "CudaDirectCurrentRegions.QwenNamedQ4SidecarUsesQ3Q4Q6AndCompleteMtp"
+      ],
+      "graph": [
+        "CudaGraphCurrentRegions.QwenNamedQ4SidecarUsesQ3Q4Q6AndCompleteMtp"
+      ]
+    },
+    "canonical_builder_sha256": "bd3d62d9bac7b4e1c39ee8960ead54436769560652463e09ad91625b4026cd07",
+    "binding": "Same canonical complete builder; CUDA runner replaces execution and declared activation-codec reference",
+    "classification": "NATIVE_QUALIFIED"
+  },
+  {
+    "family": "Qwen3.8-2.4T-A95B-GGUF",
+    "region": "R02",
+    "source": "tests/compute_models/cpu_c5_qwen_attention.h",
+    "anchor": "inline Fragment norm_residual(",
+    "cpu_names": [
+      "CpuC5Parameters.QwenActualWidthsUseDeclaredFloatNormEpsilon",
+      "CpuGraphC5Parameters.QwenActualWidthsUseDeclaredFloatNormEpsilon"
+    ],
+    "cuda_named_equivalent": {
+      "direct": [
+        "CudaDirectC5Parameters.QwenActualWidthsUseDeclaredFloatNormEpsilon"
+      ],
+      "graph": [
+        "CudaGraphC5Parameters.QwenActualWidthsUseDeclaredFloatNormEpsilon"
+      ]
+    },
+    "canonical_builder_sha256": "bef69662d1b4024b1946279605da6ae4bc0bdd50ad33e750ba27af7fb01d60b6",
+    "binding": "Same canonical complete builder; CUDA runner replaces execution and declared activation-codec reference",
+    "classification": "NATIVE_QUALIFIED"
+  },
+  {
+    "family": "Qwen3.8-2.4T-A95B-GGUF",
+    "region": "R04",
+    "source": "tests/compute_models/cpu_c5_qwen_attention.h",
+    "anchor": "inline Fragment make(",
+    "cpu_names": [
+      "CpuC5Parameters.Qwen24ActualHalfSplitFrequencyNormAndKvFeedback",
+      "CpuGraphC5Parameters.Qwen24ActualHalfSplitFrequencyNormAndKvFeedback"
+    ],
+    "cuda_named_equivalent": {
+      "direct": [
+        "CudaDirectC5Parameters.Qwen24ActualHalfSplitFrequencyNormAndKvFeedback"
+      ],
+      "graph": [
+        "CudaGraphC5Parameters.Qwen24ActualHalfSplitFrequencyNormAndKvFeedback"
+      ]
+    },
+    "canonical_builder_sha256": "bef69662d1b4024b1946279605da6ae4bc0bdd50ad33e750ba27af7fb01d60b6",
+    "binding": "Same canonical complete builder; CUDA runner replaces execution and declared activation-codec reference",
+    "classification": "NATIVE_QUALIFIED"
+  },
+  {
+    "family": "Qwen3.8-2.4T-A95B-GGUF",
+    "region": "R05",
+    "source": "tests/compute_models/d5_qwen38_24t_semantic_fragments.h",
+    "anchor": "inline Fragment gdn(",
+    "cpu_names": [
+      "CpuGraphQwenRecurrent.D5NineProfilesUseCompleteGateAndActualStateFeedback",
+      "CpuQwenRecurrent.D5NineProfilesUseCompleteGateAndActualStateFeedback"
+    ],
+    "cuda_named_equivalent": {
+      "direct": [
+        "CudaQwenRecurrent.D5NineProfilesUseCompleteGateAndActualStateFeedback"
+      ],
+      "graph": [
+        "CudaGraphQwenRecurrent.D5NineProfilesUseCompleteGateAndActualStateFeedback"
+      ]
+    },
+    "canonical_builder_sha256": "b419ccdab0d23da5ff1db51d6e2c9c504bcae02f83666885cb5bb457b62d2736",
+    "binding": "Same canonical complete builder; CUDA runner replaces execution and declared activation-codec reference",
+    "classification": "NATIVE_QUALIFIED"
+  },
+  {
+    "family": "Qwen3.8-2.4T-A95B-GGUF",
+    "region": "R10",
+    "source": "tests/compute_models/cpu_c5_qwen_nextn.h",
+    "anchor": "Grouped eg(",
+    "cpu_names": [
+      "CpuC5Parameters.Qwen24CompleteNextNUsesMixedRolesCacheMoeAndFullHead",
+      "CpuGraphC5Parameters.Qwen24CompleteNextNUsesMixedRolesCacheMoeAndFullHead"
+    ],
+    "cuda_named_equivalent": {
+      "direct": [
+        "CudaDirectC5Parameters.Qwen24CompleteNextNUsesMixedRolesCacheMoeAndFullHead"
+      ],
+      "graph": [
+        "CudaGraphC5Parameters.Qwen24CompleteNextNUsesMixedRolesCacheMoeAndFullHead"
+      ]
+    },
+    "canonical_builder_sha256": "0af76eca31c35a3bc3c56d0be354588dbdf530580398470599b04b6328d50231",
+    "binding": "Same canonical complete builder; CUDA runner replaces execution and declared activation-codec reference",
+    "classification": "NATIVE_QUALIFIED"
+  },
+  {
+    "family": "Qwen3.8-2.4T-A95B-GGUF",
+    "region": "R11",
+    "source": "tests/compute_models/cpu_c5_qwen_nextn.h",
+    "anchor": "Grouped ed(",
+    "cpu_names": [
+      "CpuC5Parameters.Qwen24CompleteNextNUsesMixedRolesCacheMoeAndFullHead",
+      "CpuGraphC5Parameters.Qwen24CompleteNextNUsesMixedRolesCacheMoeAndFullHead"
+    ],
+    "cuda_named_equivalent": {
+      "direct": [
+        "CudaDirectC5Parameters.Qwen24CompleteNextNUsesMixedRolesCacheMoeAndFullHead"
+      ],
+      "graph": [
+        "CudaGraphC5Parameters.Qwen24CompleteNextNUsesMixedRolesCacheMoeAndFullHead"
+      ]
+    },
+    "canonical_builder_sha256": "0af76eca31c35a3bc3c56d0be354588dbdf530580398470599b04b6328d50231",
+    "binding": "Same canonical complete builder; CUDA runner replaces execution and declared activation-codec reference",
+    "classification": "NATIVE_QUALIFIED"
+  },
+  {
+    "family": "Qwen3.8-2.4T-A95B-GGUF",
+    "region": "R13",
+    "source": "tests/compute_models/cpu_c5_qwen_nextn.h",
+    "anchor": "inline Fragment decoder(",
+    "cpu_names": [
+      "CpuC5Parameters.Qwen24CompleteNextNUsesMixedRolesCacheMoeAndFullHead",
+      "CpuGraphC5Parameters.Qwen24CompleteNextNUsesMixedRolesCacheMoeAndFullHead"
+    ],
+    "cuda_named_equivalent": {
+      "direct": [
+        "CudaDirectC5Parameters.Qwen24CompleteNextNUsesMixedRolesCacheMoeAndFullHead"
+      ],
+      "graph": [
+        "CudaGraphC5Parameters.Qwen24CompleteNextNUsesMixedRolesCacheMoeAndFullHead"
+      ]
+    },
+    "canonical_builder_sha256": "0af76eca31c35a3bc3c56d0be354588dbdf530580398470599b04b6328d50231",
+    "binding": "Same canonical complete builder; CUDA runner replaces execution and declared activation-codec reference",
+    "classification": "NATIVE_QUALIFIED"
+  },
+  {
+    "family": "Kimi-K3-GGUF",
+    "region": "R02",
+    "source": "tests/compute_models/d5_kimi_remaining_fragments.h",
+    "anchor": "inline Fragment dense_ffn(",
+    "cpu_names": [
+      "CpuGraphMoeFragments.D5KimiDenseFfn",
+      "CpuMoeFragments.D5KimiDenseFfn"
+    ],
+    "cuda_named_equivalent": {
+      "direct": [
+        "CudaMoeFragments.D5KimiDenseFfn"
+      ],
+      "graph": [
+        "CudaGraphMoeFragments.D5KimiDenseFfn"
+      ]
+    },
+    "canonical_builder_sha256": "edc6aaeb8d05c1f848447849b45bf3f908b77a737823ce6dfbf737feedeb2218",
+    "binding": "Same canonical complete builder; CUDA runner replaces execution and declared activation-codec reference",
+    "classification": "NATIVE_QUALIFIED"
+  },
+  {
+    "family": "Kimi-K3-GGUF",
+    "region": "R06",
+    "source": "tests/compute_models/d5_kda_full_fragments.h",
+    "anchor": "inline Fragment complete(",
+    "cpu_names": [
+      "CpuGraphMoeFragments.D5SixProfilesFullKdaChainAndTwoStates",
+      "CpuMoeFragments.D5SixProfilesFullKdaChainAndTwoStates"
+    ],
+    "cuda_named_equivalent": {
+      "direct": [
+        "CudaMoeFragments.D5SixProfilesFullKdaChainAndTwoStates"
+      ],
+      "graph": [
+        "CudaGraphMoeFragments.D5SixProfilesFullKdaChainAndTwoStates"
+      ]
+    },
+    "canonical_builder_sha256": "fab310b39195f960106d61e9d5a5ea03a31c56b81d83fa32608592f31ffa2cb0",
+    "binding": "Same canonical complete builder; CUDA runner replaces execution and declared activation-codec reference",
+    "classification": "NATIVE_QUALIFIED"
+  },
+  {
+    "family": "Kimi-K3-GGUF",
+    "region": "R07",
+    "source": "tests/compute_models/d5_kimi_remaining_fragments.h",
+    "anchor": "inline Fragment mla(",
+    "cpu_names": [
+      "CpuGraphMoeFragments.D5KimiAbsorbedMlaWithCache",
+      "CpuMoeFragments.D5KimiAbsorbedMlaWithCache"
+    ],
+    "cuda_named_equivalent": {
+      "direct": [
+        "CudaMoeFragments.D5KimiAbsorbedMlaWithCache"
+      ],
+      "graph": [
+        "CudaGraphMoeFragments.D5KimiAbsorbedMlaWithCache"
+      ]
+    },
+    "canonical_builder_sha256": "edc6aaeb8d05c1f848447849b45bf3f908b77a737823ce6dfbf737feedeb2218",
+    "binding": "Same canonical complete builder; CUDA runner replaces execution and declared activation-codec reference",
+    "classification": "NATIVE_QUALIFIED"
+  },
+  {
+    "family": "Kimi-K3-GGUF",
+    "region": "R10",
+    "source": "tests/compute_models/d5_moe_execution_fragments.h",
+    "anchor": "inline Fragment moe_chain(",
+    "cpu_names": [
+      "CpuGraphMoeFragments.D5EightGgufProfilesFullMoe",
+      "CpuMoeFragments.D5EightGgufProfilesFullMoe"
+    ],
+    "cuda_named_equivalent": {
+      "direct": [
+        "CudaMoeFragments.D5EightGgufProfilesFullMoe"
+      ],
+      "graph": [
+        "CudaGraphMoeFragments.D5EightGgufProfilesFullMoe"
+      ]
+    },
+    "canonical_builder_sha256": "2f7119b5e31507c1197309a86b87f85aaf419495602117ab000363118fe57db3",
+    "binding": "Same canonical complete builder; CUDA runner replaces execution and declared activation-codec reference",
+    "classification": "NATIVE_QUALIFIED"
+  },
+  {
+    "family": "Kimi-K3-GGUF",
+    "region": "R11",
+    "source": "tests/compute_models/d5_moe_execution_fragments.h",
+    "anchor": "inline Fragment moe_chain(",
+    "cpu_names": [
+      "CpuGraphMoeFragments.D5EightGgufProfilesFullMoe",
+      "CpuMoeFragments.D5EightGgufProfilesFullMoe"
+    ],
+    "cuda_named_equivalent": {
+      "direct": [
+        "CudaMoeFragments.D5EightGgufProfilesFullMoe"
+      ],
+      "graph": [
+        "CudaGraphMoeFragments.D5EightGgufProfilesFullMoe"
+      ]
+    },
+    "canonical_builder_sha256": "2f7119b5e31507c1197309a86b87f85aaf419495602117ab000363118fe57db3",
+    "binding": "Same canonical complete builder; CUDA runner replaces execution and declared activation-codec reference",
+    "classification": "NATIVE_QUALIFIED"
+  },
+  {
+    "family": "Kimi-K3-GGUF",
+    "region": "R12",
+    "source": "tests/compute_models/d5_kimi_remaining_fragments.h",
+    "anchor": "inline Fragment attention_residual(",
+    "cpu_names": [
+      "CpuGraphMoeFragments.D5KimiAttentionResidualBanking",
+      "CpuMoeFragments.D5KimiAttentionResidualBanking"
+    ],
+    "cuda_named_equivalent": {
+      "direct": [
+        "CudaMoeFragments.D5KimiAttentionResidualBanking"
+      ],
+      "graph": [
+        "CudaGraphMoeFragments.D5KimiAttentionResidualBanking"
+      ]
+    },
+    "canonical_builder_sha256": "edc6aaeb8d05c1f848447849b45bf3f908b77a737823ce6dfbf737feedeb2218",
+    "binding": "Same canonical complete builder; CUDA runner replaces execution and declared activation-codec reference",
+    "classification": "NATIVE_QUALIFIED"
+  },
+  {
+    "family": "GLM-5.3-GGUF",
+    "region": "R02",
+    "source": "tests/compute_models/d5_glm_remaining_fragments.h",
+    "anchor": "inline Fragment dense_ffn(",
+    "cpu_names": [
+      "CpuGraphMoeFragments.D5GlmGgufDenseFfn",
+      "CpuMoeFragments.D5GlmGgufDenseFfn"
+    ],
+    "cuda_named_equivalent": {
+      "direct": [
+        "CudaMoeFragments.D5GlmGgufDenseFfn"
+      ],
+      "graph": [
+        "CudaGraphMoeFragments.D5GlmGgufDenseFfn"
+      ]
+    },
+    "canonical_builder_sha256": "12dbf546cb1050470dd6db65fe4d1f0a70364781a22d9df466699e7b10cde742",
+    "binding": "Same canonical complete builder; CUDA runner replaces execution and declared activation-codec reference",
+    "classification": "NATIVE_QUALIFIED"
+  },
+  {
+    "family": "GLM-5.3-GGUF",
+    "region": "R07",
+    "source": "tests/compute_models/d5_glm_remaining_fragments.h",
+    "anchor": "inline Fragment mla(",
+    "cpu_names": [
+      "CpuGraphMoeFragments.D5GlmGgufAbsorbedMlaWithCache",
+      "CpuMoeFragments.D5GlmGgufAbsorbedMlaWithCache"
+    ],
+    "cuda_named_equivalent": {
+      "direct": [
+        "CudaMoeFragments.D5GlmGgufAbsorbedMlaWithCache"
+      ],
+      "graph": [
+        "CudaGraphMoeFragments.D5GlmGgufAbsorbedMlaWithCache"
+      ]
+    },
+    "canonical_builder_sha256": "12dbf546cb1050470dd6db65fe4d1f0a70364781a22d9df466699e7b10cde742",
+    "binding": "Same canonical complete builder; CUDA runner replaces execution and declared activation-codec reference",
+    "classification": "NATIVE_QUALIFIED"
+  },
+  {
+    "family": "GLM-5.3-GGUF",
+    "region": "R08",
+    "source": "tests/compute_models/d5_glm_remaining_fragments.h",
+    "anchor": "inline Fragment sparse_attention(",
+    "cpu_names": [
+      "CpuGraphMoeFragments.D5GlmGgufDsaSelectionConsumesMlaCache",
+      "CpuMoeFragments.D5GlmGgufDsaSelectionConsumesMlaCache"
+    ],
+    "cuda_named_equivalent": {
+      "direct": [
+        "CudaMoeFragments.D5GlmGgufDsaSelectionConsumesMlaCache"
+      ],
+      "graph": [
+        "CudaGraphMoeFragments.D5GlmGgufDsaSelectionConsumesMlaCache"
+      ]
+    },
+    "canonical_builder_sha256": "12dbf546cb1050470dd6db65fe4d1f0a70364781a22d9df466699e7b10cde742",
+    "binding": "Same canonical complete builder; CUDA runner replaces execution and declared activation-codec reference",
+    "classification": "NATIVE_QUALIFIED"
+  },
+  {
+    "family": "GLM-5.3-GGUF",
+    "region": "R09",
+    "source": "tests/compute_models/d5_glm_remaining_fragments.h",
+    "anchor": "inline Fragment sparse_attention(",
+    "cpu_names": [
+      "CpuGraphMoeFragments.D5GlmGgufMtpIndexCarryReset",
+      "CpuMoeFragments.D5GlmGgufMtpIndexCarryReset"
+    ],
+    "cuda_named_equivalent": {
+      "direct": [
+        "CudaMoeFragments.D5GlmGgufMtpIndexCarryReset"
+      ],
+      "graph": [
+        "CudaGraphMoeFragments.D5GlmGgufMtpIndexCarryReset"
+      ]
+    },
+    "canonical_builder_sha256": "12dbf546cb1050470dd6db65fe4d1f0a70364781a22d9df466699e7b10cde742",
+    "binding": "Same canonical complete builder; CUDA runner replaces execution and declared activation-codec reference",
+    "classification": "NATIVE_QUALIFIED"
+  },
+  {
+    "family": "GLM-5.3-GGUF",
+    "region": "R10",
+    "source": "tests/compute_models/d5_moe_execution_fragments.h",
+    "anchor": "inline Fragment moe_chain(",
+    "cpu_names": [
+      "CpuGraphMoeFragments.D5EightGgufProfilesFullMoe",
+      "CpuMoeFragments.D5EightGgufProfilesFullMoe"
+    ],
+    "cuda_named_equivalent": {
+      "direct": [
+        "CudaMoeFragments.D5EightGgufProfilesFullMoe"
+      ],
+      "graph": [
+        "CudaGraphMoeFragments.D5EightGgufProfilesFullMoe"
+      ]
+    },
+    "canonical_builder_sha256": "2f7119b5e31507c1197309a86b87f85aaf419495602117ab000363118fe57db3",
+    "binding": "Same canonical complete builder; CUDA runner replaces execution and declared activation-codec reference",
+    "classification": "NATIVE_QUALIFIED"
+  },
+  {
+    "family": "GLM-5.3-GGUF",
+    "region": "R11",
+    "source": "tests/compute_models/d5_moe_execution_fragments.h",
+    "anchor": "inline Fragment moe_chain(",
+    "cpu_names": [
+      "CpuGraphMoeFragments.D5EightGgufProfilesFullMoe",
+      "CpuMoeFragments.D5EightGgufProfilesFullMoe"
+    ],
+    "cuda_named_equivalent": {
+      "direct": [
+        "CudaMoeFragments.D5EightGgufProfilesFullMoe"
+      ],
+      "graph": [
+        "CudaGraphMoeFragments.D5EightGgufProfilesFullMoe"
+      ]
+    },
+    "canonical_builder_sha256": "2f7119b5e31507c1197309a86b87f85aaf419495602117ab000363118fe57db3",
+    "binding": "Same canonical complete builder; CUDA runner replaces execution and declared activation-codec reference",
+    "classification": "NATIVE_QUALIFIED"
+  },
+  {
+    "family": "GLM-5.3-GGUF",
+    "region": "R13",
+    "source": "tests/compute_models/d5_glm_remaining_fragments.h",
+    "anchor": "inline Fragment mtp_decoder(",
+    "cpu_names": [
+      "CpuGraphMoeFragments.D5GlmGgufNextNDecoderWithCarryAndFullHead",
+      "CpuMoeFragments.D5GlmGgufNextNDecoderWithCarryAndFullHead"
+    ],
+    "cuda_named_equivalent": {
+      "direct": [
+        "CudaMoeFragments.D5GlmGgufNextNDecoderWithCarryAndFullHead"
+      ],
+      "graph": [
+        "CudaGraphMoeFragments.D5GlmGgufNextNDecoderWithCarryAndFullHead"
+      ]
+    },
+    "canonical_builder_sha256": "12dbf546cb1050470dd6db65fe4d1f0a70364781a22d9df466699e7b10cde742",
+    "binding": "Same canonical complete builder; CUDA runner replaces execution and declared activation-codec reference",
+    "classification": "NATIVE_QUALIFIED"
+  },
+  {
+    "family": "GLM-5.3-Flash-GGUF",
+    "region": "R02",
+    "source": "tests/compute_models/d5_glm_remaining_fragments.h",
+    "anchor": "inline Fragment dense_ffn(",
+    "cpu_names": [
+      "CpuGraphMoeFragments.D5GlmGgufDenseFfn",
+      "CpuMoeFragments.D5GlmGgufDenseFfn"
+    ],
+    "cuda_named_equivalent": {
+      "direct": [
+        "CudaMoeFragments.D5GlmGgufDenseFfn"
+      ],
+      "graph": [
+        "CudaGraphMoeFragments.D5GlmGgufDenseFfn"
+      ]
+    },
+    "canonical_builder_sha256": "12dbf546cb1050470dd6db65fe4d1f0a70364781a22d9df466699e7b10cde742",
+    "binding": "Same canonical complete builder; CUDA runner replaces execution and declared activation-codec reference",
+    "classification": "NATIVE_QUALIFIED"
+  },
+  {
+    "family": "GLM-5.3-Flash-GGUF",
+    "region": "R06",
+    "source": "tests/compute_models/d5_kda_full_fragments.h",
+    "anchor": "inline Fragment complete(",
+    "cpu_names": [
+      "CpuGraphMoeFragments.D5SixProfilesFullKdaChainAndTwoStates",
+      "CpuMoeFragments.D5SixProfilesFullKdaChainAndTwoStates"
+    ],
+    "cuda_named_equivalent": {
+      "direct": [
+        "CudaMoeFragments.D5SixProfilesFullKdaChainAndTwoStates"
+      ],
+      "graph": [
+        "CudaGraphMoeFragments.D5SixProfilesFullKdaChainAndTwoStates"
+      ]
+    },
+    "canonical_builder_sha256": "fab310b39195f960106d61e9d5a5ea03a31c56b81d83fa32608592f31ffa2cb0",
+    "binding": "Same canonical complete builder; CUDA runner replaces execution and declared activation-codec reference",
+    "classification": "NATIVE_QUALIFIED"
+  },
+  {
+    "family": "GLM-5.3-Flash-GGUF",
+    "region": "R07",
+    "source": "tests/compute_models/d5_glm_remaining_fragments.h",
+    "anchor": "inline Fragment mla(",
+    "cpu_names": [
+      "CpuGraphMoeFragments.D5GlmGgufAbsorbedMlaWithCache",
+      "CpuMoeFragments.D5GlmGgufAbsorbedMlaWithCache"
+    ],
+    "cuda_named_equivalent": {
+      "direct": [
+        "CudaMoeFragments.D5GlmGgufAbsorbedMlaWithCache"
+      ],
+      "graph": [
+        "CudaGraphMoeFragments.D5GlmGgufAbsorbedMlaWithCache"
+      ]
+    },
+    "canonical_builder_sha256": "12dbf546cb1050470dd6db65fe4d1f0a70364781a22d9df466699e7b10cde742",
+    "binding": "Same canonical complete builder; CUDA runner replaces execution and declared activation-codec reference",
+    "classification": "NATIVE_QUALIFIED"
+  },
+  {
+    "family": "GLM-5.3-Flash-GGUF",
+    "region": "R08",
+    "source": "tests/compute_models/d5_glm_remaining_fragments.h",
+    "anchor": "inline Fragment sparse_attention(",
+    "cpu_names": [
+      "CpuGraphMoeFragments.D5GlmGgufDsaSelectionConsumesMlaCache",
+      "CpuMoeFragments.D5GlmGgufDsaSelectionConsumesMlaCache"
+    ],
+    "cuda_named_equivalent": {
+      "direct": [
+        "CudaMoeFragments.D5GlmGgufDsaSelectionConsumesMlaCache"
+      ],
+      "graph": [
+        "CudaGraphMoeFragments.D5GlmGgufDsaSelectionConsumesMlaCache"
+      ]
+    },
+    "canonical_builder_sha256": "12dbf546cb1050470dd6db65fe4d1f0a70364781a22d9df466699e7b10cde742",
+    "binding": "Same canonical complete builder; CUDA runner replaces execution and declared activation-codec reference",
+    "classification": "NATIVE_QUALIFIED"
+  },
+  {
+    "family": "GLM-5.3-Flash-GGUF",
+    "region": "R09",
+    "source": "tests/compute_models/d5_glm_remaining_fragments.h",
+    "anchor": "inline Fragment indexer(",
+    "cpu_names": [
+      "CpuGraphMoeFragments.D5GlmFlashPooledIndexerWithTail",
+      "CpuMoeFragments.D5GlmFlashPooledIndexerWithTail"
+    ],
+    "cuda_named_equivalent": {
+      "direct": [
+        "CudaMoeFragments.D5GlmFlashPooledIndexerWithTail"
+      ],
+      "graph": [
+        "CudaGraphMoeFragments.D5GlmFlashPooledIndexerWithTail"
+      ]
+    },
+    "canonical_builder_sha256": "12dbf546cb1050470dd6db65fe4d1f0a70364781a22d9df466699e7b10cde742",
+    "binding": "Same canonical complete builder; CUDA runner replaces execution and declared activation-codec reference",
+    "classification": "NATIVE_QUALIFIED"
+  },
+  {
+    "family": "GLM-5.3-Flash-GGUF",
+    "region": "R10",
+    "source": "tests/compute_models/d5_moe_execution_fragments.h",
+    "anchor": "inline Fragment moe_chain(",
+    "cpu_names": [
+      "CpuGraphMoeFragments.D5EightGgufProfilesFullMoe",
+      "CpuMoeFragments.D5EightGgufProfilesFullMoe"
+    ],
+    "cuda_named_equivalent": {
+      "direct": [
+        "CudaMoeFragments.D5EightGgufProfilesFullMoe"
+      ],
+      "graph": [
+        "CudaGraphMoeFragments.D5EightGgufProfilesFullMoe"
+      ]
+    },
+    "canonical_builder_sha256": "2f7119b5e31507c1197309a86b87f85aaf419495602117ab000363118fe57db3",
+    "binding": "Same canonical complete builder; CUDA runner replaces execution and declared activation-codec reference",
+    "classification": "NATIVE_QUALIFIED"
+  },
+  {
+    "family": "GLM-5.3-Flash-GGUF",
+    "region": "R11",
+    "source": "tests/compute_models/d5_moe_execution_fragments.h",
+    "anchor": "inline Fragment moe_chain(",
+    "cpu_names": [
+      "CpuGraphMoeFragments.D5EightGgufProfilesFullMoe",
+      "CpuMoeFragments.D5EightGgufProfilesFullMoe"
+    ],
+    "cuda_named_equivalent": {
+      "direct": [
+        "CudaMoeFragments.D5EightGgufProfilesFullMoe"
+      ],
+      "graph": [
+        "CudaGraphMoeFragments.D5EightGgufProfilesFullMoe"
+      ]
+    },
+    "canonical_builder_sha256": "2f7119b5e31507c1197309a86b87f85aaf419495602117ab000363118fe57db3",
+    "binding": "Same canonical complete builder; CUDA runner replaces execution and declared activation-codec reference",
+    "classification": "NATIVE_QUALIFIED"
+  },
+  {
+    "family": "GLM-5.3-Flash-GGUF",
+    "region": "R12",
+    "source": "tests/compute_models/d5_glm_remaining_fragments.h",
+    "anchor": "inline Fragment hyper_connection(",
+    "cpu_names": [
+      "CpuGraphMoeFragments.D5GlmFlashWeightedHyperConnection",
+      "CpuMoeFragments.D5GlmFlashWeightedHyperConnection"
+    ],
+    "cuda_named_equivalent": {
+      "direct": [
+        "CudaMoeFragments.D5GlmFlashWeightedHyperConnection"
+      ],
+      "graph": [
+        "CudaGraphMoeFragments.D5GlmFlashWeightedHyperConnection"
+      ]
+    },
+    "canonical_builder_sha256": "12dbf546cb1050470dd6db65fe4d1f0a70364781a22d9df466699e7b10cde742",
+    "binding": "Same canonical complete builder; CUDA runner replaces execution and declared activation-codec reference",
+    "classification": "NATIVE_QUALIFIED"
+  },
+  {
+    "family": "GLM-5.3-Flash-GGUF",
+    "region": "R13",
+    "source": "tests/compute_models/d5_glm_remaining_fragments.h",
+    "anchor": "inline Fragment mtp_decoder(",
+    "cpu_names": [
+      "CpuGraphMoeFragments.D5GlmGgufNextNDecoderWithCarryAndFullHead",
+      "CpuMoeFragments.D5GlmGgufNextNDecoderWithCarryAndFullHead"
+    ],
+    "cuda_named_equivalent": {
+      "direct": [
+        "CudaMoeFragments.D5GlmGgufNextNDecoderWithCarryAndFullHead"
+      ],
+      "graph": [
+        "CudaGraphMoeFragments.D5GlmGgufNextNDecoderWithCarryAndFullHead"
+      ]
+    },
+    "canonical_builder_sha256": "12dbf546cb1050470dd6db65fe4d1f0a70364781a22d9df466699e7b10cde742",
+    "binding": "Same canonical complete builder; CUDA runner replaces execution and declared activation-codec reference",
+    "classification": "NATIVE_QUALIFIED"
+  },
+  {
+    "family": "DeepSeek-V4-Pro-0813-GGUF",
+    "region": "R02",
+    "source": "tests/compute_models/cpu_c5_parameter_fragments.h",
+    "anchor": "inline d5_moe_execution_cases::Case new_deepseek_case(",
+    "cpu_names": [
+      "C5ExactNewGgufMain/CpuC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile102",
+      "C5ExactNewGgufMain/CpuC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile103",
+      "C5ExactNewGgufMain/CpuC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile89",
+      "C5ExactNewGgufMain/CpuC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile90",
+      "C5ExactNewGgufMain/CpuGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile102",
+      "C5ExactNewGgufMain/CpuGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile103",
+      "C5ExactNewGgufMain/CpuGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile89",
+      "C5ExactNewGgufMain/CpuGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile90"
+    ],
+    "cuda_named_equivalent": {
+      "direct": [
+        "C5ExactNewGgufMain/CudaDirectC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile102",
+        "C5ExactNewGgufMain/CudaDirectC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile103",
+        "C5ExactNewGgufMain/CudaDirectC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile89",
+        "C5ExactNewGgufMain/CudaDirectC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile90"
+      ],
+      "graph": [
+        "C5ExactNewGgufMain/CudaGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile102",
+        "C5ExactNewGgufMain/CudaGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile103",
+        "C5ExactNewGgufMain/CudaGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile89",
+        "C5ExactNewGgufMain/CudaGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile90"
+      ]
+    },
+    "canonical_builder_sha256": "928bcb1701490987c288ebc05f5e9a97ac5a6cd7850c09989c4c95dc32a39c96",
+    "binding": "Same canonical complete builder; CUDA runner replaces execution and declared activation-codec reference",
+    "classification": "NATIVE_QUALIFIED"
+  },
+  {
+    "family": "DeepSeek-V4-Pro-0813-GGUF",
+    "region": "R07",
+    "source": "tests/compute_models/cpu_c5_parameter_fragments.h",
+    "anchor": "inline d5_moe_execution_cases::Case new_deepseek_case(",
+    "cpu_names": [
+      "C5ExactNewGgufMain/CpuC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile102",
+      "C5ExactNewGgufMain/CpuC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile103",
+      "C5ExactNewGgufMain/CpuC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile89",
+      "C5ExactNewGgufMain/CpuC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile90",
+      "C5ExactNewGgufMain/CpuGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile102",
+      "C5ExactNewGgufMain/CpuGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile103",
+      "C5ExactNewGgufMain/CpuGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile89",
+      "C5ExactNewGgufMain/CpuGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile90"
+    ],
+    "cuda_named_equivalent": {
+      "direct": [
+        "C5ExactNewGgufMain/CudaDirectC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile102",
+        "C5ExactNewGgufMain/CudaDirectC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile103",
+        "C5ExactNewGgufMain/CudaDirectC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile89",
+        "C5ExactNewGgufMain/CudaDirectC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile90"
+      ],
+      "graph": [
+        "C5ExactNewGgufMain/CudaGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile102",
+        "C5ExactNewGgufMain/CudaGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile103",
+        "C5ExactNewGgufMain/CudaGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile89",
+        "C5ExactNewGgufMain/CudaGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile90"
+      ]
+    },
+    "canonical_builder_sha256": "928bcb1701490987c288ebc05f5e9a97ac5a6cd7850c09989c4c95dc32a39c96",
+    "binding": "Same canonical complete builder; CUDA runner replaces execution and declared activation-codec reference",
+    "classification": "NATIVE_QUALIFIED"
+  },
+  {
+    "family": "DeepSeek-V4-Pro-0813-GGUF",
+    "region": "R08",
+    "source": "tests/compute_models/cpu_c5_parameter_fragments.h",
+    "anchor": "inline d5_moe_execution_cases::Case new_deepseek_case(",
+    "cpu_names": [
+      "C5ExactNewGgufMain/CpuC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile102",
+      "C5ExactNewGgufMain/CpuC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile103",
+      "C5ExactNewGgufMain/CpuC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile89",
+      "C5ExactNewGgufMain/CpuC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile90",
+      "C5ExactNewGgufMain/CpuGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile102",
+      "C5ExactNewGgufMain/CpuGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile103",
+      "C5ExactNewGgufMain/CpuGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile89",
+      "C5ExactNewGgufMain/CpuGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile90"
+    ],
+    "cuda_named_equivalent": {
+      "direct": [
+        "C5ExactNewGgufMain/CudaDirectC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile102",
+        "C5ExactNewGgufMain/CudaDirectC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile103",
+        "C5ExactNewGgufMain/CudaDirectC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile89",
+        "C5ExactNewGgufMain/CudaDirectC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile90"
+      ],
+      "graph": [
+        "C5ExactNewGgufMain/CudaGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile102",
+        "C5ExactNewGgufMain/CudaGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile103",
+        "C5ExactNewGgufMain/CudaGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile89",
+        "C5ExactNewGgufMain/CudaGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile90"
+      ]
+    },
+    "canonical_builder_sha256": "928bcb1701490987c288ebc05f5e9a97ac5a6cd7850c09989c4c95dc32a39c96",
+    "binding": "Same canonical complete builder; CUDA runner replaces execution and declared activation-codec reference",
+    "classification": "NATIVE_QUALIFIED"
+  },
+  {
+    "family": "DeepSeek-V4-Pro-0813-GGUF",
+    "region": "R09",
+    "source": "tests/compute_models/cpu_c5_parameter_fragments.h",
+    "anchor": "inline d5_moe_execution_cases::Case new_deepseek_case(",
+    "cpu_names": [
+      "C5ExactNewGgufMain/CpuC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile102",
+      "C5ExactNewGgufMain/CpuC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile103",
+      "C5ExactNewGgufMain/CpuC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile89",
+      "C5ExactNewGgufMain/CpuC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile90",
+      "C5ExactNewGgufMain/CpuGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile102",
+      "C5ExactNewGgufMain/CpuGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile103",
+      "C5ExactNewGgufMain/CpuGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile89",
+      "C5ExactNewGgufMain/CpuGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile90"
+    ],
+    "cuda_named_equivalent": {
+      "direct": [
+        "C5ExactNewGgufMain/CudaDirectC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile102",
+        "C5ExactNewGgufMain/CudaDirectC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile103",
+        "C5ExactNewGgufMain/CudaDirectC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile89",
+        "C5ExactNewGgufMain/CudaDirectC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile90"
+      ],
+      "graph": [
+        "C5ExactNewGgufMain/CudaGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile102",
+        "C5ExactNewGgufMain/CudaGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile103",
+        "C5ExactNewGgufMain/CudaGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile89",
+        "C5ExactNewGgufMain/CudaGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile90"
+      ]
+    },
+    "canonical_builder_sha256": "928bcb1701490987c288ebc05f5e9a97ac5a6cd7850c09989c4c95dc32a39c96",
+    "binding": "Same canonical complete builder; CUDA runner replaces execution and declared activation-codec reference",
+    "classification": "NATIVE_QUALIFIED"
+  },
+  {
+    "family": "DeepSeek-V4-Pro-0813-GGUF",
+    "region": "R10",
+    "source": "tests/compute_models/cpu_c5_parameter_fragments.h",
+    "anchor": "inline d5_moe_execution_cases::Case new_deepseek_case(",
+    "cpu_names": [
+      "C5ExactNewGgufMain/CpuC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile102",
+      "C5ExactNewGgufMain/CpuC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile103",
+      "C5ExactNewGgufMain/CpuC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile89",
+      "C5ExactNewGgufMain/CpuC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile90",
+      "C5ExactNewGgufMain/CpuGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile102",
+      "C5ExactNewGgufMain/CpuGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile103",
+      "C5ExactNewGgufMain/CpuGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile89",
+      "C5ExactNewGgufMain/CpuGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile90"
+    ],
+    "cuda_named_equivalent": {
+      "direct": [
+        "C5ExactNewGgufMain/CudaDirectC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile102",
+        "C5ExactNewGgufMain/CudaDirectC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile103",
+        "C5ExactNewGgufMain/CudaDirectC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile89",
+        "C5ExactNewGgufMain/CudaDirectC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile90"
+      ],
+      "graph": [
+        "C5ExactNewGgufMain/CudaGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile102",
+        "C5ExactNewGgufMain/CudaGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile103",
+        "C5ExactNewGgufMain/CudaGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile89",
+        "C5ExactNewGgufMain/CudaGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile90"
+      ]
+    },
+    "canonical_builder_sha256": "928bcb1701490987c288ebc05f5e9a97ac5a6cd7850c09989c4c95dc32a39c96",
+    "binding": "Same canonical complete builder; CUDA runner replaces execution and declared activation-codec reference",
+    "classification": "NATIVE_QUALIFIED"
+  },
+  {
+    "family": "DeepSeek-V4-Pro-0813-GGUF",
+    "region": "R11",
+    "source": "tests/compute_models/cpu_c5_parameter_fragments.h",
+    "anchor": "inline d5_moe_execution_cases::Case new_deepseek_case(",
+    "cpu_names": [
+      "C5ExactNewGgufMain/CpuC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile102",
+      "C5ExactNewGgufMain/CpuC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile103",
+      "C5ExactNewGgufMain/CpuC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile89",
+      "C5ExactNewGgufMain/CpuC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile90",
+      "C5ExactNewGgufMain/CpuGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile102",
+      "C5ExactNewGgufMain/CpuGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile103",
+      "C5ExactNewGgufMain/CpuGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile89",
+      "C5ExactNewGgufMain/CpuGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile90"
+    ],
+    "cuda_named_equivalent": {
+      "direct": [
+        "C5ExactNewGgufMain/CudaDirectC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile102",
+        "C5ExactNewGgufMain/CudaDirectC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile103",
+        "C5ExactNewGgufMain/CudaDirectC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile89",
+        "C5ExactNewGgufMain/CudaDirectC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile90"
+      ],
+      "graph": [
+        "C5ExactNewGgufMain/CudaGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile102",
+        "C5ExactNewGgufMain/CudaGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile103",
+        "C5ExactNewGgufMain/CudaGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile89",
+        "C5ExactNewGgufMain/CudaGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile90"
+      ]
+    },
+    "canonical_builder_sha256": "928bcb1701490987c288ebc05f5e9a97ac5a6cd7850c09989c4c95dc32a39c96",
+    "binding": "Same canonical complete builder; CUDA runner replaces execution and declared activation-codec reference",
+    "classification": "NATIVE_QUALIFIED"
+  },
+  {
+    "family": "DeepSeek-V4-Pro-0813-GGUF",
+    "region": "R12",
+    "source": "tests/compute_models/cpu_c5_parameter_fragments.h",
+    "anchor": "inline d5_moe_execution_cases::Case new_deepseek_case(",
+    "cpu_names": [
+      "C5ExactNewGgufMain/CpuC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile102",
+      "C5ExactNewGgufMain/CpuC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile103",
+      "C5ExactNewGgufMain/CpuC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile89",
+      "C5ExactNewGgufMain/CpuC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile90",
+      "C5ExactNewGgufMain/CpuGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile102",
+      "C5ExactNewGgufMain/CpuGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile103",
+      "C5ExactNewGgufMain/CpuGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile89",
+      "C5ExactNewGgufMain/CpuGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile90"
+    ],
+    "cuda_named_equivalent": {
+      "direct": [
+        "C5ExactNewGgufMain/CudaDirectC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile102",
+        "C5ExactNewGgufMain/CudaDirectC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile103",
+        "C5ExactNewGgufMain/CudaDirectC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile89",
+        "C5ExactNewGgufMain/CudaDirectC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile90"
+      ],
+      "graph": [
+        "C5ExactNewGgufMain/CudaGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile102",
+        "C5ExactNewGgufMain/CudaGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile103",
+        "C5ExactNewGgufMain/CudaGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile89",
+        "C5ExactNewGgufMain/CudaGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile90"
+      ]
+    },
+    "canonical_builder_sha256": "928bcb1701490987c288ebc05f5e9a97ac5a6cd7850c09989c4c95dc32a39c96",
+    "binding": "Same canonical complete builder; CUDA runner replaces execution and declared activation-codec reference",
+    "classification": "NATIVE_QUALIFIED"
+  },
+  {
+    "family": "DeepSeek-V4-Flash-0731-GGUF",
+    "region": "R02",
+    "source": "tests/compute_models/cpu_c5_parameter_fragments.h",
+    "anchor": "inline d5_moe_execution_cases::Case new_deepseek_case(",
+    "cpu_names": [
+      "C5ExactNewGgufMain/CpuC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile102",
+      "C5ExactNewGgufMain/CpuC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile103",
+      "C5ExactNewGgufMain/CpuC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile89",
+      "C5ExactNewGgufMain/CpuC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile90",
+      "C5ExactNewGgufMain/CpuGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile102",
+      "C5ExactNewGgufMain/CpuGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile103",
+      "C5ExactNewGgufMain/CpuGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile89",
+      "C5ExactNewGgufMain/CpuGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile90"
+    ],
+    "cuda_named_equivalent": {
+      "direct": [
+        "C5ExactNewGgufMain/CudaDirectC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile102",
+        "C5ExactNewGgufMain/CudaDirectC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile103",
+        "C5ExactNewGgufMain/CudaDirectC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile89",
+        "C5ExactNewGgufMain/CudaDirectC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile90"
+      ],
+      "graph": [
+        "C5ExactNewGgufMain/CudaGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile102",
+        "C5ExactNewGgufMain/CudaGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile103",
+        "C5ExactNewGgufMain/CudaGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile89",
+        "C5ExactNewGgufMain/CudaGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile90"
+      ]
+    },
+    "canonical_builder_sha256": "928bcb1701490987c288ebc05f5e9a97ac5a6cd7850c09989c4c95dc32a39c96",
+    "binding": "Same canonical complete builder; CUDA runner replaces execution and declared activation-codec reference",
+    "classification": "NATIVE_QUALIFIED"
+  },
+  {
+    "family": "DeepSeek-V4-Flash-0731-GGUF",
+    "region": "R07",
+    "source": "tests/compute_models/cpu_c5_parameter_fragments.h",
+    "anchor": "inline d5_moe_execution_cases::Case new_deepseek_case(",
+    "cpu_names": [
+      "C5ExactNewGgufMain/CpuC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile102",
+      "C5ExactNewGgufMain/CpuC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile103",
+      "C5ExactNewGgufMain/CpuC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile89",
+      "C5ExactNewGgufMain/CpuC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile90",
+      "C5ExactNewGgufMain/CpuGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile102",
+      "C5ExactNewGgufMain/CpuGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile103",
+      "C5ExactNewGgufMain/CpuGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile89",
+      "C5ExactNewGgufMain/CpuGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile90"
+    ],
+    "cuda_named_equivalent": {
+      "direct": [
+        "C5ExactNewGgufMain/CudaDirectC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile102",
+        "C5ExactNewGgufMain/CudaDirectC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile103",
+        "C5ExactNewGgufMain/CudaDirectC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile89",
+        "C5ExactNewGgufMain/CudaDirectC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile90"
+      ],
+      "graph": [
+        "C5ExactNewGgufMain/CudaGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile102",
+        "C5ExactNewGgufMain/CudaGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile103",
+        "C5ExactNewGgufMain/CudaGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile89",
+        "C5ExactNewGgufMain/CudaGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile90"
+      ]
+    },
+    "canonical_builder_sha256": "928bcb1701490987c288ebc05f5e9a97ac5a6cd7850c09989c4c95dc32a39c96",
+    "binding": "Same canonical complete builder; CUDA runner replaces execution and declared activation-codec reference",
+    "classification": "NATIVE_QUALIFIED"
+  },
+  {
+    "family": "DeepSeek-V4-Flash-0731-GGUF",
+    "region": "R08",
+    "source": "tests/compute_models/cpu_c5_parameter_fragments.h",
+    "anchor": "inline d5_moe_execution_cases::Case new_deepseek_case(",
+    "cpu_names": [
+      "C5ExactNewGgufMain/CpuC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile102",
+      "C5ExactNewGgufMain/CpuC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile103",
+      "C5ExactNewGgufMain/CpuC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile89",
+      "C5ExactNewGgufMain/CpuC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile90",
+      "C5ExactNewGgufMain/CpuGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile102",
+      "C5ExactNewGgufMain/CpuGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile103",
+      "C5ExactNewGgufMain/CpuGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile89",
+      "C5ExactNewGgufMain/CpuGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile90"
+    ],
+    "cuda_named_equivalent": {
+      "direct": [
+        "C5ExactNewGgufMain/CudaDirectC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile102",
+        "C5ExactNewGgufMain/CudaDirectC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile103",
+        "C5ExactNewGgufMain/CudaDirectC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile89",
+        "C5ExactNewGgufMain/CudaDirectC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile90"
+      ],
+      "graph": [
+        "C5ExactNewGgufMain/CudaGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile102",
+        "C5ExactNewGgufMain/CudaGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile103",
+        "C5ExactNewGgufMain/CudaGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile89",
+        "C5ExactNewGgufMain/CudaGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile90"
+      ]
+    },
+    "canonical_builder_sha256": "928bcb1701490987c288ebc05f5e9a97ac5a6cd7850c09989c4c95dc32a39c96",
+    "binding": "Same canonical complete builder; CUDA runner replaces execution and declared activation-codec reference",
+    "classification": "NATIVE_QUALIFIED"
+  },
+  {
+    "family": "DeepSeek-V4-Flash-0731-GGUF",
+    "region": "R09",
+    "source": "tests/compute_models/cpu_c5_parameter_fragments.h",
+    "anchor": "inline d5_moe_execution_cases::Case new_deepseek_case(",
+    "cpu_names": [
+      "C5ExactNewGgufMain/CpuC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile102",
+      "C5ExactNewGgufMain/CpuC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile103",
+      "C5ExactNewGgufMain/CpuC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile89",
+      "C5ExactNewGgufMain/CpuC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile90",
+      "C5ExactNewGgufMain/CpuGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile102",
+      "C5ExactNewGgufMain/CpuGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile103",
+      "C5ExactNewGgufMain/CpuGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile89",
+      "C5ExactNewGgufMain/CpuGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile90"
+    ],
+    "cuda_named_equivalent": {
+      "direct": [
+        "C5ExactNewGgufMain/CudaDirectC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile102",
+        "C5ExactNewGgufMain/CudaDirectC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile103",
+        "C5ExactNewGgufMain/CudaDirectC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile89",
+        "C5ExactNewGgufMain/CudaDirectC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile90"
+      ],
+      "graph": [
+        "C5ExactNewGgufMain/CudaGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile102",
+        "C5ExactNewGgufMain/CudaGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile103",
+        "C5ExactNewGgufMain/CudaGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile89",
+        "C5ExactNewGgufMain/CudaGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile90"
+      ]
+    },
+    "canonical_builder_sha256": "928bcb1701490987c288ebc05f5e9a97ac5a6cd7850c09989c4c95dc32a39c96",
+    "binding": "Same canonical complete builder; CUDA runner replaces execution and declared activation-codec reference",
+    "classification": "NATIVE_QUALIFIED"
+  },
+  {
+    "family": "DeepSeek-V4-Flash-0731-GGUF",
+    "region": "R10",
+    "source": "tests/compute_models/cpu_c5_parameter_fragments.h",
+    "anchor": "inline d5_moe_execution_cases::Case new_deepseek_case(",
+    "cpu_names": [
+      "C5ExactNewGgufMain/CpuC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile102",
+      "C5ExactNewGgufMain/CpuC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile103",
+      "C5ExactNewGgufMain/CpuC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile89",
+      "C5ExactNewGgufMain/CpuC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile90",
+      "C5ExactNewGgufMain/CpuGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile102",
+      "C5ExactNewGgufMain/CpuGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile103",
+      "C5ExactNewGgufMain/CpuGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile89",
+      "C5ExactNewGgufMain/CpuGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile90"
+    ],
+    "cuda_named_equivalent": {
+      "direct": [
+        "C5ExactNewGgufMain/CudaDirectC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile102",
+        "C5ExactNewGgufMain/CudaDirectC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile103",
+        "C5ExactNewGgufMain/CudaDirectC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile89",
+        "C5ExactNewGgufMain/CudaDirectC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile90"
+      ],
+      "graph": [
+        "C5ExactNewGgufMain/CudaGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile102",
+        "C5ExactNewGgufMain/CudaGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile103",
+        "C5ExactNewGgufMain/CudaGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile89",
+        "C5ExactNewGgufMain/CudaGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile90"
+      ]
+    },
+    "canonical_builder_sha256": "928bcb1701490987c288ebc05f5e9a97ac5a6cd7850c09989c4c95dc32a39c96",
+    "binding": "Same canonical complete builder; CUDA runner replaces execution and declared activation-codec reference",
+    "classification": "NATIVE_QUALIFIED"
+  },
+  {
+    "family": "DeepSeek-V4-Flash-0731-GGUF",
+    "region": "R11",
+    "source": "tests/compute_models/cpu_c5_parameter_fragments.h",
+    "anchor": "inline d5_moe_execution_cases::Case new_deepseek_case(",
+    "cpu_names": [
+      "C5ExactNewGgufMain/CpuC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile102",
+      "C5ExactNewGgufMain/CpuC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile103",
+      "C5ExactNewGgufMain/CpuC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile89",
+      "C5ExactNewGgufMain/CpuC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile90",
+      "C5ExactNewGgufMain/CpuGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile102",
+      "C5ExactNewGgufMain/CpuGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile103",
+      "C5ExactNewGgufMain/CpuGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile89",
+      "C5ExactNewGgufMain/CpuGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile90"
+    ],
+    "cuda_named_equivalent": {
+      "direct": [
+        "C5ExactNewGgufMain/CudaDirectC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile102",
+        "C5ExactNewGgufMain/CudaDirectC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile103",
+        "C5ExactNewGgufMain/CudaDirectC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile89",
+        "C5ExactNewGgufMain/CudaDirectC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile90"
+      ],
+      "graph": [
+        "C5ExactNewGgufMain/CudaGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile102",
+        "C5ExactNewGgufMain/CudaGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile103",
+        "C5ExactNewGgufMain/CudaGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile89",
+        "C5ExactNewGgufMain/CudaGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile90"
+      ]
+    },
+    "canonical_builder_sha256": "928bcb1701490987c288ebc05f5e9a97ac5a6cd7850c09989c4c95dc32a39c96",
+    "binding": "Same canonical complete builder; CUDA runner replaces execution and declared activation-codec reference",
+    "classification": "NATIVE_QUALIFIED"
+  },
+  {
+    "family": "DeepSeek-V4-Flash-0731-GGUF",
+    "region": "R12",
+    "source": "tests/compute_models/cpu_c5_parameter_fragments.h",
+    "anchor": "inline d5_moe_execution_cases::Case new_deepseek_case(",
+    "cpu_names": [
+      "C5ExactNewGgufMain/CpuC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile102",
+      "C5ExactNewGgufMain/CpuC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile103",
+      "C5ExactNewGgufMain/CpuC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile89",
+      "C5ExactNewGgufMain/CpuC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile90",
+      "C5ExactNewGgufMain/CpuGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile102",
+      "C5ExactNewGgufMain/CpuGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile103",
+      "C5ExactNewGgufMain/CpuGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile89",
+      "C5ExactNewGgufMain/CpuGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile90"
+    ],
+    "cuda_named_equivalent": {
+      "direct": [
+        "C5ExactNewGgufMain/CudaDirectC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile102",
+        "C5ExactNewGgufMain/CudaDirectC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile103",
+        "C5ExactNewGgufMain/CudaDirectC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile89",
+        "C5ExactNewGgufMain/CudaDirectC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile90"
+      ],
+      "graph": [
+        "C5ExactNewGgufMain/CudaGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile102",
+        "C5ExactNewGgufMain/CudaGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile103",
+        "C5ExactNewGgufMain/CudaGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile89",
+        "C5ExactNewGgufMain/CudaGraphC5NewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile90"
+      ]
+    },
+    "canonical_builder_sha256": "928bcb1701490987c288ebc05f5e9a97ac5a6cd7850c09989c4c95dc32a39c96",
+    "binding": "Same canonical complete builder; CUDA runner replaces execution and declared activation-codec reference",
+    "classification": "NATIVE_QUALIFIED"
+  }
+]
