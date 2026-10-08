@@ -1,6 +1,6 @@
 # CUDA 交付入口：WSL 原样参数
 
-<!-- MODULE REVIEW: SCOPED -->
+<!-- MODULE REVIEW: AUDITED -->
 
 - baseline：`b3691265`；本批工具，产品/registry不变。
 - trigger：Linux configure首次FAIL；`--`经默认shell重解析，将
@@ -8,3 +8,7 @@
 - 有限FIX：WSL launch改`--exec`，不经shell重解析；补真实WSL含分号参数反例。
 - 预算/验收：一次修复、轻量行为测试与同ID一次configure纠正；通过项复用、失败预算不重置。
   不重跑Windows、不改数学/P1/公共工具。配置未通过前不继续build。
+
+AUDITED：原日志尾部明确出现`graph: command not found`与`simd: command not found`，
+源工程只得到compute选择而consumer仍要求graph/simd。固定唯一launch修复为`--exec`；
+Windows配方不变，Linuxfixture复制步骤没有launch argv，因此其PASS可复用。
