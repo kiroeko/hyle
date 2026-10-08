@@ -1,0 +1,9 @@
+{
+  "changed_factors": [
+    "compute_route_cuda"
+  ],
+  "same_product_roots": true,
+  "same_all_factor_transitive_closures": true,
+  "same_public_headers": true,
+  "scope": "Only redundant direct private platform/thread edges at compute_route_cuda. Actual product owners audited; raw broad selector retained, no automatic full-suite PASS claim."
+}

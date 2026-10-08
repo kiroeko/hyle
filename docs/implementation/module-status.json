@@ -270,9 +270,10 @@
     },
     {
       "module": "compute",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/compute-bound-view-alignment-cuda-best-of.md",
-      "summary": "AUDITED：已知view offset冷过滤FIX-A、CUDA配方/原alignment数据FIX-B冻结；公开ABI/热搜索/数学不改，原C4失败保留且同ID最后一次纠正。"
+      "summary": "CANDIDATE：23精确CUDA叶优选/169成熟默认/14单承载与79重复程序清退；两OS差分/三交付、Core63及严格profile资源回退通过，原性能聚合及static批次FAIL保留；最后文档/证据收口，无新P1。",
+      "candidate": "cd53173946564155121819f1ccae7f6726b908ed"
     },
     {
       "module": "graph",
@@ -484,21 +485,24 @@
     },
     {
       "module": "compute_provider_cuda",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/cuda-best-of-completion.md",
-      "summary": "CUDA best-of补齐AUDITED：C1一次诊断停止，206有限请求/原carrier/完整成本与R1冷规则R2冗余数学去留R3差分验收冻结；C2批量真实payload/输出/资源资格仍待，不追加n/优化，接近直接成熟默认。"
+      "summary": "CANDIDATE：23精确CUDA叶优选/169成熟默认/14单承载与79重复程序清退；两OS差分/三交付、Core63及严格profile资源回退通过，原性能聚合及static批次FAIL保留；最后文档/证据收口，无新P1。",
+      "candidate": "cd53173946564155121819f1ccae7f6726b908ed"
     },
     {
       "module": "compute_route_cuda",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/cuda-best-of-completion.md",
-      "summary": "CUDA best-of补齐AUDITED：C1一次诊断停止，206有限请求/原carrier/完整成本与R1冷规则R2冗余数学去留R3差分验收冻结；C2批量真实payload/输出/资源资格仍待，不追加n/优化，接近直接成熟默认。"
+      "summary": "CANDIDATE：23精确CUDA叶优选/169成熟默认/14单承载与79重复程序清退；两OS差分/三交付、Core63及严格profile资源回退通过，原性能聚合及static批次FAIL保留；最后文档/证据收口，无新P1。",
+      "candidate": "cd53173946564155121819f1ccae7f6726b908ed"
     },
     {
       "module": "graph_route_cuda",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/cuda-best-of-completion.md",
-      "summary": "CUDA best-of补齐AUDITED：C1一次诊断停止，206有限请求/原carrier/完整成本与R1冷规则R2冗余数学去留R3差分验收冻结；C2批量真实payload/输出/资源资格仍待，不追加n/优化，接近直接成熟默认。"
+      "summary": "CANDIDATE：23精确CUDA叶优选/169成熟默认/14单承载与79重复程序清退；两OS差分/三交付、Core63及严格profile资源回退通过，原性能聚合及static批次FAIL保留；最后文档/证据收口，无新P1。",
+      "candidate": "cd53173946564155121819f1ccae7f6726b908ed"
     },
     {
       "module": "compute_route_apple",

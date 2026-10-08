@@ -1,0 +1,22 @@
+[
+  {
+    "path": "C:\\hv\\cuda-c3-static-initial-unqualified",
+    "bytes": 1043377641.0,
+    "removed": true
+  },
+  {
+    "path": "C:\\hv\\cuda-c3-static-consumer",
+    "bytes": 5233355267.0,
+    "removed": true
+  },
+  {
+    "path": "C:\\hv\\cuda-c3-shared-consumer",
+    "bytes": 5206435663.0,
+    "removed": true
+  },
+  {
+    "path": "C:\\hv\\cuda-c3-core-checks",
+    "bytes": 24970924.0,
+    "removed": true
+  }
+]

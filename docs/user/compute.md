@@ -5,8 +5,8 @@
 > 标准 CPU 构建使用 `HYLE_COMPUTE_ONEDNN=AUTO`，在支持的 x86-64 目标接入已支持的 oneDNN 能力。
 > CUDA factor 提供 device/context/queue、memory resource、stream interop、byte transfer、Completion 与
 > command capture 基础运行时。普通路线已接入 ggml CUDA、cuBLASLt、SGLang、CCCL 与有限 HYLE CUDA Provider，
-> 普通 CUDA Direct/Graph、固定模型原计算与Win/WSL三交付已接通；当前新版本采用具名成熟工程默认，
-> U4同artifact A/A未取得测量资格，不声明新增SM89性能WIN。当前收口范围见[CUDA计划](../implementation/tasks/compute/cuda-final-closure-plan.md)。
+> 普通 CUDA Direct/Graph、固定模型原计算与Win/WSL三交付已接通；当前版本按算子、真实端口和资源应用成熟默认，
+> 并在精确环境中应用23个已测叶操作优选。资格及限制见[CUDA优选任务](../implementation/tasks/compute/cuda-best-of-completion.md)。
 > Apple MLX/Metal 的原生 Direct/Graph、三交付和 M4 限定性能验收已完成；
 > Vulkan/SPIR-V 的 R6 也已完成真实计算、三交付与已测设备/版本域的有限性能验收。
 > HIP/ROCm 当前无限期不纳入产品，也没有空实现或构建开关。

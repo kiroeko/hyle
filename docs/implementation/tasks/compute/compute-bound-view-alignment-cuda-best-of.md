@@ -1,6 +1,6 @@
 # 已知 TensorView 对齐的冷选择修复
 
-<!-- MODULE REVIEW: AUDITED -->
+<!-- MODULE REVIEW: CANDIDATE -->
 
 owner `compute`，baseline `c8dd92ac`，父任务[CUDA best-of](cuda-best-of-completion.md)。
 这是新的实际反例，重新定界旧CLOSED；原CPU规则/数学和宏验收不重开。
@@ -58,3 +58,11 @@ SDK或参数，已PASS的consumer configure-2按此具体配置等价证明复�
 decline；InvalidArgument/Internal/OOM等仍传播，不改数学/ABI/执行。Core仍处于AUDITED，
 先独立提交此审计后修源码。随后按新缺陷的独立窄正确性口径复核managed/偏移/非法资源，
 不伪重命名原29项预算；保留原28项数学证据及原FAIL。其余source/三交付仍待，不能CLOSED。
+
+## 候选终审
+
+candidate `cd53173946564155121819f1ccae7f6726b908ed`。FIX-C原普通默认窄检查PASS只保留
+其实际域；最后profile资格断言下的managed双输入/完整输出/Completion、offset回退与
+descriptor违规绑定拒绝两项PASS。Windows/WSL Core原单元各63 PASS；父轮source及三SDK
+交付差分PASS。公开API/ABI、shader数学及热submit表不变，只冷候选标准decline、已知offset
+与已有alignment数据。原static29 FAIL没有改写/第三次；后续只收口文档/证据。

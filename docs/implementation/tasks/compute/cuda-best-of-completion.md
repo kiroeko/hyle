@@ -1,6 +1,6 @@
 # CUDA 性能优选补齐与对应清退
 
-<!-- MODULE REVIEW: AUDITED -->
+<!-- MODULE REVIEW: CANDIDATE -->
 
 baseline `3e9e71d0ab6a915d3682314e9102864638d1005e`，Windows工作树干净。
 2026-10-08用户要求CUDA补至CPU同级，并明确“差不多就选主流，不无限性能比较”。
@@ -155,3 +155,27 @@ Windows source首次数学/资源25、普通规则5、受影响Graph4与完整re
 descriptor违规绑定）PASS，源码与配方断言证实测量候选确实激活。原29项没有第三次。
 Windows static普通Direct/Graph独立消费者PASS。其余Windows shared与WSL source/static/shared
 正按38步差分批次串行运行；Core原单元门、证据归档、文档/终审/垃圾清理仍待，不签CLOSED。
+
+## C4 验收与候选冻结
+
+固定产品/测试候选 `cd53173946564155121819f1ccae7f6726b908ed`，之后只文档/证据维护。
+Win shared、WSL static/shared各29数学/资源/默认检查及普通Direct/Graph独立消费者PASS；
+WSL source25/6/7 PASS。Core原63单元在Win/WSL各PASS，FIX-C严格profile两项PASS，
+原static29 FAIL原样保留且没有第三次，23规则及28未变域证据按冷热源码/合同复用。
+当前[终审证据](../../../../evidence/correctness/cuda-best-of-c3/README.md)绑定原失败、语义
+组件证明与完整归档；两OS/source/static/shared实际交付成立，不冒称原FAIL变PASS。
+
+| 门 | 当前实际裁决 |
+|---|---|
+| C++/正确性 | Core两OS各63，原数学与23变输入完整输出、active规则、negative/FIX-C PASS |
+| API/自然接口 | 普通Direct/Graph不传provider排序/timing；规则按算子/端口/资源/shape冷匹配；融合region保持 |
+| 三交付 | Win/WSL source/static/shared、SDK relocation/loader/邻exe DLL及真实两入口 PASS |
+| 依赖/构建 | 中央只增加两个已有闭包内private直接边；全部产品根/公共头/传递闭包相同，真实producer/SDK两OS PASS |
+| 性能 | C2 qualification PASS；25 WIN/2 LOSE/20未裁决聚合FAIL保留。只导入23完整赢家；169默认/14单承载，不追加采样 |
+| 文档/易用性 | 当前限制与入口文档更新；docs/closure待本候选冻结后最后检查，无新构建/P1 |
+| 红队/生命周期 | managed/offset/descriptor换非法view拒绝、两slot/变输入、零热分配、关闭/失败及原特殊值资源域检查 PASS |
+
+统一Compute+Graph非测试实现 **61,100行/258文件**。已清理Win约10.72GiB、WSL约0.14GiB
+当前owner临时消费者/首次失败SDK，保留source、最新SDK、模型、缓存和P1验证输入。原公共
+Graph/Vulkan BLOCKED不变，其它路线/CPU旧状态不重开；本goal只关闭本轮CUDA规则/去留。
+完整模型数学104GGUF/559合同等复用原U23/U5明确不变域，不因文档收口重新全跑。

@@ -1,0 +1,460 @@
+{
+  "product_candidate": "acdc6eda4b68ad40a120472b9bc4ea4996395817",
+  "final_test_candidate": "cd531739",
+  "archive_sha256": "e27b7593779cb29b5514a8d6a8c577fd93de8e01c6d840da0017567eeaf8e87a",
+  "xml": [
+    {
+      "path": ".scratch\\validation\\cuda-best-of\\logs\\c3-win-families.xml",
+      "tests": 25,
+      "failed": 0,
+      "skipped": 0,
+      "properties": {}
+    },
+    {
+      "path": ".scratch\\validation\\cuda-best-of\\logs\\c3-win-graph.xml",
+      "tests": 4,
+      "failed": 0,
+      "skipped": 0,
+      "properties": {}
+    },
+    {
+      "path": ".scratch\\validation\\cuda-best-of\\logs\\c3-win-rules.xml",
+      "tests": 5,
+      "failed": 0,
+      "skipped": 0,
+      "properties": {
+        "measured_rule_environment": "0"
+      }
+    },
+    {
+      "path": ".scratch\\validation\\cuda-best-of\\logs\\c4-linux-source-compute_provider_cuda.xml",
+      "tests": 25,
+      "failed": 0,
+      "skipped": 0,
+      "properties": {}
+    },
+    {
+      "path": ".scratch\\validation\\cuda-best-of\\logs\\c4-linux-source-compute_route_cuda.xml",
+      "tests": 6,
+      "failed": 0,
+      "skipped": 0,
+      "properties": {
+        "measured_rule_environment": "0"
+      }
+    },
+    {
+      "path": ".scratch\\validation\\cuda-best-of\\logs\\c4-linux-source-graph_route_cuda.xml",
+      "tests": 7,
+      "failed": 0,
+      "skipped": 0,
+      "properties": {}
+    },
+    {
+      "path": ".scratch\\validation\\cuda-best-of\\logs\\c4-win-regions.xml",
+      "tests": 3,
+      "failed": 0,
+      "skipped": 0,
+      "properties": {}
+    },
+    {
+      "path": ".scratch\\validation\\cuda-best-of\\logs\\core-linux-checks.xml",
+      "tests": 63,
+      "failed": 0,
+      "skipped": 0,
+      "properties": {}
+    },
+    {
+      "path": ".scratch\\validation\\cuda-best-of\\logs\\core-win-checks.xml",
+      "tests": 63,
+      "failed": 0,
+      "skipped": 0,
+      "properties": {}
+    },
+    {
+      "path": ".scratch\\validation\\cuda-best-of\\logs\\fixc-managed-and-offset.xml",
+      "tests": 2,
+      "failed": 0,
+      "skipped": 0,
+      "properties": {}
+    },
+    {
+      "path": ".scratch\\validation\\cuda-best-of\\logs\\fixc-profile-final.xml",
+      "tests": 2,
+      "failed": 0,
+      "skipped": 0,
+      "properties": {}
+    },
+    {
+      "path": ".scratch\\validation\\cuda-c3-native\\logs\\c4-linux-shared-math.xml",
+      "tests": 29,
+      "failed": 0,
+      "skipped": 0,
+      "properties": {
+        "measured_rule_environment": "0"
+      }
+    },
+    {
+      "path": ".scratch\\validation\\cuda-c3-native\\logs\\c4-linux-static-math.xml",
+      "tests": 29,
+      "failed": 0,
+      "skipped": 0,
+      "properties": {
+        "measured_rule_environment": "0"
+      }
+    },
+    {
+      "path": ".scratch\\validation\\cuda-c3-native\\logs\\c4-win-shared-math.xml",
+      "tests": 29,
+      "failed": 0,
+      "skipped": 0,
+      "properties": {
+        "measured_rule_environment": "0"
+      }
+    },
+    {
+      "path": ".scratch\\validation\\cuda-c3-native\\logs\\c4-win-static-math.xml",
+      "tests": 29,
+      "failed": 1,
+      "skipped": 0,
+      "properties": {
+        "measured_rule_environment": "1"
+      }
+    }
+  ],
+  "task_states": [
+    {
+      "id": "c3-win-build",
+      "attempts": 1,
+      "status": "PASS",
+      "prior_statuses": [],
+      "seconds": 30.813
+    },
+    {
+      "id": "c3-win-configure",
+      "attempts": 1,
+      "status": "PASS",
+      "prior_statuses": [],
+      "seconds": 57.906
+    },
+    {
+      "id": "c3-win-families",
+      "attempts": 1,
+      "status": "PASS",
+      "prior_statuses": [],
+      "seconds": 2.906
+    },
+    {
+      "id": "c3-win-family-build",
+      "attempts": 1,
+      "status": "PASS",
+      "prior_statuses": [],
+      "seconds": 1.969
+    },
+    {
+      "id": "c3-win-graph",
+      "attempts": 1,
+      "status": "PASS",
+      "prior_statuses": [],
+      "seconds": 0.781
+    },
+    {
+      "id": "c3-win-rules",
+      "attempts": 1,
+      "status": "PASS",
+      "prior_statuses": [],
+      "seconds": 1.172
+    },
+    {
+      "id": "c4-linux-shared-build",
+      "attempts": 1,
+      "status": "PASS",
+      "prior_statuses": [],
+      "seconds": 78.656
+    },
+    {
+      "id": "c4-linux-shared-configure",
+      "attempts": 1,
+      "status": "PASS",
+      "prior_statuses": [],
+      "seconds": 10.5
+    },
+    {
+      "id": "c4-linux-shared-consumer-build",
+      "attempts": 1,
+      "status": "PASS",
+      "prior_statuses": [],
+      "seconds": 16.047
+    },
+    {
+      "id": "c4-linux-shared-consumer-configure",
+      "attempts": 1,
+      "status": "PASS",
+      "prior_statuses": [],
+      "seconds": 5.203
+    },
+    {
+      "id": "c4-linux-shared-install",
+      "attempts": 1,
+      "status": "PASS",
+      "prior_statuses": [],
+      "seconds": 0.172
+    },
+    {
+      "id": "c4-linux-shared-math",
+      "attempts": 1,
+      "status": "PASS",
+      "prior_statuses": [],
+      "seconds": 3.187
+    },
+    {
+      "id": "c4-linux-shared-ordinary",
+      "attempts": 1,
+      "status": "PASS",
+      "prior_statuses": [],
+      "seconds": 0.578
+    },
+    {
+      "id": "c4-linux-shared-relocate",
+      "attempts": 1,
+      "status": "PASS",
+      "prior_statuses": [],
+      "seconds": 0.078
+    },
+    {
+      "id": "c4-linux-source-build",
+      "attempts": 2,
+      "status": "PASS",
+      "prior_statuses": [
+        "FAIL"
+      ],
+      "seconds": 23.079
+    },
+    {
+      "id": "c4-linux-source-compute_provider_cuda",
+      "attempts": 1,
+      "status": "PASS",
+      "prior_statuses": [],
+      "seconds": 2.75
+    },
+    {
+      "id": "c4-linux-source-compute_route_cuda",
+      "attempts": 1,
+      "status": "PASS",
+      "prior_statuses": [],
+      "seconds": 1.375
+    },
+    {
+      "id": "c4-linux-source-configure",
+      "attempts": 1,
+      "status": "PASS",
+      "prior_statuses": [],
+      "seconds": 22.046
+    },
+    {
+      "id": "c4-linux-source-graph_route_cuda",
+      "attempts": 1,
+      "status": "PASS",
+      "prior_statuses": [],
+      "seconds": 0.922
+    },
+    {
+      "id": "c4-linux-static-build",
+      "attempts": 1,
+      "status": "PASS",
+      "prior_statuses": [],
+      "seconds": 80.266
+    },
+    {
+      "id": "c4-linux-static-configure",
+      "attempts": 1,
+      "status": "PASS",
+      "prior_statuses": [],
+      "seconds": 10.687
+    },
+    {
+      "id": "c4-linux-static-consumer-build",
+      "attempts": 1,
+      "status": "PASS",
+      "prior_statuses": [],
+      "seconds": 16.235
+    },
+    {
+      "id": "c4-linux-static-consumer-configure",
+      "attempts": 1,
+      "status": "PASS",
+      "prior_statuses": [],
+      "seconds": 5.25
+    },
+    {
+      "id": "c4-linux-static-install",
+      "attempts": 1,
+      "status": "PASS",
+      "prior_statuses": [],
+      "seconds": 0.234
+    },
+    {
+      "id": "c4-linux-static-math",
+      "attempts": 1,
+      "status": "PASS",
+      "prior_statuses": [],
+      "seconds": 3.109
+    },
+    {
+      "id": "c4-linux-static-ordinary",
+      "attempts": 1,
+      "status": "PASS",
+      "prior_statuses": [],
+      "seconds": 0.547
+    },
+    {
+      "id": "c4-linux-static-relocate",
+      "attempts": 1,
+      "status": "PASS",
+      "prior_statuses": [],
+      "seconds": 0.0
+    },
+    {
+      "id": "c4-win-regions",
+      "attempts": 1,
+      "status": "PASS",
+      "prior_statuses": [],
+      "seconds": 0.641
+    },
+    {
+      "id": "c4-win-shared-build",
+      "attempts": 1,
+      "status": "PASS",
+      "prior_statuses": [],
+      "seconds": 75.718
+    },
+    {
+      "id": "c4-win-shared-configure",
+      "attempts": 1,
+      "status": "PASS",
+      "prior_statuses": [],
+      "seconds": 53.453
+    },
+    {
+      "id": "c4-win-shared-consumer-build",
+      "attempts": 1,
+      "status": "PASS",
+      "prior_statuses": [],
+      "seconds": 21.907
+    },
+    {
+      "id": "c4-win-shared-consumer-configure",
+      "attempts": 1,
+      "status": "PASS",
+      "prior_statuses": [],
+      "seconds": 55.313
+    },
+    {
+      "id": "c4-win-shared-install",
+      "attempts": 1,
+      "status": "PASS",
+      "prior_statuses": [],
+      "seconds": 3.171
+    },
+    {
+      "id": "c4-win-shared-math",
+      "attempts": 1,
+      "status": "PASS",
+      "prior_statuses": [],
+      "seconds": 3.656
+    },
+    {
+      "id": "c4-win-shared-ordinary",
+      "attempts": 1,
+      "status": "PASS",
+      "prior_statuses": [],
+      "seconds": 0.578
+    },
+    {
+      "id": "c4-win-shared-relocate",
+      "attempts": 1,
+      "status": "PASS",
+      "prior_statuses": [],
+      "seconds": 0.0
+    },
+    {
+      "id": "c4-win-static-build",
+      "attempts": 3,
+      "status": "PASS",
+      "prior_statuses": [
+        "PASS",
+        "FAIL"
+      ],
+      "seconds": 82.172
+    },
+    {
+      "id": "c4-win-static-configure",
+      "attempts": 3,
+      "status": "PASS",
+      "prior_statuses": [
+        "PASS",
+        "PASS"
+      ],
+      "seconds": 279.548
+    },
+    {
+      "id": "c4-win-static-consumer-build",
+      "attempts": 3,
+      "status": "PASS",
+      "prior_statuses": [
+        "PASS",
+        "FAIL"
+      ],
+      "seconds": 51.563
+    },
+    {
+      "id": "c4-win-static-consumer-configure",
+      "attempts": 2,
+      "status": "PASS",
+      "prior_statuses": [
+        "PASS"
+      ],
+      "seconds": 103.593
+    },
+    {
+      "id": "c4-win-static-install",
+      "attempts": 2,
+      "status": "PASS",
+      "prior_statuses": [
+        "PASS"
+      ],
+      "seconds": 7.905
+    },
+    {
+      "id": "c4-win-static-math",
+      "attempts": 2,
+      "status": "FAIL",
+      "prior_statuses": [
+        "FAIL"
+      ],
+      "seconds": 6.734
+    },
+    {
+      "id": "c4-win-static-relocate",
+      "attempts": 3,
+      "status": "PASS",
+      "prior_statuses": [
+        "PASS",
+        "FAIL"
+      ],
+      "seconds": 0.0
+    }
+  ],
+  "shader": {
+    "old": 669,
+    "new": 590,
+    "net_removed": 79,
+    "all_retained_same_instructions": false,
+    "retained_count": 574,
+    "native_unchanged_count": 207,
+    "native_changed": []
+  },
+  "original_static_batch": "FAIL 28/29; no third batch",
+  "fixc_profile": "two targeted cases PASS; assertions enforce actual qualified environment/caller; original ordinary-only run retained",
+  "performance": "C2 one AA and n15 only; no later timing",
+  "limitations": "23 exact leaf rules only; no all-hardware/WSL/shared/complete-region WIN; fallback remains per-operation ENGINEERING_DEFAULT."
+}
