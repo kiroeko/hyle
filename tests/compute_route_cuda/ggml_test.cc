@@ -107,10 +107,11 @@ TEST(CudaDefault, EngineeringPolicyIsColdAndDoesNotLeakToExpertFactory) {
     EXPECT_EQ(prepared->route_preference(), 100u);
     EXPECT_EQ(prepared->workload(), workload);
   }
-  auto selected = cuda::device().value();
-  auto expert = Context::create(selected, ggml_cuda::provider()).value();
-  auto program = prepare(expert, Operation(Unary{UnaryKind::kExp}),
-      std::span(&description, 1), std::span(&description, 1), memory.ref());
+  auto selected = cuda::device(0).value();
+  auto expert = Context::create(selected, cublas::provider()).value();
+  const auto right = TensorDesc::dense(DataType::kFloat32,
+      std::array<std::int64_t, 2>{64, 32}).value();
+  auto program = prepare(expert, MatMul{}, description, right, memory.ref());
   ASSERT_TRUE(program) << program.error().message();
   EXPECT_TRUE(program->route_policy().empty());
 }
