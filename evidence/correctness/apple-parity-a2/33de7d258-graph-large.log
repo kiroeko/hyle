@@ -1,0 +1,84 @@
+Running main() from /Users/kiro/Library/Caches/hyle/dependencies/v1/sources/googletest-063de7e9578f-162765170ae6/googletest/src/gtest_main.cc
+Note: Google Test filter = CurrentDemand/AppleParityGraphGguf.*/g9d504e80cbfefb7f:CurrentDemand/AppleParityGraphGguf.*/ga846e3d718ee259b
+[==========] Running 2 tests from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 2 tests from CurrentDemand/AppleParityGraphGguf
+[ RUN      ] CurrentDemand/AppleParityGraphGguf.CurrentGgufDemandUsesOriginalBytesAndAllRows/g9d504e80cbfefb7f
+[APPLE-GGUF] g9d504e80cbfefb7f N=248320 K=8192 E=1
+ggml_metal_device_init: tensor API disabled for pre-M5 and pre-A19 devices
+ggml_metal_library_init: using embedded metal library
+ggml_metal_library_compile_all: compiled 'fa' library in 0.011 sec
+ggml_metal_library_compile_all: compiled 'mul_mv' library in 0.005 sec
+ggml_metal_library_compile_all: compiled 'mul_mm' library in 0.004 sec
+ggml_metal_library_compile_all: compiled 'quantize' library in 0.003 sec
+ggml_metal_library_compile_all: compiled 'softmax' library in 0.003 sec
+ggml_metal_library_compile_all: compiled 'norm' library in 0.003 sec
+ggml_metal_library_compile_all: compiled 'unary' library in 0.003 sec
+ggml_metal_library_compile_all: compiled 'binbcast' library in 0.011 sec
+ggml_metal_library_compile_all: compiled 'reduce' library in 0.011 sec
+ggml_metal_library_compile_all: compiled 'tri' library in 0.011 sec
+ggml_metal_library_compile_all: compiled 'ssm' library in 0.011 sec
+ggml_metal_library_compile_all: compiled 'wkv' library in 0.003 sec
+ggml_metal_library_compile_all: compiled 'gated_delta_net' library in 0.003 sec
+ggml_metal_library_compile_all: compiled 'solve_tri' library in 0.010 sec
+ggml_metal_library_compile_all: compiled 'rope' library in 0.010 sec
+ggml_metal_library_compile_all: compiled 'conv' library in 0.010 sec
+ggml_metal_library_compile_all: compiled 'upscale' library in 0.010 sec
+ggml_metal_library_compile_all: compiled 'argsort' library in 0.011 sec
+ggml_metal_library_compile_all: compiled 'pool' library in 0.010 sec
+ggml_metal_library_compile_all: compiled 'misc' library in 0.004 sec
+ggml_metal_library_compile_all: loaded 20 libraries from embedded data in 0.011 sec (max single = 0.011 sec)
+ggml_metal_rsets_init: creating a residency set collection (keep_alive = 180 s)
+ggml_metal_device_init: GPU name:   MTL0 (Apple M4)
+ggml_metal_device_init: GPU family: MTLGPUFamilyApple9  (1009)
+ggml_metal_device_init: GPU family: MTLGPUFamilyCommon3 (3003)
+ggml_metal_device_init: GPU family: MTLGPUFamilyMetal4  (5002)
+ggml_metal_device_init: simdgroup reduction   = true
+ggml_metal_device_init: simdgroup matrix mul. = true
+ggml_metal_device_init: has unified memory    = true
+ggml_metal_device_init: has bfloat            = true
+ggml_metal_device_init: has tensor            = false
+ggml_metal_device_init: use residency sets    = true
+ggml_metal_device_init: use shared buffers    = true
+ggml_metal_device_init: recommendedMaxWorkingSetSize  = 12713.12 MB
+ggml_metal_init: allocating
+ggml_metal_init: found device: Apple M4
+ggml_metal_init: picking default device: Apple M4
+ggml_metal_init: use fusion         = true
+ggml_metal_init: use concurrency    = true
+ggml_metal_init: use graph optimize = true
+ggml_metal_free: deallocating
+ggml_metal_init: allocating
+ggml_metal_init: found device: Apple M4
+ggml_metal_init: picking default device: Apple M4
+ggml_metal_init: use fusion         = true
+ggml_metal_init: use concurrency    = true
+ggml_metal_init: use graph optimize = true
+ggml_metal_library_compile_pipeline: compiling pipeline: base = 'kernel_get_rows_q8_0', name = 'kernel_get_rows_q8_0'
+ggml_metal_library_compile_pipeline: loaded kernel_get_rows_q8_0                          0x1040e9b60 | th_max = 1024 | th_width =   32
+ggml_metal_free: deallocating
+[       OK ] CurrentDemand/AppleParityGraphGguf.CurrentGgufDemandUsesOriginalBytesAndAllRows/g9d504e80cbfefb7f (491 ms)
+[ RUN      ] CurrentDemand/AppleParityGraphGguf.CurrentGgufDemandUsesOriginalBytesAndAllRows/ga846e3d718ee259b
+[APPLE-GGUF] ga846e3d718ee259b N=248320 K=8192 E=1
+ggml_metal_init: allocating
+ggml_metal_init: found device: Apple M4
+ggml_metal_init: picking default device: Apple M4
+ggml_metal_init: use fusion         = true
+ggml_metal_init: use concurrency    = true
+ggml_metal_init: use graph optimize = true
+ggml_metal_free: deallocating
+ggml_metal_init: allocating
+ggml_metal_init: found device: Apple M4
+ggml_metal_init: picking default device: Apple M4
+ggml_metal_init: use fusion         = true
+ggml_metal_init: use concurrency    = true
+ggml_metal_init: use graph optimize = true
+ggml_metal_library_compile_pipeline: compiling pipeline: base = 'kernel_mul_mv_q8_0_f32', name = 'kernel_mul_mv_q8_0_f32_nsg=4_ne12=1_r2=1_r3=1_split=0'
+ggml_metal_library_compile_pipeline: loaded kernel_mul_mv_q8_0_f32_nsg=4_ne12=1_r2=1_r3=1_split=0     0x7c1214ca80 | th_max = 1024 | th_width =   32
+ggml_metal_free: deallocating
+[       OK ] CurrentDemand/AppleParityGraphGguf.CurrentGgufDemandUsesOriginalBytesAndAllRows/ga846e3d718ee259b (294 ms)
+[----------] 2 tests from CurrentDemand/AppleParityGraphGguf (785 ms total)
+
+[----------] Global test environment tear-down
+[==========] 2 tests from 1 test suite ran. (785 ms total)
+[  PASSED  ] 2 tests.

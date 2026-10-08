@@ -1,0 +1,37 @@
+[0/2] Re-checking globbed directories...
+[1/37] cd /Users/kiro/hyle-scratch/d5-graph-825c41f8/src/compute_route_apple && /opt/homebrew/bin/cmake -E copy_if_different /Users/kiro/hyle-scratch/d5-graph-825c41f8/_deps/mlx-build/mlx/backend/metal/kernels/mlx.metallib /Users/kiro/hyle-scratch/d5-graph-825c41f8/bin/mlx.metallib
+[2/37] Building CXX object src/compute_route_apple/CMakeFiles/hyle_compute_route_apple.dir/apple_operations.cc.o
+[3/37] Building CXX object src/compute_route_apple/CMakeFiles/hyle_compute_route_apple.dir/apple_context.cc.o
+[4/37] Building CXX object src/compute_route_apple/CMakeFiles/hyle_compute_route_apple.dir/apple_tensor.cc.o
+[5/37] Building OBJCXX object src/compute_route_apple/CMakeFiles/hyle_compute_route_apple.dir/apple_environment.mm.o
+[6/37] Building CXX object src/compute_route_apple/CMakeFiles/hyle_compute_route_apple.dir/apple_recurrent.cc.o
+[7/37] Building CXX object src/compute_route_apple/CMakeFiles/hyle_compute_route_apple.dir/apple_mature_indexing.cc.o
+[8/37] Building CXX object src/compute_route_apple/CMakeFiles/hyle_compute_route_apple.dir/apple_mature_reduction.cc.o
+[9/37] Building CXX object src/compute_route_apple/CMakeFiles/hyle_compute_route_apple.dir/apple_mature_float.cc.o
+[10/37] Building CXX object src/compute_route_apple/CMakeFiles/hyle_compute_route_apple.dir/apple_mature_artifact.cc.o
+[11/37] Linking CXX shared library bin/libhyle_compute_route_apple.0.1.0.dylib
+[12/37] Creating library symlink bin/libhyle_compute_route_apple.dylib
+[13/37] Building CXX object src/graph_route_apple/CMakeFiles/hyle_graph_route_apple.dir/apple_lowering.cc.o
+[14/37] Linking CXX shared library bin/libhyle_graph_route_apple.0.1.0.dylib
+[15/37] Creating library symlink bin/libhyle_graph_route_apple.dylib
+[16/37] Building CXX object tests/compute_route_apple/CMakeFiles/hyle_compute_route_apple_test.dir/context_test.cc.o
+[17/37] Building CXX object tests/compute_route_apple/CMakeFiles/hyle_compute_route_apple_test.dir/operations_test.cc.o
+[18/37] Building CXX object tests/compute_route_apple/CMakeFiles/hyle_compute_route_apple_test.dir/tensor_test.cc.o
+[19/37] Building CXX object tests/compute_route_apple/CMakeFiles/hyle_compute_route_apple_test.dir/reduction_test.cc.o
+[20/37] Building CXX object tests/compute_route_apple/CMakeFiles/hyle_compute_route_apple_test.dir/indexing_test.cc.o
+[21/37] Building CXX object tests/compute_route_apple/CMakeFiles/hyle_compute_route_apple_test.dir/scatter_test.cc.o
+[22/37] Building CXX object tests/compute_route_apple/CMakeFiles/hyle_compute_route_apple_test.dir/d5_qwen35_execution_test.cc.o
+[23/37] Building CXX object tests/compute_route_apple/CMakeFiles/hyle_compute_route_apple_test.dir/lifecycle_test.cc.o
+[24/37] Building CXX object tests/compute_route_apple/CMakeFiles/hyle_compute_route_apple_test.dir/mlx_quantized_test.cc.o
+[25/37] Building CXX object tests/compute_route_apple/CMakeFiles/hyle_compute_route_apple_test.dir/recurrent_test.cc.o
+[26/37] Building CXX object tests/graph_route_apple/CMakeFiles/hyle_graph_route_apple_test.dir/tensor_test.cc.o
+[27/37] Building CXX object tests/graph_route_apple/CMakeFiles/hyle_graph_route_apple_test.dir/graph_test.cc.o
+[28/37] Building CXX object tests/graph_route_apple/CMakeFiles/hyle_graph_route_apple_test.dir/reduction_test.cc.o
+[29/37] Building CXX object tests/graph_route_apple/CMakeFiles/hyle_graph_route_apple_test.dir/indexing_test.cc.o
+[30/37] Building CXX object tests/graph_route_apple/CMakeFiles/hyle_graph_route_apple_test.dir/scatter_test.cc.o
+[31/37] Building CXX object tests/graph_route_apple/CMakeFiles/hyle_graph_route_apple_test.dir/recurrent_test.cc.o
+[32/37] Building CXX object tests/graph_route_apple/CMakeFiles/hyle_graph_route_apple_test.dir/model_composition_test.cc.o
+[33/37] Building CXX object tests/graph_route_apple/CMakeFiles/hyle_graph_route_apple_test.dir/mlx_quantized_test.cc.o
+[34/37] Linking CXX executable bin/hyle_compute_route_apple_test
+[35/37] Building CXX object tests/graph_route_apple/CMakeFiles/hyle_graph_route_apple_test.dir/d5_qwen35_execution_test.cc.o
+[36/37] Linking CXX executable bin/hyle_graph_route_apple_test

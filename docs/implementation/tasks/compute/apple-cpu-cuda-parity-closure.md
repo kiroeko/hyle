@@ -173,3 +173,10 @@ owner/实际影响选择，不触发其它CLOSED模块全集。三交付/license
 另定位Anemll原Metal IQ1_XXXS候选`a809594fd2035979ad2b7ef23398127c1d07e891`，限定查实际
 encoding/源码/API/许可证及另外两种IQ1，未准入，不扩研究面。旧官方FP4两边界/预算不变。
 A2与whole goal仍未完成；已通过域不因上述问题重跑全集或P1。
+
+大载体纠正`33de7d258`已经完成：Air owning build通过，只复验两项失败Q8_0ID及carrier
+metadata边界；Direct3/3、Graph2/2通过，原2,161,377,280字节用U8[248320,8704]按完整
+encoded rows承载，原packed bytes/native program不变，未重跑559/P1。结合不受改动影响
+的旧通过项，当前两入口各546 numeric qualified/5 Q4_K精确失败/8 IQ1 skip；这是证据复用
+与delta合并，不冒称新全集。34packed域不变。统一实现61,252行/260文件，不含tests/vendor。
+阶段仍A2；Q4_K/窄IQ1/官方FP4、45plain与新官方/MTP完整片段、默认/优选/三交付未完成。

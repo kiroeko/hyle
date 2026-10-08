@@ -152,3 +152,22 @@ Anemll/anemll-flash-llama.cpp at `a809594fd2035979ad2b7ef23398127c1d07e891`;
 its source/encoding/API qualification is pending. A README claim is not runtime
 proof and is not a reason to write a HYLE IQ1 algorithm. Official FP4's old
 small-scale domain mismatch remains open. A2/whole-goal verdict stays incomplete.
+
+## Large-carrier correction33de7d258
+
+[Native owning build](33de7d258-build.log) PASS. Only the two failed Q8_0
+IDs and the no-allocation carrier boundary test were selected:
+[Direct](33de7d258-direct-large.log)3/3 and
+[Graph](33de7d258-graph-large.log)2/2 PASS. The exact2,161,377,280-byte
+weight now usesU8[248320,8704], retaining original packed bytes and native
+ggml region. Small payloads retain the prior flat shape; unrepresentable
+row axes still returnOutOfRange. Shared fixture uploads follow `input_spec`
+in both entries. No complete559 batch or P1 was repeated.
+
+Reusing unchanged passing domains with this delta leaves546 numerically
+qualified GGUF requests per entry,5 original Q4_K exact-output failures and
+8 IQ1 extension skips. This is a combined evidence verdict, not a new559 run.
+34 packed requests are unaffected. Canonical implementation is61,252 lines/
+260 files, tests/vendors excluded. Native/header/seam three-delivery validation,
+Q4_K exact carrier, narrow IQ1 and official FP4 remain required; no completion
+or universal hardware/performance claim is made.
