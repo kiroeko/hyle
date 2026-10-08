@@ -48,3 +48,13 @@ API宏owner显式include，原build-2 C4430保留。只加该既有公开头incl
 保留。显式加标准头，原consumer build同ID最后第三次。测试头include不改变consumer CMake、
 SDK或参数，已PASS的consumer configure-2按此具体配置等价证明复用，不再因宽源码hash重配。
 不改公共runner，build依赖以这条原配置证明代替宽hash；数学仍只有最后第二次，失败即停止。
+
+## static 最后数学批次终态及退回冷选择修复
+
+原29项第二次结果28 PASS/1 FAIL：23完整赢家实际命中、变输入输出、偏移view回退与descriptor
+后换违规view拒绝均PASS；managed回退失败。整批保留FAIL，原数学批次预算结束，不跑第三次。
+已确认 `prepare_candidate`资源失配按标准返回Unimplemented，而上层Direct候选循环直接
+返回该错误，未继续后续合法候选。新增有限FIX-C只在这条冷候选循环把Unimplemented视为
+decline；InvalidArgument/Internal/OOM等仍传播，不改数学/ABI/执行。Core仍处于AUDITED，
+先独立提交此审计后修源码。随后按新缺陷的独立窄正确性口径复核managed/偏移/非法资源，
+不伪重命名原29项预算；保留原28项数学证据及原FAIL。其余source/三交付仍待，不能CLOSED。
