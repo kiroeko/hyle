@@ -165,7 +165,7 @@ int main() {
     }
     const auto qos=hyle::bench::perf::configure_thread_qos();
     const bool rival=enabled("HYLE_BENCH_RIVAL_FIRST"),allocate=enabled("HYLE_BENCH_PEER_ALLOCATION_FIRST");
-    std::fprintf(stderr,"# HYLE_APPLE_OVERLAP_RUN qos=%s qos_ok=%s aa=%s verify=%d execution=%s allocation=%s run_nonce=%s\n",
+    std::fprintf(stderr,"# HYLE_APPLE_OVERLAP_RUN apple_qos=%s qos_ok=%s aa=%s verify=%d execution_order=%s allocation_order=%s run_nonce=%s\n",
         qos.name,qos.ok,aa.empty()?"none":aa.c_str(),verify,rival?"peer-first":"candidate-first",
         allocate?"peer-first":"candidate-first",hyle::bench::perf::run_nonce());
     for(const auto &shape:shapes) {

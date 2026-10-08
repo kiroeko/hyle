@@ -114,3 +114,10 @@ n15、八strata、A/A/已知delta/timer-floor、5% margin；module-local A/A借�
 和compiled窄patch逐文件核对。统一仪器要求fresh qualified producer，使用唯一新目录，
 build2/采样串行，既有模型/交付不重跑。未资格不导入winner，近似/噪声保留合法成熟
 工程default并明确方向未决；未运行的正式项不写PASS。
+
+首次fresh qualified批次源码build完成58s，同路A/A16process全部PASS且无bias/instability。
+正式首process被统一仪器拒绝：新样例marker用了execution/allocation/qos，而公共合同要求
+execution_order/allocation_order/apple_qos。这是模块局部性能consumer的遥测格式错误，
+不修改公共runner/统计核心或产品算法。唯一纠正改三字段名和对应A/A断言、更新本合同
+source provenance hash；原失败保留，正式n15并未完成。新artifact需本批A/A资格，使用唯一
+纠正producer后清前一producer；不重跑任何模型/交付，不增加n15预算或无限换测试方法。

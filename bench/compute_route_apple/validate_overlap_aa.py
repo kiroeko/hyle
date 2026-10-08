@@ -67,8 +67,8 @@ def main():
                     if result.returncode: raise RuntimeError('AA process failed: ' + str(log))
                     marker = next(line for line in text.splitlines() if line.startswith('# HYLE_APPLE_OVERLAP_RUN '))
                     for token in [f'aa={route}', f'run_nonce={nonce}', 'verify=0', 'qos_ok=1',
-                        'execution=' + ('peer-first' if rival else 'candidate-first'),
-                        'allocation=' + ('peer-first' if allocation else 'candidate-first')]:
+                        'execution_order=' + ('peer-first' if rival else 'candidate-first'),
+                        'allocation_order=' + ('peer-first' if allocation else 'candidate-first')]:
                         if token not in marker: raise RuntimeError('AA telemetry mismatch')
                     facts = [line for line in text.splitlines() if line.startswith('# OVERLAP_ENV ')]
                     qos = [line for line in text.splitlines() if line.startswith('# OVERLAP_OWNER_QOS ')]
