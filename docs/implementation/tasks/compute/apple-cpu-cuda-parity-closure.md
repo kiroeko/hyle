@@ -250,3 +250,15 @@ boundary矩阵与最终清理尚未闭合；A2数值两项、官方FP4与A3资�
 两项官方attention残余按[一次数值责任捕获](apple-dspark-numeric-cause.md)执行：只Direct
 两ID/原六replay，原门保持，逐层原source方程/原MLX trig诊断，不继续猜测FMA或调容差。
 三交付已通过consumer保持原候选；本批还独立检查三形态的三个Apple公开头，未变矩阵不跑。
+
+一次捕获已证明CPU/GPU trig精度路径错配与前驱误差传播，非grouped/final接线错误。
+`bdc60f88`按原MLX数学预先固定独立完整参考后，两个失败ID Direct2/2、Graph2/2全部PASS，
+原whole pointwise、BF16/storage、cache反馈/reset门不放宽；矩阵/三交付不重跑。九新witness
+两入口已有合并PASS证据；目标hidden/confidence的受影响参考两入口各2/2确认、三形态公开
+头9/9通过。数值原因任务结案，不继续捕获；官方FP4与依赖它的完整官方main/DSpark专家
+仍待原桥接决定，不用量化MXFP4侧车代签。A3默认/有预算成本裁决与最终A4复核仍待。
+
+A3的[默认与有限成本范围](apple-default-cost-scope.md)已按当前产品源码定界：多数实际
+packing域是单成熟carrier，不假造best-of竞赛；plain BF16/F32 linear与plain grouped的
+两成熟候选保留完整转换/内存/同步成本，最终稳定candidate后才做原生准入与一次P1。
+不存在本路线自研shader/GEMM/GDN/Hadamard kernel可虚报清退；语义/资源桥接不误删。

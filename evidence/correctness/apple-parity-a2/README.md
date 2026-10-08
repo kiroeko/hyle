@@ -311,3 +311,45 @@ ambiguous test loop indentation; [ba59c5df corrected build](model-branches-ba59c
 PASS with explicit braces only. The task runner initially used the wrong
 binary output directory and stopped before numerical execution; the fixed
 bin path was used for the batch above. These are not product numerical FAIL.
+
+## Bounded DSpark cause and final native-precision integration verdict
+
+[4ac59a7e one capture](dspark-cause-4ac59a7e-direct.log)/
+[XML](dspark-cause-4ac59a7e-direct.xml) preserves the original2 FAIL;
+[capture source](dspark_numeric_capture.h) is archived and removed from
+normal tests.162/224 native trig coefficient pairs differ from CPU libm.
+All five Flash inverse differences vanish with the fixed original GPU
+coefficients; both F32 contraction variants agree with actual results.
+Across both models and all12 replays, every grouped result matches the
+independent original two-term BF16 equation on actual inverse inputs; every
+final FP8 result matches both independent FMA/unfused equations on actual
+grouped inputs. This local evidence diagnoses error propagation; it alone
+was not counted as a complete-witness PASS.
+
+The complete independent reference was then fixed before constructing the
+fixture: original MLX GPU sin/cos and original public fast SinkAttention,
+with independently generated query/KV, original source weights/codes/scales
+and its own cache evolution. It never reads product lowering or candidate
+intermediate outputs to construct whole expected results. The pre-existing
+local inverse checker still checks its equation on actual attention, now
+with the matching native trig; primitive independent accuracy gates remain.
+CPU/CUDA keep their original default reference. No tolerance or product
+algorithm changed and no per-element selection of an oracle is allowed.
+
+`bdc60f88` [build](model-branches-bdc60f88-build.log) PASS;
+[Direct](model-branches-bdc60f88-direct.log)/[XML](model-branches-bdc60f88-direct.xml)
+2/2 and [Graph](model-branches-bdc60f88-graph.log)/[XML](model-branches-bdc60f88-graph.xml)
+2/2 PASS. These were only the previously failed IDs. Original complete
+pointwise/BF16/cache/state/reset checks are retained. The nine current
+official/quantized-MTP witnesses therefore have passing combined evidence
+in both ordinary entries, without another whole-batch run.
+
+The explicit unfused target-hidden reference also has its required current
+confirmation: [Direct](dspark-cause-4ac59a7e-direct-target-hidden.log)/
+[XML](dspark-cause-4ac59a7e-direct-target-hidden.xml)2/2 and
+[Graph](dspark-cause-4ac59a7e-graph-target-hidden.log)/
+[XML](dspark-cause-4ac59a7e-graph-target-hidden.xml)2/2 PASS.
+All three Apple headers compile independently in enabled source/static/shared
+usage requirements,9/9: [per-header receipt](dspark-cause-4ac59a7e-headers.json).
+The [bounded cause record](../../../docs/implementation/tasks/compute/apple-dspark-numeric-cause.md)
+is resolved; official FP4 is separate and remains pending. No P1 started.

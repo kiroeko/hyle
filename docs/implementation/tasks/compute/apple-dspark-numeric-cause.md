@@ -44,3 +44,12 @@ primitive独立数学门与source/storage证据仍保留；这次补的是同原
 复验，两入口串行。若仍不通过，停止本方案并列具名未决，不继续换参考。产品FIX仍零。
 捕获源码随证据归档并移出常态测试；公开头9/9已通过，目标hidden/confidence两入口各2/2
 定向确认通过，既有矩阵和三交付不重复。
+
+## 正式结果
+
+`bdc60f88`增量owning build PASS；仅两个失败ID的普通Direct2/2、Graph2/2全部PASS，
+原完整输出、BF16/storage、实际cache反馈、六次replay与reset及局部inverse精确门均保留。
+参考在fixture构造前固定原MLX sin/cos和SinkAttention；完整期望从独立输入/权重/自己的
+cache状态推进，不取candidate中间输出。原CPU/CUDA默认不改；不是选择更近的逐值答案，
+也没有HYLE产品/数学改动。[原失败、捕获与正式raw](../../../../evidence/correctness/apple-parity-a2/README.md)
+保留。此两witness的数值问题关闭，不扩继续调查；官方FP4仍是独立待决，没有被本轮解决。
