@@ -1,0 +1,3502 @@
+{
+  "schema": "hyle.perf.contract/v1",
+  "experiment": {
+    "sample_schedule": [
+      15
+    ],
+    "order_policy": "fixed-dual",
+    "holdout": false
+  },
+  "build": {
+    "configuration": "Release",
+    "fresh": true,
+    "linkage": "static",
+    "lto": "off",
+    "isa": "portable",
+    "toolchain": "machine-profile-bound"
+  },
+  "hosts": {
+    "allowed_platforms": [
+      "windows"
+    ],
+    "certification_platforms": [
+      "windows"
+    ],
+    "requirements": {
+      "machine_profiles": [
+        "W1-WIN"
+      ],
+      "qualified_role": "engineering",
+      "formal_independent_hardware": true
+    }
+  },
+  "id": "cuda-best-of-matrix-p1-v1",
+  "module": "compute_route_cuda",
+  "claim": "Bounded same-contract full resident CUDA operation candidate comparisons on AA-qualified actual requests; winners may be mature or native, aggregate comparison includes losing candidates.",
+  "candidate": {
+    "target": "hyle_cuda_matrix_bench",
+    "delivery_shape": "static",
+    "revision": "runtime-bound",
+    "component": "compute_route_cuda",
+    "entrypoint": "include/hyle/compute/prepared_operation.h"
+  },
+  "peers": [
+    {
+      "id": "actual-peer",
+      "revision": "3f8668b8be625c98f32785554c1e7213945503d3",
+      "configuration": {
+        "role": "Same immutable product SDK and actual original admitted peer implementation with independent equal resources; variants identified per workload."
+      }
+    }
+  ],
+  "strata": [
+    {
+      "id": "candidate-first-candidate-first-allocation",
+      "dimensions": {
+        "execution_order": "candidate-first",
+        "allocation_order": "candidate-first"
+      },
+      "target_variant": "primary",
+      "environment": {}
+    },
+    {
+      "id": "candidate-first-peer-first-allocation",
+      "dimensions": {
+        "execution_order": "candidate-first",
+        "allocation_order": "peer-first"
+      },
+      "target_variant": "primary",
+      "environment": {
+        "HYLE_BENCH_PEER_ALLOCATION_FIRST": "1"
+      }
+    },
+    {
+      "id": "peer-first-candidate-first-allocation",
+      "dimensions": {
+        "execution_order": "peer-first",
+        "allocation_order": "candidate-first"
+      },
+      "target_variant": "primary",
+      "environment": {
+        "HYLE_BENCH_RIVAL_FIRST": "1"
+      }
+    },
+    {
+      "id": "peer-first-peer-first-allocation",
+      "dimensions": {
+        "execution_order": "peer-first",
+        "allocation_order": "peer-first"
+      },
+      "target_variant": "primary",
+      "environment": {
+        "HYLE_BENCH_RIVAL_FIRST": "1",
+        "HYLE_BENCH_PEER_ALLOCATION_FIRST": "1"
+      }
+    }
+  ],
+  "controls": [
+    {
+      "id": "aa",
+      "kind": "aa",
+      "parameters": {
+        "maximum_bias_percent": 5
+      }
+    },
+    {
+      "id": "delta5",
+      "kind": "known-delta",
+      "parameters": {
+        "nominal_percent": 5
+      }
+    },
+    {
+      "id": "delta10",
+      "kind": "known-delta",
+      "parameters": {
+        "nominal_percent": 10
+      }
+    },
+    {
+      "id": "timer-floor",
+      "kind": "timer-floor",
+      "parameters": {
+        "minimum_workload_floor_multiple": 20
+      }
+    }
+  ],
+  "workloads": [
+    {
+      "id": "copy-f32-t1-h2048-hyle-ggml",
+      "tier": "replay",
+      "gate_role": "product",
+      "consumer_key": "cuda-fixed-tensor/copy-f32-t1-h2048",
+      "provenance": {
+        "path": "consumer.json",
+        "sha256": "dc867450c1b361c300382691a24a174a3f94c93be180c0990b728e393c7028b4"
+      },
+      "ownership_topology": {
+        "candidate": "Independent original mature Provider Context/Queue/two resident slots; private pools admitted",
+        "peer": "Independent native CUDA Provider Context/Queue/two resident slots; no artificial per-kernel waits",
+        "equivalence": "One complete ordinary resident operation through terminal event completion and retained-reference settlement; same bits/shape/precision. No external capture or no-private requirement."
+      },
+      "material_contribution": {
+        "frequency": 1,
+        "value": 1,
+        "unit": "completed-tensor-operation",
+        "budget": 5,
+        "denominator": "one complete resident tensor operation plus terminal Completion",
+        "derivation": "One fixed model-shaped resident operation; no invented invocation frequency or full-model throughput."
+      },
+      "semantic_contract": "copy f32 -> f32 original F32 intermediate/precision and ordinary managed-resource contract",
+      "comparability": "COMPARABLE",
+      "peer_id": "actual-peer",
+      "metric": {
+        "name": "operations-per-second",
+        "unit": "op/s",
+        "direction": "higher-is-better"
+      },
+      "input": {
+        "distribution": "Original nonuniform seed5/17 dyadic payloads, typed scales/bias/mask and checked IDs; output precision unchanged",
+        "scale": {
+          "tokens": 1,
+          "hidden": 2048,
+          "input_slots": 2
+        }
+      },
+      "setup": "Original independent two-slot owners; complete output verified before/after; original2048 symmetric complete warmup; cold setup separate",
+      "charged_phases": [
+        "Original submit, all math/conversion/checks/private runtime/stream transfer, terminal Completion wait and retained-reference settlement"
+      ],
+      "pair": {
+        "candidate": "Candidate",
+        "peer": "Peer"
+      },
+      "practical_margin_percent": 5,
+      "noninferiority_margin_percent": 5,
+      "estimator": {
+        "kind": "process-median",
+        "minimum_independent_samples": 15,
+        "tail_alpha": 0.01
+      },
+      "required_strata": [
+        "candidate-first-candidate-first-allocation",
+        "candidate-first-peer-first-allocation",
+        "peer-first-candidate-first-allocation",
+        "peer-first-peer-first-allocation"
+      ],
+      "required_controls": [
+        "aa",
+        "delta5",
+        "delta10",
+        "timer-floor"
+      ]
+    },
+    {
+      "id": "abs-f16-t1-h2048-hyle-ggml",
+      "tier": "replay",
+      "gate_role": "product",
+      "consumer_key": "cuda-fixed-tensor/abs-f16-t1-h2048",
+      "provenance": {
+        "path": "consumer.json",
+        "sha256": "dc867450c1b361c300382691a24a174a3f94c93be180c0990b728e393c7028b4"
+      },
+      "ownership_topology": {
+        "candidate": "Independent original mature Provider Context/Queue/two resident slots; private pools admitted",
+        "peer": "Independent native CUDA Provider Context/Queue/two resident slots; no artificial per-kernel waits",
+        "equivalence": "One complete ordinary resident operation through terminal event completion and retained-reference settlement; same bits/shape/precision. No external capture or no-private requirement."
+      },
+      "material_contribution": {
+        "frequency": 1,
+        "value": 1,
+        "unit": "completed-tensor-operation",
+        "budget": 5,
+        "denominator": "one complete resident tensor operation plus terminal Completion",
+        "derivation": "One fixed model-shaped resident operation; no invented invocation frequency or full-model throughput."
+      },
+      "semantic_contract": "abs f16 -> f16 original F32 intermediate/precision and ordinary managed-resource contract",
+      "comparability": "COMPARABLE",
+      "peer_id": "actual-peer",
+      "metric": {
+        "name": "operations-per-second",
+        "unit": "op/s",
+        "direction": "higher-is-better"
+      },
+      "input": {
+        "distribution": "Original nonuniform seed5/17 dyadic payloads, typed scales/bias/mask and checked IDs; output precision unchanged",
+        "scale": {
+          "tokens": 1,
+          "hidden": 2048,
+          "input_slots": 2
+        }
+      },
+      "setup": "Original independent two-slot owners; complete output verified before/after; original2048 symmetric complete warmup; cold setup separate",
+      "charged_phases": [
+        "Original submit, all math/conversion/checks/private runtime/stream transfer, terminal Completion wait and retained-reference settlement"
+      ],
+      "pair": {
+        "candidate": "Candidate",
+        "peer": "Peer"
+      },
+      "practical_margin_percent": 5,
+      "noninferiority_margin_percent": 5,
+      "estimator": {
+        "kind": "process-median",
+        "minimum_independent_samples": 15,
+        "tail_alpha": 0.01
+      },
+      "required_strata": [
+        "candidate-first-candidate-first-allocation",
+        "candidate-first-peer-first-allocation",
+        "peer-first-candidate-first-allocation",
+        "peer-first-peer-first-allocation"
+      ],
+      "required_controls": [
+        "aa",
+        "delta5",
+        "delta10",
+        "timer-floor"
+      ]
+    },
+    {
+      "id": "neg-f32-t1-h2048-hyle-ggml",
+      "tier": "replay",
+      "gate_role": "product",
+      "consumer_key": "cuda-fixed-tensor/neg-f32-t1-h2048",
+      "provenance": {
+        "path": "consumer.json",
+        "sha256": "dc867450c1b361c300382691a24a174a3f94c93be180c0990b728e393c7028b4"
+      },
+      "ownership_topology": {
+        "candidate": "Independent original mature Provider Context/Queue/two resident slots; private pools admitted",
+        "peer": "Independent native CUDA Provider Context/Queue/two resident slots; no artificial per-kernel waits",
+        "equivalence": "One complete ordinary resident operation through terminal event completion and retained-reference settlement; same bits/shape/precision. No external capture or no-private requirement."
+      },
+      "material_contribution": {
+        "frequency": 1,
+        "value": 1,
+        "unit": "completed-tensor-operation",
+        "budget": 5,
+        "denominator": "one complete resident tensor operation plus terminal Completion",
+        "derivation": "One fixed model-shaped resident operation; no invented invocation frequency or full-model throughput."
+      },
+      "semantic_contract": "neg f32 -> f32 original F32 intermediate/precision and ordinary managed-resource contract",
+      "comparability": "COMPARABLE",
+      "peer_id": "actual-peer",
+      "metric": {
+        "name": "operations-per-second",
+        "unit": "op/s",
+        "direction": "higher-is-better"
+      },
+      "input": {
+        "distribution": "Original nonuniform seed5/17 dyadic payloads, typed scales/bias/mask and checked IDs; output precision unchanged",
+        "scale": {
+          "tokens": 1,
+          "hidden": 2048,
+          "input_slots": 2
+        }
+      },
+      "setup": "Original independent two-slot owners; complete output verified before/after; original2048 symmetric complete warmup; cold setup separate",
+      "charged_phases": [
+        "Original submit, all math/conversion/checks/private runtime/stream transfer, terminal Completion wait and retained-reference settlement"
+      ],
+      "pair": {
+        "candidate": "Candidate",
+        "peer": "Peer"
+      },
+      "practical_margin_percent": 5,
+      "noninferiority_margin_percent": 5,
+      "estimator": {
+        "kind": "process-median",
+        "minimum_independent_samples": 15,
+        "tail_alpha": 0.01
+      },
+      "required_strata": [
+        "candidate-first-candidate-first-allocation",
+        "candidate-first-peer-first-allocation",
+        "peer-first-candidate-first-allocation",
+        "peer-first-peer-first-allocation"
+      ],
+      "required_controls": [
+        "aa",
+        "delta5",
+        "delta10",
+        "timer-floor"
+      ]
+    },
+    {
+      "id": "neg-f16-t32-h4096-hyle-ggml",
+      "tier": "replay",
+      "gate_role": "product",
+      "consumer_key": "cuda-fixed-tensor/neg-f16-t32-h4096",
+      "provenance": {
+        "path": "consumer.json",
+        "sha256": "dc867450c1b361c300382691a24a174a3f94c93be180c0990b728e393c7028b4"
+      },
+      "ownership_topology": {
+        "candidate": "Independent original mature Provider Context/Queue/two resident slots; private pools admitted",
+        "peer": "Independent native CUDA Provider Context/Queue/two resident slots; no artificial per-kernel waits",
+        "equivalence": "One complete ordinary resident operation through terminal event completion and retained-reference settlement; same bits/shape/precision. No external capture or no-private requirement."
+      },
+      "material_contribution": {
+        "frequency": 1,
+        "value": 1,
+        "unit": "completed-tensor-operation",
+        "budget": 5,
+        "denominator": "one complete resident tensor operation plus terminal Completion",
+        "derivation": "One fixed model-shaped resident operation; no invented invocation frequency or full-model throughput."
+      },
+      "semantic_contract": "neg f16 -> f16 original F32 intermediate/precision and ordinary managed-resource contract",
+      "comparability": "COMPARABLE",
+      "peer_id": "actual-peer",
+      "metric": {
+        "name": "operations-per-second",
+        "unit": "op/s",
+        "direction": "higher-is-better"
+      },
+      "input": {
+        "distribution": "Original nonuniform seed5/17 dyadic payloads, typed scales/bias/mask and checked IDs; output precision unchanged",
+        "scale": {
+          "tokens": 32,
+          "hidden": 4096,
+          "input_slots": 2
+        }
+      },
+      "setup": "Original independent two-slot owners; complete output verified before/after; original2048 symmetric complete warmup; cold setup separate",
+      "charged_phases": [
+        "Original submit, all math/conversion/checks/private runtime/stream transfer, terminal Completion wait and retained-reference settlement"
+      ],
+      "pair": {
+        "candidate": "Candidate",
+        "peer": "Peer"
+      },
+      "practical_margin_percent": 5,
+      "noninferiority_margin_percent": 5,
+      "estimator": {
+        "kind": "process-median",
+        "minimum_independent_samples": 15,
+        "tail_alpha": 0.01
+      },
+      "required_strata": [
+        "candidate-first-candidate-first-allocation",
+        "candidate-first-peer-first-allocation",
+        "peer-first-candidate-first-allocation",
+        "peer-first-peer-first-allocation"
+      ],
+      "required_controls": [
+        "aa",
+        "delta5",
+        "delta10",
+        "timer-floor"
+      ]
+    },
+    {
+      "id": "neg-bf16-t1-h2048-hyle-ggml",
+      "tier": "replay",
+      "gate_role": "product",
+      "consumer_key": "cuda-fixed-tensor/neg-bf16-t1-h2048",
+      "provenance": {
+        "path": "consumer.json",
+        "sha256": "dc867450c1b361c300382691a24a174a3f94c93be180c0990b728e393c7028b4"
+      },
+      "ownership_topology": {
+        "candidate": "Independent original mature Provider Context/Queue/two resident slots; private pools admitted",
+        "peer": "Independent native CUDA Provider Context/Queue/two resident slots; no artificial per-kernel waits",
+        "equivalence": "One complete ordinary resident operation through terminal event completion and retained-reference settlement; same bits/shape/precision. No external capture or no-private requirement."
+      },
+      "material_contribution": {
+        "frequency": 1,
+        "value": 1,
+        "unit": "completed-tensor-operation",
+        "budget": 5,
+        "denominator": "one complete resident tensor operation plus terminal Completion",
+        "derivation": "One fixed model-shaped resident operation; no invented invocation frequency or full-model throughput."
+      },
+      "semantic_contract": "neg bf16 -> bf16 original F32 intermediate/precision and ordinary managed-resource contract",
+      "comparability": "COMPARABLE",
+      "peer_id": "actual-peer",
+      "metric": {
+        "name": "operations-per-second",
+        "unit": "op/s",
+        "direction": "higher-is-better"
+      },
+      "input": {
+        "distribution": "Original nonuniform seed5/17 dyadic payloads, typed scales/bias/mask and checked IDs; output precision unchanged",
+        "scale": {
+          "tokens": 1,
+          "hidden": 2048,
+          "input_slots": 2
+        }
+      },
+      "setup": "Original independent two-slot owners; complete output verified before/after; original2048 symmetric complete warmup; cold setup separate",
+      "charged_phases": [
+        "Original submit, all math/conversion/checks/private runtime/stream transfer, terminal Completion wait and retained-reference settlement"
+      ],
+      "pair": {
+        "candidate": "Candidate",
+        "peer": "Peer"
+      },
+      "practical_margin_percent": 5,
+      "noninferiority_margin_percent": 5,
+      "estimator": {
+        "kind": "process-median",
+        "minimum_independent_samples": 15,
+        "tail_alpha": 0.01
+      },
+      "required_strata": [
+        "candidate-first-candidate-first-allocation",
+        "candidate-first-peer-first-allocation",
+        "peer-first-candidate-first-allocation",
+        "peer-first-peer-first-allocation"
+      ],
+      "required_controls": [
+        "aa",
+        "delta5",
+        "delta10",
+        "timer-floor"
+      ]
+    },
+    {
+      "id": "neg-bf16-t32-h4096-hyle-ggml",
+      "tier": "replay",
+      "gate_role": "product",
+      "consumer_key": "cuda-fixed-tensor/neg-bf16-t32-h4096",
+      "provenance": {
+        "path": "consumer.json",
+        "sha256": "dc867450c1b361c300382691a24a174a3f94c93be180c0990b728e393c7028b4"
+      },
+      "ownership_topology": {
+        "candidate": "Independent original mature Provider Context/Queue/two resident slots; private pools admitted",
+        "peer": "Independent native CUDA Provider Context/Queue/two resident slots; no artificial per-kernel waits",
+        "equivalence": "One complete ordinary resident operation through terminal event completion and retained-reference settlement; same bits/shape/precision. No external capture or no-private requirement."
+      },
+      "material_contribution": {
+        "frequency": 1,
+        "value": 1,
+        "unit": "completed-tensor-operation",
+        "budget": 5,
+        "denominator": "one complete resident tensor operation plus terminal Completion",
+        "derivation": "One fixed model-shaped resident operation; no invented invocation frequency or full-model throughput."
+      },
+      "semantic_contract": "neg bf16 -> bf16 original F32 intermediate/precision and ordinary managed-resource contract",
+      "comparability": "COMPARABLE",
+      "peer_id": "actual-peer",
+      "metric": {
+        "name": "operations-per-second",
+        "unit": "op/s",
+        "direction": "higher-is-better"
+      },
+      "input": {
+        "distribution": "Original nonuniform seed5/17 dyadic payloads, typed scales/bias/mask and checked IDs; output precision unchanged",
+        "scale": {
+          "tokens": 32,
+          "hidden": 4096,
+          "input_slots": 2
+        }
+      },
+      "setup": "Original independent two-slot owners; complete output verified before/after; original2048 symmetric complete warmup; cold setup separate",
+      "charged_phases": [
+        "Original submit, all math/conversion/checks/private runtime/stream transfer, terminal Completion wait and retained-reference settlement"
+      ],
+      "pair": {
+        "candidate": "Candidate",
+        "peer": "Peer"
+      },
+      "practical_margin_percent": 5,
+      "noninferiority_margin_percent": 5,
+      "estimator": {
+        "kind": "process-median",
+        "minimum_independent_samples": 15,
+        "tail_alpha": 0.01
+      },
+      "required_strata": [
+        "candidate-first-candidate-first-allocation",
+        "candidate-first-peer-first-allocation",
+        "peer-first-candidate-first-allocation",
+        "peer-first-peer-first-allocation"
+      ],
+      "required_controls": [
+        "aa",
+        "delta5",
+        "delta10",
+        "timer-floor"
+      ]
+    },
+    {
+      "id": "exp-bf16-t32-h4096-hyle-ggml",
+      "tier": "replay",
+      "gate_role": "product",
+      "consumer_key": "cuda-fixed-tensor/exp-bf16-t32-h4096",
+      "provenance": {
+        "path": "consumer.json",
+        "sha256": "dc867450c1b361c300382691a24a174a3f94c93be180c0990b728e393c7028b4"
+      },
+      "ownership_topology": {
+        "candidate": "Independent original mature Provider Context/Queue/two resident slots; private pools admitted",
+        "peer": "Independent native CUDA Provider Context/Queue/two resident slots; no artificial per-kernel waits",
+        "equivalence": "One complete ordinary resident operation through terminal event completion and retained-reference settlement; same bits/shape/precision. No external capture or no-private requirement."
+      },
+      "material_contribution": {
+        "frequency": 1,
+        "value": 1,
+        "unit": "completed-tensor-operation",
+        "budget": 5,
+        "denominator": "one complete resident tensor operation plus terminal Completion",
+        "derivation": "One fixed model-shaped resident operation; no invented invocation frequency or full-model throughput."
+      },
+      "semantic_contract": "exp bf16 -> bf16 original F32 intermediate/precision and ordinary managed-resource contract",
+      "comparability": "COMPARABLE",
+      "peer_id": "actual-peer",
+      "metric": {
+        "name": "operations-per-second",
+        "unit": "op/s",
+        "direction": "higher-is-better"
+      },
+      "input": {
+        "distribution": "Original nonuniform seed5/17 dyadic payloads, typed scales/bias/mask and checked IDs; output precision unchanged",
+        "scale": {
+          "tokens": 32,
+          "hidden": 4096,
+          "input_slots": 2
+        }
+      },
+      "setup": "Original independent two-slot owners; complete output verified before/after; original2048 symmetric complete warmup; cold setup separate",
+      "charged_phases": [
+        "Original submit, all math/conversion/checks/private runtime/stream transfer, terminal Completion wait and retained-reference settlement"
+      ],
+      "pair": {
+        "candidate": "Candidate",
+        "peer": "Peer"
+      },
+      "practical_margin_percent": 5,
+      "noninferiority_margin_percent": 5,
+      "estimator": {
+        "kind": "process-median",
+        "minimum_independent_samples": 15,
+        "tail_alpha": 0.01
+      },
+      "required_strata": [
+        "candidate-first-candidate-first-allocation",
+        "candidate-first-peer-first-allocation",
+        "peer-first-candidate-first-allocation",
+        "peer-first-peer-first-allocation"
+      ],
+      "required_controls": [
+        "aa",
+        "delta5",
+        "delta10",
+        "timer-floor"
+      ]
+    },
+    {
+      "id": "log-f16-t1-h2048-hyle-ggml",
+      "tier": "replay",
+      "gate_role": "product",
+      "consumer_key": "cuda-fixed-tensor/log-f16-t1-h2048",
+      "provenance": {
+        "path": "consumer.json",
+        "sha256": "dc867450c1b361c300382691a24a174a3f94c93be180c0990b728e393c7028b4"
+      },
+      "ownership_topology": {
+        "candidate": "Independent original mature Provider Context/Queue/two resident slots; private pools admitted",
+        "peer": "Independent native CUDA Provider Context/Queue/two resident slots; no artificial per-kernel waits",
+        "equivalence": "One complete ordinary resident operation through terminal event completion and retained-reference settlement; same bits/shape/precision. No external capture or no-private requirement."
+      },
+      "material_contribution": {
+        "frequency": 1,
+        "value": 1,
+        "unit": "completed-tensor-operation",
+        "budget": 5,
+        "denominator": "one complete resident tensor operation plus terminal Completion",
+        "derivation": "One fixed model-shaped resident operation; no invented invocation frequency or full-model throughput."
+      },
+      "semantic_contract": "log f16 -> f16 original F32 intermediate/precision and ordinary managed-resource contract",
+      "comparability": "COMPARABLE",
+      "peer_id": "actual-peer",
+      "metric": {
+        "name": "operations-per-second",
+        "unit": "op/s",
+        "direction": "higher-is-better"
+      },
+      "input": {
+        "distribution": "Original nonuniform seed5/17 dyadic payloads, typed scales/bias/mask and checked IDs; output precision unchanged",
+        "scale": {
+          "tokens": 1,
+          "hidden": 2048,
+          "input_slots": 2
+        }
+      },
+      "setup": "Original independent two-slot owners; complete output verified before/after; original2048 symmetric complete warmup; cold setup separate",
+      "charged_phases": [
+        "Original submit, all math/conversion/checks/private runtime/stream transfer, terminal Completion wait and retained-reference settlement"
+      ],
+      "pair": {
+        "candidate": "Candidate",
+        "peer": "Peer"
+      },
+      "practical_margin_percent": 5,
+      "noninferiority_margin_percent": 5,
+      "estimator": {
+        "kind": "process-median",
+        "minimum_independent_samples": 15,
+        "tail_alpha": 0.01
+      },
+      "required_strata": [
+        "candidate-first-candidate-first-allocation",
+        "candidate-first-peer-first-allocation",
+        "peer-first-candidate-first-allocation",
+        "peer-first-peer-first-allocation"
+      ],
+      "required_controls": [
+        "aa",
+        "delta5",
+        "delta10",
+        "timer-floor"
+      ]
+    },
+    {
+      "id": "log-bf16-t1-h2048-hyle-ggml",
+      "tier": "replay",
+      "gate_role": "product",
+      "consumer_key": "cuda-fixed-tensor/log-bf16-t1-h2048",
+      "provenance": {
+        "path": "consumer.json",
+        "sha256": "dc867450c1b361c300382691a24a174a3f94c93be180c0990b728e393c7028b4"
+      },
+      "ownership_topology": {
+        "candidate": "Independent original mature Provider Context/Queue/two resident slots; private pools admitted",
+        "peer": "Independent native CUDA Provider Context/Queue/two resident slots; no artificial per-kernel waits",
+        "equivalence": "One complete ordinary resident operation through terminal event completion and retained-reference settlement; same bits/shape/precision. No external capture or no-private requirement."
+      },
+      "material_contribution": {
+        "frequency": 1,
+        "value": 1,
+        "unit": "completed-tensor-operation",
+        "budget": 5,
+        "denominator": "one complete resident tensor operation plus terminal Completion",
+        "derivation": "One fixed model-shaped resident operation; no invented invocation frequency or full-model throughput."
+      },
+      "semantic_contract": "log bf16 -> bf16 original F32 intermediate/precision and ordinary managed-resource contract",
+      "comparability": "COMPARABLE",
+      "peer_id": "actual-peer",
+      "metric": {
+        "name": "operations-per-second",
+        "unit": "op/s",
+        "direction": "higher-is-better"
+      },
+      "input": {
+        "distribution": "Original nonuniform seed5/17 dyadic payloads, typed scales/bias/mask and checked IDs; output precision unchanged",
+        "scale": {
+          "tokens": 1,
+          "hidden": 2048,
+          "input_slots": 2
+        }
+      },
+      "setup": "Original independent two-slot owners; complete output verified before/after; original2048 symmetric complete warmup; cold setup separate",
+      "charged_phases": [
+        "Original submit, all math/conversion/checks/private runtime/stream transfer, terminal Completion wait and retained-reference settlement"
+      ],
+      "pair": {
+        "candidate": "Candidate",
+        "peer": "Peer"
+      },
+      "practical_margin_percent": 5,
+      "noninferiority_margin_percent": 5,
+      "estimator": {
+        "kind": "process-median",
+        "minimum_independent_samples": 15,
+        "tail_alpha": 0.01
+      },
+      "required_strata": [
+        "candidate-first-candidate-first-allocation",
+        "candidate-first-peer-first-allocation",
+        "peer-first-candidate-first-allocation",
+        "peer-first-peer-first-allocation"
+      ],
+      "required_controls": [
+        "aa",
+        "delta5",
+        "delta10",
+        "timer-floor"
+      ]
+    },
+    {
+      "id": "sqrt-bf16-t1-h2048-hyle-ggml",
+      "tier": "replay",
+      "gate_role": "product",
+      "consumer_key": "cuda-fixed-tensor/sqrt-bf16-t1-h2048",
+      "provenance": {
+        "path": "consumer.json",
+        "sha256": "dc867450c1b361c300382691a24a174a3f94c93be180c0990b728e393c7028b4"
+      },
+      "ownership_topology": {
+        "candidate": "Independent original mature Provider Context/Queue/two resident slots; private pools admitted",
+        "peer": "Independent native CUDA Provider Context/Queue/two resident slots; no artificial per-kernel waits",
+        "equivalence": "One complete ordinary resident operation through terminal event completion and retained-reference settlement; same bits/shape/precision. No external capture or no-private requirement."
+      },
+      "material_contribution": {
+        "frequency": 1,
+        "value": 1,
+        "unit": "completed-tensor-operation",
+        "budget": 5,
+        "denominator": "one complete resident tensor operation plus terminal Completion",
+        "derivation": "One fixed model-shaped resident operation; no invented invocation frequency or full-model throughput."
+      },
+      "semantic_contract": "sqrt bf16 -> bf16 original F32 intermediate/precision and ordinary managed-resource contract",
+      "comparability": "COMPARABLE",
+      "peer_id": "actual-peer",
+      "metric": {
+        "name": "operations-per-second",
+        "unit": "op/s",
+        "direction": "higher-is-better"
+      },
+      "input": {
+        "distribution": "Original nonuniform seed5/17 dyadic payloads, typed scales/bias/mask and checked IDs; output precision unchanged",
+        "scale": {
+          "tokens": 1,
+          "hidden": 2048,
+          "input_slots": 2
+        }
+      },
+      "setup": "Original independent two-slot owners; complete output verified before/after; original2048 symmetric complete warmup; cold setup separate",
+      "charged_phases": [
+        "Original submit, all math/conversion/checks/private runtime/stream transfer, terminal Completion wait and retained-reference settlement"
+      ],
+      "pair": {
+        "candidate": "Candidate",
+        "peer": "Peer"
+      },
+      "practical_margin_percent": 5,
+      "noninferiority_margin_percent": 5,
+      "estimator": {
+        "kind": "process-median",
+        "minimum_independent_samples": 15,
+        "tail_alpha": 0.01
+      },
+      "required_strata": [
+        "candidate-first-candidate-first-allocation",
+        "candidate-first-peer-first-allocation",
+        "peer-first-candidate-first-allocation",
+        "peer-first-peer-first-allocation"
+      ],
+      "required_controls": [
+        "aa",
+        "delta5",
+        "delta10",
+        "timer-floor"
+      ]
+    },
+    {
+      "id": "sqrt-bf16-t32-h4096-hyle-ggml",
+      "tier": "replay",
+      "gate_role": "product",
+      "consumer_key": "cuda-fixed-tensor/sqrt-bf16-t32-h4096",
+      "provenance": {
+        "path": "consumer.json",
+        "sha256": "dc867450c1b361c300382691a24a174a3f94c93be180c0990b728e393c7028b4"
+      },
+      "ownership_topology": {
+        "candidate": "Independent original mature Provider Context/Queue/two resident slots; private pools admitted",
+        "peer": "Independent native CUDA Provider Context/Queue/two resident slots; no artificial per-kernel waits",
+        "equivalence": "One complete ordinary resident operation through terminal event completion and retained-reference settlement; same bits/shape/precision. No external capture or no-private requirement."
+      },
+      "material_contribution": {
+        "frequency": 1,
+        "value": 1,
+        "unit": "completed-tensor-operation",
+        "budget": 5,
+        "denominator": "one complete resident tensor operation plus terminal Completion",
+        "derivation": "One fixed model-shaped resident operation; no invented invocation frequency or full-model throughput."
+      },
+      "semantic_contract": "sqrt bf16 -> bf16 original F32 intermediate/precision and ordinary managed-resource contract",
+      "comparability": "COMPARABLE",
+      "peer_id": "actual-peer",
+      "metric": {
+        "name": "operations-per-second",
+        "unit": "op/s",
+        "direction": "higher-is-better"
+      },
+      "input": {
+        "distribution": "Original nonuniform seed5/17 dyadic payloads, typed scales/bias/mask and checked IDs; output precision unchanged",
+        "scale": {
+          "tokens": 32,
+          "hidden": 4096,
+          "input_slots": 2
+        }
+      },
+      "setup": "Original independent two-slot owners; complete output verified before/after; original2048 symmetric complete warmup; cold setup separate",
+      "charged_phases": [
+        "Original submit, all math/conversion/checks/private runtime/stream transfer, terminal Completion wait and retained-reference settlement"
+      ],
+      "pair": {
+        "candidate": "Candidate",
+        "peer": "Peer"
+      },
+      "practical_margin_percent": 5,
+      "noninferiority_margin_percent": 5,
+      "estimator": {
+        "kind": "process-median",
+        "minimum_independent_samples": 15,
+        "tail_alpha": 0.01
+      },
+      "required_strata": [
+        "candidate-first-candidate-first-allocation",
+        "candidate-first-peer-first-allocation",
+        "peer-first-candidate-first-allocation",
+        "peer-first-peer-first-allocation"
+      ],
+      "required_controls": [
+        "aa",
+        "delta5",
+        "delta10",
+        "timer-floor"
+      ]
+    },
+    {
+      "id": "rsqrt-bf16-t32-h4096-hyle-ggml",
+      "tier": "replay",
+      "gate_role": "product",
+      "consumer_key": "cuda-fixed-tensor/rsqrt-bf16-t32-h4096",
+      "provenance": {
+        "path": "consumer.json",
+        "sha256": "dc867450c1b361c300382691a24a174a3f94c93be180c0990b728e393c7028b4"
+      },
+      "ownership_topology": {
+        "candidate": "Independent original mature Provider Context/Queue/two resident slots; private pools admitted",
+        "peer": "Independent native CUDA Provider Context/Queue/two resident slots; no artificial per-kernel waits",
+        "equivalence": "One complete ordinary resident operation through terminal event completion and retained-reference settlement; same bits/shape/precision. No external capture or no-private requirement."
+      },
+      "material_contribution": {
+        "frequency": 1,
+        "value": 1,
+        "unit": "completed-tensor-operation",
+        "budget": 5,
+        "denominator": "one complete resident tensor operation plus terminal Completion",
+        "derivation": "One fixed model-shaped resident operation; no invented invocation frequency or full-model throughput."
+      },
+      "semantic_contract": "rsqrt bf16 -> bf16 original F32 intermediate/precision and ordinary managed-resource contract",
+      "comparability": "COMPARABLE",
+      "peer_id": "actual-peer",
+      "metric": {
+        "name": "operations-per-second",
+        "unit": "op/s",
+        "direction": "higher-is-better"
+      },
+      "input": {
+        "distribution": "Original nonuniform seed5/17 dyadic payloads, typed scales/bias/mask and checked IDs; output precision unchanged",
+        "scale": {
+          "tokens": 32,
+          "hidden": 4096,
+          "input_slots": 2
+        }
+      },
+      "setup": "Original independent two-slot owners; complete output verified before/after; original2048 symmetric complete warmup; cold setup separate",
+      "charged_phases": [
+        "Original submit, all math/conversion/checks/private runtime/stream transfer, terminal Completion wait and retained-reference settlement"
+      ],
+      "pair": {
+        "candidate": "Candidate",
+        "peer": "Peer"
+      },
+      "practical_margin_percent": 5,
+      "noninferiority_margin_percent": 5,
+      "estimator": {
+        "kind": "process-median",
+        "minimum_independent_samples": 15,
+        "tail_alpha": 0.01
+      },
+      "required_strata": [
+        "candidate-first-candidate-first-allocation",
+        "candidate-first-peer-first-allocation",
+        "peer-first-candidate-first-allocation",
+        "peer-first-peer-first-allocation"
+      ],
+      "required_controls": [
+        "aa",
+        "delta5",
+        "delta10",
+        "timer-floor"
+      ]
+    },
+    {
+      "id": "tanh-f32-t32-h4096-hyle-ggml",
+      "tier": "replay",
+      "gate_role": "product",
+      "consumer_key": "cuda-fixed-tensor/tanh-f32-t32-h4096",
+      "provenance": {
+        "path": "consumer.json",
+        "sha256": "dc867450c1b361c300382691a24a174a3f94c93be180c0990b728e393c7028b4"
+      },
+      "ownership_topology": {
+        "candidate": "Independent original mature Provider Context/Queue/two resident slots; private pools admitted",
+        "peer": "Independent native CUDA Provider Context/Queue/two resident slots; no artificial per-kernel waits",
+        "equivalence": "One complete ordinary resident operation through terminal event completion and retained-reference settlement; same bits/shape/precision. No external capture or no-private requirement."
+      },
+      "material_contribution": {
+        "frequency": 1,
+        "value": 1,
+        "unit": "completed-tensor-operation",
+        "budget": 5,
+        "denominator": "one complete resident tensor operation plus terminal Completion",
+        "derivation": "One fixed model-shaped resident operation; no invented invocation frequency or full-model throughput."
+      },
+      "semantic_contract": "tanh f32 -> f32 original F32 intermediate/precision and ordinary managed-resource contract",
+      "comparability": "COMPARABLE",
+      "peer_id": "actual-peer",
+      "metric": {
+        "name": "operations-per-second",
+        "unit": "op/s",
+        "direction": "higher-is-better"
+      },
+      "input": {
+        "distribution": "Original nonuniform seed5/17 dyadic payloads, typed scales/bias/mask and checked IDs; output precision unchanged",
+        "scale": {
+          "tokens": 32,
+          "hidden": 4096,
+          "input_slots": 2
+        }
+      },
+      "setup": "Original independent two-slot owners; complete output verified before/after; original2048 symmetric complete warmup; cold setup separate",
+      "charged_phases": [
+        "Original submit, all math/conversion/checks/private runtime/stream transfer, terminal Completion wait and retained-reference settlement"
+      ],
+      "pair": {
+        "candidate": "Candidate",
+        "peer": "Peer"
+      },
+      "practical_margin_percent": 5,
+      "noninferiority_margin_percent": 5,
+      "estimator": {
+        "kind": "process-median",
+        "minimum_independent_samples": 15,
+        "tail_alpha": 0.01
+      },
+      "required_strata": [
+        "candidate-first-candidate-first-allocation",
+        "candidate-first-peer-first-allocation",
+        "peer-first-candidate-first-allocation",
+        "peer-first-peer-first-allocation"
+      ],
+      "required_controls": [
+        "aa",
+        "delta5",
+        "delta10",
+        "timer-floor"
+      ]
+    },
+    {
+      "id": "silu-f16-t1-h2048-hyle-sglang",
+      "tier": "replay",
+      "gate_role": "product",
+      "consumer_key": "cuda-fixed-tensor/silu-f16-t1-h2048",
+      "provenance": {
+        "path": "consumer.json",
+        "sha256": "dc867450c1b361c300382691a24a174a3f94c93be180c0990b728e393c7028b4"
+      },
+      "ownership_topology": {
+        "candidate": "Independent original mature Provider Context/Queue/two resident slots; private pools admitted",
+        "peer": "Independent native CUDA Provider Context/Queue/two resident slots; no artificial per-kernel waits",
+        "equivalence": "One complete ordinary resident operation through terminal event completion and retained-reference settlement; same bits/shape/precision. No external capture or no-private requirement."
+      },
+      "material_contribution": {
+        "frequency": 1,
+        "value": 1,
+        "unit": "completed-tensor-operation",
+        "budget": 5,
+        "denominator": "one complete resident tensor operation plus terminal Completion",
+        "derivation": "One fixed model-shaped resident operation; no invented invocation frequency or full-model throughput."
+      },
+      "semantic_contract": "silu f16 -> f16 original F32 intermediate/precision and ordinary managed-resource contract",
+      "comparability": "COMPARABLE",
+      "peer_id": "actual-peer",
+      "metric": {
+        "name": "operations-per-second",
+        "unit": "op/s",
+        "direction": "higher-is-better"
+      },
+      "input": {
+        "distribution": "Original nonuniform seed5/17 dyadic payloads, typed scales/bias/mask and checked IDs; output precision unchanged",
+        "scale": {
+          "tokens": 1,
+          "hidden": 2048,
+          "input_slots": 2
+        }
+      },
+      "setup": "Original independent two-slot owners; complete output verified before/after; original2048 symmetric complete warmup; cold setup separate",
+      "charged_phases": [
+        "Original submit, all math/conversion/checks/private runtime/stream transfer, terminal Completion wait and retained-reference settlement"
+      ],
+      "pair": {
+        "candidate": "Candidate",
+        "peer": "Peer"
+      },
+      "practical_margin_percent": 5,
+      "noninferiority_margin_percent": 5,
+      "estimator": {
+        "kind": "process-median",
+        "minimum_independent_samples": 15,
+        "tail_alpha": 0.01
+      },
+      "required_strata": [
+        "candidate-first-candidate-first-allocation",
+        "candidate-first-peer-first-allocation",
+        "peer-first-candidate-first-allocation",
+        "peer-first-peer-first-allocation"
+      ],
+      "required_controls": [
+        "aa",
+        "delta5",
+        "delta10",
+        "timer-floor"
+      ]
+    },
+    {
+      "id": "silu-bf16-t1-h2048-hyle-sglang",
+      "tier": "replay",
+      "gate_role": "product",
+      "consumer_key": "cuda-fixed-tensor/silu-bf16-t1-h2048",
+      "provenance": {
+        "path": "consumer.json",
+        "sha256": "dc867450c1b361c300382691a24a174a3f94c93be180c0990b728e393c7028b4"
+      },
+      "ownership_topology": {
+        "candidate": "Independent original mature Provider Context/Queue/two resident slots; private pools admitted",
+        "peer": "Independent native CUDA Provider Context/Queue/two resident slots; no artificial per-kernel waits",
+        "equivalence": "One complete ordinary resident operation through terminal event completion and retained-reference settlement; same bits/shape/precision. No external capture or no-private requirement."
+      },
+      "material_contribution": {
+        "frequency": 1,
+        "value": 1,
+        "unit": "completed-tensor-operation",
+        "budget": 5,
+        "denominator": "one complete resident tensor operation plus terminal Completion",
+        "derivation": "One fixed model-shaped resident operation; no invented invocation frequency or full-model throughput."
+      },
+      "semantic_contract": "silu bf16 -> bf16 original F32 intermediate/precision and ordinary managed-resource contract",
+      "comparability": "COMPARABLE",
+      "peer_id": "actual-peer",
+      "metric": {
+        "name": "operations-per-second",
+        "unit": "op/s",
+        "direction": "higher-is-better"
+      },
+      "input": {
+        "distribution": "Original nonuniform seed5/17 dyadic payloads, typed scales/bias/mask and checked IDs; output precision unchanged",
+        "scale": {
+          "tokens": 1,
+          "hidden": 2048,
+          "input_slots": 2
+        }
+      },
+      "setup": "Original independent two-slot owners; complete output verified before/after; original2048 symmetric complete warmup; cold setup separate",
+      "charged_phases": [
+        "Original submit, all math/conversion/checks/private runtime/stream transfer, terminal Completion wait and retained-reference settlement"
+      ],
+      "pair": {
+        "candidate": "Candidate",
+        "peer": "Peer"
+      },
+      "practical_margin_percent": 5,
+      "noninferiority_margin_percent": 5,
+      "estimator": {
+        "kind": "process-median",
+        "minimum_independent_samples": 15,
+        "tail_alpha": 0.01
+      },
+      "required_strata": [
+        "candidate-first-candidate-first-allocation",
+        "candidate-first-peer-first-allocation",
+        "peer-first-candidate-first-allocation",
+        "peer-first-peer-first-allocation"
+      ],
+      "required_controls": [
+        "aa",
+        "delta5",
+        "delta10",
+        "timer-floor"
+      ]
+    },
+    {
+      "id": "gelu_tanh-bf16-t32-h4096-hyle-sglang",
+      "tier": "replay",
+      "gate_role": "product",
+      "consumer_key": "cuda-fixed-tensor/gelu_tanh-bf16-t32-h4096",
+      "provenance": {
+        "path": "consumer.json",
+        "sha256": "dc867450c1b361c300382691a24a174a3f94c93be180c0990b728e393c7028b4"
+      },
+      "ownership_topology": {
+        "candidate": "Independent original mature Provider Context/Queue/two resident slots; private pools admitted",
+        "peer": "Independent native CUDA Provider Context/Queue/two resident slots; no artificial per-kernel waits",
+        "equivalence": "One complete ordinary resident operation through terminal event completion and retained-reference settlement; same bits/shape/precision. No external capture or no-private requirement."
+      },
+      "material_contribution": {
+        "frequency": 1,
+        "value": 1,
+        "unit": "completed-tensor-operation",
+        "budget": 5,
+        "denominator": "one complete resident tensor operation plus terminal Completion",
+        "derivation": "One fixed model-shaped resident operation; no invented invocation frequency or full-model throughput."
+      },
+      "semantic_contract": "gelu_tanh bf16 -> bf16 original F32 intermediate/precision and ordinary managed-resource contract",
+      "comparability": "COMPARABLE",
+      "peer_id": "actual-peer",
+      "metric": {
+        "name": "operations-per-second",
+        "unit": "op/s",
+        "direction": "higher-is-better"
+      },
+      "input": {
+        "distribution": "Original nonuniform seed5/17 dyadic payloads, typed scales/bias/mask and checked IDs; output precision unchanged",
+        "scale": {
+          "tokens": 32,
+          "hidden": 4096,
+          "input_slots": 2
+        }
+      },
+      "setup": "Original independent two-slot owners; complete output verified before/after; original2048 symmetric complete warmup; cold setup separate",
+      "charged_phases": [
+        "Original submit, all math/conversion/checks/private runtime/stream transfer, terminal Completion wait and retained-reference settlement"
+      ],
+      "pair": {
+        "candidate": "Candidate",
+        "peer": "Peer"
+      },
+      "practical_margin_percent": 5,
+      "noninferiority_margin_percent": 5,
+      "estimator": {
+        "kind": "process-median",
+        "minimum_independent_samples": 15,
+        "tail_alpha": 0.01
+      },
+      "required_strata": [
+        "candidate-first-candidate-first-allocation",
+        "candidate-first-peer-first-allocation",
+        "peer-first-candidate-first-allocation",
+        "peer-first-peer-first-allocation"
+      ],
+      "required_controls": [
+        "aa",
+        "delta5",
+        "delta10",
+        "timer-floor"
+      ]
+    },
+    {
+      "id": "softplus-f16-t1-h2048-hyle-torch",
+      "tier": "replay",
+      "gate_role": "product",
+      "consumer_key": "cuda-fixed-tensor/softplus-f16-t1-h2048",
+      "provenance": {
+        "path": "consumer.json",
+        "sha256": "dc867450c1b361c300382691a24a174a3f94c93be180c0990b728e393c7028b4"
+      },
+      "ownership_topology": {
+        "candidate": "Independent original mature Provider Context/Queue/two resident slots; private pools admitted",
+        "peer": "Independent native CUDA Provider Context/Queue/two resident slots; no artificial per-kernel waits",
+        "equivalence": "One complete ordinary resident operation through terminal event completion and retained-reference settlement; same bits/shape/precision. No external capture or no-private requirement."
+      },
+      "material_contribution": {
+        "frequency": 1,
+        "value": 1,
+        "unit": "completed-tensor-operation",
+        "budget": 5,
+        "denominator": "one complete resident tensor operation plus terminal Completion",
+        "derivation": "One fixed model-shaped resident operation; no invented invocation frequency or full-model throughput."
+      },
+      "semantic_contract": "softplus f16 -> f16 original F32 intermediate/precision and ordinary managed-resource contract",
+      "comparability": "COMPARABLE",
+      "peer_id": "actual-peer",
+      "metric": {
+        "name": "operations-per-second",
+        "unit": "op/s",
+        "direction": "higher-is-better"
+      },
+      "input": {
+        "distribution": "Original nonuniform seed5/17 dyadic payloads, typed scales/bias/mask and checked IDs; output precision unchanged",
+        "scale": {
+          "tokens": 1,
+          "hidden": 2048,
+          "input_slots": 2
+        }
+      },
+      "setup": "Original independent two-slot owners; complete output verified before/after; original2048 symmetric complete warmup; cold setup separate",
+      "charged_phases": [
+        "Original submit, all math/conversion/checks/private runtime/stream transfer, terminal Completion wait and retained-reference settlement"
+      ],
+      "pair": {
+        "candidate": "Candidate",
+        "peer": "Peer"
+      },
+      "practical_margin_percent": 5,
+      "noninferiority_margin_percent": 5,
+      "estimator": {
+        "kind": "process-median",
+        "minimum_independent_samples": 15,
+        "tail_alpha": 0.01
+      },
+      "required_strata": [
+        "candidate-first-candidate-first-allocation",
+        "candidate-first-peer-first-allocation",
+        "peer-first-candidate-first-allocation",
+        "peer-first-peer-first-allocation"
+      ],
+      "required_controls": [
+        "aa",
+        "delta5",
+        "delta10",
+        "timer-floor"
+      ]
+    },
+    {
+      "id": "softplus-bf16-t32-h4096-hyle-torch",
+      "tier": "replay",
+      "gate_role": "product",
+      "consumer_key": "cuda-fixed-tensor/softplus-bf16-t32-h4096",
+      "provenance": {
+        "path": "consumer.json",
+        "sha256": "dc867450c1b361c300382691a24a174a3f94c93be180c0990b728e393c7028b4"
+      },
+      "ownership_topology": {
+        "candidate": "Independent original mature Provider Context/Queue/two resident slots; private pools admitted",
+        "peer": "Independent native CUDA Provider Context/Queue/two resident slots; no artificial per-kernel waits",
+        "equivalence": "One complete ordinary resident operation through terminal event completion and retained-reference settlement; same bits/shape/precision. No external capture or no-private requirement."
+      },
+      "material_contribution": {
+        "frequency": 1,
+        "value": 1,
+        "unit": "completed-tensor-operation",
+        "budget": 5,
+        "denominator": "one complete resident tensor operation plus terminal Completion",
+        "derivation": "One fixed model-shaped resident operation; no invented invocation frequency or full-model throughput."
+      },
+      "semantic_contract": "softplus bf16 -> bf16 original F32 intermediate/precision and ordinary managed-resource contract",
+      "comparability": "COMPARABLE",
+      "peer_id": "actual-peer",
+      "metric": {
+        "name": "operations-per-second",
+        "unit": "op/s",
+        "direction": "higher-is-better"
+      },
+      "input": {
+        "distribution": "Original nonuniform seed5/17 dyadic payloads, typed scales/bias/mask and checked IDs; output precision unchanged",
+        "scale": {
+          "tokens": 32,
+          "hidden": 4096,
+          "input_slots": 2
+        }
+      },
+      "setup": "Original independent two-slot owners; complete output verified before/after; original2048 symmetric complete warmup; cold setup separate",
+      "charged_phases": [
+        "Original submit, all math/conversion/checks/private runtime/stream transfer, terminal Completion wait and retained-reference settlement"
+      ],
+      "pair": {
+        "candidate": "Candidate",
+        "peer": "Peer"
+      },
+      "practical_margin_percent": 5,
+      "noninferiority_margin_percent": 5,
+      "estimator": {
+        "kind": "process-median",
+        "minimum_independent_samples": 15,
+        "tail_alpha": 0.01
+      },
+      "required_strata": [
+        "candidate-first-candidate-first-allocation",
+        "candidate-first-peer-first-allocation",
+        "peer-first-candidate-first-allocation",
+        "peer-first-peer-first-allocation"
+      ],
+      "required_controls": [
+        "aa",
+        "delta5",
+        "delta10",
+        "timer-floor"
+      ]
+    },
+    {
+      "id": "add-f16-t1-h2048-hyle-ggml",
+      "tier": "replay",
+      "gate_role": "product",
+      "consumer_key": "cuda-fixed-tensor/add-f16-t1-h2048",
+      "provenance": {
+        "path": "consumer.json",
+        "sha256": "dc867450c1b361c300382691a24a174a3f94c93be180c0990b728e393c7028b4"
+      },
+      "ownership_topology": {
+        "candidate": "Independent original mature Provider Context/Queue/two resident slots; private pools admitted",
+        "peer": "Independent native CUDA Provider Context/Queue/two resident slots; no artificial per-kernel waits",
+        "equivalence": "One complete ordinary resident operation through terminal event completion and retained-reference settlement; same bits/shape/precision. No external capture or no-private requirement."
+      },
+      "material_contribution": {
+        "frequency": 1,
+        "value": 1,
+        "unit": "completed-tensor-operation",
+        "budget": 5,
+        "denominator": "one complete resident tensor operation plus terminal Completion",
+        "derivation": "One fixed model-shaped resident operation; no invented invocation frequency or full-model throughput."
+      },
+      "semantic_contract": "add f16 -> f16 original F32 intermediate/precision and ordinary managed-resource contract",
+      "comparability": "COMPARABLE",
+      "peer_id": "actual-peer",
+      "metric": {
+        "name": "operations-per-second",
+        "unit": "op/s",
+        "direction": "higher-is-better"
+      },
+      "input": {
+        "distribution": "Original nonuniform seed5/17 dyadic payloads, typed scales/bias/mask and checked IDs; output precision unchanged",
+        "scale": {
+          "tokens": 1,
+          "hidden": 2048,
+          "input_slots": 2
+        }
+      },
+      "setup": "Original independent two-slot owners; complete output verified before/after; original2048 symmetric complete warmup; cold setup separate",
+      "charged_phases": [
+        "Original submit, all math/conversion/checks/private runtime/stream transfer, terminal Completion wait and retained-reference settlement"
+      ],
+      "pair": {
+        "candidate": "Candidate",
+        "peer": "Peer"
+      },
+      "practical_margin_percent": 5,
+      "noninferiority_margin_percent": 5,
+      "estimator": {
+        "kind": "process-median",
+        "minimum_independent_samples": 15,
+        "tail_alpha": 0.01
+      },
+      "required_strata": [
+        "candidate-first-candidate-first-allocation",
+        "candidate-first-peer-first-allocation",
+        "peer-first-candidate-first-allocation",
+        "peer-first-peer-first-allocation"
+      ],
+      "required_controls": [
+        "aa",
+        "delta5",
+        "delta10",
+        "timer-floor"
+      ]
+    },
+    {
+      "id": "sub-f16-t32-h4096-hyle-ggml",
+      "tier": "replay",
+      "gate_role": "product",
+      "consumer_key": "cuda-fixed-tensor/sub-f16-t32-h4096",
+      "provenance": {
+        "path": "consumer.json",
+        "sha256": "dc867450c1b361c300382691a24a174a3f94c93be180c0990b728e393c7028b4"
+      },
+      "ownership_topology": {
+        "candidate": "Independent original mature Provider Context/Queue/two resident slots; private pools admitted",
+        "peer": "Independent native CUDA Provider Context/Queue/two resident slots; no artificial per-kernel waits",
+        "equivalence": "One complete ordinary resident operation through terminal event completion and retained-reference settlement; same bits/shape/precision. No external capture or no-private requirement."
+      },
+      "material_contribution": {
+        "frequency": 1,
+        "value": 1,
+        "unit": "completed-tensor-operation",
+        "budget": 5,
+        "denominator": "one complete resident tensor operation plus terminal Completion",
+        "derivation": "One fixed model-shaped resident operation; no invented invocation frequency or full-model throughput."
+      },
+      "semantic_contract": "sub f16 -> f16 original F32 intermediate/precision and ordinary managed-resource contract",
+      "comparability": "COMPARABLE",
+      "peer_id": "actual-peer",
+      "metric": {
+        "name": "operations-per-second",
+        "unit": "op/s",
+        "direction": "higher-is-better"
+      },
+      "input": {
+        "distribution": "Original nonuniform seed5/17 dyadic payloads, typed scales/bias/mask and checked IDs; output precision unchanged",
+        "scale": {
+          "tokens": 32,
+          "hidden": 4096,
+          "input_slots": 2
+        }
+      },
+      "setup": "Original independent two-slot owners; complete output verified before/after; original2048 symmetric complete warmup; cold setup separate",
+      "charged_phases": [
+        "Original submit, all math/conversion/checks/private runtime/stream transfer, terminal Completion wait and retained-reference settlement"
+      ],
+      "pair": {
+        "candidate": "Candidate",
+        "peer": "Peer"
+      },
+      "practical_margin_percent": 5,
+      "noninferiority_margin_percent": 5,
+      "estimator": {
+        "kind": "process-median",
+        "minimum_independent_samples": 15,
+        "tail_alpha": 0.01
+      },
+      "required_strata": [
+        "candidate-first-candidate-first-allocation",
+        "candidate-first-peer-first-allocation",
+        "peer-first-candidate-first-allocation",
+        "peer-first-peer-first-allocation"
+      ],
+      "required_controls": [
+        "aa",
+        "delta5",
+        "delta10",
+        "timer-floor"
+      ]
+    },
+    {
+      "id": "sub-bf16-t1-h2048-hyle-ggml",
+      "tier": "replay",
+      "gate_role": "product",
+      "consumer_key": "cuda-fixed-tensor/sub-bf16-t1-h2048",
+      "provenance": {
+        "path": "consumer.json",
+        "sha256": "dc867450c1b361c300382691a24a174a3f94c93be180c0990b728e393c7028b4"
+      },
+      "ownership_topology": {
+        "candidate": "Independent original mature Provider Context/Queue/two resident slots; private pools admitted",
+        "peer": "Independent native CUDA Provider Context/Queue/two resident slots; no artificial per-kernel waits",
+        "equivalence": "One complete ordinary resident operation through terminal event completion and retained-reference settlement; same bits/shape/precision. No external capture or no-private requirement."
+      },
+      "material_contribution": {
+        "frequency": 1,
+        "value": 1,
+        "unit": "completed-tensor-operation",
+        "budget": 5,
+        "denominator": "one complete resident tensor operation plus terminal Completion",
+        "derivation": "One fixed model-shaped resident operation; no invented invocation frequency or full-model throughput."
+      },
+      "semantic_contract": "sub bf16 -> bf16 original F32 intermediate/precision and ordinary managed-resource contract",
+      "comparability": "COMPARABLE",
+      "peer_id": "actual-peer",
+      "metric": {
+        "name": "operations-per-second",
+        "unit": "op/s",
+        "direction": "higher-is-better"
+      },
+      "input": {
+        "distribution": "Original nonuniform seed5/17 dyadic payloads, typed scales/bias/mask and checked IDs; output precision unchanged",
+        "scale": {
+          "tokens": 1,
+          "hidden": 2048,
+          "input_slots": 2
+        }
+      },
+      "setup": "Original independent two-slot owners; complete output verified before/after; original2048 symmetric complete warmup; cold setup separate",
+      "charged_phases": [
+        "Original submit, all math/conversion/checks/private runtime/stream transfer, terminal Completion wait and retained-reference settlement"
+      ],
+      "pair": {
+        "candidate": "Candidate",
+        "peer": "Peer"
+      },
+      "practical_margin_percent": 5,
+      "noninferiority_margin_percent": 5,
+      "estimator": {
+        "kind": "process-median",
+        "minimum_independent_samples": 15,
+        "tail_alpha": 0.01
+      },
+      "required_strata": [
+        "candidate-first-candidate-first-allocation",
+        "candidate-first-peer-first-allocation",
+        "peer-first-candidate-first-allocation",
+        "peer-first-peer-first-allocation"
+      ],
+      "required_controls": [
+        "aa",
+        "delta5",
+        "delta10",
+        "timer-floor"
+      ]
+    },
+    {
+      "id": "mul-f32-t1-h2048-hyle-ggml",
+      "tier": "replay",
+      "gate_role": "product",
+      "consumer_key": "cuda-fixed-tensor/mul-f32-t1-h2048",
+      "provenance": {
+        "path": "consumer.json",
+        "sha256": "dc867450c1b361c300382691a24a174a3f94c93be180c0990b728e393c7028b4"
+      },
+      "ownership_topology": {
+        "candidate": "Independent original mature Provider Context/Queue/two resident slots; private pools admitted",
+        "peer": "Independent native CUDA Provider Context/Queue/two resident slots; no artificial per-kernel waits",
+        "equivalence": "One complete ordinary resident operation through terminal event completion and retained-reference settlement; same bits/shape/precision. No external capture or no-private requirement."
+      },
+      "material_contribution": {
+        "frequency": 1,
+        "value": 1,
+        "unit": "completed-tensor-operation",
+        "budget": 5,
+        "denominator": "one complete resident tensor operation plus terminal Completion",
+        "derivation": "One fixed model-shaped resident operation; no invented invocation frequency or full-model throughput."
+      },
+      "semantic_contract": "mul f32 -> f32 original F32 intermediate/precision and ordinary managed-resource contract",
+      "comparability": "COMPARABLE",
+      "peer_id": "actual-peer",
+      "metric": {
+        "name": "operations-per-second",
+        "unit": "op/s",
+        "direction": "higher-is-better"
+      },
+      "input": {
+        "distribution": "Original nonuniform seed5/17 dyadic payloads, typed scales/bias/mask and checked IDs; output precision unchanged",
+        "scale": {
+          "tokens": 1,
+          "hidden": 2048,
+          "input_slots": 2
+        }
+      },
+      "setup": "Original independent two-slot owners; complete output verified before/after; original2048 symmetric complete warmup; cold setup separate",
+      "charged_phases": [
+        "Original submit, all math/conversion/checks/private runtime/stream transfer, terminal Completion wait and retained-reference settlement"
+      ],
+      "pair": {
+        "candidate": "Candidate",
+        "peer": "Peer"
+      },
+      "practical_margin_percent": 5,
+      "noninferiority_margin_percent": 5,
+      "estimator": {
+        "kind": "process-median",
+        "minimum_independent_samples": 15,
+        "tail_alpha": 0.01
+      },
+      "required_strata": [
+        "candidate-first-candidate-first-allocation",
+        "candidate-first-peer-first-allocation",
+        "peer-first-candidate-first-allocation",
+        "peer-first-peer-first-allocation"
+      ],
+      "required_controls": [
+        "aa",
+        "delta5",
+        "delta10",
+        "timer-floor"
+      ]
+    },
+    {
+      "id": "mul-f16-t32-h4096-hyle-ggml",
+      "tier": "replay",
+      "gate_role": "product",
+      "consumer_key": "cuda-fixed-tensor/mul-f16-t32-h4096",
+      "provenance": {
+        "path": "consumer.json",
+        "sha256": "dc867450c1b361c300382691a24a174a3f94c93be180c0990b728e393c7028b4"
+      },
+      "ownership_topology": {
+        "candidate": "Independent original mature Provider Context/Queue/two resident slots; private pools admitted",
+        "peer": "Independent native CUDA Provider Context/Queue/two resident slots; no artificial per-kernel waits",
+        "equivalence": "One complete ordinary resident operation through terminal event completion and retained-reference settlement; same bits/shape/precision. No external capture or no-private requirement."
+      },
+      "material_contribution": {
+        "frequency": 1,
+        "value": 1,
+        "unit": "completed-tensor-operation",
+        "budget": 5,
+        "denominator": "one complete resident tensor operation plus terminal Completion",
+        "derivation": "One fixed model-shaped resident operation; no invented invocation frequency or full-model throughput."
+      },
+      "semantic_contract": "mul f16 -> f16 original F32 intermediate/precision and ordinary managed-resource contract",
+      "comparability": "COMPARABLE",
+      "peer_id": "actual-peer",
+      "metric": {
+        "name": "operations-per-second",
+        "unit": "op/s",
+        "direction": "higher-is-better"
+      },
+      "input": {
+        "distribution": "Original nonuniform seed5/17 dyadic payloads, typed scales/bias/mask and checked IDs; output precision unchanged",
+        "scale": {
+          "tokens": 32,
+          "hidden": 4096,
+          "input_slots": 2
+        }
+      },
+      "setup": "Original independent two-slot owners; complete output verified before/after; original2048 symmetric complete warmup; cold setup separate",
+      "charged_phases": [
+        "Original submit, all math/conversion/checks/private runtime/stream transfer, terminal Completion wait and retained-reference settlement"
+      ],
+      "pair": {
+        "candidate": "Candidate",
+        "peer": "Peer"
+      },
+      "practical_margin_percent": 5,
+      "noninferiority_margin_percent": 5,
+      "estimator": {
+        "kind": "process-median",
+        "minimum_independent_samples": 15,
+        "tail_alpha": 0.01
+      },
+      "required_strata": [
+        "candidate-first-candidate-first-allocation",
+        "candidate-first-peer-first-allocation",
+        "peer-first-candidate-first-allocation",
+        "peer-first-peer-first-allocation"
+      ],
+      "required_controls": [
+        "aa",
+        "delta5",
+        "delta10",
+        "timer-floor"
+      ]
+    },
+    {
+      "id": "mul-bf16-t1-h2048-hyle-ggml",
+      "tier": "replay",
+      "gate_role": "product",
+      "consumer_key": "cuda-fixed-tensor/mul-bf16-t1-h2048",
+      "provenance": {
+        "path": "consumer.json",
+        "sha256": "dc867450c1b361c300382691a24a174a3f94c93be180c0990b728e393c7028b4"
+      },
+      "ownership_topology": {
+        "candidate": "Independent original mature Provider Context/Queue/two resident slots; private pools admitted",
+        "peer": "Independent native CUDA Provider Context/Queue/two resident slots; no artificial per-kernel waits",
+        "equivalence": "One complete ordinary resident operation through terminal event completion and retained-reference settlement; same bits/shape/precision. No external capture or no-private requirement."
+      },
+      "material_contribution": {
+        "frequency": 1,
+        "value": 1,
+        "unit": "completed-tensor-operation",
+        "budget": 5,
+        "denominator": "one complete resident tensor operation plus terminal Completion",
+        "derivation": "One fixed model-shaped resident operation; no invented invocation frequency or full-model throughput."
+      },
+      "semantic_contract": "mul bf16 -> bf16 original F32 intermediate/precision and ordinary managed-resource contract",
+      "comparability": "COMPARABLE",
+      "peer_id": "actual-peer",
+      "metric": {
+        "name": "operations-per-second",
+        "unit": "op/s",
+        "direction": "higher-is-better"
+      },
+      "input": {
+        "distribution": "Original nonuniform seed5/17 dyadic payloads, typed scales/bias/mask and checked IDs; output precision unchanged",
+        "scale": {
+          "tokens": 1,
+          "hidden": 2048,
+          "input_slots": 2
+        }
+      },
+      "setup": "Original independent two-slot owners; complete output verified before/after; original2048 symmetric complete warmup; cold setup separate",
+      "charged_phases": [
+        "Original submit, all math/conversion/checks/private runtime/stream transfer, terminal Completion wait and retained-reference settlement"
+      ],
+      "pair": {
+        "candidate": "Candidate",
+        "peer": "Peer"
+      },
+      "practical_margin_percent": 5,
+      "noninferiority_margin_percent": 5,
+      "estimator": {
+        "kind": "process-median",
+        "minimum_independent_samples": 15,
+        "tail_alpha": 0.01
+      },
+      "required_strata": [
+        "candidate-first-candidate-first-allocation",
+        "candidate-first-peer-first-allocation",
+        "peer-first-candidate-first-allocation",
+        "peer-first-peer-first-allocation"
+      ],
+      "required_controls": [
+        "aa",
+        "delta5",
+        "delta10",
+        "timer-floor"
+      ]
+    },
+    {
+      "id": "mul-bf16-t32-h4096-hyle-ggml",
+      "tier": "replay",
+      "gate_role": "product",
+      "consumer_key": "cuda-fixed-tensor/mul-bf16-t32-h4096",
+      "provenance": {
+        "path": "consumer.json",
+        "sha256": "dc867450c1b361c300382691a24a174a3f94c93be180c0990b728e393c7028b4"
+      },
+      "ownership_topology": {
+        "candidate": "Independent original mature Provider Context/Queue/two resident slots; private pools admitted",
+        "peer": "Independent native CUDA Provider Context/Queue/two resident slots; no artificial per-kernel waits",
+        "equivalence": "One complete ordinary resident operation through terminal event completion and retained-reference settlement; same bits/shape/precision. No external capture or no-private requirement."
+      },
+      "material_contribution": {
+        "frequency": 1,
+        "value": 1,
+        "unit": "completed-tensor-operation",
+        "budget": 5,
+        "denominator": "one complete resident tensor operation plus terminal Completion",
+        "derivation": "One fixed model-shaped resident operation; no invented invocation frequency or full-model throughput."
+      },
+      "semantic_contract": "mul bf16 -> bf16 original F32 intermediate/precision and ordinary managed-resource contract",
+      "comparability": "COMPARABLE",
+      "peer_id": "actual-peer",
+      "metric": {
+        "name": "operations-per-second",
+        "unit": "op/s",
+        "direction": "higher-is-better"
+      },
+      "input": {
+        "distribution": "Original nonuniform seed5/17 dyadic payloads, typed scales/bias/mask and checked IDs; output precision unchanged",
+        "scale": {
+          "tokens": 32,
+          "hidden": 4096,
+          "input_slots": 2
+        }
+      },
+      "setup": "Original independent two-slot owners; complete output verified before/after; original2048 symmetric complete warmup; cold setup separate",
+      "charged_phases": [
+        "Original submit, all math/conversion/checks/private runtime/stream transfer, terminal Completion wait and retained-reference settlement"
+      ],
+      "pair": {
+        "candidate": "Candidate",
+        "peer": "Peer"
+      },
+      "practical_margin_percent": 5,
+      "noninferiority_margin_percent": 5,
+      "estimator": {
+        "kind": "process-median",
+        "minimum_independent_samples": 15,
+        "tail_alpha": 0.01
+      },
+      "required_strata": [
+        "candidate-first-candidate-first-allocation",
+        "candidate-first-peer-first-allocation",
+        "peer-first-candidate-first-allocation",
+        "peer-first-peer-first-allocation"
+      ],
+      "required_controls": [
+        "aa",
+        "delta5",
+        "delta10",
+        "timer-floor"
+      ]
+    },
+    {
+      "id": "div-bf16-t32-h4096-hyle-ggml",
+      "tier": "replay",
+      "gate_role": "product",
+      "consumer_key": "cuda-fixed-tensor/div-bf16-t32-h4096",
+      "provenance": {
+        "path": "consumer.json",
+        "sha256": "dc867450c1b361c300382691a24a174a3f94c93be180c0990b728e393c7028b4"
+      },
+      "ownership_topology": {
+        "candidate": "Independent original mature Provider Context/Queue/two resident slots; private pools admitted",
+        "peer": "Independent native CUDA Provider Context/Queue/two resident slots; no artificial per-kernel waits",
+        "equivalence": "One complete ordinary resident operation through terminal event completion and retained-reference settlement; same bits/shape/precision. No external capture or no-private requirement."
+      },
+      "material_contribution": {
+        "frequency": 1,
+        "value": 1,
+        "unit": "completed-tensor-operation",
+        "budget": 5,
+        "denominator": "one complete resident tensor operation plus terminal Completion",
+        "derivation": "One fixed model-shaped resident operation; no invented invocation frequency or full-model throughput."
+      },
+      "semantic_contract": "div bf16 -> bf16 original F32 intermediate/precision and ordinary managed-resource contract",
+      "comparability": "COMPARABLE",
+      "peer_id": "actual-peer",
+      "metric": {
+        "name": "operations-per-second",
+        "unit": "op/s",
+        "direction": "higher-is-better"
+      },
+      "input": {
+        "distribution": "Original nonuniform seed5/17 dyadic payloads, typed scales/bias/mask and checked IDs; output precision unchanged",
+        "scale": {
+          "tokens": 32,
+          "hidden": 4096,
+          "input_slots": 2
+        }
+      },
+      "setup": "Original independent two-slot owners; complete output verified before/after; original2048 symmetric complete warmup; cold setup separate",
+      "charged_phases": [
+        "Original submit, all math/conversion/checks/private runtime/stream transfer, terminal Completion wait and retained-reference settlement"
+      ],
+      "pair": {
+        "candidate": "Candidate",
+        "peer": "Peer"
+      },
+      "practical_margin_percent": 5,
+      "noninferiority_margin_percent": 5,
+      "estimator": {
+        "kind": "process-median",
+        "minimum_independent_samples": 15,
+        "tail_alpha": 0.01
+      },
+      "required_strata": [
+        "candidate-first-candidate-first-allocation",
+        "candidate-first-peer-first-allocation",
+        "peer-first-candidate-first-allocation",
+        "peer-first-peer-first-allocation"
+      ],
+      "required_controls": [
+        "aa",
+        "delta5",
+        "delta10",
+        "timer-floor"
+      ]
+    },
+    {
+      "id": "rms-f32-t1-h2048-hyle-ggml",
+      "tier": "replay",
+      "gate_role": "product",
+      "consumer_key": "cuda-fixed-tensor/rms-f32-t1-h2048",
+      "provenance": {
+        "path": "consumer.json",
+        "sha256": "dc867450c1b361c300382691a24a174a3f94c93be180c0990b728e393c7028b4"
+      },
+      "ownership_topology": {
+        "candidate": "Independent original mature Provider Context/Queue/two resident slots; private pools admitted",
+        "peer": "Independent native CUDA Provider Context/Queue/two resident slots; no artificial per-kernel waits",
+        "equivalence": "One complete ordinary resident operation through terminal event completion and retained-reference settlement; same bits/shape/precision. No external capture or no-private requirement."
+      },
+      "material_contribution": {
+        "frequency": 1,
+        "value": 1,
+        "unit": "completed-tensor-operation",
+        "budget": 5,
+        "denominator": "one complete resident tensor operation plus terminal Completion",
+        "derivation": "One fixed model-shaped resident operation; no invented invocation frequency or full-model throughput."
+      },
+      "semantic_contract": "rms f32 -> f32 original F32 intermediate/precision and ordinary managed-resource contract",
+      "comparability": "COMPARABLE",
+      "peer_id": "actual-peer",
+      "metric": {
+        "name": "operations-per-second",
+        "unit": "op/s",
+        "direction": "higher-is-better"
+      },
+      "input": {
+        "distribution": "Original nonuniform seed5/17 dyadic payloads, typed scales/bias/mask and checked IDs; output precision unchanged",
+        "scale": {
+          "tokens": 1,
+          "hidden": 2048,
+          "input_slots": 2
+        }
+      },
+      "setup": "Original independent two-slot owners; complete output verified before/after; original2048 symmetric complete warmup; cold setup separate",
+      "charged_phases": [
+        "Original submit, all math/conversion/checks/private runtime/stream transfer, terminal Completion wait and retained-reference settlement"
+      ],
+      "pair": {
+        "candidate": "Candidate",
+        "peer": "Peer"
+      },
+      "practical_margin_percent": 5,
+      "noninferiority_margin_percent": 5,
+      "estimator": {
+        "kind": "process-median",
+        "minimum_independent_samples": 15,
+        "tail_alpha": 0.01
+      },
+      "required_strata": [
+        "candidate-first-candidate-first-allocation",
+        "candidate-first-peer-first-allocation",
+        "peer-first-candidate-first-allocation",
+        "peer-first-peer-first-allocation"
+      ],
+      "required_controls": [
+        "aa",
+        "delta5",
+        "delta10",
+        "timer-floor"
+      ]
+    },
+    {
+      "id": "rms-f16-t32-h4096-hyle-ggml",
+      "tier": "replay",
+      "gate_role": "product",
+      "consumer_key": "cuda-fixed-tensor/rms-f16-t32-h4096",
+      "provenance": {
+        "path": "consumer.json",
+        "sha256": "dc867450c1b361c300382691a24a174a3f94c93be180c0990b728e393c7028b4"
+      },
+      "ownership_topology": {
+        "candidate": "Independent original mature Provider Context/Queue/two resident slots; private pools admitted",
+        "peer": "Independent native CUDA Provider Context/Queue/two resident slots; no artificial per-kernel waits",
+        "equivalence": "One complete ordinary resident operation through terminal event completion and retained-reference settlement; same bits/shape/precision. No external capture or no-private requirement."
+      },
+      "material_contribution": {
+        "frequency": 1,
+        "value": 1,
+        "unit": "completed-tensor-operation",
+        "budget": 5,
+        "denominator": "one complete resident tensor operation plus terminal Completion",
+        "derivation": "One fixed model-shaped resident operation; no invented invocation frequency or full-model throughput."
+      },
+      "semantic_contract": "rms f16 -> f16 original F32 intermediate/precision and ordinary managed-resource contract",
+      "comparability": "COMPARABLE",
+      "peer_id": "actual-peer",
+      "metric": {
+        "name": "operations-per-second",
+        "unit": "op/s",
+        "direction": "higher-is-better"
+      },
+      "input": {
+        "distribution": "Original nonuniform seed5/17 dyadic payloads, typed scales/bias/mask and checked IDs; output precision unchanged",
+        "scale": {
+          "tokens": 32,
+          "hidden": 4096,
+          "input_slots": 2
+        }
+      },
+      "setup": "Original independent two-slot owners; complete output verified before/after; original2048 symmetric complete warmup; cold setup separate",
+      "charged_phases": [
+        "Original submit, all math/conversion/checks/private runtime/stream transfer, terminal Completion wait and retained-reference settlement"
+      ],
+      "pair": {
+        "candidate": "Candidate",
+        "peer": "Peer"
+      },
+      "practical_margin_percent": 5,
+      "noninferiority_margin_percent": 5,
+      "estimator": {
+        "kind": "process-median",
+        "minimum_independent_samples": 15,
+        "tail_alpha": 0.01
+      },
+      "required_strata": [
+        "candidate-first-candidate-first-allocation",
+        "candidate-first-peer-first-allocation",
+        "peer-first-candidate-first-allocation",
+        "peer-first-peer-first-allocation"
+      ],
+      "required_controls": [
+        "aa",
+        "delta5",
+        "delta10",
+        "timer-floor"
+      ]
+    },
+    {
+      "id": "weighted_rms-f32-t32-h4096-hyle-ggml",
+      "tier": "replay",
+      "gate_role": "product",
+      "consumer_key": "cuda-fixed-tensor/weighted_rms-f32-t32-h4096",
+      "provenance": {
+        "path": "consumer.json",
+        "sha256": "dc867450c1b361c300382691a24a174a3f94c93be180c0990b728e393c7028b4"
+      },
+      "ownership_topology": {
+        "candidate": "Independent original mature Provider Context/Queue/two resident slots; private pools admitted",
+        "peer": "Independent native CUDA Provider Context/Queue/two resident slots; no artificial per-kernel waits",
+        "equivalence": "One complete ordinary resident operation through terminal event completion and retained-reference settlement; same bits/shape/precision. No external capture or no-private requirement."
+      },
+      "material_contribution": {
+        "frequency": 1,
+        "value": 1,
+        "unit": "completed-tensor-operation",
+        "budget": 5,
+        "denominator": "one complete resident tensor operation plus terminal Completion",
+        "derivation": "One fixed model-shaped resident operation; no invented invocation frequency or full-model throughput."
+      },
+      "semantic_contract": "weighted_rms f32 -> f32 original F32 intermediate/precision and ordinary managed-resource contract",
+      "comparability": "COMPARABLE",
+      "peer_id": "actual-peer",
+      "metric": {
+        "name": "operations-per-second",
+        "unit": "op/s",
+        "direction": "higher-is-better"
+      },
+      "input": {
+        "distribution": "Original nonuniform seed5/17 dyadic payloads, typed scales/bias/mask and checked IDs; output precision unchanged",
+        "scale": {
+          "tokens": 32,
+          "hidden": 4096,
+          "input_slots": 2
+        }
+      },
+      "setup": "Original independent two-slot owners; complete output verified before/after; original2048 symmetric complete warmup; cold setup separate",
+      "charged_phases": [
+        "Original submit, all math/conversion/checks/private runtime/stream transfer, terminal Completion wait and retained-reference settlement"
+      ],
+      "pair": {
+        "candidate": "Candidate",
+        "peer": "Peer"
+      },
+      "practical_margin_percent": 5,
+      "noninferiority_margin_percent": 5,
+      "estimator": {
+        "kind": "process-median",
+        "minimum_independent_samples": 15,
+        "tail_alpha": 0.01
+      },
+      "required_strata": [
+        "candidate-first-candidate-first-allocation",
+        "candidate-first-peer-first-allocation",
+        "peer-first-candidate-first-allocation",
+        "peer-first-peer-first-allocation"
+      ],
+      "required_controls": [
+        "aa",
+        "delta5",
+        "delta10",
+        "timer-floor"
+      ]
+    },
+    {
+      "id": "weighted_rms-f16-t1-h2048-hyle-ggml",
+      "tier": "replay",
+      "gate_role": "product",
+      "consumer_key": "cuda-fixed-tensor/weighted_rms-f16-t1-h2048",
+      "provenance": {
+        "path": "consumer.json",
+        "sha256": "dc867450c1b361c300382691a24a174a3f94c93be180c0990b728e393c7028b4"
+      },
+      "ownership_topology": {
+        "candidate": "Independent original mature Provider Context/Queue/two resident slots; private pools admitted",
+        "peer": "Independent native CUDA Provider Context/Queue/two resident slots; no artificial per-kernel waits",
+        "equivalence": "One complete ordinary resident operation through terminal event completion and retained-reference settlement; same bits/shape/precision. No external capture or no-private requirement."
+      },
+      "material_contribution": {
+        "frequency": 1,
+        "value": 1,
+        "unit": "completed-tensor-operation",
+        "budget": 5,
+        "denominator": "one complete resident tensor operation plus terminal Completion",
+        "derivation": "One fixed model-shaped resident operation; no invented invocation frequency or full-model throughput."
+      },
+      "semantic_contract": "weighted_rms f16 -> f16 original F32 intermediate/precision and ordinary managed-resource contract",
+      "comparability": "COMPARABLE",
+      "peer_id": "actual-peer",
+      "metric": {
+        "name": "operations-per-second",
+        "unit": "op/s",
+        "direction": "higher-is-better"
+      },
+      "input": {
+        "distribution": "Original nonuniform seed5/17 dyadic payloads, typed scales/bias/mask and checked IDs; output precision unchanged",
+        "scale": {
+          "tokens": 1,
+          "hidden": 2048,
+          "input_slots": 2
+        }
+      },
+      "setup": "Original independent two-slot owners; complete output verified before/after; original2048 symmetric complete warmup; cold setup separate",
+      "charged_phases": [
+        "Original submit, all math/conversion/checks/private runtime/stream transfer, terminal Completion wait and retained-reference settlement"
+      ],
+      "pair": {
+        "candidate": "Candidate",
+        "peer": "Peer"
+      },
+      "practical_margin_percent": 5,
+      "noninferiority_margin_percent": 5,
+      "estimator": {
+        "kind": "process-median",
+        "minimum_independent_samples": 15,
+        "tail_alpha": 0.01
+      },
+      "required_strata": [
+        "candidate-first-candidate-first-allocation",
+        "candidate-first-peer-first-allocation",
+        "peer-first-candidate-first-allocation",
+        "peer-first-peer-first-allocation"
+      ],
+      "required_controls": [
+        "aa",
+        "delta5",
+        "delta10",
+        "timer-floor"
+      ]
+    },
+    {
+      "id": "weighted_rms-bf16-t1-h2048-hyle-ggml",
+      "tier": "replay",
+      "gate_role": "product",
+      "consumer_key": "cuda-fixed-tensor/weighted_rms-bf16-t1-h2048",
+      "provenance": {
+        "path": "consumer.json",
+        "sha256": "dc867450c1b361c300382691a24a174a3f94c93be180c0990b728e393c7028b4"
+      },
+      "ownership_topology": {
+        "candidate": "Independent original mature Provider Context/Queue/two resident slots; private pools admitted",
+        "peer": "Independent native CUDA Provider Context/Queue/two resident slots; no artificial per-kernel waits",
+        "equivalence": "One complete ordinary resident operation through terminal event completion and retained-reference settlement; same bits/shape/precision. No external capture or no-private requirement."
+      },
+      "material_contribution": {
+        "frequency": 1,
+        "value": 1,
+        "unit": "completed-tensor-operation",
+        "budget": 5,
+        "denominator": "one complete resident tensor operation plus terminal Completion",
+        "derivation": "One fixed model-shaped resident operation; no invented invocation frequency or full-model throughput."
+      },
+      "semantic_contract": "weighted_rms bf16 -> bf16 original F32 intermediate/precision and ordinary managed-resource contract",
+      "comparability": "COMPARABLE",
+      "peer_id": "actual-peer",
+      "metric": {
+        "name": "operations-per-second",
+        "unit": "op/s",
+        "direction": "higher-is-better"
+      },
+      "input": {
+        "distribution": "Original nonuniform seed5/17 dyadic payloads, typed scales/bias/mask and checked IDs; output precision unchanged",
+        "scale": {
+          "tokens": 1,
+          "hidden": 2048,
+          "input_slots": 2
+        }
+      },
+      "setup": "Original independent two-slot owners; complete output verified before/after; original2048 symmetric complete warmup; cold setup separate",
+      "charged_phases": [
+        "Original submit, all math/conversion/checks/private runtime/stream transfer, terminal Completion wait and retained-reference settlement"
+      ],
+      "pair": {
+        "candidate": "Candidate",
+        "peer": "Peer"
+      },
+      "practical_margin_percent": 5,
+      "noninferiority_margin_percent": 5,
+      "estimator": {
+        "kind": "process-median",
+        "minimum_independent_samples": 15,
+        "tail_alpha": 0.01
+      },
+      "required_strata": [
+        "candidate-first-candidate-first-allocation",
+        "candidate-first-peer-first-allocation",
+        "peer-first-candidate-first-allocation",
+        "peer-first-peer-first-allocation"
+      ],
+      "required_controls": [
+        "aa",
+        "delta5",
+        "delta10",
+        "timer-floor"
+      ]
+    },
+    {
+      "id": "layer-f32-t1-h2048-hyle-ggml",
+      "tier": "replay",
+      "gate_role": "product",
+      "consumer_key": "cuda-fixed-tensor/layer-f32-t1-h2048",
+      "provenance": {
+        "path": "consumer.json",
+        "sha256": "dc867450c1b361c300382691a24a174a3f94c93be180c0990b728e393c7028b4"
+      },
+      "ownership_topology": {
+        "candidate": "Independent original mature Provider Context/Queue/two resident slots; private pools admitted",
+        "peer": "Independent native CUDA Provider Context/Queue/two resident slots; no artificial per-kernel waits",
+        "equivalence": "One complete ordinary resident operation through terminal event completion and retained-reference settlement; same bits/shape/precision. No external capture or no-private requirement."
+      },
+      "material_contribution": {
+        "frequency": 1,
+        "value": 1,
+        "unit": "completed-tensor-operation",
+        "budget": 5,
+        "denominator": "one complete resident tensor operation plus terminal Completion",
+        "derivation": "One fixed model-shaped resident operation; no invented invocation frequency or full-model throughput."
+      },
+      "semantic_contract": "layer f32 -> f32 original F32 intermediate/precision and ordinary managed-resource contract",
+      "comparability": "COMPARABLE",
+      "peer_id": "actual-peer",
+      "metric": {
+        "name": "operations-per-second",
+        "unit": "op/s",
+        "direction": "higher-is-better"
+      },
+      "input": {
+        "distribution": "Original nonuniform seed5/17 dyadic payloads, typed scales/bias/mask and checked IDs; output precision unchanged",
+        "scale": {
+          "tokens": 1,
+          "hidden": 2048,
+          "input_slots": 2
+        }
+      },
+      "setup": "Original independent two-slot owners; complete output verified before/after; original2048 symmetric complete warmup; cold setup separate",
+      "charged_phases": [
+        "Original submit, all math/conversion/checks/private runtime/stream transfer, terminal Completion wait and retained-reference settlement"
+      ],
+      "pair": {
+        "candidate": "Candidate",
+        "peer": "Peer"
+      },
+      "practical_margin_percent": 5,
+      "noninferiority_margin_percent": 5,
+      "estimator": {
+        "kind": "process-median",
+        "minimum_independent_samples": 15,
+        "tail_alpha": 0.01
+      },
+      "required_strata": [
+        "candidate-first-candidate-first-allocation",
+        "candidate-first-peer-first-allocation",
+        "peer-first-candidate-first-allocation",
+        "peer-first-peer-first-allocation"
+      ],
+      "required_controls": [
+        "aa",
+        "delta5",
+        "delta10",
+        "timer-floor"
+      ]
+    },
+    {
+      "id": "layer-f32-t32-h4096-hyle-ggml",
+      "tier": "replay",
+      "gate_role": "product",
+      "consumer_key": "cuda-fixed-tensor/layer-f32-t32-h4096",
+      "provenance": {
+        "path": "consumer.json",
+        "sha256": "dc867450c1b361c300382691a24a174a3f94c93be180c0990b728e393c7028b4"
+      },
+      "ownership_topology": {
+        "candidate": "Independent original mature Provider Context/Queue/two resident slots; private pools admitted",
+        "peer": "Independent native CUDA Provider Context/Queue/two resident slots; no artificial per-kernel waits",
+        "equivalence": "One complete ordinary resident operation through terminal event completion and retained-reference settlement; same bits/shape/precision. No external capture or no-private requirement."
+      },
+      "material_contribution": {
+        "frequency": 1,
+        "value": 1,
+        "unit": "completed-tensor-operation",
+        "budget": 5,
+        "denominator": "one complete resident tensor operation plus terminal Completion",
+        "derivation": "One fixed model-shaped resident operation; no invented invocation frequency or full-model throughput."
+      },
+      "semantic_contract": "layer f32 -> f32 original F32 intermediate/precision and ordinary managed-resource contract",
+      "comparability": "COMPARABLE",
+      "peer_id": "actual-peer",
+      "metric": {
+        "name": "operations-per-second",
+        "unit": "op/s",
+        "direction": "higher-is-better"
+      },
+      "input": {
+        "distribution": "Original nonuniform seed5/17 dyadic payloads, typed scales/bias/mask and checked IDs; output precision unchanged",
+        "scale": {
+          "tokens": 32,
+          "hidden": 4096,
+          "input_slots": 2
+        }
+      },
+      "setup": "Original independent two-slot owners; complete output verified before/after; original2048 symmetric complete warmup; cold setup separate",
+      "charged_phases": [
+        "Original submit, all math/conversion/checks/private runtime/stream transfer, terminal Completion wait and retained-reference settlement"
+      ],
+      "pair": {
+        "candidate": "Candidate",
+        "peer": "Peer"
+      },
+      "practical_margin_percent": 5,
+      "noninferiority_margin_percent": 5,
+      "estimator": {
+        "kind": "process-median",
+        "minimum_independent_samples": 15,
+        "tail_alpha": 0.01
+      },
+      "required_strata": [
+        "candidate-first-candidate-first-allocation",
+        "candidate-first-peer-first-allocation",
+        "peer-first-candidate-first-allocation",
+        "peer-first-peer-first-allocation"
+      ],
+      "required_controls": [
+        "aa",
+        "delta5",
+        "delta10",
+        "timer-floor"
+      ]
+    },
+    {
+      "id": "affine_layer-f32-t32-h4096-hyle-ggml",
+      "tier": "replay",
+      "gate_role": "product",
+      "consumer_key": "cuda-fixed-tensor/affine_layer-f32-t32-h4096",
+      "provenance": {
+        "path": "consumer.json",
+        "sha256": "dc867450c1b361c300382691a24a174a3f94c93be180c0990b728e393c7028b4"
+      },
+      "ownership_topology": {
+        "candidate": "Independent original mature Provider Context/Queue/two resident slots; private pools admitted",
+        "peer": "Independent native CUDA Provider Context/Queue/two resident slots; no artificial per-kernel waits",
+        "equivalence": "One complete ordinary resident operation through terminal event completion and retained-reference settlement; same bits/shape/precision. No external capture or no-private requirement."
+      },
+      "material_contribution": {
+        "frequency": 1,
+        "value": 1,
+        "unit": "completed-tensor-operation",
+        "budget": 5,
+        "denominator": "one complete resident tensor operation plus terminal Completion",
+        "derivation": "One fixed model-shaped resident operation; no invented invocation frequency or full-model throughput."
+      },
+      "semantic_contract": "affine_layer f32 -> f32 original F32 intermediate/precision and ordinary managed-resource contract",
+      "comparability": "COMPARABLE",
+      "peer_id": "actual-peer",
+      "metric": {
+        "name": "operations-per-second",
+        "unit": "op/s",
+        "direction": "higher-is-better"
+      },
+      "input": {
+        "distribution": "Original nonuniform seed5/17 dyadic payloads, typed scales/bias/mask and checked IDs; output precision unchanged",
+        "scale": {
+          "tokens": 32,
+          "hidden": 4096,
+          "input_slots": 2
+        }
+      },
+      "setup": "Original independent two-slot owners; complete output verified before/after; original2048 symmetric complete warmup; cold setup separate",
+      "charged_phases": [
+        "Original submit, all math/conversion/checks/private runtime/stream transfer, terminal Completion wait and retained-reference settlement"
+      ],
+      "pair": {
+        "candidate": "Candidate",
+        "peer": "Peer"
+      },
+      "practical_margin_percent": 5,
+      "noninferiority_margin_percent": 5,
+      "estimator": {
+        "kind": "process-median",
+        "minimum_independent_samples": 15,
+        "tail_alpha": 0.01
+      },
+      "required_strata": [
+        "candidate-first-candidate-first-allocation",
+        "candidate-first-peer-first-allocation",
+        "peer-first-candidate-first-allocation",
+        "peer-first-peer-first-allocation"
+      ],
+      "required_controls": [
+        "aa",
+        "delta5",
+        "delta10",
+        "timer-floor"
+      ]
+    },
+    {
+      "id": "affine_layer-bf16-t1-h2048-hyle-ggml",
+      "tier": "replay",
+      "gate_role": "product",
+      "consumer_key": "cuda-fixed-tensor/affine_layer-bf16-t1-h2048",
+      "provenance": {
+        "path": "consumer.json",
+        "sha256": "dc867450c1b361c300382691a24a174a3f94c93be180c0990b728e393c7028b4"
+      },
+      "ownership_topology": {
+        "candidate": "Independent original mature Provider Context/Queue/two resident slots; private pools admitted",
+        "peer": "Independent native CUDA Provider Context/Queue/two resident slots; no artificial per-kernel waits",
+        "equivalence": "One complete ordinary resident operation through terminal event completion and retained-reference settlement; same bits/shape/precision. No external capture or no-private requirement."
+      },
+      "material_contribution": {
+        "frequency": 1,
+        "value": 1,
+        "unit": "completed-tensor-operation",
+        "budget": 5,
+        "denominator": "one complete resident tensor operation plus terminal Completion",
+        "derivation": "One fixed model-shaped resident operation; no invented invocation frequency or full-model throughput."
+      },
+      "semantic_contract": "affine_layer bf16 -> bf16 original F32 intermediate/precision and ordinary managed-resource contract",
+      "comparability": "COMPARABLE",
+      "peer_id": "actual-peer",
+      "metric": {
+        "name": "operations-per-second",
+        "unit": "op/s",
+        "direction": "higher-is-better"
+      },
+      "input": {
+        "distribution": "Original nonuniform seed5/17 dyadic payloads, typed scales/bias/mask and checked IDs; output precision unchanged",
+        "scale": {
+          "tokens": 1,
+          "hidden": 2048,
+          "input_slots": 2
+        }
+      },
+      "setup": "Original independent two-slot owners; complete output verified before/after; original2048 symmetric complete warmup; cold setup separate",
+      "charged_phases": [
+        "Original submit, all math/conversion/checks/private runtime/stream transfer, terminal Completion wait and retained-reference settlement"
+      ],
+      "pair": {
+        "candidate": "Candidate",
+        "peer": "Peer"
+      },
+      "practical_margin_percent": 5,
+      "noninferiority_margin_percent": 5,
+      "estimator": {
+        "kind": "process-median",
+        "minimum_independent_samples": 15,
+        "tail_alpha": 0.01
+      },
+      "required_strata": [
+        "candidate-first-candidate-first-allocation",
+        "candidate-first-peer-first-allocation",
+        "peer-first-candidate-first-allocation",
+        "peer-first-peer-first-allocation"
+      ],
+      "required_controls": [
+        "aa",
+        "delta5",
+        "delta10",
+        "timer-floor"
+      ]
+    },
+    {
+      "id": "mean-bf16-t1-h2048-hyle-ggml",
+      "tier": "replay",
+      "gate_role": "product",
+      "consumer_key": "cuda-fixed-tensor/mean-bf16-t1-h2048",
+      "provenance": {
+        "path": "consumer.json",
+        "sha256": "dc867450c1b361c300382691a24a174a3f94c93be180c0990b728e393c7028b4"
+      },
+      "ownership_topology": {
+        "candidate": "Independent original mature Provider Context/Queue/two resident slots; private pools admitted",
+        "peer": "Independent native CUDA Provider Context/Queue/two resident slots; no artificial per-kernel waits",
+        "equivalence": "One complete ordinary resident operation through terminal event completion and retained-reference settlement; same bits/shape/precision. No external capture or no-private requirement."
+      },
+      "material_contribution": {
+        "frequency": 1,
+        "value": 1,
+        "unit": "completed-tensor-operation",
+        "budget": 5,
+        "denominator": "one complete resident tensor operation plus terminal Completion",
+        "derivation": "One fixed model-shaped resident operation; no invented invocation frequency or full-model throughput."
+      },
+      "semantic_contract": "mean bf16 -> bf16 original F32 intermediate/precision and ordinary managed-resource contract",
+      "comparability": "COMPARABLE",
+      "peer_id": "actual-peer",
+      "metric": {
+        "name": "operations-per-second",
+        "unit": "op/s",
+        "direction": "higher-is-better"
+      },
+      "input": {
+        "distribution": "Original nonuniform seed5/17 dyadic payloads, typed scales/bias/mask and checked IDs; output precision unchanged",
+        "scale": {
+          "tokens": 1,
+          "hidden": 2048,
+          "input_slots": 2
+        }
+      },
+      "setup": "Original independent two-slot owners; complete output verified before/after; original2048 symmetric complete warmup; cold setup separate",
+      "charged_phases": [
+        "Original submit, all math/conversion/checks/private runtime/stream transfer, terminal Completion wait and retained-reference settlement"
+      ],
+      "pair": {
+        "candidate": "Candidate",
+        "peer": "Peer"
+      },
+      "practical_margin_percent": 5,
+      "noninferiority_margin_percent": 5,
+      "estimator": {
+        "kind": "process-median",
+        "minimum_independent_samples": 15,
+        "tail_alpha": 0.01
+      },
+      "required_strata": [
+        "candidate-first-candidate-first-allocation",
+        "candidate-first-peer-first-allocation",
+        "peer-first-candidate-first-allocation",
+        "peer-first-peer-first-allocation"
+      ],
+      "required_controls": [
+        "aa",
+        "delta5",
+        "delta10",
+        "timer-floor"
+      ]
+    },
+    {
+      "id": "masked_softmax-bf16-t1-h2048-hyle-ggml",
+      "tier": "replay",
+      "gate_role": "product",
+      "consumer_key": "cuda-fixed-tensor/masked_softmax-bf16-t1-h2048",
+      "provenance": {
+        "path": "consumer.json",
+        "sha256": "dc867450c1b361c300382691a24a174a3f94c93be180c0990b728e393c7028b4"
+      },
+      "ownership_topology": {
+        "candidate": "Independent original mature Provider Context/Queue/two resident slots; private pools admitted",
+        "peer": "Independent native CUDA Provider Context/Queue/two resident slots; no artificial per-kernel waits",
+        "equivalence": "One complete ordinary resident operation through terminal event completion and retained-reference settlement; same bits/shape/precision. No external capture or no-private requirement."
+      },
+      "material_contribution": {
+        "frequency": 1,
+        "value": 1,
+        "unit": "completed-tensor-operation",
+        "budget": 5,
+        "denominator": "one complete resident tensor operation plus terminal Completion",
+        "derivation": "One fixed model-shaped resident operation; no invented invocation frequency or full-model throughput."
+      },
+      "semantic_contract": "masked_softmax bf16 -> bf16 original F32 intermediate/precision and ordinary managed-resource contract",
+      "comparability": "COMPARABLE",
+      "peer_id": "actual-peer",
+      "metric": {
+        "name": "operations-per-second",
+        "unit": "op/s",
+        "direction": "higher-is-better"
+      },
+      "input": {
+        "distribution": "Original nonuniform seed5/17 dyadic payloads, typed scales/bias/mask and checked IDs; output precision unchanged",
+        "scale": {
+          "tokens": 1,
+          "hidden": 2048,
+          "input_slots": 2
+        }
+      },
+      "setup": "Original independent two-slot owners; complete output verified before/after; original2048 symmetric complete warmup; cold setup separate",
+      "charged_phases": [
+        "Original submit, all math/conversion/checks/private runtime/stream transfer, terminal Completion wait and retained-reference settlement"
+      ],
+      "pair": {
+        "candidate": "Candidate",
+        "peer": "Peer"
+      },
+      "practical_margin_percent": 5,
+      "noninferiority_margin_percent": 5,
+      "estimator": {
+        "kind": "process-median",
+        "minimum_independent_samples": 15,
+        "tail_alpha": 0.01
+      },
+      "required_strata": [
+        "candidate-first-candidate-first-allocation",
+        "candidate-first-peer-first-allocation",
+        "peer-first-candidate-first-allocation",
+        "peer-first-peer-first-allocation"
+      ],
+      "required_controls": [
+        "aa",
+        "delta5",
+        "delta10",
+        "timer-floor"
+      ]
+    },
+    {
+      "id": "concat-f32-t32-h4096-hyle-ggml",
+      "tier": "replay",
+      "gate_role": "product",
+      "consumer_key": "cuda-fixed-tensor/concat-f32-t32-h4096",
+      "provenance": {
+        "path": "consumer.json",
+        "sha256": "dc867450c1b361c300382691a24a174a3f94c93be180c0990b728e393c7028b4"
+      },
+      "ownership_topology": {
+        "candidate": "Independent original mature Provider Context/Queue/two resident slots; private pools admitted",
+        "peer": "Independent native CUDA Provider Context/Queue/two resident slots; no artificial per-kernel waits",
+        "equivalence": "One complete ordinary resident operation through terminal event completion and retained-reference settlement; same bits/shape/precision. No external capture or no-private requirement."
+      },
+      "material_contribution": {
+        "frequency": 1,
+        "value": 1,
+        "unit": "completed-tensor-operation",
+        "budget": 5,
+        "denominator": "one complete resident tensor operation plus terminal Completion",
+        "derivation": "One fixed model-shaped resident operation; no invented invocation frequency or full-model throughput."
+      },
+      "semantic_contract": "concat f32 -> f32 original F32 intermediate/precision and ordinary managed-resource contract",
+      "comparability": "COMPARABLE",
+      "peer_id": "actual-peer",
+      "metric": {
+        "name": "operations-per-second",
+        "unit": "op/s",
+        "direction": "higher-is-better"
+      },
+      "input": {
+        "distribution": "Original nonuniform seed5/17 dyadic payloads, typed scales/bias/mask and checked IDs; output precision unchanged",
+        "scale": {
+          "tokens": 32,
+          "hidden": 4096,
+          "input_slots": 2
+        }
+      },
+      "setup": "Original independent two-slot owners; complete output verified before/after; original2048 symmetric complete warmup; cold setup separate",
+      "charged_phases": [
+        "Original submit, all math/conversion/checks/private runtime/stream transfer, terminal Completion wait and retained-reference settlement"
+      ],
+      "pair": {
+        "candidate": "Candidate",
+        "peer": "Peer"
+      },
+      "practical_margin_percent": 5,
+      "noninferiority_margin_percent": 5,
+      "estimator": {
+        "kind": "process-median",
+        "minimum_independent_samples": 15,
+        "tail_alpha": 0.01
+      },
+      "required_strata": [
+        "candidate-first-candidate-first-allocation",
+        "candidate-first-peer-first-allocation",
+        "peer-first-candidate-first-allocation",
+        "peer-first-peer-first-allocation"
+      ],
+      "required_controls": [
+        "aa",
+        "delta5",
+        "delta10",
+        "timer-floor"
+      ]
+    },
+    {
+      "id": "concat-bf16-t32-h4096-hyle-ggml",
+      "tier": "replay",
+      "gate_role": "product",
+      "consumer_key": "cuda-fixed-tensor/concat-bf16-t32-h4096",
+      "provenance": {
+        "path": "consumer.json",
+        "sha256": "dc867450c1b361c300382691a24a174a3f94c93be180c0990b728e393c7028b4"
+      },
+      "ownership_topology": {
+        "candidate": "Independent original mature Provider Context/Queue/two resident slots; private pools admitted",
+        "peer": "Independent native CUDA Provider Context/Queue/two resident slots; no artificial per-kernel waits",
+        "equivalence": "One complete ordinary resident operation through terminal event completion and retained-reference settlement; same bits/shape/precision. No external capture or no-private requirement."
+      },
+      "material_contribution": {
+        "frequency": 1,
+        "value": 1,
+        "unit": "completed-tensor-operation",
+        "budget": 5,
+        "denominator": "one complete resident tensor operation plus terminal Completion",
+        "derivation": "One fixed model-shaped resident operation; no invented invocation frequency or full-model throughput."
+      },
+      "semantic_contract": "concat bf16 -> bf16 original F32 intermediate/precision and ordinary managed-resource contract",
+      "comparability": "COMPARABLE",
+      "peer_id": "actual-peer",
+      "metric": {
+        "name": "operations-per-second",
+        "unit": "op/s",
+        "direction": "higher-is-better"
+      },
+      "input": {
+        "distribution": "Original nonuniform seed5/17 dyadic payloads, typed scales/bias/mask and checked IDs; output precision unchanged",
+        "scale": {
+          "tokens": 32,
+          "hidden": 4096,
+          "input_slots": 2
+        }
+      },
+      "setup": "Original independent two-slot owners; complete output verified before/after; original2048 symmetric complete warmup; cold setup separate",
+      "charged_phases": [
+        "Original submit, all math/conversion/checks/private runtime/stream transfer, terminal Completion wait and retained-reference settlement"
+      ],
+      "pair": {
+        "candidate": "Candidate",
+        "peer": "Peer"
+      },
+      "practical_margin_percent": 5,
+      "noninferiority_margin_percent": 5,
+      "estimator": {
+        "kind": "process-median",
+        "minimum_independent_samples": 15,
+        "tail_alpha": 0.01
+      },
+      "required_strata": [
+        "candidate-first-candidate-first-allocation",
+        "candidate-first-peer-first-allocation",
+        "peer-first-candidate-first-allocation",
+        "peer-first-peer-first-allocation"
+      ],
+      "required_controls": [
+        "aa",
+        "delta5",
+        "delta10",
+        "timer-floor"
+      ]
+    },
+    {
+      "id": "packed_silu-f32-t1-h6144-ggml-sglang",
+      "tier": "replay",
+      "gate_role": "product",
+      "consumer_key": "cuda-fixed-tensor/packed_silu-f32-t1-h6144",
+      "provenance": {
+        "path": "consumer.json",
+        "sha256": "dc867450c1b361c300382691a24a174a3f94c93be180c0990b728e393c7028b4"
+      },
+      "ownership_topology": {
+        "candidate": "Independent original mature Provider Context/Queue/two resident slots; private pools admitted",
+        "peer": "Independent native CUDA Provider Context/Queue/two resident slots; no artificial per-kernel waits",
+        "equivalence": "One complete ordinary resident operation through terminal event completion and retained-reference settlement; same bits/shape/precision. No external capture or no-private requirement."
+      },
+      "material_contribution": {
+        "frequency": 1,
+        "value": 1,
+        "unit": "completed-tensor-operation",
+        "budget": 5,
+        "denominator": "one complete resident tensor operation plus terminal Completion",
+        "derivation": "One fixed model-shaped resident operation; no invented invocation frequency or full-model throughput."
+      },
+      "semantic_contract": "packed_silu f32 -> f32 original F32 intermediate/precision and ordinary managed-resource contract",
+      "comparability": "COMPARABLE",
+      "peer_id": "actual-peer",
+      "metric": {
+        "name": "operations-per-second",
+        "unit": "op/s",
+        "direction": "higher-is-better"
+      },
+      "input": {
+        "distribution": "Original nonuniform seed5/17 dyadic payloads, typed scales/bias/mask and checked IDs; output precision unchanged",
+        "scale": {
+          "tokens": 1,
+          "hidden": 6144,
+          "input_slots": 2
+        }
+      },
+      "setup": "Original independent two-slot owners; complete output verified before/after; original2048 symmetric complete warmup; cold setup separate",
+      "charged_phases": [
+        "Original submit, all math/conversion/checks/private runtime/stream transfer, terminal Completion wait and retained-reference settlement"
+      ],
+      "pair": {
+        "candidate": "Candidate",
+        "peer": "Peer"
+      },
+      "practical_margin_percent": 5,
+      "noninferiority_margin_percent": 5,
+      "estimator": {
+        "kind": "process-median",
+        "minimum_independent_samples": 15,
+        "tail_alpha": 0.01
+      },
+      "required_strata": [
+        "candidate-first-candidate-first-allocation",
+        "candidate-first-peer-first-allocation",
+        "peer-first-candidate-first-allocation",
+        "peer-first-peer-first-allocation"
+      ],
+      "required_controls": [
+        "aa",
+        "delta5",
+        "delta10",
+        "timer-floor"
+      ]
+    },
+    {
+      "id": "packed_silu-f16-t1-h6144-hyle-sglang",
+      "tier": "replay",
+      "gate_role": "product",
+      "consumer_key": "cuda-fixed-tensor/packed_silu-f16-t1-h6144",
+      "provenance": {
+        "path": "consumer.json",
+        "sha256": "dc867450c1b361c300382691a24a174a3f94c93be180c0990b728e393c7028b4"
+      },
+      "ownership_topology": {
+        "candidate": "Independent original mature Provider Context/Queue/two resident slots; private pools admitted",
+        "peer": "Independent native CUDA Provider Context/Queue/two resident slots; no artificial per-kernel waits",
+        "equivalence": "One complete ordinary resident operation through terminal event completion and retained-reference settlement; same bits/shape/precision. No external capture or no-private requirement."
+      },
+      "material_contribution": {
+        "frequency": 1,
+        "value": 1,
+        "unit": "completed-tensor-operation",
+        "budget": 5,
+        "denominator": "one complete resident tensor operation plus terminal Completion",
+        "derivation": "One fixed model-shaped resident operation; no invented invocation frequency or full-model throughput."
+      },
+      "semantic_contract": "packed_silu f16 -> f16 original F32 intermediate/precision and ordinary managed-resource contract",
+      "comparability": "COMPARABLE",
+      "peer_id": "actual-peer",
+      "metric": {
+        "name": "operations-per-second",
+        "unit": "op/s",
+        "direction": "higher-is-better"
+      },
+      "input": {
+        "distribution": "Original nonuniform seed5/17 dyadic payloads, typed scales/bias/mask and checked IDs; output precision unchanged",
+        "scale": {
+          "tokens": 1,
+          "hidden": 6144,
+          "input_slots": 2
+        }
+      },
+      "setup": "Original independent two-slot owners; complete output verified before/after; original2048 symmetric complete warmup; cold setup separate",
+      "charged_phases": [
+        "Original submit, all math/conversion/checks/private runtime/stream transfer, terminal Completion wait and retained-reference settlement"
+      ],
+      "pair": {
+        "candidate": "Candidate",
+        "peer": "Peer"
+      },
+      "practical_margin_percent": 5,
+      "noninferiority_margin_percent": 5,
+      "estimator": {
+        "kind": "process-median",
+        "minimum_independent_samples": 15,
+        "tail_alpha": 0.01
+      },
+      "required_strata": [
+        "candidate-first-candidate-first-allocation",
+        "candidate-first-peer-first-allocation",
+        "peer-first-candidate-first-allocation",
+        "peer-first-peer-first-allocation"
+      ],
+      "required_controls": [
+        "aa",
+        "delta5",
+        "delta10",
+        "timer-floor"
+      ]
+    },
+    {
+      "id": "packed_silu-f16-t32-h6144-ggml-sglang",
+      "tier": "replay",
+      "gate_role": "product",
+      "consumer_key": "cuda-fixed-tensor/packed_silu-f16-t32-h6144",
+      "provenance": {
+        "path": "consumer.json",
+        "sha256": "dc867450c1b361c300382691a24a174a3f94c93be180c0990b728e393c7028b4"
+      },
+      "ownership_topology": {
+        "candidate": "Independent original mature Provider Context/Queue/two resident slots; private pools admitted",
+        "peer": "Independent native CUDA Provider Context/Queue/two resident slots; no artificial per-kernel waits",
+        "equivalence": "One complete ordinary resident operation through terminal event completion and retained-reference settlement; same bits/shape/precision. No external capture or no-private requirement."
+      },
+      "material_contribution": {
+        "frequency": 1,
+        "value": 1,
+        "unit": "completed-tensor-operation",
+        "budget": 5,
+        "denominator": "one complete resident tensor operation plus terminal Completion",
+        "derivation": "One fixed model-shaped resident operation; no invented invocation frequency or full-model throughput."
+      },
+      "semantic_contract": "packed_silu f16 -> f16 original F32 intermediate/precision and ordinary managed-resource contract",
+      "comparability": "COMPARABLE",
+      "peer_id": "actual-peer",
+      "metric": {
+        "name": "operations-per-second",
+        "unit": "op/s",
+        "direction": "higher-is-better"
+      },
+      "input": {
+        "distribution": "Original nonuniform seed5/17 dyadic payloads, typed scales/bias/mask and checked IDs; output precision unchanged",
+        "scale": {
+          "tokens": 32,
+          "hidden": 6144,
+          "input_slots": 2
+        }
+      },
+      "setup": "Original independent two-slot owners; complete output verified before/after; original2048 symmetric complete warmup; cold setup separate",
+      "charged_phases": [
+        "Original submit, all math/conversion/checks/private runtime/stream transfer, terminal Completion wait and retained-reference settlement"
+      ],
+      "pair": {
+        "candidate": "Candidate",
+        "peer": "Peer"
+      },
+      "practical_margin_percent": 5,
+      "noninferiority_margin_percent": 5,
+      "estimator": {
+        "kind": "process-median",
+        "minimum_independent_samples": 15,
+        "tail_alpha": 0.01
+      },
+      "required_strata": [
+        "candidate-first-candidate-first-allocation",
+        "candidate-first-peer-first-allocation",
+        "peer-first-candidate-first-allocation",
+        "peer-first-peer-first-allocation"
+      ],
+      "required_controls": [
+        "aa",
+        "delta5",
+        "delta10",
+        "timer-floor"
+      ]
+    },
+    {
+      "id": "packed_silu-bf16-t1-h6144-ggml-sglang",
+      "tier": "replay",
+      "gate_role": "product",
+      "consumer_key": "cuda-fixed-tensor/packed_silu-bf16-t1-h6144",
+      "provenance": {
+        "path": "consumer.json",
+        "sha256": "dc867450c1b361c300382691a24a174a3f94c93be180c0990b728e393c7028b4"
+      },
+      "ownership_topology": {
+        "candidate": "Independent original mature Provider Context/Queue/two resident slots; private pools admitted",
+        "peer": "Independent native CUDA Provider Context/Queue/two resident slots; no artificial per-kernel waits",
+        "equivalence": "One complete ordinary resident operation through terminal event completion and retained-reference settlement; same bits/shape/precision. No external capture or no-private requirement."
+      },
+      "material_contribution": {
+        "frequency": 1,
+        "value": 1,
+        "unit": "completed-tensor-operation",
+        "budget": 5,
+        "denominator": "one complete resident tensor operation plus terminal Completion",
+        "derivation": "One fixed model-shaped resident operation; no invented invocation frequency or full-model throughput."
+      },
+      "semantic_contract": "packed_silu bf16 -> bf16 original F32 intermediate/precision and ordinary managed-resource contract",
+      "comparability": "COMPARABLE",
+      "peer_id": "actual-peer",
+      "metric": {
+        "name": "operations-per-second",
+        "unit": "op/s",
+        "direction": "higher-is-better"
+      },
+      "input": {
+        "distribution": "Original nonuniform seed5/17 dyadic payloads, typed scales/bias/mask and checked IDs; output precision unchanged",
+        "scale": {
+          "tokens": 1,
+          "hidden": 6144,
+          "input_slots": 2
+        }
+      },
+      "setup": "Original independent two-slot owners; complete output verified before/after; original2048 symmetric complete warmup; cold setup separate",
+      "charged_phases": [
+        "Original submit, all math/conversion/checks/private runtime/stream transfer, terminal Completion wait and retained-reference settlement"
+      ],
+      "pair": {
+        "candidate": "Candidate",
+        "peer": "Peer"
+      },
+      "practical_margin_percent": 5,
+      "noninferiority_margin_percent": 5,
+      "estimator": {
+        "kind": "process-median",
+        "minimum_independent_samples": 15,
+        "tail_alpha": 0.01
+      },
+      "required_strata": [
+        "candidate-first-candidate-first-allocation",
+        "candidate-first-peer-first-allocation",
+        "peer-first-candidate-first-allocation",
+        "peer-first-peer-first-allocation"
+      ],
+      "required_controls": [
+        "aa",
+        "delta5",
+        "delta10",
+        "timer-floor"
+      ]
+    },
+    {
+      "id": "packed_silu-bf16-t32-h6144-ggml-sglang",
+      "tier": "replay",
+      "gate_role": "product",
+      "consumer_key": "cuda-fixed-tensor/packed_silu-bf16-t32-h6144",
+      "provenance": {
+        "path": "consumer.json",
+        "sha256": "dc867450c1b361c300382691a24a174a3f94c93be180c0990b728e393c7028b4"
+      },
+      "ownership_topology": {
+        "candidate": "Independent original mature Provider Context/Queue/two resident slots; private pools admitted",
+        "peer": "Independent native CUDA Provider Context/Queue/two resident slots; no artificial per-kernel waits",
+        "equivalence": "One complete ordinary resident operation through terminal event completion and retained-reference settlement; same bits/shape/precision. No external capture or no-private requirement."
+      },
+      "material_contribution": {
+        "frequency": 1,
+        "value": 1,
+        "unit": "completed-tensor-operation",
+        "budget": 5,
+        "denominator": "one complete resident tensor operation plus terminal Completion",
+        "derivation": "One fixed model-shaped resident operation; no invented invocation frequency or full-model throughput."
+      },
+      "semantic_contract": "packed_silu bf16 -> bf16 original F32 intermediate/precision and ordinary managed-resource contract",
+      "comparability": "COMPARABLE",
+      "peer_id": "actual-peer",
+      "metric": {
+        "name": "operations-per-second",
+        "unit": "op/s",
+        "direction": "higher-is-better"
+      },
+      "input": {
+        "distribution": "Original nonuniform seed5/17 dyadic payloads, typed scales/bias/mask and checked IDs; output precision unchanged",
+        "scale": {
+          "tokens": 32,
+          "hidden": 6144,
+          "input_slots": 2
+        }
+      },
+      "setup": "Original independent two-slot owners; complete output verified before/after; original2048 symmetric complete warmup; cold setup separate",
+      "charged_phases": [
+        "Original submit, all math/conversion/checks/private runtime/stream transfer, terminal Completion wait and retained-reference settlement"
+      ],
+      "pair": {
+        "candidate": "Candidate",
+        "peer": "Peer"
+      },
+      "practical_margin_percent": 5,
+      "noninferiority_margin_percent": 5,
+      "estimator": {
+        "kind": "process-median",
+        "minimum_independent_samples": 15,
+        "tail_alpha": 0.01
+      },
+      "required_strata": [
+        "candidate-first-candidate-first-allocation",
+        "candidate-first-peer-first-allocation",
+        "peer-first-candidate-first-allocation",
+        "peer-first-peer-first-allocation"
+      ],
+      "required_controls": [
+        "aa",
+        "delta5",
+        "delta10",
+        "timer-floor"
+      ]
+    },
+    {
+      "id": "separate_silu-f16-t32-h6144-hyle-ggml",
+      "tier": "replay",
+      "gate_role": "product",
+      "consumer_key": "cuda-fixed-tensor/separate_silu-f16-t32-h6144",
+      "provenance": {
+        "path": "consumer.json",
+        "sha256": "dc867450c1b361c300382691a24a174a3f94c93be180c0990b728e393c7028b4"
+      },
+      "ownership_topology": {
+        "candidate": "Independent original mature Provider Context/Queue/two resident slots; private pools admitted",
+        "peer": "Independent native CUDA Provider Context/Queue/two resident slots; no artificial per-kernel waits",
+        "equivalence": "One complete ordinary resident operation through terminal event completion and retained-reference settlement; same bits/shape/precision. No external capture or no-private requirement."
+      },
+      "material_contribution": {
+        "frequency": 1,
+        "value": 1,
+        "unit": "completed-tensor-operation",
+        "budget": 5,
+        "denominator": "one complete resident tensor operation plus terminal Completion",
+        "derivation": "One fixed model-shaped resident operation; no invented invocation frequency or full-model throughput."
+      },
+      "semantic_contract": "separate_silu f16 -> f16 original F32 intermediate/precision and ordinary managed-resource contract",
+      "comparability": "COMPARABLE",
+      "peer_id": "actual-peer",
+      "metric": {
+        "name": "operations-per-second",
+        "unit": "op/s",
+        "direction": "higher-is-better"
+      },
+      "input": {
+        "distribution": "Original nonuniform seed5/17 dyadic payloads, typed scales/bias/mask and checked IDs; output precision unchanged",
+        "scale": {
+          "tokens": 32,
+          "hidden": 6144,
+          "input_slots": 2
+        }
+      },
+      "setup": "Original independent two-slot owners; complete output verified before/after; original2048 symmetric complete warmup; cold setup separate",
+      "charged_phases": [
+        "Original submit, all math/conversion/checks/private runtime/stream transfer, terminal Completion wait and retained-reference settlement"
+      ],
+      "pair": {
+        "candidate": "Candidate",
+        "peer": "Peer"
+      },
+      "practical_margin_percent": 5,
+      "noninferiority_margin_percent": 5,
+      "estimator": {
+        "kind": "process-median",
+        "minimum_independent_samples": 15,
+        "tail_alpha": 0.01
+      },
+      "required_strata": [
+        "candidate-first-candidate-first-allocation",
+        "candidate-first-peer-first-allocation",
+        "peer-first-candidate-first-allocation",
+        "peer-first-peer-first-allocation"
+      ],
+      "required_controls": [
+        "aa",
+        "delta5",
+        "delta10",
+        "timer-floor"
+      ]
+    },
+    {
+      "id": "packed_gelu_tanh-bf16-t32-h6144-hyle-sglang",
+      "tier": "replay",
+      "gate_role": "product",
+      "consumer_key": "cuda-fixed-tensor/packed_gelu_tanh-bf16-t32-h6144",
+      "provenance": {
+        "path": "consumer.json",
+        "sha256": "dc867450c1b361c300382691a24a174a3f94c93be180c0990b728e393c7028b4"
+      },
+      "ownership_topology": {
+        "candidate": "Independent original mature Provider Context/Queue/two resident slots; private pools admitted",
+        "peer": "Independent native CUDA Provider Context/Queue/two resident slots; no artificial per-kernel waits",
+        "equivalence": "One complete ordinary resident operation through terminal event completion and retained-reference settlement; same bits/shape/precision. No external capture or no-private requirement."
+      },
+      "material_contribution": {
+        "frequency": 1,
+        "value": 1,
+        "unit": "completed-tensor-operation",
+        "budget": 5,
+        "denominator": "one complete resident tensor operation plus terminal Completion",
+        "derivation": "One fixed model-shaped resident operation; no invented invocation frequency or full-model throughput."
+      },
+      "semantic_contract": "packed_gelu_tanh bf16 -> bf16 original F32 intermediate/precision and ordinary managed-resource contract",
+      "comparability": "COMPARABLE",
+      "peer_id": "actual-peer",
+      "metric": {
+        "name": "operations-per-second",
+        "unit": "op/s",
+        "direction": "higher-is-better"
+      },
+      "input": {
+        "distribution": "Original nonuniform seed5/17 dyadic payloads, typed scales/bias/mask and checked IDs; output precision unchanged",
+        "scale": {
+          "tokens": 32,
+          "hidden": 6144,
+          "input_slots": 2
+        }
+      },
+      "setup": "Original independent two-slot owners; complete output verified before/after; original2048 symmetric complete warmup; cold setup separate",
+      "charged_phases": [
+        "Original submit, all math/conversion/checks/private runtime/stream transfer, terminal Completion wait and retained-reference settlement"
+      ],
+      "pair": {
+        "candidate": "Candidate",
+        "peer": "Peer"
+      },
+      "practical_margin_percent": 5,
+      "noninferiority_margin_percent": 5,
+      "estimator": {
+        "kind": "process-median",
+        "minimum_independent_samples": 15,
+        "tail_alpha": 0.01
+      },
+      "required_strata": [
+        "candidate-first-candidate-first-allocation",
+        "candidate-first-peer-first-allocation",
+        "peer-first-candidate-first-allocation",
+        "peer-first-peer-first-allocation"
+      ],
+      "required_controls": [
+        "aa",
+        "delta5",
+        "delta10",
+        "timer-floor"
+      ]
+    },
+    {
+      "id": "cast-bf16-f16-t1-h2048-hyle-ggml",
+      "tier": "replay",
+      "gate_role": "product",
+      "consumer_key": "cuda-fixed-tensor/cast-bf16-f16-t1-h2048",
+      "provenance": {
+        "path": "consumer.json",
+        "sha256": "dc867450c1b361c300382691a24a174a3f94c93be180c0990b728e393c7028b4"
+      },
+      "ownership_topology": {
+        "candidate": "Independent original mature Provider Context/Queue/two resident slots; private pools admitted",
+        "peer": "Independent native CUDA Provider Context/Queue/two resident slots; no artificial per-kernel waits",
+        "equivalence": "One complete ordinary resident operation through terminal event completion and retained-reference settlement; same bits/shape/precision. No external capture or no-private requirement."
+      },
+      "material_contribution": {
+        "frequency": 1,
+        "value": 1,
+        "unit": "completed-tensor-operation",
+        "budget": 5,
+        "denominator": "one complete resident tensor operation plus terminal Completion",
+        "derivation": "One fixed model-shaped resident operation; no invented invocation frequency or full-model throughput."
+      },
+      "semantic_contract": "cast bf16 -> f16 original F32 intermediate/precision and ordinary managed-resource contract",
+      "comparability": "COMPARABLE",
+      "peer_id": "actual-peer",
+      "metric": {
+        "name": "operations-per-second",
+        "unit": "op/s",
+        "direction": "higher-is-better"
+      },
+      "input": {
+        "distribution": "Original nonuniform seed5/17 dyadic payloads, typed scales/bias/mask and checked IDs; output precision unchanged",
+        "scale": {
+          "tokens": 1,
+          "hidden": 2048,
+          "input_slots": 2
+        }
+      },
+      "setup": "Original independent two-slot owners; complete output verified before/after; original2048 symmetric complete warmup; cold setup separate",
+      "charged_phases": [
+        "Original submit, all math/conversion/checks/private runtime/stream transfer, terminal Completion wait and retained-reference settlement"
+      ],
+      "pair": {
+        "candidate": "Candidate",
+        "peer": "Peer"
+      },
+      "practical_margin_percent": 5,
+      "noninferiority_margin_percent": 5,
+      "estimator": {
+        "kind": "process-median",
+        "minimum_independent_samples": 15,
+        "tail_alpha": 0.01
+      },
+      "required_strata": [
+        "candidate-first-candidate-first-allocation",
+        "candidate-first-peer-first-allocation",
+        "peer-first-candidate-first-allocation",
+        "peer-first-peer-first-allocation"
+      ],
+      "required_controls": [
+        "aa",
+        "delta5",
+        "delta10",
+        "timer-floor"
+      ]
+    }
+  ],
+  "artifacts": {
+    "validators": [
+      "artifact-identity",
+      "build-contract",
+      "cuda-workload-aa"
+    ]
+  },
+  "extensions": {
+    "runner": {
+      "schema": "hyle.perf.nanobench-runner/v1",
+      "sampling_topology": "native-runtime-pair",
+      "cmake": {
+        "cache": {
+          "CMAKE_BUILD_TYPE": "Release",
+          "CMAKE_INTERPROCEDURAL_OPTIMIZATION": "OFF",
+          "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
+          "CMAKE_PREFIX_PATH": "C:/hv/cuda-u5-static-relocated",
+          "HYLE_STATIC": "ON",
+          "HYLE_SIMD_EXACT_TARGET": "",
+          "CUDA_MATRIX_IMAGE": "C:/hv/cuda-best-of",
+          "FETCHCONTENT_FULLY_DISCONNECTED": "ON"
+        },
+        "peer_cache": {
+          "actual-peer": "CUDA_MATRIX_REFERENCE"
+        }
+      },
+      "profiles": {
+        "W1-WIN": {
+          "generator": "Ninja",
+          "compiler_id": "MSVC",
+          "compiler_version_prefix": "19.50",
+          "cache": {}
+        }
+      },
+      "executables": [
+        {
+          "id": "cuda-matrix",
+          "target": "hyle_cuda_matrix_bench",
+          "stem": "hyle_cuda_matrix_bench",
+          "target_variant": "primary",
+          "measurement_batch": 1,
+          "telemetry_prefixes": [
+            "# HYLE_CUDA_MATRIX_RUN "
+          ],
+          "workloads": [
+            {
+              "id": "copy-f32-t1-h2048-hyle-ggml",
+              "title": "copy-f32-t1-h2048-hyle-ggml"
+            },
+            {
+              "id": "abs-f16-t1-h2048-hyle-ggml",
+              "title": "abs-f16-t1-h2048-hyle-ggml"
+            },
+            {
+              "id": "neg-f32-t1-h2048-hyle-ggml",
+              "title": "neg-f32-t1-h2048-hyle-ggml"
+            },
+            {
+              "id": "neg-f16-t32-h4096-hyle-ggml",
+              "title": "neg-f16-t32-h4096-hyle-ggml"
+            },
+            {
+              "id": "neg-bf16-t1-h2048-hyle-ggml",
+              "title": "neg-bf16-t1-h2048-hyle-ggml"
+            },
+            {
+              "id": "neg-bf16-t32-h4096-hyle-ggml",
+              "title": "neg-bf16-t32-h4096-hyle-ggml"
+            },
+            {
+              "id": "exp-bf16-t32-h4096-hyle-ggml",
+              "title": "exp-bf16-t32-h4096-hyle-ggml"
+            },
+            {
+              "id": "log-f16-t1-h2048-hyle-ggml",
+              "title": "log-f16-t1-h2048-hyle-ggml"
+            },
+            {
+              "id": "log-bf16-t1-h2048-hyle-ggml",
+              "title": "log-bf16-t1-h2048-hyle-ggml"
+            },
+            {
+              "id": "sqrt-bf16-t1-h2048-hyle-ggml",
+              "title": "sqrt-bf16-t1-h2048-hyle-ggml"
+            },
+            {
+              "id": "sqrt-bf16-t32-h4096-hyle-ggml",
+              "title": "sqrt-bf16-t32-h4096-hyle-ggml"
+            },
+            {
+              "id": "rsqrt-bf16-t32-h4096-hyle-ggml",
+              "title": "rsqrt-bf16-t32-h4096-hyle-ggml"
+            },
+            {
+              "id": "tanh-f32-t32-h4096-hyle-ggml",
+              "title": "tanh-f32-t32-h4096-hyle-ggml"
+            },
+            {
+              "id": "silu-f16-t1-h2048-hyle-sglang",
+              "title": "silu-f16-t1-h2048-hyle-sglang"
+            },
+            {
+              "id": "silu-bf16-t1-h2048-hyle-sglang",
+              "title": "silu-bf16-t1-h2048-hyle-sglang"
+            },
+            {
+              "id": "gelu_tanh-bf16-t32-h4096-hyle-sglang",
+              "title": "gelu_tanh-bf16-t32-h4096-hyle-sglang"
+            },
+            {
+              "id": "softplus-f16-t1-h2048-hyle-torch",
+              "title": "softplus-f16-t1-h2048-hyle-torch"
+            },
+            {
+              "id": "softplus-bf16-t32-h4096-hyle-torch",
+              "title": "softplus-bf16-t32-h4096-hyle-torch"
+            },
+            {
+              "id": "add-f16-t1-h2048-hyle-ggml",
+              "title": "add-f16-t1-h2048-hyle-ggml"
+            },
+            {
+              "id": "sub-f16-t32-h4096-hyle-ggml",
+              "title": "sub-f16-t32-h4096-hyle-ggml"
+            },
+            {
+              "id": "sub-bf16-t1-h2048-hyle-ggml",
+              "title": "sub-bf16-t1-h2048-hyle-ggml"
+            },
+            {
+              "id": "mul-f32-t1-h2048-hyle-ggml",
+              "title": "mul-f32-t1-h2048-hyle-ggml"
+            },
+            {
+              "id": "mul-f16-t32-h4096-hyle-ggml",
+              "title": "mul-f16-t32-h4096-hyle-ggml"
+            },
+            {
+              "id": "mul-bf16-t1-h2048-hyle-ggml",
+              "title": "mul-bf16-t1-h2048-hyle-ggml"
+            },
+            {
+              "id": "mul-bf16-t32-h4096-hyle-ggml",
+              "title": "mul-bf16-t32-h4096-hyle-ggml"
+            },
+            {
+              "id": "div-bf16-t32-h4096-hyle-ggml",
+              "title": "div-bf16-t32-h4096-hyle-ggml"
+            },
+            {
+              "id": "rms-f32-t1-h2048-hyle-ggml",
+              "title": "rms-f32-t1-h2048-hyle-ggml"
+            },
+            {
+              "id": "rms-f16-t32-h4096-hyle-ggml",
+              "title": "rms-f16-t32-h4096-hyle-ggml"
+            },
+            {
+              "id": "weighted_rms-f32-t32-h4096-hyle-ggml",
+              "title": "weighted_rms-f32-t32-h4096-hyle-ggml"
+            },
+            {
+              "id": "weighted_rms-f16-t1-h2048-hyle-ggml",
+              "title": "weighted_rms-f16-t1-h2048-hyle-ggml"
+            },
+            {
+              "id": "weighted_rms-bf16-t1-h2048-hyle-ggml",
+              "title": "weighted_rms-bf16-t1-h2048-hyle-ggml"
+            },
+            {
+              "id": "layer-f32-t1-h2048-hyle-ggml",
+              "title": "layer-f32-t1-h2048-hyle-ggml"
+            },
+            {
+              "id": "layer-f32-t32-h4096-hyle-ggml",
+              "title": "layer-f32-t32-h4096-hyle-ggml"
+            },
+            {
+              "id": "affine_layer-f32-t32-h4096-hyle-ggml",
+              "title": "affine_layer-f32-t32-h4096-hyle-ggml"
+            },
+            {
+              "id": "affine_layer-bf16-t1-h2048-hyle-ggml",
+              "title": "affine_layer-bf16-t1-h2048-hyle-ggml"
+            },
+            {
+              "id": "mean-bf16-t1-h2048-hyle-ggml",
+              "title": "mean-bf16-t1-h2048-hyle-ggml"
+            },
+            {
+              "id": "masked_softmax-bf16-t1-h2048-hyle-ggml",
+              "title": "masked_softmax-bf16-t1-h2048-hyle-ggml"
+            },
+            {
+              "id": "concat-f32-t32-h4096-hyle-ggml",
+              "title": "concat-f32-t32-h4096-hyle-ggml"
+            },
+            {
+              "id": "concat-bf16-t32-h4096-hyle-ggml",
+              "title": "concat-bf16-t32-h4096-hyle-ggml"
+            },
+            {
+              "id": "packed_silu-f32-t1-h6144-ggml-sglang",
+              "title": "packed_silu-f32-t1-h6144-ggml-sglang"
+            },
+            {
+              "id": "packed_silu-f16-t1-h6144-hyle-sglang",
+              "title": "packed_silu-f16-t1-h6144-hyle-sglang"
+            },
+            {
+              "id": "packed_silu-f16-t32-h6144-ggml-sglang",
+              "title": "packed_silu-f16-t32-h6144-ggml-sglang"
+            },
+            {
+              "id": "packed_silu-bf16-t1-h6144-ggml-sglang",
+              "title": "packed_silu-bf16-t1-h6144-ggml-sglang"
+            },
+            {
+              "id": "packed_silu-bf16-t32-h6144-ggml-sglang",
+              "title": "packed_silu-bf16-t32-h6144-ggml-sglang"
+            },
+            {
+              "id": "separate_silu-f16-t32-h6144-hyle-ggml",
+              "title": "separate_silu-f16-t32-h6144-hyle-ggml"
+            },
+            {
+              "id": "packed_gelu_tanh-bf16-t32-h6144-hyle-sglang",
+              "title": "packed_gelu_tanh-bf16-t32-h6144-hyle-sglang"
+            },
+            {
+              "id": "cast-bf16-f16-t1-h2048-hyle-ggml",
+              "title": "cast-bf16-f16-t1-h2048-hyle-ggml"
+            }
+          ]
+        }
+      ],
+      "control_executable": {
+        "target": "hyle_perf_control_bench",
+        "stem": "hyle_perf_control_bench"
+      },
+      "controlled_environment": [
+        "HYLE_BENCH_RIVAL_FIRST",
+        "HYLE_BENCH_PEER_ALLOCATION_FIRST",
+        "HYLE_BENCH_AA_ROUTE",
+        "HYLE_BENCH_VERIFY_ONLY"
+      ],
+      "validators": [
+        {
+          "id": "artifact-identity",
+          "kind": "artifact-identity"
+        },
+        {
+          "id": "build-contract",
+          "kind": "build-contract"
+        },
+        {
+          "id": "cuda-workload-aa",
+          "kind": "command",
+          "command": [
+            "{python}",
+            "validate_image.py",
+            "--build",
+            "{build}",
+            "--output",
+            "{output}"
+          ]
+        }
+      ],
+      "measurement_adapter": "nanobench-paired-rows-v1"
+    }
+  }
+}

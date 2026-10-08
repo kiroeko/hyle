@@ -1,0 +1,10 @@
+{
+  "total_pairs": 212,
+  "qualified": 47,
+  "diagnostic": 165,
+  "runs": 8,
+  "no_reruns_or_sample_escalation": true,
+  "actual_same_artifact_workload_and_both_orders_allocations": true,
+  "archive_sha256": "f935e956061e03bb3f056d71f6fddb7b7e4a305ded77e11327e4b56493362daf",
+  "formal_product_sampling": "Only47 qualified pairs; other165 choose justified mature defaults, no new AA/n."
+}

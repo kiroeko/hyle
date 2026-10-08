@@ -94,3 +94,11 @@ C2批量准入/输出及独立pair-slot验证完成，见[原资格](../../../..
 192多候选/14单承载，对应212 pair program两侧各两slot/变输入均通过。Plain Gather原ggml
 仅准入encoded embedding，所以这两个plain请求CCCL单承载，不能伪两家竞速。单项未做AA/P1
 不签性能PASS；下一步在这固定212 pair上一次短AA资格，只对合格子集正式n15，不重跑本数学门。
+
+C2原8进程AA批次完成：212 pair中47合格/165未资格，原误差/偏差保留；
+正式一次n15仅取47，165不再采样/调参数而按用户要求成熟工程默认。使用原AA image/全部
+邻exe DLL逐字复制到外部仪器项目，不能重新编译/重调数学。qualified TSV每条行与原212
+对应行逐字相同，只去掉独立、已完全settled的非资格请求；每项Context/两slot/数据/
+2048对称warm/compare/完成边界不变，所以不是逐pair subprocess或其它生命周期改动。
+本subset只改变batch的非计费外侧项目数量，不继承不同shape/recipe/algorithm的资格。
+原全212 TSV及完整AA日志封存，新47 TSV/声明哈希受validator检查，不冒称旧完整file SHA相同。
