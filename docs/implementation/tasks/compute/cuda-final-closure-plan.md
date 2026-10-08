@@ -5,6 +5,17 @@
 `f5f137f1b3e48bdd56acd42f7471d3c412c7b6e3`；Windows 工作树干净，保留后续与用户修改。
 当前状态只看 [registry](../../module-status.json)，不恢复旧 goal、百分比或施工队列。
 
+## 本 goal 完成
+
+2026-10-08，U1--U6本次CUDA基础库冻结范围完成，整体100%，
+见[逐项终审与限制](cuda-final-u6-audit.md)。当前owner经独立CANDIDATE后按本goal预声明
+工程默认/P0裁决关闭；原U4 AA失败/未取得P1冠军保持INCONCLUSIVE，没有改成PASS/SOTA。
+两OS固定原计算/完整branch与source/static/shared、CUDA-only/mixed已验；六重复公式已
+物理删除借入成熟算术，具名独有数学/资源保留。全Compute+Graph实现60,774行/255文件。
+旧U4临时产物Windows25.408GiB/WSL0.420GiB已清理；不扩算子、模型engine或其它GPU。
+后面的百分比/阶段日志保留为历史进展，最终只以本段/registry/terminal为准。
+完成后停止，等用户讨论下一阶段。
+
 ## 固定需求与边界
 
 - 要求来自 [固定制品与 tensor 需求](cpu-final-demand-carriers.json)，其中 CPU 的候选／状态不签 CUDA。

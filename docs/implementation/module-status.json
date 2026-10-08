@@ -416,10 +416,14 @@
     },
     {
       "module": "compute_backend_cuda",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/compute/cuda-final-u6-audit.md",
-      "summary": "CUDA最终候选已冻结：U1/U23固定覆盖/原资源/完整三交付、U4成熟工程默认与能力门分离、U5借入六重复公式；source及前三SDK增量已过，最后WSL shared待；AA FAIL无新WIN，不假关闭旧Graph/Vulkan或CPU。",
-      "candidate": "657f291f6e4d50b0e1c14ca24cdbe7b1715066e4"
+      "summary": "CUDA有限goal CLOSED：固定模型/量化/MTP完整原计算与状态、两OS CUDA-only/mixed三交付、cold成熟默认/真实能力门、六重复公式BORROW和具名unique保留、U5 42步/源码SDK增量及终审清理完成。AA原FAIL/性能INCONCLUSIVE无新WIN；按授权ENGINEERING_DEFAULT/P0关闭，不签全设备SOTA或推理engine，不解除旧Graph/Vulkan。",
+      "candidate": "657f291f6e4d50b0e1c14ca24cdbe7b1715066e4",
+      "performance": {
+        "tier": "P0",
+        "evidence": "docs/implementation/tasks/compute/cuda-final-u6-audit.md"
+      }
     },
     {
       "module": "compute_provider_native",
@@ -485,24 +489,36 @@
     },
     {
       "module": "compute_provider_cuda",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/compute/cuda-final-u6-audit.md",
-      "summary": "CUDA最终候选已冻结：U1/U23固定覆盖/原资源/完整三交付、U4成熟工程默认与能力门分离、U5借入六重复公式；source及前三SDK增量已过，最后WSL shared待；AA FAIL无新WIN，不假关闭旧Graph/Vulkan或CPU。",
-      "candidate": "657f291f6e4d50b0e1c14ca24cdbe7b1715066e4"
+      "summary": "CUDA有限goal CLOSED：固定模型/量化/MTP完整原计算与状态、两OS CUDA-only/mixed三交付、cold成熟默认/真实能力门、六重复公式BORROW和具名unique保留、U5 42步/源码SDK增量及终审清理完成。AA原FAIL/性能INCONCLUSIVE无新WIN；按授权ENGINEERING_DEFAULT/P0关闭，不签全设备SOTA或推理engine，不解除旧Graph/Vulkan。",
+      "candidate": "657f291f6e4d50b0e1c14ca24cdbe7b1715066e4",
+      "performance": {
+        "tier": "P0",
+        "evidence": "docs/implementation/tasks/compute/cuda-final-u6-audit.md"
+      }
     },
     {
       "module": "compute_route_cuda",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/compute/cuda-final-u6-audit.md",
-      "summary": "CUDA最终候选已冻结：U1/U23固定覆盖/原资源/完整三交付、U4成熟工程默认与能力门分离、U5借入六重复公式；source及前三SDK增量已过，最后WSL shared待；AA FAIL无新WIN，不假关闭旧Graph/Vulkan或CPU。",
-      "candidate": "657f291f6e4d50b0e1c14ca24cdbe7b1715066e4"
+      "summary": "CUDA有限goal CLOSED：固定模型/量化/MTP完整原计算与状态、两OS CUDA-only/mixed三交付、cold成熟默认/真实能力门、六重复公式BORROW和具名unique保留、U5 42步/源码SDK增量及终审清理完成。AA原FAIL/性能INCONCLUSIVE无新WIN；按授权ENGINEERING_DEFAULT/P0关闭，不签全设备SOTA或推理engine，不解除旧Graph/Vulkan。",
+      "candidate": "657f291f6e4d50b0e1c14ca24cdbe7b1715066e4",
+      "performance": {
+        "tier": "P0",
+        "evidence": "docs/implementation/tasks/compute/cuda-final-u6-audit.md"
+      }
     },
     {
       "module": "graph_route_cuda",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/compute/cuda-final-u6-audit.md",
-      "summary": "CUDA最终候选已冻结：U1/U23固定覆盖/原资源/完整三交付、U4成熟工程默认与能力门分离、U5借入六重复公式；source及前三SDK增量已过，最后WSL shared待；AA FAIL无新WIN，不假关闭旧Graph/Vulkan或CPU。",
-      "candidate": "657f291f6e4d50b0e1c14ca24cdbe7b1715066e4"
+      "summary": "CUDA有限goal CLOSED：固定模型/量化/MTP完整原计算与状态、两OS CUDA-only/mixed三交付、cold成熟默认/真实能力门、六重复公式BORROW和具名unique保留、U5 42步/源码SDK增量及终审清理完成。AA原FAIL/性能INCONCLUSIVE无新WIN；按授权ENGINEERING_DEFAULT/P0关闭，不签全设备SOTA或推理engine，不解除旧Graph/Vulkan。",
+      "candidate": "657f291f6e4d50b0e1c14ca24cdbe7b1715066e4",
+      "performance": {
+        "tier": "P0",
+        "evidence": "docs/implementation/tasks/compute/cuda-final-u6-audit.md"
+      }
     },
     {
       "module": "compute_route_apple",
@@ -544,31 +560,47 @@
     },
     {
       "module": "compute_ggml_runtime",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/compute/cuda-final-u6-audit.md",
-      "summary": "CUDA最终候选已冻结：U1/U23固定覆盖/原资源/完整三交付、U4成熟工程默认与能力门分离、U5借入六重复公式；source及前三SDK增量已过，最后WSL shared待；AA FAIL无新WIN，不假关闭旧Graph/Vulkan或CPU。",
-      "candidate": "657f291f6e4d50b0e1c14ca24cdbe7b1715066e4"
+      "summary": "CUDA有限goal CLOSED：固定模型/量化/MTP完整原计算与状态、两OS CUDA-only/mixed三交付、cold成熟默认/真实能力门、六重复公式BORROW和具名unique保留、U5 42步/源码SDK增量及终审清理完成。AA原FAIL/性能INCONCLUSIVE无新WIN；按授权ENGINEERING_DEFAULT/P0关闭，不签全设备SOTA或推理engine，不解除旧Graph/Vulkan。",
+      "candidate": "657f291f6e4d50b0e1c14ca24cdbe7b1715066e4",
+      "performance": {
+        "tier": "P0",
+        "evidence": "docs/implementation/tasks/compute/cuda-final-u6-audit.md"
+      }
     },
     {
       "module": "compute_provider_ggml_cuda",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/compute/cuda-final-u6-audit.md",
-      "summary": "CUDA最终候选已冻结：U1/U23固定覆盖/原资源/完整三交付、U4成熟工程默认与能力门分离、U5借入六重复公式；source及前三SDK增量已过，最后WSL shared待；AA FAIL无新WIN，不假关闭旧Graph/Vulkan或CPU。",
-      "candidate": "657f291f6e4d50b0e1c14ca24cdbe7b1715066e4"
+      "summary": "CUDA有限goal CLOSED：固定模型/量化/MTP完整原计算与状态、两OS CUDA-only/mixed三交付、cold成熟默认/真实能力门、六重复公式BORROW和具名unique保留、U5 42步/源码SDK增量及终审清理完成。AA原FAIL/性能INCONCLUSIVE无新WIN；按授权ENGINEERING_DEFAULT/P0关闭，不签全设备SOTA或推理engine，不解除旧Graph/Vulkan。",
+      "candidate": "657f291f6e4d50b0e1c14ca24cdbe7b1715066e4",
+      "performance": {
+        "tier": "P0",
+        "evidence": "docs/implementation/tasks/compute/cuda-final-u6-audit.md"
+      }
     },
     {
       "module": "graph_provider_ggml_cuda",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/compute/cuda-final-u6-audit.md",
-      "summary": "CUDA最终候选已冻结：U1/U23固定覆盖/原资源/完整三交付、U4成熟工程默认与能力门分离、U5借入六重复公式；source及前三SDK增量已过，最后WSL shared待；AA FAIL无新WIN，不假关闭旧Graph/Vulkan或CPU。",
-      "candidate": "657f291f6e4d50b0e1c14ca24cdbe7b1715066e4"
+      "summary": "CUDA有限goal CLOSED：固定模型/量化/MTP完整原计算与状态、两OS CUDA-only/mixed三交付、cold成熟默认/真实能力门、六重复公式BORROW和具名unique保留、U5 42步/源码SDK增量及终审清理完成。AA原FAIL/性能INCONCLUSIVE无新WIN；按授权ENGINEERING_DEFAULT/P0关闭，不签全设备SOTA或推理engine，不解除旧Graph/Vulkan。",
+      "candidate": "657f291f6e4d50b0e1c14ca24cdbe7b1715066e4",
+      "performance": {
+        "tier": "P0",
+        "evidence": "docs/implementation/tasks/compute/cuda-final-u6-audit.md"
+      }
     },
     {
       "module": "compute_provider_flashinfer",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/compute/cuda-final-u6-audit.md",
-      "summary": "CUDA最终候选已冻结：U1/U23固定覆盖/原资源/完整三交付、U4成熟工程默认与能力门分离、U5借入六重复公式；source及前三SDK增量已过，最后WSL shared待；AA FAIL无新WIN，不假关闭旧Graph/Vulkan或CPU。",
-      "candidate": "657f291f6e4d50b0e1c14ca24cdbe7b1715066e4"
+      "summary": "CUDA有限goal CLOSED：固定模型/量化/MTP完整原计算与状态、两OS CUDA-only/mixed三交付、cold成熟默认/真实能力门、六重复公式BORROW和具名unique保留、U5 42步/源码SDK增量及终审清理完成。AA原FAIL/性能INCONCLUSIVE无新WIN；按授权ENGINEERING_DEFAULT/P0关闭，不签全设备SOTA或推理engine，不解除旧Graph/Vulkan。",
+      "candidate": "657f291f6e4d50b0e1c14ca24cdbe7b1715066e4",
+      "performance": {
+        "tier": "P0",
+        "evidence": "docs/implementation/tasks/compute/cuda-final-u6-audit.md"
+      }
     },
     {
       "module": "compute_provider_ggml_metal",
@@ -585,10 +617,14 @@
     },
     {
       "module": "compute_provider_torch_cuda",
-      "state": "CANDIDATE",
-      "summary": "CUDA最终候选已冻结：U1/U23固定覆盖/原资源/完整三交付、U4成熟工程默认与能力门分离、U5借入六重复公式；source及前三SDK增量已过，最后WSL shared待；AA FAIL无新WIN，不假关闭旧Graph/Vulkan或CPU。",
+      "state": "CLOSED",
+      "summary": "CUDA有限goal CLOSED：固定模型/量化/MTP完整原计算与状态、两OS CUDA-only/mixed三交付、cold成熟默认/真实能力门、六重复公式BORROW和具名unique保留、U5 42步/源码SDK增量及终审清理完成。AA原FAIL/性能INCONCLUSIVE无新WIN；按授权ENGINEERING_DEFAULT/P0关闭，不签全设备SOTA或推理engine，不解除旧Graph/Vulkan。",
       "record": "docs/implementation/tasks/compute/cuda-final-u6-audit.md",
-      "candidate": "657f291f6e4d50b0e1c14ca24cdbe7b1715066e4"
+      "candidate": "657f291f6e4d50b0e1c14ca24cdbe7b1715066e4",
+      "performance": {
+        "tier": "P0",
+        "evidence": "docs/implementation/tasks/compute/cuda-final-u6-audit.md"
+      }
     }
   ]
 }
