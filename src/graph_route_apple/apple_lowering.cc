@@ -99,11 +99,13 @@ Result<std::vector<mx::array>> trace(const Plan &plan,
         node.operation.custom_as<compute::model_ops::CausalConv1d>()
             .has_value() ||
         node.operation.custom_as<compute::model_ops::SinkAttention>().has_value();
+    const bool mlx_quantized =
+        node.operation.custom_as<compute::model_ops::MlxQuantized>().has_value();
     auto outputs =
         ca::detail::is_mlx_float_operation(node.operation, descriptions)
             ? ca::detail::lower_mlx_float(node.operation, descriptions, arguments, stream)
         : node.operation.kind() == compute::OperationKind::kCustom &&
-                !mature_custom
+                !mature_custom && !mlx_quantized
             ? plan.custom(node.operation, arguments, stream)
             : ca::lower(node.operation, arguments, stream, plan.workload);
     if (!outputs)

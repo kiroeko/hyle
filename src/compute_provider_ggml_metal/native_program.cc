@@ -75,6 +75,12 @@ ggml_type native_quantized_type(const TensorDesc &description) noexcept {
   if (!type)
     return GGML_TYPE_COUNT;
   switch (*type) {
+  case GgufQuantizedType::kQ4_0:
+    return GGML_TYPE_Q4_0;
+  case GgufQuantizedType::kQ4_1:
+    return GGML_TYPE_Q4_1;
+  case GgufQuantizedType::kQ2K:
+    return GGML_TYPE_Q2_K;
   case GgufQuantizedType::kQ3K:
     return GGML_TYPE_Q3_K;
   case GgufQuantizedType::kQ4K:
@@ -93,6 +99,16 @@ ggml_type native_quantized_type(const TensorDesc &description) noexcept {
     return GGML_TYPE_IQ4_NL;
   case GgufQuantizedType::kIq4Xs:
     return GGML_TYPE_IQ4_XS;
+  case GgufQuantizedType::kIq2Xxs:
+    return GGML_TYPE_IQ2_XXS;
+  case GgufQuantizedType::kIq2Xs:
+    return GGML_TYPE_IQ2_XS;
+  case GgufQuantizedType::kIq2S:
+    return GGML_TYPE_IQ2_S;
+  case GgufQuantizedType::kIq1S:
+    return GGML_TYPE_IQ1_S;
+  case GgufQuantizedType::kIq1M:
+    return GGML_TYPE_IQ1_M;
   case GgufQuantizedType::kMxfp4:
     return GGML_TYPE_MXFP4;
   default:

@@ -8,12 +8,14 @@
 #include <limits>
 #include <optional>
 #include <stdexcept>
+#include <string>
 #include <utility>
 
 #include <mlx/fast.h>
 #include <mlx/ops.h>
 
 #include "apple_internal.h"
+#include "apple_checks.h"
 #include "apple_mature_indexing.h"
 #include "apple_mature_reduction.h"
 #include "hyle/compute/model_ops.h"
@@ -34,6 +36,10 @@ Result<DataType> logical_type(mx::Dtype type) {
     return DataType::kInt64;
   if (type == mx::bool_)
     return DataType::kBool;
+  if (type == mx::uint8)
+    return DataType::kUInt8;
+  if (type == mx::uint32)
+    return DataType::kUInt32;
   return std::unexpected(Status::Unimplemented(
       "Apple tensor lowering admits F32/F16/BF16/I32/I64/Bool storage"));
 }
@@ -318,6 +324,7 @@ Result<std::vector<mx::array>> lower_tensor(const Operation &operation,
                                             mx::Stream stream) noexcept {
   try {
     const auto causal_conv = operation.custom_as<model_ops::CausalConv1d>();
+    const auto mlx_quantized = operation.custom_as<model_ops::MlxQuantized>();
     const auto sink_attention = operation.custom_as<model_ops::SinkAttention>();
     if (!causal_conv && !sink_attention && !admitted(operation.kind()))
       return std::unexpected(Status::Unimplemented(
@@ -340,6 +347,65 @@ Result<std::vector<mx::array>> lower_tensor(const Operation &operation,
     const auto &output = outputs[0];
     HYLE_ASSIGN_OR_RETURN(auto type, native_type(output.data_type()));
     HYLE_ASSIGN_OR_RETURN(auto shape, native_shape(output));
+    if (mlx_quantized) {
+      const auto &op = *mlx_quantized;
+      const bool affine = op.format == model_ops::MlxWeightFormat::kAffine4;
+      const bool embedding = op.kind == model_ops::MlxQuantizedKind::kEmbedding;
+      const bool grouped = op.kind == model_ops::MlxQuantizedKind::kGrouped;
+      const int bits = op.format == model_ops::MlxWeightFormat::kMxfp8 ? 8 : 4;
+      const std::string mode = affine ? "affine" : bits == 4 ? "mxfp4" : "mxfp8";
+      const std::size_t w = embedding ? 0 : 1;
+      const auto weights = inputs[w];
+      const auto scales = inputs[w + 1];
+      const std::optional<mx::array> bias = affine
+          ? std::optional<mx::array>{inputs[w + 2]} : std::nullopt;
+      std::optional<mx::array> status;
+      std::optional<mx::array> ids;
+      if (embedding || grouped) {
+        const auto raw = inputs.back();
+        auto valid = mx::logical_and(mx::greater_equal(raw, mx::array(0), stream),
+            mx::less(raw, mx::array(weights.shape(0)), stream), stream);
+        ids = mx::where(valid, raw, mx::array(0), stream);
+        status = mx::where(mx::all(valid, false, stream), mx::array(0),
+                           mx::array(kIndexOutOfRange), stream);
+      }
+      mx::array result = weights;
+      if (embedding) {
+        auto selected_w = mx::take(weights, *ids, 0, stream);
+        auto selected_s = mx::take(scales, *ids, 0, stream);
+        auto selected_b = mx::take(*bias, *ids, 0, stream);
+        result = mx::dequantize(selected_w, selected_s, selected_b,
+             static_cast<int>(op.group_size), bits, mode, std::nullopt, type, stream);
+      } else {
+        // The original GPU kernels accumulate in F32. An explicit widened
+        // result for mixed affine ports is part of the declared contract.
+        auto activation = mx::astype(inputs[0], type, stream);
+        auto scale = affine ? mx::astype(scales, type, stream) : scales;
+        auto biases = bias ? std::optional<mx::array>{mx::astype(*bias, type, stream)}
+                           : std::nullopt;
+        if (grouped) {
+          const auto count64 = std::int64_t{activation.shape(0)} * activation.shape(1);
+          if (count64 > (std::numeric_limits<int>::max)())
+            return std::unexpected(Status::OutOfRange("MLX selected expert batch exceeds native range"));
+          const int count = static_cast<int>(count64);
+          auto rows = mx::reshape(activation, {count, 1, activation.shape(2)}, stream);
+          auto selected = mx::reshape(*ids, {count}, stream);
+          result = mx::gather_qmm(rows, weights, scale, biases, std::nullopt,
+              selected, true, static_cast<int>(op.group_size), bits, mode, false, stream);
+          result = mx::reshape(result, shape, stream);
+        } else {
+          result = mx::quantized_matmul(activation, weights, scale, biases, true,
+                       static_cast<int>(op.group_size), bits, mode, stream);
+        }
+      }
+      result = mx::astype(result, type, stream);
+      if (status) {
+        HYLE_ASSIGN_OR_RETURN(auto checked,
+            with_device_status(std::move(result), std::move(*status), stream));
+        result = std::move(checked);
+      }
+      return std::vector{std::move(result)};
+    }
     if (sink_attention) {
       auto query = mx::transpose(inputs[0], {0, 2, 1, 3}, stream);
       auto key = mx::transpose(inputs[1], {0, 2, 1, 3}, stream);

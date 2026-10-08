@@ -113,6 +113,10 @@ Result<DataType> logical_type(mx::Dtype type) noexcept {
     return DataType::kInt64;
   if (type == mx::bool_)
     return DataType::kBool;
+  if (type == mx::uint8)
+    return DataType::kUInt8;
+  if (type == mx::uint32)
+    return DataType::kUInt32;
   return std::unexpected(Status::Unimplemented(
       "Apple input admits F32/F16/BF16/I32/I64/Bool logical storage"));
 }
@@ -178,6 +182,12 @@ Result<InputSpec> input_spec(const TensorDesc &description) noexcept {
     break;
   case DataType::kBool:
     result.dtype = mx::bool_;
+    break;
+  case DataType::kUInt8:
+    result.dtype = mx::uint8;
+    break;
+  case DataType::kUInt32:
+    result.dtype = mx::uint32;
     break;
   default:
     return std::unexpected(Status::Unimplemented(

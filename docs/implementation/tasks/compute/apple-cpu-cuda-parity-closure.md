@@ -87,5 +87,7 @@ Metal分派；余8合同的IQ1_XS/XXS/XXXS须查已登记成熟来源，不能�
 | F5 | owning target三交付/metallib/dylib/离线与失配、文档/LOC/清理 | 批量实现后集中当前Air验证，精确具名失败仅一次纠正 |
 
 前三个现有AUDITED owner依法重新绑定此有限scope，原F45/F46/CPU enum失败和预算保留；
+旧范围的[F45记录](llm-moe-d5-portable-float-native-qualification.md)与
+[CPU enum迁移记录](cpu-quant-mtp-c3-format-bindings.md)仅作历史证据，不恢复旧施工队列。
 它们不是CLOSED reopen，不伪造AUDITED→SCOPED或BLOCKED。公共API/数据/执行仍原Apple
 native形状，F1/F2是成熟接线，F3原生资格前不写数学。各有限source疑问一轮follow-up即裁决。
