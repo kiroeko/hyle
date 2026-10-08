@@ -397,15 +397,11 @@
       ]
     },
     {
-      "id": "linux-cuda-source-static-local-receipts-not-yet-sealed",
+      "id": "cuda-final-u3-linux-static",
       "proofs": [
         {
-          "path": ".scratch/validation/cuda-final-u3-delivery/linux-cuda-static/receipt.json",
-          "sha256": "0e026b858a1af3201088e31207e4eedcec2810e0ea53d331798fcb491c4cf49d"
-        },
-        {
-          "path": ".scratch/validation/cuda-final-u3-delivery/linux-static-runtime/receipt.json",
-          "sha256": "bd773ccdcaf2468d109bc668bf3964bf20a7153a6f8d7ff02169e1f03b063b89"
+          "path": "evidence/correctness/cuda-final-u3-linux-static/receipt.json",
+          "sha256": "6d96078339c3d86fc190f8d3b40d95b5a9be5bdfa99f5e81d408b82468b82dd4"
         }
       ]
     }

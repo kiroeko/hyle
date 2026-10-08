@@ -53,6 +53,8 @@ U1 先做只读协调审计，不批量改 registry 来假装所有 owner 已经
 [本批续跑入口与固定清单](../../../../evidence/correctness/cuda-final-u3-joint-delivery/delivery.py)
 及[有限工具卡](../build/cuda-delivery-execution-control.md)。用户随后明确恢复 U2/U3，
 本轮从2026-10-08 09:59:04 +08:00计时，清单`run_enabled=true`；不创建另一个CUDA goal。
+Linux日志参数的具体配方缺陷已由[有限路径修复](../build/cuda-delivery-linux-output-path.md)
+纠正并通过真实WSL轻量写入检查，Windows身份及已通过记录不失效。
 仅用此入口执行剩余交付，旧本批启动脚本退出执行路径。它保留原数学全集，四个组合共享
 同一配方，命令通过后复用、失败后停止、记录/预算固定在 canonical task ID；换输出目录和
 文档提交不重置预算。不得用新脚本/ID 绕开失败停止。进度读 `delivery.py status` 与当前

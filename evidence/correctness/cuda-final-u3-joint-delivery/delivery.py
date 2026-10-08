@@ -34,6 +34,15 @@ def local(path, root):
     return Path(value) if Path(value).is_absolute() else root / value
 
 
+def child_logs(job, logs):
+    value = logs.as_posix()
+    if job.get('linux_output') and os.name == 'nt':
+        if len(logs.drive) != 2 or logs.drive[1] != ':':
+            raise ValueError('Linux logs require a declared absolute Windows drive path')
+        value = '/mnt/' + logs.drive[0].lower() + value[2:]
+    return value
+
+
 def make_jobs(manifest):
     """Four remaining recipes share steps; no copied per-platform drivers."""
     jobs = []
@@ -57,6 +66,8 @@ def make_jobs(manifest):
                    'env': {'OMP_NUM_THREADS': '1', 'MKL_NUM_THREADS': '1'}, **extra}
             if argv is not None:
                 job['argv'] = launch + argv
+            if linux:
+                job['linux_output'] = True
             if not linux and name in ('configure', 'build', 'install', 'sdk-configure', 'sdk-build'):
                 job['vs_env'] = manifest['windows']['vs_env']
             jobs.append(job); previous = [job['id']]
@@ -265,7 +276,7 @@ class Runner:
                         raise ValueError('Relocation requires the declared fresh installed prefix')
                     before.rename(after); rc = 0
                 else:
-                    argv = [part.replace('{root}', self.root.as_posix()).replace('{logs}', logs.as_posix())
+                    argv = [part.replace('{root}', self.root.as_posix()).replace('{logs}', child_logs(job, logs))
                             for part in job['argv']]
                     rc = subprocess.run(argv, cwd=self.root, env=environment, stdout=stream,
                         stderr=subprocess.STDOUT, timeout=job['timeout'], **flags).returncode

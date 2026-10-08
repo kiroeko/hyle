@@ -1,6 +1,6 @@
 # CUDA 交付入口：Linux XML 输出路径
 
-<!-- MODULE REVIEW: AUDITED -->
+<!-- MODULE REVIEW: CLOSED -->
 
 - baseline：`eec92792`；仅本批工具，不修改产品/registry，Windows当前批次继续。
 - trigger：Linux配方把`{logs}`展开为`C:/...`后传给WSL gtest，不能写入预期canonical XML。
@@ -13,3 +13,7 @@
 AUDITED：gtest接收Linux进程本地路径；canonical日志目录为绝对Windows盘符路径，已有
 WSL挂载为`/mnt/c`。固定只改Linux子进程的`{logs}`展开，本地记录仍用原路径。
 Windows job不增加字段，因此此前输入身份和通过记录不失效。
+
+已修正Linux子进程日志参数。本地proof仍使用canonical路径，Windows配方逐字保持。
+14项轻量测试通过，包括真实WSL Python写一项XML、由入口读取并确认；该probe不是GPU
+资格。原Windows批次没有中断或重跑；工具任务CLOSED，无产品/数学/P1变化。
