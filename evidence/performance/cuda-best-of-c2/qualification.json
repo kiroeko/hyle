@@ -1,0 +1,22 @@
+{
+  "requests": 206,
+  "candidate_observations": 1030,
+  "correct": 408,
+  "declined": 622,
+  "numeric_failures": 0,
+  "multiple_candidate_requests": 192,
+  "single_carrier_requests": 14,
+  "no_carrier": 0,
+  "correct_pair_programs_verified": 212,
+  "matrix_exact_union_verified": true,
+  "source": "Existing U5 static SDK; new consumer only, product/API/vendor math unchanged",
+  "all_cold_runtimes_instantiated": true,
+  "native_and_mature_independent_slots": 2,
+  "payload_changes": [
+    5,
+    17
+  ],
+  "merged_log_recovery": "Only exact upstream stderr warmup text removed during parser normalization; original unchanged and full five-provider union verified",
+  "archive_sha256": "0ca9312626470395efce5c05c140facd51e1f1aa1a0962ee544f1574eed88f5d",
+  "performance": "PENDING; no WIN/LOSS or AA/P1 PASS from numeric qualification"
+}

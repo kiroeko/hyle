@@ -1,0 +1,7192 @@
+[
+  {
+    "request": "copy-f32-t1-h2048",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "copy-f32-t1-h2048",
+    "provider": "ggml",
+    "admission": "CORRECT",
+    "capture": false,
+    "prepared_replay": false,
+    "blocks_host": true,
+    "workspace": 0,
+    "private_known": false
+  },
+  {
+    "request": "copy-f32-t1-h2048",
+    "provider": "sglang",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "copy-f32-t1-h2048",
+    "provider": "torch",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "copy-f32-t1-h2048",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "copy-f32-t32-h4096",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "copy-f32-t32-h4096",
+    "provider": "ggml",
+    "admission": "CORRECT",
+    "capture": false,
+    "prepared_replay": false,
+    "blocks_host": true,
+    "workspace": 0,
+    "private_known": false
+  },
+  {
+    "request": "copy-f32-t32-h4096",
+    "provider": "sglang",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "copy-f32-t32-h4096",
+    "provider": "torch",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "copy-f32-t32-h4096",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "copy-f16-t1-h2048",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "copy-f16-t1-h2048",
+    "provider": "ggml",
+    "admission": "CORRECT",
+    "capture": false,
+    "prepared_replay": false,
+    "blocks_host": true,
+    "workspace": 0,
+    "private_known": false
+  },
+  {
+    "request": "copy-f16-t1-h2048",
+    "provider": "sglang",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "copy-f16-t1-h2048",
+    "provider": "torch",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "copy-f16-t1-h2048",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "copy-f16-t32-h4096",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "copy-f16-t32-h4096",
+    "provider": "ggml",
+    "admission": "CORRECT",
+    "capture": false,
+    "prepared_replay": false,
+    "blocks_host": true,
+    "workspace": 0,
+    "private_known": false
+  },
+  {
+    "request": "copy-f16-t32-h4096",
+    "provider": "sglang",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "copy-f16-t32-h4096",
+    "provider": "torch",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "copy-f16-t32-h4096",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "copy-bf16-t1-h2048",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "copy-bf16-t1-h2048",
+    "provider": "ggml",
+    "admission": "CORRECT",
+    "capture": false,
+    "prepared_replay": false,
+    "blocks_host": true,
+    "workspace": 0,
+    "private_known": false
+  },
+  {
+    "request": "copy-bf16-t1-h2048",
+    "provider": "sglang",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "copy-bf16-t1-h2048",
+    "provider": "torch",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "copy-bf16-t1-h2048",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "copy-bf16-t32-h4096",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "copy-bf16-t32-h4096",
+    "provider": "ggml",
+    "admission": "CORRECT",
+    "capture": false,
+    "prepared_replay": false,
+    "blocks_host": true,
+    "workspace": 0,
+    "private_known": false
+  },
+  {
+    "request": "copy-bf16-t32-h4096",
+    "provider": "sglang",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "copy-bf16-t32-h4096",
+    "provider": "torch",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "copy-bf16-t32-h4096",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "abs-f32-t1-h2048",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "abs-f32-t1-h2048",
+    "provider": "ggml",
+    "admission": "CORRECT",
+    "capture": false,
+    "prepared_replay": false,
+    "blocks_host": true,
+    "workspace": 0,
+    "private_known": false
+  },
+  {
+    "request": "abs-f32-t1-h2048",
+    "provider": "sglang",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "abs-f32-t1-h2048",
+    "provider": "torch",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "abs-f32-t1-h2048",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "abs-f32-t32-h4096",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "abs-f32-t32-h4096",
+    "provider": "ggml",
+    "admission": "CORRECT",
+    "capture": false,
+    "prepared_replay": false,
+    "blocks_host": true,
+    "workspace": 0,
+    "private_known": false
+  },
+  {
+    "request": "abs-f32-t32-h4096",
+    "provider": "sglang",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "abs-f32-t32-h4096",
+    "provider": "torch",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "abs-f32-t32-h4096",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "abs-f16-t1-h2048",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "abs-f16-t1-h2048",
+    "provider": "ggml",
+    "admission": "CORRECT",
+    "capture": false,
+    "prepared_replay": false,
+    "blocks_host": true,
+    "workspace": 0,
+    "private_known": false
+  },
+  {
+    "request": "abs-f16-t1-h2048",
+    "provider": "sglang",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "abs-f16-t1-h2048",
+    "provider": "torch",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "abs-f16-t1-h2048",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "abs-f16-t32-h4096",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "abs-f16-t32-h4096",
+    "provider": "ggml",
+    "admission": "CORRECT",
+    "capture": false,
+    "prepared_replay": false,
+    "blocks_host": true,
+    "workspace": 0,
+    "private_known": false
+  },
+  {
+    "request": "abs-f16-t32-h4096",
+    "provider": "sglang",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "abs-f16-t32-h4096",
+    "provider": "torch",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "abs-f16-t32-h4096",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "abs-bf16-t1-h2048",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "abs-bf16-t1-h2048",
+    "provider": "ggml",
+    "admission": "CORRECT",
+    "capture": false,
+    "prepared_replay": false,
+    "blocks_host": true,
+    "workspace": 0,
+    "private_known": false
+  },
+  {
+    "request": "abs-bf16-t1-h2048",
+    "provider": "sglang",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "abs-bf16-t1-h2048",
+    "provider": "torch",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "abs-bf16-t1-h2048",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "abs-bf16-t32-h4096",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "abs-bf16-t32-h4096",
+    "provider": "ggml",
+    "admission": "CORRECT",
+    "capture": false,
+    "prepared_replay": false,
+    "blocks_host": true,
+    "workspace": 0,
+    "private_known": false
+  },
+  {
+    "request": "abs-bf16-t32-h4096",
+    "provider": "sglang",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "abs-bf16-t32-h4096",
+    "provider": "torch",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "abs-bf16-t32-h4096",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "neg-f32-t1-h2048",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "neg-f32-t1-h2048",
+    "provider": "ggml",
+    "admission": "CORRECT",
+    "capture": false,
+    "prepared_replay": false,
+    "blocks_host": true,
+    "workspace": 0,
+    "private_known": false
+  },
+  {
+    "request": "neg-f32-t1-h2048",
+    "provider": "sglang",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "neg-f32-t1-h2048",
+    "provider": "torch",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "neg-f32-t1-h2048",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "neg-f32-t32-h4096",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "neg-f32-t32-h4096",
+    "provider": "ggml",
+    "admission": "CORRECT",
+    "capture": false,
+    "prepared_replay": false,
+    "blocks_host": true,
+    "workspace": 0,
+    "private_known": false
+  },
+  {
+    "request": "neg-f32-t32-h4096",
+    "provider": "sglang",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "neg-f32-t32-h4096",
+    "provider": "torch",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "neg-f32-t32-h4096",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "neg-f16-t1-h2048",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "neg-f16-t1-h2048",
+    "provider": "ggml",
+    "admission": "CORRECT",
+    "capture": false,
+    "prepared_replay": false,
+    "blocks_host": true,
+    "workspace": 0,
+    "private_known": false
+  },
+  {
+    "request": "neg-f16-t1-h2048",
+    "provider": "sglang",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "neg-f16-t1-h2048",
+    "provider": "torch",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "neg-f16-t1-h2048",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "neg-f16-t32-h4096",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "neg-f16-t32-h4096",
+    "provider": "ggml",
+    "admission": "CORRECT",
+    "capture": false,
+    "prepared_replay": false,
+    "blocks_host": true,
+    "workspace": 0,
+    "private_known": false
+  },
+  {
+    "request": "neg-f16-t32-h4096",
+    "provider": "sglang",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "neg-f16-t32-h4096",
+    "provider": "torch",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "neg-f16-t32-h4096",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "neg-bf16-t1-h2048",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "neg-bf16-t1-h2048",
+    "provider": "ggml",
+    "admission": "CORRECT",
+    "capture": false,
+    "prepared_replay": false,
+    "blocks_host": true,
+    "workspace": 0,
+    "private_known": false
+  },
+  {
+    "request": "neg-bf16-t1-h2048",
+    "provider": "sglang",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "neg-bf16-t1-h2048",
+    "provider": "torch",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "neg-bf16-t1-h2048",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "neg-bf16-t32-h4096",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "neg-bf16-t32-h4096",
+    "provider": "ggml",
+    "admission": "CORRECT",
+    "capture": false,
+    "prepared_replay": false,
+    "blocks_host": true,
+    "workspace": 0,
+    "private_known": false
+  },
+  {
+    "request": "neg-bf16-t32-h4096",
+    "provider": "sglang",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "neg-bf16-t32-h4096",
+    "provider": "torch",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "neg-bf16-t32-h4096",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "exp-f32-t1-h2048",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "exp-f32-t1-h2048",
+    "provider": "ggml",
+    "admission": "CORRECT",
+    "capture": false,
+    "prepared_replay": false,
+    "blocks_host": true,
+    "workspace": 0,
+    "private_known": false
+  },
+  {
+    "request": "exp-f32-t1-h2048",
+    "provider": "sglang",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "exp-f32-t1-h2048",
+    "provider": "torch",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "exp-f32-t1-h2048",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "exp-f32-t32-h4096",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "exp-f32-t32-h4096",
+    "provider": "ggml",
+    "admission": "CORRECT",
+    "capture": false,
+    "prepared_replay": false,
+    "blocks_host": true,
+    "workspace": 0,
+    "private_known": false
+  },
+  {
+    "request": "exp-f32-t32-h4096",
+    "provider": "sglang",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "exp-f32-t32-h4096",
+    "provider": "torch",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "exp-f32-t32-h4096",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "exp-f16-t1-h2048",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "exp-f16-t1-h2048",
+    "provider": "ggml",
+    "admission": "CORRECT",
+    "capture": false,
+    "prepared_replay": false,
+    "blocks_host": true,
+    "workspace": 0,
+    "private_known": false
+  },
+  {
+    "request": "exp-f16-t1-h2048",
+    "provider": "sglang",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "exp-f16-t1-h2048",
+    "provider": "torch",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "exp-f16-t1-h2048",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "exp-f16-t32-h4096",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "exp-f16-t32-h4096",
+    "provider": "ggml",
+    "admission": "CORRECT",
+    "capture": false,
+    "prepared_replay": false,
+    "blocks_host": true,
+    "workspace": 0,
+    "private_known": false
+  },
+  {
+    "request": "exp-f16-t32-h4096",
+    "provider": "sglang",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "exp-f16-t32-h4096",
+    "provider": "torch",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "exp-f16-t32-h4096",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "exp-bf16-t1-h2048",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "exp-bf16-t1-h2048",
+    "provider": "ggml",
+    "admission": "CORRECT",
+    "capture": false,
+    "prepared_replay": false,
+    "blocks_host": true,
+    "workspace": 0,
+    "private_known": false
+  },
+  {
+    "request": "exp-bf16-t1-h2048",
+    "provider": "sglang",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "exp-bf16-t1-h2048",
+    "provider": "torch",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "exp-bf16-t1-h2048",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "exp-bf16-t32-h4096",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "exp-bf16-t32-h4096",
+    "provider": "ggml",
+    "admission": "CORRECT",
+    "capture": false,
+    "prepared_replay": false,
+    "blocks_host": true,
+    "workspace": 0,
+    "private_known": false
+  },
+  {
+    "request": "exp-bf16-t32-h4096",
+    "provider": "sglang",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "exp-bf16-t32-h4096",
+    "provider": "torch",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "exp-bf16-t32-h4096",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "log-f32-t1-h2048",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "log-f32-t1-h2048",
+    "provider": "ggml",
+    "admission": "CORRECT",
+    "capture": false,
+    "prepared_replay": false,
+    "blocks_host": true,
+    "workspace": 0,
+    "private_known": false
+  },
+  {
+    "request": "log-f32-t1-h2048",
+    "provider": "sglang",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "log-f32-t1-h2048",
+    "provider": "torch",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "log-f32-t1-h2048",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "log-f32-t32-h4096",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "log-f32-t32-h4096",
+    "provider": "ggml",
+    "admission": "CORRECT",
+    "capture": false,
+    "prepared_replay": false,
+    "blocks_host": true,
+    "workspace": 0,
+    "private_known": false
+  },
+  {
+    "request": "log-f32-t32-h4096",
+    "provider": "sglang",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "log-f32-t32-h4096",
+    "provider": "torch",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "log-f32-t32-h4096",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "log-f16-t1-h2048",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "log-f16-t1-h2048",
+    "provider": "ggml",
+    "admission": "CORRECT",
+    "capture": false,
+    "prepared_replay": false,
+    "blocks_host": true,
+    "workspace": 0,
+    "private_known": false
+  },
+  {
+    "request": "log-f16-t1-h2048",
+    "provider": "sglang",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "log-f16-t1-h2048",
+    "provider": "torch",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "log-f16-t1-h2048",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "log-f16-t32-h4096",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "log-f16-t32-h4096",
+    "provider": "ggml",
+    "admission": "CORRECT",
+    "capture": false,
+    "prepared_replay": false,
+    "blocks_host": true,
+    "workspace": 0,
+    "private_known": false
+  },
+  {
+    "request": "log-f16-t32-h4096",
+    "provider": "sglang",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "log-f16-t32-h4096",
+    "provider": "torch",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "log-f16-t32-h4096",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "log-bf16-t1-h2048",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "log-bf16-t1-h2048",
+    "provider": "ggml",
+    "admission": "CORRECT",
+    "capture": false,
+    "prepared_replay": false,
+    "blocks_host": true,
+    "workspace": 0,
+    "private_known": false
+  },
+  {
+    "request": "log-bf16-t1-h2048",
+    "provider": "sglang",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "log-bf16-t1-h2048",
+    "provider": "torch",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "log-bf16-t1-h2048",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "log-bf16-t32-h4096",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "log-bf16-t32-h4096",
+    "provider": "ggml",
+    "admission": "CORRECT",
+    "capture": false,
+    "prepared_replay": false,
+    "blocks_host": true,
+    "workspace": 0,
+    "private_known": false
+  },
+  {
+    "request": "log-bf16-t32-h4096",
+    "provider": "sglang",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "log-bf16-t32-h4096",
+    "provider": "torch",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "log-bf16-t32-h4096",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "sqrt-f32-t1-h2048",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "sqrt-f32-t1-h2048",
+    "provider": "ggml",
+    "admission": "CORRECT",
+    "capture": false,
+    "prepared_replay": false,
+    "blocks_host": true,
+    "workspace": 0,
+    "private_known": false
+  },
+  {
+    "request": "sqrt-f32-t1-h2048",
+    "provider": "sglang",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "sqrt-f32-t1-h2048",
+    "provider": "torch",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "sqrt-f32-t1-h2048",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "sqrt-f32-t32-h4096",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "sqrt-f32-t32-h4096",
+    "provider": "ggml",
+    "admission": "CORRECT",
+    "capture": false,
+    "prepared_replay": false,
+    "blocks_host": true,
+    "workspace": 0,
+    "private_known": false
+  },
+  {
+    "request": "sqrt-f32-t32-h4096",
+    "provider": "sglang",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "sqrt-f32-t32-h4096",
+    "provider": "torch",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "sqrt-f32-t32-h4096",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "sqrt-f16-t1-h2048",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "sqrt-f16-t1-h2048",
+    "provider": "ggml",
+    "admission": "CORRECT",
+    "capture": false,
+    "prepared_replay": false,
+    "blocks_host": true,
+    "workspace": 0,
+    "private_known": false
+  },
+  {
+    "request": "sqrt-f16-t1-h2048",
+    "provider": "sglang",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "sqrt-f16-t1-h2048",
+    "provider": "torch",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "sqrt-f16-t1-h2048",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "sqrt-f16-t32-h4096",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "sqrt-f16-t32-h4096",
+    "provider": "ggml",
+    "admission": "CORRECT",
+    "capture": false,
+    "prepared_replay": false,
+    "blocks_host": true,
+    "workspace": 0,
+    "private_known": false
+  },
+  {
+    "request": "sqrt-f16-t32-h4096",
+    "provider": "sglang",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "sqrt-f16-t32-h4096",
+    "provider": "torch",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "sqrt-f16-t32-h4096",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "sqrt-bf16-t1-h2048",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "sqrt-bf16-t1-h2048",
+    "provider": "ggml",
+    "admission": "CORRECT",
+    "capture": false,
+    "prepared_replay": false,
+    "blocks_host": true,
+    "workspace": 0,
+    "private_known": false
+  },
+  {
+    "request": "sqrt-bf16-t1-h2048",
+    "provider": "sglang",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "sqrt-bf16-t1-h2048",
+    "provider": "torch",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "sqrt-bf16-t1-h2048",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "sqrt-bf16-t32-h4096",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "sqrt-bf16-t32-h4096",
+    "provider": "ggml",
+    "admission": "CORRECT",
+    "capture": false,
+    "prepared_replay": false,
+    "blocks_host": true,
+    "workspace": 0,
+    "private_known": false
+  },
+  {
+    "request": "sqrt-bf16-t32-h4096",
+    "provider": "sglang",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "sqrt-bf16-t32-h4096",
+    "provider": "torch",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "sqrt-bf16-t32-h4096",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "rsqrt-f32-t1-h2048",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "rsqrt-f32-t1-h2048",
+    "provider": "ggml",
+    "admission": "CORRECT",
+    "capture": false,
+    "prepared_replay": false,
+    "blocks_host": true,
+    "workspace": 0,
+    "private_known": false
+  },
+  {
+    "request": "rsqrt-f32-t1-h2048",
+    "provider": "sglang",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "rsqrt-f32-t1-h2048",
+    "provider": "torch",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "rsqrt-f32-t1-h2048",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "rsqrt-f32-t32-h4096",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "rsqrt-f32-t32-h4096",
+    "provider": "ggml",
+    "admission": "CORRECT",
+    "capture": false,
+    "prepared_replay": false,
+    "blocks_host": true,
+    "workspace": 0,
+    "private_known": false
+  },
+  {
+    "request": "rsqrt-f32-t32-h4096",
+    "provider": "sglang",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "rsqrt-f32-t32-h4096",
+    "provider": "torch",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "rsqrt-f32-t32-h4096",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "rsqrt-f16-t1-h2048",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "rsqrt-f16-t1-h2048",
+    "provider": "ggml",
+    "admission": "CORRECT",
+    "capture": false,
+    "prepared_replay": false,
+    "blocks_host": true,
+    "workspace": 0,
+    "private_known": false
+  },
+  {
+    "request": "rsqrt-f16-t1-h2048",
+    "provider": "sglang",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "rsqrt-f16-t1-h2048",
+    "provider": "torch",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "rsqrt-f16-t1-h2048",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "rsqrt-f16-t32-h4096",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "rsqrt-f16-t32-h4096",
+    "provider": "ggml",
+    "admission": "CORRECT",
+    "capture": false,
+    "prepared_replay": false,
+    "blocks_host": true,
+    "workspace": 0,
+    "private_known": false
+  },
+  {
+    "request": "rsqrt-f16-t32-h4096",
+    "provider": "sglang",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "rsqrt-f16-t32-h4096",
+    "provider": "torch",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "rsqrt-f16-t32-h4096",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "rsqrt-bf16-t1-h2048",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "rsqrt-bf16-t1-h2048",
+    "provider": "ggml",
+    "admission": "CORRECT",
+    "capture": false,
+    "prepared_replay": false,
+    "blocks_host": true,
+    "workspace": 0,
+    "private_known": false
+  },
+  {
+    "request": "rsqrt-bf16-t1-h2048",
+    "provider": "sglang",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "rsqrt-bf16-t1-h2048",
+    "provider": "torch",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "rsqrt-bf16-t1-h2048",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "rsqrt-bf16-t32-h4096",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "rsqrt-bf16-t32-h4096",
+    "provider": "ggml",
+    "admission": "CORRECT",
+    "capture": false,
+    "prepared_replay": false,
+    "blocks_host": true,
+    "workspace": 0,
+    "private_known": false
+  },
+  {
+    "request": "rsqrt-bf16-t32-h4096",
+    "provider": "sglang",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "rsqrt-bf16-t32-h4096",
+    "provider": "torch",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "rsqrt-bf16-t32-h4096",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "tanh-f32-t1-h2048",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "tanh-f32-t1-h2048",
+    "provider": "ggml",
+    "admission": "CORRECT",
+    "capture": false,
+    "prepared_replay": false,
+    "blocks_host": true,
+    "workspace": 0,
+    "private_known": false
+  },
+  {
+    "request": "tanh-f32-t1-h2048",
+    "provider": "sglang",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "tanh-f32-t1-h2048",
+    "provider": "torch",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "tanh-f32-t1-h2048",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "tanh-f32-t32-h4096",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "tanh-f32-t32-h4096",
+    "provider": "ggml",
+    "admission": "CORRECT",
+    "capture": false,
+    "prepared_replay": false,
+    "blocks_host": true,
+    "workspace": 0,
+    "private_known": false
+  },
+  {
+    "request": "tanh-f32-t32-h4096",
+    "provider": "sglang",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "tanh-f32-t32-h4096",
+    "provider": "torch",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "tanh-f32-t32-h4096",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "tanh-f16-t1-h2048",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "tanh-f16-t1-h2048",
+    "provider": "ggml",
+    "admission": "CORRECT",
+    "capture": false,
+    "prepared_replay": false,
+    "blocks_host": true,
+    "workspace": 0,
+    "private_known": false
+  },
+  {
+    "request": "tanh-f16-t1-h2048",
+    "provider": "sglang",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "tanh-f16-t1-h2048",
+    "provider": "torch",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "tanh-f16-t1-h2048",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "tanh-f16-t32-h4096",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "tanh-f16-t32-h4096",
+    "provider": "ggml",
+    "admission": "CORRECT",
+    "capture": false,
+    "prepared_replay": false,
+    "blocks_host": true,
+    "workspace": 0,
+    "private_known": false
+  },
+  {
+    "request": "tanh-f16-t32-h4096",
+    "provider": "sglang",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "tanh-f16-t32-h4096",
+    "provider": "torch",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "tanh-f16-t32-h4096",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "tanh-bf16-t1-h2048",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "tanh-bf16-t1-h2048",
+    "provider": "ggml",
+    "admission": "CORRECT",
+    "capture": false,
+    "prepared_replay": false,
+    "blocks_host": true,
+    "workspace": 0,
+    "private_known": false
+  },
+  {
+    "request": "tanh-bf16-t1-h2048",
+    "provider": "sglang",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "tanh-bf16-t1-h2048",
+    "provider": "torch",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "tanh-bf16-t1-h2048",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "tanh-bf16-t32-h4096",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "tanh-bf16-t32-h4096",
+    "provider": "ggml",
+    "admission": "CORRECT",
+    "capture": false,
+    "prepared_replay": false,
+    "blocks_host": true,
+    "workspace": 0,
+    "private_known": false
+  },
+  {
+    "request": "tanh-bf16-t32-h4096",
+    "provider": "sglang",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "tanh-bf16-t32-h4096",
+    "provider": "torch",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "tanh-bf16-t32-h4096",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "sigmoid-f32-t1-h2048",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "sigmoid-f32-t1-h2048",
+    "provider": "ggml",
+    "admission": "CORRECT",
+    "capture": false,
+    "prepared_replay": false,
+    "blocks_host": true,
+    "workspace": 0,
+    "private_known": false
+  },
+  {
+    "request": "sigmoid-f32-t1-h2048",
+    "provider": "sglang",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "sigmoid-f32-t1-h2048",
+    "provider": "torch",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "sigmoid-f32-t1-h2048",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "sigmoid-f32-t32-h4096",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "sigmoid-f32-t32-h4096",
+    "provider": "ggml",
+    "admission": "CORRECT",
+    "capture": false,
+    "prepared_replay": false,
+    "blocks_host": true,
+    "workspace": 0,
+    "private_known": false
+  },
+  {
+    "request": "sigmoid-f32-t32-h4096",
+    "provider": "sglang",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "sigmoid-f32-t32-h4096",
+    "provider": "torch",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "sigmoid-f32-t32-h4096",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "sigmoid-f16-t1-h2048",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "sigmoid-f16-t1-h2048",
+    "provider": "ggml",
+    "admission": "CORRECT",
+    "capture": false,
+    "prepared_replay": false,
+    "blocks_host": true,
+    "workspace": 0,
+    "private_known": false
+  },
+  {
+    "request": "sigmoid-f16-t1-h2048",
+    "provider": "sglang",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "sigmoid-f16-t1-h2048",
+    "provider": "torch",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "sigmoid-f16-t1-h2048",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "sigmoid-f16-t32-h4096",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "sigmoid-f16-t32-h4096",
+    "provider": "ggml",
+    "admission": "CORRECT",
+    "capture": false,
+    "prepared_replay": false,
+    "blocks_host": true,
+    "workspace": 0,
+    "private_known": false
+  },
+  {
+    "request": "sigmoid-f16-t32-h4096",
+    "provider": "sglang",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "sigmoid-f16-t32-h4096",
+    "provider": "torch",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "sigmoid-f16-t32-h4096",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "sigmoid-bf16-t1-h2048",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "sigmoid-bf16-t1-h2048",
+    "provider": "ggml",
+    "admission": "CORRECT",
+    "capture": false,
+    "prepared_replay": false,
+    "blocks_host": true,
+    "workspace": 0,
+    "private_known": false
+  },
+  {
+    "request": "sigmoid-bf16-t1-h2048",
+    "provider": "sglang",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "sigmoid-bf16-t1-h2048",
+    "provider": "torch",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "sigmoid-bf16-t1-h2048",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "sigmoid-bf16-t32-h4096",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "sigmoid-bf16-t32-h4096",
+    "provider": "ggml",
+    "admission": "CORRECT",
+    "capture": false,
+    "prepared_replay": false,
+    "blocks_host": true,
+    "workspace": 0,
+    "private_known": false
+  },
+  {
+    "request": "sigmoid-bf16-t32-h4096",
+    "provider": "sglang",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "sigmoid-bf16-t32-h4096",
+    "provider": "torch",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "sigmoid-bf16-t32-h4096",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "silu-f32-t1-h2048",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "silu-f32-t1-h2048",
+    "provider": "ggml",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "silu-f32-t1-h2048",
+    "provider": "sglang",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "silu-f32-t1-h2048",
+    "provider": "torch",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "silu-f32-t1-h2048",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "silu-f32-t32-h4096",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "silu-f32-t32-h4096",
+    "provider": "ggml",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "silu-f32-t32-h4096",
+    "provider": "sglang",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "silu-f32-t32-h4096",
+    "provider": "torch",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "silu-f32-t32-h4096",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "silu-f16-t1-h2048",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "silu-f16-t1-h2048",
+    "provider": "ggml",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "silu-f16-t1-h2048",
+    "provider": "sglang",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "silu-f16-t1-h2048",
+    "provider": "torch",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "silu-f16-t1-h2048",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "silu-f16-t32-h4096",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "silu-f16-t32-h4096",
+    "provider": "ggml",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "silu-f16-t32-h4096",
+    "provider": "sglang",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "silu-f16-t32-h4096",
+    "provider": "torch",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "silu-f16-t32-h4096",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "silu-bf16-t1-h2048",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "silu-bf16-t1-h2048",
+    "provider": "ggml",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "silu-bf16-t1-h2048",
+    "provider": "sglang",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "silu-bf16-t1-h2048",
+    "provider": "torch",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "silu-bf16-t1-h2048",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "silu-bf16-t32-h4096",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "silu-bf16-t32-h4096",
+    "provider": "ggml",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "silu-bf16-t32-h4096",
+    "provider": "sglang",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "silu-bf16-t32-h4096",
+    "provider": "torch",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "silu-bf16-t32-h4096",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "gelu-f32-t1-h2048",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "gelu-f32-t1-h2048",
+    "provider": "ggml",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "gelu-f32-t1-h2048",
+    "provider": "sglang",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "gelu-f32-t1-h2048",
+    "provider": "torch",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "gelu-f32-t1-h2048",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "gelu-f32-t32-h4096",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "gelu-f32-t32-h4096",
+    "provider": "ggml",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "gelu-f32-t32-h4096",
+    "provider": "sglang",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "gelu-f32-t32-h4096",
+    "provider": "torch",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "gelu-f32-t32-h4096",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "gelu-f16-t1-h2048",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "gelu-f16-t1-h2048",
+    "provider": "ggml",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "gelu-f16-t1-h2048",
+    "provider": "sglang",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "gelu-f16-t1-h2048",
+    "provider": "torch",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "gelu-f16-t1-h2048",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "gelu-f16-t32-h4096",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "gelu-f16-t32-h4096",
+    "provider": "ggml",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "gelu-f16-t32-h4096",
+    "provider": "sglang",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "gelu-f16-t32-h4096",
+    "provider": "torch",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "gelu-f16-t32-h4096",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "gelu-bf16-t1-h2048",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "gelu-bf16-t1-h2048",
+    "provider": "ggml",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "gelu-bf16-t1-h2048",
+    "provider": "sglang",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "gelu-bf16-t1-h2048",
+    "provider": "torch",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "gelu-bf16-t1-h2048",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "gelu-bf16-t32-h4096",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "gelu-bf16-t32-h4096",
+    "provider": "ggml",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "gelu-bf16-t32-h4096",
+    "provider": "sglang",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "gelu-bf16-t32-h4096",
+    "provider": "torch",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "gelu-bf16-t32-h4096",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "gelu_tanh-f32-t1-h2048",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "gelu_tanh-f32-t1-h2048",
+    "provider": "ggml",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "gelu_tanh-f32-t1-h2048",
+    "provider": "sglang",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "gelu_tanh-f32-t1-h2048",
+    "provider": "torch",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "gelu_tanh-f32-t1-h2048",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "gelu_tanh-f32-t32-h4096",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "gelu_tanh-f32-t32-h4096",
+    "provider": "ggml",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "gelu_tanh-f32-t32-h4096",
+    "provider": "sglang",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "gelu_tanh-f32-t32-h4096",
+    "provider": "torch",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "gelu_tanh-f32-t32-h4096",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "gelu_tanh-f16-t1-h2048",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "gelu_tanh-f16-t1-h2048",
+    "provider": "ggml",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "gelu_tanh-f16-t1-h2048",
+    "provider": "sglang",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "gelu_tanh-f16-t1-h2048",
+    "provider": "torch",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "gelu_tanh-f16-t1-h2048",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "gelu_tanh-f16-t32-h4096",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "gelu_tanh-f16-t32-h4096",
+    "provider": "ggml",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "gelu_tanh-f16-t32-h4096",
+    "provider": "sglang",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "gelu_tanh-f16-t32-h4096",
+    "provider": "torch",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "gelu_tanh-f16-t32-h4096",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "gelu_tanh-bf16-t1-h2048",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "gelu_tanh-bf16-t1-h2048",
+    "provider": "ggml",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "gelu_tanh-bf16-t1-h2048",
+    "provider": "sglang",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "gelu_tanh-bf16-t1-h2048",
+    "provider": "torch",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "gelu_tanh-bf16-t1-h2048",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "gelu_tanh-bf16-t32-h4096",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "gelu_tanh-bf16-t32-h4096",
+    "provider": "ggml",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "gelu_tanh-bf16-t32-h4096",
+    "provider": "sglang",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "gelu_tanh-bf16-t32-h4096",
+    "provider": "torch",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "gelu_tanh-bf16-t32-h4096",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "softplus-f32-t1-h2048",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "softplus-f32-t1-h2048",
+    "provider": "ggml",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "softplus-f32-t1-h2048",
+    "provider": "sglang",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "softplus-f32-t1-h2048",
+    "provider": "torch",
+    "admission": "CORRECT",
+    "capture": false,
+    "prepared_replay": false,
+    "blocks_host": true,
+    "workspace": 0,
+    "private_known": false
+  },
+  {
+    "request": "softplus-f32-t1-h2048",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "softplus-f32-t32-h4096",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "softplus-f32-t32-h4096",
+    "provider": "ggml",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "softplus-f32-t32-h4096",
+    "provider": "sglang",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "softplus-f32-t32-h4096",
+    "provider": "torch",
+    "admission": "CORRECT",
+    "capture": false,
+    "prepared_replay": false,
+    "blocks_host": true,
+    "workspace": 0,
+    "private_known": false
+  },
+  {
+    "request": "softplus-f32-t32-h4096",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "softplus-f16-t1-h2048",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "softplus-f16-t1-h2048",
+    "provider": "ggml",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "softplus-f16-t1-h2048",
+    "provider": "sglang",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "softplus-f16-t1-h2048",
+    "provider": "torch",
+    "admission": "CORRECT",
+    "capture": false,
+    "prepared_replay": false,
+    "blocks_host": true,
+    "workspace": 0,
+    "private_known": false
+  },
+  {
+    "request": "softplus-f16-t1-h2048",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "softplus-f16-t32-h4096",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "softplus-f16-t32-h4096",
+    "provider": "ggml",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "softplus-f16-t32-h4096",
+    "provider": "sglang",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "softplus-f16-t32-h4096",
+    "provider": "torch",
+    "admission": "CORRECT",
+    "capture": false,
+    "prepared_replay": false,
+    "blocks_host": true,
+    "workspace": 0,
+    "private_known": false
+  },
+  {
+    "request": "softplus-f16-t32-h4096",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "softplus-bf16-t1-h2048",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "softplus-bf16-t1-h2048",
+    "provider": "ggml",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "softplus-bf16-t1-h2048",
+    "provider": "sglang",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "softplus-bf16-t1-h2048",
+    "provider": "torch",
+    "admission": "CORRECT",
+    "capture": false,
+    "prepared_replay": false,
+    "blocks_host": true,
+    "workspace": 0,
+    "private_known": false
+  },
+  {
+    "request": "softplus-bf16-t1-h2048",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "softplus-bf16-t32-h4096",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "softplus-bf16-t32-h4096",
+    "provider": "ggml",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "softplus-bf16-t32-h4096",
+    "provider": "sglang",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "softplus-bf16-t32-h4096",
+    "provider": "torch",
+    "admission": "CORRECT",
+    "capture": false,
+    "prepared_replay": false,
+    "blocks_host": true,
+    "workspace": 0,
+    "private_known": false
+  },
+  {
+    "request": "softplus-bf16-t32-h4096",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "add-f32-t1-h2048",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "add-f32-t1-h2048",
+    "provider": "ggml",
+    "admission": "CORRECT",
+    "capture": false,
+    "prepared_replay": false,
+    "blocks_host": true,
+    "workspace": 0,
+    "private_known": false
+  },
+  {
+    "request": "add-f32-t1-h2048",
+    "provider": "sglang",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "add-f32-t1-h2048",
+    "provider": "torch",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "add-f32-t1-h2048",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "add-f32-t32-h4096",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "add-f32-t32-h4096",
+    "provider": "ggml",
+    "admission": "CORRECT",
+    "capture": false,
+    "prepared_replay": false,
+    "blocks_host": true,
+    "workspace": 0,
+    "private_known": false
+  },
+  {
+    "request": "add-f32-t32-h4096",
+    "provider": "sglang",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "add-f32-t32-h4096",
+    "provider": "torch",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "add-f32-t32-h4096",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "add-f16-t1-h2048",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "add-f16-t1-h2048",
+    "provider": "ggml",
+    "admission": "CORRECT",
+    "capture": false,
+    "prepared_replay": false,
+    "blocks_host": true,
+    "workspace": 0,
+    "private_known": false
+  },
+  {
+    "request": "add-f16-t1-h2048",
+    "provider": "sglang",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "add-f16-t1-h2048",
+    "provider": "torch",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "add-f16-t1-h2048",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "add-f16-t32-h4096",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "add-f16-t32-h4096",
+    "provider": "ggml",
+    "admission": "CORRECT",
+    "capture": false,
+    "prepared_replay": false,
+    "blocks_host": true,
+    "workspace": 0,
+    "private_known": false
+  },
+  {
+    "request": "add-f16-t32-h4096",
+    "provider": "sglang",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "add-f16-t32-h4096",
+    "provider": "torch",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "add-f16-t32-h4096",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "add-bf16-t1-h2048",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "add-bf16-t1-h2048",
+    "provider": "ggml",
+    "admission": "CORRECT",
+    "capture": false,
+    "prepared_replay": false,
+    "blocks_host": true,
+    "workspace": 0,
+    "private_known": false
+  },
+  {
+    "request": "add-bf16-t1-h2048",
+    "provider": "sglang",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "add-bf16-t1-h2048",
+    "provider": "torch",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "add-bf16-t1-h2048",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "add-bf16-t32-h4096",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "add-bf16-t32-h4096",
+    "provider": "ggml",
+    "admission": "CORRECT",
+    "capture": false,
+    "prepared_replay": false,
+    "blocks_host": true,
+    "workspace": 0,
+    "private_known": false
+  },
+  {
+    "request": "add-bf16-t32-h4096",
+    "provider": "sglang",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "add-bf16-t32-h4096",
+    "provider": "torch",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "add-bf16-t32-h4096",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "sub-f32-t1-h2048",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "sub-f32-t1-h2048",
+    "provider": "ggml",
+    "admission": "CORRECT",
+    "capture": false,
+    "prepared_replay": false,
+    "blocks_host": true,
+    "workspace": 0,
+    "private_known": false
+  },
+  {
+    "request": "sub-f32-t1-h2048",
+    "provider": "sglang",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "sub-f32-t1-h2048",
+    "provider": "torch",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "sub-f32-t1-h2048",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "sub-f32-t32-h4096",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "sub-f32-t32-h4096",
+    "provider": "ggml",
+    "admission": "CORRECT",
+    "capture": false,
+    "prepared_replay": false,
+    "blocks_host": true,
+    "workspace": 0,
+    "private_known": false
+  },
+  {
+    "request": "sub-f32-t32-h4096",
+    "provider": "sglang",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "sub-f32-t32-h4096",
+    "provider": "torch",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "sub-f32-t32-h4096",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "sub-f16-t1-h2048",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "sub-f16-t1-h2048",
+    "provider": "ggml",
+    "admission": "CORRECT",
+    "capture": false,
+    "prepared_replay": false,
+    "blocks_host": true,
+    "workspace": 0,
+    "private_known": false
+  },
+  {
+    "request": "sub-f16-t1-h2048",
+    "provider": "sglang",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "sub-f16-t1-h2048",
+    "provider": "torch",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "sub-f16-t1-h2048",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "sub-f16-t32-h4096",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "sub-f16-t32-h4096",
+    "provider": "ggml",
+    "admission": "CORRECT",
+    "capture": false,
+    "prepared_replay": false,
+    "blocks_host": true,
+    "workspace": 0,
+    "private_known": false
+  },
+  {
+    "request": "sub-f16-t32-h4096",
+    "provider": "sglang",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "sub-f16-t32-h4096",
+    "provider": "torch",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "sub-f16-t32-h4096",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "sub-bf16-t1-h2048",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "sub-bf16-t1-h2048",
+    "provider": "ggml",
+    "admission": "CORRECT",
+    "capture": false,
+    "prepared_replay": false,
+    "blocks_host": true,
+    "workspace": 0,
+    "private_known": false
+  },
+  {
+    "request": "sub-bf16-t1-h2048",
+    "provider": "sglang",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "sub-bf16-t1-h2048",
+    "provider": "torch",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "sub-bf16-t1-h2048",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "sub-bf16-t32-h4096",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "sub-bf16-t32-h4096",
+    "provider": "ggml",
+    "admission": "CORRECT",
+    "capture": false,
+    "prepared_replay": false,
+    "blocks_host": true,
+    "workspace": 0,
+    "private_known": false
+  },
+  {
+    "request": "sub-bf16-t32-h4096",
+    "provider": "sglang",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "sub-bf16-t32-h4096",
+    "provider": "torch",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "sub-bf16-t32-h4096",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "mul-f32-t1-h2048",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "mul-f32-t1-h2048",
+    "provider": "ggml",
+    "admission": "CORRECT",
+    "capture": false,
+    "prepared_replay": false,
+    "blocks_host": true,
+    "workspace": 0,
+    "private_known": false
+  },
+  {
+    "request": "mul-f32-t1-h2048",
+    "provider": "sglang",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "mul-f32-t1-h2048",
+    "provider": "torch",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "mul-f32-t1-h2048",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "mul-f32-t32-h4096",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "mul-f32-t32-h4096",
+    "provider": "ggml",
+    "admission": "CORRECT",
+    "capture": false,
+    "prepared_replay": false,
+    "blocks_host": true,
+    "workspace": 0,
+    "private_known": false
+  },
+  {
+    "request": "mul-f32-t32-h4096",
+    "provider": "sglang",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "mul-f32-t32-h4096",
+    "provider": "torch",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "mul-f32-t32-h4096",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "mul-f16-t1-h2048",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "mul-f16-t1-h2048",
+    "provider": "ggml",
+    "admission": "CORRECT",
+    "capture": false,
+    "prepared_replay": false,
+    "blocks_host": true,
+    "workspace": 0,
+    "private_known": false
+  },
+  {
+    "request": "mul-f16-t1-h2048",
+    "provider": "sglang",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "mul-f16-t1-h2048",
+    "provider": "torch",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "mul-f16-t1-h2048",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "mul-f16-t32-h4096",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "mul-f16-t32-h4096",
+    "provider": "ggml",
+    "admission": "CORRECT",
+    "capture": false,
+    "prepared_replay": false,
+    "blocks_host": true,
+    "workspace": 0,
+    "private_known": false
+  },
+  {
+    "request": "mul-f16-t32-h4096",
+    "provider": "sglang",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "mul-f16-t32-h4096",
+    "provider": "torch",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "mul-f16-t32-h4096",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "mul-bf16-t1-h2048",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "mul-bf16-t1-h2048",
+    "provider": "ggml",
+    "admission": "CORRECT",
+    "capture": false,
+    "prepared_replay": false,
+    "blocks_host": true,
+    "workspace": 0,
+    "private_known": false
+  },
+  {
+    "request": "mul-bf16-t1-h2048",
+    "provider": "sglang",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "mul-bf16-t1-h2048",
+    "provider": "torch",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "mul-bf16-t1-h2048",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "mul-bf16-t32-h4096",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "mul-bf16-t32-h4096",
+    "provider": "ggml",
+    "admission": "CORRECT",
+    "capture": false,
+    "prepared_replay": false,
+    "blocks_host": true,
+    "workspace": 0,
+    "private_known": false
+  },
+  {
+    "request": "mul-bf16-t32-h4096",
+    "provider": "sglang",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "mul-bf16-t32-h4096",
+    "provider": "torch",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "mul-bf16-t32-h4096",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "div-f32-t1-h2048",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "div-f32-t1-h2048",
+    "provider": "ggml",
+    "admission": "CORRECT",
+    "capture": false,
+    "prepared_replay": false,
+    "blocks_host": true,
+    "workspace": 0,
+    "private_known": false
+  },
+  {
+    "request": "div-f32-t1-h2048",
+    "provider": "sglang",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "div-f32-t1-h2048",
+    "provider": "torch",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "div-f32-t1-h2048",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "div-f32-t32-h4096",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "div-f32-t32-h4096",
+    "provider": "ggml",
+    "admission": "CORRECT",
+    "capture": false,
+    "prepared_replay": false,
+    "blocks_host": true,
+    "workspace": 0,
+    "private_known": false
+  },
+  {
+    "request": "div-f32-t32-h4096",
+    "provider": "sglang",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "div-f32-t32-h4096",
+    "provider": "torch",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "div-f32-t32-h4096",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "div-f16-t1-h2048",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "div-f16-t1-h2048",
+    "provider": "ggml",
+    "admission": "CORRECT",
+    "capture": false,
+    "prepared_replay": false,
+    "blocks_host": true,
+    "workspace": 0,
+    "private_known": false
+  },
+  {
+    "request": "div-f16-t1-h2048",
+    "provider": "sglang",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "div-f16-t1-h2048",
+    "provider": "torch",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "div-f16-t1-h2048",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "div-f16-t32-h4096",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "div-f16-t32-h4096",
+    "provider": "ggml",
+    "admission": "CORRECT",
+    "capture": false,
+    "prepared_replay": false,
+    "blocks_host": true,
+    "workspace": 0,
+    "private_known": false
+  },
+  {
+    "request": "div-f16-t32-h4096",
+    "provider": "sglang",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "div-f16-t32-h4096",
+    "provider": "torch",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "div-f16-t32-h4096",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "div-bf16-t1-h2048",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "div-bf16-t1-h2048",
+    "provider": "ggml",
+    "admission": "CORRECT",
+    "capture": false,
+    "prepared_replay": false,
+    "blocks_host": true,
+    "workspace": 0,
+    "private_known": false
+  },
+  {
+    "request": "div-bf16-t1-h2048",
+    "provider": "sglang",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "div-bf16-t1-h2048",
+    "provider": "torch",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "div-bf16-t1-h2048",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "div-bf16-t32-h4096",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "div-bf16-t32-h4096",
+    "provider": "ggml",
+    "admission": "CORRECT",
+    "capture": false,
+    "prepared_replay": false,
+    "blocks_host": true,
+    "workspace": 0,
+    "private_known": false
+  },
+  {
+    "request": "div-bf16-t32-h4096",
+    "provider": "sglang",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "div-bf16-t32-h4096",
+    "provider": "torch",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "div-bf16-t32-h4096",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "rms-f32-t1-h2048",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "rms-f32-t1-h2048",
+    "provider": "ggml",
+    "admission": "CORRECT",
+    "capture": false,
+    "prepared_replay": false,
+    "blocks_host": true,
+    "workspace": 0,
+    "private_known": false
+  },
+  {
+    "request": "rms-f32-t1-h2048",
+    "provider": "sglang",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "rms-f32-t1-h2048",
+    "provider": "torch",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "rms-f32-t1-h2048",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "rms-f32-t32-h4096",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "rms-f32-t32-h4096",
+    "provider": "ggml",
+    "admission": "CORRECT",
+    "capture": false,
+    "prepared_replay": false,
+    "blocks_host": true,
+    "workspace": 0,
+    "private_known": false
+  },
+  {
+    "request": "rms-f32-t32-h4096",
+    "provider": "sglang",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "rms-f32-t32-h4096",
+    "provider": "torch",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "rms-f32-t32-h4096",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "rms-f16-t1-h2048",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "rms-f16-t1-h2048",
+    "provider": "ggml",
+    "admission": "CORRECT",
+    "capture": false,
+    "prepared_replay": false,
+    "blocks_host": true,
+    "workspace": 0,
+    "private_known": false
+  },
+  {
+    "request": "rms-f16-t1-h2048",
+    "provider": "sglang",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "rms-f16-t1-h2048",
+    "provider": "torch",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "rms-f16-t1-h2048",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "rms-f16-t32-h4096",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "rms-f16-t32-h4096",
+    "provider": "ggml",
+    "admission": "CORRECT",
+    "capture": false,
+    "prepared_replay": false,
+    "blocks_host": true,
+    "workspace": 0,
+    "private_known": false
+  },
+  {
+    "request": "rms-f16-t32-h4096",
+    "provider": "sglang",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "rms-f16-t32-h4096",
+    "provider": "torch",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "rms-f16-t32-h4096",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "rms-bf16-t1-h2048",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "rms-bf16-t1-h2048",
+    "provider": "ggml",
+    "admission": "CORRECT",
+    "capture": false,
+    "prepared_replay": false,
+    "blocks_host": true,
+    "workspace": 0,
+    "private_known": false
+  },
+  {
+    "request": "rms-bf16-t1-h2048",
+    "provider": "sglang",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "rms-bf16-t1-h2048",
+    "provider": "torch",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "rms-bf16-t1-h2048",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "rms-bf16-t32-h4096",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "rms-bf16-t32-h4096",
+    "provider": "ggml",
+    "admission": "CORRECT",
+    "capture": false,
+    "prepared_replay": false,
+    "blocks_host": true,
+    "workspace": 0,
+    "private_known": false
+  },
+  {
+    "request": "rms-bf16-t32-h4096",
+    "provider": "sglang",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "rms-bf16-t32-h4096",
+    "provider": "torch",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "rms-bf16-t32-h4096",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "weighted_rms-f32-t1-h2048",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "weighted_rms-f32-t1-h2048",
+    "provider": "ggml",
+    "admission": "CORRECT",
+    "capture": false,
+    "prepared_replay": false,
+    "blocks_host": true,
+    "workspace": 0,
+    "private_known": false
+  },
+  {
+    "request": "weighted_rms-f32-t1-h2048",
+    "provider": "sglang",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "weighted_rms-f32-t1-h2048",
+    "provider": "torch",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "weighted_rms-f32-t1-h2048",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "weighted_rms-f32-t32-h4096",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "weighted_rms-f32-t32-h4096",
+    "provider": "ggml",
+    "admission": "CORRECT",
+    "capture": false,
+    "prepared_replay": false,
+    "blocks_host": true,
+    "workspace": 0,
+    "private_known": false
+  },
+  {
+    "request": "weighted_rms-f32-t32-h4096",
+    "provider": "sglang",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "weighted_rms-f32-t32-h4096",
+    "provider": "torch",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "weighted_rms-f32-t32-h4096",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "weighted_rms-f16-t1-h2048",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "weighted_rms-f16-t1-h2048",
+    "provider": "ggml",
+    "admission": "CORRECT",
+    "capture": false,
+    "prepared_replay": false,
+    "blocks_host": true,
+    "workspace": 0,
+    "private_known": false
+  },
+  {
+    "request": "weighted_rms-f16-t1-h2048",
+    "provider": "sglang",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "weighted_rms-f16-t1-h2048",
+    "provider": "torch",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "weighted_rms-f16-t1-h2048",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "weighted_rms-f16-t32-h4096",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "weighted_rms-f16-t32-h4096",
+    "provider": "ggml",
+    "admission": "CORRECT",
+    "capture": false,
+    "prepared_replay": false,
+    "blocks_host": true,
+    "workspace": 0,
+    "private_known": false
+  },
+  {
+    "request": "weighted_rms-f16-t32-h4096",
+    "provider": "sglang",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "weighted_rms-f16-t32-h4096",
+    "provider": "torch",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "weighted_rms-f16-t32-h4096",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "weighted_rms-bf16-t1-h2048",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "weighted_rms-bf16-t1-h2048",
+    "provider": "ggml",
+    "admission": "CORRECT",
+    "capture": false,
+    "prepared_replay": false,
+    "blocks_host": true,
+    "workspace": 0,
+    "private_known": false
+  },
+  {
+    "request": "weighted_rms-bf16-t1-h2048",
+    "provider": "sglang",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "weighted_rms-bf16-t1-h2048",
+    "provider": "torch",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "weighted_rms-bf16-t1-h2048",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "weighted_rms-bf16-t32-h4096",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "weighted_rms-bf16-t32-h4096",
+    "provider": "ggml",
+    "admission": "CORRECT",
+    "capture": false,
+    "prepared_replay": false,
+    "blocks_host": true,
+    "workspace": 0,
+    "private_known": false
+  },
+  {
+    "request": "weighted_rms-bf16-t32-h4096",
+    "provider": "sglang",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "weighted_rms-bf16-t32-h4096",
+    "provider": "torch",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "weighted_rms-bf16-t32-h4096",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "layer-f32-t1-h2048",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "layer-f32-t1-h2048",
+    "provider": "ggml",
+    "admission": "CORRECT",
+    "capture": false,
+    "prepared_replay": false,
+    "blocks_host": true,
+    "workspace": 0,
+    "private_known": false
+  },
+  {
+    "request": "layer-f32-t1-h2048",
+    "provider": "sglang",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "layer-f32-t1-h2048",
+    "provider": "torch",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "layer-f32-t1-h2048",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "layer-f32-t32-h4096",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "layer-f32-t32-h4096",
+    "provider": "ggml",
+    "admission": "CORRECT",
+    "capture": false,
+    "prepared_replay": false,
+    "blocks_host": true,
+    "workspace": 0,
+    "private_known": false
+  },
+  {
+    "request": "layer-f32-t32-h4096",
+    "provider": "sglang",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "layer-f32-t32-h4096",
+    "provider": "torch",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "layer-f32-t32-h4096",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "layer-f16-t1-h2048",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "layer-f16-t1-h2048",
+    "provider": "ggml",
+    "admission": "CORRECT",
+    "capture": false,
+    "prepared_replay": false,
+    "blocks_host": true,
+    "workspace": 0,
+    "private_known": false
+  },
+  {
+    "request": "layer-f16-t1-h2048",
+    "provider": "sglang",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "layer-f16-t1-h2048",
+    "provider": "torch",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "layer-f16-t1-h2048",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "layer-f16-t32-h4096",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "layer-f16-t32-h4096",
+    "provider": "ggml",
+    "admission": "CORRECT",
+    "capture": false,
+    "prepared_replay": false,
+    "blocks_host": true,
+    "workspace": 0,
+    "private_known": false
+  },
+  {
+    "request": "layer-f16-t32-h4096",
+    "provider": "sglang",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "layer-f16-t32-h4096",
+    "provider": "torch",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "layer-f16-t32-h4096",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "layer-bf16-t1-h2048",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "layer-bf16-t1-h2048",
+    "provider": "ggml",
+    "admission": "CORRECT",
+    "capture": false,
+    "prepared_replay": false,
+    "blocks_host": true,
+    "workspace": 0,
+    "private_known": false
+  },
+  {
+    "request": "layer-bf16-t1-h2048",
+    "provider": "sglang",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "layer-bf16-t1-h2048",
+    "provider": "torch",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "layer-bf16-t1-h2048",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "layer-bf16-t32-h4096",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "layer-bf16-t32-h4096",
+    "provider": "ggml",
+    "admission": "CORRECT",
+    "capture": false,
+    "prepared_replay": false,
+    "blocks_host": true,
+    "workspace": 0,
+    "private_known": false
+  },
+  {
+    "request": "layer-bf16-t32-h4096",
+    "provider": "sglang",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "layer-bf16-t32-h4096",
+    "provider": "torch",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "layer-bf16-t32-h4096",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "affine_layer-f32-t1-h2048",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "affine_layer-f32-t1-h2048",
+    "provider": "ggml",
+    "admission": "CORRECT",
+    "capture": false,
+    "prepared_replay": false,
+    "blocks_host": true,
+    "workspace": 0,
+    "private_known": false
+  },
+  {
+    "request": "affine_layer-f32-t1-h2048",
+    "provider": "sglang",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "affine_layer-f32-t1-h2048",
+    "provider": "torch",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "affine_layer-f32-t1-h2048",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "affine_layer-f32-t32-h4096",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "affine_layer-f32-t32-h4096",
+    "provider": "ggml",
+    "admission": "CORRECT",
+    "capture": false,
+    "prepared_replay": false,
+    "blocks_host": true,
+    "workspace": 0,
+    "private_known": false
+  },
+  {
+    "request": "affine_layer-f32-t32-h4096",
+    "provider": "sglang",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "affine_layer-f32-t32-h4096",
+    "provider": "torch",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "affine_layer-f32-t32-h4096",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "affine_layer-f16-t1-h2048",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "affine_layer-f16-t1-h2048",
+    "provider": "ggml",
+    "admission": "CORRECT",
+    "capture": false,
+    "prepared_replay": false,
+    "blocks_host": true,
+    "workspace": 0,
+    "private_known": false
+  },
+  {
+    "request": "affine_layer-f16-t1-h2048",
+    "provider": "sglang",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "affine_layer-f16-t1-h2048",
+    "provider": "torch",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "affine_layer-f16-t1-h2048",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "affine_layer-f16-t32-h4096",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "affine_layer-f16-t32-h4096",
+    "provider": "ggml",
+    "admission": "CORRECT",
+    "capture": false,
+    "prepared_replay": false,
+    "blocks_host": true,
+    "workspace": 0,
+    "private_known": false
+  },
+  {
+    "request": "affine_layer-f16-t32-h4096",
+    "provider": "sglang",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "affine_layer-f16-t32-h4096",
+    "provider": "torch",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "affine_layer-f16-t32-h4096",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "affine_layer-bf16-t1-h2048",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "affine_layer-bf16-t1-h2048",
+    "provider": "ggml",
+    "admission": "CORRECT",
+    "capture": false,
+    "prepared_replay": false,
+    "blocks_host": true,
+    "workspace": 0,
+    "private_known": false
+  },
+  {
+    "request": "affine_layer-bf16-t1-h2048",
+    "provider": "sglang",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "affine_layer-bf16-t1-h2048",
+    "provider": "torch",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "affine_layer-bf16-t1-h2048",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "affine_layer-bf16-t32-h4096",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "affine_layer-bf16-t32-h4096",
+    "provider": "ggml",
+    "admission": "CORRECT",
+    "capture": false,
+    "prepared_replay": false,
+    "blocks_host": true,
+    "workspace": 0,
+    "private_known": false
+  },
+  {
+    "request": "affine_layer-bf16-t32-h4096",
+    "provider": "sglang",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "affine_layer-bf16-t32-h4096",
+    "provider": "torch",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "affine_layer-bf16-t32-h4096",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "sum-f32-t1-h2048",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "sum-f32-t1-h2048",
+    "provider": "ggml",
+    "admission": "CORRECT",
+    "capture": false,
+    "prepared_replay": false,
+    "blocks_host": true,
+    "workspace": 0,
+    "private_known": false
+  },
+  {
+    "request": "sum-f32-t1-h2048",
+    "provider": "sglang",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "sum-f32-t1-h2048",
+    "provider": "torch",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "sum-f32-t1-h2048",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "sum-f32-t32-h4096",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "sum-f32-t32-h4096",
+    "provider": "ggml",
+    "admission": "CORRECT",
+    "capture": false,
+    "prepared_replay": false,
+    "blocks_host": true,
+    "workspace": 0,
+    "private_known": false
+  },
+  {
+    "request": "sum-f32-t32-h4096",
+    "provider": "sglang",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "sum-f32-t32-h4096",
+    "provider": "torch",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "sum-f32-t32-h4096",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "sum-f16-t1-h2048",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "sum-f16-t1-h2048",
+    "provider": "ggml",
+    "admission": "CORRECT",
+    "capture": false,
+    "prepared_replay": false,
+    "blocks_host": true,
+    "workspace": 0,
+    "private_known": false
+  },
+  {
+    "request": "sum-f16-t1-h2048",
+    "provider": "sglang",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "sum-f16-t1-h2048",
+    "provider": "torch",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "sum-f16-t1-h2048",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "sum-f16-t32-h4096",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "sum-f16-t32-h4096",
+    "provider": "ggml",
+    "admission": "CORRECT",
+    "capture": false,
+    "prepared_replay": false,
+    "blocks_host": true,
+    "workspace": 0,
+    "private_known": false
+  },
+  {
+    "request": "sum-f16-t32-h4096",
+    "provider": "sglang",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "sum-f16-t32-h4096",
+    "provider": "torch",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "sum-f16-t32-h4096",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "sum-bf16-t1-h2048",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "sum-bf16-t1-h2048",
+    "provider": "ggml",
+    "admission": "CORRECT",
+    "capture": false,
+    "prepared_replay": false,
+    "blocks_host": true,
+    "workspace": 0,
+    "private_known": false
+  },
+  {
+    "request": "sum-bf16-t1-h2048",
+    "provider": "sglang",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "sum-bf16-t1-h2048",
+    "provider": "torch",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "sum-bf16-t1-h2048",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "sum-bf16-t32-h4096",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "sum-bf16-t32-h4096",
+    "provider": "ggml",
+    "admission": "CORRECT",
+    "capture": false,
+    "prepared_replay": false,
+    "blocks_host": true,
+    "workspace": 0,
+    "private_known": false
+  },
+  {
+    "request": "sum-bf16-t32-h4096",
+    "provider": "sglang",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "sum-bf16-t32-h4096",
+    "provider": "torch",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "sum-bf16-t32-h4096",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "mean-f32-t1-h2048",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "mean-f32-t1-h2048",
+    "provider": "ggml",
+    "admission": "CORRECT",
+    "capture": false,
+    "prepared_replay": false,
+    "blocks_host": true,
+    "workspace": 0,
+    "private_known": false
+  },
+  {
+    "request": "mean-f32-t1-h2048",
+    "provider": "sglang",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "mean-f32-t1-h2048",
+    "provider": "torch",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "mean-f32-t1-h2048",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "mean-f32-t32-h4096",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "mean-f32-t32-h4096",
+    "provider": "ggml",
+    "admission": "CORRECT",
+    "capture": false,
+    "prepared_replay": false,
+    "blocks_host": true,
+    "workspace": 0,
+    "private_known": false
+  },
+  {
+    "request": "mean-f32-t32-h4096",
+    "provider": "sglang",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "mean-f32-t32-h4096",
+    "provider": "torch",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "mean-f32-t32-h4096",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "mean-f16-t1-h2048",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "mean-f16-t1-h2048",
+    "provider": "ggml",
+    "admission": "CORRECT",
+    "capture": false,
+    "prepared_replay": false,
+    "blocks_host": true,
+    "workspace": 0,
+    "private_known": false
+  },
+  {
+    "request": "mean-f16-t1-h2048",
+    "provider": "sglang",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "mean-f16-t1-h2048",
+    "provider": "torch",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "mean-f16-t1-h2048",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "mean-f16-t32-h4096",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "mean-f16-t32-h4096",
+    "provider": "ggml",
+    "admission": "CORRECT",
+    "capture": false,
+    "prepared_replay": false,
+    "blocks_host": true,
+    "workspace": 0,
+    "private_known": false
+  },
+  {
+    "request": "mean-f16-t32-h4096",
+    "provider": "sglang",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "mean-f16-t32-h4096",
+    "provider": "torch",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "mean-f16-t32-h4096",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "mean-bf16-t1-h2048",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "mean-bf16-t1-h2048",
+    "provider": "ggml",
+    "admission": "CORRECT",
+    "capture": false,
+    "prepared_replay": false,
+    "blocks_host": true,
+    "workspace": 0,
+    "private_known": false
+  },
+  {
+    "request": "mean-bf16-t1-h2048",
+    "provider": "sglang",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "mean-bf16-t1-h2048",
+    "provider": "torch",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "mean-bf16-t1-h2048",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "mean-bf16-t32-h4096",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "mean-bf16-t32-h4096",
+    "provider": "ggml",
+    "admission": "CORRECT",
+    "capture": false,
+    "prepared_replay": false,
+    "blocks_host": true,
+    "workspace": 0,
+    "private_known": false
+  },
+  {
+    "request": "mean-bf16-t32-h4096",
+    "provider": "sglang",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "mean-bf16-t32-h4096",
+    "provider": "torch",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "mean-bf16-t32-h4096",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "softmax-f32-t1-h2048",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "softmax-f32-t1-h2048",
+    "provider": "ggml",
+    "admission": "CORRECT",
+    "capture": false,
+    "prepared_replay": false,
+    "blocks_host": true,
+    "workspace": 0,
+    "private_known": false
+  },
+  {
+    "request": "softmax-f32-t1-h2048",
+    "provider": "sglang",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "softmax-f32-t1-h2048",
+    "provider": "torch",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "softmax-f32-t1-h2048",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "softmax-f32-t32-h4096",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "softmax-f32-t32-h4096",
+    "provider": "ggml",
+    "admission": "CORRECT",
+    "capture": false,
+    "prepared_replay": false,
+    "blocks_host": true,
+    "workspace": 0,
+    "private_known": false
+  },
+  {
+    "request": "softmax-f32-t32-h4096",
+    "provider": "sglang",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "softmax-f32-t32-h4096",
+    "provider": "torch",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "softmax-f32-t32-h4096",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "softmax-f16-t1-h2048",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "softmax-f16-t1-h2048",
+    "provider": "ggml",
+    "admission": "CORRECT",
+    "capture": false,
+    "prepared_replay": false,
+    "blocks_host": true,
+    "workspace": 0,
+    "private_known": false
+  },
+  {
+    "request": "softmax-f16-t1-h2048",
+    "provider": "sglang",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "softmax-f16-t1-h2048",
+    "provider": "torch",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "softmax-f16-t1-h2048",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "softmax-f16-t32-h4096",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "softmax-f16-t32-h4096",
+    "provider": "ggml",
+    "admission": "CORRECT",
+    "capture": false,
+    "prepared_replay": false,
+    "blocks_host": true,
+    "workspace": 0,
+    "private_known": false
+  },
+  {
+    "request": "softmax-f16-t32-h4096",
+    "provider": "sglang",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "softmax-f16-t32-h4096",
+    "provider": "torch",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "softmax-f16-t32-h4096",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "softmax-bf16-t1-h2048",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "softmax-bf16-t1-h2048",
+    "provider": "ggml",
+    "admission": "CORRECT",
+    "capture": false,
+    "prepared_replay": false,
+    "blocks_host": true,
+    "workspace": 0,
+    "private_known": false
+  },
+  {
+    "request": "softmax-bf16-t1-h2048",
+    "provider": "sglang",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "softmax-bf16-t1-h2048",
+    "provider": "torch",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "softmax-bf16-t1-h2048",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "softmax-bf16-t32-h4096",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "softmax-bf16-t32-h4096",
+    "provider": "ggml",
+    "admission": "CORRECT",
+    "capture": false,
+    "prepared_replay": false,
+    "blocks_host": true,
+    "workspace": 0,
+    "private_known": false
+  },
+  {
+    "request": "softmax-bf16-t32-h4096",
+    "provider": "sglang",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "softmax-bf16-t32-h4096",
+    "provider": "torch",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "softmax-bf16-t32-h4096",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "masked_softmax-f32-t1-h2048",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "masked_softmax-f32-t1-h2048",
+    "provider": "ggml",
+    "admission": "CORRECT",
+    "capture": false,
+    "prepared_replay": false,
+    "blocks_host": true,
+    "workspace": 0,
+    "private_known": false
+  },
+  {
+    "request": "masked_softmax-f32-t1-h2048",
+    "provider": "sglang",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "masked_softmax-f32-t1-h2048",
+    "provider": "torch",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "masked_softmax-f32-t1-h2048",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "masked_softmax-f32-t32-h4096",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "masked_softmax-f32-t32-h4096",
+    "provider": "ggml",
+    "admission": "CORRECT",
+    "capture": false,
+    "prepared_replay": false,
+    "blocks_host": true,
+    "workspace": 0,
+    "private_known": false
+  },
+  {
+    "request": "masked_softmax-f32-t32-h4096",
+    "provider": "sglang",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "masked_softmax-f32-t32-h4096",
+    "provider": "torch",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "masked_softmax-f32-t32-h4096",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "masked_softmax-f16-t1-h2048",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "masked_softmax-f16-t1-h2048",
+    "provider": "ggml",
+    "admission": "CORRECT",
+    "capture": false,
+    "prepared_replay": false,
+    "blocks_host": true,
+    "workspace": 0,
+    "private_known": false
+  },
+  {
+    "request": "masked_softmax-f16-t1-h2048",
+    "provider": "sglang",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "masked_softmax-f16-t1-h2048",
+    "provider": "torch",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "masked_softmax-f16-t1-h2048",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "masked_softmax-f16-t32-h4096",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "masked_softmax-f16-t32-h4096",
+    "provider": "ggml",
+    "admission": "CORRECT",
+    "capture": false,
+    "prepared_replay": false,
+    "blocks_host": true,
+    "workspace": 0,
+    "private_known": false
+  },
+  {
+    "request": "masked_softmax-f16-t32-h4096",
+    "provider": "sglang",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "masked_softmax-f16-t32-h4096",
+    "provider": "torch",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "masked_softmax-f16-t32-h4096",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "masked_softmax-bf16-t1-h2048",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "masked_softmax-bf16-t1-h2048",
+    "provider": "ggml",
+    "admission": "CORRECT",
+    "capture": false,
+    "prepared_replay": false,
+    "blocks_host": true,
+    "workspace": 0,
+    "private_known": false
+  },
+  {
+    "request": "masked_softmax-bf16-t1-h2048",
+    "provider": "sglang",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "masked_softmax-bf16-t1-h2048",
+    "provider": "torch",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "masked_softmax-bf16-t1-h2048",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "masked_softmax-bf16-t32-h4096",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "masked_softmax-bf16-t32-h4096",
+    "provider": "ggml",
+    "admission": "CORRECT",
+    "capture": false,
+    "prepared_replay": false,
+    "blocks_host": true,
+    "workspace": 0,
+    "private_known": false
+  },
+  {
+    "request": "masked_softmax-bf16-t32-h4096",
+    "provider": "sglang",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "masked_softmax-bf16-t32-h4096",
+    "provider": "torch",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "masked_softmax-bf16-t32-h4096",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "concat-f32-t1-h2048",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "concat-f32-t1-h2048",
+    "provider": "ggml",
+    "admission": "CORRECT",
+    "capture": false,
+    "prepared_replay": false,
+    "blocks_host": true,
+    "workspace": 0,
+    "private_known": false
+  },
+  {
+    "request": "concat-f32-t1-h2048",
+    "provider": "sglang",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "concat-f32-t1-h2048",
+    "provider": "torch",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "concat-f32-t1-h2048",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "concat-f32-t32-h4096",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "concat-f32-t32-h4096",
+    "provider": "ggml",
+    "admission": "CORRECT",
+    "capture": false,
+    "prepared_replay": false,
+    "blocks_host": true,
+    "workspace": 0,
+    "private_known": false
+  },
+  {
+    "request": "concat-f32-t32-h4096",
+    "provider": "sglang",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "concat-f32-t32-h4096",
+    "provider": "torch",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "concat-f32-t32-h4096",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "concat-f16-t1-h2048",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "concat-f16-t1-h2048",
+    "provider": "ggml",
+    "admission": "CORRECT",
+    "capture": false,
+    "prepared_replay": false,
+    "blocks_host": true,
+    "workspace": 0,
+    "private_known": false
+  },
+  {
+    "request": "concat-f16-t1-h2048",
+    "provider": "sglang",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "concat-f16-t1-h2048",
+    "provider": "torch",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "concat-f16-t1-h2048",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "concat-f16-t32-h4096",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "concat-f16-t32-h4096",
+    "provider": "ggml",
+    "admission": "CORRECT",
+    "capture": false,
+    "prepared_replay": false,
+    "blocks_host": true,
+    "workspace": 0,
+    "private_known": false
+  },
+  {
+    "request": "concat-f16-t32-h4096",
+    "provider": "sglang",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "concat-f16-t32-h4096",
+    "provider": "torch",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "concat-f16-t32-h4096",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "concat-bf16-t1-h2048",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "concat-bf16-t1-h2048",
+    "provider": "ggml",
+    "admission": "CORRECT",
+    "capture": false,
+    "prepared_replay": false,
+    "blocks_host": true,
+    "workspace": 0,
+    "private_known": false
+  },
+  {
+    "request": "concat-bf16-t1-h2048",
+    "provider": "sglang",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "concat-bf16-t1-h2048",
+    "provider": "torch",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "concat-bf16-t1-h2048",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "concat-bf16-t32-h4096",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "concat-bf16-t32-h4096",
+    "provider": "ggml",
+    "admission": "CORRECT",
+    "capture": false,
+    "prepared_replay": false,
+    "blocks_host": true,
+    "workspace": 0,
+    "private_known": false
+  },
+  {
+    "request": "concat-bf16-t32-h4096",
+    "provider": "sglang",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "concat-bf16-t32-h4096",
+    "provider": "torch",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "concat-bf16-t32-h4096",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "packed_silu-f32-t1-h6144",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "packed_silu-f32-t1-h6144",
+    "provider": "ggml",
+    "admission": "CORRECT",
+    "capture": false,
+    "prepared_replay": false,
+    "blocks_host": true,
+    "workspace": 0,
+    "private_known": false
+  },
+  {
+    "request": "packed_silu-f32-t1-h6144",
+    "provider": "sglang",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "packed_silu-f32-t1-h6144",
+    "provider": "torch",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "packed_silu-f32-t1-h6144",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "packed_silu-f32-t32-h6144",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "packed_silu-f32-t32-h6144",
+    "provider": "ggml",
+    "admission": "CORRECT",
+    "capture": false,
+    "prepared_replay": false,
+    "blocks_host": true,
+    "workspace": 0,
+    "private_known": false
+  },
+  {
+    "request": "packed_silu-f32-t32-h6144",
+    "provider": "sglang",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "packed_silu-f32-t32-h6144",
+    "provider": "torch",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "packed_silu-f32-t32-h6144",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "packed_silu-f16-t1-h6144",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "packed_silu-f16-t1-h6144",
+    "provider": "ggml",
+    "admission": "CORRECT",
+    "capture": false,
+    "prepared_replay": false,
+    "blocks_host": true,
+    "workspace": 0,
+    "private_known": false
+  },
+  {
+    "request": "packed_silu-f16-t1-h6144",
+    "provider": "sglang",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "packed_silu-f16-t1-h6144",
+    "provider": "torch",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "packed_silu-f16-t1-h6144",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "packed_silu-f16-t32-h6144",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "packed_silu-f16-t32-h6144",
+    "provider": "ggml",
+    "admission": "CORRECT",
+    "capture": false,
+    "prepared_replay": false,
+    "blocks_host": true,
+    "workspace": 0,
+    "private_known": false
+  },
+  {
+    "request": "packed_silu-f16-t32-h6144",
+    "provider": "sglang",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "packed_silu-f16-t32-h6144",
+    "provider": "torch",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "packed_silu-f16-t32-h6144",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "packed_silu-bf16-t1-h6144",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "packed_silu-bf16-t1-h6144",
+    "provider": "ggml",
+    "admission": "CORRECT",
+    "capture": false,
+    "prepared_replay": false,
+    "blocks_host": true,
+    "workspace": 0,
+    "private_known": false
+  },
+  {
+    "request": "packed_silu-bf16-t1-h6144",
+    "provider": "sglang",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "packed_silu-bf16-t1-h6144",
+    "provider": "torch",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "packed_silu-bf16-t1-h6144",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "packed_silu-bf16-t32-h6144",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "packed_silu-bf16-t32-h6144",
+    "provider": "ggml",
+    "admission": "CORRECT",
+    "capture": false,
+    "prepared_replay": false,
+    "blocks_host": true,
+    "workspace": 0,
+    "private_known": false
+  },
+  {
+    "request": "packed_silu-bf16-t32-h6144",
+    "provider": "sglang",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "packed_silu-bf16-t32-h6144",
+    "provider": "torch",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "packed_silu-bf16-t32-h6144",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "separate_silu-f32-t1-h6144",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "separate_silu-f32-t1-h6144",
+    "provider": "ggml",
+    "admission": "CORRECT",
+    "capture": false,
+    "prepared_replay": false,
+    "blocks_host": true,
+    "workspace": 0,
+    "private_known": false
+  },
+  {
+    "request": "separate_silu-f32-t1-h6144",
+    "provider": "sglang",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "separate_silu-f32-t1-h6144",
+    "provider": "torch",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "separate_silu-f32-t1-h6144",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "separate_silu-f32-t32-h6144",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "separate_silu-f32-t32-h6144",
+    "provider": "ggml",
+    "admission": "CORRECT",
+    "capture": false,
+    "prepared_replay": false,
+    "blocks_host": true,
+    "workspace": 0,
+    "private_known": false
+  },
+  {
+    "request": "separate_silu-f32-t32-h6144",
+    "provider": "sglang",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "separate_silu-f32-t32-h6144",
+    "provider": "torch",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "separate_silu-f32-t32-h6144",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "separate_silu-f16-t1-h6144",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "separate_silu-f16-t1-h6144",
+    "provider": "ggml",
+    "admission": "CORRECT",
+    "capture": false,
+    "prepared_replay": false,
+    "blocks_host": true,
+    "workspace": 0,
+    "private_known": false
+  },
+  {
+    "request": "separate_silu-f16-t1-h6144",
+    "provider": "sglang",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "separate_silu-f16-t1-h6144",
+    "provider": "torch",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "separate_silu-f16-t1-h6144",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "separate_silu-f16-t32-h6144",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "separate_silu-f16-t32-h6144",
+    "provider": "ggml",
+    "admission": "CORRECT",
+    "capture": false,
+    "prepared_replay": false,
+    "blocks_host": true,
+    "workspace": 0,
+    "private_known": false
+  },
+  {
+    "request": "separate_silu-f16-t32-h6144",
+    "provider": "sglang",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "separate_silu-f16-t32-h6144",
+    "provider": "torch",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "separate_silu-f16-t32-h6144",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "separate_silu-bf16-t1-h6144",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "separate_silu-bf16-t1-h6144",
+    "provider": "ggml",
+    "admission": "CORRECT",
+    "capture": false,
+    "prepared_replay": false,
+    "blocks_host": true,
+    "workspace": 0,
+    "private_known": false
+  },
+  {
+    "request": "separate_silu-bf16-t1-h6144",
+    "provider": "sglang",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "separate_silu-bf16-t1-h6144",
+    "provider": "torch",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "separate_silu-bf16-t1-h6144",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "separate_silu-bf16-t32-h6144",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "separate_silu-bf16-t32-h6144",
+    "provider": "ggml",
+    "admission": "CORRECT",
+    "capture": false,
+    "prepared_replay": false,
+    "blocks_host": true,
+    "workspace": 0,
+    "private_known": false
+  },
+  {
+    "request": "separate_silu-bf16-t32-h6144",
+    "provider": "sglang",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "separate_silu-bf16-t32-h6144",
+    "provider": "torch",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "separate_silu-bf16-t32-h6144",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "packed_gelu-f32-t1-h6144",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "packed_gelu-f32-t1-h6144",
+    "provider": "ggml",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "packed_gelu-f32-t1-h6144",
+    "provider": "sglang",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "packed_gelu-f32-t1-h6144",
+    "provider": "torch",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "packed_gelu-f32-t1-h6144",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "packed_gelu-f32-t32-h6144",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "packed_gelu-f32-t32-h6144",
+    "provider": "ggml",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "packed_gelu-f32-t32-h6144",
+    "provider": "sglang",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "packed_gelu-f32-t32-h6144",
+    "provider": "torch",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "packed_gelu-f32-t32-h6144",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "packed_gelu-f16-t1-h6144",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "packed_gelu-f16-t1-h6144",
+    "provider": "ggml",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "packed_gelu-f16-t1-h6144",
+    "provider": "sglang",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "packed_gelu-f16-t1-h6144",
+    "provider": "torch",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "packed_gelu-f16-t1-h6144",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "packed_gelu-f16-t32-h6144",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "packed_gelu-f16-t32-h6144",
+    "provider": "ggml",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "packed_gelu-f16-t32-h6144",
+    "provider": "sglang",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "packed_gelu-f16-t32-h6144",
+    "provider": "torch",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "packed_gelu-f16-t32-h6144",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "packed_gelu-bf16-t1-h6144",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "packed_gelu-bf16-t1-h6144",
+    "provider": "ggml",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "packed_gelu-bf16-t1-h6144",
+    "provider": "sglang",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "packed_gelu-bf16-t1-h6144",
+    "provider": "torch",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "packed_gelu-bf16-t1-h6144",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "packed_gelu-bf16-t32-h6144",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "packed_gelu-bf16-t32-h6144",
+    "provider": "ggml",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "packed_gelu-bf16-t32-h6144",
+    "provider": "sglang",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "packed_gelu-bf16-t32-h6144",
+    "provider": "torch",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "packed_gelu-bf16-t32-h6144",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "separate_gelu-f32-t1-h6144",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "separate_gelu-f32-t1-h6144",
+    "provider": "ggml",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "separate_gelu-f32-t1-h6144",
+    "provider": "sglang",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "separate_gelu-f32-t1-h6144",
+    "provider": "torch",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "separate_gelu-f32-t1-h6144",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "separate_gelu-f32-t32-h6144",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "separate_gelu-f32-t32-h6144",
+    "provider": "ggml",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "separate_gelu-f32-t32-h6144",
+    "provider": "sglang",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "separate_gelu-f32-t32-h6144",
+    "provider": "torch",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "separate_gelu-f32-t32-h6144",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "separate_gelu-f16-t1-h6144",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "separate_gelu-f16-t1-h6144",
+    "provider": "ggml",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "separate_gelu-f16-t1-h6144",
+    "provider": "sglang",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "separate_gelu-f16-t1-h6144",
+    "provider": "torch",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "separate_gelu-f16-t1-h6144",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "separate_gelu-f16-t32-h6144",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "separate_gelu-f16-t32-h6144",
+    "provider": "ggml",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "separate_gelu-f16-t32-h6144",
+    "provider": "sglang",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "separate_gelu-f16-t32-h6144",
+    "provider": "torch",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "separate_gelu-f16-t32-h6144",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "separate_gelu-bf16-t1-h6144",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "separate_gelu-bf16-t1-h6144",
+    "provider": "ggml",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "separate_gelu-bf16-t1-h6144",
+    "provider": "sglang",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "separate_gelu-bf16-t1-h6144",
+    "provider": "torch",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "separate_gelu-bf16-t1-h6144",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "separate_gelu-bf16-t32-h6144",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "separate_gelu-bf16-t32-h6144",
+    "provider": "ggml",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "separate_gelu-bf16-t32-h6144",
+    "provider": "sglang",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "separate_gelu-bf16-t32-h6144",
+    "provider": "torch",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "separate_gelu-bf16-t32-h6144",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "packed_gelu_tanh-f32-t1-h6144",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "packed_gelu_tanh-f32-t1-h6144",
+    "provider": "ggml",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "packed_gelu_tanh-f32-t1-h6144",
+    "provider": "sglang",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "packed_gelu_tanh-f32-t1-h6144",
+    "provider": "torch",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "packed_gelu_tanh-f32-t1-h6144",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "packed_gelu_tanh-f32-t32-h6144",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "packed_gelu_tanh-f32-t32-h6144",
+    "provider": "ggml",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "packed_gelu_tanh-f32-t32-h6144",
+    "provider": "sglang",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "packed_gelu_tanh-f32-t32-h6144",
+    "provider": "torch",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "packed_gelu_tanh-f32-t32-h6144",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "packed_gelu_tanh-f16-t1-h6144",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "packed_gelu_tanh-f16-t1-h6144",
+    "provider": "ggml",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "packed_gelu_tanh-f16-t1-h6144",
+    "provider": "sglang",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "packed_gelu_tanh-f16-t1-h6144",
+    "provider": "torch",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "packed_gelu_tanh-f16-t1-h6144",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "packed_gelu_tanh-f16-t32-h6144",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "packed_gelu_tanh-f16-t32-h6144",
+    "provider": "ggml",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "packed_gelu_tanh-f16-t32-h6144",
+    "provider": "sglang",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "packed_gelu_tanh-f16-t32-h6144",
+    "provider": "torch",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "packed_gelu_tanh-f16-t32-h6144",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "packed_gelu_tanh-bf16-t1-h6144",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "packed_gelu_tanh-bf16-t1-h6144",
+    "provider": "ggml",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "packed_gelu_tanh-bf16-t1-h6144",
+    "provider": "sglang",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "packed_gelu_tanh-bf16-t1-h6144",
+    "provider": "torch",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "packed_gelu_tanh-bf16-t1-h6144",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "packed_gelu_tanh-bf16-t32-h6144",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "packed_gelu_tanh-bf16-t32-h6144",
+    "provider": "ggml",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "packed_gelu_tanh-bf16-t32-h6144",
+    "provider": "sglang",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "packed_gelu_tanh-bf16-t32-h6144",
+    "provider": "torch",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "packed_gelu_tanh-bf16-t32-h6144",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "separate_gelu_tanh-f32-t1-h6144",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "separate_gelu_tanh-f32-t1-h6144",
+    "provider": "ggml",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "separate_gelu_tanh-f32-t1-h6144",
+    "provider": "sglang",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "separate_gelu_tanh-f32-t1-h6144",
+    "provider": "torch",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "separate_gelu_tanh-f32-t1-h6144",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "separate_gelu_tanh-f32-t32-h6144",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "separate_gelu_tanh-f32-t32-h6144",
+    "provider": "ggml",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "separate_gelu_tanh-f32-t32-h6144",
+    "provider": "sglang",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "separate_gelu_tanh-f32-t32-h6144",
+    "provider": "torch",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "separate_gelu_tanh-f32-t32-h6144",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "separate_gelu_tanh-f16-t1-h6144",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "separate_gelu_tanh-f16-t1-h6144",
+    "provider": "ggml",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "separate_gelu_tanh-f16-t1-h6144",
+    "provider": "sglang",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "separate_gelu_tanh-f16-t1-h6144",
+    "provider": "torch",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "separate_gelu_tanh-f16-t1-h6144",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "separate_gelu_tanh-f16-t32-h6144",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "separate_gelu_tanh-f16-t32-h6144",
+    "provider": "ggml",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "separate_gelu_tanh-f16-t32-h6144",
+    "provider": "sglang",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "separate_gelu_tanh-f16-t32-h6144",
+    "provider": "torch",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "separate_gelu_tanh-f16-t32-h6144",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "separate_gelu_tanh-bf16-t1-h6144",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "separate_gelu_tanh-bf16-t1-h6144",
+    "provider": "ggml",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "separate_gelu_tanh-bf16-t1-h6144",
+    "provider": "sglang",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "separate_gelu_tanh-bf16-t1-h6144",
+    "provider": "torch",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "separate_gelu_tanh-bf16-t1-h6144",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "separate_gelu_tanh-bf16-t32-h6144",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "separate_gelu_tanh-bf16-t32-h6144",
+    "provider": "ggml",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "separate_gelu_tanh-bf16-t32-h6144",
+    "provider": "sglang",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "separate_gelu_tanh-bf16-t32-h6144",
+    "provider": "torch",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "separate_gelu_tanh-bf16-t32-h6144",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "cast-f32-f16-t1-h2048",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "cast-f32-f16-t1-h2048",
+    "provider": "ggml",
+    "admission": "CORRECT",
+    "capture": false,
+    "prepared_replay": false,
+    "blocks_host": true,
+    "workspace": 0,
+    "private_known": false
+  },
+  {
+    "request": "cast-f32-f16-t1-h2048",
+    "provider": "sglang",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "cast-f32-f16-t1-h2048",
+    "provider": "torch",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "cast-f32-f16-t1-h2048",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "cast-f32-f16-t32-h4096",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "cast-f32-f16-t32-h4096",
+    "provider": "ggml",
+    "admission": "CORRECT",
+    "capture": false,
+    "prepared_replay": false,
+    "blocks_host": true,
+    "workspace": 0,
+    "private_known": false
+  },
+  {
+    "request": "cast-f32-f16-t32-h4096",
+    "provider": "sglang",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "cast-f32-f16-t32-h4096",
+    "provider": "torch",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "cast-f32-f16-t32-h4096",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "cast-f32-bf16-t1-h2048",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "cast-f32-bf16-t1-h2048",
+    "provider": "ggml",
+    "admission": "CORRECT",
+    "capture": false,
+    "prepared_replay": false,
+    "blocks_host": true,
+    "workspace": 0,
+    "private_known": false
+  },
+  {
+    "request": "cast-f32-bf16-t1-h2048",
+    "provider": "sglang",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "cast-f32-bf16-t1-h2048",
+    "provider": "torch",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "cast-f32-bf16-t1-h2048",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "cast-f32-bf16-t32-h4096",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "cast-f32-bf16-t32-h4096",
+    "provider": "ggml",
+    "admission": "CORRECT",
+    "capture": false,
+    "prepared_replay": false,
+    "blocks_host": true,
+    "workspace": 0,
+    "private_known": false
+  },
+  {
+    "request": "cast-f32-bf16-t32-h4096",
+    "provider": "sglang",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "cast-f32-bf16-t32-h4096",
+    "provider": "torch",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "cast-f32-bf16-t32-h4096",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "cast-f16-f32-t1-h2048",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "cast-f16-f32-t1-h2048",
+    "provider": "ggml",
+    "admission": "CORRECT",
+    "capture": false,
+    "prepared_replay": false,
+    "blocks_host": true,
+    "workspace": 0,
+    "private_known": false
+  },
+  {
+    "request": "cast-f16-f32-t1-h2048",
+    "provider": "sglang",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "cast-f16-f32-t1-h2048",
+    "provider": "torch",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "cast-f16-f32-t1-h2048",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "cast-f16-f32-t32-h4096",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "cast-f16-f32-t32-h4096",
+    "provider": "ggml",
+    "admission": "CORRECT",
+    "capture": false,
+    "prepared_replay": false,
+    "blocks_host": true,
+    "workspace": 0,
+    "private_known": false
+  },
+  {
+    "request": "cast-f16-f32-t32-h4096",
+    "provider": "sglang",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "cast-f16-f32-t32-h4096",
+    "provider": "torch",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "cast-f16-f32-t32-h4096",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "cast-f16-bf16-t1-h2048",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "cast-f16-bf16-t1-h2048",
+    "provider": "ggml",
+    "admission": "CORRECT",
+    "capture": false,
+    "prepared_replay": false,
+    "blocks_host": true,
+    "workspace": 0,
+    "private_known": false
+  },
+  {
+    "request": "cast-f16-bf16-t1-h2048",
+    "provider": "sglang",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "cast-f16-bf16-t1-h2048",
+    "provider": "torch",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "cast-f16-bf16-t1-h2048",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "cast-f16-bf16-t32-h4096",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "cast-f16-bf16-t32-h4096",
+    "provider": "ggml",
+    "admission": "CORRECT",
+    "capture": false,
+    "prepared_replay": false,
+    "blocks_host": true,
+    "workspace": 0,
+    "private_known": false
+  },
+  {
+    "request": "cast-f16-bf16-t32-h4096",
+    "provider": "sglang",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "cast-f16-bf16-t32-h4096",
+    "provider": "torch",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "cast-f16-bf16-t32-h4096",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "cast-bf16-f32-t1-h2048",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "cast-bf16-f32-t1-h2048",
+    "provider": "ggml",
+    "admission": "CORRECT",
+    "capture": false,
+    "prepared_replay": false,
+    "blocks_host": true,
+    "workspace": 0,
+    "private_known": false
+  },
+  {
+    "request": "cast-bf16-f32-t1-h2048",
+    "provider": "sglang",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "cast-bf16-f32-t1-h2048",
+    "provider": "torch",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "cast-bf16-f32-t1-h2048",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "cast-bf16-f32-t32-h4096",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "cast-bf16-f32-t32-h4096",
+    "provider": "ggml",
+    "admission": "CORRECT",
+    "capture": false,
+    "prepared_replay": false,
+    "blocks_host": true,
+    "workspace": 0,
+    "private_known": false
+  },
+  {
+    "request": "cast-bf16-f32-t32-h4096",
+    "provider": "sglang",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "cast-bf16-f32-t32-h4096",
+    "provider": "torch",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "cast-bf16-f32-t32-h4096",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "cast-bf16-f16-t1-h2048",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "cast-bf16-f16-t1-h2048",
+    "provider": "ggml",
+    "admission": "CORRECT",
+    "capture": false,
+    "prepared_replay": false,
+    "blocks_host": true,
+    "workspace": 0,
+    "private_known": false
+  },
+  {
+    "request": "cast-bf16-f16-t1-h2048",
+    "provider": "sglang",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "cast-bf16-f16-t1-h2048",
+    "provider": "torch",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "cast-bf16-f16-t1-h2048",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "cast-bf16-f16-t32-h4096",
+    "provider": "hyle",
+    "admission": "CORRECT",
+    "capture": true,
+    "prepared_replay": true,
+    "blocks_host": false,
+    "workspace": 0,
+    "private_known": true
+  },
+  {
+    "request": "cast-bf16-f16-t32-h4096",
+    "provider": "ggml",
+    "admission": "CORRECT",
+    "capture": false,
+    "prepared_replay": false,
+    "blocks_host": true,
+    "workspace": 0,
+    "private_known": false
+  },
+  {
+    "request": "cast-bf16-f16-t32-h4096",
+    "provider": "sglang",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "cast-bf16-f16-t32-h4096",
+    "provider": "torch",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "cast-bf16-f16-t32-h4096",
+    "provider": "cccl",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "gather-f32-t1-h2048",
+    "provider": "hyle",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "gather-f32-t1-h2048",
+    "provider": "ggml",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "gather-f32-t1-h2048",
+    "provider": "sglang",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "gather-f32-t1-h2048",
+    "provider": "torch",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "gather-f32-t1-h2048",
+    "provider": "cccl",
+    "admission": "CORRECT",
+    "capture": false,
+    "prepared_replay": false,
+    "blocks_host": true,
+    "workspace": 512,
+    "private_known": true
+  },
+  {
+    "request": "gather-f32-t32-h4096",
+    "provider": "hyle",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "gather-f32-t32-h4096",
+    "provider": "ggml",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "gather-f32-t32-h4096",
+    "provider": "sglang",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "gather-f32-t32-h4096",
+    "provider": "torch",
+    "admission": "DECLINED"
+  },
+  {
+    "request": "gather-f32-t32-h4096",
+    "provider": "cccl",
+    "admission": "CORRECT",
+    "capture": false,
+    "prepared_replay": false,
+    "blocks_host": true,
+    "workspace": 512,
+    "private_known": true
+  }
+]

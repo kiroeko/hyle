@@ -88,3 +88,9 @@ R3相同两入口/资源/失配和source/static/shared差分验收。没有已�
 本AUDITED记录独立提交后才允许上述三owner产品变化；C2不改任何成熟数学或公共instrument。
 C2只用现adapter/SDK一次batch build，至多一次具名纠正（独立完整payload batch，不重置旧
 C1三次build/首次冷准入FAIL）。AA资格与P1之后只取实际CORRECT且同合同的候选组合。
+
+C2批量准入/输出及独立pair-slot验证完成，见[原资格](../../../../evidence/performance/cuda-best-of-c2/README.md)：
+206请求/五provider1030观察，408完整输出通过、622明确decline，零数值失败、零无承载；
+192多候选/14单承载，对应212 pair program两侧各两slot/变输入均通过。Plain Gather原ggml
+仅准入encoded embedding，所以这两个plain请求CCCL单承载，不能伪两家竞速。单项未做AA/P1
+不签性能PASS；下一步在这固定212 pair上一次短AA资格，只对合格子集正式n15，不重跑本数学门。
