@@ -78,3 +78,7 @@ compilation: both routes registered the same DS4 source lock. The original confi
 this does not assign a mathematical consumer verdict. The bounded
 [shared license registration repair](../../../docs/implementation/tasks/build/compute-mixed-shared-license-registration.md)
 changes only which selected component owns the package license entry.
+The [Air CPU+Apple receipt](air-cpu-apple-partial.json) now signs six actual ordinary Direct/Graph
+consumers across source and relocated shared/static SDKs. The existing SDK loop completed with exit 0;
+the original configuration failure remains separate. This validates both native routes within one
+complete package, not H2 joint execution, overlap or engine-directed expert transfer.

@@ -261,3 +261,17 @@ Air Apple-only原批次已exit0：source/shared/static × Direct/Graph六项消�
 真实SDK的mlx.metallib与runtime闭包、搬迁和原生MLX/ggml-Metal数学旅程通过；四项新增SDK日志
 和实际HyleConfig已归档。C3当前24消费者PASS、66项UNRUN。
 下一串行Air Vulkan-only三交付已启动，使用同一精确源码snapshot，未增用户额外route/Provider开关。
+
+### C3 当前批次（2026-10-10）
+
+Windows CPU/CUDA/Vulkan、Air Apple/Vulkan/CPU+Apple 六组普通三交付已通过，当前消费者矩阵为
+36 PASS / 54 UNRUN。记录保留各自候选身份，不把后续文档提交当新数学资格。
+Air CPU+Apple 首次配置发现 DS4 共享 lock 重复登记；已按
+[有限登记修正卡](compute-mixed-shared-license-registration.md)修正并冻结产品 `530e230bb`。
+[原失败](../../../../evidence/correctness/compute-unified-c3/air-mixed-license-failure/receipt.json)
+保留，精确完整源码 snapshot `7a7b4c3b` 在原目录恢复配置后实际 PASS，
+[当前收据](../../../../evidence/correctness/compute-unified-c3/air-cpu-apple-partial.json)已签 source/shared/static × Direct/Graph 六项真实计算 PASS，SDK 原循环 exit0。
+本组搬迁及普通资产闭包已通过，build2/test1；不重跑单路线、P1 或删除原 build root。
+H1–H3 包括已接受的异步传输/重叠/专家片段机制，仍未实施；mixed SDK 不代签这些能力。
+统一脚本在不可变 `6e7af97eb` 测得 Compute+Graph 62,508 实现行（不含 tests/third_party），
+self-check PASS；本次登记修正只有 CMake，不改变该实现行数。

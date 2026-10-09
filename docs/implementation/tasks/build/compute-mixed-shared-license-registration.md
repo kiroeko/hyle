@@ -31,3 +31,11 @@ P0：一次 CMake 条件选择，不增加运行期成本。恢复 Air 原 sourc
 
 产品候选：`530e230bbc11e4fe12218a6a021ca15b009337c3`。仅上述 component 闭包条件已实现，中央 registry 保持严格唯一 owner。
 selector READY，docs/closure/diff 检查通过；Air 组合原目录配置和数学尚待恢复，不能称 PASS。
+
+Air 原目录 configure 与 source Direct/Graph 均已实际 PASS；
+[收据](../../../../evidence/correctness/compute-unified-c3/air-cpu-apple-partial.json)保留日志/候选/完整 archive 身份。
+原 shared/static SDK 循环继续，未完成项仍 UNRUN；不重跑 source 或单路线。
+
+同一候选的 shared/static relocated SDK Direct/Graph 四项均实际 PASS，原 SDK 循环 exit0；
+与 source 合计六消费者通过。本项适用门完成，owner 暂留 CANDIDATE 等待 C3 全部交付终审，
+不能把本组成功代签其它组合或 H2；旧配置 FAIL 保留。

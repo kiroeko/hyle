@@ -1,7 +1,7 @@
 {
   "scope": "C3 declared single-route and CPU+one-GPU source/shared/static SDK delivery, ordinary Direct/Graph consumers",
-  "product_candidate": "2614676ee64bceddadcf791c218d6eea1f051c64",
-  "identity_note": "Each receipt keeps its actual product/configuration/linkage identity. Completed Windows CPU/CUDA entries retain 321bb5bd/79137d31 identities; the newer candidate changes only Apple conditional source asset dependencies, not their non-Apple paths. Remaining entries use the newer candidate.",
+  "product_candidate": "530e230bbc11e4fe12218a6a021ca15b009337c3",
+  "identity_note": "Each receipt retains its actual immutable product, full source archive, platform, recipe and linkage identity. The top-level candidate is the latest product repair, not a relabeling of earlier validated artifacts.",
   "meaning": "Mixed SDK consumers execute each selected route independently. This matrix does not certify H1-H3 joint execution, overlap, expert transfer, model capacity or all operator coverage.",
   "shape_count": 45,
   "consumer_entry_count": 90,
@@ -271,20 +271,21 @@
       "routes": "cpu;apple",
       "deliveries": {
         "source": {
-          "direct": "UNRUN",
-          "graph": "UNRUN"
+          "direct": "PASS",
+          "graph": "PASS"
         },
         "shared": {
-          "direct": "UNRUN",
-          "graph": "UNRUN"
+          "direct": "PASS",
+          "graph": "PASS"
         },
         "static": {
-          "direct": "UNRUN",
-          "graph": "UNRUN"
+          "direct": "PASS",
+          "graph": "PASS"
         }
       },
       "evidence": [
-        "air-mixed-license-failure/receipt.json"
+        "air-mixed-license-failure/receipt.json",
+        "air-cpu-apple-partial.json"
       ]
     },
     {

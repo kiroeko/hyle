@@ -1,0 +1,1380 @@
+'/opt/homebrew/bin/cmake' '-S' '/Users/kiro/hyle-scratch/compute-unified/source-c8874688' '-B' '/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-build' '-G' 'Ninja' '-DCMAKE_OSX_DEPLOYMENT_TARGET=14.4' '-DCMAKE_BUILD_TYPE=Release' '-DCMAKE_INSTALL_PREFIX=/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging' '-DHYLE_COMPONENTS=graph' '-DHYLE_BUILD_TESTS=OFF' '-DHYLE_BUILD_BENCH=OFF' '-DHYLE_INSTALL=ON' '-DHYLE_STATIC=OFF' '-DHYLE_COMPUTE_ROUTES=cpu' 'apple'
+CMake Warning:
+  Ignoring extra path from command line:
+
+   "apple"
+
+
+-- The CXX compiler identification is AppleClang 21.0.0.21000334
+-- Detecting CXX compiler ABI info
+-- Detecting CXX compiler ABI info - done
+-- Check for working CXX compiler: /usr/bin/c++ - skipped
+-- Detecting CXX compile features
+-- Detecting CXX compile features - done
+-- HYLE products: requested='graph' available='core,error,simd,math,compute,graph' factors='core,container_intrusive,util_core,error,math,platform,mem,simd,container,compute_ops,compute,graph,compute_provider_onednn,compute_backend_cpu,compute_ggml_runtime,compute_provider_ggml,graph_provider_onednn,compute_provider_native,compute_route_cpu,graph_route_cpu'
+-- The C compiler identification is AppleClang 21.0.0.21000334
+-- Detecting C compiler ABI info
+-- Detecting C compiler ABI info - done
+-- Check for working C compiler: /usr/bin/cc - skipped
+-- Detecting C compile features
+-- Detecting C compile features - done
+-- HYLE_SANITIZER = off
+-- HYLE_TESTING = OFF (test-only interfaces stripped -- zero in shipped lib)
+-- HYLE: oneDNN provider OFF -- dependency download skipped
+-- Found Python3: /Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/bin/python3.9 (found version "3.9.6") found components: Interpreter
+-- ggml source: 2319 files, 11 exact patches
+
+-- The ASM compiler identification is AppleClang
+-- Found assembler: /usr/bin/cc
+-- Performing Test CMAKE_HAVE_LIBC_PTHREAD
+-- Performing Test CMAKE_HAVE_LIBC_PTHREAD - Success
+-- Found Threads: TRUE
+-- CMAKE_SYSTEM_PROCESSOR: arm64
+-- GGML_SYSTEM_ARCH: ARM
+-- Including CPU backend
+-- ARM detected
+-- Performing Test GGML_COMPILER_SUPPORTS_FP16_FORMAT_I3E
+-- Performing Test GGML_COMPILER_SUPPORTS_FP16_FORMAT_I3E - Failed
+-- Checking for ARM features using flags:
+-- Performing Test HAVE_DOTPROD
+-- Performing Test HAVE_DOTPROD - Success
+-- Performing Test HAVE_SVE
+-- Performing Test HAVE_SVE - Failed
+-- Performing Test HAVE_MATMUL_INT8
+-- Performing Test HAVE_MATMUL_INT8 - Failed
+-- Performing Test HAVE_FMA
+-- Performing Test HAVE_FMA - Success
+-- Performing Test HAVE_FP16_VECTOR_ARITHMETIC
+-- Performing Test HAVE_FP16_VECTOR_ARITHMETIC - Success
+-- Performing Test HAVE_SME
+-- Performing Test HAVE_SME - Failed
+-- Adding CPU backend variant ggml-cpu:  
+-- ggml version: 0.26.0
+-- ggml commit:  ffa4e8b80930029a35991f94e7c8a93cd67730ab-hyle
+-- HYLE: reusing locked CPU SDK at /Users/kiro/Library/Caches/hyle/dependencies/v1/sdks/torch-cpu/Darwin-be0642231d2008c7b90071fc0898d82a0c002d47f38350ebf3ed779fc01972d7/libtorch
+-- Found Torch: /Users/kiro/Library/Caches/hyle/dependencies/v1/sdks/torch-cpu/Darwin-be0642231d2008c7b90071fc0898d82a0c002d47f38350ebf3ed779fc01972d7/libtorch/lib/libtorch.dylib (Required is exact version "2.8.0")
+-- HYLE: original TorchAO/ATen CPU low precision -- locked LibTorch 2.8.0
+-- HYLE_TRACE = OFF (hooks compile to nothing -- zero cost)
+-- HYLE source package target unavailable (requires Git and a Git checkout)
+-- HYLE 0.1.0 | AppleClang 21.0.0.21000334 | C++23 | sanitizer=off | linkage=shared | products=core,error,simd,math,compute,graph | factors=core,container_intrusive,util_core,error,math,platform,mem,simd,container,compute_ops,compute,graph,compute_provider_onednn,compute_backend_cpu,compute_ggml_runtime,compute_provider_ggml,graph_provider_onednn,compute_provider_native,compute_route_cpu,graph_route_cpu
+-- Configuring done (3.7s)
+-- Generating done (0.0s)
+-- Build files have been written to: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-build
+'/opt/homebrew/bin/cmake' '--build' '/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-build' '--config' 'Release' '--parallel' '2'
+[0/2] Re-checking globbed directories...
+[1/164] Building CXX object src/error/CMakeFiles/hyle_error.dir/status.cc.o
+[2/164] Linking CXX shared library bin/libhyle_error.0.1.0.dylib
+[3/164] Creating library symlink bin/libhyle_error.dylib
+[4/164] Building CXX object src/platform/CMakeFiles/hyle_platform_cpu_probe.dir/cpu.cc.o
+[5/164] Building CXX object src/platform/CMakeFiles/hyle_platform_cgroup_parser.dir/linux_cgroup.cc.o
+[6/164] Building CXX object src/platform/CMakeFiles/hyle_platform.dir/cpu_resource.cc.o
+[7/164] Building CXX object src/platform/CMakeFiles/hyle_platform.dir/dynlib.cc.o
+[8/164] Building CXX object src/platform/CMakeFiles/hyle_platform.dir/environment.cc.o
+[9/164] Building CXX object src/platform/CMakeFiles/hyle_platform.dir/host_memory.cc.o
+[10/164] Building CXX object src/platform/CMakeFiles/hyle_platform.dir/process.cc.o
+[11/164] Building CXX object src/platform/CMakeFiles/hyle_platform.dir/random.cc.o
+[12/164] Building CXX object src/platform/CMakeFiles/hyle_platform.dir/numa.cc.o
+[13/164] Building CXX object src/platform/CMakeFiles/hyle_platform.dir/virtual_memory.cc.o
+[14/164] Linking CXX shared library bin/libhyle_platform.0.1.0.dylib
+[15/164] Creating library symlink bin/libhyle_platform.dylib
+[16/164] Building CXX object src/mem/CMakeFiles/hyle_mem.dir/buffer.cc.o
+[17/164] Building CXX object src/mem/CMakeFiles/hyle_mem.dir/buffer_pool.cc.o
+[18/164] Building C object src/mem/CMakeFiles/mimalloc_static.dir/__/__/third_party/mimalloc/src/static.c.o
+[19/164] Building CXX object src/mem/CMakeFiles/hyle_mem.dir/composite_buffer.cc.o
+[20/164] Building CXX object src/mem/CMakeFiles/hyle_mem.dir/heap.cc.o
+[21/164] Building CXX object src/mem/CMakeFiles/hyle_mem.dir/range_allocator.cc.o
+[22/164] Building CXX object src/mem/CMakeFiles/hyle_mem.dir/lifetime_plan.cc.o
+[23/164] Building CXX object src/mem/CMakeFiles/hyle_mem.dir/resource.cc.o
+[24/164] Building CXX object src/mem/CMakeFiles/hyle_mem.dir/system.cc.o
+[25/164] Linking C static library bin/libmimalloc_static.a
+[26/164] Building CXX object src/mem/CMakeFiles/hyle_mem.dir/stats.cc.o
+[27/164] Building CXX object src/compute_ops/CMakeFiles/hyle_compute_ops.dir/tensor_desc.cc.o
+[28/164] Building CXX object src/compute_ops/CMakeFiles/hyle_compute_ops.dir/operation.cc.o
+[29/164] Building CXX object src/compute_ops/CMakeFiles/hyle_compute_ops.dir/low_precision.cc.o
+[30/164] Linking CXX shared library bin/libhyle_mem.0.1.0.dylib
+[31/164] Building CXX object src/compute_ops/CMakeFiles/hyle_compute_ops.dir/weight_decode.cc.o
+[32/164] Linking CXX shared library bin/libhyle_compute_ops.0.1.0.dylib
+[33/164] Building CXX object src/compute_ggml_runtime/vendor/src/CMakeFiles/ggml-base.dir/ggml.cpp.o
+[34/164] Building C object src/compute_ggml_runtime/vendor/src/CMakeFiles/ggml-base.dir/ggml.c.o
+[35/164] Building C object src/compute_ggml_runtime/vendor/src/CMakeFiles/ggml-base.dir/ggml-alloc.c.o
+[36/164] Building CXX object src/compute_ggml_runtime/vendor/src/CMakeFiles/ggml-base.dir/ggml-backend.cpp.o
+[37/164] Building CXX object src/compute_ggml_runtime/vendor/src/CMakeFiles/ggml-base.dir/ggml-opt.cpp.o
+[38/164] Building CXX object src/compute_ggml_runtime/vendor/src/CMakeFiles/ggml-base.dir/ggml-backend-meta.cpp.o
+[39/164] Building CXX object src/compute_ggml_runtime/vendor/src/CMakeFiles/ggml-base.dir/ggml-threading.cpp.o
+[40/164] Building CXX object src/compute_ggml_runtime/vendor/src/CMakeFiles/ggml-base.dir/gguf.cpp.o
+[41/164] Creating library symlink bin/libhyle_mem.dylib
+[42/164] Creating library symlink bin/libhyle_compute_ops.dylib
+[43/164] Building CXX object src/compute/CMakeFiles/hyle_compute.dir/command_capture.cc.o
+[44/164] Building C object src/compute_ggml_runtime/vendor/src/CMakeFiles/ggml-base.dir/ggml-quants.c.o
+[45/164] Building CXX object src/compute/CMakeFiles/hyle_compute.dir/completion.cc.o
+[46/164] Building CXX object src/compute/CMakeFiles/hyle_compute.dir/custom_kernel.cc.o
+[47/164] Building CXX object src/compute/CMakeFiles/hyle_compute.dir/device.cc.o
+[48/164] Building CXX object src/compute/CMakeFiles/hyle_compute.dir/provider.cc.o
+[49/164] Building CXX object src/compute/CMakeFiles/hyle_compute.dir/route_policy.cc.o
+[50/164] Building CXX object src/compute/CMakeFiles/hyle_compute.dir/operation.cc.o
+[51/164] Building CXX object src/compute/CMakeFiles/hyle_compute.dir/result.cc.o
+[52/164] Building CXX object src/compute/CMakeFiles/hyle_compute.dir/shape_domain.cc.o
+[53/164] Building CXX object src/compute/CMakeFiles/hyle_compute.dir/shape_program.cc.o
+[54/164] Building CXX object src/compute/CMakeFiles/hyle_compute.dir/tensor_view.cc.o
+[55/164] Building CXX object src/compute/CMakeFiles/hyle_compute.dir/transfer.cc.o
+[56/164] Linking CXX static library bin/libggml-base.a
+[57/164] Building CXX object src/compute/CMakeFiles/hyle_compute.dir/workload.cc.o
+[58/164] Building C object src/compute_ggml_runtime/vendor/src/CMakeFiles/ggml-cpu.dir/ggml-cpu/ggml-cpu.c.o
+[59/164] Building CXX object src/compute_ggml_runtime/vendor/src/CMakeFiles/ggml-cpu.dir/ggml-cpu/ggml-cpu.cpp.o
+[60/164] Building CXX object src/compute_ggml_runtime/vendor/src/CMakeFiles/ggml-cpu.dir/ggml-cpu/hbm.cpp.o
+[61/164] Building C object src/compute_ggml_runtime/vendor/src/CMakeFiles/ggml-cpu.dir/ggml-cpu/quants.c.o
+[62/164] Building CXX object src/compute_ggml_runtime/vendor/src/CMakeFiles/ggml-cpu.dir/ggml-cpu/traits.cpp.o
+[63/164] Building CXX object src/compute_ggml_runtime/vendor/src/CMakeFiles/ggml-cpu.dir/ggml-cpu/amx/amx.cpp.o
+[64/164] Building CXX object src/compute_ggml_runtime/vendor/src/CMakeFiles/ggml-cpu.dir/ggml-cpu/amx/mmq.cpp.o
+[65/164] Building CXX object src/compute_ggml_runtime/vendor/src/CMakeFiles/ggml-cpu.dir/ggml-cpu/repack.cpp.o
+[66/164] Building CXX object src/compute_ggml_runtime/vendor/src/CMakeFiles/ggml-cpu.dir/ggml-cpu/tiled/tiled.cpp.o
+[67/164] Building CXX object src/compute_ggml_runtime/vendor/src/CMakeFiles/ggml-cpu.dir/ggml-cpu/tiled/tiled-kernel.cpp.o
+[68/164] Building CXX object src/compute_ggml_runtime/vendor/src/CMakeFiles/ggml-cpu.dir/ggml-cpu/binary-ops.cpp.o
+[69/164] Building CXX object src/compute_ggml_runtime/vendor/src/CMakeFiles/ggml-cpu.dir/ggml-cpu/vec.cpp.o
+[70/164] Building CXX object src/compute_ggml_runtime/vendor/src/CMakeFiles/ggml-cpu.dir/ggml-cpu/unary-ops.cpp.o
+[71/164] Building C object src/compute_ggml_runtime/vendor/src/CMakeFiles/ggml-cpu.dir/ggml-cpu/arch/arm/quants.c.o
+[72/164] Building CXX object src/compute_ggml_runtime/vendor/src/CMakeFiles/ggml-cpu.dir/ggml-cpu/arch/arm/repack.cpp.o
+[73/164] Linking CXX shared library bin/libhyle_compute.0.1.0.dylib
+[74/164] Building CXX object src/compute_ggml_runtime/vendor/src/CMakeFiles/ggml.dir/ggml-backend-dl.cpp.o
+[75/164] Building CXX object src/compute_ggml_runtime/vendor/src/CMakeFiles/ggml.dir/ggml-backend-reg.cpp.o
+[76/164] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/runtime.cc.o
+[77/164] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/ops/dispatch_ops.cc.o
+[78/164] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/random/random_dispatch.cc.o
+[79/164] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/search/search_dispatch.cc.o
+[80/164] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/narrow/narrow_dispatch.cc.o
+[81/164] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/scan/scan_dispatch.cc.o
+[82/164] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/dtype/dtype_dispatch.cc.o
+[83/164] Building CXX object src/compute_ggml_runtime/vendor/src/CMakeFiles/ggml-cpu.dir/ggml-cpu/ops.cpp.o
+[84/164] Linking CXX static library bin/libggml-cpu.a
+[85/164] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/dtype/cvt_fp8_scalar.cc.o
+[86/164] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/math/math_dispatch.cc.o
+[87/164] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/math/transcendental_scalar.cc.o
+[88/164] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/math/activations.cc.o
+[89/164] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/sort/sort_dispatch.cc.o
+[90/164] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/sort/top_k.cc.o
+[91/164] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/sort/radix_sort.cc.o
+[92/164] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/bitpack/bitpack_dispatch.cc.o
+[93/164] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/sort/vqsort_scalar.cc.o
+[94/164] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/math/transcendental_highway_neon.cc.o
+[95/164] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/ops/ops_scalar.cc.o
+[96/164] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/ops/ops_neon.cc.o
+[97/164] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/dtype_convert/dtype_convert_scalar.cc.o
+[98/164] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/dtype_convert/dtype_convert_neon.cc.o
+[99/164] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/scan/scan_scalar.cc.o
+[100/164] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/scan/scan_neon.cc.o
+[101/164] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/random/random_scalar.cc.o
+[102/164] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/random/random_neon.cc.o
+[103/164] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/sort/vqsort_hyle_neon.cc.o
+[104/164] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/search/search_scalar.cc.o
+[105/164] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/narrow/narrow_scalar.cc.o
+[106/164] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/narrow/narrow_neon.cc.o
+[107/164] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/search/search_neon.cc.o
+[108/164] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/bitpack/bitpack_scalar.cc.o
+[109/164] Creating library symlink bin/libhyle_compute.dylib
+[110/164] Building CXX object src/compute_backend_cpu/CMakeFiles/hyle_compute_backend_cpu.dir/cpu_backend.cc.o
+[111/164] Building CXX object src/compute_ggml_runtime/CMakeFiles/hyle_compute_ggml_runtime.dir/metadata_arena.cc.o
+[112/164] Building CXX object src/compute_ggml_runtime/CMakeFiles/hyle_compute_ggml_runtime.dir/cpu_execution.cc.o
+[113/164] Building CXX object src/compute_ggml_runtime/CMakeFiles/hyle_compute_ggml_runtime.dir/cpu_program.cc.o
+[114/164] Linking CXX static library bin/libggml.a
+[115/164] Linking CXX shared library bin/libhyle_compute_backend_cpu.0.1.0.dylib
+[116/164] Linking CXX shared library bin/libhyle_compute_ggml_runtime.0.1.0.dylib
+[117/164] Building CXX object src/container/CMakeFiles/hyle_container.dir/hash.cc.o
+[118/164] Building CXX object src/container/CMakeFiles/hyle_container.dir/pod_vector.cc.o
+[119/164] Building CXX object src/container/CMakeFiles/hyle_container.dir/flat_hash_map.cc.o
+[120/164] Building CXX object src/container/CMakeFiles/hyle_container.dir/dynamic_bitset.cc.o
+[121/164] Building CXX object src/container/CMakeFiles/hyle_container.dir/bitset_ops_neon.cc.o
+[122/164] Building CXX object src/container/CMakeFiles/hyle_container.dir/generated/simd-dispatch/container_bitset/container_bitset_scalar.cc.o
+[123/164] Building CXX object src/container/CMakeFiles/hyle_container.dir/generated/simd-dispatch/container_bitset/container_bitset_neon.cc.o
+[124/164] Creating library symlink bin/libhyle_compute_backend_cpu.dylib
+[125/164] Creating library symlink bin/libhyle_compute_ggml_runtime.dylib
+[126/164] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/bitpack/bitpack_neon.cc.o
+[127/164] Linking CXX shared library bin/libhyle_simd.0.1.0.dylib
+[128/164] Creating library symlink bin/libhyle_simd.dylib
+[129/164] Building CXX object src/compute_provider_ggml/CMakeFiles/hyle_compute_provider_ggml.dir/ggml_cpu_provider.cc.o
+[130/164] Building CXX object src/compute_provider_ggml/CMakeFiles/hyle_compute_provider_ggml.dir/standard_index.cc.o
+[131/164] Building CXX object src/compute_provider_native/CMakeFiles/hyle_compute_provider_native.dir/cast.cc.o
+[132/164] Building CXX object src/compute_provider_native/CMakeFiles/hyle_compute_provider_native.dir/default_rules.cc.o
+[133/164] Building CXX object src/compute_provider_native/CMakeFiles/hyle_compute_provider_native.dir/ds4_quantization.cc.o
+[134/164] Building CXX object src/compute_provider_native/CMakeFiles/hyle_compute_provider_native.dir/elementwise.cc.o
+[135/164] Building CXX object src/compute_provider_native/CMakeFiles/hyle_compute_provider_native.dir/indexing.cc.o
+[136/164] Building CXX object src/compute_provider_native/CMakeFiles/hyle_compute_provider_native.dir/native_provider.cc.o
+[137/164] Building CXX object src/compute_provider_native/CMakeFiles/hyle_compute_provider_native.dir/aten_cpu_provider.cc.o
+[138/164] Building CXX object src/compute_provider_native/CMakeFiles/hyle_compute_provider_native.dir/normalization.cc.o
+[139/164] Building CXX object src/compute_provider_native/CMakeFiles/hyle_compute_provider_native.dir/reduction.cc.o
+[140/164] Building CXX object src/compute_provider_native/CMakeFiles/hyle_compute_provider_native.dir/transform.cc.o
+[141/164] Building CXX object src/compute_provider_native/CMakeFiles/hyle_compute_provider_native.dir/transformer.cc.o
+[142/164] Linking CXX shared library bin/libhyle_container.0.1.0.dylib
+[143/164] Linking CXX shared library bin/libhyle_compute_provider_ggml.0.1.0.dylib
+[144/164] Creating library symlink bin/libhyle_container.dylib
+[145/164] Building CXX object src/graph/CMakeFiles/hyle_graph.dir/graph.cc.o
+[146/164] Building CXX object src/graph/CMakeFiles/hyle_graph.dir/effect_order.cc.o
+[147/164] Building CXX object src/compute_provider_native/CMakeFiles/hyle_compute_provider_native.dir/torch_cpu_program.cc.o
+[148/164] Linking CXX shared library bin/libhyle_compute_provider_native.0.1.0.dylib
+[149/164] Building CXX object src/graph/CMakeFiles/hyle_graph.dir/view_domain.cc.o
+[150/164] Building CXX object src/graph/CMakeFiles/hyle_graph.dir/constant_artifact.cc.o
+[151/164] Creating library symlink bin/libhyle_compute_provider_ggml.dylib
+[152/164] Creating library symlink bin/libhyle_compute_provider_native.dylib
+[153/164] Building CXX object src/compute_route_cpu/CMakeFiles/hyle_compute_route_cpu.dir/cpu_context.cc.o
+[154/164] Building CXX object src/compute_route_cpu/CMakeFiles/hyle_compute_route_cpu.dir/default_policy.cc.o
+[155/164] Linking CXX shared library bin/libhyle_compute_route_cpu.0.1.0.dylib
+[156/164] Creating library symlink bin/libhyle_compute_route_cpu.dylib
+[157/164] Building CXX object src/graph_route_cpu/CMakeFiles/hyle_graph_route_cpu.dir/cpu_context.cc.o
+[158/164] Building CXX object src/graph/CMakeFiles/hyle_graph.dir/executable.cc.o
+[159/164] Linking CXX shared library bin/libhyle_graph.0.1.0.dylib
+[160/164] Creating library symlink bin/libhyle_graph.dylib
+[161/164] Building CXX object src/graph_route_cpu/CMakeFiles/hyle_graph_route_cpu.dir/ggml_region.cc.o
+[162/164] Linking CXX shared library bin/libhyle_graph_route_cpu.0.1.0.dylib
+[163/164] Creating library symlink bin/libhyle_graph_route_cpu.dylib
+'/opt/homebrew/bin/cmake' '--install' '/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-build' '--config' 'Release'
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/lib/libhyle_error.0.1.0.dylib
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/lib/libhyle_error.dylib
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/lib/libhyle_platform.0.1.0.dylib
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/lib/libhyle_platform.dylib
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/lib/libhyle_mem.0.1.0.dylib
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/lib/libhyle_mem.dylib
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/lib/libhyle_simd.0.1.0.dylib
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/lib/libhyle_simd.dylib
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/lib/libhyle_container.0.1.0.dylib
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/lib/libhyle_container.dylib
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/lib/libhyle_compute.0.1.0.dylib
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/lib/libhyle_compute.dylib
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/lib/libhyle_graph.0.1.0.dylib
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/lib/libhyle_graph.dylib
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/lib/libhyle_compute_provider_ggml.0.1.0.dylib
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/lib/libhyle_compute_provider_ggml.dylib
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/lib/libhyle_compute_ops.0.1.0.dylib
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/lib/libhyle_compute_ops.dylib
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/lib/libhyle_compute_backend_cpu.0.1.0.dylib
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/lib/libhyle_compute_backend_cpu.dylib
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/lib/libhyle_compute_provider_native.0.1.0.dylib
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/lib/libhyle_compute_provider_native.dylib
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/lib/libhyle_compute_route_cpu.0.1.0.dylib
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/lib/libhyle_compute_route_cpu.dylib
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/lib/libhyle_graph_route_cpu.0.1.0.dylib
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/lib/libhyle_graph_route_cpu.dylib
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/lib/libhyle_compute_ggml_runtime.0.1.0.dylib
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/lib/libhyle_compute_ggml_runtime.dylib
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/include/hyle/core/assert.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/include/hyle/core/cache.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/include/hyle/core/compiler.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/include/hyle/core/detail/compiler_attributes.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/include/hyle/core/detail/preprocessor.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/include/hyle/core/environment.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/include/hyle/version.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/include/hyle/visibility.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/include/hyle/container/detail/intrusive_member.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/include/hyle/container/intrusive_forward_list.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/include/hyle/container/intrusive_hlist.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/include/hyle/container/intrusive_list.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/include/hyle/util/borrow.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/include/hyle/util/function_ref.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/include/hyle/util/random.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/include/hyle/util/ref_counted.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/include/hyle/util/scope_guard.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/include/hyle/util/spin_lock.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/include/hyle/util/type_name.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/include/hyle/util/unique_resource.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/include/hyle/error/format.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/include/hyle/error/result.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/include/hyle/error/status.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/include/hyle/error/system_error.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/include/hyle/math/scalar.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/include/hyle/platform/cpu.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/include/hyle/platform/cpu_convenience.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/include/hyle/platform/dynlib.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/include/hyle/platform/environment.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/include/hyle/platform/environment_convenience.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/include/hyle/platform/host_memory.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/include/hyle/platform/numa.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/include/hyle/platform/process.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/include/hyle/platform/random.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/include/hyle/platform/virtual_memory.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/include/hyle/platform/visibility.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/include/hyle/mem/alignment.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/include/hyle/mem/allocator.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/include/hyle/mem/arena.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/include/hyle/mem/buffer.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/include/hyle/mem/buffer_pool.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/include/hyle/mem/fixed_pool.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/include/hyle/mem/growable_pool.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/include/hyle/mem/heap.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/include/hyle/mem/large_page_reservation.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/include/hyle/mem/lifetime_plan.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/include/hyle/mem/object_pool.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/include/hyle/mem/pmr.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/include/hyle/mem/pool.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/include/hyle/mem/pool_cache.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/include/hyle/mem/pool_loan.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/include/hyle/mem/quota_allocator.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/include/hyle/mem/range_allocator.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/include/hyle/mem/region.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/include/hyle/mem/resource.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/include/hyle/mem/shared_pool.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/include/hyle/mem/stack_allocator.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/include/hyle/mem/stats.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/include/hyle/mem/std_allocator.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/include/hyle/mem/system_inline.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/include/hyle/mem/visibility.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/include/hyle/simd/bitpack.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/include/hyle/simd/dtype.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/include/hyle/simd/dtype_ops.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/include/hyle/simd/fat_kernel.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/include/hyle/simd/math.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/include/hyle/simd/narrow_ops.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/include/hyle/simd/ops.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/include/hyle/simd/random.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/include/hyle/simd/runtime.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/include/hyle/simd/scan.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/include/hyle/simd/search.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/include/hyle/simd/sort.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/include/hyle/simd/target.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/include/hyle/simd/types.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/include/hyle/simd/visibility.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/include/hyle/container/btree.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/include/hyle/container/btree_map.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/include/hyle/container/btree_set.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/include/hyle/container/circular_buffer.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/include/hyle/container/detail/adaptive_mutex.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/include/hyle/container/detail/adaptive_rw_lock.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/include/hyle/container/detail/flat_hash_probe.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/include/hyle/container/detail/flat_hash_table.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/include/hyle/container/dynamic_bitset.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/include/hyle/container/flat_hash_map.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/include/hyle/container/flat_hash_set.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/include/hyle/container/flat_map.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/include/hyle/container/flat_set.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/include/hyle/container/flat_sorted.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/include/hyle/container/hash.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/include/hyle/container/inplace_vector.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/include/hyle/container/lru_cache.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/include/hyle/container/pod_vector.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/include/hyle/container/ring_deque.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/include/hyle/container/small_vector.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/include/hyle/container/sparse_set.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/include/hyle/container/static_vector.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/include/hyle/container/visibility.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/include/hyle/compute/completion.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/include/hyle/compute/custom_kernel.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/include/hyle/compute/delegated_operation.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/include/hyle/compute/detail/backend_extension.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/include/hyle/compute/detail/command_capture.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/include/hyle/compute/detail/completion_access.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/include/hyle/compute/detail/context_ref.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/include/hyle/compute/detail/generated_result.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/include/hyle/compute/detail/prepared_callbacks.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/include/hyle/compute/detail/provider_extension.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/include/hyle/compute/detail/queue_sequence.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/include/hyle/compute/detail/resource_binding.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/include/hyle/compute/device.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/include/hyle/compute/prepared_operation.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/include/hyle/compute/provider.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/include/hyle/compute/resource_requirement.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/include/hyle/compute/result.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/include/hyle/compute/route_policy.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/include/hyle/compute/tensor.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/include/hyle/compute/transfer.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/include/hyle/compute/visibility.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/include/hyle/compute/workload.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/include/hyle/graph/compile_report.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/include/hyle/graph/executable.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/include/hyle/graph/graph.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/include/hyle/graph/region_provider.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/include/hyle/graph/visibility.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/include/hyle/compute/providers/ggml_cpu.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/include/hyle/compute/low_precision.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/include/hyle/compute/model_ops.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/include/hyle/compute/operation.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/include/hyle/compute/ops_visibility.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/include/hyle/compute/tensor_desc.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/include/hyle/compute/backends/cpu.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/include/hyle/compute/providers/native.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/include/hyle/compute/cpu.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/include/hyle/graph/cpu.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/include/hyle/obs/trace.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/licenses/Hyle/HYLE-LICENSE
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/licenses/Hyle/THIRD_PARTY-NOTICES.md
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/licenses/Hyle/highway-upstream-LICENSE
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/highway/hwy/abort.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/highway/hwy/aligned_allocator.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/highway/hwy/auto_tune.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/highway/hwy/base.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/highway/hwy/bit_set.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/highway/hwy/cache_control.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/highway/hwy/contrib/algo/copy-inl.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/highway/hwy/contrib/algo/count-inl.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/highway/hwy/contrib/algo/find-inl.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/highway/hwy/contrib/algo/is_sorted-inl.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/highway/hwy/contrib/algo/minmax-inl.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/highway/hwy/contrib/algo/transform-inl.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/highway/hwy/contrib/base64/base64-inl.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/highway/hwy/contrib/bit_pack/bit_pack-inl.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/highway/hwy/contrib/btree/btree-inl.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/highway/hwy/contrib/btree/btree_map.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/highway/hwy/contrib/btree/btree_nodes.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/highway/hwy/contrib/btree/btree_set.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/highway/hwy/contrib/btree/btree_test_util-inl.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/highway/hwy/contrib/btree/btreemap_impl-inl.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/highway/hwy/contrib/btree/btreeset_impl-inl.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/highway/hwy/contrib/coder/range_coder-inl.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/highway/hwy/contrib/coder/range_coder.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/highway/hwy/contrib/crc/crc-inl.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/highway/hwy/contrib/dot/dot-inl.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/highway/hwy/contrib/hash/cuckoo-inl.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/highway/hwy/contrib/hash/cuckoo2x2-inl.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/highway/hwy/contrib/hash/cuckoo2x2.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/highway/hwy/contrib/hash/hash-inl.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/highway/hwy/contrib/hash/highwayhash-inl.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/highway/hwy/contrib/hash/phast-inl.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/highway/hwy/contrib/hash/phast.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/highway/hwy/contrib/hash/shardmul-inl.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/highway/hwy/contrib/hash/shardmul.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/highway/hwy/contrib/iguana/ans-inl.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/highway/hwy/contrib/iguana/ans.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/highway/hwy/contrib/iguana/ans_detail.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/highway/hwy/contrib/image/image.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/highway/hwy/contrib/intdiv/intdiv-inl.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/highway/hwy/contrib/math/f16_math-inl.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/highway/hwy/contrib/math/fast_math-inl.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/highway/hwy/contrib/math/float_manip-inl.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/highway/hwy/contrib/math/fp_arith-inl.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/highway/hwy/contrib/math/math-inl.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/highway/hwy/contrib/math/math_test-inl.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/highway/hwy/contrib/matvec/matvec-inl.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/highway/hwy/contrib/random/random-inl.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/highway/hwy/contrib/sort/algo-inl.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/highway/hwy/contrib/sort/order.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/highway/hwy/contrib/sort/result-inl.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/highway/hwy/contrib/sort/shared-inl.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/highway/hwy/contrib/sort/sorting_networks-inl.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/highway/hwy/contrib/sort/traits-inl.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/highway/hwy/contrib/sort/traits128-inl.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/highway/hwy/contrib/sort/vqsort-inl.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/highway/hwy/contrib/sort/vqsort.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/highway/hwy/contrib/thread_pool/futex.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/highway/hwy/contrib/thread_pool/index_range.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/highway/hwy/contrib/thread_pool/spin.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/highway/hwy/contrib/thread_pool/thread_pool.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/highway/hwy/contrib/thread_pool/topology.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/highway/hwy/contrib/unroller/unroller-inl.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/highway/hwy/detect_compiler_arch.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/highway/hwy/detect_targets.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/highway/hwy/examples/skeleton-inl.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/highway/hwy/examples/skeleton.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/highway/hwy/foreach_target.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/highway/hwy/highway.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/highway/hwy/highway_export.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/highway/hwy/nanobenchmark.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/highway/hwy/ops/arm_neon-inl.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/highway/hwy/ops/arm_sve-inl.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/highway/hwy/ops/emu128-inl.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/highway/hwy/ops/generic_ops-inl.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/highway/hwy/ops/inside-inl.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/highway/hwy/ops/loongarch_lasx-inl.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/highway/hwy/ops/loongarch_lsx-inl.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/highway/hwy/ops/ppc_vsx-inl.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/highway/hwy/ops/rvv-inl.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/highway/hwy/ops/scalar-inl.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/highway/hwy/ops/set_macros-inl.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/highway/hwy/ops/shared-inl.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/highway/hwy/ops/wasm_128-inl.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/highway/hwy/ops/wasm_256-inl.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/highway/hwy/ops/x86_128-inl.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/highway/hwy/ops/x86_256-inl.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/highway/hwy/ops/x86_512-inl.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/highway/hwy/ops/x86_avx3-inl.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/highway/hwy/per_target.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/highway/hwy/perf_counters.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/highway/hwy/print-inl.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/highway/hwy/print.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/highway/hwy/profiler.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/highway/hwy/robust_statistics.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/highway/hwy/stats.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/highway/hwy/targets.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/highway/hwy/tests/hwy_gtest.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/highway/hwy/tests/test_util-inl.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/highway/hwy/tests/test_util.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/highway/hwy/timer-inl.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/highway/hwy/timer.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/highway/hwy/x86_cpuid.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/licenses/Hyle/xsimd-upstream-LICENSE
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/lib/cmake/Hyle/HyleIsa.cmake
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/lib/cmake/Hyle/HyleDispatch.cmake
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/types
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/types/xsimd_avx512bw_register.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/types/xsimd_all_registers.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/types/xsimd_api.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/types/xsimd_avx512vnni_avx512vbmi2_register.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/types/xsimd_avx512f_register.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/types/xsimd_rvv_register.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/types/xsimd_sse4_1_register.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/types/xsimd_avx512vl_register.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/types/xsimd_vsx_register.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/types/xsimd_i8mm_neon64_register.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/types/xsimd_vxe_register.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/types/xsimd_utils.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/types/xsimd_sse3_register.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/types/xsimd_sve_register.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/types/xsimd_fma3_sse_register.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/types/xsimd_common_arch.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/types/xsimd_sse2_register.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/types/xsimd_avx_register.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/types/xsimd_avx512vbmi2_register.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/types/xsimd_batch_constant.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/types/xsimd_avx512pf_register.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/types/xsimd_avx512ifma_register.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/types/xsimd_neon_register.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/types/xsimd_batch.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/types/xsimd_ssse3_register.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/types/xsimd_avx2_register.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/types/xsimd_register.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/types/xsimd_traits.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/types/xsimd_avx512vnni_avx512bw_register.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/types/xsimd_avx512cd_register.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/types/xsimd_fma3_avx_register.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/types/xsimd_avx512vbmi_register.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/types/xsimd_fma3_avx2_128_register.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/types/xsimd_emulated_register.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/types/xsimd_avxvnni_register.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/types/xsimd_fma3_avx2_register.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/types/xsimd_fma4_register.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/types/xsimd_avx512er_register.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/types/xsimd_sse4_2_register.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/types/xsimd_wasm_register.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/types/xsimd_batch_fwd.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/types/xsimd_neon64_register.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/types/xsimd_avx512dq_register.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/memory
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/memory/xsimd_alignment.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/memory/xsimd_aligned_allocator.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/config
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/config/xsimd_cpu_features_riscv.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/config/xsimd_cpu_features_ppc.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/config/xsimd_arch.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/config/xsimd_config.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/config/xsimd_cpuid.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/config/xsimd_macros.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/config/xsimd_cpu_features_arm.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/config/xsimd_cpu_features_x86.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/config/xsimd_getauxval.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/config/xsimd_cpu_features_s390x.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/config/xsimd_cpu_features.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/utils
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/utils/bits.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/utils/xsimd_type_traits.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/math
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/math/xsimd_rem_pio2.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/arch
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/arch/xsimd_avx2_128.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/arch/xsimd_sse4_1.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/arch/xsimd_avx512pf.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/arch/xsimd_emulated.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/arch/xsimd_avx512vbmi.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/arch/xsimd_sse4_2.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/arch/xsimd_avx512vnni_avx512bw.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/arch/xsimd_avx512er.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/arch/xsimd_common.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/arch/xsimd_vsx.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/arch/xsimd_neon.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/arch/xsimd_wasm.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/arch/xsimd_fma3_avx.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/arch/xsimd_avx512dq.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/arch/xsimd_avx512ifma.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/arch/xsimd_sve.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/arch/xsimd_avx512cd.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/arch/xsimd_avx512bw.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/arch/xsimd_fma3_avx2_128.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/arch/xsimd_rvv.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/arch/xsimd_avx2.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/arch/xsimd_neon64.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/arch/xsimd_i8mm_neon64.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/arch/xsimd_scalar.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/arch/utils
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/arch/utils/shifts.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/arch/xsimd_avx_128.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/arch/xsimd_avx.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/arch/xsimd_avx512vl_128.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/arch/xsimd_avx512vl.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/arch/xsimd_vxe.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/arch/common
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/arch/common/xsimd_common_rounding.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/arch/common/xsimd_common_math.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/arch/common/xsimd_common_swizzle.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/arch/common/xsimd_common_memory.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/arch/common/xsimd_common_complex.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/arch/common/xsimd_common_trigo.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/arch/common/xsimd_common_cast.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/arch/common/xsimd_common_logical.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/arch/common/xsimd_common_details.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/arch/common/xsimd_common_bit.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/arch/common/xsimd_common_arithmetic.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/arch/xsimd_common_fwd.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/arch/xsimd_fma4.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/arch/xsimd_avx512vl_256.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/arch/xsimd_avxvnni.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/arch/xsimd_fma3_avx2.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/arch/xsimd_ssse3.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/arch/xsimd_fma3_sse.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/arch/xsimd_avx512f.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/arch/xsimd_constants.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/arch/xsimd_avx512vbmi2.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/arch/xsimd_avx512vnni_avx512vbmi2.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/arch/xsimd_sse3.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/arch/xsimd_sse2.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/arch/xsimd_isa.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/xsimd.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/licenses/Hyle/mimalloc-LICENSE
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/licenses/Hyle/highway-LICENSE
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/licenses/Hyle/xxhash-LICENSE
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/licenses/Hyle/wyhash-LICENSE
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/licenses/Hyle/ggml-runtime-LICENSE
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/licenses/Hyle/ggml-runtime-patches-LICENSE
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/licenses/Hyle/ggml-runtime-patches-NOTICE.md
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/lib/cmake/HyleTorchCpuSdk/HyleTorchCpuSdkConfig.cmake
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/lib/cmake/HyleTorchCpuSdk/torch_cpu_fetch.cmake
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/lib/cmake/HyleTorchCpuSdk/HyleDependencyLock.json
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/licenses/Hyle/TorchAO-CPU-LICENSE
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/licenses/Hyle/TorchAO-CPU-NOTICE.md
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/licenses/Hyle/bitsandbytes_cpu-LICENSE
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/licenses/Hyle/bitsandbytes_cpu-NOTICE.md
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/licenses/Hyle/awq_cpu-LICENSE
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/licenses/Hyle/awq_cpu-NOTICE.md
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/licenses/Hyle/compressed_tensors_cpu-LICENSE
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/licenses/Hyle/compressed_tensors_cpu-NOTICE.md
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/licenses/Hyle/mlx_cpu_quant-LICENSE
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/licenses/Hyle/mlx_cpu_quant-NOTICE.md
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/share/licenses/Hyle/ds4-quantization-LICENSE
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/lib/cmake/Hyle/HyleTargets.cmake
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/lib/cmake/Hyle/HyleTargets-release.cmake
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/lib/cmake/Hyle/HyleConfig.cmake
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/lib/cmake/Hyle/HyleConfigVersion.cmake
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging/lib/cmake/Hyle/HyleRuntimeStaging.cmake
+-- Found Python3: /usr/bin/python3 (found version "3.9.6") found components: Interpreter
+'/usr/bin/python3' '/Users/kiro/hyle-scratch/compute-unified/source-c8874688/scripts/check-shared-export-hygiene.py' '--root' '/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging' '--allow-empty'
+-- shared export hygiene passed: 14 HYLE libraries, 1225 exports inspected
+'/opt/homebrew/bin/cmake' '-S' '/Users/kiro/hyle-scratch/compute-unified/source-c8874688/samples/package/graph/cpp' '-B' '/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-consumer' '-G' 'Ninja' '-DCMAKE_OSX_DEPLOYMENT_TARGET=14.4' '-DCMAKE_BUILD_TYPE=Release' '-DCMAKE_PREFIX_PATH=/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-relocated'
+-- The CXX compiler identification is AppleClang 21.0.0.21000334
+-- Detecting CXX compiler ABI info
+-- Detecting CXX compiler ABI info - done
+-- Check for working CXX compiler: /usr/bin/c++ - skipped
+-- Detecting CXX compile features
+-- Detecting CXX compile features - done
+-- HYLE: reusing locked CPU SDK at /Users/kiro/Library/Caches/hyle/dependencies/v1/sdks/torch-cpu/Darwin-be0642231d2008c7b90071fc0898d82a0c002d47f38350ebf3ed779fc01972d7/libtorch
+-- Found Torch: /Users/kiro/Library/Caches/hyle/dependencies/v1/sdks/torch-cpu/Darwin-be0642231d2008c7b90071fc0898d82a0c002d47f38350ebf3ed779fc01972d7/libtorch/lib/libtorch.dylib (Required is exact version "2.8.0")
+-- Configuring done (1.2s)
+-- Generating done (0.0s)
+-- Build files have been written to: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-consumer
+'/opt/homebrew/bin/cmake' '--build' '/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-consumer' '--config' 'Release' '--parallel' '2'
+[1/2] Building CXX object CMakeFiles/hyle_package_graph_cpp.dir/main.cc.o
+[2/2] Linking CXX executable hyle_package_graph_cpp
+'/opt/homebrew/bin/ctest' '--test-dir' '/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-consumer' '-C' 'Release' '--timeout' '30' '--output-on-failure'
+Test project /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-consumer
+    Start 1: hyle_package_graph_cpp
+1/1 Test #1: hyle_package_graph_cpp ...........   Passed    4.69 sec
+
+100% tests passed, 0 tests failed out of 1
+
+Total Test time (real) =   4.69 sec
+'/opt/homebrew/bin/cmake' '-S' '/Users/kiro/hyle-scratch/compute-unified/source-c8874688/samples/package/compute/cpp' '-B' '/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-compute-consumer' '-G' 'Ninja' '-DCMAKE_OSX_DEPLOYMENT_TARGET=14.4' '-DCMAKE_BUILD_TYPE=Release' '-DCMAKE_PREFIX_PATH=/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-relocated'
+-- The CXX compiler identification is AppleClang 21.0.0.21000334
+-- Detecting CXX compiler ABI info
+-- Detecting CXX compiler ABI info - done
+-- Check for working CXX compiler: /usr/bin/c++ - skipped
+-- Detecting CXX compile features
+-- Detecting CXX compile features - done
+-- HYLE: reusing locked CPU SDK at /Users/kiro/Library/Caches/hyle/dependencies/v1/sdks/torch-cpu/Darwin-be0642231d2008c7b90071fc0898d82a0c002d47f38350ebf3ed779fc01972d7/libtorch
+-- Found Torch: /Users/kiro/Library/Caches/hyle/dependencies/v1/sdks/torch-cpu/Darwin-be0642231d2008c7b90071fc0898d82a0c002d47f38350ebf3ed779fc01972d7/libtorch/lib/libtorch.dylib (Required is exact version "2.8.0")
+-- Configuring done (1.2s)
+-- Generating done (0.0s)
+-- Build files have been written to: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-compute-consumer
+'/opt/homebrew/bin/cmake' '--build' '/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-compute-consumer' '--config' 'Release' '--parallel' '2'
+[1/2] Building CXX object CMakeFiles/hyle_package_compute_cpp.dir/main.cc.o
+[2/2] Linking CXX executable hyle_package_compute_cpp
+'/opt/homebrew/bin/ctest' '--test-dir' '/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-compute-consumer' '-C' 'Release' '--timeout' '30' '--output-on-failure'
+Test project /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-compute-consumer
+    Start 1: hyle_package_compute_cpp
+1/1 Test #1: hyle_package_compute_cpp .........   Passed    0.40 sec
+
+100% tests passed, 0 tests failed out of 1
+
+Total Test time (real) =   0.40 sec
+'/opt/homebrew/bin/cmake' '-S' '/Users/kiro/hyle-scratch/compute-unified/source-c8874688' '-B' '/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-build' '-G' 'Ninja' '-DCMAKE_OSX_DEPLOYMENT_TARGET=14.4' '-DCMAKE_BUILD_TYPE=Release' '-DCMAKE_INSTALL_PREFIX=/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging' '-DHYLE_COMPONENTS=graph' '-DHYLE_BUILD_TESTS=OFF' '-DHYLE_BUILD_BENCH=OFF' '-DHYLE_INSTALL=ON' '-DHYLE_STATIC=ON' '-DHYLE_COMPUTE_ROUTES=cpu' 'apple'
+CMake Warning:
+  Ignoring extra path from command line:
+
+   "apple"
+
+
+-- The CXX compiler identification is AppleClang 21.0.0.21000334
+-- Detecting CXX compiler ABI info
+-- Detecting CXX compiler ABI info - done
+-- Check for working CXX compiler: /usr/bin/c++ - skipped
+-- Detecting CXX compile features
+-- Detecting CXX compile features - done
+-- HYLE products: requested='graph' available='core,error,simd,math,compute,graph' factors='core,container_intrusive,util_core,error,math,platform,mem,simd,container,compute_ops,compute,graph,compute_provider_onednn,compute_backend_cpu,compute_ggml_runtime,compute_provider_ggml,graph_provider_onednn,compute_provider_native,compute_route_cpu,graph_route_cpu'
+-- The C compiler identification is AppleClang 21.0.0.21000334
+-- Detecting C compiler ABI info
+-- Detecting C compiler ABI info - done
+-- Check for working C compiler: /usr/bin/cc - skipped
+-- Detecting C compile features
+-- Detecting C compile features - done
+-- HYLE_SANITIZER = off
+-- HYLE_TESTING = OFF (test-only interfaces stripped -- zero in shipped lib)
+-- HYLE: oneDNN provider OFF -- dependency download skipped
+-- Found Python3: /Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/bin/python3.9 (found version "3.9.6") found components: Interpreter
+-- ggml source: 2319 files, 11 exact patches
+
+-- The ASM compiler identification is AppleClang
+-- Found assembler: /usr/bin/cc
+-- Performing Test CMAKE_HAVE_LIBC_PTHREAD
+-- Performing Test CMAKE_HAVE_LIBC_PTHREAD - Success
+-- Found Threads: TRUE
+-- CMAKE_SYSTEM_PROCESSOR: arm64
+-- GGML_SYSTEM_ARCH: ARM
+-- Including CPU backend
+-- ARM detected
+-- Performing Test GGML_COMPILER_SUPPORTS_FP16_FORMAT_I3E
+-- Performing Test GGML_COMPILER_SUPPORTS_FP16_FORMAT_I3E - Failed
+-- Checking for ARM features using flags:
+-- Performing Test HAVE_DOTPROD
+-- Performing Test HAVE_DOTPROD - Success
+-- Performing Test HAVE_SVE
+-- Performing Test HAVE_SVE - Failed
+-- Performing Test HAVE_MATMUL_INT8
+-- Performing Test HAVE_MATMUL_INT8 - Failed
+-- Performing Test HAVE_FMA
+-- Performing Test HAVE_FMA - Success
+-- Performing Test HAVE_FP16_VECTOR_ARITHMETIC
+-- Performing Test HAVE_FP16_VECTOR_ARITHMETIC - Success
+-- Performing Test HAVE_SME
+-- Performing Test HAVE_SME - Failed
+-- Adding CPU backend variant ggml-cpu:  
+-- ggml version: 0.26.0
+-- ggml commit:  ffa4e8b80930029a35991f94e7c8a93cd67730ab-hyle
+-- HYLE: reusing locked CPU SDK at /Users/kiro/Library/Caches/hyle/dependencies/v1/sdks/torch-cpu/Darwin-be0642231d2008c7b90071fc0898d82a0c002d47f38350ebf3ed779fc01972d7/libtorch
+-- Found Torch: /Users/kiro/Library/Caches/hyle/dependencies/v1/sdks/torch-cpu/Darwin-be0642231d2008c7b90071fc0898d82a0c002d47f38350ebf3ed779fc01972d7/libtorch/lib/libtorch.dylib (Required is exact version "2.8.0")
+-- HYLE: original TorchAO/ATen CPU low precision -- locked LibTorch 2.8.0
+-- HYLE_TRACE = OFF (hooks compile to nothing -- zero cost)
+-- HYLE source package target unavailable (requires Git and a Git checkout)
+-- HYLE 0.1.0 | AppleClang 21.0.0.21000334 | C++23 | sanitizer=off | linkage=static | products=core,error,simd,math,compute,graph | factors=core,container_intrusive,util_core,error,math,platform,mem,simd,container,compute_ops,compute,graph,compute_provider_onednn,compute_backend_cpu,compute_ggml_runtime,compute_provider_ggml,graph_provider_onednn,compute_provider_native,compute_route_cpu,graph_route_cpu
+-- Configuring done (3.6s)
+-- Generating done (0.0s)
+-- Build files have been written to: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-build
+'/opt/homebrew/bin/cmake' '--build' '/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-build' '--config' 'Release' '--parallel' '2'
+[0/2] Re-checking globbed directories...
+[1/150] Building CXX object src/error/CMakeFiles/hyle_error.dir/status.cc.o
+[2/150] Linking CXX static library bin/libhyle_error.a
+[3/150] Building CXX object src/platform/CMakeFiles/hyle_platform_cpu_probe.dir/cpu.cc.o
+[4/150] Building CXX object src/platform/CMakeFiles/hyle_platform_cgroup_parser.dir/linux_cgroup.cc.o
+[5/150] Building CXX object src/platform/CMakeFiles/hyle_platform.dir/dynlib.cc.o
+[6/150] Building CXX object src/platform/CMakeFiles/hyle_platform.dir/cpu_resource.cc.o
+[7/150] Building CXX object src/platform/CMakeFiles/hyle_platform.dir/environment.cc.o
+[8/150] Building CXX object src/platform/CMakeFiles/hyle_platform.dir/host_memory.cc.o
+[9/150] Building CXX object src/platform/CMakeFiles/hyle_platform.dir/process.cc.o
+[10/150] Building CXX object src/platform/CMakeFiles/hyle_platform.dir/random.cc.o
+[11/150] Building CXX object src/platform/CMakeFiles/hyle_platform.dir/numa.cc.o
+[12/150] Building CXX object src/platform/CMakeFiles/hyle_platform.dir/virtual_memory.cc.o
+[13/150] Building C object src/compute_ggml_runtime/vendor/src/CMakeFiles/ggml-base.dir/ggml.c.o
+[14/150] Building C object src/mem/CMakeFiles/mimalloc_static.dir/__/__/third_party/mimalloc/src/static.c.o
+[15/150] Building CXX object src/compute_ggml_runtime/vendor/src/CMakeFiles/ggml-base.dir/ggml.cpp.o
+[16/150] Building C object src/compute_ggml_runtime/vendor/src/CMakeFiles/ggml-base.dir/ggml-alloc.c.o
+[17/150] Building CXX object src/compute_ggml_runtime/vendor/src/CMakeFiles/ggml-base.dir/ggml-backend.cpp.o
+[18/150] Building CXX object src/compute_ggml_runtime/vendor/src/CMakeFiles/ggml-base.dir/ggml-opt.cpp.o
+[19/150] Building CXX object src/compute_ggml_runtime/vendor/src/CMakeFiles/ggml-base.dir/ggml-backend-meta.cpp.o
+[20/150] Building CXX object src/compute_ggml_runtime/vendor/src/CMakeFiles/ggml-base.dir/ggml-threading.cpp.o
+[21/150] Building CXX object src/compute_ggml_runtime/vendor/src/CMakeFiles/ggml-base.dir/gguf.cpp.o
+[22/150] Linking CXX static library bin/libhyle_platform.a
+[23/150] Building CXX object src/mem/CMakeFiles/hyle_mem.dir/buffer.cc.o
+[24/150] Building C object src/compute_ggml_runtime/vendor/src/CMakeFiles/ggml-base.dir/ggml-quants.c.o
+[25/150] Building CXX object src/mem/CMakeFiles/hyle_mem.dir/buffer_pool.cc.o
+[26/150] Building CXX object src/mem/CMakeFiles/hyle_mem.dir/heap.cc.o
+[27/150] Building CXX object src/mem/CMakeFiles/hyle_mem.dir/composite_buffer.cc.o
+[28/150] Building CXX object src/mem/CMakeFiles/hyle_mem.dir/range_allocator.cc.o
+[29/150] Building CXX object src/mem/CMakeFiles/hyle_mem.dir/resource.cc.o
+[30/150] Building CXX object src/mem/CMakeFiles/hyle_mem.dir/lifetime_plan.cc.o
+[31/150] Building CXX object src/mem/CMakeFiles/hyle_mem.dir/system.cc.o
+[32/150] Linking C static library bin/libmimalloc_static.a
+[33/150] Building CXX object src/mem/CMakeFiles/hyle_mem.dir/stats.cc.o
+[34/150] Building CXX object src/compute_ops/CMakeFiles/hyle_compute_ops.dir/tensor_desc.cc.o
+[35/150] Building CXX object src/compute_ops/CMakeFiles/hyle_compute_ops.dir/operation.cc.o
+[36/150] Building CXX object src/compute_ops/CMakeFiles/hyle_compute_ops.dir/low_precision.cc.o
+[37/150] Linking CXX static library bin/libggml-base.a
+[38/150] Building C object src/compute_ggml_runtime/vendor/src/CMakeFiles/ggml-cpu.dir/ggml-cpu/ggml-cpu.c.o
+[39/150] Building CXX object src/compute_ops/CMakeFiles/hyle_compute_ops.dir/weight_decode.cc.o
+[40/150] Building CXX object src/compute_ggml_runtime/vendor/src/CMakeFiles/ggml-cpu.dir/ggml-cpu/ggml-cpu.cpp.o
+[41/150] Building CXX object src/compute_ggml_runtime/vendor/src/CMakeFiles/ggml-cpu.dir/ggml-cpu/hbm.cpp.o
+[42/150] Building C object src/compute_ggml_runtime/vendor/src/CMakeFiles/ggml-cpu.dir/ggml-cpu/quants.c.o
+[43/150] Building CXX object src/compute_ggml_runtime/vendor/src/CMakeFiles/ggml-cpu.dir/ggml-cpu/traits.cpp.o
+[44/150] Building CXX object src/compute_ggml_runtime/vendor/src/CMakeFiles/ggml-cpu.dir/ggml-cpu/amx/amx.cpp.o
+[45/150] Building CXX object src/compute_ggml_runtime/vendor/src/CMakeFiles/ggml-cpu.dir/ggml-cpu/amx/mmq.cpp.o
+[46/150] Building CXX object src/compute_ggml_runtime/vendor/src/CMakeFiles/ggml-cpu.dir/ggml-cpu/repack.cpp.o
+[47/150] Building CXX object src/compute_ggml_runtime/vendor/src/CMakeFiles/ggml-cpu.dir/ggml-cpu/tiled/tiled-kernel.cpp.o
+[48/150] Building CXX object src/compute_ggml_runtime/vendor/src/CMakeFiles/ggml-cpu.dir/ggml-cpu/tiled/tiled.cpp.o
+[49/150] Building CXX object src/compute_ggml_runtime/vendor/src/CMakeFiles/ggml-cpu.dir/ggml-cpu/binary-ops.cpp.o
+[50/150] Building CXX object src/compute_ggml_runtime/vendor/src/CMakeFiles/ggml-cpu.dir/ggml-cpu/vec.cpp.o
+[51/150] Building CXX object src/compute_ggml_runtime/vendor/src/CMakeFiles/ggml-cpu.dir/ggml-cpu/unary-ops.cpp.o
+[52/150] Building C object src/compute_ggml_runtime/vendor/src/CMakeFiles/ggml-cpu.dir/ggml-cpu/arch/arm/quants.c.o
+[53/150] Building CXX object src/compute_ggml_runtime/vendor/src/CMakeFiles/ggml-cpu.dir/ggml-cpu/arch/arm/repack.cpp.o
+[54/150] Linking CXX static library bin/libhyle_mem.a
+[55/150] Linking CXX static library bin/libhyle_compute_ops.a
+[56/150] Building CXX object src/compute/CMakeFiles/hyle_compute.dir/command_capture.cc.o
+[57/150] Building CXX object src/compute/CMakeFiles/hyle_compute.dir/completion.cc.o
+[58/150] Building CXX object src/compute/CMakeFiles/hyle_compute.dir/custom_kernel.cc.o
+[59/150] Building CXX object src/compute/CMakeFiles/hyle_compute.dir/device.cc.o
+[60/150] Building CXX object src/compute/CMakeFiles/hyle_compute.dir/operation.cc.o
+[61/150] Building CXX object src/compute_ggml_runtime/vendor/src/CMakeFiles/ggml-cpu.dir/ggml-cpu/ops.cpp.o
+[62/150] Building CXX object src/compute/CMakeFiles/hyle_compute.dir/provider.cc.o
+[63/150] Building CXX object src/compute/CMakeFiles/hyle_compute.dir/route_policy.cc.o
+[64/150] Building CXX object src/compute/CMakeFiles/hyle_compute.dir/result.cc.o
+[65/150] Building CXX object src/compute/CMakeFiles/hyle_compute.dir/shape_domain.cc.o
+[66/150] Building CXX object src/compute/CMakeFiles/hyle_compute.dir/shape_program.cc.o
+[67/150] Building CXX object src/compute/CMakeFiles/hyle_compute.dir/tensor_view.cc.o
+[68/150] Building CXX object src/compute/CMakeFiles/hyle_compute.dir/transfer.cc.o
+[69/150] Building CXX object src/compute/CMakeFiles/hyle_compute.dir/workload.cc.o
+[70/150] Building CXX object src/compute_ggml_runtime/vendor/src/CMakeFiles/ggml.dir/ggml-backend-dl.cpp.o
+[71/150] Linking CXX static library bin/libggml-cpu.a
+[72/150] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/runtime.cc.o
+[73/150] Building CXX object src/compute_ggml_runtime/vendor/src/CMakeFiles/ggml.dir/ggml-backend-reg.cpp.o
+[74/150] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/ops/dispatch_ops.cc.o
+[75/150] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/random/random_dispatch.cc.o
+[76/150] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/search/search_dispatch.cc.o
+[77/150] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/narrow/narrow_dispatch.cc.o
+[78/150] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/scan/scan_dispatch.cc.o
+[79/150] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/dtype/cvt_fp8_scalar.cc.o
+[80/150] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/dtype/dtype_dispatch.cc.o
+[81/150] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/math/math_dispatch.cc.o
+[82/150] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/math/transcendental_scalar.cc.o
+[83/150] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/math/activations.cc.o
+[84/150] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/sort/sort_dispatch.cc.o
+[85/150] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/sort/top_k.cc.o
+[86/150] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/sort/radix_sort.cc.o
+[87/150] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/bitpack/bitpack_dispatch.cc.o
+[88/150] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/sort/vqsort_scalar.cc.o
+[89/150] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/math/transcendental_highway_neon.cc.o
+[90/150] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/ops/ops_scalar.cc.o
+[91/150] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/ops/ops_neon.cc.o
+[92/150] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/dtype_convert/dtype_convert_scalar.cc.o
+[93/150] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/dtype_convert/dtype_convert_neon.cc.o
+[94/150] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/scan/scan_scalar.cc.o
+[95/150] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/scan/scan_neon.cc.o
+[96/150] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/random/random_scalar.cc.o
+[97/150] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/random/random_neon.cc.o
+[98/150] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/sort/vqsort_hyle_neon.cc.o
+[99/150] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/search/search_scalar.cc.o
+[100/150] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/narrow/narrow_scalar.cc.o
+[101/150] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/narrow/narrow_neon.cc.o
+[102/150] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/search/search_neon.cc.o
+[103/150] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/bitpack/bitpack_scalar.cc.o
+[104/150] Linking CXX static library bin/libhyle_compute.a
+[105/150] Building CXX object src/compute_backend_cpu/CMakeFiles/hyle_compute_backend_cpu.dir/cpu_backend.cc.o
+[106/150] Building CXX object src/compute_ggml_runtime/CMakeFiles/hyle_compute_ggml_runtime.dir/metadata_arena.cc.o
+[107/150] Building CXX object src/compute_ggml_runtime/CMakeFiles/hyle_compute_ggml_runtime.dir/cpu_execution.cc.o
+[108/150] Building CXX object src/compute_ggml_runtime/CMakeFiles/hyle_compute_ggml_runtime.dir/cpu_program.cc.o
+[109/150] Linking CXX static library bin/libggml.a
+[110/150] Building CXX object src/container/CMakeFiles/hyle_container.dir/hash.cc.o
+[111/150] Building CXX object src/container/CMakeFiles/hyle_container.dir/pod_vector.cc.o
+[112/150] Building CXX object src/container/CMakeFiles/hyle_container.dir/flat_hash_map.cc.o
+[113/150] Building CXX object src/container/CMakeFiles/hyle_container.dir/dynamic_bitset.cc.o
+[114/150] Building CXX object src/container/CMakeFiles/hyle_container.dir/bitset_ops_neon.cc.o
+[115/150] Building CXX object src/container/CMakeFiles/hyle_container.dir/generated/simd-dispatch/container_bitset/container_bitset_scalar.cc.o
+[116/150] Building CXX object src/container/CMakeFiles/hyle_container.dir/generated/simd-dispatch/container_bitset/container_bitset_neon.cc.o
+[117/150] Linking CXX static library bin/libhyle_compute_backend_cpu.a
+[118/150] Linking CXX static library bin/libhyle_compute_ggml_runtime.a
+[119/150] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/bitpack/bitpack_neon.cc.o
+[120/150] Linking CXX static library bin/libhyle_simd.a
+[121/150] Building CXX object src/compute_provider_ggml/CMakeFiles/hyle_compute_provider_ggml.dir/ggml_cpu_provider.cc.o
+[122/150] Building CXX object src/compute_provider_ggml/CMakeFiles/hyle_compute_provider_ggml.dir/standard_index.cc.o
+[123/150] Building CXX object src/compute_provider_native/CMakeFiles/hyle_compute_provider_native.dir/cast.cc.o
+[124/150] Building CXX object src/compute_provider_native/CMakeFiles/hyle_compute_provider_native.dir/default_rules.cc.o
+[125/150] Building CXX object src/compute_provider_native/CMakeFiles/hyle_compute_provider_native.dir/ds4_quantization.cc.o
+[126/150] Building CXX object src/compute_provider_native/CMakeFiles/hyle_compute_provider_native.dir/elementwise.cc.o
+[127/150] Building CXX object src/compute_provider_native/CMakeFiles/hyle_compute_provider_native.dir/indexing.cc.o
+[128/150] Building CXX object src/compute_provider_native/CMakeFiles/hyle_compute_provider_native.dir/native_provider.cc.o
+[129/150] Building CXX object src/compute_provider_native/CMakeFiles/hyle_compute_provider_native.dir/aten_cpu_provider.cc.o
+[130/150] Building CXX object src/compute_provider_native/CMakeFiles/hyle_compute_provider_native.dir/normalization.cc.o
+[131/150] Building CXX object src/compute_provider_native/CMakeFiles/hyle_compute_provider_native.dir/reduction.cc.o
+[132/150] Building CXX object src/compute_provider_native/CMakeFiles/hyle_compute_provider_native.dir/transform.cc.o
+[133/150] Building CXX object src/compute_provider_native/CMakeFiles/hyle_compute_provider_native.dir/transformer.cc.o
+[134/150] Linking CXX static library bin/libhyle_container.a
+[135/150] Building CXX object src/graph/CMakeFiles/hyle_graph.dir/graph.cc.o
+[136/150] Building CXX object src/graph/CMakeFiles/hyle_graph.dir/effect_order.cc.o
+[137/150] Building CXX object src/compute_provider_native/CMakeFiles/hyle_compute_provider_native.dir/torch_cpu_program.cc.o
+[138/150] Building CXX object src/graph/CMakeFiles/hyle_graph.dir/view_domain.cc.o
+[139/150] Building CXX object src/graph/CMakeFiles/hyle_graph.dir/constant_artifact.cc.o
+[140/150] Linking CXX static library bin/libhyle_compute_provider_ggml.a
+[141/150] Linking CXX static library bin/libhyle_compute_provider_native.a
+[142/150] Building CXX object src/compute_route_cpu/CMakeFiles/hyle_compute_route_cpu.dir/cpu_context.cc.o
+[143/150] Building CXX object src/compute_route_cpu/CMakeFiles/hyle_compute_route_cpu.dir/default_policy.cc.o
+[144/150] Linking CXX static library bin/libhyle_compute_route_cpu.a
+[145/150] Building CXX object src/graph_route_cpu/CMakeFiles/hyle_graph_route_cpu.dir/cpu_context.cc.o
+[146/150] Building CXX object src/graph/CMakeFiles/hyle_graph.dir/executable.cc.o
+[147/150] Linking CXX static library bin/libhyle_graph.a
+[148/150] Building CXX object src/graph_route_cpu/CMakeFiles/hyle_graph_route_cpu.dir/ggml_region.cc.o
+[149/150] Linking CXX static library bin/libhyle_graph_route_cpu.a
+'/opt/homebrew/bin/cmake' '--install' '/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-build' '--config' 'Release'
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/lib/libhyle_error.a
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/lib/libhyle_platform.a
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/lib/libhyle_mem.a
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/lib/libhyle_simd.a
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/lib/libhyle_container.a
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/lib/libhyle_compute.a
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/lib/libhyle_graph.a
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/lib/libhyle_compute_provider_ggml.a
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/lib/libhyle_compute_ops.a
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/lib/libhyle_compute_backend_cpu.a
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/lib/libhyle_compute_provider_native.a
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/lib/libhyle_compute_route_cpu.a
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/lib/libhyle_graph_route_cpu.a
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/lib/libhyle_compute_ggml_runtime.a
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/lib/libmimalloc_static.a
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/lib/libggml.a
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/lib/libggml-base.a
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/lib/libggml-cpu.a
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/include/hyle/core/assert.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/include/hyle/core/cache.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/include/hyle/core/compiler.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/include/hyle/core/detail/compiler_attributes.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/include/hyle/core/detail/preprocessor.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/include/hyle/core/environment.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/include/hyle/version.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/include/hyle/visibility.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/include/hyle/container/detail/intrusive_member.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/include/hyle/container/intrusive_forward_list.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/include/hyle/container/intrusive_hlist.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/include/hyle/container/intrusive_list.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/include/hyle/util/borrow.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/include/hyle/util/function_ref.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/include/hyle/util/random.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/include/hyle/util/ref_counted.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/include/hyle/util/scope_guard.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/include/hyle/util/spin_lock.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/include/hyle/util/type_name.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/include/hyle/util/unique_resource.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/include/hyle/error/format.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/include/hyle/error/result.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/include/hyle/error/status.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/include/hyle/error/system_error.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/include/hyle/math/scalar.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/include/hyle/platform/cpu.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/include/hyle/platform/cpu_convenience.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/include/hyle/platform/dynlib.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/include/hyle/platform/environment.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/include/hyle/platform/environment_convenience.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/include/hyle/platform/host_memory.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/include/hyle/platform/numa.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/include/hyle/platform/process.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/include/hyle/platform/random.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/include/hyle/platform/virtual_memory.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/include/hyle/platform/visibility.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/include/hyle/mem/alignment.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/include/hyle/mem/allocator.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/include/hyle/mem/arena.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/include/hyle/mem/buffer.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/include/hyle/mem/buffer_pool.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/include/hyle/mem/fixed_pool.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/include/hyle/mem/growable_pool.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/include/hyle/mem/heap.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/include/hyle/mem/large_page_reservation.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/include/hyle/mem/lifetime_plan.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/include/hyle/mem/object_pool.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/include/hyle/mem/pmr.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/include/hyle/mem/pool.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/include/hyle/mem/pool_cache.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/include/hyle/mem/pool_loan.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/include/hyle/mem/quota_allocator.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/include/hyle/mem/range_allocator.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/include/hyle/mem/region.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/include/hyle/mem/resource.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/include/hyle/mem/shared_pool.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/include/hyle/mem/stack_allocator.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/include/hyle/mem/stats.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/include/hyle/mem/std_allocator.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/include/hyle/mem/system_inline.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/include/hyle/mem/visibility.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/include/hyle/simd/bitpack.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/include/hyle/simd/dtype.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/include/hyle/simd/dtype_ops.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/include/hyle/simd/fat_kernel.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/include/hyle/simd/math.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/include/hyle/simd/narrow_ops.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/include/hyle/simd/ops.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/include/hyle/simd/random.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/include/hyle/simd/runtime.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/include/hyle/simd/scan.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/include/hyle/simd/search.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/include/hyle/simd/sort.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/include/hyle/simd/target.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/include/hyle/simd/types.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/include/hyle/simd/visibility.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/include/hyle/container/btree.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/include/hyle/container/btree_map.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/include/hyle/container/btree_set.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/include/hyle/container/circular_buffer.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/include/hyle/container/detail/adaptive_mutex.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/include/hyle/container/detail/adaptive_rw_lock.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/include/hyle/container/detail/flat_hash_probe.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/include/hyle/container/detail/flat_hash_table.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/include/hyle/container/dynamic_bitset.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/include/hyle/container/flat_hash_map.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/include/hyle/container/flat_hash_set.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/include/hyle/container/flat_map.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/include/hyle/container/flat_set.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/include/hyle/container/flat_sorted.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/include/hyle/container/hash.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/include/hyle/container/inplace_vector.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/include/hyle/container/lru_cache.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/include/hyle/container/pod_vector.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/include/hyle/container/ring_deque.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/include/hyle/container/small_vector.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/include/hyle/container/sparse_set.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/include/hyle/container/static_vector.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/include/hyle/container/visibility.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/include/hyle/compute/completion.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/include/hyle/compute/custom_kernel.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/include/hyle/compute/delegated_operation.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/include/hyle/compute/detail/backend_extension.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/include/hyle/compute/detail/command_capture.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/include/hyle/compute/detail/completion_access.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/include/hyle/compute/detail/context_ref.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/include/hyle/compute/detail/generated_result.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/include/hyle/compute/detail/prepared_callbacks.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/include/hyle/compute/detail/provider_extension.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/include/hyle/compute/detail/queue_sequence.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/include/hyle/compute/detail/resource_binding.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/include/hyle/compute/device.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/include/hyle/compute/prepared_operation.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/include/hyle/compute/provider.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/include/hyle/compute/resource_requirement.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/include/hyle/compute/result.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/include/hyle/compute/route_policy.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/include/hyle/compute/tensor.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/include/hyle/compute/transfer.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/include/hyle/compute/visibility.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/include/hyle/compute/workload.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/include/hyle/graph/compile_report.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/include/hyle/graph/executable.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/include/hyle/graph/graph.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/include/hyle/graph/region_provider.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/include/hyle/graph/visibility.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/include/hyle/compute/providers/ggml_cpu.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/include/hyle/compute/low_precision.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/include/hyle/compute/model_ops.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/include/hyle/compute/operation.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/include/hyle/compute/ops_visibility.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/include/hyle/compute/tensor_desc.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/include/hyle/compute/backends/cpu.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/include/hyle/compute/providers/native.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/include/hyle/compute/cpu.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/include/hyle/graph/cpu.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/include/hyle/obs/trace.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/licenses/Hyle/HYLE-LICENSE
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/licenses/Hyle/THIRD_PARTY-NOTICES.md
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/licenses/Hyle/highway-upstream-LICENSE
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/highway/hwy/abort.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/highway/hwy/aligned_allocator.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/highway/hwy/auto_tune.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/highway/hwy/base.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/highway/hwy/bit_set.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/highway/hwy/cache_control.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/highway/hwy/contrib/algo/copy-inl.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/highway/hwy/contrib/algo/count-inl.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/highway/hwy/contrib/algo/find-inl.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/highway/hwy/contrib/algo/is_sorted-inl.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/highway/hwy/contrib/algo/minmax-inl.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/highway/hwy/contrib/algo/transform-inl.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/highway/hwy/contrib/base64/base64-inl.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/highway/hwy/contrib/bit_pack/bit_pack-inl.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/highway/hwy/contrib/btree/btree-inl.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/highway/hwy/contrib/btree/btree_map.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/highway/hwy/contrib/btree/btree_nodes.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/highway/hwy/contrib/btree/btree_set.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/highway/hwy/contrib/btree/btree_test_util-inl.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/highway/hwy/contrib/btree/btreemap_impl-inl.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/highway/hwy/contrib/btree/btreeset_impl-inl.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/highway/hwy/contrib/coder/range_coder-inl.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/highway/hwy/contrib/coder/range_coder.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/highway/hwy/contrib/crc/crc-inl.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/highway/hwy/contrib/dot/dot-inl.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/highway/hwy/contrib/hash/cuckoo-inl.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/highway/hwy/contrib/hash/cuckoo2x2-inl.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/highway/hwy/contrib/hash/cuckoo2x2.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/highway/hwy/contrib/hash/hash-inl.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/highway/hwy/contrib/hash/highwayhash-inl.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/highway/hwy/contrib/hash/phast-inl.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/highway/hwy/contrib/hash/phast.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/highway/hwy/contrib/hash/shardmul-inl.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/highway/hwy/contrib/hash/shardmul.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/highway/hwy/contrib/iguana/ans-inl.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/highway/hwy/contrib/iguana/ans.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/highway/hwy/contrib/iguana/ans_detail.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/highway/hwy/contrib/image/image.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/highway/hwy/contrib/intdiv/intdiv-inl.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/highway/hwy/contrib/math/f16_math-inl.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/highway/hwy/contrib/math/fast_math-inl.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/highway/hwy/contrib/math/float_manip-inl.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/highway/hwy/contrib/math/fp_arith-inl.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/highway/hwy/contrib/math/math-inl.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/highway/hwy/contrib/math/math_test-inl.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/highway/hwy/contrib/matvec/matvec-inl.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/highway/hwy/contrib/random/random-inl.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/highway/hwy/contrib/sort/algo-inl.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/highway/hwy/contrib/sort/order.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/highway/hwy/contrib/sort/result-inl.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/highway/hwy/contrib/sort/shared-inl.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/highway/hwy/contrib/sort/sorting_networks-inl.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/highway/hwy/contrib/sort/traits-inl.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/highway/hwy/contrib/sort/traits128-inl.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/highway/hwy/contrib/sort/vqsort-inl.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/highway/hwy/contrib/sort/vqsort.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/highway/hwy/contrib/thread_pool/futex.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/highway/hwy/contrib/thread_pool/index_range.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/highway/hwy/contrib/thread_pool/spin.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/highway/hwy/contrib/thread_pool/thread_pool.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/highway/hwy/contrib/thread_pool/topology.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/highway/hwy/contrib/unroller/unroller-inl.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/highway/hwy/detect_compiler_arch.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/highway/hwy/detect_targets.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/highway/hwy/examples/skeleton-inl.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/highway/hwy/examples/skeleton.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/highway/hwy/foreach_target.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/highway/hwy/highway.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/highway/hwy/highway_export.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/highway/hwy/nanobenchmark.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/highway/hwy/ops/arm_neon-inl.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/highway/hwy/ops/arm_sve-inl.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/highway/hwy/ops/emu128-inl.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/highway/hwy/ops/generic_ops-inl.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/highway/hwy/ops/inside-inl.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/highway/hwy/ops/loongarch_lasx-inl.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/highway/hwy/ops/loongarch_lsx-inl.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/highway/hwy/ops/ppc_vsx-inl.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/highway/hwy/ops/rvv-inl.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/highway/hwy/ops/scalar-inl.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/highway/hwy/ops/set_macros-inl.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/highway/hwy/ops/shared-inl.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/highway/hwy/ops/wasm_128-inl.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/highway/hwy/ops/wasm_256-inl.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/highway/hwy/ops/x86_128-inl.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/highway/hwy/ops/x86_256-inl.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/highway/hwy/ops/x86_512-inl.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/highway/hwy/ops/x86_avx3-inl.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/highway/hwy/per_target.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/highway/hwy/perf_counters.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/highway/hwy/print-inl.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/highway/hwy/print.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/highway/hwy/profiler.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/highway/hwy/robust_statistics.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/highway/hwy/stats.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/highway/hwy/targets.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/highway/hwy/tests/hwy_gtest.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/highway/hwy/tests/test_util-inl.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/highway/hwy/tests/test_util.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/highway/hwy/timer-inl.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/highway/hwy/timer.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/highway/hwy/x86_cpuid.h
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/licenses/Hyle/xsimd-upstream-LICENSE
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/lib/cmake/Hyle/HyleIsa.cmake
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/lib/cmake/Hyle/HyleDispatch.cmake
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/types
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/types/xsimd_avx512bw_register.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/types/xsimd_all_registers.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/types/xsimd_api.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/types/xsimd_avx512vnni_avx512vbmi2_register.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/types/xsimd_avx512f_register.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/types/xsimd_rvv_register.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/types/xsimd_sse4_1_register.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/types/xsimd_avx512vl_register.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/types/xsimd_vsx_register.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/types/xsimd_i8mm_neon64_register.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/types/xsimd_vxe_register.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/types/xsimd_utils.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/types/xsimd_sse3_register.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/types/xsimd_sve_register.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/types/xsimd_fma3_sse_register.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/types/xsimd_common_arch.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/types/xsimd_sse2_register.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/types/xsimd_avx_register.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/types/xsimd_avx512vbmi2_register.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/types/xsimd_batch_constant.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/types/xsimd_avx512pf_register.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/types/xsimd_avx512ifma_register.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/types/xsimd_neon_register.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/types/xsimd_batch.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/types/xsimd_ssse3_register.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/types/xsimd_avx2_register.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/types/xsimd_register.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/types/xsimd_traits.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/types/xsimd_avx512vnni_avx512bw_register.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/types/xsimd_avx512cd_register.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/types/xsimd_fma3_avx_register.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/types/xsimd_avx512vbmi_register.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/types/xsimd_fma3_avx2_128_register.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/types/xsimd_emulated_register.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/types/xsimd_avxvnni_register.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/types/xsimd_fma3_avx2_register.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/types/xsimd_fma4_register.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/types/xsimd_avx512er_register.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/types/xsimd_sse4_2_register.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/types/xsimd_wasm_register.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/types/xsimd_batch_fwd.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/types/xsimd_neon64_register.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/types/xsimd_avx512dq_register.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/memory
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/memory/xsimd_alignment.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/memory/xsimd_aligned_allocator.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/config
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/config/xsimd_cpu_features_riscv.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/config/xsimd_cpu_features_ppc.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/config/xsimd_arch.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/config/xsimd_config.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/config/xsimd_cpuid.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/config/xsimd_macros.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/config/xsimd_cpu_features_arm.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/config/xsimd_cpu_features_x86.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/config/xsimd_getauxval.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/config/xsimd_cpu_features_s390x.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/config/xsimd_cpu_features.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/utils
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/utils/bits.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/utils/xsimd_type_traits.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/math
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/math/xsimd_rem_pio2.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/arch
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/arch/xsimd_avx2_128.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/arch/xsimd_sse4_1.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/arch/xsimd_avx512pf.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/arch/xsimd_emulated.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/arch/xsimd_avx512vbmi.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/arch/xsimd_sse4_2.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/arch/xsimd_avx512vnni_avx512bw.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/arch/xsimd_avx512er.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/arch/xsimd_common.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/arch/xsimd_vsx.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/arch/xsimd_neon.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/arch/xsimd_wasm.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/arch/xsimd_fma3_avx.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/arch/xsimd_avx512dq.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/arch/xsimd_avx512ifma.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/arch/xsimd_sve.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/arch/xsimd_avx512cd.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/arch/xsimd_avx512bw.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/arch/xsimd_fma3_avx2_128.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/arch/xsimd_rvv.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/arch/xsimd_avx2.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/arch/xsimd_neon64.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/arch/xsimd_i8mm_neon64.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/arch/xsimd_scalar.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/arch/utils
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/arch/utils/shifts.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/arch/xsimd_avx_128.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/arch/xsimd_avx.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/arch/xsimd_avx512vl_128.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/arch/xsimd_avx512vl.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/arch/xsimd_vxe.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/arch/common
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/arch/common/xsimd_common_rounding.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/arch/common/xsimd_common_math.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/arch/common/xsimd_common_swizzle.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/arch/common/xsimd_common_memory.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/arch/common/xsimd_common_complex.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/arch/common/xsimd_common_trigo.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/arch/common/xsimd_common_cast.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/arch/common/xsimd_common_logical.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/arch/common/xsimd_common_details.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/arch/common/xsimd_common_bit.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/arch/common/xsimd_common_arithmetic.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/arch/xsimd_common_fwd.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/arch/xsimd_fma4.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/arch/xsimd_avx512vl_256.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/arch/xsimd_avxvnni.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/arch/xsimd_fma3_avx2.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/arch/xsimd_ssse3.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/arch/xsimd_fma3_sse.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/arch/xsimd_avx512f.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/arch/xsimd_constants.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/arch/xsimd_avx512vbmi2.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/arch/xsimd_avx512vnni_avx512vbmi2.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/arch/xsimd_sse3.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/arch/xsimd_sse2.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/arch/xsimd_isa.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/Hyle/dependencies/xsimd/include/xsimd/xsimd.hpp
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/licenses/Hyle/mimalloc-LICENSE
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/licenses/Hyle/highway-LICENSE
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/licenses/Hyle/xxhash-LICENSE
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/licenses/Hyle/wyhash-LICENSE
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/licenses/Hyle/ggml-runtime-LICENSE
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/licenses/Hyle/ggml-runtime-patches-LICENSE
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/licenses/Hyle/ggml-runtime-patches-NOTICE.md
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/lib/cmake/HyleTorchCpuSdk/HyleTorchCpuSdkConfig.cmake
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/lib/cmake/HyleTorchCpuSdk/torch_cpu_fetch.cmake
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/lib/cmake/HyleTorchCpuSdk/HyleDependencyLock.json
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/licenses/Hyle/TorchAO-CPU-LICENSE
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/licenses/Hyle/TorchAO-CPU-NOTICE.md
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/licenses/Hyle/bitsandbytes_cpu-LICENSE
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/licenses/Hyle/bitsandbytes_cpu-NOTICE.md
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/licenses/Hyle/awq_cpu-LICENSE
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/licenses/Hyle/awq_cpu-NOTICE.md
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/licenses/Hyle/compressed_tensors_cpu-LICENSE
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/licenses/Hyle/compressed_tensors_cpu-NOTICE.md
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/licenses/Hyle/mlx_cpu_quant-LICENSE
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/licenses/Hyle/mlx_cpu_quant-NOTICE.md
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/share/licenses/Hyle/ds4-quantization-LICENSE
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/lib/cmake/Hyle/HyleTargets.cmake
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/lib/cmake/Hyle/HyleTargets-release.cmake
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/lib/cmake/Hyle/HyleConfig.cmake
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/lib/cmake/Hyle/HyleConfigVersion.cmake
+-- Installing: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging/lib/cmake/Hyle/HyleRuntimeStaging.cmake
+'/opt/homebrew/bin/cmake' '-S' '/Users/kiro/hyle-scratch/compute-unified/source-c8874688/samples/package/graph/cpp' '-B' '/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-consumer' '-G' 'Ninja' '-DCMAKE_OSX_DEPLOYMENT_TARGET=14.4' '-DCMAKE_BUILD_TYPE=Release' '-DCMAKE_PREFIX_PATH=/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-relocated'
+-- The CXX compiler identification is AppleClang 21.0.0.21000334
+-- Detecting CXX compiler ABI info
+-- Detecting CXX compiler ABI info - done
+-- Check for working CXX compiler: /usr/bin/c++ - skipped
+-- Detecting CXX compile features
+-- Detecting CXX compile features - done
+-- Performing Test CMAKE_HAVE_LIBC_PTHREAD
+-- Performing Test CMAKE_HAVE_LIBC_PTHREAD - Success
+-- Found Threads: TRUE
+-- HYLE: reusing locked CPU SDK at /Users/kiro/Library/Caches/hyle/dependencies/v1/sdks/torch-cpu/Darwin-be0642231d2008c7b90071fc0898d82a0c002d47f38350ebf3ed779fc01972d7/libtorch
+-- Found Torch: /Users/kiro/Library/Caches/hyle/dependencies/v1/sdks/torch-cpu/Darwin-be0642231d2008c7b90071fc0898d82a0c002d47f38350ebf3ed779fc01972d7/libtorch/lib/libtorch.dylib (Required is exact version "2.8.0")
+-- Configuring done (1.3s)
+-- Generating done (0.0s)
+-- Build files have been written to: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-consumer
+'/opt/homebrew/bin/cmake' '--build' '/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-consumer' '--config' 'Release' '--parallel' '2'
+[1/2] Building CXX object CMakeFiles/hyle_package_graph_cpp.dir/main.cc.o
+[2/2] Linking CXX executable hyle_package_graph_cpp
+'/opt/homebrew/bin/ctest' '--test-dir' '/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-consumer' '-C' 'Release' '--timeout' '30' '--output-on-failure'
+Test project /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-consumer
+    Start 1: hyle_package_graph_cpp
+1/1 Test #1: hyle_package_graph_cpp ...........   Passed    0.52 sec
+
+100% tests passed, 0 tests failed out of 1
+
+Total Test time (real) =   0.53 sec
+'/opt/homebrew/bin/cmake' '-S' '/Users/kiro/hyle-scratch/compute-unified/source-c8874688/samples/package/compute/cpp' '-B' '/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-compute-consumer' '-G' 'Ninja' '-DCMAKE_OSX_DEPLOYMENT_TARGET=14.4' '-DCMAKE_BUILD_TYPE=Release' '-DCMAKE_PREFIX_PATH=/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-relocated'
+-- The CXX compiler identification is AppleClang 21.0.0.21000334
+-- Detecting CXX compiler ABI info
+-- Detecting CXX compiler ABI info - done
+-- Check for working CXX compiler: /usr/bin/c++ - skipped
+-- Detecting CXX compile features
+-- Detecting CXX compile features - done
+-- Performing Test CMAKE_HAVE_LIBC_PTHREAD
+-- Performing Test CMAKE_HAVE_LIBC_PTHREAD - Success
+-- Found Threads: TRUE
+-- HYLE: reusing locked CPU SDK at /Users/kiro/Library/Caches/hyle/dependencies/v1/sdks/torch-cpu/Darwin-be0642231d2008c7b90071fc0898d82a0c002d47f38350ebf3ed779fc01972d7/libtorch
+-- Found Torch: /Users/kiro/Library/Caches/hyle/dependencies/v1/sdks/torch-cpu/Darwin-be0642231d2008c7b90071fc0898d82a0c002d47f38350ebf3ed779fc01972d7/libtorch/lib/libtorch.dylib (Required is exact version "2.8.0")
+-- Configuring done (1.3s)
+-- Generating done (0.0s)
+-- Build files have been written to: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-compute-consumer
+'/opt/homebrew/bin/cmake' '--build' '/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-compute-consumer' '--config' 'Release' '--parallel' '2'
+[1/2] Building CXX object CMakeFiles/hyle_package_compute_cpp.dir/main.cc.o
+[2/2] Linking CXX executable hyle_package_compute_cpp
+'/opt/homebrew/bin/ctest' '--test-dir' '/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-compute-consumer' '-C' 'Release' '--timeout' '30' '--output-on-failure'
+Test project /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-compute-consumer
+    Start 1: hyle_package_compute_cpp
+1/1 Test #1: hyle_package_compute_cpp .........   Passed    0.44 sec
+
+100% tests passed, 0 tests failed out of 1
+
+Total Test time (real) =   0.45 sec
+-- HYLE selected product smoke passed: graph (source, shared, static, relocated consumers)
