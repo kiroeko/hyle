@@ -159,3 +159,6 @@ selected FP4/FP8、尾尺度与encoded MatMul、三QAT全有限BF16及资源/fin
 差0及独立F16边界1.34e-7；最新Pro/Flash主干与完整三stage DSpark两入口通过，
 原全部state现在21/24每入口，剩3个共享case仍失败/未验。整体工程估计约50%。
 不复测已过权重矩阵、未知硬件/三交付/P1未完成，所有原完整精度门保持。
+
+剩余三个state进入[显式参数及首偏差有限FIX](vulkan-parity-v2-three-state-fixes.md)，
+原轮M5-N2诊断已终结，原失败/预算保持；先测试参数和同输入边界，不盲改数学。

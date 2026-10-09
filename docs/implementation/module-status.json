@@ -546,20 +546,20 @@
     {
       "module": "compute_route_vulkan",
       "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/vulkan-parity-v2-catalogue-matrix.md",
-      "summary": "Vulkan catalogue matrix AUDITED: finite M1-M5 typed convolution through mature casts, original grouped F32 binding and complete common 559/80/34/45/104 plus state/sidecar consumers. Prior native source packets retained; full runtime, defaults and delivery pending."
+      "record": "docs/implementation/tasks/compute/vulkan-parity-v2-three-state-fixes.md",
+      "summary": "Vulkan three remaining state contracts AUDITED: explicit GGUF reference parameters, one same-input Flash norm/Q8 boundary diagnosis and independently qualified mixed artifacts. Original 80/560 matrices and21/24 state evidence retained; product math frozen."
     },
     {
       "module": "graph_route_vulkan",
       "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/vulkan-parity-v2-catalogue-matrix.md",
-      "summary": "Vulkan catalogue matrix AUDITED: finite M1-M5 typed convolution through mature casts, original grouped F32 binding and complete common 559/80/34/45/104 plus state/sidecar consumers. Prior native source packets retained; full runtime, defaults and delivery pending."
+      "record": "docs/implementation/tasks/compute/vulkan-parity-v2-three-state-fixes.md",
+      "summary": "Vulkan three remaining state contracts AUDITED: explicit GGUF reference parameters, one same-input Flash norm/Q8 boundary diagnosis and independently qualified mixed artifacts. Original 80/560 matrices and21/24 state evidence retained; product math frozen."
     },
     {
       "module": "compute_provider_ggml_vulkan",
       "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/vulkan-parity-v2-catalogue-matrix.md",
-      "summary": "Vulkan catalogue matrix AUDITED: finite M1-M5 typed convolution through mature casts, original grouped F32 binding and complete common 559/80/34/45/104 plus state/sidecar consumers. Prior native source packets retained; full runtime, defaults and delivery pending."
+      "record": "docs/implementation/tasks/compute/vulkan-parity-v2-three-state-fixes.md",
+      "summary": "Vulkan three remaining state contracts AUDITED: explicit GGUF reference parameters, one same-input Flash norm/Q8 boundary diagnosis and independently qualified mixed artifacts. Original 80/560 matrices and21/24 state evidence retained; product math frozen."
     },
     {
       "module": "compute_ggml_runtime",
