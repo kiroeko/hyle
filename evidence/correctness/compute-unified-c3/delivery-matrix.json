@@ -277,17 +277,18 @@
           "graph": "PASS"
         },
         "shared": {
-          "direct": "PASS",
-          "graph": "PASS"
+          "direct": "UNRUN",
+          "graph": "UNRUN"
         },
         "static": {
-          "direct": "PASS",
-          "graph": "PASS"
+          "direct": "UNRUN",
+          "graph": "UNRUN"
         }
       },
       "evidence": [
         "air-mixed-license-failure/receipt.json",
-        "air-cpu-apple-partial.json"
+        "air-cpu-apple-partial.json",
+        "mixed-sdk-route-failure/original-air-cpu-apple-claim.json"
       ]
     },
     {

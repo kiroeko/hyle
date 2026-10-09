@@ -280,3 +280,13 @@ Windows CPU+CUDA 普通 source Direct/Graph 两项真实计算现已 PASS（0.89
 [收据](../../../../evidence/correctness/compute-unified-c3/windows-cpu-cuda-partial.json)绑定启动时的
 不可变 validation source `b7115b114`。C3 当前38 PASS / 52 UNRUN；原 driver 串行继续 shared/static，
 保留 source 对象，不重启、不跑 P1。组合包仍不代签 H1 联合/异步/专家传输。
+
+### C3 当前资格纠正：组合 SDK 工具缺陷
+
+上述 Air CPU+Apple 六项中的四项 SDK 资格判断错误：实际 metadata 只有 CPU，原数学日志
+确实 PASS，但只签 CPU 数学。四项组合资格撤回为 UNRUN；两个 source 消费者仍真实通过。
+Windows CPU+CUDA shared 也在此处正确报缺 CUDA 后停止，原产物/CPU objects 保留。
+当前有效 C3 为34 PASS / 56 UNRUN；历史计数不代表当前资格。
+具名反例与有限修正见[独立工具卡](compute-delivery-route-argv-repair.md)和
+[原判断/失败收据](../../../../evidence/correctness/compute-unified-c3/mixed-sdk-route-failure/receipt.json)。
+只修参数边界和全路线 SDK guard，原目录恢复 shared/static，不重跑 source/单路线/P1。

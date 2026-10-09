@@ -92,3 +92,10 @@ is not a shader, resource, operator or consumer PASS and does not increase the d
 The [Windows CPU+CUDA partial receipt](windows-cpu-cuda-partial.json) signs source Direct/Graph
 real math PASS on the actual RTX 4070 and CPU. The original serial driver continues shared/static SDK
 stages; source objects and results are retained. Combined delivery does not certify H1 joint execution.
+
+**Current correction:** four prior Air CPU+Apple SDK claims are withdrawn: both actual SDK configs
+contain only CPU. Their raw math PASS observations are retained, but do not qualify a mixed package.
+The effective matrix is 34/90 PASS. Windows CPU+CUDA shared stopped on missing CUDA after the same
+argument loss. [Original claims, metadata and failure](mixed-sdk-route-failure/receipt.json) are preserved;
+the [bounded tool repair](../../../docs/implementation/tasks/build/compute-delivery-route-argv-repair.md)
+must pass before the original SDK stages resume. Source mixed consumers remain valid.

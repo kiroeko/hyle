@@ -1,0 +1,11 @@
+{
+  "scope": "C3 tool argv loss and incomplete mixed SDK guard",
+  "requested_windows": "cpu;cuda",
+  "actual_windows_shared": "cpu",
+  "windows_driver": "FAIL: SDK missing selected compute_cuda feature",
+  "requested_air": "cpu;apple",
+  "actual_air_shared_static": "cpu",
+  "correction": "Withdraw four mixed SDK claims; retain raw CPU math observations and both true source consumers. Effective C3 count is 34/90.",
+  "tool_baseline": "aaf1c8be5",
+  "original_claim": "original-air-cpu-apple-claim.json"
+}

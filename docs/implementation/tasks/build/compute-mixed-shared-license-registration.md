@@ -39,3 +39,7 @@ Air 原目录 configure 与 source Direct/Graph 均已实际 PASS；
 同一候选的 shared/static relocated SDK Direct/Graph 四项均实际 PASS，原 SDK 循环 exit0；
 与 source 合计六消费者通过。本项适用门完成，owner 暂留 CANDIDATE 等待 C3 全部交付终审，
 不能把本组成功代签其它组合或 H2；旧配置 FAIL 保留。
+
+资格纠正：上述 shared/static 的原数学 PASS 实际仅在 CPU SDK 运行；参数转发丢失 Apple，
+四项组合资格已撤回。许可证修正的 source 证据有效，完整 SDK 验收尚未完成，不能称本项适用门全通过。
+见[独立工具修正](compute-delivery-route-argv-repair.md)；恢复 SDK 阶段时仍保留本产品候选和原对象。
