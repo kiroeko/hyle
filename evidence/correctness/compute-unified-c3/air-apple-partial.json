@@ -16,21 +16,30 @@
     },
     {
       "entry": "shared-direct",
-      "verdict": "UNRUN"
+      "verdict": "PASS",
+      "log": "evidence/correctness/compute-unified-c3/air-apple/shared-direct-ctest.log",
+      "sha256": "582ab628feb941d9c1a7705510ea9bf0541e82ede4967c9649b6f892e705d455"
     },
     {
       "entry": "shared-graph",
-      "verdict": "UNRUN"
+      "verdict": "PASS",
+      "log": "evidence/correctness/compute-unified-c3/air-apple/shared-graph-ctest.log",
+      "sha256": "8a26d0449569339ccb17517e3efb94451b69a6ee09146fd3f9708ec05b09f736"
     },
     {
       "entry": "static-direct",
-      "verdict": "UNRUN"
+      "verdict": "PASS",
+      "log": "evidence/correctness/compute-unified-c3/air-apple/static-direct-ctest.log",
+      "sha256": "7b2ed5fcd40375501282028e7fbef6033dac5224f04ce1d701c960c1a1ac800a"
     },
     {
       "entry": "static-graph",
-      "verdict": "UNRUN"
+      "verdict": "PASS",
+      "log": "evidence/correctness/compute-unified-c3/air-apple/static-graph-ctest.log",
+      "sha256": "e658a21e80250a18ce9abae98bd6ba34cee964d36d1b464bf51798d9692b4118"
     }
   ],
   "log_sha256": "a82851451d9951f61a2546405200a7ee5f6ee657ba284da0646ab89acb453879",
-  "remaining": "Shared/static, other platform/route/mixed entries and H1-H3 unproven"
+  "remaining": "Other route/platform/mixed entries, Vulkan F32 cross-platform scope and H1-H3 still unproven",
+  "batch_exit_code": 0
 }

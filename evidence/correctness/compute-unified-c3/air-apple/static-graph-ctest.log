@@ -1,0 +1,70 @@
+Start testing: Oct 10 02:39 CST
+----------------------------------------------------------
+1/1 Testing: hyle_package_graph_cpp
+1/1 Test: hyle_package_graph_cpp
+Command: "/Users/kiro/hyle-scratch/compute-unified/a-apple/selected-graph/static-consumer/hyle_package_graph_cpp"
+Directory: /Users/kiro/hyle-scratch/compute-unified/a-apple/selected-graph/static-consumer
+"hyle_package_graph_cpp" start time: Oct 10 02:39 CST
+Output:
+----------------------------------------------------------
+ggml_metal_device_init: tensor API disabled for pre-M5 and pre-A19 devices
+ggml_metal_library_init: using embedded metal library
+ggml_metal_library_compile_all: compiled 'fa' library in 13.863 sec
+ggml_metal_library_compile_all: compiled 'mul_mv' library in 0.807 sec
+ggml_metal_library_compile_all: compiled 'mul_mm' library in 0.974 sec
+ggml_metal_library_compile_all: compiled 'quantize' library in 0.255 sec
+ggml_metal_library_compile_all: compiled 'softmax' library in 0.033 sec
+ggml_metal_library_compile_all: compiled 'norm' library in 0.064 sec
+ggml_metal_library_compile_all: compiled 'unary' library in 0.081 sec
+ggml_metal_library_compile_all: compiled 'binbcast' library in 0.061 sec
+ggml_metal_library_compile_all: compiled 'reduce' library in 0.018 sec
+ggml_metal_library_compile_all: compiled 'tri' library in 0.027 sec
+ggml_metal_library_compile_all: compiled 'ssm' library in 0.042 sec
+ggml_metal_library_compile_all: compiled 'wkv' library in 0.023 sec
+ggml_metal_library_compile_all: compiled 'gated_delta_net' library in 0.037 sec
+ggml_metal_library_compile_all: compiled 'solve_tri' library in 0.014 sec
+ggml_metal_library_compile_all: compiled 'rope' library in 0.063 sec
+ggml_metal_library_compile_all: compiled 'conv' library in 0.254 sec
+ggml_metal_library_compile_all: compiled 'upscale' library in 0.061 sec
+ggml_metal_library_compile_all: compiled 'argsort' library in 13.861 sec
+ggml_metal_library_compile_all: compiled 'pool' library in 0.043 sec
+ggml_metal_library_compile_all: compiled 'misc' library in 0.094 sec
+ggml_metal_library_compile_all: loaded 20 libraries from embedded data in 13.863 sec (max single = 13.863 sec)
+ggml_metal_rsets_init: creating a residency set collection (keep_alive = 180 s)
+ggml_metal_device_init: GPU name:   MTL0 (Apple M4)
+ggml_metal_device_init: GPU family: MTLGPUFamilyApple9  (1009)
+ggml_metal_device_init: GPU family: MTLGPUFamilyCommon3 (3003)
+ggml_metal_device_init: GPU family: MTLGPUFamilyMetal4  (5002)
+ggml_metal_device_init: simdgroup reduction   = true
+ggml_metal_device_init: simdgroup matrix mul. = true
+ggml_metal_device_init: has unified memory    = true
+ggml_metal_device_init: has bfloat            = true
+ggml_metal_device_init: has tensor            = false
+ggml_metal_device_init: use residency sets    = true
+ggml_metal_device_init: use shared buffers    = true
+ggml_metal_device_init: recommendedMaxWorkingSetSize  = 12713.12 MB
+ggml_metal_init: allocating
+ggml_metal_init: found device: Apple M4
+ggml_metal_init: picking default device: Apple M4
+ggml_metal_init: use fusion         = true
+ggml_metal_init: use concurrency    = true
+ggml_metal_init: use graph optimize = true
+ggml_metal_library_compile_pipeline: compiling pipeline: base = 'kernel_gated_delta_net_f32_1', name = 'kernel_gated_delta_net_f32_1_ne20=32_ne30=1_K=1'
+ggml_metal_library_compile_pipeline: loaded kernel_gated_delta_net_f32_1_ne20=32_ne30=1_K=1     0x7aff7f4e00 | th_max = 1024 | th_width =   32
+ggml_metal_free: deallocating
+ggml_metal_init: allocating
+ggml_metal_init: found device: Apple M4
+ggml_metal_init: picking default device: Apple M4
+ggml_metal_init: use fusion         = true
+ggml_metal_init: use concurrency    = true
+ggml_metal_init: use graph optimize = true
+ggml_metal_free: deallocating
+<end of output>
+Test time =  14.47 sec
+----------------------------------------------------------
+Test Passed.
+"hyle_package_graph_cpp" end time: Oct 10 02:40 CST
+"hyle_package_graph_cpp" time elapsed: 00:00:14
+----------------------------------------------------------
+
+End testing: Oct 10 02:40 CST

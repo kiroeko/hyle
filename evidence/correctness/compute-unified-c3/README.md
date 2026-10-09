@@ -4,8 +4,8 @@ This is ongoing validation for the [active delivery card](../../../docs/implemen
 It is not a terminal verdict for all platforms/routes, hybrid execution, or asynchronous expert transfers.
 
 [Delivery matrix](delivery-matrix.json) fixes the declared applicable scope: 15 platform/route groups,
-45 source/shared/static shapes, each with the existing Direct and Graph consumer. Twenty consumer entries
-are currently PASS and the other 70 are UNRUN; earlier Vulkan failures remain archived. A mixed SDK entry runs each selected native route independently
+45 source/shared/static shapes, each with the existing Direct and Graph consumer. Twenty-four consumer entries
+are currently PASS and the other 66 are UNRUN; earlier Vulkan failures remain archived. A mixed SDK entry runs each selected native route independently
 and cannot certify the later joint execution or asynchronous transfer work.
 
 [Conditional source-asset producer counterexample](apple-conditional-producer/receipt.json) records a
@@ -65,6 +65,6 @@ The remaining WSL/Air entries now use fresh `source-2614676e` directories from t
 42,967,040-byte source archive, SHA256 `94cd4aff04573073ffc848ecf71d67933ed705d03160ba93f8ce1b3da64b1bcc`.
 Both received archives were checked against that hash; no native math PASS follows from transport.
 The [Air Apple partial receipt](air-apple-partial.json) signs actual source Direct/Graph consumers on
-Mac16,12 Apple M4. Shared/static are running in the same serial batch. Its newer complete validation
+Mac16,12 Apple M4. Shared/static also passed and the serial batch exited 0. Its newer complete validation
 source snapshot is c8874688, archive SHA256 `3770e2f2147120f527ff96a45af4a096ed846c791624e720582cb2eb4a88d4f5`;
 product c96c7c6e and test/document-only follow-up identities remain distinct.

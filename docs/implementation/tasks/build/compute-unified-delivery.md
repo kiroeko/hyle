@@ -256,3 +256,8 @@ Windows Vulkan source实际构建完成但两消费者FAIL，[原始失败和有
 完整validation源码c8874688（产品c96c7c6e加test/docs后续）hash核对后部署；source Direct/Graph
 两个真实消费者已PASS，shared/static仍未签，[部分收据](../../../../evidence/correctness/compute-unified-c3/air-apple-partial.json)。
 没有使用Mac mini或并行重型平台build。C3当前20消费者PASS、70项UNRUN，不签H1–H3。
+
+Air Apple-only原批次已exit0：source/shared/static × Direct/Graph六项消费者全PASS，
+真实SDK的mlx.metallib与runtime闭包、搬迁和原生MLX/ggml-Metal数学旅程通过；四项新增SDK日志
+和实际HyleConfig已归档。C3当前24消费者PASS、66项UNRUN。
+下一串行Air Vulkan-only三交付已启动，使用同一精确源码snapshot，未增用户额外route/Provider开关。
