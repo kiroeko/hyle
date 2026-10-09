@@ -1,0 +1,320 @@
+Running main() from C:\public\tools\hyle-dependencies\v1\sources\googletest-063de7e9578f-162765170ae6\googletest\src\gtest_main.cc
+Note: Google Test filter = VulkanMoeFragments.D5EightGgufProfilesFullMoe:VulkanMoeFragments.D5GlmDsaIndexerWithCache:VulkanMoeFragments.D5GlmFlashPooledIndexerWithTail:VulkanMoeFragments.D5GlmFlashWeightedHyperConnection:VulkanMoeFragments.D5GlmGgufAbsorbedMlaWithCache:VulkanMoeFragments.D5GlmGgufDenseFfn:VulkanMoeFragments.D5GlmGgufDsaSelectionConsumesMlaCache:VulkanMoeFragments.D5GlmGgufMtpIndexCarryReset:VulkanMoeFragments.D5GlmGgufNextNDecoderWithCarryAndFullHead:VulkanMoeFragments.D5KimiAbsorbedMlaWithCache:VulkanMoeFragments.D5KimiAttentionResidualBanking:VulkanMoeFragments.D5KimiDenseFfn:VulkanMoeFragments.D5SevenProfilesHyperConnectionCore:VulkanMoeFragments.D5SixProfilesFullKdaChainAndTwoStates:VulkanQwen38_24T.D5GgufFullRouterSharedExpertAndNearTieReplay:VulkanQwenRecurrent.D5NineProfilesUseCompleteGateAndActualStateFeedback:VulkanManaged.D5Qwen35OfficialEmbeddingNormHeadAndFailureUsePreparedCalls:VulkanManaged.D5Qwen35OfficialFfnUsesMaturePreparedCalls:VulkanManaged.D5Qwen35OfficialGqaNormRopeAndAttentionUsePreparedCalls:VulkanManaged.D5Qwen35OfficialCausalConvAndGdnUsePreparedCalls:VulkanManaged.D5Qwen35OfficialMtpAndBfloatBoundaryUsePreparedCalls:VulkanMoeFragments.D5KimiAttentionResidualOrdinary:VulkanMoeFragments.D5SixProfilesBoundedKdaActualStateFeedback:VulkanMoeFragments.D5KimiThreeProfilesSituActivation:VulkanMoeFragments.D5OfficialKimiMixedStorageFullMoe:VulkanQwen38_24T.D5OfficialBfloatGroupedExpertKeepsExactWidthsTopKPortsAndReplay:VulkanQwen38_24T.D5OfficialBfloatRouterPreservesF32NearTieScores:VulkanQwen38_24T.D5FullRouterSharedExpertAndNearTieDirectReplay:*VulkanQwen38Profiles.D5Qwen38ProfileFfnUsesExactInnerWidthAndReplays/*:*VulkanQwen38Profiles.D5Qwen38ProfilePartialRopeGqaAndOutputGateReplay/*:*VulkanQwen38Profiles.D5Qwen38ProfileMtpUsesExactConcatWidthAndReplays/*:VulkanIree.OriginalIq1ActualFullBanksReplayAndEdgeIndices
+[==========] Running 41 tests from 8 test suites.
+[----------] Global test environment set-up.
+[----------] 5 tests from VulkanManaged
+[ RUN      ] VulkanManaged.D5Qwen35OfficialEmbeddingNormHeadAndFailureUsePreparedCalls
+[       OK ] VulkanManaged.D5Qwen35OfficialEmbeddingNormHeadAndFailureUsePreparedCalls (340 ms)
+[ RUN      ] VulkanManaged.D5Qwen35OfficialFfnUsesMaturePreparedCalls
+[       OK ] VulkanManaged.D5Qwen35OfficialFfnUsesMaturePreparedCalls (338 ms)
+[ RUN      ] VulkanManaged.D5Qwen35OfficialGqaNormRopeAndAttentionUsePreparedCalls
+[       OK ] VulkanManaged.D5Qwen35OfficialGqaNormRopeAndAttentionUsePreparedCalls (328 ms)
+[ RUN      ] VulkanManaged.D5Qwen35OfficialCausalConvAndGdnUsePreparedCalls
+[       OK ] VulkanManaged.D5Qwen35OfficialCausalConvAndGdnUsePreparedCalls (261 ms)
+[ RUN      ] VulkanManaged.D5Qwen35OfficialMtpAndBfloatBoundaryUsePreparedCalls
+[       OK ] VulkanManaged.D5Qwen35OfficialMtpAndBfloatBoundaryUsePreparedCalls (225 ms)
+[----------] 5 tests from VulkanManaged (1494 ms total)
+
+[----------] 4 tests from VulkanQwen38_24T
+[ RUN      ] VulkanQwen38_24T.D5OfficialBfloatGroupedExpertKeepsExactWidthsTopKPortsAndReplay
+[       OK ] VulkanQwen38_24T.D5OfficialBfloatGroupedExpertKeepsExactWidthsTopKPortsAndReplay (823 ms)
+[ RUN      ] VulkanQwen38_24T.D5OfficialBfloatRouterPreservesF32NearTieScores
+[       OK ] VulkanQwen38_24T.D5OfficialBfloatRouterPreservesF32NearTieScores (95 ms)
+[ RUN      ] VulkanQwen38_24T.D5FullRouterSharedExpertAndNearTieDirectReplay
+[       OK ] VulkanQwen38_24T.D5FullRouterSharedExpertAndNearTieDirectReplay (1419 ms)
+[ RUN      ] VulkanQwen38_24T.D5GgufFullRouterSharedExpertAndNearTieReplay
+[       OK ] VulkanQwen38_24T.D5GgufFullRouterSharedExpertAndNearTieReplay (9849 ms)
+[----------] 4 tests from VulkanQwen38_24T (12187 ms total)
+
+[----------] 18 tests from VulkanMoeFragments
+[ RUN      ] VulkanMoeFragments.D5OfficialKimiMixedStorageFullMoe
+[       OK ] VulkanMoeFragments.D5OfficialKimiMixedStorageFullMoe (1080 ms)
+[ RUN      ] VulkanMoeFragments.D5EightGgufProfilesFullMoe
+[       OK ] VulkanMoeFragments.D5EightGgufProfilesFullMoe (29317 ms)
+[ RUN      ] VulkanMoeFragments.D5GlmFlashWeightedHyperConnection
+[       OK ] VulkanMoeFragments.D5GlmFlashWeightedHyperConnection (927 ms)
+[ RUN      ] VulkanMoeFragments.D5GlmDsaIndexerWithCache
+[       OK ] VulkanMoeFragments.D5GlmDsaIndexerWithCache (1796 ms)
+[ RUN      ] VulkanMoeFragments.D5GlmFlashPooledIndexerWithTail
+[       OK ] VulkanMoeFragments.D5GlmFlashPooledIndexerWithTail (7483 ms)
+[ RUN      ] VulkanMoeFragments.D5GlmGgufDenseFfn
+[       OK ] VulkanMoeFragments.D5GlmGgufDenseFfn (3301 ms)
+[ RUN      ] VulkanMoeFragments.D5GlmGgufNextNDecoderWithCarryAndFullHead
+[       OK ] VulkanMoeFragments.D5GlmGgufNextNDecoderWithCarryAndFullHead (12956 ms)
+[ RUN      ] VulkanMoeFragments.D5GlmGgufDsaSelectionConsumesMlaCache
+[       OK ] VulkanMoeFragments.D5GlmGgufDsaSelectionConsumesMlaCache (15186 ms)
+[ RUN      ] VulkanMoeFragments.D5GlmGgufMtpIndexCarryReset
+[       OK ] VulkanMoeFragments.D5GlmGgufMtpIndexCarryReset (9760 ms)
+[ RUN      ] VulkanMoeFragments.D5GlmGgufAbsorbedMlaWithCache
+[       OK ] VulkanMoeFragments.D5GlmGgufAbsorbedMlaWithCache (3824 ms)
+[ RUN      ] VulkanMoeFragments.D5KimiDenseFfn
+[       OK ] VulkanMoeFragments.D5KimiDenseFfn (4512 ms)
+[ RUN      ] VulkanMoeFragments.D5KimiAbsorbedMlaWithCache
+[       OK ] VulkanMoeFragments.D5KimiAbsorbedMlaWithCache (2808 ms)
+[ RUN      ] VulkanMoeFragments.D5KimiAttentionResidualBanking
+[       OK ] VulkanMoeFragments.D5KimiAttentionResidualBanking (1953 ms)
+[ RUN      ] VulkanMoeFragments.D5KimiAttentionResidualOrdinary
+[       OK ] VulkanMoeFragments.D5KimiAttentionResidualOrdinary (1865 ms)
+[ RUN      ] VulkanMoeFragments.D5SixProfilesFullKdaChainAndTwoStates
+[       OK ] VulkanMoeFragments.D5SixProfilesFullKdaChainAndTwoStates (10360 ms)
+[ RUN      ] VulkanMoeFragments.D5SixProfilesBoundedKdaActualStateFeedback
+[       OK ] VulkanMoeFragments.D5SixProfilesBoundedKdaActualStateFeedback (5205 ms)
+[ RUN      ] VulkanMoeFragments.D5KimiThreeProfilesSituActivation
+[       OK ] VulkanMoeFragments.D5KimiThreeProfilesSituActivation (1261 ms)
+[ RUN      ] VulkanMoeFragments.D5SevenProfilesHyperConnectionCore
+[       OK ] VulkanMoeFragments.D5SevenProfilesHyperConnectionCore (1382 ms)
+[----------] 18 tests from VulkanMoeFragments (114985 ms total)
+
+[----------] 1 test from VulkanQwenRecurrent
+[ RUN      ] VulkanQwenRecurrent.D5NineProfilesUseCompleteGateAndActualStateFeedback
+[       OK ] VulkanQwenRecurrent.D5NineProfilesUseCompleteGateAndActualStateFeedback (7103 ms)
+[----------] 1 test from VulkanQwenRecurrent (7103 ms total)
+
+[----------] 1 test from VulkanIree
+[ RUN      ] VulkanIree.OriginalIq1ActualFullBanksReplayAndEdgeIndices
+FULL_IQ1_BANK type=20 E=896 N=3584 K=3072 bytes=1772617728 replay=2 edge_ids=PASS
+FULL_IQ1_BANK type=20 E=896 N=3072 K=3584 bytes=1772617728 replay=2 edge_ids=PASS
+FULL_IQ1_BANK type=19 E=896 N=3584 K=3072 bytes=1618477056 replay=2 edge_ids=PASS
+FULL_IQ1_BANK type=19 E=896 N=3072 K=3584 bytes=1618477056 replay=2 edge_ids=PASS
+FULL_IQ1_BANK type=18 E=896 N=3584 K=3072 bytes=1464336384 replay=2 edge_ids=PASS
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\tensor_test_support.h(114): error: The difference between observed[i] and want is 2.1317973732948303e-06, which exceeds relative * std::abs(want) + (type == c::DataType::kFloat32 ? 2e-6 : 2e-7), where
+observed[i] evaluates to -0.0084585919976234436,
+want evaluates to -0.0084607237949967384, and
+relative * std::abs(want) + (type == c::DataType::kFloat32 ? 2e-6 : 2e-7) evaluates to 2.0507643427699804e-06.
+82
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\iq1_test_support.h(148): full IQ1 bank=18 E=896 N=3072 K=3584
+
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\tensor_test_support.h(114): error: The difference between observed[i] and want is 2.1317973732948303e-06, which exceeds relative * std::abs(want) + (type == c::DataType::kFloat32 ? 2e-6 : 2e-7), where
+observed[i] evaluates to -0.0084585919976234436,
+want evaluates to -0.0084607237949967384, and
+relative * std::abs(want) + (type == c::DataType::kFloat32 ? 2e-6 : 2e-7) evaluates to 2.0507643427699804e-06.
+210
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\iq1_test_support.h(148): full IQ1 bank=18 E=896 N=3072 K=3584
+
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\tensor_test_support.h(114): error: The difference between observed[i] and want is 2.1317973732948303e-06, which exceeds relative * std::abs(want) + (type == c::DataType::kFloat32 ? 2e-6 : 2e-7), where
+observed[i] evaluates to -0.0084585919976234436,
+want evaluates to -0.0084607237949967384, and
+relative * std::abs(want) + (type == c::DataType::kFloat32 ? 2e-6 : 2e-7) evaluates to 2.0507643427699804e-06.
+338
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\iq1_test_support.h(148): full IQ1 bank=18 E=896 N=3072 K=3584
+
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\tensor_test_support.h(114): error: The difference between observed[i] and want is 2.1317973732948303e-06, which exceeds relative * std::abs(want) + (type == c::DataType::kFloat32 ? 2e-6 : 2e-7), where
+observed[i] evaluates to -0.0084585919976234436,
+want evaluates to -0.0084607237949967384, and
+relative * std::abs(want) + (type == c::DataType::kFloat32 ? 2e-6 : 2e-7) evaluates to 2.0507643427699804e-06.
+466
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\iq1_test_support.h(148): full IQ1 bank=18 E=896 N=3072 K=3584
+
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\tensor_test_support.h(114): error: The difference between observed[i] and want is 2.1317973732948303e-06, which exceeds relative * std::abs(want) + (type == c::DataType::kFloat32 ? 2e-6 : 2e-7), where
+observed[i] evaluates to -0.0084585919976234436,
+want evaluates to -0.0084607237949967384, and
+relative * std::abs(want) + (type == c::DataType::kFloat32 ? 2e-6 : 2e-7) evaluates to 2.0507643427699804e-06.
+594
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\iq1_test_support.h(148): full IQ1 bank=18 E=896 N=3072 K=3584
+
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\tensor_test_support.h(114): error: The difference between observed[i] and want is 2.1317973732948303e-06, which exceeds relative * std::abs(want) + (type == c::DataType::kFloat32 ? 2e-6 : 2e-7), where
+observed[i] evaluates to -0.0084585919976234436,
+want evaluates to -0.0084607237949967384, and
+relative * std::abs(want) + (type == c::DataType::kFloat32 ? 2e-6 : 2e-7) evaluates to 2.0507643427699804e-06.
+722
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\iq1_test_support.h(148): full IQ1 bank=18 E=896 N=3072 K=3584
+
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\tensor_test_support.h(114): error: The difference between observed[i] and want is 2.1317973732948303e-06, which exceeds relative * std::abs(want) + (type == c::DataType::kFloat32 ? 2e-6 : 2e-7), where
+observed[i] evaluates to -0.0084585919976234436,
+want evaluates to -0.0084607237949967384, and
+relative * std::abs(want) + (type == c::DataType::kFloat32 ? 2e-6 : 2e-7) evaluates to 2.0507643427699804e-06.
+850
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\iq1_test_support.h(148): full IQ1 bank=18 E=896 N=3072 K=3584
+
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\tensor_test_support.h(114): error: The difference between observed[i] and want is 2.1317973732948303e-06, which exceeds relative * std::abs(want) + (type == c::DataType::kFloat32 ? 2e-6 : 2e-7), where
+observed[i] evaluates to -0.0084585919976234436,
+want evaluates to -0.0084607237949967384, and
+relative * std::abs(want) + (type == c::DataType::kFloat32 ? 2e-6 : 2e-7) evaluates to 2.0507643427699804e-06.
+978
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\iq1_test_support.h(148): full IQ1 bank=18 E=896 N=3072 K=3584
+
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\tensor_test_support.h(114): error: The difference between observed[i] and want is 2.1317973732948303e-06, which exceeds relative * std::abs(want) + (type == c::DataType::kFloat32 ? 2e-6 : 2e-7), where
+observed[i] evaluates to -0.0084585919976234436,
+want evaluates to -0.0084607237949967384, and
+relative * std::abs(want) + (type == c::DataType::kFloat32 ? 2e-6 : 2e-7) evaluates to 2.0507643427699804e-06.
+1106
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\iq1_test_support.h(148): full IQ1 bank=18 E=896 N=3072 K=3584
+
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\tensor_test_support.h(114): error: The difference between observed[i] and want is 2.1317973732948303e-06, which exceeds relative * std::abs(want) + (type == c::DataType::kFloat32 ? 2e-6 : 2e-7), where
+observed[i] evaluates to -0.0084585919976234436,
+want evaluates to -0.0084607237949967384, and
+relative * std::abs(want) + (type == c::DataType::kFloat32 ? 2e-6 : 2e-7) evaluates to 2.0507643427699804e-06.
+1234
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\iq1_test_support.h(148): full IQ1 bank=18 E=896 N=3072 K=3584
+
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\tensor_test_support.h(114): error: The difference between observed[i] and want is 2.1317973732948303e-06, which exceeds relative * std::abs(want) + (type == c::DataType::kFloat32 ? 2e-6 : 2e-7), where
+observed[i] evaluates to -0.0084585919976234436,
+want evaluates to -0.0084607237949967384, and
+relative * std::abs(want) + (type == c::DataType::kFloat32 ? 2e-6 : 2e-7) evaluates to 2.0507643427699804e-06.
+1362
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\iq1_test_support.h(148): full IQ1 bank=18 E=896 N=3072 K=3584
+
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\tensor_test_support.h(114): error: The difference between observed[i] and want is 2.1317973732948303e-06, which exceeds relative * std::abs(want) + (type == c::DataType::kFloat32 ? 2e-6 : 2e-7), where
+observed[i] evaluates to -0.0084585919976234436,
+want evaluates to -0.0084607237949967384, and
+relative * std::abs(want) + (type == c::DataType::kFloat32 ? 2e-6 : 2e-7) evaluates to 2.0507643427699804e-06.
+1490
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\iq1_test_support.h(148): full IQ1 bank=18 E=896 N=3072 K=3584
+
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\tensor_test_support.h(114): error: The difference between observed[i] and want is 2.1317973732948303e-06, which exceeds relative * std::abs(want) + (type == c::DataType::kFloat32 ? 2e-6 : 2e-7), where
+observed[i] evaluates to -0.0084585919976234436,
+want evaluates to -0.0084607237949967384, and
+relative * std::abs(want) + (type == c::DataType::kFloat32 ? 2e-6 : 2e-7) evaluates to 2.0507643427699804e-06.
+1618
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\iq1_test_support.h(148): full IQ1 bank=18 E=896 N=3072 K=3584
+
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\tensor_test_support.h(114): error: The difference between observed[i] and want is 2.1317973732948303e-06, which exceeds relative * std::abs(want) + (type == c::DataType::kFloat32 ? 2e-6 : 2e-7), where
+observed[i] evaluates to -0.0084585919976234436,
+want evaluates to -0.0084607237949967384, and
+relative * std::abs(want) + (type == c::DataType::kFloat32 ? 2e-6 : 2e-7) evaluates to 2.0507643427699804e-06.
+1746
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\iq1_test_support.h(148): full IQ1 bank=18 E=896 N=3072 K=3584
+
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\tensor_test_support.h(114): error: The difference between observed[i] and want is 2.1317973732948303e-06, which exceeds relative * std::abs(want) + (type == c::DataType::kFloat32 ? 2e-6 : 2e-7), where
+observed[i] evaluates to -0.0084585919976234436,
+want evaluates to -0.0084607237949967384, and
+relative * std::abs(want) + (type == c::DataType::kFloat32 ? 2e-6 : 2e-7) evaluates to 2.0507643427699804e-06.
+1874
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\iq1_test_support.h(148): full IQ1 bank=18 E=896 N=3072 K=3584
+
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\tensor_test_support.h(114): error: The difference between observed[i] and want is 2.1317973732948303e-06, which exceeds relative * std::abs(want) + (type == c::DataType::kFloat32 ? 2e-6 : 2e-7), where
+observed[i] evaluates to -0.0084585919976234436,
+want evaluates to -0.0084607237949967384, and
+relative * std::abs(want) + (type == c::DataType::kFloat32 ? 2e-6 : 2e-7) evaluates to 2.0507643427699804e-06.
+2002
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\iq1_test_support.h(148): full IQ1 bank=18 E=896 N=3072 K=3584
+
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\tensor_test_support.h(114): error: The difference between observed[i] and want is 2.1317973732948303e-06, which exceeds relative * std::abs(want) + (type == c::DataType::kFloat32 ? 2e-6 : 2e-7), where
+observed[i] evaluates to -0.0084585919976234436,
+want evaluates to -0.0084607237949967384, and
+relative * std::abs(want) + (type == c::DataType::kFloat32 ? 2e-6 : 2e-7) evaluates to 2.0507643427699804e-06.
+2130
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\iq1_test_support.h(148): full IQ1 bank=18 E=896 N=3072 K=3584
+
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\tensor_test_support.h(114): error: The difference between observed[i] and want is 2.1317973732948303e-06, which exceeds relative * std::abs(want) + (type == c::DataType::kFloat32 ? 2e-6 : 2e-7), where
+observed[i] evaluates to -0.0084585919976234436,
+want evaluates to -0.0084607237949967384, and
+relative * std::abs(want) + (type == c::DataType::kFloat32 ? 2e-6 : 2e-7) evaluates to 2.0507643427699804e-06.
+2258
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\iq1_test_support.h(148): full IQ1 bank=18 E=896 N=3072 K=3584
+
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\tensor_test_support.h(114): error: The difference between observed[i] and want is 2.1317973732948303e-06, which exceeds relative * std::abs(want) + (type == c::DataType::kFloat32 ? 2e-6 : 2e-7), where
+observed[i] evaluates to -0.0084585919976234436,
+want evaluates to -0.0084607237949967384, and
+relative * std::abs(want) + (type == c::DataType::kFloat32 ? 2e-6 : 2e-7) evaluates to 2.0507643427699804e-06.
+2386
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\iq1_test_support.h(148): full IQ1 bank=18 E=896 N=3072 K=3584
+
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\tensor_test_support.h(114): error: The difference between observed[i] and want is 2.1317973732948303e-06, which exceeds relative * std::abs(want) + (type == c::DataType::kFloat32 ? 2e-6 : 2e-7), where
+observed[i] evaluates to -0.0084585919976234436,
+want evaluates to -0.0084607237949967384, and
+relative * std::abs(want) + (type == c::DataType::kFloat32 ? 2e-6 : 2e-7) evaluates to 2.0507643427699804e-06.
+2514
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\iq1_test_support.h(148): full IQ1 bank=18 E=896 N=3072 K=3584
+
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\tensor_test_support.h(114): error: The difference between observed[i] and want is 2.1317973732948303e-06, which exceeds relative * std::abs(want) + (type == c::DataType::kFloat32 ? 2e-6 : 2e-7), where
+observed[i] evaluates to -0.0084585919976234436,
+want evaluates to -0.0084607237949967384, and
+relative * std::abs(want) + (type == c::DataType::kFloat32 ? 2e-6 : 2e-7) evaluates to 2.0507643427699804e-06.
+2642
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\iq1_test_support.h(148): full IQ1 bank=18 E=896 N=3072 K=3584
+
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\tensor_test_support.h(114): error: The difference between observed[i] and want is 2.1317973732948303e-06, which exceeds relative * std::abs(want) + (type == c::DataType::kFloat32 ? 2e-6 : 2e-7), where
+observed[i] evaluates to -0.0084585919976234436,
+want evaluates to -0.0084607237949967384, and
+relative * std::abs(want) + (type == c::DataType::kFloat32 ? 2e-6 : 2e-7) evaluates to 2.0507643427699804e-06.
+2770
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\iq1_test_support.h(148): full IQ1 bank=18 E=896 N=3072 K=3584
+
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\tensor_test_support.h(114): error: The difference between observed[i] and want is 2.1317973732948303e-06, which exceeds relative * std::abs(want) + (type == c::DataType::kFloat32 ? 2e-6 : 2e-7), where
+observed[i] evaluates to -0.0084585919976234436,
+want evaluates to -0.0084607237949967384, and
+relative * std::abs(want) + (type == c::DataType::kFloat32 ? 2e-6 : 2e-7) evaluates to 2.0507643427699804e-06.
+2898
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\iq1_test_support.h(148): full IQ1 bank=18 E=896 N=3072 K=3584
+
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\tensor_test_support.h(114): error: The difference between observed[i] and want is 2.1317973732948303e-06, which exceeds relative * std::abs(want) + (type == c::DataType::kFloat32 ? 2e-6 : 2e-7), where
+observed[i] evaluates to -0.0084585919976234436,
+want evaluates to -0.0084607237949967384, and
+relative * std::abs(want) + (type == c::DataType::kFloat32 ? 2e-6 : 2e-7) evaluates to 2.0507643427699804e-06.
+3026
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\iq1_test_support.h(148): full IQ1 bank=18 E=896 N=3072 K=3584
+
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\iq1_test_support.h(169): error: Value of: ::testing::Test::HasFailure()
+  Actual: true
+Expected: false
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\iq1_test_support.h(148): full IQ1 bank=18 E=896 N=3072 K=3584
+
+[  FAILED  ] VulkanIree.OriginalIq1ActualFullBanksReplayAndEdgeIndices (17534 ms)
+[----------] 1 test from VulkanIree (17534 ms total)
+
+[----------] 6 tests from D5OfficialAndPrimaryGguf/VulkanQwen38Profiles
+[ RUN      ] D5OfficialAndPrimaryGguf/VulkanQwen38Profiles.D5Qwen38ProfileFfnUsesExactInnerWidthAndReplays/0
+[       OK ] D5OfficialAndPrimaryGguf/VulkanQwen38Profiles.D5Qwen38ProfileFfnUsesExactInnerWidthAndReplays/0 (924 ms)
+[ RUN      ] D5OfficialAndPrimaryGguf/VulkanQwen38Profiles.D5Qwen38ProfileFfnUsesExactInnerWidthAndReplays/1
+[       OK ] D5OfficialAndPrimaryGguf/VulkanQwen38Profiles.D5Qwen38ProfileFfnUsesExactInnerWidthAndReplays/1 (918 ms)
+[ RUN      ] D5OfficialAndPrimaryGguf/VulkanQwen38Profiles.D5Qwen38ProfilePartialRopeGqaAndOutputGateReplay/0
+[       OK ] D5OfficialAndPrimaryGguf/VulkanQwen38Profiles.D5Qwen38ProfilePartialRopeGqaAndOutputGateReplay/0 (240 ms)
+[ RUN      ] D5OfficialAndPrimaryGguf/VulkanQwen38Profiles.D5Qwen38ProfilePartialRopeGqaAndOutputGateReplay/1
+[       OK ] D5OfficialAndPrimaryGguf/VulkanQwen38Profiles.D5Qwen38ProfilePartialRopeGqaAndOutputGateReplay/1 (231 ms)
+[ RUN      ] D5OfficialAndPrimaryGguf/VulkanQwen38Profiles.D5Qwen38ProfileMtpUsesExactConcatWidthAndReplays/0
+[       OK ] D5OfficialAndPrimaryGguf/VulkanQwen38Profiles.D5Qwen38ProfileMtpUsesExactConcatWidthAndReplays/0 (333 ms)
+[ RUN      ] D5OfficialAndPrimaryGguf/VulkanQwen38Profiles.D5Qwen38ProfileMtpUsesExactConcatWidthAndReplays/1
+[       OK ] D5OfficialAndPrimaryGguf/VulkanQwen38Profiles.D5Qwen38ProfileMtpUsesExactConcatWidthAndReplays/1 (333 ms)
+[----------] 6 tests from D5OfficialAndPrimaryGguf/VulkanQwen38Profiles (2981 ms total)
+
+[----------] 3 tests from D5FidelityGguf/VulkanQwen38Profiles
+[ RUN      ] D5FidelityGguf/VulkanQwen38Profiles.D5Qwen38ProfileFfnUsesExactInnerWidthAndReplays/0
+[       OK ] D5FidelityGguf/VulkanQwen38Profiles.D5Qwen38ProfileFfnUsesExactInnerWidthAndReplays/0 (922 ms)
+[ RUN      ] D5FidelityGguf/VulkanQwen38Profiles.D5Qwen38ProfilePartialRopeGqaAndOutputGateReplay/0
+[       OK ] D5FidelityGguf/VulkanQwen38Profiles.D5Qwen38ProfilePartialRopeGqaAndOutputGateReplay/0 (234 ms)
+[ RUN      ] D5FidelityGguf/VulkanQwen38Profiles.D5Qwen38ProfileMtpUsesExactConcatWidthAndReplays/0
+[       OK ] D5FidelityGguf/VulkanQwen38Profiles.D5Qwen38ProfileMtpUsesExactConcatWidthAndReplays/0 (334 ms)
+[----------] 3 tests from D5FidelityGguf/VulkanQwen38Profiles (1491 ms total)
+
+[----------] 3 tests from D5Official24T/VulkanQwen38Profiles
+[ RUN      ] D5Official24T/VulkanQwen38Profiles.D5Qwen38ProfileFfnUsesExactInnerWidthAndReplays/0
+[       OK ] D5Official24T/VulkanQwen38Profiles.D5Qwen38ProfileFfnUsesExactInnerWidthAndReplays/0 (350 ms)
+[ RUN      ] D5Official24T/VulkanQwen38Profiles.D5Qwen38ProfilePartialRopeGqaAndOutputGateReplay/0
+[       OK ] D5Official24T/VulkanQwen38Profiles.D5Qwen38ProfilePartialRopeGqaAndOutputGateReplay/0 (239 ms)
+[ RUN      ] D5Official24T/VulkanQwen38Profiles.D5Qwen38ProfileMtpUsesExactConcatWidthAndReplays/0
+[       OK ] D5Official24T/VulkanQwen38Profiles.D5Qwen38ProfileMtpUsesExactConcatWidthAndReplays/0 (541 ms)
+[----------] 3 tests from D5Official24T/VulkanQwen38Profiles (1132 ms total)
+
+[----------] Global test environment tear-down
+[==========] 41 tests from 8 test suites ran. (158911 ms total)
+[  PASSED  ] 40 tests.
+[  FAILED  ] 1 test, listed below:
+[  FAILED  ] VulkanIree.OriginalIq1ActualFullBanksReplayAndEdgeIndices
+
+ 1 FAILED TEST

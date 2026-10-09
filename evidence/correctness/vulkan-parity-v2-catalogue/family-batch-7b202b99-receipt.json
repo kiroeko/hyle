@@ -1,0 +1,74 @@
+{
+  "candidate": "7b202b99afc2c20ae27d5b666071be828164a6a1",
+  "steps": [
+    {
+      "name": "direct-family",
+      "returncode": 1,
+      "filter": "VulkanMoeFragments.D5EightGgufProfilesFullMoe:VulkanMoeFragments.D5GlmDsaIndexerWithCache:VulkanMoeFragments.D5GlmFlashPooledIndexerWithTail:VulkanMoeFragments.D5GlmFlashWeightedHyperConnection:VulkanMoeFragments.D5GlmGgufAbsorbedMlaWithCache:VulkanMoeFragments.D5GlmGgufDenseFfn:VulkanMoeFragments.D5GlmGgufDsaSelectionConsumesMlaCache:VulkanMoeFragments.D5GlmGgufMtpIndexCarryReset:VulkanMoeFragments.D5GlmGgufNextNDecoderWithCarryAndFullHead:VulkanMoeFragments.D5KimiAbsorbedMlaWithCache:VulkanMoeFragments.D5KimiAttentionResidualBanking:VulkanMoeFragments.D5KimiDenseFfn:VulkanMoeFragments.D5SevenProfilesHyperConnectionCore:VulkanMoeFragments.D5SixProfilesFullKdaChainAndTwoStates:VulkanQwen38_24T.D5GgufFullRouterSharedExpertAndNearTieReplay:VulkanQwenRecurrent.D5NineProfilesUseCompleteGateAndActualStateFeedback:VulkanManaged.D5Qwen35OfficialEmbeddingNormHeadAndFailureUsePreparedCalls:VulkanManaged.D5Qwen35OfficialFfnUsesMaturePreparedCalls:VulkanManaged.D5Qwen35OfficialGqaNormRopeAndAttentionUsePreparedCalls:VulkanManaged.D5Qwen35OfficialCausalConvAndGdnUsePreparedCalls:VulkanManaged.D5Qwen35OfficialMtpAndBfloatBoundaryUsePreparedCalls:VulkanMoeFragments.D5KimiAttentionResidualOrdinary:VulkanMoeFragments.D5SixProfilesBoundedKdaActualStateFeedback:VulkanMoeFragments.D5KimiThreeProfilesSituActivation:VulkanMoeFragments.D5OfficialKimiMixedStorageFullMoe:VulkanQwen38_24T.D5OfficialBfloatGroupedExpertKeepsExactWidthsTopKPortsAndReplay:VulkanQwen38_24T.D5OfficialBfloatRouterPreservesF32NearTieScores:VulkanQwen38_24T.D5FullRouterSharedExpertAndNearTieDirectReplay:*VulkanQwen38Profiles.D5Qwen38ProfileFfnUsesExactInnerWidthAndReplays/*:*VulkanQwen38Profiles.D5Qwen38ProfilePartialRopeGqaAndOutputGateReplay/*:*VulkanQwen38Profiles.D5Qwen38ProfileMtpUsesExactConcatWidthAndReplays/*:VulkanIree.OriginalIq1ActualFullBanksReplayAndEdgeIndices",
+      "tests": {
+        "tests": "41",
+        "failures": "1",
+        "disabled": "0",
+        "errors": "0",
+        "time": "158.911",
+        "timestamp": "2026-10-09T15:46:06.158",
+        "name": "AllTests"
+      },
+      "validation_error": false,
+      "log": "family-batch-7b202b99-direct-family.log",
+      "log_sha256": "ec415c85173aa7170bdfdd3032f1342f7149c16b25ce1c6e1c3b1411869345e0",
+      "xml": "family-batch-7b202b99-direct-family.xml",
+      "binary_sha256": "3dcacbddffedb130cd8520946ed6e3826ab7fe0e463cec6df817c30bf0bb6394",
+      "adjacent_dlls": [
+        "hyle_compute.dll",
+        "hyle_compute_ggml_runtime.dll",
+        "hyle_compute_ops.dll",
+        "hyle_compute_provider_ggml_vulkan.dll",
+        "hyle_compute_provider_iree_vulkan.dll",
+        "hyle_compute_route_vulkan.dll",
+        "hyle_container.dll",
+        "hyle_error.dll",
+        "hyle_graph.dll",
+        "hyle_graph_route_vulkan.dll",
+        "hyle_mem.dll",
+        "hyle_platform.dll",
+        "hyle_time.dll"
+      ]
+    },
+    {
+      "name": "graph-family",
+      "returncode": 1,
+      "filter": "VulkanGraphMoeFragments.D5EightGgufProfilesFullMoe:VulkanGraphMoeFragments.D5GlmDsaIndexerWithCache:VulkanGraphMoeFragments.D5GlmFlashPooledIndexerWithTail:VulkanGraphMoeFragments.D5GlmFlashWeightedHyperConnection:VulkanGraphMoeFragments.D5GlmGgufAbsorbedMlaWithCache:VulkanGraphMoeFragments.D5GlmGgufDenseFfn:VulkanGraphMoeFragments.D5GlmGgufDsaSelectionConsumesMlaCache:VulkanGraphMoeFragments.D5GlmGgufMtpIndexCarryReset:VulkanGraphMoeFragments.D5GlmGgufNextNDecoderWithCarryAndFullHead:VulkanGraphMoeFragments.D5KimiAbsorbedMlaWithCache:VulkanGraphMoeFragments.D5KimiAttentionResidualBanking:VulkanGraphMoeFragments.D5KimiDenseFfn:VulkanGraphMoeFragments.D5SevenProfilesHyperConnectionCore:VulkanGraphMoeFragments.D5SixProfilesFullKdaChainAndTwoStates:VulkanGraphQwen38_24T.D5GgufFullRouterSharedExpertAndNearTieReplay:VulkanGraphQwenRecurrent.D5NineProfilesUseCompleteGateAndActualStateFeedback:VulkanGraphD5.D5Qwen35OfficialEmbeddingNormHeadAndFailureUsePreparedCalls:VulkanGraphD5.D5Qwen35OfficialFfnUsesMaturePreparedCalls:VulkanGraphD5.D5Qwen35OfficialGqaNormRopeAndAttentionUsePreparedCalls:VulkanGraphD5.D5Qwen35OfficialCausalConvAndGdnUsePreparedCalls:VulkanGraphD5.D5Qwen35OfficialMtpAndBfloatBoundaryUsePreparedCalls:VulkanGraphMoeFragments.D5KimiAttentionResidualOrdinary:VulkanGraphMoeFragments.D5SixProfilesBoundedKdaActualStateFeedback:VulkanGraphMoeFragments.D5KimiThreeProfilesSituActivation:VulkanGraphMoeFragments.D5OfficialKimiMixedStorageFullMoe:VulkanGraphQwen38_24T.D5OfficialBfloatGroupedExpertKeepsExactWidthsTopKPortsAndReplay:VulkanGraphQwen38_24T.D5OfficialBfloatRouterPreservesF32NearTieScores:VulkanGraphQwen38_24T.D5FullRouterSharedExpertAndNearTieReplay:*VulkanGraphQwen38Profiles.D5Qwen38ProfileFfnUsesExactInnerWidthAndReplays/*:*VulkanGraphQwen38Profiles.D5Qwen38ProfilePartialRopeGqaAndOutputGateReplay/*:*VulkanGraphQwen38Profiles.D5Qwen38ProfileMtpUsesExactConcatWidthAndReplays/*:VulkanGraph.OriginalIq1ActualFullBanksReplayAndEdgeIndices",
+      "tests": {
+        "tests": "41",
+        "failures": "1",
+        "disabled": "0",
+        "errors": "0",
+        "time": "133.882",
+        "timestamp": "2026-10-09T15:48:45.247",
+        "name": "AllTests"
+      },
+      "validation_error": false,
+      "log": "family-batch-7b202b99-graph-family.log",
+      "log_sha256": "d2c7c083152c8591daff31a665ea646e3dd19965183acae67ee5fdb151b1523e",
+      "xml": "family-batch-7b202b99-graph-family.xml",
+      "binary_sha256": "f934f49b94bf1e24196ecdd15045280e75bbfda069df911eb3a2d78f9dbcefcc",
+      "adjacent_dlls": [
+        "hyle_compute.dll",
+        "hyle_compute_ggml_runtime.dll",
+        "hyle_compute_ops.dll",
+        "hyle_compute_provider_ggml_vulkan.dll",
+        "hyle_compute_provider_iree_vulkan.dll",
+        "hyle_compute_route_vulkan.dll",
+        "hyle_container.dll",
+        "hyle_error.dll",
+        "hyle_graph.dll",
+        "hyle_graph_route_vulkan.dll",
+        "hyle_mem.dll",
+        "hyle_platform.dll",
+        "hyle_time.dll"
+      ]
+    }
+  ],
+  "scope": "Remaining original family/80 parameter witnesses, local Qwen3.5-2B and actual eight IQ1 bank qualification"
+}

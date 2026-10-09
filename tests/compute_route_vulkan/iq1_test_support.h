@@ -1,7 +1,9 @@
 #pragma once
 
+#include <algorithm>
 #include <array>
 #include <cmath>
+#include <cstdio>
 #include <cstdint>
 #include <cstring>
 #include <vector>
@@ -88,6 +90,49 @@ struct Inputs {
           result[row * n + col] += activation[row * k + j] * decoded(static_cast<int>(ids[row]), col, j);
     return result;
   }
+  std::vector<double> source_expected() const {
+    // Original mul_mv.metal: unsigned-nibble dot plus delta*sumy, then
+    // d/odd-scale and lane-strided F32 accumulation before subgroup reduction.
+    // Volatile rounds each source operation and prevents a host FMA rewrite.
+    auto rounded=[](float value) { volatile float f32=value;return f32; };
+    std::vector<double> result(2*s*n);
+    for (int row=0;row<2*s;++row) for (int col=0;col<n;++col) {
+      std::array<float,32> lanes{};
+      for (int group32=0;group32<k/32;++group32) {
+        const auto base=(static_cast<std::size_t>(static_cast<int>(ids[row])*n+col)*(k/256)+group32/8)*block_bytes();
+        const auto group=group32%8;
+        const auto nibble=type==types[1] ? byte(base+34+group)>>4
+            : (byte(base+(type==types[0]?42:34)+group/2)>>(4*(group&1)))&15;
+        std::uint16_t bits=0;std::memcpy(&bits,weight.data()+base,2);
+        const auto d=static_cast<float>(t::decode(bits,c::DataType::kFloat16));
+        const float odd=static_cast<float>(2*(nibble&7)+1),delta=(nibble&8)?-1.125F:-0.875F;
+        std::array<float,32> grid{};
+        for (int j=0;j<32;++j) {
+          const auto low=byte(base+2+group*4+j/8);
+          auto index=low;
+          if (type==types[0]) index|=((byte(base+34+group)>>(2*(j/8)))&3)<<8;
+          else if (type==types[1]) index|=((byte(base+34+group)>>(j/8))&1)<<8;
+          const auto word=type==types[0]?vulkan_iq1_original::xs[index]
+              : type==types[1]?vulkan_iq1_original::xxs[index]:vulkan_iq1_original::xxxs[index];
+          const auto value=static_cast<unsigned>((word>>(8*(j%8)))&255);
+          grid[j]=static_cast<float>((value<128?int(value):int(value)-256)+1);
+        }
+        float sumy=0,dot=0;
+        const auto *input=activation.data()+row*k+group32*32;
+        for (int j=0;j<32;++j) sumy=rounded(sumy+static_cast<float>(input[j]));
+        for (int j=0;j<4;++j) {
+          float partial=rounded(static_cast<float>(input[j])*grid[j]);
+          for (int term=1;term<8;++term)
+            partial=rounded(partial+rounded(static_cast<float>(input[j+term*4])*grid[j+term*4]));
+          dot=rounded(dot+partial);
+        }
+        const auto contribution=rounded(rounded(d*rounded(dot+rounded(delta*sumy)))*odd);
+        lanes[group32%32]=rounded(lanes[group32%32]+contribution);
+      }
+      for (auto lane:lanes) result[row*n+col]+=lane;
+    }
+    return result;
+  }
   std::array<v::Tensor, 3> upload(const v::Context &context) const {
     return {context.upload(descriptions[0], weight).value(),
             t::make(context, descriptions[1], activation), upload_ids(context, descriptions[2], ids)};
@@ -165,7 +210,13 @@ template <class Prepare> void actual_banks(Prepare prepare) {
       ASSERT_TRUE(invocation->bind(inputs).ok());auto work=invocation->submit();
       ASSERT_TRUE(work) << work.error().message();auto result=work->wait();
       ASSERT_TRUE(result) << result.error().message();
-      t::expect(context,result->get()->tensors()[0],data.expected());
+      const auto source=data.source_expected(),ideal=data.expected();
+      double source_vs_ideal=0;
+      for (std::size_t i=0;i<source.size();++i)
+        source_vs_ideal=std::max(source_vs_ideal,std::abs(source[i]-ideal[i]));
+      std::printf("FULL_IQ1_REFERENCE type=%u K=%d source_vs_ideal_max=%.9g\n",
+          static_cast<unsigned>(shape.type),shape.k,source_vs_ideal);
+      t::expect(context,result->get()->tensors()[0],source);
       ASSERT_FALSE(::testing::Test::HasFailure());
     }
     auto invalid=program->create_invocation().value();data.ids.back()=shape.e;

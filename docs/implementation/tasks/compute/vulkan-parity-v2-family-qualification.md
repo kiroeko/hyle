@@ -44,3 +44,17 @@ packed字节仍小于I32，但逻辑元素超I32。复用既有原grid decoder�
 测试真正上传全部bank，访问E-1/E-2/0、改变activation和IDs，同slot重放、越界拒绝。
 只增test，不增产品数学；容量/feature事实按实际device报告，不把OOM当算子覆盖PASS。
 有限F1–F3已审计固定，现阶段不需要产品改变或公开API重开。
+
+### F3-N：原32lane贡献的参考定义
+
+`7b202b99` 两入口各40/41 PASS，全部既有family/参数/本地官方链通过；IQ1前五个
+完整bank实跑通过，第六个XXXS K3584失败：Double逐元素dot与原F32 contribution
+差2.1318e-6，原严格门2.0508e-6。无validation错误，原结果保存，不认作性能FAIL。
+已核对注册 `mul_mv.metal` 与原tensor recipe：每lane以32间隔遍历32元素group，
+F32先累加原无偏移nibble dot及sumy，再执行 `d*(dot+delta*sumy)*odd_scale`，
+最后对32lane归约；当前Double逐元素解码dot没有这些原F32存储/累加边界。
+
+有限纠正只给full-bank测试增加独立原source contribution方程；同输入、原grid、
+原F32边界及严格6e-6/2e-6数值门保持，理想Double差另记诊断，不回灌产品输出。
+每入口只重测IQ1 full-bank这个ID（全部8 shape参考受影响），40个已通过分支不重跑。
+产品/math/shader/常态成本不变；本具名纠正一次，预算20分钟内裁决，不追加姿势。

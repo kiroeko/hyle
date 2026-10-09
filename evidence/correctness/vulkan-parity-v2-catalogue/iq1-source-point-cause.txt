@@ -1,0 +1,1 @@
+Original F32 source point E=895,N=3072,K=3584,col=82: source=-0.0084586376324295998, ideal=-0.0084607237949967384, observed=-0.0084585919976234436, observed_vs_source=4.56348062e-08
