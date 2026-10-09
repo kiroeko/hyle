@@ -303,3 +303,8 @@ Windows CPU+CUDA 原 static Direct/Graph 也已真实 PASS，完整路线与 DLL
 Air 完整 CPU+Apple shared 两项现已真实 PASS（Graph20.28s/Direct14.78s），精确 route-set 已核对；
 新产物证据独立保存，原错误 CPU-only SDK metadata/数学/判断不覆盖。C3 当前40 PASS / 50 UNRUN。
 Air static 原批次继续，H1–H3仍未实施。统一 LOC 在 `5e94f4cd` 实测62,508 code lines，self-check PASS。
+
+Air 完整 CPU+Apple static 两项也已真实 PASS，原 SDK 循环 exit0；C3当前42 PASS / 48 UNRUN。
+参数转发与完整 SDK guard 的独立工具卡已 CLOSED，两组合 SDK 原失败全部按实际完整路线修正。
+先前四份 CPU-only consumer 记录仍是真实 CPU 数学，不能继续冒充组合；后续只在实际完整CPU
+软件/recipe/合同身份匹配时归入 CPU 证据，避免重建同语义 SDK，不将旧判断当混合资格。

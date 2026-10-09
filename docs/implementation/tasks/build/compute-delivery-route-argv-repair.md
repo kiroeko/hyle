@@ -1,6 +1,6 @@
 # C3 独立工具修正：组合路线参数与 SDK 资格
 
-<!-- MODULE REVIEW: CANDIDATE -->
+<!-- MODULE REVIEW: CLOSED -->
 
 - tool owner：C3 selected-component smoke；baseline `aaf1c8be5`。
 - 不改产品 API/算法/路由/锁、closure/selector/perf 核心；不重开产品 owner。
@@ -56,3 +56,9 @@ Air 修正后的 shared 也真实 PASS：Graph20.28s/Direct14.78s，metadata 精
 新日志与 SDK metadata 放在独立 `air-cpu-apple-fixed`，原 CPU-only 文件不覆盖。
 C3 现40 PASS / 50 UNRUN；static 原循环继续，尚未签。本工具仍 CANDIDATE，等待该四项修复资格完成。
 统一脚本在不可变 `5e94f4cd` 重新统计 Compute+Graph62,508 实现行，self-check PASS，不含测试和第三方。
+
+Air 原 static Direct/Graph 也已真实 PASS，完整 `cpu;apple` 配置/安装 metadata、搬迁/资产闭包
+均由原 guard 和普通 consumer 通过；SDK 循环 exit0。两组本工具失败的 SDK 阶段已全部修正资格，
+Windows11/WSL2/Air2工具测试、docs/closure/diff通过，原失败/误判/CPU-only记录不覆盖。
+本独立工具卡 CLOSED，不新增产品组件、不宣称本卡关闭 C3/H1–H3；C3当前42 PASS / 48 UNRUN。
+reopen仅限新可复现参数边界或实际 SDK route-set 错配，不因文档/其它路线重新跑本已完成批次。

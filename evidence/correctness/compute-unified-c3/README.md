@@ -115,3 +115,6 @@ The corrected Air CPU+Apple shared SDK now also passed both ordinary math consum
 `cpu;apple` metadata. Its new files are under `air-cpu-apple-fixed`; the earlier CPU-only logs/configs
 remain untouched. Effective C3 count is 40/90; the Air static pair is still unrun. The unchanged
 Compute+Graph implementation union measures 62,508 code lines at immutable 5e94f4cd, self-check PASS.
+Air corrected static Direct/Graph also passed and the SDK loop exited 0. CPU+Apple now has six
+qualified ordinary consumers; the tool repair is closed. Effective C3 count is 42/90. All corrected
+SDK artifacts keep exact `cpu;apple` metadata; the original CPU-only records remain separate.
