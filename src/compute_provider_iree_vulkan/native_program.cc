@@ -639,7 +639,7 @@ NativeProgram::create(NativeDevice device, ProgramSpec spec) noexcept {
         const std::array<iree_hal_dim_t, 3> codes{e, n, four ? k / 2 : k},
             w_scale{e, four ? n : (n + 127) / 128, k / (four ? 32 : 128)};
         HYLE_ASSIGN_OR_RETURN(state->views[0], allocate_view(hal, a,
-            encoded ? IREE_HAL_ELEMENT_TYPE_SINT_8 : type));
+            encoded ? static_cast<iree_hal_element_type_t>(IREE_HAL_ELEMENT_TYPE_SINT_8) : type));
         std::size_t port = 1;
         if (encoded) {
           HYLE_ASSIGN_OR_RETURN(state->views[port], allocate_view(hal, a_scale, IREE_HAL_ELEMENT_TYPE_FLOAT_32));
@@ -678,7 +678,7 @@ NativeProgram::create(NativeDevice device, ProgramSpec spec) noexcept {
         HYLE_ASSIGN_OR_RETURN(state->views[0], allocate_view(hal, activation, type));
         HYLE_ASSIGN_OR_RETURN(state->views[1], allocate_view(hal, words, IREE_HAL_ELEMENT_TYPE_SINT_32));
         HYLE_ASSIGN_OR_RETURN(state->views[2], allocate_view(hal, scales,
-            affine ? type : IREE_HAL_ELEMENT_TYPE_SINT_8));
+            affine ? type : static_cast<iree_hal_element_type_t>(IREE_HAL_ELEMENT_TYPE_SINT_8)));
         state->count = 3;
         if (affine) {
           HYLE_ASSIGN_OR_RETURN(state->views[3], allocate_view(hal, scales, type));
