@@ -128,7 +128,7 @@ copied['CMakeLists.txt'] = hashlib.sha256(cmake_input.read_bytes()).hexdigest()
 iq1_source = repo/'tests/compute_route_vulkan/iq1_test_support.h'
 iq1 = iq1_source.read_text(encoding='utf-8').split('template <class Prepare> void domains(Prepare prepare) {', 1)[0]
 iq1 = iq1.replace('#include "../../src/compute_route_vulkan/vulkan_iq1.h"\n', '')
-iq1 += '} // namespace vulkan_iq1_test\n'
+iq1 += 'template <class Prepare> void lifecycle(Prepare prepare) {' + iq1_source.read_text(encoding='utf-8').split('template <class Prepare> void lifecycle(Prepare prepare) {', 1)[1]
 iq1_name = 'tests/compute_route_vulkan/iq1_public_support.h'
 (consumer/iq1_name).write_text(iq1, encoding='utf-8', newline='\n')
 for name, source in [('tests/compute_route_vulkan/iq1_original_grid.h', repo/'tests/compute_route_vulkan/iq1_original_grid.h'),

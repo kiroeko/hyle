@@ -52,7 +52,8 @@ while todo:
         if not name.startswith('hyle/') and name!='vulkan_program_internal.h':todo.append(source.parent/name)
 iq1_source=repo/'tests/compute_route_vulkan/iq1_test_support.h'
 iq1=iq1_source.read_text().split('template <class Prepare> void domains(Prepare prepare) {',1)[0]
-iq1=iq1.replace('#include "../../src/compute_route_vulkan/vulkan_iq1.h"\n','')+'} // namespace vulkan_iq1_test\n'
+iq1=iq1.replace('#include "../../src/compute_route_vulkan/vulkan_iq1.h"\n','')
+iq1+='template <class Prepare> void lifecycle(Prepare prepare) {'+iq1_source.read_text().split('template <class Prepare> void lifecycle(Prepare prepare) {',1)[1]
 (consumer/'tests/compute_route_vulkan/iq1_public_support.h').write_text(iq1)
 for name,source in [('tests/compute_route_vulkan/iq1_original_grid.h',repo/'tests/compute_route_vulkan/iq1_original_grid.h'),
                     ('iq1_delta.cc',Path(__file__).parent/'consumer/iq1_delta.cc'),

@@ -25,4 +25,7 @@ hyle::Result<v::Program> prepare(const v::Context &context, c::Operation operati
 TEST(VulkanDelivery, V4OriginalIq1ShapesChangedInputsAndCheckedIds) {
   vulkan_iq1_test::batch(prepare);
 }
+TEST(VulkanDelivery, V4OriginalIq1OwnedLeaseCancelCloseAndOom) {
+  vulkan_iq1_test::lifecycle(prepare);
+}
 }
