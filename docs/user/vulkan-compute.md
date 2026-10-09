@@ -3,10 +3,11 @@
 Vulkan 路线使用原生 buffer/device memory、pipeline、descriptor、command buffer 和 fence。
 HYLE 在准备期绑定 ggml region、IREE 原生程序或 HYLE shader，Graph 冷期规划边界资源；原生片段
 复用录制命令，成熟 Provider 保留自己的图/程序、编码和内部资源管理。
-普通用户只选路线，不排序 Provider 或提供 timing profile。既有 F32 基础支持域已完成 Windows RTX 4070
-与 Air M4/MoltenVK 的真实计算、资源寿命、三交付和
-[有限性能验收](../implementation/tasks/compute/vulkan-v1-four-route-foundation.md)。
-资格限所记录的设备/软件与 F32 shape 域，不承诺其它设备或完整推理模型的性能。
+普通用户只选路线，不排序 Provider 或提供 timing profile。当前共同模型目录的Windows RTX4070
+资格覆盖104 GGUF身份、559数值端口、80参数角色、34非GGUF packed、45 plain及八模型族的
+必需片段/状态；详见[当前覆盖](model-fragment-coverage.md#vulkan-当前共同目录资格)。
+Windows和Air M4/MoltenVK的source/static/shared已验证普通Direct/Graph代表片段、重放和失败边界；
+这不将Windows完整矩阵外推为全部设备资格或整模型推理。默认为合格成熟程序，未测条件不称SOTA。
 
 可选[模型与阶段信息](compute.md#可选模型与阶段信息)可随
 `vulkan::prepare(context, workload, operation, inputs...)` 传入；span 形式则使用最后一个参数
@@ -23,9 +24,9 @@ HYLE 在准备期绑定 ggml region、IREE 原生程序或 HYLE shader，Graph �
 开发链接库和 SPIRV-Headers CMake package；可通过 `VULKAN_SDK` 指定 SDK 根目录。
 Vulkan-Headers 与完整 ggml Vulkan 源码从中央锁取得；窄接入补丁只应用到构建目录中的副本。
 静态 SDK 的导出声明不再要求原厂 `Vulkan` 开发 package；私有 runtime 通过动态 loader 取得函数。
-当前 [M1-V](../implementation/tasks/compute/llm-moe-m1-vulkan-admission.md) 已接入原版递归片段、
-FP8 MatMul 和 checked I32 Scan；M3-D3 又接入十种原生 GGUF packed MatMul/GroupedMatMul。
-各纵切的验收限下述适用域，完整模型片段与性能优选仍按 M3 后续阶段推进。
+当前接入原版递归片段、FP8/FP4及21种公共GGUF编码的实际端口；ggml Vulkan承载已资格
+原region，三种IQ1扩展与具名非GGUF程序由IREE承载，具体operation/dtype/shape能力仍须匹配。
+当前[收据和交付范围](../implementation/tasks/compute/vulkan-parity-v4-delivery.md)不复用旧M3的十格式上限。
 IREE C runtime 与锁定的参数化程序由同一个 factor 交付；使用二进制 SDK 不需要 Python、MLIR
 或运行编译器。源码构建中的 Python 只用于核对和准备锁定资源。
 二进制 SDK 已嵌入 SPIR-V，不需要 glslang/glslc 或运行时 shader 文件。用户系统必须提供可用的
@@ -97,8 +98,9 @@ Recorder由调用者管理固定输出缓冲的重写时机；保留旧结果时
 - 二维 F32 MatMul（F32 accumulation），activation dense，RHS dense 或转置的 dense view；
   MatMul 保持已有设备/shape 性能资格。
 - 二维 GGUF packed weight MatMul：`<hyle/compute/low_precision.h>` 的
-  `gguf_weight_description(type, logical_type, k, n)` 接受 Q3_K、Q4_K、Q5_K、Q6_K、Q8_0、
-  IQ3_XXS、IQ3_S、IQ4_NL、IQ4_XS 和 MXFP4，描述逻辑 `[K,N]`、原生 ggml `[N,K]`。
+  `gguf_weight_description(type, logical_type, k, n)` 表达公共21种GGUF编码；
+  原ggml MatMul域包括Q4_0/Q4_1/Q2_K、IQ2/IQ1_S/IQ1_M等实际格式，
+  描述逻辑 `[K,N]`、原生 ggml `[N,K]`。三种IQ1 XS/XXS/XXXS扩展的当前资格限下述grouped域。
   payload 必须已是对应 GGUF/ggml block bytes；HYLE 不加载模型、不量化，也不在准备或执行时
   解码/重打包。`logical_type` 可为 F32 或 F16，activation/output 使用相同类型并以 F32 累加。
   普通 `vk::prepare(context, c::MatMul{}, activation_desc, weight_tensor)` 捕获已上传权重；传
@@ -108,11 +110,13 @@ Recorder由调用者管理固定输出缓冲的重写时机；保留旧结果时
 - MoE grouped packed weight 使用
   `gguf_grouped_weight_description(type, DataType::kFloat32, experts, n, k)` 描述 `[E,N,K]`，并通过
   `model_ops::grouped_matmul()` 接受 weights `[E,N,K]`、activation `[T,S,K]`、I32 expert ids
-  `[T,S]`，输出 `[T,S,N]`。十种格式都可表达；M3-D3 的实际 grouped 数值验收使用 IQ4_XS，
-  由原版 ggml Vulkan `MUL_MAT_ID` 执行。Direct 和 Graph 均保持这一自然端口顺序。
+  `[T,S]`，输出 `[T,S,N]`。编码由共同目录和原程序能力确定；
+  ggml Vulkan `MUL_MAT_ID`保留原packed bank；三种IQ1 XS/XXS/XXXS扩展由IREE执行
+  原selected-group contribution。Direct和Graph保持这一自然端口顺序。
   packed 权重端口必须满足设备 storage-buffer alignment、精确容量和 canonical block/stride；
-  错格式、错端口或不足容量在 prepare/bind 阶段失败。Windows RTX 已完成十格式 MatMul、
-  IQ4_XS grouped、重复消费和 Direct/Graph 正确性；本轮为 P0 接缝验证，尚无新 P1 性能结论。
+  错格式、错端口或不足容量在 prepare/bind 阶段失败。Windows RTX已完成共同目录真实K/N及原8个IQ1 E512/896
+  全bank上传、变activation/IDs与边界专家执行；巨大完整模型驻留不在范围内。
+  无合格第二完整carrier的域用成熟工程默认，不制造性能赢家。
 - F32/F16/BF16 的 SiLU、GELU、GELU-tanh 门控，支持 separate/packed-halves；
   RMSNorm/LayerNorm 在最后一维以 F32 累加，scale/bias 各自可用输入类型或 F32，最终舍入一次。
 - 同三浮点类型的 Reduce Sum/Mean/Min/Max（任意合法轴集合/keepdim）和 Softmax/LogSoftmax
@@ -171,7 +175,10 @@ shaderFloat16/storageBuffer16BitAccess，Scan 要求 shaderInt64。FP8 准备期
 `align64(4*M*K)+align64(4*N*K)`，输出为4*M*N，均须落在 storage buffer range 与32位索引域。
 超出域在准备期拒绝；执行不下载 payload 到 CPU 计算或重新选路。
 既有小形状的普通 Direct/Graph、两个槽和混合片段已有 Windows/Air 正确性与三交付证据；
-D5 新增真实模型宽度在 Windows Direct/Graph 通过，完整 D5 三交付已完成；性能验收仍待完成。完整模型画像的官方格式拒绝及DeepSeek Q8数值失败见[当前验收卡](../implementation/tasks/compute/llm-moe-d5-real-fragment-acceptance.md)。
+当前真实模型宽度、官方FP4/FP8主干/DSpark、Q8/BF16 sidecar与必要MTP在Windows两入口已资格；
+source/static/shared代表消费者在Windows/Air通过。旧D5拒绝和数值FAIL是历史证据，
+当前结果见[共同目录资格](model-fragment-coverage.md#vulkan-当前共同目录资格)。
+本轮性能按用户接受的源等价/成熟默认/P0收口；原placement A/A未资格、正式P1 INCONCLUSIVE保留，不称WIN。
 
 LayerNorm 在设备支持512线程、至少2KiB shared memory、行数不超过X维工作组上限、
 且F32暂存不超过 storage buffer range 的非空域，准备期绑定原版 ggml GroupNorm 的中心化
@@ -246,7 +253,7 @@ TopK 使用同一普通入口：`vk::prepare(context, c::TopK{.count = 8}, score
 长行 scratch、取值与布局复制均计费，k=1 也不免除完整排序。dense View 仍可有非对齐字节
 起点；准备时按排序核的设备对齐要求固定必要复制，计入根起点与累计别名偏移。
 目前通过 Windows static/shared 与 Air/Mini 正确性，以及 Windows/Air 三种 C++ 交付；
-完整模型需求域与成熟路径性能资格按[当前 M2/M3 计划](../implementation/tasks/compute/llm-moe-coverage-completion-plan.md)
+完整模型需求域与成熟路径资格按[当前Vulkan收口](../implementation/tasks/compute/vulkan-cpu-cuda-apple-parity-closure.md)
 推进，尚不称为性能优选。
 
 ### 显式递归状态

@@ -2,7 +2,7 @@
 
 本页先保留2026-10-05的[D5验收快照](../implementation/tasks/compute/llm-moe-d5-acceptance-ledger.json)，
 Apple当前扩展与原FP4缺口的后续结果见文末[Apple当前资格](#apple-当前共同目录与官方fp4资格)。旧快照
-说明可依赖的**模型片段支持范围**。每个表格单元同时对应普通Direct和Graph两个入口；
+作为当轮**模型片段支持范围**；Vulkan后续结果见文末[当前Vulkan资格](#vulkan-当前共同目录资格)。每个表格单元同时对应普通Direct和Graph两个入口；
 “通过”表示该固定画像的全部必需片段已运行，并通过原数值、状态反馈及资源/完成检查。
 它不表示整模型推理、完整上下文容量或任意硬件已经验收。HYLE不负责模型加载、tokenizer或采样。
 
@@ -54,7 +54,7 @@ Vulkan仍因A/A资格失败而未完成。
 | Vulkan：GLM两个官方FP8、DeepSeek两个官方FP4/FP8画像 | 完整MoE分别在grouped FP8/FP4冷准备或完整Graph编译拒绝 | [Vulkan边界](../../evidence/correctness/llm-moe-d5-real-fragments/vulkan-delivery/README.md) |
 | Vulkan：DeepSeek Flash `UD-Q8_K_XL` | 长位置attention/压缩片段未通过原数值门；同模型`UD-Q4_K_XL`逐画像通过 | [逐画像裁决](../../evidence/correctness/llm-moe-d5-real-fragments/vulkan-delivery/README.md) |
 
-“准备拒绝”表示当前已接入的路线不能执行该必需域，不证明所有成熟库都没有相应能力。
+此历史表的“准备拒绝”表示D5当轮已接入路线不能执行该必需域，不证明所有成熟库都没有相应能力。
 这些画像不能因其它片段通过、交付测试正确拒绝、换用GGUF或CPU回退而标成支持。
 一次成功的`prepare/compile`也不能覆盖上表明确保留的数值失败域。
 
@@ -133,3 +133,27 @@ CPU扩展已经进入实施：11种新增GGUF格式和已准入NF4/AWQ/CT/MLX接
 机器为当前MacBook Air M4/16GiB；资格有实际工具链/原source版本边界，不等于巨型整模型
 驻留、loader或推理引擎。原native tiny失败保留；小段GPU位域桥接保持原数学与存储合同。
 性能仍仅对具名完整成本域裁决，不能由这些正确性/交付结果宣称全部硬件SOTA。
+
+## Vulkan 当前共同目录资格
+
+[当前Vulkan轮](../implementation/tasks/compute/vulkan-cpu-cuda-apple-parity-closure.md)使用
+与CPU/CUDA/Apple相同的[模型目录](../architecture/model-compute-catalogue.md)：Windows RTX4070
+Direct/Graph各80/80非GGUF、560/560 GGUF/104身份、25/25当前状态及40个余下family分支
+运行通过。80参数角色与八族逐方程/形状关联，三种扩展IQ1的8个完整E512/896银行实际
+上传并执行变activation/IDs和边界专家；不是只冷准备或枚举设备。
+
+当前DeepSeek Pro0813/Flash0731原混合FP4/FP8完整主干/三stage DSpark、Q8/BF16
+sidecar及共同GGUF画像90/103的状态/feedback/reset/必要NextN已资格。旧D5官方MoE
+拒绝和Q8数值FAIL仍保留，分别由成熟程序接线与同precision/同输入参考修正解除，
+没有放宽原误差门；旧表不得继续当当前支持上限。具体[参数/族和原银行](../implementation/tasks/compute/vulkan-parity-v2-family-qualification.md)、
+[状态纠正证据](../implementation/tasks/compute/vulkan-parity-v2-three-state-fixes.md)保存原失败和实际运行。
+
+[当前三交付](../implementation/tasks/compute/vulkan-parity-v4-delivery.md)在Windows及Air
+M4/MoltenVK各实际执行source/static/shared代表消费者，每种两入口14项通过，含
+原模型片段、IQ1重放/坏索引、独立公开头与搬迁。Air代表消费者不代签全部Windows
+559端口；其它GPU/driver/容量仍须原native capability。WSL本机只有CPU软件Vulkan
+device，不签GPU数值资格。HYLE不负责整模型加载、推理engine或巨型权重全驻留。
+
+普通条件准备期固定一个成熟首选和具名能力兜底；未知条件有合法ENGINEERING_DEFAULT，
+执行不搜索/计时。用户已接受[源等价/P0性能工程取舍](../implementation/tasks/compute/vulkan-v3-performance-engineering-decision.md)，
+原placement A/A FAIL和未运行正式P1 INCONCLUSIVE保留，不宣称统计性能冠军。
