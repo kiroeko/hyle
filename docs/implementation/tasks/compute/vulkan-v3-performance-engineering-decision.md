@@ -1,6 +1,6 @@
 # Vulkan V3：性能资格边界与工程取舍
 
-<!-- MODULE REVIEW: BLOCKED -->
+<!-- MODULE REVIEW: CLOSED -->
 
 本页只记录[V3](vulkan-parity-v3-defaults-best-of.md)的性能资格条件，不暂停其它交付工作。
 产品候选 `09410e32c`，普通API/算法/default已冻结；原math与两端完整service相同。
@@ -40,3 +40,11 @@ Plan service、相同输入，不是Graph/native算法比赛。因此它证明�
    固定新scope与预算，不能原条件下继续采样。本页不自动启动下一性能轮。
 
 用户决定前不能凭本页将P1改PASS或整个goal标完成。构建/语义/交付MUST不受例外豁免。
+
+## 用户明确决定（2026-10-09）
+
+用户在解释计时偏差后答复“就这样吧，一般我倾向删除自己算子，用市面成熟的”。
+据此采用选项1：源等价/成熟默认/正确性资源/P0工程裁决，原placement AA FAIL与
+正式n15未运行/P1 INCONCLUSIVE保持，不重测、不制造WIN。独有能力仍需逐项明确，
+成熟完整替代无明确优势的self数学按其偏好删除。V4所有构建/数值/资源/交付MUST
+没有豁免，整个goal仍未完成。本性能政策问题结束；route按协议恢复本轮V4范围。

@@ -540,25 +540,15 @@
     },
     {
       "module": "compute_route_vulkan",
-      "state": "BLOCKED",
-      "record": "docs/implementation/tasks/compute/vulkan-v3-performance-engineering-decision.md",
-      "summary": "V3 performance condition BLOCKED: primary owned AA8/8 PASS, placement firstAA factor6.50% fails5% qualification. Full V2/default/resource facts retained. Independent V4 platform/delivery continues; no formalP1/productLOSS/goal completion claim.",
-      "candidate": "09410e32cebb911937a7269ba6732ec901db9d4e",
-      "blocked_from": "CANDIDATE",
-      "blocker": "Neutral placement same-native-plan A/A exceeded fixed5% factor gate (allocation factor1.06498698); product correctness/resource PASS, formaln15 not run and P1 unqualified. No product performance LOSS inferred.",
-      "resume_condition": "Explicit acceptance of documented source-equivalence/mature-default/P0 engineering closure with P1 INCONCLUSIVE retained, or a named measurement/environment change scoped with a fresh bounded qualification contract. No unchanged-condition retry or n31.",
-      "blocker_owner": "Vulkan performance qualification / user engineering-policy decision"
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/vulkan-parity-v4-delivery.md",
+      "summary": "V4 SCOPED after explicit user engineering/P0 decision: primary AA PASS, placement qualification FAIL and formalP1 INCONCLUSIVE retained; no performance WIN. Current source/platform/three-delivery audit, V2/default proofs reused; mature replacement preferred and unique mechanisms distinguished."
     },
     {
       "module": "graph_route_vulkan",
-      "state": "BLOCKED",
-      "record": "docs/implementation/tasks/compute/vulkan-v3-performance-engineering-decision.md",
-      "summary": "V3 performance condition BLOCKED: primary owned AA8/8 PASS, placement firstAA factor6.50% fails5% qualification. Full V2/default/resource facts retained. Independent V4 platform/delivery continues; no formalP1/productLOSS/goal completion claim.",
-      "candidate": "09410e32cebb911937a7269ba6732ec901db9d4e",
-      "blocked_from": "CANDIDATE",
-      "blocker": "Neutral placement same-native-plan A/A exceeded fixed5% factor gate (allocation factor1.06498698); product correctness/resource PASS, formaln15 not run and P1 unqualified. No product performance LOSS inferred.",
-      "resume_condition": "Explicit acceptance of documented source-equivalence/mature-default/P0 engineering closure with P1 INCONCLUSIVE retained, or a named measurement/environment change scoped with a fresh bounded qualification contract. No unchanged-condition retry or n31.",
-      "blocker_owner": "Vulkan performance qualification / user engineering-policy decision"
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/vulkan-parity-v4-delivery.md",
+      "summary": "V4 SCOPED after explicit user engineering/P0 decision: primary AA PASS, placement qualification FAIL and formalP1 INCONCLUSIVE retained; no performance WIN. Current source/platform/three-delivery audit, V2/default proofs reused; mature replacement preferred and unique mechanisms distinguished."
     },
     {
       "module": "compute_provider_ggml_vulkan",

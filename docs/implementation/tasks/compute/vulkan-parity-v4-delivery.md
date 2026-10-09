@@ -3,8 +3,8 @@
 <!-- MODULE REVIEW: SCOPED -->
 
 baseline `d04978bd`；协调owner为当前Vulkan/Graph，build/package是横向交付工作。
-[父轮](vulkan-cpu-cuda-apple-parity-closure.md)全部需求保持。V3性能资格条件等待
-[明确取舍](vulkan-v3-performance-engineering-decision.md)，本包独立验证，不代签P1。
+[父轮](vulkan-cpu-cuda-apple-parity-closure.md)全部需求保持。V3性能资格条件已获
+[明确工程取舍](vulkan-v3-performance-engineering-decision.md#用户明确决定2026-10-09)，本包独立验证，不代签P1。
 目前仅source/环境/旧交付接缝审计，不在CANDIDATE/BLOCKED owner下写产品。
 
 有限结果：Windows与Air真实可用设备的source/static/shared与搬迁、DLL/dylib邻置、
