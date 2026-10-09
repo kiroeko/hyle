@@ -17,7 +17,12 @@ namespace base=cpu_c4_model_branches;
 using sem::Fragment;using sem::ValueId;using sem::bytes;using sem::dense;
 constexpr std::int64_t h=4096,r=256,t=5,vocabulary=129280,window=128,heads=64,groups=8;
 using NormReference=std::vector<float>(*)(std::span<const float>,std::span<const float>);
-struct Model {const c::ModelArtifactProfileDescription *profile;bool bf16;NormReference norm_reference=nullptr;};
+using RotaryReference=std::vector<float>(*)(std::span<const float>,std::int64_t,
+    std::span<const std::int32_t>,bool);
+struct Model {
+  const c::ModelArtifactProfileDescription *profile;bool bf16;
+  NormReference norm_reference=nullptr;RotaryReference rotary_reference=nullptr;
+};
 inline constexpr auto q8_profile=[] {
   auto p=base::flash_profile;p.artifact_repository="unsloth/DeepSeek-V4-Flash-0731-GGUF";
   p.artifact_revision="fbbb5b93fb787c21338159b0af3318bb3f4d9768";
@@ -148,7 +153,8 @@ inline ValueId rope(Fragment &f,ValueId x,ValueId pos,bool inverse=false) {
   return ds::concat(f,prefix,rotated,3);
 }
 inline std::vector<float> rope_ref(std::vector<float> x,std::int64_t count,
-                                  std::span<const std::int32_t> positions,bool inverse=false) {
+                                  std::span<const std::int32_t> positions,bool inverse=false,RotaryReference native=nullptr) {
+  if(native) return native(x,count,positions,inverse);
 #if defined(HYLE_C4_ROTARY_REFERENCE)
   return HYLE_C4_ROTARY_REFERENCE(x,count,positions,inverse);
 #else
@@ -193,11 +199,11 @@ inline Fragment attention(const Model &model,int stage,AttentionReference *refer
   *reference=[qa,qb,kv,wa,ob,qs,ks,ones,sinks,ids,factor,model](std::span<const float> input,std::span<const float> main_x,
       std::span<const float> old,std::int32_t p)->moe::ReferenceOutputs {
     std::array<std::int32_t,1> mp{p};std::vector<std::int32_t> dp(t);std::iota(dp.begin(),dp.end(),p+1);
-    auto query=rope_ref(norm_ref(qb.reference(norm_ref(qa.reference(input),qs,model.norm_reference)),ones,model.norm_reference),heads,dp);
+    auto query=rope_ref(norm_ref(qb.reference(norm_ref(qa.reference(input),qs,model.norm_reference)),ones,model.norm_reference),heads,dp,false,model.rotary_reference);
     std::vector<float> joined(main_x.begin(),main_x.end());joined.insert(joined.end(),input.begin(),input.end());
     auto k=norm_ref(kv.reference(joined),ks,model.norm_reference);
-    auto main_k=rope_ref(std::vector<float>(k.begin(),k.begin()+512),1,mp);
-    auto draft_k=rope_ref(std::vector<float>(k.begin()+512,k.end()),1,dp);
+    auto main_k=rope_ref(std::vector<float>(k.begin(),k.begin()+512),1,mp,false,model.rotary_reference);
+    auto draft_k=rope_ref(std::vector<float>(k.begin()+512,k.end()),1,dp,false,model.rotary_reference);
     std::vector<float> cache(old.begin(),old.end());std::copy(main_k.begin(),main_k.end(),cache.begin()+p%window*512);
     auto all=cache;all.insert(all.end(),draft_k.begin(),draft_k.end());
 #if defined(HYLE_C4_SINK_REFERENCE)
@@ -205,7 +211,7 @@ inline Fragment attention(const Model &model,int stage,AttentionReference *refer
 #else
     auto out=ds::old::sink_reference(query,all,all,std::vector<float>(t*(window+t)),sinks,t,window+t,factor);
 #endif
-    auto inv=rope_ref(std::move(out),heads,dp,true);
+    auto inv=rope_ref(std::move(out),heads,dp,true,model.rotary_reference);
     return {std::move(cache),ob.reference(grouped_reference(wa,inv,ids))};
   };return f;
 }
@@ -352,7 +358,7 @@ inline Fragment prefill(const Model &model) {
   auto target=d5_gguf_test::activation(count*3*h,17);auto main_ref=norm_ref(main.reference(target),scale,model.norm_reference);
   std::vector<std::vector<float>> expected;
   for(int stage=0;stage<3;++stage) {
-    auto keys=rope_ref(norm_ref(kv[stage].reference(main_ref),scales[stage],model.norm_reference),1,positions);
+    auto keys=rope_ref(norm_ref(kv[stage].reference(main_ref),scales[stage],model.norm_reference),1,positions,false,model.rotary_reference);
     std::vector<float> cache(window*512);
     for(std::int64_t row=0;row<window;++row)std::copy_n(keys.data()+take[row]*512,512,cache.data()+row*512);
     expected.push_back(std::move(cache));

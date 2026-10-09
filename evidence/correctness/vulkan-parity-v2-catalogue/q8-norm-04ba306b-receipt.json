@@ -1,0 +1,74 @@
+{
+  "candidate": "04ba306b3cd4932d89bb20498288e6c27ba00823",
+  "steps": [
+    {
+      "name": "direct-q8",
+      "returncode": 1,
+      "filter": "CurrentSidecars/VulkanCurrentSidecar.MixedMxfp4FullThreeStagesAndVocabulary/Q8",
+      "tests": {
+        "tests": "1",
+        "failures": "1",
+        "disabled": "0",
+        "errors": "0",
+        "time": "16.289",
+        "timestamp": "2026-10-09T15:08:01.061",
+        "name": "AllTests"
+      },
+      "validation_error": false,
+      "log": "q8-norm-04ba306b-direct-q8.log",
+      "log_sha256": "fa673d5a5bc989af20b355a016302e568190f4907a0a2abf99905902e26c5d09",
+      "xml": "q8-norm-04ba306b-direct-q8.xml",
+      "binary_sha256": "a120a4ad91dc2189f176efa27a0c1f17724e243411ad2bf0fb8fe0eb9fdfd08a",
+      "adjacent_dlls": [
+        "hyle_compute.dll",
+        "hyle_compute_ggml_runtime.dll",
+        "hyle_compute_ops.dll",
+        "hyle_compute_provider_ggml_vulkan.dll",
+        "hyle_compute_provider_iree_vulkan.dll",
+        "hyle_compute_route_vulkan.dll",
+        "hyle_container.dll",
+        "hyle_error.dll",
+        "hyle_graph.dll",
+        "hyle_graph_route_vulkan.dll",
+        "hyle_mem.dll",
+        "hyle_platform.dll",
+        "hyle_time.dll"
+      ]
+    },
+    {
+      "name": "graph-q8",
+      "returncode": 1,
+      "filter": "CurrentSidecars/VulkanGraphCurrentSidecar.MixedMxfp4FullThreeStagesAndVocabulary/Q8",
+      "tests": {
+        "tests": "1",
+        "failures": "1",
+        "disabled": "0",
+        "errors": "0",
+        "time": "13.449",
+        "timestamp": "2026-10-09T15:08:17.602",
+        "name": "AllTests"
+      },
+      "validation_error": false,
+      "log": "q8-norm-04ba306b-graph-q8.log",
+      "log_sha256": "77e84e811fea666c187adbff10f5fc65eaca7b0df7c6e1fcc46968194186e66f",
+      "xml": "q8-norm-04ba306b-graph-q8.xml",
+      "binary_sha256": "470d3b3c755c6577589f0d855f63096ae7db1a92a3ffea5f45426e30a12ce89a",
+      "adjacent_dlls": [
+        "hyle_compute.dll",
+        "hyle_compute_ggml_runtime.dll",
+        "hyle_compute_ops.dll",
+        "hyle_compute_provider_ggml_vulkan.dll",
+        "hyle_compute_provider_iree_vulkan.dll",
+        "hyle_compute_route_vulkan.dll",
+        "hyle_container.dll",
+        "hyle_error.dll",
+        "hyle_graph.dll",
+        "hyle_graph_route_vulkan.dll",
+        "hyle_mem.dll",
+        "hyle_platform.dll",
+        "hyle_time.dll"
+      ]
+    }
+  ],
+  "scope": "only remaining Flash Q8 sidecar, explicit same-input qualified native RMS reference; full gates and programs unchanged"
+}

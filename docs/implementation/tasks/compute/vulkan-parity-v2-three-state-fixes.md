@@ -38,3 +38,17 @@ ggml差0，独立F32参考最大4.77e-7至7.15e-7，已观测下一Q8_1编码两
 1 byte变化；源GPU归约顺序与原scalar参考不同。仅Q8 Model增加显式native
 NormReference参数，冷构造原图计算参考，CPU/CUDA默认scalar与数值门不变。
 只剩Q8两入口一次定向完整三stage/词表/feedback验证，原通过域不重测。
+
+### S2-N 结果与 S2-R 具名参考缺陷
+
+`04ba306b` Q8 两入口完整 delta 均 FAIL；normalized 最大误差0.0529–0.0587，
+原门0.04，无 validation error。prefill RMS 源顺序差已证，但它不能唯一解释完整
+三stage 的误差，不把机制证据改写成完整 PASS，不重复该候选。
+
+随后 source 审计发现独立的具名参考错误：Flash sidecar 的 `rope()` 输入、输出为
+F32，整个模型使用 F32 graph state；Vulkan 测试共享 `HYLE_C4_ROTARY_REFERENCE`
+却硬编码 `native_rotary(...bfloat=true)`，错误套用了官方 BF16 主干的存储边界。
+S2-R 只通过 Model 的显式 RotaryReference 绑定原 F32 native 旋转，默认 CPU/CUDA
+方程与产品不变，不改变误差门或完整片段。该错误的一次纠正预算15分钟；因两
+sidecar 参考都受影响，只集中每入口 Q8/BF16 四行，不重测80/560/25全集。
+失败则冻结准确未资格范围，继续父轮其它独立验收，禁止追加同原因试探。

@@ -112,6 +112,10 @@ class HYLE_VULKAN_CURRENT_STATE_SIDECAR : public ::testing::TestWithParam<cpu_c4
 TEST_P(HYLE_VULKAN_CURRENT_STATE_SIDECAR, MixedMxfp4FullThreeStagesAndVocabulary) {
   auto model=GetParam();
   if(!model.bf16) model.norm_reference=vulkan_current_state_test::native_norm;
+  // Both sidecars keep F32 graph state; official BF16 boundaries do not apply.
+  model.rotary_reference=[](auto input,auto heads,auto positions,bool inverse) {
+    return vulkan_current_state_test::native_rotary(input,heads,positions,false,inverse,512,false,false);
+  };
   SCOPED_TRACE(model.profile->variant);
   cpu_c4_flash_sidecars::check(model,vulkan_catalogue_test::run);
 }
