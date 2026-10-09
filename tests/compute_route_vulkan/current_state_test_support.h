@@ -1,6 +1,7 @@
 #pragma once
 
 #include "catalogue_gguf_test_support.h"
+#include "../../src/compute_ggml_runtime/explicit_rope.h"
 
 namespace vulkan_catalogue_gguf {
 inline std::vector<float> projection(c::GgufQuantizedType quant,
@@ -59,6 +60,33 @@ inline std::vector<float> grouped(const c::TensorDesc &description,
 #undef HYLE_C4_GROUPED_REFERENCE
 
 namespace vulkan_current_state_test {
+inline std::vector<float> native_rotary(std::span<const float> input,std::int64_t heads,
+    std::span<const std::int32_t> positions,bool compressed,bool inverse,std::int64_t depth=512) {
+  using namespace vulkan_catalogue_gguf;
+  if(depth<64 || input.size()!=positions.size()*heads*depth) throw std::runtime_error("native rotary shape differs");
+  static Backend backend;auto active=backend.activate();Storage storage;
+  storage.context=ggml_init({ggml_tensor_overhead()*64+ggml_graph_overhead_custom(128,false),nullptr,true});
+  if(!storage.context) throw std::runtime_error("native rotary metadata OOM");
+  auto *x=ggml_new_tensor_3d(storage.context,GGML_TYPE_F32,64,heads,static_cast<std::int64_t>(positions.size()));
+  auto *p=ggml_new_tensor_1d(storage.context,GGML_TYPE_I32,static_cast<std::int64_t>(positions.size()));
+  auto *f=ggml_new_tensor_1d(storage.context,GGML_TYPE_F32,32);
+  auto *out=hyle::compute::ggml_runtime::explicit_rope(storage.context,x,p,f,64,true);
+  auto *graph=ggml_new_graph_custom(storage.context,128,false);ggml_build_forward_expand(graph,out);
+  storage.buffer=ggml_backend_alloc_ctx_tensors(storage.context,backend.get());
+  if(!storage.buffer) throw std::runtime_error("native rotary storage OOM");
+  std::vector<float> tail(positions.size()*heads*64);
+  for(std::size_t row=0;row<positions.size()*heads;++row)
+    std::copy_n(input.data()+row*depth+depth-64,64,tail.data()+row*64);
+  const auto frequency=cpu_c4_model_branches::ds::rope_frequencies(compressed,inverse);
+  ggml_backend_tensor_set(x,tail.data(),0,tail.size()*sizeof(float));
+  ggml_backend_tensor_set(p,positions.data(),0,positions.size_bytes());
+  ggml_backend_tensor_set(f,frequency.data(),0,frequency.size()*sizeof(float));
+  if(ggml_backend_graph_compute(backend.get(),graph)!=GGML_STATUS_SUCCESS) throw std::runtime_error("native rotary terminal failure");
+  ggml_backend_tensor_get(out,tail.data(),0,tail.size()*sizeof(float));std::vector<float> result(input.begin(),input.end());
+  for(std::size_t row=0;row<positions.size()*heads;++row)
+    std::copy_n(tail.data()+row*64,64,result.data()+row*depth+depth-64);
+  return cpu_c4_model_branches::ds::bfloat_boundary(std::move(result));
+}
 inline std::vector<float> rounded_sink(const std::array<std::vector<float>,5> &data,
     std::int64_t tokens,std::int64_t keys,float scale) {
   const auto heads=static_cast<std::int64_t>(data[4].size());
@@ -138,6 +166,9 @@ inline auto models() {
       const auto tokens=static_cast<std::int64_t>(query.size()/sinks.size()/512),keys=static_cast<std::int64_t>(key.size()/512);
       const std::vector<float> mask(tokens*keys,0.f);
       return model_sink(query,key,value,mask,sinks,tokens,keys,scale);
+    };
+    model.rotation_reference=[](auto input,auto heads,auto positions,bool inverse) {
+      return native_rotary(input,heads,positions,false,inverse);
     };
   }
   return result;

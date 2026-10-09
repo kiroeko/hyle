@@ -139,3 +139,10 @@ HYLE与锁定原ggml直接图native最大差0；独立F32方程最大差6.920099
 输入，在取得HYLE输出前构造参考；原GPU错误/类型/完整片段门与F32/BF16
 状态方程保持。先两入口以外只Direct两个Prefill ID一次定向资格；原生公式
 与独立方程证据并列，不把native一致性冒充完整主干资格，仍无产品/Shader改动。
+
+`92a24dd2` 两prefill ID原sink参考后仍FAIL：剩余inverse RoPE逐位比较438点，
+另84条邻接BF16边界误差；源参考CPU std::sin/cos及可能FMA，与当前原ggml
+分开的native Mul/Add及GPU函数不同。只补已存在Model.rotation_reference的原
+native显式phase→sin/cos→Mul/Add→BF16参考，参数/完整gate保持；该原private
+helper已CLOSED且无改动，不新增产品算法。下一次仅这两个prefill ID，保留失败
+记录，结果决定下一步，不把native一致性替代独立precision原方程或完整链门。
