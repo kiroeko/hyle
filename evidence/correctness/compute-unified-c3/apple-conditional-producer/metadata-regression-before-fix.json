@@ -1,0 +1,18 @@
+{
+  "scope": "Extended existing metadata-only regression; no native route verdict",
+  "command": [
+    "python",
+    "tests/tooling/runtime_staging_graph_test.py"
+  ],
+  "observed_exit": 1,
+  "failing_case": {
+    "config": "Debug",
+    "target": "conditional",
+    "observed_producers": [
+      "n10"
+    ],
+    "expected_producers": []
+  },
+  "meaning": "Reproduces the existing unconditional source producer defect; product fix pending after live Windows CUDA batch",
+  "runtime_helper_sha256": "b7daddf4f58649717a8d7d6bb83137f9d7901f763191ea71041d9e8bb99f310f"
+}

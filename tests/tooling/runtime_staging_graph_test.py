@@ -50,6 +50,8 @@ foreach(target IN ITEMS alias conditional cycleA cyclicConditional other n0)
   file(GENERATE OUTPUT "${CMAKE_BINARY_DIR}/${target}.txt" CONTENT "$<JOIN:${files},\n>")
   get_property(assets GLOBAL PROPERTY HYLE_RUNTIME_WALK_APPLE_ASSETS)
   file(GENERATE OUTPUT "${CMAKE_BINARY_DIR}/${target}-assets.txt" CONTENT "$<JOIN:${assets},\n>")
+  get_property(producers GLOBAL PROPERTY HYLE_RUNTIME_WALK_APPLE_PRODUCERS)
+  file(GENERATE OUTPUT "${CMAKE_BINARY_DIR}/${target}-producers.txt" CONTENT "$<JOIN:${producers},\n>")
 endforeach()
 '''.replace("@HELPER@", (repo / "cmake/HyleRuntimeStaging.cmake").as_posix())
         (root / "CMakeLists.txt").write_text(source, encoding="utf-8")
@@ -70,7 +72,10 @@ endforeach()
                 assets = {Path(line).name for line in (build / (target + "-assets.txt")).read_text().splitlines() if line}
                 expected_assets = {"mlx.metallib"} if target in {"alias", "n0"} or (target == "conditional" and config == "Release") else set()
                 assert assets == expected_assets, (config, target, assets, expected_assets)
-        print("PASS: DLL/native asset diamond/alias/conditional/false/cycle and per-collection reset in Debug and Release")
+                producers = set((build / (target + "-producers.txt")).read_text().splitlines()) - {""}
+                expected_producers = {"n10"} if expected_assets else set()
+                assert producers == expected_producers, (config, target, producers, expected_producers)
+        print("PASS: DLL/native asset and producer diamond/alias/conditional/false/cycle and per-collection reset in Debug and Release")
 
 
 if __name__ == "__main__":

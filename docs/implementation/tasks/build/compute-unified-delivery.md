@@ -212,3 +212,7 @@ C2-01有限修正接法已在[可丢弃helper副本](../../../../evidence/correc
 通过Windows Ninja和Air Unix Makefiles正/反分支、跨目录library/资产producer构建图检查：
 collector保留producer条件，stage使用求值后的`DEPENDS`，撤掉无条件producer边。
 仅修改副本，当前产品/候选未变；不签native MLX数学。当前static原批次完成后按上述范围正式修正。
+
+现有`runtime_staging_graph_test.py`已补producer条件断言；当前helper在Debug conditional分支
+实际失败：producer为`n10`而应为空，[失败记录](../../../../evidence/correctness/compute-unified-c3/apple-conditional-producer/metadata-regression-before-fix.json)
+明确保留，不称PASS。此测试补缺复现既有C2-01反例，修正后只重跑本接缝适用回归和实际Apple交付。
