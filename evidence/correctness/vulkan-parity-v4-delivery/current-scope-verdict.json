@@ -1,0 +1,27 @@
+{
+  "product_candidate": "b4f21f1c1500d9ef8d71c552c7644ca230680008",
+  "windows": {
+    "source_static_shared": "PASS, 14 actual tests each in original three-delivery batch",
+    "W2_W3_delta": "PASS, both relocated SDKs incrementally rebuilt/relinked and actual Direct/Graph IQ1 tests; no full V2 repeat",
+    "public_headers": "PASS, each static/shared SDK three standalone ON and three standalone OFF-branch headers",
+    "raw": "windows-raw.zip + windows-portability-delta.zip"
+  },
+  "air": {
+    "machine": "Mac16,12 Apple M4 16GiB; macOS27.0.1; MoltenVK1.4.1 / loader1.4.350",
+    "source_static_shared": "PASS, 14 actual tests each, no skips; producer source original warning/type errors retained with bounded continuation",
+    "public_headers": "PASS, each static/shared SDK three standalone ON and three standalone OFF-branch headers",
+    "fixture": "14 files all SHA256 equal to Windows local fixture",
+    "raw": "air-raw.tar.gz + air-native-env.txt"
+  },
+  "remaining": [
+    "WSL current source/compile/public headers and default actual software-only rejection; no real Vulkan GPU is available",
+    "Final route OFF configuration/artifact isolation delta and equivalent-current V2/default source proof ledger",
+    "Final resource/closure/red-team/cleanup record and owner terminal transitions"
+  ],
+  "performance": "Explicit accepted mature ENGINEERING_DEFAULT/P0; original AA placement qualification FAIL/formalP1 INCONCLUSIVE remain; no new WIN, no further samples",
+  "code_changes": [
+    "Four bounded positive IQ1 signed/HAL conversions",
+    "Two unused local constexpr captures removed",
+    "Equal-width bounded artifact elements normalized to uint64_t"
+  ]
+}

@@ -1,0 +1,264 @@
+{
+  "candidate": "5461b1359d5657e68b39d96494e893cef517cdc1",
+  "product_candidate": "2f78714c8",
+  "system": "macOS-27.0.1-arm64-arm-64bit",
+  "steps": [
+    {
+      "label": "source-producer-configure",
+      "argv": [
+        "/opt/homebrew/bin/cmake",
+        "-S",
+        "/Users/kiro/hyle-scratch/vulkan-v4-air/consumer",
+        "-B",
+        "/Users/kiro/hyle-scratch/vulkan-v4-air/producer",
+        "-G",
+        "Ninja",
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON",
+        "-DCMAKE_OSX_DEPLOYMENT_TARGET=14.4",
+        "-DD5_GGML_SOURCE=/Users/kiro/Library/Caches/hyle/dependencies/v1/sources/ggml-456172ec733a-41b7e10fd424",
+        "-DD5_GTEST_SOURCE=/Users/kiro/Library/Caches/hyle/dependencies/v1/sources/googletest-063de7e9578f-162765170ae6",
+        "-DHYLE_DEP_SOURCE_CACHE=/Users/kiro/Library/Caches/hyle/dependencies/v1",
+        "-DHYLE_WERROR=ON",
+        "-DHYLE_VULKAN_GLSLANG=/opt/homebrew/bin/glslangValidator",
+        "-DD5_SOURCE_ROOT=/Users/kiro/hyle",
+        "-DV4_SOURCE_STATIC=ON",
+        "-DCMAKE_INSTALL_PREFIX=/Users/kiro/hyle-scratch/vulkan-v4-air/source-staging"
+      ],
+      "returncode": 0,
+      "seconds": 14.384
+    },
+    {
+      "label": "source-producer-build",
+      "argv": [
+        "/opt/homebrew/bin/cmake",
+        "--build",
+        "/Users/kiro/hyle-scratch/vulkan-v4-air/producer",
+        "-j",
+        "2"
+      ],
+      "returncode": 1,
+      "seconds": 82.003
+    },
+    {
+      "label": "source-producer-build-w2",
+      "argv": [
+        "/opt/homebrew/bin/cmake",
+        "--build",
+        "/Users/kiro/hyle-scratch/vulkan-v4-air/producer",
+        "-j",
+        "2"
+      ],
+      "returncode": 1,
+      "seconds": 22.615
+    },
+    {
+      "label": "source-producer-build-w3",
+      "argv": [
+        "/opt/homebrew/bin/cmake",
+        "--build",
+        "/Users/kiro/hyle-scratch/vulkan-v4-air/producer",
+        "-j",
+        "2"
+      ],
+      "returncode": 0,
+      "seconds": 30.345
+    },
+    {
+      "label": "source-consumer-test",
+      "argv": [
+        "/opt/homebrew/bin/ctest",
+        "--test-dir",
+        "/Users/kiro/hyle-scratch/vulkan-v4-air/producer",
+        "--output-on-failure",
+        "--no-tests=error",
+        "-j",
+        "1",
+        "--output-junit",
+        "/Users/kiro/hyle-scratch/vulkan-v4-air/receipts/source-tests.xml"
+      ],
+      "returncode": 0,
+      "seconds": 9.435
+    },
+    {
+      "label": "static-install",
+      "argv": [
+        "/opt/homebrew/bin/cmake",
+        "--install",
+        "/Users/kiro/hyle-scratch/vulkan-v4-air/producer",
+        "--prefix",
+        "/Users/kiro/hyle-scratch/vulkan-v4-air/static-staging"
+      ],
+      "returncode": 0,
+      "seconds": 0.328
+    },
+    {
+      "label": "static-consumer-configure",
+      "argv": [
+        "/opt/homebrew/bin/cmake",
+        "-S",
+        "/Users/kiro/hyle-scratch/vulkan-v4-air/consumer",
+        "-B",
+        "/Users/kiro/hyle-scratch/vulkan-v4-air/static-consumer",
+        "-G",
+        "Ninja",
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON",
+        "-DCMAKE_OSX_DEPLOYMENT_TARGET=14.4",
+        "-DD5_GGML_SOURCE=/Users/kiro/Library/Caches/hyle/dependencies/v1/sources/ggml-456172ec733a-41b7e10fd424",
+        "-DD5_GTEST_SOURCE=/Users/kiro/Library/Caches/hyle/dependencies/v1/sources/googletest-063de7e9578f-162765170ae6",
+        "-DCMAKE_PREFIX_PATH=/Users/kiro/hyle-scratch/vulkan-v4-air/static-relocated"
+      ],
+      "returncode": 0,
+      "seconds": 0.577
+    },
+    {
+      "label": "static-consumer-build",
+      "argv": [
+        "/opt/homebrew/bin/cmake",
+        "--build",
+        "/Users/kiro/hyle-scratch/vulkan-v4-air/static-consumer",
+        "--target",
+        "d5_vulkan_delivery",
+        "-j",
+        "2"
+      ],
+      "returncode": 0,
+      "seconds": 13.921
+    },
+    {
+      "label": "static-consumer-test",
+      "argv": [
+        "/opt/homebrew/bin/ctest",
+        "--test-dir",
+        "/Users/kiro/hyle-scratch/vulkan-v4-air/static-consumer",
+        "--output-on-failure",
+        "--no-tests=error",
+        "-j",
+        "1",
+        "--output-junit",
+        "/Users/kiro/hyle-scratch/vulkan-v4-air/receipts/static-tests.xml"
+      ],
+      "returncode": 0,
+      "seconds": 8.78
+    },
+    {
+      "label": "shared-producer-configure",
+      "argv": [
+        "/opt/homebrew/bin/cmake",
+        "-S",
+        "/Users/kiro/hyle-scratch/vulkan-v4-air/consumer",
+        "-B",
+        "/Users/kiro/hyle-scratch/vulkan-v4-air/producer",
+        "-G",
+        "Ninja",
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON",
+        "-DCMAKE_OSX_DEPLOYMENT_TARGET=14.4",
+        "-DD5_GGML_SOURCE=/Users/kiro/Library/Caches/hyle/dependencies/v1/sources/ggml-456172ec733a-41b7e10fd424",
+        "-DD5_GTEST_SOURCE=/Users/kiro/Library/Caches/hyle/dependencies/v1/sources/googletest-063de7e9578f-162765170ae6",
+        "-DHYLE_DEP_SOURCE_CACHE=/Users/kiro/Library/Caches/hyle/dependencies/v1",
+        "-DHYLE_WERROR=ON",
+        "-DHYLE_VULKAN_GLSLANG=/opt/homebrew/bin/glslangValidator",
+        "-DD5_SOURCE_ROOT=/Users/kiro/hyle",
+        "-DV4_SOURCE_STATIC=OFF",
+        "-DCMAKE_INSTALL_PREFIX=/Users/kiro/hyle-scratch/vulkan-v4-air/shared-staging"
+      ],
+      "returncode": 0,
+      "seconds": 14.034
+    },
+    {
+      "label": "shared-producer-build",
+      "argv": [
+        "/opt/homebrew/bin/cmake",
+        "--build",
+        "/Users/kiro/hyle-scratch/vulkan-v4-air/producer",
+        "-j",
+        "2"
+      ],
+      "returncode": 0,
+      "seconds": 38.964
+    },
+    {
+      "label": "shared-install",
+      "argv": [
+        "/opt/homebrew/bin/cmake",
+        "--install",
+        "/Users/kiro/hyle-scratch/vulkan-v4-air/producer",
+        "--prefix",
+        "/Users/kiro/hyle-scratch/vulkan-v4-air/shared-staging"
+      ],
+      "returncode": 0,
+      "seconds": 0.255
+    },
+    {
+      "label": "shared-consumer-configure",
+      "argv": [
+        "/opt/homebrew/bin/cmake",
+        "-S",
+        "/Users/kiro/hyle-scratch/vulkan-v4-air/consumer",
+        "-B",
+        "/Users/kiro/hyle-scratch/vulkan-v4-air/shared-consumer",
+        "-G",
+        "Ninja",
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON",
+        "-DCMAKE_OSX_DEPLOYMENT_TARGET=14.4",
+        "-DD5_GGML_SOURCE=/Users/kiro/Library/Caches/hyle/dependencies/v1/sources/ggml-456172ec733a-41b7e10fd424",
+        "-DD5_GTEST_SOURCE=/Users/kiro/Library/Caches/hyle/dependencies/v1/sources/googletest-063de7e9578f-162765170ae6",
+        "-DCMAKE_PREFIX_PATH=/Users/kiro/hyle-scratch/vulkan-v4-air/shared-relocated"
+      ],
+      "returncode": 0,
+      "seconds": 0.586
+    },
+    {
+      "label": "shared-consumer-build",
+      "argv": [
+        "/opt/homebrew/bin/cmake",
+        "--build",
+        "/Users/kiro/hyle-scratch/vulkan-v4-air/shared-consumer",
+        "--target",
+        "d5_vulkan_delivery",
+        "-j",
+        "2"
+      ],
+      "returncode": 0,
+      "seconds": 13.844
+    },
+    {
+      "label": "shared-consumer-test",
+      "argv": [
+        "/opt/homebrew/bin/ctest",
+        "--test-dir",
+        "/Users/kiro/hyle-scratch/vulkan-v4-air/shared-consumer",
+        "--output-on-failure",
+        "--no-tests=error",
+        "-j",
+        "1",
+        "--output-junit",
+        "/Users/kiro/hyle-scratch/vulkan-v4-air/receipts/shared-tests.xml"
+      ],
+      "returncode": 0,
+      "seconds": 11.492
+    }
+  ],
+  "continued_candidate": "7573d4e79076dfce3facd71e47aa8528203955a5",
+  "continued_candidates": [
+    "d302b56abcb5fc1a0aa06e87db847448ea3dc743"
+  ],
+  "stages": {
+    "source": {
+      "verdict": "PASS",
+      "tests": 14
+    },
+    "static": {
+      "verdict": "PASS",
+      "tests": 14
+    },
+    "shared": {
+      "verdict": "PASS",
+      "tests": 14
+    }
+  },
+  "verdict": "PASS"
+}

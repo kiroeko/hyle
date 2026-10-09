@@ -1,0 +1,17 @@
+{
+  "failures": [
+    {
+      "candidate": "5461b1359d5657e68b39d96494e893cef517cdc1",
+      "phase": "exact identity preflight",
+      "cause": "Caller used abbreviated 5461b1359; required full commit guard refused before configure/build/runtime",
+      "retained_raw": "air-raw.tar.gz/caller-identity-refusal.txt"
+    },
+    {
+      "candidate": "46cf6f311",
+      "phase": "bounded resume setup; before resumed build",
+      "cause": "consumer.mkdir() encountered the existing consumer folder, FileExistsError at run-posix.py:38",
+      "correction": "Only resume uses exist_ok; producer and previous failure receipts retained; no math/config/test ran in this failed invocation"
+    }
+  ],
+  "limits": "Entry refusals are not numerical or performance failures. Product compile failures and their exact original logs are preserved in air-raw.tar.gz."
+}

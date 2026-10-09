@@ -1,0 +1,142 @@
+{
+  "candidate": "d302b56abcb5fc1a0aa06e87db847448ea3dc743",
+  "steps": [
+    {
+      "label": "static-build",
+      "argv": [
+        "C:\\Program Files\\CMake\\bin\\cmake.EXE",
+        "--build",
+        "C:\\hv\\v4w\\source-build",
+        "--target",
+        "hyle_compute_provider_iree_vulkan",
+        "hyle_compute_route_vulkan",
+        "hyle_graph_route_vulkan",
+        "--parallel",
+        "2"
+      ],
+      "returncode": 0,
+      "seconds": 129.734
+    },
+    {
+      "label": "static-install",
+      "argv": [
+        "C:\\Program Files\\CMake\\bin\\cmake.EXE",
+        "--install",
+        "C:\\hv\\v4w\\source-build",
+        "--prefix",
+        "C:\\hv\\v4w\\static-relocated"
+      ],
+      "returncode": 0,
+      "seconds": 2.546
+    },
+    {
+      "label": "static-consumer-link",
+      "argv": [
+        "C:\\Program Files\\CMake\\bin\\cmake.EXE",
+        "--build",
+        "C:\\hv\\v4w\\static-consumer",
+        "--target",
+        "d5_vulkan_delivery",
+        "--parallel",
+        "2"
+      ],
+      "returncode": 0,
+      "seconds": 10.438
+    },
+    {
+      "label": "static-direct-iq1",
+      "argv": [
+        "C:\\hv\\v4w\\static-consumer\\d5_vulkan_direct.exe",
+        "--gtest_filter=*V4OriginalIq1ShapesChangedInputsAndCheckedIds",
+        "--gtest_output=xml:C:\\hv\\v4w\\receipts\\windows-w2-w3-delta\\static-direct.xml"
+      ],
+      "returncode": 0,
+      "seconds": 1.109
+    },
+    {
+      "label": "static-graph-iq1",
+      "argv": [
+        "C:\\hv\\v4w\\static-consumer\\d5_vulkan_graph.exe",
+        "--gtest_filter=*V4OriginalIq1ShapesChangedInputsAndCheckedIds",
+        "--gtest_output=xml:C:\\hv\\v4w\\receipts\\windows-w2-w3-delta\\static-graph.xml"
+      ],
+      "returncode": 0,
+      "seconds": 0.875
+    },
+    {
+      "label": "shared-build",
+      "argv": [
+        "C:\\Program Files\\CMake\\bin\\cmake.EXE",
+        "--build",
+        "C:\\hv\\vp1",
+        "--target",
+        "hyle_compute_provider_iree_vulkan",
+        "hyle_compute_route_vulkan",
+        "hyle_graph_route_vulkan",
+        "--parallel",
+        "2"
+      ],
+      "returncode": 0,
+      "seconds": 3.297
+    },
+    {
+      "label": "shared-install",
+      "argv": [
+        "C:\\Program Files\\CMake\\bin\\cmake.EXE",
+        "--install",
+        "C:\\hv\\vp1",
+        "--prefix",
+        "C:\\hv\\v4w\\shared-relocated"
+      ],
+      "returncode": 0,
+      "seconds": 2.532
+    },
+    {
+      "label": "shared-consumer-link",
+      "argv": [
+        "C:\\Program Files\\CMake\\bin\\cmake.EXE",
+        "--build",
+        "C:\\hv\\v4w\\shared-consumer",
+        "--target",
+        "d5_vulkan_delivery",
+        "--parallel",
+        "2"
+      ],
+      "returncode": 0,
+      "seconds": 1.218
+    },
+    {
+      "label": "shared-direct-iq1",
+      "argv": [
+        "C:\\hv\\v4w\\shared-consumer\\d5_vulkan_direct.exe",
+        "--gtest_filter=*V4OriginalIq1ShapesChangedInputsAndCheckedIds",
+        "--gtest_output=xml:C:\\hv\\v4w\\receipts\\windows-w2-w3-delta\\shared-direct.xml"
+      ],
+      "returncode": 0,
+      "seconds": 0.953
+    },
+    {
+      "label": "shared-graph-iq1",
+      "argv": [
+        "C:\\hv\\v4w\\shared-consumer\\d5_vulkan_graph.exe",
+        "--gtest_filter=*V4OriginalIq1ShapesChangedInputsAndCheckedIds",
+        "--gtest_output=xml:C:\\hv\\v4w\\receipts\\windows-w2-w3-delta\\shared-graph.xml"
+      ],
+      "returncode": 0,
+      "seconds": 0.907
+    }
+  ],
+  "stages": {
+    "static": {
+      "verdict": "PASS",
+      "iq1_cases": 2,
+      "source_changes": "only two unused constexpr captures and equal-width bounded elements type; no VMFB or numerical algorithm change"
+    },
+    "shared": {
+      "verdict": "PASS",
+      "iq1_cases": 2,
+      "source_changes": "only two unused constexpr captures and equal-width bounded elements type; no VMFB or numerical algorithm change"
+    }
+  },
+  "verdict": "PASS"
+}

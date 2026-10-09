@@ -70,3 +70,22 @@ W2续编发现Mac的`size_t`与`uint64_t`虽同宽却是不同C++类型，
 显式存为uint64，与网格上限同型，值/公式/数值程序不变；route owner已AUDITED。
 协议先独立提交再改此一行。所有原失败/纠正次数累计保留，不重配置成功的source
 producer；收齐错误的既有对象和最终三交付继续复用。
+
+## Windows/Air当前批次完成，V4仍未终局
+
+[当前真实收据及剩余项](../../../../evidence/correctness/vulkan-parity-v4-delivery/current-scope-verdict.json)
+绑定产品`b4f21f1c1`：Windows两SDK增量build/install/link和Direct/Graph IQ1差异4项
+全通过，复用不变的三交付14项数学/资源证明，不重跑完整V2/P1。Air一个producer/
+两配置实际完成source/static/shared各14测试，无skip；两SDK独立ON/OFF分支头各3项
+编译通过。Air原14文件fixture逐SHA与Windows相同，真实M4/MoltenVK数值执行不拿
+设备枚举或host oracle代替GPU资格。原Werror、调用身份、resume目录和type错误均保留。
+
+本批旧WindowsSDK不是当前输入的无条件证书：W2/W3的冷期常量capture/同宽计数
+值保持等价，新的增量SDK实际IQ1重放和坏索引已运行。VMFB、shader数学、冷优选规则、
+公开接口均不变；旧CPU/CUDA/Apple产品未改。代码统一统计**62,486行／268文件**，
+排除tests/vendor/bench；比本轮前只多3行类型处理，没有新算子。
+
+尚待WSL当前编译/公开头与software-only默认拒绝、OFF配置/artifact隔离差异、
+最终source/resource复核、临时产物清理及合法terminal状态；本卡保持AUDITED，
+不签V4或整个goal完成。当前WSL只发现llvmpipe CPU设备，真实GPU数值资格缺席，
+不能代签PASS。四路线single-primary有限审计已经独立结束，不再启动旧性能队列。
