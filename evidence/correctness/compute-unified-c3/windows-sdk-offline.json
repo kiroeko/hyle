@@ -1,0 +1,183 @@
+{
+  "scope": "Actual installed Windows CPU SDK offline acquisition and missing assets; configure only, no build or P1",
+  "rows": [
+    {
+      "case": "shared-offline-hit",
+      "argv": [
+        "cmake",
+        "-S",
+        "C:\\h7\\sdk-offline",
+        "-B",
+        "C:\\h7\\sdk-offline\\shared-offline-hit",
+        "-G",
+        "Ninja",
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DCMAKE_PREFIX_PATH=C:/h7/w-cpu/selected-graph/shared-sdk-relocated",
+        "-DFETCHCONTENT_FULLY_DISCONNECTED=ON"
+      ],
+      "returncode": 0,
+      "expected_acceptance": true,
+      "expected_diagnostic": "",
+      "verdict": "PASS",
+      "log": "evidence/correctness/compute-unified-c3/windows-sdk-offline/shared-offline-hit.log",
+      "log_sha256": "a3825260ae8ff2f3d462e1710c1a6b49722a07e4a82fb9dc41f8216cb825c867"
+    },
+    {
+      "case": "shared-offline-miss",
+      "argv": [
+        "cmake",
+        "-S",
+        "C:\\h7\\sdk-offline",
+        "-B",
+        "C:\\h7\\sdk-offline\\shared-offline-miss",
+        "-G",
+        "Ninja",
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DCMAKE_PREFIX_PATH=C:/h7/w-cpu/selected-graph/shared-sdk-relocated",
+        "-DFETCHCONTENT_FULLY_DISCONNECTED=ON",
+        "-DHYLE_DEP_SOURCE_CACHE=C:/h7/sdk-offline/shared-empty-cache"
+      ],
+      "returncode": 1,
+      "expected_acceptance": false,
+      "expected_diagnostic": "LibTorch CPU SDK missing while disconnected",
+      "verdict": "PASS",
+      "log": "evidence/correctness/compute-unified-c3/windows-sdk-offline/shared-offline-miss.log",
+      "log_sha256": "f13499dede4c109cbae1931d95f5244b8906a82bf7b49ed5692df2f325cbe552"
+    },
+    {
+      "case": "shared-invalid-root",
+      "argv": [
+        "cmake",
+        "-S",
+        "C:\\h7\\sdk-offline",
+        "-B",
+        "C:\\h7\\sdk-offline\\shared-invalid-root",
+        "-G",
+        "Ninja",
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DCMAKE_PREFIX_PATH=C:/h7/w-cpu/selected-graph/shared-sdk-relocated",
+        "-DFETCHCONTENT_FULLY_DISCONNECTED=ON",
+        "-DHYLE_COMPUTE_TORCH_CPU_ROOT=C:/h7/sdk-offline/absent-sdk"
+      ],
+      "returncode": 1,
+      "expected_acceptance": false,
+      "expected_diagnostic": "Incomplete LibTorch CPU SDK",
+      "verdict": "PASS",
+      "log": "evidence/correctness/compute-unified-c3/windows-sdk-offline/shared-invalid-root.log",
+      "log_sha256": "f891c453a07344daa74317647f3d7c237a0b39e2a15f0613d7079fbd9770747d"
+    },
+    {
+      "case": "shared-missing-runtime",
+      "argv": [
+        "cmake",
+        "-S",
+        "C:\\h7\\sdk-offline",
+        "-B",
+        "C:\\h7\\sdk-offline\\shared-missing-runtime",
+        "-G",
+        "Ninja",
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DCMAKE_PREFIX_PATH=C:/h7/sdk-offline/shared-missing-runtime",
+        "-DFETCHCONTENT_FULLY_DISCONNECTED=ON"
+      ],
+      "returncode": 1,
+      "expected_acceptance": false,
+      "expected_diagnostic": "Hyle CPU SDK is missing its original optimized ggml program",
+      "verdict": "PASS",
+      "log": "evidence/correctness/compute-unified-c3/windows-sdk-offline/shared-missing-runtime.log",
+      "log_sha256": "0025b0097d772449e4d049083ad2e13701ddded8ee5bdf77888381e9dad13d1b"
+    },
+    {
+      "case": "static-offline-hit",
+      "argv": [
+        "cmake",
+        "-S",
+        "C:\\h7\\sdk-offline",
+        "-B",
+        "C:\\h7\\sdk-offline\\static-offline-hit",
+        "-G",
+        "Ninja",
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DCMAKE_PREFIX_PATH=C:/h7/w-cpu/selected-graph/static-sdk-relocated",
+        "-DFETCHCONTENT_FULLY_DISCONNECTED=ON"
+      ],
+      "returncode": 0,
+      "expected_acceptance": true,
+      "expected_diagnostic": "",
+      "verdict": "PASS",
+      "log": "evidence/correctness/compute-unified-c3/windows-sdk-offline/static-offline-hit.log",
+      "log_sha256": "23910470176266a80c30382ea0962b9fafba0380c582b03cad50dc0b08cbb3f1"
+    },
+    {
+      "case": "static-offline-miss",
+      "argv": [
+        "cmake",
+        "-S",
+        "C:\\h7\\sdk-offline",
+        "-B",
+        "C:\\h7\\sdk-offline\\static-offline-miss",
+        "-G",
+        "Ninja",
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DCMAKE_PREFIX_PATH=C:/h7/w-cpu/selected-graph/static-sdk-relocated",
+        "-DFETCHCONTENT_FULLY_DISCONNECTED=ON",
+        "-DHYLE_DEP_SOURCE_CACHE=C:/h7/sdk-offline/static-empty-cache"
+      ],
+      "returncode": 1,
+      "expected_acceptance": false,
+      "expected_diagnostic": "LibTorch CPU SDK missing while disconnected",
+      "verdict": "PASS",
+      "log": "evidence/correctness/compute-unified-c3/windows-sdk-offline/static-offline-miss.log",
+      "log_sha256": "206e1ac1269f28d544ae15cde085509dda1647303ba23d822e0264ba942fe317"
+    },
+    {
+      "case": "static-invalid-root",
+      "argv": [
+        "cmake",
+        "-S",
+        "C:\\h7\\sdk-offline",
+        "-B",
+        "C:\\h7\\sdk-offline\\static-invalid-root",
+        "-G",
+        "Ninja",
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DCMAKE_PREFIX_PATH=C:/h7/w-cpu/selected-graph/static-sdk-relocated",
+        "-DFETCHCONTENT_FULLY_DISCONNECTED=ON",
+        "-DHYLE_COMPUTE_TORCH_CPU_ROOT=C:/h7/sdk-offline/absent-sdk"
+      ],
+      "returncode": 1,
+      "expected_acceptance": false,
+      "expected_diagnostic": "Incomplete LibTorch CPU SDK",
+      "verdict": "PASS",
+      "log": "evidence/correctness/compute-unified-c3/windows-sdk-offline/static-invalid-root.log",
+      "log_sha256": "1ebb2011ec7b66e661220f4b766a4d1541eaf2f636640fe733a6d2a5c2b55cee"
+    },
+    {
+      "case": "static-missing-runtime",
+      "argv": [
+        "cmake",
+        "-S",
+        "C:\\h7\\sdk-offline",
+        "-B",
+        "C:\\h7\\sdk-offline\\static-missing-runtime",
+        "-G",
+        "Ninja",
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DCMAKE_PREFIX_PATH=C:/h7/sdk-offline/static-missing-runtime",
+        "-DFETCHCONTENT_FULLY_DISCONNECTED=ON"
+      ],
+      "returncode": 1,
+      "expected_acceptance": false,
+      "expected_diagnostic": "Hyle CPU SDK is missing its original optimized ggml program",
+      "verdict": "PASS",
+      "log": "evidence/correctness/compute-unified-c3/windows-sdk-offline/static-missing-runtime.log",
+      "log_sha256": "eb9ce1a55fa7087979d29244bbb9e6af6b7e97185058098fcefed184ccecdcf0"
+    }
+  ],
+  "current_product_candidate": "79137d31ce1bec9053d3a4f92f2892e3a21cbb80",
+  "sdk_origin": "Same relocated CPU SDKs described in windows-cpu-partial.json; explicit tests OFF, distinct product identities retained there",
+  "sdk_config_sha256": {
+    "shared": "46f7aaf9d2feb20ed51f1ac2ef197c3de324f39a53d0b391d0ffbe27d49f03ac",
+    "static": "e149def077e36ed2b2f1d410ad4500e0deaf86651e994cdfa042f25aa8270420"
+  }
+}

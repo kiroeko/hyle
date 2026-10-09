@@ -176,3 +176,7 @@ Windows CPU C3已实际完成：source/shared/static × Direct/Graph 六项正�
 共享/静态 SDK 搬迁、DLL EXE邻置及 shared export 检查通过。证据见
 [C3部分收据](../../../../evidence/correctness/compute-unified-c3/README.md)。
 CUDA进入下一个串行批次；其余平台/路线/mixed验收与H1–H3仍未签，模块继续CANDIDATE。
+
+同一 Windows CPU relocated shared/static SDK 另完成六项路线需求/recipe配置检查，以及八项离线/
+缺件配置检查：离线缓存命中接纳；离线缓存缺失、显式SDK根无效、原版ggml运行库缺失均按具体诊断拒绝。
+这些只签配置/交付边界，不签其它路线数学或新性能，原source/shared/static产物身份继续按收据分别保留。

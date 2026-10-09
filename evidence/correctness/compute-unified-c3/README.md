@@ -11,10 +11,16 @@ It is not a terminal verdict for all platforms/routes, hybrid execution, or asyn
 - [Actual SDK requirement checks](windows-sdk-requirements.json): shared/static installed SDKs accept CPU,
   reject a requested absent CUDA route and reject a retired Provider option. Exported target route/recipe
   properties agree with package variables; these six configure verdicts required no rebuild or P1.
+- [Actual SDK offline and missing-dependency checks](windows-sdk-offline.json): eight configure cases passed
+  across the same relocated shared/static CPU SDKs. A populated offline cache is accepted; an empty offline
+  cache, invalid explicit Torch root and missing original ggml runtime are rejected with their specific
+  diagnostics. [Logs](windows-sdk-offline/) preserve the observed outputs; no native rebuild or P1 was run.
 
 The producer used MSVC 19.50.35728.0, full CPU route, locked oneDNN 3.13.4, ggml CPU core/port and
 LibTorch 2.8.0+cpu. Source/static/shared share capability semantics, while recipe identities reflect linkage/configuration.
 Actual runtime staging placed DLLs beside each EXE. Static HYLE still requires the qualified dynamic Torch runtime.
+The required Torch runtime remains a locked machine SDK acquisition, not part of the HYLE archive; offline
+consumption needs its populated cache or a qualified local root/archive. Route requirements do not remove it.
 The shared SDK export check inspected 17 HYLE libraries and 1289 exports; no new P1 was run.
 
 Windows CUDA is in progress. Remaining route/platform/mixed SDK entries have no PASS here.

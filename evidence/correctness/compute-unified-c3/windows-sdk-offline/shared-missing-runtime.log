@@ -1,0 +1,17 @@
+-- The CXX compiler identification is MSVC 19.50.35728.0
+-- Detecting CXX compiler ABI info
+-- Detecting CXX compiler ABI info - done
+-- Check for working CXX compiler: C:/Program Files/Microsoft Visual Studio/18/Enterprise/VC/Tools/MSVC/14.50.35717/bin/Hostx64/x64/cl.exe - skipped
+-- Detecting CXX compile features
+-- Detecting CXX compile features - done
+-- Configuring incomplete, errors occurred!
+CMake Error at shared-missing-runtime/lib/cmake/HyleGgmlCpuRuntime/HyleGgmlCpuRuntimeConfig.cmake:29 (message):
+  Hyle CPU SDK is missing its original optimized ggml program:
+  C:/h7/sdk-offline/shared-missing-runtime/lib/hyle_ggml_cpu_avx2_ffa4e8b8_bdae1e43311ee486.dll
+Call Stack (most recent call first):
+  C:/Program Files/CMake/share/cmake-4.4/Modules/CMakeFindDependencyMacro.cmake:93 (find_package)
+  C:/Program Files/CMake/share/cmake-4.4/Modules/CMakeFindDependencyMacro.cmake:125 (__find_dependency_common)
+  shared-missing-runtime/lib/cmake/Hyle/HyleConfig.cmake:66 (find_dependency)
+  CMakeLists.txt:3 (find_package)
+
+

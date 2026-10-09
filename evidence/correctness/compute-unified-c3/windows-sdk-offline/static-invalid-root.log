@@ -1,0 +1,25 @@
+-- The CXX compiler identification is MSVC 19.50.35728.0
+-- Detecting CXX compiler ABI info
+-- Detecting CXX compiler ABI info - done
+-- Check for working CXX compiler: C:/Program Files/Microsoft Visual Studio/18/Enterprise/VC/Tools/MSVC/14.50.35717/bin/Hostx64/x64/cl.exe - skipped
+-- Detecting CXX compile features
+-- Detecting CXX compile features - done
+-- Performing Test CMAKE_HAVE_LIBC_PTHREAD
+-- Performing Test CMAKE_HAVE_LIBC_PTHREAD - Failed
+-- Looking for pthread_create in pthreads
+-- Looking for pthread_create in pthreads - not found
+-- Looking for pthread_create in pthread
+-- Looking for pthread_create in pthread - not found
+-- Found Threads: TRUE
+-- Configuring incomplete, errors occurred!
+CMake Error at C:/h7/w-cpu/selected-graph/static-sdk-relocated/lib/cmake/HyleTorchCpuSdk/torch_cpu_fetch.cmake:82 (message):
+  Incomplete LibTorch CPU SDK: C:/h7/sdk-offline/absent-sdk/build-version
+Call Stack (most recent call first):
+  C:/h7/w-cpu/selected-graph/static-sdk-relocated/lib/cmake/HyleTorchCpuSdk/torch_cpu_fetch.cmake:135 (_hyle_torch_cpu_check_root)
+  C:/h7/w-cpu/selected-graph/static-sdk-relocated/lib/cmake/HyleTorchCpuSdk/HyleTorchCpuSdkConfig.cmake:6 (hyle_resolve_torch_cpu_sdk)
+  C:/Program Files/CMake/share/cmake-4.4/Modules/CMakeFindDependencyMacro.cmake:93 (find_package)
+  C:/Program Files/CMake/share/cmake-4.4/Modules/CMakeFindDependencyMacro.cmake:125 (__find_dependency_common)
+  C:/h7/w-cpu/selected-graph/static-sdk-relocated/lib/cmake/Hyle/HyleConfig.cmake:66 (find_dependency)
+  CMakeLists.txt:3 (find_package)
+
+
