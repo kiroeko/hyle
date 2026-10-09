@@ -46,3 +46,16 @@ P0 只原算子/转换成本与实际资源账；本包不跑 P1、不写 WIN。
 七问：原实现身份/许可保持；真实主/正交完整程序固定；下层和 checked/storage复用；
 成本披露与原语义不变；无FFI/新provider vtable；原交付闭包；用户自然入口和具名限制。
 本卡 AUDITED 授权 M1–M5，尚无本轮 runtime PASS，不签完整路线完成。
+
+### M5-G：实际宽矩阵的原 grid 单位
+
+共同plain `p033ae23672c4671a` N=17408/K=5120，现冷检查将8 split-K
+乘到原始列数，误拒绝已审成熟矩阵。原 Vulkan MAT pipeline 的最小列 tile32，
+实际 X=8*ceil(N/tile)，split reduce tile1024；原源码4419–4600/9208/9213/5804
+可复现。只修这两个冷grid单位，保持8片F32 workspace和buffer/index上限；
+matvec仍按不大于N的保守grid约束。不放宽数值，不改变原pipeline选择。
+
+第一集中批次接入34 packed/45 plain及原官方四MoE完整片段；[原始证据](../../../../evidence/correctness/vulkan-parity-v2-catalogue/README.md)。
+同版本共同fixture/误差门保持，native cold结果保留GPU常量；Graph同slot重放，
+Direct复用不可变Program、按旧结果lease合同更新可变请求。原559/80/104及新增
+完整branch余项仍属于本卡，未实跑不能由此批代签。

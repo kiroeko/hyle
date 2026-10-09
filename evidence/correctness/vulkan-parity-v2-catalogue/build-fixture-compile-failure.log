@@ -1,0 +1,95 @@
+[0/2] Re-checking globbed directories...
+[1/2] Re-running CMake...
+-- HYLE developer factors: requested='compute_provider_ggml_vulkan,compute_route_vulkan,graph_route_vulkan' resolved='core,container_intrusive,util_core,error,time,math,platform,mem,container,compute_ops,compute,graph,compute_ggml_runtime,compute_provider_ggml_vulkan,compute_provider_iree_vulkan,compute_route_vulkan,graph_route_vulkan' products=''
+-- HYLE_SANITIZER = off
+-- HYLE_TESTING = OFF (tests exercise the shipping layout/hot paths)
+-- ggml source: 2263 files, 15 exact patches
+
+-- CMAKE_SYSTEM_PROCESSOR: AMD64
+-- CMAKE_GENERATOR_PLATFORM: 
+-- GGML_SYSTEM_ARCH: x86
+-- Vulkan found
+-- GL_KHR_cooperative_matrix supported by glslc
+-- GL_NV_cooperative_matrix2 supported by glslc
+-- GL_NV_cooperative_matrix_decode_vector supported by glslc
+-- GL_EXT_integer_dot_product supported by glslc
+-- GL_EXT_bfloat16 supported by glslc
+-- GL_EXT_float_e2m1 supported by glslc
+-- GL_EXT_float_e4m3 supported by glslc
+-- Including Vulkan backend
+-- ggml version: 0.24.0
+-- ggml commit:  456172ec733a135778adcd32d00e576a58232e45-hyle
+-- IREE source: 7467 files, 15 exact patches, 7 offline programs
+
+-- IREE HAL drivers:
+--   - vulkan
+-- IREE HAL local executable library loaders:
+-- IREE HAL local executable plugin mechanisms:
+fatal: not a git repository (or any of the parent directories): .git
+-- Not adding LLVM/MLIR because the configuration does not require it
+-- *Not* building or importing IREE's compiler tools.
+   Set IREE_BUILD_COMPILER to build them or IREE_HOST_BIN_DIR to import them.
+-- Configuring IREE runtime plugins
+-- Runtime tracing disabled
+-- iree_allocator_system() using `IREE_ALLOCATOR_LIBC_*`
+-- IREE task topology: using platform-specific (Windows)
+-- HYLE_TRACE = OFF (hooks compile to nothing -- zero cost)
+-- HYLE 0.1.0 | MSVC 19.50.35728.0 | C++23 | sanitizer=off | linkage=shared | products= | factors=core,container_intrusive,util_core,error,time,math,platform,mem,container,compute_ops,compute,graph,compute_ggml_runtime,compute_provider_ggml_vulkan,compute_provider_iree_vulkan,compute_route_vulkan,graph_route_vulkan
+-- Configuring done (35.0s)
+-- Generating done (2.3s)
+-- Build files have been written to: C:/hv/vp1
+[0/4] Re-checking globbed directories...
+[1/19] Performing build step for 'vulkan-shaders-gen'
+ninja: no work to do.
+[2/19] Performing install step for 'vulkan-shaders-gen'
+-- Up-to-date: C:/hv/vp1/Release/vulkan-shaders-gen.exe
+[3/19] Completed 'vulkan-shaders-gen'
+[4/19] Building CXX object src\compute_provider_ggml_vulkan\CMakeFiles\hyle_compute_provider_ggml_vulkan.dir\region.cc.obj
+[5/19] Linking CXX shared library bin\hyle_compute_provider_ggml_vulkan.dll
+[6/18] Building CXX object src\compute_route_vulkan\CMakeFiles\hyle_compute_route_vulkan.dir\vulkan_region.cc.obj
+[7/18] Linking CXX shared library bin\hyle_compute_route_vulkan.dll
+[8/17] C:\WINDOWS\system32\cmd.exe /C "cd /D C:\hv\vp1\tests\compute_route_vulkan && "C:\Program Files\CMake\bin\cmake.exe" -P C:/hv/vp1/tests/compute_route_vulkan/hyle-runtime/hyle_compute_route_vulkan_test-Release.cmake"
+[9/17] Building CXX object tests\graph_route_vulkan\CMakeFiles\hyle_graph_route_vulkan_test.dir\d5_qwen35_execution_test.cc.obj
+FAILED: [code=2] tests/graph_route_vulkan/CMakeFiles/hyle_graph_route_vulkan_test.dir/d5_qwen35_execution_test.cc.obj 
+"C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\bin\Hostx64\x64\cl.exe"  /nologo /TP -DGGML_USE_VULKAN -DHYLE_COMPUTE_VULKAN=1 -DHYLE_VULKAN_TEST_SHADER=\"C:/hv/vp1/tests/graph_route_vulkan/affine.spv\" -IC:\public\project-hyle\hyle\include -IC:\hv\vp1\src\compute_ggml_runtime\source-8dc7950171d4c70b\src\..\include -external:IC:\public\tools\hyle-dependencies\v1\sources\vulkan_headers-e3b1eec08173-69d6adc9001f\include -external:IC:\public\tools\hyle-dependencies\v1\sources\googletest-063de7e9578f-162765170ae6\googletest\include -external:IC:\public\tools\hyle-dependencies\v1\sources\googletest-063de7e9578f-162765170ae6\googletest -external:W0 /DWIN32 /D_WINDOWS /EHsc /O2 /Ob2 /DNDEBUG -std:c++latest -MD /W4 /permissive- /wd4324 /Zc:__cplusplus /utf-8 /Zc:preprocessor /showIncludes /Fotests\graph_route_vulkan\CMakeFiles\hyle_graph_route_vulkan_test.dir\d5_qwen35_execution_test.cc.obj /Fdtests\graph_route_vulkan\CMakeFiles\hyle_graph_route_vulkan_test.dir\ /FS -c C:\public\project-hyle\hyle\tests\graph_route_vulkan\d5_qwen35_execution_test.cc
+C:\public\project-hyle\hyle\tests\graph_route_vulkan\../compute_route_vulkan/catalogue_test_support.h(153): error C2374: 'gtest_trace_153': redefinition; multiple initialization
+C:\public\project-hyle\hyle\tests\graph_route_vulkan\../compute_route_vulkan/catalogue_test_support.h(153): note: see declaration of 'gtest_trace_153'
+C:\public\project-hyle\hyle\tests\graph_route_vulkan\../compute_route_vulkan/catalogue_test_support.h(153): error C2086: 'const testing::ScopedTrace gtest_trace_153': redefinition
+C:\public\project-hyle\hyle\tests\graph_route_vulkan\../compute_route_vulkan/catalogue_test_support.h(153): note: see declaration of 'gtest_trace_153'
+C:\public\project-hyle\hyle\tests\graph_route_vulkan\../compute_route_vulkan/catalogue_test_support.h(166): error C2374: 'gtest_trace_166': redefinition; multiple initialization
+C:\public\project-hyle\hyle\tests\graph_route_vulkan\../compute_route_vulkan/catalogue_test_support.h(166): note: see declaration of 'gtest_trace_166'
+C:\public\project-hyle\hyle\tests\graph_route_vulkan\../compute_route_vulkan/catalogue_test_support.h(166): error C2086: 'const testing::ScopedTrace gtest_trace_166': redefinition
+C:\public\project-hyle\hyle\tests\graph_route_vulkan\../compute_route_vulkan/catalogue_test_support.h(166): note: see declaration of 'gtest_trace_166'
+[10/17] Building CXX object tests\compute_route_vulkan\CMakeFiles\hyle_compute_route_vulkan_test.dir\d5_qwen35_execution_test.cc.obj
+FAILED: [code=2] tests/compute_route_vulkan/CMakeFiles/hyle_compute_route_vulkan_test.dir/d5_qwen35_execution_test.cc.obj 
+"C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\bin\Hostx64\x64\cl.exe"  /nologo /TP -DGGML_USE_VULKAN -DHYLE_COMPUTE_VULKAN=1 -DHYLE_VULKAN_TEST_SHADER=\"C:/hv/vp1/tests/compute_route_vulkan/affine.spv\" -IC:\public\project-hyle\hyle\src\compute_route_vulkan -IC:\public\project-hyle\hyle\src\compute -IC:\public\project-hyle\hyle\include -IC:\hv\vp1\src\compute_ggml_runtime\source-8dc7950171d4c70b\src\..\include -external:IC:\public\tools\hyle-dependencies\v1\sources\vulkan_headers-e3b1eec08173-69d6adc9001f\include -external:IC:\public\tools\hyle-dependencies\v1\sources\googletest-063de7e9578f-162765170ae6\googletest\include -external:IC:\public\tools\hyle-dependencies\v1\sources\googletest-063de7e9578f-162765170ae6\googletest -external:W0 /DWIN32 /D_WINDOWS /EHsc /O2 /Ob2 /DNDEBUG -std:c++latest -MD /W4 /permissive- /wd4324 /Zc:__cplusplus /utf-8 /Zc:preprocessor /showIncludes /Fotests\compute_route_vulkan\CMakeFiles\hyle_compute_route_vulkan_test.dir\d5_qwen35_execution_test.cc.obj /Fdtests\compute_route_vulkan\CMakeFiles\hyle_compute_route_vulkan_test.dir\ /FS -c C:\public\project-hyle\hyle\tests\compute_route_vulkan\d5_qwen35_execution_test.cc
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\catalogue_test_support.h(133): error C3889: call to object of class type 'std::ranges::_Find_fn': no matching call operator found
+C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\xutility(6399): note: could be '_It std::ranges::_Find_fn::operator ()(_It,_Se,const _Ty &,_Pj)'
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\catalogue_test_support.h(133): note: '_It std::ranges::_Find_fn::operator ()(_It,_Se,const _Ty &,_Pj)': expects 4 arguments - 2 provided
+C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\xutility(6411): note: or       'conditional<std::ranges::borrowed_range<_Rng>,unknown-type,std::ranges::dangling>::type std::ranges::_Find_fn::operator ()(_Rng &&,const _Ty &,_Pj)'
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\catalogue_test_support.h(133): note: the associated constraints are not satisfied
+C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\xutility(6410): note: the concept 'std::indirect_binary_predicate<std::ranges::equal_to,std::_Projected_impl<std::_Vector_const_iterator<std::_Vector_val<std::_Simple_types<_Ty>>>,std::identity>::_Type,const _Ty*>' evaluated to false
+        with
+        [
+            _Ty=d5_qwen38_24t_full_router::ValueId
+        ]
+C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\xutility(1107): note: the concept 'std::predicate<std::ranges::equal_to&,d5_qwen38_24t_full_router::ValueId&,d5_qwen38_24t_full_router::ValueId&>' evaluated to false
+C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\concepts(260): note: the concept 'std::regular_invocable<std::ranges::equal_to&,d5_qwen38_24t_full_router::ValueId&,d5_qwen38_24t_full_router::ValueId&>' evaluated to false
+C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\concepts(257): note: the concept 'std::invocable<std::ranges::equal_to&,d5_qwen38_24t_full_router::ValueId&,d5_qwen38_24t_full_router::ValueId&>' evaluated to false
+C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\concepts(254): note: 'invoke': no matching overloaded function found
+C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\type_traits(1682): note: could be 'unknown-type std::invoke(_Callable &&,_Ty1 &&,_Types2 ...) noexcept(<expr>)'
+C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\type_traits(1676): note: or       'unknown-type std::invoke(_Callable &&) noexcept(<expr>)'
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\catalogue_test_support.h(133): error C2088: built-in operator '!=' cannot be applied to an operand of type 'std::_Vector_const_iterator<std::_Vector_val<std::_Simple_types<_Ty>>>'
+        with
+        [
+            _Ty=d5_qwen38_24t_full_router::ValueId
+        ]
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\catalogue_test_support.h(153): error C2374: 'gtest_trace_153': redefinition; multiple initialization
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\catalogue_test_support.h(153): note: see declaration of 'gtest_trace_153'
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\catalogue_test_support.h(153): error C2086: 'const testing::ScopedTrace gtest_trace_153': redefinition
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\catalogue_test_support.h(153): note: see declaration of 'gtest_trace_153'
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\catalogue_test_support.h(166): error C2374: 'gtest_trace_166': redefinition; multiple initialization
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\catalogue_test_support.h(166): note: see declaration of 'gtest_trace_166'
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\catalogue_test_support.h(166): error C2086: 'const testing::ScopedTrace gtest_trace_166': redefinition
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\catalogue_test_support.h(166): note: see declaration of 'gtest_trace_166'
+ninja: build stopped: subcommand failed.

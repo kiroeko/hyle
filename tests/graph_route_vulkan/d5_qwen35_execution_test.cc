@@ -38,6 +38,9 @@
 #include "hyle/compute/model_ops.h"
 #include "hyle/graph/vulkan.h"
 
+#define HYLE_TEST_GRAPH_ROUTE_VULKAN 1
+#include "../compute_route_vulkan/catalogue_test_support.h"
+
 namespace {
 using namespace vulkan_gate_norm_test;
 namespace g = hyle::graph;
@@ -1443,26 +1446,10 @@ TEST(VulkanGraphMoeFragments, D5OfficialFp8DenseBoundaries) {
   }
 }
 
-TEST(VulkanGraphMoeFragments, D5OfficialFullMoeColdBoundary) {
-  namespace boundary = d5_vulkan_official_boundary;
-  boundary::for_each([](const boundary::sem::Fragment &fragment) {
+TEST(VulkanGraphMoeFragments, D5OfficialFullMoeNativeExecution) {
+  d5_vulkan_official_boundary::for_each([](const auto &fragment) {
     SCOPED_TRACE(fragment.profile->model_name);
-    auto full = boundary::sem::make_graph(fragment);
-    auto context = vulkan_test::context().value();
-    std::vector<v::Tensor> constants;
-    for (std::size_t i = 0; i < fragment.constants.size(); ++i) {
-      auto tensor = context.upload(fragment.description(fragment.constants[i]),
-                                   fragment.constant_bytes[i]);
-      ASSERT_TRUE(tensor) << tensor.error().message();
-      constants.push_back(std::move(*tensor));
-    }
-    const auto workload = q::workload(
-        *fragment.profile, c::WorkloadPhase::kDecode, fragment.region);
-    auto result = gv::compile(context, full.graph, constants, {.workload = workload});
-    ASSERT_FALSE(result) << "Official Vulkan MoE now compiles; qualify execution "
-                            "before replacing its rejection record.";
-    ASSERT_TRUE(result.error().IsUnimplemented()) << result.error().message();
-    boundary::record("graph", fragment, 0, "complete_moe", result.error());
+    vulkan_catalogue_test::run(fragment);
   });
 }
 

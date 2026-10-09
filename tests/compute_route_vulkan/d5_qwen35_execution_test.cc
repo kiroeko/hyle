@@ -38,6 +38,8 @@
 #include "vulkan_program_internal.h"
 #endif
 
+#include "catalogue_test_support.h"
+
 namespace {
 using namespace vulkan_gate_norm_test;
 #if !defined(HYLE_D5_EXTERNAL_CONSUMER)
@@ -1488,43 +1490,10 @@ TEST(VulkanMoeFragments, D5OfficialFp8DenseBoundaries) {
   }
 }
 
-TEST(VulkanMoeFragments, D5OfficialFullMoeColdBoundary) {
-  namespace boundary = d5_vulkan_official_boundary;
-  boundary::for_each([](const boundary::sem::Fragment &fragment) {
+TEST(VulkanMoeFragments, D5OfficialFullMoeNativeExecution) {
+  d5_vulkan_official_boundary::for_each([](const auto &fragment) {
     SCOPED_TRACE(fragment.profile->model_name);
-    auto context = vulkan_test::context().value();
-    const auto workload = q::workload(
-        *fragment.profile, c::WorkloadPhase::kDecode, fragment.region);
-    std::vector<v::Tensor> constants(fragment.descriptions.size());
-    for (std::size_t i = 0; i < fragment.constants.size(); ++i) {
-      const auto id = fragment.constants[i];
-      auto tensor = context.upload(fragment.description(id), fragment.constant_bytes[i]);
-      ASSERT_TRUE(tensor) << tensor.error().message();
-      constants[id.ordinal()] = std::move(*tensor);
-    }
-    std::size_t prepared = 0;
-    for (const auto &node : fragment.nodes) {
-      if (node.operation.kind() == c::OperationKind::kView)
-        continue;
-      std::vector<v::Argument> arguments;
-      for (auto id : node.inputs) {
-        if (id.kind() == qfull::ValueKind::kConstant)
-          arguments.emplace_back(constants[id.ordinal()]);
-        else
-          arguments.emplace_back(fragment.description(id));
-      }
-      auto result = v::prepare(context, node.operation, arguments, workload);
-      if (!result) {
-        const char *operation = boundary::missing_operation(node.operation);
-        ASSERT_NE(operation, nullptr) << result.error().message();
-        ASSERT_TRUE(result.error().IsUnimplemented()) << result.error().message();
-        boundary::record("direct", fragment, prepared, operation, result.error());
-        return;
-      }
-      ++prepared;
-    }
-    FAIL() << "Official Vulkan MoE now prepares; qualify execution before "
-              "replacing its rejection record.";
+    vulkan_catalogue_test::run(fragment);
   });
 }
 

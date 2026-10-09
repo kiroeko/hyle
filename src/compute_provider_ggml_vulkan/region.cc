@@ -760,6 +760,9 @@ Result<Region> Region::create(NativeDevice device,
       } else if (node.operation.custom_as<model_ops::GroupedMatMul>()) {
         output =
             ggml_mul_mat_id(context, arguments[0], arguments[1], arguments[2]);
+        if (!ggml_prec_set_acc(output, GGML_PREC_F32))
+          return std::unexpected(Status::Unimplemented(
+              "original ggml grouped F32 accumulation unavailable"));
       } else if (const auto descriptor =
                      node.operation
                          .custom_as<model_ops::HyperConnectionCombine>()) {

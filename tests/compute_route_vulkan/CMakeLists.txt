@@ -7,7 +7,7 @@ if(HYLE_COMPUTE_VULKAN_ENABLED)
     DEPENDS affine.comp VERBATIM)
   hyle_add_test(compute_route_vulkan SOURCES native_test.cc lifecycle_test.cc tensor_test.cc view_test.cc gate_norm_test.cc concat_test.cc reduction_test.cc provider_bridge_test.cc managed_region_test.cc
     d5_qwen35_profile_test.cc d5_qwen35_execution_test.cc topk_test.cc gather_test.cc scan_test.cc scatter_test.cc recurrent_test.cc
-    mxfp4_test.cc gguf_test.cc iree_test.cc mature_tensor_test.cc "${CMAKE_CURRENT_BINARY_DIR}/affine.spv")
+    mxfp4_test.cc gguf_test.cc iree_test.cc mature_tensor_test.cc catalogue_test.cc "${CMAKE_CURRENT_BINARY_DIR}/affine.spv")
   target_compile_definitions(hyle_compute_route_vulkan_test PRIVATE
     HYLE_VULKAN_TEST_SHADER="${CMAKE_CURRENT_BINARY_DIR}/affine.spv")
   target_include_directories(hyle_compute_route_vulkan_test PRIVATE

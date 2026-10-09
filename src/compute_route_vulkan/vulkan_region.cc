@@ -1,4 +1,5 @@
 #include "vulkan_iree.h"
+#include "vulkan_mlx.h"
 #include "vulkan_program_internal.h"
 #include "vulkan_tensor.h"
 #include "hyle/compute/model_ops.h"
@@ -176,10 +177,13 @@ bool region_operation(const ProgramState &program, const PlanStep &step,
         static_cast<std::uint64_t>(inputs[1].dimensions().back());
     // Original matmul may choose up to eight split-K pieces. Bound both its
     // F32 partial workspace and all grids before native graph allocation.
+    // The locked MAT pipelines tile at least 32 columns. Split-K multiplies
+    // that tile count, not each scalar column; the final reduction tiles 1024.
     if (rows > limits.maxComputeWorkGroupCount[1] ||
-        columns > limits.maxComputeWorkGroupCount[0] / 8 ||
+        (columns + 31) / 32 > limits.maxComputeWorkGroupCount[0] / 8 ||
+        columns > limits.maxComputeWorkGroupCount[0] ||
         rows * columns > limits.maxStorageBufferRange / (8 * sizeof(float)) ||
-        rows * columns > limits.maxComputeWorkGroupCount[0])
+        (rows * columns + 1023) / 1024 > limits.maxComputeWorkGroupCount[0])
       return false;
   }
   if (step.operation.get_if<GatedDeltaNet>() ||
@@ -347,10 +351,12 @@ bool quantized_gather_operation(const ProgramState &program,
 
 bool bfloat_region_operation(const ProgramState &program,
                              const PlanStep &step) noexcept {
-  if (step.outputs.size() != 1 ||
-      program.values[step.outputs[0]].description.data_type() !=
-          DataType::kBFloat16 ||
-      !(step.operation.get_if<Unary>() || step.operation.get_if<Binary>() ||
+  if (step.outputs.size() != 1) return false;
+  const auto type = program.values[step.outputs[0]].description.data_type();
+  const bool convolution = step.operation.custom_as<model_ops::CausalConv1d>() &&
+      (type == DataType::kFloat16 || type == DataType::kBFloat16);
+  if ((!convolution && type != DataType::kBFloat16) ||
+      !(convolution || step.operation.get_if<Unary>() || step.operation.get_if<Binary>() ||
         step.operation.get_if<GatedActivation>() ||
         step.operation.get_if<RmsNorm>() ||
         step.operation.get_if<LayerNorm>() || step.operation.get_if<Reduce>() ||
@@ -361,7 +367,8 @@ bool bfloat_region_operation(const ProgramState &program,
   const auto wide = TensorDesc::dense(
       DataType::kFloat32,
       program.values[step.outputs[0]].description.dimensions());
-  if (!wide || !iree_precision_supported(*program.runtime->device, *wide))
+  if (!wide || (type == DataType::kBFloat16 &&
+                !iree_precision_supported(*program.runtime->device, *wide)))
     return false;
   return region_operation(program, step, true);
 }
@@ -403,14 +410,9 @@ Status lower_bfloat_region(ProgramState &program,
     const std::vector<std::size_t> last_uses(program.values.size(), 0);
     HYLE_RETURN_IF_ERROR(
         lower_region(program, local, 0, local.steps.size(), last_uses));
-    // The public BF16 port is a rounding boundary. Its qualified conversion
-    // belongs to the original IREE program on this same native device.
-    return lower_iree(program, {Operation(Cast{DataType::kBFloat16}),
-                                {result},
-                                step.outputs,
-                                {},
-                                {1, 1, 1},
-                                {}});
+    // The public F16/BF16 port is the source rounding boundary, using the
+    // already qualified original conversion on this same native device.
+    return lower_native_cast(program, result, step.outputs[0]);
   } catch (const std::bad_alloc &) {
     return Status::ResourceExhausted("Vulkan BF16 region metadata");
   }
