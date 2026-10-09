@@ -1,0 +1,114 @@
+{
+  "scope": "Archived actual SDK route metadata, not rerun math",
+  "rows": [
+    {
+      "group": "windows-cpu",
+      "linkage": "shared",
+      "expected": "cpu",
+      "actual": "cpu",
+      "matches": true,
+      "metadata": "evidence/correctness/compute-unified-c3/windows-cpu/shared-HyleConfig.cmake",
+      "sha256": "46f7aaf9d2feb20ed51f1ac2ef197c3de324f39a53d0b391d0ffbe27d49f03ac"
+    },
+    {
+      "group": "windows-cpu",
+      "linkage": "static",
+      "expected": "cpu",
+      "actual": "cpu",
+      "matches": true,
+      "metadata": "evidence/correctness/compute-unified-c3/windows-cpu/static-HyleConfig.cmake",
+      "sha256": "e149def077e36ed2b2f1d410ad4500e0deaf86651e994cdfa042f25aa8270420"
+    },
+    {
+      "group": "windows-cuda",
+      "linkage": "shared",
+      "expected": "cuda",
+      "actual": "cuda",
+      "matches": true,
+      "metadata": "evidence/correctness/compute-unified-c3/windows-cuda/shared-HyleConfig.cmake",
+      "sha256": "c0ff0c8f52773ca0548bfb6c4bf70e2d14de29567a9118ff2eb947c19bbcc269"
+    },
+    {
+      "group": "windows-cuda",
+      "linkage": "static",
+      "expected": "cuda",
+      "actual": "cuda",
+      "matches": true,
+      "metadata": "evidence/correctness/compute-unified-c3/windows-cuda/static-HyleConfig.cmake",
+      "sha256": "17ce01dd72c574f85419ff51049d48b3154c9422ddf11c53b63f166418864e03"
+    },
+    {
+      "group": "windows-vulkan",
+      "linkage": "shared",
+      "expected": "vulkan",
+      "actual": "vulkan",
+      "matches": true,
+      "metadata": "evidence/correctness/compute-unified-c3/windows-vulkan/shared-HyleConfig.cmake",
+      "sha256": "5ba8e00566a477b876b4f905251555f20db8f80e992cbf00ba81509e37244482"
+    },
+    {
+      "group": "windows-vulkan",
+      "linkage": "static",
+      "expected": "vulkan",
+      "actual": "vulkan",
+      "matches": true,
+      "metadata": "evidence/correctness/compute-unified-c3/windows-vulkan/static-HyleConfig.cmake",
+      "sha256": "364c4b351fe36377adf23a5056f3bec6d0558edc9def61d333cb67f5c51c3391"
+    },
+    {
+      "group": "air-apple",
+      "linkage": "shared",
+      "expected": "apple",
+      "actual": "apple",
+      "matches": true,
+      "metadata": "evidence/correctness/compute-unified-c3/air-apple/shared-HyleConfig.cmake",
+      "sha256": "046c87f4029c898b8532c8403a26734e8737f9b402a15c0dd14e2cd40c264776"
+    },
+    {
+      "group": "air-apple",
+      "linkage": "static",
+      "expected": "apple",
+      "actual": "apple",
+      "matches": true,
+      "metadata": "evidence/correctness/compute-unified-c3/air-apple/static-HyleConfig.cmake",
+      "sha256": "6db0b1da934f1ac320097fb2bcad7116497032f39cd0d69f67bb93466f388a1a"
+    },
+    {
+      "group": "air-vulkan",
+      "linkage": "shared",
+      "expected": "vulkan",
+      "actual": "vulkan",
+      "matches": true,
+      "metadata": "evidence/correctness/compute-unified-c3/air-vulkan/shared-HyleConfig.cmake",
+      "sha256": "2e48d7b4054ada5b7b9d3197936fbc178ca40f88f86690764afc1b64d14b5511"
+    },
+    {
+      "group": "air-vulkan",
+      "linkage": "static",
+      "expected": "vulkan",
+      "actual": "vulkan",
+      "matches": true,
+      "metadata": "evidence/correctness/compute-unified-c3/air-vulkan/static-HyleConfig.cmake",
+      "sha256": "033be78e4829aa95751c23af4199f0e1cde33038e1d9272fcc18327ea26707f2"
+    },
+    {
+      "group": "air-cpu-apple",
+      "linkage": "shared",
+      "expected": "cpu;apple",
+      "actual": "cpu",
+      "matches": false,
+      "metadata": "evidence/correctness/compute-unified-c3/air-cpu-apple/shared-HyleConfig.cmake",
+      "sha256": "e12b47214ffb4299077cdb3d212699d3ee3621bcfa8751d48a07cf7199af4f63"
+    },
+    {
+      "group": "air-cpu-apple",
+      "linkage": "static",
+      "expected": "cpu;apple",
+      "actual": "cpu",
+      "matches": false,
+      "metadata": "evidence/correctness/compute-unified-c3/air-cpu-apple/static-HyleConfig.cmake",
+      "sha256": "76126672d99e97767079976abe76cbd9a81615e3d89d9468dbc4c67db4bf6d4e"
+    }
+  ],
+  "result": "Ten single-route SDK configs match. Two former Air mixed SDK configs fail the requested route set; their four claims are already withdrawn. No other archived SDK is affected by the argv defect."
+}

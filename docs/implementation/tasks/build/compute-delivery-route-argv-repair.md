@@ -32,3 +32,8 @@ Air 同两项转发/guard 工具测试实际 PASS，见
 [工具收据](../../../../evidence/correctness/compute-unified-c3/mixed-sdk-route-failure/tool-repair-receipt.json)。
 Windows 原 shared/static SDK 循环已恢复，source 不重跑，原 CPU objects 保留；只有错误 package
 staging payload 被有边界删除，避免旧 ABI/未选资产遗留。Air 两 SDK 循环仍待串行恢复。
+
+已逐份核对全部已归档的12个 SDK route metadata：十份单路线均与请求一致，只有两份 Air
+组合与请求不符，见[元数据审计](../../../../evidence/correctness/compute-unified-c3/mixed-sdk-route-failure/archived-sdk-route-audit.json)。
+这项只签 metadata，不重跑或升级数学资格。Air 原错误包 payload 已清理，source、build objects
+和 machine SDK/cache 保留；修正后的原 shared/static 循环已经准备，待 Windows 重型批次结束后串行执行。

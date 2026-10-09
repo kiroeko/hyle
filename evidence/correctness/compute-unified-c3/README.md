@@ -99,3 +99,6 @@ The effective matrix is 34/90 PASS. Windows CPU+CUDA shared stopped on missing C
 argument loss. [Original claims, metadata and failure](mixed-sdk-route-failure/receipt.json) are preserved;
 the [bounded tool repair](../../../docs/implementation/tasks/build/compute-delivery-route-argv-repair.md)
 must pass before the original SDK stages resume. Source mixed consumers remain valid.
+The [archived SDK metadata audit](mixed-sdk-route-failure/archived-sdk-route-audit.json) checked all
+twelve previously saved configs: ten single-route SDKs match their requests; the two already withdrawn
+Air mixed configs do not. This inspection changes no math verdict and requires no native rebuild.
