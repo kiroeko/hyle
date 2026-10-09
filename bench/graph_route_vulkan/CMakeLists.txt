@@ -38,4 +38,6 @@ if(HYLE_COMPUTE_VULKAN_ENABLED AND TARGET GTest::gtest)
   target_compile_features(hyle_vulkan_owned_control_bench PRIVATE cxx_std_23)
   target_compile_definitions(hyle_vulkan_owned_control_bench PRIVATE _CRT_SECURE_NO_WARNINGS)
   target_link_libraries(hyle_vulkan_owned_control_bench PRIVATE hyle_core nanobench)
+  hyle_register_benches(graph_route_vulkan
+    hyle_graph_route_vulkan_owned_placement hyle_vulkan_owned_control_bench)
 endif()
