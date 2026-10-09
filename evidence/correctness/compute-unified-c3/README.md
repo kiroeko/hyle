@@ -8,6 +8,9 @@ It is not a terminal verdict for all platforms/routes, hybrid execution, or asyn
 - [Per-entry result](windows-cpu-partial.json): exact observed test logs and distinct product identities;
   the later shipping-test-default correction does not change these explicitly tests-OFF math recipes.
 - [Archived logs and package metadata](windows-cpu/): CTest logs, real HyleConfig outputs and three bare configuration checks.
+- [Actual SDK requirement checks](windows-sdk-requirements.json): shared/static installed SDKs accept CPU,
+  reject a requested absent CUDA route and reject a retired Provider option. Exported target route/recipe
+  properties agree with package variables; these six configure verdicts required no rebuild or P1.
 
 The producer used MSVC 19.50.35728.0, full CPU route, locked oneDNN 3.13.4, ggml CPU core/port and
 LibTorch 2.8.0+cpu. Source/static/shared share capability semantics, while recipe identities reflect linkage/configuration.

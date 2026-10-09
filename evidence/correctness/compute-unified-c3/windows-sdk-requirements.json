@@ -1,0 +1,44 @@
+[
+  {
+    "linkage": "shared",
+    "case": "cpu",
+    "returncode": 0,
+    "expected_acceptance": true,
+    "pass": true
+  },
+  {
+    "linkage": "shared",
+    "case": "missing-cuda",
+    "returncode": 1,
+    "expected_acceptance": false,
+    "pass": true
+  },
+  {
+    "linkage": "shared",
+    "case": "legacy",
+    "returncode": 1,
+    "expected_acceptance": false,
+    "pass": true
+  },
+  {
+    "linkage": "static",
+    "case": "cpu",
+    "returncode": 0,
+    "expected_acceptance": true,
+    "pass": true
+  },
+  {
+    "linkage": "static",
+    "case": "missing-cuda",
+    "returncode": 1,
+    "expected_acceptance": false,
+    "pass": true
+  },
+  {
+    "linkage": "static",
+    "case": "legacy",
+    "returncode": 1,
+    "expected_acceptance": false,
+    "pass": true
+  }
+]

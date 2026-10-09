@@ -19,7 +19,7 @@
 成果：有限 KEEP/FIX ledger、实际扫描/检查命令、已处理文档与未解决产品项；
 文档修改只 docs/closure/diff，不重建/P1。C3 或 H1 新产品问题不因本卡“review完成”签 PASS。
 
-## 结果（进行中）
+## 有限 review 结果
 
 已扫描 917 个 Git-tracked Markdown：101 当前权威/用法、20 导航/样例、767 task/evidence、29 vendor origin。
 不是 917 页全部逐段重写：按身份做全文件覆盖，101 当前权威与当前 record 做冲突/源码重点核对，
