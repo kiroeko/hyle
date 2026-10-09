@@ -98,3 +98,15 @@ Flash三stage BF16 activation T=5触发原matvec断言；原源码10534的选择
 native ne1/ne2/ne3 predicate widening BF16 activation，保留BF16权重/原F32acc，
 所有转换成本计账。M5-S具名有限纠正，不改库/Shader/精度门，原80/560已过域
 不重测，状态批尚未取得资格，之后一次定向状态验。
+
+### M5-N1：Qwen单query SDPA的错误原程序参考
+
+状态Direct已运行24项16 PASS/8 FAIL。Qwen实际attention消费者为Qseq=1，
+当前Provider明确lower为F32 scores MatMul→softmax→F32 value MatMul；原Vulkan
+10534选择matvec而非coopmat2，两个乘法均F32。共同fixture.native_outputs
+却固定假设coopmat2两乘数F16，48个小误差断言仅对这个错误参考。
+Vulkan测试wrapper只对固定region0x040c0501、Qseq=1清除这条不适用的F16
+参考，保留更严格的原F32 8e-5/4e-5门、RoPE/norm/state方程；原primitive/
+算法/API不改，不以更宽门取PASS。两入口这一个ID一次定向验证。
+其它DSpark/attention/新版GGUF数值FAIL仍保留，须逐首偏差有界查因，不推定环境或
+绕过原完整片段门；本条不能替那些域签PASS。

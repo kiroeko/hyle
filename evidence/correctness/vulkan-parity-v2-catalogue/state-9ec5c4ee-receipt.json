@@ -1,0 +1,74 @@
+{
+  "candidate": "9ec5c4ee3036f4177444597cf49c9bbd07963e32",
+  "steps": [
+    {
+      "name": "direct-state",
+      "returncode": 1,
+      "filter": "CurrentOfficial/VulkanCurrentState.*:VulkanCurrentState.*:C5ActualConvolutionParameters/VulkanCatalogueParameters.*:VulkanCatalogueParameters.*:C5ExactNewGgufMain/VulkanCatalogueNewDeepSeek.*",
+      "tests": {
+        "tests": "24",
+        "failures": "8",
+        "disabled": "0",
+        "errors": "0",
+        "time": "383.535",
+        "timestamp": "2026-10-09T14:08:11.777",
+        "name": "AllTests"
+      },
+      "validation_error": false,
+      "log": "state-9ec5c4ee-direct-state.log",
+      "log_sha256": "21e600d2148982ff781f44ee16efe745659d83d18af059a4e6e7b773415e426f",
+      "xml": "state-9ec5c4ee-direct-state.xml",
+      "binary_sha256": "9087d53ff43c49f556b70c9c315364730e98dde884620d2f9d1d79a280e6158d",
+      "adjacent_dlls": [
+        "hyle_compute.dll",
+        "hyle_compute_ggml_runtime.dll",
+        "hyle_compute_ops.dll",
+        "hyle_compute_provider_ggml_vulkan.dll",
+        "hyle_compute_provider_iree_vulkan.dll",
+        "hyle_compute_route_vulkan.dll",
+        "hyle_container.dll",
+        "hyle_error.dll",
+        "hyle_graph.dll",
+        "hyle_graph_route_vulkan.dll",
+        "hyle_mem.dll",
+        "hyle_platform.dll",
+        "hyle_time.dll"
+      ]
+    },
+    {
+      "name": "graph-state",
+      "returncode": 1,
+      "filter": "CurrentOfficial/VulkanGraphCurrentState.*:VulkanGraphCurrentState.*:C5ActualConvolutionParameters/VulkanGraphCatalogueParameters.*:VulkanGraphCatalogueParameters.*:C5ExactNewGgufMain/VulkanGraphCatalogueNewDeepSeek.*",
+      "tests": {
+        "tests": "24",
+        "failures": "9",
+        "disabled": "0",
+        "errors": "0",
+        "time": "236.355",
+        "timestamp": "2026-10-09T14:14:35.622",
+        "name": "AllTests"
+      },
+      "validation_error": false,
+      "log": "state-9ec5c4ee-graph-state.log",
+      "log_sha256": "dccfada2c3e50e1a942417ab477349ddadd4821d9c6fe13af099c5dc7fcb8e3a",
+      "xml": "state-9ec5c4ee-graph-state.xml",
+      "binary_sha256": "baf926c9f03c203d8e25c4a2689d160677e24844ffa140e735df087b64468e94",
+      "adjacent_dlls": [
+        "hyle_compute.dll",
+        "hyle_compute_ggml_runtime.dll",
+        "hyle_compute_ops.dll",
+        "hyle_compute_provider_ggml_vulkan.dll",
+        "hyle_compute_provider_iree_vulkan.dll",
+        "hyle_compute_route_vulkan.dll",
+        "hyle_container.dll",
+        "hyle_error.dll",
+        "hyle_graph.dll",
+        "hyle_graph_route_vulkan.dll",
+        "hyle_mem.dll",
+        "hyle_platform.dll",
+        "hyle_time.dll"
+      ]
+    }
+  ],
+  "scope": "current Pro0813 Flash0731 main/state/DSpark, named MTP sidecars and actual parameter consumers; untouched legacy family branches/platform/delivery/P1 remain pending"
+}

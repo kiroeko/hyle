@@ -1,0 +1,45 @@
+{
+  "direct-state": {
+    "tests": {
+      "tests": "24",
+      "failures": "8",
+      "disabled": "0",
+      "errors": "0",
+      "time": "383.535",
+      "timestamp": "2026-10-09T14:08:11.777",
+      "name": "AllTests"
+    },
+    "failed_cases": [
+      "VulkanCurrentState.FlashQ8AndBfloatSidecarsUseMixedMxfp4ThreeStages",
+      "VulkanCatalogueParameters.Qwen24ActualHalfSplitFrequencyNormAndKvFeedback",
+      "CurrentOfficial/VulkanCurrentState.PrefillFiveTokenAttentionAndCacheFeedback/Pro0813",
+      "CurrentOfficial/VulkanCurrentState.PrefillFiveTokenAttentionAndCacheFeedback/Flash0731",
+      "CurrentOfficial/VulkanCurrentState.OfficialMainCompressionAttentionAndFp4Moe/Pro0813",
+      "CurrentOfficial/VulkanCurrentState.OfficialMainCompressionAttentionAndFp4Moe/Flash0731",
+      "C5ExactNewGgufMain/VulkanCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile90",
+      "C5ExactNewGgufMain/VulkanCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile103"
+    ]
+  },
+  "graph-state": {
+    "tests": {
+      "tests": "24",
+      "failures": "9",
+      "disabled": "0",
+      "errors": "0",
+      "time": "236.355",
+      "timestamp": "2026-10-09T14:14:35.622",
+      "name": "AllTests"
+    },
+    "failed_cases": [
+      "VulkanGraphCurrentState.FlashQ8AndBfloatSidecarsUseMixedMxfp4ThreeStages",
+      "VulkanGraphCatalogueParameters.Qwen24ActualHalfSplitFrequencyNormAndKvFeedback",
+      "CurrentOfficial/VulkanGraphCurrentState.PrefillFiveTokenAttentionAndCacheFeedback/Pro0813",
+      "CurrentOfficial/VulkanGraphCurrentState.PrefillFiveTokenAttentionAndCacheFeedback/Flash0731",
+      "CurrentOfficial/VulkanGraphCurrentState.OfficialMainCompressionAttentionAndFp4Moe/Pro0813",
+      "CurrentOfficial/VulkanGraphCurrentState.OfficialMainCompressionAttentionAndFp4Moe/Flash0731",
+      "CurrentOfficial/VulkanGraphCurrentState.CompleteThreeStageDspark/Pro0813",
+      "C5ExactNewGgufMain/VulkanGraphCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile90",
+      "C5ExactNewGgufMain/VulkanGraphCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile103"
+    ]
+  }
+}
