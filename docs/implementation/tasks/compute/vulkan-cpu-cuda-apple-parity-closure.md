@@ -40,6 +40,7 @@ CPU/CUDA/Apple CLOSED不动；公共runtime等依赖只遇具名缺陷/新增sou
 已有[balanced-AA](llm-moe-d5-vulkan-measurement-balance.md)记录同轮paired与两侧独立
 中位数可产生不同裁决；这是具体测量审计输入，不是旧P1 PASS。先固定同输入循环、
 paired/时序/成本/边界的数学合同，必要公共统计接缝必须独立tool task，不能本轮无限造仪器。
+具体唯一恢复资格按[同轮配对A/A独立卡](vulkan-parity-paired-aa-qualification.md)执行。
 不恢复原n15/n31；不强求更严格桌面空闲/改系统模式/弹UAC。实现稳定candidate才一次
 适用同拓扑A/A→固定n15、5% margin，正反/分配顺序和placement；不合格不能导入赢家。
 
