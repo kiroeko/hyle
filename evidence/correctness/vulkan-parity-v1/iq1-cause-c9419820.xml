@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites tests="1" failures="0" disabled="0" errors="0" time="11.347" timestamp="2026-10-09T09:12:42.058" name="AllTests">
+  <testsuite name="VulkanGguf" tests="1" failures="0" disabled="0" skipped="0" errors="0" time="11.347" timestamp="2026-10-09T09:12:42.058">
+    <testcase name="Iq1SOriginalQ8ActivationCauseCapture" file="C:\public\project-hyle\hyle\tests\compute_route_vulkan\gguf_test.cc" line="42" status="run" result="completed" time="11.347" timestamp="2026-10-09T09:12:42.058" classname="VulkanGguf" />
+  </testsuite>
+</testsuites>

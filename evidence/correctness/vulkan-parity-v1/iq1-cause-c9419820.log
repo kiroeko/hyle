@@ -1,0 +1,14 @@
+Running main() from C:\public\tools\hyle-dependencies\v1\sources\googletest-063de7e9578f-162765170ae6\googletest\src\gtest_main.cc
+Note: Google Test filter = VulkanGguf.Iq1SOriginalQ8ActivationCauseCapture
+[==========] Running 1 test from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 1 test from VulkanGguf
+[ RUN      ] VulkanGguf.Iq1SOriginalQ8ActivationCauseCapture
+IQ1_S_CAUSE replay=1 q8_original_max_error=4.47034836e-07 nominal_f32_max_error=0.00478547603
+IQ1_S_CAUSE replay=2 q8_original_max_error=8.94069672e-07 nominal_f32_max_error=0.00957095205
+[       OK ] VulkanGguf.Iq1SOriginalQ8ActivationCauseCapture (11347 ms)
+[----------] 1 test from VulkanGguf (11347 ms total)
+
+[----------] Global test environment tear-down
+[==========] 1 test from 1 test suite ran. (11347 ms total)
+[  PASSED  ] 1 test.

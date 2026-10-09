@@ -1,0 +1,82 @@
+Running main() from C:\public\tools\hyle-dependencies\v1\sources\googletest-063de7e9578f-162765170ae6\googletest\src\gtest_main.cc
+[==========] Running 25 tests from 6 test suites.
+[----------] Global test environment set-up.
+[----------] 3 tests from GgmlVulkanMetadata
+[ RUN      ] GgmlVulkanMetadata.RejectsInvalidAndExhaustedBacking
+[       OK ] GgmlVulkanMetadata.RejectsInvalidAndExhaustedBacking (0 ms)
+[ RUN      ] GgmlVulkanMetadata.MoveAndIndependentContextsRetireTheirExactAllocations
+[       OK ] GgmlVulkanMetadata.MoveAndIndependentContextsRetireTheirExactAllocations (0 ms)
+[ RUN      ] GgmlVulkanMetadata.PatchedContextRejectsOverflowAndMisalignmentWithoutAbort
+[       OK ] GgmlVulkanMetadata.PatchedContextRejectsOverflowAndMisalignmentWithoutAbort (0 ms)
+[----------] 3 tests from GgmlVulkanMetadata (0 ms total)
+
+[----------] 6 tests from GgmlVulkanRegion
+[ RUN      ] GgmlVulkanRegion.TargetEmbeddingFormatsAdmitOnlyInternalUncheckedRows
+[       OK ] GgmlVulkanRegion.TargetEmbeddingFormatsAdmitOnlyInternalUncheckedRows (0 ms)
+[ RUN      ] GgmlVulkanRegion.OriginalVulkanFormatsAdmitMatricesAndExtendedIq1StaysRejected
+[       OK ] GgmlVulkanRegion.OriginalVulkanFormatsAdmitMatricesAndExtendedIq1StaysRejected (0 ms)
+[ RUN      ] GgmlVulkanRegion.DenseBfloatGroupedExpertsRequireF32Activations
+[       OK ] GgmlVulkanRegion.DenseBfloatGroupedExpertsRequireF32Activations (0 ms)
+[ RUN      ] GgmlVulkanRegion.BfloatRouterMatMulRetainsF32OutputDomain
+[       OK ] GgmlVulkanRegion.BfloatRouterMatMulRetainsF32OutputDomain (0 ms)
+[ RUN      ] GgmlVulkanRegion.ModelWidthNormGateResidualWithChangingInputs
+[       OK ] GgmlVulkanRegion.ModelWidthNormGateResidualWithChangingInputs (404 ms)
+[ RUN      ] GgmlVulkanRegion.D5AbsorbedMlaColdShapeBoundary
+[       OK ] GgmlVulkanRegion.D5AbsorbedMlaColdShapeBoundary (0 ms)
+[----------] 6 tests from GgmlVulkanRegion (404 ms total)
+
+[----------] 8 tests from GgmlVulkanNative
+[ RUN      ] GgmlVulkanNative.RejectsInvalidLoaderAndPhysicalIndex
+[       OK ] GgmlVulkanNative.RejectsInvalidLoaderAndPhysicalIndex (12 ms)
+[ RUN      ] GgmlVulkanNative.ExplicitValidationUsesItsOwnInstance
+[       OK ] GgmlVulkanNative.ExplicitValidationUsesItsOwnInstance (155 ms)
+[ RUN      ] GgmlVulkanNative.QuotaAndBorrowedOwnerRetireExactNativeStorage
+[       OK ] GgmlVulkanNative.QuotaAndBorrowedOwnerRetireExactNativeStorage (120 ms)
+[ RUN      ] GgmlVulkanNative.IndependentOwnersAndNestedThreadScopes
+[       OK ] GgmlVulkanNative.IndependentOwnersAndNestedThreadScopes (117 ms)
+[ RUN      ] GgmlVulkanNative.RealNativeCreationFailuresRollBackHandles
+ggml_vulkan: Device memory allocation of size 4096 failed.
+ggml_vulkan: vk::Device::bindBufferMemory: ErrorOutOfDeviceMemory
+[       OK ] GgmlVulkanNative.RealNativeCreationFailuresRollBackHandles (116 ms)
+[ RUN      ] GgmlVulkanNative.PartialRegionSubmitRetainsResourcesUntilDrainIsProved
+[       OK ] GgmlVulkanNative.PartialRegionSubmitRetainsResourcesUntilDrainIsProved (62 ms)
+[ RUN      ] GgmlVulkanNative.FenceObservationFailureKeepsTheAcceptedRegionPending
+[       OK ] GgmlVulkanNative.FenceObservationFailureKeepsTheAcceptedRegionPending (60 ms)
+[ RUN      ] GgmlVulkanNative.ColdStoragePartialDeviceAllocationRollsBack
+ggml_vulkan: Device memory allocation of size 8192 failed.
+ggml_vulkan: vk::Device::allocateMemory: ErrorOutOfDeviceMemory
+ggml_gallocr_reserve_n_impl: failed to allocate Vulkan0 buffer of size 16384
+[       OK ] GgmlVulkanNative.ColdStoragePartialDeviceAllocationRollsBack (57 ms)
+[----------] 8 tests from GgmlVulkanNative (704 ms total)
+
+[----------] 2 tests from GgmlVulkanWork
+[ RUN      ] GgmlVulkanWork.RepeatedIndependentSlotsRetainTheirResourceLeases
+[       OK ] GgmlVulkanWork.RepeatedIndependentSlotsRetainTheirResourceLeases (61 ms)
+[ RUN      ] GgmlVulkanWork.MovedPendingOwnerDrainsBeforeDroppingItsLastGraphLease
+[       OK ] GgmlVulkanWork.MovedPendingOwnerDrainsBeforeDroppingItsLastGraphLease (63 ms)
+[----------] 2 tests from GgmlVulkanWork (125 ms total)
+
+[----------] 5 tests from GgmlVulkanStorage
+[ RUN      ] GgmlVulkanStorage.LivenessReuseAndPendingLeaseRetireQuota
+[       OK ] GgmlVulkanStorage.LivenessReuseAndPendingLeaseRetireQuota (61 ms)
+[ RUN      ] GgmlVulkanStorage.ColdQuotaFailureAndMissingOutputReturnErrors
+ggml_gallocr_reserve_n_impl: failed to allocate Vulkan0 buffer of size 16384
+[       OK ] GgmlVulkanStorage.ColdQuotaFailureAndMissingOutputReturnErrors (58 ms)
+[ RUN      ] GgmlVulkanStorage.EveryColdPlannerHostAllocationFailureIsRecoverable
+ggml_dyn_tallocr_alloc: not enough space in the buffer to allocate 8192 bytes, largest block available 0 bytes
+ggml_gallocr_reserve_n_impl: failed to allocate Vulkan0 buffer of size 16384
+[       OK ] GgmlVulkanStorage.EveryColdPlannerHostAllocationFailureIsRecoverable (66 ms)
+[ RUN      ] GgmlVulkanStorage.ImportedStorageNeedsAnOwnerAndTheSameDevice
+[       OK ] GgmlVulkanStorage.ImportedStorageNeedsAnOwnerAndTheSameDevice (114 ms)
+[ RUN      ] GgmlVulkanStorage.FragmentedPlannerCapacityReturnsFailureWithoutAbort
+[       OK ] GgmlVulkanStorage.FragmentedPlannerCapacityReturnsFailureWithoutAbort (62 ms)
+[----------] 5 tests from GgmlVulkanStorage (363 ms total)
+
+[----------] 1 test from GgmlVulkanQualification
+[ RUN      ] GgmlVulkanQualification.Mxfp4PreservesFrozenQvkValues
+[       OK ] GgmlVulkanQualification.Mxfp4PreservesFrozenQvkValues (63 ms)
+[----------] 1 test from GgmlVulkanQualification (63 ms total)
+
+[----------] Global test environment tear-down
+[==========] 25 tests from 6 test suites ran. (1661 ms total)
+[  PASSED  ] 25 tests.

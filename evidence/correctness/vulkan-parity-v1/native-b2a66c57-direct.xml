@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites tests="5" failures="2" disabled="0" errors="0" time="44.523" timestamp="2026-10-09T09:03:08.776" name="AllTests">
+  <testsuite name="VulkanGguf" tests="5" failures="2" disabled="0" skipped="0" errors="0" time="44.523" timestamp="2026-10-09T09:03:08.776">
+    <testcase name="EveryCatalogFormatUsesNativeDirectRegionAndReplays" file="C:\public\project-hyle\hyle\tests\compute_route_vulkan\gguf_test.cc" line="10" status="run" result="completed" time="22.547" timestamp="2026-10-09T09:03:08.776" classname="VulkanGguf">
+      <failure message="C:\public\project-hyle\hyle\tests\compute_route_vulkan\gguf_test_support.h:165&#x0A;The difference between observed[i] and expected[i] is 0.0047854760263428275, which exceeds 3.0e-3 + 3.0e-4 * std::abs(expected[i]), where&#x0A;observed[i] evaluates to -2.0911331176757812,&#x0A;expected[i] evaluates to -2.0959185937021241, and&#x0A;3.0e-3 + 3.0e-4 * std::abs(expected[i]) evaluates to 0.0036287755781106374.&#x0A;8&#x0A;Google Test trace:&#x0A;C:\public\project-hyle\hyle\tests\compute_route_vulkan\gguf_test.cc(20): 16&#x0A;" type=""><![CDATA[C:\public\project-hyle\hyle\tests\compute_route_vulkan\gguf_test_support.h:165
+The difference between observed[i] and expected[i] is 0.0047854760263428275, which exceeds 3.0e-3 + 3.0e-4 * std::abs(expected[i]), where
+observed[i] evaluates to -2.0911331176757812,
+expected[i] evaluates to -2.0959185937021241, and
+3.0e-3 + 3.0e-4 * std::abs(expected[i]) evaluates to 0.0036287755781106374.
+8
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\gguf_test.cc(20): 16
+]]></failure>
+      <failure message="C:\public\project-hyle\hyle\tests\compute_route_vulkan\gguf_test_support.h:165&#x0A;The difference between observed[i] and expected[i] is 0.0095709520526856551, which exceeds 3.0e-3 + 3.0e-4 * std::abs(expected[i]), where&#x0A;observed[i] evaluates to -4.1822662353515625,&#x0A;expected[i] evaluates to -4.1918371874042482, and&#x0A;3.0e-3 + 3.0e-4 * std::abs(expected[i]) evaluates to 0.0042575511562212747.&#x0A;8&#x0A;Google Test trace:&#x0A;C:\public\project-hyle\hyle\tests\compute_route_vulkan\gguf_test.cc(20): 16&#x0A;" type=""><![CDATA[C:\public\project-hyle\hyle\tests\compute_route_vulkan\gguf_test_support.h:165
+The difference between observed[i] and expected[i] is 0.0095709520526856551, which exceeds 3.0e-3 + 3.0e-4 * std::abs(expected[i]), where
+observed[i] evaluates to -4.1822662353515625,
+expected[i] evaluates to -4.1918371874042482, and
+3.0e-3 + 3.0e-4 * std::abs(expected[i]) evaluates to 0.0042575511562212747.
+8
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\gguf_test.cc(20): 16
+]]></failure>
+    </testcase>
+    <testcase name="TargetEmbeddingFormatsUseNativeRowsAndCheckedPublication" file="C:\public\project-hyle\hyle\tests\compute_route_vulkan\gguf_test.cc" line="42" status="run" result="completed" time="0.256" timestamp="2026-10-09T09:03:31.324" classname="VulkanGguf" />
+    <testcase name="PackedFormatsGroupedExpertsUseNativeMulMatId" file="C:\public\project-hyle\hyle\tests\compute_route_vulkan\gguf_test.cc" line="127" status="run" result="completed" time="21.546" timestamp="2026-10-09T09:03:31.580" classname="VulkanGguf">
+      <failure message="C:\public\project-hyle\hyle\tests\compute_route_vulkan\gguf_test_support.h:165&#x0A;The difference between observed[i] and expected[i] is 0.0051422002115930621, which exceeds 3.0e-3 + 3.0e-4 * std::abs(expected[i]), where&#x0A;observed[i] evaluates to 1.7917664051055908,&#x0A;expected[i] evaluates to 1.7866242048939978, and&#x0A;3.0e-3 + 3.0e-4 * std::abs(expected[i]) evaluates to 0.0035359872614681995.&#x0A;9&#x0A;Google Test trace:&#x0A;C:\public\project-hyle\hyle\tests\compute_route_vulkan\gguf_test.cc(131): 16&#x0A;" type=""><![CDATA[C:\public\project-hyle\hyle\tests\compute_route_vulkan\gguf_test_support.h:165
+The difference between observed[i] and expected[i] is 0.0051422002115930621, which exceeds 3.0e-3 + 3.0e-4 * std::abs(expected[i]), where
+observed[i] evaluates to 1.7917664051055908,
+expected[i] evaluates to 1.7866242048939978, and
+3.0e-3 + 3.0e-4 * std::abs(expected[i]) evaluates to 0.0035359872614681995.
+9
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\gguf_test.cc(131): 16
+]]></failure>
+      <failure message="C:\public\project-hyle\hyle\tests\compute_route_vulkan\gguf_test_support.h:165&#x0A;The difference between observed[i] and expected[i] is 0.007601298216954655, which exceeds 3.0e-3 + 3.0e-4 * std::abs(expected[i]), where&#x0A;observed[i] evaluates to -1.3447329998016357,&#x0A;expected[i] evaluates to -1.3523342980185904, and&#x0A;3.0e-3 + 3.0e-4 * std::abs(expected[i]) evaluates to 0.003405700289405577.&#x0A;21&#x0A;Google Test trace:&#x0A;C:\public\project-hyle\hyle\tests\compute_route_vulkan\gguf_test.cc(131): 16&#x0A;" type=""><![CDATA[C:\public\project-hyle\hyle\tests\compute_route_vulkan\gguf_test_support.h:165
+The difference between observed[i] and expected[i] is 0.007601298216954655, which exceeds 3.0e-3 + 3.0e-4 * std::abs(expected[i]), where
+observed[i] evaluates to -1.3447329998016357,
+expected[i] evaluates to -1.3523342980185904, and
+3.0e-3 + 3.0e-4 * std::abs(expected[i]) evaluates to 0.003405700289405577.
+21
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\gguf_test.cc(131): 16
+]]></failure>
+      <failure message="C:\public\project-hyle\hyle\tests\compute_route_vulkan\gguf_test_support.h:165&#x0A;The difference between observed[i] and expected[i] is 0.0046604537480829933, which exceeds 3.0e-3 + 3.0e-4 * std::abs(expected[i]), where&#x0A;observed[i] evaluates to -1.1070929765701294,&#x0A;expected[i] evaluates to -1.1024325228220464, and&#x0A;3.0e-3 + 3.0e-4 * std::abs(expected[i]) evaluates to 0.0033307297568466142.&#x0A;29&#x0A;Google Test trace:&#x0A;C:\public\project-hyle\hyle\tests\compute_route_vulkan\gguf_test.cc(131): 16&#x0A;" type=""><![CDATA[C:\public\project-hyle\hyle\tests\compute_route_vulkan\gguf_test_support.h:165
+The difference between observed[i] and expected[i] is 0.0046604537480829933, which exceeds 3.0e-3 + 3.0e-4 * std::abs(expected[i]), where
+observed[i] evaluates to -1.1070929765701294,
+expected[i] evaluates to -1.1024325228220464, and
+3.0e-3 + 3.0e-4 * std::abs(expected[i]) evaluates to 0.0033307297568466142.
+29
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\gguf_test.cc(131): 16
+]]></failure>
+      <failure message="C:\public\project-hyle\hyle\tests\compute_route_vulkan\gguf_test_support.h:165&#x0A;The difference between observed[i] and expected[i] is 0.010284400423186124, which exceeds 3.0e-3 + 3.0e-4 * std::abs(expected[i]), where&#x0A;observed[i] evaluates to 3.5835328102111816,&#x0A;expected[i] evaluates to 3.5732484097879955, and&#x0A;3.0e-3 + 3.0e-4 * std::abs(expected[i]) evaluates to 0.0040719745229363981.&#x0A;9&#x0A;Google Test trace:&#x0A;C:\public\project-hyle\hyle\tests\compute_route_vulkan\gguf_test.cc(131): 16&#x0A;" type=""><![CDATA[C:\public\project-hyle\hyle\tests\compute_route_vulkan\gguf_test_support.h:165
+The difference between observed[i] and expected[i] is 0.010284400423186124, which exceeds 3.0e-3 + 3.0e-4 * std::abs(expected[i]), where
+observed[i] evaluates to 3.5835328102111816,
+expected[i] evaluates to 3.5732484097879955, and
+3.0e-3 + 3.0e-4 * std::abs(expected[i]) evaluates to 0.0040719745229363981.
+9
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\gguf_test.cc(131): 16
+]]></failure>
+      <failure message="C:\public\project-hyle\hyle\tests\compute_route_vulkan\gguf_test_support.h:165&#x0A;The difference between observed[i] and expected[i] is 0.005227450225552932, which exceeds 3.0e-3 + 3.0e-4 * std::abs(expected[i]), where&#x0A;observed[i] evaluates to 2.0766186714172363,&#x0A;expected[i] evaluates to 2.0713912211916834, and&#x0A;3.0e-3 + 3.0e-4 * std::abs(expected[i]) evaluates to 0.0036214173663575051.&#x0A;19&#x0A;Google Test trace:&#x0A;C:\public\project-hyle\hyle\tests\compute_route_vulkan\gguf_test.cc(131): 16&#x0A;" type=""><![CDATA[C:\public\project-hyle\hyle\tests\compute_route_vulkan\gguf_test_support.h:165
+The difference between observed[i] and expected[i] is 0.005227450225552932, which exceeds 3.0e-3 + 3.0e-4 * std::abs(expected[i]), where
+observed[i] evaluates to 2.0766186714172363,
+expected[i] evaluates to 2.0713912211916834, and
+3.0e-3 + 3.0e-4 * std::abs(expected[i]) evaluates to 0.0036214173663575051.
+19
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\gguf_test.cc(131): 16
+]]></failure>
+      <failure message="C:\public\project-hyle\hyle\tests\compute_route_vulkan\gguf_test_support.h:165&#x0A;The difference between observed[i] and expected[i] is 0.01520259643390931, which exceeds 3.0e-3 + 3.0e-4 * std::abs(expected[i]), where&#x0A;observed[i] evaluates to -2.6894659996032715,&#x0A;expected[i] evaluates to -2.7046685960371808, and&#x0A;3.0e-3 + 3.0e-4 * std::abs(expected[i]) evaluates to 0.0038114005788111543.&#x0A;21&#x0A;Google Test trace:&#x0A;C:\public\project-hyle\hyle\tests\compute_route_vulkan\gguf_test.cc(131): 16&#x0A;" type=""><![CDATA[C:\public\project-hyle\hyle\tests\compute_route_vulkan\gguf_test_support.h:165
+The difference between observed[i] and expected[i] is 0.01520259643390931, which exceeds 3.0e-3 + 3.0e-4 * std::abs(expected[i]), where
+observed[i] evaluates to -2.6894659996032715,
+expected[i] evaluates to -2.7046685960371808, and
+3.0e-3 + 3.0e-4 * std::abs(expected[i]) evaluates to 0.0038114005788111543.
+21
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\gguf_test.cc(131): 16
+]]></failure>
+      <failure message="C:\public\project-hyle\hyle\tests\compute_route_vulkan\gguf_test_support.h:165&#x0A;The difference between observed[i] and expected[i] is 0.0056256726265937473, which exceeds 3.0e-3 + 3.0e-4 * std::abs(expected[i]), where&#x0A;observed[i] evaluates to 4.3305654525756836,&#x0A;expected[i] evaluates to 4.3249397799490898, and&#x0A;3.0e-3 + 3.0e-4 * std::abs(expected[i]) evaluates to 0.0042974819339847269.&#x0A;23&#x0A;Google Test trace:&#x0A;C:\public\project-hyle\hyle\tests\compute_route_vulkan\gguf_test.cc(131): 16&#x0A;" type=""><![CDATA[C:\public\project-hyle\hyle\tests\compute_route_vulkan\gguf_test_support.h:165
+The difference between observed[i] and expected[i] is 0.0056256726265937473, which exceeds 3.0e-3 + 3.0e-4 * std::abs(expected[i]), where
+observed[i] evaluates to 4.3305654525756836,
+expected[i] evaluates to 4.3249397799490898, and
+3.0e-3 + 3.0e-4 * std::abs(expected[i]) evaluates to 0.0042974819339847269.
+23
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\gguf_test.cc(131): 16
+]]></failure>
+      <failure message="C:\public\project-hyle\hyle\tests\compute_route_vulkan\gguf_test_support.h:165&#x0A;The difference between observed[i] and expected[i] is 0.0093209074961659866, which exceeds 3.0e-3 + 3.0e-4 * std::abs(expected[i]), where&#x0A;observed[i] evaluates to -2.2141859531402588,&#x0A;expected[i] evaluates to -2.2048650456440928, and&#x0A;3.0e-3 + 3.0e-4 * std::abs(expected[i]) evaluates to 0.0036614595136932279.&#x0A;29&#x0A;Google Test trace:&#x0A;C:\public\project-hyle\hyle\tests\compute_route_vulkan\gguf_test.cc(131): 16&#x0A;" type=""><![CDATA[C:\public\project-hyle\hyle\tests\compute_route_vulkan\gguf_test_support.h:165
+The difference between observed[i] and expected[i] is 0.0093209074961659866, which exceeds 3.0e-3 + 3.0e-4 * std::abs(expected[i]), where
+observed[i] evaluates to -2.2141859531402588,
+expected[i] evaluates to -2.2048650456440928, and
+3.0e-3 + 3.0e-4 * std::abs(expected[i]) evaluates to 0.0036614595136932279.
+29
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\gguf_test.cc(131): 16
+]]></failure>
+    </testcase>
+    <testcase name="DenseBfloatGroupedExpertsUseNativeMulMatIdAndReplay" file="C:\public\project-hyle\hyle\tests\compute_route_vulkan\gguf_test.cc" line="175" status="run" result="completed" time="0.105" timestamp="2026-10-09T09:03:53.126" classname="VulkanGguf" />
+    <testcase name="RejectsMalformedFormatAndPackedStorageOnWrongPorts" file="C:\public\project-hyle\hyle\tests\compute_route_vulkan\gguf_test.cc" line="222" status="run" result="completed" time="0.067" timestamp="2026-10-09T09:03:53.232" classname="VulkanGguf" />
+  </testsuite>
+</testsuites>

@@ -5,6 +5,7 @@ import json
 import os
 from pathlib import Path
 import subprocess
+import sys
 
 ROOT = Path(__file__).resolve().parents[3]
 BUILD = Path('C:/hv/vp1')
@@ -14,6 +15,8 @@ ctypes.windll.kernel32.SetErrorMode(0x0001 | 0x0002 | 0x8000)
 flags = {'creationflags': subprocess.CREATE_NO_WINDOW}
 env = dict(os.environ, VULKAN_SDK=str(SDK), HYLE_VULKAN_VALIDATION='1',
     HYLE_TEST_VULKAN_VALIDATE='1', VK_LAYER_PATH=str(SDK / 'Bin'))
+delta = '--delta' in sys.argv[1:]
+if delta: env['HYLE_VULKAN_IQ1_DELTA'] = '1'
 candidate = subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=ROOT, text=True, **flags).strip()
 if subprocess.check_output(['git', 'status', '--porcelain'], cwd=ROOT, text=True, **flags).strip():
     raise RuntimeError('batch requires an immutable clean candidate')
@@ -24,6 +27,14 @@ jobs = [
     ('direct', 'hyle_compute_route_vulkan_test', 'VulkanGguf.*'),
     ('graph', 'hyle_graph_route_vulkan_test', 'VulkanGraphGguf.*'),
 ]
+if delta:
+    jobs = [
+        ('direct-delta', 'hyle_compute_route_vulkan_test',
+         'VulkanGguf.EveryCatalogFormatUsesNativeDirectRegionAndReplays:VulkanGguf.PackedFormatsGroupedExpertsUseNativeMulMatId'),
+        ('graph-delta', 'hyle_graph_route_vulkan_test',
+         'VulkanGraphGguf.PackedMatMulUsesCapturedNativeWeightAndReplays:VulkanGraphGguf.PackedFormatsGroupedExpertsUseCapturedMulMatId'),
+    ]
+receipt['tested_types'] = ['IQ1_S'] if delta else 'declared full first batch'
 failed = False
 for name, stem, selected in jobs:
     executable = BUILD / 'bin' / (stem + '.exe')

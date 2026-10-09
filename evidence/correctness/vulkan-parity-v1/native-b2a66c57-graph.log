@@ -1,0 +1,119 @@
+Running main() from C:\public\tools\hyle-dependencies\v1\sources\googletest-063de7e9578f-162765170ae6\googletest\src\gtest_main.cc
+Note: Google Test filter = VulkanGraphGguf.*
+[==========] Running 4 tests from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 4 tests from VulkanGraphGguf
+[ RUN      ] VulkanGraphGguf.PackedMatMulUsesCapturedNativeWeightAndReplays
+C:\public\project-hyle\hyle\tests\graph_route_vulkan\../compute_route_vulkan/gguf_test_support.h(165): error: The difference between observed[i] and expected[i] is 0.0045143145159260989, which exceeds 3.0e-3 + 3.0e-4 * std::abs(expected[i]), where
+observed[i] evaluates to 0.58708524703979492,
+expected[i] evaluates to 0.58257093252386882, and
+3.0e-3 + 3.0e-4 * std::abs(expected[i]) evaluates to 0.0031747712797571609.
+14
+Google Test trace:
+C:\public\project-hyle\hyle\tests\graph_route_vulkan\gguf_test.cc(16): 16
+
+C:\public\project-hyle\hyle\tests\graph_route_vulkan\../compute_route_vulkan/gguf_test_support.h(165): error: The difference between observed[i] and expected[i] is 0.0090286290318521978, which exceeds 3.0e-3 + 3.0e-4 * std::abs(expected[i]), where
+observed[i] evaluates to 1.1741704940795898,
+expected[i] evaluates to 1.1651418650477376, and
+3.0e-3 + 3.0e-4 * std::abs(expected[i]) evaluates to 0.0033495425595143212.
+14
+Google Test trace:
+C:\public\project-hyle\hyle\tests\graph_route_vulkan\gguf_test.cc(16): 16
+
+[  FAILED  ] VulkanGraphGguf.PackedMatMulUsesCapturedNativeWeightAndReplays (23546 ms)
+[ RUN      ] VulkanGraphGguf.TargetEmbeddingFormatsUseCheckedNativeRowsAndKeepLeases
+[       OK ] VulkanGraphGguf.TargetEmbeddingFormatsUseCheckedNativeRowsAndKeepLeases (247 ms)
+[ RUN      ] VulkanGraphGguf.PackedFormatsGroupedExpertsUseCapturedMulMatId
+C:\public\project-hyle\hyle\tests\graph_route_vulkan\../compute_route_vulkan/gguf_test_support.h(165): error: The difference between observed[i] and expected[i] is 0.0051488055679320688, which exceeds 3.0e-3 + 3.0e-4 * std::abs(expected[i]), where
+observed[i] evaluates to -2.2981269359588623,
+expected[i] evaluates to -2.3032757415267944, and
+3.0e-3 + 3.0e-4 * std::abs(expected[i]) evaluates to 0.0036909827224580385.
+0
+Google Test trace:
+C:\public\project-hyle\hyle\tests\graph_route_vulkan\gguf_test.cc(102): 16
+
+C:\public\project-hyle\hyle\tests\graph_route_vulkan\../compute_route_vulkan/gguf_test_support.h(165): error: The difference between observed[i] and expected[i] is 0.0058789354605308652, which exceeds 3.0e-3 + 3.0e-4 * std::abs(expected[i]), where
+observed[i] evaluates to -2.8598804473876953,
+expected[i] evaluates to -2.8657593828482262, and
+3.0e-3 + 3.0e-4 * std::abs(expected[i]) evaluates to 0.0038597278148544681.
+7
+Google Test trace:
+C:\public\project-hyle\hyle\tests\graph_route_vulkan\gguf_test.cc(102): 16
+
+C:\public\project-hyle\hyle\tests\graph_route_vulkan\../compute_route_vulkan/gguf_test_support.h(165): error: The difference between observed[i] and expected[i] is 0.0056544479970812335, which exceeds 3.0e-3 + 3.0e-4 * std::abs(expected[i]), where
+observed[i] evaluates to -0.020362377166748047,
+expected[i] evaluates to -0.02601682516382928, and
+3.0e-3 + 3.0e-4 * std::abs(expected[i]) evaluates to 0.0030078050475491488.
+12
+Google Test trace:
+C:\public\project-hyle\hyle\tests\graph_route_vulkan\gguf_test.cc(102): 16
+
+C:\public\project-hyle\hyle\tests\graph_route_vulkan\../compute_route_vulkan/gguf_test_support.h(165): error: The difference between observed[i] and expected[i] is 0.0060811300399365997, which exceeds 3.0e-3 + 3.0e-4 * std::abs(expected[i]), where
+observed[i] evaluates to -2.3604135513305664,
+expected[i] evaluates to -2.366494681370503, and
+3.0e-3 + 3.0e-4 * std::abs(expected[i]) evaluates to 0.0037099484044111506.
+20
+Google Test trace:
+C:\public\project-hyle\hyle\tests\graph_route_vulkan\gguf_test.cc(102): 16
+
+C:\public\project-hyle\hyle\tests\graph_route_vulkan\../compute_route_vulkan/gguf_test_support.h(165): error: The difference between observed[i] and expected[i] is 0.010297611135864138, which exceeds 3.0e-3 + 3.0e-4 * std::abs(expected[i]), where
+observed[i] evaluates to -4.5962538719177246,
+expected[i] evaluates to -4.6065514830535887, and
+3.0e-3 + 3.0e-4 * std::abs(expected[i]) evaluates to 0.0043819654449160769.
+0
+Google Test trace:
+C:\public\project-hyle\hyle\tests\graph_route_vulkan\gguf_test.cc(102): 16
+
+C:\public\project-hyle\hyle\tests\graph_route_vulkan\../compute_route_vulkan/gguf_test_support.h(165): error: The difference between observed[i] and expected[i] is 0.01175787092106173, which exceeds 3.0e-3 + 3.0e-4 * std::abs(expected[i]), where
+observed[i] evaluates to -5.7197608947753906,
+expected[i] evaluates to -5.7315187656964524, and
+3.0e-3 + 3.0e-4 * std::abs(expected[i]) evaluates to 0.0047194556297089352.
+7
+Google Test trace:
+C:\public\project-hyle\hyle\tests\graph_route_vulkan\gguf_test.cc(102): 16
+
+C:\public\project-hyle\hyle\tests\graph_route_vulkan\../compute_route_vulkan/gguf_test_support.h(165): error: The difference between observed[i] and expected[i] is 0.011308895994162467, which exceeds 3.0e-3 + 3.0e-4 * std::abs(expected[i]), where
+observed[i] evaluates to -0.040724754333496094,
+expected[i] evaluates to -0.052033650327658561, and
+3.0e-3 + 3.0e-4 * std::abs(expected[i]) evaluates to 0.0030156100950982975.
+12
+Google Test trace:
+C:\public\project-hyle\hyle\tests\graph_route_vulkan\gguf_test.cc(102): 16
+
+C:\public\project-hyle\hyle\tests\graph_route_vulkan\../compute_route_vulkan/gguf_test_support.h(165): error: The difference between observed[i] and expected[i] is 0.0057071608619816416, which exceeds 3.0e-3 + 3.0e-4 * std::abs(expected[i]), where
+observed[i] evaluates to 5.1164913177490234,
+expected[i] evaluates to 5.1107841568870418, and
+3.0e-3 + 3.0e-4 * std::abs(expected[i]) evaluates to 0.0045332352470661124.
+18
+Google Test trace:
+C:\public\project-hyle\hyle\tests\graph_route_vulkan\gguf_test.cc(102): 16
+
+C:\public\project-hyle\hyle\tests\graph_route_vulkan\../compute_route_vulkan/gguf_test_support.h(165): error: The difference between observed[i] and expected[i] is 0.012162260079873199, which exceeds 3.0e-3 + 3.0e-4 * std::abs(expected[i]), where
+observed[i] evaluates to -4.7208271026611328,
+expected[i] evaluates to -4.732989362741006, and
+3.0e-3 + 3.0e-4 * std::abs(expected[i]) evaluates to 0.0044198968088223021.
+20
+Google Test trace:
+C:\public\project-hyle\hyle\tests\graph_route_vulkan\gguf_test.cc(102): 16
+
+C:\public\project-hyle\hyle\tests\graph_route_vulkan\../compute_route_vulkan/gguf_test_support.h(165): error: The difference between observed[i] and expected[i] is 0.0066681812323601264, which exceeds 3.0e-3 + 3.0e-4 * std::abs(expected[i]), where
+observed[i] evaluates to 7.3387689590454102,
+expected[i] evaluates to 7.33210077781305, and
+3.0e-3 + 3.0e-4 * std::abs(expected[i]) evaluates to 0.0051996302333439147.
+22
+Google Test trace:
+C:\public\project-hyle\hyle\tests\graph_route_vulkan\gguf_test.cc(102): 16
+
+[  FAILED  ] VulkanGraphGguf.PackedFormatsGroupedExpertsUseCapturedMulMatId (21431 ms)
+[ RUN      ] VulkanGraphGguf.DenseBfloatGroupedExpertsUseCapturedMulMatIdAndReplay
+[       OK ] VulkanGraphGguf.DenseBfloatGroupedExpertsUseCapturedMulMatIdAndReplay (103 ms)
+[----------] 4 tests from VulkanGraphGguf (45328 ms total)
+
+[----------] Global test environment tear-down
+[==========] 4 tests from 1 test suite ran. (45328 ms total)
+[  PASSED  ] 2 tests.
+[  FAILED  ] 2 tests, listed below:
+[  FAILED  ] VulkanGraphGguf.PackedMatMulUsesCapturedNativeWeightAndReplays
+[  FAILED  ] VulkanGraphGguf.PackedFormatsGroupedExpertsUseCapturedMulMatId
+
+ 2 FAILED TESTS

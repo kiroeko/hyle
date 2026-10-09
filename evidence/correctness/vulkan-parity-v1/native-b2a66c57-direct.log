@@ -1,0 +1,105 @@
+Running main() from C:\public\tools\hyle-dependencies\v1\sources\googletest-063de7e9578f-162765170ae6\googletest\src\gtest_main.cc
+Note: Google Test filter = VulkanGguf.*
+[==========] Running 5 tests from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 5 tests from VulkanGguf
+[ RUN      ] VulkanGguf.EveryCatalogFormatUsesNativeDirectRegionAndReplays
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\gguf_test_support.h(165): error: The difference between observed[i] and expected[i] is 0.0047854760263428275, which exceeds 3.0e-3 + 3.0e-4 * std::abs(expected[i]), where
+observed[i] evaluates to -2.0911331176757812,
+expected[i] evaluates to -2.0959185937021241, and
+3.0e-3 + 3.0e-4 * std::abs(expected[i]) evaluates to 0.0036287755781106374.
+8
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\gguf_test.cc(20): 16
+
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\gguf_test_support.h(165): error: The difference between observed[i] and expected[i] is 0.0095709520526856551, which exceeds 3.0e-3 + 3.0e-4 * std::abs(expected[i]), where
+observed[i] evaluates to -4.1822662353515625,
+expected[i] evaluates to -4.1918371874042482, and
+3.0e-3 + 3.0e-4 * std::abs(expected[i]) evaluates to 0.0042575511562212747.
+8
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\gguf_test.cc(20): 16
+
+[  FAILED  ] VulkanGguf.EveryCatalogFormatUsesNativeDirectRegionAndReplays (22547 ms)
+[ RUN      ] VulkanGguf.TargetEmbeddingFormatsUseNativeRowsAndCheckedPublication
+[       OK ] VulkanGguf.TargetEmbeddingFormatsUseNativeRowsAndCheckedPublication (256 ms)
+[ RUN      ] VulkanGguf.PackedFormatsGroupedExpertsUseNativeMulMatId
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\gguf_test_support.h(165): error: The difference between observed[i] and expected[i] is 0.0051422002115930621, which exceeds 3.0e-3 + 3.0e-4 * std::abs(expected[i]), where
+observed[i] evaluates to 1.7917664051055908,
+expected[i] evaluates to 1.7866242048939978, and
+3.0e-3 + 3.0e-4 * std::abs(expected[i]) evaluates to 0.0035359872614681995.
+9
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\gguf_test.cc(131): 16
+
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\gguf_test_support.h(165): error: The difference between observed[i] and expected[i] is 0.007601298216954655, which exceeds 3.0e-3 + 3.0e-4 * std::abs(expected[i]), where
+observed[i] evaluates to -1.3447329998016357,
+expected[i] evaluates to -1.3523342980185904, and
+3.0e-3 + 3.0e-4 * std::abs(expected[i]) evaluates to 0.003405700289405577.
+21
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\gguf_test.cc(131): 16
+
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\gguf_test_support.h(165): error: The difference between observed[i] and expected[i] is 0.0046604537480829933, which exceeds 3.0e-3 + 3.0e-4 * std::abs(expected[i]), where
+observed[i] evaluates to -1.1070929765701294,
+expected[i] evaluates to -1.1024325228220464, and
+3.0e-3 + 3.0e-4 * std::abs(expected[i]) evaluates to 0.0033307297568466142.
+29
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\gguf_test.cc(131): 16
+
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\gguf_test_support.h(165): error: The difference between observed[i] and expected[i] is 0.010284400423186124, which exceeds 3.0e-3 + 3.0e-4 * std::abs(expected[i]), where
+observed[i] evaluates to 3.5835328102111816,
+expected[i] evaluates to 3.5732484097879955, and
+3.0e-3 + 3.0e-4 * std::abs(expected[i]) evaluates to 0.0040719745229363981.
+9
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\gguf_test.cc(131): 16
+
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\gguf_test_support.h(165): error: The difference between observed[i] and expected[i] is 0.005227450225552932, which exceeds 3.0e-3 + 3.0e-4 * std::abs(expected[i]), where
+observed[i] evaluates to 2.0766186714172363,
+expected[i] evaluates to 2.0713912211916834, and
+3.0e-3 + 3.0e-4 * std::abs(expected[i]) evaluates to 0.0036214173663575051.
+19
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\gguf_test.cc(131): 16
+
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\gguf_test_support.h(165): error: The difference between observed[i] and expected[i] is 0.01520259643390931, which exceeds 3.0e-3 + 3.0e-4 * std::abs(expected[i]), where
+observed[i] evaluates to -2.6894659996032715,
+expected[i] evaluates to -2.7046685960371808, and
+3.0e-3 + 3.0e-4 * std::abs(expected[i]) evaluates to 0.0038114005788111543.
+21
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\gguf_test.cc(131): 16
+
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\gguf_test_support.h(165): error: The difference between observed[i] and expected[i] is 0.0056256726265937473, which exceeds 3.0e-3 + 3.0e-4 * std::abs(expected[i]), where
+observed[i] evaluates to 4.3305654525756836,
+expected[i] evaluates to 4.3249397799490898, and
+3.0e-3 + 3.0e-4 * std::abs(expected[i]) evaluates to 0.0042974819339847269.
+23
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\gguf_test.cc(131): 16
+
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\gguf_test_support.h(165): error: The difference between observed[i] and expected[i] is 0.0093209074961659866, which exceeds 3.0e-3 + 3.0e-4 * std::abs(expected[i]), where
+observed[i] evaluates to -2.2141859531402588,
+expected[i] evaluates to -2.2048650456440928, and
+3.0e-3 + 3.0e-4 * std::abs(expected[i]) evaluates to 0.0036614595136932279.
+29
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\gguf_test.cc(131): 16
+
+[  FAILED  ] VulkanGguf.PackedFormatsGroupedExpertsUseNativeMulMatId (21546 ms)
+[ RUN      ] VulkanGguf.DenseBfloatGroupedExpertsUseNativeMulMatIdAndReplay
+[       OK ] VulkanGguf.DenseBfloatGroupedExpertsUseNativeMulMatIdAndReplay (105 ms)
+[ RUN      ] VulkanGguf.RejectsMalformedFormatAndPackedStorageOnWrongPorts
+[       OK ] VulkanGguf.RejectsMalformedFormatAndPackedStorageOnWrongPorts (67 ms)
+[----------] 5 tests from VulkanGguf (44523 ms total)
+
+[----------] Global test environment tear-down
+[==========] 5 tests from 1 test suite ran. (44523 ms total)
+[  PASSED  ] 3 tests.
+[  FAILED  ] 2 tests, listed below:
+[  FAILED  ] VulkanGguf.EveryCatalogFormatUsesNativeDirectRegionAndReplays
+[  FAILED  ] VulkanGguf.PackedFormatsGroupedExpertsUseNativeMulMatId
+
+ 2 FAILED TESTS

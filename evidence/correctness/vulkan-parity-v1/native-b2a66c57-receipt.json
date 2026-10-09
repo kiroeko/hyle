@@ -1,0 +1,75 @@
+{
+  "candidate": "b2a66c57ac9338909e38a4af0d02c9efe4fe21c4",
+  "build": "C:\\hv\\vp1",
+  "steps": [
+    {
+      "name": "provider",
+      "returncode": 0,
+      "filter": "*",
+      "binary_sha256": "18dac8ea7055a78403fef0bccea6d18a421e74870698081c6e63978b64350920",
+      "log": "native-b2a66c57-provider.log",
+      "log_sha256": "877311f19b483c0c4cebc1b4173195ca8c9bee2e772026d39f79024082b98aba",
+      "adjacent_dlls": [
+        "hyle_compute.dll",
+        "hyle_compute_ggml_runtime.dll",
+        "hyle_compute_ops.dll",
+        "hyle_compute_provider_ggml_vulkan.dll",
+        "hyle_compute_provider_iree_vulkan.dll",
+        "hyle_compute_route_vulkan.dll",
+        "hyle_container.dll",
+        "hyle_error.dll",
+        "hyle_graph.dll",
+        "hyle_graph_route_vulkan.dll",
+        "hyle_mem.dll",
+        "hyle_platform.dll",
+        "hyle_time.dll"
+      ]
+    },
+    {
+      "name": "direct",
+      "returncode": 1,
+      "filter": "VulkanGguf.*",
+      "binary_sha256": "53eccfcbf6c8f86111e862eebbc0e817791d10346d8347bb88ce66792ec2dfe0",
+      "log": "native-b2a66c57-direct.log",
+      "log_sha256": "30a7a63f76dc310942319585d7884510a250167e9d6a4d98e350773fe7c1f139",
+      "adjacent_dlls": [
+        "hyle_compute.dll",
+        "hyle_compute_ggml_runtime.dll",
+        "hyle_compute_ops.dll",
+        "hyle_compute_provider_ggml_vulkan.dll",
+        "hyle_compute_provider_iree_vulkan.dll",
+        "hyle_compute_route_vulkan.dll",
+        "hyle_container.dll",
+        "hyle_error.dll",
+        "hyle_graph.dll",
+        "hyle_graph_route_vulkan.dll",
+        "hyle_mem.dll",
+        "hyle_platform.dll",
+        "hyle_time.dll"
+      ]
+    },
+    {
+      "name": "graph",
+      "returncode": 1,
+      "filter": "VulkanGraphGguf.*",
+      "binary_sha256": "b1ae84eb1f2661294674a44fdd409b6dc0f6b6e7c6c4d5709002577bbc3d1b7c",
+      "log": "native-b2a66c57-graph.log",
+      "log_sha256": "d79b0909d818bae267d1fbb541e84f6143712792fff1b81f5f1b879cc6ca1099",
+      "adjacent_dlls": [
+        "hyle_compute.dll",
+        "hyle_compute_ggml_runtime.dll",
+        "hyle_compute_ops.dll",
+        "hyle_compute_provider_ggml_vulkan.dll",
+        "hyle_compute_provider_iree_vulkan.dll",
+        "hyle_compute_route_vulkan.dll",
+        "hyle_container.dll",
+        "hyle_error.dll",
+        "hyle_graph.dll",
+        "hyle_graph_route_vulkan.dll",
+        "hyle_mem.dll",
+        "hyle_platform.dll",
+        "hyle_time.dll"
+      ]
+    }
+  ]
+}
