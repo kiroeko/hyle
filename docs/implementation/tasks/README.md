@@ -13,6 +13,11 @@
 - [构建、冷路由和 CPU/GPU 组合入口设计](build/compute-entry-design.md)：入口统计与有限后续施工包；
   本 goal 不改产品，通用增量依赖图只登记 DEFER。
 
+用户已启动的后续实施：
+
+- [C1–C3 / R1 统一配置与交付](build/compute-unified-delivery.md)：当前 owner 按 registry；
+  接线集中后批量验收，H1–H3 另卡启动，增量依赖图继续 DEFER。
+
 当前跨产品能力审计事实：
 
 - [CLOSED 组件全库正确性资格审计](project/closed-components-correctness-qualification-2026-09.md)：
