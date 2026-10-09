@@ -1,5 +1,5 @@
 {
-  "baseline": "a19391c7efa84d1f0c42919e8192e4ce78d1ee32",
+  "baseline": "c80c9ec2e7b7616d06bc1f193c8130457e95486a",
   "kind": "Original source/admission audit only; no runtime PASS",
   "counts": {
     "gguf_profiles": 104,
@@ -50,11 +50,12 @@
     "contracts": 119,
     "embedding_types": [
       "kQ2K",
+      "kQ3K",
       "kQ4_0",
       "kQ4_1",
       "kQ5K"
     ],
-    "embedding_contracts": 7
+    "embedding_contracts": 8
   },
   "rows": [
     {

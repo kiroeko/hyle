@@ -15,7 +15,7 @@ NEW = {
     'kIq1S': 'GGML_TYPE_IQ1_S', 'kIq1M': 'GGML_TYPE_IQ1_M',
 }
 EMBEDDING = {'kQ4K', 'kQ6K', 'kQ8_0'}
-NEW_EMBEDDING = {'kQ2K', 'kQ4_0', 'kQ4_1', 'kQ5K'}
+NEW_EMBEDDING = {'kQ2K', 'kQ3K', 'kQ4_0', 'kQ4_1', 'kQ5K'}
 
 def digest(path):
     return hashlib.sha256(path.read_bytes()).hexdigest()
@@ -40,6 +40,8 @@ def main():
     get_rows = capability[capability.index('case GGML_OP_GET_ROWS:'):capability.index('case GGML_OP_CPY:')]
     assert 'case GGML_OP_MUL_MAT_ID:' in matmul
     generated = generator.read_text(encoding='utf-8')
+    for name in ('GGML_TYPE_Q3_K', 'GGML_TYPE_Q5_K'):
+        assert 'case ' + name + ':' in get_rows, name
     for name in NEW.values():
         assert 'case ' + name + ':' in matmul, name
         assert 'case ' + name + ':' in get_rows, name

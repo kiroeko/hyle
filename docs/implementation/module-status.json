@@ -571,7 +571,7 @@
       "module": "compute_provider_ggml_vulkan",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/vulkan-parity-v1-ggml-native-bindings.md",
-      "summary": "Vulkan parity V1 AUDITED: frozen original eight-format/119-contract type bindings and four embedding formats/eight contracts; old route/Graph performance blockers remain, runtime not yet verified."
+      "summary": "Vulkan parity V1 AUDITED: frozen original eight-format/119-contract type bindings and five embedding formats/eight contracts; old route/Graph performance blockers remain, runtime not yet verified."
     },
     {
       "module": "compute_ggml_runtime",

@@ -11,14 +11,14 @@ route/Graph原BLOCKED和其它CLOSED owner保持；本卡不授权修改其产�
 
 锁定ggml `456172ec733a135778adcd32d00e576a58232e45`原Vulkan supports_op、
 shader-generator与dequant/mul_mat_vec body已含Q4_0/Q4_1/Q2_K、IQ2_XXS/XS/S、IQ1_S/M，
-对应119个共同目录合同。原GET_ROWS含Q2_K/Q4_0/Q4_1/Q5_K，但HYLE仅准入Q4_K/Q6_K/Q8_0，
+对应119个共同目录合同。原GET_ROWS含Q2_K/Q3_K/Q4_0/Q4_1/Q5_K，但HYLE仅准入Q4_K/Q6_K/Q8_0，
 对应另8个实际embedding合同。source存在不签实际device/shape/数值PASS。
 未知IQ1_XS/XXS/XXXS仍不制造COUNT tensor，不由CPU枚举推定GPU实现。
 
 | FIX | 唯一允许产品改动 | 集中验收 |
 |---|---|---|
 | G1 | `region.cc::native_quantized_type`只补上述原8种ggml_type | 原bytes/shape/stride/ggml_nbytes一致，实际MUL_MAT/MUL_MAT_ID与变输入 |
-| G2 | `native_embedding_table`只补实际需要的Q2_K/Q4_0/Q4_1/Q5_K | 原GET_ROWS精确/encoding、native能力、重复/变IDs，public checked失败/恢复 |
+| G2 | `native_embedding_table`只补实际需要的Q2_K/Q3_K/Q4_0/Q4_1/Q5_K | 原GET_ROWS精确/encoding、native能力、重复/变IDs，public checked失败/恢复 |
 | G3 | 原拒绝测试迁移为18类型静态准入与3无source扩展拒绝；复用普通Direct/Graph批量测试 | 两入口原FP32累加门、不解码/repack/换格式，不用prepare成功代签执行 |
 
 canonical descriptors、buffer alignment/capacity/offset/overflow、cold原device supports_op、
@@ -31,7 +31,7 @@ P0：原packed bytes直接native调用；冷建立graph/workspace；hot无decode
 
 ## 预声明验证与停止
 
-同批8格式MatMul/grouped、实际7种embedding、旧10格式回归的影响子集；动态activation/
+同批8格式MatMul/grouped、实际8种embedding、旧10格式回归的影响子集；动态activation/
 weight/IDs、checked错误/恢复、旧结果/close、异常容量及native资源测试；Windows RTX4070
 实际计算，Air按真实原capability另验。共同119/8合同的actual geometry在父轮矩阵统一
 验证，微型源资格不冒称全部合同已完成。三交付/package按selector与父轮集中一次，
