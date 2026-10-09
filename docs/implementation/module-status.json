@@ -546,20 +546,20 @@
     {
       "module": "compute_route_vulkan",
       "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/vulkan-parity-v2-iq1-bindings.md",
-      "summary": "Vulkan IQ1 source batch AUDITED: native source and Direct/Graph 18-case repeated numerical/checked-ID plus request/lease/cancel/close/OOM packet qualified; eight actual banks cold-only. Full catalogue/state/default/P1/platform/three deliveries remain pending."
+      "record": "docs/implementation/tasks/compute/vulkan-parity-v2-catalogue-matrix.md",
+      "summary": "Vulkan catalogue matrix AUDITED: finite M1-M5 typed convolution through mature casts, original grouped F32 binding and complete common 559/80/34/45/104 plus state/sidecar consumers. Prior native source packets retained; full runtime, defaults and delivery pending."
     },
     {
       "module": "graph_route_vulkan",
       "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/vulkan-parity-v2-iq1-bindings.md",
-      "summary": "Vulkan IQ1 source batch AUDITED: native source and Direct/Graph 18-case repeated numerical/checked-ID plus request/lease/cancel/close/OOM packet qualified; eight actual banks cold-only. Full catalogue/state/default/P1/platform/three deliveries remain pending."
+      "record": "docs/implementation/tasks/compute/vulkan-parity-v2-catalogue-matrix.md",
+      "summary": "Vulkan catalogue matrix AUDITED: finite M1-M5 typed convolution through mature casts, original grouped F32 binding and complete common 559/80/34/45/104 plus state/sidecar consumers. Prior native source packets retained; full runtime, defaults and delivery pending."
     },
     {
       "module": "compute_provider_ggml_vulkan",
       "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/vulkan-parity-v1-ggml-native-bindings.md",
-      "summary": "Vulkan parity V1 AUDITED: frozen original eight-format/119-contract type bindings and five embedding formats/eight contracts; old route/Graph performance blockers remain, runtime not yet verified."
+      "record": "docs/implementation/tasks/compute/vulkan-parity-v2-catalogue-matrix.md",
+      "summary": "Vulkan catalogue matrix AUDITED: finite M1-M5 typed convolution through mature casts, original grouped F32 binding and complete common 559/80/34/45/104 plus state/sidecar consumers. Prior native source packets retained; full runtime, defaults and delivery pending."
     },
     {
       "module": "compute_ggml_runtime",

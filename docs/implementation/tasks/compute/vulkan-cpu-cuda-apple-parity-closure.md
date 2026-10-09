@@ -134,3 +134,7 @@ selected FP4/FP8、尾尺度与encoded MatMul、三QAT全有限BF16及资源/fin
 
 统一脚本在 `11c2b11d` 统计：Compute+Graph 全部非测试实现62,409行/267文件。
 本包复用一个producer，未新增完整build tree；生成制品仅49,180-byte VMFB及原网格。
+
+[共同实际端口与完整状态矩阵](vulkan-parity-v2-catalogue-matrix.md)已按当前完整目录
+审计有限M1–M5：typed conv、原grouped F32绑定、共同fixture/cold准备和旧官方拒绝
+迁移。原成熟source批次继续复用，先批接再集中验收，不新增HYLE数学。
