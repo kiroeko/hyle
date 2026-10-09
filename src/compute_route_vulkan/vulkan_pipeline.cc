@@ -48,7 +48,7 @@ create_pipeline(const std::shared_ptr<Device> &device,
     std::vector<VkDescriptorSetLayoutBinding> bindings(pipeline->bindings);
     std::vector<VkDescriptorBindingFlags> binding_flags(
         pipeline->bindings,
-        rebindable ? VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT : 0u);
+        rebindable ? VkDescriptorBindingFlags{VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT} : 0u);
     for (std::uint32_t index = 0; index < pipeline->bindings; ++index) {
       bindings[index].binding = index;
       bindings[index].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
@@ -64,7 +64,7 @@ create_pipeline(const std::shared_ptr<Device> &device,
     descriptors.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
     descriptors.pNext = &flags;
     descriptors.flags =
-        rebindable ? VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT
+        rebindable ? VkDescriptorSetLayoutCreateFlags{VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT}
                    : 0u;
     descriptors.bindingCount = pipeline->bindings;
     descriptors.pBindings = bindings.data();
@@ -336,7 +336,7 @@ Status record(const std::shared_ptr<Run> &run,
       VkDescriptorPoolCreateInfo pool{};
       pool.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
       pool.flags =
-          rebindable ? VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT : 0u;
+          rebindable ? VkDescriptorPoolCreateFlags{VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT} : 0u;
       pool.maxSets = static_cast<std::uint32_t>(dispatches.size());
       pool.poolSizeCount = 1;
       pool.pPoolSizes = &size;
