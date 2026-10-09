@@ -82,3 +82,9 @@ The [Air CPU+Apple receipt](air-cpu-apple-partial.json) now signs six actual ord
 consumers across source and relocated shared/static SDKs. The existing SDK loop completed with exit 0;
 the original configuration failure remains separate. This validates both native routes within one
 complete package, not H2 joint execution, overlap or engine-directed expert transfer.
+
+[WSL native Vulkan device facts](wsl-vulkan-machine-facts.json) show only llvmpipe, physical device
+type CPU. NVIDIA CUDA reports the RTX 4070 separately; this does not expose it to the Vulkan loader.
+The ordinary Vulkan route disallows software devices. SDK compilation remains applicable; real GPU
+math is unqualified on this machine, consistent with the declared platform limit. This device query
+is not a shader, resource, operator or consumer PASS and does not increase the delivery matrix count.

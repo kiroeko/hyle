@@ -1,0 +1,20 @@
+{
+  "scope": "Native physical device availability only; not math, shader or performance PASS",
+  "create_result": 0,
+  "devices": [
+    {
+      "name": "llvmpipe (LLVM 20.1.2, 256 bits)",
+      "device_type": 4,
+      "vendor_id": 65541,
+      "device_id": 0,
+      "api_version": 4211006,
+      "driver_version": 104865800
+    }
+  ],
+  "enumerate_result": 0,
+  "platform_identity": [
+    "6.18.40.1-microsoft-standard-WSL2",
+    "NVIDIA GeForce RTX 4070, 617.14"
+  ],
+  "meaning": "Only Vulkan software device observed; ordinary route disallows software devices. SDK compilation remains applicable. Real GPU math remains unqualified; this fact is not a provider test PASS."
+}
