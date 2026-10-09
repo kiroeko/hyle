@@ -1,0 +1,420 @@
+{
+  "kind": "actual public source/static/shared consumers; original failures retained",
+  "product_candidate": "2f78714c8959c0eeac859381f7b991c75b8bb0a2",
+  "steps": {
+    "shared-w1": {
+      "candidate": "a73f1fa7dbfa9603c7ec9610bc7a1bad2a0a5aa2",
+      "product_candidate": "2f78714c8959c0eeac859381f7b991c75b8bb0a2",
+      "stage": "shared",
+      "steps": [
+        {
+          "label": "producer-configure",
+          "argv": [
+            "C:\\Program Files\\CMake\\bin\\cmake.EXE",
+            "-S",
+            "C:\\public\\project-hyle\\hyle",
+            "-B",
+            "C:\\hv\\vp1",
+            "-U",
+            "HYLE_DEV_FACTORS",
+            "-DHYLE_COMPONENTS=compute,graph,simd",
+            "-DHYLE_BUILD_TESTS=OFF",
+            "-DHYLE_BUILD_BENCH=OFF",
+            "-DHYLE_TEST_INSTRUMENTATION=OFF",
+            "-DHYLE_INSTALL=ON",
+            "-DHYLE_STATIC=OFF",
+            "-DHYLE_COMPUTE_CPU=OFF",
+            "-DHYLE_COMPUTE_ONEDNN=OFF",
+            "-DHYLE_COMPUTE_CUDA=OFF",
+            "-DHYLE_COMPUTE_APPLE=OFF",
+            "-DHYLE_COMPUTE_VULKAN=ON",
+            "-DHYLE_WERROR=ON",
+            "-DCMAKE_INSTALL_PREFIX=C:\\hv\\v4w\\shared-staging"
+          ],
+          "returncode": 0,
+          "seconds": 34.328
+        },
+        {
+          "label": "producer-build",
+          "argv": [
+            "C:\\Program Files\\CMake\\bin\\cmake.EXE",
+            "--build",
+            "C:\\hv\\vp1",
+            "-j",
+            "2"
+          ],
+          "returncode": 0,
+          "seconds": 146.187
+        },
+        {
+          "label": "install",
+          "argv": [
+            "C:\\Program Files\\CMake\\bin\\cmake.EXE",
+            "--install",
+            "C:\\hv\\vp1",
+            "--prefix",
+            "C:\\hv\\v4w\\shared-staging"
+          ],
+          "returncode": 0,
+          "seconds": 1.172
+        },
+        {
+          "label": "consumer-configure",
+          "argv": [
+            "C:\\Program Files\\CMake\\bin\\cmake.EXE",
+            "-S",
+            "C:\\hv\\v4w\\consumer",
+            "-B",
+            "C:\\hv\\v4w\\shared-consumer",
+            "-G",
+            "Ninja",
+            "-DCMAKE_BUILD_TYPE=Release",
+            "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON",
+            "-DD5_GGML_SOURCE=C:\\public\\tools\\hyle-dependencies\\v1\\sources\\ggml-456172ec733a-41b7e10fd424",
+            "-DD5_GTEST_SOURCE=C:\\public\\tools\\hyle-dependencies\\v1\\sources\\googletest-063de7e9578f-162765170ae6",
+            "-DCMAKE_PREFIX_PATH=C:\\hv\\v4w\\shared-relocated"
+          ],
+          "returncode": 0,
+          "seconds": 2.891
+        },
+        {
+          "label": "consumer-build",
+          "argv": [
+            "C:\\Program Files\\CMake\\bin\\cmake.EXE",
+            "--build",
+            "C:\\hv\\v4w\\shared-consumer",
+            "--target",
+            "d5_vulkan_delivery",
+            "-j",
+            "2"
+          ],
+          "returncode": 0,
+          "seconds": 12.422
+        },
+        {
+          "label": "consumer-test",
+          "argv": [
+            "C:\\Program Files\\CMake\\bin\\ctest.EXE",
+            "--test-dir",
+            "C:\\hv\\v4w\\shared-consumer",
+            "--output-on-failure",
+            "--no-tests=error",
+            "-j",
+            "1",
+            "--output-junit",
+            "C:\\hv\\v4w\\receipts\\shared-w1\\tests.xml"
+          ],
+          "returncode": 0,
+          "seconds": 25.078
+        }
+      ],
+      "verdict": "PASS",
+      "tests": 12,
+      "runtime_path": "C:\\WINDOWS/System32;C:\\WINDOWS"
+    },
+    "shared-iq1": {
+      "candidate": "3fcde8d56607487d68f4cf2a33dc2ea85ce618a4",
+      "product_candidate": "2f78714c8959c0eeac859381f7b991c75b8bb0a2",
+      "stage": "shared",
+      "steps": [
+        {
+          "label": "consumer-configure",
+          "argv": [
+            "C:\\Program Files\\CMake\\bin\\cmake.EXE",
+            "-S",
+            "C:\\hv\\v4w\\consumer",
+            "-B",
+            "C:\\hv\\v4w\\shared-consumer",
+            "-G",
+            "Ninja",
+            "-DCMAKE_BUILD_TYPE=Release",
+            "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON",
+            "-DD5_GGML_SOURCE=C:\\public\\tools\\hyle-dependencies\\v1\\sources\\ggml-456172ec733a-41b7e10fd424",
+            "-DD5_GTEST_SOURCE=C:\\public\\tools\\hyle-dependencies\\v1\\sources\\googletest-063de7e9578f-162765170ae6",
+            "-DCMAKE_PREFIX_PATH=C:\\hv\\v4w\\shared-relocated"
+          ],
+          "returncode": 0,
+          "seconds": 0.265
+        },
+        {
+          "label": "consumer-build",
+          "argv": [
+            "C:\\Program Files\\CMake\\bin\\cmake.EXE",
+            "--build",
+            "C:\\hv\\v4w\\shared-consumer",
+            "--target",
+            "d5_vulkan_delivery",
+            "-j",
+            "2"
+          ],
+          "returncode": 0,
+          "seconds": 10.969
+        },
+        {
+          "label": "consumer-test",
+          "argv": [
+            "C:\\Program Files\\CMake\\bin\\ctest.EXE",
+            "--test-dir",
+            "C:\\hv\\v4w\\shared-consumer",
+            "--output-on-failure",
+            "--no-tests=error",
+            "-j",
+            "1",
+            "--output-junit",
+            "C:\\hv\\v4w\\receipts\\shared-iq1\\tests.xml"
+          ],
+          "returncode": 0,
+          "seconds": 24.734
+        }
+      ],
+      "reused_sdk_candidate": "a73f1fa7dbfa9603c7ec9610bc7a1bad2a0a5aa2",
+      "reused_sdk_receipt": "receipts/shared-w1/receipt.json",
+      "verdict": "PASS",
+      "tests": 14,
+      "runtime_path": "C:\\WINDOWS/System32;C:\\WINDOWS"
+    },
+    "source-sdk": {
+      "candidate": "3fcde8d56607487d68f4cf2a33dc2ea85ce618a4",
+      "product_candidate": "2f78714c8959c0eeac859381f7b991c75b8bb0a2",
+      "stage": "source",
+      "steps": [
+        {
+          "label": "source-configure",
+          "argv": [
+            "C:\\Program Files\\CMake\\bin\\cmake.EXE",
+            "-S",
+            "C:\\hv\\v4w\\consumer",
+            "-B",
+            "C:\\hv\\v4w\\source-build",
+            "-G",
+            "Ninja",
+            "-DCMAKE_BUILD_TYPE=Release",
+            "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON",
+            "-DD5_GGML_SOURCE=C:\\public\\tools\\hyle-dependencies\\v1\\sources\\ggml-456172ec733a-41b7e10fd424",
+            "-DD5_GTEST_SOURCE=C:\\public\\tools\\hyle-dependencies\\v1\\sources\\googletest-063de7e9578f-162765170ae6",
+            "-DHYLE_DEP_SOURCE_CACHE=C:/public/tools/hyle-dependencies/v1",
+            "-DHYLE_VULKAN_GLSLANG=C:/public/tools/glslang/glslangValidator.exe",
+            "-DVulkan_GLSLANG_VALIDATOR_EXECUTABLE=C:/public/tools/glslang/glslangValidator.exe",
+            "-DVulkan_GLSLC_EXECUTABLE=C:/public/tools/hyle-vulkan/1.4.357.0/Bin/glslc.exe",
+            "-DVulkan_INCLUDE_DIR=C:/public/tools/hyle-vulkan/1.4.357.0/include",
+            "-DVulkan_LIBRARY=C:/public/tools/hyle-vulkan/1.4.357.0/Lib/vulkan-1.lib",
+            "-DD5_SOURCE_ROOT=C:\\hv\\v4w\\source-tree",
+            "-DCMAKE_INSTALL_PREFIX=C:\\hv\\v4w\\static-staging",
+            "-DHYLE_WERROR=ON"
+          ],
+          "returncode": 0,
+          "seconds": 48.437
+        },
+        {
+          "label": "source-build",
+          "argv": [
+            "C:\\Program Files\\CMake\\bin\\cmake.EXE",
+            "--build",
+            "C:\\hv\\v4w\\source-build",
+            "-j",
+            "2"
+          ],
+          "returncode": 0,
+          "seconds": 290.953
+        },
+        {
+          "label": "consumer-test",
+          "argv": [
+            "C:\\Program Files\\CMake\\bin\\ctest.EXE",
+            "--test-dir",
+            "C:\\hv\\v4w\\source-build",
+            "--output-on-failure",
+            "--no-tests=error",
+            "-j",
+            "1",
+            "--output-junit",
+            "C:\\hv\\v4w\\receipts\\source-sdk\\tests.xml"
+          ],
+          "returncode": 0,
+          "seconds": 25.719
+        }
+      ],
+      "verdict": "PASS",
+      "tests": 14,
+      "runtime_path": "C:\\WINDOWS/System32;C:\\WINDOWS"
+    },
+    "static": {
+      "candidate": "3fcde8d56607487d68f4cf2a33dc2ea85ce618a4",
+      "product_candidate": "2f78714c8959c0eeac859381f7b991c75b8bb0a2",
+      "stage": "static",
+      "steps": [
+        {
+          "label": "install",
+          "argv": [
+            "C:\\Program Files\\CMake\\bin\\cmake.EXE",
+            "--install",
+            "C:\\hv\\v4w\\source-build",
+            "--prefix",
+            "C:\\hv\\v4w\\static-staging"
+          ],
+          "returncode": 0,
+          "seconds": 0.969
+        },
+        {
+          "label": "consumer-configure",
+          "argv": [
+            "C:\\Program Files\\CMake\\bin\\cmake.EXE",
+            "-S",
+            "C:\\hv\\v4w\\consumer",
+            "-B",
+            "C:\\hv\\v4w\\static-consumer",
+            "-G",
+            "Ninja",
+            "-DCMAKE_BUILD_TYPE=Release",
+            "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON",
+            "-DD5_GGML_SOURCE=C:\\public\\tools\\hyle-dependencies\\v1\\sources\\ggml-456172ec733a-41b7e10fd424",
+            "-DD5_GTEST_SOURCE=C:\\public\\tools\\hyle-dependencies\\v1\\sources\\googletest-063de7e9578f-162765170ae6",
+            "-DCMAKE_PREFIX_PATH=C:\\hv\\v4w\\static-relocated"
+          ],
+          "returncode": 0,
+          "seconds": 2.359
+        },
+        {
+          "label": "consumer-build",
+          "argv": [
+            "C:\\Program Files\\CMake\\bin\\cmake.EXE",
+            "--build",
+            "C:\\hv\\v4w\\static-consumer",
+            "--target",
+            "d5_vulkan_delivery",
+            "-j",
+            "2"
+          ],
+          "returncode": 0,
+          "seconds": 14.188
+        },
+        {
+          "label": "consumer-test",
+          "argv": [
+            "C:\\Program Files\\CMake\\bin\\ctest.EXE",
+            "--test-dir",
+            "C:\\hv\\v4w\\static-consumer",
+            "--output-on-failure",
+            "--no-tests=error",
+            "-j",
+            "1",
+            "--output-junit",
+            "C:\\hv\\v4w\\receipts\\static\\tests.xml"
+          ],
+          "returncode": 0,
+          "seconds": 24.922
+        }
+      ],
+      "verdict": "PASS",
+      "tests": 14,
+      "runtime_path": "C:\\WINDOWS/System32;C:\\WINDOWS"
+    },
+    "public-headers": {
+      "candidate": "8efa9d338f3236caef9e7bdfc52c6da328c0ec45",
+      "checks": [
+        {
+          "stage": "static",
+          "label": "configure",
+          "returncode": 0
+        },
+        {
+          "stage": "static",
+          "label": "build",
+          "returncode": 0
+        },
+        {
+          "stage": "shared",
+          "label": "configure",
+          "returncode": 0
+        },
+        {
+          "stage": "shared",
+          "label": "build",
+          "returncode": 0
+        }
+      ],
+      "verdict": "PASS",
+      "independent_on_headers": 6,
+      "independent_off_headers": 6
+    }
+  },
+  "licenses": {
+    "static": {
+      "share/licenses/Hyle/ggml-runtime-LICENSE": "94f29bbed6a22c35b992c5c6ebf0e7c92f13b836b90f36f461c9cf2f0f1d010d",
+      "share/licenses/Hyle/ggml-runtime-patches-LICENSE": "94f29bbed6a22c35b992c5c6ebf0e7c92f13b836b90f36f461c9cf2f0f1d010d",
+      "share/licenses/Hyle/ggml-runtime-patches-NOTICE.md": "260c3882f6833eda067f34825cb926c117ed7da4c323cb3a7e56537002e712af",
+      "share/licenses/Hyle/ggml-vulkan-patches-LICENSE": "94f29bbed6a22c35b992c5c6ebf0e7c92f13b836b90f36f461c9cf2f0f1d010d",
+      "share/licenses/Hyle/ggml-vulkan-patches-NOTICE.md": "0ed9773155d730f95cfdf150cc9f737a7ecbfb37377f824faa165ebeb74d823c",
+      "share/licenses/Hyle/ggml-vulkan-shaders-LICENSE": "94f29bbed6a22c35b992c5c6ebf0e7c92f13b836b90f36f461c9cf2f0f1d010d",
+      "share/licenses/Hyle/ggml-vulkan-shaders-NOTICE.md": "56099101407005113fdce3456b5ab7b2fa13d8a0450462086628eb362b58a622",
+      "share/licenses/Hyle/highway-LICENSE": "b8b1fae5894cfbe213b47f1378bb2269cf82de18b34447e871c0225ace0d3ad7",
+      "share/licenses/Hyle/highway-upstream-LICENSE": "85de9303e7a81f35d81befd51a4004c41b5e7f7e40cd4e3f5ff609ecd71a0e44",
+      "share/licenses/Hyle/HYLE-LICENSE": "edcbc4391ee471753cc9a7f8b410ad6fe8f65a3dc5a368a5c2fa06122316f478",
+      "share/licenses/Hyle/iree-awq-LICENSE": "2af485d269071b583c62c20250a63349f8313312cc9df0bd9007ca39c6d57bd9",
+      "share/licenses/Hyle/iree-bitsandbytes-LICENSE": "52412d7bc7ce4157ea628bbaacb8829e0a9cb3c58f57f99176126bc8cf2bfc85",
+      "share/licenses/Hyle/iree-compressed-tensors-LICENSE": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4",
+      "share/licenses/Hyle/iree-deepseek-LICENSE": "1c8f573e830ca9b3ebfeb7ace1823146e22b66f99ee223840e7637c9e745e1c7",
+      "share/licenses/Hyle/iree-ds4-LICENSE": "4a8a1358f5b048627d71e4988de0bafd386f4988991929629e6cb9e29b7b9b2f",
+      "share/licenses/Hyle/iree-flatcc-LICENSE": "c8f0d9c1f92c658d87ebd854ee7447a3d3912d2c3a5c78c117787be5d5da8af3",
+      "share/licenses/Hyle/iree-flatcc-NOTICE": "adc7608d0e1b6b88ddec742473dc4a05878b1788d8dd8b8b4abfc0e3404488f4",
+      "share/licenses/Hyle/iree-flatcc-portable-LICENSE": "cdaa0a9f209382e44e614ab520c05111b0edfc486e3800da093b77c054d02ea1",
+      "share/licenses/Hyle/iree-LICENSE": "579fa63489ca4714793e90fa778b320f84527d7ebee37f1798db487e80c13cc0",
+      "share/licenses/Hyle/iree-mlx-LICENSE": "ccfab7ccb2ea306f71531c8ca77bb55507606cd90768b1e32b8b52ab5b48cf01",
+      "share/licenses/Hyle/iree-sglang-LICENSE": "1495e1e757ef4d0925a2350563cf5754bb23c51701a8ec4fb3c5cdcbedae6747",
+      "share/licenses/Hyle/iree-unsloth-iq1-LICENSE": "94f29bbed6a22c35b992c5c6ebf0e7c92f13b836b90f36f461c9cf2f0f1d010d",
+      "share/licenses/Hyle/iree-vulkan-headers-Apache-2.0.txt": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+      "share/licenses/Hyle/iree-vulkan-headers-LICENSE.md": "ac24e5ea920e4318e4d02c4086ae51f53cfb03feed06c18df1019e7ada1ec7bc",
+      "share/licenses/Hyle/iree-vulkan-headers-MIT.txt": "1ca3502222d967f3be5751c55f6b7ee735b5383909c3b501495f54b216dbf227",
+      "share/licenses/Hyle/iree-vulkan-patches-LICENSE": "579fa63489ca4714793e90fa778b320f84527d7ebee37f1798db487e80c13cc0",
+      "share/licenses/Hyle/iree-vulkan-patches-NOTICE.md": "2f7316281a6191d9fce693dd648f6e3afc714e2b07c580e89717c3b0d3e484c5",
+      "share/licenses/Hyle/mimalloc-LICENSE": "82ade5d7d9b029044b5fbbc326207fc47c2d44ee4dd71e8a559c36d728217de9",
+      "share/licenses/Hyle/rust-parker-LICENSE-MIT": "b71bd43a069ca0641a9ecfe585ca7b3c53b5cc1608f8b68321168698e28b5ea1",
+      "share/licenses/Hyle/THIRD_PARTY-NOTICES.md": "c4393a48e84aaab7631581b96ea1f9c85c8b915507e96cd46bb8b9c03d196d94",
+      "share/licenses/Hyle/vulkan-headers-Apache-2.0.txt": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+      "share/licenses/Hyle/vulkan-headers-LICENSE.md": "95ad366d23fadf701d355bc45fb8b82ae2d700239471d35d41286ac3b08ff903",
+      "share/licenses/Hyle/vulkan-headers-MIT.txt": "1ca3502222d967f3be5751c55f6b7ee735b5383909c3b501495f54b216dbf227",
+      "share/licenses/Hyle/wyhash-LICENSE": "6a90b88421a0d9b090e121daa11b3c6d55eed5eeb3281a2fcc454d6a28b5547c",
+      "share/licenses/Hyle/xsimd-upstream-LICENSE": "501352acba62cc54e8e3d293754d606f919c9b425b962193c211f9fa29cd9940",
+      "share/licenses/Hyle/xxhash-LICENSE": "6ffedbc0f7878612d2b23589f1ff2ab15633e1df7963a5d9fc750ec5500c7e7a"
+    },
+    "shared": {
+      "share/licenses/Hyle/ggml-runtime-LICENSE": "94f29bbed6a22c35b992c5c6ebf0e7c92f13b836b90f36f461c9cf2f0f1d010d",
+      "share/licenses/Hyle/ggml-runtime-patches-LICENSE": "94f29bbed6a22c35b992c5c6ebf0e7c92f13b836b90f36f461c9cf2f0f1d010d",
+      "share/licenses/Hyle/ggml-runtime-patches-NOTICE.md": "260c3882f6833eda067f34825cb926c117ed7da4c323cb3a7e56537002e712af",
+      "share/licenses/Hyle/ggml-vulkan-patches-LICENSE": "94f29bbed6a22c35b992c5c6ebf0e7c92f13b836b90f36f461c9cf2f0f1d010d",
+      "share/licenses/Hyle/ggml-vulkan-patches-NOTICE.md": "0ed9773155d730f95cfdf150cc9f737a7ecbfb37377f824faa165ebeb74d823c",
+      "share/licenses/Hyle/ggml-vulkan-shaders-LICENSE": "94f29bbed6a22c35b992c5c6ebf0e7c92f13b836b90f36f461c9cf2f0f1d010d",
+      "share/licenses/Hyle/ggml-vulkan-shaders-NOTICE.md": "56099101407005113fdce3456b5ab7b2fa13d8a0450462086628eb362b58a622",
+      "share/licenses/Hyle/highway-LICENSE": "b8b1fae5894cfbe213b47f1378bb2269cf82de18b34447e871c0225ace0d3ad7",
+      "share/licenses/Hyle/highway-upstream-LICENSE": "85de9303e7a81f35d81befd51a4004c41b5e7f7e40cd4e3f5ff609ecd71a0e44",
+      "share/licenses/Hyle/HYLE-LICENSE": "edcbc4391ee471753cc9a7f8b410ad6fe8f65a3dc5a368a5c2fa06122316f478",
+      "share/licenses/Hyle/iree-awq-LICENSE": "2af485d269071b583c62c20250a63349f8313312cc9df0bd9007ca39c6d57bd9",
+      "share/licenses/Hyle/iree-bitsandbytes-LICENSE": "52412d7bc7ce4157ea628bbaacb8829e0a9cb3c58f57f99176126bc8cf2bfc85",
+      "share/licenses/Hyle/iree-compressed-tensors-LICENSE": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4",
+      "share/licenses/Hyle/iree-deepseek-LICENSE": "1c8f573e830ca9b3ebfeb7ace1823146e22b66f99ee223840e7637c9e745e1c7",
+      "share/licenses/Hyle/iree-ds4-LICENSE": "4a8a1358f5b048627d71e4988de0bafd386f4988991929629e6cb9e29b7b9b2f",
+      "share/licenses/Hyle/iree-flatcc-LICENSE": "c8f0d9c1f92c658d87ebd854ee7447a3d3912d2c3a5c78c117787be5d5da8af3",
+      "share/licenses/Hyle/iree-flatcc-NOTICE": "adc7608d0e1b6b88ddec742473dc4a05878b1788d8dd8b8b4abfc0e3404488f4",
+      "share/licenses/Hyle/iree-flatcc-portable-LICENSE": "cdaa0a9f209382e44e614ab520c05111b0edfc486e3800da093b77c054d02ea1",
+      "share/licenses/Hyle/iree-LICENSE": "579fa63489ca4714793e90fa778b320f84527d7ebee37f1798db487e80c13cc0",
+      "share/licenses/Hyle/iree-mlx-LICENSE": "ccfab7ccb2ea306f71531c8ca77bb55507606cd90768b1e32b8b52ab5b48cf01",
+      "share/licenses/Hyle/iree-sglang-LICENSE": "1495e1e757ef4d0925a2350563cf5754bb23c51701a8ec4fb3c5cdcbedae6747",
+      "share/licenses/Hyle/iree-unsloth-iq1-LICENSE": "94f29bbed6a22c35b992c5c6ebf0e7c92f13b836b90f36f461c9cf2f0f1d010d",
+      "share/licenses/Hyle/iree-vulkan-headers-Apache-2.0.txt": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+      "share/licenses/Hyle/iree-vulkan-headers-LICENSE.md": "ac24e5ea920e4318e4d02c4086ae51f53cfb03feed06c18df1019e7ada1ec7bc",
+      "share/licenses/Hyle/iree-vulkan-headers-MIT.txt": "1ca3502222d967f3be5751c55f6b7ee735b5383909c3b501495f54b216dbf227",
+      "share/licenses/Hyle/iree-vulkan-patches-LICENSE": "579fa63489ca4714793e90fa778b320f84527d7ebee37f1798db487e80c13cc0",
+      "share/licenses/Hyle/iree-vulkan-patches-NOTICE.md": "2f7316281a6191d9fce693dd648f6e3afc714e2b07c580e89717c3b0d3e484c5",
+      "share/licenses/Hyle/mimalloc-LICENSE": "82ade5d7d9b029044b5fbbc326207fc47c2d44ee4dd71e8a559c36d728217de9",
+      "share/licenses/Hyle/rust-parker-LICENSE-MIT": "b71bd43a069ca0641a9ecfe585ca7b3c53b5cc1608f8b68321168698e28b5ea1",
+      "share/licenses/Hyle/THIRD_PARTY-NOTICES.md": "c4393a48e84aaab7631581b96ea1f9c85c8b915507e96cd46bb8b9c03d196d94",
+      "share/licenses/Hyle/vulkan-headers-Apache-2.0.txt": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+      "share/licenses/Hyle/vulkan-headers-LICENSE.md": "95ad366d23fadf701d355bc45fb8b82ae2d700239471d35d41286ac3b08ff903",
+      "share/licenses/Hyle/vulkan-headers-MIT.txt": "1ca3502222d967f3be5751c55f6b7ee735b5383909c3b501495f54b216dbf227",
+      "share/licenses/Hyle/wyhash-LICENSE": "6a90b88421a0d9b090e121daa11b3c6d55eed5eeb3281a2fcc454d6a28b5547c",
+      "share/licenses/Hyle/xsimd-upstream-LICENSE": "501352acba62cc54e8e3d293754d606f919c9b425b962193c211f9fa29cd9940",
+      "share/licenses/Hyle/xxhash-LICENSE": "6ffedbc0f7878612d2b23589f1ff2ab15633e1df7963a5d9fc750ec5500c7e7a"
+    }
+  },
+  "limits": "No new P1. The independent OFF header branch is compiled, not a new full OFF SDK build. V2 full numeric scope reused by unchanged source; these representative consumers are not a model engine or Air/WSL qualification."
+}

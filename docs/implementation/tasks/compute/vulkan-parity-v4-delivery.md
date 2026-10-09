@@ -49,3 +49,17 @@ Windows当前公开产品接缝需移除开发factor选择、关闭test instrume
 `iree_hal_dim_t`，与相邻official/MLX分支相同；不放宽warning，不改索引域、
 数学/VMFB/公开合同或资源。该IREE owner保持AUDITED并将本轮record绑定本卡，
 协议独立提交后才修改。续编当前producer，三交付差异验证；不重跑V2全矩阵/P1。
+
+W1产品`2f78714c8959c0eeac859381f7b991c75b8bb0a2`：Windows source/static/shared
+各14实际测试全PASS、无skip；两个SDK各3个独立ON头和3个独立OFF分支头编译通过。
+36份carrier/基础许可各SDK均到位，DLL邻exe、搬迁/隐藏producer与精简PATH通过。
+首轮Werror/源码SDK环境FAIL保持，不重跑Windows共同数值全集。
+
+### W2：Air Clang的两处未使用常量捕获
+
+Air本批当前source配置通过，82秒增量前置build在同一IREE私有文件485/497处
+报告`-Wunused-lambda-capture`：局部constexpr `limit`被按值捕获，但只作常量表达式，
+并未ODR-use。有限W2只删除这两个捕获，保留lambda及原INT32范围方程、状态/资源与
+VMFB；不用关闭Werror或改变数值域。owner已是本卡AUDITED，追加FIX独立提交后
+实施，复用原producer续编。所有原步骤/FAIL和预算保留；唯一此错误的定向纠正，
+不是换目录重新开始。Windows旧数学/冷规则不重跑，受影响SDK按等价冷代码差异复核。
