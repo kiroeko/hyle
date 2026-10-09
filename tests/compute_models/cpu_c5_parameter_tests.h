@@ -41,10 +41,18 @@ TEST_P(HYLE_C5_DEEPSEEK_SUITE, ActualMixedMainAttentionMoeAndHyperHeadReplay) {
   const auto model = cpu_c5_parameters::new_deepseek_case(&identity);
   for (std::int64_t ratio : {0, 4, 128}) {
     SCOPED_TRACE(ratio);
+#if defined(HYLE_TEST_VULKAN_CATALOGUE)
+    run_q24_semantic_fragment(d5_deepseek_remaining_fragments::attention(model, ratio, vulkan_current_state_test::gguf_reference()));
+#else
     run_q24_semantic_fragment(d5_deepseek_remaining_fragments::attention(model, ratio));
+#endif
     ASSERT_FALSE(::testing::Test::HasFatalFailure());
   }
+#if defined(HYLE_TEST_VULKAN_CATALOGUE)
+  run_q24_semantic_fragment(d5_deepseek_remaining_fragments::compressor(model, 4, true, {}, vulkan_current_state_test::gguf_reference()));
+#else
   run_q24_semantic_fragment(d5_deepseek_remaining_fragments::compressor(model, 4, true));
+#endif
   ASSERT_FALSE(::testing::Test::HasFatalFailure());
   run_q24_semantic_fragment(d5_moe_execution_fragments::gguf_moe(model));
   ASSERT_FALSE(::testing::Test::HasFatalFailure());

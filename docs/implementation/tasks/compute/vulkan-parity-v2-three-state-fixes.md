@@ -26,3 +26,8 @@ P0为原数据/精度/资源边界；无P1/性能宣称。Windows同producer bui
 Flash两mixed制品prefill→共享embedding→完整三stage→全部词表分块、真实反馈/reset；
 原数值／索引／生命周期合同保持。三平台/三交付/default/正式P1仍父轮未验。
 公共API/算法/组件图/仪器不变；native reference拥有独立原设备/完成，参数冷期固定。
+
+S1/S3已批接并编译：RotaryReference显式传过attention/compressor/独立方程，
+旧频率、F32输出与原gate保持；原CPU/CUDA默认分支相同且无跨TU定义差异。
+Flash两个实际制品独立参数行；完整prefill/三stage/全词表步骤未删除。
+下一集中run仅每入口GGUF90/103与Flash Q8/BF16四行，原通过域不重跑。

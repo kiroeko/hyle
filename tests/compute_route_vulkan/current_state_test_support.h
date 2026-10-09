@@ -54,14 +54,14 @@ inline std::vector<float> grouped(const c::TensorDesc &description,
 
 namespace vulkan_current_state_test {
 inline std::vector<float> native_rotary(std::span<const float>,std::int64_t,
-    std::span<const std::int32_t>,bool,bool,std::int64_t);
+    std::span<const std::int32_t>,bool,bool,std::int64_t,bool,bool);
 inline std::vector<float> model_sink(std::span<const float>,std::span<const float>,
     std::span<const float>,std::span<const float>,std::span<const float>,
     std::int64_t,std::int64_t,float);
 }
 #define HYLE_C4_QUANTIZED_REFERENCE vulkan_catalogue_gguf::projection
 #define HYLE_C4_GROUPED_REFERENCE vulkan_catalogue_gguf::grouped
-#define HYLE_C4_ROTARY_REFERENCE(input,heads,positions,inverse) vulkan_current_state_test::native_rotary(input,heads,positions,false,inverse,512)
+#define HYLE_C4_ROTARY_REFERENCE(input,heads,positions,inverse) vulkan_current_state_test::native_rotary(input,heads,positions,false,inverse,512,false,true)
 #define HYLE_C4_SINK_REFERENCE vulkan_current_state_test::model_sink
 #include "../compute_models/cpu_c4_qwen_mtp.h"
 #include "../compute_models/cpu_c4_flash_sidecars.h"
@@ -72,7 +72,8 @@ inline std::vector<float> model_sink(std::span<const float>,std::span<const floa
 
 namespace vulkan_current_state_test {
 inline std::vector<float> native_rotary(std::span<const float> input,std::int64_t heads,
-    std::span<const std::int32_t> positions,bool compressed,bool inverse,std::int64_t depth=512) {
+    std::span<const std::int32_t> positions,bool compressed,bool inverse,std::int64_t depth=512,
+    bool legacy=false,bool bfloat=true) {
   using namespace vulkan_catalogue_gguf;
   if(depth<64 || input.size()!=positions.size()*heads*depth) throw std::runtime_error("native rotary shape differs");
   static Backend backend;auto active=backend.activate();Storage storage;
@@ -88,7 +89,8 @@ inline std::vector<float> native_rotary(std::span<const float> input,std::int64_
   std::vector<float> tail(positions.size()*heads*64);
   for(std::size_t row=0;row<positions.size()*heads;++row)
     std::copy_n(input.data()+row*depth+depth-64,64,tail.data()+row*64);
-  const auto frequency=cpu_c4_model_branches::ds::rope_frequencies(compressed,inverse);
+  const auto frequency=legacy?d5_deepseek_remaining_fragments::rope_frequencies(compressed,inverse):
+      cpu_c4_model_branches::ds::rope_frequencies(compressed,inverse);
   ggml_backend_tensor_set(x,tail.data(),0,tail.size()*sizeof(float));
   ggml_backend_tensor_set(p,positions.data(),0,positions.size_bytes());
   ggml_backend_tensor_set(f,frequency.data(),0,frequency.size()*sizeof(float));
@@ -96,7 +98,13 @@ inline std::vector<float> native_rotary(std::span<const float> input,std::int64_
   ggml_backend_tensor_get(out,tail.data(),0,tail.size()*sizeof(float));std::vector<float> result(input.begin(),input.end());
   for(std::size_t row=0;row<positions.size()*heads;++row)
     std::copy_n(tail.data()+row*64,64,result.data()+row*depth+depth-64);
-  return cpu_c4_model_branches::ds::bfloat_boundary(std::move(result));
+  return bfloat?cpu_c4_model_branches::ds::bfloat_boundary(std::move(result)):result;
+}
+inline d5_deepseek_remaining_fragments::RotaryReference gguf_reference() {
+  return [](auto input,auto depth,std::int32_t position,bool compressed,bool inverse) {
+    const std::array positions{position};
+    return native_rotary(input,static_cast<std::int64_t>(input.size()/depth),positions,compressed,inverse,depth,true,false);
+  };
 }
 inline std::vector<float> rounded_sink(const std::array<std::vector<float>,5> &data,
     std::int64_t tokens,std::int64_t keys,float scale) {

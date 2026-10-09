@@ -2,8 +2,10 @@
 
 #if defined(HYLE_TEST_GRAPH_ROUTE_VULKAN)
 #define HYLE_VULKAN_CURRENT_STATE_SUITE VulkanGraphCurrentState
+#define HYLE_VULKAN_CURRENT_STATE_SIDECAR VulkanGraphCurrentSidecar
 #else
 #define HYLE_VULKAN_CURRENT_STATE_SUITE VulkanCurrentState
+#define HYLE_VULKAN_CURRENT_STATE_SIDECAR VulkanCurrentSidecar
 #endif
 namespace {
 #if !defined(HYLE_TEST_GRAPH_ROUTE_VULKAN)
@@ -80,12 +82,15 @@ INSTANTIATE_TEST_SUITE_P(CurrentOfficial,HYLE_VULKAN_CURRENT_STATE_SUITE,
 TEST(HYLE_VULKAN_CURRENT_STATE_SUITE, QwenNamedQ4SidecarUsesActualQ3Q4Q6Mtp) {
   cpu_c4_qwen_mtp::check(vulkan_catalogue_test::run);
 }
-TEST(HYLE_VULKAN_CURRENT_STATE_SUITE, FlashQ8AndBfloatSidecarsUseMixedMxfp4ThreeStages) {
-  for(const auto &model:cpu_c4_flash_sidecars::models) {
-    SCOPED_TRACE(model.profile->variant);
-    cpu_c4_flash_sidecars::check(model,vulkan_catalogue_test::run);
-    ASSERT_FALSE(::testing::Test::HasFailure());
-  }
+class HYLE_VULKAN_CURRENT_STATE_SIDECAR : public ::testing::TestWithParam<cpu_c4_flash_sidecars::Model> {};
+TEST_P(HYLE_VULKAN_CURRENT_STATE_SIDECAR, MixedMxfp4FullThreeStagesAndVocabulary) {
+  const auto &model=GetParam();
+  SCOPED_TRACE(model.profile->variant);
+  cpu_c4_flash_sidecars::check(model,vulkan_catalogue_test::run);
 }
+INSTANTIATE_TEST_SUITE_P(CurrentSidecars,HYLE_VULKAN_CURRENT_STATE_SIDECAR,
+    ::testing::ValuesIn(cpu_c4_flash_sidecars::models),
+    [](const auto &item){return item.param.bf16?"BFloat16":"Q8";});
 } // namespace
 #undef HYLE_VULKAN_CURRENT_STATE_SUITE
+#undef HYLE_VULKAN_CURRENT_STATE_SIDECAR

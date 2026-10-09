@@ -131,11 +131,19 @@ inline std::vector<float> hadamard_reference(std::span<const float> input,
   return result;
 }
 
+using RotaryReference = std::function<std::vector<float>(std::span<const float>,
+    std::int64_t,std::int32_t,bool,bool)>;
+inline std::vector<float> rotate_reference(std::span<const float> input,
+    std::int64_t depth,std::int32_t position,bool compressed,bool inverse,
+    const RotaryReference &native) {
+  return native ? native(input,depth,position,compressed,inverse)
+                : rope_reference(input,depth,position,compressed,inverse);
+}
 inline std::vector<float> compress_reference(
     std::span<const float> previous_kv, std::span<const float> previous_score,
     std::span<const float> current_kv, std::span<const float> current_score,
     std::span<const float> norm, std::int64_t ratio, std::int32_t position,
-    bool indexer) {
+    bool indexer, const RotaryReference &native = {}) {
   const auto depth = std::int64_t(norm.size());
   const auto channels = ratio == 4 ? 2 * depth : depth;
   const auto rows = ratio == 4 ? 4 : 64;
@@ -163,7 +171,7 @@ inline std::vector<float> compress_reference(
   const auto inverse_rms = 1.0 / std::sqrt(squares / double(depth) + 1.0e-6);
   for (std::int64_t channel = 0; channel < depth; ++channel)
     reduced[channel] = float(reduced[channel] * inverse_rms * norm[channel]);
-  auto result = rope_reference(reduced, depth, position, true);
+  auto result = rotate_reference(reduced, depth, position, true, false, native);
   return indexer ? hadamard_reference(result, depth) : result;
 }
 
@@ -173,7 +181,8 @@ struct CompressorOptions final {
   bool positive_hidden = false;
 };
 inline Fragment compressor(const moe::Case &model, std::int64_t ratio,
-                             bool indexer = false, CompressorOptions options = {}) {
+                             bool indexer = false, CompressorOptions options = {},
+                             const RotaryReference &native = {}) {
   if ((ratio != 4 && ratio != 128) || (indexer && ratio != 4))
     throw std::runtime_error("invalid DeepSeek compressor role");
   using Storage = linear::Storage;
@@ -282,7 +291,7 @@ inline Fragment compressor(const moe::Case &model, std::int64_t ratio,
     replay.inputs.push_back(bytes(std::vector<std::uint8_t>{std::uint8_t(update)}));
     if (update)
       old_cache = compress_reference(old_kv, old_score, kv, score, norm, ratio,
-                                      compressed_position, indexer);
+                                      compressed_position, indexer, native);
     replay.outputs = {old_cache, kv, score};
     f.replays.push_back(std::move(replay));
     old_kv = std::move(kv);
@@ -408,7 +417,8 @@ inline std::vector<float> float_values(std::span<const std::byte> data) {
   return result;
 }
 
-inline Fragment attention(const moe::Case &model, std::int64_t ratio) {
+inline Fragment attention(const moe::Case &model, std::int64_t ratio,
+                          const RotaryReference &native = {}) {
   if (!model.gguf || (ratio != 0 && ratio != 4 && ratio != 128))
     throw std::runtime_error("complete DeepSeek attention requires audited GGUF projections");
   using Storage = linear::Storage;
@@ -426,8 +436,8 @@ inline Fragment attention(const moe::Case &model, std::int64_t ratio) {
   Fragment f{.profile = model.profile, .region = 0x08093404,
              .quantized = storage == Storage::kQ8_0};
   if (ratio) {
-    f = compressor(model, ratio, false, options);
-    if (ratio == 4) join_compressor(f, compressor(model, ratio, true, options));
+    f = compressor(model, ratio, false, options, native);
+    if (ratio == 4) join_compressor(f, compressor(model, ratio, true, options, native));
     f.region = ratio == 4 ? 0x08093405 : 0x08093406;
   } else {
     (void)f.input(dense({1, model.hidden}));
@@ -568,11 +578,11 @@ inline Fragment attention(const moe::Case &model, std::int64_t ratio) {
     replay.inputs.push_back(bytes(token_positions));
     auto qr_values = sem::oracle::rms_norm_rows(qa.reference(last), qnorm, rank, 1.0e-6F);
     auto query = sem::oracle::rms_norm_rows(qb.reference(qr_values), ones, depth, 1.0e-6F);
-    query = rope_reference(query, depth, position, ratio != 0);
+    query = rotate_reference(query, depth, position, ratio != 0, false, native);
     auto new_keys = sem::oracle::rms_norm_rows(project_rows(kv, x, model.hidden), knorm, depth, 1.0e-6F);
     for (std::int64_t t = 0; t < chunk; ++t) {
-      auto row = rope_reference(std::span<const float>(new_keys).subspan(t * depth, depth),
-                                depth, token_positions[t], ratio != 0);
+      auto row = rotate_reference(std::span<const float>(new_keys).subspan(t * depth, depth),
+                                  depth, token_positions[t], ratio != 0, false, native);
       std::copy(row.begin(), row.end(), new_keys.begin() + t * depth);
     }
     auto full_raw = raw_history;
@@ -601,7 +611,7 @@ inline Fragment attention(const moe::Case &model, std::int64_t ratio) {
         replay.inputs.push_back(bytes(replay.reset_state ? index_history : std::vector<float>(index_history.size(), 29)));
         std::copy(replay.outputs[3].begin(), replay.outputs[3].end(), index_history.begin() + (visible - 1) * 128);
         replay.outputs[index_output] = index_history;
-        auto iq = hadamard_reference(rope_reference(index_q->reference(qr_values), 128, position, true), 128);
+        auto iq = hadamard_reference(rotate_reference(index_q->reference(qr_values), 128, position, true, false, native), 128);
         auto iw = index_weight->reference(last);
         for (auto &value : iw) value *= 1.0F / std::sqrt(8192.0F);
         std::vector<float> scores(capacity);
@@ -633,7 +643,7 @@ inline Fragment attention(const moe::Case &model, std::int64_t ratio) {
     }
     auto context_values = sink_reference(query, attended_keys, attended_keys, attention_mask,
                                           sinks, 1, key_count, scale);
-    auto derotated_values = rope_reference(context_values, depth, position, ratio != 0, true);
+    auto derotated_values = rotate_reference(context_values, depth, position, ratio != 0, true, native);
     auto grouped_values = moe::project(derotated_values, wa, group_ids, out_rank, group_width);
     replay.outputs[context_output] = std::move(context_values);
     replay.outputs[context_output + 1] = std::move(derotated_values);
