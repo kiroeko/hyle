@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites tests="2" failures="0" disabled="0" errors="0" time="23.132" timestamp="2026-10-09T09:23:27.688" name="AllTests">
+  <testsuite name="VulkanGraphGguf" tests="2" failures="0" disabled="0" skipped="0" errors="0" time="23.132" timestamp="2026-10-09T09:23:27.688">
+    <testcase name="PackedMatMulUsesCapturedNativeWeightAndReplays" file="C:\public\project-hyle\hyle\tests\graph_route_vulkan\gguf_test.cc" line="9" status="run" result="completed" time="11.653" timestamp="2026-10-09T09:23:27.688" classname="VulkanGraphGguf" />
+    <testcase name="PackedFormatsGroupedExpertsUseCapturedMulMatId" file="C:\public\project-hyle\hyle\tests\graph_route_vulkan\gguf_test.cc" line="98" status="run" result="completed" time="11.478" timestamp="2026-10-09T09:23:39.342" classname="VulkanGraphGguf" />
+  </testsuite>
+</testsuites>

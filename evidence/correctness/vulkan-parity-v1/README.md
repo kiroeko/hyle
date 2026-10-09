@@ -26,3 +26,14 @@ test私有include路径；03cfe0f3只纠正相对include，未扩公开产品依
 [串行驱动](run_windows_batch.py)只运行该批实际GPU程序，CREATE_NO_WINDOW和ErrorMode
 禁止缺DLL/崩溃弹窗；EXE旁保有CMake-stage DLL，validation layer显式进程级启用。
 原route/Graph性能BLOCKED未解除，本批不P1、不self扩张、不重写公共验证系统。
+
+## IQ1_S delta正式结果
+
+`a9eced9d`[Direct2/2](native-a9eced9d-direct-delta.xml)、
+[Graph2/2](native-a9eced9d-graph-delta.xml) PASS；
+[receipt](native-a9eced9d-receipt.json)明确只有IQ1_S、仅原四失败ID。每次精确原Q8_1
+程序门和独立原GGUF模型量化门同时通过，不放宽其它17格式原门。
+结合首批，普通Direct合并5/5、Graph4/4、Provider25/25，所有18MatMul类型、9grouped
+类型、8embedding样本通过；不是再次whole batch run，不签119/8实际完整矩阵已通过。
+数值参考责任已解决，停止此捕获。Compile/private-include失败也保留；产品candidate
+仍3b7d3ba9，之后仅test/docs/evidence变化。全部实现当前61,432行/261文件，不含测试。

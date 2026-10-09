@@ -62,3 +62,10 @@ MMVQ在RTX整数dot、连续F32输入、该固定M2/K256下选择Q8_1，不是HY
 路由到错代码也同错。原3e-3逐点门只对其原F32程序适用；不把它误当本库Q8_1程序合同，
 其它17格式原门完全不变。输入/权重/output/state不改，QQ8转换/同步成本必须如实计入。
 仅IQ1_S MatMul/grouped四个失败ID两入口delta验收，明确打印所测type，其它通过域复用。
+
+`a9eced9d`IQ1_S定向正式结果Direct2/2、Graph2/2 PASS，紧原program门与共同模型量化门
+同时通过；raw逐项打印IQ1_S，没有重跑其它类型/provider/embedding。仅一次测试私有
+include纠正，两test增量重链，无产品改动/重配/P1。合并首批证据，18原格式MatMul、
+9grouped样本、8embedding普通入口已有真实GPU资格；这是微型source链，不代签父轮
+119/8全部actual geometry或559/34/45/新版MTP完整覆盖。该数值原因关闭，不继续探查。
+下个包只按共同目录补actual矩阵和具名原成熟承载；原route/Graph性能BLOCKED仍保持。

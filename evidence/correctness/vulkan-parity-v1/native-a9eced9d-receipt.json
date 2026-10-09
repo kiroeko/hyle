@@ -1,0 +1,55 @@
+{
+  "candidate": "a9eced9d65c1613c099b63a51c4071730dbb2e40",
+  "build": "C:\\hv\\vp1",
+  "steps": [
+    {
+      "name": "direct-delta",
+      "returncode": 0,
+      "filter": "VulkanGguf.EveryCatalogFormatUsesNativeDirectRegionAndReplays:VulkanGguf.PackedFormatsGroupedExpertsUseNativeMulMatId",
+      "binary_sha256": "244f26bd91744503780816c09ae1018a5ba30678d68066b17c2c10b675b8fe6d",
+      "log": "native-a9eced9d-direct-delta.log",
+      "log_sha256": "112ea6fe9eef8a9c212fcdac1335cec2a7b67cb1d1179acd414fe24321414561",
+      "adjacent_dlls": [
+        "hyle_compute.dll",
+        "hyle_compute_ggml_runtime.dll",
+        "hyle_compute_ops.dll",
+        "hyle_compute_provider_ggml_vulkan.dll",
+        "hyle_compute_provider_iree_vulkan.dll",
+        "hyle_compute_route_vulkan.dll",
+        "hyle_container.dll",
+        "hyle_error.dll",
+        "hyle_graph.dll",
+        "hyle_graph_route_vulkan.dll",
+        "hyle_mem.dll",
+        "hyle_platform.dll",
+        "hyle_time.dll"
+      ]
+    },
+    {
+      "name": "graph-delta",
+      "returncode": 0,
+      "filter": "VulkanGraphGguf.PackedMatMulUsesCapturedNativeWeightAndReplays:VulkanGraphGguf.PackedFormatsGroupedExpertsUseCapturedMulMatId",
+      "binary_sha256": "90adbdcf6c28d6f5d2fd963a6485dc5ce5727e43a25584979d8c089f40446fe5",
+      "log": "native-a9eced9d-graph-delta.log",
+      "log_sha256": "77307a7096d079b2bece81f776e4db12a4b0773274cc256d5066d699cf8b2dfa",
+      "adjacent_dlls": [
+        "hyle_compute.dll",
+        "hyle_compute_ggml_runtime.dll",
+        "hyle_compute_ops.dll",
+        "hyle_compute_provider_ggml_vulkan.dll",
+        "hyle_compute_provider_iree_vulkan.dll",
+        "hyle_compute_route_vulkan.dll",
+        "hyle_container.dll",
+        "hyle_error.dll",
+        "hyle_graph.dll",
+        "hyle_graph_route_vulkan.dll",
+        "hyle_mem.dll",
+        "hyle_platform.dll",
+        "hyle_time.dll"
+      ]
+    }
+  ],
+  "tested_types": [
+    "IQ1_S"
+  ]
+}

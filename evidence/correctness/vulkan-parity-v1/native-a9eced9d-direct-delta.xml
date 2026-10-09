@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites tests="2" failures="0" disabled="0" errors="0" time="22.233" timestamp="2026-10-09T09:23:05.328" name="AllTests">
+  <testsuite name="VulkanGguf" tests="2" failures="0" disabled="0" skipped="0" errors="0" time="22.233" timestamp="2026-10-09T09:23:05.328">
+    <testcase name="EveryCatalogFormatUsesNativeDirectRegionAndReplays" file="C:\public\project-hyle\hyle\tests\compute_route_vulkan\gguf_test.cc" line="10" status="run" result="completed" time="11.137" timestamp="2026-10-09T09:23:05.328" classname="VulkanGguf" />
+    <testcase name="PackedFormatsGroupedExpertsUseNativeMulMatId" file="C:\public\project-hyle\hyle\tests\compute_route_vulkan\gguf_test.cc" line="183" status="run" result="completed" time="11.095" timestamp="2026-10-09T09:23:16.466" classname="VulkanGguf" />
+  </testsuite>
+</testsuites>
