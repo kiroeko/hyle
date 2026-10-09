@@ -1,0 +1,7 @@
+stage mature
+stage ordinary
+stage topk
+stage recorded rows=1
+stage recorded rows=16
+oracle index=0 actual=-24.7578106 expected=-24.7648582 delta=0.0070476532
+Vulkan FFN: Vulkan sample independent numerical oracle mismatch

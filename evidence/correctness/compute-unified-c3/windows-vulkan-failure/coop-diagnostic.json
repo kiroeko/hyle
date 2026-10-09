@@ -1,0 +1,19 @@
+[
+  {
+    "case": "no-coop2",
+    "environment_override": {
+      "GGML_VK_DISABLE_COOPMAT2": "1"
+    },
+    "exit": 20,
+    "scope": "Diagnostic only; flags are not a proposed user workaround or math PASS for default configuration"
+  },
+  {
+    "case": "no-coop",
+    "environment_override": {
+      "GGML_VK_DISABLE_COOPMAT2": "1",
+      "GGML_VK_DISABLE_COOPMAT": "1"
+    },
+    "exit": 20,
+    "scope": "Diagnostic only; flags are not a proposed user workaround or math PASS for default configuration"
+  }
+]

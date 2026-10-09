@@ -505,14 +505,9 @@
     },
     {
       "module": "compute_provider_ggml_vulkan",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/compute/vulkan-parity-final-audit.md",
-      "summary": "Vulkan CLOSED: common Windows104/559/80/34/45/eight-family and current model/state scope, mature cold defaults, applicable Windows/Air/WSL three deliveries/OFF/headers/resources and final cleanup verified. No new self math or WIN; accepted P0 policy/P1 INCONCLUSIVE, WSL GPU unavailable and hardware/residency limits explicit.",
-      "candidate": "a27a9b17f043f557726dd73a023e38e70e3e270d",
-      "performance": {
-        "tier": "P0",
-        "evidence": "evidence/correctness/vulkan-parity-v4-delivery/final-audit.json"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/vulkan-f32-matmul-admission-repair.md",
+      "summary": "C3实际F32 FFN数值反例触发定向reopen；审计原成熟完整精度路径，不新增自研MatMul、不放宽误差或恢复历史队列。"
     },
     {
       "module": "compute_ggml_runtime",

@@ -1,0 +1,14 @@
+{
+  "product_candidate": "2614676ee64bceddadcf791c218d6eea1f051c64",
+  "scope": "Actual committed C2-01 helper correction; build graph qualification only, not native Metal/math",
+  "metadata_regression": "PASS: Debug/Release, source producers/alias/diamond/false/cycle/reset",
+  "windows_ninja": "PASS: inactive and active real library owner in separate directory; generated/copied asset presence matches active branch",
+  "air_unix_makefiles": "PASS: same product helpers, inactive and active cross-directory owner/asset cases",
+  "helper_sha256": {
+    "HyleRuntimeStaging.cmake": "471d95794804c77309e77845beb4b7de4d4bcaa329b58d43bf4299434b935035",
+    "HyleAppleRuntime.cmake": "70b4dd4f0696a7d12048ae986ac2af4d19189d6d6b30858bc11b06f8d8a17869"
+  },
+  "native_cpp_shader_changes": false,
+  "p1": "NOT_APPLICABLE: cold build dependency correction, no math/algorithm/runtime flags changed",
+  "remaining": "Actual Apple native deliveries are still unrun; Windows CPU/CUDA receipts retain their original product identities"
+}

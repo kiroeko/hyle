@@ -5,13 +5,15 @@ It is not a terminal verdict for all platforms/routes, hybrid execution, or asyn
 
 [Delivery matrix](delivery-matrix.json) fixes the declared applicable scope: 15 platform/route groups,
 45 source/shared/static shapes, each with the existing Direct and Graph consumer. Twelve consumer entries
-are currently PASS; the other 78 are UNRUN. A mixed SDK entry runs each selected native route independently
+are currently PASS; two Windows Vulkan source entries are FAIL and the other 76 are UNRUN. A mixed SDK entry runs each selected native route independently
 and cannot certify the later joint execution or asynchronous transfer work.
 
 [Conditional source-asset producer counterexample](apple-conditional-producer/receipt.json) records a
 C2-01 build-graph defect: an inactive link suppresses copying but still builds its source asset owner.
-This is a CMake fixture, not a Metal or math verdict. A finite owner-authorized correction is pending
-after the current immutable Windows CUDA batch; existing non-Apple math receipts are retained.
+This is a CMake fixture, not a Metal or math verdict. The [applied product correction](apple-conditional-producer/product-fix-receipt.json)
+passed the metadata regression and actual conditional cross-directory asset builds on Windows Ninja and
+Air Unix Makefiles. Existing non-Apple math receipts retain their original product identities; actual
+Apple native delivery remains unrun.
 The [disposable correction experiment](apple-conditional-producer/design-experiment/receipt.json) passed
 inactive/active source asset cases on Windows Ninja and Air Unix Makefiles, with the real library owner
 and generated asset in a separate directory. It validates the finite dependency approach, not an applied
@@ -43,6 +45,14 @@ consumption needs its populated cache or a qualified local root/archive. Route r
 The shared SDK export check inspected 17 HYLE libraries and 1289 exports; no new P1 was run.
 
 Windows CPU and CUDA three-delivery consumer batches are complete. Remaining route/platform/mixed SDK entries have no PASS here.
+[Windows Vulkan source failure receipt](windows-vulkan-failure/receipt.json) preserves both actual failures:
+the sample's old native-dispatch count and the 16-row F32 FFN numerical mismatch. An independent host
+rounding bill matches the observed GPU result after narrowing the down-projection activation to F16;
+disabling cooperative-matrix variants does not resolve it. Default F32 admission needs a finite repair,
+with the original numerical gate retained. Shared/static are unrun; no Vulkan PASS or self-math replacement is claimed.
 Read-only verification copies use a 42,956,800-byte source-only archive from the Windows product candidate
 79137d31, SHA256 `6ca08a1ea6728ee340267b5fa10e0f1b9c681e726f2bf407cf2abadd8d0ffefe`.
 The archive excludes large historical evidence and is not a reverse source of product changes.
+The remaining WSL/Air entries now use fresh `source-2614676e` directories from the corrected product:
+42,967,040-byte source archive, SHA256 `94cd4aff04573073ffc848ecf71d67933ed705d03160ba93f8ce1b3da64b1bcc`.
+Both received archives were checked against that hash; no native math PASS follows from transport.

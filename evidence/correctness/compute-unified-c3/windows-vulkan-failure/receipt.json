@@ -1,0 +1,26 @@
+{
+  "candidate": "2614676ee64bceddadcf791c218d6eea1f051c64",
+  "source_batch_exit": 1,
+  "source_direct": "FAIL",
+  "source_graph": "FAIL",
+  "graph_report_observed": {
+    "nodes": 5,
+    "native_dispatch_count": 2,
+    "managed_region_count": 1,
+    "storage_blocks": 2,
+    "opaque": false
+  },
+  "graph_assertion": "Sample expects old native count 4; actual mature region composition remains admitted",
+  "numeric_case": {
+    "rows": 16,
+    "first_output": 0,
+    "gpu": -24.757810592651367,
+    "full_f32_oracle": -24.76485824584961,
+    "round_down_activation_to_f16_oracle": -24.757810592651367,
+    "delta_to_f32": 0.0070476531982421875
+  },
+  "diagnostic_environment": "Disabling coopmat2 or both coopmat variants does not remove the mismatch; no user workaround proposed",
+  "finite_next": "Retain mature region; migrate stale sample count; bind F32 MatMul to a qualified existing original full-precision path. Ownership and finite FIX must be audited before product math edits. No tolerance relaxation or self MatMul.",
+  "log_sha256": "a6ce56e3017604fcc9836755e46af276871a675758e98ef8c732a33154aa9de6",
+  "shared_static": "UNRUN"
+}

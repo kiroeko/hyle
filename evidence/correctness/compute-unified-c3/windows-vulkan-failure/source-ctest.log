@@ -1,0 +1,35 @@
+Start testing: Oct 10 01:15 中国标准时间
+----------------------------------------------------------
+1/2 Testing: hyle_selected_source_consumer
+1/2 Test: hyle_selected_source_consumer
+Command: "C:/h7/w-vulkan/selected-graph/source-build/hyle_selected_source_consumer.exe"
+Directory: C:/h7/w-vulkan/selected-graph/source-build
+"hyle_selected_source_consumer" start time: Oct 10 01:15 中国标准时间
+Output:
+----------------------------------------------------------
+Vulkan graph FFN: incomplete Vulkan compilation report
+<end of output>
+Test time =   1.21 sec
+----------------------------------------------------------
+Test Failed.
+"hyle_selected_source_consumer" end time: Oct 10 01:15 中国标准时间
+"hyle_selected_source_consumer" time elapsed: 00:00:01
+----------------------------------------------------------
+
+2/2 Testing: hyle_selected_source_compute
+2/2 Test: hyle_selected_source_compute
+Command: "C:/h7/w-vulkan/selected-graph/source-build/hyle_selected_source_compute.exe"
+Directory: C:/h7/w-vulkan/selected-graph/source-build
+"hyle_selected_source_compute" start time: Oct 10 01:15 中国标准时间
+Output:
+----------------------------------------------------------
+Vulkan FFN: Vulkan sample independent numerical oracle mismatch
+<end of output>
+Test time =   1.42 sec
+----------------------------------------------------------
+Test Failed.
+"hyle_selected_source_compute" end time: Oct 10 01:15 中国标准时间
+"hyle_selected_source_compute" time elapsed: 00:00:01
+----------------------------------------------------------
+
+End testing: Oct 10 01:15 中国标准时间

@@ -236,3 +236,16 @@ AUDITED有限FIX已应用：仅修改两helper的producer条件和stage依赖声
 新产品candidate为`2614676ee64bceddadcf791c218d6eea1f051c64`；前一79137d31的CPU/CUDA已完成格
 保留其实际产物身份。新diff只影响Apple source producer的条件边，CPU/CUDA所用无Apple资产路径
 未变；不把旧产物改标新tree，也不重跑其数学。剩余矩阵从新candidate开始，source archive重新绑定。
+
+Air新目录直接复制产品helper的Unix Makefiles正/反分支和跨目录producer实际PASS，
+[应用后收据](../../../../evidence/correctness/compute-unified-c3/apple-conditional-producer/product-fix-receipt.json)保存真实产品SHA。
+修正后的完整source-only archive已在WSL/Air新`source-2614676e`目录展开，两端SHA256匹配。
+Windows Vulkan-only普通三交付进入下一个串行批次；没有启动P1或并行重型平台构建。
+
+Windows Vulkan source实际构建完成但两消费者FAIL，[原始失败和有界诊断](../../../../evidence/correctness/compute-unified-c3/windows-vulkan-failure/receipt.json)
+已保留。Graph报告为5节点/2native/1managed，样例仍固定旧4native；数值失败仅在rows16，
+首输出GPU=-24.757810592651367、原F32 oracle=-24.76485824584961。只把down激活舍入F16的
+独立模拟恰好得到GPU值；禁用coopmat2或全部coopmat也不改善，不能归结为设备波动。
+下一步只审计原成熟F32完整精度路径的接法及旧样例断言，不改误差门、不新增自研算子/用户开关。
+若需要改已CLOSED的ggml Vulkan Provider，先以此具体correctness反例绑定新owner卡SCOPED/AUDITED。
+现有677个source构建产物保留，定向修正后恢复对应阶段，不能重跑破坏root的整批driver。
