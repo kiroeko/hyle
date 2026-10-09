@@ -100,3 +100,11 @@ lowering、锁定原ggml Vulkan和已注册IREE完整程序及相应公开测试
 D3 verify-only 已执行：两完整片段、两端输出/两cycle/资源预算PASS，实际dispatch/
 managed-region数量及cold/warm常驻字节逐端完全相同；Graph对显式native-plan。
 原完整算法/精度/接口仍稳定，下一步仅该合同的唯一A/A资格及适用n15，预算不重置旧比较。
+
+primary拥有服务A/A在 `4c284c4f` 唯一8process PASS。进入P1前为既定placement要求
+添加中性前缀的独立artifact，primary源码/EXE不改；placement首次单独8process资格，
+失败不得换layout重测。固定正式样本primary/placement×双执行/分配四strata×n15，
+两完整片段共同采样；原公共controls源码原样构建，n15正反controls与原统计/机器policy。
+全过程一次，约25分钟上限，不升31。P1主统计仍逐轮paired比的进程中位，原op/s侧
+中位仅绝对时间/floor诊断；不得把其比值导入主裁决。只有两artifact AA及原controls
+均资格才签正式NI；未资格或测量未完保持明确INCONCLUSIVE，不假签产品退化。
