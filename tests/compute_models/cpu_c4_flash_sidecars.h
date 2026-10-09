@@ -423,7 +423,9 @@ template<class Run> void check(const Model &model,Run run) {
     for(std::size_t step=0;step<observed.size();++step) {
       auto teacher=d5_gguf_test::activation(h,int(31+step));
       std::vector<float> expected;
-      auto ll=lm.reference(program.normalized_reference[step]),bias=mk.reference(program.markov_reference[step]);
+      // The full three-stage program has already passed its independent oracle.
+      // Qualify the head with the same actual state that its invocation consumes.
+      auto ll=lm.reference(observed[step]),bias=mk.reference(markov[step]);
       for(std::size_t i=0;i<ll.size();++i)expected.push_back(ll[i]+bias[i]);
       head.replays.push_back({{bytes(teacher),bytes(observed[step]),bytes(markov[step])},{lm.reference(teacher),std::move(expected)}});
     }

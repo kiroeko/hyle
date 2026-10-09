@@ -1,0 +1,74 @@
+{
+  "candidate": "f2ef3389a3a8e1a3c817045ffbe23b9e1509a336",
+  "steps": [
+    {
+      "name": "direct-sidecars",
+      "returncode": 1,
+      "filter": "CurrentSidecars/VulkanCurrentSidecar.MixedMxfp4FullThreeStagesAndVocabulary/*",
+      "tests": {
+        "tests": "2",
+        "failures": "1",
+        "disabled": "0",
+        "errors": "0",
+        "time": "39.289",
+        "timestamp": "2026-10-09T15:15:07.839",
+        "name": "AllTests"
+      },
+      "validation_error": false,
+      "log": "sidecar-f32-rope-f2ef3389-direct-sidecars.log",
+      "log_sha256": "a4fb0e5161dadeeb249ce8118da2e4b8db1f90bc3ebc03b79e17eb8f363f34a1",
+      "xml": "sidecar-f32-rope-f2ef3389-direct-sidecars.xml",
+      "binary_sha256": "c51c8dda339c008281bf4578348a8ecd63685c79f78cb9c57c2c7ca5eb9ede42",
+      "adjacent_dlls": [
+        "hyle_compute.dll",
+        "hyle_compute_ggml_runtime.dll",
+        "hyle_compute_ops.dll",
+        "hyle_compute_provider_ggml_vulkan.dll",
+        "hyle_compute_provider_iree_vulkan.dll",
+        "hyle_compute_route_vulkan.dll",
+        "hyle_container.dll",
+        "hyle_error.dll",
+        "hyle_graph.dll",
+        "hyle_graph_route_vulkan.dll",
+        "hyle_mem.dll",
+        "hyle_platform.dll",
+        "hyle_time.dll"
+      ]
+    },
+    {
+      "name": "graph-sidecars",
+      "returncode": 1,
+      "filter": "CurrentSidecars/VulkanGraphCurrentSidecar.MixedMxfp4FullThreeStagesAndVocabulary/*",
+      "tests": {
+        "tests": "2",
+        "failures": "1",
+        "disabled": "0",
+        "errors": "0",
+        "time": "32.876",
+        "timestamp": "2026-10-09T15:15:47.393",
+        "name": "AllTests"
+      },
+      "validation_error": false,
+      "log": "sidecar-f32-rope-f2ef3389-graph-sidecars.log",
+      "log_sha256": "96e35c993028f1c7de98f5936cd873b0e82a0ec5082deda8b04fa4f26bd14d99",
+      "xml": "sidecar-f32-rope-f2ef3389-graph-sidecars.xml",
+      "binary_sha256": "bf4603ffaa7679aad91df2689363efdc4953572b6aef9c254ddf5d213bc2e953",
+      "adjacent_dlls": [
+        "hyle_compute.dll",
+        "hyle_compute_ggml_runtime.dll",
+        "hyle_compute_ops.dll",
+        "hyle_compute_provider_ggml_vulkan.dll",
+        "hyle_compute_provider_iree_vulkan.dll",
+        "hyle_compute_route_vulkan.dll",
+        "hyle_container.dll",
+        "hyle_error.dll",
+        "hyle_graph.dll",
+        "hyle_graph_route_vulkan.dll",
+        "hyle_mem.dll",
+        "hyle_platform.dll",
+        "hyle_time.dll"
+      ]
+    }
+  ],
+  "scope": "Flash Q8/BF16 sidecar delta only; reference keeps actual F32 rotary state and full gates/programs"
+}

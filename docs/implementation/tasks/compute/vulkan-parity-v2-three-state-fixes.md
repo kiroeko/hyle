@@ -52,3 +52,13 @@ S2-R 只通过 Model 的显式 RotaryReference 绑定原 F32 native 旋转，默
 方程与产品不变，不改变误差门或完整片段。该错误的一次纠正预算15分钟；因两
 sidecar 参考都受影响，只集中每入口 Q8/BF16 四行，不重测80/560/25全集。
 失败则冻结准确未资格范围，继续父轮其它独立验收，禁止追加同原因试探。
+
+S2-R `f2ef3389` 两入口 BF16 PASS；Q8 的完整三stage region `0x0c040122`
+及 prefill/embedding 均通过，唯一错误转移至全词表 head `0x0c040125`：
+0.0414580703 > 0.04。已定位第二个独立 fixture 缺陷 S2-H：head 实际输入
+`observed[step]`，oracle 却取 `program.normalized_reference[step]`；两者是完整
+程序已验收误差范围内的不同输入，后续 Q8 codec 放大差异。改为以实际输入
+构造独立原 projection reference，全部三stage/feedback/reset门、全129280词表
+行与head数值门不变。这是同输入正确性修复，不是放宽最终门或删除计算步骤。
+CPU/CUDA 产品不改；共享测试 fixture 统一修正该输入不一致。仅两 sidecar
+每入口一次 delta，15分钟纠正预算内结束，未过不再追加同原因试探。

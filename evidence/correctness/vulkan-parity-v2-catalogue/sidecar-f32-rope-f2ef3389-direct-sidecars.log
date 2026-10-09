@@ -1,0 +1,31 @@
+Running main() from C:\public\tools\hyle-dependencies\v1\sources\googletest-063de7e9578f-162765170ae6\googletest\src\gtest_main.cc
+Note: Google Test filter = CurrentSidecars/VulkanCurrentSidecar.MixedMxfp4FullThreeStagesAndVocabulary/*
+[==========] Running 2 tests from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 2 tests from CurrentSidecars/VulkanCurrentSidecar
+[ RUN      ] CurrentSidecars/VulkanCurrentSidecar.MixedMxfp4FullThreeStagesAndVocabulary/Q8
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\../compute_models/d5_gguf_test_support.h(297): error: Expected: (max_error) <= (2.0e-2F + 2.0e-2F * max_reference), actual: 0.0414580703 vs 0.04
+max_reference=1
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\catalogue_test_support.h(119): 1
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\catalogue_test_support.h(35): region=201589029
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\current_state_tests.h(119): sidecar:dspark-DeepSeek-V4-Flash-0731-Q8_0.gguf
+
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\../compute_models/cpu_c4_flash_sidecars.h(430): error: Value of: ::testing::Test::HasFailure()
+  Actual: true
+Expected: false
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\current_state_tests.h(119): sidecar:dspark-DeepSeek-V4-Flash-0731-Q8_0.gguf
+
+[  FAILED  ] CurrentSidecars/VulkanCurrentSidecar.MixedMxfp4FullThreeStagesAndVocabulary/Q8, where GetParam() = 32-byte object <D0-AF 70-EE F6-7F 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00> (18700 ms)
+[ RUN      ] CurrentSidecars/VulkanCurrentSidecar.MixedMxfp4FullThreeStagesAndVocabulary/BFloat16
+[       OK ] CurrentSidecars/VulkanCurrentSidecar.MixedMxfp4FullThreeStagesAndVocabulary/BFloat16 (20588 ms)
+[----------] 2 tests from CurrentSidecars/VulkanCurrentSidecar (39288 ms total)
+
+[----------] Global test environment tear-down
+[==========] 2 tests from 1 test suite ran. (39289 ms total)
+[  PASSED  ] 1 test.
+[  FAILED  ] 1 test, listed below:
+[  FAILED  ] CurrentSidecars/VulkanCurrentSidecar.MixedMxfp4FullThreeStagesAndVocabulary/Q8, where GetParam() = 32-byte object <D0-AF 70-EE F6-7F 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00>
+
+ 1 FAILED TEST
