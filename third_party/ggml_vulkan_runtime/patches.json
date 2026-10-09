@@ -302,9 +302,29 @@
         {
           "before": "                sg_create({GGML_TYPE_F32, GGML_TYPE_F32, true, false}, tc_mm, \"matmul_id_f32_f32\", matmul_id_f32_f32_fp32_len, matmul_id_f32_f32_fp32_data, sizeof(vk_mat_mat_id_push_constants), mul_mat_id_param_count);",
           "after": "            // HYLE: complete F32 operand pipeline registered above."
+        },
+        {
+          "before": "    const bool x_non_contig = (ctx->device->coopmat2 && src0->type == GGML_TYPE_F32) ||\n                              !ggml_vk_dim01_contiguous(src0);\n    const bool y_non_contig = (ctx->device->coopmat2 && src1->type == GGML_TYPE_F32) ||",
+          "after": "    const bool hyle_f32_operands = src0->type == GGML_TYPE_F32 && src1->type == GGML_TYPE_F32 &&\n                                   dst->op_params[3] == GGML_PREC_F32;\n    const bool x_non_contig = (!hyle_f32_operands && ctx->device->coopmat2 && src0->type == GGML_TYPE_F32) ||\n                              !ggml_vk_dim01_contiguous(src0);\n    const bool y_non_contig = (!hyle_f32_operands && ctx->device->coopmat2 && src1->type == GGML_TYPE_F32) ||"
+        },
+        {
+          "before": "    const bool x_non_contig = (ctx->device->coopmat2 && src0->type == GGML_TYPE_F32) ||\n                              !ggml_vk_dim01_contiguous(src0);\n    // If src0 is BF16, try to use a BF16 x BF16 multiply",
+          "after": "    const bool hyle_f32_operands = src0->type == GGML_TYPE_F32 && src1->type == GGML_TYPE_F32 &&\n                                   dst->op_params[3] == GGML_PREC_F32;\n    const bool x_non_contig = (!hyle_f32_operands && ctx->device->coopmat2 && src0->type == GGML_TYPE_F32) ||\n                              !ggml_vk_dim01_contiguous(src0);\n    // If src0 is BF16, try to use a BF16 x BF16 multiply"
+        },
+        {
+          "before": "    const bool y_decode_vector_supported = ctx->device->coopmat2_decode_vector &&",
+          "after": "    const bool y_decode_vector_supported = !hyle_f32_operands && ctx->device->coopmat2_decode_vector &&"
+        },
+        {
+          "before": "                              (ctx->device->coopmat2 && src1->type == GGML_TYPE_F32) ||\n                              // Intel coopmat1:",
+          "after": "                              (!hyle_f32_operands && ctx->device->coopmat2 && src1->type == GGML_TYPE_F32) ||\n                              // Intel coopmat1:"
+        },
+        {
+          "before": "    const uint32_t y_staged_row_stride = ctx->device->coopmat2 && !quantize_y ? ggml_vk_align_size(ne10, 64) : ne10;",
+          "after": "    const uint32_t y_staged_row_stride = !hyle_f32_operands && ctx->device->coopmat2 && !quantize_y ? ggml_vk_align_size(ne10, 64) : ne10;"
         }
       ],
-      "after_sha256": "ecfe832e61a91641ea9553626ad23c37f571fba54be186554ea0cc2c3980d6b3"
+      "after_sha256": "9cb86bf51208debdf96e67eecc1783f3b75e76169b5c9f17ea6646f391a3ad70"
     },
     {
       "path": "src/ggml.cpp",

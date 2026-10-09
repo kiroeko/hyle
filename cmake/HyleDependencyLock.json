@@ -883,7 +883,7 @@
       },
       "vendored": {
         "path": "third_party/ggml_vulkan_runtime",
-        "tree_sha256": "4b8596133e9494f25e924f813dc4de89bdda0938cfbf645769378e51b6fc9be9"
+        "tree_sha256": "f536fb741927d7d96341594f563eb03465e2da11ed33f917f0ba58583915670d"
       },
       "license": {
         "expression": "MIT",

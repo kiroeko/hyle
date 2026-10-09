@@ -763,6 +763,11 @@ Result<Region> Region::create(NativeDevice device,
         if (!ggml_prec_set_acc(output, GGML_PREC_F32))
           return std::unexpected(Status::Unimplemented(
               "original ggml grouped F32 accumulation unavailable"));
+        if (arguments[0]->type == GGML_TYPE_F32 &&
+            arguments[1]->type == GGML_TYPE_F32 &&
+            !ggml_prec_set_src(output, GGML_PREC_F32, 1))
+          return std::unexpected(Status::Unimplemented(
+              "original ggml grouped F32 operands unavailable"));
       } else if (const auto descriptor =
                      node.operation
                          .custom_as<model_ops::HyperConnectionCombine>()) {
