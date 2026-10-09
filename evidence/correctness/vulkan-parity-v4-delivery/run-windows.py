@@ -20,7 +20,7 @@ if args.reuse_shared_sdk and args.stage != 'shared':
 repo = Path.cwd().resolve()
 root = Path('C:/hv/v4w').resolve()
 source_tree = root/'source-tree'
-product = '29fde392f'
+product = '2f78714c8'
 flags = {'creationflags': subprocess.CREATE_NO_WINDOW}
 ctypes.windll.kernel32.SetErrorMode(0x0001 | 0x0002 | 0x8000)
 os.environ['VSLANG'] = '1033'
