@@ -3,4 +3,7 @@
 namespace hyle::compute::vulkan::detail {
 inline constexpr char kShaderCompiler[] = "@HYLE_VULKAN_SHADER_COMPILER@";
 inline constexpr char kShaderRevision[] = "@HYLE_DEP_GGML_VULKAN_SHADERS_COMMIT@";
+inline constexpr char kVulkanSdkVersion[] = "@HYLE_DEP_VULKAN_SDK_VERSION@";
+inline constexpr char kGgmlRevision[] = "@HYLE_DEP_GGML_COMMIT@";
+inline constexpr char kIreeRevision[] = "@HYLE_DEP_IREE_RUNTIME_COMMIT@";
 } // namespace hyle::compute::vulkan::detail

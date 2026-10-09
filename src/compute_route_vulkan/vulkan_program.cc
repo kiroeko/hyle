@@ -2,6 +2,7 @@
 #include "vulkan_iree.h"
 #include "vulkan_program_internal.h"
 #include "vulkan_iq1.h"
+#include "vulkan_policy.h"
 #include "vulkan_tensor.h"
 
 #include "hyle/compute/low_precision.h"
@@ -247,19 +248,23 @@ Result<Program> prepare_plan(const Context &context, const Plan &plan,
         last_uses[input] = index;
     for (std::size_t index = 0; index < plan.steps.size();) {
       const auto &step = plan.steps[index];
-      if (iree_operation(*program, step)) {
+      if (matches_mature_default(*program, step, DefaultCarrier::kIree) &&
+          iree_operation(*program, step)) {
         HYLE_RETURN_IF_ERROR(lower_iree(*program, step));
         ++index;
         continue;
       }
-      if (bfloat_region_operation(*program, step)) {
+      if (matches_mature_default(*program, step, DefaultCarrier::kGgml) &&
+          bfloat_region_operation(*program, step)) {
         HYLE_RETURN_IF_ERROR(lower_bfloat_region(*program, step));
         ++index;
         continue;
       }
-      if (managed_operation(*program, step)) {
+      if (matches_mature_default(*program, step, DefaultCarrier::kGgml) &&
+          managed_operation(*program, step)) {
         auto end = index;
         while (end < plan.steps.size() &&
+               matches_mature_default(*program, plan.steps[end], DefaultCarrier::kGgml) &&
                managed_operation(*program, plan.steps[end]))
           ++end;
         HYLE_RETURN_IF_ERROR(
@@ -267,12 +272,14 @@ Result<Program> prepare_plan(const Context &context, const Plan &plan,
         index = end;
         continue;
       }
-      if (checked_grouped_operation(*program, step)) {
+      if (matches_mature_default(*program, step, DefaultCarrier::kGgml) &&
+          checked_grouped_operation(*program, step)) {
         HYLE_RETURN_IF_ERROR(lower_checked_grouped(*program, step));
         ++index;
         continue;
       }
-      if (quantized_gather_operation(*program, step)) {
+      if (matches_mature_default(*program, step, DefaultCarrier::kGgml) &&
+          quantized_gather_operation(*program, step)) {
         HYLE_RETURN_IF_ERROR(lower_gather(*program, step));
         ++index;
         continue;

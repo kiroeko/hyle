@@ -101,6 +101,9 @@ Result<std::shared_ptr<Device>> create_device(ContextOptions options) noexcept {
     auto &environment = device->environment;
     environment.shader_compiler = kShaderCompiler;
     environment.shader_revision = kShaderRevision;
+    environment.sdk_version = kVulkanSdkVersion;
+    environment.ggml_revision = kGgmlRevision;
+    environment.iree_revision = kIreeRevision;
     environment.device_name = device->properties.deviceName;
     environment.driver_name = driver.driverName;
     environment.driver_info = driver.driverInfo;

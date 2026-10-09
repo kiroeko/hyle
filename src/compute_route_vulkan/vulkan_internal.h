@@ -18,24 +18,44 @@ namespace cd = hyle::compute::detail;
 
 inline constexpr RouteFactId kSubgroupArithmeticAttribute{0x48594c45564b5254ULL,
                                                           1, 1};
+inline constexpr RouteFactId kShaderCompilerAttribute{0x48594c45564b5254ULL, 2, 1};
+inline constexpr RouteFactId kShaderSourceAttribute{0x48594c45564b5254ULL, 3, 1};
+inline constexpr RouteFactId kHeaderVersionAttribute{0x48594c45564b5254ULL, 4, 1};
+inline constexpr ProviderId kGgmlCarrierId{0x48594c45564b5254ULL, 1};
+inline constexpr ProviderId kIreeCarrierId{0x48594c45564b5254ULL, 2};
 
 struct RouteFacts final {
-  std::array<RouteFact, 8> environment;
+  std::array<RouteFact, 14> environment{};
+  std::size_t count = 0;
+  std::span<const RouteFact> values() const noexcept {
+    return {environment.data(), count};
+  }
 };
 
 inline RouteFacts route_facts(const Environment &environment) noexcept {
-  return {{
-      RouteFact::number(route_fact::kDeviceVendorId, environment.vendor_id),
-      RouteFact::number(route_fact::kDeviceId, environment.device_id),
-      RouteFact::string(route_fact::kDeviceName, environment.device_name),
-      RouteFact::number(route_fact::kDriverVersion, environment.driver_version),
-      RouteFact::number(route_fact::kApiVersion, environment.api_version),
-      RouteFact::number(route_fact::kSubgroupSize, environment.subgroup_size),
-      RouteFact::number(route_fact::kSharedMemoryBytes,
-                        environment.shared_memory_bytes),
-      RouteFact::number(kSubgroupArithmeticAttribute,
-                        environment.subgroup_arithmetic ? 1u : 0u),
-  }};
+  RouteFacts facts;
+  const auto number = [&](RouteFactId id, std::uint64_t value) {
+    facts.environment[facts.count++] = RouteFact::number(id, value);
+  };
+  const auto text = [&](RouteFactId id, std::string_view value) {
+    if (!value.empty())
+      facts.environment[facts.count++] = RouteFact::string(id, value);
+  };
+  number(route_fact::kDeviceVendorId, environment.vendor_id);
+  number(route_fact::kDeviceId, environment.device_id);
+  text(route_fact::kDeviceName, environment.device_name);
+  text(route_fact::kDriverName, environment.driver_name);
+  number(route_fact::kDriverVersion, environment.driver_version);
+  number(route_fact::kRuntimeVersion, environment.loader_version);
+  number(route_fact::kApiVersion, environment.api_version);
+  text(route_fact::kSdkVersion, environment.sdk_version);
+  number(route_fact::kSubgroupSize, environment.subgroup_size);
+  number(route_fact::kSharedMemoryBytes, environment.shared_memory_bytes);
+  number(kSubgroupArithmeticAttribute, environment.subgroup_arithmetic ? 1u : 0u);
+  text(kShaderCompilerAttribute, environment.shader_compiler);
+  text(kShaderSourceAttribute, environment.shader_revision);
+  number(kHeaderVersionAttribute, environment.header_version);
+  return facts;
 }
 
 // Native PFNs are resolved once for the exact instance/device. There are no

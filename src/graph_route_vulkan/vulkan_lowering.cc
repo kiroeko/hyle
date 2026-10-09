@@ -36,16 +36,12 @@ static Result<cv::Program> compile_impl(const cv::Context &context,
     if (report != nullptr) {
       report->environment = context.environment();
       report->implementation_policy =
-          "Fixed managed ggml dense floating Copy/Cast, F32 Concat, rank0..8 "
-          "broadcast/"
-          "norm/gate/pointwise and selected-axis Sum/Mean, TopK/recurrent and "
-          "native GGUF Q3_K/Q4_K/Q5_K/Q6_K/Q8_0/IQ3_XXS/IQ3_S/IQ4_NL/"
-          "IQ4_XS/MXFP4 MatMul and GroupedMatMul regions, "
-          "original IREE checked I32 Scan/FP8/BF16 conversion regions, and "
-          "native tensor "
-          "shaders plus cold custom "
-          "SPIR-V; "
-          "device feature/limit matching, no runtime timing or provider search";
+          "Cold common condition matching binds mature ggml Vulkan tensor/native GGUF "
+          "regions and original IREE packed/FP4/FP8/IQ1/precision/checked-scan "
+          "programs; actual typed feature/resource admission is authoritative. "
+          "Unknown machine/model/version conditions retain legal engineering "
+          "defaults. Native storage/strict-semantic domains and cold custom "
+          "SPIR-V remain distinct; no runtime timing or provider search";
       report->numerical_policy =
           "F32/F16/BF16 tensor arithmetic with F32 evaluation and storage RNE; "
           "I32/I64/Bool exact storage operations; "

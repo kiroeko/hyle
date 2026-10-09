@@ -6,10 +6,68 @@
 #include "../compute/workload_fixture.h"
 #include "gate_norm_test_support.h"
 #include "vulkan_program_internal.h"
+#include "vulkan_policy.h"
 
 namespace {
 using namespace vulkan_gate_norm_test;
 namespace d = v::detail;
+
+TEST(VulkanManaged, ColdRulesMatchFullConditionAxesAndUnknownDefault) {
+  auto context=vulkan_test::context().value();
+  auto &environment=d::Access::runtime(context)->device->environment;
+  EXPECT_EQ(environment.ggml_revision,"456172ec733a135778adcd32d00e576a58232e45");
+  EXPECT_EQ(environment.iree_revision,"6ef606b6fa3e12bd2c12d36a07463069eb71185f");
+  EXPECT_FALSE(environment.sdk_version.empty());
+  d::ProgramState program;program.runtime=d::Access::runtime(context);
+  program.workload=workload_test::known(c::WorkloadPhase::kDecode);
+  const auto description=dense(c::DataType::kFloat32,{2,8});
+  program.values={{description,{}},{description,{}}};
+  const d::PlanStep step{.operation=c::Operation(c::Unary{c::UnaryKind::kSilu}),.inputs={0},.outputs={1}};
+  const std::array facts{
+      c::RouteFactPredicate::number(c::route_fact::kDeviceVendorId,environment.vendor_id),
+      c::RouteFactPredicate::number(c::route_fact::kDeviceId,environment.device_id),
+      c::RouteFactPredicate::number(c::route_fact::kDriverVersion,environment.driver_version),
+      c::RouteFactPredicate::string(c::route_fact::kSdkVersion,environment.sdk_version),
+      c::RouteFactPredicate::string(d::kShaderCompilerAttribute,environment.shader_compiler)};
+  const std::array dimensions{c::RouteDimensionPredicate::exact(0,2),c::RouteDimensionPredicate::exact(1,8)};
+  std::array ports{c::RouteTensorPredicate{.direction=c::RoutePortDirection::kInput,
+      .index=0,.data_type=c::DataType::kFloat32,.storage_kind=c::RouteStorageKind::kPlain,
+      .minimum_rank=2,.maximum_rank=2,.dimensions=dimensions}};
+  auto rule=d::kGgmlDefaultSelector;rule.platform=c::kBuildRoutePlatform;
+  rule.provider_version=environment.ggml_revision;rule.environment=facts;
+  rule.profile=c::exact_profile_selector(program.workload.profile.description());
+  rule.phase=program.workload.phase;rule.region=program.workload.region;
+  rule.operation=c::OperationKind::kUnary;rule.ports=ports;
+  EXPECT_TRUE(d::matches_cold_rule(program,step,d::DefaultCarrier::kGgml,rule));
+  auto mismatch=rule;mismatch.profile.model_name="other-model";
+  EXPECT_FALSE(d::matches_cold_rule(program,step,d::DefaultCarrier::kGgml,mismatch));
+  mismatch=rule;mismatch.phase=c::WorkloadPhase::kPrefill;
+  EXPECT_FALSE(d::matches_cold_rule(program,step,d::DefaultCarrier::kGgml,mismatch));
+  mismatch=rule;mismatch.provider_version="unqualified-revision";
+  EXPECT_FALSE(d::matches_cold_rule(program,step,d::DefaultCarrier::kGgml,mismatch));
+  ports[0].storage_kind=c::RouteStorageKind::kBlocked;
+  EXPECT_FALSE(d::matches_cold_rule(program,step,d::DefaultCarrier::kGgml,rule));
+  ports[0].storage_kind=c::RouteStorageKind::kPlain;
+  const auto saved=environment;
+  environment.device_name.clear();environment.driver_name.clear();environment.sdk_version.clear();
+  const auto unknown=d::route_facts(environment);
+  EXPECT_TRUE(std::ranges::all_of(unknown.values(),[](const auto &fact){return fact.valid();}));
+  EXPECT_FALSE(d::matches_cold_rule(program,step,d::DefaultCarrier::kGgml,rule));
+  EXPECT_TRUE(d::matches_mature_default(program,step,d::DefaultCarrier::kGgml));
+  EXPECT_TRUE(d::matches_mature_default(program,step,d::DefaultCarrier::kIree));
+  auto prepared=v::prepare(context,program.workload,c::Unary{c::UnaryKind::kSilu},description);
+  environment=saved;
+  ASSERT_TRUE(prepared) << prepared.error().message();
+  EXPECT_EQ(prepared->workload(),program.workload);
+  EXPECT_TRUE(d::Access::program(*prepared)->dispatches.back().region);
+  auto invocation=prepared->create_invocation().value();
+  for (double changed : {1.0,-1.0}) {
+    const std::vector<double> input(16,changed),expected(16,unary(c::UnaryKind::kSilu,changed));
+    ASSERT_TRUE(invocation.bind(make(context,description,input)).ok());
+    auto result=invocation.submit().value().wait();ASSERT_TRUE(result);
+    expect(context,result->get()->tensors()[0],expected);
+  }
+}
 
 TEST(VulkanManaged, D5RealQwenProjectionUsesExactProfileAndReplays) {
   const auto fixture_root = d5_qwen35_fixture::root();

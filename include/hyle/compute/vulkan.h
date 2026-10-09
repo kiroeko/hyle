@@ -53,6 +53,9 @@ struct Environment final {
   std::string driver_info;
   std::string shader_compiler;
   std::string shader_revision;
+  std::string sdk_version;
+  std::string ggml_revision;
+  std::string iree_revision;
   std::uint32_t vendor_id = 0;
   std::uint32_t device_id = 0;
   std::uint32_t driver_id = 0;
