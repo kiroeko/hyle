@@ -331,3 +331,8 @@ Air CPU+Vulkan static 两消费者也已真实 PASS，精确完整路线/原生�
 Air五组cpu/apple/vulkan/cpu+apple/cpu+vulkan三交付全部完成；C3当前54 PASS / 36 UNRUN。
 下一串行 Windows CPU+Vulkan 新批次，然后WSL剩余组；其Vulkan实际GPU未资格仍按机器证据区分，
 不能用软件设备签GPU。H1–H3仍未开始；完成平台SDK不代签联合执行。
+
+Windows CPU+Vulkan 新 source Direct0.52s/Graph0.76s 两项真实数学已 PASS，
+[收据](../../../../evidence/correctness/compute-unified-c3/windows-cpu-vulkan-partial.json)保留启动时的
+不可变 source `2b60fa15` 与工具/产品身份。C3 当前56 PASS / 34 UNRUN；原 shared/static
+循环继续，不重启 source root、不跑 P1，仍不签 H3 联合/异步/专家传输。

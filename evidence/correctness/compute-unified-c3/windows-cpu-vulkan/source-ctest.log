@@ -1,0 +1,33 @@
+Start testing: Oct 10 06:30 中国标准时间
+----------------------------------------------------------
+1/2 Testing: hyle_selected_source_consumer
+1/2 Test: hyle_selected_source_consumer
+Command: "C:/h7/w-cpu-vulkan/selected-graph/source-build/hyle_selected_source_consumer.exe"
+Directory: C:/h7/w-cpu-vulkan/selected-graph/source-build
+"hyle_selected_source_consumer" start time: Oct 10 06:30 中国标准时间
+Output:
+----------------------------------------------------------
+<end of output>
+Test time =   0.76 sec
+----------------------------------------------------------
+Test Passed.
+"hyle_selected_source_consumer" end time: Oct 10 06:30 中国标准时间
+"hyle_selected_source_consumer" time elapsed: 00:00:00
+----------------------------------------------------------
+
+2/2 Testing: hyle_selected_source_compute
+2/2 Test: hyle_selected_source_compute
+Command: "C:/h7/w-cpu-vulkan/selected-graph/source-build/hyle_selected_source_compute.exe"
+Directory: C:/h7/w-cpu-vulkan/selected-graph/source-build
+"hyle_selected_source_compute" start time: Oct 10 06:30 中国标准时间
+Output:
+----------------------------------------------------------
+<end of output>
+Test time =   0.52 sec
+----------------------------------------------------------
+Test Passed.
+"hyle_selected_source_compute" end time: Oct 10 06:30 中国标准时间
+"hyle_selected_source_compute" time elapsed: 00:00:00
+----------------------------------------------------------
+
+End testing: Oct 10 06:30 中国标准时间

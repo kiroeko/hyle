@@ -1,0 +1,37 @@
+{
+  "scope": "Actual full CPU+Vulkan ordinary delivery; both native routes execute real math. Not H3 joint/async/expert qualification",
+  "product_candidate": "530e230bbc11e4fe12218a6a021ca15b009337c3",
+  "validation_source_commit": "2b60fa15daa78dc88fcf5dc34f76a8c5fa65562a",
+  "tool_candidate": "ed2dd3c3869be140fa6e63c439c3f8479a3deb6c",
+  "routes": "cpu;vulkan",
+  "rows": [
+    {
+      "entry": "source-direct",
+      "verdict": "PASS"
+    },
+    {
+      "entry": "source-graph",
+      "verdict": "PASS"
+    },
+    {
+      "entry": "shared-direct",
+      "verdict": "UNRUN"
+    },
+    {
+      "entry": "shared-graph",
+      "verdict": "UNRUN"
+    },
+    {
+      "entry": "static-direct",
+      "verdict": "UNRUN"
+    },
+    {
+      "entry": "static-graph",
+      "verdict": "UNRUN"
+    }
+  ],
+  "source_log": "evidence/correctness/compute-unified-c3/windows-cpu-vulkan/source-ctest.log",
+  "source_log_sha256": "bfa736dbcf29b739e5945e7de779ba32a247e44c24e645f7f62ec0125c7d1e3d",
+  "source_log_encoding": "original Windows cp936 bytes retained",
+  "remaining": "Original serial driver continues shared/static; WSL entries and H1-H3 unproven."
+}

@@ -1,0 +1,15 @@
+{
+  "source_commit": "2b60fa15daa78dc88fcf5dc34f76a8c5fa65562a",
+  "routes": "cpu;vulkan",
+  "argv": [
+    "cmake",
+    "-DHYLE_SOURCE_DIR=C:/public/project-hyle/hyle",
+    "-DHYLE_SMOKE_ROOT=C:/h7/w-cpu-vulkan",
+    "-DHYLE_SMOKE_COMPONENT=graph",
+    "-DHYLE_SMOKE_GENERATOR=Ninja",
+    "-DHYLE_SMOKE_COMPUTE_ROUTES=cpu;vulkan",
+    "-P",
+    "C:\\public\\project-hyle\\hyle\\cmake\\HyleCiSelectedComponentSmoke.cmake"
+  ],
+  "root": "C:\\h7\\w-cpu-vulkan"
+}

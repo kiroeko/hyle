@@ -135,3 +135,6 @@ remains unrun, and H3 joint/async/expert execution is not certified by this deli
 Air CPU+Vulkan static also passed both ordinary consumers with exact routes, and the original driver
 exited 0. All five declared Air route groups now have source/shared/static qualification. Effective
 C3 count is 54/90; Windows CPU+Vulkan and WSL groups remain unrun, and H1-H3 remain unimplemented.
+The [Windows CPU+Vulkan partial receipt](windows-cpu-vulkan-partial.json) now signs its actual source
+Direct/Graph consumers with both native routes enabled. The original serial driver continues
+shared/static; effective C3 count is 56/90. No H3 joint/async/expert claim follows from this math batch.
