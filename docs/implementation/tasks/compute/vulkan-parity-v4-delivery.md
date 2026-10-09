@@ -100,3 +100,9 @@ warning，不改Shader或数学。IREE owner已绑定本卡AUDITED，协议独�
 续编同producer；原失败不丢弃。WSL只有CPU软件device，后续只验公开构建与默认
 拒绝，不把软件可创建/枚举当真实GPU数值PASS；Win/Air相同值的旧完整数学按source
 等价复用，Linux实际编译和拒绝仍必须完成。
+
+W4续编后GCC到达native pipeline，剩余三处相同enum/uint32条件表达式在
+`vulkan_pipeline.cc:51/67/339`：descriptor binding/layout/pool的update-after-bind flag。
+同producer一次`-k0`收齐其余对象，仅此三处。有限W5只用Vulkan各flag typedef显式
+构造原bit常量，rebindable与0分支、原能力门和资源生命周期不变；route owner
+保持本卡AUDITED，先提交该精确FIX再改产品。无新handler/queue/kernel或性能采样。
