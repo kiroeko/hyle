@@ -6,6 +6,8 @@
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
+#include <cstdio>
+#include <cstdlib>
 #include <cstring>
 #include <span>
 #include <vector>
@@ -14,7 +16,7 @@
 #include "hyle/compute/model_ops.h"
 #include "tensor_test_support.h"
 #include "../compute_models/d5_gguf_test_support.h"
-#include "vulkan_program_internal.h"
+#include "../../src/compute_route_vulkan/vulkan_program_internal.h"
 
 namespace vulkan_gguf_test {
 namespace c = hyle::compute;
