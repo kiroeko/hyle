@@ -1,0 +1,108 @@
+{
+  "product_candidate": "79137d31ce1bec9053d3a4f92f2892e3a21cbb80",
+  "scope": "Actual Windows CUDA-only source public Direct and Graph FFN consumers; partial C3 receipt",
+  "platform": "Windows",
+  "route": "cuda",
+  "configuration": {
+    "CMAKE_CXX_COMPILER": "C:/Program Files/Microsoft Visual Studio/18/Enterprise/VC/Tools/MSVC/14.50.35717/bin/Hostx64/x64/cl.exe",
+    "CMAKE_CXX_FLAGS": "/DWIN32 /D_WINDOWS /EHsc",
+    "CMAKE_CXX_FLAGS_RELEASE": "/O2 /Ob2 /DNDEBUG",
+    "CUDAToolkit_NVCC_EXECUTABLE": "C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v13.3/bin/nvcc.exe",
+    "HYLE_COMPUTE_ROUTES": "cuda",
+    "HYLE_DEP_SOURCE_CACHE": "C:/public/tools/hyle-dependencies/v1",
+    "HYLE_STATIC": "OFF"
+  },
+  "cpu_math_provider_isolation": "No compute_backend_cpu or compute_provider_onednn producer directory; mandatory CUDA Torch runtime DLLs do not imply CPU route admission",
+  "runtime_dll_names_next_to_exe": [
+    "asmjit.dll",
+    "c10.dll",
+    "c10_cuda.dll",
+    "caffe2_nvrtc.dll",
+    "cublas64_12.dll",
+    "cublas64_13.dll",
+    "cublasLt64_12.dll",
+    "cublasLt64_13.dll",
+    "cudart64_12.dll",
+    "cudart64_13.dll",
+    "cudnn64_9.dll",
+    "cudnn_adv64_9.dll",
+    "cudnn_cnn64_9.dll",
+    "cudnn_engines_precompiled64_9.dll",
+    "cudnn_engines_runtime_compiled64_9.dll",
+    "cudnn_graph64_9.dll",
+    "cudnn_heuristic64_9.dll",
+    "cudnn_ops64_9.dll",
+    "cufft64_11.dll",
+    "cufftw64_11.dll",
+    "cupti64_2025.2.1.dll",
+    "curand64_10.dll",
+    "cusolver64_11.dll",
+    "cusolverMg64_11.dll",
+    "cusparse64_12.dll",
+    "fbgemm.dll",
+    "hyle_compute.dll",
+    "hyle_compute_backend_cuda.dll",
+    "hyle_compute_ggml_runtime.dll",
+    "hyle_compute_ops.dll",
+    "hyle_compute_provider_cublas.dll",
+    "hyle_compute_provider_cuda.dll",
+    "hyle_compute_provider_ggml_cuda.dll",
+    "hyle_compute_provider_torch_cuda.dll",
+    "hyle_compute_route_cuda.dll",
+    "hyle_container.dll",
+    "hyle_error.dll",
+    "hyle_graph.dll",
+    "hyle_graph_provider_ggml_cuda.dll",
+    "hyle_graph_route_cuda.dll",
+    "hyle_mem.dll",
+    "hyle_platform.dll",
+    "hyle_platform_thread.dll",
+    "hyle_time.dll",
+    "libiomp5md.dll",
+    "libiompstubs5md.dll",
+    "nvJitLink_120_0.dll",
+    "nvrtc-builtins64_129.dll",
+    "nvrtc64_120_0.alt.dll",
+    "nvrtc64_120_0.dll",
+    "torch.dll",
+    "torch_cpu.dll",
+    "torch_cuda.dll",
+    "torch_global_deps.dll",
+    "uv.dll",
+    "zlibwapi.dll"
+  ],
+  "rows": [
+    {
+      "entry": "source-direct",
+      "verdict": "PASS",
+      "log": "evidence/correctness/compute-unified-c3/windows-cuda/source-build-ctest.log",
+      "log_sha256": "99c977da3ccd33de233bba58548b8f649511c1f807634ebe9a03c0a6965705f6",
+      "executable_sha256": "f2f225f496c8ff800e771fb658f0eb58775480c875820b72eab8776c0a9e6b01"
+    },
+    {
+      "entry": "source-graph",
+      "verdict": "PASS",
+      "log": "evidence/correctness/compute-unified-c3/windows-cuda/source-build-ctest.log",
+      "log_sha256": "99c977da3ccd33de233bba58548b8f649511c1f807634ebe9a03c0a6965705f6",
+      "executable_sha256": "f616684fea3c119d2a01725e93d29391a0913a72b23c2a59081ef51e5a5e0b3c"
+    },
+    {
+      "entry": "shared-direct",
+      "verdict": "UNRUN"
+    },
+    {
+      "entry": "shared-graph",
+      "verdict": "UNRUN"
+    },
+    {
+      "entry": "static-direct",
+      "verdict": "UNRUN"
+    },
+    {
+      "entry": "static-graph",
+      "verdict": "UNRUN"
+    }
+  ],
+  "remaining": "Relocated shared/static SDK consumers, other route/platform/mixed entries and H1-H3 are not signed",
+  "performance": "No P1 run; unchanged native math, real consumer correctness/delivery only"
+}

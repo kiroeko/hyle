@@ -180,3 +180,8 @@ CUDA进入下一个串行批次；其余平台/路线/mixed验收与H1–H3仍�
 同一 Windows CPU relocated shared/static SDK 另完成六项路线需求/recipe配置检查，以及八项离线/
 缺件配置检查：离线缓存命中接纳；离线缓存缺失、显式SDK根无效、原版ggml运行库缺失均按具体诊断拒绝。
 这些只签配置/交付边界，不签其它路线数学或新性能，原source/shared/static产物身份继续按收据分别保留。
+
+Windows CUDA 源码嵌入的真实 Direct/Graph FFN 两项已 PASS，实际 RTX4070、Toolkit13.3；
+所需DLL均在EXE邻侧，未构建HYLE CPU backend或oneDNN。原批次继续shared/static，不重跑source。
+最终不可变候选79137d31的selector计划READY，逐commit产品授权无issue；全共享接缝superset保留，
+不把计划或跳过项写成执行PASS。新增适用Torch CPU平台/版本元数据测试已实际通过，不签模型数学。
