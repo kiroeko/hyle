@@ -21,17 +21,17 @@ TEST(VulkanTensor, UnsignedPayloadViewConcatAndNoArithmetic) {
     const auto source = context.upload(description, payload(description, raw)).value();
     const auto first = source.view(c::View::slice(1, 1, 3, 2).value()).value();
     const auto second = source.view(c::View::slice(1, 0, 2, 3).value()).value();
-    auto copy = execute(context, c::Copy{}, std::array{first});
+    auto copy = execute(context, c::Operation(c::Copy{}), std::array{first});
     ASSERT_TRUE(copy) << copy.error().message();
     EXPECT_EQ(bits(context, *copy), bits(context, first));
-    auto combined = execute(context, c::Concat{1}, std::array{first, second});
+    auto combined = execute(context, c::Operation(c::Concat{1}), std::array{first, second});
     ASSERT_TRUE(combined) << combined.error().message();
     std::vector<std::uint64_t> expected;
     for (int row = 0; row < 2; ++row)
       for (int column : {1, 3, 5, 0, 3}) expected.push_back(raw[row * 9 + column]);
     EXPECT_EQ(bits(context, *combined), expected);
     EXPECT_EQ(bits(context, source), raw);
-    EXPECT_FALSE(execute(context, c::Unary{c::UnaryKind::kAbs}, std::array{source}));
+    EXPECT_FALSE(execute(context, c::Operation(c::Unary{c::UnaryKind::kAbs}), std::array{source}));
   }
 }
 
