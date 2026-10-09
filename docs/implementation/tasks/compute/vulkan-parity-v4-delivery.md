@@ -39,3 +39,13 @@ selector根据真实API/package seam选择门；文档不重建。closure/docs/d
 Windows当前公开产品接缝需移除开发factor选择、关闭test instrumentation，实际重配置一次，
 不能凭旧developer测试库签install；相同dependency sourcecache不重复下载。
 本包V2数值证明及V3冷规则证明按未变源码复用，三交付consumer仍实际运行；无新的AA/n15。
+
+### W1：真实Werror交付编译残留
+
+`707f769a`shared配置成功，原开发cache为WERROR=OFF；正式WERROR=ON在
+`compute_provider_iree_vulkan/native_program.cc:607/609/610`四处IQ1 shape initializer
+报C4838/C2220。未运行install或consumer，原日志/失败收据保留。
+有限W1只把已经通过positive/INT32 packed/workspace检查的维度显式转换成
+`iree_hal_dim_t`，与相邻official/MLX分支相同；不放宽warning，不改索引域、
+数学/VMFB/公开合同或资源。该IREE owner保持AUDITED并将本轮record绑定本卡，
+协议独立提交后才修改。续编当前producer，三交付差异验证；不重跑V2全矩阵/P1。

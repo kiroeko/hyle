@@ -615,8 +615,8 @@
     {
       "module": "compute_provider_iree_vulkan",
       "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/vulkan-parity-v2-iq1-bindings.md",
-      "summary": "V2 IREE mature carrier qualification:34 packed/official FP4-FP8, three original IQ1 codecs and all eight full E512/896 banks pass Windows Direct/Graph replay/checked indices; independent original F32 contribution references and strict gates retained. Defaults/P1/platform/three deliveries pending."
+      "record": "docs/implementation/tasks/compute/vulkan-parity-v4-delivery.md",
+      "summary": "V4 AUDITED W1: exact IQ1 signed-to-HAL shape conversion Werror residue; positive/INT32 packed and workspace bounds unchanged. Windows V2 packed/full-bank proofs reused; actual platform/three-delivery delta pending, no new P1."
     },
     {
       "module": "compute_provider_torch_cuda",
