@@ -40,3 +40,15 @@ candidate；新错误仅一次具名纠正，否则具体裁决。无mock/CPU计
 
 本次在产品前先提交本卡/owner record/source静态映射，随后才产品。当前runtime未运行，
 G1/G2/G3尚未PASS；docs/closure和统一LOC不重建、不跑P1，旧perf blocker保持。
+
+## 首批具名数值结果与一次原因捕获
+
+`3b7d3ba9`统一编译PASS，`b2a66c57`原Provider25/25通过；普通Direct3/5、Graph2/4。
+所有失败只涉及IQ1_S的MatMul/grouped，embedding八类型两入口通过。原其它类型没有
+数值失败，不重跑它们。原门保持，当前只能签部分通过，不能签119合同完整runtime。
+已查锁定backend：RTX整数dot路径会把F32 activation转为Q8_1（d/s也存F16），旧helper
+只用decoded weights×未转换F32参考。它不是已证错误的末层kernel或precision FAIL。
+固定一次Direct IQ1_S捕获：原same input/encoded weights；独立原Q8_1量化和IQ1_S整数
+dot/rounded-s公式，与native结果和旧F32参考分别比较。只作原因证据，不改变模型输入/
+输出门，不取更近结果签PASS；产品FIX零。若证实参考服务不同，再按原共同数值合同
+定界；若无法证实，保留精确缺口停止同候选微调。只编译变更测试，不重配或全集/P1。

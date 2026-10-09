@@ -39,6 +39,62 @@ TEST(VulkanGguf, EveryCatalogFormatUsesNativeDirectRegionAndReplays) {
   }
 }
 
+TEST(VulkanGguf, Iq1SOriginalQ8ActivationCauseCapture) {
+  QuantizerCleanup cleanup;
+  auto context = vulkan_test::context().value();
+  constexpr int k = 256, n = 8, m = 2;
+  const auto input_desc = vulkan_tensor_test::dense(c::DataType::kFloat32, {m, k});
+  const auto weight_desc = c::gguf_weight_description(c::GgufQuantizedType::kIq1S,
+      c::DataType::kFloat32, k, n).value();
+  auto packed = pack(c::GgufQuantizedType::kIq1S, weights(n, k), n, k, *weight_desc.required_bytes());
+  auto weight = context.upload(weight_desc, packed.bytes).value();
+  auto program = v::prepare(context, c::MatMul{}, input_desc, weight_desc).value();
+  const auto *traits = ggml_get_type_traits(GGML_TYPE_Q8_1);
+  ASSERT_NE(traits->from_float_ref, nullptr);
+  ASSERT_EQ(ggml_type_size(GGML_TYPE_Q8_1), 36u);
+  ASSERT_EQ(ggml_type_size(GGML_TYPE_IQ1_S), 50u);
+  auto half = [](const std::byte *p) {
+    ggml_fp16_t bits; std::memcpy(&bits, p, sizeof(bits));
+    return ggml_fp16_to_fp32(bits);
+  };
+  for (int replay : {1, 2}) {
+    auto x = activations(m, k, replay);
+    std::vector<float> f32(x.begin(), x.end());
+    std::vector<std::byte> q8(m * (k / 32) * 36);
+    traits->from_float_ref(f32.data(), q8.data(), m * k);
+    auto input = vulkan_tensor_test::make(context, input_desc, x);
+    auto slot = program.create_invocation().value();
+    ASSERT_TRUE(slot.bind(input, weight).ok());
+    auto work = slot.submit().value(); auto result = work.wait().value();
+    auto actual = vulkan_tensor_test::values(context, result.get()->tensors()[0]);
+    const auto nominal = matmul(x, packed.decoded, m, n, k);
+    double native_error = 0, nominal_error = 0;
+    for (int token = 0; token < m; ++token) for (int row = 0; row < n; ++row) {
+      const auto *a = packed.bytes.data() + row * 50;
+      const float scale = half(a);
+      double total = 0;
+      for (int group = 0; group < 8; ++group) {
+        std::uint16_t high; std::memcpy(&high, a + 34 + group * 2, sizeof(high));
+        const float dl = scale * (2 * ((high >> 12) & 7) + 1);
+        const float delta = (high & 0x8000) ? -.125F : .125F;
+        const auto *b = q8.data() + (token * 8 + group) * 36;
+        int dot = 0;
+        for (int i = 0; i < 32; ++i) {
+          const int grid = int(std::round(packed.decoded[row * k + group * 32 + i] / dl - delta));
+          std::int8_t code; std::memcpy(&code, b + 4 + i, sizeof(code));
+          dot += (grid + 1) * code;
+        }
+        total += dl * (half(b) * dot + (delta - 1) * half(b + 2));
+      }
+      const auto pos = token * n + row;
+      native_error = std::max(native_error, std::abs(actual[pos] - total));
+      nominal_error = std::max(nominal_error, std::abs(actual[pos] - nominal[pos]));
+    }
+    std::printf("IQ1_S_CAUSE replay=%d q8_original_max_error=%.9g nominal_f32_max_error=%.9g\n",
+        replay, native_error, nominal_error);
+  }
+}
+
 TEST(VulkanGguf, TargetEmbeddingFormatsUseNativeRowsAndCheckedPublication) {
   QuantizerCleanup cleanup;
   auto context = vulkan_test::context().value();
