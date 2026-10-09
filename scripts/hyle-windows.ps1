@@ -203,7 +203,8 @@ if (($Action -eq 'Configure' -and $Preset -eq 'windows') -or
 
 $needsNinja = $Action -in @('PackageSmoke', 'ProductShapeSmoke', 'SourcePackageSmoke') -or
     $Preset -in @('windows-ninja', 'windows-ninja-check', 'windows-clangcl',
-        'windows-clangcl-check', 'win', 'windows-cuda')
+        'windows-clangcl-check', 'win', 'windows-cuda', 'compute-cpu',
+        'compute-cuda', 'compute-apple', 'compute-vulkan')
 if ($needsNinja -and -not (Get-Command ninja -ErrorAction SilentlyContinue)) {
     throw "The '$Preset' preset/action requires Ninja on PATH."
 }

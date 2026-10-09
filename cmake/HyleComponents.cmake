@@ -684,28 +684,33 @@ else()
   endif()
 endif()
 
-# CPU computation is a product choice, separate from explicit developer factor
-# selection. Filter the declared roots before following either product or test
-# edges; disabling only the native target would still pull its SIMD closure.
-if(_hyle_selection_mode STREQUAL "product" AND
-   ("compute" IN_LIST _hyle_requested_products OR
-    "graph" IN_LIST _hyle_requested_products))
-  option(HYLE_COMPUTE_CPU "Include the CPU Compute execution route" ON)
-  if(NOT HYLE_COMPUTE_CPU)
-    foreach(_product IN ITEMS COMPUTE GRAPH)
+# Metadata-only scripts keep declarations unchanged. Real projects filter
+# routes before following the one product/test DAG; no SDK work happens here.
+if(NOT CMAKE_SCRIPT_MODE_FILE AND _hyle_selection_mode STREQUAL "product")
+  include("${HYLE_SOURCE_DIR}/cmake/HyleComputeRoutes.cmake")
+  hyle_resolve_compute_product_routes("${_hyle_requested_products}")
+  foreach(_product IN ITEMS COMPUTE GRAPH)
+    foreach(_route IN ITEMS cpu cuda apple vulkan)
+      if(NOT _route IN_LIST HYLE_COMPUTE_ROUTE_LIST)
+        list(REMOVE_ITEM _HYLE_PRODUCT_FACTORS_${_product}
+          compute_route_${_route} graph_route_${_route})
+      endif()
+    endforeach()
+    if(NOT "cpu" IN_LIST HYLE_COMPUTE_ROUTE_LIST)
       list(REMOVE_ITEM _HYLE_PRODUCT_FACTORS_${_product}
         compute_backend_cpu compute_provider_native
-        compute_provider_onednn graph_provider_onednn
-        compute_route_cpu graph_route_cpu)
-    endforeach()
-    set(_hyle_requested_roots "")
-    foreach(_product IN LISTS _hyle_requested_products)
-      string(TOUPPER "${_product}" _product_upper)
-      list(APPEND _hyle_requested_roots
-        ${_HYLE_PRODUCT_FACTORS_${_product_upper}})
-    endforeach()
-    list(REMOVE_DUPLICATES _hyle_requested_roots)
-  endif()
+        compute_provider_onednn graph_provider_onednn)
+    endif()
+    if(NOT "cuda" IN_LIST HYLE_COMPUTE_ROUTE_LIST)
+      list(REMOVE_ITEM _HYLE_PRODUCT_FACTORS_${_product} compute_backend_cuda)
+    endif()
+  endforeach()
+  set(_hyle_requested_roots "")
+  foreach(_product IN LISTS _hyle_requested_products)
+    string(TOUPPER "${_product}" _product_upper)
+    list(APPEND _hyle_requested_roots ${_HYLE_PRODUCT_FACTORS_${_product_upper}})
+  endforeach()
+  list(REMOVE_DUPLICATES _hyle_requested_roots)
 endif()
 
 # Validate every manifest edge even for an unselected component: this is
@@ -829,6 +834,13 @@ foreach(_component IN LISTS _hyle_topological_components)
     set(HYLE_BUILD_${_component_upper} FALSE)
   endif()
 endforeach()
+
+# Maintenance availability follows the final factor/test closure. Unsupported
+# native factors keep their OFF headers without a public feature option family.
+if(NOT CMAKE_SCRIPT_MODE_FILE AND _hyle_selection_mode STREQUAL "factor")
+  include("${HYLE_SOURCE_DIR}/cmake/HyleComputeRoutes.cmake")
+  hyle_resolve_compute_factor_routes()
+endif()
 
 # Product mode exposes a facade only when all of its root factors are present.
 # This also exposes a complete transitive product (for example Core) when

@@ -1,7 +1,6 @@
 include_guard(GLOBAL)
 
-hyle_auto_feature_option(HYLE_COMPUTE_VULKAN
-  "Build the native Vulkan compute execution route" DEFAULT OFF)
+# Private availability is derived from the selected DAG by HyleComputeRoutes.
 
 function(hyle_configure_vulkan_dependencies)
   if(HYLE_COMPUTE_VULKAN STREQUAL "OFF")

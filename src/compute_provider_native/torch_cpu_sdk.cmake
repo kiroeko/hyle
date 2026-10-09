@@ -1,7 +1,7 @@
 include_guard(GLOBAL)
 
-hyle_auto_feature_option(HYLE_COMPUTE_TORCH_CPU
-  "Use the original TorchAO/ATen CPU low precision programs" DEFAULT AUTO)
+# Complete CPU products require this SDK; exact factors derive private
+# availability from their selected DAG. There is no public Provider option.
 set(HYLE_COMPUTE_TORCH_CPU_ENABLED OFF)
 if(HYLE_COMPUTE_TORCH_CPU STREQUAL "OFF")
   return()

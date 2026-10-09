@@ -467,33 +467,30 @@ unset(_split_header_duplicate_source)
 unset(_split_header_projection_build)
 unset(_split_header_projection_source)
 
-# Route selection is a real source-parent journey. CPU OFF must prune the
-# native dependency closure before test selection or vendor discovery, and
-# absent optional implementations must not escape through the public facade.
+# Real source-parent journeys: complete CPU Compute/Graph or unrelated Core.
+# Required CPU Providers are not optional knobs; unselected native roots vanish.
 set(_route_source "${_hyle_contract_root}/compute-route-source")
 file(MAKE_DIRECTORY "${_route_source}")
 file(WRITE "${_route_source}/CMakeLists.txt"
 "cmake_minimum_required(VERSION 3.25)\n"
 "project(hyle_compute_route_contract LANGUAGES CXX)\n"
-"set(HYLE_COMPONENTS graph)\n"
+"if(HYLE_CONTRACT_COMPUTE)\n"
+"  set(HYLE_COMPONENTS graph)\n"
+"  set(HYLE_COMPUTE_ROUTES cpu)\n"
+"else()\n"
+"  set(HYLE_COMPONENTS core)\n"
+"endif()\n"
 "set(HYLE_BUILD_BENCH OFF)\n"
 "set(HYLE_INSTALL OFF)\n"
-"set(HYLE_COMPUTE_CUDA OFF)\n"
 "add_subdirectory(\"${HYLE_SOURCE_DIR}\" hyle)\n"
 [=[
-foreach(_product IN ITEMS compute graph)
-  if(NOT TARGET hyle::${_product})
-    message(FATAL_ERROR "missing public product ${_product}")
-  endif()
-  get_target_property(_links hyle::${_product} INTERFACE_LINK_LIBRARIES)
-  foreach(_absent IN ITEMS compute_backend_cuda compute_provider_onednn graph_provider_onednn)
-    if("hyle_${_absent}" IN_LIST _links)
-      message(FATAL_ERROR "absent ${_absent} leaked through ${_product}")
+if(HYLE_CONTRACT_COMPUTE)
+  foreach(_product IN ITEMS compute graph)
+    if(NOT TARGET hyle::${_product})
+      message(FATAL_ERROR "missing public product ${_product}")
     endif()
   endforeach()
-endforeach()
-if(HYLE_COMPUTE_CPU)
-  foreach(_factor IN ITEMS compute_backend_cpu compute_provider_native)
+  foreach(_factor IN ITEMS compute_backend_cpu compute_provider_native compute_route_cpu)
     if(NOT TARGET hyle_${_factor})
       message(FATAL_ERROR "CPU route lacks ${_factor}")
     endif()
@@ -501,12 +498,20 @@ if(HYLE_COMPUTE_CPU)
 else()
   foreach(_factor IN ITEMS compute_backend_cpu compute_provider_native compute_provider_onednn graph_provider_onednn simd)
     if(TARGET hyle_${_factor})
-      message(FATAL_ERROR "CPU OFF leaked ${_factor}")
+      message(FATAL_ERROR "unrelated product leaked CPU ${_factor}")
     endif()
   endforeach()
 endif()
-if(TARGET CUDA::cudart OR TARGET dnnl OR HYLE_COMPUTE_CUDA_ENABLED OR HYLE_COMPUTE_ONEDNN_ENABLED)
-  message(FATAL_ERROR "unselected SDK/provider was acquired")
+foreach(_factor IN ITEMS compute_backend_cuda compute_route_cuda compute_route_apple compute_route_vulkan)
+  if(TARGET hyle_${_factor})
+    message(FATAL_ERROR "unselected native factor was acquired: ${_factor}")
+  endif()
+endforeach()
+if(TARGET CUDA::cudart OR TARGET mlx)
+  message(FATAL_ERROR "unselected GPU SDK/provider was acquired")
+endif()
+if(NOT HYLE_CONTRACT_COMPUTE AND (TARGET dnnl OR TARGET torch_cpu))
+  message(FATAL_ERROR "unrelated product acquired CPU Provider")
 endif()
 ]=])
 foreach(_cpu IN ITEMS ON OFF)
@@ -515,26 +520,19 @@ foreach(_cpu IN ITEMS ON OFF)
       "${CMAKE_COMMAND}" -S "${_route_source}"
       -B "${_hyle_contract_root}/route-cpu-${_cpu}-tests-${_tests}"
       ${_hyle_generator_args}
-      -DHYLE_COMPUTE_CPU=${_cpu} -DHYLE_BUILD_TESTS=${_tests}
-      -DHYLE_COMPUTE_ONEDNN=OFF
+      -DHYLE_CONTRACT_COMPUTE=${_cpu} -DHYLE_BUILD_TESTS=${_tests}
       -DCMAKE_DISABLE_FIND_PACKAGE_CUDAToolkit=TRUE)
   endforeach()
 endforeach()
-_hyle_contract_run("CPU OFF / oneDNN AUTO" TRUE
-  "${CMAKE_COMMAND}" -S "${_route_source}"
-  -B "${_hyle_contract_root}/route-no-cpu-onednn-auto"
-  ${_hyle_generator_args}
-  -DHYLE_COMPUTE_CPU=OFF -DHYLE_BUILD_TESTS=OFF
-  -DHYLE_COMPUTE_ONEDNN=AUTO)
-_hyle_contract_run("CPU OFF / oneDNN ON contradiction" FALSE
+_hyle_contract_run("Old CPU Provider option migration" FALSE
   "${CMAKE_COMMAND}" -S "${_route_source}"
   -B "${_hyle_contract_root}/route-no-cpu-onednn-on"
   ${_hyle_generator_args}
-  -DHYLE_COMPUTE_CPU=OFF -DHYLE_BUILD_TESTS=OFF
-  -DHYLE_COMPUTE_ONEDNN=ON)
+  -DHYLE_CONTRACT_COMPUTE=ON -DHYLE_BUILD_TESTS=OFF
+  -DHYLE_COMPUTE_ONEDNN=OFF)
 if(NOT HYLE_CONTRACT_LAST_OUTPUT MATCHES
-   "HYLE_COMPUTE_ONEDNN=ON requires HYLE_COMPUTE_CPU=ON")
-  message(FATAL_ERROR "CPU/oneDNN contradiction lacks its actionable diagnostic")
+   "HYLE_COMPUTE_ONEDNN is no longer a public build option")
+  message(FATAL_ERROR "old Provider option lacks its migration diagnostic")
 endif()
 unset(_route_source)
 unset(_cpu)

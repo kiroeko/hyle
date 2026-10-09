@@ -1,12 +1,6 @@
 include_guard(GLOBAL)
 
-if(HYLE_BUILD_COMPUTE_PROVIDER_ONEDNN OR
-   HYLE_BUILD_PRODUCT_COMPUTE OR HYLE_BUILD_PRODUCT_GRAPH)
-  hyle_auto_feature_option(HYLE_COMPUTE_ONEDNN
-    "Build the x64 oneDNN compute provider" DEFAULT AUTO)
-else()
-  set(HYLE_COMPUTE_ONEDNN OFF)
-endif()
+# Private availability is derived from the selected DAG by HyleComputeRoutes.
 
 function(hyle_configure_compute_dependencies)
   if(DEFINED HYLE_COMPUTE_CPU AND NOT HYLE_COMPUTE_CPU)

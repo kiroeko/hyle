@@ -79,3 +79,14 @@ submit 无新增搜索/设备查询/计时；未知环境保持合法默认，�
 - 现行 sample/合同 fixture 的参数随实际语义迁移；历史 performance contract 仍绑定原不可变候选，
   不迁移其 recipe、改历史证书或重跑 P1；新性能任务须新版本合同。
 - 有界解析测试和既有 configure fixture 对正/反入口取证；C1/C2/R1 不逐项启动完整 native run。
+
+### C1 接线与部分验证
+
+已实现唯一 route-set、所选产品根过滤、完整必要依赖私有派生、四 preset、旧参数迁移错误；
+维护 factor 自动原生适用性，selector policy 撤掉重复 Compute cache，核心算法不变；现行 source
+samples/Apple parity/MASM fixture 和用户配置说明同步迁移。历史性能合同不修改。
+`python tests/tooling/compute_routes_test.py` 实际 8 tests 通过，含边界/父工程与 cache 迁移、
+canonical set、平台错误、维护 OFF headers、三条实际 manifest configure 闭包及四 preset。
+这是配置证据，未运行数学或 SDK；不能将 LANGUAGES NONE metadata fixture 当 native 路线完成。
+`python tests/tooling/validation_selector_test.py` 实际 60 tests 通过（99.857 秒）；
+docs/closure/diff 检查通过。原 component-contract 与平台三交付仍留 C3 批验，不写 PASS。

@@ -14,18 +14,13 @@
     {
       "name": "compute-cpu",
       "displayName": "CPU Compute and Graph",
-      "description": "Standard CPU C++ build with qualified mature providers and a shared dependency cache; GPU routes, tests and benchmarks are off.",
+      "description": "Complete CPU C++ build with automatic required providers and a shared dependency cache; GPU routes, tests and benchmarks are off.",
       "generator": "Ninja",
       "binaryDir": "${sourceDir}/build-compute-cpu",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Release",
         "HYLE_COMPONENTS": "compute;graph",
-        "HYLE_COMPUTE_CPU": "ON",
-        "HYLE_COMPUTE_CUDA": "OFF",
-        "HYLE_COMPUTE_APPLE": "OFF",
-        "HYLE_COMPUTE_VULKAN": "OFF",
-        "HYLE_COMPUTE_ONEDNN": "AUTO",
-        "HYLE_COMPUTE_TORCH_CPU": "AUTO",
+        "HYLE_COMPUTE_ROUTES": "cpu",
         "HYLE_BUILD_TESTS": "OFF",
         "HYLE_BUILD_BENCH": "OFF"
       }
@@ -33,16 +28,46 @@
     {
       "name": "compute-cuda",
       "displayName": "CUDA Compute and Graph",
-      "description": "Standard CUDA C++ build with the route's mature providers; CPU, Apple, Vulkan, tests and benchmarks are off. Requires a supported C++ toolchain and CUDA Toolkit 13.3+. Set HYLE_COMPUTE_CPU=ON explicitly for a mixed SDK.",
+      "description": "Standard CUDA C++ build with the route's mature providers; CPU, Apple, Vulkan, tests and benchmarks are off. Requires a supported C++ toolchain and CUDA Toolkit 13.3+. Set HYLE_COMPUTE_ROUTES=cpu;cuda explicitly for a mixed SDK.",
       "generator": "Ninja",
       "binaryDir": "${sourceDir}/build-compute-cuda",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Release",
         "HYLE_COMPONENTS": "compute;graph",
-        "HYLE_COMPUTE_CPU": "OFF",
-        "HYLE_COMPUTE_CUDA": "ON",
-        "HYLE_COMPUTE_APPLE": "OFF",
-        "HYLE_COMPUTE_VULKAN": "OFF",
+        "HYLE_COMPUTE_ROUTES": "cuda",
+        "HYLE_BUILD_TESTS": "OFF",
+        "HYLE_BUILD_BENCH": "OFF"
+      }
+    },
+    {
+      "name": "compute-apple",
+      "displayName": "Apple MLX and Metal Compute and Graph",
+      "description": "Complete Apple MLX and Metal route with automatic required Providers; tests and benchmarks are off.",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build-compute-apple",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "HYLE_COMPONENTS": "compute;graph",
+        "HYLE_COMPUTE_ROUTES": "apple",
+        "HYLE_BUILD_TESTS": "OFF",
+        "HYLE_BUILD_BENCH": "OFF"
+      },
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Darwin"
+      }
+    },
+    {
+      "name": "compute-vulkan",
+      "displayName": "Vulkan Compute and Graph",
+      "description": "Complete Vulkan route with automatic required Providers; tests and benchmarks are off.",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build-compute-vulkan",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "HYLE_COMPONENTS": "compute;graph",
+        "HYLE_COMPUTE_ROUTES": "vulkan",
         "HYLE_BUILD_TESTS": "OFF",
         "HYLE_BUILD_BENCH": "OFF"
       }
@@ -204,6 +229,8 @@
     }
   ],
   "buildPresets": [
+    { "name": "compute-apple", "configurePreset": "compute-apple", "jobs": 2 },
+    { "name": "compute-vulkan", "configurePreset": "compute-vulkan", "jobs": 2 },
     { "name": "compute-cpu", "configurePreset": "compute-cpu", "configuration": "Release", "jobs": 2 },
     { "name": "compute-cuda", "configurePreset": "compute-cuda", "configuration": "Release", "jobs": 2 },
     { "name": "windows", "configurePreset": "windows", "configuration": "Release" },

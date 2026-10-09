@@ -2,7 +2,8 @@
 
 > 本页描述当前 Compute runtime foundation、CPU operation surface 与 CUDA runtime；施工资格只以
 > [`module-status.json`](../implementation/module-status.json) 为准。普通 CPU 入口自动组装已构建的 oneDNN/ggml/ATen/Native 实现；
-> 标准 CPU 构建使用 `HYLE_COMPUTE_ONEDNN=AUTO`，在支持的 x86-64 目标接入已支持的 oneDNN 能力。
+> 标准 CPU 构建使用 `HYLE_COMPUTE_ROUTES=cpu`，自动接入该平台所需的合格 Provider。
+> 统一配置正在执行交付验收，当前状态见 registry；数学与接口资格不因此外推。
 > CUDA factor 提供 device/context/queue、memory resource、stream interop、byte transfer、Completion 与
 > command capture 基础运行时。普通路线已接入 ggml CUDA、cuBLASLt、SGLang、CCCL 与有限 HYLE CUDA Provider，
 > 普通 CUDA Direct/Graph、固定模型原计算与Win/WSL三交付已接通；当前版本按算子、真实端口和资源应用成熟默认，
@@ -62,8 +63,9 @@ Apple 与 Vulkan 各自使用原生 Program、运行槽和资源；普通 Direct
 [Apple MLX/Metal](apple-compute.md) 与 [Vulkan](vulkan-compute.md)。本文后续 Queue/Provider 的
 细节属于 CPU/CUDA 接入，不要求这两条原生路线采用同一执行器。
 
-构建时默认 `HYLE_COMPUTE_CPU=ON`。CUDA-only SDK 显式设 CPU OFF、CUDA ON；四条路线都 OFF 时仅有
-计算语义/资源合同底座，无 CPU/Native 入口。安装包的实际 capability、头与 CMake 选项见
+Compute/Graph 构建默认完整 `cpu`；CUDA-only 选择 `HYLE_COMPUTE_ROUTES=cuda`，
+联合 SDK 选择如 `cpu;cuda`。不提供普通用户的无执行路线或 Provider 裁剪模式。
+安装包的实际 capability、头与 CMake 选项见
 [交付配置](distribution.md#4-消费安装包)。
 
 当程序已经知道要执行哪个 operation、在哪个 device 上执行，并希望复用固定 shape/layout 的路线时，
@@ -97,14 +99,12 @@ Windows未初始化开发工具链的shell先用`./scripts/hyle-windows.ps1 -Act
 再用同脚本`-Action Build -Preset compute-cpu`；预设构建并行2。源码嵌入只设置产品并`add_subdirectory`，
 不需要手工枚举Provider。
 
-Windows/Linux x86_64默认`HYLE_COMPUTE_TORCH_CPU=AUTO`取得CPU-only LibTorch `2.8.0+cpu`，
+选择完整 CPU 路线时，Windows/Linux x86_64自动取得CPU-only LibTorch `2.8.0+cpu`，
 使用中央锁中的原archive/SHA与统一cache的SDK子区；有合格本地SDK则复用，缺少时取得一次，
 不因下载失败静默缺失已验收域。高级参数为：
 
 | 参数 | 含义 |
 |---|---|
-| `HYLE_COMPUTE_TORCH_CPU=OFF` | 显式裁剪官方低精度组合，不探测或下载SDK；对应画像拒绝 |
-| `HYLE_COMPUTE_TORCH_CPU=ON` | 强制能力；不支持的平台明确失败 |
 | `HYLE_COMPUTE_TORCH_CPU_ROOT=<prefix>` | 复用外部CPU SDK；错误版本/不完整root明确失败 |
 | `HYLE_COMPUTE_TORCH_CPU_ARCHIVE=<zip>` | 使用已下载的锁定原archive，验SHA后一次解包，不再下载一份 |
 | `HYLE_DEP_SOURCE_CACHE=<path>` | 统一缓存位置；SDK只保留一个平台/版本身份，不复制到每个build |
@@ -385,13 +385,12 @@ cmake --build --preset compute-cuda
 Windows 从已初始化的 developer shell 执行上述命令，或用既有
 `scripts/hyle-windows.ps1 -Action Configure -Preset compute-cuda` 与
 `scripts/hyle-windows.ps1 -Action Build -Preset compute-cuda` 导入受支持的 MSVC 环境。
-CPU+CUDA SDK 可在 configure 时显式覆盖 `-DHYLE_COMPUTE_CPU=ON`；static、install、目标 arch
+CPU+CUDA SDK 可在 configure 时显式覆盖 `"-DHYLE_COMPUTE_ROUTES=cpu;cuda"`；static、install、目标 arch
 按普通 CMake 参数选，不需要内部 Provider flags 或排序。源码与安装包均链接 `hyle::compute`，
 应用链接后调用 `hyle_stage_runtime_dependencies(app)`，Windows 把依赖 DLL 邻置 exe。
 构建选择不代替具体模型／格式／精度请求的准备与运行资格，当前新增合同仍按 owner 卡验收。
 
-不用 preset 时选择 `HYLE_COMPONENTS=compute`、`HYLE_COMPUTE_CUDA=ON`；CUDA-only 再设
-`HYLE_COMPUTE_CPU=OFF`。自然 C++ 入口如下：
+不用 preset 时选择 `HYLE_COMPONENTS=compute`、`HYLE_COMPUTE_ROUTES=cuda`。自然 C++ 入口如下：
 
 ```cpp
 #include <hyle/compute/cuda.h>
@@ -721,8 +720,8 @@ mask可含负无穷，全部key被屏蔽时输出零。CPU/CUDA/Vulkan执行ggml
 索引容量。单个sink-attention程序可执行不代表整幅画像通过；FP8投影、压缩状态等必需片段
 分别由完整画像收据覆盖，拒绝/失败域不能用此接口接通替代。
 
-CUDA runtime 与 CUDA operation provider 是两层。选择 `HYLE_COMPUTE_CUDA=AUTO` 时，CMake 仅在当前目标能
-找到用户安装的 CUDA Toolkit 时启用；`ON` 找不到即配置失败，`OFF` 不探测。HYLE 不下载 CUDA Toolkit。
+CUDA runtime 与 CUDA operation provider 是两层。选择 `HYLE_COMPUTE_ROUTES=cuda` 或包含 cuda 的集合时，
+CMake 必须找到所需 CUDA Toolkit，缺失即配置失败；未选择不探测。HYLE 不下载 CUDA Toolkit。
 启用后可以创建 CUDA Context/Queue、device/pinned/managed `MemoryResource`，借入或接管同 primary context
 的非默认 stream，并通过 `cuda::submit()` 录入 typed stream command。Graph 可在冷路径 capture 兼容的
 CUDA command/copy segment。只创建 backend Context 不会自动装入计算 Provider；当前独立接入状态见下表。
@@ -1254,10 +1253,9 @@ span 只需活到调用返回。序列没有人为四项上限，也不会自动
 64-byte-aligned scratch slice；调用方只需按 `workspace_requirement()` 分配一块总 workspace，不应自行
 推导 tile 或依赖该内部阈值。
 
-标准 CPU 配置的该选项默认 `AUTO`：支持的 x86-64 目标接入 oneDNN，AArch64 使用已构建的 ggml/Native 后备。构建时
-`HYLE_COMPUTE_ONEDNN=ON` 在受支持的 x86-64 目标强制启用，在 AArch64 等不支持目标会明确配置失败；
-`AUTO` 在不支持目标关闭该实现。可复现的 x86-64 oneDNN 制品可显式选择 `ON`，不需要
-它的制品保持 `OFF`。`PreparedOperation::provider()` 与 `workspace_requirement()` 可解释实际路线。
+标准 CPU 配置自动在支持的 x86-64 目标接入 oneDNN，macOS ARM64 使用合格 ggml/ATen/Native 路径。
+普通用户不再设置 oneDNN ON/OFF/AUTO；必要实现随路线自动取得，依赖缺件明确失败。
+`PreparedOperation::provider()` 与 `workspace_requirement()` 可解释实际路线。
 oneDNN 类型不会泄漏到 Tensor、Operation 或 Graph API。
 
 ## 所有权、失败和限制

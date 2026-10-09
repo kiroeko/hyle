@@ -3,12 +3,7 @@ include_guard(GLOBAL)
 # CUDA is a machine SDK, not a source dependency.  Declare and probe it only
 # when the CUDA factor is part of the resolved component closure so a CPU-only
 # source consumer never acquires a CUDA cache option or filesystem probe.
-if(HYLE_BUILD_COMPUTE_BACKEND_CUDA)
-  hyle_auto_feature_option(HYLE_COMPUTE_CUDA
-    "Build the CUDA 13.3+ asynchronous Compute backend" DEFAULT OFF)
-else()
-  set(HYLE_COMPUTE_CUDA OFF)
-endif()
+# Private availability is derived from the selected DAG by HyleComputeRoutes.
 
 function(hyle_configure_cuda_dependency)
   if(HYLE_COMPUTE_CUDA STREQUAL "OFF")

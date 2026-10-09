@@ -1,7 +1,6 @@
 include_guard(GLOBAL)
 
-hyle_auto_feature_option(HYLE_COMPUTE_APPLE
-  "Build the native Apple MLX Metal execution route" DEFAULT OFF)
+# Private availability is derived from the selected DAG by HyleComputeRoutes.
 
 function(hyle_configure_apple_dependencies)
   if(HYLE_COMPUTE_APPLE STREQUAL "OFF")

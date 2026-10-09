@@ -154,32 +154,34 @@ target-bound TU，跨静态/动态边界仍传 pointer/count/POD；它不是额�
 当前已验收产品中的 IO TLS、HTTP/2 和 trace 等昂贵能力默认关闭，并且只有 owner 组件/gate
 成立时才出现对应 cache 项。
 
-Compute/Graph 用 `HYLE_COMPUTE_CPU=ON|OFF` 选择是否交付 CPU 计算，默认 ON。普通用户仍链接
-`hyle::compute/graph`；CPU OFF 排除 CPU backend、Native kernels 和 CPU oneDNN providers，不排除
-GPU 所需的 host 控制、准备和传输机制。配置示例：
+Compute/Graph 使用唯一 `HYLE_COMPUTE_ROUTES` 集合，省略时默认完整 CPU。普通用户仍链接
+`hyle::compute/graph`；未选路线在取依赖闭包前排除，不影响 GPU 所需 host 控制和传输。
+统一配置正在按 owner 卡执行三交付验收，当前状态见 registry。配置示例：
 
-| 交付能力 | `HYLE_COMPUTE_CPU` | `HYLE_COMPUTE_CUDA` | `HYLE_COMPUTE_ONEDNN` |
-|---|---|---|---|
-| CPU Native | ON | OFF | OFF |
-| CUDA 默认计算与 native Graph | OFF | ON | OFF |
-| 仅 tensor/operation/Graph 语义底座，无执行设备 | OFF | OFF | OFF |
+| 交付能力 | `HYLE_COMPUTE_ROUTES` |
+|---|---|
+| 完整 CPU | cpu |
+| CUDA / Apple MLX-Metal / Vulkan | cuda / apple / vulkan |
+| CPU 与一个 GPU 的 SDK | cpu;cuda / cpu;apple / cpu;vulkan |
 
 这些值由源码父工程在 `add_subdirectory()` 前设置，或由 SDK producer 的 CMake 配置选择；安装消费者
 读取 `Hyle_AVAILABLE_FEATURES` 中的 `compute_cpu/compute_cuda/compute_onednn`，不能在自己工程里
 用宏创建未交付路线。选中 target 传播相应 `HYLE_COMPUTE_*` 存在性宏；它们不改变公共对象布局。
-未选 native/provider 的头、空实现 target、SDK 查找与运行库不进入安装包。无 backend 的底座不能运行
-计算；后续真实路线接入也不会由这个配置自动获得。
+未选 native/provider 的头、空实现 target、SDK 查找与运行库不进入安装包。
+路线集合顺序不是 preference；空、未知、AUTO 和不支持的平台组合明确拒绝。
+旧六个 CPU/CUDA/Apple/Vulkan/oneDNN/Torch CPU 开关要求迁移和 fresh build，不保留双轨。
+presence 宏由 target 传播，不能在 consumer 手写宏创建未交付能力。
+mixed SDK 只证明编入多路线，跨路线联合图仍须 H1–H3 另行验收。
 
-CPU 路线可带独立的 x86-64 oneDNN provider factor；
-`HYLE_COMPUTE_ONEDNN=ON|OFF|AUTO` 只在相应 CPU 产品/因子闭包出现，默认 AUTO：支持的 x86-64
-目标接入锁定 oneDNN；macOS ARM64使用原ggml/ATen CPU程序。ON 在不支持目标明确失败；OFF 可显式裁剪该实现。
+CPU 路线在支持的 x86-64 目标自动接入锁定 oneDNN；macOS ARM64 使用原 ggml/ATen CPU 程序。
+必要 Provider 不提供普通 ON/OFF；缺少合格必要依赖时明确失败。
 普通 Direct 使用 `hyle::compute::cpu::create_context()`，普通 Graph 使用
 `hyle::graph::cpu::create_context()`；用户不需要排列 Provider。专家仍可显式限定 Provider。
 static SDK 传递锁定 oneDNN archive/header 闭包，shared SDK 把实现私有链接进 provider library，
-二者安装 Apache-2.0 notice。CPU OFF + oneDNN ON 明确配置失败；CPU OFF + oneDNN AUTO
-不探测、不下载。构建 feature 只记录可用实现；默认规则的性能验收由 CPU 路线任务记录。
+二者安装 Apache-2.0 notice。不选择 CPU 不探测/取得其数学 Provider。
+构建 feature 只记录可用实现；默认规则的性能验收由 CPU 路线任务记录。
 
-标准CPU配置还通过`HYLE_COMPUTE_TORCH_CPU=AUTO`取得锁定原LibTorch CPU SDK：
+标准 CPU 配置还自动取得锁定原 LibTorch CPU SDK：
 Windows/Linux x86_64为`2.8.0+cpu`，macOS ARM64为`2.8.0`。source/static/shared复用同一锁与本机cache，
 安装消费者由依赖shim解析SDK，不要求用户列第三方target。HYLE static仍需要外部shared CPU runtime；
 二进制HYLE prefix不包含整个LibTorch开发包。离线迁移需同时带已验证的本机依赖cache，
@@ -188,10 +190,10 @@ Mac受管stage修正原CPU dylib的libomp加载边并保留原archive身份，�
 用户声明不匹配版本/目标或非可搬移SDK时configure明确失败。当前Mac资格与未完成项见
 [CPU F3证据](../../evidence/correctness/cpu-final-f3/README.md)。
 
-Compute/Graph 包含可选 CUDA 默认路线。`HYLE_COMPUTE_CUDA=OFF|ON|AUTO` 只在相应产品闭包中出现，
+Compute/Graph 的 CUDA 路线由 `HYLE_COMPUTE_ROUTES=cuda` 选择，
 普通 `compute-cuda` configure/build preset 选择 CUDA-only Compute+Graph、Release、tests/bench OFF，
-build 并行度 2；`HYLE_COMPUTE_CPU=ON` 可显式取得 mixed SDK，三交付仍用既有 install/static 参数。
-默认 OFF；ON 要求用户预装 CUDA Toolkit 13.3+ 并在缺失时失败，AUTO 只用于本地探测，OFF 完全不探测。
+build 并行度 2；`"-DHYLE_COMPUTE_ROUTES=cpu;cuda"` 可显式取得 mixed SDK，三交付仍用既有 install/static 参数。
+选中时要求用户预装 CUDA Toolkit 13.3+，缺失失败；未选完全不探测。
 CUDA Toolkit 是机器 SDK，不进入 FetchContent cache，也不会由 HYLE 下载。启用后的 source/static/shared
 都传播 `CUDAToolkit` package requirement；安装包消费者同样必须能被 `find_package(CUDAToolkit 13.3)`
 找到。选择公开产品会接入 ggml CUDA、cuBLASLt、SGLang、DeepSeek 与 CCCL 等实现；Direct 使用

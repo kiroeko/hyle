@@ -35,8 +35,7 @@ Vulkan loader/driver；HYLE 不下载驱动，也不把设备枚举当作计算�
 ```sh
 cmake -S . -B build-vulkan -G Ninja \
   -DHYLE_COMPONENTS="compute;graph" \
-  -DHYLE_COMPUTE_VULKAN=ON -DHYLE_COMPUTE_CPU=OFF \
-  -DHYLE_COMPUTE_CUDA=OFF -DHYLE_COMPUTE_APPLE=OFF \
+  -DHYLE_COMPUTE_ROUTES=vulkan \
   -DHYLE_BUILD_TESTS=OFF -DHYLE_STATIC=ON -DHYLE_INSTALL=ON \
   -DCMAKE_BUILD_TYPE=Release
 cmake --build build-vulkan --parallel 2
@@ -57,7 +56,7 @@ macOS 使用已安装的 loader/MoltenVK。若 loader 不在动态库搜索路�
 workgroup。可重新绑定输入的普通 Invocation 还需要设备真实支持
 `descriptorBindingStorageBufferUpdateAfterBind`。缺条件明确报错；固定 caller buffers 的
 Recorder 不强制采用可重绑定 descriptor。默认拒绝软件 device，不做 CPU 模型 fallback。
-`OFF` 不探测 SDK、编译 shader 或获取路线依赖；`ON` 缺构建条件失败。
+未选择 `vulkan` 不探测 SDK、编译 shader 或获取路线依赖；已选择则缺构建条件明确失败。
 
 ## 普通 Direct Compute
 

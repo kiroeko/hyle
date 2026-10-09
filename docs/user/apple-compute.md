@@ -21,7 +21,7 @@ Graph 的 typed lowering 收到同一份冷信息。无注解继续使用合法 
 ```sh
 cmake -S . -B build-apple -G Ninja \
   -DHYLE_COMPONENTS="compute;graph" \
-  -DHYLE_COMPUTE_APPLE=ON -DHYLE_COMPUTE_CPU=OFF -DHYLE_COMPUTE_CUDA=OFF \
+  -DHYLE_COMPUTE_ROUTES=apple \
   -DHYLE_BUILD_TESTS=OFF -DHYLE_STATIC=ON -DHYLE_INSTALL=ON \
   -DCMAKE_BUILD_TYPE=Release
 cmake --build build-apple --parallel 2
