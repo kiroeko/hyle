@@ -11,6 +11,7 @@ struct IreeStage final {
     std::uint32_t value = 0;
     VkDeviceSize offset = 0;
     iree_vulkan::BufferSpan destination;
+    bool constant = false;
   };
   Run *parent = nullptr;
   std::unique_ptr<iree_vulkan::NativeProgram> program;
@@ -18,7 +19,8 @@ struct IreeStage final {
   std::size_t input_count = 0;
   std::uint32_t output = 0;
   std::size_t output_bytes = 0;
-  std::shared_ptr<Run> input_copy, output_copy, flag_copy;
+  std::shared_ptr<Run> input_copy, constant_copy, output_copy, flag_copy;
+  bool constants_submitted = false;
   std::shared_ptr<Buffer> flag;
   bool reading_flag = false;
   Status bind() noexcept;

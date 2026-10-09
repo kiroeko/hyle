@@ -17,12 +17,27 @@ enum class ProgramKind {
   Nf4Decode,
   Nf4NestedDecode,
   AwqDecode,
-  Symmetric4Decode
+  Symmetric4Decode,
+  MlxAffineLinear,
+  MlxAffineGrouped,
+  MlxMx4Linear,
+  MlxMx4Grouped,
+  MlxMx8Linear,
+  MlxMx8Grouped,
+  MlxAffineEmbedding
 };
 enum class ArtifactScalar { Float32, Float16, BFloat16 };
 constexpr bool artifact_program(ProgramKind kind) noexcept {
   return kind == ProgramKind::Nf4Decode || kind == ProgramKind::Nf4NestedDecode ||
          kind == ProgramKind::AwqDecode || kind == ProgramKind::Symmetric4Decode;
+}
+constexpr bool mlx_program(ProgramKind kind) noexcept {
+  return kind >= ProgramKind::MlxAffineLinear &&
+         kind <= ProgramKind::MlxAffineEmbedding;
+}
+constexpr bool mlx_grouped(ProgramKind kind) noexcept {
+  return kind == ProgramKind::MlxAffineGrouped || kind == ProgramKind::MlxMx4Grouped ||
+         kind == ProgramKind::MlxMx8Grouped;
 }
 struct ProgramSpec final {
   ProgramKind kind = ProgramKind::ScanInclusive;
@@ -34,6 +49,7 @@ struct ProgramSpec final {
   std::uint32_t group_size = 64;
   ArtifactScalar scale_type = ArtifactScalar::Float32;
   ArtifactScalar output_type = ArtifactScalar::Float32;
+  std::int64_t experts = 1; // Embedding: original vocabulary row count.
 };
 struct BufferSpan final {
   VkBuffer buffer = VK_NULL_HANDLE;

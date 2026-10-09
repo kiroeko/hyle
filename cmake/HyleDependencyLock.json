@@ -294,7 +294,7 @@
           {
             "root": "hyle",
             "path": "third_party/iree_vulkan_runtime/NOTICE.md",
-            "sha256": "729022158b78e928b42c1c67c28b351be60fe8f6c222d5c51d6c418b9e6b740e"
+            "sha256": "dc074cd28dae57c2306c2108b948e3ba851d0e48185c776e5d042a00ddfcafc4"
           },
           {
             "root": "hyle",
@@ -310,12 +310,17 @@
             "root": "hyle",
             "path": "third_party/iree_vulkan_runtime/programs/licenses/compressed-tensors.txt",
             "sha256": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4"
+          },
+          {
+            "root": "hyle",
+            "path": "third_party/iree_vulkan_runtime/programs/licenses/mlx.txt",
+            "sha256": "ccfab7ccb2ea306f71531c8ca77bb55507606cd90768b1e32b8b52ab5b48cf01"
           }
         ]
       },
       "vendored": {
         "path": "third_party/iree_vulkan_runtime",
-        "tree_sha256": "f9484803b8aa93b9781126ebf0abac9caf5885cbe1aa2cd61fb1a00428d75137"
+        "tree_sha256": "1a15611bd20ffe2f5ca247a4bfa0bde979f2ebbafbc86c01df7d8da31208126a"
       }
     },
     {

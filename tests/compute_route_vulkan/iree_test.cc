@@ -3,6 +3,7 @@
 
 #include "iree_test_support.h"
 #include "artifact_test_support.h"
+#include "mlx_test_support.h"
 #include "scan_test_support.h"
 #include "vulkan_program_internal.h"
 
@@ -17,6 +18,69 @@ hyle::Result<v::Program> prepare_artifact(const v::Context &context,
   std::vector<v::Argument> arguments;
   for (const auto &description : descriptions) arguments.emplace_back(description);
   return v::prepare(context, operation, std::span<const v::Argument>(arguments));
+}
+
+TEST(VulkanIree, OriginalMlxBatchPreservesGroupsSourceTypesAndCheckedSlots) {
+  vulkan_mlx_test::batch(prepare_artifact);
+}
+
+TEST(VulkanIree, OriginalMlxConstantsKeepBanksAcrossRebindingAndSlots) {
+  vulkan_mlx_test::constants([](const v::Context &context, c::Operation operation,
+                               std::span<const v::Tensor> resident) {
+    std::vector<v::Argument> arguments;
+    for (std::size_t i = 0; i < resident.size(); ++i)
+      if (i == 0 || i + 1 == resident.size()) arguments.emplace_back(resident[i].description());
+      else arguments.emplace_back(resident[i]);
+    return v::prepare(context, operation, std::span<const v::Argument>(arguments));
+  });
+}
+
+TEST(VulkanIree, OriginalMlxEmptyEmbeddingDomainOomCancelAndClose) {
+  using namespace vulkan_mlx_test;
+  hyle::mem::QuotaAllocator quota(hyle::mem::system_allocator(), 384 * 1024 * 1024);
+  {
+    auto context = vulkan_test::context(&quota).value();
+    Inputs data(Format::kAffine4, Kind::kEmbedding, c::DataType::kBFloat16, 64);
+    auto descriptions = data.descriptions;
+    descriptions.back() = t::dense(c::DataType::kInt32, {0});
+    auto empty = prepare_artifact(context, data.operation, descriptions).value();
+    auto inputs = data.upload(context);
+    inputs.back() = context.upload(descriptions.back(), {}).value();
+    { auto slot = empty.create_invocation().value();ASSERT_TRUE(slot.bind(inputs).ok());
+      auto done = slot.submit().value();auto result = done.wait();ASSERT_TRUE(result);
+      EXPECT_EQ(*result->get()->tensors()[0].description().element_count(), 0U); }
+    auto &limits = v::detail::Access::runtime(context)->device->properties.limits;
+    const auto saved = limits;
+    limits.maxComputeWorkGroupInvocations = 63;
+    EXPECT_FALSE(prepare_artifact(context, data.operation, data.descriptions));
+    limits = saved;
+    auto program = prepare_artifact(context, data.operation, data.descriptions).value();
+    { auto reservation = quota.try_reserve_bytes(quota.limit() - quota.used());ASSERT_TRUE(reservation);
+      auto denied = program.create_invocation();ASSERT_FALSE(denied);
+      EXPECT_TRUE(denied.error().IsResourceExhausted()); }
+    auto slot = program.create_invocation().value();ASSERT_TRUE(slot.bind(data.upload(context)).ok());
+    { auto done = slot.submit().value();ASSERT_TRUE(done.request_cancel().ok());auto result = done.wait();
+      if (result) data.check(context, result->get()->tensors()[0]);else EXPECT_TRUE(result.error().IsCancelled()); }
+    { auto done = slot.submit().value();auto result = done.wait();ASSERT_TRUE(result) << result.error().message();
+      data.check(context, result->get()->tensors()[0]); }
+    EXPECT_TRUE(context.close().ok());EXPECT_FALSE(slot.submit());
+  }
+  EXPECT_EQ(quota.used(), 0U);
+}
+
+TEST(VulkanIree, OriginalMlxMx8SignsZerosAndSourceScaleClassification) {
+  using namespace vulkan_mlx_test;
+  auto context = vulkan_test::context().value();
+  Inputs data(Format::kMxfp8, Kind::kLinear, c::DataType::kFloat32, 32, 0, c::DataType::kUnknown, 256);
+  // Each output row below observes all encoded normal signs and zero codes;
+  // separately force a source E8 Inf to distinguish MLX255 from E8 NaN.
+  data.exponents.assign(data.exponents.size(), 255);
+  std::vector<std::uint64_t> scale(data.exponents.size(), 255);
+  data.payloads[2] = t::payload(data.descriptions[2], scale);data.calculate();
+  auto program = prepare_artifact(context, data.operation, data.descriptions).value();
+  auto slot = program.create_invocation().value();ASSERT_TRUE(slot.bind(data.upload(context)).ok());
+  auto done = slot.submit().value();auto result = done.wait();ASSERT_TRUE(result) << result.error().message();
+  data.check(context, result->get()->tensors()[0]);
 }
 
 TEST(VulkanIree, OriginalArtifactBatchPreservesSourceRoundingAndSixPorts) {

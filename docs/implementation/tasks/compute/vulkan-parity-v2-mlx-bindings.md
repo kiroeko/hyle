@@ -94,3 +94,11 @@ Air/三交付及父轮default/P1仍未验。owner现AUDITED重新绑定本卡，
 七问：原源/pin/MIT许可见本卡及SOURCE；普通主/反偏置链与失败形状已冻结；复用existing
 Vulkan/ggml/IREE/mem/checked storage；P0 group空间和完整复制/执行成本有界；VM私有FFI
 不进公开ABI；交付沿既有嵌入/许可证/DLL；用户只用原自然schema，最终能力/精度按真实域诊断。
+
+M2-C具名成本修正：MLX bank实际可达1GiB；现有IREE边界每replay复制全部输入不能满足
+不可变权重低成本重放。本批复用原native复制但拆成首次constant copy和每次dynamic copy，
+只对Plan明确immutable constant及MLX生效；mutable banks仍每次收费。成功接受constant
+GPU提交后才标记已初始化，取消/失败仍按原queue/drain退役。常量copy非benchmark-only优化；
+普通Direct的`Argument(Tensor)`和Graph constants都适用。额外一native command只在cold
+首轮，后续无bank copy、不重选Provider。预声明检查constant副本不变、动态输入/IDs变更、
+两slot、取消/关闭/lease，原artifact/FP8资源路径不改变。

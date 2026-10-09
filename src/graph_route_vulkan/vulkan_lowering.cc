@@ -146,6 +146,7 @@ static Result<cv::Program> compile_impl(const cv::Context &context,
       if (!node)
         continue;
       const bool mature_custom =
+          node->operation.custom_as<compute::model_ops::MlxQuantized>() ||
           node->operation.custom_as<compute::model_ops::ArtifactWeightDecode>() ||
           node->operation.custom_as<compute::model_ops::CausalConv1d>() ||
           node->operation.custom_as<compute::model_ops::RecurrentGatedDeltaNet>() ||

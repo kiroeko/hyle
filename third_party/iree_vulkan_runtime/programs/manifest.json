@@ -71,6 +71,40 @@
       "offline_compilation": "compile_artifacts.py",
       "execution_contract": "SignedZeroInfNanPreserve 32; original source-typed decode; qualified native final Cast for cross-dtype half sources",
       "qualification": "docs/implementation/tasks/compute/vulkan-parity-v2-artifact-bindings.md"
+    },
+    {
+      "name": "mlx",
+      "file": "mlx.vmfb.b64",
+      "sha256": "af554194521f9975b821f47feba8c81639add8835217727ea0c07d3febc6d920",
+      "bytes": 214449,
+      "recipe": "mlx.mlir",
+      "recipe_sha256": "c1b77b3e0f9b5c032f1b407d66bb0e187bbfb7b095ea90b6c43e4da519e72bae",
+      "exports_used": [
+        "affine_linear_f32",
+        "affine_grouped_f32",
+        "affine_linear_f16",
+        "affine_grouped_f16",
+        "affine_linear_bf16",
+        "affine_grouped_bf16",
+        "mx4_linear_f32",
+        "mx4_grouped_f32",
+        "mx4_linear_f16",
+        "mx4_grouped_f16",
+        "mx4_linear_bf16",
+        "mx4_grouped_bf16",
+        "mx8_linear_f32",
+        "mx8_grouped_f32",
+        "mx8_linear_f16",
+        "mx8_grouped_f16",
+        "mx8_linear_bf16",
+        "mx8_grouped_bf16",
+        "affine_embedding_f32",
+        "affine_embedding_f16",
+        "affine_embedding_bf16"
+      ],
+      "offline_compilation": "compile_mlx.py",
+      "execution_contract": "Original selected one-K-group tensor programs; F32 dot-before-source-scale accumulation; IEEE32 original64-lane schedule",
+      "qualification": "docs/implementation/tasks/compute/vulkan-parity-v2-mlx-bindings.md"
     }
   ]
 }

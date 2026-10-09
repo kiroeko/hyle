@@ -54,3 +54,23 @@ Original source identities and parent tensor borrows are registered in
 `third_party/{bitsandbytes,awq,compressed_tensors}_cpu/SOURCE.json` and their
 notices. The new recipe/bytecode/exports are recorded in programs/manifest.json;
 offline compilation is recorded separately from runtime qualification.
+
+## Original MLX packed tensor programs
+
+`programs/mlx.mlir` expresses the original MLX group sequences in standard
+tensor/arith/linalg/scf operations. Origin: ml-explore/mlx
+`2b2bb49790158ecd008d1685c94e3ef119792a00`, Copyright © 2023-2026 Apple Inc.,
+MIT; see `programs/licenses/mlx.txt` and the registered source identities in
+`third_party/mlx_cpu_quant/SOURCE.json`. Source functions are
+`backend/cpu/quantized.cpp::_qmm_t_simd`, `fp_qmm_t_simd` and
+`dequantize_scale<T,32>`, `ops.cpp::affine_dequantize`, and
+`python/mlx/nn/layers/quantized.py::QuantizedEmbedding::__call__`.
+
+Original nibble order, FP4_LUT, E4M3FN conversion and E8 scale semantics remain
+unchanged. MX dot precedes each source-typed group scale, with F32 accumulation.
+Only selected experts and one K group are expanded; embedding selects rows
+before typed multiplication/addition. IREE's original compiler owns MatMul,
+loop execution, workgroup selection and resources. No HYLE kernel/quantizer,
+compiler pass or full F32 expert bank is introduced. Tensor barriers and shape
+ties preserve source dtype materialization; their byte identities and offline
+compilation are recorded in the existing manifest and qualification receipt.

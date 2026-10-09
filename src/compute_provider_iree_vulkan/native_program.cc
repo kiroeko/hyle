@@ -115,6 +115,21 @@ iree_hal_element_type_t artifact_scalar(ArtifactScalar type) noexcept {
     return IREE_HAL_ELEMENT_TYPE_FLOAT_32;
   }
 }
+
+const char *mlx_entry(const ProgramSpec &spec) noexcept {
+  const auto type = static_cast<std::size_t>(spec.output_type);
+  if (type >= 3 || !mlx_program(spec.kind)) return nullptr;
+  constexpr std::array<std::array<const char *, 3>, 7> names{{
+      {"module.affine_linear_f32", "module.affine_linear_f16", "module.affine_linear_bf16"},
+      {"module.affine_grouped_f32", "module.affine_grouped_f16", "module.affine_grouped_bf16"},
+      {"module.mx4_linear_f32", "module.mx4_linear_f16", "module.mx4_linear_bf16"},
+      {"module.mx4_grouped_f32", "module.mx4_grouped_f16", "module.mx4_grouped_bf16"},
+      {"module.mx8_linear_f32", "module.mx8_linear_f16", "module.mx8_linear_bf16"},
+      {"module.mx8_grouped_f32", "module.mx8_grouped_f16", "module.mx8_grouped_bf16"},
+      {"module.affine_embedding_f32", "module.affine_embedding_f16", "module.affine_embedding_bf16"}}};
+  return names[static_cast<std::size_t>(spec.kind) -
+               static_cast<std::size_t>(ProgramKind::MlxAffineLinear)][type];
+}
 } // namespace
 
 struct NativeProgram::State final {
@@ -358,6 +373,7 @@ NativeProgram::create(NativeDevice device, ProgramSpec spec) noexcept {
   const bool precision = spec.kind == ProgramKind::Float32ToBFloat16 ||
                          spec.kind == ProgramKind::Float16ToBFloat16;
   const bool artifact = artifact_program(spec.kind);
+  const bool mlx = mlx_program(spec.kind);
   const auto &features = device.state_->native.native();
   if (scan && !features.shader_int64)
     return std::unexpected(
@@ -382,12 +398,26 @@ NativeProgram::create(NativeDevice device, ProgramSpec spec) noexcept {
                    !features.preserve_float32_specials))
     return std::unexpected(Status::Unimplemented(
         "artifact program requires enabled original numeric features"));
-  if (!scan && !precision && !artifact &&
+  const bool embedding = spec.kind == ProgramKind::MlxAffineEmbedding;
+  const bool mx8 = spec.kind == ProgramKind::MlxMx8Linear ||
+                   spec.kind == ProgramKind::MlxMx8Grouped;
+  const bool affine = spec.kind == ProgramKind::MlxAffineLinear ||
+                      spec.kind == ProgramKind::MlxAffineGrouped || embedding;
+  if (mlx && (!mlx_entry(spec) || spec.experts <= 0 || spec.depth <= 0 ||
+              spec.group_size == 0 || spec.depth % spec.group_size ||
+              (!affine && spec.group_size != 32) ||
+              (affine && spec.group_size != 32 && spec.group_size != 64 &&
+               spec.group_size != 128)))
+    return std::unexpected(Status::InvalidArgument("IREE original MLX domain"));
+  if (mlx && (!features.shader_int16 || !features.shader_float16 ||
+              !features.storage_buffer16 || !features.preserve_float32_specials))
+    return std::unexpected(Status::Unimplemented("MLX requires enabled original numeric features"));
+  if (!scan && !precision && !artifact && !mlx &&
       (!features.shader_float16 || !features.storage_buffer16))
     return std::unexpected(Status::Unimplemented(
         "FP8 program requires enabled Float16 and storage16"));
   const auto block = spec.kind == ProgramKind::Float8Block128 ? 128 : 32;
-  if (!scan && !precision && !artifact &&
+  if (!scan && !precision && !artifact && !mlx &&
       (spec.depth <= 0 || spec.depth % block ||
        (spec.kind == ProgramKind::Float8Block128 && spec.columns % block)))
     return std::unexpected(
@@ -398,11 +428,23 @@ NativeProgram::create(NativeDevice device, ProgramSpec spec) noexcept {
   constexpr std::int64_t max_elements =
       std::numeric_limits<std::int32_t>::max() / 8;
   if (spec.rows > max_elements / spec.columns ||
-      (!scan && !precision && !artifact &&
+      (!scan && !precision && !artifact && !mlx &&
        (spec.rows > max_elements / spec.depth ||
         spec.columns > max_elements / spec.depth)))
     return std::unexpected(
         Status::OutOfRange("IREE descriptor program index/workspace domain"));
+  if (mlx) {
+    constexpr auto limit = std::int64_t{INT32_MAX} / 4;
+    const auto fits = [limit](std::int64_t x, std::int64_t y) {
+      return x > 0 && y > 0 && x <= limit / y;
+    };
+    if ((embedding ? !fits(spec.experts, spec.depth / 8)
+                   : (!fits(spec.rows, spec.depth) ||
+                      !fits(spec.experts, spec.columns) ||
+                      !fits(spec.experts * spec.columns, spec.depth / (mx8 ? 4 : 8)) ||
+                      !fits(spec.rows * spec.columns, spec.group_size))))
+      return std::unexpected(Status::OutOfRange("MLX original tensor index/workspace domain"));
+  }
   try {
     auto state = std::make_unique<State>();
     state->device = std::move(device);
@@ -418,6 +460,7 @@ NativeProgram::create(NativeDevice device, ProgramSpec spec) noexcept {
                        owner.programs[scan         ? 0
                                       : precision  ? 2
                                       : artifact   ? 3
+                                      : mlx        ? 4
                                                    : 1]
                            .get()};
     iree_vm_context_t *context = nullptr;
@@ -453,6 +496,15 @@ NativeProgram::create(NativeDevice device, ProgramSpec spec) noexcept {
     case ProgramKind::Symmetric4Decode:
       name = artifact_entry(spec);
       break;
+    case ProgramKind::MlxAffineLinear:
+    case ProgramKind::MlxAffineGrouped:
+    case ProgramKind::MlxMx4Linear:
+    case ProgramKind::MlxMx4Grouped:
+    case ProgramKind::MlxMx8Linear:
+    case ProgramKind::MlxMx8Grouped:
+    case ProgramKind::MlxAffineEmbedding:
+      name = mlx_entry(spec);
+      break;
     default:
       return std::unexpected(Status::InvalidArgument("IREE program kind"));
     }
@@ -469,7 +521,42 @@ NativeProgram::create(NativeDevice device, ProgramSpec spec) noexcept {
                             iree_allocator_system(), &outputs)));
     state->outputs.reset(outputs);
     auto *hal = owner.device.get();
-    if (artifact) {
+    if (mlx) {
+      const auto rows = static_cast<iree_hal_dim_t>(spec.rows);
+      const auto columns = static_cast<iree_hal_dim_t>(spec.columns);
+      const auto depth = static_cast<iree_hal_dim_t>(spec.depth);
+      const auto experts = static_cast<iree_hal_dim_t>(spec.experts);
+      const auto type = artifact_scalar(spec.output_type);
+      if (embedding) {
+        const std::array<iree_hal_dim_t, 2> words{experts, depth / 8},
+            scales{experts, depth / spec.group_size};
+        const std::array<iree_hal_dim_t, 1> ids{rows};
+        HYLE_ASSIGN_OR_RETURN(state->views[0], allocate_view(hal, words, IREE_HAL_ELEMENT_TYPE_SINT_32));
+        HYLE_ASSIGN_OR_RETURN(state->views[1], allocate_view(hal, scales, type));
+        HYLE_ASSIGN_OR_RETURN(state->views[2], allocate_view(hal, scales, type));
+        HYLE_ASSIGN_OR_RETURN(state->views[3], allocate_view(hal, ids, IREE_HAL_ELEMENT_TYPE_SINT_32));
+        state->count = 4;
+      } else {
+        const std::array<iree_hal_dim_t, 2> activation{rows, depth};
+        const std::array<iree_hal_dim_t, 3> words{experts, columns, depth / (mx8 ? 4 : 8)},
+            scales{experts, columns, depth / spec.group_size};
+        HYLE_ASSIGN_OR_RETURN(state->views[0], allocate_view(hal, activation, type));
+        HYLE_ASSIGN_OR_RETURN(state->views[1], allocate_view(hal, words, IREE_HAL_ELEMENT_TYPE_SINT_32));
+        HYLE_ASSIGN_OR_RETURN(state->views[2], allocate_view(hal, scales,
+            affine ? type : IREE_HAL_ELEMENT_TYPE_SINT_8));
+        state->count = 3;
+        if (affine) {
+          HYLE_ASSIGN_OR_RETURN(state->views[3], allocate_view(hal, scales, type));
+          state->count = 4;
+        }
+        if (mlx_grouped(spec.kind)) {
+          const std::array<iree_hal_dim_t, 1> ids{rows};
+          HYLE_ASSIGN_OR_RETURN(state->views[state->count],
+              allocate_view(hal, ids, IREE_HAL_ELEMENT_TYPE_SINT_32));
+          ++state->count;
+        }
+      }
+    } else if (artifact) {
       const auto n = static_cast<iree_hal_dim_t>(spec.rows);
       const auto k = static_cast<iree_hal_dim_t>(spec.columns);
       const auto groups = static_cast<iree_hal_dim_t>(
@@ -602,7 +689,7 @@ WorkState NativeProgram::invoke(CompletionNotify notify,
       iree_vm_ref_release(&ref);
       HYLE_RETURN_IF_ERROR(detail::consume_status(pushed));
     }
-    if (artifact_program(state.spec.kind)) {
+    if (artifact_program(state.spec.kind) || mlx_program(state.spec.kind)) {
       const auto group = iree_vm_value_make_i32(
           static_cast<std::int32_t>(state.spec.group_size));
       HYLE_RETURN_IF_ERROR(detail::consume_status(

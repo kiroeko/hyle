@@ -1,5 +1,6 @@
 #include "../compute_route_vulkan/iree_test_support.h"
 #include "../compute_route_vulkan/artifact_test_support.h"
+#include "../compute_route_vulkan/mlx_test_support.h"
 #include "../compute_route_vulkan/scan_test_support.h"
 #include "hyle/graph/vulkan.h"
 
@@ -21,6 +22,24 @@ hyle::Result<v::Program> compile_artifact(const v::Context &context,
   const auto result = builder.result(node).value();
   EXPECT_TRUE(builder.publish(result).ok());
   return gv::compile(context, std::move(builder).finish().value());
+}
+
+TEST(VulkanGraph, OriginalMlxBatchUsesOrdinaryTypedNodesAndCheckedSlots) {
+  vulkan_mlx_test::batch(compile_artifact);
+}
+
+TEST(VulkanGraph, OriginalMlxConstantsKeepBanksAcrossRebindingAndSlots) {
+  vulkan_mlx_test::constants([](const v::Context &context, c::Operation operation,
+                               std::span<const v::Tensor> resident) {
+    auto builder = g::GraphBuilder::create().value();std::vector<g::ValueId> inputs;
+    std::vector<v::Tensor> constants;
+    for (std::size_t i = 0; i < resident.size(); ++i)
+      if (i == 0 || i + 1 == resident.size()) inputs.push_back(builder.input(resident[i].description()).value());
+      else { inputs.push_back(builder.constant(resident[i].description()).value());constants.push_back(resident[i]); }
+    const auto result = builder.result(builder.add_node(operation, inputs).value()).value();
+    EXPECT_TRUE(builder.publish(result).ok());
+    return gv::compile(context, std::move(builder).finish().value(), constants);
+  });
 }
 
 TEST(VulkanGraph, OriginalArtifactBatchUsesOrdinaryTypedEntry) {

@@ -1,4 +1,5 @@
 #include "vulkan_iree.h"
+#include "vulkan_mlx.h"
 
 #include <algorithm>
 #include <cstring>
@@ -214,6 +215,8 @@ bool iree_operation(const ProgramState &program,
     return false;
   if (step.operation.custom_as<model_ops::ArtifactWeightDecode>())
     return true; // Domain diagnostics belong to cold lowering, never a shader fallback.
+  if (step.operation.custom_as<model_ops::MlxQuantized>())
+    return true;
   const auto &input = program.values[step.inputs[0]].description;
   if (const auto *cast = step.operation.get_if<Cast>())
     return step.inputs.size() == 1 &&
@@ -231,6 +234,8 @@ bool iree_operation(const ProgramState &program,
 }
 
 Status lower_iree(ProgramState &program, const PlanStep &step) noexcept {
+  if (step.operation.custom_as<model_ops::MlxQuantized>())
+    return lower_mlx(program, step);
   try {
     const auto &input = program.values[step.inputs[0]].description;
     iv::ProgramSpec spec;
@@ -314,15 +319,7 @@ Status lower_iree(ProgramState &program, const PlanStep &step) noexcept {
                     : !fp8_dispatch_fits(limits, spec)))
       return Status::Unimplemented("Vulkan IREE program exceeds admitted "
                                    "native grid or workspace limits");
-    {
-      std::lock_guard lock(program.runtime->mutex);
-      if (program.runtime->closed)
-        return Status::FailedPrecondition("Vulkan context is closed");
-      if (!device.iree) {
-        HYLE_ASSIGN_OR_RETURN(device.iree, iv::NativeDevice::create(
-                                               device.provider, device.quota));
-      }
-    }
+    HYLE_RETURN_IF_ERROR(ensure_iree_device(program));
     Dispatch dispatch;
     dispatch.iree = spec;
     dispatch.values = step.inputs;
@@ -352,22 +349,41 @@ Status lower_iree(ProgramState &program, const PlanStep &step) noexcept {
       // Preserve the mature source's materialized rounding. Final conversion
       // uses the already qualified native Cast paths, with explicit storage,
       // copies and completion; no compiler arithmetic workaround is required.
-      PlanStep convert{Operation(Cast{
-          program.values[step.outputs[0]].description.data_type()}),
-          {output}, step.outputs, {}, {1, 1, 1}, {}};
-      if (iree_operation(program, convert))
-        return lower_iree(program, convert);
-      if (!managed_operation(program, convert))
-        return Status::Unimplemented("Vulkan artifact final Cast domain");
-      Plan local;
-      local.outputs = step.outputs;
-      local.steps.push_back(std::move(convert));
-      const std::vector<std::size_t> last_uses(program.values.size(), 0);
-      return lower_region(program, local, 0, 1, last_uses);
+      return lower_native_cast(program, output, step.outputs[0]);
     }
     return Status::Ok();
   } catch (const std::bad_alloc &) {
     return Status::ResourceExhausted("Vulkan IREE preparation metadata");
+  }
+}
+
+Status ensure_iree_device(ProgramState &program) noexcept {
+  std::lock_guard lock(program.runtime->mutex);
+  if (program.runtime->closed)
+    return Status::FailedPrecondition("Vulkan context is closed");
+  auto &device = *program.runtime->device;
+  if (!device.iree) {
+    HYLE_ASSIGN_OR_RETURN(device.iree,
+        iv::NativeDevice::create(device.provider, device.quota));
+  }
+  return Status::Ok();
+}
+
+Status lower_native_cast(ProgramState &program, std::uint32_t input,
+                          std::uint32_t output) noexcept {
+  try {
+    PlanStep convert{Operation(Cast{program.values[output].description.data_type()}),
+        {input}, {output}, {}, {1, 1, 1}, {}};
+    if (iree_operation(program, convert)) return lower_iree(program, convert);
+    if (!managed_operation(program, convert))
+      return Status::Unimplemented("Vulkan original typed conversion domain");
+    Plan local;
+    local.outputs = {output};
+    local.steps.push_back(std::move(convert));
+    const std::vector<std::size_t> last_uses(program.values.size(), 0);
+    return lower_region(program, local, 0, 1, last_uses);
+  } catch (const std::bad_alloc &) {
+    return Status::ResourceExhausted("Vulkan typed conversion metadata");
   }
 }
 
@@ -386,14 +402,20 @@ create_iree_stage(const std::shared_ptr<Run> &run, const Dispatch &dispatch,
     stage->output_bytes = *values[stage->output].description.required_bytes();
     for (std::size_t port = 0; port < stage->input_count; ++port) {
       auto &input = stage->inputs[port];
-      input.value = dispatch.values[iv::artifact_program(spec.kind) ? port : port % 2];
-      if (!iv::artifact_program(spec.kind) && port >= 2)
+      const bool individual = iv::artifact_program(spec.kind) || iv::mlx_program(spec.kind);
+      input.value = dispatch.values[individual ? port : port % 2];
+      if (!individual && port >= 2)
         input.offset =
             static_cast<VkDeviceSize>(spec.depth) *
             static_cast<VkDeviceSize>(port == 2 ? spec.rows : spec.columns);
       HYLE_ASSIGN_OR_RETURN(input.destination, stage->program->input(port));
+      input.constant = iv::mlx_program(spec.kind) && values[input.value].constant.valid();
     }
     HYLE_ASSIGN_OR_RETURN(stage->input_copy, create_run(run->runtime));
+    if (std::ranges::any_of(std::span(stage->inputs.data(), stage->input_count),
+                           [](const auto &input) { return input.constant; })) {
+      HYLE_ASSIGN_OR_RETURN(stage->constant_copy, create_run(run->runtime));
+    }
     HYLE_ASSIGN_OR_RETURN(stage->output_copy, create_run(run->runtime));
     if (spec.kind == iv::ProgramKind::ScanInclusive ||
         spec.kind == iv::ProgramKind::ScanExclusive) {
@@ -423,15 +445,21 @@ Status IreeStage::bind() noexcept {
       return Status::InvalidArgument("Vulkan IREE input range");
   }
   HYLE_RETURN_IF_ERROR(begin_copy(*input_copy));
+  if (constant_copy && !constants_submitted)
+    HYLE_RETURN_IF_ERROR(begin_copy(*constant_copy));
   for (std::size_t port = 0; port < input_count; ++port) {
     const auto &input = inputs[port];
+    if (input.constant && constants_submitted) continue;
     const auto &buffer = parent->retained_buffers[input.value];
     const VkBufferCopy copy{buffer->offset + input.offset,
                             input.destination.offset, input.destination.bytes};
     parent->runtime->device->fn.CmdCopyBuffer(
-        input_copy->command, buffer->handle, input.destination.buffer, 1,
+        input.constant ? constant_copy->command : input_copy->command,
+        buffer->handle, input.destination.buffer, 1,
         &copy);
   }
+  if (constant_copy && !constants_submitted)
+    HYLE_RETURN_IF_ERROR(end_copy(*constant_copy));
   return end_copy(*input_copy);
 }
 
@@ -498,8 +526,13 @@ bool advance_async_locked(Run &run) noexcept {
     Status status;
     if (stage.iree) {
       stage.iree->reading_flag = false;
-      status = submit_native(device, stage.iree->input_copy->command,
-                             VK_NULL_HANDLE);
+      if (stage.iree->constant_copy && !stage.iree->constants_submitted) {
+        status = submit_native(device, stage.iree->constant_copy->command, VK_NULL_HANDLE);
+        accepted = accepted || status.ok();
+        if (status.ok()) stage.iree->constants_submitted = true;
+      }
+      if (status.ok())
+        status = submit_native(device, stage.iree->input_copy->command, VK_NULL_HANDLE);
       accepted = accepted || status.ok();
       if (status.ok()) {
         const auto submitted =
