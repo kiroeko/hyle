@@ -1,0 +1,23 @@
+{
+  "candidate": "bcd13f136e3cf24088be7836598e83b922e20c45",
+  "exit": 0,
+  "binary_sha256": "ccd97d07a31140a13746ec1f29cb93411f96266340d49dc22a07edf9775e9eba",
+  "raw_sha256": "27a3295db989fe5555da2c30477ce5d7b1b1cf88a402f81f07ba1a28ced96adf",
+  "log": "verify-bcd13f13.log",
+  "phase": "verify-only, no samples",
+  "dlls": [
+    "hyle_compute.dll",
+    "hyle_compute_ggml_runtime.dll",
+    "hyle_compute_ops.dll",
+    "hyle_compute_provider_ggml_vulkan.dll",
+    "hyle_compute_provider_iree_vulkan.dll",
+    "hyle_compute_route_vulkan.dll",
+    "hyle_container.dll",
+    "hyle_error.dll",
+    "hyle_graph.dll",
+    "hyle_graph_route_vulkan.dll",
+    "hyle_mem.dll",
+    "hyle_platform.dll",
+    "hyle_time.dll"
+  ]
+}

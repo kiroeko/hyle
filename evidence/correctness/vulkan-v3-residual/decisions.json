@@ -1,0 +1,133 @@
+{
+  "baseline": "651d91050",
+  "kind": "D2 finite current residual capability decision; no new runtime/P1 WIN",
+  "decision": "No complete redundant global native capability identified; qualified mature default always precedes overlapping native compatibility paths. Retained unique semantics/resource/feature domains are not performance winners. No new self algorithm or optimization.",
+  "domains": [
+    {
+      "domain": "Copy/Fill/Select",
+      "decision": "KEEP_STORAGE",
+      "reason": "U32-word storage, I32/I64/Bool/U8/U32, exact bits/odd byte origins/empty; mature floating/layout kernels do not cover full storage contract",
+      "source": "src/compute_route_vulkan/vulkan_tensor.cc",
+      "source_sha256": "a188a4431b4c52d7d731970832e7ae6618b3fb082f2a274a1cfa38214f36c371",
+      "contract_test": "tests/compute_route_vulkan/tensor_test.cc",
+      "direction": "NOT_MEASURED_UNIQUE_CAPABILITY",
+      "new_self_work": "FROZEN"
+    },
+    {
+      "domain": "Cast",
+      "decision": "KEEP_STRICT_CAPABILITY",
+      "reason": "F32/F16/BF16 RNE, arbitrary admitted byte origins/strides and no optional16-bit shader requirement; IREE precision has narrower dense/numeric-feature/grid domain",
+      "source": "src/compute_route_vulkan/vulkan_iree.cc",
+      "source_sha256": "d91c53c8a42b89a5cd799fd7bb591001034cb5e5efda280ff878d91bdd34c6fc",
+      "contract_test": "tests/compute_route_vulkan/view_test.cc",
+      "direction": "NOT_MEASURED_UNIQUE_CAPABILITY",
+      "new_self_work": "FROZEN"
+    },
+    {
+      "domain": "Abs/Neg/Exp/Log/Sqrt/Rsqrt/Tanh/Sigmoid/SiLU/Softplus, Add/Sub/Mul/Div and SwiGLU",
+      "decision": "KEEP_LOW_FEATURE_ONLY",
+      "reason": "Qualified managed ggml is the default. Native128-lane implementation remains outside original512-lane feature/resource domain, not a hot alternative searched or unmeasured winner",
+      "source": "src/compute_route_vulkan/vulkan_elementwise.cc",
+      "source_sha256": "35f20637c1c56a925a3b6480894254a9c621b538a6a104941323b07838c1f0b5",
+      "contract_test": "tests/compute_route_vulkan/managed_region_test.cc",
+      "direction": "NOT_MEASURED_UNIQUE_CAPABILITY",
+      "new_self_work": "FROZEN"
+    },
+    {
+      "domain": "ReLU/GELU-erf/GELU-tanh and their gates",
+      "decision": "KEEP_COMPLETE_SEMANTICS",
+      "reason": "Pinned original ReLU/GELU source exists but NaN, infinity and stable negative-tail definitions differ. No registered complete qualified replacement; no timing against a weaker primitive",
+      "source": "src/compute_route_vulkan/shaders/tensor.comp",
+      "source_sha256": "0c1320858183c2bec62cc279bd4061f627276f6d2e1da78bacbeba51744f83f8",
+      "contract_test": "tests/compute_route_vulkan/gate_norm_test.cc",
+      "direction": "NOT_MEASURED_UNIQUE_CAPABILITY",
+      "new_self_work": "FROZEN"
+    },
+    {
+      "domain": "number Minimum/Maximum",
+      "decision": "KEEP_COMPLETE_SEMANTICS",
+      "reason": "NaN-number and signed-zero contract; locked mature typed region admits four arithmetic binaries, not this full contract",
+      "source": "src/compute_provider_ggml_vulkan/region.cc",
+      "source_sha256": "090eb57cec82d9ac56512ab23f22d38735eb318a6f7967ff184a229f856968d8",
+      "contract_test": "tests/compute_route_vulkan/tensor_test.cc",
+      "direction": "NOT_MEASURED_UNIQUE_CAPABILITY",
+      "new_self_work": "FROZEN"
+    },
+    {
+      "domain": "RMSNorm/LayerNorm native fallback",
+      "decision": "KEEP_LOW_FEATURE_ONLY",
+      "reason": "Original managed512-lane norm is preferred; native128-lane low-feature/strict admitted storage remains a distinct capability",
+      "source": "src/compute_route_vulkan/vulkan_normalization.cc",
+      "source_sha256": "90b25978d1ae851b107e8a0caa4962a502d3f0e18cbc8e17f7938896b97b6d33",
+      "contract_test": "tests/compute_route_vulkan/gate_norm_test.cc",
+      "direction": "NOT_MEASURED_UNIQUE_CAPABILITY",
+      "new_self_work": "FROZEN"
+    },
+    {
+      "domain": "Reduction minima/maxima, LogSoftmax/LogSumExp and empty/strict fallback",
+      "decision": "KEEP_COMPLETE_SEMANTICS",
+      "reason": "Managed Sum/Mean/Softmax preferred in qualified domain; original region does not cover remaining complete public reduction/probability contract",
+      "source": "src/compute_route_vulkan/vulkan_reduction.cc",
+      "source_sha256": "b8a292ec9f6eaca989acef7a0faaaa97a4c1cc1d26369f03aaee93a55629dc1f",
+      "contract_test": "tests/compute_route_vulkan/reduction_test.cc",
+      "direction": "NOT_MEASURED_UNIQUE_CAPABILITY",
+      "new_self_work": "FROZEN"
+    },
+    {
+      "domain": "Concat",
+      "decision": "KEEP_STORAGE",
+      "reason": "All admitted storage types and unaligned word ownership; original mature floating/512-lane layout path preferred, remaining byte/integer/low-feature domain distinct",
+      "source": "src/compute_route_vulkan/vulkan_tensor.cc",
+      "source_sha256": "a188a4431b4c52d7d731970832e7ae6618b3fb082f2a274a1cfa38214f36c371",
+      "contract_test": "tests/compute_route_vulkan/concat_test.cc",
+      "direction": "NOT_MEASURED_UNIQUE_CAPABILITY",
+      "new_self_work": "FROZEN"
+    },
+    {
+      "domain": "Gather/Scatter adapters",
+      "decision": "KEEP_CHECKED_STORAGE",
+      "reason": "Checked transactional publication, general storage/axis/strides, specified duplicate update semantics; mature numerical portions still delegate, primitive alone is not complete substitute",
+      "source": "src/compute_route_vulkan/vulkan_scatter.cc",
+      "source_sha256": "458dd3af544a486a27864f2e36d09d98f9d540644f6d069cb7a229dd21875601",
+      "contract_test": "tests/compute_route_vulkan/scatter_test.cc",
+      "direction": "NOT_MEASURED_UNIQUE_CAPABILITY",
+      "new_self_work": "FROZEN"
+    },
+    {
+      "domain": "Index validation, safe IDs and checked output copy",
+      "decision": "KEEP_RESOURCE_MECHANISM",
+      "reason": "Logical errors must not publish outputs or dispatch unsafe library indices; boundaries used by original ggml/IREE programs",
+      "source": "src/compute_route_vulkan/vulkan_tensor.cc",
+      "source_sha256": "a188a4431b4c52d7d731970832e7ae6618b3fb082f2a274a1cfa38214f36c371",
+      "contract_test": "tests/compute_route_vulkan/gather_test.cc",
+      "direction": "NOT_MEASURED_UNIQUE_CAPABILITY",
+      "new_self_work": "FROZEN"
+    },
+    {
+      "domain": "Wide checked integer scan",
+      "decision": "KEEP_COMPLETE_CAPABILITY",
+      "reason": "Original IREE checked scan is preferred within its numeric-feature/grid domain; native wide prefix/overflow and core U32 storage capability remain distinct",
+      "source": "src/compute_route_vulkan/shaders/integer_scan.comp",
+      "source_sha256": "6e943c8bb3dfe76e80e1b9917a200d3b465afac2feb4076ab7ccdf4efd704950",
+      "contract_test": "tests/compute_route_vulkan/scan_test.cc",
+      "direction": "NOT_MEASURED_UNIQUE_CAPABILITY",
+      "new_self_work": "FROZEN"
+    },
+    {
+      "domain": "User custom SPIR-V and native buffer/command/fence code",
+      "decision": "KEEP_NATIVE_INTERFACE",
+      "reason": "Caller algorithm and required route resource mechanism, not an HYLE operator competitor",
+      "source": "src/compute_route_vulkan/vulkan_program.cc",
+      "source_sha256": "d99e0bb87e1b6caa503b099956cb3d0857c4fa19a250f27890be2623087fd070",
+      "contract_test": "tests/compute_route_vulkan/native_test.cc",
+      "direction": "NOT_MEASURED_UNIQUE_CAPABILITY",
+      "new_self_work": "FROZEN"
+    }
+  ],
+  "search_scope": [
+    "Locked ggml456172ec public Vulkan source and current typed region builders",
+    "Locked IREE6ef606 and registered original modules/feature/resource admission",
+    "Current native lowering and existing public typed/resource tests"
+  ],
+  "performance_limits": "No same-contract second complete mature carrier for fixed model numerical ports; single-carrier defaults use source/correctness/resource/P0, not timing competition. Graph frontend hot cost is separately compared to identical owned native Plan service."
+}

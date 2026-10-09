@@ -82,3 +82,21 @@ Graph前端对显式原生片段计划，验证低成本重复执行；不声称
 预检不过则不启动n15。通过后一次n15四strata与placement，5%门/原controls；无n31。
 先verify-only核对输出/两cycle/资源，再冻结candidate/toolchain/source ABI并运行。
 此处只授权bench接线和preflight，不提前给P1 PASS；无新增产品算法。
+
+## D2 有限残留裁决
+
+[逐域表](../../../../evidence/correctness/vulkan-v3-residual/decisions.json)核对当前native
+lowering、锁定原ggml Vulkan和已注册IREE完整程序及相应公开测试，不按库名判断。
+12组残留分别属于字节/整数/NaN-RNE存储、低feature域、完整严格数学、checked
+索引/发布/重复更新、wide prefix或用户自带SPIR-V/资源机制；没有已证明完整冗余域。
+固定模型数学端口已成熟承载；所有可用ggml/IREE默认都在native compatibility前绑定。
+保留的source在重叠域不是另一个可热搜的候选；仅独有完整能力仍保留，不伪称性能WIN。
+
+原Relu/Gelu可运行正常有限数值并不等于完整NaN/Inf/尾部合同；原512-lane kernel也
+不能替128-lane设备域。当前只审已锁定source/API/program，未扩大operator目录或
+研究自研优化。无完整同合同第二承载时按用户既定原则不造竞赛；未来成熟完整替代
+资格化即触发定向删除，不因当前保留授予SOTA。SIMD及下层资源没有改动。
+
+D3 verify-only 已执行：两完整片段、两端输出/两cycle/资源预算PASS，实际dispatch/
+managed-region数量及cold/warm常驻字节逐端完全相同；Graph对显式native-plan。
+原完整算法/精度/接口仍稳定，下一步仅该合同的唯一A/A资格及适用n15，预算不重置旧比较。
