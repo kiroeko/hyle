@@ -122,3 +122,6 @@ selected FP4/FP8、尾尺度与encoded MatMul、三QAT全有限BF16及资源/fin
 同输入F32原程序+既有native BF16边界替代失格fused变体，原算法/精度门保持；原失败保留。
 当前整体估计约30%，LOC62,261/265文件。剩余三个扩展IQ1、全actual合同/完整model-state
 分支仍未证明；V3/default/P1与V4平台/三交付也未完成，不能签Vulkan全收口。
+
+剩余 8 个专家合同进入[三种原 IQ1 程序批次](vulkan-parity-v2-iq1-bindings.md)；
+原 GPU 网格/计算、checked 索引与一子组 workspace 已审计，有限 I1–I5 先固定再接线。

@@ -546,14 +546,14 @@
     {
       "module": "compute_route_vulkan",
       "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/vulkan-parity-v2-official-float-bindings.md",
-      "summary": "Vulkan official float batch AUDITED: exact 13 original programs/27 offline schedules, ordered block scaling, finite GPU control, rank3 carriers and bounded F1-F6. Prior artifact/MLX source-chain evidence retained; actual catalogue/delivery/P1 pending."
+      "record": "docs/implementation/tasks/compute/vulkan-parity-v2-iq1-bindings.md",
+      "summary": "Vulkan IQ1 original GPU batch AUDITED: eight expert contracts, exact registered source/grid/layout; finite I1-I5 native selected-group carrier, checked publication, one-group workspace and offline provenance."
     },
     {
       "module": "graph_route_vulkan",
       "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/vulkan-parity-v2-official-float-bindings.md",
-      "summary": "Vulkan official float batch AUDITED: exact 13 original programs/27 offline schedules, ordered block scaling, finite GPU control, rank3 carriers and bounded F1-F6. Prior artifact/MLX source-chain evidence retained; actual catalogue/delivery/P1 pending."
+      "record": "docs/implementation/tasks/compute/vulkan-parity-v2-iq1-bindings.md",
+      "summary": "Vulkan IQ1 original GPU batch AUDITED: eight expert contracts, exact registered source/grid/layout; finite I1-I5 native selected-group carrier, checked publication, one-group workspace and offline provenance."
     },
     {
       "module": "compute_provider_ggml_vulkan",
@@ -620,8 +620,8 @@
     {
       "module": "compute_provider_iree_vulkan",
       "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/vulkan-parity-v2-official-float-bindings.md",
-      "summary": "Vulkan official float batch AUDITED: exact 13 original programs/27 offline schedules, ordered block scaling, finite GPU control, rank3 carriers and bounded F1-F6. Prior artifact/MLX source-chain evidence retained; actual catalogue/delivery/P1 pending."
+      "record": "docs/implementation/tasks/compute/vulkan-parity-v2-iq1-bindings.md",
+      "summary": "Vulkan IQ1 original GPU batch AUDITED: eight expert contracts, exact registered source/grid/layout; finite I1-I5 native selected-group carrier, checked publication, one-group workspace and offline provenance."
     },
     {
       "module": "compute_provider_torch_cuda",
