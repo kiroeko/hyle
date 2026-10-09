@@ -1,0 +1,36 @@
+{
+  "product_candidate": "c96c7c6eefb41f9aca71c92b4304814a731fe088",
+  "validation_source_commit": "c8874688646b6a91395cbcc2472d02099b4929fd",
+  "source_archive_sha256": "3770e2f2147120f527ff96a45af4a096ed846c791624e720582cb2eb4a88d4f5",
+  "machine": "MacBook Air Mac16,12 Apple M4 macOS27.0.1 AppleClang21",
+  "route": "apple",
+  "scope": "Actual source Direct/Graph native MLX/Metal FFN plus existing mature sample consumers, partial C3",
+  "rows": [
+    {
+      "entry": "source-direct",
+      "verdict": "PASS"
+    },
+    {
+      "entry": "source-graph",
+      "verdict": "PASS"
+    },
+    {
+      "entry": "shared-direct",
+      "verdict": "UNRUN"
+    },
+    {
+      "entry": "shared-graph",
+      "verdict": "UNRUN"
+    },
+    {
+      "entry": "static-direct",
+      "verdict": "UNRUN"
+    },
+    {
+      "entry": "static-graph",
+      "verdict": "UNRUN"
+    }
+  ],
+  "log_sha256": "a82851451d9951f61a2546405200a7ee5f6ee657ba284da0646ab89acb453879",
+  "remaining": "Shared/static, other platform/route/mixed entries and H1-H3 unproven"
+}

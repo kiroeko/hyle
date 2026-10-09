@@ -228,8 +228,8 @@
       "routes": "apple",
       "deliveries": {
         "source": {
-          "direct": "UNRUN",
-          "graph": "UNRUN"
+          "direct": "PASS",
+          "graph": "PASS"
         },
         "shared": {
           "direct": "UNRUN",
@@ -240,7 +240,9 @@
           "graph": "UNRUN"
         }
       },
-      "evidence": []
+      "evidence": [
+        "air-apple-partial.json"
+      ]
     },
     {
       "platform": "Darwin-Air",

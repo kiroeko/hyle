@@ -249,3 +249,10 @@ Windows Vulkan source实际构建完成但两消费者FAIL，[原始失败和有
 下一步只审计原成熟F32完整精度路径的接法及旧样例断言，不改误差门、不新增自研算子/用户开关。
 若需要改已CLOSED的ggml Vulkan Provider，先以此具体correctness反例绑定新owner卡SCOPED/AUDITED。
 现有677个source构建产物保留，定向修正后恢复对应阶段，不能重跑破坏root的整批driver。
+
+定向F32返修的Windows普通三交付/范围/30项资源和dtype回归均已实际通过，见当前
+[F32返修卡](../compute/vulkan-f32-matmul-admission-repair.md)，其跨平台尚待C3；不回写旧FAIL。
+下一串行批次已进入Air Apple-only：实际Mac16,12/Apple M4/macOS27.0.1/AppleClang21，
+完整validation源码c8874688（产品c96c7c6e加test/docs后续）hash核对后部署；source Direct/Graph
+两个真实消费者已PASS，shared/static仍未签，[部分收据](../../../../evidence/correctness/compute-unified-c3/air-apple-partial.json)。
+没有使用Mac mini或并行重型平台build。C3当前20消费者PASS、70项UNRUN，不签H1–H3。
