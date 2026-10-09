@@ -124,3 +124,8 @@ CPU-only SDK observations. Fresh shared/static configuration matches their respe
 feature set and recipe exactly; product headers/source/locks/build inputs, machine and math contract
 are unchanged. The old artifacts are not relabeled with a new source identity. This avoids rebuilding
 the same SDKs and does not transfer a best-of WIN to a different domain. Effective C3 count is 48/90.
+The [Air CPU+Vulkan partial receipt](air-cpu-vulkan-partial.json) now signs the two actual source
+consumers with both native routes enabled. Shared/static remain unrun; the serial original batch
+continues. Effective C3 count is 50/90, with no H3 joint/async/expert claim. Completed Windows mixed
+SDK build objects were removed after archived hash and process checks, freeing 4.05 GiB while keeping
+both relocated SDKs, source/consumer artifacts and dependency caches.

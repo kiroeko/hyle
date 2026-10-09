@@ -1,0 +1,33 @@
+Start testing: Oct 10 06:11 CST
+----------------------------------------------------------
+1/2 Testing: hyle_selected_source_consumer
+1/2 Test: hyle_selected_source_consumer
+Command: "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/source-build/hyle_selected_source_consumer"
+Directory: /Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/source-build
+"hyle_selected_source_consumer" start time: Oct 10 06:11 CST
+Output:
+----------------------------------------------------------
+<end of output>
+Test time =   6.93 sec
+----------------------------------------------------------
+Test Passed.
+"hyle_selected_source_consumer" end time: Oct 10 06:11 CST
+"hyle_selected_source_consumer" time elapsed: 00:00:06
+----------------------------------------------------------
+
+2/2 Testing: hyle_selected_source_compute
+2/2 Test: hyle_selected_source_compute
+Command: "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/source-build/hyle_selected_source_compute"
+Directory: /Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/source-build
+"hyle_selected_source_compute" start time: Oct 10 06:11 CST
+Output:
+----------------------------------------------------------
+<end of output>
+Test time =   0.63 sec
+----------------------------------------------------------
+Test Passed.
+"hyle_selected_source_compute" end time: Oct 10 06:11 CST
+"hyle_selected_source_compute" time elapsed: 00:00:00
+----------------------------------------------------------
+
+End testing: Oct 10 06:11 CST

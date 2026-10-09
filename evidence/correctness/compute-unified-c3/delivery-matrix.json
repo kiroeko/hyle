@@ -298,8 +298,8 @@
       "routes": "cpu;vulkan",
       "deliveries": {
         "source": {
-          "direct": "UNRUN",
-          "graph": "UNRUN"
+          "direct": "PASS",
+          "graph": "PASS"
         },
         "shared": {
           "direct": "UNRUN",
@@ -310,7 +310,9 @@
           "graph": "UNRUN"
         }
       },
-      "evidence": []
+      "evidence": [
+        "air-cpu-vulkan-partial.json"
+      ]
     }
   ],
   "not_applicable": [

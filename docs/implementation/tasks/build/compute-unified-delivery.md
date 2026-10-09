@@ -315,3 +315,10 @@ Air CPU 单路线现在已完成三交付：新 source Direct0.40s/Graph4.23s �
 相同，因此复用原四项 CPU 数学，不将原产物改标成新tree，也不重建相同 SDK。
 [CPU收据](../../../../evidence/correctness/compute-unified-c3/air-cpu-partial.json)保存新source、
 旧实际SDK身份与新配置匹配证明；C3当前48 PASS / 42 UNRUN。下一串行 Air CPU+Vulkan 新批次。
+
+Air CPU+Vulkan source 普通 Direct0.63s/Graph6.93s 两项真实数学现已 PASS，
+[组合收据](../../../../evidence/correctness/compute-unified-c3/air-cpu-vulkan-partial.json)保存实际完整
+源码/路线身份；shared配置的route-set也精确 `cpu;vulkan`，原循环继续shared/static，尚未签。
+C3当前50 PASS / 40 UNRUN，不签H3联合/异步。Windows已完成CPU+CUDA两个SDK producer object
+目录清理4,350,873,870 bytes（4.05GiB），两relocated SDK、source、所有consumer EXE/assets、
+machine cache和已核对SHA256的日志均保留，未删除产品源码或重启任何native批次。

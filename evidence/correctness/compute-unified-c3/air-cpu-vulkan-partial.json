@@ -1,0 +1,36 @@
+{
+  "scope": "Actual full CPU+Vulkan ordinary mixed delivery, each route executes native math; not H3 joint/async/expert execution",
+  "product_candidate": "530e230bbc11e4fe12218a6a021ca15b009337c3",
+  "validation_source_commit": "ed2dd3c3869be140fa6e63c439c3f8479a3deb6c",
+  "source_archive_sha256": "98ef74990ec0e679a9293444c1f01800d8c3d3ac18e8a02bd8eb2e0c81ddd09a",
+  "routes": "cpu;vulkan",
+  "rows": [
+    {
+      "entry": "source-direct",
+      "verdict": "PASS"
+    },
+    {
+      "entry": "source-graph",
+      "verdict": "PASS"
+    },
+    {
+      "entry": "shared-direct",
+      "verdict": "UNRUN"
+    },
+    {
+      "entry": "shared-graph",
+      "verdict": "UNRUN"
+    },
+    {
+      "entry": "static-direct",
+      "verdict": "UNRUN"
+    },
+    {
+      "entry": "static-graph",
+      "verdict": "UNRUN"
+    }
+  ],
+  "source_log": "evidence/correctness/compute-unified-c3/air-cpu-vulkan/source-ctest.log",
+  "source_log_sha256": "acd00602dab6c79c5c22848755239bd956a16ee0901b6d1c827c923920f15f9d",
+  "remaining": "Original serial driver continues shared/static. Other C3 and H1-H3 unproven."
+}
