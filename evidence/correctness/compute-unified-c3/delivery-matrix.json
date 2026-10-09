@@ -1,0 +1,318 @@
+{
+  "scope": "C3 declared single-route and CPU+one-GPU source/shared/static SDK delivery, ordinary Direct/Graph consumers",
+  "product_candidate": "79137d31ce1bec9053d3a4f92f2892e3a21cbb80",
+  "identity_note": "Each receipt owns actual product/configuration/linkage identities. Windows CPU original and shipping-default-corrected identities are distinguished in its receipt.",
+  "meaning": "Mixed SDK consumers execute each selected route independently. This matrix does not certify H1-H3 joint execution, overlap, expert transfer, model capacity or all operator coverage.",
+  "shape_count": 45,
+  "consumer_entry_count": 90,
+  "rows": [
+    {
+      "platform": "Windows",
+      "routes": "cpu",
+      "deliveries": {
+        "source": {
+          "direct": "PASS",
+          "graph": "PASS"
+        },
+        "shared": {
+          "direct": "PASS",
+          "graph": "PASS"
+        },
+        "static": {
+          "direct": "PASS",
+          "graph": "PASS"
+        }
+      },
+      "evidence": [
+        "windows-cpu-partial.json",
+        "windows-cpu-receipt.json"
+      ]
+    },
+    {
+      "platform": "Windows",
+      "routes": "cuda",
+      "deliveries": {
+        "source": {
+          "direct": "PASS",
+          "graph": "PASS"
+        },
+        "shared": {
+          "direct": "UNRUN",
+          "graph": "UNRUN"
+        },
+        "static": {
+          "direct": "UNRUN",
+          "graph": "UNRUN"
+        }
+      },
+      "evidence": [
+        "windows-cuda-partial.json"
+      ]
+    },
+    {
+      "platform": "Windows",
+      "routes": "vulkan",
+      "deliveries": {
+        "source": {
+          "direct": "UNRUN",
+          "graph": "UNRUN"
+        },
+        "shared": {
+          "direct": "UNRUN",
+          "graph": "UNRUN"
+        },
+        "static": {
+          "direct": "UNRUN",
+          "graph": "UNRUN"
+        }
+      },
+      "evidence": []
+    },
+    {
+      "platform": "Windows",
+      "routes": "cpu;cuda",
+      "deliveries": {
+        "source": {
+          "direct": "UNRUN",
+          "graph": "UNRUN"
+        },
+        "shared": {
+          "direct": "UNRUN",
+          "graph": "UNRUN"
+        },
+        "static": {
+          "direct": "UNRUN",
+          "graph": "UNRUN"
+        }
+      },
+      "evidence": []
+    },
+    {
+      "platform": "Windows",
+      "routes": "cpu;vulkan",
+      "deliveries": {
+        "source": {
+          "direct": "UNRUN",
+          "graph": "UNRUN"
+        },
+        "shared": {
+          "direct": "UNRUN",
+          "graph": "UNRUN"
+        },
+        "static": {
+          "direct": "UNRUN",
+          "graph": "UNRUN"
+        }
+      },
+      "evidence": []
+    },
+    {
+      "platform": "Linux-WSL",
+      "routes": "cpu",
+      "deliveries": {
+        "source": {
+          "direct": "UNRUN",
+          "graph": "UNRUN"
+        },
+        "shared": {
+          "direct": "UNRUN",
+          "graph": "UNRUN"
+        },
+        "static": {
+          "direct": "UNRUN",
+          "graph": "UNRUN"
+        }
+      },
+      "evidence": []
+    },
+    {
+      "platform": "Linux-WSL",
+      "routes": "cuda",
+      "deliveries": {
+        "source": {
+          "direct": "UNRUN",
+          "graph": "UNRUN"
+        },
+        "shared": {
+          "direct": "UNRUN",
+          "graph": "UNRUN"
+        },
+        "static": {
+          "direct": "UNRUN",
+          "graph": "UNRUN"
+        }
+      },
+      "evidence": []
+    },
+    {
+      "platform": "Linux-WSL",
+      "routes": "vulkan",
+      "deliveries": {
+        "source": {
+          "direct": "UNRUN",
+          "graph": "UNRUN"
+        },
+        "shared": {
+          "direct": "UNRUN",
+          "graph": "UNRUN"
+        },
+        "static": {
+          "direct": "UNRUN",
+          "graph": "UNRUN"
+        }
+      },
+      "evidence": []
+    },
+    {
+      "platform": "Linux-WSL",
+      "routes": "cpu;cuda",
+      "deliveries": {
+        "source": {
+          "direct": "UNRUN",
+          "graph": "UNRUN"
+        },
+        "shared": {
+          "direct": "UNRUN",
+          "graph": "UNRUN"
+        },
+        "static": {
+          "direct": "UNRUN",
+          "graph": "UNRUN"
+        }
+      },
+      "evidence": []
+    },
+    {
+      "platform": "Linux-WSL",
+      "routes": "cpu;vulkan",
+      "deliveries": {
+        "source": {
+          "direct": "UNRUN",
+          "graph": "UNRUN"
+        },
+        "shared": {
+          "direct": "UNRUN",
+          "graph": "UNRUN"
+        },
+        "static": {
+          "direct": "UNRUN",
+          "graph": "UNRUN"
+        }
+      },
+      "evidence": []
+    },
+    {
+      "platform": "Darwin-Air",
+      "routes": "cpu",
+      "deliveries": {
+        "source": {
+          "direct": "UNRUN",
+          "graph": "UNRUN"
+        },
+        "shared": {
+          "direct": "UNRUN",
+          "graph": "UNRUN"
+        },
+        "static": {
+          "direct": "UNRUN",
+          "graph": "UNRUN"
+        }
+      },
+      "evidence": []
+    },
+    {
+      "platform": "Darwin-Air",
+      "routes": "apple",
+      "deliveries": {
+        "source": {
+          "direct": "UNRUN",
+          "graph": "UNRUN"
+        },
+        "shared": {
+          "direct": "UNRUN",
+          "graph": "UNRUN"
+        },
+        "static": {
+          "direct": "UNRUN",
+          "graph": "UNRUN"
+        }
+      },
+      "evidence": []
+    },
+    {
+      "platform": "Darwin-Air",
+      "routes": "vulkan",
+      "deliveries": {
+        "source": {
+          "direct": "UNRUN",
+          "graph": "UNRUN"
+        },
+        "shared": {
+          "direct": "UNRUN",
+          "graph": "UNRUN"
+        },
+        "static": {
+          "direct": "UNRUN",
+          "graph": "UNRUN"
+        }
+      },
+      "evidence": []
+    },
+    {
+      "platform": "Darwin-Air",
+      "routes": "cpu;apple",
+      "deliveries": {
+        "source": {
+          "direct": "UNRUN",
+          "graph": "UNRUN"
+        },
+        "shared": {
+          "direct": "UNRUN",
+          "graph": "UNRUN"
+        },
+        "static": {
+          "direct": "UNRUN",
+          "graph": "UNRUN"
+        }
+      },
+      "evidence": []
+    },
+    {
+      "platform": "Darwin-Air",
+      "routes": "cpu;vulkan",
+      "deliveries": {
+        "source": {
+          "direct": "UNRUN",
+          "graph": "UNRUN"
+        },
+        "shared": {
+          "direct": "UNRUN",
+          "graph": "UNRUN"
+        },
+        "static": {
+          "direct": "UNRUN",
+          "graph": "UNRUN"
+        }
+      },
+      "evidence": []
+    }
+  ],
+  "not_applicable": [
+    {
+      "platform": "Windows",
+      "routes": "apple/cpu;apple",
+      "reason": "Native Apple route requires Darwin aarch64"
+    },
+    {
+      "platform": "Linux-WSL",
+      "routes": "apple/cpu;apple",
+      "reason": "Native Apple route requires Darwin aarch64"
+    },
+    {
+      "platform": "Darwin-Air",
+      "routes": "cuda/cpu;cuda",
+      "reason": "Native CUDA route requires Windows or Linux"
+    }
+  ],
+  "heavy_execution": "Serial batches, build2/test1; one Graph producer also signs the existing Direct consumer; completed entries are retained, not restarted because of documentation changes."
+}

@@ -185,3 +185,8 @@ Windows CUDA 源码嵌入的真实 Direct/Graph FFN 两项已 PASS，实际 RTX4
 所需DLL均在EXE邻侧，未构建HYLE CPU backend或oneDNN。原批次继续shared/static，不重跑source。
 最终不可变候选79137d31的selector计划READY，逐commit产品授权无issue；全共享接缝superset保留，
 不把计划或跳过项写成执行PASS。新增适用Torch CPU平台/版本元数据测试已实际通过，不签模型数学。
+
+C3已约定平台/路线展开为[15组交付矩阵](../../../../evidence/correctness/compute-unified-c3/delivery-matrix.json)：
+Windows/WSL各cpu、cuda、vulkan、cpu+cuda、cpu+vulkan；Air为cpu、apple、vulkan、cpu+apple、cpu+vulkan。
+每组source/shared/static共45格，每格普通Direct/Graph两消费者。当前8项消费者PASS、82项UNRUN；
+mixed SDK仅验证其两条native路线分别可用，不代签H1–H3联合、异步或专家搬运。

@@ -3,6 +3,11 @@
 This is ongoing validation for the [active delivery card](../../../docs/implementation/tasks/build/compute-unified-delivery.md).
 It is not a terminal verdict for all platforms/routes, hybrid execution, or asynchronous expert transfers.
 
+[Delivery matrix](delivery-matrix.json) fixes the declared applicable scope: 15 platform/route groups,
+45 source/shared/static shapes, each with the existing Direct and Graph consumer. Eight consumer entries
+are currently PASS; the other 82 are UNRUN. A mixed SDK entry runs each selected native route independently
+and cannot certify the later joint execution or asynchronous transfer work.
+
 - [Windows CPU receipt](windows-cpu-receipt.json): six actual public math consumers passed,
   covering Direct and Graph in embedded source, relocated shared SDK and relocated static SDK.
 - [Per-entry result](windows-cpu-partial.json): exact observed test logs and distinct product identities;
