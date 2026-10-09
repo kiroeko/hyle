@@ -37,3 +37,7 @@ staging payload 被有边界删除，避免旧 ABI/未选资产遗留。Air 两 
 组合与请求不符，见[元数据审计](../../../../evidence/correctness/compute-unified-c3/mixed-sdk-route-failure/archived-sdk-route-audit.json)。
 这项只签 metadata，不重跑或升级数学资格。Air 原错误包 payload 已清理，source、build objects
 和 machine SDK/cache 保留；修正后的原 shared/static 循环已经准备，待 Windows 重型批次结束后串行执行。
+
+WSL 的完整验证源码也以同一 ed2dd3c3 archive/hash 更新，原目录保留；实际 CMake3.28.3 的
+转发/完整路线 guard 两项 PASS。此项只签工具行为，不签 WSL CPU/CUDA/Vulkan 数学或 GPU。
+后续 Unix launcher 已绑定新 source identity，不把新版工具误标旧 snapshot。
