@@ -39,11 +39,8 @@ endforeach()
   file(GENERATE OUTPUT "${_script}" CONTENT "${_content}")
   add_custom_target(${_stage}
     COMMAND "${CMAKE_COMMAND}" -P "${_script}"
-    DEPENDS ${_assets}
+    DEPENDS ${_assets} ${producers}
     VERBATIM)
-  if(producers)
-    add_dependencies(${_stage} ${producers})
-  endif()
   add_dependencies(${target} ${_stage})
   set_property(TARGET ${target} PROPERTY HYLE_APPLE_RUNTIME_STAGING_TARGET ${_stage})
 endfunction()

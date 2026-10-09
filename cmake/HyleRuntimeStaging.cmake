@@ -58,7 +58,7 @@ function(_hyle_runtime_files_walk owner condition ancestors output)
       get_target_property(_imported "${owner}" IMPORTED)
       if(NOT _imported)
         set_property(GLOBAL APPEND PROPERTY HYLE_RUNTIME_WALK_APPLE_PRODUCERS
-          "${owner}")
+          "$<${condition}:${owner}>")
       endif()
     endif()
   endif()

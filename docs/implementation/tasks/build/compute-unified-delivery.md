@@ -227,3 +227,8 @@ Windows CUDA原不可变79137d31批次已exit0：source/shared/static × Direct/
 撤去无条件`add_dependencies(stage, producers)`。不改公共API、数学、路由/flags或仪器。
 验收只选已有元数据回归、已经固定的两generator正反/跨目录构建图，以及后续实际Apple三交付；
 非Apple已通过格因不触及此路径保留，不重建、不跑P1。实现后立即冻结新candidate并继续C3剩余矩阵。
+
+AUDITED有限FIX已应用：仅两helper共4行净改动，producer条件和stage依赖正确传递；
+现有Debug/Release条件、alias/diamond/cycle/reset元数据回归实际PASS；Windows新目录中
+直接复制产品helper的真实library正/反分支及跨目录资产生成/复制实际PASS。
+未改include/C++/shader、Provider或路由；Air同产品helper的Makefiles复核及Apple native交付继续C3。
