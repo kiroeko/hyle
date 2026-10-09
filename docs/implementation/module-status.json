@@ -541,14 +541,14 @@
     {
       "module": "compute_route_vulkan",
       "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/vulkan-parity-v2-family-qualification.md",
-      "summary": "V2 Windows coverage qualified: both entrances80/80 non-GGUF,560/560 GGUF/identity,25/25 current state,40 remaining family consumers;80 parameter roles/eight families associated, eight full IQ1 E512/896 banks replay/edge-index PASS. V3 defaults/P1/self and V4 platform/three deliveries pending."
+      "record": "docs/implementation/tasks/compute/vulkan-parity-v3-defaults-best-of.md",
+      "summary": "V3 D1 AUDITED: sparse actual environment/build/provider facts and common cold selectors bind existing mature defaults with full workload/ports; unknown facts preserve legal defaults. V2 Windows coverage retained; residual contract audit, bounded same-contract P1 and V4 remain."
     },
     {
       "module": "graph_route_vulkan",
       "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/vulkan-parity-v2-family-qualification.md",
-      "summary": "V2 Windows coverage qualified: both entrances80/80 non-GGUF,560/560 GGUF/identity,25/25 current state,40 remaining family consumers;80 parameter roles/eight families associated, eight full IQ1 E512/896 banks replay/edge-index PASS. V3 defaults/P1/self and V4 platform/three deliveries pending."
+      "record": "docs/implementation/tasks/compute/vulkan-parity-v3-defaults-best-of.md",
+      "summary": "V3 D1 AUDITED: sparse actual environment/build/provider facts and common cold selectors bind existing mature defaults with full workload/ports; unknown facts preserve legal defaults. V2 Windows coverage retained; residual contract audit, bounded same-contract P1 and V4 remain."
     },
     {
       "module": "compute_provider_ggml_vulkan",

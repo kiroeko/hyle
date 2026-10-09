@@ -1,6 +1,6 @@
 # Vulkan V3：成熟默认、条件绑定与有限成本裁决
 
-<!-- MODULE REVIEW: SCOPED -->
+<!-- MODULE REVIEW: AUDITED -->
 
 baseline `755dec4c5`；owners `compute_route_vulkan`、`graph_route_vulkan`，必要的
 原region接线归 `compute_provider_ggml_vulkan`。V2 Windows 104/559/80/34/45/八族及
@@ -28,3 +28,22 @@ Windows同producer build2/test1、重型串行、DLL邻置/隐藏child；已过V
 验证只新默认/条件/真实重叠、必要资源与直接Graph消费者delta；三平台/三交付仍V4。
 必须selector、closure明确previous-ref、docs/diff与统一LOC。本文SCOPED前段只读，
 具体原算子漏绑定及删除表固定后再AUDITED，不扩模型、算子研究或公共治理。
+
+## D1 有限FIX已审计
+
+现有RouteFacts保留vendor/device/name/driver/API/subgroup，但未接线、缺编译SDK/原
+provider源码版本，空文本还会成为InvalidFacts。仅修改route owner：Environment冷事实
+补SDK/ggml/IREE源码身份，route_facts改为稀疏有效事实；既有所有原typed/capacity
+admission前接入固定ggml/IREE默认selector，PlanStep输入/输出、workload全字段传入共同
+matcher。默认selector不约束特定机器/模型；窄条件可用共同matcher，未知facts不得命中
+窄规则、仍可匹配合法成熟默认。GPU代数未可靠提供则未知，不猜SM或借CUDA探测。
+matcher只prepare执行，native执行状态/资源/融合形状不变，没有新用户偏好或hot metadata。
+Graph实现说明的旧十格式名单同步当前原承载范围，不改接口责任。
+
+source/contract审计还证明Relu/Gelu原shader虽存在，但完整公开NaN/Inf/负尾语义不同；
+不能凭正常有限输入计时认完整替代。native低feature/严格存储等独有域暂不删除，D2表逐
+域继续源裁决，只有真实完整重复才比较或清退。D3的旧不等责配对仍不运行。
+
+首批验证只新条件适配的组合字段/unknown facts/default、两入口ggml/IREE实际链与
+workload保留、Graph报告和必要重放；V2相同typed/math大矩阵不重跑。公共matcher与
+共享模块不改，CMake只配置现有生成头里的锁定事实，不新增依赖/用户开关。
