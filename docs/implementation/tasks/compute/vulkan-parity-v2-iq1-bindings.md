@@ -67,3 +67,8 @@ private native 再独立验证银行字节、activation 与 32-lane workspace；
 独立 CPU 网格差分 fixture。集中构建修正仅测试误引用未导出的私有 helper，移除
 这条内部断言，保留普通 prepare 的 actual geometry 验收；不为测试导出私有 API。
 [原始批次证据](../../../../evidence/correctness/vulkan-parity-v2-iq1/README.md)记录实际结果。
+
+Windows 首候选 `6920e7a35` native owner7/7及两入口8 actual冷shape准备通过。
+两个运行ID失败的一次具名 status 捕获定位为 fixture 误用 floating-only helper
+上传 I32 IDs，实际 1/2 被编码为浮点位型而正确拒绝。只修本包 I32 payload，
+产品/原数学/误差门保持；定向复验两个未过ID，已过owner/冷域不重跑。

@@ -1,0 +1,27 @@
+Running main() from C:\public\tools\hyle-dependencies\v1\sources\googletest-063de7e9578f-162765170ae6\googletest\src\gtest_main.cc
+Note: Google Test filter = VulkanGraph.OriginalIq1*
+[==========] Running 3 tests from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 3 tests from VulkanGraph
+[ RUN      ] VulkanGraph.OriginalIq1ExpertProgramsAndChangedInputs
+unknown file: error: C++ exception with description "Bad expected access" thrown in the test body.
+
+[  FAILED  ] VulkanGraph.OriginalIq1ExpertProgramsAndChangedInputs (228 ms)
+[ RUN      ] VulkanGraph.OriginalIq1ActualPackedGeometryAndFeatureBoundaries
+[       OK ] VulkanGraph.OriginalIq1ActualPackedGeometryAndFeatureBoundaries (232 ms)
+[ RUN      ] VulkanGraph.OriginalIq1IndependentLeaseCancelCloseAndOom
+C:\public\project-hyle\hyle\tests\graph_route_vulkan\../compute_route_vulkan/iq1_test_support.h(141): error: Value of: r1
+  Actual: false
+Expected: true
+
+[  FAILED  ] VulkanGraph.OriginalIq1IndependentLeaseCancelCloseAndOom (189 ms)
+[----------] 3 tests from VulkanGraph (651 ms total)
+
+[----------] Global test environment tear-down
+[==========] 3 tests from 1 test suite ran. (651 ms total)
+[  PASSED  ] 1 test.
+[  FAILED  ] 2 tests, listed below:
+[  FAILED  ] VulkanGraph.OriginalIq1ExpertProgramsAndChangedInputs
+[  FAILED  ] VulkanGraph.OriginalIq1IndependentLeaseCancelCloseAndOom
+
+ 2 FAILED TESTS

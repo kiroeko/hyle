@@ -18,6 +18,12 @@ namespace v = c::vulkan;
 namespace t = vulkan_tensor_test;
 inline constexpr std::array types{c::GgufQuantizedType::kIq1Xs,
     c::GgufQuantizedType::kIq1Xxs, c::GgufQuantizedType::kIq1Xxxs};
+inline v::Tensor upload_ids(const v::Context &context, const c::TensorDesc &description,
+                           std::span<const double> values) {
+  std::vector<std::int32_t> ids;
+  for (auto value : values) ids.push_back(static_cast<std::int32_t>(value));
+  return context.upload(description, std::as_bytes(std::span(ids))).value();
+}
 
 struct Inputs {
   c::GgufQuantizedType type;
@@ -83,7 +89,7 @@ struct Inputs {
   }
   std::array<v::Tensor, 3> upload(const v::Context &context) const {
     return {context.upload(descriptions[0], weight).value(),
-            t::make(context, descriptions[1], activation), t::make(context, descriptions[2], ids)};
+            t::make(context, descriptions[1], activation), upload_ids(context, descriptions[2], ids)};
   }
 };
 
@@ -93,14 +99,15 @@ template <class Prepare> void batch(Prepare prepare) {
     SCOPED_TRACE(::testing::Message() << "IQ1 format=" << static_cast<unsigned>(type) << " k=" << k << " slots=" << s);
     Inputs first(type, k, s), second(type, k, s, 1);
     auto prepared = prepare(context, c::model_ops::grouped_matmul(), first.descriptions);
-    ASSERT_TRUE(prepared) << prepared.error().message();auto slot = prepared->create_invocation().value();
+    ASSERT_TRUE(prepared) << prepared.error().message();auto invocation = prepared->create_invocation();
+    ASSERT_TRUE(invocation) << invocation.error().message();auto slot = std::move(*invocation);
     for (const auto *data : {&first, &second}) {
       ASSERT_TRUE(slot.bind(data->upload(context)).ok());auto work = slot.submit().value();auto result = work.wait();
       ASSERT_TRUE(result) << result.error().message();t::expect(context, result->get()->tensors()[0], data->expected());
     }
     for (double bad : {-1.0, 3.0, 2147483647.0}) {
       auto failed = prepared->create_invocation().value();auto inputs = first.upload(context);auto ids = first.ids;ids.back() = bad;
-      inputs[2] = t::make(context, first.descriptions[2], ids);
+      inputs[2] = upload_ids(context, first.descriptions[2], ids);
       ASSERT_TRUE(failed.bind(inputs).ok());auto work = failed.submit().value();auto result = work.wait();
       ASSERT_FALSE(result);EXPECT_TRUE(result.error().IsInvalidArgument());EXPECT_FALSE(failed.submit());
     }
@@ -138,7 +145,7 @@ template <class Prepare> void lifecycle(Prepare prepare) {
     auto first = program.create_invocation().value(), second = program.create_invocation().value();
     ASSERT_TRUE(first.bind(a.upload(context)).ok());ASSERT_TRUE(second.bind(b.upload(context)).ok());v::Tensor retained;
     { auto one = first.submit().value(), two = second.submit().value();auto r2 = two.wait(), r1 = one.wait();
-      ASSERT_TRUE(r1);ASSERT_TRUE(r2);t::expect(context,r1->get()->tensors()[0],a.expected());t::expect(context,r2->get()->tensors()[0],b.expected());
+      ASSERT_TRUE(r1) << r1.error().message();ASSERT_TRUE(r2) << r2.error().message();t::expect(context,r1->get()->tensors()[0],a.expected());t::expect(context,r2->get()->tensors()[0],b.expected());
       retained = r1->get()->tensors()[0]; }
     EXPECT_FALSE(first.submit());
     { auto cancelled = second.submit().value();ASSERT_TRUE(cancelled.request_cancel().ok());auto result = cancelled.wait();
