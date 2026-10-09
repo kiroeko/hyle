@@ -80,10 +80,24 @@ struct NativeDevice::State final {
 Result<NativeDevice> NativeDevice::create(NativeOptions options) noexcept {
   try {
     auto state = std::make_shared<State>();
-    HYLE_ASSIGN_OR_RETURN(state->loader,
-                          platform::DynLib::open(options.loader_path
-                                                     ? options.loader_path
-                                                     : default_loader()));
+    auto loader = platform::DynLib::open(options.loader_path
+                                            ? options.loader_path
+                                            : default_loader());
+#if HYLE_OS_MACOS
+    // Homebrew's native Vulkan runtime is provisioned outside dyld's bare-name
+    // search. Discover it once in the route owner; explicit overrides stay final.
+    if (!loader && !options.loader_path) {
+      for (const auto *path : {"/opt/homebrew/lib/libvulkan.1.dylib",
+                              "/usr/local/lib/libvulkan.1.dylib"}) {
+        loader = platform::DynLib::open(path);
+        if (loader)
+          break;
+      }
+    }
+#endif
+    if (!loader)
+      return std::unexpected(std::move(loader).error());
+    state->loader = std::move(*loader);
     HYLE_ASSIGN_OR_RETURN(auto get,
                           state->loader.symbol_as<PFN_vkGetInstanceProcAddr>(
                               "vkGetInstanceProcAddr"));
