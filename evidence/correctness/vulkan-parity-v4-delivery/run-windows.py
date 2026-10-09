@@ -37,6 +37,7 @@ for line in vc_env.splitlines():
         if name.lower() == 'path' and '\\VC\\Tools\\MSVC\\' not in value: continue
         os.environ[name] = value
 os.environ['HYLE_DEP_SOURCE_CACHE'] = 'C:/public/tools/hyle-dependencies/v1'
+os.environ['VULKAN_SDK'] = 'C:/public/tools/hyle-vulkan/1.4.357.0'
 
 if args.attempt and not re.fullmatch(r'[a-z0-9-]+', args.attempt):
     raise SystemExit('Use a simple lowercase attempt name.')

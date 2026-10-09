@@ -1,0 +1,8 @@
+{
+  "candidate": "5ff5ca23",
+  "stage": "source configure; no source build/runtime",
+  "failure": "Independent source consumer did not inherit the live producer cached SPIRV-Headers_DIR; original ggml requires the Vulkan SDK package path",
+  "source_evidence": "Original src/ggml-vulkan/CMakeLists.txt lines11-14 appends VULKAN_SDK before find_package(SPIRV-Headers CONFIG REQUIRED)",
+  "correction": "Provide the already installed standard VULKAN_SDK environment in the fixed Windows batch; do not change product code or use another SDK",
+  "product_changed": false
+}
