@@ -24,16 +24,21 @@
     },
     {
       "entry": "static-direct",
-      "verdict": "UNRUN"
+      "verdict": "PASS",
+      "log": "evidence/correctness/compute-unified-c3/windows-vulkan/static-compute-consumer-ctest.log",
+      "sha256": "733ff03f102e8b8870d37ad2d2836b5d2a3ab27bb71f09d65b9d2e1f55f1e493"
     },
     {
       "entry": "static-graph",
-      "verdict": "UNRUN"
+      "verdict": "PASS",
+      "log": "evidence/correctness/compute-unified-c3/windows-vulkan/static-consumer-ctest.log",
+      "sha256": "e80ae13530b6387ea3f48c4b0c274464ebcbe47ef5ae552e4e9ec0a9c546044c"
     }
   ],
   "log_sha256": "9ca004af18d13f945b3bbdcad2c2b1bff89f0bfd961624c06f89f5018b94aa32",
   "numeric_gate": "unchanged 1e-4 + 4e-5*abs(expected); actual source FFN rows1/16 and three changed inputs",
   "before_failures": "Preserved in windows-vulkan-failure; first incomplete repair candidate also failed, not relabeled",
   "remaining": "F32 range/resource/operator regressions, source/shared/static applicable platform delivery and joint execution remain unproven",
-  "extra_range_case": "Added after shared compile; UNRUN until dedicated tiny consumer rebuild, no FFN replay implied"
+  "extra_range_case": "PASS source/shared/static Direct after necessary tiny consumer rebuilds; dense/transposed RHS, huge/tiny/non-F16-exact F32 input, two changed bindings. SDKs not rebuilt for test-only addition.",
+  "batch_exit_code": 0
 }

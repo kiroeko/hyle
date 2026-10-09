@@ -90,3 +90,8 @@ Windows relocated shared的Direct/Graph FFN也实际PASS（1.43s/1.21s），已�
 现有普通Direct consumer增补F32范围case：65536、2^-25与非F16可精确表示的输入，dense和
 转置RHS各两次更新；无需编译第二套Provider或修改误差门。此case加在已完成shared编译之后，
 不冒称已运行，待本批static结束后只补构建tiny consumer，不重建SDK。
+
+Windows static原循环exit0，Direct/Graph也PASS（0.39s/0.34s），三交付六项普通消费者完成。
+新增F32范围case实际source/shared/static Direct均PASS；source/shared只补一个consumer TU，
+未重建SDK，[三格收据](../../../../evidence/correctness/compute-unified-c3/windows-vulkan-range.json)已保存。
+接着在唯一DEV_FACTORS Vulkan闭包构建既有Provider、Direct、Graph三个测试目标；不恢复旧全库队列。

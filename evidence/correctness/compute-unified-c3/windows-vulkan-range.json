@@ -1,0 +1,25 @@
+{
+  "product_candidate": "c96c7c6eefb41f9aca71c92b4304814a731fe088",
+  "consumer_revision": "0747d8855",
+  "scope": "Additional public F32 range/transposed/replay precision regression in three deliveries; not full resource/platform qualification",
+  "rows": [
+    {
+      "shape": "source-build",
+      "log": "evidence/correctness/compute-unified-c3/windows-vulkan/source-range-ctest.log",
+      "sha256": "663cc6ec94b06f190472ca2bef1f4d8c78cf935d3671cce03d48b596653e397d",
+      "verdict": "PASS"
+    },
+    {
+      "shape": "shared-compute-consumer",
+      "log": "evidence/correctness/compute-unified-c3/windows-vulkan/shared-range-ctest.log",
+      "sha256": "276786197ed538fed8b7f378883ec410fb5431d1b81aa0d57e4b576dc2b525de",
+      "verdict": "PASS"
+    },
+    {
+      "shape": "static-compute-consumer",
+      "log": "evidence/correctness/compute-unified-c3/windows-vulkan/static-range-ctest.log",
+      "sha256": "733ff03f102e8b8870d37ad2d2836b5d2a3ab27bb71f09d65b9d2e1f55f1e493",
+      "verdict": "PASS"
+    }
+  ]
+}
