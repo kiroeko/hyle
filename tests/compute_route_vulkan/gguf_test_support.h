@@ -6,12 +6,15 @@
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
+#include <cstring>
 #include <span>
 #include <vector>
 
 #include "hyle/compute/low_precision.h"
 #include "hyle/compute/model_ops.h"
 #include "tensor_test_support.h"
+#include "../compute_models/d5_gguf_test_support.h"
+#include "vulkan_program_internal.h"
 
 namespace vulkan_gguf_test {
 namespace c = hyle::compute;
@@ -40,6 +43,23 @@ inline constexpr std::array kGroupedTypes{
     c::GgufQuantizedType::kIq2Xxs, c::GgufQuantizedType::kIq2Xs,
     c::GgufQuantizedType::kIq2S, c::GgufQuantizedType::kIq1S,
     c::GgufQuantizedType::kIq1M};
+
+inline bool iq1_delta() {
+#if defined(_WIN32)
+  char *value = nullptr; std::size_t size = 0;
+  const bool selected = _dupenv_s(&value, &size, "HYLE_VULKAN_IQ1_DELTA") == 0 && value && value[0] == '1';
+  std::free(value); return selected;
+#else
+  const auto *value = std::getenv("HYLE_VULKAN_IQ1_DELTA"); return value && value[0] == '1';
+#endif
+}
+
+inline std::span<const c::GgufQuantizedType> selected_matrix_types(bool grouped = false) {
+  static constexpr std::array only{c::GgufQuantizedType::kIq1S};
+  if (iq1_delta()) { std::puts("VULKAN_NUMERIC_DELTA types=IQ1_S"); return only; }
+  return grouped ? std::span<const c::GgufQuantizedType>(kGroupedTypes)
+                 : std::span<const c::GgufQuantizedType>(kTypes);
+}
 
 inline ggml_type native_type(c::GgufQuantizedType type) {
   switch (type) {
@@ -164,6 +184,80 @@ inline void expect_close(const v::Context &context, const v::Tensor &actual,
     EXPECT_NEAR(observed[i], expected[i],
                 3.0e-3 + 3.0e-4 * std::abs(expected[i]))
         << i;
+}
+
+// The original Vulkan MMVQ program also rounds Q8_1 activation d/s to F16.
+// Fix that program reference from its cold device facts, before observing
+// any result; the nominal decoded-weight model accuracy remains independent.
+inline bool iq1s_mmvq_reference(const v::Context &context) {
+  if (context.environment().vendor_id != 0x10de) return false;
+  const auto &native = v::detail::Access::runtime(context)->device->provider.native();
+  auto get = reinterpret_cast<PFN_vkGetPhysicalDeviceFeatures2>(
+      native.get_instance_proc_addr(native.instance, "vkGetPhysicalDeviceFeatures2"));
+  if (!get) return false;
+  VkPhysicalDeviceShaderIntegerDotProductFeatures dot{};
+  dot.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_INTEGER_DOT_PRODUCT_FEATURES;
+  VkPhysicalDeviceFeatures2 features{}; features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
+  features.pNext = &dot; get(native.physical, &features);
+  return dot.shaderIntegerDotProduct == VK_TRUE;
+}
+
+inline std::vector<double> iq1s_q8_program(std::span<const double> activation,
+    const Packed &packed, int rows, int columns, int width,
+    std::span<const std::int32_t> experts = {}) {
+  std::vector<float> input(activation.begin(), activation.end());
+  std::vector<std::byte> encoded(rows * (width / 32) * 36);
+  ggml_get_type_traits(GGML_TYPE_Q8_1)->from_float_ref(input.data(), encoded.data(), rows * width);
+  auto half = [](const std::byte *p) {
+    ggml_fp16_t value; std::memcpy(&value, p, sizeof(value)); return ggml_fp16_to_fp32(value);
+  };
+  std::vector<double> result(rows * columns);
+  for (int token = 0; token < rows; ++token) for (int row = 0; row < columns; ++row) {
+    const auto weight_row = (experts.empty() ? 0 : experts[token]) * columns + row;
+    double total = 0;
+    for (int group = 0; group < width / 32; ++group) {
+      const auto *a = packed.bytes.data() + (weight_row * (width / 256) + group / 8) * 50;
+      std::uint16_t high; std::memcpy(&high, a + 34 + (group % 8) * 2, sizeof(high));
+      const float dl = half(a) * (2 * ((high >> 12) & 7) + 1);
+      if (dl == 0) continue;
+      const float delta = (high & 0x8000) ? -.125F : .125F;
+      const auto *b = encoded.data() + (token * (width / 32) + group) * 36;
+      int dot = 0;
+      for (int i = 0; i < 32; ++i) {
+        const auto pos = weight_row * width + group * 32 + i;
+        const int grid = int(std::round(packed.decoded[pos] / dl - delta));
+        std::int8_t value; std::memcpy(&value, b + 4 + i, sizeof(value));
+        dot += (grid + 1) * value;
+      }
+      total += dl * (half(b) * dot + (delta - 1) * half(b + 2));
+    }
+    result[token * columns + row] = total;
+  }
+  return result;
+}
+
+inline void expect_native_projection(const v::Context &context, const v::Tensor &actual,
+    c::GgufQuantizedType type, std::span<const double> activation, const Packed &packed,
+    int rows, int columns, int width, std::span<const std::int32_t> experts = {}) {
+  const auto nominal = experts.empty() ? matmul(activation, packed.decoded, rows, columns, width)
+      : grouped_matmul(activation, packed.decoded, experts, columns, width);
+  if (type != c::GgufQuantizedType::kIq1S || !iq1s_mmvq_reference(context)) {
+    expect_close(context, actual, nominal); return;
+  }
+  const auto native = iq1s_q8_program(activation, packed, rows, columns, width, experts);
+  const auto observed = vulkan_tensor_test::values(context, actual);
+  ASSERT_EQ(observed.size(), native.size());
+  std::vector<float> normalized_actual, normalized_nominal;
+  double peak = 0;
+  for (auto value : nominal) peak = std::max(peak, std::abs(value));
+  ASSERT_GT(peak, 0);
+  for (std::size_t i = 0; i < observed.size(); ++i) {
+    EXPECT_NEAR(observed[i], native[i], 1e-5 + 2e-6 * std::abs(native[i])) << i;
+    normalized_actual.push_back(float(observed[i] / peak));
+    normalized_nominal.push_back(float(nominal[i] / peak));
+  }
+  // Established common GGUF model gate, normalized so zero cannot hide.
+  d5_gguf_test::expect_quantized_chain_matmul_close(normalized_actual, normalized_nominal);
 }
 
 struct QuantizerCleanup final {

@@ -52,3 +52,13 @@ G1/G2/G3尚未PASS；docs/closure和统一LOC不重建、不跑P1，旧perf bloc
 dot/rounded-s公式，与native结果和旧F32参考分别比较。只作原因证据，不改变模型输入/
 输出门，不取更近结果签PASS；产品FIX零。若证实参考服务不同，再按原共同数值合同
 定界；若无法证实，保留精确缺口停止同候选微调。只编译变更测试，不重配或全集/P1。
+
+`c9419820`一次原因捕获：两replay的原Q8_1/IQ1_S整数dot/rounded-s独立方程与native
+最大误差4.47e-7/8.94e-7，而原未转换F32参考最大差0.004785/0.009571。锁定source的
+MMVQ在RTX整数dot、连续F32输入、该固定M2/K256下选择Q8_1，不是HYLE漏传F32 accumulator
+或新增数学。旧FAIL保留，捕获不代签正式资格。
+正式唯一测试修正：预先按原source/device事实固定IQ1_S程序参考，紧至1e-5+2e-6 relative；
+同时按已经建立的共同GGUF归一化完整量化门比较独立未量化activation期望，不能只验证
+路由到错代码也同错。原3e-3逐点门只对其原F32程序适用；不把它误当本库Q8_1程序合同，
+其它17格式原门完全不变。输入/权重/output/state不改，QQ8转换/同步成本必须如实计入。
+仅IQ1_S MatMul/grouped四个失败ID两入口delta验收，明确打印所测type，其它通过域复用。

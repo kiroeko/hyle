@@ -16,7 +16,7 @@ TEST(VulkanGguf, EveryCatalogFormatUsesNativeDirectRegionAndReplays) {
   const auto input_desc =
       vulkan_tensor_test::dense(c::DataType::kFloat32, {m, k});
   const auto physical = weights(n, k);
-  for (const auto type : kTypes) {
+  for (const auto type : selected_matrix_types()) {
     SCOPED_TRACE(static_cast<int>(type));
     const auto weight_desc =
         c::gguf_weight_description(type, c::DataType::kFloat32, k, n).value();
@@ -33,8 +33,8 @@ TEST(VulkanGguf, EveryCatalogFormatUsesNativeDirectRegionAndReplays) {
       auto work = invocation.submit().value();
       auto result = work.wait();
       ASSERT_TRUE(result) << result.error().message();
-      expect_close(context, result->get()->tensors()[0],
-                   matmul(values, packed.decoded, m, n, k));
+      expect_native_projection(context, result->get()->tensors()[0], type,
+                               values, packed, m, n, k);
     }
   }
 }
@@ -183,7 +183,7 @@ TEST(VulkanGguf, TargetEmbeddingFormatsUseNativeRowsAndCheckedPublication) {
 TEST(VulkanGguf, PackedFormatsGroupedExpertsUseNativeMulMatId) {
   QuantizerCleanup cleanup;
   auto context = vulkan_test::context().value();
-  for (const auto type : kGroupedTypes) {
+  for (const auto type : selected_matrix_types(true)) {
     SCOPED_TRACE(static_cast<int>(type));
     constexpr int experts = 4;
     constexpr int n = 8;
@@ -222,8 +222,8 @@ TEST(VulkanGguf, PackedFormatsGroupedExpertsUseNativeMulMatId) {
       auto work = invocation.submit().value();
       auto result = work.wait();
       ASSERT_TRUE(result) << result.error().message();
-      expect_close(context, result->get()->tensors()[0],
-                   grouped_matmul(values, packed.decoded, ids, n, k));
+      expect_native_projection(context, result->get()->tensors()[0], type,
+                               values, packed, tokens * slots, n, k, ids);
     }
   }
 }
