@@ -25,3 +25,10 @@ Windows 实际反例 fixture 三个组合均失败，原日志保留；`PARSE_AR
 包括真实子进程转发和缺/多/无声明 SDK 拒绝。只改本 driver 与已有工具测试，CPP/数学为零 diff。
 selector 给 shared-CMake superset READY；非本工具的全库数学、headers、P1 无产品变化不适用，
 不启动这些全库重编。两组合旧 SDK 资格仍未签，下一步在原目录恢复，其配置前置 guard 必须先通过。
+
+工具 candidate：`ed2dd3c3869be140fa6e63c439c3f8479a3deb6c`。完整 Windows 来源 archive 的
+SHA256 `98ef74990ec0e679a9293444c1f01800d8c3d3ac18e8a02bd8eb2e0c81ddd09a` 在 Air 核对一致；
+Air 同两项转发/guard 工具测试实际 PASS，见
+[工具收据](../../../../evidence/correctness/compute-unified-c3/mixed-sdk-route-failure/tool-repair-receipt.json)。
+Windows 原 shared/static SDK 循环已恢复，source 不重跑，原 CPU objects 保留；只有错误 package
+staging payload 被有边界删除，避免旧 ABI/未选资产遗留。Air 两 SDK 循环仍待串行恢复。

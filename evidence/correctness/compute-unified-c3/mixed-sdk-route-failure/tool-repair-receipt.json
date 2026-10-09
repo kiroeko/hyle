@@ -1,0 +1,15 @@
+{
+  "tool_candidate": "ed2dd3c3869be140fa6e63c439c3f8479a3deb6c",
+  "product_candidate": "530e230bbc11e4fe12218a6a021ca15b009337c3",
+  "windows_tool_suite": {
+    "tests": 11,
+    "verdict": "PASS"
+  },
+  "air_forwarding_and_guard": {
+    "tests": 2,
+    "verdict": "PASS"
+  },
+  "scope": "CMake argv forwarding and exact SDK route guard only; no math qualification",
+  "source_archive_sha256": "98ef74990ec0e679a9293444c1f01800d8c3d3ac18e8a02bd8eb2e0c81ddd09a",
+  "remaining": "Original mixed SDK stages running/pending; four prior Air claims remain withdrawn."
+}
