@@ -45,6 +45,22 @@ R1：保留 matcher/profile/all-port 语义、现有 mature defaults；检查实
 submit 无新增搜索/设备查询/计时；未知环境保持合法默认，缺真实能力拒绝，不偷偷 CPU fallback。
 每子包审计后才能固定其产品 FIX；C1 的 AUDITED 不自动授权 C2/R1 新源码/API。
 
+### C2 AUDITED：一个应用资产入口和真实 SDK metadata
+
+baseline 为 C1 产品 `f01b349a5`。源码反例已核实：generic helper 只 stage DLL/loader path；
+Apple helper 另行获取 metallib，并不检查 app 是否真正链接 MLX；安装 metadata 只有 features、
+没有所选路线/实际软件 recipe 可查询值。现有 runtime graph 已处理 alias/条件边/diamond/cycle，复用它。
+
+| FIX | 有限产品动作 | 验收 |
+|---|---|---|
+| C2-01 | 唯一公开 `hyle_stage_runtime(app)`；原 helpers 私有化；同一 target walk 收集有 owner 的 MLX 资产，保留条件表达式/producer | CPU/Core 不 stage 未链接资产；MLX source/install；重复调用、条件边/多 app、DLL 更新与 exe 邻置 |
+| C2-02 | 从实际 features/已登记锁/编译 recipe 投影 installed 路线与 fingerprint；source 采用相同值；显式路线需求只验子集，不修改 SDK | source/static/shared 查询一致；unknown/缺路线/旧参数拒绝；metadata 不被称 ABI/SOTA 证书 |
+| C2-03 | 迁移现行 CMake/用户 helper 调用；原 source/install asset graph、下载器和许可证不复制 | selected source/SDK consumer、搬迁/缺件/离线仍在 C3 批验 |
+
+正常三交付仍只链接公开 products；多路线聚合 target 会需要其实际全闭包，不能从代码只调用 CPU
+推断 Apple runtime 可删除。target-owned resource property 是既有资产闭包的投影，不新建依赖 registry。
+本包改变 cold CMake/API 名，不改数学、运行资源或 Provider preference；P0，无 P1。
+
 ## 预算、验证和停止
 
 - 审计一遍当前入口/源码和现有 fixture；一个配置边界最多一次定向修正，不翻历史性能队列。
