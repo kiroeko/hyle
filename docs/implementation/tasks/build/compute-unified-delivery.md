@@ -1,6 +1,6 @@
 # C1–C3 / R1：统一 Compute/Graph 配置与交付
 
-<!-- MODULE REVIEW: CANDIDATE -->
+<!-- MODULE REVIEW: AUDITED -->
 
 - baseline：`0a167159e08bf2df021c0b7f7fc8942a4dc87c3e`；Windows canonical，启动工作树干净。
 - 用户已明确启动实施；[已定设计](../../../architecture/compute-next-stage.md)与
@@ -188,7 +188,7 @@ Windows CUDA 源码嵌入的真实 Direct/Graph FFN 两项已 PASS，实际 RTX4
 
 C3已约定平台/路线展开为[15组交付矩阵](../../../../evidence/correctness/compute-unified-c3/delivery-matrix.json)：
 Windows/WSL各cpu、cuda、vulkan、cpu+cuda、cpu+vulkan；Air为cpu、apple、vulkan、cpu+apple、cpu+vulkan。
-每组source/shared/static共45格，每格普通Direct/Graph两消费者。当前10项消费者PASS、80项UNRUN；
+每组source/shared/static共45格，每格普通Direct/Graph两消费者。当前12项消费者PASS、78项UNRUN；
 mixed SDK仅验证其两条native路线分别可用，不代签H1–H3联合、异步或专家搬运。
 
 ### C3 发现 C2-01 条件 producer 接缝缺陷（待定向修正）
@@ -216,3 +216,14 @@ collector保留producer条件，stage使用求值后的`DEPENDS`，撤掉无条�
 现有`runtime_staging_graph_test.py`已补producer条件断言；当前helper在Debug conditional分支
 实际失败：producer为`n10`而应为空，[失败记录](../../../../evidence/correctness/compute-unified-c3/apple-conditional-producer/metadata-regression-before-fix.json)
 明确保留，不称PASS。此测试补缺复现既有C2-01反例，修正后只重跑本接缝适用回归和实际Apple交付。
+
+### C2-01 定向返修 AUDITED
+
+Windows CUDA原不可变79137d31批次已exit0：source/shared/static × Direct/Graph六项真实FFN
+消费者全PASS，日志/实际SDK元数据已归档。此时没有本批native进程；CPU/CUDA完成格保留实际身份。
+
+返修baseline为79137d31，仍绑定本卡15个当前owner，仅恢复已声明C2-01的条件producer合同。
+固定FIX两项：collector为非imported资产owner保留原链接条件；stage将条件producer放进`DEPENDS`，
+撤去无条件`add_dependencies(stage, producers)`。不改公共API、数学、路由/flags或仪器。
+验收只选已有元数据回归、已经固定的两generator正反/跨目录构建图，以及后续实际Apple三交付；
+非Apple已通过格因不触及此路径保留，不重建、不跑P1。实现后立即冻结新candidate并继续C3剩余矩阵。

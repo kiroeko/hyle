@@ -270,17 +270,15 @@
     },
     {
       "module": "compute",
-      "state": "CANDIDATE",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/build/compute-unified-delivery.md",
-      "summary": "统一配置/SDK资产/冷路由候选已修正发行默认tests；独立路由构建与全文档review完成；C3平台三交付批验进行中，原显式OFF格不重启。",
-      "candidate": "79137d31ce1bec9053d3a4f92f2892e3a21cbb80"
+      "summary": "C2-01条件producer反例已固定；Windows CPU/CUDA三交付消费者均完成，定向修正资产构建依赖，不改数学或重跑P1。"
     },
     {
       "module": "graph",
-      "state": "CANDIDATE",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/build/compute-unified-delivery.md",
-      "summary": "统一配置/SDK资产/冷路由候选已修正发行默认tests；独立路由构建与全文档review完成；C3平台三交付批验进行中，原显式OFF格不重启。",
-      "candidate": "79137d31ce1bec9053d3a4f92f2892e3a21cbb80"
+      "summary": "C2-01条件producer反例已固定；Windows CPU/CUDA三交付消费者均完成，定向修正资产构建依赖，不改数学或重跑P1。"
     },
     {
       "module": "container_concurrent",
@@ -354,10 +352,9 @@
     },
     {
       "module": "compute_provider_onednn",
-      "state": "CANDIDATE",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/build/compute-unified-delivery.md",
-      "summary": "统一配置/SDK资产/冷路由候选已修正发行默认tests；独立路由构建与全文档review完成；C3平台三交付批验进行中，原显式OFF格不重启。",
-      "candidate": "79137d31ce1bec9053d3a4f92f2892e3a21cbb80"
+      "summary": "C2-01条件producer反例已固定；Windows CPU/CUDA三交付消费者均完成，定向修正资产构建依赖，不改数学或重跑P1。"
     },
     {
       "module": "compute_provider_ggml",
@@ -394,38 +391,33 @@
     },
     {
       "module": "compute_backend_cpu",
-      "state": "CANDIDATE",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/build/compute-unified-delivery.md",
-      "summary": "统一配置/SDK资产/冷路由候选已修正发行默认tests；独立路由构建与全文档review完成；C3平台三交付批验进行中，原显式OFF格不重启。",
-      "candidate": "79137d31ce1bec9053d3a4f92f2892e3a21cbb80"
+      "summary": "C2-01条件producer反例已固定；Windows CPU/CUDA三交付消费者均完成，定向修正资产构建依赖，不改数学或重跑P1。"
     },
     {
       "module": "compute_backend_cuda",
-      "state": "CANDIDATE",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/build/compute-unified-delivery.md",
-      "summary": "统一配置/SDK资产/冷路由候选已修正发行默认tests；独立路由构建与全文档review完成；C3平台三交付批验进行中，原显式OFF格不重启。",
-      "candidate": "79137d31ce1bec9053d3a4f92f2892e3a21cbb80"
+      "summary": "C2-01条件producer反例已固定；Windows CPU/CUDA三交付消费者均完成，定向修正资产构建依赖，不改数学或重跑P1。"
     },
     {
       "module": "compute_provider_native",
-      "state": "CANDIDATE",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/build/compute-unified-delivery.md",
-      "summary": "统一配置/SDK资产/冷路由候选已修正发行默认tests；独立路由构建与全文档review完成；C3平台三交付批验进行中，原显式OFF格不重启。",
-      "candidate": "79137d31ce1bec9053d3a4f92f2892e3a21cbb80"
+      "summary": "C2-01条件producer反例已固定；Windows CPU/CUDA三交付消费者均完成，定向修正资产构建依赖，不改数学或重跑P1。"
     },
     {
       "module": "compute_route_cpu",
-      "state": "CANDIDATE",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/build/compute-unified-delivery.md",
-      "summary": "统一配置/SDK资产/冷路由候选已修正发行默认tests；独立路由构建与全文档review完成；C3平台三交付批验进行中，原显式OFF格不重启。",
-      "candidate": "79137d31ce1bec9053d3a4f92f2892e3a21cbb80"
+      "summary": "C2-01条件producer反例已固定；Windows CPU/CUDA三交付消费者均完成，定向修正资产构建依赖，不改数学或重跑P1。"
     },
     {
       "module": "graph_route_cpu",
-      "state": "CANDIDATE",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/build/compute-unified-delivery.md",
-      "summary": "统一配置/SDK资产/冷路由候选已修正发行默认tests；独立路由构建与全文档review完成；C3平台三交付批验进行中，原显式OFF格不重启。",
-      "candidate": "79137d31ce1bec9053d3a4f92f2892e3a21cbb80"
+      "summary": "C2-01条件producer反例已固定；Windows CPU/CUDA三交付消费者均完成，定向修正资产构建依赖，不改数学或重跑P1。"
     },
     {
       "module": "compute_provider_cublas",
@@ -463,45 +455,39 @@
     },
     {
       "module": "compute_route_cuda",
-      "state": "CANDIDATE",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/build/compute-unified-delivery.md",
-      "summary": "统一配置/SDK资产/冷路由候选已修正发行默认tests；独立路由构建与全文档review完成；C3平台三交付批验进行中，原显式OFF格不重启。",
-      "candidate": "79137d31ce1bec9053d3a4f92f2892e3a21cbb80"
+      "summary": "C2-01条件producer反例已固定；Windows CPU/CUDA三交付消费者均完成，定向修正资产构建依赖，不改数学或重跑P1。"
     },
     {
       "module": "graph_route_cuda",
-      "state": "CANDIDATE",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/build/compute-unified-delivery.md",
-      "summary": "统一配置/SDK资产/冷路由候选已修正发行默认tests；独立路由构建与全文档review完成；C3平台三交付批验进行中，原显式OFF格不重启。",
-      "candidate": "79137d31ce1bec9053d3a4f92f2892e3a21cbb80"
+      "summary": "C2-01条件producer反例已固定；Windows CPU/CUDA三交付消费者均完成，定向修正资产构建依赖，不改数学或重跑P1。"
     },
     {
       "module": "compute_route_apple",
-      "state": "CANDIDATE",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/build/compute-unified-delivery.md",
-      "summary": "统一配置/SDK资产/冷路由候选已修正发行默认tests；独立路由构建与全文档review完成；C3平台三交付批验进行中，原显式OFF格不重启。",
-      "candidate": "79137d31ce1bec9053d3a4f92f2892e3a21cbb80"
+      "summary": "C2-01条件producer反例已固定；Windows CPU/CUDA三交付消费者均完成，定向修正资产构建依赖，不改数学或重跑P1。"
     },
     {
       "module": "graph_route_apple",
-      "state": "CANDIDATE",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/build/compute-unified-delivery.md",
-      "summary": "统一配置/SDK资产/冷路由候选已修正发行默认tests；独立路由构建与全文档review完成；C3平台三交付批验进行中，原显式OFF格不重启。",
-      "candidate": "79137d31ce1bec9053d3a4f92f2892e3a21cbb80"
+      "summary": "C2-01条件producer反例已固定；Windows CPU/CUDA三交付消费者均完成，定向修正资产构建依赖，不改数学或重跑P1。"
     },
     {
       "module": "compute_route_vulkan",
-      "state": "CANDIDATE",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/build/compute-unified-delivery.md",
-      "summary": "统一配置/SDK资产/冷路由候选已修正发行默认tests；独立路由构建与全文档review完成；C3平台三交付批验进行中，原显式OFF格不重启。",
-      "candidate": "79137d31ce1bec9053d3a4f92f2892e3a21cbb80"
+      "summary": "C2-01条件producer反例已固定；Windows CPU/CUDA三交付消费者均完成，定向修正资产构建依赖，不改数学或重跑P1。"
     },
     {
       "module": "graph_route_vulkan",
-      "state": "CANDIDATE",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/build/compute-unified-delivery.md",
-      "summary": "统一配置/SDK资产/冷路由候选已修正发行默认tests；独立路由构建与全文档review完成；C3平台三交付批验进行中，原显式OFF格不重启。",
-      "candidate": "79137d31ce1bec9053d3a4f92f2892e3a21cbb80"
+      "summary": "C2-01条件producer反例已固定；Windows CPU/CUDA三交付消费者均完成，定向修正资产构建依赖，不改数学或重跑P1。"
     },
     {
       "module": "compute_provider_ggml_vulkan",
@@ -516,10 +502,9 @@
     },
     {
       "module": "compute_ggml_runtime",
-      "state": "CANDIDATE",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/build/compute-unified-delivery.md",
-      "summary": "统一配置/SDK资产/冷路由候选已修正发行默认tests；独立路由构建与全文档review完成；C3平台三交付批验进行中，原显式OFF格不重启。",
-      "candidate": "79137d31ce1bec9053d3a4f92f2892e3a21cbb80"
+      "summary": "C2-01条件producer反例已固定；Windows CPU/CUDA三交付消费者均完成，定向修正资产构建依赖，不改数学或重跑P1。"
     },
     {
       "module": "compute_provider_ggml_cuda",

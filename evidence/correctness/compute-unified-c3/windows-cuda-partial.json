@@ -100,11 +100,15 @@
     },
     {
       "entry": "static-direct",
-      "verdict": "UNRUN"
+      "verdict": "PASS",
+      "log": "evidence/correctness/compute-unified-c3/windows-cuda/static-compute-consumer-ctest.log",
+      "log_sha256": "6ead71a40f976b00fb495701a46cc6ef8d92a390f76ffa905cad82fce392bf0e"
     },
     {
       "entry": "static-graph",
-      "verdict": "UNRUN"
+      "verdict": "PASS",
+      "log": "evidence/correctness/compute-unified-c3/windows-cuda/static-consumer-ctest.log",
+      "log_sha256": "bf23a4e0d4c4b5f9ea6e8438bbba4b6596eee51a7443d7a57089adff9d120dc2"
     }
   ],
   "remaining": "Relocated shared/static SDK consumers, other route/platform/mixed entries and H1-H3 are not signed",
