@@ -11,7 +11,8 @@ Graph 使用的模型制品画像、canonical boundary 条件、Provider 完整 
 Graph 把模型无关的逻辑 DAG 编译成可重复执行的程序：验证语义、应用已验证的实现/融合规则、决定
 边界资源/转换/依赖、规划自己拥有的 workspace，并导出执行和诊断事实。它不是模型 runtime 或通用任务池。
 
-用户先选择 CPU、CUDA、Apple MLX/Metal 或 Vulkan 路线。CPU+GPU 分担模型计算不在范围内；
+用户先选择CPU、CUDA、Apple MLX/Metal或Vulkan路线。当前单路线验收未包含CPU+GPU分担模型计算，
+用户新增的组合与通用增量求值需求进入[下一阶段设计](compute-next-stage.md)，不由旧实现直接签支持；
 host 控制/上传下载和同 GPU 多 Provider 组合仍在范围内，见
 [Compute 边界](compute-design.md#13-四条独立路线与明确非目标)。
 

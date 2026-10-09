@@ -33,9 +33,10 @@ kernel 时建立窄、版本锁定、许可证与升级责任明确的源码 fac
 CPU、CUDA、Apple MLX/Metal、Vulkan 是四条独立计算路线。用户选部署路线，构建取得相应实现；
 准备期绑定实际 device、格式、数值与有限 shape，执行不重新选设备或 Provider。
 
-**模型 CPU+GPU 联合推理不属于 HYLE 范围，不是延期项目**：不提供分层 offload、CPU FFN/专家分担
-或这种联合计划的调度。纯 CPU 是完整路线。GPU 缺算子或容量不足时选择同路线合格候选，或明确拒绝，
-不能静默改用 CPU 模型 kernel。
+**已收口单路线基础阶段未包含模型CPU+GPU联合推理**。2026-10-09用户新增的
+统一配置/联合计算要求进入[下一阶段设计](compute-next-stage.md)，尚未实现或资格化；
+旧收口不代签分层offload、CPU FFN/专家分担。纯CPU仍是完整路线，纯GPU遇到缺算子/
+容量不足时选择同路线合格候选或明确拒绝，不能静默改用CPU模型kernel。
 
 host 控制/metadata、冷权重准备、上传下载、映射、同步和回收仍保留；它们不是模型联合计算。
 同一 GPU 上组合多个 Provider 也在范围内。HIP/ROCm 无设备和维护条件，当前不实现；将来可独立接入，

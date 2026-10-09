@@ -18,8 +18,9 @@ HYLE 是推理引擎下面的基础加速库；推理引擎是第一个可执行
 采样策略不能因为推理引擎需要它们就下沉到基础模块。HYLE 提供可复用机制；推理引擎拥有模型
 语义和产品策略。
 
-推理计算采用 CPU、CUDA、MLX/Metal、Vulkan 四条独立路线。模型级 CPU+GPU 分担计算不属于 HYLE
-范围，不因参考引擎提供 offload 就成为本库 MUST 或延期任务。CPU-only 推理、GPU 的 host 提交与
+当前推理基础采用CPU、CUDA、MLX/Metal、Vulkan四条独立路线，旧验收未纳入模型级CPU+GPU分担。
+用户2026-10-09新增的组合要求见[下一阶段设计](compute-next-stage.md)，尚未实现；
+它由明确消费者需求驱动，不由参考引擎的feature自动准入。CPU-only推理、GPU的host提交与
 输入输出传输/同步、同 GPU 多 Provider 组合仍保留，精确边界见
 [Compute §1.3](compute-design.md#13-四条独立路线与明确非目标)。
 

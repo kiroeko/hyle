@@ -14,7 +14,8 @@ CPU、CUDA、Apple MLX/Metal、Vulkan 各自实现冷编译、执行制品、运
 计算/数值描述、错误、资源访问、结果/完成与必要计划事实，不强制一个 segment loop、统一 native
 handle 或逐 kernel 虚调用。独立实现不是把 Error、Mem 等同义基础设施复制四份。
 
-模型 CPU+GPU 联合计算不在范围内。用户选计算路线，HYLE 按研发时已验证的规则绑定路线内实现；
+已收口基础阶段未包含模型CPU+GPU联合计算；用户新要求另进入[下一阶段设计](compute-next-stage.md)，
+尚未交付。用户选计算路线，HYLE 按研发时已验证的规则绑定路线内实现；
 缺少 GPU 算子或资源时明确拒绝，不借 CPU fallback 绕过配置。host 控制、权重准备、上传下载和回收
 不属于这种混合。
 
