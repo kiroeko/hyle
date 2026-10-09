@@ -505,16 +505,15 @@
     },
     {
       "module": "compute_provider_ggml_vulkan",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/vulkan-f32-matmul-admission-repair.md",
-      "summary": "C3实际F32 FFN数值反例触发定向reopen；审计原成熟完整精度路径，不新增自研MatMul、不放宽误差或恢复历史队列。"
+      "summary": "Vulkan F32输入内部缩窄反例已审计；固定原完整F32 shader接线、source精度和旧样例断言三项FIX，不自研乘法或放宽误差。"
     },
     {
       "module": "compute_ggml_runtime",
-      "state": "CANDIDATE",
-      "record": "docs/implementation/tasks/build/compute-unified-delivery.md",
-      "summary": "统一构建/冷路由候选已修正条件资产producer；Windows CPU/CUDA三交付消费者全部通过，其余平台/路线/mixed矩阵仍待验，H1–H3未实施。",
-      "candidate": "2614676ee64bceddadcf791c218d6eea1f051c64"
+      "state": "AUDITED",
+      "record": "docs/implementation/tasks/compute/vulkan-f32-matmul-admission-repair.md",
+      "summary": "Vulkan F32输入内部缩窄反例已审计；固定原完整F32 shader接线、source精度和旧样例断言三项FIX，不自研乘法或放宽误差。"
     },
     {
       "module": "compute_provider_ggml_cuda",

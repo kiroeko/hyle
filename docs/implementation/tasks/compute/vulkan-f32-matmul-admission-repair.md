@@ -1,8 +1,8 @@
 # Vulkan F32 MatMul 精度接入定向返修
 
-<!-- MODULE REVIEW: SCOPED -->
+<!-- MODULE REVIEW: AUDITED -->
 
-- 当前 owner：`compute_provider_ggml_vulkan`；baseline `2614676ee64bceddadcf791c218d6eea1f051c64`。
+- 当前 owner：`compute_provider_ggml_vulkan`、`compute_ggml_runtime`；baseline `2614676ee64bceddadcf791c218d6eea1f051c64`。
 - 合法 reopen trigger：C3 普通 Direct/Graph FFN 的实际 F32 correctness 反例，见
   [失败收据](../../../../evidence/correctness/compute-unified-c3/windows-vulkan-failure/receipt.json)。
   不回写旧 CLOSED terminal，不恢复历史算子/性能队列。
@@ -41,3 +41,19 @@ min-source precision/原生全精度 pipeline 的选择必须在冷编译/固定
 - 审计预算一遍接缝和一次具体反例资格；最多一个有限产品修正候选。
   不可承载则写精确缺口/恢复条件，不以“继续研究”无限追加姿势。
 - 本卡不代签C3全部交付、H1–H3或全模型容量；完成相关验收后归档实际结果和统一LOC。
+
+## AUDITED：固定有限FIX
+
+原ggml的`ggml_prec_set_acc(F32)`只限制累加，不限制输入缩窄；原Vulkan subgroup F32/F32
+map在Float16设备上选择半精度内部程序，原完整`matmul_f32_f32_fp32`程序已生成但只在
+FP32-only fallback登记。精度API还有`ggml_prec_set_src(...,F32,1)`；HYLE应表达其普通F32输入合同。
+原库既有通用subgroup tile、pipeline创建/资源检查和dispatch继续承载，不能新增乘法算法。
+
+| FIX | 有限产品动作 | 验收 |
+|---|---|---|
+| F32-01 | 原Vulkan接入登记完整F32/F32原shader及其原subgroup tile，避免Float16设备覆盖该完整路径；其它dtype/量化map不变 | 原FFN rows1/16；非F16可表达的F32输入；已有F16/BF16/量化定向回归 |
+| F32-02 | 普通plain F32 MatMul冷构造表达source精度最低F32，累加仍F32；不改外部API、Provider搜索或replay | Direct/Graph相同精度、转置RHS和重复运行 |
+| F32-03 | Graph样例按成熟region实际覆盖核对报告，撤掉旧自研dispatch数量假设；数值门不变 | 5个live节点、实际native/managed边界和输出正确 |
+
+`compute_ggml_runtime`因拥有build-local原Vulkan port进入AUDITED并绑定本卡；当前CPU/CUDA源码
+和规则不修改，未启用Vulkan的recipe不包含该backend manifest。返修后冻结同一有限候选再验适用门。
