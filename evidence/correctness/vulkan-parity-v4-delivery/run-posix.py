@@ -35,7 +35,7 @@ def run(label,command,env=None):
     (out/'receipt.json').write_text(json.dumps(receipt,indent=2)+'\n')
     print(label,p.returncode,receipt['steps'][-1]['seconds'],flush=True)
     if p.returncode:raise SystemExit('Failed gate: '+str(out/(label+'.log')))
-consumer=root/'consumer';consumer.mkdir()
+consumer=root/'consumer';consumer.mkdir(exist_ok=args.resume_source_build)
 todo=[repo/f'tests/{entry}_route_vulkan/d5_qwen35_execution_test.cc' for entry in ('compute','graph')]
 copied={}
 while todo:
