@@ -182,11 +182,12 @@ auto result = invocation->run();  // first general bridge explicitly blocks to c
 Apple/Vulkan 对称表达任务，但保留 MLX array/Vulkan Tensor 原生绑定与结果类型。
 `options` 传 region/node 放置、实际 workload、分域预算和明确 transfer 策略，不传 Provider 排名。
 可共享 immutable compiled artifact；每次并发运行拥有独立 invocation、临时资源和输出 slot。
-第一个通用桥使用明确阻塞的 `run()`：CPU→GPU→CPU 的必要 host wait 计入完整成本，
-没有隐藏后台进展线程。应用可借现有 Sched 执行它，调用方 backing 需活到终态。
-成熟完整 region 若已有合格 async owner 可保留其原生形式；不据此宣称其它桥也非阻塞。
-非阻塞组合 submit/预取/重叠属于后续具名扩展，先冻结进展 owner/停止协议再纳入，
-不在七包中顺手新写 polling service 或 runtime。
+同步 `run()` 是简单使用与 correctness 基线，不是本轮组合能力的终点。
+2026-10-09 用户确认：H1–H3 纳入有界异步传输/依赖、可重叠执行，以及引擎驱动的专家权重片段迁移。
+各路线在实施前冻结原生 copy/compute 时间线、ready/completion 和进展 owner；复用成熟完整 region、
+原生事件及已有 Sched，不另起后台 runtime。不能把在新线程上阻塞整条链当作实际 copy/compute overlap。
+必要 host wait 要报告并计入完整成本；硬件/Provider 无合法重叠承载时明确说明该实际域，
+不能仅因函数名 async 或返回 pending 就签 overlap。
 
 ### 4.4 边界资源是完整合同
 
@@ -210,6 +211,13 @@ host staging、repack、上传/下载、同步、融合损失进入冷 P0/完整
 流式权重应作为显式受绑定输入/容量子片段，不能被当整个不可变 GPU 常量在 warmup 全部上传。
 若 Provider 仅支持完整驻留/prepare packing，就报告不适用该流式旅程，优先其它合格成熟承载。
 
+专家权重迁移由引擎提供实际 IDs/范围、目标存放/执行约束和驻留决定；HYLE 提供受预算的
+数据选择/搬运、固定容量暂存与多槽复用、绑定更新、跨 native 时间线依赖和在途 owner 保活。
+变更权重 payload/所选 expert 不重选 Provider；数值/物理格式/shape domain 或允许执行位置变化
+必须按原合同重新准备。纯粹迁移和下一组权重准备可与独立已接纳计算重叠，但有读写依赖的
+buffer 不得提前复用。成熟 region 管理这些机制时保留它，HYLE 不再重写稀疏数学或模型 cache。
+专家命中策略、预测预取、淘汰和何时移到 CPU/GPU 属引擎；多 GPU 不纳入。
+
 ### 4.5 失败、取消和关闭
 
 编译失败释放 partial artifact；只有显式无副作用 decline 允许冷期选择预声明合法后备。
@@ -231,6 +239,11 @@ host 权重模式需真实分批容量/重用旅程，不能用设备枚举、�
 简单 copy 或 mock Provider 冒充联合支持。
 有限 consumer 不外推全部 27B/2.4T 模型容量/执行；同精度/所有必要边界成本才可称性能比较。
 原单路线证据不因此失效或重跑，但也不自动签新组合。
+
+异步/重叠额外验收：实际原生 copy/compute 进展与依赖证据、至少两个受限 slot 的
+在途/更新/复用、expert IDs 每次改变但 Provider 固定、坏 ID/范围拒绝、OOM/cancel/close、
+丢弃 completion/旧 lease 的终态保活。只用 callback/polling 名称或两个独立任务耗时相近
+不能证明 overlap；若需计时，只对稳定候选的完整旅程有界运行，不扩大算子 P1。
 
 ## 5. 增量依赖图只登记待办
 

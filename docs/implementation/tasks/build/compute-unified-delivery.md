@@ -20,7 +20,10 @@
 
 C1 先统一构建输入，C2 统一 SDK/资产，R1 校准 identity/冷诊断，接线结束后 C3 一个稳定候选批验。
 H1/H2/H3 联合计算须另卡绑定实际 owner；本卡不删除 same-Device guard，不签 mixed 执行。
-增量依赖图继续 DEFER。SIMD、模型 loader/engine、算子扩张、非阻塞组合服务、公共治理/计时核心都不改。
+2026-10-09 用户已接受 scope 调整：H1–H3 追加有界异步传输/依赖/真实可重叠执行、引擎驱动
+的 expert 权重片段迁移机制；同步 run 仍保留，不把异步整体 DEFER。expert cache/预测/淘汰/
+模型放置策略和多 GPU 不做。新 H 卡实施前重新冻结 native 进展/槽/取消关闭的有限 FIX 与验收。
+增量依赖图继续 DEFER。SIMD、模型 loader/engine、算子扩张、新后台 runtime、公共治理/计时核心都不改。
 
 ## C1 AUDITED：有限改动集
 
