@@ -5,18 +5,28 @@ parser=argparse.ArgumentParser()
 parser.add_argument('--root',required=True,type=Path)
 parser.add_argument('--candidate',required=True)
 parser.add_argument('--cache',required=True,type=Path)
+parser.add_argument('--resume-source-build',action='store_true')
 args=parser.parse_args()
 repo=Path.cwd().resolve();root=args.root.expanduser().resolve();cache=args.cache.expanduser().resolve()
 if root==repo or not root.is_relative_to(Path.home()/'hyle-scratch'):
     raise SystemExit('Use an owned validation directory below ~/hyle-scratch')
 root.mkdir(parents=True,exist_ok=True)
 out=root/'receipts'
-if out.exists():raise SystemExit('Retain the previous batch receipt; do not silently restart')
-out.mkdir()
 head=subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip()
 if head!=args.candidate or subprocess.check_output(['git','status','--porcelain'],text=True).strip():
     raise SystemExit('Require the clean, exact Windows-origin candidate')
-receipt={'candidate':head,'product_candidate':'2f78714c8','system':platform.platform(),'steps':[]}
+if args.resume_source_build:
+    receipt=json.loads((out/'receipt.json').read_text())
+    if len(receipt['steps'])!=2 or receipt['steps'][0]['returncode']!=0 or receipt['steps'][1]['returncode']==0:
+        raise SystemExit('Resume is limited to the recorded first source build failure')
+    changed=subprocess.check_output(['git','diff','--name-only',receipt['candidate'],head,'--','include','src','cmake','third_party','CMakeLists.txt'],text=True).splitlines()
+    if changed!=['src/compute_provider_iree_vulkan/native_program.cc']:
+        raise SystemExit('Resume requires only the bounded native-program warning correction')
+    receipt['continued_candidate']=head
+else:
+    if out.exists():raise SystemExit('Retain the previous batch receipt; do not silently restart')
+    out.mkdir()
+    receipt={'candidate':head,'product_candidate':'2f78714c8','system':platform.platform(),'steps':[]}
 def run(label,command,env=None):
     command=list(map(str,command));start=time.monotonic()
     with (out/(label+'.log')).open('w') as stream:
@@ -60,9 +70,10 @@ if platform.system()=='Darwin':runtime_env['DYLD_FALLBACK_LIBRARY_PATH']='/opt/h
 for stage in ('source','static','shared'):
     staging=root/(stage+'-staging');prefix=root/(stage+'-relocated')
     if stage in ('source','shared'):
-        run(stage+'-producer-configure',[cmake,'-S',consumer,'-B',producer,*common,*deps,*source_options,
-            '-DD5_SOURCE_ROOT='+str(repo),'-DV4_SOURCE_STATIC='+('OFF' if stage=='shared' else 'ON'),'-DCMAKE_INSTALL_PREFIX='+str(staging)])
-        run(stage+'-producer-build',[cmake,'--build',producer,'-j','2'])
+        if not (stage=='source' and args.resume_source_build):
+            run(stage+'-producer-configure',[cmake,'-S',consumer,'-B',producer,*common,*deps,*source_options,
+                '-DD5_SOURCE_ROOT='+str(repo),'-DV4_SOURCE_STATIC='+('OFF' if stage=='shared' else 'ON'),'-DCMAKE_INSTALL_PREFIX='+str(staging)])
+        run(stage+'-producer-build'+('-w2' if stage=='source' and args.resume_source_build else ''),[cmake,'--build',producer,'-j','2'])
     if stage=='source':build=producer
     else:
         run(stage+'-install',[cmake,'--install',producer,'--prefix',staging])
