@@ -1,0 +1,23 @@
+{
+  "candidate_commit": "57eec08600ae8af40ace987f0ad44918279fad57",
+  "candidate_tree": "7b463e332a388cb5041ab797e35cccd17666d056",
+  "baseline_commit": "a19391c7efa84d1f0c42919e8192e4ce78d1ee32",
+  "product_authorization": {
+    "owners": [
+      "compute_provider_ggml_vulkan",
+      "compute_provider_iree_vulkan",
+      "compute_route_vulkan",
+      "graph_route_vulkan"
+    ],
+    "states": {
+      "compute_provider_ggml_vulkan": "CANDIDATE",
+      "compute_provider_iree_vulkan": "CANDIDATE",
+      "compute_route_vulkan": "CANDIDATE",
+      "graph_route_vulkan": "CANDIDATE"
+    },
+    "issues": []
+  },
+  "unknown_paths": [],
+  "verdict": "PASS_AUTHORIZATION_ONLY",
+  "limits": "This is a read-only commit-chain/ownership audit. Broad selected native gates are not executed or labelled PASS by this plan; actual scoped numerical/delivery/resource proofs are in final-audit.json."
+}
