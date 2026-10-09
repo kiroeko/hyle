@@ -122,3 +122,16 @@ value 和成熟 Cast，原 liveness/完成/失败/结果 lease 负责两个片�
 GPU copy／Cast／完成均真实计费；不写舍入算法，不改公开入口。
 source 仍16个离线 entry，跨源精度的公开组合由第二成熟片段承载；生成器/manifest/native
 resolver同步裁剪。仅两失败批量 ID 验证，既有三新增成功 ID 仍复用；最多一次真实验收。
+
+## Windows batch 结果（非父轮终局）
+
+产品 `9e00073bf`；`1710f874` 两失败 ID 唯一复验 Direct1/1、Graph1/1 PASS，48个
+格式/scale-output/group组合各自经过独立slot/完整payload更新/replay/旧结果，另验
+nested9/258组边界。合并 `61d0585b` 的两入口 cold decode→MatMul、取消/OOM/close/释放
+PASS 和首轮原Provider/FP8/Scan/U8/U32影响子集，Windows微型原链资格完成。
+[完整证据与限制](../../../../evidence/correctness/vulkan-parity-v2-artifacts/README.md)。
+原失败保留，约106MiB失败raw无损压成1.54MiB，验证逐字节相等后清理重复raw；未扩公共仪器。
+
+这不是18个全模型geometry、559/34/45目录或Air/三交付/default/P1完成。
+父轮仍active；下一批按原MLX16 packed/剩余typed hook/真实官方精度与状态审计定界。
+当前统一Compute+Graph非测试实现61,663行/261文件；vendor recipe/bytecode不算自研实现。

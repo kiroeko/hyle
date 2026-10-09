@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites tests="1" failures="0" disabled="0" errors="0" time="1.222" timestamp="2026-10-09T10:40:26.752" name="AllTests">
+  <testsuite name="VulkanIree" tests="1" failures="0" disabled="0" skipped="0" errors="0" time="1.222" timestamp="2026-10-09T10:40:26.752">
+    <testcase name="OriginalArtifactBatchPreservesSourceRoundingAndSixPorts" file="C:\public\project-hyle\hyle\tests\compute_route_vulkan\iree_test.cc" line="22" status="run" result="completed" time="1.222" timestamp="2026-10-09T10:40:26.752" classname="VulkanIree" />
+  </testsuite>
+</testsuites>
