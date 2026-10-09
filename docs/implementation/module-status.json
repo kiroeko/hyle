@@ -505,15 +505,17 @@
     },
     {
       "module": "compute_provider_ggml_vulkan",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/vulkan-f32-matmul-admission-repair.md",
-      "summary": "首Vulkan F32修正候选数值FAIL保留；同FIX唯一限定完成：撤去显式F32操作的coop强制输入缩窄，不改库、误差或仪器。"
+      "summary": "Vulkan F32同FIX限定完成已冻结；保留首次候选FAIL和原误差门，撤去显式F32的coop预转换，实际数值/交付待验。",
+      "candidate": "c96c7c6eefb41f9aca71c92b4304814a731fe088"
     },
     {
       "module": "compute_ggml_runtime",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/vulkan-f32-matmul-admission-repair.md",
-      "summary": "首Vulkan F32修正候选数值FAIL保留；同FIX唯一限定完成：撤去显式F32操作的coop强制输入缩窄，不改库、误差或仪器。"
+      "summary": "Vulkan F32同FIX限定完成已冻结；保留首次候选FAIL和原误差门，撤去显式F32的coop预转换，实际数值/交付待验。",
+      "candidate": "c96c7c6eefb41f9aca71c92b4304814a731fe088"
     },
     {
       "module": "compute_provider_ggml_cuda",

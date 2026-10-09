@@ -1,6 +1,6 @@
 # Vulkan F32 MatMul 精度接入定向返修
 
-<!-- MODULE REVIEW: AUDITED -->
+<!-- MODULE REVIEW: CANDIDATE -->
 
 - 当前 owner：`compute_provider_ggml_vulkan`、`compute_ggml_runtime`；baseline `2614676ee64bceddadcf791c218d6eea1f051c64`。
 - 合法 reopen trigger：C3 普通 Direct/Graph FFN 的实际 F32 correctness 反例，见
@@ -76,3 +76,7 @@ Direct/Graph目标，再验原数值门；原失败收据保留，不能改标�
 撤去这项强制缩窄，真实non-contiguous处理仍保留；Grouped plain F32同时表达source最低F32。
 原“一个修正候选”记录为已消耗，当前明确追加一次同FIX的限定完成，不换库/模型/误差/仪器。
 此完成候选若仍不满足原数学门，停止追加姿势并按具体事实重新裁决。无P1，CPU/CUDA不重测。
+
+同FIX限定完成candidate：`c96c7c6eefb41f9aca71c92b4304814a731fe088`。
+显式F32 operands时不做coop的F16预转换/decode-vector暂存；真实非连续条件、其它dtype及量化
+路径仍保持，Grouped plain F32同样使用原source精度API。实际数值验收仍待运行。
