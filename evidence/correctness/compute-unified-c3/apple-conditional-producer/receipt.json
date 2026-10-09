@@ -1,0 +1,24 @@
+{
+  "scope": "C2-01 declared conditional build-graph seam only; no native MLX, Metal, provider or math qualification",
+  "candidate": "79137d31ce1bec9053d3a4f92f2892e3a21cbb80",
+  "fixture_configure": "PASS",
+  "fixture_build": "PASS",
+  "inactive_edge_generated_asset": true,
+  "inactive_edge_copied_asset": false,
+  "finding": "Inactive link correctly suppresses copying but unconditionally builds the source asset owner through add_dependencies(stage, producers).",
+  "product_fix": "PENDING; finish current immutable Windows CUDA batch before changing product helper, then return actual owners to AUDITED for the finite conditional producer correction. Preserve completed unmodified non-Apple receipt identities.",
+  "files": [
+    {
+      "file": "evidence/correctness/compute-unified-c3/apple-conditional-producer/build.ninja",
+      "sha256": "eaacc01764c70d285ba3776062704f8608bfec6903fe239955625f39acb8edd7"
+    },
+    {
+      "file": "evidence/correctness/compute-unified-c3/apple-conditional-producer/fixture.txt",
+      "sha256": "7698f74962cf47a2571dd39a00e6cf4601f2844933d0ac7ec0ad1558d0539f1f"
+    },
+    {
+      "file": "evidence/correctness/compute-unified-c3/apple-conditional-producer/staging-script.cmake",
+      "sha256": "7925509850817dfc4ef22fd82b7970b7d8a64584a56ea762fe6aec5392b70528"
+    }
+  ]
+}

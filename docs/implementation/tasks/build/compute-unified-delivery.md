@@ -190,3 +190,16 @@ C3已约定平台/路线展开为[15组交付矩阵](../../../../evidence/correc
 Windows/WSL各cpu、cuda、vulkan、cpu+cuda、cpu+vulkan；Air为cpu、apple、vulkan、cpu+apple、cpu+vulkan。
 每组source/shared/static共45格，每格普通Direct/Graph两消费者。当前8项消费者PASS、82项UNRUN；
 mixed SDK仅验证其两条native路线分别可用，不代签H1–H3联合、异步或专家搬运。
+
+### C3 发现 C2-01 条件 producer 接缝缺陷（待定向修正）
+
+已在真实CMake构建图夹具复现：普通application的`BOOL:0`链接边正确不复制metallib，
+但统一helper把未求值的source owner收集成无条件producer，`add_dependencies(stage, producers)`
+仍生成源资产。见[反例收据](../../../../evidence/correctness/compute-unified-c3/apple-conditional-producer/receipt.json)。
+夹具只签构建图事实，不签Metal、Provider或数学；此前LANGUAGES NONE/imported-executable夹具
+被CMake拒绝后改为真实CXX application，本结论来自成功配置和实际构建，不来自失败夹具。
+
+有限修正范围仍在C2-01：source producer依赖保留真实条件，正分支/跨目录/原生generator顺序仍正确；
+不改数学、路由、flags、公共staging入口或治理核心。当前Windows CUDA不可变批次继续，结束后
+先按协议将本卡实际owner退回AUDITED再改helper、冻结新candidate。保留不受Apple条件影响的
+已完成CPU/CUDA格及其原身份；不重启已通过数学或P1。Apple实际三交付在修正后首次验证。

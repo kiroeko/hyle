@@ -8,6 +8,11 @@ It is not a terminal verdict for all platforms/routes, hybrid execution, or asyn
 are currently PASS; the other 82 are UNRUN. A mixed SDK entry runs each selected native route independently
 and cannot certify the later joint execution or asynchronous transfer work.
 
+[Conditional source-asset producer counterexample](apple-conditional-producer/receipt.json) records a
+C2-01 build-graph defect: an inactive link suppresses copying but still builds its source asset owner.
+This is a CMake fixture, not a Metal or math verdict. A finite owner-authorized correction is pending
+after the current immutable Windows CUDA batch; existing non-Apple math receipts are retained.
+
 - [Windows CPU receipt](windows-cpu-receipt.json): six actual public math consumers passed,
   covering Direct and Graph in embedded source, relocated shared SDK and relocated static SDK.
 - [Per-entry result](windows-cpu-partial.json): exact observed test logs and distinct product identities;
