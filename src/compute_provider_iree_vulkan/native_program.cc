@@ -604,10 +604,13 @@ NativeProgram::create(NativeDevice device, ProgramSpec spec) noexcept {
     state->outputs.reset(outputs);
     auto *hal = owner.device.get();
     if (iq1) {
-      const std::array<iree_hal_dim_t, 2> a{spec.rows, spec.depth};
+      const auto r = static_cast<iree_hal_dim_t>(spec.rows);
+      const auto k = static_cast<iree_hal_dim_t>(spec.depth);
+      const std::array<iree_hal_dim_t, 2> a{r, k};
       const std::array<iree_hal_dim_t, 1> w{
-          spec.experts * spec.columns * (spec.depth / 256) * iq1_block_bytes(spec.kind)},
-          ids{spec.rows};
+          static_cast<iree_hal_dim_t>(spec.experts * spec.columns *
+                                      (spec.depth / 256) * iq1_block_bytes(spec.kind))},
+          ids{r};
       HYLE_ASSIGN_OR_RETURN(state->views[0], allocate_view(hal, a, IREE_HAL_ELEMENT_TYPE_FLOAT_32));
       HYLE_ASSIGN_OR_RETURN(state->views[1], allocate_view(hal, w, IREE_HAL_ELEMENT_TYPE_SINT_8));
       HYLE_ASSIGN_OR_RETURN(state->views[2], allocate_view(hal, ids, IREE_HAL_ELEMENT_TYPE_SINT_32));
