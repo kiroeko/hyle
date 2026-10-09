@@ -1,0 +1,62 @@
+FFF
+======================================================================
+FAIL: test_delivery_wrapper_preserves_child_route_argument (__main__.ComputeRoutesTest.test_delivery_wrapper_preserves_child_route_argument) (routes='cpu;cuda')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\public\project-hyle\hyle\tests\tooling\compute_routes_test.py", line 207, in test_delivery_wrapper_preserves_child_route_argument
+    self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+AssertionError: 1 != 0 : 'C:/Program Files/CMake/bin/cmake.exe' '-DHYLE_COMPUTE_ROUTES=cpu' 'cuda' '-P' 'C:/public/project-hyle/hyle/.scratch/validation/compute-routes-contract/tmpju9jyx1w/child.cmake'
+CMake Error at .scratch/validation/compute-routes-contract/tmpju9jyx1w/child.cmake:3 (message):
+  child route argument was split: cpu
+
+
+CMake Error at .scratch/validation/compute-routes-contract/tmpju9jyx1w/forward.cmake:8 (message):
+  probe failed with exit code 1
+Call Stack (most recent call first):
+  .scratch/validation/compute-routes-contract/tmpju9jyx1w/forward.cmake:14 (_hyle_selected_run)
+
+
+
+
+======================================================================
+FAIL: test_delivery_wrapper_preserves_child_route_argument (__main__.ComputeRoutesTest.test_delivery_wrapper_preserves_child_route_argument) (routes='cpu;apple')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\public\project-hyle\hyle\tests\tooling\compute_routes_test.py", line 207, in test_delivery_wrapper_preserves_child_route_argument
+    self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+AssertionError: 1 != 0 : 'C:/Program Files/CMake/bin/cmake.exe' '-DHYLE_COMPUTE_ROUTES=cpu' 'apple' '-P' 'C:/public/project-hyle/hyle/.scratch/validation/compute-routes-contract/tmpju9jyx1w/child.cmake'
+CMake Error at .scratch/validation/compute-routes-contract/tmpju9jyx1w/child.cmake:3 (message):
+  child route argument was split: cpu
+
+
+CMake Error at .scratch/validation/compute-routes-contract/tmpju9jyx1w/forward.cmake:8 (message):
+  probe failed with exit code 1
+Call Stack (most recent call first):
+  .scratch/validation/compute-routes-contract/tmpju9jyx1w/forward.cmake:14 (_hyle_selected_run)
+
+
+
+
+======================================================================
+FAIL: test_delivery_wrapper_preserves_child_route_argument (__main__.ComputeRoutesTest.test_delivery_wrapper_preserves_child_route_argument) (routes='cpu;vulkan')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\public\project-hyle\hyle\tests\tooling\compute_routes_test.py", line 207, in test_delivery_wrapper_preserves_child_route_argument
+    self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+AssertionError: 1 != 0 : 'C:/Program Files/CMake/bin/cmake.exe' '-DHYLE_COMPUTE_ROUTES=cpu' 'vulkan' '-P' 'C:/public/project-hyle/hyle/.scratch/validation/compute-routes-contract/tmpju9jyx1w/child.cmake'
+CMake Error at .scratch/validation/compute-routes-contract/tmpju9jyx1w/child.cmake:3 (message):
+  child route argument was split: cpu
+
+
+CMake Error at .scratch/validation/compute-routes-contract/tmpju9jyx1w/forward.cmake:8 (message):
+  probe failed with exit code 1
+Call Stack (most recent call first):
+  .scratch/validation/compute-routes-contract/tmpju9jyx1w/forward.cmake:14 (_hyle_selected_run)
+
+
+
+
+----------------------------------------------------------------------
+Ran 1 test in 0.241s
+
+FAILED (failures=3)

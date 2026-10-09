@@ -181,5 +181,56 @@ class ComputeRoutesTest(unittest.TestCase):
             self.assertEqual(result.returncode == 0, expected, result.stdout + result.stderr)
 
 
+    def test_delivery_wrapper_preserves_child_route_argument(self):
+        driver = (ROOT / "cmake/HyleCiSelectedComponentSmoke.cmake").read_text()
+        start = driver.index("function(_hyle_selected_run label)")
+        end = driver.index("endfunction()", start) + len("endfunction()")
+        wrapper = driver[start:end]
+        for routes in ("cpu", "cpu;cuda", "cpu;apple", "cpu;vulkan"):
+            with self.subTest(routes=routes):
+                check = self.directory / "child.cmake"
+                check.write_text(
+                    f'set(expected [==[{routes}]==])\n'
+                    'if(NOT HYLE_COMPUTE_ROUTES STREQUAL expected)\n'
+                    'message(FATAL_ERROR "child route argument was split: ${HYLE_COMPUTE_ROUTES}")\n'
+                    'endif()\n', encoding="utf-8")
+                script = self.directory / "forward.cmake"
+                script.write_text(
+                    'cmake_minimum_required(VERSION 3.25)\n' + wrapper + '\n'
+                    f'set(routes [==[{routes}]==])\n'
+                    'string(REPLACE ";" "\\\\;" route_argument "${routes}")\n'
+                    'list(APPEND child_args "-DHYLE_COMPUTE_ROUTES=${route_argument}")\n'
+                    f'_hyle_selected_run(probe "${{CMAKE_COMMAND}}" ${{child_args}} -P "{check.as_posix()}")\n',
+                    encoding="utf-8")
+                result = subprocess.run(["cmake", "-P", str(script)], capture_output=True,
+                                        text=True, timeout=15, **NO_WINDOW)
+                self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+
+
+    def test_delivery_guard_requires_the_complete_route_set(self):
+        driver = (ROOT / "cmake/HyleCiSelectedComponentSmoke.cmake").read_text()
+        start = driver.index("function(_hyle_selected_require_compute_routes config routes)")
+        end = driver.index("endfunction()", start) + len("endfunction()")
+        guard = driver[start:end]
+        cases = [(value, value, True) for value in
+                 ("cpu", "cuda", "apple", "vulkan", "cpu;cuda", "cpu;apple", "cpu;vulkan")]
+        cases += [("cpu", "cpu;cuda", False), ("cpu", "cpu;apple", False),
+                  ("cpu", "cpu;vulkan", False), ("cpu;cuda", "cpu", False),
+                  (None, "cpu", False)]
+        for actual, expected, success in cases:
+            with self.subTest(actual=actual, expected=expected):
+                config = '' if actual is None else f'set(Hyle_AVAILABLE_COMPUTE_ROUTES "{actual}")'
+                script = self.directory / "sdk-route-check.cmake"
+                script.write_text(
+                    'cmake_minimum_required(VERSION 3.25)\n' + guard + '\n'
+                    f'_hyle_selected_require_compute_routes([==[{config}]==] [==[{expected}]==])\n',
+                    encoding="utf-8")
+                result = subprocess.run(["cmake", "-P", str(script)], capture_output=True,
+                                        text=True, timeout=15, **NO_WINDOW)
+                self.assertEqual(result.returncode == 0, success, result.stdout + result.stderr)
+                if not success:
+                    self.assertIn("do not match requested", result.stderr)
+
+
 if __name__ == "__main__":
     unittest.main()

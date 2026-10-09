@@ -29,12 +29,23 @@ if(NOT EXISTS "${_sample}/CMakeLists.txt" OR
 endif()
 
 function(_hyle_selected_run label)
+  cmake_parse_arguments(PARSE_ARGV 1 RUN "" "" "")
   execute_process(
-    COMMAND ${ARGN}
+    COMMAND ${RUN_UNPARSED_ARGUMENTS}
     RESULT_VARIABLE _result
     COMMAND_ECHO STDOUT)
   if(NOT _result EQUAL 0)
     message(FATAL_ERROR "${label} failed with exit code ${_result}")
+  endif()
+endfunction()
+
+function(_hyle_selected_require_compute_routes config routes)
+  string(REGEX MATCH "set\\(Hyle_AVAILABLE_COMPUTE_ROUTES \"([^\"]*)\"\\)"
+    _declaration "${config}")
+  set(_actual "${CMAKE_MATCH_1}")
+  if(NOT _declaration OR NOT _actual STREQUAL routes)
+    message(FATAL_ERROR
+      "SDK Compute routes '${_actual}' do not match requested '${routes}'")
   endif()
 endfunction()
 
@@ -178,6 +189,11 @@ foreach(_linkage IN ITEMS shared static)
     -DHYLE_INSTALL=ON
     -DHYLE_STATIC=${_static}
     ${_selected_feature_args})
+  if(HYLE_SMOKE_COMPONENT MATCHES "^(compute|graph)$")
+    file(READ "${_sdk_build}/HyleConfig.cmake" _configured_hyle_config)
+    _hyle_selected_require_compute_routes(
+      "${_configured_hyle_config}" "${_smoke_routes}")
+  endif()
   _hyle_selected_run("build ${_linkage} ${HYLE_SMOKE_COMPONENT} SDK"
     "${CMAKE_COMMAND}" --build "${_sdk_build}" --config Release --parallel 2)
   _hyle_selected_run("install ${_linkage} ${HYLE_SMOKE_COMPONENT} SDK"
@@ -216,10 +232,12 @@ foreach(_linkage IN ITEMS shared static)
       _installed_hyle_config)
     file(READ "${_staging}/lib/cmake/Hyle/HyleTargets.cmake"
       _installed_hyle_targets)
+    _hyle_selected_require_compute_routes(
+      "${_installed_hyle_config}" "${_smoke_routes}")
     string(REGEX MATCH "set\\(Hyle_AVAILABLE_FEATURES \"([^\"]*)\"\\)"
       _feature_declaration "${_installed_hyle_config}")
     set(_installed_features "${CMAKE_MATCH_1}")
-    foreach(_feature IN ITEMS cpu cuda onednn)
+    foreach(_feature IN ITEMS cpu cuda apple vulkan onednn)
       if(_compute_${_feature}_selected)
         if(NOT "compute_${_feature}" IN_LIST _installed_features)
           message(FATAL_ERROR "SDK missing selected compute_${_feature} feature")
