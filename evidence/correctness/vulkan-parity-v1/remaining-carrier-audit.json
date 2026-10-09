@@ -1,0 +1,1142 @@
+{
+  "baseline": "26df2446b4b95d6ad04ad5058ff615c3804012d3",
+  "kind": "Remaining carrier audit; source only, no runtime verdict",
+  "counts": {
+    "gguf_profiles": 104,
+    "gguf_numeric": 559,
+    "packed_non_gguf": 34,
+    "plain_non_gguf": 45,
+    "gguf_parameter_role_shape": 80
+  },
+  "operations": {
+    "MlxQuantized": "ORDINARY_TYPED_HOOK_MISSING",
+    "ArtifactWeightDecode": "ORDINARY_TYPED_HOOK_MISSING",
+    "GroupedFloat4Linear": "ORDINARY_TYPED_HOOK_MISSING",
+    "GroupedFloat8Linear": "ORDINARY_TYPED_HOOK_MISSING",
+    "BlockQuantizationRoundtrip": "ORDINARY_TYPED_HOOK_MISSING",
+    "Float8BlockLinear": "ORDINARY_TYPED_HOOK_MISSING",
+    "Float8WeightDecode": "ORDINARY_TYPED_HOOK_MISSING"
+  },
+  "storage": {
+    "uint8_uint32": "route tensor_storage_type does not admit these existing public types",
+    "rank3_fp4_fp8": "named_compressed_storage admits GGUF or named rank2 FP8 only"
+  },
+  "mature_origins": {
+    "nf4": "bitsandbytes833649 original codebook/high-low/nested group256/offset program",
+    "awq": "AutoAWQ88e4c76 original nibble order/zero/scales program",
+    "ct": "compressed-tensorsac8e2ba symmetric4 offset8/source-dtype program",
+    "mlx_quantized": "original MLX affine/MX4/MX8 group and E8M0 program"
+  },
+  "compiler": {
+    "path": "C:/hv/m2vk-tools/iree/compiler/_mlir_libs/iree-compile.exe",
+    "observed": "3.12.0rc20260919 @ 6ef606b6fa3e12bd2c12d36a07463069eb71185f",
+    "matches_runtime_pin": true,
+    "runtime_qualification": "NOT_RUN"
+  },
+  "packed": [
+    {
+      "id": "n0bb663b75e961054",
+      "format": "kMx8",
+      "experts": 1,
+      "n": 32768,
+      "k": 1024,
+      "group": 32,
+      "grouped": false,
+      "embedding": false,
+      "artifact": 3,
+      "candidate": "Original borrowed codec + ATen CPU program; single current carrier"
+    },
+    {
+      "id": "n11ac28dbeaa21a76",
+      "format": "kMx4",
+      "experts": 256,
+      "n": 2048,
+      "k": 4096,
+      "group": 32,
+      "grouped": true,
+      "embedding": false,
+      "artifact": 3,
+      "candidate": "Original borrowed codec + ATen CPU program; single current carrier"
+    },
+    {
+      "id": "n1a02d912dccfbfcc",
+      "format": "kMx8",
+      "experts": 1,
+      "n": 512,
+      "k": 4096,
+      "group": 32,
+      "grouped": false,
+      "embedding": false,
+      "artifact": 3,
+      "candidate": "Original borrowed codec + ATen CPU program; single current carrier"
+    },
+    {
+      "id": "n202aedd266175231",
+      "format": "kMx8",
+      "experts": 1,
+      "n": 4096,
+      "k": 8192,
+      "group": 32,
+      "grouped": false,
+      "embedding": false,
+      "artifact": 3,
+      "candidate": "Original borrowed codec + ATen CPU program; single current carrier"
+    },
+    {
+      "id": "n2208fbb06e447168",
+      "format": "kAwq",
+      "experts": 1,
+      "n": 1024,
+      "k": 5120,
+      "group": 128,
+      "grouped": false,
+      "embedding": false,
+      "artifact": 1,
+      "candidate": "Original borrowed codec + ATen CPU program; single current carrier"
+    },
+    {
+      "id": "n2af37225831ba519",
+      "format": "kNf4",
+      "experts": 1,
+      "n": 16,
+      "k": 2048,
+      "group": 64,
+      "grouped": false,
+      "embedding": false,
+      "artifact": 0,
+      "candidate": "Original borrowed codec + ATen CPU program; single current carrier"
+    },
+    {
+      "id": "n33d5fe29fed560af",
+      "format": "kCt",
+      "experts": 1,
+      "n": 1024,
+      "k": 5120,
+      "group": 128,
+      "grouped": false,
+      "embedding": false,
+      "artifact": 2,
+      "candidate": "Original borrowed codec + ATen CPU program; single current carrier"
+    },
+    {
+      "id": "n37e21568674f2571",
+      "format": "kMx8",
+      "experts": 1,
+      "n": 2048,
+      "k": 4096,
+      "group": 32,
+      "grouped": false,
+      "embedding": false,
+      "artifact": 3,
+      "candidate": "Original borrowed codec + ATen CPU program; single current carrier"
+    },
+    {
+      "id": "n39f10794d1034fdd",
+      "format": "kCt",
+      "experts": 1,
+      "n": 17408,
+      "k": 5120,
+      "group": 128,
+      "grouped": false,
+      "embedding": false,
+      "artifact": 2,
+      "candidate": "Original borrowed codec + ATen CPU program; single current carrier"
+    },
+    {
+      "id": "n44af3ac14c76c678",
+      "format": "kMx8",
+      "experts": 1,
+      "n": 1024,
+      "k": 4096,
+      "group": 32,
+      "grouped": false,
+      "embedding": false,
+      "artifact": 3,
+      "candidate": "Original borrowed codec + ATen CPU program; single current carrier"
+    },
+    {
+      "id": "n57f8346172bcde91",
+      "format": "kAffine",
+      "experts": 1,
+      "n": 256,
+      "k": 4096,
+      "group": 64,
+      "grouped": false,
+      "embedding": false,
+      "artifact": 3,
+      "candidate": "Original borrowed codec + ATen CPU program; single current carrier"
+    },
+    {
+      "id": "n5b450b9128f9ddb4",
+      "format": "kAffine",
+      "experts": 1,
+      "n": 512,
+      "k": 4096,
+      "group": 64,
+      "grouped": false,
+      "embedding": false,
+      "artifact": 3,
+      "candidate": "Original borrowed codec + ATen CPU program; single current carrier"
+    },
+    {
+      "id": "n627e13f695902a6f",
+      "format": "kAwq",
+      "experts": 1,
+      "n": 5120,
+      "k": 17408,
+      "group": 128,
+      "grouped": false,
+      "embedding": false,
+      "artifact": 1,
+      "candidate": "Original borrowed codec + ATen CPU program; single current carrier"
+    },
+    {
+      "id": "n7251e93056484f69",
+      "format": "kAffine",
+      "experts": 1,
+      "n": 1024,
+      "k": 4096,
+      "group": 64,
+      "grouped": false,
+      "embedding": false,
+      "artifact": 3,
+      "candidate": "Original borrowed codec + ATen CPU program; single current carrier"
+    },
+    {
+      "id": "n7b3b05721f557885",
+      "format": "kAwq",
+      "experts": 1,
+      "n": 6144,
+      "k": 5120,
+      "group": 128,
+      "grouped": false,
+      "embedding": false,
+      "artifact": 1,
+      "candidate": "Original borrowed codec + ATen CPU program; single current carrier"
+    },
+    {
+      "id": "n7b87eddf86e971d2",
+      "format": "kNf4",
+      "experts": 1,
+      "n": 2048,
+      "k": 2048,
+      "group": 64,
+      "grouped": false,
+      "embedding": false,
+      "artifact": 0,
+      "candidate": "Original borrowed codec + ATen CPU program; single current carrier"
+    },
+    {
+      "id": "n827da62ad0daf7b8",
+      "format": "kMx8",
+      "experts": 1,
+      "n": 8192,
+      "k": 1024,
+      "group": 32,
+      "grouped": false,
+      "embedding": false,
+      "artifact": 3,
+      "candidate": "Original borrowed codec + ATen CPU program; single current carrier"
+    },
+    {
+      "id": "n85a9768ce0cfbe9d",
+      "format": "kAffine",
+      "experts": 1,
+      "n": 64,
+      "k": 4096,
+      "group": 64,
+      "grouped": false,
+      "embedding": false,
+      "artifact": 3,
+      "candidate": "Original borrowed codec + ATen CPU program; single current carrier"
+    },
+    {
+      "id": "n8c79bf7f55b10c01",
+      "format": "kAwq",
+      "experts": 1,
+      "n": 12288,
+      "k": 5120,
+      "group": 128,
+      "grouped": false,
+      "embedding": false,
+      "artifact": 1,
+      "candidate": "Original borrowed codec + ATen CPU program; single current carrier"
+    },
+    {
+      "id": "n9bfaa0e6dba16c70",
+      "format": "kMx8",
+      "experts": 1,
+      "n": 4096,
+      "k": 2048,
+      "group": 32,
+      "grouped": false,
+      "embedding": false,
+      "artifact": 3,
+      "candidate": "Original borrowed codec + ATen CPU program; single current carrier"
+    },
+    {
+      "id": "na2bfd546f5de3726",
+      "format": "kAffine",
+      "experts": 1,
+      "n": 129280,
+      "k": 4096,
+      "group": 64,
+      "grouped": false,
+      "embedding": true,
+      "artifact": 3,
+      "candidate": "Original borrowed codec + ATen CPU program; single current carrier"
+    },
+    {
+      "id": "na7b682381e9fa396",
+      "format": "kCt",
+      "experts": 1,
+      "n": 5120,
+      "k": 17408,
+      "group": 128,
+      "grouped": false,
+      "embedding": false,
+      "artifact": 2,
+      "candidate": "Original borrowed codec + ATen CPU program; single current carrier"
+    },
+    {
+      "id": "nab5612104243530d",
+      "format": "kNf4",
+      "experts": 1,
+      "n": 4096,
+      "k": 2048,
+      "group": 64,
+      "grouped": false,
+      "embedding": false,
+      "artifact": 0,
+      "candidate": "Original borrowed codec + ATen CPU program; single current carrier"
+    },
+    {
+      "id": "nad972a78d88299e9",
+      "format": "kCt",
+      "experts": 1,
+      "n": 5120,
+      "k": 6144,
+      "group": 128,
+      "grouped": false,
+      "embedding": false,
+      "artifact": 2,
+      "candidate": "Original borrowed codec + ATen CPU program; single current carrier"
+    },
+    {
+      "id": "nb0eb5191fc5bb45c",
+      "format": "kNf4",
+      "experts": 1,
+      "n": 512,
+      "k": 2048,
+      "group": 64,
+      "grouped": false,
+      "embedding": false,
+      "artifact": 0,
+      "candidate": "Original borrowed codec + ATen CPU program; single current carrier"
+    },
+    {
+      "id": "nb696beddeed9063f",
+      "format": "kAffine",
+      "experts": 1,
+      "n": 129280,
+      "k": 4096,
+      "group": 64,
+      "grouped": false,
+      "embedding": false,
+      "artifact": 3,
+      "candidate": "Original borrowed codec + ATen CPU program; single current carrier"
+    },
+    {
+      "id": "nb79fa3dba1813475",
+      "format": "kCt",
+      "experts": 1,
+      "n": 12288,
+      "k": 5120,
+      "group": 128,
+      "grouped": false,
+      "embedding": false,
+      "artifact": 2,
+      "candidate": "Original borrowed codec + ATen CPU program; single current carrier"
+    },
+    {
+      "id": "nc0c493d5f357c6f5",
+      "format": "kAwq",
+      "experts": 1,
+      "n": 10240,
+      "k": 5120,
+      "group": 128,
+      "grouped": false,
+      "embedding": false,
+      "artifact": 1,
+      "candidate": "Original borrowed codec + ATen CPU program; single current carrier"
+    },
+    {
+      "id": "nc1901694d1ed5be9",
+      "format": "kNf4",
+      "experts": 1,
+      "n": 2048,
+      "k": 6144,
+      "group": 64,
+      "grouped": false,
+      "embedding": false,
+      "artifact": 0,
+      "candidate": "Original borrowed codec + ATen CPU program; single current carrier"
+    },
+    {
+      "id": "nc801b7e28c4a66c0",
+      "format": "kMx4",
+      "experts": 256,
+      "n": 4096,
+      "k": 2048,
+      "group": 32,
+      "grouped": true,
+      "embedding": false,
+      "artifact": 3,
+      "candidate": "Original borrowed codec + ATen CPU program; single current carrier"
+    },
+    {
+      "id": "ncb8979d217d13ad8",
+      "format": "kNf4",
+      "experts": 1,
+      "n": 6144,
+      "k": 2048,
+      "group": 64,
+      "grouped": false,
+      "embedding": false,
+      "artifact": 0,
+      "candidate": "Original borrowed codec + ATen CPU program; single current carrier"
+    },
+    {
+      "id": "ne3db6edc9b6e92ec",
+      "format": "kMx8",
+      "experts": 8,
+      "n": 1024,
+      "k": 4096,
+      "group": 32,
+      "grouped": true,
+      "embedding": false,
+      "artifact": 3,
+      "candidate": "Original borrowed codec + ATen CPU program; single current carrier"
+    },
+    {
+      "id": "nf425aabf7fb25c64",
+      "format": "kAwq",
+      "experts": 1,
+      "n": 17408,
+      "k": 5120,
+      "group": 128,
+      "grouped": false,
+      "embedding": false,
+      "artifact": 1,
+      "candidate": "Original borrowed codec + ATen CPU program; single current carrier"
+    },
+    {
+      "id": "nfab7af12a04d1cd9",
+      "format": "kAwq",
+      "experts": 1,
+      "n": 5120,
+      "k": 6144,
+      "group": 128,
+      "grouped": false,
+      "embedding": false,
+      "artifact": 1,
+      "candidate": "Original borrowed codec + ATen CPU program; single current carrier"
+    }
+  ],
+  "plain": [
+    {
+      "id": "p033ae23672c4671a",
+      "role": "projection",
+      "storage": "kBFloat16",
+      "shape": [
+        17408,
+        5120
+      ],
+      "artifact": 2,
+      "candidate": "ATen/ggml according to primitive semantics, current qualification pending"
+    },
+    {
+      "id": "p0afd29f5ba0d80fe",
+      "role": "norm",
+      "storage": "kBFloat16",
+      "shape": [
+        1024
+      ],
+      "artifact": 3,
+      "candidate": "ATen/ggml according to primitive semantics, current qualification pending"
+    },
+    {
+      "id": "p0bd7aad8df2d52de",
+      "role": "norm",
+      "storage": "kBFloat16",
+      "shape": [
+        512
+      ],
+      "artifact": 3,
+      "candidate": "ATen/ggml according to primitive semantics, current qualification pending"
+    },
+    {
+      "id": "p17277e53d2d86a4c",
+      "role": "hc_base",
+      "storage": "kFloat32",
+      "shape": [
+        4
+      ],
+      "artifact": 3,
+      "candidate": "ATen/ggml according to primitive semantics, current qualification pending"
+    },
+    {
+      "id": "p1e385a41b1182a6a",
+      "role": "conv",
+      "storage": "kBFloat16",
+      "shape": [
+        6144,
+        1,
+        4
+      ],
+      "artifact": 0,
+      "candidate": "ATen/ggml according to primitive semantics, current qualification pending"
+    },
+    {
+      "id": "p1ee2dd3f7e4dba6e",
+      "role": "head",
+      "storage": "kBFloat16",
+      "shape": [
+        248320,
+        5120
+      ],
+      "artifact": 2,
+      "candidate": "ATen/ggml according to primitive semantics, current qualification pending"
+    },
+    {
+      "id": "p25de7cab6d16489e",
+      "role": "conv",
+      "storage": "kFloat16",
+      "shape": [
+        10240,
+        1,
+        4
+      ],
+      "artifact": 1,
+      "candidate": "ATen/ggml according to primitive semantics, current qualification pending"
+    },
+    {
+      "id": "p2e309ecbb28e6116",
+      "role": "norm_zero_centered",
+      "storage": "kFloat16",
+      "shape": [
+        5120
+      ],
+      "artifact": 1,
+      "candidate": "ATen/ggml according to primitive semantics, current qualification pending"
+    },
+    {
+      "id": "p2f522eea94460483",
+      "role": "projection",
+      "storage": "kBFloat16",
+      "shape": [
+        1024,
+        5120
+      ],
+      "artifact": 2,
+      "candidate": "ATen/ggml according to primitive semantics, current qualification pending"
+    },
+    {
+      "id": "p393f3bca8bb96741",
+      "role": "projection",
+      "storage": "kFloat16",
+      "shape": [
+        48,
+        5120
+      ],
+      "artifact": 1,
+      "candidate": "ATen/ggml according to primitive semantics, current qualification pending"
+    },
+    {
+      "id": "p395036291851d773",
+      "role": "projection",
+      "storage": "kFloat32",
+      "shape": [
+        4,
+        16384
+      ],
+      "artifact": 3,
+      "candidate": "ATen/ggml according to primitive semantics, current qualification pending"
+    },
+    {
+      "id": "p401603e31391cadf",
+      "role": "norm_zero_centered",
+      "storage": "kBFloat16",
+      "shape": [
+        2048
+      ],
+      "artifact": 0,
+      "candidate": "ATen/ggml according to primitive semantics, current qualification pending"
+    },
+    {
+      "id": "p4952faefad3c4446",
+      "role": "log_decay",
+      "storage": "kBFloat16",
+      "shape": [
+        48
+      ],
+      "artifact": 2,
+      "candidate": "ATen/ggml according to primitive semantics, current qualification pending"
+    },
+    {
+      "id": "p4b14bc81a1f54ccb",
+      "role": "position_lookup",
+      "storage": "kBFloat16",
+      "shape": [
+        4,
+        256
+      ],
+      "artifact": 3,
+      "candidate": "ATen/ggml according to primitive semantics, current qualification pending"
+    },
+    {
+      "id": "p4dc6f44efc136a4f",
+      "role": "norm_zero_centered",
+      "storage": "kFloat16",
+      "shape": [
+        256
+      ],
+      "artifact": 1,
+      "candidate": "ATen/ggml according to primitive semantics, current qualification pending"
+    },
+    {
+      "id": "p6521e759968a3577",
+      "role": "embedding",
+      "storage": "kFloat16",
+      "shape": [
+        248320,
+        5120
+      ],
+      "artifact": 1,
+      "candidate": "ATen/ggml according to primitive semantics, current qualification pending"
+    },
+    {
+      "id": "p6656a11cafc1dac0",
+      "role": "projection",
+      "storage": "kBFloat16",
+      "shape": [
+        12288,
+        5120
+      ],
+      "artifact": 2,
+      "candidate": "ATen/ggml according to primitive semantics, current qualification pending"
+    },
+    {
+      "id": "p67911b255e95f6ce",
+      "role": "time_bias",
+      "storage": "kFloat16",
+      "shape": [
+        48
+      ],
+      "artifact": 1,
+      "candidate": "ATen/ggml according to primitive semantics, current qualification pending"
+    },
+    {
+      "id": "p6cad3b2609a46d21",
+      "role": "embedding",
+      "storage": "kBFloat16",
+      "shape": [
+        248320,
+        5120
+      ],
+      "artifact": 2,
+      "candidate": "ATen/ggml according to primitive semantics, current qualification pending"
+    },
+    {
+      "id": "p7075e074f5c559c6",
+      "role": "sink",
+      "storage": "kFloat32",
+      "shape": [
+        64
+      ],
+      "artifact": 3,
+      "candidate": "ATen/ggml according to primitive semantics, current qualification pending"
+    },
+    {
+      "id": "p73b1be8a81f60682",
+      "role": "norm_zero_centered",
+      "storage": "kBFloat16",
+      "shape": [
+        256
+      ],
+      "artifact": 0,
+      "candidate": "ATen/ggml according to primitive semantics, current qualification pending"
+    },
+    {
+      "id": "p77a635b55664287f",
+      "role": "projection",
+      "storage": "kBFloat16",
+      "shape": [
+        6144,
+        5120
+      ],
+      "artifact": 2,
+      "candidate": "ATen/ggml according to primitive semantics, current qualification pending"
+    },
+    {
+      "id": "p78cfb55fb5085d3a",
+      "role": "norm",
+      "storage": "kBFloat16",
+      "shape": [
+        128
+      ],
+      "artifact": 0,
+      "candidate": "ATen/ggml according to primitive semantics, current qualification pending"
+    },
+    {
+      "id": "p893cd9940b6cedd0",
+      "role": "time_bias",
+      "storage": "kBFloat16",
+      "shape": [
+        16
+      ],
+      "artifact": 0,
+      "candidate": "ATen/ggml according to primitive semantics, current qualification pending"
+    },
+    {
+      "id": "p89a9ec4743c9107b",
+      "role": "position_lookup",
+      "storage": "kBFloat16",
+      "shape": [
+        4,
+        1024
+      ],
+      "artifact": 3,
+      "candidate": "ATen/ggml according to primitive semantics, current qualification pending"
+    },
+    {
+      "id": "p89c23f07a68ea22a",
+      "role": "embedding",
+      "storage": "kBFloat16",
+      "shape": [
+        248320,
+        2048
+      ],
+      "artifact": 0,
+      "candidate": "ATen/ggml according to primitive semantics, current qualification pending"
+    },
+    {
+      "id": "p8f3f00196aec37da",
+      "role": "head",
+      "storage": "kFloat16",
+      "shape": [
+        248320,
+        5120
+      ],
+      "artifact": 1,
+      "candidate": "ATen/ggml according to primitive semantics, current qualification pending"
+    },
+    {
+      "id": "p91a52869c4190996",
+      "role": "projection",
+      "storage": "kBFloat16",
+      "shape": [
+        256,
+        4096
+      ],
+      "artifact": 3,
+      "candidate": "ATen/ggml according to primitive semantics, current qualification pending"
+    },
+    {
+      "id": "p938bcf88666f5aa4",
+      "role": "projection",
+      "storage": "kBFloat16",
+      "shape": [
+        5120,
+        17408
+      ],
+      "artifact": 2,
+      "candidate": "ATen/ggml according to primitive semantics, current qualification pending"
+    },
+    {
+      "id": "p968d0881539dd7a3",
+      "role": "hc_base",
+      "storage": "kFloat32",
+      "shape": [
+        24
+      ],
+      "artifact": 3,
+      "candidate": "ATen/ggml according to primitive semantics, current qualification pending"
+    },
+    {
+      "id": "p9e4bbe139a148cc5",
+      "role": "projection",
+      "storage": "kBFloat16",
+      "shape": [
+        10240,
+        5120
+      ],
+      "artifact": 2,
+      "candidate": "ATen/ggml according to primitive semantics, current qualification pending"
+    },
+    {
+      "id": "pa2a7b9ba93a5c9c2",
+      "role": "router_bias",
+      "storage": "kFloat32",
+      "shape": [
+        256
+      ],
+      "artifact": 3,
+      "candidate": "ATen/ggml according to primitive semantics, current qualification pending"
+    },
+    {
+      "id": "paac32a736c36ec89",
+      "role": "log_decay",
+      "storage": "kFloat16",
+      "shape": [
+        48
+      ],
+      "artifact": 1,
+      "candidate": "ATen/ggml according to primitive semantics, current qualification pending"
+    },
+    {
+      "id": "pac94ec1bf56a019b",
+      "role": "projection",
+      "storage": "kBFloat16",
+      "shape": [
+        5120,
+        6144
+      ],
+      "artifact": 2,
+      "candidate": "ATen/ggml according to primitive semantics, current qualification pending"
+    },
+    {
+      "id": "pb2ff1ec2df5e4a16",
+      "role": "integer_lookup",
+      "storage": "kInt32",
+      "shape": [
+        129280,
+        6
+      ],
+      "artifact": 3,
+      "candidate": "ATen/ggml according to primitive semantics, current qualification pending"
+    },
+    {
+      "id": "pb3839cd7a67d8b9e",
+      "role": "projection",
+      "storage": "kBFloat16",
+      "shape": [
+        5120,
+        10240
+      ],
+      "artifact": 2,
+      "candidate": "ATen/ggml according to primitive semantics, current qualification pending"
+    },
+    {
+      "id": "pb76b261976613ec5",
+      "role": "conv",
+      "storage": "kBFloat16",
+      "shape": [
+        10240,
+        1,
+        4
+      ],
+      "artifact": 2,
+      "candidate": "ATen/ggml according to primitive semantics, current qualification pending"
+    },
+    {
+      "id": "pbe853152955b7d0c",
+      "role": "projection",
+      "storage": "kFloat32",
+      "shape": [
+        24,
+        16384
+      ],
+      "artifact": 3,
+      "candidate": "ATen/ggml according to primitive semantics, current qualification pending"
+    },
+    {
+      "id": "pc5b6491635fce0b8",
+      "role": "time_bias",
+      "storage": "kBFloat16",
+      "shape": [
+        48
+      ],
+      "artifact": 2,
+      "candidate": "ATen/ggml according to primitive semantics, current qualification pending"
+    },
+    {
+      "id": "pcd4216fa4b5222b9",
+      "role": "projection",
+      "storage": "kBFloat16",
+      "shape": [
+        48,
+        5120
+      ],
+      "artifact": 2,
+      "candidate": "ATen/ggml according to primitive semantics, current qualification pending"
+    },
+    {
+      "id": "pd349b6da7bece4a8",
+      "role": "norm",
+      "storage": "kBFloat16",
+      "shape": [
+        4096
+      ],
+      "artifact": 3,
+      "candidate": "ATen/ggml according to primitive semantics, current qualification pending"
+    },
+    {
+      "id": "pd75430a907622b9e",
+      "role": "position_lookup",
+      "storage": "kBFloat16",
+      "shape": [
+        128,
+        512
+      ],
+      "artifact": 3,
+      "candidate": "ATen/ggml according to primitive semantics, current qualification pending"
+    },
+    {
+      "id": "pdacb7536905755fa",
+      "role": "log_decay",
+      "storage": "kBFloat16",
+      "shape": [
+        16
+      ],
+      "artifact": 0,
+      "candidate": "ATen/ggml according to primitive semantics, current qualification pending"
+    },
+    {
+      "id": "pdc1efdcf1673bd32",
+      "role": "norm_zero_centered",
+      "storage": "kBFloat16",
+      "shape": [
+        5120
+      ],
+      "artifact": 2,
+      "candidate": "ATen/ggml according to primitive semantics, current qualification pending"
+    },
+    {
+      "id": "pf0d7ebdd2f4776da",
+      "role": "norm",
+      "storage": "kFloat16",
+      "shape": [
+        128
+      ],
+      "artifact": 1,
+      "candidate": "ATen/ggml according to primitive semantics, current qualification pending"
+    }
+  ],
+  "families": [
+    {
+      "name": "Qwen3.5-2B-GGUF",
+      "profiles": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21
+      ],
+      "regions": [
+        "R02",
+        "R04",
+        "R05"
+      ]
+    },
+    {
+      "name": "Qwen3.8-27B-GGUF",
+      "profiles": [
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40,
+        41,
+        42,
+        43,
+        44,
+        45,
+        46
+      ],
+      "regions": [
+        "R02",
+        "R04",
+        "R05",
+        "R13"
+      ]
+    },
+    {
+      "name": "Qwen3.8-2.4T-A95B-GGUF",
+      "profiles": [
+        47,
+        48,
+        49,
+        50,
+        51,
+        52,
+        53,
+        54,
+        55
+      ],
+      "regions": [
+        "R02",
+        "R04",
+        "R05",
+        "R10",
+        "R11",
+        "R13"
+      ]
+    },
+    {
+      "name": "Kimi-K3-GGUF",
+      "profiles": [
+        56,
+        57,
+        58,
+        59,
+        60,
+        61,
+        62,
+        63,
+        64
+      ],
+      "regions": [
+        "R02",
+        "R06",
+        "R07",
+        "R10",
+        "R11",
+        "R12"
+      ]
+    },
+    {
+      "name": "GLM-5.3-GGUF",
+      "profiles": [
+        65,
+        66,
+        67,
+        68,
+        69,
+        70,
+        71,
+        72,
+        73,
+        74,
+        75,
+        76
+      ],
+      "regions": [
+        "R02",
+        "R07",
+        "R08",
+        "R09",
+        "R10",
+        "R11",
+        "R13"
+      ]
+    },
+    {
+      "name": "GLM-5.3-Flash-GGUF",
+      "profiles": [
+        77,
+        78,
+        79,
+        80,
+        81,
+        82,
+        83,
+        84,
+        85,
+        86,
+        87,
+        88
+      ],
+      "regions": [
+        "R02",
+        "R06",
+        "R07",
+        "R08",
+        "R09",
+        "R10",
+        "R11",
+        "R12",
+        "R13"
+      ]
+    },
+    {
+      "name": "DeepSeek-V4-Pro-0813-GGUF",
+      "profiles": [
+        89,
+        90
+      ],
+      "regions": [
+        "R02",
+        "R07",
+        "R08",
+        "R09",
+        "R10",
+        "R11",
+        "R12"
+      ]
+    },
+    {
+      "name": "DeepSeek-V4-Flash-0731-GGUF",
+      "profiles": [
+        91,
+        92,
+        93,
+        94,
+        95,
+        96,
+        97,
+        98,
+        99,
+        100,
+        101,
+        102,
+        103
+      ],
+      "regions": [
+        "R02",
+        "R07",
+        "R08",
+        "R09",
+        "R10",
+        "R11",
+        "R12"
+      ]
+    }
+  ],
+  "limitations": [
+    "Source/generic IREE compiler availability does not prove executable shape, dtype, numerical, resource or complete region support.",
+    "No need for new model research or full weight download.",
+    "New programs must preserve source packing/rounding and use original IREE tensor operations, not HYLE shaders or alternative physical formats."
+  ]
+}

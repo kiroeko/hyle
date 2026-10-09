@@ -83,3 +83,10 @@ PASS：相同原topology、双执行/分配顺序、24round×6调用、真实输
 公共Graph仅协调覆盖/最终聚合，不因此授权重写共同Graph产品。旧正式P1仍未完成，
 后续稳定candidate须同paired口径、相同完成/拥有服务与原controls；不重用旧未资格数据。
 CPU/CUDA/Apple CLOSED保持，首次Provider原绑定工作及真实source记录继续复用。
+
+V1剩余[carrier/source审计](../../../../evidence/correctness/vulkan-parity-v1/remaining-carrier-audit.json)
+已固定7个缺失typed hook、现有U8/U32缺admission及named rank3 FP4/FP8缺承载。
+34packed保留原NF4/AWQ/CT/MLX实际packing/scale/rounding；45plain和八族沿共同数据。
+现有IREE compiler6ef606与runtime锁精确一致，无需新下载/重建LLVM或研究模型版本。
+这些是有限新FIX的source输入，不是新runtime PASS；下一步先审计原标准tensor recipe/
+native参数与资源接口，再AUDITED批量接线，仍不新增HYLE shader或自研算法。
