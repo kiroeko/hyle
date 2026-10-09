@@ -1,6 +1,6 @@
 # C1–C3 / R1：统一 Compute/Graph 配置与交付
 
-<!-- MODULE REVIEW: AUDITED -->
+<!-- MODULE REVIEW: CANDIDATE -->
 
 - baseline：`0a167159e08bf2df021c0b7f7fc8942a4dc87c3e`；Windows canonical，启动工作树干净。
 - 用户已明确启动实施；[已定设计](../../../architecture/compute-next-stage.md)与
@@ -228,7 +228,11 @@ Windows CUDA原不可变79137d31批次已exit0：source/shared/static × Direct/
 验收只选已有元数据回归、已经固定的两generator正反/跨目录构建图，以及后续实际Apple三交付；
 非Apple已通过格因不触及此路径保留，不重建、不跑P1。实现后立即冻结新candidate并继续C3剩余矩阵。
 
-AUDITED有限FIX已应用：仅两helper共4行净改动，producer条件和stage依赖正确传递；
+AUDITED有限FIX已应用：仅修改两helper的producer条件和stage依赖声明，条件正确传递；
 现有Debug/Release条件、alias/diamond/cycle/reset元数据回归实际PASS；Windows新目录中
 直接复制产品helper的真实library正/反分支及跨目录资产生成/复制实际PASS。
 未改include/C++/shader、Provider或路由；Air同产品helper的Makefiles复核及Apple native交付继续C3。
+
+新产品candidate为`2614676ee64bceddadcf791c218d6eea1f051c64`；前一79137d31的CPU/CUDA已完成格
+保留其实际产物身份。新diff只影响Apple source producer的条件边，CPU/CUDA所用无Apple资产路径
+未变；不把旧产物改标新tree，也不重跑其数学。剩余矩阵从新candidate开始，source archive重新绑定。

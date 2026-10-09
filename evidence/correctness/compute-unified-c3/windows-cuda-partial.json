@@ -1,6 +1,6 @@
 {
   "product_candidate": "79137d31ce1bec9053d3a4f92f2892e3a21cbb80",
-  "scope": "Actual Windows CUDA-only source public Direct and Graph FFN consumers; partial C3 receipt",
+  "scope": "Actual Windows CUDA-only source/relocated shared/static public Direct and Graph FFN consumers; complete Windows CUDA consumer batch, partial overall C3",
   "platform": "Windows",
   "route": "cuda",
   "configuration": {
@@ -111,6 +111,7 @@
       "log_sha256": "bf23a4e0d4c4b5f9ea6e8438bbba4b6596eee51a7443d7a57089adff9d120dc2"
     }
   ],
-  "remaining": "Relocated shared/static SDK consumers, other route/platform/mixed entries and H1-H3 are not signed",
-  "performance": "No P1 run; unchanged native math, real consumer correctness/delivery only"
+  "remaining": "Other route/platform/mixed entries and H1-H3 are not signed",
+  "performance": "No P1 run; unchanged native math, real consumer correctness/delivery only",
+  "batch_exit_code": 0
 }

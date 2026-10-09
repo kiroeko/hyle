@@ -1,7 +1,7 @@
 {
   "scope": "C3 declared single-route and CPU+one-GPU source/shared/static SDK delivery, ordinary Direct/Graph consumers",
-  "product_candidate": "79137d31ce1bec9053d3a4f92f2892e3a21cbb80",
-  "identity_note": "Each receipt owns actual product/configuration/linkage identities. Windows CPU original and shipping-default-corrected identities are distinguished in its receipt.",
+  "product_candidate": "2614676ee64bceddadcf791c218d6eea1f051c64",
+  "identity_note": "Each receipt keeps its actual product/configuration/linkage identity. Completed Windows CPU/CUDA entries retain 321bb5bd/79137d31 identities; the newer candidate changes only Apple conditional source asset dependencies, not their non-Apple paths. Remaining entries use the newer candidate.",
   "meaning": "Mixed SDK consumers execute each selected route independently. This matrix does not certify H1-H3 joint execution, overlap, expert transfer, model capacity or all operator coverage.",
   "shape_count": 45,
   "consumer_entry_count": 90,

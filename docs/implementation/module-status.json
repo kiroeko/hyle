@@ -270,15 +270,17 @@
     },
     {
       "module": "compute",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/build/compute-unified-delivery.md",
-      "summary": "C2-01条件producer反例已固定；Windows CPU/CUDA三交付消费者均完成，定向修正资产构建依赖，不改数学或重跑P1。"
+      "summary": "统一构建/冷路由候选已修正条件资产producer；Windows CPU/CUDA三交付消费者全部通过，其余平台/路线/mixed矩阵仍待验，H1–H3未实施。",
+      "candidate": "2614676ee64bceddadcf791c218d6eea1f051c64"
     },
     {
       "module": "graph",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/build/compute-unified-delivery.md",
-      "summary": "C2-01条件producer反例已固定；Windows CPU/CUDA三交付消费者均完成，定向修正资产构建依赖，不改数学或重跑P1。"
+      "summary": "统一构建/冷路由候选已修正条件资产producer；Windows CPU/CUDA三交付消费者全部通过，其余平台/路线/mixed矩阵仍待验，H1–H3未实施。",
+      "candidate": "2614676ee64bceddadcf791c218d6eea1f051c64"
     },
     {
       "module": "container_concurrent",
@@ -352,9 +354,10 @@
     },
     {
       "module": "compute_provider_onednn",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/build/compute-unified-delivery.md",
-      "summary": "C2-01条件producer反例已固定；Windows CPU/CUDA三交付消费者均完成，定向修正资产构建依赖，不改数学或重跑P1。"
+      "summary": "统一构建/冷路由候选已修正条件资产producer；Windows CPU/CUDA三交付消费者全部通过，其余平台/路线/mixed矩阵仍待验，H1–H3未实施。",
+      "candidate": "2614676ee64bceddadcf791c218d6eea1f051c64"
     },
     {
       "module": "compute_provider_ggml",
@@ -391,33 +394,38 @@
     },
     {
       "module": "compute_backend_cpu",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/build/compute-unified-delivery.md",
-      "summary": "C2-01条件producer反例已固定；Windows CPU/CUDA三交付消费者均完成，定向修正资产构建依赖，不改数学或重跑P1。"
+      "summary": "统一构建/冷路由候选已修正条件资产producer；Windows CPU/CUDA三交付消费者全部通过，其余平台/路线/mixed矩阵仍待验，H1–H3未实施。",
+      "candidate": "2614676ee64bceddadcf791c218d6eea1f051c64"
     },
     {
       "module": "compute_backend_cuda",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/build/compute-unified-delivery.md",
-      "summary": "C2-01条件producer反例已固定；Windows CPU/CUDA三交付消费者均完成，定向修正资产构建依赖，不改数学或重跑P1。"
+      "summary": "统一构建/冷路由候选已修正条件资产producer；Windows CPU/CUDA三交付消费者全部通过，其余平台/路线/mixed矩阵仍待验，H1–H3未实施。",
+      "candidate": "2614676ee64bceddadcf791c218d6eea1f051c64"
     },
     {
       "module": "compute_provider_native",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/build/compute-unified-delivery.md",
-      "summary": "C2-01条件producer反例已固定；Windows CPU/CUDA三交付消费者均完成，定向修正资产构建依赖，不改数学或重跑P1。"
+      "summary": "统一构建/冷路由候选已修正条件资产producer；Windows CPU/CUDA三交付消费者全部通过，其余平台/路线/mixed矩阵仍待验，H1–H3未实施。",
+      "candidate": "2614676ee64bceddadcf791c218d6eea1f051c64"
     },
     {
       "module": "compute_route_cpu",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/build/compute-unified-delivery.md",
-      "summary": "C2-01条件producer反例已固定；Windows CPU/CUDA三交付消费者均完成，定向修正资产构建依赖，不改数学或重跑P1。"
+      "summary": "统一构建/冷路由候选已修正条件资产producer；Windows CPU/CUDA三交付消费者全部通过，其余平台/路线/mixed矩阵仍待验，H1–H3未实施。",
+      "candidate": "2614676ee64bceddadcf791c218d6eea1f051c64"
     },
     {
       "module": "graph_route_cpu",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/build/compute-unified-delivery.md",
-      "summary": "C2-01条件producer反例已固定；Windows CPU/CUDA三交付消费者均完成，定向修正资产构建依赖，不改数学或重跑P1。"
+      "summary": "统一构建/冷路由候选已修正条件资产producer；Windows CPU/CUDA三交付消费者全部通过，其余平台/路线/mixed矩阵仍待验，H1–H3未实施。",
+      "candidate": "2614676ee64bceddadcf791c218d6eea1f051c64"
     },
     {
       "module": "compute_provider_cublas",
@@ -455,39 +463,45 @@
     },
     {
       "module": "compute_route_cuda",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/build/compute-unified-delivery.md",
-      "summary": "C2-01条件producer反例已固定；Windows CPU/CUDA三交付消费者均完成，定向修正资产构建依赖，不改数学或重跑P1。"
+      "summary": "统一构建/冷路由候选已修正条件资产producer；Windows CPU/CUDA三交付消费者全部通过，其余平台/路线/mixed矩阵仍待验，H1–H3未实施。",
+      "candidate": "2614676ee64bceddadcf791c218d6eea1f051c64"
     },
     {
       "module": "graph_route_cuda",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/build/compute-unified-delivery.md",
-      "summary": "C2-01条件producer反例已固定；Windows CPU/CUDA三交付消费者均完成，定向修正资产构建依赖，不改数学或重跑P1。"
+      "summary": "统一构建/冷路由候选已修正条件资产producer；Windows CPU/CUDA三交付消费者全部通过，其余平台/路线/mixed矩阵仍待验，H1–H3未实施。",
+      "candidate": "2614676ee64bceddadcf791c218d6eea1f051c64"
     },
     {
       "module": "compute_route_apple",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/build/compute-unified-delivery.md",
-      "summary": "C2-01条件producer反例已固定；Windows CPU/CUDA三交付消费者均完成，定向修正资产构建依赖，不改数学或重跑P1。"
+      "summary": "统一构建/冷路由候选已修正条件资产producer；Windows CPU/CUDA三交付消费者全部通过，其余平台/路线/mixed矩阵仍待验，H1–H3未实施。",
+      "candidate": "2614676ee64bceddadcf791c218d6eea1f051c64"
     },
     {
       "module": "graph_route_apple",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/build/compute-unified-delivery.md",
-      "summary": "C2-01条件producer反例已固定；Windows CPU/CUDA三交付消费者均完成，定向修正资产构建依赖，不改数学或重跑P1。"
+      "summary": "统一构建/冷路由候选已修正条件资产producer；Windows CPU/CUDA三交付消费者全部通过，其余平台/路线/mixed矩阵仍待验，H1–H3未实施。",
+      "candidate": "2614676ee64bceddadcf791c218d6eea1f051c64"
     },
     {
       "module": "compute_route_vulkan",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/build/compute-unified-delivery.md",
-      "summary": "C2-01条件producer反例已固定；Windows CPU/CUDA三交付消费者均完成，定向修正资产构建依赖，不改数学或重跑P1。"
+      "summary": "统一构建/冷路由候选已修正条件资产producer；Windows CPU/CUDA三交付消费者全部通过，其余平台/路线/mixed矩阵仍待验，H1–H3未实施。",
+      "candidate": "2614676ee64bceddadcf791c218d6eea1f051c64"
     },
     {
       "module": "graph_route_vulkan",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/build/compute-unified-delivery.md",
-      "summary": "C2-01条件producer反例已固定；Windows CPU/CUDA三交付消费者均完成，定向修正资产构建依赖，不改数学或重跑P1。"
+      "summary": "统一构建/冷路由候选已修正条件资产producer；Windows CPU/CUDA三交付消费者全部通过，其余平台/路线/mixed矩阵仍待验，H1–H3未实施。",
+      "candidate": "2614676ee64bceddadcf791c218d6eea1f051c64"
     },
     {
       "module": "compute_provider_ggml_vulkan",
@@ -502,9 +516,10 @@
     },
     {
       "module": "compute_ggml_runtime",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/build/compute-unified-delivery.md",
-      "summary": "C2-01条件producer反例已固定；Windows CPU/CUDA三交付消费者均完成，定向修正资产构建依赖，不改数学或重跑P1。"
+      "summary": "统一构建/冷路由候选已修正条件资产producer；Windows CPU/CUDA三交付消费者全部通过，其余平台/路线/mixed矩阵仍待验，H1–H3未实施。",
+      "candidate": "2614676ee64bceddadcf791c218d6eea1f051c64"
     },
     {
       "module": "compute_provider_ggml_cuda",
