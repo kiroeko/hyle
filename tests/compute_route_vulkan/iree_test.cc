@@ -67,6 +67,7 @@ TEST(VulkanIree, OriginalArtifactChecksFeaturesDomainFailureAndCancellation) {
     if (output) data.check(context, output->get()->tensors()[0]);
     else EXPECT_TRUE(output.error().IsCancelled());
     output = c::ResultLease<v::Results>{};
+    cancelled = c::OwnedResult<v::Results>{};
     auto next = slot.submit().value();
     auto result = next.wait();
     ASSERT_TRUE(result) << result.error().message();

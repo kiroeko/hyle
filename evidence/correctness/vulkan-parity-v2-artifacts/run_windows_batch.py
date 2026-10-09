@@ -23,7 +23,8 @@ tag = 'native-' + candidate[:8]
 jobs = [
     ('provider', 'hyle_compute_provider_iree_vulkan_test', '*'),
     ('direct', 'hyle_compute_route_vulkan_test',
-     'VulkanIree.*:VulkanTensor.ExactStorageHandlesOddStridesWordsAndEmptyTransfers'),
+     'VulkanIree.*:VulkanTensor.ExactStorageHandlesOddStridesWordsAndEmptyTransfers:'
+     'VulkanTensor.UnsignedPayloadViewConcatAndNoArithmetic'),
     ('graph', 'hyle_graph_route_vulkan_test',
      'VulkanGraph.OriginalArtifact*:VulkanGraph.OriginalFloat8*:'
      'VulkanGraph.CheckedScanChainsTwoOriginalProgramsWithIndependentResults'),

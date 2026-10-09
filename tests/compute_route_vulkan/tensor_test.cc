@@ -10,6 +10,31 @@ constexpr std::array types{c::DataType::kFloat32,  c::DataType::kFloat16,
                            c::DataType::kInt64,    c::DataType::kBool,
                            c::DataType::kUInt8,    c::DataType::kUInt32};
 
+TEST(VulkanTensor, UnsignedPayloadViewConcatAndNoArithmetic) {
+  auto context = vulkan_test::context().value();
+  for (auto type : {c::DataType::kUInt8, c::DataType::kUInt32}) {
+    const auto description = dense(type, {2, 9});
+    std::vector<std::uint64_t> raw(18);
+    for (std::size_t i = 0; i < raw.size(); ++i)
+      raw[i] = type == c::DataType::kUInt8 ? (i * 37 + 129) % 256
+                                          : 0xfedc1234U + i;
+    const auto source = context.upload(description, payload(description, raw)).value();
+    const auto first = source.view(c::View::slice(1, 1, 3, 2).value()).value();
+    const auto second = source.view(c::View::slice(1, 0, 2, 3).value()).value();
+    auto copy = execute(context, c::Copy{}, std::array{first});
+    ASSERT_TRUE(copy) << copy.error().message();
+    EXPECT_EQ(bits(context, *copy), bits(context, first));
+    auto combined = execute(context, c::Concat{1}, std::array{first, second});
+    ASSERT_TRUE(combined) << combined.error().message();
+    std::vector<std::uint64_t> expected;
+    for (int row = 0; row < 2; ++row)
+      for (int column : {1, 3, 5, 0, 3}) expected.push_back(raw[row * 9 + column]);
+    EXPECT_EQ(bits(context, *combined), expected);
+    EXPECT_EQ(bits(context, source), raw);
+    EXPECT_FALSE(execute(context, c::Unary{c::UnaryKind::kAbs}, std::array{source}));
+  }
+}
+
 TEST(VulkanTensor, ExactStorageHandlesOddStridesWordsAndEmptyTransfers) {
   auto context = vulkan_test::context().value();
   for (auto type : types) {
