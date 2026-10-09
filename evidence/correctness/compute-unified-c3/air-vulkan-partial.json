@@ -6,8 +6,35 @@
   "scope": "Actual Air Vulkan source Direct/Graph under env -u DYLD_LIBRARY_PATH -u DYLD_FALLBACK_LIBRARY_PATH; no user workaround",
   "source_direct": "PASS",
   "source_graph": "PASS",
-  "shared_static": "UNRUN",
+  "shared_static": "PASS",
   "log_sha256": "8f859edcc4bafcc30ee5c65e456f586a2d347ede68e61f3294d8900107766ba2",
   "before_failure": "Preserved air-vulkan-loader-failure; temporary environment diagnostic is not the current PASS",
-  "remaining": "Shared/static and rest of C3/mixed/H1-H3 unproven"
+  "remaining": "Other platform/route/mixed entries and H1-H3 unproven",
+  "sdk_rows": [
+    {
+      "entry": "shared-direct",
+      "verdict": "PASS",
+      "log": "evidence/correctness/compute-unified-c3/air-vulkan/shared-direct-ctest.log",
+      "sha256": "69bdf5bdf0388b120279572b850e2fa64a6b5c81fe020da91a6f4f556978b38a"
+    },
+    {
+      "entry": "shared-graph",
+      "verdict": "PASS",
+      "log": "evidence/correctness/compute-unified-c3/air-vulkan/shared-graph-ctest.log",
+      "sha256": "d0cc124c7fdcf2df699f8470cebb0781399dd1f4ffd0258b6146b004496fe150"
+    },
+    {
+      "entry": "static-direct",
+      "verdict": "PASS",
+      "log": "evidence/correctness/compute-unified-c3/air-vulkan/static-direct-ctest.log",
+      "sha256": "2be0e421c0ffe8e55d1564f4b2a0c08dfe5270ea96399df8c3f7d42e76247a68"
+    },
+    {
+      "entry": "static-graph",
+      "verdict": "PASS",
+      "log": "evidence/correctness/compute-unified-c3/air-vulkan/static-graph-ctest.log",
+      "sha256": "8ea188ebe8ab0019f82d449b8ccaa928a3d7106b6de47b2090ebb1355a170c88"
+    }
+  ],
+  "batch_exit_code": 0
 }

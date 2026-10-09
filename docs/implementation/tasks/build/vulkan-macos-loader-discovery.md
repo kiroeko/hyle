@@ -29,3 +29,8 @@ Air普通source已实际PASS：明确`env -u DYLD_LIBRARY_PATH -u DYLD_FALLBACK_
 原Direct/Graph，2.42s/0.47s；[收据](../../../../evidence/correctness/compute-unified-c3/air-vulkan-partial.json)
 保持初始FAIL与诊断独立。完整源码archive hash匹配后checksum增量更新，只编译一个owner TU
 及必要链接，原shader no-work。shared/static恢复现有driver循环，未删除source root，尚未签PASS。
+
+原shared/static循环现已exit0，四项SDK消费者也全部PASS（static Graph0.78s/Direct0.73s），
+两SDK搬迁和实际HyleConfig日志已归档。普通入口未设置DYLD回退环境，driver/数学未改。
+本卡适用source/shared/static门完成；actor暂保CANDIDATE等待C3统一终审/其余直接需求绑定，
+不代签尚未完成的mixed平台矩阵或H1–H3。统一LOC当前62,508实现行，不含tests/third_party。

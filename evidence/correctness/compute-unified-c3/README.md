@@ -4,8 +4,8 @@ This is ongoing validation for the [active delivery card](../../../docs/implemen
 It is not a terminal verdict for all platforms/routes, hybrid execution, or asynchronous expert transfers.
 
 [Delivery matrix](delivery-matrix.json) fixes the declared applicable scope: 15 platform/route groups,
-45 source/shared/static shapes, each with the existing Direct and Graph consumer. Twenty-four consumer entries
-are currently PASS and the other 66 are UNRUN; earlier Vulkan failures remain archived. A mixed SDK entry runs each selected native route independently
+45 source/shared/static shapes, each with the existing Direct and Graph consumer. Thirty consumer entries
+are currently PASS and the other 60 are UNRUN; earlier Vulkan failures remain archived. A mixed SDK entry runs each selected native route independently
 and cannot certify the later joint execution or asynchronous transfer work.
 
 [Conditional source-asset producer counterexample](apple-conditional-producer/receipt.json) records a
@@ -68,3 +68,7 @@ The [Air Apple partial receipt](air-apple-partial.json) signs actual source Dire
 Mac16,12 Apple M4. Shared/static also passed and the serial batch exited 0. Its newer complete validation
 source snapshot is c8874688, archive SHA256 `3770e2f2147120f527ff96a45af4a096ed846c791624e720582cb2eb4a88d4f5`;
 product c96c7c6e and test/document-only follow-up identities remain distinct.
+The [Air Vulkan receipt](air-vulkan-partial.json) covers six actual source/relocated shared/static consumers
+after route-owned default loader discovery, without DYLD overrides. Its original loader failure remains
+archived. Product a1c22ac3 and validation snapshot 55652ab2 are bound to the complete archive hash; only the
+changed owner TU and links were rebuilt for the source correction.
