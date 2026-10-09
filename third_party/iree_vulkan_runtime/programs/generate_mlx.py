@@ -90,7 +90,15 @@ def group_program(fmt, dtype, grouped):
     else:
         lines += ['      %encoded = arith.trunci %code : i32 to i8',
                   '      %fp8 = arith.bitcast %encoded : i8 to f8E4M3FN',
-                  '      %value = arith.extf %fp8 : f8E4M3FN to f32']
+                  '      %decoded_value = arith.extf %fp8 : f8E4M3FN to f32',
+                  # E4M3FN reserves both signs of exponent15/mantissa7.
+                  # The locked original lowering recognizes only +NaN.
+                  '      %nan_mask = arith.constant 127 : i32',
+                  '      %magnitude = arith.andi %code, %nan_mask : i32',
+                  '      %is_nan = arith.cmpi eq, %magnitude, %nan_mask : i32',
+                  '      %nan_bits = arith.constant 2143289344 : i32',
+                  '      %nan = arith.bitcast %nan_bits : i32 to f32',
+                  '      %value = arith.select %is_nan, %nan, %decoded_value : f32']
     lines += ['      linalg.yield %value : f32', '  } -> tensor<?x?x?xf32>',
               '  %a_bar = util.optimization_barrier %ax : tensor<?x?x?xf32>',
               '  %w_bar = util.optimization_barrier %wx : tensor<?x?x?xf32>',

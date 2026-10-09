@@ -147,7 +147,11 @@ struct Inputs final {
 
   void check(const v::Context &context, const v::Tensor &tensor) const {
     ASSERT_EQ(tensor.description(), output);
-    t::expect(context, tensor, expected, true);
+    // MatMul's original numerical contract permits native F32 association and
+    // device denormal behavior. Reuse its established arithmetic error gate;
+    // NaN/Inf classification remains mandatory. Embedding's typed pointwise
+    // multiplication/addition retains the exact source rounding gate.
+    t::expect(context, tensor, expected, kind == Kind::kEmbedding);
   }
 };
 

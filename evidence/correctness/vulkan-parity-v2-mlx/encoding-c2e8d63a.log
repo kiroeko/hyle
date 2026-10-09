@@ -1,0 +1,409 @@
+Running main() from C:\public\tools\hyle-dependencies\v1\sources\googletest-063de7e9578f-162765170ae6\googletest\src\gtest_main.cc
+Note: Google Test filter = VulkanIree.OriginalMlxMx8SignsZerosAndSourceScaleClassification:VulkanIree.OriginalMlxMx8All256EncodingsUseTheSourceFormat
+[==========] Running 2 tests from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 2 tests from VulkanIree
+[ RUN      ] VulkanIree.OriginalMlxMx8SignsZerosAndSourceScaleClassification
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\tensor_test_support.h(108): error: Expected equality of these values:
+  observed[i]
+    Which is: 0
+  want
+    Which is: 1.88079096131566e-37
+0
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\iree_test.cc(76): 1/6/0
+
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\tensor_test_support.h(108): error: Expected equality of these values:
+  observed[i]
+    Which is: 0
+  want
+    Which is: 1.88079096131566e-37
+1
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\iree_test.cc(76): 1/6/0
+
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\tensor_test_support.h(108): error: Expected equality of these values:
+  observed[i]
+    Which is: 0
+  want
+    Which is: 1.88079096131566e-37
+2
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\iree_test.cc(76): 1/6/0
+
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\tensor_test_support.h(108): error: Expected equality of these values:
+  observed[i]
+    Which is: 0
+  want
+    Which is: 1.88079096131566e-37
+3
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\iree_test.cc(76): 1/6/0
+
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\tensor_test_support.h(108): error: Expected equality of these values:
+  observed[i]
+    Which is: 0
+  want
+    Which is: 1.88079096131566e-37
+4
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\iree_test.cc(76): 1/6/0
+
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\tensor_test_support.h(108): error: Expected equality of these values:
+  observed[i]
+    Which is: 0
+  want
+    Which is: 1.88079096131566e-37
+5
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\iree_test.cc(76): 1/6/0
+
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\tensor_test_support.h(108): error: Expected equality of these values:
+  observed[i]
+    Which is: 0
+  want
+    Which is: 1.88079096131566e-37
+6
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\iree_test.cc(76): 1/6/0
+
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\tensor_test_support.h(108): error: Expected equality of these values:
+  observed[i]
+    Which is: 0
+  want
+    Which is: 1.88079096131566e-37
+7
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\iree_test.cc(76): 1/6/0
+
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\tensor_test_support.h(108): error: Expected equality of these values:
+  observed[i]
+    Which is: 0
+  want
+    Which is: 1.88079096131566e-37
+8
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\iree_test.cc(76): 1/6/0
+
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\tensor_test_support.h(108): error: Expected equality of these values:
+  observed[i]
+    Which is: 0
+  want
+    Which is: 1.88079096131566e-37
+9
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\iree_test.cc(76): 1/6/0
+
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\tensor_test_support.h(108): error: Expected equality of these values:
+  observed[i]
+    Which is: 0
+  want
+    Which is: 1.88079096131566e-37
+0
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\iree_test.cc(76): 1/5/0
+
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\tensor_test_support.h(108): error: Expected equality of these values:
+  observed[i]
+    Which is: 0
+  want
+    Which is: 1.88079096131566e-37
+1
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\iree_test.cc(76): 1/5/0
+
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\tensor_test_support.h(108): error: Expected equality of these values:
+  observed[i]
+    Which is: 0
+  want
+    Which is: 1.88079096131566e-37
+2
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\iree_test.cc(76): 1/5/0
+
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\tensor_test_support.h(108): error: Expected equality of these values:
+  observed[i]
+    Which is: 0
+  want
+    Which is: 1.88079096131566e-37
+3
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\iree_test.cc(76): 1/5/0
+
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\tensor_test_support.h(108): error: Expected equality of these values:
+  observed[i]
+    Which is: 0
+  want
+    Which is: 1.88079096131566e-37
+4
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\iree_test.cc(76): 1/5/0
+
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\tensor_test_support.h(108): error: Expected equality of these values:
+  observed[i]
+    Which is: 0
+  want
+    Which is: 1.88079096131566e-37
+5
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\iree_test.cc(76): 1/5/0
+
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\tensor_test_support.h(108): error: Expected equality of these values:
+  observed[i]
+    Which is: 0
+  want
+    Which is: 1.88079096131566e-37
+6
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\iree_test.cc(76): 1/5/0
+
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\tensor_test_support.h(108): error: Expected equality of these values:
+  observed[i]
+    Which is: 0
+  want
+    Which is: 1.88079096131566e-37
+7
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\iree_test.cc(76): 1/5/0
+
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\tensor_test_support.h(108): error: Expected equality of these values:
+  observed[i]
+    Which is: 0
+  want
+    Which is: 1.88079096131566e-37
+8
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\iree_test.cc(76): 1/5/0
+
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\tensor_test_support.h(108): error: Expected equality of these values:
+  observed[i]
+    Which is: 0
+  want
+    Which is: 1.88079096131566e-37
+9
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\iree_test.cc(76): 1/5/0
+
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\tensor_test_support.h(108): error: Expected equality of these values:
+  observed[i]
+    Which is: 0
+  want
+    Which is: 1.88079096131566e-37
+0
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\iree_test.cc(76): 2/6/0
+
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\tensor_test_support.h(108): error: Expected equality of these values:
+  observed[i]
+    Which is: 0
+  want
+    Which is: 1.88079096131566e-37
+1
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\iree_test.cc(76): 2/6/0
+
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\tensor_test_support.h(108): error: Expected equality of these values:
+  observed[i]
+    Which is: 0
+  want
+    Which is: 1.88079096131566e-37
+2
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\iree_test.cc(76): 2/6/0
+
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\tensor_test_support.h(108): error: Expected equality of these values:
+  observed[i]
+    Which is: 0
+  want
+    Which is: 1.88079096131566e-37
+3
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\iree_test.cc(76): 2/6/0
+
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\tensor_test_support.h(108): error: Expected equality of these values:
+  observed[i]
+    Which is: 0
+  want
+    Which is: 1.88079096131566e-37
+4
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\iree_test.cc(76): 2/6/0
+
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\tensor_test_support.h(108): error: Expected equality of these values:
+  observed[i]
+    Which is: 0
+  want
+    Which is: 1.88079096131566e-37
+5
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\iree_test.cc(76): 2/6/0
+
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\tensor_test_support.h(108): error: Expected equality of these values:
+  observed[i]
+    Which is: 0
+  want
+    Which is: 1.88079096131566e-37
+6
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\iree_test.cc(76): 2/6/0
+
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\tensor_test_support.h(108): error: Expected equality of these values:
+  observed[i]
+    Which is: 0
+  want
+    Which is: 1.88079096131566e-37
+7
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\iree_test.cc(76): 2/6/0
+
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\tensor_test_support.h(108): error: Expected equality of these values:
+  observed[i]
+    Which is: 0
+  want
+    Which is: 1.88079096131566e-37
+8
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\iree_test.cc(76): 2/6/0
+
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\tensor_test_support.h(108): error: Expected equality of these values:
+  observed[i]
+    Which is: 0
+  want
+    Which is: 1.88079096131566e-37
+9
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\iree_test.cc(76): 2/6/0
+
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\tensor_test_support.h(108): error: Expected equality of these values:
+  observed[i]
+    Which is: 0
+  want
+    Which is: 1.88079096131566e-37
+0
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\iree_test.cc(76): 2/5/0
+
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\tensor_test_support.h(108): error: Expected equality of these values:
+  observed[i]
+    Which is: 0
+  want
+    Which is: 1.88079096131566e-37
+1
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\iree_test.cc(76): 2/5/0
+
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\tensor_test_support.h(108): error: Expected equality of these values:
+  observed[i]
+    Which is: 0
+  want
+    Which is: 1.88079096131566e-37
+2
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\iree_test.cc(76): 2/5/0
+
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\tensor_test_support.h(108): error: Expected equality of these values:
+  observed[i]
+    Which is: 0
+  want
+    Which is: 1.88079096131566e-37
+3
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\iree_test.cc(76): 2/5/0
+
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\tensor_test_support.h(108): error: Expected equality of these values:
+  observed[i]
+    Which is: 0
+  want
+    Which is: 1.88079096131566e-37
+4
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\iree_test.cc(76): 2/5/0
+
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\tensor_test_support.h(108): error: Expected equality of these values:
+  observed[i]
+    Which is: 0
+  want
+    Which is: 1.88079096131566e-37
+5
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\iree_test.cc(76): 2/5/0
+
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\tensor_test_support.h(108): error: Expected equality of these values:
+  observed[i]
+    Which is: 0
+  want
+    Which is: 1.88079096131566e-37
+6
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\iree_test.cc(76): 2/5/0
+
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\tensor_test_support.h(108): error: Expected equality of these values:
+  observed[i]
+    Which is: 0
+  want
+    Which is: 1.88079096131566e-37
+7
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\iree_test.cc(76): 2/5/0
+
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\tensor_test_support.h(108): error: Expected equality of these values:
+  observed[i]
+    Which is: 0
+  want
+    Which is: 1.88079096131566e-37
+8
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\iree_test.cc(76): 2/5/0
+
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\tensor_test_support.h(108): error: Expected equality of these values:
+  observed[i]
+    Which is: 0
+  want
+    Which is: 1.88079096131566e-37
+9
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\iree_test.cc(76): 2/5/0
+
+[  FAILED  ] VulkanIree.OriginalMlxMx8SignsZerosAndSourceScaleClassification (700 ms)
+[ RUN      ] VulkanIree.OriginalMlxMx8All256EncodingsUseTheSourceFormat
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\tensor_test_support.h(106): error: Value of: std::isnan(observed[i])
+  Actual: false
+Expected: true
+255
+
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\tensor_test_support.h(106): error: Value of: std::isnan(observed[i])
+  Actual: false
+Expected: true
+511
+
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\tensor_test_support.h(106): error: Value of: std::isnan(observed[i])
+  Actual: false
+Expected: true
+255
+
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\tensor_test_support.h(106): error: Value of: std::isnan(observed[i])
+  Actual: false
+Expected: true
+511
+
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\tensor_test_support.h(106): error: Value of: std::isnan(observed[i])
+  Actual: false
+Expected: true
+255
+
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\tensor_test_support.h(106): error: Value of: std::isnan(observed[i])
+  Actual: false
+Expected: true
+511
+
+[  FAILED  ] VulkanIree.OriginalMlxMx8All256EncodingsUseTheSourceFormat (164 ms)
+[----------] 2 tests from VulkanIree (865 ms total)
+
+[----------] Global test environment tear-down
+[==========] 2 tests from 1 test suite ran. (865 ms total)
+[  PASSED  ] 0 tests.
+[  FAILED  ] 2 tests, listed below:
+[  FAILED  ] VulkanIree.OriginalMlxMx8SignsZerosAndSourceScaleClassification
+[  FAILED  ] VulkanIree.OriginalMlxMx8All256EncodingsUseTheSourceFormat
+
+ 2 FAILED TESTS

@@ -112,3 +112,23 @@ FP8影响子集通过。仅两批量 ID在首个grouped坏索引后要求旧slot
 `gather_test.cc`既有合同明确旧slot保持OutOfRange、同Program新Invocation恢复。
 唯一M5纠正只按此已有失败合同改fixture，不改变产品错误形状或数值门。
 两失败ID执行一次delta；先前真实PASS域复用，不再跑Provider/旧域/全集或P1。
+
+## M1-N：完整编码／矩阵精度门的具名纠正
+
+`c2e8d63a` 追加42个源scale边界及全部256 E4M3FN code（三dtype）后，实际发现两项：
+negative NaN0xff被原compiler转换成有限值；MX scale0的2^-127在F32乘法中被flush，
+结果0相对独立原算法为约1.88e-37。原新增test曾把全部复合MatMul传入helper的
+`exact=true`，这既不是现有普通矩阵误差合同，也不是MLX原CPU SIMD lane/原GPU关联次序
+的逐位承诺；原source NOTICE已明确矩阵F32 association不签bitwise identity。
+
+一次M1-N明确动作：negative NaN按原E4M3FN两个sign的保留码分类作标准select保护；
+其余转换仍原`arith.extf`，不改量化算法。MatMul使用已存在普通tensor算术门
+F32 `6e-6 relative+2e-6 absolute`、F16 `0.001 relative+2e-7 absolute`、BF16
+`0.008 relative+2e-7 absolute`，NaN/Inf仍严格分类/相等；embedding保留exact typed门。
+这是把人为新增的bitwise矩阵test改回原产品合同，不改变既有普通数值门或放宽NaN。
+
+一次实际float-controls查询：denorm16=1、denorm32=0、signed32=1。明确不承诺Vulkan
+F32渐进下溢/1e-37的逐位CPU一致性，不能强加设备不支持的DenormPreserve32模式。
+源scale编码/半精度边界不变，整体模型数值仍须按既有完整链门另验；此事实进入父轮
+numeric/default文档。原exact失败保留，不能倒写PASS。唯一重跑两个边界ID；因共享
+reference解释改变，同时定向复核两个MLX批量ID，其它已通过资源/常量/旧域不重测。

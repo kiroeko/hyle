@@ -75,10 +75,10 @@
     {
       "name": "mlx",
       "file": "mlx.vmfb.b64",
-      "sha256": "af554194521f9975b821f47feba8c81639add8835217727ea0c07d3febc6d920",
-      "bytes": 214449,
+      "sha256": "76130ec7b73e7d73e4cf69c19e246d9ffdddabe5e7f6fed1890eef94066f4b6c",
+      "bytes": 214609,
       "recipe": "mlx.mlir",
-      "recipe_sha256": "c1b77b3e0f9b5c032f1b407d66bb0e187bbfb7b095ea90b6c43e4da519e72bae",
+      "recipe_sha256": "1ddda003de3ae42167f25dee96f5f4cf11bae7ea46a0a9c49adb3316cb29dba6",
       "exports_used": [
         "affine_linear_f32",
         "affine_grouped_f32",

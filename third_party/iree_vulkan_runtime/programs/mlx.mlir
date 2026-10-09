@@ -1076,7 +1076,13 @@ func.func @mx8_linear_f32(%a: tensor<?x?xf32>, %w: tensor<?x?x?xi32>, %s: tensor
       %code = arith.andi %shifted, %mask : i32
       %encoded = arith.trunci %code : i32 to i8
       %fp8 = arith.bitcast %encoded : i8 to f8E4M3FN
-      %value = arith.extf %fp8 : f8E4M3FN to f32
+      %decoded_value = arith.extf %fp8 : f8E4M3FN to f32
+      %nan_mask = arith.constant 127 : i32
+      %magnitude = arith.andi %code, %nan_mask : i32
+      %is_nan = arith.cmpi eq, %magnitude, %nan_mask : i32
+      %nan_bits = arith.constant 2143289344 : i32
+      %nan = arith.bitcast %nan_bits : i32 to f32
+      %value = arith.select %is_nan, %nan, %decoded_value : f32
       linalg.yield %value : f32
   } -> tensor<?x?x?xf32>
   %a_bar = util.optimization_barrier %ax : tensor<?x?x?xf32>
@@ -1168,7 +1174,13 @@ func.func @mx8_grouped_f32(%a: tensor<?x?xf32>, %w: tensor<?x?x?xi32>, %s: tenso
       %code = arith.andi %shifted, %mask : i32
       %encoded = arith.trunci %code : i32 to i8
       %fp8 = arith.bitcast %encoded : i8 to f8E4M3FN
-      %value = arith.extf %fp8 : f8E4M3FN to f32
+      %decoded_value = arith.extf %fp8 : f8E4M3FN to f32
+      %nan_mask = arith.constant 127 : i32
+      %magnitude = arith.andi %code, %nan_mask : i32
+      %is_nan = arith.cmpi eq, %magnitude, %nan_mask : i32
+      %nan_bits = arith.constant 2143289344 : i32
+      %nan = arith.bitcast %nan_bits : i32 to f32
+      %value = arith.select %is_nan, %nan, %decoded_value : f32
       linalg.yield %value : f32
   } -> tensor<?x?x?xf32>
   %a_bar = util.optimization_barrier %ax : tensor<?x?x?xf32>
@@ -1261,7 +1273,13 @@ func.func @mx8_linear_f16(%a: tensor<?x?xf16>, %w: tensor<?x?x?xi32>, %s: tensor
       %code = arith.andi %shifted, %mask : i32
       %encoded = arith.trunci %code : i32 to i8
       %fp8 = arith.bitcast %encoded : i8 to f8E4M3FN
-      %value = arith.extf %fp8 : f8E4M3FN to f32
+      %decoded_value = arith.extf %fp8 : f8E4M3FN to f32
+      %nan_mask = arith.constant 127 : i32
+      %magnitude = arith.andi %code, %nan_mask : i32
+      %is_nan = arith.cmpi eq, %magnitude, %nan_mask : i32
+      %nan_bits = arith.constant 2143289344 : i32
+      %nan = arith.bitcast %nan_bits : i32 to f32
+      %value = arith.select %is_nan, %nan, %decoded_value : f32
       linalg.yield %value : f32
   } -> tensor<?x?x?xf32>
   %a_bar = util.optimization_barrier %ax : tensor<?x?x?xf32>
@@ -1357,7 +1375,13 @@ func.func @mx8_grouped_f16(%a: tensor<?x?xf16>, %w: tensor<?x?x?xi32>, %s: tenso
       %code = arith.andi %shifted, %mask : i32
       %encoded = arith.trunci %code : i32 to i8
       %fp8 = arith.bitcast %encoded : i8 to f8E4M3FN
-      %value = arith.extf %fp8 : f8E4M3FN to f32
+      %decoded_value = arith.extf %fp8 : f8E4M3FN to f32
+      %nan_mask = arith.constant 127 : i32
+      %magnitude = arith.andi %code, %nan_mask : i32
+      %is_nan = arith.cmpi eq, %magnitude, %nan_mask : i32
+      %nan_bits = arith.constant 2143289344 : i32
+      %nan = arith.bitcast %nan_bits : i32 to f32
+      %value = arith.select %is_nan, %nan, %decoded_value : f32
       linalg.yield %value : f32
   } -> tensor<?x?x?xf32>
   %a_bar = util.optimization_barrier %ax : tensor<?x?x?xf32>
@@ -1454,7 +1478,13 @@ func.func @mx8_linear_bf16(%a: tensor<?x?xi16>, %w: tensor<?x?x?xi32>, %s: tenso
       %code = arith.andi %shifted, %mask : i32
       %encoded = arith.trunci %code : i32 to i8
       %fp8 = arith.bitcast %encoded : i8 to f8E4M3FN
-      %value = arith.extf %fp8 : f8E4M3FN to f32
+      %decoded_value = arith.extf %fp8 : f8E4M3FN to f32
+      %nan_mask = arith.constant 127 : i32
+      %magnitude = arith.andi %code, %nan_mask : i32
+      %is_nan = arith.cmpi eq, %magnitude, %nan_mask : i32
+      %nan_bits = arith.constant 2143289344 : i32
+      %nan = arith.bitcast %nan_bits : i32 to f32
+      %value = arith.select %is_nan, %nan, %decoded_value : f32
       linalg.yield %value : f32
   } -> tensor<?x?x?xf32>
   %a_bar = util.optimization_barrier %ax : tensor<?x?x?xf32>
@@ -1554,7 +1584,13 @@ func.func @mx8_grouped_bf16(%a: tensor<?x?xi16>, %w: tensor<?x?x?xi32>, %s: tens
       %code = arith.andi %shifted, %mask : i32
       %encoded = arith.trunci %code : i32 to i8
       %fp8 = arith.bitcast %encoded : i8 to f8E4M3FN
-      %value = arith.extf %fp8 : f8E4M3FN to f32
+      %decoded_value = arith.extf %fp8 : f8E4M3FN to f32
+      %nan_mask = arith.constant 127 : i32
+      %magnitude = arith.andi %code, %nan_mask : i32
+      %is_nan = arith.cmpi eq, %magnitude, %nan_mask : i32
+      %nan_bits = arith.constant 2143289344 : i32
+      %nan = arith.bitcast %nan_bits : i32 to f32
+      %value = arith.select %is_nan, %nan, %decoded_value : f32
       linalg.yield %value : f32
   } -> tensor<?x?x?xf32>
   %a_bar = util.optimization_barrier %ax : tensor<?x?x?xf32>

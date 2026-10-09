@@ -121,6 +121,21 @@ TEST(VulkanIree, OriginalMlxMx8All256EncodingsUseTheSourceFormat) {
   }
 }
 
+TEST(VulkanIree, OriginalMlxFloatControlSourceCapture) {
+  auto context = vulkan_test::context().value();
+  const auto &device = *v::detail::Access::runtime(context)->device;
+  VkPhysicalDeviceFloatControlsProperties controls{};
+  controls.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FLOAT_CONTROLS_PROPERTIES;
+  VkPhysicalDeviceProperties2 properties{};
+  properties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
+  properties.pNext = &controls;
+  device.instance_fn.GetPhysicalDeviceProperties2(device.native.physical_device, &properties);
+  std::fprintf(stdout, "MLX_FLOAT_CONTROL denorm16=%u denorm32=%u denorm64=%u signed32=%u independence=%u\n",
+      controls.shaderDenormPreserveFloat16, controls.shaderDenormPreserveFloat32,
+      controls.shaderDenormPreserveFloat64, controls.shaderSignedZeroInfNanPreserveFloat32,
+      static_cast<unsigned>(controls.denormBehaviorIndependence));
+}
+
 TEST(VulkanIree, OriginalArtifactBatchPreservesSourceRoundingAndSixPorts) {
   vulkan_artifact_test::batch(prepare_artifact);
 }
