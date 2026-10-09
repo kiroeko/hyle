@@ -1,0 +1,71 @@
+{
+  "product_candidate": "a27a9b17f043f557726dd73a023e38e70e3e270d",
+  "comparison_baseline": "7cda5d729bee677e7371302874e66049b0e308f7",
+  "product_delta": {
+    "src/compute_provider_iree_vulkan/native_program.cc": "d25a91dcb1f42db3dea5dbb4b3c79b05eff578d23b6f4c9f0b3629f9e0c5e8a0",
+    "src/compute_route_vulkan/vulkan_iree.cc": "59cabb81314179752ecc935f1ecc936f828c37a141af28e96ab6e965dc7d76c4",
+    "src/compute_route_vulkan/vulkan_pipeline.cc": "59aec5b0eb94cadbd383236707e7813d6a763366ebdc2ec20010b5407d11ee2c"
+  },
+  "equivalence_review": [
+    "IQ1 HAL dimensions are positive and bounded to INT32 packed/workspace domain before signed/HAL conversion; explicit cast preserves admitted values",
+    "Two captured constexpr limits are never ODR-used; removing unused captures preserves the same range equations and program allocation",
+    "size_t and uint64_t have equal width on all observed hosts; artifact elements first bounded to INT32/8, same grid computation and bounds",
+    "HAL SINT8 scalar enum values explicitly typed to existing element typedef, same encoded and MX arithmetic/storage paths",
+    "Vulkan binding/layout/pool update-after-bind bit constants explicitly typed to their flag typedefs, same rebindable and zero branches; actual two-entrance SDK lease/cancel/OOM/close delta on Windows/Air"
+  ],
+  "unchanged_scopes": [
+    "Public API and Environment fields since 7cda",
+    "Default cold matching and all prepare/run algorithm selections",
+    "All ggml resource overlays/shader math and IREE original VMFB/recipes",
+    "Graph liveness/native execution/submission/completion and recorded plan",
+    "CPU/CUDA/Apple products and SIMD itself"
+  ],
+  "receipts": {
+    "windows-verdict.json": {
+      "sha256": "3798bd548b03c477181c11e435cd913b198194f6391708617d33e57f2a4a57b9",
+      "verdict": "per-step PASS"
+    },
+    "windows-resource-receipt.json": {
+      "sha256": "ede5122944ab7d187a987259be965e76fff2d814e0fd2353552c0a4f4353af3b",
+      "verdict": "PASS"
+    },
+    "windows-off-receipt.json": {
+      "sha256": "4330fbee30e8f2a6da0b321ab856dede7d5a3b7c0cb0910b45bb54c65bf8f804",
+      "verdict": "PASS"
+    },
+    "air-receipt.json": {
+      "sha256": "814ef0f34dd952f43e0ff36330cb8f25eac0a0e6fbf6c047c4029e61d56db483",
+      "verdict": "PASS"
+    },
+    "air-final-receipt.json": {
+      "sha256": "1cc6345e5ca17681f82430a836bf15829d0c66843eaac576ab7d75e9cedd14b9",
+      "verdict": "PASS"
+    },
+    "wsl-static-receipt.json": {
+      "sha256": "ee04f0094cf93d3c1f8b0fdb003c1eceed541c784d8a39f1cc279fd64a76259d",
+      "verdict": "PASS"
+    },
+    "wsl-shared-receipt.json": {
+      "sha256": "bbdfaaefc7d23776e44878f0699380381f941f974f583b565b6517316d02dd22",
+      "verdict": "PASS"
+    },
+    "wsl-off-receipt.json": {
+      "sha256": "3482841a685b8f4c94c5aac833acf6de3ddf3729c62693eb50168fc92f4b977c",
+      "verdict": "PASS"
+    }
+  },
+  "windows_full_numeric_proof": "evidence/correctness/vulkan-parity-v2-catalogue/README.md; both80/560/25 plus40family and8fullbank current receipts; 80 parameter/eight-family per-entry SHA map",
+  "default_proof": "v3-default-7cda5d72 Direct10/10 Graph10/10 full-condition and unknown-rule/resource tests; no hot matching",
+  "performance_policy": "Explicit user engineering/P0 decision; primary AA PASS, placement AA qualification FAIL, formal n15 NOT_RUN/INCONCLUSIVE retained; no WIN",
+  "scope_limits": [
+    "Window full operator/state scope, not full-model engine or giant full-model residency",
+    "Air real MoltenVK representative numerical/resource programs and three deliveries; not all559 Windows ports or all devices",
+    "WSL compiler/header/three-delivery and real default software-device refusal; GPU numerical UNAVAILABLE, not PASS"
+  ],
+  "cleanup": {
+    "status": "BLOCKED_BY_AUTOMATIC_APPROVAL",
+    "retained_windows_transport_files": 8,
+    "retained_windows_transport_bytes": 36764705,
+    "reason": "Automatic review rejected inline multi-surface deletion and then even preparation/dry-run of bounded single-shell file-only cleanup. Returned reason only blocked by policy. No deletion ran. Valid reusable producers and locked shared caches retained; no failed standalone producer remains."
+  }
+}

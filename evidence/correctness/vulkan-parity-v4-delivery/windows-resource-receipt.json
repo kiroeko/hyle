@@ -1,0 +1,142 @@
+{
+  "candidate": "2eb1c76643ed3d81332a654961ae4d2945f17df1",
+  "steps": [
+    {
+      "label": "static-build",
+      "argv": [
+        "C:\\Program Files\\CMake\\bin\\cmake.EXE",
+        "--build",
+        "C:\\hv\\v4w\\source-build",
+        "--target",
+        "hyle_compute_provider_iree_vulkan",
+        "hyle_compute_route_vulkan",
+        "hyle_graph_route_vulkan",
+        "--parallel",
+        "2"
+      ],
+      "returncode": 0,
+      "seconds": 3.437
+    },
+    {
+      "label": "static-install",
+      "argv": [
+        "C:\\Program Files\\CMake\\bin\\cmake.EXE",
+        "--install",
+        "C:\\hv\\v4w\\source-build",
+        "--prefix",
+        "C:\\hv\\v4w\\static-relocated"
+      ],
+      "returncode": 0,
+      "seconds": 0.219
+    },
+    {
+      "label": "static-consumer-link",
+      "argv": [
+        "C:\\Program Files\\CMake\\bin\\cmake.EXE",
+        "--build",
+        "C:\\hv\\v4w\\static-consumer",
+        "--target",
+        "d5_vulkan_delivery",
+        "--parallel",
+        "2"
+      ],
+      "returncode": 0,
+      "seconds": 2.891
+    },
+    {
+      "label": "static-direct-resource",
+      "argv": [
+        "C:\\hv\\v4w\\static-consumer\\d5_vulkan_direct.exe",
+        "--gtest_filter=*V4OriginalIq1OwnedLeaseCancelCloseAndOom",
+        "--gtest_output=xml:C:\\hv\\v4w\\receipts\\windows-w4-w5-resource-delta\\static-direct.xml"
+      ],
+      "returncode": 0,
+      "seconds": 0.343
+    },
+    {
+      "label": "static-graph-resource",
+      "argv": [
+        "C:\\hv\\v4w\\static-consumer\\d5_vulkan_graph.exe",
+        "--gtest_filter=*V4OriginalIq1OwnedLeaseCancelCloseAndOom",
+        "--gtest_output=xml:C:\\hv\\v4w\\receipts\\windows-w4-w5-resource-delta\\static-graph.xml"
+      ],
+      "returncode": 0,
+      "seconds": 0.344
+    },
+    {
+      "label": "shared-build",
+      "argv": [
+        "C:\\Program Files\\CMake\\bin\\cmake.EXE",
+        "--build",
+        "C:\\hv\\vp1",
+        "--target",
+        "hyle_compute_provider_iree_vulkan",
+        "hyle_compute_route_vulkan",
+        "hyle_graph_route_vulkan",
+        "--parallel",
+        "2"
+      ],
+      "returncode": 0,
+      "seconds": 3.375
+    },
+    {
+      "label": "shared-install",
+      "argv": [
+        "C:\\Program Files\\CMake\\bin\\cmake.EXE",
+        "--install",
+        "C:\\hv\\vp1",
+        "--prefix",
+        "C:\\hv\\v4w\\shared-relocated"
+      ],
+      "returncode": 0,
+      "seconds": 0.187
+    },
+    {
+      "label": "shared-consumer-link",
+      "argv": [
+        "C:\\Program Files\\CMake\\bin\\cmake.EXE",
+        "--build",
+        "C:\\hv\\v4w\\shared-consumer",
+        "--target",
+        "d5_vulkan_delivery",
+        "--parallel",
+        "2"
+      ],
+      "returncode": 0,
+      "seconds": 3.609
+    },
+    {
+      "label": "shared-direct-resource",
+      "argv": [
+        "C:\\hv\\v4w\\shared-consumer\\d5_vulkan_direct.exe",
+        "--gtest_filter=*V4OriginalIq1OwnedLeaseCancelCloseAndOom",
+        "--gtest_output=xml:C:\\hv\\v4w\\receipts\\windows-w4-w5-resource-delta\\shared-direct.xml"
+      ],
+      "returncode": 0,
+      "seconds": 0.39
+    },
+    {
+      "label": "shared-graph-resource",
+      "argv": [
+        "C:\\hv\\v4w\\shared-consumer\\d5_vulkan_graph.exe",
+        "--gtest_filter=*V4OriginalIq1OwnedLeaseCancelCloseAndOom",
+        "--gtest_output=xml:C:\\hv\\v4w\\receipts\\windows-w4-w5-resource-delta\\shared-graph.xml"
+      ],
+      "returncode": 0,
+      "seconds": 0.313
+    }
+  ],
+  "stages": {
+    "static": {
+      "verdict": "PASS",
+      "iq1_cases": 2,
+      "source_changes": "explicit HAL element and Vulkan descriptor flag typedefs preserve identical values; native resource delta actual execution, no VMFB/math change"
+    },
+    "shared": {
+      "verdict": "PASS",
+      "iq1_cases": 2,
+      "source_changes": "explicit HAL element and Vulkan descriptor flag typedefs preserve identical values; native resource delta actual execution, no VMFB/math change"
+    }
+  },
+  "verdict": "PASS"
+}

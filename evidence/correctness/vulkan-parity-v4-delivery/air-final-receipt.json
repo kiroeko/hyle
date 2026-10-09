@@ -1,0 +1,158 @@
+{
+  "candidate": "d0400a9433b796d20d96f2a693f4bf5d47aeb55a",
+  "steps": [
+    {
+      "label": "static-direct-resource",
+      "argv": [
+        "/Users/kiro/hyle-scratch/vulkan-v4-air/static-consumer/d5_vulkan_direct",
+        "--gtest_filter=*V4OriginalIq1OwnedLeaseCancelCloseAndOom",
+        "--gtest_output=xml:/Users/kiro/hyle-scratch/vulkan-v4-air/receipts/final-delta-corrected/static-direct.xml"
+      ],
+      "returncode": 0,
+      "seconds": 0.041
+    },
+    {
+      "label": "static-graph-resource",
+      "argv": [
+        "/Users/kiro/hyle-scratch/vulkan-v4-air/static-consumer/d5_vulkan_graph",
+        "--gtest_filter=*V4OriginalIq1OwnedLeaseCancelCloseAndOom",
+        "--gtest_output=xml:/Users/kiro/hyle-scratch/vulkan-v4-air/receipts/final-delta-corrected/static-graph.xml"
+      ],
+      "returncode": 0,
+      "seconds": 0.699
+    },
+    {
+      "label": "shared-configure",
+      "argv": [
+        "cmake",
+        "-S",
+        "/Users/kiro/hyle-scratch/vulkan-v4-air/consumer",
+        "-B",
+        "/Users/kiro/hyle-scratch/vulkan-v4-air/producer",
+        "-DV4_SOURCE_STATIC=OFF"
+      ],
+      "returncode": 0,
+      "seconds": 11.734
+    },
+    {
+      "label": "shared-build",
+      "argv": [
+        "cmake",
+        "--build",
+        "/Users/kiro/hyle-scratch/vulkan-v4-air/producer",
+        "--parallel",
+        "2"
+      ],
+      "returncode": 0,
+      "seconds": 39.007
+    },
+    {
+      "label": "shared-install",
+      "argv": [
+        "cmake",
+        "--install",
+        "/Users/kiro/hyle-scratch/vulkan-v4-air/producer",
+        "--prefix",
+        "/Users/kiro/hyle-scratch/vulkan-v4-air/shared-relocated"
+      ],
+      "returncode": 0,
+      "seconds": 0.206
+    },
+    {
+      "label": "shared-link",
+      "argv": [
+        "cmake",
+        "--build",
+        "/Users/kiro/hyle-scratch/vulkan-v4-air/shared-consumer",
+        "--parallel",
+        "2"
+      ],
+      "returncode": 0,
+      "seconds": 1.211
+    },
+    {
+      "label": "shared-direct-resource",
+      "argv": [
+        "/Users/kiro/hyle-scratch/vulkan-v4-air/shared-consumer/d5_vulkan_direct",
+        "--gtest_filter=*V4OriginalIq1OwnedLeaseCancelCloseAndOom",
+        "--gtest_output=xml:/Users/kiro/hyle-scratch/vulkan-v4-air/receipts/final-delta-corrected/shared-direct.xml"
+      ],
+      "returncode": 0,
+      "seconds": 4.147
+    },
+    {
+      "label": "shared-graph-resource",
+      "argv": [
+        "/Users/kiro/hyle-scratch/vulkan-v4-air/shared-consumer/d5_vulkan_graph",
+        "--gtest_filter=*V4OriginalIq1OwnedLeaseCancelCloseAndOom",
+        "--gtest_output=xml:/Users/kiro/hyle-scratch/vulkan-v4-air/receipts/final-delta-corrected/shared-graph.xml"
+      ],
+      "returncode": 0,
+      "seconds": 1.191
+    },
+    {
+      "label": "off-build",
+      "argv": [
+        "cmake",
+        "--build",
+        "/Users/kiro/hyle-scratch/vulkan-v4-air/off",
+        "--parallel",
+        "2"
+      ],
+      "returncode": 0,
+      "seconds": 10.772
+    },
+    {
+      "label": "off-install",
+      "argv": [
+        "cmake",
+        "--install",
+        "/Users/kiro/hyle-scratch/vulkan-v4-air/off",
+        "--prefix",
+        "/Users/kiro/hyle-scratch/vulkan-v4-air/off-sdk"
+      ],
+      "returncode": 0,
+      "seconds": 0.1
+    },
+    {
+      "label": "off-consumer-configure",
+      "argv": [
+        "cmake",
+        "-S",
+        "/Users/kiro/hyle/evidence/correctness/vulkan-parity-v4-delivery/platform",
+        "-B",
+        "/Users/kiro/hyle-scratch/vulkan-v4-air/off-consumer",
+        "-G",
+        "Ninja",
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DCMAKE_OSX_DEPLOYMENT_TARGET=14.4",
+        "-DV4_ENABLE_VULKAN=OFF",
+        "-DCMAKE_PREFIX_PATH=/Users/kiro/hyle-scratch/vulkan-v4-air/off-sdk"
+      ],
+      "returncode": 0,
+      "seconds": 0.196
+    },
+    {
+      "label": "off-consumer-build",
+      "argv": [
+        "cmake",
+        "--build",
+        "/Users/kiro/hyle-scratch/vulkan-v4-air/off-consumer",
+        "--parallel",
+        "2"
+      ],
+      "returncode": 0,
+      "seconds": 0.381
+    },
+    {
+      "label": "off-consumer-run",
+      "argv": [
+        "/Users/kiro/hyle-scratch/vulkan-v4-air/off-consumer/v4_platform"
+      ],
+      "returncode": 0,
+      "seconds": 0.28
+    }
+  ],
+  "static_sdk_reused_from": "receipts/final-delta/receipt.json (first four PASS steps)",
+  "verdict": "PASS"
+}

@@ -1,0 +1,109 @@
+{
+  "scope": "Linux shared compilation/SDK and software default rejection; no GPU numerical PASS",
+  "steps": [
+    {
+      "label": "shared-configure",
+      "argv": [
+        "cmake",
+        "-S",
+        "/root/hyle/evidence/correctness/vulkan-parity-v4-delivery/platform",
+        "-B",
+        "/root/hyle-scratch/vulkan-v4/producer",
+        "-DV4_SOURCE_STATIC=OFF"
+      ],
+      "returncode": 0,
+      "seconds": 20.099
+    },
+    {
+      "label": "shared-build",
+      "argv": [
+        "cmake",
+        "--build",
+        "/root/hyle-scratch/vulkan-v4/producer",
+        "--parallel",
+        "2"
+      ],
+      "returncode": 0,
+      "seconds": 53.039
+    },
+    {
+      "label": "shared-install",
+      "argv": [
+        "cmake",
+        "--install",
+        "/root/hyle-scratch/vulkan-v4/producer",
+        "--prefix",
+        "/root/hyle-scratch/vulkan-v4/shared-staging"
+      ],
+      "returncode": 0,
+      "seconds": 0.04
+    },
+    {
+      "label": "shared-consumer-configure",
+      "argv": [
+        "cmake",
+        "-S",
+        "/root/hyle/evidence/correctness/vulkan-parity-v4-delivery/platform",
+        "-B",
+        "/root/hyle-scratch/vulkan-v4/shared-consumer",
+        "-G",
+        "Ninja",
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DCMAKE_CXX_COMPILER=/usr/bin/g++-14",
+        "-DCMAKE_PREFIX_PATH=/root/hyle-scratch/vulkan-v4/shared-relocated"
+      ],
+      "returncode": 0,
+      "seconds": 3.922
+    },
+    {
+      "label": "shared-consumer-build",
+      "argv": [
+        "cmake",
+        "--build",
+        "/root/hyle-scratch/vulkan-v4/shared-consumer",
+        "--parallel",
+        "2"
+      ],
+      "returncode": 0,
+      "seconds": 1.016
+    },
+    {
+      "label": "shared-default-rejection",
+      "argv": [
+        "/root/hyle-scratch/vulkan-v4/shared-consumer/v4_platform"
+      ],
+      "returncode": 0,
+      "seconds": 0.07
+    },
+    {
+      "label": "shared-public-headers-configure",
+      "argv": [
+        "cmake",
+        "-S",
+        "/root/hyle/evidence/correctness/vulkan-parity-v4-delivery/headers",
+        "-B",
+        "/root/hyle-scratch/vulkan-v4/shared-headers",
+        "-G",
+        "Ninja",
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DCMAKE_CXX_COMPILER=/usr/bin/g++-14",
+        "-DCMAKE_PREFIX_PATH=/root/hyle-scratch/vulkan-v4/shared-relocated"
+      ],
+      "returncode": 0,
+      "seconds": 2.899
+    },
+    {
+      "label": "shared-public-headers-build",
+      "argv": [
+        "cmake",
+        "--build",
+        "/root/hyle-scratch/vulkan-v4/shared-headers",
+        "--parallel",
+        "2"
+      ],
+      "returncode": 0,
+      "seconds": 1.326
+    }
+  ],
+  "verdict": "PASS"
+}

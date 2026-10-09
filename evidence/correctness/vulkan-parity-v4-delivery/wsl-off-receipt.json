@@ -1,0 +1,26 @@
+{
+  "steps": [
+    {
+      "label": "off-build",
+      "argv": [
+        "cmake",
+        "--build",
+        "/root/hyle-scratch/vulkan-v4/off",
+        "--parallel",
+        "2"
+      ],
+      "returncode": 0,
+      "seconds": 28.795
+    },
+    {
+      "label": "off-common-consumer",
+      "argv": [
+        "/root/hyle-scratch/vulkan-v4/off/v4_platform"
+      ],
+      "returncode": 0,
+      "seconds": 0.001
+    }
+  ],
+  "verdict": "PASS",
+  "vulkan_probe_and_artifact_leakage": false
+}

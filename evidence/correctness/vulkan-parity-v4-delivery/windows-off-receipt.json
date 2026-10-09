@@ -1,0 +1,43 @@
+{
+  "steps": [
+    {
+      "label": "off-consumer-configure",
+      "argv": [
+        "C:\\Program Files\\CMake\\bin\\cmake.EXE",
+        "-S",
+        "evidence/correctness/vulkan-parity-v4-delivery/platform",
+        "-B",
+        "C:\\hv\\v4w\\off-consumer",
+        "-G",
+        "Ninja",
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DV4_ENABLE_VULKAN=OFF",
+        "-DCMAKE_PREFIX_PATH=C:\\hv\\v4w\\off-sdk"
+      ],
+      "returncode": 0,
+      "seconds": 0.094
+    },
+    {
+      "label": "off-consumer-build",
+      "argv": [
+        "C:\\Program Files\\CMake\\bin\\cmake.EXE",
+        "--build",
+        "C:\\hv\\v4w\\off-consumer",
+        "--parallel",
+        "2"
+      ],
+      "returncode": 0,
+      "seconds": 1.0
+    },
+    {
+      "label": "off-consumer-run",
+      "argv": [
+        "C:\\hv\\v4w\\off-consumer\\v4_platform.exe"
+      ],
+      "returncode": 0,
+      "seconds": 0.031
+    }
+  ],
+  "verdict": "PASS",
+  "vulkan_probe_and_artifact_leakage": false
+}

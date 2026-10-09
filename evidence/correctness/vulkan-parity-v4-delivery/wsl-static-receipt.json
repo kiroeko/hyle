@@ -1,0 +1,107 @@
+{
+  "candidate": "a27a9b17f043f557726dd73a023e38e70e3e270d",
+  "scope": "Linux source/static/shared public binding and actual software-only default rejection; no GPU numerical qualification",
+  "steps": [
+    {
+      "label": "source-sdk-all-build",
+      "argv": [
+        "cmake",
+        "--build",
+        "/root/hyle-scratch/vulkan-v4/producer",
+        "--parallel",
+        "2"
+      ],
+      "returncode": 0,
+      "seconds": 1.563
+    },
+    {
+      "label": "source-default-rejection",
+      "argv": [
+        "/root/hyle-scratch/vulkan-v4/producer/v4_platform"
+      ],
+      "returncode": 0,
+      "seconds": 0.034
+    },
+    {
+      "label": "static-install-complete",
+      "argv": [
+        "cmake",
+        "--install",
+        "/root/hyle-scratch/vulkan-v4/producer",
+        "--prefix",
+        "/root/hyle-scratch/vulkan-v4/static-staging"
+      ],
+      "returncode": 0,
+      "seconds": 0.086
+    },
+    {
+      "label": "static-consumer-configure",
+      "argv": [
+        "cmake",
+        "-S",
+        "/root/hyle/evidence/correctness/vulkan-parity-v4-delivery/platform",
+        "-B",
+        "/root/hyle-scratch/vulkan-v4/static-consumer",
+        "-G",
+        "Ninja",
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DCMAKE_CXX_COMPILER=/usr/bin/g++-14",
+        "-DCMAKE_PREFIX_PATH=/root/hyle-scratch/vulkan-v4/static-relocated"
+      ],
+      "returncode": 0,
+      "seconds": 3.735
+    },
+    {
+      "label": "static-consumer-build",
+      "argv": [
+        "cmake",
+        "--build",
+        "/root/hyle-scratch/vulkan-v4/static-consumer",
+        "--target",
+        "v4_platform",
+        "--parallel",
+        "2"
+      ],
+      "returncode": 0,
+      "seconds": 1.109
+    },
+    {
+      "label": "static-default-rejection",
+      "argv": [
+        "/root/hyle-scratch/vulkan-v4/static-consumer/v4_platform"
+      ],
+      "returncode": 0,
+      "seconds": 0.031
+    },
+    {
+      "label": "static-public-headers-configure",
+      "argv": [
+        "cmake",
+        "-S",
+        "/root/hyle/evidence/correctness/vulkan-parity-v4-delivery/headers",
+        "-B",
+        "/root/hyle-scratch/vulkan-v4/static-headers",
+        "-G",
+        "Ninja",
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DCMAKE_CXX_COMPILER=/usr/bin/g++-14",
+        "-DCMAKE_PREFIX_PATH=/root/hyle-scratch/vulkan-v4/static-relocated"
+      ],
+      "returncode": 0,
+      "seconds": 3.59
+    },
+    {
+      "label": "static-public-headers-build",
+      "argv": [
+        "cmake",
+        "--build",
+        "/root/hyle-scratch/vulkan-v4/static-headers",
+        "--parallel",
+        "2"
+      ],
+      "returncode": 0,
+      "seconds": 1.393
+    }
+  ],
+  "verdict": "PASS"
+}

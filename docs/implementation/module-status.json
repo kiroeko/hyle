@@ -281,9 +281,9 @@
     },
     {
       "module": "graph",
-      "state": "SCOPED",
-      "record": "docs/implementation/tasks/compute/vulkan-cpu-cuda-apple-parity-closure.md",
-      "summary": "Vulkan aggregate SCOPED: V2 Windows common104/559/80/34/45/eight-family and current state coverage qualified in both entrances, including full selected IQ1 banks. V3 defaults/P1/self and V4 platform/three deliveries remain; CPU/CUDA/Apple terminal scopes unchanged."
+      "state": "AUDITED",
+      "record": "docs/implementation/tasks/compute/vulkan-parity-final-audit.md",
+      "summary": "Vulkan aggregate AUDITED final review: common Windows numeric/state scope, current cold defaults and three-platform applicable deliveries/OFF/resource deltas qualified; accepted P0 policy and P1 INCONCLUSIVE retained. No new product FIX; final terminal and retained transport decision pending."
     },
     {
       "module": "container_concurrent",

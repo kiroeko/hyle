@@ -1,13 +1,15 @@
 # Vulkan：共同目录、成熟接线与最终收口
 
-<!-- MODULE REVIEW: SCOPED -->
+<!-- MODULE REVIEW: AUDITED -->
 
-> 当前摘要（2026-10-09）：整体工程估计约65%。Windows 两入口各80/80实际 non-GGUF、
-> 560/560 GGUF/身份、25/25当前状态与40个余下family分支通过；80参数/八族关联及8 IQ1原bank实跑完成。
-> V3默认/有限P1及V4平台/三交付未完成。下文阶段数字为历史快照，不是当前队列。
+> 当前摘要（2026-10-09）：技术验收已齐备，V1/V2/V3及V4实际构建/交付/OFF/资源门通过。
+> Windows完整算子/状态目录、Air真实代表数值与三交付、WSL三交付/头/软件默认拒绝已验；
+> WSL无真实GPU，不签GPU数值。正式P1 INCONCLUSIVE按用户工程/P0决定保留，无新WIN。
+> [终审与当前归档限制](vulkan-parity-final-audit.md)待最终合法状态与用户取舍；goal未完成。
+> 下文阶段数字/旧owner状态为历史快照，不是当前队列。
 
-V3冷默认D1已接线并完成两入口各10/10实际delta；原残留完整合同与有限P1尚未终审。
-统一实现62,483行/268文件，不含测试；公开冷事实的跨平台/三交付仍由V4完成。
+统一实现62,486行/268文件，不含测试。原三处私有类型/capture残留已明确并修正，
+不新增数学/Shader，不重跑不变V2/P1。四路线single-primary有限审计完成。
 
 baseline `a19391c7efa84d1f0c42919e8192e4ce78d1ee32`，Windows工作树干净。
 2026-10-09用户明确要求新建goal并执行。Windows是唯一产品真相；独立新goal已建立，
@@ -34,7 +36,7 @@ source/static/shared和文档均须收口。不是模型loader/engine/巨型权�
 平台/硬件/driver/SDK/compiler/provider、模型制品/phase/region和实际端口format/dtype/
 shape均可冷绑定；hot不得查找/计时/裁决Provider。用户无需rank或timing profile。
 
-## owner及旧阻塞
+## 启动时owner及旧阻塞（历史）
 
 `compute_provider_ggml_vulkan`现AUDITED但旧卡只准入十格式/拒绝CPU扩展；本次依法重定界。
 `compute_provider_iree_vulkan`现CANDIDATE，待明确原程序缺口后退回AUDITED，不能在
