@@ -46,10 +46,10 @@
     {
       "name": "artifacts",
       "file": "artifacts.vmfb.b64",
-      "sha256": "1c6d7218a52ae81fd39f0fab7492fe3ca593b28921ed8cb9a7b53641aa6934a1",
-      "bytes": 143011,
+      "sha256": "35a7eb56f54dda1d117d25336cea91aa3b58d563cf516341cfe94d2571b739f1",
+      "bytes": 143375,
       "recipe": "artifacts.mlir",
-      "recipe_sha256": "37f5cf24629043baf74022796f6aa1497c3d2b83afe7b326ba89a19ed3bc9e90",
+      "recipe_sha256": "c0d17472bc0b86ecc7fa2f52027cc21406bfa03bd285b51498824d4399cab44d",
       "exports_used": [
         "nf4_f32",
         "nf4_f16",

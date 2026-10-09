@@ -163,8 +163,9 @@ module {
         %group_index = arith.divui %flat, %group : index
         %outer_index = arith.divui %group_index, %c256 : index
         %scale_code = tensor.extract %scale_codes[%group_index] : tensor<?xi8>
-        %scale_uint = arith.extui %scale_code : i8 to i32
-        %scale_index = arith.index_castui %scale_uint : i32 to index
+        %scale_signed_index = arith.index_cast %scale_code : i8 to index
+        %byte_mask = arith.constant 255 : index
+        %scale_index = arith.andi %scale_signed_index, %byte_mask : index
         %scale_value = tensor.extract %scale_book[%scale_index] : tensor<256xf32>
         %outer = tensor.extract %outer_scales[%outer_index] : tensor<?xf32>
         %bias = tensor.extract %offset[%c0] : tensor<1xf32>
@@ -212,8 +213,9 @@ module {
         %group_index = arith.divui %flat, %group : index
         %outer_index = arith.divui %group_index, %c256 : index
         %scale_code = tensor.extract %scale_codes[%group_index] : tensor<?xi8>
-        %scale_uint = arith.extui %scale_code : i8 to i32
-        %scale_index = arith.index_castui %scale_uint : i32 to index
+        %scale_signed_index = arith.index_cast %scale_code : i8 to index
+        %byte_mask = arith.constant 255 : index
+        %scale_index = arith.andi %scale_signed_index, %byte_mask : index
         %scale_value = tensor.extract %scale_book[%scale_index] : tensor<256xf32>
         %outer = tensor.extract %outer_scales[%outer_index] : tensor<?xf32>
         %bias = tensor.extract %offset[%c0] : tensor<1xf32>
@@ -262,8 +264,9 @@ module {
         %group_index = arith.divui %flat, %group : index
         %outer_index = arith.divui %group_index, %c256 : index
         %scale_code = tensor.extract %scale_codes[%group_index] : tensor<?xi8>
-        %scale_uint = arith.extui %scale_code : i8 to i32
-        %scale_index = arith.index_castui %scale_uint : i32 to index
+        %scale_signed_index = arith.index_cast %scale_code : i8 to index
+        %byte_mask = arith.constant 255 : index
+        %scale_index = arith.andi %scale_signed_index, %byte_mask : index
         %scale_value = tensor.extract %scale_book[%scale_index] : tensor<256xf32>
         %outer = tensor.extract %outer_scales[%outer_index] : tensor<?xf32>
         %bias = tensor.extract %offset[%c0] : tensor<1xf32>

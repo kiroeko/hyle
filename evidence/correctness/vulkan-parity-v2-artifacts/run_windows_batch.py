@@ -5,6 +5,7 @@ import json
 import os
 from pathlib import Path
 import subprocess
+import sys
 import xml.etree.ElementTree as ET
 
 ROOT = Path(__file__).resolve().parents[3]
@@ -29,6 +30,16 @@ jobs = [
      'VulkanGraph.OriginalArtifact*:VulkanGraph.OriginalFloat8*:'
      'VulkanGraph.CheckedScanChainsTwoOriginalProgramsWithIndependentResults'),
 ]
+if '--delta' in sys.argv[1:]:
+    jobs = [
+        ('direct-delta', 'hyle_compute_route_vulkan_test',
+         'VulkanIree.OriginalArtifactBatchPreservesSourceRoundingAndSixPorts:'
+         'VulkanIree.OriginalArtifactColdResultBindsMatureConstantProjection:'
+         'VulkanIree.OriginalArtifactChecksFeaturesDomainFailureAndCancellation'),
+        ('graph-delta', 'hyle_graph_route_vulkan_test',
+         'VulkanGraph.OriginalArtifactBatchUsesOrdinaryTypedEntry:'
+         'VulkanGraph.OriginalArtifactColdResultBindsMatureConstantProjection'),
+    ]
 receipt = {'candidate': candidate, 'build': str(BUILD), 'steps': [],
            'limits': 'Micro source qualification; not all 18 full model geometries, Air or delivery PASS.'}
 failed = False

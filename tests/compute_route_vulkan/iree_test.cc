@@ -33,7 +33,7 @@ TEST(VulkanIree, OriginalArtifactColdResultBindsMatureConstantProjection) {
 
 TEST(VulkanIree, OriginalArtifactChecksFeaturesDomainFailureAndCancellation) {
   using namespace vulkan_artifact_test;
-  hyle::mem::QuotaAllocator quota(hyle::mem::system_allocator(), 128 * 1024 * 1024);
+  hyle::mem::QuotaAllocator quota(hyle::mem::system_allocator(), 256 * 1024 * 1024);
   {
     auto context = vulkan_test::context(&quota).value();
     Inputs data(Format::kNf4DoubleQuant, 3, 192, 64,

@@ -136,7 +136,7 @@ struct Inputs final {
 
 template <class Prepare>
 void batch(Prepare prepare) {
-  hyle::mem::QuotaAllocator quota(hyle::mem::system_allocator(), 128 * 1024 * 1024);
+  hyle::mem::QuotaAllocator quota(hyle::mem::system_allocator(), 256 * 1024 * 1024);
   {
     auto context = vulkan_test::context(&quota).value();
     for (auto format : {Format::kNf4, Format::kNf4DoubleQuant, Format::kAwqGemm4,

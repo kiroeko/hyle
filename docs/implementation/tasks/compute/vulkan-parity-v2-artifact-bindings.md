@@ -81,3 +81,17 @@ selector、docs/closure 必跑；适用未运行写 UNPROVEN，不能 PASS。bud
 未列入安装资源，尚未编译新 C++。一次 A5 纠正仅补 owning factor 的三项
 `RUNTIME_FILE_SPECS`；不修改公共 package checker，不删除许可证或放宽 gate。
 复用同一 producer，未启动测试或 P1，旧通过域不重跑。
+
+首次 GPU `156ab3c7`：原 IREE7/7、U8/U32两个存储及旧 FP8/Scan 域通过；新增三 Direct/
+两 Graph ID 失败，不能签新增 PASS。一次 `2585bc6a` 原四格式捕获证明 NF4/AWQ/CT
+解码样本匹配；nested NF4 高位 scale code 148/185 变成负 index，原生成 SPIR-V 在
+`ShiftRightArithmetic` 后直接 AccessChain，丢失 i8→unsigned index 的零扩展，robust
+读取为0。唯一 A1 纠正把原 U8 lookup 的 unsigned 语义写成标准 index cast +255 mask；
+不改原 scale 数学、格式、compiler pass/调度或数值门。其它21原入口不改。
+
+同次捕获明确请求创建拒绝是 `Vulkan device memory quota`，不是 ABI 或六端口数值失败。
+原 IREE `vulkan/allocator.c` 的池 slab 为64MiB，完整配额包含保留池和 caller/native output；
+128MiB 新 fixture 无法覆盖已保留 native 池及输出。恢复既有 FP8 fixture 的256MiB正常
+预算，同时仍以 reserve-all 注入真实 OOM、检查释放到0，不放宽产品 quota 或绕过计费。
+仅重跑失败的新增五 ID（与首次未能到达的新增组合）；原 Provider/FP8/Scan/U8 PASS 复用。
+一次 test 显式 Operation 构造纠正已通过增量编译，未更改产品接口。
