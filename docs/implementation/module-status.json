@@ -270,15 +270,17 @@
     },
     {
       "module": "compute",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/build/compute-unified-delivery.md",
-      "summary": "C3独立review发现发行默认tests开关的实际易用性缺陷；定向修正默认，原显式OFF格复用/补配置，不改数学或重测P1。"
+      "summary": "统一配置/SDK资产/冷路由候选已修正发行默认tests；独立路由构建与全文档review完成；C3平台三交付批验进行中，原显式OFF格不重启。",
+      "candidate": "79137d31ce1bec9053d3a4f92f2892e3a21cbb80"
     },
     {
       "module": "graph",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/build/compute-unified-delivery.md",
-      "summary": "C3独立review发现发行默认tests开关的实际易用性缺陷；定向修正默认，原显式OFF格复用/补配置，不改数学或重测P1。"
+      "summary": "统一配置/SDK资产/冷路由候选已修正发行默认tests；独立路由构建与全文档review完成；C3平台三交付批验进行中，原显式OFF格不重启。",
+      "candidate": "79137d31ce1bec9053d3a4f92f2892e3a21cbb80"
     },
     {
       "module": "container_concurrent",
@@ -352,9 +354,10 @@
     },
     {
       "module": "compute_provider_onednn",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/build/compute-unified-delivery.md",
-      "summary": "C3独立review发现发行默认tests开关的实际易用性缺陷；定向修正默认，原显式OFF格复用/补配置，不改数学或重测P1。"
+      "summary": "统一配置/SDK资产/冷路由候选已修正发行默认tests；独立路由构建与全文档review完成；C3平台三交付批验进行中，原显式OFF格不重启。",
+      "candidate": "79137d31ce1bec9053d3a4f92f2892e3a21cbb80"
     },
     {
       "module": "compute_provider_ggml",
@@ -391,33 +394,38 @@
     },
     {
       "module": "compute_backend_cpu",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/build/compute-unified-delivery.md",
-      "summary": "C3独立review发现发行默认tests开关的实际易用性缺陷；定向修正默认，原显式OFF格复用/补配置，不改数学或重测P1。"
+      "summary": "统一配置/SDK资产/冷路由候选已修正发行默认tests；独立路由构建与全文档review完成；C3平台三交付批验进行中，原显式OFF格不重启。",
+      "candidate": "79137d31ce1bec9053d3a4f92f2892e3a21cbb80"
     },
     {
       "module": "compute_backend_cuda",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/build/compute-unified-delivery.md",
-      "summary": "C3独立review发现发行默认tests开关的实际易用性缺陷；定向修正默认，原显式OFF格复用/补配置，不改数学或重测P1。"
+      "summary": "统一配置/SDK资产/冷路由候选已修正发行默认tests；独立路由构建与全文档review完成；C3平台三交付批验进行中，原显式OFF格不重启。",
+      "candidate": "79137d31ce1bec9053d3a4f92f2892e3a21cbb80"
     },
     {
       "module": "compute_provider_native",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/build/compute-unified-delivery.md",
-      "summary": "C3独立review发现发行默认tests开关的实际易用性缺陷；定向修正默认，原显式OFF格复用/补配置，不改数学或重测P1。"
+      "summary": "统一配置/SDK资产/冷路由候选已修正发行默认tests；独立路由构建与全文档review完成；C3平台三交付批验进行中，原显式OFF格不重启。",
+      "candidate": "79137d31ce1bec9053d3a4f92f2892e3a21cbb80"
     },
     {
       "module": "compute_route_cpu",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/build/compute-unified-delivery.md",
-      "summary": "C3独立review发现发行默认tests开关的实际易用性缺陷；定向修正默认，原显式OFF格复用/补配置，不改数学或重测P1。"
+      "summary": "统一配置/SDK资产/冷路由候选已修正发行默认tests；独立路由构建与全文档review完成；C3平台三交付批验进行中，原显式OFF格不重启。",
+      "candidate": "79137d31ce1bec9053d3a4f92f2892e3a21cbb80"
     },
     {
       "module": "graph_route_cpu",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/build/compute-unified-delivery.md",
-      "summary": "C3独立review发现发行默认tests开关的实际易用性缺陷；定向修正默认，原显式OFF格复用/补配置，不改数学或重测P1。"
+      "summary": "统一配置/SDK资产/冷路由候选已修正发行默认tests；独立路由构建与全文档review完成；C3平台三交付批验进行中，原显式OFF格不重启。",
+      "candidate": "79137d31ce1bec9053d3a4f92f2892e3a21cbb80"
     },
     {
       "module": "compute_provider_cublas",
@@ -455,39 +463,45 @@
     },
     {
       "module": "compute_route_cuda",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/build/compute-unified-delivery.md",
-      "summary": "C3独立review发现发行默认tests开关的实际易用性缺陷；定向修正默认，原显式OFF格复用/补配置，不改数学或重测P1。"
+      "summary": "统一配置/SDK资产/冷路由候选已修正发行默认tests；独立路由构建与全文档review完成；C3平台三交付批验进行中，原显式OFF格不重启。",
+      "candidate": "79137d31ce1bec9053d3a4f92f2892e3a21cbb80"
     },
     {
       "module": "graph_route_cuda",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/build/compute-unified-delivery.md",
-      "summary": "C3独立review发现发行默认tests开关的实际易用性缺陷；定向修正默认，原显式OFF格复用/补配置，不改数学或重测P1。"
+      "summary": "统一配置/SDK资产/冷路由候选已修正发行默认tests；独立路由构建与全文档review完成；C3平台三交付批验进行中，原显式OFF格不重启。",
+      "candidate": "79137d31ce1bec9053d3a4f92f2892e3a21cbb80"
     },
     {
       "module": "compute_route_apple",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/build/compute-unified-delivery.md",
-      "summary": "C3独立review发现发行默认tests开关的实际易用性缺陷；定向修正默认，原显式OFF格复用/补配置，不改数学或重测P1。"
+      "summary": "统一配置/SDK资产/冷路由候选已修正发行默认tests；独立路由构建与全文档review完成；C3平台三交付批验进行中，原显式OFF格不重启。",
+      "candidate": "79137d31ce1bec9053d3a4f92f2892e3a21cbb80"
     },
     {
       "module": "graph_route_apple",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/build/compute-unified-delivery.md",
-      "summary": "C3独立review发现发行默认tests开关的实际易用性缺陷；定向修正默认，原显式OFF格复用/补配置，不改数学或重测P1。"
+      "summary": "统一配置/SDK资产/冷路由候选已修正发行默认tests；独立路由构建与全文档review完成；C3平台三交付批验进行中，原显式OFF格不重启。",
+      "candidate": "79137d31ce1bec9053d3a4f92f2892e3a21cbb80"
     },
     {
       "module": "compute_route_vulkan",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/build/compute-unified-delivery.md",
-      "summary": "C3独立review发现发行默认tests开关的实际易用性缺陷；定向修正默认，原显式OFF格复用/补配置，不改数学或重测P1。"
+      "summary": "统一配置/SDK资产/冷路由候选已修正发行默认tests；独立路由构建与全文档review完成；C3平台三交付批验进行中，原显式OFF格不重启。",
+      "candidate": "79137d31ce1bec9053d3a4f92f2892e3a21cbb80"
     },
     {
       "module": "graph_route_vulkan",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/build/compute-unified-delivery.md",
-      "summary": "C3独立review发现发行默认tests开关的实际易用性缺陷；定向修正默认，原显式OFF格复用/补配置，不改数学或重测P1。"
+      "summary": "统一配置/SDK资产/冷路由候选已修正发行默认tests；独立路由构建与全文档review完成；C3平台三交付批验进行中，原显式OFF格不重启。",
+      "candidate": "79137d31ce1bec9053d3a4f92f2892e3a21cbb80"
     },
     {
       "module": "compute_provider_ggml_vulkan",
@@ -502,9 +516,10 @@
     },
     {
       "module": "compute_ggml_runtime",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/build/compute-unified-delivery.md",
-      "summary": "C3独立review发现发行默认tests开关的实际易用性缺陷；定向修正默认，原显式OFF格复用/补配置，不改数学或重测P1。"
+      "summary": "统一配置/SDK资产/冷路由候选已修正发行默认tests；独立路由构建与全文档review完成；C3平台三交付批验进行中，原显式OFF格不重启。",
+      "candidate": "79137d31ce1bec9053d3a4f92f2892e3a21cbb80"
     },
     {
       "module": "compute_provider_ggml_cuda",

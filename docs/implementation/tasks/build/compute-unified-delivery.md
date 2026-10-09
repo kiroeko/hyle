@@ -1,6 +1,6 @@
 # C1–C3 / R1：统一 Compute/Graph 配置与交付
 
-<!-- MODULE REVIEW: AUDITED -->
+<!-- MODULE REVIEW: CANDIDATE -->
 
 - baseline：`0a167159e08bf2df021c0b7f7fc8942a4dc87c3e`；Windows canonical，启动工作树干净。
 - 用户已明确启动实施；[已定设计](../../../architecture/compute-next-stage.md)与
@@ -169,3 +169,5 @@ B1产品 `79137d31` 仅改变未显式给tests时的默认值。实际root Core�
 当前候选另有 route/SDK元数据9 tests、runtime资产图测试、docs/closure/diff PASS；
 独立路由/构建/全文档review的有限发现已处理，详见
 [review卡](../project/compute-routing-build-doc-review.md)。C3继续原已固定显式OFF批次，没有P1。
+最终产品候选更新为 `79137d31`（registry保存完整SHA）；只有默认参数行为变化，显式OFF批次
+继续保留自己的实际recipe/产品身份，最终归档区分原候选产物与新增配置取证，不伪造同tree复用。
