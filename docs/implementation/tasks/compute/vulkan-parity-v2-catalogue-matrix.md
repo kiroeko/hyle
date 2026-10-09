@@ -110,3 +110,19 @@ Vulkan测试wrapper只对固定region0x040c0501、Qseq=1清除这条不适用的
 算法/API不改，不以更宽门取PASS。两入口这一个ID一次定向验证。
 其它DSpark/attention/新版GGUF数值FAIL仍保留，须逐首偏差有界查因，不推定环境或
 绕过原完整片段门；本条不能替那些域签PASS。
+
+## 当前资格与具名剩余数值域
+
+产品 `9ec5c4ee` 修复两真实接线边界；状态Direct16/24、Graph15/24；
+`d0c6138c` Qseq1原F32参考纠正两入口单ID PASS，当前17/24、16/24。
+原非GGUF80/80与GGUF560/560两入口矩阵保持，未重测或宣称全state通过。
+
+M5-N2 有限follow-up：剩余7/8项按首分歧分成多query sink attention/FP32或F16
+乘数、DSpark全词表复合误差、新官方/两GGUF main的状态舍入，不先推定为产品
+或oracle问题。一次原native leaf与独立源方程的同输入捕获，最多30分钟；只
+允许具体冷绑定/转换/原程序参考修正，精度门和原模型程序不变。需要新public
+合同或自研算法时停下具名决策；其它已过域不反复跑。其后只受影响ID一次
+集中delta，不重测80/560/24全集。该scope先作为诊断，不授权盲调实现。
+
+完整八族剩余历史branch映射/80参数归属、三IQ1巨大bank能力、平台/三交付/default/
+正式P1仍未完成，父轮45%不因此加成。所有未验或失败范围维持UNPROVEN/FAIL。

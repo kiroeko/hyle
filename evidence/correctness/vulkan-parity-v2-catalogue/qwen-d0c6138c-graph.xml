@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites tests="1" failures="0" disabled="0" errors="0" time="1.131" timestamp="2026-10-09T14:20:19.414" name="AllTests">
+  <testsuite name="VulkanGraphCatalogueParameters" tests="1" failures="0" disabled="0" skipped="0" errors="0" time="1.131" timestamp="2026-10-09T14:20:19.414">
+    <testcase name="Qwen24ActualHalfSplitFrequencyNormAndKvFeedback" file="C:\public\project-hyle\hyle\tests\compute_route_vulkan\../compute_models/cpu_c5_parameter_tests.h" line="58" status="run" result="completed" time="1.131" timestamp="2026-10-09T14:20:19.414" classname="VulkanGraphCatalogueParameters" />
+  </testsuite>
+</testsuites>

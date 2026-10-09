@@ -149,3 +149,8 @@ selected FP4/FP8、尾尺度与encoded MatMul、三QAT全有限BF16及资源/fin
 [当前结果](vulkan-parity-v2-catalogue-matrix.md)，仍明示head分块/expert窗口；
 完整巨大银行驻留不能推导。原34/45两入口资格继承，整体约45%；剩余参数/state/
 最新MTP/DSpark与V3/V4仍未完成，GPU矩阵不因后续文档或fixture改动重复执行。
+
+状态批最新可复核结果：Qseq1不适用F16参考已改回严格F32，两入口单ID通过；
+当前Direct17/24、Graph16/24。剩余7/8项具名数值follow-up已冻结，仅先捕获
+首偏差与原native精度次序，不扩大误差、不重跑80/560/24全集。统一实现统计
+仍按新产品candidate的统一脚本输出记录；本轮没有新增算子数学或shader。

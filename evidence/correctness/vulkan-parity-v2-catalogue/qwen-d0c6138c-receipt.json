@@ -1,0 +1,44 @@
+{
+  "candidate": "d0c6138c0330dcbd5ebddec0118a999db70260bf",
+  "scope": "only Qseq1 F32 SDPA oracle correction, existing tighter F32 gate",
+  "steps": [
+    {
+      "name": "direct",
+      "filter": "VulkanCatalogueParameters.Qwen24ActualHalfSplitFrequencyNormAndKvFeedback",
+      "returncode": 0,
+      "tests": {
+        "tests": "1",
+        "failures": "0",
+        "disabled": "0",
+        "errors": "0",
+        "time": "1.509",
+        "timestamp": "2026-10-09T14:20:17.801",
+        "name": "AllTests"
+      },
+      "validation_error": false,
+      "log": "qwen-d0c6138c-direct.log",
+      "log_sha256": "f8fcbed13ede2600322c9b5cb5d6724c778a2c3a4cce195473d6a83333357e5b",
+      "xml": "qwen-d0c6138c-direct.xml",
+      "binary_sha256": "4613b053a2874e38955c261583ac6e34dc245405a7765ab57516cebd2d908a3f"
+    },
+    {
+      "name": "graph",
+      "filter": "VulkanGraphCatalogueParameters.Qwen24ActualHalfSplitFrequencyNormAndKvFeedback",
+      "returncode": 0,
+      "tests": {
+        "tests": "1",
+        "failures": "0",
+        "disabled": "0",
+        "errors": "0",
+        "time": "1.131",
+        "timestamp": "2026-10-09T14:20:19.414",
+        "name": "AllTests"
+      },
+      "validation_error": false,
+      "log": "qwen-d0c6138c-graph.log",
+      "log_sha256": "e22e534b9644cd203aef7c7a4627077f55f6a950d14641b0a0d14531baa4725b",
+      "xml": "qwen-d0c6138c-graph.xml",
+      "binary_sha256": "dc8c692689805c39f2bb22c4847a81a0785548919bf3c41a0ad1d2b066a89607"
+    }
+  ]
+}

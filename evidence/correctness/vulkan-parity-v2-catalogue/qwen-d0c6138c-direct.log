@@ -1,0 +1,12 @@
+Running main() from C:\public\tools\hyle-dependencies\v1\sources\googletest-063de7e9578f-162765170ae6\googletest\src\gtest_main.cc
+Note: Google Test filter = VulkanCatalogueParameters.Qwen24ActualHalfSplitFrequencyNormAndKvFeedback
+[==========] Running 1 test from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 1 test from VulkanCatalogueParameters
+[ RUN      ] VulkanCatalogueParameters.Qwen24ActualHalfSplitFrequencyNormAndKvFeedback
+[       OK ] VulkanCatalogueParameters.Qwen24ActualHalfSplitFrequencyNormAndKvFeedback (1509 ms)
+[----------] 1 test from VulkanCatalogueParameters (1509 ms total)
+
+[----------] Global test environment tear-down
+[==========] 1 test from 1 test suite ran. (1509 ms total)
+[  PASSED  ] 1 test.
