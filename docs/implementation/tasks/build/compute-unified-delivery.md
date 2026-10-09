@@ -294,3 +294,8 @@ Windows CPU+CUDA shared 也在此处正确报缺 CUDA 后停止，原产物/CPU 
 工具修正 ed2dd3c3 后，Windows 原 shared SDK 完整 CPU+CUDA 两项真实数学已 PASS，
 配置和安装 route metadata 均为 `cpu;cuda`，DLL 邻 EXE；C3 当前36 PASS / 54 UNRUN。
 同一原循环继续 static，Air 两个错误组合 SDK 尚待串行恢复，四项资格继续未验。
+
+Windows CPU+CUDA 原 static Direct/Graph 也已真实 PASS，完整路线与 DLL 邻置核对通过，
+原 SDK 循环 exit0。该组 source/shared/static 六项完成；C3 当前38 PASS / 52 UNRUN。
+下一串行 Air CPU+Apple shared/static 已从原目录恢复，新的配置/启动参数均完整 `cpu;apple`，
+其四项新数学尚未签。source 两项保留，不以新工具 fixture 或配置通过替代数学。

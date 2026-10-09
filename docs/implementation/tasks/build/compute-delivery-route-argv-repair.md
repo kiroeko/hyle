@@ -46,3 +46,8 @@ WSL 的完整验证源码也以同一 ed2dd3c3 archive/hash 更新，原目录�
 搬迁后 Direct1.74s/Graph1.67s 真实数学 PASS，DLL 邻 EXE；
 [当前收据](../../../../evidence/correctness/compute-unified-c3/windows-cpu-cuda-partial.json)保留工具、
 产品及日志身份。C3 现36 PASS / 54 UNRUN；static 同一原循环继续，source/shared 不重跑。
+
+Windows 原 static 也已实际 PASS：Graph1.84s/Direct1.85s，metadata 精确 `cpu;cuda`、DLL 邻 EXE，
+SDK 循环 exit0；该组合六消费者全部通过，C3 当前38 PASS / 52 UNRUN。
+下一串行 Air 原 SDK 循环已恢复，真实子进程为一个 `cpu;apple` 参数，配置 metadata 也精确一致；
+shared/static 数学尚未签，旧错误包/判断与 source PASS 独立保留。没有重启任何 source root。

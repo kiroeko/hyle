@@ -106,3 +106,8 @@ The corrected Windows CPU+CUDA shared SDK now passed both relocated ordinary con
 `cpu;cuda` producer/package metadata and DLLs adjacent to the EXEs. Its partial receipt preserves the
 new tool identity separately from the unchanged product. Effective C3 count is now 36/90; static and
 the four withdrawn Air mixed SDK entries remain unrun.
+Windows CPU+CUDA static Direct/Graph also passed, and the original fixed SDK loop exited 0. All six
+ordinary consumers for this group are now qualified; the effective C3 count is 38/90. Source, shared
+and static results retain their distinct product/tool/linkage identities. The corrected Air mixed SDK
+loop has resumed serially with exact `cpu;apple` arguments and producer metadata; its four entries
+remain unqualified until the real consumers run.
