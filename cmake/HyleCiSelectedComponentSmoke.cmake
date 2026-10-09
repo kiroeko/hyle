@@ -120,6 +120,17 @@ elseif(HYLE_SMOKE_COMPONENT MATCHES "^(compute|graph)$")
   string(REPLACE ";" "\\;" _smoke_route_argument "${_smoke_routes}")
   list(APPEND _selected_feature_args "-DHYLE_COMPUTE_ROUTES=${_smoke_route_argument}")
 endif()
+if(HYLE_SMOKE_COMPONENT STREQUAL "graph")
+  # Both natural products share one producer per route/linkage, not two SDK
+  # builds of the same closure. The companion is the existing real math sample.
+  set(_compute_sample "${HYLE_SOURCE_DIR}/samples/package/compute/cpp")
+  string(APPEND _source_expert_contract
+    "add_executable(hyle_selected_source_compute \"${_compute_sample}/main.cc\")\n"
+    "target_link_libraries(hyle_selected_source_compute PRIVATE hyle::compute)\n"
+    "hyle_stage_runtime(hyle_selected_source_compute)\n")
+  string(APPEND _source_extra_tests
+    "add_test(NAME hyle_selected_source_compute COMMAND hyle_selected_source_compute)\n")
+endif()
 file(WRITE "${_source_parent}/CMakeLists.txt"
 "cmake_minimum_required(VERSION 3.25)\n"
 "project(hyle_selected_source_consumer LANGUAGES CXX)\n"
@@ -299,6 +310,18 @@ foreach(_linkage IN ITEMS shared static)
   _hyle_selected_run("run ${_linkage} ${HYLE_SMOKE_COMPONENT} consumer"
     "${CMAKE_CTEST_COMMAND}" --test-dir "${_consumer}" -C Release
     --timeout 30 --output-on-failure)
+  if(HYLE_SMOKE_COMPONENT STREQUAL "graph")
+    set(_compute_consumer "${_root}/${_linkage}-compute-consumer")
+    _hyle_selected_run("configure ${_linkage} companion Compute consumer"
+      "${CMAKE_COMMAND}" -S "${_compute_sample}" -B "${_compute_consumer}"
+      ${_generator_args} ${_platform_args}
+      -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH=${_prefix})
+    _hyle_selected_run("build ${_linkage} companion Compute consumer"
+      "${CMAKE_COMMAND}" --build "${_compute_consumer}" --config Release --parallel 2)
+    _hyle_selected_run("run ${_linkage} companion Compute consumer"
+      "${CMAKE_CTEST_COMMAND}" --test-dir "${_compute_consumer}" -C Release
+      --timeout 30 --output-on-failure)
+  endif()
 endforeach()
 
 message(STATUS
