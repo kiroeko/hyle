@@ -17,7 +17,7 @@ from hyle_perf.machine import evaluate_machine_profile, expected_child_policy, g
 from hyle_perf.runner import _apply_sampling_policy, _required_telemetry
 from hyle_perf.nanobench import parse_nanobench, select_pair
 
-BUILD = Path('C:/hv/d5pf/vulkan')
+BUILD = Path('C:/hv/vp1/bin')
 EXE = BUILD / 'hyle_graph_route_vulkan_d5_bench.exe'
 OUT = ROOT / 'evidence/performance/vulkan-parity-paired-aa'
 TITLES = ('Qwen3.5-2B official BF16 FFN M1 H2048 N6144',

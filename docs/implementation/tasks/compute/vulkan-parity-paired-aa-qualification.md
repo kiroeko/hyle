@@ -23,7 +23,7 @@
 
 ## 一次有限任务
 
-复用已有外部consumer `C:/hv/d5pf/vulkan`与原static SDK及锁定source，原Vulkan D5 consumer
+复用当前`C:/hv/vp1`已编译产品库及原source，原Vulkan D5 consumer
 两具名完整fragment、原输入/权重/精度/资源verify、两角色Graph/Graph和Direct/Direct，
 每角色双执行/双分配顺序共8process；24round/每arm每round6调用，原affinity/QoS策略。
 初次，仅局部validator读取已有真实paired-round日志；不写新benchmark数学、不改产品
@@ -48,3 +48,9 @@ warmup及verify结束后位置归零，pair每round均覆盖完整cycle，无热
 初次误向普通root producer `C:/hv/vp1`请求仅存在于external工程的D5 target，配置/产物
 未失败，启动target不匹配；改用现有external consumer只增量编译该源，不重建产品SDK。
 局部reader严格拒绝缺round/重复/错arm/不完整输入cycle，不改变公共hyle-perf统计核。
+
+external consumer随后的真实编译发现旧SDK公开enum只有十格式，而当前共同fixture引用
+新增CPU/GPU枚举；旧SDK/现header不可混用。唯一有界接线改为root的maintainer-only D5
+benchmark target，链接当前已编译产品/原GTest/nanobench/ggml；只在对应GTest target存在
+时提供，没有新产品/公开依赖或空target。既有producer增量只编译一个consumer，旧失败
+原始日志保留；不重建旧SDK、无新benchmark数学/额外采样预算。
