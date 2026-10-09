@@ -89,3 +89,14 @@ producer；收齐错误的既有对象和最终三交付继续复用。
 最终source/resource复核、临时产物清理及合法terminal状态；本卡保持AUDITED，
 不签V4或整个goal完成。当前WSL只发现llvmpipe CPU设备，真实GPU数值资格缺席，
 不能代签PASS。四路线single-primary有限审计已经独立结束，不再启动旧性能队列。
+
+### W4：WSL GCC的两个HAL枚举条件表达式
+
+当前Windows来源快照`6d7beb36`在GCC14.2/WERROR下的Linux配置通过；原build及
+一次`-k0`剩余错误收集只发现`native_program.cc:642/681`的`-Wextra`：
+`IREE_HAL_ELEMENT_TYPE_SINT_8`枚举与`iree_hal_element_type_t`整数混合条件表达式。
+有限W4仅将这两个原常量显式转换为HAL定义类型，值/shape/资源/VMFB保持；不关闭
+warning，不改Shader或数学。IREE owner已绑定本卡AUDITED，协议独立提交后修改。
+续编同producer；原失败不丢弃。WSL只有CPU软件device，后续只验公开构建与默认
+拒绝，不把软件可创建/枚举当真实GPU数值PASS；Win/Air相同值的旧完整数学按source
+等价复用，Linux实际编译和拒绝仍必须完成。
