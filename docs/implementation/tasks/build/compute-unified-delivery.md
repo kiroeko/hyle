@@ -1,6 +1,6 @@
 # C1–C3 / R1：统一 Compute/Graph 配置与交付
 
-<!-- MODULE REVIEW: CANDIDATE -->
+<!-- MODULE REVIEW: AUDITED -->
 
 - baseline：`0a167159e08bf2df021c0b7f7fc8942a4dc87c3e`；Windows canonical，启动工作树干净。
 - 用户已明确启动实施；[已定设计](../../../architecture/compute-next-stage.md)与
@@ -154,3 +154,12 @@ C1/C2/R1 接线完成；C3 一条 Graph producer journey 同时签实际 Direct/
 每平台/路线/交付共享 producer，不分别构建两套 SDK。当前只运行配置与工具检查，三交付尚未签。
 Compute+Graph 统一 LOC 实际仍为 62,486 code lines / 268 files（`.scratch/compute-unified/loc.json`）；
 include/C++/shader 零 diff，没有新增自研数学。
+
+### C3 定向修正 B1：发行默认测试
+
+独立 review 的 B1 是真实正常使用缺陷：裸设置路线/安装仍继承顶层 tests ON。
+候选按协议退回 AUDITED；有限 FIX 仅为：显式产品路线或 install 请求的默认 tests OFF，
+维护 preset/用户明确 tests ON 继续有效，显式 tests ON + install 的冲突仍明确拒绝。
+不改 test instrumentation ABI、组件边、数学/flags/Provider 规则。增加真实裸配置取证。
+已运行 source/共享批次均明确 tests OFF，其产物/数学没有这个默认差异；保留已完成格，不因
+文档或此默认改动从头重跑全部旧 gate，最终新候选对受影响配置及既有格做明确身份/适用性记录。
