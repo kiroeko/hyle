@@ -96,3 +96,19 @@ tensor/arith/scf。原127正值、7步有界search与even tie规则不改，不�
 不改compiler pass，不调整BF16 exact门。离线29原module资格通过；补充分别format trace，
 只复验本批新增四ID，原passed owner/旧域不重跑。若仍失败，列具体未资格域继续父轮
 其它有界工作，不能无限调flag/换测试或冒称完整路线PASS。
+
+## F3-N：已证同输入精度边界（AUDITED）
+
+`959f52869` unique source纠正后，两入口全部QAT有限BF16/finite失败和encoded尾部重放
+PASS；剩余两个ID只在BF16动态linear/grouped失败，F32域正确。一次`47a2215b`同输入
+捕获：BF16已存储数值完全相同，F32程序两scale模式最大误差0；BF16原变体最大差
+0.015625/0.125488281。不得以更宽门或重复条件掩盖；原原始FAIL保留。
+
+F3-N有限改动改为原F32 group程序加既有qualified native BF16→F32/F32→BF16边界。
+激活值不改变，原RNE/floor/FP4和逐组dot/scale次序不改变，所有转换、临时和同步计成本。
+BF16输入先原native widening，native程序输出F32 private buffer，最终原precision程序
+materialize BF16；grouped还经过现有checked发布。QAT/explicit decode已验BF16变体不动。
+删除三项失格fused BF16线性重复变体，FP4仅换为同源F32中间程序；公开13语义全部保留，
+离线实际10entry/24浮点+2整数dispatch。编译器或VM统计仪器不改，不加HYLE数学。
+只复验两个剩余ID，两入口各一次；原两个新增PASS和旧域继承。若仍不符，保留精确
+UNPROVEN域，转向父轮其它明确任务，不无限扩大本项。

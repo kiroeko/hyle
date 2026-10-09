@@ -321,9 +321,10 @@ def linear(dtype, grouped=False, four=False, power=False, encoded=False):
 def generate(path):
     entries = [finite('f32'), finite('bf16'), source_fp8_encode(), quantize('f32'), quantize('bf16'),
                weight_decode('f32'), weight_decode('bf16'), fp8_roundtrip(64), fp8_roundtrip(128), fp4_roundtrip()]
-    entries += [linear(t, power=p) for t in ('f32', 'bf16') for p in (False, True)]
-    entries += [linear(t, grouped=True) for t in ('f32', 'bf16')]
-    entries += [linear('bf16', grouped=True, four=True), linear('f32', encoded=True)]
+    # BF16 input/output cross the already qualified native Cast boundaries;
+    # retire unqualified fused BF16 linear variants rather than keep two tracks.
+    entries += [linear('f32', power=p) for p in (False, True)]
+    entries += [linear('f32', grouped=True), linear('f32', grouped=True, four=True), linear('f32', encoded=True)]
     path.write_text('module {\n' + '\n'.join(entries) + '\n}\n', encoding='utf-8', newline='\n')
 
 

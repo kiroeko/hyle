@@ -31,12 +31,9 @@ enum class ProgramKind {
   OfficialRoundtrip8Group128,
   OfficialRoundtrip4Group32,
   OfficialLinearF32,
-  OfficialLinearBf16,
   OfficialLinearPowerF32,
-  OfficialLinearPowerBf16,
   OfficialGrouped8F32,
-  OfficialGrouped8Bf16,
-  OfficialGrouped4Bf16,
+  OfficialGrouped4F32,
   OfficialEncodedBlock128
 };
 enum class ArtifactScalar { Float32, Float16, BFloat16 };
@@ -58,8 +55,7 @@ constexpr bool official_program(ProgramKind kind) noexcept {
 }
 constexpr bool official_grouped(ProgramKind kind) noexcept {
   return kind == ProgramKind::OfficialGrouped8F32 ||
-         kind == ProgramKind::OfficialGrouped8Bf16 ||
-         kind == ProgramKind::OfficialGrouped4Bf16;
+         kind == ProgramKind::OfficialGrouped4F32;
 }
 constexpr bool official_roundtrip(ProgramKind kind) noexcept {
   return kind >= ProgramKind::OfficialRoundtrip8Group64 &&

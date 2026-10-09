@@ -695,190 +695,6 @@ linalg.yield %value : f32
 } -> tensor<?x?xf32>
 return %out, %flag : tensor<?x?xf32>, tensor<i32>
 }
-func.func @linear_normal_bf16(%input: tensor<?x?xi16>, %wc: tensor<?x?x?xi8>, %ws: tensor<?x?x?xf32>, %floor: f32) -> (tensor<?x?xi16>, tensor<i32>) {
-%c0 = arith.constant 0 : index
-%c1 = arith.constant 1 : index
-%c2 = arith.constant 2 : index
-%c128 = arith.constant 128 : index
-%group = arith.constant 128 : index
-%g32 = arith.constant 128 : i32
-%k = tensor.dim %input, %c1 : tensor<?x?xi16>
-%n = tensor.dim %wc, %c1 : tensor<?x?x?xi8>
-%r = tensor.dim %input, %c0 : tensor<?x?xi16>
-%blocks = arith.divui %k, %group : index
-%flag = func.call @finite_bf16(%input) : (tensor<?x?xi16>) -> tensor<i32>
-%power = arith.constant 0 : i32
-%q:2 = func.call @quant_bf16(%input, %g32, %floor, %power) : (tensor<?x?xi16>, i32, f32, i32) -> (tensor<?x?xi8>, tensor<?x?xf32>)
-%zero = arith.constant 0.0 : f32
-%empty_sum = tensor.empty(%r, %n) : tensor<?x?xf32>
-%sum0 = linalg.fill ins(%zero : f32) outs(%empty_sum : tensor<?x?xf32>) -> tensor<?x?xf32>
-%total = scf.for %block = %c0 to %blocks step %c1 iter_args(%sum = %sum0) -> (tensor<?x?xf32>) {
-%begin = arith.muli %block, %group : index
-%empty_a = tensor.empty(%r, %c1, %group) : tensor<?x?x?xf32>
-%ax = linalg.generic {indexing_maps = [affine_map<(d0,d1,d2)->(d0,d1,d2)>], iterator_types = ["parallel","parallel","parallel"]} outs(%empty_a : tensor<?x?x?xf32>) {
-^bb0(%unused_a: f32):
-%row = linalg.index 0 : index
-%j = linalg.index 2 : index
-%column = arith.addi %begin, %j : index
-%byte = tensor.extract %q#0[%row, %column] : tensor<?x?xi8>
-%code = arith.extui %byte : i8 to i32
-%value_byte = arith.trunci %code : i32 to i8
-%value_encoded = arith.bitcast %value_byte : i8 to f8E4M3FN
-%value_original = arith.extf %value_encoded : f8E4M3FN to f32
-%value_mask = arith.constant 127 : i32
-%value_magnitude = arith.andi %code, %value_mask : i32
-%value_is_nan = arith.cmpi eq, %value_magnitude, %value_mask : i32
-%value_nan_bits = arith.constant 2143289344 : i32
-%value_nan = arith.bitcast %value_nan_bits : i32 to f32
-%value = arith.select %value_is_nan, %value_nan, %value_original : f32
-linalg.yield %value : f32
-} -> tensor<?x?x?xf32>
-%empty_w = tensor.empty(%r, %n, %group) : tensor<?x?x?xf32>
-%wx = linalg.generic {indexing_maps = [affine_map<(d0,d1,d2)->(d0,d1,d2)>], iterator_types = ["parallel","parallel","parallel"]} outs(%empty_w : tensor<?x?x?xf32>) {
-^bb0(%unused_w: f32):
-%row = linalg.index 0 : index
-%col = linalg.index 1 : index
-%j = linalg.index 2 : index
-%column = arith.addi %begin, %j : index
-%expert = arith.constant 0 : index
-%byte = tensor.extract %wc[%expert, %col, %column] : tensor<?x?x?xi8>
-%code = arith.extui %byte : i8 to i32
-%value_byte = arith.trunci %code : i32 to i8
-%value_encoded = arith.bitcast %value_byte : i8 to f8E4M3FN
-%value_original = arith.extf %value_encoded : f8E4M3FN to f32
-%value_mask = arith.constant 127 : i32
-%value_magnitude = arith.andi %code, %value_mask : i32
-%value_is_nan = arith.cmpi eq, %value_magnitude, %value_mask : i32
-%value_nan_bits = arith.constant 2143289344 : i32
-%value_nan = arith.bitcast %value_nan_bits : i32 to f32
-%value = arith.select %value_is_nan, %value_nan, %value_original : f32
-linalg.yield %value : f32
-} -> tensor<?x?x?xf32>
-%abar = util.optimization_barrier %ax : tensor<?x?x?xf32>
-%wbar = util.optimization_barrier %wx : tensor<?x?x?xf32>
-%ab = flow.tensor.tie_shape %abar : tensor<?x?x?xf32>{%r, %c1, %group}
-%wb = flow.tensor.tie_shape %wbar : tensor<?x?x?xf32>{%r, %n, %group}
-%empty_dot = tensor.empty(%r, %c1, %n) : tensor<?x?x?xf32>
-%init_dot = linalg.fill ins(%zero : f32) outs(%empty_dot : tensor<?x?x?xf32>) -> tensor<?x?x?xf32>
-%dot = linalg.batch_matmul indexing_maps = [affine_map<(d0,d1,d2,d3)->(d0,d1,d3)>, affine_map<(d0,d1,d2,d3)->(d0,d2,d3)>, affine_map<(d0,d1,d2,d3)->(d0,d1,d2)>] ins(%ab, %wb : tensor<?x?x?xf32>, tensor<?x?x?xf32>) outs(%init_dot : tensor<?x?x?xf32>) -> tensor<?x?x?xf32>
-%next = linalg.generic {indexing_maps = [affine_map<(d0,d1)->(d0,d1)>], iterator_types = ["parallel","parallel"]} outs(%empty_sum : tensor<?x?xf32>) {
-^bb0(%unused_s: f32):
-%row = linalg.index 0 : index
-%col = linalg.index 1 : index
-%expert = arith.constant 0 : index
-%weight_column = arith.divui %col, %c128 : index
-%a_scale = tensor.extract %q#1[%row, %block] : tensor<?x?xf32>
-%w_scale = tensor.extract %ws[%expert, %weight_column, %block] : tensor<?x?x?xf32>
-%d = tensor.extract %dot[%row, %c0, %col] : tensor<?x?x?xf32>
-%old = tensor.extract %sum[%row, %col] : tensor<?x?xf32>
-%activation_scaled = arith.mulf %d, %a_scale : f32
-%weight_scaled = arith.mulf %activation_scaled, %w_scale : f32
-%value = arith.addf %old, %weight_scaled : f32
-linalg.yield %value : f32
-} -> tensor<?x?xf32>
-scf.yield %next : tensor<?x?xf32>
-}
-%out_empty = tensor.empty(%r, %n) : tensor<?x?xi16>
-%out = linalg.generic {indexing_maps = [affine_map<(d0,d1)->(d0,d1)>, affine_map<(d0,d1)->(d0,d1)>], iterator_types = ["parallel","parallel"]} ins(%total : tensor<?x?xf32>) outs(%out_empty : tensor<?x?xi16>) {
-^bb0(%value: f32, %unused: i16):
-%stored_float = arith.truncf %value : f32 to bf16
-%stored = arith.bitcast %stored_float : bf16 to i16
-linalg.yield %stored : i16
-} -> tensor<?x?xi16>
-return %out, %flag : tensor<?x?xi16>, tensor<i32>
-}
-func.func @linear_power_bf16(%input: tensor<?x?xi16>, %wc: tensor<?x?x?xi8>, %ws: tensor<?x?x?xf32>, %floor: f32) -> (tensor<?x?xi16>, tensor<i32>) {
-%c0 = arith.constant 0 : index
-%c1 = arith.constant 1 : index
-%c2 = arith.constant 2 : index
-%c128 = arith.constant 128 : index
-%group = arith.constant 128 : index
-%g32 = arith.constant 128 : i32
-%k = tensor.dim %input, %c1 : tensor<?x?xi16>
-%n = tensor.dim %wc, %c1 : tensor<?x?x?xi8>
-%r = tensor.dim %input, %c0 : tensor<?x?xi16>
-%blocks = arith.divui %k, %group : index
-%flag = func.call @finite_bf16(%input) : (tensor<?x?xi16>) -> tensor<i32>
-%power = arith.constant 1 : i32
-%q:2 = func.call @quant_bf16(%input, %g32, %floor, %power) : (tensor<?x?xi16>, i32, f32, i32) -> (tensor<?x?xi8>, tensor<?x?xf32>)
-%zero = arith.constant 0.0 : f32
-%empty_sum = tensor.empty(%r, %n) : tensor<?x?xf32>
-%sum0 = linalg.fill ins(%zero : f32) outs(%empty_sum : tensor<?x?xf32>) -> tensor<?x?xf32>
-%total = scf.for %block = %c0 to %blocks step %c1 iter_args(%sum = %sum0) -> (tensor<?x?xf32>) {
-%begin = arith.muli %block, %group : index
-%empty_a = tensor.empty(%r, %c1, %group) : tensor<?x?x?xf32>
-%ax = linalg.generic {indexing_maps = [affine_map<(d0,d1,d2)->(d0,d1,d2)>], iterator_types = ["parallel","parallel","parallel"]} outs(%empty_a : tensor<?x?x?xf32>) {
-^bb0(%unused_a: f32):
-%row = linalg.index 0 : index
-%j = linalg.index 2 : index
-%column = arith.addi %begin, %j : index
-%byte = tensor.extract %q#0[%row, %column] : tensor<?x?xi8>
-%code = arith.extui %byte : i8 to i32
-%value_byte = arith.trunci %code : i32 to i8
-%value_encoded = arith.bitcast %value_byte : i8 to f8E4M3FN
-%value_original = arith.extf %value_encoded : f8E4M3FN to f32
-%value_mask = arith.constant 127 : i32
-%value_magnitude = arith.andi %code, %value_mask : i32
-%value_is_nan = arith.cmpi eq, %value_magnitude, %value_mask : i32
-%value_nan_bits = arith.constant 2143289344 : i32
-%value_nan = arith.bitcast %value_nan_bits : i32 to f32
-%value = arith.select %value_is_nan, %value_nan, %value_original : f32
-linalg.yield %value : f32
-} -> tensor<?x?x?xf32>
-%empty_w = tensor.empty(%r, %n, %group) : tensor<?x?x?xf32>
-%wx = linalg.generic {indexing_maps = [affine_map<(d0,d1,d2)->(d0,d1,d2)>], iterator_types = ["parallel","parallel","parallel"]} outs(%empty_w : tensor<?x?x?xf32>) {
-^bb0(%unused_w: f32):
-%row = linalg.index 0 : index
-%col = linalg.index 1 : index
-%j = linalg.index 2 : index
-%column = arith.addi %begin, %j : index
-%expert = arith.constant 0 : index
-%byte = tensor.extract %wc[%expert, %col, %column] : tensor<?x?x?xi8>
-%code = arith.extui %byte : i8 to i32
-%value_byte = arith.trunci %code : i32 to i8
-%value_encoded = arith.bitcast %value_byte : i8 to f8E4M3FN
-%value_original = arith.extf %value_encoded : f8E4M3FN to f32
-%value_mask = arith.constant 127 : i32
-%value_magnitude = arith.andi %code, %value_mask : i32
-%value_is_nan = arith.cmpi eq, %value_magnitude, %value_mask : i32
-%value_nan_bits = arith.constant 2143289344 : i32
-%value_nan = arith.bitcast %value_nan_bits : i32 to f32
-%value = arith.select %value_is_nan, %value_nan, %value_original : f32
-linalg.yield %value : f32
-} -> tensor<?x?x?xf32>
-%abar = util.optimization_barrier %ax : tensor<?x?x?xf32>
-%wbar = util.optimization_barrier %wx : tensor<?x?x?xf32>
-%ab = flow.tensor.tie_shape %abar : tensor<?x?x?xf32>{%r, %c1, %group}
-%wb = flow.tensor.tie_shape %wbar : tensor<?x?x?xf32>{%r, %n, %group}
-%empty_dot = tensor.empty(%r, %c1, %n) : tensor<?x?x?xf32>
-%init_dot = linalg.fill ins(%zero : f32) outs(%empty_dot : tensor<?x?x?xf32>) -> tensor<?x?x?xf32>
-%dot = linalg.batch_matmul indexing_maps = [affine_map<(d0,d1,d2,d3)->(d0,d1,d3)>, affine_map<(d0,d1,d2,d3)->(d0,d2,d3)>, affine_map<(d0,d1,d2,d3)->(d0,d1,d2)>] ins(%ab, %wb : tensor<?x?x?xf32>, tensor<?x?x?xf32>) outs(%init_dot : tensor<?x?x?xf32>) -> tensor<?x?x?xf32>
-%next = linalg.generic {indexing_maps = [affine_map<(d0,d1)->(d0,d1)>], iterator_types = ["parallel","parallel"]} outs(%empty_sum : tensor<?x?xf32>) {
-^bb0(%unused_s: f32):
-%row = linalg.index 0 : index
-%col = linalg.index 1 : index
-%expert = arith.constant 0 : index
-%weight_column = arith.divui %col, %c128 : index
-%a_scale = tensor.extract %q#1[%row, %block] : tensor<?x?xf32>
-%w_scale = tensor.extract %ws[%expert, %weight_column, %block] : tensor<?x?x?xf32>
-%d = tensor.extract %dot[%row, %c0, %col] : tensor<?x?x?xf32>
-%old = tensor.extract %sum[%row, %col] : tensor<?x?xf32>
-%activation_scaled = arith.mulf %d, %a_scale : f32
-%weight_scaled = arith.mulf %activation_scaled, %w_scale : f32
-%value = arith.addf %old, %weight_scaled : f32
-linalg.yield %value : f32
-} -> tensor<?x?xf32>
-scf.yield %next : tensor<?x?xf32>
-}
-%out_empty = tensor.empty(%r, %n) : tensor<?x?xi16>
-%out = linalg.generic {indexing_maps = [affine_map<(d0,d1)->(d0,d1)>, affine_map<(d0,d1)->(d0,d1)>], iterator_types = ["parallel","parallel"]} ins(%total : tensor<?x?xf32>) outs(%out_empty : tensor<?x?xi16>) {
-^bb0(%value: f32, %unused: i16):
-%stored_float = arith.truncf %value : f32 to bf16
-%stored = arith.bitcast %stored_float : bf16 to i16
-linalg.yield %stored : i16
-} -> tensor<?x?xi16>
-return %out, %flag : tensor<?x?xi16>, tensor<i32>
-}
 func.func @grouped8_f32(%input: tensor<?x?xf32>, %wc: tensor<?x?x?xi8>, %ws: tensor<?x?x?xf32>, %ids: tensor<?xi32>, %slots_arg: i32, %activations_arg: i32, %floor: f32) -> (tensor<?x?xf32>, tensor<i32>) {
 %c0 = arith.constant 0 : index
 %c1 = arith.constant 1 : index
@@ -985,130 +801,22 @@ linalg.yield %value : f32
 } -> tensor<?x?xf32>
 return %out, %flag : tensor<?x?xf32>, tensor<i32>
 }
-func.func @grouped8_bf16(%input: tensor<?x?xi16>, %wc: tensor<?x?x?xi8>, %ws: tensor<?x?x?xf32>, %ids: tensor<?xi32>, %slots_arg: i32, %activations_arg: i32, %floor: f32) -> (tensor<?x?xi16>, tensor<i32>) {
-%c0 = arith.constant 0 : index
-%c1 = arith.constant 1 : index
-%c2 = arith.constant 2 : index
-%c128 = arith.constant 128 : index
-%group = arith.constant 128 : index
-%g32 = arith.constant 128 : i32
-%k = tensor.dim %input, %c1 : tensor<?x?xi16>
-%n = tensor.dim %wc, %c1 : tensor<?x?x?xi8>
-%r = tensor.dim %ids, %c0 : tensor<?xi32>
-%slots = arith.index_cast %slots_arg : i32 to index
-%activations = arith.index_cast %activations_arg : i32 to index
-%blocks = arith.divui %k, %group : index
-%flag = func.call @finite_bf16(%input) : (tensor<?x?xi16>) -> tensor<i32>
-%power = arith.constant 0 : i32
-%q:2 = func.call @quant_bf16(%input, %g32, %floor, %power) : (tensor<?x?xi16>, i32, f32, i32) -> (tensor<?x?xi8>, tensor<?x?xf32>)
-%zero = arith.constant 0.0 : f32
-%empty_sum = tensor.empty(%r, %n) : tensor<?x?xf32>
-%sum0 = linalg.fill ins(%zero : f32) outs(%empty_sum : tensor<?x?xf32>) -> tensor<?x?xf32>
-%total = scf.for %block = %c0 to %blocks step %c1 iter_args(%sum = %sum0) -> (tensor<?x?xf32>) {
-%begin = arith.muli %block, %group : index
-%empty_a = tensor.empty(%r, %c1, %group) : tensor<?x?x?xf32>
-%ax = linalg.generic {indexing_maps = [affine_map<(d0,d1,d2)->(d0,d1,d2)>], iterator_types = ["parallel","parallel","parallel"]} outs(%empty_a : tensor<?x?x?xf32>) {
-^bb0(%unused_a: f32):
-%row = linalg.index 0 : index
-%j = linalg.index 2 : index
-%column = arith.addi %begin, %j : index
-%token = arith.divui %row, %slots : index
-%selected_slot = arith.remui %row, %slots : index
-%shared = arith.cmpi eq, %activations, %c1 : index
-%slot = arith.select %shared, %c0, %selected_slot : index
-%base = arith.muli %token, %activations : index
-%activation_row = arith.addi %base, %slot : index
-%byte = tensor.extract %q#0[%activation_row, %column] : tensor<?x?xi8>
-%code = arith.extui %byte : i8 to i32
-%value_byte = arith.trunci %code : i32 to i8
-%value_encoded = arith.bitcast %value_byte : i8 to f8E4M3FN
-%value_original = arith.extf %value_encoded : f8E4M3FN to f32
-%value_mask = arith.constant 127 : i32
-%value_magnitude = arith.andi %code, %value_mask : i32
-%value_is_nan = arith.cmpi eq, %value_magnitude, %value_mask : i32
-%value_nan_bits = arith.constant 2143289344 : i32
-%value_nan = arith.bitcast %value_nan_bits : i32 to f32
-%value = arith.select %value_is_nan, %value_nan, %value_original : f32
-linalg.yield %value : f32
-} -> tensor<?x?x?xf32>
-%empty_w = tensor.empty(%r, %n, %group) : tensor<?x?x?xf32>
-%wx = linalg.generic {indexing_maps = [affine_map<(d0,d1,d2)->(d0,d1,d2)>], iterator_types = ["parallel","parallel","parallel"]} outs(%empty_w : tensor<?x?x?xf32>) {
-^bb0(%unused_w: f32):
-%row = linalg.index 0 : index
-%col = linalg.index 1 : index
-%j = linalg.index 2 : index
-%column = arith.addi %begin, %j : index
-%id = tensor.extract %ids[%row] : tensor<?xi32>
-%expert = arith.index_cast %id : i32 to index
-%byte = tensor.extract %wc[%expert, %col, %column] : tensor<?x?x?xi8>
-%code = arith.extui %byte : i8 to i32
-%value_byte = arith.trunci %code : i32 to i8
-%value_encoded = arith.bitcast %value_byte : i8 to f8E4M3FN
-%value_original = arith.extf %value_encoded : f8E4M3FN to f32
-%value_mask = arith.constant 127 : i32
-%value_magnitude = arith.andi %code, %value_mask : i32
-%value_is_nan = arith.cmpi eq, %value_magnitude, %value_mask : i32
-%value_nan_bits = arith.constant 2143289344 : i32
-%value_nan = arith.bitcast %value_nan_bits : i32 to f32
-%value = arith.select %value_is_nan, %value_nan, %value_original : f32
-linalg.yield %value : f32
-} -> tensor<?x?x?xf32>
-%abar = util.optimization_barrier %ax : tensor<?x?x?xf32>
-%wbar = util.optimization_barrier %wx : tensor<?x?x?xf32>
-%ab = flow.tensor.tie_shape %abar : tensor<?x?x?xf32>{%r, %c1, %group}
-%wb = flow.tensor.tie_shape %wbar : tensor<?x?x?xf32>{%r, %n, %group}
-%empty_dot = tensor.empty(%r, %c1, %n) : tensor<?x?x?xf32>
-%init_dot = linalg.fill ins(%zero : f32) outs(%empty_dot : tensor<?x?x?xf32>) -> tensor<?x?x?xf32>
-%dot = linalg.batch_matmul indexing_maps = [affine_map<(d0,d1,d2,d3)->(d0,d1,d3)>, affine_map<(d0,d1,d2,d3)->(d0,d2,d3)>, affine_map<(d0,d1,d2,d3)->(d0,d1,d2)>] ins(%ab, %wb : tensor<?x?x?xf32>, tensor<?x?x?xf32>) outs(%init_dot : tensor<?x?x?xf32>) -> tensor<?x?x?xf32>
-%next = linalg.generic {indexing_maps = [affine_map<(d0,d1)->(d0,d1)>], iterator_types = ["parallel","parallel"]} outs(%empty_sum : tensor<?x?xf32>) {
-^bb0(%unused_s: f32):
-%row = linalg.index 0 : index
-%col = linalg.index 1 : index
-%token = arith.divui %row, %slots : index
-%selected_slot = arith.remui %row, %slots : index
-%shared = arith.cmpi eq, %activations, %c1 : index
-%slot = arith.select %shared, %c0, %selected_slot : index
-%base = arith.muli %token, %activations : index
-%activation_row = arith.addi %base, %slot : index
-%id = tensor.extract %ids[%row] : tensor<?xi32>
-%expert = arith.index_cast %id : i32 to index
-%weight_column = arith.divui %col, %c128 : index
-%a_scale = tensor.extract %q#1[%activation_row, %block] : tensor<?x?xf32>
-%w_scale = tensor.extract %ws[%expert, %weight_column, %block] : tensor<?x?x?xf32>
-%d = tensor.extract %dot[%row, %c0, %col] : tensor<?x?x?xf32>
-%old = tensor.extract %sum[%row, %col] : tensor<?x?xf32>
-%activation_scaled = arith.mulf %d, %a_scale : f32
-%weight_scaled = arith.mulf %activation_scaled, %w_scale : f32
-%value = arith.addf %old, %weight_scaled : f32
-linalg.yield %value : f32
-} -> tensor<?x?xf32>
-scf.yield %next : tensor<?x?xf32>
-}
-%out_empty = tensor.empty(%r, %n) : tensor<?x?xi16>
-%out = linalg.generic {indexing_maps = [affine_map<(d0,d1)->(d0,d1)>, affine_map<(d0,d1)->(d0,d1)>], iterator_types = ["parallel","parallel"]} ins(%total : tensor<?x?xf32>) outs(%out_empty : tensor<?x?xi16>) {
-^bb0(%value: f32, %unused: i16):
-%stored_float = arith.truncf %value : f32 to bf16
-%stored = arith.bitcast %stored_float : bf16 to i16
-linalg.yield %stored : i16
-} -> tensor<?x?xi16>
-return %out, %flag : tensor<?x?xi16>, tensor<i32>
-}
-func.func @grouped4_bf16(%input: tensor<?x?xi16>, %wc: tensor<?x?x?xi8>, %ws: tensor<?x?x?xf32>, %ids: tensor<?xi32>, %slots_arg: i32, %activations_arg: i32, %floor: f32) -> (tensor<?x?xi16>, tensor<i32>) {
+func.func @grouped4_f32(%input: tensor<?x?xf32>, %wc: tensor<?x?x?xi8>, %ws: tensor<?x?x?xf32>, %ids: tensor<?xi32>, %slots_arg: i32, %activations_arg: i32, %floor: f32) -> (tensor<?x?xf32>, tensor<i32>) {
 %c0 = arith.constant 0 : index
 %c1 = arith.constant 1 : index
 %c2 = arith.constant 2 : index
 %c128 = arith.constant 128 : index
 %group = arith.constant 32 : index
 %g32 = arith.constant 128 : i32
-%k = tensor.dim %input, %c1 : tensor<?x?xi16>
+%k = tensor.dim %input, %c1 : tensor<?x?xf32>
 %n = tensor.dim %wc, %c1 : tensor<?x?x?xi8>
 %r = tensor.dim %ids, %c0 : tensor<?xi32>
 %slots = arith.index_cast %slots_arg : i32 to index
 %activations = arith.index_cast %activations_arg : i32 to index
 %blocks = arith.divui %k, %group : index
-%flag = func.call @finite_bf16(%input) : (tensor<?x?xi16>) -> tensor<i32>
+%flag = func.call @finite_f32(%input) : (tensor<?x?xf32>) -> tensor<i32>
 %power = arith.constant 1 : i32
-%q:2 = func.call @quant_bf16(%input, %g32, %floor, %power) : (tensor<?x?xi16>, i32, f32, i32) -> (tensor<?x?xi8>, tensor<?x?xf32>)
+%q:2 = func.call @quant_f32(%input, %g32, %floor, %power) : (tensor<?x?xf32>, i32, f32, i32) -> (tensor<?x?xi8>, tensor<?x?xf32>)
 %zero = arith.constant 0.0 : f32
 %empty_sum = tensor.empty(%r, %n) : tensor<?x?xf32>
 %sum0 = linalg.fill ins(%zero : f32) outs(%empty_sum : tensor<?x?xf32>) -> tensor<?x?xf32>
@@ -1195,14 +903,12 @@ linalg.yield %value : f32
 } -> tensor<?x?xf32>
 scf.yield %next : tensor<?x?xf32>
 }
-%out_empty = tensor.empty(%r, %n) : tensor<?x?xi16>
-%out = linalg.generic {indexing_maps = [affine_map<(d0,d1)->(d0,d1)>, affine_map<(d0,d1)->(d0,d1)>], iterator_types = ["parallel","parallel"]} ins(%total : tensor<?x?xf32>) outs(%out_empty : tensor<?x?xi16>) {
-^bb0(%value: f32, %unused: i16):
-%stored_float = arith.truncf %value : f32 to bf16
-%stored = arith.bitcast %stored_float : bf16 to i16
-linalg.yield %stored : i16
-} -> tensor<?x?xi16>
-return %out, %flag : tensor<?x?xi16>, tensor<i32>
+%out_empty = tensor.empty(%r, %n) : tensor<?x?xf32>
+%out = linalg.generic {indexing_maps = [affine_map<(d0,d1)->(d0,d1)>, affine_map<(d0,d1)->(d0,d1)>], iterator_types = ["parallel","parallel"]} ins(%total : tensor<?x?xf32>) outs(%out_empty : tensor<?x?xf32>) {
+^bb0(%value: f32, %unused: f32):
+linalg.yield %value : f32
+} -> tensor<?x?xf32>
+return %out, %flag : tensor<?x?xf32>, tensor<i32>
 }
 func.func @encoded_block128(%input: tensor<?x?xi8>, %as: tensor<?x?xf32>, %wc: tensor<?x?x?xi8>, %ws: tensor<?x?x?xf32>) -> tensor<?x?xf32> {
 %c0 = arith.constant 0 : index

@@ -38,7 +38,7 @@ def main():
     run([str(recipe), *flags, '--compile-to=executable-configurations', '-o', str(configured)], 'configure.log')
     text = configured.read_text()
     pattern = re.compile(r'attributes \{translation_info = #iree_codegen.translation_info<pipeline = #iree_gpu.spirv_pipeline<BaseDistribute> workgroup_size = \[64, 1, 1\]>')
-    if len(pattern.findall(text)) != 27: raise ValueError('27 original official schedules differ')
+    if len(pattern.findall(text)) != 24: raise ValueError('24 original official schedules differ')
     annotation = 'attributes {spirv.entry_point_abi = #spirv.entry_point_abi<workgroup_size = [64, 1, 1], target_width = 32>, translation_info'
     annotated = output / 'annotated.mlir'
     annotated.write_text(pattern.sub(lambda m:m.group().replace('attributes {translation_info', annotation), text), encoding='utf-8', newline='\n')
@@ -49,14 +49,13 @@ def main():
     control = [p for p in modules if '"SignedZeroInfNanPreserve", 32' not in p.read_text()]
     # Original global finite-bit reductions use one lane and integer tests;
     # they contain no floating arithmetic to which IEEE32 mode would apply.
-    if len(modules) != 29 or len(control) != 2 or any(
+    if len(modules) != 26 or len(control) != 2 or any(
         '"LocalSize", 1, 1, 1' not in p.read_text() or
         re.search(r'spirv\.(?:FAdd|FSub|FMul|FDiv|FConvert)', p.read_text())
         for p in control):
         raise ValueError('original official IEEE32 mode missing')
     exports = ['weight_decode_f32','weight_decode_bf16','fp8_roundtrip_64','fp8_roundtrip_128','fp4_roundtrip_32',
-        'linear_normal_f32','linear_power_f32','linear_normal_bf16','linear_power_bf16',
-        'grouped8_f32','grouped8_bf16','grouped4_bf16','encoded_block128']
+        'linear_normal_f32','linear_power_f32', 'grouped8_f32','grouped4_f32','encoded_block128']
     receipt = {'commands': commands, 'exports': exports, 'files': {}}
     for file in [recipe, Path(__file__), recipe.with_name('generate_official.py'),
                  recipe.with_name('generate_mlx.py'), configured, annotated, binary, output / 'compiler-version.txt', *modules]:

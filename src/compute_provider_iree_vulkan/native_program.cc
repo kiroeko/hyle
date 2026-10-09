@@ -136,9 +136,8 @@ const char *official_entry(ProgramKind kind) noexcept {
   constexpr std::array names{
       "module.weight_decode_f32", "module.weight_decode_bf16",
       "module.fp8_roundtrip_64", "module.fp8_roundtrip_128", "module.fp4_roundtrip_32",
-      "module.linear_normal_f32", "module.linear_normal_bf16",
-      "module.linear_power_f32", "module.linear_power_bf16",
-      "module.grouped8_f32", "module.grouped8_bf16", "module.grouped4_bf16",
+      "module.linear_normal_f32", "module.linear_power_f32",
+      "module.grouped8_f32", "module.grouped4_f32",
       "module.encoded_block128"};
   return official_program(kind)
       ? names[static_cast<std::size_t>(kind) - static_cast<std::size_t>(ProgramKind::OfficialWeightDecodeF32)]
@@ -488,7 +487,7 @@ NativeProgram::create(NativeDevice device, ProgramSpec spec) noexcept {
         : official_roundtrip(spec.kind) ? !fits(spec.rows, spec.columns)
         : (!fits(spec.rows, spec.depth) || !fits(spec.experts, spec.columns) ||
            !fits(spec.experts * spec.columns, spec.depth) ||
-           !fits(spec.rows * spec.columns, spec.kind == ProgramKind::OfficialGrouped4Bf16 ? 32 : 128)))
+           !fits(spec.rows * spec.columns, spec.kind == ProgramKind::OfficialGrouped4F32 ? 32 : 128)))
       return std::unexpected(Status::OutOfRange("official float original tensor index/workspace domain"));
   }
   try {
@@ -558,12 +557,9 @@ NativeProgram::create(NativeDevice device, ProgramSpec spec) noexcept {
     case ProgramKind::OfficialRoundtrip8Group128:
     case ProgramKind::OfficialRoundtrip4Group32:
     case ProgramKind::OfficialLinearF32:
-    case ProgramKind::OfficialLinearBf16:
     case ProgramKind::OfficialLinearPowerF32:
-    case ProgramKind::OfficialLinearPowerBf16:
     case ProgramKind::OfficialGrouped8F32:
-    case ProgramKind::OfficialGrouped8Bf16:
-    case ProgramKind::OfficialGrouped4Bf16:
+    case ProgramKind::OfficialGrouped4F32:
     case ProgramKind::OfficialEncodedBlock128:
       name = official_entry(spec.kind);
       break;
@@ -601,7 +597,7 @@ NativeProgram::create(NativeDevice device, ProgramSpec spec) noexcept {
       } else {
         const bool encoded = spec.kind == ProgramKind::OfficialEncodedBlock128;
         const bool grouped = official_grouped(spec.kind);
-        const bool four = spec.kind == ProgramKind::OfficialGrouped4Bf16;
+        const bool four = spec.kind == ProgramKind::OfficialGrouped4F32;
         const auto a_rows = grouped ? r / spec.selection_slots * spec.activation_slots : r;
         const std::array<iree_hal_dim_t, 2> a{a_rows, k}, a_scale{r, k / 128};
         const std::array<iree_hal_dim_t, 3> codes{e, n, four ? k / 2 : k},

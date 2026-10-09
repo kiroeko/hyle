@@ -424,7 +424,7 @@ create_iree_stage(const std::shared_ptr<Run> &run, const Dispatch &dispatch,
         } else if (iv::official_grouped(spec.kind)) {
           input.value = dispatch.values[port == 0 ? 1 : port == 3 ? 2 : 0];
           if (port == 2) input.offset = static_cast<VkDeviceSize>(spec.experts) * spec.columns * spec.depth /
-              (spec.kind == iv::ProgramKind::OfficialGrouped4Bf16 ? 2 : 1);
+              (spec.kind == iv::ProgramKind::OfficialGrouped4F32 ? 2 : 1);
         } else {
           input.value = dispatch.values[port == 0 ? 0 : 1];
           if (port == 2) input.offset = static_cast<VkDeviceSize>(spec.columns) * spec.depth;

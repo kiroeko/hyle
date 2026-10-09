@@ -1,0 +1,16 @@
+Running main() from C:\public\tools\hyle-dependencies\v1\sources\googletest-063de7e9578f-162765170ae6\googletest\src\gtest_main.cc
+Note: Google Test filter = VulkanIree.OriginalOfficialBfloatFloatProgramCause
+[==========] Running 1 test from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 1 test from VulkanIree
+[ RUN      ] VulkanIree.OriginalOfficialBfloatFloatProgramCause
+OFFICIAL_DTYPE_CAUSE type=6 power=0 max_error=0 first=0.00336767733 expected=0.00336767733
+OFFICIAL_DTYPE_CAUSE type=5 power=0 max_error=0.015625 first=0.0111694336 expected=0.00337219238
+OFFICIAL_DTYPE_CAUSE type=6 power=1 max_error=0 first=0.00336766243 expected=0.00336766243
+OFFICIAL_DTYPE_CAUSE type=5 power=1 max_error=0.125488281 first=0.0111694336 expected=0.00337219238
+[       OK ] VulkanIree.OriginalOfficialBfloatFloatProgramCause (275 ms)
+[----------] 1 test from VulkanIree (275 ms total)
+
+[----------] Global test environment tear-down
+[==========] 1 test from 1 test suite ran. (275 ms total)
+[  PASSED  ] 1 test.

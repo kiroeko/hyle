@@ -40,7 +40,7 @@ bool fits(const Device &device, const iv::ProgramSpec &spec) noexcept {
   const bool roundtrip = iv::official_roundtrip(spec.kind);
   std::uint64_t work = r * n, bytes = 32 * work + 512;
   if (!decode && !roundtrip) {
-    const auto group = spec.kind == iv::ProgramKind::OfficialGrouped4Bf16 ? 32U : 128U;
+    const auto group = spec.kind == iv::ProgramKind::OfficialGrouped4F32 ? 32U : 128U;
     if (!product(r, k) || !product(e, n) || !product(e * n, k) ||
         !product(r * n, group)) return false;
     work = r * n * group;
@@ -88,8 +88,7 @@ Status lower_official_float(ProgramState &program, const PlanStep &step) noexcep
     } else if (grouped8 || grouped4) {
       const auto &a = program.values[step.inputs[1]].description;
       const auto &ids = program.values[step.inputs[2]].description;
-      spec.kind = grouped4 ? iv::ProgramKind::OfficialGrouped4Bf16
-          : bf16 ? iv::ProgramKind::OfficialGrouped8Bf16 : iv::ProgramKind::OfficialGrouped8F32;
+      spec.kind = grouped4 ? iv::ProgramKind::OfficialGrouped4F32 : iv::ProgramKind::OfficialGrouped8F32;
       spec.experts = first.dimensions()[0];spec.columns = first.dimensions()[1];spec.depth = first.dimensions()[2];
       spec.selection_slots = ids.dimensions()[1];spec.activation_slots = a.dimensions()[1];
       spec.rows = a.dimensions()[0] * spec.selection_slots;
@@ -99,8 +98,7 @@ Status lower_official_float(ProgramState &program, const PlanStep &step) noexcep
       spec.rows = first.dimensions()[0];spec.depth = first.dimensions()[1];spec.columns = w.dimensions()[1];
       if (linear) {
         const bool power = linear->scale_rounding == model_ops::Float8ScaleRounding::kPowerOfTwo;
-        spec.kind = power ? (bf16 ? iv::ProgramKind::OfficialLinearPowerBf16 : iv::ProgramKind::OfficialLinearPowerF32)
-                          : (bf16 ? iv::ProgramKind::OfficialLinearBf16 : iv::ProgramKind::OfficialLinearF32);
+        spec.kind = power ? iv::ProgramKind::OfficialLinearPowerF32 : iv::ProgramKind::OfficialLinearF32;
         spec.absmax_floor = linear->absmax_floor;
       } else {
         if (step.operation.get_if<MatMul>()->accumulation_type != DataType::kFloat32)
@@ -114,6 +112,18 @@ Status lower_official_float(ProgramState &program, const PlanStep &step) noexcep
       return Status::Unimplemented("Vulkan official float numeric features, workspace or index domain");
     HYLE_RETURN_IF_ERROR(ensure_iree_device(program));
     auto inputs = step.inputs;auto destination = step.outputs[0];
+    const bool widened = bf16 && (linear || grouped8 || grouped4);
+    if (widened) {
+      // Same stored BF16 values, qualified widening before the mature F32
+      // group program. Keep the final BF16 materialization a native boundary.
+      const auto port = (grouped8 || grouped4) ? 1U : 0U;
+      const auto description = program.values[inputs[port]].description;
+      HYLE_ASSIGN_OR_RETURN(auto promoted,
+          TensorDesc::dense(DataType::kFloat32, description.dimensions()));
+      const auto value = append(program, promoted);
+      HYLE_RETURN_IF_ERROR(lower_native_cast(program, inputs[port], value));
+      inputs[port] = value;spec.output_type = iv::ArtifactScalar::Float32;
+    }
     if (grouped8 || grouped4) {
       if (!program.status_value) {
         HYLE_ASSIGN_OR_RETURN(auto status, TensorDesc::dense(DataType::kInt32, {}));
@@ -122,10 +132,21 @@ Status lower_official_float(ProgramState &program, const PlanStep &step) noexcep
       const auto ids = program.values[inputs.back()].description;
       const auto safe = append(program, ids);
       HYLE_RETURN_IF_ERROR(lower_index_check(program, inputs.back(), safe, static_cast<std::uint64_t>(spec.experts), true));
-      inputs.back() = safe;destination = append(program, output);
+      inputs.back() = safe;
     }
+    if (widened) {
+      HYLE_ASSIGN_OR_RETURN(auto intermediate,
+          TensorDesc::dense(DataType::kFloat32, output.dimensions()));
+      destination = append(program, intermediate);
+    } else if (grouped8 || grouped4) destination = append(program, output);
     Dispatch dispatch;dispatch.iree = spec;dispatch.values = std::move(inputs);
     dispatch.values.push_back(destination);program.dispatches.push_back(std::move(dispatch));
+    if (widened && (grouped8 || grouped4)) {
+      const auto converted = append(program, output);
+      HYLE_RETURN_IF_ERROR(lower_native_cast(program, destination, converted));
+      return lower_checked_copy(program, converted, step.outputs[0]);
+    }
+    if (widened) return lower_native_cast(program, destination, step.outputs[0]);
     return (grouped8 || grouped4) ? lower_checked_copy(program, destination, step.outputs[0]) : Status::Ok();
   } catch (const std::bad_alloc &) {
     return Status::ResourceExhausted("Vulkan official float preparation metadata");
