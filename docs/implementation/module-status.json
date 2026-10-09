@@ -570,8 +570,8 @@
     {
       "module": "compute_provider_ggml_vulkan",
       "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/cpu-quant-mtp-c3-format-bindings.md",
-      "summary": "C3公共GGUF enum消费者有限迁移AUDITED：只明确拒绝新增CPU格式，原D5资格/算法/限制不变，不恢复GPU队列；不签新增GPU能力。 宏有限轮已验收CLOSED，继续原父轮有限FIX/限制，无新数学或资格扩张。"
+      "record": "docs/implementation/tasks/compute/vulkan-parity-v1-ggml-native-bindings.md",
+      "summary": "Vulkan parity V1 AUDITED: frozen original eight-format/119-contract type bindings and four embedding formats/eight contracts; old route/Graph performance blockers remain, runtime not yet verified."
     },
     {
       "module": "compute_ggml_runtime",
