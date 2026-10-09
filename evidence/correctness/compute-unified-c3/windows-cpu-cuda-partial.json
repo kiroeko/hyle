@@ -1,0 +1,37 @@
+{
+  "product_candidate": "530e230bbc11e4fe12218a6a021ca15b009337c3",
+  "validation_source_commit": "b7115b1142d44a14b6598757f1f007f71b1a61f1",
+  "routes": "cpu;cuda",
+  "platform": "Windows MSVC19.50.35728.0 CUDA13.3.73 RTX4070 driver617.14",
+  "scope": "Ordinary combined SDK; selected CPU and CUDA routes each execute real math. This does not certify H1 joint execution, async transfers or expert movement.",
+  "rows": [
+    {
+      "entry": "source-direct",
+      "verdict": "PASS"
+    },
+    {
+      "entry": "source-graph",
+      "verdict": "PASS"
+    },
+    {
+      "entry": "shared-direct",
+      "verdict": "UNRUN"
+    },
+    {
+      "entry": "shared-graph",
+      "verdict": "UNRUN"
+    },
+    {
+      "entry": "static-direct",
+      "verdict": "UNRUN"
+    },
+    {
+      "entry": "static-graph",
+      "verdict": "UNRUN"
+    }
+  ],
+  "source_log": "evidence/correctness/compute-unified-c3/windows-cpu-cuda/source-ctest.log",
+  "source_log_encoding": "Windows cp936, original bytes retained",
+  "source_log_sha256": "dc31415bc3fe13b93020219ddf0acd9f53c024487911880722964157f886b2ce",
+  "remaining": "The original driver continues shared/static SDK stages; no source restart or P1."
+}

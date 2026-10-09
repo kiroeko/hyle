@@ -275,3 +275,8 @@ Air CPU+Apple 首次配置发现 DS4 共享 lock 重复登记；已按
 H1–H3 包括已接受的异步传输/重叠/专家片段机制，仍未实施；mixed SDK 不代签这些能力。
 统一脚本在不可变 `6e7af97eb` 测得 Compute+Graph 62,508 实现行（不含 tests/third_party），
 self-check PASS；本次登记修正只有 CMake，不改变该实现行数。
+
+Windows CPU+CUDA 普通 source Direct/Graph 两项真实计算现已 PASS（0.89s/0.72s），
+[收据](../../../../evidence/correctness/compute-unified-c3/windows-cpu-cuda-partial.json)绑定启动时的
+不可变 validation source `b7115b114`。C3 当前38 PASS / 52 UNRUN；原 driver 串行继续 shared/static，
+保留 source 对象，不重启、不跑 P1。组合包仍不代签 H1 联合/异步/专家传输。

@@ -88,3 +88,7 @@ type CPU. NVIDIA CUDA reports the RTX 4070 separately; this does not expose it t
 The ordinary Vulkan route disallows software devices. SDK compilation remains applicable; real GPU
 math is unqualified on this machine, consistent with the declared platform limit. This device query
 is not a shader, resource, operator or consumer PASS and does not increase the delivery matrix count.
+
+The [Windows CPU+CUDA partial receipt](windows-cpu-cuda-partial.json) signs source Direct/Graph
+real math PASS on the actual RTX 4070 and CPU. The original serial driver continues shared/static SDK
+stages; source objects and results are retained. Combined delivery does not certify H1 joint execution.
