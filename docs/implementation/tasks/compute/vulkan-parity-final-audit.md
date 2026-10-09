@@ -1,6 +1,6 @@
 # Vulkan 终审：产品验收与临时归档限制
 
-<!-- MODULE REVIEW: AUDITED -->
+<!-- MODULE REVIEW: CANDIDATE -->
 
 baseline `a19391c7`，产品candidate `a27a9b17f`；Windows为唯一产品真相。
 父轮[当前范围](vulkan-cpu-cuda-apple-parity-closure.md)不缩减。
