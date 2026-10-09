@@ -158,6 +158,10 @@ Compute/Graph 使用唯一 `HYLE_COMPUTE_ROUTES` 集合，省略时默认完整 
 `hyle::compute/graph`；未选路线在取依赖闭包前排除，不影响 GPU 所需 host 控制和传输。
 统一配置正在按 owner 卡执行三交付验收，当前状态见 registry。配置示例：
 
+裸 CMake 显式选择路线或 `HYLE_INSTALL=ON` 时，默认采用 tests OFF 的发行配置；
+不需要再手动关闭测试。维护 preset/调用方明确 `HYLE_BUILD_TESTS=ON` 仍有效；
+明确同时要求 install 和 tests 的冲突仍拒绝。
+
 | 交付能力 | `HYLE_COMPUTE_ROUTES` |
 |---|---|
 | 完整 CPU | cpu |

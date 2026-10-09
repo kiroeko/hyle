@@ -29,9 +29,11 @@
 |---|---|---|
 | D1 | developer setup 与两 sample README 仍使用旧路由开关/旧 staging API | 四处已修；当前权威/样例扫描旧拼法匹配归零，历史不改 |
 | D2 | architecture 仍称统一配置“尚未实施/仅设计goal”，与已提交候选及活动卡冲突 | 更新为“候选接线、交付待验”；组合/异步仍明确未交付，旧设计卡保留历史 |
-| B1 | 裸顶层 CMake 默认 tests ON；`HYLE_INSTALL=ON` 另需用户手设 tests OFF，普通路线输入不能自然产生发行配置 | 是真实易用性缺陷；presets已代填，裸用户入口仍须有限纠正并取证，尚未解决 |
+| B1 | 裸顶层 CMake 默认 tests ON；`HYLE_INSTALL=ON` 另需用户手设 tests OFF，普通路线输入不能自然产生发行配置 | 定向修复已提交79137d31；裸 install/显式路线→OFF、显式维护tests→ON三个实际Core配置通过，不构建/P1 |
 | R1 | 用户希望尽可能提前 Provider 绑定；硬件/driver/模型/真实 ports 尚未知时无法合法构建期定全部 | KEEP：构建裁剪已知域/固定规则→prepare冷绑定→submit固定程序；不为提前而猜未知事实或做热 autotune |
 | R2 | expert API 仍能配置 Provider/要求特定实现；可能被误认为普通用户必须排列 | KEEP真实扩展/硬约束，普通路线factory自动组合；当前指南区分，无新增排名菜单 |
 
 `check-docs` 实际通过（882 Markdown、4197 relative links）；docs/closure/diff实际通过。
-当前 review 尚未终局：B1需按实际owner协议有限修复/验收，C3实际交付未完；不能将链接通过当全产品正确。
+当前产品/文档 review 的有限发现均已处理；B1按owner协议退回AUDITED后修复，实际配置证据在
+`C:/h7/bare-defaults/receipt.json`。无数学/布局/热路由变化，不重开其它CLOSED模块。
+C3实际交付未完；不能将本review或链接通过当新组合/全模型运行资格。

@@ -163,3 +163,9 @@ include/C++/shader 零 diff，没有新增自研数学。
 不改 test instrumentation ABI、组件边、数学/flags/Provider 规则。增加真实裸配置取证。
 已运行 source/共享批次均明确 tests OFF，其产物/数学没有这个默认差异；保留已完成格，不因
 文档或此默认改动从头重跑全部旧 gate，最终新候选对受影响配置及既有格做明确身份/适用性记录。
+
+B1产品 `79137d31` 仅改变未显式给tests时的默认值。实际root Core配置三格 PASS：
+裸 install默认OFF、显式路线但无Compute产品默认OFF、明确维护tests ON保留ON。
+当前候选另有 route/SDK元数据9 tests、runtime资产图测试、docs/closure/diff PASS；
+独立路由/构建/全文档review的有限发现已处理，详见
+[review卡](../project/compute-routing-build-doc-review.md)。C3继续原已固定显式OFF批次，没有P1。
