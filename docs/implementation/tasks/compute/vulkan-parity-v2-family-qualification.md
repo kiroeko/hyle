@@ -1,6 +1,6 @@
 # Vulkan V2：剩余模型族与参数合同验收
 
-<!-- MODULE REVIEW: SCOPED -->
+<!-- MODULE REVIEW: AUDITED -->
 
 baseline `f42112fb2`；owners `compute_route_vulkan`、`graph_route_vulkan`、
 `compute_provider_ggml_vulkan`。属于[父轮](vulkan-cpu-cuda-apple-parity-closure.md)，
@@ -29,3 +29,18 @@ source审计只读既定consumer；无新产品FIX时直接使用已编译候选
 P0为原成熟数学/资源/转换账；P1、默认、平台和三交付仍由V3/V4完成。
 Windows RTX4070真实GPU，build2/test1，DLL邻置、隐藏child及validation层；只用本地fixture。
 必需检查：selected工具/测试、closure（registry明确previous-ref）、docs/diff与统一LOC。
+
+## AUDITED source 结论
+
+[80条/八族当前源映射](../../../../evidence/correctness/vulkan-parity-v2-catalogue/family-parameter-source-audit.json)
+固定每个角色、shape、F32存储、原consumer anchor/SHA及两入口case，不新造需求。
+实际数学核对包括 Qwen/DeepSeek1e-6、Kimi/GLM1e-5、GLM indexer LayerNorm1e-6、
+GDN folded A/bias与norm128、KDA逐key decay/L2、卷积单例轴/三参数拼接、
+选择用router correction、latent/shared gate、AttnRes银行、mHC20轮、NextN原次序/carry。
+24个参数anchor仍存在，另有family原consumer anchor；未运行项保持PENDING。
+
+F3 8银行源metadata：E896的N/K3584/3072双方向与E512的8192/2048双方向；
+packed字节仍小于I32，但逻辑元素超I32。复用既有原grid decoder作独立数值参考，
+测试真正上传全部bank，访问E-1/E-2/0、改变activation和IDs，同slot重放、越界拒绝。
+只增test，不增产品数学；容量/feature事实按实际device报告，不把OOM当算子覆盖PASS。
+有限F1–F3已审计固定，现阶段不需要产品改变或公开API重开。

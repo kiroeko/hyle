@@ -1,0 +1,3790 @@
+{
+  "kind": "F1 bounded original consumer/parameter source audit, not runtime PASS",
+  "baseline": "f42112fb2",
+  "counts": {
+    "parameter_rows": 80,
+    "distinct_parameter_storage_shapes": 30,
+    "families": 8
+  },
+  "source_anchors": [
+    {
+      "source": "tests/compute_models/d5_deepseek_remaining_fragments.h",
+      "anchor": "auto norm_weight = linear::parameter(",
+      "current_sha256": "5174d4fedabd5b719c7acb91fe2abb523a768c7ec9685878e9b1efaed3241a2b",
+      "prior_sha256": "573f05761a211c02c70ffe97e1028fe215145a884a68137a439cf13a7abb3895"
+    },
+    {
+      "source": "tests/compute_models/d5_kimi_remaining_fragments.h",
+      "anchor": "inline Fragment dense_ffn(",
+      "current_sha256": "edc6aaeb8d05c1f848447849b45bf3f908b77a737823ce6dfbf737feedeb2218",
+      "prior_sha256": "edc6aaeb8d05c1f848447849b45bf3f908b77a737823ce6dfbf737feedeb2218"
+    },
+    {
+      "source": "tests/compute_models/d5_kimi_remaining_fragments.h",
+      "anchor": "inline Fragment attention_residual(",
+      "current_sha256": "edc6aaeb8d05c1f848447849b45bf3f908b77a737823ce6dfbf737feedeb2218",
+      "prior_sha256": "edc6aaeb8d05c1f848447849b45bf3f908b77a737823ce6dfbf737feedeb2218"
+    },
+    {
+      "source": "tests/compute_models/d5_kda_full_fragments.h",
+      "anchor": "inline Fragment complete(",
+      "current_sha256": "fab310b39195f960106d61e9d5a5ea03a31c56b81d83fa32608592f31ffa2cb0",
+      "prior_sha256": "fab310b39195f960106d61e9d5a5ea03a31c56b81d83fa32608592f31ffa2cb0"
+    },
+    {
+      "source": "tests/compute_models/cpu_c5_qwen_attention.h",
+      "anchor": "inline Fragment norm_residual(",
+      "current_sha256": "24b1428ffefbe46f10b9c6dc168020af603e207ad796963fb9c8764af093c5ae",
+      "prior_sha256": "9ff6f43529b87a77f31524814721ff62168899a1740d0bee5c2fc64500b25333"
+    },
+    {
+      "source": "tests/compute_models/d5_glm_remaining_fragments.h",
+      "anchor": "inline Fragment mla(",
+      "current_sha256": "12dbf546cb1050470dd6db65fe4d1f0a70364781a22d9df466699e7b10cde742",
+      "prior_sha256": "12dbf546cb1050470dd6db65fe4d1f0a70364781a22d9df466699e7b10cde742"
+    },
+    {
+      "source": "tests/compute_models/d5_deepseek_remaining_fragments.h",
+      "anchor": "head_base",
+      "current_sha256": "5174d4fedabd5b719c7acb91fe2abb523a768c7ec9685878e9b1efaed3241a2b",
+      "prior_sha256": "573f05761a211c02c70ffe97e1028fe215145a884a68137a439cf13a7abb3895"
+    },
+    {
+      "source": "tests/compute_models/d5_glm_remaining_fragments.h",
+      "anchor": "inline Fragment dense_ffn(",
+      "current_sha256": "12dbf546cb1050470dd6db65fe4d1f0a70364781a22d9df466699e7b10cde742",
+      "prior_sha256": "12dbf546cb1050470dd6db65fe4d1f0a70364781a22d9df466699e7b10cde742"
+    },
+    {
+      "source": "tests/compute_models/d5_glm_remaining_fragments.h",
+      "anchor": "inline Fragment mtp_decoder(",
+      "current_sha256": "12dbf546cb1050470dd6db65fe4d1f0a70364781a22d9df466699e7b10cde742",
+      "prior_sha256": "12dbf546cb1050470dd6db65fe4d1f0a70364781a22d9df466699e7b10cde742"
+    },
+    {
+      "source": "tests/compute_models/cpu_c5_parameter_fragments.h",
+      "anchor": "inline Fragment convolution(",
+      "current_sha256": "16de6e8f2c70b32557073966aed4e5a51cc53d38a86df93a4ff09e45f8c21575",
+      "prior_sha256": "ae3b7d6973680370638ec37b1515a614f55818d514aae958b7692cdce3b873ac"
+    },
+    {
+      "source": "tests/compute_models/d5_qwen38_24t_moe_profiles.h",
+      "anchor": "shared_score_weight",
+      "current_sha256": "ea93064fca5e64b4db7bfb5ded1062d83baf6ab3794f52f962beee2b0fd8a9ee",
+      "prior_sha256": "ea93064fca5e64b4db7bfb5ded1062d83baf6ab3794f52f962beee2b0fd8a9ee"
+    },
+    {
+      "source": "tests/compute_models/cpu_c5_qwen_nextn.h",
+      "anchor": "inline Fragment decoder(",
+      "current_sha256": "79c3cd12cf83ce597d5a8604bd3682eef8c89ce37d8d0ab2629186738f5ff185",
+      "prior_sha256": "6e2e2a93f01a7fc65d5b4a59ce55f5996e4814181eaceb9cec24ea92276cb340"
+    },
+    {
+      "source": "tests/compute_models/d5_deepseek_remaining_fragments.h",
+      "anchor": "inline Fragment compressor(",
+      "current_sha256": "5174d4fedabd5b719c7acb91fe2abb523a768c7ec9685878e9b1efaed3241a2b",
+      "prior_sha256": "573f05761a211c02c70ffe97e1028fe215145a884a68137a439cf13a7abb3895"
+    },
+    {
+      "source": "tests/compute_models/d5_deepseek_remaining_fragments.h",
+      "anchor": "inline Fragment attention(",
+      "current_sha256": "5174d4fedabd5b719c7acb91fe2abb523a768c7ec9685878e9b1efaed3241a2b",
+      "prior_sha256": "573f05761a211c02c70ffe97e1028fe215145a884a68137a439cf13a7abb3895"
+    },
+    {
+      "source": "tests/compute_models/d5_kimi_remaining_fragments.h",
+      "anchor": "inline Fragment mla(",
+      "current_sha256": "edc6aaeb8d05c1f848447849b45bf3f908b77a737823ce6dfbf737feedeb2218",
+      "prior_sha256": "edc6aaeb8d05c1f848447849b45bf3f908b77a737823ce6dfbf737feedeb2218"
+    },
+    {
+      "source": "tests/compute_models/d5_qwen38_24t_semantic_fragments.h",
+      "anchor": "inline Fragment gdn(",
+      "current_sha256": "b419ccdab0d23da5ff1db51d6e2c9c504bcae02f83666885cb5bb457b62d2736",
+      "prior_sha256": "b419ccdab0d23da5ff1db51d6e2c9c504bcae02f83666885cb5bb457b62d2736"
+    },
+    {
+      "source": "tests/compute_models/d5_moe_execution_fragments.h",
+      "anchor": "if (latent_up)",
+      "current_sha256": "2f7119b5e31507c1197309a86b87f85aaf419495602117ab000363118fe57db3",
+      "prior_sha256": "2f7119b5e31507c1197309a86b87f85aaf419495602117ab000363118fe57db3"
+    },
+    {
+      "source": "tests/compute_models/cpu_c4_qwen_mtp.h",
+      "anchor": "auto carry=norm(",
+      "current_sha256": "bd3d62d9bac7b4e1c39ee8960ead54436769560652463e09ad91625b4026cd07",
+      "prior_sha256": "a7cd7d23abed91ddd9537d64874f0bff4fb285b699a4fb3f9f2c9328e9b2552a"
+    },
+    {
+      "source": "tests/compute_models/d5_deepseek_remaining_fragments.h",
+      "anchor": "f.constant(dense({heads}), bytes(sinks))",
+      "current_sha256": "5174d4fedabd5b719c7acb91fe2abb523a768c7ec9685878e9b1efaed3241a2b",
+      "prior_sha256": "573f05761a211c02c70ffe97e1028fe215145a884a68137a439cf13a7abb3895"
+    },
+    {
+      "source": "tests/compute_models/d5_moe_semantic_fragments.h",
+      "anchor": "inline Fragment hyper_connection(",
+      "current_sha256": "00d140f8f1e4eae19af75bf04a24d6c3abacb620a950bc197f4c612f00d6b57e",
+      "prior_sha256": "00d140f8f1e4eae19af75bf04a24d6c3abacb620a950bc197f4c612f00d6b57e"
+    },
+    {
+      "source": "tests/compute_models/d5_glm_remaining_fragments.h",
+      "anchor": "c::LayerNorm{.epsilon = 1.0e-6F}",
+      "current_sha256": "12dbf546cb1050470dd6db65fe4d1f0a70364781a22d9df466699e7b10cde742",
+      "prior_sha256": "12dbf546cb1050470dd6db65fe4d1f0a70364781a22d9df466699e7b10cde742"
+    },
+    {
+      "source": "tests/compute_models/d5_deepseek_remaining_fragments.h",
+      "anchor": "const std::int64_t depth = indexer ? 128 : 512",
+      "current_sha256": "5174d4fedabd5b719c7acb91fe2abb523a768c7ec9685878e9b1efaed3241a2b",
+      "prior_sha256": "573f05761a211c02c70ffe97e1028fe215145a884a68137a439cf13a7abb3895"
+    },
+    {
+      "source": "tests/compute_models/d5_moe_execution_fragments.h",
+      "anchor": "inline Routing routing(",
+      "current_sha256": "2f7119b5e31507c1197309a86b87f85aaf419495602117ab000363118fe57db3",
+      "prior_sha256": "2f7119b5e31507c1197309a86b87f85aaf419495602117ab000363118fe57db3"
+    },
+    {
+      "source": "tests/compute_models/cpu_c5_qwen_attention.h",
+      "anchor": "auto weight = f.constant(dense({depth})",
+      "current_sha256": "24b1428ffefbe46f10b9c6dc168020af603e207ad796963fb9c8764af093c5ae",
+      "prior_sha256": "9ff6f43529b87a77f31524814721ff62168899a1740d0bee5c2fc64500b25333"
+    },
+    {
+      "source": "tests/compute_models/cpu_c5_qwen_attention.h",
+      "anchor": "inline Fragment make(",
+      "current_sha256": "24b1428ffefbe46f10b9c6dc168020af603e207ad796963fb9c8764af093c5ae",
+      "prior_sha256": "9ff6f43529b87a77f31524814721ff62168899a1740d0bee5c2fc64500b25333"
+    },
+    {
+      "source": "tests/compute_models/cpu_c4_qwen_mtp.h",
+      "anchor": "inline Fragment decoder(",
+      "current_sha256": "bd3d62d9bac7b4e1c39ee8960ead54436769560652463e09ad91625b4026cd07",
+      "prior_sha256": "a7cd7d23abed91ddd9537d64874f0bff4fb285b699a4fb3f9f2c9328e9b2552a"
+    },
+    {
+      "source": "tests/compute_models/cpu_c5_qwen_nextn.h",
+      "anchor": "Grouped eg(",
+      "current_sha256": "79c3cd12cf83ce597d5a8604bd3682eef8c89ce37d8d0ab2629186738f5ff185",
+      "prior_sha256": "6e2e2a93f01a7fc65d5b4a59ce55f5996e4814181eaceb9cec24ea92276cb340"
+    },
+    {
+      "source": "tests/compute_models/cpu_c5_qwen_nextn.h",
+      "anchor": "Grouped ed(",
+      "current_sha256": "79c3cd12cf83ce597d5a8604bd3682eef8c89ce37d8d0ab2629186738f5ff185",
+      "prior_sha256": "6e2e2a93f01a7fc65d5b4a59ce55f5996e4814181eaceb9cec24ea92276cb340"
+    },
+    {
+      "source": "tests/compute_models/d5_moe_execution_fragments.h",
+      "anchor": "inline Fragment moe_chain(",
+      "current_sha256": "2f7119b5e31507c1197309a86b87f85aaf419495602117ab000363118fe57db3",
+      "prior_sha256": "2f7119b5e31507c1197309a86b87f85aaf419495602117ab000363118fe57db3"
+    },
+    {
+      "source": "tests/compute_models/d5_glm_remaining_fragments.h",
+      "anchor": "inline Fragment sparse_attention(",
+      "current_sha256": "12dbf546cb1050470dd6db65fe4d1f0a70364781a22d9df466699e7b10cde742",
+      "prior_sha256": "12dbf546cb1050470dd6db65fe4d1f0a70364781a22d9df466699e7b10cde742"
+    },
+    {
+      "source": "tests/compute_models/d5_glm_remaining_fragments.h",
+      "anchor": "inline Fragment indexer(",
+      "current_sha256": "12dbf546cb1050470dd6db65fe4d1f0a70364781a22d9df466699e7b10cde742",
+      "prior_sha256": "12dbf546cb1050470dd6db65fe4d1f0a70364781a22d9df466699e7b10cde742"
+    },
+    {
+      "source": "tests/compute_models/d5_glm_remaining_fragments.h",
+      "anchor": "inline Fragment hyper_connection(",
+      "current_sha256": "12dbf546cb1050470dd6db65fe4d1f0a70364781a22d9df466699e7b10cde742",
+      "prior_sha256": "12dbf546cb1050470dd6db65fe4d1f0a70364781a22d9df466699e7b10cde742"
+    },
+    {
+      "source": "tests/compute_models/cpu_c5_parameter_fragments.h",
+      "anchor": "inline d5_moe_execution_cases::Case new_deepseek_case(",
+      "current_sha256": "16de6e8f2c70b32557073966aed4e5a51cc53d38a86df93a4ff09e45f8c21575",
+      "prior_sha256": "ae3b7d6973680370638ec37b1515a614f55818d514aae958b7692cdce3b873ac"
+    }
+  ],
+  "parameter_roles": [
+    {
+      "ordinal": 0,
+      "id": "g054e3b315c2e2f7a",
+      "role": "attn_norm.weight",
+      "shape": [
+        7168
+      ],
+      "storage": "F32",
+      "families": [
+        {
+          "family": "DeepSeek-V4-Pro-0813-GGUF",
+          "witness": {
+            "source": "tests/compute_models/d5_deepseek_remaining_fragments.h",
+            "anchor": "auto norm_weight = linear::parameter(",
+            "direct_cases": [
+              "C5ExactNewGgufMain/VulkanCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile102",
+              "C5ExactNewGgufMain/VulkanCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile103",
+              "C5ExactNewGgufMain/VulkanCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile89",
+              "C5ExactNewGgufMain/VulkanCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile90"
+            ],
+            "graph_cases": [
+              "C5ExactNewGgufMain/VulkanGraphCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile102",
+              "C5ExactNewGgufMain/VulkanGraphCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile103",
+              "C5ExactNewGgufMain/VulkanGraphCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile89",
+              "C5ExactNewGgufMain/VulkanGraphCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile90"
+            ],
+            "verdict": "PENDING_CURRENT_REPLAY_OR_QUALIFIED_RECEIPT_REUSE"
+          }
+        },
+        {
+          "family": "Kimi-K3-GGUF",
+          "witness": {
+            "source": "tests/compute_models/d5_kimi_remaining_fragments.h",
+            "anchor": "inline Fragment dense_ffn(",
+            "direct_cases": [
+              "VulkanMoeFragments.D5KimiDenseFfn"
+            ],
+            "graph_cases": [
+              "VulkanGraphMoeFragments.D5KimiDenseFfn"
+            ],
+            "verdict": "PENDING_CURRENT_REPLAY_OR_QUALIFIED_RECEIPT_REUSE"
+          }
+        }
+      ]
+    },
+    {
+      "ordinal": 1,
+      "id": "g054e3b315c2e2f7a",
+      "role": "attn_res_score.weight",
+      "shape": [
+        7168
+      ],
+      "storage": "F32",
+      "families": [
+        {
+          "family": "Kimi-K3-GGUF",
+          "witness": {
+            "source": "tests/compute_models/d5_kimi_remaining_fragments.h",
+            "anchor": "inline Fragment attention_residual(",
+            "direct_cases": [
+              "VulkanMoeFragments.D5KimiAttentionResidualBanking"
+            ],
+            "graph_cases": [
+              "VulkanGraphMoeFragments.D5KimiAttentionResidualBanking"
+            ],
+            "verdict": "PENDING_CURRENT_REPLAY_OR_QUALIFIED_RECEIPT_REUSE"
+          }
+        }
+      ]
+    },
+    {
+      "ordinal": 2,
+      "id": "g054e3b315c2e2f7a",
+      "role": "ffn_norm.weight",
+      "shape": [
+        7168
+      ],
+      "storage": "F32",
+      "families": [
+        {
+          "family": "DeepSeek-V4-Pro-0813-GGUF",
+          "witness": {
+            "source": "tests/compute_models/d5_deepseek_remaining_fragments.h",
+            "anchor": "auto norm_weight = linear::parameter(",
+            "direct_cases": [
+              "C5ExactNewGgufMain/VulkanCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile102",
+              "C5ExactNewGgufMain/VulkanCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile103",
+              "C5ExactNewGgufMain/VulkanCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile89",
+              "C5ExactNewGgufMain/VulkanCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile90"
+            ],
+            "graph_cases": [
+              "C5ExactNewGgufMain/VulkanGraphCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile102",
+              "C5ExactNewGgufMain/VulkanGraphCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile103",
+              "C5ExactNewGgufMain/VulkanGraphCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile89",
+              "C5ExactNewGgufMain/VulkanGraphCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile90"
+            ],
+            "verdict": "PENDING_CURRENT_REPLAY_OR_QUALIFIED_RECEIPT_REUSE"
+          }
+        },
+        {
+          "family": "Kimi-K3-GGUF",
+          "witness": {
+            "source": "tests/compute_models/d5_kimi_remaining_fragments.h",
+            "anchor": "inline Fragment dense_ffn(",
+            "direct_cases": [
+              "VulkanMoeFragments.D5KimiDenseFfn"
+            ],
+            "graph_cases": [
+              "VulkanGraphMoeFragments.D5KimiDenseFfn"
+            ],
+            "verdict": "PENDING_CURRENT_REPLAY_OR_QUALIFIED_RECEIPT_REUSE"
+          }
+        }
+      ]
+    },
+    {
+      "ordinal": 3,
+      "id": "g054e3b315c2e2f7a",
+      "role": "ffn_res_score.weight",
+      "shape": [
+        7168
+      ],
+      "storage": "F32",
+      "families": [
+        {
+          "family": "Kimi-K3-GGUF",
+          "witness": {
+            "source": "tests/compute_models/d5_kimi_remaining_fragments.h",
+            "anchor": "inline Fragment attention_residual(",
+            "direct_cases": [
+              "VulkanMoeFragments.D5KimiAttentionResidualBanking"
+            ],
+            "graph_cases": [
+              "VulkanGraphMoeFragments.D5KimiAttentionResidualBanking"
+            ],
+            "verdict": "PENDING_CURRENT_REPLAY_OR_QUALIFIED_RECEIPT_REUSE"
+          }
+        }
+      ]
+    },
+    {
+      "ordinal": 4,
+      "id": "g054e3b315c2e2f7a",
+      "role": "output_norm.weight",
+      "shape": [
+        7168
+      ],
+      "storage": "F32",
+      "families": [
+        {
+          "family": "DeepSeek-V4-Pro-0813-GGUF",
+          "witness": {
+            "source": "tests/compute_models/d5_deepseek_remaining_fragments.h",
+            "anchor": "auto norm_weight = linear::parameter(",
+            "direct_cases": [
+              "C5ExactNewGgufMain/VulkanCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile102",
+              "C5ExactNewGgufMain/VulkanCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile103",
+              "C5ExactNewGgufMain/VulkanCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile89",
+              "C5ExactNewGgufMain/VulkanCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile90"
+            ],
+            "graph_cases": [
+              "C5ExactNewGgufMain/VulkanGraphCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile102",
+              "C5ExactNewGgufMain/VulkanGraphCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile103",
+              "C5ExactNewGgufMain/VulkanGraphCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile89",
+              "C5ExactNewGgufMain/VulkanGraphCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile90"
+            ],
+            "verdict": "PENDING_CURRENT_REPLAY_OR_QUALIFIED_RECEIPT_REUSE"
+          }
+        },
+        {
+          "family": "Kimi-K3-GGUF",
+          "witness": {
+            "source": "tests/compute_models/d5_kimi_remaining_fragments.h",
+            "anchor": "inline Fragment dense_ffn(",
+            "direct_cases": [
+              "VulkanMoeFragments.D5KimiDenseFfn"
+            ],
+            "graph_cases": [
+              "VulkanGraphMoeFragments.D5KimiDenseFfn"
+            ],
+            "verdict": "PENDING_CURRENT_REPLAY_OR_QUALIFIED_RECEIPT_REUSE"
+          }
+        }
+      ]
+    },
+    {
+      "ordinal": 5,
+      "id": "g054e3b315c2e2f7a",
+      "role": "output_res_score.weight",
+      "shape": [
+        7168
+      ],
+      "storage": "F32",
+      "families": [
+        {
+          "family": "Kimi-K3-GGUF",
+          "witness": {
+            "source": "tests/compute_models/d5_kimi_remaining_fragments.h",
+            "anchor": "inline Fragment attention_residual(",
+            "direct_cases": [
+              "VulkanMoeFragments.D5KimiAttentionResidualBanking"
+            ],
+            "graph_cases": [
+              "VulkanGraphMoeFragments.D5KimiAttentionResidualBanking"
+            ],
+            "verdict": "PENDING_CURRENT_REPLAY_OR_QUALIFIED_RECEIPT_REUSE"
+          }
+        }
+      ]
+    },
+    {
+      "ordinal": 6,
+      "id": "g0784de1ec4c24e89",
+      "role": "ssm_a",
+      "shape": [
+        96
+      ],
+      "storage": "F32",
+      "families": [
+        {
+          "family": "Kimi-K3-GGUF",
+          "witness": {
+            "source": "tests/compute_models/d5_kda_full_fragments.h",
+            "anchor": "inline Fragment complete(",
+            "direct_cases": [
+              "VulkanMoeFragments.D5SixProfilesFullKdaChainAndTwoStates"
+            ],
+            "graph_cases": [
+              "VulkanGraphMoeFragments.D5SixProfilesFullKdaChainAndTwoStates"
+            ],
+            "verdict": "PENDING_CURRENT_REPLAY_OR_QUALIFIED_RECEIPT_REUSE"
+          }
+        }
+      ]
+    },
+    {
+      "ordinal": 7,
+      "id": "g1c5c423de55d1f6f",
+      "role": "attn_norm.weight",
+      "shape": [
+        2048
+      ],
+      "storage": "F32",
+      "families": [
+        {
+          "family": "Qwen3.5-2B-GGUF",
+          "witness": {
+            "source": "tests/compute_models/cpu_c5_qwen_attention.h",
+            "anchor": "inline Fragment norm_residual(",
+            "direct_cases": [
+              "VulkanCatalogueParameters.QwenActualWidthsUseDeclaredFloatNormEpsilon"
+            ],
+            "graph_cases": [
+              "VulkanGraphCatalogueParameters.QwenActualWidthsUseDeclaredFloatNormEpsilon"
+            ],
+            "verdict": "PENDING_CURRENT_REPLAY_OR_QUALIFIED_RECEIPT_REUSE"
+          }
+        }
+      ]
+    },
+    {
+      "ordinal": 8,
+      "id": "g1c5c423de55d1f6f",
+      "role": "attn_q_a_norm.weight",
+      "shape": [
+        2048
+      ],
+      "storage": "F32",
+      "families": [
+        {
+          "family": "GLM-5.3-GGUF",
+          "witness": {
+            "source": "tests/compute_models/d5_glm_remaining_fragments.h",
+            "anchor": "inline Fragment mla(",
+            "direct_cases": [
+              "VulkanMoeFragments.D5GlmGgufAbsorbedMlaWithCache"
+            ],
+            "graph_cases": [
+              "VulkanGraphMoeFragments.D5GlmGgufAbsorbedMlaWithCache"
+            ],
+            "verdict": "PENDING_CURRENT_REPLAY_OR_QUALIFIED_RECEIPT_REUSE"
+          }
+        }
+      ]
+    },
+    {
+      "ordinal": 9,
+      "id": "g1c5c423de55d1f6f",
+      "role": "output_norm.weight",
+      "shape": [
+        2048
+      ],
+      "storage": "F32",
+      "families": [
+        {
+          "family": "Qwen3.5-2B-GGUF",
+          "witness": {
+            "source": "tests/compute_models/cpu_c5_qwen_attention.h",
+            "anchor": "inline Fragment norm_residual(",
+            "direct_cases": [
+              "VulkanCatalogueParameters.QwenActualWidthsUseDeclaredFloatNormEpsilon"
+            ],
+            "graph_cases": [
+              "VulkanGraphCatalogueParameters.QwenActualWidthsUseDeclaredFloatNormEpsilon"
+            ],
+            "verdict": "PENDING_CURRENT_REPLAY_OR_QUALIFIED_RECEIPT_REUSE"
+          }
+        }
+      ]
+    },
+    {
+      "ordinal": 10,
+      "id": "g1c5c423de55d1f6f",
+      "role": "post_attention_norm.weight",
+      "shape": [
+        2048
+      ],
+      "storage": "F32",
+      "families": [
+        {
+          "family": "Qwen3.5-2B-GGUF",
+          "witness": {
+            "source": "tests/compute_models/cpu_c5_qwen_attention.h",
+            "anchor": "inline Fragment norm_residual(",
+            "direct_cases": [
+              "VulkanCatalogueParameters.QwenActualWidthsUseDeclaredFloatNormEpsilon"
+            ],
+            "graph_cases": [
+              "VulkanGraphCatalogueParameters.QwenActualWidthsUseDeclaredFloatNormEpsilon"
+            ],
+            "verdict": "PENDING_CURRENT_REPLAY_OR_QUALIFIED_RECEIPT_REUSE"
+          }
+        }
+      ]
+    },
+    {
+      "ordinal": 11,
+      "id": "g1e77cc620bd4015d",
+      "role": "output_hc_base.weight",
+      "shape": [
+        4
+      ],
+      "storage": "F32",
+      "families": [
+        {
+          "family": "DeepSeek-V4-Flash-0731-GGUF",
+          "witness": {
+            "source": "tests/compute_models/d5_deepseek_remaining_fragments.h",
+            "anchor": "head_base",
+            "direct_cases": [
+              "C5ExactNewGgufMain/VulkanCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile102",
+              "C5ExactNewGgufMain/VulkanCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile103",
+              "C5ExactNewGgufMain/VulkanCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile89",
+              "C5ExactNewGgufMain/VulkanCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile90"
+            ],
+            "graph_cases": [
+              "C5ExactNewGgufMain/VulkanGraphCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile102",
+              "C5ExactNewGgufMain/VulkanGraphCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile103",
+              "C5ExactNewGgufMain/VulkanGraphCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile89",
+              "C5ExactNewGgufMain/VulkanGraphCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile90"
+            ],
+            "verdict": "PENDING_CURRENT_REPLAY_OR_QUALIFIED_RECEIPT_REUSE"
+          }
+        },
+        {
+          "family": "DeepSeek-V4-Pro-0813-GGUF",
+          "witness": {
+            "source": "tests/compute_models/d5_deepseek_remaining_fragments.h",
+            "anchor": "head_base",
+            "direct_cases": [
+              "C5ExactNewGgufMain/VulkanCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile102",
+              "C5ExactNewGgufMain/VulkanCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile103",
+              "C5ExactNewGgufMain/VulkanCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile89",
+              "C5ExactNewGgufMain/VulkanCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile90"
+            ],
+            "graph_cases": [
+              "C5ExactNewGgufMain/VulkanGraphCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile102",
+              "C5ExactNewGgufMain/VulkanGraphCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile103",
+              "C5ExactNewGgufMain/VulkanGraphCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile89",
+              "C5ExactNewGgufMain/VulkanGraphCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile90"
+            ],
+            "verdict": "PENDING_CURRENT_REPLAY_OR_QUALIFIED_RECEIPT_REUSE"
+          }
+        }
+      ]
+    },
+    {
+      "ordinal": 12,
+      "id": "g213d30ae728f9624",
+      "role": "attn_norm.weight",
+      "shape": [
+        6144
+      ],
+      "storage": "F32",
+      "families": [
+        {
+          "family": "GLM-5.3-GGUF",
+          "witness": {
+            "source": "tests/compute_models/d5_glm_remaining_fragments.h",
+            "anchor": "inline Fragment dense_ffn(",
+            "direct_cases": [
+              "VulkanMoeFragments.D5GlmGgufDenseFfn"
+            ],
+            "graph_cases": [
+              "VulkanGraphMoeFragments.D5GlmGgufDenseFfn"
+            ],
+            "verdict": "PENDING_CURRENT_REPLAY_OR_QUALIFIED_RECEIPT_REUSE"
+          }
+        }
+      ]
+    },
+    {
+      "ordinal": 13,
+      "id": "g213d30ae728f9624",
+      "role": "ffn_norm.weight",
+      "shape": [
+        6144
+      ],
+      "storage": "F32",
+      "families": [
+        {
+          "family": "GLM-5.3-GGUF",
+          "witness": {
+            "source": "tests/compute_models/d5_glm_remaining_fragments.h",
+            "anchor": "inline Fragment dense_ffn(",
+            "direct_cases": [
+              "VulkanMoeFragments.D5GlmGgufDenseFfn"
+            ],
+            "graph_cases": [
+              "VulkanGraphMoeFragments.D5GlmGgufDenseFfn"
+            ],
+            "verdict": "PENDING_CURRENT_REPLAY_OR_QUALIFIED_RECEIPT_REUSE"
+          }
+        }
+      ]
+    },
+    {
+      "ordinal": 14,
+      "id": "g213d30ae728f9624",
+      "role": "nextn.enorm.weight",
+      "shape": [
+        6144
+      ],
+      "storage": "F32",
+      "families": [
+        {
+          "family": "GLM-5.3-GGUF",
+          "witness": {
+            "source": "tests/compute_models/d5_glm_remaining_fragments.h",
+            "anchor": "inline Fragment mtp_decoder(",
+            "direct_cases": [
+              "VulkanMoeFragments.D5GlmGgufNextNDecoderWithCarryAndFullHead"
+            ],
+            "graph_cases": [
+              "VulkanGraphMoeFragments.D5GlmGgufNextNDecoderWithCarryAndFullHead"
+            ],
+            "verdict": "PENDING_CURRENT_REPLAY_OR_QUALIFIED_RECEIPT_REUSE"
+          }
+        }
+      ]
+    },
+    {
+      "ordinal": 15,
+      "id": "g213d30ae728f9624",
+      "role": "nextn.hnorm.weight",
+      "shape": [
+        6144
+      ],
+      "storage": "F32",
+      "families": [
+        {
+          "family": "GLM-5.3-GGUF",
+          "witness": {
+            "source": "tests/compute_models/d5_glm_remaining_fragments.h",
+            "anchor": "inline Fragment mtp_decoder(",
+            "direct_cases": [
+              "VulkanMoeFragments.D5GlmGgufNextNDecoderWithCarryAndFullHead"
+            ],
+            "graph_cases": [
+              "VulkanGraphMoeFragments.D5GlmGgufNextNDecoderWithCarryAndFullHead"
+            ],
+            "verdict": "PENDING_CURRENT_REPLAY_OR_QUALIFIED_RECEIPT_REUSE"
+          }
+        }
+      ]
+    },
+    {
+      "ordinal": 16,
+      "id": "g213d30ae728f9624",
+      "role": "nextn.shared_head_norm.weight",
+      "shape": [
+        6144
+      ],
+      "storage": "F32",
+      "families": [
+        {
+          "family": "GLM-5.3-GGUF",
+          "witness": {
+            "source": "tests/compute_models/d5_glm_remaining_fragments.h",
+            "anchor": "inline Fragment mtp_decoder(",
+            "direct_cases": [
+              "VulkanMoeFragments.D5GlmGgufNextNDecoderWithCarryAndFullHead"
+            ],
+            "graph_cases": [
+              "VulkanGraphMoeFragments.D5GlmGgufNextNDecoderWithCarryAndFullHead"
+            ],
+            "verdict": "PENDING_CURRENT_REPLAY_OR_QUALIFIED_RECEIPT_REUSE"
+          }
+        }
+      ]
+    },
+    {
+      "ordinal": 17,
+      "id": "g213d30ae728f9624",
+      "role": "output_norm.weight",
+      "shape": [
+        6144
+      ],
+      "storage": "F32",
+      "families": [
+        {
+          "family": "GLM-5.3-GGUF",
+          "witness": {
+            "source": "tests/compute_models/d5_glm_remaining_fragments.h",
+            "anchor": "inline Fragment dense_ffn(",
+            "direct_cases": [
+              "VulkanMoeFragments.D5GlmGgufDenseFfn"
+            ],
+            "graph_cases": [
+              "VulkanGraphMoeFragments.D5GlmGgufDenseFfn"
+            ],
+            "verdict": "PENDING_CURRENT_REPLAY_OR_QUALIFIED_RECEIPT_REUSE"
+          }
+        }
+      ]
+    },
+    {
+      "ordinal": 18,
+      "id": "g31709c3de72cf996",
+      "role": "ssm_conv1d_k.weight",
+      "shape": [
+        4,
+        1,
+        12288,
+        1
+      ],
+      "storage": "F32",
+      "families": [
+        {
+          "family": "Kimi-K3-GGUF",
+          "witness": {
+            "source": "tests/compute_models/cpu_c5_parameter_fragments.h",
+            "anchor": "inline Fragment convolution(",
+            "direct_cases": [
+              "C5ActualConvolutionParameters/VulkanCatalogueParameters.ActualGgufConvolutionStorageFeedsCompleteRecurrentState/g31709c3de72cf996"
+            ],
+            "graph_cases": [
+              "C5ActualConvolutionParameters/VulkanGraphCatalogueParameters.ActualGgufConvolutionStorageFeedsCompleteRecurrentState/g31709c3de72cf996"
+            ],
+            "verdict": "PENDING_CURRENT_REPLAY_OR_QUALIFIED_RECEIPT_REUSE"
+          }
+        }
+      ]
+    },
+    {
+      "ordinal": 19,
+      "id": "g31709c3de72cf996",
+      "role": "ssm_conv1d_q.weight",
+      "shape": [
+        4,
+        1,
+        12288,
+        1
+      ],
+      "storage": "F32",
+      "families": [
+        {
+          "family": "Kimi-K3-GGUF",
+          "witness": {
+            "source": "tests/compute_models/cpu_c5_parameter_fragments.h",
+            "anchor": "inline Fragment convolution(",
+            "direct_cases": [
+              "C5ActualConvolutionParameters/VulkanCatalogueParameters.ActualGgufConvolutionStorageFeedsCompleteRecurrentState/g31709c3de72cf996"
+            ],
+            "graph_cases": [
+              "C5ActualConvolutionParameters/VulkanGraphCatalogueParameters.ActualGgufConvolutionStorageFeedsCompleteRecurrentState/g31709c3de72cf996"
+            ],
+            "verdict": "PENDING_CURRENT_REPLAY_OR_QUALIFIED_RECEIPT_REUSE"
+          }
+        }
+      ]
+    },
+    {
+      "ordinal": 20,
+      "id": "g31709c3de72cf996",
+      "role": "ssm_conv1d_v.weight",
+      "shape": [
+        4,
+        1,
+        12288,
+        1
+      ],
+      "storage": "F32",
+      "families": [
+        {
+          "family": "Kimi-K3-GGUF",
+          "witness": {
+            "source": "tests/compute_models/cpu_c5_parameter_fragments.h",
+            "anchor": "inline Fragment convolution(",
+            "direct_cases": [
+              "C5ActualConvolutionParameters/VulkanCatalogueParameters.ActualGgufConvolutionStorageFeedsCompleteRecurrentState/g31709c3de72cf996"
+            ],
+            "graph_cases": [
+              "C5ActualConvolutionParameters/VulkanGraphCatalogueParameters.ActualGgufConvolutionStorageFeedsCompleteRecurrentState/g31709c3de72cf996"
+            ],
+            "verdict": "PENDING_CURRENT_REPLAY_OR_QUALIFIED_RECEIPT_REUSE"
+          }
+        }
+      ]
+    },
+    {
+      "ordinal": 21,
+      "id": "g31ac295ea4973891",
+      "role": "attn_norm.weight",
+      "shape": [
+        8192
+      ],
+      "storage": "F32",
+      "families": [
+        {
+          "family": "Qwen3.8-2.4T-A95B-GGUF",
+          "witness": {
+            "source": "tests/compute_models/cpu_c5_qwen_attention.h",
+            "anchor": "inline Fragment norm_residual(",
+            "direct_cases": [
+              "VulkanCatalogueParameters.QwenActualWidthsUseDeclaredFloatNormEpsilon"
+            ],
+            "graph_cases": [
+              "VulkanGraphCatalogueParameters.QwenActualWidthsUseDeclaredFloatNormEpsilon"
+            ],
+            "verdict": "PENDING_CURRENT_REPLAY_OR_QUALIFIED_RECEIPT_REUSE"
+          }
+        }
+      ]
+    },
+    {
+      "ordinal": 22,
+      "id": "g31ac295ea4973891",
+      "role": "ffn_gate_inp_shexp.weight",
+      "shape": [
+        8192
+      ],
+      "storage": "F32",
+      "families": [
+        {
+          "family": "Qwen3.8-2.4T-A95B-GGUF",
+          "witness": {
+            "source": "tests/compute_models/d5_qwen38_24t_moe_profiles.h",
+            "anchor": "shared_score_weight",
+            "direct_cases": [
+              "VulkanQwen38_24T.D5GgufFullRouterSharedExpertAndNearTieReplay"
+            ],
+            "graph_cases": [
+              "VulkanGraphQwen38_24T.D5GgufFullRouterSharedExpertAndNearTieReplay"
+            ],
+            "verdict": "PENDING_CURRENT_REPLAY_OR_QUALIFIED_RECEIPT_REUSE"
+          }
+        }
+      ]
+    },
+    {
+      "ordinal": 23,
+      "id": "g31ac295ea4973891",
+      "role": "nextn.enorm.weight",
+      "shape": [
+        8192
+      ],
+      "storage": "F32",
+      "families": [
+        {
+          "family": "Qwen3.8-2.4T-A95B-GGUF",
+          "witness": {
+            "source": "tests/compute_models/cpu_c5_qwen_nextn.h",
+            "anchor": "inline Fragment decoder(",
+            "direct_cases": [
+              "VulkanCatalogueParameters.Qwen24CompleteNextNUsesMixedRolesCacheMoeAndFullHead"
+            ],
+            "graph_cases": [
+              "VulkanGraphCatalogueParameters.Qwen24CompleteNextNUsesMixedRolesCacheMoeAndFullHead"
+            ],
+            "verdict": "PENDING_CURRENT_REPLAY_OR_QUALIFIED_RECEIPT_REUSE"
+          }
+        }
+      ]
+    },
+    {
+      "ordinal": 24,
+      "id": "g31ac295ea4973891",
+      "role": "nextn.hnorm.weight",
+      "shape": [
+        8192
+      ],
+      "storage": "F32",
+      "families": [
+        {
+          "family": "Qwen3.8-2.4T-A95B-GGUF",
+          "witness": {
+            "source": "tests/compute_models/cpu_c5_qwen_nextn.h",
+            "anchor": "inline Fragment decoder(",
+            "direct_cases": [
+              "VulkanCatalogueParameters.Qwen24CompleteNextNUsesMixedRolesCacheMoeAndFullHead"
+            ],
+            "graph_cases": [
+              "VulkanGraphCatalogueParameters.Qwen24CompleteNextNUsesMixedRolesCacheMoeAndFullHead"
+            ],
+            "verdict": "PENDING_CURRENT_REPLAY_OR_QUALIFIED_RECEIPT_REUSE"
+          }
+        }
+      ]
+    },
+    {
+      "ordinal": 25,
+      "id": "g31ac295ea4973891",
+      "role": "nextn.shared_head_norm.weight",
+      "shape": [
+        8192
+      ],
+      "storage": "F32",
+      "families": [
+        {
+          "family": "Qwen3.8-2.4T-A95B-GGUF",
+          "witness": {
+            "source": "tests/compute_models/cpu_c5_qwen_nextn.h",
+            "anchor": "inline Fragment decoder(",
+            "direct_cases": [
+              "VulkanCatalogueParameters.Qwen24CompleteNextNUsesMixedRolesCacheMoeAndFullHead"
+            ],
+            "graph_cases": [
+              "VulkanGraphCatalogueParameters.Qwen24CompleteNextNUsesMixedRolesCacheMoeAndFullHead"
+            ],
+            "verdict": "PENDING_CURRENT_REPLAY_OR_QUALIFIED_RECEIPT_REUSE"
+          }
+        }
+      ]
+    },
+    {
+      "ordinal": 26,
+      "id": "g31ac295ea4973891",
+      "role": "output_norm.weight",
+      "shape": [
+        8192
+      ],
+      "storage": "F32",
+      "families": [
+        {
+          "family": "Qwen3.8-2.4T-A95B-GGUF",
+          "witness": {
+            "source": "tests/compute_models/cpu_c5_qwen_attention.h",
+            "anchor": "inline Fragment norm_residual(",
+            "direct_cases": [
+              "VulkanCatalogueParameters.QwenActualWidthsUseDeclaredFloatNormEpsilon"
+            ],
+            "graph_cases": [
+              "VulkanGraphCatalogueParameters.QwenActualWidthsUseDeclaredFloatNormEpsilon"
+            ],
+            "verdict": "PENDING_CURRENT_REPLAY_OR_QUALIFIED_RECEIPT_REUSE"
+          }
+        }
+      ]
+    },
+    {
+      "ordinal": 27,
+      "id": "g31ac295ea4973891",
+      "role": "post_attention_norm.weight",
+      "shape": [
+        8192
+      ],
+      "storage": "F32",
+      "families": [
+        {
+          "family": "Qwen3.8-2.4T-A95B-GGUF",
+          "witness": {
+            "source": "tests/compute_models/cpu_c5_qwen_attention.h",
+            "anchor": "inline Fragment norm_residual(",
+            "direct_cases": [
+              "VulkanCatalogueParameters.QwenActualWidthsUseDeclaredFloatNormEpsilon"
+            ],
+            "graph_cases": [
+              "VulkanGraphCatalogueParameters.QwenActualWidthsUseDeclaredFloatNormEpsilon"
+            ],
+            "verdict": "PENDING_CURRENT_REPLAY_OR_QUALIFIED_RECEIPT_REUSE"
+          }
+        }
+      ]
+    },
+    {
+      "ordinal": 28,
+      "id": "g31ac295ea4973891",
+      "role": "ssm_dt.bias",
+      "shape": [
+        8192
+      ],
+      "storage": "F32",
+      "families": [
+        {
+          "family": "GLM-5.3-Flash-GGUF",
+          "witness": {
+            "source": "tests/compute_models/d5_kda_full_fragments.h",
+            "anchor": "inline Fragment complete(",
+            "direct_cases": [
+              "VulkanMoeFragments.D5SixProfilesFullKdaChainAndTwoStates"
+            ],
+            "graph_cases": [
+              "VulkanGraphMoeFragments.D5SixProfilesFullKdaChainAndTwoStates"
+            ],
+            "verdict": "PENDING_CURRENT_REPLAY_OR_QUALIFIED_RECEIPT_REUSE"
+          }
+        }
+      ]
+    },
+    {
+      "ordinal": 29,
+      "id": "g387ac01a79dc6e56",
+      "role": "attn_compressor_norm.weight",
+      "shape": [
+        512
+      ],
+      "storage": "F32",
+      "families": [
+        {
+          "family": "DeepSeek-V4-Flash-0731-GGUF",
+          "witness": {
+            "source": "tests/compute_models/d5_deepseek_remaining_fragments.h",
+            "anchor": "inline Fragment compressor(",
+            "direct_cases": [
+              "C5ExactNewGgufMain/VulkanCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile102",
+              "C5ExactNewGgufMain/VulkanCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile103",
+              "C5ExactNewGgufMain/VulkanCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile89",
+              "C5ExactNewGgufMain/VulkanCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile90"
+            ],
+            "graph_cases": [
+              "C5ExactNewGgufMain/VulkanGraphCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile102",
+              "C5ExactNewGgufMain/VulkanGraphCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile103",
+              "C5ExactNewGgufMain/VulkanGraphCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile89",
+              "C5ExactNewGgufMain/VulkanGraphCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile90"
+            ],
+            "verdict": "PENDING_CURRENT_REPLAY_OR_QUALIFIED_RECEIPT_REUSE"
+          }
+        },
+        {
+          "family": "DeepSeek-V4-Pro-0813-GGUF",
+          "witness": {
+            "source": "tests/compute_models/d5_deepseek_remaining_fragments.h",
+            "anchor": "inline Fragment compressor(",
+            "direct_cases": [
+              "C5ExactNewGgufMain/VulkanCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile102",
+              "C5ExactNewGgufMain/VulkanCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile103",
+              "C5ExactNewGgufMain/VulkanCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile89",
+              "C5ExactNewGgufMain/VulkanCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile90"
+            ],
+            "graph_cases": [
+              "C5ExactNewGgufMain/VulkanGraphCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile102",
+              "C5ExactNewGgufMain/VulkanGraphCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile103",
+              "C5ExactNewGgufMain/VulkanGraphCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile89",
+              "C5ExactNewGgufMain/VulkanGraphCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile90"
+            ],
+            "verdict": "PENDING_CURRENT_REPLAY_OR_QUALIFIED_RECEIPT_REUSE"
+          }
+        }
+      ]
+    },
+    {
+      "ordinal": 30,
+      "id": "g387ac01a79dc6e56",
+      "role": "attn_kv_a_norm.weight",
+      "shape": [
+        512
+      ],
+      "storage": "F32",
+      "families": [
+        {
+          "family": "DeepSeek-V4-Flash-0731-GGUF",
+          "witness": {
+            "source": "tests/compute_models/d5_deepseek_remaining_fragments.h",
+            "anchor": "inline Fragment attention(",
+            "direct_cases": [
+              "C5ExactNewGgufMain/VulkanCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile102",
+              "C5ExactNewGgufMain/VulkanCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile103",
+              "C5ExactNewGgufMain/VulkanCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile89",
+              "C5ExactNewGgufMain/VulkanCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile90"
+            ],
+            "graph_cases": [
+              "C5ExactNewGgufMain/VulkanGraphCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile102",
+              "C5ExactNewGgufMain/VulkanGraphCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile103",
+              "C5ExactNewGgufMain/VulkanGraphCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile89",
+              "C5ExactNewGgufMain/VulkanGraphCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile90"
+            ],
+            "verdict": "PENDING_CURRENT_REPLAY_OR_QUALIFIED_RECEIPT_REUSE"
+          }
+        },
+        {
+          "family": "DeepSeek-V4-Pro-0813-GGUF",
+          "witness": {
+            "source": "tests/compute_models/d5_deepseek_remaining_fragments.h",
+            "anchor": "inline Fragment attention(",
+            "direct_cases": [
+              "C5ExactNewGgufMain/VulkanCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile102",
+              "C5ExactNewGgufMain/VulkanCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile103",
+              "C5ExactNewGgufMain/VulkanCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile89",
+              "C5ExactNewGgufMain/VulkanCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile90"
+            ],
+            "graph_cases": [
+              "C5ExactNewGgufMain/VulkanGraphCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile102",
+              "C5ExactNewGgufMain/VulkanGraphCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile103",
+              "C5ExactNewGgufMain/VulkanGraphCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile89",
+              "C5ExactNewGgufMain/VulkanGraphCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile90"
+            ],
+            "verdict": "PENDING_CURRENT_REPLAY_OR_QUALIFIED_RECEIPT_REUSE"
+          }
+        },
+        {
+          "family": "GLM-5.3-Flash-GGUF",
+          "witness": {
+            "source": "tests/compute_models/d5_glm_remaining_fragments.h",
+            "anchor": "inline Fragment mla(",
+            "direct_cases": [
+              "VulkanMoeFragments.D5GlmGgufAbsorbedMlaWithCache"
+            ],
+            "graph_cases": [
+              "VulkanGraphMoeFragments.D5GlmGgufAbsorbedMlaWithCache"
+            ],
+            "verdict": "PENDING_CURRENT_REPLAY_OR_QUALIFIED_RECEIPT_REUSE"
+          }
+        },
+        {
+          "family": "GLM-5.3-GGUF",
+          "witness": {
+            "source": "tests/compute_models/d5_glm_remaining_fragments.h",
+            "anchor": "inline Fragment mla(",
+            "direct_cases": [
+              "VulkanMoeFragments.D5GlmGgufAbsorbedMlaWithCache"
+            ],
+            "graph_cases": [
+              "VulkanGraphMoeFragments.D5GlmGgufAbsorbedMlaWithCache"
+            ],
+            "verdict": "PENDING_CURRENT_REPLAY_OR_QUALIFIED_RECEIPT_REUSE"
+          }
+        },
+        {
+          "family": "Kimi-K3-GGUF",
+          "witness": {
+            "source": "tests/compute_models/d5_kimi_remaining_fragments.h",
+            "anchor": "inline Fragment mla(",
+            "direct_cases": [
+              "VulkanMoeFragments.D5KimiAbsorbedMlaWithCache"
+            ],
+            "graph_cases": [
+              "VulkanGraphMoeFragments.D5KimiAbsorbedMlaWithCache"
+            ],
+            "verdict": "PENDING_CURRENT_REPLAY_OR_QUALIFIED_RECEIPT_REUSE"
+          }
+        }
+      ]
+    },
+    {
+      "ordinal": 31,
+      "id": "g3abe70bc39c017ce",
+      "role": "ssm_a",
+      "shape": [
+        16
+      ],
+      "storage": "F32",
+      "families": [
+        {
+          "family": "Qwen3.5-2B-GGUF",
+          "witness": {
+            "source": "tests/compute_models/d5_qwen38_24t_semantic_fragments.h",
+            "anchor": "inline Fragment gdn(",
+            "direct_cases": [
+              "VulkanQwenRecurrent.D5NineProfilesUseCompleteGateAndActualStateFeedback"
+            ],
+            "graph_cases": [
+              "VulkanGraphQwenRecurrent.D5NineProfilesUseCompleteGateAndActualStateFeedback"
+            ],
+            "verdict": "PENDING_CURRENT_REPLAY_OR_QUALIFIED_RECEIPT_REUSE"
+          }
+        }
+      ]
+    },
+    {
+      "ordinal": 32,
+      "id": "g3abe70bc39c017ce",
+      "role": "ssm_dt.bias",
+      "shape": [
+        16
+      ],
+      "storage": "F32",
+      "families": [
+        {
+          "family": "Qwen3.5-2B-GGUF",
+          "witness": {
+            "source": "tests/compute_models/d5_qwen38_24t_semantic_fragments.h",
+            "anchor": "inline Fragment gdn(",
+            "direct_cases": [
+              "VulkanQwenRecurrent.D5NineProfilesUseCompleteGateAndActualStateFeedback"
+            ],
+            "graph_cases": [
+              "VulkanGraphQwenRecurrent.D5NineProfilesUseCompleteGateAndActualStateFeedback"
+            ],
+            "verdict": "PENDING_CURRENT_REPLAY_OR_QUALIFIED_RECEIPT_REUSE"
+          }
+        }
+      ]
+    },
+    {
+      "ordinal": 33,
+      "id": "g46a1b605201b05b2",
+      "role": "ffn_routed_norm.weight",
+      "shape": [
+        3584
+      ],
+      "storage": "F32",
+      "families": [
+        {
+          "family": "Kimi-K3-GGUF",
+          "witness": {
+            "source": "tests/compute_models/d5_moe_execution_fragments.h",
+            "anchor": "if (latent_up)",
+            "direct_cases": [
+              "VulkanMoeFragments.D5EightGgufProfilesFullMoe"
+            ],
+            "graph_cases": [
+              "VulkanGraphMoeFragments.D5EightGgufProfilesFullMoe"
+            ],
+            "verdict": "PENDING_CURRENT_REPLAY_OR_QUALIFIED_RECEIPT_REUSE"
+          }
+        }
+      ]
+    },
+    {
+      "ordinal": 34,
+      "id": "g46bdde84d095e7f9",
+      "role": "attn_norm.weight",
+      "shape": [
+        5120
+      ],
+      "storage": "F32",
+      "families": [
+        {
+          "family": "Qwen3.8-27B-GGUF",
+          "witness": {
+            "source": "tests/compute_models/cpu_c5_qwen_attention.h",
+            "anchor": "inline Fragment norm_residual(",
+            "direct_cases": [
+              "VulkanCatalogueParameters.QwenActualWidthsUseDeclaredFloatNormEpsilon"
+            ],
+            "graph_cases": [
+              "VulkanGraphCatalogueParameters.QwenActualWidthsUseDeclaredFloatNormEpsilon"
+            ],
+            "verdict": "PENDING_CURRENT_REPLAY_OR_QUALIFIED_RECEIPT_REUSE"
+          }
+        }
+      ]
+    },
+    {
+      "ordinal": 35,
+      "id": "g46bdde84d095e7f9",
+      "role": "nextn.enorm.weight",
+      "shape": [
+        5120
+      ],
+      "storage": "F32",
+      "families": [
+        {
+          "family": "Qwen3.8-27B-GGUF",
+          "witness": {
+            "source": "tests/compute_models/cpu_c4_qwen_mtp.h",
+            "anchor": "auto carry=norm(",
+            "direct_cases": [
+              "VulkanCurrentState.QwenNamedQ4SidecarUsesActualQ3Q4Q6Mtp"
+            ],
+            "graph_cases": [
+              "VulkanGraphCurrentState.QwenNamedQ4SidecarUsesActualQ3Q4Q6Mtp"
+            ],
+            "verdict": "PENDING_CURRENT_REPLAY_OR_QUALIFIED_RECEIPT_REUSE"
+          }
+        }
+      ]
+    },
+    {
+      "ordinal": 36,
+      "id": "g46bdde84d095e7f9",
+      "role": "nextn.hnorm.weight",
+      "shape": [
+        5120
+      ],
+      "storage": "F32",
+      "families": [
+        {
+          "family": "Qwen3.8-27B-GGUF",
+          "witness": {
+            "source": "tests/compute_models/cpu_c4_qwen_mtp.h",
+            "anchor": "auto carry=norm(",
+            "direct_cases": [
+              "VulkanCurrentState.QwenNamedQ4SidecarUsesActualQ3Q4Q6Mtp"
+            ],
+            "graph_cases": [
+              "VulkanGraphCurrentState.QwenNamedQ4SidecarUsesActualQ3Q4Q6Mtp"
+            ],
+            "verdict": "PENDING_CURRENT_REPLAY_OR_QUALIFIED_RECEIPT_REUSE"
+          }
+        }
+      ]
+    },
+    {
+      "ordinal": 37,
+      "id": "g46bdde84d095e7f9",
+      "role": "nextn.shared_head_norm.weight",
+      "shape": [
+        5120
+      ],
+      "storage": "F32",
+      "families": [
+        {
+          "family": "Qwen3.8-27B-GGUF",
+          "witness": {
+            "source": "tests/compute_models/cpu_c4_qwen_mtp.h",
+            "anchor": "auto carry=norm(",
+            "direct_cases": [
+              "VulkanCurrentState.QwenNamedQ4SidecarUsesActualQ3Q4Q6Mtp"
+            ],
+            "graph_cases": [
+              "VulkanGraphCurrentState.QwenNamedQ4SidecarUsesActualQ3Q4Q6Mtp"
+            ],
+            "verdict": "PENDING_CURRENT_REPLAY_OR_QUALIFIED_RECEIPT_REUSE"
+          }
+        }
+      ]
+    },
+    {
+      "ordinal": 38,
+      "id": "g46bdde84d095e7f9",
+      "role": "output_norm.weight",
+      "shape": [
+        5120
+      ],
+      "storage": "F32",
+      "families": [
+        {
+          "family": "Qwen3.8-27B-GGUF",
+          "witness": {
+            "source": "tests/compute_models/cpu_c5_qwen_attention.h",
+            "anchor": "inline Fragment norm_residual(",
+            "direct_cases": [
+              "VulkanCatalogueParameters.QwenActualWidthsUseDeclaredFloatNormEpsilon"
+            ],
+            "graph_cases": [
+              "VulkanGraphCatalogueParameters.QwenActualWidthsUseDeclaredFloatNormEpsilon"
+            ],
+            "verdict": "PENDING_CURRENT_REPLAY_OR_QUALIFIED_RECEIPT_REUSE"
+          }
+        }
+      ]
+    },
+    {
+      "ordinal": 39,
+      "id": "g46bdde84d095e7f9",
+      "role": "post_attention_norm.weight",
+      "shape": [
+        5120
+      ],
+      "storage": "F32",
+      "families": [
+        {
+          "family": "Qwen3.8-27B-GGUF",
+          "witness": {
+            "source": "tests/compute_models/cpu_c5_qwen_attention.h",
+            "anchor": "inline Fragment norm_residual(",
+            "direct_cases": [
+              "VulkanCatalogueParameters.QwenActualWidthsUseDeclaredFloatNormEpsilon"
+            ],
+            "graph_cases": [
+              "VulkanGraphCatalogueParameters.QwenActualWidthsUseDeclaredFloatNormEpsilon"
+            ],
+            "verdict": "PENDING_CURRENT_REPLAY_OR_QUALIFIED_RECEIPT_REUSE"
+          }
+        }
+      ]
+    },
+    {
+      "ordinal": 40,
+      "id": "g5d1bf1a8413d63ad",
+      "role": "attn_q_a_norm.weight",
+      "shape": [
+        1024
+      ],
+      "storage": "F32",
+      "families": [
+        {
+          "family": "DeepSeek-V4-Flash-0731-GGUF",
+          "witness": {
+            "source": "tests/compute_models/d5_deepseek_remaining_fragments.h",
+            "anchor": "inline Fragment attention(",
+            "direct_cases": [
+              "C5ExactNewGgufMain/VulkanCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile102",
+              "C5ExactNewGgufMain/VulkanCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile103",
+              "C5ExactNewGgufMain/VulkanCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile89",
+              "C5ExactNewGgufMain/VulkanCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile90"
+            ],
+            "graph_cases": [
+              "C5ExactNewGgufMain/VulkanGraphCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile102",
+              "C5ExactNewGgufMain/VulkanGraphCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile103",
+              "C5ExactNewGgufMain/VulkanGraphCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile89",
+              "C5ExactNewGgufMain/VulkanGraphCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile90"
+            ],
+            "verdict": "PENDING_CURRENT_REPLAY_OR_QUALIFIED_RECEIPT_REUSE"
+          }
+        }
+      ]
+    },
+    {
+      "ordinal": 41,
+      "id": "g5eff2d2b50218d42",
+      "role": "attn_sinks.weight",
+      "shape": [
+        64
+      ],
+      "storage": "F32",
+      "families": [
+        {
+          "family": "DeepSeek-V4-Flash-0731-GGUF",
+          "witness": {
+            "source": "tests/compute_models/d5_deepseek_remaining_fragments.h",
+            "anchor": "f.constant(dense({heads}), bytes(sinks))",
+            "direct_cases": [
+              "C5ExactNewGgufMain/VulkanCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile102",
+              "C5ExactNewGgufMain/VulkanCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile103",
+              "C5ExactNewGgufMain/VulkanCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile89",
+              "C5ExactNewGgufMain/VulkanCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile90"
+            ],
+            "graph_cases": [
+              "C5ExactNewGgufMain/VulkanGraphCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile102",
+              "C5ExactNewGgufMain/VulkanGraphCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile103",
+              "C5ExactNewGgufMain/VulkanGraphCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile89",
+              "C5ExactNewGgufMain/VulkanGraphCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile90"
+            ],
+            "verdict": "PENDING_CURRENT_REPLAY_OR_QUALIFIED_RECEIPT_REUSE"
+          }
+        }
+      ]
+    },
+    {
+      "ordinal": 42,
+      "id": "g5eff2d2b50218d42",
+      "role": "ssm_a",
+      "shape": [
+        64
+      ],
+      "storage": "F32",
+      "families": [
+        {
+          "family": "GLM-5.3-Flash-GGUF",
+          "witness": {
+            "source": "tests/compute_models/d5_kda_full_fragments.h",
+            "anchor": "inline Fragment complete(",
+            "direct_cases": [
+              "VulkanMoeFragments.D5SixProfilesFullKdaChainAndTwoStates"
+            ],
+            "graph_cases": [
+              "VulkanGraphMoeFragments.D5SixProfilesFullKdaChainAndTwoStates"
+            ],
+            "verdict": "PENDING_CURRENT_REPLAY_OR_QUALIFIED_RECEIPT_REUSE"
+          }
+        }
+      ]
+    },
+    {
+      "ordinal": 43,
+      "id": "g5f3fef8f778c1bf0",
+      "role": "attn_q_a_norm.weight",
+      "shape": [
+        1536
+      ],
+      "storage": "F32",
+      "families": [
+        {
+          "family": "DeepSeek-V4-Pro-0813-GGUF",
+          "witness": {
+            "source": "tests/compute_models/d5_deepseek_remaining_fragments.h",
+            "anchor": "inline Fragment attention(",
+            "direct_cases": [
+              "C5ExactNewGgufMain/VulkanCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile102",
+              "C5ExactNewGgufMain/VulkanCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile103",
+              "C5ExactNewGgufMain/VulkanCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile89",
+              "C5ExactNewGgufMain/VulkanCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile90"
+            ],
+            "graph_cases": [
+              "C5ExactNewGgufMain/VulkanGraphCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile102",
+              "C5ExactNewGgufMain/VulkanGraphCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile103",
+              "C5ExactNewGgufMain/VulkanGraphCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile89",
+              "C5ExactNewGgufMain/VulkanGraphCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile90"
+            ],
+            "verdict": "PENDING_CURRENT_REPLAY_OR_QUALIFIED_RECEIPT_REUSE"
+          }
+        },
+        {
+          "family": "GLM-5.3-Flash-GGUF",
+          "witness": {
+            "source": "tests/compute_models/d5_glm_remaining_fragments.h",
+            "anchor": "inline Fragment mla(",
+            "direct_cases": [
+              "VulkanMoeFragments.D5GlmGgufAbsorbedMlaWithCache"
+            ],
+            "graph_cases": [
+              "VulkanGraphMoeFragments.D5GlmGgufAbsorbedMlaWithCache"
+            ],
+            "verdict": "PENDING_CURRENT_REPLAY_OR_QUALIFIED_RECEIPT_REUSE"
+          }
+        },
+        {
+          "family": "Kimi-K3-GGUF",
+          "witness": {
+            "source": "tests/compute_models/d5_kimi_remaining_fragments.h",
+            "anchor": "inline Fragment mla(",
+            "direct_cases": [
+              "VulkanMoeFragments.D5KimiAbsorbedMlaWithCache"
+            ],
+            "graph_cases": [
+              "VulkanGraphMoeFragments.D5KimiAbsorbedMlaWithCache"
+            ],
+            "verdict": "PENDING_CURRENT_REPLAY_OR_QUALIFIED_RECEIPT_REUSE"
+          }
+        }
+      ]
+    },
+    {
+      "ordinal": 44,
+      "id": "g5f9b5d825d4e2ef7",
+      "role": "hc_attn_base.weight",
+      "shape": [
+        24
+      ],
+      "storage": "F32",
+      "families": [
+        {
+          "family": "DeepSeek-V4-Flash-0731-GGUF",
+          "witness": {
+            "source": "tests/compute_models/d5_moe_semantic_fragments.h",
+            "anchor": "inline Fragment hyper_connection(",
+            "direct_cases": [
+              "VulkanMoeFragments.D5SevenProfilesHyperConnectionCore"
+            ],
+            "graph_cases": [
+              "VulkanGraphMoeFragments.D5SevenProfilesHyperConnectionCore"
+            ],
+            "verdict": "PENDING_CURRENT_REPLAY_OR_QUALIFIED_RECEIPT_REUSE"
+          }
+        },
+        {
+          "family": "DeepSeek-V4-Pro-0813-GGUF",
+          "witness": {
+            "source": "tests/compute_models/d5_moe_semantic_fragments.h",
+            "anchor": "inline Fragment hyper_connection(",
+            "direct_cases": [
+              "VulkanMoeFragments.D5SevenProfilesHyperConnectionCore"
+            ],
+            "graph_cases": [
+              "VulkanGraphMoeFragments.D5SevenProfilesHyperConnectionCore"
+            ],
+            "verdict": "PENDING_CURRENT_REPLAY_OR_QUALIFIED_RECEIPT_REUSE"
+          }
+        },
+        {
+          "family": "GLM-5.3-Flash-GGUF",
+          "witness": {
+            "source": "tests/compute_models/d5_moe_semantic_fragments.h",
+            "anchor": "inline Fragment hyper_connection(",
+            "direct_cases": [
+              "VulkanMoeFragments.D5SevenProfilesHyperConnectionCore"
+            ],
+            "graph_cases": [
+              "VulkanGraphMoeFragments.D5SevenProfilesHyperConnectionCore"
+            ],
+            "verdict": "PENDING_CURRENT_REPLAY_OR_QUALIFIED_RECEIPT_REUSE"
+          }
+        }
+      ]
+    },
+    {
+      "ordinal": 45,
+      "id": "g5f9b5d825d4e2ef7",
+      "role": "hc_ffn_base.weight",
+      "shape": [
+        24
+      ],
+      "storage": "F32",
+      "families": [
+        {
+          "family": "DeepSeek-V4-Flash-0731-GGUF",
+          "witness": {
+            "source": "tests/compute_models/d5_moe_semantic_fragments.h",
+            "anchor": "inline Fragment hyper_connection(",
+            "direct_cases": [
+              "VulkanMoeFragments.D5SevenProfilesHyperConnectionCore"
+            ],
+            "graph_cases": [
+              "VulkanGraphMoeFragments.D5SevenProfilesHyperConnectionCore"
+            ],
+            "verdict": "PENDING_CURRENT_REPLAY_OR_QUALIFIED_RECEIPT_REUSE"
+          }
+        },
+        {
+          "family": "DeepSeek-V4-Pro-0813-GGUF",
+          "witness": {
+            "source": "tests/compute_models/d5_moe_semantic_fragments.h",
+            "anchor": "inline Fragment hyper_connection(",
+            "direct_cases": [
+              "VulkanMoeFragments.D5SevenProfilesHyperConnectionCore"
+            ],
+            "graph_cases": [
+              "VulkanGraphMoeFragments.D5SevenProfilesHyperConnectionCore"
+            ],
+            "verdict": "PENDING_CURRENT_REPLAY_OR_QUALIFIED_RECEIPT_REUSE"
+          }
+        },
+        {
+          "family": "GLM-5.3-Flash-GGUF",
+          "witness": {
+            "source": "tests/compute_models/d5_moe_semantic_fragments.h",
+            "anchor": "inline Fragment hyper_connection(",
+            "direct_cases": [
+              "VulkanMoeFragments.D5SevenProfilesHyperConnectionCore"
+            ],
+            "graph_cases": [
+              "VulkanGraphMoeFragments.D5SevenProfilesHyperConnectionCore"
+            ],
+            "verdict": "PENDING_CURRENT_REPLAY_OR_QUALIFIED_RECEIPT_REUSE"
+          }
+        }
+      ]
+    },
+    {
+      "ordinal": 46,
+      "id": "g661fbd62b81a6b2c",
+      "role": "attn_norm.weight",
+      "shape": [
+        4096
+      ],
+      "storage": "F32",
+      "families": [
+        {
+          "family": "DeepSeek-V4-Flash-0731-GGUF",
+          "witness": {
+            "source": "tests/compute_models/d5_deepseek_remaining_fragments.h",
+            "anchor": "auto norm_weight = linear::parameter(",
+            "direct_cases": [
+              "C5ExactNewGgufMain/VulkanCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile102",
+              "C5ExactNewGgufMain/VulkanCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile103",
+              "C5ExactNewGgufMain/VulkanCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile89",
+              "C5ExactNewGgufMain/VulkanCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile90"
+            ],
+            "graph_cases": [
+              "C5ExactNewGgufMain/VulkanGraphCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile102",
+              "C5ExactNewGgufMain/VulkanGraphCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile103",
+              "C5ExactNewGgufMain/VulkanGraphCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile89",
+              "C5ExactNewGgufMain/VulkanGraphCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile90"
+            ],
+            "verdict": "PENDING_CURRENT_REPLAY_OR_QUALIFIED_RECEIPT_REUSE"
+          }
+        },
+        {
+          "family": "GLM-5.3-Flash-GGUF",
+          "witness": {
+            "source": "tests/compute_models/d5_glm_remaining_fragments.h",
+            "anchor": "inline Fragment dense_ffn(",
+            "direct_cases": [
+              "VulkanMoeFragments.D5GlmGgufDenseFfn"
+            ],
+            "graph_cases": [
+              "VulkanGraphMoeFragments.D5GlmGgufDenseFfn"
+            ],
+            "verdict": "PENDING_CURRENT_REPLAY_OR_QUALIFIED_RECEIPT_REUSE"
+          }
+        }
+      ]
+    },
+    {
+      "ordinal": 47,
+      "id": "g661fbd62b81a6b2c",
+      "role": "ffn_norm.weight",
+      "shape": [
+        4096
+      ],
+      "storage": "F32",
+      "families": [
+        {
+          "family": "DeepSeek-V4-Flash-0731-GGUF",
+          "witness": {
+            "source": "tests/compute_models/d5_deepseek_remaining_fragments.h",
+            "anchor": "auto norm_weight = linear::parameter(",
+            "direct_cases": [
+              "C5ExactNewGgufMain/VulkanCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile102",
+              "C5ExactNewGgufMain/VulkanCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile103",
+              "C5ExactNewGgufMain/VulkanCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile89",
+              "C5ExactNewGgufMain/VulkanCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile90"
+            ],
+            "graph_cases": [
+              "C5ExactNewGgufMain/VulkanGraphCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile102",
+              "C5ExactNewGgufMain/VulkanGraphCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile103",
+              "C5ExactNewGgufMain/VulkanGraphCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile89",
+              "C5ExactNewGgufMain/VulkanGraphCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile90"
+            ],
+            "verdict": "PENDING_CURRENT_REPLAY_OR_QUALIFIED_RECEIPT_REUSE"
+          }
+        },
+        {
+          "family": "GLM-5.3-Flash-GGUF",
+          "witness": {
+            "source": "tests/compute_models/d5_glm_remaining_fragments.h",
+            "anchor": "inline Fragment dense_ffn(",
+            "direct_cases": [
+              "VulkanMoeFragments.D5GlmGgufDenseFfn"
+            ],
+            "graph_cases": [
+              "VulkanGraphMoeFragments.D5GlmGgufDenseFfn"
+            ],
+            "verdict": "PENDING_CURRENT_REPLAY_OR_QUALIFIED_RECEIPT_REUSE"
+          }
+        }
+      ]
+    },
+    {
+      "ordinal": 48,
+      "id": "g661fbd62b81a6b2c",
+      "role": "nextn.enorm.weight",
+      "shape": [
+        4096
+      ],
+      "storage": "F32",
+      "families": [
+        {
+          "family": "GLM-5.3-Flash-GGUF",
+          "witness": {
+            "source": "tests/compute_models/d5_glm_remaining_fragments.h",
+            "anchor": "inline Fragment mtp_decoder(",
+            "direct_cases": [
+              "VulkanMoeFragments.D5GlmGgufNextNDecoderWithCarryAndFullHead"
+            ],
+            "graph_cases": [
+              "VulkanGraphMoeFragments.D5GlmGgufNextNDecoderWithCarryAndFullHead"
+            ],
+            "verdict": "PENDING_CURRENT_REPLAY_OR_QUALIFIED_RECEIPT_REUSE"
+          }
+        }
+      ]
+    },
+    {
+      "ordinal": 49,
+      "id": "g661fbd62b81a6b2c",
+      "role": "nextn.hnorm.weight",
+      "shape": [
+        4096
+      ],
+      "storage": "F32",
+      "families": [
+        {
+          "family": "GLM-5.3-Flash-GGUF",
+          "witness": {
+            "source": "tests/compute_models/d5_glm_remaining_fragments.h",
+            "anchor": "inline Fragment mtp_decoder(",
+            "direct_cases": [
+              "VulkanMoeFragments.D5GlmGgufNextNDecoderWithCarryAndFullHead"
+            ],
+            "graph_cases": [
+              "VulkanGraphMoeFragments.D5GlmGgufNextNDecoderWithCarryAndFullHead"
+            ],
+            "verdict": "PENDING_CURRENT_REPLAY_OR_QUALIFIED_RECEIPT_REUSE"
+          }
+        }
+      ]
+    },
+    {
+      "ordinal": 50,
+      "id": "g661fbd62b81a6b2c",
+      "role": "nextn.shared_head_norm.weight",
+      "shape": [
+        4096
+      ],
+      "storage": "F32",
+      "families": [
+        {
+          "family": "GLM-5.3-Flash-GGUF",
+          "witness": {
+            "source": "tests/compute_models/d5_glm_remaining_fragments.h",
+            "anchor": "inline Fragment mtp_decoder(",
+            "direct_cases": [
+              "VulkanMoeFragments.D5GlmGgufNextNDecoderWithCarryAndFullHead"
+            ],
+            "graph_cases": [
+              "VulkanGraphMoeFragments.D5GlmGgufNextNDecoderWithCarryAndFullHead"
+            ],
+            "verdict": "PENDING_CURRENT_REPLAY_OR_QUALIFIED_RECEIPT_REUSE"
+          }
+        }
+      ]
+    },
+    {
+      "ordinal": 51,
+      "id": "g661fbd62b81a6b2c",
+      "role": "output_norm.weight",
+      "shape": [
+        4096
+      ],
+      "storage": "F32",
+      "families": [
+        {
+          "family": "DeepSeek-V4-Flash-0731-GGUF",
+          "witness": {
+            "source": "tests/compute_models/d5_deepseek_remaining_fragments.h",
+            "anchor": "auto norm_weight = linear::parameter(",
+            "direct_cases": [
+              "C5ExactNewGgufMain/VulkanCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile102",
+              "C5ExactNewGgufMain/VulkanCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile103",
+              "C5ExactNewGgufMain/VulkanCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile89",
+              "C5ExactNewGgufMain/VulkanCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile90"
+            ],
+            "graph_cases": [
+              "C5ExactNewGgufMain/VulkanGraphCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile102",
+              "C5ExactNewGgufMain/VulkanGraphCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile103",
+              "C5ExactNewGgufMain/VulkanGraphCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile89",
+              "C5ExactNewGgufMain/VulkanGraphCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile90"
+            ],
+            "verdict": "PENDING_CURRENT_REPLAY_OR_QUALIFIED_RECEIPT_REUSE"
+          }
+        },
+        {
+          "family": "GLM-5.3-Flash-GGUF",
+          "witness": {
+            "source": "tests/compute_models/d5_glm_remaining_fragments.h",
+            "anchor": "inline Fragment dense_ffn(",
+            "direct_cases": [
+              "VulkanMoeFragments.D5GlmGgufDenseFfn"
+            ],
+            "graph_cases": [
+              "VulkanGraphMoeFragments.D5GlmGgufDenseFfn"
+            ],
+            "verdict": "PENDING_CURRENT_REPLAY_OR_QUALIFIED_RECEIPT_REUSE"
+          }
+        }
+      ]
+    },
+    {
+      "ordinal": 52,
+      "id": "g67aaf775a617e9f7",
+      "role": "ssm_dt.bias",
+      "shape": [
+        12288
+      ],
+      "storage": "F32",
+      "families": [
+        {
+          "family": "Kimi-K3-GGUF",
+          "witness": {
+            "source": "tests/compute_models/d5_kda_full_fragments.h",
+            "anchor": "inline Fragment complete(",
+            "direct_cases": [
+              "VulkanMoeFragments.D5SixProfilesFullKdaChainAndTwoStates"
+            ],
+            "graph_cases": [
+              "VulkanGraphMoeFragments.D5SixProfilesFullKdaChainAndTwoStates"
+            ],
+            "verdict": "PENDING_CURRENT_REPLAY_OR_QUALIFIED_RECEIPT_REUSE"
+          }
+        }
+      ]
+    },
+    {
+      "ordinal": 53,
+      "id": "g7651f3980ebb670e",
+      "role": "ssm_conv1d.weight",
+      "shape": [
+        4,
+        20480
+      ],
+      "storage": "F32",
+      "families": [
+        {
+          "family": "Qwen3.8-2.4T-A95B-GGUF",
+          "witness": {
+            "source": "tests/compute_models/cpu_c5_parameter_fragments.h",
+            "anchor": "inline Fragment convolution(",
+            "direct_cases": [
+              "C5ActualConvolutionParameters/VulkanCatalogueParameters.ActualGgufConvolutionStorageFeedsCompleteRecurrentState/g7651f3980ebb670e"
+            ],
+            "graph_cases": [
+              "C5ActualConvolutionParameters/VulkanGraphCatalogueParameters.ActualGgufConvolutionStorageFeedsCompleteRecurrentState/g7651f3980ebb670e"
+            ],
+            "verdict": "PENDING_CURRENT_REPLAY_OR_QUALIFIED_RECEIPT_REUSE"
+          }
+        }
+      ]
+    },
+    {
+      "ordinal": 54,
+      "id": "g7f1222d4f5412926",
+      "role": "attn_sinks.weight",
+      "shape": [
+        128
+      ],
+      "storage": "F32",
+      "families": [
+        {
+          "family": "DeepSeek-V4-Pro-0813-GGUF",
+          "witness": {
+            "source": "tests/compute_models/d5_deepseek_remaining_fragments.h",
+            "anchor": "f.constant(dense({heads}), bytes(sinks))",
+            "direct_cases": [
+              "C5ExactNewGgufMain/VulkanCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile102",
+              "C5ExactNewGgufMain/VulkanCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile103",
+              "C5ExactNewGgufMain/VulkanCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile89",
+              "C5ExactNewGgufMain/VulkanCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile90"
+            ],
+            "graph_cases": [
+              "C5ExactNewGgufMain/VulkanGraphCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile102",
+              "C5ExactNewGgufMain/VulkanGraphCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile103",
+              "C5ExactNewGgufMain/VulkanGraphCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile89",
+              "C5ExactNewGgufMain/VulkanGraphCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile90"
+            ],
+            "verdict": "PENDING_CURRENT_REPLAY_OR_QUALIFIED_RECEIPT_REUSE"
+          }
+        }
+      ]
+    },
+    {
+      "ordinal": 55,
+      "id": "g7f1222d4f5412926",
+      "role": "indexer.k_norm.bias",
+      "shape": [
+        128
+      ],
+      "storage": "F32",
+      "families": [
+        {
+          "family": "GLM-5.3-Flash-GGUF",
+          "witness": {
+            "source": "tests/compute_models/d5_glm_remaining_fragments.h",
+            "anchor": "c::LayerNorm{.epsilon = 1.0e-6F}",
+            "direct_cases": [
+              "VulkanMoeFragments.D5GlmDsaIndexerWithCache"
+            ],
+            "graph_cases": [
+              "VulkanGraphMoeFragments.D5GlmDsaIndexerWithCache"
+            ],
+            "verdict": "PENDING_CURRENT_REPLAY_OR_QUALIFIED_RECEIPT_REUSE"
+          }
+        },
+        {
+          "family": "GLM-5.3-GGUF",
+          "witness": {
+            "source": "tests/compute_models/d5_glm_remaining_fragments.h",
+            "anchor": "c::LayerNorm{.epsilon = 1.0e-6F}",
+            "direct_cases": [
+              "VulkanMoeFragments.D5GlmDsaIndexerWithCache"
+            ],
+            "graph_cases": [
+              "VulkanGraphMoeFragments.D5GlmDsaIndexerWithCache"
+            ],
+            "verdict": "PENDING_CURRENT_REPLAY_OR_QUALIFIED_RECEIPT_REUSE"
+          }
+        }
+      ]
+    },
+    {
+      "ordinal": 56,
+      "id": "g7f1222d4f5412926",
+      "role": "indexer.k_norm.weight",
+      "shape": [
+        128
+      ],
+      "storage": "F32",
+      "families": [
+        {
+          "family": "GLM-5.3-Flash-GGUF",
+          "witness": {
+            "source": "tests/compute_models/d5_glm_remaining_fragments.h",
+            "anchor": "c::LayerNorm{.epsilon = 1.0e-6F}",
+            "direct_cases": [
+              "VulkanMoeFragments.D5GlmDsaIndexerWithCache"
+            ],
+            "graph_cases": [
+              "VulkanGraphMoeFragments.D5GlmDsaIndexerWithCache"
+            ],
+            "verdict": "PENDING_CURRENT_REPLAY_OR_QUALIFIED_RECEIPT_REUSE"
+          }
+        },
+        {
+          "family": "GLM-5.3-GGUF",
+          "witness": {
+            "source": "tests/compute_models/d5_glm_remaining_fragments.h",
+            "anchor": "c::LayerNorm{.epsilon = 1.0e-6F}",
+            "direct_cases": [
+              "VulkanMoeFragments.D5GlmDsaIndexerWithCache"
+            ],
+            "graph_cases": [
+              "VulkanGraphMoeFragments.D5GlmDsaIndexerWithCache"
+            ],
+            "verdict": "PENDING_CURRENT_REPLAY_OR_QUALIFIED_RECEIPT_REUSE"
+          }
+        }
+      ]
+    },
+    {
+      "ordinal": 57,
+      "id": "g7f1222d4f5412926",
+      "role": "indexer_compressor_norm.weight",
+      "shape": [
+        128
+      ],
+      "storage": "F32",
+      "families": [
+        {
+          "family": "DeepSeek-V4-Flash-0731-GGUF",
+          "witness": {
+            "source": "tests/compute_models/d5_deepseek_remaining_fragments.h",
+            "anchor": "const std::int64_t depth = indexer ? 128 : 512",
+            "direct_cases": [
+              "C5ExactNewGgufMain/VulkanCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile102",
+              "C5ExactNewGgufMain/VulkanCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile103",
+              "C5ExactNewGgufMain/VulkanCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile89",
+              "C5ExactNewGgufMain/VulkanCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile90"
+            ],
+            "graph_cases": [
+              "C5ExactNewGgufMain/VulkanGraphCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile102",
+              "C5ExactNewGgufMain/VulkanGraphCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile103",
+              "C5ExactNewGgufMain/VulkanGraphCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile89",
+              "C5ExactNewGgufMain/VulkanGraphCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile90"
+            ],
+            "verdict": "PENDING_CURRENT_REPLAY_OR_QUALIFIED_RECEIPT_REUSE"
+          }
+        },
+        {
+          "family": "DeepSeek-V4-Pro-0813-GGUF",
+          "witness": {
+            "source": "tests/compute_models/d5_deepseek_remaining_fragments.h",
+            "anchor": "const std::int64_t depth = indexer ? 128 : 512",
+            "direct_cases": [
+              "C5ExactNewGgufMain/VulkanCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile102",
+              "C5ExactNewGgufMain/VulkanCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile103",
+              "C5ExactNewGgufMain/VulkanCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile89",
+              "C5ExactNewGgufMain/VulkanCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile90"
+            ],
+            "graph_cases": [
+              "C5ExactNewGgufMain/VulkanGraphCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile102",
+              "C5ExactNewGgufMain/VulkanGraphCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile103",
+              "C5ExactNewGgufMain/VulkanGraphCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile89",
+              "C5ExactNewGgufMain/VulkanGraphCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile90"
+            ],
+            "verdict": "PENDING_CURRENT_REPLAY_OR_QUALIFIED_RECEIPT_REUSE"
+          }
+        }
+      ]
+    },
+    {
+      "ordinal": 58,
+      "id": "g7f1222d4f5412926",
+      "role": "ssm_a",
+      "shape": [
+        128
+      ],
+      "storage": "F32",
+      "families": [
+        {
+          "family": "Qwen3.8-2.4T-A95B-GGUF",
+          "witness": {
+            "source": "tests/compute_models/d5_qwen38_24t_semantic_fragments.h",
+            "anchor": "inline Fragment gdn(",
+            "direct_cases": [
+              "VulkanQwenRecurrent.D5NineProfilesUseCompleteGateAndActualStateFeedback"
+            ],
+            "graph_cases": [
+              "VulkanGraphQwenRecurrent.D5NineProfilesUseCompleteGateAndActualStateFeedback"
+            ],
+            "verdict": "PENDING_CURRENT_REPLAY_OR_QUALIFIED_RECEIPT_REUSE"
+          }
+        }
+      ]
+    },
+    {
+      "ordinal": 59,
+      "id": "g7f1222d4f5412926",
+      "role": "ssm_dt.bias",
+      "shape": [
+        128
+      ],
+      "storage": "F32",
+      "families": [
+        {
+          "family": "Qwen3.8-2.4T-A95B-GGUF",
+          "witness": {
+            "source": "tests/compute_models/d5_qwen38_24t_semantic_fragments.h",
+            "anchor": "inline Fragment gdn(",
+            "direct_cases": [
+              "VulkanQwenRecurrent.D5NineProfilesUseCompleteGateAndActualStateFeedback"
+            ],
+            "graph_cases": [
+              "VulkanGraphQwenRecurrent.D5NineProfilesUseCompleteGateAndActualStateFeedback"
+            ],
+            "verdict": "PENDING_CURRENT_REPLAY_OR_QUALIFIED_RECEIPT_REUSE"
+          }
+        }
+      ]
+    },
+    {
+      "ordinal": 60,
+      "id": "g7f1222d4f5412926",
+      "role": "ssm_norm.weight",
+      "shape": [
+        128
+      ],
+      "storage": "F32",
+      "families": [
+        {
+          "family": "GLM-5.3-Flash-GGUF",
+          "witness": {
+            "source": "tests/compute_models/d5_kda_full_fragments.h",
+            "anchor": "inline Fragment complete(",
+            "direct_cases": [
+              "VulkanMoeFragments.D5SixProfilesFullKdaChainAndTwoStates"
+            ],
+            "graph_cases": [
+              "VulkanGraphMoeFragments.D5SixProfilesFullKdaChainAndTwoStates"
+            ],
+            "verdict": "PENDING_CURRENT_REPLAY_OR_QUALIFIED_RECEIPT_REUSE"
+          }
+        },
+        {
+          "family": "Kimi-K3-GGUF",
+          "witness": {
+            "source": "tests/compute_models/d5_kda_full_fragments.h",
+            "anchor": "inline Fragment complete(",
+            "direct_cases": [
+              "VulkanMoeFragments.D5SixProfilesFullKdaChainAndTwoStates"
+            ],
+            "graph_cases": [
+              "VulkanGraphMoeFragments.D5SixProfilesFullKdaChainAndTwoStates"
+            ],
+            "verdict": "PENDING_CURRENT_REPLAY_OR_QUALIFIED_RECEIPT_REUSE"
+          }
+        },
+        {
+          "family": "Qwen3.5-2B-GGUF",
+          "witness": {
+            "source": "tests/compute_models/d5_qwen38_24t_semantic_fragments.h",
+            "anchor": "inline Fragment gdn(",
+            "direct_cases": [
+              "VulkanQwenRecurrent.D5NineProfilesUseCompleteGateAndActualStateFeedback"
+            ],
+            "graph_cases": [
+              "VulkanGraphQwenRecurrent.D5NineProfilesUseCompleteGateAndActualStateFeedback"
+            ],
+            "verdict": "PENDING_CURRENT_REPLAY_OR_QUALIFIED_RECEIPT_REUSE"
+          }
+        },
+        {
+          "family": "Qwen3.8-2.4T-A95B-GGUF",
+          "witness": {
+            "source": "tests/compute_models/d5_qwen38_24t_semantic_fragments.h",
+            "anchor": "inline Fragment gdn(",
+            "direct_cases": [
+              "VulkanQwenRecurrent.D5NineProfilesUseCompleteGateAndActualStateFeedback"
+            ],
+            "graph_cases": [
+              "VulkanGraphQwenRecurrent.D5NineProfilesUseCompleteGateAndActualStateFeedback"
+            ],
+            "verdict": "PENDING_CURRENT_REPLAY_OR_QUALIFIED_RECEIPT_REUSE"
+          }
+        },
+        {
+          "family": "Qwen3.8-27B-GGUF",
+          "witness": {
+            "source": "tests/compute_models/d5_qwen38_24t_semantic_fragments.h",
+            "anchor": "inline Fragment gdn(",
+            "direct_cases": [
+              "VulkanQwenRecurrent.D5NineProfilesUseCompleteGateAndActualStateFeedback"
+            ],
+            "graph_cases": [
+              "VulkanGraphQwenRecurrent.D5NineProfilesUseCompleteGateAndActualStateFeedback"
+            ],
+            "verdict": "PENDING_CURRENT_REPLAY_OR_QUALIFIED_RECEIPT_REUSE"
+          }
+        }
+      ]
+    },
+    {
+      "ordinal": 61,
+      "id": "g89aa3265ac4fdf68",
+      "role": "ssm_conv1d_k.weight",
+      "shape": [
+        4,
+        1,
+        8192
+      ],
+      "storage": "F32",
+      "families": [
+        {
+          "family": "GLM-5.3-Flash-GGUF",
+          "witness": {
+            "source": "tests/compute_models/cpu_c5_parameter_fragments.h",
+            "anchor": "inline Fragment convolution(",
+            "direct_cases": [
+              "C5ActualConvolutionParameters/VulkanCatalogueParameters.ActualGgufConvolutionStorageFeedsCompleteRecurrentState/g89aa3265ac4fdf68"
+            ],
+            "graph_cases": [
+              "C5ActualConvolutionParameters/VulkanGraphCatalogueParameters.ActualGgufConvolutionStorageFeedsCompleteRecurrentState/g89aa3265ac4fdf68"
+            ],
+            "verdict": "PENDING_CURRENT_REPLAY_OR_QUALIFIED_RECEIPT_REUSE"
+          }
+        }
+      ]
+    },
+    {
+      "ordinal": 62,
+      "id": "g89aa3265ac4fdf68",
+      "role": "ssm_conv1d_q.weight",
+      "shape": [
+        4,
+        1,
+        8192
+      ],
+      "storage": "F32",
+      "families": [
+        {
+          "family": "GLM-5.3-Flash-GGUF",
+          "witness": {
+            "source": "tests/compute_models/cpu_c5_parameter_fragments.h",
+            "anchor": "inline Fragment convolution(",
+            "direct_cases": [
+              "C5ActualConvolutionParameters/VulkanCatalogueParameters.ActualGgufConvolutionStorageFeedsCompleteRecurrentState/g89aa3265ac4fdf68"
+            ],
+            "graph_cases": [
+              "C5ActualConvolutionParameters/VulkanGraphCatalogueParameters.ActualGgufConvolutionStorageFeedsCompleteRecurrentState/g89aa3265ac4fdf68"
+            ],
+            "verdict": "PENDING_CURRENT_REPLAY_OR_QUALIFIED_RECEIPT_REUSE"
+          }
+        }
+      ]
+    },
+    {
+      "ordinal": 63,
+      "id": "g89aa3265ac4fdf68",
+      "role": "ssm_conv1d_v.weight",
+      "shape": [
+        4,
+        1,
+        8192
+      ],
+      "storage": "F32",
+      "families": [
+        {
+          "family": "GLM-5.3-Flash-GGUF",
+          "witness": {
+            "source": "tests/compute_models/cpu_c5_parameter_fragments.h",
+            "anchor": "inline Fragment convolution(",
+            "direct_cases": [
+              "C5ActualConvolutionParameters/VulkanCatalogueParameters.ActualGgufConvolutionStorageFeedsCompleteRecurrentState/g89aa3265ac4fdf68"
+            ],
+            "graph_cases": [
+              "C5ActualConvolutionParameters/VulkanGraphCatalogueParameters.ActualGgufConvolutionStorageFeedsCompleteRecurrentState/g89aa3265ac4fdf68"
+            ],
+            "verdict": "PENDING_CURRENT_REPLAY_OR_QUALIFIED_RECEIPT_REUSE"
+          }
+        }
+      ]
+    },
+    {
+      "ordinal": 64,
+      "id": "g8abf5b8ae6fe9e99",
+      "role": "output_hc_scale.weight",
+      "shape": [
+        1
+      ],
+      "storage": "F32",
+      "families": [
+        {
+          "family": "DeepSeek-V4-Flash-0731-GGUF",
+          "witness": {
+            "source": "tests/compute_models/d5_deepseek_remaining_fragments.h",
+            "anchor": "head_base",
+            "direct_cases": [
+              "C5ExactNewGgufMain/VulkanCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile102",
+              "C5ExactNewGgufMain/VulkanCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile103",
+              "C5ExactNewGgufMain/VulkanCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile89",
+              "C5ExactNewGgufMain/VulkanCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile90"
+            ],
+            "graph_cases": [
+              "C5ExactNewGgufMain/VulkanGraphCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile102",
+              "C5ExactNewGgufMain/VulkanGraphCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile103",
+              "C5ExactNewGgufMain/VulkanGraphCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile89",
+              "C5ExactNewGgufMain/VulkanGraphCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile90"
+            ],
+            "verdict": "PENDING_CURRENT_REPLAY_OR_QUALIFIED_RECEIPT_REUSE"
+          }
+        },
+        {
+          "family": "DeepSeek-V4-Pro-0813-GGUF",
+          "witness": {
+            "source": "tests/compute_models/d5_deepseek_remaining_fragments.h",
+            "anchor": "head_base",
+            "direct_cases": [
+              "C5ExactNewGgufMain/VulkanCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile102",
+              "C5ExactNewGgufMain/VulkanCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile103",
+              "C5ExactNewGgufMain/VulkanCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile89",
+              "C5ExactNewGgufMain/VulkanCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile90"
+            ],
+            "graph_cases": [
+              "C5ExactNewGgufMain/VulkanGraphCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile102",
+              "C5ExactNewGgufMain/VulkanGraphCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile103",
+              "C5ExactNewGgufMain/VulkanGraphCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile89",
+              "C5ExactNewGgufMain/VulkanGraphCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile90"
+            ],
+            "verdict": "PENDING_CURRENT_REPLAY_OR_QUALIFIED_RECEIPT_REUSE"
+          }
+        }
+      ]
+    },
+    {
+      "ordinal": 65,
+      "id": "gb6d9e8fd011685be",
+      "role": "exp_probs_b.bias",
+      "shape": [
+        288
+      ],
+      "storage": "F32",
+      "families": [
+        {
+          "family": "GLM-5.3-Flash-GGUF",
+          "witness": {
+            "source": "tests/compute_models/d5_moe_execution_fragments.h",
+            "anchor": "inline Routing routing(",
+            "direct_cases": [
+              "VulkanMoeFragments.D5EightGgufProfilesFullMoe"
+            ],
+            "graph_cases": [
+              "VulkanGraphMoeFragments.D5EightGgufProfilesFullMoe"
+            ],
+            "verdict": "PENDING_CURRENT_REPLAY_OR_QUALIFIED_RECEIPT_REUSE"
+          }
+        }
+      ]
+    },
+    {
+      "ordinal": 66,
+      "id": "gc3c587739220f12d",
+      "role": "ssm_conv1d.weight",
+      "shape": [
+        4,
+        6144
+      ],
+      "storage": "F32",
+      "families": [
+        {
+          "family": "Qwen3.5-2B-GGUF",
+          "witness": {
+            "source": "tests/compute_models/cpu_c5_parameter_fragments.h",
+            "anchor": "inline Fragment convolution(",
+            "direct_cases": [
+              "C5ActualConvolutionParameters/VulkanCatalogueParameters.ActualGgufConvolutionStorageFeedsCompleteRecurrentState/gc3c587739220f12d"
+            ],
+            "graph_cases": [
+              "C5ActualConvolutionParameters/VulkanGraphCatalogueParameters.ActualGgufConvolutionStorageFeedsCompleteRecurrentState/gc3c587739220f12d"
+            ],
+            "verdict": "PENDING_CURRENT_REPLAY_OR_QUALIFIED_RECEIPT_REUSE"
+          }
+        }
+      ]
+    },
+    {
+      "ordinal": 67,
+      "id": "gd197458cabf1df53",
+      "role": "exp_probs_b.bias",
+      "shape": [
+        896
+      ],
+      "storage": "F32",
+      "families": [
+        {
+          "family": "Kimi-K3-GGUF",
+          "witness": {
+            "source": "tests/compute_models/d5_moe_execution_fragments.h",
+            "anchor": "inline Routing routing(",
+            "direct_cases": [
+              "VulkanMoeFragments.D5EightGgufProfilesFullMoe"
+            ],
+            "graph_cases": [
+              "VulkanGraphMoeFragments.D5EightGgufProfilesFullMoe"
+            ],
+            "verdict": "PENDING_CURRENT_REPLAY_OR_QUALIFIED_RECEIPT_REUSE"
+          }
+        }
+      ]
+    },
+    {
+      "ordinal": 68,
+      "id": "gd57295091e4ad903",
+      "role": "ssm_conv1d_k.weight",
+      "shape": [
+        4,
+        1,
+        12288
+      ],
+      "storage": "F32",
+      "families": [
+        {
+          "family": "Kimi-K3-GGUF",
+          "witness": {
+            "source": "tests/compute_models/cpu_c5_parameter_fragments.h",
+            "anchor": "inline Fragment convolution(",
+            "direct_cases": [
+              "C5ActualConvolutionParameters/VulkanCatalogueParameters.ActualGgufConvolutionStorageFeedsCompleteRecurrentState/gd57295091e4ad903"
+            ],
+            "graph_cases": [
+              "C5ActualConvolutionParameters/VulkanGraphCatalogueParameters.ActualGgufConvolutionStorageFeedsCompleteRecurrentState/gd57295091e4ad903"
+            ],
+            "verdict": "PENDING_CURRENT_REPLAY_OR_QUALIFIED_RECEIPT_REUSE"
+          }
+        }
+      ]
+    },
+    {
+      "ordinal": 69,
+      "id": "gd57295091e4ad903",
+      "role": "ssm_conv1d_q.weight",
+      "shape": [
+        4,
+        1,
+        12288
+      ],
+      "storage": "F32",
+      "families": [
+        {
+          "family": "Kimi-K3-GGUF",
+          "witness": {
+            "source": "tests/compute_models/cpu_c5_parameter_fragments.h",
+            "anchor": "inline Fragment convolution(",
+            "direct_cases": [
+              "C5ActualConvolutionParameters/VulkanCatalogueParameters.ActualGgufConvolutionStorageFeedsCompleteRecurrentState/gd57295091e4ad903"
+            ],
+            "graph_cases": [
+              "C5ActualConvolutionParameters/VulkanGraphCatalogueParameters.ActualGgufConvolutionStorageFeedsCompleteRecurrentState/gd57295091e4ad903"
+            ],
+            "verdict": "PENDING_CURRENT_REPLAY_OR_QUALIFIED_RECEIPT_REUSE"
+          }
+        }
+      ]
+    },
+    {
+      "ordinal": 70,
+      "id": "gd57295091e4ad903",
+      "role": "ssm_conv1d_v.weight",
+      "shape": [
+        4,
+        1,
+        12288
+      ],
+      "storage": "F32",
+      "families": [
+        {
+          "family": "Kimi-K3-GGUF",
+          "witness": {
+            "source": "tests/compute_models/cpu_c5_parameter_fragments.h",
+            "anchor": "inline Fragment convolution(",
+            "direct_cases": [
+              "C5ActualConvolutionParameters/VulkanCatalogueParameters.ActualGgufConvolutionStorageFeedsCompleteRecurrentState/gd57295091e4ad903"
+            ],
+            "graph_cases": [
+              "C5ActualConvolutionParameters/VulkanGraphCatalogueParameters.ActualGgufConvolutionStorageFeedsCompleteRecurrentState/gd57295091e4ad903"
+            ],
+            "verdict": "PENDING_CURRENT_REPLAY_OR_QUALIFIED_RECEIPT_REUSE"
+          }
+        }
+      ]
+    },
+    {
+      "ordinal": 71,
+      "id": "gde6f2b3637242ea4",
+      "role": "hc_attn_scale.weight",
+      "shape": [
+        3
+      ],
+      "storage": "F32",
+      "families": [
+        {
+          "family": "DeepSeek-V4-Flash-0731-GGUF",
+          "witness": {
+            "source": "tests/compute_models/d5_moe_semantic_fragments.h",
+            "anchor": "inline Fragment hyper_connection(",
+            "direct_cases": [
+              "VulkanMoeFragments.D5SevenProfilesHyperConnectionCore"
+            ],
+            "graph_cases": [
+              "VulkanGraphMoeFragments.D5SevenProfilesHyperConnectionCore"
+            ],
+            "verdict": "PENDING_CURRENT_REPLAY_OR_QUALIFIED_RECEIPT_REUSE"
+          }
+        },
+        {
+          "family": "DeepSeek-V4-Pro-0813-GGUF",
+          "witness": {
+            "source": "tests/compute_models/d5_moe_semantic_fragments.h",
+            "anchor": "inline Fragment hyper_connection(",
+            "direct_cases": [
+              "VulkanMoeFragments.D5SevenProfilesHyperConnectionCore"
+            ],
+            "graph_cases": [
+              "VulkanGraphMoeFragments.D5SevenProfilesHyperConnectionCore"
+            ],
+            "verdict": "PENDING_CURRENT_REPLAY_OR_QUALIFIED_RECEIPT_REUSE"
+          }
+        },
+        {
+          "family": "GLM-5.3-Flash-GGUF",
+          "witness": {
+            "source": "tests/compute_models/d5_moe_semantic_fragments.h",
+            "anchor": "inline Fragment hyper_connection(",
+            "direct_cases": [
+              "VulkanMoeFragments.D5SevenProfilesHyperConnectionCore"
+            ],
+            "graph_cases": [
+              "VulkanGraphMoeFragments.D5SevenProfilesHyperConnectionCore"
+            ],
+            "verdict": "PENDING_CURRENT_REPLAY_OR_QUALIFIED_RECEIPT_REUSE"
+          }
+        }
+      ]
+    },
+    {
+      "ordinal": 72,
+      "id": "gde6f2b3637242ea4",
+      "role": "hc_ffn_scale.weight",
+      "shape": [
+        3
+      ],
+      "storage": "F32",
+      "families": [
+        {
+          "family": "DeepSeek-V4-Flash-0731-GGUF",
+          "witness": {
+            "source": "tests/compute_models/d5_moe_semantic_fragments.h",
+            "anchor": "inline Fragment hyper_connection(",
+            "direct_cases": [
+              "VulkanMoeFragments.D5SevenProfilesHyperConnectionCore"
+            ],
+            "graph_cases": [
+              "VulkanGraphMoeFragments.D5SevenProfilesHyperConnectionCore"
+            ],
+            "verdict": "PENDING_CURRENT_REPLAY_OR_QUALIFIED_RECEIPT_REUSE"
+          }
+        },
+        {
+          "family": "DeepSeek-V4-Pro-0813-GGUF",
+          "witness": {
+            "source": "tests/compute_models/d5_moe_semantic_fragments.h",
+            "anchor": "inline Fragment hyper_connection(",
+            "direct_cases": [
+              "VulkanMoeFragments.D5SevenProfilesHyperConnectionCore"
+            ],
+            "graph_cases": [
+              "VulkanGraphMoeFragments.D5SevenProfilesHyperConnectionCore"
+            ],
+            "verdict": "PENDING_CURRENT_REPLAY_OR_QUALIFIED_RECEIPT_REUSE"
+          }
+        },
+        {
+          "family": "GLM-5.3-Flash-GGUF",
+          "witness": {
+            "source": "tests/compute_models/d5_moe_semantic_fragments.h",
+            "anchor": "inline Fragment hyper_connection(",
+            "direct_cases": [
+              "VulkanMoeFragments.D5SevenProfilesHyperConnectionCore"
+            ],
+            "graph_cases": [
+              "VulkanGraphMoeFragments.D5SevenProfilesHyperConnectionCore"
+            ],
+            "verdict": "PENDING_CURRENT_REPLAY_OR_QUALIFIED_RECEIPT_REUSE"
+          }
+        }
+      ]
+    },
+    {
+      "ordinal": 73,
+      "id": "ge7e2005b88a3235e",
+      "role": "exp_probs_b.bias",
+      "shape": [
+        384
+      ],
+      "storage": "F32",
+      "families": [
+        {
+          "family": "DeepSeek-V4-Pro-0813-GGUF",
+          "witness": {
+            "source": "tests/compute_models/d5_moe_execution_fragments.h",
+            "anchor": "inline Routing routing(",
+            "direct_cases": [
+              "C5ExactNewGgufMain/VulkanCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile102",
+              "C5ExactNewGgufMain/VulkanCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile103",
+              "C5ExactNewGgufMain/VulkanCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile89",
+              "C5ExactNewGgufMain/VulkanCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile90"
+            ],
+            "graph_cases": [
+              "C5ExactNewGgufMain/VulkanGraphCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile102",
+              "C5ExactNewGgufMain/VulkanGraphCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile103",
+              "C5ExactNewGgufMain/VulkanGraphCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile89",
+              "C5ExactNewGgufMain/VulkanGraphCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile90"
+            ],
+            "verdict": "PENDING_CURRENT_REPLAY_OR_QUALIFIED_RECEIPT_REUSE"
+          }
+        }
+      ]
+    },
+    {
+      "ordinal": 74,
+      "id": "gf480bf5fc2031d05",
+      "role": "ssm_a",
+      "shape": [
+        48
+      ],
+      "storage": "F32",
+      "families": [
+        {
+          "family": "Qwen3.8-27B-GGUF",
+          "witness": {
+            "source": "tests/compute_models/d5_qwen38_24t_semantic_fragments.h",
+            "anchor": "inline Fragment gdn(",
+            "direct_cases": [
+              "VulkanQwenRecurrent.D5NineProfilesUseCompleteGateAndActualStateFeedback"
+            ],
+            "graph_cases": [
+              "VulkanGraphQwenRecurrent.D5NineProfilesUseCompleteGateAndActualStateFeedback"
+            ],
+            "verdict": "PENDING_CURRENT_REPLAY_OR_QUALIFIED_RECEIPT_REUSE"
+          }
+        }
+      ]
+    },
+    {
+      "ordinal": 75,
+      "id": "gf480bf5fc2031d05",
+      "role": "ssm_dt.bias",
+      "shape": [
+        48
+      ],
+      "storage": "F32",
+      "families": [
+        {
+          "family": "Qwen3.8-27B-GGUF",
+          "witness": {
+            "source": "tests/compute_models/d5_qwen38_24t_semantic_fragments.h",
+            "anchor": "inline Fragment gdn(",
+            "direct_cases": [
+              "VulkanQwenRecurrent.D5NineProfilesUseCompleteGateAndActualStateFeedback"
+            ],
+            "graph_cases": [
+              "VulkanGraphQwenRecurrent.D5NineProfilesUseCompleteGateAndActualStateFeedback"
+            ],
+            "verdict": "PENDING_CURRENT_REPLAY_OR_QUALIFIED_RECEIPT_REUSE"
+          }
+        }
+      ]
+    },
+    {
+      "ordinal": 76,
+      "id": "gf4c46eb70564ef43",
+      "role": "ssm_conv1d.weight",
+      "shape": [
+        4,
+        10240
+      ],
+      "storage": "F32",
+      "families": [
+        {
+          "family": "Qwen3.8-27B-GGUF",
+          "witness": {
+            "source": "tests/compute_models/cpu_c5_parameter_fragments.h",
+            "anchor": "inline Fragment convolution(",
+            "direct_cases": [
+              "C5ActualConvolutionParameters/VulkanCatalogueParameters.ActualGgufConvolutionStorageFeedsCompleteRecurrentState/gf4c46eb70564ef43"
+            ],
+            "graph_cases": [
+              "C5ActualConvolutionParameters/VulkanGraphCatalogueParameters.ActualGgufConvolutionStorageFeedsCompleteRecurrentState/gf4c46eb70564ef43"
+            ],
+            "verdict": "PENDING_CURRENT_REPLAY_OR_QUALIFIED_RECEIPT_REUSE"
+          }
+        }
+      ]
+    },
+    {
+      "ordinal": 77,
+      "id": "gf7a8ea4874da3508",
+      "role": "attn_k_norm.weight",
+      "shape": [
+        256
+      ],
+      "storage": "F32",
+      "families": [
+        {
+          "family": "Qwen3.5-2B-GGUF",
+          "witness": {
+            "source": "tests/compute_models/cpu_c5_qwen_attention.h",
+            "anchor": "auto weight = f.constant(dense({depth})",
+            "direct_cases": [
+              "VulkanCatalogueParameters.Qwen24ActualHalfSplitFrequencyNormAndKvFeedback"
+            ],
+            "graph_cases": [
+              "VulkanGraphCatalogueParameters.Qwen24ActualHalfSplitFrequencyNormAndKvFeedback"
+            ],
+            "verdict": "PENDING_CURRENT_REPLAY_OR_QUALIFIED_RECEIPT_REUSE"
+          }
+        },
+        {
+          "family": "Qwen3.8-2.4T-A95B-GGUF",
+          "witness": {
+            "source": "tests/compute_models/cpu_c5_qwen_attention.h",
+            "anchor": "auto weight = f.constant(dense({depth})",
+            "direct_cases": [
+              "VulkanCatalogueParameters.Qwen24ActualHalfSplitFrequencyNormAndKvFeedback"
+            ],
+            "graph_cases": [
+              "VulkanGraphCatalogueParameters.Qwen24ActualHalfSplitFrequencyNormAndKvFeedback"
+            ],
+            "verdict": "PENDING_CURRENT_REPLAY_OR_QUALIFIED_RECEIPT_REUSE"
+          }
+        },
+        {
+          "family": "Qwen3.8-27B-GGUF",
+          "witness": {
+            "source": "tests/compute_models/cpu_c5_qwen_attention.h",
+            "anchor": "auto weight = f.constant(dense({depth})",
+            "direct_cases": [
+              "VulkanCatalogueParameters.Qwen24ActualHalfSplitFrequencyNormAndKvFeedback"
+            ],
+            "graph_cases": [
+              "VulkanGraphCatalogueParameters.Qwen24ActualHalfSplitFrequencyNormAndKvFeedback"
+            ],
+            "verdict": "PENDING_CURRENT_REPLAY_OR_QUALIFIED_RECEIPT_REUSE"
+          }
+        }
+      ]
+    },
+    {
+      "ordinal": 78,
+      "id": "gf7a8ea4874da3508",
+      "role": "attn_q_norm.weight",
+      "shape": [
+        256
+      ],
+      "storage": "F32",
+      "families": [
+        {
+          "family": "Qwen3.5-2B-GGUF",
+          "witness": {
+            "source": "tests/compute_models/cpu_c5_qwen_attention.h",
+            "anchor": "auto weight = f.constant(dense({depth})",
+            "direct_cases": [
+              "VulkanCatalogueParameters.Qwen24ActualHalfSplitFrequencyNormAndKvFeedback"
+            ],
+            "graph_cases": [
+              "VulkanGraphCatalogueParameters.Qwen24ActualHalfSplitFrequencyNormAndKvFeedback"
+            ],
+            "verdict": "PENDING_CURRENT_REPLAY_OR_QUALIFIED_RECEIPT_REUSE"
+          }
+        },
+        {
+          "family": "Qwen3.8-2.4T-A95B-GGUF",
+          "witness": {
+            "source": "tests/compute_models/cpu_c5_qwen_attention.h",
+            "anchor": "auto weight = f.constant(dense({depth})",
+            "direct_cases": [
+              "VulkanCatalogueParameters.Qwen24ActualHalfSplitFrequencyNormAndKvFeedback"
+            ],
+            "graph_cases": [
+              "VulkanGraphCatalogueParameters.Qwen24ActualHalfSplitFrequencyNormAndKvFeedback"
+            ],
+            "verdict": "PENDING_CURRENT_REPLAY_OR_QUALIFIED_RECEIPT_REUSE"
+          }
+        },
+        {
+          "family": "Qwen3.8-27B-GGUF",
+          "witness": {
+            "source": "tests/compute_models/cpu_c5_qwen_attention.h",
+            "anchor": "auto weight = f.constant(dense({depth})",
+            "direct_cases": [
+              "VulkanCatalogueParameters.Qwen24ActualHalfSplitFrequencyNormAndKvFeedback"
+            ],
+            "graph_cases": [
+              "VulkanGraphCatalogueParameters.Qwen24ActualHalfSplitFrequencyNormAndKvFeedback"
+            ],
+            "verdict": "PENDING_CURRENT_REPLAY_OR_QUALIFIED_RECEIPT_REUSE"
+          }
+        }
+      ]
+    },
+    {
+      "ordinal": 79,
+      "id": "gf7a8ea4874da3508",
+      "role": "exp_probs_b.bias",
+      "shape": [
+        256
+      ],
+      "storage": "F32",
+      "families": [
+        {
+          "family": "DeepSeek-V4-Flash-0731-GGUF",
+          "witness": {
+            "source": "tests/compute_models/d5_moe_execution_fragments.h",
+            "anchor": "inline Routing routing(",
+            "direct_cases": [
+              "C5ExactNewGgufMain/VulkanCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile102",
+              "C5ExactNewGgufMain/VulkanCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile103",
+              "C5ExactNewGgufMain/VulkanCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile89",
+              "C5ExactNewGgufMain/VulkanCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile90"
+            ],
+            "graph_cases": [
+              "C5ExactNewGgufMain/VulkanGraphCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile102",
+              "C5ExactNewGgufMain/VulkanGraphCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile103",
+              "C5ExactNewGgufMain/VulkanGraphCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile89",
+              "C5ExactNewGgufMain/VulkanGraphCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile90"
+            ],
+            "verdict": "PENDING_CURRENT_REPLAY_OR_QUALIFIED_RECEIPT_REUSE"
+          }
+        },
+        {
+          "family": "GLM-5.3-GGUF",
+          "witness": {
+            "source": "tests/compute_models/d5_moe_execution_fragments.h",
+            "anchor": "inline Routing routing(",
+            "direct_cases": [
+              "VulkanMoeFragments.D5EightGgufProfilesFullMoe"
+            ],
+            "graph_cases": [
+              "VulkanGraphMoeFragments.D5EightGgufProfilesFullMoe"
+            ],
+            "verdict": "PENDING_CURRENT_REPLAY_OR_QUALIFIED_RECEIPT_REUSE"
+          }
+        }
+      ]
+    }
+  ],
+  "families": [
+    {
+      "family": "Qwen3.5-2B-GGUF",
+      "profiles": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21
+      ],
+      "regions": [
+        {
+          "region": "R02",
+          "witness": {
+            "source": "tests/compute_models/cpu_c5_qwen_attention.h",
+            "anchor": "inline Fragment norm_residual(",
+            "direct_cases": [
+              "VulkanCatalogueParameters.QwenActualWidthsUseDeclaredFloatNormEpsilon"
+            ],
+            "graph_cases": [
+              "VulkanGraphCatalogueParameters.QwenActualWidthsUseDeclaredFloatNormEpsilon"
+            ],
+            "verdict": "PENDING_CURRENT_REPLAY_OR_QUALIFIED_RECEIPT_REUSE"
+          }
+        },
+        {
+          "region": "R04",
+          "witness": {
+            "source": "tests/compute_models/cpu_c5_qwen_attention.h",
+            "anchor": "inline Fragment make(",
+            "direct_cases": [
+              "VulkanCatalogueParameters.Qwen24ActualHalfSplitFrequencyNormAndKvFeedback"
+            ],
+            "graph_cases": [
+              "VulkanGraphCatalogueParameters.Qwen24ActualHalfSplitFrequencyNormAndKvFeedback"
+            ],
+            "verdict": "PENDING_CURRENT_REPLAY_OR_QUALIFIED_RECEIPT_REUSE"
+          }
+        },
+        {
+          "region": "R05",
+          "witness": {
+            "source": "tests/compute_models/d5_qwen38_24t_semantic_fragments.h",
+            "anchor": "inline Fragment gdn(",
+            "direct_cases": [
+              "VulkanQwenRecurrent.D5NineProfilesUseCompleteGateAndActualStateFeedback"
+            ],
+            "graph_cases": [
+              "VulkanGraphQwenRecurrent.D5NineProfilesUseCompleteGateAndActualStateFeedback"
+            ],
+            "verdict": "PENDING_CURRENT_REPLAY_OR_QUALIFIED_RECEIPT_REUSE"
+          }
+        }
+      ]
+    },
+    {
+      "family": "Qwen3.8-27B-GGUF",
+      "profiles": [
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40,
+        41,
+        42,
+        43,
+        44,
+        45,
+        46
+      ],
+      "regions": [
+        {
+          "region": "R02",
+          "witness": {
+            "source": "tests/compute_models/cpu_c5_qwen_attention.h",
+            "anchor": "inline Fragment norm_residual(",
+            "direct_cases": [
+              "VulkanCatalogueParameters.QwenActualWidthsUseDeclaredFloatNormEpsilon"
+            ],
+            "graph_cases": [
+              "VulkanGraphCatalogueParameters.QwenActualWidthsUseDeclaredFloatNormEpsilon"
+            ],
+            "verdict": "PENDING_CURRENT_REPLAY_OR_QUALIFIED_RECEIPT_REUSE"
+          }
+        },
+        {
+          "region": "R04",
+          "witness": {
+            "source": "tests/compute_models/cpu_c5_qwen_attention.h",
+            "anchor": "inline Fragment make(",
+            "direct_cases": [
+              "VulkanCatalogueParameters.Qwen24ActualHalfSplitFrequencyNormAndKvFeedback"
+            ],
+            "graph_cases": [
+              "VulkanGraphCatalogueParameters.Qwen24ActualHalfSplitFrequencyNormAndKvFeedback"
+            ],
+            "verdict": "PENDING_CURRENT_REPLAY_OR_QUALIFIED_RECEIPT_REUSE"
+          }
+        },
+        {
+          "region": "R05",
+          "witness": {
+            "source": "tests/compute_models/d5_qwen38_24t_semantic_fragments.h",
+            "anchor": "inline Fragment gdn(",
+            "direct_cases": [
+              "VulkanQwenRecurrent.D5NineProfilesUseCompleteGateAndActualStateFeedback"
+            ],
+            "graph_cases": [
+              "VulkanGraphQwenRecurrent.D5NineProfilesUseCompleteGateAndActualStateFeedback"
+            ],
+            "verdict": "PENDING_CURRENT_REPLAY_OR_QUALIFIED_RECEIPT_REUSE"
+          }
+        },
+        {
+          "region": "R13",
+          "witness": {
+            "source": "tests/compute_models/cpu_c4_qwen_mtp.h",
+            "anchor": "inline Fragment decoder(",
+            "direct_cases": [
+              "VulkanCurrentState.QwenNamedQ4SidecarUsesActualQ3Q4Q6Mtp"
+            ],
+            "graph_cases": [
+              "VulkanGraphCurrentState.QwenNamedQ4SidecarUsesActualQ3Q4Q6Mtp"
+            ],
+            "verdict": "PENDING_CURRENT_REPLAY_OR_QUALIFIED_RECEIPT_REUSE"
+          }
+        }
+      ]
+    },
+    {
+      "family": "Qwen3.8-2.4T-A95B-GGUF",
+      "profiles": [
+        47,
+        48,
+        49,
+        50,
+        51,
+        52,
+        53,
+        54,
+        55
+      ],
+      "regions": [
+        {
+          "region": "R02",
+          "witness": {
+            "source": "tests/compute_models/cpu_c5_qwen_attention.h",
+            "anchor": "inline Fragment norm_residual(",
+            "direct_cases": [
+              "VulkanCatalogueParameters.QwenActualWidthsUseDeclaredFloatNormEpsilon"
+            ],
+            "graph_cases": [
+              "VulkanGraphCatalogueParameters.QwenActualWidthsUseDeclaredFloatNormEpsilon"
+            ],
+            "verdict": "PENDING_CURRENT_REPLAY_OR_QUALIFIED_RECEIPT_REUSE"
+          }
+        },
+        {
+          "region": "R04",
+          "witness": {
+            "source": "tests/compute_models/cpu_c5_qwen_attention.h",
+            "anchor": "inline Fragment make(",
+            "direct_cases": [
+              "VulkanCatalogueParameters.Qwen24ActualHalfSplitFrequencyNormAndKvFeedback"
+            ],
+            "graph_cases": [
+              "VulkanGraphCatalogueParameters.Qwen24ActualHalfSplitFrequencyNormAndKvFeedback"
+            ],
+            "verdict": "PENDING_CURRENT_REPLAY_OR_QUALIFIED_RECEIPT_REUSE"
+          }
+        },
+        {
+          "region": "R05",
+          "witness": {
+            "source": "tests/compute_models/d5_qwen38_24t_semantic_fragments.h",
+            "anchor": "inline Fragment gdn(",
+            "direct_cases": [
+              "VulkanQwenRecurrent.D5NineProfilesUseCompleteGateAndActualStateFeedback"
+            ],
+            "graph_cases": [
+              "VulkanGraphQwenRecurrent.D5NineProfilesUseCompleteGateAndActualStateFeedback"
+            ],
+            "verdict": "PENDING_CURRENT_REPLAY_OR_QUALIFIED_RECEIPT_REUSE"
+          }
+        },
+        {
+          "region": "R10",
+          "witness": {
+            "source": "tests/compute_models/cpu_c5_qwen_nextn.h",
+            "anchor": "Grouped eg(",
+            "direct_cases": [
+              "VulkanCatalogueParameters.Qwen24CompleteNextNUsesMixedRolesCacheMoeAndFullHead"
+            ],
+            "graph_cases": [
+              "VulkanGraphCatalogueParameters.Qwen24CompleteNextNUsesMixedRolesCacheMoeAndFullHead"
+            ],
+            "verdict": "PENDING_CURRENT_REPLAY_OR_QUALIFIED_RECEIPT_REUSE"
+          }
+        },
+        {
+          "region": "R11",
+          "witness": {
+            "source": "tests/compute_models/cpu_c5_qwen_nextn.h",
+            "anchor": "Grouped ed(",
+            "direct_cases": [
+              "VulkanCatalogueParameters.Qwen24CompleteNextNUsesMixedRolesCacheMoeAndFullHead"
+            ],
+            "graph_cases": [
+              "VulkanGraphCatalogueParameters.Qwen24CompleteNextNUsesMixedRolesCacheMoeAndFullHead"
+            ],
+            "verdict": "PENDING_CURRENT_REPLAY_OR_QUALIFIED_RECEIPT_REUSE"
+          }
+        },
+        {
+          "region": "R13",
+          "witness": {
+            "source": "tests/compute_models/cpu_c5_qwen_nextn.h",
+            "anchor": "inline Fragment decoder(",
+            "direct_cases": [
+              "VulkanCatalogueParameters.Qwen24CompleteNextNUsesMixedRolesCacheMoeAndFullHead"
+            ],
+            "graph_cases": [
+              "VulkanGraphCatalogueParameters.Qwen24CompleteNextNUsesMixedRolesCacheMoeAndFullHead"
+            ],
+            "verdict": "PENDING_CURRENT_REPLAY_OR_QUALIFIED_RECEIPT_REUSE"
+          }
+        }
+      ]
+    },
+    {
+      "family": "Kimi-K3-GGUF",
+      "profiles": [
+        56,
+        57,
+        58,
+        59,
+        60,
+        61,
+        62,
+        63,
+        64
+      ],
+      "regions": [
+        {
+          "region": "R02",
+          "witness": {
+            "source": "tests/compute_models/d5_kimi_remaining_fragments.h",
+            "anchor": "inline Fragment dense_ffn(",
+            "direct_cases": [
+              "VulkanMoeFragments.D5KimiDenseFfn"
+            ],
+            "graph_cases": [
+              "VulkanGraphMoeFragments.D5KimiDenseFfn"
+            ],
+            "verdict": "PENDING_CURRENT_REPLAY_OR_QUALIFIED_RECEIPT_REUSE"
+          }
+        },
+        {
+          "region": "R06",
+          "witness": {
+            "source": "tests/compute_models/d5_kda_full_fragments.h",
+            "anchor": "inline Fragment complete(",
+            "direct_cases": [
+              "VulkanMoeFragments.D5SixProfilesFullKdaChainAndTwoStates"
+            ],
+            "graph_cases": [
+              "VulkanGraphMoeFragments.D5SixProfilesFullKdaChainAndTwoStates"
+            ],
+            "verdict": "PENDING_CURRENT_REPLAY_OR_QUALIFIED_RECEIPT_REUSE"
+          }
+        },
+        {
+          "region": "R07",
+          "witness": {
+            "source": "tests/compute_models/d5_kimi_remaining_fragments.h",
+            "anchor": "inline Fragment mla(",
+            "direct_cases": [
+              "VulkanMoeFragments.D5KimiAbsorbedMlaWithCache"
+            ],
+            "graph_cases": [
+              "VulkanGraphMoeFragments.D5KimiAbsorbedMlaWithCache"
+            ],
+            "verdict": "PENDING_CURRENT_REPLAY_OR_QUALIFIED_RECEIPT_REUSE"
+          }
+        },
+        {
+          "region": "R10",
+          "witness": {
+            "source": "tests/compute_models/d5_moe_execution_fragments.h",
+            "anchor": "inline Fragment moe_chain(",
+            "direct_cases": [
+              "VulkanMoeFragments.D5EightGgufProfilesFullMoe"
+            ],
+            "graph_cases": [
+              "VulkanGraphMoeFragments.D5EightGgufProfilesFullMoe"
+            ],
+            "verdict": "PENDING_CURRENT_REPLAY_OR_QUALIFIED_RECEIPT_REUSE"
+          }
+        },
+        {
+          "region": "R11",
+          "witness": {
+            "source": "tests/compute_models/d5_moe_execution_fragments.h",
+            "anchor": "inline Fragment moe_chain(",
+            "direct_cases": [
+              "VulkanMoeFragments.D5EightGgufProfilesFullMoe"
+            ],
+            "graph_cases": [
+              "VulkanGraphMoeFragments.D5EightGgufProfilesFullMoe"
+            ],
+            "verdict": "PENDING_CURRENT_REPLAY_OR_QUALIFIED_RECEIPT_REUSE"
+          }
+        },
+        {
+          "region": "R12",
+          "witness": {
+            "source": "tests/compute_models/d5_kimi_remaining_fragments.h",
+            "anchor": "inline Fragment attention_residual(",
+            "direct_cases": [
+              "VulkanMoeFragments.D5KimiAttentionResidualBanking"
+            ],
+            "graph_cases": [
+              "VulkanGraphMoeFragments.D5KimiAttentionResidualBanking"
+            ],
+            "verdict": "PENDING_CURRENT_REPLAY_OR_QUALIFIED_RECEIPT_REUSE"
+          }
+        }
+      ]
+    },
+    {
+      "family": "GLM-5.3-GGUF",
+      "profiles": [
+        65,
+        66,
+        67,
+        68,
+        69,
+        70,
+        71,
+        72,
+        73,
+        74,
+        75,
+        76
+      ],
+      "regions": [
+        {
+          "region": "R02",
+          "witness": {
+            "source": "tests/compute_models/d5_glm_remaining_fragments.h",
+            "anchor": "inline Fragment dense_ffn(",
+            "direct_cases": [
+              "VulkanMoeFragments.D5GlmGgufDenseFfn"
+            ],
+            "graph_cases": [
+              "VulkanGraphMoeFragments.D5GlmGgufDenseFfn"
+            ],
+            "verdict": "PENDING_CURRENT_REPLAY_OR_QUALIFIED_RECEIPT_REUSE"
+          }
+        },
+        {
+          "region": "R07",
+          "witness": {
+            "source": "tests/compute_models/d5_glm_remaining_fragments.h",
+            "anchor": "inline Fragment mla(",
+            "direct_cases": [
+              "VulkanMoeFragments.D5GlmGgufAbsorbedMlaWithCache"
+            ],
+            "graph_cases": [
+              "VulkanGraphMoeFragments.D5GlmGgufAbsorbedMlaWithCache"
+            ],
+            "verdict": "PENDING_CURRENT_REPLAY_OR_QUALIFIED_RECEIPT_REUSE"
+          }
+        },
+        {
+          "region": "R08",
+          "witness": {
+            "source": "tests/compute_models/d5_glm_remaining_fragments.h",
+            "anchor": "inline Fragment sparse_attention(",
+            "direct_cases": [
+              "VulkanMoeFragments.D5GlmGgufDsaSelectionConsumesMlaCache"
+            ],
+            "graph_cases": [
+              "VulkanGraphMoeFragments.D5GlmGgufDsaSelectionConsumesMlaCache"
+            ],
+            "verdict": "PENDING_CURRENT_REPLAY_OR_QUALIFIED_RECEIPT_REUSE"
+          }
+        },
+        {
+          "region": "R09",
+          "witness": {
+            "source": "tests/compute_models/d5_glm_remaining_fragments.h",
+            "anchor": "inline Fragment sparse_attention(",
+            "direct_cases": [
+              "VulkanMoeFragments.D5GlmGgufMtpIndexCarryReset"
+            ],
+            "graph_cases": [
+              "VulkanGraphMoeFragments.D5GlmGgufMtpIndexCarryReset"
+            ],
+            "verdict": "PENDING_CURRENT_REPLAY_OR_QUALIFIED_RECEIPT_REUSE"
+          }
+        },
+        {
+          "region": "R10",
+          "witness": {
+            "source": "tests/compute_models/d5_moe_execution_fragments.h",
+            "anchor": "inline Fragment moe_chain(",
+            "direct_cases": [
+              "VulkanMoeFragments.D5EightGgufProfilesFullMoe"
+            ],
+            "graph_cases": [
+              "VulkanGraphMoeFragments.D5EightGgufProfilesFullMoe"
+            ],
+            "verdict": "PENDING_CURRENT_REPLAY_OR_QUALIFIED_RECEIPT_REUSE"
+          }
+        },
+        {
+          "region": "R11",
+          "witness": {
+            "source": "tests/compute_models/d5_moe_execution_fragments.h",
+            "anchor": "inline Fragment moe_chain(",
+            "direct_cases": [
+              "VulkanMoeFragments.D5EightGgufProfilesFullMoe"
+            ],
+            "graph_cases": [
+              "VulkanGraphMoeFragments.D5EightGgufProfilesFullMoe"
+            ],
+            "verdict": "PENDING_CURRENT_REPLAY_OR_QUALIFIED_RECEIPT_REUSE"
+          }
+        },
+        {
+          "region": "R13",
+          "witness": {
+            "source": "tests/compute_models/d5_glm_remaining_fragments.h",
+            "anchor": "inline Fragment mtp_decoder(",
+            "direct_cases": [
+              "VulkanMoeFragments.D5GlmGgufNextNDecoderWithCarryAndFullHead"
+            ],
+            "graph_cases": [
+              "VulkanGraphMoeFragments.D5GlmGgufNextNDecoderWithCarryAndFullHead"
+            ],
+            "verdict": "PENDING_CURRENT_REPLAY_OR_QUALIFIED_RECEIPT_REUSE"
+          }
+        }
+      ]
+    },
+    {
+      "family": "GLM-5.3-Flash-GGUF",
+      "profiles": [
+        77,
+        78,
+        79,
+        80,
+        81,
+        82,
+        83,
+        84,
+        85,
+        86,
+        87,
+        88
+      ],
+      "regions": [
+        {
+          "region": "R02",
+          "witness": {
+            "source": "tests/compute_models/d5_glm_remaining_fragments.h",
+            "anchor": "inline Fragment dense_ffn(",
+            "direct_cases": [
+              "VulkanMoeFragments.D5GlmGgufDenseFfn"
+            ],
+            "graph_cases": [
+              "VulkanGraphMoeFragments.D5GlmGgufDenseFfn"
+            ],
+            "verdict": "PENDING_CURRENT_REPLAY_OR_QUALIFIED_RECEIPT_REUSE"
+          }
+        },
+        {
+          "region": "R06",
+          "witness": {
+            "source": "tests/compute_models/d5_kda_full_fragments.h",
+            "anchor": "inline Fragment complete(",
+            "direct_cases": [
+              "VulkanMoeFragments.D5SixProfilesFullKdaChainAndTwoStates"
+            ],
+            "graph_cases": [
+              "VulkanGraphMoeFragments.D5SixProfilesFullKdaChainAndTwoStates"
+            ],
+            "verdict": "PENDING_CURRENT_REPLAY_OR_QUALIFIED_RECEIPT_REUSE"
+          }
+        },
+        {
+          "region": "R07",
+          "witness": {
+            "source": "tests/compute_models/d5_glm_remaining_fragments.h",
+            "anchor": "inline Fragment mla(",
+            "direct_cases": [
+              "VulkanMoeFragments.D5GlmGgufAbsorbedMlaWithCache"
+            ],
+            "graph_cases": [
+              "VulkanGraphMoeFragments.D5GlmGgufAbsorbedMlaWithCache"
+            ],
+            "verdict": "PENDING_CURRENT_REPLAY_OR_QUALIFIED_RECEIPT_REUSE"
+          }
+        },
+        {
+          "region": "R08",
+          "witness": {
+            "source": "tests/compute_models/d5_glm_remaining_fragments.h",
+            "anchor": "inline Fragment sparse_attention(",
+            "direct_cases": [
+              "VulkanMoeFragments.D5GlmGgufDsaSelectionConsumesMlaCache"
+            ],
+            "graph_cases": [
+              "VulkanGraphMoeFragments.D5GlmGgufDsaSelectionConsumesMlaCache"
+            ],
+            "verdict": "PENDING_CURRENT_REPLAY_OR_QUALIFIED_RECEIPT_REUSE"
+          }
+        },
+        {
+          "region": "R09",
+          "witness": {
+            "source": "tests/compute_models/d5_glm_remaining_fragments.h",
+            "anchor": "inline Fragment indexer(",
+            "direct_cases": [
+              "VulkanMoeFragments.D5GlmFlashPooledIndexerWithTail"
+            ],
+            "graph_cases": [
+              "VulkanGraphMoeFragments.D5GlmFlashPooledIndexerWithTail"
+            ],
+            "verdict": "PENDING_CURRENT_REPLAY_OR_QUALIFIED_RECEIPT_REUSE"
+          }
+        },
+        {
+          "region": "R10",
+          "witness": {
+            "source": "tests/compute_models/d5_moe_execution_fragments.h",
+            "anchor": "inline Fragment moe_chain(",
+            "direct_cases": [
+              "VulkanMoeFragments.D5EightGgufProfilesFullMoe"
+            ],
+            "graph_cases": [
+              "VulkanGraphMoeFragments.D5EightGgufProfilesFullMoe"
+            ],
+            "verdict": "PENDING_CURRENT_REPLAY_OR_QUALIFIED_RECEIPT_REUSE"
+          }
+        },
+        {
+          "region": "R11",
+          "witness": {
+            "source": "tests/compute_models/d5_moe_execution_fragments.h",
+            "anchor": "inline Fragment moe_chain(",
+            "direct_cases": [
+              "VulkanMoeFragments.D5EightGgufProfilesFullMoe"
+            ],
+            "graph_cases": [
+              "VulkanGraphMoeFragments.D5EightGgufProfilesFullMoe"
+            ],
+            "verdict": "PENDING_CURRENT_REPLAY_OR_QUALIFIED_RECEIPT_REUSE"
+          }
+        },
+        {
+          "region": "R12",
+          "witness": {
+            "source": "tests/compute_models/d5_glm_remaining_fragments.h",
+            "anchor": "inline Fragment hyper_connection(",
+            "direct_cases": [
+              "VulkanMoeFragments.D5GlmFlashWeightedHyperConnection"
+            ],
+            "graph_cases": [
+              "VulkanGraphMoeFragments.D5GlmFlashWeightedHyperConnection"
+            ],
+            "verdict": "PENDING_CURRENT_REPLAY_OR_QUALIFIED_RECEIPT_REUSE"
+          }
+        },
+        {
+          "region": "R13",
+          "witness": {
+            "source": "tests/compute_models/d5_glm_remaining_fragments.h",
+            "anchor": "inline Fragment mtp_decoder(",
+            "direct_cases": [
+              "VulkanMoeFragments.D5GlmGgufNextNDecoderWithCarryAndFullHead"
+            ],
+            "graph_cases": [
+              "VulkanGraphMoeFragments.D5GlmGgufNextNDecoderWithCarryAndFullHead"
+            ],
+            "verdict": "PENDING_CURRENT_REPLAY_OR_QUALIFIED_RECEIPT_REUSE"
+          }
+        }
+      ]
+    },
+    {
+      "family": "DeepSeek-V4-Pro-0813-GGUF",
+      "profiles": [
+        89,
+        90
+      ],
+      "regions": [
+        {
+          "region": "R02",
+          "witness": {
+            "source": "tests/compute_models/cpu_c5_parameter_fragments.h",
+            "anchor": "inline d5_moe_execution_cases::Case new_deepseek_case(",
+            "direct_cases": [
+              "C5ExactNewGgufMain/VulkanCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile102",
+              "C5ExactNewGgufMain/VulkanCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile103",
+              "C5ExactNewGgufMain/VulkanCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile89",
+              "C5ExactNewGgufMain/VulkanCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile90"
+            ],
+            "graph_cases": [
+              "C5ExactNewGgufMain/VulkanGraphCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile102",
+              "C5ExactNewGgufMain/VulkanGraphCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile103",
+              "C5ExactNewGgufMain/VulkanGraphCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile89",
+              "C5ExactNewGgufMain/VulkanGraphCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile90"
+            ],
+            "verdict": "PENDING_CURRENT_REPLAY_OR_QUALIFIED_RECEIPT_REUSE"
+          }
+        },
+        {
+          "region": "R07",
+          "witness": {
+            "source": "tests/compute_models/cpu_c5_parameter_fragments.h",
+            "anchor": "inline d5_moe_execution_cases::Case new_deepseek_case(",
+            "direct_cases": [
+              "C5ExactNewGgufMain/VulkanCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile102",
+              "C5ExactNewGgufMain/VulkanCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile103",
+              "C5ExactNewGgufMain/VulkanCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile89",
+              "C5ExactNewGgufMain/VulkanCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile90"
+            ],
+            "graph_cases": [
+              "C5ExactNewGgufMain/VulkanGraphCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile102",
+              "C5ExactNewGgufMain/VulkanGraphCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile103",
+              "C5ExactNewGgufMain/VulkanGraphCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile89",
+              "C5ExactNewGgufMain/VulkanGraphCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile90"
+            ],
+            "verdict": "PENDING_CURRENT_REPLAY_OR_QUALIFIED_RECEIPT_REUSE"
+          }
+        },
+        {
+          "region": "R08",
+          "witness": {
+            "source": "tests/compute_models/cpu_c5_parameter_fragments.h",
+            "anchor": "inline d5_moe_execution_cases::Case new_deepseek_case(",
+            "direct_cases": [
+              "C5ExactNewGgufMain/VulkanCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile102",
+              "C5ExactNewGgufMain/VulkanCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile103",
+              "C5ExactNewGgufMain/VulkanCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile89",
+              "C5ExactNewGgufMain/VulkanCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile90"
+            ],
+            "graph_cases": [
+              "C5ExactNewGgufMain/VulkanGraphCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile102",
+              "C5ExactNewGgufMain/VulkanGraphCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile103",
+              "C5ExactNewGgufMain/VulkanGraphCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile89",
+              "C5ExactNewGgufMain/VulkanGraphCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile90"
+            ],
+            "verdict": "PENDING_CURRENT_REPLAY_OR_QUALIFIED_RECEIPT_REUSE"
+          }
+        },
+        {
+          "region": "R09",
+          "witness": {
+            "source": "tests/compute_models/cpu_c5_parameter_fragments.h",
+            "anchor": "inline d5_moe_execution_cases::Case new_deepseek_case(",
+            "direct_cases": [
+              "C5ExactNewGgufMain/VulkanCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile102",
+              "C5ExactNewGgufMain/VulkanCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile103",
+              "C5ExactNewGgufMain/VulkanCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile89",
+              "C5ExactNewGgufMain/VulkanCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile90"
+            ],
+            "graph_cases": [
+              "C5ExactNewGgufMain/VulkanGraphCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile102",
+              "C5ExactNewGgufMain/VulkanGraphCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile103",
+              "C5ExactNewGgufMain/VulkanGraphCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile89",
+              "C5ExactNewGgufMain/VulkanGraphCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile90"
+            ],
+            "verdict": "PENDING_CURRENT_REPLAY_OR_QUALIFIED_RECEIPT_REUSE"
+          }
+        },
+        {
+          "region": "R10",
+          "witness": {
+            "source": "tests/compute_models/cpu_c5_parameter_fragments.h",
+            "anchor": "inline d5_moe_execution_cases::Case new_deepseek_case(",
+            "direct_cases": [
+              "C5ExactNewGgufMain/VulkanCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile102",
+              "C5ExactNewGgufMain/VulkanCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile103",
+              "C5ExactNewGgufMain/VulkanCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile89",
+              "C5ExactNewGgufMain/VulkanCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile90"
+            ],
+            "graph_cases": [
+              "C5ExactNewGgufMain/VulkanGraphCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile102",
+              "C5ExactNewGgufMain/VulkanGraphCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile103",
+              "C5ExactNewGgufMain/VulkanGraphCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile89",
+              "C5ExactNewGgufMain/VulkanGraphCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile90"
+            ],
+            "verdict": "PENDING_CURRENT_REPLAY_OR_QUALIFIED_RECEIPT_REUSE"
+          }
+        },
+        {
+          "region": "R11",
+          "witness": {
+            "source": "tests/compute_models/cpu_c5_parameter_fragments.h",
+            "anchor": "inline d5_moe_execution_cases::Case new_deepseek_case(",
+            "direct_cases": [
+              "C5ExactNewGgufMain/VulkanCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile102",
+              "C5ExactNewGgufMain/VulkanCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile103",
+              "C5ExactNewGgufMain/VulkanCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile89",
+              "C5ExactNewGgufMain/VulkanCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile90"
+            ],
+            "graph_cases": [
+              "C5ExactNewGgufMain/VulkanGraphCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile102",
+              "C5ExactNewGgufMain/VulkanGraphCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile103",
+              "C5ExactNewGgufMain/VulkanGraphCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile89",
+              "C5ExactNewGgufMain/VulkanGraphCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile90"
+            ],
+            "verdict": "PENDING_CURRENT_REPLAY_OR_QUALIFIED_RECEIPT_REUSE"
+          }
+        },
+        {
+          "region": "R12",
+          "witness": {
+            "source": "tests/compute_models/cpu_c5_parameter_fragments.h",
+            "anchor": "inline d5_moe_execution_cases::Case new_deepseek_case(",
+            "direct_cases": [
+              "C5ExactNewGgufMain/VulkanCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile102",
+              "C5ExactNewGgufMain/VulkanCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile103",
+              "C5ExactNewGgufMain/VulkanCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile89",
+              "C5ExactNewGgufMain/VulkanCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile90"
+            ],
+            "graph_cases": [
+              "C5ExactNewGgufMain/VulkanGraphCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile102",
+              "C5ExactNewGgufMain/VulkanGraphCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile103",
+              "C5ExactNewGgufMain/VulkanGraphCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile89",
+              "C5ExactNewGgufMain/VulkanGraphCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile90"
+            ],
+            "verdict": "PENDING_CURRENT_REPLAY_OR_QUALIFIED_RECEIPT_REUSE"
+          }
+        }
+      ]
+    },
+    {
+      "family": "DeepSeek-V4-Flash-0731-GGUF",
+      "profiles": [
+        91,
+        92,
+        93,
+        94,
+        95,
+        96,
+        97,
+        98,
+        99,
+        100,
+        101,
+        102,
+        103
+      ],
+      "regions": [
+        {
+          "region": "R02",
+          "witness": {
+            "source": "tests/compute_models/cpu_c5_parameter_fragments.h",
+            "anchor": "inline d5_moe_execution_cases::Case new_deepseek_case(",
+            "direct_cases": [
+              "C5ExactNewGgufMain/VulkanCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile102",
+              "C5ExactNewGgufMain/VulkanCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile103",
+              "C5ExactNewGgufMain/VulkanCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile89",
+              "C5ExactNewGgufMain/VulkanCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile90"
+            ],
+            "graph_cases": [
+              "C5ExactNewGgufMain/VulkanGraphCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile102",
+              "C5ExactNewGgufMain/VulkanGraphCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile103",
+              "C5ExactNewGgufMain/VulkanGraphCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile89",
+              "C5ExactNewGgufMain/VulkanGraphCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile90"
+            ],
+            "verdict": "PENDING_CURRENT_REPLAY_OR_QUALIFIED_RECEIPT_REUSE"
+          }
+        },
+        {
+          "region": "R07",
+          "witness": {
+            "source": "tests/compute_models/cpu_c5_parameter_fragments.h",
+            "anchor": "inline d5_moe_execution_cases::Case new_deepseek_case(",
+            "direct_cases": [
+              "C5ExactNewGgufMain/VulkanCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile102",
+              "C5ExactNewGgufMain/VulkanCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile103",
+              "C5ExactNewGgufMain/VulkanCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile89",
+              "C5ExactNewGgufMain/VulkanCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile90"
+            ],
+            "graph_cases": [
+              "C5ExactNewGgufMain/VulkanGraphCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile102",
+              "C5ExactNewGgufMain/VulkanGraphCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile103",
+              "C5ExactNewGgufMain/VulkanGraphCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile89",
+              "C5ExactNewGgufMain/VulkanGraphCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile90"
+            ],
+            "verdict": "PENDING_CURRENT_REPLAY_OR_QUALIFIED_RECEIPT_REUSE"
+          }
+        },
+        {
+          "region": "R08",
+          "witness": {
+            "source": "tests/compute_models/cpu_c5_parameter_fragments.h",
+            "anchor": "inline d5_moe_execution_cases::Case new_deepseek_case(",
+            "direct_cases": [
+              "C5ExactNewGgufMain/VulkanCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile102",
+              "C5ExactNewGgufMain/VulkanCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile103",
+              "C5ExactNewGgufMain/VulkanCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile89",
+              "C5ExactNewGgufMain/VulkanCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile90"
+            ],
+            "graph_cases": [
+              "C5ExactNewGgufMain/VulkanGraphCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile102",
+              "C5ExactNewGgufMain/VulkanGraphCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile103",
+              "C5ExactNewGgufMain/VulkanGraphCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile89",
+              "C5ExactNewGgufMain/VulkanGraphCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile90"
+            ],
+            "verdict": "PENDING_CURRENT_REPLAY_OR_QUALIFIED_RECEIPT_REUSE"
+          }
+        },
+        {
+          "region": "R09",
+          "witness": {
+            "source": "tests/compute_models/cpu_c5_parameter_fragments.h",
+            "anchor": "inline d5_moe_execution_cases::Case new_deepseek_case(",
+            "direct_cases": [
+              "C5ExactNewGgufMain/VulkanCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile102",
+              "C5ExactNewGgufMain/VulkanCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile103",
+              "C5ExactNewGgufMain/VulkanCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile89",
+              "C5ExactNewGgufMain/VulkanCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile90"
+            ],
+            "graph_cases": [
+              "C5ExactNewGgufMain/VulkanGraphCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile102",
+              "C5ExactNewGgufMain/VulkanGraphCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile103",
+              "C5ExactNewGgufMain/VulkanGraphCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile89",
+              "C5ExactNewGgufMain/VulkanGraphCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile90"
+            ],
+            "verdict": "PENDING_CURRENT_REPLAY_OR_QUALIFIED_RECEIPT_REUSE"
+          }
+        },
+        {
+          "region": "R10",
+          "witness": {
+            "source": "tests/compute_models/cpu_c5_parameter_fragments.h",
+            "anchor": "inline d5_moe_execution_cases::Case new_deepseek_case(",
+            "direct_cases": [
+              "C5ExactNewGgufMain/VulkanCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile102",
+              "C5ExactNewGgufMain/VulkanCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile103",
+              "C5ExactNewGgufMain/VulkanCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile89",
+              "C5ExactNewGgufMain/VulkanCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile90"
+            ],
+            "graph_cases": [
+              "C5ExactNewGgufMain/VulkanGraphCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile102",
+              "C5ExactNewGgufMain/VulkanGraphCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile103",
+              "C5ExactNewGgufMain/VulkanGraphCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile89",
+              "C5ExactNewGgufMain/VulkanGraphCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile90"
+            ],
+            "verdict": "PENDING_CURRENT_REPLAY_OR_QUALIFIED_RECEIPT_REUSE"
+          }
+        },
+        {
+          "region": "R11",
+          "witness": {
+            "source": "tests/compute_models/cpu_c5_parameter_fragments.h",
+            "anchor": "inline d5_moe_execution_cases::Case new_deepseek_case(",
+            "direct_cases": [
+              "C5ExactNewGgufMain/VulkanCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile102",
+              "C5ExactNewGgufMain/VulkanCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile103",
+              "C5ExactNewGgufMain/VulkanCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile89",
+              "C5ExactNewGgufMain/VulkanCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile90"
+            ],
+            "graph_cases": [
+              "C5ExactNewGgufMain/VulkanGraphCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile102",
+              "C5ExactNewGgufMain/VulkanGraphCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile103",
+              "C5ExactNewGgufMain/VulkanGraphCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile89",
+              "C5ExactNewGgufMain/VulkanGraphCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile90"
+            ],
+            "verdict": "PENDING_CURRENT_REPLAY_OR_QUALIFIED_RECEIPT_REUSE"
+          }
+        },
+        {
+          "region": "R12",
+          "witness": {
+            "source": "tests/compute_models/cpu_c5_parameter_fragments.h",
+            "anchor": "inline d5_moe_execution_cases::Case new_deepseek_case(",
+            "direct_cases": [
+              "C5ExactNewGgufMain/VulkanCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile102",
+              "C5ExactNewGgufMain/VulkanCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile103",
+              "C5ExactNewGgufMain/VulkanCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile89",
+              "C5ExactNewGgufMain/VulkanCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile90"
+            ],
+            "graph_cases": [
+              "C5ExactNewGgufMain/VulkanGraphCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile102",
+              "C5ExactNewGgufMain/VulkanGraphCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile103",
+              "C5ExactNewGgufMain/VulkanGraphCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile89",
+              "C5ExactNewGgufMain/VulkanGraphCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile90"
+            ],
+            "verdict": "PENDING_CURRENT_REPLAY_OR_QUALIFIED_RECEIPT_REUSE"
+          }
+        }
+      ]
+    }
+  ],
+  "semantics_review": "F32 parameter storage, model-specific norm epsilon, real Q/K/latent/head widths, folded recurrent A and bias, three convolution views/concat, selection-only router correction, latent norm/shared gate, AttnRes bank, mHC fixed Sinkhorn, GLM LayerNorm/pooling, original NextN order and carry; same consumers as fixed C5 contract review. Source anchor existence/hashes alone do not prove runtime."
+}

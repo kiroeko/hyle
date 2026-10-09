@@ -541,20 +541,20 @@
     {
       "module": "compute_route_vulkan",
       "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/vulkan-parity-v2-three-state-fixes.md",
-      "summary": "Vulkan state packet qualified: Windows Direct/Graph each25/25 after explicit F32 rotary and same-input vocabulary-head reference fixes. Original80/560 matrices retained; remaining family/parameter/bank audit, defaults/P1/platform/three deliveries pending. Product math unchanged."
+      "record": "docs/implementation/tasks/compute/vulkan-parity-v2-family-qualification.md",
+      "summary": "Vulkan remaining family/parameter packet AUDITED: fixed80 role rows and eight family original consumers; qualified80/560/25 packets retained. Batch existing unrun branches and actual eight IQ1 bank executions; no new product math. Defaults/P1/platform/three deliveries pending."
     },
     {
       "module": "graph_route_vulkan",
       "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/vulkan-parity-v2-three-state-fixes.md",
-      "summary": "Vulkan state packet qualified: Windows Direct/Graph each25/25 after explicit F32 rotary and same-input vocabulary-head reference fixes. Original80/560 matrices retained; remaining family/parameter/bank audit, defaults/P1/platform/three deliveries pending. Product math unchanged."
+      "record": "docs/implementation/tasks/compute/vulkan-parity-v2-family-qualification.md",
+      "summary": "Vulkan remaining family/parameter packet AUDITED: fixed80 role rows and eight family original consumers; qualified80/560/25 packets retained. Batch existing unrun branches and actual eight IQ1 bank executions; no new product math. Defaults/P1/platform/three deliveries pending."
     },
     {
       "module": "compute_provider_ggml_vulkan",
       "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/vulkan-parity-v2-three-state-fixes.md",
-      "summary": "Vulkan state packet qualified: Windows Direct/Graph each25/25 after explicit F32 rotary and same-input vocabulary-head reference fixes. Original80/560 matrices retained; remaining family/parameter/bank audit, defaults/P1/platform/three deliveries pending. Product math unchanged."
+      "record": "docs/implementation/tasks/compute/vulkan-parity-v2-family-qualification.md",
+      "summary": "Vulkan remaining family/parameter packet AUDITED: fixed80 role rows and eight family original consumers; qualified80/560/25 packets retained. Batch existing unrun branches and actual eight IQ1 bank executions; no new product math. Defaults/P1/platform/three deliveries pending."
     },
     {
       "module": "compute_ggml_runtime",
