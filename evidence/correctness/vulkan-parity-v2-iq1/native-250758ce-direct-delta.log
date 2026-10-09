@@ -1,0 +1,342 @@
+Running main() from C:\public\tools\hyle-dependencies\v1\sources\googletest-063de7e9578f-162765170ae6\googletest\src\gtest_main.cc
+Note: Google Test filter = VulkanIree.OriginalIq1ExpertProgramsAndChangedInputs:VulkanIree.OriginalIq1IndependentLeaseCancelCloseAndOom
+[==========] Running 2 tests from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 2 tests from VulkanIree
+[ RUN      ] VulkanIree.OriginalIq1ExpertProgramsAndChangedInputs
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\iq1_test_support.h(112): error: Value of: result.error().IsInvalidArgument()
+  Actual: false
+Expected: true
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\iq1_test_support.h(99): IQ1 format=20 k=256 slots=1
+
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\iq1_test_support.h(112): error: Value of: result.error().IsInvalidArgument()
+  Actual: false
+Expected: true
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\iq1_test_support.h(99): IQ1 format=20 k=256 slots=1
+
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\iq1_test_support.h(112): error: Value of: result.error().IsInvalidArgument()
+  Actual: false
+Expected: true
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\iq1_test_support.h(99): IQ1 format=20 k=256 slots=1
+
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\iq1_test_support.h(112): error: Value of: result.error().IsInvalidArgument()
+  Actual: false
+Expected: true
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\iq1_test_support.h(99): IQ1 format=20 k=256 slots=2
+
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\iq1_test_support.h(112): error: Value of: result.error().IsInvalidArgument()
+  Actual: false
+Expected: true
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\iq1_test_support.h(99): IQ1 format=20 k=256 slots=2
+
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\iq1_test_support.h(112): error: Value of: result.error().IsInvalidArgument()
+  Actual: false
+Expected: true
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\iq1_test_support.h(99): IQ1 format=20 k=256 slots=2
+
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\iq1_test_support.h(112): error: Value of: result.error().IsInvalidArgument()
+  Actual: false
+Expected: true
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\iq1_test_support.h(99): IQ1 format=20 k=1024 slots=1
+
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\iq1_test_support.h(112): error: Value of: result.error().IsInvalidArgument()
+  Actual: false
+Expected: true
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\iq1_test_support.h(99): IQ1 format=20 k=1024 slots=1
+
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\iq1_test_support.h(112): error: Value of: result.error().IsInvalidArgument()
+  Actual: false
+Expected: true
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\iq1_test_support.h(99): IQ1 format=20 k=1024 slots=1
+
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\iq1_test_support.h(112): error: Value of: result.error().IsInvalidArgument()
+  Actual: false
+Expected: true
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\iq1_test_support.h(99): IQ1 format=20 k=1024 slots=2
+
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\iq1_test_support.h(112): error: Value of: result.error().IsInvalidArgument()
+  Actual: false
+Expected: true
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\iq1_test_support.h(99): IQ1 format=20 k=1024 slots=2
+
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\iq1_test_support.h(112): error: Value of: result.error().IsInvalidArgument()
+  Actual: false
+Expected: true
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\iq1_test_support.h(99): IQ1 format=20 k=1024 slots=2
+
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\iq1_test_support.h(112): error: Value of: result.error().IsInvalidArgument()
+  Actual: false
+Expected: true
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\iq1_test_support.h(99): IQ1 format=20 k=8192 slots=1
+
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\iq1_test_support.h(112): error: Value of: result.error().IsInvalidArgument()
+  Actual: false
+Expected: true
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\iq1_test_support.h(99): IQ1 format=20 k=8192 slots=1
+
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\iq1_test_support.h(112): error: Value of: result.error().IsInvalidArgument()
+  Actual: false
+Expected: true
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\iq1_test_support.h(99): IQ1 format=20 k=8192 slots=1
+
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\iq1_test_support.h(112): error: Value of: result.error().IsInvalidArgument()
+  Actual: false
+Expected: true
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\iq1_test_support.h(99): IQ1 format=20 k=8192 slots=2
+
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\iq1_test_support.h(112): error: Value of: result.error().IsInvalidArgument()
+  Actual: false
+Expected: true
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\iq1_test_support.h(99): IQ1 format=20 k=8192 slots=2
+
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\iq1_test_support.h(112): error: Value of: result.error().IsInvalidArgument()
+  Actual: false
+Expected: true
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\iq1_test_support.h(99): IQ1 format=20 k=8192 slots=2
+
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\iq1_test_support.h(112): error: Value of: result.error().IsInvalidArgument()
+  Actual: false
+Expected: true
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\iq1_test_support.h(99): IQ1 format=19 k=256 slots=1
+
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\iq1_test_support.h(112): error: Value of: result.error().IsInvalidArgument()
+  Actual: false
+Expected: true
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\iq1_test_support.h(99): IQ1 format=19 k=256 slots=1
+
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\iq1_test_support.h(112): error: Value of: result.error().IsInvalidArgument()
+  Actual: false
+Expected: true
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\iq1_test_support.h(99): IQ1 format=19 k=256 slots=1
+
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\iq1_test_support.h(112): error: Value of: result.error().IsInvalidArgument()
+  Actual: false
+Expected: true
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\iq1_test_support.h(99): IQ1 format=19 k=256 slots=2
+
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\iq1_test_support.h(112): error: Value of: result.error().IsInvalidArgument()
+  Actual: false
+Expected: true
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\iq1_test_support.h(99): IQ1 format=19 k=256 slots=2
+
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\iq1_test_support.h(112): error: Value of: result.error().IsInvalidArgument()
+  Actual: false
+Expected: true
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\iq1_test_support.h(99): IQ1 format=19 k=256 slots=2
+
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\iq1_test_support.h(112): error: Value of: result.error().IsInvalidArgument()
+  Actual: false
+Expected: true
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\iq1_test_support.h(99): IQ1 format=19 k=1024 slots=1
+
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\iq1_test_support.h(112): error: Value of: result.error().IsInvalidArgument()
+  Actual: false
+Expected: true
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\iq1_test_support.h(99): IQ1 format=19 k=1024 slots=1
+
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\iq1_test_support.h(112): error: Value of: result.error().IsInvalidArgument()
+  Actual: false
+Expected: true
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\iq1_test_support.h(99): IQ1 format=19 k=1024 slots=1
+
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\iq1_test_support.h(112): error: Value of: result.error().IsInvalidArgument()
+  Actual: false
+Expected: true
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\iq1_test_support.h(99): IQ1 format=19 k=1024 slots=2
+
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\iq1_test_support.h(112): error: Value of: result.error().IsInvalidArgument()
+  Actual: false
+Expected: true
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\iq1_test_support.h(99): IQ1 format=19 k=1024 slots=2
+
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\iq1_test_support.h(112): error: Value of: result.error().IsInvalidArgument()
+  Actual: false
+Expected: true
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\iq1_test_support.h(99): IQ1 format=19 k=1024 slots=2
+
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\iq1_test_support.h(112): error: Value of: result.error().IsInvalidArgument()
+  Actual: false
+Expected: true
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\iq1_test_support.h(99): IQ1 format=19 k=8192 slots=1
+
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\iq1_test_support.h(112): error: Value of: result.error().IsInvalidArgument()
+  Actual: false
+Expected: true
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\iq1_test_support.h(99): IQ1 format=19 k=8192 slots=1
+
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\iq1_test_support.h(112): error: Value of: result.error().IsInvalidArgument()
+  Actual: false
+Expected: true
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\iq1_test_support.h(99): IQ1 format=19 k=8192 slots=1
+
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\iq1_test_support.h(112): error: Value of: result.error().IsInvalidArgument()
+  Actual: false
+Expected: true
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\iq1_test_support.h(99): IQ1 format=19 k=8192 slots=2
+
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\iq1_test_support.h(112): error: Value of: result.error().IsInvalidArgument()
+  Actual: false
+Expected: true
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\iq1_test_support.h(99): IQ1 format=19 k=8192 slots=2
+
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\iq1_test_support.h(112): error: Value of: result.error().IsInvalidArgument()
+  Actual: false
+Expected: true
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\iq1_test_support.h(99): IQ1 format=19 k=8192 slots=2
+
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\iq1_test_support.h(112): error: Value of: result.error().IsInvalidArgument()
+  Actual: false
+Expected: true
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\iq1_test_support.h(99): IQ1 format=18 k=256 slots=1
+
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\iq1_test_support.h(112): error: Value of: result.error().IsInvalidArgument()
+  Actual: false
+Expected: true
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\iq1_test_support.h(99): IQ1 format=18 k=256 slots=1
+
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\iq1_test_support.h(112): error: Value of: result.error().IsInvalidArgument()
+  Actual: false
+Expected: true
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\iq1_test_support.h(99): IQ1 format=18 k=256 slots=1
+
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\iq1_test_support.h(112): error: Value of: result.error().IsInvalidArgument()
+  Actual: false
+Expected: true
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\iq1_test_support.h(99): IQ1 format=18 k=256 slots=2
+
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\iq1_test_support.h(112): error: Value of: result.error().IsInvalidArgument()
+  Actual: false
+Expected: true
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\iq1_test_support.h(99): IQ1 format=18 k=256 slots=2
+
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\iq1_test_support.h(112): error: Value of: result.error().IsInvalidArgument()
+  Actual: false
+Expected: true
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\iq1_test_support.h(99): IQ1 format=18 k=256 slots=2
+
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\iq1_test_support.h(112): error: Value of: result.error().IsInvalidArgument()
+  Actual: false
+Expected: true
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\iq1_test_support.h(99): IQ1 format=18 k=1024 slots=1
+
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\iq1_test_support.h(112): error: Value of: result.error().IsInvalidArgument()
+  Actual: false
+Expected: true
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\iq1_test_support.h(99): IQ1 format=18 k=1024 slots=1
+
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\iq1_test_support.h(112): error: Value of: result.error().IsInvalidArgument()
+  Actual: false
+Expected: true
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\iq1_test_support.h(99): IQ1 format=18 k=1024 slots=1
+
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\iq1_test_support.h(112): error: Value of: result.error().IsInvalidArgument()
+  Actual: false
+Expected: true
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\iq1_test_support.h(99): IQ1 format=18 k=1024 slots=2
+
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\iq1_test_support.h(112): error: Value of: result.error().IsInvalidArgument()
+  Actual: false
+Expected: true
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\iq1_test_support.h(99): IQ1 format=18 k=1024 slots=2
+
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\iq1_test_support.h(112): error: Value of: result.error().IsInvalidArgument()
+  Actual: false
+Expected: true
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\iq1_test_support.h(99): IQ1 format=18 k=1024 slots=2
+
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\iq1_test_support.h(112): error: Value of: result.error().IsInvalidArgument()
+  Actual: false
+Expected: true
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\iq1_test_support.h(99): IQ1 format=18 k=8192 slots=1
+
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\iq1_test_support.h(112): error: Value of: result.error().IsInvalidArgument()
+  Actual: false
+Expected: true
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\iq1_test_support.h(99): IQ1 format=18 k=8192 slots=1
+
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\iq1_test_support.h(112): error: Value of: result.error().IsInvalidArgument()
+  Actual: false
+Expected: true
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\iq1_test_support.h(99): IQ1 format=18 k=8192 slots=1
+
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\iq1_test_support.h(112): error: Value of: result.error().IsInvalidArgument()
+  Actual: false
+Expected: true
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\iq1_test_support.h(99): IQ1 format=18 k=8192 slots=2
+
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\iq1_test_support.h(112): error: Value of: result.error().IsInvalidArgument()
+  Actual: false
+Expected: true
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\iq1_test_support.h(99): IQ1 format=18 k=8192 slots=2
+
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\iq1_test_support.h(112): error: Value of: result.error().IsInvalidArgument()
+  Actual: false
+Expected: true
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\iq1_test_support.h(99): IQ1 format=18 k=8192 slots=2
+
+[  FAILED  ] VulkanIree.OriginalIq1ExpertProgramsAndChangedInputs (1004 ms)
+[ RUN      ] VulkanIree.OriginalIq1IndependentLeaseCancelCloseAndOom
+[       OK ] VulkanIree.OriginalIq1IndependentLeaseCancelCloseAndOom (151 ms)
+[----------] 2 tests from VulkanIree (1156 ms total)
+
+[----------] Global test environment tear-down
+[==========] 2 tests from 1 test suite ran. (1156 ms total)
+[  PASSED  ] 1 test.
+[  FAILED  ] 1 test, listed below:
+[  FAILED  ] VulkanIree.OriginalIq1ExpertProgramsAndChangedInputs
+
+ 1 FAILED TEST

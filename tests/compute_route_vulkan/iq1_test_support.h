@@ -109,7 +109,7 @@ template <class Prepare> void batch(Prepare prepare) {
       auto failed = prepared->create_invocation().value();auto inputs = first.upload(context);auto ids = first.ids;ids.back() = bad;
       inputs[2] = upload_ids(context, first.descriptions[2], ids);
       ASSERT_TRUE(failed.bind(inputs).ok());auto work = failed.submit().value();auto result = work.wait();
-      ASSERT_FALSE(result);EXPECT_TRUE(result.error().IsInvalidArgument());EXPECT_FALSE(failed.submit());
+      ASSERT_FALSE(result);EXPECT_TRUE(result.error().IsOutOfRange()) << result.error().message();EXPECT_FALSE(failed.submit());
     }
   }
 }

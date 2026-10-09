@@ -78,3 +78,8 @@ program.values 内的 output descriptor；追加 status/safe IDs 使 vector 扩�
 失效，造成随机 stride/bytes 错误。沿既有 lower_mlx 保存 descriptor 值，之后只
 使用稳定副本。原数学/端口/native 程序不变，两入口数值与生命周期各一次定向验；
 已过 native owner 与实际冷几何不反复运行。不额外导出或增加常态对象 metadata。
+
+`250758cef` 两入口18组合×2重放全部数值无误，独立请求/lease/cancel/close/OOM
+两ID PASS；运行ID仅54个错误分类断言不符。原 vulkan_run.cc:136 的既有坏索引
+合同为 OutOfRange，fixture误写 InvalidArgument；只恢复原分类断言，不改变产品
+或错误合同。最终仅两入口数值/坏索引ID定向复验，生命周期等通过域继承。

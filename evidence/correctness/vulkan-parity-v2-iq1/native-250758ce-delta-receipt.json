@@ -1,0 +1,44 @@
+{
+  "candidate": "250758cef2466f8e171ae885eef328ac6ab07586",
+  "scope": "affected IQ1 runtime and output lifecycle, owner/cold geometry retained",
+  "steps": [
+    {
+      "name": "direct",
+      "filter": "VulkanIree.OriginalIq1ExpertProgramsAndChangedInputs:VulkanIree.OriginalIq1IndependentLeaseCancelCloseAndOom",
+      "returncode": 1,
+      "tests": {
+        "tests": "2",
+        "failures": "1",
+        "disabled": "0",
+        "errors": "0",
+        "time": "1.156",
+        "timestamp": "2026-10-09T13:08:59.452",
+        "name": "AllTests"
+      },
+      "validation_error": false,
+      "log": "native-250758ce-direct-delta.log",
+      "log_sha256": "36da34fc99ea1fe2cd4fed085e089140ca8e2ee3c526b7f4c1a7358300abb49c",
+      "xml": "native-250758ce-direct-delta.xml",
+      "binary_sha256": "7d8877d3cee3e7837dfd6442f4971d88f01a0a01596bb749eb48770b18fd078d"
+    },
+    {
+      "name": "graph",
+      "filter": "VulkanGraph.OriginalIq1ExpertProgramsAndChangedInputs:VulkanGraph.OriginalIq1IndependentLeaseCancelCloseAndOom",
+      "returncode": 1,
+      "tests": {
+        "tests": "2",
+        "failures": "1",
+        "disabled": "0",
+        "errors": "0",
+        "time": "1.046",
+        "timestamp": "2026-10-09T13:09:00.687",
+        "name": "AllTests"
+      },
+      "validation_error": false,
+      "log": "native-250758ce-graph-delta.log",
+      "log_sha256": "3affaaacb16abd5874a977cf2524c1529e56c163b7edbc6dd6b547f83719016d",
+      "xml": "native-250758ce-graph-delta.xml",
+      "binary_sha256": "c111118fea6986ea2502cc8ceb5b2037df7411db5b36344b79d8a0dcf1d8a054"
+    }
+  ]
+}
