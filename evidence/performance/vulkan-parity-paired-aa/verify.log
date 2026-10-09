@@ -1,0 +1,17 @@
+# HYLE_D5_FRAGMENT_RUN execution_order=candidate-first allocation_order=candidate-first aa_route=off paired_mode=nanobench-compare affinity_topology=external caller_cpu=external affinity_ok=not-applicable parent_mask=0xffffffff priority=other run_nonce=unmanaged verify_only=1
+# D5_VULKAN_ENV device=NVIDIA GeForce RTX 4070 driver=2588114944 api=4211039 shader=456172ec733a135778adcd32d00e576a58232e45
+# graph nodes=5 native_dispatches=4 managed_regions=6 constants=75501568
+# setup route=graph slots=2 resident_bytes=411373568 peak_bytes=411373568 milliseconds=73.195
+# D5_VULKAN_ENV device=NVIDIA GeForce RTX 4070 driver=2588114944 api=4211039 shader=456172ec733a135778adcd32d00e576a58232e45
+# setup route=direct slots=2 resident_bytes=512299008 peak_bytes=512299008 milliseconds=79.449
+# warmed route=graph cold_bytes=411373568 resident_bytes=411381760
+# warmed route=direct cold_bytes=512299008 resident_bytes=512309248
+# verify PASS profile=Qwen3.5-2B official BF16 FFN M1 H2048 N6144 replays=2 aa=off
+# D5_VULKAN_ENV device=NVIDIA GeForce RTX 4070 driver=2588114944 api=4211039 shader=456172ec733a135778adcd32d00e576a58232e45
+# graph nodes=35 native_dispatches=22 managed_regions=16 constants=122421304
+# setup route=graph slots=3 resident_bytes=277198160 peak_bytes=277198160 milliseconds=65.315
+# D5_VULKAN_ENV device=NVIDIA GeForce RTX 4070 driver=2588114944 api=4211039 shader=456172ec733a135778adcd32d00e576a58232e45
+# setup route=direct slots=3 resident_bytes=281212640 peak_bytes=281212640 milliseconds=82.658
+# warmed route=graph cold_bytes=277198160 resident_bytes=277244240
+# warmed route=direct cold_bytes=281212640 resident_bytes=281295584
+# verify PASS profile=DeepSeek V4 Flash UD-Q4_K_XL hash-MoE H4096 N2048 top6 replays=3 aa=off

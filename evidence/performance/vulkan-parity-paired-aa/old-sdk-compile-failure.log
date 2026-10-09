@@ -1,0 +1,55 @@
+[0/1] Re-running CMake...
+-- Warning: ccache not found - consider installing it for faster compilation or disable this warning with GGML_CCACHE=OFF
+-- CMAKE_SYSTEM_PROCESSOR: AMD64
+-- CMAKE_GENERATOR_PLATFORM: 
+-- GGML_SYSTEM_ARCH: x86
+-- ggml version: 0.24.0
+-- ggml commit:  unknown
+-- Configuring done (0.2s)
+-- Generating done (0.0s)
+-- Build files have been written to: C:/hv/d5pf/vulkan
+[1/4] C:\WINDOWS\system32\cmd.exe /C "cd /D C:\hv\d5pf\vulkan && "C:\Program Files\CMake\bin\cmake.exe" -P C:/hv/d5pf/vulkan/hyle-runtime/hyle_graph_route_vulkan_d5_bench-Release.cmake"
+[2/4] Building CXX object CMakeFiles\hyle_graph_route_vulkan_d5_bench.dir\C_\public\project-hyle\hyle\bench\graph_route_vulkan\d5_fragment_bench.cc.obj
+FAILED: [code=2] CMakeFiles/hyle_graph_route_vulkan_d5_bench.dir/C_/public/project-hyle/hyle/bench/graph_route_vulkan/d5_fragment_bench.cc.obj 
+"C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\bin\Hostx64\x64\cl.exe"  /nologo /TP -DHYLE_COMPUTE_VULKAN=1 -DHYLE_STATIC -IC:\Users\kiro\AppData\Local\hyle\dependencies\v1\sources\ggml-456172ec733a-41b7e10fd424\src\..\include -external:IC:\hv\d5vk\static-relocated\include -external:IC:\public\project-hyle\hyle\third_party\nanobench -external:IC:\Users\kiro\AppData\Local\hyle\dependencies\v1\sources\googletest-063de7e9578f-162765170ae6\googletest\include -external:IC:\Users\kiro\AppData\Local\hyle\dependencies\v1\sources\googletest-063de7e9578f-162765170ae6\googletest -external:W0 /DWIN32 /D_WINDOWS /EHsc /O2 /Ob2 /DNDEBUG -std:c++latest -MD /utf-8 /W4 /WX /Zc:__cplusplus /Zc:preprocessor /showIncludes /FoCMakeFiles\hyle_graph_route_vulkan_d5_bench.dir\C_\public\project-hyle\hyle\bench\graph_route_vulkan\d5_fragment_bench.cc.obj /FdCMakeFiles\hyle_graph_route_vulkan_d5_bench.dir\ /FS -c C:\public\project-hyle\hyle\bench\graph_route_vulkan\d5_fragment_bench.cc
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(22): error C2838: 'kQ4_0': illegal qualified name in member declaration
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(22): error C2065: 'kQ4_0': undeclared identifier
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(22): error C2131: expression did not evaluate to a constant
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(22): note: a non-constant (sub-)expression was encountered
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(24): error C2838: 'kQ4_1': illegal qualified name in member declaration
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(24): error C2065: 'kQ4_1': undeclared identifier
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(24): error C2131: expression did not evaluate to a constant
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(24): note: a non-constant (sub-)expression was encountered
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(26): error C2838: 'kQ2K': illegal qualified name in member declaration
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(26): error C2065: 'kQ2K': undeclared identifier
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(26): error C2131: expression did not evaluate to a constant
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(26): note: a non-constant (sub-)expression was encountered
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(28): error C2838: 'kIq2Xxs': illegal qualified name in member declaration
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(28): error C2065: 'kIq2Xxs': undeclared identifier
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(28): error C2131: expression did not evaluate to a constant
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(28): note: a non-constant (sub-)expression was encountered
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(30): error C2838: 'kIq2Xs': illegal qualified name in member declaration
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(30): error C2065: 'kIq2Xs': undeclared identifier
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(30): error C2131: expression did not evaluate to a constant
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(30): note: a non-constant (sub-)expression was encountered
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(32): error C2838: 'kIq2S': illegal qualified name in member declaration
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(32): error C2065: 'kIq2S': undeclared identifier
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(32): error C2131: expression did not evaluate to a constant
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(32): note: a non-constant (sub-)expression was encountered
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(34): error C2838: 'kIq1S': illegal qualified name in member declaration
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(34): error C2065: 'kIq1S': undeclared identifier
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(34): error C2131: expression did not evaluate to a constant
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(34): note: a non-constant (sub-)expression was encountered
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(36): error C2838: 'kIq1M': illegal qualified name in member declaration
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(36): error C2065: 'kIq1M': undeclared identifier
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(36): error C2131: expression did not evaluate to a constant
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(36): note: a non-constant (sub-)expression was encountered
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(22): error C2051: case expression not constant
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(24): error C2051: case expression not constant
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(26): error C2051: case expression not constant
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(28): error C2051: case expression not constant
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(30): error C2051: case expression not constant
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(32): error C2051: case expression not constant
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(34): error C2051: case expression not constant
+C:\public\project-hyle\hyle\tests\compute_models\d5_gguf_test_support.h(36): error C2051: case expression not constant
+ninja: build stopped: subcommand failed.

@@ -72,3 +72,14 @@ docs/state不build/P1。七门真实通过才CLOSED，适用未验不能PASS；�
 每包/重大变化/用户询问汇报已实现/已验/未完/阻塞和统一Compute+Graph非测试LOC。
 采用[skip ci]提交推送，不用Actions。全部约定Vulkan能力和验收完成后通知并停止，
 不自动扩算子大全。当前先V1审计/第一原库批次，不解除旧blocked或宣称Vulkan完成。
+
+## 具名恢复条件已满足：重新SCOPED（2026-10-09）
+
+[独立paired A/A](../../../../evidence/performance/vulkan-parity-paired-aa/README.md)唯一8process
+PASS：相同原topology、双执行/分配顺序、24round×6调用、真实输出/资源/native终态，
+原5%/10%门保持。源审计修正配对信息丢失，不靠更换目录/无限重测；原失败仍保留。
+据旧resume_condition，`compute_route_vulkan`/`graph_route_vulkan`与D5聚合`graph`
+依法BLOCKED→SCOPED绑定本卡，新覆盖改动须先AUDITED固定有限FIX；不直接CLOSED。
+公共Graph仅协调覆盖/最终聚合，不因此授权重写共同Graph产品。旧正式P1仍未完成，
+后续稳定candidate须同paired口径、相同完成/拥有服务与原controls；不重用旧未资格数据。
+CPU/CUDA/Apple CLOSED保持，首次Provider原绑定工作及真实source记录继续复用。

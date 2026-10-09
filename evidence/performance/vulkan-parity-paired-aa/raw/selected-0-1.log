@@ -1,0 +1,133 @@
+
+| relative |              95% CI |               ns/op |                op/s |    err% |     total | Qwen3.5-2B official BF16 FFN M1 H2048 N6144
+|---------:|--------------------:|--------------------:|--------------------:|--------:|----------:|:--------------------------------------------
+|   100.0% |                     |        2,499,016.67 |              400.16 |    6.0% |      0.36 | `Graph complete fragment`
+|    96.3% |     91.0% .. 105.9% |        2,484,175.00 |              402.55 |    6.2% |      0.36 | `Direct complete fragment`
+
+  Summary
+    no difference resolved between `Graph complete fragment` and `Direct complete fragment`
+    ratio 0.96x, 95% CI [0.91 .. 1.06], 24 paired rounds, interleaved
+
+| relative |              95% CI |               ns/op |                op/s |    err% |     total | DeepSeek V4 Flash UD-Q4_K_XL hash-MoE H4096 N2048 top6
+|---------:|--------------------:|--------------------:|--------------------:|--------:|----------:|:-------------------------------------------------------
+|   100.0% |                     |          921,233.33 |            1,085.50 |   12.0% |      0.14 | `Graph complete fragment`
+|   107.5% |     98.8% .. 113.9% |          846,000.00 |            1,182.03 |   12.2% |      0.14 | `Direct complete fragment`
+
+  Summary
+    no difference resolved between `Graph complete fragment` and `Direct complete fragment`
+    ratio 1.08x, 95% CI [0.99 .. 1.14], 24 paired rounds, interleaved
+# HYLE_D5_FRAGMENT_RUN execution_order=candidate-first allocation_order=peer-first aa_route=selected paired_mode=nanobench-compare affinity_topology=native-runtime-pair caller_cpu=2 affinity_ok=1 parent_mask=0x14 priority=above-normal run_nonce=4a54187cf41b4fd29fc236aa20881967 verify_only=0
+# D5_VULKAN_ENV device=NVIDIA GeForce RTX 4070 driver=2588114944 api=4211039 shader=456172ec733a135778adcd32d00e576a58232e45
+# graph nodes=5 native_dispatches=4 managed_regions=6 constants=75501568
+# setup route=graph slots=2 resident_bytes=411373568 peak_bytes=411373568 milliseconds=71.339
+# D5_VULKAN_ENV device=NVIDIA GeForce RTX 4070 driver=2588114944 api=4211039 shader=456172ec733a135778adcd32d00e576a58232e45
+# graph nodes=5 native_dispatches=4 managed_regions=6 constants=75501568
+# setup route=graph slots=2 resident_bytes=411373568 peak_bytes=411373568 milliseconds=66.814
+# warmed route=graph cold_bytes=411373568 resident_bytes=411381760
+# warmed route=graph cold_bytes=411373568 resident_bytes=411381760
+# verify PASS profile=Qwen3.5-2B official BF16 FFN M1 H2048 N6144 replays=2 aa=selected
+# D5_PAIRED_ROUND profile="Qwen3.5-2B official BF16 FFN M1 H2048 N6144" arm="Graph complete fragment" round=0 iterations=6 seconds_per_call=0.00265015 paired_relative=1 slots=2
+# D5_PAIRED_ROUND profile="Qwen3.5-2B official BF16 FFN M1 H2048 N6144" arm="Graph complete fragment" round=1 iterations=6 seconds_per_call=0.0026361499999999999 paired_relative=1 slots=2
+# D5_PAIRED_ROUND profile="Qwen3.5-2B official BF16 FFN M1 H2048 N6144" arm="Graph complete fragment" round=2 iterations=6 seconds_per_call=0.0027599666666666667 paired_relative=1 slots=2
+# D5_PAIRED_ROUND profile="Qwen3.5-2B official BF16 FFN M1 H2048 N6144" arm="Graph complete fragment" round=3 iterations=6 seconds_per_call=0.00263715 paired_relative=1 slots=2
+# D5_PAIRED_ROUND profile="Qwen3.5-2B official BF16 FFN M1 H2048 N6144" arm="Graph complete fragment" round=4 iterations=6 seconds_per_call=0.0026226500000000002 paired_relative=1 slots=2
+# D5_PAIRED_ROUND profile="Qwen3.5-2B official BF16 FFN M1 H2048 N6144" arm="Graph complete fragment" round=5 iterations=6 seconds_per_call=0.0029464499999999998 paired_relative=1 slots=2
+# D5_PAIRED_ROUND profile="Qwen3.5-2B official BF16 FFN M1 H2048 N6144" arm="Graph complete fragment" round=6 iterations=6 seconds_per_call=0.0025650666666666667 paired_relative=1 slots=2
+# D5_PAIRED_ROUND profile="Qwen3.5-2B official BF16 FFN M1 H2048 N6144" arm="Graph complete fragment" round=7 iterations=6 seconds_per_call=0.0023032833333333333 paired_relative=1 slots=2
+# D5_PAIRED_ROUND profile="Qwen3.5-2B official BF16 FFN M1 H2048 N6144" arm="Graph complete fragment" round=8 iterations=6 seconds_per_call=0.0024214166666666668 paired_relative=1 slots=2
+# D5_PAIRED_ROUND profile="Qwen3.5-2B official BF16 FFN M1 H2048 N6144" arm="Graph complete fragment" round=9 iterations=6 seconds_per_call=0.0031705333333333333 paired_relative=1 slots=2
+# D5_PAIRED_ROUND profile="Qwen3.5-2B official BF16 FFN M1 H2048 N6144" arm="Graph complete fragment" round=10 iterations=6 seconds_per_call=0.0023643833333333334 paired_relative=1 slots=2
+# D5_PAIRED_ROUND profile="Qwen3.5-2B official BF16 FFN M1 H2048 N6144" arm="Graph complete fragment" round=11 iterations=6 seconds_per_call=0.0022461666666666667 paired_relative=1 slots=2
+# D5_PAIRED_ROUND profile="Qwen3.5-2B official BF16 FFN M1 H2048 N6144" arm="Graph complete fragment" round=12 iterations=6 seconds_per_call=0.00273165 paired_relative=1 slots=2
+# D5_PAIRED_ROUND profile="Qwen3.5-2B official BF16 FFN M1 H2048 N6144" arm="Graph complete fragment" round=13 iterations=6 seconds_per_call=0.0025054333333333332 paired_relative=1 slots=2
+# D5_PAIRED_ROUND profile="Qwen3.5-2B official BF16 FFN M1 H2048 N6144" arm="Graph complete fragment" round=14 iterations=6 seconds_per_call=0.0025397833333333335 paired_relative=1 slots=2
+# D5_PAIRED_ROUND profile="Qwen3.5-2B official BF16 FFN M1 H2048 N6144" arm="Graph complete fragment" round=15 iterations=6 seconds_per_call=0.0025865333333333334 paired_relative=1 slots=2
+# D5_PAIRED_ROUND profile="Qwen3.5-2B official BF16 FFN M1 H2048 N6144" arm="Graph complete fragment" round=16 iterations=6 seconds_per_call=0.0022831333333333333 paired_relative=1 slots=2
+# D5_PAIRED_ROUND profile="Qwen3.5-2B official BF16 FFN M1 H2048 N6144" arm="Graph complete fragment" round=17 iterations=6 seconds_per_call=0.0024925999999999998 paired_relative=1 slots=2
+# D5_PAIRED_ROUND profile="Qwen3.5-2B official BF16 FFN M1 H2048 N6144" arm="Graph complete fragment" round=18 iterations=6 seconds_per_call=0.0021889333333333333 paired_relative=1 slots=2
+# D5_PAIRED_ROUND profile="Qwen3.5-2B official BF16 FFN M1 H2048 N6144" arm="Graph complete fragment" round=19 iterations=6 seconds_per_call=0.0022610166666666666 paired_relative=1 slots=2
+# D5_PAIRED_ROUND profile="Qwen3.5-2B official BF16 FFN M1 H2048 N6144" arm="Graph complete fragment" round=20 iterations=6 seconds_per_call=0.0022889333333333335 paired_relative=1 slots=2
+# D5_PAIRED_ROUND profile="Qwen3.5-2B official BF16 FFN M1 H2048 N6144" arm="Graph complete fragment" round=21 iterations=6 seconds_per_call=0.0022475833333333332 paired_relative=1 slots=2
+# D5_PAIRED_ROUND profile="Qwen3.5-2B official BF16 FFN M1 H2048 N6144" arm="Graph complete fragment" round=22 iterations=6 seconds_per_call=0.0023498333333333335 paired_relative=1 slots=2
+# D5_PAIRED_ROUND profile="Qwen3.5-2B official BF16 FFN M1 H2048 N6144" arm="Graph complete fragment" round=23 iterations=6 seconds_per_call=0.0024667499999999998 paired_relative=1 slots=2
+# D5_PAIRED_ROUND profile="Qwen3.5-2B official BF16 FFN M1 H2048 N6144" arm="Direct complete fragment" round=0 iterations=6 seconds_per_call=0.0029392833333333336 paired_relative=0.96298910873458876 slots=2
+# D5_PAIRED_ROUND profile="Qwen3.5-2B official BF16 FFN M1 H2048 N6144" arm="Direct complete fragment" round=1 iterations=6 seconds_per_call=0.0027254500000000004 paired_relative=0.96298910873458876 slots=2
+# D5_PAIRED_ROUND profile="Qwen3.5-2B official BF16 FFN M1 H2048 N6144" arm="Direct complete fragment" round=2 iterations=6 seconds_per_call=0.0027721333333333331 paired_relative=0.96298910873458876 slots=2
+# D5_PAIRED_ROUND profile="Qwen3.5-2B official BF16 FFN M1 H2048 N6144" arm="Direct complete fragment" round=3 iterations=6 seconds_per_call=0.0027811666666666666 paired_relative=0.96298910873458876 slots=2
+# D5_PAIRED_ROUND profile="Qwen3.5-2B official BF16 FFN M1 H2048 N6144" arm="Direct complete fragment" round=4 iterations=6 seconds_per_call=0.0028365666666666668 paired_relative=0.96298910873458876 slots=2
+# D5_PAIRED_ROUND profile="Qwen3.5-2B official BF16 FFN M1 H2048 N6144" arm="Direct complete fragment" round=5 iterations=6 seconds_per_call=0.0024785333333333334 paired_relative=0.96298910873458876 slots=2
+# D5_PAIRED_ROUND profile="Qwen3.5-2B official BF16 FFN M1 H2048 N6144" arm="Direct complete fragment" round=6 iterations=6 seconds_per_call=0.0024380999999999999 paired_relative=0.96298910873458876 slots=2
+# D5_PAIRED_ROUND profile="Qwen3.5-2B official BF16 FFN M1 H2048 N6144" arm="Direct complete fragment" round=7 iterations=6 seconds_per_call=0.0026632166666666662 paired_relative=0.96298910873458876 slots=2
+# D5_PAIRED_ROUND profile="Qwen3.5-2B official BF16 FFN M1 H2048 N6144" arm="Direct complete fragment" round=8 iterations=6 seconds_per_call=0.0025006333333333331 paired_relative=0.96298910873458876 slots=2
+# D5_PAIRED_ROUND profile="Qwen3.5-2B official BF16 FFN M1 H2048 N6144" arm="Direct complete fragment" round=9 iterations=6 seconds_per_call=0.0022330499999999999 paired_relative=0.96298910873458876 slots=2
+# D5_PAIRED_ROUND profile="Qwen3.5-2B official BF16 FFN M1 H2048 N6144" arm="Direct complete fragment" round=10 iterations=6 seconds_per_call=0.0024898166666666665 paired_relative=0.96298910873458876 slots=2
+# D5_PAIRED_ROUND profile="Qwen3.5-2B official BF16 FFN M1 H2048 N6144" arm="Direct complete fragment" round=11 iterations=6 seconds_per_call=0.0027212999999999998 paired_relative=0.96298910873458876 slots=2
+# D5_PAIRED_ROUND profile="Qwen3.5-2B official BF16 FFN M1 H2048 N6144" arm="Direct complete fragment" round=12 iterations=6 seconds_per_call=0.0022355666666666668 paired_relative=0.96298910873458876 slots=2
+# D5_PAIRED_ROUND profile="Qwen3.5-2B official BF16 FFN M1 H2048 N6144" arm="Direct complete fragment" round=13 iterations=6 seconds_per_call=0.0022653499999999997 paired_relative=0.96298910873458876 slots=2
+# D5_PAIRED_ROUND profile="Qwen3.5-2B official BF16 FFN M1 H2048 N6144" arm="Direct complete fragment" round=14 iterations=6 seconds_per_call=0.0024387499999999999 paired_relative=0.96298910873458876 slots=2
+# D5_PAIRED_ROUND profile="Qwen3.5-2B official BF16 FFN M1 H2048 N6144" arm="Direct complete fragment" round=15 iterations=6 seconds_per_call=0.0022674833333333334 paired_relative=0.96298910873458876 slots=2
+# D5_PAIRED_ROUND profile="Qwen3.5-2B official BF16 FFN M1 H2048 N6144" arm="Direct complete fragment" round=16 iterations=6 seconds_per_call=0.0025313833333333335 paired_relative=0.96298910873458876 slots=2
+# D5_PAIRED_ROUND profile="Qwen3.5-2B official BF16 FFN M1 H2048 N6144" arm="Direct complete fragment" round=17 iterations=6 seconds_per_call=0.0023529333333333334 paired_relative=0.96298910873458876 slots=2
+# D5_PAIRED_ROUND profile="Qwen3.5-2B official BF16 FFN M1 H2048 N6144" arm="Direct complete fragment" round=18 iterations=6 seconds_per_call=0.0024295333333333334 paired_relative=0.96298910873458876 slots=2
+# D5_PAIRED_ROUND profile="Qwen3.5-2B official BF16 FFN M1 H2048 N6144" arm="Direct complete fragment" round=19 iterations=6 seconds_per_call=0.0023582666666666667 paired_relative=0.96298910873458876 slots=2
+# D5_PAIRED_ROUND profile="Qwen3.5-2B official BF16 FFN M1 H2048 N6144" arm="Direct complete fragment" round=20 iterations=6 seconds_per_call=0.0025148333333333333 paired_relative=0.96298910873458876 slots=2
+# D5_PAIRED_ROUND profile="Qwen3.5-2B official BF16 FFN M1 H2048 N6144" arm="Direct complete fragment" round=21 iterations=6 seconds_per_call=0.0023799166666666669 paired_relative=0.96298910873458876 slots=2
+# D5_PAIRED_ROUND profile="Qwen3.5-2B official BF16 FFN M1 H2048 N6144" arm="Direct complete fragment" round=22 iterations=6 seconds_per_call=0.0026069166666666667 paired_relative=0.96298910873458876 slots=2
+# D5_PAIRED_ROUND profile="Qwen3.5-2B official BF16 FFN M1 H2048 N6144" arm="Direct complete fragment" round=23 iterations=6 seconds_per_call=0.00216395 paired_relative=0.96298910873458876 slots=2
+# D5_VULKAN_ENV device=NVIDIA GeForce RTX 4070 driver=2588114944 api=4211039 shader=456172ec733a135778adcd32d00e576a58232e45
+# graph nodes=35 native_dispatches=22 managed_regions=16 constants=122421304
+# setup route=graph slots=3 resident_bytes=277198160 peak_bytes=277198160 milliseconds=62.108
+# D5_VULKAN_ENV device=NVIDIA GeForce RTX 4070 driver=2588114944 api=4211039 shader=456172ec733a135778adcd32d00e576a58232e45
+# graph nodes=35 native_dispatches=22 managed_regions=16 constants=122421304
+# setup route=graph slots=3 resident_bytes=277198160 peak_bytes=277198160 milliseconds=68.051
+# warmed route=graph cold_bytes=277198160 resident_bytes=277244240
+# warmed route=graph cold_bytes=277198160 resident_bytes=277244240
+# verify PASS profile=DeepSeek V4 Flash UD-Q4_K_XL hash-MoE H4096 N2048 top6 replays=3 aa=selected
+# D5_PAIRED_ROUND profile="DeepSeek V4 Flash UD-Q4_K_XL hash-MoE H4096 N2048 top6" arm="Graph complete fragment" round=0 iterations=6 seconds_per_call=0.0010703833333333332 paired_relative=1 slots=3
+# D5_PAIRED_ROUND profile="DeepSeek V4 Flash UD-Q4_K_XL hash-MoE H4096 N2048 top6" arm="Graph complete fragment" round=1 iterations=6 seconds_per_call=0.00090288333333333332 paired_relative=1 slots=3
+# D5_PAIRED_ROUND profile="DeepSeek V4 Flash UD-Q4_K_XL hash-MoE H4096 N2048 top6" arm="Graph complete fragment" round=2 iterations=6 seconds_per_call=0.00081888333333333333 paired_relative=1 slots=3
+# D5_PAIRED_ROUND profile="DeepSeek V4 Flash UD-Q4_K_XL hash-MoE H4096 N2048 top6" arm="Graph complete fragment" round=3 iterations=6 seconds_per_call=0.0011493666666666667 paired_relative=1 slots=3
+# D5_PAIRED_ROUND profile="DeepSeek V4 Flash UD-Q4_K_XL hash-MoE H4096 N2048 top6" arm="Graph complete fragment" round=4 iterations=6 seconds_per_call=0.0013127166666666665 paired_relative=1 slots=3
+# D5_PAIRED_ROUND profile="DeepSeek V4 Flash UD-Q4_K_XL hash-MoE H4096 N2048 top6" arm="Graph complete fragment" round=5 iterations=6 seconds_per_call=0.00083725 paired_relative=1 slots=3
+# D5_PAIRED_ROUND profile="DeepSeek V4 Flash UD-Q4_K_XL hash-MoE H4096 N2048 top6" arm="Graph complete fragment" round=6 iterations=6 seconds_per_call=0.00081413333333333335 paired_relative=1 slots=3
+# D5_PAIRED_ROUND profile="DeepSeek V4 Flash UD-Q4_K_XL hash-MoE H4096 N2048 top6" arm="Graph complete fragment" round=7 iterations=6 seconds_per_call=0.00095385000000000001 paired_relative=1 slots=3
+# D5_PAIRED_ROUND profile="DeepSeek V4 Flash UD-Q4_K_XL hash-MoE H4096 N2048 top6" arm="Graph complete fragment" round=8 iterations=6 seconds_per_call=0.0013445666666666667 paired_relative=1 slots=3
+# D5_PAIRED_ROUND profile="DeepSeek V4 Flash UD-Q4_K_XL hash-MoE H4096 N2048 top6" arm="Graph complete fragment" round=9 iterations=6 seconds_per_call=0.0014924833333333333 paired_relative=1 slots=3
+# D5_PAIRED_ROUND profile="DeepSeek V4 Flash UD-Q4_K_XL hash-MoE H4096 N2048 top6" arm="Graph complete fragment" round=10 iterations=6 seconds_per_call=0.00085056666666666672 paired_relative=1 slots=3
+# D5_PAIRED_ROUND profile="DeepSeek V4 Flash UD-Q4_K_XL hash-MoE H4096 N2048 top6" arm="Graph complete fragment" round=11 iterations=6 seconds_per_call=0.00068076666666666661 paired_relative=1 slots=3
+# D5_PAIRED_ROUND profile="DeepSeek V4 Flash UD-Q4_K_XL hash-MoE H4096 N2048 top6" arm="Graph complete fragment" round=12 iterations=6 seconds_per_call=0.0008884833333333334 paired_relative=1 slots=3
+# D5_PAIRED_ROUND profile="DeepSeek V4 Flash UD-Q4_K_XL hash-MoE H4096 N2048 top6" arm="Graph complete fragment" round=13 iterations=6 seconds_per_call=0.0010460666666666665 paired_relative=1 slots=3
+# D5_PAIRED_ROUND profile="DeepSeek V4 Flash UD-Q4_K_XL hash-MoE H4096 N2048 top6" arm="Graph complete fragment" round=14 iterations=6 seconds_per_call=0.00099381666666666676 paired_relative=1 slots=3
+# D5_PAIRED_ROUND profile="DeepSeek V4 Flash UD-Q4_K_XL hash-MoE H4096 N2048 top6" arm="Graph complete fragment" round=15 iterations=6 seconds_per_call=0.00089049999999999991 paired_relative=1 slots=3
+# D5_PAIRED_ROUND profile="DeepSeek V4 Flash UD-Q4_K_XL hash-MoE H4096 N2048 top6" arm="Graph complete fragment" round=16 iterations=6 seconds_per_call=0.00070505000000000003 paired_relative=1 slots=3
+# D5_PAIRED_ROUND profile="DeepSeek V4 Flash UD-Q4_K_XL hash-MoE H4096 N2048 top6" arm="Graph complete fragment" round=17 iterations=6 seconds_per_call=0.00094330000000000011 paired_relative=1 slots=3
+# D5_PAIRED_ROUND profile="DeepSeek V4 Flash UD-Q4_K_XL hash-MoE H4096 N2048 top6" arm="Graph complete fragment" round=18 iterations=6 seconds_per_call=0.00093958333333333339 paired_relative=1 slots=3
+# D5_PAIRED_ROUND profile="DeepSeek V4 Flash UD-Q4_K_XL hash-MoE H4096 N2048 top6" arm="Graph complete fragment" round=19 iterations=6 seconds_per_call=0.0010103 paired_relative=1 slots=3
+# D5_PAIRED_ROUND profile="DeepSeek V4 Flash UD-Q4_K_XL hash-MoE H4096 N2048 top6" arm="Graph complete fragment" round=20 iterations=6 seconds_per_call=0.00104725 paired_relative=1 slots=3
+# D5_PAIRED_ROUND profile="DeepSeek V4 Flash UD-Q4_K_XL hash-MoE H4096 N2048 top6" arm="Graph complete fragment" round=21 iterations=6 seconds_per_call=0.00071050000000000009 paired_relative=1 slots=3
+# D5_PAIRED_ROUND profile="DeepSeek V4 Flash UD-Q4_K_XL hash-MoE H4096 N2048 top6" arm="Graph complete fragment" round=22 iterations=6 seconds_per_call=0.00070003333333333335 paired_relative=1 slots=3
+# D5_PAIRED_ROUND profile="DeepSeek V4 Flash UD-Q4_K_XL hash-MoE H4096 N2048 top6" arm="Graph complete fragment" round=23 iterations=6 seconds_per_call=0.00087256666666666672 paired_relative=1 slots=3
+# D5_PAIRED_ROUND profile="DeepSeek V4 Flash UD-Q4_K_XL hash-MoE H4096 N2048 top6" arm="Direct complete fragment" round=0 iterations=6 seconds_per_call=0.0009577166666666667 paired_relative=1.0751530696131448 slots=3
+# D5_PAIRED_ROUND profile="DeepSeek V4 Flash UD-Q4_K_XL hash-MoE H4096 N2048 top6" arm="Direct complete fragment" round=1 iterations=6 seconds_per_call=0.00084761666666666668 paired_relative=1.0751530696131448 slots=3
+# D5_PAIRED_ROUND profile="DeepSeek V4 Flash UD-Q4_K_XL hash-MoE H4096 N2048 top6" arm="Direct complete fragment" round=2 iterations=6 seconds_per_call=0.00082029999999999994 paired_relative=1.0751530696131448 slots=3
+# D5_PAIRED_ROUND profile="DeepSeek V4 Flash UD-Q4_K_XL hash-MoE H4096 N2048 top6" arm="Direct complete fragment" round=3 iterations=6 seconds_per_call=0.00095419999999999999 paired_relative=1.0751530696131448 slots=3
+# D5_PAIRED_ROUND profile="DeepSeek V4 Flash UD-Q4_K_XL hash-MoE H4096 N2048 top6" arm="Direct complete fragment" round=4 iterations=6 seconds_per_call=0.0011672333333333333 paired_relative=1.0751530696131448 slots=3
+# D5_PAIRED_ROUND profile="DeepSeek V4 Flash UD-Q4_K_XL hash-MoE H4096 N2048 top6" arm="Direct complete fragment" round=5 iterations=6 seconds_per_call=0.00082638333333333324 paired_relative=1.0751530696131448 slots=3
+# D5_PAIRED_ROUND profile="DeepSeek V4 Flash UD-Q4_K_XL hash-MoE H4096 N2048 top6" arm="Direct complete fragment" round=6 iterations=6 seconds_per_call=0.00072323333333333337 paired_relative=1.0751530696131448 slots=3
+# D5_PAIRED_ROUND profile="DeepSeek V4 Flash UD-Q4_K_XL hash-MoE H4096 N2048 top6" arm="Direct complete fragment" round=7 iterations=6 seconds_per_call=0.00075030000000000008 paired_relative=1.0751530696131448 slots=3
+# D5_PAIRED_ROUND profile="DeepSeek V4 Flash UD-Q4_K_XL hash-MoE H4096 N2048 top6" arm="Direct complete fragment" round=8 iterations=6 seconds_per_call=0.0014064166666666667 paired_relative=1.0751530696131448 slots=3
+# D5_PAIRED_ROUND profile="DeepSeek V4 Flash UD-Q4_K_XL hash-MoE H4096 N2048 top6" arm="Direct complete fragment" round=9 iterations=6 seconds_per_call=0.0011654 paired_relative=1.0751530696131448 slots=3
+# D5_PAIRED_ROUND profile="DeepSeek V4 Flash UD-Q4_K_XL hash-MoE H4096 N2048 top6" arm="Direct complete fragment" round=10 iterations=6 seconds_per_call=0.00074235000000000002 paired_relative=1.0751530696131448 slots=3
+# D5_PAIRED_ROUND profile="DeepSeek V4 Flash UD-Q4_K_XL hash-MoE H4096 N2048 top6" arm="Direct complete fragment" round=11 iterations=6 seconds_per_call=0.00070431666666666672 paired_relative=1.0751530696131448 slots=3
+# D5_PAIRED_ROUND profile="DeepSeek V4 Flash UD-Q4_K_XL hash-MoE H4096 N2048 top6" arm="Direct complete fragment" round=12 iterations=6 seconds_per_call=0.00082669999999999998 paired_relative=1.0751530696131448 slots=3
+# D5_PAIRED_ROUND profile="DeepSeek V4 Flash UD-Q4_K_XL hash-MoE H4096 N2048 top6" arm="Direct complete fragment" round=13 iterations=6 seconds_per_call=0.00084438333333333336 paired_relative=1.0751530696131448 slots=3
+# D5_PAIRED_ROUND profile="DeepSeek V4 Flash UD-Q4_K_XL hash-MoE H4096 N2048 top6" arm="Direct complete fragment" round=14 iterations=6 seconds_per_call=0.0013002333333333334 paired_relative=1.0751530696131448 slots=3
+# D5_PAIRED_ROUND profile="DeepSeek V4 Flash UD-Q4_K_XL hash-MoE H4096 N2048 top6" arm="Direct complete fragment" round=15 iterations=6 seconds_per_call=0.00078203333333333328 paired_relative=1.0751530696131448 slots=3
+# D5_PAIRED_ROUND profile="DeepSeek V4 Flash UD-Q4_K_XL hash-MoE H4096 N2048 top6" arm="Direct complete fragment" round=16 iterations=6 seconds_per_call=0.0011069333333333334 paired_relative=1.0751530696131448 slots=3
+# D5_PAIRED_ROUND profile="DeepSeek V4 Flash UD-Q4_K_XL hash-MoE H4096 N2048 top6" arm="Direct complete fragment" round=17 iterations=6 seconds_per_call=0.00087635000000000002 paired_relative=1.0751530696131448 slots=3
+# D5_PAIRED_ROUND profile="DeepSeek V4 Flash UD-Q4_K_XL hash-MoE H4096 N2048 top6" arm="Direct complete fragment" round=18 iterations=6 seconds_per_call=0.00087356666666666674 paired_relative=1.0751530696131448 slots=3
+# D5_PAIRED_ROUND profile="DeepSeek V4 Flash UD-Q4_K_XL hash-MoE H4096 N2048 top6" arm="Direct complete fragment" round=19 iterations=6 seconds_per_call=0.0021564499999999999 paired_relative=1.0751530696131448 slots=3
+# D5_PAIRED_ROUND profile="DeepSeek V4 Flash UD-Q4_K_XL hash-MoE H4096 N2048 top6" arm="Direct complete fragment" round=20 iterations=6 seconds_per_call=0.00079880000000000001 paired_relative=1.0751530696131448 slots=3
+# D5_PAIRED_ROUND profile="DeepSeek V4 Flash UD-Q4_K_XL hash-MoE H4096 N2048 top6" arm="Direct complete fragment" round=21 iterations=6 seconds_per_call=0.00072196666666666674 paired_relative=1.0751530696131448 slots=3
+# D5_PAIRED_ROUND profile="DeepSeek V4 Flash UD-Q4_K_XL hash-MoE H4096 N2048 top6" arm="Direct complete fragment" round=22 iterations=6 seconds_per_call=0.00070870000000000004 paired_relative=1.0751530696131448 slots=3
+# D5_PAIRED_ROUND profile="DeepSeek V4 Flash UD-Q4_K_XL hash-MoE H4096 N2048 top6" arm="Direct complete fragment" round=23 iterations=6 seconds_per_call=0.00086603333333333326 paired_relative=1.0751530696131448 slots=3

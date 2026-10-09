@@ -281,13 +281,9 @@
     },
     {
       "module": "graph",
-      "state": "BLOCKED",
-      "record": "docs/implementation/tasks/compute/llm-moe-d5-vulkan-performance-blocker.md",
-      "summary": "D5 BLOCKED：总ledger162通过/12拒绝/2数值失败，四路线A5完成，CPU/Apple/CUDA代表片段P1通过。Vulkan恢复A/A失败、正式样本0，保留原中断数据；A6与D6未关闭，产品FIX零。",
-      "blocked_from": "AUDITED",
-      "blocker": "Vulkan D5 A6唯一中断恢复的同实现A/A超过5%因素门/10%粗不稳定门；guard阻止正式样本，P1 INCONCLUSIVE，非产品性能FAIL。",
-      "blocker_owner": "D5性能验证维护者（Windows canonical）",
-      "resume_condition": "针对已记录自比较偏差的具名测量修正或执行环境变化，重新SCOPED有限预算并通过原同拓扑双顺序A/A；或用户明确修订工程验收要求。重复原命令不解除；残余正确性/覆盖要求不取消。"
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/vulkan-cpu-cuda-apple-parity-closure.md",
+      "summary": "Vulkan parity SCOPED: named paired measurement correction and exact eight-process AA passed unchanged 5%/10% gates; old failures retained; common catalogue, mature carrier and finite FIX audit pending. No product change or P1 completion claimed."
     },
     {
       "module": "container_concurrent",
@@ -549,23 +545,15 @@
     },
     {
       "module": "compute_route_vulkan",
-      "state": "BLOCKED",
-      "record": "docs/implementation/tasks/compute/llm-moe-d5-vulkan-performance-blocker.md",
-      "summary": "D5 BLOCKED：Vulkan两入口合计34通过/8冷拒绝/2数值失败，A5三交付完成。唯一A6恢复的自比较不合格，guard阻止正式采样，聚合INCONCLUSIVE；非产品性能FAIL。原Q4通过、Q8数值失败和官方低精度拒绝均保留。",
-      "blocked_from": "AUDITED",
-      "blocker": "Vulkan D5 A6唯一中断恢复的同实现A/A超过5%因素门/10%粗不稳定门；guard阻止正式样本，P1 INCONCLUSIVE，非产品性能FAIL。",
-      "blocker_owner": "D5性能验证维护者（Windows canonical）",
-      "resume_condition": "针对已记录自比较偏差的具名测量修正或执行环境变化，重新SCOPED有限预算并通过原同拓扑双顺序A/A；或用户明确修订工程验收要求。重复原命令不解除；残余正确性/覆盖要求不取消。"
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/vulkan-cpu-cuda-apple-parity-closure.md",
+      "summary": "Vulkan parity SCOPED: named paired measurement correction and exact eight-process AA passed unchanged 5%/10% gates; old failures retained; common catalogue, mature carrier and finite FIX audit pending. No product change or P1 completion claimed."
     },
     {
       "module": "graph_route_vulkan",
-      "state": "BLOCKED",
-      "record": "docs/implementation/tasks/compute/llm-moe-d5-vulkan-performance-blocker.md",
-      "summary": "D5 BLOCKED：Vulkan两入口合计34通过/8冷拒绝/2数值失败，A5三交付完成。唯一A6恢复的自比较不合格，guard阻止正式采样，聚合INCONCLUSIVE；非产品性能FAIL。原Q4通过、Q8数值失败和官方低精度拒绝均保留。",
-      "blocked_from": "AUDITED",
-      "blocker": "Vulkan D5 A6唯一中断恢复的同实现A/A超过5%因素门/10%粗不稳定门；guard阻止正式样本，P1 INCONCLUSIVE，非产品性能FAIL。",
-      "blocker_owner": "D5性能验证维护者（Windows canonical）",
-      "resume_condition": "针对已记录自比较偏差的具名测量修正或执行环境变化，重新SCOPED有限预算并通过原同拓扑双顺序A/A；或用户明确修订工程验收要求。重复原命令不解除；残余正确性/覆盖要求不取消。"
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/vulkan-cpu-cuda-apple-parity-closure.md",
+      "summary": "Vulkan parity SCOPED: named paired measurement correction and exact eight-process AA passed unchanged 5%/10% gates; old failures retained; common catalogue, mature carrier and finite FIX audit pending. No product change or P1 completion claimed."
     },
     {
       "module": "compute_provider_ggml_vulkan",
