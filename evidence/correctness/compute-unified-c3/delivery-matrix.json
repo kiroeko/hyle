@@ -249,8 +249,8 @@
       "routes": "vulkan",
       "deliveries": {
         "source": {
-          "direct": "FAIL",
-          "graph": "FAIL"
+          "direct": "PASS",
+          "graph": "PASS"
         },
         "shared": {
           "direct": "UNRUN",
@@ -262,6 +262,7 @@
         }
       },
       "evidence": [
+        "air-vulkan-partial.json",
         "air-vulkan-loader-failure/receipt.json"
       ]
     },

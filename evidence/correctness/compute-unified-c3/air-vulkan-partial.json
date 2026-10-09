@@ -1,0 +1,13 @@
+{
+  "product_candidate": "a1c22ac347583e8a9af3be3d8e8b55534afcd710",
+  "validation_source": "55652ab2c",
+  "source_archive_sha256": "0b48fd1c44ef0543d2213670dc8f775228e820c05a16c1b8950fae28d4d03358",
+  "source_location": "source-c8874688 refreshed from entire authenticated source snapshot with checksum-preserving update",
+  "scope": "Actual Air Vulkan source Direct/Graph under env -u DYLD_LIBRARY_PATH -u DYLD_FALLBACK_LIBRARY_PATH; no user workaround",
+  "source_direct": "PASS",
+  "source_graph": "PASS",
+  "shared_static": "UNRUN",
+  "log_sha256": "8f859edcc4bafcc30ee5c65e456f586a2d347ede68e61f3294d8900107766ba2",
+  "before_failure": "Preserved air-vulkan-loader-failure; temporary environment diagnostic is not the current PASS",
+  "remaining": "Shared/static and rest of C3/mixed/H1-H3 unproven"
+}

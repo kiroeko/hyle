@@ -24,3 +24,8 @@ P0：冷Context最多三次系统打开；成功owner仍保活DynLib至native终
 产品candidate：`a1c22ac347583e8a9af3be3d8e8b55534afcd710`。默认冷发现已接入上述两位置，
 显式loader override不进入回退；非macOS路径不执行新分支。数学、driver和全进程环境未改。
 实际Air无DYLD覆盖的普通三交付尚待验证，诊断成功不代签。
+
+Air普通source已实际PASS：明确`env -u DYLD_LIBRARY_PATH -u DYLD_FALLBACK_LIBRARY_PATH`运行
+原Direct/Graph，2.42s/0.47s；[收据](../../../../evidence/correctness/compute-unified-c3/air-vulkan-partial.json)
+保持初始FAIL与诊断独立。完整源码archive hash匹配后checksum增量更新，只编译一个owner TU
+及必要链接，原shader no-work。shared/static恢复现有driver循环，未删除source root，尚未签PASS。
