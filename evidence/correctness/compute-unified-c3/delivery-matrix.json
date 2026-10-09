@@ -58,8 +58,8 @@
           "graph": "PASS"
         },
         "shared": {
-          "direct": "UNRUN",
-          "graph": "UNRUN"
+          "direct": "PASS",
+          "graph": "PASS"
         },
         "static": {
           "direct": "UNRUN",

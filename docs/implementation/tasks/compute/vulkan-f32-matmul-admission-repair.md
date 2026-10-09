@@ -85,3 +85,8 @@ Direct/Graph目标，再验原数值门；原失败收据保留，不能改标�
 原rows1/16 FFN、改变输入和原误差门均保留；[收据](../../../../evidence/correctness/compute-unified-c3/windows-vulkan-partial.json)
 保存当前PASS，初始和中间FAIL不改标。source产物保留，已从原driver的shared/static循环恢复，
 没有重启会删除root的source批次。范围/资源/其它dtype定向回归及适用平台交付仍未签。
+
+Windows relocated shared的Direct/Graph FFN也实际PASS（1.43s/1.21s），已归档，static原循环继续。
+现有普通Direct consumer增补F32范围case：65536、2^-25与非F16可精确表示的输入，dense和
+转置RHS各两次更新；无需编译第二套Provider或修改误差门。此case加在已完成shared编译之后，
+不冒称已运行，待本批static结束后只补构建tiny consumer，不重建SDK。

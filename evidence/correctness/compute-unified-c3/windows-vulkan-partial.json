@@ -12,11 +12,15 @@
     },
     {
       "entry": "shared-direct",
-      "verdict": "UNRUN"
+      "verdict": "PASS",
+      "log": "evidence/correctness/compute-unified-c3/windows-vulkan/shared-compute-consumer-ctest.log",
+      "sha256": "0225c3506b23c35209f0f66888dd9807230bab1b449b62cb5631e457ccc0ec10"
     },
     {
       "entry": "shared-graph",
-      "verdict": "UNRUN"
+      "verdict": "PASS",
+      "log": "evidence/correctness/compute-unified-c3/windows-vulkan/shared-consumer-ctest.log",
+      "sha256": "86d2138374fcb66bd004460578200536dddfd0176b225980a29c4a87e3edfd81"
     },
     {
       "entry": "static-direct",
@@ -30,5 +34,6 @@
   "log_sha256": "9ca004af18d13f945b3bbdcad2c2b1bff89f0bfd961624c06f89f5018b94aa32",
   "numeric_gate": "unchanged 1e-4 + 4e-5*abs(expected); actual source FFN rows1/16 and three changed inputs",
   "before_failures": "Preserved in windows-vulkan-failure; first incomplete repair candidate also failed, not relabeled",
-  "remaining": "F32 range/resource/operator regressions, source/shared/static applicable platform delivery and joint execution remain unproven"
+  "remaining": "F32 range/resource/operator regressions, source/shared/static applicable platform delivery and joint execution remain unproven",
+  "extra_range_case": "Added after shared compile; UNRUN until dedicated tiny consumer rebuild, no FFN replay implied"
 }

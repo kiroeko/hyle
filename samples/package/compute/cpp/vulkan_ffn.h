@@ -4,6 +4,7 @@
 
 #include <hyle/compute/vulkan.h>
 
+#include <algorithm>
 #include <array>
 #include <cmath>
 #include <cstdint>
@@ -107,6 +108,50 @@ struct Weights final {
 };
 
 // Ordinary typed Direct: changing ready inputs, automatic output ownership.
+inline hyle::Status f32_operand_range(const v::Context &context) {
+  constexpr int rows = 16, depth = 7, columns = 5;
+  const auto input_desc = dense({rows, depth});
+  std::array<float, depth * columns> weights{};
+  weights[0 * columns + 0] = 0x1p-16f;
+  weights[1 * columns + 1] = 0x1p25f;
+  weights[2 * columns + 2] = 1.f;
+  weights[3 * columns + 3] = 0.25f;
+  weights[4 * columns + 4] = 3.f;
+  weights[5 * columns + 4] = 1000.f;
+  weights[6 * columns + 4] = 1.f;
+  for (bool transposed : {false, true}) {
+    auto description = dense({depth, columns});
+    auto physical = weights;
+    if (transposed) {
+      description = dense({columns, depth}).transposed().value();
+      for (int inner = 0; inner < depth; ++inner)
+        for (int column = 0; column < columns; ++column)
+          physical[column * depth + inner] = weights[inner * columns + column];
+    }
+    HYLE_ASSIGN_OR_RETURN(auto right, context.upload(
+        description, std::as_bytes(std::span(physical))));
+    HYLE_ASSIGN_OR_RETURN(auto program,
+                          v::prepare(context, c::MatMul{}, input_desc, right));
+    HYLE_ASSIGN_OR_RETURN(auto slot, program.create_invocation());
+    for (int replay = 0; replay < 2; ++replay) {
+      const std::array<float, depth> values{
+          0x1p16f, 0x1p-25f, 1.0001f + replay * 0.0003f,
+          -3.1415927f, 0.33333334f, 1e-4f, -0.125f};
+      std::array<float, rows * depth> input{};
+      for (int row = 0; row < rows; ++row)
+        std::copy(values.begin(), values.end(), input.begin() + row * depth);
+      HYLE_ASSIGN_OR_RETURN(auto left, context.upload(
+          input_desc, std::as_bytes(std::span(input))));
+      HYLE_RETURN_IF_ERROR(slot.bind(left));
+      HYLE_ASSIGN_OR_RETURN(auto work, slot.submit());
+      HYLE_ASSIGN_OR_RETURN(auto result, work.wait());
+      HYLE_RETURN_IF_ERROR(check(context, result->tensors()[0],
+          matmul(input, weights, rows, depth, columns)));
+    }
+  }
+  return hyle::Status::Ok();
+}
+
 inline hyle::Status ordinary(const v::Context &context) {
   const auto a_desc = dense({3, 7}), b_desc = dense({7, 5});
   const auto b_host = data(7 * 5, 6);
@@ -196,6 +241,7 @@ inline hyle::Status run() {
   HYLE_ASSIGN_OR_RETURN(auto context, v::Context::create());
   HYLE_RETURN_IF_ERROR(sample_vulkan_mature::direct(context));
   HYLE_RETURN_IF_ERROR(ordinary(context));
+  HYLE_RETURN_IF_ERROR(f32_operand_range(context));
   HYLE_RETURN_IF_ERROR(sample_vulkan_topk::direct(context));
   const Weights weights;
   for (int rows : {1, 16})
