@@ -546,14 +546,14 @@
     {
       "module": "compute_route_vulkan",
       "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/vulkan-parity-v2-artifact-bindings.md",
-      "summary": "Vulkan artifact batch AUDITED: exact mature NF4/AWQ/CT tensor recipes, six native ports, source rounding and U8/U32 storage fixed; paired AA resume retained. Product/runtime validation pending; no P1 or full catalogue PASS."
+      "record": "docs/implementation/tasks/compute/vulkan-parity-v2-mlx-bindings.md",
+      "summary": "Vulkan MLX packed batch AUDITED: exact original one-group/selected tensor programs, 21 entries, 32 original compiled dispatches and finite M1-M5; prior artifact Windows evidence retained. No full catalogue, Air, delivery or P1 PASS."
     },
     {
       "module": "graph_route_vulkan",
       "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/vulkan-parity-v2-artifact-bindings.md",
-      "summary": "Vulkan artifact batch AUDITED: exact mature NF4/AWQ/CT tensor recipes, six native ports, source rounding and U8/U32 storage fixed; paired AA resume retained. Product/runtime validation pending; no P1 or full catalogue PASS."
+      "record": "docs/implementation/tasks/compute/vulkan-parity-v2-mlx-bindings.md",
+      "summary": "Vulkan MLX packed batch AUDITED: exact original one-group/selected tensor programs, 21 entries, 32 original compiled dispatches and finite M1-M5; prior artifact Windows evidence retained. No full catalogue, Air, delivery or P1 PASS."
     },
     {
       "module": "compute_provider_ggml_vulkan",
@@ -620,8 +620,8 @@
     {
       "module": "compute_provider_iree_vulkan",
       "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/vulkan-parity-v2-artifact-bindings.md",
-      "summary": "Vulkan artifact batch AUDITED: exact mature NF4/AWQ/CT tensor recipes, six native ports, source rounding and U8/U32 storage fixed; paired AA resume retained. Product/runtime validation pending; no P1 or full catalogue PASS."
+      "record": "docs/implementation/tasks/compute/vulkan-parity-v2-mlx-bindings.md",
+      "summary": "Vulkan MLX packed batch AUDITED: exact original one-group/selected tensor programs, 21 entries, 32 original compiled dispatches and finite M1-M5; prior artifact Windows evidence retained. No full catalogue, Air, delivery or P1 PASS."
     },
     {
       "module": "compute_provider_torch_cuda",

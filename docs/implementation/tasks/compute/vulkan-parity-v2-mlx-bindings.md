@@ -1,6 +1,6 @@
 # Vulkan V2：原 MLX packed 十六需求
 
-<!-- MODULE REVIEW: SCOPED -->
+<!-- MODULE REVIEW: AUDITED -->
 
 baseline `a2c0d0c84a7e25a72617cf9a8641ccb75fac1f2b`。父轮
 [Vulkan parity](vulkan-cpu-cuda-apple-parity-closure.md)；现有 owner
@@ -58,3 +58,39 @@ P0记录one-group decode、原 dot/scale/累计、原VM内部循环和实际空�
 具体新source/call/ABI错误只做一次具名纠正；未合格不能PASS，不无限compiler flag试错。
 
 当前：SCOPED；原source与接口已识别，native动态group/typed workspace审计尚未完成。
+
+## AUDITED：冻结 M1–M5
+
+原source hashes已核对，现有CPU/CUDA/Apple三个consumer的packing、group次序、dtype和
+checked IDs接口一致。21个原标准 tensor/arith/linalg/scf entry（3格式×linear/grouped×
+3dtype + affine embedding×3dtype）已用锁定原compiler离线configure/compile成功；其
+32个去重dispatch均为原LocalSize64，并沿用原precision程序的IEEE execution mode。
+这只是编译/source资格，不是实际GPU PASS；不把scratch实验算成基础架构完成。
+
+- **M1-F**：直接纳入该21-entry原序列。scf VM循环每次只持有当前K group；选中W临时为
+  `[R,N,G]`，A为`[R,1,G]`，dot为`[R,1,N]`，F32累计为`[R,N]`，MX scale先以输出dtype
+  materialize再乘dot。原`optimization_barrier`配合`flow.tensor.tie_shape`保持原dtype和
+  tensor形状，已核对生成SPIR-V中U8 scale255的unsigned mask。embedding保留两次原typed
+  mul/add舍入。不能全K或全expert bank展开。
+- **M2-F**：私有七ProgramKind、experts、group与统一source/output dtype；A以二维、linear W/
+  scales以E=1三维、grouped IDs以R一维的原native view承载同bytes；embedding保持二维bank。
+  NativeProgram维持五输入上限及原scalar group，新增第五小型bytecode module。每invocation
+  独立VM/input/private-output，原queue/fence/async callback/retirement与quota不改。
+- **M3-F**：普通两入口接MlxQuantized。mixed affine仅冷追加已资格Cast，使A/scale/bias匹配
+  schema输出dtype；checked IDs沿既有safe-index和checked-copy发布边界。workspace按
+  group临时、两累计/dot/typed scale及必要转换预先有界；bank/input逐descriptor、index和
+  native grid先检查。空embedding无需dispatch。源dtype/internalTensor必须真实计费。
+- **M4-F**：原MLX源码/许可证/标准recipe/21 VM exports/新32原SPIR-V的manifest和vendor
+  identity更新，复用CMake嵌入及许可证安装。OFF路线/其它owner原结果不动，不改公共治理。
+- **M5-F**：本批全部三dtype/7入口、多group/实际packing、mixed affine、changed A/W/
+  scales/bias/IDs、bad/duplicate IDs、两slot/lease/状态恢复/empty/close/cancel/OOM和
+  bounds拒绝；新增DLL由原stage邻置。一producer、一不可变candidate集中build2/test1。
+
+普通 API/生命周期不变；额外临时空间与原VM内部dispatch全部算成本，未知硬件以真能力拒绝。
+旧上批通过域只在受影响共享接缝做必要delta，不重跑全路线/P1。模型16 actual geometry、
+Air/三交付及父轮default/P1仍未验。owner现AUDITED重新绑定本卡，baseline/source范围明确；
+同一原source/call误接最多一次具名纠正，否则列具体剩余域裁决，不无限优化或扩自研。
+
+七问：原源/pin/MIT许可见本卡及SOURCE；普通主/反偏置链与失败形状已冻结；复用existing
+Vulkan/ggml/IREE/mem/checked storage；P0 group空间和完整复制/执行成本有界；VM私有FFI
+不进公开ABI；交付沿既有嵌入/许可证/DLL；用户只用原自然schema，最终能力/精度按真实域诊断。
