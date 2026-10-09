@@ -132,3 +132,6 @@ both relocated SDKs, source/consumer artifacts and dependency caches.
 Air CPU+Vulkan shared also passed both relocated ordinary math consumers with exact `cpu;vulkan`
 metadata. The partial receipt and new logs bind actual identities. Effective C3 count is 52/90; static
 remains unrun, and H3 joint/async/expert execution is not certified by this delivery batch.
+Air CPU+Vulkan static also passed both ordinary consumers with exact routes, and the original driver
+exited 0. All five declared Air route groups now have source/shared/static qualification. Effective
+C3 count is 54/90; Windows CPU+Vulkan and WSL groups remain unrun, and H1-H3 remain unimplemented.

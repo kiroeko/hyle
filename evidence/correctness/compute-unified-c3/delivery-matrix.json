@@ -306,8 +306,8 @@
           "graph": "PASS"
         },
         "static": {
-          "direct": "UNRUN",
-          "graph": "UNRUN"
+          "direct": "PASS",
+          "graph": "PASS"
         }
       },
       "evidence": [

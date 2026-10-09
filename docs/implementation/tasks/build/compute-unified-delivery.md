@@ -326,3 +326,8 @@ machine cache和已核对SHA256的日志均保留，未删除产品源码或重�
 Air CPU+Vulkan 原 shared SDK 两项现也真实 PASS（Graph7.26s/Direct1.39s），精确 `cpu;vulkan`
 metadata、搬迁和原生资产闭包核对通过。C3 当前52 PASS / 38 UNRUN；原 static 循环继续，
 H3联合/异步/专家传输未实施。不因本轮文档或状态记录重编已通过阶段。
+
+Air CPU+Vulkan static 两消费者也已真实 PASS，精确完整路线/原生资产/搬迁检查通过，原循环exit0。
+Air五组cpu/apple/vulkan/cpu+apple/cpu+vulkan三交付全部完成；C3当前54 PASS / 36 UNRUN。
+下一串行 Windows CPU+Vulkan 新批次，然后WSL剩余组；其Vulkan实际GPU未资格仍按机器证据区分，
+不能用软件设备签GPU。H1–H3仍未开始；完成平台SDK不代签联合执行。

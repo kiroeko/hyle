@@ -29,14 +29,21 @@
     },
     {
       "entry": "static-direct",
-      "verdict": "UNRUN"
+      "verdict": "PASS",
+      "log": "evidence/correctness/compute-unified-c3/air-cpu-vulkan/static-direct-ctest.log",
+      "sha256": "4f701209f1ef5536ebbae66f81b5f860eeb27520742ee25cd023527c5be846f0",
+      "actual_routes": "cpu;vulkan"
     },
     {
       "entry": "static-graph",
-      "verdict": "UNRUN"
+      "verdict": "PASS",
+      "log": "evidence/correctness/compute-unified-c3/air-cpu-vulkan/static-graph-ctest.log",
+      "sha256": "ae1967854c0a3ce2ac8ca7f3b369b9b5703f86682d1b86e204da43bb1e5fe8d1",
+      "actual_routes": "cpu;vulkan"
     }
   ],
   "source_log": "evidence/correctness/compute-unified-c3/air-cpu-vulkan/source-ctest.log",
   "source_log_sha256": "acd00602dab6c79c5c22848755239bd956a16ee0901b6d1c827c923920f15f9d",
-  "remaining": "Original driver continues static; actual source/shared four consumers passed with both routes. H3 remains unproven."
+  "remaining": "Air CPU+Vulkan six ordinary math consumers complete; other C3/H1-H3 still unproven.",
+  "batch_exit_code": 0
 }
