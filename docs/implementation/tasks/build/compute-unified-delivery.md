@@ -87,6 +87,20 @@ R1 有限 FIX：当前使用文档将新 SDK route/recipe 查询与已有 implem
 验证未选 CPU 无隐式 fallback。无需为“必须重构”制造没有反例的 C++ 改动。
 原旧性能例外/INCONCLUSIVE 不重写，旧规则与源身份相同时不重跑 P1。
 
+### C3 入口与候选冻结
+
+实际三交付 consumer 使用现 `samples/package/compute/cpp`、`graph/cpp` 的数学/FFN journey，
+不新增 copy-only 演示。旧 selected-component smoke 动态拼 CPU/CUDA/oneDNN 旧参数，本次仅迁移
+为一个 `HYLE_SMOKE_COMPUTE_ROUTES`，保留原三交付、缺头/许可/运行资产/搬迁断言及低并行行为。
+不新写另一套发布工具，不把当前仪器无映射/旧参数失败当产品数学 FAIL。
+归档基线 superset；执行直接影响的 Compute/Graph 和 Core runtime staging/包接缝，
+未改其他模块数学/算法而不适用的完整 correctness 逐项保留原因。
+
+本机实际环境：Windows MSVC/Toolkit 13.3 和 RTX4070；WSL Ubuntu-24.04 x86_64/GCC14，
+可见 RTX4070/driver617.14；MacBook Air Mac16,12/arm64/macOS27.0.1/AppleClang21/CMake4.3.4，
+Metal 使用 setup 中既有签名组件/shim，默认 CLT 的 xcrun 不代表组件不存在。
+三验证机尚未为本候选签验收；Air 约40GiB可用，每 producer 串行、有界清理，不积累重复源码/SDK。
+
 ## 预算、验证和停止
 
 - 审计一遍当前入口/源码和现有 fixture；一个配置边界最多一次定向修正，不翻历史性能队列。

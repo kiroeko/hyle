@@ -87,18 +87,24 @@ elseif(HYLE_SMOKE_COMPONENT STREQUAL "core")
   string(APPEND _source_extra_tests
     "add_test(NAME hyle_selected_core_no_exceptions COMMAND hyle_selected_core_no_exceptions)\n")
 elseif(HYLE_SMOKE_COMPONENT MATCHES "^(compute|graph)$")
-  # Exercise one explicit capability set in every delivery shape. Preserve
-  # the existing x64 oneDNN smoke unless the caller chooses a narrower route.
-  set(_compute_cpu_selected TRUE)
-  if(DEFINED HYLE_SMOKE_COMPUTE_CPU)
-    set(_compute_cpu_selected "${HYLE_SMOKE_COMPUTE_CPU}")
+  # Drive the same complete product route set through all three deliveries.
+  foreach(_legacy IN ITEMS CPU CUDA ONEDNN)
+    if(DEFINED HYLE_SMOKE_COMPUTE_${_legacy})
+      message(FATAL_ERROR "Use HYLE_SMOKE_COMPUTE_ROUTES instead of old feature smoke knobs")
+    endif()
+  endforeach()
+  if(NOT DEFINED HYLE_SMOKE_COMPUTE_ROUTES)
+    set(HYLE_SMOKE_COMPUTE_ROUTES cpu)
   endif()
-  if(DEFINED HYLE_SMOKE_COMPUTE_CUDA AND HYLE_SMOKE_COMPUTE_CUDA)
-    set(_compute_cuda_selected TRUE)
-  endif()
-  if(DEFINED HYLE_SMOKE_COMPUTE_ONEDNN)
-    set(_compute_onednn_selected "${HYLE_SMOKE_COMPUTE_ONEDNN}")
-  elseif(_compute_cpu_selected AND NOT _compute_cuda_selected)
+  include("${HYLE_SOURCE_DIR}/cmake/HyleComputeRoutes.cmake")
+  _hyle_parse_compute_routes("${HYLE_SMOKE_COMPUTE_ROUTES}" _smoke_routes)
+  foreach(_route IN ITEMS cpu cuda apple vulkan)
+    set(_compute_${_route}_selected FALSE)
+    if(_route IN_LIST _smoke_routes)
+      set(_compute_${_route}_selected TRUE)
+    endif()
+  endforeach()
+  if(_compute_cpu_selected)
     cmake_host_system_information(
       RESULT _hyle_smoke_host_processor QUERY OS_PLATFORM)
     string(TOLOWER "${_hyle_smoke_host_processor}"
@@ -108,18 +114,11 @@ elseif(HYLE_SMOKE_COMPONENT MATCHES "^(compute|graph)$")
     endif()
     unset(_hyle_smoke_host_processor)
   endif()
-  foreach(_feature IN ITEMS cpu cuda onednn)
-    string(TOUPPER "${_feature}" _feature_upper)
-    if(_compute_${_feature}_selected)
-      set(_feature_value ON)
-    else()
-      set(_feature_value OFF)
-    endif()
-    string(APPEND _source_feature_contract
-      "set(HYLE_COMPUTE_${_feature_upper} ${_feature_value})\n")
-    list(APPEND _selected_feature_args
-      -DHYLE_COMPUTE_${_feature_upper}=${_feature_value})
-  endforeach()
+  string(APPEND _source_feature_contract
+    "set(HYLE_COMPUTE_ROUTES [==[${_smoke_routes}]==])\n")
+  # Keep one CMake list element even when the route value contains semicolons.
+  string(REPLACE ";" "\\;" _smoke_route_argument "${_smoke_routes}")
+  list(APPEND _selected_feature_args "-DHYLE_COMPUTE_ROUTES=${_smoke_route_argument}")
 endif()
 file(WRITE "${_source_parent}/CMakeLists.txt"
 "cmake_minimum_required(VERSION 3.25)\n"
