@@ -192,3 +192,7 @@ V3拥有服务的primary A/A通过、placement A/A资格失败，正式n15未启
 [具体性能取舍](vulkan-v3-performance-engineering-decision.md)待用户决定。
 独立[V4平台/三交付](vulkan-parity-v4-delivery.md)开始当前源与真实环境审计，
 不让该性能条件阻断可独立工作，也不假签P1或整个goal完成。
+
+2026-10-09用户明确偏好纳入[四路线单primary有限清理](four-route-single-primary-cleanup.md)：
+每个完整条件一个固定首选及有实用途的默认/失败兜底，已输或闲置数学实现清理。
+其它CLOSED路线只读核对，发现具名新事实才定向reopen，不恢复全库重审/性能队列。

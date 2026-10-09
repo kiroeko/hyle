@@ -540,15 +540,15 @@
     },
     {
       "module": "compute_route_vulkan",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/vulkan-parity-v4-delivery.md",
-      "summary": "V4 SCOPED after explicit user engineering/P0 decision: primary AA PASS, placement qualification FAIL and formalP1 INCONCLUSIVE retained; no performance WIN. Current source/platform/three-delivery audit, V2/default proofs reused; mature replacement preferred and unique mechanisms distinguished."
+      "summary": "V4 AUDITED: fixed batched source/static/shared and actual Windows/Air/WSL applicability gates; reuse unchanged V2/default proofs, no new AA/n15. User engineering/P0 decision and unqualified formalP1 retained; four-route single-primary source audit complete."
     },
     {
       "module": "graph_route_vulkan",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/vulkan-parity-v4-delivery.md",
-      "summary": "V4 SCOPED after explicit user engineering/P0 decision: primary AA PASS, placement qualification FAIL and formalP1 INCONCLUSIVE retained; no performance WIN. Current source/platform/three-delivery audit, V2/default proofs reused; mature replacement preferred and unique mechanisms distinguished."
+      "summary": "V4 AUDITED: fixed batched source/static/shared and actual Windows/Air/WSL applicability gates; reuse unchanged V2/default proofs, no new AA/n15. User engineering/P0 decision and unqualified formalP1 retained; four-route single-primary source audit complete."
     },
     {
       "module": "compute_provider_ggml_vulkan",

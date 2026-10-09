@@ -1,0 +1,79 @@
+{
+  "baseline": "5f26ad520",
+  "kind": "bounded current source and existing verdict audit; no new numerical or performance qualification",
+  "qualified_primary_checks": [
+    {
+      "route": "CPU",
+      "qualified_requests": 43,
+      "chosen": {
+        "native": 41,
+        "ggml": 1,
+        "aten": 1
+      },
+      "multiple_primaries": [],
+      "evidence": "evidence/performance/cpu-final-f4-p1/complete-provider-choices.json",
+      "evidence_sha256": "25656cd7ae96188011c51ac530fd922075c4fc4180fc3ca28d415662e14d4eb8"
+    },
+    {
+      "route": "CUDA",
+      "qualified_requests": 23,
+      "chosen": {
+        "hyle": 23
+      },
+      "multiple_primaries": [],
+      "evidence": "evidence/performance/cuda-best-of-c2/complete-provider-choices.json",
+      "evidence_sha256": "2bd54abf28c8d47cf5bd19f4f7a23fb6174f83194e0b6c2b67477919adc91df2"
+    }
+  ],
+  "sources": {
+    "src/compute_route_cpu/default_policy.cc": "3b0d5aca67390514cce2d4ede5749ce567cb5debd0219811976ad420167d603a",
+    "src/compute_provider_native/default_rules.cc": "5cdcc9165dd8099d55aadf4b46ec58db240229c80ff88b50d99a8a7356f44464",
+    "src/compute_provider_native/elementwise.cc": "6a05b5aaab1cfabdf4defe4e005cb00113b0e996c95d4d6797f0d1a2bdf3b6a8",
+    "src/compute_route_cuda/default_policy.cc": "3c4eafe1a55b033fd703a01ebcba2511c2917401ccedc512c4f2b10000a65445",
+    "src/compute_route_cuda/best_of.cc": "e68757a259f876cef729a5bb4b2f9519bec70ef9a5adf45a473437af5332c807",
+    "src/compute_provider_cuda/tensor_kernel.cu": "95181b72d1b833ea36db284b4b86b2ad038e87fed962ad8000326d5274a5ed7c",
+    "src/compute_route_apple/apple_operations.cc": "4c90b14e44cc3a438c16c9935ef19e1e14a1642790179261004cb2d8d6065ee2",
+    "src/compute_route_apple/apple_mature_float.cc": "c612df03b76fefa18a02604bd792bcd8f702829d753e3e1275f8acbedb3f1a25",
+    "src/graph_route_apple/apple_lowering.cc": "9088727780a903f1b5f1558bb188aab431455574bb6a8b83de2ca96e2a1d50cb",
+    "src/compute_route_vulkan/vulkan_program.cc": "d99e0bb87e1b6caa503b099956cb3d0857c4fa19a250f27890be2623087fd070",
+    "src/compute_route_vulkan/vulkan_policy.h": "0652c58c8dddd89d52c7eb2ad051be15c218d2b7dc5634b517913a535d37bec9",
+    "src/compute_route_vulkan/vulkan_elementwise.cc": "35f20637c1c56a925a3b6480894254a9c621b538a6a104941323b07838c1f0b5",
+    "src/compute_route_vulkan/vulkan_normalization.cc": "90b25978d1ae851b107e8a0caa4962a502d3f0e18cbc8e17f7938896b97b6d33",
+    "src/compute_route_vulkan/vulkan_reduction.cc": "b8a292ec9f6eaca989acef7a0faaaa97a4c1cc1d26369f03aaee93a55629dc1f",
+    "src/compute_route_vulkan/vulkan_tensor.cc": "a188a4431b4c52d7d731970832e7ae6618b3fb082f2a274a1cfa38214f36c371",
+    "src/compute_route_vulkan/vulkan_scatter.cc": "458dd3af544a486a27864f2e36d09d98f9d540644f6d069cb7a229dd21875601",
+    "src/compute_route_vulkan/shaders/tensor.comp": "0c1320858183c2bec62cc279bd4061f627276f6d2e1da78bacbeba51744f83f8"
+  },
+  "decisions": [
+    {
+      "route": "CPU",
+      "primary": "43 exact qualified choices; other contracts one mature engineering baseline",
+      "self": "20 qualified kinds plus named Copy/RMS resource capability; old 14 kinds physically retired in F5",
+      "fallback": "OneDNN unavailable on macOS/disabled; original GGUF codec; ATen stable special values or odd-byte/rank/layout; Copy/RMS declared-resource contract",
+      "decision": "KEEP_PRIMARY_AND_NAMED_CAPABILITIES"
+    },
+    {
+      "route": "CUDA",
+      "primary": "23 exact qualified native leaf rules; plain rank2 GEMM cuBLAS, packed ggml, eligible activations SGLang, scan/topK/plainGather CCCL, admitted SDPA FlashInfer, stableSoftplus Torch",
+      "self": "79 redundant dense AOT instances already physically retired; remaining shared generic code covers qualified rules or strict stride/alignment/managed/resource/IEEE semantics",
+      "fallback": "Unknown software/hardware uses mature baseline; measured resource qualifier fails use original capability; Graph complete region precedes isolated leaf rule",
+      "decision": "KEEP_PRIMARY_AND_NAMED_CAPABILITIES"
+    },
+    {
+      "route": "Apple",
+      "primary": "GGUF and fixed model region ggml Metal, packed MLX and ordinary tensors MLX; four measured overlaps already prefer ggml",
+      "self": "No redundant self Metal/GEMM/GDN/Hadamard shader; authorized FP4 fidelity and checked publication adapters preserved",
+      "fallback": "Exact Q4_K selected-row semantic uses MLX source program instead of original half-rounded Metal; failed carrier is not kept as competing primary",
+      "decision": "KEEP_PRIMARY_AND_MATURE_FORMAT_DOMAINS"
+    },
+    {
+      "route": "Vulkan",
+      "primary": "IREE registered packed/precision programs first; ggml qualified original regions next; strict storage/semantic/low-feature paths only outside their admission",
+      "self": "Residual 128-lane tensor code is shared strict/low-feature capability, not a second hot choice. ReLU/GELU IEEE/tail, numberMinMax, LogSoftmax/LogSumExp and empty reductions remain sole complete registered paths",
+      "fallback": "Original ggml 512-lane/grid/16-bit admission fails; unaligned arbitrary byte storage, integer/Bool payloads, exact cast without optional shader features; checked transactional IDs/duplicates, wide/overflow scan",
+      "decision": "KEEP_PRIMARY_AND_NAMED_CAPABILITIES_NO_NEW_WIN"
+    }
+  ],
+  "new_physical_retirements": [],
+  "limits": "Current source audit found no newly proven entirely unused/losing operator source beyond existing retirements. Source and winner uniqueness checks do not prove all-device SOTA, new numeric coverage, Vulkan delivery or P1. No product edit, old CLOSED states preserved."
+}
