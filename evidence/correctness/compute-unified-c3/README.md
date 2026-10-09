@@ -12,6 +12,10 @@ and cannot certify the later joint execution or asynchronous transfer work.
 C2-01 build-graph defect: an inactive link suppresses copying but still builds its source asset owner.
 This is a CMake fixture, not a Metal or math verdict. A finite owner-authorized correction is pending
 after the current immutable Windows CUDA batch; existing non-Apple math receipts are retained.
+The [disposable correction experiment](apple-conditional-producer/design-experiment/receipt.json) passed
+inactive/active source asset cases on Windows Ninja and Air Unix Makefiles, with the real library owner
+and generated asset in a separate directory. It validates the finite dependency approach, not an applied
+product fix or native Metal execution.
 
 - [Windows CPU receipt](windows-cpu-receipt.json): six actual public math consumers passed,
   covering Direct and Graph in embedded source, relocated shared SDK and relocated static SDK.

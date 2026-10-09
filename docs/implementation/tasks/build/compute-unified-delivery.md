@@ -207,3 +207,8 @@ mixed SDK仅验证其两条native路线分别可用，不代签H1–H3联合、�
 Windows CUDA relocated shared SDK 的Direct/Graph FFN两项也已实际PASS，DLL邻EXE；
 shared export hygiene检查18个HYLE库/985个导出通过。共四项CUDA消费者已归档；
 原批次进入static，不重跑source/shared。数学/路由/原生进展未改变，没有P1。
+
+C2-01有限修正接法已在[可丢弃helper副本](../../../../evidence/correctness/compute-unified-c3/apple-conditional-producer/design-experiment/receipt.json)
+通过Windows Ninja和Air Unix Makefiles正/反分支、跨目录library/资产producer构建图检查：
+collector保留producer条件，stage使用求值后的`DEPENDS`，撤掉无条件producer边。
+仅修改副本，当前产品/候选未变；不签native MLX数学。当前static原批次完成后按上述范围正式修正。

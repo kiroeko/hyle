@@ -1,0 +1,7 @@
+file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/owner.cc" "int asset_owner_value() { return 1; }\n")
+add_library(asset_owner STATIC "${CMAKE_CURRENT_BINARY_DIR}/owner.cc")
+add_custom_command(OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/mlx.metallib"
+  COMMAND "${CMAKE_COMMAND}" -E touch "${CMAKE_CURRENT_BINARY_DIR}/mlx.metallib")
+add_custom_target(asset_producer DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/mlx.metallib")
+add_dependencies(asset_owner asset_producer)
+set_property(TARGET asset_owner PROPERTY HYLE_APPLE_METALLIB "${CMAKE_CURRENT_BINARY_DIR}/mlx.metallib")

@@ -1,0 +1,37 @@
+{
+  "scope": "Disposable build-graph experiment only; no product edits or native MLX/math qualification",
+  "windows_ninja": {
+    "inactive_generates": false,
+    "inactive_copies": false,
+    "active_generates": true,
+    "active_copies": true,
+    "observed_exit": 0
+  },
+  "air_unix_makefiles": {
+    "inactive_generates": false,
+    "inactive_copies": false,
+    "active_generates": true,
+    "active_copies": true,
+    "observed_exit": 0
+  },
+  "finite_fix": "Retain source owner condition in collected producer and pass evaluated producers through custom-target DEPENDS instead of unconditional add_dependencies. Actual library owner and asset producer are in another CMake directory.",
+  "product_status": "Pending authorized application after current immutable Windows CUDA batch",
+  "files": [
+    {
+      "file": "evidence/correctness/compute-unified-c3/apple-conditional-producer/design-experiment/AppleRuntime-proposed.cmake",
+      "sha256": "869f3e07776c04156415fb115f76d19248770204cd89660a8a38b9f8ffdf0de5"
+    },
+    {
+      "file": "evidence/correctness/compute-unified-c3/apple-conditional-producer/design-experiment/fixture.txt",
+      "sha256": "281c585708a23991cf5da456f3236a7a0ea51363f14b91bf6cb95c4f658761ff"
+    },
+    {
+      "file": "evidence/correctness/compute-unified-c3/apple-conditional-producer/design-experiment/native-fixture.txt",
+      "sha256": "db7e59b3970d65d497f641b9a3da4527f253f300613930d17911d00f5e1bb697"
+    },
+    {
+      "file": "evidence/correctness/compute-unified-c3/apple-conditional-producer/design-experiment/RuntimeStaging-proposed.cmake",
+      "sha256": "6d1e6c64f6e877e88004fd809fe6e0f512bb913cc6df276d7ba6cb7624549bf2"
+    }
+  ]
+}
