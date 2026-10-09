@@ -72,3 +72,9 @@ The [Air Vulkan receipt](air-vulkan-partial.json) covers six actual source/reloc
 after route-owned default loader discovery, without DYLD overrides. Its original loader failure remains
 archived. Product a1c22ac3 and validation snapshot 55652ab2 are bound to the complete archive hash; only the
 changed owner TU and links were rebuilt for the source correction.
+
+The [Air CPU+Apple configuration failure](air-mixed-license-failure/receipt.json) occurred before
+compilation: both routes registered the same DS4 source lock. The original configure log is retained;
+this does not assign a mathematical consumer verdict. The bounded
+[shared license registration repair](../../../docs/implementation/tasks/build/compute-mixed-shared-license-registration.md)
+changes only which selected component owns the package license entry.

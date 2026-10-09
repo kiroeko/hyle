@@ -477,10 +477,9 @@
     },
     {
       "module": "compute_route_apple",
-      "state": "CANDIDATE",
-      "record": "docs/implementation/tasks/build/compute-unified-delivery.md",
-      "summary": "统一构建/冷路由候选已修正条件资产producer；Windows CPU/CUDA三交付消费者全部通过，其余平台/路线/mixed矩阵仍待验，H1–H3未实施。",
-      "candidate": "2614676ee64bceddadcf791c218d6eea1f051c64"
+      "state": "AUDITED",
+      "record": "docs/implementation/tasks/build/compute-mixed-shared-license-registration.md",
+      "summary": "C3 CPU+Apple 真实配置发现 DS4 重复锁登记；已固定一个组件闭包条件修正，算子和路由不变。"
     },
     {
       "module": "graph_route_apple",

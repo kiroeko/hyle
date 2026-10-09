@@ -1,0 +1,13 @@
+{
+  "scope": "ordinary Air cpu;apple source embedding configure",
+  "baseline": "6e7af97eba15e131db13829681cdbde514965a88",
+  "validation_source_snapshot": "55652ab2c",
+  "product_candidate": "a1c22ac347583e8a9af3be3d8e8b55534afcd710",
+  "configure": "FAIL",
+  "compile": "UNRUN",
+  "direct": "UNRUN",
+  "graph": "UNRUN",
+  "diagnosis": "CPU native and Apple both register the same locked ds4_quantization source; registry correctly rejects duplicate ownership.",
+  "log": "configure.log",
+  "matrix_meaning": "Failure is in configuration; no mathematical consumer PASS or FAIL is claimed."
+}

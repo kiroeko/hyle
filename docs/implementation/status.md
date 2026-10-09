@@ -57,7 +57,7 @@
 | compute_provider_cuda | CLOSED | P1 / [PASS](../../evidence/performance/cuda-best-of-c2/README.md) / 5% | [record](tasks/compute/cuda-best-of-completion.md) | CLOSED：23精确CUDA叶优选、169成熟默认、14单承载；79重复程序实例清退。两OS三交付/Core63/严格profile资源回退及终审通过；原性能聚合和static批次FAIL保留，不外推全硬件/完整region。 |
 | compute_route_cuda | CANDIDATE | — | [record](tasks/build/compute-unified-delivery.md) | 统一构建/冷路由候选已修正条件资产producer；Windows CPU/CUDA三交付消费者全部通过，其余平台/路线/mixed矩阵仍待验，H1–H3未实施。 |
 | graph_route_cuda | CANDIDATE | — | [record](tasks/build/compute-unified-delivery.md) | 统一构建/冷路由候选已修正条件资产producer；Windows CPU/CUDA三交付消费者全部通过，其余平台/路线/mixed矩阵仍待验，H1–H3未实施。 |
-| compute_route_apple | CANDIDATE | — | [record](tasks/build/compute-unified-delivery.md) | 统一构建/冷路由候选已修正条件资产producer；Windows CPU/CUDA三交付消费者全部通过，其余平台/路线/mixed矩阵仍待验，H1–H3未实施。 |
+| compute_route_apple | AUDITED | — | [record](tasks/build/compute-mixed-shared-license-registration.md) | C3 CPU+Apple 真实配置发现 DS4 重复锁登记；已固定一个组件闭包条件修正，算子和路由不变。 |
 | graph_route_apple | CANDIDATE | — | [record](tasks/build/compute-unified-delivery.md) | 统一构建/冷路由候选已修正条件资产producer；Windows CPU/CUDA三交付消费者全部通过，其余平台/路线/mixed矩阵仍待验，H1–H3未实施。 |
 | compute_route_vulkan | CANDIDATE | — | [record](tasks/build/compute-unified-delivery.md) | 统一构建/冷路由候选已修正条件资产producer；Windows CPU/CUDA三交付消费者全部通过，其余平台/路线/mixed矩阵仍待验，H1–H3未实施。 |
 | graph_route_vulkan | CANDIDATE | — | [record](tasks/build/compute-unified-delivery.md) | 统一构建/冷路由候选已修正条件资产producer；Windows CPU/CUDA三交付消费者全部通过，其余平台/路线/mixed矩阵仍待验，H1–H3未实施。 |
