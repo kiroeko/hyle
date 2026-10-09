@@ -119,4 +119,7 @@ hyle_register_package_dependency(
     "${iree_vulkan_headers_SOURCE_DIR}/LICENSES/Apache-2.0.txt|${CMAKE_INSTALL_DATADIR}/licenses/Hyle|iree-vulkan-headers-Apache-2.0.txt"
     "${iree_vulkan_headers_SOURCE_DIR}/LICENSES/MIT.txt|${CMAKE_INSTALL_DATADIR}/licenses/Hyle|iree-vulkan-headers-MIT.txt"
     "${_vendor}/LICENSE|${CMAKE_INSTALL_DATADIR}/licenses/Hyle|iree-vulkan-patches-LICENSE"
-    "${_vendor}/NOTICE.md|${CMAKE_INSTALL_DATADIR}/licenses/Hyle|iree-vulkan-patches-NOTICE.md")
+    "${_vendor}/NOTICE.md|${CMAKE_INSTALL_DATADIR}/licenses/Hyle|iree-vulkan-patches-NOTICE.md"
+    "${_vendor}/programs/licenses/bitsandbytes.txt|${CMAKE_INSTALL_DATADIR}/licenses/Hyle|iree-bitsandbytes-LICENSE"
+    "${_vendor}/programs/licenses/awq.txt|${CMAKE_INSTALL_DATADIR}/licenses/Hyle|iree-awq-LICENSE"
+    "${_vendor}/programs/licenses/compressed-tensors.txt|${CMAKE_INSTALL_DATADIR}/licenses/Hyle|iree-compressed-tensors-LICENSE")

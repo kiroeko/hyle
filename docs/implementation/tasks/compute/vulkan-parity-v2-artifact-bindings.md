@@ -72,3 +72,12 @@ selector、docs/closure 必跑；适用未运行写 UNPROVEN，不能 PASS。bud
 剩余项及原因，本卡保持 AUDITED 或依法转阶段，不能用无限调查续命。
 
 当前：审计完成；产品与 runtime 尚未实现/运行，全部新增验证 UNPROVEN。
+
+## 首批 candidate 与具名交付纠正
+
+`1ea7e3074` 完成 A1–A5 产品接线和 24 个原格式/scale-output dtype 入口、六 native input。
+锁定编译器离线原标准 recipe 生成 24 个 LocalSize64/SignedZeroInfNanPreserve 入口成功；
+这不是 runtime PASS。首次集中构建在 package registry 拒绝新增三个原源 license
+未列入安装资源，尚未编译新 C++。一次 A5 纠正仅补 owning factor 的三项
+`RUNTIME_FILE_SPECS`；不修改公共 package checker，不删除许可证或放宽 gate。
+复用同一 producer，未启动测试或 P1，旧通过域不重跑。
