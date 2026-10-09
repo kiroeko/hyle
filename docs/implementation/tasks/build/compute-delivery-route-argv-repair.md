@@ -51,3 +51,8 @@ Windows 原 static 也已实际 PASS：Graph1.84s/Direct1.85s，metadata 精确 
 SDK 循环 exit0；该组合六消费者全部通过，C3 当前38 PASS / 52 UNRUN。
 下一串行 Air 原 SDK 循环已恢复，真实子进程为一个 `cpu;apple` 参数，配置 metadata 也精确一致；
 shared/static 数学尚未签，旧错误包/判断与 source PASS 独立保留。没有重启任何 source root。
+
+Air 修正后的 shared 也真实 PASS：Graph20.28s/Direct14.78s，metadata 精确 `cpu;apple`；
+新日志与 SDK metadata 放在独立 `air-cpu-apple-fixed`，原 CPU-only 文件不覆盖。
+C3 现40 PASS / 50 UNRUN；static 原循环继续，尚未签。本工具仍 CANDIDATE，等待该四项修复资格完成。
+统一脚本在不可变 `5e94f4cd` 重新统计 Compute+Graph62,508 实现行，self-check PASS，不含测试和第三方。

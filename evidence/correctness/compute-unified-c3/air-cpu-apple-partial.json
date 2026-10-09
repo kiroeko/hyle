@@ -22,19 +22,25 @@
     },
     {
       "entry": "shared-direct",
-      "verdict": "UNRUN",
-      "log": "evidence/correctness/compute-unified-c3/air-cpu-apple/shared-direct-ctest.log",
-      "sha256": "cec63a1022eb9676dc648f6dad5b788cf76fe11791ee354bf45d92f33a715819",
+      "verdict": "PASS",
+      "log": "evidence/correctness/compute-unified-c3/air-cpu-apple-fixed/shared-direct-ctest.log",
+      "sha256": "452aeb53a9d44d532c7be46279e33e9641d6511a61e371365461de9b02450e37",
       "superseded_claim": "PASS",
-      "observed_cpu_only_math": "PASS"
+      "observed_cpu_only_math": "PASS",
+      "tool_candidate": "ed2dd3c3869be140fa6e63c439c3f8479a3deb6c",
+      "actual_routes": "cpu;apple",
+      "source_archive_sha256": "98ef74990ec0e679a9293444c1f01800d8c3d3ac18e8a02bd8eb2e0c81ddd09a"
     },
     {
       "entry": "shared-graph",
-      "verdict": "UNRUN",
-      "log": "evidence/correctness/compute-unified-c3/air-cpu-apple/shared-graph-ctest.log",
-      "sha256": "75b83f12b16440909d354ac41a4b082427e5362169f36ce5d42d123925624e31",
+      "verdict": "PASS",
+      "log": "evidence/correctness/compute-unified-c3/air-cpu-apple-fixed/shared-graph-ctest.log",
+      "sha256": "7c4ec3e42375d9bee9762f5fdede54f64c0222bda87a5e4bdf59b9f3033e214b",
       "superseded_claim": "PASS",
-      "observed_cpu_only_math": "PASS"
+      "observed_cpu_only_math": "PASS",
+      "tool_candidate": "ed2dd3c3869be140fa6e63c439c3f8479a3deb6c",
+      "actual_routes": "cpu;apple",
+      "source_archive_sha256": "98ef74990ec0e679a9293444c1f01800d8c3d3ac18e8a02bd8eb2e0c81ddd09a"
     },
     {
       "entry": "static-direct",
@@ -55,7 +61,7 @@
   ],
   "scope": "C3 ordinary mixed SDK. CPU and Apple native math consumers must each execute; not H2 joint execution.",
   "before_failure": "air-mixed-license-failure/receipt.json",
-  "remaining": "Corrected SDK stages and other C3 entries remain unproven; source CPU+Apple PASS retained.",
+  "remaining": "Corrected full-route shared SDK passed. Original fixed loop continues static; prior CPU-only observations remain in original folder and archived claim.",
   "batch_exit_code": 0,
   "sdk_log_sha256": "3fe0cefb6994107121b1b96f247a134a235388259d399012bd6c78b90b772b54",
   "qualification_correction": "Shared/static actual available routes are cpu. Their math passed for CPU only; requested CPU+Apple qualification is withdrawn pending corrected argv and full route guard."
