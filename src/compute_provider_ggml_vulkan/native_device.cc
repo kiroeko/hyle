@@ -2,6 +2,7 @@
 #include "hyle/core/environment.h"
 
 #include <exception>
+#include <initializer_list>
 #include <new>
 #include <utility>
 
