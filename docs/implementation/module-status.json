@@ -477,9 +477,10 @@
     },
     {
       "module": "compute_route_apple",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/build/compute-mixed-shared-license-registration.md",
-      "summary": "C3 CPU+Apple 真实配置发现 DS4 重复锁登记；已固定一个组件闭包条件修正，算子和路由不变。"
+      "summary": "C3 CPU+Apple DS4 共享锁登记定向修正已冻结；原失败保留，恢复组合三交付验收。",
+      "candidate": "530e230bbc11e4fe12218a6a021ca15b009337c3"
     },
     {
       "module": "graph_route_apple",

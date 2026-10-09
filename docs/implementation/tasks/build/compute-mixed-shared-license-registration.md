@@ -1,6 +1,6 @@
 # C3 CPU+Apple 共享源码依赖登记修正
 
-<!-- MODULE REVIEW: AUDITED -->
+<!-- MODULE REVIEW: CANDIDATE -->
 
 - owner：`compute_route_apple`；baseline `6e7af97eb`。
 - 需求：普通 `HYLE_COMPUTE_ROUTES=cpu;apple` 的完整源码及静态/动态 SDK。
@@ -28,3 +28,6 @@ P0：一次 CMake 条件选择，不增加运行期成本。恢复 Air 原 sourc
 一次组合交付批次；有新缺陷则报告具体项，不换目录重置失败预算。
 本卡不实现 H2 联合执行或新算子；完成本项仍回到
 [C3 统一交付](compute-unified-delivery.md)，不能代签其余路线/平台。
+
+产品候选：`530e230bbc11e4fe12218a6a021ca15b009337c3`。仅上述 component 闭包条件已实现，中央 registry 保持严格唯一 owner。
+selector READY，docs/closure/diff 检查通过；Air 组合原目录配置和数学尚待恢复，不能称 PASS。
