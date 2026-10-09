@@ -109,10 +109,10 @@
     {
       "name": "official",
       "file": "official.vmfb.b64",
-      "sha256": "7cf7f29690ce8e2145a64e3a8cfe625d01f4212e7b71e5729080c8870a2d5226",
-      "bytes": 173478,
+      "sha256": "c6e941800a74d7e7c5e01ecd4e8f7b5ff888fc1270518b4182988b1b97d53943",
+      "bytes": 175618,
       "recipe": "official.mlir",
-      "recipe_sha256": "e725df15a906b1df5fb291658006239ae2ba8b15accbc60e6484b9b2260a76c1",
+      "recipe_sha256": "4f56ef4e2755baab007d222bc5f0540d61cbf08eb5284aa3209091a42c7a47fb",
       "exports_used": [
         "weight_decode_f32",
         "weight_decode_bf16",

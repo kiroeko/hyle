@@ -80,3 +80,19 @@ OOM及实际byte-range拒绝。原13entry源码/call错误一次具名纠正；�
 离线source最终有27个原LocalSize64数学dispatch及2个原LocalSize1全局finite-bit
 reduction；后两项只做整数分类，没有浮点算术，因此不制造虚构IEEE32模式或修改其
 原schedule。制品校验明确验证29模块、27浮点mode及两整数单lane，仍不改compiler/math。
+
+## 首批候选与具名源／fixture纠正
+
+`37f1ee4bf`集中build仅一处model_ops枚举namespace遗漏，`a265d1be9`增量纠正后PASS。
+首次GPU Provider7/7、原FP8/precision两Direct/一Graph ID通过；新增四ID两入口FAIL。
+tail fixture使用`N/128`漏填实际ceil尾尺度，独立logical oracle却有该尺度；唯一fixture
+纠正改为`(N+127)/128`，不改产品或数值门。一次b706 precision分类证明失败限于BF16
+动态linear/grouped及FP8 QAT64/128，FP4 QAT与decode原域未出现该差异。
+
+F1/F2具名source纠正：原IREE `arith.truncf`→E4M3FN的低值/舍入边界不能签当前资格。
+保留原SGLang/DeepSeek scale和dot次序，编码替换为已登记ds4原
+`dsv4_e4m3fn_dequant_cpu`／`dsv4_e4m3fn_value_cpu` binary nearest/even序列，表达为标准
+tensor/arith/scf。原127正值、7步有界search与even tie规则不改，不新设计量化算法、
+不改compiler pass，不调整BF16 exact门。离线29原module资格通过；补充分别format trace，
+只复验本批新增四ID，原passed owner/旧域不重跑。若仍失败，列具体未资格域继续父轮
+其它有界工作，不能无限调flag/换测试或冒称完整路线PASS。

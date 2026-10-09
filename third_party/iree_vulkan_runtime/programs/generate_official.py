@@ -32,6 +32,40 @@ def finite(dtype):
         'linalg.yield %value : i32', '} -> tensor<i32>', 'return %flag : tensor<i32>', '}'])
 
 
+def source_fp8_encode():
+    # Direct original ds4 dsv4_e4m3fn_dequant_cpu search/even-code sequence.
+    # Values use its unchanged dsv4_e4m3fn_value_cpu definition.
+    values = [code / 512 if code < 8 else (1 + (code & 7) / 8) * 2 ** ((code >> 3) - 7)
+              for code in range(127)]
+    table = ', '.join(str(float(x)) for x in values)
+    return '\n'.join(['func.func private @source_fp8_encode(%input: f32) -> i8 {',
+        f'%table = arith.constant dense<[{table}]> : tensor<127xf32>',
+        '%c0 = arith.constant 0 : index', '%c1 = arith.constant 1 : index', '%c2 = arith.constant 2 : index',
+        '%c126 = arith.constant 126 : index', '%cap = arith.constant 448.0 : f32',
+        '%abs = math.absf %input : f32', '%ax = arith.minimumf %abs, %cap : f32',
+        '%bounds:2 = scf.while (%lo = %c0, %hi = %c126) : (index, index) -> (index, index) {',
+        '%condition = arith.cmpi ult, %lo, %hi : index', 'scf.condition(%condition) %lo, %hi : index, index',
+        '} do {', '^bb0(%lo: index, %hi: index):', '%sum = arith.addi %lo, %hi : index',
+        '%raised = arith.addi %sum, %c1 : index', '%mid = arith.divui %raised, %c2 : index',
+        '%value = tensor.extract %table[%mid] : tensor<127xf32>', '%lower = arith.cmpf ole, %value, %ax : f32',
+        '%before = arith.subi %mid, %c1 : index', '%new_lo = arith.select %lower, %mid, %lo : index',
+        '%new_hi = arith.select %lower, %hi, %before : index', 'scf.yield %new_lo, %new_hi : index, index', '}',
+        '%next0 = arith.addi %bounds#0, %c1 : index', '%next = arith.minui %next0, %c126 : index',
+        '%a = tensor.extract %table[%bounds#0] : tensor<127xf32>', '%b = tensor.extract %table[%next] : tensor<127xf32>',
+        '%ad = arith.subf %ax, %a : f32', '%bd = arith.subf %ax, %b : f32',
+        '%da = math.absf %ad : f32', '%db = math.absf %bd : f32', '%closer = arith.cmpf olt, %db, %da : f32',
+        '%tie = arith.cmpf oeq, %db, %da : f32', '%best32 = arith.index_cast %bounds#0 : index to i32',
+        '%next32 = arith.index_cast %next : index to i32', '%one = arith.constant 1 : i32', '%zero = arith.constant 0 : i32',
+        '%bestodd = arith.andi %best32, %one : i32', '%nextodd = arith.andi %next32, %one : i32',
+        '%odd = arith.cmpi ne, %bestodd, %zero : i32', '%even = arith.cmpi eq, %nextodd, %zero : i32',
+        '%even_tie = arith.andi %tie, %even : i1', '%choose_tie = arith.andi %even_tie, %odd : i1',
+        '%choose = arith.ori %closer, %choose_tie : i1', '%selected = arith.select %choose, %next32, %best32 : i32',
+        '%bits = arith.bitcast %input : f32 to i32', '%sign_shift = arith.constant 24 : i32',
+        '%sign_mask = arith.constant 128 : i32', '%shifted = arith.shrui %bits, %sign_shift : i32',
+        '%sign = arith.andi %shifted, %sign_mask : i32', '%signed = arith.ori %selected, %sign : i32',
+        '%result = arith.trunci %signed : i32 to i8', 'return %result : i8', '}'])
+
+
 def quantize(dtype):
     t = 'f32' if dtype == 'f32' else 'i16'
     lines = [f'func.func private @quant_{dtype}(%x: tensor<?x?x{t}>, %group_arg: i32, %floor: f32, %power: i32) -> (tensor<?x?xi8>, tensor<?x?xf32>) {{',
@@ -68,7 +102,7 @@ def quantize(dtype):
         '%s = tensor.extract %scales[%r, %b] : tensor<?x?xf32>', '%normalized = arith.divf %v, %s : f32',
         '%lo = arith.constant -448.0 : f32', '%hi = arith.constant 448.0 : f32',
         '%lower = arith.maximumf %normalized, %lo : f32', '%clipped = arith.minimumf %lower, %hi : f32',
-        '%converted = arith.truncf %clipped : f32 to f8E4M3FN', '%bits = arith.bitcast %converted : f8E4M3FN to i8',
+        '%bits = func.call @source_fp8_encode(%clipped) : (f32) -> i8',
         'linalg.yield %bits : i8', '} -> tensor<?x?xi8>', 'return %codes, %scales : tensor<?x?xi8>, tensor<?x?xf32>', '}']
     return '\n'.join(lines)
 
@@ -285,7 +319,7 @@ def linear(dtype, grouped=False, four=False, power=False, encoded=False):
 
 
 def generate(path):
-    entries = [finite('f32'), finite('bf16'), quantize('f32'), quantize('bf16'),
+    entries = [finite('f32'), finite('bf16'), source_fp8_encode(), quantize('f32'), quantize('bf16'),
                weight_decode('f32'), weight_decode('bf16'), fp8_roundtrip(64), fp8_roundtrip(128), fp4_roundtrip()]
     entries += [linear(t, power=p) for t in ('f32', 'bf16') for p in (False, True)]
     entries += [linear(t, grouped=True) for t in ('f32', 'bf16')]

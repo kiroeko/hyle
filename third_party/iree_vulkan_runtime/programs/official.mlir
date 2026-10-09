@@ -33,6 +33,61 @@ linalg.yield %value : i32
 } -> tensor<i32>
 return %flag : tensor<i32>
 }
+func.func private @source_fp8_encode(%input: f32) -> i8 {
+%table = arith.constant dense<[0.0, 0.001953125, 0.00390625, 0.005859375, 0.0078125, 0.009765625, 0.01171875, 0.013671875, 0.015625, 0.017578125, 0.01953125, 0.021484375, 0.0234375, 0.025390625, 0.02734375, 0.029296875, 0.03125, 0.03515625, 0.0390625, 0.04296875, 0.046875, 0.05078125, 0.0546875, 0.05859375, 0.0625, 0.0703125, 0.078125, 0.0859375, 0.09375, 0.1015625, 0.109375, 0.1171875, 0.125, 0.140625, 0.15625, 0.171875, 0.1875, 0.203125, 0.21875, 0.234375, 0.25, 0.28125, 0.3125, 0.34375, 0.375, 0.40625, 0.4375, 0.46875, 0.5, 0.5625, 0.625, 0.6875, 0.75, 0.8125, 0.875, 0.9375, 1.0, 1.125, 1.25, 1.375, 1.5, 1.625, 1.75, 1.875, 2.0, 2.25, 2.5, 2.75, 3.0, 3.25, 3.5, 3.75, 4.0, 4.5, 5.0, 5.5, 6.0, 6.5, 7.0, 7.5, 8.0, 9.0, 10.0, 11.0, 12.0, 13.0, 14.0, 15.0, 16.0, 18.0, 20.0, 22.0, 24.0, 26.0, 28.0, 30.0, 32.0, 36.0, 40.0, 44.0, 48.0, 52.0, 56.0, 60.0, 64.0, 72.0, 80.0, 88.0, 96.0, 104.0, 112.0, 120.0, 128.0, 144.0, 160.0, 176.0, 192.0, 208.0, 224.0, 240.0, 256.0, 288.0, 320.0, 352.0, 384.0, 416.0, 448.0]> : tensor<127xf32>
+%c0 = arith.constant 0 : index
+%c1 = arith.constant 1 : index
+%c2 = arith.constant 2 : index
+%c126 = arith.constant 126 : index
+%cap = arith.constant 448.0 : f32
+%abs = math.absf %input : f32
+%ax = arith.minimumf %abs, %cap : f32
+%bounds:2 = scf.while (%lo = %c0, %hi = %c126) : (index, index) -> (index, index) {
+%condition = arith.cmpi ult, %lo, %hi : index
+scf.condition(%condition) %lo, %hi : index, index
+} do {
+^bb0(%lo: index, %hi: index):
+%sum = arith.addi %lo, %hi : index
+%raised = arith.addi %sum, %c1 : index
+%mid = arith.divui %raised, %c2 : index
+%value = tensor.extract %table[%mid] : tensor<127xf32>
+%lower = arith.cmpf ole, %value, %ax : f32
+%before = arith.subi %mid, %c1 : index
+%new_lo = arith.select %lower, %mid, %lo : index
+%new_hi = arith.select %lower, %hi, %before : index
+scf.yield %new_lo, %new_hi : index, index
+}
+%next0 = arith.addi %bounds#0, %c1 : index
+%next = arith.minui %next0, %c126 : index
+%a = tensor.extract %table[%bounds#0] : tensor<127xf32>
+%b = tensor.extract %table[%next] : tensor<127xf32>
+%ad = arith.subf %ax, %a : f32
+%bd = arith.subf %ax, %b : f32
+%da = math.absf %ad : f32
+%db = math.absf %bd : f32
+%closer = arith.cmpf olt, %db, %da : f32
+%tie = arith.cmpf oeq, %db, %da : f32
+%best32 = arith.index_cast %bounds#0 : index to i32
+%next32 = arith.index_cast %next : index to i32
+%one = arith.constant 1 : i32
+%zero = arith.constant 0 : i32
+%bestodd = arith.andi %best32, %one : i32
+%nextodd = arith.andi %next32, %one : i32
+%odd = arith.cmpi ne, %bestodd, %zero : i32
+%even = arith.cmpi eq, %nextodd, %zero : i32
+%even_tie = arith.andi %tie, %even : i1
+%choose_tie = arith.andi %even_tie, %odd : i1
+%choose = arith.ori %closer, %choose_tie : i1
+%selected = arith.select %choose, %next32, %best32 : i32
+%bits = arith.bitcast %input : f32 to i32
+%sign_shift = arith.constant 24 : i32
+%sign_mask = arith.constant 128 : i32
+%shifted = arith.shrui %bits, %sign_shift : i32
+%sign = arith.andi %shifted, %sign_mask : i32
+%signed = arith.ori %selected, %sign : i32
+%result = arith.trunci %signed : i32 to i8
+return %result : i8
+}
 func.func private @quant_f32(%x: tensor<?x?xf32>, %group_arg: i32, %floor: f32, %power: i32) -> (tensor<?x?xi8>, tensor<?x?xf32>) {
 %c0 = arith.constant 0 : index
 %c1 = arith.constant 1 : index
@@ -84,8 +139,7 @@ linalg.yield %value : f32
 %hi = arith.constant 448.0 : f32
 %lower = arith.maximumf %normalized, %lo : f32
 %clipped = arith.minimumf %lower, %hi : f32
-%converted = arith.truncf %clipped : f32 to f8E4M3FN
-%bits = arith.bitcast %converted : f8E4M3FN to i8
+%bits = func.call @source_fp8_encode(%clipped) : (f32) -> i8
 linalg.yield %bits : i8
 } -> tensor<?x?xi8>
 return %codes, %scales : tensor<?x?xi8>, tensor<?x?xf32>
@@ -147,8 +201,7 @@ linalg.yield %value : f32
 %hi = arith.constant 448.0 : f32
 %lower = arith.maximumf %normalized, %lo : f32
 %clipped = arith.minimumf %lower, %hi : f32
-%converted = arith.truncf %clipped : f32 to f8E4M3FN
-%bits = arith.bitcast %converted : f8E4M3FN to i8
+%bits = func.call @source_fp8_encode(%clipped) : (f32) -> i8
 linalg.yield %bits : i8
 } -> tensor<?x?xi8>
 return %codes, %scales : tensor<?x?xi8>, tensor<?x?xf32>
