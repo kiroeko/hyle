@@ -181,3 +181,6 @@ V2剩余[模型族与参数验收](vulkan-parity-v2-family-qualification.md)按�
 两入口40个余下完整family/本地官方分支、80参数关联与8 IQ1原尺寸银行均实际资格。
 V2 Windows正确性覆盖完成，整体约60%；接下去只V3默认/有限P1/self和V4平台/三交付。
 旧FAIL保留，未测范围不写PASS；不再重测已过算子/状态大矩阵。
+
+V3进入[成熟默认与有限成本审计](vulkan-parity-v3-defaults-best-of.md)，先按共同条件
+绑定、原完整语义/能力及真正同合同完成边界固定有限FIX，不恢复不等责旧A/B。
