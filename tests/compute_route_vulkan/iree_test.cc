@@ -56,7 +56,9 @@ TEST(VulkanIree, OriginalArtifactChecksFeaturesDomainFailureAndCancellation) {
       ASSERT_FALSE(denied);
       EXPECT_TRUE(denied.error().IsResourceExhausted());
     }
-    auto slot = program.create_invocation().value();
+    auto created = program.create_invocation();
+    ASSERT_TRUE(created) << created.error().message();
+    auto slot = std::move(*created);
     const auto inputs = data.upload(context);
     ASSERT_TRUE(slot.bind(inputs).ok());
     auto cancelled = slot.submit().value();
@@ -76,6 +78,37 @@ TEST(VulkanIree, OriginalArtifactChecksFeaturesDomainFailureAndCancellation) {
     EXPECT_FALSE(slot.submit());
   }
   EXPECT_EQ(quota.used(), 0U);
+}
+
+TEST(VulkanIree, OriginalArtifactBoundedCauseCapture) {
+  using namespace vulkan_artifact_test;
+  auto context = vulkan_test::context().value();
+  for (auto format : {Format::kNf4, Format::kNf4DoubleQuant, Format::kAwqGemm4,
+                      Format::kCompressedTensorsSymmetric4}) {
+    const int n = format == Format::kAwqGemm4 ? 16 : 3;
+    Inputs data(format, n, 128, 64, c::DataType::kFloat32, c::DataType::kFloat32);
+    auto program = prepare_artifact(context, data.operation, data.descriptions).value();
+    const auto state = v::detail::Access::program(program);
+    const auto spec = *state->dispatches.back().iree;
+    std::fprintf(stdout, "ARTIFACT_CAUSE format=%u kind=%u n=%lld k=%lld group=%u ports=%zu\n",
+                 static_cast<unsigned>(format), static_cast<unsigned>(spec.kind),
+                 static_cast<long long>(spec.rows), static_cast<long long>(spec.columns),
+                 spec.group_size, data.descriptions.size());
+    auto created = program.create_invocation();
+    ASSERT_TRUE(created) << created.error().message();
+    auto slot = std::move(*created);
+    const auto inputs = data.upload(context);
+    ASSERT_TRUE(slot.bind(inputs).ok());
+    auto work = slot.submit().value();
+    auto result = work.wait();
+    ASSERT_TRUE(result) << result.error().message();
+    const auto actual = t::values(context, result->get()->tensors()[0]);
+    for (int index : {0, 1, 63, 64, 127, 128, 255, 383})
+      std::fprintf(stdout, "ARTIFACT_VALUE index=%d actual=%.9g expected=%.9g\n",
+                   index, actual[index], data.expected[index]);
+    for (std::size_t i = 0; i < inputs.size(); ++i)
+      EXPECT_EQ(t::bytes(context, inputs[i]), data.payloads[i]) << i;
+  }
 }
 
 TEST(VulkanIree, OriginalFloat8DirectShapesRepeatedSlotsAndQuotaRetire) {

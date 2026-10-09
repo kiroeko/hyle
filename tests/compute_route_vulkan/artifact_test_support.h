@@ -153,8 +153,12 @@ void batch(Prepare prepare) {
             Inputs changed(format, n, k, group, scale, output, 1);
             auto program = prepare(context, original.operation, original.descriptions);
             ASSERT_TRUE(program) << program.error().message();
-            auto first = program->create_invocation().value();
-            auto second = program->create_invocation().value();
+            auto first_created = program->create_invocation();
+            ASSERT_TRUE(first_created) << first_created.error().message();
+            auto second_created = program->create_invocation();
+            ASSERT_TRUE(second_created) << second_created.error().message();
+            auto first = std::move(*first_created);
+            auto second = std::move(*second_created);
             ASSERT_TRUE(first.bind(original.upload(context)).ok());
             ASSERT_TRUE(second.bind(changed.upload(context)).ok());
             v::Tensor retained;
@@ -209,6 +213,7 @@ void cold_projection(Decode decode, Projection projection) {
                       Format::kCompressedTensorsSymmetric4})
     for (auto dtype : types) {
       const int n = format == Format::kAwqGemm4 ? 16 : 3, k = 128;
+      SCOPED_TRACE(::testing::Message() << static_cast<int>(format) << '/' << static_cast<int>(dtype));
       const bool nf4 = format == Format::kNf4 || format == Format::kNf4DoubleQuant;
       Inputs data(format, n, k, 64, nf4 ? c::DataType::kFloat32 : dtype, dtype);
       auto prepare = decode(context, data.operation, data.descriptions).value();
