@@ -31,8 +31,9 @@ struct Inputs {
   std::array<c::TensorDesc, 3> descriptions;
   std::vector<std::byte> weight;
   std::vector<double> activation, ids;
-  Inputs(c::GgufQuantizedType format, int depth = 1024, int slots = 2, int seed = 0)
-      : type(format), k(depth), n(5), e(3), s(slots),
+  Inputs(c::GgufQuantizedType format, int depth = 1024, int slots = 2, int seed = 0,
+         int columns = 5, int experts = 3)
+      : type(format), k(depth), n(columns), e(experts), s(slots),
         descriptions{c::gguf_grouped_weight_description(format, c::DataType::kFloat32, e, n, k).value(),
                      t::dense(c::DataType::kFloat32, {2, s, k}),
                      t::dense(c::DataType::kInt32, {2, s})},
@@ -133,6 +134,47 @@ template <class Prepare> void domains(Prepare prepare) {
   device.properties.limits.maxComputeWorkGroupInvocations = 63;
   EXPECT_FALSE(prepare(context,c::model_ops::grouped_matmul(),data.descriptions));
   device.properties.limits.maxComputeWorkGroupInvocations = saved;
+}
+
+template <class Prepare> void actual_banks(Prepare prepare) {
+  auto context = vulkan_test::context().value();
+  struct Shape { c::GgufQuantizedType type; int k, n, e; };
+  const std::array shapes{Shape{types[0],3072,3584,896},Shape{types[0],3584,3072,896},
+      Shape{types[1],3072,3584,896},Shape{types[1],3584,3072,896},
+      Shape{types[2],3072,3584,896},Shape{types[2],3584,3072,896},
+      Shape{types[2],8192,2048,512},Shape{types[2],2048,8192,512}};
+  for (const auto &shape : shapes) {
+    SCOPED_TRACE(::testing::Message() << "full IQ1 bank=" << static_cast<unsigned>(shape.type)
+        << " E=" << shape.e << " N=" << shape.n << " K=" << shape.k);
+    Inputs data(shape.type,shape.k,2,0,shape.n,shape.e);
+    data.ids={double(shape.e-1),0,double(shape.e-2),double(shape.e-1)};
+    auto program=prepare(context,c::model_ops::grouped_matmul(),data.descriptions);
+    ASSERT_TRUE(program) << program.error().message();
+    auto invocation=program->create_invocation();ASSERT_TRUE(invocation) << invocation.error().message();
+    auto weight=context.upload(data.descriptions[0],data.weight);
+    ASSERT_TRUE(weight) << weight.error().message();
+    std::array<v::Tensor,3> inputs{std::move(*weight),{}, {}};
+    for (int replay=0;replay<2;++replay) {
+      if (replay) {
+        for (std::size_t i=0;i<data.activation.size();++i)
+          data.activation[i]=static_cast<float>(0.1*std::cos(0.017*(i+13)));
+        data.ids={0,double(shape.e-1),double(shape.e-1),double(shape.e-2)};
+      }
+      inputs[1]=t::make(context,data.descriptions[1],data.activation);
+      inputs[2]=upload_ids(context,data.descriptions[2],data.ids);
+      ASSERT_TRUE(invocation->bind(inputs).ok());auto work=invocation->submit();
+      ASSERT_TRUE(work) << work.error().message();auto result=work->wait();
+      ASSERT_TRUE(result) << result.error().message();
+      t::expect(context,result->get()->tensors()[0],data.expected());
+      ASSERT_FALSE(::testing::Test::HasFailure());
+    }
+    auto invalid=program->create_invocation().value();data.ids.back()=shape.e;
+    inputs[2]=upload_ids(context,data.descriptions[2],data.ids);
+    ASSERT_TRUE(invalid.bind(inputs).ok());auto work=invalid.submit().value();auto result=work.wait();
+    ASSERT_FALSE(result);EXPECT_TRUE(result.error().IsOutOfRange()) << result.error().message();
+    std::printf("FULL_IQ1_BANK type=%u E=%d N=%d K=%d bytes=%zu replay=2 edge_ids=PASS\n",
+        static_cast<unsigned>(shape.type),shape.e,shape.n,shape.k,data.weight.size());
+  }
 }
 
 template <class Prepare> void lifecycle(Prepare prepare) {

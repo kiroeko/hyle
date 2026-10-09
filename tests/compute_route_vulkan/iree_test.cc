@@ -31,6 +31,9 @@ TEST(VulkanIree, OriginalIq1ExpertProgramsAndChangedInputs) {
 TEST(VulkanIree, OriginalIq1ActualPackedGeometryAndFeatureBoundaries) {
   vulkan_iq1_test::domains(prepare_artifact);
 }
+TEST(VulkanIree, OriginalIq1ActualFullBanksReplayAndEdgeIndices) {
+  vulkan_iq1_test::actual_banks(prepare_artifact);
+}
 TEST(VulkanIree, OriginalIq1IndependentLeaseCancelCloseAndOom) {
   vulkan_iq1_test::lifecycle(prepare_artifact);
 }
