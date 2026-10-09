@@ -76,7 +76,14 @@ include(HyleDependencyCache)
 
 # Component resolution needs to know whether factor-owned tests are part of
 # this build: TEST_DEPS are build fixtures, never shipping product edges.
-option(HYLE_BUILD_TESTS "build unit tests (GoogleTest)" ${PROJECT_IS_TOP_LEVEL})
+set(_hyle_tests_default "${PROJECT_IS_TOP_LEVEL}")
+if(HYLE_INSTALL OR DEFINED HYLE_COMPUTE_ROUTES)
+  # A product route/SDK request is a shipping journey. Explicit developer
+  # presets or callers can still request tests, without a second lite SKU.
+  set(_hyle_tests_default OFF)
+endif()
+option(HYLE_BUILD_TESTS "build unit tests (GoogleTest)" ${_hyle_tests_default})
+unset(_hyle_tests_default)
 
 # Resolve platform capability before the component graph. Sched and its current
 # IO consumers require fcontext; the Compute and Graph runtime factors remain
