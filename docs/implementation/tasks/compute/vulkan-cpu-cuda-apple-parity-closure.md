@@ -2,8 +2,8 @@
 
 <!-- MODULE REVIEW: SCOPED -->
 
-> 当前摘要（2026-10-09）：整体工程估计约55%。Windows 两入口各80/80实际 non-GGUF、
-> 560/560 GGUF/身份、25/25当前状态通过。V2剩余八族分支/80参数关联与银行边界复核；
+> 当前摘要（2026-10-09）：整体工程估计约60%。Windows 两入口各80/80实际 non-GGUF、
+> 560/560 GGUF/身份、25/25当前状态与40个余下family分支通过；80参数/八族关联及8 IQ1原bank实跑完成。
 > V3默认/有限P1及V4平台/三交付未完成。下文阶段数字为历史快照，不是当前队列。
 
 baseline `a19391c7efa84d1f0c42919e8192e4ce78d1ee32`，Windows工作树干净。
@@ -176,3 +176,8 @@ selected FP4/FP8、尾尺度与encoded MatMul、三QAT全有限BF16及资源/fin
 
 V2剩余[模型族与参数验收](vulkan-parity-v2-family-qualification.md)按既定完整需求单独有限
 定界；先source/80条关联审计，只执行尚无当前证据的分支，不恢复旧研究或已过矩阵。
+
+该有限包现已完成[Windows裁决](vulkan-parity-v2-family-qualification.md#windows-有限批结果)：
+两入口40个余下完整family/本地官方分支、80参数关联与8 IQ1原尺寸银行均实际资格。
+V2 Windows正确性覆盖完成，整体约60%；接下去只V3默认/有限P1/self和V4平台/三交付。
+旧FAIL保留，未测范围不写PASS；不再重测已过算子/状态大矩阵。

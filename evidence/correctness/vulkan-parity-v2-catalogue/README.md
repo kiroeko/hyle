@@ -100,3 +100,22 @@ adjacent DLLs and validation-layer results.
 
 Family/parameter/bank aggregate proof, default/P1, other platforms and three
 deliveries remain pending. This packet is not the complete Vulkan closure.
+
+## Remaining family and actual-bank packet
+
+At `7b202b99`, Direct/Graph each40 existing family/parameter/local official
+consumers PASS with no skip. Only the new full IQ1 bank ID failed against an
+ideal Double dot: XXXS K3584 differs2.1318e-6 at a cancellation point. The
+original source instead has F32 unsigned-nibble contribution, correction,
+scaling and32-lane accumulation. An independent source point differs from
+GPU only4.5635e-8. At `e74ef5ac`, only that IQ1 ID was replayed in each entrance
+and all8 full E512/896 banks PASS, including changed input/IDs and edge-index
+failure; strict numeric gates unchanged. All failed raw receipts remain.
+
+`family-parameter-windows-verdict.json` associates each of80 parameter
+role/shape entries and all8 families with original semantic anchors and exact
+current two-entrance PASS receipts. This was reviewed for dtype, epsilon,
+layout, selection, state and native precision. It joins the separate80/560/25
+packets; it is not a104-full-model engine-run claim or platform/P1/delivery
+qualification. Maximum actual IQ1 bank is1,772,617,728 packed bytes, without
+an E*N*K F32 expansion or full giant-model residency claim.

@@ -58,3 +58,23 @@ F32先累加原无偏移nibble dot及sumy，再执行 `d*(dot+delta*sumy)*odd_sc
 原F32边界及严格6e-6/2e-6数值门保持，理想Double差另记诊断，不回灌产品输出。
 每入口只重测IQ1 full-bank这个ID（全部8 shape参考受影响），40个已通过分支不重跑。
 产品/math/shader/常态成本不变；本具名纠正一次，预算20分钟内裁决，不追加姿势。
+
+## Windows 有限批结果
+
+`7b202b99` Direct/Graph各40个既有分支PASS，无SKIP；本地Qwen3.5-2B真实fixture、
+Kimi/GLM完整FFN/MLA/DSA/KDA/AttnRes/MoE/NextN以及Qwen完整GDN、官方/量化
+FFN/GQA/MTP和路由重放通过。原全词表NextN步骤未删除，不重测80/560/25通过域。
+
+`e74ef5ac` IQ1单ID delta 两入口PASS：全部8原E512/896银行真正上传并执行两次变
+activation/IDs重放，最大合法专家与E越界；最大packed bank1,772,617,728 bytes。
+原贡献方程source点与GPU差4.5635e-8，先前Double理想dot差2.1318e-6。
+严格数值门保持；原FAIL、Double诊断、完整log/XML及精确EXE/DLL receipt保留。
+三IQ1原E资格由cold-only升级为实际selected执行；它不代表巨型整模型驻留。
+
+[当前80条/八族关联裁决](../../../../evidence/correctness/vulkan-parity-v2-catalogue/family-parameter-windows-verdict.json)
+给出逐参数角色/shape、源码anchor、实际Direct/Graph PASS的收据SHA；与559/34/45
+权重和104身份矩阵共同满足当前Windows完整算子/状态覆盖，不把名称匹配当语义证明。
+统一Compute+Graph非测试实现62,410行/267文件；本包仅测试承载改动，没有新产品数学。
+
+本包结束，F1–F3有界验收完成。V2 Windows覆盖完成；其它平台/三交付由父轮V4验收，
+默认/有限同合同P1/self裁决由V3完成，未运行不签PASS。路线/父Graph尚未CLOSED。

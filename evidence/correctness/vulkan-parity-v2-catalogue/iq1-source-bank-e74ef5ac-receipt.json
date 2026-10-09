@@ -1,0 +1,74 @@
+{
+  "candidate": "e74ef5ac998abef59aa6a31bcecad38e0b50d0d9",
+  "steps": [
+    {
+      "name": "direct-iq1",
+      "returncode": 0,
+      "filter": "VulkanIree.OriginalIq1ActualFullBanksReplayAndEdgeIndices",
+      "tests": {
+        "tests": "1",
+        "failures": "0",
+        "disabled": "0",
+        "errors": "0",
+        "time": "29.045",
+        "timestamp": "2026-10-09T15:57:40.241",
+        "name": "AllTests"
+      },
+      "validation_error": false,
+      "log": "iq1-source-bank-e74ef5ac-direct-iq1.log",
+      "log_sha256": "0e6a1496e14ba5f215a18ce168e9dafcb8d60ead976acaa4dce6cccc811f90ea",
+      "xml": "iq1-source-bank-e74ef5ac-direct-iq1.xml",
+      "binary_sha256": "f618057a7f7da5a10862d845431e43d4fffba26f8ea6d254bd46643eba78c11f",
+      "adjacent_dlls": [
+        "hyle_compute.dll",
+        "hyle_compute_ggml_runtime.dll",
+        "hyle_compute_ops.dll",
+        "hyle_compute_provider_ggml_vulkan.dll",
+        "hyle_compute_provider_iree_vulkan.dll",
+        "hyle_compute_route_vulkan.dll",
+        "hyle_container.dll",
+        "hyle_error.dll",
+        "hyle_graph.dll",
+        "hyle_graph_route_vulkan.dll",
+        "hyle_mem.dll",
+        "hyle_platform.dll",
+        "hyle_time.dll"
+      ]
+    },
+    {
+      "name": "graph-iq1",
+      "returncode": 0,
+      "filter": "VulkanGraph.OriginalIq1ActualFullBanksReplayAndEdgeIndices",
+      "tests": {
+        "tests": "1",
+        "failures": "0",
+        "disabled": "0",
+        "errors": "0",
+        "time": "26.843",
+        "timestamp": "2026-10-09T15:58:09.402",
+        "name": "AllTests"
+      },
+      "validation_error": false,
+      "log": "iq1-source-bank-e74ef5ac-graph-iq1.log",
+      "log_sha256": "10e09aebd715d25411a00515b72e3ed4f794e65442b55bf1524b5359f5639030",
+      "xml": "iq1-source-bank-e74ef5ac-graph-iq1.xml",
+      "binary_sha256": "1a8f3295cc174adb659b1d53bb135a77f8caa9b35bc4e253267ea2875f97c801",
+      "adjacent_dlls": [
+        "hyle_compute.dll",
+        "hyle_compute_ggml_runtime.dll",
+        "hyle_compute_ops.dll",
+        "hyle_compute_provider_ggml_vulkan.dll",
+        "hyle_compute_provider_iree_vulkan.dll",
+        "hyle_compute_route_vulkan.dll",
+        "hyle_container.dll",
+        "hyle_error.dll",
+        "hyle_graph.dll",
+        "hyle_graph_route_vulkan.dll",
+        "hyle_mem.dll",
+        "hyle_platform.dll",
+        "hyle_time.dll"
+      ]
+    }
+  ],
+  "scope": "Only actual eight IQ1 banks; original independent F32 contribution reference and unchanged strict gates"
+}

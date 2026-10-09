@@ -283,7 +283,7 @@
       "module": "graph",
       "state": "SCOPED",
       "record": "docs/implementation/tasks/compute/vulkan-cpu-cuda-apple-parity-closure.md",
-      "summary": "Vulkan aggregate SCOPED: Windows both entrances80/80 non-GGUF,560/560 GGUF and25/25 current state qualified. Final family/parameter coverage, defaults/P1 and platform/three-delivery gates remain; other route closures retained."
+      "summary": "Vulkan aggregate SCOPED: V2 Windows common104/559/80/34/45/eight-family and current state coverage qualified in both entrances, including full selected IQ1 banks. V3 defaults/P1/self and V4 platform/three deliveries remain; CPU/CUDA/Apple terminal scopes unchanged."
     },
     {
       "module": "container_concurrent",
@@ -542,19 +542,19 @@
       "module": "compute_route_vulkan",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/vulkan-parity-v2-family-qualification.md",
-      "summary": "Vulkan remaining family/parameter packet AUDITED: fixed80 role rows and eight family original consumers; qualified80/560/25 packets retained. Batch existing unrun branches and actual eight IQ1 bank executions; no new product math. Defaults/P1/platform/three deliveries pending."
+      "summary": "V2 Windows coverage qualified: both entrances80/80 non-GGUF,560/560 GGUF/identity,25/25 current state,40 remaining family consumers;80 parameter roles/eight families associated, eight full IQ1 E512/896 banks replay/edge-index PASS. V3 defaults/P1/self and V4 platform/three deliveries pending."
     },
     {
       "module": "graph_route_vulkan",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/vulkan-parity-v2-family-qualification.md",
-      "summary": "Vulkan remaining family/parameter packet AUDITED: fixed80 role rows and eight family original consumers; qualified80/560/25 packets retained. Batch existing unrun branches and actual eight IQ1 bank executions; no new product math. Defaults/P1/platform/three deliveries pending."
+      "summary": "V2 Windows coverage qualified: both entrances80/80 non-GGUF,560/560 GGUF/identity,25/25 current state,40 remaining family consumers;80 parameter roles/eight families associated, eight full IQ1 E512/896 banks replay/edge-index PASS. V3 defaults/P1/self and V4 platform/three deliveries pending."
     },
     {
       "module": "compute_provider_ggml_vulkan",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/vulkan-parity-v2-family-qualification.md",
-      "summary": "Vulkan remaining family/parameter packet AUDITED: fixed80 role rows and eight family original consumers; qualified80/560/25 packets retained. Batch existing unrun branches and actual eight IQ1 bank executions; no new product math. Defaults/P1/platform/three deliveries pending."
+      "summary": "V2 Windows coverage qualified: both entrances80/80 non-GGUF,560/560 GGUF/identity,25/25 current state,40 remaining family consumers;80 parameter roles/eight families associated, eight full IQ1 E512/896 banks replay/edge-index PASS. V3 defaults/P1/self and V4 platform/three deliveries pending."
     },
     {
       "module": "compute_ggml_runtime",
@@ -616,7 +616,7 @@
       "module": "compute_provider_iree_vulkan",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/vulkan-parity-v2-iq1-bindings.md",
-      "summary": "Vulkan IQ1 source batch AUDITED: native source and Direct/Graph 18-case repeated numerical/checked-ID plus request/lease/cancel/close/OOM packet qualified; eight actual banks cold-only. Full catalogue/state/default/P1/platform/three deliveries remain pending."
+      "summary": "V2 IREE mature carrier qualification:34 packed/official FP4-FP8, three original IQ1 codecs and all eight full E512/896 banks pass Windows Direct/Graph replay/checked indices; independent original F32 contribution references and strict gates retained. Defaults/P1/platform/three deliveries pending."
     },
     {
       "module": "compute_provider_torch_cuda",

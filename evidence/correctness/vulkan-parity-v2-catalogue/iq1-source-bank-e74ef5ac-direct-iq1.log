@@ -1,0 +1,36 @@
+Running main() from C:\public\tools\hyle-dependencies\v1\sources\googletest-063de7e9578f-162765170ae6\googletest\src\gtest_main.cc
+Note: Google Test filter = VulkanIree.OriginalIq1ActualFullBanksReplayAndEdgeIndices
+[==========] Running 1 test from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 1 test from VulkanIree
+[ RUN      ] VulkanIree.OriginalIq1ActualFullBanksReplayAndEdgeIndices
+FULL_IQ1_REFERENCE type=20 K=3072 source_vs_ideal_max=2.18044805e-06
+FULL_IQ1_REFERENCE type=20 K=3072 source_vs_ideal_max=2.02881969e-06
+FULL_IQ1_BANK type=20 E=896 N=3584 K=3072 bytes=1772617728 replay=2 edge_ids=PASS
+FULL_IQ1_REFERENCE type=20 K=3584 source_vs_ideal_max=2.82150636e-06
+FULL_IQ1_REFERENCE type=20 K=3584 source_vs_ideal_max=2.16152607e-06
+FULL_IQ1_BANK type=20 E=896 N=3072 K=3584 bytes=1772617728 replay=2 edge_ids=PASS
+FULL_IQ1_REFERENCE type=19 K=3072 source_vs_ideal_max=2.38386895e-06
+FULL_IQ1_REFERENCE type=19 K=3072 source_vs_ideal_max=2.04810163e-06
+FULL_IQ1_BANK type=19 E=896 N=3584 K=3072 bytes=1618477056 replay=2 edge_ids=PASS
+FULL_IQ1_REFERENCE type=19 K=3584 source_vs_ideal_max=2.42946782e-06
+FULL_IQ1_REFERENCE type=19 K=3584 source_vs_ideal_max=2.50173266e-06
+FULL_IQ1_BANK type=19 E=896 N=3072 K=3584 bytes=1618477056 replay=2 edge_ids=PASS
+FULL_IQ1_REFERENCE type=18 K=3072 source_vs_ideal_max=2.47260307e-06
+FULL_IQ1_REFERENCE type=18 K=3072 source_vs_ideal_max=2.46883042e-06
+FULL_IQ1_BANK type=18 E=896 N=3584 K=3072 bytes=1464336384 replay=2 edge_ids=PASS
+FULL_IQ1_REFERENCE type=18 K=3584 source_vs_ideal_max=2.18754011e-06
+FULL_IQ1_REFERENCE type=18 K=3584 source_vs_ideal_max=2.54195918e-06
+FULL_IQ1_BANK type=18 E=896 N=3072 K=3584 bytes=1464336384 replay=2 edge_ids=PASS
+FULL_IQ1_REFERENCE type=18 K=8192 source_vs_ideal_max=2.52559359e-06
+FULL_IQ1_REFERENCE type=18 K=8192 source_vs_ideal_max=1.85029106e-06
+FULL_IQ1_BANK type=18 E=512 N=2048 K=8192 bytes=1275068416 replay=2 edge_ids=PASS
+FULL_IQ1_REFERENCE type=18 K=2048 source_vs_ideal_max=1.38244193e-06
+FULL_IQ1_REFERENCE type=18 K=2048 source_vs_ideal_max=1.0275025e-06
+FULL_IQ1_BANK type=18 E=512 N=8192 K=2048 bytes=1275068416 replay=2 edge_ids=PASS
+[       OK ] VulkanIree.OriginalIq1ActualFullBanksReplayAndEdgeIndices (29045 ms)
+[----------] 1 test from VulkanIree (29045 ms total)
+
+[----------] Global test environment tear-down
+[==========] 1 test from 1 test suite ran. (29045 ms total)
+[  PASSED  ] 1 test.
