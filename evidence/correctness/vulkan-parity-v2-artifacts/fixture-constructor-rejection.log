@@ -1,0 +1,50 @@
+[0/2] Re-checking globbed directories...
+[1/8] Performing build step for 'vulkan-shaders-gen'
+ninja: no work to do.
+[2/8] Performing install step for 'vulkan-shaders-gen'
+-- Up-to-date: C:/hv/vp1/Release/vulkan-shaders-gen.exe
+[3/8] Completed 'vulkan-shaders-gen'
+[4/8] C:\WINDOWS\system32\cmd.exe /C "cd /D C:\hv\vp1\tests\compute_route_vulkan && "C:\Program Files\CMake\bin\cmake.exe" -P C:/hv/vp1/tests/compute_route_vulkan/hyle-runtime/hyle_compute_route_vulkan_test-Release.cmake"
+[5/8] Building CXX object tests\compute_route_vulkan\CMakeFiles\hyle_compute_route_vulkan_test.dir\tensor_test.cc.obj
+FAILED: [code=2] tests/compute_route_vulkan/CMakeFiles/hyle_compute_route_vulkan_test.dir/tensor_test.cc.obj 
+"C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\bin\Hostx64\x64\cl.exe"  /nologo /TP -DGGML_USE_VULKAN -DHYLE_COMPUTE_VULKAN=1 -DHYLE_VULKAN_TEST_SHADER=\"C:/hv/vp1/tests/compute_route_vulkan/affine.spv\" -IC:\public\project-hyle\hyle\src\compute_route_vulkan -IC:\public\project-hyle\hyle\src\compute -IC:\public\project-hyle\hyle\include -IC:\hv\vp1\src\compute_ggml_runtime\source-8dc7950171d4c70b\src\..\include -external:IC:\public\tools\hyle-dependencies\v1\sources\vulkan_headers-e3b1eec08173-69d6adc9001f\include -external:IC:\public\tools\hyle-dependencies\v1\sources\googletest-063de7e9578f-162765170ae6\googletest\include -external:IC:\public\tools\hyle-dependencies\v1\sources\googletest-063de7e9578f-162765170ae6\googletest -external:W0 /DWIN32 /D_WINDOWS /EHsc /O2 /Ob2 /DNDEBUG -std:c++latest -MD /W4 /permissive- /wd4324 /Zc:__cplusplus /utf-8 /Zc:preprocessor /showIncludes /Fotests\compute_route_vulkan\CMakeFiles\hyle_compute_route_vulkan_test.dir\tensor_test.cc.obj /Fdtests\compute_route_vulkan\CMakeFiles\hyle_compute_route_vulkan_test.dir\ /FS -c C:\public\project-hyle\hyle\tests\compute_route_vulkan\tensor_test.cc
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\tensor_test.cc(24): error C2664: 'hyle::Result<hyle::compute::vulkan::Tensor> vulkan_tensor_test::execute(const hyle::compute::vulkan::Context &,hyle::compute::Operation,std::span<const hyle::compute::vulkan::Tensor,18446744073709551615>)': cannot convert argument 2 from 'hyle::compute::Copy' to 'hyle::compute::Operation'
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\tensor_test.cc(24): note: No user-defined-conversion operator available that can perform this conversion, or the operator cannot be called
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\tensor_test_support.h(80): note: see declaration of 'vulkan_tensor_test::execute'
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\tensor_test.cc(24): note: while trying to match the argument list '(_Ty, hyle::compute::Copy, std::array<_First,1>)'
+        with
+        [
+            _Ty=hyle::compute::vulkan::Context
+        ]
+        and
+        [
+            _First=hyle::compute::vulkan::Tensor
+        ]
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\tensor_test.cc(27): error C2664: 'hyle::Result<hyle::compute::vulkan::Tensor> vulkan_tensor_test::execute(const hyle::compute::vulkan::Context &,hyle::compute::Operation,std::span<const hyle::compute::vulkan::Tensor,18446744073709551615>)': cannot convert argument 2 from 'hyle::compute::Concat' to 'hyle::compute::Operation'
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\tensor_test.cc(27): note: No user-defined-conversion operator available that can perform this conversion, or the operator cannot be called
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\tensor_test_support.h(80): note: see declaration of 'vulkan_tensor_test::execute'
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\tensor_test.cc(27): note: while trying to match the argument list '(_Ty, hyle::compute::Concat, std::array<_First,2>)'
+        with
+        [
+            _Ty=hyle::compute::vulkan::Context
+        ]
+        and
+        [
+            _First=hyle::compute::vulkan::Tensor
+        ]
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\tensor_test.cc(34): error C2664: 'hyle::Result<hyle::compute::vulkan::Tensor> vulkan_tensor_test::execute(const hyle::compute::vulkan::Context &,hyle::compute::Operation,std::span<const hyle::compute::vulkan::Tensor,18446744073709551615>)': cannot convert argument 2 from 'hyle::compute::Unary' to 'hyle::compute::Operation'
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\tensor_test.cc(34): note: No user-defined-conversion operator available that can perform this conversion, or the operator cannot be called
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\tensor_test_support.h(80): note: see declaration of 'vulkan_tensor_test::execute'
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\tensor_test.cc(34): note: while trying to match the argument list '(_Ty, hyle::compute::Unary, std::array<_First,1>)'
+        with
+        [
+            _Ty=hyle::compute::vulkan::Context
+        ]
+        and
+        [
+            _First=hyle::compute::vulkan::Tensor
+        ]
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\tensor_test.cc(34): error C2440: 'initializing': cannot convert from 'bool' to 'testing::AssertionResult'
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\tensor_test.cc(34): note: Constructor for class 'testing::AssertionResult' is declared 'explicit'
+[6/8] Building CXX object tests\compute_route_vulkan\CMakeFiles\hyle_compute_route_vulkan_test.dir\iree_test.cc.obj
+ninja: build stopped: subcommand failed.

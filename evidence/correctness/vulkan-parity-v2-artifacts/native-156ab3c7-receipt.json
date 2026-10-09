@@ -1,0 +1,109 @@
+{
+  "candidate": "156ab3c7400f28a0553c065cd4e38fc7e258ce43",
+  "build": "C:\\hv\\vp1",
+  "steps": [
+    {
+      "name": "provider",
+      "returncode": 0,
+      "filter": "*",
+      "validation_error": false,
+      "xml": "native-156ab3c7-provider.xml",
+      "tests": {
+        "tests": "7",
+        "failures": "0",
+        "disabled": "0",
+        "errors": "0",
+        "time": "0.83",
+        "timestamp": "2026-10-09T10:18:10.740",
+        "name": "AllTests"
+      },
+      "binary_sha256": "c58e9314b7ae79ce86855d39f5f81d986fd9745b781b993d71a0dd9bc12dc79b",
+      "log": "native-156ab3c7-provider.log",
+      "log_sha256": "501fd204749e652bcc50941958ac2fca701cc34b6428961173d60a7dfd2511e7",
+      "adjacent_dlls": [
+        "hyle_compute.dll",
+        "hyle_compute_ggml_runtime.dll",
+        "hyle_compute_ops.dll",
+        "hyle_compute_provider_ggml_vulkan.dll",
+        "hyle_compute_provider_iree_vulkan.dll",
+        "hyle_compute_route_vulkan.dll",
+        "hyle_container.dll",
+        "hyle_error.dll",
+        "hyle_graph.dll",
+        "hyle_graph_route_vulkan.dll",
+        "hyle_mem.dll",
+        "hyle_platform.dll",
+        "hyle_time.dll"
+      ]
+    },
+    {
+      "name": "direct",
+      "returncode": 1,
+      "filter": "VulkanIree.*:VulkanTensor.ExactStorageHandlesOddStridesWordsAndEmptyTransfers:VulkanTensor.UnsignedPayloadViewConcatAndNoArithmetic",
+      "validation_error": false,
+      "xml": "native-156ab3c7-direct.xml",
+      "tests": {
+        "tests": "10",
+        "failures": "3",
+        "disabled": "0",
+        "errors": "0",
+        "time": "4.043",
+        "timestamp": "2026-10-09T10:18:11.819",
+        "name": "AllTests"
+      },
+      "binary_sha256": "3651182e4a196535fe1cf4f42919988eaf99857930b5b116e4348890af8cf84b",
+      "log": "native-156ab3c7-direct.log",
+      "log_sha256": "5fc2cb8bac4c294f7d59cf4dd4ca583c7b18051f632d5d5545cf3f5069ce9c6c",
+      "adjacent_dlls": [
+        "hyle_compute.dll",
+        "hyle_compute_ggml_runtime.dll",
+        "hyle_compute_ops.dll",
+        "hyle_compute_provider_ggml_vulkan.dll",
+        "hyle_compute_provider_iree_vulkan.dll",
+        "hyle_compute_route_vulkan.dll",
+        "hyle_container.dll",
+        "hyle_error.dll",
+        "hyle_graph.dll",
+        "hyle_graph_route_vulkan.dll",
+        "hyle_mem.dll",
+        "hyle_platform.dll",
+        "hyle_time.dll"
+      ]
+    },
+    {
+      "name": "graph",
+      "returncode": 1,
+      "filter": "VulkanGraph.OriginalArtifact*:VulkanGraph.OriginalFloat8*:VulkanGraph.CheckedScanChainsTwoOriginalProgramsWithIndependentResults",
+      "validation_error": false,
+      "xml": "native-156ab3c7-graph.xml",
+      "tests": {
+        "tests": "4",
+        "failures": "2",
+        "disabled": "0",
+        "errors": "0",
+        "time": "1.704",
+        "timestamp": "2026-10-09T10:18:16.105",
+        "name": "AllTests"
+      },
+      "binary_sha256": "ae9b242f5ba204589e5174104a37949f75f3382c8bc48f90dcb0fa898e55f967",
+      "log": "native-156ab3c7-graph.log",
+      "log_sha256": "01c591dafabdd5103a3e606d640ca692444854bad3fedd3042d346bce77ae571",
+      "adjacent_dlls": [
+        "hyle_compute.dll",
+        "hyle_compute_ggml_runtime.dll",
+        "hyle_compute_ops.dll",
+        "hyle_compute_provider_ggml_vulkan.dll",
+        "hyle_compute_provider_iree_vulkan.dll",
+        "hyle_compute_route_vulkan.dll",
+        "hyle_container.dll",
+        "hyle_error.dll",
+        "hyle_graph.dll",
+        "hyle_graph_route_vulkan.dll",
+        "hyle_mem.dll",
+        "hyle_platform.dll",
+        "hyle_time.dll"
+      ]
+    }
+  ],
+  "limits": "Micro source qualification; not all 18 full model geometries, Air or delivery PASS."
+}
