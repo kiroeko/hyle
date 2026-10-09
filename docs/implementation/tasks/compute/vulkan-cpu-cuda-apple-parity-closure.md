@@ -138,3 +138,9 @@ selected FP4/FP8、尾尺度与encoded MatMul、三QAT全有限BF16及资源/fin
 [共同实际端口与完整状态矩阵](vulkan-parity-v2-catalogue-matrix.md)已按当前完整目录
 审计有限M1–M5：typed conv、原grouped F32绑定、共同fixture/cold准备和旧官方拒绝
 迁移。原成熟source批次继续复用，先批接再集中验收，不新增HYLE数学。
+
+完整实际non-GGUF批次已Windows两入口80/80 PASS：34 packed+45 plain及原
+四官方MoE完整程序，源typed conv、冷宽grid与cold准备已接；
+[结果及未验范围](vulkan-parity-v2-catalogue-matrix.md)。整体工程估计约38%，
+实现62,412行/267文件；继续559 GGUF/80参数/104身份与新状态sidecar，不重测
+本次已过矩阵，不签其它平台、三交付/default/P1。

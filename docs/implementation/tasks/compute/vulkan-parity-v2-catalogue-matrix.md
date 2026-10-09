@@ -59,3 +59,14 @@ matvec仍按不大于N的保守grid约束。不放宽数值，不改变原pipeli
 同版本共同fixture/误差门保持，native cold结果保留GPU常量；Graph同slot重放，
 Direct复用不可变Program、按旧结果lease合同更新可变请求。原559/80/104及新增
 完整branch余项仍属于本卡，未实跑不能由此批代签。
+
+M2 下一矩阵已批接共同559 GGUF/104身份：只给测试增加外部Bank hook，现CPU/
+CUDA/Apple分支不变；无CPU backend宏/链接/fallback。锁定原Vulkan 8 prototype
+codec/dot为集成oracle，plain与三IQ1扩展用独立原解码/舍入方程，原K/N与全部
+head行分块/显式expert window保持。旧80项两入口通过域复用，新矩阵尚未运行。
+
+Windows 第一批 `6ed2cdefa` Direct80/80、Graph80/80 PASS，无validation layer错；
+34 packed/45 plain实际合同及原四官方MoE完整程序已资格。M1/冷宽grid与cold
+preparation普通入口通过；M3普通GGUF grouped精度绑定随后在559矩阵签运行，
+不借上述IREE grouped PASS冒充。剩余559/80/104及新版状态/sidecars继续本卡。
+当前整体约38%；统一非测试Compute+Graph62,412行/267文件。

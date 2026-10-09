@@ -1,0 +1,74 @@
+{
+  "candidate": "6ed2cdefaa64bf6a965f13558e811f98a4d19a73",
+  "steps": [
+    {
+      "name": "direct",
+      "returncode": 0,
+      "filter": "CurrentDemand/VulkanCatalogue*.*:VulkanMoeFragments.D5OfficialFullMoeNativeExecution",
+      "tests": {
+        "tests": "80",
+        "failures": "0",
+        "disabled": "0",
+        "errors": "0",
+        "time": "135.017",
+        "timestamp": "2026-10-09T13:36:34.345",
+        "name": "AllTests"
+      },
+      "validation_error": false,
+      "log": "native-6ed2cdef-direct.log",
+      "log_sha256": "b7c240523930c5a6a97b95316fb798d411329d53ac547fb3f25bbd0f72e52cbc",
+      "xml": "native-6ed2cdef-direct.xml",
+      "binary_sha256": "771ac9464ca57f262ccc2060601bb73401e55e526f164bf623349427b177ab1d",
+      "adjacent_dlls": [
+        "hyle_compute.dll",
+        "hyle_compute_ggml_runtime.dll",
+        "hyle_compute_ops.dll",
+        "hyle_compute_provider_ggml_vulkan.dll",
+        "hyle_compute_provider_iree_vulkan.dll",
+        "hyle_compute_route_vulkan.dll",
+        "hyle_container.dll",
+        "hyle_error.dll",
+        "hyle_graph.dll",
+        "hyle_graph_route_vulkan.dll",
+        "hyle_mem.dll",
+        "hyle_platform.dll",
+        "hyle_time.dll"
+      ]
+    },
+    {
+      "name": "graph",
+      "returncode": 0,
+      "filter": "CurrentDemand/VulkanGraphCatalogue*.*:VulkanGraphMoeFragments.D5OfficialFullMoeNativeExecution",
+      "tests": {
+        "tests": "80",
+        "failures": "0",
+        "disabled": "0",
+        "errors": "0",
+        "time": "127.144",
+        "timestamp": "2026-10-09T13:38:49.495",
+        "name": "AllTests"
+      },
+      "validation_error": false,
+      "log": "native-6ed2cdef-graph.log",
+      "log_sha256": "fa65204828ddf61717687df7b52451d90c3fac7fd472fb3364b9662b63ea3e39",
+      "xml": "native-6ed2cdef-graph.xml",
+      "binary_sha256": "a54dbf0aa102a51ebceb280dca434bb37ba3081766e487287ea08ff53f83b1a6",
+      "adjacent_dlls": [
+        "hyle_compute.dll",
+        "hyle_compute_ggml_runtime.dll",
+        "hyle_compute_ops.dll",
+        "hyle_compute_provider_ggml_vulkan.dll",
+        "hyle_compute_provider_iree_vulkan.dll",
+        "hyle_compute_route_vulkan.dll",
+        "hyle_container.dll",
+        "hyle_error.dll",
+        "hyle_graph.dll",
+        "hyle_graph_route_vulkan.dll",
+        "hyle_mem.dll",
+        "hyle_platform.dll",
+        "hyle_time.dll"
+      ]
+    }
+  ],
+  "scope": "first actual catalogue batch 34 packed/45 plain and original four official MoE programs; remaining GGUF/parameters/current branches/platform/delivery/P1 unproven"
+}

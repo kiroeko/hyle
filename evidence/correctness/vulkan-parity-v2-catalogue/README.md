@@ -19,3 +19,13 @@ remain. No new HYLE math, GLSL, quantization algorithm or performance claim.
 Build diagnostics remain in this directory. Native logs/XML/receipts must
 record actual outcomes; no unrun case is PASS. WSL/Air, deliveries, defaults
 and formal P1 remain parent tasks. Document updates never rebuild or rerun P1.
+
+## First actual Windows batch result
+
+Product `6ed2cdefa`: Direct80/80 and Graph80/80 PASS, no validation-layer errors.
+This covers all34 packed, all45 plain and the existing original four official
+MoE full programs. Actual N/K, common head row windows, declared expert windows,
+native cold preparation feeding GPU constants, two input replays, state/rounding
+checks and bad-index retained-result checks are exercised. The original four
+MoE profiles do not stand in for newer Pro0813/Flash0731/DSpark qualification.
+No unrun559/80/104 or new state/sidecar/platform/delivery/P1 item is PASS.

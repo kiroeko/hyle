@@ -1,6 +1,17 @@
 #include "catalogue_test_support.h"
+#include "catalogue_gguf_test_support.h"
 
 namespace {
+class VulkanCatalogueGguf : public ::testing::TestWithParam<cpu_c5_inputs::Case> {};
+TEST_P(VulkanCatalogueGguf, OriginalBytesActualRoleWidthAndReplay) {
+  vulkan_catalogue_gguf::check(GetParam());
+}
+INSTANTIATE_TEST_SUITE_P(CurrentDemand,VulkanCatalogueGguf,
+    ::testing::ValuesIn(cpu_c5_inputs::cases),
+    [](const auto &item){return std::string(item.param.id);});
+TEST(VulkanCatalogueGguf, All104ExactArtifactIdentitiesRunActualProjection) {
+  vulkan_catalogue_gguf::identities();
+}
 class VulkanCataloguePlain : public ::testing::TestWithParam<cpu_c5_plain_inputs::Case> {};
 TEST_P(VulkanCataloguePlain, ActualStorageRoleAndReplay) {
   vulkan_catalogue_test::plain(GetParam());

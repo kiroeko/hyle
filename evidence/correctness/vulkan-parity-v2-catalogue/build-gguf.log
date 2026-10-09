@@ -1,0 +1,157 @@
+[0/2] Re-checking globbed directories...
+[1/11] Performing build step for 'vulkan-shaders-gen'
+ninja: no work to do.
+[2/11] Performing install step for 'vulkan-shaders-gen'
+-- Up-to-date: C:/hv/vp1/Release/vulkan-shaders-gen.exe
+[3/11] Completed 'vulkan-shaders-gen'
+[4/11] C:\WINDOWS\system32\cmd.exe /C "cd /D C:\hv\vp1\tests\compute_route_vulkan && "C:\Program Files\CMake\bin\cmake.exe" -P C:/hv/vp1/tests/compute_route_vulkan/hyle-runtime/hyle_compute_route_vulkan_test-Release.cmake"
+[5/11] Building CXX object tests\graph_route_vulkan\CMakeFiles\hyle_graph_route_vulkan_test.dir\d5_qwen35_execution_test.cc.obj
+[6/11] Building CXX object tests\compute_route_vulkan\CMakeFiles\hyle_compute_route_vulkan_test.dir\d5_qwen35_execution_test.cc.obj
+[7/11] Building CXX object tests\graph_route_vulkan\CMakeFiles\hyle_graph_route_vulkan_test.dir\catalogue_test.cc.obj
+C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\xutility(508): warning C4244: 'initializing': conversion from '_Ty' to '_Ty', possible loss of data
+        with
+        [
+            _Ty=const double
+        ]
+        and
+        [
+            _Ty=float
+        ]
+C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\xutility(508): note: the template instantiation context (the oldest one first) is
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\gguf_test_support.h(210): note: see reference to function template instantiation 'std::vector<float,std::allocator<float>>::vector<std::_Span_iterator<_Ty>,0>(_Iter,_Iter,const _Alloc &)' being compiled
+        with
+        [
+            _Ty=const double,
+            _Iter=std::_Span_iterator<const double>,
+            _Alloc=std::allocator<float>
+        ]
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\gguf_test_support.h(210): note: see the first reference to 'std::vector<float,std::allocator<float>>::vector' in 'vulkan_gguf_test::iq1s_q8_program'
+C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\vector(700): note: see reference to function template instantiation 'void std::vector<float,std::allocator<float>>::_Construct_n<_Ty*,_Ty*>(const unsigned __int64,_Ty *&&,_Ty *&&)' being compiled
+        with
+        [
+            _Ty=const double
+        ]
+C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\vector(2120): note: see reference to function template instantiation 'float *std::_Uninitialized_copy<_Ty,_Ty,std::allocator<float>>(_InIt,_Se,float *,_Alloc &)' being compiled
+        with
+        [
+            _Ty=const double *,
+            _InIt=const double *,
+            _Se=const double *,
+            _Alloc=std::allocator<float>
+        ]
+C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\xmemory(1922): note: see reference to function template instantiation 'void std::_Uninitialized_backout_al<std::allocator<float>>::_Emplace_back<_Ty&>(_Ty &)' being compiled
+        with
+        [
+            _Ty=const double
+        ]
+C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\xmemory(1864): note: see reference to function template instantiation 'void std::_Default_allocator_traits<_Alloc>::construct<_Ty,const double&>(_Alloc &,_Objty *const ,const double &)' being compiled
+        with
+        [
+            _Alloc=std::allocator<float>,
+            _Ty=float,
+            _Objty=float
+        ]
+C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\xmemory(734): note: see reference to function template instantiation '_Ty *std::construct_at<_Objty,const double&>(_Ty *const ,const double &) noexcept(<expr>)' being compiled
+        with
+        [
+            _Ty=float,
+            _Objty=float
+        ]
+C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\xutility(509): warning C4244: 'initializing': conversion from '_Ty' to '_Objty', possible loss of data
+        with
+        [
+            _Ty=const double
+        ]
+        and
+        [
+            _Objty=float
+        ]
+C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\xutility(509): note: the template instantiation context (the oldest one first) is
+C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\xmemory(1864): note: see reference to function template instantiation 'void std::_Default_allocator_traits<_Alloc>::construct<_Ty,const double&>(_Alloc &,_Objty *const ,const double &)' being compiled
+        with
+        [
+            _Alloc=std::allocator<float>,
+            _Ty=float,
+            _Objty=float
+        ]
+C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\xmemory(734): note: see reference to function template instantiation '_Ty *std::construct_at<_Objty,const double&>(_Ty *const ,const double &) noexcept' being compiled
+        with
+        [
+            _Ty=float,
+            _Objty=float
+        ]
+[8/11] Building CXX object tests\compute_route_vulkan\CMakeFiles\hyle_compute_route_vulkan_test.dir\catalogue_test.cc.obj
+C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\xutility(508): warning C4244: 'initializing': conversion from '_Ty' to '_Ty', possible loss of data
+        with
+        [
+            _Ty=const double
+        ]
+        and
+        [
+            _Ty=float
+        ]
+C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\xutility(508): note: the template instantiation context (the oldest one first) is
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\gguf_test_support.h(210): note: see reference to function template instantiation 'std::vector<float,std::allocator<float>>::vector<std::_Span_iterator<_Ty>,0>(_Iter,_Iter,const _Alloc &)' being compiled
+        with
+        [
+            _Ty=const double,
+            _Iter=std::_Span_iterator<const double>,
+            _Alloc=std::allocator<float>
+        ]
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\gguf_test_support.h(210): note: see the first reference to 'std::vector<float,std::allocator<float>>::vector' in 'vulkan_gguf_test::iq1s_q8_program'
+C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\vector(700): note: see reference to function template instantiation 'void std::vector<float,std::allocator<float>>::_Construct_n<_Ty*,_Ty*>(const unsigned __int64,_Ty *&&,_Ty *&&)' being compiled
+        with
+        [
+            _Ty=const double
+        ]
+C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\vector(2120): note: see reference to function template instantiation 'float *std::_Uninitialized_copy<_Ty,_Ty,std::allocator<float>>(_InIt,_Se,float *,_Alloc &)' being compiled
+        with
+        [
+            _Ty=const double *,
+            _InIt=const double *,
+            _Se=const double *,
+            _Alloc=std::allocator<float>
+        ]
+C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\xmemory(1922): note: see reference to function template instantiation 'void std::_Uninitialized_backout_al<std::allocator<float>>::_Emplace_back<_Ty&>(_Ty &)' being compiled
+        with
+        [
+            _Ty=const double
+        ]
+C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\xmemory(1864): note: see reference to function template instantiation 'void std::_Default_allocator_traits<_Alloc>::construct<_Ty,const double&>(_Alloc &,_Objty *const ,const double &)' being compiled
+        with
+        [
+            _Alloc=std::allocator<float>,
+            _Ty=float,
+            _Objty=float
+        ]
+C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\xmemory(734): note: see reference to function template instantiation '_Ty *std::construct_at<_Objty,const double&>(_Ty *const ,const double &) noexcept(<expr>)' being compiled
+        with
+        [
+            _Ty=float,
+            _Objty=float
+        ]
+C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\xutility(509): warning C4244: 'initializing': conversion from '_Ty' to '_Objty', possible loss of data
+        with
+        [
+            _Ty=const double
+        ]
+        and
+        [
+            _Objty=float
+        ]
+C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\xutility(509): note: the template instantiation context (the oldest one first) is
+C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\xmemory(1864): note: see reference to function template instantiation 'void std::_Default_allocator_traits<_Alloc>::construct<_Ty,const double&>(_Alloc &,_Objty *const ,const double &)' being compiled
+        with
+        [
+            _Alloc=std::allocator<float>,
+            _Ty=float,
+            _Objty=float
+        ]
+C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\xmemory(734): note: see reference to function template instantiation '_Ty *std::construct_at<_Objty,const double&>(_Ty *const ,const double &) noexcept' being compiled
+        with
+        [
+            _Ty=float,
+            _Objty=float
+        ]
+[9/11] Linking CXX executable bin\hyle_graph_route_vulkan_test.exe
+[10/11] Linking CXX executable bin\hyle_compute_route_vulkan_test.exe

@@ -1,5 +1,5 @@
 #pragma once
-#if defined(HYLE_GGML_CPU_IQ1_EXTENSIONS) || defined(HYLE_GGML_CUDA_IQ1_EXTENSIONS) || defined(HYLE_COMPUTE_APPLE)
+#if defined(HYLE_GGML_CPU_IQ1_EXTENSIONS) || defined(HYLE_GGML_CUDA_IQ1_EXTENSIONS) || defined(HYLE_COMPUTE_APPLE) || defined(HYLE_C5_GGUF_EXTERNAL_BANK)
 #if defined(HYLE_GGML_CPU_IQ1_EXTENSIONS) || defined(HYLE_GGML_CUDA_IQ1_EXTENSIONS) || defined(HYLE_GGML_METAL_IQ1_EXTENSIONS)
 #include "cpu_expanded_gguf_fixture.h"
 #endif
@@ -33,6 +33,9 @@ inline c::ModelArtifactProfileDescription profile(unsigned index) {
   return result;
 }
 
+#if defined(HYLE_C5_GGUF_EXTERNAL_BANK)
+using Bank = HYLE_C5_GGUF_EXTERNAL_BANK;
+#else
 struct Bank {
   ggml_type type;
   std::int64_t k;
@@ -137,6 +140,7 @@ struct Bank {
 #endif
   }
 };
+#endif
 
 inline std::vector<float> activation(std::int64_t rows,std::int64_t k,int seed) {
   std::vector<float> result(rows*k);
