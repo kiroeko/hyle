@@ -61,6 +61,29 @@ Apple helper 另行获取 metallib，并不检查 app 是否真正链接 MLX；�
 推断 Apple runtime 可删除。target-owned resource property 是既有资产闭包的投影，不新建依赖 registry。
 本包改变 cold CMake/API 名，不改数学、运行资源或 Provider preference；P0，无 P1。
 
+工具接缝 TT1（独立有界维护项）：新增 route metadata test 和旧 non-package sample/correctness
+CMake 调用迁移后，selector 对九个此前无映射的路径拒绝 verdict。只在 policy 登记该测试及八个
+实际 shared build 输入，保留全 package/授权门；不改 selector/checker 算法，不将样例当工具以跳过交付。
+WORKTREE 累积基线的已提交 owner attribution 不能代表最终 candidate，正式 C3 使用不可变 commit。
+
+### R1 AUDITED：保留已有冷绑定，校准新构建入口
+
+有限源码扫描结论：没有证据要求改写 matcher、policy 表或 native 执行器。
+
+| 项 | 实际接缝/依据 | 裁决 |
+|---|---|---|
+| Direct/Graph 默认一致 | CPU 两 create_context 共享 default_policy；CUDA Graph 调同一 internal factory，仅 scope/region carrier 不同 | KEEP 完整 region 优先，不让普通用户排序 |
+| 编译 recipe 失配 | Native default_rule_build 查 compiler/flags/linkage/IPO/CRT/parent options；CUDA CMake 与 best_of 检查实际硬件/driver/toolkit/进程条件 | KEEP 精确 WIN 域；C2 fingerprint 只诊断，不成为新证书 |
+| mixed ggml 来源 | runtime 一个选定 core；CPU-only/含 GPU pin 和 port identity 已区分 | KEEP 合法成熟默认，不继承另一个 recipe 的 WIN |
+| model/格式/环境匹配 | 公共 route_policy/workload；Apple route_input、Vulkan matches_cold_rule 从实际 Program descriptors/environment/profile 构造 | KEEP 实际 ports/native admission；不增加全模型 Q4 枚举 |
+| 冷诊断 | PreparedOperation implementation/route_policy/workload；Graph route reports；native Program environment/workload | KEEP 原查询，补统一构建与 recipe 解释；不为统一报告强制改变 native 对象 |
+| hot/失败边界 | 本批 include/C++/shader 原文零 diff，原 prepared/run state 与完成路径不改 | KEEP submit 固定、不计时/探设备；任何 accepted error 不换设备重算 |
+
+R1 有限 FIX：当前使用文档将新 SDK route/recipe 查询与已有 implementation/policy/native reports 对接，
+解释 maturity default 与精确 WIN、存放与执行分离；C3 在新闭包运行 ordinary Direct/Graph 接缝，
+验证未选 CPU 无隐式 fallback。无需为“必须重构”制造没有反例的 C++ 改动。
+原旧性能例外/INCONCLUSIVE 不重写，旧规则与源身份相同时不重跑 P1。
+
 ## 预算、验证和停止
 
 - 审计一遍当前入口/源码和现有 fixture；一个配置边界最多一次定向修正，不翻历史性能队列。

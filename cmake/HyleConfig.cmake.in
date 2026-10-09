@@ -2,6 +2,39 @@
 
 include(CMakeFindDependencyMacro)
 
+set(Hyle_AVAILABLE_COMPUTE_ROUTES "@HYLE_PACKAGE_COMPUTE_ROUTES@")
+set(Hyle_COMPUTE_RECIPE_ID "@HYLE_PACKAGE_COMPUTE_RECIPE_ID@")
+foreach(_Hyle_legacy IN ITEMS HYLE_COMPUTE_CPU HYLE_COMPUTE_CUDA HYLE_COMPUTE_APPLE
+    HYLE_COMPUTE_VULKAN HYLE_COMPUTE_ONEDNN HYLE_COMPUTE_TORCH_CPU)
+  if(DEFINED ${_Hyle_legacy})
+    set(Hyle_FOUND FALSE)
+    set(Hyle_NOT_FOUND_MESSAGE
+      "${_Hyle_legacy} is no longer a public build option; request HYLE_COMPUTE_ROUTES or read this SDK's capabilities")
+    return()
+  endif()
+endforeach()
+unset(_Hyle_legacy)
+# A requested set only asserts capabilities in this immutable SDK. It cannot
+# download/recompile Providers or alter the imported target's presence macros.
+if(DEFINED HYLE_COMPUTE_ROUTES)
+  foreach(_Hyle_requested IN LISTS HYLE_COMPUTE_ROUTES)
+    string(STRIP "${_Hyle_requested}" _Hyle_requested)
+    string(TOLOWER "${_Hyle_requested}" _Hyle_requested)
+    if(NOT _Hyle_requested IN_LIST Hyle_AVAILABLE_COMPUTE_ROUTES)
+      set(Hyle_FOUND FALSE)
+      set(Hyle_NOT_FOUND_MESSAGE
+        "Hyle SDK does not contain requested Compute route '${_Hyle_requested}'; available: ${Hyle_AVAILABLE_COMPUTE_ROUTES}")
+      return()
+    endif()
+  endforeach()
+  if(HYLE_COMPUTE_ROUTES STREQUAL "")
+    set(Hyle_FOUND FALSE)
+    set(Hyle_NOT_FOUND_MESSAGE "HYLE_COMPUTE_ROUTES must be a nonempty route requirement")
+    return()
+  endif()
+  unset(_Hyle_requested)
+endif()
+
 set(_Hyle_find_dependency_specs "@HYLE_PACKAGE_FIND_DEPENDENCIES@")
 foreach(_Hyle_find_dependency_spec IN LISTS _Hyle_find_dependency_specs)
   string(REPLACE "|" ";" _Hyle_find_dependency_args
@@ -26,6 +59,13 @@ set(Hyle_AVAILABLE_COMPONENTS "@HYLE_PACKAGE_COMPONENTS@")
 set(Hyle_AVAILABLE_FEATURES "@HYLE_PACKAGE_FEATURES@")
 if("compute_apple" IN_LIST Hyle_AVAILABLE_FEATURES)
   include("${CMAKE_CURRENT_LIST_DIR}/HyleAppleRuntime.cmake")
+  get_filename_component(_Hyle_metallib
+    "${CMAKE_CURRENT_LIST_DIR}/../../mlx.metallib" ABSOLUTE)
+  if(NOT EXISTS "${_Hyle_metallib}")
+    message(FATAL_ERROR "Hyle Apple SDK is missing native resource '${_Hyle_metallib}'")
+  endif()
+  set_property(TARGET hyle::_mlx_native PROPERTY HYLE_APPLE_METALLIB "${_Hyle_metallib}")
+  unset(_Hyle_metallib)
 endif()
 set(Hyle_STATIC @HYLE_PACKAGE_STATIC@)
 set(_Hyle_missing_components "")

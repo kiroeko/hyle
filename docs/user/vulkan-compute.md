@@ -44,7 +44,7 @@ cmake --install build-vulkan --prefix /your/sdk
 
 源码嵌入使用相同选项、`add_subdirectory` 和 `hyle::compute` / `hyle::graph`；安装 SDK 使用
 `find_package(Hyle 0.1.0 EXACT REQUIRED COMPONENTS compute graph)`。`HYLE_STATIC=OFF` 生成
-shared SDK，使用独立 build/prefix。Windows 消费者调用 `hyle_stage_runtime_dependencies(app)`
+shared SDK，使用独立 build/prefix。Windows 消费者调用 `hyle_stage_runtime(app)`
 把 HYLE 及需要的 C++ runtime DLL 放在 EXE 旁。Vulkan loader 使用系统提供的 `vulkan-1.dll`；
 Linux 默认 `libvulkan.so.1`，macOS 默认 `libvulkan.1.dylib`。
 

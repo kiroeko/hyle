@@ -15,7 +15,7 @@ hyle_add_test(compute_route_cpu SOURCES context_test.cc d5_qwen35_profile_test.c
 target_link_libraries(hyle_compute_route_cpu_test PRIVATE ggml)
 target_include_directories(hyle_compute_route_cpu_test SYSTEM PRIVATE
   "${HYLE_GGML_SOURCE_DIR}/src")
-hyle_stage_runtime_dependencies(hyle_compute_route_cpu_test)
+hyle_stage_runtime(hyle_compute_route_cpu_test)
 get_target_property(_hyle_torch_cpu hyle_compute_provider_native HYLE_TORCH_CPU_ENABLED)
 if(_hyle_torch_cpu)
   target_compile_definitions(hyle_compute_route_cpu_test PRIVATE HYLE_TEST_TORCH_CPU=1)

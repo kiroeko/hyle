@@ -32,7 +32,7 @@ function(hyle_add_correctness_journey name)
   endif()
   hyle_apply_warnings(${_target})
   hyle_apply_sanitizer(${_target})
-  hyle_stage_runtime_dependencies(${_target})
+  hyle_stage_runtime(${_target})
 
   add_test(NAME ${_target} COMMAND ${_target})
   set_tests_properties(${_target} PROPERTIES

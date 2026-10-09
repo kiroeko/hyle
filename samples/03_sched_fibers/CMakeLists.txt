@@ -11,4 +11,4 @@ add_subdirectory(../.. hyle_build)
 # configuration instead of silently producing a sample without its subject.
 add_executable(sched_sample main.cc)
 target_link_libraries(sched_sample PRIVATE hyle::sched hyle::mem)
-hyle_stage_runtime_dependencies(sched_sample)
+hyle_stage_runtime(sched_sample)

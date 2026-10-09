@@ -54,17 +54,17 @@ target_link_libraries(runtime_probe PRIVATE "$<$<CONFIG:Release>:probe::facade>"
 target_link_libraries(runtime_probe PRIVATE "$<IF:$<CONFIG:Debug>,unused_runtime,probe::facade>")
 set_target_properties(runtime_probe PROPERTIES
   RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/app")
-hyle_stage_runtime_dependencies(runtime_probe)
-hyle_stage_runtime_dependencies(runtime_probe)
+hyle_stage_runtime(runtime_probe)
+hyle_stage_runtime(runtime_probe)
 add_executable(runtime_peer main.cc)
 target_link_libraries(runtime_peer PRIVATE probe::facade)
 set_target_properties(runtime_peer PROPERTIES
   RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/app")
-hyle_stage_runtime_dependencies(runtime_peer)
+hyle_stage_runtime(runtime_peer)
 add_executable(empty_probe empty.cc)
 set_target_properties(empty_probe PROPERTIES
   RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/empty")
-hyle_stage_runtime_dependencies(empty_probe)
+hyle_stage_runtime(empty_probe)
 ]=])
 string(CONFIGURE "${_project}" _project @ONLY)
 file(WRITE "${_source}/CMakeLists.txt" "${_project}")

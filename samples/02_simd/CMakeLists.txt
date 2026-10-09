@@ -15,7 +15,7 @@ endif()
 
 add_executable(simd_sample main.cc)
 target_link_libraries(simd_sample PRIVATE hyle::simd)
-hyle_stage_runtime_dependencies(simd_sample)
+hyle_stage_runtime(simd_sample)
 
 # OPTIONAL exact target for this consumer TU. It exposes the locked
 # Highway headers and compiles the expert kernel without CPUID/function pointers.

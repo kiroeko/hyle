@@ -10,5 +10,5 @@ if(HYLE_COMPUTE_VULKAN_ENABLED)
     "${HYLE_SOURCE_DIR}/src/compute_provider_iree_vulkan")
   target_link_libraries(hyle_compute_provider_iree_vulkan_test PRIVATE
     hyle_compute_provider_ggml_vulkan hyle_mem hyle_error Vulkan-Headers)
-  hyle_stage_runtime_dependencies(hyle_compute_provider_iree_vulkan_test)
+  hyle_stage_runtime(hyle_compute_provider_iree_vulkan_test)
 endif()

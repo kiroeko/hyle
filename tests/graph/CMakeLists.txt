@@ -11,7 +11,7 @@ if(HYLE_COMPUTE_CPU AND HYLE_GGML_CPU_ENABLED
     region_provider_test.cc
     DEPS hyle_compute_backend_cpu hyle_compute_provider_native
          hyle_compute_provider_ggml Threads::Threads)
-  hyle_stage_runtime_dependencies(hyle_graph_executable_test)
+  hyle_stage_runtime(hyle_graph_executable_test)
   target_include_directories(hyle_graph_executable_test PRIVATE
     "${CMAKE_CURRENT_SOURCE_DIR}/../../src/compute")
   # OPTIONAL_ABSENT keeps a placeholder target so the component graph remains

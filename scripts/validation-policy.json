@@ -61,6 +61,10 @@
   },
   "tool_suites": [
     {
+      "paths": ["tests/tooling/compute_routes_test.py"],
+      "tests": ["tests/tooling/compute_routes_test.py"]
+    },
+    {
       "paths": ["cmake/HyleRuntimeStaging.cmake", "tests/tooling/runtime_staging_graph_test.py", "tests/tooling/torch_cpu_sdk_platform_test.py"],
       "tests": ["tests/tooling/runtime_staging_graph_test.py", "tests/tooling/torch_cpu_sdk_platform_test.py"]
     },
@@ -105,6 +109,12 @@
       "tests": ["tests/tooling/bench_stat_parser_test.py", "tests/tooling/perf_machine_test.py", "tests/tooling/hyle_perf_core_test.py", "tests/tooling/hyle_perf_nanobench_test.py", "tests/tooling/hyle_perf_runner_test.py", "tests/tooling/hyle_perf_controls_test.py", "tests/tooling/hyle_perf_evidence_runner_test.py", "tests/tooling/hyle_perf_raw_replay_test.py", "tests/tooling/hyle_perf_build_replay_test.py"]
     }
   ],
-  "package_tools": ["scripts/hyle-unix.sh", "scripts/hyle-windows.ps1", "scripts/header-self-contained.py", "hyle-offline-deps.cmake"],
+  "package_tools": [
+    "scripts/hyle-unix.sh", "scripts/hyle-windows.ps1", "scripts/header-self-contained.py", "hyle-offline-deps.cmake",
+    "samples/01_mem_container/CMakeLists.txt", "samples/02_simd/CMakeLists.txt",
+    "samples/03_sched_fibers/CMakeLists.txt", "samples/04_prebuilt_lib/CMakeLists.txt",
+    "samples/05_installed_sdk/CMakeLists.txt", "samples/06_installed_io_http2/CMakeLists.txt",
+    "samples/08_inference_service/CMakeLists.txt", "tests/correctness/CMakeLists.txt"
+  ],
   "format_config": [".clang-format", ".clang-tidy", ".editorconfig", ".gitattributes", ".gitignore"]
 }

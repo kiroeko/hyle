@@ -18,7 +18,7 @@ if(HYLE_COMPUTE_VULKAN_ENABLED)
     "${HYLE_GGML_VULKAN_SOURCE_DIR}/src")
   target_link_libraries(hyle_compute_provider_ggml_vulkan_test PRIVATE
     ggml Vulkan-Headers hyle_compute_ggml_runtime hyle_compute_ops hyle_mem hyle_error hyle_platform)
-  hyle_stage_runtime_dependencies(hyle_compute_provider_ggml_vulkan_test)
+  hyle_stage_runtime(hyle_compute_provider_ggml_vulkan_test)
   if(MSVC AND HYLE_TARGET_PROCESSOR STREQUAL "x86_64")
     FetchContent_GetProperties(ggml SOURCE_DIR _locked_ggml_source)
     add_test(NAME hyle_ggml_vulkan_masm_composition_test

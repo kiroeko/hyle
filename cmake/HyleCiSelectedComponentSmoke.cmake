@@ -133,7 +133,7 @@ file(WRITE "${_source_parent}/CMakeLists.txt"
 "add_executable(hyle_selected_source_consumer \"${_sample}/main.cc\")\n"
 "target_link_libraries(hyle_selected_source_consumer PRIVATE hyle::${HYLE_SMOKE_COMPONENT})\n"
 "${_source_expert_contract}"
-"hyle_stage_runtime_dependencies(hyle_selected_source_consumer)\n"
+"hyle_stage_runtime(hyle_selected_source_consumer)\n"
 "enable_testing()\n"
 "add_test(NAME hyle_selected_source_consumer COMMAND hyle_selected_source_consumer)\n"
 "${_source_extra_tests}")

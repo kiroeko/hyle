@@ -16,7 +16,7 @@ endif()
 add_executable(hyle_simd_cpp_package_probe main.cc)
 target_link_libraries(hyle_simd_cpp_package_probe PRIVATE hyle::simd)
 target_compile_features(hyle_simd_cpp_package_probe PRIVATE cxx_std_23)
-hyle_stage_runtime_dependencies(hyle_simd_cpp_package_probe)
+hyle_stage_runtime(hyle_simd_cpp_package_probe)
 
 # The same expert journey must work for source embedding and for relocated
 # static/shared SDKs. Keep provider-native types inside this object TU.

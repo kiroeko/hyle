@@ -10,7 +10,7 @@ endif()
 
 add_executable(installed_io_http2_consumer main.cc)
 target_link_libraries(installed_io_http2_consumer PRIVATE hyle::io)
-hyle_stage_runtime_dependencies(installed_io_http2_consumer)
+hyle_stage_runtime(installed_io_http2_consumer)
 
 enable_testing()
 add_test(NAME installed_io_http2_consumer COMMAND installed_io_http2_consumer)

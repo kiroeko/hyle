@@ -42,7 +42,7 @@ Qwen27B命名Q4_0的实际Q3/Q4/Q6 MTP sidecar、Flash Q8/BF16两份实际MXFP4�
    每个端口的真实存储与精度仍由本次descriptor证明。未知身份仅能用合法通用路径。
 4. Direct准备并复用Invocation；Graph编译并准备独立执行槽。重复调用更新activation/cache/ids，
    等真实Completion完成后读输出；借用权重活到最后一次完成。
-5. source/static/shared均为C++交付，安装消费用find_package；调用 `hyle_stage_runtime_dependencies`。
+5. source/static/shared均为C++交付，安装消费用find_package；调用 `hyle_stage_runtime`。
    Windows将依赖DLL邻置exe，Linux/macOS保留实际loader路径。HYLE static仍含外部shared CPU runtime资产。
 
 ## 需要保留的成本与限制

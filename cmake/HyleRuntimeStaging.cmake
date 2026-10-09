@@ -18,6 +18,8 @@ function(_hyle_collect_runtime_files target output)
   # CMake configure is serialized and this walker does not invoke callbacks.
   # Reset per collection: targets/runtime assets may change before a later call.
   set_property(GLOBAL PROPERTY HYLE_RUNTIME_WALK_SEEN "")
+  set_property(GLOBAL PROPERTY HYLE_RUNTIME_WALK_APPLE_ASSETS "")
+  set_property(GLOBAL PROPERTY HYLE_RUNTIME_WALK_APPLE_PRODUCERS "")
   _hyle_runtime_files_walk("${target}" "1" "" _files)
   list(REMOVE_DUPLICATES _files)
   set(${output} "${_files}" PARENT_SCOPE)
@@ -46,6 +48,19 @@ function(_hyle_runtime_files_walk owner condition ancestors output)
   if(_alias)
     _hyle_runtime_files_walk("${_alias}" "${condition}" "${ancestors}" _alias_files)
     list(APPEND _files ${_alias_files})
+  else()
+    # Route-owned resource, using exactly the same conditional link walk as
+    # DLLs. Merely having MLX in a mixed SDK must not stage an unlinked asset.
+    get_target_property(_metallib "${owner}" HYLE_APPLE_METALLIB)
+    if(_metallib)
+      set_property(GLOBAL APPEND PROPERTY HYLE_RUNTIME_WALK_APPLE_ASSETS
+        "$<${condition}:${_metallib}>")
+      get_target_property(_imported "${owner}" IMPORTED)
+      if(NOT _imported)
+        set_property(GLOBAL APPEND PROPERTY HYLE_RUNTIME_WALK_APPLE_PRODUCERS
+          "${owner}")
+      endif()
+    endif()
   endif()
   foreach(_property IN ITEMS LINK_LIBRARIES INTERFACE_LINK_LIBRARIES
       IMPORTED_LINK_DEPENDENT_LIBRARIES IMPORTED_LINK_DEPENDENT_LIBRARIES_RELEASE
@@ -92,9 +107,9 @@ endfunction()
 # Opt-in Windows DLL staging and Linux SDK loader paths. This file is shared by
 # source embedding and installed SDKs; HYLE's own linkage does not describe a
 # consumer's complete runtime closure (e.g. a separately compiled kernel DLL).
-function(hyle_stage_runtime_dependencies target)
+function(_hyle_stage_runtime_dependencies target)
   if(NOT TARGET ${target})
-    message(FATAL_ERROR "hyle_stage_runtime_dependencies: target '${target}' does not exist")
+    message(FATAL_ERROR "hyle_stage_runtime: target '${target}' does not exist")
   endif()
   get_target_property(_existing ${target} HYLE_RUNTIME_STAGING_TARGET)
   if(_existing)
@@ -167,4 +182,30 @@ endforeach()
   set_target_properties(${_stage} PROPERTIES FOLDER "hyle/runtime-staging")
   add_dependencies(${target} ${_stage})
   set_property(TARGET ${target} PROPERTY HYLE_RUNTIME_STAGING_TARGET ${_stage})
+endfunction()
+
+# Same application API for embedded source and either installed SDK shape.
+# The old individual helpers are private so consumers need no platform branch.
+function(hyle_stage_runtime target)
+  if(NOT TARGET ${target})
+    message(FATAL_ERROR "hyle_stage_runtime: target '${target}' does not exist")
+  endif()
+  get_target_property(_type ${target} TYPE)
+  if(NOT _type STREQUAL "EXECUTABLE")
+    message(FATAL_ERROR "hyle_stage_runtime requires an executable application target")
+  endif()
+  get_target_property(_existing ${target} HYLE_UNIFIED_RUNTIME_STAGING)
+  if(_existing)
+    return()
+  endif()
+  _hyle_stage_runtime_dependencies(${target})
+  get_property(_assets GLOBAL PROPERTY HYLE_RUNTIME_WALK_APPLE_ASSETS)
+  if(_assets)
+    get_property(_producers GLOBAL PROPERTY HYLE_RUNTIME_WALK_APPLE_PRODUCERS)
+    list(REMOVE_DUPLICATES _assets)
+    list(REMOVE_DUPLICATES _producers)
+    include("${CMAKE_CURRENT_FUNCTION_LIST_DIR}/HyleAppleRuntime.cmake")
+    _hyle_stage_apple_runtime(${target} "${_assets}" "${_producers}")
+  endif()
+  set_property(TARGET ${target} PROPERTY HYLE_UNIFIED_RUNTIME_STAGING TRUE)
 endfunction()

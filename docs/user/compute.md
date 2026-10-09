@@ -68,6 +68,12 @@ Compute/Graph 构建默认完整 `cpu`；CUDA-only 选择 `HYLE_COMPUTE_ROUTES=c
 安装包的实际 capability、头与 CMake 选项见
 [交付配置](distribution.md#4-消费安装包)。
 
+构建集合说明 SDK 可用能力；具体任务仍由所选 Context 及 prepare/compile 的真实 dtype/encoding、
+模型/阶段、硬件/版本和资源条件绑定。`PreparedOperation::implementation()/route_policy()` 与
+Graph/native route 的已有报告解释入选实现；SDK 的 recipe fingerprint 用于核对构建身份，
+不表示该硬件上的新 WIN。精确资格不匹配时仍使用合法成熟默认，缺能力才明确拒绝。
+多路线 SDK 不让 GPU-only Context 自动转 CPU；它也不代签尚未验收的联合计算。
+
 当程序已经知道要执行哪个 operation、在哪个 device 上执行，并希望复用固定 shape/layout 的路线时，
 使用 Compute。跨节点拓扑、liveness 和可复用图执行物使用 [Graph](graph.md)；模型、KV cache、batching、
 sampling 和 serving 留在推理引擎。
@@ -131,7 +137,7 @@ CPU 内部把已量化数值表达为 F32 并计算，不宣称硬件原生 FP8 
 source/static/shared 三种 HYLE 交付都依赖此外部 shared CPU runtime。
 HYLE static 不代表把 LibTorch 静态链接进进程；安装消费者只需提供HYLE prefix，Native依赖shim
 复用或取得同一锁定CPU SDK，高级用户也可提供外部CPU LibTorch prefix。Windows消费者调用
-`hyle_stage_runtime_dependencies(my_app)`，由HYLE将完整CPU DLL闭包邻置到exe目录；不要让程序依赖
+`hyle_stage_runtime(my_app)`，由HYLE将完整CPU DLL闭包邻置到exe目录；不要让程序依赖
 Python 或 CUDA 的 DLL 搜索目录。Linux使用同一helper为实际CPU SDK依赖绑定loader路径，
 覆盖shared adapter的间接依赖；无需另设`LD_LIBRARY_PATH`或逐应用复制整份SDK。
 分发 CPU SDK 时同时保留其原许可证和第三方 notices，HYLE 安装包另附所借用 TorchAO 的 BSD 许可。
@@ -143,7 +149,7 @@ Windows/Linux x86_64 的普通 CPU 路线包含同一锁定版本的 ggml 基线
 执行时不重新探测、计时或选择。用户不需要选择 ISA。适用的优化程序缺失或版本不匹配时明确报错。
 
 源码、静态与动态交付都须保留随附的私有 CPU 程序 DLL/so，HYLE 静态库也不是无运行资产的单文件交付。
-源与安装消费者均调用 `hyle_stage_runtime_dependencies(my_app)`：Windows 将 DLL 放到 exe 同目录，
+源与安装消费者均调用 `hyle_stage_runtime(my_app)`：Windows 将 DLL 放到 exe 同目录，
 Linux 为实际运行资产绑定加载路径。私有程序不提供公共 ABI，也不改变普通 Direct/Graph 入口。
 
 ## 可选模型与阶段信息
@@ -387,7 +393,7 @@ Windows 从已初始化的 developer shell 执行上述命令，或用既有
 `scripts/hyle-windows.ps1 -Action Build -Preset compute-cuda` 导入受支持的 MSVC 环境。
 CPU+CUDA SDK 可在 configure 时显式覆盖 `"-DHYLE_COMPUTE_ROUTES=cpu;cuda"`；static、install、目标 arch
 按普通 CMake 参数选，不需要内部 Provider flags 或排序。源码与安装包均链接 `hyle::compute`，
-应用链接后调用 `hyle_stage_runtime_dependencies(app)`，Windows 把依赖 DLL 邻置 exe。
+应用链接后调用 `hyle_stage_runtime(app)`，Windows 把依赖 DLL 邻置 exe。
 构建选择不代替具体模型／格式／精度请求的准备与运行资格，当前新增合同仍按 owner 卡验收。
 
 不用 preset 时选择 `HYLE_COMPONENTS=compute`、`HYLE_COMPUTE_ROUTES=cuda`。自然 C++ 入口如下：

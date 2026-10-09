@@ -23,11 +23,11 @@ if(HYLE_GGML_CPU_ENABLED)
   target_include_directories(hyle_graph_route_cpu_test SYSTEM PRIVATE
     "${HYLE_GGML_SOURCE_DIR}/src")
 endif()
-hyle_stage_runtime_dependencies(hyle_graph_route_cpu_test)
+hyle_stage_runtime(hyle_graph_route_cpu_test)
 
 # The installed/source consumer is also run in the targeted route test suite.
 # Sched is a test dependency, not a shipping dependency of the CPU route.
 hyle_add_test(graph_route_cpu NAME cpu_executor
   SOURCES ../../samples/package/graph/cpu_executor/main.cc
   DEPS hyle_sched hyle_compute_provider_native hyle_graph_provider_onednn)
-hyle_stage_runtime_dependencies(hyle_graph_route_cpu_cpu_executor_test)
+hyle_stage_runtime(hyle_graph_route_cpu_cpu_executor_test)

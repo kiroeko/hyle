@@ -5,5 +5,5 @@ if(HYLE_GGML_CPU_ENABLED)
     transformer_fill_test.cc layout_broadcast_test.cc
     DEPS hyle_compute_backend_cpu hyle_simd)
   target_link_libraries(hyle_compute_provider_ggml_test PRIVATE ggml)
-  hyle_stage_runtime_dependencies(hyle_compute_provider_ggml_test)
+  hyle_stage_runtime(hyle_compute_provider_ggml_test)
 endif()

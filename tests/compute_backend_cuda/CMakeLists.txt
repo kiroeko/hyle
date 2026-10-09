@@ -24,7 +24,7 @@ if(HYLE_COMPUTE_CUDA_ENABLED)
       CUDA_STANDARD 17
       CUDA_STANDARD_REQUIRED ON
       CUDA_ARCHITECTURES native)
-    hyle_stage_runtime_dependencies(${_hyle_cuda_test})
+    hyle_stage_runtime(${_hyle_cuda_test})
   endforeach()
   if(MSVC)
     # nvcc 13.3 feeds both NVIDIA's UTF-8 headers and its generated C stub to

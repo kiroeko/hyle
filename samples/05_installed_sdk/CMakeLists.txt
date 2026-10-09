@@ -5,7 +5,7 @@ find_package(Hyle 0.1.0 EXACT REQUIRED COMPONENTS mem)
 
 add_executable(installed_mem_cpp_consumer system_allocator.cc)
 target_link_libraries(installed_mem_cpp_consumer PRIVATE hyle::mem)
-hyle_stage_runtime_dependencies(installed_mem_cpp_consumer)
+hyle_stage_runtime(installed_mem_cpp_consumer)
 
 if(NOT Hyle_AVAILABLE_COMPONENTS)
   message(FATAL_ERROR "installed HYLE package reported no components")
@@ -36,7 +36,7 @@ foreach(_component IN LISTS Hyle_AVAILABLE_COMPONENTS)
   set(_consumer "installed_${_component}_target_consumer")
   add_executable(${_consumer} all_components.cc)
   target_link_libraries(${_consumer} PRIVATE hyle::${_component})
-  hyle_stage_runtime_dependencies(${_consumer})
+  hyle_stage_runtime(${_consumer})
   add_test(NAME ${_consumer} COMMAND ${_consumer})
 endforeach()
 

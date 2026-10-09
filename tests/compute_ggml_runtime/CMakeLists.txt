@@ -20,7 +20,7 @@ if(HYLE_COMPUTE_CUDA_ENABLED)
       LINKER:--wrap=cudaGetLastError)
   endif()
   set_tests_properties(hyle_compute_ggml_runtime_cuda_test PROPERTIES TIMEOUT 60)
-  hyle_stage_runtime_dependencies(hyle_compute_ggml_runtime_cuda_test)
+  hyle_stage_runtime(hyle_compute_ggml_runtime_cuda_test)
 endif()
 if(HYLE_GGML_CPU_ENABLED)
   hyle_add_test(compute_ggml_runtime SOURCES execution_test.cc
@@ -31,7 +31,7 @@ if(HYLE_GGML_CPU_ENABLED)
   target_include_directories(hyle_compute_ggml_runtime_test SYSTEM PRIVATE
     "${HYLE_GGML_SOURCE_DIR}/src")
   target_link_libraries(hyle_compute_ggml_runtime_test PRIVATE ggml hyle_mem hyle_error)
-  hyle_stage_runtime_dependencies(hyle_compute_ggml_runtime_test)
+  hyle_stage_runtime(hyle_compute_ggml_runtime_test)
 
   # Each executable substitutes failures only inside its exact vendor C TU.
   # They do not link the HYLE runtime, install hooks, or exhaust the machine.

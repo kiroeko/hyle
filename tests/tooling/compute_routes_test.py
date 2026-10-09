@@ -139,6 +139,47 @@ class ComputeRoutesTest(unittest.TestCase):
             self.assertFalse(set(cache) & set(LEGACY))
             self.assertEqual(builds[name]["jobs"], 2)
 
+    def test_installed_requirements_assert_sdk_without_reconfiguring(self):
+        # Package metadata fixture, not a native library/provider certificate.
+        prepare = self.directory / "prepare"
+        sdk = self.directory / "sdk/lib/cmake/Hyle"
+        prepare.mkdir()
+        (prepare / "CMakeLists.txt").write_text(
+            'cmake_minimum_required(VERSION 3.25)\nproject(SdkMetadata NONE)\n'
+            'include(CMakePackageConfigHelpers)\n'
+            'set(HYLE_PACKAGE_COMPUTE_ROUTES cpu)\n'
+            'set(HYLE_PACKAGE_COMPUTE_RECIPE_ID fixture-recipe)\n'
+            'set(HYLE_PACKAGE_COMPONENTS compute)\n'
+            'set(HYLE_PACKAGE_FEATURES compute_cpu)\n'
+            'set(HYLE_PACKAGE_STATIC ON)\n'
+            f'file(MAKE_DIRECTORY "{sdk.as_posix()}")\n'
+            f'configure_package_config_file("{(ROOT / "cmake/HyleConfig.cmake.in").as_posix()}" '
+            f'"{(sdk / "HyleConfig.cmake").as_posix()}" INSTALL_DESTINATION lib/cmake/Hyle)\n'
+            f'file(WRITE "{(sdk / "HyleTargets.cmake").as_posix()}" '
+            '"add_library(hyle::compute INTERFACE IMPORTED)\\n")\n'
+            f'file(COPY "{(ROOT / "cmake/HyleRuntimeStaging.cmake").as_posix()}" '
+            f'DESTINATION "{sdk.as_posix()}")\n', encoding="utf-8")
+        result = subprocess.run(["cmake", "-S", str(prepare), "-B", str(prepare / "build")],
+                                capture_output=True, text=True, timeout=15, **NO_WINDOW)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        source = self.directory / "consumer"
+        source.mkdir()
+        (source / "CMakeLists.txt").write_text(
+            'cmake_minimum_required(VERSION 3.25)\nproject(ConsumeMetadata NONE)\n'
+            'find_package(Hyle CONFIG REQUIRED COMPONENTS compute)\n'
+            'if(NOT Hyle_AVAILABLE_COMPUTE_ROUTES STREQUAL "cpu" OR '
+            'NOT Hyle_COMPUTE_RECIPE_ID STREQUAL "fixture-recipe")\n'
+            'message(FATAL_ERROR "SDK metadata changed")\nendif()\n', encoding="utf-8")
+        cases = [([], True), (["-DHYLE_COMPUTE_ROUTES=CPU"], True),
+                 (["-DHYLE_COMPUTE_ROUTES=cpu;cuda"], False),
+                 (["-DHYLE_COMPUTE_ROUTES="], False),
+                 (["-DHYLE_COMPUTE_TORCH_CPU=OFF"], False)]
+        for ordinal, (args, expected) in enumerate(cases):
+            result = subprocess.run(["cmake", "-S", str(source), "-B", str(source / str(ordinal)),
+                                     "-DHyle_DIR=" + str(sdk), *args], capture_output=True,
+                                    text=True, timeout=15, **NO_WINDOW)
+            self.assertEqual(result.returncode == 0, expected, result.stdout + result.stderr)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -21,4 +21,4 @@ target_link_libraries(hyle_inference_service PRIVATE
   hyle::sched
   hyle::simd
   hyle::util)
-hyle_stage_runtime_dependencies(hyle_inference_service)
+hyle_stage_runtime(hyle_inference_service)

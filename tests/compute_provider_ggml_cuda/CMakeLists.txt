@@ -11,5 +11,5 @@ if(HYLE_COMPUTE_CUDA_ENABLED)
     target_link_options(hyle_compute_provider_ggml_cuda_test PRIVATE
       LINKER:--wrap=cudaStreamBeginCapture)
   endif()
-  hyle_stage_runtime_dependencies(hyle_compute_provider_ggml_cuda_test)
+  hyle_stage_runtime(hyle_compute_provider_ggml_cuda_test)
 endif()

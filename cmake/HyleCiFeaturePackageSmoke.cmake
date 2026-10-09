@@ -188,7 +188,7 @@ function(_hyle_feature_smoke_shape shape is_static)
 "add_executable(hyle_locked_feature_consumer main.cc)\n"
 "target_compile_features(hyle_locked_feature_consumer PRIVATE cxx_std_23)\n"
 "target_link_libraries(hyle_locked_feature_consumer PRIVATE hyle::io)\n"
-"hyle_stage_runtime_dependencies(hyle_locked_feature_consumer)\n"
+"hyle_stage_runtime(hyle_locked_feature_consumer)\n"
 "enable_testing()\n"
 "add_test(NAME hyle_locked_feature_consumer COMMAND hyle_locked_feature_consumer)\n")
   file(WRITE "${_consumer_source}/main.cc"
@@ -277,7 +277,7 @@ function(_hyle_feature_smoke_tracy shape is_static)
 "add_executable(hyle_locked_trace_consumer main.cc)\n"
 "target_compile_features(hyle_locked_trace_consumer PRIVATE cxx_std_23)\n"
 "target_link_libraries(hyle_locked_trace_consumer PRIVATE hyle::obs)\n"
-"hyle_stage_runtime_dependencies(hyle_locked_trace_consumer)\n"
+"hyle_stage_runtime(hyle_locked_trace_consumer)\n"
 "enable_testing()\n"
 "add_test(NAME hyle_locked_trace_consumer COMMAND hyle_locked_trace_consumer)\n")
   file(WRITE "${_consumer_source}/main.cc"

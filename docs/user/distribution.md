@@ -92,7 +92,7 @@ cmake --install build-sdk-shared --config Release
 ```
 
 shared package 仍是 C++ SDK。运行时必须能找到动态库闭包；Linux/macOS 使用正常的 rpath/loader
-策略，Windows consumer 可使用 package 提供的 `hyle_stage_runtime_dependencies()` 把 imported DLL
+策略，Windows consumer 可使用 package 提供的 `hyle_stage_runtime()` 把 imported DLL
 闭包复制到 executable 旁。该 opt-in 在每次构建 consumer 时检查并只更新不同文件，即使 EXE 无需
 重链接也会更新 DLL；静态 HYLE 用户链接自己的 shared kernel 时同样适用，空 DLL 闭包也合法。
 shared factor 默认只导出显式标注的 C++ API；内部 C、汇编与第三方符号
@@ -109,7 +109,7 @@ find_package(Hyle 0.1.0 EXACT REQUIRED COMPONENTS mem container)
 target_link_libraries(my_app PRIVATE hyle::container)
 
 if(WIN32)
-  hyle_stage_runtime_dependencies(my_app)
+  hyle_stage_runtime(my_app)
 endif()
 ```
 
@@ -117,7 +117,7 @@ endif()
 到同一个 prefix 后依赖偶然搜索顺序；也不要从一个 SDK 拿头、从另一个拿库。
 
 Visual Studio 生成器下，在创建 consumer target 的同一 CMake 目录调用
-`hyle_stage_runtime_dependencies()`；其链接的库可以来自其它目录。
+`hyle_stage_runtime()`；其链接的库可以来自其它目录。
 
 Linux 静态 SDK 若要链入 shared library，生产 SDK 时设置
 `-DCMAKE_POSITION_INDEPENDENT_CODE=ON`。普通静态 EXE 与这种 PIC SDK 是明确的 producer 配置；
@@ -173,6 +173,12 @@ Compute/Graph 使用唯一 `HYLE_COMPUTE_ROUTES` 集合，省略时默认完整 
 presence 宏由 target 传播，不能在 consumer 手写宏创建未交付能力。
 mixed SDK 只证明编入多路线，跨路线联合图仍须 H1–H3 另行验收。
 
+安装包提供 `Hyle_AVAILABLE_COMPUTE_ROUTES` 与 `Hyle_COMPUTE_RECIPE_ID`；source 和安装 target
+都可通过 `get_target_property(... hyle::compute HYLE_COMPUTE_ROUTES)` / `HYLE_COMPUTE_RECIPE_ID`
+查询实际配置。fingerprint 随版本/flags/linkage 等 recipe 变化，用于冷诊断，不是 ABI 或性能证书。
+安装 consumer 可在 `find_package` 前设置 `HYLE_COMPUTE_ROUTES` 断言所需子集；缺路线报错，
+不会由此修改 SDK、下载 Provider 或重编。源码/安装应用统一调用 `hyle_stage_runtime(app)`。
+
 CPU 路线在支持的 x86-64 目标自动接入锁定 oneDNN；macOS ARM64 使用原 ggml/ATen CPU 程序。
 必要 Provider 不提供普通 ON/OFF；缺少合格必要依赖时明确失败。
 普通 Direct 使用 `hyle::compute::cpu::create_context()`，普通 Graph 使用
@@ -200,7 +206,7 @@ CUDA Toolkit 是机器 SDK，不进入 FetchContent cache，也不会由 HYLE �
 `compute::cuda::create_context()`，Graph 使用 `graph::cuda::create_context/compile/prepare_replay()`。
 ggml 与 SGLang activation 的许可证/NOTICE 随选中路线安装；原始系统 CUDA SDK 仍由机器提供。
 当前三交付/性能验收状态见 module-status。Windows 消费者在链接公开产品后调用
-`hyle_stage_runtime_dependencies(my_app)`，会把所需 HYLE、CUDA Runtime、cuBLAS 与 cuBLASLt
+`hyle_stage_runtime(my_app)`，会把所需 HYLE、CUDA Runtime、cuBLAS 与 cuBLASLt
 DLL 放在 exe 同目录；源码、静态 SDK 和动态 SDK 使用同一入口。构建时仍需安装 CUDA Toolkit，
 运行机器需具备相应 NVIDIA 驱动与 VC runtime。
 Apple MLX/Metal 的构建、metallib 邻置与已验收边界见 [Apple 指南](apple-compute.md)。

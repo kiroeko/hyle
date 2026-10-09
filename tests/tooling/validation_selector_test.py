@@ -445,7 +445,7 @@ class ImpactTest(unittest.TestCase):
 
     @patch.object(selector.platform, "system", return_value="Darwin")
     def test_apple_runtime_cmake_uses_real_owner_and_consumer_closure(self, _system):
-        self.write("cmake/HyleAppleRuntime.cmake", "function(hyle_stage_apple_runtime target)\nendfunction()\n")
+        self.write("cmake/HyleAppleRuntime.cmake", "function(hyle_stage_runtime target)\nendfunction()\n")
         self.commit()
         plan = self.plan()
         self.assertEqual(plan["verdict"], "READY")
@@ -464,7 +464,7 @@ class ImpactTest(unittest.TestCase):
                    "hyle_add_header_self_contained_test(compute_route_apple)\n")
         self.set_state("compute_route_apple", "CLOSED")
         self.base = self.commit()
-        self.write("cmake/HyleAppleRuntime.cmake", "function(hyle_stage_apple_runtime target)\nendfunction()\n")
+        self.write("cmake/HyleAppleRuntime.cmake", "function(hyle_stage_runtime target)\nendfunction()\n")
         self.commit()
         plan = self.plan()
         self.assertEqual(plan["verdict"], "BLOCKED")

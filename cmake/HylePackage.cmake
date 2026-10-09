@@ -4,6 +4,53 @@ include_guard(GLOBAL)
 # factor and product targets; this file turns the already-resolved target graph into one
 # relocatable package without reconstructing dependencies from filenames.
 function(hyle_install_package)
+  hyle_package_collect_registry(_source_exports HYLE_PACKAGE_FEATURES _source_dependencies)
+  set(HYLE_PACKAGE_COMPUTE_ROUTES "${HYLE_COMPUTE_ROUTE_LIST}")
+  # Diagnostic build identity, not a cross-ABI guarantee or WIN certificate.
+  # Dependency identities come from the existing registry/lock, not a parallel
+  # handwritten list of Providers. Include only this package's locked inputs.
+  set(_recipe "routes=${HYLE_COMPUTE_ROUTE_LIST}|features=${HYLE_PACKAGE_FEATURES}")
+  string(APPEND _recipe
+    "|${CMAKE_SYSTEM_NAME}/${HYLE_TARGET_PROCESSOR}"
+    "|${CMAKE_CXX_COMPILER_ID}/${CMAKE_CXX_COMPILER_VERSION}"
+    "|static=${HYLE_STATIC}|config=${CMAKE_BUILD_TYPE}"
+    "|flags=${CMAKE_CXX_FLAGS}/${CMAKE_CXX_FLAGS_RELEASE}"
+    "|crt=${CMAKE_MSVC_RUNTIME_LIBRARY}|cuda=${CMAKE_CUDA_ARCHITECTURES}"
+    "|isa=${HYLE_SIMD_EXACT_TARGET}|ipo=${CMAKE_INTERPROCEDURAL_OPTIMIZATION}"
+    "|ipo-release=${CMAKE_INTERPROCEDURAL_OPTIMIZATION_RELEASE}"
+    "|configs=${CMAKE_CONFIGURATION_TYPES}|debug=${CMAKE_CXX_FLAGS_DEBUG}"
+    "|relwithdebinfo=${CMAKE_CXX_FLAGS_RELWITHDEBINFO}"
+    "|cuda-compiler=${CMAKE_CUDA_COMPILER_VERSION}"
+    "|cuda-flags=${CMAKE_CUDA_FLAGS}/${CMAKE_CUDA_FLAGS_RELEASE}"
+    "|metal=${HYLE_APPLE_METAL_COMPILER}|vulkan=${HYLE_VULKAN_SHADER_COMPILER}"
+    "|trace=${HYLE_TRACE}|sanitizer=${HYLE_SANITIZER}")
+  get_directory_property(_directory_options COMPILE_OPTIONS)
+  get_directory_property(_directory_definitions COMPILE_DEFINITIONS)
+  string(APPEND _recipe "|options=${_directory_options}|definitions=${_directory_definitions}")
+  get_property(_dependencies GLOBAL PROPERTY HYLE_PACKAGE_DEPENDENCIES)
+  foreach(_dependency IN LISTS _dependencies)
+    _hyle_package_dependency_property("${_dependency}" LOCKED_DEPENDENCIES _locked)
+    foreach(_identity IN LISTS _locked)
+      string(TOUPPER "${_identity}" _upper)
+      string(APPEND _recipe "|${_identity}=${HYLE_DEP_${_upper}_COMMIT}:"
+        "${HYLE_DEP_${_upper}_VERSION}:${HYLE_DEP_${_upper}_VENDORED_TREE_SHA256}:")
+    endforeach()
+  endforeach()
+  string(APPEND _recipe "|ggml-cpu=${HYLE_GGML_CPU_PROVIDER_VERSION}"
+    "|ggml-cuda=${HYLE_GGML_CUDA_PROVIDER_VERSION}")
+  string(SHA256 HYLE_PACKAGE_COMPUTE_RECIPE_ID "${_recipe}")
+  set_property(GLOBAL PROPERTY HYLE_COMPUTE_BUILD_RECIPE_ID
+    "${HYLE_PACKAGE_COMPUTE_RECIPE_ID}")
+
+  foreach(_product IN ITEMS compute graph)
+    if(TARGET hyle_product_${_product})
+      set_target_properties(hyle_product_${_product} PROPERTIES
+        HYLE_COMPUTE_ROUTES "${HYLE_PACKAGE_COMPUTE_ROUTES}"
+        HYLE_COMPUTE_RECIPE_ID "${HYLE_PACKAGE_COMPUTE_RECIPE_ID}")
+      set_property(TARGET hyle_product_${_product} APPEND PROPERTY EXPORT_PROPERTIES
+        HYLE_COMPUTE_ROUTES HYLE_COMPUTE_RECIPE_ID)
+    endif()
+  endforeach()
   if(NOT HYLE_INSTALL)
     return()
   endif()

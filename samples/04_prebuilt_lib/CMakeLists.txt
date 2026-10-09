@@ -9,7 +9,7 @@ add_executable(installed_package_consumer consumer.cc)
 target_link_libraries(installed_package_consumer PRIVATE hyle::simd hyle::mem)
 
 # No-op for static/Unix; stages the complete imported DLL closure on Windows.
-hyle_stage_runtime_dependencies(installed_package_consumer)
+hyle_stage_runtime(installed_package_consumer)
 
 enable_testing()
 add_test(NAME installed_package_consumer COMMAND installed_package_consumer)

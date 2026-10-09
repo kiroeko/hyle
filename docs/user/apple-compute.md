@@ -34,7 +34,7 @@ shared MLX；不要另外链接另一版本或另一份 static MLX。
 
 ```cmake
 target_link_libraries(my_app PRIVATE hyle::graph) # Direct-only 用 hyle::compute
-hyle_stage_apple_runtime(my_app)
+hyle_stage_runtime(my_app)
 ```
 
 这个显式 helper 在 source 和 installed SDK 中相同。它把真实 `mlx.metallib` 放到 EXE 旁，并跟踪资源
