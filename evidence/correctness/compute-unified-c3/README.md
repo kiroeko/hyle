@@ -102,3 +102,7 @@ must pass before the original SDK stages resume. Source mixed consumers remain v
 The [archived SDK metadata audit](mixed-sdk-route-failure/archived-sdk-route-audit.json) checked all
 twelve previously saved configs: ten single-route SDKs match their requests; the two already withdrawn
 Air mixed configs do not. This inspection changes no math verdict and requires no native rebuild.
+The corrected Windows CPU+CUDA shared SDK now passed both relocated ordinary consumers with exact
+`cpu;cuda` producer/package metadata and DLLs adjacent to the EXEs. Its partial receipt preserves the
+new tool identity separately from the unchanged product. Effective C3 count is now 36/90; static and
+the four withdrawn Air mixed SDK entries remain unrun.

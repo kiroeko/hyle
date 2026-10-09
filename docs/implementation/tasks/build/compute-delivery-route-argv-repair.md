@@ -41,3 +41,8 @@ staging payload 被有边界删除，避免旧 ABI/未选资产遗留。Air 两 
 WSL 的完整验证源码也以同一 ed2dd3c3 archive/hash 更新，原目录保留；实际 CMake3.28.3 的
 转发/完整路线 guard 两项 PASS。此项只签工具行为，不签 WSL CPU/CUDA/Vulkan 数学或 GPU。
 后续 Unix launcher 已绑定新 source identity，不把新版工具误标旧 snapshot。
+
+修正后的 Windows 原 shared SDK 已实际通过：完整 `cpu;cuda` 配置/安装 metadata 与四路线 guard，
+搬迁后 Direct1.74s/Graph1.67s 真实数学 PASS，DLL 邻 EXE；
+[当前收据](../../../../evidence/correctness/compute-unified-c3/windows-cpu-cuda-partial.json)保留工具、
+产品及日志身份。C3 现36 PASS / 54 UNRUN；static 同一原循环继续，source/shared 不重跑。

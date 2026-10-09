@@ -290,3 +290,7 @@ Windows CPU+CUDA shared 也在此处正确报缺 CUDA 后停止，原产物/CPU 
 具名反例与有限修正见[独立工具卡](compute-delivery-route-argv-repair.md)和
 [原判断/失败收据](../../../../evidence/correctness/compute-unified-c3/mixed-sdk-route-failure/receipt.json)。
 只修参数边界和全路线 SDK guard，原目录恢复 shared/static，不重跑 source/单路线/P1。
+
+工具修正 ed2dd3c3 后，Windows 原 shared SDK 完整 CPU+CUDA 两项真实数学已 PASS，
+配置和安装 route metadata 均为 `cpu;cuda`，DLL 邻 EXE；C3 当前36 PASS / 54 UNRUN。
+同一原循环继续 static，Air 两个错误组合 SDK 尚待串行恢复，四项资格继续未验。
