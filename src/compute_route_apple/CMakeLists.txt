@@ -67,6 +67,12 @@ if(HYLE_COMPUTE_APPLE_ENABLED)
       "${HYLE_SOURCE_DIR}/third_party/${_recipe}/NOTICE.md|${CMAKE_INSTALL_DATADIR}/licenses/Hyle|${_recipe}-NOTICE.md")
   endforeach()
   foreach(_source_recipe IN ITEMS ds4_quantization deepseek_quantization)
+    # A combined CPU/Apple package shares this source lock and license. Use
+    # the selected component closure, independent of subdirectory order.
+    if(_source_recipe STREQUAL "ds4_quantization" AND
+       HYLE_BUILD_COMPUTE_PROVIDER_NATIVE)
+      continue()
+    endif()
     set(_source_extra_licenses "")
     if(_source_recipe STREQUAL "deepseek_quantization")
       list(APPEND _source_extra_licenses
