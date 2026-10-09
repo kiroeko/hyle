@@ -29,7 +29,7 @@ struct Float8Inputs final {
     for (bool weights : {false, true}) {
       auto &bytes = weights ? w : a;
       const auto height = weights ? n : m;
-      const auto scale_rows = weights && block ? height / 128 : height;
+      const auto scale_rows = weights && block ? (height + 127) / 128 : height;
       for (int row = 0; row < scale_rows; ++row)
         for (int col = 0; col < k / group; ++col) {
           const auto index = static_cast<std::size_t>(row * (k / group) + col);

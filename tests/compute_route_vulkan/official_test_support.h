@@ -106,6 +106,7 @@ void linears(Prepare prepare) {
   auto context = vulkan_test::context().value();
   for (auto type : {c::DataType::kFloat32, c::DataType::kBFloat16})
     for (bool power : {false, true}) for (int n : {5, 129}) {
+      SCOPED_TRACE(::testing::Message() << "linear/" << static_cast<int>(type) << '/' << power << '/' << n);
       const int m = 3, k = 384;Weight first(1, n, k), second(1, n, k, false, 1);
       const auto ad = t::dense(type, {m, k});const auto floor = power ? 1e-4f : 1e-10f;
       const auto operation = c::model_ops::float8_block_linear(power ? c::model_ops::Float8ScaleRounding::kPowerOfTwo : c::model_ops::Float8ScaleRounding::kNone, floor);
@@ -128,6 +129,7 @@ void grouped(Prepare prepare) {
   for (bool four : {false, true}) for (auto type : {c::DataType::kFloat32, c::DataType::kBFloat16}) {
     if (four && type != c::DataType::kBFloat16) continue;
     for (int activations : {1, 2}) {
+      SCOPED_TRACE(::testing::Message() << "grouped/" << four << '/' << static_cast<int>(type) << '/' << activations);
       const int tokens = 2, slots = 2, k = 256, n = 7;Weight first(3, n, k, four), second(3, n, k, four, 1);
       const auto ad = t::dense(type, {tokens, activations, k}), id = t::dense(c::DataType::kInt32, {tokens, slots});
       const auto operation = four ? c::model_ops::grouped_float4_linear() : c::model_ops::grouped_float8_linear();
@@ -155,6 +157,7 @@ template <class Prepare>
 void decodes(Prepare prepare) {
   auto context = vulkan_test::context().value();
   for (int n : {5, 129}) for (auto type : {c::DataType::kFloat32, c::DataType::kBFloat16}) {
+    SCOPED_TRACE(::testing::Message() << "decode/" << static_cast<int>(type) << '/' << n);
     Weight data(1, n, 256);auto program = prepare(context, c::model_ops::float8_weight_decode(type), std::span(&data.description, 1));
     ASSERT_TRUE(program) << program.error().message();auto slot = program->create_invocation().value();
     ASSERT_TRUE(slot.bind(context.upload(data.description, data.bytes).value()).ok());
@@ -174,6 +177,7 @@ void roundtrips(Prepare prepare) {
   for (auto format : {c::model_ops::BlockQuantizationFormat::kFloat4E2M1Block32,
                      c::model_ops::BlockQuantizationFormat::kFloat8E4M3Block64,
                      c::model_ops::BlockQuantizationFormat::kFloat8E4M3Block128}) {
+    SCOPED_TRACE(::testing::Message() << "roundtrip/" << static_cast<int>(format));
     const bool four = format == c::model_ops::BlockQuantizationFormat::kFloat4E2M1Block32;
     const int group = four ? 32 : format == c::model_ops::BlockQuantizationFormat::kFloat8E4M3Block64 ? 64 : 128;
     const auto description = t::dense(c::DataType::kBFloat16, {1, static_cast<std::int64_t>(all.size())});
