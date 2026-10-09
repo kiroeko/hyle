@@ -1,0 +1,16 @@
+{
+  "base": "0a38a9892",
+  "scope": "additional independent original F16 multiply boundary equation; no gate or program change",
+  "command": [
+    "C:\\hv\\vp1\\bin\\hyle_compute_route_vulkan_test.exe",
+    "--gtest_filter=VulkanStateCause.ActualSinkInputsUseOriginalNativeAndIndependentEquation"
+  ],
+  "returncode": 0,
+  "log_sha256": "40c470c51dcf8910ba227f20c1058ebff8debc4a4cfb706a116bef844c31a196",
+  "binary_sha256": "bd1bb4a8cbded3d69b7b9683064391be2596e38ac495aa9853dac222877512da",
+  "source_sha256": {
+    "tests/compute_route_vulkan/current_state_test_support.h": "405f2ab146bd3fb3e3f472272047b7ab3cbf53bde8dfb32d4827e11b1287b72c",
+    "tests/compute_route_vulkan/current_state_tests.h": "c49ef359c685a1ad4766d4a44e6c54c768daa9260715c317a9c9bca114415c7f",
+    "tests/compute_route_vulkan/catalogue_test_support.h": "cfce102a4fa1d33592d3fa0cd765a6c74cd2fca03979e4c14a548849dcb7921f"
+  }
+}

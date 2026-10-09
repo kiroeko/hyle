@@ -1,0 +1,16 @@
+{
+  "scope": "single first-replay actual sink inputs, diagnostic not complete-model PASS",
+  "base": "0a38a9892",
+  "command": [
+    "C:\\hv\\vp1\\bin\\hyle_compute_route_vulkan_test.exe",
+    "--gtest_filter=VulkanStateCause.ActualSinkInputsUseOriginalNativeAndIndependentEquation"
+  ],
+  "returncode": 1,
+  "binary_sha256": "9835cfdbe46cdf3694e6d1a9b36288bbcfcdbec64e1664449b01ee0c8903ca49",
+  "log_sha256": "236bd4427e6ed650bf69850e1aef96da92421dba53f12c38d8e2ebd3fd0597e0",
+  "source_sha256": {
+    "tests/compute_route_vulkan/catalogue_test_support.h": "cfce102a4fa1d33592d3fa0cd765a6c74cd2fca03979e4c14a548849dcb7921f",
+    "tests/compute_route_vulkan/current_state_test_support.h": "6d96f02522624a27d23118bfdbfc1c83b6b3bfee0ae7272c9f93c04fbbbad3e0",
+    "tests/compute_route_vulkan/current_state_tests.h": "6b1c0da3864fb3751c25e2044559c83376bdb4107f9b81678cdf05b0da91e5c7"
+  }
+}

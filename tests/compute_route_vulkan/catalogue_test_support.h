@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <bit>
+#include <functional>
 #include <span>
 #include <vector>
 
@@ -28,7 +29,9 @@ inline std::vector<float> floats(const v::Context &context, const v::Tensor &ten
 }
 
 inline void execute(const v::Context &context, sem::Fragment fixture,
-                    std::vector<v::Tensor> *capture = nullptr) {
+                    std::vector<v::Tensor> *capture = nullptr,
+                    const std::function<void(const c::Operation &,
+                        std::span<const v::Tensor>,std::span<const v::Tensor>)> &observe_node = {}) {
   SCOPED_TRACE("region=" + std::to_string(fixture.region));
   std::vector<v::Tensor> prepared, values(fixture.descriptions.size());
   if (fixture.preparation) {
@@ -105,6 +108,11 @@ inline void execute(const v::Context &context, sem::Fragment fixture,
       auto result=work->wait();ASSERT_TRUE(result) << result.error().message();const auto outputs=result->get()->tensors();
       ASSERT_EQ(outputs.size(),node.outputs.size());
       for (std::size_t i=0;i<outputs.size();++i) values[node.outputs[i].ordinal()]=outputs[i];
+      if (observe_node) {
+        std::vector<v::Tensor> all;
+        for (auto id : node.inputs) all.push_back(values[id.ordinal()]);
+        observe_node(node.operation,all,outputs);
+      }
     }
 #endif
     for (std::size_t i=0;i<fixture.outputs.size();++i) {

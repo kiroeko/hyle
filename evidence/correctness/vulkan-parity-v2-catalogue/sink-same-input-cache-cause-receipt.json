@@ -1,0 +1,16 @@
+{
+  "scope": "one actual sink boundary, corrected initial-cache fixture; diagnostic only",
+  "base": "0a38a9892",
+  "command": [
+    "C:\\hv\\vp1\\bin\\hyle_compute_route_vulkan_test.exe",
+    "--gtest_filter=VulkanStateCause.ActualSinkInputsUseOriginalNativeAndIndependentEquation"
+  ],
+  "returncode": 0,
+  "binary_sha256": "a2bc9df2df796099099ebddaf8f26e7fd6cde35ec38a966211db365bf3fa7b15",
+  "log_sha256": "631e99f4bd74d3b42f919ce8556038a1ca77578127d70b5ebff3fb0c1bebc09c",
+  "source_sha256": {
+    "tests/compute_route_vulkan/catalogue_test_support.h": "cfce102a4fa1d33592d3fa0cd765a6c74cd2fca03979e4c14a548849dcb7921f",
+    "tests/compute_route_vulkan/current_state_test_support.h": "6d96f02522624a27d23118bfdbfc1c83b6b3bfee0ae7272c9f93c04fbbbad3e0",
+    "tests/compute_route_vulkan/current_state_tests.h": "a70be61982e92822891996d6ae0f2a8130936be874a1887f059665eca2a7fec4"
+  }
+}

@@ -126,3 +126,16 @@ M5-N2 有限follow-up：剩余7/8项按首分歧分成多query sink attention/FP
 
 完整八族剩余历史branch映射/80参数归属、三IQ1巨大bank能力、平台/三交付/default/
 正式P1仍未完成，父轮45%不因此加成。所有未验或失败范围维持UNPROVEN/FAIL。
+
+### M5-N2-S：同输入原程序精度已证
+
+2026-10-09 14:30：一次Flash0731首sink原边界捕获，T5/H64/D512/L133；
+HYLE与锁定原ggml直接图native最大差0；独立F32方程最大差6.92009926e-5。
+源9537–9640在coopmat2下明确F32→F16两乘数，F32累加；独立方程加原F16
+乘数/概率存储边界后最大差1.34110451e-7。证据`sink-rounded-source-cause.log`。
+首次diagnostic误给空初cache导致fixture越界；已按完整window512修正，原记录保留。
+
+只把当前Model.attention_reference绑定原Vulkan sink计算，照原mask/sinks/shape
+输入，在取得HYLE输出前构造参考；原GPU错误/类型/完整片段门与F32/BF16
+状态方程保持。先两入口以外只Direct两个Prefill ID一次定向资格；原生公式
+与独立方程证据并列，不把native一致性冒充完整主干资格，仍无产品/Shader改动。

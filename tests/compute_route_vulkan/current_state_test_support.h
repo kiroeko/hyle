@@ -59,11 +59,87 @@ inline std::vector<float> grouped(const c::TensorDesc &description,
 #undef HYLE_C4_GROUPED_REFERENCE
 
 namespace vulkan_current_state_test {
+inline std::vector<float> rounded_sink(const std::array<std::vector<float>,5> &data,
+    std::int64_t tokens,std::int64_t keys,float scale) {
+  const auto heads=static_cast<std::int64_t>(data[4].size());
+  auto half=[](float value){return static_cast<float>(half_test::decode(half_test::encode<hyle::simd::float16_t>(value)));};
+  std::vector<float> result(tokens*heads*512),score(keys),probabilities(keys);
+  for(std::int64_t token=0;token<tokens;++token) for(std::int64_t head=0;head<heads;++head) {
+    float maximum=data[4][head];const auto offset=(token*heads+head)*512;
+    for(std::int64_t row=0;row<keys;++row) {
+      double sum=0;
+      for(std::int64_t d=0;d<512;++d) sum+=static_cast<double>(half(data[0][offset+d]))*half(data[1][row*512+d]);
+      score[row]=static_cast<float>(sum)*scale+data[3][token*keys+row];maximum=std::max(maximum,score[row]);
+    }
+    double denominator=std::exp(static_cast<double>(data[4][head])-maximum);
+    for(std::int64_t row=0;row<keys;++row) denominator+=std::exp(static_cast<double>(score[row])-maximum);
+    for(std::int64_t row=0;row<keys;++row) probabilities[row]=half(static_cast<float>(std::exp(static_cast<double>(score[row])-maximum)/denominator));
+    for(std::int64_t d=0;d<512;++d) {
+      double sum=0;
+      for(std::int64_t row=0;row<keys;++row) sum+=static_cast<double>(probabilities[row])*half(data[2][row*512+d]);
+      result[offset+d]=static_cast<float>(sum);
+    }
+  }
+  return result;
+}
+inline std::vector<float> native_sink(std::span<const hyle::compute::TensorDesc> descriptions,
+    const std::array<std::vector<float>,5> &data,float scale) {
+  using namespace vulkan_catalogue_gguf;
+  static Backend backend;auto active=backend.activate();Storage storage;
+  storage.context=ggml_init({ggml_tensor_overhead()*32+ggml_graph_overhead_custom(64,false),nullptr,true});
+  if(!storage.context) throw std::runtime_error("native sink metadata OOM");
+  std::array<ggml_tensor *,5> inputs{};
+  for(std::size_t port=0;port<5;++port) {
+    std::array<std::int64_t,4> dims{1,1,1,1};
+    std::ranges::reverse_copy(descriptions[port].dimensions(),dims.begin());
+    inputs[port]=ggml_new_tensor(storage.context,GGML_TYPE_F32,static_cast<int>(descriptions[port].rank()),dims.data());
+    if(ggml_nbytes(inputs[port])!=data[port].size()*sizeof(float)) throw std::runtime_error("native sink bytes differ");
+  }
+  auto *q=ggml_permute(storage.context,inputs[0],0,2,1,3);
+  auto *k=ggml_permute(storage.context,inputs[1],0,2,1,3);
+  auto *v=ggml_permute(storage.context,inputs[2],0,2,1,3);
+  auto *scores=ggml_mul_mat(storage.context,k,q);ggml_prec_set_acc(scores,GGML_PREC_F32);
+  auto *probability=ggml_soft_max_ext(storage.context,scores,inputs[3],scale,0.f);
+  ggml_soft_max_add_sinks(probability,inputs[4]);
+  v=ggml_cont(storage.context,ggml_transpose(storage.context,v));
+  auto *output=ggml_mul_mat(storage.context,v,probability);ggml_prec_set_acc(output,GGML_PREC_F32);
+  output=ggml_cont(storage.context,ggml_permute(storage.context,output,0,2,1,3));
+  auto *graph=ggml_new_graph_custom(storage.context,64,false);ggml_build_forward_expand(graph,output);
+  storage.buffer=ggml_backend_alloc_ctx_tensors(storage.context,backend.get());
+  if(!storage.buffer) throw std::runtime_error("native sink storage OOM");
+  for(std::size_t port=0;port<5;++port) ggml_backend_tensor_set(inputs[port],data[port].data(),0,data[port].size()*sizeof(float));
+  if(ggml_backend_graph_compute(backend.get(),graph)!=GGML_STATUS_SUCCESS) throw std::runtime_error("native sink terminal failure");
+  std::vector<float> result(ggml_nelements(output));ggml_backend_tensor_get(output,result.data(),0,result.size()*sizeof(float));return result;
+}
+inline std::vector<float> model_sink(std::span<const float> query,std::span<const float> key,
+    std::span<const float> value,std::span<const float> mask,std::span<const float> sinks,
+    std::int64_t tokens,std::int64_t keys,float scale) {
+  namespace c=hyle::compute;
+  const auto heads=static_cast<std::int64_t>(sinks.size());
+  const std::array descriptions{
+      c::TensorDesc::dense(c::DataType::kFloat32,std::array{std::int64_t{1},tokens,heads,std::int64_t{512}}).value(),
+      c::TensorDesc::dense(c::DataType::kFloat32,std::array{std::int64_t{1},keys,std::int64_t{1},std::int64_t{512}}).value(),
+      c::TensorDesc::dense(c::DataType::kFloat32,std::array{std::int64_t{1},keys,std::int64_t{1},std::int64_t{512}}).value(),
+      c::TensorDesc::dense(c::DataType::kFloat32,std::array{tokens,keys}).value(),
+      c::TensorDesc::dense(c::DataType::kFloat32,std::array{heads}).value()};
+  const std::array<std::vector<float>,5> data{
+      std::vector<float>(query.begin(),query.end()),std::vector<float>(key.begin(),key.end()),
+      std::vector<float>(value.begin(),value.end()),std::vector<float>(mask.begin(),mask.end()),
+      std::vector<float>(sinks.begin(),sinks.end())};
+  return native_sink(descriptions,data,scale);
+}
 inline auto models() {
   auto result=cpu_c4_model_branches::models;
   // Fixed original IREE block equations materialize multiply before add,
   // matching the already qualified source program on this route.
-  for(auto &model:result) model.fused_scale_accumulation=false;
+  for(auto &model:result) {
+    model.fused_scale_accumulation=false;
+    model.attention_reference=[](auto query,auto key,auto value,auto sinks,float scale) {
+      const auto tokens=static_cast<std::int64_t>(query.size()/sinks.size()/512),keys=static_cast<std::int64_t>(key.size()/512);
+      const std::vector<float> mask(tokens*keys,0.f);
+      return model_sink(query,key,value,mask,sinks,tokens,keys,scale);
+    };
+  }
   return result;
 }
 } // namespace vulkan_current_state_test

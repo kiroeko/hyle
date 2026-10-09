@@ -1,0 +1,13 @@
+Running main() from C:\public\tools\hyle-dependencies\v1\sources\googletest-063de7e9578f-162765170ae6\googletest\src\gtest_main.cc
+Note: Google Test filter = VulkanStateCause.ActualSinkInputsUseOriginalNativeAndIndependentEquation
+[==========] Running 1 test from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 1 test from VulkanStateCause
+[ RUN      ] VulkanStateCause.ActualSinkInputsUseOriginalNativeAndIndependentEquation
+STATE_SINK_CAUSE query_tokens=5 heads=64 depth=512 keys=133 native_max=0 nominal_max=6.92009926e-05 rounded_max=1.34110451e-07
+[       OK ] VulkanStateCause.ActualSinkInputsUseOriginalNativeAndIndependentEquation (12235 ms)
+[----------] 1 test from VulkanStateCause (12236 ms total)
+
+[----------] Global test environment tear-down
+[==========] 1 test from 1 test suite ran. (12236 ms total)
+[  PASSED  ] 1 test.
