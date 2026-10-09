@@ -122,6 +122,20 @@ while todo:
 cmake_input = Path(__file__).parent/'consumer/CMakeLists.txt'
 shutil.copyfile(cmake_input, consumer/'CMakeLists.txt')
 copied['CMakeLists.txt'] = hashlib.sha256(cmake_input.read_bytes()).hexdigest()
+# Copy only the original public IQ1 equation/batch; private feature mutation
+# and full-bank diagnostics are not installed-consumer requirements here.
+iq1_source = repo/'tests/compute_route_vulkan/iq1_test_support.h'
+iq1 = iq1_source.read_text(encoding='utf-8').split('template <class Prepare> void domains(Prepare prepare) {', 1)[0]
+iq1 = iq1.replace('#include "../../src/compute_route_vulkan/vulkan_iq1.h"\n', '')
+iq1 += '} // namespace vulkan_iq1_test\n'
+iq1_name = 'tests/compute_route_vulkan/iq1_public_support.h'
+(consumer/iq1_name).write_text(iq1, encoding='utf-8', newline='\n')
+for name, source in [('tests/compute_route_vulkan/iq1_original_grid.h', repo/'tests/compute_route_vulkan/iq1_original_grid.h'),
+                     ('iq1_delta.cc', Path(__file__).parent/'consumer/iq1_delta.cc')]:
+    shutil.copyfile(source, consumer/name)
+    copied[name] = hashlib.sha256(source.read_bytes()).hexdigest()
+copied[iq1_name] = {'origin_sha256': hashlib.sha256(iq1_source.read_bytes()).hexdigest(),
+                    'public_prefix_sha256': hashlib.sha256(iq1.encode()).hexdigest()}
 (out/'consumer-inputs.json').write_text(json.dumps(copied, indent=2)+'\n')
 
 cache = Path('C:/public/tools/hyle-dependencies/v1/sources')
@@ -139,13 +153,13 @@ if args.stage == 'shared':
     producer = Path('C:/hv/vp1')
     staging, prefix = root/'shared-staging', root/'shared-relocated'
     if args.reuse_shared_sdk:
-        original = json.loads((root/'receipts/shared/receipt.json').read_text())
+        original = json.loads((root/'receipts/shared-w1/receipt.json').read_text())
         assert original['product_candidate'] == product and prefix.is_dir()
         for label in ('producer-configure', 'producer-build', 'install'):
             assert any(step['label'] == label and step['returncode'] == 0
                        for step in original['steps'])
         receipt['reused_sdk_candidate'] = original['candidate']
-        receipt['reused_sdk_receipt'] = 'receipts/shared/receipt.json'
+        receipt['reused_sdk_receipt'] = 'receipts/shared-w1/receipt.json'
 if args.stage == 'shared' and not args.reuse_shared_sdk:
     (out/'producer-original-cache.txt').write_bytes((producer/'CMakeCache.txt').read_bytes())
     run('producer-configure', [cmake, '-S', repo, '-B', producer, '-U', 'HYLE_DEV_FACTORS',
@@ -221,8 +235,8 @@ finally:
 native = (build/'Testing/Temporary/LastTest.log').read_bytes()
 (out/'native-tests.log').write_bytes(native)
 passed = sum(map(int, re.findall(rb'\[  PASSED  \]\s+(\d+) tests?\.', native)))
-if b'[  SKIPPED ]' in native or passed != 12:
-    raise SystemExit('Expected twelve executed passing tests, without skips.')
-receipt.update(verdict='PASS', tests=12, runtime_path=runtime_env['PATH'])
+if b'[  SKIPPED ]' in native or passed != 14:
+    raise SystemExit('Expected fourteen executed passing tests, without skips.')
+receipt.update(verdict='PASS', tests=14, runtime_path=runtime_env['PATH'])
 (out/'receipt.json').write_text(json.dumps(receipt, indent=2)+'\n')
-print(args.stage, 'PASS, 12 tests, no skips', flush=True)
+print(args.stage, 'PASS, 14 tests, no skips', flush=True)
