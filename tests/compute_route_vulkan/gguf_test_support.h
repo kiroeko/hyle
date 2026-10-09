@@ -22,10 +22,43 @@ inline constexpr std::array kTypes{
     c::GgufQuantizedType::kQ5K,   c::GgufQuantizedType::kQ6K,
     c::GgufQuantizedType::kQ8_0,  c::GgufQuantizedType::kIq3Xxs,
     c::GgufQuantizedType::kIq3S,  c::GgufQuantizedType::kIq4Nl,
-    c::GgufQuantizedType::kIq4Xs, c::GgufQuantizedType::kMxfp4};
+    c::GgufQuantizedType::kIq4Xs, c::GgufQuantizedType::kMxfp4,
+    c::GgufQuantizedType::kQ4_0, c::GgufQuantizedType::kQ4_1,
+    c::GgufQuantizedType::kQ2K, c::GgufQuantizedType::kIq2Xxs,
+    c::GgufQuantizedType::kIq2Xs, c::GgufQuantizedType::kIq2S,
+    c::GgufQuantizedType::kIq1S, c::GgufQuantizedType::kIq1M};
+
+inline constexpr std::array kEmbeddingTypes{
+    c::GgufQuantizedType::kQ2K, c::GgufQuantizedType::kQ3K,
+    c::GgufQuantizedType::kQ4_0, c::GgufQuantizedType::kQ4_1,
+    c::GgufQuantizedType::kQ4K, c::GgufQuantizedType::kQ5K,
+    c::GgufQuantizedType::kQ6K, c::GgufQuantizedType::kQ8_0};
+
+inline constexpr std::array kGroupedTypes{
+    c::GgufQuantizedType::kIq4Xs, c::GgufQuantizedType::kQ4_0,
+    c::GgufQuantizedType::kQ4_1, c::GgufQuantizedType::kQ2K,
+    c::GgufQuantizedType::kIq2Xxs, c::GgufQuantizedType::kIq2Xs,
+    c::GgufQuantizedType::kIq2S, c::GgufQuantizedType::kIq1S,
+    c::GgufQuantizedType::kIq1M};
 
 inline ggml_type native_type(c::GgufQuantizedType type) {
   switch (type) {
+  case c::GgufQuantizedType::kQ4_0:
+    return GGML_TYPE_Q4_0;
+  case c::GgufQuantizedType::kQ4_1:
+    return GGML_TYPE_Q4_1;
+  case c::GgufQuantizedType::kQ2K:
+    return GGML_TYPE_Q2_K;
+  case c::GgufQuantizedType::kIq2Xxs:
+    return GGML_TYPE_IQ2_XXS;
+  case c::GgufQuantizedType::kIq2Xs:
+    return GGML_TYPE_IQ2_XS;
+  case c::GgufQuantizedType::kIq2S:
+    return GGML_TYPE_IQ2_S;
+  case c::GgufQuantizedType::kIq1S:
+    return GGML_TYPE_IQ1_S;
+  case c::GgufQuantizedType::kIq1M:
+    return GGML_TYPE_IQ1_M;
   case c::GgufQuantizedType::kQ3K:
     return GGML_TYPE_Q3_K;
   case c::GgufQuantizedType::kQ4K:

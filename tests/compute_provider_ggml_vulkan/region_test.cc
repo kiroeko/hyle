@@ -111,7 +111,9 @@ TEST(GgmlVulkanRegion, TargetEmbeddingFormatsAdmitOnlyInternalUncheckedRows) {
       c::TensorDesc::dense(c::DataType::kInt32, std::array<std::int64_t, 1>{2})
           .value();
   for (const auto type :
-       {c::GgufQuantizedType::kQ4K, c::GgufQuantizedType::kQ6K,
+       {c::GgufQuantizedType::kQ2K, c::GgufQuantizedType::kQ3K,
+        c::GgufQuantizedType::kQ4_0, c::GgufQuantizedType::kQ4_1,
+        c::GgufQuantizedType::kQ5K, c::GgufQuantizedType::kQ4K, c::GgufQuantizedType::kQ6K,
         c::GgufQuantizedType::kQ8_0}) {
     const auto stored =
         c::gguf_weight_description(type, c::DataType::kFloat32, 256, 3).value();
@@ -130,7 +132,7 @@ TEST(GgmlVulkanRegion, TargetEmbeddingFormatsAdmitOnlyInternalUncheckedRows) {
         c::Operation(c::Gather{1, c::IndexBoundsPolicy::kUnchecked}), inputs,
         outputs));
   }
-  const auto other = c::gguf_weight_description(c::GgufQuantizedType::kQ5K,
+  const auto other = c::gguf_weight_description(c::GgufQuantizedType::kIq3S,
                                                 c::DataType::kFloat32, 256, 3)
                          .value()
                          .transposed()
@@ -143,7 +145,7 @@ TEST(GgmlVulkanRegion, TargetEmbeddingFormatsAdmitOnlyInternalUncheckedRows) {
       other_inputs, other_outputs));
 }
 
-TEST(GgmlVulkanRegion, CpuFormatPortDoesNotQualifyGpuMatrices) {
+TEST(GgmlVulkanRegion, OriginalVulkanFormatsAdmitMatricesAndExtendedIq1StaysRejected) {
   const auto activation = c::TensorDesc::dense(
       c::DataType::kFloat32, std::array<std::int64_t, 2>{2, 256}).value();
   for (const auto type : {c::GgufQuantizedType::kQ4_0, c::GgufQuantizedType::kQ4_1,
@@ -157,7 +159,9 @@ TEST(GgmlVulkanRegion, CpuFormatPortDoesNotQualifyGpuMatrices) {
                                                   256, 3).value();
     const std::array inputs{activation, weight};
     const std::array outputs{c::infer_single_output(c::Operation(c::MatMul{}), inputs).value()};
-    EXPECT_FALSE(region_supports(c::Operation(c::MatMul{}), inputs, outputs));
+    const bool original = type != c::GgufQuantizedType::kIq1Xs &&
+        type != c::GgufQuantizedType::kIq1Xxs && type != c::GgufQuantizedType::kIq1Xxxs;
+    EXPECT_EQ(region_supports(c::Operation(c::MatMul{}), inputs, outputs), original);
     const auto grouped_weights = c::gguf_grouped_weight_description(
         type, c::DataType::kFloat32, 2, 3, 256).value();
     const auto grouped_activation = c::TensorDesc::dense(
@@ -167,7 +171,7 @@ TEST(GgmlVulkanRegion, CpuFormatPortDoesNotQualifyGpuMatrices) {
     const std::array grouped_inputs{grouped_weights, grouped_activation, ids};
     const auto grouped = c::model_ops::grouped_matmul();
     const std::array grouped_outputs{c::infer_single_output(grouped, grouped_inputs).value()};
-    EXPECT_FALSE(region_supports(grouped, grouped_inputs, grouped_outputs));
+    EXPECT_EQ(region_supports(grouped, grouped_inputs, grouped_outputs), original);
   }
 }
 

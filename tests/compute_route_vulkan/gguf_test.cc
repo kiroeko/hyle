@@ -45,9 +45,7 @@ TEST(VulkanGguf, TargetEmbeddingFormatsUseNativeRowsAndCheckedPublication) {
   constexpr int rows = 3;
   constexpr int width = 256;
   const auto ids_desc = vulkan_tensor_test::dense(c::DataType::kInt32, {2});
-  for (const auto type :
-       {c::GgufQuantizedType::kQ4K, c::GgufQuantizedType::kQ6K,
-        c::GgufQuantizedType::kQ8_0}) {
+  for (const auto type : kEmbeddingTypes) {
     SCOPED_TRACE(static_cast<int>(type));
     const auto stored =
         c::gguf_weight_description(type, c::DataType::kFloat32, width, rows)
@@ -126,48 +124,51 @@ TEST(VulkanGguf, TargetEmbeddingFormatsUseNativeRowsAndCheckedPublication) {
   }
 }
 
-TEST(VulkanGguf, PackedIq4XsGroupedExpertsUseNativeMulMatId) {
+TEST(VulkanGguf, PackedFormatsGroupedExpertsUseNativeMulMatId) {
   QuantizerCleanup cleanup;
   auto context = vulkan_test::context().value();
-  constexpr int experts = 4;
-  constexpr int n = 8;
-  constexpr int k = 256;
-  constexpr int tokens = 2;
-  constexpr int slots = 2;
-  const auto weight_desc =
-      c::gguf_grouped_weight_description(c::GgufQuantizedType::kIq4Xs,
-                                         c::DataType::kFloat32, experts, n, k)
-          .value();
-  const auto activation_desc =
-      vulkan_tensor_test::dense(c::DataType::kFloat32, {tokens, slots, k});
-  const auto ids_desc =
-      vulkan_tensor_test::dense(c::DataType::kInt32, {tokens, slots});
-  const auto physical = weights(experts * n, k, 3);
-  auto packed = pack(c::GgufQuantizedType::kIq4Xs, physical, experts * n, k,
-                     *weight_desc.required_bytes());
-  auto weight = context.upload(weight_desc, packed.bytes).value();
-  const std::array<std::int32_t, tokens * slots> ids{0, 3, 1, 2};
-  auto selected =
-      context.upload(ids_desc, std::as_bytes(std::span(ids))).value();
-  auto program = v::prepare(context, c::model_ops::grouped_matmul(),
-                            weight_desc, activation_desc, ids_desc);
-  ASSERT_TRUE(program) << program.error().message();
-  const auto &prepared = *v::detail::Access::program(*program);
-  ASSERT_TRUE(prepared.status_value.has_value());
-  ASSERT_TRUE(std::ranges::any_of(prepared.dispatches, [](const auto &dispatch) {
-    return static_cast<bool>(dispatch.region);
-  }));
-  auto invocation = program->create_invocation().value();
-  for (int replay = 1; replay <= 2; ++replay) {
-    const auto values = activations(tokens * slots, k, replay);
-    auto activation =
-        vulkan_tensor_test::make(context, activation_desc, values);
-    ASSERT_TRUE(invocation.bind(weight, activation, selected).ok());
-    auto work = invocation.submit().value();
-    auto result = work.wait();
-    ASSERT_TRUE(result) << result.error().message();
-    expect_close(context, result->get()->tensors()[0],
-                 grouped_matmul(values, packed.decoded, ids, n, k));
+  for (const auto type : kGroupedTypes) {
+    SCOPED_TRACE(static_cast<int>(type));
+    constexpr int experts = 4;
+    constexpr int n = 8;
+    constexpr int k = 256;
+    constexpr int tokens = 2;
+    constexpr int slots = 2;
+    const auto weight_desc =
+        c::gguf_grouped_weight_description(type,
+                                           c::DataType::kFloat32, experts, n, k)
+            .value();
+    const auto activation_desc =
+        vulkan_tensor_test::dense(c::DataType::kFloat32, {tokens, slots, k});
+    const auto ids_desc =
+        vulkan_tensor_test::dense(c::DataType::kInt32, {tokens, slots});
+    const auto physical = weights(experts * n, k, 3);
+    auto packed = pack(type, physical, experts * n, k,
+                       *weight_desc.required_bytes());
+    auto weight = context.upload(weight_desc, packed.bytes).value();
+    const std::array<std::int32_t, tokens * slots> ids{0, 3, 1, 2};
+    auto selected =
+        context.upload(ids_desc, std::as_bytes(std::span(ids))).value();
+    auto program = v::prepare(context, c::model_ops::grouped_matmul(),
+                              weight_desc, activation_desc, ids_desc);
+    ASSERT_TRUE(program) << program.error().message();
+    const auto &prepared = *v::detail::Access::program(*program);
+    ASSERT_TRUE(prepared.status_value.has_value());
+    ASSERT_TRUE(std::ranges::any_of(prepared.dispatches, [](const auto &dispatch) {
+      return static_cast<bool>(dispatch.region);
+    }));
+    auto invocation = program->create_invocation().value();
+    for (int replay = 1; replay <= 2; ++replay) {
+      const auto values = activations(tokens * slots, k, replay);
+      auto activation =
+          vulkan_tensor_test::make(context, activation_desc, values);
+      ASSERT_TRUE(invocation.bind(weight, activation, selected).ok());
+      auto work = invocation.submit().value();
+      auto result = work.wait();
+      ASSERT_TRUE(result) << result.error().message();
+      expect_close(context, result->get()->tensors()[0],
+                   grouped_matmul(values, packed.decoded, ids, n, k));
+    }
   }
 }
 
