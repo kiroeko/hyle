@@ -1,6 +1,9 @@
+#include "hyle/graph/graph.h"
+#if defined(V4_EXPECT_VULKAN)
 #include "hyle/compute/vulkan.h"
 #include "hyle/compute/detail/vulkan_plan.h"
 #include "hyle/graph/vulkan.h"
+#endif
 #include <iostream>
 #if defined(V4_EXPECT_VULKAN)
 #ifndef HYLE_COMPUTE_VULKAN
