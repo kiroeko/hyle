@@ -1,0 +1,43 @@
+{
+  "candidate": "959f52869003afd37b83812f2e911efbb65905a2",
+  "steps": [
+    {
+      "name": "direct-delta",
+      "returncode": 1,
+      "filter": "VulkanIree.OriginalOfficial*",
+      "tests": {
+        "tests": "4",
+        "failures": "2",
+        "disabled": "0",
+        "errors": "0",
+        "time": "1.289",
+        "timestamp": "2026-10-09T12:33:11.895",
+        "name": "AllTests"
+      },
+      "log": "native-959f5286-direct-delta.log",
+      "log_sha256": "e9b40e1e91161393d4e9e0e658b571b67de70f6f95c6c9b25534d841f612f3dc",
+      "xml": "native-959f5286-direct-delta.xml",
+      "binary_sha256": "d11bcd532ff29f10f4b137c022d3e25cd5e7acc3aa0b21a3efe49c57f22df241",
+      "validation_error": false
+    },
+    {
+      "name": "graph-delta",
+      "returncode": 1,
+      "filter": "VulkanGraph.OriginalOfficial*",
+      "tests": {
+        "tests": "4",
+        "failures": "2",
+        "disabled": "0",
+        "errors": "0",
+        "time": "1.318",
+        "timestamp": "2026-10-09T12:33:13.452",
+        "name": "AllTests"
+      },
+      "log": "native-959f5286-graph-delta.log",
+      "log_sha256": "cb58e847ca5dfb5308950e2299f22e53ff7eaaaac8637deb817ad7963062c666",
+      "xml": "native-959f5286-graph-delta.xml",
+      "binary_sha256": "e94b18aa22bb68b49d40cc59c4f840251c2ac299027cb4e6ceb0144236cfc5c9",
+      "validation_error": false
+    }
+  ]
+}

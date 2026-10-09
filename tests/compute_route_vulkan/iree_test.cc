@@ -44,6 +44,28 @@ TEST(VulkanIree, OriginalOfficialEncodedBlock128TailAndReplay) {
     }
   }
 }
+TEST(VulkanIree, OriginalOfficialBfloatFloatProgramCause) {
+  namespace o = vulkan_official_test;
+  auto context = vulkan_test::context().value();
+  o::Weight weight(1, 5, 384);
+  auto values = o::activation(3, 384, c::DataType::kBFloat16, 0);
+  std::vector<double> stored(values.begin(), values.end());
+  for (bool power : {false, true}) {
+    const auto floor = power ? 1e-4f : 1e-10f;
+    const auto operation = c::model_ops::float8_block_linear(power ? c::model_ops::Float8ScaleRounding::kPowerOfTwo : c::model_ops::Float8ScaleRounding::kNone, floor);
+    const auto expected = o::reference(weight, o::quantize(values, 384, floor, power), 3, 1, 1, {}, c::DataType::kFloat32);
+    for (auto type : {c::DataType::kFloat32, c::DataType::kBFloat16}) {
+      const auto ad = t::dense(type, {3, 384});const std::array desc{ad, weight.description};
+      auto program = prepare_artifact(context, operation, desc).value();auto slot = program.create_invocation().value();
+      ASSERT_TRUE(slot.bind(std::array{t::make(context, ad, stored), context.upload(weight.description, weight.bytes).value()}).ok());
+      auto work = slot.submit().value();auto result = work.wait();ASSERT_TRUE(result);
+      const auto actual = t::values(context, result->get()->tensors()[0]);
+      double worst = 0;for (std::size_t i = 0; i < actual.size(); ++i) worst = std::max(worst, std::abs(actual[i] - t::rounded(expected[i], type)));
+      std::fprintf(stdout, "OFFICIAL_DTYPE_CAUSE type=%u power=%u max_error=%.9g first=%.9g expected=%.9g\n", static_cast<unsigned>(type), power, worst, actual[0], t::rounded(expected[0], type));
+      if (type == c::DataType::kFloat32) t::expect(context, result->get()->tensors()[0], expected);
+    }
+  }
+}
 
 TEST(VulkanIree, OriginalMlxBatchPreservesGroupsSourceTypesAndCheckedSlots) {
   vulkan_mlx_test::batch(prepare_artifact);
