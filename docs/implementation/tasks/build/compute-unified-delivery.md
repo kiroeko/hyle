@@ -308,3 +308,10 @@ Air 完整 CPU+Apple static 两项也已真实 PASS，原 SDK 循环 exit0；C3�
 参数转发与完整 SDK guard 的独立工具卡已 CLOSED，两组合 SDK 原失败全部按实际完整路线修正。
 先前四份 CPU-only consumer 记录仍是真实 CPU 数学，不能继续冒充组合；后续只在实际完整CPU
 软件/recipe/合同身份匹配时归入 CPU 证据，避免重建同语义 SDK，不将旧判断当混合资格。
+
+Air CPU 单路线现在已完成三交付：新 source Direct0.40s/Graph4.23s 实际 PASS；shared/static
+只做当前完整配置，route/feature/recipe 与原 CPU-only SDK 各自逐项精确一致。7a7b4c3b→ed2dd3c3
+全产品 include/src/lock/build 输入零变化（仅验证 driver/test/docs变），实际机器/编译器/SDK/数学合同
+相同，因此复用原四项 CPU 数学，不将原产物改标成新tree，也不重建相同 SDK。
+[CPU收据](../../../../evidence/correctness/compute-unified-c3/air-cpu-partial.json)保存新source、
+旧实际SDK身份与新配置匹配证明；C3当前48 PASS / 42 UNRUN。下一串行 Air CPU+Vulkan 新批次。

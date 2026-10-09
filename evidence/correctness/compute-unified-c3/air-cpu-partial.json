@@ -1,0 +1,72 @@
+{
+  "scope": "Air complete CPU ordinary source/shared/static Direct/Graph; old observations are CPU-only, never mixed",
+  "product_candidate": "530e230bbc11e4fe12218a6a021ca15b009337c3",
+  "new_source_identity": {
+    "product_candidate": "530e230bbc11e4fe12218a6a021ca15b009337c3",
+    "validation_source_commit": "ed2dd3c3869be140fa6e63c439c3f8479a3deb6c",
+    "source_archive_sha256": "98ef74990ec0e679a9293444c1f01800d8c3d3ac18e8a02bd8eb2e0c81ddd09a",
+    "routes": "cpu",
+    "scope": "New source stage only; SDK reuse needs independent identity audit"
+  },
+  "rows": [
+    {
+      "entry": "source-direct",
+      "verdict": "PASS",
+      "log": "evidence/correctness/compute-unified-c3/air-cpu/source-ctest.log",
+      "sha256": "305a82e398e2cd52d966839335812813090e08608d0f2dfec0082bee138f3086"
+    },
+    {
+      "entry": "source-graph",
+      "verdict": "PASS",
+      "log": "evidence/correctness/compute-unified-c3/air-cpu/source-ctest.log",
+      "sha256": "305a82e398e2cd52d966839335812813090e08608d0f2dfec0082bee138f3086"
+    },
+    {
+      "entry": "shared-direct",
+      "verdict": "PASS",
+      "evidence_mode": "REUSED_ACTUAL_CPU_ONLY_MATH",
+      "log": "evidence/correctness/compute-unified-c3/air-cpu-apple/shared-direct-ctest.log",
+      "sha256": "cec63a1022eb9676dc648f6dad5b788cf76fe11791ee354bf45d92f33a715819",
+      "original_product_candidate": "530e230bbc11e4fe12218a6a021ca15b009337c3",
+      "original_validation_source": "7a7b4c3b90a2a9c20faaf54be4b6f73fdfcfd3fa",
+      "actual_routes": "cpu",
+      "matching_current_config": "evidence/correctness/compute-unified-c3/air-cpu/shared-configured-HyleConfig.cmake"
+    },
+    {
+      "entry": "shared-graph",
+      "verdict": "PASS",
+      "evidence_mode": "REUSED_ACTUAL_CPU_ONLY_MATH",
+      "log": "evidence/correctness/compute-unified-c3/air-cpu-apple/shared-graph-ctest.log",
+      "sha256": "75b83f12b16440909d354ac41a4b082427e5362169f36ce5d42d123925624e31",
+      "original_product_candidate": "530e230bbc11e4fe12218a6a021ca15b009337c3",
+      "original_validation_source": "7a7b4c3b90a2a9c20faaf54be4b6f73fdfcfd3fa",
+      "actual_routes": "cpu",
+      "matching_current_config": "evidence/correctness/compute-unified-c3/air-cpu/shared-configured-HyleConfig.cmake"
+    },
+    {
+      "entry": "static-direct",
+      "verdict": "PASS",
+      "evidence_mode": "REUSED_ACTUAL_CPU_ONLY_MATH",
+      "log": "evidence/correctness/compute-unified-c3/air-cpu-apple/static-direct-ctest.log",
+      "sha256": "883f09085760bf744b702d110cc29753d3e4fc725f0101e058da5972be6b86f2",
+      "original_product_candidate": "530e230bbc11e4fe12218a6a021ca15b009337c3",
+      "original_validation_source": "7a7b4c3b90a2a9c20faaf54be4b6f73fdfcfd3fa",
+      "actual_routes": "cpu",
+      "matching_current_config": "evidence/correctness/compute-unified-c3/air-cpu/static-configured-HyleConfig.cmake"
+    },
+    {
+      "entry": "static-graph",
+      "verdict": "PASS",
+      "evidence_mode": "REUSED_ACTUAL_CPU_ONLY_MATH",
+      "log": "evidence/correctness/compute-unified-c3/air-cpu-apple/static-graph-ctest.log",
+      "sha256": "987c15445b2b73561816e9e526df22bba10ed7788009d52c119db6f514d2bd91",
+      "original_product_candidate": "530e230bbc11e4fe12218a6a021ca15b009337c3",
+      "original_validation_source": "7a7b4c3b90a2a9c20faaf54be4b6f73fdfcfd3fa",
+      "actual_routes": "cpu",
+      "matching_current_config": "evidence/correctness/compute-unified-c3/air-cpu/static-configured-HyleConfig.cmake"
+    }
+  ],
+  "reuse_proof": "Full product headers/src/build inputs/locks unchanged from 7a7b4c3b to ed2dd3c3; only selected validation driver differs. Real current shared/static configure succeeded; both route/recipe/features exactly match prior CPU SDKs. Same actual machine/compiler/SDK/native math contract. Prior raw files preserved, not relabeled as a newer artifact.",
+  "sdk_rebuild": "NOT_RUN: matching actual evidence reused per C3 contract",
+  "remaining": "Other C3 platform/route entries and H1-H3 unproven."
+}

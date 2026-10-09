@@ -118,3 +118,9 @@ Compute+Graph implementation union measures 62,508 code lines at immutable 5e94f
 Air corrected static Direct/Graph also passed and the SDK loop exited 0. CPU+Apple now has six
 qualified ordinary consumers; the tool repair is closed. Effective C3 count is 42/90. All corrected
 SDK artifacts keep exact `cpu;apple` metadata; the original CPU-only records remain separate.
+
+The [Air CPU receipt](air-cpu-partial.json) signs two newly run source consumers and reuses four actual
+CPU-only SDK observations. Fresh shared/static configuration matches their respective route, full
+feature set and recipe exactly; product headers/source/locks/build inputs, machine and math contract
+are unchanged. The old artifacts are not relabeled with a new source identity. This avoids rebuilding
+the same SDKs and does not transfer a best-of WIN to a different domain. Effective C3 count is 48/90.

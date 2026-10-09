@@ -211,19 +211,21 @@
       "routes": "cpu",
       "deliveries": {
         "source": {
-          "direct": "UNRUN",
-          "graph": "UNRUN"
+          "direct": "PASS",
+          "graph": "PASS"
         },
         "shared": {
-          "direct": "UNRUN",
-          "graph": "UNRUN"
+          "direct": "PASS",
+          "graph": "PASS"
         },
         "static": {
-          "direct": "UNRUN",
-          "graph": "UNRUN"
+          "direct": "PASS",
+          "graph": "PASS"
         }
       },
-      "evidence": []
+      "evidence": [
+        "air-cpu-partial.json"
+      ]
     },
     {
       "platform": "Darwin-Air",

@@ -1,0 +1,112 @@
+'/opt/homebrew/bin/cmake' '-S' '/Users/kiro/hyle-scratch/compute-unified/source-c8874688' '-B' '/Users/kiro/hyle-scratch/compute-unified/a-cpu/selected-graph/shared-sdk-build' '-G' 'Ninja' '-DCMAKE_OSX_DEPLOYMENT_TARGET=14.4' '-DCMAKE_BUILD_TYPE=Release' '-DCMAKE_INSTALL_PREFIX=/Users/kiro/hyle-scratch/compute-unified/a-cpu/selected-graph/shared-sdk-staging' '-DHYLE_COMPONENTS=graph' '-DHYLE_BUILD_TESTS=OFF' '-DHYLE_BUILD_BENCH=OFF' '-DHYLE_INSTALL=ON' '-DHYLE_STATIC=OFF' '-DHYLE_COMPUTE_ROUTES=cpu'
+-- The CXX compiler identification is AppleClang 21.0.0.21000334
+-- Detecting CXX compiler ABI info
+-- Detecting CXX compiler ABI info - done
+-- Check for working CXX compiler: /usr/bin/c++ - skipped
+-- Detecting CXX compile features
+-- Detecting CXX compile features - done
+-- HYLE products: requested='graph' available='core,error,simd,math,compute,graph' factors='core,container_intrusive,util_core,error,math,platform,mem,simd,container,compute_ops,compute,graph,compute_provider_onednn,compute_backend_cpu,compute_ggml_runtime,compute_provider_ggml,graph_provider_onednn,compute_provider_native,compute_route_cpu,graph_route_cpu'
+-- The C compiler identification is AppleClang 21.0.0.21000334
+-- Detecting C compiler ABI info
+-- Detecting C compiler ABI info - done
+-- Check for working C compiler: /usr/bin/cc - skipped
+-- Detecting C compile features
+-- Detecting C compile features - done
+-- HYLE_SANITIZER = off
+-- HYLE_TESTING = OFF (test-only interfaces stripped -- zero in shipped lib)
+-- HYLE: oneDNN provider OFF -- dependency download skipped
+-- Found Python3: /Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/bin/python3.9 (found version "3.9.6") found components: Interpreter
+-- ggml source: 2319 files, 11 exact patches
+
+-- The ASM compiler identification is AppleClang
+-- Found assembler: /usr/bin/cc
+-- Performing Test CMAKE_HAVE_LIBC_PTHREAD
+-- Performing Test CMAKE_HAVE_LIBC_PTHREAD - Success
+-- Found Threads: TRUE
+-- CMAKE_SYSTEM_PROCESSOR: arm64
+-- GGML_SYSTEM_ARCH: ARM
+-- Including CPU backend
+-- ARM detected
+-- Performing Test GGML_COMPILER_SUPPORTS_FP16_FORMAT_I3E
+-- Performing Test GGML_COMPILER_SUPPORTS_FP16_FORMAT_I3E - Failed
+-- Checking for ARM features using flags:
+-- Performing Test HAVE_DOTPROD
+-- Performing Test HAVE_DOTPROD - Success
+-- Performing Test HAVE_SVE
+-- Performing Test HAVE_SVE - Failed
+-- Performing Test HAVE_MATMUL_INT8
+-- Performing Test HAVE_MATMUL_INT8 - Failed
+-- Performing Test HAVE_FMA
+-- Performing Test HAVE_FMA - Success
+-- Performing Test HAVE_FP16_VECTOR_ARITHMETIC
+-- Performing Test HAVE_FP16_VECTOR_ARITHMETIC - Success
+-- Performing Test HAVE_SME
+-- Performing Test HAVE_SME - Failed
+-- Adding CPU backend variant ggml-cpu:  
+-- ggml version: 0.26.0
+-- ggml commit:  ffa4e8b80930029a35991f94e7c8a93cd67730ab-hyle
+-- HYLE: reusing locked CPU SDK at /Users/kiro/Library/Caches/hyle/dependencies/v1/sdks/torch-cpu/Darwin-be0642231d2008c7b90071fc0898d82a0c002d47f38350ebf3ed779fc01972d7/libtorch
+-- Found Torch: /Users/kiro/Library/Caches/hyle/dependencies/v1/sdks/torch-cpu/Darwin-be0642231d2008c7b90071fc0898d82a0c002d47f38350ebf3ed779fc01972d7/libtorch/lib/libtorch.dylib (Required is exact version "2.8.0")
+-- HYLE: original TorchAO/ATen CPU low precision -- locked LibTorch 2.8.0
+-- HYLE_TRACE = OFF (hooks compile to nothing -- zero cost)
+-- HYLE source package target unavailable (requires Git and a Git checkout)
+-- HYLE 0.1.0 | AppleClang 21.0.0.21000334 | C++23 | sanitizer=off | linkage=shared | products=core,error,simd,math,compute,graph | factors=core,container_intrusive,util_core,error,math,platform,mem,simd,container,compute_ops,compute,graph,compute_provider_onednn,compute_backend_cpu,compute_ggml_runtime,compute_provider_ggml,graph_provider_onednn,compute_provider_native,compute_route_cpu,graph_route_cpu
+-- Configuring done (3.5s)
+-- Generating done (0.0s)
+-- Build files have been written to: /Users/kiro/hyle-scratch/compute-unified/a-cpu/selected-graph/shared-sdk-build
+'/opt/homebrew/bin/cmake' '-S' '/Users/kiro/hyle-scratch/compute-unified/source-c8874688' '-B' '/Users/kiro/hyle-scratch/compute-unified/a-cpu/selected-graph/static-sdk-build' '-G' 'Ninja' '-DCMAKE_OSX_DEPLOYMENT_TARGET=14.4' '-DCMAKE_BUILD_TYPE=Release' '-DCMAKE_INSTALL_PREFIX=/Users/kiro/hyle-scratch/compute-unified/a-cpu/selected-graph/static-sdk-staging' '-DHYLE_COMPONENTS=graph' '-DHYLE_BUILD_TESTS=OFF' '-DHYLE_BUILD_BENCH=OFF' '-DHYLE_INSTALL=ON' '-DHYLE_STATIC=ON' '-DHYLE_COMPUTE_ROUTES=cpu'
+-- The CXX compiler identification is AppleClang 21.0.0.21000334
+-- Detecting CXX compiler ABI info
+-- Detecting CXX compiler ABI info - done
+-- Check for working CXX compiler: /usr/bin/c++ - skipped
+-- Detecting CXX compile features
+-- Detecting CXX compile features - done
+-- HYLE products: requested='graph' available='core,error,simd,math,compute,graph' factors='core,container_intrusive,util_core,error,math,platform,mem,simd,container,compute_ops,compute,graph,compute_provider_onednn,compute_backend_cpu,compute_ggml_runtime,compute_provider_ggml,graph_provider_onednn,compute_provider_native,compute_route_cpu,graph_route_cpu'
+-- The C compiler identification is AppleClang 21.0.0.21000334
+-- Detecting C compiler ABI info
+-- Detecting C compiler ABI info - done
+-- Check for working C compiler: /usr/bin/cc - skipped
+-- Detecting C compile features
+-- Detecting C compile features - done
+-- HYLE_SANITIZER = off
+-- HYLE_TESTING = OFF (test-only interfaces stripped -- zero in shipped lib)
+-- HYLE: oneDNN provider OFF -- dependency download skipped
+-- Found Python3: /Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/bin/python3.9 (found version "3.9.6") found components: Interpreter
+-- ggml source: 2319 files, 11 exact patches
+
+-- The ASM compiler identification is AppleClang
+-- Found assembler: /usr/bin/cc
+-- Performing Test CMAKE_HAVE_LIBC_PTHREAD
+-- Performing Test CMAKE_HAVE_LIBC_PTHREAD - Success
+-- Found Threads: TRUE
+-- CMAKE_SYSTEM_PROCESSOR: arm64
+-- GGML_SYSTEM_ARCH: ARM
+-- Including CPU backend
+-- ARM detected
+-- Performing Test GGML_COMPILER_SUPPORTS_FP16_FORMAT_I3E
+-- Performing Test GGML_COMPILER_SUPPORTS_FP16_FORMAT_I3E - Failed
+-- Checking for ARM features using flags:
+-- Performing Test HAVE_DOTPROD
+-- Performing Test HAVE_DOTPROD - Success
+-- Performing Test HAVE_SVE
+-- Performing Test HAVE_SVE - Failed
+-- Performing Test HAVE_MATMUL_INT8
+-- Performing Test HAVE_MATMUL_INT8 - Failed
+-- Performing Test HAVE_FMA
+-- Performing Test HAVE_FMA - Success
+-- Performing Test HAVE_FP16_VECTOR_ARITHMETIC
+-- Performing Test HAVE_FP16_VECTOR_ARITHMETIC - Success
+-- Performing Test HAVE_SME
+-- Performing Test HAVE_SME - Failed
+-- Adding CPU backend variant ggml-cpu:  
+-- ggml version: 0.26.0
+-- ggml commit:  ffa4e8b80930029a35991f94e7c8a93cd67730ab-hyle
+-- HYLE: reusing locked CPU SDK at /Users/kiro/Library/Caches/hyle/dependencies/v1/sdks/torch-cpu/Darwin-be0642231d2008c7b90071fc0898d82a0c002d47f38350ebf3ed779fc01972d7/libtorch
+-- Found Torch: /Users/kiro/Library/Caches/hyle/dependencies/v1/sdks/torch-cpu/Darwin-be0642231d2008c7b90071fc0898d82a0c002d47f38350ebf3ed779fc01972d7/libtorch/lib/libtorch.dylib (Required is exact version "2.8.0")
+-- HYLE: original TorchAO/ATen CPU low precision -- locked LibTorch 2.8.0
+-- HYLE_TRACE = OFF (hooks compile to nothing -- zero cost)
+-- HYLE source package target unavailable (requires Git and a Git checkout)
+-- HYLE 0.1.0 | AppleClang 21.0.0.21000334 | C++23 | sanitizer=off | linkage=static | products=core,error,simd,math,compute,graph | factors=core,container_intrusive,util_core,error,math,platform,mem,simd,container,compute_ops,compute,graph,compute_provider_onednn,compute_backend_cpu,compute_ggml_runtime,compute_provider_ggml,graph_provider_onednn,compute_provider_native,compute_route_cpu,graph_route_cpu
+-- Configuring done (3.6s)
+-- Generating done (0.0s)
+-- Build files have been written to: /Users/kiro/hyle-scratch/compute-unified/a-cpu/selected-graph/static-sdk-build
