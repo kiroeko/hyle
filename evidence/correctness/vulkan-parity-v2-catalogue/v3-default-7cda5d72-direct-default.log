@@ -1,0 +1,33 @@
+Running main() from C:\public\tools\hyle-dependencies\v1\sources\googletest-063de7e9578f-162765170ae6\googletest\src\gtest_main.cc
+Note: Google Test filter = VulkanManaged.ColdRulesMatchFullConditionAxesAndUnknownDefault:VulkanManaged.DirectNormRebindsIndependentSlotsAndRetainsOldResults:VulkanManaged.PointwiseFamilyUsesRealProviderWithoutNormAnchor:VulkanManaged.ElementwiseDeviceLimitsRetainQualifiedFallbacks:VulkanManaged.PackedAndSeparateSwiGluRetainHighRankRowHalves:VulkanManaged.D5RealQwenProjectionUsesExactProfileAndReplays:VulkanIree.OriginalIq1ExpertProgramsAndChangedInputs:VulkanIree.OriginalIq1IndependentLeaseCancelCloseAndOom:VulkanIree.OriginalOfficialGroupedFp4Fp8SharedDistinctAndChecked:VulkanIree.OriginalFloat8DirectComposesBFloat16WithoutExpandingInputs
+[==========] Running 10 tests from 2 test suites.
+[----------] Global test environment set-up.
+[----------] 6 tests from VulkanManaged
+[ RUN      ] VulkanManaged.ColdRulesMatchFullConditionAxesAndUnknownDefault
+[       OK ] VulkanManaged.ColdRulesMatchFullConditionAxesAndUnknownDefault (305 ms)
+[ RUN      ] VulkanManaged.D5RealQwenProjectionUsesExactProfileAndReplays
+[       OK ] VulkanManaged.D5RealQwenProjectionUsesExactProfileAndReplays (116 ms)
+[ RUN      ] VulkanManaged.DirectNormRebindsIndependentSlotsAndRetainsOldResults
+[       OK ] VulkanManaged.DirectNormRebindsIndependentSlotsAndRetainsOldResults (209 ms)
+[ RUN      ] VulkanManaged.PointwiseFamilyUsesRealProviderWithoutNormAnchor
+[       OK ] VulkanManaged.PointwiseFamilyUsesRealProviderWithoutNormAnchor (682 ms)
+[ RUN      ] VulkanManaged.ElementwiseDeviceLimitsRetainQualifiedFallbacks
+[       OK ] VulkanManaged.ElementwiseDeviceLimitsRetainQualifiedFallbacks (88 ms)
+[ RUN      ] VulkanManaged.PackedAndSeparateSwiGluRetainHighRankRowHalves
+[       OK ] VulkanManaged.PackedAndSeparateSwiGluRetainHighRankRowHalves (226 ms)
+[----------] 6 tests from VulkanManaged (1630 ms total)
+
+[----------] 4 tests from VulkanIree
+[ RUN      ] VulkanIree.OriginalIq1ExpertProgramsAndChangedInputs
+[       OK ] VulkanIree.OriginalIq1ExpertProgramsAndChangedInputs (851 ms)
+[ RUN      ] VulkanIree.OriginalIq1IndependentLeaseCancelCloseAndOom
+[       OK ] VulkanIree.OriginalIq1IndependentLeaseCancelCloseAndOom (150 ms)
+[ RUN      ] VulkanIree.OriginalOfficialGroupedFp4Fp8SharedDistinctAndChecked
+[       OK ] VulkanIree.OriginalOfficialGroupedFp4Fp8SharedDistinctAndChecked (319 ms)
+[ RUN      ] VulkanIree.OriginalFloat8DirectComposesBFloat16WithoutExpandingInputs
+[       OK ] VulkanIree.OriginalFloat8DirectComposesBFloat16WithoutExpandingInputs (156 ms)
+[----------] 4 tests from VulkanIree (1477 ms total)
+
+[----------] Global test environment tear-down
+[==========] 10 tests from 2 test suites ran. (3107 ms total)
+[  PASSED  ] 10 tests.

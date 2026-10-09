@@ -119,3 +119,19 @@ layout, selection, state and native precision. It joins the separate80/560/25
 packets; it is not a104-full-model engine-run claim or platform/P1/delivery
 qualification. Maximum actual IQ1 bank is1,772,617,728 packed bytes, without
 an E*N*K F32 expansion or full giant-model residency claim.
+
+## V3 cold-default delta
+
+At `7cda5d729`, both Direct/Graph10/10 PASS with actual ggml/IREE chains and
+local real weights. Cold route facts now include compiled SDK/compiler/source
+and original provider revision; empty unknown text is omitted, rather than
+invalidating all matching. Shared matching receives native route, platform,
+actual environment/provider, full workload profile/phase/region and typed
+ports. Legal mature defaults remain independent of unknown machine/model
+facts and native admission still checks actual features/limits. No hot search,
+math or shader change. Exact `v3-default-7cda5d72-*` raw receipts retain hashes,
+adjacent DLLs and validation results. V2 big matrices were not replayed.
+
+The first build failure was an explicit Operation constructor in the added
+test and was corrected once. V3 residual/P1 and V4 ABI/header/delivery/platform
+checks remain; this delta alone does not qualify a hardware winner or closure.

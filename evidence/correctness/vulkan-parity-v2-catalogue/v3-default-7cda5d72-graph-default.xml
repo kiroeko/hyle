@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites tests="10" failures="0" disabled="0" errors="0" time="2.774" timestamp="2026-10-09T16:39:52.285" name="AllTests">
+  <testsuite name="VulkanGraph" tests="10" failures="0" disabled="0" skipped="0" errors="0" time="2.774" timestamp="2026-10-09T16:39:52.285">
+    <testcase name="OriginalIq1ExpertProgramsAndChangedInputs" file="C:\public\project-hyle\hyle\tests\graph_route_vulkan\iree_test.cc" line="32" status="run" result="completed" time="0.961" timestamp="2026-10-09T16:39:52.285" classname="VulkanGraph" />
+    <testcase name="OriginalIq1IndependentLeaseCancelCloseAndOom" file="C:\public\project-hyle\hyle\tests\graph_route_vulkan\iree_test.cc" line="41" status="run" result="completed" time="0.149" timestamp="2026-10-09T16:39:53.247" classname="VulkanGraph" />
+    <testcase name="OriginalOfficialGroupedFp4Fp8SharedDistinctAndChecked" file="C:\public\project-hyle\hyle\tests\graph_route_vulkan\iree_test.cc" line="44" status="run" result="completed" time="0.302" timestamp="2026-10-09T16:39:53.396" classname="VulkanGraph" />
+    <testcase name="OriginalFloat8RegionContinuesIntoGgmlAndNativeCopy" file="C:\public\project-hyle\hyle\tests\graph_route_vulkan\iree_test.cc" line="103" status="run" result="completed" time="0.168" timestamp="2026-10-09T16:39:53.698" classname="VulkanGraph" />
+    <testcase name="D5RealQwenProjectionUsesExactProfileAndReplays" file="C:\public\project-hyle\hyle\tests\graph_route_vulkan\managed_region_test.cc" line="13" status="run" result="completed" time="0.109" timestamp="2026-10-09T16:39:53.867" classname="VulkanGraph" />
+    <testcase name="ManagedLayerNormKeepsMisalignedCapturedRowsAndPublishedForks" file="C:\public\project-hyle\hyle\tests\graph_route_vulkan\managed_region_test.cc" line="68" status="run" result="completed" time="0.098" timestamp="2026-10-09T16:39:53.976" classname="VulkanGraph" />
+    <testcase name="ManagedNormFusionPreservesPublishedForksAndNativeBoundaries" file="C:\public\project-hyle\hyle\tests\graph_route_vulkan\managed_region_test.cc" line="123" status="run" result="completed" time="0.642" timestamp="2026-10-09T16:39:54.075" classname="VulkanGraph" />
+    <testcase name="PointwiseRegionPreservesScalarOrderPublishedValuesAndRebinds" file="C:\public\project-hyle\hyle\tests\graph_route_vulkan\managed_region_test.cc" line="255" status="run" result="completed" time="0.137" timestamp="2026-10-09T16:39:54.717" classname="VulkanGraph" />
+    <testcase name="StableModelGatesShareMatureRegionAndKeepPublishedForks" file="C:\public\project-hyle\hyle\tests\graph_route_vulkan\managed_region_test.cc" line="325" status="run" result="completed" time="0.105" timestamp="2026-10-09T16:39:54.855" classname="VulkanGraph" />
+    <testcase name="B2BatchedLinearAndHadamardShareOneMatureRegion" file="C:\public\project-hyle\hyle\tests\graph_route_vulkan\managed_region_test.cc" line="415" status="run" result="completed" time="0.099" timestamp="2026-10-09T16:39:54.960" classname="VulkanGraph" />
+  </testsuite>
+</testsuites>

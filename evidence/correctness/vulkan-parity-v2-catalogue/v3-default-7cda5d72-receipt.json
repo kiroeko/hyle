@@ -1,0 +1,74 @@
+{
+  "candidate": "7cda5d729bee677e7371302874e66049b0e308f7",
+  "steps": [
+    {
+      "name": "direct-default",
+      "returncode": 0,
+      "filter": "VulkanManaged.ColdRulesMatchFullConditionAxesAndUnknownDefault:VulkanManaged.DirectNormRebindsIndependentSlotsAndRetainsOldResults:VulkanManaged.PointwiseFamilyUsesRealProviderWithoutNormAnchor:VulkanManaged.ElementwiseDeviceLimitsRetainQualifiedFallbacks:VulkanManaged.PackedAndSeparateSwiGluRetainHighRankRowHalves:VulkanManaged.D5RealQwenProjectionUsesExactProfileAndReplays:VulkanIree.OriginalIq1ExpertProgramsAndChangedInputs:VulkanIree.OriginalIq1IndependentLeaseCancelCloseAndOom:VulkanIree.OriginalOfficialGroupedFp4Fp8SharedDistinctAndChecked:VulkanIree.OriginalFloat8DirectComposesBFloat16WithoutExpandingInputs",
+      "tests": {
+        "tests": "10",
+        "failures": "0",
+        "disabled": "0",
+        "errors": "0",
+        "time": "3.107",
+        "timestamp": "2026-10-09T16:39:48.997",
+        "name": "AllTests"
+      },
+      "validation_error": false,
+      "log": "v3-default-7cda5d72-direct-default.log",
+      "log_sha256": "3ff02148d2a3f60d769b96ffa9e9d3732bf8d372f0ea1c9077dd0f0cc0607051",
+      "xml": "v3-default-7cda5d72-direct-default.xml",
+      "binary_sha256": "dccd4641b88e7329e3b05285283e5f2ac51a82a0dfd2fc0029bc905e752afa13",
+      "adjacent_dlls": [
+        "hyle_compute.dll",
+        "hyle_compute_ggml_runtime.dll",
+        "hyle_compute_ops.dll",
+        "hyle_compute_provider_ggml_vulkan.dll",
+        "hyle_compute_provider_iree_vulkan.dll",
+        "hyle_compute_route_vulkan.dll",
+        "hyle_container.dll",
+        "hyle_error.dll",
+        "hyle_graph.dll",
+        "hyle_graph_route_vulkan.dll",
+        "hyle_mem.dll",
+        "hyle_platform.dll",
+        "hyle_time.dll"
+      ]
+    },
+    {
+      "name": "graph-default",
+      "returncode": 0,
+      "filter": "VulkanGraph.ManagedLayerNormKeepsMisalignedCapturedRowsAndPublishedForks:VulkanGraph.ManagedNormFusionPreservesPublishedForksAndNativeBoundaries:VulkanGraph.PointwiseRegionPreservesScalarOrderPublishedValuesAndRebinds:VulkanGraph.StableModelGatesShareMatureRegionAndKeepPublishedForks:VulkanGraph.B2BatchedLinearAndHadamardShareOneMatureRegion:VulkanGraph.D5RealQwenProjectionUsesExactProfileAndReplays:VulkanGraph.OriginalIq1ExpertProgramsAndChangedInputs:VulkanGraph.OriginalIq1IndependentLeaseCancelCloseAndOom:VulkanGraph.OriginalOfficialGroupedFp4Fp8SharedDistinctAndChecked:VulkanGraph.OriginalFloat8RegionContinuesIntoGgmlAndNativeCopy",
+      "tests": {
+        "tests": "10",
+        "failures": "0",
+        "disabled": "0",
+        "errors": "0",
+        "time": "2.774",
+        "timestamp": "2026-10-09T16:39:52.285",
+        "name": "AllTests"
+      },
+      "validation_error": false,
+      "log": "v3-default-7cda5d72-graph-default.log",
+      "log_sha256": "7a7be419469de9bee0decaed2b9f9eba5393599285626a70dc43e4410c0c0c2e",
+      "xml": "v3-default-7cda5d72-graph-default.xml",
+      "binary_sha256": "46927c291b6f63217a78033e1dc23c17c753e39a49c3aca581384bb6848e68b3",
+      "adjacent_dlls": [
+        "hyle_compute.dll",
+        "hyle_compute_ggml_runtime.dll",
+        "hyle_compute_ops.dll",
+        "hyle_compute_provider_ggml_vulkan.dll",
+        "hyle_compute_provider_iree_vulkan.dll",
+        "hyle_compute_route_vulkan.dll",
+        "hyle_container.dll",
+        "hyle_error.dll",
+        "hyle_graph.dll",
+        "hyle_graph_route_vulkan.dll",
+        "hyle_mem.dll",
+        "hyle_platform.dll",
+        "hyle_time.dll"
+      ]
+    }
+  ],
+  "scope": "V3 cold conditions and legal unknown default, actual managed/IREE Direct/Graph chains and replay/resource delta only"
+}

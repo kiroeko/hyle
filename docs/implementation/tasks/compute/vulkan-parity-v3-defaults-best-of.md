@@ -47,3 +47,17 @@ source/contract审计还证明Relu/Gelu原shader虽存在，但完整公开NaN/I
 首批验证只新条件适配的组合字段/unknown facts/default、两入口ggml/IREE实际链与
 workload保留、Graph报告和必要重放；V2相同typed/math大矩阵不重跑。公共matcher与
 共享模块不改，CMake只配置现有生成头里的锁定事实，不新增依赖/用户开关。
+
+## D1当前实际结果
+
+`7cda5d729` 新冷匹配与稀疏事实已接线，锁定SDK/ggml/IREE身份由唯一dependency lock
+配置进既有生成头。Windows Direct10/10、Graph10/10 PASS：组合条件与未知事实默认，
+真实ggml规范与本地权重、IREE IQ1/FP4/FP8、跨Provider链及重放/lease/cancel/close/OOM。
+原cold admission/融合/资源/数值规则保持；没有新数学，匹配不进入submit/run。
+编译首失败仅为新测试Operation的显式构造器，已一次修正；产品编译和定向测试通过。
+原V2大矩阵未重测。[raw收据](../../../../evidence/correctness/vulkan-parity-v2-catalogue/README.md)
+保留候选、二进制SHA、邻置DLL及validation结果。
+
+本批D1完成，不等于V3全部完成；D2完整残留裁决、D3同合同preflight和D4有限P1仍待。
+公开Environment新增的冷事实与相应header/三交付验收属于本路线V4必需项，尚未签PASS。
+本批统一Compute+Graph非测试实现62,483行/268文件。新增的是冷条件适配，不是算子数学。

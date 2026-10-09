@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites tests="10" failures="0" disabled="0" errors="0" time="3.107" timestamp="2026-10-09T16:39:48.997" name="AllTests">
+  <testsuite name="VulkanManaged" tests="6" failures="0" disabled="0" skipped="0" errors="0" time="1.63" timestamp="2026-10-09T16:39:48.997">
+    <testcase name="ColdRulesMatchFullConditionAxesAndUnknownDefault" file="C:\public\project-hyle\hyle\tests\compute_route_vulkan\managed_region_test.cc" line="15" status="run" result="completed" time="0.305" timestamp="2026-10-09T16:39:48.997" classname="VulkanManaged" />
+    <testcase name="D5RealQwenProjectionUsesExactProfileAndReplays" file="C:\public\project-hyle\hyle\tests\compute_route_vulkan\managed_region_test.cc" line="72" status="run" result="completed" time="0.116" timestamp="2026-10-09T16:39:49.302" classname="VulkanManaged" />
+    <testcase name="DirectNormRebindsIndependentSlotsAndRetainsOldResults" file="C:\public\project-hyle\hyle\tests\compute_route_vulkan\managed_region_test.cc" line="159" status="run" result="completed" time="0.209" timestamp="2026-10-09T16:39:49.419" classname="VulkanManaged" />
+    <testcase name="PointwiseFamilyUsesRealProviderWithoutNormAnchor" file="C:\public\project-hyle\hyle\tests\compute_route_vulkan\managed_region_test.cc" line="286" status="run" result="completed" time="0.682" timestamp="2026-10-09T16:39:49.629" classname="VulkanManaged" />
+    <testcase name="ElementwiseDeviceLimitsRetainQualifiedFallbacks" file="C:\public\project-hyle\hyle\tests\compute_route_vulkan\managed_region_test.cc" line="538" status="run" result="completed" time="0.088" timestamp="2026-10-09T16:39:50.312" classname="VulkanManaged" />
+    <testcase name="PackedAndSeparateSwiGluRetainHighRankRowHalves" file="C:\public\project-hyle\hyle\tests\compute_route_vulkan\managed_region_test.cc" line="552" status="run" result="completed" time="0.226" timestamp="2026-10-09T16:39:50.400" classname="VulkanManaged" />
+  </testsuite>
+  <testsuite name="VulkanIree" tests="4" failures="0" disabled="0" skipped="0" errors="0" time="1.477" timestamp="2026-10-09T16:39:50.627">
+    <testcase name="OriginalIq1ExpertProgramsAndChangedInputs" file="C:\public\project-hyle\hyle\tests\compute_route_vulkan\iree_test.cc" line="28" status="run" result="completed" time="0.851" timestamp="2026-10-09T16:39:50.627" classname="VulkanIree" />
+    <testcase name="OriginalIq1IndependentLeaseCancelCloseAndOom" file="C:\public\project-hyle\hyle\tests\compute_route_vulkan\iree_test.cc" line="37" status="run" result="completed" time="0.15" timestamp="2026-10-09T16:39:51.478" classname="VulkanIree" />
+    <testcase name="OriginalOfficialGroupedFp4Fp8SharedDistinctAndChecked" file="C:\public\project-hyle\hyle\tests\compute_route_vulkan\iree_test.cc" line="40" status="run" result="completed" time="0.319" timestamp="2026-10-09T16:39:51.629" classname="VulkanIree" />
+    <testcase name="OriginalFloat8DirectComposesBFloat16WithoutExpandingInputs" file="C:\public\project-hyle\hyle\tests\compute_route_vulkan\iree_test.cc" line="355" status="run" result="completed" time="0.156" timestamp="2026-10-09T16:39:51.948" classname="VulkanIree" />
+  </testsuite>
+</testsuites>

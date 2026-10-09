@@ -1,0 +1,30 @@
+Running main() from C:\public\tools\hyle-dependencies\v1\sources\googletest-063de7e9578f-162765170ae6\googletest\src\gtest_main.cc
+Note: Google Test filter = VulkanGraph.ManagedLayerNormKeepsMisalignedCapturedRowsAndPublishedForks:VulkanGraph.ManagedNormFusionPreservesPublishedForksAndNativeBoundaries:VulkanGraph.PointwiseRegionPreservesScalarOrderPublishedValuesAndRebinds:VulkanGraph.StableModelGatesShareMatureRegionAndKeepPublishedForks:VulkanGraph.B2BatchedLinearAndHadamardShareOneMatureRegion:VulkanGraph.D5RealQwenProjectionUsesExactProfileAndReplays:VulkanGraph.OriginalIq1ExpertProgramsAndChangedInputs:VulkanGraph.OriginalIq1IndependentLeaseCancelCloseAndOom:VulkanGraph.OriginalOfficialGroupedFp4Fp8SharedDistinctAndChecked:VulkanGraph.OriginalFloat8RegionContinuesIntoGgmlAndNativeCopy
+[==========] Running 10 tests from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 10 tests from VulkanGraph
+[ RUN      ] VulkanGraph.OriginalIq1ExpertProgramsAndChangedInputs
+[       OK ] VulkanGraph.OriginalIq1ExpertProgramsAndChangedInputs (961 ms)
+[ RUN      ] VulkanGraph.OriginalIq1IndependentLeaseCancelCloseAndOom
+[       OK ] VulkanGraph.OriginalIq1IndependentLeaseCancelCloseAndOom (149 ms)
+[ RUN      ] VulkanGraph.OriginalOfficialGroupedFp4Fp8SharedDistinctAndChecked
+[       OK ] VulkanGraph.OriginalOfficialGroupedFp4Fp8SharedDistinctAndChecked (302 ms)
+[ RUN      ] VulkanGraph.OriginalFloat8RegionContinuesIntoGgmlAndNativeCopy
+[       OK ] VulkanGraph.OriginalFloat8RegionContinuesIntoGgmlAndNativeCopy (168 ms)
+[ RUN      ] VulkanGraph.D5RealQwenProjectionUsesExactProfileAndReplays
+[       OK ] VulkanGraph.D5RealQwenProjectionUsesExactProfileAndReplays (109 ms)
+[ RUN      ] VulkanGraph.ManagedLayerNormKeepsMisalignedCapturedRowsAndPublishedForks
+[       OK ] VulkanGraph.ManagedLayerNormKeepsMisalignedCapturedRowsAndPublishedForks (98 ms)
+[ RUN      ] VulkanGraph.ManagedNormFusionPreservesPublishedForksAndNativeBoundaries
+[       OK ] VulkanGraph.ManagedNormFusionPreservesPublishedForksAndNativeBoundaries (642 ms)
+[ RUN      ] VulkanGraph.PointwiseRegionPreservesScalarOrderPublishedValuesAndRebinds
+[       OK ] VulkanGraph.PointwiseRegionPreservesScalarOrderPublishedValuesAndRebinds (137 ms)
+[ RUN      ] VulkanGraph.StableModelGatesShareMatureRegionAndKeepPublishedForks
+[       OK ] VulkanGraph.StableModelGatesShareMatureRegionAndKeepPublishedForks (105 ms)
+[ RUN      ] VulkanGraph.B2BatchedLinearAndHadamardShareOneMatureRegion
+[       OK ] VulkanGraph.B2BatchedLinearAndHadamardShareOneMatureRegion (99 ms)
+[----------] 10 tests from VulkanGraph (2774 ms total)
+
+[----------] Global test environment tear-down
+[==========] 10 tests from 1 test suite ran. (2774 ms total)
+[  PASSED  ] 10 tests.
