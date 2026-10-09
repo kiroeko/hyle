@@ -1,7 +1,8 @@
 # Compute/Graph：统一配置、冷路由与 CPU/GPU 组合设计
 
-> 用户授权的新设计范围，尚未实施。入口统计、baseline、有限施工包和验证只在
-> [本轮设计卡](../implementation/tasks/build/compute-entry-design.md)维护。
+> 用户授权的新范围。统一配置/资产已进入固定候选、C3交付待验；组合能力尚未实施。
+> 当前 owner/验收见[实施卡](../implementation/tasks/build/compute-unified-delivery.md)和 registry；
+> [原设计卡](../implementation/tasks/build/compute-entry-design.md)保存入口统计与设计事实。
 > 通用增量依赖图只登记为 DEFER 待办，本轮不实施、不增加组件或热路径成本。
 
 ## 1. 五项选择各有一个 owner
@@ -22,7 +23,7 @@
 
 ### 2.1 路线集合和默认
 
-拟将当前四路线开关及 CPU 的 oneDNN/Torch 开关替换为
+统一配置将原四路线开关及 CPU 的 oneDNN/Torch 开关替换为
 `HYLE_COMPUTE_ROUTES`，接受非空路线集合 `cpu`、`cuda`、`apple`、`vulkan`。
 单项和如 `cpu;cuda`、`cpu;apple`、`cpu;vulkan` 使用同一解析器。
 统一小写、去重、固定 canonical 顺序；集合顺序没有 preference 含义。
@@ -37,7 +38,7 @@ tests/bench 默认关闭、build jobs 2。源码嵌入和 preset 最终都进入
 第一版联合执行仅资格化 CPU+一个 GPU，不以多路线 SDK 推断 GPU+GPU 联合支持。
 CUDA-only 不拉 CPU 数学库；vendor 必需 host 控制代码不算 CPU Provider。
 
-以下是**拟实施后的**命令形状，当前不能按本页运行：
+以下命令使用当前统一配置候选；适用交付验收尚按 C3 卡进行，不据此宣称整包已关闭：
 
 ```text
 cmake --preset compute-cpu
@@ -81,7 +82,7 @@ HYLE_STATIC 只选择 HYLE linkage；必要 LibTorch 等动态 runtime 仍由闭
 不为“一个版本好看”未经资格升级 GPU，也不把 CPU-only 精确 WIN 复制到 mixed SDK。
 Provider/版本/flags 改变后，旧 exact rule 只有所有实际条件都匹配才命中，否则合法成熟默认。
 
-拟统一 `hyle_stage_runtime(app)`：沿**实际链接的 owner**收集 DLL/so/dylib/native assets，
+统一 `hyle_stage_runtime(app)`：沿**实际链接的 owner**收集 DLL/so/dylib/native assets，
 组合既有 generic/Apple helpers 和 package registry；按 target 链接闭包而非猜测 C++ 调用来决定资产。
 多路线 SDK 的聚合 target 可连入全部所选路线，届时资产也须完整；不虚构“只调用 CPU 就不需要其它 runtime”。
 要求纯 CPU 产物隔离时选择单 CPU SDK；不增加每个 app 的 Provider 禁用菜单。
@@ -254,8 +255,9 @@ host 权重模式需真实分批容量/重用旅程，不能用设备枚举、�
 
 ## 6. 实施顺序和停止
 
-本 goal 只完成入口/设计交付。实施另依法启动 C1统一路线→C2 SDK/资产→R1冷绑定校准→C3批量交付，
-随后 H1 CPU+CUDA→H2 CPU+Apple→H3 CPU+Vulkan；七包的有限 FIX/owner/验收见唯一设计卡。
+用户已启动实施：C1统一路线→C2 SDK/资产→R1冷绑定校准→C3批量交付，
+随后 H1 CPU+CUDA→H2 CPU+Apple→H3 CPU+Vulkan；包括后续确认的异步重叠/专家搬运机制。
+有限 FIX/owner/验收由各活动卡维护，设计卡不作为新的当前队列。
 当前模块 terminal record 不回写，旧 goal/百分比/队列不恢复。
 新组合提出的新需求不受旧“模型 CPU+GPU 本轮范围外”永久禁止，也不能把新设计当旧证据里的完成。
-到达固定设计/验证交付后结束本 goal，不自动扩算子、实现推理引擎或启动增量图。
+到达七包适用验收后停止，不自动扩算子、实现推理引擎或启动增量图。

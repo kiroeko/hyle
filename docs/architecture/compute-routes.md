@@ -22,7 +22,7 @@ handle 或逐 kernel 虚调用。独立实现不是把 Error、Mem 等同义基�
 构建必须从公开产品、路线实现直到第三方 native backend 一直隔离：
 
 - `hyle::compute/graph` 聚合所选真实实现，不固定拉入全部 CPU/oneDNN 或全部 GPU Provider。
-- OFF 不探测 SDK、不编译/链接/安装原生实现；AUTO 只发现实际可用能力，ON 缺必要条件明确失败。
+- 未选路线不探测 SDK、不编译/链接/安装原生实现；已选完整路线缺必要条件明确失败。
   系统 SDK 由用户安装，HYLE 不下载 CUDA Toolkit。没有实现不预造选项/空 target。
 - 公共语义头不要求 CUDA/Metal/Vulkan SDK。native 专家入口归对应路线；flags、ISA、部署版本、
   vendor 宏归 owning target，不改变消费者可见的公共对象布局，不泄漏全局编译开关。
@@ -31,8 +31,8 @@ handle 或逐 kernel 虚调用。独立实现不是把 Error、Mem 等同义基�
 - 裁剪必须传入 vendor 的 CMake，不能只关掉 HYLE 外层入口。vendor 必需的 host/CPU 基础代码不等于
   允许 CPU 模型计算；如果 vendor 无法关闭所需的隐式模型 fallback，该路径不能冒充纯 GPU。
 - 多路线同 SDK 可选并存，不代表一个模型可跨 CPU/GPU联合执行。
-  [统一配置设计](compute-next-stage.md#2-唯一普通构建入口)将用一个路线集合替换分散选择，
-  native feature 由它派生，不保留第二套全局路线开关；当前配置尚未迁移。
+  [统一配置](compute-next-stage.md#2-唯一普通构建入口)用一个路线集合替换分散选择，
+  native feature 由它派生，不保留第二套全局路线开关；当前候选的交付验收仍按活动卡。
   实际程序在冷准备期绑定，不每次运行检查构建配置。
 
 MLX 有独立的 CPU/Metal/CUDA 开关，默认 tests/examples、文件格式功能和 nested Metal-C++ 下载也须

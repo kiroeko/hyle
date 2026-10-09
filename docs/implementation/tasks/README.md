@@ -17,6 +17,8 @@
 
 - [C1–C3 / R1 统一配置与交付](build/compute-unified-delivery.md)：当前 owner 按 registry；
   接线集中后批量验收，H1–H3 另卡启动，增量依赖图继续 DEFER。
+- [路由、构建与全文档独立 review](project/compute-routing-build-doc-review.md)：用户要求在 R1 后、H1 前完成；
+  不扩为无反例的全库产品重审。
 
 当前跨产品能力审计事实：
 

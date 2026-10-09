@@ -9,7 +9,8 @@ CPU Graph 把输入作为 `ConstantPolicy::kMaterialize` 常量，编译后释�
 CPU/CUDA 的 Graph 消费同时用公开 `NodeProviderConstraint` 指定配置实例，CPU 另用全局家族 allow
 筛选；约束只在冷 compile 使用，仍复用同一个 Invocation 和 CUDA capture，不增加另一条执行接口。
 样例只构建 SDK 实际提供的 CPU 路线；CUDA-only SDK 使用 `HYLE_SAMPLE_CUDA=ON`，不会编译或链接
-CPU factory/consumer。源码嵌入可同时传 `HYLE_COMPUTE_CPU=OFF`。两条路线都未选择时配置明确失败。
+CPU factory/consumer。源码嵌入由样例选择完整 `cpu` 或 `cpu;cuda` 集合，不使用 Provider/路线细开关。
+无可用目标路线的安装 SDK 配置明确失败。
 两个例子分别限定 1/2 个普通算子候选，并检查报告区分候选发现与真正 prepare 次数；恰好用满且没有省略
 后续查询不算搜索受限。这是例子已知只有一个 Provider 的边界，不是一般 Graph 应照抄的容量配置。
 
@@ -60,7 +61,7 @@ CPU/CUDA executable 分别输出到构建目录的 `cpu/`、`cuda/`，各自 sta
 实例；只有算法确实依赖某个资源实例时才使用 `exact_resource`，并从资源 owner 显式传入同一个句柄。
 
 CUDA 版加 `-DHYLE_SAMPLE_CUDA=ON`，并使用含 `compute_cuda` feature 的安装包；源码方式会显式启用
-`HYLE_COMPUTE_CUDA=ON`。CUDA Toolkit 13.3+ 与 nvcc 由用户安装，不由 HYLE 下载。`cuda_main.cc` 是
+`HYLE_COMPUTE_ROUTES=cpu;cuda`。CUDA Toolkit 13.3+ 与 nvcc 由用户安装，不由 HYLE 下载。`cuda_main.cc` 是
 C++23 factory/consumer；单独的 `cuda_kernel.cu` library 只编译 native kernel，不解析 HYLE 头，当前用
 CUDA C++17。它验证 257 元素的尾块、两个 Queue 上的独立 Invocation，以及动态输入和编译时物化常量
 两种两节点 exact capture/replay。物化场景在编译后、capture 前释放原 device allocation；还检查配置

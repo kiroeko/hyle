@@ -8,7 +8,7 @@ targets. Pre-1.0 package consumption deliberately requires the complete version.
 The imported targets carry the public headers, C++23 floor, static/shared visibility
 definition, module dependency closure and mem's private mimalloc backing. The consumer never
 searches for individual `.lib`/`.a` files or reconstructs static link order. On Windows,
-`hyle_stage_runtime_dependencies()` copies the imported DLL closure beside the executable.
+`hyle_stage_runtime()` copies the imported DLL closure beside the executable.
 
 Run both shared and static paths on Linux/WSL:
 
