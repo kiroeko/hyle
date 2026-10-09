@@ -802,6 +802,10 @@ Result<Region> Region::create(NativeDevice device,
         if (!ggml_prec_set_acc(product, GGML_PREC_F32))
           return std::unexpected(
               Status::Unimplemented("ggml Vulkan MatMul F32 accumulation"));
+        if (right->type == GGML_TYPE_F32 && left->type == GGML_TYPE_F32 &&
+            !ggml_prec_set_src(product, GGML_PREC_F32, 1))
+          return std::unexpected(
+              Status::Unimplemented("ggml Vulkan MatMul F32 operands"));
         const auto target =
             native_type(recipe.values[node.outputs[0]].data_type());
         output = product->type == target ? product

@@ -282,9 +282,29 @@
         {
           "before": "        last_struct = (VkBaseOutStructure *)&vk12_features;\n\n        VkPhysicalDeviceInternallySynchronizedQueuesFeaturesKHR",
           "after": "        last_struct = (VkBaseOutStructure *)&vk12_features;\n        VkPhysicalDeviceSynchronization2Features hyle_sync2{};\n        hyle_sync2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SYNCHRONIZATION_2_FEATURES;\n        if (device->properties.apiVersion >= VK_API_VERSION_1_3 &&\n            vk_instance.loader_version >= VK_API_VERSION_1_3) {\n            last_struct->pNext = (VkBaseOutStructure *)&hyle_sync2;\n            last_struct = (VkBaseOutStructure *)&hyle_sync2;\n        }\n\n        VkPhysicalDeviceInternallySynchronizedQueuesFeaturesKHR"
+        },
+        {
+          "before": "    std::vector<vk_tile_config> tc_mm = {{s_warptile, s_wg_denoms, s_align}, {m_warptile, m_wg_denoms, m_align}, {l_warptile, l_wg_denoms, l_align}};",
+          "after": "    std::vector<vk_tile_config> tc_mm = {{s_warptile, s_wg_denoms, s_align}, {m_warptile, m_wg_denoms, m_align}, {l_warptile, l_wg_denoms, l_align}};\n    // HYLE's plain F32 operands keep their precision even on Float16 devices.\n    // Borrow the original FP32 shader and original generic subgroup tiles.\n    // Other storage/quantized pipeline maps retain their native fast paths.\n    std::vector<vk_tile_config> hyle_f32_tiles = {\n        {{subgroup_size_32, 32, 32, 16, device->subgroup_size == 8 ? 8u : 32u, 32, 2, 2, 2, 1, subgroup_size_8}, {32, 32, 1}, 32},\n        {{128, 64, 64, 16, mm_warp_8, 32, 2, 4, 2, 1, mm_warp_8}, {64, 64, 1}, 64},\n        {{128, 128, 128, 16, mm_warp_8 * 2, 64, 2, 4, 4, 1, mm_warp_8}, {128, 128, 1}, 128},\n    };\n    hyle_f32_tiles.erase(std::remove_if(hyle_f32_tiles.begin(), hyle_f32_tiles.end(), [&](const auto & tile) {\n        const auto & wt = tile.warptile;\n        const uint64_t shared_bytes = uint64_t(wt[1] + wt[2]) * (wt[3] / 2 + 1) * 2 * sizeof(float);\n        return shared_bytes > device->properties.limits.maxComputeSharedMemorySize ||\n               wt[0] > device->properties.limits.maxComputeWorkGroupInvocations ||\n               wt[0] > device->properties.limits.maxComputeWorkGroupSize[0];\n    }), hyle_f32_tiles.end());\n    if (hyle_f32_tiles.empty()) throw std::runtime_error(\"Vulkan F32 matmul resource limits\");\n    spec_fn_t hyle_f32_spec = [&](const std::vector<uint32_t> & wt, bool aligned) {\n        return ggml_vk_mul_mm_spec(wt, aligned);\n    };\n    create_mm_pipelines({GGML_TYPE_F32, GGML_TYPE_F32, false, false}, hyle_f32_tiles,\n        \"matmul_f32_f32\", matmul_f32_f32_fp32_len, matmul_f32_f32_fp32_data,\n        sizeof(vk_mat_mat_push_constants), 3, hyle_f32_spec, false);\n    create_mm_pipelines({GGML_TYPE_F32, GGML_TYPE_F32, true, false}, hyle_f32_tiles,\n        \"matmul_id_f32_f32\", matmul_id_f32_f32_fp32_len, matmul_id_f32_f32_fp32_data,\n        sizeof(vk_mat_mat_id_push_constants), mul_mat_id_param_count, hyle_f32_spec, false);\n"
+        },
+        {
+          "before": "            sg_create({GGML_TYPE_F32, GGML_TYPE_F32, false, false}, tc_mm, \"matmul_f32_f32\", SPV_DOT2(matmul_f32_f32), sizeof(vk_mat_mat_push_constants), 3);",
+          "after": "            // HYLE: complete F32 operand pipeline registered above."
+        },
+        {
+          "before": "                sg_create({GGML_TYPE_F32, GGML_TYPE_F32, true, false}, tc_mm, \"matmul_id_f32_f32\", SPV_DOT2(matmul_id_f32_f32), sizeof(vk_mat_mat_id_push_constants), mul_mat_id_param_count);",
+          "after": "            // HYLE: complete F32 operand pipeline registered above."
+        },
+        {
+          "before": "            sg_create({GGML_TYPE_F32, GGML_TYPE_F32, false, false}, tc_mm, \"matmul_f32_f32\", matmul_f32_f32_fp32_len, matmul_f32_f32_fp32_data, sizeof(vk_mat_mat_push_constants), 3);",
+          "after": "            // HYLE: complete F32 operand pipeline registered above."
+        },
+        {
+          "before": "                sg_create({GGML_TYPE_F32, GGML_TYPE_F32, true, false}, tc_mm, \"matmul_id_f32_f32\", matmul_id_f32_f32_fp32_len, matmul_id_f32_f32_fp32_data, sizeof(vk_mat_mat_id_push_constants), mul_mat_id_param_count);",
+          "after": "            // HYLE: complete F32 operand pipeline registered above."
         }
       ],
-      "after_sha256": "d102b3ed762a5df0d50e42ece0faf84b775ba1ae37ca0b3286174c3d5e4fda70"
+      "after_sha256": "ecfe832e61a91641ea9553626ad23c37f571fba54be186554ea0cc2c3980d6b3"
     },
     {
       "path": "src/ggml.cpp",

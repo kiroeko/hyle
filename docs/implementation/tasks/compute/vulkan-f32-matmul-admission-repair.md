@@ -57,3 +57,12 @@ FP32-only fallback登记。精度API还有`ggml_prec_set_src(...,F32,1)`；HYLE�
 
 `compute_ggml_runtime`因拥有build-local原Vulkan port进入AUDITED并绑定本卡；当前CPU/CUDA源码
 和规则不修改，未启用Vulkan的recipe不包含该backend manifest。返修后冻结同一有限候选再验适用门。
+
+## 固定实现
+
+F32-01接入原FP32 normal/ID shader，借原通用subgroup三个tile并按真实FP32 shared bytes与
+workgroup limits筛掉不合法tile；原F32/F32半精度map不再覆盖它，其它dtype/量化map未改。
+F32-02普通plain F32乘法请求原precision API的source最低F32，仍保留F32累加。
+F32-03只要求实际native/custom和managed边界存在，不再假设旧自研4dispatch；原数值门未改。
+依赖仍为原锁pin，没有升级或新shader/乘法算法。原port result/tree/NOTICE身份已更新；
+原上下文匹配唯一性检查通过，selector产品授权和docs/closure/diff通过，数学尚待候选实跑。

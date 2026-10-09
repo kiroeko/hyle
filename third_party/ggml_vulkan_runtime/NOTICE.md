@@ -24,6 +24,14 @@ handle the common negative-domain and signed-zero boundaries explicitly.
 These are declared numerical adaptations, including changes to finite math.
 The original dispatch, fusion and resource planning remain in place.
 
+Plain F32/F32 matrix multiplication uses the original full-FP32 shader with
+the original generic subgroup tiles, including on devices that also support
+Float16. Tile admission accounts for the actual F32 shared-memory footprint
+and workgroup limits. This preserves F32 operands as well as accumulation;
+the original half-internal shader could narrow an F32 FFN activation before
+the down projection. Other storage and quantized pipeline maps are unchanged.
+No new multiplication shader or algorithm is introduced.
+
 The two Argsort shaders retain the upstream bitonic sorting networks, barriers,
 dispatch and scratch management. Their comparison uses original F32 storage
 keys and source indices to provide stable ties, equal signed zeros, NaN-last in

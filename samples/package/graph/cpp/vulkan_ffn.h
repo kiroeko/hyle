@@ -78,7 +78,7 @@ inline hyle::Result<v::Program> prepare(const v::Context &context,
     return std::unexpected(
         hyle::Status::Internal("Vulkan Graph workload was not retained"));
   if (!report.status.ok() || report.nodes.size() != 5 ||
-      report.native_dispatch_count != 4 || report.managed_region_count != 1 ||
+      report.native_dispatch_count == 0 || report.managed_region_count == 0 ||
       report.invocation_storage_block_bytes.empty() ||
       report.opaque_storage_bytes)
     return std::unexpected(
