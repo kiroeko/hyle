@@ -52,12 +52,23 @@ inline std::vector<float> grouped(const c::TensorDesc &description,
 }
 } // namespace vulkan_catalogue_gguf
 
+namespace vulkan_current_state_test {
+inline std::vector<float> native_rotary(std::span<const float>,std::int64_t,
+    std::span<const std::int32_t>,bool,bool,std::int64_t);
+inline std::vector<float> model_sink(std::span<const float>,std::span<const float>,
+    std::span<const float>,std::span<const float>,std::span<const float>,
+    std::int64_t,std::int64_t,float);
+}
 #define HYLE_C4_QUANTIZED_REFERENCE vulkan_catalogue_gguf::projection
 #define HYLE_C4_GROUPED_REFERENCE vulkan_catalogue_gguf::grouped
+#define HYLE_C4_ROTARY_REFERENCE(input,heads,positions,inverse) vulkan_current_state_test::native_rotary(input,heads,positions,false,inverse,512)
+#define HYLE_C4_SINK_REFERENCE vulkan_current_state_test::model_sink
 #include "../compute_models/cpu_c4_qwen_mtp.h"
 #include "../compute_models/cpu_c4_flash_sidecars.h"
 #undef HYLE_C4_QUANTIZED_REFERENCE
 #undef HYLE_C4_GROUPED_REFERENCE
+#undef HYLE_C4_ROTARY_REFERENCE
+#undef HYLE_C4_SINK_REFERENCE
 
 namespace vulkan_current_state_test {
 inline std::vector<float> native_rotary(std::span<const float> input,std::int64_t heads,
@@ -172,5 +183,17 @@ inline auto models() {
     };
   }
   return result;
+}
+inline d5_deepseek_official_attention::NativeReference main_reference() {
+  d5_deepseek_official_attention::NativeReference reference;
+  reference.fused_scale_accumulation=false;
+  reference.rotation=[](auto input,auto depth,std::int32_t position,bool compressed,bool inverse) {
+    const std::array positions{position};
+    return native_rotary(input,static_cast<std::int64_t>(input.size()/depth),positions,compressed,inverse,depth);
+  };
+  reference.sink=[](auto query,auto key,auto value,auto mask,auto sinks,float scale) {
+    return model_sink(query,key,value,mask,sinks,1,static_cast<std::int64_t>(key.size()/512),scale);
+  };
+  return reference;
 }
 } // namespace vulkan_current_state_test

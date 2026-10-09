@@ -62,7 +62,7 @@ TEST_P(HYLE_VULKAN_CURRENT_STATE_SUITE, OfficialMainCompressionAttentionAndFp4Mo
   const auto &model=GetParam();SCOPED_TRACE(model.profile->model_revision);const auto shape=model.main_case();
   for(std::int64_t ratio:{0,4,128}) {
     SCOPED_TRACE(ratio);
-    vulkan_catalogue_test::run(d5_deepseek_official_attention::attention(shape,ratio));
+    vulkan_catalogue_test::run(d5_deepseek_official_attention::attention(shape,ratio,nullptr,vulkan_current_state_test::main_reference()));
     ASSERT_FALSE(::testing::Test::HasFailure());
   }
   for(bool down:{false,true}) {

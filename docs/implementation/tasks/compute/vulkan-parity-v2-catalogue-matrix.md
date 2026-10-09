@@ -146,3 +146,9 @@ HYLE与锁定原ggml直接图native最大差0；独立F32方程最大差6.920099
 native显式phase→sin/cos→Mul/Add→BF16参考，参数/完整gate保持；该原private
 helper已CLOSED且无改动，不新增产品算法。下一次仅这两个prefill ID，保留失败
 记录，结果决定下一步，不把native一致性替代独立precision原方程或完整链门。
+
+`b592b5d0` Direct两个Prefill ID PASS，原误差及inverse逐位门保持。已证
+同原因同步到当前官方main的既有NativeReference（包括原FP8非融合次序）和
+Flash sidecar的两个具名测试reference hook；CPU/CUDA默认方程与数据不变，
+未改产品。其余GGUF indexer/Graph未判定项仍FAIL/UNPROVEN，下一次只失败ID
+集中delta，不跑80/560或24全量。

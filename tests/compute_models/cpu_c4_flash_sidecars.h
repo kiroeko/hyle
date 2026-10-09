@@ -146,6 +146,9 @@ inline ValueId rope(Fragment &f,ValueId x,ValueId pos,bool inverse=false) {
 }
 inline std::vector<float> rope_ref(std::vector<float> x,std::int64_t count,
                                   std::span<const std::int32_t> positions,bool inverse=false) {
+#if defined(HYLE_C4_ROTARY_REFERENCE)
+  return HYLE_C4_ROTARY_REFERENCE(x,count,positions,inverse);
+#else
   const auto freq=ds::rope_frequencies(false,inverse);
   for(std::size_t token=0;token<positions.size();++token)for(std::int64_t head=0;head<count;++head) {
     for(std::int64_t pair=0;pair<32;++pair) {
@@ -155,6 +158,7 @@ inline std::vector<float> rope_ref(std::vector<float> x,std::int64_t count,
     }
   }
   return x;
+#endif
 }
 using AttentionReference=std::function<moe::ReferenceOutputs(std::span<const float>,std::span<const float>,
     std::span<const float>,std::int32_t)>;
@@ -193,7 +197,11 @@ inline Fragment attention(const Model &model,int stage,AttentionReference *refer
     auto draft_k=rope_ref(std::vector<float>(k.begin()+512,k.end()),1,dp);
     std::vector<float> cache(old.begin(),old.end());std::copy(main_k.begin(),main_k.end(),cache.begin()+p%window*512);
     auto all=cache;all.insert(all.end(),draft_k.begin(),draft_k.end());
+#if defined(HYLE_C4_SINK_REFERENCE)
+    auto out=HYLE_C4_SINK_REFERENCE(query,all,all,std::vector<float>(t*(window+t)),sinks,t,window+t,factor);
+#else
     auto out=ds::old::sink_reference(query,all,all,std::vector<float>(t*(window+t)),sinks,t,window+t,factor);
+#endif
     auto inv=rope_ref(std::move(out),heads,dp,true);
     return {std::move(cache),ob.reference(grouped_reference(wa,inv,ids))};
   };return f;

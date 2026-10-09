@@ -1,0 +1,14 @@
+Running main() from C:\public\tools\hyle-dependencies\v1\sources\googletest-063de7e9578f-162765170ae6\googletest\src\gtest_main.cc
+Note: Google Test filter = CurrentOfficial/VulkanCurrentState.PrefillFiveTokenAttentionAndCacheFeedback/*
+[==========] Running 2 tests from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 2 tests from CurrentOfficial/VulkanCurrentState
+[ RUN      ] CurrentOfficial/VulkanCurrentState.PrefillFiveTokenAttentionAndCacheFeedback/Pro0813
+[       OK ] CurrentOfficial/VulkanCurrentState.PrefillFiveTokenAttentionAndCacheFeedback/Pro0813 (13867 ms)
+[ RUN      ] CurrentOfficial/VulkanCurrentState.PrefillFiveTokenAttentionAndCacheFeedback/Flash0731
+[       OK ] CurrentOfficial/VulkanCurrentState.PrefillFiveTokenAttentionAndCacheFeedback/Flash0731 (7045 ms)
+[----------] 2 tests from CurrentOfficial/VulkanCurrentState (20913 ms total)
+
+[----------] Global test environment tear-down
+[==========] 2 tests from 1 test suite ran. (20913 ms total)
+[  PASSED  ] 2 tests.
