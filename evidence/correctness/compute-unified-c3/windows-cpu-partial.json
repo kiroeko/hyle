@@ -1,0 +1,46 @@
+{
+  "product_before_default_fix": "321bb5bd8ff5743a439111c49e7d75d4e8dae394",
+  "product_final": "79137d31ce1bec9053d3a4f92f2892e3a21cbb80",
+  "route": "cpu",
+  "platform": "Windows",
+  "scope": "current-candidate Direct/Graph public math consumers; partial receipt, does not sign other routes/platforms/hybrid",
+  "default_fix_applicability": "These consumers explicitly disable tests; the final default correction does not change their math/compile flags. Old and final product identities are recorded separately, not fake same-tree reuse.",
+  "rows": [
+    {
+      "entry": "source-direct",
+      "verdict": "PASS",
+      "log": "C:/h7/w-cpu/selected-graph/source-build/Testing/Temporary/LastTest.log",
+      "sha256": "1b1817a74ed3b722ac93c3c353c350178b4cba02a34a9e57430619a63340e864"
+    },
+    {
+      "entry": "source-graph",
+      "verdict": "PASS",
+      "log": "C:/h7/w-cpu/selected-graph/source-build/Testing/Temporary/LastTest.log",
+      "sha256": "1b1817a74ed3b722ac93c3c353c350178b4cba02a34a9e57430619a63340e864"
+    },
+    {
+      "entry": "shared-direct",
+      "verdict": "PASS",
+      "log": "C:/h7/w-cpu/selected-graph/shared-compute-consumer/Testing/Temporary/LastTest.log",
+      "sha256": "96b6e0b553076e3a462fdec045d30d9028c706dfd70f2f13409927e8f2d6f60d"
+    },
+    {
+      "entry": "shared-graph",
+      "verdict": "PASS",
+      "log": "C:/h7/w-cpu/selected-graph/shared-consumer/Testing/Temporary/LastTest.log",
+      "sha256": "8d50c86d1c590b8a9987952ba68d27d7e229e38b7c725b4bf37317432eb9ffbe"
+    },
+    {
+      "entry": "static-direct",
+      "verdict": "PASS",
+      "log": "C:/h7/w-cpu/selected-graph/static-compute-consumer/Testing/Temporary/LastTest.log",
+      "sha256": "f132092a9deb3ba8712773ded5334e9ee9da775be1cb67723bf2967d1e901cbe"
+    },
+    {
+      "entry": "static-graph",
+      "verdict": "PASS",
+      "log": "C:/h7/w-cpu/selected-graph/static-consumer/Testing/Temporary/LastTest.log",
+      "sha256": "d9b838b8a988ce738360cc94cf74124647b7503e7f841d447c426e2f0cff4121"
+    }
+  ]
+}

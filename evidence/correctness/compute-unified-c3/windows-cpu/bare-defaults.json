@@ -1,0 +1,56 @@
+[
+  {
+    "name": "install",
+    "argv": [
+      "cmake",
+      "-S",
+      "C:/public/project-hyle/hyle",
+      "-B",
+      "C:\\h7\\bare-defaults\\install",
+      "-G",
+      "Ninja",
+      "-DCMAKE_BUILD_TYPE=Release",
+      "-DHYLE_COMPONENTS=core",
+      "-DHYLE_INSTALL=ON"
+    ],
+    "returncode": 0,
+    "expected_tests": "OFF",
+    "pass": true
+  },
+  {
+    "name": "route-without-compute",
+    "argv": [
+      "cmake",
+      "-S",
+      "C:/public/project-hyle/hyle",
+      "-B",
+      "C:\\h7\\bare-defaults\\route-without-compute",
+      "-G",
+      "Ninja",
+      "-DCMAKE_BUILD_TYPE=Release",
+      "-DHYLE_COMPONENTS=core",
+      "-DHYLE_COMPUTE_ROUTES=cpu"
+    ],
+    "returncode": 0,
+    "expected_tests": "OFF",
+    "pass": true
+  },
+  {
+    "name": "explicit-maintenance",
+    "argv": [
+      "cmake",
+      "-S",
+      "C:/public/project-hyle/hyle",
+      "-B",
+      "C:\\h7\\bare-defaults\\explicit-maintenance",
+      "-G",
+      "Ninja",
+      "-DCMAKE_BUILD_TYPE=Release",
+      "-DHYLE_COMPONENTS=core",
+      "-DHYLE_BUILD_TESTS=ON"
+    ],
+    "returncode": 0,
+    "expected_tests": "ON",
+    "pass": true
+  }
+]

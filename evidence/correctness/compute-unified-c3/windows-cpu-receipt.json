@@ -1,0 +1,36 @@
+{
+  "scope": "Windows CPU source/static/shared Direct+Graph actual public math consumers; three explicit-shipping-default configuration cases",
+  "verdict": "PASS",
+  "files": [
+    {
+      "file": "evidence/correctness/compute-unified-c3/windows-cpu/source-build-ctest.log",
+      "sha256": "1b1817a74ed3b722ac93c3c353c350178b4cba02a34a9e57430619a63340e864"
+    },
+    {
+      "file": "evidence/correctness/compute-unified-c3/windows-cpu/shared-consumer-ctest.log",
+      "sha256": "8d50c86d1c590b8a9987952ba68d27d7e229e38b7c725b4bf37317432eb9ffbe"
+    },
+    {
+      "file": "evidence/correctness/compute-unified-c3/windows-cpu/shared-compute-consumer-ctest.log",
+      "sha256": "96b6e0b553076e3a462fdec045d30d9028c706dfd70f2f13409927e8f2d6f60d"
+    },
+    {
+      "file": "evidence/correctness/compute-unified-c3/windows-cpu/static-consumer-ctest.log",
+      "sha256": "d9b838b8a988ce738360cc94cf74124647b7503e7f841d447c426e2f0cff4121"
+    },
+    {
+      "file": "evidence/correctness/compute-unified-c3/windows-cpu/static-compute-consumer-ctest.log",
+      "sha256": "f132092a9deb3ba8712773ded5334e9ee9da775be1cb67723bf2967d1e901cbe"
+    },
+    {
+      "file": "evidence/correctness/compute-unified-c3/windows-cpu/shared-HyleConfig.cmake",
+      "sha256": "46f7aaf9d2feb20ed51f1ac2ef197c3de324f39a53d0b391d0ffbe27d49f03ac"
+    },
+    {
+      "file": "evidence/correctness/compute-unified-c3/windows-cpu/static-HyleConfig.cmake",
+      "sha256": "e149def077e36ed2b2f1d410ad4500e0deaf86651e994cdfa042f25aa8270420"
+    }
+  ],
+  "other_routes": "UNRUN",
+  "hybrid_async_expert": "UNIMPLEMENTED"
+}

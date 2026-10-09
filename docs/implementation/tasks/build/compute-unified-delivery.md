@@ -171,3 +171,8 @@ B1产品 `79137d31` 仅改变未显式给tests时的默认值。实际root Core�
 [review卡](../project/compute-routing-build-doc-review.md)。C3继续原已固定显式OFF批次，没有P1。
 最终产品候选更新为 `79137d31`（registry保存完整SHA）；只有默认参数行为变化，显式OFF批次
 继续保留自己的实际recipe/产品身份，最终归档区分原候选产物与新增配置取证，不伪造同tree复用。
+
+Windows CPU C3已实际完成：source/shared/static × Direct/Graph 六项正常数学消费者 PASS，
+共享/静态 SDK 搬迁、DLL EXE邻置及 shared export 检查通过。证据见
+[C3部分收据](../../../../evidence/correctness/compute-unified-c3/README.md)。
+CUDA进入下一个串行批次；其余平台/路线/mixed验收与H1–H3仍未签，模块继续CANDIDATE。

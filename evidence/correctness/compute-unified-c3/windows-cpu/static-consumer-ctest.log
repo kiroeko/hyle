@@ -1,0 +1,18 @@
+Start testing: Oct 09 23:41 中国标准时间
+----------------------------------------------------------
+1/1 Testing: hyle_package_graph_cpp
+1/1 Test: hyle_package_graph_cpp
+Command: "C:/h7/w-cpu/selected-graph/static-consumer/hyle_package_graph_cpp.exe"
+Directory: C:/h7/w-cpu/selected-graph/static-consumer
+"hyle_package_graph_cpp" start time: Oct 09 23:41 中国标准时间
+Output:
+----------------------------------------------------------
+<end of output>
+Test time =   0.87 sec
+----------------------------------------------------------
+Test Passed.
+"hyle_package_graph_cpp" end time: Oct 09 23:41 中国标准时间
+"hyle_package_graph_cpp" time elapsed: 00:00:00
+----------------------------------------------------------
+
+End testing: Oct 09 23:41 中国标准时间
