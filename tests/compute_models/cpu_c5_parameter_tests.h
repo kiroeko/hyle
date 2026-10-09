@@ -1,6 +1,12 @@
 #pragma once
-#if defined(HYLE_GGML_CPU_IQ1_EXTENSIONS) || defined(HYLE_GGML_CUDA_IQ1_EXTENSIONS)
-#if defined(HYLE_TEST_GRAPH_ROUTE_CUDA)
+#if defined(HYLE_GGML_CPU_IQ1_EXTENSIONS) || defined(HYLE_GGML_CUDA_IQ1_EXTENSIONS) || defined(HYLE_TEST_VULKAN_CATALOGUE)
+#if defined(HYLE_TEST_VULKAN_CATALOGUE) && defined(HYLE_TEST_GRAPH_ROUTE_VULKAN)
+#define HYLE_C5_PARAMETER_SUITE VulkanGraphCatalogueParameters
+#define HYLE_C5_DEEPSEEK_SUITE VulkanGraphCatalogueNewDeepSeek
+#elif defined(HYLE_TEST_VULKAN_CATALOGUE)
+#define HYLE_C5_PARAMETER_SUITE VulkanCatalogueParameters
+#define HYLE_C5_DEEPSEEK_SUITE VulkanCatalogueNewDeepSeek
+#elif defined(HYLE_TEST_GRAPH_ROUTE_CUDA)
 #define HYLE_C5_PARAMETER_SUITE CudaGraphC5Parameters
 #define HYLE_C5_DEEPSEEK_SUITE CudaGraphC5NewDeepSeek
 #elif defined(HYLE_C5_GGUF_DOT_REFERENCE)

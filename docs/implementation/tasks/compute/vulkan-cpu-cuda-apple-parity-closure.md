@@ -144,3 +144,8 @@ selected FP4/FP8、尾尺度与encoded MatMul、三QAT全有限BF16及资源/fin
 [结果及未验范围](vulkan-parity-v2-catalogue-matrix.md)。整体工程估计约38%，
 实现62,412行/267文件；继续559 GGUF/80参数/104身份与新状态sidecar，不重测
 本次已过矩阵，不签其它平台、三交付/default/P1。
+
+559实际GGUF合同与104精确身份的Windows两入口矩阵各560/560 PASS，
+[当前结果](vulkan-parity-v2-catalogue-matrix.md)，仍明示head分块/expert窗口；
+完整巨大银行驻留不能推导。原34/45两入口资格继承，整体约45%；剩余参数/state/
+最新MTP/DSpark与V3/V4仍未完成，GPU矩阵不因后续文档或fixture改动重复执行。

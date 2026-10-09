@@ -1,0 +1,74 @@
+{
+  "candidate": "08764fc4e1f0ee9749d351f46e1f4514ab887fdc",
+  "steps": [
+    {
+      "name": "direct-gguf",
+      "returncode": 0,
+      "filter": "CurrentDemand/VulkanCatalogueGguf.*:VulkanCatalogueGguf.All104ExactArtifactIdentitiesRunActualProjection",
+      "tests": {
+        "tests": "560",
+        "failures": "0",
+        "disabled": "0",
+        "errors": "0",
+        "time": "347.387",
+        "timestamp": "2026-10-09T13:51:51.334",
+        "name": "AllTests"
+      },
+      "validation_error": false,
+      "log": "gguf-08764fc4-direct-gguf.log",
+      "log_sha256": "6a74d2620980b5ce6a7bd7f9aaaa449546df6381caa18bbf9d76290002fb3a87",
+      "xml": "gguf-08764fc4-direct-gguf.xml",
+      "binary_sha256": "435595421859b52ae80060002a6fc05cf22db7b88e7ac244341acf5af3c891cb",
+      "adjacent_dlls": [
+        "hyle_compute.dll",
+        "hyle_compute_ggml_runtime.dll",
+        "hyle_compute_ops.dll",
+        "hyle_compute_provider_ggml_vulkan.dll",
+        "hyle_compute_provider_iree_vulkan.dll",
+        "hyle_compute_route_vulkan.dll",
+        "hyle_container.dll",
+        "hyle_error.dll",
+        "hyle_graph.dll",
+        "hyle_graph_route_vulkan.dll",
+        "hyle_mem.dll",
+        "hyle_platform.dll",
+        "hyle_time.dll"
+      ]
+    },
+    {
+      "name": "graph-gguf",
+      "returncode": 0,
+      "filter": "CurrentDemand/VulkanGraphCatalogueGguf.*:VulkanGraphCatalogueGguf.All104ExactArtifactIdentitiesRunActualProjection",
+      "tests": {
+        "tests": "560",
+        "failures": "0",
+        "disabled": "0",
+        "errors": "0",
+        "time": "282.178",
+        "timestamp": "2026-10-09T13:57:39.058",
+        "name": "AllTests"
+      },
+      "validation_error": false,
+      "log": "gguf-08764fc4-graph-gguf.log",
+      "log_sha256": "85666e4610a0feabe4f8705b9dc64629db7394b6482f10e080295a8fa2aed4f0",
+      "xml": "gguf-08764fc4-graph-gguf.xml",
+      "binary_sha256": "a94fc72780a74fe60d788faae75dfb0f6016f1652fb991b9cab88e7076c49deb",
+      "adjacent_dlls": [
+        "hyle_compute.dll",
+        "hyle_compute_ggml_runtime.dll",
+        "hyle_compute_ops.dll",
+        "hyle_compute_provider_ggml_vulkan.dll",
+        "hyle_compute_provider_iree_vulkan.dll",
+        "hyle_compute_route_vulkan.dll",
+        "hyle_container.dll",
+        "hyle_error.dll",
+        "hyle_graph.dll",
+        "hyle_graph_route_vulkan.dll",
+        "hyle_mem.dll",
+        "hyle_platform.dll",
+        "hyle_time.dll"
+      ]
+    }
+  ],
+  "scope": "actual559 GGUF contracts and104 exact identities; common head/expert windows; remaining parameters/current branches/platform/delivery/P1 unproven"
+}

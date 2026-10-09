@@ -75,3 +75,15 @@ GGUF首矩阵 `a3c3567f` 在原GPU oracle初始化处停止，尚无case PASS。
 锁定Vulkan运行时有原instance隔离补丁，直接vendor全局init没有激活owner而assert。
 只修测试oracle：创建既有NativeDevice、使用其backend和作用域包围原native调用/
 释放；不改runtime/产品/数学/门。定向原559/104矩阵一次，原80项不重跑。
+
+原GPU oracle作用域修正后 `08764fc4` Direct560/560、Graph560/560 PASS，
+每入口559实际GGUF合同与104精确身份，原head全行分块和expert window明示；
+无validation layer错，M3原grouped F32绑定取得实际宽度/IDs/重放资格。
+首失败不删；下一批只是80参数承载及最新main/state/MTP/DSpark，以上矩阵不重跑。
+
+新版状态/参数批已集中build：原C4 Pro0813/Flash0731 main、target/confidence/
+Markov、attention/cache、完整三stage DSpark；Qwen命名Q4 sidecar与Flash两
+sidecars；共同C5 convolution/Qwen实际attention/GDN/MTP/newGGUF主干消费者。
+只新增测试原Vulkan reference作用域与具名test宏分支；CPU/CUDA/Apple方程、
+普通产品和数学不变。原IREE dot→scale→add原序列的非融合定义预先固定；
+GPU实跑尚未完成，原560/80两入口结果不重复、不由原model版本代签最新版本。

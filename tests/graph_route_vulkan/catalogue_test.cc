@@ -1,6 +1,9 @@
 #define HYLE_TEST_GRAPH_ROUTE_VULKAN 1
 #include "../compute_route_vulkan/catalogue_test_support.h"
 #include "../compute_route_vulkan/catalogue_gguf_test_support.h"
+#include "../compute_route_vulkan/current_state_test_support.h"
+#include "../compute_route_vulkan/current_state_tests.h"
+#include "../compute_route_vulkan/catalogue_parameter_tests.h"
 
 namespace {
 class VulkanGraphCatalogueGguf : public ::testing::TestWithParam<cpu_c5_inputs::Case> {};

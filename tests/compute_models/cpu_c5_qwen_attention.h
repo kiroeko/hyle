@@ -1,5 +1,5 @@
 #pragma once
-#if defined(HYLE_GGML_CPU_IQ1_EXTENSIONS) || defined(HYLE_GGML_CUDA_IQ1_EXTENSIONS)
+#if defined(HYLE_GGML_CPU_IQ1_EXTENSIONS) || defined(HYLE_GGML_CUDA_IQ1_EXTENSIONS) || defined(HYLE_TEST_VULKAN_CATALOGUE)
 #include "cpu_c5_parameter_fragments.h"
 
 // Actual text-only qwen35moe GGUF post-projection region. All three MRoPE

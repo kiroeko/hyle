@@ -1,0 +1,1692 @@
+Running main() from C:\public\tools\hyle-dependencies\v1\sources\googletest-063de7e9578f-162765170ae6\googletest\src\gtest_main.cc
+Note: Google Test filter = CurrentDemand/VulkanGraphCatalogueGguf.*:VulkanGraphCatalogueGguf.All104ExactArtifactIdentitiesRunActualProjection
+[==========] Running 560 tests from 2 test suites.
+[----------] Global test environment set-up.
+[----------] 1 test from VulkanGraphCatalogueGguf
+[ RUN      ] VulkanGraphCatalogueGguf.All104ExactArtifactIdentitiesRunActualProjection
+[       OK ] VulkanGraphCatalogueGguf.All104ExactArtifactIdentitiesRunActualProjection (12097 ms)
+[----------] 1 test from VulkanGraphCatalogueGguf (12097 ms total)
+
+[----------] 559 tests from CurrentDemand/VulkanGraphCatalogueGguf
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g00125aaea3282755
+VULKAN_CATALOGUE_GGUF id=g00125aaea3282755 K=4096 N=2048 originalE=256 executedE=8
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g00125aaea3282755 (7269 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g00e02d8096b5f9b7
+VULKAN_CATALOGUE_GGUF id=g00e02d8096b5f9b7 K=1024 N=32768 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g00e02d8096b5f9b7 (170 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g01035bd562538a3e
+VULKAN_CATALOGUE_GGUF id=g01035bd562538a3e K=5120 N=12288 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g01035bd562538a3e (238 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g01805fcaf9c2a541
+VULKAN_CATALOGUE_GGUF id=g01805fcaf9c2a541 K=4096 N=154880 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g01805fcaf9c2a541 (5007 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g01fec23506b8ecba
+VULKAN_CATALOGUE_GGUF id=g01fec23506b8ecba K=2048 N=248320 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g01fec23506b8ecba (340 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g020d5a4a1cca0e66
+VULKAN_CATALOGUE_GGUF id=g020d5a4a1cca0e66 K=2048 N=4096 originalE=288 executedE=8
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g020d5a4a1cca0e66 (202 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g025bfeab2a2b4166
+VULKAN_CATALOGUE_GGUF id=g025bfeab2a2b4166 K=5120 N=6144 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g025bfeab2a2b4166 (380 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g0265d2a3a9612db8
+VULKAN_CATALOGUE_GGUF id=g0265d2a3a9612db8 K=5120 N=10240 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g0265d2a3a9612db8 (110 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g0271e71c79ea9d81
+VULKAN_CATALOGUE_GGUF id=g0271e71c79ea9d81 K=6144 N=32 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g0271e71c79ea9d81 (90 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g02bd4fddfcce6b30
+VULKAN_CATALOGUE_GGUF id=g02bd4fddfcce6b30 K=2048 N=512 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g02bd4fddfcce6b30 (83 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g033ae23672c4671a
+VULKAN_CATALOGUE_GGUF id=g033ae23672c4671a K=17408 N=5120 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g033ae23672c4671a (241 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g03e45cb4aff8a659
+VULKAN_CATALOGUE_GGUF id=g03e45cb4aff8a659 K=2048 N=2048 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g03e45cb4aff8a659 (93 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g0489c2eedc202f03
+VULKAN_CATALOGUE_GGUF id=g0489c2eedc202f03 K=2048 N=16384 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g0489c2eedc202f03 (109 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g049151d8f381b4a0
+VULKAN_CATALOGUE_GGUF id=g049151d8f381b4a0 K=2048 N=6144 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g049151d8f381b4a0 (214 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g04b07cbb1766f4b5
+VULKAN_CATALOGUE_GGUF id=g04b07cbb1766f4b5 K=5120 N=17408 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g04b07cbb1766f4b5 (104 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g04c2b6a183f62a26
+VULKAN_CATALOGUE_GGUF id=g04c2b6a183f62a26 K=2048 N=2048 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g04c2b6a183f62a26 (90 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g04e7c49fa8f912bf
+VULKAN_CATALOGUE_GGUF id=g04e7c49fa8f912bf K=2048 N=6144 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g04e7c49fa8f912bf (186 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g04ec619f845f032a
+VULKAN_CATALOGUE_GGUF id=g04ec619f845f032a K=17408 N=5120 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g04ec619f845f032a (120 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g05e7943e6a85af78
+VULKAN_CATALOGUE_GGUF id=g05e7943e6a85af78 K=2048 N=512 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g05e7943e6a85af78 (180 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g0601e7de91c5f4ec
+VULKAN_CATALOGUE_GGUF id=g0601e7de91c5f4ec K=128 N=12288 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g0601e7de91c5f4ec (137 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g06c4de633f4f367f
+VULKAN_CATALOGUE_GGUF id=g06c4de633f4f367f K=8192 N=4096 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g06c4de633f4f367f (111 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g06eb96803ace8d8d
+VULKAN_CATALOGUE_GGUF id=g06eb96803ace8d8d K=5120 N=10240 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g06eb96803ace8d8d (247 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g06fdfd5318f8a424
+VULKAN_CATALOGUE_GGUF id=g06fdfd5318f8a424 K=6144 N=5120 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g06fdfd5318f8a424 (11544 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g07095cff726cc5c5
+VULKAN_CATALOGUE_GGUF id=g07095cff726cc5c5 K=5120 N=10240 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g07095cff726cc5c5 (107 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g07a6985768ce2706
+VULKAN_CATALOGUE_GGUF id=g07a6985768ce2706 K=5120 N=1024 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g07a6985768ce2706 (84 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g08185e12167bfd04
+VULKAN_CATALOGUE_GGUF id=g08185e12167bfd04 K=4096 N=129280 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g08185e12167bfd04 (521 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g0871a309ef021d10
+VULKAN_CATALOGUE_GGUF id=g0871a309ef021d10 K=5120 N=12288 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g0871a309ef021d10 (180 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g09131d3868738326
+VULKAN_CATALOGUE_GGUF id=g09131d3868738326 K=4096 N=8192 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g09131d3868738326 (160 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g09361a4e124a9ad5
+VULKAN_CATALOGUE_GGUF id=g09361a4e124a9ad5 K=4096 N=128 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g09361a4e124a9ad5 (88 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g095f0f318cc45578
+VULKAN_CATALOGUE_GGUF id=g095f0f318cc45578 K=7168 N=3072 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g095f0f318cc45578 (90 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g0a69a5d5023feb1e
+VULKAN_CATALOGUE_GGUF id=g0a69a5d5023feb1e K=2048 N=6144 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g0a69a5d5023feb1e (86 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g0b6ee71961edeec0
+VULKAN_CATALOGUE_GGUF id=g0b6ee71961edeec0 K=5120 N=248320 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g0b6ee71961edeec0 (675 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g0bb39b7c28f3dee5
+VULKAN_CATALOGUE_GGUF id=g0bb39b7c28f3dee5 K=6144 N=2048 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g0bb39b7c28f3dee5 (96 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g0bbcfcf4731b6d22
+VULKAN_CATALOGUE_GGUF id=g0bbcfcf4731b6d22 K=6144 N=2048 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g0bbcfcf4731b6d22 (96 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g0bd1815eae37dc78
+VULKAN_CATALOGUE_GGUF id=g0bd1815eae37dc78 K=2048 N=8192 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g0bd1815eae37dc78 (87 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g0c0470fb1e95e423
+VULKAN_CATALOGUE_GGUF id=g0c0470fb1e95e423 K=4096 N=2048 originalE=288 executedE=8
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g0c0470fb1e95e423 (224 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g0cc1b76d58fde999
+VULKAN_CATALOGUE_GGUF id=g0cc1b76d58fde999 K=2048 N=4096 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g0cc1b76d58fde999 (87 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g0d00783d92ab8d62
+VULKAN_CATALOGUE_GGUF id=g0d00783d92ab8d62 K=16384 N=4096 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g0d00783d92ab8d62 (109 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g0d21f1a96cdc3248
+VULKAN_CATALOGUE_GGUF id=g0d21f1a96cdc3248 K=2048 N=2048 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g0d21f1a96cdc3248 (81 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g0d81623d258c79ee
+VULKAN_CATALOGUE_GGUF id=g0d81623d258c79ee K=4096 N=12288 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g0d81623d258c79ee (102 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g0df84de38855367f
+VULKAN_CATALOGUE_GGUF id=g0df84de38855367f K=4096 N=512 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g0df84de38855367f (132 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g0e29caa30b264d42
+VULKAN_CATALOGUE_GGUF id=g0e29caa30b264d42 K=2048 N=512 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g0e29caa30b264d42 (87 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g0ebfcca2c2c6dfc8
+VULKAN_CATALOGUE_GGUF id=g0ebfcca2c2c6dfc8 K=8192 N=1024 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g0ebfcca2c2c6dfc8 (84 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g0f7daff61b4e14ad
+VULKAN_CATALOGUE_GGUF id=g0f7daff61b4e14ad K=6144 N=2048 originalE=256 executedE=8
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g0f7daff61b4e14ad (129 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g0ff513dd4e7d38b7
+VULKAN_CATALOGUE_GGUF id=g0ff513dd4e7d38b7 K=7168 N=1536 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g0ff513dd4e7d38b7 (141 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g107a85c0fdeb4b76
+VULKAN_CATALOGUE_GGUF id=g107a85c0fdeb4b76 K=8192 N=20480 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g107a85c0fdeb4b76 (279 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g10c5d07b696aa62c
+VULKAN_CATALOGUE_GGUF id=g10c5d07b696aa62c K=8192 N=248320 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g10c5d07b696aa62c (5675 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g10e1af4a9c9f595a
+VULKAN_CATALOGUE_GGUF id=g10e1af4a9c9f595a K=6144 N=2048 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g10e1af4a9c9f595a (147 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g11378c413bae7f30
+VULKAN_CATALOGUE_GGUF id=g11378c413bae7f30 K=28672 N=4 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g11378c413bae7f30 (93 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g1184cb5736482bcf
+VULKAN_CATALOGUE_GGUF id=g1184cb5736482bcf K=4096 N=2048 originalE=288 executedE=8
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g1184cb5736482bcf (108 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g120af51586c2b6bb
+VULKAN_CATALOGUE_GGUF id=g120af51586c2b6bb K=2048 N=6144 originalE=256 executedE=8
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g120af51586c2b6bb (133 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g1302a81bec8d01cc
+VULKAN_CATALOGUE_GGUF id=g1302a81bec8d01cc K=4096 N=154880 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g1302a81bec8d01cc (5637 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g135a49c428793e92
+VULKAN_CATALOGUE_GGUF id=g135a49c428793e92 K=6144 N=5120 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g135a49c428793e92 (98 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g15185b7bebaf7291
+VULKAN_CATALOGUE_GGUF id=g15185b7bebaf7291 K=17408 N=5120 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g15185b7bebaf7291 (103 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g15339afdc4247e9d
+VULKAN_CATALOGUE_GGUF id=g15339afdc4247e9d K=2048 N=4096 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g15339afdc4247e9d (82 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g158ae185485aa8fb
+VULKAN_CATALOGUE_GGUF id=g158ae185485aa8fb K=17408 N=5120 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g158ae185485aa8fb (411 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g159ed4d903dd76fb
+VULKAN_CATALOGUE_GGUF id=g159ed4d903dd76fb K=2048 N=4096 originalE=288 executedE=8
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g159ed4d903dd76fb (123 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g15b767aa30ace3b6
+VULKAN_CATALOGUE_GGUF id=g15b767aa30ace3b6 K=17408 N=5120 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g15b767aa30ace3b6 (129 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g15db3b10f5a16632
+VULKAN_CATALOGUE_GGUF id=g15db3b10f5a16632 K=5120 N=12288 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g15db3b10f5a16632 (101 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g16e4533785f71a9b
+VULKAN_CATALOGUE_GGUF id=g16e4533785f71a9b K=6144 N=12288 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g16e4533785f71a9b (109 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g17ba5361bfb2a43c
+VULKAN_CATALOGUE_GGUF id=g17ba5361bfb2a43c K=8192 N=32768 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g17ba5361bfb2a43c (366 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g185807c796155b98
+VULKAN_CATALOGUE_GGUF id=g185807c796155b98 K=5120 N=12288 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g185807c796155b98 (1360 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g1a4668bf2430f374
+VULKAN_CATALOGUE_GGUF id=g1a4668bf2430f374 K=2048 N=248320 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g1a4668bf2430f374 (519 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g1a46c588e265e007
+VULKAN_CATALOGUE_GGUF id=g1a46c588e265e007 K=8192 N=2048 originalE=512 executedE=8
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g1a46c588e265e007 (431 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g1a8f7c89c95d9b99
+VULKAN_CATALOGUE_GGUF id=g1a8f7c89c95d9b99 K=5120 N=1024 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g1a8f7c89c95d9b99 (96 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g1abb7fdea8230384
+VULKAN_CATALOGUE_GGUF id=g1abb7fdea8230384 K=16384 N=6144 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g1abb7fdea8230384 (215 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g1b0a788786185dda
+VULKAN_CATALOGUE_GGUF id=g1b0a788786185dda K=2048 N=6144 originalE=256 executedE=8
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g1b0a788786185dda (120 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g1bb7bba63c20f72d
+VULKAN_CATALOGUE_GGUF id=g1bb7bba63c20f72d K=4096 N=12288 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g1bb7bba63c20f72d (99 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g1c3aab49330712a1
+VULKAN_CATALOGUE_GGUF id=g1c3aab49330712a1 K=2048 N=512 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g1c3aab49330712a1 (84 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g1c3b6300a3a6bcd1
+VULKAN_CATALOGUE_GGUF id=g1c3b6300a3a6bcd1 K=12288 N=4096 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g1c3b6300a3a6bcd1 (116 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g1c946f44a0bc9333
+VULKAN_CATALOGUE_GGUF id=g1c946f44a0bc9333 K=5120 N=1024 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g1c946f44a0bc9333 (88 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g1cad4d6b91b4a526
+VULKAN_CATALOGUE_GGUF id=g1cad4d6b91b4a526 K=3584 N=3072 originalE=896 executedE=8
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g1cad4d6b91b4a526 (192 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g1cd7007efedcd57c
+VULKAN_CATALOGUE_GGUF id=g1cd7007efedcd57c K=6144 N=2048 originalE=256 executedE=8
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g1cd7007efedcd57c (139 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g1db40ec6f3c95b0a
+VULKAN_CATALOGUE_GGUF id=g1db40ec6f3c95b0a K=6144 N=154880 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g1db40ec6f3c95b0a (900 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g1df23badd4fd7ff9
+VULKAN_CATALOGUE_GGUF id=g1df23badd4fd7ff9 K=5120 N=1024 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g1df23badd4fd7ff9 (139 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g1dfe76f91ff9f76b
+VULKAN_CATALOGUE_GGUF id=g1dfe76f91ff9f76b K=2048 N=6144 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g1dfe76f91ff9f76b (83 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g1ef9122f7f2249a8
+VULKAN_CATALOGUE_GGUF id=g1ef9122f7f2249a8 K=6144 N=2048 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g1ef9122f7f2249a8 (96 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g1f0f627f182b28f8
+VULKAN_CATALOGUE_GGUF id=g1f0f627f182b28f8 K=5120 N=6144 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g1f0f627f182b28f8 (95 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g215a77f9e65ba9bb
+VULKAN_CATALOGUE_GGUF id=g215a77f9e65ba9bb K=4096 N=8192 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g215a77f9e65ba9bb (89 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g21e73a30b744daf9
+VULKAN_CATALOGUE_GGUF id=g21e73a30b744daf9 K=4096 N=2048 originalE=288 executedE=8
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g21e73a30b744daf9 (525 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g23ad825726b30364
+VULKAN_CATALOGUE_GGUF id=g23ad825726b30364 K=5120 N=12288 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g23ad825726b30364 (2676 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g249eefb082db181c
+VULKAN_CATALOGUE_GGUF id=g249eefb082db181c K=2048 N=6144 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g249eefb082db181c (82 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g24e9c23f5c131662
+VULKAN_CATALOGUE_GGUF id=g24e9c23f5c131662 K=2048 N=4096 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g24e9c23f5c131662 (82 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g255a0091bfda5d3a
+VULKAN_CATALOGUE_GGUF id=g255a0091bfda5d3a K=5120 N=1024 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g255a0091bfda5d3a (157 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g2568c115c191fa67
+VULKAN_CATALOGUE_GGUF id=g2568c115c191fa67 K=128 N=512 originalE=96 executedE=96
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g2568c115c191fa67 (249 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g258fe88c07b5c086
+VULKAN_CATALOGUE_GGUF id=g258fe88c07b5c086 K=2048 N=6144 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g258fe88c07b5c086 (143 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g25d1521dad0e3d16
+VULKAN_CATALOGUE_GGUF id=g25d1521dad0e3d16 K=16384 N=4096 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g25d1521dad0e3d16 (116 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g26081bbded6186fc
+VULKAN_CATALOGUE_GGUF id=g26081bbded6186fc K=8192 N=128 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g26081bbded6186fc (87 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g262f4a978876b76f
+VULKAN_CATALOGUE_GGUF id=g262f4a978876b76f K=12288 N=7168 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g262f4a978876b76f (199 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g2647e8e4be504eac
+VULKAN_CATALOGUE_GGUF id=g2647e8e4be504eac K=128 N=8192 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g2647e8e4be504eac (91 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g2666b21c054f442b
+VULKAN_CATALOGUE_GGUF id=g2666b21c054f442b K=4096 N=2048 originalE=256 executedE=8
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g2666b21c054f442b (252 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g27a9f9d6ccdbb6de
+VULKAN_CATALOGUE_GGUF id=g27a9f9d6ccdbb6de K=17408 N=5120 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g27a9f9d6ccdbb6de (287 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g281def5a74391750
+VULKAN_CATALOGUE_GGUF id=g281def5a74391750 K=4096 N=129280 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g281def5a74391750 (255 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g28824779993573b5
+VULKAN_CATALOGUE_GGUF id=g28824779993573b5 K=5120 N=10240 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g28824779993573b5 (425 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g291119cbef7a92f8
+VULKAN_CATALOGUE_GGUF id=g291119cbef7a92f8 K=1024 N=4 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g291119cbef7a92f8 (94 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g2a555db39b4c0d03
+VULKAN_CATALOGUE_GGUF id=g2a555db39b4c0d03 K=6144 N=576 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g2a555db39b4c0d03 (136 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g2aa472107f145205
+VULKAN_CATALOGUE_GGUF id=g2aa472107f145205 K=6144 N=2048 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g2aa472107f145205 (91 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g2ab40a3d8060c8d2
+VULKAN_CATALOGUE_GGUF id=g2ab40a3d8060c8d2 K=6144 N=2048 originalE=256 executedE=8
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g2ab40a3d8060c8d2 (180 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g2bd2c6dd45e9c06c
+VULKAN_CATALOGUE_GGUF id=g2bd2c6dd45e9c06c K=2048 N=4096 originalE=288 executedE=8
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g2bd2c6dd45e9c06c (187 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g2c2fccfb9c73b581
+VULKAN_CATALOGUE_GGUF id=g2c2fccfb9c73b581 K=16384 N=4 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g2c2fccfb9c73b581 (91 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g2d2fdcbb8c2f4112
+VULKAN_CATALOGUE_GGUF id=g2d2fdcbb8c2f4112 K=28672 N=24 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g2d2fdcbb8c2f4112 (102 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g2d5bfdf98c58d053
+VULKAN_CATALOGUE_GGUF id=g2d5bfdf98c58d053 K=5120 N=10240 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g2d5bfdf98c58d053 (247 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g2da4404768d45036
+VULKAN_CATALOGUE_GGUF id=g2da4404768d45036 K=5120 N=1024 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g2da4404768d45036 (90 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g2de98322f47106fc
+VULKAN_CATALOGUE_GGUF id=g2de98322f47106fc K=6144 N=2048 originalE=256 executedE=8
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g2de98322f47106fc (117 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g2df751f640bc7c34
+VULKAN_CATALOGUE_GGUF id=g2df751f640bc7c34 K=5120 N=248320 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g2df751f640bc7c34 (5723 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g2e3e5fff242dd80b
+VULKAN_CATALOGUE_GGUF id=g2e3e5fff242dd80b K=12288 N=4096 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g2e3e5fff242dd80b (99 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g2e668b812d9d6ee5
+VULKAN_CATALOGUE_GGUF id=g2e668b812d9d6ee5 K=4096 N=2048 originalE=256 executedE=8
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g2e668b812d9d6ee5 (110 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g2e6e7c48ef8471e2
+VULKAN_CATALOGUE_GGUF id=g2e6e7c48ef8471e2 K=6144 N=12288 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g2e6e7c48ef8471e2 (110 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g2f1c98c39a8ea698
+VULKAN_CATALOGUE_GGUF id=g2f1c98c39a8ea698 K=33792 N=7168 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g2f1c98c39a8ea698 (363 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g2f5852da42ab06ae
+VULKAN_CATALOGUE_GGUF id=g2f5852da42ab06ae K=5120 N=1024 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g2f5852da42ab06ae (105 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g2f948e5bf5e68a7c
+VULKAN_CATALOGUE_GGUF id=g2f948e5bf5e68a7c K=4096 N=2048 originalE=288 executedE=8
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g2f948e5bf5e68a7c (188 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g2fcad3816188464a
+VULKAN_CATALOGUE_GGUF id=g2fcad3816188464a K=6 N=129280 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g2fcad3816188464a (101 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g2ff770594fc462a5
+VULKAN_CATALOGUE_GGUF id=g2ff770594fc462a5 K=16384 N=6144 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g2ff770594fc462a5 (116 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g3083483ce6e7c1dd
+VULKAN_CATALOGUE_GGUF id=g3083483ce6e7c1dd K=8192 N=32768 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g3083483ce6e7c1dd (178 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g316e4801b7c444e9
+VULKAN_CATALOGUE_GGUF id=g316e4801b7c444e9 K=2048 N=248320 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g316e4801b7c444e9 (549 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g31c8ad421082479d
+VULKAN_CATALOGUE_GGUF id=g31c8ad421082479d K=8192 N=2048 originalE=512 executedE=8
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g31c8ad421082479d (158 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g32cbf0039fa5c639
+VULKAN_CATALOGUE_GGUF id=g32cbf0039fa5c639 K=5120 N=12288 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g32cbf0039fa5c639 (164 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g32e7eab1bd33c76e
+VULKAN_CATALOGUE_GGUF id=g32e7eab1bd33c76e K=1536 N=18432 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g32e7eab1bd33c76e (115 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g33062296d1ddf498
+VULKAN_CATALOGUE_GGUF id=g33062296d1ddf498 K=4096 N=2048 originalE=288 executedE=8
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g33062296d1ddf498 (138 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g33a6735bbf373ee8
+VULKAN_CATALOGUE_GGUF id=g33a6735bbf373ee8 K=6144 N=12288 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g33a6735bbf373ee8 (123 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g343fa776dceb49f9
+VULKAN_CATALOGUE_GGUF id=g343fa776dceb49f9 K=2048 N=6144 originalE=256 executedE=8
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g343fa776dceb49f9 (120 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g3508f9a7c40a0614
+VULKAN_CATALOGUE_GGUF id=g3508f9a7c40a0614 K=7168 N=12288 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g3508f9a7c40a0614 (111 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g355b22fb71c75902
+VULKAN_CATALOGUE_GGUF id=g355b22fb71c75902 K=3584 N=7168 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g355b22fb71c75902 (102 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g3560f36d25c826bd
+VULKAN_CATALOGUE_GGUF id=g3560f36d25c826bd K=2048 N=4096 originalE=288 executedE=8
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g3560f36d25c826bd (112 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g35817f668d9e9727
+VULKAN_CATALOGUE_GGUF id=g35817f668d9e9727 K=4096 N=1536 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g35817f668d9e9727 (83 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g36326ef5c4393865
+VULKAN_CATALOGUE_GGUF id=g36326ef5c4393865 K=16384 N=24 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g36326ef5c4393865 (86 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g3633725453bb3ef0
+VULKAN_CATALOGUE_GGUF id=g3633725453bb3ef0 K=2048 N=512 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g3633725453bb3ef0 (81 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g367fbca9185184f7
+VULKAN_CATALOGUE_GGUF id=g367fbca9185184f7 K=7168 N=3584 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g367fbca9185184f7 (159 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g3684aa54b7870770
+VULKAN_CATALOGUE_GGUF id=g3684aa54b7870770 K=16384 N=4096 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g3684aa54b7870770 (109 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g36ca62ddd953a1af
+VULKAN_CATALOGUE_GGUF id=g36ca62ddd953a1af K=2048 N=6144 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g36ca62ddd953a1af (91 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g36e28e4aeeac1b1f
+VULKAN_CATALOGUE_GGUF id=g36e28e4aeeac1b1f K=2048 N=8192 originalE=512 executedE=8
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g36e28e4aeeac1b1f (237 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g3790571cdeb4effe
+VULKAN_CATALOGUE_GGUF id=g3790571cdeb4effe K=4096 N=64 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g3790571cdeb4effe (155 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g37ff520ec9c935b0
+VULKAN_CATALOGUE_GGUF id=g37ff520ec9c935b0 K=17408 N=5120 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g37ff520ec9c935b0 (158 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g3853b774141cdf7a
+VULKAN_CATALOGUE_GGUF id=g3853b774141cdf7a K=1536 N=8192 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g3853b774141cdf7a (143 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g38d46169ba90451d
+VULKAN_CATALOGUE_GGUF id=g38d46169ba90451d K=7168 N=163840 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g38d46169ba90451d (630 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g38e2cc41d8de6c76
+VULKAN_CATALOGUE_GGUF id=g38e2cc41d8de6c76 K=6144 N=2048 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g38e2cc41d8de6c76 (85 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g38e698e60856690e
+VULKAN_CATALOGUE_GGUF id=g38e698e60856690e K=5120 N=248320 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g38e698e60856690e (5386 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g395cdd5a9062e045
+VULKAN_CATALOGUE_GGUF id=g395cdd5a9062e045 K=4096 N=129280 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g395cdd5a9062e045 (216 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g39fe3c01d152b05e
+VULKAN_CATALOGUE_GGUF id=g39fe3c01d152b05e K=5120 N=10240 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g39fe3c01d152b05e (102 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g3aaa161033452486
+VULKAN_CATALOGUE_GGUF id=g3aaa161033452486 K=6144 N=7168 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g3aaa161033452486 (104 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g3b45141a9613408a
+VULKAN_CATALOGUE_GGUF id=g3b45141a9613408a K=2048 N=6144 originalE=256 executedE=8
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g3b45141a9613408a (195 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g3cd087458a5562ae
+VULKAN_CATALOGUE_GGUF id=g3cd087458a5562ae K=6144 N=5120 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g3cd087458a5562ae (105 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g3d40feb062aa1720
+VULKAN_CATALOGUE_GGUF id=g3d40feb062aa1720 K=5120 N=6144 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g3d40feb062aa1720 (93 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g3d5a2d99b52bffb5
+VULKAN_CATALOGUE_GGUF id=g3d5a2d99b52bffb5 K=3072 N=3584 originalE=896 executedE=8
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g3d5a2d99b52bffb5 (152 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g3d98a356719fec32
+VULKAN_CATALOGUE_GGUF id=g3d98a356719fec32 K=4096 N=2048 originalE=288 executedE=8
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g3d98a356719fec32 (116 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g3dadc1c1fada2aba
+VULKAN_CATALOGUE_GGUF id=g3dadc1c1fada2aba K=16384 N=8192 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g3dadc1c1fada2aba (150 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g3dce76bf34e611cc
+VULKAN_CATALOGUE_GGUF id=g3dce76bf34e611cc K=4096 N=32 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g3dce76bf34e611cc (92 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g3e1459315c761d9c
+VULKAN_CATALOGUE_GGUF id=g3e1459315c761d9c K=128 N=8192 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g3e1459315c761d9c (131 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g3e3795fd618f678d
+VULKAN_CATALOGUE_GGUF id=g3e3795fd618f678d K=8192 N=2048 originalE=512 executedE=8
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g3e3795fd618f678d (127 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g3e688836b99572c7
+VULKAN_CATALOGUE_GGUF id=g3e688836b99572c7 K=6144 N=2048 originalE=256 executedE=8
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g3e688836b99572c7 (133 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g3ece52052eed66ed
+VULKAN_CATALOGUE_GGUF id=g3ece52052eed66ed K=2048 N=4096 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g3ece52052eed66ed (124 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g3f1c1783ac0bd649
+VULKAN_CATALOGUE_GGUF id=g3f1c1783ac0bd649 K=2048 N=6144 originalE=256 executedE=8
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g3f1c1783ac0bd649 (141 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g3f5fa0e1cc4833ff
+VULKAN_CATALOGUE_GGUF id=g3f5fa0e1cc4833ff K=8192 N=1024 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g3f5fa0e1cc4833ff (162 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g3ff2f7f4106bdfce
+VULKAN_CATALOGUE_GGUF id=g3ff2f7f4106bdfce K=2048 N=6144 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g3ff2f7f4106bdfce (528 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g406c43af70061b8a
+VULKAN_CATALOGUE_GGUF id=g406c43af70061b8a K=6144 N=2048 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g406c43af70061b8a (90 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g40a0a7b6612a1e1c
+VULKAN_CATALOGUE_GGUF id=g40a0a7b6612a1e1c K=6144 N=5120 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g40a0a7b6612a1e1c (94 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g4310986fb8a81767
+VULKAN_CATALOGUE_GGUF id=g4310986fb8a81767 K=512 N=128 originalE=96 executedE=96
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g4310986fb8a81767 (276 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g431ff0245f3c805c
+VULKAN_CATALOGUE_GGUF id=g431ff0245f3c805c K=2048 N=4096 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g431ff0245f3c805c (380 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g4451d99002df5d78
+VULKAN_CATALOGUE_GGUF id=g4451d99002df5d78 K=5120 N=12288 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g4451d99002df5d78 (103 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g456d0cb4418faebb
+VULKAN_CATALOGUE_GGUF id=g456d0cb4418faebb K=6144 N=2048 originalE=256 executedE=8
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g456d0cb4418faebb (184 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g45cfb01de98c79ad
+VULKAN_CATALOGUE_GGUF id=g45cfb01de98c79ad K=16384 N=4096 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g45cfb01de98c79ad (199 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g4616b24a00d79747
+VULKAN_CATALOGUE_GGUF id=g4616b24a00d79747 K=8192 N=16384 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g4616b24a00d79747 (133 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g46611c47f58d0d31
+VULKAN_CATALOGUE_GGUF id=g46611c47f58d0d31 K=5120 N=17408 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g46611c47f58d0d31 (102 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g466cf695e90910b9
+VULKAN_CATALOGUE_GGUF id=g466cf695e90910b9 K=7168 N=6144 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g466cf695e90910b9 (97 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g4677d3e109f687c4
+VULKAN_CATALOGUE_GGUF id=g4677d3e109f687c4 K=17408 N=5120 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g4677d3e109f687c4 (106 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g46da0e5c536771d6
+VULKAN_CATALOGUE_GGUF id=g46da0e5c536771d6 K=4096 N=129280 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g46da0e5c536771d6 (2712 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g473fbe6b8806a34b
+VULKAN_CATALOGUE_GGUF id=g473fbe6b8806a34b K=5120 N=17408 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g473fbe6b8806a34b (164 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g47dd661ec977c2e5
+VULKAN_CATALOGUE_GGUF id=g47dd661ec977c2e5 K=16384 N=24 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g47dd661ec977c2e5 (95 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g47e5effbd42e8548
+VULKAN_CATALOGUE_GGUF id=g47e5effbd42e8548 K=6144 N=2048 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g47e5effbd42e8548 (87 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g4860b87d61eac35c
+VULKAN_CATALOGUE_GGUF id=g4860b87d61eac35c K=4096 N=2048 originalE=288 executedE=8
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g4860b87d61eac35c (184 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g48cc75ad554394cb
+VULKAN_CATALOGUE_GGUF id=g48cc75ad554394cb K=2048 N=512 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g48cc75ad554394cb (86 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g48ed393367eb8b5c
+VULKAN_CATALOGUE_GGUF id=g48ed393367eb8b5c K=7168 N=33792 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g48ed393367eb8b5c (159 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g49206e64df152f53
+VULKAN_CATALOGUE_GGUF id=g49206e64df152f53 K=5120 N=17408 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g49206e64df152f53 (103 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g4a0d3c4cef1dd2f6
+VULKAN_CATALOGUE_GGUF id=g4a0d3c4cef1dd2f6 K=8192 N=248320 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g4a0d3c4cef1dd2f6 (9898 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g4af80ed2c524e853
+VULKAN_CATALOGUE_GGUF id=g4af80ed2c524e853 K=5120 N=17408 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g4af80ed2c524e853 (110 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g4b4c9775f80d24f3
+VULKAN_CATALOGUE_GGUF id=g4b4c9775f80d24f3 K=5120 N=10240 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g4b4c9775f80d24f3 (193 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g4b4c98ac1f02717f
+VULKAN_CATALOGUE_GGUF id=g4b4c98ac1f02717f K=5120 N=6144 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g4b4c98ac1f02717f (91 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g4c2f031269d6004c
+VULKAN_CATALOGUE_GGUF id=g4c2f031269d6004c K=5120 N=248320 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g4c2f031269d6004c (9356 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g4d6af5e24ec44e1e
+VULKAN_CATALOGUE_GGUF id=g4d6af5e24ec44e1e K=2048 N=4096 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g4d6af5e24ec44e1e (92 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g4ddeee45fdde3c4d
+VULKAN_CATALOGUE_GGUF id=g4ddeee45fdde3c4d K=7168 N=96 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g4ddeee45fdde3c4d (137 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g4e6871cae9e3d771
+VULKAN_CATALOGUE_GGUF id=g4e6871cae9e3d771 K=5120 N=10240 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g4e6871cae9e3d771 (97 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g4e9e5a1609dbdce8
+VULKAN_CATALOGUE_GGUF id=g4e9e5a1609dbdce8 K=4096 N=2048 originalE=288 executedE=8
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g4e9e5a1609dbdce8 (114 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g4ebd92653b71c8c9
+VULKAN_CATALOGUE_GGUF id=g4ebd92653b71c8c9 K=5120 N=12288 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g4ebd92653b71c8c9 (98 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g4f2628c7bc95602d
+VULKAN_CATALOGUE_GGUF id=g4f2628c7bc95602d K=2048 N=6144 originalE=256 executedE=8
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g4f2628c7bc95602d (116 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g50111b9451912e93
+VULKAN_CATALOGUE_GGUF id=g50111b9451912e93 K=2048 N=4096 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g50111b9451912e93 (83 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g50c01af288425ed2
+VULKAN_CATALOGUE_GGUF id=g50c01af288425ed2 K=2048 N=2048 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g50c01af288425ed2 (85 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g5115f566b0868df7
+VULKAN_CATALOGUE_GGUF id=g5115f566b0868df7 K=7168 N=576 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g5115f566b0868df7 (84 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g5223f165f895a315
+VULKAN_CATALOGUE_GGUF id=g5223f165f895a315 K=4096 N=129280 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g5223f165f895a315 (270 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g524b3cc6dd625a33
+VULKAN_CATALOGUE_GGUF id=g524b3cc6dd625a33 K=2048 N=6144 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g524b3cc6dd625a33 (94 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g52a7200343a83447
+VULKAN_CATALOGUE_GGUF id=g52a7200343a83447 K=2048 N=248320 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g52a7200343a83447 (260 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g538832e90cf302d9
+VULKAN_CATALOGUE_GGUF id=g538832e90cf302d9 K=8192 N=512 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g538832e90cf302d9 (111 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g539e7e0c42d143b6
+VULKAN_CATALOGUE_GGUF id=g539e7e0c42d143b6 K=2048 N=4096 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g539e7e0c42d143b6 (79 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g54f36262fee0c295
+VULKAN_CATALOGUE_GGUF id=g54f36262fee0c295 K=3584 N=3072 originalE=896 executedE=8
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g54f36262fee0c295 (128 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g55727109a70d1512
+VULKAN_CATALOGUE_GGUF id=g55727109a70d1512 K=5120 N=17408 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g55727109a70d1512 (103 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g55820b596f326016
+VULKAN_CATALOGUE_GGUF id=g55820b596f326016 K=8192 N=2048 originalE=512 executedE=8
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g55820b596f326016 (135 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g5624555286dc00e2
+VULKAN_CATALOGUE_GGUF id=g5624555286dc00e2 K=7168 N=3584 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g5624555286dc00e2 (87 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g563528af0b7b4dbd
+VULKAN_CATALOGUE_GGUF id=g563528af0b7b4dbd K=2048 N=2048 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g563528af0b7b4dbd (171 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g56bb2a45a2c37fa1
+VULKAN_CATALOGUE_GGUF id=g56bb2a45a2c37fa1 K=3072 N=3584 originalE=896 executedE=8
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g56bb2a45a2c37fa1 (116 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g57da38b144a9c6ff
+VULKAN_CATALOGUE_GGUF id=g57da38b144a9c6ff K=5120 N=6144 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g57da38b144a9c6ff (96 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g59aa656440ad320c
+VULKAN_CATALOGUE_GGUF id=g59aa656440ad320c K=8192 N=16384 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g59aa656440ad320c (254 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g59bf8a30bf125c3b
+VULKAN_CATALOGUE_GGUF id=g59bf8a30bf125c3b K=4096 N=154880 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g59bf8a30bf125c3b (251 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g5a9658bf4bb3440b
+VULKAN_CATALOGUE_GGUF id=g5a9658bf4bb3440b K=7168 N=3072 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g5a9658bf4bb3440b (153 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g5ab93ef6f90ef4c8
+VULKAN_CATALOGUE_GGUF id=g5ab93ef6f90ef4c8 K=6144 N=7168 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g5ab93ef6f90ef4c8 (175 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g5bac4323103ea431
+VULKAN_CATALOGUE_GGUF id=g5bac4323103ea431 K=3072 N=3584 originalE=896 executedE=8
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g5bac4323103ea431 (127 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g5bc50b96d93f881d
+VULKAN_CATALOGUE_GGUF id=g5bc50b96d93f881d K=512 N=256 originalE=64 executedE=64
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g5bc50b96d93f881d (215 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g5c4992a439258f36
+VULKAN_CATALOGUE_GGUF id=g5c4992a439258f36 K=5120 N=1024 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g5c4992a439258f36 (92 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g5ca169dda315bf6e
+VULKAN_CATALOGUE_GGUF id=g5ca169dda315bf6e K=7168 N=896 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g5ca169dda315bf6e (128 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g5cd05db993c402e8
+VULKAN_CATALOGUE_GGUF id=g5cd05db993c402e8 K=17408 N=5120 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g5cd05db993c402e8 (117 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g5d4178a84aafb6d9
+VULKAN_CATALOGUE_GGUF id=g5d4178a84aafb6d9 K=7168 N=129280 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g5d4178a84aafb6d9 (5229 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g5d5c2c0938850c37
+VULKAN_CATALOGUE_GGUF id=g5d5c2c0938850c37 K=6144 N=128 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g5d5c2c0938850c37 (134 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g5d7f8f335fcd0962
+VULKAN_CATALOGUE_GGUF id=g5d7f8f335fcd0962 K=7168 N=12288 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g5d7f8f335fcd0962 (213 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g5d83eb68ea347ff9
+VULKAN_CATALOGUE_GGUF id=g5d83eb68ea347ff9 K=8192 N=20480 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g5d83eb68ea347ff9 (161 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g5e4d4bd4f33152aa
+VULKAN_CATALOGUE_GGUF id=g5e4d4bd4f33152aa K=8192 N=2048 originalE=512 executedE=8
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g5e4d4bd4f33152aa (215 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g5e81f3bbceb10c65
+VULKAN_CATALOGUE_GGUF id=g5e81f3bbceb10c65 K=4096 N=2048 originalE=288 executedE=8
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g5e81f3bbceb10c65 (109 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g5efbf251fdfffc31
+VULKAN_CATALOGUE_GGUF id=g5efbf251fdfffc31 K=6144 N=5120 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g5efbf251fdfffc31 (96 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g5f0ff53d63866ab1
+VULKAN_CATALOGUE_GGUF id=g5f0ff53d63866ab1 K=7168 N=256 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g5f0ff53d63866ab1 (150 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g5f2b5dd939288873
+VULKAN_CATALOGUE_GGUF id=g5f2b5dd939288873 K=8192 N=2048 originalE=512 executedE=8
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g5f2b5dd939288873 (150 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g5f5e130ec7eb90b5
+VULKAN_CATALOGUE_GGUF id=g5f5e130ec7eb90b5 K=5120 N=48 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g5f5e130ec7eb90b5 (144 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g602bac503f977d1c
+VULKAN_CATALOGUE_GGUF id=g602bac503f977d1c K=256 N=512 originalE=64 executedE=64
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g602bac503f977d1c (127 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g6048f0be473fd889
+VULKAN_CATALOGUE_GGUF id=g6048f0be473fd889 K=5120 N=6144 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g6048f0be473fd889 (104 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g606210070bcfd622
+VULKAN_CATALOGUE_GGUF id=g606210070bcfd622 K=6144 N=5120 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g606210070bcfd622 (103 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g60da362a17009ca8
+VULKAN_CATALOGUE_GGUF id=g60da362a17009ca8 K=6144 N=154880 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g60da362a17009ca8 (3415 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g6195d0c14b44a1d0
+VULKAN_CATALOGUE_GGUF id=g6195d0c14b44a1d0 K=5120 N=6144 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g6195d0c14b44a1d0 (92 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g61d808e47b86184b
+VULKAN_CATALOGUE_GGUF id=g61d808e47b86184b K=4096 N=64 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g61d808e47b86184b (99 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g622621995063bd82
+VULKAN_CATALOGUE_GGUF id=g622621995063bd82 K=5120 N=48 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g622621995063bd82 (78 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g624120d2e7d8c9e3
+VULKAN_CATALOGUE_GGUF id=g624120d2e7d8c9e3 K=4096 N=1536 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g624120d2e7d8c9e3 (139 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g62ffef3e0fb3e18b
+VULKAN_CATALOGUE_GGUF id=g62ffef3e0fb3e18b K=5120 N=12288 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g62ffef3e0fb3e18b (96 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g63080c7baeb7038c
+VULKAN_CATALOGUE_GGUF id=g63080c7baeb7038c K=5120 N=12288 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g63080c7baeb7038c (92 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g635c77433acc4866
+VULKAN_CATALOGUE_GGUF id=g635c77433acc4866 K=2048 N=6144 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g635c77433acc4866 (80 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g63849d4a40ba2714
+VULKAN_CATALOGUE_GGUF id=g63849d4a40ba2714 K=5120 N=248320 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g63849d4a40ba2714 (5359 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g641200859f3ef6f0
+VULKAN_CATALOGUE_GGUF id=g641200859f3ef6f0 K=6144 N=5120 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g641200859f3ef6f0 (96 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g64b2778601fdfff0
+VULKAN_CATALOGUE_GGUF id=g64b2778601fdfff0 K=2048 N=16 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g64b2778601fdfff0 (91 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g64b649142b8fea00
+VULKAN_CATALOGUE_GGUF id=g64b649142b8fea00 K=3072 N=3584 originalE=896 executedE=8
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g64b649142b8fea00 (138 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g656f90ddceb8c63e
+VULKAN_CATALOGUE_GGUF id=g656f90ddceb8c63e K=6144 N=5120 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g656f90ddceb8c63e (107 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g66ae1db62c6ddc0b
+VULKAN_CATALOGUE_GGUF id=g66ae1db62c6ddc0b K=7168 N=6144 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g66ae1db62c6ddc0b (175 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g67726d00dbb43297
+VULKAN_CATALOGUE_GGUF id=g67726d00dbb43297 K=3584 N=3072 originalE=896 executedE=8
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g67726d00dbb43297 (138 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g67c58a8e90432579
+VULKAN_CATALOGUE_GGUF id=g67c58a8e90432579 K=2048 N=512 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g67c58a8e90432579 (86 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g67ef7d138690ea08
+VULKAN_CATALOGUE_GGUF id=g67ef7d138690ea08 K=17408 N=5120 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g67ef7d138690ea08 (165 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g6a292ed9a5666e57
+VULKAN_CATALOGUE_GGUF id=g6a292ed9a5666e57 K=8192 N=128 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g6a292ed9a5666e57 (134 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g6aed68bda5bc81d1
+VULKAN_CATALOGUE_GGUF id=g6aed68bda5bc81d1 K=2048 N=6144 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g6aed68bda5bc81d1 (93 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g6b2d86d3dc909725
+VULKAN_CATALOGUE_GGUF id=g6b2d86d3dc909725 K=2048 N=512 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g6b2d86d3dc909725 (84 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g6d0ee7c70b7a7254
+VULKAN_CATALOGUE_GGUF id=g6d0ee7c70b7a7254 K=4096 N=2048 originalE=256 executedE=8
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g6d0ee7c70b7a7254 (114 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g6df2aecab146318d
+VULKAN_CATALOGUE_GGUF id=g6df2aecab146318d K=7168 N=163840 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g6df2aecab146318d (6451 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g6e5411768aa515ee
+VULKAN_CATALOGUE_GGUF id=g6e5411768aa515ee K=4096 N=129280 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g6e5411768aa515ee (2882 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g6e76569d54c69ff7
+VULKAN_CATALOGUE_GGUF id=g6e76569d54c69ff7 K=2048 N=6144 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g6e76569d54c69ff7 (84 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g6eb1346ca8c91f2e
+VULKAN_CATALOGUE_GGUF id=g6eb1346ca8c91f2e K=7168 N=6144 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g6eb1346ca8c91f2e (103 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g6ed385ece93ad8a6
+VULKAN_CATALOGUE_GGUF id=g6ed385ece93ad8a6 K=7168 N=163840 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g6ed385ece93ad8a6 (1094 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g702cba8c3b1ca1aa
+VULKAN_CATALOGUE_GGUF id=g702cba8c3b1ca1aa K=8192 N=2048 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g702cba8c3b1ca1aa (89 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g70a08f1e814d1ec3
+VULKAN_CATALOGUE_GGUF id=g70a08f1e814d1ec3 K=6144 N=576 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g70a08f1e814d1ec3 (84 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g70bd0e252e8428ee
+VULKAN_CATALOGUE_GGUF id=g70bd0e252e8428ee K=6144 N=5120 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g70bd0e252e8428ee (95 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g7162981aebd0abe4
+VULKAN_CATALOGUE_GGUF id=g7162981aebd0abe4 K=2048 N=512 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g7162981aebd0abe4 (90 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g717fc257511a722a
+VULKAN_CATALOGUE_GGUF id=g717fc257511a722a K=3072 N=3584 originalE=896 executedE=8
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g717fc257511a722a (120 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g726d5f561bacef09
+VULKAN_CATALOGUE_GGUF id=g726d5f561bacef09 K=16384 N=7168 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g726d5f561bacef09 (232 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g72a91505b8f77bfe
+VULKAN_CATALOGUE_GGUF id=g72a91505b8f77bfe K=2048 N=6144 originalE=256 executedE=8
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g72a91505b8f77bfe (131 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g72b56205d8c9ad2b
+VULKAN_CATALOGUE_GGUF id=g72b56205d8c9ad2b K=5120 N=17408 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g72b56205d8c9ad2b (101 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g72db31699076b2c1
+VULKAN_CATALOGUE_GGUF id=g72db31699076b2c1 K=2048 N=8192 originalE=512 executedE=8
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g72db31699076b2c1 (134 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g7324c2cfddb9fc08
+VULKAN_CATALOGUE_GGUF id=g7324c2cfddb9fc08 K=17408 N=5120 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g7324c2cfddb9fc08 (122 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g73dbcf34a6bcca23
+VULKAN_CATALOGUE_GGUF id=g73dbcf34a6bcca23 K=7168 N=163840 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g73dbcf34a6bcca23 (3798 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g7559ad0a885a6edc
+VULKAN_CATALOGUE_GGUF id=g7559ad0a885a6edc K=6144 N=2048 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g7559ad0a885a6edc (99 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g7559e4f2f317c1da
+VULKAN_CATALOGUE_GGUF id=g7559e4f2f317c1da K=6144 N=5120 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g7559e4f2f317c1da (92 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g75fe78e54f7cf8db
+VULKAN_CATALOGUE_GGUF id=g75fe78e54f7cf8db K=7168 N=33792 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g75fe78e54f7cf8db (203 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g76c25fa96e7c9f91
+VULKAN_CATALOGUE_GGUF id=g76c25fa96e7c9f91 K=4096 N=16384 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g76c25fa96e7c9f91 (250 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g76f7b182ce3e3b6e
+VULKAN_CATALOGUE_GGUF id=g76f7b182ce3e3b6e K=4096 N=154880 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g76f7b182ce3e3b6e (480 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g771263db8f86f81b
+VULKAN_CATALOGUE_GGUF id=g771263db8f86f81b K=6144 N=154880 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g771263db8f86f81b (8314 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g778b8505a8a580e3
+VULKAN_CATALOGUE_GGUF id=g778b8505a8a580e3 K=2048 N=4096 originalE=288 executedE=8
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g778b8505a8a580e3 (114 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g77a635b55664287f
+VULKAN_CATALOGUE_GGUF id=g77a635b55664287f K=6144 N=5120 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g77a635b55664287f (162 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g77c6207da9dd84f6
+VULKAN_CATALOGUE_GGUF id=g77c6207da9dd84f6 K=2048 N=16 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g77c6207da9dd84f6 (157 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g781ca9a5a4036cec
+VULKAN_CATALOGUE_GGUF id=g781ca9a5a4036cec K=5120 N=12288 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g781ca9a5a4036cec (140 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g78341f86eaa7a06b
+VULKAN_CATALOGUE_GGUF id=g78341f86eaa7a06b K=6144 N=5120 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g78341f86eaa7a06b (119 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g787c5666be0c78e5
+VULKAN_CATALOGUE_GGUF id=g787c5666be0c78e5 K=5120 N=1024 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g787c5666be0c78e5 (132 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g788b4b0bf1c933ae
+VULKAN_CATALOGUE_GGUF id=g788b4b0bf1c933ae K=4096 N=256 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g788b4b0bf1c933ae (174 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g78aa69d5a3222c2a
+VULKAN_CATALOGUE_GGUF id=g78aa69d5a3222c2a K=6144 N=2048 originalE=256 executedE=8
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g78aa69d5a3222c2a (148 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g79186ac59ffbccec
+VULKAN_CATALOGUE_GGUF id=g79186ac59ffbccec K=7168 N=128 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g79186ac59ffbccec (90 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g794426d0b6d5aa7d
+VULKAN_CATALOGUE_GGUF id=g794426d0b6d5aa7d K=4096 N=288 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g794426d0b6d5aa7d (140 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g7ab96bdaac383906
+VULKAN_CATALOGUE_GGUF id=g7ab96bdaac383906 K=5120 N=10240 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g7ab96bdaac383906 (118 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g7af42fab08d6ca4d
+VULKAN_CATALOGUE_GGUF id=g7af42fab08d6ca4d K=4096 N=129280 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g7af42fab08d6ca4d (474 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g7b10c0b29a75937f
+VULKAN_CATALOGUE_GGUF id=g7b10c0b29a75937f K=6144 N=154880 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g7b10c0b29a75937f (483 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g7bc50abcbc9c7ba8
+VULKAN_CATALOGUE_GGUF id=g7bc50abcbc9c7ba8 K=2048 N=512 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g7bc50abcbc9c7ba8 (103 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g7be6f59665a8f0f2
+VULKAN_CATALOGUE_GGUF id=g7be6f59665a8f0f2 K=6144 N=154880 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g7be6f59665a8f0f2 (429 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g7c032149b0b80d45
+VULKAN_CATALOGUE_GGUF id=g7c032149b0b80d45 K=6144 N=2048 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g7c032149b0b80d45 (745 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g7cb09b0750a60bb5
+VULKAN_CATALOGUE_GGUF id=g7cb09b0750a60bb5 K=6144 N=2048 originalE=256 executedE=8
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g7cb09b0750a60bb5 (215 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g7d1199d2e0b1739e
+VULKAN_CATALOGUE_GGUF id=g7d1199d2e0b1739e K=6144 N=2048 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g7d1199d2e0b1739e (145 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g7d1b783af19a6d13
+VULKAN_CATALOGUE_GGUF id=g7d1b783af19a6d13 K=7168 N=256 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g7d1b783af19a6d13 (139 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g7dbcb2b0bab1ac0d
+VULKAN_CATALOGUE_GGUF id=g7dbcb2b0bab1ac0d K=3072 N=7168 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g7dbcb2b0bab1ac0d (161 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g7df80878dd2c5970
+VULKAN_CATALOGUE_GGUF id=g7df80878dd2c5970 K=3072 N=3584 originalE=896 executedE=8
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g7df80878dd2c5970 (179 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g7eb7534afd57db10
+VULKAN_CATALOGUE_GGUF id=g7eb7534afd57db10 K=3072 N=3584 originalE=896 executedE=8
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g7eb7534afd57db10 (186 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g7f2da86691126654
+VULKAN_CATALOGUE_GGUF id=g7f2da86691126654 K=2048 N=16384 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g7f2da86691126654 (221 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g7f54483f2a2a6ece
+VULKAN_CATALOGUE_GGUF id=g7f54483f2a2a6ece K=5120 N=17408 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g7f54483f2a2a6ece (167 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g80c35be8d1aed6d1
+VULKAN_CATALOGUE_GGUF id=g80c35be8d1aed6d1 K=16384 N=7168 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g80c35be8d1aed6d1 (173 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g80d5d1325cc09981
+VULKAN_CATALOGUE_GGUF id=g80d5d1325cc09981 K=3072 N=3584 originalE=896 executedE=8
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g80d5d1325cc09981 (170 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g815ffc47686cbbb6
+VULKAN_CATALOGUE_GGUF id=g815ffc47686cbbb6 K=7168 N=33792 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g815ffc47686cbbb6 (463 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g823930bf19efadfd
+VULKAN_CATALOGUE_GGUF id=g823930bf19efadfd K=5120 N=1024 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g823930bf19efadfd (163 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g8339ba4c5ae49e39
+VULKAN_CATALOGUE_GGUF id=g8339ba4c5ae49e39 K=4096 N=16384 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g8339ba4c5ae49e39 (159 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g83db196c244cf022
+VULKAN_CATALOGUE_GGUF id=g83db196c244cf022 K=1536 N=65536 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g83db196c244cf022 (181 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g84ab11cc7286b44a
+VULKAN_CATALOGUE_GGUF id=g84ab11cc7286b44a K=8192 N=4096 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g84ab11cc7286b44a (171 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g85a355c852a1293f
+VULKAN_CATALOGUE_GGUF id=g85a355c852a1293f K=6144 N=2048 originalE=256 executedE=8
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g85a355c852a1293f (215 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g866e328d605d0abe
+VULKAN_CATALOGUE_GGUF id=g866e328d605d0abe K=5120 N=248320 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g866e328d605d0abe (459 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g867a95aaa466bdaf
+VULKAN_CATALOGUE_GGUF id=g867a95aaa466bdaf K=5120 N=12288 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g867a95aaa466bdaf (919 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g8696d20c58ce8742
+VULKAN_CATALOGUE_GGUF id=g8696d20c58ce8742 K=4096 N=64 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g8696d20c58ce8742 (131 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g87467a9466f2fbcd
+VULKAN_CATALOGUE_GGUF id=g87467a9466f2fbcd K=4096 N=2048 originalE=288 executedE=8
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g87467a9466f2fbcd (184 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g874d4629daa2d39e
+VULKAN_CATALOGUE_GGUF id=g874d4629daa2d39e K=6144 N=5120 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g874d4629daa2d39e (158 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g87a842766b68979f
+VULKAN_CATALOGUE_GGUF id=g87a842766b68979f K=7168 N=1536 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g87a842766b68979f (133 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g882a87526b05c380
+VULKAN_CATALOGUE_GGUF id=g882a87526b05c380 K=6144 N=32 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g882a87526b05c380 (135 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g895c611bfa1aa144
+VULKAN_CATALOGUE_GGUF id=g895c611bfa1aa144 K=7168 N=512 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g895c611bfa1aa144 (199 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g8a26e6beeb066ac4
+VULKAN_CATALOGUE_GGUF id=g8a26e6beeb066ac4 K=4096 N=154880 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g8a26e6beeb066ac4 (890 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g8ad4b55658779e82
+VULKAN_CATALOGUE_GGUF id=g8ad4b55658779e82 K=33792 N=7168 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g8ad4b55658779e82 (266 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g8bdef9b87ae5f2a3
+VULKAN_CATALOGUE_GGUF id=g8bdef9b87ae5f2a3 K=17408 N=5120 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g8bdef9b87ae5f2a3 (146 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g8be4fda71e8695c1
+VULKAN_CATALOGUE_GGUF id=g8be4fda71e8695c1 K=8192 N=128 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g8be4fda71e8695c1 (90 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g8bfb0b4f2aea98bf
+VULKAN_CATALOGUE_GGUF id=g8bfb0b4f2aea98bf K=5120 N=6144 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g8bfb0b4f2aea98bf (136 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g8c16dcee17cf9908
+VULKAN_CATALOGUE_GGUF id=g8c16dcee17cf9908 K=8192 N=4096 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g8c16dcee17cf9908 (179 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g8c7b35b6d3cfc941
+VULKAN_CATALOGUE_GGUF id=g8c7b35b6d3cfc941 K=6144 N=2048 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g8c7b35b6d3cfc941 (164 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g8c8e6b505f8b7dee
+VULKAN_CATALOGUE_GGUF id=g8c8e6b505f8b7dee K=5120 N=48 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g8c8e6b505f8b7dee (187 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g8d9ba57385e7836d
+VULKAN_CATALOGUE_GGUF id=g8d9ba57385e7836d K=128 N=512 originalE=96 executedE=96
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g8d9ba57385e7836d (178 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g8dd9ab1f82649ecb
+VULKAN_CATALOGUE_GGUF id=g8dd9ab1f82649ecb K=12288 N=4096 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g8dd9ab1f82649ecb (241 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g90276d1a86bbf084
+VULKAN_CATALOGUE_GGUF id=g90276d1a86bbf084 K=8192 N=2048 originalE=512 executedE=8
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g90276d1a86bbf084 (171 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g909005978669ece8
+VULKAN_CATALOGUE_GGUF id=g909005978669ece8 K=10240 N=5120 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g909005978669ece8 (183 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g91c84bcb9c8ab61a
+VULKAN_CATALOGUE_GGUF id=g91c84bcb9c8ab61a K=8192 N=1024 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g91c84bcb9c8ab61a (128 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g91d3d8c9f5386f27
+VULKAN_CATALOGUE_GGUF id=g91d3d8c9f5386f27 K=7168 N=128 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g91d3d8c9f5386f27 (83 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g92073071a28d877e
+VULKAN_CATALOGUE_GGUF id=g92073071a28d877e K=5120 N=12288 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g92073071a28d877e (136 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g9243e9e0f356bb2d
+VULKAN_CATALOGUE_GGUF id=g9243e9e0f356bb2d K=4096 N=2048 originalE=256 executedE=8
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g9243e9e0f356bb2d (187 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g928be938b4e3b0a7
+VULKAN_CATALOGUE_GGUF id=g928be938b4e3b0a7 K=2048 N=8192 originalE=512 executedE=8
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g928be938b4e3b0a7 (228 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g928bf6ce5a12f293
+VULKAN_CATALOGUE_GGUF id=g928bf6ce5a12f293 K=3584 N=3072 originalE=896 executedE=8
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g928bf6ce5a12f293 (202 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g92b81a6de1360969
+VULKAN_CATALOGUE_GGUF id=g92b81a6de1360969 K=5120 N=17408 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g92b81a6de1360969 (167 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g92d7bbff0d13a24b
+VULKAN_CATALOGUE_GGUF id=g92d7bbff0d13a24b K=4096 N=1536 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g92d7bbff0d13a24b (140 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g933745c93683dfa6
+VULKAN_CATALOGUE_GGUF id=g933745c93683dfa6 K=5120 N=6144 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g933745c93683dfa6 (175 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g938bcf88666f5aa4
+VULKAN_CATALOGUE_GGUF id=g938bcf88666f5aa4 K=5120 N=17408 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g938bcf88666f5aa4 (270 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g93c422e0de2c820e
+VULKAN_CATALOGUE_GGUF id=g93c422e0de2c820e K=2048 N=4096 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g93c422e0de2c820e (117 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g948a74d7508f441a
+VULKAN_CATALOGUE_GGUF id=g948a74d7508f441a K=1024 N=32768 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g948a74d7508f441a (226 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g94932729ca787716
+VULKAN_CATALOGUE_GGUF id=g94932729ca787716 K=5120 N=248320 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g94932729ca787716 (7593 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g94d728c86275d6bb
+VULKAN_CATALOGUE_GGUF id=g94d728c86275d6bb K=4096 N=2048 originalE=288 executedE=8
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g94d728c86275d6bb (125 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g95c0db87f1b16a1c
+VULKAN_CATALOGUE_GGUF id=g95c0db87f1b16a1c K=6144 N=5120 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g95c0db87f1b16a1c (127 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g95d04430f22114e5
+VULKAN_CATALOGUE_GGUF id=g95d04430f22114e5 K=4096 N=256 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g95d04430f22114e5 (109 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g96d273ac40041b97
+VULKAN_CATALOGUE_GGUF id=g96d273ac40041b97 K=512 N=128 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g96d273ac40041b97 (118 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g96d96909e5c7bf1b
+VULKAN_CATALOGUE_GGUF id=g96d96909e5c7bf1b K=3584 N=7168 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g96d96909e5c7bf1b (114 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g9842f7448d9b35e5
+VULKAN_CATALOGUE_GGUF id=g9842f7448d9b35e5 K=1536 N=65536 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g9842f7448d9b35e5 (357 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g986a545ca4d91187
+VULKAN_CATALOGUE_GGUF id=g986a545ca4d91187 K=5120 N=248320 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g986a545ca4d91187 (587 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g98ed00768ae43b69
+VULKAN_CATALOGUE_GGUF id=g98ed00768ae43b69 K=6144 N=2048 originalE=256 executedE=8
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g98ed00768ae43b69 (186 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g99bb98b6cc1c48ec
+VULKAN_CATALOGUE_GGUF id=g99bb98b6cc1c48ec K=7168 N=163840 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g99bb98b6cc1c48ec (647 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g9a3668e2b06ce0bf
+VULKAN_CATALOGUE_GGUF id=g9a3668e2b06ce0bf K=10240 N=5120 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g9a3668e2b06ce0bf (122 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g9a5050e92b42110f
+VULKAN_CATALOGUE_GGUF id=g9a5050e92b42110f K=7168 N=1024 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g9a5050e92b42110f (119 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g9aaf667c1aa3ad4d
+VULKAN_CATALOGUE_GGUF id=g9aaf667c1aa3ad4d K=3584 N=3072 originalE=896 executedE=8
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g9aaf667c1aa3ad4d (139 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g9ab32a9e9d2ba706
+VULKAN_CATALOGUE_GGUF id=g9ab32a9e9d2ba706 K=2048 N=4096 originalE=256 executedE=8
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g9ab32a9e9d2ba706 (116 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g9b706452ee14e510
+VULKAN_CATALOGUE_GGUF id=g9b706452ee14e510 K=5120 N=1024 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g9b706452ee14e510 (143 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g9bd2a2d62dfdc963
+VULKAN_CATALOGUE_GGUF id=g9bd2a2d62dfdc963 K=2048 N=512 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g9bd2a2d62dfdc963 (84 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g9c0c51b9d42cad86
+VULKAN_CATALOGUE_GGUF id=g9c0c51b9d42cad86 K=4096 N=2048 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g9c0c51b9d42cad86 (125 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g9c2cec6d467d3446
+VULKAN_CATALOGUE_GGUF id=g9c2cec6d467d3446 K=7168 N=129280 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g9c2cec6d467d3446 (1264 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g9c661cbdcb45fc05
+VULKAN_CATALOGUE_GGUF id=g9c661cbdcb45fc05 K=4096 N=2048 originalE=288 executedE=8
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g9c661cbdcb45fc05 (150 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g9cb7ffdb120fea88
+VULKAN_CATALOGUE_GGUF id=g9cb7ffdb120fea88 K=3072 N=7168 originalE=384 executedE=8
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g9cb7ffdb120fea88 (177 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g9d504e80cbfefb7f
+VULKAN_CATALOGUE_GGUF id=g9d504e80cbfefb7f K=8192 N=248320 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g9d504e80cbfefb7f (1417 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g9db18c935cff072f
+VULKAN_CATALOGUE_GGUF id=g9db18c935cff072f K=4096 N=2048 originalE=256 executedE=8
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g9db18c935cff072f (214 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g9dd27b58cd9f3388
+VULKAN_CATALOGUE_GGUF id=g9dd27b58cd9f3388 K=2048 N=2048 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g9dd27b58cd9f3388 (131 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g9e2b2e4f1be96db6
+VULKAN_CATALOGUE_GGUF id=g9e2b2e4f1be96db6 K=8192 N=248320 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g9e2b2e4f1be96db6 (810 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g9e30e831a98aad2b
+VULKAN_CATALOGUE_GGUF id=g9e30e831a98aad2b K=6144 N=2048 originalE=256 executedE=8
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g9e30e831a98aad2b (207 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g9e41a3e695e6e409
+VULKAN_CATALOGUE_GGUF id=g9e41a3e695e6e409 K=7168 N=3584 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g9e41a3e695e6e409 (134 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g9e4bbe139a148cc5
+VULKAN_CATALOGUE_GGUF id=g9e4bbe139a148cc5 K=10240 N=5120 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g9e4bbe139a148cc5 (224 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g9e5fba022d25692a
+VULKAN_CATALOGUE_GGUF id=g9e5fba022d25692a K=4096 N=2048 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g9e5fba022d25692a (129 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g9e668b60cb173e83
+VULKAN_CATALOGUE_GGUF id=g9e668b60cb173e83 K=512 N=128 originalE=96 executedE=96
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g9e668b60cb173e83 (180 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g9e66f1143070f349
+VULKAN_CATALOGUE_GGUF id=g9e66f1143070f349 K=4096 N=512 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g9e66f1143070f349 (159 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g9e9e831f27223588
+VULKAN_CATALOGUE_GGUF id=g9e9e831f27223588 K=2048 N=6144 originalE=256 executedE=8
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g9e9e831f27223588 (182 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g9f66853590925f1c
+VULKAN_CATALOGUE_GGUF id=g9f66853590925f1c K=17408 N=5120 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/g9f66853590925f1c (128 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/ga050ea94c77e8d6a
+VULKAN_CATALOGUE_GGUF id=ga050ea94c77e8d6a K=4096 N=8192 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/ga050ea94c77e8d6a (159 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/ga106ecb3f035661b
+VULKAN_CATALOGUE_GGUF id=ga106ecb3f035661b K=6144 N=2048 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/ga106ecb3f035661b (128 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/ga16cab810d380485
+VULKAN_CATALOGUE_GGUF id=ga16cab810d380485 K=6144 N=32 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/ga16cab810d380485 (149 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/ga187f722b4d87eb3
+VULKAN_CATALOGUE_GGUF id=ga187f722b4d87eb3 K=2048 N=4096 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/ga187f722b4d87eb3 (92 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/ga1b54ab5c4b0f0d1
+VULKAN_CATALOGUE_GGUF id=ga1b54ab5c4b0f0d1 K=6144 N=2048 originalE=256 executedE=8
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/ga1b54ab5c4b0f0d1 (150 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/ga297626a8a430173
+VULKAN_CATALOGUE_GGUF id=ga297626a8a430173 K=6144 N=5120 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/ga297626a8a430173 (119 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/ga2b6a6b523c2feab
+VULKAN_CATALOGUE_GGUF id=ga2b6a6b523c2feab K=4096 N=1024 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/ga2b6a6b523c2feab (124 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/ga2bc6343f0eb56e9
+VULKAN_CATALOGUE_GGUF id=ga2bc6343f0eb56e9 K=5120 N=17408 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/ga2bc6343f0eb56e9 (239 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/ga2be3eedcbdb56e2
+VULKAN_CATALOGUE_GGUF id=ga2be3eedcbdb56e2 K=3072 N=3584 originalE=896 executedE=8
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/ga2be3eedcbdb56e2 (233 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/ga310c38520e0aa26
+VULKAN_CATALOGUE_GGUF id=ga310c38520e0aa26 K=2048 N=8192 originalE=512 executedE=8
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/ga310c38520e0aa26 (188 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/ga3182557f51b9086
+VULKAN_CATALOGUE_GGUF id=ga3182557f51b9086 K=4096 N=1024 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/ga3182557f51b9086 (124 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/ga3521e9eda0f9d3b
+VULKAN_CATALOGUE_GGUF id=ga3521e9eda0f9d3b K=4096 N=129280 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/ga3521e9eda0f9d3b (6406 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/ga387b662e5a549d5
+VULKAN_CATALOGUE_GGUF id=ga387b662e5a549d5 K=4096 N=2048 originalE=256 executedE=8
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/ga387b662e5a549d5 (196 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/ga42b14eafb6a4844
+VULKAN_CATALOGUE_GGUF id=ga42b14eafb6a4844 K=4096 N=1536 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/ga42b14eafb6a4844 (135 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/ga464bb4cd5995c56
+VULKAN_CATALOGUE_GGUF id=ga464bb4cd5995c56 K=5120 N=17408 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/ga464bb4cd5995c56 (177 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/ga49e218909672b6d
+VULKAN_CATALOGUE_GGUF id=ga49e218909672b6d K=7168 N=1536 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/ga49e218909672b6d (148 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/ga524ce1dfe673c75
+VULKAN_CATALOGUE_GGUF id=ga524ce1dfe673c75 K=6144 N=256 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/ga524ce1dfe673c75 (154 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/ga5657615f19c4386
+VULKAN_CATALOGUE_GGUF id=ga5657615f19c4386 K=5120 N=10240 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/ga5657615f19c4386 (140 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/ga57d16a02e1fb400
+VULKAN_CATALOGUE_GGUF id=ga57d16a02e1fb400 K=5120 N=1024 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/ga57d16a02e1fb400 (104 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/ga5ebd3ecae344292
+VULKAN_CATALOGUE_GGUF id=ga5ebd3ecae344292 K=8192 N=2048 originalE=512 executedE=8
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/ga5ebd3ecae344292 (158 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/ga62cbaf1daea5dfc
+VULKAN_CATALOGUE_GGUF id=ga62cbaf1daea5dfc K=5120 N=10240 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/ga62cbaf1daea5dfc (167 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/ga692bfb6abc9e765
+VULKAN_CATALOGUE_GGUF id=ga692bfb6abc9e765 K=4096 N=12288 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/ga692bfb6abc9e765 (241 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/ga702c90b3cebb5d0
+VULKAN_CATALOGUE_GGUF id=ga702c90b3cebb5d0 K=4096 N=128 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/ga702c90b3cebb5d0 (161 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/ga714aef102c0d21c
+VULKAN_CATALOGUE_GGUF id=ga714aef102c0d21c K=2048 N=2048 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/ga714aef102c0d21c (160 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/ga846e3d718ee259b
+VULKAN_CATALOGUE_GGUF id=ga846e3d718ee259b K=8192 N=248320 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/ga846e3d718ee259b (8790 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/ga8651be271cfb8ec
+VULKAN_CATALOGUE_GGUF id=ga8651be271cfb8ec K=5120 N=17408 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/ga8651be271cfb8ec (150 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/ga89a385d8ffa0cda
+VULKAN_CATALOGUE_GGUF id=ga89a385d8ffa0cda K=7168 N=384 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/ga89a385d8ffa0cda (170 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/ga8add34e4047dba0
+VULKAN_CATALOGUE_GGUF id=ga8add34e4047dba0 K=6144 N=2048 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/ga8add34e4047dba0 (132 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/ga983d02c1ae01e40
+VULKAN_CATALOGUE_GGUF id=ga983d02c1ae01e40 K=2048 N=8192 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/ga983d02c1ae01e40 (164 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gaac85c3f51f94f74
+VULKAN_CATALOGUE_GGUF id=gaac85c3f51f94f74 K=2048 N=2048 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gaac85c3f51f94f74 (165 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gab63d2e43c8c290f
+VULKAN_CATALOGUE_GGUF id=gab63d2e43c8c290f K=5120 N=17408 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gab63d2e43c8c290f (180 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gab79d297a17e1746
+VULKAN_CATALOGUE_GGUF id=gab79d297a17e1746 K=5120 N=248320 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gab79d297a17e1746 (793 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gac4915293564c302
+VULKAN_CATALOGUE_GGUF id=gac4915293564c302 K=2048 N=2048 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gac4915293564c302 (160 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gac599cd90d880574
+VULKAN_CATALOGUE_GGUF id=gac599cd90d880574 K=6144 N=154880 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gac599cd90d880574 (4998 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gac816ca77adba612
+VULKAN_CATALOGUE_GGUF id=gac816ca77adba612 K=256 N=4 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gac816ca77adba612 (146 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gac94ec1bf56a019b
+VULKAN_CATALOGUE_GGUF id=gac94ec1bf56a019b K=5120 N=6144 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gac94ec1bf56a019b (190 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gac9e8fd15af1884b
+VULKAN_CATALOGUE_GGUF id=gac9e8fd15af1884b K=6144 N=5120 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gac9e8fd15af1884b (121 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gacf44a6396133a0a
+VULKAN_CATALOGUE_GGUF id=gacf44a6396133a0a K=2048 N=512 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gacf44a6396133a0a (96 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gad7d2c848480ca39
+VULKAN_CATALOGUE_GGUF id=gad7d2c848480ca39 K=1536 N=16384 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gad7d2c848480ca39 (250 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gad9506f5887fe543
+VULKAN_CATALOGUE_GGUF id=gad9506f5887fe543 K=5120 N=248320 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gad9506f5887fe543 (603 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gad957b5af47de62d
+VULKAN_CATALOGUE_GGUF id=gad957b5af47de62d K=16384 N=24 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gad957b5af47de62d (201 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gade1d3c968644ef3
+VULKAN_CATALOGUE_GGUF id=gade1d3c968644ef3 K=2048 N=2048 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gade1d3c968644ef3 (123 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gaf0a728ca3ccd829
+VULKAN_CATALOGUE_GGUF id=gaf0a728ca3ccd829 K=4096 N=2048 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gaf0a728ca3ccd829 (208 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gaf4f98823a4ff46b
+VULKAN_CATALOGUE_GGUF id=gaf4f98823a4ff46b K=12288 N=6144 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gaf4f98823a4ff46b (182 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gaf6f99c25b5eefda
+VULKAN_CATALOGUE_GGUF id=gaf6f99c25b5eefda K=2048 N=512 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gaf6f99c25b5eefda (142 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gafaf5a772238391c
+VULKAN_CATALOGUE_GGUF id=gafaf5a772238391c K=7168 N=1024 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gafaf5a772238391c (205 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gb0537de90fd43049
+VULKAN_CATALOGUE_GGUF id=gb0537de90fd43049 K=128 N=4 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gb0537de90fd43049 (146 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gb16cf5de3f54020b
+VULKAN_CATALOGUE_GGUF id=gb16cf5de3f54020b K=5120 N=1024 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gb16cf5de3f54020b (168 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gb174491132bb3ae9
+VULKAN_CATALOGUE_GGUF id=gb174491132bb3ae9 K=2048 N=2048 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gb174491132bb3ae9 (133 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gb1a1b9933fe24340
+VULKAN_CATALOGUE_GGUF id=gb1a1b9933fe24340 K=5120 N=10240 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gb1a1b9933fe24340 (159 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gb1e362061797691f
+VULKAN_CATALOGUE_GGUF id=gb1e362061797691f K=17408 N=5120 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gb1e362061797691f (172 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gb1fd414d7401eeae
+VULKAN_CATALOGUE_GGUF id=gb1fd414d7401eeae K=17408 N=5120 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gb1fd414d7401eeae (229 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gb2676f0521e2c011
+VULKAN_CATALOGUE_GGUF id=gb2676f0521e2c011 K=6144 N=154880 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gb2676f0521e2c011 (5129 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gb329de786028aaba
+VULKAN_CATALOGUE_GGUF id=gb329de786028aaba K=6144 N=2048 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gb329de786028aaba (131 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gb32bae7826cad7a4
+VULKAN_CATALOGUE_GGUF id=gb32bae7826cad7a4 K=16384 N=8192 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gb32bae7826cad7a4 (338 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gb3839cd7a67d8b9e
+VULKAN_CATALOGUE_GGUF id=gb3839cd7a67d8b9e K=5120 N=10240 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gb3839cd7a67d8b9e (223 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gb385250d022da1ea
+VULKAN_CATALOGUE_GGUF id=gb385250d022da1ea K=6144 N=2048 originalE=256 executedE=8
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gb385250d022da1ea (138 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gb5389f62d370dd86
+VULKAN_CATALOGUE_GGUF id=gb5389f62d370dd86 K=4096 N=129280 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gb5389f62d370dd86 (3972 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gb5954d4f5bb321cb
+VULKAN_CATALOGUE_GGUF id=gb5954d4f5bb321cb K=2048 N=8192 originalE=512 executedE=8
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gb5954d4f5bb321cb (176 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gb60aa5095000c24a
+VULKAN_CATALOGUE_GGUF id=gb60aa5095000c24a K=8192 N=2048 originalE=512 executedE=8
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gb60aa5095000c24a (182 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gb62dde7975a55b7d
+VULKAN_CATALOGUE_GGUF id=gb62dde7975a55b7d K=2048 N=4096 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gb62dde7975a55b7d (85 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gb6c1312cc57abe91
+VULKAN_CATALOGUE_GGUF id=gb6c1312cc57abe91 K=3584 N=3072 originalE=896 executedE=8
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gb6c1312cc57abe91 (124 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gb6e0961b4cdb758f
+VULKAN_CATALOGUE_GGUF id=gb6e0961b4cdb758f K=6144 N=2048 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gb6e0961b4cdb758f (107 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gb7405b7a1436f21f
+VULKAN_CATALOGUE_GGUF id=gb7405b7a1436f21f K=6144 N=5120 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gb7405b7a1436f21f (113 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gb80d9577953bffc0
+VULKAN_CATALOGUE_GGUF id=gb80d9577953bffc0 K=2048 N=6144 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gb80d9577953bffc0 (141 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gb84e4c900b507325
+VULKAN_CATALOGUE_GGUF id=gb84e4c900b507325 K=16384 N=8192 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gb84e4c900b507325 (153 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gb8fa771702a06987
+VULKAN_CATALOGUE_GGUF id=gb8fa771702a06987 K=6144 N=128 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gb8fa771702a06987 (86 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gb8fca96e7eb5572a
+VULKAN_CATALOGUE_GGUF id=gb8fca96e7eb5572a K=2048 N=4096 originalE=288 executedE=8
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gb8fca96e7eb5572a (241 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gb90e888a8a050feb
+VULKAN_CATALOGUE_GGUF id=gb90e888a8a050feb K=33792 N=7168 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gb90e888a8a050feb (344 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gb912dc9a3f2a0055
+VULKAN_CATALOGUE_GGUF id=gb912dc9a3f2a0055 K=192 N=512 originalE=64 executedE=64
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gb912dc9a3f2a0055 (147 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gb973bd9839628aae
+VULKAN_CATALOGUE_GGUF id=gb973bd9839628aae K=2048 N=8192 originalE=512 executedE=8
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gb973bd9839628aae (189 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gba36a02747ff998a
+VULKAN_CATALOGUE_GGUF id=gba36a02747ff998a K=2048 N=4096 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gba36a02747ff998a (126 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gbad5d8a886c1ba78
+VULKAN_CATALOGUE_GGUF id=gbad5d8a886c1ba78 K=5120 N=17408 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gbad5d8a886c1ba78 (189 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gbad8b7a23af99f51
+VULKAN_CATALOGUE_GGUF id=gbad8b7a23af99f51 K=5120 N=1024 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gbad8b7a23af99f51 (140 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gbb21248aeb6e572d
+VULKAN_CATALOGUE_GGUF id=gbb21248aeb6e572d K=5120 N=248320 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gbb21248aeb6e572d (560 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gbc6cead31c8f00ec
+VULKAN_CATALOGUE_GGUF id=gbc6cead31c8f00ec K=5120 N=248320 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gbc6cead31c8f00ec (8172 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gbc8fe452b33c0087
+VULKAN_CATALOGUE_GGUF id=gbc8fe452b33c0087 K=2048 N=4096 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gbc8fe452b33c0087 (158 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gbcc67bdac03cd84e
+VULKAN_CATALOGUE_GGUF id=gbcc67bdac03cd84e K=5120 N=12288 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gbcc67bdac03cd84e (107 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gbce685e7d173359e
+VULKAN_CATALOGUE_GGUF id=gbce685e7d173359e K=5120 N=6144 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gbce685e7d173359e (126 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gbe96f67f93196f75
+VULKAN_CATALOGUE_GGUF id=gbe96f67f93196f75 K=7168 N=129280 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gbe96f67f93196f75 (4132 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gbf47eecb5069a663
+VULKAN_CATALOGUE_GGUF id=gbf47eecb5069a663 K=512 N=128 originalE=96 executedE=96
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gbf47eecb5069a663 (445 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gbfe88a2ef965261a
+VULKAN_CATALOGUE_GGUF id=gbfe88a2ef965261a K=7168 N=12288 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gbfe88a2ef965261a (153 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gc0c2152bfa1b03f5
+VULKAN_CATALOGUE_GGUF id=gc0c2152bfa1b03f5 K=8192 N=2048 originalE=512 executedE=8
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gc0c2152bfa1b03f5 (166 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gc3a28468ea5ec0d9
+VULKAN_CATALOGUE_GGUF id=gc3a28468ea5ec0d9 K=2048 N=8192 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gc3a28468ea5ec0d9 (93 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gc49aa98bb4f2507c
+VULKAN_CATALOGUE_GGUF id=gc49aa98bb4f2507c K=5120 N=10240 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gc49aa98bb4f2507c (122 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gc5271e33e26377b1
+VULKAN_CATALOGUE_GGUF id=gc5271e33e26377b1 K=7168 N=128 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gc5271e33e26377b1 (155 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gc56d3eb80147fc75
+VULKAN_CATALOGUE_GGUF id=gc56d3eb80147fc75 K=8192 N=4096 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gc56d3eb80147fc75 (106 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gc583c170f579616f
+VULKAN_CATALOGUE_GGUF id=gc583c170f579616f K=2048 N=512 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gc583c170f579616f (184 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gc5bbf5817d8e70d6
+VULKAN_CATALOGUE_GGUF id=gc5bbf5817d8e70d6 K=8192 N=2048 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gc5bbf5817d8e70d6 (268 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gc5e462f4fa5288d1
+VULKAN_CATALOGUE_GGUF id=gc5e462f4fa5288d1 K=1536 N=4096 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gc5e462f4fa5288d1 (176 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gc6111176f9678024
+VULKAN_CATALOGUE_GGUF id=gc6111176f9678024 K=1024 N=8192 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gc6111176f9678024 (88 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gc6e4ad58390e26b8
+VULKAN_CATALOGUE_GGUF id=gc6e4ad58390e26b8 K=2048 N=4096 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gc6e4ad58390e26b8 (168 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gc73c5319a67d3247
+VULKAN_CATALOGUE_GGUF id=gc73c5319a67d3247 K=7168 N=96 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gc73c5319a67d3247 (147 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gc8650e5a1ce281a6
+VULKAN_CATALOGUE_GGUF id=gc8650e5a1ce281a6 K=2048 N=6144 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gc8650e5a1ce281a6 (145 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gc8f72fff70a24ea7
+VULKAN_CATALOGUE_GGUF id=gc8f72fff70a24ea7 K=7168 N=163840 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gc8f72fff70a24ea7 (6216 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gc9846cab70955814
+VULKAN_CATALOGUE_GGUF id=gc9846cab70955814 K=1536 N=4096 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gc9846cab70955814 (137 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gc9c820cb5f69da33
+VULKAN_CATALOGUE_GGUF id=gc9c820cb5f69da33 K=5120 N=6144 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gc9c820cb5f69da33 (170 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gc9e66af1a463785e
+VULKAN_CATALOGUE_GGUF id=gc9e66af1a463785e K=2048 N=4096 originalE=288 executedE=8
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gc9e66af1a463785e (199 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gcb76cc3741143750
+VULKAN_CATALOGUE_GGUF id=gcb76cc3741143750 K=4096 N=2048 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gcb76cc3741143750 (146 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gcc055da4c2e49c93
+VULKAN_CATALOGUE_GGUF id=gcc055da4c2e49c93 K=8192 N=20480 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gcc055da4c2e49c93 (209 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gcca58eaf2f010df6
+VULKAN_CATALOGUE_GGUF id=gcca58eaf2f010df6 K=5120 N=1024 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gcca58eaf2f010df6 (131 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gcd102ff92aa448da
+VULKAN_CATALOGUE_GGUF id=gcd102ff92aa448da K=3584 N=3072 originalE=896 executedE=8
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gcd102ff92aa448da (221 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gcd43d35739a51fd9
+VULKAN_CATALOGUE_GGUF id=gcd43d35739a51fd9 K=8192 N=2048 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gcd43d35739a51fd9 (140 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gcd6f16110644d63b
+VULKAN_CATALOGUE_GGUF id=gcd6f16110644d63b K=5120 N=1024 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gcd6f16110644d63b (137 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gcf14803b20ce4544
+VULKAN_CATALOGUE_GGUF id=gcf14803b20ce4544 K=3584 N=3072 originalE=896 executedE=8
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gcf14803b20ce4544 (172 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gd02afb2b17f7e4cf
+VULKAN_CATALOGUE_GGUF id=gd02afb2b17f7e4cf K=2048 N=2048 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gd02afb2b17f7e4cf (136 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gd0d5b85bc16f4828
+VULKAN_CATALOGUE_GGUF id=gd0d5b85bc16f4828 K=2048 N=4096 originalE=256 executedE=8
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gd0d5b85bc16f4828 (181 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gd10aee88eb7894c5
+VULKAN_CATALOGUE_GGUF id=gd10aee88eb7894c5 K=4096 N=154880 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gd10aee88eb7894c5 (5191 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gd1f4e67100027841
+VULKAN_CATALOGUE_GGUF id=gd1f4e67100027841 K=7168 N=129280 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gd1f4e67100027841 (689 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gd2a1c9530d92ae86
+VULKAN_CATALOGUE_GGUF id=gd2a1c9530d92ae86 K=7168 N=576 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gd2a1c9530d92ae86 (107 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gd2ccf9275f4daf98
+VULKAN_CATALOGUE_GGUF id=gd2ccf9275f4daf98 K=12288 N=7168 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gd2ccf9275f4daf98 (172 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gd2ce336f4be89d7f
+VULKAN_CATALOGUE_GGUF id=gd2ce336f4be89d7f K=2048 N=8192 originalE=512 executedE=8
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gd2ce336f4be89d7f (162 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gd32422cc20c3a356
+VULKAN_CATALOGUE_GGUF id=gd32422cc20c3a356 K=2048 N=8192 originalE=512 executedE=8
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gd32422cc20c3a356 (161 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gd3e5cd7c936bc61c
+VULKAN_CATALOGUE_GGUF id=gd3e5cd7c936bc61c K=2048 N=4096 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gd3e5cd7c936bc61c (101 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gd44eb9779606d2e0
+VULKAN_CATALOGUE_GGUF id=gd44eb9779606d2e0 K=4096 N=2048 originalE=288 executedE=8
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gd44eb9779606d2e0 (125 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gd459fc4f92f346ef
+VULKAN_CATALOGUE_GGUF id=gd459fc4f92f346ef K=2048 N=512 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gd459fc4f92f346ef (152 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gd48a70049eaf72a2
+VULKAN_CATALOGUE_GGUF id=gd48a70049eaf72a2 K=2048 N=8192 originalE=512 executedE=8
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gd48a70049eaf72a2 (208 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gd559b08d71f57213
+VULKAN_CATALOGUE_GGUF id=gd559b08d71f57213 K=6144 N=12288 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gd559b08d71f57213 (271 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gd5b1e76c6f3036a1
+VULKAN_CATALOGUE_GGUF id=gd5b1e76c6f3036a1 K=7168 N=64 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gd5b1e76c6f3036a1 (227 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gd5bd129150dd5f6b
+VULKAN_CATALOGUE_GGUF id=gd5bd129150dd5f6b K=5120 N=17408 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gd5bd129150dd5f6b (195 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gd60eb054d579f26e
+VULKAN_CATALOGUE_GGUF id=gd60eb054d579f26e K=2048 N=8192 originalE=512 executedE=8
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gd60eb054d579f26e (341 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gd7016fecf3180cf7
+VULKAN_CATALOGUE_GGUF id=gd7016fecf3180cf7 K=2048 N=6144 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gd7016fecf3180cf7 (118 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gd824e98c9ced8e26
+VULKAN_CATALOGUE_GGUF id=gd824e98c9ced8e26 K=16384 N=6144 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gd824e98c9ced8e26 (196 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gd91c3d4d63709838
+VULKAN_CATALOGUE_GGUF id=gd91c3d4d63709838 K=16384 N=8192 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gd91c3d4d63709838 (185 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gda0be538a7302bff
+VULKAN_CATALOGUE_GGUF id=gda0be538a7302bff K=5120 N=1024 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gda0be538a7302bff (132 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gda9da2cae454382c
+VULKAN_CATALOGUE_GGUF id=gda9da2cae454382c K=1536 N=18432 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gda9da2cae454382c (124 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gdad5a6c7bec1d702
+VULKAN_CATALOGUE_GGUF id=gdad5a6c7bec1d702 K=2048 N=2048 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gdad5a6c7bec1d702 (176 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gdc615b72adda546d
+VULKAN_CATALOGUE_GGUF id=gdc615b72adda546d K=1536 N=18432 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gdc615b72adda546d (256 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gdcb7c290e9163945
+VULKAN_CATALOGUE_GGUF id=gdcb7c290e9163945 K=4096 N=1024 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gdcb7c290e9163945 (230 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gdcd6bc20f1856585
+VULKAN_CATALOGUE_GGUF id=gdcd6bc20f1856585 K=7168 N=512 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gdcd6bc20f1856585 (128 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gde94017d0f472f4b
+VULKAN_CATALOGUE_GGUF id=gde94017d0f472f4b K=5120 N=248320 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gde94017d0f472f4b (367 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gde9cb35a1421baaf
+VULKAN_CATALOGUE_GGUF id=gde9cb35a1421baaf K=5120 N=12288 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gde9cb35a1421baaf (124 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gdf05589e2e512011
+VULKAN_CATALOGUE_GGUF id=gdf05589e2e512011 K=5120 N=10240 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gdf05589e2e512011 (159 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gdf4d0503a180aa09
+VULKAN_CATALOGUE_GGUF id=gdf4d0503a180aa09 K=12288 N=7168 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gdf4d0503a180aa09 (164 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/ge004d184c6f69e3e
+VULKAN_CATALOGUE_GGUF id=ge004d184c6f69e3e K=256 N=512 originalE=64 executedE=64
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/ge004d184c6f69e3e (214 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/ge04af6abbc2afce4
+VULKAN_CATALOGUE_GGUF id=ge04af6abbc2afce4 K=6144 N=2048 originalE=256 executedE=8
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/ge04af6abbc2afce4 (175 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/ge0866e4c8c6b4714
+VULKAN_CATALOGUE_GGUF id=ge0866e4c8c6b4714 K=4096 N=2048 originalE=288 executedE=8
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/ge0866e4c8c6b4714 (210 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/ge090ebd9d6b6257d
+VULKAN_CATALOGUE_GGUF id=ge090ebd9d6b6257d K=6144 N=154880 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/ge090ebd9d6b6257d (509 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/ge20aefa78083dba5
+VULKAN_CATALOGUE_GGUF id=ge20aefa78083dba5 K=5120 N=17408 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/ge20aefa78083dba5 (167 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/ge234ac2a557fd613
+VULKAN_CATALOGUE_GGUF id=ge234ac2a557fd613 K=12288 N=6144 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/ge234ac2a557fd613 (293 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/ge266afae89763173
+VULKAN_CATALOGUE_GGUF id=ge266afae89763173 K=17408 N=5120 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/ge266afae89763173 (201 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/ge34dd226f8f1d562
+VULKAN_CATALOGUE_GGUF id=ge34dd226f8f1d562 K=2048 N=2048 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/ge34dd226f8f1d562 (368 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/ge383c42ca9c36e7b
+VULKAN_CATALOGUE_GGUF id=ge383c42ca9c36e7b K=512 N=256 originalE=64 executedE=64
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/ge383c42ca9c36e7b (168 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/ge4349717a9fda78d
+VULKAN_CATALOGUE_GGUF id=ge4349717a9fda78d K=8192 N=1 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/ge4349717a9fda78d (141 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/ge4529bbaae09b09d
+VULKAN_CATALOGUE_GGUF id=ge4529bbaae09b09d K=1536 N=16384 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/ge4529bbaae09b09d (136 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/ge515dabcafc3b64a
+VULKAN_CATALOGUE_GGUF id=ge515dabcafc3b64a K=5120 N=12288 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/ge515dabcafc3b64a (154 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/ge517ef628df603a0
+VULKAN_CATALOGUE_GGUF id=ge517ef628df603a0 K=2048 N=4096 originalE=288 executedE=8
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/ge517ef628df603a0 (152 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/ge5c199147531e6e9
+VULKAN_CATALOGUE_GGUF id=ge5c199147531e6e9 K=17408 N=5120 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/ge5c199147531e6e9 (162 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/ge638b2963d48c62b
+VULKAN_CATALOGUE_GGUF id=ge638b2963d48c62b K=2048 N=8192 originalE=512 executedE=8
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/ge638b2963d48c62b (149 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/ge66b1e14e5f0019e
+VULKAN_CATALOGUE_GGUF id=ge66b1e14e5f0019e K=5120 N=248320 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/ge66b1e14e5f0019e (1594 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/ge74bd58ea22426a2
+VULKAN_CATALOGUE_GGUF id=ge74bd58ea22426a2 K=8192 N=248320 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/ge74bd58ea22426a2 (1991 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/ge795055eb7b66c1b
+VULKAN_CATALOGUE_GGUF id=ge795055eb7b66c1b K=5120 N=6144 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/ge795055eb7b66c1b (97 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/ge9114a5b57f7892d
+VULKAN_CATALOGUE_GGUF id=ge9114a5b57f7892d K=4096 N=154880 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/ge9114a5b57f7892d (304 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/ge9f29f733f64891b
+VULKAN_CATALOGUE_GGUF id=ge9f29f733f64891b K=8192 N=2048 originalE=512 executedE=8
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/ge9f29f733f64891b (146 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gea379c32b97623f2
+VULKAN_CATALOGUE_GGUF id=gea379c32b97623f2 K=17408 N=5120 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gea379c32b97623f2 (132 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gea75a412f749f6a7
+VULKAN_CATALOGUE_GGUF id=gea75a412f749f6a7 K=1024 N=8192 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gea75a412f749f6a7 (145 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/geabda6479a9266bd
+VULKAN_CATALOGUE_GGUF id=geabda6479a9266bd K=192 N=512 originalE=64 executedE=64
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/geabda6479a9266bd (181 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/geae5c338b6e342d3
+VULKAN_CATALOGUE_GGUF id=geae5c338b6e342d3 K=1536 N=8192 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/geae5c338b6e342d3 (84 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/geb02370f687ab948
+VULKAN_CATALOGUE_GGUF id=geb02370f687ab948 K=7168 N=576 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/geb02370f687ab948 (143 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/geb1146ad2c3a955c
+VULKAN_CATALOGUE_GGUF id=geb1146ad2c3a955c K=4096 N=154880 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/geb1146ad2c3a955c (3302 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gec379c0953540373
+VULKAN_CATALOGUE_GGUF id=gec379c0953540373 K=128 N=12288 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gec379c0953540373 (78 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gec69a78a7a19ec77
+VULKAN_CATALOGUE_GGUF id=gec69a78a7a19ec77 K=6144 N=154880 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gec69a78a7a19ec77 (510 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/geceef7e529556723
+VULKAN_CATALOGUE_GGUF id=geceef7e529556723 K=4096 N=8192 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/geceef7e529556723 (96 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/ged38cb062c5a6d11
+VULKAN_CATALOGUE_GGUF id=ged38cb062c5a6d11 K=2048 N=8192 originalE=512 executedE=8
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/ged38cb062c5a6d11 (114 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gee0136b69411b8a5
+VULKAN_CATALOGUE_GGUF id=gee0136b69411b8a5 K=3584 N=7168 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gee0136b69411b8a5 (153 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gee7a7ea593ecf163
+VULKAN_CATALOGUE_GGUF id=gee7a7ea593ecf163 K=6144 N=2048 originalE=256 executedE=8
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gee7a7ea593ecf163 (125 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/geec3a4906210ba68
+VULKAN_CATALOGUE_GGUF id=geec3a4906210ba68 K=4096 N=1024 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/geec3a4906210ba68 (83 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gef89d8ef342635c8
+VULKAN_CATALOGUE_GGUF id=gef89d8ef342635c8 K=5120 N=6144 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gef89d8ef342635c8 (93 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gefc1c6ae9e57c7ad
+VULKAN_CATALOGUE_GGUF id=gefc1c6ae9e57c7ad K=2048 N=4096 originalE=288 executedE=8
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gefc1c6ae9e57c7ad (116 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gefd55b95b0056985
+VULKAN_CATALOGUE_GGUF id=gefd55b95b0056985 K=5120 N=10240 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gefd55b95b0056985 (98 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gefd980d6ab63ec24
+VULKAN_CATALOGUE_GGUF id=gefd980d6ab63ec24 K=4096 N=2048 originalE=256 executedE=8
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gefd980d6ab63ec24 (121 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gf0d6d6c93eda260e
+VULKAN_CATALOGUE_GGUF id=gf0d6d6c93eda260e K=4096 N=12288 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gf0d6d6c93eda260e (169 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gf0f43c6f1f04eb7d
+VULKAN_CATALOGUE_GGUF id=gf0f43c6f1f04eb7d K=2048 N=6144 originalE=256 executedE=8
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gf0f43c6f1f04eb7d (136 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gf18b85a397fb88a9
+VULKAN_CATALOGUE_GGUF id=gf18b85a397fb88a9 K=8192 N=2048 originalE=512 executedE=8
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gf18b85a397fb88a9 (129 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gf1d3b7af66177e48
+VULKAN_CATALOGUE_GGUF id=gf1d3b7af66177e48 K=8192 N=16384 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gf1d3b7af66177e48 (156 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gf1f7b5facdf4f92c
+VULKAN_CATALOGUE_GGUF id=gf1f7b5facdf4f92c K=5120 N=6144 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gf1f7b5facdf4f92c (89 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gf28a9b41dddced1f
+VULKAN_CATALOGUE_GGUF id=gf28a9b41dddced1f K=12288 N=6144 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gf28a9b41dddced1f (118 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gf29b74abb123a970
+VULKAN_CATALOGUE_GGUF id=gf29b74abb123a970 K=6144 N=7168 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gf29b74abb123a970 (92 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gf35c9be9f8d62fca
+VULKAN_CATALOGUE_GGUF id=gf35c9be9f8d62fca K=2048 N=248320 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gf35c9be9f8d62fca (307 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gf43ed64493e0f0c0
+VULKAN_CATALOGUE_GGUF id=gf43ed64493e0f0c0 K=4096 N=2048 originalE=288 executedE=8
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gf43ed64493e0f0c0 (125 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gf4669ece8588a11f
+VULKAN_CATALOGUE_GGUF id=gf4669ece8588a11f K=2048 N=6144 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gf4669ece8588a11f (84 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gf529a42a7dcfe42b
+VULKAN_CATALOGUE_GGUF id=gf529a42a7dcfe42b K=3584 N=3072 originalE=896 executedE=8
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gf529a42a7dcfe42b (107 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gf5b71451dfed76b7
+VULKAN_CATALOGUE_GGUF id=gf5b71451dfed76b7 K=5120 N=6144 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gf5b71451dfed76b7 (87 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gf61b0d9d4c2db5e9
+VULKAN_CATALOGUE_GGUF id=gf61b0d9d4c2db5e9 K=2048 N=512 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gf61b0d9d4c2db5e9 (128 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gf6abaede4732885d
+VULKAN_CATALOGUE_GGUF id=gf6abaede4732885d K=6144 N=5120 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gf6abaede4732885d (95 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gf756e60d4fed4959
+VULKAN_CATALOGUE_GGUF id=gf756e60d4fed4959 K=7168 N=64 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gf756e60d4fed4959 (77 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gf7a53825c0b00b5d
+VULKAN_CATALOGUE_GGUF id=gf7a53825c0b00b5d K=5120 N=6144 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gf7a53825c0b00b5d (90 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gf85a94d356144233
+VULKAN_CATALOGUE_GGUF id=gf85a94d356144233 K=8192 N=32768 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gf85a94d356144233 (212 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gf8819f93f2068521
+VULKAN_CATALOGUE_GGUF id=gf8819f93f2068521 K=4096 N=154880 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gf8819f93f2068521 (262 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gf988ae7f0b3f2cf1
+VULKAN_CATALOGUE_GGUF id=gf988ae7f0b3f2cf1 K=5120 N=10240 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gf988ae7f0b3f2cf1 (99 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gf9a26a83aae1e077
+VULKAN_CATALOGUE_GGUF id=gf9a26a83aae1e077 K=16384 N=6144 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gf9a26a83aae1e077 (131 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gf9be7e01b48380ac
+VULKAN_CATALOGUE_GGUF id=gf9be7e01b48380ac K=2048 N=512 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gf9be7e01b48380ac (86 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gfa96014d96622bcc
+VULKAN_CATALOGUE_GGUF id=gfa96014d96622bcc K=5120 N=17408 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gfa96014d96622bcc (113 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gfadff5940423681c
+VULKAN_CATALOGUE_GGUF id=gfadff5940423681c K=3072 N=7168 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gfadff5940423681c (152 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gfe4317eb5c364712
+VULKAN_CATALOGUE_GGUF id=gfe4317eb5c364712 K=5120 N=1024 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gfe4317eb5c364712 (93 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gfe9dab7838f04044
+VULKAN_CATALOGUE_GGUF id=gfe9dab7838f04044 K=7168 N=3072 originalE=384 executedE=8
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gfe9dab7838f04044 (162 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gfe9f1d051f825cf8
+VULKAN_CATALOGUE_GGUF id=gfe9f1d051f825cf8 K=2048 N=16 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gfe9f1d051f825cf8 (87 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gff3536d129402a13
+VULKAN_CATALOGUE_GGUF id=gff3536d129402a13 K=2048 N=4096 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gff3536d129402a13 (79 ms)
+[ RUN      ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gffbb236fda803143
+VULKAN_CATALOGUE_GGUF id=gffbb236fda803143 K=5120 N=12288 originalE=1 executedE=1
+[       OK ] CurrentDemand/VulkanGraphCatalogueGguf.OriginalBytesActualRoleWidthAndReplay/gffbb236fda803143 (105 ms)
+[----------] 559 tests from CurrentDemand/VulkanGraphCatalogueGguf (270080 ms total)
+
+[----------] Global test environment tear-down
+[==========] 560 tests from 2 test suites ran. (282178 ms total)
+[  PASSED  ] 560 tests.

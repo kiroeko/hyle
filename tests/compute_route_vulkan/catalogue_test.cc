@@ -1,5 +1,8 @@
 #include "catalogue_test_support.h"
 #include "catalogue_gguf_test_support.h"
+#include "current_state_test_support.h"
+#include "current_state_tests.h"
+#include "catalogue_parameter_tests.h"
 
 namespace {
 class VulkanCatalogueGguf : public ::testing::TestWithParam<cpu_c5_inputs::Case> {};
