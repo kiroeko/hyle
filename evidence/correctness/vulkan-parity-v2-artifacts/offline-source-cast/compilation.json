@@ -1,0 +1,76 @@
+{
+  "commands": [
+    [
+      "C:\\hv\\m2vk-tools\\iree\\compiler\\_mlir_libs\\iree-compile.exe",
+      "--version"
+    ],
+    [
+      "C:\\hv\\m2vk-tools\\iree\\compiler\\_mlir_libs\\iree-compile.exe",
+      "C:\\public\\project-hyle\\hyle\\third_party\\iree_vulkan_runtime\\programs\\artifacts.mlir",
+      "--iree-hal-target-device=vulkan",
+      "--iree-vulkan-target=vp_android_baseline_2022",
+      "--iree-vulkan-dispatch-abi=descriptors",
+      "--iree-vulkan-target-features=spirv:v1.3,cap:Shader,cap:Int16,cap:Float16,cap:StorageBuffer16BitAccess,cap:SignedZeroInfNanPreserve,ext:SPV_KHR_16bit_storage,ext:SPV_KHR_float_controls",
+      "--iree-execution-model=async-external",
+      "--compile-to=executable-configurations",
+      "-o",
+      "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\vulkan-v2-artifacts\\offline-source-cast\\configured.mlir"
+    ],
+    [
+      "C:\\hv\\m2vk-tools\\iree\\compiler\\_mlir_libs\\iree-compile.exe",
+      "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\vulkan-v2-artifacts\\offline-source-cast\\annotated.mlir",
+      "--iree-hal-target-device=vulkan",
+      "--iree-vulkan-target=vp_android_baseline_2022",
+      "--iree-vulkan-dispatch-abi=descriptors",
+      "--iree-vulkan-target-features=spirv:v1.3,cap:Shader,cap:Int16,cap:Float16,cap:StorageBuffer16BitAccess,cap:SignedZeroInfNanPreserve,ext:SPV_KHR_16bit_storage,ext:SPV_KHR_float_controls",
+      "--iree-execution-model=async-external",
+      "--compile-from=executable-configurations",
+      "-o",
+      "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\vulkan-v2-artifacts\\offline-source-cast\\artifacts.vmfb",
+      "--iree-hal-dump-executable-files-to=C:\\public\\project-hyle\\hyle\\.scratch\\validation\\vulkan-v2-artifacts\\offline-source-cast\\spirv"
+    ]
+  ],
+  "exports": [
+    "nf4_f32",
+    "nf4_f16",
+    "nf4_bf16",
+    "nf4_nested_f32",
+    "nf4_nested_f16",
+    "nf4_nested_bf16",
+    "awq_f32_f32",
+    "awq_f32_f16",
+    "awq_f32_bf16",
+    "awq_f16_f16",
+    "awq_bf16_bf16",
+    "ct_f32_f32",
+    "ct_f32_f16",
+    "ct_f32_bf16",
+    "ct_f16_f16",
+    "ct_bf16_bf16"
+  ],
+  "files": {
+    "artifacts.mlir": "e14b3af4e5c1d942e5385459f9eee140d6d6c3b940a469f7f6db9b08cceda2a9",
+    "compile_artifacts.py": "3a22b7e182f3be55df9f9cb3dc6dd59741e986e7151e31d61aa1dddd53ce2f92",
+    "generate_artifacts.py": "8c751af375f70e08f239efe3ef864e4591650e565ebeb4696f72c784f4cf382b",
+    "configured.mlir": "75ed7e106aa158bbd596c35bca21dd189473f7650048d92e60bd1bdcadf6e141",
+    "annotated.mlir": "023559d37acce5f5f4f8df86a6004f4c32eacb9af8d303ed0f09e9eac7dcdf02",
+    "artifacts.vmfb": "d9cfed23364f0f2ac5cdba0cd27a147d31dfe2f324260f832e12a21e1ccb0e21",
+    "compiler-version.txt": "afc0d254b2555330caf79d6eb859e01fb59dc86c098fda257d76ac1943a6d446",
+    "module_awq_bf16_bf16_dispatch_0_awq_bf16_bf16_dispatch_0_elementwise_broadcast_D_i16.spirv.mlir": "703c21e0b55ac43eb98c44a4286c7be0ebb5fdfb05fcdcb01a7d7074d8667700",
+    "module_awq_f16_f16_dispatch_0_awq_f16_f16_dispatch_0_elementwise_broadcast_D_f16.spirv.mlir": "bf80e225eb2ea0a315ae353335d3773dbe92513e43c26877db3de6ab7bb6ffbb",
+    "module_awq_f32_bf16_dispatch_0_awq_f32_bf16_dispatch_0_elementwise_broadcast_D_i16.spirv.mlir": "c614ab5952a0d289b5ec4db861cd0deb8bab61cf624843b1eb26afd36c4a13bd",
+    "module_awq_f32_f16_dispatch_0_awq_f32_f16_dispatch_0_elementwise_broadcast_D_f16.spirv.mlir": "df5d9c4e5d35eb73553f4391100ac0d2a756151b97bf2489021b694eacecaf1e",
+    "module_awq_f32_f32_dispatch_0_awq_f32_f32_dispatch_0_elementwise_broadcast_D_f32.spirv.mlir": "20ff3261fc72f597c3f9afd2a9afe22b0e0712edf322aa00460bc4f022139cfb",
+    "module_ct_bf16_bf16_dispatch_0_ct_bf16_bf16_dispatch_0_elementwise_broadcast_D_i16.spirv.mlir": "bbf9b9039e7c2e35d28111be87adb0a186e9d3df352b0594f93b8a867d751bad",
+    "module_ct_f16_f16_dispatch_0_ct_f16_f16_dispatch_0_elementwise_broadcast_D_f16.spirv.mlir": "4eac6bb1e4e8e63c67f99595ca29fa5c26b4c0f63c1638cf40ae052533e8227f",
+    "module_ct_f32_bf16_dispatch_0_ct_f32_bf16_dispatch_0_elementwise_broadcast_D_i16.spirv.mlir": "6178678413b10815fe03c8b908a52c891d4ddc6959c388ccb483d17d9b78e27a",
+    "module_ct_f32_f16_dispatch_0_ct_f32_f16_dispatch_0_elementwise_broadcast_D_f16.spirv.mlir": "2751e5ae85338fa688155c3b5c040684a662844a51e57c049522f87c5d7bf9c2",
+    "module_ct_f32_f32_dispatch_0_ct_f32_f32_dispatch_0_elementwise_broadcast_D_f32.spirv.mlir": "7f8dd1e13f229cc8158f560f7346b12804bd482aff7dc106e7fea01ff7c42d7c",
+    "module_nf4_bf16_dispatch_0_nf4_bf16_dispatch_0_elementwise_broadcast_D_i16.spirv.mlir": "47188c3972232a2c1acb17756e98407f26418db18d4907f01099698b60524341",
+    "module_nf4_f16_dispatch_0_nf4_f16_dispatch_0_elementwise_broadcast_D_f16.spirv.mlir": "12e1133b88a9f6f0e16b0559d06b7e44525a06d87db0d52658fddd58302e23a4",
+    "module_nf4_f32_dispatch_0_nf4_f32_dispatch_0_elementwise_broadcast_D_f32.spirv.mlir": "4421ec3beff58faf3bcb0cb317733a2c7d18050a6616dc0b5b878299d47f09b5",
+    "module_nf4_nested_bf16_dispatch_0_nf4_nested_bf16_dispatch_0_elementwise_broadcast_D_i16.spirv.mlir": "d9ad1fa3528f8ac218c9837d24f429c62712e50a45198baa46c3b9d05326554c",
+    "module_nf4_nested_f16_dispatch_0_nf4_nested_f16_dispatch_0_elementwise_broadcast_D_f16.spirv.mlir": "c4d93899359bb701310d10a35c5fe9d623119b33ac6e65a9ba0fcdca0414d23f",
+    "module_nf4_nested_f32_dispatch_0_nf4_nested_f32_dispatch_0_elementwise_broadcast_D_f32.spirv.mlir": "801028a26fa31a096b640067883ec554ca480d9c3e2974f77ef8aa65d38dbbd0"
+  }
+}

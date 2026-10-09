@@ -1,0 +1,52 @@
+[0/2] Re-checking globbed directories...
+[1/2] Re-running CMake...
+-- HYLE developer factors: requested='compute_provider_ggml_vulkan,compute_route_vulkan,graph_route_vulkan' resolved='core,container_intrusive,util_core,error,time,math,platform,mem,container,compute_ops,compute,graph,compute_ggml_runtime,compute_provider_ggml_vulkan,compute_provider_iree_vulkan,compute_route_vulkan,graph_route_vulkan' products=''
+-- HYLE_SANITIZER = off
+-- HYLE_TESTING = OFF (tests exercise the shipping layout/hot paths)
+-- ggml source: 2263 files, 15 exact patches
+
+-- CMAKE_SYSTEM_PROCESSOR: AMD64
+-- CMAKE_GENERATOR_PLATFORM: 
+-- GGML_SYSTEM_ARCH: x86
+-- Vulkan found
+-- GL_KHR_cooperative_matrix supported by glslc
+-- GL_NV_cooperative_matrix2 supported by glslc
+-- GL_NV_cooperative_matrix_decode_vector supported by glslc
+-- GL_EXT_integer_dot_product supported by glslc
+-- GL_EXT_bfloat16 supported by glslc
+-- GL_EXT_float_e2m1 supported by glslc
+-- GL_EXT_float_e4m3 supported by glslc
+-- Including Vulkan backend
+-- ggml version: 0.24.0
+-- ggml commit:  456172ec733a135778adcd32d00e576a58232e45-hyle
+-- IREE source: 7467 files, 15 exact patches, 4 offline programs
+
+-- IREE HAL drivers:
+--   - vulkan
+-- IREE HAL local executable library loaders:
+-- IREE HAL local executable plugin mechanisms:
+fatal: not a git repository (or any of the parent directories): .git
+-- Not adding LLVM/MLIR because the configuration does not require it
+-- *Not* building or importing IREE's compiler tools.
+   Set IREE_BUILD_COMPILER to build them or IREE_HOST_BIN_DIR to import them.
+-- Configuring IREE runtime plugins
+-- Runtime tracing disabled
+-- iree_allocator_system() using `IREE_ALLOCATOR_LIBC_*`
+-- IREE task topology: using platform-specific (Windows)
+-- HYLE_TRACE = OFF (hooks compile to nothing -- zero cost)
+-- HYLE 0.1.0 | MSVC 19.50.35728.0 | C++23 | sanitizer=off | linkage=shared | products= | factors=core,container_intrusive,util_core,error,time,math,platform,mem,container,compute_ops,compute,graph,compute_ggml_runtime,compute_provider_ggml_vulkan,compute_provider_iree_vulkan,compute_route_vulkan,graph_route_vulkan
+-- Configuring done (35.7s)
+-- Generating done (2.4s)
+-- Build files have been written to: C:/hv/vp1
+[0/4] Re-checking globbed directories...
+[1/15] Performing build step for 'vulkan-shaders-gen'
+ninja: no work to do.
+[2/15] Performing install step for 'vulkan-shaders-gen'
+-- Up-to-date: C:/hv/vp1/Release/vulkan-shaders-gen.exe
+[3/15] Completed 'vulkan-shaders-gen'
+[4/15] Building CXX object src\compute_provider_iree_vulkan\CMakeFiles\hyle_compute_provider_iree_vulkan.dir\generated\programs.cc.obj
+[5/15] Building CXX object src\compute_provider_iree_vulkan\CMakeFiles\hyle_compute_provider_iree_vulkan.dir\native_program.cc.obj
+[6/15] Linking CXX shared library bin\hyle_compute_provider_iree_vulkan.dll
+[7/15] Building CXX object src\compute_route_vulkan\CMakeFiles\hyle_compute_route_vulkan.dir\vulkan_iree.cc.obj
+[8/15] Linking CXX shared library bin\hyle_compute_route_vulkan.dll
+[9/12] C:\WINDOWS\system32\cmd.exe /C "cd /D C:\hv\vp1\tests\compute_route_vulkan && "C:\Program Files\CMake\bin\cmake.exe" -P C:/hv/vp1/tests/compute_route_vulkan/hyle-runtime/hyle_compute_route_vulkan_test-Release.cmake"

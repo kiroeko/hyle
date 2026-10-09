@@ -1,0 +1,109 @@
+{
+  "candidate": "61d0585b01c0a1da9d7ad443c064e1265332e388",
+  "build": "C:\\hv\\vp1",
+  "steps": [
+    {
+      "name": "direct-delta",
+      "returncode": 1,
+      "filter": "VulkanIree.OriginalArtifactBatchPreservesSourceRoundingAndSixPorts:VulkanIree.OriginalArtifactColdResultBindsMatureConstantProjection:VulkanIree.OriginalArtifactChecksFeaturesDomainFailureAndCancellation",
+      "validation_error": false,
+      "xml": "native-61d0585b-direct-delta.xml",
+      "tests": {
+        "tests": "3",
+        "failures": "1",
+        "disabled": "0",
+        "errors": "0",
+        "time": "2.505",
+        "timestamp": "2026-10-09T10:28:29.801",
+        "name": "AllTests"
+      },
+      "binary_sha256": "f20c88601a4eda35c44ab5e31aefbaa7940c1822c0ea5529c02d60278c38f117",
+      "log": "native-61d0585b-direct-delta.log",
+      "log_sha256": "b5a8753aedb9b6d4eaf771817be0d83a83f650192df522a5de0c1153158b4f95",
+      "adjacent_dlls": [
+        "hyle_compute.dll",
+        "hyle_compute_ggml_runtime.dll",
+        "hyle_compute_ops.dll",
+        "hyle_compute_provider_ggml_vulkan.dll",
+        "hyle_compute_provider_iree_vulkan.dll",
+        "hyle_compute_route_vulkan.dll",
+        "hyle_container.dll",
+        "hyle_error.dll",
+        "hyle_graph.dll",
+        "hyle_graph_route_vulkan.dll",
+        "hyle_mem.dll",
+        "hyle_platform.dll",
+        "hyle_time.dll"
+      ]
+    },
+    {
+      "name": "graph-delta",
+      "returncode": 1,
+      "filter": "VulkanGraph.OriginalArtifactBatchUsesOrdinaryTypedEntry:VulkanGraph.OriginalArtifactColdResultBindsMatureConstantProjection",
+      "validation_error": false,
+      "xml": "native-61d0585b-graph-delta.xml",
+      "tests": {
+        "tests": "2",
+        "failures": "1",
+        "disabled": "0",
+        "errors": "0",
+        "time": "2.546",
+        "timestamp": "2026-10-09T10:28:33.723",
+        "name": "AllTests"
+      },
+      "binary_sha256": "c5f3320d18207993001def8c407de5b27fe3d86e1fd8d4c143cc6bbc52a55a12",
+      "log": "native-61d0585b-graph-delta.log",
+      "log_sha256": "dedbf0730b022fc9259e76c8c607a016f480c91f81d022c60d4844872738ca02",
+      "adjacent_dlls": [
+        "hyle_compute.dll",
+        "hyle_compute_ggml_runtime.dll",
+        "hyle_compute_ops.dll",
+        "hyle_compute_provider_ggml_vulkan.dll",
+        "hyle_compute_provider_iree_vulkan.dll",
+        "hyle_compute_route_vulkan.dll",
+        "hyle_container.dll",
+        "hyle_error.dll",
+        "hyle_graph.dll",
+        "hyle_graph_route_vulkan.dll",
+        "hyle_mem.dll",
+        "hyle_platform.dll",
+        "hyle_time.dll"
+      ]
+    }
+  ],
+  "limits": "Micro source qualification; not all 18 full model geometries, Air or delivery PASS.",
+  "lossless_compressed_raw": [
+    {
+      "original": "native-61d0585b-direct-delta.log",
+      "file": "native-61d0585b-direct-delta.log.gz",
+      "original_sha256": "b5a8753aedb9b6d4eaf771817be0d83a83f650192df522a5de0c1153158b4f95",
+      "original_bytes": 16778871,
+      "compressed_sha256": "676819cccf22fbda6305e7cdedb892d46b16f5e3cd02645b84e0b0abed16a470",
+      "compressed_bytes": 229458
+    },
+    {
+      "original": "native-61d0585b-direct-delta.xml",
+      "file": "native-61d0585b-direct-delta.xml.gz",
+      "original_sha256": "ca1b92d098b7df6da3a29ce0eb5a5aec00f874f79a13c4a0f339756eb3bdb6c0",
+      "original_bytes": 36242220,
+      "compressed_sha256": "76940da610e5659ef3c36d22a035e41df0ebade4fd81388298184293d4bce103",
+      "compressed_bytes": 539465
+    },
+    {
+      "original": "native-61d0585b-graph-delta.log",
+      "file": "native-61d0585b-graph-delta.log.gz",
+      "original_sha256": "dedbf0730b022fc9259e76c8c607a016f480c91f81d022c60d4844872738ca02",
+      "original_bytes": 18437736,
+      "compressed_sha256": "e50da64c05f1397771fae50d7cfe597a697a7e0e220024f3215a77ac059b4666",
+      "compressed_bytes": 266409
+    },
+    {
+      "original": "native-61d0585b-graph-delta.xml",
+      "file": "native-61d0585b-graph-delta.xml.gz",
+      "original_sha256": "2a8fa6a98debfa90c3e3c2d6263c866183e33f0ed8182064ade95444e6243a5f",
+      "original_bytes": 39560238,
+      "compressed_sha256": "711dc892b3b558357ef9ab531f16141f3193cb11a70fb5fc908ce798a2942eba",
+      "compressed_bytes": 577806
+    }
+  ]
+}

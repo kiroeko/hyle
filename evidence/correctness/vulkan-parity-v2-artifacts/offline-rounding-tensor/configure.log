@@ -1,0 +1,144 @@
+C:\public\project-hyle\hyle\third_party\iree_vulkan_runtime\programs\artifacts.mlir:465:14: error: 'tensor.dim' op unexpected during shape cleanup; dynamic dimensions must have been resolved prior to leaving the flow dialect
+    %final = linalg.generic {
+             ^
+C:\public\project-hyle\hyle\third_party\iree_vulkan_runtime\programs\artifacts.mlir:417:3: note: called from
+  func.func @awq_f16_f32(%packed: tensor<?x?xi32>, %zeros: tensor<?x?xi32>, %scales: tensor<?x?xf16>, %group_arg: i32) -> tensor<?x?xf32> {
+  ^
+C:\public\project-hyle\hyle\third_party\iree_vulkan_runtime\programs\artifacts.mlir:465:14: note: see current operation: %18 = "tensor.dim"(%17, %2) : (tensor<?x?xf16>, index) -> index
+    %final = linalg.generic {
+             ^
+C:\public\project-hyle\hyle\third_party\iree_vulkan_runtime\programs\artifacts.mlir:465:14: error: 'tensor.dim' op unexpected during shape cleanup; dynamic dimensions must have been resolved prior to leaving the flow dialect
+    %final = linalg.generic {
+             ^
+C:\public\project-hyle\hyle\third_party\iree_vulkan_runtime\programs\artifacts.mlir:417:3: note: called from
+  func.func @awq_f16_f32(%packed: tensor<?x?xi32>, %zeros: tensor<?x?xi32>, %scales: tensor<?x?xf16>, %group_arg: i32) -> tensor<?x?xf32> {
+  ^
+C:\public\project-hyle\hyle\third_party\iree_vulkan_runtime\programs\artifacts.mlir:465:14: note: see current operation: %19 = "tensor.dim"(%17, %1) : (tensor<?x?xf16>, index) -> index
+    %final = linalg.generic {
+             ^
+C:\public\project-hyle\hyle\third_party\iree_vulkan_runtime\programs\artifacts.mlir:571:14: error: 'tensor.dim' op unexpected during shape cleanup; dynamic dimensions must have been resolved prior to leaving the flow dialect
+    %final = linalg.generic {
+             ^
+C:\public\project-hyle\hyle\third_party\iree_vulkan_runtime\programs\artifacts.mlir:523:3: note: called from
+  func.func @awq_f16_bf16(%packed: tensor<?x?xi32>, %zeros: tensor<?x?xi32>, %scales: tensor<?x?xf16>, %group_arg: i32) -> tensor<?x?xi16> {
+  ^
+C:\public\project-hyle\hyle\third_party\iree_vulkan_runtime\programs\artifacts.mlir:571:14: note: see current operation: %18 = "tensor.dim"(%17, %2) : (tensor<?x?xf16>, index) -> index
+    %final = linalg.generic {
+             ^
+C:\public\project-hyle\hyle\third_party\iree_vulkan_runtime\programs\artifacts.mlir:571:14: error: 'tensor.dim' op unexpected during shape cleanup; dynamic dimensions must have been resolved prior to leaving the flow dialect
+    %final = linalg.generic {
+             ^
+C:\public\project-hyle\hyle\third_party\iree_vulkan_runtime\programs\artifacts.mlir:523:3: note: called from
+  func.func @awq_f16_bf16(%packed: tensor<?x?xi32>, %zeros: tensor<?x?xi32>, %scales: tensor<?x?xf16>, %group_arg: i32) -> tensor<?x?xi16> {
+  ^
+C:\public\project-hyle\hyle\third_party\iree_vulkan_runtime\programs\artifacts.mlir:571:14: note: see current operation: %19 = "tensor.dim"(%17, %1) : (tensor<?x?xf16>, index) -> index
+    %final = linalg.generic {
+             ^
+C:\public\project-hyle\hyle\third_party\iree_vulkan_runtime\programs\artifacts.mlir:635:14: error: 'tensor.dim' op unexpected during shape cleanup; dynamic dimensions must have been resolved prior to leaving the flow dialect
+    %final = linalg.generic {
+             ^
+C:\public\project-hyle\hyle\third_party\iree_vulkan_runtime\programs\artifacts.mlir:583:3: note: called from
+  func.func @awq_bf16_f32(%packed: tensor<?x?xi32>, %zeros: tensor<?x?xi32>, %scales: tensor<?x?xi16>, %group_arg: i32) -> tensor<?x?xf32> {
+  ^
+C:\public\project-hyle\hyle\third_party\iree_vulkan_runtime\programs\artifacts.mlir:635:14: note: see current operation: %18 = "tensor.dim"(%17, %2) : (tensor<?x?xi16>, index) -> index
+    %final = linalg.generic {
+             ^
+C:\public\project-hyle\hyle\third_party\iree_vulkan_runtime\programs\artifacts.mlir:635:14: error: 'tensor.dim' op unexpected during shape cleanup; dynamic dimensions must have been resolved prior to leaving the flow dialect
+    %final = linalg.generic {
+             ^
+C:\public\project-hyle\hyle\third_party\iree_vulkan_runtime\programs\artifacts.mlir:583:3: note: called from
+  func.func @awq_bf16_f32(%packed: tensor<?x?xi32>, %zeros: tensor<?x?xi32>, %scales: tensor<?x?xi16>, %group_arg: i32) -> tensor<?x?xf32> {
+  ^
+C:\public\project-hyle\hyle\third_party\iree_vulkan_runtime\programs\artifacts.mlir:635:14: note: see current operation: %19 = "tensor.dim"(%17, %1) : (tensor<?x?xi16>, index) -> index
+    %final = linalg.generic {
+             ^
+C:\public\project-hyle\hyle\third_party\iree_vulkan_runtime\programs\artifacts.mlir:698:14: error: 'tensor.dim' op unexpected during shape cleanup; dynamic dimensions must have been resolved prior to leaving the flow dialect
+    %final = linalg.generic {
+             ^
+C:\public\project-hyle\hyle\third_party\iree_vulkan_runtime\programs\artifacts.mlir:646:3: note: called from
+  func.func @awq_bf16_f16(%packed: tensor<?x?xi32>, %zeros: tensor<?x?xi32>, %scales: tensor<?x?xi16>, %group_arg: i32) -> tensor<?x?xf16> {
+  ^
+C:\public\project-hyle\hyle\third_party\iree_vulkan_runtime\programs\artifacts.mlir:698:14: note: see current operation: %18 = "tensor.dim"(%17, %2) : (tensor<?x?xi16>, index) -> index
+    %final = linalg.generic {
+             ^
+C:\public\project-hyle\hyle\third_party\iree_vulkan_runtime\programs\artifacts.mlir:698:14: error: 'tensor.dim' op unexpected during shape cleanup; dynamic dimensions must have been resolved prior to leaving the flow dialect
+    %final = linalg.generic {
+             ^
+C:\public\project-hyle\hyle\third_party\iree_vulkan_runtime\programs\artifacts.mlir:646:3: note: called from
+  func.func @awq_bf16_f16(%packed: tensor<?x?xi32>, %zeros: tensor<?x?xi32>, %scales: tensor<?x?xi16>, %group_arg: i32) -> tensor<?x?xf16> {
+  ^
+C:\public\project-hyle\hyle\third_party\iree_vulkan_runtime\programs\artifacts.mlir:698:14: note: see current operation: %19 = "tensor.dim"(%17, %1) : (tensor<?x?xi16>, index) -> index
+    %final = linalg.generic {
+             ^
+C:\public\project-hyle\hyle\third_party\iree_vulkan_runtime\programs\artifacts.mlir:917:14: error: 'tensor.dim' op unexpected during shape cleanup; dynamic dimensions must have been resolved prior to leaving the flow dialect
+    %final = linalg.generic {
+             ^
+C:\public\project-hyle\hyle\third_party\iree_vulkan_runtime\programs\artifacts.mlir:876:3: note: called from
+  func.func @ct_f16_f32(%packed: tensor<?x?xi32>, %scales: tensor<?x?xf16>, %group_arg: i32) -> tensor<?x?xf32> {
+  ^
+C:\public\project-hyle\hyle\third_party\iree_vulkan_runtime\programs\artifacts.mlir:917:14: note: see current operation: %15 = "tensor.dim"(%14, %2) : (tensor<?x?xf16>, index) -> index
+    %final = linalg.generic {
+             ^
+C:\public\project-hyle\hyle\third_party\iree_vulkan_runtime\programs\artifacts.mlir:917:14: error: 'tensor.dim' op unexpected during shape cleanup; dynamic dimensions must have been resolved prior to leaving the flow dialect
+    %final = linalg.generic {
+             ^
+C:\public\project-hyle\hyle\third_party\iree_vulkan_runtime\programs\artifacts.mlir:876:3: note: called from
+  func.func @ct_f16_f32(%packed: tensor<?x?xi32>, %scales: tensor<?x?xf16>, %group_arg: i32) -> tensor<?x?xf32> {
+  ^
+C:\public\project-hyle\hyle\third_party\iree_vulkan_runtime\programs\artifacts.mlir:917:14: note: see current operation: %16 = "tensor.dim"(%14, %1) : (tensor<?x?xf16>, index) -> index
+    %final = linalg.generic {
+             ^
+C:\public\project-hyle\hyle\third_party\iree_vulkan_runtime\programs\artifacts.mlir:1009:14: error: 'tensor.dim' op unexpected during shape cleanup; dynamic dimensions must have been resolved prior to leaving the flow dialect
+    %final = linalg.generic {
+             ^
+C:\public\project-hyle\hyle\third_party\iree_vulkan_runtime\programs\artifacts.mlir:968:3: note: called from
+  func.func @ct_f16_bf16(%packed: tensor<?x?xi32>, %scales: tensor<?x?xf16>, %group_arg: i32) -> tensor<?x?xi16> {
+  ^
+C:\public\project-hyle\hyle\third_party\iree_vulkan_runtime\programs\artifacts.mlir:1009:14: note: see current operation: %15 = "tensor.dim"(%14, %2) : (tensor<?x?xf16>, index) -> index
+    %final = linalg.generic {
+             ^
+C:\public\project-hyle\hyle\third_party\iree_vulkan_runtime\programs\artifacts.mlir:1009:14: error: 'tensor.dim' op unexpected during shape cleanup; dynamic dimensions must have been resolved prior to leaving the flow dialect
+    %final = linalg.generic {
+             ^
+C:\public\project-hyle\hyle\third_party\iree_vulkan_runtime\programs\artifacts.mlir:968:3: note: called from
+  func.func @ct_f16_bf16(%packed: tensor<?x?xi32>, %scales: tensor<?x?xf16>, %group_arg: i32) -> tensor<?x?xi16> {
+  ^
+C:\public\project-hyle\hyle\third_party\iree_vulkan_runtime\programs\artifacts.mlir:1009:14: note: see current operation: %16 = "tensor.dim"(%14, %1) : (tensor<?x?xf16>, index) -> index
+    %final = linalg.generic {
+             ^
+C:\public\project-hyle\hyle\third_party\iree_vulkan_runtime\programs\artifacts.mlir:1066:14: error: 'tensor.dim' op unexpected during shape cleanup; dynamic dimensions must have been resolved prior to leaving the flow dialect
+    %final = linalg.generic {
+             ^
+C:\public\project-hyle\hyle\third_party\iree_vulkan_runtime\programs\artifacts.mlir:1021:3: note: called from
+  func.func @ct_bf16_f32(%packed: tensor<?x?xi32>, %scales: tensor<?x?xi16>, %group_arg: i32) -> tensor<?x?xf32> {
+  ^
+C:\public\project-hyle\hyle\third_party\iree_vulkan_runtime\programs\artifacts.mlir:1066:14: note: see current operation: %15 = "tensor.dim"(%14, %2) : (tensor<?x?xi16>, index) -> index
+    %final = linalg.generic {
+             ^
+C:\public\project-hyle\hyle\third_party\iree_vulkan_runtime\programs\artifacts.mlir:1066:14: error: 'tensor.dim' op unexpected during shape cleanup; dynamic dimensions must have been resolved prior to leaving the flow dialect
+    %final = linalg.generic {
+             ^
+C:\public\project-hyle\hyle\third_party\iree_vulkan_runtime\programs\artifacts.mlir:1021:3: note: called from
+  func.func @ct_bf16_f32(%packed: tensor<?x?xi32>, %scales: tensor<?x?xi16>, %group_arg: i32) -> tensor<?x?xf32> {
+  ^
+C:\public\project-hyle\hyle\third_party\iree_vulkan_runtime\programs\artifacts.mlir:1066:14: note: see current operation: %16 = "tensor.dim"(%14, %1) : (tensor<?x?xi16>, index) -> index
+    %final = linalg.generic {
+             ^
+C:\public\project-hyle\hyle\third_party\iree_vulkan_runtime\programs\artifacts.mlir:1122:14: error: 'tensor.dim' op unexpected during shape cleanup; dynamic dimensions must have been resolved prior to leaving the flow dialect
+    %final = linalg.generic {
+             ^
+C:\public\project-hyle\hyle\third_party\iree_vulkan_runtime\programs\artifacts.mlir:1077:3: note: called from
+  func.func @ct_bf16_f16(%packed: tensor<?x?xi32>, %scales: tensor<?x?xi16>, %group_arg: i32) -> tensor<?x?xf16> {
+  ^
+C:\public\project-hyle\hyle\third_party\iree_vulkan_runtime\programs\artifacts.mlir:1122:14: note: see current operation: %15 = "tensor.dim"(%14, %2) : (tensor<?x?xi16>, index) -> index
+    %final = linalg.generic {
+             ^
+C:\public\project-hyle\hyle\third_party\iree_vulkan_runtime\programs\artifacts.mlir:1122:14: error: 'tensor.dim' op unexpected during shape cleanup; dynamic dimensions must have been resolved prior to leaving the flow dialect
+    %final = linalg.generic {
+             ^
+C:\public\project-hyle\hyle\third_party\iree_vulkan_runtime\programs\artifacts.mlir:1077:3: note: called from
+  func.func @ct_bf16_f16(%packed: tensor<?x?xi32>, %scales: tensor<?x?xi16>, %group_arg: i32) -> tensor<?x?xf16> {
+  ^
+C:\public\project-hyle\hyle\third_party\iree_vulkan_runtime\programs\artifacts.mlir:1122:14: note: see current operation: %16 = "tensor.dim"(%14, %1) : (tensor<?x?xi16>, index) -> index
+    %final = linalg.generic {
+             ^
