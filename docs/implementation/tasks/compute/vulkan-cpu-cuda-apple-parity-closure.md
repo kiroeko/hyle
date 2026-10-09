@@ -112,3 +112,6 @@ group组合、全256 MX8编码、source尺度边界、常量重放与checked资�
 原NaN分类适配后正确；F32极小值按已有GPU矩阵误差合同，明确不签CPU逐位下溢一致性。
 当前估计约25%，LOC61,935/263文件；下一批是其余具名官方FP4/FP8 typed/region缺口和
 完整目录actual矩阵，不重复已通过微型批次，仍不签父轮完成。
+
+剩余 [官方 FP4／FP8 与QAT原程序批次](vulkan-parity-v2-official-float-bindings.md)
+独立SCOPED；按原精度次序/finite控制/selected workspace审计后再AUDITED接线。
