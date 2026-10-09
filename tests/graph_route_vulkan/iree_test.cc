@@ -34,6 +34,9 @@ TEST(VulkanGraph, OriginalOfficialGroupedFp4Fp8SharedDistinctAndChecked) {
 TEST(VulkanGraph, OriginalOfficialQatFiniteBfloatExhaustiveAndFailure) {
   vulkan_official_test::roundtrips(compile_artifact);
 }
+TEST(VulkanGraph, OriginalOfficialIndependentLeaseFiniteCancelCloseAndOom) {
+  vulkan_official_test::lifecycle(compile_artifact);
+}
 TEST(VulkanGraph, OriginalOfficialEncodedBlock128TailAndReplay) {
   auto context = vulkan_test::context().value();
   for (int n : {5, 129}) {

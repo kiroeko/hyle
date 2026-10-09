@@ -1,0 +1,43 @@
+{
+  "candidate": "ee9350abac07a0864be65d3f05f61306a8cecf5c",
+  "steps": [
+    {
+      "name": "direct-bf16",
+      "returncode": 0,
+      "filter": "VulkanIree.OriginalOfficialDynamicLinearsAndWeightTailDecode:VulkanIree.OriginalOfficialGroupedFp4Fp8SharedDistinctAndChecked",
+      "tests": {
+        "tests": "2",
+        "failures": "0",
+        "disabled": "0",
+        "errors": "0",
+        "time": "0.928",
+        "timestamp": "2026-10-09T12:42:17.096",
+        "name": "AllTests"
+      },
+      "log": "native-ee9350ab-direct-bf16.log",
+      "log_sha256": "05f3cd6f96262be08313e95ce54ead85055799225fc7a0e4bcd671cdabbab87d",
+      "xml": "native-ee9350ab-direct-bf16.xml",
+      "binary_sha256": "8fabd15a2466124c420affe4e77820da03c388f7ea731f09d8098fa9c5e77c25",
+      "validation_error": false
+    },
+    {
+      "name": "graph-bf16",
+      "returncode": 0,
+      "filter": "VulkanGraph.OriginalOfficialDynamicLinearsAndWeightTailDecode:VulkanGraph.OriginalOfficialGroupedFp4Fp8SharedDistinctAndChecked",
+      "tests": {
+        "tests": "2",
+        "failures": "0",
+        "disabled": "0",
+        "errors": "0",
+        "time": "0.936",
+        "timestamp": "2026-10-09T12:42:18.160",
+        "name": "AllTests"
+      },
+      "log": "native-ee9350ab-graph-bf16.log",
+      "log_sha256": "0a4fcc3249436780097768239140db8ab391bf8477b1cd35d522005819b09fe4",
+      "xml": "native-ee9350ab-graph-bf16.xml",
+      "binary_sha256": "4a974d8519a723f9b6339872490f77c96ee3b33337ff0368e8fdad5e861b80f2",
+      "validation_error": false
+    }
+  ]
+}

@@ -30,6 +30,9 @@ TEST(VulkanIree, OriginalOfficialGroupedFp4Fp8SharedDistinctAndChecked) {
 TEST(VulkanIree, OriginalOfficialQatFiniteBfloatExhaustiveAndFailure) {
   vulkan_official_test::roundtrips(prepare_artifact);
 }
+TEST(VulkanIree, OriginalOfficialIndependentLeaseFiniteCancelCloseAndOom) {
+  vulkan_official_test::lifecycle(prepare_artifact);
+}
 TEST(VulkanIree, OriginalOfficialEncodedBlock128TailAndReplay) {
   auto context = vulkan_test::context().value();
   for (int n : {5, 129}) {

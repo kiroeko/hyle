@@ -198,4 +198,41 @@ void roundtrips(Prepare prepare) {
     auto work = slot.submit().value();auto result = work.wait();ASSERT_FALSE(result);EXPECT_TRUE(result.error().IsInvalidArgument());
   }
 }
+
+template <class Prepare>
+void lifecycle(Prepare prepare) {
+  hyle::mem::QuotaAllocator quota(hyle::mem::system_allocator(), 512 * 1024 * 1024);
+  {
+    auto context = vulkan_test::context(&quota).value();Weight w(1, 5, 256);
+    const auto ad = t::dense(c::DataType::kBFloat16, {2, 256});const std::array descriptions{ad, w.description};
+    const auto operation = c::model_ops::float8_block_linear(c::model_ops::Float8ScaleRounding::kPowerOfTwo, 1e-4f);
+    auto program = prepare(context, operation, descriptions).value();
+    { auto reservation = quota.try_reserve_bytes(quota.limit() - quota.used());ASSERT_TRUE(reservation);
+      auto denied = program.create_invocation();ASSERT_FALSE(denied);EXPECT_TRUE(denied.error().IsResourceExhausted()); }
+    auto first = program.create_invocation().value(), second = program.create_invocation().value();
+    const auto x = activation(2, 256, c::DataType::kBFloat16, 0), y = activation(2, 256, c::DataType::kBFloat16, 1);
+    std::vector<double> xd(x.begin(), x.end()), yd(y.begin(), y.end());
+    const auto bank = context.upload(w.description, w.bytes).value();
+    const std::array a{t::make(context, ad, xd), bank}, b{t::make(context, ad, yd), bank};
+    const auto ax = reference(w, quantize(x, 256, 1e-4f, true), 2, 1, 1, {}, c::DataType::kBFloat16),
+        by = reference(w, quantize(y, 256, 1e-4f, true), 2, 1, 1, {}, c::DataType::kBFloat16);
+    ASSERT_TRUE(first.bind(a).ok());ASSERT_TRUE(second.bind(b).ok());v::Tensor retained;
+    { auto one = first.submit().value(), two = second.submit().value();auto r2 = two.wait(), r1 = one.wait();
+      ASSERT_TRUE(r1);ASSERT_TRUE(r2);t::expect(context, r1->get()->tensors()[0], ax);t::expect(context, r2->get()->tensors()[0], by);
+      retained = r1->get()->tensors()[0]; }
+    EXPECT_FALSE(first.submit());
+    { auto cancelled = second.submit().value();ASSERT_TRUE(cancelled.request_cancel().ok());auto result = cancelled.wait();
+      if (result) t::expect(context, result->get()->tensors()[0], by);else EXPECT_TRUE(result.error().IsCancelled()); }
+    { auto repeat = second.submit().value();auto result = repeat.wait();ASSERT_TRUE(result);t::expect(context, result->get()->tensors()[0], by); }
+    t::expect(context, retained, ax);EXPECT_EQ(t::bytes(context, bank), w.bytes);
+    auto bad = xd;bad[0] = std::numeric_limits<double>::infinity();
+    ASSERT_TRUE(second.bind(std::array{t::make(context, ad, bad), bank}).ok());
+    { auto work = second.submit().value();auto result = work.wait();ASSERT_FALSE(result);EXPECT_TRUE(result.error().IsInvalidArgument()); }
+    EXPECT_FALSE(second.submit());
+    auto recovered = program.create_invocation().value();ASSERT_TRUE(recovered.bind(a).ok());
+    { auto work = recovered.submit().value();auto result = work.wait();ASSERT_TRUE(result);t::expect(context, result->get()->tensors()[0], ax); }
+    EXPECT_TRUE(context.close().ok());EXPECT_FALSE(recovered.submit());
+  }
+  EXPECT_EQ(quota.used(), 0U);
+}
 } // namespace vulkan_official_test
