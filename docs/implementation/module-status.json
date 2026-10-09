@@ -270,15 +270,15 @@
     },
     {
       "module": "compute",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/build/compute-unified-delivery.md",
-      "summary": "统一Compute路线/必要Provider/SDK资产与冷绑定公开交付新需求；C1先定界，C2/R1后续子包另审；未改产品。"
+      "summary": "C1统一Compute路线/必要Provider输入已审计并固定有限FIX；共享构建和现行fixture参数迁移，C2/R1仍须子包审计；不改数学。"
     },
     {
       "module": "graph",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/build/compute-unified-delivery.md",
-      "summary": "统一Compute路线/必要Provider/SDK资产与冷绑定公开交付新需求；C1先定界，C2/R1后续子包另审；未改产品。"
+      "summary": "C1统一Compute路线/必要Provider输入已审计并固定有限FIX；共享构建和现行fixture参数迁移，C2/R1仍须子包审计；不改数学。"
     },
     {
       "module": "container_concurrent",
@@ -352,9 +352,9 @@
     },
     {
       "module": "compute_provider_onednn",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/build/compute-unified-delivery.md",
-      "summary": "统一Compute路线/必要Provider/SDK资产与冷绑定公开交付新需求；C1先定界，C2/R1后续子包另审；未改产品。"
+      "summary": "C1统一Compute路线/必要Provider输入已审计并固定有限FIX；共享构建和现行fixture参数迁移，C2/R1仍须子包审计；不改数学。"
     },
     {
       "module": "compute_provider_ggml",
@@ -391,33 +391,33 @@
     },
     {
       "module": "compute_backend_cpu",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/build/compute-unified-delivery.md",
-      "summary": "统一Compute路线/必要Provider/SDK资产与冷绑定公开交付新需求；C1先定界，C2/R1后续子包另审；未改产品。"
+      "summary": "C1统一Compute路线/必要Provider输入已审计并固定有限FIX；共享构建和现行fixture参数迁移，C2/R1仍须子包审计；不改数学。"
     },
     {
       "module": "compute_backend_cuda",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/build/compute-unified-delivery.md",
-      "summary": "统一Compute路线/必要Provider/SDK资产与冷绑定公开交付新需求；C1先定界，C2/R1后续子包另审；未改产品。"
+      "summary": "C1统一Compute路线/必要Provider输入已审计并固定有限FIX；共享构建和现行fixture参数迁移，C2/R1仍须子包审计；不改数学。"
     },
     {
       "module": "compute_provider_native",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/build/compute-unified-delivery.md",
-      "summary": "统一Compute路线/必要Provider/SDK资产与冷绑定公开交付新需求；C1先定界，C2/R1后续子包另审；未改产品。"
+      "summary": "C1统一Compute路线/必要Provider输入已审计并固定有限FIX；共享构建和现行fixture参数迁移，C2/R1仍须子包审计；不改数学。"
     },
     {
       "module": "compute_route_cpu",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/build/compute-unified-delivery.md",
-      "summary": "统一Compute路线/必要Provider/SDK资产与冷绑定公开交付新需求；C1先定界，C2/R1后续子包另审；未改产品。"
+      "summary": "C1统一Compute路线/必要Provider输入已审计并固定有限FIX；共享构建和现行fixture参数迁移，C2/R1仍须子包审计；不改数学。"
     },
     {
       "module": "graph_route_cpu",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/build/compute-unified-delivery.md",
-      "summary": "统一Compute路线/必要Provider/SDK资产与冷绑定公开交付新需求；C1先定界，C2/R1后续子包另审；未改产品。"
+      "summary": "C1统一Compute路线/必要Provider输入已审计并固定有限FIX；共享构建和现行fixture参数迁移，C2/R1仍须子包审计；不改数学。"
     },
     {
       "module": "compute_provider_cublas",
@@ -455,39 +455,39 @@
     },
     {
       "module": "compute_route_cuda",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/build/compute-unified-delivery.md",
-      "summary": "统一Compute路线/必要Provider/SDK资产与冷绑定公开交付新需求；C1先定界，C2/R1后续子包另审；未改产品。"
+      "summary": "C1统一Compute路线/必要Provider输入已审计并固定有限FIX；共享构建和现行fixture参数迁移，C2/R1仍须子包审计；不改数学。"
     },
     {
       "module": "graph_route_cuda",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/build/compute-unified-delivery.md",
-      "summary": "统一Compute路线/必要Provider/SDK资产与冷绑定公开交付新需求；C1先定界，C2/R1后续子包另审；未改产品。"
+      "summary": "C1统一Compute路线/必要Provider输入已审计并固定有限FIX；共享构建和现行fixture参数迁移，C2/R1仍须子包审计；不改数学。"
     },
     {
       "module": "compute_route_apple",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/build/compute-unified-delivery.md",
-      "summary": "统一Compute路线/必要Provider/SDK资产与冷绑定公开交付新需求；C1先定界，C2/R1后续子包另审；未改产品。"
+      "summary": "C1统一Compute路线/必要Provider输入已审计并固定有限FIX；共享构建和现行fixture参数迁移，C2/R1仍须子包审计；不改数学。"
     },
     {
       "module": "graph_route_apple",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/build/compute-unified-delivery.md",
-      "summary": "统一Compute路线/必要Provider/SDK资产与冷绑定公开交付新需求；C1先定界，C2/R1后续子包另审；未改产品。"
+      "summary": "C1统一Compute路线/必要Provider输入已审计并固定有限FIX；共享构建和现行fixture参数迁移，C2/R1仍须子包审计；不改数学。"
     },
     {
       "module": "compute_route_vulkan",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/build/compute-unified-delivery.md",
-      "summary": "统一Compute路线/必要Provider/SDK资产与冷绑定公开交付新需求；C1先定界，C2/R1后续子包另审；未改产品。"
+      "summary": "C1统一Compute路线/必要Provider输入已审计并固定有限FIX；共享构建和现行fixture参数迁移，C2/R1仍须子包审计；不改数学。"
     },
     {
       "module": "graph_route_vulkan",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/build/compute-unified-delivery.md",
-      "summary": "统一Compute路线/必要Provider/SDK资产与冷绑定公开交付新需求；C1先定界，C2/R1后续子包另审；未改产品。"
+      "summary": "C1统一Compute路线/必要Provider输入已审计并固定有限FIX；共享构建和现行fixture参数迁移，C2/R1仍须子包审计；不改数学。"
     },
     {
       "module": "compute_provider_ggml_vulkan",
@@ -502,9 +502,9 @@
     },
     {
       "module": "compute_ggml_runtime",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/build/compute-unified-delivery.md",
-      "summary": "统一Compute路线/必要Provider/SDK资产与冷绑定公开交付新需求；C1先定界，C2/R1后续子包另审；未改产品。"
+      "summary": "C1统一Compute路线/必要Provider输入已审计并固定有限FIX；共享构建和现行fixture参数迁移，C2/R1仍须子包审计；不改数学。"
     },
     {
       "module": "compute_provider_ggml_cuda",

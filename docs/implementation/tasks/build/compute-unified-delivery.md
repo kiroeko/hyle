@@ -1,6 +1,6 @@
 # C1–C3 / R1：统一 Compute/Graph 配置与交付
 
-<!-- MODULE REVIEW: SCOPED -->
+<!-- MODULE REVIEW: AUDITED -->
 
 - baseline：`0a167159e08bf2df021c0b7f7fc8942a4dc87c3e`；Windows canonical，启动工作树干净。
 - 用户已明确启动实施；[已定设计](../../../architecture/compute-next-stage.md)与
@@ -22,7 +22,7 @@ C1 先统一构建输入，C2 统一 SDK/资产，R1 校准 identity/冷诊断�
 H1/H2/H3 联合计算须另卡绑定实际 owner；本卡不删除 same-Device guard，不签 mixed 执行。
 增量依赖图继续 DEFER。SIMD、模型 loader/engine、算子扩张、非阻塞组合服务、公共治理/计时核心都不改。
 
-## C1 有限范围（先审计，未授权写产品）
+## C1 AUDITED：有限改动集
 
 | ID | 源码问题/真实旅程 | 允许 FIX | 验收 |
 |---|---|---|---|
@@ -62,4 +62,20 @@ submit 无新增搜索/设备查询/计时；未知环境保持合法默认，�
 第三方身份/许可证与算法不升级，沿现 lock/registry；完整性是公开配置/交付的新需求；
 复用现有图/依赖/资产 owner；P0 只在冷 CMake/准备路径，既有 hot 成本不变；没有 C/FFI 新入口；
 三交付在 C3 批量实测；user/developer 当前用法随实际产品迁移，不提前称可用。
-当前为 SCOPED，C1-01–04 待 AUDITED，产品改动/新验收为零。
+当前 C1-01–04 已 AUDITED；C2/R1 仍须各自子包审计，产品改动/新验收为零。
+
+### 审计固定的接法
+
+- 元数据 projection 的 CMake script 不 probe 平台/依赖；实际 project 才解析产品路线。
+  保留中央 factor/product 声明和静态 graph adapter，不为新 helper 改 selector 核心。
+- 普通产品过滤未选 route/backend/CPU Provider 根后按原 DAG 取闭包；无 Compute 产品不探 SDK。
+  tests 的 CPU oracle 是 TEST_DEPS，不成为 shipping GPU fallback。
+- DEV_FACTORS 的能力由最终选中 factor/test 闭包和宿主适用性派生；其 optional OFF header fixture
+  不冒充正常已选路线。selector 不再传重复 compute feature cache，保留原平台验收规则；
+  只迁移 policy 和对应断言，不新增列表 merge/状态规则/仪器行为。
+- 普通完整 CPU 当前真实可承载 Windows/Linux x86_64、Darwin aarch64；其它 CPU ABI 若缺
+  必要 original ATen SDK 明确拒绝，不 silently lite。CUDA/Apple/Vulkan 保持各 native SDK admission。
+- 必要 Provider ON/OFF 仅为内部正常变量，由唯一解析路径派生；不再声明公开 cache option。
+- 现行 sample/合同 fixture 的参数随实际语义迁移；历史 performance contract 仍绑定原不可变候选，
+  不迁移其 recipe、改历史证书或重跑 P1；新性能任务须新版本合同。
+- 有界解析测试和既有 configure fixture 对正/反入口取证；C1/C2/R1 不逐项启动完整 native run。
