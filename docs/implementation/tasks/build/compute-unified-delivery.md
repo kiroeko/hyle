@@ -1,6 +1,6 @@
 # C1–C3 / R1：统一 Compute/Graph 配置与交付
 
-<!-- MODULE REVIEW: AUDITED -->
+<!-- MODULE REVIEW: CANDIDATE -->
 
 - baseline：`0a167159e08bf2df021c0b7f7fc8942a4dc87c3e`；Windows canonical，启动工作树干净。
 - 用户已明确启动实施；[已定设计](../../../architecture/compute-next-stage.md)与
@@ -146,3 +146,11 @@ canonical set、平台错误、维护 OFF headers、三条实际 manifest config
 这是配置证据，未运行数学或 SDK；不能将 LANGUAGES NONE metadata fixture 当 native 路线完成。
 `python tests/tooling/validation_selector_test.py` 实际 60 tests 通过（99.857 秒）；
 docs/closure/diff 检查通过。原 component-contract 与平台三交付仍留 C3 批验，不写 PASS。
+
+## 固定候选与 C3
+
+产品 candidate：`321bb5bd8ff5743a439111c49e7d75d4e8dae394`。
+C1/C2/R1 接线完成；C3 一条 Graph producer journey 同时签实际 Direct/Graph 消费者，
+每平台/路线/交付共享 producer，不分别构建两套 SDK。当前只运行配置与工具检查，三交付尚未签。
+Compute+Graph 统一 LOC 实际仍为 62,486 code lines / 268 files（`.scratch/compute-unified/loc.json`）；
+include/C++/shader 零 diff，没有新增自研数学。

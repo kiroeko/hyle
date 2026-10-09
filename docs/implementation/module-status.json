@@ -270,15 +270,17 @@
     },
     {
       "module": "compute",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/build/compute-unified-delivery.md",
-      "summary": "C1统一Compute路线/必要Provider输入已审计并固定有限FIX；共享构建和现行fixture参数迁移，C2/R1仍须子包审计；不改数学。"
+      "summary": "C1/C2/R1统一配置/SDK资产/冷绑定校准已固定候选；C3批量三平台三交付待验；原数学/热路径不改，H1-H3另卡。",
+      "candidate": "321bb5bd8ff5743a439111c49e7d75d4e8dae394"
     },
     {
       "module": "graph",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/build/compute-unified-delivery.md",
-      "summary": "C1统一Compute路线/必要Provider输入已审计并固定有限FIX；共享构建和现行fixture参数迁移，C2/R1仍须子包审计；不改数学。"
+      "summary": "C1/C2/R1统一配置/SDK资产/冷绑定校准已固定候选；C3批量三平台三交付待验；原数学/热路径不改，H1-H3另卡。",
+      "candidate": "321bb5bd8ff5743a439111c49e7d75d4e8dae394"
     },
     {
       "module": "container_concurrent",
@@ -352,9 +354,10 @@
     },
     {
       "module": "compute_provider_onednn",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/build/compute-unified-delivery.md",
-      "summary": "C1统一Compute路线/必要Provider输入已审计并固定有限FIX；共享构建和现行fixture参数迁移，C2/R1仍须子包审计；不改数学。"
+      "summary": "C1/C2/R1统一配置/SDK资产/冷绑定校准已固定候选；C3批量三平台三交付待验；原数学/热路径不改，H1-H3另卡。",
+      "candidate": "321bb5bd8ff5743a439111c49e7d75d4e8dae394"
     },
     {
       "module": "compute_provider_ggml",
@@ -391,33 +394,38 @@
     },
     {
       "module": "compute_backend_cpu",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/build/compute-unified-delivery.md",
-      "summary": "C1统一Compute路线/必要Provider输入已审计并固定有限FIX；共享构建和现行fixture参数迁移，C2/R1仍须子包审计；不改数学。"
+      "summary": "C1/C2/R1统一配置/SDK资产/冷绑定校准已固定候选；C3批量三平台三交付待验；原数学/热路径不改，H1-H3另卡。",
+      "candidate": "321bb5bd8ff5743a439111c49e7d75d4e8dae394"
     },
     {
       "module": "compute_backend_cuda",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/build/compute-unified-delivery.md",
-      "summary": "C1统一Compute路线/必要Provider输入已审计并固定有限FIX；共享构建和现行fixture参数迁移，C2/R1仍须子包审计；不改数学。"
+      "summary": "C1/C2/R1统一配置/SDK资产/冷绑定校准已固定候选；C3批量三平台三交付待验；原数学/热路径不改，H1-H3另卡。",
+      "candidate": "321bb5bd8ff5743a439111c49e7d75d4e8dae394"
     },
     {
       "module": "compute_provider_native",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/build/compute-unified-delivery.md",
-      "summary": "C1统一Compute路线/必要Provider输入已审计并固定有限FIX；共享构建和现行fixture参数迁移，C2/R1仍须子包审计；不改数学。"
+      "summary": "C1/C2/R1统一配置/SDK资产/冷绑定校准已固定候选；C3批量三平台三交付待验；原数学/热路径不改，H1-H3另卡。",
+      "candidate": "321bb5bd8ff5743a439111c49e7d75d4e8dae394"
     },
     {
       "module": "compute_route_cpu",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/build/compute-unified-delivery.md",
-      "summary": "C1统一Compute路线/必要Provider输入已审计并固定有限FIX；共享构建和现行fixture参数迁移，C2/R1仍须子包审计；不改数学。"
+      "summary": "C1/C2/R1统一配置/SDK资产/冷绑定校准已固定候选；C3批量三平台三交付待验；原数学/热路径不改，H1-H3另卡。",
+      "candidate": "321bb5bd8ff5743a439111c49e7d75d4e8dae394"
     },
     {
       "module": "graph_route_cpu",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/build/compute-unified-delivery.md",
-      "summary": "C1统一Compute路线/必要Provider输入已审计并固定有限FIX；共享构建和现行fixture参数迁移，C2/R1仍须子包审计；不改数学。"
+      "summary": "C1/C2/R1统一配置/SDK资产/冷绑定校准已固定候选；C3批量三平台三交付待验；原数学/热路径不改，H1-H3另卡。",
+      "candidate": "321bb5bd8ff5743a439111c49e7d75d4e8dae394"
     },
     {
       "module": "compute_provider_cublas",
@@ -455,39 +463,45 @@
     },
     {
       "module": "compute_route_cuda",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/build/compute-unified-delivery.md",
-      "summary": "C1统一Compute路线/必要Provider输入已审计并固定有限FIX；共享构建和现行fixture参数迁移，C2/R1仍须子包审计；不改数学。"
+      "summary": "C1/C2/R1统一配置/SDK资产/冷绑定校准已固定候选；C3批量三平台三交付待验；原数学/热路径不改，H1-H3另卡。",
+      "candidate": "321bb5bd8ff5743a439111c49e7d75d4e8dae394"
     },
     {
       "module": "graph_route_cuda",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/build/compute-unified-delivery.md",
-      "summary": "C1统一Compute路线/必要Provider输入已审计并固定有限FIX；共享构建和现行fixture参数迁移，C2/R1仍须子包审计；不改数学。"
+      "summary": "C1/C2/R1统一配置/SDK资产/冷绑定校准已固定候选；C3批量三平台三交付待验；原数学/热路径不改，H1-H3另卡。",
+      "candidate": "321bb5bd8ff5743a439111c49e7d75d4e8dae394"
     },
     {
       "module": "compute_route_apple",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/build/compute-unified-delivery.md",
-      "summary": "C1统一Compute路线/必要Provider输入已审计并固定有限FIX；共享构建和现行fixture参数迁移，C2/R1仍须子包审计；不改数学。"
+      "summary": "C1/C2/R1统一配置/SDK资产/冷绑定校准已固定候选；C3批量三平台三交付待验；原数学/热路径不改，H1-H3另卡。",
+      "candidate": "321bb5bd8ff5743a439111c49e7d75d4e8dae394"
     },
     {
       "module": "graph_route_apple",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/build/compute-unified-delivery.md",
-      "summary": "C1统一Compute路线/必要Provider输入已审计并固定有限FIX；共享构建和现行fixture参数迁移，C2/R1仍须子包审计；不改数学。"
+      "summary": "C1/C2/R1统一配置/SDK资产/冷绑定校准已固定候选；C3批量三平台三交付待验；原数学/热路径不改，H1-H3另卡。",
+      "candidate": "321bb5bd8ff5743a439111c49e7d75d4e8dae394"
     },
     {
       "module": "compute_route_vulkan",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/build/compute-unified-delivery.md",
-      "summary": "C1统一Compute路线/必要Provider输入已审计并固定有限FIX；共享构建和现行fixture参数迁移，C2/R1仍须子包审计；不改数学。"
+      "summary": "C1/C2/R1统一配置/SDK资产/冷绑定校准已固定候选；C3批量三平台三交付待验；原数学/热路径不改，H1-H3另卡。",
+      "candidate": "321bb5bd8ff5743a439111c49e7d75d4e8dae394"
     },
     {
       "module": "graph_route_vulkan",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/build/compute-unified-delivery.md",
-      "summary": "C1统一Compute路线/必要Provider输入已审计并固定有限FIX；共享构建和现行fixture参数迁移，C2/R1仍须子包审计；不改数学。"
+      "summary": "C1/C2/R1统一配置/SDK资产/冷绑定校准已固定候选；C3批量三平台三交付待验；原数学/热路径不改，H1-H3另卡。",
+      "candidate": "321bb5bd8ff5743a439111c49e7d75d4e8dae394"
     },
     {
       "module": "compute_provider_ggml_vulkan",
@@ -502,9 +516,10 @@
     },
     {
       "module": "compute_ggml_runtime",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/build/compute-unified-delivery.md",
-      "summary": "C1统一Compute路线/必要Provider输入已审计并固定有限FIX；共享构建和现行fixture参数迁移，C2/R1仍须子包审计；不改数学。"
+      "summary": "C1/C2/R1统一配置/SDK资产/冷绑定校准已固定候选；C3批量三平台三交付待验；原数学/热路径不改，H1-H3另卡。",
+      "candidate": "321bb5bd8ff5743a439111c49e7d75d4e8dae394"
     },
     {
       "module": "compute_provider_ggml_cuda",
