@@ -482,7 +482,7 @@ NativeProgram::create(NativeDevice device, ProgramSpec spec) noexcept {
   }
   if (mlx) {
     constexpr auto limit = std::int64_t{INT32_MAX} / 4;
-    const auto fits = [limit](std::int64_t x, std::int64_t y) {
+    const auto fits = [](std::int64_t x, std::int64_t y) {
       return x > 0 && y > 0 && x <= limit / y;
     };
     if ((embedding ? !fits(spec.experts, spec.depth / 8)
@@ -494,7 +494,7 @@ NativeProgram::create(NativeDevice device, ProgramSpec spec) noexcept {
   }
   if (official) {
     constexpr auto limit = std::int64_t{INT32_MAX} / 4;
-    const auto fits = [limit](std::int64_t x, std::int64_t y) {
+    const auto fits = [](std::int64_t x, std::int64_t y) {
       return x > 0 && y > 0 && x <= limit / y;
     };
     if (official_decode ? !fits(spec.rows, spec.columns)
