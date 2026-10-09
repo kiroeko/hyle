@@ -19,3 +19,26 @@ logs/XML/receipt record the actual outcome; an unrun case is not PASS.
 The eight catalogue geometries in the domains test are **cold preparation only**.
 Full-bank actual GPU qualification, remaining catalogue/regions/state, WSL/Air,
 three deliveries, defaults and formal P1 remain pending in the parent round.
+
+## Windows packet result
+
+Product candidate `250758cef` (final test-only revision `11c2b11d`): Direct and
+Graph numerical/checked-ID delta each 1/1 PASS, three formats times three K
+values (256/1024/8192) times two slot counts, two changed weight/activation/ID
+replays, and 54 exact OutOfRange cases per entrance. Independent requests,
+retained output lease, cancellation/replay, close and reserve-all OOM each
+passed at `250758cef`; the affected native owner 7/7 and eight actual cold
+geometries per entrance passed at `6920e7a35`. No validation-layer errors.
+
+The native source program did not change after initial offline generation.
+One real adapter defect was fixed: saving the output TensorDesc by value before
+appending checked temporaries, avoiding an invalidated vector reference. The
+fixture-only I32 upload and existing OutOfRange category were corrected; all
+original failures are retained. No precision threshold or source algorithm was
+changed, and no P1/WIN is claimed. The compile receipt records its original
+generator hash; subsequent explicit UTF-8 input reading changes no grid or IR.
+
+The change-impact selector conservatively selects a wider package matrix for
+the vendor/CMake seam. This packet runs its affected native owner and ordinary
+Direct/Graph consumers. Other platform/delivery selections are deferred to the
+parent V4 and remain unproven, rather than being labeled skipped/PASS.

@@ -1,0 +1,45 @@
+{
+  "candidate": "11c2b11d0e855875046f5a1ca95f50415579f920",
+  "product_candidate": "250758cef",
+  "scope": "IQ1 numerical/checked-ID delta; lifecycle, native owner and actual cold geometries retained",
+  "steps": [
+    {
+      "name": "direct",
+      "filter": "VulkanIree.OriginalIq1ExpertProgramsAndChangedInputs",
+      "returncode": 0,
+      "tests": {
+        "tests": "1",
+        "failures": "0",
+        "disabled": "0",
+        "errors": "0",
+        "time": "0.944",
+        "timestamp": "2026-10-09T13:10:12.161",
+        "name": "AllTests"
+      },
+      "validation_error": false,
+      "log": "native-11c2b11d-direct-numeric.log",
+      "log_sha256": "f7eeb7e81c96d4482739d88b2ea2a31a93673214b2009fc5ce3294d1dc4550b5",
+      "xml": "native-11c2b11d-direct-numeric.xml",
+      "binary_sha256": "88eed8d422e26c2e19118015affbec8df173e4df18f725e10f44f2d7808602ef"
+    },
+    {
+      "name": "graph",
+      "filter": "VulkanGraph.OriginalIq1ExpertProgramsAndChangedInputs",
+      "returncode": 0,
+      "tests": {
+        "tests": "1",
+        "failures": "0",
+        "disabled": "0",
+        "errors": "0",
+        "time": "0.893",
+        "timestamp": "2026-10-09T13:10:13.236",
+        "name": "AllTests"
+      },
+      "validation_error": false,
+      "log": "native-11c2b11d-graph-numeric.log",
+      "log_sha256": "1c352b704b1a819d43518a7b48bf1a179c3d28207340e5726164535a22fae297",
+      "xml": "native-11c2b11d-graph-numeric.xml",
+      "binary_sha256": "2976acd17c112bf44caa24f7d6bdde04de3cda30a08979e0599be12daab3804f"
+    }
+  ]
+}

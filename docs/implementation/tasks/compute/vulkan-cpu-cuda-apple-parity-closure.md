@@ -125,3 +125,12 @@ selected FP4/FP8、尾尺度与encoded MatMul、三QAT全有限BF16及资源/fin
 
 剩余 8 个专家合同进入[三种原 IQ1 程序批次](vulkan-parity-v2-iq1-bindings.md)；
 原 GPU 网格/计算、checked 索引与一子组 workspace 已审计，有限 I1–I5 先固定再接线。
+
+三 IQ1 扩展原 GPU carrier 的 Windows 原链已资格：三格式、两普通入口、18组合
+与变输入重放、原坏索引/资源生命周期通过；8 actual银行只签冷准备。
+[结果及边界](vulkan-parity-v2-iq1-bindings.md#windows-原链资格结果非父轮终局)。
+当前整体工程估计约32%；先进入完整559/34/45共同矩阵与八族model-state分支，
+再V3合法default/有限P1及V4平台/三交付。已过微型包不重跑，未验范围不写PASS。
+
+统一脚本在 `11c2b11d` 统计：Compute+Graph 全部非测试实现62,409行/267文件。
+本包复用一个producer，未新增完整build tree；生成制品仅49,180-byte VMFB及原网格。

@@ -83,3 +83,15 @@ program.values 内的 output descriptor；追加 status/safe IDs 使 vector 扩�
 两ID PASS；运行ID仅54个错误分类断言不符。原 vulkan_run.cc:136 的既有坏索引
 合同为 OutOfRange，fixture误写 InvalidArgument；只恢复原分类断言，不改变产品
 或错误合同。最终仅两入口数值/坏索引ID定向复验，生命周期等通过域继承。
+
+## Windows 原链资格结果（非父轮终局）
+
+最终产品 `250758cef`、测试修正 `11c2b11d`：Direct/Graph 新数值ID各1/1 PASS，
+18组合×2 changed重放及每入口54个 OutOfRange；独立请求、lease、cancel/replay、
+close、reserve-all OOM两入口ID通过。native owner7/7与两入口8 actual冷几何通过域
+按此前结果继承，validation layer无错。原失败完整保留，误差门/数学程序未放宽。
+
+I1–I4 当前原程序/普通入口有限Windows批次通过；I5 offline source/identity/许可
+已接，三交付/Air/WSL仍由父轮集中验。八完整银行 GPU、完整目录/model-state/default/
+正式P1仍未验，不签本owner或Vulkan整条路线 CLOSED。统一Compute+Graph实现统计
+见父轮最新记录。下一步进入完整共同目录与状态分支集中矩阵，不复验已过微型包。

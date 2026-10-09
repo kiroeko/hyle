@@ -547,13 +547,13 @@
       "module": "compute_route_vulkan",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/vulkan-parity-v2-iq1-bindings.md",
-      "summary": "Vulkan IQ1 original GPU batch AUDITED: eight expert contracts, exact registered source/grid/layout; finite I1-I5 native selected-group carrier, checked publication, one-group workspace and offline provenance."
+      "summary": "Vulkan IQ1 source batch AUDITED: native source and Direct/Graph 18-case repeated numerical/checked-ID plus request/lease/cancel/close/OOM packet qualified; eight actual banks cold-only. Full catalogue/state/default/P1/platform/three deliveries remain pending."
     },
     {
       "module": "graph_route_vulkan",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/vulkan-parity-v2-iq1-bindings.md",
-      "summary": "Vulkan IQ1 original GPU batch AUDITED: eight expert contracts, exact registered source/grid/layout; finite I1-I5 native selected-group carrier, checked publication, one-group workspace and offline provenance."
+      "summary": "Vulkan IQ1 source batch AUDITED: native source and Direct/Graph 18-case repeated numerical/checked-ID plus request/lease/cancel/close/OOM packet qualified; eight actual banks cold-only. Full catalogue/state/default/P1/platform/three deliveries remain pending."
     },
     {
       "module": "compute_provider_ggml_vulkan",
@@ -621,7 +621,7 @@
       "module": "compute_provider_iree_vulkan",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/vulkan-parity-v2-iq1-bindings.md",
-      "summary": "Vulkan IQ1 original GPU batch AUDITED: eight expert contracts, exact registered source/grid/layout; finite I1-I5 native selected-group carrier, checked publication, one-group workspace and offline provenance."
+      "summary": "Vulkan IQ1 source batch AUDITED: native source and Direct/Graph 18-case repeated numerical/checked-ID plus request/lease/cancel/close/OOM packet qualified; eight actual banks cold-only. Full catalogue/state/default/P1/platform/three deliveries remain pending."
     },
     {
       "module": "compute_provider_torch_cuda",
