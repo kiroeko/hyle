@@ -155,6 +155,10 @@ def generate():
     for kind in ("nf4", "nf4_nested", "awq", "ct"):
         for scale in (("f32",) if kind.startswith("nf4") else TYPES):
             for output in TYPES:
+                # Cross-dtype half sources use the route's already qualified
+                # native Cast after the original typed decode result.
+                if not kind.startswith("nf4") and scale != "f32" and output != scale:
+                    continue
                 text, name = entry(kind, scale, output)
                 entries.append(text)
                 names.append(name)

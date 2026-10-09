@@ -46,10 +46,10 @@
     {
       "name": "artifacts",
       "file": "artifacts.vmfb.b64",
-      "sha256": "35a7eb56f54dda1d117d25336cea91aa3b58d563cf516341cfe94d2571b739f1",
-      "bytes": 143375,
+      "sha256": "d9cfed23364f0f2ac5cdba0cd27a147d31dfe2f324260f832e12a21e1ccb0e21",
+      "bytes": 97637,
       "recipe": "artifacts.mlir",
-      "recipe_sha256": "c0d17472bc0b86ecc7fa2f52027cc21406bfa03bd285b51498824d4399cab44d",
+      "recipe_sha256": "e14b3af4e5c1d942e5385459f9eee140d6d6c3b940a469f7f6db9b08cceda2a9",
       "exports_used": [
         "nf4_f32",
         "nf4_f16",
@@ -60,24 +60,16 @@
         "awq_f32_f32",
         "awq_f32_f16",
         "awq_f32_bf16",
-        "awq_f16_f32",
         "awq_f16_f16",
-        "awq_f16_bf16",
-        "awq_bf16_f32",
-        "awq_bf16_f16",
         "awq_bf16_bf16",
         "ct_f32_f32",
         "ct_f32_f16",
         "ct_f32_bf16",
-        "ct_f16_f32",
         "ct_f16_f16",
-        "ct_f16_bf16",
-        "ct_bf16_f32",
-        "ct_bf16_f16",
         "ct_bf16_bf16"
       ],
       "offline_compilation": "compile_artifacts.py",
-      "execution_contract": "SignedZeroInfNanPreserve 32; original source-scale rounding and compiler 64-lane schedule",
+      "execution_contract": "SignedZeroInfNanPreserve 32; original source-typed decode; qualified native final Cast for cross-dtype half sources",
       "qualification": "docs/implementation/tasks/compute/vulkan-parity-v2-artifact-bindings.md"
     }
   ]

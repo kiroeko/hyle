@@ -30,7 +30,14 @@ jobs = [
      'VulkanGraph.OriginalArtifact*:VulkanGraph.OriginalFloat8*:'
      'VulkanGraph.CheckedScanChainsTwoOriginalProgramsWithIndependentResults'),
 ]
-if '--delta' in sys.argv[1:]:
+if '--rounding-delta' in sys.argv[1:]:
+    jobs = [
+        ('direct-rounding', 'hyle_compute_route_vulkan_test',
+         'VulkanIree.OriginalArtifactBatchPreservesSourceRoundingAndSixPorts'),
+        ('graph-rounding', 'hyle_graph_route_vulkan_test',
+         'VulkanGraph.OriginalArtifactBatchUsesOrdinaryTypedEntry'),
+    ]
+elif '--delta' in sys.argv[1:]:
     jobs = [
         ('direct-delta', 'hyle_compute_route_vulkan_test',
          'VulkanIree.OriginalArtifactBatchPreservesSourceRoundingAndSixPorts:'

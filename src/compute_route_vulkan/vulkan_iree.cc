@@ -86,6 +86,16 @@ bool artifact_dispatch_fits(const Device &device, const ProgramState &program,
   // Include descriptor alignment in the original allocator's combined input
   // and output domain. Reject before native allocation, not after an OOM probe.
   std::uint64_t bytes = (*output.required_bytes() + 63) & ~std::uint64_t{63};
+  const auto operation = step.operation.custom_as<model_ops::ArtifactWeightDecode>();
+  if (operation &&
+      (operation->format == model_ops::WeightArtifactFormat::kAwqGemm4 ||
+       operation->format == model_ops::WeightArtifactFormat::kCompressedTensorsSymmetric4)) {
+    const auto scale = program.values[step.inputs[
+        operation->format == model_ops::WeightArtifactFormat::kAwqGemm4 ? 2 : 1]]
+                           .description.data_type();
+    if (scale != DataType::kFloat32 && scale != output.data_type())
+      bytes += (elements * 2 + 63) & ~std::uint64_t{63};
+  }
   for (const auto input : step.inputs) {
     const auto size = *program.values[input].description.required_bytes();
     if (size > limits.maxStorageBufferRange)
@@ -316,9 +326,45 @@ Status lower_iree(ProgramState &program, const PlanStep &step) noexcept {
     Dispatch dispatch;
     dispatch.iree = spec;
     dispatch.values = step.inputs;
-    dispatch.values.insert(dispatch.values.end(), step.outputs.begin(),
-                           step.outputs.end());
+    auto output = step.outputs[0];
+    bool source_rounding = false;
+    DataType source_type = DataType::kFloat32;
+    if (artifact &&
+        (spec.kind == iv::ProgramKind::AwqDecode ||
+         spec.kind == iv::ProgramKind::Symmetric4Decode)) {
+      source_type = program.values[step.inputs[
+          spec.kind == iv::ProgramKind::AwqDecode ? 2 : 1]].description.data_type();
+      source_rounding = source_type != DataType::kFloat32 &&
+          source_type != program.values[output].description.data_type();
+    }
+    if (source_rounding) {
+      const auto &description = program.values[output].description;
+      HYLE_ASSIGN_OR_RETURN(auto source_result,
+          TensorDesc::dense(source_type, description.dimensions()));
+      output = static_cast<std::uint32_t>(program.values.size());
+      program.values.push_back({source_result, {}});
+      program.aliases.push_back({output, 0});
+      dispatch.iree->output_type = artifact_scalar(source_type);
+    }
+    dispatch.values.push_back(output);
     program.dispatches.push_back(std::move(dispatch));
+    if (source_rounding) {
+      // Preserve the mature source's materialized rounding. Final conversion
+      // uses the already qualified native Cast paths, with explicit storage,
+      // copies and completion; no compiler arithmetic workaround is required.
+      PlanStep convert{Operation(Cast{
+          program.values[step.outputs[0]].description.data_type()}),
+          {output}, step.outputs, {}, {1, 1, 1}, {}};
+      if (iree_operation(program, convert))
+        return lower_iree(program, convert);
+      if (!managed_operation(program, convert))
+        return Status::Unimplemented("Vulkan artifact final Cast domain");
+      Plan local;
+      local.outputs = step.outputs;
+      local.steps.push_back(std::move(convert));
+      const std::vector<std::size_t> last_uses(program.values.size(), 0);
+      return lower_region(program, local, 0, 1, last_uses);
+    }
     return Status::Ok();
   } catch (const std::bad_alloc &) {
     return Status::ResourceExhausted("Vulkan IREE preparation metadata");

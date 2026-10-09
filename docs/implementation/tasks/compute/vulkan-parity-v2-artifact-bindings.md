@@ -95,3 +95,30 @@ selector、docs/closure 必跑；适用未运行写 UNPROVEN，不能 PASS。bud
 预算，同时仍以 reserve-all 注入真实 OOM、检查释放到0，不放宽产品 quota 或绕过计费。
 仅重跑失败的新增五 ID（与首次未能到达的新增组合）；原 Provider/FP8/Scan/U8 PASS 复用。
 一次 test 显式 Operation 构造纠正已通过增量编译，未更改产品接口。
+
+## A1-R：源精度舍入边界定向审计（AUDITED）
+
+`61d0585b` 唯一纠正复验：Direct 冷解码→MatMul 和取消/OOM/关闭/释放到0通过，Graph
+冷解码→MatMul通过，nested U8 lookup 原问题已消失；两批量 ID 仍 FAIL。首次真正走到
+全部 scale/output 组合发现新事实：AWQ/CT F16/BF16 source→其它 output 的中间舍入被
+compiler canonicalization 消掉。例如原 BF16 source→F16 的生成 SPIR-V 是 FMul F32→
+直接 FConvert F16，缺少源 BF16 舍入；不能放宽精度或把不同输出层级当成通过。
+
+新增有限 A1-R 只允许在已有原 recipe 的 source dtype 值上使用 IREE 已有
+`util.optimization_barrier`，保持原 tensor materialization 的舍入，再做最终转换。
+锁定原 `UtilOps.td` 603–610 明确该原操作在最后编译阶段删除、无 runtime 开销；不修改
+编译器、shader 算法、source dtype、最终 dtype 或数值门。cold ABI/六输入/VM/资源不变。
+离线编译与两失败批量 ID 纠正预算10分钟、一次；已通过的三新增 ID 和旧域复用。
+若原标准 barrier 仍不能保持正确舍入，具名拒绝这些 cross-dtype 域并退回范围裁决，
+不继续改仪器、随机换 compiler flags 或写自研舍入算法。
+
+原标准 barrier 的标量位置会产生非法无限动态 workgroup scratch；tensor 位置缺失
+Flow shape propagation，两个离线结果均未产生可交付制品，未启动新 GPU run。A1-R
+依据这些具体反例重新固定为已有成熟分段组合：原解码只生成源 F16/BF16 typed tensor，
+最终 Cast 复用已有合格 ggml 浮点 Cast／IREE F16→BF16；不继续 compiler 调参。
+两个位置的失败保存证据；未编译候选源恢复到已验原 recipe 后移除八个失格 cross-dtype
+导出，不保留未使用错误程序。NativeProgram 只接受合格单段域；路线冷期追加内部 typed
+value 和成熟 Cast，原 liveness/完成/失败/结果 lease 负责两个片段。新增中间 bytes、
+GPU copy／Cast／完成均真实计费；不写舍入算法，不改公开入口。
+source 仍16个离线 entry，跨源精度的公开组合由第二成熟片段承载；生成器/manifest/native
+resolver同步裁剪。仅两失败批量 ID 验证，既有三新增成功 ID 仍复用；最多一次真实验收。

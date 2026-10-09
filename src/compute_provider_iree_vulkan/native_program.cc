@@ -77,27 +77,29 @@ const char *artifact_entry(const ProgramSpec &spec) noexcept {
                             "module.nf4_bf16"};
   constexpr std::array nested{"module.nf4_nested_f32", "module.nf4_nested_f16",
                               "module.nf4_nested_bf16"};
-  constexpr std::array awq{
-      "module.awq_f32_f32", "module.awq_f32_f16", "module.awq_f32_bf16",
-      "module.awq_f16_f32", "module.awq_f16_f16", "module.awq_f16_bf16",
-      "module.awq_bf16_f32", "module.awq_bf16_f16", "module.awq_bf16_bf16"};
-  constexpr std::array ct{
-      "module.ct_f32_f32", "module.ct_f32_f16", "module.ct_f32_bf16",
-      "module.ct_f16_f32", "module.ct_f16_f16", "module.ct_f16_bf16",
-      "module.ct_bf16_f32", "module.ct_bf16_f16", "module.ct_bf16_bf16"};
+  constexpr std::array awq{"module.awq_f32_f32", "module.awq_f32_f16",
+                           "module.awq_f32_bf16"};
+  constexpr std::array ct{"module.ct_f32_f32", "module.ct_f32_f16",
+                          "module.ct_f32_bf16"};
   const auto scale = static_cast<std::size_t>(spec.scale_type);
   const auto output = static_cast<std::size_t>(spec.output_type);
   if (scale >= 3 || output >= 3)
     return nullptr;
+  if ((spec.kind == ProgramKind::AwqDecode ||
+       spec.kind == ProgramKind::Symmetric4Decode) &&
+      spec.scale_type != ArtifactScalar::Float32 && scale != output)
+    return nullptr; // Typed source result; final Cast is a qualified route fragment.
   switch (spec.kind) {
   case ProgramKind::Nf4Decode:
     return nf4[output];
   case ProgramKind::Nf4NestedDecode:
     return nested[output];
   case ProgramKind::AwqDecode:
-    return awq[scale * 3 + output];
+    return scale == 1 ? "module.awq_f16_f16"
+           : scale == 2 ? "module.awq_bf16_bf16" : awq[output];
   case ProgramKind::Symmetric4Decode:
-    return ct[scale * 3 + output];
+    return scale == 1 ? "module.ct_f16_f16"
+           : scale == 2 ? "module.ct_bf16_bf16" : ct[output];
   default:
     return nullptr;
   }
