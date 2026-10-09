@@ -1,6 +1,7 @@
 #include "native_program.h"
 
 #include <array>
+#include <cmath>
 #include <condition_variable>
 #include <limits>
 #include <mutex>
@@ -129,6 +130,19 @@ const char *mlx_entry(const ProgramSpec &spec) noexcept {
       {"module.affine_embedding_f32", "module.affine_embedding_f16", "module.affine_embedding_bf16"}}};
   return names[static_cast<std::size_t>(spec.kind) -
                static_cast<std::size_t>(ProgramKind::MlxAffineLinear)][type];
+}
+
+const char *official_entry(ProgramKind kind) noexcept {
+  constexpr std::array names{
+      "module.weight_decode_f32", "module.weight_decode_bf16",
+      "module.fp8_roundtrip_64", "module.fp8_roundtrip_128", "module.fp4_roundtrip_32",
+      "module.linear_normal_f32", "module.linear_normal_bf16",
+      "module.linear_power_f32", "module.linear_power_bf16",
+      "module.grouped8_f32", "module.grouped8_bf16", "module.grouped4_bf16",
+      "module.encoded_block128"};
+  return official_program(kind)
+      ? names[static_cast<std::size_t>(kind) - static_cast<std::size_t>(ProgramKind::OfficialWeightDecodeF32)]
+      : nullptr;
 }
 } // namespace
 
@@ -374,6 +388,7 @@ NativeProgram::create(NativeDevice device, ProgramSpec spec) noexcept {
                          spec.kind == ProgramKind::Float16ToBFloat16;
   const bool artifact = artifact_program(spec.kind);
   const bool mlx = mlx_program(spec.kind);
+  const bool official = official_program(spec.kind);
   const auto &features = device.state_->native.native();
   if (scan && !features.shader_int64)
     return std::unexpected(
@@ -412,12 +427,31 @@ NativeProgram::create(NativeDevice device, ProgramSpec spec) noexcept {
   if (mlx && (!features.shader_int16 || !features.shader_float16 ||
               !features.storage_buffer16 || !features.preserve_float32_specials))
     return std::unexpected(Status::Unimplemented("MLX requires enabled original numeric features"));
-  if (!scan && !precision && !artifact && !mlx &&
+  const bool official_decode = spec.kind == ProgramKind::OfficialWeightDecodeF32 ||
+                               spec.kind == ProgramKind::OfficialWeightDecodeBf16;
+  if (official && (spec.depth <= 0 || spec.selection_slots <= 0 ||
+                   spec.selection_slots > INT32_MAX || spec.activation_slots <= 0 ||
+                   spec.activation_slots > INT32_MAX || spec.experts <= 0 ||
+                   spec.depth % (official_roundtrip(spec.kind)
+                       ? (spec.kind == ProgramKind::OfficialRoundtrip4Group32 ? 32
+                          : spec.kind == ProgramKind::OfficialRoundtrip8Group64 ? 64 : 128)
+                       : 128) ||
+                   (official_grouped(spec.kind) &&
+                    (spec.rows % spec.selection_slots ||
+                     (spec.activation_slots != 1 && spec.activation_slots != spec.selection_slots))) ||
+                   (official_checked(spec.kind) && !official_roundtrip(spec.kind) &&
+                    (!std::isfinite(spec.absmax_floor) || spec.absmax_floor <= 0 ||
+                     !std::isnormal(spec.absmax_floor / 448.f)))))
+    return std::unexpected(Status::InvalidArgument("original official float shape/scalar domain"));
+  if (official && (!features.shader_int16 || !features.shader_float16 ||
+                   !features.storage_buffer16 || !features.preserve_float32_specials))
+    return std::unexpected(Status::Unimplemented("official float requires enabled original numeric features"));
+  if (!scan && !precision && !artifact && !mlx && !official &&
       (!features.shader_float16 || !features.storage_buffer16))
     return std::unexpected(Status::Unimplemented(
         "FP8 program requires enabled Float16 and storage16"));
   const auto block = spec.kind == ProgramKind::Float8Block128 ? 128 : 32;
-  if (!scan && !precision && !artifact && !mlx &&
+  if (!scan && !precision && !artifact && !mlx && !official &&
       (spec.depth <= 0 || spec.depth % block ||
        (spec.kind == ProgramKind::Float8Block128 && spec.columns % block)))
     return std::unexpected(
@@ -428,7 +462,7 @@ NativeProgram::create(NativeDevice device, ProgramSpec spec) noexcept {
   constexpr std::int64_t max_elements =
       std::numeric_limits<std::int32_t>::max() / 8;
   if (spec.rows > max_elements / spec.columns ||
-      (!scan && !precision && !artifact && !mlx &&
+      (!scan && !precision && !artifact && !mlx && !official &&
        (spec.rows > max_elements / spec.depth ||
         spec.columns > max_elements / spec.depth)))
     return std::unexpected(
@@ -444,6 +478,18 @@ NativeProgram::create(NativeDevice device, ProgramSpec spec) noexcept {
                       !fits(spec.experts * spec.columns, spec.depth / (mx8 ? 4 : 8)) ||
                       !fits(spec.rows * spec.columns, spec.group_size))))
       return std::unexpected(Status::OutOfRange("MLX original tensor index/workspace domain"));
+  }
+  if (official) {
+    constexpr auto limit = std::int64_t{INT32_MAX} / 4;
+    const auto fits = [limit](std::int64_t x, std::int64_t y) {
+      return x > 0 && y > 0 && x <= limit / y;
+    };
+    if (official_decode ? !fits(spec.rows, spec.columns)
+        : official_roundtrip(spec.kind) ? !fits(spec.rows, spec.columns)
+        : (!fits(spec.rows, spec.depth) || !fits(spec.experts, spec.columns) ||
+           !fits(spec.experts * spec.columns, spec.depth) ||
+           !fits(spec.rows * spec.columns, spec.kind == ProgramKind::OfficialGrouped4Bf16 ? 32 : 128)))
+      return std::unexpected(Status::OutOfRange("official float original tensor index/workspace domain"));
   }
   try {
     auto state = std::make_unique<State>();
@@ -461,6 +507,7 @@ NativeProgram::create(NativeDevice device, ProgramSpec spec) noexcept {
                                       : precision  ? 2
                                       : artifact   ? 3
                                       : mlx        ? 4
+                                      : official   ? 5
                                                    : 1]
                            .get()};
     iree_vm_context_t *context = nullptr;
@@ -505,6 +552,21 @@ NativeProgram::create(NativeDevice device, ProgramSpec spec) noexcept {
     case ProgramKind::MlxAffineEmbedding:
       name = mlx_entry(spec);
       break;
+    case ProgramKind::OfficialWeightDecodeF32:
+    case ProgramKind::OfficialWeightDecodeBf16:
+    case ProgramKind::OfficialRoundtrip8Group64:
+    case ProgramKind::OfficialRoundtrip8Group128:
+    case ProgramKind::OfficialRoundtrip4Group32:
+    case ProgramKind::OfficialLinearF32:
+    case ProgramKind::OfficialLinearBf16:
+    case ProgramKind::OfficialLinearPowerF32:
+    case ProgramKind::OfficialLinearPowerBf16:
+    case ProgramKind::OfficialGrouped8F32:
+    case ProgramKind::OfficialGrouped8Bf16:
+    case ProgramKind::OfficialGrouped4Bf16:
+    case ProgramKind::OfficialEncodedBlock128:
+      name = official_entry(spec.kind);
+      break;
     default:
       return std::unexpected(Status::InvalidArgument("IREE program kind"));
     }
@@ -521,7 +583,48 @@ NativeProgram::create(NativeDevice device, ProgramSpec spec) noexcept {
                             iree_allocator_system(), &outputs)));
     state->outputs.reset(outputs);
     auto *hal = owner.device.get();
-    if (mlx) {
+    if (official) {
+      const auto r = static_cast<iree_hal_dim_t>(spec.rows);
+      const auto n = static_cast<iree_hal_dim_t>(spec.columns);
+      const auto k = static_cast<iree_hal_dim_t>(spec.depth);
+      const auto e = static_cast<iree_hal_dim_t>(spec.experts);
+      const auto type = artifact_scalar(spec.output_type);
+      if (official_roundtrip(spec.kind)) {
+        const std::array<iree_hal_dim_t, 2> a{r, n};
+        HYLE_ASSIGN_OR_RETURN(state->views[0], allocate_view(hal, a, IREE_HAL_ELEMENT_TYPE_SINT_16));
+        state->count = 1;
+      } else if (official_decode) {
+        const std::array<iree_hal_dim_t, 2> codes{r, n}, scales{(r + 127) / 128, n / 128};
+        HYLE_ASSIGN_OR_RETURN(state->views[0], allocate_view(hal, codes, IREE_HAL_ELEMENT_TYPE_SINT_8));
+        HYLE_ASSIGN_OR_RETURN(state->views[1], allocate_view(hal, scales, IREE_HAL_ELEMENT_TYPE_FLOAT_32));
+        state->count = 2;
+      } else {
+        const bool encoded = spec.kind == ProgramKind::OfficialEncodedBlock128;
+        const bool grouped = official_grouped(spec.kind);
+        const bool four = spec.kind == ProgramKind::OfficialGrouped4Bf16;
+        const auto a_rows = grouped ? r / spec.selection_slots * spec.activation_slots : r;
+        const std::array<iree_hal_dim_t, 2> a{a_rows, k}, a_scale{r, k / 128};
+        const std::array<iree_hal_dim_t, 3> codes{e, n, four ? k / 2 : k},
+            w_scale{e, four ? n : (n + 127) / 128, k / (four ? 32 : 128)};
+        HYLE_ASSIGN_OR_RETURN(state->views[0], allocate_view(hal, a,
+            encoded ? IREE_HAL_ELEMENT_TYPE_SINT_8 : type));
+        std::size_t port = 1;
+        if (encoded) {
+          HYLE_ASSIGN_OR_RETURN(state->views[port], allocate_view(hal, a_scale, IREE_HAL_ELEMENT_TYPE_FLOAT_32));
+          ++port;
+        }
+        HYLE_ASSIGN_OR_RETURN(state->views[port], allocate_view(hal, codes, IREE_HAL_ELEMENT_TYPE_SINT_8));
+        ++port;
+        HYLE_ASSIGN_OR_RETURN(state->views[port], allocate_view(hal, w_scale, IREE_HAL_ELEMENT_TYPE_FLOAT_32));
+        ++port;
+        if (grouped) {
+          const std::array<iree_hal_dim_t, 1> ids{r};
+          HYLE_ASSIGN_OR_RETURN(state->views[port], allocate_view(hal, ids, IREE_HAL_ELEMENT_TYPE_SINT_32));
+          ++port;
+        }
+        state->count = port;
+      }
+    } else if (mlx) {
       const auto rows = static_cast<iree_hal_dim_t>(spec.rows);
       const auto columns = static_cast<iree_hal_dim_t>(spec.columns);
       const auto depth = static_cast<iree_hal_dim_t>(spec.depth);
@@ -694,6 +797,16 @@ WorkState NativeProgram::invoke(CompletionNotify notify,
           static_cast<std::int32_t>(state.spec.group_size));
       HYLE_RETURN_IF_ERROR(detail::consume_status(
           iree_vm_list_push_value(state.inputs.get(), &group)));
+    }
+    if (official_grouped(state.spec.kind)) {
+      for (const auto scalar : {state.spec.selection_slots, state.spec.activation_slots}) {
+        const auto value = iree_vm_value_make_i32(static_cast<std::int32_t>(scalar));
+        HYLE_RETURN_IF_ERROR(detail::consume_status(iree_vm_list_push_value(state.inputs.get(), &value)));
+      }
+    }
+    if (official_checked(state.spec.kind) && !official_roundtrip(state.spec.kind)) {
+      const auto floor = iree_vm_value_make_f32(state.spec.absmax_floor);
+      HYLE_RETURN_IF_ERROR(detail::consume_status(iree_vm_list_push_value(state.inputs.get(), &floor)));
     }
     for (auto *value : {state.ready.get(), state.done.get()}) {
       auto ref = iree_hal_fence_retain_ref(value);

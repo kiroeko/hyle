@@ -105,6 +105,32 @@
       "offline_compilation": "compile_mlx.py",
       "execution_contract": "Original selected one-K-group tensor programs; F32 dot-before-source-scale accumulation; IEEE32 original64-lane schedule",
       "qualification": "docs/implementation/tasks/compute/vulkan-parity-v2-mlx-bindings.md"
+    },
+    {
+      "name": "official",
+      "file": "official.vmfb.b64",
+      "sha256": "7cf7f29690ce8e2145a64e3a8cfe625d01f4212e7b71e5729080c8870a2d5226",
+      "bytes": 173478,
+      "recipe": "official.mlir",
+      "recipe_sha256": "e725df15a906b1df5fb291658006239ae2ba8b15accbc60e6484b9b2260a76c1",
+      "exports_used": [
+        "weight_decode_f32",
+        "weight_decode_bf16",
+        "fp8_roundtrip_64",
+        "fp8_roundtrip_128",
+        "fp4_roundtrip_32",
+        "linear_normal_f32",
+        "linear_power_f32",
+        "linear_normal_bf16",
+        "linear_power_bf16",
+        "grouped8_f32",
+        "grouped8_bf16",
+        "grouped4_bf16",
+        "encoded_block128"
+      ],
+      "offline_compilation": "compile_official.py",
+      "execution_contract": "Original QAT/RNE and selected group dot-before-scale; 27 IEEE32 math schedules and2 native integer finite controls",
+      "qualification": "docs/implementation/tasks/compute/vulkan-parity-v2-official-float-bindings.md"
     }
   ]
 }

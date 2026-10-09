@@ -23,6 +23,7 @@ struct IreeStage final {
   bool constants_submitted = false;
   std::shared_ptr<Buffer> flag;
   bool reading_flag = false;
+  bool finite_input_flag = false;
   Status bind() noexcept;
   static void completed(void *, const Status &) noexcept;
 };

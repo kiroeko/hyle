@@ -1,6 +1,7 @@
 #include "../compute_route_vulkan/iree_test_support.h"
 #include "../compute_route_vulkan/artifact_test_support.h"
 #include "../compute_route_vulkan/mlx_test_support.h"
+#include "../compute_route_vulkan/official_test_support.h"
 #include "../compute_route_vulkan/scan_test_support.h"
 #include "hyle/graph/vulkan.h"
 
@@ -22,6 +23,30 @@ hyle::Result<v::Program> compile_artifact(const v::Context &context,
   const auto result = builder.result(node).value();
   EXPECT_TRUE(builder.publish(result).ok());
   return gv::compile(context, std::move(builder).finish().value());
+}
+
+TEST(VulkanGraph, OriginalOfficialDynamicLinearsAndWeightTailDecode) {
+  vulkan_official_test::linears(compile_artifact);vulkan_official_test::decodes(compile_artifact);
+}
+TEST(VulkanGraph, OriginalOfficialGroupedFp4Fp8SharedDistinctAndChecked) {
+  vulkan_official_test::grouped(compile_artifact);
+}
+TEST(VulkanGraph, OriginalOfficialQatFiniteBfloatExhaustiveAndFailure) {
+  vulkan_official_test::roundtrips(compile_artifact);
+}
+TEST(VulkanGraph, OriginalOfficialEncodedBlock128TailAndReplay) {
+  auto context = vulkan_test::context().value();
+  for (int n : {5, 129}) {
+    Float8Inputs a(3, 256, n, c::Float8ScaleMode::kFloat32Block128), b(3, 256, n, c::Float8ScaleMode::kFloat32Block128, 1);
+    const std::array descriptions{a.activation, a.weight};
+    auto program = compile_artifact(context, c::Operation(c::MatMul{.accumulation_type=c::DataType::kFloat32}), descriptions);
+    ASSERT_TRUE(program) << program.error().message();auto slot = program->create_invocation().value();
+    for (const auto *data : {&a, &b}) {
+      const std::array inputs{context.upload(data->activation, data->a).value(), context.upload(data->weight, data->w).value()};
+      ASSERT_TRUE(slot.bind(inputs).ok());auto work = slot.submit().value();auto result = work.wait();
+      ASSERT_TRUE(result) << result.error().message();t::expect(context, result->get()->tensors()[0], data->multiply(), true);
+    }
+  }
 }
 
 TEST(VulkanGraph, OriginalMlxBatchUsesOrdinaryTypedNodesAndCheckedSlots) {

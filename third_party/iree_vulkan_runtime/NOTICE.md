@@ -74,3 +74,22 @@ loop execution, workgroup selection and resources. No HYLE kernel/quantizer,
 compiler pass or full F32 expert bank is introduced. Tensor barriers and shape
 ties preserve source dtype materialization; their byte identities and offline
 compilation are recorded in the existing manifest and qualification receipt.
+
+## Original official float and QAT programs
+
+`programs/official.mlir` translates the registered original DeepSeek
+weight_dequant/activation and FP4 group equations, SGLang `_per_token_group_quant_8bit_colmajor`
+and `_w8a8_block_fp8_matmul`, and ds4
+`9139e2ae58a41503968a500f36f75895c1ba63fc` original BF16 QAT roundtrip equations.
+Source identities/functions are in `third_party/deepseek_fp8/provenance.json`,
+`third_party/sglang_activation/fp8/source.json` and
+`third_party/ds4_quantization/source.json`. See `programs/licenses/deepseek.txt`,
+`sglang.txt` and `ds4.txt`; original copyrights and terms are retained.
+
+Only standard tensor/arith/linalg/scf operations are emitted. Original IREE
+owns native conversion, matrix execution, group loops and resource management.
+FP4 nearest-even lookup and low BF16 significand handling preserve the original
+format and already qualified source tensor equations; no new quantization
+algorithm, HYLE kernel or compiler pass is introduced. Dynamic finite control
+returns a native scalar flag; failed output remains private. Original dot then
+activation scale, weight scale and ordered F32 accumulation are retained.

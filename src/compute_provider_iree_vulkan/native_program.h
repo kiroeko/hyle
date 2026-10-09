@@ -24,7 +24,20 @@ enum class ProgramKind {
   MlxMx4Grouped,
   MlxMx8Linear,
   MlxMx8Grouped,
-  MlxAffineEmbedding
+  MlxAffineEmbedding,
+  OfficialWeightDecodeF32,
+  OfficialWeightDecodeBf16,
+  OfficialRoundtrip8Group64,
+  OfficialRoundtrip8Group128,
+  OfficialRoundtrip4Group32,
+  OfficialLinearF32,
+  OfficialLinearBf16,
+  OfficialLinearPowerF32,
+  OfficialLinearPowerBf16,
+  OfficialGrouped8F32,
+  OfficialGrouped8Bf16,
+  OfficialGrouped4Bf16,
+  OfficialEncodedBlock128
 };
 enum class ArtifactScalar { Float32, Float16, BFloat16 };
 constexpr bool artifact_program(ProgramKind kind) noexcept {
@@ -39,6 +52,24 @@ constexpr bool mlx_grouped(ProgramKind kind) noexcept {
   return kind == ProgramKind::MlxAffineGrouped || kind == ProgramKind::MlxMx4Grouped ||
          kind == ProgramKind::MlxMx8Grouped;
 }
+constexpr bool official_program(ProgramKind kind) noexcept {
+  return kind >= ProgramKind::OfficialWeightDecodeF32 &&
+         kind <= ProgramKind::OfficialEncodedBlock128;
+}
+constexpr bool official_grouped(ProgramKind kind) noexcept {
+  return kind == ProgramKind::OfficialGrouped8F32 ||
+         kind == ProgramKind::OfficialGrouped8Bf16 ||
+         kind == ProgramKind::OfficialGrouped4Bf16;
+}
+constexpr bool official_roundtrip(ProgramKind kind) noexcept {
+  return kind >= ProgramKind::OfficialRoundtrip8Group64 &&
+         kind <= ProgramKind::OfficialRoundtrip4Group32;
+}
+constexpr bool official_checked(ProgramKind kind) noexcept {
+  return official_program(kind) && kind != ProgramKind::OfficialWeightDecodeF32 &&
+         kind != ProgramKind::OfficialWeightDecodeBf16 &&
+         kind != ProgramKind::OfficialEncodedBlock128;
+}
 struct ProgramSpec final {
   ProgramKind kind = ProgramKind::ScanInclusive;
   std::int64_t rows = 0;
@@ -50,6 +81,9 @@ struct ProgramSpec final {
   ArtifactScalar scale_type = ArtifactScalar::Float32;
   ArtifactScalar output_type = ArtifactScalar::Float32;
   std::int64_t experts = 1; // Embedding: original vocabulary row count.
+  std::int64_t selection_slots = 1;
+  std::int64_t activation_slots = 1;
+  float absmax_floor = 1.0e-10F;
 };
 struct BufferSpan final {
   VkBuffer buffer = VK_NULL_HANDLE;

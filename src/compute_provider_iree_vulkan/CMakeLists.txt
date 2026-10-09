@@ -123,4 +123,7 @@ hyle_register_package_dependency(
     "${_vendor}/programs/licenses/bitsandbytes.txt|${CMAKE_INSTALL_DATADIR}/licenses/Hyle|iree-bitsandbytes-LICENSE"
     "${_vendor}/programs/licenses/awq.txt|${CMAKE_INSTALL_DATADIR}/licenses/Hyle|iree-awq-LICENSE"
     "${_vendor}/programs/licenses/compressed-tensors.txt|${CMAKE_INSTALL_DATADIR}/licenses/Hyle|iree-compressed-tensors-LICENSE"
-    "${_vendor}/programs/licenses/mlx.txt|${CMAKE_INSTALL_DATADIR}/licenses/Hyle|iree-mlx-LICENSE")
+    "${_vendor}/programs/licenses/mlx.txt|${CMAKE_INSTALL_DATADIR}/licenses/Hyle|iree-mlx-LICENSE"
+    "${_vendor}/programs/licenses/ds4.txt|${CMAKE_INSTALL_DATADIR}/licenses/Hyle|iree-ds4-LICENSE"
+    "${_vendor}/programs/licenses/deepseek.txt|${CMAKE_INSTALL_DATADIR}/licenses/Hyle|iree-deepseek-LICENSE"
+    "${_vendor}/programs/licenses/sglang.txt|${CMAKE_INSTALL_DATADIR}/licenses/Hyle|iree-sglang-LICENSE")

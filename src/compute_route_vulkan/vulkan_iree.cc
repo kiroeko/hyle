@@ -1,5 +1,6 @@
 #include "vulkan_iree.h"
 #include "vulkan_mlx.h"
+#include "vulkan_official.h"
 
 #include <algorithm>
 #include <cstring>
@@ -187,6 +188,12 @@ void fail_sequence(Run &run, const Status &status) noexcept {
 bool named_compressed_storage(const TensorDesc &description) noexcept {
   if (gguf_quantized_type(description.storage_format()))
     return true;
+  if (description.rank() == 3) {
+    const auto shape = description.dimensions();
+    const auto fp8 = float8_grouped_weight_description(shape[0], shape[1], shape[2]);
+    const auto fp4 = float4_grouped_weight_description(shape[0], shape[1], shape[2]);
+    return (fp8 && *fp8 == description) || (fp4 && *fp4 == description);
+  }
   if (description.rank() != 2)
     return false;
   if (float8_mode(description, false) || float8_mode(description, true))
@@ -213,6 +220,7 @@ bool iree_operation(const ProgramState &program,
                     const PlanStep &step) noexcept {
   if (step.custom || step.inputs.empty() || step.outputs.size() != 1)
     return false;
+  if (official_float_operation(program, step)) return true;
   if (step.operation.custom_as<model_ops::ArtifactWeightDecode>())
     return true; // Domain diagnostics belong to cold lowering, never a shader fallback.
   if (step.operation.custom_as<model_ops::MlxQuantized>())
@@ -234,6 +242,7 @@ bool iree_operation(const ProgramState &program,
 }
 
 Status lower_iree(ProgramState &program, const PlanStep &step) noexcept {
+  if (official_float_operation(program, step)) return lower_official_float(program, step);
   if (step.operation.custom_as<model_ops::MlxQuantized>())
     return lower_mlx(program, step);
   try {
@@ -403,13 +412,31 @@ create_iree_stage(const std::shared_ptr<Run> &run, const Dispatch &dispatch,
     for (std::size_t port = 0; port < stage->input_count; ++port) {
       auto &input = stage->inputs[port];
       const bool individual = iv::artifact_program(spec.kind) || iv::mlx_program(spec.kind);
-      input.value = dispatch.values[individual ? port : port % 2];
-      if (!individual && port >= 2)
+      if (iv::official_program(spec.kind)) {
+        if (iv::official_roundtrip(spec.kind)) input.value = dispatch.values[0];
+        else if (spec.kind == iv::ProgramKind::OfficialWeightDecodeF32 ||
+                 spec.kind == iv::ProgramKind::OfficialWeightDecodeBf16) {
+          input.value = dispatch.values[0];
+          if (port == 1) input.offset = static_cast<VkDeviceSize>(spec.rows) * spec.columns;
+        } else if (spec.kind == iv::ProgramKind::OfficialEncodedBlock128) {
+          input.value = dispatch.values[port < 2 ? 0 : 1];
+          if (port == 1 || port == 3) input.offset = static_cast<VkDeviceSize>(spec.depth) * (port == 1 ? spec.rows : spec.columns);
+        } else if (iv::official_grouped(spec.kind)) {
+          input.value = dispatch.values[port == 0 ? 1 : port == 3 ? 2 : 0];
+          if (port == 2) input.offset = static_cast<VkDeviceSize>(spec.experts) * spec.columns * spec.depth /
+              (spec.kind == iv::ProgramKind::OfficialGrouped4Bf16 ? 2 : 1);
+        } else {
+          input.value = dispatch.values[port == 0 ? 0 : 1];
+          if (port == 2) input.offset = static_cast<VkDeviceSize>(spec.columns) * spec.depth;
+        }
+      } else input.value = dispatch.values[individual ? port : port % 2];
+      if (!iv::official_program(spec.kind) && !individual && port >= 2)
         input.offset =
             static_cast<VkDeviceSize>(spec.depth) *
             static_cast<VkDeviceSize>(port == 2 ? spec.rows : spec.columns);
       HYLE_ASSIGN_OR_RETURN(input.destination, stage->program->input(port));
-      input.constant = iv::mlx_program(spec.kind) && values[input.value].constant.valid();
+      input.constant = (iv::mlx_program(spec.kind) || iv::official_program(spec.kind)) &&
+                       values[input.value].constant.valid();
     }
     HYLE_ASSIGN_OR_RETURN(stage->input_copy, create_run(run->runtime));
     if (std::ranges::any_of(std::span(stage->inputs.data(), stage->input_count),
@@ -417,8 +444,9 @@ create_iree_stage(const std::shared_ptr<Run> &run, const Dispatch &dispatch,
       HYLE_ASSIGN_OR_RETURN(stage->constant_copy, create_run(run->runtime));
     }
     HYLE_ASSIGN_OR_RETURN(stage->output_copy, create_run(run->runtime));
+    stage->finite_input_flag = iv::official_checked(spec.kind);
     if (spec.kind == iv::ProgramKind::ScanInclusive ||
-        spec.kind == iv::ProgramKind::ScanExclusive) {
+        spec.kind == iv::ProgramKind::ScanExclusive || stage->finite_input_flag) {
       HYLE_ASSIGN_OR_RETURN(stage->flag_copy, create_run(run->runtime));
       HYLE_ASSIGN_OR_RETURN(stage->flag,
                             allocate_buffer(run->runtime->device, 4, true));
@@ -492,7 +520,9 @@ void IreeStage::completed(void *opaque, const Status &completion) noexcept {
     if (status.ok()) {
       std::memcpy(&flag, buffer->mapped, sizeof(flag));
       if (flag != 0)
-        status = Status::OutOfRange("Vulkan Scan prefix exceeds I32");
+        status = stage.finite_input_flag
+            ? Status::InvalidArgument("Vulkan original quantization requires finite activation")
+            : Status::OutOfRange("Vulkan Scan prefix exceeds I32");
     }
   }
   if (status.ok() && run.cancelled) {

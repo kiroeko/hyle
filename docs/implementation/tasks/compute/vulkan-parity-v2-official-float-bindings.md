@@ -76,3 +76,7 @@ finite失败、precision3种QAT全部有限BF16及midpoint/low-scale；encoded/d
 FP8链与完整FP4expert片段；changed权重/activation/scales/ids、两slot/lease/cancel/close/
 OOM及实际byte-range拒绝。原13entry源码/call错误一次具名纠正；不改数值门或无限flags。
 模型全尺寸/完整catalogue、Air/三交付/default/P1仍未运行，不把本批样本签这些PASS。
+
+离线source最终有27个原LocalSize64数学dispatch及2个原LocalSize1全局finite-bit
+reduction；后两项只做整数分类，没有浮点算术，因此不制造虚构IEEE32模式或修改其
+原schedule。制品校验明确验证29模块、27浮点mode及两整数单lane，仍不改compiler/math。

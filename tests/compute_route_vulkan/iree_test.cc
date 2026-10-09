@@ -4,6 +4,7 @@
 #include "iree_test_support.h"
 #include "artifact_test_support.h"
 #include "mlx_test_support.h"
+#include "official_test_support.h"
 #include "scan_test_support.h"
 #include "vulkan_program_internal.h"
 
@@ -18,6 +19,30 @@ hyle::Result<v::Program> prepare_artifact(const v::Context &context,
   std::vector<v::Argument> arguments;
   for (const auto &description : descriptions) arguments.emplace_back(description);
   return v::prepare(context, operation, std::span<const v::Argument>(arguments));
+}
+
+TEST(VulkanIree, OriginalOfficialDynamicLinearsAndWeightTailDecode) {
+  vulkan_official_test::linears(prepare_artifact);vulkan_official_test::decodes(prepare_artifact);
+}
+TEST(VulkanIree, OriginalOfficialGroupedFp4Fp8SharedDistinctAndChecked) {
+  vulkan_official_test::grouped(prepare_artifact);
+}
+TEST(VulkanIree, OriginalOfficialQatFiniteBfloatExhaustiveAndFailure) {
+  vulkan_official_test::roundtrips(prepare_artifact);
+}
+TEST(VulkanIree, OriginalOfficialEncodedBlock128TailAndReplay) {
+  auto context = vulkan_test::context().value();
+  for (int n : {5, 129}) {
+    Float8Inputs a(3, 256, n, c::Float8ScaleMode::kFloat32Block128), b(3, 256, n, c::Float8ScaleMode::kFloat32Block128, 1);
+    const std::array descriptions{a.activation, a.weight};
+    auto program = prepare_artifact(context, c::Operation(c::MatMul{.accumulation_type=c::DataType::kFloat32}), descriptions);
+    ASSERT_TRUE(program) << program.error().message();auto slot = program->create_invocation().value();
+    for (const auto *data : {&a, &b}) {
+      const std::array inputs{context.upload(data->activation, data->a).value(), context.upload(data->weight, data->w).value()};
+      ASSERT_TRUE(slot.bind(inputs).ok());auto work = slot.submit().value();auto result = work.wait();
+      ASSERT_TRUE(result) << result.error().message();t::expect(context, result->get()->tensors()[0], data->multiply(), true);
+    }
+  }
 }
 
 TEST(VulkanIree, OriginalMlxBatchPreservesGroupsSourceTypesAndCheckedSlots) {
