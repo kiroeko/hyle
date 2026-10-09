@@ -17,12 +17,15 @@ if head!=args.candidate or subprocess.check_output(['git','status','--porcelain'
     raise SystemExit('Require the clean, exact Windows-origin candidate')
 if args.resume_source_build:
     receipt=json.loads((out/'receipt.json').read_text())
-    if len(receipt['steps'])!=2 or receipt['steps'][0]['returncode']!=0 or receipt['steps'][1]['returncode']==0:
-        raise SystemExit('Resume is limited to the recorded first source build failure')
+    if (len(receipt['steps']) not in (2,3) or receipt['steps'][0]['returncode']!=0 or
+        receipt['steps'][-1]['returncode']==0 or
+        not receipt['steps'][-1]['label'].startswith('source-producer-build')):
+        raise SystemExit('Resume is limited to the two recorded source portability failures')
     changed=subprocess.check_output(['git','diff','--name-only',receipt['candidate'],head,'--','include','src','cmake','third_party','CMakeLists.txt'],text=True).splitlines()
-    if changed!=['src/compute_provider_iree_vulkan/native_program.cc']:
-        raise SystemExit('Resume requires only the bounded native-program warning correction')
-    receipt['continued_candidate']=head
+    allowed={'src/compute_provider_iree_vulkan/native_program.cc','src/compute_route_vulkan/vulkan_iree.cc'}
+    if not changed or not set(changed)<=allowed:
+        raise SystemExit('Resume requires only the bounded W2/W3 portability corrections')
+    receipt.setdefault('continued_candidates',[]).append(head)
 else:
     if out.exists():raise SystemExit('Retain the previous batch receipt; do not silently restart')
     out.mkdir()
@@ -73,7 +76,7 @@ for stage in ('source','static','shared'):
         if not (stage=='source' and args.resume_source_build):
             run(stage+'-producer-configure',[cmake,'-S',consumer,'-B',producer,*common,*deps,*source_options,
                 '-DD5_SOURCE_ROOT='+str(repo),'-DV4_SOURCE_STATIC='+('OFF' if stage=='shared' else 'ON'),'-DCMAKE_INSTALL_PREFIX='+str(staging)])
-        run(stage+'-producer-build'+('-w2' if stage=='source' and args.resume_source_build else ''),[cmake,'--build',producer,'-j','2'])
+        run(stage+'-producer-build'+('-w'+str(len(receipt['steps'])) if stage=='source' and args.resume_source_build else ''),[cmake,'--build',producer,'-j','2'])
     if stage=='source':build=producer
     else:
         run(stage+'-install',[cmake,'--install',producer,'--prefix',staging])
