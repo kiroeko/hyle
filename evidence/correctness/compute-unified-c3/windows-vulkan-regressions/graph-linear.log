@@ -1,0 +1,16 @@
+Running main() from C:\public\tools\hyle-dependencies\v1\sources\googletest-063de7e9578f-162765170ae6\googletest\src\gtest_main.cc
+Note: Google Test filter = VulkanGraph.B2BatchedLinearAndHadamardShareOneMatureRegion:VulkanGraph.ManagedNormFusionPreservesPublishedForksAndNativeBoundaries:VulkanGraph.StableModelGatesShareMatureRegionAndKeepPublishedForks
+[==========] Running 3 tests from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 3 tests from VulkanGraph
+[ RUN      ] VulkanGraph.ManagedNormFusionPreservesPublishedForksAndNativeBoundaries
+[       OK ] VulkanGraph.ManagedNormFusionPreservesPublishedForksAndNativeBoundaries (602 ms)
+[ RUN      ] VulkanGraph.StableModelGatesShareMatureRegionAndKeepPublishedForks
+[       OK ] VulkanGraph.StableModelGatesShareMatureRegionAndKeepPublishedForks (78 ms)
+[ RUN      ] VulkanGraph.B2BatchedLinearAndHadamardShareOneMatureRegion
+[       OK ] VulkanGraph.B2BatchedLinearAndHadamardShareOneMatureRegion (65 ms)
+[----------] 3 tests from VulkanGraph (745 ms total)
+
+[----------] Global test environment tear-down
+[==========] 3 tests from 1 test suite ran. (745 ms total)
+[  PASSED  ] 3 tests.

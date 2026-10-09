@@ -95,3 +95,10 @@ Windows static原循环exit0，Direct/Graph也PASS（0.39s/0.34s），三交付�
 新增F32范围case实际source/shared/static Direct均PASS；source/shared只补一个consumer TU，
 未重建SDK，[三格收据](../../../../evidence/correctness/compute-unified-c3/windows-vulkan-range.json)已保存。
 接着在唯一DEV_FACTORS Vulkan闭包构建既有Provider、Direct、Graph三个测试目标；不恢复旧全库队列。
+
+Windows定向回归实际30项PASS，无fixture skip：Provider资源/配额/OOM/租约10项，
+Direct精度/转置/重绑/F16/BF16/错误和生命周期9项，Graph成熟边界3项；原压缩格式与
+MatMul-ID等8项另通过，含新plain F32 grouped tokens16精度case。测试补一个TU未重建Provider。
+[资源/精度收据](../../../../evidence/correctness/compute-unified-c3/windows-vulkan-regressions.json)与
+[matrix/ID收据](../../../../evidence/correctness/compute-unified-c3/windows-vulkan-quant-regressions.json)
+保存真实过滤条件和日志hash；不签其它平台或P1。Windows本范围完成，owner继续CANDIDATE等待C3平台门。

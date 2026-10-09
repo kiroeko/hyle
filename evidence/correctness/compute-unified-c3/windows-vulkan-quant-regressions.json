@@ -1,0 +1,22 @@
+{
+  "candidate": "c96c7c6eefb41f9aca71c92b4304814a731fe088",
+  "scope": "Applicable plain F32, BF16 and compressed matrix/ID regression subset; no P1",
+  "rows": [
+    {
+      "case": "direct-quant-grouped",
+      "filter": "VulkanGguf.PlainF32GroupedExpertsPreserveOperandsOnMatrixPath:VulkanGguf.PackedFormatsGroupedExpertsUseNativeMulMatId:VulkanGguf.DenseBfloatGroupedExpertsUseNativeMulMatIdAndReplay:VulkanGguf.EveryCatalogFormatUsesNativeDirectRegionAndReplays:VulkanMxfp4.*",
+      "exit": 0,
+      "verdict": "PASS",
+      "log": "evidence/correctness/compute-unified-c3/windows-vulkan-regressions/direct-quant-grouped.log",
+      "sha256": "d59d655f06b0cff9c1536c1c9d8f9d65efe83be860de12c64d8ff456d1a88e0b"
+    },
+    {
+      "case": "graph-quant-grouped",
+      "filter": "VulkanGraphGguf.PackedMatMulUsesCapturedNativeWeightAndReplays:VulkanGraphGguf.PackedFormatsGroupedExpertsUseCapturedMulMatId",
+      "exit": 0,
+      "verdict": "PASS",
+      "log": "evidence/correctness/compute-unified-c3/windows-vulkan-regressions/graph-quant-grouped.log",
+      "sha256": "286de1ad5b1e6f7bc64be9020013aa01668a033f7473e4e7213e7990df6e15b2"
+    }
+  ]
+}

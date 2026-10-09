@@ -1,0 +1,25 @@
+Running main() from C:\public\tools\hyle-dependencies\v1\sources\googletest-063de7e9578f-162765170ae6\googletest\src\gtest_main.cc
+Note: Google Test filter = VulkanGguf.PlainF32GroupedExpertsPreserveOperandsOnMatrixPath:VulkanGguf.PackedFormatsGroupedExpertsUseNativeMulMatId:VulkanGguf.DenseBfloatGroupedExpertsUseNativeMulMatIdAndReplay:VulkanGguf.EveryCatalogFormatUsesNativeDirectRegionAndReplays:VulkanMxfp4.*
+[==========] Running 6 tests from 2 test suites.
+[----------] Global test environment set-up.
+[----------] 2 tests from VulkanMxfp4
+[ RUN      ] VulkanMxfp4.OriginalDirectRepeatedSlotsKeepCompressedInputsAndResults
+[       OK ] VulkanMxfp4.OriginalDirectRepeatedSlotsKeepCompressedInputsAndResults (209 ms)
+[ RUN      ] VulkanMxfp4.RejectsUnrelatedEncodingAndPlainMathOnCompressedStorage
+[       OK ] VulkanMxfp4.RejectsUnrelatedEncodingAndPlainMathOnCompressedStorage (62 ms)
+[----------] 2 tests from VulkanMxfp4 (271 ms total)
+
+[----------] 4 tests from VulkanGguf
+[ RUN      ] VulkanGguf.EveryCatalogFormatUsesNativeDirectRegionAndReplays
+[       OK ] VulkanGguf.EveryCatalogFormatUsesNativeDirectRegionAndReplays (20594 ms)
+[ RUN      ] VulkanGguf.PackedFormatsGroupedExpertsUseNativeMulMatId
+[       OK ] VulkanGguf.PackedFormatsGroupedExpertsUseNativeMulMatId (20243 ms)
+[ RUN      ] VulkanGguf.DenseBfloatGroupedExpertsUseNativeMulMatIdAndReplay
+[       OK ] VulkanGguf.DenseBfloatGroupedExpertsUseNativeMulMatIdAndReplay (112 ms)
+[ RUN      ] VulkanGguf.PlainF32GroupedExpertsPreserveOperandsOnMatrixPath
+[       OK ] VulkanGguf.PlainF32GroupedExpertsPreserveOperandsOnMatrixPath (252 ms)
+[----------] 4 tests from VulkanGguf (41202 ms total)
+
+[----------] Global test environment tear-down
+[==========] 6 tests from 2 test suites ran. (41474 ms total)
+[  PASSED  ] 6 tests.

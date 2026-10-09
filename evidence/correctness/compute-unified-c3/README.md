@@ -54,7 +54,10 @@ requested F32 operands before cooperative-path conversion. The original numerica
 The relocated shared/static SDK Direct/Graph FFN consumers also passed; the resumed SDK loop exited 0.
 [Additional F32 range/transposed/replay receipt](windows-vulkan-range.json) covers all three deliveries after
 only the needed small consumers were rebuilt. SDKs were not rebuilt for that test addition. Existing native
-resource and other-dtype regressions are next; other platforms remain unrun. No self multiplication is added.
+resource and other-dtype regressions passed in [22 selected cases](windows-vulkan-regressions.json);
+[eight matrix/ID and quantized regression cases](windows-vulkan-quant-regressions.json) also passed, including
+the new plain-F32 grouped matrix path with non-F16-exact and out-of-F16-range operands. These subsets had
+no fixture skips. Other platforms remain unrun. No self multiplication is added.
 Read-only verification copies use a 42,956,800-byte source-only archive from the Windows product candidate
 79137d31, SHA256 `6ca08a1ea6728ee340267b5fa10e0f1b9c681e726f2bf407cf2abadd8d0ffefe`.
 The archive excludes large historical evidence and is not a reverse source of product changes.

@@ -275,6 +275,46 @@ TEST(VulkanGguf, DenseBfloatGroupedExpertsUseNativeMulMatIdAndReplay) {
   }
 }
 
+TEST(VulkanGguf, PlainF32GroupedExpertsPreserveOperandsOnMatrixPath) {
+  auto context = vulkan_test::context().value();
+  constexpr int experts = 3, columns = 2, depth = 32, tokens = 16, slots = 2;
+  const auto weight_desc = vulkan_tensor_test::dense(
+      c::DataType::kFloat32, {experts, columns, depth});
+  const auto input_desc = vulkan_tensor_test::dense(
+      c::DataType::kFloat32, {tokens, slots, depth});
+  const auto ids_desc = vulkan_tensor_test::dense(
+      c::DataType::kInt32, {tokens, slots});
+  constexpr std::array<double, experts * columns> coefficients{1, 2, 3, 4, -1, 0.5};
+  std::vector<double> weights(experts * columns * depth);
+  for (std::size_t row = 0; row < coefficients.size(); ++row)
+    std::fill_n(weights.begin() + row * depth, depth, coefficients[row]);
+  auto weight = vulkan_tensor_test::make(context, weight_desc, weights);
+  std::array<std::int32_t, tokens * slots> ids{};
+  for (int token = 0; token < tokens; ++token) {
+    ids[token * slots] = 0;
+    ids[token * slots + 1] = 2;
+  }
+  auto selected = context.upload(ids_desc, std::as_bytes(std::span(ids))).value();
+  auto program = v::prepare(context, c::model_ops::grouped_matmul(),
+                            weight_desc, input_desc, ids_desc);
+  ASSERT_TRUE(program) << program.error().message();
+  auto invocation = program->create_invocation().value();
+  for (float input : {1.0004f, 65536.f}) {
+    const std::vector<double> values(tokens * slots * depth, input);
+    auto tensor = vulkan_tensor_test::make(context, input_desc, values);
+    ASSERT_TRUE(invocation.bind(weight, tensor, selected).ok());
+    auto result = invocation.submit().value().wait();
+    ASSERT_TRUE(result) << result.error().message();
+    std::vector<double> expected(tokens * slots * columns);
+    for (int token = 0; token < tokens; ++token)
+      for (int slot = 0; slot < slots; ++slot)
+        for (int column = 0; column < columns; ++column)
+          expected[(token * slots + slot) * columns + column] =
+              depth * double(input) * coefficients[ids[token * slots + slot] * columns + column];
+    vulkan_tensor_test::expect(context, result->get()->tensors()[0], expected);
+  }
+}
+
 TEST(VulkanGguf, RejectsMalformedFormatAndPackedStorageOnWrongPorts) {
   auto context = vulkan_test::context().value();
   const auto input = vulkan_tensor_test::dense(c::DataType::kFloat32, {2, 256});

@@ -1,0 +1,39 @@
+Running main() from C:\public\tools\hyle-dependencies\v1\sources\googletest-063de7e9578f-162765170ae6\googletest\src\gtest_main.cc
+Note: Google Test filter = GgmlVulkanWork.*:GgmlVulkanStorage.*:GgmlVulkanRegion.ModelWidthNormGateResidualWithChangingInputs:GgmlVulkanRegion.DenseBfloatGroupedExpertsRequireF32Activations:GgmlVulkanRegion.BfloatRouterMatMulRetainsF32OutputDomain
+[==========] Running 10 tests from 3 test suites.
+[----------] Global test environment set-up.
+[----------] 3 tests from GgmlVulkanRegion
+[ RUN      ] GgmlVulkanRegion.DenseBfloatGroupedExpertsRequireF32Activations
+[       OK ] GgmlVulkanRegion.DenseBfloatGroupedExpertsRequireF32Activations (0 ms)
+[ RUN      ] GgmlVulkanRegion.BfloatRouterMatMulRetainsF32OutputDomain
+[       OK ] GgmlVulkanRegion.BfloatRouterMatMulRetainsF32OutputDomain (0 ms)
+[ RUN      ] GgmlVulkanRegion.ModelWidthNormGateResidualWithChangingInputs
+[       OK ] GgmlVulkanRegion.ModelWidthNormGateResidualWithChangingInputs (180 ms)
+[----------] 3 tests from GgmlVulkanRegion (180 ms total)
+
+[----------] 2 tests from GgmlVulkanWork
+[ RUN      ] GgmlVulkanWork.RepeatedIndependentSlotsRetainTheirResourceLeases
+[       OK ] GgmlVulkanWork.RepeatedIndependentSlotsRetainTheirResourceLeases (65 ms)
+[ RUN      ] GgmlVulkanWork.MovedPendingOwnerDrainsBeforeDroppingItsLastGraphLease
+[       OK ] GgmlVulkanWork.MovedPendingOwnerDrainsBeforeDroppingItsLastGraphLease (63 ms)
+[----------] 2 tests from GgmlVulkanWork (128 ms total)
+
+[----------] 5 tests from GgmlVulkanStorage
+[ RUN      ] GgmlVulkanStorage.LivenessReuseAndPendingLeaseRetireQuota
+[       OK ] GgmlVulkanStorage.LivenessReuseAndPendingLeaseRetireQuota (63 ms)
+[ RUN      ] GgmlVulkanStorage.ColdQuotaFailureAndMissingOutputReturnErrors
+[       OK ] GgmlVulkanStorage.ColdQuotaFailureAndMissingOutputReturnErrors (58 ms)
+[ RUN      ] GgmlVulkanStorage.EveryColdPlannerHostAllocationFailureIsRecoverable
+[       OK ] GgmlVulkanStorage.EveryColdPlannerHostAllocationFailureIsRecoverable (59 ms)
+[ RUN      ] GgmlVulkanStorage.ImportedStorageNeedsAnOwnerAndTheSameDevice
+[       OK ] GgmlVulkanStorage.ImportedStorageNeedsAnOwnerAndTheSameDevice (118 ms)
+[ RUN      ] GgmlVulkanStorage.FragmentedPlannerCapacityReturnsFailureWithoutAbort
+[       OK ] GgmlVulkanStorage.FragmentedPlannerCapacityReturnsFailureWithoutAbort (59 ms)
+[----------] 5 tests from GgmlVulkanStorage (359 ms total)
+
+[----------] Global test environment tear-down
+[==========] 10 tests from 3 test suites ran. (669 ms total)
+[  PASSED  ] 10 tests.
+ggml_gallocr_reserve_n_impl: failed to allocate Vulkan0 buffer of size 16384
+ggml_dyn_tallocr_alloc: not enough space in the buffer to allocate 8192 bytes, largest block available 0 bytes
+ggml_gallocr_reserve_n_impl: failed to allocate Vulkan0 buffer of size 16384

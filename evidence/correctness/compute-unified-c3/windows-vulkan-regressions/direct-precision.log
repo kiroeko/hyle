@@ -1,0 +1,37 @@
+Running main() from C:\public\tools\hyle-dependencies\v1\sources\googletest-063de7e9578f-162765170ae6\googletest\src\gtest_main.cc
+Note: Google Test filter = VulkanTyped.MatMulDenseConstantChangingAndTransposedRhs:VulkanTyped.RebindingChangesBothActivationAndDenseRhsOnRecordedCommands:VulkanTyped.InvalidDomainsAndForeignDeviceAreRejected:VulkanNative.NativeOwnersTransfersAndQuota:VulkanManaged.BfloatRank2SmallMatvecWidensActivationBoundary:VulkanManaged.B2MatureLinearPositionAndTransformReplay:VulkanManaged.B2MatureCausalGqaRetainsReplayResults:VulkanLifetime.ExportedTensorAndNativeTokenPreventSlotOverwrite:VulkanLifetime.ManagedPrefixSurvivesRejectedNativeSuffixUntilDrain
+[==========] Running 9 tests from 4 test suites.
+[----------] Global test environment set-up.
+[----------] 1 test from VulkanNative
+[ RUN      ] VulkanNative.NativeOwnersTransfersAndQuota
+[       OK ] VulkanNative.NativeOwnersTransfersAndQuota (224 ms)
+[----------] 1 test from VulkanNative (224 ms total)
+
+[----------] 3 tests from VulkanTyped
+[ RUN      ] VulkanTyped.MatMulDenseConstantChangingAndTransposedRhs
+[       OK ] VulkanTyped.MatMulDenseConstantChangingAndTransposedRhs (695 ms)
+[ RUN      ] VulkanTyped.RebindingChangesBothActivationAndDenseRhsOnRecordedCommands
+[       OK ] VulkanTyped.RebindingChangesBothActivationAndDenseRhsOnRecordedCommands (79 ms)
+[ RUN      ] VulkanTyped.InvalidDomainsAndForeignDeviceAreRejected
+[       OK ] VulkanTyped.InvalidDomainsAndForeignDeviceAreRejected (137 ms)
+[----------] 3 tests from VulkanTyped (913 ms total)
+
+[----------] 2 tests from VulkanLifetime
+[ RUN      ] VulkanLifetime.ExportedTensorAndNativeTokenPreventSlotOverwrite
+[       OK ] VulkanLifetime.ExportedTensorAndNativeTokenPreventSlotOverwrite (67 ms)
+[ RUN      ] VulkanLifetime.ManagedPrefixSurvivesRejectedNativeSuffixUntilDrain
+[       OK ] VulkanLifetime.ManagedPrefixSurvivesRejectedNativeSuffixUntilDrain (279 ms)
+[----------] 2 tests from VulkanLifetime (346 ms total)
+
+[----------] 3 tests from VulkanManaged
+[ RUN      ] VulkanManaged.BfloatRank2SmallMatvecWidensActivationBoundary
+[       OK ] VulkanManaged.BfloatRank2SmallMatvecWidensActivationBoundary (120 ms)
+[ RUN      ] VulkanManaged.B2MatureLinearPositionAndTransformReplay
+[       OK ] VulkanManaged.B2MatureLinearPositionAndTransformReplay (176 ms)
+[ RUN      ] VulkanManaged.B2MatureCausalGqaRetainsReplayResults
+[       OK ] VulkanManaged.B2MatureCausalGqaRetainsReplayResults (88 ms)
+[----------] 3 tests from VulkanManaged (386 ms total)
+
+[----------] Global test environment tear-down
+[==========] 9 tests from 4 test suites ran. (1870 ms total)
+[  PASSED  ] 9 tests.

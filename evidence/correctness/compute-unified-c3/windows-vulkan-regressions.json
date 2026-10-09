@@ -1,0 +1,39 @@
+{
+  "candidate": "c96c7c6eefb41f9aca71c92b4304814a731fe088",
+  "scope": "Frozen F32 repair applicable existing resource/dtype/linear regression subset; no P1/full-model/platform verdict",
+  "rows": [
+    {
+      "case": "provider-resources",
+      "argv": [
+        "C:\\h7\\w-vulkan-native\\bin\\hyle_compute_provider_ggml_vulkan_test.exe",
+        "--gtest_filter=GgmlVulkanWork.*:GgmlVulkanStorage.*:GgmlVulkanRegion.ModelWidthNormGateResidualWithChangingInputs:GgmlVulkanRegion.DenseBfloatGroupedExpertsRequireF32Activations:GgmlVulkanRegion.BfloatRouterMatMulRetainsF32OutputDomain"
+      ],
+      "exit_code": 0,
+      "verdict": "PASS",
+      "log": "evidence/correctness/compute-unified-c3/windows-vulkan-regressions/provider-resources.log",
+      "sha256": "ec55489fc384a85f31de3554e72f7d40ac2d961d7953066611e6d8e64e1ac91a"
+    },
+    {
+      "case": "direct-precision",
+      "argv": [
+        "C:\\h7\\w-vulkan-native\\bin\\hyle_compute_route_vulkan_test.exe",
+        "--gtest_filter=VulkanTyped.MatMulDenseConstantChangingAndTransposedRhs:VulkanTyped.RebindingChangesBothActivationAndDenseRhsOnRecordedCommands:VulkanTyped.InvalidDomainsAndForeignDeviceAreRejected:VulkanNative.NativeOwnersTransfersAndQuota:VulkanManaged.BfloatRank2SmallMatvecWidensActivationBoundary:VulkanManaged.B2MatureLinearPositionAndTransformReplay:VulkanManaged.B2MatureCausalGqaRetainsReplayResults:VulkanLifetime.ExportedTensorAndNativeTokenPreventSlotOverwrite:VulkanLifetime.ManagedPrefixSurvivesRejectedNativeSuffixUntilDrain"
+      ],
+      "exit_code": 0,
+      "verdict": "PASS",
+      "log": "evidence/correctness/compute-unified-c3/windows-vulkan-regressions/direct-precision.log",
+      "sha256": "31d817278254c30a72c998cfb0bf9b6e5935e06f82ff477784270925c17987e6"
+    },
+    {
+      "case": "graph-linear",
+      "argv": [
+        "C:\\h7\\w-vulkan-native\\bin\\hyle_graph_route_vulkan_test.exe",
+        "--gtest_filter=VulkanGraph.B2BatchedLinearAndHadamardShareOneMatureRegion:VulkanGraph.ManagedNormFusionPreservesPublishedForksAndNativeBoundaries:VulkanGraph.StableModelGatesShareMatureRegionAndKeepPublishedForks"
+      ],
+      "exit_code": 0,
+      "verdict": "PASS",
+      "log": "evidence/correctness/compute-unified-c3/windows-vulkan-regressions/graph-linear.log",
+      "sha256": "d8dcbfc92de5e4675c9fe78dcb9c8bf5f287a26ca498bdf5bdf47905794e52b0"
+    }
+  ]
+}
