@@ -63,3 +63,10 @@ Air本批当前source配置通过，82秒增量前置build在同一IREE私有文
 VMFB；不用关闭Werror或改变数值域。owner已是本卡AUDITED，追加FIX独立提交后
 实施，复用原producer续编。所有原步骤/FAIL和预算保留；唯一此错误的定向纠正，
 不是换目录重新开始。Windows旧数学/冷规则不重跑，受影响SDK按等价冷代码差异复核。
+
+W2续编发现Mac的`size_t`与`uint64_t`虽同宽却是不同C++类型，
+`vulkan_iree.cc:84 std::min`无法推导同一类型。一次`-k0`汇集本producer全部剩余
+编译，只有此处产品错误，无其它新增错误。有限W3只把已限制到INT32/8的elements
+显式存为uint64，与网格上限同型，值/公式/数值程序不变；route owner已AUDITED。
+协议先独立提交再改此一行。所有原失败/纠正次数累计保留，不重配置成功的source
+producer；收齐错误的既有对象和最终三交付继续复用。
