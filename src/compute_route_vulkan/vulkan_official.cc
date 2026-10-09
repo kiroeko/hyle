@@ -98,7 +98,7 @@ Status lower_official_float(ProgramState &program, const PlanStep &step) noexcep
       const auto &w = program.values[step.inputs[1]].description;
       spec.rows = first.dimensions()[0];spec.depth = first.dimensions()[1];spec.columns = w.dimensions()[1];
       if (linear) {
-        const bool power = linear->scale_rounding == Float8ScaleRounding::kPowerOfTwo;
+        const bool power = linear->scale_rounding == model_ops::Float8ScaleRounding::kPowerOfTwo;
         spec.kind = power ? (bf16 ? iv::ProgramKind::OfficialLinearPowerBf16 : iv::ProgramKind::OfficialLinearPowerF32)
                           : (bf16 ? iv::ProgramKind::OfficialLinearBf16 : iv::ProgramKind::OfficialLinearF32);
         spec.absmax_floor = linear->absmax_floor;
