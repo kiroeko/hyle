@@ -27,11 +27,15 @@ os.environ['VSLANG'] = '1033'
 # Import the supported local MSVC toolchain in a hidden process once.
 vs = Path('C:/Program Files/Microsoft Visual Studio/18/Enterprise/Common7/Tools/VsDevCmd.bat')
 if not vs.is_file(): raise SystemExit('Supported VS toolchain is absent')
-vc_env = subprocess.check_output([os.environ['ComSpec'], '/d', '/s', '/c',
-    'call "' + str(vs) + '" -arch=x64 >nul && set'], text=True, **flags)
+# cmd.exe uses its own quoting; Python's list-to-command-line escapes are for
+# CRT parsers and turn this known batch filename into literal backslash quotes.
+vc_env = subprocess.check_output('"' + os.environ['ComSpec'] +
+    '" /d /s /c "call "' + str(vs) + '" -arch=x64 >nul && set"', text=True, **flags)
 for line in vc_env.splitlines():
     name, separator, value = line.partition('=')
-    if separator and name: os.environ[name] = value
+    if separator and name:
+        if name.lower() == 'path' and '\\VC\\Tools\\MSVC\\' not in value: continue
+        os.environ[name] = value
 os.environ['HYLE_DEP_SOURCE_CACHE'] = 'C:/public/tools/hyle-dependencies/v1'
 
 if args.attempt and not re.fullmatch(r'[a-z0-9-]+', args.attempt):

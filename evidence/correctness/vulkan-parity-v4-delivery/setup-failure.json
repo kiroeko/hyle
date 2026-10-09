@@ -1,0 +1,7 @@
+{
+  "candidate": "e4a3c47f",
+  "stage": "toolchain environment import; no configure/build/runtime executed",
+  "failure": "cmd.exe receives literal backslash quotes from Python list2cmdline around VsDevCmd.bat; batch import exits1",
+  "correction": "Use cmd-specific quoting for this known static path; hidden read-only environment import verified returncode0 and MSVC path before batch restart",
+  "product_changed": false
+}
