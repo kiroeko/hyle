@@ -87,3 +87,14 @@ sidecars；共同C5 convolution/Qwen实际attention/GDN/MTP/newGGUF主干消费�
 只新增测试原Vulkan reference作用域与具名test宏分支；CPU/CUDA/Apple方程、
 普通产品和数学不变。原IREE dot→scale→add原序列的非融合定义预先固定；
 GPU实跑尚未完成，原560/80两入口结果不重复、不由原model版本代签最新版本。
+
+### M5-S：最新sidecar的两个真实接线反例
+
+`575b5d80` 状态批次未完成，Qwen命名MTP的 SDPA causal=false被冷拒绝；
+原原生scores→softmax→value支持非因果，当前adapter固定拒绝/始终mask。只放开
+已承载同dtype/shape档的causal=false，并仅causal=true生成原diag mask。
+Flash三stage BF16 activation T=5触发原matvec断言；原源码10534的选择阈值为8，
+且native ne1=1适用于有batch的调用，现adapter只判rank2的1–4行。只按同原
+native ne1/ne2/ne3 predicate widening BF16 activation，保留BF16权重/原F32acc，
+所有转换成本计账。M5-S具名有限纠正，不改库/Shader/精度门，原80/560已过域
+不重测，状态批尚未取得资格，之后一次定向状态验。

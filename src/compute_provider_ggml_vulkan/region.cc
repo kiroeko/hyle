@@ -460,7 +460,7 @@ bool region_supports(const Operation &operation,
            (width == 64 || width == 128 || width == 256 || width == 512);
   }
   if (const auto *attention = operation.get_if<ScaledDotProductAttention>()) {
-    if (inputs.size() != 3 || outputs.size() != 1 || !attention->causal ||
+    if (inputs.size() != 3 || outputs.size() != 1 ||
         attention->layout != AttentionLayout::kBatchSequenceHeadDepth ||
         attention->mask != MaskKind::kNone ||
         attention->accumulation_type != DataType::kFloat32 ||
@@ -780,16 +780,14 @@ Result<Region> Region::create(NativeDevice device,
       } else if (node.operation.get_if<MatMul>() ||
                  node.operation.custom_as<model_ops::BFloatLinearF32>()) {
         // The fixed upstream Vulkan small-matvec selector admits a BF16
-        // activation for one to four rank-2 rows, but its selected pipeline
+        // activation for up to eight rows (or one native row per batch), but
+        // its selected pipeline
         // accepts only F32/F16/Q8_1 on that port. Keep the BF16 weight and
         // FP32 accumulation while widening only the tiny activation boundary;
         // otherwise the backend aborts instead of returning unsupported.
-        const auto &activation = recipe.values[node.inputs[0]];
-        const auto elements = activation.element_count();
         const bool small_matvec =
-            activation.rank() == 2 && activation.dimensions().back() > 0 &&
-            elements && *elements > 0 &&
-            *elements / activation.dimensions().back() <= 4;
+            left->ne[1] == 1 ||
+            (left->ne[1] <= 8 && left->ne[2] * left->ne[3] == 1);
         if (left->type == GGML_TYPE_BF16 && small_matvec)
           left = ggml_cast(context, left, GGML_TYPE_F32);
         auto *right = arguments[1];
@@ -855,8 +853,9 @@ Result<Region> Region::create(NativeDevice device,
           return std::unexpected(Status::Unimplemented(
               "ggml Vulkan attention score accumulation"));
         scores = ggml_scale(context, scores, attention->scale);
-        scores = ggml_diag_mask_inf(
-            context, scores, static_cast<int>(key->ne[1] - query->ne[1]));
+        if (attention->causal)
+          scores = ggml_diag_mask_inf(
+              context, scores, static_cast<int>(key->ne[1] - query->ne[1]));
         auto *probabilities = ggml_soft_max(context, scores);
         value = ggml_cont(context, ggml_transpose(context, value));
         output = ggml_mul_mat(context, value, probabilities);

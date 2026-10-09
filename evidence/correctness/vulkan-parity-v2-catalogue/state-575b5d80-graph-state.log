@@ -1,0 +1,20 @@
+Running main() from C:\public\tools\hyle-dependencies\v1\sources\googletest-063de7e9578f-162765170ae6\googletest\src\gtest_main.cc
+Note: Google Test filter = CurrentOfficial/VulkanGraphCurrentState.*:VulkanGraphCurrentState.*:C5ActualConvolutionParameters/VulkanGraphCatalogueParameters.*:VulkanGraphCatalogueParameters.*:C5ExactNewGgufMain/VulkanGraphCatalogueNewDeepSeek.*
+[==========] Running 24 tests from 5 test suites.
+[----------] Global test environment set-up.
+[----------] 2 tests from VulkanGraphCurrentState
+[ RUN      ] VulkanGraphCurrentState.QwenNamedQ4SidecarUsesActualQ3Q4Q6Mtp
+C:\public\project-hyle\hyle\tests\graph_route_vulkan\../compute_route_vulkan/catalogue_test_support.h(55): error: Value of: compiled
+  Actual: false
+Expected: true
+operation has no admitted Vulkan tensor lowering
+Google Test trace:
+C:\public\project-hyle\hyle\tests\graph_route_vulkan\../compute_route_vulkan/catalogue_test_support.h(32): region=201589008
+
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\../compute_models/cpu_c4_qwen_mtp.h(172): error: Value of: ::testing::Test::HasFailure()
+  Actual: true
+Expected: false
+
+[  FAILED  ] VulkanGraphCurrentState.QwenNamedQ4SidecarUsesActualQ3Q4Q6Mtp (2943 ms)
+[ RUN      ] VulkanGraphCurrentState.FlashQ8AndBfloatSidecarsUseMixedMxfp4ThreeStages
+C:\hv\vp1\src\compute_ggml_runtime\source-8dc7950171d4c70b\src\ggml-vulkan\ggml-vulkan.cpp:8132: GGML_ASSERT(b_type == GGML_TYPE_F32 || b_type == GGML_TYPE_F16 || b_type == GGML_TYPE_Q8_1) failed

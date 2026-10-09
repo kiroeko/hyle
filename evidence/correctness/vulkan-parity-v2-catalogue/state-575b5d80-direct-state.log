@@ -1,0 +1,20 @@
+Running main() from C:\public\tools\hyle-dependencies\v1\sources\googletest-063de7e9578f-162765170ae6\googletest\src\gtest_main.cc
+Note: Google Test filter = CurrentOfficial/VulkanCurrentState.*:VulkanCurrentState.*:C5ActualConvolutionParameters/VulkanCatalogueParameters.*:VulkanCatalogueParameters.*:C5ExactNewGgufMain/VulkanCatalogueNewDeepSeek.*
+[==========] Running 24 tests from 5 test suites.
+[----------] Global test environment set-up.
+[----------] 2 tests from VulkanCurrentState
+[ RUN      ] VulkanCurrentState.QwenNamedQ4SidecarUsesActualQ3Q4Q6Mtp
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\catalogue_test_support.h(67): error: Value of: program
+  Actual: false
+Expected: true
+scaled-dot-product-attention: operation has no admitted Vulkan tensor lowering
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\catalogue_test_support.h(32): region=201589008
+
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\../compute_models/cpu_c4_qwen_mtp.h(172): error: Value of: ::testing::Test::HasFailure()
+  Actual: true
+Expected: false
+
+[  FAILED  ] VulkanCurrentState.QwenNamedQ4SidecarUsesActualQ3Q4Q6Mtp (3014 ms)
+[ RUN      ] VulkanCurrentState.FlashQ8AndBfloatSidecarsUseMixedMxfp4ThreeStages
+C:\hv\vp1\src\compute_ggml_runtime\source-8dc7950171d4c70b\src\ggml-vulkan\ggml-vulkan.cpp:8132: GGML_ASSERT(b_type == GGML_TYPE_F32 || b_type == GGML_TYPE_F16 || b_type == GGML_TYPE_Q8_1) failed
