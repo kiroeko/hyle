@@ -540,15 +540,17 @@
     },
     {
       "module": "compute_route_vulkan",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/vulkan-parity-v3-defaults-best-of.md",
-      "summary": "V3 D1 cold default matching qualified: real SDK/ggml/IREE revisions and sparse valid device/compiler facts, full workload/typed-port common matching, legal unknown-condition defaults; Windows Direct/Graph10/10 delta PASS. V2 coverage retained. Residual contract/P1 and V4 header/ABI/platform/three deliveries pending."
+      "summary": "V3 candidate frozen: common cold defaults and full owned same-contract native-plan/Graph service verified; finite residual domains are unique/strict/low-feature or resource mechanisms, mature defaults preferred. Primary paired AA8/8 PASS; neutral placement first qualification and fixedn15/V4 outstanding.",
+      "candidate": "09410e32cebb911937a7269ba6732ec901db9d4e"
     },
     {
       "module": "graph_route_vulkan",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/vulkan-parity-v3-defaults-best-of.md",
-      "summary": "V3 D1 cold default matching qualified: real SDK/ggml/IREE revisions and sparse valid device/compiler facts, full workload/typed-port common matching, legal unknown-condition defaults; Windows Direct/Graph10/10 delta PASS. V2 coverage retained. Residual contract/P1 and V4 header/ABI/platform/three deliveries pending."
+      "summary": "V3 candidate frozen: common cold defaults and full owned same-contract native-plan/Graph service verified; finite residual domains are unique/strict/low-feature or resource mechanisms, mature defaults preferred. Primary paired AA8/8 PASS; neutral placement first qualification and fixedn15/V4 outstanding.",
+      "candidate": "09410e32cebb911937a7269ba6732ec901db9d4e"
     },
     {
       "module": "compute_provider_ggml_vulkan",

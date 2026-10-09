@@ -1,0 +1,267 @@
+{
+  "schema": "vulkan-owned-paired-aa/v1",
+  "identity": {
+    "candidate": "4c284c4fe8e1913feb9cf1827d7f0a0a43d625fe",
+    "binary": "ccd97d07a31140a13746ec1f29cb93411f96266340d49dc22a07edf9775e9eba",
+    "runner": "4fc05dbd0acaeeac2dbb4502803254537ec41d03515df79763b0daee24940a74",
+    "dlls": {
+      "hyle_compute.dll": "7343bacb242d9251b4ded6a9b9fe64d32571ce47e249704017651f68c100ad00",
+      "hyle_compute_ggml_runtime.dll": "4b30146053a6d4d61ebffd6b7aa1b481bf22005db84a8bbf8c08e2346f4f0ce4",
+      "hyle_compute_ops.dll": "61ad62f46c19eeeda0ec725585b3ed7d06a80450b53be56027fc836e84ca35f6",
+      "hyle_compute_provider_ggml_vulkan.dll": "40f3eb865d0367718bfb5d848d3f3a03fee691f7d08968dfde38945989fdfa07",
+      "hyle_compute_provider_iree_vulkan.dll": "0ae5c4cbfa597a818f000ec84e51d38653b7b47d7b0bcbd27f11e0c4d7dbbab0",
+      "hyle_compute_route_vulkan.dll": "c15143df01b2f5446a51a1e87bad308c6165477bc8112483489db4b5a7975cbd",
+      "hyle_container.dll": "8395effe0a6406f2262a883ef41d54613990d9f1c8b54eae8e90d748da6dae41",
+      "hyle_error.dll": "65e46ebc32510c502d51f972ae15f284ce593261d36e166d86fa1fd314e01602",
+      "hyle_graph.dll": "87384e5876aba7355965ef8a5a22c87176001212ad52c82873325cbd9741419f",
+      "hyle_graph_route_vulkan.dll": "8e088efc9eb3cdfdad0c394e3c14dfad83906193929c5281dd3b6754699d1e2d",
+      "hyle_mem.dll": "49b1b28487dcfad113323ed312851ca58dfe9e77e76167fbba6850a101a5891f",
+      "hyle_platform.dll": "5d60f0124a5b6d3c01e2076bbb9502de9be3358eb8ff928f813cc382e5e43fbe",
+      "hyle_time.dll": "d54abf6fb2ff20786ad06d45b145b2c534cacbd99533d9be80b957e391fec48a"
+    }
+  },
+  "machine": {
+    "gate": "PASS",
+    "profile_id": "W1-WIN",
+    "role": "engineering",
+    "formal_claim": null,
+    "physical_host_identity": {
+      "schema": "hyle-perf-physical-host-identity-v1",
+      "profile_id": "W1-WIN",
+      "physical_host_id": "W1",
+      "physical_host_key_sha256": "0de152cace15dd26a2a64ba86717299b0e300c4c99284683ec04fa9fe0786816",
+      "environment": "windows",
+      "independent_hardware": true,
+      "profile_provisioned": true,
+      "registration_state": "REGISTERED_MATCH",
+      "stable_machine_id_source": "windows-machine-guid-sha256",
+      "stable_machine_id_sha256": "b4bbf09e3db097cf433da14a4ff16bef366dec28d42b27f8b303524267af5e97",
+      "stable_machine_id_matches_registered": true,
+      "required_host_facts_match": true,
+      "mismatched_host_facts": [],
+      "registered_profile_contract_sha256": "91af2ece88589864690e7ae537da7beb248572a998d7b869eeec9611735cab22",
+      "raw_identifier_recorded": false
+    },
+    "expected_child_policy": {
+      "environment": "windows",
+      "affinity_mask": "0x14",
+      "logical_cpu": 2,
+      "cpu_set_id": 258,
+      "required_efficiency_class": "maximum",
+      "smt_sibling_logical_cpu": 3,
+      "priority": "above-normal",
+      "applied_by": "benchmark-parent-mask-plus-caller-singleton",
+      "sampling_topology": "native-runtime-pair",
+      "logical_cpus": [
+        2,
+        4
+      ],
+      "cpu_set_ids": [
+        258,
+        260
+      ],
+      "physical_core_indices": [
+        2,
+        4
+      ],
+      "caller_logical_cpu": 2,
+      "distinct_physical_cores": true,
+      "reserved_physical_core_count": 2,
+      "helper_placement": "native-runtime-managed"
+    },
+    "errors": [],
+    "warnings": []
+  },
+  "policy": {
+    "environment": "windows",
+    "affinity_mask": "0x14",
+    "logical_cpu": 2,
+    "cpu_set_id": 258,
+    "required_efficiency_class": "maximum",
+    "smt_sibling_logical_cpu": 3,
+    "priority": "above-normal",
+    "applied_by": "benchmark-parent-mask-plus-caller-singleton",
+    "sampling_topology": "native-runtime-pair",
+    "logical_cpus": [
+      2,
+      4
+    ],
+    "cpu_set_ids": [
+      258,
+      260
+    ],
+    "physical_core_indices": [
+      2,
+      4
+    ],
+    "caller_logical_cpu": 2,
+    "distinct_physical_cores": true,
+    "reserved_physical_core_count": 2,
+    "helper_placement": "native-runtime-managed"
+  },
+  "gate": "PASS",
+  "runs": [
+    {
+      "arm": "selected",
+      "order": 0,
+      "allocation": 0,
+      "ratios": {
+        "Qwen3.5-2B official BF16 FFN M1 H2048 N6144": 1.0017324007813733,
+        "DeepSeek V4 Flash UD-Q4_K_XL hash-MoE H4096 N2048 top6": 1.0099280950074618
+      },
+      "log": "owned-aa-raw/selected-0-0.log",
+      "sha256": "648d3fce6de14b89816a754d59187255ef713d5f5b808cd08fbcdabe595295a8",
+      "nonce": "87f48ecde00a407db21c20752a71e099"
+    },
+    {
+      "arm": "selected",
+      "order": 0,
+      "allocation": 1,
+      "ratios": {
+        "Qwen3.5-2B official BF16 FFN M1 H2048 N6144": 1.0324021706220134,
+        "DeepSeek V4 Flash UD-Q4_K_XL hash-MoE H4096 N2048 top6": 0.9366297134670143
+      },
+      "log": "owned-aa-raw/selected-0-1.log",
+      "sha256": "6413b4e039e7f3697674554a3a5e766c8e9f3790b04019d87a01eb5757d09557",
+      "nonce": "618c53b496ea4eebb0574c188690aac3"
+    },
+    {
+      "arm": "selected",
+      "order": 1,
+      "allocation": 0,
+      "ratios": {
+        "Qwen3.5-2B official BF16 FFN M1 H2048 N6144": 1.0645992393927468,
+        "DeepSeek V4 Flash UD-Q4_K_XL hash-MoE H4096 N2048 top6": 0.9762518238417914
+      },
+      "log": "owned-aa-raw/selected-1-0.log",
+      "sha256": "9fcbb4c42cb7514d4e4a583b0f7c6f3b6be80c72a3e88d761a38d3e84fe6841a",
+      "nonce": "06a29941d0764017809cac4920456efe"
+    },
+    {
+      "arm": "selected",
+      "order": 1,
+      "allocation": 1,
+      "ratios": {
+        "Qwen3.5-2B official BF16 FFN M1 H2048 N6144": 0.9711344196531575,
+        "DeepSeek V4 Flash UD-Q4_K_XL hash-MoE H4096 N2048 top6": 1.0534228505538474
+      },
+      "log": "owned-aa-raw/selected-1-1.log",
+      "sha256": "a6c9fb52a96bc96ebffc62793e55f620bbcd1877b1c550722372be7774157625",
+      "nonce": "1cc67ee1df46407db49ea5c7ead17469"
+    },
+    {
+      "arm": "peer",
+      "order": 0,
+      "allocation": 0,
+      "ratios": {
+        "Qwen3.5-2B official BF16 FFN M1 H2048 N6144": 1.0035676408378311,
+        "DeepSeek V4 Flash UD-Q4_K_XL hash-MoE H4096 N2048 top6": 1.0661141813223707
+      },
+      "log": "owned-aa-raw/peer-0-0.log",
+      "sha256": "dcee7a2ac4ec60ffcdf37acbbfd82b56434a98e22d4923f6785fe6102cf0c9fa",
+      "nonce": "8946b1cb161b4e199026a82f5b805a8d"
+    },
+    {
+      "arm": "peer",
+      "order": 0,
+      "allocation": 1,
+      "ratios": {
+        "Qwen3.5-2B official BF16 FFN M1 H2048 N6144": 0.9908981131420418,
+        "DeepSeek V4 Flash UD-Q4_K_XL hash-MoE H4096 N2048 top6": 1.0027765264040742
+      },
+      "log": "owned-aa-raw/peer-0-1.log",
+      "sha256": "a53c8902b337d1732b8cbd0823942d513826db23521b7167c14093b56ec82f5f",
+      "nonce": "04b01ce72c07452fb06c4707053a49d0"
+    },
+    {
+      "arm": "peer",
+      "order": 1,
+      "allocation": 0,
+      "ratios": {
+        "Qwen3.5-2B official BF16 FFN M1 H2048 N6144": 1.0771372938213086,
+        "DeepSeek V4 Flash UD-Q4_K_XL hash-MoE H4096 N2048 top6": 0.9856925348537915
+      },
+      "log": "owned-aa-raw/peer-1-0.log",
+      "sha256": "0464692d4b6b163b3179b8f84347317ed3b872d350e0c433ff1a3ef7d77f9ecc",
+      "nonce": "bcb3a2c5722d42ebb162e34b1b13fb44"
+    },
+    {
+      "arm": "peer",
+      "order": 1,
+      "allocation": 1,
+      "ratios": {
+        "Qwen3.5-2B official BF16 FFN M1 H2048 N6144": 0.9685054134983475,
+        "DeepSeek V4 Flash UD-Q4_K_XL hash-MoE H4096 N2048 top6": 0.9646865409753873
+      },
+      "log": "owned-aa-raw/peer-1-1.log",
+      "sha256": "582fb357661103d0d04e8aa05096edabc00f249dc40f1077f7369b0e092d2979",
+      "nonce": "9453821bb6d1402a993b4a946cff42b1"
+    }
+  ],
+  "summaries": {
+    "selected/Qwen3.5-2B official BF16 FFN M1 H2048 N6144": {
+      "ratios": [
+        1.0017324007813733,
+        1.0324021706220134,
+        1.0645992393927468,
+        0.9711344196531575
+      ],
+      "factor_medians": {
+        "all": 1.0170672857016934,
+        "order=0": 1.0170672857016934,
+        "order=1": 1.0178668295229523,
+        "allocation=0": 1.03316582008706,
+        "allocation=1": 1.0017682951375855
+      }
+    },
+    "selected/DeepSeek V4 Flash UD-Q4_K_XL hash-MoE H4096 N2048 top6": {
+      "ratios": [
+        1.0099280950074618,
+        0.9366297134670143,
+        0.9762518238417914,
+        1.0534228505538474
+      ],
+      "factor_medians": {
+        "all": 0.9930899594246266,
+        "order=0": 0.9732789042372381,
+        "order=1": 1.0148373371978194,
+        "allocation=0": 0.9930899594246266,
+        "allocation=1": 0.9950262820104309
+      }
+    },
+    "peer/Qwen3.5-2B official BF16 FFN M1 H2048 N6144": {
+      "ratios": [
+        1.0035676408378311,
+        0.9908981131420418,
+        1.0771372938213086,
+        0.9685054134983475
+      ],
+      "factor_medians": {
+        "all": 0.9972328769899365,
+        "order=0": 0.9972328769899365,
+        "order=1": 1.022821353659828,
+        "allocation=0": 1.0403524673295699,
+        "allocation=1": 0.9797017633201947
+      }
+    },
+    "peer/DeepSeek V4 Flash UD-Q4_K_XL hash-MoE H4096 N2048 top6": {
+      "ratios": [
+        1.0661141813223707,
+        1.0027765264040742,
+        0.9856925348537915,
+        0.9646865409753873
+      ],
+      "factor_medians": {
+        "all": 0.9942345306289329,
+        "order=0": 1.0344453538632226,
+        "order=1": 0.9751895379145894,
+        "allocation=0": 1.025903358088081,
+        "allocation=1": 0.9837315336897308
+      }
+    }
+  },
+  "errors": [],
+  "seconds": 40.21899999980815,
+  "product_samples": 0,
+  "comparison": "same owned native plan service; old Recorder AA not reused"
+}
