@@ -1,0 +1,15 @@
+{
+  "candidate": "c96c7c6eefb41f9aca71c92b4304814a731fe088",
+  "validation_source": "c8874688646b6a91395cbcc2472d02099b4929fd",
+  "ordinary_source_direct": "FAIL",
+  "ordinary_source_graph": "FAIL",
+  "cause": "Bare libvulkan.1.dylib not found despite installed /opt/homebrew/lib/libvulkan.1.dylib; installed ICD is /opt/homebrew/etc/vulkan/icd.d/MoltenVK_icd.json",
+  "diagnostic": {
+    "temporary_DYLD_FALLBACK_LIBRARY_PATH": "/opt/homebrew/lib:/usr/local/lib:/usr/lib",
+    "direct_exit": 0,
+    "graph_exit": 0,
+    "qualification": "Diagnostic only, not ordinary PASS or user workaround"
+  },
+  "log_sha256": "73ad35c0bc565c2c23955a2fecc35412b8ad72e466adb4a68258ded377f07dff",
+  "finite_next": "Fix route-owned cold default loader discovery for conventional macOS provisioned paths; explicit loader override remains authoritative; no global env mutation or driver installation"
+}

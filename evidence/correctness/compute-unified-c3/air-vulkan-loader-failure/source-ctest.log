@@ -1,0 +1,35 @@
+Start testing: Oct 10 02:49 CST
+----------------------------------------------------------
+1/2 Testing: hyle_selected_source_consumer
+1/2 Test: hyle_selected_source_consumer
+Command: "/Users/kiro/hyle-scratch/compute-unified/a-vulkan/selected-graph/source-build/hyle_selected_source_consumer"
+Directory: /Users/kiro/hyle-scratch/compute-unified/a-vulkan/selected-graph/source-build
+"hyle_selected_source_consumer" start time: Oct 10 02:49 CST
+Output:
+----------------------------------------------------------
+Vulkan graph FFN: posix dlopen failed: dlopen(libvulkan.1.dylib, 0x0006): tried: 'libvulkan.1.dylib' (no such file), '/System/Volumes/Preboot/Cryptexes/OSlibvulkan.1.dylib' (no such file), '/Users/kiro/hyle-scratch/compute-unified/a-vulkan/selected-graph/source-build/hyle/src/error/libvulkan.1.dylib' (no such file), '/System/Volumes/Pr
+<end of output>
+Test time =   4.06 sec
+----------------------------------------------------------
+Test Failed.
+"hyle_selected_source_consumer" end time: Oct 10 02:50 CST
+"hyle_selected_source_consumer" time elapsed: 00:00:04
+----------------------------------------------------------
+
+2/2 Testing: hyle_selected_source_compute
+2/2 Test: hyle_selected_source_compute
+Command: "/Users/kiro/hyle-scratch/compute-unified/a-vulkan/selected-graph/source-build/hyle_selected_source_compute"
+Directory: /Users/kiro/hyle-scratch/compute-unified/a-vulkan/selected-graph/source-build
+"hyle_selected_source_compute" start time: Oct 10 02:50 CST
+Output:
+----------------------------------------------------------
+Vulkan FFN: posix dlopen failed: dlopen(libvulkan.1.dylib, 0x0006): tried: 'libvulkan.1.dylib' (no such file), '/System/Volumes/Preboot/Cryptexes/OSlibvulkan.1.dylib' (no such file), '/Users/kiro/hyle-scratch/compute-unified/a-vulkan/selected-graph/source-build/hyle/src/error/libvulkan.1.dylib' (no such file), '/System/Volumes/Pr
+<end of output>
+Test time =   0.28 sec
+----------------------------------------------------------
+Test Failed.
+"hyle_selected_source_compute" end time: Oct 10 02:50 CST
+"hyle_selected_source_compute" time elapsed: 00:00:00
+----------------------------------------------------------
+
+End testing: Oct 10 02:50 CST
