@@ -505,15 +505,17 @@
     },
     {
       "module": "compute_provider_ggml_vulkan",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/vulkan-f32-matmul-admission-repair.md",
-      "summary": "Vulkan F32输入内部缩窄反例已审计；固定原完整F32 shader接线、source精度和旧样例断言三项FIX，不自研乘法或放宽误差。"
+      "summary": "Vulkan原完整F32 shader与source精度接法已冻结；保留成熟region和原数值门，定向数学/资源/三交付待验，不新增自研乘法。",
+      "candidate": "18593789ad90a9823d37d0b11b470db28bce5cb9"
     },
     {
       "module": "compute_ggml_runtime",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/vulkan-f32-matmul-admission-repair.md",
-      "summary": "Vulkan F32输入内部缩窄反例已审计；固定原完整F32 shader接线、source精度和旧样例断言三项FIX，不自研乘法或放宽误差。"
+      "summary": "Vulkan原完整F32 shader与source精度接法已冻结；保留成熟region和原数值门，定向数学/资源/三交付待验，不新增自研乘法。",
+      "candidate": "18593789ad90a9823d37d0b11b470db28bce5cb9"
     },
     {
       "module": "compute_provider_ggml_cuda",
