@@ -289,14 +289,18 @@ def validate_transitions(
         for record in after_records
         if isinstance(record, dict) and isinstance(record.get("module"), str)
     }
-    removed = [component for component in before_order if component not in after]
+    removed = [
+        component for component in before_order
+        if component not in after and _record_state(before[component]) != "QUEUED"
+    ]
     if removed:
         errors.append(
             "transition comparison does not allow component removal or rename: "
             + ", ".join(removed)
         )
     surviving_after = [component for component in after_order if component in before]
-    if surviving_after != before_order:
+    surviving_before = [component for component in before_order if component in after]
+    if surviving_after != surviving_before:
         errors.append("transition comparison does not allow reordering existing components")
     for component in after_order:
         if component not in before and _record_state(after[component]) != "QUEUED":

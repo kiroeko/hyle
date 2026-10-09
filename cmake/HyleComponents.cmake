@@ -135,7 +135,7 @@ endfunction()
 set(HYLE_KNOWN_COMPONENTS "")
 set(HYLE_IMPLEMENTED_COMPONENTS "")
 
-# Declaration order is the append-only component identity order mirrored by
+# Declaration order preserves implemented component identities mirrored by
 # module-status.json. Target construction uses HYLE_RESOLVED_COMPONENT_LIST,
 # whose dependency closure is topologically sorted, so an older factor may
 # acquire a newly admitted lower-level dependency without rewriting registry
@@ -407,11 +407,6 @@ _hyle_declare_component(compute_provider_native
   PRIVATE_DEPS core math mem platform simd compute_backend_cpu compute_ops
   PUBLIC_DEPS compute
   SPLIT_PUBLIC_HEADERS hyle/compute/providers/native.h)
-
-# Reserved identity for the optional Platform/Sched-backed persistent CPU
-# execution pool.  It remains dependency-free and absent from the Compute
-# product until its own closure round freezes API, ownership and performance.
-_hyle_declare_component(compute_sched QUEUED)
 
 # Compiled defaults own implementation composition at the CPU route boundary.
 # Compute never acquires a reverse dependency on Graph or its region providers.

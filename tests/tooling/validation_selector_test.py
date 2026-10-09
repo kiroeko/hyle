@@ -526,13 +526,13 @@ class ImpactTest(unittest.TestCase):
             self.assertIn("sched", selector.reverse_consumers({"container_queue"}, [graph]))
 
     def test_global_change_skips_only_dormant_audit_identity(self):
-        name = "compute_sched"
+        name = "dormant_fixture"
         self.write(selector.MANIFEST, self.graph_bytes.replace(
-            b"_hyle_declare_component(compute_sched QUEUED)",
-            b"_hyle_declare_component(compute_sched)"))
+            b"_hyle_declare_component(core)",
+            b"_hyle_declare_component(core)\n_hyle_declare_component(dormant_fixture)"))
         registry = json.loads((self.root / selector.REGISTRY).read_text())
-        row = next(row for row in registry["modules"] if row["module"] == name)
-        row.update(state="BLOCKED", blocked_from="SCOPED")
+        row = {"module": name, "state": "BLOCKED", "blocked_from": "SCOPED"}
+        registry["modules"].insert(1, row)
         self.write(selector.REGISTRY, json.dumps(registry))
         self.write(f"src/{name}/CMakeLists.txt", f"# Audit only\nhyle_add_module({name})\n")
         self.base = self.commit()
@@ -574,6 +574,39 @@ class ImpactTest(unittest.TestCase):
         graph = copy.deepcopy(graph)
         graph["factors"][name]["deps"] = ["compute"]
         self.assertNotIn(name, selector.audit_only_factors(selector.Snapshot(self.root, "WORKTREE"), graph))
+
+    def test_empty_queued_withdrawal_has_no_product_build(self):
+        name = "withdrawal_fixture"
+        reserved = self.graph_bytes.replace(
+            b"_hyle_declare_component(core)",
+            b"_hyle_declare_component(core)\n_hyle_declare_component(withdrawal_fixture QUEUED)")
+        registry = json.loads((self.root / selector.REGISTRY).read_text())
+        registry["modules"].insert(1, {"module": name, "state": "QUEUED"})
+        self.write(selector.MANIFEST, reserved)
+        self.write(selector.REGISTRY, json.dumps(registry))
+        self.base = self.commit()
+        self.write(selector.MANIFEST, self.graph_bytes)
+        registry["modules"] = [row for row in registry["modules"] if row["module"] != name]
+        self.write(selector.REGISTRY, json.dumps(registry))
+        self.commit()
+        plan = self.plan()
+        self.assertEqual(plan["verdict"], "READY")
+        self.assertEqual(self.selected(plan), {"docs", "closure"})
+        self.assertEqual(plan["product_authorization"]["owners"], [])
+        before = selector.Snapshot(self.root, self.base)
+        after = selector.Snapshot(self.root, "HEAD")
+        graphs = [selector.project_graph(before), selector.project_graph(after)]
+        self.assertTrue(selector.queued_reservations_withdrawn(before, after, graphs))
+        for state in ("SCOPED", "AUDITED", "CANDIDATE", "CLOSED", "BLOCKED"):
+            with patch.object(selector, "registry_states", return_value={name: state}):
+                self.assertFalse(selector.queued_reservations_withdrawn(before, after, graphs))
+        for prefix in ("src", "include/hyle", "tests"):
+            altered = copy.copy(before)
+            altered.files = dict(before.files, **{f"{prefix}/{name}/file.cc": ("100644", "blob", "fixture")})
+            self.assertFalse(selector.queued_reservations_withdrawn(altered, after, graphs))
+        changed = copy.deepcopy(graphs)
+        changed[1]["factors"]["core"]["deps"] = ["error"]
+        self.assertFalse(selector.queued_reservations_withdrawn(before, after, changed))
 
     def test_global_public_visibility_is_package_contract(self):
         self.write("include/hyle/visibility.h", "#define EXPORT 2\n")

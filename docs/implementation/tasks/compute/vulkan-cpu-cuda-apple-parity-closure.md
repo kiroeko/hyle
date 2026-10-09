@@ -2,6 +2,10 @@
 
 <!-- MODULE REVIEW: SCOPED -->
 
+> 当前摘要（2026-10-09）：整体工程估计约55%。Windows 两入口各80/80实际 non-GGUF、
+> 560/560 GGUF/身份、25/25当前状态通过。V2剩余八族分支/80参数关联与银行边界复核；
+> V3默认/有限P1及V4平台/三交付未完成。下文阶段数字为历史快照，不是当前队列。
+
 baseline `a19391c7efa84d1f0c42919e8192e4ce78d1ee32`，Windows工作树干净。
 2026-10-09用户明确要求新建goal并执行。Windows是唯一产品真相；独立新goal已建立，
 不恢复旧进度/施工队列。当前RTX4070/12GiB、NVIDIA617.14；实际Vulkan/SDK身份运行前记录。
@@ -162,3 +166,10 @@ selected FP4/FP8、尾尺度与encoded MatMul、三QAT全有限BF16及资源/fin
 
 剩余三个state进入[显式参数及首偏差有限FIX](vulkan-parity-v2-three-state-fixes.md)，
 原轮M5-N2诊断已终结，原失败/预算保持；先测试参数和同输入边界，不盲改数学。
+
+三个剩余 state 有限批已结束：显式 GGUF 原 F32 reference、独立 BF16 sidecar 资格，
+以及 Q8 原 F32 旋转/同输入全词表参考修正均通过，原门保持。
+[结果与限制](vulkan-parity-v2-three-state-fixes.md#有限批裁决)。当前状态两入口各25/25，
+仍不签剩余 family/参数/银行、default/P1、其它平台或三交付；没有新 HYLE 数学。
+统一 Compute+Graph 实现62,410行/267文件，测试/第三方不计入。
+无需求的 QUEUED `compute_sched` 经用户明确决定撤回，现有 Sched/借用 executor API 保持。

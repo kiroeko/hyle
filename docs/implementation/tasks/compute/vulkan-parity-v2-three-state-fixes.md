@@ -2,6 +2,9 @@
 
 <!-- MODULE REVIEW: AUDITED -->
 
+> 本有限批已资格；当前 Windows 状态矩阵两入口各25/25 PASS。该结果不关闭路线，
+> 剩余 family/参数/银行、默认/P1、平台及三交付由父轮继续。以下失败保留为历史证据。
+
 baseline `2a7e840e13ed64fe6190afea7c44cad2f536853b`。继承[实际矩阵轮](vulkan-parity-v2-catalogue-matrix.md)
 已资格的 80/560 两入口及当前状态21/24；不重测这些完整矩阵。
 owners `compute_route_vulkan`、`graph_route_vulkan`、`compute_provider_ggml_vulkan`。
@@ -52,6 +55,20 @@ S2-R 只通过 Model 的显式 RotaryReference 绑定原 F32 native 旋转，默
 方程与产品不变，不改变误差门或完整片段。该错误的一次纠正预算15分钟；因两
 sidecar 参考都受影响，只集中每入口 Q8/BF16 四行，不重测80/560/25全集。
 失败则冻结准确未资格范围，继续父轮其它独立验收，禁止追加同原因试探。
+
+## 有限批裁决
+
+`0fc45b5d` Q8/BF16 两制品在 Direct/Graph 两入口全部 PASS，无 validation error；
+prefill、完整三stage、反馈/reset、原独立状态门及全部129280词表行均实际执行。
+S1/S3 的 profile90/103 资格继承 `da1d8382`，此前通过域不重测；状态两入口各25/25。
+原 Q8 FAIL 及每次纠正的完整 log/XML/SHA receipt 均保留在
+[本批证据](../../../../evidence/correctness/vulkan-parity-v2-catalogue/README.md)。
+
+源问题是参考错误：官方 BF16 旋转边界误套于 F32 sidecar，以及 head 两侧输入不一致。
+RMS 原归约机制差异已证，但单独修正它不足以通过完整链，未夸大为唯一原因。
+产品/math/shader/API 未改，原门保持。shared test head 参考修正以已有完整程序独立
+资格为前提，不能用该修正绕过前级误差门。13项 input-contract、closure/docs/diff通过。
+该有限批结束，不追加诊断；父轮全覆盖、V3/V4 尚未完成，路线仍处于 AUDITED。
 
 S2-R `f2ef3389` 两入口 BF16 PASS；Q8 的完整三stage region `0x0c040122`
 及 prefill/embedding 均通过，唯一错误转移至全词表 head `0x0c040125`：

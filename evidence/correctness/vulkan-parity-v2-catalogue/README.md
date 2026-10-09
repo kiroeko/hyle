@@ -80,3 +80,23 @@ because it would create inconsistent inline definitions across test TUs.
 The draft is retained as `unused-gguf-hook-audit.diff`; qualified code was
 restored and rebuilt. Further GGUF reference adaptation must use explicit
 parameters and preserve original iterative frequencies and F32 storage.
+
+## Current state packet completed
+
+`da1d8382` qualified GGUF profiles90/103 and the independently split BF16
+sidecar. `04ba306b` showed that correcting RMS reduction order alone did not
+qualify Q8. Source then identified an erroneous BF16 rotary boundary applied
+to the F32 sidecar, and a head oracle consuming a different activation from
+the actual invocation. These are test-reference defects, not new math.
+
+At `0fc45b5d`, Q8 and BF16 each PASS in both Direct and Graph: original prefill,
+complete three stages, independent state/reset gates and all129280 vocabulary
+rows. The head now qualifies its own program on the same actual input after
+the complete preceding program passed its independent gate. No gate widened,
+product shader/math changed or failed log replaced. Current state totals are
+25/25 per entrance, with the earlier80/560 packets retained without reruns.
+Raw `sidecar-head-input-0fc45b5d-*` logs/XML and receipt record exact EXE hashes,
+adjacent DLLs and validation-layer results.
+
+Family/parameter/bank aggregate proof, default/P1, other platforms and three
+deliveries remain pending. This packet is not the complete Vulkan closure.

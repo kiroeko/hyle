@@ -181,3 +181,9 @@ feature 矩阵由显式 full workflow 运行；sanitizer、真实 GPU 与 SVE/RV
 
 维护者不得因为新 factor 改写旧 identity 顺序、复制依赖表、向普通用户公开所有 factor，或顺手扩大
 CI/P1。当前限制与活动状态只写 registry/record，不在本文追加阶段性“已完成列表”。
+
+无源码、公开入口、target 或依赖的 QUEUED 预留名称可以按需求撤回；
+[本次清理与验证](../implementation/tasks/build/queued-compute-sched-retirement.md)说明具体边界。中央 manifest 与 registry
+同时删除，保留存续身份顺序。该动作不改变已实现产品的图、交付或运行时，不触发全库构建/P1。
+Compute 借用调用方执行器时，通过 `ParallelExecutorRef` 组合现有 Sched；普通入口无需专门
+的 Compute 调度模块，实际用法见[公开样例](../../samples/package/graph/cpu_executor/main.cc)。

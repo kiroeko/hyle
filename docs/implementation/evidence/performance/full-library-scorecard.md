@@ -1,7 +1,10 @@
 # HYLE 全库性能账本（2026-09-17）
 
+> 历史快照：记录2026-09-17基础架构终审的候选与范围，不是当前模块清单或未完成队列。
+> 最新状态以[当前登记](../../module-status.json)为准；旧名称及排除项仅描述当轮事实。
+
 本页是 [`full-library-scorecard.json`](full-library-scorecard.json) 的人读结论。机器账本绑定
-[`module-status.json`](../../module-status.json) 中当前 48 个 `CLOSED` factor，覆盖 R2 共同语义、
+当轮 48 个 `CLOSED` factor，覆盖 R2 共同语义、
 Mem 定向尾项、R3–R6 四路线及 [R7 终局](../../tasks/compute/four-route-foundation-final-review.md)。
 基础架构重构完成；六个 R7 owner 绑定 `87ae5834`，以 P0 源码及关闭跟踪的代表性 codegen 证明继承
 未变执行路径。没有新增 P1、没有宣称整个 binary placement 不变，TRACE ON 不继承 OFF 性能资格。

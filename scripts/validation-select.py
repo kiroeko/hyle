@@ -201,6 +201,26 @@ def vendored_owners(path, policy):
     return list(matches[0])
 
 
+def queued_reservations_withdrawn(before, after, graphs):
+    old, new = graphs
+    removed = old["factors"].keys() - new["factors"].keys()
+    if not removed or new["factors"].keys() - old["factors"].keys():
+        return False
+    if old["products"] != new["products"] or any(
+        old["factors"][name] != data for name, data in new["factors"].items()
+    ):
+        return False
+    states = registry_states(before)
+    for name in removed:
+        if not old["factors"][name]["queued"] or states.get(name) != "QUEUED":
+            return False
+        prefixes = (f"src/{name}/", f"include/hyle/{name}/", f"tests/{name}/")
+        if any(path.startswith(prefixes)
+               for snapshot in (before, after) for path in snapshot.files):
+            return False
+    return True
+
+
 def classify(before, after, graphs, policy):
     changes, unknown = [], []
     for path in sorted(before.files.keys() | after.files.keys()):
@@ -250,7 +270,10 @@ def classify(before, after, graphs, policy):
                     "unmapped maintenance helper retired; additions and modifications remain fail-closed",
                 )
             elif path == MANIFEST:
-                kind, reason = "graph", "central component or ownership contract changed"
+                if queued_reservations_withdrawn(before, after, graphs):
+                    kind, reason = "state", "empty QUEUED reservations withdrawn; product graph unchanged"
+                else:
+                    kind, reason = "graph", "central component or ownership contract changed"
             elif path.startswith("bench/contracts/") and path.endswith(".json"):
                 kind, reason = (
                     "benchmark",

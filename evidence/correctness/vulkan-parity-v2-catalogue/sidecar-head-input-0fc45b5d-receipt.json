@@ -1,0 +1,74 @@
+{
+  "candidate": "0fc45b5d86b4ba279fafa56c9fcac43e26e54e9f",
+  "steps": [
+    {
+      "name": "direct-sidecars",
+      "returncode": 0,
+      "filter": "CurrentSidecars/VulkanCurrentSidecar.MixedMxfp4FullThreeStagesAndVocabulary/*",
+      "tests": {
+        "tests": "2",
+        "failures": "0",
+        "disabled": "0",
+        "errors": "0",
+        "time": "120.1",
+        "timestamp": "2026-10-09T15:17:22.800",
+        "name": "AllTests"
+      },
+      "validation_error": false,
+      "log": "sidecar-head-input-0fc45b5d-direct-sidecars.log",
+      "log_sha256": "73f7c73e1e18293d543c9c2135b0844f51149e235ad4506b9f32eac12718c225",
+      "xml": "sidecar-head-input-0fc45b5d-direct-sidecars.xml",
+      "binary_sha256": "c771684fba535c37bf0e4ae6fe84fcae5a78a9ac122d2cc75c3c4aaadc8020ea",
+      "adjacent_dlls": [
+        "hyle_compute.dll",
+        "hyle_compute_ggml_runtime.dll",
+        "hyle_compute_ops.dll",
+        "hyle_compute_provider_ggml_vulkan.dll",
+        "hyle_compute_provider_iree_vulkan.dll",
+        "hyle_compute_route_vulkan.dll",
+        "hyle_container.dll",
+        "hyle_error.dll",
+        "hyle_graph.dll",
+        "hyle_graph_route_vulkan.dll",
+        "hyle_mem.dll",
+        "hyle_platform.dll",
+        "hyle_time.dll"
+      ]
+    },
+    {
+      "name": "graph-sidecars",
+      "returncode": 0,
+      "filter": "CurrentSidecars/VulkanGraphCurrentSidecar.MixedMxfp4FullThreeStagesAndVocabulary/*",
+      "tests": {
+        "tests": "2",
+        "failures": "0",
+        "disabled": "0",
+        "errors": "0",
+        "time": "40.085",
+        "timestamp": "2026-10-09T15:19:23.144",
+        "name": "AllTests"
+      },
+      "validation_error": false,
+      "log": "sidecar-head-input-0fc45b5d-graph-sidecars.log",
+      "log_sha256": "09552665938d3f3c5d2e57d80ec54b7699f406bef96d96822ecab690b00d4faa",
+      "xml": "sidecar-head-input-0fc45b5d-graph-sidecars.xml",
+      "binary_sha256": "331a917b7c5e878d526a0b2e27fca8de274674eb3a8c733167eca44ac282997b",
+      "adjacent_dlls": [
+        "hyle_compute.dll",
+        "hyle_compute_ggml_runtime.dll",
+        "hyle_compute_ops.dll",
+        "hyle_compute_provider_ggml_vulkan.dll",
+        "hyle_compute_provider_iree_vulkan.dll",
+        "hyle_compute_route_vulkan.dll",
+        "hyle_container.dll",
+        "hyle_error.dll",
+        "hyle_graph.dll",
+        "hyle_graph_route_vulkan.dll",
+        "hyle_mem.dll",
+        "hyle_platform.dll",
+        "hyle_time.dll"
+      ]
+    }
+  ],
+  "scope": "Flash Q8/BF16 delta; original F32 rotary reference and same actual head inputs, full independent three-stage gates/programs and whole vocabulary preserved"
+}

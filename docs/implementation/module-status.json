@@ -272,7 +272,7 @@
       "module": "compute",
       "state": "CLOSED",
       "record": "docs/implementation/tasks/compute/compute-bound-view-alignment-cuda-best-of.md",
-      "summary": "CLOSED：23精确CUDA叶优选、169成熟默认、14单承载；79重复程序实例清退。两OS三交付/Core63/严格profile资源回退及终审通过；原性能聚合和static批次FAIL保留，不外推全硬件/完整region，原Graph/Vulkan blocker不变。",
+      "summary": "CLOSED：23精确CUDA叶优选、169成熟默认、14单承载；79重复程序实例清退。两OS三交付/Core63/严格profile资源回退及终审通过；原性能聚合和static批次FAIL保留，不外推全硬件/完整region。",
       "candidate": "cd53173946564155121819f1ccae7f6726b908ed",
       "performance": {
         "tier": "P0",
@@ -283,7 +283,7 @@
       "module": "graph",
       "state": "SCOPED",
       "record": "docs/implementation/tasks/compute/vulkan-cpu-cuda-apple-parity-closure.md",
-      "summary": "Vulkan parity SCOPED: named paired measurement correction and exact eight-process AA passed unchanged 5%/10% gates; old failures retained; common catalogue, mature carrier and finite FIX audit pending. No product change or P1 completion claimed."
+      "summary": "Vulkan aggregate SCOPED: Windows both entrances80/80 non-GGUF,560/560 GGUF and25/25 current state qualified. Final family/parameter coverage, defaults/P1 and platform/three-delivery gates remain; other route closures retained."
     },
     {
       "module": "container_concurrent",
@@ -359,7 +359,7 @@
       "module": "compute_provider_onednn",
       "state": "CLOSED",
       "record": "docs/implementation/tasks/compute/cpu-final-f1-build-contract.md",
-      "summary": "CPU最终F1 CLOSED：recipe/软件资格、同core原CPU端口、预编译程序与安全ISA/重放、逐合同成熟默认、oneDNN3.13.4和三平台单/具名混合三交付已验；原失败/skip保留。未签新的WIN，F4/F5/F6及GPU旧状态不变。",
+      "summary": "CPU最终F1 CLOSED：recipe/软件资格、同core原CPU端口、预编译程序与安全ISA/重放、逐合同成熟默认、oneDNN3.13.4和三平台单/具名混合三交付已验；原失败/skip保留。未签新的WIN。",
       "candidate": "560eb1d2332bb69ee5148e899b000fae85d80074",
       "performance": {
         "tier": "P0",
@@ -370,7 +370,7 @@
       "module": "compute_provider_ggml",
       "state": "CLOSED",
       "record": "docs/implementation/tasks/compute/compute-graph-macro-normalization.md",
-      "summary": "宏规范 CLOSED：目标facts/显式include/export/直接Core声明、三平台实际编译与三交付完成；原CPU数学、清退与43规则保持；不新签性能赢家，CUDA goal及旧Graph/Vulkan blocker未关闭。",
+      "summary": "宏规范 CLOSED：目标facts/显式include/export/直接Core声明、三平台实际编译与三交付完成；原CPU数学、清退与43规则保持；不新签性能赢家。",
       "candidate": "026d40bcfdde389c9f69b2458b55d8157774ebda",
       "performance": {
         "tier": "P0",
@@ -381,7 +381,7 @@
       "module": "graph_provider_onednn",
       "state": "CLOSED",
       "record": "docs/implementation/tasks/compute/cpu-final-f1-build-contract.md",
-      "summary": "CPU最终F1 CLOSED：recipe/软件资格、同core原CPU端口、预编译程序与安全ISA/重放、逐合同成熟默认、oneDNN3.13.4和三平台单/具名混合三交付已验；原失败/skip保留。未签新的WIN，F4/F5/F6及GPU旧状态不变。",
+      "summary": "CPU最终F1 CLOSED：recipe/软件资格、同core原CPU端口、预编译程序与安全ISA/重放、逐合同成熟默认、oneDNN3.13.4和三平台单/具名混合三交付已验；原失败/skip保留。未签新的WIN。",
       "candidate": "560eb1d2332bb69ee5148e899b000fae85d80074",
       "performance": {
         "tier": "P0",
@@ -414,7 +414,7 @@
       "module": "compute_backend_cuda",
       "state": "CLOSED",
       "record": "docs/implementation/tasks/compute/cuda-final-u6-audit.md",
-      "summary": "CUDA有限goal CLOSED：固定模型/量化/MTP完整原计算与状态、两OS CUDA-only/mixed三交付、cold成熟默认/真实能力门、六重复公式BORROW和具名unique保留、U5 42步/源码SDK增量及终审清理完成。AA原FAIL/性能INCONCLUSIVE无新WIN；按授权ENGINEERING_DEFAULT/P0关闭，不签全设备SOTA或推理engine，不解除旧Graph/Vulkan。",
+      "summary": "CUDA有限goal CLOSED：固定模型/量化/MTP完整原计算与状态、两OS CUDA-only/mixed三交付、cold成熟默认/真实能力门、六重复公式BORROW和具名unique保留、U5 42步/源码SDK增量及终审清理完成。AA原FAIL/性能INCONCLUSIVE无新WIN；按授权ENGINEERING_DEFAULT/P0关闭，不签全设备SOTA或推理engine。",
       "candidate": "657f291f6e4d50b0e1c14ca24cdbe7b1715066e4",
       "performance": {
         "tier": "P0",
@@ -425,7 +425,7 @@
       "module": "compute_provider_native",
       "state": "CLOSED",
       "record": "docs/implementation/tasks/compute/compute-graph-macro-normalization.md",
-      "summary": "宏规范 CLOSED：目标facts/显式include/export/直接Core声明、三平台实际编译与三交付完成；原CPU数学、清退与43规则保持；不新签性能赢家，CUDA goal及旧Graph/Vulkan blocker未关闭。",
+      "summary": "宏规范 CLOSED：目标facts/显式include/export/直接Core声明、三平台实际编译与三交付完成；原CPU数学、清退与43规则保持；不新签性能赢家。",
       "candidate": "026d40bcfdde389c9f69b2458b55d8157774ebda",
       "performance": {
         "tier": "P0",
@@ -433,15 +433,10 @@
       }
     },
     {
-      "module": "compute_sched",
-      "state": "QUEUED",
-      "summary": "compute_sched identity 已预留：未来审计 Platform process/topology 与 Sched persistent workers 到 Compute ParallelExecutorRef 的自然 CPU execution-pool bridge；尚无依赖、产品入口或实现。"
-    },
-    {
       "module": "compute_route_cpu",
       "state": "CLOSED",
       "record": "docs/implementation/tasks/compute/cpu-final-f4-best-of.md",
-      "summary": "CPU最终F4 CLOSED：当前43精确完整候选优选／成熟工程默认固定，资格P1与两入口/资源/CPU-only三平台及四mixed三交付delta通过；旧187/17移除，失败/未知保留；F5清退与F6终审仍待。",
+      "summary": "CPU最终F4 CLOSED：当前43精确完整候选优选／成熟工程默认固定，资格P1与两入口/资源/CPU-only三平台及四mixed三交付delta通过；旧187/17移除，失败/未知保留。",
       "candidate": "a7ccfc6639483aee4a76403a35fb32d1732441ec",
       "performance": {
         "tier": "P1",
@@ -453,7 +448,7 @@
       "module": "graph_route_cpu",
       "state": "CLOSED",
       "record": "docs/implementation/tasks/compute/cpu-final-f4-best-of.md",
-      "summary": "CPU最终F4 CLOSED：当前43精确完整候选优选／成熟工程默认固定，资格P1与两入口/资源/CPU-only三平台及四mixed三交付delta通过；旧187/17移除，失败/未知保留；F5清退与F6终审仍待。",
+      "summary": "CPU最终F4 CLOSED：当前43精确完整候选优选／成熟工程默认固定，资格P1与两入口/资源/CPU-only三平台及四mixed三交付delta通过；旧187/17移除，失败/未知保留。",
       "candidate": "a7ccfc6639483aee4a76403a35fb32d1732441ec",
       "performance": {
         "tier": "P1",
@@ -476,7 +471,7 @@
       "module": "compute_provider_marlin",
       "state": "CLOSED",
       "record": "docs/implementation/tasks/compute/llm-moe-d4-self-operator-retirement.md",
-      "summary": "M3-D4 CLOSED 91c2fb4d：无合格优势且由成熟 Provider 覆盖的 Marlin、CPU/CUDA/Apple/Vulkan 自有算子域已批量退场；四路线正确性、组件合同与 Compute/Graph 三交付通过，D5 继续真实模型片段验收。",
+      "summary": "M3-D4 CLOSED 91c2fb4d：无合格优势且由成熟 Provider 覆盖的 Marlin、CPU/CUDA/Apple/Vulkan 自有算子域已批量退场；四路线正确性、组件合同与 Compute/Graph 三交付通过。",
       "candidate": "91c2fb4df18f6937d64d195793a8c5b30b06a8ed",
       "performance": {
         "tier": "P0",
@@ -487,7 +482,7 @@
       "module": "compute_provider_cuda",
       "state": "CLOSED",
       "record": "docs/implementation/tasks/compute/cuda-best-of-completion.md",
-      "summary": "CLOSED：23精确CUDA叶优选、169成熟默认、14单承载；79重复程序实例清退。两OS三交付/Core63/严格profile资源回退及终审通过；原性能聚合和static批次FAIL保留，不外推全硬件/完整region，原Graph/Vulkan blocker不变。",
+      "summary": "CLOSED：23精确CUDA叶优选、169成熟默认、14单承载；79重复程序实例清退。两OS三交付/Core63/严格profile资源回退及终审通过；原性能聚合和static批次FAIL保留，不外推全硬件/完整region。",
       "candidate": "cd53173946564155121819f1ccae7f6726b908ed",
       "performance": {
         "tier": "P1",
@@ -499,7 +494,7 @@
       "module": "compute_route_cuda",
       "state": "CLOSED",
       "record": "docs/implementation/tasks/compute/cuda-best-of-completion.md",
-      "summary": "CLOSED：23精确CUDA叶优选、169成熟默认、14单承载；79重复程序实例清退。两OS三交付/Core63/严格profile资源回退及终审通过；原性能聚合和static批次FAIL保留，不外推全硬件/完整region，原Graph/Vulkan blocker不变。",
+      "summary": "CLOSED：23精确CUDA叶优选、169成熟默认、14单承载；79重复程序实例清退。两OS三交付/Core63/严格profile资源回退及终审通过；原性能聚合和static批次FAIL保留，不外推全硬件/完整region。",
       "candidate": "cd53173946564155121819f1ccae7f6726b908ed",
       "performance": {
         "tier": "P1",
@@ -511,7 +506,7 @@
       "module": "graph_route_cuda",
       "state": "CLOSED",
       "record": "docs/implementation/tasks/compute/cuda-best-of-completion.md",
-      "summary": "CLOSED：23精确CUDA叶优选、169成熟默认、14单承载；79重复程序实例清退。两OS三交付/Core63/严格profile资源回退及终审通过；原性能聚合和static批次FAIL保留，不外推全硬件/完整region，原Graph/Vulkan blocker不变。",
+      "summary": "CLOSED：23精确CUDA叶优选、169成熟默认、14单承载；79重复程序实例清退。两OS三交付/Core63/严格profile资源回退及终审通过；原性能聚合和static批次FAIL保留，不外推全硬件/完整region。",
       "candidate": "cd53173946564155121819f1ccae7f6726b908ed",
       "performance": {
         "tier": "P1",
@@ -523,7 +518,7 @@
       "module": "compute_route_apple",
       "state": "CLOSED",
       "record": "docs/implementation/tasks/compute/apple-cpu-cuda-parity-closure.md",
-      "summary": "Apple parity CLOSED: 559/34/45 carrier domains, current official FP4 main/DSpark and MTP, resources and three deliveries verified; four mature overlap WINs at n15, legal unknown-condition defaults, no redundant self kernel; Vulkan blocker unchanged.",
+      "summary": "Apple parity CLOSED: 559/34/45 carrier domains, current official FP4 main/DSpark and MTP, resources and three deliveries verified; four mature overlap WINs at n15, legal unknown-condition defaults, no redundant self kernel; Vulkan status is tracked separately.",
       "candidate": "326a40ee9b2f01a760d8bbdc66974685ff8cfdb0",
       "performance": {
         "tier": "P1",
@@ -535,7 +530,7 @@
       "module": "graph_route_apple",
       "state": "CLOSED",
       "record": "docs/implementation/tasks/compute/apple-cpu-cuda-parity-closure.md",
-      "summary": "Apple parity CLOSED: 559/34/45 carrier domains, current official FP4 main/DSpark and MTP, resources and three deliveries verified; four mature overlap WINs at n15, legal unknown-condition defaults, no redundant self kernel; Vulkan blocker unchanged.",
+      "summary": "Apple parity CLOSED: 559/34/45 carrier domains, current official FP4 main/DSpark and MTP, resources and three deliveries verified; four mature overlap WINs at n15, legal unknown-condition defaults, no redundant self kernel; Vulkan status is tracked separately.",
       "candidate": "326a40ee9b2f01a760d8bbdc66974685ff8cfdb0",
       "performance": {
         "tier": "P1",
@@ -547,19 +542,19 @@
       "module": "compute_route_vulkan",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/vulkan-parity-v2-three-state-fixes.md",
-      "summary": "Vulkan three remaining state contracts AUDITED: explicit GGUF reference parameters, one same-input Flash norm/Q8 boundary diagnosis and independently qualified mixed artifacts. Original 80/560 matrices and21/24 state evidence retained; product math frozen."
+      "summary": "Vulkan state packet qualified: Windows Direct/Graph each25/25 after explicit F32 rotary and same-input vocabulary-head reference fixes. Original80/560 matrices retained; remaining family/parameter/bank audit, defaults/P1/platform/three deliveries pending. Product math unchanged."
     },
     {
       "module": "graph_route_vulkan",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/vulkan-parity-v2-three-state-fixes.md",
-      "summary": "Vulkan three remaining state contracts AUDITED: explicit GGUF reference parameters, one same-input Flash norm/Q8 boundary diagnosis and independently qualified mixed artifacts. Original 80/560 matrices and21/24 state evidence retained; product math frozen."
+      "summary": "Vulkan state packet qualified: Windows Direct/Graph each25/25 after explicit F32 rotary and same-input vocabulary-head reference fixes. Original80/560 matrices retained; remaining family/parameter/bank audit, defaults/P1/platform/three deliveries pending. Product math unchanged."
     },
     {
       "module": "compute_provider_ggml_vulkan",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/vulkan-parity-v2-three-state-fixes.md",
-      "summary": "Vulkan three remaining state contracts AUDITED: explicit GGUF reference parameters, one same-input Flash norm/Q8 boundary diagnosis and independently qualified mixed artifacts. Original 80/560 matrices and21/24 state evidence retained; product math frozen."
+      "summary": "Vulkan state packet qualified: Windows Direct/Graph each25/25 after explicit F32 rotary and same-input vocabulary-head reference fixes. Original80/560 matrices retained; remaining family/parameter/bank audit, defaults/P1/platform/three deliveries pending. Product math unchanged."
     },
     {
       "module": "compute_ggml_runtime",
@@ -576,7 +571,7 @@
       "module": "compute_provider_ggml_cuda",
       "state": "CLOSED",
       "record": "docs/implementation/tasks/compute/cuda-final-u6-audit.md",
-      "summary": "CUDA有限goal CLOSED：固定模型/量化/MTP完整原计算与状态、两OS CUDA-only/mixed三交付、cold成熟默认/真实能力门、六重复公式BORROW和具名unique保留、U5 42步/源码SDK增量及终审清理完成。AA原FAIL/性能INCONCLUSIVE无新WIN；按授权ENGINEERING_DEFAULT/P0关闭，不签全设备SOTA或推理engine，不解除旧Graph/Vulkan。",
+      "summary": "CUDA有限goal CLOSED：固定模型/量化/MTP完整原计算与状态、两OS CUDA-only/mixed三交付、cold成熟默认/真实能力门、六重复公式BORROW和具名unique保留、U5 42步/源码SDK增量及终审清理完成。AA原FAIL/性能INCONCLUSIVE无新WIN；按授权ENGINEERING_DEFAULT/P0关闭，不签全设备SOTA或推理engine。",
       "candidate": "657f291f6e4d50b0e1c14ca24cdbe7b1715066e4",
       "performance": {
         "tier": "P0",
@@ -587,7 +582,7 @@
       "module": "graph_provider_ggml_cuda",
       "state": "CLOSED",
       "record": "docs/implementation/tasks/compute/cuda-final-u6-audit.md",
-      "summary": "CUDA有限goal CLOSED：固定模型/量化/MTP完整原计算与状态、两OS CUDA-only/mixed三交付、cold成熟默认/真实能力门、六重复公式BORROW和具名unique保留、U5 42步/源码SDK增量及终审清理完成。AA原FAIL/性能INCONCLUSIVE无新WIN；按授权ENGINEERING_DEFAULT/P0关闭，不签全设备SOTA或推理engine，不解除旧Graph/Vulkan。",
+      "summary": "CUDA有限goal CLOSED：固定模型/量化/MTP完整原计算与状态、两OS CUDA-only/mixed三交付、cold成熟默认/真实能力门、六重复公式BORROW和具名unique保留、U5 42步/源码SDK增量及终审清理完成。AA原FAIL/性能INCONCLUSIVE无新WIN；按授权ENGINEERING_DEFAULT/P0关闭，不签全设备SOTA或推理engine。",
       "candidate": "657f291f6e4d50b0e1c14ca24cdbe7b1715066e4",
       "performance": {
         "tier": "P0",
@@ -598,7 +593,7 @@
       "module": "compute_provider_flashinfer",
       "state": "CLOSED",
       "record": "docs/implementation/tasks/compute/cuda-final-u6-audit.md",
-      "summary": "CUDA有限goal CLOSED：固定模型/量化/MTP完整原计算与状态、两OS CUDA-only/mixed三交付、cold成熟默认/真实能力门、六重复公式BORROW和具名unique保留、U5 42步/源码SDK增量及终审清理完成。AA原FAIL/性能INCONCLUSIVE无新WIN；按授权ENGINEERING_DEFAULT/P0关闭，不签全设备SOTA或推理engine，不解除旧Graph/Vulkan。",
+      "summary": "CUDA有限goal CLOSED：固定模型/量化/MTP完整原计算与状态、两OS CUDA-only/mixed三交付、cold成熟默认/真实能力门、六重复公式BORROW和具名unique保留、U5 42步/源码SDK增量及终审清理完成。AA原FAIL/性能INCONCLUSIVE无新WIN；按授权ENGINEERING_DEFAULT/P0关闭，不签全设备SOTA或推理engine。",
       "candidate": "657f291f6e4d50b0e1c14ca24cdbe7b1715066e4",
       "performance": {
         "tier": "P0",
@@ -609,7 +604,7 @@
       "module": "compute_provider_ggml_metal",
       "state": "CLOSED",
       "record": "docs/implementation/tasks/compute/apple-cpu-cuda-parity-closure.md",
-      "summary": "Apple parity CLOSED: 559/34/45 carrier domains, current official FP4 main/DSpark and MTP, resources and three deliveries verified; four mature overlap WINs at n15, legal unknown-condition defaults, no redundant self kernel; Vulkan blocker unchanged.",
+      "summary": "Apple parity CLOSED: 559/34/45 carrier domains, current official FP4 main/DSpark and MTP, resources and three deliveries verified; four mature overlap WINs at n15, legal unknown-condition defaults, no redundant self kernel; Vulkan status is tracked separately.",
       "candidate": "326a40ee9b2f01a760d8bbdc66974685ff8cfdb0",
       "performance": {
         "tier": "P1",
@@ -626,7 +621,7 @@
     {
       "module": "compute_provider_torch_cuda",
       "state": "CLOSED",
-      "summary": "CUDA有限goal CLOSED：固定模型/量化/MTP完整原计算与状态、两OS CUDA-only/mixed三交付、cold成熟默认/真实能力门、六重复公式BORROW和具名unique保留、U5 42步/源码SDK增量及终审清理完成。AA原FAIL/性能INCONCLUSIVE无新WIN；按授权ENGINEERING_DEFAULT/P0关闭，不签全设备SOTA或推理engine，不解除旧Graph/Vulkan。",
+      "summary": "CUDA有限goal CLOSED：固定模型/量化/MTP完整原计算与状态、两OS CUDA-only/mixed三交付、cold成熟默认/真实能力门、六重复公式BORROW和具名unique保留、U5 42步/源码SDK增量及终审清理完成。AA原FAIL/性能INCONCLUSIVE无新WIN；按授权ENGINEERING_DEFAULT/P0关闭，不签全设备SOTA或推理engine。",
       "record": "docs/implementation/tasks/compute/cuda-final-u6-audit.md",
       "candidate": "657f291f6e4d50b0e1c14ca24cdbe7b1715066e4",
       "performance": {

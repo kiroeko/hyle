@@ -168,13 +168,19 @@ def main() -> None:
         ]
     }
     require_error(checker.validate_transitions(before, after), "must enter as 'QUEUED'")
-    require_error(
-        checker.validate_transitions(
-            {"modules": [{"module": "a", "state": "QUEUED"}]},
-            {"modules": []},
-        ),
-        "component removal",
-    )
+    before = {"modules": [{"module": "a", "state": "QUEUED"},
+                          {"module": "b", "state": "CLOSED"}]}
+    after = {"modules": [{"module": "b", "state": "CLOSED"}]}
+    if errors := checker.validate_transitions(before, after):
+        raise AssertionError(f"unused QUEUED withdrawal rejected: {errors!r}")
+    for state in ("SCOPED", "AUDITED", "CANDIDATE", "CLOSED", "BLOCKED"):
+        require_error(
+            checker.validate_transitions(
+                {"modules": [{"module": "a", "state": state}]},
+                {"modules": []},
+            ),
+            "component removal",
+        )
     require_error(
         checker.validate_transitions(
             {

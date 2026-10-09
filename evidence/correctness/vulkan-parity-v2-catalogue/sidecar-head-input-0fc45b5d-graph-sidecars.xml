@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites tests="2" failures="0" disabled="0" errors="0" time="40.085" timestamp="2026-10-09T15:19:23.144" name="AllTests">
+  <testsuite name="CurrentSidecars/VulkanGraphCurrentSidecar" tests="2" failures="0" disabled="0" skipped="0" errors="0" time="40.085" timestamp="2026-10-09T15:19:23.144">
+    <testcase name="MixedMxfp4FullThreeStagesAndVocabulary/Q8" value_param="32-byte object &lt;C0-31 E8-10 F7-7F 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00&gt;" file="C:\public\project-hyle\hyle\tests\graph_route_vulkan\../compute_route_vulkan/current_state_tests.h" line="112" status="run" result="completed" time="22.983" timestamp="2026-10-09T15:19:23.144" classname="CurrentSidecars/VulkanGraphCurrentSidecar" />
+    <testcase name="MixedMxfp4FullThreeStagesAndVocabulary/BFloat16" value_param="32-byte object &lt;F0-32 E8-10 F7-7F 00-00 01-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00&gt;" file="C:\public\project-hyle\hyle\tests\graph_route_vulkan\../compute_route_vulkan/current_state_tests.h" line="112" status="run" result="completed" time="17.101" timestamp="2026-10-09T15:19:46.128" classname="CurrentSidecars/VulkanGraphCurrentSidecar" />
+  </testsuite>
+</testsuites>

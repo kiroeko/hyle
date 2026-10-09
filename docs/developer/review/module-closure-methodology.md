@@ -24,7 +24,10 @@ CLOSED -> SCOPED
 | `CANDIDATE` | API、算法和普通产品形状已经停止变化 | 完整 commit/tree 与候选验证 |
 | `CLOSED` | 全部适用工程门通过，应停止日常施工 | terminal record、七门与工程性能结论 |
 | `BLOCKED` | 一个外部或工具条件使本轮不能裁决 | blocker、owner、精确恢复条件 |
-不能跳级。候选后若改变公开合同、算法、对象布局、常态成本或正常 workload，退回 `AUDITED`；
+不能跳级。没有源码、公开入口、target 或依赖的 `QUEUED` 预留身份可因需求取消从当前
+manifest 与 registry 同时撤回，历史保留在 Git；它不进入 `CLOSED`，也不计作完成功能。
+已经启动施工的身份仍禁止删除、改名或重排，所有存续身份顺序保持。
+候选后若改变公开合同、算法、对象布局、常态成本或正常 workload，退回 `AUDITED`；
 只补说明或证据不改变 candidate。`CLOSED` 表示当前范围已真实验收并进入变更控制，不表示永久 ABI、
 所有机器上的绝对 SOTA，或未来永远不增加能力。
 
