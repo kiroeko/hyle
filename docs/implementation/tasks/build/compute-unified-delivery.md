@@ -188,7 +188,7 @@ Windows CUDA 源码嵌入的真实 Direct/Graph FFN 两项已 PASS，实际 RTX4
 
 C3已约定平台/路线展开为[15组交付矩阵](../../../../evidence/correctness/compute-unified-c3/delivery-matrix.json)：
 Windows/WSL各cpu、cuda、vulkan、cpu+cuda、cpu+vulkan；Air为cpu、apple、vulkan、cpu+apple、cpu+vulkan。
-每组source/shared/static共45格，每格普通Direct/Graph两消费者。当前8项消费者PASS、82项UNRUN；
+每组source/shared/static共45格，每格普通Direct/Graph两消费者。当前10项消费者PASS、80项UNRUN；
 mixed SDK仅验证其两条native路线分别可用，不代签H1–H3联合、异步或专家搬运。
 
 ### C3 发现 C2-01 条件 producer 接缝缺陷（待定向修正）
@@ -203,3 +203,7 @@ mixed SDK仅验证其两条native路线分别可用，不代签H1–H3联合、�
 不改数学、路由、flags、公共staging入口或治理核心。当前Windows CUDA不可变批次继续，结束后
 先按协议将本卡实际owner退回AUDITED再改helper、冻结新candidate。保留不受Apple条件影响的
 已完成CPU/CUDA格及其原身份；不重启已通过数学或P1。Apple实际三交付在修正后首次验证。
+
+Windows CUDA relocated shared SDK 的Direct/Graph FFN两项也已实际PASS，DLL邻EXE；
+shared export hygiene检查18个HYLE库/985个导出通过。共四项CUDA消费者已归档；
+原批次进入static，不重跑source/shared。数学/路由/原生进展未改变，没有P1。

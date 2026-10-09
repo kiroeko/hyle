@@ -1,0 +1,20 @@
+Start testing: Oct 10 00:39 中国标准时间
+----------------------------------------------------------
+1/1 Testing: hyle_package_compute_cpp
+1/1 Test: hyle_package_compute_cpp
+Command: "C:/h7/w-cuda/selected-graph/shared-compute-consumer/hyle_package_compute_cpp.exe"
+Directory: C:/h7/w-cuda/selected-graph/shared-compute-consumer
+"hyle_package_compute_cpp" start time: Oct 10 00:39 中国标准时间
+Output:
+----------------------------------------------------------
+ggml_cuda_init: found 1 CUDA devices (Total VRAM: 12281 MiB):
+  Device 0: NVIDIA GeForce RTX 4070, compute capability 8.9, VMM: yes, VRAM: 12281 MiB
+<end of output>
+Test time =   1.71 sec
+----------------------------------------------------------
+Test Passed.
+"hyle_package_compute_cpp" end time: Oct 10 00:39 中国标准时间
+"hyle_package_compute_cpp" time elapsed: 00:00:01
+----------------------------------------------------------
+
+End testing: Oct 10 00:39 中国标准时间

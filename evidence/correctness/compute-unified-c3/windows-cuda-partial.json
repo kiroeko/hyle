@@ -88,11 +88,15 @@
     },
     {
       "entry": "shared-direct",
-      "verdict": "UNRUN"
+      "verdict": "PASS",
+      "log": "evidence/correctness/compute-unified-c3/windows-cuda/shared-compute-consumer-ctest.log",
+      "log_sha256": "4a8f5da847404113bc3accbde7f18850c0388ee48dd3f563252eb51372e6ade5"
     },
     {
       "entry": "shared-graph",
-      "verdict": "UNRUN"
+      "verdict": "PASS",
+      "log": "evidence/correctness/compute-unified-c3/windows-cuda/shared-consumer-ctest.log",
+      "log_sha256": "634ce1c5a6c02965c5314f37b7b1054a2ecd98e835f87a31bc1cb0c9c676c1cc"
     },
     {
       "entry": "static-direct",
