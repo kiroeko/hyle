@@ -129,3 +129,6 @@ consumers with both native routes enabled. Shared/static remain unrun; the seria
 continues. Effective C3 count is 50/90, with no H3 joint/async/expert claim. Completed Windows mixed
 SDK build objects were removed after archived hash and process checks, freeing 4.05 GiB while keeping
 both relocated SDKs, source/consumer artifacts and dependency caches.
+Air CPU+Vulkan shared also passed both relocated ordinary math consumers with exact `cpu;vulkan`
+metadata. The partial receipt and new logs bind actual identities. Effective C3 count is 52/90; static
+remains unrun, and H3 joint/async/expert execution is not certified by this delivery batch.

@@ -322,3 +322,7 @@ Air CPU+Vulkan source 普通 Direct0.63s/Graph6.93s 两项真实数学现已 PAS
 C3当前50 PASS / 40 UNRUN，不签H3联合/异步。Windows已完成CPU+CUDA两个SDK producer object
 目录清理4,350,873,870 bytes（4.05GiB），两relocated SDK、source、所有consumer EXE/assets、
 machine cache和已核对SHA256的日志均保留，未删除产品源码或重启任何native批次。
+
+Air CPU+Vulkan 原 shared SDK 两项现也真实 PASS（Graph7.26s/Direct1.39s），精确 `cpu;vulkan`
+metadata、搬迁和原生资产闭包核对通过。C3 当前52 PASS / 38 UNRUN；原 static 循环继续，
+H3联合/异步/专家传输未实施。不因本轮文档或状态记录重编已通过阶段。

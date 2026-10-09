@@ -1,0 +1,18 @@
+Start testing: Oct 10 06:14 CST
+----------------------------------------------------------
+1/1 Testing: hyle_package_compute_cpp
+1/1 Test: hyle_package_compute_cpp
+Command: "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/shared-compute-consumer/hyle_package_compute_cpp"
+Directory: /Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/shared-compute-consumer
+"hyle_package_compute_cpp" start time: Oct 10 06:14 CST
+Output:
+----------------------------------------------------------
+<end of output>
+Test time =   1.39 sec
+----------------------------------------------------------
+Test Passed.
+"hyle_package_compute_cpp" end time: Oct 10 06:14 CST
+"hyle_package_compute_cpp" time elapsed: 00:00:01
+----------------------------------------------------------
+
+End testing: Oct 10 06:14 CST
