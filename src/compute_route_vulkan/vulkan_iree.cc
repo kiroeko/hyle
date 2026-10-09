@@ -79,7 +79,7 @@ bool artifact_dispatch_fits(const Device &device, const ProgramState &program,
                             const PlanStep &step) noexcept {
   const auto &limits = device.properties.limits;
   const auto &output = program.values[step.outputs[0]].description;
-  const auto elements = *output.element_count();
+  const std::uint64_t elements = *output.element_count();
   if (elements > std::uint64_t{INT32_MAX} / 8 ||
       (std::min)((elements + 63) / 64, std::uint64_t{65535}) >
           limits.maxComputeWorkGroupCount[0] ||
