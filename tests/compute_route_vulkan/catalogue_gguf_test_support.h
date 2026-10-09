@@ -8,19 +8,23 @@
 #include "gguf_test_support.h"
 #include "iq1_test_support.h"
 #include "../compute_models/cpu_c5_gguf_inputs.h"
+#include "../../src/compute_provider_ggml_vulkan/native_device.h"
 
 namespace vulkan_catalogue_gguf {
 namespace c = hyle::compute;
 namespace in = cpu_c5_inputs;
 class Backend final {
 public:
-  Backend() : value_(ggml_backend_vk_init(0)) {
+  Backend() : owner_(hyle::compute::ggml_vulkan::detail::NativeDevice::create({.validation=true}).value()),
+              value_(owner_.create_backend().value()) {
     if (!value_ || !ggml_backend_is_vk(value_))
       throw std::runtime_error("catalogue reference requires original Vulkan backend");
   }
-  ~Backend() {ggml_backend_free(value_);}
+  ~Backend() {auto active=owner_.activate();ggml_backend_free(value_);}
   ggml_backend_t get() const {return value_;}
+  auto activate() const {return owner_.activate();}
 private:
+  hyle::compute::ggml_vulkan::detail::NativeDevice owner_;
   ggml_backend_t value_;
 };
 struct Storage final {
@@ -31,6 +35,7 @@ struct Storage final {
 inline std::array<float,8> native_dots(ggml_type type,std::int64_t k,
     std::span<const std::byte> packed,std::span<const float> input) {
   static Backend backend;
+  auto active=backend.activate();
   Storage storage;
   storage.context=ggml_init({ggml_tensor_overhead()*4+ggml_graph_overhead_custom(8,false),nullptr,true});
   if(!storage.context) throw std::runtime_error("original Vulkan reference metadata OOM");

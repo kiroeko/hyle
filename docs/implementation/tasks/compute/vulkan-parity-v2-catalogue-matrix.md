@@ -70,3 +70,8 @@ Windows 第一批 `6ed2cdefa` Direct80/80、Graph80/80 PASS，无validation laye
 preparation普通入口通过；M3普通GGUF grouped精度绑定随后在559矩阵签运行，
 不借上述IREE grouped PASS冒充。剩余559/80/104及新版状态/sidecars继续本卡。
 当前整体约38%；统一非测试Compute+Graph62,412行/267文件。
+
+GGUF首矩阵 `a3c3567f` 在原GPU oracle初始化处停止，尚无case PASS。
+锁定Vulkan运行时有原instance隔离补丁，直接vendor全局init没有激活owner而assert。
+只修测试oracle：创建既有NativeDevice、使用其backend和作用域包围原native调用/
+释放；不改runtime/产品/数学/门。定向原559/104矩阵一次，原80项不重跑。
