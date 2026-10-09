@@ -102,3 +102,6 @@ V2首批 `9e00073bf` 产品及 `1710f874` 定向资格已完成：原 NF4/AWQ/CT
 仍不能签18全模型geometry、剩余16 MLX packed、其它typed hook/官方完整状态、所有目录、
 Air/三交付/default/P1；当前整体工程估计约20%，下一包按具名成熟carrier继续审计与批接。
 统一非测试Compute+Graph实现61,663行/261文件。文档/证据更新不重建、不重测。
+
+剩余16项 [MLX packed 原程序批次](vulkan-parity-v2-mlx-bindings.md)进入独立SCOPED审计；
+只研究原group/selected/typed workspace接口，AUDITED有限FIX前不新增产品实现。
