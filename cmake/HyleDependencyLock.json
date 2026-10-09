@@ -294,7 +294,7 @@
           {
             "root": "hyle",
             "path": "third_party/iree_vulkan_runtime/NOTICE.md",
-            "sha256": "97e68228441aa5f76b831dbbd2ab25fe9127fab15fc6597e0e3b8415f045eb9b"
+            "sha256": "2f7316281a6191d9fce693dd648f6e3afc714e2b07c580e89717c3b0d3e484c5"
           },
           {
             "root": "hyle",
@@ -330,12 +330,17 @@
             "root": "hyle",
             "path": "third_party/iree_vulkan_runtime/programs/licenses/sglang.txt",
             "sha256": "1495e1e757ef4d0925a2350563cf5754bb23c51701a8ec4fb3c5cdcbedae6747"
+          },
+          {
+            "root": "hyle",
+            "path": "third_party/iree_vulkan_runtime/programs/licenses/iq1.txt",
+            "sha256": "94f29bbed6a22c35b992c5c6ebf0e7c92f13b836b90f36f461c9cf2f0f1d010d"
           }
         ]
       },
       "vendored": {
         "path": "third_party/iree_vulkan_runtime",
-        "tree_sha256": "e678bbf7079a319605e067eb0d7b78f11491fab43d052a4f5a9044b14a9d787e"
+        "tree_sha256": "02718e417e40dc23d622e3cf5521852b6c4600e1ad35dae476b32c2263d9933d"
       }
     },
     {

@@ -1,6 +1,7 @@
 #include "../compute_ops/view_alias.h"
 #include "vulkan_iree.h"
 #include "vulkan_program_internal.h"
+#include "vulkan_iq1.h"
 #include "vulkan_tensor.h"
 
 #include "hyle/compute/low_precision.h"
@@ -164,7 +165,8 @@ Result<Program> prepare_plan(const Context &context, const Plan &plan,
           (!description.is_plain() && !named_compressed_storage(description)) ||
           !bytes ||
           *bytes > runtime->device->properties.limits.maxStorageBufferRange ||
-          !elements || *elements > (std::numeric_limits<std::int32_t>::max)())
+          !elements || (*elements > (std::numeric_limits<std::int32_t>::max)() &&
+                        !iq1_storage_description(description)))
         return std::unexpected(Status::Unimplemented(
             "Vulkan plan requires supported plain or named compressed "
             "storage within device limits"));

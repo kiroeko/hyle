@@ -57,3 +57,13 @@ cancel/close；已有共享资源域仅必要 delta。Air/WSL/三交付/完整�
 expert bank 原样 U8 承载，native 只展开 selected 子组，输出 F32；坏 IDs 先 safe
 索引后 checked 发布。原循环/舍入误差按已有 Vulkan 矩阵门，不制造逐位同 CPU 承诺。
 原下层 CLOSED core 不修改；本包最多三个私有 entry，不扩公共 API。I1–I5 固定后施工。
+
+I2/I4 冷承载补充：原 8 expert bank 的逻辑元素超 I32，但 46/42/38-byte packed
+地址仍在 I32 字节域。只对 canonical 三 IQ1 rank3 descriptor 使用实际 packed 范围，
+private native 再独立验证银行字节、activation 与 32-lane workspace；其它格式限制不变。
+离线三 entry 复用四原 LocalSize64 dispatch，原 lane-strided 程序保留，不展开全银行。
+
+产品批接已固定：三 native entry、packed byte 域、普通两入口、原 checked 发布及
+独立 CPU 网格差分 fixture。集中构建修正仅测试误引用未导出的私有 helper，移除
+这条内部断言，保留普通 prepare 的 actual geometry 验收；不为测试导出私有 API。
+[原始批次证据](../../../../evidence/correctness/vulkan-parity-v2-iq1/README.md)记录实际结果。

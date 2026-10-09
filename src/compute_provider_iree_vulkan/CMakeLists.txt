@@ -126,4 +126,5 @@ hyle_register_package_dependency(
     "${_vendor}/programs/licenses/mlx.txt|${CMAKE_INSTALL_DATADIR}/licenses/Hyle|iree-mlx-LICENSE"
     "${_vendor}/programs/licenses/ds4.txt|${CMAKE_INSTALL_DATADIR}/licenses/Hyle|iree-ds4-LICENSE"
     "${_vendor}/programs/licenses/deepseek.txt|${CMAKE_INSTALL_DATADIR}/licenses/Hyle|iree-deepseek-LICENSE"
-    "${_vendor}/programs/licenses/sglang.txt|${CMAKE_INSTALL_DATADIR}/licenses/Hyle|iree-sglang-LICENSE")
+    "${_vendor}/programs/licenses/sglang.txt|${CMAKE_INSTALL_DATADIR}/licenses/Hyle|iree-sglang-LICENSE"
+    "${_vendor}/programs/licenses/iq1.txt|${CMAKE_INSTALL_DATADIR}/licenses/Hyle|iree-unsloth-iq1-LICENSE")

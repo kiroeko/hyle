@@ -388,7 +388,13 @@ NativeProgram::create(NativeDevice device, ProgramSpec spec) noexcept {
   const bool artifact = artifact_program(spec.kind);
   const bool mlx = mlx_program(spec.kind);
   const bool official = official_program(spec.kind);
+  const bool iq1 = iq1_program(spec.kind);
   const auto &features = device.state_->native.native();
+  if (iq1 && (spec.depth <= 0 || spec.depth % 256 || spec.experts <= 0))
+    return std::unexpected(Status::InvalidArgument("original IQ1 complete block/expert domain"));
+  if (iq1 && (!features.shader_int16 || !features.shader_float16 ||
+              !features.storage_buffer16 || !features.preserve_float32_specials))
+    return std::unexpected(Status::Unimplemented("IQ1 requires original numeric device features"));
   if (scan && !features.shader_int64)
     return std::unexpected(
         Status::Unimplemented("checked Scan requires enabled shaderInt64"));
@@ -445,12 +451,12 @@ NativeProgram::create(NativeDevice device, ProgramSpec spec) noexcept {
   if (official && (!features.shader_int16 || !features.shader_float16 ||
                    !features.storage_buffer16 || !features.preserve_float32_specials))
     return std::unexpected(Status::Unimplemented("official float requires enabled original numeric features"));
-  if (!scan && !precision && !artifact && !mlx && !official &&
+  if (!scan && !precision && !artifact && !mlx && !official && !iq1 &&
       (!features.shader_float16 || !features.storage_buffer16))
     return std::unexpected(Status::Unimplemented(
         "FP8 program requires enabled Float16 and storage16"));
   const auto block = spec.kind == ProgramKind::Float8Block128 ? 128 : 32;
-  if (!scan && !precision && !artifact && !mlx && !official &&
+  if (!scan && !precision && !artifact && !mlx && !official && !iq1 &&
       (spec.depth <= 0 || spec.depth % block ||
        (spec.kind == ProgramKind::Float8Block128 && spec.columns % block)))
     return std::unexpected(
@@ -461,11 +467,19 @@ NativeProgram::create(NativeDevice device, ProgramSpec spec) noexcept {
   constexpr std::int64_t max_elements =
       std::numeric_limits<std::int32_t>::max() / 8;
   if (spec.rows > max_elements / spec.columns ||
-      (!scan && !precision && !artifact && !mlx && !official &&
+      (!scan && !precision && !artifact && !mlx && !official && !iq1 &&
        (spec.rows > max_elements / spec.depth ||
         spec.columns > max_elements / spec.depth)))
     return std::unexpected(
         Status::OutOfRange("IREE descriptor program index/workspace domain"));
+  if (iq1) {
+    const auto row_bytes = spec.depth / 256 * iq1_block_bytes(spec.kind);
+    if (spec.rows > INT32_MAX / 4 / spec.depth ||
+        spec.experts > INT32_MAX / spec.columns ||
+        spec.experts * spec.columns > INT32_MAX / row_bytes ||
+        spec.rows * spec.columns > INT32_MAX / 4 / 32)
+      return std::unexpected(Status::OutOfRange("IQ1 original packed index/workspace domain"));
+  }
   if (mlx) {
     constexpr auto limit = std::int64_t{INT32_MAX} / 4;
     const auto fits = [limit](std::int64_t x, std::int64_t y) {
@@ -507,6 +521,7 @@ NativeProgram::create(NativeDevice device, ProgramSpec spec) noexcept {
                                       : artifact   ? 3
                                       : mlx        ? 4
                                       : official   ? 5
+                                      : iq1        ? 6
                                                    : 1]
                            .get()};
     iree_vm_context_t *context = nullptr;
@@ -563,6 +578,15 @@ NativeProgram::create(NativeDevice device, ProgramSpec spec) noexcept {
     case ProgramKind::OfficialEncodedBlock128:
       name = official_entry(spec.kind);
       break;
+    case ProgramKind::Iq1XsGrouped:
+      name = "module.iq1_xs";
+      break;
+    case ProgramKind::Iq1XxsGrouped:
+      name = "module.iq1_xxs";
+      break;
+    case ProgramKind::Iq1XxxsGrouped:
+      name = "module.iq1_xxxs";
+      break;
     default:
       return std::unexpected(Status::InvalidArgument("IREE program kind"));
     }
@@ -579,7 +603,16 @@ NativeProgram::create(NativeDevice device, ProgramSpec spec) noexcept {
                             iree_allocator_system(), &outputs)));
     state->outputs.reset(outputs);
     auto *hal = owner.device.get();
-    if (official) {
+    if (iq1) {
+      const std::array<iree_hal_dim_t, 2> a{spec.rows, spec.depth};
+      const std::array<iree_hal_dim_t, 1> w{
+          spec.experts * spec.columns * (spec.depth / 256) * iq1_block_bytes(spec.kind)},
+          ids{spec.rows};
+      HYLE_ASSIGN_OR_RETURN(state->views[0], allocate_view(hal, a, IREE_HAL_ELEMENT_TYPE_FLOAT_32));
+      HYLE_ASSIGN_OR_RETURN(state->views[1], allocate_view(hal, w, IREE_HAL_ELEMENT_TYPE_SINT_8));
+      HYLE_ASSIGN_OR_RETURN(state->views[2], allocate_view(hal, ids, IREE_HAL_ELEMENT_TYPE_SINT_32));
+      state->count = 3;
+    } else if (official) {
       const auto r = static_cast<iree_hal_dim_t>(spec.rows);
       const auto n = static_cast<iree_hal_dim_t>(spec.columns);
       const auto k = static_cast<iree_hal_dim_t>(spec.depth);
@@ -793,6 +826,10 @@ WorkState NativeProgram::invoke(CompletionNotify notify,
           static_cast<std::int32_t>(state.spec.group_size));
       HYLE_RETURN_IF_ERROR(detail::consume_status(
           iree_vm_list_push_value(state.inputs.get(), &group)));
+    }
+    if (iq1_program(state.spec.kind)) {
+      const auto n = iree_vm_value_make_i32(static_cast<std::int32_t>(state.spec.columns));
+      HYLE_RETURN_IF_ERROR(detail::consume_status(iree_vm_list_push_value(state.inputs.get(), &n)));
     }
     if (official_grouped(state.spec.kind)) {
       for (const auto scalar : {state.spec.selection_slots, state.spec.activation_slots}) {

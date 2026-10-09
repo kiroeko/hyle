@@ -205,7 +205,8 @@ NativeDevice::create(ggml_vulkan::detail::NativeDevice native,
                               detail::precision_program(),
                               detail::artifacts_program(),
                               detail::mlx_program(),
-                              detail::official_program()};
+                              detail::official_program(),
+                              detail::iq1_program()};
     for (std::size_t i = 0; i < programs.size(); ++i) {
       iree_vm_module_t *module = nullptr;
       HYLE_RETURN_IF_ERROR(

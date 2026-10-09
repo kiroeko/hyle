@@ -128,6 +128,22 @@
       "offline_compilation": "compile_official.py",
       "execution_contract": "Original QAT/RNE and selected group dot-before-scale; 27 IEEE32 math schedules and2 native integer finite controls",
       "qualification": "docs/implementation/tasks/compute/vulkan-parity-v2-official-float-bindings.md"
+    },
+    {
+      "name": "iq1",
+      "file": "iq1.vmfb.b64",
+      "sha256": "23ce12b8af75c6fea75f2ed9cf542239314a34dbc3117bf06cc0ab6cc7d61cee",
+      "bytes": 49180,
+      "recipe": "iq1.mlir",
+      "recipe_sha256": "5000262d27edb8222ec71745ca4cc6b3e9e8960d0ad1d7b962c2db61bcbee820",
+      "exports_used": [
+        "iq1_xs",
+        "iq1_xxs",
+        "iq1_xxxs"
+      ],
+      "offline_compilation": "compile_iq1.py",
+      "execution_contract": "Registered Unsloth GPU grids, 32-lane strided subgroup contributions and final reduction; no full F32 bank",
+      "qualification": "docs/implementation/tasks/compute/vulkan-parity-v2-iq1-bindings.md"
     }
   ]
 }

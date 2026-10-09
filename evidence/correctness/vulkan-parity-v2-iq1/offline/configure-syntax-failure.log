@@ -1,0 +1,3 @@
+C:\public\project-hyle\hyle\third_party\iree_vulkan_runtime\programs\iq1.mlir:236:102: error: expected attribute name
+%out = linalg.reduce ins(%tied : tensor<?x?x32xf32>) outs(%init : tensor<?x?xf32>) dimensions = [2] {
+                                                                                                     ^

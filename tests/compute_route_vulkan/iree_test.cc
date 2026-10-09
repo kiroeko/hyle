@@ -5,6 +5,7 @@
 #include "artifact_test_support.h"
 #include "mlx_test_support.h"
 #include "official_test_support.h"
+#include "iq1_test_support.h"
 #include "scan_test_support.h"
 #include "vulkan_program_internal.h"
 
@@ -23,6 +24,15 @@ hyle::Result<v::Program> prepare_artifact(const v::Context &context,
 
 TEST(VulkanIree, OriginalOfficialDynamicLinearsAndWeightTailDecode) {
   vulkan_official_test::linears(prepare_artifact);vulkan_official_test::decodes(prepare_artifact);
+}
+TEST(VulkanIree, OriginalIq1ExpertProgramsAndChangedInputs) {
+  vulkan_iq1_test::batch(prepare_artifact);
+}
+TEST(VulkanIree, OriginalIq1ActualPackedGeometryAndFeatureBoundaries) {
+  vulkan_iq1_test::domains(prepare_artifact);
+}
+TEST(VulkanIree, OriginalIq1IndependentLeaseCancelCloseAndOom) {
+  vulkan_iq1_test::lifecycle(prepare_artifact);
 }
 TEST(VulkanIree, OriginalOfficialGroupedFp4Fp8SharedDistinctAndChecked) {
   vulkan_official_test::grouped(prepare_artifact);

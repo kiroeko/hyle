@@ -1,0 +1,51 @@
+{
+  "commands": [
+    [
+      "C:\\hv\\m2vk-tools\\iree\\compiler\\_mlir_libs\\iree-compile.exe",
+      "--version"
+    ],
+    [
+      "C:\\hv\\m2vk-tools\\iree\\compiler\\_mlir_libs\\iree-compile.exe",
+      "C:\\public\\project-hyle\\hyle\\third_party\\iree_vulkan_runtime\\programs\\iq1.mlir",
+      "--iree-hal-target-device=vulkan",
+      "--iree-vulkan-target=vp_android_baseline_2022",
+      "--iree-vulkan-dispatch-abi=descriptors",
+      "--iree-vulkan-target-features=spirv:v1.3,cap:Shader,cap:Int16,cap:Float16,cap:StorageBuffer16BitAccess,cap:SignedZeroInfNanPreserve,ext:SPV_KHR_16bit_storage,ext:SPV_KHR_float_controls",
+      "--iree-execution-model=async-external",
+      "--compile-to=executable-configurations",
+      "-o",
+      "C:\\public\\project-hyle\\hyle\\evidence\\correctness\\vulkan-parity-v2-iq1\\offline\\configured.mlir"
+    ],
+    [
+      "C:\\hv\\m2vk-tools\\iree\\compiler\\_mlir_libs\\iree-compile.exe",
+      "C:\\public\\project-hyle\\hyle\\evidence\\correctness\\vulkan-parity-v2-iq1\\offline\\annotated.mlir",
+      "--iree-hal-target-device=vulkan",
+      "--iree-vulkan-target=vp_android_baseline_2022",
+      "--iree-vulkan-dispatch-abi=descriptors",
+      "--iree-vulkan-target-features=spirv:v1.3,cap:Shader,cap:Int16,cap:Float16,cap:StorageBuffer16BitAccess,cap:SignedZeroInfNanPreserve,ext:SPV_KHR_16bit_storage,ext:SPV_KHR_float_controls",
+      "--iree-execution-model=async-external",
+      "--compile-from=executable-configurations",
+      "-o",
+      "C:\\public\\project-hyle\\hyle\\evidence\\correctness\\vulkan-parity-v2-iq1\\offline\\iq1.vmfb",
+      "--iree-hal-dump-executable-files-to=C:\\public\\project-hyle\\hyle\\evidence\\correctness\\vulkan-parity-v2-iq1\\offline\\spirv"
+    ]
+  ],
+  "exports": [
+    "iq1_xs",
+    "iq1_xxs",
+    "iq1_xxxs"
+  ],
+  "files": {
+    "iq1.mlir": "5000262d27edb8222ec71745ca4cc6b3e9e8960d0ad1d7b962c2db61bcbee820",
+    "compile_iq1.py": "dbc30ce43c62653b3149ece7f292aa066873d2332972acc75231ec72b3726fd9",
+    "generate_iq1.py": "39036491131e362af8f49a6e5e11a9ad518400afed894f65015da00b2a619da0",
+    "configured.mlir": "577720625a5ead1d1a77fcf4e29ffda5a624bff7b52190a99c6166b9af84c73a",
+    "annotated.mlir": "36932e188dd11038672a77e3b8efaabe3848952381612dc57cf1a36dc7a74ec3",
+    "iq1.vmfb": "23ce12b8af75c6fea75f2ed9cf542239314a34dbc3117bf06cc0ab6cc7d61cee",
+    "compiler-version.txt": "afc0d254b2555330caf79d6eb859e01fb59dc86c098fda257d76ac1943a6d446",
+    "module_iq1_xs_dispatch_0_iq1_xs_dispatch_0_elementwise_broadcast_D_f32.spirv.mlir": "6affc2a95a18202b388057eb4f04a13349e637cecde1621d312f840fcc4f2d41",
+    "module_iq1_xs_dispatch_1_iq1_xs_dispatch_1_reduction_Dx32_f32.spirv.mlir": "5fbd8239704cef450384d433fa6bd6485f8d714ed98b27310bfc67c5d274d480",
+    "module_iq1_xxs_dispatch_0_iq1_xxs_dispatch_0_elementwise_broadcast_D_f32.spirv.mlir": "8e8933c0ecc382388509056f44553c04b7defda36afc794521a22c0d02609aec",
+    "module_iq1_xxxs_dispatch_0_iq1_xxxs_dispatch_0_elementwise_broadcast_D_f32.spirv.mlir": "95170a94a8e78415d9172a7c6ea6a7f5aee75ca4edee62fa6d3591dc224d1610"
+  }
+}

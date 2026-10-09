@@ -2,6 +2,7 @@
 #include "../compute_route_vulkan/artifact_test_support.h"
 #include "../compute_route_vulkan/mlx_test_support.h"
 #include "../compute_route_vulkan/official_test_support.h"
+#include "../compute_route_vulkan/iq1_test_support.h"
 #include "../compute_route_vulkan/scan_test_support.h"
 #include "hyle/graph/vulkan.h"
 
@@ -27,6 +28,15 @@ hyle::Result<v::Program> compile_artifact(const v::Context &context,
 
 TEST(VulkanGraph, OriginalOfficialDynamicLinearsAndWeightTailDecode) {
   vulkan_official_test::linears(compile_artifact);vulkan_official_test::decodes(compile_artifact);
+}
+TEST(VulkanGraph, OriginalIq1ExpertProgramsAndChangedInputs) {
+  vulkan_iq1_test::batch(compile_artifact);
+}
+TEST(VulkanGraph, OriginalIq1ActualPackedGeometryAndFeatureBoundaries) {
+  vulkan_iq1_test::domains(compile_artifact);
+}
+TEST(VulkanGraph, OriginalIq1IndependentLeaseCancelCloseAndOom) {
+  vulkan_iq1_test::lifecycle(compile_artifact);
 }
 TEST(VulkanGraph, OriginalOfficialGroupedFp4Fp8SharedDistinctAndChecked) {
   vulkan_official_test::grouped(compile_artifact);

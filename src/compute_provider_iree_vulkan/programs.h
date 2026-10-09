@@ -9,4 +9,5 @@ std::span<const unsigned char> precision_program() noexcept;
 std::span<const unsigned char> artifacts_program() noexcept;
 std::span<const unsigned char> mlx_program() noexcept;
 std::span<const unsigned char> official_program() noexcept;
+std::span<const unsigned char> iq1_program() noexcept;
 } // namespace hyle::compute::iree_vulkan::detail

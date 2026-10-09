@@ -80,7 +80,7 @@ struct NativeDevice::State final {
       tracker;
   detail::Owner<iree_hal_device_group_t, iree_hal_device_group_release> group;
   detail::Owner<iree_vm_module_t, iree_vm_module_release> hal;
-  std::array<detail::Owner<iree_vm_module_t, iree_vm_module_release>, 6>
+  std::array<detail::Owner<iree_vm_module_t, iree_vm_module_release>, 7>
       programs;
 };
 } // namespace hyle::compute::iree_vulkan

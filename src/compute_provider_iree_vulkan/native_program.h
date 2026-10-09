@@ -34,9 +34,19 @@ enum class ProgramKind {
   OfficialLinearPowerF32,
   OfficialGrouped8F32,
   OfficialGrouped4F32,
-  OfficialEncodedBlock128
+  OfficialEncodedBlock128,
+  Iq1XsGrouped,
+  Iq1XxsGrouped,
+  Iq1XxxsGrouped
 };
 enum class ArtifactScalar { Float32, Float16, BFloat16 };
+constexpr bool iq1_program(ProgramKind kind) noexcept {
+  return kind >= ProgramKind::Iq1XsGrouped && kind <= ProgramKind::Iq1XxxsGrouped;
+}
+constexpr std::int64_t iq1_block_bytes(ProgramKind kind) noexcept {
+  return kind == ProgramKind::Iq1XsGrouped ? 46
+         : kind == ProgramKind::Iq1XxsGrouped ? 42 : 38;
+}
 constexpr bool artifact_program(ProgramKind kind) noexcept {
   return kind == ProgramKind::Nf4Decode || kind == ProgramKind::Nf4NestedDecode ||
          kind == ProgramKind::AwqDecode || kind == ProgramKind::Symmetric4Decode;

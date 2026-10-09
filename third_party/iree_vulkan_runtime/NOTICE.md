@@ -93,3 +93,14 @@ format and already qualified source tensor equations; no new quantization
 algorithm, HYLE kernel or compiler pass is introduced. Dynamic finite control
 returns a native scalar flag; failed output remains private. Original dot then
 activation scale, weight scale and ordered F32 accumulation are retained.
+
+## Original Unsloth IQ1 GPU programs
+
+`programs/iq1.mlir` expresses the three registered original GPU grids and
+`kernel_mul_mv_iq1_{xs,xxs,xxxs}_f32_impl` from Unsloth llama.cpp
+`a809594fd2035979ad2b7ef23398127c1d07e891`, registered in
+`third_party/ggml_metal_iq1/origins.json` and `patches.json`. Original packed
+46/42/38-byte blocks, grid low/high indices, scale/delta equations, per-lane
+strided contribution sequence and final reduction are retained. IREE owns
+standard tensor/arith/scf/linalg compilation and execution. There is no new
+HYLE quantizer, shader or whole-bank float expansion. See `programs/licenses/iq1.txt`.

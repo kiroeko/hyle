@@ -1,5 +1,6 @@
 #include "vulkan_iree.h"
 #include "vulkan_mlx.h"
+#include "vulkan_iq1.h"
 #include "vulkan_official.h"
 
 #include <algorithm>
@@ -221,6 +222,7 @@ bool iree_operation(const ProgramState &program,
   if (step.custom || step.inputs.empty() || step.outputs.size() != 1)
     return false;
   if (official_float_operation(program, step)) return true;
+  if (iq1_operation(program, step)) return true;
   if (step.operation.custom_as<model_ops::ArtifactWeightDecode>())
     return true; // Domain diagnostics belong to cold lowering, never a shader fallback.
   if (step.operation.custom_as<model_ops::MlxQuantized>())
@@ -243,6 +245,7 @@ bool iree_operation(const ProgramState &program,
 
 Status lower_iree(ProgramState &program, const PlanStep &step) noexcept {
   if (official_float_operation(program, step)) return lower_official_float(program, step);
+  if (iq1_operation(program, step)) return lower_iq1(program, step);
   if (step.operation.custom_as<model_ops::MlxQuantized>())
     return lower_mlx(program, step);
   try {
@@ -411,7 +414,7 @@ create_iree_stage(const std::shared_ptr<Run> &run, const Dispatch &dispatch,
     stage->output_bytes = *values[stage->output].description.required_bytes();
     for (std::size_t port = 0; port < stage->input_count; ++port) {
       auto &input = stage->inputs[port];
-      const bool individual = iv::artifact_program(spec.kind) || iv::mlx_program(spec.kind);
+      const bool individual = iv::artifact_program(spec.kind) || iv::mlx_program(spec.kind) || iv::iq1_program(spec.kind);
       if (iv::official_program(spec.kind)) {
         if (iv::official_roundtrip(spec.kind)) input.value = dispatch.values[0];
         else if (spec.kind == iv::ProgramKind::OfficialWeightDecodeF32 ||
@@ -435,7 +438,7 @@ create_iree_stage(const std::shared_ptr<Run> &run, const Dispatch &dispatch,
             static_cast<VkDeviceSize>(spec.depth) *
             static_cast<VkDeviceSize>(port == 2 ? spec.rows : spec.columns);
       HYLE_ASSIGN_OR_RETURN(input.destination, stage->program->input(port));
-      input.constant = (iv::mlx_program(spec.kind) || iv::official_program(spec.kind)) &&
+      input.constant = (iv::mlx_program(spec.kind) || iv::official_program(spec.kind) || iv::iq1_program(spec.kind)) &&
                        values[input.value].constant.valid();
     }
     HYLE_ASSIGN_OR_RETURN(stage->input_copy, create_run(run->runtime));
