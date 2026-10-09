@@ -71,16 +71,54 @@ TEST(VulkanIree, OriginalMlxEmptyEmbeddingDomainOomCancelAndClose) {
 TEST(VulkanIree, OriginalMlxMx8SignsZerosAndSourceScaleClassification) {
   using namespace vulkan_mlx_test;
   auto context = vulkan_test::context().value();
-  Inputs data(Format::kMxfp8, Kind::kLinear, c::DataType::kFloat32, 32, 0, c::DataType::kUnknown, 256);
-  // Each output row below observes all encoded normal signs and zero codes;
-  // separately force a source E8 Inf to distinguish MLX255 from E8 NaN.
-  data.exponents.assign(data.exponents.size(), 255);
-  std::vector<std::uint64_t> scale(data.exponents.size(), 255);
-  data.payloads[2] = t::payload(data.descriptions[2], scale);data.calculate();
-  auto program = prepare_artifact(context, data.operation, data.descriptions).value();
-  auto slot = program.create_invocation().value();ASSERT_TRUE(slot.bind(data.upload(context)).ok());
-  auto done = slot.submit().value();auto result = done.wait();ASSERT_TRUE(result) << result.error().message();
-  data.check(context, result->get()->tensors()[0]);
+  for (auto format : {Format::kMxfp4, Format::kMxfp8}) for (auto type : types)
+    for (auto exponent : {0, 102, 103, 127, 142, 143, 255}) {
+      SCOPED_TRACE(::testing::Message() << static_cast<int>(format) << '/' << static_cast<int>(type) << '/' << exponent);
+      Inputs data(format, Kind::kLinear, type, 32, 0, c::DataType::kUnknown, 32);
+      std::fill(data.codes.begin(), data.codes.end(), format == Format::kMxfp4 ? 2 : 0x38);
+      std::vector<std::uint64_t> words(*data.descriptions[1].element_count(), format == Format::kMxfp4 ? 0x22222222 : 0x38383838);
+      data.payloads[1] = t::payload(data.descriptions[1], words);
+      // Small dot at overflow proves the source F16 scale itself overflows;
+      // final F16 rounding alone would produce the finite value2048.
+      std::fill(data.activation.begin(), data.activation.end(), exponent == 143 ? 1. / 1024 : 1.);
+      std::vector<std::uint64_t> a(data.activation.size(), t::encode(data.activation[0], type));
+      data.payloads[0] = t::payload(data.descriptions[0], a);
+      std::fill(data.exponents.begin(), data.exponents.end(), static_cast<std::uint8_t>(exponent));
+      std::vector<std::uint64_t> s(data.exponents.size(), static_cast<std::uint64_t>(exponent));
+      data.payloads[2] = t::payload(data.descriptions[2], s);data.calculate();
+      auto program = prepare_artifact(context, data.operation, data.descriptions).value();
+      auto slot = program.create_invocation().value();ASSERT_TRUE(slot.bind(data.upload(context)).ok());
+      auto done = slot.submit().value();auto result = done.wait();ASSERT_TRUE(result) << result.error().message();
+      data.check(context, result->get()->tensors()[0]);
+    }
+}
+
+TEST(VulkanIree, OriginalMlxMx8All256EncodingsUseTheSourceFormat) {
+  using namespace vulkan_mlx_test;
+  auto context = vulkan_test::context().value();
+  for (auto type : types) {
+    Inputs data(Format::kMxfp8, Kind::kLinear, type, 32, 0, c::DataType::kUnknown, 32);
+    data.n = 256;data.codes.resize(data.n * data.k);
+    data.descriptions[1] = t::dense(c::DataType::kUInt32, {256, 8});
+    data.descriptions[2] = t::dense(c::DataType::kUInt8, {256, 1});
+    data.output = t::dense(type, {2, 256});
+    std::vector<std::uint64_t> words(256 * 8), scales(256, 127);
+    for (int code = 0; code < 256; ++code)
+      for (int j = 0; j < 32; ++j) {
+        data.codes[code * 32 + j] = static_cast<std::uint8_t>(code);
+        words[code * 8 + j / 4] = static_cast<std::uint64_t>(code) * 0x01010101;
+      }
+    data.payloads[1] = t::payload(data.descriptions[1], words);
+    data.payloads[2] = t::payload(data.descriptions[2], scales);
+    data.exponents.assign(256, 127);
+    std::fill(data.activation.begin(), data.activation.end(), 1.);
+    std::vector<std::uint64_t> a(data.activation.size(), t::encode(1., type));
+    data.payloads[0] = t::payload(data.descriptions[0], a);data.calculate();
+    auto program = prepare_artifact(context, data.operation, data.descriptions).value();
+    auto slot = program.create_invocation().value();ASSERT_TRUE(slot.bind(data.upload(context)).ok());
+    auto done = slot.submit().value();auto result = done.wait();ASSERT_TRUE(result) << result.error().message();
+    data.check(context, result->get()->tensors()[0]);
+  }
 }
 
 TEST(VulkanIree, OriginalArtifactBatchPreservesSourceRoundingAndSixPorts) {

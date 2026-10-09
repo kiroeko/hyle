@@ -1,0 +1,75 @@
+{
+  "candidate": "43f562321e68e557689d90de4c679d158f464599",
+  "build": "C:\\hv\\vp1",
+  "steps": [
+    {
+      "name": "direct-delta",
+      "returncode": 0,
+      "filter": "VulkanIree.OriginalMlxBatchPreservesGroupsSourceTypesAndCheckedSlots",
+      "validation_error": false,
+      "tests": {
+        "tests": "1",
+        "failures": "0",
+        "disabled": "0",
+        "errors": "0",
+        "time": "2.539",
+        "timestamp": "2026-10-09T11:37:37.945",
+        "name": "AllTests"
+      },
+      "xml": "native-43f56232-direct-delta.xml",
+      "binary_sha256": "52e57841035d9112f529a68983590ae20b0ef9b64915dad14c6022c9fb4205de",
+      "log": "native-43f56232-direct-delta.log",
+      "log_sha256": "201d7382bd10a169eaba2f758430d70fbe866bcbdf0b17e77ae66e25b253d062",
+      "adjacent_dlls": [
+        "hyle_compute.dll",
+        "hyle_compute_ggml_runtime.dll",
+        "hyle_compute_ops.dll",
+        "hyle_compute_provider_ggml_vulkan.dll",
+        "hyle_compute_provider_iree_vulkan.dll",
+        "hyle_compute_route_vulkan.dll",
+        "hyle_container.dll",
+        "hyle_error.dll",
+        "hyle_graph.dll",
+        "hyle_graph_route_vulkan.dll",
+        "hyle_mem.dll",
+        "hyle_platform.dll",
+        "hyle_time.dll"
+      ]
+    },
+    {
+      "name": "graph-delta",
+      "returncode": 0,
+      "filter": "VulkanGraph.OriginalMlxBatchUsesOrdinaryTypedNodesAndCheckedSlots",
+      "validation_error": false,
+      "tests": {
+        "tests": "1",
+        "failures": "0",
+        "disabled": "0",
+        "errors": "0",
+        "time": "2.818",
+        "timestamp": "2026-10-09T11:37:40.626",
+        "name": "AllTests"
+      },
+      "xml": "native-43f56232-graph-delta.xml",
+      "binary_sha256": "d8d1a1127d2faee89d94a3a398f8476e029b93f8b946b2c66dc17f7d96989dbd",
+      "log": "native-43f56232-graph-delta.log",
+      "log_sha256": "a83cfbe4aba6e29866cdf52b849469c3b8164def8e10c46e856fedb81f8f68ce",
+      "adjacent_dlls": [
+        "hyle_compute.dll",
+        "hyle_compute_ggml_runtime.dll",
+        "hyle_compute_ops.dll",
+        "hyle_compute_provider_ggml_vulkan.dll",
+        "hyle_compute_provider_iree_vulkan.dll",
+        "hyle_compute_route_vulkan.dll",
+        "hyle_container.dll",
+        "hyle_error.dll",
+        "hyle_graph.dll",
+        "hyle_graph_route_vulkan.dll",
+        "hyle_mem.dll",
+        "hyle_platform.dll",
+        "hyle_time.dll"
+      ]
+    }
+  ],
+  "limits": "Micro source qualification; all 16 full model geometries, Air, delivery and P1 remain unproven."
+}
