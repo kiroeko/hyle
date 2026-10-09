@@ -1,0 +1,4 @@
+IREE (https://iree.dev):
+  IREE compiler version 3.12.0rc20260919 @ 6ef606b6fa3e12bd2c12d36a07463069eb71185f
+  LLVM version 24.0.0git
+  Optimized build

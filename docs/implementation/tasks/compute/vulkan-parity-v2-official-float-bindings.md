@@ -112,3 +112,16 @@ materialize BF16；grouped还经过现有checked发布。QAT/explicit decode已�
 离线实际10entry/24浮点+2整数dispatch。编译器或VM统计仪器不改，不加HYLE数学。
 只复验两个剩余ID，两入口各一次；原两个新增PASS和旧域继承。若仍不符，保留精确
 UNPROVEN域，转向父轮其它明确任务，不无限扩大本项。
+
+## Windows原链批次结果（非父轮终局）
+
+最终产品`ee9350aba`；两剩余ID Direct2/2、Graph2/2 PASS，原QAT/encoded两ID两入口
+结果继承；独立请求/lease/finite错误/cancel/replay/close/OOM、零quota accounting于
+`a5ae3ae4`两入口生命周期ID PASS。[完整结果与限制](../../../../evidence/correctness/vulkan-parity-v2-official/README.md)。
+实际原程序10entry、24数学+2整数dispatch，公开13精度/操作组合不减少；失格fused
+BF16重复变体移除，BF16以原native边界保持，原数学/误差门不改。三QAT全部有限BF16、
+多group与two-replay精确通过；falseNaN/Inf不发布；模型相关slot/token/expert仍原语义。
+
+全尺寸/完整state/model分支、559/34/45目录、Air/三交付/default/P1仍未验，不能签父轮
+完成。不再重测此微型包，后续仅具名变化delta。下一步核对剩余IQ1三格式原成熟承载、
+八族/45plain全分支与actual矩阵。统一Compute+Graph非测试实现62,261行/265文件。

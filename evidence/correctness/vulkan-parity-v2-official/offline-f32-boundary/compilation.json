@@ -1,0 +1,81 @@
+{
+  "commands": [
+    [
+      "C:\\hv\\m2vk-tools\\iree\\compiler\\_mlir_libs\\iree-compile.exe",
+      "--version"
+    ],
+    [
+      "C:\\hv\\m2vk-tools\\iree\\compiler\\_mlir_libs\\iree-compile.exe",
+      "C:\\public\\project-hyle\\hyle\\third_party\\iree_vulkan_runtime\\programs\\official.mlir",
+      "--iree-hal-target-device=vulkan",
+      "--iree-vulkan-target=vp_android_baseline_2022",
+      "--iree-vulkan-dispatch-abi=descriptors",
+      "--iree-vulkan-target-features=spirv:v1.3,cap:Shader,cap:Int16,cap:Float16,cap:StorageBuffer16BitAccess,cap:SignedZeroInfNanPreserve,ext:SPV_KHR_16bit_storage,ext:SPV_KHR_float_controls",
+      "--iree-execution-model=async-external",
+      "--compile-to=executable-configurations",
+      "-o",
+      "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\vulkan-v2-official\\offline-f32-boundary\\configured.mlir"
+    ],
+    [
+      "C:\\hv\\m2vk-tools\\iree\\compiler\\_mlir_libs\\iree-compile.exe",
+      "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\vulkan-v2-official\\offline-f32-boundary\\annotated.mlir",
+      "--iree-hal-target-device=vulkan",
+      "--iree-vulkan-target=vp_android_baseline_2022",
+      "--iree-vulkan-dispatch-abi=descriptors",
+      "--iree-vulkan-target-features=spirv:v1.3,cap:Shader,cap:Int16,cap:Float16,cap:StorageBuffer16BitAccess,cap:SignedZeroInfNanPreserve,ext:SPV_KHR_16bit_storage,ext:SPV_KHR_float_controls",
+      "--iree-execution-model=async-external",
+      "--compile-from=executable-configurations",
+      "-o",
+      "C:\\public\\project-hyle\\hyle\\.scratch\\validation\\vulkan-v2-official\\offline-f32-boundary\\official.vmfb",
+      "--iree-hal-dump-executable-files-to=C:\\public\\project-hyle\\hyle\\.scratch\\validation\\vulkan-v2-official\\offline-f32-boundary\\spirv"
+    ]
+  ],
+  "exports": [
+    "weight_decode_f32",
+    "weight_decode_bf16",
+    "fp8_roundtrip_64",
+    "fp8_roundtrip_128",
+    "fp4_roundtrip_32",
+    "linear_normal_f32",
+    "linear_power_f32",
+    "grouped8_f32",
+    "grouped4_f32",
+    "encoded_block128"
+  ],
+  "files": {
+    "official.mlir": "d467d9d2ee15c68e407bef1d5e6b6ed22c4a64a046ad10644f9a292a8e58bc91",
+    "compile_official.py": "7f99dabbcefad6a53dceafec80c9225322075dd701df24f33a122ac6232aaae7",
+    "generate_official.py": "a95c2df009573502f01224f5e95dce3c182172cff16c76dd292bba56d7fe54e9",
+    "generate_mlx.py": "55365b41a3ad57dda2a8c7245fa2bc77b4477ac21ee0045482b68e21bfce50d3",
+    "configured.mlir": "471b1e89f5e2529adcaaee286a55bc866a4ea90c4d25a0103a49ea91ae3127eb",
+    "annotated.mlir": "fb1204e06f16d1595112fcf36a93fb6ac51e18fb7d9f4d9f2ad12bac1468c625",
+    "official.vmfb": "9d95a49491acd89584ce884ade428b8fd35d67fd00588d1321bfbdc7a0702b64",
+    "compiler-version.txt": "afc0d254b2555330caf79d6eb859e01fb59dc86c098fda257d76ac1943a6d446",
+    "module_encoded_block128_dispatch_3_encoded_block128_dispatch_3_elementwise_broadcast_D_f32.spirv.mlir": "738d19c3cb9973a5e847a874b28bdd1624b3284cdb50e07343dcdb058dda975a",
+    "module_fp4_roundtrip_32_dispatch_1_fp4_roundtrip_32_dispatch_1_reduction_DxD_i16xi32.spirv.mlir": "bf6bdac4ebd50ee3b92804ce211b4665c3e0ff9bbb653b938ef3b5633032f5c7",
+    "module_fp4_roundtrip_32_dispatch_2_fp4_roundtrip_32_dispatch_2_elementwise_broadcast_D_i16.spirv.mlir": "31519718d55284cf36139dd2f64ce0c9d9fe0b444e7f26ecb6a3a7ca881f3e05",
+    "module_fp8_roundtrip_128_dispatch_1_fp8_roundtrip_128_dispatch_1_reduction_Dx128_i16xf32.spirv.mlir": "2465cb62830891f82a490e408034286b8d93ee311f1d6810d0d164bcc21d75e5",
+    "module_fp8_roundtrip_128_dispatch_2_fp8_roundtrip_128_dispatch_2_elementwise_broadcast_D_i8.spirv.mlir": "b5ffa833396b8a8e03804a6911e5c2a050db7a211830c6b9ddce0bbec58785eb",
+    "module_fp8_roundtrip_128_dispatch_3_fp8_roundtrip_128_dispatch_3_elementwise_broadcast_D_i16.spirv.mlir": "c8eedee01b3dab5bd07f15fb138f1e93095167eabbfc287e9c413b2e8ba1ca6c",
+    "module_fp8_roundtrip_64_dispatch_0_fp8_roundtrip_64_dispatch_0_reduction_D_i16xi32.spirv.mlir": "482580b54591089e0e79216f7f38c84025e91ac8193ea9b18e1a46c161a99447",
+    "module_fp8_roundtrip_64_dispatch_1_fp8_roundtrip_64_dispatch_1_reduction_Dx64_i16xf32.spirv.mlir": "19ac266fe92c2b2453d662b7d831f90da3a9d94b2f98d3b65d9c5f60f91b76b0",
+    "module_fp8_roundtrip_64_dispatch_2_fp8_roundtrip_64_dispatch_2_elementwise_broadcast_D_i8.spirv.mlir": "b8ede2b13324ad6e34e76212ed1382b93d4a6ad52d9c7b64018aa5733567db84",
+    "module_fp8_roundtrip_64_dispatch_3_fp8_roundtrip_64_dispatch_3_elementwise_broadcast_D_i16.spirv.mlir": "f19d5b13e18f38957a69cc645d325715ebe6ba82f747935dcc874fd7e9a0ebb4",
+    "module_grouped4_f32_dispatch_3_grouped4_f32_dispatch_3_elementwise_broadcast_D_f32.spirv.mlir": "7031c85db6ee3ef77e032eb4d1efb0c5a12012ae19a96342abedb4d5730d9ecb",
+    "module_grouped4_f32_dispatch_4_grouped4_f32_dispatch_4_elementwise_broadcast_D_f32.spirv.mlir": "c6607cc4139b8113b69d7515ddc829a8ce2af534f88ef62b2f34cb62b9ac184c",
+    "module_grouped4_f32_dispatch_6_grouped4_f32_dispatch_6_elementwise_broadcast_D_f32.spirv.mlir": "bee395f5433e1c6e06d9a9cede6200addd674ef79b02ad039950d52876ea1dba",
+    "module_grouped8_f32_dispatch_3_grouped8_f32_dispatch_3_elementwise_broadcast_D_f32.spirv.mlir": "59ff6d4326b9c759be8d61c5dae7e2801ae27b23151014a3b200125697016d8e",
+    "module_grouped8_f32_dispatch_4_grouped8_f32_dispatch_4_elementwise_broadcast_D_f32.spirv.mlir": "ea186cc1fcfefe3374a3d2efa25ba78ed27235367fda98ec763cbfa3a2175eaf",
+    "module_grouped8_f32_dispatch_6_grouped8_f32_dispatch_6_elementwise_broadcast_D_f32.spirv.mlir": "74aad69c886ce7c8a2b8eb5af7715ea4465e0381530e828b22b274d5f28fab7a",
+    "module_linear_normal_f32_dispatch_0_linear_normal_f32_dispatch_0_reduction_D_f32xi32.spirv.mlir": "6181978d1ccc8e7352de242a7eaa2b197559d8a49883c1a4ae9fdd7d1c005426",
+    "module_linear_normal_f32_dispatch_1_linear_normal_f32_dispatch_1_reduction_DxD_f32.spirv.mlir": "6370bc396a71310b1dfa6c9ac493a4dcbe374e4424cde79b93471f7ebce96e67",
+    "module_linear_normal_f32_dispatch_2_linear_normal_f32_dispatch_2_elementwise_broadcast_D_i8.spirv.mlir": "40064e37c06d573d162933cebc29e9084479b3dacdd86a8af361b7f4dd21696a",
+    "module_linear_normal_f32_dispatch_3_linear_normal_f32_dispatch_3_elementwise_broadcast_D_f32.spirv.mlir": "9f5d48ad43566617319de0a08f550fb622b57c0fb3c1cc3441582b6f85ed48e8",
+    "module_linear_normal_f32_dispatch_4_linear_normal_f32_dispatch_4_elementwise_broadcast_D_f32.spirv.mlir": "eedaaf1869b6f62ce4614c4c11051277eb20ab4037d200a9b432fbe1adcdde24",
+    "module_linear_normal_f32_dispatch_5_linear_normal_f32_dispatch_5_batch_matmul_Dx1xDxD_f32.spirv.mlir": "bab70e6adfaa6bcbfdada7013a22a2a2a5bee087406d34188d3509c53b7a8c4e",
+    "module_linear_normal_f32_dispatch_6_linear_normal_f32_dispatch_6_elementwise_broadcast_D_f32.spirv.mlir": "e9f31d80aabcd618001f64eb94ec29510b1b5483d77c87603ee8705f7955b2e8",
+    "module_linear_power_f32_dispatch_1_linear_power_f32_dispatch_1_reduction_DxD_f32.spirv.mlir": "9960ab767d354027c6105b783c2c2222d33e33210996e52c5e6e8c4080135597",
+    "module_weight_decode_bf16_dispatch_0_weight_decode_bf16_dispatch_0_elementwise_broadcast_D_i16.spirv.mlir": "212b58d5e1e1ab0d131e49fdcbd1329b7ecc3e428ead967ab2d47a2b214d6485",
+    "module_weight_decode_f32_dispatch_0_weight_decode_f32_dispatch_0_elementwise_broadcast_D_f32.spirv.mlir": "b0f5311e55154aeff1d2b4cba43149527ab35dd2854cbf592d8abdcd3706b23f"
+  }
+}

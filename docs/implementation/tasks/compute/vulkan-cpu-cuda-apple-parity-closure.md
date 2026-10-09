@@ -115,3 +115,10 @@ group组合、全256 MX8编码、source尺度边界、常量重放与checked资�
 
 剩余 [官方 FP4／FP8 与QAT原程序批次](vulkan-parity-v2-official-float-bindings.md)
 独立SCOPED；按原精度次序/finite控制/selected workspace审计后再AUDITED接线。
+
+官方float/QAT批次的Windows普通两入口现已资格：五schema/公开13精度组合、原
+selected FP4/FP8、尾尺度与encoded MatMul、三QAT全有限BF16及资源/finite错误/
+取消/lease/关闭/OOM完成；[结果](vulkan-parity-v2-official-float-bindings.md#windows原链批次结果非父轮终局)。
+同输入F32原程序+既有native BF16边界替代失格fused变体，原算法/精度门保持；原失败保留。
+当前整体估计约30%，LOC62,261/265文件。剩余三个扩展IQ1、全actual合同/完整model-state
+分支仍未证明；V3/default/P1与V4平台/三交付也未完成，不能签Vulkan全收口。

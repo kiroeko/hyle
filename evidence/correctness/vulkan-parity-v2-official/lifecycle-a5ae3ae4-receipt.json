@@ -1,0 +1,43 @@
+{
+  "candidate": "a5ae3ae4e624d9b28b210a4e9218d15c9d265126",
+  "steps": [
+    {
+      "name": "direct",
+      "returncode": 0,
+      "filter": "VulkanIree.OriginalOfficialIndependentLeaseFiniteCancelCloseAndOom",
+      "tests": {
+        "tests": "1",
+        "failures": "0",
+        "disabled": "0",
+        "errors": "0",
+        "time": "0.271",
+        "timestamp": "2026-10-09T12:44:11.746",
+        "name": "AllTests"
+      },
+      "log": "lifecycle-a5ae3ae4-direct.log",
+      "log_sha256": "61c087e33b694f98b0289546e187c63269e06f5fdabd76395fc13d33d0698bfd",
+      "xml": "lifecycle-a5ae3ae4-direct.xml",
+      "binary_sha256": "b9098c89bc173f0ae1cdd733d752923636e4337ab7face930060fce0fc3222bb",
+      "validation_error": false
+    },
+    {
+      "name": "graph",
+      "returncode": 0,
+      "filter": "VulkanGraph.OriginalOfficialIndependentLeaseFiniteCancelCloseAndOom",
+      "tests": {
+        "tests": "1",
+        "failures": "0",
+        "disabled": "0",
+        "errors": "0",
+        "time": "0.269",
+        "timestamp": "2026-10-09T12:44:12.135",
+        "name": "AllTests"
+      },
+      "log": "lifecycle-a5ae3ae4-graph.log",
+      "log_sha256": "8d26ae1cbc741cf9f58fbfeaf68d2cf914ecade85641481ab61aed3d9f962e70",
+      "xml": "lifecycle-a5ae3ae4-graph.xml",
+      "binary_sha256": "ac729976cbeb7edc679b3c544ab9ba4757b334bb9709a83e4e25932d71f9f83d",
+      "validation_error": false
+    }
+  ]
+}
