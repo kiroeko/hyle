@@ -23,7 +23,7 @@
 
 ## 一次有限任务
 
-复用当前Windows canonical producer `C:/hv/vp1`及锁定source/SDK，原Vulkan D5 consumer
+复用已有外部consumer `C:/hv/d5pf/vulkan`与原static SDK及锁定source，原Vulkan D5 consumer
 两具名完整fragment、原输入/权重/精度/资源verify、两角色Graph/Graph和Direct/Direct，
 每角色双执行/双分配顺序共8process；24round/每arm每round6调用，原affinity/QoS策略。
 初次，仅局部validator读取已有真实paired-round日志；不写新benchmark数学、不改产品
@@ -44,3 +44,7 @@ warmup及verify结束后位置归零，pair每round均覆盖完整cycle，无热
 明确未决条件/原数据，继续可独立的成熟Provider审计，不借此把整goal假完成。
 后续正式P1应使用同一预声明paired口径和统一统计/controls/raw verifier；必要adapter
 必须独立有界tool task，不在本卡扩写统计系统。此卡通过只签A/A资格，不是performance WIN。
+
+初次误向普通root producer `C:/hv/vp1`请求仅存在于external工程的D5 target，配置/产物
+未失败，启动target不匹配；改用现有external consumer只增量编译该源，不重建产品SDK。
+局部reader严格拒绝缺round/重复/错arm/不完整输入cycle，不改变公共hyle-perf统计核。
