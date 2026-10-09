@@ -61,7 +61,7 @@
 | graph_route_apple | CANDIDATE | — | [record](tasks/build/compute-unified-delivery.md) | 统一构建/冷路由候选已修正条件资产producer；Windows CPU/CUDA三交付消费者全部通过，其余平台/路线/mixed矩阵仍待验，H1–H3未实施。 |
 | compute_route_vulkan | CANDIDATE | — | [record](tasks/build/compute-unified-delivery.md) | 统一构建/冷路由候选已修正条件资产producer；Windows CPU/CUDA三交付消费者全部通过，其余平台/路线/mixed矩阵仍待验，H1–H3未实施。 |
 | graph_route_vulkan | CANDIDATE | — | [record](tasks/build/compute-unified-delivery.md) | 统一构建/冷路由候选已修正条件资产producer；Windows CPU/CUDA三交付消费者全部通过，其余平台/路线/mixed矩阵仍待验，H1–H3未实施。 |
-| compute_provider_ggml_vulkan | AUDITED | — | [record](tasks/build/vulkan-macos-loader-discovery.md) | Air普通Vulkan loader发现反例已审计；仅修正route-owned冷默认标准路径，不注入环境/安装driver或改数学。 |
+| compute_provider_ggml_vulkan | CANDIDATE | — | [record](tasks/build/vulkan-macos-loader-discovery.md) | macOS Vulkan默认loader标准位置发现候选已冻结；不注入环境/安装driver，Air普通三交付待验。 |
 | compute_ggml_runtime | CANDIDATE | — | [record](tasks/compute/vulkan-f32-matmul-admission-repair.md) | Vulkan F32同FIX限定完成已冻结；保留首次候选FAIL和原误差门，撤去显式F32的coop预转换，实际数值/交付待验。 |
 | compute_provider_ggml_cuda | CLOSED | P0 / [PASS](tasks/compute/cuda-final-u6-audit.md) | [record](tasks/compute/cuda-final-u6-audit.md) | CUDA有限goal CLOSED：固定模型/量化/MTP完整原计算与状态、两OS CUDA-only/mixed三交付、cold成熟默认/真实能力门、六重复公式BORROW和具名unique保留、U5 42步/源码SDK增量及终审清理完成。AA原FAIL/性能INCONCLUSIVE无新WIN；按授权ENGINEERING_DEFAULT/P0关闭，不签全设备SOTA或推理engine。 |
 | graph_provider_ggml_cuda | CLOSED | P0 / [PASS](tasks/compute/cuda-final-u6-audit.md) | [record](tasks/compute/cuda-final-u6-audit.md) | CUDA有限goal CLOSED：固定模型/量化/MTP完整原计算与状态、两OS CUDA-only/mixed三交付、cold成熟默认/真实能力门、六重复公式BORROW和具名unique保留、U5 42步/源码SDK增量及终审清理完成。AA原FAIL/性能INCONCLUSIVE无新WIN；按授权ENGINEERING_DEFAULT/P0关闭，不签全设备SOTA或推理engine。 |

@@ -505,9 +505,10 @@
     },
     {
       "module": "compute_provider_ggml_vulkan",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/build/vulkan-macos-loader-discovery.md",
-      "summary": "Air普通Vulkan loader发现反例已审计；仅修正route-owned冷默认标准路径，不注入环境/安装driver或改数学。"
+      "summary": "macOS Vulkan默认loader标准位置发现候选已冻结；不注入环境/安装driver，Air普通三交付待验。",
+      "candidate": "a1c22ac347583e8a9af3be3d8e8b55534afcd710"
     },
     {
       "module": "compute_ggml_runtime",

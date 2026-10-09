@@ -1,6 +1,6 @@
 # C3 macOS Vulkan 普通 loader 发现修正
 
-<!-- MODULE REVIEW: AUDITED -->
+<!-- MODULE REVIEW: CANDIDATE -->
 
 - owner：`compute_provider_ggml_vulkan`；baseline `c96c7c6eefb41f9aca71c92b4304814a731fe088`。
 - trigger：[Air 普通 source Direct/Graph 实际 loader 失败](../../../../evidence/correctness/compute-unified-c3/air-vulkan-loader-failure/receipt.json)。
@@ -20,3 +20,7 @@ Intel conventional `/usr/local/lib/libvulkan.1.dylib`。显式路径仍有权威
 P0：冷Context最多三次系统打开；成功owner仍保活DynLib至native终态，无热开销。
 预算：一次具名接缝审计、一个限定修正、一次适用三交付；失败记录保留，不换日志/clone重置预算。
 模型/算子扩张、通用平台loader、公共治理和计时工具不改。修正资格后归档并回C3；不代签其余矩阵/H1–H3。
+
+产品candidate：`a1c22ac347583e8a9af3be3d8e8b55534afcd710`。默认冷发现已接入上述两位置，
+显式loader override不进入回退；非macOS路径不执行新分支。数学、driver和全进程环境未改。
+实际Air无DYLD覆盖的普通三交付尚待验证，诊断成功不代签。
