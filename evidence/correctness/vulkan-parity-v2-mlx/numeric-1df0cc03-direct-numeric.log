@@ -1,0 +1,16 @@
+Running main() from C:\public\tools\hyle-dependencies\v1\sources\googletest-063de7e9578f-162765170ae6\googletest\src\gtest_main.cc
+Note: Google Test filter = VulkanIree.OriginalMlxMx8SignsZerosAndSourceScaleClassification:VulkanIree.OriginalMlxMx8All256EncodingsUseTheSourceFormat:VulkanIree.OriginalMlxBatchPreservesGroupsSourceTypesAndCheckedSlots
+[==========] Running 3 tests from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 3 tests from VulkanIree
+[ RUN      ] VulkanIree.OriginalMlxBatchPreservesGroupsSourceTypesAndCheckedSlots
+[       OK ] VulkanIree.OriginalMlxBatchPreservesGroupsSourceTypesAndCheckedSlots (2294 ms)
+[ RUN      ] VulkanIree.OriginalMlxMx8SignsZerosAndSourceScaleClassification
+[       OK ] VulkanIree.OriginalMlxMx8SignsZerosAndSourceScaleClassification (634 ms)
+[ RUN      ] VulkanIree.OriginalMlxMx8All256EncodingsUseTheSourceFormat
+[       OK ] VulkanIree.OriginalMlxMx8All256EncodingsUseTheSourceFormat (163 ms)
+[----------] 3 tests from VulkanIree (3092 ms total)
+
+[----------] Global test environment tear-down
+[==========] 3 tests from 1 test suite ran. (3092 ms total)
+[  PASSED  ] 3 tests.

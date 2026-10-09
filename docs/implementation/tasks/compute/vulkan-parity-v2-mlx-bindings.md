@@ -132,3 +132,17 @@ F32渐进下溢/1e-37的逐位CPU一致性，不能强加设备不支持的Denor
 源scale编码/半精度边界不变，整体模型数值仍须按既有完整链门另验；此事实进入父轮
 numeric/default文档。原exact失败保留，不能倒写PASS。唯一重跑两个边界ID；因共享
 reference解释改变，同时定向复核两个MLX批量ID，其它已通过资源/常量/旧域不重测。
+
+## Windows批次结果与剩余范围
+
+`43f56232` 两批量ID按既有失败合同纠正后PASS；最终`1df0cc035`负NaN适配及
+`numeric-1df0cc03`一次复核Direct3/3、Graph1/1 PASS。每入口39普通组合+6 mixed，
+七typed入口/三dtype、group32/64/128、多group、changed全payload/IDs、两slot/lease
+及坏ID新slot恢复完成；全部256 MX8 code×三dtype、42 scale/dtype边界使用适用原矩阵门。
+原资源/常量/旧artifact与FP8影响子集结果复用，[完整证据](../../../../evidence/correctness/vulkan-parity-v2-mlx/README.md)。
+
+本批Windows微型原链资格完成，不签16个全模型geometry或559/34/45 catalogue完成。
+32原dispatch／21entry、原source精度与group空间、首次constant复制和全部native完成成本
+均明确；f32 denorm逐位CPU一致性不在普通GPU矩阵承诺内，NaN/Inf仍严格，完整链门未改。
+Air/三交付及父轮default/P1未运行，仍UNPROVEN；不为本批额外造P1竞赛或重开CPU/CUDA/Apple。
+统一Compute+Graph非测试实现61,935行/263文件，vendor标准recipe/bytecode不算自研算子。

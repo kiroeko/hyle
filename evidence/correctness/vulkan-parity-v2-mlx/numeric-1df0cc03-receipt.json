@@ -1,0 +1,43 @@
+{
+  "candidate": "1df0cc03548bfabc7b9f3881005c6d08fd36afd7",
+  "steps": [
+    {
+      "name": "direct-numeric",
+      "returncode": 0,
+      "filter": "VulkanIree.OriginalMlxMx8SignsZerosAndSourceScaleClassification:VulkanIree.OriginalMlxMx8All256EncodingsUseTheSourceFormat:VulkanIree.OriginalMlxBatchPreservesGroupsSourceTypesAndCheckedSlots",
+      "tests": {
+        "tests": "3",
+        "failures": "0",
+        "disabled": "0",
+        "errors": "0",
+        "time": "3.092",
+        "timestamp": "2026-10-09T11:54:48.407",
+        "name": "AllTests"
+      },
+      "validation_error": false,
+      "binary_sha256": "48cf123c68438210851863ebf8a1d380c897031b1892a6b22eca512ccab0beab",
+      "log": "numeric-1df0cc03-direct-numeric.log",
+      "log_sha256": "d7448aa3abd75fa6f351d12ab850128b5816a924306b50ac51ad5dddf560af30",
+      "xml": "numeric-1df0cc03-direct-numeric.xml"
+    },
+    {
+      "name": "graph-numeric",
+      "returncode": 0,
+      "filter": "VulkanGraph.OriginalMlxBatchUsesOrdinaryTypedNodesAndCheckedSlots",
+      "tests": {
+        "tests": "1",
+        "failures": "0",
+        "disabled": "0",
+        "errors": "0",
+        "time": "2.592",
+        "timestamp": "2026-10-09T11:54:51.618",
+        "name": "AllTests"
+      },
+      "validation_error": false,
+      "binary_sha256": "29a6bce71afd82dfbce6fdd92dd8bf6505f5d1ec24e80aff93b39058b6eefddb",
+      "log": "numeric-1df0cc03-graph-numeric.log",
+      "log_sha256": "f33a608debee0a5b3cb47c280f90014062b32f5e714bc73762ffc44d7d72492d",
+      "xml": "numeric-1df0cc03-graph-numeric.xml"
+    }
+  ]
+}

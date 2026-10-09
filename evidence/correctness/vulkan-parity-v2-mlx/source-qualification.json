@@ -1,0 +1,12 @@
+{
+  "original_mlx_revision": "2b2bb49790158ecd008d1685c94e3ef119792a00",
+  "original_cpu_source_sha256": "8890160da0a884b559aad18ce20a2b08170b721c38ce1c800229ae9998ed846d",
+  "original_source_registry": "third_party/mlx_cpu_quant/SOURCE.json",
+  "qualified_programs": 21,
+  "original_deduplicated_dispatches": 32,
+  "ordinary_combinations_per_entry": 45,
+  "all_mx8_codes": 256,
+  "scale_boundary_cases": 42,
+  "geometry_limit": "micro source chain; not all sixteen full dimensions or complete models",
+  "f32_denormal_limit": "actual Nvidia Vulkan denorm32=0; original matrix absolute/relative error gate applies; no bitwise CPU identity"
+}

@@ -105,3 +105,10 @@ Air/三交付/default/P1；当前整体工程估计约20%，下一包按具名�
 
 剩余16项 [MLX packed 原程序批次](vulkan-parity-v2-mlx-bindings.md)进入独立SCOPED审计；
 只研究原group/selected/typed workspace接口，AUDITED有限FIX前不新增产品实现。
+
+MLX批次现已有实际Windows两入口资格：21原entry／32原dispatch，45普通/mixed精度/
+group组合、全256 MX8编码、source尺度边界、常量重放与checked资源链完成。
+详见[批次结果及精度边界](vulkan-parity-v2-mlx-bindings.md#windows批次结果与剩余范围)。
+原NaN分类适配后正确；F32极小值按已有GPU矩阵误差合同，明确不签CPU逐位下溢一致性。
+当前估计约25%，LOC61,935/263文件；下一批是其余具名官方FP4/FP8 typed/region缺口和
+完整目录actual矩阵，不重复已通过微型批次，仍不签父轮完成。

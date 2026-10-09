@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites tests="3" failures="0" disabled="0" errors="0" time="3.092" timestamp="2026-10-09T11:54:48.407" name="AllTests">
+  <testsuite name="VulkanIree" tests="3" failures="0" disabled="0" skipped="0" errors="0" time="3.092" timestamp="2026-10-09T11:54:48.407">
+    <testcase name="OriginalMlxBatchPreservesGroupsSourceTypesAndCheckedSlots" file="C:\public\project-hyle\hyle\tests\compute_route_vulkan\iree_test.cc" line="23" status="run" result="completed" time="2.294" timestamp="2026-10-09T11:54:48.407" classname="VulkanIree" />
+    <testcase name="OriginalMlxMx8SignsZerosAndSourceScaleClassification" file="C:\public\project-hyle\hyle\tests\compute_route_vulkan\iree_test.cc" line="71" status="run" result="completed" time="0.634" timestamp="2026-10-09T11:54:50.702" classname="VulkanIree" />
+    <testcase name="OriginalMlxMx8All256EncodingsUseTheSourceFormat" file="C:\public\project-hyle\hyle\tests\compute_route_vulkan\iree_test.cc" line="96" status="run" result="completed" time="0.163" timestamp="2026-10-09T11:54:51.337" classname="VulkanIree" />
+  </testsuite>
+</testsuites>

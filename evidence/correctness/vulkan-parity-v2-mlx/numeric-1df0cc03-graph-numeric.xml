@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites tests="1" failures="0" disabled="0" errors="0" time="2.592" timestamp="2026-10-09T11:54:51.618" name="AllTests">
+  <testsuite name="VulkanGraph" tests="1" failures="0" disabled="0" skipped="0" errors="0" time="2.592" timestamp="2026-10-09T11:54:51.618">
+    <testcase name="OriginalMlxBatchUsesOrdinaryTypedNodesAndCheckedSlots" file="C:\public\project-hyle\hyle\tests\graph_route_vulkan\iree_test.cc" line="27" status="run" result="completed" time="2.592" timestamp="2026-10-09T11:54:51.618" classname="VulkanGraph" />
+  </testsuite>
+</testsuites>
