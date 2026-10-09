@@ -152,3 +152,26 @@ helper已CLOSED且无改动，不新增产品算法。下一次仅这两个prefi
 Flash sidecar的两个具名测试reference hook；CPU/CUDA默认方程与数据不变，
 未改产品。其余GGUF indexer/Graph未判定项仍FAIL/UNPROVEN，下一次只失败ID
 集中delta，不跑80/560或24全量。
+
+剩余两GGUF main失败的首域0x08093403为indexer/compression。其原test RoPE
+参考用Double sin/cos与Double产品，实际原ggml仍F32 phase/函数/分开产品，
+且固定reset位置65536使差异显现；保留原iterative频率和F32输出，不套官方
+BF16边界。按已证同precision原因只给Vulkan测试绑定原GGUF频率native旋转，
+CPU/CUDA默认不变；两合同/两入口一次定向delta，失败后不继续调整姿势或门。
+
+该GGUF hook草稿在运行前废弃：宏会让旧inline helper在两个test TU产生不同
+定义，违反ODR。保留草稿审计，不运行、不署名PASS；既有已资格native reference
+产品/测试保留。剩余两indexer须用显式测试参数承载的有界修正，不引入全局开关。
+
+## M5-N2 有限诊断结论与明确阶段
+
+同输入原native差0、F16边界独立方程差1.34e-7已证原精度。
+`b592b5d0` Direct两个Prefill PASS；`df30019c` Direct4/5、Graph6/7，
+最新Pro/Flash主干与完整三stage DSpark两入口通过。当前两入口均21/24，
+尚未资格的是Flash mixed sidecar（Q8先失败，BF16未到）与GGUF profile90/103
+indexer/main。该有限诊断结束，维持AUDITED实施阶段；不能无限延长本捕获或
+重复24/80/560全量。剩余3项下一有限FIX须显式参数引用和首偏差分类，原门不变。
+
+本轮产品byte未变，全部新增为原模型reference/fixture与证据；无新HYLE算子、
+Shader或SOTA主张。父轮约50%，V2权重矩阵及当前官方state主体已资格，其余
+真实范围、所有平台/三交付/default/P1仍未完成。

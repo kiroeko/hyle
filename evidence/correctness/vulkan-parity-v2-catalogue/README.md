@@ -57,3 +57,26 @@ against the exact original native leaf and the independent source equation.
 Use a shared cause to fix only affected current consumers; preserve source
 precision and gates. Do not repeat the passed80/560 matrices or all24 state
 cases, and do not infer a performance or environment verdict from these errors.
+
+## Proved native precision and targeted state qualification
+
+Single same-input Flash sink T5/H64/D512/L133: HYLE versus locked original
+Vulkan graph max error0; independent F32 equation differs6.92009926e-5.
+The original coopmat2 source converts F32 multiplicands to F16 while keeping
+F32 accumulation. An independent equation with those F16 boundaries differs
+only1.34110451e-7. Native rotary reference preserves the same explicit F32
+phase/GPU sin-cos/Mul-Add/BF16 storage boundary, rather than CPU double/FMA.
+No numerical threshold or product math was changed.
+
+Direct prefill2/2 PASS at `b592b5d0`; `df30019c` affected Direct4/5 and
+Graph6/7 PASS. Both latest Pro0813/Flash0731 official main and complete
+three-stage DSpark now pass both entrances. Current state totals are21/24
+per entrance. Three shared cases remain unqualified: Flash mixed Q8/BF16
+sidecar (Q8 fails first, BF16 part not reached) and current GGUF profiles90
+and103 indexer/main. The original failures remain and none is renamed PASS.
+
+An unused macro-based old GGUF rotary hook was rejected before runtime
+because it would create inconsistent inline definitions across test TUs.
+The draft is retained as `unused-gguf-hook-audit.diff`; qualified code was
+restored and rebuilt. Further GGUF reference adaptation must use explicit
+parameters and preserve original iterative frequencies and F32 storage.

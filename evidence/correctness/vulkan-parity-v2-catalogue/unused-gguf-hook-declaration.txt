@@ -1,0 +1,9 @@
+#pragma once
+#include <cstdint>
+#include <span>
+#include <vector>
+namespace vulkan_current_state_test {
+inline std::vector<float> gguf_rotary(std::span<const float>,std::int64_t,
+    std::int32_t,bool,bool);
+}
+#define HYLE_VULKAN_GGUF_ROTARY_REFERENCE vulkan_current_state_test::gguf_rotary

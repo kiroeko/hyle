@@ -1,0 +1,81 @@
+Running main() from C:\public\tools\hyle-dependencies\v1\sources\googletest-063de7e9578f-162765170ae6\googletest\src\gtest_main.cc
+Note: Google Test filter = CurrentOfficial/VulkanCurrentState.OfficialMainCompressionAttentionAndFp4Moe/*:CurrentOfficial/VulkanCurrentState.CompleteThreeStageDspark/*:VulkanCurrentState.FlashQ8AndBfloatSidecarsUseMixedMxfp4ThreeStages
+[==========] Running 5 tests from 2 test suites.
+[----------] Global test environment set-up.
+[----------] 1 test from VulkanCurrentState
+[ RUN      ] VulkanCurrentState.FlashQ8AndBfloatSidecarsUseMixedMxfp4ThreeStages
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\../compute_models/d5_gguf_test_support.h(297): error: Expected: (max_error) <= (2.0e-2F + 2.0e-2F * max_reference), actual: 0.0535063744 vs 0.04
+max_reference=1
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\catalogue_test_support.h(119): 0
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\catalogue_test_support.h(35): region=201589026
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\current_state_tests.h(85): sidecar:dspark-DeepSeek-V4-Flash-0731-Q8_0.gguf
+
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\../compute_models/d5_gguf_test_support.h(297): error: Expected: (max_error) <= (2.0e-2F + 2.0e-2F * max_reference), actual: 0.0506724119 vs 0.04
+max_reference=1
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\catalogue_test_support.h(119): 4
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\catalogue_test_support.h(35): region=201589026
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\current_state_tests.h(85): sidecar:dspark-DeepSeek-V4-Flash-0731-Q8_0.gguf
+
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\../compute_models/d5_gguf_test_support.h(297): error: Expected: (max_error) <= (2.0e-2F + 2.0e-2F * max_reference), actual: 0.046635747 vs 0.04
+max_reference=1
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\catalogue_test_support.h(119): 5
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\catalogue_test_support.h(35): region=201589026
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\current_state_tests.h(85): sidecar:dspark-DeepSeek-V4-Flash-0731-Q8_0.gguf
+
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\../compute_models/d5_gguf_test_support.h(297): error: Expected: (max_error) <= (2.0e-2F + 2.0e-2F * max_reference), actual: 0.0589051247 vs 0.04
+max_reference=1
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\catalogue_test_support.h(119): 0
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\catalogue_test_support.h(35): region=201589026
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\current_state_tests.h(85): sidecar:dspark-DeepSeek-V4-Flash-0731-Q8_0.gguf
+
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\../compute_models/d5_gguf_test_support.h(297): error: Expected: (max_error) <= (2.0e-2F + 2.0e-2F * max_reference), actual: 0.0586627722 vs 0.04
+max_reference=1
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\catalogue_test_support.h(119): 4
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\catalogue_test_support.h(35): region=201589026
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\current_state_tests.h(85): sidecar:dspark-DeepSeek-V4-Flash-0731-Q8_0.gguf
+
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\../compute_models/d5_gguf_test_support.h(297): error: Expected: (max_error) <= (2.0e-2F + 2.0e-2F * max_reference), actual: 0.0532363653 vs 0.04
+max_reference=1
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\catalogue_test_support.h(119): 5
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\catalogue_test_support.h(35): region=201589026
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\current_state_tests.h(85): sidecar:dspark-DeepSeek-V4-Flash-0731-Q8_0.gguf
+
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\../compute_models/cpu_c4_flash_sidecars.h(404): error: Value of: ::testing::Test::HasFailure()
+  Actual: true
+Expected: false
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\current_state_tests.h(85): sidecar:dspark-DeepSeek-V4-Flash-0731-Q8_0.gguf
+
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\current_state_tests.h(87): error: Value of: ::testing::Test::HasFailure()
+  Actual: true
+Expected: false
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\current_state_tests.h(85): sidecar:dspark-DeepSeek-V4-Flash-0731-Q8_0.gguf
+
+[  FAILED  ] VulkanCurrentState.FlashQ8AndBfloatSidecarsUseMixedMxfp4ThreeStages (15673 ms)
+[----------] 1 test from VulkanCurrentState (15673 ms total)
+
+[----------] 4 tests from CurrentOfficial/VulkanCurrentState
+[ RUN      ] CurrentOfficial/VulkanCurrentState.OfficialMainCompressionAttentionAndFp4Moe/Pro0813
+[       OK ] CurrentOfficial/VulkanCurrentState.OfficialMainCompressionAttentionAndFp4Moe/Pro0813 (24149 ms)
+[ RUN      ] CurrentOfficial/VulkanCurrentState.OfficialMainCompressionAttentionAndFp4Moe/Flash0731
+[       OK ] CurrentOfficial/VulkanCurrentState.OfficialMainCompressionAttentionAndFp4Moe/Flash0731 (15526 ms)
+[ RUN      ] CurrentOfficial/VulkanCurrentState.CompleteThreeStageDspark/Pro0813
+[       OK ] CurrentOfficial/VulkanCurrentState.CompleteThreeStageDspark/Pro0813 (66129 ms)
+[ RUN      ] CurrentOfficial/VulkanCurrentState.CompleteThreeStageDspark/Flash0731
+[       OK ] CurrentOfficial/VulkanCurrentState.CompleteThreeStageDspark/Flash0731 (26288 ms)
+[----------] 4 tests from CurrentOfficial/VulkanCurrentState (132094 ms total)
+
+[----------] Global test environment tear-down
+[==========] 5 tests from 2 test suites ran. (147767 ms total)
+[  PASSED  ] 4 tests.
+[  FAILED  ] 1 test, listed below:
+[  FAILED  ] VulkanCurrentState.FlashQ8AndBfloatSidecarsUseMixedMxfp4ThreeStages
+
+ 1 FAILED TEST

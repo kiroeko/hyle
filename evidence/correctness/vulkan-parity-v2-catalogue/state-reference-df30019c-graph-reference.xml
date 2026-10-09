@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites tests="7" failures="1" disabled="0" errors="0" time="117.332" timestamp="2026-10-09T14:42:28.471" name="AllTests">
+  <testsuite name="VulkanGraphCurrentState" tests="1" failures="1" disabled="0" skipped="0" errors="0" time="13.122" timestamp="2026-10-09T14:42:28.472">
+    <testcase name="FlashQ8AndBfloatSidecarsUseMixedMxfp4ThreeStages" file="C:\public\project-hyle\hyle\tests\graph_route_vulkan\../compute_route_vulkan/current_state_tests.h" line="83" status="run" result="completed" time="13.122" timestamp="2026-10-09T14:42:28.472" classname="VulkanGraphCurrentState">
+      <failure message="C:\public\project-hyle\hyle\tests\graph_route_vulkan\../compute_models/d5_gguf_test_support.h:297&#x0A;Expected: (max_error) &lt;= (2.0e-2F + 2.0e-2F * max_reference), actual: 0.0535063744 vs 0.04&#x0A;max_reference=1&#x0A;Google Test trace:&#x0A;C:\public\project-hyle\hyle\tests\graph_route_vulkan\../compute_route_vulkan/catalogue_test_support.h(119): 0&#x0A;C:\public\project-hyle\hyle\tests\graph_route_vulkan\../compute_route_vulkan/catalogue_test_support.h(35): region=201589026&#x0A;C:\public\project-hyle\hyle\tests\graph_route_vulkan\../compute_route_vulkan/current_state_tests.h(85): sidecar:dspark-DeepSeek-V4-Flash-0731-Q8_0.gguf&#x0A;" type=""><![CDATA[C:\public\project-hyle\hyle\tests\graph_route_vulkan\../compute_models/d5_gguf_test_support.h:297
+Expected: (max_error) <= (2.0e-2F + 2.0e-2F * max_reference), actual: 0.0535063744 vs 0.04
+max_reference=1
+Google Test trace:
+C:\public\project-hyle\hyle\tests\graph_route_vulkan\../compute_route_vulkan/catalogue_test_support.h(119): 0
+C:\public\project-hyle\hyle\tests\graph_route_vulkan\../compute_route_vulkan/catalogue_test_support.h(35): region=201589026
+C:\public\project-hyle\hyle\tests\graph_route_vulkan\../compute_route_vulkan/current_state_tests.h(85): sidecar:dspark-DeepSeek-V4-Flash-0731-Q8_0.gguf
+]]></failure>
+      <failure message="C:\public\project-hyle\hyle\tests\graph_route_vulkan\../compute_models/d5_gguf_test_support.h:297&#x0A;Expected: (max_error) &lt;= (2.0e-2F + 2.0e-2F * max_reference), actual: 0.0506724119 vs 0.04&#x0A;max_reference=1&#x0A;Google Test trace:&#x0A;C:\public\project-hyle\hyle\tests\graph_route_vulkan\../compute_route_vulkan/catalogue_test_support.h(119): 4&#x0A;C:\public\project-hyle\hyle\tests\graph_route_vulkan\../compute_route_vulkan/catalogue_test_support.h(35): region=201589026&#x0A;C:\public\project-hyle\hyle\tests\graph_route_vulkan\../compute_route_vulkan/current_state_tests.h(85): sidecar:dspark-DeepSeek-V4-Flash-0731-Q8_0.gguf&#x0A;" type=""><![CDATA[C:\public\project-hyle\hyle\tests\graph_route_vulkan\../compute_models/d5_gguf_test_support.h:297
+Expected: (max_error) <= (2.0e-2F + 2.0e-2F * max_reference), actual: 0.0506724119 vs 0.04
+max_reference=1
+Google Test trace:
+C:\public\project-hyle\hyle\tests\graph_route_vulkan\../compute_route_vulkan/catalogue_test_support.h(119): 4
+C:\public\project-hyle\hyle\tests\graph_route_vulkan\../compute_route_vulkan/catalogue_test_support.h(35): region=201589026
+C:\public\project-hyle\hyle\tests\graph_route_vulkan\../compute_route_vulkan/current_state_tests.h(85): sidecar:dspark-DeepSeek-V4-Flash-0731-Q8_0.gguf
+]]></failure>
+      <failure message="C:\public\project-hyle\hyle\tests\graph_route_vulkan\../compute_models/d5_gguf_test_support.h:297&#x0A;Expected: (max_error) &lt;= (2.0e-2F + 2.0e-2F * max_reference), actual: 0.046635747 vs 0.04&#x0A;max_reference=1&#x0A;Google Test trace:&#x0A;C:\public\project-hyle\hyle\tests\graph_route_vulkan\../compute_route_vulkan/catalogue_test_support.h(119): 5&#x0A;C:\public\project-hyle\hyle\tests\graph_route_vulkan\../compute_route_vulkan/catalogue_test_support.h(35): region=201589026&#x0A;C:\public\project-hyle\hyle\tests\graph_route_vulkan\../compute_route_vulkan/current_state_tests.h(85): sidecar:dspark-DeepSeek-V4-Flash-0731-Q8_0.gguf&#x0A;" type=""><![CDATA[C:\public\project-hyle\hyle\tests\graph_route_vulkan\../compute_models/d5_gguf_test_support.h:297
+Expected: (max_error) <= (2.0e-2F + 2.0e-2F * max_reference), actual: 0.046635747 vs 0.04
+max_reference=1
+Google Test trace:
+C:\public\project-hyle\hyle\tests\graph_route_vulkan\../compute_route_vulkan/catalogue_test_support.h(119): 5
+C:\public\project-hyle\hyle\tests\graph_route_vulkan\../compute_route_vulkan/catalogue_test_support.h(35): region=201589026
+C:\public\project-hyle\hyle\tests\graph_route_vulkan\../compute_route_vulkan/current_state_tests.h(85): sidecar:dspark-DeepSeek-V4-Flash-0731-Q8_0.gguf
+]]></failure>
+      <failure message="C:\public\project-hyle\hyle\tests\graph_route_vulkan\../compute_models/d5_gguf_test_support.h:297&#x0A;Expected: (max_error) &lt;= (2.0e-2F + 2.0e-2F * max_reference), actual: 0.0589051247 vs 0.04&#x0A;max_reference=1&#x0A;Google Test trace:&#x0A;C:\public\project-hyle\hyle\tests\graph_route_vulkan\../compute_route_vulkan/catalogue_test_support.h(119): 0&#x0A;C:\public\project-hyle\hyle\tests\graph_route_vulkan\../compute_route_vulkan/catalogue_test_support.h(35): region=201589026&#x0A;C:\public\project-hyle\hyle\tests\graph_route_vulkan\../compute_route_vulkan/current_state_tests.h(85): sidecar:dspark-DeepSeek-V4-Flash-0731-Q8_0.gguf&#x0A;" type=""><![CDATA[C:\public\project-hyle\hyle\tests\graph_route_vulkan\../compute_models/d5_gguf_test_support.h:297
+Expected: (max_error) <= (2.0e-2F + 2.0e-2F * max_reference), actual: 0.0589051247 vs 0.04
+max_reference=1
+Google Test trace:
+C:\public\project-hyle\hyle\tests\graph_route_vulkan\../compute_route_vulkan/catalogue_test_support.h(119): 0
+C:\public\project-hyle\hyle\tests\graph_route_vulkan\../compute_route_vulkan/catalogue_test_support.h(35): region=201589026
+C:\public\project-hyle\hyle\tests\graph_route_vulkan\../compute_route_vulkan/current_state_tests.h(85): sidecar:dspark-DeepSeek-V4-Flash-0731-Q8_0.gguf
+]]></failure>
+      <failure message="C:\public\project-hyle\hyle\tests\graph_route_vulkan\../compute_models/d5_gguf_test_support.h:297&#x0A;Expected: (max_error) &lt;= (2.0e-2F + 2.0e-2F * max_reference), actual: 0.0586627722 vs 0.04&#x0A;max_reference=1&#x0A;Google Test trace:&#x0A;C:\public\project-hyle\hyle\tests\graph_route_vulkan\../compute_route_vulkan/catalogue_test_support.h(119): 4&#x0A;C:\public\project-hyle\hyle\tests\graph_route_vulkan\../compute_route_vulkan/catalogue_test_support.h(35): region=201589026&#x0A;C:\public\project-hyle\hyle\tests\graph_route_vulkan\../compute_route_vulkan/current_state_tests.h(85): sidecar:dspark-DeepSeek-V4-Flash-0731-Q8_0.gguf&#x0A;" type=""><![CDATA[C:\public\project-hyle\hyle\tests\graph_route_vulkan\../compute_models/d5_gguf_test_support.h:297
+Expected: (max_error) <= (2.0e-2F + 2.0e-2F * max_reference), actual: 0.0586627722 vs 0.04
+max_reference=1
+Google Test trace:
+C:\public\project-hyle\hyle\tests\graph_route_vulkan\../compute_route_vulkan/catalogue_test_support.h(119): 4
+C:\public\project-hyle\hyle\tests\graph_route_vulkan\../compute_route_vulkan/catalogue_test_support.h(35): region=201589026
+C:\public\project-hyle\hyle\tests\graph_route_vulkan\../compute_route_vulkan/current_state_tests.h(85): sidecar:dspark-DeepSeek-V4-Flash-0731-Q8_0.gguf
+]]></failure>
+      <failure message="C:\public\project-hyle\hyle\tests\graph_route_vulkan\../compute_models/d5_gguf_test_support.h:297&#x0A;Expected: (max_error) &lt;= (2.0e-2F + 2.0e-2F * max_reference), actual: 0.0532363653 vs 0.04&#x0A;max_reference=1&#x0A;Google Test trace:&#x0A;C:\public\project-hyle\hyle\tests\graph_route_vulkan\../compute_route_vulkan/catalogue_test_support.h(119): 5&#x0A;C:\public\project-hyle\hyle\tests\graph_route_vulkan\../compute_route_vulkan/catalogue_test_support.h(35): region=201589026&#x0A;C:\public\project-hyle\hyle\tests\graph_route_vulkan\../compute_route_vulkan/current_state_tests.h(85): sidecar:dspark-DeepSeek-V4-Flash-0731-Q8_0.gguf&#x0A;" type=""><![CDATA[C:\public\project-hyle\hyle\tests\graph_route_vulkan\../compute_models/d5_gguf_test_support.h:297
+Expected: (max_error) <= (2.0e-2F + 2.0e-2F * max_reference), actual: 0.0532363653 vs 0.04
+max_reference=1
+Google Test trace:
+C:\public\project-hyle\hyle\tests\graph_route_vulkan\../compute_route_vulkan/catalogue_test_support.h(119): 5
+C:\public\project-hyle\hyle\tests\graph_route_vulkan\../compute_route_vulkan/catalogue_test_support.h(35): region=201589026
+C:\public\project-hyle\hyle\tests\graph_route_vulkan\../compute_route_vulkan/current_state_tests.h(85): sidecar:dspark-DeepSeek-V4-Flash-0731-Q8_0.gguf
+]]></failure>
+      <failure message="C:\public\project-hyle\hyle\tests\compute_route_vulkan\../compute_models/cpu_c4_flash_sidecars.h:404&#x0A;Value of: ::testing::Test::HasFailure()&#x0A;  Actual: true&#x0A;Expected: false&#x0A;Google Test trace:&#x0A;C:\public\project-hyle\hyle\tests\graph_route_vulkan\../compute_route_vulkan/current_state_tests.h(85): sidecar:dspark-DeepSeek-V4-Flash-0731-Q8_0.gguf&#x0A;" type=""><![CDATA[C:\public\project-hyle\hyle\tests\compute_route_vulkan\../compute_models/cpu_c4_flash_sidecars.h:404
+Value of: ::testing::Test::HasFailure()
+  Actual: true
+Expected: false
+Google Test trace:
+C:\public\project-hyle\hyle\tests\graph_route_vulkan\../compute_route_vulkan/current_state_tests.h(85): sidecar:dspark-DeepSeek-V4-Flash-0731-Q8_0.gguf
+]]></failure>
+      <failure message="C:\public\project-hyle\hyle\tests\graph_route_vulkan\../compute_route_vulkan/current_state_tests.h:87&#x0A;Value of: ::testing::Test::HasFailure()&#x0A;  Actual: true&#x0A;Expected: false&#x0A;Google Test trace:&#x0A;C:\public\project-hyle\hyle\tests\graph_route_vulkan\../compute_route_vulkan/current_state_tests.h(85): sidecar:dspark-DeepSeek-V4-Flash-0731-Q8_0.gguf&#x0A;" type=""><![CDATA[C:\public\project-hyle\hyle\tests\graph_route_vulkan\../compute_route_vulkan/current_state_tests.h:87
+Value of: ::testing::Test::HasFailure()
+  Actual: true
+Expected: false
+Google Test trace:
+C:\public\project-hyle\hyle\tests\graph_route_vulkan\../compute_route_vulkan/current_state_tests.h(85): sidecar:dspark-DeepSeek-V4-Flash-0731-Q8_0.gguf
+]]></failure>
+    </testcase>
+  </testsuite>
+  <testsuite name="CurrentOfficial/VulkanGraphCurrentState" tests="6" failures="0" disabled="0" skipped="0" errors="0" time="104.21" timestamp="2026-10-09T14:42:41.594">
+    <testcase name="PrefillFiveTokenAttentionAndCacheFeedback/Pro0813" value_param="184-byte object &lt;40-C2 3D-DF F7-7F 00-00 00-1C 00-00 00-00 00-00 00-02 00-00 00-00 00-00 80-00 00-00 00-00 00-00 00-06 00-00 00-00 00-00 10-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 F0-15 40-DF F7-7F 00-00 ... B8-15 40-DF F7-7F 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 68-53 E3-D2 48-02 00-00&gt;" file="C:\public\project-hyle\hyle\tests\graph_route_vulkan\../compute_route_vulkan/current_state_tests.h" line="57" status="run" result="completed" time="11.852" timestamp="2026-10-09T14:42:41.594" classname="CurrentOfficial/VulkanGraphCurrentState" />
+    <testcase name="PrefillFiveTokenAttentionAndCacheFeedback/Flash0731" value_param="184-byte object &lt;30-C4 3D-DF F7-7F 00-00 00-10 00-00 00-00 00-00 00-01 00-00 00-00 00-00 40-00 00-00 00-00 00-00 00-04 00-00 00-00 00-00 08-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 F0-15 40-DF F7-7F 00-00 ... B8-15 40-DF F7-7F 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 28-54 E3-D2 48-02 00-00&gt;" file="C:\public\project-hyle\hyle\tests\graph_route_vulkan\../compute_route_vulkan/current_state_tests.h" line="57" status="run" result="completed" time="5.721" timestamp="2026-10-09T14:42:53.446" classname="CurrentOfficial/VulkanGraphCurrentState" />
+    <testcase name="OfficialMainCompressionAttentionAndFp4Moe/Pro0813" value_param="184-byte object &lt;40-C2 3D-DF F7-7F 00-00 00-1C 00-00 00-00 00-00 00-02 00-00 00-00 00-00 80-00 00-00 00-00 00-00 00-06 00-00 00-00 00-00 10-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 F0-15 40-DF F7-7F 00-00 ... B8-15 40-DF F7-7F 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 A8-52 E3-D2 48-02 00-00&gt;" file="C:\public\project-hyle\hyle\tests\graph_route_vulkan\../compute_route_vulkan/current_state_tests.h" line="61" status="run" result="completed" time="17.69" timestamp="2026-10-09T14:42:59.168" classname="CurrentOfficial/VulkanGraphCurrentState" />
+    <testcase name="OfficialMainCompressionAttentionAndFp4Moe/Flash0731" value_param="184-byte object &lt;30-C4 3D-DF F7-7F 00-00 00-10 00-00 00-00 00-00 00-01 00-00 00-00 00-00 40-00 00-00 00-00 00-00 00-04 00-00 00-00 00-00 08-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 F0-15 40-DF F7-7F 00-00 ... B8-15 40-DF F7-7F 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 A8-5E E3-D2 48-02 00-00&gt;" file="C:\public\project-hyle\hyle\tests\graph_route_vulkan\../compute_route_vulkan/current_state_tests.h" line="61" status="run" result="completed" time="10.2" timestamp="2026-10-09T14:43:16.858" classname="CurrentOfficial/VulkanGraphCurrentState" />
+    <testcase name="CompleteThreeStageDspark/Pro0813" value_param="184-byte object &lt;40-C2 3D-DF F7-7F 00-00 00-1C 00-00 00-00 00-00 00-02 00-00 00-00 00-00 80-00 00-00 00-00 00-00 00-06 00-00 00-00 00-00 10-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 F0-15 40-DF F7-7F 00-00 ... B8-15 40-DF F7-7F 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 68-59 E3-D2 48-02 00-00&gt;" file="C:\public\project-hyle\hyle\tests\graph_route_vulkan\../compute_route_vulkan/current_state_tests.h" line="73" status="run" result="completed" time="41.304" timestamp="2026-10-09T14:43:27.059" classname="CurrentOfficial/VulkanGraphCurrentState" />
+    <testcase name="CompleteThreeStageDspark/Flash0731" value_param="184-byte object &lt;30-C4 3D-DF F7-7F 00-00 00-10 00-00 00-00 00-00 00-01 00-00 00-00 00-00 40-00 00-00 00-00 00-00 00-04 00-00 00-00 00-00 08-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 F0-15 40-DF F7-7F 00-00 ... B8-15 40-DF F7-7F 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 00-00 A8-5B E3-D2 48-02 00-00&gt;" file="C:\public\project-hyle\hyle\tests\graph_route_vulkan\../compute_route_vulkan/current_state_tests.h" line="73" status="run" result="completed" time="17.44" timestamp="2026-10-09T14:44:08.364" classname="CurrentOfficial/VulkanGraphCurrentState" />
+  </testsuite>
+</testsuites>

@@ -154,3 +154,8 @@ selected FP4/FP8、尾尺度与encoded MatMul、三QAT全有限BF16及资源/fin
 当前Direct17/24、Graph16/24。剩余7/8项具名数值follow-up已冻结，仅先捕获
 首偏差与原native精度次序，不扩大误差、不重跑80/560/24全集。统一实现统计
 仍按新产品candidate的统一脚本输出记录；本轮没有新增算子数学或shader。
+
+[原native精度诊断与定向资格](vulkan-parity-v2-catalogue-matrix.md)已证同输入
+差0及独立F16边界1.34e-7；最新Pro/Flash主干与完整三stage DSpark两入口通过，
+原全部state现在21/24每入口，剩3个共享case仍失败/未验。整体工程估计约50%。
+不复测已过权重矩阵、未知硬件/三交付/P1未完成，所有原完整精度门保持。
