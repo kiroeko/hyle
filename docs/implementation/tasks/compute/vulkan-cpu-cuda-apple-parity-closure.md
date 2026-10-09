@@ -173,3 +173,6 @@ selected FP4/FP8、尾尺度与encoded MatMul、三QAT全有限BF16及资源/fin
 仍不签剩余 family/参数/银行、default/P1、其它平台或三交付；没有新 HYLE 数学。
 统一 Compute+Graph 实现62,410行/267文件，测试/第三方不计入。
 无需求的 QUEUED `compute_sched` 经用户明确决定撤回，现有 Sched/借用 executor API 保持。
+
+V2剩余[模型族与参数验收](vulkan-parity-v2-family-qualification.md)按既定完整需求单独有限
+定界；先source/80条关联审计，只执行尚无当前证据的分支，不恢复旧研究或已过矩阵。
