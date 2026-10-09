@@ -1,0 +1,34 @@
+{
+  "candidate": "c96c7c6eefb41f9aca71c92b4304814a731fe088",
+  "scope": "Actual Windows Vulkan public source Direct/Graph consumers after original full-F32 admission repair; partial C3",
+  "rows": [
+    {
+      "entry": "source-direct",
+      "verdict": "PASS"
+    },
+    {
+      "entry": "source-graph",
+      "verdict": "PASS"
+    },
+    {
+      "entry": "shared-direct",
+      "verdict": "UNRUN"
+    },
+    {
+      "entry": "shared-graph",
+      "verdict": "UNRUN"
+    },
+    {
+      "entry": "static-direct",
+      "verdict": "UNRUN"
+    },
+    {
+      "entry": "static-graph",
+      "verdict": "UNRUN"
+    }
+  ],
+  "log_sha256": "9ca004af18d13f945b3bbdcad2c2b1bff89f0bfd961624c06f89f5018b94aa32",
+  "numeric_gate": "unchanged 1e-4 + 4e-5*abs(expected); actual source FFN rows1/16 and three changed inputs",
+  "before_failures": "Preserved in windows-vulkan-failure; first incomplete repair candidate also failed, not relabeled",
+  "remaining": "F32 range/resource/operator regressions, source/shared/static applicable platform delivery and joint execution remain unproven"
+}

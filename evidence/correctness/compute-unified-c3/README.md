@@ -4,8 +4,8 @@ This is ongoing validation for the [active delivery card](../../../docs/implemen
 It is not a terminal verdict for all platforms/routes, hybrid execution, or asynchronous expert transfers.
 
 [Delivery matrix](delivery-matrix.json) fixes the declared applicable scope: 15 platform/route groups,
-45 source/shared/static shapes, each with the existing Direct and Graph consumer. Twelve consumer entries
-are currently PASS; two Windows Vulkan source entries are FAIL and the other 76 are UNRUN. A mixed SDK entry runs each selected native route independently
+45 source/shared/static shapes, each with the existing Direct and Graph consumer. Fourteen consumer entries
+are currently PASS and the other 76 are UNRUN; earlier Vulkan failures remain archived. A mixed SDK entry runs each selected native route independently
 and cannot certify the later joint execution or asynchronous transfer work.
 
 [Conditional source-asset producer counterexample](apple-conditional-producer/receipt.json) records a
@@ -48,8 +48,10 @@ Windows CPU and CUDA three-delivery consumer batches are complete. Remaining rou
 [Windows Vulkan source failure receipt](windows-vulkan-failure/receipt.json) preserves both actual failures:
 the sample's old native-dispatch count and the 16-row F32 FFN numerical mismatch. An independent host
 rounding bill matches the observed GPU result after narrowing the down-projection activation to F16;
-disabling cooperative-matrix variants does not resolve it. Default F32 admission needs a finite repair,
-with the original numerical gate retained. Shared/static are unrun; no Vulkan PASS or self-math replacement is claimed.
+disabling cooperative-matrix variants does not resolve it. The [bounded completion receipt](windows-vulkan-partial.json)
+now signs source Direct/Graph PASS after binding the original full-F32 shaders and preserving explicitly
+requested F32 operands before cooperative-path conversion. The original numerical gate is retained.
+Shared/static and additional range/resource/operator regressions are unrun; no self multiplication is added.
 Read-only verification copies use a 42,956,800-byte source-only archive from the Windows product candidate
 79137d31, SHA256 `6ca08a1ea6728ee340267b5fa10e0f1b9c681e726f2bf407cf2abadd8d0ffefe`.
 The archive excludes large historical evidence and is not a reverse source of product changes.

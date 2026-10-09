@@ -80,3 +80,8 @@ Direct/Graph目标，再验原数值门；原失败收据保留，不能改标�
 同FIX限定完成candidate：`c96c7c6eefb41f9aca71c92b4304814a731fe088`。
 显式F32 operands时不做coop的F16预转换/decode-vector暂存；真实非连续条件、其它dtype及量化
 路径仍保持，Grouped plain F32同样使用原source精度API。实际数值验收仍待运行。
+
+限定完成候选的实际source Direct/Graph两个CTest现已PASS（0.46s/0.45s），
+原rows1/16 FFN、改变输入和原误差门均保留；[收据](../../../../evidence/correctness/compute-unified-c3/windows-vulkan-partial.json)
+保存当前PASS，初始和中间FAIL不改标。source产物保留，已从原driver的shared/static循环恢复，
+没有重启会删除root的source批次。范围/资源/其它dtype定向回归及适用平台交付仍未签。

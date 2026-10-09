@@ -54,8 +54,8 @@
       "routes": "vulkan",
       "deliveries": {
         "source": {
-          "direct": "FAIL",
-          "graph": "FAIL"
+          "direct": "PASS",
+          "graph": "PASS"
         },
         "shared": {
           "direct": "UNRUN",
@@ -67,6 +67,7 @@
         }
       },
       "evidence": [
+        "windows-vulkan-partial.json",
         "windows-vulkan-failure/receipt.json"
       ]
     },
