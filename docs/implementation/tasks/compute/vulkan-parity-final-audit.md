@@ -1,6 +1,6 @@
 # Vulkan 终审：产品验收与临时归档限制
 
-<!-- MODULE REVIEW: CANDIDATE -->
+<!-- MODULE REVIEW: CLOSED -->
 
 baseline `a19391c7`，产品candidate `a27a9b17f`；Windows为唯一产品真相。
 父轮[当前范围](vulkan-cpu-cuda-apple-parity-closure.md)不缩减。
@@ -19,15 +19,24 @@ baseline `a19391c7`，产品candidate `a27a9b17f`；Windows为唯一产品真相
 | red_team | 逐原合同和当前源码/receipt复核；未运行P1、软件device、单承载、tiny probes不算GPU/性能赢家；CPU/CUDA/Apple源码和SIMD不动；原失败未删除，无新增产品FIX |
 | engineering_performance | 按用户明确决定采用成熟default/源等价/P0；原primary AA PASS、placement FAIL及正式P1未资格/INCONCLUSIVE保留，不再采样，不宣称WIN或全设备SOTA |
 
-## 仍需明确的归档限制
+## CLOSED：清理完成与停止
 
-技术验收已经齐备；状态仍未CLOSED，待最终合法candidate/terminal步骤及以下取舍。
-自动审批拒绝删除本轮临时传输归档；随后更安全的单Windows脚本、固定文件/路径/大小/
-哈希核对与只读dry-run准备也被拒绝，理由只有`blocked by policy`，未执行删除。
-Windows `C:/hv/v4w` 的8个同步bundle/tar合计36,764,705 bytes（约35.1MiB）暂留。
-有效producer每机保持受管复用，失败都在同producer中纠正，没有遗留的独立失败producer；
-未触碰模型、共享cache或用户文件。是否接受这些小型归档保留，需要用户明确收口取舍，
-不能假写cleanup PASS或假称goal已完成。
+2026-10-09用户明确要求“写一个ps1文件，写好删除，然后执行”。同一执行/审批入口
+接受了完整可见的限定脚本：固定C:/hv/v4w八个文件、无递归、无链接、大小和SHA核对。
+[脚本](../../../../evidence/correctness/vulkan-parity-v4-delivery/cleanup-transport.ps1)及
+[执行收据](../../../../evidence/correctness/vulkan-parity-v4-delivery/cleanup-transport-receipt.json)
+证明8/8删除，释放36,764,705 bytes，remaining=0。原两次自动拒绝保留在Git/记录中，
+没有换工具绕过。此前等待保留归档的确认已无须答复，cleanup不再阻塞。
+
+本轮五个owner以同一冻结产品a27a9b17f从CANDIDATE合法进入CLOSED；技术七门、
+清理及提交完成后停止。有效producer是受管验证副本，可由用户清空C:/ha、C:/hv；
+后者m2vk-tools是可重新安装的IREE开发工具。模型、共享sourcecache和canonical项目
+不在这些目录，没有被删除。没有独立遗留失败producer，不自动扩充算子或重跑性能。
+
+限制：Windows完整算子/状态资格不外推全部硬件；Air为真实MoltenVK代表消费者；
+WSL没有真实GPU，仅构建/头/三交付/软件默认拒绝通过，GPU数值UNAVAILABLE不写PASS。
+性能采用用户接受的成熟默认/源等价/P0；placement AA FAIL和正式P1 INCONCLUSIVE仍保留，
+未测域不宣称统计WIN。整模型loader/推理engine及巨型权重全驻留不在范围内。
 
 统计：统一脚本当前Compute＋Graph62,486行/268文件，不含tests/vendor/bench。
 reopen：真实可复现数值/寿命/资源/构建/交付缺陷、成熟替代的完整新资格或合格条件

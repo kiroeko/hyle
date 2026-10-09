@@ -1,6 +1,6 @@
 # Vulkan V4：当前候选的平台与三交付
 
-<!-- MODULE REVIEW: AUDITED -->
+<!-- MODULE REVIEW: CLOSED -->
 
 baseline `d04978bd`；协调owner为当前Vulkan/Graph，build/package是横向交付工作。
 [父轮](vulkan-cpu-cuda-apple-parity-closure.md)全部需求保持。V3性能资格条件已获
@@ -106,3 +106,10 @@ W4续编后GCC到达native pipeline，剩余三处相同enum/uint32条件表达�
 同producer一次`-k0`收齐其余对象，仅此三处。有限W5只用Vulkan各flag typedef显式
 构造原bit常量，rebindable与0分支、原能力门和资源生命周期不变；route owner
 保持本卡AUDITED，先提交该精确FIX再改产品。无新handler/queue/kernel或性能采样。
+
+## V4最终CLOSED
+
+产品a27a9b17f；Windows/Air实际三交付、独立头/资源delta与OFF，WSL适用三交付/头/
+软件默认拒绝/OFF全部通过。原失败和源码等价复用见上文与[最终审计](vulkan-parity-final-audit.md)。
+8个临时同步归档已通过用户明确要求的PS1执行删除，cleanup PASS，原审批拒绝保留。
+不新签P1/全硬件WIN，不签WSL GPU或整模型engine；本包结束。

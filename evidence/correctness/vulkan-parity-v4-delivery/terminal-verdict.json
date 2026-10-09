@@ -1,0 +1,20 @@
+{
+  "verdict": "CLOSED",
+  "product_candidate": "a27a9b17f043f557726dd73a023e38e70e3e270d",
+  "owners": [
+    "graph",
+    "compute_route_vulkan",
+    "graph_route_vulkan",
+    "compute_provider_ggml_vulkan",
+    "compute_provider_iree_vulkan"
+  ],
+  "technical_and_cleanup_gates": "PASS as scoped in vulkan-parity-final-audit.md and exact receipt/SHA maps",
+  "cleanup": "8 transport files deleted, 36764705 bytes, remaining0; user-directed PS1 executed through same approval endpoint",
+  "performance": "P0 engineering policy accepted; original primary AA PASS, placement AA qualification FAIL and formal P1 NOT_RUN/INCONCLUSIVE retained, no WIN",
+  "limits": [
+    "Hardware-bound full Windows operator/state qualification; Air representative real MoltenVK numerical/resource/delivery scope",
+    "WSL only software Vulkan device: compilation/header/three-delivery/OFF/default refusal passed; real GPU numerical UNAVAILABLE",
+    "Not model loader/engine, all-hardware SOTA or giant full-model residency",
+    "Reusable verification producers/tools are disposable, canonical product/model/shared caches elsewhere"
+  ]
+}

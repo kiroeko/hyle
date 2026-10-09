@@ -1,11 +1,11 @@
 # Vulkan：共同目录、成熟接线与最终收口
 
-<!-- MODULE REVIEW: AUDITED -->
+<!-- MODULE REVIEW: CLOSED -->
 
 > 当前摘要（2026-10-09）：技术验收已齐备，V1/V2/V3及V4实际构建/交付/OFF/资源门通过。
 > Windows完整算子/状态目录、Air真实代表数值与三交付、WSL三交付/头/软件默认拒绝已验；
 > WSL无真实GPU，不签GPU数值。正式P1 INCONCLUSIVE按用户工程/P0决定保留，无新WIN。
-> [终审与当前归档限制](vulkan-parity-final-audit.md)待最终合法状态与用户取舍；goal未完成。
+> [终审与当前归档限制](vulkan-parity-final-audit.md)已完成，归档清理8/8通过，五owner合法CLOSED；停止本轮，后续阶段由用户讨论。
 > 下文阶段数字/旧owner状态为历史快照，不是当前队列。
 
 统一实现62,486行/268文件，不含测试。原三处私有类型/capture残留已明确并修正，

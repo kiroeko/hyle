@@ -281,10 +281,14 @@
     },
     {
       "module": "graph",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/compute/vulkan-parity-final-audit.md",
-      "summary": "Vulkan final CANDIDATE: full admitted Windows operator/state scope, mature cold defaults, applicable Windows/Air/WSL three deliveries/OFF/public heads/resources qualified. P0 engineering decision and formalP1 INCONCLUSIVE retained; technical FIX complete, no new math/WIN. Final transport retention decision pending.",
-      "candidate": "a27a9b17f043f557726dd73a023e38e70e3e270d"
+      "summary": "Vulkan CLOSED: common Windows104/559/80/34/45/eight-family and current model/state scope, mature cold defaults, applicable Windows/Air/WSL three deliveries/OFF/headers/resources and final cleanup verified. No new self math or WIN; accepted P0 policy/P1 INCONCLUSIVE, WSL GPU unavailable and hardware/residency limits explicit.",
+      "candidate": "a27a9b17f043f557726dd73a023e38e70e3e270d",
+      "performance": {
+        "tier": "P0",
+        "evidence": "evidence/correctness/vulkan-parity-v4-delivery/final-audit.json"
+      }
     },
     {
       "module": "container_concurrent",
@@ -541,24 +545,36 @@
     },
     {
       "module": "compute_route_vulkan",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/compute/vulkan-parity-final-audit.md",
-      "summary": "Vulkan final CANDIDATE: full admitted Windows operator/state scope, mature cold defaults, applicable Windows/Air/WSL three deliveries/OFF/public heads/resources qualified. P0 engineering decision and formalP1 INCONCLUSIVE retained; technical FIX complete, no new math/WIN. Final transport retention decision pending.",
-      "candidate": "a27a9b17f043f557726dd73a023e38e70e3e270d"
+      "summary": "Vulkan CLOSED: common Windows104/559/80/34/45/eight-family and current model/state scope, mature cold defaults, applicable Windows/Air/WSL three deliveries/OFF/headers/resources and final cleanup verified. No new self math or WIN; accepted P0 policy/P1 INCONCLUSIVE, WSL GPU unavailable and hardware/residency limits explicit.",
+      "candidate": "a27a9b17f043f557726dd73a023e38e70e3e270d",
+      "performance": {
+        "tier": "P0",
+        "evidence": "evidence/correctness/vulkan-parity-v4-delivery/final-audit.json"
+      }
     },
     {
       "module": "graph_route_vulkan",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/compute/vulkan-parity-final-audit.md",
-      "summary": "Vulkan final CANDIDATE: full admitted Windows operator/state scope, mature cold defaults, applicable Windows/Air/WSL three deliveries/OFF/public heads/resources qualified. P0 engineering decision and formalP1 INCONCLUSIVE retained; technical FIX complete, no new math/WIN. Final transport retention decision pending.",
-      "candidate": "a27a9b17f043f557726dd73a023e38e70e3e270d"
+      "summary": "Vulkan CLOSED: common Windows104/559/80/34/45/eight-family and current model/state scope, mature cold defaults, applicable Windows/Air/WSL three deliveries/OFF/headers/resources and final cleanup verified. No new self math or WIN; accepted P0 policy/P1 INCONCLUSIVE, WSL GPU unavailable and hardware/residency limits explicit.",
+      "candidate": "a27a9b17f043f557726dd73a023e38e70e3e270d",
+      "performance": {
+        "tier": "P0",
+        "evidence": "evidence/correctness/vulkan-parity-v4-delivery/final-audit.json"
+      }
     },
     {
       "module": "compute_provider_ggml_vulkan",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/compute/vulkan-parity-final-audit.md",
-      "summary": "Vulkan final CANDIDATE: full admitted Windows operator/state scope, mature cold defaults, applicable Windows/Air/WSL three deliveries/OFF/public heads/resources qualified. P0 engineering decision and formalP1 INCONCLUSIVE retained; technical FIX complete, no new math/WIN. Final transport retention decision pending.",
-      "candidate": "a27a9b17f043f557726dd73a023e38e70e3e270d"
+      "summary": "Vulkan CLOSED: common Windows104/559/80/34/45/eight-family and current model/state scope, mature cold defaults, applicable Windows/Air/WSL three deliveries/OFF/headers/resources and final cleanup verified. No new self math or WIN; accepted P0 policy/P1 INCONCLUSIVE, WSL GPU unavailable and hardware/residency limits explicit.",
+      "candidate": "a27a9b17f043f557726dd73a023e38e70e3e270d",
+      "performance": {
+        "tier": "P0",
+        "evidence": "evidence/correctness/vulkan-parity-v4-delivery/final-audit.json"
+      }
     },
     {
       "module": "compute_ggml_runtime",
@@ -618,10 +634,14 @@
     },
     {
       "module": "compute_provider_iree_vulkan",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/compute/vulkan-parity-final-audit.md",
-      "summary": "Vulkan final CANDIDATE: full admitted Windows operator/state scope, mature cold defaults, applicable Windows/Air/WSL three deliveries/OFF/public heads/resources qualified. P0 engineering decision and formalP1 INCONCLUSIVE retained; technical FIX complete, no new math/WIN. Final transport retention decision pending.",
-      "candidate": "a27a9b17f043f557726dd73a023e38e70e3e270d"
+      "summary": "Vulkan CLOSED: common Windows104/559/80/34/45/eight-family and current model/state scope, mature cold defaults, applicable Windows/Air/WSL three deliveries/OFF/headers/resources and final cleanup verified. No new self math or WIN; accepted P0 policy/P1 INCONCLUSIVE, WSL GPU unavailable and hardware/residency limits explicit.",
+      "candidate": "a27a9b17f043f557726dd73a023e38e70e3e270d",
+      "performance": {
+        "tier": "P0",
+        "evidence": "evidence/correctness/vulkan-parity-v4-delivery/final-audit.json"
+      }
     },
     {
       "module": "compute_provider_torch_cuda",

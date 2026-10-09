@@ -1,0 +1,47 @@
+{
+  "executed": true,
+  "files": [
+    {
+      "path": "C:\\hv\\v4w\\air-current.bundle",
+      "bytes": 3301856,
+      "sha256": "B3C718B81C3F0FD5CCFD3ED5097A15D73B0D534C6E3FB29ACA38074FE7112565"
+    },
+    {
+      "path": "C:\\hv\\v4w\\air-delta.bundle",
+      "bytes": 5739,
+      "sha256": "8744CFD993531B019A5CDAE050C71CB4F5D0516F44B001832A4715E4E2886F1A"
+    },
+    {
+      "path": "C:\\hv\\v4w\\air-w2.bundle",
+      "bytes": 343469,
+      "sha256": "DBB90695A69D184EE1BBBF6108A83C9A3334B7C98A02198C9D62F8AFDA3CCD0D"
+    },
+    {
+      "path": "C:\\hv\\v4w\\air-resume.bundle",
+      "bytes": 730,
+      "sha256": "F0FD6C6EE4236197F74246F747DF3C13FCD16CB336E63973BCC7C4DC8DF33AD0"
+    },
+    {
+      "path": "C:\\hv\\v4w\\air-w3.bundle",
+      "bytes": 2511,
+      "sha256": "5F01E5CDDD9C74C15968C11C0D10072BDFB630F9C36119D604FBA0217E05022A"
+    },
+    {
+      "path": "C:\\hv\\v4w\\air-final-delta.bundle",
+      "bytes": 95781,
+      "sha256": "7882ACA12B0AE283F82171FC25423CDAD0618369979B796C2E39AD2141AAD6EB"
+    },
+    {
+      "path": "C:\\hv\\v4w\\air-last-fixture.bundle",
+      "bytes": 859,
+      "sha256": "3D3A0387A1BC894B31B91799D9A984DF605F1572E7B4B7BEE70B34E8A29EB308"
+    },
+    {
+      "path": "C:\\hv\\v4w\\wsl-source.tar",
+      "bytes": 33013760,
+      "sha256": "5712D4C07ED78A5C6166F651034D0F234479C2480372F7B910C338B436E543D8"
+    }
+  ],
+  "bytes": 36764705.0,
+  "remaining": 0
+}

@@ -63,9 +63,12 @@
     "WSL compiler/header/three-delivery and real default software-device refusal; GPU numerical UNAVAILABLE, not PASS"
   ],
   "cleanup": {
-    "status": "BLOCKED_BY_AUTOMATIC_APPROVAL",
-    "retained_windows_transport_files": 8,
-    "retained_windows_transport_bytes": 36764705,
-    "reason": "Automatic review rejected inline multi-surface deletion and then even preparation/dry-run of bounded single-shell file-only cleanup. Returned reason only blocked by policy. No deletion ran. Valid reusable producers and locked shared caches retained; no failed standalone producer remains."
+    "status": "PASS",
+    "receipt": "cleanup-transport-receipt.json",
+    "script": "cleanup-transport.ps1",
+    "deleted_files": 8,
+    "deleted_bytes": 36764705,
+    "remaining": 0,
+    "history": "Original inline and safer-script attempts were rejected with blocked by policy. After the user explicitly requested writing/executing PS1, the same exec approval endpoint accepted the fully visible bounded script. It checked the fixed root, non-reparse files, size and SHA; no recursive deletion or alternate-tool bypass. No product/models/shared caches deleted."
   }
 }

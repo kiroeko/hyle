@@ -1,6 +1,6 @@
 # Vulkan V3：成熟默认、条件绑定与有限成本裁决
 
-<!-- MODULE REVIEW: AUDITED -->
+<!-- MODULE REVIEW: CLOSED -->
 
 baseline `755dec4c5`；owners `compute_route_vulkan`、`graph_route_vulkan`，必要的
 原region接线归 `compute_provider_ggml_vulkan`。V2 Windows 104/559/80/34/45/八族及
@@ -113,3 +113,10 @@ neutral placement AA八process结束：完整数值/资源通过，但同native-
 DeepSeek分配因素偏差6.4987%越5%门。primary PASS不替placement签资格；n15不启动。
 [具体工程取舍](vulkan-v3-performance-engineering-decision.md)保存固定结果、源等价和
 未证明原因。本性能条件未解决不关闭V3/goal，但V4平台/三交付仍可独立推进。
+
+## V3最终CLOSED
+
+D1冷规则实际资格、D2具名残留/四路线single-primary审计、D3同服务源/资源等价与
+用户接受的D4工程/P0取舍完成。原placement A/A资格FAIL、正式P1 INCONCLUSIVE仍保留，
+不重测、不称WIN；源码/math/VMFB无新算法。当前结论见[最终审计](vulkan-parity-final-audit.md)，
+旧段落未完成/待决定是当时快照，不是当前施工队列。
