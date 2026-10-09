@@ -90,7 +90,7 @@ void address_axis(inout uint remaining, inout uvec3 offsets, uint dimension, uve
     remaining /= dimension;
 }
 
-uint width(uint type) { return type == 4 ? 8 : type == 5 ? 1 : (type == 1 || type == 2) ? 2 : 4; }
+uint width(uint type) { return type == 4 ? 8 : (type == 5 || type == 6) ? 1 : (type == 1 || type == 2) ? 2 : 4; }
 uint word(uint port, uint index) { return port == 0 ? a[index] : port == 1 ? b[index] : c[index]; }
 uint load_bytes(uint port, uint offset, uint size) {
     uint shift = (offset & 3u) * 8u;

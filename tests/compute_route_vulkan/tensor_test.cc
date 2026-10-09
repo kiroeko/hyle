@@ -7,7 +7,8 @@ namespace {
 using namespace vulkan_tensor_test;
 constexpr std::array types{c::DataType::kFloat32,  c::DataType::kFloat16,
                            c::DataType::kBFloat16, c::DataType::kInt32,
-                           c::DataType::kInt64,    c::DataType::kBool};
+                           c::DataType::kInt64,    c::DataType::kBool,
+                           c::DataType::kUInt8,    c::DataType::kUInt32};
 
 TEST(VulkanTensor, ExactStorageHandlesOddStridesWordsAndEmptyTransfers) {
   auto context = vulkan_test::context().value();
@@ -22,7 +23,8 @@ TEST(VulkanTensor, ExactStorageHandlesOddStridesWordsAndEmptyTransfers) {
               .value();
       std::vector<std::uint64_t> raw(count);
       for (std::size_t i = 0; i < raw.size(); ++i) {
-        raw[i] = type == c::DataType::kBool    ? i % 2
+        raw[i] = type == c::DataType::kUInt8   ? (i * 71 + 19) % 256
+                 : type == c::DataType::kBool    ? i % 2
                  : type == c::DataType::kInt64 ? 0xffffeeee12340000ULL + i
                  : size == 2                   ? (i % 3 == 0   ? 0xffc3u
                                                   : i % 3 == 1 ? 0x8000u
@@ -44,7 +46,8 @@ TEST(VulkanTensor, ExactStorageHandlesOddStridesWordsAndEmptyTransfers) {
       const auto mask =
           context.upload(mask_desc, payload(mask_desc, flags)).value();
       const auto scalar = c::ScalarValue::from_bits(
-          type, type == c::DataType::kBool    ? 1
+          type, type == c::DataType::kUInt8   ? 0xe3
+                : type == c::DataType::kBool    ? 1
                 : type == c::DataType::kInt64 ? 0x12345678abcdef01ULL
                 : size == 2                   ? 0xffc3
                                               : 0xffc00003);

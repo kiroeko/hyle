@@ -22,6 +22,10 @@ std::optional<std::uint32_t> tensor_storage_type(DataType type) noexcept {
     return 4;
   case DataType::kBool:
     return 5;
+  case DataType::kUInt8:
+    return 6;
+  case DataType::kUInt32:
+    return 7;
   default:
     return std::nullopt;
   }

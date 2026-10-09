@@ -284,7 +284,7 @@
         "sha256": "7ddac6a12f17c3822dbcbf1227abe67ee7de68f40d429f307d9ab2bdf137e702"
       },
       "license": {
-        "expression": "Apache-2.0 WITH LLVM-exception",
+        "expression": "(Apache-2.0 WITH LLVM-exception) AND MIT AND Apache-2.0",
         "files": [
           {
             "root": "hyle",
@@ -294,13 +294,28 @@
           {
             "root": "hyle",
             "path": "third_party/iree_vulkan_runtime/NOTICE.md",
-            "sha256": "c4cad2c5b15eb2616d46728684c66b771427f99e6ece68350548a109727b3ac7"
+            "sha256": "729022158b78e928b42c1c67c28b351be60fe8f6c222d5c51d6c418b9e6b740e"
+          },
+          {
+            "root": "hyle",
+            "path": "third_party/iree_vulkan_runtime/programs/licenses/awq.txt",
+            "sha256": "2af485d269071b583c62c20250a63349f8313312cc9df0bd9007ca39c6d57bd9"
+          },
+          {
+            "root": "hyle",
+            "path": "third_party/iree_vulkan_runtime/programs/licenses/bitsandbytes.txt",
+            "sha256": "52412d7bc7ce4157ea628bbaacb8829e0a9cb3c58f57f99176126bc8cf2bfc85"
+          },
+          {
+            "root": "hyle",
+            "path": "third_party/iree_vulkan_runtime/programs/licenses/compressed-tensors.txt",
+            "sha256": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4"
           }
         ]
       },
       "vendored": {
         "path": "third_party/iree_vulkan_runtime",
-        "tree_sha256": "fa42b3dcbc027a31300992c576f236640980894349ddb7468ad967b3f861192b"
+        "tree_sha256": "c6cb0f6eecadcbb1e06832b873a42b4b902a8e3b58795910416eb9ec09935d7b"
       }
     },
     {

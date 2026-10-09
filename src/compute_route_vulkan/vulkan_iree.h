@@ -14,7 +14,7 @@ struct IreeStage final {
   };
   Run *parent = nullptr;
   std::unique_ptr<iree_vulkan::NativeProgram> program;
-  std::array<Input, 4> inputs;
+  std::array<Input, 6> inputs;
   std::size_t input_count = 0;
   std::uint32_t output = 0;
   std::size_t output_bytes = 0;

@@ -27,3 +27,30 @@ The POSIX and Windows IOCP semaphore completion paths clear their operation trac
 before the final callback, which may free the operation under the original
 async ownership contract. This fixes a reproduced host use-after-free without
 changing numerical programs or adding a new execution mechanism.
+
+## Original artifact tensor recipes
+
+`programs/artifacts.mlir` is the original NF4, AutoAWQ and compressed-tensors
+decode sequence expressed in standard tensor/arith/linalg operations. The
+locked IREE compiler retains its own lowering, workgroup selection and runtime.
+No HYLE dequantization kernel, quantizer or custom compiler pass is introduced.
+The maintainer generator preserves the original scale dtype rounding before
+the separately requested output conversion. Explicit decode output is charged
+to that operation; it is not a hidden persistent F32 model weight bank.
+
+- bitsandbytes `833649043474794b8fe7a4136e0c40faf077b2e0`,
+  `bitsandbytes/backends/default/ops.py` `_dequantize_4bit_compute` and
+  `_dequantize_blockwise_compute`; Copyright (c) Facebook, Inc. and its
+  affiliates, MIT. See `programs/licenses/bitsandbytes.txt`.
+- AutoAWQ `88e4c76b20755db275574e6a03c83c84ba3bece5`,
+  `awq/utils/packing_utils.py` unpack/reverse order and dequantize;
+  Copyright (c) 2023 MIT HAN Lab, MIT. See `programs/licenses/awq.txt`.
+- compressed-tensors `ac8e2ba82f4e0d5eaa40069f8fc642738f124cd4`,
+  original `unpack_from_int32` and symmetric grouped dequantization;
+  Copyright contributors to the vLLM project, Apache-2.0.
+  See `programs/licenses/compressed-tensors.txt`.
+
+Original source identities and parent tensor borrows are registered in
+`third_party/{bitsandbytes,awq,compressed_tensors}_cpu/SOURCE.json` and their
+notices. The new recipe/bytecode/exports are recorded in programs/manifest.json;
+offline compilation is recorded separately from runtime qualification.

@@ -71,6 +71,48 @@ Result<BufferSpan> span(iree_hal_buffer_view_t *view) noexcept {
   result.bytes = static_cast<std::size_t>(bytes);
   return result;
 }
+
+const char *artifact_entry(const ProgramSpec &spec) noexcept {
+  constexpr std::array nf4{"module.nf4_f32", "module.nf4_f16",
+                            "module.nf4_bf16"};
+  constexpr std::array nested{"module.nf4_nested_f32", "module.nf4_nested_f16",
+                              "module.nf4_nested_bf16"};
+  constexpr std::array awq{
+      "module.awq_f32_f32", "module.awq_f32_f16", "module.awq_f32_bf16",
+      "module.awq_f16_f32", "module.awq_f16_f16", "module.awq_f16_bf16",
+      "module.awq_bf16_f32", "module.awq_bf16_f16", "module.awq_bf16_bf16"};
+  constexpr std::array ct{
+      "module.ct_f32_f32", "module.ct_f32_f16", "module.ct_f32_bf16",
+      "module.ct_f16_f32", "module.ct_f16_f16", "module.ct_f16_bf16",
+      "module.ct_bf16_f32", "module.ct_bf16_f16", "module.ct_bf16_bf16"};
+  const auto scale = static_cast<std::size_t>(spec.scale_type);
+  const auto output = static_cast<std::size_t>(spec.output_type);
+  if (scale >= 3 || output >= 3)
+    return nullptr;
+  switch (spec.kind) {
+  case ProgramKind::Nf4Decode:
+    return nf4[output];
+  case ProgramKind::Nf4NestedDecode:
+    return nested[output];
+  case ProgramKind::AwqDecode:
+    return awq[scale * 3 + output];
+  case ProgramKind::Symmetric4Decode:
+    return ct[scale * 3 + output];
+  default:
+    return nullptr;
+  }
+}
+
+iree_hal_element_type_t artifact_scalar(ArtifactScalar type) noexcept {
+  switch (type) {
+  case ArtifactScalar::Float16:
+    return IREE_HAL_ELEMENT_TYPE_FLOAT_16;
+  case ArtifactScalar::BFloat16:
+    return IREE_HAL_ELEMENT_TYPE_SINT_16; // Standard bf16 bit carrier.
+  default:
+    return IREE_HAL_ELEMENT_TYPE_FLOAT_32;
+  }
+}
 } // namespace
 
 struct NativeProgram::State final {
@@ -78,7 +120,7 @@ struct NativeProgram::State final {
   ProgramSpec spec;
   detail::Owner<iree_vm_context_t, iree_vm_context_release> context;
   iree_vm_function_t function = {};
-  std::array<View, 4> views;
+  std::array<View, 6> views;
   std::size_t count = 0;
   detail::Owner<iree_vm_list_t, iree_vm_list_release> inputs, outputs;
   Fence ready, done, retired;
@@ -313,6 +355,7 @@ NativeProgram::create(NativeDevice device, ProgramSpec spec) noexcept {
                     spec.kind == ProgramKind::ScanExclusive;
   const bool precision = spec.kind == ProgramKind::Float32ToBFloat16 ||
                          spec.kind == ProgramKind::Float16ToBFloat16;
+  const bool artifact = artifact_program(spec.kind);
   const auto &features = device.state_->native.native();
   if (scan && !features.shader_int64)
     return std::unexpected(
@@ -323,12 +366,26 @@ NativeProgram::create(NativeDevice device, ProgramSpec spec) noexcept {
                      !features.shader_float16)))
     return std::unexpected(Status::Unimplemented(
         "BF16 conversion requires enabled numeric device features"));
-  if (!scan && !precision &&
+  if (artifact && (!artifact_entry(spec) || spec.group_size == 0 ||
+                   spec.group_size > INT32_MAX ||
+                   spec.columns % spec.group_size != 0 ||
+                   (spec.columns % (spec.kind == ProgramKind::Nf4Decode ||
+                                            spec.kind == ProgramKind::Nf4NestedDecode
+                                        ? 2
+                                        : 8)) != 0 ||
+                   (spec.kind == ProgramKind::AwqDecode && spec.rows % 8 != 0)))
+    return std::unexpected(Status::InvalidArgument("IREE original artifact domain"));
+  if (artifact && (!features.shader_int16 || !features.shader_float16 ||
+                   !features.storage_buffer16 ||
+                   !features.preserve_float32_specials))
+    return std::unexpected(Status::Unimplemented(
+        "artifact program requires enabled original numeric features"));
+  if (!scan && !precision && !artifact &&
       (!features.shader_float16 || !features.storage_buffer16))
     return std::unexpected(Status::Unimplemented(
         "FP8 program requires enabled Float16 and storage16"));
   const auto block = spec.kind == ProgramKind::Float8Block128 ? 128 : 32;
-  if (!scan && !precision &&
+  if (!scan && !precision && !artifact &&
       (spec.depth <= 0 || spec.depth % block ||
        (spec.kind == ProgramKind::Float8Block128 && spec.columns % block)))
     return std::unexpected(
@@ -339,7 +396,7 @@ NativeProgram::create(NativeDevice device, ProgramSpec spec) noexcept {
   constexpr std::int64_t max_elements =
       std::numeric_limits<std::int32_t>::max() / 8;
   if (spec.rows > max_elements / spec.columns ||
-      (!scan && !precision &&
+      (!scan && !precision && !artifact &&
        (spec.rows > max_elements / spec.depth ||
         spec.columns > max_elements / spec.depth)))
     return std::unexpected(
@@ -356,9 +413,10 @@ NativeProgram::create(NativeDevice device, ProgramSpec spec) noexcept {
     HYLE_RETURN_IF_ERROR(detail::consume_status(
         iree_async_proactor_pool_get(owner.pool.get(), 0, &state->proactor)));
     std::array modules{owner.hal.get(),
-                       owner.programs[scan        ? 0
-                                      : precision ? 2
-                                                  : 1]
+                       owner.programs[scan         ? 0
+                                      : precision  ? 2
+                                      : artifact   ? 3
+                                                   : 1]
                            .get()};
     iree_vm_context_t *context = nullptr;
     HYLE_RETURN_IF_ERROR(
@@ -387,6 +445,12 @@ NativeProgram::create(NativeDevice device, ProgramSpec spec) noexcept {
     case ProgramKind::Float16ToBFloat16:
       name = "module.f16_to_bf16";
       break;
+    case ProgramKind::Nf4Decode:
+    case ProgramKind::Nf4NestedDecode:
+    case ProgramKind::AwqDecode:
+    case ProgramKind::Symmetric4Decode:
+      name = artifact_entry(spec);
+      break;
     default:
       return std::unexpected(Status::InvalidArgument("IREE program kind"));
     }
@@ -395,7 +459,7 @@ NativeProgram::create(NativeDevice device, ProgramSpec spec) noexcept {
             context, iree_make_cstring_view(name), &state->function)));
     iree_vm_list_t *inputs = nullptr, *outputs = nullptr;
     HYLE_RETURN_IF_ERROR(detail::consume_status(
-        iree_vm_list_create(iree_vm_make_undefined_type_def(), 6,
+        iree_vm_list_create(iree_vm_make_undefined_type_def(), 9,
                             iree_allocator_system(), &inputs)));
     state->inputs.reset(inputs);
     HYLE_RETURN_IF_ERROR(detail::consume_status(
@@ -403,7 +467,56 @@ NativeProgram::create(NativeDevice device, ProgramSpec spec) noexcept {
                             iree_allocator_system(), &outputs)));
     state->outputs.reset(outputs);
     auto *hal = owner.device.get();
-    if (precision) {
+    if (artifact) {
+      const auto n = static_cast<iree_hal_dim_t>(spec.rows);
+      const auto k = static_cast<iree_hal_dim_t>(spec.columns);
+      const auto groups = static_cast<iree_hal_dim_t>(
+          spec.rows * (spec.columns / spec.group_size));
+      const bool nf4 = spec.kind == ProgramKind::Nf4Decode ||
+                       spec.kind == ProgramKind::Nf4NestedDecode;
+      const bool awq = spec.kind == ProgramKind::AwqDecode;
+      const std::array<iree_hal_dim_t, 2> packed{
+          awq ? k : n, awq ? n / 8 : k / (nf4 ? 2 : 8)};
+      HYLE_ASSIGN_OR_RETURN(
+          state->views[0], allocate_view(hal, packed, nf4
+                                      ? IREE_HAL_ELEMENT_TYPE_SINT_8
+                                      : IREE_HAL_ELEMENT_TYPE_SINT_32));
+      if (nf4) {
+        const std::array<iree_hal_dim_t, 1> group_shape{groups}, book{16};
+        if (spec.kind == ProgramKind::Nf4NestedDecode) {
+          const std::array<iree_hal_dim_t, 1> outer{
+              groups / 256 + (groups % 256 != 0)}, scale_book{256}, scalar{1};
+          HYLE_ASSIGN_OR_RETURN(state->views[1],
+              allocate_view(hal, group_shape, IREE_HAL_ELEMENT_TYPE_SINT_8));
+          HYLE_ASSIGN_OR_RETURN(state->views[2],
+              allocate_view(hal, outer, IREE_HAL_ELEMENT_TYPE_FLOAT_32));
+          HYLE_ASSIGN_OR_RETURN(state->views[3],
+              allocate_view(hal, scale_book, IREE_HAL_ELEMENT_TYPE_FLOAT_32));
+          HYLE_ASSIGN_OR_RETURN(state->views[4],
+              allocate_view(hal, scalar, IREE_HAL_ELEMENT_TYPE_FLOAT_32));
+          HYLE_ASSIGN_OR_RETURN(state->views[5],
+              allocate_view(hal, book, IREE_HAL_ELEMENT_TYPE_FLOAT_32));
+          state->count = 6;
+        } else {
+          HYLE_ASSIGN_OR_RETURN(state->views[1],
+              allocate_view(hal, group_shape, IREE_HAL_ELEMENT_TYPE_FLOAT_32));
+          HYLE_ASSIGN_OR_RETURN(state->views[2],
+              allocate_view(hal, book, IREE_HAL_ELEMENT_TYPE_FLOAT_32));
+          state->count = 3;
+        }
+      } else {
+        const std::array<iree_hal_dim_t, 2> scales{
+            awq ? k / spec.group_size : n, awq ? n : k / spec.group_size};
+        if (awq) {
+          const std::array<iree_hal_dim_t, 2> zeros{k / spec.group_size, n / 8};
+          HYLE_ASSIGN_OR_RETURN(state->views[1],
+              allocate_view(hal, zeros, IREE_HAL_ELEMENT_TYPE_SINT_32));
+        }
+        HYLE_ASSIGN_OR_RETURN(state->views[awq ? 2 : 1],
+            allocate_view(hal, scales, artifact_scalar(spec.scale_type)));
+        state->count = awq ? 3 : 2;
+      }
+    } else if (precision) {
       const std::array<iree_hal_dim_t, 1> shape{
           static_cast<iree_hal_dim_t>(spec.rows * spec.columns)};
       HYLE_ASSIGN_OR_RETURN(
@@ -486,6 +599,12 @@ WorkState NativeProgram::invoke(CompletionNotify notify,
       auto pushed = iree_vm_list_push_ref_move(state.inputs.get(), &ref);
       iree_vm_ref_release(&ref);
       HYLE_RETURN_IF_ERROR(detail::consume_status(pushed));
+    }
+    if (artifact_program(state.spec.kind)) {
+      const auto group = iree_vm_value_make_i32(
+          static_cast<std::int32_t>(state.spec.group_size));
+      HYLE_RETURN_IF_ERROR(detail::consume_status(
+          iree_vm_list_push_value(state.inputs.get(), &group)));
     }
     for (auto *value : {state.ready.get(), state.done.get()}) {
       auto ref = iree_hal_fence_retain_ref(value);

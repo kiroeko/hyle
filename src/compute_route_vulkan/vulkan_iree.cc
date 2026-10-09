@@ -5,6 +5,7 @@
 #include <new>
 
 #include "hyle/compute/low_precision.h"
+#include "hyle/compute/model_ops.h"
 
 namespace hyle::compute::vulkan::detail {
 namespace iv = iree_vulkan;
@@ -63,6 +64,35 @@ bool fp8_dispatch_fits(const VkPhysicalDeviceLimits &limits,
            limits.maxComputeWorkGroupCount[0];
   };
   return grid_fits(m, k) && grid_fits(n, k) && grid_fits(m, n);
+}
+
+iv::ArtifactScalar artifact_scalar(DataType type) noexcept {
+  return type == DataType::kFloat16   ? iv::ArtifactScalar::Float16
+         : type == DataType::kBFloat16 ? iv::ArtifactScalar::BFloat16
+                                      : iv::ArtifactScalar::Float32;
+}
+
+bool artifact_dispatch_fits(const Device &device, const ProgramState &program,
+                            const PlanStep &step) noexcept {
+  const auto &limits = device.properties.limits;
+  const auto &output = program.values[step.outputs[0]].description;
+  const auto elements = *output.element_count();
+  if (elements > std::uint64_t{INT32_MAX} / 8 ||
+      (std::min)((elements + 63) / 64, std::uint64_t{65535}) >
+          limits.maxComputeWorkGroupCount[0] ||
+      limits.maxComputeWorkGroupCount[1] < 1 ||
+      limits.maxComputeWorkGroupCount[2] < 1)
+    return false;
+  // Include descriptor alignment in the original allocator's combined input
+  // and output domain. Reject before native allocation, not after an OOM probe.
+  std::uint64_t bytes = (*output.required_bytes() + 63) & ~std::uint64_t{63};
+  for (const auto input : step.inputs) {
+    const auto size = *program.values[input].description.required_bytes();
+    if (size > limits.maxStorageBufferRange)
+      return false;
+    bytes += (size + 63) & ~std::uint64_t{63};
+  }
+  return bytes <= limits.maxStorageBufferRange;
 }
 
 std::optional<Float8ScaleMode> float8_mode(const TensorDesc &description,
@@ -172,6 +202,8 @@ bool iree_operation(const ProgramState &program,
                     const PlanStep &step) noexcept {
   if (step.custom || step.inputs.empty() || step.outputs.size() != 1)
     return false;
+  if (step.operation.custom_as<model_ops::ArtifactWeightDecode>())
+    return true; // Domain diagnostics belong to cold lowering, never a shader fallback.
   const auto &input = program.values[step.inputs[0]].description;
   if (const auto *cast = step.operation.get_if<Cast>())
     return step.inputs.size() == 1 &&
@@ -194,7 +226,26 @@ Status lower_iree(ProgramState &program, const PlanStep &step) noexcept {
     iv::ProgramSpec spec;
     const auto *scan = step.operation.get_if<Scan>();
     const bool precision = step.operation.get_if<Cast>() != nullptr;
-    if (precision) {
+    const auto artifact = step.operation.custom_as<model_ops::ArtifactWeightDecode>();
+    if (artifact) {
+      using Format = model_ops::WeightArtifactFormat;
+      spec.kind = artifact->format == Format::kNf4 ? iv::ProgramKind::Nf4Decode
+                  : artifact->format == Format::kNf4DoubleQuant
+                      ? iv::ProgramKind::Nf4NestedDecode
+                  : artifact->format == Format::kAwqGemm4
+                      ? iv::ProgramKind::AwqDecode
+                      : iv::ProgramKind::Symmetric4Decode;
+      const auto &output = program.values[step.outputs[0]].description;
+      spec.rows = output.dimensions()[0];
+      spec.columns = output.dimensions()[1];
+      spec.group_size = artifact->group_size;
+      spec.output_type = artifact_scalar(output.data_type());
+      if (spec.kind == iv::ProgramKind::AwqDecode ||
+          spec.kind == iv::ProgramKind::Symmetric4Decode)
+        spec.scale_type = artifact_scalar(
+            program.values[step.inputs[spec.kind == iv::ProgramKind::AwqDecode ? 2 : 1]]
+                .description.data_type());
+    } else if (precision) {
       if (!iree_operation(program, step))
         return Status::Unimplemented("Vulkan IREE conversion domain");
       spec.kind = input.data_type() == DataType::kFloat16
@@ -231,7 +282,9 @@ Status lower_iree(ProgramState &program, const PlanStep &step) noexcept {
                        (input.data_type() == DataType::kFloat16 &&
                         !features.shader_float16))) ||
         (!scan && !precision &&
-         (!features.shader_float16 || !features.storage_buffer16)))
+         (!features.shader_float16 || !features.storage_buffer16)) ||
+        (artifact && (!features.shader_int16 ||
+                      !features.preserve_float32_specials)))
       return Status::Unimplemented(
           "Vulkan IREE program requires enabled numeric device features");
     const auto &limits = device.properties.limits;
@@ -247,7 +300,8 @@ Status lower_iree(ProgramState &program, const PlanStep &step) noexcept {
     if (limits.maxComputeWorkGroupInvocations < 64 ||
         limits.maxComputeWorkGroupSize[0] < 64 ||
         ((scan || precision) ? !fits(spec.rows, spec.columns)
-                             : !fp8_dispatch_fits(limits, spec)))
+         : artifact ? !artifact_dispatch_fits(device, program, step)
+                    : !fp8_dispatch_fits(limits, spec)))
       return Status::Unimplemented("Vulkan IREE program exceeds admitted "
                                    "native grid or workspace limits");
     {
@@ -286,8 +340,8 @@ create_iree_stage(const std::shared_ptr<Run> &run, const Dispatch &dispatch,
     stage->output_bytes = *values[stage->output].description.required_bytes();
     for (std::size_t port = 0; port < stage->input_count; ++port) {
       auto &input = stage->inputs[port];
-      input.value = dispatch.values[port % 2];
-      if (port >= 2)
+      input.value = dispatch.values[iv::artifact_program(spec.kind) ? port : port % 2];
+      if (!iv::artifact_program(spec.kind) && port >= 2)
         input.offset =
             static_cast<VkDeviceSize>(spec.depth) *
             static_cast<VkDeviceSize>(port == 2 ? spec.rows : spec.columns);

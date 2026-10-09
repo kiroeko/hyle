@@ -13,13 +13,27 @@ enum class ProgramKind {
   Float8Block128,
   Float8Group32,
   Float32ToBFloat16,
-  Float16ToBFloat16
+  Float16ToBFloat16,
+  Nf4Decode,
+  Nf4NestedDecode,
+  AwqDecode,
+  Symmetric4Decode
 };
+enum class ArtifactScalar { Float32, Float16, BFloat16 };
+constexpr bool artifact_program(ProgramKind kind) noexcept {
+  return kind == ProgramKind::Nf4Decode || kind == ProgramKind::Nf4NestedDecode ||
+         kind == ProgramKind::AwqDecode || kind == ProgramKind::Symmetric4Decode;
+}
 struct ProgramSpec final {
   ProgramKind kind = ProgramKind::ScanInclusive;
   std::int64_t rows = 0;
   std::int64_t columns = 0;
   std::int64_t depth = 0; // MatMul reduction dimension; ignored by Scan.
+  // Artifact output [rows, columns]; original scale and final output rounding
+  // remain distinct. The group is a prepared scalar, not a per-call search.
+  std::uint32_t group_size = 64;
+  ArtifactScalar scale_type = ArtifactScalar::Float32;
+  ArtifactScalar output_type = ArtifactScalar::Float32;
 };
 struct BufferSpan final {
   VkBuffer buffer = VK_NULL_HANDLE;

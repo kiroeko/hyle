@@ -2,6 +2,7 @@
 #include <thread>
 
 #include "iree_test_support.h"
+#include "artifact_test_support.h"
 #include "scan_test_support.h"
 #include "vulkan_program_internal.h"
 
@@ -9,6 +10,72 @@ namespace {
 using namespace vulkan_iree_test;
 namespace t = vulkan_tensor_test;
 namespace s = vulkan_scan_test;
+
+hyle::Result<v::Program> prepare_artifact(const v::Context &context,
+                                        c::Operation operation,
+                                        std::span<const c::TensorDesc> descriptions) {
+  std::vector<v::Argument> arguments;
+  for (const auto &description : descriptions) arguments.emplace_back(description);
+  return v::prepare(context, operation, std::span<const v::Argument>(arguments));
+}
+
+TEST(VulkanIree, OriginalArtifactBatchPreservesSourceRoundingAndSixPorts) {
+  vulkan_artifact_test::batch(prepare_artifact);
+}
+
+TEST(VulkanIree, OriginalArtifactColdResultBindsMatureConstantProjection) {
+  vulkan_artifact_test::cold_projection(prepare_artifact,
+      [](const v::Context &context, const c::TensorDesc &activation, const v::Tensor &weight) {
+        return v::prepare(context, c::MatMul{.accumulation_type = c::DataType::kFloat32},
+                          v::Argument(activation), v::Argument(weight));
+      });
+}
+
+TEST(VulkanIree, OriginalArtifactChecksFeaturesDomainFailureAndCancellation) {
+  using namespace vulkan_artifact_test;
+  hyle::mem::QuotaAllocator quota(hyle::mem::system_allocator(), 128 * 1024 * 1024);
+  {
+    auto context = vulkan_test::context(&quota).value();
+    Inputs data(Format::kNf4DoubleQuant, 3, 192, 64,
+                c::DataType::kFloat32, c::DataType::kFloat32);
+    auto &device = *v::detail::Access::runtime(context)->device;
+    const auto limits = device.properties.limits;
+    device.properties.limits.maxComputeWorkGroupInvocations = 63;
+    auto rejected = prepare_artifact(context, data.operation, data.descriptions);
+    ASSERT_FALSE(rejected);
+    EXPECT_TRUE(rejected.error().IsUnimplemented());
+    device.properties.limits = limits;
+    auto wrong = data.descriptions;
+    wrong[3] = t::dense(c::DataType::kFloat32, {255});
+    EXPECT_FALSE(prepare_artifact(context, data.operation, wrong));
+    auto program = prepare_artifact(context, data.operation, data.descriptions).value();
+    {
+      auto all_remaining = quota.try_reserve_bytes(quota.limit() - quota.used());
+      ASSERT_TRUE(all_remaining);
+      auto denied = program.create_invocation();
+      ASSERT_FALSE(denied);
+      EXPECT_TRUE(denied.error().IsResourceExhausted());
+    }
+    auto slot = program.create_invocation().value();
+    const auto inputs = data.upload(context);
+    ASSERT_TRUE(slot.bind(inputs).ok());
+    auto cancelled = slot.submit().value();
+    ASSERT_TRUE(cancelled.request_cancel().ok());
+    auto output = cancelled.wait();
+    // A completed operation may win the race. Either outcome must retire all
+    // six inputs; a cancelled result is never published.
+    if (output) data.check(context, output->get()->tensors()[0]);
+    else EXPECT_TRUE(output.error().IsCancelled());
+    output = c::ResultLease<v::Results>{};
+    auto next = slot.submit().value();
+    auto result = next.wait();
+    ASSERT_TRUE(result) << result.error().message();
+    data.check(context, result->get()->tensors()[0]);
+    EXPECT_TRUE(context.close().ok());
+    EXPECT_FALSE(slot.submit());
+  }
+  EXPECT_EQ(quota.used(), 0U);
+}
 
 TEST(VulkanIree, OriginalFloat8DirectShapesRepeatedSlotsAndQuotaRetire) {
   hyle::mem::QuotaAllocator quota(hyle::mem::system_allocator(),

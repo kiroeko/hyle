@@ -1,4 +1,5 @@
 #include "../compute_route_vulkan/iree_test_support.h"
+#include "../compute_route_vulkan/artifact_test_support.h"
 #include "../compute_route_vulkan/scan_test_support.h"
 #include "hyle/graph/vulkan.h"
 
@@ -8,6 +9,36 @@ namespace g = hyle::graph;
 namespace gv = g::vulkan;
 namespace t = vulkan_tensor_test;
 namespace s = vulkan_scan_test;
+
+hyle::Result<v::Program> compile_artifact(const v::Context &context,
+                                        c::Operation operation,
+                                        std::span<const c::TensorDesc> descriptions) {
+  auto builder = g::GraphBuilder::create().value();
+  std::vector<g::ValueId> inputs;
+  for (const auto &description : descriptions)
+    inputs.push_back(builder.input(description).value());
+  const auto node = builder.add_node(operation, inputs).value();
+  const auto result = builder.result(node).value();
+  EXPECT_TRUE(builder.publish(result).ok());
+  return gv::compile(context, std::move(builder).finish().value());
+}
+
+TEST(VulkanGraph, OriginalArtifactBatchUsesOrdinaryTypedEntry) {
+  vulkan_artifact_test::batch(compile_artifact);
+}
+
+TEST(VulkanGraph, OriginalArtifactColdResultBindsMatureConstantProjection) {
+  vulkan_artifact_test::cold_projection(compile_artifact,
+      [](const v::Context &context, const c::TensorDesc &activation, const v::Tensor &weight) {
+    auto builder = g::GraphBuilder::create().value();
+    const auto a = builder.input(activation).value();
+    const auto w = builder.constant(weight.description()).value();
+    const auto result = builder.add(
+        c::MatMul{.accumulation_type = c::DataType::kFloat32}, a, w).value();
+    EXPECT_TRUE(builder.publish(result).ok());
+    return gv::compile(context, std::move(builder).finish().value(), std::array{weight});
+  });
+}
 
 TEST(VulkanGraph, OriginalFloat8RegionContinuesIntoGgmlAndNativeCopy) {
   auto context = vulkan_test::context().value();
