@@ -540,17 +540,25 @@
     },
     {
       "module": "compute_route_vulkan",
-      "state": "CANDIDATE",
-      "record": "docs/implementation/tasks/compute/vulkan-parity-v3-defaults-best-of.md",
-      "summary": "V3 candidate frozen: common cold defaults and full owned same-contract native-plan/Graph service verified; finite residual domains are unique/strict/low-feature or resource mechanisms, mature defaults preferred. Primary paired AA8/8 PASS; neutral placement first qualification and fixedn15/V4 outstanding.",
-      "candidate": "09410e32cebb911937a7269ba6732ec901db9d4e"
+      "state": "BLOCKED",
+      "record": "docs/implementation/tasks/compute/vulkan-v3-performance-engineering-decision.md",
+      "summary": "V3 performance condition BLOCKED: primary owned AA8/8 PASS, placement firstAA factor6.50% fails5% qualification. Full V2/default/resource facts retained. Independent V4 platform/delivery continues; no formalP1/productLOSS/goal completion claim.",
+      "candidate": "09410e32cebb911937a7269ba6732ec901db9d4e",
+      "blocked_from": "CANDIDATE",
+      "blocker": "Neutral placement same-native-plan A/A exceeded fixed5% factor gate (allocation factor1.06498698); product correctness/resource PASS, formaln15 not run and P1 unqualified. No product performance LOSS inferred.",
+      "resume_condition": "Explicit acceptance of documented source-equivalence/mature-default/P0 engineering closure with P1 INCONCLUSIVE retained, or a named measurement/environment change scoped with a fresh bounded qualification contract. No unchanged-condition retry or n31.",
+      "blocker_owner": "Vulkan performance qualification / user engineering-policy decision"
     },
     {
       "module": "graph_route_vulkan",
-      "state": "CANDIDATE",
-      "record": "docs/implementation/tasks/compute/vulkan-parity-v3-defaults-best-of.md",
-      "summary": "V3 candidate frozen: common cold defaults and full owned same-contract native-plan/Graph service verified; finite residual domains are unique/strict/low-feature or resource mechanisms, mature defaults preferred. Primary paired AA8/8 PASS; neutral placement first qualification and fixedn15/V4 outstanding.",
-      "candidate": "09410e32cebb911937a7269ba6732ec901db9d4e"
+      "state": "BLOCKED",
+      "record": "docs/implementation/tasks/compute/vulkan-v3-performance-engineering-decision.md",
+      "summary": "V3 performance condition BLOCKED: primary owned AA8/8 PASS, placement firstAA factor6.50% fails5% qualification. Full V2/default/resource facts retained. Independent V4 platform/delivery continues; no formalP1/productLOSS/goal completion claim.",
+      "candidate": "09410e32cebb911937a7269ba6732ec901db9d4e",
+      "blocked_from": "CANDIDATE",
+      "blocker": "Neutral placement same-native-plan A/A exceeded fixed5% factor gate (allocation factor1.06498698); product correctness/resource PASS, formaln15 not run and P1 unqualified. No product performance LOSS inferred.",
+      "resume_condition": "Explicit acceptance of documented source-equivalence/mature-default/P0 engineering closure with P1 INCONCLUSIVE retained, or a named measurement/environment change scoped with a fresh bounded qualification contract. No unchanged-condition retry or n31.",
+      "blocker_owner": "Vulkan performance qualification / user engineering-policy decision"
     },
     {
       "module": "compute_provider_ggml_vulkan",

@@ -187,3 +187,8 @@ V2 Windows正确性覆盖完成，整体约60%；接下去只V3默认/有限P1/s
 
 V3进入[成熟默认与有限成本审计](vulkan-parity-v3-defaults-best-of.md)，先按共同条件
 绑定、原完整语义/能力及真正同合同完成边界固定有限FIX，不恢复不等责旧A/B。
+
+V3拥有服务的primary A/A通过、placement A/A资格失败，正式n15未启动，
+[具体性能取舍](vulkan-v3-performance-engineering-decision.md)待用户决定。
+独立[V4平台/三交付](vulkan-parity-v4-delivery.md)开始当前源与真实环境审计，
+不让该性能条件阻断可独立工作，也不假签P1或整个goal完成。

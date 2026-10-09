@@ -108,3 +108,8 @@ primary拥有服务A/A在 `4c284c4f` 唯一8process PASS。进入P1前为既定p
 全过程一次，约25分钟上限，不升31。P1主统计仍逐轮paired比的进程中位，原op/s侧
 中位仅绝对时间/floor诊断；不得把其比值导入主裁决。只有两artifact AA及原controls
 均资格才签正式NI；未资格或测量未完保持明确INCONCLUSIVE，不假签产品退化。
+
+neutral placement AA八process结束：完整数值/资源通过，但同native-plan自身的
+DeepSeek分配因素偏差6.4987%越5%门。primary PASS不替placement签资格；n15不启动。
+[具体工程取舍](vulkan-v3-performance-engineering-decision.md)保存固定结果、源等价和
+未证明原因。本性能条件未解决不关闭V3/goal，但V4平台/三交付仍可独立推进。
