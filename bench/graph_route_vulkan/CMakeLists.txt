@@ -19,4 +19,12 @@ if(HYLE_COMPUTE_VULKAN_ENABLED AND TARGET GTest::gtest)
   hyle_apply_warnings(hyle_graph_route_vulkan_d5_bench)
   hyle_stage_runtime_dependencies(hyle_graph_route_vulkan_d5_bench)
   hyle_register_benches(graph_route_vulkan hyle_graph_route_vulkan_d5_bench)
+  # Same owned-output/Invocation contract on Graph and explicit native Plan.
+  add_executable(hyle_graph_route_vulkan_owned_bench owned_fragment_bench.cc)
+  target_compile_features(hyle_graph_route_vulkan_owned_bench PRIVATE cxx_std_23)
+  target_link_libraries(hyle_graph_route_vulkan_owned_bench PRIVATE
+    hyle_graph_route_vulkan nanobench GTest::gtest ggml)
+  hyle_apply_warnings(hyle_graph_route_vulkan_owned_bench)
+  hyle_stage_runtime_dependencies(hyle_graph_route_vulkan_owned_bench)
+  hyle_register_benches(graph_route_vulkan hyle_graph_route_vulkan_owned_bench)
 endif()

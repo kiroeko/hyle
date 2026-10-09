@@ -61,3 +61,24 @@ workload保留、Graph报告和必要重放；V2相同typed/math大矩阵不重�
 本批D1完成，不等于V3全部完成；D2完整残留裁决、D3同合同preflight和D4有限P1仍待。
 公开Environment新增的冷事实与相应header/三交付验收属于本路线V4必需项，尚未签PASS。
 本批统一Compute+Graph非测试实现62,483行/268文件。新增的是冷条件适配，不是算子数学。
+
+## D3 同合同成本预检已定界
+
+新有限peer不是旧Recorder：`compute/detail/vulkan_plan.h::prepare_plan`是已安装的
+Vulkan专属冷接缝，将显式typed片段计划编译成普通Program。Graph编译也调用同一接缝。
+以已验真实Qwen3.5-2B BF16 FFN和DeepSeek混合hash-MoE完整片段为固定primary/holdout，
+显式计划端保留完整节点、常量、端口、view与workload，准备后销毁计划；两端均创建普通
+Invocation并绑定同一输入cycle，submit→wait→release拥有结果lease均在计时内。
+
+两端同算法/precision/encoding/转换/融合、cold资源规划、独立slot与native终态，
+相同失败/取消/输出不可改写合同；初始化/首次原库lazy warm另列实际时间和常驻资源。
+无caller-destination差异，无新增薄弱语义的benchmark-only输出。比较分类SAME_CONTRACT：
+Graph前端对显式原生片段计划，验证低成本重复执行；不声称provider WIN、通用engine性能
+或整模型推理。默认选择的原算法、状态、能力门均保持，不为测试添加产品后门。
+
+只增一个独立maintainer bench target，继承原fixture/nanobench/paired reader/统一仪器；
+不改旧AA raw及公共d5_common/统计核心。新完成服务不同于旧Recorder，A/A必须重新
+对该新合同固定唯一8process（Graph/Graph与native-plan/native-plan各双执行/分配顺序），
+预检不过则不启动n15。通过后一次n15四strata与placement，5%门/原controls；无n31。
+先verify-only核对输出/两cycle/资源，再冻结candidate/toolchain/source ABI并运行。
+此处只授权bench接线和preflight，不提前给P1 PASS；无新增产品算法。
