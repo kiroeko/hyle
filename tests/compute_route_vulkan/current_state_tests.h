@@ -9,6 +9,32 @@
 #endif
 namespace {
 #if !defined(HYLE_TEST_GRAPH_ROUTE_VULKAN)
+TEST(VulkanStateCause, Q8SidecarActualNormInputsAndNextCodec) {
+  auto fragment=cpu_c4_flash_sidecars::prefill(cpu_c4_flash_sidecars::models[0]);
+  auto context=vulkan_test::context().value();std::size_t observed=0;
+  vulkan_catalogue_test::execute(context,std::move(fragment),nullptr,
+      [&](const auto &operation,std::span<const hyle::compute::vulkan::Tensor> inputs,
+          std::span<const hyle::compute::vulkan::Tensor> outputs) {
+    if(!operation.template get_if<hyle::compute::RmsNorm>()) return;
+    const auto input=vulkan_catalogue_test::floats(context,inputs[0]),scale=vulkan_catalogue_test::floats(context,inputs[1]);
+    const auto actual=vulkan_catalogue_test::floats(context,outputs[0]);
+    const auto native=vulkan_current_state_test::native_norm(input,scale),nominal=cpu_c4_flash_sidecars::norm_ref(input,scale);
+    double native_error=0,nominal_error=0;std::size_t differences=0;
+    for(std::size_t i=0;i<actual.size();++i) {
+      native_error=std::max(native_error,std::abs(static_cast<double>(actual[i])-native[i]));
+      nominal_error=std::max(nominal_error,std::abs(static_cast<double>(actual[i])-nominal[i]));
+      differences+=actual[i]!=nominal[i];
+    }
+    const auto count=actual.size()/32*36;std::vector<std::byte> a(count),b(count);
+    ggml_get_type_traits(GGML_TYPE_Q8_1)->from_float_ref(actual.data(),a.data(),actual.size());
+    ggml_get_type_traits(GGML_TYPE_Q8_1)->from_float_ref(nominal.data(),b.data(),nominal.size());
+    std::size_t codes=0;for(std::size_t i=0;i<count;++i) codes+=a[i]!=b[i];
+    std::printf("STATE_NORM_CAUSE ordinal=%zu rows=%zu width=%zu native_max=%.9g nominal_max=%.9g changed_f32=%zu changed_q8_bytes=%zu\n",
+        observed++,actual.size()/scale.size(),scale.size(),native_error,nominal_error,differences,codes);
+    EXPECT_LE(native_error,1e-6);
+  });
+  EXPECT_GT(observed,0U);
+}
 TEST(VulkanStateCause, ActualSinkInputsUseOriginalNativeAndIndependentEquation) {
   const auto model=vulkan_current_state_test::models()[1];
   const auto cache=d5_deepseek_official_attention::cache_reference(
@@ -84,7 +110,8 @@ TEST(HYLE_VULKAN_CURRENT_STATE_SUITE, QwenNamedQ4SidecarUsesActualQ3Q4Q6Mtp) {
 }
 class HYLE_VULKAN_CURRENT_STATE_SIDECAR : public ::testing::TestWithParam<cpu_c4_flash_sidecars::Model> {};
 TEST_P(HYLE_VULKAN_CURRENT_STATE_SIDECAR, MixedMxfp4FullThreeStagesAndVocabulary) {
-  const auto &model=GetParam();
+  auto model=GetParam();
+  if(!model.bf16) model.norm_reference=vulkan_current_state_test::native_norm;
   SCOPED_TRACE(model.profile->variant);
   cpu_c4_flash_sidecars::check(model,vulkan_catalogue_test::run);
 }

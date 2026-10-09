@@ -1,0 +1,74 @@
+{
+  "candidate": "da1d8382e8cd4791bdd97cc09735db10b617f25e",
+  "steps": [
+    {
+      "name": "direct-three",
+      "returncode": 1,
+      "filter": "C5ExactNewGgufMain/VulkanCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile90:C5ExactNewGgufMain/VulkanCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile103:CurrentSidecars/VulkanCurrentSidecar.*",
+      "tests": {
+        "tests": "4",
+        "failures": "1",
+        "disabled": "0",
+        "errors": "0",
+        "time": "84.028",
+        "timestamp": "2026-10-09T14:59:24.074",
+        "name": "AllTests"
+      },
+      "validation_error": false,
+      "log": "state-three-da1d8382-direct-three.log",
+      "log_sha256": "d5dbe1f3c4313643e8179c7e0cfc6317214cead1c4dbf1440ef4229a3c748e14",
+      "xml": "state-three-da1d8382-direct-three.xml",
+      "binary_sha256": "066d35e1febab0e41d0d33250dcf570684e93d83cf478479d8ccdbc8f49b904f",
+      "adjacent_dlls": [
+        "hyle_compute.dll",
+        "hyle_compute_ggml_runtime.dll",
+        "hyle_compute_ops.dll",
+        "hyle_compute_provider_ggml_vulkan.dll",
+        "hyle_compute_provider_iree_vulkan.dll",
+        "hyle_compute_route_vulkan.dll",
+        "hyle_container.dll",
+        "hyle_error.dll",
+        "hyle_graph.dll",
+        "hyle_graph_route_vulkan.dll",
+        "hyle_mem.dll",
+        "hyle_platform.dll",
+        "hyle_time.dll"
+      ]
+    },
+    {
+      "name": "graph-three",
+      "returncode": 1,
+      "filter": "C5ExactNewGgufMain/VulkanGraphCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile90:C5ExactNewGgufMain/VulkanGraphCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile103:CurrentSidecars/VulkanGraphCurrentSidecar.*",
+      "tests": {
+        "tests": "4",
+        "failures": "1",
+        "disabled": "0",
+        "errors": "0",
+        "time": "71.735",
+        "timestamp": "2026-10-09T15:00:48.333",
+        "name": "AllTests"
+      },
+      "validation_error": false,
+      "log": "state-three-da1d8382-graph-three.log",
+      "log_sha256": "381c5f2b519ee1ecdf2542023b36b7ed2f66bd1e27221fd72f2934856c7b4993",
+      "xml": "state-three-da1d8382-graph-three.xml",
+      "binary_sha256": "f13035557243ec17e1a3f6a86b9da1fc87ee0e5cf60e924193bd2500ad84911d",
+      "adjacent_dlls": [
+        "hyle_compute.dll",
+        "hyle_compute_ggml_runtime.dll",
+        "hyle_compute_ops.dll",
+        "hyle_compute_provider_ggml_vulkan.dll",
+        "hyle_compute_provider_iree_vulkan.dll",
+        "hyle_compute_route_vulkan.dll",
+        "hyle_container.dll",
+        "hyle_error.dll",
+        "hyle_graph.dll",
+        "hyle_graph_route_vulkan.dll",
+        "hyle_mem.dll",
+        "hyle_platform.dll",
+        "hyle_time.dll"
+      ]
+    }
+  ],
+  "scope": "only GGUF90/103 remaining branches and independently qualified Flash Q8/BF16 sidecars; no repeated complete matrices"
+}

@@ -16,7 +16,8 @@ namespace q=cpu_c4_qwen_mtp;
 namespace base=cpu_c4_model_branches;
 using sem::Fragment;using sem::ValueId;using sem::bytes;using sem::dense;
 constexpr std::int64_t h=4096,r=256,t=5,vocabulary=129280,window=128,heads=64,groups=8;
-struct Model {const c::ModelArtifactProfileDescription *profile;bool bf16;};
+using NormReference=std::vector<float>(*)(std::span<const float>,std::span<const float>);
+struct Model {const c::ModelArtifactProfileDescription *profile;bool bf16;NormReference norm_reference=nullptr;};
 inline constexpr auto q8_profile=[] {
   auto p=base::flash_profile;p.artifact_repository="unsloth/DeepSeek-V4-Flash-0731-GGUF";
   p.artifact_revision="fbbb5b93fb787c21338159b0af3318bb3f4d9768";
@@ -119,7 +120,9 @@ inline std::vector<float> grouped_reference(const Grouped &w,std::span<const flo
 #endif
 }
 inline ValueId norm(Fragment &f,ValueId x,std::vector<float>& scale) {return q::norm(f,x,scale);}
-inline std::vector<float> norm_ref(std::span<const float> x,std::span<const float> scale) {
+inline std::vector<float> norm_ref(std::span<const float> x,std::span<const float> scale,
+                                   NormReference native=nullptr) {
+  if(native) return native(x,scale);
   // Preserve the original F32 RMSNorm boundaries before the next Q8 codec.
   // A Double inverse and one final rounding describe a different input to
   // that codec, even though both norm outputs have F32 storage.
@@ -187,12 +190,12 @@ inline Fragment attention(const Model &model,int stage,AttentionReference *refer
   auto oa=grouped(f,wa,core::reshape(f,inverse,{t,groups,4096}),gid);
   auto ob=linear(f,core::reshape(f,oa,{t,groups*1024}),h,groups*1024,model.bf16,631+stage*29);
   f.outputs={cache,ob.output};
-  *reference=[qa,qb,kv,wa,ob,qs,ks,ones,sinks,ids,factor](std::span<const float> input,std::span<const float> main_x,
+  *reference=[qa,qb,kv,wa,ob,qs,ks,ones,sinks,ids,factor,model](std::span<const float> input,std::span<const float> main_x,
       std::span<const float> old,std::int32_t p)->moe::ReferenceOutputs {
     std::array<std::int32_t,1> mp{p};std::vector<std::int32_t> dp(t);std::iota(dp.begin(),dp.end(),p+1);
-    auto query=rope_ref(norm_ref(qb.reference(norm_ref(qa.reference(input),qs)),ones),heads,dp);
+    auto query=rope_ref(norm_ref(qb.reference(norm_ref(qa.reference(input),qs,model.norm_reference)),ones,model.norm_reference),heads,dp);
     std::vector<float> joined(main_x.begin(),main_x.end());joined.insert(joined.end(),input.begin(),input.end());
-    auto k=norm_ref(kv.reference(joined),ks);
+    auto k=norm_ref(kv.reference(joined),ks,model.norm_reference);
     auto main_k=rope_ref(std::vector<float>(k.begin(),k.begin()+512),1,mp);
     auto draft_k=rope_ref(std::vector<float>(k.begin()+512,k.end()),1,dp);
     std::vector<float> cache(old.begin(),old.end());std::copy(main_k.begin(),main_k.end(),cache.begin()+p%window*512);
@@ -295,13 +298,13 @@ inline Program complete(const Model &model,std::span<const float> embedding_actu
     std::vector<float> embed(embedding_expected.begin(),embedding_expected.end());
     std::vector<float> states(t*4*h);for(std::int64_t row=0;row<t;++row)for(int stream=0;stream<4;++stream)
       std::copy_n(embed.data()+row*h,h,states.data()+(row*4+stream)*h);
-    auto main_ref=norm_ref(main_proj.reference(targets),scale);
+    auto main_ref=norm_ref(main_proj.reference(targets),scale,model.norm_reference);
     for(int stage=0;stage<3;++stage) {
       auto pre=am[stage].reference(states,std::vector<float>(t*h));
-      auto a=ar[stage](norm_ref(pre[1],scale),main_ref,cache[stage],position);cache[stage]=a[0];
+      auto a=ar[stage](norm_ref(pre[1],scale,model.norm_reference),main_ref,cache[stage],position);cache[stage]=a[0];
       states=am[stage].reference(states,a.back())[2];
       auto mpre=mm[stage].reference(states,std::vector<float>(t*h));
-      states=mm[stage].reference(states,mr[stage](norm_ref(mpre[1],scale))[0])[2];
+      states=mm[stage].reference(states,mr[stage](norm_ref(mpre[1],scale,model.norm_reference))[0])[2];
     }
     std::vector<float> collapsed_ref(t*h);
     for(std::int64_t row=0;row<t;++row) {
@@ -313,7 +316,7 @@ inline Program complete(const Model &model,std::span<const float> embedding_actu
         collapsed_ref[row*h+col]=float(sum);
       }
     }
-    auto normed=norm_ref(collapsed_ref,scale);
+    auto normed=norm_ref(collapsed_ref,scale,model.norm_reference);
     std::vector<std::int32_t> tokens{3,int(base::noise_token),3,128,129279};std::vector<float> m(t*r);
     for(std::int64_t row=0;row<t;++row)m[row*r+base::MarkovWeight::column(tokens[row],r)]=base::MarkovWeight::coefficient(tokens[row]);
     std::vector<float> joined;for(std::int64_t row=0;row<t;++row) {
@@ -346,10 +349,10 @@ inline Fragment prefill(const Model &model) {
     key=core::reshape(f,rope(f,core::reshape(f,key,{1,count,1,512}),pos),{count,512});
     f.outputs.push_back(f.one(c::Operation(c::Gather{}),{key,indices}));
   }
-  auto target=d5_gguf_test::activation(count*3*h,17);auto main_ref=norm_ref(main.reference(target),scale);
+  auto target=d5_gguf_test::activation(count*3*h,17);auto main_ref=norm_ref(main.reference(target),scale,model.norm_reference);
   std::vector<std::vector<float>> expected;
   for(int stage=0;stage<3;++stage) {
-    auto keys=rope_ref(norm_ref(kv[stage].reference(main_ref),scales[stage]),1,positions);
+    auto keys=rope_ref(norm_ref(kv[stage].reference(main_ref),scales[stage],model.norm_reference),1,positions);
     std::vector<float> cache(window*512);
     for(std::int64_t row=0;row<window;++row)std::copy_n(keys.data()+take[row]*512,512,cache.data()+row*512);
     expected.push_back(std::move(cache));

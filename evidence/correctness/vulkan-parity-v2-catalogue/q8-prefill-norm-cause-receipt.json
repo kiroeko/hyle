@@ -1,0 +1,15 @@
+{
+  "base": "da1d8382",
+  "scope": "same actual norm inputs, original native RMS and independently fixed F32 reference/next Q8 codec; diagnostic only",
+  "returncode": 0,
+  "command": [
+    "C:\\hv\\vp1\\bin\\hyle_compute_route_vulkan_test.exe",
+    "--gtest_filter=VulkanStateCause.Q8SidecarActualNormInputsAndNextCodec"
+  ],
+  "log_sha256": "280b663c112e6aff8e1da5ac253a92f699e57188672b37d197d8a86f95924116",
+  "binary_sha256": "3a2063581877b7e36062ca5104343da8df33a3018429c981d466d577c3a2450d",
+  "source_sha256": {
+    "tests/compute_route_vulkan/current_state_test_support.h": "20738a3f9180a8601e1a6595c20f5f354eb7a83dd66d793a7fd30b8860d73aa2",
+    "tests/compute_route_vulkan/current_state_tests.h": "4ccb83f574c81e839451bc28f60e18169b920aeeb5a1230685b67630b2af57c3"
+  }
+}

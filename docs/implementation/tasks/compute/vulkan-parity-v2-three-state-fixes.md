@@ -31,3 +31,10 @@ S1/S3已批接并编译：RotaryReference显式传过attention/compressor/独立
 旧频率、F32输出与原gate保持；原CPU/CUDA默认分支相同且无跨TU定义差异。
 Flash两个实际制品独立参数行；完整prefill/三stage/全词表步骤未删除。
 下一集中run仅每入口GGUF90/103与Flash Q8/BF16四行，原通过域不重跑。
+
+`da1d8382` 每入口四行3 PASS：GGUF90/103与Flash BF16完整资格，Q8仍FAIL；
+原BF16此前未运行现在独立通过。S2一次实际prefill RMS边界捕获：四层与原
+ggml差0，独立F32参考最大4.77e-7至7.15e-7，已观测下一Q8_1编码两层各
+1 byte变化；源GPU归约顺序与原scalar参考不同。仅Q8 Model增加显式native
+NormReference参数，冷构造原图计算参考，CPU/CUDA默认scalar与数值门不变。
+只剩Q8两入口一次定向完整三stage/词表/feedback验证，原通过域不重测。

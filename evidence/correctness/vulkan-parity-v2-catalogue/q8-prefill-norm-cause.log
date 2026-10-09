@@ -1,0 +1,16 @@
+Running main() from C:\public\tools\hyle-dependencies\v1\sources\googletest-063de7e9578f-162765170ae6\googletest\src\gtest_main.cc
+Note: Google Test filter = VulkanStateCause.Q8SidecarActualNormInputsAndNextCodec
+[==========] Running 1 test from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 1 test from VulkanStateCause
+[ RUN      ] VulkanStateCause.Q8SidecarActualNormInputsAndNextCodec
+STATE_NORM_CAUSE ordinal=0 rows=129 width=4096 native_max=0 nominal_max=4.76837158e-07 changed_f32=120710 changed_q8_bytes=1
+STATE_NORM_CAUSE ordinal=1 rows=129 width=512 native_max=0 nominal_max=4.76837158e-07 changed_f32=21500 changed_q8_bytes=0
+STATE_NORM_CAUSE ordinal=2 rows=129 width=512 native_max=0 nominal_max=4.76837158e-07 changed_f32=18357 changed_q8_bytes=0
+STATE_NORM_CAUSE ordinal=3 rows=129 width=512 native_max=0 nominal_max=7.15255737e-07 changed_f32=23017 changed_q8_bytes=1
+[       OK ] VulkanStateCause.Q8SidecarActualNormInputsAndNextCodec (974 ms)
+[----------] 1 test from VulkanStateCause (974 ms total)
+
+[----------] Global test environment tear-down
+[==========] 1 test from 1 test suite ran. (974 ms total)
+[  PASSED  ] 1 test.

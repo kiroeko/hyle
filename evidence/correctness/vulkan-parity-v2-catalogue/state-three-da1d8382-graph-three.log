@@ -1,0 +1,73 @@
+Running main() from C:\public\tools\hyle-dependencies\v1\sources\googletest-063de7e9578f-162765170ae6\googletest\src\gtest_main.cc
+Note: Google Test filter = C5ExactNewGgufMain/VulkanGraphCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile90:C5ExactNewGgufMain/VulkanGraphCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile103:CurrentSidecars/VulkanGraphCurrentSidecar.*
+[==========] Running 4 tests from 2 test suites.
+[----------] Global test environment set-up.
+[----------] 2 tests from CurrentSidecars/VulkanGraphCurrentSidecar
+[ RUN      ] CurrentSidecars/VulkanGraphCurrentSidecar.MixedMxfp4FullThreeStagesAndVocabulary/Q8
+C:\public\project-hyle\hyle\tests\graph_route_vulkan\../compute_models/d5_gguf_test_support.h(297): error: Expected: (max_error) <= (2.0e-2F + 2.0e-2F * max_reference), actual: 0.0535063744 vs 0.04
+max_reference=1
+Google Test trace:
+C:\public\project-hyle\hyle\tests\graph_route_vulkan\../compute_route_vulkan/catalogue_test_support.h(119): 0
+C:\public\project-hyle\hyle\tests\graph_route_vulkan\../compute_route_vulkan/catalogue_test_support.h(35): region=201589026
+C:\public\project-hyle\hyle\tests\graph_route_vulkan\../compute_route_vulkan/current_state_tests.h(88): sidecar:dspark-DeepSeek-V4-Flash-0731-Q8_0.gguf
+
+C:\public\project-hyle\hyle\tests\graph_route_vulkan\../compute_models/d5_gguf_test_support.h(297): error: Expected: (max_error) <= (2.0e-2F + 2.0e-2F * max_reference), actual: 0.0506724119 vs 0.04
+max_reference=1
+Google Test trace:
+C:\public\project-hyle\hyle\tests\graph_route_vulkan\../compute_route_vulkan/catalogue_test_support.h(119): 4
+C:\public\project-hyle\hyle\tests\graph_route_vulkan\../compute_route_vulkan/catalogue_test_support.h(35): region=201589026
+C:\public\project-hyle\hyle\tests\graph_route_vulkan\../compute_route_vulkan/current_state_tests.h(88): sidecar:dspark-DeepSeek-V4-Flash-0731-Q8_0.gguf
+
+C:\public\project-hyle\hyle\tests\graph_route_vulkan\../compute_models/d5_gguf_test_support.h(297): error: Expected: (max_error) <= (2.0e-2F + 2.0e-2F * max_reference), actual: 0.046635747 vs 0.04
+max_reference=1
+Google Test trace:
+C:\public\project-hyle\hyle\tests\graph_route_vulkan\../compute_route_vulkan/catalogue_test_support.h(119): 5
+C:\public\project-hyle\hyle\tests\graph_route_vulkan\../compute_route_vulkan/catalogue_test_support.h(35): region=201589026
+C:\public\project-hyle\hyle\tests\graph_route_vulkan\../compute_route_vulkan/current_state_tests.h(88): sidecar:dspark-DeepSeek-V4-Flash-0731-Q8_0.gguf
+
+C:\public\project-hyle\hyle\tests\graph_route_vulkan\../compute_models/d5_gguf_test_support.h(297): error: Expected: (max_error) <= (2.0e-2F + 2.0e-2F * max_reference), actual: 0.0589051247 vs 0.04
+max_reference=1
+Google Test trace:
+C:\public\project-hyle\hyle\tests\graph_route_vulkan\../compute_route_vulkan/catalogue_test_support.h(119): 0
+C:\public\project-hyle\hyle\tests\graph_route_vulkan\../compute_route_vulkan/catalogue_test_support.h(35): region=201589026
+C:\public\project-hyle\hyle\tests\graph_route_vulkan\../compute_route_vulkan/current_state_tests.h(88): sidecar:dspark-DeepSeek-V4-Flash-0731-Q8_0.gguf
+
+C:\public\project-hyle\hyle\tests\graph_route_vulkan\../compute_models/d5_gguf_test_support.h(297): error: Expected: (max_error) <= (2.0e-2F + 2.0e-2F * max_reference), actual: 0.0586627722 vs 0.04
+max_reference=1
+Google Test trace:
+C:\public\project-hyle\hyle\tests\graph_route_vulkan\../compute_route_vulkan/catalogue_test_support.h(119): 4
+C:\public\project-hyle\hyle\tests\graph_route_vulkan\../compute_route_vulkan/catalogue_test_support.h(35): region=201589026
+C:\public\project-hyle\hyle\tests\graph_route_vulkan\../compute_route_vulkan/current_state_tests.h(88): sidecar:dspark-DeepSeek-V4-Flash-0731-Q8_0.gguf
+
+C:\public\project-hyle\hyle\tests\graph_route_vulkan\../compute_models/d5_gguf_test_support.h(297): error: Expected: (max_error) <= (2.0e-2F + 2.0e-2F * max_reference), actual: 0.0532363653 vs 0.04
+max_reference=1
+Google Test trace:
+C:\public\project-hyle\hyle\tests\graph_route_vulkan\../compute_route_vulkan/catalogue_test_support.h(119): 5
+C:\public\project-hyle\hyle\tests\graph_route_vulkan\../compute_route_vulkan/catalogue_test_support.h(35): region=201589026
+C:\public\project-hyle\hyle\tests\graph_route_vulkan\../compute_route_vulkan/current_state_tests.h(88): sidecar:dspark-DeepSeek-V4-Flash-0731-Q8_0.gguf
+
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\../compute_models/cpu_c4_flash_sidecars.h(404): error: Value of: ::testing::Test::HasFailure()
+  Actual: true
+Expected: false
+Google Test trace:
+C:\public\project-hyle\hyle\tests\graph_route_vulkan\../compute_route_vulkan/current_state_tests.h(88): sidecar:dspark-DeepSeek-V4-Flash-0731-Q8_0.gguf
+
+[  FAILED  ] CurrentSidecars/VulkanGraphCurrentSidecar.MixedMxfp4FullThreeStagesAndVocabulary/Q8, where GetParam() = 16-byte object <40-31 67-41 F7-7F 00-00 00-00 00-00 00-00 00-00> (13283 ms)
+[ RUN      ] CurrentSidecars/VulkanGraphCurrentSidecar.MixedMxfp4FullThreeStagesAndVocabulary/BFloat16
+[       OK ] CurrentSidecars/VulkanGraphCurrentSidecar.MixedMxfp4FullThreeStagesAndVocabulary/BFloat16 (21809 ms)
+[----------] 2 tests from CurrentSidecars/VulkanGraphCurrentSidecar (35093 ms total)
+
+[----------] 2 tests from C5ExactNewGgufMain/VulkanGraphCatalogueNewDeepSeek
+[ RUN      ] C5ExactNewGgufMain/VulkanGraphCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile90
+[       OK ] C5ExactNewGgufMain/VulkanGraphCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile90 (23317 ms)
+[ RUN      ] C5ExactNewGgufMain/VulkanGraphCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile103
+[       OK ] C5ExactNewGgufMain/VulkanGraphCatalogueNewDeepSeek.ActualMixedMainAttentionMoeAndHyperHeadReplay/Profile103 (13324 ms)
+[----------] 2 tests from C5ExactNewGgufMain/VulkanGraphCatalogueNewDeepSeek (36642 ms total)
+
+[----------] Global test environment tear-down
+[==========] 4 tests from 2 test suites ran. (71735 ms total)
+[  PASSED  ] 3 tests.
+[  FAILED  ] 1 test, listed below:
+[  FAILED  ] CurrentSidecars/VulkanGraphCurrentSidecar.MixedMxfp4FullThreeStagesAndVocabulary/Q8, where GetParam() = 16-byte object <40-31 67-41 F7-7F 00-00 00-00 00-00 00-00 00-00>
+
+ 1 FAILED TEST

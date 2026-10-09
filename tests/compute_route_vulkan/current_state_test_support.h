@@ -53,6 +53,22 @@ inline std::vector<float> grouped(const c::TensorDesc &description,
 } // namespace vulkan_catalogue_gguf
 
 namespace vulkan_current_state_test {
+inline std::vector<float> native_norm(std::span<const float> input,std::span<const float> scale) {
+  using namespace vulkan_catalogue_gguf;
+  if(scale.empty() || input.size()%scale.size()) throw std::runtime_error("native norm shape differs");
+  static Backend backend;auto active=backend.activate();Storage storage;
+  storage.context=ggml_init({ggml_tensor_overhead()*8+ggml_graph_overhead_custom(16,false),nullptr,true});
+  if(!storage.context) throw std::runtime_error("native norm metadata OOM");
+  auto *x=ggml_new_tensor_2d(storage.context,GGML_TYPE_F32,static_cast<std::int64_t>(scale.size()),static_cast<std::int64_t>(input.size()/scale.size()));
+  auto *gamma=ggml_new_tensor_1d(storage.context,GGML_TYPE_F32,static_cast<std::int64_t>(scale.size()));
+  auto *output=ggml_mul(storage.context,ggml_rms_norm(storage.context,x,1e-6f),gamma);
+  auto *graph=ggml_new_graph_custom(storage.context,16,false);ggml_build_forward_expand(graph,output);
+  storage.buffer=ggml_backend_alloc_ctx_tensors(storage.context,backend.get());
+  if(!storage.buffer) throw std::runtime_error("native norm storage OOM");
+  ggml_backend_tensor_set(x,input.data(),0,input.size_bytes());ggml_backend_tensor_set(gamma,scale.data(),0,scale.size_bytes());
+  if(ggml_backend_graph_compute(backend.get(),graph)!=GGML_STATUS_SUCCESS) throw std::runtime_error("native norm terminal failure");
+  std::vector<float> result(input.size());ggml_backend_tensor_get(output,result.data(),0,result.size()*sizeof(float));return result;
+}
 inline std::vector<float> native_rotary(std::span<const float>,std::int64_t,
     std::span<const std::int32_t>,bool,bool,std::int64_t,bool,bool);
 inline std::vector<float> model_sink(std::span<const float>,std::span<const float>,
