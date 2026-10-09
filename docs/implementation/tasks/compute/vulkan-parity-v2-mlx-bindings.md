@@ -102,3 +102,13 @@ GPU提交后才标记已初始化，取消/失败仍按原queue/drain退役。�
 普通Direct的`Argument(Tensor)`和Graph constants都适用。额外一native command只在cold
 首轮，后续无bank copy、不重选Provider。预声明检查constant副本不变、动态输入/IDs变更、
 两slot、取消/关闭/lease，原artifact/FP8资源路径不改变。
+
+## 首次 Windows candidate 与唯一 fixture 纠正
+
+`1ad27d6c8` 产品48步集中build PASS；`1fbd8ac7` GPU owner7/7、Direct8/9、Graph3/4。
+MLX constants/rebinding、empty/OOM/cancel/close/零泄漏、MX8/源scale255分类及必要旧artifact/
+FP8影响子集通过。仅两批量 ID在首个grouped坏索引后要求旧slot重新bind而失败；已跑域
+没有数值或validation layer错误。原`vulkan_run.cc`保留每slot的terminal checked failure；
+`gather_test.cc`既有合同明确旧slot保持OutOfRange、同Program新Invocation恢复。
+唯一M5纠正只按此已有失败合同改fixture，不改变产品错误形状或数值门。
+两失败ID执行一次delta；先前真实PASS域复用，不再跑Provider/旧域/全集或P1。

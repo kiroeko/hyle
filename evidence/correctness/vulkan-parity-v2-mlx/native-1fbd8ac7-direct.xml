@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites tests="9" failures="1" disabled="0" errors="0" time="3.118" timestamp="2026-10-09T11:35:42.442" name="AllTests">
+  <testsuite name="VulkanIree" tests="9" failures="1" disabled="0" skipped="0" errors="0" time="3.118" timestamp="2026-10-09T11:35:42.443">
+    <testcase name="OriginalMlxBatchPreservesGroupsSourceTypesAndCheckedSlots" file="C:\public\project-hyle\hyle\tests\compute_route_vulkan\iree_test.cc" line="23" status="run" result="completed" time="0.714" timestamp="2026-10-09T11:35:42.443" classname="VulkanIree">
+      <failure message="C:\public\project-hyle\hyle\tests\compute_route_vulkan\mlx_test_support.h:195&#x0A;Value of: first-&gt;bind(a.upload(context)).ok()&#x0A;  Actual: false&#x0A;Expected: true&#x0A;Google Test trace:&#x0A;C:\public\project-hyle\hyle\tests\compute_route_vulkan\mlx_test_support.h(166): 0/1/6/32&#x0A;" type=""><![CDATA[C:\public\project-hyle\hyle\tests\compute_route_vulkan\mlx_test_support.h:195
+Value of: first->bind(a.upload(context)).ok()
+  Actual: false
+Expected: true
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\mlx_test_support.h(166): 0/1/6/32
+]]></failure>
+    </testcase>
+    <testcase name="OriginalMlxConstantsKeepBanksAcrossRebindingAndSlots" file="C:\public\project-hyle\hyle\tests\compute_route_vulkan\iree_test.cc" line="27" status="run" result="completed" time="0.164" timestamp="2026-10-09T11:35:43.157" classname="VulkanIree" />
+    <testcase name="OriginalMlxEmptyEmbeddingDomainOomCancelAndClose" file="C:\public\project-hyle\hyle\tests\compute_route_vulkan\iree_test.cc" line="38" status="run" result="completed" time="0.151" timestamp="2026-10-09T11:35:43.321" classname="VulkanIree" />
+    <testcase name="OriginalMlxMx8SignsZerosAndSourceScaleClassification" file="C:\public\project-hyle\hyle\tests\compute_route_vulkan\iree_test.cc" line="71" status="run" result="completed" time="0.144" timestamp="2026-10-09T11:35:43.472" classname="VulkanIree" />
+    <testcase name="OriginalArtifactBatchPreservesSourceRoundingAndSixPorts" file="C:\public\project-hyle\hyle\tests\compute_route_vulkan\iree_test.cc" line="86" status="run" result="completed" time="1.01" timestamp="2026-10-09T11:35:43.617" classname="VulkanIree" />
+    <testcase name="OriginalArtifactColdResultBindsMatureConstantProjection" file="C:\public\project-hyle\hyle\tests\compute_route_vulkan\iree_test.cc" line="90" status="run" result="completed" time="0.38" timestamp="2026-10-09T11:35:44.628" classname="VulkanIree" />
+    <testcase name="OriginalArtifactChecksFeaturesDomainFailureAndCancellation" file="C:\public\project-hyle\hyle\tests\compute_route_vulkan\iree_test.cc" line="98" status="run" result="completed" time="0.142" timestamp="2026-10-09T11:35:45.009" classname="VulkanIree" />
+    <testcase name="OriginalArtifactBoundedCauseCapture" file="C:\public\project-hyle\hyle\tests\compute_route_vulkan\iree_test.cc" line="147" status="run" result="completed" time="0.159" timestamp="2026-10-09T11:35:45.151" classname="VulkanIree" />
+    <testcase name="OriginalFloat8DirectComposesBFloat16WithoutExpandingInputs" file="C:\public\project-hyle\hyle\tests\compute_route_vulkan\iree_test.cc" line="239" status="run" result="completed" time="0.249" timestamp="2026-10-09T11:35:45.311" classname="VulkanIree" />
+  </testsuite>
+</testsuites>

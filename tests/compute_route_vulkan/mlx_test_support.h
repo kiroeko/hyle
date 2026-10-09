@@ -192,8 +192,10 @@ void batch(Prepare prepare) {
               ASSERT_TRUE(first->bind(inputs).ok());
               { auto done = first->submit().value();auto failure = done.wait();ASSERT_FALSE(failure);
                 EXPECT_TRUE(failure.error().IsOutOfRange()); }
-              ASSERT_TRUE(first->bind(a.upload(context)).ok());
-              { auto done = first->submit().value();auto result = done.wait();ASSERT_TRUE(result) << result.error().message();
+              EXPECT_TRUE(first->bind(a.upload(context)).IsOutOfRange());
+              auto recovered = program->create_invocation().value();
+              ASSERT_TRUE(recovered.bind(a.upload(context)).ok());
+              { auto done = recovered.submit().value();auto result = done.wait();ASSERT_TRUE(result) << result.error().message();
                 a.check(context, result->get()->tensors()[0]); }
             }
           }

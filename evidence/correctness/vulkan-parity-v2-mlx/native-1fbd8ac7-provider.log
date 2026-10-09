@@ -1,0 +1,23 @@
+Running main() from C:\public\tools\hyle-dependencies\v1\sources\googletest-063de7e9578f-162765170ae6\googletest\src\gtest_main.cc
+[==========] Running 7 tests from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 7 tests from IreeNative
+[ RUN      ] IreeNative.QuotaFailureRollsBackAndReleasesBorrowedOwner
+[       OK ] IreeNative.QuotaFailureRollsBackAndReleasesBorrowedOwner (155 ms)
+[ RUN      ] IreeNative.OriginalCheckedScansUseSharedDeviceAndRepeat
+[       OK ] IreeNative.OriginalCheckedScansUseSharedDeviceAndRepeat (110 ms)
+[ RUN      ] IreeNative.OriginalFp8ProgramsUseCompressedInputAndIndependentSlots
+[       OK ] IreeNative.OriginalFp8ProgramsUseCompressedInputAndIndependentSlots (108 ms)
+[ RUN      ] IreeNative.OriginalProactorAdvancesIndependentProgramsWithoutHostPolling
+[       OK ] IreeNative.OriginalProactorAdvancesIndependentProgramsWithoutHostPolling (102 ms)
+[ RUN      ] IreeNative.CheckedScanReportsIntermediateAndExclusiveFinalOverflow
+[       OK ] IreeNative.CheckedScanReportsIntermediateAndExclusiveFinalOverflow (103 ms)
+[ RUN      ] IreeNative.RuntimeQuotaFailureKeepsOutputsPrivateAndReleasesResources
+[       OK ] IreeNative.RuntimeQuotaFailureKeepsOutputsPrivateAndReleasesResources (113 ms)
+[ RUN      ] IreeNative.RetirementIncludesTheNotificationReturning
+[       OK ] IreeNative.RetirementIncludesTheNotificationReturning (103 ms)
+[----------] 7 tests from IreeNative (797 ms total)
+
+[----------] Global test environment tear-down
+[==========] 7 tests from 1 test suite ran. (797 ms total)
+[  PASSED  ] 7 tests.

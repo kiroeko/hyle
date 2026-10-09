@@ -1,0 +1,74 @@
+Running main() from C:\public\tools\hyle-dependencies\v1\sources\googletest-063de7e9578f-162765170ae6\googletest\src\gtest_main.cc
+Note: Google Test filter = VulkanIree.OriginalMlx*:VulkanIree.OriginalArtifact*:VulkanIree.OriginalFloat8DirectComposesBFloat16WithoutExpandingInputs
+[==========] Running 9 tests from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 9 tests from VulkanIree
+[ RUN      ] VulkanIree.OriginalMlxBatchPreservesGroupsSourceTypesAndCheckedSlots
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\mlx_test_support.h(195): error: Value of: first->bind(a.upload(context)).ok()
+  Actual: false
+Expected: true
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\mlx_test_support.h(166): 0/1/6/32
+
+[  FAILED  ] VulkanIree.OriginalMlxBatchPreservesGroupsSourceTypesAndCheckedSlots (714 ms)
+[ RUN      ] VulkanIree.OriginalMlxConstantsKeepBanksAcrossRebindingAndSlots
+[       OK ] VulkanIree.OriginalMlxConstantsKeepBanksAcrossRebindingAndSlots (164 ms)
+[ RUN      ] VulkanIree.OriginalMlxEmptyEmbeddingDomainOomCancelAndClose
+[       OK ] VulkanIree.OriginalMlxEmptyEmbeddingDomainOomCancelAndClose (151 ms)
+[ RUN      ] VulkanIree.OriginalMlxMx8SignsZerosAndSourceScaleClassification
+[       OK ] VulkanIree.OriginalMlxMx8SignsZerosAndSourceScaleClassification (144 ms)
+[ RUN      ] VulkanIree.OriginalArtifactBatchPreservesSourceRoundingAndSixPorts
+[       OK ] VulkanIree.OriginalArtifactBatchPreservesSourceRoundingAndSixPorts (1010 ms)
+[ RUN      ] VulkanIree.OriginalArtifactColdResultBindsMatureConstantProjection
+[       OK ] VulkanIree.OriginalArtifactColdResultBindsMatureConstantProjection (380 ms)
+[ RUN      ] VulkanIree.OriginalArtifactChecksFeaturesDomainFailureAndCancellation
+[       OK ] VulkanIree.OriginalArtifactChecksFeaturesDomainFailureAndCancellation (142 ms)
+[ RUN      ] VulkanIree.OriginalArtifactBoundedCauseCapture
+ARTIFACT_CAUSE format=0 kind=6 n=3 k=128 group=64 ports=3
+ARTIFACT_VALUE index=0 actual=-0.0713 expected=-0.0713
+ARTIFACT_VALUE index=1 actual=-0.0131743457 expected=-0.0131743457
+ARTIFACT_VALUE index=63 actual=0.0175478067 expected=0.0175478067
+ARTIFACT_VALUE index=64 actual=-0.1426 expected=-0.1426
+ARTIFACT_VALUE index=127 actual=0.0350956134 expected=0.0350956134
+ARTIFACT_VALUE index=128 actual=-0.2139 expected=-0.2139
+ARTIFACT_VALUE index=255 actual=0.0701912269 expected=0.0701912269
+ARTIFACT_VALUE index=383 actual=0.105286844 expected=0.105286844
+ARTIFACT_CAUSE format=1 kind=7 n=3 k=128 group=64 ports=6
+ARTIFACT_VALUE index=0 actual=-0.193503946 expected=-0.193503946
+ARTIFACT_VALUE index=1 actual=-0.0357543863 expected=-0.0357543863
+ARTIFACT_VALUE index=63 actual=0.0476237014 expected=0.0476237014
+ARTIFACT_VALUE index=64 actual=-0.285858274 expected=-0.285858274
+ARTIFACT_VALUE index=127 actual=0.0703532398 expected=0.0703532398
+ARTIFACT_VALUE index=128 actual=-0.378212601 expected=-0.378212601
+ARTIFACT_VALUE index=255 actual=0.115812309 expected=0.115812309
+ARTIFACT_VALUE index=383 actual=0.161271378 expected=0.161271378
+ARTIFACT_CAUSE format=2 kind=8 n=16 k=128 group=64 ports=3
+ARTIFACT_VALUE index=0 actual=0 expected=0
+ARTIFACT_VALUE index=1 actual=0.0821999982 expected=0.0821999982
+ARTIFACT_VALUE index=63 actual=0.136999995 expected=0.136999995
+ARTIFACT_VALUE index=64 actual=-2.329 expected=-2.329
+ARTIFACT_VALUE index=127 actual=0 expected=0
+ARTIFACT_VALUE index=128 actual=0 expected=0
+ARTIFACT_VALUE index=255 actual=0 expected=0
+ARTIFACT_VALUE index=383 actual=-0.328799993 expected=-0.328799993
+ARTIFACT_CAUSE format=3 kind=9 n=3 k=128 group=64 ports=2
+ARTIFACT_VALUE index=0 actual=-0.1096 expected=-0.1096
+ARTIFACT_VALUE index=1 actual=-0.0137 expected=-0.0137
+ARTIFACT_VALUE index=63 actual=-0.0274 expected=-0.0274
+ARTIFACT_VALUE index=64 actual=0 expected=0
+ARTIFACT_VALUE index=127 actual=0.164399996 expected=0.164399996
+ARTIFACT_VALUE index=128 actual=-0.328799993 expected=-0.328799993
+ARTIFACT_VALUE index=255 actual=0.328799993 expected=0.328799993
+ARTIFACT_VALUE index=383 actual=0.493200004 expected=0.493200004
+[       OK ] VulkanIree.OriginalArtifactBoundedCauseCapture (159 ms)
+[ RUN      ] VulkanIree.OriginalFloat8DirectComposesBFloat16WithoutExpandingInputs
+[       OK ] VulkanIree.OriginalFloat8DirectComposesBFloat16WithoutExpandingInputs (249 ms)
+[----------] 9 tests from VulkanIree (3118 ms total)
+
+[----------] Global test environment tear-down
+[==========] 9 tests from 1 test suite ran. (3118 ms total)
+[  PASSED  ] 8 tests.
+[  FAILED  ] 1 test, listed below:
+[  FAILED  ] VulkanIree.OriginalMlxBatchPreservesGroupsSourceTypesAndCheckedSlots
+
+ 1 FAILED TEST

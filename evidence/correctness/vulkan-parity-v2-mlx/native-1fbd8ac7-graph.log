@@ -1,0 +1,28 @@
+Running main() from C:\public\tools\hyle-dependencies\v1\sources\googletest-063de7e9578f-162765170ae6\googletest\src\gtest_main.cc
+Note: Google Test filter = VulkanGraph.OriginalMlx*:VulkanGraph.OriginalArtifact*
+[==========] Running 4 tests from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 4 tests from VulkanGraph
+[ RUN      ] VulkanGraph.OriginalMlxBatchUsesOrdinaryTypedNodesAndCheckedSlots
+C:\public\project-hyle\hyle\tests\graph_route_vulkan\../compute_route_vulkan/mlx_test_support.h(195): error: Value of: first->bind(a.upload(context)).ok()
+  Actual: false
+Expected: true
+Google Test trace:
+C:\public\project-hyle\hyle\tests\graph_route_vulkan\../compute_route_vulkan/mlx_test_support.h(166): 0/1/6/32
+
+[  FAILED  ] VulkanGraph.OriginalMlxBatchUsesOrdinaryTypedNodesAndCheckedSlots (763 ms)
+[ RUN      ] VulkanGraph.OriginalMlxConstantsKeepBanksAcrossRebindingAndSlots
+[       OK ] VulkanGraph.OriginalMlxConstantsKeepBanksAcrossRebindingAndSlots (172 ms)
+[ RUN      ] VulkanGraph.OriginalArtifactBatchUsesOrdinaryTypedEntry
+[       OK ] VulkanGraph.OriginalArtifactBatchUsesOrdinaryTypedEntry (1107 ms)
+[ RUN      ] VulkanGraph.OriginalArtifactColdResultBindsMatureConstantProjection
+[       OK ] VulkanGraph.OriginalArtifactColdResultBindsMatureConstantProjection (398 ms)
+[----------] 4 tests from VulkanGraph (2441 ms total)
+
+[----------] Global test environment tear-down
+[==========] 4 tests from 1 test suite ran. (2441 ms total)
+[  PASSED  ] 3 tests.
+[  FAILED  ] 1 test, listed below:
+[  FAILED  ] VulkanGraph.OriginalMlxBatchUsesOrdinaryTypedNodesAndCheckedSlots
+
+ 1 FAILED TEST
