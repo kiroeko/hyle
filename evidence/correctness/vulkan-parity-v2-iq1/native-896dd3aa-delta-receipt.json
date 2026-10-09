@@ -1,0 +1,44 @@
+{
+  "candidate": "896dd3aa4006828fbeded0ca2c6490a6171e1e0d",
+  "scope": "only previously failed IQ1 runtime IDs, unchanged product 6920e7a35",
+  "steps": [
+    {
+      "name": "direct",
+      "filter": "VulkanIree.OriginalIq1ExpertProgramsAndChangedInputs:VulkanIree.OriginalIq1IndependentLeaseCancelCloseAndOom",
+      "returncode": 1,
+      "tests": {
+        "tests": "2",
+        "failures": "2",
+        "disabled": "0",
+        "errors": "0",
+        "time": "0.364",
+        "timestamp": "2026-10-09T13:07:46.680",
+        "name": "AllTests"
+      },
+      "validation_error": false,
+      "log": "native-896dd3aa-direct-delta.log",
+      "log_sha256": "97ae3f1fdc3a1b86f664d9cfd9d76a858f4118de14e03bdda716f4f879750a8e",
+      "xml": "native-896dd3aa-direct-delta.xml",
+      "binary_sha256": "7d8877d3cee3e7837dfd6442f4971d88f01a0a01596bb749eb48770b18fd078d"
+    },
+    {
+      "name": "graph",
+      "filter": "VulkanGraph.OriginalIq1ExpertProgramsAndChangedInputs:VulkanGraph.OriginalIq1IndependentLeaseCancelCloseAndOom",
+      "returncode": 1,
+      "tests": {
+        "tests": "2",
+        "failures": "1",
+        "disabled": "0",
+        "errors": "0",
+        "time": "0.437",
+        "timestamp": "2026-10-09T13:07:47.198",
+        "name": "AllTests"
+      },
+      "validation_error": false,
+      "log": "native-896dd3aa-graph-delta.log",
+      "log_sha256": "869c7533891e0dbcfcc3dc48422fcf7ed1ab0a5142dd6e9b55ac026b2f3f6b62",
+      "xml": "native-896dd3aa-graph-delta.xml",
+      "binary_sha256": "c111118fea6986ea2502cc8ceb5b2037df7411db5b36344b79d8a0dcf1d8a054"
+    }
+  ]
+}

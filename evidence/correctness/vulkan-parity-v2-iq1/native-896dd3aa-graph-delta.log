@@ -1,0 +1,43 @@
+Running main() from C:\public\tools\hyle-dependencies\v1\sources\googletest-063de7e9578f-162765170ae6\googletest\src\gtest_main.cc
+Note: Google Test filter = VulkanGraph.OriginalIq1ExpertProgramsAndChangedInputs:VulkanGraph.OriginalIq1IndependentLeaseCancelCloseAndOom
+[==========] Running 2 tests from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 2 tests from VulkanGraph
+[ RUN      ] VulkanGraph.OriginalIq1ExpertProgramsAndChangedInputs
+C:\public\project-hyle\hyle\tests\graph_route_vulkan\../compute_route_vulkan/iq1_test_support.h(112): error: Value of: result.error().IsInvalidArgument()
+  Actual: false
+Expected: true
+Google Test trace:
+C:\public\project-hyle\hyle\tests\graph_route_vulkan\../compute_route_vulkan/iq1_test_support.h(99): IQ1 format=20 k=256 slots=1
+
+C:\public\project-hyle\hyle\tests\graph_route_vulkan\../compute_route_vulkan/iq1_test_support.h(112): error: Value of: result.error().IsInvalidArgument()
+  Actual: false
+Expected: true
+Google Test trace:
+C:\public\project-hyle\hyle\tests\graph_route_vulkan\../compute_route_vulkan/iq1_test_support.h(99): IQ1 format=20 k=256 slots=1
+
+C:\public\project-hyle\hyle\tests\graph_route_vulkan\../compute_route_vulkan/iq1_test_support.h(112): error: Value of: result.error().IsInvalidArgument()
+  Actual: false
+Expected: true
+Google Test trace:
+C:\public\project-hyle\hyle\tests\graph_route_vulkan\../compute_route_vulkan/iq1_test_support.h(99): IQ1 format=20 k=256 slots=1
+
+C:\public\project-hyle\hyle\tests\graph_route_vulkan\../compute_route_vulkan/iq1_test_support.h(103): error: Value of: invocation
+  Actual: false
+Expected: true
+Vulkan buffer size exceeds domain
+Google Test trace:
+C:\public\project-hyle\hyle\tests\graph_route_vulkan\../compute_route_vulkan/iq1_test_support.h(99): IQ1 format=20 k=256 slots=2
+
+[  FAILED  ] VulkanGraph.OriginalIq1ExpertProgramsAndChangedInputs (290 ms)
+[ RUN      ] VulkanGraph.OriginalIq1IndependentLeaseCancelCloseAndOom
+[       OK ] VulkanGraph.OriginalIq1IndependentLeaseCancelCloseAndOom (147 ms)
+[----------] 2 tests from VulkanGraph (437 ms total)
+
+[----------] Global test environment tear-down
+[==========] 2 tests from 1 test suite ran. (437 ms total)
+[  PASSED  ] 1 test.
+[  FAILED  ] 1 test, listed below:
+[  FAILED  ] VulkanGraph.OriginalIq1ExpertProgramsAndChangedInputs
+
+ 1 FAILED TEST

@@ -46,7 +46,9 @@ Status lower_iq1(ProgramState &program, const PlanStep &step) noexcept {
   try {
     const auto &weight = program.values[step.inputs[0]].description;
     const auto &activation = program.values[step.inputs[1]].description;
-    const auto &output = program.values[step.outputs[0]].description;
+    // Appending checked status/safe IDs may grow values. Keep the descriptor
+    // itself, as the existing MLX lowering does, rather than a vector borrow.
+    const auto output = program.values[step.outputs[0]].description;
     if (!iq1_storage_description(weight) ||
         activation.data_type() != DataType::kFloat32 || !activation.is_plain() ||
         output.data_type() != DataType::kFloat32)

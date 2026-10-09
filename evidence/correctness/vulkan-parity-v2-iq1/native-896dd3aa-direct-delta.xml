@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites tests="2" failures="2" disabled="0" errors="0" time="0.364" timestamp="2026-10-09T13:07:46.680" name="AllTests">
+  <testsuite name="VulkanIree" tests="2" failures="2" disabled="0" skipped="0" errors="0" time="0.364" timestamp="2026-10-09T13:07:46.680">
+    <testcase name="OriginalIq1ExpertProgramsAndChangedInputs" file="C:\public\project-hyle\hyle\tests\compute_route_vulkan\iree_test.cc" line="28" status="run" result="completed" time="0.222" timestamp="2026-10-09T13:07:46.680" classname="VulkanIree">
+      <failure message="C:\public\project-hyle\hyle\tests\compute_route_vulkan\iq1_test_support.h:102&#x0A;Value of: prepared&#x0A;  Actual: false&#x0A;Expected: true&#x0A;Vulkan tensor byte stride exceeds U32&#x0A;Google Test trace:&#x0A;C:\public\project-hyle\hyle\tests\compute_route_vulkan\iq1_test_support.h(99): IQ1 format=20 k=256 slots=1&#x0A;" type=""><![CDATA[C:\public\project-hyle\hyle\tests\compute_route_vulkan\iq1_test_support.h:102
+Value of: prepared
+  Actual: false
+Expected: true
+Vulkan tensor byte stride exceeds U32
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\iq1_test_support.h(99): IQ1 format=20 k=256 slots=1
+]]></failure>
+    </testcase>
+    <testcase name="OriginalIq1IndependentLeaseCancelCloseAndOom" file="C:\public\project-hyle\hyle\tests\compute_route_vulkan\iree_test.cc" line="34" status="run" result="completed" time="0.142" timestamp="2026-10-09T13:07:46.902" classname="VulkanIree">
+      <failure message="unknown file&#x0A;C++ exception with description &quot;Bad expected access&quot; thrown in the test body.&#x0A;" type=""><![CDATA[unknown file
+C++ exception with description "Bad expected access" thrown in the test body.
+]]></failure>
+    </testcase>
+  </testsuite>
+</testsuites>

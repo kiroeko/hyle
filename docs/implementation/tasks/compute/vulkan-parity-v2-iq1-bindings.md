@@ -72,3 +72,9 @@ Windows 首候选 `6920e7a35` native owner7/7及两入口8 actual冷shape准备�
 两个运行ID失败的一次具名 status 捕获定位为 fixture 误用 floating-only helper
 上传 I32 IDs，实际 1/2 被编码为浮点位型而正确拒绝。只修本包 I32 payload，
 产品/原数学/误差门保持；定向复验两个未过ID，已过owner/冷域不重跑。
+
+I2 唯一产品纠正：I32 fixture修正后的 `896dd3aa` 暴露新 lower_iq1 借用了
+program.values 内的 output descriptor；追加 status/safe IDs 使 vector 扩容，借用
+失效，造成随机 stride/bytes 错误。沿既有 lower_mlx 保存 descriptor 值，之后只
+使用稳定副本。原数学/端口/native 程序不变，两入口数值与生命周期各一次定向验；
+已过 native owner 与实际冷几何不反复运行。不额外导出或增加常态对象 metadata。

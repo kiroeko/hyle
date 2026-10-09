@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites tests="2" failures="1" disabled="0" errors="0" time="0.437" timestamp="2026-10-09T13:07:47.198" name="AllTests">
+  <testsuite name="VulkanGraph" tests="2" failures="1" disabled="0" skipped="0" errors="0" time="0.437" timestamp="2026-10-09T13:07:47.198">
+    <testcase name="OriginalIq1ExpertProgramsAndChangedInputs" file="C:\public\project-hyle\hyle\tests\graph_route_vulkan\iree_test.cc" line="32" status="run" result="completed" time="0.29" timestamp="2026-10-09T13:07:47.198" classname="VulkanGraph">
+      <failure message="C:\public\project-hyle\hyle\tests\graph_route_vulkan\../compute_route_vulkan/iq1_test_support.h:112&#x0A;Value of: result.error().IsInvalidArgument()&#x0A;  Actual: false&#x0A;Expected: true&#x0A;Google Test trace:&#x0A;C:\public\project-hyle\hyle\tests\graph_route_vulkan\../compute_route_vulkan/iq1_test_support.h(99): IQ1 format=20 k=256 slots=1&#x0A;" type=""><![CDATA[C:\public\project-hyle\hyle\tests\graph_route_vulkan\../compute_route_vulkan/iq1_test_support.h:112
+Value of: result.error().IsInvalidArgument()
+  Actual: false
+Expected: true
+Google Test trace:
+C:\public\project-hyle\hyle\tests\graph_route_vulkan\../compute_route_vulkan/iq1_test_support.h(99): IQ1 format=20 k=256 slots=1
+]]></failure>
+      <failure message="C:\public\project-hyle\hyle\tests\graph_route_vulkan\../compute_route_vulkan/iq1_test_support.h:112&#x0A;Value of: result.error().IsInvalidArgument()&#x0A;  Actual: false&#x0A;Expected: true&#x0A;Google Test trace:&#x0A;C:\public\project-hyle\hyle\tests\graph_route_vulkan\../compute_route_vulkan/iq1_test_support.h(99): IQ1 format=20 k=256 slots=1&#x0A;" type=""><![CDATA[C:\public\project-hyle\hyle\tests\graph_route_vulkan\../compute_route_vulkan/iq1_test_support.h:112
+Value of: result.error().IsInvalidArgument()
+  Actual: false
+Expected: true
+Google Test trace:
+C:\public\project-hyle\hyle\tests\graph_route_vulkan\../compute_route_vulkan/iq1_test_support.h(99): IQ1 format=20 k=256 slots=1
+]]></failure>
+      <failure message="C:\public\project-hyle\hyle\tests\graph_route_vulkan\../compute_route_vulkan/iq1_test_support.h:112&#x0A;Value of: result.error().IsInvalidArgument()&#x0A;  Actual: false&#x0A;Expected: true&#x0A;Google Test trace:&#x0A;C:\public\project-hyle\hyle\tests\graph_route_vulkan\../compute_route_vulkan/iq1_test_support.h(99): IQ1 format=20 k=256 slots=1&#x0A;" type=""><![CDATA[C:\public\project-hyle\hyle\tests\graph_route_vulkan\../compute_route_vulkan/iq1_test_support.h:112
+Value of: result.error().IsInvalidArgument()
+  Actual: false
+Expected: true
+Google Test trace:
+C:\public\project-hyle\hyle\tests\graph_route_vulkan\../compute_route_vulkan/iq1_test_support.h(99): IQ1 format=20 k=256 slots=1
+]]></failure>
+      <failure message="C:\public\project-hyle\hyle\tests\graph_route_vulkan\../compute_route_vulkan/iq1_test_support.h:103&#x0A;Value of: invocation&#x0A;  Actual: false&#x0A;Expected: true&#x0A;Vulkan buffer size exceeds domain&#x0A;Google Test trace:&#x0A;C:\public\project-hyle\hyle\tests\graph_route_vulkan\../compute_route_vulkan/iq1_test_support.h(99): IQ1 format=20 k=256 slots=2&#x0A;" type=""><![CDATA[C:\public\project-hyle\hyle\tests\graph_route_vulkan\../compute_route_vulkan/iq1_test_support.h:103
+Value of: invocation
+  Actual: false
+Expected: true
+Vulkan buffer size exceeds domain
+Google Test trace:
+C:\public\project-hyle\hyle\tests\graph_route_vulkan\../compute_route_vulkan/iq1_test_support.h(99): IQ1 format=20 k=256 slots=2
+]]></failure>
+    </testcase>
+    <testcase name="OriginalIq1IndependentLeaseCancelCloseAndOom" file="C:\public\project-hyle\hyle\tests\graph_route_vulkan\iree_test.cc" line="38" status="run" result="completed" time="0.147" timestamp="2026-10-09T13:07:47.488" classname="VulkanGraph" />
+  </testsuite>
+</testsuites>
