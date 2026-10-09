@@ -108,8 +108,10 @@ Provider 需要时发现并检查版本/targets，不代管安装器。backend �
 新增 option 前必须证明它不是从平台、编译器、组件选择或 feature presence 可导出的重复状态。正式 CI/
 交付要显式固定重要 feature 集，不能依赖宿主偶然探测结果。
 
-Compute 的 CPU/CUDA/Apple/Vulkan 构建配置只组合真实 backend/provider feature，不另增一套重复的
-单选路线枚举或 CPU+GPU 联合推理开关。未选路线不探测 SDK、不编译原生实现；已选路线也不等于全部
+Compute 的 CPU/CUDA/Apple/Vulkan 构建配置只组合真实 backend/provider feature。
+[统一配置设计](compute-next-stage.md#2-唯一普通构建入口)拟用一个路线集合替换当前分散的开关，
+内部 feature 从唯一集合和中央图派生，不保留双轨选择，也不增加 CPU+GPU 联合推理布尔开关。
+设计尚未实施；当前命令仍见 user 文档。未选路线不探测 SDK、不编译原生实现；已选路线也不等于全部
 算子可用。四条路线可独立编译并采用不同执行器；宏/flags 归 owning target，只有公开头确实需要的
 usage requirement 才传播，不能用消费者宏改变同一公开对象布局。SDK 版本/feature 集在 configure 中
 选定并记录，交付说明保留对应要求；实际模型/device/shape 路线在准备阶段绑定，不是每次执行的 CMake/宏选择。
@@ -117,7 +119,8 @@ usage requirement 才传播，不能用消费者宏改变同一公开对象布�
 [Compute 四路线设计](compute-routes.md#1-隔离边界)。
 
 选路线不等于让用户挑算子库。标准发行配置应包含该路线默认优选规则所需且已验收的实现，并在正常
-C++ 入口自动组装；裁剪/禁用某 Provider 是高级交付控制，不是逐 op 性能选择。规则与可用实现必须
+C++ 入口自动组装。统一配置实施后，普通产品不再提供必要 Provider 的裁剪/禁用；
+维护隔离只在内部 fixture，真实 expert kernel/Provider 扩展仍有其能力约束，不是逐 op 性能选择。规则与可用实现必须
 由同一构建闭包投影，source/static/shared 不出现“规则指向未交付实现”。裁剪后的合法基线或明确
 能力缺失须可解释；当前某 Provider 默认 OFF 是现状，不是要求重构后永远由用户手动开启的原则。
 不自动启用尚未验收的实现，也不在 configure 时跑性能比赛。best-of 的责任见

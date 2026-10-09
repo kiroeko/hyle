@@ -12,7 +12,8 @@ Graph 把模型无关的逻辑 DAG 编译成可重复执行的程序：验证语
 边界资源/转换/依赖、规划自己拥有的 workspace，并导出执行和诊断事实。它不是模型 runtime 或通用任务池。
 
 用户先选择CPU、CUDA、Apple MLX/Metal或Vulkan路线。当前单路线验收未包含CPU+GPU分担模型计算，
-用户新增的组合与通用增量求值需求进入[下一阶段设计](compute-next-stage.md)，不由旧实现直接签支持；
+用户新增的组合需求进入[下一阶段设计](compute-next-stage.md)，通用增量求值仅登记为待办，
+本轮不实施；新需求不由旧实现直接签支持。
 host 控制/上传下载和同 GPU 多 Provider 组合仍在范围内，见
 [Compute 边界](compute-design.md#13-四条独立路线与明确非目标)。
 

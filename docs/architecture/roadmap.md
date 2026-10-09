@@ -71,8 +71,9 @@ Graph 拥有逻辑图、region 边界、copy/sync、liveness 与 alias；每条�
 对象布局或通用 segment loop 当重构前提。详细合同见 [Compute](compute-design.md) 与 [Graph](graph-design.md)。
 
 当前推理基础采用CPU、CUDA、MLX/Metal、Vulkan四条独立计算路线；旧收口未纳入模型级CPU+GPU联合。
-用户新增的统一配置、通用增量依赖图与CPU/GPU组合进入[下一阶段设计](compute-next-stage.md)，
-尚未实现或资格化。host提交/传输/同步及同GPU多Provider组合仍保留。共同的是图语义、
+用户新增的统一配置与CPU/GPU组合进入[下一阶段设计](compute-next-stage.md)，
+尚未实现或资格化；通用增量依赖图只登记待办，本轮不实施。
+host提交/传输/同步及同GPU多Provider组合仍保留。共同的是图语义、
 资源/完成责任与已验证的优选规则，不强制四套原生实现复用同一执行器；研发时验证 best-of、构建期
 交付规则和实现、准备期匹配绑定、执行期固定。普通用户不排序 Provider 或提供 timing profile；
 Graph 仍按实际图规划资源/依赖，不现场比较 Provider 性能。规则见

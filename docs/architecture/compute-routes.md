@@ -30,8 +30,10 @@ handle 或逐 kernel 虚调用。独立实现不是把 Error、Mem 等同义基�
   多路线，但每个 native runtime 分别适配、资格化；source/static/shared 的能力边界一致。
 - 裁剪必须传入 vendor 的 CMake，不能只关掉 HYLE 外层入口。vendor 必需的 host/CPU 基础代码不等于
   允许 CPU 模型计算；如果 vendor 无法关闭所需的隐式模型 fallback，该路径不能冒充纯 GPU。
-- 多路线同 SDK 可选并存，不代表一个模型可跨 CPU/GPU联合执行。不增一套与 backend feature 重复的
-  全局“路线 enum”开关；实际程序在冷准备期绑定，不每次运行检查构建配置。
+- 多路线同 SDK 可选并存，不代表一个模型可跨 CPU/GPU联合执行。
+  [统一配置设计](compute-next-stage.md#2-唯一普通构建入口)将用一个路线集合替换分散选择，
+  native feature 由它派生，不保留第二套全局路线开关；当前配置尚未迁移。
+  实际程序在冷准备期绑定，不每次运行检查构建配置。
 
 MLX 有独立的 CPU/Metal/CUDA 开关，默认 tests/examples、文件格式功能和 nested Metal-C++ 下载也须
 由适配构建明确处理。选择 Apple adapter 不能默认取得 MLX-CUDA；共享资源缓存应接管其所需源码，

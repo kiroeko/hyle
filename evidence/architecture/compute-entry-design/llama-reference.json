@@ -1,0 +1,191 @@
+{
+  "repository": "ggml-org/llama.cpp",
+  "commit": "e60eff95fda7b6e46bf402a8e9f1e86d88ab29c8",
+  "purpose": "Design only; no build, performance or HYLE runtime qualification",
+  "sources": [
+    {
+      "path": "common/arg.cpp",
+      "url": "https://github.com/ggml-org/llama.cpp/blob/e60eff95fda7b6e46bf402a8e9f1e86d88ab29c8/common/arg.cpp",
+      "sha256": "d3f3895a7a8b313863f08b0f7a4d4754ac46c4f85580caf2a1c6798c8af405c1",
+      "excerpts": [
+        {
+          "needle": "--cpu-moe",
+          "line": 2763,
+          "first_line": 2760,
+          "text": "        }\n    ).set_env(\"LLAMA_ARG_OVERRIDE_TENSOR\"));\n    add_opt(common_arg(\n        {\"-cmoe\", \"--cpu-moe\"},\n        \"keep all Mixture of Experts (MoE) weights in the CPU\",\n        [](common_params & params) {\n            params.tensor_buft_overrides.push_back(llm_ffn_exps_cpu_override());\n        }\n    ).set_env(\"LLAMA_ARG_CPU_MOE\"));\n    add_opt(common_arg(\n        {\"-ncmoe\", \"--n-cpu-moe\"}, \"N\",\n        \"keep the Mixture of Experts (MoE) weights of the first N layers in the CPU\",\n        [](common_params & params, int value) {"
+        },
+        {
+          "needle": "--cpu-moe",
+          "line": 4142,
+          "first_line": 4139,
+          "text": "        }\n    ).set_spec().set_examples({LLAMA_EXAMPLE_SPECULATIVE, LLAMA_EXAMPLE_SERVER, LLAMA_EXAMPLE_CLI}));\n    add_opt(common_arg(\n        {\"--spec-draft-cpu-moe\", \"-cmoed\", \"--cpu-moe-draft\"},\n        \"keep all Mixture of Experts (MoE) weights in the CPU for the draft model\",\n        [](common_params & params) {\n            params.speculative.draft.tensor_buft_overrides.push_back(llm_ffn_exps_cpu_override());\n        }\n    ).set_spec().set_examples({LLAMA_EXAMPLE_SPECULATIVE, LLAMA_EXAMPLE_SERVER, LLAMA_EXAMPLE_CLI}).set_env(\"LLAMA_ARG_SPEC_DRAFT_CPU_MOE\"));\n    add_opt(common_arg(\n        {\"--spec-draft-n-cpu-moe\", \"--spec-draft-ncmoe\", \"-ncmoed\", \"--n-cpu-moe-draft\"}, \"N\",\n        \"keep the Mixture of Experts (MoE) weights of the first N layers in the CPU for the draft model\",\n        [](common_params & params, int value) {"
+        },
+        {
+          "needle": "--n-cpu-moe",
+          "line": 2770,
+          "first_line": 2767,
+          "text": "        }\n    ).set_env(\"LLAMA_ARG_CPU_MOE\"));\n    add_opt(common_arg(\n        {\"-ncmoe\", \"--n-cpu-moe\"}, \"N\",\n        \"keep the Mixture of Experts (MoE) weights of the first N layers in the CPU\",\n        [](common_params & params, int value) {\n            if (value < 0) {\n                throw std::invalid_argument(\"invalid value\");\n            }\n            llm_add_n_cpu_ffn_overrides(value, LLM_FFN_EXPS_REGEX, params.tensor_buft_overrides);\n        }\n    ).set_env(\"LLAMA_ARG_N_CPU_MOE\"));\n    add_opt(common_arg("
+        },
+        {
+          "needle": "--n-cpu-moe",
+          "line": 2792,
+          "first_line": 2789,
+          "text": "    add_opt(common_arg(\n        {\"-ncffn\", \"--n-cpu-ffn\"}, \"N\",\n        \"keep the dense FFN weights of the first N layers in the CPU\\n\"\n        \"(dense models; for MoE expert weights use --n-cpu-moe)\",\n        [](common_params & params, int value) {\n            if (value < 0) {\n                throw std::invalid_argument(\"invalid value\");\n            }\n            llm_add_n_cpu_ffn_overrides(value, LLM_FFN_DENSE_REGEX, params.tensor_buft_overrides);\n        }\n    ).set_env(\"LLAMA_ARG_N_CPU_FFN\"));\n    GGML_ASSERT(params.n_gpu_layers < 0); // string_format would need to be extended for a default >= 0\n    add_opt(common_arg("
+        },
+        {
+          "needle": "--op-offload",
+          "line": 2960,
+          "first_line": 2957,
+          "text": "        }\n    ));\n    add_opt(common_arg(\n        {\"--op-offload\"},\n        {\"--no-op-offload\"},\n        string_format(\"whether to offload host tensor operations to device (default: %s)\", params.no_op_offload ? \"false\" : \"true\"),\n        [](common_params & params, bool value) {\n            params.no_op_offload = !value;\n        }\n    ));\n    add_opt(common_arg(\n        {\"--lora\"}, \"FNAME\",\n        \"path to LoRA adapter (use comma-separated values to load multiple adapters)\","
+        }
+      ]
+    },
+    {
+      "path": "src/llama-model.cpp",
+      "url": "https://github.com/ggml-org/llama.cpp/blob/e60eff95fda7b6e46bf402a8e9f1e86d88ab29c8/src/llama-model.cpp",
+      "sha256": "76cd0f66c83aa1e6612ba110897c78e9c96ad28733806771fd2e296bb2b410aa",
+      "excerpts": [
+        {
+          "needle": "n_gpu_layers",
+          "line": 1531,
+          "first_line": 1528,
+          "text": "    const auto & tensor_split = params.tensor_split;\n\n    const int n_layer_all = hparams.n_layer_all;\n    const int n_gpu_layers = this->n_gpu_layers();\n\n    const bool use_mmap_buffer = true;\n\n    this->ml = &ml; // to be used by create_tensor() and load_arch_tensors()\n\n    if (ml.use_mmap && params.load_mode == LLAMA_LOAD_MODE_AUTO) {\n        for (const auto & dev : devices) {\n            ggml_backend_dev_props props;\n            ggml_backend_dev_get_props(dev.dev, &props);"
+        },
+        {
+          "needle": "n_gpu_layers",
+          "line": 1614,
+          "first_line": 1611,
+          "text": "        splits[i] /= split_sum;\n    }\n\n    const int i_gpu_start = std::max(n_layer_all + 1 - n_gpu_layers, 0);\n    const int act_gpu_layers = devices.empty() ? 0 : std::min(n_gpu_layers, n_layer_all + 1);\n    auto get_layer_buft_list = [&](int il) -> llama_model::impl::layer_dev {\n        const bool is_swa = il < n_layer_all && hparams.is_swa(il);\n        if (il < i_gpu_start || (il - i_gpu_start) >= act_gpu_layers) {\n            LLAMA_LOG_DEBUG(\"load_tensors: layer %3d assigned to device %s, is_swa = %d\\n\", il, ggml_backend_dev_name(cpu_dev), is_swa);\n            return {cpu_dev, &pimpl->cpu_buft_list};\n        }\n        const int layer_gpu = std::upper_bound(splits.begin(), splits.begin() + n_devices(), float(il - i_gpu_start)/act_gpu_layers) - splits.begin();\n        auto * dev = devices.at(layer_gpu).dev;"
+        },
+        {
+          "needle": "GGML_BACKEND_BUFFER_USAGE_WEIGHTS",
+          "line": 1928,
+          "first_line": 1925,
+          "text": "        for (auto & buf : bufs) {\n            // indicate that this buffer contains weights\n            // this is used by ggml_backend_sched to improve op scheduling: ops that use a weight are preferably scheduled to the backend that contains the weight\n            ggml_backend_buffer_set_usage(buf.get(), GGML_BACKEND_BUFFER_USAGE_WEIGHTS);\n        }\n\n        pimpl->ctxs_bufs.emplace_back(std::move(ctx_ptr), std::move(bufs));\n\n        ctx_buf_maps.emplace_back(ctx, buf_map);\n    }\n\n    if (llama_supports_gpu_offload()) {\n        const int n_gpu = std::min(n_gpu_layers, n_layer_all);"
+        },
+        {
+          "needle": "tensor_buft_overrides",
+          "line": 1303,
+          "first_line": 1300,
+          "text": "        pimpl->tensor_split_owned.assign(params.tensor_split, params.tensor_split + llama_max_devices());\n        this->params.tensor_split = pimpl->tensor_split_owned.data();\n    }\n    pimpl->has_tensor_overrides = params.tensor_buft_overrides && params.tensor_buft_overrides[0].pattern;\n}\n\nllama_model::~llama_model() {\n    for (auto * lora : loras) {\n        delete lora;\n    }\n}\n\nvoid llama_model_base::load_stats(llama_model_loader & ml) {"
+        },
+        {
+          "needle": "tensor_buft_overrides",
+          "line": 2957,
+          "first_line": 2954,
+          "text": "llama_model_params llama_model_default_params() {\n    llama_model_params result = {\n        /*.devices                     =*/ nullptr,\n        /*.tensor_buft_overrides       =*/ nullptr,\n        /*.n_gpu_layers                =*/ -1,\n        /*.split_mode                  =*/ LLAMA_SPLIT_MODE_LAYER,\n        /*.load_mode                   =*/ LLAMA_LOAD_MODE_AUTO,\n        /*.lazy_mode                   =*/ LLAMA_LAZY_MODE_AUTO,\n        /*.main_gpu                    =*/ 0,\n        /*.tensor_split                =*/ nullptr,\n        /*.progress_callback           =*/ nullptr,\n        /*.progress_callback_user_data =*/ nullptr,\n        /*.kv_overrides                =*/ nullptr,"
+        }
+      ]
+    },
+    {
+      "path": "src/llama-context.cpp",
+      "url": "https://github.com/ggml-org/llama.cpp/blob/e60eff95fda7b6e46bf402a8e9f1e86d88ab29c8/src/llama-context.cpp",
+      "sha256": "578e4b2cdcf3c2230bc6081bbe33f18a935c277903675c2f81efc6145c2dc61c",
+      "excerpts": [
+        {
+          "needle": "ggml_backend_sched_new",
+          "line": 650,
+          "first_line": 647,
+          "text": "    gf_res_reserve.reset(new llm_graph_result(max_nodes));\n    gf_res_prev_active = nullptr;\n\n    sched.reset(ggml_backend_sched_new(backend_ptrs.data(), backend_buft.data(), backend_ptrs.size(), max_nodes, cparams.pipeline_parallel, cparams.op_offload));\n    ggml_backend_sched_set_copy_callback(sched.get(), sched_copy_experts, this);\n\n    llama_memory_context_ptr mctx;\n    if (memory) {\n        LLAMA_LOG_DEBUG(\"%s: reserving full memory module\\n\", __func__);\n        mctx = memory->init_full();\n        if (!mctx) {\n            throw std::runtime_error(\"failed to initialize memory module\");\n        }"
+        },
+        {
+          "needle": "ggml_backend_sched_new",
+          "line": 690,
+          "first_line": 687,
+          "text": "            if (cparams.pipeline_parallel) {\n                LLAMA_LOG_WARN(\"%s: compute buffer allocation failed, retrying without pipeline parallelism\\n\", __func__);\n                cparams.pipeline_parallel = false;\n                sched.reset(ggml_backend_sched_new(backend_ptrs.data(), backend_buft.data(), backend_ptrs.size(), max_nodes, false, cparams.op_offload));\n                ggml_backend_sched_set_copy_callback(sched.get(), sched_copy_experts, this);\n                gf = graph_reserve(n_tokens, n_seqs, n_outputs_pp, mctx.get());\n            }\n            if (!gf) {\n                throw std::runtime_error(\"failed to allocate compute pp buffers\");\n            }\n        }\n\n        n_splits_pp        = ggml_backend_sched_get_n_splits(sched.get());"
+        },
+        {
+          "needle": "set_tensor_backend",
+          "line": 2757,
+          "first_line": 2754,
+          "text": "                for (const auto & backend : backends) {\n                    if (ggml_backend_get_device(backend.get()) == dev_layer) {\n                        if (ggml_backend_supports_op(backend.get(), cur)) {\n                            ggml_backend_sched_set_tensor_backend(sched.get(), cur, backend.get());\n                        }\n                    }\n                }\n            }\n        }\n    };\n}\n\n//"
+        },
+        {
+          "needle": "host_buffer_type",
+          "line": 419,
+          "first_line": 416,
+          "text": "            if (backend_type == GGML_BACKEND_DEVICE_TYPE_CPU && !model.devices.empty()) {\n                // use the host buffer of the first device CPU for faster transfer of the intermediate state\n                const auto & dev = model.devices[0];\n                auto * host_buft = ggml_backend_dev_host_buffer_type(dev.dev);\n                if (host_buft) {\n                    buft = host_buft;\n                }\n            }\n\n            backend_buft.push_back(buft);\n            backend_ptrs.push_back(backend.get());\n            backend_buf_exp_size.push_back(0);\n        }"
+        },
+        {
+          "needle": "host_buffer_type",
+          "line": 2213,
+          "first_line": 2210,
+          "text": "        auto * buft = ggml_backend_cpu_buffer_type();\n        // try to use the host buffer of the device where the output tensor is allocated for faster transfer to system memory\n        auto * output_dev = model.dev_output();\n        auto * output_dev_host_buft = output_dev ? ggml_backend_dev_host_buffer_type(output_dev) : nullptr;\n        if (output_dev_host_buft) {\n            buft = output_dev_host_buft;\n        }\n        buf_output.reset(ggml_backend_buft_alloc_buffer(buft, new_size));\n        if (buf_output == nullptr) {\n            LLAMA_LOG_ERROR(\"%s: failed to allocate output buffer of size %.2f MiB\\n\", __func__, new_size / (1024.0 * 1024.0));\n            return 0;\n        }\n        ggml_backend_buffer_clear(buf_output.get(), 0);"
+        },
+        {
+          "first_line": 2655,
+          "last_line": 2736,
+          "purpose": "bounded follow-up: native completion, sparse expert data and boundary placement",
+          "text": "bool llama_context::sched_copy_experts(ggml_backend_t backend, const ggml_tensor * src, ggml_tensor * dst, ggml_cgraph * graph, void * user_data) {\n    auto * lctx = static_cast<llama_context *>(user_data);\n\n    // the slot maps of the MoE cache\n    if (lctx->moe_cache && lctx->moe_cache->copy(backend, src, dst, graph)) {\n        return true;\n    }\n\n    auto & st = lctx->copy_experts;\n\n    // the ids must be computed before the split starts, so only the first node of the split is considered\n    if (ggml_graph_n_nodes(graph) == 0) {\n        return false;\n    }\n    const ggml_tensor * node = ggml_graph_node(graph, 0);\n    if (node->op != GGML_OP_MUL_MAT_ID || node->src[0] != dst) {\n        return false;\n    }\n\n    const ggml_tensor * ids = node->src[2];\n    if (ggml_nelements(ids) == 0) {\n        return true;\n    }\n\n    const int64_t n_expert    = src->ne[2];\n    const size_t  expert_size = src->nb[2];\n\n    if (ids != st.ids || (int64_t) st.used.size() != n_expert) {\n        st.ids_data.resize(ggml_nbytes(ids)/sizeof(int32_t));\n        ggml_backend_tensor_get_async(backend, ids, st.ids_data.data(), 0, ggml_nbytes(ids));\n        ggml_backend_synchronize(backend);\n\n        st.used.assign(n_expert, false);\n        for (int64_t i1 = 0; i1 < ids->ne[1]; i1++) {\n            for (int64_t i0 = 0; i0 < ids->ne[0]; i0++) {\n                const int32_t id = st.ids_data[i1*ids->nb[1]/sizeof(int32_t) + i0*ids->nb[0]/sizeof(int32_t)];\n                GGML_ASSERT(id >= 0 && id < n_expert);\n                st.used[id] = true;\n            }\n        }\n\n        st.ids = ids;\n    }\n\n    // group consecutive experts and copy them together\n    for (int64_t first = 0; first < n_expert; ) {\n        if (!st.used[first]) {\n            first++;\n            continue;\n        }\n        int64_t last = first;\n        while (last + 1 < n_expert && st.used[last + 1]) {\n            last++;\n        }\n\n        // the experts in the MoE cache are copied from device memory, the others are uploaded\n        int64_t next = first;\n        for (int64_t e = first; e <= last && lctx->moe_cache; ) {\n            const int64_t n = lctx->moe_cache->copy_experts(backend, src, dst, e, last);\n            if (n == 0) {\n                e++;\n                continue;\n            }\n            if (next < e) {\n                ggml_backend_tensor_set_async(backend, dst, (const uint8_t *) src->data + next*expert_size, next*expert_size, (e - next)*expert_size);\n            }\n            e   += n;\n            next = e;\n        }\n\n        // copy a bit extra to ensure there are no NaNs in the padding of the last expert, this is necessary for MMQ in the CUDA backend\n        const size_t offset  = next*expert_size;\n        const size_t padding = last < n_expert - 1 ? std::min<size_t>(expert_size, 512) : 0;\n        const size_t size    = (last + 1 - next)*expert_size + padding;\n        if (size > 0) {\n            ggml_backend_tensor_set_async(backend, dst, (const uint8_t *) src->data + offset, offset, size);\n        }\n\n        first = last + 1;\n    }\n\n    return true;"
+        },
+        {
+          "first_line": 2740,
+          "last_line": 2760,
+          "purpose": "bounded follow-up: native completion, sparse expert data and boundary placement",
+          "text": "    return [&](const llama_ubatch & ubatch, ggml_tensor * cur, const char * name, int il) {\n        if (il >= 0) {\n            ggml_format_name(cur, \"%s-%d\", name, il);\n        } else {\n            ggml_set_name(cur, name);\n        }\n\n        // - norm may be automatically assigned to the backend of the previous layer, increasing data transfer between backends\n        // - force the last op of the layer on the specified backend to avoid running it on the backend of the next layer due to scheduling\n        // FIXME: fix in ggml_backend_sched\n        const bool full_offload = model.n_gpu_layers() > model.hparams.n_layer_all;\n        if (ubatch.n_tokens < 32 || full_offload) {\n            if (il != -1 && (strcmp(name, \"norm\") == 0 || strcmp(name, \"l_last\") == 0)) {\n                const auto & dev_layer = model.dev_layer(il);\n                for (const auto & backend : backends) {\n                    if (ggml_backend_get_device(backend.get()) == dev_layer) {\n                        if (ggml_backend_supports_op(backend.get(), cur)) {\n                            ggml_backend_sched_set_tensor_backend(sched.get(), cur, backend.get());\n                        }\n                    }\n                }"
+        }
+      ]
+    },
+    {
+      "path": "ggml/src/ggml-backend.cpp",
+      "url": "https://github.com/ggml-org/llama.cpp/blob/e60eff95fda7b6e46bf402a8e9f1e86d88ab29c8/ggml/src/ggml-backend.cpp",
+      "sha256": "9a1e17bb2ff6089e597a9bb487f004863e2ac486c1289a444058783a070e10ac",
+      "excerpts": [
+        {
+          "needle": "op_offload",
+          "line": 975,
+          "first_line": 972,
+          "text": "    char * context_buffer;\n    size_t context_buffer_size;\n\n    bool op_offload;\n\n    int debug;\n\n    // used for debugging graph reallocations [GGML_SCHED_DEBUG_REALLOC]\n    // ref: https://github.com/ggml-org/llama.cpp/pull/17617\n    int debug_realloc;\n    int debug_graph_size;\n    int debug_prev_graph_size;\n};"
+        },
+        {
+          "needle": "op_offload",
+          "line": 1113,
+          "first_line": 1110,
+          "text": "            if (src->buffer != NULL && src->buffer->usage == GGML_BACKEND_BUFFER_USAGE_WEIGHTS) {\n                int src_backend_id = ggml_backend_sched_backend_from_buffer(sched, src, tensor);\n                // check if a backend with higher prio wants to offload the op\n                if (sched->op_offload && src_backend_id == sched->n_backends - 1 && ggml_backend_buffer_is_host(src->buffer)) {\n                    for (int b = 0; b < src_backend_id; b++) {\n                        if (ggml_backend_supports_op(sched->backends[b], tensor) && ggml_backend_offload_op(sched->backends[b], tensor)) {\n                            SET_CAUSE(tensor, \"1.off\");\n                            return b;\n                        }\n                    }\n                }\n                SET_CAUSE(tensor, \"1.wgt%d\", i);\n                return src_backend_id;"
+        },
+        {
+          "needle": "GGML_BACKEND_BUFFER_USAGE_WEIGHTS",
+          "line": 1110,
+          "first_line": 1107,
+          "text": "            if (src == NULL) {\n                continue;\n            }\n            if (src->buffer != NULL && src->buffer->usage == GGML_BACKEND_BUFFER_USAGE_WEIGHTS) {\n                int src_backend_id = ggml_backend_sched_backend_from_buffer(sched, src, tensor);\n                // check if a backend with higher prio wants to offload the op\n                if (sched->op_offload && src_backend_id == sched->n_backends - 1 && ggml_backend_buffer_is_host(src->buffer)) {\n                    for (int b = 0; b < src_backend_id; b++) {\n                        if (ggml_backend_supports_op(sched->backends[b], tensor) && ggml_backend_offload_op(sched->backends[b], tensor)) {\n                            SET_CAUSE(tensor, \"1.off\");\n                            return b;\n                        }\n                    }"
+        },
+        {
+          "needle": "GGML_BACKEND_BUFFER_USAGE_WEIGHTS",
+          "line": 1477,
+          "first_line": 1474,
+          "text": "                    }\n                    // check if a weight is on a different and incompatible backend\n                    // by starting a new split, the memory of the previously offloaded weights can be reused\n                    if (src->buffer != NULL && src->buffer->usage == GGML_BACKEND_BUFFER_USAGE_WEIGHTS) {\n                        int src_backend_id = tensor_backend_id(src);\n                        if (src_backend_id != cur_backend_id && !ggml_backend_sched_buffer_supported(sched, src, cur_backend_id)) {\n                            need_new_split = true;\n                            break;\n                        }\n                    }\n                }\n            }\n"
+        },
+        {
+          "needle": "copy_async",
+          "line": 651,
+          "first_line": 648,
+          "text": "    }\n}\n\nvoid ggml_backend_tensor_copy_async(ggml_backend_t backend_src, ggml_backend_t backend_dst, const struct ggml_tensor * src, struct ggml_tensor * dst) {\n    GGML_ASSERT(ggml_are_same_layout(src, dst) && \"cannot copy tensors with different layouts\");\n\n    if (src == dst) {\n        return;\n    }\n\n    GGML_ASSERT(backend_dst);\n    if (backend_dst->iface.cpy_tensor_async != NULL) {\n        if (backend_dst->iface.cpy_tensor_async(backend_src, backend_dst, src, dst)) {"
+        },
+        {
+          "needle": "supports_op",
+          "line": 606,
+          "first_line": 603,
+          "text": "    return backend->iface.graph_compute(backend, cgraph);\n}\n\nbool ggml_backend_supports_op(ggml_backend_t backend, const struct ggml_tensor * op) {\n    GGML_ASSERT(backend);\n    return ggml_backend_dev_supports_op(backend->device, op);\n}\n\nbool ggml_backend_supports_buft(ggml_backend_t backend, ggml_backend_buffer_type_t buft) {\n    GGML_ASSERT(backend);\n    return ggml_backend_dev_supports_buft(backend->device, buft);\n}\n"
+        },
+        {
+          "needle": "supports_op",
+          "line": 608,
+          "first_line": 605,
+          "text": "\nbool ggml_backend_supports_op(ggml_backend_t backend, const struct ggml_tensor * op) {\n    GGML_ASSERT(backend);\n    return ggml_backend_dev_supports_op(backend->device, op);\n}\n\nbool ggml_backend_supports_buft(ggml_backend_t backend, ggml_backend_buffer_type_t buft) {\n    GGML_ASSERT(backend);\n    return ggml_backend_dev_supports_buft(backend->device, buft);\n}\n\nbool ggml_backend_offload_op(ggml_backend_t backend, const struct ggml_tensor * op) {\n    GGML_ASSERT(backend);"
+        },
+        {
+          "first_line": 651,
+          "last_line": 671,
+          "purpose": "bounded follow-up: native completion, sparse expert data and boundary placement",
+          "text": "void ggml_backend_tensor_copy_async(ggml_backend_t backend_src, ggml_backend_t backend_dst, const struct ggml_tensor * src, struct ggml_tensor * dst) {\n    GGML_ASSERT(ggml_are_same_layout(src, dst) && \"cannot copy tensors with different layouts\");\n\n    if (src == dst) {\n        return;\n    }\n\n    GGML_ASSERT(backend_dst);\n    if (backend_dst->iface.cpy_tensor_async != NULL) {\n        if (backend_dst->iface.cpy_tensor_async(backend_src, backend_dst, src, dst)) {\n            return;\n        }\n    }\n\n    // an async copy would normally happen after all the queued operations on both backends are completed\n    // to simulate the same behavior, we need to synchronize both backends first, and do a blocking copy\n    ggml_backend_synchronize(backend_src);\n    ggml_backend_synchronize(backend_dst);\n    ggml_backend_tensor_copy(src, dst);\n}\n"
+        },
+        {
+          "first_line": 1854,
+          "last_line": 1893,
+          "purpose": "bounded follow-up: native completion, sparse expert data and boundary placement",
+          "text": "    GGML_ASSERT(sched);\n    struct ggml_backend_sched_split * splits = sched->splits;\n\n    int prev_backend_id = -1;\n\n    for (int split_id = 0; split_id < sched->n_splits; split_id++) {\n        struct ggml_backend_sched_split * split = &splits[split_id];\n        int split_backend_id = split->backend_id;\n        ggml_backend_t split_backend = sched->backends[split_backend_id];\n\n        // ensure the previous split's async work has completed before we start\n        // this split, the allocator may have reused buffer regions across splits\n        if (split->n_inputs == 0 && prev_backend_id >= 0 && prev_backend_id != split_backend_id) {\n            if (sched->events[prev_backend_id][sched->cur_copy] != NULL) {\n                ggml_backend_event_synchronize(sched->events[prev_backend_id][sched->cur_copy]);\n            } else {\n                ggml_backend_synchronize(sched->backends[prev_backend_id]);\n            }\n        }\n\n        // copy the input tensors to the split backend\n        // the weights in host memory are copied last, so that the copy callback can read the other inputs of the split\n        for (int input_id = 0; input_id < split->n_inputs; input_id++) {\n            if (!ggml_backend_sched_is_host_weight(split->inputs[input_id])) {\n                ggml_backend_sched_copy_input(sched, split, split->inputs[input_id]);\n            }\n        }\n        for (int input_id = 0; input_id < split->n_inputs; input_id++) {\n            if (ggml_backend_sched_is_host_weight(split->inputs[input_id])) {\n                ggml_backend_sched_copy_input(sched, split, split->inputs[input_id]);\n            }\n        }\n\n        if (!sched->callback_eval) {\n            enum ggml_status ec = ggml_backend_graph_compute_async(split_backend, &split->graph);\n            if (ec != GGML_STATUS_SUCCESS) {\n                return ec;\n            }\n        } else {\n            // similar to ggml_backend_compare_graph_backend"
+        }
+      ]
+    }
+  ]
+}

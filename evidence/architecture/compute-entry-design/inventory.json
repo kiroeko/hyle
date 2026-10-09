@@ -1,0 +1,1143 @@
+{
+  "schema": "hyle.compute-entry-design.inventory.v1",
+  "baseline": "17ff6555c7af0a8bd44d648209c40f53de758420",
+  "method": "Unique configuration control or integration/route lifecycle family. Overloads, aliases, references, individual operator descriptors, derived vars/macros and internal dependency targets are not extra entries. Toolchain/offline groups name standard axes rather than every CMake spelling. This is the design perimeter, not a symbol count or implementation certificate.",
+  "counts": {
+    "total": 74,
+    "by_group": {
+      "acquisition_inputs": 6,
+      "capability_controls": 6,
+      "delivery_controls": 2,
+      "expert_and_extension_entries": 15,
+      "integration_workflows": 8,
+      "internal_binding_seams": 6,
+      "maintenance_controls": 6,
+      "ordinary_route_roots": 8,
+      "product_selection": 2,
+      "shared_semantic_and_lifecycle_entries": 8,
+      "toolchain_and_offline_axes": 7
+    },
+    "by_audience": {
+      "advanced_acquisition": 6,
+      "advanced_standard": 7,
+      "expert": 15,
+      "internal": 6,
+      "maintainer": 7,
+      "ordinary": 19,
+      "ordinary_current": 6,
+      "ordinary_or_integration": 8
+    }
+  },
+  "entries": [
+    {
+      "group": "capability_controls",
+      "name": "HYLE_COMPUTE_CPU",
+      "audience": "ordinary_current",
+      "owner": "build_system",
+      "consumer": "source/package producer",
+      "effect": "BOOL ON; CPU math closure, independent of GPU selections",
+      "decision": "REPLACE: one HYLE_COMPUTE_ROUTES set; mandatory platform closure",
+      "source": {
+        "path": "cmake/HyleComponents.cmake",
+        "line": 693,
+        "anchor": "option(HYLE_COMPUTE_CPU",
+        "sha256": "d46db1db85550d05c707c7ac4930e51b1f6175fc45bfa1b7150a15ee06739457"
+      }
+    },
+    {
+      "group": "capability_controls",
+      "name": "HYLE_COMPUTE_CUDA",
+      "audience": "ordinary_current",
+      "owner": "build_system",
+      "consumer": "source/package producer",
+      "effect": "OFF default; AUTO may omit route; ON requires Toolkit",
+      "decision": "REPLACE: one HYLE_COMPUTE_ROUTES set; mandatory platform closure",
+      "source": {
+        "path": "cmake/HyleCudaDependencies.cmake",
+        "line": 7,
+        "anchor": "hyle_auto_feature_option(HYLE_COMPUTE_CUDA",
+        "sha256": "1296ca2f85d631bd4ae2dac9d0a065000848f8f11c6622813fb6fe27f1a3a933"
+      }
+    },
+    {
+      "group": "capability_controls",
+      "name": "HYLE_COMPUTE_APPLE",
+      "audience": "ordinary_current",
+      "owner": "build_system",
+      "consumer": "source/package producer",
+      "effect": "OFF default; platform/Metal/MLX closure",
+      "decision": "REPLACE: one HYLE_COMPUTE_ROUTES set; mandatory platform closure",
+      "source": {
+        "path": "cmake/HyleAppleDependencies.cmake",
+        "line": 3,
+        "anchor": "hyle_auto_feature_option(HYLE_COMPUTE_APPLE",
+        "sha256": "89e14839887e011ea3ce69a565b4e7ca1bf887d438fbc2de7672d7ff77c064dd"
+      }
+    },
+    {
+      "group": "capability_controls",
+      "name": "HYLE_COMPUTE_VULKAN",
+      "audience": "ordinary_current",
+      "owner": "build_system",
+      "consumer": "source/package producer",
+      "effect": "OFF default; shader/native closure",
+      "decision": "REPLACE: one HYLE_COMPUTE_ROUTES set; mandatory platform closure",
+      "source": {
+        "path": "cmake/HyleVulkanDependencies.cmake",
+        "line": 3,
+        "anchor": "hyle_auto_feature_option(HYLE_COMPUTE_VULKAN",
+        "sha256": "0bcc3dab209b5ba315435bbcc55add22d79512efab56873ef5204a3ccdc3acf2"
+      }
+    },
+    {
+      "group": "capability_controls",
+      "name": "HYLE_COMPUTE_ONEDNN",
+      "audience": "ordinary_current",
+      "owner": "build_system",
+      "consumer": "source/package producer",
+      "effect": "AUTO x86; OFF removes eligible CPU programs and recipe",
+      "decision": "REPLACE: one HYLE_COMPUTE_ROUTES set; mandatory platform closure",
+      "source": {
+        "path": "cmake/HyleComputeDependencies.cmake",
+        "line": 5,
+        "anchor": "hyle_auto_feature_option(HYLE_COMPUTE_ONEDNN",
+        "sha256": "f5f16779c1367f496010bd227fcf21bcdfee0cbc64aabba7c65c8d758893e90f"
+      }
+    },
+    {
+      "group": "capability_controls",
+      "name": "HYLE_COMPUTE_TORCH_CPU",
+      "audience": "ordinary_current",
+      "owner": "build_system",
+      "consumer": "source/package producer",
+      "effect": "AUTO on supported platform; OFF removes original ATen/format programs",
+      "decision": "REPLACE: one HYLE_COMPUTE_ROUTES set; mandatory platform closure",
+      "source": {
+        "path": "src/compute_provider_native/torch_cpu_sdk.cmake",
+        "line": 3,
+        "anchor": "hyle_auto_feature_option(HYLE_COMPUTE_TORCH_CPU",
+        "sha256": "1aa818ac945896b0a8bb950a6fa96d4cd774020b6ee57556fa70b5c4f7ed323e"
+      }
+    },
+    {
+      "group": "product_selection",
+      "name": "HYLE_COMPONENTS",
+      "audience": "ordinary",
+      "owner": "build_system",
+      "consumer": "source producer",
+      "effect": "public product selection; graph already depends on compute",
+      "decision": "KEEP: central product/factor DAG, no duplicate route graph",
+      "source": {
+        "path": "cmake/HyleComponents.cmake",
+        "line": 608,
+        "anchor": "set(HYLE_COMPONENTS \"${_hyle_selection_input}\" CACHE STRING",
+        "sha256": "d46db1db85550d05c707c7ac4930e51b1f6175fc45bfa1b7150a15ee06739457"
+      }
+    },
+    {
+      "group": "product_selection",
+      "name": "HYLE_DEV_FACTORS",
+      "audience": "maintainer",
+      "owner": "build_system",
+      "consumer": "source producer",
+      "effect": "top-level maintenance only; excludes embedding/install",
+      "decision": "KEEP: central product/factor DAG, no duplicate route graph",
+      "source": {
+        "path": "cmake/HyleComponents.cmake",
+        "line": 594,
+        "anchor": "set(HYLE_DEV_FACTORS \"${_hyle_selection_input}\" CACHE STRING",
+        "sha256": "d46db1db85550d05c707c7ac4930e51b1f6175fc45bfa1b7150a15ee06739457"
+      }
+    },
+    {
+      "group": "delivery_controls",
+      "name": "HYLE_STATIC",
+      "audience": "ordinary",
+      "owner": "build_system",
+      "consumer": "SDK producer",
+      "effect": "HYLE linkage/install shape; not provider or operator coverage",
+      "decision": "KEEP: three deliveries have the same route capability contract",
+      "source": {
+        "path": "CMakeLists.txt",
+        "line": 241,
+        "anchor": "option(HYLE_STATIC",
+        "sha256": "b756bac2cab67910a57ca6587a2a18c167a20038094ab2dc174801d5169ba333"
+      }
+    },
+    {
+      "group": "delivery_controls",
+      "name": "HYLE_INSTALL",
+      "audience": "ordinary",
+      "owner": "build_system",
+      "consumer": "SDK producer",
+      "effect": "HYLE linkage/install shape; not provider or operator coverage",
+      "decision": "KEEP: three deliveries have the same route capability contract",
+      "source": {
+        "path": "CMakeLists.txt",
+        "line": 161,
+        "anchor": "option(HYLE_INSTALL",
+        "sha256": "b756bac2cab67910a57ca6587a2a18c167a20038094ab2dc174801d5169ba333"
+      }
+    },
+    {
+      "group": "acquisition_inputs",
+      "name": "HYLE_DEP_SOURCE_CACHE",
+      "audience": "advanced_acquisition",
+      "owner": "build_system",
+      "consumer": "online/offline producer",
+      "effect": "source/binary location only, must satisfy locked identity",
+      "decision": "KEEP: optional location override; not an OFF capability switch",
+      "source": {
+        "path": "cmake/HyleDependencyCache.cmake",
+        "line": 89,
+        "anchor": "set(HYLE_DEP_SOURCE_CACHE \"${_normalized}\" CACHE PATH",
+        "sha256": "b4ed6b5116f65c34da3d4c7efb36b77c7401dc2e1b38100642016ab7021e8ed9"
+      }
+    },
+    {
+      "group": "acquisition_inputs",
+      "name": "HYLE_DEP_BUILD_DIR",
+      "audience": "advanced_acquisition",
+      "owner": "build_system",
+      "consumer": "online/offline producer",
+      "effect": "source/binary location only, must satisfy locked identity",
+      "decision": "KEEP: optional location override; not an OFF capability switch",
+      "source": {
+        "path": "CMakeLists.txt",
+        "line": 327,
+        "anchor": "set(HYLE_DEP_BUILD_DIR \"${_hyle_dep_build_dir_normalized}\" CACHE PATH",
+        "sha256": "b756bac2cab67910a57ca6587a2a18c167a20038094ab2dc174801d5169ba333"
+      }
+    },
+    {
+      "group": "acquisition_inputs",
+      "name": "HYLE_COMPUTE_TORCH_CPU_ROOT",
+      "audience": "advanced_acquisition",
+      "owner": "build_system",
+      "consumer": "online/offline producer",
+      "effect": "source/binary location only, must satisfy locked identity",
+      "decision": "KEEP: optional location override; not an OFF capability switch",
+      "source": {
+        "path": "src/compute_provider_native/torch_cpu_fetch.cmake",
+        "line": 120,
+        "anchor": "set(HYLE_COMPUTE_TORCH_CPU_ROOT \"\" CACHE PATH",
+        "sha256": "c7d30e8df8388f716b9583ae95aff7014f8d42b6523b08cec54714999bee81fe"
+      }
+    },
+    {
+      "group": "acquisition_inputs",
+      "name": "HYLE_COMPUTE_TORCH_CPU_ARCHIVE",
+      "audience": "advanced_acquisition",
+      "owner": "build_system",
+      "consumer": "online/offline producer",
+      "effect": "source/binary location only, must satisfy locked identity",
+      "decision": "KEEP: optional location override; not an OFF capability switch",
+      "source": {
+        "path": "src/compute_provider_native/torch_cpu_fetch.cmake",
+        "line": 121,
+        "anchor": "set(HYLE_COMPUTE_TORCH_CPU_ARCHIVE \"\" CACHE FILEPATH",
+        "sha256": "c7d30e8df8388f716b9583ae95aff7014f8d42b6523b08cec54714999bee81fe"
+      }
+    },
+    {
+      "group": "acquisition_inputs",
+      "name": "HYLE_COMPUTE_TORCH_CUDA_ARCHIVE",
+      "audience": "advanced_acquisition",
+      "owner": "build_system",
+      "consumer": "online/offline producer",
+      "effect": "source/binary location only, must satisfy locked identity",
+      "decision": "KEEP: optional location override; not an OFF capability switch",
+      "source": {
+        "path": "src/compute_provider_torch_cuda/torch_cuda_fetch.cmake",
+        "line": 14,
+        "anchor": "set(HYLE_COMPUTE_TORCH_CUDA_ARCHIVE \"\" CACHE FILEPATH",
+        "sha256": "7610909071928564dabfc87d898a6fc8a59eb59fb3297931ad704fc2eab2ed41"
+      }
+    },
+    {
+      "group": "acquisition_inputs",
+      "name": "HYLE_COMPUTE_TORCH_CUDA_ARCHIVES_DIR",
+      "audience": "advanced_acquisition",
+      "owner": "build_system",
+      "consumer": "online/offline producer",
+      "effect": "source/binary location only, must satisfy locked identity",
+      "decision": "KEEP: optional location override; not an OFF capability switch",
+      "source": {
+        "path": "src/compute_provider_torch_cuda/torch_cuda_linux.cmake",
+        "line": 34,
+        "anchor": "set(HYLE_COMPUTE_TORCH_CUDA_ARCHIVES_DIR \"\" CACHE PATH",
+        "sha256": "d598d5f7a7b6bf4e25e7aac8446ab41c8ec4721f0c68ea889a44355796240700"
+      }
+    },
+    {
+      "group": "toolchain_and_offline_axes",
+      "name": "CMAKE_CUDA_ARCHITECTURES / CUDAARCHS",
+      "audience": "advanced_standard",
+      "owner": "build_system",
+      "consumer": "source/binary producer",
+      "effect": "one standard architecture axis; default 80,89-real; binary admission is separate",
+      "decision": "KEEP: standard axis, no second HYLE compiler/device option",
+      "source": {
+        "path": "cmake/HyleCudaDependencies.cmake",
+        "line": 52,
+        "anchor": "if(NOT DEFINED CMAKE_CUDA_ARCHITECTURES)",
+        "sha256": "1296ca2f85d631bd4ae2dac9d0a065000848f8f11c6622813fb6fe27f1a3a933"
+      }
+    },
+    {
+      "group": "toolchain_and_offline_axes",
+      "name": "CUDAToolkit discovery",
+      "audience": "advanced_standard",
+      "owner": "build_system",
+      "consumer": "source/binary producer",
+      "effect": "standard Toolkit path/toolchain; no downloaded driver",
+      "decision": "KEEP: standard axis, no second HYLE compiler/device option",
+      "source": {
+        "path": "cmake/HyleCudaDependencies.cmake",
+        "line": 21,
+        "anchor": "find_package(CUDAToolkit 13.3 REQUIRED)",
+        "sha256": "1296ca2f85d631bd4ae2dac9d0a065000848f8f11c6622813fb6fe27f1a3a933"
+      }
+    },
+    {
+      "group": "toolchain_and_offline_axes",
+      "name": "HYLE_VULKAN_GLSLANG / VULKAN_SDK",
+      "audience": "advanced_standard",
+      "owner": "build_system",
+      "consumer": "source/binary producer",
+      "effect": "host shader compiler; binary SDK must not require compiler",
+      "decision": "KEEP: standard axis, no second HYLE compiler/device option",
+      "source": {
+        "path": "cmake/HyleVulkanDependencies.cmake",
+        "line": 14,
+        "anchor": "find_program(HYLE_VULKAN_GLSLANG",
+        "sha256": "0bcc3dab209b5ba315435bbcc55add22d79512efab56873ef5204a3ccdc3acf2"
+      }
+    },
+    {
+      "group": "toolchain_and_offline_axes",
+      "name": "CMAKE_OSX_DEPLOYMENT_TARGET",
+      "audience": "advanced_standard",
+      "owner": "build_system",
+      "consumer": "source/binary producer",
+      "effect": "platform minimum and ABI; compiler/device support are distinct",
+      "decision": "KEEP: standard axis, no second HYLE compiler/device option",
+      "source": {
+        "path": "CMakeLists.txt",
+        "line": 34,
+        "anchor": "set(CMAKE_OSX_DEPLOYMENT_TARGET",
+        "sha256": "b756bac2cab67910a57ca6587a2a18c167a20038094ab2dc174801d5169ba333"
+      }
+    },
+    {
+      "group": "toolchain_and_offline_axes",
+      "name": "CC / CXX toolchain pair",
+      "audience": "advanced_standard",
+      "owner": "build_system",
+      "consumer": "source/binary producer",
+      "effect": "actual selected host compiler, never runtime performance search",
+      "decision": "KEEP: standard axis, no second HYLE compiler/device option",
+      "source": {
+        "path": "scripts/hyle-unix.sh",
+        "line": 14,
+        "anchor": "Set both CC and CXX",
+        "sha256": "96d69955e38ea5b3f7280e579320eba9f28cc70f47db443c7972dde0f179870f"
+      }
+    },
+    {
+      "group": "toolchain_and_offline_axes",
+      "name": "FETCHCONTENT_FULLY_DISCONNECTED",
+      "audience": "advanced_standard",
+      "owner": "build_system",
+      "consumer": "source/binary producer",
+      "effect": "no-network acquisition, selected missing dependencies must fail",
+      "decision": "KEEP: standard axis, no second HYLE compiler/device option",
+      "source": {
+        "path": "cmake/HyleDependencyCache.cmake",
+        "line": 326,
+        "anchor": "FETCHCONTENT_FULLY_DISCONNECTED",
+        "sha256": "b4ed6b5116f65c34da3d4c7efb36b77c7401dc2e1b38100642016ab7021e8ed9"
+      }
+    },
+    {
+      "group": "toolchain_and_offline_axes",
+      "name": "FETCHCONTENT_SOURCE_DIR_<LOCK_NAME>",
+      "audience": "advanced_standard",
+      "owner": "build_system",
+      "consumer": "source/binary producer",
+      "effect": "exact reviewed source substitution, not arbitrary system versions",
+      "decision": "KEEP: standard axis, no second HYLE compiler/device option",
+      "source": {
+        "path": "cmake/HyleDependencyVersions.cmake",
+        "line": 443,
+        "anchor": "function(hyle_verify_locked_fetchcontent_override",
+        "sha256": "542a07ef5779d394a5aa27f130c53988c1296f9805089800f5519bbda0f6f81f"
+      }
+    },
+    {
+      "group": "maintenance_controls",
+      "name": "HYLE_BUILD_TESTS",
+      "audience": "maintainer",
+      "owner": "build_system",
+      "consumer": "developer build",
+      "effect": "top-level default ON; install requires OFF",
+      "decision": "KEEP: separate from ordinary complete compute preset",
+      "source": {
+        "path": "CMakeLists.txt",
+        "line": 79,
+        "anchor": "option(HYLE_BUILD_TESTS",
+        "sha256": "b756bac2cab67910a57ca6587a2a18c167a20038094ab2dc174801d5169ba333"
+      }
+    },
+    {
+      "group": "maintenance_controls",
+      "name": "HYLE_BUILD_BENCH",
+      "audience": "maintainer",
+      "owner": "build_system",
+      "consumer": "developer build",
+      "effect": "default OFF; not ordinary product coverage",
+      "decision": "KEEP: separate from ordinary complete compute preset",
+      "source": {
+        "path": "CMakeLists.txt",
+        "line": 160,
+        "anchor": "option(HYLE_BUILD_BENCH",
+        "sha256": "b756bac2cab67910a57ca6587a2a18c167a20038094ab2dc174801d5169ba333"
+      }
+    },
+    {
+      "group": "maintenance_controls",
+      "name": "HYLE_WERROR",
+      "audience": "maintainer",
+      "owner": "build_system",
+      "consumer": "developer build",
+      "effect": "compiler diagnostics",
+      "decision": "KEEP: separate from ordinary complete compute preset",
+      "source": {
+        "path": "CMakeLists.txt",
+        "line": 242,
+        "anchor": "option(HYLE_WERROR",
+        "sha256": "b756bac2cab67910a57ca6587a2a18c167a20038094ab2dc174801d5169ba333"
+      }
+    },
+    {
+      "group": "maintenance_controls",
+      "name": "HYLE_SANITIZER",
+      "audience": "maintainer",
+      "owner": "build_system",
+      "consumer": "developer build",
+      "effect": "instrumented build identity; not measured winner recipe",
+      "decision": "KEEP: separate from ordinary complete compute preset",
+      "source": {
+        "path": "CMakeLists.txt",
+        "line": 243,
+        "anchor": "set(HYLE_SANITIZER \"off\" CACHE STRING",
+        "sha256": "b756bac2cab67910a57ca6587a2a18c167a20038094ab2dc174801d5169ba333"
+      }
+    },
+    {
+      "group": "maintenance_controls",
+      "name": "HYLE_TRACE",
+      "audience": "maintainer",
+      "owner": "build_system",
+      "consumer": "developer build",
+      "effect": "instrumentation identity; default OFF",
+      "decision": "KEEP: separate from ordinary complete compute preset",
+      "source": {
+        "path": "cmake/HyleTrace.cmake",
+        "line": 20,
+        "anchor": "option(HYLE_TRACE",
+        "sha256": "593cd08c2aa6e084b195d07f0c8558ff8150a7be14a170a8fc73a8bf4000ca0e"
+      }
+    },
+    {
+      "group": "maintenance_controls",
+      "name": "HYLE_SIMD_EXACT_TARGET",
+      "audience": "maintainer",
+      "owner": "build_system",
+      "consumer": "developer build",
+      "effect": "explicit ISA promise, alters qualified CPU recipe; keep SIMD itself",
+      "decision": "KEEP: separate from ordinary complete compute preset",
+      "source": {
+        "path": "CMakeLists.txt",
+        "line": 221,
+        "anchor": "set(HYLE_SIMD_EXACT_TARGET \"${HYLE_SIMD_EXACT_TARGET}\" CACHE STRING",
+        "sha256": "b756bac2cab67910a57ca6587a2a18c167a20038094ab2dc174801d5169ba333"
+      }
+    },
+    {
+      "group": "integration_workflows",
+      "name": "compute-cpu preset",
+      "audience": "ordinary",
+      "owner": "build_system",
+      "consumer": "C++ application integration",
+      "effect": "CPU ON; GPU OFF; two provider AUTO knobs; build jobs 2",
+      "decision": "REPLACE cache selection, preserve consumer convenience",
+      "source": {
+        "path": "CMakePresets.json",
+        "line": 15,
+        "anchor": "\"name\": \"compute-cpu\"",
+        "sha256": "e9f00e5ee32b23fd6fe6e6078dcd917f23c10c505955761ef0240f0555145c06"
+      }
+    },
+    {
+      "group": "integration_workflows",
+      "name": "compute-cuda preset",
+      "audience": "ordinary",
+      "owner": "build_system",
+      "consumer": "C++ application integration",
+      "effect": "CUDA ON; CPU OFF; no matching Apple/Vulkan ordinary presets",
+      "decision": "REPLACE cache selection; add symmetric presets",
+      "source": {
+        "path": "CMakePresets.json",
+        "line": 34,
+        "anchor": "\"name\": \"compute-cuda\"",
+        "sha256": "e9f00e5ee32b23fd6fe6e6078dcd917f23c10c505955761ef0240f0555145c06"
+      }
+    },
+    {
+      "group": "integration_workflows",
+      "name": "Windows toolchain wrapper",
+      "audience": "ordinary",
+      "owner": "build_system",
+      "consumer": "C++ application integration",
+      "effect": "Configure/Build public; smoke actions maintenance, forwards CMake args",
+      "decision": "KEEP environment selection, do not invent route semantics here",
+      "source": {
+        "path": "scripts/hyle-windows.ps1",
+        "line": 2,
+        "anchor": "param(",
+        "sha256": "bf1bff8a853486b6d1114dac4072d8a6d88aa9668a3ca144f93faa1676e92fdf"
+      }
+    },
+    {
+      "group": "integration_workflows",
+      "name": "Unix toolchain wrapper",
+      "audience": "ordinary",
+      "owner": "build_system",
+      "consumer": "C++ application integration",
+      "effect": "forwards selected compiler, platform-local build dirs",
+      "decision": "KEEP; same presets and CMake contract",
+      "source": {
+        "path": "scripts/hyle-unix.sh",
+        "line": 11,
+        "anchor": "scripts/hyle-unix.sh [--] COMMAND",
+        "sha256": "96d69955e38ea5b3f7280e579320eba9f28cc70f47db443c7972dde0f179870f"
+      }
+    },
+    {
+      "group": "integration_workflows",
+      "name": "source embedding",
+      "audience": "ordinary",
+      "owner": "build_system",
+      "consumer": "C++ application integration",
+      "effect": "parent selection before add_subdirectory",
+      "decision": "KEEP public hyle::compute/graph targets",
+      "source": {
+        "path": "cmake/HyleComponents.cmake",
+        "line": 604,
+        "anchor": "An embedding parent must set HYLE_COMPONENTS",
+        "sha256": "d46db1db85550d05c707c7ac4930e51b1f6175fc45bfa1b7150a15ee06739457"
+      }
+    },
+    {
+      "group": "integration_workflows",
+      "name": "installed package discovery",
+      "audience": "ordinary",
+      "owner": "build_system",
+      "consumer": "C++ application integration",
+      "effect": "find_package Hyle COMPONENTS + exported feature metadata",
+      "decision": "EXTEND route requirement check; do not rebuild or change SDK recipe",
+      "source": {
+        "path": "cmake/HyleConfig.cmake.in",
+        "line": 32,
+        "anchor": "foreach(_Hyle_component IN LISTS Hyle_FIND_COMPONENTS)",
+        "sha256": "36dbf19071c06e59d65877844fb51a5da617caee9d69d63109102c7364c86722"
+      }
+    },
+    {
+      "group": "integration_workflows",
+      "name": "generic runtime staging",
+      "audience": "ordinary",
+      "owner": "build_system",
+      "consumer": "C++ application integration",
+      "effect": "Windows DLL copy, Unix loader paths; linked owner closure",
+      "decision": "COMPOSE under hyle_stage_runtime(app)",
+      "source": {
+        "path": "cmake/HyleRuntimeStaging.cmake",
+        "line": 95,
+        "anchor": "function(hyle_stage_runtime_dependencies target)",
+        "sha256": "d95168b976ae1f45249d9ffba442920eb7e5e2002be6b2068ccd795d840b165d"
+      }
+    },
+    {
+      "group": "integration_workflows",
+      "name": "Apple metallib staging",
+      "audience": "ordinary",
+      "owner": "build_system",
+      "consumer": "C++ application integration",
+      "effect": "native resource adjacent to app; source and relocated SDK",
+      "decision": "COMPOSE under the same helper, only for linked Apple route",
+      "source": {
+        "path": "cmake/HyleAppleRuntime.cmake",
+        "line": 6,
+        "anchor": "function(hyle_stage_apple_runtime target)",
+        "sha256": "0383518e2d9f3e1a9c319c5e52cc367c5877c2d88b8abe4668e821aa2c23dec1"
+      }
+    },
+    {
+      "group": "ordinary_route_roots",
+      "name": "cpu Direct",
+      "audience": "ordinary",
+      "owner": "compute_route_cpu",
+      "consumer": "Direct operation/region consumer",
+      "effect": "common Context + prepare/compile; caller executor/native thread budget",
+      "decision": "KEEP native flow; no common queue required",
+      "source": {
+        "path": "include/hyle/compute/cpu.h",
+        "line": 34,
+        "anchor": "create_context(DefaultContextOptions",
+        "sha256": "9027d03738a4b982a2c1ba36c28b31d19ab4656732ef8efc3fc40365628431a5"
+      }
+    },
+    {
+      "group": "ordinary_route_roots",
+      "name": "cpu Graph",
+      "audience": "ordinary",
+      "owner": "graph_route_cpu",
+      "consumer": "typed Graph consumer",
+      "effect": "common Context + prepare/compile; caller executor/native thread budget",
+      "decision": "KEEP default Provider assembly; hybrid is a new explicit opt-in",
+      "source": {
+        "path": "include/hyle/graph/cpu.h",
+        "line": 21,
+        "anchor": "create_context(compute::cpu::DefaultContextOptions",
+        "sha256": "207f78caafbec1e73966f0ead5563b51aa2aaf3e5eccabde15b6a20447a25f99"
+      }
+    },
+    {
+      "group": "ordinary_route_roots",
+      "name": "cuda Direct",
+      "audience": "ordinary",
+      "owner": "compute_route_cuda",
+      "consumer": "Direct operation/region consumer",
+      "effect": "common Context/native stream and MemoryResource; cold replay/capture",
+      "decision": "KEEP native flow; no common queue required",
+      "source": {
+        "path": "include/hyle/compute/cuda.h",
+        "line": 37,
+        "anchor": "create_context(DefaultContextOptions",
+        "sha256": "17a151206986aefeb230065c5e27a989b58824c158bd2bdaad756fc7820a9246"
+      }
+    },
+    {
+      "group": "ordinary_route_roots",
+      "name": "cuda Graph",
+      "audience": "ordinary",
+      "owner": "graph_route_cuda",
+      "consumer": "typed Graph consumer",
+      "effect": "common Context/native stream and MemoryResource; cold replay/capture",
+      "decision": "KEEP default Provider assembly; hybrid is a new explicit opt-in",
+      "source": {
+        "path": "include/hyle/graph/cuda.h",
+        "line": 27,
+        "anchor": "compile(const Graph &graph",
+        "sha256": "059264fb0360cfd298ea7e543ac153b334209e04ab90f0e5a66ea2857f4986e3"
+      }
+    },
+    {
+      "group": "ordinary_route_roots",
+      "name": "apple Direct",
+      "audience": "ordinary",
+      "owner": "compute_route_apple",
+      "consumer": "Direct operation/region consumer",
+      "effect": "MLX arrays/compiled region/owned native outputs; checked completion",
+      "decision": "KEEP native flow; no common queue required",
+      "source": {
+        "path": "include/hyle/compute/apple.h",
+        "line": 141,
+        "anchor": "static Result<Context> create()",
+        "sha256": "397eefb45348fdd95c5bd33e9eee67e6a8ea10ee57e153013ae6ef40c278196b"
+      }
+    },
+    {
+      "group": "ordinary_route_roots",
+      "name": "apple Graph",
+      "audience": "ordinary",
+      "owner": "graph_route_apple",
+      "consumer": "typed Graph consumer",
+      "effect": "MLX arrays/compiled region/owned native outputs; checked completion",
+      "decision": "KEEP default Provider assembly; hybrid is a new explicit opt-in",
+      "source": {
+        "path": "include/hyle/graph/apple.h",
+        "line": 81,
+        "anchor": "compile(const compute::apple::Context",
+        "sha256": "32006ca06e94b2a48515f93a736a8d2e48aeb7032afcf8068db636a1ac057567"
+      }
+    },
+    {
+      "group": "ordinary_route_roots",
+      "name": "vulkan Direct",
+      "audience": "ordinary",
+      "owner": "compute_route_vulkan",
+      "consumer": "Direct operation/region consumer",
+      "effect": "native Tensor/Program/Invocation with buffers/commands/fences",
+      "decision": "KEEP native flow; no common queue required",
+      "source": {
+        "path": "include/hyle/compute/vulkan.h",
+        "line": 137,
+        "anchor": "create(ContextOptions options",
+        "sha256": "ce8eaca1908a1c6e738b94c069cb2d78262ad324e8aecadf4b53e84f413a0718"
+      }
+    },
+    {
+      "group": "ordinary_route_roots",
+      "name": "vulkan Graph",
+      "audience": "ordinary",
+      "owner": "graph_route_vulkan",
+      "consumer": "typed Graph consumer",
+      "effect": "native Tensor/Program/Invocation with buffers/commands/fences",
+      "decision": "KEEP default Provider assembly; hybrid is a new explicit opt-in",
+      "source": {
+        "path": "include/hyle/graph/vulkan.h",
+        "line": 98,
+        "anchor": "compile(const compute::vulkan::Context",
+        "sha256": "43e5994289d6d7631703bff42c03005b1e197b48a4ad24ae9ed3780b43bdc8c7"
+      }
+    },
+    {
+      "group": "shared_semantic_and_lifecycle_entries",
+      "name": "Operation schema / parameters",
+      "audience": "ordinary_or_integration",
+      "owner": "compute",
+      "consumer": "Direct/Graph prepared consumer",
+      "effect": "actual numerical semantics; schema inference is not executable qualification",
+      "decision": "KEEP existing semantics; reuse, do not duplicate selector/profile/result",
+      "source": {
+        "path": "include/hyle/compute/operation.h",
+        "line": 531,
+        "anchor": "class Operation final",
+        "sha256": "e4ee275e58618a5e18e4c4cd4e5c749f9dd209102a3bdb854a5fac11acb2e079"
+      }
+    },
+    {
+      "group": "shared_semantic_and_lifecycle_entries",
+      "name": "TensorDesc / physical encoding",
+      "audience": "ordinary_or_integration",
+      "owner": "compute",
+      "consumer": "Direct/Graph prepared consumer",
+      "effect": "shared descriptor/physical storage identity, every input/output port checked",
+      "decision": "KEEP existing semantics; reuse, do not duplicate selector/profile/result",
+      "source": {
+        "path": "include/hyle/compute/tensor_desc.h",
+        "line": 141,
+        "anchor": "class HYLE_COMPUTE_OPS_API TensorDesc final",
+        "sha256": "e5496e00c643bcce2efbb42666773f4172243d10458b756d6f9881b0e677eb9a"
+      }
+    },
+    {
+      "group": "shared_semantic_and_lifecycle_entries",
+      "name": "ModelArtifactProfile::create",
+      "audience": "ordinary_or_integration",
+      "owner": "compute",
+      "consumer": "Direct/Graph prepared consumer",
+      "effect": "owned immutable model/artifact identity; generic empty profile legal",
+      "decision": "KEEP existing semantics; reuse, do not duplicate selector/profile/result",
+      "source": {
+        "path": "include/hyle/compute/workload.h",
+        "line": 57,
+        "anchor": "class ModelArtifactProfile final",
+        "sha256": "2e7509d99d986e71b06788e4dd1dcb9595799e2ad972df48449ff0b58f0815ad"
+      }
+    },
+    {
+      "group": "shared_semantic_and_lifecycle_entries",
+      "name": "WorkloadContext",
+      "audience": "ordinary_or_integration",
+      "owner": "compute",
+      "consumer": "Direct/Graph prepared consumer",
+      "effect": "phase/versioned region; not model loader or global precision",
+      "decision": "KEEP existing semantics; reuse, do not duplicate selector/profile/result",
+      "source": {
+        "path": "include/hyle/compute/workload.h",
+        "line": 115,
+        "anchor": "struct WorkloadContext final",
+        "sha256": "2e7509d99d986e71b06788e4dd1dcb9595799e2ad972df48449ff0b58f0815ad"
+      }
+    },
+    {
+      "group": "shared_semantic_and_lifecycle_entries",
+      "name": "common compute::prepare",
+      "audience": "ordinary_or_integration",
+      "owner": "compute",
+      "consumer": "Direct/Graph prepared consumer",
+      "effect": "all-port operation/resource binding; overloads are one workflow",
+      "decision": "KEEP existing semantics; reuse, do not duplicate selector/profile/result",
+      "source": {
+        "path": "include/hyle/compute/prepared_operation.h",
+        "line": 145,
+        "anchor": "prepare(const Context &context, Operation operation,",
+        "sha256": "3fe6a6f1ddc31c2181a208658e627be20933bde325ec0b63dba06281d007ed7b"
+      }
+    },
+    {
+      "group": "shared_semantic_and_lifecycle_entries",
+      "name": "common graph::compile",
+      "audience": "ordinary_or_integration",
+      "owner": "graph",
+      "consumer": "Direct/Graph prepared consumer",
+      "effect": "bounded region/planning/copy/reuse; exact or declared shape domain",
+      "decision": "KEEP existing semantics; reuse, do not duplicate selector/profile/result",
+      "source": {
+        "path": "include/hyle/graph/executable.h",
+        "line": 982,
+        "anchor": "compile(const Graph &graph, CompileEnvironment environment,",
+        "sha256": "363509e1e24ff01250776b989a09d35c4677d003e1f4502ea238681208870b01"
+      }
+    },
+    {
+      "group": "shared_semantic_and_lifecycle_entries",
+      "name": "Invocation::prepare_replay",
+      "audience": "ordinary_or_integration",
+      "owner": "graph",
+      "consumer": "Direct/Graph prepared consumer",
+      "effect": "cold queue/transfer/completion binding; submit uses fixed result",
+      "decision": "KEEP existing semantics; reuse, do not duplicate selector/profile/result",
+      "source": {
+        "path": "include/hyle/graph/executable.h",
+        "line": 941,
+        "anchor": "Status prepare_replay(std::span<const QueueBinding>",
+        "sha256": "363509e1e24ff01250776b989a09d35c4677d003e1f4502ea238681208870b01"
+      }
+    },
+    {
+      "group": "shared_semantic_and_lifecycle_entries",
+      "name": "native ResultLease / OwnedResult",
+      "audience": "ordinary_or_integration",
+      "owner": "compute",
+      "consumer": "Direct/Graph prepared consumer",
+      "effect": "ready successful native ownership and terminal completion, not implicit host copy",
+      "decision": "KEEP existing semantics; reuse, do not duplicate selector/profile/result",
+      "source": {
+        "path": "include/hyle/compute/result.h",
+        "line": 26,
+        "anchor": "class [[nodiscard]] ResultLease final",
+        "sha256": "7e4e55a4dbd1dde6deeca6630f023045ea18740867746ae1827d4f45b806d9ee"
+      }
+    },
+    {
+      "group": "expert_and_extension_entries",
+      "name": "Provider factories",
+      "audience": "expert",
+      "owner": "compute/provider factors",
+      "consumer": "custom Provider/native interop integration",
+      "effect": "expert native/ATen/oneDNN/ggml/cuBLAS/FlashInfer/SGLang/DeepSeek/CCCL/Torch construction; ordinary route assembles them",
+      "decision": "KEEP hard constraints/native extensions; no new ordinary ranking control",
+      "source": {
+        "path": "include/hyle/compute/providers/native.h",
+        "line": 5,
+        "anchor": "namespace hyle::compute::native",
+        "sha256": "3be77c0f4ecda743d7b03d27658120d27867d281c77fd0ed5eaa5ad12ac3ad5d"
+      }
+    },
+    {
+      "group": "expert_and_extension_entries",
+      "name": "Custom kernel extension",
+      "audience": "expert",
+      "owner": "compute_ops",
+      "consumer": "custom Provider/native interop integration",
+      "effect": "user pure/native execution extension, not a runtime timing policy",
+      "decision": "KEEP hard constraints/native extensions; no new ordinary ranking control",
+      "source": {
+        "path": "include/hyle/compute/custom_kernel.h",
+        "line": 296,
+        "anchor": "make_custom_kernel(Kernel",
+        "sha256": "12ea43a8f599d6179d484b11e872ee998bbc47c61f9be66db90ac992e1532cbc"
+      }
+    },
+    {
+      "group": "expert_and_extension_entries",
+      "name": "Direct delegated preparation",
+      "audience": "expert",
+      "owner": "compute",
+      "consumer": "custom Provider/native interop integration",
+      "effect": "native private resources/output ownership; no Graph requirement",
+      "decision": "KEEP hard constraints/native extensions; no new ordinary ranking control",
+      "source": {
+        "path": "include/hyle/compute/delegated_operation.h",
+        "line": 130,
+        "anchor": "prepare_delegated(const Context &context",
+        "sha256": "43a8c35359d39cb5db489892a5f9b79cd22a90af3b876992509353ad696ae960"
+      }
+    },
+    {
+      "group": "expert_and_extension_entries",
+      "name": "Apple region callable",
+      "audience": "expert",
+      "owner": "compute_route_apple",
+      "consumer": "custom Provider/native interop integration",
+      "effect": "complete MLX compiled region through Context::compile; preserve mature native scheduling",
+      "decision": "KEEP hard constraints/native extensions; no new ordinary ranking control",
+      "source": {
+        "path": "include/hyle/compute/apple.h",
+        "line": 45,
+        "anchor": "using RegionFunction",
+        "sha256": "397eefb45348fdd95c5bd33e9eee67e6a8ea10ee57e153013ae6ef40c278196b"
+      }
+    },
+    {
+      "group": "expert_and_extension_entries",
+      "name": "CUDA resource/stream interop",
+      "audience": "expert",
+      "owner": "compute_backend_cuda",
+      "consumer": "custom Provider/native interop integration",
+      "effect": "exact Context native stream, device/pinned/managed resource, actual completion",
+      "decision": "KEEP hard constraints/native extensions; no new ordinary ranking control",
+      "source": {
+        "path": "include/hyle/compute/backends/cuda.h",
+        "line": 112,
+        "anchor": "borrow_stream(const Context",
+        "sha256": "6105a13ef265410f320346698cd20971d69c3cdbee25b0e4dd2f386487042ed6"
+      }
+    },
+    {
+      "group": "expert_and_extension_entries",
+      "name": "Graph compile budgets / replay constraints",
+      "audience": "expert",
+      "owner": "graph",
+      "consumer": "custom Provider/native interop integration",
+      "effect": "bounded proposals/search/resource/concurrency/capture requirements, not timing profiles",
+      "decision": "KEEP hard constraints/native extensions; no new ordinary ranking control",
+      "source": {
+        "path": "include/hyle/graph/executable.h",
+        "line": 756,
+        "anchor": "struct CompileOptions final",
+        "sha256": "363509e1e24ff01250776b989a09d35c4677d003e1f4502ea238681208870b01"
+      }
+    },
+    {
+      "group": "expert_and_extension_entries",
+      "name": "ContextOptions::providers / ProviderBinding",
+      "audience": "expert",
+      "owner": "compute",
+      "consumer": "custom Provider/native interop integration",
+      "effect": "expert custom integrations can give explicit families/preferences; ordinary facade owns ranking",
+      "decision": "KEEP hard constraints/native extensions; no new ordinary ranking control",
+      "source": {
+        "path": "include/hyle/compute/device.h",
+        "line": 124,
+        "anchor": "struct ProviderBinding final",
+        "sha256": "6fabfe06600cad6f12ec70a0b83246d8dbbf8ea9a8f9fcc002e9dfab7f801c5a"
+      }
+    },
+    {
+      "group": "expert_and_extension_entries",
+      "name": "CompileEnvironment targets/storage/lanes",
+      "audience": "expert",
+      "owner": "graph",
+      "consumer": "custom Provider/native interop integration",
+      "effect": "one exact Device; not CPU+GPU execution",
+      "decision": "KEEP hard constraints/native extensions; no new ordinary ranking control",
+      "source": {
+        "path": "include/hyle/graph/executable.h",
+        "line": 112,
+        "anchor": "struct CompileEnvironment final",
+        "sha256": "363509e1e24ff01250776b989a09d35c4677d003e1f4502ea238681208870b01"
+      }
+    },
+    {
+      "group": "expert_and_extension_entries",
+      "name": "node/value placement + external contracts",
+      "audience": "expert",
+      "owner": "graph",
+      "consumer": "custom Provider/native interop integration",
+      "effect": "explicit preferred/required placement independent of Provider selection",
+      "decision": "KEEP hard constraints/native extensions; no new ordinary ranking control",
+      "source": {
+        "path": "include/hyle/graph/executable.h",
+        "line": 124,
+        "anchor": "struct NodePlacement final",
+        "sha256": "363509e1e24ff01250776b989a09d35c4677d003e1f4502ea238681208870b01"
+      }
+    },
+    {
+      "group": "expert_and_extension_entries",
+      "name": "allowed/denied/node Provider constraints",
+      "audience": "expert",
+      "owner": "graph",
+      "consumer": "custom Provider/native interop integration",
+      "effect": "hard capability restrictions; not ordinary provider sorting",
+      "decision": "KEEP hard constraints/native extensions; no new ordinary ranking control",
+      "source": {
+        "path": "include/hyle/graph/executable.h",
+        "line": 787,
+        "anchor": "std::span<const compute::ProviderId> allowed_providers",
+        "sha256": "363509e1e24ff01250776b989a09d35c4677d003e1f4502ea238681208870b01"
+      }
+    },
+    {
+      "group": "expert_and_extension_entries",
+      "name": "RegionProvider extension",
+      "audience": "expert",
+      "owner": "graph",
+      "consumer": "custom Provider/native interop integration",
+      "effect": "whole region proposal/artifact; protect mature fusion",
+      "decision": "KEEP hard constraints/native extensions; no new ordinary ranking control",
+      "source": {
+        "path": "include/hyle/graph/region_provider.h",
+        "line": 310,
+        "anchor": "struct RegionProviderVTable final",
+        "sha256": "22b75e8e11f0763324385b607a14abec27ce1080d1302bfd9cdc8e9a99734d6b"
+      }
+    },
+    {
+      "group": "expert_and_extension_entries",
+      "name": "match_route_selector / match_route_policy",
+      "audience": "expert",
+      "owner": "compute",
+      "consumer": "custom Provider/native interop integration",
+      "effect": "public allocation-free cold selector semantics; no timing winner search",
+      "decision": "KEEP hard constraints/native extensions; no new ordinary ranking control",
+      "source": {
+        "path": "include/hyle/compute/route_policy.h",
+        "line": 316,
+        "anchor": "RouteMatchResult match_route_selector(",
+        "sha256": "71a4fd38cb6702769cf9879e9c02a631797986f6c1f18417f014b65bb8d70926"
+      }
+    },
+    {
+      "group": "expert_and_extension_entries",
+      "name": "compute::copy_async / transfer_properties",
+      "audience": "expert",
+      "owner": "compute",
+      "consumer": "custom Provider/native interop integration",
+      "effect": "actual Queue/resource pair, unsupported errors, no fake async staging",
+      "decision": "KEEP hard constraints/native extensions; no new ordinary ranking control",
+      "source": {
+        "path": "include/hyle/compute/transfer.h",
+        "line": 33,
+        "anchor": "transfer_properties(const Queue",
+        "sha256": "240e618942e9975640dac7ebcd4ce1b0fbbc2d01b1eb19a4576bf1be39e8090c"
+      }
+    },
+    {
+      "group": "expert_and_extension_entries",
+      "name": "Vulkan native borrow/queue",
+      "audience": "expert",
+      "owner": "compute_route_vulkan",
+      "consumer": "custom Provider/native interop integration",
+      "effect": "exact VkDevice/queue-family ready data; owner retained; no pending semaphore bridge",
+      "decision": "KEEP hard constraints/native extensions; no new ordinary ranking control",
+      "source": {
+        "path": "include/hyle/compute/vulkan.h",
+        "line": 166,
+        "anchor": "borrow_ready(const TensorDesc",
+        "sha256": "ce8eaca1908a1c6e738b94c069cb2d78262ad324e8aecadf4b53e84f413a0718"
+      }
+    },
+    {
+      "group": "expert_and_extension_entries",
+      "name": "Apple custom lowering",
+      "audience": "expert",
+      "owner": "graph_route_apple",
+      "consumer": "custom Provider/native interop integration",
+      "effect": "cold trace in native runtime/stream; not generic CPU interop",
+      "decision": "KEEP hard constraints/native extensions; no new ordinary ranking control",
+      "source": {
+        "path": "include/hyle/graph/apple.h",
+        "line": 35,
+        "anchor": "using CustomLowering",
+        "sha256": "32006ca06e94b2a48515f93a736a8d2e48aeb7032afcf8068db636a1ac057567"
+      }
+    },
+    {
+      "group": "internal_binding_seams",
+      "name": "CPU default policy",
+      "audience": "internal",
+      "owner": "compute_route_cpu",
+      "consumer": "default assembly/compiler",
+      "effect": "mature defaults + separately qualified exact Native overrides",
+      "decision": "DESIGN input; reopen only finite implementation scope with new card",
+      "source": {
+        "path": "src/compute_route_cpu/default_policy.cc",
+        "line": 15,
+        "anchor": "Family baseline(Operation operation)",
+        "sha256": "3b0d5aca67390514cce2d4ede5749ce567cb5debd0219811976ad420167d603a"
+      }
+    },
+    {
+      "group": "internal_binding_seams",
+      "name": "CUDA default policy",
+      "audience": "internal",
+      "owner": "compute_route_cuda",
+      "consumer": "default assembly/compiler",
+      "effect": "hard-admitted mature choices with per-op exact qualified overrides",
+      "decision": "DESIGN input; reopen only finite implementation scope with new card",
+      "source": {
+        "path": "src/compute_route_cuda/default_policy.cc",
+        "line": 14,
+        "anchor": "Family baseline(const ProviderOperationRequest",
+        "sha256": "3c4eafe1a55b033fd703a01ebcba2511c2917401ccedc512c4f2b10000a65445"
+      }
+    },
+    {
+      "group": "internal_binding_seams",
+      "name": "Apple mature policy match",
+      "audience": "internal",
+      "owner": "compute_route_apple",
+      "consumer": "default assembly/compiler",
+      "effect": "ggml/MLX native program boundary",
+      "decision": "DESIGN input; reopen only finite implementation scope with new card",
+      "source": {
+        "path": "src/compute_route_apple/apple_operations.cc",
+        "line": 281,
+        "anchor": "match_route_selector(kAffineQ4Rule",
+        "sha256": "4c90b14e44cc3a438c16c9935ef19e1e14a1642790179261004cb2d8d6065ee2"
+      }
+    },
+    {
+      "group": "internal_binding_seams",
+      "name": "Vulkan mature policy match",
+      "audience": "internal",
+      "owner": "compute_route_vulkan",
+      "consumer": "default assembly/compiler",
+      "effect": "ggml/IREE engineering default; not a formal performance WIN",
+      "decision": "DESIGN input; reopen only finite implementation scope with new card",
+      "source": {
+        "path": "src/compute_route_vulkan/vulkan_policy.h",
+        "line": 43,
+        "anchor": "match_route_selector(selector",
+        "sha256": "0652c58c8dddd89d52c7eb2ad051be15c218d2b7dc5634b517913a535d37bec9"
+      }
+    },
+    {
+      "group": "internal_binding_seams",
+      "name": "shared ggml SDK source recipe",
+      "audience": "internal",
+      "owner": "compute_ggml_runtime",
+      "consumer": "default assembly/compiler",
+      "effect": "CPU-only newer pin vs mixed SDK GPU-qualified shared pin; changes software identity",
+      "decision": "DESIGN input; reopen only finite implementation scope with new card",
+      "source": {
+        "path": "src/compute_ggml_runtime/CMakeLists.txt",
+        "line": 33,
+        "anchor": "if(_cpu AND NOT HYLE_COMPUTE_CUDA_ENABLED",
+        "sha256": "7162fc8461e519e644f67f197799bddf5458a3c3ed68fee90221279123d25a0d"
+      }
+    },
+    {
+      "group": "internal_binding_seams",
+      "name": "Graph same-Device guard",
+      "audience": "internal",
+      "owner": "graph",
+      "consumer": "default assembly/compiler",
+      "effect": "CPU+GPU rejected; must add native fragment composition, not remove guard blindly",
+      "decision": "DESIGN input; reopen only finite implementation scope with new card",
+      "source": {
+        "path": "src/graph/executable.cc",
+        "line": 8134,
+        "anchor": "target.context->device() != environment.targets[0].context->device()",
+        "sha256": "089548f76aa386f43dd1434f3db2cf2d6caf44046e7e6bdd3f43f9360872b4e7"
+      }
+    }
+  ]
+}

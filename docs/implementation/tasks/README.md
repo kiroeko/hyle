@@ -8,6 +8,11 @@
 
 - [治理执行性与文档压缩 v4](project/governance-documentation-v4.md)。
 
+用户新增的 Compute/Graph 设计工作：
+
+- [构建、冷路由和 CPU/GPU 组合入口设计](build/compute-entry-design.md)：入口统计与有限后续施工包；
+  本 goal 不改产品，通用增量依赖图只登记 DEFER。
+
 当前跨产品能力审计事实：
 
 - [CLOSED 组件全库正确性资格审计](project/closed-components-correctness-qualification-2026-09.md)：
