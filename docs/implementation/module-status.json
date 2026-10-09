@@ -545,15 +545,15 @@
     },
     {
       "module": "compute_route_vulkan",
-      "state": "SCOPED",
-      "record": "docs/implementation/tasks/compute/vulkan-cpu-cuda-apple-parity-closure.md",
-      "summary": "Vulkan parity SCOPED: named paired measurement correction and exact eight-process AA passed unchanged 5%/10% gates; old failures retained; common catalogue, mature carrier and finite FIX audit pending. No product change or P1 completion claimed."
+      "state": "AUDITED",
+      "record": "docs/implementation/tasks/compute/vulkan-parity-v2-artifact-bindings.md",
+      "summary": "Vulkan artifact batch AUDITED: exact mature NF4/AWQ/CT tensor recipes, six native ports, source rounding and U8/U32 storage fixed; paired AA resume retained. Product/runtime validation pending; no P1 or full catalogue PASS."
     },
     {
       "module": "graph_route_vulkan",
-      "state": "SCOPED",
-      "record": "docs/implementation/tasks/compute/vulkan-cpu-cuda-apple-parity-closure.md",
-      "summary": "Vulkan parity SCOPED: named paired measurement correction and exact eight-process AA passed unchanged 5%/10% gates; old failures retained; common catalogue, mature carrier and finite FIX audit pending. No product change or P1 completion claimed."
+      "state": "AUDITED",
+      "record": "docs/implementation/tasks/compute/vulkan-parity-v2-artifact-bindings.md",
+      "summary": "Vulkan artifact batch AUDITED: exact mature NF4/AWQ/CT tensor recipes, six native ports, source rounding and U8/U32 storage fixed; paired AA resume retained. Product/runtime validation pending; no P1 or full catalogue PASS."
     },
     {
       "module": "compute_provider_ggml_vulkan",
@@ -619,10 +619,9 @@
     },
     {
       "module": "compute_provider_iree_vulkan",
-      "state": "CANDIDATE",
-      "record": "docs/implementation/tasks/compute/llm-moe-d3-ggml-vulkan-native-binding.md",
-      "summary": "IREE原D3能力仍CANDIDATE；宏等价改动026d40bc经实际owner编译、32 native及三平台宏/交付验收，原功能/精度/资源/性能限制保持，不签Vulkan路线CLOSED。",
-      "candidate": "026d40bcfdde389c9f69b2458b55d8157774ebda"
+      "state": "AUDITED",
+      "record": "docs/implementation/tasks/compute/vulkan-parity-v2-artifact-bindings.md",
+      "summary": "Vulkan artifact batch AUDITED: exact mature NF4/AWQ/CT tensor recipes, six native ports, source rounding and U8/U32 storage fixed; paired AA resume retained. Product/runtime validation pending; no P1 or full catalogue PASS."
     },
     {
       "module": "compute_provider_torch_cuda",

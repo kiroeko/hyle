@@ -1,0 +1,74 @@
+# Vulkan V2：原 NF4／AWQ／compressed-tensors 批量接入
+
+<!-- MODULE REVIEW: AUDITED -->
+
+父轮：[共同目录收口](vulkan-cpu-cuda-apple-parity-closure.md)。baseline
+`487b474072529a11612963add826bff40e4f5a6f`；owner
+`compute_provider_iree_vulkan`、`compute_route_vulkan`、`graph_route_vulkan`。
+IREE 原 CANDIDATE 因新增原程序退回 AUDITED；两路线已由独立 paired A/A 恢复 SCOPED，
+本次完成具名审计后进入 AUDITED。其他 owner 的 CLOSED/有限 FIX 不变。
+
+## 真实 consumer 与来源
+
+[共同端口](cpu-final-demand-carriers.json)中 6 个 NF4、7 个 AWQ、5 个 CT packed
+合同需要原字节解码和后续投影；不换成近似 GGUF 格式。主纵切是混合权重的显式准备、
+decoded Tensor→MatMul，正交纵切是 U8/U32 payload 的精确 Copy/Fill/Select/View/Concat。
+普通调用沿现有 `artifact_weight_decode`、Vulkan `prepare`、GraphBuilder/compile，
+不增加模型 loader、provider 排序或用户 timing。
+
+已核对公共 `weight_decode.cc` 的全部端口、group、shape 和输出 dtype；既有 Apple 借用
+代码和登记原源码互相对应：bitsandbytes `833649043474794b8fe7a4136e0c40faf077b2e0`，
+AutoAWQ `88e4c76b20755db275574e6a03c83c84ba3bece5`，compressed-tensors
+`ac8e2ba82f4e0d5eaa40069f8fc642738f124cd4`。复制原 tensor 序列为 IREE 标准
+tensor/arith/linalg recipe，保留许可/来源，不自写 GLSL、量化算法或调度器。
+锁定 compiler/runtime 均为 `6ef606b6fa3e12bd2c12d36a07463069eb71185f`；编译器已本地可用。
+
+## 有限 FIX（产品前冻结）
+
+| ID | 缺陷／允许改动 | 验收 |
+|---|---|---|
+| A1 | IREE 原标准程序承载 NF4 high-first nibble、nested absmax 256+offset、AWQ 原 nibble 顺序及零点、CT symmetric4；保留源 scale dtype 的乘法舍入及最终 F32/F16/BF16 输出 | 独立原 CPU 借用参考，全部格式/scale-output dtype 组合、group、非方阵和变 payload |
+| A2 | 私有 ProgramSpec 原程序类型、group/source-output dtype；最多六个 native inputs 和 group scalar；原 module/VM/HAL/fence/quota/async retirement 复用 | 普通两入口、独立 slot、replay/保活、close/cancel/资源失败，无 host 数学 fallback |
+| A3 | 路线冷匹配 ArtifactWeightDecode、逐真实 port 拷贝，Graph typed hook；原六输入不得误走 FP8 的 port%2/scale offset 或 Scan flag | nested 六个不同输入、普通 Graph 未提供 custom callback、decoded weight 后接原 MatMul |
+| A4 | 原 U32 存储 shader 仅新增 U8/U32 storage ID/width；不改数学 body；公共 schema 与 float-only guard 保持 | bytes 精确、非四字节尾、stride/view、禁止未资格 unsigned 数学 |
+| A5 | 新标准 recipe/离线 VMFB、来源许可及 vendor digest 纳入既有生成机制 | 同一 producer 编译、现有 native IREE/precision/FP8 回归；父轮三交付统一运行 |
+
+34 packed 中其余 16 MLX、三种扩展 IQ1、七 typed hook 中其它六个及完整目录/官方 FP4/FP8
+仍由父轮具名后续批次处理，不把本批静态支持当整个 Vulkan runtime PASS。
+
+## 冻结语义与成本
+
+NF4 scale/book 是 F32；nested 首先以原 F32 顺序还原 absmax。
+AWQ 原顺序 `{0,4,1,5,2,6,3,7}`，差值先 cast 到 scale dtype，再乘并保留该 dtype 的舍入；
+CT signed4 同样先 cast 再乘。最终显式 output dtype 在此后转换，不能先提升 F32 避掉
+原半精度舍入。BF16 端口以 i16 原位承载，内部用标准 bitcast/truncf；F16 使用原类型。
+
+decoded tensor 是公开、显式的准备结果；动态 decode 每次执行和 GPU copy/完成均计成本。
+不暗中常驻整模型 F32 bank。不可变权重可由 caller 先 decode，再作为已有 MatMul 常量
+绑定；expert selected-only 与 MLX fused region 属后续独立 batch。所有 feature、shape、
+descriptor/workspace/dispatch 范围在冷准备前拒绝，不靠 OOM 试探能力。
+每 Invocation 自己的 VM/context/input/private-output、原 completion 和结果 lease 不变；
+失败/取消禁止发布，退役后才能释放或复用。六输入只扩大本 provider 原有的有限参数数组。
+
+## 七问与验证预算
+
+1. 三原成熟源及 IREE 已登记；新 recipe 标注各来源及许可证，compiler 不成为消费依赖。
+2. 本批 18 packed 合同仍须实际 geometry 验证；样本与静态 source 不代签完整目录。
+3. 复用现有 schema、Vulkan owner、ggml 后续 MatMul、IREE VM/HAL 与 quota；不重开下层全库。
+4. P0：每输出一次原 scalar decode，原标准编译器调度；显式输出及边界成本如实记录。
+   本批只有一家完整 carrier，不制造 provider 竞赛；父轮稳定候选再做适用完整成本 P1。
+5. 原 VM 私有 FFI 不进入公开 C++，无新增公共 vtable/executor 或兼容旧 API。
+6. 原 CMake 嵌入所有 bytecode；无需运行时 compiler/Python。三交付/搬迁/DLL/许可由 V4 一批验证。
+7. 现有 Direct/Graph schema 自然入口，不要求外部 custom shader callback；错误说明具体 feature/domain。
+
+批末一个不可变 candidate，复用 `C:/hv/vp1`，build2/test1、重型串行；源码/离线 recipe
+实现预算 90 分钟，资格与纠正预算 45 分钟。只允许一次具名 source/compiler/接线纠正，
+不逐格式重配、不重复已通过整矩阵、不跑本批 P1。新 source 事实改变算法或资源范围时
+重新定界，不写自研替代。Windows RTX4070 原 GPU 先验；Air capability 与三交付仍未验。
+
+预声明：格式/原源 dtype/最终 dtype、group64/128、tail/nested跨256、两入口投影、原字段
+更新、两 slot/lease/close、schema错误/容量/OOM/cancel，以及现有 IREE/存储影响子集。
+selector、docs/closure 必跑；适用未运行写 UNPROVEN，不能 PASS。budget 到达留下明确
+剩余项及原因，本卡保持 AUDITED 或依法转阶段，不能用无限调查续命。
+
+当前：审计完成；产品与 runtime 尚未实现/运行，全部新增验证 UNPROVEN。

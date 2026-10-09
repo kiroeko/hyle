@@ -90,3 +90,7 @@ V1剩余[carrier/source审计](../../../../evidence/correctness/vulkan-parity-v1
 现有IREE compiler6ef606与runtime锁精确一致，无需新下载/重建LLVM或研究模型版本。
 这些是有限新FIX的source输入，不是新runtime PASS；下一步先审计原标准tensor recipe/
 native参数与资源接口，再AUDITED批量接线，仍不新增HYLE shader或自研算法。
+
+下一批 [NF4／AWQ／compressed-tensors 原程序接线](vulkan-parity-v2-artifact-bindings.md)
+已完成 source/六端口/精度/资源审计并固定有限 A1–A5；对应 IREE 与两路线进入 AUDITED。
+当前新增 runtime 尚未运行，完整父轮需求、V3/V4 和正式 P1 仍未完成。
