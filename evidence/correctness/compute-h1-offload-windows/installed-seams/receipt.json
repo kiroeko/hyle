@@ -1,0 +1,218 @@
+{
+  "candidate": "7eaf67b8a496ee19b609533980cd69e7efb5aa49",
+  "rows": [
+    {
+      "stage": "shared-header-0",
+      "exit": 0,
+      "seconds": 1.02,
+      "minimum_available_gib": 47.04,
+      "log": "C:\\h7\\h1-offload-windows-installed-seams\\shared-header-0.log",
+      "minimum_commit_headroom_gib": 41.84,
+      "maximum_owned_private_gib": 0.01,
+      "guards": {
+        "minimum_available_gib": 16,
+        "minimum_commit_headroom_gib": 16,
+        "maximum_owned_private_gib": 12
+      }
+    },
+    {
+      "stage": "shared-header-1",
+      "exit": 2,
+      "seconds": 1.01,
+      "minimum_available_gib": 47.04,
+      "log": "C:\\h7\\h1-offload-windows-installed-seams\\shared-header-1.log",
+      "minimum_commit_headroom_gib": 41.84,
+      "maximum_owned_private_gib": 0.01,
+      "guards": {
+        "minimum_available_gib": 16,
+        "minimum_commit_headroom_gib": 16,
+        "maximum_owned_private_gib": 12
+      }
+    },
+    {
+      "stage": "shared-header-1",
+      "exit": 0,
+      "seconds": 1.02,
+      "minimum_available_gib": 47.12,
+      "log": "C:\\h7\\h1-offload-windows-installed-seams\\shared-header-1.log",
+      "minimum_commit_headroom_gib": 41.95,
+      "maximum_owned_private_gib": 0.01,
+      "guards": {
+        "minimum_available_gib": 16,
+        "minimum_commit_headroom_gib": 16,
+        "maximum_owned_private_gib": 12
+      }
+    },
+    {
+      "stage": "shared-header-2",
+      "exit": 0,
+      "seconds": 2.03,
+      "minimum_available_gib": 46.95,
+      "log": "C:\\h7\\h1-offload-windows-installed-seams\\shared-header-2.log",
+      "minimum_commit_headroom_gib": 41.77,
+      "maximum_owned_private_gib": 0.2,
+      "guards": {
+        "minimum_available_gib": 16,
+        "minimum_commit_headroom_gib": 16,
+        "maximum_owned_private_gib": 12
+      }
+    },
+    {
+      "stage": "shared-header-3",
+      "exit": 0,
+      "seconds": 1.02,
+      "minimum_available_gib": 47.13,
+      "log": "C:\\h7\\h1-offload-windows-installed-seams\\shared-header-3.log",
+      "minimum_commit_headroom_gib": 41.96,
+      "maximum_owned_private_gib": 0.01,
+      "guards": {
+        "minimum_available_gib": 16,
+        "minimum_commit_headroom_gib": 16,
+        "maximum_owned_private_gib": 12
+      }
+    },
+    {
+      "stage": "shared-relocated-configure",
+      "exit": 0,
+      "seconds": 49.69,
+      "minimum_available_gib": 47.07,
+      "log": "C:\\h7\\h1-offload-windows-installed-seams\\shared-relocated-configure.log",
+      "minimum_commit_headroom_gib": 41.93,
+      "maximum_owned_private_gib": 0.03,
+      "guards": {
+        "minimum_available_gib": 16,
+        "minimum_commit_headroom_gib": 16,
+        "maximum_owned_private_gib": 12
+      }
+    },
+    {
+      "stage": "shared-relocated-build",
+      "exit": 0,
+      "seconds": 13.19,
+      "minimum_available_gib": 47.08,
+      "log": "C:\\h7\\h1-offload-windows-installed-seams\\shared-relocated-build.log",
+      "minimum_commit_headroom_gib": 41.9,
+      "maximum_owned_private_gib": 0.23,
+      "guards": {
+        "minimum_available_gib": 16,
+        "minimum_commit_headroom_gib": 16,
+        "maximum_owned_private_gib": 12
+      }
+    },
+    {
+      "stage": "shared-relocated-test",
+      "exit": 0,
+      "seconds": 1.01,
+      "minimum_available_gib": 47.28,
+      "log": "C:\\h7\\h1-offload-windows-installed-seams\\shared-relocated-test.log",
+      "minimum_commit_headroom_gib": 42.1,
+      "maximum_owned_private_gib": 0.01,
+      "guards": {
+        "minimum_available_gib": 16,
+        "minimum_commit_headroom_gib": 16,
+        "maximum_owned_private_gib": 12
+      }
+    },
+    {
+      "stage": "static-header-0",
+      "exit": 0,
+      "seconds": 1.02,
+      "minimum_available_gib": 47.23,
+      "log": "C:\\h7\\h1-offload-windows-installed-seams\\static-header-0.log",
+      "minimum_commit_headroom_gib": 42.08,
+      "maximum_owned_private_gib": 0.01,
+      "guards": {
+        "minimum_available_gib": 16,
+        "minimum_commit_headroom_gib": 16,
+        "maximum_owned_private_gib": 12
+      }
+    },
+    {
+      "stage": "static-header-1",
+      "exit": 0,
+      "seconds": 1.02,
+      "minimum_available_gib": 47.05,
+      "log": "C:\\h7\\h1-offload-windows-installed-seams\\static-header-1.log",
+      "minimum_commit_headroom_gib": 41.88,
+      "maximum_owned_private_gib": 0.01,
+      "guards": {
+        "minimum_available_gib": 16,
+        "minimum_commit_headroom_gib": 16,
+        "maximum_owned_private_gib": 12
+      }
+    },
+    {
+      "stage": "static-header-2",
+      "exit": 0,
+      "seconds": 2.03,
+      "minimum_available_gib": 46.93,
+      "log": "C:\\h7\\h1-offload-windows-installed-seams\\static-header-2.log",
+      "minimum_commit_headroom_gib": 41.76,
+      "maximum_owned_private_gib": 0.2,
+      "guards": {
+        "minimum_available_gib": 16,
+        "minimum_commit_headroom_gib": 16,
+        "maximum_owned_private_gib": 12
+      }
+    },
+    {
+      "stage": "static-header-3",
+      "exit": 0,
+      "seconds": 1.02,
+      "minimum_available_gib": 47.31,
+      "log": "C:\\h7\\h1-offload-windows-installed-seams\\static-header-3.log",
+      "minimum_commit_headroom_gib": 42.16,
+      "maximum_owned_private_gib": 0.01,
+      "guards": {
+        "minimum_available_gib": 16,
+        "minimum_commit_headroom_gib": 16,
+        "maximum_owned_private_gib": 12
+      }
+    },
+    {
+      "stage": "static-relocated-configure",
+      "exit": 0,
+      "seconds": 50.73,
+      "minimum_available_gib": 47.07,
+      "log": "C:\\h7\\h1-offload-windows-installed-seams\\static-relocated-configure.log",
+      "minimum_commit_headroom_gib": 41.91,
+      "maximum_owned_private_gib": 0.03,
+      "guards": {
+        "minimum_available_gib": 16,
+        "minimum_commit_headroom_gib": 16,
+        "maximum_owned_private_gib": 12
+      }
+    },
+    {
+      "stage": "static-relocated-build",
+      "exit": 0,
+      "seconds": 11.2,
+      "minimum_available_gib": 45.92,
+      "log": "C:\\h7\\h1-offload-windows-installed-seams\\static-relocated-build.log",
+      "minimum_commit_headroom_gib": 41.34,
+      "maximum_owned_private_gib": 0.41,
+      "guards": {
+        "minimum_available_gib": 16,
+        "minimum_commit_headroom_gib": 16,
+        "maximum_owned_private_gib": 12
+      }
+    },
+    {
+      "stage": "static-relocated-test",
+      "exit": 0,
+      "seconds": 2.03,
+      "minimum_available_gib": 46.93,
+      "log": "C:\\h7\\h1-offload-windows-installed-seams\\static-relocated-test.log",
+      "minimum_commit_headroom_gib": 41.31,
+      "maximum_owned_private_gib": 0.86,
+      "guards": {
+        "minimum_available_gib": 16,
+        "minimum_commit_headroom_gib": 16,
+        "maximum_owned_private_gib": 12
+      }
+    }
+  ],
+  "build_parallel": 1,
+  "test_parallel": 1,
+  "claim": "only listed actual stages"
+}

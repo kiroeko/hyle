@@ -1,0 +1,64 @@
+{
+  "candidate": "7eaf67b8a496ee19b609533980cd69e7efb5aa49",
+  "rows": [
+    {
+      "stage": "probe-configure",
+      "exit": 0,
+      "seconds": 49.72,
+      "minimum_available_gib": 45.99,
+      "log": "C:\\h7\\h1-offload-windows-native-overlap\\probe-configure.log",
+      "minimum_commit_headroom_gib": 39.87,
+      "maximum_owned_private_gib": 0.03,
+      "guards": {
+        "minimum_available_gib": 16,
+        "minimum_commit_headroom_gib": 16,
+        "maximum_owned_private_gib": 12
+      }
+    },
+    {
+      "stage": "probe-build",
+      "exit": 0,
+      "seconds": 7.14,
+      "minimum_available_gib": 47.17,
+      "log": "C:\\h7\\h1-offload-windows-native-overlap\\probe-build.log",
+      "minimum_commit_headroom_gib": 42.03,
+      "maximum_owned_private_gib": 0.14,
+      "guards": {
+        "minimum_available_gib": 16,
+        "minimum_commit_headroom_gib": 16,
+        "maximum_owned_private_gib": 12
+      }
+    },
+    {
+      "stage": "native-trace",
+      "exit": 0,
+      "seconds": 3.06,
+      "minimum_available_gib": 46.58,
+      "log": "C:\\h7\\h1-offload-windows-native-overlap\\native-trace.log",
+      "minimum_commit_headroom_gib": 40.72,
+      "maximum_owned_private_gib": 1.3,
+      "guards": {
+        "minimum_available_gib": 16,
+        "minimum_commit_headroom_gib": 16,
+        "maximum_owned_private_gib": 12
+      }
+    },
+    {
+      "stage": "trace-export",
+      "exit": 0,
+      "seconds": 1.02,
+      "minimum_available_gib": 47.22,
+      "log": "C:\\h7\\h1-offload-windows-native-overlap\\trace-export.log",
+      "minimum_commit_headroom_gib": 42.04,
+      "maximum_owned_private_gib": 0.03,
+      "guards": {
+        "minimum_available_gib": 16,
+        "minimum_commit_headroom_gib": 16,
+        "maximum_owned_private_gib": 12
+      }
+    }
+  ],
+  "build_parallel": 1,
+  "test_parallel": 1,
+  "claim": "only listed actual stages"
+}

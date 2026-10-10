@@ -1,0 +1,3 @@
+[1/3] C:\WINDOWS\system32\cmd.exe /C "cd /D C:\h7\h1-windows-delivery\shared-relocated-joint && "C:\Program Files\CMake\bin\cmake.exe" -P C:/h7/h1-windows-delivery/shared-relocated-joint/hyle-runtime/hyle_cpu_cuda_sample-Release.cmake"
+[2/3] Building CXX object CMakeFiles\hyle_cpu_cuda_sample.dir\main.cc.obj
+[3/3] Linking CXX executable C:\h7\h1-windows-delivery\shared-apps\hyle_cpu_cuda_sample.exe

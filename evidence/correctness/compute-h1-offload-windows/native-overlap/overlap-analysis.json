@@ -1,0 +1,58 @@
+{
+  "candidate": "7eaf67b8a496ee19b609533980cd69e7efb5aa49",
+  "verdict": "PASS",
+  "scope": "Physical native overlap only; no P1 or winner/speedup claim",
+  "copy_bytes": 16777216,
+  "kernel_count": 8,
+  "intersections": [
+    [
+      0,
+      1,
+      13,
+      14,
+      716376402,
+      717126091,
+      715412507,
+      716733390,
+      "ampere_sgemm_128x64_nn",
+      356988
+    ],
+    [
+      0,
+      1,
+      13,
+      14,
+      716376402,
+      717126091,
+      716746350,
+      718111713,
+      "ampere_sgemm_128x64_nn",
+      379741
+    ]
+  ],
+  "columns": [
+    "device",
+    "context",
+    "copy_stream",
+    "kernel_stream",
+    "copy_start_ns",
+    "copy_end_ns",
+    "kernel_start_ns",
+    "kernel_end_ns",
+    "kernel_name",
+    "intersection_ns"
+  ],
+  "trace_identity": {
+    "overlap-cuda.sqlite": {
+      "path": "C:\\h7\\h1-offload-windows-native-overlap\\overlap-cuda.sqlite",
+      "bytes": 352256,
+      "sha256": "b6abf4c234e202b32ac7cd023a935c85ebec7e41737b69fa377bd189b7e1e910"
+    },
+    "overlap-cuda.nsys-rep": {
+      "path": "C:\\h7\\h1-offload-windows-native-overlap\\overlap-cuda.nsys-rep",
+      "bytes": 112600,
+      "sha256": "4f9d20d96e88362f9330af8025c17979d6219c0b4ad821439d521894d7b0afb2"
+    }
+  },
+  "probe_sha256": "7d341cca5b7bbf46f75153db5d297f3a7aaeca2973de5c3705b0385d7e6fe8af"
+}

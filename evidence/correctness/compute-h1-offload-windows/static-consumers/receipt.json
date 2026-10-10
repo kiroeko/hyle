@@ -1,0 +1,134 @@
+{
+  "candidate": "7eaf67b8a496ee19b609533980cd69e7efb5aa49",
+  "rows": [
+    {
+      "stage": "joint-configure",
+      "exit": 0,
+      "seconds": 133.97,
+      "minimum_available_gib": 46.01,
+      "log": "C:\\h7\\h1-offload-windows-static-consumers\\joint-configure.log",
+      "minimum_commit_headroom_gib": 39.43,
+      "maximum_owned_private_gib": 0.03,
+      "guards": {
+        "minimum_available_gib": 16,
+        "minimum_commit_headroom_gib": 16,
+        "maximum_owned_private_gib": 12
+      }
+    },
+    {
+      "stage": "joint-build",
+      "exit": 0,
+      "seconds": 12.19,
+      "minimum_available_gib": 42.51,
+      "log": "C:\\h7\\h1-offload-windows-static-consumers\\joint-build.log",
+      "minimum_commit_headroom_gib": 39.43,
+      "maximum_owned_private_gib": 0.38,
+      "guards": {
+        "minimum_available_gib": 16,
+        "minimum_commit_headroom_gib": 16,
+        "maximum_owned_private_gib": 12
+      }
+    },
+    {
+      "stage": "joint-test",
+      "exit": 0,
+      "seconds": 3.06,
+      "minimum_available_gib": 43.84,
+      "log": "C:\\h7\\h1-offload-windows-static-consumers\\joint-test.log",
+      "minimum_commit_headroom_gib": 39.19,
+      "maximum_owned_private_gib": 0.85,
+      "guards": {
+        "minimum_available_gib": 16,
+        "minimum_commit_headroom_gib": 16,
+        "maximum_owned_private_gib": 12
+      }
+    },
+    {
+      "stage": "direct-configure",
+      "exit": 0,
+      "seconds": 50.75,
+      "minimum_available_gib": 45.12,
+      "log": "C:\\h7\\h1-offload-windows-static-consumers\\direct-configure.log",
+      "minimum_commit_headroom_gib": 39.15,
+      "maximum_owned_private_gib": 0.03,
+      "guards": {
+        "minimum_available_gib": 16,
+        "minimum_commit_headroom_gib": 16,
+        "maximum_owned_private_gib": 12
+      }
+    },
+    {
+      "stage": "direct-build",
+      "exit": 0,
+      "seconds": 11.17,
+      "minimum_available_gib": 45.6,
+      "log": "C:\\h7\\h1-offload-windows-static-consumers\\direct-build.log",
+      "minimum_commit_headroom_gib": 39.51,
+      "maximum_owned_private_gib": 0.24,
+      "guards": {
+        "minimum_available_gib": 16,
+        "minimum_commit_headroom_gib": 16,
+        "maximum_owned_private_gib": 12
+      }
+    },
+    {
+      "stage": "direct-test",
+      "exit": 0,
+      "seconds": 2.06,
+      "minimum_available_gib": 45.38,
+      "log": "C:\\h7\\h1-offload-windows-static-consumers\\direct-test.log",
+      "minimum_commit_headroom_gib": 38.96,
+      "maximum_owned_private_gib": 1.1,
+      "guards": {
+        "minimum_available_gib": 16,
+        "minimum_commit_headroom_gib": 16,
+        "maximum_owned_private_gib": 12
+      }
+    },
+    {
+      "stage": "contracts-configure",
+      "exit": 0,
+      "seconds": 50.73,
+      "minimum_available_gib": 45.95,
+      "log": "C:\\h7\\h1-offload-windows-static-consumers\\contracts-configure.log",
+      "minimum_commit_headroom_gib": 39.44,
+      "maximum_owned_private_gib": 0.03,
+      "guards": {
+        "minimum_available_gib": 16,
+        "minimum_commit_headroom_gib": 16,
+        "maximum_owned_private_gib": 12
+      }
+    },
+    {
+      "stage": "contracts-build",
+      "exit": 0,
+      "seconds": 11.17,
+      "minimum_available_gib": 45.01,
+      "log": "C:\\h7\\h1-offload-windows-static-consumers\\contracts-build.log",
+      "minimum_commit_headroom_gib": 39.43,
+      "maximum_owned_private_gib": 0.77,
+      "guards": {
+        "minimum_available_gib": 16,
+        "minimum_commit_headroom_gib": 16,
+        "maximum_owned_private_gib": 12
+      }
+    },
+    {
+      "stage": "contracts-test",
+      "exit": 0,
+      "seconds": 2.03,
+      "minimum_available_gib": 45.84,
+      "log": "C:\\h7\\h1-offload-windows-static-consumers\\contracts-test.log",
+      "minimum_commit_headroom_gib": 39.23,
+      "maximum_owned_private_gib": 0.89,
+      "guards": {
+        "minimum_available_gib": 16,
+        "minimum_commit_headroom_gib": 16,
+        "maximum_owned_private_gib": 12
+      }
+    }
+  ],
+  "build_parallel": 1,
+  "test_parallel": 1,
+  "claim": "only listed actual stages"
+}

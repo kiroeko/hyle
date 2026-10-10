@@ -1,0 +1,209 @@
+{
+  "candidate": "7eaf67b8a496ee19b609533980cd69e7efb5aa49",
+  "user_resumption": "2026-10-10 explicit continue after memory hold",
+  "windows_current": "source/shared/static, changed installed headers, relocated shared/static joint consumers, missing route rejection and current native overlap completed",
+  "wsl_current": "NOT_RUN",
+  "files": {
+    "static-consumers/contracts-build.log": {
+      "bytes": 456,
+      "sha256": "62cf6038ae1daeb5161f326a5b15900c648737d377ddc375f451904ee19495b0",
+      "original_sha256": "62cf6038ae1daeb5161f326a5b15900c648737d377ddc375f451904ee19495b0"
+    },
+    "static-consumers/contracts-configure.log": {
+      "bytes": 1389,
+      "sha256": "e56796c4c99e24e6aa46bc347352e326b01f132ff03c80552bca6a9d8fe57f4b",
+      "original_sha256": "e56796c4c99e24e6aa46bc347352e326b01f132ff03c80552bca6a9d8fe57f4b"
+    },
+    "static-consumers/contracts-test.log": {
+      "bytes": 227,
+      "sha256": "344fb325902f8f7cbdc740ca3c64cf051a1331a8a903ade8cd5f761cb96fe48b",
+      "original_sha256": "344fb325902f8f7cbdc740ca3c64cf051a1331a8a903ade8cd5f761cb96fe48b"
+    },
+    "static-consumers/direct-build.log": {
+      "bytes": 399,
+      "sha256": "610d9f22886f0cb4c3653ce3830acb3d6c83f77e0e3e2cd832b6ae8107e1d8d5",
+      "original_sha256": "610d9f22886f0cb4c3653ce3830acb3d6c83f77e0e3e2cd832b6ae8107e1d8d5"
+    },
+    "static-consumers/direct-configure.log": {
+      "bytes": 1386,
+      "sha256": "ed27bdc6481a0c9e187fed1aa00186ccff2f23542efc42b0b7cf89e746c57317",
+      "original_sha256": "ed27bdc6481a0c9e187fed1aa00186ccff2f23542efc42b0b7cf89e746c57317"
+    },
+    "static-consumers/direct-test.log": {
+      "bytes": 225,
+      "sha256": "b8e96da8bbfb61bc2207a735c0a040f8cd10d3835cb24d7d93ad0ae7b18d054a",
+      "original_sha256": "b8e96da8bbfb61bc2207a735c0a040f8cd10d3835cb24d7d93ad0ae7b18d054a"
+    },
+    "static-consumers/joint-build.log": {
+      "bytes": 385,
+      "sha256": "febd789ce78d72bde5af1b5546a143c6426ba064a044ddd3e589c806c6175af3",
+      "original_sha256": "febd789ce78d72bde5af1b5546a143c6426ba064a044ddd3e589c806c6175af3"
+    },
+    "static-consumers/joint-configure.log": {
+      "bytes": 1386,
+      "sha256": "c9a45ce2a50c47690a92e75969d2fec27f5336c1fabf78f26c885cd23297cc04",
+      "original_sha256": "c9a45ce2a50c47690a92e75969d2fec27f5336c1fabf78f26c885cd23297cc04"
+    },
+    "static-consumers/joint-test.log": {
+      "bytes": 220,
+      "sha256": "334388c19b3d9227285707ddd285543e0bc5e788455bc050c57d6c0e91515a87",
+      "original_sha256": "334388c19b3d9227285707ddd285543e0bc5e788455bc050c57d6c0e91515a87"
+    },
+    "static-consumers/receipt.json": {
+      "bytes": 4211,
+      "sha256": "d3bf186108b9b38b542aff7a298ddda85de88ad5376ddebb790d9b1452756824",
+      "original_sha256": "d3bf186108b9b38b542aff7a298ddda85de88ad5376ddebb790d9b1452756824"
+    },
+    "static-consumers": {
+      "observed_maximum_owned_private_gib": 1.1,
+      "minimum_available_gib": 42.51
+    },
+    "installed-seams/receipt.json": {
+      "bytes": 7016,
+      "sha256": "ed27cbe4c1796501eb7075ad40d19e3ec04b8154956925dbe70c10501153815f",
+      "original_sha256": "ed27cbe4c1796501eb7075ad40d19e3ec04b8154956925dbe70c10501153815f"
+    },
+    "installed-seams/shared-header-0.log": {
+      "bytes": 20,
+      "sha256": "cc1602b28f0dd1e637ff12e155bc2e714fce76216f61d121cd338026af0fc859",
+      "original_sha256": "cc1602b28f0dd1e637ff12e155bc2e714fce76216f61d121cd338026af0fc859"
+    },
+    "installed-seams/shared-header-1-initial-missing-toolkit.log": {
+      "bytes": 181,
+      "sha256": "a46c2541f2435421d78809052605b466d87590d4dda5ba3878d0a60720e9f4c8",
+      "original_sha256": "a46c2541f2435421d78809052605b466d87590d4dda5ba3878d0a60720e9f4c8"
+    },
+    "installed-seams/shared-header-1.log": {
+      "bytes": 1234,
+      "sha256": "370389095ab41c41f1af2c7e75be5f0d75f3dce2f048e53d8a51d8d8a1396214",
+      "original_sha256": "370389095ab41c41f1af2c7e75be5f0d75f3dce2f048e53d8a51d8d8a1396214"
+    },
+    "installed-seams/shared-header-2.log": {
+      "bytes": 1462,
+      "sha256": "93e6e936c2fc9c1f67af3c24074d0be3d4406925b47e5bd9d73eef3308a7e5a2",
+      "original_sha256": "93e6e936c2fc9c1f67af3c24074d0be3d4406925b47e5bd9d73eef3308a7e5a2"
+    },
+    "installed-seams/shared-header-3.log": {
+      "bytes": 20,
+      "sha256": "06e0000b0a2336a5633dcc314daa6e53a3bb5bd93286e2f5d9402ddbe12e3d30",
+      "original_sha256": "06e0000b0a2336a5633dcc314daa6e53a3bb5bd93286e2f5d9402ddbe12e3d30"
+    },
+    "installed-seams/shared-relocated-build.log": {
+      "bytes": 405,
+      "sha256": "a1bcc7d8da6878ddebfe8b6dec90fb2380b0a6fb38bdf565ae7a04ae0525f57c",
+      "original_sha256": "a1bcc7d8da6878ddebfe8b6dec90fb2380b0a6fb38bdf565ae7a04ae0525f57c"
+    },
+    "installed-seams/shared-relocated-configure.log": {
+      "bytes": 1087,
+      "sha256": "f1f1eff39f7510d87cf29d25e42cb8a75657d4536a8c56ac65fa7aef4dda826c",
+      "original_sha256": "f1f1eff39f7510d87cf29d25e42cb8a75657d4536a8c56ac65fa7aef4dda826c"
+    },
+    "installed-seams/shared-relocated-test.log": {
+      "bytes": 230,
+      "sha256": "1657464a65547694e3d0920e6bb68ca1afcd4781f697069e317692a10e1db67c",
+      "original_sha256": "1657464a65547694e3d0920e6bb68ca1afcd4781f697069e317692a10e1db67c"
+    },
+    "installed-seams/static-header-0.log": {
+      "bytes": 20,
+      "sha256": "abb718a8a30794c5506d851215e8228acb6f1b45d54860107cfa0e7f2d91404c",
+      "original_sha256": "abb718a8a30794c5506d851215e8228acb6f1b45d54860107cfa0e7f2d91404c"
+    },
+    "installed-seams/static-header-1.log": {
+      "bytes": 1234,
+      "sha256": "d48d4d797af7b324bdb5bc0944b02e23ba7767124d00aaa6cd29ad994f347f12",
+      "original_sha256": "d48d4d797af7b324bdb5bc0944b02e23ba7767124d00aaa6cd29ad994f347f12"
+    },
+    "installed-seams/static-header-2.log": {
+      "bytes": 1462,
+      "sha256": "3a5f682f0ceb44c3a3e75ecdca5ff13d76a0d789941a5f145722ab7b5b67d2c0",
+      "original_sha256": "3a5f682f0ceb44c3a3e75ecdca5ff13d76a0d789941a5f145722ab7b5b67d2c0"
+    },
+    "installed-seams/static-header-3.log": {
+      "bytes": 20,
+      "sha256": "2be02ee2630d93d56688b39578f8b898d154d0c5d462c48d854b4769a47054b4",
+      "original_sha256": "2be02ee2630d93d56688b39578f8b898d154d0c5d462c48d854b4769a47054b4"
+    },
+    "installed-seams/static-relocated-build.log": {
+      "bytes": 405,
+      "sha256": "cdcaf0e032efb8c5c0bfbbba82f3901b98010b1d77d7ab82bbfa29ba114a45f5",
+      "original_sha256": "cdcaf0e032efb8c5c0bfbbba82f3901b98010b1d77d7ab82bbfa29ba114a45f5"
+    },
+    "installed-seams/static-relocated-configure.log": {
+      "bytes": 1395,
+      "sha256": "cbbe6123cef2d19f549f30db23d9fa1cf7106314d3e1122e6f2ab55526d3d7db",
+      "original_sha256": "cbbe6123cef2d19f549f30db23d9fa1cf7106314d3e1122e6f2ab55526d3d7db"
+    },
+    "installed-seams/static-relocated-test.log": {
+      "bytes": 230,
+      "sha256": "ff3a7c17260f7a5af04af2ebe762870d4bc81d416480862011aac9328fd50df6",
+      "original_sha256": "ff3a7c17260f7a5af04af2ebe762870d4bc81d416480862011aac9328fd50df6"
+    },
+    "installed-seams": {
+      "observed_maximum_owned_private_gib": 0.86,
+      "minimum_available_gib": 45.92
+    },
+    "native-overlap/native-trace.log": {
+      "bytes": 459,
+      "sha256": "2c17e211ed110540481d752710e7021c1a121c3dda9ecf96089085b7dcd99c27",
+      "original_sha256": "2c17e211ed110540481d752710e7021c1a121c3dda9ecf96089085b7dcd99c27"
+    },
+    "native-overlap/overlap-analysis.json": {
+      "bytes": 1331,
+      "sha256": "c087f90518df14897d845336161ff843b104a893a204704063382be33e4f3b7a",
+      "original_sha256": "c087f90518df14897d845336161ff843b104a893a204704063382be33e4f3b7a"
+    },
+    "native-overlap/overlap-cuda.nsys-rep": {
+      "bytes": 112600,
+      "sha256": "4f9d20d96e88362f9330af8025c17979d6219c0b4ad821439d521894d7b0afb2",
+      "original_sha256": "4f9d20d96e88362f9330af8025c17979d6219c0b4ad821439d521894d7b0afb2"
+    },
+    "native-overlap/overlap-cuda.sqlite": {
+      "bytes": 352256,
+      "sha256": "b6abf4c234e202b32ac7cd023a935c85ebec7e41737b69fa377bd189b7e1e910",
+      "original_sha256": "b6abf4c234e202b32ac7cd023a935c85ebec7e41737b69fa377bd189b7e1e910"
+    },
+    "native-overlap/probe-build.log": {
+      "bytes": 428,
+      "sha256": "a6daa6144ab6ce02df928264a4e60323fbec3b4ad44ac8931be87e52ea50e864",
+      "original_sha256": "a6daa6144ab6ce02df928264a4e60323fbec3b4ad44ac8931be87e52ea50e864"
+    },
+    "native-overlap/probe-configure.log": {
+      "bytes": 1069,
+      "sha256": "09d2c70a8eb7da78b7dd3c16bcf9d6b96949288a33e465e4cdb02ca4c0000046",
+      "original_sha256": "09d2c70a8eb7da78b7dd3c16bcf9d6b96949288a33e465e4cdb02ca4c0000046"
+    },
+    "native-overlap/receipt.json": {
+      "bytes": 1947,
+      "sha256": "dc17cbd2918dc23905d524c3520c9fea4b54ef20b4f0e47d511ef03c06247fa2",
+      "original_sha256": "dc17cbd2918dc23905d524c3520c9fea4b54ef20b4f0e47d511ef03c06247fa2"
+    },
+    "native-overlap/trace-export.log": {
+      "bytes": 8127,
+      "sha256": "23ee1bbb67d70360e0b0fc980bf865ea343bb1d2bcabc22631c480d600d95613",
+      "original_sha256": "49e8acce6ef5745b00f52d500d75a6cd1305b7378735bd71bf11051c656b7350"
+    },
+    "native-overlap": {
+      "observed_maximum_owned_private_gib": 1.3,
+      "minimum_available_gib": 45.99
+    },
+    "final-seams/missing-composition-check.log": {
+      "bytes": 883,
+      "sha256": "28d4aacf77a4abba613656e943fc93770931d301e9ec969ad0b86280c61fc5db",
+      "original_sha256": "28d4aacf77a4abba613656e943fc93770931d301e9ec969ad0b86280c61fc5db"
+    },
+    "final-seams/native-probe-math-check.log": {
+      "bytes": 250,
+      "sha256": "dd7bc4c4b1ecfc584f9bac71ed0b727298c9c1c34e722ab326f8cb823c090fa6",
+      "original_sha256": "dd7bc4c4b1ecfc584f9bac71ed0b727298c9c1c34e722ab326f8cb823c090fa6"
+    },
+    "final-seams/receipt.json": {
+      "bytes": 1099,
+      "sha256": "cdbebf5d454997ea04bc09974e9f0fb578fe070a8f571292e45d96f2d3a39240",
+      "original_sha256": "cdbebf5d454997ea04bc09974e9f0fb578fe070a8f571292e45d96f2d3a39240"
+    },
+    "final-seams": {
+      "observed_maximum_owned_private_gib": 0.02,
+      "minimum_available_gib": 46.84
+    }
+  }
+}

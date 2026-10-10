@@ -1,0 +1,21 @@
+PASS expected rejection: genuine CUDA-only SDK cannot satisfy CPU+CUDA consumer; configure exit=1
+-- The CXX compiler identification is MSVC 19.50.35728.0
+-- Detecting CXX compiler ABI info
+-- Detecting CXX compiler ABI info - done
+-- Check for working CXX compiler: C:/Program Files/Microsoft Visual Studio/18/Enterprise/VC/Tools/MSVC/14.50.35717/bin/Hostx64/x64/cl.exe - skipped
+-- Detecting CXX compile features
+-- Detecting CXX compile features - done
+CMake Error at CMakeLists.txt:12 (find_package):
+  Found package configuration file:
+
+    C:/h7/w-cuda/selected-graph/shared-sdk-relocated/lib/cmake/Hyle/HyleConfig.cmake
+
+  but it set Hyle_FOUND to FALSE so package "Hyle" is considered to be NOT
+  FOUND.  Reason given by package:
+
+  Hyle SDK does not contain requested Compute route 'cpu'; available: cuda
+
+
+
+-- Configuring incomplete, errors occurred!
+

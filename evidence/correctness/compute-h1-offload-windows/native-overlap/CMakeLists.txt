@@ -1,0 +1,8 @@
+cmake_minimum_required(VERSION 3.25)
+project(hyle_offload_overlap LANGUAGES CXX)
+set(HYLE_COMPUTE_ROUTES cuda)
+find_package(Hyle 0.1.0 EXACT REQUIRED COMPONENTS compute)
+add_executable(hyle_offload_overlap ../h1-overlap.cc)
+target_compile_features(hyle_offload_overlap PRIVATE cxx_std_23)
+target_link_libraries(hyle_offload_overlap PRIVATE hyle::compute)
+hyle_stage_runtime(hyle_offload_overlap)

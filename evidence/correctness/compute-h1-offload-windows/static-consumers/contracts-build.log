@@ -1,0 +1,3 @@
+[1/3] C:\WINDOWS\system32\cmd.exe /C "cd /D C:\h7\h1-windows-delivery\static-contracts && "C:\Program Files\CMake\bin\cmake.exe" -P C:/h7/h1-windows-delivery/static-contracts/hyle-runtime/hyle_cpu_cuda_contracts-Release.cmake"
+[2/3] Building CXX object CMakeFiles\hyle_cpu_cuda_contracts.dir\C_\public\project-hyle\hyle\tests\graph\cpu_cuda_contracts.cc.obj
+[3/3] Linking CXX executable C:\h7\h1-windows-delivery\static-apps\hyle_cpu_cuda_contracts.exe

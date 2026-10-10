@@ -1,0 +1,36 @@
+{
+  "candidate": "7eaf67b8a496ee19b609533980cd69e7efb5aa49",
+  "rows": [
+    {
+      "stage": "native-probe-math-check",
+      "exit": 0,
+      "seconds": 1.02,
+      "minimum_available_gib": 46.84,
+      "log": "C:\\h7\\h1-offload-windows-final-seams\\native-probe-math-check.log",
+      "minimum_commit_headroom_gib": 41.73,
+      "maximum_owned_private_gib": 0.01,
+      "guards": {
+        "minimum_available_gib": 16,
+        "minimum_commit_headroom_gib": 16,
+        "maximum_owned_private_gib": 12
+      }
+    },
+    {
+      "stage": "missing-composition-check",
+      "exit": 0,
+      "seconds": 1.03,
+      "minimum_available_gib": 46.89,
+      "log": "C:\\h7\\h1-offload-windows-final-seams\\missing-composition-check.log",
+      "minimum_commit_headroom_gib": 41.77,
+      "maximum_owned_private_gib": 0.02,
+      "guards": {
+        "minimum_available_gib": 16,
+        "minimum_commit_headroom_gib": 16,
+        "maximum_owned_private_gib": 12
+      }
+    }
+  ],
+  "build_parallel": 1,
+  "test_parallel": 1,
+  "claim": "only listed actual stages"
+}

@@ -3,6 +3,33 @@
 产品候选为 `7eaf67b8a496ee19b609533980cd69e7efb5aa49`。本记录保存 H1-07至09新合同下
 实际运行结果，不替代原合同的历史证据，也不签整包 CLOSED。
 
+## 用户恢复后的当前结果
+
+2026-10-10用户明确继续；同一产品候选的Windows source/shared/static三交付现均完成。
+恢复只接已安装static SDK的消费者，未重编producer，也未重跑source/shared原数学全集。
+
+| 新补验收 | 当前结果 | 证据 |
+|---|---|---|
+| installed static组合/Direct/contracts | PASS 3/3 | [receipt](static-consumers/receipt.json) |
+| shared/static四个changed公开安装头分别独立编译 | PASS 8/8 | [receipt](installed-seams/receipt.json) |
+| shared/static SDK真正改名搬迁后的组合消费者configure/build/run | PASS 2/2；原目录在验收时不存在，结束后恢复；无SDK副本 | [receipt](installed-seams/receipt.json) |
+| 真实CUDA-only SDK拒绝CPU+CUDA消费者 | PASS预期configure拒绝，没有补下载CPU或偷偷fallback | [日志](final-seams/missing-composition-check.log) |
+| 当前候选native迁移/计算物理重叠 | PASS；同device/context不同stream的16MiB H2D与两个成熟GEMM执行区间真实相交；不宣称性能赢家 | [分析](native-overlap/overlap-analysis.json)、[数值控制运行](final-seams/native-probe-math-check.log) |
+| WSL当前候选 | 未运行，整包仍CANDIDATE | [归档](recovery-archive.json) |
+
+static消费者批次单并行，观察到本轮进程private最大1.1GiB、物理可用最小42.51GiB；没有触发
+16GiB物理/提交余量或12GiB本轮private观察门。它是每秒采样最大值，不冒充精确瞬时峰值。
+安装头第一条cuda头命令漏传native Toolkit include，原C1083记录保留；只修task-private命令，
+普通find_package消费者本来已得到该transitive include，无产品修改。通过后的同阶段终态与
+失败历史均保留，不把旧错误行静默改为成功。
+
+当前候选重新编译了小型native probe，并采一次仅CUDA的Nsight trace：8个成熟FP32 GEMM、
+独立weight-slot DMA；两个交叠分别356.988us和379.741us，证明机制可物理重叠，不是收益资格。
+同一EXE的未插桩数值控制运行也成功，trace不采需管理员权限的CPU调度，没有UAC/新P1。
+原始小型trace/SQLite连同hash已归档，SDK/DLL/producer对象未复制入仓库。
+
+下列各节保留首次运行、内存停止及只读检查时的历史边界；当前结果以本节和新receipt为准。
+
 | 范围 | 实际结果 | 证据 |
 |---|---|---|
 | Windows source，单并行编译/测试 | PASS，5/5：普通 Graph、普通 Compute、CPU+CUDA组合、Direct权重迁移、组合contracts | [receipt](source/receipt.json)、[测试日志](source/source-test.log) |

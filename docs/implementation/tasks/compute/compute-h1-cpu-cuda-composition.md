@@ -382,7 +382,7 @@ Windows installed shared SDK的组合/Direct/contracts三个实际消费者均�
 
 - 完整不可变产品候选：`7eaf67b8a496ee19b609533980cd69e7efb5aa49`；H1-01至09同一产品范围，当前12个owner进入CANDIDATE。
 - 普通CPU/staging/device三域、共享ResourceBudget及weight选项、冷ResourceReport/ReplayReport已固定。
-- 最新语法/配置/文档与selector授权通过；新增native数学、预算/alias/失败/生命周期、三交付仍未验。
+- Windows本候选source/shared/static数学、预算/alias/失败/生命周期、安装头、搬迁与native重叠现已验；WSL本候选尚未验。
 - Windows沿原source producer对象与installed SDK批量入口；WSL随后精确同步产品候选，保持vendor/cache及未完成对象。
 - CUDA build1/test1，重型run串行；本批driver在每阶段及构建期间核对Windows可用内存，低于12GiB停止自己的进程树并保留对象，不能以中断签PASS。
 - 先source联合/Direct/contracts及普通CPU/CUDA消费者，再shared/static SDK/公开头/资产/搬迁；只修实际失败半径。
@@ -416,3 +416,24 @@ native测试、WSL或P1；用户明确继续前保持重型停止。
 shared/static八个changed头与候选一致，组合导出/Graph facade及recipe一致，61/37个导出库
 位置存在，shared三EXE及可达HYLE DLL共30份PE的直接导入可解析。边界只metadata/文件和
 直接导入，不代签安装头编译、static执行、搬迁或第三方loader内部。未启动编译/应用/WSL。
+
+### 用户明确恢复：Windows交付验收完成
+
+2026-10-10用户明确继续，解除前述重型停止约束。沿现SDK单并行补installed static组合/
+Direct/contracts，3/3通过；没有重建producer或重跑source/shared已通过全集。本批每秒采样
+本轮private最大1.1GiB，整机物理可用最低42.51GiB；所有阶段未触门，不代表无采样间峰值。
+
+[恢复归档](../../../../evidence/correctness/compute-h1-offload-windows/recovery-archive.json)还补齐
+八个changed installed header编译、shared/static SDK真正改名搬迁后组合configure/build/run、
+真实CUDA-only SDK明确拒绝CPU+CUDA要求，以及本产品候选的native重叠。原CUDA头检查
+漏传Toolkit include的失败行保留，只修私有验证命令；公共CMake消费者未发生此缺陷。
+物理取证中同device/context、不同stream的16MiB H2D与两个真实成熟GEMM相交，另有同EXE
+数学控制运行；不重用旧ABI probe，不凭pending句柄签重叠，不做P1/加速或赢家宣称。
+
+普通CPU/CUDA Direct及Graph入口由source批次两份既有cpp消费者真实运行覆盖，原5/5结果
+继续复用。Windows本候选适用门已补齐；下一步只同步精确候选并补WSL，build1/test1、
+重型串行，同时限制Linux本批内存。H1仍CANDIDATE，H2/H3未启动；不以Windows替代WSL。
+
+[本轮统一LOC](../../../../evidence/architecture/compute-entry-design/loc-h1-windows-recovered.json)
+self-check PASS：Compute+Graph全部非测试实现64,435行/281文件，全库自实现不含测试159,662行。
+本轮只补验证和证据，产品候选没有变化，不把probe或文档算新增基础实现。

@@ -1,0 +1,2 @@
+shared-header-1.cc
+C:\h7\h1-windows-delivery\shared-sdk\include\hyle/compute/backends/cuda.h(11): fatal error C1083: Cannot open include file: 'cuda.h': No such file or directory

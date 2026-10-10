@@ -1,0 +1,12 @@
+-- The CXX compiler identification is MSVC 19.50.35728.0
+-- Detecting CXX compiler ABI info
+-- Detecting CXX compiler ABI info - done
+-- Check for working CXX compiler: C:/Program Files/Microsoft Visual Studio/18/Enterprise/VC/Tools/MSVC/14.50.35717/bin/Hostx64/x64/cl.exe - skipped
+-- Detecting CXX compile features
+-- Detecting CXX compile features - done
+-- Found CUDAToolkit: C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v13.3/include;C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v13.3/include/cccl (found suitable version "13.3.73", minimum required is "13.3")
+-- HYLE: reusing locked CPU SDK at C:/public/tools/hyle-dependencies/v1/sdks/torch-cpu/Windows-bf0079104e068dcbd60b2f8de589dc725282cbe865a85016cc5b8aa46cab519d/libtorch
+-- Found Torch: C:/public/tools/hyle-dependencies/v1/sdks/torch-cpu/Windows-bf0079104e068dcbd60b2f8de589dc725282cbe865a85016cc5b8aa46cab519d/libtorch/lib/torch.lib (Required is exact version "2.8.0")
+-- Configuring done (48.9s)
+-- Generating done (0.2s)
+-- Build files have been written to: C:/h7/h1-windows-delivery/shared-relocated-joint
