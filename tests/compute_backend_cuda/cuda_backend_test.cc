@@ -17,6 +17,7 @@
 #include "hyle/compute/detail/generated_result.h"
 #include "hyle/compute/detail/queue_sequence.h"
 #include "hyle/compute/transfer.h"
+#include "hyle/compute/resource_leases.h"
 #include "hyle/error/status.h"
 #include "hyle/mem/stats.h"
 #include "native_context.h"
@@ -377,6 +378,37 @@ TEST(CudaBackend, OwnedKernelResultWaitAndAbandonmentPreserveNativeStorage) {
     destroyed->wait(0, std::memory_order_acquire);
     EXPECT_EQ(destroyed->load(), 1);
   }
+}
+
+TEST(CudaBackend, LeaseCoreHoldsNativeBackingAndPublishesAfterRealWrite) {
+  using namespace hyle::compute;
+  auto context = Context::create(cuda::device(0).value()).value();
+  auto queue = context.create_queue().value();
+  auto resident = cuda::MemoryResource::create(context, cuda::MemoryKind::kDevice).value();
+  auto pool = LeasePool::create(resident.ref(), 1024, {.max_blocks = 2}).value();
+  auto uses = LeaseUsePool::create().value();
+  auto write = pool.allocate(256).value();
+  auto view = write.view().value();
+  ASSERT_TRUE(view.fill(std::byte{41}).ok());
+  auto pointer = cuda::pointer<std::byte>(view).value();
+  auto batch = uses.begin().value();
+  ASSERT_TRUE(batch.write(write).ok());
+  EXPECT_FALSE(write.publish().has_value());
+  auto work = cuda::submit(queue, [&](cudaStream_t stream) noexcept {
+    return launch_increment_kernel(stream, pointer, 256);
+  });
+  ASSERT_TRUE(work.has_value());
+  ASSERT_TRUE(batch.attach(*work).ok());
+  ASSERT_TRUE(work->wait().ok());
+  auto ready = write.publish().value();
+  std::array<std::byte, 256> result{};
+  ASSERT_TRUE(ready.view()->read(result).ok());
+  for (auto value : result) EXPECT_EQ(value, std::byte{42});
+  auto shared = ready;
+  EXPECT_FALSE(ready.try_write().has_value());
+  shared.reset();
+  EXPECT_TRUE(ready.try_write().has_value());
+  EXPECT_EQ(pool.stats().live_blocks, 0u);
 }
 
 TEST(CudaBackend, SynchronousDeviceFillAndCopyDoNotReturnBeforeCompletion) {

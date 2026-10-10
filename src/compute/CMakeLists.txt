@@ -8,6 +8,7 @@ hyle_add_module(compute TRACE SOURCES
   operation.cc
   provider.cc
   resource_budget.cc
+  resource_leases.cc
   route_policy.cc
   result.cc
   shape_domain.cc
