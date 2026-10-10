@@ -1,0 +1,15 @@
+{
+  "scope": "Original declared component contract, preserving passed sections; no GPU/math/P1 qualification inferred",
+  "tool_candidates": [
+    "788f9e800bb096d7f7d5f55b6c4b880aeb5600f6",
+    "161f1259e92f05175711570e452b3367bd703541"
+  ],
+  "source_product_candidate": "a2476b62cfe49c1663998645c362392685c06eb1",
+  "prefix_evidence": "sdk-environment-contract.log: earlier configured/built assertions succeeded before missing SDK",
+  "middle_evidence": "target-platform-failure-remaining-contract.log: original all-root through package registry assertions succeeded before target fixture failure",
+  "final_evidence": "last-contract.log: corrected target-platform and remaining offline/gtest sections passed",
+  "focused_fixtures": "focused-fixture-receipt.json",
+  "verdict": "PASS",
+  "last_log_sha256": "4b9541d90e6cc270fffba942b21a39855cdcab3c202971aa73424eedb24d22e4",
+  "source_cpp_diff": "none; tool fixtures only and separately qualified Linux target-local RPATH seam"
+}

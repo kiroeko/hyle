@@ -1,6 +1,6 @@
 # C3 独立工具修正：组件合同的最小源码夹具
 
-<!-- MODULE REVIEW: AUDITED -->
+<!-- MODULE REVIEW: CLOSED -->
 
 - tool owner：`cmake/HyleCiComponentContract.cmake`；baseline `3067016ca`。
 - scope：只迁移两个最小源码夹具的文件依赖，不改产品、组件图、路线规则或公共治理核心。
@@ -42,3 +42,17 @@ P0：测试准备的一次文件复制，无产品运行期开销。没有产品
 预算新增仅为一个上述具名 fixture 纠正、一次既有 target-platform 合同以及原 master 在其后
 尚未运行的尾段。已通过前段和 GPU SDK 不重跑，公共平台/selector/perf 核心仍不改。
 本工具保持 AUDITED，范围仅追加这一个 fixture；未授权新产品能力或全库重审。
+
+## 终局
+
+FIX2 工具候选 `161f1259`；旧 target/32-bit/fcontext/Sched/IO positive-negative 断言仍全部保留。
+在原目录从该嵌套合同续跑，之后 offline/cache/GoogleTest 尾段实际通过，最终 exit0 并报告
+`HYLE component contracts passed`；没有重跑成功前段。
+[完整收据](../../../../evidence/correctness/compute-unified-c3/component-contract/complete-receipt.json)
+区分首次缺文件、启动缺 SDK、目标身份缺失以及各段实际执行身份，不覆盖任何原失败。
+
+scope/architecture/correctness/delivery/usability_docs/red_team/P0 均通过：本轮仅改原工具夹具，
+无新增产品 ABI、SDK 或热成本；FIX1 原正/反断言和 FIX2 原嵌套合同实际通过，父合同全部覆盖。
+适用 docs/closure/diff 与 selector READY；无产品源码/公开头/P1 影响，不扩全库数学。
+工具卡 CLOSED；reopen 仅新可复现夹具与当前普通配置合同错配。它签 C3 component-contract，
+不签尚未运行的平台 SDK 或 H1–H3。Compute+Graph 实现仍62,508行，统一已测代码域零变化。

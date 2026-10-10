@@ -1,0 +1,13 @@
+{
+  "source_commit": "161f1259e92f05175711570e452b3367bd703541",
+  "tool_candidate": "788f9e80",
+  "resume": "Original contract from target-platform onward; prior passed sections retained, no root reset",
+  "VULKAN_SDK": "C:/public/tools/hyle-vulkan/1.4.357.0",
+  "argv": [
+    "cmake",
+    "-DHYLE_SOURCE_DIR=C:/public/project-hyle/hyle",
+    "-DHYLE_SMOKE_ROOT=C:/h7/component-contract",
+    "-P",
+    "C:/h7/transport/resume-component-last.cmake"
+  ]
+}

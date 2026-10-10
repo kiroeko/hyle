@@ -357,3 +357,7 @@ WSL CPU source Direct 已 PASS；Graph 在创建 invocation 时无法装载原�
 MODULE 缺失/恢复也已验证。C3 当前62 PASS / 28 UNRUN；原 shared/static 剩余阶段继续。
 组件合同的两个原夹具断言已通过；后半段因启动时未传本机 Vulkan SDK 环境而失败，
 原失败另存，补正确环境后只恢复尚未通过的后半段，不重跑前段或全库数学。
+
+组件合同尾段又发现一个 metadata child 缺真实 target identity，独立工具卡按具体反例
+追加唯一夹具纠正；原 Sched/32-bit/目标身份断言保留。最终全部原合同已分段 PASS/exit0，
+失败与成功段独立归档，工具卡 CLOSED。C3 平台矩阵仍62/90，下一串行 WSL CPU SDK剩余循环。
