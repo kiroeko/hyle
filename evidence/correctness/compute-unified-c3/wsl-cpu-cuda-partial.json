@@ -1,0 +1,37 @@
+{
+  "scope": "Real complete CPU+CUDA source/shared/static ordinary consumers executing both native math routes; no H1 joint/async/expert qualification",
+  "product_candidate": "a2476b62cfe49c1663998645c362392685c06eb1",
+  "validation_source_commit": "a2476b62cfe49c1663998645c362392685c06eb1",
+  "source_archive_sha256": "d0c2377d14be5752f6e1876a54d8c568cb1cc32a7066391bd784699a1ad14c86",
+  "routes": "cpu;cuda",
+  "rows": [
+    {
+      "entry": "source-direct",
+      "verdict": "PASS",
+      "log": "evidence/correctness/compute-unified-c3/wsl-cpu-cuda/source-ctest.log",
+      "sha256": "f92fbab93c30f96b9136bfe18d95ef07b444ef3315feb7701ff55a70c0935eda"
+    },
+    {
+      "entry": "source-graph",
+      "verdict": "PASS",
+      "log": "evidence/correctness/compute-unified-c3/wsl-cpu-cuda/source-ctest.log",
+      "sha256": "f92fbab93c30f96b9136bfe18d95ef07b444ef3315feb7701ff55a70c0935eda"
+    },
+    {
+      "entry": "shared-direct",
+      "verdict": "UNRUN"
+    },
+    {
+      "entry": "shared-graph",
+      "verdict": "UNRUN"
+    },
+    {
+      "entry": "static-direct",
+      "verdict": "UNRUN"
+    },
+    {
+      "entry": "static-graph",
+      "verdict": "UNRUN"
+    }
+  ]
+}

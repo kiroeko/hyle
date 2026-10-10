@@ -179,8 +179,8 @@
       "routes": "cpu;cuda",
       "deliveries": {
         "source": {
-          "direct": "UNRUN",
-          "graph": "UNRUN"
+          "direct": "PASS",
+          "graph": "PASS"
         },
         "shared": {
           "direct": "UNRUN",
@@ -191,7 +191,9 @@
           "graph": "UNRUN"
         }
       },
-      "evidence": []
+      "evidence": [
+        "wsl-cpu-cuda-partial.json"
+      ]
     },
     {
       "platform": "Linux-WSL",

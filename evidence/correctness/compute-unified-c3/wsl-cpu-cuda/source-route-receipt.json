@@ -1,0 +1,12 @@
+{
+  "scope": "Source consumer actual CPU+CUDA route and compiler definitions; original mathematical CTest archived separately",
+  "candidate": "a2476b62cfe49c1663998645c362392685c06eb1",
+  "actual_routes": "cpu;cuda",
+  "enabled": [
+    "HYLE_COMPUTE_CPU=1",
+    "HYLE_COMPUTE_CUDA=1",
+    "HYLE_GRAPH_ONEDNN=1"
+  ],
+  "compiler_command": "/usr/bin/g++-14 -DHYLE_COMPUTE_CPU=1 -DHYLE_COMPUTE_CUDA=1 -DHYLE_COMPUTE_FLASHINFER=1 -DHYLE_COMPUTE_ONEDNN=1 -DHYLE_COMPUTE_TORCH_CUDA=1 -DHYLE_GRAPH_ONEDNN=1 -I/root/hyle-scratch/compute-unified/source-7a7b4c3b/include -isystem /usr/local/cuda-13.3/targets/x86_64-linux/include -O3 -DNDEBUG -std=gnu++23 -MD -MT CMakeFiles/hyle_selected_source_consumer.dir/root/hyle-scratch/compute-unified/source-7a7b4c3b/samples/package/graph/cpp/main.cc.o -MF CMakeFiles/hyle_selected_source_consumer.dir/root/hyle-scratch/compute-unified/source-7a7b4c3b/samples/package/graph/cpp/main.cc.o.d -o CMakeFiles/hyle_selected_source_consumer.dir/root/hyle-scratch/compute-unified/source-7a7b4c3b/samples/package/graph/cpp/main.cc.o -c /root/hyle-scratch/compute-unified/source-7a7b4c3b/samples/package/graph/cpp/main.cc",
+  "hybrid_execution": "not certified; each route executes independently"
+}

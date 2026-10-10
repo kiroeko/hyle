@@ -434,3 +434,10 @@ missing依赖，未设置LD覆盖。链接器对vendor CUDA12叶依赖的警告�
 CUDA-only批次/绝对路径校验后清理，释放709,522,760字节；source、两个SDK、全部consumer/
 日志/cache保留，不触碰活动CPU+CUDA目录。[清理收据](../../../../evidence/correctness/compute-unified-c3/wsl-cuda/cleanup-sdk-build-objects.json)
 只记录产物管理，不新增完成项或重跑P1。
+
+WSL CPU+CUDA source Graph1.20s/Direct0.53s 已实际PASS，真实source route为cpu;cuda，
+编译命令启用CPU/CUDA/Graph oneDNN，原消费者分别执行两条数学路径；
+[部分收据](../../../../evidence/correctness/compute-unified-c3/wsl-cpu-cuda-partial.json)及
+[宏/路线证据](../../../../evidence/correctness/compute-unified-c3/wsl-cpu-cuda/source-route-receipt.json)
+绑定冻结来源与CTest。C3当前74 PASS / 16 UNRUN，原shared/static循环继续，source不重跑。
+不把组合SDK签成H1跨设备依赖、异步、重叠或专家迁移；实现LOC仍62,508。
