@@ -1,0 +1,54 @@
+{
+  "candidate": "7eaf67b8a496ee19b609533980cd69e7efb5aa49",
+  "scope": "only four changed public headers standalone MSVC syntax, not installed relocation",
+  "rows": [
+    {
+      "mode": "shared",
+      "header": "hyle/compute/resource_budget.h",
+      "verdict": "PASS",
+      "log": ".scratch\\compute-unified\\h1-offload-headers\\shared0.log"
+    },
+    {
+      "mode": "shared",
+      "header": "hyle/compute/cuda_weights.h",
+      "verdict": "PASS",
+      "log": ".scratch\\compute-unified\\h1-offload-headers\\shared1.log"
+    },
+    {
+      "mode": "shared",
+      "header": "hyle/graph/cpu_cuda.h",
+      "verdict": "PASS",
+      "log": ".scratch\\compute-unified\\h1-offload-headers\\shared2.log"
+    },
+    {
+      "mode": "shared",
+      "header": "hyle/graph/executable.h",
+      "verdict": "PASS",
+      "log": ".scratch\\compute-unified\\h1-offload-headers\\shared3.log"
+    },
+    {
+      "mode": "static",
+      "header": "hyle/compute/resource_budget.h",
+      "verdict": "PASS",
+      "log": ".scratch\\compute-unified\\h1-offload-headers\\static0.log"
+    },
+    {
+      "mode": "static",
+      "header": "hyle/compute/cuda_weights.h",
+      "verdict": "PASS",
+      "log": ".scratch\\compute-unified\\h1-offload-headers\\static1.log"
+    },
+    {
+      "mode": "static",
+      "header": "hyle/graph/cpu_cuda.h",
+      "verdict": "PASS",
+      "log": ".scratch\\compute-unified\\h1-offload-headers\\static2.log"
+    },
+    {
+      "mode": "static",
+      "header": "hyle/graph/executable.h",
+      "verdict": "PASS",
+      "log": ".scratch\\compute-unified\\h1-offload-headers\\static3.log"
+    }
+  ]
+}

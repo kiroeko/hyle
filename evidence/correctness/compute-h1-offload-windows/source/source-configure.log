@@ -1,0 +1,64 @@
+-- HYLE products: requested='graph' available='core,error,time,platform,simd,math,sched,compute,graph' factors='core,container_intrusive,util_core,error,time,math,timer_queue,platform,platform_thread,platform_fs,mem,mem_vm,simd,container,container_queue,sched,compute_ops,compute,graph,compute_provider_onednn,compute_backend_cpu,compute_ggml_runtime,compute_provider_ggml,graph_provider_onednn,compute_backend_cuda,compute_provider_native,compute_route_cpu,graph_route_cpu,compute_provider_cublas,compute_provider_cuda,compute_provider_flashinfer,compute_provider_ggml_cuda,compute_provider_torch_cuda,compute_route_cuda,graph_provider_ggml_cuda,graph_route_cuda,graph_route_cpu_cuda'
+-- HYLE_SANITIZER = off
+-- HYLE_TESTING = OFF (test-only interfaces stripped -- zero in shipped lib)
+CMake Warning (deprecated) at C:/public/tools/hyle-dependencies/v1/sources/onednn-c531fe1a5cd6-5c0c833df87c/CMakeLists.txt:36 (cmake_policy):
+  The OLD behavior for policy CMP0146 will be removed from a future version
+  of CMake.
+
+  The cmake-policies(7) manual explains that the OLD behaviors of all
+  policies are deprecated and that a policy should be set to OLD only under
+  specific short-term circumstances.  Projects should be ported to the NEW
+  behavior and not rely on setting a policy to OLD.
+This warning is for project developers.  Use -Wno-author or -Wno-deprecated
+to suppress it.
+
+-- DNNL_TARGET_ARCH: X64
+-- ONEDNN_LIBRARY_TYPE: STATIC (default: SHARED)
+-- ONEDNN_BUILD_GRAPH: OFF (default: ON)
+-- ONEDNN_ENABLE_CONCURRENT_EXEC: ON (default: OFF)
+-- ONEDNN_ENABLE_PRIMITIVE_CACHE: OFF (default: ON)
+-- ONEDNN_ENABLE_WORKLOAD: INFERENCE (default: TRAINING)
+-- ONEDNN_ENABLE_PRIMITIVE: MATMUL;LAYER_NORMALIZATION;BINARY;ELTWISE;REORDER (default: ALL)
+-- ONEDNN_EXPERIMENTAL_UKERNEL: ON (default: OFF)
+-- ONEDNN_ENABLE_JIT_PROFILING: OFF (default: ON)
+-- ONEDNN_ENABLE_ITT_TASKS: OFF (default: ON)
+-- ONEDNN_VERBOSE: OFF (default: ON)
+-- ONEDNN_CPU_RUNTIME: THREADPOOL (default: OMP)
+-- ONEDNN_ENABLE_MAX_CPU_ISA: OFF (default: ON)
+-- ONEDNN_ENABLE_CPU_ISA_HINTS: OFF (default: ON)
+-- Threadpool testing: standalone
+-- Found OpenCL headers: C:/public/tools/hyle-dependencies/v1/sources/onednn-c531fe1a5cd6-5c0c833df87c/third_party/opencl
+-- Enabled testing coverage: CI
+-- Enabled workload: INFERENCE
+-- Enabled primitives: MATMUL;LAYER_NORMALIZATION;BINARY;ELTWISE;REORDER
+-- Enabled primitive CPU ISA: ALL
+-- Enabled primitive GPU ISA: ALL
+-- Enabled GeMM kernels ISA: ALL
+-- Primitive cache is disabled
+-- Experimental functionality for ukernels is enabled
+-- HYLE: oneDNN v3.13.4 -- x64 BRGEMM, normalization and tensor primitives enabled
+-- HYLE: CUDA backend ON -- found CUDA Toolkit 13.3.73 at 'C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v13.3'; capability enabled
+-- ggml source: 2263 files, 21 exact patches
+
+-- CMAKE_SYSTEM_PROCESSOR: AMD64
+-- CMAKE_GENERATOR_PLATFORM:
+-- GGML_SYSTEM_ARCH: x86
+-- Including CPU backend
+-- x86 detected
+-- Adding CPU backend variant ggml-cpu:
+-- Found CUDAToolkit: C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v13.3/include;C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v13.3/include/cccl (found version "13.3.73")
+-- CUDA Toolkit found
+-- Using CMAKE_CUDA_ARCHITECTURES=80;89-real CMAKE_CUDA_ARCHITECTURES_NATIVE=89-real
+-- FlashAttention K-V type combinations: f16-f16;q4_0-q4_0;q8_0-q8_0;bf16-bf16
+-- Including CUDA backend
+-- ggml version: 0.24.0
+-- ggml commit:  456172ec733a135778adcd32d00e576a58232e45-hyle
+-- Found CUDAToolkit: C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v13.3/include;C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v13.3/include/cccl (found suitable version "13.3.73", minimum required is "13.3")
+-- HYLE: reusing locked CPU SDK at C:/public/tools/hyle-dependencies/v1/sdks/torch-cpu/Windows-bf0079104e068dcbd60b2f8de589dc725282cbe865a85016cc5b8aa46cab519d/libtorch
+-- HYLE: original TorchAO/ATen CPU low precision -- locked LibTorch 2.8.0
+-- HYLE: reusing locked CPU SDK at C:/public/tools/hyle-dependencies/v1/sdks/torch-cpu/Windows-bf0079104e068dcbd60b2f8de589dc725282cbe865a85016cc5b8aa46cab519d/libtorch
+-- HYLE_TRACE = OFF (hooks compile to nothing -- zero cost)
+-- HYLE 0.1.0 | MSVC 19.50.35728.0 | C++23 | sanitizer=off | linkage=shared | products=core,error,time,platform,simd,math,sched,compute,graph | factors=core,container_intrusive,util_core,error,time,math,timer_queue,platform,platform_thread,platform_fs,mem,mem_vm,simd,container,container_queue,sched,compute_ops,compute,graph,compute_provider_onednn,compute_backend_cpu,compute_ggml_runtime,compute_provider_ggml,graph_provider_onednn,compute_backend_cuda,compute_provider_native,compute_route_cpu,graph_route_cpu,compute_provider_cublas,compute_provider_cuda,compute_provider_flashinfer,compute_provider_ggml_cuda,compute_provider_torch_cuda,compute_route_cuda,graph_provider_ggml_cuda,graph_route_cuda,graph_route_cpu_cuda
+-- Configuring done (195.0s)
+-- Generating done (0.7s)
+-- Build files have been written to: C:/h7/w-cpu-cuda/selected-graph/source-build

@@ -1,0 +1,29 @@
+{
+  "candidate": "7eaf67b8a496ee19b609533980cd69e7efb5aa49",
+  "rows": [
+    {
+      "stage": "source-configure",
+      "exit": 0,
+      "seconds": 196.08,
+      "minimum_available_gib": 13.87,
+      "log": "C:\\h7\\h1-offload-windows\\source-configure.log"
+    },
+    {
+      "stage": "source-build",
+      "exit": 0,
+      "seconds": 124.05,
+      "minimum_available_gib": 32.07,
+      "log": "C:\\h7\\h1-offload-windows\\source-build.log"
+    },
+    {
+      "stage": "source-test",
+      "exit": 0,
+      "seconds": 4.0,
+      "minimum_available_gib": 32.13,
+      "log": "C:\\h7\\h1-offload-windows\\source-test.log"
+    }
+  ],
+  "build_parallel": 1,
+  "test_parallel": 1,
+  "claim": "only listed actual stages"
+}

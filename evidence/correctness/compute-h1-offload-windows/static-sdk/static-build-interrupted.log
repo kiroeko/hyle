@@ -1,0 +1,71 @@
+[0/2] Re-checking globbed directories...
+[1/228] Building CXX object hyle\src\error\CMakeFiles\hyle_error.dir\status.cc.obj
+[2/228] Linking CXX static library hyle\src\error\hyle_error.lib
+[3/228] Building CXX object hyle\src\platform\CMakeFiles\hyle_platform_cpu_probe.dir\cpu.cc.obj
+[4/228] Building CXX object hyle\src\platform\CMakeFiles\hyle_platform.dir\cpu_resource.cc.obj
+[5/228] Building CXX object hyle\src\platform\CMakeFiles\hyle_platform.dir\dynlib.cc.obj
+[6/228] Building CXX object hyle\src\platform\CMakeFiles\hyle_platform.dir\environment.cc.obj
+[7/228] Building CXX object hyle\src\platform\CMakeFiles\hyle_platform.dir\host_memory.cc.obj
+[8/228] Building CXX object hyle\src\platform\CMakeFiles\hyle_platform.dir\numa.cc.obj
+[9/228] Building CXX object hyle\src\platform\CMakeFiles\hyle_platform.dir\process.cc.obj
+[10/228] Building CXX object hyle\src\platform\CMakeFiles\hyle_platform.dir\random.cc.obj
+[11/228] Building CXX object hyle\src\platform\CMakeFiles\hyle_platform.dir\virtual_memory.cc.obj
+[12/228] Building CXX object hyle\src\time\CMakeFiles\hyle_time.dir\clock.cc.obj
+[13/228] Building CXX object hyle\src\time\CMakeFiles\hyle_time.dir\interop.cc.obj
+[14/228] Linking CXX static library hyle\src\platform\hyle_platform.lib
+[15/228] Building CXX object hyle\src\mem\CMakeFiles\hyle_mem.dir\buffer.cc.obj
+[16/228] Building CXX object hyle\src\mem\CMakeFiles\hyle_mem.dir\buffer_pool.cc.obj
+[17/228] Building CXX object hyle\src\mem\CMakeFiles\hyle_mem.dir\composite_buffer.cc.obj
+[18/228] Building CXX object hyle\src\mem\CMakeFiles\hyle_mem.dir\heap.cc.obj
+[19/228] Building CXX object hyle\src\mem\CMakeFiles\hyle_mem.dir\lifetime_plan.cc.obj
+[20/228] Building CXX object hyle\src\mem\CMakeFiles\hyle_mem.dir\range_allocator.cc.obj
+[21/228] Building CXX object hyle\src\mem\CMakeFiles\hyle_mem.dir\resource.cc.obj
+[22/228] Building CXX object hyle\src\mem\CMakeFiles\hyle_mem.dir\system.cc.obj
+[23/228] Building CXX object hyle\src\mem\CMakeFiles\hyle_mem.dir\stats.cc.obj
+[24/228] Building CXX object hyle\src\compute_ops\CMakeFiles\hyle_compute_ops.dir\operation.cc.obj
+[25/228] Building CXX object hyle\src\compute_ops\CMakeFiles\hyle_compute_ops.dir\tensor_desc.cc.obj
+[26/228] Building CXX object hyle\src\compute_ops\CMakeFiles\hyle_compute_ops.dir\low_precision.cc.obj
+[27/228] Building CXX object hyle\src\compute_ops\CMakeFiles\hyle_compute_ops.dir\weight_decode.cc.obj
+[28/228] Linking CXX static library hyle\src\time\hyle_time.lib
+[29/228] Building CXX object hyle\src\platform_thread\CMakeFiles\hyle_platform_thread.dir\thread.cc.obj
+[30/228] Building CXX object hyle\src\platform_thread\CMakeFiles\hyle_platform_thread.dir\wait.cc.obj
+[31/228] Linking CXX static library hyle\src\mem\hyle_mem.lib
+[32/228] Linking CXX static library hyle\src\compute_ops\hyle_compute_ops.lib
+[33/228] Building CXX object hyle\src\compute\CMakeFiles\hyle_compute.dir\command_capture.cc.obj
+[34/228] Building CXX object hyle\src\compute\CMakeFiles\hyle_compute.dir\completion.cc.obj
+[35/228] Building CXX object hyle\src\compute\CMakeFiles\hyle_compute.dir\custom_kernel.cc.obj
+[36/228] Building CXX object hyle\src\compute\CMakeFiles\hyle_compute.dir\device.cc.obj
+[37/228] Building CXX object hyle\src\compute\CMakeFiles\hyle_compute.dir\operation.cc.obj
+[38/228] Building CXX object hyle\src\compute\CMakeFiles\hyle_compute.dir\provider.cc.obj
+[39/228] Building CXX object hyle\src\compute\CMakeFiles\hyle_compute.dir\resource_budget.cc.obj
+[40/228] Building CXX object hyle\src\compute\CMakeFiles\hyle_compute.dir\route_policy.cc.obj
+[41/228] Building CXX object hyle\src\compute\CMakeFiles\hyle_compute.dir\result.cc.obj
+[42/228] Building CXX object hyle\src\compute\CMakeFiles\hyle_compute.dir\shape_domain.cc.obj
+[43/228] Building CXX object hyle\src\compute\CMakeFiles\hyle_compute.dir\shape_program.cc.obj
+[44/228] Building CXX object hyle\src\compute\CMakeFiles\hyle_compute.dir\tensor_view.cc.obj
+[45/228] Building CXX object hyle\src\compute\CMakeFiles\hyle_compute.dir\transfer.cc.obj
+[46/228] Building CXX object hyle\src\compute\CMakeFiles\hyle_compute.dir\workload.cc.obj
+[47/228] Linking CXX static library hyle\src\platform_thread\hyle_platform_thread.lib
+[48/228] Building CXX object hyle\src\simd\CMakeFiles\hyle_simd.dir\runtime.cc.obj
+[49/228] Building CXX object hyle\src\simd\CMakeFiles\hyle_simd.dir\ops\dispatch_ops.cc.obj
+[50/228] Building CXX object hyle\src\simd\CMakeFiles\hyle_simd.dir\random\random_dispatch.cc.obj
+[51/228] Building CXX object hyle\src\simd\CMakeFiles\hyle_simd.dir\search\search_dispatch.cc.obj
+[52/228] Building CXX object hyle\src\simd\CMakeFiles\hyle_simd.dir\narrow\narrow_dispatch.cc.obj
+[53/228] Building CXX object hyle\src\simd\CMakeFiles\hyle_simd.dir\scan\scan_dispatch.cc.obj
+[54/228] Building CXX object hyle\src\simd\CMakeFiles\hyle_simd.dir\dtype\dtype_dispatch.cc.obj
+[55/228] Building CXX object hyle\src\simd\CMakeFiles\hyle_simd.dir\dtype\cvt_fp8_scalar.cc.obj
+[56/228] Building CXX object hyle\src\simd\CMakeFiles\hyle_simd.dir\math\math_dispatch.cc.obj
+[57/228] Building CXX object hyle\src\simd\CMakeFiles\hyle_simd.dir\math\transcendental_scalar.cc.obj
+[58/228] Building CXX object hyle\src\simd\CMakeFiles\hyle_simd.dir\math\activations.cc.obj
+[59/228] Building CXX object hyle\src\simd\CMakeFiles\hyle_simd.dir\sort\sort_dispatch.cc.obj
+[60/228] Building CXX object hyle\src\simd\CMakeFiles\hyle_simd.dir\sort\top_k.cc.obj
+[61/228] Building CXX object hyle\src\simd\CMakeFiles\hyle_simd.dir\sort\vqsort_scalar.cc.obj
+[62/228] Building CXX object hyle\src\simd\CMakeFiles\hyle_simd.dir\sort\radix_sort.cc.obj
+[63/228] Building CXX object hyle\src\simd\CMakeFiles\hyle_simd.dir\bitpack\bitpack_dispatch.cc.obj
+[64/228] Building CXX object hyle\src\simd\CMakeFiles\hyle_simd.dir\ops\dot_f16c.cc.obj
+[65/228] Building CXX object hyle\src\simd\CMakeFiles\hyle_simd.dir\ops\dot_avx_vnni.cc.obj
+[66/228] Building CXX object hyle\src\simd\CMakeFiles\hyle_simd.dir\ops\dot_avx512_vnni.cc.obj
+[67/228] Building CXX object hyle\src\simd\CMakeFiles\hyle_simd.dir\ops\dot_avx512bf16.cc.obj
+[68/228] Building CXX object hyle\src\simd\CMakeFiles\hyle_simd.dir\dtype\cvt_f16c.cc.obj
+[69/228] Building CXX object hyle\src\simd\CMakeFiles\hyle_simd.dir\dtype\cvt_avx512bf16.cc.obj
+[70/228] Building CXX object hyle\src\simd\CMakeFiles\hyle_simd.dir\math\transcendental_highway.cc.obj

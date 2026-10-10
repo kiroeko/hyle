@@ -1,0 +1,13 @@
+{
+  "candidate": "7eaf67b8a496ee19b609533980cd69e7efb5aa49",
+  "verdict": "INTERRUPTED",
+  "stage": "static installed joint consumer configure",
+  "cause": "User reported Windows memory alarm; agent stopped only owned Python validation PID 75544 and its descendants",
+  "root_session_exit": 1,
+  "verified_after_stop": "No cl/nvcc/ninja/cmake/ctest or h1-offload Python process found",
+  "static_producer_build_and_install": "PASS, see static-sdk/receipt.json",
+  "static_installed_consumer_tests": "NOT_RUN",
+  "wsl_new_candidate": "NOT_RUN",
+  "memory_alarm_root_cause": "UNPROVEN; no peak commit record at user alarm",
+  "heavy_work": "Stopped; await explicit user continuation"
+}

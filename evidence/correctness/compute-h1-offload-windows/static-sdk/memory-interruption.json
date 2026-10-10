@@ -1,0 +1,9 @@
+{
+  "candidate": "7eaf67b8a496ee19b609533980cd69e7efb5aa49",
+  "stage": "static-build",
+  "verdict": "INTERRUPTED",
+  "cause": "available physical RAM crossed predeclared 12GiB guard; only owned build tree terminated",
+  "last_logged_step": "70/228 transcendental_highway.cc",
+  "native_or_math_failure": false,
+  "resume": "same source-build objects, parallel 1 after observed free RAM 49.17 GiB"
+}

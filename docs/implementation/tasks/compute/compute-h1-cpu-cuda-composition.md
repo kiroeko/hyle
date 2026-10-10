@@ -387,3 +387,21 @@ Windows installed shared SDK的组合/Direct/contracts三个实际消费者均�
 - CUDA build1/test1，重型run串行；本批driver在每阶段及构建期间核对Windows可用内存，低于12GiB停止自己的进程树并保留对象，不能以中断签PASS。
 - 先source联合/Direct/contracts及普通CPU/CUDA消费者，再shared/static SDK/公开头/资产/搬迁；只修实际失败半径。
 - 不启动P1/C3全集。代码/API/算法/常态成本变化先退回实际owner AUDITED；文档和证据不换本候选。
+
+### 新候选Windows实际验收与内存停止
+
+[本批归档](../../../../evidence/correctness/compute-h1-offload-windows/README.md)对应同一候选
+`7eaf67b8a496ee19b609533980cd69e7efb5aa49`：Windows source五个实际消费者5/5通过，installed
+shared组合/Direct/contracts三个消费者3/3通过，四个公开源码头shared/static独立语法8/8通过。
+普通CPU主存权重参与实际数学、有界staging、共享预算及alias/回滚/旧lease、准备诊断/host-wait
+拒绝均已在Windows本批消费者运行；不是仅语法、copy或枚举。新合同下WSL尚未运行。
+
+Windows static producer已实际构建及安装；installed static组合consumer configure期间用户报告
+内存告警，agent停止自己的root Python PID75544及其子进程，确认会话exit1且无本轮编译残留。
+静态消费者验收为INTERRUPTED，未运行测试不能签PASS；不是数学或库实现FAIL。更早一次12GiB
+物理内存guard中断、原对象和完成结果同样保留，没有重新起完整producer或重复shared/source。
+
+停止后只读快照为约46.5GiB可用物理内存、35.3/75.3GiB提交内存；没有告警时的提交峰值，原因
+尚未证明。仅物理余量不足以作为安全准入；恢复前须同时核对提交余量和编译进程峰值。用户
+明确恢复前不启动Windows/WSL重型验证。当前12个owner仍CANDIDATE，候选/API/算法不变；
+安装头/资产/搬迁、静态consumer、WSL及受影响native证据尚未齐，H1未签CLOSED。

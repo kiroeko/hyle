@@ -1,0 +1,193 @@
+[0/2] Re-checking globbed directories...
+[1/158] Building CXX object hyle\src\simd\CMakeFiles\hyle_simd.dir\sort\vqsort_hyle_avx2.cc.obj
+[2/158] Building CXX object hyle\src\simd\CMakeFiles\hyle_simd.dir\math\transcendental_highway_avx512.cc.obj
+[3/158] Building CXX object hyle\src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\ops\ops_scalar.cc.obj
+[4/158] Building CXX object hyle\src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\ops\ops_sse4.cc.obj
+[5/158] Building CXX object hyle\src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\ops\ops_avx2.cc.obj
+[6/158] Building CXX object hyle\src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\ops\ops_avx512.cc.obj
+[7/158] Building CXX object hyle\src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\dtype_convert\dtype_convert_scalar.cc.obj
+[8/158] Building CXX object hyle\src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\dtype_convert\dtype_convert_sse4.cc.obj
+[9/158] Building CXX object hyle\src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\dtype_convert\dtype_convert_avx2.cc.obj
+[10/158] Building CXX object hyle\src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\dtype_convert\dtype_convert_avx512.cc.obj
+[11/158] Building CXX object hyle\src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\scan\scan_scalar.cc.obj
+[12/158] Building CXX object hyle\src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\scan\scan_sse4.cc.obj
+[13/158] Building CXX object hyle\src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\scan\scan_avx2.cc.obj
+[14/158] Building CXX object hyle\src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\scan\scan_avx512.cc.obj
+[15/158] Building CXX object hyle\src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\random\random_scalar.cc.obj
+[16/158] Building CXX object hyle\src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\random\random_sse4.cc.obj
+[17/158] Building CXX object hyle\src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\random\random_avx2.cc.obj
+[18/158] Building CXX object hyle\src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\random\random_avx512.cc.obj
+[19/158] Building CXX object hyle\src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\search\search_scalar.cc.obj
+[20/158] Building CXX object hyle\src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\search\search_sse4.cc.obj
+[21/158] Building CXX object hyle\src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\search\search_avx2.cc.obj
+[22/158] Building CXX object hyle\src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\search\search_avx512.cc.obj
+[23/158] Building CXX object hyle\src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\narrow\narrow_scalar.cc.obj
+[24/158] Building CXX object hyle\src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\narrow\narrow_sse4.cc.obj
+[25/158] Building CXX object hyle\src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\narrow\narrow_avx2.cc.obj
+[26/158] Building CXX object hyle\src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\narrow\narrow_avx512.cc.obj
+[27/158] Building CXX object hyle\src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\bitpack\bitpack_scalar.cc.obj
+[28/158] Building CXX object hyle\src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\bitpack\bitpack_sse4.cc.obj
+[29/158] Building CXX object hyle\src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\bitpack\bitpack_avx2.cc.obj
+[30/158] Building CXX object hyle\src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\bitpack\bitpack_avx512.cc.obj
+[31/158] Building CXX object hyle\src\container\CMakeFiles\hyle_container.dir\hash.cc.obj
+[32/158] Building CXX object hyle\src\container\CMakeFiles\hyle_container.dir\pod_vector.cc.obj
+[33/158] Building CXX object hyle\src\container\CMakeFiles\hyle_container.dir\flat_hash_map.cc.obj
+[34/158] Building CXX object hyle\src\container\CMakeFiles\hyle_container.dir\dynamic_bitset.cc.obj
+[35/158] Building CXX object hyle\src\container\CMakeFiles\hyle_container.dir\hash_xxh3_avx2.cc.obj
+[36/158] Building CXX object hyle\src\container\CMakeFiles\hyle_container.dir\generated\simd-dispatch\container_bitset\container_bitset_scalar.cc.obj
+[37/158] Building CXX object hyle\src\container\CMakeFiles\hyle_container.dir\generated\simd-dispatch\container_bitset\container_bitset_sse4.cc.obj
+[38/158] Building CXX object hyle\src\container\CMakeFiles\hyle_container.dir\generated\simd-dispatch\container_bitset\container_bitset_avx2.cc.obj
+[39/158] Linking CXX static library hyle\src\compute\hyle_compute.lib
+[40/158] Building CXX object hyle\src\compute_backend_cpu\CMakeFiles\hyle_compute_backend_cpu.dir\cpu_backend.cc.obj
+[41/158] Building CXX object hyle\src\compute_ggml_runtime\CMakeFiles\hyle_compute_ggml_runtime.dir\metadata_arena.cc.obj
+[42/158] Building CXX object hyle\src\compute_ggml_runtime\CMakeFiles\hyle_compute_ggml_runtime.dir\cpu_execution.cc.obj
+[43/158] Building CXX object hyle\src\compute_ggml_runtime\CMakeFiles\hyle_compute_ggml_runtime.dir\cpu_program.cc.obj
+[44/158] Building CXX object hyle\src\compute_backend_cuda\CMakeFiles\hyle_compute_backend_cuda.dir\cuda_backend.cc.obj
+[45/158] Building CXX object hyle\src\compute_backend_cuda\CMakeFiles\hyle_compute_backend_cuda.dir\driver_release.cc.obj
+[46/158] Building CXX object hyle\src\compute_backend_cuda\CMakeFiles\hyle_compute_backend_cuda.dir\cuda_memory.cc.obj
+[47/158] Building CXX object hyle\src\compute_backend_cuda\CMakeFiles\hyle_compute_backend_cuda.dir\cuda_device_status.cc.obj
+[48/158] Building CUDA object hyle\src\compute_backend_cuda\CMakeFiles\hyle_compute_backend_cuda.dir\device_status_kernel.cu.obj
+device_status_kernel.cu
+tmpxft_00015a08_00000000-7_device_status_kernel.compute_89.cudafe1.cpp
+[49/158] Building CXX object hyle\src\platform_fs\CMakeFiles\hyle_platform_fs.dir\fs.cc.obj
+[50/158] Linking CXX static library hyle\src\simd\hyle_simd.lib
+[51/158] Linking CXX static library hyle\src\container\hyle_container.lib
+[52/158] Building CXX object hyle\src\graph\CMakeFiles\hyle_graph.dir\graph.cc.obj
+[53/158] Building CXX object hyle\src\graph\CMakeFiles\hyle_graph.dir\effect_order.cc.obj
+[54/158] Building CXX object hyle\src\graph\CMakeFiles\hyle_graph.dir\executable.cc.obj
+[55/158] Building CXX object hyle\src\graph\CMakeFiles\hyle_graph.dir\view_domain.cc.obj
+[56/158] Building CXX object hyle\src\graph\CMakeFiles\hyle_graph.dir\constant_artifact.cc.obj
+[57/158] Building CXX object hyle\src\compute_provider_onednn\CMakeFiles\hyle_compute_provider_onednn.dir\brgemm_internal.cc.obj
+[58/158] Building CXX object hyle\src\compute_provider_onednn\CMakeFiles\hyle_compute_provider_onednn.dir\normalization_internal.cc.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[59/158] Building CXX object hyle\src\compute_provider_onednn\CMakeFiles\hyle_compute_provider_onednn.dir\onednn_provider.cc.obj
+[60/158] Linking CXX static library hyle\src\compute_backend_cpu\hyle_compute_backend_cpu.lib
+[61/158] Linking CXX static library hyle\src\compute_ggml_runtime\hyle_compute_ggml_runtime.lib
+[62/158] Building CXX object hyle\src\compute_provider_ggml\CMakeFiles\hyle_compute_provider_ggml.dir\ggml_cpu_provider.cc.obj
+[63/158] Building CXX object hyle\src\compute_provider_ggml\CMakeFiles\hyle_compute_provider_ggml.dir\standard_index.cc.obj
+[64/158] Linking CXX static library hyle\src\compute_backend_cuda\hyle_compute_backend_cuda.lib
+[65/158] Building CXX object hyle\src\compute_provider_native\CMakeFiles\hyle_compute_provider_native.dir\aten_cpu_provider.cc.obj
+[66/158] Building CXX object hyle\src\compute_provider_native\CMakeFiles\hyle_compute_provider_native.dir\cast.cc.obj
+[67/158] Building CXX object hyle\src\compute_provider_native\CMakeFiles\hyle_compute_provider_native.dir\default_rules.cc.obj
+[68/158] Building CXX object hyle\src\compute_provider_native\CMakeFiles\hyle_compute_provider_native.dir\ds4_quantization.cc.obj
+[69/158] Building CXX object hyle\src\compute_provider_native\CMakeFiles\hyle_compute_provider_native.dir\elementwise.cc.obj
+[70/158] Building CXX object hyle\src\compute_provider_native\CMakeFiles\hyle_compute_provider_native.dir\indexing.cc.obj
+[71/158] Building CXX object hyle\src\compute_provider_native\CMakeFiles\hyle_compute_provider_native.dir\native_provider.cc.obj
+[72/158] Building CXX object hyle\src\compute_provider_native\CMakeFiles\hyle_compute_provider_native.dir\normalization.cc.obj
+[73/158] Building CXX object hyle\src\compute_provider_native\CMakeFiles\hyle_compute_provider_native.dir\reduction.cc.obj
+[74/158] Building CXX object hyle\src\compute_provider_native\CMakeFiles\hyle_compute_provider_native.dir\transform.cc.obj
+[75/158] Building CXX object hyle\src\compute_provider_native\CMakeFiles\hyle_compute_provider_native.dir\transformer.cc.obj
+[76/158] Building CXX object hyle\src\compute_provider_native\CMakeFiles\hyle_compute_provider_native.dir\torch_cpu_program.cc.obj
+[77/158] Building CXX object hyle\src\compute_provider_cublas\CMakeFiles\hyle_compute_provider_cublas.dir\cublas_provider.cc.obj
+[78/158] Building CXX object hyle\src\compute_provider_cuda\CMakeFiles\hyle_compute_provider_cuda.dir\collectives_provider.cc.obj
+[79/158] Building CUDA object hyle\src\compute_provider_cuda\CMakeFiles\hyle_compute_provider_cuda.dir\collectives.cu.obj
+collectives.cu
+tmpxft_00004d50_00000000-7_collectives.compute_89.cudafe1.cpp
+[80/158] Building CXX object hyle\src\compute_provider_cuda\CMakeFiles\hyle_compute_provider_cuda.dir\cuda_provider.cc.obj
+[81/158] Building CUDA object hyle\src\compute_provider_cuda\CMakeFiles\hyle_compute_provider_cuda.dir\native_kernel.cu.obj
+native_kernel.cu
+tmpxft_00010e58_00000000-7_native_kernel.compute_89.cudafe1.cpp
+[82/158] Building CUDA object hyle\src\compute_provider_cuda\CMakeFiles\hyle_compute_provider_cuda.dir\sglang_kernel.cu.obj
+sglang_kernel.cu
+tmpxft_00017050_00000000-7_sglang_kernel.compute_89.cudafe1.cpp
+[83/158] Building CUDA object hyle\src\compute_provider_cuda\CMakeFiles\hyle_compute_provider_cuda.dir\sglang_norm_kernel.cu.obj
+sglang_norm_kernel.cu
+tmpxft_0000f07c_00000000-7_sglang_norm_kernel.compute_89.cudafe1.cpp
+[84/158] Building CXX object hyle\src\compute_provider_cuda\CMakeFiles\hyle_compute_provider_cuda.dir\router_provider.cc.obj
+[85/158] Building CUDA object hyle\src\compute_provider_cuda\CMakeFiles\hyle_compute_provider_cuda.dir\sglang_router_kernel.cu.obj
+sglang_router_kernel.cu
+tmpxft_00004ec0_00000000-7_sglang_router_kernel.compute_89.cudafe1.cpp
+[86/158] Building CXX object hyle\src\compute_provider_cuda\CMakeFiles\hyle_compute_provider_cuda.dir\fp8_provider.cc.obj
+[87/158] Building CXX object hyle\src\compute_provider_cuda\CMakeFiles\hyle_compute_provider_cuda.dir\grouped_fp8_provider.cc.obj
+[88/158] Building CXX object hyle\src\compute_provider_cuda\CMakeFiles\hyle_compute_provider_cuda.dir\deepseek_fp8_provider.cc.obj
+[89/158] Building CXX object hyle\src\compute_provider_cuda\CMakeFiles\hyle_compute_provider_cuda.dir\deepseek_grouped_fp4_provider.cc.obj
+[90/158] Building CXX object hyle\src\compute_provider_cuda\CMakeFiles\hyle_compute_provider_cuda.dir\tensor_provider.cc.obj
+[91/158] Building CUDA object hyle\src\compute_provider_cuda\CMakeFiles\hyle_compute_provider_cuda.dir\tensor_kernel.cu.obj
+tensor_kernel.cu
+tmpxft_0000953c_00000000-7_tensor_kernel.compute_89.cudafe1.cpp
+[92/158] Building CXX object hyle\src\compute_provider_cuda\CMakeFiles\hyle_compute_provider_cuda.dir\norm_provider.cc.obj
+[93/158] Building CUDA object hyle\src\compute_provider_cuda\CMakeFiles\hyle_compute_provider_cuda.dir\norm_kernel.cu.obj
+norm_kernel.cu
+tmpxft_00015334_00000000-7_norm_kernel.compute_89.cudafe1.cpp
+[94/158] Building CXX object hyle\src\compute_provider_cuda\CMakeFiles\hyle_compute_provider_cuda.dir\reduction_provider.cc.obj
+[95/158] Building CUDA object hyle\src\compute_provider_cuda\CMakeFiles\hyle_compute_provider_cuda.dir\reduction_kernel.cu.obj
+reduction_kernel.cu
+tmpxft_00009094_00000000-7_reduction_kernel.compute_89.cudafe1.cpp
+[96/158] Building CXX object hyle\src\compute_provider_cuda\CMakeFiles\hyle_compute_provider_cuda.dir\concat_provider.cc.obj
+[97/158] Building CUDA object hyle\src\compute_provider_cuda\CMakeFiles\hyle_compute_provider_cuda.dir\concat_kernel.cu.obj
+concat_kernel.cu
+tmpxft_00011650_00000000-7_concat_kernel.compute_89.cudafe1.cpp
+[98/158] Building CXX object hyle\src\compute_provider_cuda\CMakeFiles\hyle_compute_provider_cuda.dir\scatter_provider.cc.obj
+[99/158] Building CUDA object hyle\src\compute_provider_cuda\CMakeFiles\hyle_compute_provider_cuda.dir\scatter_kernel.cu.obj
+scatter_kernel.cu
+tmpxft_00003c38_00000000-7_scatter_kernel.compute_89.cudafe1.cpp
+[100/158] Building CXX object hyle\src\compute_provider_ggml_cuda\CMakeFiles\hyle_compute_provider_ggml_cuda.dir\ggml_cuda_provider.cc.obj
+[101/158] Building CXX object hyle\src\compute_provider_ggml_cuda\CMakeFiles\hyle_compute_provider_ggml_cuda.dir\tensor_program.cc.obj
+[102/158] Building CXX object hyle\src\compute_provider_torch_cuda\CMakeFiles\hyle_compute_provider_torch_cuda.dir\artifact_provider.cc.obj
+[103/158] Linking CXX static library hyle\src\platform_fs\hyle_platform_fs.lib
+[104/158] Building CXX object hyle\src\mem_vm\CMakeFiles\hyle_mem_vm.dir\mapping.cc.obj
+[105/158] Building CXX object hyle\src\mem_vm\CMakeFiles\hyle_mem_vm.dir\file_mapping.cc.obj
+[106/158] Building CXX object hyle\src\mem_vm\CMakeFiles\hyle_mem_vm.dir\shared_mapping.cc.obj
+[107/158] Linking CXX static library hyle\src\graph\hyle_graph.lib
+[108/158] Linking CXX static library hyle\src\compute_provider_onednn\hyle_compute_provider_onednn.lib
+[109/158] Linking CXX static library hyle\src\compute_provider_ggml\hyle_compute_provider_ggml.lib
+[110/158] Building CXX object hyle\src\graph_provider_onednn\CMakeFiles\hyle_graph_provider_onednn.dir\onednn_region_provider.cc.obj
+[111/158] Linking CXX static library hyle\src\compute_provider_native\hyle_compute_provider_native.lib
+[112/158] Building CXX object hyle\src\compute_route_cpu\CMakeFiles\hyle_compute_route_cpu.dir\cpu_context.cc.obj
+[113/158] Building CXX object hyle\src\compute_route_cpu\CMakeFiles\hyle_compute_route_cpu.dir\default_policy.cc.obj
+[114/158] Linking CXX static library hyle\src\compute_provider_cublas\hyle_compute_provider_cublas.lib
+[115/158] Linking CXX static library hyle\src\compute_provider_cuda\hyle_compute_provider_cuda.lib
+[116/158] Linking CXX static library hyle\src\compute_provider_ggml_cuda\hyle_compute_provider_ggml_cuda.lib
+[117/158] Linking CXX static library hyle\src\compute_provider_torch_cuda\hyle_compute_provider_torch_cuda.lib
+[118/158] Building CXX object hyle\src\compute_route_cuda\CMakeFiles\hyle_compute_route_cuda.dir\cuda_context.cc.obj
+[119/158] Building CXX object hyle\src\compute_route_cuda\CMakeFiles\hyle_compute_route_cuda.dir\default_policy.cc.obj
+[120/158] Building CXX object hyle\src\compute_route_cuda\CMakeFiles\hyle_compute_route_cuda.dir\best_of.cc.obj
+[121/158] Building CXX object hyle\src\compute_route_cuda\CMakeFiles\hyle_compute_route_cuda.dir\weights.cc.obj
+[122/158] Building CXX object hyle\src\graph_provider_ggml_cuda\CMakeFiles\hyle_graph_provider_ggml_cuda.dir\ggml_cuda_region.cc.obj
+[123/158] Linking CXX static library hyle\src\mem_vm\hyle_mem_vm.lib
+[124/158] Building CXX object hyle\src\sched\CMakeFiles\hyle_sched.dir\fiber.cc.obj
+[125/158] Building CXX object hyle\src\sched\CMakeFiles\hyle_sched.dir\scheduler.cc.obj
+[126/158] Building CXX object hyle\src\sched\CMakeFiles\hyle_sched.dir\sync.cc.obj
+[127/158] Building CXX object hyle\src\sched\CMakeFiles\hyle_sched.dir\join.cc.obj
+[128/158] Building CXX object hyle\src\sched\CMakeFiles\hyle_sched.dir\blocking.cc.obj
+[129/158] Building CXX object hyle\src\sched\CMakeFiles\hyle_sched.dir\cancel.cc.obj
+[130/158] Building CXX object hyle\src\sched\CMakeFiles\hyle_sched.dir\task_scope.cc.obj
+[131/158] Building CXX object hyle\src\sched\CMakeFiles\hyle_sched.dir\bulk.cc.obj
+[132/158] Building ASM_MASM object hyle\src\sched\CMakeFiles\hyle_sched.dir\C_\public\project-hyle\hyle\third_party\fcontext\asm\jump_x86_64_ms_pe_masm.asm.obj
+Microsoft (R) Macro Assembler (x64) Version 14.50.35728.0
+Copyright (C) Microsoft Corporation.  All rights reserved.
+
+ Assembling: C:\public\project-hyle\hyle\third_party\fcontext\asm\jump_x86_64_ms_pe_masm.asm
+[133/158] Building ASM_MASM object hyle\src\sched\CMakeFiles\hyle_sched.dir\C_\public\project-hyle\hyle\third_party\fcontext\asm\make_x86_64_ms_pe_masm.asm.obj
+Microsoft (R) Macro Assembler (x64) Version 14.50.35728.0
+Copyright (C) Microsoft Corporation.  All rights reserved.
+
+ Assembling: C:\public\project-hyle\hyle\third_party\fcontext\asm\make_x86_64_ms_pe_masm.asm
+[134/158] Building ASM_MASM object hyle\src\sched\CMakeFiles\hyle_sched.dir\C_\public\project-hyle\hyle\third_party\fcontext\asm\ontop_x86_64_ms_pe_masm.asm.obj
+Microsoft (R) Macro Assembler (x64) Version 14.50.35728.0
+Copyright (C) Microsoft Corporation.  All rights reserved.
+
+ Assembling: C:\public\project-hyle\hyle\third_party\fcontext\asm\ontop_x86_64_ms_pe_masm.asm
+[135/158] Linking CXX static library hyle\src\graph_provider_onednn\hyle_graph_provider_onednn.lib
+[136/158] Linking CXX static library hyle\src\compute_route_cpu\hyle_compute_route_cpu.lib
+[137/158] Building CXX object hyle\src\graph_route_cpu\CMakeFiles\hyle_graph_route_cpu.dir\cpu_context.cc.obj
+[138/158] Building CXX object hyle\src\graph_route_cpu\CMakeFiles\hyle_graph_route_cpu.dir\ggml_region.cc.obj
+[139/158] Linking CXX static library hyle\src\compute_route_cuda\hyle_compute_route_cuda.lib
+[140/158] Linking CXX static library hyle\src\graph_provider_ggml_cuda\hyle_graph_provider_ggml_cuda.lib
+[141/158] Building CXX object hyle\src\graph_route_cuda\CMakeFiles\hyle_graph_route_cuda.dir\cuda_context.cc.obj
+[142/158] C:\WINDOWS\system32\cmd.exe /C "cd /D C:\h7\w-cpu-cuda\selected-graph\source-build && "C:\Program Files\CMake\bin\cmake.exe" -P C:/h7/w-cpu-cuda/selected-graph/source-build/hyle-runtime/hyle_cpu_cuda_sample-Release.cmake"
+[143/158] C:\WINDOWS\system32\cmd.exe /C "cd /D C:\h7\w-cpu-cuda\selected-graph\source-build && "C:\Program Files\CMake\bin\cmake.exe" -P C:/h7/w-cpu-cuda/selected-graph/source-build/hyle-runtime/hyle_cuda_weights_sample-Release.cmake"
+[144/158] C:\WINDOWS\system32\cmd.exe /C "cd /D C:\h7\w-cpu-cuda\selected-graph\source-build && "C:\Program Files\CMake\bin\cmake.exe" -P C:/h7/w-cpu-cuda/selected-graph/source-build/hyle-runtime/hyle_cpu_cuda_contracts-Release.cmake"
+[145/158] Linking CXX static library hyle\src\sched\hyle_sched.lib
+[146/158] Linking CXX static library hyle\src\graph_route_cpu\hyle_graph_route_cpu.lib
+[147/158] Linking CXX static library hyle\src\graph_route_cuda\hyle_graph_route_cuda.lib
+[148/158] Building CXX object hyle\src\graph_route_cpu_cuda\CMakeFiles\hyle_graph_route_cpu_cuda.dir\compile.cc.obj
+[149/158] Building CXX object hyle\src\graph_route_cpu_cuda\CMakeFiles\hyle_graph_route_cpu_cuda.dir\progress.cc.obj
+[150/158] Building CXX object hyle\src\graph_route_cpu_cuda\CMakeFiles\hyle_graph_route_cpu_cuda.dir\invocation.cc.obj
+[151/158] Building CXX object CMakeFiles\hyle_cpu_cuda_sample.dir\C_\public\project-hyle\hyle\samples\package\graph\cpu_cuda\main.cc.obj
+[152/158] Building CXX object CMakeFiles\hyle_cuda_weights_sample.dir\C_\public\project-hyle\hyle\samples\package\compute\cuda_weights\main.cc.obj
+[153/158] Building CXX object CMakeFiles\hyle_cpu_cuda_contracts.dir\C_\public\project-hyle\hyle\tests\graph\cpu_cuda_contracts.cc.obj
+[154/158] Linking CXX static library hyle\src\graph_route_cpu_cuda\hyle_graph_route_cpu_cuda.lib
+[155/158] Linking CXX executable hyle_cpu_cuda_sample.exe
+[156/158] Linking CXX executable hyle_cuda_weights_sample.exe
+[157/158] Linking CXX executable hyle_cpu_cuda_contracts.exe

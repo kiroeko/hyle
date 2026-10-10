@@ -1,0 +1,26 @@
+{
+  "candidate": "7eaf67b8a496ee19b609533980cd69e7efb5aa49",
+  "tree": "fa7fed9f5e78a1e28f9c649c2f0af47ec90866e7",
+  "scope": "Changed product and consumer files from offload-scope baseline; not a complete SDK manifest",
+  "file_sha256": {
+    "include/hyle/compute/cuda_weights.h": "4fdd66441bdedc22b4352f19a8e8bf89dfefc214fb695750d38fd9636aa13d44",
+    "include/hyle/compute/resource_budget.h": "7e04cba9fb6727e883ef89a66a80b1f50b363c0b250bf327711ac430b6f13c5b",
+    "include/hyle/graph/cpu_cuda.h": "a7bb69686ae5f1e42449f4b9f8ecf2f3d6713a3329773aa154e3bd7cc9ac5207",
+    "include/hyle/graph/executable.h": "8494f631596c1fefa336385fb909e9a9baee7708549abd4c8b5e8ce1a203e75f",
+    "samples/package/compute/cuda_weights/README.md": "b5b07469b88aed83ae21810169139a705550f268e0a9ab3e70c90fef4295ce65",
+    "samples/package/graph/cpu_cuda/README.md": "3acf38657d0ae06d74739bc4c38abd008b30c6f7b59ba54b23b98f3f78e2c332",
+    "samples/package/graph/cpu_cuda/inference.h": "6193f6fe864d5f9c2e99c3b649b9a74ae7753fa4fe0203dc8b7e4757fb62e9f6",
+    "samples/package/graph/cpu_cuda/main.cc": "49a36e00701dd0b6ca350e7f14f9698b981d61c60fc137daf6965a5b6cbd2c53",
+    "src/compute/CMakeLists.txt": "e24171f4c04ff25e782316b42be69fef5ae2b2d416be29852ccfb1a092d9cd5d",
+    "src/compute/resource_budget.cc": "d9789ac7f548af30a45ee3fcee0ca376fcdb533f06dc8ac150e402c2d10e2346",
+    "src/compute_route_cuda/weights.cc": "6521fc88a4650857b6b7a1c9447ddb3a8066833e94f682ad31b7a0d977cc2309",
+    "src/graph/constant_artifact.cc": "8036eb7024df9b4bf5fd247d0d1300213498c08c1a5c1805fff543bee60186f3",
+    "src/graph/constant_artifact.h": "960a061d1e43d6fcd3164fe5e4fa13a6abba4ca3b048102ce2af1165c9870037",
+    "src/graph/executable.cc": "2d531e044dbe629218bca074b2da06aef970a72f2c9ea2ab9d6f74760694a0cf",
+    "src/graph/plan_state.h": "aea58e984cbc153df461823fa9b39e6dec3e7e7e99e2c5045ce52e5cd6bca428",
+    "src/graph/storage_budget.h": "3a2cd29a84f4b87bc58e8894e8bd59ac9e1404b370508d3c560889d16a3e4965",
+    "src/graph_route_cpu_cuda/compile.cc": "ac51efee0c84ccf4a06aea54b8a10bbbb6dccc792ffcb781b07598c08f09295b",
+    "src/graph_route_cpu_cuda/invocation.cc": "d069fb89c22f6f9f1d8b794859fe126a59eac465f046591d84f2880b57b1509e",
+    "tests/graph/cpu_cuda_contracts.cc": "97fe6d7d6b61a12905c3fdc3a5117734f0b1dec935c9249c73add39f243a44d3"
+  }
+}

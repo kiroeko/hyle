@@ -1,0 +1,22 @@
+{
+  "candidate": "7eaf67b8a496ee19b609533980cd69e7efb5aa49",
+  "rows": [
+    {
+      "stage": "static-build",
+      "exit": 0,
+      "seconds": 414.16,
+      "minimum_available_gib": 37.91,
+      "log": "C:\\h7\\h1-offload-windows-static\\static-build.log"
+    },
+    {
+      "stage": "static-install",
+      "exit": 0,
+      "seconds": 4.0,
+      "minimum_available_gib": 45.23,
+      "log": "C:\\h7\\h1-offload-windows-static\\static-install.log"
+    }
+  ],
+  "build_parallel": 1,
+  "test_parallel": 1,
+  "claim": "only listed actual stages"
+}

@@ -1,0 +1,78 @@
+{
+  "candidate": "7eaf67b8a496ee19b609533980cd69e7efb5aa49",
+  "rows": [
+    {
+      "stage": "shared-install",
+      "exit": 0,
+      "seconds": 4.0,
+      "minimum_available_gib": 32.07,
+      "log": "C:\\h7\\h1-offload-windows-shared\\shared-install.log"
+    },
+    {
+      "stage": "joint-configure",
+      "exit": 0,
+      "seconds": 50.03,
+      "minimum_available_gib": 32.02,
+      "log": "C:\\h7\\h1-offload-windows-shared\\joint-configure.log"
+    },
+    {
+      "stage": "joint-build",
+      "exit": 0,
+      "seconds": 14.0,
+      "minimum_available_gib": 32.12,
+      "log": "C:\\h7\\h1-offload-windows-shared\\joint-build.log"
+    },
+    {
+      "stage": "joint-test",
+      "exit": 0,
+      "seconds": 2.02,
+      "minimum_available_gib": 31.5,
+      "log": "C:\\h7\\h1-offload-windows-shared\\joint-test.log"
+    },
+    {
+      "stage": "direct-configure",
+      "exit": 0,
+      "seconds": 49.02,
+      "minimum_available_gib": 32.32,
+      "log": "C:\\h7\\h1-offload-windows-shared\\direct-configure.log"
+    },
+    {
+      "stage": "direct-build",
+      "exit": 0,
+      "seconds": 8.0,
+      "minimum_available_gib": 31.7,
+      "log": "C:\\h7\\h1-offload-windows-shared\\direct-build.log"
+    },
+    {
+      "stage": "direct-test",
+      "exit": 0,
+      "seconds": 1.02,
+      "minimum_available_gib": 31.94,
+      "log": "C:\\h7\\h1-offload-windows-shared\\direct-test.log"
+    },
+    {
+      "stage": "contracts-configure",
+      "exit": 0,
+      "seconds": 49.01,
+      "minimum_available_gib": 31.58,
+      "log": "C:\\h7\\h1-offload-windows-shared\\contracts-configure.log"
+    },
+    {
+      "stage": "contracts-build",
+      "exit": 0,
+      "seconds": 9.02,
+      "minimum_available_gib": 31.47,
+      "log": "C:\\h7\\h1-offload-windows-shared\\contracts-build.log"
+    },
+    {
+      "stage": "contracts-test",
+      "exit": 0,
+      "seconds": 1.0,
+      "minimum_available_gib": 31.61,
+      "log": "C:\\h7\\h1-offload-windows-shared\\contracts-test.log"
+    }
+  ],
+  "build_parallel": 1,
+  "test_parallel": 1,
+  "claim": "only listed actual stages"
+}
