@@ -153,3 +153,24 @@ scope 只含 native bridge、route buffer/固定 transfer/原退休及相应 P0�
 改变数学/default Provider。先固定追加 seam 一遍源码审计/有限实现，再一批定向原生验证；保留上述
 数学事实，按实际改变的调用链补受影响验收，不重跑历史全集。停止预算：原生正交时间线两端各
 一个固定有界候选；失败先查实际队列/同步成本，有具体缺陷才修，不换 workload 无限试。
+
+#### H3-07 AUDITED：有限原生交接
+
+原 NativeDevice 的 transfer_queue 已由 ggml 初始化，单队列时是同一 handle 的 alias；提交沿原
+device_submit_mutex→queue handle 锁序。原 Buffer 默认 EXCLUSIVE，新 MemoryResource 受管缓冲
+允许原 compute/transfer 两个 family；旧 Context 分配/外部 borrow 不擅自扩大 family，仍走原队列。
+上传固定槽冷创建 transfer-family command pool/command、binary semaphore 和 copy fence，复用原
+compute command/fence与原 pending/Completion owner。下载保留原 compute queue，不能凭 host
+fence 等待伪造跨队列 GPU 写入的 acquire。
+
+上传原 copy 在 transfer queue signal；compute queue 空交接 submit wait ALL_COMMANDS 后 signal 原
+结果 fence，semaphore 提供 memory availability/visibility。公开 ready 继续覆盖 compute ordered
+prefix。若 copy 被接纳而 compute 交接被拒绝，保留 copy fence/prefix，实际退休后发布原失败并禁止
+槽复用；未知 fence 观察失败只在 exceptional wait 用原锁序排空两个已提交队列，不能只排 compute。
+不另建 Runtime/线程，也不改变 mature 数学、默认 Provider 或旧资源的所属 family。
+
+冷 Environment/NativeStorage 与组合 replay 报告只揭示真实 transfer queue/缓冲可用性和上传数量，
+available queue 不冒充 overlap 性能资格。FIX 就上述 bridge、受管 Buffer、固定上传/退休和报告；
+定向验证原五项 source、两槽更新/同队列旧 Buffer、copy 接纳后 handoff 拒绝/保活/退休，以及同一
+固定 P0 时间线 Windows/Air。installed batch 在该 API/算法冻结后一次接线；不扩性能仪器或模型算子。
+补充审计已固定，新增 provider owner 进入 AUDITED，现有 route owner 沿追加 FIX 实施。

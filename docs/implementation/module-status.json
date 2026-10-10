@@ -551,9 +551,9 @@
     },
     {
       "module": "compute_provider_ggml_vulkan",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/compute-h3-cpu-vulkan-composition.md",
-      "summary": "H3-07 scoped: expose the existing native transfer queue and lawful transfer/compute handoff; source math qualification is retained, no new math or provider winner."
+      "summary": "H3-07 audited: borrow existing transfer queue and submit locks; fixed shared-family upload, semaphore handoff and partial-prefix retirement, without new math or Provider changes."
     },
     {
       "module": "compute_ggml_runtime",
