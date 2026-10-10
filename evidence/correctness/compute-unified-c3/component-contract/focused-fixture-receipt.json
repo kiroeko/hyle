@@ -1,0 +1,36 @@
+{
+  "tool_candidate": "788f9e80",
+  "rows": [
+    {
+      "name": "selected-audit",
+      "argv": [
+        "cmake",
+        "-S",
+        "C:\\h7\\component-contract\\component-contract\\selected-audit-fixture",
+        "-B",
+        "C:\\h7\\component-contract\\component-contract\\selected-audit-build"
+      ],
+      "exit": 0,
+      "expected_success": true,
+      "verified": true,
+      "log": "evidence/correctness/compute-unified-c3/component-contract/selected-audit-fixed.log",
+      "sha256": "5c1fd98ae84fcf48e74273f13c39d57b1d810751a716cfbe2448a941799041ae"
+    },
+    {
+      "name": "selected-invalid",
+      "argv": [
+        "cmake",
+        "-S",
+        "C:\\h7\\component-contract\\component-contract\\selected-invalid-fixture",
+        "-B",
+        "C:\\h7\\component-contract\\component-contract\\selected-invalid-build"
+      ],
+      "exit": 1,
+      "expected_success": false,
+      "verified": true,
+      "log": "evidence/correctness/compute-unified-c3/component-contract/selected-invalid-fixed.log",
+      "sha256": "c155d9201809227a4266b64c1114ea5492524320ca1d62000dbe7f1defff862b",
+      "diagnostic_check": "The original contract's exact two diagnostic fragments, replacing the scratch receipt's incorrect guessed wording; same execution/log SHA retained."
+    }
+  ]
+}

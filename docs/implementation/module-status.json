@@ -512,10 +512,9 @@
     },
     {
       "module": "compute_ggml_runtime",
-      "state": "CANDIDATE",
-      "record": "docs/implementation/tasks/compute/vulkan-f32-matmul-admission-repair.md",
-      "summary": "Vulkan F32同FIX限定完成已冻结；保留首次候选FAIL和原误差门，撤去显式F32的coop预转换，实际数值/交付待验。",
-      "candidate": "c96c7c6eefb41f9aca71c92b4304814a731fe088"
+      "state": "AUDITED",
+      "record": "docs/implementation/tasks/build/compute-ggml-cpu-linux-loader-path.md",
+      "summary": "C3 Linux CPU loader AUDITED：已固定一个 target-local build RPATH 修正；数学、ABI、默认规则不变，原 source/shared/static 定向验收。"
     },
     {
       "module": "compute_provider_ggml_cuda",

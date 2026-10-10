@@ -1,0 +1,245 @@
+CMake Error at cmake/HyleCiComponentContract.cmake:41 (message):
+  maintainer all selects every implemented IO factor failed with exit code 1:
+
+  -- Building for: Visual Studio 18 2026
+
+  -- Selecting Windows SDK version 10.0.26100.0 to target Windows 10.0.26200.
+
+  -- The CXX compiler identification is MSVC 19.50.35728.0
+
+  -- Detecting CXX compiler ABI info
+
+  -- Detecting CXX compiler ABI info - done
+
+  -- Check for working CXX compiler: C:/Program Files/Microsoft Visual
+  Studio/18/Enterprise/VC/Tools/MSVC/14.50.35717/bin/Hostx64/x64/cl.exe -
+  skipped
+
+  -- Detecting CXX compile features
+
+  -- Detecting CXX compile features - done
+
+  -- HYLE developer factors: requested='all'
+  resolved='core,container_intrusive,util_core,error,mem_reclaim,time,obs,math,timer_queue,platform,platform_thread,platform_fs,mem,mem_vm,simd,container,container_text,util_runtime,container_queue,sched,io_core,io_tls,io_http,io_http2,io_transfer,compute_ops,compute,graph,container_concurrent,io_watch,process,io_websocket,compute_provider_onednn,compute_backend_cpu,compute_ggml_runtime,compute_provider_ggml,graph_provider_onednn,compute_backend_cuda,compute_provider_native,compute_route_cpu,graph_route_cpu,compute_provider_cublas,compute_provider_marlin,compute_provider_cuda,compute_provider_flashinfer,compute_provider_ggml_cuda,compute_provider_torch_cuda,compute_route_cuda,graph_provider_ggml_cuda,graph_route_cuda,compute_provider_ggml_metal,compute_route_apple,graph_route_apple,compute_provider_ggml_vulkan,compute_provider_iree_vulkan,compute_route_vulkan,graph_route_vulkan'
+  products=''
+
+  -- The C compiler identification is MSVC 19.50.35728.0
+
+  -- Detecting C compiler ABI info
+
+  -- Detecting C compiler ABI info - done
+
+  -- Check for working C compiler: C:/Program Files/Microsoft Visual
+  Studio/18/Enterprise/VC/Tools/MSVC/14.50.35717/bin/Hostx64/x64/cl.exe -
+  skipped
+
+  -- Detecting C compile features
+
+  -- Detecting C compile features - done
+
+  -- HYLE_SANITIZER = off
+
+  -- HYLE_TESTING = OFF (test-only interfaces stripped -- zero in shipped
+  lib)
+
+  -- HYLE: io TLS OFF -- dependency probe skipped
+
+  -- oneDNN build configuration is based on the CMAKE_BUILD_TYPE value, but
+
+   the CMake generator 'Visual Studio 18 2026' does not respect it and requires
+   using the --config option to choose the build type. Changing the build type
+   using the --config option requires rerunning CMake from scratch with a
+   matching CMAKE_BUILD_TYPE value.
+
+  -- DNNL_TARGET_ARCH: X64
+
+  -- ONEDNN_LIBRARY_TYPE: STATIC (default: SHARED)
+
+  -- ONEDNN_BUILD_GRAPH: OFF (default: ON)
+
+  -- ONEDNN_ENABLE_CONCURRENT_EXEC: ON (default: OFF)
+
+  -- ONEDNN_ENABLE_PRIMITIVE_CACHE: OFF (default: ON)
+
+  -- ONEDNN_ENABLE_WORKLOAD: INFERENCE (default: TRAINING)
+
+  -- ONEDNN_ENABLE_PRIMITIVE:
+  MATMUL;LAYER_NORMALIZATION;BINARY;ELTWISE;REORDER (default: ALL)
+
+  -- ONEDNN_EXPERIMENTAL_UKERNEL: ON (default: OFF)
+
+  -- ONEDNN_ENABLE_JIT_PROFILING: OFF (default: ON)
+
+  -- ONEDNN_ENABLE_ITT_TASKS: OFF (default: ON)
+
+  -- ONEDNN_VERBOSE: OFF (default: ON)
+
+  -- ONEDNN_CPU_RUNTIME: THREADPOOL (default: OMP)
+
+  -- ONEDNN_ENABLE_MAX_CPU_ISA: OFF (default: ON)
+
+  -- ONEDNN_ENABLE_CPU_ISA_HINTS: OFF (default: ON)
+
+  -- Performing Test CMAKE_HAVE_LIBC_PTHREAD
+
+  -- Performing Test CMAKE_HAVE_LIBC_PTHREAD - Failed
+
+  -- Looking for pthread_create in pthreads
+
+  -- Looking for pthread_create in pthreads - not found
+
+  -- Looking for pthread_create in pthread
+
+  -- Looking for pthread_create in pthread - not found
+
+  -- Found Threads: TRUE
+
+  -- Found OpenMP_C: -openmp (found version "2.0")
+
+  -- Found OpenMP_CXX: -openmp (found version "2.0")
+
+  -- Found OpenMP: TRUE (found version "2.0")
+
+  -- Threadpool testing: standalone
+
+  -- Found OpenCL headers:
+  C:/Users/kiro/AppData/Local/hyle/dependencies/v1/sources/onednn-c531fe1a5cd6-5c0c833df87c/third_party/opencl
+
+  -- Found Git: C:/Program Files/Git/cmd/git.exe (found version
+  "2.52.0.windows.1")
+
+  -- Enabled testing coverage: CI
+
+  -- Enabled workload: INFERENCE
+
+  -- Enabled primitives: MATMUL;LAYER_NORMALIZATION;BINARY;ELTWISE;REORDER
+
+  -- Enabled primitive CPU ISA: ALL
+
+  -- Enabled primitive GPU ISA: ALL
+
+  -- Enabled GeMM kernels ISA: ALL
+
+  -- Primitive cache is disabled
+
+  -- Experimental functionality for ukernels is enabled
+
+  -- HYLE: oneDNN v3.13.4 -- x64 BRGEMM, normalization and tensor primitives
+  enabled
+
+  -- Found CUDAToolkit: C:/Program Files/NVIDIA GPU Computing
+  Toolkit/CUDA/v13.3/include;C:/Program Files/NVIDIA GPU Computing
+  Toolkit/CUDA/v13.3/include/cccl (found suitable version "13.3.73", minimum
+  required is "13.3")
+
+  -- HYLE: CUDA backend ON -- found CUDA Toolkit 13.3.73 at 'C:/Program
+  Files/NVIDIA GPU Computing Toolkit/CUDA/v13.3'; capability enabled
+
+  -- HYLE: Apple route OFF -- MLX and Metal probe/download skipped
+
+  -- Found Python3: C:/Program Files/Python312/python.exe (found version
+  "3.12.10") found components: Interpreter
+
+  -- The ASM_MASM compiler identification is MSVC
+
+  -- Found assembler: C:/Program Files/Microsoft Visual
+  Studio/18/Enterprise/VC/Tools/MSVC/14.50.35717/bin/Hostx64/x64/ml64.exe
+
+  -- Performing Test HYLE_CXX_HAS_AVX10_2_INTRINSICS
+
+  -- Performing Test HYLE_CXX_HAS_AVX10_2_INTRINSICS - Failed
+
+  -- ggml source: 2263 files, 33 exact patches
+
+
+
+  -- The ASM compiler identification is MSVC
+
+  -- Found assembler: C:/Program Files/Microsoft Visual
+  Studio/18/Enterprise/VC/Tools/MSVC/14.50.35717/bin/Hostx64/x64/cl.exe
+
+  -- CMAKE_SYSTEM_PROCESSOR: AMD64
+
+  -- CMAKE_GENERATOR_PLATFORM:
+
+  -- GGML_SYSTEM_ARCH: x86
+
+  -- Including CPU backend
+
+  -- x86 detected
+
+  -- Adding CPU backend variant ggml-cpu:
+
+  -- Found CUDAToolkit: C:/Program Files/NVIDIA GPU Computing
+  Toolkit/CUDA/v13.3/include;C:/Program Files/NVIDIA GPU Computing
+  Toolkit/CUDA/v13.3/include/cccl (found version "13.3.73")
+
+  -- CUDA Toolkit found
+
+  -- The CUDA compiler identification is NVIDIA 13.3.73 with host compiler
+  MSVC 19.50.35728.0
+
+  -- Detecting CUDA compiler ABI info
+
+  -- Detecting CUDA compiler ABI info - done
+
+  -- Check for working CUDA compiler: C:/Program Files/NVIDIA GPU Computing
+  Toolkit/CUDA/v13.3/bin/nvcc.exe - skipped
+
+  -- Detecting CUDA compile features
+
+  -- Detecting CUDA compile features - done
+
+  -- Using CMAKE_CUDA_ARCHITECTURES=80;89-real
+  CMAKE_CUDA_ARCHITECTURES_NATIVE=89-real
+
+  -- FlashAttention K-V type combinations:
+  f16-f16;q4_0-q4_0;q8_0-q8_0;bf16-bf16
+
+  -- Including CUDA backend
+
+  -- Configuring incomplete, errors occurred!
+
+
+
+  CMake Warning (deprecated) at
+  C:/Users/kiro/AppData/Local/hyle/dependencies/v1/sources/onednn-c531fe1a5cd6-5c0c833df87c/CMakeLists.txt:36
+  (cmake_policy):
+
+    The OLD behavior for policy CMP0146 will be removed from a future version
+    of CMake.
+
+
+
+    The cmake-policies(7) manual explains that the OLD behaviors of all
+    policies are deprecated and that a policy should be set to OLD only under
+    specific short-term circumstances.  Projects should be ported to the NEW
+    behavior and not rely on setting a policy to OLD.
+
+  This warning is for project developers.  Use -Wno-author or -Wno-deprecated
+
+  to suppress it.
+
+
+
+  CMake Error at C:/Program
+  Files/CMake/share/cmake-4.4/Modules/FindPackageHandleStandardArgs.cmake:290
+  (message):
+
+    Could NOT find Vulkan (missing: Vulkan_LIBRARY Vulkan_INCLUDE_DIR glslc)
+    (found version "")
+
+  Call Stack (most recent call first):
+
+    C:/Program Files/CMake/share/cmake-4.4/Modules/FindPackageHandleStandardArgs.cmake:654 (_FPHSA_FAILURE_MESSAGE)
+    C:/Program Files/CMake/share/cmake-4.4/Modules/FindVulkan.cmake:780 (find_package_handle_standard_args)
+    C:/h7/component-contract/component-contract/implemented-factors-all/src/compute_ggml_runtime/source-e73b695f71c1ea2c/src/ggml-vulkan/CMakeLists.txt:9 (find_package)
+
+
+
+
+
+Call Stack (most recent call first):
+  cmake/HyleCiComponentContract.cmake:626 (_hyle_contract_run)
+
+

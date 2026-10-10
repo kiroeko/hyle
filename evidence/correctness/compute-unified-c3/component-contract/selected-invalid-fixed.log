@@ -1,0 +1,12 @@
+-- Selecting Windows SDK version 10.0.26100.0 to target Windows 10.0.26200.
+-- HYLE products: requested='core' available='core' factors='core'
+-- Configuring incomplete, errors occurred!
+
+CMake Error at C:/public/project-hyle/hyle/cmake/HyleComponents.cmake:1104 (message):
+  component 'core' implementation 'src/core/probe.cc' includes
+  'hyle/obs/log.h' owned by 'obs', but the component has no direct product
+  dependency or matching PRIVATE_BUILD_DEPS seam
+Call Stack (most recent call first):
+  CMakeLists.txt:5 (include)
+
+

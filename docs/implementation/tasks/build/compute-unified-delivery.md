@@ -344,3 +344,11 @@ metadata 精确 `cpu;vulkan`、DLL 邻 EXE、搬迁与闭包 guard 通过。C3�
 Windows CPU+Vulkan static Direct1.15s/Graph1.03s 也已完成真实数学及搬移后资产验证，原批次退出0。
 C3 当前60 PASS / 30 UNRUN；Windows与Air声明的五组均完成三交付。下一批为WSL，
 H1–H3联合/异步/专家迁移仍未实施；不重跑已通过source/shared或P1。
+
+C3 的组件合同发现最小源码夹具漏带路线解析文件，按
+[独立工具卡](compute-component-fixture-repair.md)只迁移两个夹具；原失败保留。
+本工具修改不改变 native 产品、recipe 或已通过的交付，WSL 原批次继续。
+
+WSL CPU source Direct 已 PASS；Graph 在创建 invocation 时无法装载原生 CPU 程序，
+按[Linux loader 修正卡](compute-ggml-cpu-linux-loader-path.md)定向退回实际 owner。
+原 objects/失败日志保留，不重启 source root；不将 loader 失败写成数值或性能失败。
