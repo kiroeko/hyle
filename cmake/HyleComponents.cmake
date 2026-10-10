@@ -437,10 +437,10 @@ _hyle_declare_component(compute_provider_cuda
   SPLIT_PUBLIC_HEADERS hyle/compute/providers/cuda.h)
 # Compiled CUDA defaults compose native implementations without a CPU route.
 _hyle_declare_component(compute_route_cuda
-  PRIVATE_DEPS platform platform_thread compute_ops compute_backend_cuda compute_provider_cublas compute_provider_cuda
+  PRIVATE_DEPS platform platform_thread compute_ops container util_core compute_provider_cublas compute_provider_cuda
                compute_provider_flashinfer compute_provider_ggml_cuda compute_provider_torch_cuda
-  PUBLIC_DEPS core compute
-  SPLIT_PUBLIC_HEADERS hyle/compute/cuda.h)
+  PUBLIC_DEPS core compute compute_backend_cuda mem
+  SPLIT_PUBLIC_HEADERS hyle/compute/cuda.h hyle/compute/cuda_weights.h)
 _hyle_declare_component(graph_route_cuda
   PRIVATE_DEPS compute_backend_cuda graph_provider_ggml_cuda
   PUBLIC_DEPS core compute_route_cuda graph
@@ -510,7 +510,7 @@ _hyle_declare_component(compute_provider_torch_cuda
 # A single route never acquires its CPU or Sched closure.
 _hyle_declare_component(graph_route_cpu_cuda
   PRIVATE_DEPS util_core error mem container compute_backend_cpu graph_route_cpu graph_route_cuda
-  PUBLIC_DEPS core graph compute compute_backend_cuda sched
+  PUBLIC_DEPS core graph compute compute_backend_cuda compute_route_cuda sched
   SPLIT_PUBLIC_HEADERS hyle/graph/cpu_cuda.h)
 
 # Product facades are deliberately outside the factor DAG. They have no source,

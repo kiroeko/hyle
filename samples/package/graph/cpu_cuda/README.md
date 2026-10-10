@@ -22,7 +22,9 @@ CPU-required 节点使用 `kCpuTarget`，普通数学使用 `kCudaTarget`；仍�
 wait/result 成功后取得 Results lease。任何旧结果或在途任务都会阻止该槽改绑和覆盖。
 普通外部输入输出仍由应用保活；lease 保活 Graph workspace，不让外部可变存储自动不可变。
 
-`WeightSlots::create` 冷分配两组固定容量 pinned/device backing 和实际 TensorDesc/ID 目录。
+`compute::cuda::WeightSlots::create` 冷分配两组固定容量 pinned/device backing 和实际 TensorDesc/ID 目录。
+迁移机制属于 CUDA Compute 路线；Direct 用户可包含 `hyle/compute/cuda_weights.h` 并链接 `hyle::compute`，
+不需 CPU、Graph 或 Sched。Graph 组合的 typed bind 只增加其所有权与执行依赖连接。
 upload 选择 host-accessible tensor 片段，先检查 ID、格式、重复和总容量，再暂存原始编码字节并
 执行真实 DMA。source TensorView 可以来自 Buffer subview，越界由 Mem/TensorView admission 拒绝。
 一种矩阵可以是 FP16，另一种可以有不同 dtype/physical encoding；每片须匹配其登记描述。

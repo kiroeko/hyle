@@ -17,10 +17,12 @@
 #include "hyle/sched/sync.h"
 #include "hyle/util/ref_counted.h"
 #include "progress.h"
-#include "weights_internal.h"
+#include "../compute_route_cuda/weights_internal.h"
 
 namespace hyle::graph::cpu_cuda {
 namespace detail {
+
+using WeightState = compute::cuda::detail::WeightState;
 
 struct WeightUse final {
   ValueId value{};
@@ -32,16 +34,16 @@ struct WeightUse final {
       : value(other.value), state(std::exchange(other.state, nullptr)) {}
   WeightUse &operator=(WeightUse &&other) noexcept {
     if (this != &other) {
-      release_weight(state);
+      compute::cuda::detail::release_weight(state);
       value = other.value;
       state = std::exchange(other.state, nullptr);
     }
     return *this;
   }
-  ~WeightUse() { release_weight(state); }
+  ~WeightUse() { compute::cuda::detail::release_weight(state); }
   void reset(ValueId next_value = {}, WeightState *next_state = nullptr) noexcept {
-    retain_weight(next_state);
-    release_weight(state);
+    compute::cuda::detail::retain_weight(next_state);
+    compute::cuda::detail::release_weight(state);
     value = next_value;
     state = next_state;
   }
@@ -216,14 +218,14 @@ void drive(void *opaque) noexcept {
       break;
     }
     if (run.cuda_queue != nullptr) {
-      auto ordered = detail::order_weight(weight, *run.cuda_queue);
+      auto ordered = compute::cuda::detail::order_weight(weight, *run.cuda_queue);
       if (!ordered) {
         run.cursor.reject_successors(std::move(ordered).error());
         break;
       }
       run.weight_prefixes[i] = std::move(*ordered);
     } else {
-      const auto ready = detail::wait_weight(weight);
+      const auto ready = compute::cuda::detail::wait_weight(weight);
       if (!ready.ok()) {
         run.cursor.reject_successors(ready);
         break;
@@ -409,7 +411,7 @@ Status Invocation::reset() noexcept {
     weight.reset();
   return Status::Ok();
 }
-Status Invocation::bind(ValueId value, const WeightBatch &batch,
+Status Invocation::bind(ValueId value, const compute::cuda::WeightBatch &batch,
                         std::uint64_t id) noexcept {
   HYLE_RETURN_IF_ERROR(admit_write(state_));
   HYLE_ASSIGN_OR_RETURN(auto tensor, batch.binding(id));
@@ -426,7 +428,7 @@ Status Invocation::bind(ValueId value, const WeightBatch &batch,
   if (slot == nullptr)
     return Status::ResourceExhausted("CPU+CUDA weight binding capacity");
   HYLE_RETURN_IF_ERROR(run.invocation.bind(value, tensor));
-  slot->reset(value, detail::WeightAccess::state(batch));
+  slot->reset(value, compute::cuda::detail::WeightAccess::state(batch));
   return Status::Ok();
 }
 Status Invocation::prepare_replay(ReplayOptions options) noexcept {
@@ -477,7 +479,11 @@ Result<compute::OwnedResult<Results>> Invocation::submit() noexcept {
     return std::unexpected(terminal_status(run));
   }
   run.incref(); // retained before the existing scheduler can start the callback
-  const auto scheduled = run.scheduler->spawn_detached(&drive, &run);
+  // Mature CUDA host dispatch (notably cuBLASLt) uses deeper stacks than the
+  // scheduler's 64 KiB lightweight-task default. Use its existing 256 KiB
+  // recycled large-stack class for this adapter; ordinary Sched is unchanged.
+  const auto scheduled =
+      run.scheduler->spawn_detached(&drive, &run, mem::kFiberStackLarge);
   if (!scheduled.ok()) {
     run.cursor.reject_successors(scheduled);
     auto empty = run.cursor.finish();

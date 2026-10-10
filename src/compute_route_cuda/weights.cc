@@ -13,7 +13,7 @@
 #include "hyle/container/small_vector.h"
 #include "hyle/util/ref_counted.h"
 
-namespace hyle::graph::cpu_cuda {
+namespace hyle::compute::cuda {
 namespace detail {
 
 struct WeightBacking final : util::RefCounted<WeightBacking> {
@@ -318,4 +318,4 @@ Status WeightSlots::close() noexcept {
   return terminal;
 }
 
-} // namespace hyle::graph::cpu_cuda
+} // namespace hyle::compute::cuda

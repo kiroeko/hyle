@@ -33,15 +33,15 @@ inline hyle::Status inference_case(const compute::Context &cpu,
   down_values.fill(__float2half(1.0f / 64));
   HYLE_RETURN_IF_ERROR(gate_buffer.buffer.view().write(std::as_bytes(std::span(gate_values))));
   HYLE_RETURN_IF_ERROR(down_buffer.buffer.view().write(std::as_bytes(std::span(down_values))));
-  const std::array catalog{bridge::WeightSpec{101, gate_desc},
-                           bridge::WeightSpec{102, down_desc}};
+  const std::array catalog{compute::cuda::WeightSpec{101, gate_desc},
+                           compute::cuda::WeightSpec{102, down_desc}};
   HYLE_ASSIGN_OR_RETURN(auto slots,
-      bridge::WeightSlots::create(cuda, host, device, catalog, 81920));
+      compute::cuda::WeightSlots::create(cuda, host, device, catalog, 81920));
   HYLE_ASSIGN_OR_RETURN(auto transfer, cuda.create_queue());
   HYLE_RETURN_IF_ERROR(transfer.reserve_completions(8));
   const std::array selection{
-      bridge::WeightFragment{101, gate_buffer.view.as_const()},
-      bridge::WeightFragment{102, down_buffer.view.as_const()}};
+      compute::cuda::WeightFragment{101, gate_buffer.view.as_const()},
+      compute::cuda::WeightFragment{102, down_buffer.view.as_const()}};
   HYLE_ASSIGN_OR_RETURN(auto weights, slots.upload(0, selection, transfer));
   HYLE_ASSIGN_OR_RETURN(auto builder, graph::GraphBuilder::create());
   HYLE_ASSIGN_OR_RETURN(auto x, builder.input(x_desc));

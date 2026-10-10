@@ -1,5 +1,6 @@
 if(HYLE_COMPUTE_CUDA_ENABLED)
-  hyle_add_module(compute_route_cuda SOURCES cuda_context.cc default_policy.cc best_of.cc)
+  hyle_add_module(compute_route_cuda SOURCES
+    cuda_context.cc default_policy.cc best_of.cc weights.cc)
   target_include_directories(hyle_compute_route_cuda PRIVATE "${HYLE_SOURCE_DIR}/src/compute")
   # Evidence is tied to the original static C2 recipe. Normal builds need no
   # user switches; unqualified recipes keep the per-operation mature defaults.

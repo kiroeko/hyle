@@ -1,0 +1,10 @@
+ggml_cuda_init: found 1 CUDA devices (Total VRAM: 12281 MiB):
+  Device 0: NVIDIA GeForce RTX 4070, compute capability 8.9, VMM: yes, VRAM: 12281 MiB
+H1: contexts/resources ready
+H1: weight slots ready
+H1: first two uploads accepted
+H1: weight validation/recreation ready
+H1: mixed graph compiled
+H1: slot 0 prepared
+H1: slot 1 prepared
+H1: both slots submitted

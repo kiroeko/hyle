@@ -50,6 +50,7 @@ Status run() noexcept {
                                       cuda, compute::cuda::MemoryKind::kPinnedHost));
   HYLE_ASSIGN_OR_RETURN(auto device, compute::cuda::MemoryResource::create(
                                         cuda, compute::cuda::MemoryKind::kDevice));
+  std::fprintf(stderr, "H1: contexts/resources ready\n");
   hyle::sched::Scheduler scheduler(2, mem::system_allocator(), 64);
   HYLE_ASSIGN_OR_RETURN(auto row,
       compute::TensorDesc::dense(compute::DataType::kFloat32,
@@ -63,34 +64,37 @@ Status run() noexcept {
   HYLE_ASSIGN_OR_RETURN(auto source, tensor(mem::system_resource(), matrix));
   HYLE_ASSIGN_OR_RETURN(auto input, tensor(host.ref(), row));
   HYLE_ASSIGN_OR_RETURN(auto scale, tensor(host.ref(), scale_desc));
-  const std::array catalog{bridge::WeightSpec{7, matrix},
-                           bridge::WeightSpec{11, matrix}};
+  const std::array catalog{compute::cuda::WeightSpec{7, matrix},
+                           compute::cuda::WeightSpec{11, matrix}};
   HYLE_ASSIGN_OR_RETURN(auto weights,
-      bridge::WeightSlots::create(cuda, host, device, catalog, 16384));
+      compute::cuda::WeightSlots::create(cuda, host, device, catalog, 16384));
+  std::fprintf(stderr, "H1: weight slots ready\n");
   HYLE_ASSIGN_OR_RETURN(auto transfer, cuda.create_queue());
   HYLE_RETURN_IF_ERROR(transfer.reserve_completions(8));
   std::array<float, 4096> matrix_values{};
   for (std::size_t i = 0; i < 64; ++i)
     matrix_values[i * 64 + i] = -2.0f;
   HYLE_RETURN_IF_ERROR(source.buffer.view().write(std::as_bytes(std::span(matrix_values))));
-  const std::array selected{bridge::WeightFragment{7, source.view.as_const()}};
+  const std::array selected{compute::cuda::WeightFragment{7, source.view.as_const()}};
   HYLE_ASSIGN_OR_RETURN(auto batch0, weights.upload(0, selected, transfer));
   HYLE_ASSIGN_OR_RETURN(auto batch1, weights.upload(1, selected, transfer));
+  std::fprintf(stderr, "H1: first two uploads accepted\n");
   HYLE_RETURN_IF_ERROR(require(!weights.upload(0, selected, transfer),
                                "retained weight batch was overwritten"));
-  const std::array unknown{bridge::WeightFragment{99, source.view.as_const()}};
+  const std::array unknown{compute::cuda::WeightFragment{99, source.view.as_const()}};
   // A live batch also guards bad requests; test ID validation after release.
   batch1 = {};
   HYLE_RETURN_IF_ERROR(weights.close());
   weights = {};
   HYLE_ASSIGN_OR_RETURN(weights,
-      bridge::WeightSlots::create(cuda, host, device, catalog, 16384));
+      compute::cuda::WeightSlots::create(cuda, host, device, catalog, 16384));
   HYLE_RETURN_IF_ERROR(require(!weights.upload(1, unknown, transfer),
                                "unknown expert ID was accepted"));
   const std::array duplicate{selected[0], selected[0]};
   HYLE_RETURN_IF_ERROR(require(!weights.upload(1, duplicate, transfer),
                                "duplicate expert ID was accepted"));
   HYLE_ASSIGN_OR_RETURN(batch1, weights.upload(1, selected, transfer));
+  std::fprintf(stderr, "H1: weight validation/recreation ready\n");
 
   HYLE_ASSIGN_OR_RETURN(auto builder, graph::GraphBuilder::create());
   HYLE_ASSIGN_OR_RETURN(auto x, builder.input(row));
@@ -117,6 +121,7 @@ Status run() noexcept {
   HYLE_ASSIGN_OR_RETURN(auto compiled,
       bridge::compile(logical, {&cpu, &cuda, &host, &device},
                       {.node_placements = placement, .external_resources = external}));
+  std::fprintf(stderr, "H1: mixed graph compiled\n");
   std::array<bridge::Invocation, 2> runs;
   std::array<Tensor, 2> outputs;
   std::array<compute::Queue, 2> gpu_queues, cpu_queues;
@@ -136,6 +141,7 @@ Status run() noexcept {
     HYLE_RETURN_IF_ERROR(runs[i].bind(w, i == 0 ? batch0 : batch1, 7));
     HYLE_RETURN_IF_ERROR(runs[i].bind(y, outputs[i].view));
     HYLE_RETURN_IF_ERROR(runs[i].prepare_replay());
+    std::fprintf(stderr, "H1: slot %zu prepared\n", i);
   }
   std::array<float, 64> values, scales;
   scales.fill(1.0f);
@@ -150,6 +156,7 @@ Status run() noexcept {
   for (std::size_t i = 0; i < 2; ++i) {
     HYLE_ASSIGN_OR_RETURN(results[i], runs[i].submit());
   }
+  std::fprintf(stderr, "H1: both slots submitted\n");
   for (std::size_t i = 0; i < 2; ++i) {
     HYLE_ASSIGN_OR_RETURN(auto lease, results[i].wait());
     HYLE_ASSIGN_OR_RETURN(auto view, lease->output(y));

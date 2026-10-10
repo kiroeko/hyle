@@ -1,0 +1,70 @@
+{
+  "source": "Windows DEBUG_ONLY_THIS_PROCESS / GetThreadContext / DbgHelp StackWalk64 observation of original 64 KiB driver",
+  "exception_code": "0xc0000005",
+  "fault_address": "0x7ff80352ba3e",
+  "access": "write",
+  "target": "0x281350908a8",
+  "rsp": "0x281350908b0",
+  "target_relation": "RSP-8",
+  "module": "cublasLt64_13.dll",
+  "frames": [
+    {
+      "module": "cublasLt64_13.dll",
+      "offset": "0xefba3e"
+    },
+    {
+      "module": "cublasLt64_13.dll",
+      "offset": "0xef711b"
+    },
+    {
+      "module": "cublasLt64_13.dll",
+      "offset": "0xef59d5"
+    },
+    {
+      "module": "cublasLt64_13.dll",
+      "offset": "0xe1f6ab"
+    },
+    {
+      "module": "cublasLt64_13.dll",
+      "offset": "0xd1cd40"
+    },
+    {
+      "module": "cublasLt64_13.dll",
+      "offset": "0xe38960",
+      "nearest_export": "cublasLtMatmul"
+    },
+    {
+      "module": "hyle_compute_provider_cublas.dll",
+      "offset": "0x1f42"
+    },
+    {
+      "module": "hyle_compute.dll",
+      "offset": "0xa905"
+    },
+    {
+      "module": "hyle_graph.dll",
+      "offset": "0x36006"
+    },
+    {
+      "module": "hyle_graph.dll",
+      "offset": "0x1d6bd"
+    },
+    {
+      "module": "hyle_graph_route_cpu_cuda.dll",
+      "offset": "0x3732"
+    },
+    {
+      "module": "hyle_sched.dll",
+      "offset": "0x7f4e"
+    },
+    {
+      "module": "hyle_sched.dll",
+      "offset": "0x23f8"
+    },
+    {
+      "module": "hyle_sched.dll",
+      "offset": "0x178c5"
+    }
+  ],
+  "note": "Public export symbol names without full PDB are approximate; module/offset and registers are the actual observation. Stack-only control at 1 MiB and final pooled 256 KiB completed both consumers."
+}

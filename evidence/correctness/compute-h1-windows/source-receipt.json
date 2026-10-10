@@ -1,0 +1,44 @@
+{
+  "scope": "Windows source prototype correctness only; no SDK/WSL/physical-overlap verdict",
+  "baseline_commit": "729e4205a",
+  "candidate": "WORKTREE after bounded driver-stack and Direct ownership fixes",
+  "platform": "Windows-11-10.0.26200-SP0",
+  "compiler": "MSVC 19.50.35728.0; CUDA toolkit 13.3.73; shared producer objects",
+  "gpu": "NVIDIA GeForce RTX 4070, 617.14, 12282 MiB",
+  "build_parallel": 2,
+  "case_verdicts": {
+    "mixed_two_slot_fp32_math": "PASS",
+    "cpu_casts_cuda_gated_ffn_fp16_math": "PASS",
+    "old_result_lease_guard": "PASS",
+    "bound_weight_guard": "PASS",
+    "replay": "PASS",
+    "cooperative_cancel_and_close": "PASS",
+    "abandoned_public_owners": "PASS",
+    "direct_cuda_weight_matmul": "PASS",
+    "direct_empty_selection": "PASS"
+  },
+  "initial_failure": {
+    "exit_code": 3221225477,
+    "cause": "cuBLASLt host call on a 64 KiB Sched fiber exceeded its guarded usable stack; native exception trace writes RSP-8",
+    "control": "1 MiB stack passed; existing 256 KiB recycled large tier passed; ordinary Sched unchanged"
+  },
+  "not_run": [
+    "WSL",
+    "static SDK",
+    "shared SDK installed consumer",
+    "physical copy/compute overlap trace",
+    "full declared negative/OOM set",
+    "P1"
+  ],
+  "file_sha256": {
+    "include/hyle/compute/cuda_weights.h": "210070c18f83552566b8bd1b111c9c4a2b5fe10a544ff38f4ad10445a664a3ac",
+    "src/compute_route_cuda/weights.cc": "afd5473bc3e173ebe9e54cc022674d5ebf45299692395c6c9e3cfdeda63737a9",
+    "src/compute_route_cuda/weights_internal.h": "4848e55bbaa4191e4f658e395ebc0d9004a621796c001b5fa88c6e5697c71843",
+    "include/hyle/graph/cpu_cuda.h": "a4524b6981878e5c2fc68219e7f5c5d0f6a42db63a680b33246724728c24c234",
+    "src/graph_route_cpu_cuda/invocation.cc": "e18414780833f4ec607f204c15be89a765ecf2b0c2acd3f50d7849f94b8ec7ac",
+    "src/graph/executable.cc": "4c26a4e2c3a43d4df133c39b5d0926ab1dcc3e85cd63f343580ac003ef854b07",
+    "samples/package/graph/cpu_cuda/main.cc": "a4dc7e3f8b7ecbc151dccb1eea529b2202acb7bc24e1103952da29c662ff47fc",
+    "samples/package/graph/cpu_cuda/inference.h": "0a99e8410d7ee90dc5b5165b2e50a1836184112aa5c975e6d46435512da8bd3f",
+    "samples/package/compute/cuda_weights/main.cc": "fd0934348c3c63a42bd8f8c776b622122169cccc4cfdfabf0486a93e7e516e40"
+  }
+}

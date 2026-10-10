@@ -190,3 +190,39 @@ CPU结果消费的双槽、CPU normalization/casts→CUDA gated FFN→CPU完整�
 [本批语法/配置记录](../../../../evidence/correctness/compute-h1-wiring/weights-wiring.json)保留实际文件hash和
 未运行项；[最近统一统计](../../../../evidence/architecture/compute-entry-design/loc-h1-weights.json)
 self-check PASS：Compute+Graph 63,750实现行/278文件，全库自实现不含测试158,977行。
+
+### Windows首批真实运行及两项定向修复
+
+现[实际source结果](../../../../evidence/correctness/compute-h1-windows/source-receipt.json)已运行：
+双槽CPU→CUDA→CPU FP32数学、CPU norm/casts→CUDA完整gated FFN→CPU FP16数学，旧result lease、
+绑定weight保活、重复、cooperative cancel/close、abandoned公有owner检查通过；另有CUDA Direct
+weight DMA→原生依赖→成熟MatMul及空选择通过。适用边界只Windows source/shared producer，
+不是WSL、installed SDK、static或物理重叠资格。
+
+首次运行0xC0000005原记录保留：native exception trace定位cuBLASLt host调用写入RSP-8，
+组合driver使用了Sched轻量任务默认64KiB栈。只改此adapter栈后1MiB控制通过，最终使用现有
+256KiB large回收tier也通过；不重开或修改Sched、不改数学/Provider、不启动性能对比。
+组合driver单个usable栈256KiB加guard，首次使用可获取VM backing，重复归还现Sched stack pool；
+每次spawn仍有现Sched driver成本，不声称submit绝无分配或把该成本算零。
+
+另一个具体交付反例是compute-only SDK拿不到原Graph因子中的WeightSlots。机制已完整迁至
+`compute_route_cuda`与公开`hyle/compute/cuda_weights.h`，只有一份实现；Graph typed bind只连
+保活与依赖。CUDA单路线不取得CPU/Graph/Sched，普通Direct只链接compute。
+[Direct样例](../../../../samples/package/compute/cuda_weights/README.md)与原组合样例均已实际链接/运行。
+11项路线配置测试在此迁移后通过；公开header/依赖边保持中央manifest检查，未放宽checker。
+
+H1仍AUDITED：尚需完整预声明负向/OOM与生命周期范围、原生物理重叠、Windows/WSL三交付
+及普通路线定向回归。已有实际运行证据按本receipt hash复用；后续只补缺门或真实失败半径。
+
+Windows迁移机制的[物理重叠证据](../../../../evidence/correctness/compute-h1-windows/overlap-analysis.json)
+已取得：固定2048×2048 FP32 mature MatMul八次与另一个weight槽16MiB H2D，所有数学/迁移完成
+正确；Nsight Systems 2026.1.3原始CUPTI活动中同device/context、不同stream的一条实际
+`ampere_sgemm_128x64_nn` kernel与H2D memcpy执行区间相交812.12us。只采CUDA，不采需管理员
+权限的CPU/IP/调度，也不做A/A、P1、赢家或收益宣称；不是仅两个pending句柄或事件外包区间。
+[有界probe](../../../../evidence/correctness/compute-h1-windows/overlap-probe.cc)只调用实际迁移/成熟MatMul，
+不新增数学算子。原二进制trace/SQLite身份和有界路径保留，未把该probe当新增基础代码完成。
+此证据只签Windows native迁移机制可与独立计算物理重叠，WSL及完整交付仍待验。
+
+[统一统计](../../../../evidence/architecture/compute-entry-design/loc-h1-direct-owner.json)self-check PASS：
+本批Compute+Graph 63,765实现行/279文件，全库自实现不含测试158,992行；namespace/owner迁移
+没有保留两份实现，Direct仅增加普通消费者，不新增数学。
