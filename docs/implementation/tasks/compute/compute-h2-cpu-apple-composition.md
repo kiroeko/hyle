@@ -1,6 +1,6 @@
 # H2：CPU+MLX/Metal粗片段与offload基础机制
 
-<!-- MODULE REVIEW: AUDITED -->
+<!-- MODULE REVIEW: CANDIDATE -->
 
 - baseline：`7f428d7a9`（H1 Windows/WSL完整合同CLOSED）；新factor身份登记`b842269f`。
 - canonical：Windows；唯一Apple验收机MacBook Air `Mac16,12`，2026-10-10实读M4/16GiB、
@@ -191,3 +191,8 @@ region已绑定仍需每次触碰全部内部value metadata，与重放只沿粗
 停止集就是这三个私有文件；冷metadata配额继续计账。固定新candidate后，仅对source/shared/static
 混合Graph与合同consumer定向验证；原Direct权重、CPU/Apple原入口与公共头字节未变，复用已验
 资格，不为这处成本修复重跑全集。SDK1989批次是原candidate真实证据，不据此伪签新candidate。
+
+冷input目录修复仅九行新增/两行替换，固定新candidate37744b0ea。其余两owner源码/公开头完全
+未变，与原candidate域匹配；统一组装记录指向新candidate但不重置资格预算。1989 shared/static
+各5项消费者/4个安装头实际通过，旧install prefix已真正rename；剩余只补受影响的混合/合同，
+不改接口、不测新数学/P1。任何新source反例仍须退回owner并固定有限修复。
