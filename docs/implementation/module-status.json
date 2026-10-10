@@ -270,15 +270,17 @@
     },
     {
       "module": "compute",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/build/compute-c3-hardware-boundary-decision.md",
-      "summary": "C3限定边界AUDITED：78项数学已验，12项WSL Vulkan实GPU未资格按用户决定保留为限制而不阻塞；有限FIX仅资格记录与状态，不改产品。"
+      "summary": "C3限定资格冻结：78数学PASS，十二项WSL Vulkan运行UNQUALIFIED按用户决定不阻塞；原产品candidate不变，无代码/ABI/算法修改。",
+      "candidate": "2614676ee64bceddadcf791c218d6eea1f051c64"
     },
     {
       "module": "graph",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/build/compute-c3-hardware-boundary-decision.md",
-      "summary": "C3限定边界AUDITED：78项数学已验，12项WSL Vulkan实GPU未资格按用户决定保留为限制而不阻塞；有限FIX仅资格记录与状态，不改产品。"
+      "summary": "C3限定资格冻结：78数学PASS，十二项WSL Vulkan运行UNQUALIFIED按用户决定不阻塞；原产品candidate不变，无代码/ABI/算法修改。",
+      "candidate": "2614676ee64bceddadcf791c218d6eea1f051c64"
     },
     {
       "module": "container_concurrent",
@@ -352,9 +354,10 @@
     },
     {
       "module": "compute_provider_onednn",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/build/compute-c3-hardware-boundary-decision.md",
-      "summary": "C3限定边界AUDITED：78项数学已验，12项WSL Vulkan实GPU未资格按用户决定保留为限制而不阻塞；有限FIX仅资格记录与状态，不改产品。"
+      "summary": "C3限定资格冻结：78数学PASS，十二项WSL Vulkan运行UNQUALIFIED按用户决定不阻塞；原产品candidate不变，无代码/ABI/算法修改。",
+      "candidate": "2614676ee64bceddadcf791c218d6eea1f051c64"
     },
     {
       "module": "compute_provider_ggml",
@@ -391,33 +394,38 @@
     },
     {
       "module": "compute_backend_cpu",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/build/compute-c3-hardware-boundary-decision.md",
-      "summary": "C3限定边界AUDITED：78项数学已验，12项WSL Vulkan实GPU未资格按用户决定保留为限制而不阻塞；有限FIX仅资格记录与状态，不改产品。"
+      "summary": "C3限定资格冻结：78数学PASS，十二项WSL Vulkan运行UNQUALIFIED按用户决定不阻塞；原产品candidate不变，无代码/ABI/算法修改。",
+      "candidate": "2614676ee64bceddadcf791c218d6eea1f051c64"
     },
     {
       "module": "compute_backend_cuda",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/build/compute-c3-hardware-boundary-decision.md",
-      "summary": "C3限定边界AUDITED：78项数学已验，12项WSL Vulkan实GPU未资格按用户决定保留为限制而不阻塞；有限FIX仅资格记录与状态，不改产品。"
+      "summary": "C3限定资格冻结：78数学PASS，十二项WSL Vulkan运行UNQUALIFIED按用户决定不阻塞；原产品candidate不变，无代码/ABI/算法修改。",
+      "candidate": "2614676ee64bceddadcf791c218d6eea1f051c64"
     },
     {
       "module": "compute_provider_native",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/build/compute-c3-hardware-boundary-decision.md",
-      "summary": "C3限定边界AUDITED：78项数学已验，12项WSL Vulkan实GPU未资格按用户决定保留为限制而不阻塞；有限FIX仅资格记录与状态，不改产品。"
+      "summary": "C3限定资格冻结：78数学PASS，十二项WSL Vulkan运行UNQUALIFIED按用户决定不阻塞；原产品candidate不变，无代码/ABI/算法修改。",
+      "candidate": "2614676ee64bceddadcf791c218d6eea1f051c64"
     },
     {
       "module": "compute_route_cpu",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/build/compute-c3-hardware-boundary-decision.md",
-      "summary": "C3限定边界AUDITED：78项数学已验，12项WSL Vulkan实GPU未资格按用户决定保留为限制而不阻塞；有限FIX仅资格记录与状态，不改产品。"
+      "summary": "C3限定资格冻结：78数学PASS，十二项WSL Vulkan运行UNQUALIFIED按用户决定不阻塞；原产品candidate不变，无代码/ABI/算法修改。",
+      "candidate": "2614676ee64bceddadcf791c218d6eea1f051c64"
     },
     {
       "module": "graph_route_cpu",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/build/compute-c3-hardware-boundary-decision.md",
-      "summary": "C3限定边界AUDITED：78项数学已验，12项WSL Vulkan实GPU未资格按用户决定保留为限制而不阻塞；有限FIX仅资格记录与状态，不改产品。"
+      "summary": "C3限定资格冻结：78数学PASS，十二项WSL Vulkan运行UNQUALIFIED按用户决定不阻塞；原产品candidate不变，无代码/ABI/算法修改。",
+      "candidate": "2614676ee64bceddadcf791c218d6eea1f051c64"
     },
     {
       "module": "compute_provider_cublas",
@@ -455,15 +463,17 @@
     },
     {
       "module": "compute_route_cuda",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/build/compute-c3-hardware-boundary-decision.md",
-      "summary": "C3限定边界AUDITED：78项数学已验，12项WSL Vulkan实GPU未资格按用户决定保留为限制而不阻塞；有限FIX仅资格记录与状态，不改产品。"
+      "summary": "C3限定资格冻结：78数学PASS，十二项WSL Vulkan运行UNQUALIFIED按用户决定不阻塞；原产品candidate不变，无代码/ABI/算法修改。",
+      "candidate": "2614676ee64bceddadcf791c218d6eea1f051c64"
     },
     {
       "module": "graph_route_cuda",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/build/compute-c3-hardware-boundary-decision.md",
-      "summary": "C3限定边界AUDITED：78项数学已验，12项WSL Vulkan实GPU未资格按用户决定保留为限制而不阻塞；有限FIX仅资格记录与状态，不改产品。"
+      "summary": "C3限定资格冻结：78数学PASS，十二项WSL Vulkan运行UNQUALIFIED按用户决定不阻塞；原产品candidate不变，无代码/ABI/算法修改。",
+      "candidate": "2614676ee64bceddadcf791c218d6eea1f051c64"
     },
     {
       "module": "compute_route_apple",
@@ -478,21 +488,24 @@
     },
     {
       "module": "graph_route_apple",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/build/compute-c3-hardware-boundary-decision.md",
-      "summary": "C3限定边界AUDITED：78项数学已验，12项WSL Vulkan实GPU未资格按用户决定保留为限制而不阻塞；有限FIX仅资格记录与状态，不改产品。"
+      "summary": "C3限定资格冻结：78数学PASS，十二项WSL Vulkan运行UNQUALIFIED按用户决定不阻塞；原产品candidate不变，无代码/ABI/算法修改。",
+      "candidate": "2614676ee64bceddadcf791c218d6eea1f051c64"
     },
     {
       "module": "compute_route_vulkan",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/build/compute-c3-hardware-boundary-decision.md",
-      "summary": "C3限定边界AUDITED：78项数学已验，12项WSL Vulkan实GPU未资格按用户决定保留为限制而不阻塞；有限FIX仅资格记录与状态，不改产品。"
+      "summary": "C3限定资格冻结：78数学PASS，十二项WSL Vulkan运行UNQUALIFIED按用户决定不阻塞；原产品candidate不变，无代码/ABI/算法修改。",
+      "candidate": "2614676ee64bceddadcf791c218d6eea1f051c64"
     },
     {
       "module": "graph_route_vulkan",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/build/compute-c3-hardware-boundary-decision.md",
-      "summary": "C3限定边界AUDITED：78项数学已验，12项WSL Vulkan实GPU未资格按用户决定保留为限制而不阻塞；有限FIX仅资格记录与状态，不改产品。"
+      "summary": "C3限定资格冻结：78数学PASS，十二项WSL Vulkan运行UNQUALIFIED按用户决定不阻塞；原产品candidate不变，无代码/ABI/算法修改。",
+      "candidate": "2614676ee64bceddadcf791c218d6eea1f051c64"
     },
     {
       "module": "compute_provider_ggml_vulkan",
@@ -507,9 +520,10 @@
     },
     {
       "module": "compute_ggml_runtime",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/build/compute-c3-hardware-boundary-decision.md",
-      "summary": "C3限定边界AUDITED：78项数学已验，12项WSL Vulkan实GPU未资格按用户决定保留为限制而不阻塞；有限FIX仅资格记录与状态，不改产品。"
+      "summary": "C3限定资格冻结：78数学PASS，十二项WSL Vulkan运行UNQUALIFIED按用户决定不阻塞；原产品candidate不变，无代码/ABI/算法修改。",
+      "candidate": "a2476b62cfe49c1663998645c362392685c06eb1"
     },
     {
       "module": "compute_provider_ggml_cuda",

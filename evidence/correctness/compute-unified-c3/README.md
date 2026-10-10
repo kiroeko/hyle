@@ -5,8 +5,12 @@ It is not a terminal verdict for all platforms/routes, hybrid execution, or asyn
 
 [Delivery matrix](delivery-matrix.json) fixes the declared applicable scope: 15 platform/route groups,
 45 source/shared/static shapes, each with the existing Direct and Graph consumer. Consumer entries
-are documented per actual receipt; the current matrix records 78 PASS, 12 BLOCKED and 0 UNRUN.
-The twelve BLOCKED Vulkan and CPU+Vulkan entries have completed WSL compile/install/relocation/consumer-link
+are documented per actual receipt; the current matrix records 78 PASS and 12 UNQUALIFIED.
+The user explicitly accepted the twelve unqualified real-GPU runs as a non-blocking validation
+limit on 2026-10-10; they are not PASS or N/A. Original build-only receipts retain their historical
+BLOCKED fields; the current matrix and [accepted scope](../../../docs/implementation/tasks/build/compute-c3-hardware-boundary-decision.md)
+give the current work verdict.
+The twelve unqualified Vulkan and CPU+Vulkan entries have completed WSL compile/install/relocation/consumer-link
 checks in [Vulkan](wsl-vulkan-build-only/receipt.json) and [CPU+Vulkan](wsl-cpu-vulkan-build-only/receipt.json).
 They have no real GPU
 math qualification: the current WSL loader exposes only a software device.

@@ -1,6 +1,6 @@
 # C1–C3 / R1：统一 Compute/Graph 配置与交付
 
-<!-- MODULE REVIEW: BLOCKED -->
+<!-- MODULE REVIEW: CANDIDATE -->
 
 - baseline：`0a167159e08bf2df021c0b7f7fc8942a4dc87c3e`；Windows canonical，启动工作树干净。
 - 用户已明确启动实施；[已定设计](../../../architecture/compute-next-stage.md)与
@@ -502,3 +502,7 @@ WSL实GPU数学。消费者计数保持78 PASS / 6 BLOCKED / 6 UNRUN，实现LOC
 C3当前终局为BLOCKED，聚合correctness/delivery INCONCLUSIVE；
 [硬件限制与待决取舍](compute-c3-hardware-boundary-decision.md)给出已验结果、具体恢复条件
 和进入H1的有限方案。保留已验平台与原产物，不重启构建或追加研究来等待硬件变化。
+
+2026-10-10用户明确“保留资格，不用block”，覆盖上一段的施工阻塞裁决：当前十二项记为
+UNQUALIFIED，保留原未运行事实，不计PASS/N/A；在已验平台/编译交付边界内终结C3并继续H1–H3。
+独立scope记录与合法状态历史见上述硬件边界卡，原candidate/产物/失败和硬件事实不改标。

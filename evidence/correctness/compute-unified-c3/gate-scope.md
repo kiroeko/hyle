@@ -18,6 +18,8 @@ a relabeling of old binaries. Current ordinary consumer matrix is authoritative.
 | Vulkan on this WSL environment | `wsl-vulkan-build-only/current-device-facts.json`: only device type4 llvmpipe; ordinary context rejects software devices. Vulkan and CPU+Vulkan build-only receipts sign actual source/shared/static compilation/link/assets, no missing ELF dependencies; both original batches exited0 | All declared builds complete. Twelve real Vulkan GPU execution entries stay BLOCKED/unqualified; no software-device substitution, no PASS/N/A invented for unrun GPU math |
 | Engineering performance | C1/C2/R1 only cold CMake/diagnostic/staging changes; repaired Vulkan math has its own scoped original numerical/resource evidence | No hot search/timing added; no new P1 for tool/docs/loader paths. H1–H3 complete-cost/overlap qualification is separate and unimplemented |
 
-This ledger binds scope and prevents repeated full-suite validation. It is not
-a terminal verdict. Failed/skipped/unrun domains remain visible; C3 and the full
-goal cannot be declared complete from this document or the current partial matrix.
+This ledger binds scope and prevents repeated full-suite validation. The user's
+2026-10-10 decision retains twelve WSL Vulkan runtime entries UNQUALIFIED without
+blocking C3/H1-H3 work; original BLOCKED build-only receipts remain historical facts.
+C3 terminal qualification is limited to that explicit accepted scope. This ledger
+does not certify H1-H3 or complete the full goal.

@@ -1,6 +1,6 @@
 # C3 终态对账与 WSL Vulkan 硬件限制
 
-<!-- MODULE REVIEW: AUDITED -->
+<!-- MODULE REVIEW: CANDIDATE -->
 
 - 本记录承接[活动C1–C3/R1卡](compute-unified-delivery.md)，不重开历史任务。
 - 产品修正候选仍为各owner已登记的实际commit，最新产品修正a2476b62；文档不创建新candidate。
@@ -34,7 +34,7 @@ macOS loader与CPU+Apple许可证登记两项限定修复已各完成自己的�
 Direct/Graph三交付消费者并归档对应机器/driver/recipe身份；仅驱动/环境改变不默认重编或重跑其它域。
 H3仍按设计验证Windows/Air实GPU；该硬件限制不能被软件设备、copy或mock代签。
 
-## 用户已决定的有限取舍与AUDITED
+## 用户已决定的有限取舍与资格冻结
 
 建议允许后续H1–H3继续：保留这十二项BLOCKED及Linux Vulkan runtime未资格限制，
 承认C3的已验平台/编译交付边界足以作为后续施工输入；为共享owner按新H卡重新定界，
@@ -55,6 +55,10 @@ H1–H3继续包含用户已授权的异步传输/依赖、真实重叠和引擎
 scope/architecture/usability_docs/red_team/P0按已有有限ledger与明确用户边界裁决；
 correctness/delivery在已接受边界内PASS，十二项未资格单列而非PASS或N/A。
 当前scope不再等待硬件，不扩更多profile，不重跑已验78项、headers或配置。
+
+有限记录FIX完成并冻结：无产品改动，各owner恢复其原不可变product SHA。
+当前矩阵78 PASS / 12 UNQUALIFIED，后者是用户明确接受的本机验证限制，不阻塞下一包。
+原build-only收据的BLOCKED字段说明当时未运行事实，当前施工结论由本用户决定及矩阵补充。
 
 Compute+Graph实现LOC仍62,508/268文件；最新产品以后只有文档/证据/格式变化，
 统一脚本原身份一致结果复用，不为本阻塞重跑数学/P1。
