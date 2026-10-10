@@ -437,3 +437,15 @@ Direct/contracts，3/3通过；没有重建producer或重跑source/shared已通�
 [本轮统一LOC](../../../../evidence/architecture/compute-entry-design/loc-h1-windows-recovered.json)
 self-check PASS：Compute+Graph全部非测试实现64,435行/281文件，全库自实现不含测试159,662行。
 本轮只补验证和证据，产品候选没有变化，不把probe或文档算新增基础实现。
+
+### WSL实际进展
+
+[WSL当前证据](../../../../evidence/correctness/compute-h1-offload-wsl/README.md)对精确候选全部
+2,199个产品/消费者文件核对Git blob身份；source真实5/5、installed shared三消费者3/3通过。
+installed static三消费者也已3/3通过；安装头/搬迁继续补验，未签整包CLOSED。Linux每批独立unit实读12GiB memory.max及
+零swap限额，Windows同时保留余量观察门；没有与Windows重型run并发。
+
+两处验证入口问题已有限处理：旧archive改变未变native_bridge.h时间戳导致vendor CUDA多余
+重编，恢复与baseline/候选同blob的最后Git内容变更时间，不改对象/Ninja log；旧source父项目
+关闭安装，改私有配置后生成真实SDK，不重跑已通过source数学。初次失败/停止不代签PASS，
+relay进程退出还须核实native完成终态和实际测试。产品源码、公开接口与候选仍不变。

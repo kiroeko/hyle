@@ -1,0 +1,16 @@
+Internal ctest changing into directory: /root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/source-build
+Test project /root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/source-build
+    Start 1: hyle_selected_source_consumer
+1/5 Test #1: hyle_selected_source_consumer ....   Passed    1.29 sec
+    Start 2: hyle_selected_source_compute
+2/5 Test #2: hyle_selected_source_compute .....   Passed    0.62 sec
+    Start 3: hyle_cpu_cuda_sample
+3/5 Test #3: hyle_cpu_cuda_sample .............   Passed    0.91 sec
+    Start 4: hyle_cuda_weights_sample
+4/5 Test #4: hyle_cuda_weights_sample .........   Passed    0.60 sec
+    Start 5: hyle_cpu_cuda_contracts
+5/5 Test #5: hyle_cpu_cuda_contracts ..........   Passed    0.55 sec
+
+100% tests passed, 0 tests failed out of 5
+
+Total Test time (real) =   3.97 sec

@@ -1,0 +1,24 @@
+{
+  "candidate": "7eaf67b8a496ee19b609533980cd69e7efb5aa49",
+  "rows": [
+    {
+      "stage": "shared-install",
+      "exit": 0,
+      "seconds": 0.03,
+      "log": "/root/hyle-scratch/compute-unified/h1-offload-wsl/shared-install.log",
+      "unit_memory_peak_bytes": 109391872,
+      "unit_memory_events": "low 0\nhigh 0\nmax 0\noom 0\noom_kill 0\noom_group_kill 0"
+    },
+    {
+      "stage": "joint-configure",
+      "exit": 1,
+      "seconds": 0.13,
+      "log": "/root/hyle-scratch/compute-unified/h1-offload-wsl/joint-configure.log",
+      "unit_memory_peak_bytes": 171520000,
+      "unit_memory_events": "low 0\nhigh 0\nmax 0\noom 0\noom_kill 0\noom_group_kill 0"
+    }
+  ],
+  "build_parallel": 1,
+  "test_parallel": 1,
+  "linux_unit_memory_max_gib": 12
+}

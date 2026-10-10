@@ -1,0 +1,5 @@
+[1/2] Building CXX object CMakeFiles/hyle_cuda_weights_sample.dir/main.cc.o
+[2/2] Linking CXX executable hyle_cuda_weights_sample
+/usr/bin/ld: warning: libcudart.so.12, needed by /root/.cache/hyle/dependencies/v1/sdks/torch-cuda-leaf/Linux-02c7258e917f3043c978b53acf6f02b818db0d0d85db0e58ae578af333b9b4e2-fab2a30375b0b92c/torch/lib/libtorch_cuda.so, may conflict with libcudart.so.13
+/usr/bin/ld: warning: libcublas.so.12, needed by /root/.cache/hyle/dependencies/v1/sdks/torch-cuda-leaf/Linux-02c7258e917f3043c978b53acf6f02b818db0d0d85db0e58ae578af333b9b4e2-fab2a30375b0b92c/torch/lib/libtorch_cuda.so, may conflict with libcublas.so.13
+/usr/bin/ld: warning: libcublasLt.so.12, needed by /root/.cache/hyle/dependencies/v1/sdks/torch-cuda-leaf/Linux-02c7258e917f3043c978b53acf6f02b818db0d0d85db0e58ae578af333b9b4e2-fab2a30375b0b92c/torch/lib/libtorch_cuda.so, may conflict with libcublasLt.so.13

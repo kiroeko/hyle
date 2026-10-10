@@ -1,0 +1,9 @@
+{
+  "candidate": "7eaf67b8a496ee19b609533980cd69e7efb5aa49",
+  "file": "/root/hyle-scratch/compute-unified/source-7a7b4c3b/src/compute_provider_ggml_cuda/native_bridge.h",
+  "blob": "ad950e08997cb82368eecfd9f2f9c36b58f1fce8",
+  "also_matches_c3_baseline": "061b46700",
+  "old_mtime": 1791620457.0,
+  "restored_mtime": 1789869443,
+  "scope": "Only restore unchanged source dependency mtime to its last Git content change; no object or Ninja log edits"
+}

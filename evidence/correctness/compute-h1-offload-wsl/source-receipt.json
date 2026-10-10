@@ -1,0 +1,32 @@
+{
+  "candidate": "7eaf67b8a496ee19b609533980cd69e7efb5aa49",
+  "rows": [
+    {
+      "stage": "source-configure",
+      "exit": 0,
+      "seconds": 19.5,
+      "log": "/root/hyle-scratch/compute-unified/h1-offload-wsl/source-configure.log",
+      "unit_memory_peak_bytes": 7448875008,
+      "unit_memory_events": "low 0\nhigh 0\nmax 0\noom 0\noom_kill 0\noom_group_kill 0"
+    },
+    {
+      "stage": "source-build",
+      "exit": 0,
+      "seconds": 365.3,
+      "log": "/root/hyle-scratch/compute-unified/h1-offload-wsl/source-build.log",
+      "unit_memory_peak_bytes": 9209692160,
+      "unit_memory_events": "low 0\nhigh 0\nmax 0\noom 0\noom_kill 0\noom_group_kill 0"
+    },
+    {
+      "stage": "source-test",
+      "exit": 0,
+      "seconds": 3.98,
+      "log": "/root/hyle-scratch/compute-unified/h1-offload-wsl/source-test.log",
+      "unit_memory_peak_bytes": 9339834368,
+      "unit_memory_events": "low 0\nhigh 0\nmax 0\noom 0\noom_kill 0\noom_group_kill 0"
+    }
+  ],
+  "build_parallel": 1,
+  "test_parallel": 1,
+  "linux_unit_memory_max_gib": 12
+}

@@ -1,0 +1,8 @@
+Internal ctest changing into directory: /root/hyle-scratch/compute-unified/h1-offload-wsl/shared-joint
+Test project /root/hyle-scratch/compute-unified/h1-offload-wsl/shared-joint
+    Start 1: hyle_cpu_cuda_sample
+1/1 Test #1: hyle_cpu_cuda_sample .............   Passed    1.23 sec
+
+100% tests passed, 0 tests failed out of 1
+
+Total Test time (real) =   1.23 sec

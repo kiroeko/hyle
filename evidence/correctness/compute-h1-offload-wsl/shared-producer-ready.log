@@ -1,0 +1,106 @@
+[0/2] Re-checking globbed directories...
+[1/104] Linking CXX shared library hyle/src/error/libhyle_error.so.0.1.0
+[2/104] Creating library symlink hyle/src/error/libhyle_error.so
+[3/104] Linking CXX shared library hyle/src/time/libhyle_time.so.0.1.0
+[4/104] Creating library symlink hyle/src/time/libhyle_time.so
+[5/104] Linking CXX shared library hyle/src/platform/libhyle_platform.so.0.1.0
+[6/104] Creating library symlink hyle/src/platform/libhyle_platform.so
+[7/104] Linking CXX shared library hyle/src/platform_thread/libhyle_platform_thread.so.0.1.0
+[8/104] Creating library symlink hyle/src/platform_thread/libhyle_platform_thread.so
+[9/104] Linking CXX shared library hyle/src/platform_fs/libhyle_platform_fs.so.0.1.0
+[10/104] Creating library symlink hyle/src/platform_fs/libhyle_platform_fs.so
+[11/104] Linking CXX shared library hyle/src/mem/libhyle_mem.so.0.1.0
+[12/104] Creating library symlink hyle/src/mem/libhyle_mem.so
+[13/104] Linking CXX shared library hyle/src/mem_vm/libhyle_mem_vm.so.0.1.0
+[14/104] Creating library symlink hyle/src/mem_vm/libhyle_mem_vm.so
+[15/104] Building CXX object hyle/src/simd/CMakeFiles/hyle_simd.dir/runtime.cc.o
+[16/104] Building CXX object hyle/src/simd/CMakeFiles/hyle_simd.dir/ops/dispatch_ops.cc.o
+[17/104] Building CXX object hyle/src/simd/CMakeFiles/hyle_simd.dir/random/random_dispatch.cc.o
+[18/104] Building CXX object hyle/src/simd/CMakeFiles/hyle_simd.dir/search/search_dispatch.cc.o
+[19/104] Building CXX object hyle/src/simd/CMakeFiles/hyle_simd.dir/narrow/narrow_dispatch.cc.o
+[20/104] Building CXX object hyle/src/simd/CMakeFiles/hyle_simd.dir/scan/scan_dispatch.cc.o
+[21/104] Building CXX object hyle/src/simd/CMakeFiles/hyle_simd.dir/dtype/dtype_dispatch.cc.o
+[22/104] Building CXX object hyle/src/simd/CMakeFiles/hyle_simd.dir/math/math_dispatch.cc.o
+[23/104] Building CXX object hyle/src/simd/CMakeFiles/hyle_simd.dir/sort/sort_dispatch.cc.o
+[24/104] Building CXX object hyle/src/simd/CMakeFiles/hyle_simd.dir/bitpack/bitpack_dispatch.cc.o
+[25/104] Building CXX object hyle/src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/ops/ops_scalar.cc.o
+[26/104] Building CXX object hyle/src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/ops/ops_sse4.cc.o
+[27/104] Building CXX object hyle/src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/ops/ops_avx2.cc.o
+[28/104] Building CXX object hyle/src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/ops/ops_avx512.cc.o
+[29/104] Building CXX object hyle/src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/dtype_convert/dtype_convert_scalar.cc.o
+[30/104] Building CXX object hyle/src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/dtype_convert/dtype_convert_sse4.cc.o
+[31/104] Building CXX object hyle/src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/dtype_convert/dtype_convert_avx2.cc.o
+[32/104] Building CXX object hyle/src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/dtype_convert/dtype_convert_avx512.cc.o
+[33/104] Building CXX object hyle/src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/scan/scan_scalar.cc.o
+[34/104] Building CXX object hyle/src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/scan/scan_sse4.cc.o
+[35/104] Building CXX object hyle/src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/scan/scan_avx2.cc.o
+[36/104] Building CXX object hyle/src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/scan/scan_avx512.cc.o
+[37/104] Building CXX object hyle/src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/random/random_scalar.cc.o
+[38/104] Building CXX object hyle/src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/random/random_sse4.cc.o
+[39/104] Building CXX object hyle/src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/random/random_avx2.cc.o
+[40/104] Building CXX object hyle/src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/random/random_avx512.cc.o
+[41/104] Building CXX object hyle/src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/search/search_scalar.cc.o
+[42/104] Building CXX object hyle/src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/search/search_sse4.cc.o
+[43/104] Building CXX object hyle/src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/search/search_avx2.cc.o
+[44/104] Building CXX object hyle/src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/search/search_avx512.cc.o
+[45/104] Building CXX object hyle/src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/narrow/narrow_scalar.cc.o
+[46/104] Building CXX object hyle/src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/narrow/narrow_sse4.cc.o
+[47/104] Building CXX object hyle/src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/narrow/narrow_avx2.cc.o
+[48/104] Building CXX object hyle/src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/narrow/narrow_avx512.cc.o
+[49/104] Building CXX object hyle/src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/bitpack/bitpack_scalar.cc.o
+[50/104] Building CXX object hyle/src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/bitpack/bitpack_sse4.cc.o
+[51/104] Building CXX object hyle/src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/bitpack/bitpack_avx2.cc.o
+[52/104] Building CXX object hyle/src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/bitpack/bitpack_avx512.cc.o
+[53/104] Linking CXX shared library hyle/src/simd/libhyle_simd.so.0.1.0
+[54/104] Creating library symlink hyle/src/simd/libhyle_simd.so
+[55/104] Linking CXX shared library hyle/src/container/libhyle_container.so.0.1.0
+[56/104] Creating library symlink hyle/src/container/libhyle_container.so
+[57/104] Linking CXX shared library hyle/src/sched/libhyle_sched.so.0.1.0
+[58/104] Creating library symlink hyle/src/sched/libhyle_sched.so
+[59/104] Linking CXX shared library hyle/src/compute_ops/libhyle_compute_ops.so.0.1.0
+[60/104] Creating library symlink hyle/src/compute_ops/libhyle_compute_ops.so
+[61/104] Linking CXX shared library hyle/src/compute/libhyle_compute.so.0.1.0
+[62/104] Creating library symlink hyle/src/compute/libhyle_compute.so
+[63/104] Linking CXX shared library hyle/src/graph/libhyle_graph.so.0.1.0
+[64/104] Creating library symlink hyle/src/graph/libhyle_graph.so
+[65/104] Linking CXX shared library hyle/src/compute_provider_onednn/libhyle_compute_provider_onednn.so.0.1.0
+[66/104] Creating library symlink hyle/src/compute_provider_onednn/libhyle_compute_provider_onednn.so
+[67/104] Linking CXX shared library hyle/src/compute_backend_cpu/libhyle_compute_backend_cpu.so.0.1.0
+[68/104] Creating library symlink hyle/src/compute_backend_cpu/libhyle_compute_backend_cpu.so
+[69/104] Linking CXX shared module hyle/src/compute_ggml_runtime/libhyle_ggml_cpu_avx2_456172ec_f99368c68335266b.so
+[70/104] Linking CXX shared library hyle/src/compute_ggml_runtime/libhyle_compute_ggml_runtime.so.0.1.0
+[71/104] Creating library symlink hyle/src/compute_ggml_runtime/libhyle_compute_ggml_runtime.so
+[72/104] Linking CXX shared library hyle/src/compute_provider_ggml/libhyle_compute_provider_ggml.so.0.1.0
+[73/104] Creating library symlink hyle/src/compute_provider_ggml/libhyle_compute_provider_ggml.so
+[74/104] Linking CXX shared library hyle/src/graph_provider_onednn/libhyle_graph_provider_onednn.so.0.1.0
+[75/104] Creating library symlink hyle/src/graph_provider_onednn/libhyle_graph_provider_onednn.so
+[76/104] Linking CXX shared library hyle/src/compute_backend_cuda/libhyle_compute_backend_cuda.so.0.1.0
+[77/104] Creating library symlink hyle/src/compute_backend_cuda/libhyle_compute_backend_cuda.so
+[78/104] Linking CXX shared library hyle/src/compute_provider_native/libhyle_compute_provider_native.so.0.1.0
+[79/104] Creating library symlink hyle/src/compute_provider_native/libhyle_compute_provider_native.so
+[80/104] Linking CXX shared library hyle/src/compute_route_cpu/libhyle_compute_route_cpu.so.0.1.0
+[81/104] Creating library symlink hyle/src/compute_route_cpu/libhyle_compute_route_cpu.so
+[82/104] Linking CXX shared library hyle/src/graph_route_cpu/libhyle_graph_route_cpu.so.0.1.0
+[83/104] Creating library symlink hyle/src/graph_route_cpu/libhyle_graph_route_cpu.so
+[84/104] Linking CXX shared library hyle/src/compute_provider_cublas/libhyle_compute_provider_cublas.so.0.1.0
+[85/104] Creating library symlink hyle/src/compute_provider_cublas/libhyle_compute_provider_cublas.so
+[86/104] Linking CXX shared library hyle/src/compute_provider_cuda/libhyle_compute_provider_cuda.so.0.1.0
+[87/104] Creating library symlink hyle/src/compute_provider_cuda/libhyle_compute_provider_cuda.so
+[88/104] Linking CXX shared library hyle/src/compute_provider_flashinfer/libhyle_compute_provider_flashinfer.so.0.1.0
+[89/104] Creating library symlink hyle/src/compute_provider_flashinfer/libhyle_compute_provider_flashinfer.so
+[90/104] Linking CXX shared library hyle/src/compute_provider_ggml_cuda/libhyle_compute_provider_ggml_cuda.so.0.1.0
+[91/104] Creating library symlink hyle/src/compute_provider_ggml_cuda/libhyle_compute_provider_ggml_cuda.so
+[92/104] Linking CXX shared library hyle/src/compute_provider_torch_cuda/libhyle_compute_provider_torch_cuda.so.0.1.0
+[93/104] Creating library symlink hyle/src/compute_provider_torch_cuda/libhyle_compute_provider_torch_cuda.so
+[94/104] Linking CXX shared library hyle/src/compute_route_cuda/libhyle_compute_route_cuda.so.0.1.0
+[95/104] Creating library symlink hyle/src/compute_route_cuda/libhyle_compute_route_cuda.so
+[96/104] Linking CXX executable hyle_cuda_weights_sample
+[97/104] Linking CXX shared library hyle/src/graph_provider_ggml_cuda/libhyle_graph_provider_ggml_cuda.so.0.1.0
+[98/104] Creating library symlink hyle/src/graph_provider_ggml_cuda/libhyle_graph_provider_ggml_cuda.so
+[99/104] Linking CXX shared library hyle/src/graph_route_cuda/libhyle_graph_route_cuda.so.0.1.0
+[100/104] Creating library symlink hyle/src/graph_route_cuda/libhyle_graph_route_cuda.so
+[101/104] Linking CXX shared library hyle/src/graph_route_cpu_cuda/libhyle_graph_route_cpu_cuda.so.0.1.0
+[102/104] Creating library symlink hyle/src/graph_route_cpu_cuda/libhyle_graph_route_cpu_cuda.so
+[103/104] Linking CXX executable hyle_cpu_cuda_sample
+[104/104] Linking CXX executable hyle_cpu_cuda_contracts
+/usr/bin/ld: warning: libcudart.so.12, needed by /root/.cache/hyle/dependencies/v1/sdks/torch-cuda-leaf/Linux-02c7258e917f3043c978b53acf6f02b818db0d0d85db0e58ae578af333b9b4e2-fab2a30375b0b92c/torch/lib/libtorch_cuda.so, may conflict with libcudart.so.13

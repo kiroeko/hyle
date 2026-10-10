@@ -1,0 +1,8 @@
+[1/2] Building CXX object CMakeFiles/hyle_cpu_cuda_contracts.dir/root/hyle-scratch/compute-unified/source-7a7b4c3b/tests/graph/cpu_cuda_contracts.cc.o
+In file included from /root/hyle-scratch/compute-unified/source-7a7b4c3b/tests/graph/cpu_cuda_contracts.cc:4:
+/root/hyle-scratch/compute-unified/source-7a7b4c3b/tests/graph/../../samples/package/graph/cpu_cuda/main.cc: In function ‘int hyle_cpu_cuda_consumer_main()’:
+/root/hyle-scratch/compute-unified/source-7a7b4c3b/tests/graph/../../samples/package/graph/cpu_cuda/main.cc:273:37: warning: ‘%.*s’ directive argument is null [-Wformat-overflow=]
+  273 |     std::fprintf(stderr, "CPU+CUDA: %.*s\n", static_cast<int>(result.message().size()),
+      |                                     ^~~~
+[2/2] Linking CXX executable hyle_cpu_cuda_contracts
+/usr/bin/ld: warning: libcudart.so.12, needed by /root/.cache/hyle/dependencies/v1/sdks/torch-cuda-leaf/Linux-02c7258e917f3043c978b53acf6f02b818db0d0d85db0e58ae578af333b9b4e2-fab2a30375b0b92c/torch/lib/libtorch_cuda.so, may conflict with libcudart.so.13

@@ -1,0 +1,8 @@
+Internal ctest changing into directory: /root/hyle-scratch/compute-unified/h1-offload-wsl/static-contracts
+Test project /root/hyle-scratch/compute-unified/h1-offload-wsl/static-contracts
+    Start 1: hyle_cpu_cuda_contracts
+1/1 Test #1: hyle_cpu_cuda_contracts ..........   Passed    0.60 sec
+
+100% tests passed, 0 tests failed out of 1
+
+Total Test time (real) =   0.60 sec

@@ -1,0 +1,104 @@
+{
+  "candidate": "7eaf67b8a496ee19b609533980cd69e7efb5aa49",
+  "rows": [
+    {
+      "stage": "static-configure",
+      "exit": 0,
+      "seconds": 10.54,
+      "log": "/root/hyle-scratch/compute-unified/h1-offload-wsl/static-configure.log",
+      "unit_memory_peak_bytes": 62386176,
+      "unit_memory_events": "low 0\nhigh 0\nmax 0\noom 0\noom_kill 0\noom_group_kill 0"
+    },
+    {
+      "stage": "static-producer",
+      "exit": 0,
+      "seconds": 362.44,
+      "log": "/root/hyle-scratch/compute-unified/h1-offload-wsl/static-producer.log",
+      "unit_memory_peak_bytes": 1482330112,
+      "unit_memory_events": "low 0\nhigh 0\nmax 0\noom 0\noom_kill 0\noom_group_kill 0"
+    },
+    {
+      "stage": "static-install",
+      "exit": 0,
+      "seconds": 0.14,
+      "log": "/root/hyle-scratch/compute-unified/h1-offload-wsl/static-install.log",
+      "unit_memory_peak_bytes": 1482330112,
+      "unit_memory_events": "low 0\nhigh 0\nmax 0\noom 0\noom_kill 0\noom_group_kill 0"
+    },
+    {
+      "stage": "static-joint-configure",
+      "exit": 0,
+      "seconds": 5.17,
+      "log": "/root/hyle-scratch/compute-unified/h1-offload-wsl/static-joint-configure.log",
+      "unit_memory_peak_bytes": 1482330112,
+      "unit_memory_events": "low 0\nhigh 0\nmax 0\noom 0\noom_kill 0\noom_group_kill 0"
+    },
+    {
+      "stage": "static-joint-build",
+      "exit": 0,
+      "seconds": 3.01,
+      "log": "/root/hyle-scratch/compute-unified/h1-offload-wsl/static-joint-build.log",
+      "unit_memory_peak_bytes": 1864097792,
+      "unit_memory_events": "low 0\nhigh 0\nmax 0\noom 0\noom_kill 0\noom_group_kill 0"
+    },
+    {
+      "stage": "static-joint-test",
+      "exit": 0,
+      "seconds": 0.89,
+      "log": "/root/hyle-scratch/compute-unified/h1-offload-wsl/static-joint-test.log",
+      "unit_memory_peak_bytes": 2206654464,
+      "unit_memory_events": "low 0\nhigh 0\nmax 0\noom 0\noom_kill 0\noom_group_kill 0"
+    },
+    {
+      "stage": "static-direct-configure",
+      "exit": 0,
+      "seconds": 4.96,
+      "log": "/root/hyle-scratch/compute-unified/h1-offload-wsl/static-direct-configure.log",
+      "unit_memory_peak_bytes": 2206654464,
+      "unit_memory_events": "low 0\nhigh 0\nmax 0\noom 0\noom_kill 0\noom_group_kill 0"
+    },
+    {
+      "stage": "static-direct-build",
+      "exit": 0,
+      "seconds": 1.65,
+      "log": "/root/hyle-scratch/compute-unified/h1-offload-wsl/static-direct-build.log",
+      "unit_memory_peak_bytes": 2206654464,
+      "unit_memory_events": "low 0\nhigh 0\nmax 0\noom 0\noom_kill 0\noom_group_kill 0"
+    },
+    {
+      "stage": "static-direct-test",
+      "exit": 0,
+      "seconds": 0.57,
+      "log": "/root/hyle-scratch/compute-unified/h1-offload-wsl/static-direct-test.log",
+      "unit_memory_peak_bytes": 2206654464,
+      "unit_memory_events": "low 0\nhigh 0\nmax 0\noom 0\noom_kill 0\noom_group_kill 0"
+    },
+    {
+      "stage": "static-contracts-configure",
+      "exit": 0,
+      "seconds": 4.92,
+      "log": "/root/hyle-scratch/compute-unified/h1-offload-wsl/static-contracts-configure.log",
+      "unit_memory_peak_bytes": 2206654464,
+      "unit_memory_events": "low 0\nhigh 0\nmax 0\noom 0\noom_kill 0\noom_group_kill 0"
+    },
+    {
+      "stage": "static-contracts-build",
+      "exit": 0,
+      "seconds": 3.78,
+      "log": "/root/hyle-scratch/compute-unified/h1-offload-wsl/static-contracts-build.log",
+      "unit_memory_peak_bytes": 2206654464,
+      "unit_memory_events": "low 0\nhigh 0\nmax 0\noom 0\noom_kill 0\noom_group_kill 0"
+    },
+    {
+      "stage": "static-contracts-test",
+      "exit": 0,
+      "seconds": 0.6,
+      "log": "/root/hyle-scratch/compute-unified/h1-offload-wsl/static-contracts-test.log",
+      "unit_memory_peak_bytes": 2214436864,
+      "unit_memory_events": "low 0\nhigh 0\nmax 0\noom 0\noom_kill 0\noom_group_kill 0"
+    }
+  ],
+  "build_parallel": 1,
+  "test_parallel": 1,
+  "linux_unit_memory_max_gib": 12
+}
