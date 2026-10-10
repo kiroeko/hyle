@@ -164,3 +164,7 @@ CPU Graph workspace、metadata、原生边界和迁移共享ResourceBudget；MLX
 Compute/Graph及新Direct/混合Graph四消费者4/4；新增合同target定向1/1。GGUF逻辑轴的is_dense
 不等同native byte carrier的物理连续性，已保留原精确编码，provider继续原cold hard admission。
 安装static/shared、搬迁/头/缺路线、物理重叠与终审仍待完成；不把source通过写成整包CLOSED。
+
+1989b1fe3编码修复后统一脚本统计Compute+Graph 66,150实现行/289文件，全库自实现161,377行；
+对应[当前LOC快照](../../../../evidence/architecture/compute-entry-design/loc-h2-source-qualified.json)。
+本包仍未完成installed交付和native重叠，goal保持active，后续继续同一范围。
