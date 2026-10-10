@@ -1,6 +1,6 @@
 # H3：CPU+Vulkan粗片段与offload基础机制
 
-<!-- MODULE REVIEW: SCOPED -->
+<!-- MODULE REVIEW: AUDITED -->
 
 - baseline：84e8bc28724df5759cd7d28202dbe78a06e714fe（H2 terminal、Windows唯一产品真相，工作树原干净）。
 - owner：compute_route_vulkan、graph_route_vulkan、新graph_route_cpu_vulkan；其他已关闭owner无具名缺陷不重开。
@@ -58,3 +58,34 @@
 
 新身份QUEUED登记后，本卡将三个owner绑定SCOPED。尚未AUDITED、尚无产品实现或H3资格。
 下一动作为固定有限native承载与FIX，然后批量实施。H2 CLOSED只作可复用机制证据，不授权改其产品。
+
+## AUDITED：原生承载、API职责与有限FIX冻结
+
+具名seam与原native ownership源码已完成一遍审计：allocate_buffer保留原ggml Device，actual
+memory quota与Buffer/视图owner已有；create_run/submit_locked/observe的原池/command/fence和
+pending_owner可复用，异常观察不释放未退休资源。现transfer确实每次创建staging并同步等待。
+Vulkan标准的submission order本身不引入execution/memory依赖；保留同队列合法独立submission，
+不为证明async创建第二线程/runtime或不同VkDevice。必要barrier限定到正确buffer/阶段；fence是
+ordered prefix，冷报告不能假称独立copy已完成或跨family/deviceready。原生timeline单独验证。
+
+固定公开文件/职责：compute/vulkan_memory.h承载原VkBuffer device/staging MemoryResource与
+native Tensor/native owner映射、原编码和flush/invalidate；compute/vulkan_weights.h承载固定
+catalog/两槽的异步迁移、借原Completion/fence与native ready binding；graph/cpu_vulkan.h承载
+原typed DAG的cold partition/value映射与输入目录、独立Invocation/Results及必要Sched粗进展。
+不修改CPU Graph/Provider规则，不新增数学；各片段继续原CPU/原Vulkan compiler/native程序。
+
+设备资源保持同VkDevice与queue family，普通CPU内部存储走system/host resource，跨界才
+固定native边界/可映射暂存。两槽cold创建命令池/fence/backing，hot只做有界ID选择、必要host
+准备及原VkBuffer copy/barrier；相同shape/encoding的payload更新不重新选实现。native Tensor
+与last owner/alias护住槽，ready只在真实终态后发布；cancel停止后继，失败排空已接纳prefix。
+共享预算借ResourceBudget：payload接纳在分配前，controlled metadata借Mem StdAllocator，
+managed region/private runtime保留unknown并strict拒绝或显式partial。配额一直保留到原Buffer
+最后owner销毁；native capacity/actual VkDeviceMemory观察分别列示，不能合并当requested usage。
+现memory_quota独立控制actual native分配，不替代共享CPU/staging/packing/metadata账单。
+
+H3-01至06就是有限产品FIX集，三个owner进入AUDITED后实施；借现Mem/Results/Sched/common
+语义，无新基础缺陷不扩owner。原生copy/数学单元后API固定、集中三交付及因果半径验证。
+
+WSL继承C3用户已接受的真实GPU缺件边界：Windows/Air必须真实数学/寿命/重叠；WSL编译/安装
+三交付和可适用头/config仍验，未具备GPU的数学运行继续UNQUALIFIED，不写PASS或N/A，也不
+为同一硬件缺件自动再阻塞goal。这与C3 record已明确的后续H1-H3授权一致，不重新请求同一决定。

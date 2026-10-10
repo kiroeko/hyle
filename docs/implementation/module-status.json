@@ -539,15 +539,15 @@
     },
     {
       "module": "compute_route_vulkan",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/compute-h3-cpu-vulkan-composition.md",
-      "summary": "H3 SCOPED：用户准入CPU/Vulkan粗片段、原生两槽/异步完成、普通CPU存储、共享预算与冷诊断；基于84e8bc287绑定有限审计/六FIX候选，未实现新能力、不签原WSL十二项。"
+      "summary": "H3 AUDITED：具名native seam审计完成，固定原Buffer/Device、run/fence/pending owner、CPU/Vulkan粗片段与同device/family迁移、共享预算/冷诊断六FIX；开始批量产品接线，不新增数学，WSL保留用户接受的GPU未资格边界。"
     },
     {
       "module": "graph_route_vulkan",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/compute-h3-cpu-vulkan-composition.md",
-      "summary": "H3 SCOPED：用户准入CPU/Vulkan粗片段、原生两槽/异步完成、普通CPU存储、共享预算与冷诊断；基于84e8bc287绑定有限审计/六FIX候选，未实现新能力、不签原WSL十二项。"
+      "summary": "H3 AUDITED：具名native seam审计完成，固定原Buffer/Device、run/fence/pending owner、CPU/Vulkan粗片段与同device/family迁移、共享预算/冷诊断六FIX；开始批量产品接线，不新增数学，WSL保留用户接受的GPU未资格边界。"
     },
     {
       "module": "compute_provider_ggml_vulkan",
@@ -662,8 +662,8 @@
     },
     {
       "module": "graph_route_cpu_vulkan",
-      "state": "SCOPED",
-      "summary": "H3 SCOPED：用户准入CPU/Vulkan粗片段、原生两槽/异步完成、普通CPU存储、共享预算与冷诊断；基于84e8bc287绑定有限审计/六FIX候选，未实现新能力、不签原WSL十二项。",
+      "state": "AUDITED",
+      "summary": "H3 AUDITED：具名native seam审计完成，固定原Buffer/Device、run/fence/pending owner、CPU/Vulkan粗片段与同device/family迁移、共享预算/冷诊断六FIX；开始批量产品接线，不新增数学，WSL保留用户接受的GPU未资格边界。",
       "record": "docs/implementation/tasks/compute/compute-h3-cpu-vulkan-composition.md"
     }
   ]
