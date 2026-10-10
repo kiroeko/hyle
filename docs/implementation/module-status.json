@@ -592,6 +592,11 @@
         "tier": "P0",
         "evidence": "docs/implementation/tasks/compute/cuda-final-u6-audit.md"
       }
+    },
+    {
+      "module": "graph_route_cpu_cuda",
+      "state": "QUEUED",
+      "summary": "H1新增可选CPU+CUDA Graph组合owner：粗片段/原生进展/结果槽，隔离CPU/Sched依赖，不增加普通产品或用户开关；先SCOPED/AUDITED。"
     }
   ]
 }

@@ -69,6 +69,7 @@
 | compute_provider_ggml_metal | CLOSED | P1 / [PASS](../../evidence/performance/apple-parity-overlap-p1/README.md) / 5% | [record](tasks/compute/apple-cpu-cuda-parity-closure.md) | Apple parity CLOSED: 559/34/45 carrier domains, current official FP4 main/DSpark and MTP, resources and three deliveries verified; four mature overlap WINs at n15, legal unknown-condition defaults, no redundant self kernel; Vulkan status is tracked separately. |
 | compute_provider_iree_vulkan | CLOSED | P0 / [PASS](../../evidence/correctness/vulkan-parity-v4-delivery/final-audit.json) | [record](tasks/compute/vulkan-parity-final-audit.md) | Vulkan CLOSED: common Windows104/559/80/34/45/eight-family and current model/state scope, mature cold defaults, applicable Windows/Air/WSL three deliveries/OFF/headers/resources and final cleanup verified. No new self math or WIN; accepted P0 policy/P1 INCONCLUSIVE, WSL GPU unavailable and hardware/residency limits explicit. |
 | compute_provider_torch_cuda | CLOSED | P0 / [PASS](tasks/compute/cuda-final-u6-audit.md) | [record](tasks/compute/cuda-final-u6-audit.md) | CUDA有限goal CLOSED：固定模型/量化/MTP完整原计算与状态、两OS CUDA-only/mixed三交付、cold成熟默认/真实能力门、六重复公式BORROW和具名unique保留、U5 42步/源码SDK增量及终审清理完成。AA原FAIL/性能INCONCLUSIVE无新WIN；按授权ENGINEERING_DEFAULT/P0关闭，不签全设备SOTA或推理engine。 |
+| graph_route_cpu_cuda | QUEUED | — | — | H1新增可选CPU+CUDA Graph组合owner：粗片段/原生进展/结果槽，隔离CPU/Sched依赖，不增加普通产品或用户开关；先SCOPED/AUDITED。 |
 
 <!-- END GENERATED MODULE STATUS -->
 

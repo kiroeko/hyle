@@ -506,6 +506,10 @@ _hyle_declare_component(compute_provider_torch_cuda
   PUBLIC_DEPS core compute
   SPLIT_PUBLIC_HEADERS hyle/compute/providers/torch_cuda.h)
 
+# H1 independently owns optional CPU+CUDA composition/progress. Identity only;
+# target metadata is fixed by its finite audit before implementation.
+_hyle_declare_component(graph_route_cpu_cuda QUEUED)
+
 # Product facades are deliberately outside the factor DAG. They have no source,
 # module status, or decision authority and must never be used by an internal
 # factor edge. A facade only selects the exact factor roots that make one
