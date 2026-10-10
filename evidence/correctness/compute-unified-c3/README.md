@@ -174,3 +174,8 @@ The WSL CPU shared SDK's relocated Graph0.17s/Direct0.15s consumers also passed;
 [per-entry receipt](wsl-cpu-partial.json) binds actual config and logs. Its shared runtime has sibling
 `$ORIGIN`, the native CPU MODULE is in SDK/lib, and export hygiene passed17 libraries/1354 exports.
 The original static loop continues; effective C3 count is64/90, with no hybrid/P1 claim.
+
+[WSL CPU installed-header qualification](wsl-cpu-installed-headers/active-gcc14-receipt.json) passed30
+isolated headers with the actual exported route definitions and GCC14.2.0. Existing bare-header checks
+also passed30. An initial GCC13 consumer is retained as a diagnostic, explicitly below the declared
+floor; only the small header consumer was corrected, without SDK/math/P1 repetition.

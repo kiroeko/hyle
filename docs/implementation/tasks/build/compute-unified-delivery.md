@@ -389,3 +389,9 @@ WSL CPU relocated shared Graph0.17s/Direct0.15s 均实际 PASS，原程序 MODUL
 共享 runtime 自身 `$ORIGIN` 查找与17库/1354导出检查通过，无 LD覆盖。
 [资源收据](../../../../evidence/correctness/compute-unified-c3/wsl-cpu/shared-resource-receipt.json)
 与各 CTest/config 绑定；C3 当前64 PASS / 26 UNRUN。原静态循环继续，source/shared不重跑。
+
+WSL 已安装 CPU SDK 的30份公开头以原脚本 bare 编译 PASS；另以真实 `hyle::graph` usage
+requirements/GCC14.2.0 单头 OBJECT 编译30份均 PASS，实际CPU/oneDNN宏启用。
+[逐头证据](../../../../evidence/correctness/compute-unified-c3/wsl-cpu-installed-headers/active-gcc14-receipt.json)
+保留第一次误用系统GCC13的额外诊断，未用其签GCC14门；只校正头 consumer，不重建SDK/数学/P1。
+其它WSL路线的安装头门须待对应包真实完成，静态宏档位不由此虚签。实现LOC无变化。

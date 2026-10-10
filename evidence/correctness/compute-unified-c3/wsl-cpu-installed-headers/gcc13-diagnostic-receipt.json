@@ -1,0 +1,48 @@
+{
+  "scope": "Each installed public header in isolation with actual exported product route macros and native dependency usage; serial syntax/object checks, no SDK rebuild or math",
+  "rows": [
+    {
+      "route": "cpu",
+      "headers": [
+        "hyle/compute/completion.h",
+        "hyle/compute/cpu.h",
+        "hyle/compute/custom_kernel.h",
+        "hyle/compute/delegated_operation.h",
+        "hyle/compute/device.h",
+        "hyle/compute/low_precision.h",
+        "hyle/compute/model_ops.h",
+        "hyle/compute/operation.h",
+        "hyle/compute/ops_visibility.h",
+        "hyle/compute/prepared_operation.h",
+        "hyle/compute/provider.h",
+        "hyle/compute/resource_requirement.h",
+        "hyle/compute/result.h",
+        "hyle/compute/route_policy.h",
+        "hyle/compute/tensor.h",
+        "hyle/compute/tensor_desc.h",
+        "hyle/compute/transfer.h",
+        "hyle/compute/visibility.h",
+        "hyle/compute/workload.h",
+        "hyle/compute/backends/cpu.h",
+        "hyle/compute/providers/ggml_cpu.h",
+        "hyle/compute/providers/native.h",
+        "hyle/compute/providers/onednn.h",
+        "hyle/graph/compile_report.h",
+        "hyle/graph/cpu.h",
+        "hyle/graph/executable.h",
+        "hyle/graph/graph.h",
+        "hyle/graph/region_provider.h",
+        "hyle/graph/visibility.h",
+        "hyle/graph/providers/onednn.h"
+      ],
+      "count": 30,
+      "active_define": "HYLE_COMPUTE_CPU=1",
+      "compile_command_count": 30,
+      "sdk_config_sha256": "b5317879d73a400dcc70ed486a2767ff3dcfac73a03b9879de552167f7f8ad9f",
+      "configure_exit": 0,
+      "build_exit": 0
+    }
+  ],
+  "compiler": "c++ (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0",
+  "qualification": "Diagnostic only: below declared GCC14 floor; not the accepted active-header gate"
+}

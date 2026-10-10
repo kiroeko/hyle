@@ -1,0 +1,157 @@
+{
+  "system": "Linux",
+  "machine": "x86_64",
+  "compiler": "g++-14 (Ubuntu 14.2.0-4ubuntu2~24.04.1) 14.2.0",
+  "rows": [
+    {
+      "route": "cpu",
+      "header_dir": "compute",
+      "headers": [
+        "completion.h",
+        "cpu.h",
+        "custom_kernel.h",
+        "delegated_operation.h",
+        "device.h",
+        "low_precision.h",
+        "model_ops.h",
+        "operation.h",
+        "ops_visibility.h",
+        "prepared_operation.h",
+        "provider.h",
+        "resource_requirement.h",
+        "result.h",
+        "route_policy.h",
+        "tensor.h",
+        "tensor_desc.h",
+        "transfer.h",
+        "visibility.h",
+        "workload.h"
+      ],
+      "sdk_config_sha256": "b5317879d73a400dcc70ed486a2767ff3dcfac73a03b9879de552167f7f8ad9f",
+      "exit": 0,
+      "argv": [
+        "/usr/bin/python3",
+        "/root/hyle-scratch/compute-unified/source-7a7b4c3b/scripts/header-self-contained.py",
+        "--module",
+        "compute_graph",
+        "--header-dir",
+        "compute",
+        "--include-dir",
+        "/root/hyle-scratch/compute-unified/l-cpu/selected-graph/shared-sdk-relocated/include",
+        "--cxx",
+        "/usr/bin/g++-14",
+        "--cxx-compiler-id",
+        "GNU"
+      ],
+      "log": "cpu-compute.log",
+      "sha256": "68bfba11291cbfb7823a05cf18b9c333a36502964f37be6723e55eb33752ef58"
+    },
+    {
+      "route": "cpu",
+      "header_dir": "compute/backends",
+      "headers": [
+        "cpu.h"
+      ],
+      "sdk_config_sha256": "b5317879d73a400dcc70ed486a2767ff3dcfac73a03b9879de552167f7f8ad9f",
+      "exit": 0,
+      "argv": [
+        "/usr/bin/python3",
+        "/root/hyle-scratch/compute-unified/source-7a7b4c3b/scripts/header-self-contained.py",
+        "--module",
+        "compute_graph",
+        "--header-dir",
+        "compute/backends",
+        "--include-dir",
+        "/root/hyle-scratch/compute-unified/l-cpu/selected-graph/shared-sdk-relocated/include",
+        "--cxx",
+        "/usr/bin/g++-14",
+        "--cxx-compiler-id",
+        "GNU"
+      ],
+      "log": "cpu-compute-backends.log",
+      "sha256": "9af7e68cefd7e1282d2da0ea87ff6647ca1770da37881eeb0498af249154bb35"
+    },
+    {
+      "route": "cpu",
+      "header_dir": "compute/providers",
+      "headers": [
+        "ggml_cpu.h",
+        "native.h",
+        "onednn.h"
+      ],
+      "sdk_config_sha256": "b5317879d73a400dcc70ed486a2767ff3dcfac73a03b9879de552167f7f8ad9f",
+      "exit": 0,
+      "argv": [
+        "/usr/bin/python3",
+        "/root/hyle-scratch/compute-unified/source-7a7b4c3b/scripts/header-self-contained.py",
+        "--module",
+        "compute_graph",
+        "--header-dir",
+        "compute/providers",
+        "--include-dir",
+        "/root/hyle-scratch/compute-unified/l-cpu/selected-graph/shared-sdk-relocated/include",
+        "--cxx",
+        "/usr/bin/g++-14",
+        "--cxx-compiler-id",
+        "GNU"
+      ],
+      "log": "cpu-compute-providers.log",
+      "sha256": "c5fde5b6d38b42ce0f64ca54803ae417e087e937b62870fc56b208201cffb303"
+    },
+    {
+      "route": "cpu",
+      "header_dir": "graph",
+      "headers": [
+        "compile_report.h",
+        "cpu.h",
+        "executable.h",
+        "graph.h",
+        "region_provider.h",
+        "visibility.h"
+      ],
+      "sdk_config_sha256": "b5317879d73a400dcc70ed486a2767ff3dcfac73a03b9879de552167f7f8ad9f",
+      "exit": 0,
+      "argv": [
+        "/usr/bin/python3",
+        "/root/hyle-scratch/compute-unified/source-7a7b4c3b/scripts/header-self-contained.py",
+        "--module",
+        "compute_graph",
+        "--header-dir",
+        "graph",
+        "--include-dir",
+        "/root/hyle-scratch/compute-unified/l-cpu/selected-graph/shared-sdk-relocated/include",
+        "--cxx",
+        "/usr/bin/g++-14",
+        "--cxx-compiler-id",
+        "GNU"
+      ],
+      "log": "cpu-graph.log",
+      "sha256": "dac2054674ac56d1bc9cc700db8aa7a9782361888586d964b6588ab46f35e7f5"
+    },
+    {
+      "route": "cpu",
+      "header_dir": "graph/providers",
+      "headers": [
+        "onednn.h"
+      ],
+      "sdk_config_sha256": "b5317879d73a400dcc70ed486a2767ff3dcfac73a03b9879de552167f7f8ad9f",
+      "exit": 0,
+      "argv": [
+        "/usr/bin/python3",
+        "/root/hyle-scratch/compute-unified/source-7a7b4c3b/scripts/header-self-contained.py",
+        "--module",
+        "compute_graph",
+        "--header-dir",
+        "graph/providers",
+        "--include-dir",
+        "/root/hyle-scratch/compute-unified/l-cpu/selected-graph/shared-sdk-relocated/include",
+        "--cxx",
+        "/usr/bin/g++-14",
+        "--cxx-compiler-id",
+        "GNU"
+      ],
+      "log": "cpu-graph-providers.log",
+      "sha256": "9af7e68cefd7e1282d2da0ea87ff6647ca1770da37881eeb0498af249154bb35"
+    }
+  ]
+}
