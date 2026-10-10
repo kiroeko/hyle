@@ -12,6 +12,7 @@
 #include "hyle/compute/detail/completion_access.h"
 #include "hyle/compute/route_policy.h"
 #include "hyle/compute/vulkan.h"
+#include "hyle/compute/resource_budget.h"
 
 namespace hyle::compute::vulkan::detail {
 namespace cd = hyle::compute::detail;
@@ -137,6 +138,14 @@ struct Device final {
   mem::QuotaAllocator *quota = nullptr;
 };
 
+struct BufferBudget;
+struct BufferAllocation final {
+  compute::ResourceBudget budget;
+  mem::MemoryResourceRef resource;
+  compute::ResourceBudgetCategory category = compute::ResourceBudgetCategory::kWorkspace;
+  mem::AllocatorRef allocator = mem::system_allocator();
+};
+
 struct Buffer final {
   std::shared_ptr<Device> device;
   // Destroy memory before releasing its quota reservation.
@@ -150,6 +159,9 @@ struct Buffer final {
   VkMemoryPropertyFlags memory_flags = 0;
   void *mapped = nullptr;
   bool is_view = false;
+  // Cold opt-in accounting. One pointer on original owners; no hot scope
+  // lookup or extra allocation when no shared requested-byte budget is used.
+  BufferBudget *budget = nullptr;
   ~Buffer();
 };
 
@@ -260,7 +272,8 @@ void bind_view_buffer(Buffer &view, const std::shared_ptr<Buffer> &root,
                       VkDeviceSize byte_offset) noexcept;
 Result<std::shared_ptr<Buffer>>
 allocate_buffer(const std::shared_ptr<Device> &device, VkDeviceSize bytes,
-                bool staging, bool shader_access = false) noexcept;
+                bool staging, bool shader_access = false,
+                BufferAllocation allocation = {}) noexcept;
 Result<std::shared_ptr<Run>>
 create_run(const std::shared_ptr<Runtime> &runtime) noexcept;
 Result<Completion> submit_locked(const std::shared_ptr<Run> &run,

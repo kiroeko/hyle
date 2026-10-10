@@ -89,3 +89,15 @@ H3-01至06就是有限产品FIX集，三个owner进入AUDITED后实施；借现M
 WSL继承C3用户已接受的真实GPU缺件边界：Windows/Air必须真实数学/寿命/重叠；WSL编译/安装
 三交付和可适用头/config仍验，未具备GPU的数学运行继续UNQUALIFIED，不写PASS或N/A，也不
 为同一硬件缺件自动再阻塞goal。这与C3 record已明确的后续H1-H3授权一致，不重新请求同一决定。
+
+### 首批产品接线
+
+vulkan_memory.h/vulkan_memory.cc接真实route Buffer/Device为独立device/staging资源；staging借
+原host-visible VkDeviceMemory mapping并保留coherency/whole映射flush与invalidate。Mem opaque
+handle是本路线allocation token，不把VkBuffer当CPU指针。native Tensor allocation保留原Buffer，
+新shared ResourceBudget按原四字节native capacity在分配前接纳，原mem::QuotaAllocator仍独立
+按actual VkDeviceMemory计账；buffer最后owner销毁、先释放native内存再退budget，views保留root。
+控制块复用Mem StdAllocator，普通无预算Buffer只多一个cold accounting指针，不在hot查scope。
+
+这是有限FIX H3-02/05第一部分，尚未原生编译/数学/三交付；不据源码或资源枚举计本包完成。
+迁移固定池、native Program资源接线与组合继续批量实现，API稳定后按固定半径集中验收。

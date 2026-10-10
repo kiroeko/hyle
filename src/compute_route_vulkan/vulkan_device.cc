@@ -10,8 +10,14 @@
 
 #include "../compute_ops/view_alias.h"
 #include "hyle/core/compiler.h"
+#include "hyle/mem/std_allocator.h"
 
 namespace hyle::compute::vulkan::detail {
+
+struct BufferBudget final {
+  mem::AllocatorRef allocator;
+  compute::ResourceBudget::Reservation reservation;
+};
 
 Status native_status(VkResult result, const char *operation) noexcept {
   if (result == VK_SUCCESS)
@@ -48,6 +54,11 @@ Buffer::~Buffer() {
     device->fn.DestroyBuffer(device->native.device, handle, nullptr);
   if (memory != VK_NULL_HANDLE)
     device->fn.FreeMemory(device->native.device, memory, nullptr);
+  if (budget != nullptr) {
+    const auto allocator = budget->allocator;
+    std::destroy_at(budget);
+    allocator.deallocate(budget, sizeof(BufferBudget), alignof(BufferBudget));
+  }
 }
 
 namespace {
@@ -171,12 +182,13 @@ void bind_view_buffer(Buffer &view, const std::shared_ptr<Buffer> &root,
   view.handle = root ? root->handle : VK_NULL_HANDLE;
   view.offset = (root ? root->offset : 0) + byte_offset;
   view.bytes = root ? root->bytes - byte_offset : 0;
+  view.allocation_bytes = root ? root->allocation_bytes : 0;
   view.is_view = true;
 }
 
 Result<std::shared_ptr<Buffer>>
 allocate_buffer(const std::shared_ptr<Device> &device, VkDeviceSize bytes,
-                bool staging, bool shader_access) noexcept {
+                bool staging, bool shader_access, BufferAllocation allocation) noexcept {
   HYLE_ASSIGN_OR_RETURN(bytes, buffer_capacity(bytes));
   if (bytes > (std::numeric_limits<std::size_t>::max)() ||
       ((!staging || shader_access) &&
@@ -184,7 +196,22 @@ allocate_buffer(const std::shared_ptr<Device> &device, VkDeviceSize bytes,
     return std::unexpected(
         Status::InvalidArgument("Vulkan buffer size exceeds domain"));
   try {
-    auto buffer = std::make_shared<Buffer>();
+    auto allocator = allocation.allocator;
+    compute::ResourceBudget::Reservation reservation;
+    if (allocation.budget) {
+      HYLE_ASSIGN_OR_RETURN(allocator, allocation.budget.metadata_allocator());
+      HYLE_ASSIGN_OR_RETURN(reservation, allocation.budget.reserve(allocation.resource,
+          static_cast<std::size_t>(bytes), allocation.category));
+    }
+    if (!allocator.valid())
+      return std::unexpected(Status::InvalidArgument("invalid Vulkan buffer metadata allocator"));
+    auto buffer = std::allocate_shared<Buffer>(mem::StdAllocator<Buffer>(allocator));
+    if (allocation.budget) {
+      auto *owner = allocator.allocate(sizeof(BufferBudget), alignof(BufferBudget));
+      if (owner == nullptr)
+        return std::unexpected(Status::ResourceExhausted("Vulkan buffer budget metadata"));
+      buffer->budget = std::construct_at(static_cast<BufferBudget *>(owner), allocator, std::move(reservation));
+    }
     buffer->device = device;
     buffer->bytes = bytes;
     VkBufferCreateInfo info{};
@@ -241,12 +268,12 @@ allocate_buffer(const std::shared_ptr<Device> &device, VkDeviceSize bytes,
             Status::ResourceExhausted("Vulkan device memory quota"));
       buffer->charge = std::move(*charge);
     }
-    VkMemoryAllocateInfo allocation{};
-    allocation.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-    allocation.allocationSize = requirements.size;
-    allocation.memoryTypeIndex = selected;
+    VkMemoryAllocateInfo native_allocation{};
+    native_allocation.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+    native_allocation.allocationSize = requirements.size;
+    native_allocation.memoryTypeIndex = selected;
     status = native_status(device->fn.AllocateMemory(device->native.device,
-                                                     &allocation, nullptr,
+                                                     &native_allocation, nullptr,
                                                      &buffer->memory),
                            "vkAllocateMemory");
     if (!status.ok())

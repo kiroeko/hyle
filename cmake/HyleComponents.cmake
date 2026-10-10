@@ -462,7 +462,7 @@ _hyle_declare_component(compute_route_vulkan
   TRACE
   PRIVATE_DEPS time compute_provider_ggml_vulkan compute_provider_iree_vulkan
   PUBLIC_DEPS core compute compute_ops error mem
-  SPLIT_PUBLIC_HEADERS hyle/compute/vulkan.h hyle/compute/detail/vulkan_plan.h)
+  SPLIT_PUBLIC_HEADERS hyle/compute/vulkan.h hyle/compute/vulkan_memory.h hyle/compute/detail/vulkan_plan.h)
 _hyle_declare_component(graph_route_vulkan
   TRACE
   PUBLIC_DEPS core compute_ops compute_route_vulkan error graph
