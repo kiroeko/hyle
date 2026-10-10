@@ -270,17 +270,25 @@
     },
     {
       "module": "compute",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/compute/compute-h1-cpu-cuda-composition.md",
-      "summary": "H1 CANDIDATE：H1-07至09普通CPU存储/有界暂存、共享请求字节预算及准备诊断已固定；旧证据保留，新候选批量补Windows/WSL数学、资源与三交付，CUDA build1/test1，未运行不签PASS。",
-      "candidate": "7eaf67b8a496ee19b609533980cd69e7efb5aa49"
+      "summary": "H1 CLOSED：CPU+CUDA混合执行、双槽迁移、普通CPU主存/有界staging、共享预算及准备诊断完成；Windows/WSL三交付、安装头/搬迁、错误/寿命与当前native重叠通过。引擎策略、多GPU、Apple/Vulkan混合不在本包。",
+      "candidate": "7eaf67b8a496ee19b609533980cd69e7efb5aa49",
+      "performance": {
+        "tier": "P0",
+        "evidence": "docs/implementation/tasks/compute/compute-h1-cpu-cuda-composition.md"
+      }
     },
     {
       "module": "graph",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/compute/compute-h1-cpu-cuda-composition.md",
-      "summary": "H1 CANDIDATE：H1-07至09普通CPU存储/有界暂存、共享请求字节预算及准备诊断已固定；旧证据保留，新候选批量补Windows/WSL数学、资源与三交付，CUDA build1/test1，未运行不签PASS。",
-      "candidate": "7eaf67b8a496ee19b609533980cd69e7efb5aa49"
+      "summary": "H1 CLOSED：CPU+CUDA混合执行、双槽迁移、普通CPU主存/有界staging、共享预算及准备诊断完成；Windows/WSL三交付、安装头/搬迁、错误/寿命与当前native重叠通过。引擎策略、多GPU、Apple/Vulkan混合不在本包。",
+      "candidate": "7eaf67b8a496ee19b609533980cd69e7efb5aa49",
+      "performance": {
+        "tier": "P0",
+        "evidence": "docs/implementation/tasks/compute/compute-h1-cpu-cuda-composition.md"
+      }
     },
     {
       "module": "container_concurrent",
@@ -398,17 +406,25 @@
     },
     {
       "module": "compute_backend_cpu",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/compute/compute-h1-cpu-cuda-composition.md",
-      "summary": "H1 CANDIDATE：H1-07至09普通CPU存储/有界暂存、共享请求字节预算及准备诊断已固定；旧证据保留，新候选批量补Windows/WSL数学、资源与三交付，CUDA build1/test1，未运行不签PASS。",
-      "candidate": "7eaf67b8a496ee19b609533980cd69e7efb5aa49"
+      "summary": "H1 CLOSED：CPU+CUDA混合执行、双槽迁移、普通CPU主存/有界staging、共享预算及准备诊断完成；Windows/WSL三交付、安装头/搬迁、错误/寿命与当前native重叠通过。引擎策略、多GPU、Apple/Vulkan混合不在本包。",
+      "candidate": "7eaf67b8a496ee19b609533980cd69e7efb5aa49",
+      "performance": {
+        "tier": "P0",
+        "evidence": "docs/implementation/tasks/compute/compute-h1-cpu-cuda-composition.md"
+      }
     },
     {
       "module": "compute_backend_cuda",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/compute/compute-h1-cpu-cuda-composition.md",
-      "summary": "H1 CANDIDATE：H1-07至09普通CPU存储/有界暂存、共享请求字节预算及准备诊断已固定；旧证据保留，新候选批量补Windows/WSL数学、资源与三交付，CUDA build1/test1，未运行不签PASS。",
-      "candidate": "7eaf67b8a496ee19b609533980cd69e7efb5aa49"
+      "summary": "H1 CLOSED：CPU+CUDA混合执行、双槽迁移、普通CPU主存/有界staging、共享预算及准备诊断完成；Windows/WSL三交付、安装头/搬迁、错误/寿命与当前native重叠通过。引擎策略、多GPU、Apple/Vulkan混合不在本包。",
+      "candidate": "7eaf67b8a496ee19b609533980cd69e7efb5aa49",
+      "performance": {
+        "tier": "P0",
+        "evidence": "docs/implementation/tasks/compute/compute-h1-cpu-cuda-composition.md"
+      }
     },
     {
       "module": "compute_provider_native",
@@ -423,17 +439,25 @@
     },
     {
       "module": "compute_route_cpu",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/compute/compute-h1-cpu-cuda-composition.md",
-      "summary": "H1 CANDIDATE：H1-07至09普通CPU存储/有界暂存、共享请求字节预算及准备诊断已固定；旧证据保留，新候选批量补Windows/WSL数学、资源与三交付，CUDA build1/test1，未运行不签PASS。",
-      "candidate": "7eaf67b8a496ee19b609533980cd69e7efb5aa49"
+      "summary": "H1 CLOSED：CPU+CUDA混合执行、双槽迁移、普通CPU主存/有界staging、共享预算及准备诊断完成；Windows/WSL三交付、安装头/搬迁、错误/寿命与当前native重叠通过。引擎策略、多GPU、Apple/Vulkan混合不在本包。",
+      "candidate": "7eaf67b8a496ee19b609533980cd69e7efb5aa49",
+      "performance": {
+        "tier": "P0",
+        "evidence": "docs/implementation/tasks/compute/compute-h1-cpu-cuda-composition.md"
+      }
     },
     {
       "module": "graph_route_cpu",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/compute/compute-h1-cpu-cuda-composition.md",
-      "summary": "H1 CANDIDATE：H1-07至09普通CPU存储/有界暂存、共享请求字节预算及准备诊断已固定；旧证据保留，新候选批量补Windows/WSL数学、资源与三交付，CUDA build1/test1，未运行不签PASS。",
-      "candidate": "7eaf67b8a496ee19b609533980cd69e7efb5aa49"
+      "summary": "H1 CLOSED：CPU+CUDA混合执行、双槽迁移、普通CPU主存/有界staging、共享预算及准备诊断完成；Windows/WSL三交付、安装头/搬迁、错误/寿命与当前native重叠通过。引擎策略、多GPU、Apple/Vulkan混合不在本包。",
+      "candidate": "7eaf67b8a496ee19b609533980cd69e7efb5aa49",
+      "performance": {
+        "tier": "P0",
+        "evidence": "docs/implementation/tasks/compute/compute-h1-cpu-cuda-composition.md"
+      }
     },
     {
       "module": "compute_provider_cublas",
@@ -471,17 +495,25 @@
     },
     {
       "module": "compute_route_cuda",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/compute/compute-h1-cpu-cuda-composition.md",
-      "summary": "H1 CANDIDATE：H1-07至09普通CPU存储/有界暂存、共享请求字节预算及准备诊断已固定；旧证据保留，新候选批量补Windows/WSL数学、资源与三交付，CUDA build1/test1，未运行不签PASS。",
-      "candidate": "7eaf67b8a496ee19b609533980cd69e7efb5aa49"
+      "summary": "H1 CLOSED：CPU+CUDA混合执行、双槽迁移、普通CPU主存/有界staging、共享预算及准备诊断完成；Windows/WSL三交付、安装头/搬迁、错误/寿命与当前native重叠通过。引擎策略、多GPU、Apple/Vulkan混合不在本包。",
+      "candidate": "7eaf67b8a496ee19b609533980cd69e7efb5aa49",
+      "performance": {
+        "tier": "P0",
+        "evidence": "docs/implementation/tasks/compute/compute-h1-cpu-cuda-composition.md"
+      }
     },
     {
       "module": "graph_route_cuda",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/compute/compute-h1-cpu-cuda-composition.md",
-      "summary": "H1 CANDIDATE：H1-07至09普通CPU存储/有界暂存、共享请求字节预算及准备诊断已固定；旧证据保留，新候选批量补Windows/WSL数学、资源与三交付，CUDA build1/test1，未运行不签PASS。",
-      "candidate": "7eaf67b8a496ee19b609533980cd69e7efb5aa49"
+      "summary": "H1 CLOSED：CPU+CUDA混合执行、双槽迁移、普通CPU主存/有界staging、共享预算及准备诊断完成；Windows/WSL三交付、安装头/搬迁、错误/寿命与当前native重叠通过。引擎策略、多GPU、Apple/Vulkan混合不在本包。",
+      "candidate": "7eaf67b8a496ee19b609533980cd69e7efb5aa49",
+      "performance": {
+        "tier": "P0",
+        "evidence": "docs/implementation/tasks/compute/compute-h1-cpu-cuda-composition.md"
+      }
     },
     {
       "module": "compute_route_apple",
@@ -540,24 +572,36 @@
     },
     {
       "module": "compute_ggml_runtime",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/compute/compute-h1-cpu-cuda-composition.md",
-      "summary": "H1 CANDIDATE：H1-07至09普通CPU存储/有界暂存、共享请求字节预算及准备诊断已固定；旧证据保留，新候选批量补Windows/WSL数学、资源与三交付，CUDA build1/test1，未运行不签PASS。",
-      "candidate": "7eaf67b8a496ee19b609533980cd69e7efb5aa49"
+      "summary": "H1 CLOSED：CPU+CUDA混合执行、双槽迁移、普通CPU主存/有界staging、共享预算及准备诊断完成；Windows/WSL三交付、安装头/搬迁、错误/寿命与当前native重叠通过。引擎策略、多GPU、Apple/Vulkan混合不在本包。",
+      "candidate": "7eaf67b8a496ee19b609533980cd69e7efb5aa49",
+      "performance": {
+        "tier": "P0",
+        "evidence": "docs/implementation/tasks/compute/compute-h1-cpu-cuda-composition.md"
+      }
     },
     {
       "module": "compute_provider_ggml_cuda",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/compute/compute-h1-cpu-cuda-composition.md",
-      "summary": "H1 CANDIDATE：H1-07至09普通CPU存储/有界暂存、共享请求字节预算及准备诊断已固定；旧证据保留，新候选批量补Windows/WSL数学、资源与三交付，CUDA build1/test1，未运行不签PASS。",
-      "candidate": "7eaf67b8a496ee19b609533980cd69e7efb5aa49"
+      "summary": "H1 CLOSED：CPU+CUDA混合执行、双槽迁移、普通CPU主存/有界staging、共享预算及准备诊断完成；Windows/WSL三交付、安装头/搬迁、错误/寿命与当前native重叠通过。引擎策略、多GPU、Apple/Vulkan混合不在本包。",
+      "candidate": "7eaf67b8a496ee19b609533980cd69e7efb5aa49",
+      "performance": {
+        "tier": "P0",
+        "evidence": "docs/implementation/tasks/compute/compute-h1-cpu-cuda-composition.md"
+      }
     },
     {
       "module": "graph_provider_ggml_cuda",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/compute/compute-h1-cpu-cuda-composition.md",
-      "summary": "H1 CANDIDATE：H1-07至09普通CPU存储/有界暂存、共享请求字节预算及准备诊断已固定；旧证据保留，新候选批量补Windows/WSL数学、资源与三交付，CUDA build1/test1，未运行不签PASS。",
-      "candidate": "7eaf67b8a496ee19b609533980cd69e7efb5aa49"
+      "summary": "H1 CLOSED：CPU+CUDA混合执行、双槽迁移、普通CPU主存/有界staging、共享预算及准备诊断完成；Windows/WSL三交付、安装头/搬迁、错误/寿命与当前native重叠通过。引擎策略、多GPU、Apple/Vulkan混合不在本包。",
+      "candidate": "7eaf67b8a496ee19b609533980cd69e7efb5aa49",
+      "performance": {
+        "tier": "P0",
+        "evidence": "docs/implementation/tasks/compute/compute-h1-cpu-cuda-composition.md"
+      }
     },
     {
       "module": "compute_provider_flashinfer",
@@ -606,10 +650,14 @@
     },
     {
       "module": "graph_route_cpu_cuda",
-      "state": "CANDIDATE",
-      "summary": "H1 CANDIDATE：H1-07至09普通CPU存储/有界暂存、共享请求字节预算及准备诊断已固定；旧证据保留，新候选批量补Windows/WSL数学、资源与三交付，CUDA build1/test1，未运行不签PASS。",
+      "state": "CLOSED",
+      "summary": "H1 CLOSED：CPU+CUDA混合执行、双槽迁移、普通CPU主存/有界staging、共享预算及准备诊断完成；Windows/WSL三交付、安装头/搬迁、错误/寿命与当前native重叠通过。引擎策略、多GPU、Apple/Vulkan混合不在本包。",
       "record": "docs/implementation/tasks/compute/compute-h1-cpu-cuda-composition.md",
-      "candidate": "7eaf67b8a496ee19b609533980cd69e7efb5aa49"
+      "candidate": "7eaf67b8a496ee19b609533980cd69e7efb5aa49",
+      "performance": {
+        "tier": "P0",
+        "evidence": "docs/implementation/tasks/compute/compute-h1-cpu-cuda-composition.md"
+      }
     }
   ]
 }

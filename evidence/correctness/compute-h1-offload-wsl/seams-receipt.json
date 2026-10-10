@@ -1,0 +1,120 @@
+{
+  "candidate": "7eaf67b8a496ee19b609533980cd69e7efb5aa49",
+  "rows": [
+    {
+      "stage": "shared-installed-header-0",
+      "exit": 0,
+      "seconds": 0.6,
+      "log": "/root/hyle-scratch/compute-unified/h1-offload-wsl/shared-installed-header-0.log",
+      "unit_memory_peak_bytes": 267395072,
+      "unit_memory_events": "low 0\nhigh 0\nmax 0\noom 0\noom_kill 0\noom_group_kill 0"
+    },
+    {
+      "stage": "shared-installed-header-1",
+      "exit": 0,
+      "seconds": 0.61,
+      "log": "/root/hyle-scratch/compute-unified/h1-offload-wsl/shared-installed-header-1.log",
+      "unit_memory_peak_bytes": 288124928,
+      "unit_memory_events": "low 0\nhigh 0\nmax 0\noom 0\noom_kill 0\noom_group_kill 0"
+    },
+    {
+      "stage": "shared-installed-header-2",
+      "exit": 0,
+      "seconds": 1.05,
+      "log": "/root/hyle-scratch/compute-unified/h1-offload-wsl/shared-installed-header-2.log",
+      "unit_memory_peak_bytes": 406798336,
+      "unit_memory_events": "low 0\nhigh 0\nmax 0\noom 0\noom_kill 0\noom_group_kill 0"
+    },
+    {
+      "stage": "shared-installed-header-3",
+      "exit": 0,
+      "seconds": 0.69,
+      "log": "/root/hyle-scratch/compute-unified/h1-offload-wsl/shared-installed-header-3.log",
+      "unit_memory_peak_bytes": 406798336,
+      "unit_memory_events": "low 0\nhigh 0\nmax 0\noom 0\noom_kill 0\noom_group_kill 0"
+    },
+    {
+      "stage": "shared-relocated-configure",
+      "exit": 0,
+      "seconds": 7.95,
+      "log": "/root/hyle-scratch/compute-unified/h1-offload-wsl/shared-relocated-configure.log",
+      "unit_memory_peak_bytes": 7230341120,
+      "unit_memory_events": "low 0\nhigh 0\nmax 0\noom 0\noom_kill 0\noom_group_kill 0"
+    },
+    {
+      "stage": "shared-relocated-build",
+      "exit": 0,
+      "seconds": 2.32,
+      "log": "/root/hyle-scratch/compute-unified/h1-offload-wsl/shared-relocated-build.log",
+      "unit_memory_peak_bytes": 7549054976,
+      "unit_memory_events": "low 0\nhigh 0\nmax 0\noom 0\noom_kill 0\noom_group_kill 0"
+    },
+    {
+      "stage": "shared-relocated-test",
+      "exit": 0,
+      "seconds": 0.98,
+      "log": "/root/hyle-scratch/compute-unified/h1-offload-wsl/shared-relocated-test.log",
+      "unit_memory_peak_bytes": 8464580608,
+      "unit_memory_events": "low 0\nhigh 0\nmax 0\noom 0\noom_kill 0\noom_group_kill 0"
+    },
+    {
+      "stage": "static-installed-header-0",
+      "exit": 0,
+      "seconds": 0.49,
+      "log": "/root/hyle-scratch/compute-unified/h1-offload-wsl/static-installed-header-0.log",
+      "unit_memory_peak_bytes": 8464580608,
+      "unit_memory_events": "low 0\nhigh 0\nmax 0\noom 0\noom_kill 0\noom_group_kill 0"
+    },
+    {
+      "stage": "static-installed-header-1",
+      "exit": 0,
+      "seconds": 0.59,
+      "log": "/root/hyle-scratch/compute-unified/h1-offload-wsl/static-installed-header-1.log",
+      "unit_memory_peak_bytes": 8464580608,
+      "unit_memory_events": "low 0\nhigh 0\nmax 0\noom 0\noom_kill 0\noom_group_kill 0"
+    },
+    {
+      "stage": "static-installed-header-2",
+      "exit": 0,
+      "seconds": 1.03,
+      "log": "/root/hyle-scratch/compute-unified/h1-offload-wsl/static-installed-header-2.log",
+      "unit_memory_peak_bytes": 8464580608,
+      "unit_memory_events": "low 0\nhigh 0\nmax 0\noom 0\noom_kill 0\noom_group_kill 0"
+    },
+    {
+      "stage": "static-installed-header-3",
+      "exit": 0,
+      "seconds": 0.71,
+      "log": "/root/hyle-scratch/compute-unified/h1-offload-wsl/static-installed-header-3.log",
+      "unit_memory_peak_bytes": 8464580608,
+      "unit_memory_events": "low 0\nhigh 0\nmax 0\noom 0\noom_kill 0\noom_group_kill 0"
+    },
+    {
+      "stage": "static-relocated-configure",
+      "exit": 0,
+      "seconds": 4.86,
+      "log": "/root/hyle-scratch/compute-unified/h1-offload-wsl/static-relocated-configure.log",
+      "unit_memory_peak_bytes": 8464580608,
+      "unit_memory_events": "low 0\nhigh 0\nmax 0\noom 0\noom_kill 0\noom_group_kill 0"
+    },
+    {
+      "stage": "static-relocated-build",
+      "exit": 0,
+      "seconds": 3.07,
+      "log": "/root/hyle-scratch/compute-unified/h1-offload-wsl/static-relocated-build.log",
+      "unit_memory_peak_bytes": 8608727040,
+      "unit_memory_events": "low 0\nhigh 0\nmax 0\noom 0\noom_kill 0\noom_group_kill 0"
+    },
+    {
+      "stage": "static-relocated-test",
+      "exit": 0,
+      "seconds": 0.67,
+      "log": "/root/hyle-scratch/compute-unified/h1-offload-wsl/static-relocated-test.log",
+      "unit_memory_peak_bytes": 8953372672,
+      "unit_memory_events": "low 0\nhigh 0\nmax 0\noom 0\noom_kill 0\noom_group_kill 0"
+    }
+  ],
+  "build_parallel": 1,
+  "test_parallel": 1,
+  "linux_unit_memory_max_gib": 12
+}

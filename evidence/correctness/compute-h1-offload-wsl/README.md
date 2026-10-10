@@ -8,7 +8,8 @@
   初次私有父项目HYLE_INSTALL OFF造成未生成SDK的失败记录保留，改私有配置ON后验收通过；
   不把早先cmake --install的进程exit0当完整SDK交付。
 - [static receipt](static-receipt.json)：installed static组合/Direct/contracts实际3/3通过。
-  安装头/搬迁仍在补验，整包仍CANDIDATE。
+- [安装边界收据](seams-receipt.json)：shared/static四个changed安装头独立编译8/8、两种SDK真正
+  改名搬迁后的组合消费者configure/build/run2/2通过。原prefix在搬迁期间不存在，未复制SDK。
 
 [同步记录](sync.json)对应788,480字节delta；全部2,199个产品/消费者文件的Git blob身份已核对
 当前候选。旧验证archive的生成版SOURCE-MANIFEST与Git原件不同，仅恢复其canonical内容。

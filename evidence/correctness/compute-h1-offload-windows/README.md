@@ -1,7 +1,8 @@
 # H1 offload：Windows 已完成验收与内存中断
 
 产品候选为 `7eaf67b8a496ee19b609533980cd69e7efb5aa49`。本记录保存 H1-07至09新合同下
-实际运行结果，不替代原合同的历史证据，也不签整包 CLOSED。
+实际运行结果，不替代原合同的历史证据。Windows和WSL适用门已齐，H1当前裁决见
+[terminal](../../../docs/implementation/tasks/compute/compute-h1-cpu-cuda-composition.md#h1-terminalcpucuda组合基础机制完成)。
 
 ## 用户恢复后的当前结果
 
@@ -15,7 +16,7 @@
 | shared/static SDK真正改名搬迁后的组合消费者configure/build/run | PASS 2/2；原目录在验收时不存在，结束后恢复；无SDK副本 | [receipt](installed-seams/receipt.json) |
 | 真实CUDA-only SDK拒绝CPU+CUDA消费者 | PASS预期configure拒绝，没有补下载CPU或偷偷fallback | [日志](final-seams/missing-composition-check.log) |
 | 当前候选native迁移/计算物理重叠 | PASS；同device/context不同stream的16MiB H2D与两个成熟GEMM执行区间真实相交；不宣称性能赢家 | [分析](native-overlap/overlap-analysis.json)、[数值控制运行](final-seams/native-probe-math-check.log) |
-| WSL当前候选 | 未运行，整包仍CANDIDATE | [归档](recovery-archive.json) |
+| WSL当前候选 | source5/5、shared/static各3/3、changed安装头8/8、两种SDK搬迁2/2均通过 | [WSL证据](../compute-h1-offload-wsl/README.md) |
 
 static消费者批次单并行，观察到本轮进程private最大1.1GiB、物理可用最小42.51GiB；没有触发
 16GiB物理/提交余量或12GiB本轮private观察门。它是每秒采样最大值，不冒充精确瞬时峰值。

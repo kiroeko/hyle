@@ -1,6 +1,6 @@
 # H1：CPU+CUDA 粗片段、异步传输与流式权重
 
-<!-- MODULE REVIEW: CANDIDATE -->
+<!-- MODULE REVIEW: CLOSED -->
 
 - baseline：`061b46700`（C3按用户接受边界CLOSED）；Windows canonical。
 - 当前owner：graph、compute、graph_route_cpu、graph_route_cuda、compute_route_cpu、
@@ -449,3 +449,47 @@ installed static三消费者也已3/3通过；安装头/搬迁继续补验，未
 重编，恢复与baseline/候选同blob的最后Git内容变更时间，不改对象/Ninja log；旧source父项目
 关闭安装，改私有配置后生成真实SDK，不重跑已通过source数学。初次失败/停止不代签PASS，
 relay进程退出还须核实native完成终态和实际测试。产品源码、公开接口与候选仍不变。
+
+## H1 terminal：CPU+CUDA组合基础机制完成
+
+完整产品候选仍为 `7eaf67b8a496ee19b609533980cd69e7efb5aa49`。H1-01至09及其普通C++消费者
+均已实施、冻结并验收；本卡12个owner由CANDIDATE进入CLOSED。上文UNPROVEN、停止和
+旧候选段落是各时点历史事实，本节为当前裁决。H2/H3未实施，不据此签Apple/Vulkan混合能力。
+
+| Gate | 实际边界与证据 | Verdict |
+|---|---|---|
+| scope | 固定H1-01至09；提供粗片段放置/进展、原生迁移、普通主存、有界暂存、共享预算/诊断；不做引擎策略、模型loader、多GPU或新数学 | PASS |
+| architecture | 复用Mem/Graph/Results/Sched及CPU/CUDA成熟程序；只拥有跨端粗边界与native事件，不新建万能Queue、逐kernel调度、第二后台runtime或路由IR | PASS |
+| correctness | Windows及WSL source各5/5，正常/错误/overflow/OOM、两槽、取消/accepted错误、close/abandonment、旧lease、预算strict/partial/rollback、alias与prepare失效由实际contracts和普通数学消费者覆盖 | PASS |
+| delivery | 两平台source及installed shared/static，三消费者均实际运行；两平台changed安装头各8/8、shared/static真正搬迁各2/2；Windows DLL置exe旁；缺CPU路线明确拒绝 | PASS |
+| usability_docs | cuda_weights Direct包含/compute链接与cpu_cuda Graph包含/graph链接；compile/bind/prepare/submit/wait/result、借用寿命、预算边界及engine职责由公开头和两样例说明 | PASS |
+| red_team | 冻结后的独立复核核对实际测试覆盖、未运行项、alias/旧lease占用、busy GPU后继拒绝、host-wait失效、普通同Device保护、SDK宏/资产及relay终态；已记录夹具错误均只修验证输入，无新增产品缺陷 | PASS |
+| engineering_performance | P0：cold绑定/规划/固定两槽与requested-byte配额，普通重放不选Provider；256KiB现Sched guarded tier与实际CPU等待、staging拷贝、未知native成本明确计费。当前candidate一次CUPTI取证确认物理重叠；未宣称速度赢家，不启动无竞争域P1 | PASS |
+
+### 有限FIX完成映射
+
+- H1-01/02：独立组合factor与CPU/GPU显式placement/格式、资源硬准入；普通单路线guard和入口仍实际通过。
+- H1-03/04：真实分段native依赖/CPU进展、OwnedResult/Results lease、取消/错误/close/abandonment和晚到保活；不能覆写旧结果。
+- H1-05/06：CUDA Compute固定两槽、片段ID/描述与容量验证、真实上传/绑定/依赖；Direct不要求Graph，三交付普通消费者已验。
+- H1-07：16KiB普通CPU权重参与实际MatMul，图staging不超过512字节；CPU↔CUDA与完整FP16 FFN均通过，不全量pin CPU权重。
+- H1-08：scope共享编译/每槽/迁移计费，strict/partial、超额回滚、canonical边界去重和旧lease占用/最后释放通过。
+- H1-09：prepare成功才可查询实际copy/依赖路径，bind/reset失效、host-wait拒绝及执行一致性通过。
+
+### 证据、限制与重开
+
+[Windows完成证据](../../../../evidence/correctness/compute-h1-offload-windows/README.md)与
+[WSL完成证据](../../../../evidence/correctness/compute-h1-offload-wsl/README.md)给出实际命令、
+candidate/hash、结果、原失败与修复边界。C3十二项WSL Vulkan仍UNQUALIFIED，本H1不改其结论。
+
+只支持CPU+一个CUDA端点。调用者拥有Context/resource/Queue/Scheduler/allocator与外部payload
+借用寿命；预算仅已登记的请求字节，partial私有成本、driver/系统/其他程序与allocator rounding
+须另留余量，不预留物理内存。共享资源/顺序不承诺所有任务都重叠；当前trace只证明该native
+机制真实可重叠。取消不撤销已接纳工作，close排空本owner；lease不把外部可变输入自动不可变。
+专家选择/缓存/预测、offload比例、KV与模型循环属于引擎。
+
+合法reopen trigger：可复现数学/UB/生命周期/并发/资源预算或交付缺陷；真实consumer证明本组合
+缺失常用机制；native/成熟依赖相关升级；合格同合同证据证明material成本回归。新增Apple/Vulkan
+组合按各自新卡定界，不能把本H1历史AUDITED当其授权；不扩大算子目录。
+
+统一LOC仍64,435实现行/281文件（Compute+Graph，不含测试）；全库自实现159,662行。
+本轮新增的是验收证据，candidate后无产品源码变化。H1 CLOSED，停止本包重型run，沿goal进入H2。

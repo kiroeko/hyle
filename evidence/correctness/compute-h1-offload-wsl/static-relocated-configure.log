@@ -1,0 +1,15 @@
+-- The CXX compiler identification is GNU 14.2.0
+-- Detecting CXX compiler ABI info
+-- Detecting CXX compiler ABI info - done
+-- Check for working CXX compiler: /usr/bin/g++-14 - skipped
+-- Detecting CXX compile features
+-- Detecting CXX compile features - done
+-- Performing Test CMAKE_HAVE_LIBC_PTHREAD
+-- Performing Test CMAKE_HAVE_LIBC_PTHREAD - Success
+-- Found Threads: TRUE
+-- Found CUDAToolkit: /usr/local/cuda-13.3/targets/x86_64-linux/include (found suitable version "13.3.73", minimum required is "13.3")
+-- HYLE: reusing locked CPU SDK at /root/.cache/hyle/dependencies/v1/sdks/torch-cpu/Linux-8dea5bcfed4b53ca0f6852517bea4b4d1f3ff1cc0c21da662e834d34af1ec824/libtorch
+-- Found Torch: /root/.cache/hyle/dependencies/v1/sdks/torch-cpu/Linux-8dea5bcfed4b53ca0f6852517bea4b4d1f3ff1cc0c21da662e834d34af1ec824/libtorch/lib/libtorch.so (Required is exact version "2.8.0")
+-- Configuring done (4.8s)
+-- Generating done (0.0s)
+-- Build files have been written to: /root/hyle-scratch/compute-unified/h1-offload-wsl/static-relocated-joint
