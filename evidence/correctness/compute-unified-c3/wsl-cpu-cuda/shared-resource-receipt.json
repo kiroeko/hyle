@@ -1,0 +1,20 @@
+{
+  "scope": "Actual complete relocated CPU+CUDA shared SDK independent native math and runtime assets; not H1 joint/async/expert qualification",
+  "candidate": "a2476b62cfe49c1663998645c362392685c06eb1",
+  "actual_routes": "cpu;cuda",
+  "native_cpu_module": "libhyle_ggml_cpu_avx2_456172ec_f99368c68335266b.so",
+  "results": {
+    "graph": {
+      "seconds": "0.76",
+      "missing_runtime_dependencies": []
+    },
+    "direct": {
+      "seconds": "0.85",
+      "missing_runtime_dependencies": []
+    }
+  },
+  "exported_libraries": 28,
+  "exports_inspected": 1654,
+  "LD_LIBRARY_PATH": "",
+  "remaining": "static loop ongoing"
+}

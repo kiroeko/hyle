@@ -441,3 +441,8 @@ WSL CPU+CUDA source Graph1.20s/Direct0.53s 已实际PASS，真实source route为
 [宏/路线证据](../../../../evidence/correctness/compute-unified-c3/wsl-cpu-cuda/source-route-receipt.json)
 绑定冻结来源与CTest。C3当前74 PASS / 16 UNRUN，原shared/static循环继续，source不重跑。
 不把组合SDK签成H1跨设备依赖、异步、重叠或专家迁移；实现LOC仍62,508。
+
+WSL CPU+CUDA relocated shared Graph0.76s/Direct0.85s 也已实际PASS，metadata精确cpu;cuda，
+原CPU程序MODULE在SDK/lib，两个实际consumer的ldd无缺依赖、无LD覆盖；28库/1654导出检查通过。
+[资源收据](../../../../evidence/correctness/compute-unified-c3/wsl-cpu-cuda/shared-resource-receipt.json)
+与CTest/config已归档。C3当前76 PASS / 14 UNRUN，原static循环继续，不重跑source/shared/P1。

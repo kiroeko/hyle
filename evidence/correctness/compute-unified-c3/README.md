@@ -5,7 +5,7 @@ It is not a terminal verdict for all platforms/routes, hybrid execution, or asyn
 
 [Delivery matrix](delivery-matrix.json) fixes the declared applicable scope: 15 platform/route groups,
 45 source/shared/static shapes, each with the existing Direct and Graph consumer. Consumer entries
-are documented per actual receipt; the current matrix records 74 PASS and 16 UNRUN.
+are documented per actual receipt; the current matrix records 76 PASS and 14 UNRUN.
 Earlier Vulkan failures remain archived. A mixed SDK entry runs each selected native route independently
 and cannot certify the later joint execution or asynchronous transfer work.
 
@@ -217,3 +217,8 @@ caches remain; the active CPU+CUDA batch was not touched. No qualification count
 with both independent native mathematical routes. [Source route evidence](wsl-cpu-cuda/source-route-receipt.json)
 confirms exact cpu;cuda configuration and active CPU/CUDA/Graph-oneDNN definitions. The original SDK
 loop continues shared/static. C3 is74/90; no H1 joint/asynchronous/overlap/expert execution is inferred.
+
+WSL CPU+CUDA relocated shared Graph0.76s/Direct0.85s also passed, with exact route metadata,
+the original native CPU MODULE in SDK/lib and both actual consumer ldd results free of missing
+dependencies without LD overrides. [Resource evidence](wsl-cpu-cuda/shared-resource-receipt.json)
+records export hygiene across28 libraries/1654 exports. C3 is76/90; the original static loop continues.
