@@ -123,7 +123,9 @@ Status contracts() {
   HYLE_ASSIGN_OR_RETURN(auto first, slots.upload(0, selected));
   for (std::size_t i = 0; i < 64; ++i) diagonal[i * 64 + i] = 3.0f;
   HYLE_RETURN_IF_ERROR(source.buffer.view().write(std::as_bytes(std::span(diagonal))));
-  HYLE_ASSIGN_OR_RETURN(auto second, slots.upload(1, selected));
+  const std::array next_expert{v::WeightFragment{8, source.view.as_const()}};
+  HYLE_ASSIGN_OR_RETURN(auto second, slots.upload(1, next_expert));
+  HYLE_RETURN_IF_ERROR(require(!second.description(7), "new expert selection retained old ID"));
   HYLE_RETURN_IF_ERROR(invocation.bind(w, first, 7));
   HYLE_RETURN_IF_ERROR(require(!invocation.prepare_replay({.host_wait = g::HostWaitPolicy::kReject}).ok(), "host wait rejection ignored"));
   HYLE_RETURN_IF_ERROR(invocation.prepare_replay());
@@ -135,11 +137,11 @@ Status contracts() {
     HYLE_RETURN_IF_ERROR(require(!invocation.reset().ok(), "old lease did not guard reset"));
   }
   HYLE_RETURN_IF_ERROR(invocation.reset()); HYLE_RETURN_IF_ERROR(require(!invocation.replay_report(), "reset kept stale report"));
-  HYLE_RETURN_IF_ERROR(invocation.bind(x, input.view.as_const())); HYLE_RETURN_IF_ERROR(invocation.bind(w, second, 7)); HYLE_RETURN_IF_ERROR(invocation.prepare_replay());
+  HYLE_RETURN_IF_ERROR(invocation.bind(x, input.view.as_const())); HYLE_RETURN_IF_ERROR(invocation.bind(w, second, 8)); HYLE_RETURN_IF_ERROR(invocation.prepare_replay());
   {
     HYLE_ASSIGN_OR_RETURN(auto result, invocation.run()); HYLE_ASSIGN_OR_RETURN(auto output, result->output(y)); std::array<float, 64> values;
     HYLE_RETURN_IF_ERROR(output.storage().read(std::as_writable_bytes(std::span(values))));
-    for (auto value : values) HYLE_RETURN_IF_ERROR(require(std::abs(value + 3.0f) < 1e-5f, "updated weight did not replay"));
+    for (auto value : values) HYLE_RETURN_IF_ERROR(require(std::abs(value + 3.0f) < 1e-5f, "changed expert ID/payload did not replay"));
   }
   {
     HYLE_ASSIGN_OR_RETURN(auto work, invocation.submit()); HYLE_RETURN_IF_ERROR(work.request_cancel());
