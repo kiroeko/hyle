@@ -1,0 +1,9 @@
+{
+  "scope": "Completed native Linux CPU producer objects only",
+  "removed_directories": [
+    "/root/hyle-scratch/compute-unified/l-cpu/selected-graph/shared-sdk-build",
+    "/root/hyle-scratch/compute-unified/l-cpu/selected-graph/static-sdk-build"
+  ],
+  "removed_bytes": 741239406,
+  "preserved": "both relocated SDKs, source objects, consumers, logs, dependency caches and canonical Windows source"
+}

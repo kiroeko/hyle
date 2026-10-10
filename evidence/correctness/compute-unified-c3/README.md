@@ -184,3 +184,8 @@ WSL CPU static Graph/Direct also passed and the original SDK loop exited0. Both 
 paths include relocated SDK/lib, with the original CPU MODULE present and no LD override. Its source,
 shared and static six-entry group is complete. Updated receipts retain original loader failures.
 C3 is66/90; the next serial WSL CUDA batch has started. H1-H3 remain unimplemented.
+
+[WSL CPU completed-build cleanup](wsl-cpu/cleanup-sdk-build-objects.json) removed741,239,406 bytes
+of two owned completed producer object trees, preserving source objects, relocated SDKs, consumers,
+cache and logs. [Actual CUDA source recipe](wsl-cuda/source-recipe-identity.json) records GCC14 C++,
+the separate NVCC host compiler and absence of HYLE CPU math roots. CUDA math remains unrun.

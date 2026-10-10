@@ -401,3 +401,10 @@ requirements/GCC14.2.0 单头 OBJECT 编译30份均 PASS，实际CPU/oneDNN宏�
 [静态资源证据](../../../../evidence/correctness/compute-unified-c3/wsl-cpu/static-resource-receipt.json)
 与原 source/shared 合成六项三交付资格。C3 当前66 PASS / 24 UNRUN；下一串行 WSL CUDA
 已使用冻结a2476b62来源启动，CPU/source/shared/static不再重跑；H1–H3仍未实施。
+
+完成的WSL CPU两个SDK producer objects目录已按六PASS/exit0、实际SDK metadata及无活动
+CPU批次/受管绝对路径检查后清理，释放741,239,406字节；source对象、两个SDK、全部消费者/
+证据/cache保留。当前CUDA批次不受影响。
+[CUDA源构建身份](../../../../evidence/correctness/compute-unified-c3/wsl-cuda/source-recipe-identity.json)
+确认HYLE CXX为GCC14、NVCC为13.3.73（vendor host GNU13单独记录），CPU backend/oneDNN/
+Native/CPU Graph目录均未取得；这只签配置隔离事实，不签未完成的CUDA数学。

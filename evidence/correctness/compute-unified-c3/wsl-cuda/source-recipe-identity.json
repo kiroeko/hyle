@@ -1,0 +1,19 @@
+{
+  "scope": "CUDA-only actual source build recipe and absent CPU math factors; not completed math verdict",
+  "configuration": {
+    "CMAKE_CUDA_COMPILER": "/usr/local/cuda-13.3/bin/nvcc",
+    "CMAKE_CXX_COMPILER": "/usr/bin/g++-14",
+    "HYLE_COMPUTE_ROUTES": "cuda",
+    "HYLE_STATIC": "OFF"
+  },
+  "absent_cpu_factors": [
+    "compute_backend_cpu",
+    "compute_provider_onednn",
+    "compute_provider_native",
+    "graph_route_cpu"
+  ],
+  "cxx_version": "GNU14.2.0",
+  "nvcc_host_version": "GNU13.3.0 default, separate vendor host compilation",
+  "toolkit": "13.3.73",
+  "product_candidate": "a2476b62cfe49c1663998645c362392685c06eb1"
+}
