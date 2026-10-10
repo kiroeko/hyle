@@ -1,6 +1,6 @@
 # F1：外部资源租约与最后使用后回收
 
-> 状态：SCOPED（2026-10-11）；实施 goal 已建立，尚未写本轮产品代码/建立证书。
+> 状态：AUDITED（2026-10-11），当前先实施 F1-04 的有限 completion 资格修复；其他 F1 接缝继续逐 owner 绑定。
 > component / owner：拟由 compute 负责共同控制；compute_backend_cpu/cuda 与
 > compute_route_cpu/cuda/apple/vulkan 负责实际 native 适配；Graph 及其四路线和 CPU+GPU 适配只改 leased 接缝。
 > 具体改到的 owner 才在启动时绑定；不重开全部 Provider/算子模块。
@@ -19,7 +19,7 @@
 
 - 基线：`edb2714384037b12a3d1e69839aa895fea17cec1`；设计见
   [资源与流送设计](../../../architecture/compute-resource-streaming-design.md)。
-- 本卡已作为 compute/compute_backend_cuda 的当前 SCOPED record；其他 owner 仍按 registry。
+- 本卡已作为 compute/compute_backend_cuda 的当前 AUDITED record；其他 owner 仍按 registry。
   本轮产品验证未运行。已绑定实际 HEAD/工作树，保留后续/用户修改；完成 AUDITED 后才改产品。
 - 主纵切：量化推理的外部状态/权重范围及真实成熟数学消费。
   正交纵切：渲染资产流送和分块矩阵管线；不加入 token/layer/KV policy。
@@ -63,6 +63,38 @@ TensorView 不拥有外部 payload，Graph Results 只保护其原声明 owner�
 - 默认容量有限，满时明确 ResourceExhausted/Unavailable；retain/release 成本与统计冷查询明确。
   close 停接纳并退役本 owner，不同步/关闭用户所有 Queue 或 device。
 - 首轮原生资格先裁决 CUDA unknown observation 的保活疑点；不靠非 OK Status 推断已完成。
+
+## F1-04 AUDIT：固定实现与资格范围
+
+- 基线：`165a67d8e1d8067fcd752b88c735166304e5c550`，两 owner 已 SCOPED，工作树干净。
+- 源码反例已固定：共同 Completion::settle 以空 attachment 调 destroy 后立即 release；
+  若 CUDA 观察返回非terminal错误，destroy 再观察为 Pending，原 attachment 会被过早释放。
+  CUDA poll_slot 当前把全部非Success/NotReady当终态，reaper也照此回收。
+  这是源协议缺陷；原生故障注入资格尚未运行，不能宣称原生产GPU已触发过它。
+- 只改共同 settle 的 attachment 交接与 CUDA poll/wait/destroy 的退役分类；
+  复用 EventSlot 已有 terminal_hint、CompletionRetention、原 CompletionReaper，不增公共对象字段或第二线程。
+- CUDA Success 可退役；NotReady 待定；有官方依据的设备致命错误单列；其他观察错误保存原码并保活。
+  wait 异常只尝试一次原 stream drain；若仍不能证明退役，错误返回但 native owner 保留 attachment，
+  不因 public handle 终结释放。普通成功路径不新增context probe或额外同步。
+- 测试复用现有 HostStreamGate、OwnedCudaBuffer、ResultSlot 与 increment helper，装饰实际 native event query/wait。
+  故障 hook 仅 HYLE_TESTING 的线程局部内部 seam；shipping 无 hook 分支/额外状态。
+  验证 observer failure、wait failure/drain、abandon、首错保留、回收恰一次与实际GPU数学结果。
+- 适用：compute common correctness与CUDA backend correctness/late-failure直接消费者；
+  完整F1数学和三交付仍按F1-05/06/08集中资格，不因本修复就写整包PASS。
+- 用户再次要求已有高性能模块复用及完整开发流程：本批先源码审计/固定改动，实施后分别做review、
+  正确性/成本性能验证与红队；API/算法稳定后才启动适用的有界P1，未运行不写PASS。
+
+### 内部复用映射（F1–F3 必须核对）
+
+| 任务 | 现有承载 | 使用条件/成本 |
+|---|---|---|
+| block/offset分配与有限metadata | Mem RangeAllocator、Fixed/SharedPool、AllocatorRef | 复用范围与容量，不能重复实现树/空闲链；线程同步由实际owner负责 |
+| backing/guard保活 | Util RefCounted、CompletionRetention | 独立业务ref和native use；不把ObjectPool的destroy当warm实例复用 |
+| bytes与quota | ResourceBudget、QuotaAllocator、BufferPool | 去重同backing、old lease仍计入；Mem pool本身不等GPU completion |
+| 冷catalog/IDs与空槽 | Container flat_map/flat_set/dynamic_bitset或已排序固定数组 | 按lookup/内存/批量条件选已有自然路线，不为了形式引入热hash或metadata |
+| 排序校验与host copy | 已有容器算法/成熟byte copy和原native copy | 不自写SIMD复制kernel；需要数值转换则复用已接Provider/typed operation |
+| 进展、背压、取消/关闭 | Sched Semaphore/Channel/Waker/TaskScope/blocking handoff，IO read_exact_at/write_all_at | 无第二event loop/threadpool；原平台capability和生命周期不放宽 |
+| 冷设备/时间/诊断 | Platform、Time、Obs及原route facts/reports | 查询冷路径；普通submit不新增探测、全局registry或计时选路 |
 
 ## 有限 FIX 集
 

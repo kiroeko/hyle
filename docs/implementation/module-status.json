@@ -270,9 +270,9 @@
     },
     {
       "module": "compute",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/foundation-f1-resource-leases.md",
-      "summary": "F1 SCOPED：新资源lease生命周期与原Completion attachment接缝审计；先定向核实CUDA观察错误/退休，不改数学Provider，F1-01至08有限范围。"
+      "summary": "F1 AUDITED：固定共同Completion attachment交接与CUDA观察错误退役资格；复用既有EventSlot/CompletionRetention/Reaper，有限F1-04修复与native故障注入，其他F1接缝按当前卡后续绑定。"
     },
     {
       "module": "graph",
@@ -412,9 +412,9 @@
     },
     {
       "module": "compute_backend_cuda",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/foundation-f1-resource-leases.md",
-      "summary": "F1 SCOPED：核对poll/wait/destroy的非terminal观察错误与lease保活；先冻结错误分类和有限修复，当前尚未写产品代码。"
+      "summary": "F1 AUDITED：固定共同Completion attachment交接与CUDA观察错误退役资格；复用既有EventSlot/CompletionRetention/Reaper，有限F1-04修复与native故障注入，其他F1接缝按当前卡后续绑定。"
     },
     {
       "module": "compute_provider_native",
