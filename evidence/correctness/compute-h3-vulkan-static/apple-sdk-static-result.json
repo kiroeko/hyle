@@ -1,0 +1,120 @@
+{
+  "identity": {
+    "commit": "d2d1e86e3268ceabbcb7fa453eebd03752acb21a",
+    "mode": "static"
+  },
+  "stages": [
+    {
+      "phase": "static-sdk-configure",
+      "argv": [
+        "/opt/homebrew/bin/cmake",
+        "-S",
+        "/Users/kiro/hyle-scratch/compute-unified/source-c8874688",
+        "-B",
+        "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/h3-static-sdk-build",
+        "-G",
+        "Ninja",
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DCMAKE_INSTALL_PREFIX=/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/h3-static-sdk-staging",
+        "-DHYLE_COMPONENTS=graph",
+        "-DHYLE_COMPUTE_ROUTES=cpu;vulkan",
+        "-DHYLE_INSTALL=ON",
+        "-DHYLE_BUILD_TESTS=OFF",
+        "-DHYLE_BUILD_BENCH=OFF",
+        "-DHYLE_STATIC=ON"
+      ],
+      "exit": 0,
+      "stopped": null,
+      "seconds": 15.332071542000001,
+      "owned_peak_rss_bytes": 182697984,
+      "available_bytes_before": 7383941120,
+      "log": "/Users/kiro/hyle-scratch/compute-unified/h3-delivery/static-sdk-configure.log"
+    },
+    {
+      "phase": "static-sdk-build",
+      "argv": [
+        "/opt/homebrew/bin/cmake",
+        "--build",
+        "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/h3-static-sdk-build",
+        "--parallel",
+        "1"
+      ],
+      "exit": 0,
+      "stopped": null,
+      "seconds": 229.036455875,
+      "owned_peak_rss_bytes": 2834235392,
+      "available_bytes_before": 7238270976,
+      "log": "/Users/kiro/hyle-scratch/compute-unified/h3-delivery/static-sdk-build.log"
+    },
+    {
+      "phase": "static-sdk-install",
+      "argv": [
+        "/opt/homebrew/bin/cmake",
+        "--install",
+        "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/h3-static-sdk-build",
+        "--prefix",
+        "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/h3-static-sdk-staging"
+      ],
+      "exit": 0,
+      "stopped": null,
+      "seconds": 1.0411762499999782,
+      "owned_peak_rss_bytes": 2310144,
+      "available_bytes_before": 8442789888,
+      "log": "/Users/kiro/hyle-scratch/compute-unified/h3-delivery/static-sdk-install.log"
+    },
+    {
+      "phase": "static-consumers-configure",
+      "argv": [
+        "/opt/homebrew/bin/cmake",
+        "-S",
+        "/Users/kiro/hyle-scratch/compute-unified/h3-delivery/consumers-static",
+        "-B",
+        "/Users/kiro/hyle-scratch/compute-unified/h3-delivery/consumer-build-static",
+        "-G",
+        "Ninja",
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DCMAKE_PREFIX_PATH=/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/h3-static-sdk-relocated"
+      ],
+      "exit": 0,
+      "stopped": null,
+      "seconds": 2.064263167000007,
+      "owned_peak_rss_bytes": 24068096,
+      "available_bytes_before": 8366833664,
+      "log": "/Users/kiro/hyle-scratch/compute-unified/h3-delivery/static-consumers-configure.log"
+    },
+    {
+      "phase": "static-consumers-build",
+      "argv": [
+        "/opt/homebrew/bin/cmake",
+        "--build",
+        "/Users/kiro/hyle-scratch/compute-unified/h3-delivery/consumer-build-static",
+        "--parallel",
+        "1"
+      ],
+      "exit": 0,
+      "stopped": null,
+      "seconds": 6.146525166999993,
+      "owned_peak_rss_bytes": 256966656,
+      "available_bytes_before": 8357576704,
+      "log": "/Users/kiro/hyle-scratch/compute-unified/h3-delivery/static-consumers-build.log"
+    },
+    {
+      "phase": "static-consumers-run",
+      "argv": [
+        "/opt/homebrew/bin/ctest",
+        "--test-dir",
+        "/Users/kiro/hyle-scratch/compute-unified/h3-delivery/consumer-build-static",
+        "-j",
+        "1",
+        "--output-on-failure"
+      ],
+      "exit": 0,
+      "stopped": null,
+      "seconds": 4.138344583999981,
+      "owned_peak_rss_bytes": 155893760,
+      "available_bytes_before": 8366358528,
+      "log": "/Users/kiro/hyle-scratch/compute-unified/h3-delivery/static-consumers-run.log"
+    }
+  ],
+  "scope": "installed static delivery only; source/overlap has its separate qualification"
+}

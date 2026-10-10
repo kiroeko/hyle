@@ -1,0 +1,15 @@
+Test project /Users/kiro/hyle-scratch/compute-unified/h3-delivery/consumer-build-static
+    Start 1: h3_ordinary_compute
+1/5 Test #1: h3_ordinary_compute ..............   Passed    0.91 sec
+    Start 2: h3_ordinary_graph
+2/5 Test #2: h3_ordinary_graph ................   Passed    0.78 sec
+    Start 3: h3_weights
+3/5 Test #3: h3_weights .......................   Passed    0.69 sec
+    Start 4: h3_coarse
+4/5 Test #4: h3_coarse ........................   Passed    0.73 sec
+    Start 5: h3_contracts
+5/5 Test #5: h3_contracts .....................   Passed    0.72 sec
+
+100% tests passed, 0 tests failed out of 5
+
+Total Test time (real) =   3.83 sec

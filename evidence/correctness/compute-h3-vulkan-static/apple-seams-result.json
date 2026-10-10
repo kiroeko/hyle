@@ -1,0 +1,41 @@
+{
+  "scope": "genuine missing-route SDKs and disabled public headers only",
+  "rows": [
+    {
+      "seam": "missing-cpu",
+      "prefix": "/Users/kiro/hyle-scratch/compute-unified/a-vulkan/selected-graph/shared-sdk-relocated",
+      "exit": 1,
+      "diagnostic": "-- The CXX compiler identification is AppleClang 21.0.0.21000334\n-- Detecting CXX compiler ABI info\n-- Detecting CXX compiler ABI info - done\n-- Check for working CXX compiler: /usr/bin/c++ - skipped\n-- Detecting CXX compile features\n-- Detecting CXX compile features - done\nCMake Error at CMakeLists.txt:10 (find_package):\n  Found package configuration file:\n\n    /Users/kiro/hyle-scratch/compute-unified/a-vulkan/selected-graph/shared-sdk-relocated/lib/cmake/Hyle/HyleConfig.cmake\n\n  but it set Hyle_FOUND to FALSE so package \"Hyle\" is considered to be NOT\n  FOUND.  Reason given by package:\n\n  Hyle SDK does not contain requested Compute route 'cpu'; available: vulkan\n\n\n\n-- Configuring incomplete, errors occurred!\n"
+    },
+    {
+      "seam": "missing-vulkan",
+      "prefix": "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/h2-shared-sdk-relocated",
+      "exit": 1,
+      "diagnostic": "-- The CXX compiler identification is AppleClang 21.0.0.21000334\n-- Detecting CXX compiler ABI info\n-- Detecting CXX compiler ABI info - done\n-- Check for working CXX compiler: /usr/bin/c++ - skipped\n-- Detecting CXX compile features\n-- Detecting CXX compile features - done\nCMake Error at CMakeLists.txt:10 (find_package):\n  Found package configuration file:\n\n    /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/h2-shared-sdk-relocated/lib/cmake/Hyle/HyleConfig.cmake\n\n  but it set Hyle_FOUND to FALSE so package \"Hyle\" is considered to be NOT\n  FOUND.  Reason given by package:\n\n  Hyle SDK does not contain requested Compute route 'vulkan'; available:\n  cpu;apple\n\n\n\n-- Configuring incomplete, errors occurred!\n"
+    },
+    {
+      "seam": "vulkan-disabled-header",
+      "header": "hyle/compute/vulkan.h",
+      "native_sdk_required": false,
+      "exit": 0
+    },
+    {
+      "seam": "vulkan-disabled-header",
+      "header": "hyle/compute/vulkan_memory.h",
+      "native_sdk_required": false,
+      "exit": 0
+    },
+    {
+      "seam": "vulkan-disabled-header",
+      "header": "hyle/compute/vulkan_weights.h",
+      "native_sdk_required": false,
+      "exit": 0
+    },
+    {
+      "seam": "vulkan-disabled-header",
+      "header": "hyle/graph/cpu_vulkan.h",
+      "native_sdk_required": false,
+      "exit": 0
+    }
+  ]
+}

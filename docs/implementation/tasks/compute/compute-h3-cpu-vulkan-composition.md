@@ -200,3 +200,10 @@ Windows static 安装包已完成五消费者、三个新增公开头和真搬�
 11.402 GiB，未触发12 GiB保护，后续不重做该全构建。Air static 与 WSL可适用三交付继续串行；
 未知/未运行不签PASS，WSL实GPU维持已接受UNQUALIFIED。到这两批及最终资源/使用/负空间复核齐全
 才终结 H3。文档/状态切换仅 docs/closure，不能再发起 source/P0全集。
+
+Windows/Air static也已通过五消费者、三新增公开头和真搬迁；同时两个genuine缺路线SDK的配置
+拒绝与四个路线禁用公开头在两端通过。expert ID更新fixture在两端source/shared contracts定向
+通过。上述库代码均是原不可变候选，没有因文档提交重测P0或普通入口。
+[static/边界证据](../../../../evidence/correctness/compute-h3-vulkan-static/README.md)。
+WSL批次仍在其12GiB、SwapMax0 unit中串行执行；只有适用source/static/shared编译/安装/consumer
+链接与头/config门，GPU数学/寿命/overlap继续用户接受的UNQUALIFIED。此处不签该批未完成门。

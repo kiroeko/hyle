@@ -1,0 +1,68 @@
+{
+  "test_commit": "d2d1e86e3",
+  "scope": "Only changed expert-ID contracts, unchanged library implementation",
+  "rows": [
+    {
+      "mode": "source",
+      "stage": "build",
+      "argv": [
+        "cmake",
+        "--build",
+        "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build",
+        "--target",
+        "hyle_h3_cpu_vulkan_contracts",
+        "--parallel",
+        "1"
+      ],
+      "exit": 0,
+      "log": "C:\\h7\\h3-vulkan-delivery\\expert-id-source-build.log"
+    },
+    {
+      "mode": "source",
+      "stage": "run",
+      "argv": [
+        "ctest",
+        "--test-dir",
+        "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build",
+        "-j",
+        "1",
+        "--output-on-failure",
+        "-R",
+        "^hyle_h3_cpu_vulkan_contracts$"
+      ],
+      "exit": 0,
+      "log": "C:\\h7\\h3-vulkan-delivery\\expert-id-source-run.log"
+    },
+    {
+      "mode": "shared",
+      "stage": "build",
+      "argv": [
+        "cmake",
+        "--build",
+        "C:\\h7\\h3-vulkan-delivery\\consumer-build-shared",
+        "--target",
+        "h3_contracts",
+        "--parallel",
+        "1"
+      ],
+      "exit": 0,
+      "log": "C:\\h7\\h3-vulkan-delivery\\expert-id-shared-build.log"
+    },
+    {
+      "mode": "shared",
+      "stage": "run",
+      "argv": [
+        "ctest",
+        "--test-dir",
+        "C:\\h7\\h3-vulkan-delivery\\consumer-build-shared",
+        "-j",
+        "1",
+        "--output-on-failure",
+        "-R",
+        "^h3_contracts$"
+      ],
+      "exit": 0,
+      "log": "C:\\h7\\h3-vulkan-delivery\\expert-id-shared-run.log"
+    }
+  ]
+}

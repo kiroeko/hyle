@@ -1,0 +1,141 @@
+{
+  "candidate": "97f9332ac358b95face192a7edd39cebadfb0265",
+  "rows": [
+    {
+      "stage": "static-sdk-configure",
+      "argv": [
+        "cmake",
+        "-S",
+        "C:\\public\\project-hyle\\hyle",
+        "-B",
+        "C:\\h7\\w-cpu-vulkan\\selected-graph\\h3-static-sdk-build",
+        "-G",
+        "Ninja",
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DCMAKE_INSTALL_PREFIX=C:\\h7\\w-cpu-vulkan\\selected-graph\\h3-static-sdk-staging",
+        "-DHYLE_COMPONENTS=graph",
+        "-DHYLE_COMPUTE_ROUTES=cpu;vulkan",
+        "-DHYLE_INSTALL=ON",
+        "-DHYLE_BUILD_TESTS=OFF",
+        "-DHYLE_BUILD_BENCH=OFF",
+        "-DHYLE_STATIC=ON"
+      ],
+      "exit": 0,
+      "seconds": 59.85899999993853,
+      "stopped": null,
+      "before": {
+        "available_gib": 43.86117172241211,
+        "commit_headroom_gib": 40.13710021972656,
+        "owned_private_gib": 0.01058197021484375
+      },
+      "peak_owned_private_gib": 0.156097412109375,
+      "log": "C:\\h7\\h3-vulkan-delivery\\static-sdk-configure.log"
+    },
+    {
+      "stage": "static-sdk-build",
+      "argv": [
+        "cmake",
+        "--build",
+        "C:\\h7\\w-cpu-vulkan\\selected-graph\\h3-static-sdk-build",
+        "--parallel",
+        "1"
+      ],
+      "exit": 0,
+      "seconds": 1195.09300000011,
+      "stopped": null,
+      "before": {
+        "available_gib": 43.70780944824219,
+        "commit_headroom_gib": 40.0723876953125,
+        "owned_private_gib": 0.01058197021484375
+      },
+      "peak_owned_private_gib": 11.401592254638672,
+      "log": "C:\\h7\\h3-vulkan-delivery\\static-sdk-build.log"
+    },
+    {
+      "stage": "static-sdk-install",
+      "argv": [
+        "cmake",
+        "--install",
+        "C:\\h7\\w-cpu-vulkan\\selected-graph\\h3-static-sdk-build",
+        "--prefix",
+        "C:\\h7\\w-cpu-vulkan\\selected-graph\\h3-static-sdk-staging"
+      ],
+      "exit": 0,
+      "seconds": 5.077999999979511,
+      "stopped": null,
+      "before": {
+        "available_gib": 44.16378402709961,
+        "commit_headroom_gib": 40.471702575683594,
+        "owned_private_gib": 0.010589599609375
+      },
+      "peak_owned_private_gib": 0.015727996826171875,
+      "log": "C:\\h7\\h3-vulkan-delivery\\static-sdk-install.log"
+    },
+    {
+      "stage": "static-consumers-configure",
+      "argv": [
+        "cmake",
+        "-S",
+        "C:\\h7\\h3-vulkan-delivery\\consumers-static",
+        "-B",
+        "C:\\h7\\h3-vulkan-delivery\\consumer-build-static",
+        "-G",
+        "Ninja",
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DCMAKE_PREFIX_PATH=C:\\h7\\w-cpu-vulkan\\selected-graph\\h3-static-sdk-relocated"
+      ],
+      "exit": 0,
+      "seconds": 53.78099999995902,
+      "stopped": null,
+      "before": {
+        "available_gib": 43.36939239501953,
+        "commit_headroom_gib": 40.47116470336914,
+        "owned_private_gib": 0.010589599609375
+      },
+      "peak_owned_private_gib": 0.029052734375,
+      "log": "C:\\h7\\h3-vulkan-delivery\\static-consumers-configure.log"
+    },
+    {
+      "stage": "static-consumers-build",
+      "argv": [
+        "cmake",
+        "--build",
+        "C:\\h7\\h3-vulkan-delivery\\consumer-build-static",
+        "--parallel",
+        "1"
+      ],
+      "exit": 0,
+      "seconds": 21.32799999997951,
+      "stopped": null,
+      "before": {
+        "available_gib": 43.925018310546875,
+        "commit_headroom_gib": 40.32838439941406,
+        "owned_private_gib": 0.010589599609375
+      },
+      "peak_owned_private_gib": 0.5858497619628906,
+      "log": "C:\\h7\\h3-vulkan-delivery\\static-consumers-build.log"
+    },
+    {
+      "stage": "static-consumers-run",
+      "argv": [
+        "ctest",
+        "--test-dir",
+        "C:\\h7\\h3-vulkan-delivery\\consumer-build-static",
+        "-j",
+        "1",
+        "--output-on-failure"
+      ],
+      "exit": 0,
+      "seconds": 3.0469999997876585,
+      "stopped": null,
+      "before": {
+        "available_gib": 43.82561492919922,
+        "commit_headroom_gib": 40.26671600341797,
+        "owned_private_gib": 0.010589599609375
+      },
+      "peak_owned_private_gib": 0.3142585754394531,
+      "log": "C:\\h7\\h3-vulkan-delivery\\static-consumers-run.log"
+    }
+  ],
+  "scope": "installed static delivery/consumers only; other journeys retain their own receipts"
+}
