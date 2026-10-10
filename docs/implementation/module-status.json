@@ -669,6 +669,11 @@
         "tier": "P0",
         "evidence": "docs/implementation/tasks/compute/compute-h2-cpu-apple-composition.md"
       }
+    },
+    {
+      "module": "graph_route_cpu_vulkan",
+      "state": "QUEUED",
+      "summary": "H3已准入的CPU+Vulkan粗片段身份预留；尚无target/源码/资格，不计完成功能。"
     }
   ]
 }
