@@ -38,9 +38,11 @@ task graph，也不拥有模型循环、KV cache、batching、sampling 或 servi
 
 HYLE 提供CPU与一个GPU的显式粗片段组合机制；引擎仍负责模型加载、offload比例/层/专家策略、
 KV和请求循环。CPU+CUDA使用`hyle/graph/cpu_cuda.h`；CPU+MLX/Metal使用
-`hyle/graph/cpu_apple.h`与[可运行样例](../../samples/package/graph/cpu_apple/README.md)。
+`hyle/graph/cpu_apple.h`与[可运行样例](../../samples/package/graph/cpu_apple/README.md)；CPU+Vulkan使用
+`hyle/graph/cpu_vulkan.h`与[可运行样例](../../samples/package/graph/cpu_vulkan/README.md)。
 组合必须选择对应的CPU与GPU路线，并显式给出允许的片段位置、资源和借用owner。GPU-only
-任务缺能力不会隐式转CPU。CPU+Vulkan的同类基础机制仍在后续H3，不能从混合SDK推导已完成。
+任务缺能力不会隐式转CPU。CPU+Vulkan source/shared已在Windows/Air验收，剩余交付以
+[H3卡](../implementation/tasks/compute/compute-h3-cpu-vulkan-composition.md)为准。
 `hybrid replay`仍只表示capture与普通命令组合，和CPU/GPU放置是不同的轴。
 
 ## 普通 CUDA 入口

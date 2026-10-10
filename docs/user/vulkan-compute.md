@@ -445,6 +445,24 @@ shared memory、header/compiler 和 shader pin。默认规则在冷期匹配，�
 设备采用满足限制的成熟基线或明确拒绝；Windows NVIDIA 和 MoltenVK 的证据互不冒充，AMD/Intel
 及其它 dtype 的性能保持未资格化。
 
+## 有界迁移和 CPU 组合
+
+`hyle/compute/vulkan_memory.h`把原 VkBuffer 接为独立 device/staging 资源；普通 CPU 主存不要求
+可被 GPU 直接读取。`hyle/compute/vulkan_weights.h`固定两槽按 ID 和完整 TensorDesc 选择 payload，
+`upload → wait → binding`只发布真实 ready Tensor；批次、Tensor/native owner 阻止覆盖旧权重。
+完整 Direct 入口见[可运行样例](../../samples/package/compute/vulkan_weights/README.md)。
+
+有独立原生 transfer queue 且缓冲允许两 family 时，上传先 copy/signal，再在 compute queue wait；
+ready 仍覆盖 compute ordered prefix。旧分配/外部导入和下载继续走原 compute queue，不能用 host
+fence 等待伪造跨队列可见性。`environment().distinct_transfer_queue`、`transfer_queue_family`与
+`MemoryResource::storage_info().transfer_eligible`是冷能力事实，不是性能 WIN 或任意 GPU 的重叠保证。
+池的关闭或弃置继续用原 native retirement，接纳后失败必须保活到实际终态。
+
+选择 `HYLE_COMPUTE_ROUTES="cpu;vulkan"`自动加入 `hyle/graph/cpu_vulkan.h` 的粗片段组合和 Sched。
+主存、device、staging 分域预算与已准备的上传/等待报告均由组合提供；普通入口与资源限制见
+[组合样例](../../samples/package/graph/cpu_vulkan/README.md)。模型层/offload 比例、KV和专家策略由引擎决定。
+source/shared已在Windows/Air通过；完整当前交付状态见[H3卡](../implementation/tasks/compute/compute-h3-cpu-vulkan-composition.md)。
+
 ## 可选编译诊断
 
 需要保存编译依据时，传入一个独立报告：

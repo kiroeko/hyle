@@ -1,9 +1,10 @@
 # Compute/Graph：统一配置、冷路由与 CPU/GPU 组合设计
 
 > 用户授权的新范围。C1/C2/R1/C3在已接受边界内完成；WSL Vulkan十二项实GPU运行保留未资格而不阻塞。
-> CPU/GPU联合、异步、重叠和expert迁移的H1–H3仍须独立实施验收。
+> CPU/GPU联合、异步、重叠和expert迁移按H1–H3独立实施验收，不借单路线资格代签。
 > 2026-10-10 用户授权补齐 offload 基础边界：普通 CPU 存储与有界传输暂存分离、组合资源账单与预算、
-> 准备后的传输/等待诊断；纳入原 H1–H3，不新增阶段。H1 已完成 Windows/WSL 验收并 CLOSED；H2/H3待实施。
+> 准备后的传输/等待诊断；纳入原 H1–H3，不新增阶段。H1/H2已CLOSED；H3已完成Windows/Air的source、
+> 原生重叠与shared交付，static/WSL可适用交付继续验收。
 > 当前 owner/验收见[实施卡](../implementation/tasks/build/compute-unified-delivery.md)和 registry；
 > [原设计卡](../implementation/tasks/build/compute-entry-design.md)保存入口统计与设计事实。
 > 通用增量依赖图只登记为 DEFER 待办，本轮不实施、不增加组件或热路径成本。
@@ -267,8 +268,9 @@ H1 首先补齐并验证，H2/H3 在各自 native 域兑现相同任务；不复
 
 具体源码反例、owner、H1-07至09及批量验收见
 [H1 terminal](../implementation/tasks/compute/compute-h1-cpu-cuda-composition.md#h1-terminalcpucuda组合基础机制完成)。
-三项已在CPU+CUDA的当前候选完成Windows/WSL验收；CPU+Apple由
-[H2活动卡](../implementation/tasks/compute/compute-h2-cpu-apple-composition.md)继续定界，CPU+Vulkan随后实施。
+三项已由CPU+CUDA的[H1终局](../implementation/tasks/compute/compute-h1-cpu-cuda-composition.md)与CPU+Apple的
+[H2终局](../implementation/tasks/compute/compute-h2-cpu-apple-composition.md)完成适用验收；CPU+Vulkan按
+[H3活动卡](../implementation/tasks/compute/compute-h3-cpu-vulkan-composition.md)补齐剩余交付。
 旧候选或单路线证据只覆盖原合同，不代签这两个新组合。
 
 恢复后先批量完成三项产品接线，API/算法固定再冻结一个新候选，集中验收受影响 source/static/shared
