@@ -139,6 +139,16 @@ Result<Completion> TransferSlot::upload(const Tensor &destination, ConstTensorVi
   return completion;
 }
 
+Status detail::TransferAccess::retain(TransferSlot &slot, const Tensor &tensor) noexcept {
+  if (!slot.state_) return Status::FailedPrecondition("empty Vulkan transfer slot");
+  std::lock_guard lock(slot.state_->runtime->mutex);
+  HYLE_RETURN_IF_ERROR(validate_slot(*slot.state_, tensor));
+  if (slot.state_->submitted)
+    return Status::FailedPrecondition("Vulkan transfer references must be fixed before execution");
+  slot.state_->run->retained_buffers[0] = Access::buffer(slot.state_->staging);
+  slot.state_->run->retained_buffers[1] = Access::buffer(tensor);
+  return Status::Ok();
+}
 Result<Completion> detail::TransferAccess::upload(
     TransferSlot &slot, const Tensor &destination, std::span<const UploadPart> parts,
     std::size_t used) noexcept {

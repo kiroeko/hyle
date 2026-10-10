@@ -15,6 +15,7 @@
 #include "hyle/sched/sync.h"
 #include "hyle/util/ref_counted.h"
 #include "../compute_route_vulkan/vulkan_composition_access.h"
+#include "../compute_route_vulkan/vulkan_transfer_internal.h"
 
 namespace hyle::graph::cpu_vulkan {
 namespace ca = compute::vulkan;
@@ -437,7 +438,10 @@ Result<Invocation> Executable::create_invocation(sched::Scheduler &scheduler, co
         run.fragments[i].arguments.reserve(fragment.inputs.size());
         for (std::size_t port = 0; port < fragment.outputs.size(); ++port) {
           HYLE_ASSIGN_OR_RETURN(auto output, ca::detail::CompositionAccess::output(run.fragments[i].vulkan, port));
-          run.values[fragment.outputs[port]].native_value = std::move(output);
+          auto &value = run.values[fragment.outputs[port]];
+          if (value.transfer.valid())
+            HYLE_RETURN_IF_ERROR(ca::detail::TransferAccess::retain(value.transfer, output));
+          value.native_value = std::move(output);
         }
       }
     }

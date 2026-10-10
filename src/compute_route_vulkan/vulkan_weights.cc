@@ -150,8 +150,9 @@ Result<WeightBatch> WeightSlots::upload(std::size_t slot, std::span<const Weight
 }
 Status WeightSlots::close() noexcept {
   closed_ = true; Status status;
-  for (const auto &state : states_) if (state && state->completion.valid()) {
+  for (const auto &state : states_) if (state) {
     std::lock_guard lock(state->completion_mutex);
+    if (!state->completion.valid()) continue;
     const auto terminal = state->completion.wait();
     if (status.ok()) status = terminal;
   }
