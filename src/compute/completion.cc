@@ -203,14 +203,10 @@ void Completion::settle(Status terminal) const noexcept {
   const detail::CompletionLifetime lifetime =
       lifetime_ != nullptr ? *lifetime_ : detail::CompletionLifetime{};
   lifetime_ = nullptr;
-  // The provider completion state may itself be embedded in the retained
-  // invocation.  Retire it before releasing the attachment's final reference.
+  // An observation error is not proof that native work has retired. The
+  // original runtime owns both state retirement and the attachment handoff.
   if (vtable->destroy != nullptr)
-    vtable->destroy(state, {}, Status::Ok());
-  if (lifetime.valid()) {
-    lifetime.terminal(lifetime.state, terminal_);
-    lifetime.release(lifetime.state);
-  }
+    vtable->destroy(state, lifetime, terminal_);
 }
 
 Status

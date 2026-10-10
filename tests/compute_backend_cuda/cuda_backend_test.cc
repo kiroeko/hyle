@@ -20,6 +20,9 @@
 #include "hyle/error/status.h"
 #include "hyle/mem/stats.h"
 #include "native_context.h"
+#if defined(HYLE_TESTING)
+#include "cuda_internal.h"
+#endif
 
 cudaError_t launch_increment_kernel(cudaStream_t stream, void *data,
                                     std::size_t size) noexcept;
@@ -173,6 +176,132 @@ struct OwnedCudaBuffer final {
     }
   }
 };
+
+#if defined(HYLE_TESTING)
+thread_local bool fail_event_query_once = false;
+thread_local bool fail_event_wait_once = false;
+
+cudaError_t observed_event_query(cudaEvent_t event) noexcept {
+  const auto real = cudaEventQuery(event);
+  if (std::exchange(fail_event_query_once, false)) {
+    EXPECT_EQ(real, cudaErrorNotReady);
+    return cudaErrorMemoryAllocation;
+  }
+  return real;
+}
+
+cudaError_t observed_event_wait(cudaEvent_t event) noexcept {
+  if (std::exchange(fail_event_wait_once, false))
+    return cudaErrorMemoryAllocation;
+  return cudaEventSynchronize(event);
+}
+
+struct ScopedObservationFault final {
+  cuda::detail::CompletionObservationHooks previous;
+  ScopedObservationFault() noexcept
+      : previous(cuda::detail::set_completion_observation_hooks(
+            {&observed_event_query, &observed_event_wait})) {}
+  ~ScopedObservationFault() {
+    cuda::detail::set_completion_observation_hooks(previous);
+    fail_event_query_once = false;
+    fail_event_wait_once = false;
+  }
+};
+
+TEST(CudaBackend, ObservationFailureKeepsActualWorkAndAbandonedOwnerAlive) {
+  using hyle::compute::detail::ResultSlot;
+  auto context = Context::create(cuda::device(0).value()).value();
+  auto queue = context.create_queue().value();
+  ASSERT_TRUE(queue.reserve_completions(1).ok());
+  auto resident =
+      cuda::MemoryResource::create(context, cuda::MemoryKind::kDevice).value();
+  for (bool abandon : {false, true}) {
+    auto destroyed = std::make_shared<std::atomic<int>>(0);
+    HostStreamGate gate;
+    struct ReleaseGate final {
+      HostStreamGate &gate;
+      Context &context;
+      std::shared_ptr<std::atomic<int>> destroyed;
+      bool has_owner = false;
+      void release() noexcept {
+        gate.released.store(true, std::memory_order_release);
+        gate.released.notify_all();
+      }
+      ~ReleaseGate() {
+        release();
+        context.drain().IgnoreError();
+        if (has_owner)
+          destroyed->wait(0, std::memory_order_acquire);
+      }
+    } release{gate, context, destroyed};
+    {
+      auto slot = ResultSlot<OwnedCudaBuffer>::create(mem::system_allocator()).value();
+      auto write = slot.begin().value();
+      auto buffer = mem::Buffer::create(resident.ref(), 256).value();
+      ASSERT_TRUE(buffer.view().fill(std::byte{41}).ok());
+      auto pointer = cuda::pointer<std::byte>(buffer.view()).value();
+      auto warm = cuda::submit(queue, [&](cudaStream_t stream) noexcept {
+        return launch_increment_kernel(stream, pointer, 256);
+      });
+      ASSERT_TRUE(warm.has_value());
+      ASSERT_TRUE(warm->wait().ok());
+      ASSERT_TRUE(buffer.view().fill(std::byte{41}).ok());
+      ASSERT_TRUE(write.emplace(OwnedCudaBuffer(std::move(buffer), destroyed)).ok());
+      release.has_owner = true;
+      auto native = cuda::submit(queue, [&](cudaStream_t stream) noexcept {
+        auto status = cudaLaunchHostFunc(stream, &HostStreamGate::wait, &gate);
+        return status == cudaSuccess ? launch_increment_kernel(stream, pointer, 256)
+                                     : status;
+      });
+      ASSERT_TRUE(native.has_value());
+      auto submitted = write.publish(std::move(*native));
+      ASSERT_TRUE(submitted.has_value());
+      {
+        ScopedObservationFault fault;
+        fail_event_query_once = true;
+        auto pending = submitted->poll();
+        ASSERT_TRUE(pending.has_value());
+        EXPECT_EQ(*pending, CompletionPoll::kPending);
+        EXPECT_EQ(destroyed->load(), 0);
+      }
+      if (!abandon) {
+        release.release();
+        auto result = submitted->wait();
+        ASSERT_FALSE(result.has_value());
+        EXPECT_TRUE(result.error().IsResourceExhausted());
+      }
+    }
+    EXPECT_EQ(destroyed->load(), abandon ? 0 : 1);
+    release.release();
+    ASSERT_TRUE(context.drain().ok());
+    destroyed->wait(0, std::memory_order_acquire);
+    EXPECT_EQ(destroyed->load(), 1);
+  }
+}
+
+TEST(CudaBackend, WaitObservationFailureDrainsOriginalStreamAndPreservesError) {
+  auto context = Context::create(cuda::device(0).value()).value();
+  auto queue = context.create_queue().value();
+  auto resident = cuda::MemoryResource::create(context, cuda::MemoryKind::kDevice).value();
+  auto buffer = mem::Buffer::create(resident.ref(), 256).value();
+  ASSERT_TRUE(buffer.view().fill(std::byte{41}).ok());
+  auto pointer = cuda::pointer<std::byte>(buffer.view()).value();
+  auto completed = cuda::submit(queue, [&](cudaStream_t stream) noexcept {
+    return launch_increment_kernel(stream, pointer, 256);
+  });
+  ASSERT_TRUE(completed.has_value());
+  {
+    ScopedObservationFault fault;
+    fail_event_wait_once = true;
+    EXPECT_TRUE(completed->wait().IsResourceExhausted());
+  }
+  std::array<std::byte, 256> result{};
+  ASSERT_TRUE(buffer.read(0, result).ok());
+  for (auto value : result)
+    EXPECT_EQ(value, std::byte{42});
+  EXPECT_TRUE(completed->wait().IsResourceExhausted());
+}
+#endif
 
 TEST(CudaBackend, OwnedKernelResultWaitAndAbandonmentPreserveNativeStorage) {
   using hyle::compute::detail::ResultSlot;

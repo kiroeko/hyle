@@ -7,7 +7,7 @@ if(HYLE_COMPUTE_CUDA_ENABLED)
   # Keep Toolkit ownership in the CUDA factor so source and installed
   # consumers see the same public header contract while the Driver API remains
   # implementation-private.
-  hyle_add_module(compute_backend_cuda SOURCES
+  hyle_add_module(compute_backend_cuda TESTING SOURCES
     cuda_backend.cc
     driver_release.cc
     cuda_memory.cc

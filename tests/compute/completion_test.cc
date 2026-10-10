@@ -21,6 +21,7 @@ struct AsyncProbe final {
   bool complete = false;
   bool cancelled = false;
   bool destroyed = false;
+  bool observation_failed = false;
   std::size_t polls = 0;
   std::size_t waits = 0;
   std::size_t cancels = 0;
@@ -52,6 +53,8 @@ void destroy_async(
 hyle::Result<hyle::compute::CompletionPoll> poll_async(void *state) noexcept {
   auto &probe = *static_cast<AsyncProbe *>(state);
   ++probe.polls;
+  if (probe.observation_failed)
+    return std::unexpected(hyle::Status::Unavailable("observation failed"));
   if (!probe.complete)
     return hyle::compute::CompletionPoll::kPending;
   if (probe.cancelled)
@@ -466,6 +469,29 @@ TEST(Completion, AbandonedHandleTransfersSavedTailErrorToBackend) {
   async.abandoned = {};
   EXPECT_EQ(lifetime.terminal_code, hyle::StatusCode::Unavailable);
   EXPECT_EQ(lifetime.release_count, 1u);
+}
+
+TEST(Completion, FailedObservationHandsRetentionToActualRuntimeRetirement) {
+  AsyncProbe probe;
+  probe.observation_failed = true;
+  LifetimeProbe lifetime;
+  using namespace hyle::compute::detail;
+  CompletionLifetime attachment{&lifetime, &observe_terminal, &release_lifetime};
+  auto completion = CompletionAccess::make(&kAsyncVTable, &probe);
+  ASSERT_TRUE(CompletionAccess::attach_lifetime(completion, attachment).ok());
+  auto observed = completion.poll();
+  ASSERT_FALSE(observed.has_value());
+  EXPECT_TRUE(observed.error().IsUnavailable());
+  EXPECT_TRUE(probe.abandoned.valid());
+  EXPECT_TRUE(probe.abandoned_hint.IsUnavailable());
+  EXPECT_EQ(lifetime.release_count, 0u);
+  probe.complete = true;
+  probe.abandoned.terminal(probe.abandoned.state, probe.abandoned_hint);
+  probe.abandoned.release(probe.abandoned.state);
+  probe.abandoned = {};
+  EXPECT_EQ(lifetime.release_count, 1u);
+  EXPECT_EQ(lifetime.terminal_count, 1u);
+  EXPECT_EQ(lifetime.terminal_code, hyle::StatusCode::Unavailable);
 }
 
 } // namespace

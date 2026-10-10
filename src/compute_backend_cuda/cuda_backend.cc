@@ -363,45 +363,127 @@ Result<QueueState *> create_queue_state(ContextState *context,
   return result;
 }
 
+namespace {
+
+#if defined(HYLE_TESTING)
+thread_local CompletionObservationHooks observation_hooks;
+#endif
+
+bool terminal_device_error(cudaError_t error) noexcept {
+  switch (error) {
+  case cudaErrorIllegalAddress:
+  case cudaErrorLaunchTimeout:
+  case cudaErrorAssert:
+  case cudaErrorHardwareStackError:
+  case cudaErrorIllegalInstruction:
+  case cudaErrorMisalignedAddress:
+  case cudaErrorInvalidAddressSpace:
+  case cudaErrorInvalidPc:
+  case cudaErrorLaunchFailure:
+    return true;
+  default:
+    return false;
+  }
+}
+
+cudaError_t query_event(cudaEvent_t event) noexcept {
+#if defined(HYLE_TESTING)
+  if (observation_hooks.query != nullptr)
+    return observation_hooks.query(event);
+#endif
+  return cudaEventQuery(event);
+}
+
+cudaError_t wait_event(cudaEvent_t event) noexcept {
+#if defined(HYLE_TESTING)
+  if (observation_hooks.wait != nullptr)
+    return observation_hooks.wait(event);
+#endif
+  return cudaEventSynchronize(event);
+}
+
+Status retire_slot(EventSlot *slot, cudaError_t result) noexcept {
+  settle_status_references(slot);
+  slot->terminal_hint.Update(result == cudaSuccess
+                                ? completed_device_status(slot)
+                                : runtime_status(result));
+  slot->fence = FenceKind::kRetired;
+  return slot->terminal_hint;
+}
+
+} // namespace
+
+#if defined(HYLE_TESTING)
+CompletionObservationHooks
+set_completion_observation_hooks(CompletionObservationHooks hooks) noexcept {
+  return std::exchange(observation_hooks, hooks);
+}
+#endif
+
 Result<CompletionPoll> poll_slot(EventSlot *slot) noexcept {
   if (slot == nullptr || slot->owner == nullptr) {
     return std::unexpected(Status::Internal("CUDA completion slot is invalid"));
   }
   cudaError_t result = cudaSuccess;
+  if (slot->fence == FenceKind::kRetired) {
+    if (!slot->terminal_hint.ok())
+      return std::unexpected(slot->terminal_hint);
+    return CompletionPoll::kComplete;
+  }
   if (slot->fence == FenceKind::kEvent)
-    result = cudaEventQuery(slot->event);
+    result = query_event(slot->event);
   else if (slot->fence == FenceKind::kStreamFallback)
     result = cudaStreamQuery(slot->owner->stream);
   else
     return std::unexpected(
         Status::Internal("CUDA completion was not recorded"));
 
-  if (result == cudaSuccess) {
-    settle_status_references(slot);
-    auto status = completed_device_status(slot);
+  if (result == cudaSuccess || terminal_device_error(result)) {
+    auto status = retire_slot(slot, result);
     if (!status.ok())
       return std::unexpected(std::move(status));
     return CompletionPoll::kComplete;
   }
   if (result == cudaErrorNotReady)
     return CompletionPoll::kPending;
-  settle_status_references(slot);
-  return std::unexpected(runtime_status(result));
+  slot->terminal_hint.Update(runtime_status(result));
+  // A broken observation need not imply a broken stream. This is an
+  // exceptional, nonblocking whole-stream proof; the ordinary path is exact.
+  result = cudaStreamQuery(slot->owner->stream);
+  if (result == cudaSuccess || terminal_device_error(result))
+    return std::unexpected(retire_slot(slot, result));
+  if (result != cudaErrorNotReady)
+    slot->terminal_hint.Update(runtime_status(result));
+  return CompletionPoll::kPending;
 }
 
 Status wait_slot(EventSlot *slot) noexcept {
   if (slot == nullptr || slot->owner == nullptr)
     return Status::Internal("CUDA completion slot is invalid");
   cudaError_t result = cudaSuccess;
+  if (slot->fence == FenceKind::kRetired)
+    return slot->terminal_hint;
   if (slot->fence == FenceKind::kEvent)
-    result = cudaEventSynchronize(slot->event);
+    result = wait_event(slot->event);
   else if (slot->fence == FenceKind::kStreamFallback)
     result = cudaStreamSynchronize(slot->owner->stream);
   else
     return Status::Internal("CUDA completion was not recorded");
-  settle_status_references(slot);
-  return result == cudaSuccess ? completed_device_status(slot)
-                               : runtime_status(result);
+  if (result == cudaSuccess || terminal_device_error(result))
+    return retire_slot(slot, result);
+  slot->terminal_hint.Update(runtime_status(result));
+  // One exceptional drain attempt. An unproved failure remains owned by the
+  // backend destroy/reaper path rather than being mistaken for quiescence.
+  ScopedPrimaryContext scope(slot->owner->context->primary);
+  if (!scope) {
+    slot->terminal_hint.Update(scope.status());
+    return slot->terminal_hint;
+  }
+  result = cudaStreamSynchronize(slot->owner->stream);
+  if (result == cudaSuccess || terminal_device_error(result))
+    return retire_slot(slot, result);
+  slot->terminal_hint.Update(runtime_status(result));
+  return slot->terminal_hint;
 }
 
 void finish_abandoned(EventSlot *slot, Status observed) noexcept {
@@ -448,7 +530,7 @@ void CompletionReaper::retire(EventSlot *slot,
                               Status terminal_hint) noexcept {
   HYLE_FATAL_ASSERT(slot != nullptr);
   slot->lifetime = lifetime;
-  slot->terminal_hint = std::move(terminal_hint);
+  slot->terminal_hint.Update(std::move(terminal_hint));
   {
     std::lock_guard lock(lock_);
     HYLE_FATAL_ASSERT(started_);
@@ -519,7 +601,14 @@ void CompletionReaper::run() noexcept {
     EventSlot *slot = batch;
     batch = batch->next;
     slot->next = nullptr;
-    finish_abandoned(slot, wait_slot(slot));
+    auto observed = wait_slot(slot);
+    if (slot->fence == FenceKind::kRetired) {
+      finish_abandoned(slot, std::move(observed));
+    } else {
+      // Shutdown cannot manufacture completion. Keep this bounded retained
+      // owner quarantined if the driver cannot establish native retirement.
+      append(slot, slot);
+    }
   }
 }
 
@@ -815,7 +904,7 @@ void completion_destroy(void *state,
     return;
   }
   slot->lifetime = lifetime;
-  slot->terminal_hint = std::move(terminal_hint);
+  slot->terminal_hint.Update(std::move(terminal_hint));
   Status observed = Status::Ok();
   if (!result)
     observed = std::move(result).error();

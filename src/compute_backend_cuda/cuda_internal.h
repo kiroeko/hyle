@@ -44,7 +44,17 @@ enum class FenceKind : unsigned char {
   kReserved = 0,
   kEvent,
   kStreamFallback,
+  kRetired,
 };
+
+#if defined(HYLE_TESTING)
+struct CompletionObservationHooks final {
+  cudaError_t (*query)(cudaEvent_t) noexcept = nullptr;
+  cudaError_t (*wait)(cudaEvent_t) noexcept = nullptr;
+};
+HYLE_COMPUTE_BACKEND_CUDA_API CompletionObservationHooks
+set_completion_observation_hooks(CompletionObservationHooks hooks) noexcept;
+#endif
 
 struct EventSlot final {
   QueueState *owner = nullptr;
