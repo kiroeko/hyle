@@ -138,3 +138,6 @@ C3 count is 54/90; Windows CPU+Vulkan and WSL groups remain unrun, and H1-H3 rem
 The [Windows CPU+Vulkan partial receipt](windows-cpu-vulkan-partial.json) now signs its actual source
 Direct/Graph consumers with both native routes enabled. The original serial driver continues
 shared/static; effective C3 count is 56/90. No H3 joint/async/expert claim follows from this math batch.
+Windows CPU+Vulkan shared also passed both relocated ordinary math consumers with exact routes and
+DLLs adjacent to the EXEs. The partial receipt and logs bind the actual identities; effective C3 count
+is 58/90. The original driver continues static; source/shared are not rerun.

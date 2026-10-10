@@ -336,3 +336,7 @@ Windows CPU+Vulkan 新 source Direct0.52s/Graph0.76s 两项真实数学已 PASS�
 [收据](../../../../evidence/correctness/compute-unified-c3/windows-cpu-vulkan-partial.json)保留启动时的
 不可变 source `2b60fa15` 与工具/产品身份。C3 当前56 PASS / 34 UNRUN；原 shared/static
 循环继续，不重启 source root、不跑 P1，仍不签 H3 联合/异步/专家传输。
+
+Windows CPU+Vulkan relocated shared Direct1.17s/Graph1.20s 两项真实数学也已 PASS，
+metadata 精确 `cpu;vulkan`、DLL 邻 EXE、搬迁与闭包 guard 通过。C3当前58 PASS / 32 UNRUN；
+同一原循环继续 static，源码/shared 不重跑，H3仍未实施。
