@@ -361,3 +361,9 @@ MODULE 缺失/恢复也已验证。C3 当前62 PASS / 28 UNRUN；原 shared/stat
 组件合同尾段又发现一个 metadata child 缺真实 target identity，独立工具卡按具体反例
 追加唯一夹具纠正；原 Sched/32-bit/目标身份断言保留。最终全部原合同已分段 PASS/exit0，
 失败与成功段独立归档，工具卡 CLOSED。C3 平台矩阵仍62/90，下一串行 WSL CPU SDK剩余循环。
+
+已安装 Windows CPU+Vulkan 与 CUDA shared SDK 的全部 Compute/Graph 普通、backend、Provider
+目录逐头检查，复用原 `scripts/header-self-contained.py`；实际10组/63份头均 PASS，
+[收据](../../../../evidence/correctness/compute-unified-c3/windows-installed-headers/receipt.json)
+绑定实际 SDK config 与 compiler。此项只签 bare-header self-containment，不代签其它平台、
+静态宏档位或未运行的数学；SDK未重建，无P1，C3消费者计数仍62/90。

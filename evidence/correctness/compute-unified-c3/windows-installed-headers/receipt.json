@@ -1,0 +1,319 @@
+{
+  "scope": "Installed Windows selected Compute/Graph public headers, existing bare-header checker; no SDK rebuild or P1",
+  "compiler": "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\bin\\Hostx64\\x64\\cl.exe",
+  "rows": [
+    {
+      "route": "cpu-vulkan",
+      "header_dir": "compute",
+      "headers": [
+        "completion.h",
+        "cpu.h",
+        "custom_kernel.h",
+        "delegated_operation.h",
+        "device.h",
+        "low_precision.h",
+        "model_ops.h",
+        "operation.h",
+        "ops_visibility.h",
+        "prepared_operation.h",
+        "provider.h",
+        "resource_requirement.h",
+        "result.h",
+        "route_policy.h",
+        "tensor.h",
+        "tensor_desc.h",
+        "transfer.h",
+        "visibility.h",
+        "vulkan.h",
+        "workload.h"
+      ],
+      "exit": 0,
+      "argv": [
+        "C:\\Program Files\\Python312\\python.exe",
+        "C:\\public\\project-hyle\\hyle\\scripts\\header-self-contained.py",
+        "--module",
+        "compute_graph",
+        "--header-dir",
+        "compute",
+        "--include-dir",
+        "C:\\h7\\w-cpu-vulkan\\selected-graph\\shared-sdk-relocated\\include",
+        "--cxx",
+        "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\bin\\Hostx64\\x64\\cl.exe",
+        "--cxx-compiler-id",
+        "MSVC"
+      ],
+      "log": "evidence/correctness/compute-unified-c3/windows-installed-headers/cpu-vulkan-compute.log",
+      "sha256": "f65bc9a20bf486175385185853ca5696270c716c16856ad225994223d2c80db6",
+      "sdk_config_sha256": "4b7dc1f843db24f6be17f790e1940a6e07e7536d8a82e18fcc1da1a095c8f53e"
+    },
+    {
+      "route": "cpu-vulkan",
+      "header_dir": "compute/backends",
+      "headers": [
+        "cpu.h"
+      ],
+      "exit": 0,
+      "argv": [
+        "C:\\Program Files\\Python312\\python.exe",
+        "C:\\public\\project-hyle\\hyle\\scripts\\header-self-contained.py",
+        "--module",
+        "compute_graph",
+        "--header-dir",
+        "compute/backends",
+        "--include-dir",
+        "C:\\h7\\w-cpu-vulkan\\selected-graph\\shared-sdk-relocated\\include",
+        "--cxx",
+        "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\bin\\Hostx64\\x64\\cl.exe",
+        "--cxx-compiler-id",
+        "MSVC"
+      ],
+      "log": "evidence/correctness/compute-unified-c3/windows-installed-headers/cpu-vulkan-compute-backends.log",
+      "sha256": "74c1190d4f465b6a6cc7da335f756c230a8752fa0891039d3473954425e38bb3",
+      "sdk_config_sha256": "4b7dc1f843db24f6be17f790e1940a6e07e7536d8a82e18fcc1da1a095c8f53e"
+    },
+    {
+      "route": "cpu-vulkan",
+      "header_dir": "compute/providers",
+      "headers": [
+        "ggml_cpu.h",
+        "native.h",
+        "onednn.h"
+      ],
+      "exit": 0,
+      "argv": [
+        "C:\\Program Files\\Python312\\python.exe",
+        "C:\\public\\project-hyle\\hyle\\scripts\\header-self-contained.py",
+        "--module",
+        "compute_graph",
+        "--header-dir",
+        "compute/providers",
+        "--include-dir",
+        "C:\\h7\\w-cpu-vulkan\\selected-graph\\shared-sdk-relocated\\include",
+        "--cxx",
+        "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\bin\\Hostx64\\x64\\cl.exe",
+        "--cxx-compiler-id",
+        "MSVC"
+      ],
+      "log": "evidence/correctness/compute-unified-c3/windows-installed-headers/cpu-vulkan-compute-providers.log",
+      "sha256": "0d87ce404b16457bc60a8b8a2944b01cdc90606c2e192abdb452ebb75c0bc03e",
+      "sdk_config_sha256": "4b7dc1f843db24f6be17f790e1940a6e07e7536d8a82e18fcc1da1a095c8f53e"
+    },
+    {
+      "route": "cpu-vulkan",
+      "header_dir": "graph",
+      "headers": [
+        "compile_report.h",
+        "cpu.h",
+        "executable.h",
+        "graph.h",
+        "region_provider.h",
+        "visibility.h",
+        "vulkan.h"
+      ],
+      "exit": 0,
+      "argv": [
+        "C:\\Program Files\\Python312\\python.exe",
+        "C:\\public\\project-hyle\\hyle\\scripts\\header-self-contained.py",
+        "--module",
+        "compute_graph",
+        "--header-dir",
+        "graph",
+        "--include-dir",
+        "C:\\h7\\w-cpu-vulkan\\selected-graph\\shared-sdk-relocated\\include",
+        "--cxx",
+        "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\bin\\Hostx64\\x64\\cl.exe",
+        "--cxx-compiler-id",
+        "MSVC"
+      ],
+      "log": "evidence/correctness/compute-unified-c3/windows-installed-headers/cpu-vulkan-graph.log",
+      "sha256": "4491998f8b953aca632b1a1ea435a903f8ad0cec3ee2084f91abc2611353019a",
+      "sdk_config_sha256": "4b7dc1f843db24f6be17f790e1940a6e07e7536d8a82e18fcc1da1a095c8f53e"
+    },
+    {
+      "route": "cpu-vulkan",
+      "header_dir": "graph/providers",
+      "headers": [
+        "onednn.h"
+      ],
+      "exit": 0,
+      "argv": [
+        "C:\\Program Files\\Python312\\python.exe",
+        "C:\\public\\project-hyle\\hyle\\scripts\\header-self-contained.py",
+        "--module",
+        "compute_graph",
+        "--header-dir",
+        "graph/providers",
+        "--include-dir",
+        "C:\\h7\\w-cpu-vulkan\\selected-graph\\shared-sdk-relocated\\include",
+        "--cxx",
+        "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\bin\\Hostx64\\x64\\cl.exe",
+        "--cxx-compiler-id",
+        "MSVC"
+      ],
+      "log": "evidence/correctness/compute-unified-c3/windows-installed-headers/cpu-vulkan-graph-providers.log",
+      "sha256": "74c1190d4f465b6a6cc7da335f756c230a8752fa0891039d3473954425e38bb3",
+      "sdk_config_sha256": "4b7dc1f843db24f6be17f790e1940a6e07e7536d8a82e18fcc1da1a095c8f53e"
+    },
+    {
+      "route": "cuda",
+      "header_dir": "compute",
+      "headers": [
+        "completion.h",
+        "cuda.h",
+        "custom_kernel.h",
+        "delegated_operation.h",
+        "device.h",
+        "low_precision.h",
+        "model_ops.h",
+        "operation.h",
+        "ops_visibility.h",
+        "prepared_operation.h",
+        "provider.h",
+        "resource_requirement.h",
+        "result.h",
+        "route_policy.h",
+        "tensor.h",
+        "tensor_desc.h",
+        "transfer.h",
+        "visibility.h",
+        "workload.h"
+      ],
+      "exit": 0,
+      "argv": [
+        "C:\\Program Files\\Python312\\python.exe",
+        "C:\\public\\project-hyle\\hyle\\scripts\\header-self-contained.py",
+        "--module",
+        "compute_graph",
+        "--header-dir",
+        "compute",
+        "--include-dir",
+        "C:\\h7\\w-cuda\\selected-graph\\shared-sdk-relocated\\include",
+        "--cxx",
+        "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\bin\\Hostx64\\x64\\cl.exe",
+        "--cxx-compiler-id",
+        "MSVC",
+        "--extra-include-dir",
+        "C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v13.3/include"
+      ],
+      "log": "evidence/correctness/compute-unified-c3/windows-installed-headers/cuda-compute.log",
+      "sha256": "3d5f5f10322c3379f6d6ec2630340fe6d778d4d4f4fad288e696d44d3e63f5d5",
+      "sdk_config_sha256": "c0ff0c8f52773ca0548bfb6c4bf70e2d14de29567a9118ff2eb947c19bbcc269"
+    },
+    {
+      "route": "cuda",
+      "header_dir": "compute/backends",
+      "headers": [
+        "cuda.h"
+      ],
+      "exit": 0,
+      "argv": [
+        "C:\\Program Files\\Python312\\python.exe",
+        "C:\\public\\project-hyle\\hyle\\scripts\\header-self-contained.py",
+        "--module",
+        "compute_graph",
+        "--header-dir",
+        "compute/backends",
+        "--include-dir",
+        "C:\\h7\\w-cuda\\selected-graph\\shared-sdk-relocated\\include",
+        "--cxx",
+        "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\bin\\Hostx64\\x64\\cl.exe",
+        "--cxx-compiler-id",
+        "MSVC",
+        "--extra-include-dir",
+        "C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v13.3/include"
+      ],
+      "log": "evidence/correctness/compute-unified-c3/windows-installed-headers/cuda-compute-backends.log",
+      "sha256": "74c1190d4f465b6a6cc7da335f756c230a8752fa0891039d3473954425e38bb3",
+      "sdk_config_sha256": "c0ff0c8f52773ca0548bfb6c4bf70e2d14de29567a9118ff2eb947c19bbcc269"
+    },
+    {
+      "route": "cuda",
+      "header_dir": "compute/providers",
+      "headers": [
+        "cublas.h",
+        "cuda.h",
+        "ggml_cuda.h",
+        "torch_cuda.h"
+      ],
+      "exit": 0,
+      "argv": [
+        "C:\\Program Files\\Python312\\python.exe",
+        "C:\\public\\project-hyle\\hyle\\scripts\\header-self-contained.py",
+        "--module",
+        "compute_graph",
+        "--header-dir",
+        "compute/providers",
+        "--include-dir",
+        "C:\\h7\\w-cuda\\selected-graph\\shared-sdk-relocated\\include",
+        "--cxx",
+        "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\bin\\Hostx64\\x64\\cl.exe",
+        "--cxx-compiler-id",
+        "MSVC",
+        "--extra-include-dir",
+        "C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v13.3/include"
+      ],
+      "log": "evidence/correctness/compute-unified-c3/windows-installed-headers/cuda-compute-providers.log",
+      "sha256": "18e058e08e6938d720a066d11bf65b9cf946fe74732bbc1bd948b29215d2a8b2",
+      "sdk_config_sha256": "c0ff0c8f52773ca0548bfb6c4bf70e2d14de29567a9118ff2eb947c19bbcc269"
+    },
+    {
+      "route": "cuda",
+      "header_dir": "graph",
+      "headers": [
+        "compile_report.h",
+        "cuda.h",
+        "executable.h",
+        "graph.h",
+        "region_provider.h",
+        "visibility.h"
+      ],
+      "exit": 0,
+      "argv": [
+        "C:\\Program Files\\Python312\\python.exe",
+        "C:\\public\\project-hyle\\hyle\\scripts\\header-self-contained.py",
+        "--module",
+        "compute_graph",
+        "--header-dir",
+        "graph",
+        "--include-dir",
+        "C:\\h7\\w-cuda\\selected-graph\\shared-sdk-relocated\\include",
+        "--cxx",
+        "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\bin\\Hostx64\\x64\\cl.exe",
+        "--cxx-compiler-id",
+        "MSVC",
+        "--extra-include-dir",
+        "C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v13.3/include"
+      ],
+      "log": "evidence/correctness/compute-unified-c3/windows-installed-headers/cuda-graph.log",
+      "sha256": "86cb88f8e4b5c5410f25ecd7946bb88adbbfb8e4f736f217f93c979cdf0890d8",
+      "sdk_config_sha256": "c0ff0c8f52773ca0548bfb6c4bf70e2d14de29567a9118ff2eb947c19bbcc269"
+    },
+    {
+      "route": "cuda",
+      "header_dir": "graph/providers",
+      "headers": [
+        "ggml_cuda.h"
+      ],
+      "exit": 0,
+      "argv": [
+        "C:\\Program Files\\Python312\\python.exe",
+        "C:\\public\\project-hyle\\hyle\\scripts\\header-self-contained.py",
+        "--module",
+        "compute_graph",
+        "--header-dir",
+        "graph/providers",
+        "--include-dir",
+        "C:\\h7\\w-cuda\\selected-graph\\shared-sdk-relocated\\include",
+        "--cxx",
+        "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\bin\\Hostx64\\x64\\cl.exe",
+        "--cxx-compiler-id",
+        "MSVC",
+        "--extra-include-dir",
+        "C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v13.3/include"
+      ],
+      "log": "evidence/correctness/compute-unified-c3/windows-installed-headers/cuda-graph-providers.log",
+      "sha256": "74c1190d4f465b6a6cc7da335f756c230a8752fa0891039d3473954425e38bb3",
+      "sdk_config_sha256": "c0ff0c8f52773ca0548bfb6c4bf70e2d14de29567a9118ff2eb947c19bbcc269"
+    }
+  ]
+}

@@ -4,8 +4,9 @@ This is ongoing validation for the [active delivery card](../../../docs/implemen
 It is not a terminal verdict for all platforms/routes, hybrid execution, or asynchronous expert transfers.
 
 [Delivery matrix](delivery-matrix.json) fixes the declared applicable scope: 15 platform/route groups,
-45 source/shared/static shapes, each with the existing Direct and Graph consumer. Thirty consumer entries
-are currently PASS and the other 60 are UNRUN; earlier Vulkan failures remain archived. A mixed SDK entry runs each selected native route independently
+45 source/shared/static shapes, each with the existing Direct and Graph consumer. Consumer entries
+are documented per actual receipt; the current matrix records 62 PASS and 28 UNRUN.
+Earlier Vulkan failures remain archived. A mixed SDK entry runs each selected native route independently
 and cannot certify the later joint execution or asynchronous transfer work.
 
 [Conditional source-asset producer counterexample](apple-conditional-producer/receipt.json) records a
@@ -152,3 +153,8 @@ target-local Linux native-program loader repair at `a2476b62`. Its verified sour
 failure/diagnostic remain separate. The original ordinary consumer succeeds without LD overrides;
 temporarily missing the owned native MODULE fails before admission and restoring it succeeds.
 C3 now records 62/90 PASS. WSL shared/static and other route batches, and H1-H3, remain unqualified.
+
+[Installed Windows header receipt](windows-installed-headers/receipt.json) records the existing
+bare-header checker on all installed Compute/Graph top-level, backend and Provider headers from the
+CPU+Vulkan and CUDA shared SDKs: 63 headers in ten groups passed. It binds actual compiler and SDK
+metadata; no SDK rebuild, static-macro, other-platform or mathematical qualification is inferred.
