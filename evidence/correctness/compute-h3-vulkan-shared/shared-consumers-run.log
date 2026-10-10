@@ -1,0 +1,15 @@
+Test project C:/h7/h3-vulkan-delivery/consumer-build-shared
+    Start 1: h3_ordinary_compute
+1/5 Test #1: h3_ordinary_compute ..............   Passed    1.55 sec
+    Start 2: h3_ordinary_graph
+2/5 Test #2: h3_ordinary_graph ................   Passed    1.41 sec
+    Start 3: h3_weights
+3/5 Test #3: h3_weights .......................   Passed    0.33 sec
+    Start 4: h3_coarse
+4/5 Test #4: h3_coarse ........................   Passed    0.97 sec
+    Start 5: h3_contracts
+5/5 Test #5: h3_contracts .....................   Passed    0.55 sec
+
+100% tests passed out of 5
+
+Total Test time (real) =   4.91 sec

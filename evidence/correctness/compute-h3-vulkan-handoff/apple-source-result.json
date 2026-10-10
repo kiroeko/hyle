@@ -1,0 +1,90 @@
+{
+  "identity": {
+    "commit": "97f9332ac358b95face192a7edd39cebadfb0265",
+    "archive_sha256": "dcb95568afa605cd1f4d2031638ffc34eced1ac6501a3e4d950707cc42d654ca",
+    "bytes": 164513936
+  },
+  "stages": [
+    {
+      "phase": "source-configure",
+      "argv": [
+        "/opt/homebrew/bin/cmake",
+        "-S",
+        "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/source-parent",
+        "-B",
+        "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/source-build",
+        "-DCMAKE_BUILD_TYPE=Release"
+      ],
+      "exit": 0,
+      "stopped": null,
+      "seconds": 17.390086708000002,
+      "owned_peak_rss_bytes": 200884224,
+      "available_bytes_before": 7160446976,
+      "log": "/Users/kiro/hyle-scratch/compute-unified/h3-handoff/source-configure.log"
+    },
+    {
+      "phase": "source-dry-run",
+      "argv": [
+        "/opt/homebrew/bin/ninja",
+        "-C",
+        "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/source-build",
+        "-n",
+        "hyle_h3_vulkan_weights",
+        "hyle_h3_cpu_vulkan",
+        "hyle_h3_cpu_vulkan_contracts",
+        "hyle_h3_transfer_failure",
+        "hyle_h3_native_overlap",
+        "hyle_selected_source_consumer",
+        "hyle_selected_source_compute"
+      ],
+      "exit": 0,
+      "stopped": null,
+      "seconds": 1.0566875830000022,
+      "owned_peak_rss_bytes": 8126464,
+      "available_bytes_before": 7322566656,
+      "log": "/Users/kiro/hyle-scratch/compute-unified/h3-handoff/source-dry-run.log"
+    },
+    {
+      "phase": "source-build",
+      "argv": [
+        "/opt/homebrew/bin/cmake",
+        "--build",
+        "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/source-build",
+        "--parallel",
+        "1",
+        "--target",
+        "hyle_h3_vulkan_weights",
+        "hyle_h3_cpu_vulkan",
+        "hyle_h3_cpu_vulkan_contracts",
+        "hyle_h3_transfer_failure",
+        "hyle_h3_native_overlap",
+        "hyle_selected_source_consumer",
+        "hyle_selected_source_compute"
+      ],
+      "exit": 0,
+      "stopped": null,
+      "seconds": 42.992072334,
+      "owned_peak_rss_bytes": 762675200,
+      "available_bytes_before": 7218790400,
+      "log": "/Users/kiro/hyle-scratch/compute-unified/h3-handoff/source-build.log"
+    },
+    {
+      "phase": "source-math",
+      "argv": [
+        "/opt/homebrew/bin/ctest",
+        "--test-dir",
+        "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/source-build",
+        "-j",
+        "1",
+        "--output-on-failure"
+      ],
+      "exit": 0,
+      "stopped": null,
+      "seconds": 7.279291916999995,
+      "owned_peak_rss_bytes": 113393664,
+      "available_bytes_before": 7616708608,
+      "log": "/Users/kiro/hyle-scratch/compute-unified/h3-handoff/source-math.log"
+    }
+  ],
+  "scope": "source build/math only; installed SDK and native overlap and installed delivery still outstanding"
+}

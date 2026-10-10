@@ -1,0 +1,19 @@
+Test project C:/h7/w-cpu-vulkan/selected-graph/source-build
+    Start 1: hyle_selected_source_consumer
+1/7 Test #1: hyle_selected_source_consumer ....   Passed    0.63 sec
+    Start 2: hyle_selected_source_compute
+2/7 Test #2: hyle_selected_source_compute .....   Passed    0.56 sec
+    Start 3: hyle_h3_vulkan_weights
+3/7 Test #3: hyle_h3_vulkan_weights ...........   Passed    0.20 sec
+    Start 4: hyle_h3_cpu_vulkan
+4/7 Test #4: hyle_h3_cpu_vulkan ...............   Passed    0.54 sec
+    Start 5: hyle_h3_cpu_vulkan_contracts
+5/7 Test #5: hyle_h3_cpu_vulkan_contracts .....   Passed    0.42 sec
+    Start 6: hyle_h3_transfer_failure
+6/7 Test #6: hyle_h3_transfer_failure .........   Passed    0.20 sec
+    Start 7: hyle_h3_native_overlap
+7/7 Test #7: hyle_h3_native_overlap ...........   Passed    0.28 sec
+
+100% tests passed out of 7
+
+Total Test time (real) =   2.92 sec

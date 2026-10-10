@@ -1,0 +1,133 @@
+{
+  "candidate": "97f9332ac358b95face192a7edd39cebadfb0265",
+  "rows": [
+    {
+      "stage": "shared-install-configure",
+      "argv": [
+        "cmake",
+        "-S",
+        "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-parent",
+        "-B",
+        "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build",
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DCMAKE_INSTALL_PREFIX=C:\\h7\\w-cpu-vulkan\\selected-graph\\h3-shared-sdk-staging"
+      ],
+      "exit": 0,
+      "seconds": 53.78099999995902,
+      "stopped": null,
+      "before": {
+        "available_gib": 44.20939636230469,
+        "commit_headroom_gib": 40.41154098510742,
+        "owned_private_gib": 0.01052093505859375
+      },
+      "peak_owned_private_gib": 0.1534423828125,
+      "log": "C:\\h7\\h3-vulkan-delivery\\shared-install-configure.log"
+    },
+    {
+      "stage": "shared-sdk-build",
+      "argv": [
+        "cmake",
+        "--build",
+        "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build",
+        "--parallel",
+        "1"
+      ],
+      "exit": 0,
+      "seconds": 64.0,
+      "stopped": null,
+      "before": {
+        "available_gib": 43.94596862792969,
+        "commit_headroom_gib": 40.32760238647461,
+        "owned_private_gib": 0.010589599609375
+      },
+      "peak_owned_private_gib": 0.5030288696289062,
+      "log": "C:\\h7\\h3-vulkan-delivery\\shared-sdk-build.log"
+    },
+    {
+      "stage": "shared-sdk-install",
+      "argv": [
+        "cmake",
+        "--install",
+        "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build",
+        "--prefix",
+        "C:\\h7\\w-cpu-vulkan\\selected-graph\\h3-shared-sdk-staging"
+      ],
+      "exit": 0,
+      "seconds": 2.047000000020489,
+      "stopped": null,
+      "before": {
+        "available_gib": 41.024776458740234,
+        "commit_headroom_gib": 37.14168167114258,
+        "owned_private_gib": 0.010486602783203125
+      },
+      "peak_owned_private_gib": 0.015933990478515625,
+      "log": "C:\\h7\\h3-vulkan-delivery\\shared-sdk-install.log"
+    },
+    {
+      "stage": "shared-consumers-configure",
+      "argv": [
+        "cmake",
+        "-S",
+        "C:\\h7\\h3-vulkan-delivery\\consumers-shared",
+        "-B",
+        "C:\\h7\\h3-vulkan-delivery\\consumer-build-shared",
+        "-G",
+        "Ninja",
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DCMAKE_PREFIX_PATH=C:\\h7\\w-cpu-vulkan\\selected-graph\\h3-shared-sdk-relocated"
+      ],
+      "exit": 0,
+      "seconds": 13.218000000109896,
+      "stopped": null,
+      "before": {
+        "available_gib": 40.96037292480469,
+        "commit_headroom_gib": 37.134071350097656,
+        "owned_private_gib": 0.010486602783203125
+      },
+      "peak_owned_private_gib": 0.19894027709960938,
+      "log": "C:\\h7\\h3-vulkan-delivery\\shared-consumers-configure.log"
+    },
+    {
+      "stage": "shared-consumers-build",
+      "argv": [
+        "cmake",
+        "--build",
+        "C:\\h7\\h3-vulkan-delivery\\consumer-build-shared",
+        "--parallel",
+        "1"
+      ],
+      "exit": 0,
+      "seconds": 18.313000000081956,
+      "stopped": null,
+      "before": {
+        "available_gib": 41.13309097290039,
+        "commit_headroom_gib": 37.40283203125,
+        "owned_private_gib": 0.010486602783203125
+      },
+      "peak_owned_private_gib": 0.2781524658203125,
+      "log": "C:\\h7\\h3-vulkan-delivery\\shared-consumers-build.log"
+    },
+    {
+      "stage": "shared-consumers-run",
+      "argv": [
+        "ctest",
+        "--test-dir",
+        "C:\\h7\\h3-vulkan-delivery\\consumer-build-shared",
+        "-j",
+        "1",
+        "--output-on-failure"
+      ],
+      "exit": 0,
+      "seconds": 5.0780000002123415,
+      "stopped": null,
+      "before": {
+        "available_gib": 40.88027572631836,
+        "commit_headroom_gib": 37.15345764160156,
+        "owned_private_gib": 0.010417938232421875
+      },
+      "peak_owned_private_gib": 0.3275413513183594,
+      "log": "C:\\h7\\h3-vulkan-delivery\\shared-consumers-run.log"
+    }
+  ],
+  "scope": "installed shared delivery/consumers only; other journeys retain their own receipts"
+}

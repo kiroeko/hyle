@@ -1,0 +1,102 @@
+{
+  "candidate": "e9c5e2c3b7620937606fbdae7a6bcc80ada0dcec",
+  "rows": [
+    {
+      "stage": "source-configure",
+      "argv": [
+        "cmake",
+        "-S",
+        "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-parent",
+        "-B",
+        "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build",
+        "-DCMAKE_BUILD_TYPE=Release"
+      ],
+      "exit": 0,
+      "seconds": 208.9680000001099,
+      "stopped": null,
+      "before": {
+        "available_gib": 44.460933685302734,
+        "commit_headroom_gib": 40.63868713378906,
+        "owned_private_gib": 0.01058197021484375
+      },
+      "peak_owned_private_gib": 0.15364456176757812,
+      "log": "C:\\h7\\h3-vulkan-handoff\\source-configure.log"
+    },
+    {
+      "stage": "source-dry-run",
+      "argv": [
+        "ninja",
+        "-C",
+        "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build",
+        "-n",
+        "hyle_h3_vulkan_weights",
+        "hyle_h3_cpu_vulkan",
+        "hyle_h3_cpu_vulkan_contracts",
+        "hyle_h3_transfer_failure",
+        "hyle_h3_native_overlap",
+        "hyle_selected_source_compute",
+        "hyle_selected_source_consumer"
+      ],
+      "exit": 0,
+      "seconds": 1.0160000000614673,
+      "stopped": null,
+      "before": {
+        "available_gib": 44.40650177001953,
+        "commit_headroom_gib": 40.6600227355957,
+        "owned_private_gib": 0.010478973388671875
+      },
+      "peak_owned_private_gib": 0.0123138427734375,
+      "log": "C:\\h7\\h3-vulkan-handoff\\source-dry-run.log"
+    },
+    {
+      "stage": "source-build",
+      "argv": [
+        "cmake",
+        "--build",
+        "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build",
+        "--parallel",
+        "1",
+        "--target",
+        "hyle_h3_vulkan_weights",
+        "hyle_h3_cpu_vulkan",
+        "hyle_h3_cpu_vulkan_contracts",
+        "hyle_h3_transfer_failure",
+        "hyle_h3_native_overlap",
+        "hyle_selected_source_compute",
+        "hyle_selected_source_consumer"
+      ],
+      "exit": 0,
+      "seconds": 122.81300000008196,
+      "stopped": null,
+      "before": {
+        "available_gib": 44.42179489135742,
+        "commit_headroom_gib": 40.669979095458984,
+        "owned_private_gib": 0.010478973388671875
+      },
+      "peak_owned_private_gib": 0.5036735534667969,
+      "log": "C:\\h7\\h3-vulkan-handoff\\source-build.log"
+    },
+    {
+      "stage": "source-math-contracts",
+      "argv": [
+        "ctest",
+        "--test-dir",
+        "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build",
+        "-j",
+        "1",
+        "--output-on-failure"
+      ],
+      "exit": 0,
+      "seconds": 3.0469999997876585,
+      "stopped": null,
+      "before": {
+        "available_gib": 44.394378662109375,
+        "commit_headroom_gib": 40.66193389892578,
+        "owned_private_gib": 0.0105133056640625
+      },
+      "peak_owned_private_gib": 0.26361846923828125,
+      "log": "C:\\h7\\h3-vulkan-handoff\\source-math-contracts.log"
+    }
+  ],
+  "scope": "Windows source build/math/contracts; installed delivery and native overlap not yet qualified"
+}

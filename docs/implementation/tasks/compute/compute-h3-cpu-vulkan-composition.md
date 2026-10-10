@@ -174,3 +174,17 @@ available queue 不冒充 overlap 性能资格。FIX 就上述 bridge、受管 B
 定向验证原五项 source、两槽更新/同队列旧 Buffer、copy 接纳后 handoff 拒绝/保活/退休，以及同一
 固定 P0 时间线 Windows/Air。installed batch 在该 API/算法冻结后一次接线；不扩性能仪器或模型算子。
 补充审计已固定，新增 provider owner 进入 AUDITED，现有 route owner 沿追加 FIX 实施。
+
+#### H3-07 验证与交付进展
+
+追加产品 e9c5e2c3b、普通 CMake 消费者 97f9332ac：Windows/Air 各七项 source 全通过，包含原
+Direct/Graph、真实迁移 MatMul、两组合数学、资源寿命与接纳后 handoff 拒绝。旧 buffer 保持原队列，
+新 buffer 的跨 family sharing 与 semaphore handoff 已执行。原 no-overlap 记录保留，新增固定 P0
+实测 RTX 4070 的 17 个 dispatch bracket 与 copy 相交 694,784 ns；Air 的 2 个相交 63,207 ns。
+数学和全部 payload 同时通过，不把它写成 Provider WIN 或所有设备的 overlap 保证。
+[原生 source/失败/P0证据](../../../../evidence/correctness/compute-h3-vulkan-handoff/README.md)。
+
+Windows/Air shared 安装包已真搬迁；每端五个独立安装消费者和三个新增公开头全部通过，Windows
+DLL 在 exe 同路径。[shared证据](../../../../evidence/correctness/compute-h3-vulkan-shared/README.md)。
+static 两端以及 WSL source/static/shared可适用构建仍未签；WSL实GPU运行继续用户已接受的
+UNQUALIFIED。四 owner 保持 AUDITED，不能从 source/shared PASS 提前关闭。

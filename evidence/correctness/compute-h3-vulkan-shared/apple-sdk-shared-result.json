@@ -1,0 +1,112 @@
+{
+  "identity": {
+    "commit": "97f9332ac358b95face192a7edd39cebadfb0265",
+    "mode": "shared"
+  },
+  "stages": [
+    {
+      "phase": "shared-install-configure",
+      "argv": [
+        "/opt/homebrew/bin/cmake",
+        "-S",
+        "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/source-parent",
+        "-B",
+        "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/source-build",
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DCMAKE_INSTALL_PREFIX=/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/h3-shared-sdk-staging"
+      ],
+      "exit": 0,
+      "stopped": null,
+      "seconds": 16.344218292,
+      "owned_peak_rss_bytes": 192364544,
+      "available_bytes_before": 7673397248,
+      "log": "/Users/kiro/hyle-scratch/compute-unified/h3-delivery/shared-install-configure.log"
+    },
+    {
+      "phase": "shared-sdk-build",
+      "argv": [
+        "/opt/homebrew/bin/cmake",
+        "--build",
+        "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/source-build",
+        "--parallel",
+        "1"
+      ],
+      "exit": 0,
+      "stopped": null,
+      "seconds": 13.317844083,
+      "owned_peak_rss_bytes": 660013056,
+      "available_bytes_before": 7474855936,
+      "log": "/Users/kiro/hyle-scratch/compute-unified/h3-delivery/shared-sdk-build.log"
+    },
+    {
+      "phase": "shared-sdk-install",
+      "argv": [
+        "/opt/homebrew/bin/cmake",
+        "--install",
+        "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/source-build",
+        "--prefix",
+        "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/h3-shared-sdk-staging"
+      ],
+      "exit": 0,
+      "stopped": null,
+      "seconds": 1.0459577499999995,
+      "owned_peak_rss_bytes": 8634368,
+      "available_bytes_before": 7504756736,
+      "log": "/Users/kiro/hyle-scratch/compute-unified/h3-delivery/shared-sdk-install.log"
+    },
+    {
+      "phase": "shared-consumers-configure",
+      "argv": [
+        "/opt/homebrew/bin/cmake",
+        "-S",
+        "/Users/kiro/hyle-scratch/compute-unified/h3-delivery/consumers-shared",
+        "-B",
+        "/Users/kiro/hyle-scratch/compute-unified/h3-delivery/consumer-build-shared",
+        "-G",
+        "Ninja",
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DCMAKE_PREFIX_PATH=/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/h3-shared-sdk-relocated"
+      ],
+      "exit": 0,
+      "stopped": null,
+      "seconds": 2.0704920830000013,
+      "owned_peak_rss_bytes": 23822336,
+      "available_bytes_before": 7552909312,
+      "log": "/Users/kiro/hyle-scratch/compute-unified/h3-delivery/shared-consumers-configure.log"
+    },
+    {
+      "phase": "shared-consumers-build",
+      "argv": [
+        "/opt/homebrew/bin/cmake",
+        "--build",
+        "/Users/kiro/hyle-scratch/compute-unified/h3-delivery/consumer-build-shared",
+        "--parallel",
+        "1"
+      ],
+      "exit": 0,
+      "stopped": null,
+      "seconds": 6.156561500000002,
+      "owned_peak_rss_bytes": 260472832,
+      "available_bytes_before": 7547191296,
+      "log": "/Users/kiro/hyle-scratch/compute-unified/h3-delivery/shared-consumers-build.log"
+    },
+    {
+      "phase": "shared-consumers-run",
+      "argv": [
+        "/opt/homebrew/bin/ctest",
+        "--test-dir",
+        "/Users/kiro/hyle-scratch/compute-unified/h3-delivery/consumer-build-shared",
+        "-j",
+        "1",
+        "--output-on-failure"
+      ],
+      "exit": 0,
+      "stopped": null,
+      "seconds": 10.486031707999999,
+      "owned_peak_rss_bytes": 135806976,
+      "available_bytes_before": 7549222912,
+      "log": "/Users/kiro/hyle-scratch/compute-unified/h3-delivery/shared-consumers-run.log"
+    }
+  ],
+  "scope": "installed shared delivery only; source/overlap has its separate qualification"
+}
