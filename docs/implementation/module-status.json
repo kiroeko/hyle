@@ -595,8 +595,9 @@
     },
     {
       "module": "graph_route_cpu_cuda",
-      "state": "QUEUED",
-      "summary": "H1新增可选CPU+CUDA Graph组合owner：粗片段/原生进展/结果槽，隔离CPU/Sched依赖，不增加普通产品或用户开关；先SCOPED/AUDITED。"
+      "state": "SCOPED",
+      "summary": "H1独立可选组合owner SCOPED：自然双端点Graph/分段进展/结果槽，现Sched与CPU/CUDA原生资源，单路线隔离；有限FIX和生命周期范围已定。",
+      "record": "docs/implementation/tasks/compute/compute-h1-cpu-cuda-composition.md"
     }
   ]
 }

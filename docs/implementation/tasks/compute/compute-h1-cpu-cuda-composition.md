@@ -7,6 +7,8 @@
   compute_route_cuda、compute_backend_cpu、compute_backend_cuda、compute_ggml_runtime、
   compute_provider_ggml_cuda、graph_provider_ggml_cuda。
 - trigger：用户新准入的真正CPU/GPU片段执行、有界异步传输/依赖、真实重叠和引擎驱动expert片段迁移。
+- 新增独立可选owner `graph_route_cpu_cuda`：身份6f74cb2d先QUEUED，本轮恢复SCOPED。
+  它拥有组合/进展，不成为新用户产品；普通cpu;cuda自动取得，单路线不取得CPU/Sched依赖。
 - 不重开Apple/Vulkan、Mem/Sched或无具体缺陷的算子owner；是否需要定向底层修复以有限反例为准。
 - C3十二项WSL Vulkan实GPU运行保留UNQUALIFIED，用户明确不block；不代签GPU数学，不阻止本H1。
 
@@ -63,3 +65,56 @@ CUDA streams/events/Completion、现有结果lease与Sched。Provider成熟完�
 
 当前仅SCOPED，尚无产品FIX授权或实现。AUDITED须给出有限coverage/FIX、自然public形状、
 owner/lifetime/concurrency/error与完成账单；H2/H3按其native域后续独立施工，增量图继续DEFER。
+
+## 有限审计裁决
+
+| 能力族 | 当前证据/缺口 | 承载与动作 |
+|---|---|---|
+| 双端点静态typed DAG与粗片段 | 普通guard拒绝跨Device；现NodePlacement/region/liveness/copy规划可复用 | FIX显式cpu_cuda入口；普通guard保持；CPU/CUDA仍用原合格Context/Provider |
+| 成熟混合完整region | 原scheduler存在，但当前CPU ABI不导出backend且通用CPU backend不具备当前AVX2资格 | BORROW既有CPU/CUDA完整region，不新增低资格CPU backend；whole scheduler作为本轮未选承载，不声称其性能失败 |
+| 跨native资源与依赖 | CUDA只接受同context native storage，CPU仅同步Queue；现Graph cold routes、native events完整 | FIX显式有界pinned/device桥与分段进展；转换只走合格程序；不造新Queue |
+| 异步运行/终态/槽/lease | 原submit遇host wait会阻塞；普通output borrowed，ResultSlot已有旧lease防覆盖 | FIX独立组合Invocation与既有结果槽；按segment驱动，不把整图扔到后台线程 |
+| host权重/expert片段迁移 | 原native transfer可用，缺固定容量选择/槽/更新的自然组合 | FIX CUDA route的有界byte-range/ID选择与owned在途状态；数学和模型缓存不下沉 |
+| 交付与构建隔离 | generic Graph不依赖Sched，CUDA-only不可拉CPU math；组合有独立依赖/测试消费者 | FIX新可选组合factor；中央图自动选择，三交付/原路线隔离定向验收 |
+
+### 固定有限FIX
+
+H1-01：新 `graph_route_cpu_cuda` 声明/公开 `hyle/graph/cpu_cuda.h`/实际源码与普通路线集合闭包；
+private依赖既有Sched/Util，public依赖Graph/CPU/CUDA真实类型；不为CUDA-only添加组合依赖。
+
+H1-02：Graph内部显式跨Device编译接缝，仅由新typed CPU+CUDA adapter使用；
+它先验证exact CPU/CUDA Context及同CUDA context的host/device资源；沿现IR、NodePlacement、
+all-port workload、Provider region和冷规划，不删普通sameDevice guard、不改CPU/CUDA优选。
+
+H1-03：可暂停的segment进展复用原计划、prepared span/依赖/terminal retention，
+组合owner借现Sched处理CPU片段，CUDA原生事件驱动后继；保留原阻塞run基线和实际host wait报告。
+只处理当前静态typed DAG；无法保持effects/同步合同的native片段明确拒绝，不静默忽略。
+
+H1-04：组合Invocation固定槽/owned结果、payload绑定更新、cancel/close/晚到完成；
+旧lease持有槽owner，复用前检查全部在途完成/结果引用。借用Context/资源/Sched寿命显式声明；
+close只本组合停止admission并排空，不能关闭应用其它Context/plan。
+
+H1-05：CUDA有界权重/专家片段迁移机制，预先分配至少两组pinned/device容量；
+校验IDs/范围/字节长度/格式边界后选择复制，发布真实DMA completion并在数学队列记录依赖；
+支持每次改变选择/地址但不重选Provider，CPU参与数学与仅host权重上传分别验收。
+
+H1-06：普通双端点C++guide、推理与分块数值真实consumer、目标测试、三交付/安装头/asset与
+无组合能力诊断；接线批量结束后才冻candidate验证，不逐算子/每小改动重建全集。
+
+### Public shape与生命周期冻结
+
+- 组合名空间 `hyle::graph::cpu_cuda`，由显式CPU/CUDA Context和host/device native资源准备。
+  `compile`返回现CompiledGraph；target身份固定CUDA0/CPU1，placement仍用现NodePlacement。
+- `Invocation`作为组合独占可变槽owner，封装原Graph Invocation及CPU/transfer/compute native边界；
+  创建分配/预备workspace，bind/prepare更新固定容量，submit返回现Completion/OwnedResult形式，
+  阻塞run只等待相同终态。至少两slot可供独立上传与计算真实重叠，slot不供重入/并发变绑。
+- 固定结果payload只提供成功ready的只读tensor视图及其保活owner；普通external输入仍借用至终态，
+  外部mutable输出不声称immutable，owned输出旧lease持有时不覆盖。
+- 迁移payload为实际byte ranges及stable expert ID/容量信息，格式/shape边界由真实TensorDesc/编译规则
+  验证；不生成模型角色、cache策略或新的量化格式。错误发生在接纳前可拒绝；已接纳前缀以失败
+  Completion保活并排空，后继不提交，不在运行时换CPU重算。
+- 成本：cold图/region/slot分配；steady仅固定segments与选中fragments线性工作，必要pinned拷贝/
+  DMA/CPU等待计费；metadata opt-in组合factor，普通route对象不加组合常驻字段。
+
+这固定系统性合同与有限改动边界；内部state/容器/native callback细节在FIX中按实源码完成。
+未实现能力仍MISSING/PARTIAL，不把本审计或身份登记算成完成。
