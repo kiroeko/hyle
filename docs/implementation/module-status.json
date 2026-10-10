@@ -270,25 +270,15 @@
     },
     {
       "module": "compute",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/build/compute-c3-hardware-boundary-decision.md",
-      "summary": "C1/C2/R1/C3按用户接受边界CLOSED：统一入口/SDK/资产/配置/安装头与已验平台完成，78数学PASS；WSL Vulkan十二项实GPU运行UNQUALIFIED不阻塞，H1–H3未实现。",
-      "candidate": "2614676ee64bceddadcf791c218d6eea1f051c64",
-      "performance": {
-        "tier": "P0",
-        "evidence": "docs/implementation/tasks/build/compute-c3-hardware-boundary-decision.md"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/compute-h1-cpu-cuda-composition.md",
+      "summary": "H1 SCOPED：用户新增真正CPU+CUDA粗片段执行、异步依赖/真实重叠/有界expert片段迁移；先有限原生审计，不写产品代码，保留C3未资格边界。"
     },
     {
       "module": "graph",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/build/compute-c3-hardware-boundary-decision.md",
-      "summary": "C1/C2/R1/C3按用户接受边界CLOSED：统一入口/SDK/资产/配置/安装头与已验平台完成，78数学PASS；WSL Vulkan十二项实GPU运行UNQUALIFIED不阻塞，H1–H3未实现。",
-      "candidate": "2614676ee64bceddadcf791c218d6eea1f051c64",
-      "performance": {
-        "tier": "P0",
-        "evidence": "docs/implementation/tasks/build/compute-c3-hardware-boundary-decision.md"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/compute-h1-cpu-cuda-composition.md",
+      "summary": "H1 SCOPED：用户新增真正CPU+CUDA粗片段执行、异步依赖/真实重叠/有界expert片段迁移；先有限原生审计，不写产品代码，保留C3未资格边界。"
     },
     {
       "module": "container_concurrent",
@@ -406,25 +396,15 @@
     },
     {
       "module": "compute_backend_cpu",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/build/compute-c3-hardware-boundary-decision.md",
-      "summary": "C1/C2/R1/C3按用户接受边界CLOSED：统一入口/SDK/资产/配置/安装头与已验平台完成，78数学PASS；WSL Vulkan十二项实GPU运行UNQUALIFIED不阻塞，H1–H3未实现。",
-      "candidate": "2614676ee64bceddadcf791c218d6eea1f051c64",
-      "performance": {
-        "tier": "P0",
-        "evidence": "docs/implementation/tasks/build/compute-c3-hardware-boundary-decision.md"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/compute-h1-cpu-cuda-composition.md",
+      "summary": "H1 SCOPED：用户新增真正CPU+CUDA粗片段执行、异步依赖/真实重叠/有界expert片段迁移；先有限原生审计，不写产品代码，保留C3未资格边界。"
     },
     {
       "module": "compute_backend_cuda",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/build/compute-c3-hardware-boundary-decision.md",
-      "summary": "C1/C2/R1/C3按用户接受边界CLOSED：统一入口/SDK/资产/配置/安装头与已验平台完成，78数学PASS；WSL Vulkan十二项实GPU运行UNQUALIFIED不阻塞，H1–H3未实现。",
-      "candidate": "2614676ee64bceddadcf791c218d6eea1f051c64",
-      "performance": {
-        "tier": "P0",
-        "evidence": "docs/implementation/tasks/build/compute-c3-hardware-boundary-decision.md"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/compute-h1-cpu-cuda-composition.md",
+      "summary": "H1 SCOPED：用户新增真正CPU+CUDA粗片段执行、异步依赖/真实重叠/有界expert片段迁移；先有限原生审计，不写产品代码，保留C3未资格边界。"
     },
     {
       "module": "compute_provider_native",
@@ -439,25 +419,15 @@
     },
     {
       "module": "compute_route_cpu",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/build/compute-c3-hardware-boundary-decision.md",
-      "summary": "C1/C2/R1/C3按用户接受边界CLOSED：统一入口/SDK/资产/配置/安装头与已验平台完成，78数学PASS；WSL Vulkan十二项实GPU运行UNQUALIFIED不阻塞，H1–H3未实现。",
-      "candidate": "2614676ee64bceddadcf791c218d6eea1f051c64",
-      "performance": {
-        "tier": "P0",
-        "evidence": "docs/implementation/tasks/build/compute-c3-hardware-boundary-decision.md"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/compute-h1-cpu-cuda-composition.md",
+      "summary": "H1 SCOPED：用户新增真正CPU+CUDA粗片段执行、异步依赖/真实重叠/有界expert片段迁移；先有限原生审计，不写产品代码，保留C3未资格边界。"
     },
     {
       "module": "graph_route_cpu",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/build/compute-c3-hardware-boundary-decision.md",
-      "summary": "C1/C2/R1/C3按用户接受边界CLOSED：统一入口/SDK/资产/配置/安装头与已验平台完成，78数学PASS；WSL Vulkan十二项实GPU运行UNQUALIFIED不阻塞，H1–H3未实现。",
-      "candidate": "2614676ee64bceddadcf791c218d6eea1f051c64",
-      "performance": {
-        "tier": "P0",
-        "evidence": "docs/implementation/tasks/build/compute-c3-hardware-boundary-decision.md"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/compute-h1-cpu-cuda-composition.md",
+      "summary": "H1 SCOPED：用户新增真正CPU+CUDA粗片段执行、异步依赖/真实重叠/有界expert片段迁移；先有限原生审计，不写产品代码，保留C3未资格边界。"
     },
     {
       "module": "compute_provider_cublas",
@@ -495,25 +465,15 @@
     },
     {
       "module": "compute_route_cuda",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/build/compute-c3-hardware-boundary-decision.md",
-      "summary": "C1/C2/R1/C3按用户接受边界CLOSED：统一入口/SDK/资产/配置/安装头与已验平台完成，78数学PASS；WSL Vulkan十二项实GPU运行UNQUALIFIED不阻塞，H1–H3未实现。",
-      "candidate": "2614676ee64bceddadcf791c218d6eea1f051c64",
-      "performance": {
-        "tier": "P0",
-        "evidence": "docs/implementation/tasks/build/compute-c3-hardware-boundary-decision.md"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/compute-h1-cpu-cuda-composition.md",
+      "summary": "H1 SCOPED：用户新增真正CPU+CUDA粗片段执行、异步依赖/真实重叠/有界expert片段迁移；先有限原生审计，不写产品代码，保留C3未资格边界。"
     },
     {
       "module": "graph_route_cuda",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/build/compute-c3-hardware-boundary-decision.md",
-      "summary": "C1/C2/R1/C3按用户接受边界CLOSED：统一入口/SDK/资产/配置/安装头与已验平台完成，78数学PASS；WSL Vulkan十二项实GPU运行UNQUALIFIED不阻塞，H1–H3未实现。",
-      "candidate": "2614676ee64bceddadcf791c218d6eea1f051c64",
-      "performance": {
-        "tier": "P0",
-        "evidence": "docs/implementation/tasks/build/compute-c3-hardware-boundary-decision.md"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/compute-h1-cpu-cuda-composition.md",
+      "summary": "H1 SCOPED：用户新增真正CPU+CUDA粗片段执行、异步依赖/真实重叠/有界expert片段迁移；先有限原生审计，不写产品代码，保留C3未资格边界。"
     },
     {
       "module": "compute_route_apple",
@@ -572,36 +532,21 @@
     },
     {
       "module": "compute_ggml_runtime",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/build/compute-c3-hardware-boundary-decision.md",
-      "summary": "C1/C2/R1/C3按用户接受边界CLOSED：统一入口/SDK/资产/配置/安装头与已验平台完成，78数学PASS；WSL Vulkan十二项实GPU运行UNQUALIFIED不阻塞，H1–H3未实现。",
-      "candidate": "a2476b62cfe49c1663998645c362392685c06eb1",
-      "performance": {
-        "tier": "P0",
-        "evidence": "docs/implementation/tasks/build/compute-c3-hardware-boundary-decision.md"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/compute-h1-cpu-cuda-composition.md",
+      "summary": "H1 SCOPED：用户新增真正CPU+CUDA粗片段执行、异步依赖/真实重叠/有界expert片段迁移；先有限原生审计，不写产品代码，保留C3未资格边界。"
     },
     {
       "module": "compute_provider_ggml_cuda",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/compute/cuda-final-u6-audit.md",
-      "summary": "CUDA有限goal CLOSED：固定模型/量化/MTP完整原计算与状态、两OS CUDA-only/mixed三交付、cold成熟默认/真实能力门、六重复公式BORROW和具名unique保留、U5 42步/源码SDK增量及终审清理完成。AA原FAIL/性能INCONCLUSIVE无新WIN；按授权ENGINEERING_DEFAULT/P0关闭，不签全设备SOTA或推理engine。",
-      "candidate": "657f291f6e4d50b0e1c14ca24cdbe7b1715066e4",
-      "performance": {
-        "tier": "P0",
-        "evidence": "docs/implementation/tasks/compute/cuda-final-u6-audit.md"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/compute-h1-cpu-cuda-composition.md",
+      "summary": "H1 SCOPED：用户新增真正CPU+CUDA粗片段执行、异步依赖/真实重叠/有界expert片段迁移；先有限原生审计，不写产品代码，保留C3未资格边界。"
     },
     {
       "module": "graph_provider_ggml_cuda",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/compute/cuda-final-u6-audit.md",
-      "summary": "CUDA有限goal CLOSED：固定模型/量化/MTP完整原计算与状态、两OS CUDA-only/mixed三交付、cold成熟默认/真实能力门、六重复公式BORROW和具名unique保留、U5 42步/源码SDK增量及终审清理完成。AA原FAIL/性能INCONCLUSIVE无新WIN；按授权ENGINEERING_DEFAULT/P0关闭，不签全设备SOTA或推理engine。",
-      "candidate": "657f291f6e4d50b0e1c14ca24cdbe7b1715066e4",
-      "performance": {
-        "tier": "P0",
-        "evidence": "docs/implementation/tasks/compute/cuda-final-u6-audit.md"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/compute-h1-cpu-cuda-composition.md",
+      "summary": "H1 SCOPED：用户新增真正CPU+CUDA粗片段执行、异步依赖/真实重叠/有界expert片段迁移；先有限原生审计，不写产品代码，保留C3未资格边界。"
     },
     {
       "module": "compute_provider_flashinfer",
