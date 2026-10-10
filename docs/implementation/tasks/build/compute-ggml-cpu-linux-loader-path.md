@@ -60,3 +60,9 @@ Linux shared/static/mixed 仍未签，本 owner 保持 CANDIDATE，继续原剩�
 原 static 两普通消费者也 PASS，完整SDK循环exit0；主程序的实际ELF查找含搬移后的SDK/lib，
 原MODULE可取得，无LD覆盖。Linux CPU六项三交付已完成并独立归档；C3其它Linux/mixed域
 仍待批量资格，本owner保持CANDIDATE，不重跑CPU或Windows/Air/P1。
+
+当前资格对账：Linux CPU+CUDA source/shared/static六项也均实际PASS，无LD覆盖，实际
+relocated shared/static SDK含原AVX2 MODULE、两consumer依赖无缺件。
+[混合CUDA收据](../../../../evidence/correctness/compute-unified-c3/wsl-cpu-cuda-partial.json)
+及其resource receipts保留冻结a2476b62来源/recipe。CPU+Vulkan source/shared编译与安装头已验，
+原static循环仍在运行，实GPU数学因本WSL仅软件设备仍未资格。本owner未因此关闭或重测前序成功域。

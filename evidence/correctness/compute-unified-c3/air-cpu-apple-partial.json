@@ -70,6 +70,8 @@
   "remaining": "Full CPU+Apple source/shared/static six consumers qualified. Earlier CPU-only observations remain separately archived; other C3/H1-H3 still unproven.",
   "batch_exit_code": 0,
   "sdk_log_sha256": "3fe0cefb6994107121b1b96f247a134a235388259d399012bd6c78b90b772b54",
-  "qualification_correction": "Shared/static actual available routes are cpu. Their math passed for CPU only; requested CPU+Apple qualification is withdrawn pending corrected argv and full route guard.",
-  "fixed_sdk_batch_exit_code": 0
+  "qualification_correction": "Original CPU-only shared/static claims were retracted. Corrected ed2dd3c3 driver produced complete cpu;apple SDKs; their four real math consumers passed and fixed_sdk_batch_exit_code is 0. Original CPU-only evidence remains separately archived.",
+  "fixed_sdk_batch_exit_code": 0,
+  "historical_qualification_retraction": "Shared/static actual available routes are cpu. Their math passed for CPU only; requested CPU+Apple qualification is withdrawn pending corrected argv and full route guard.",
+  "current_qualification": "All six declared source/shared/static Direct/Graph entries PASS at their recorded actual identities; not H2 joint/async/expert qualification."
 }

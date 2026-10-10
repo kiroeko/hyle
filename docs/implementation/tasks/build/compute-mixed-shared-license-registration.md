@@ -43,3 +43,9 @@ Air 原目录 configure 与 source Direct/Graph 均已实际 PASS；
 资格纠正：上述 shared/static 的原数学 PASS 实际仅在 CPU SDK 运行；参数转发丢失 Apple，
 四项组合资格已撤回。许可证修正的 source 证据有效，完整 SDK 验收尚未完成，不能称本项适用门全通过。
 见[独立工具修正](compute-delivery-route-argv-repair.md)；恢复 SDK 阶段时仍保留本产品候选和原对象。
+
+当前资格对账：修正后的完整cpu;apple shared/static已用ed2dd3c3原driver完成，四项真实
+Direct/Graph数学全部PASS、SDK循环exit0。新结果在独立air-cpu-apple-fixed，原CPU-only
+日志与撤回事实保留。[当前收据](../../../../evidence/correctness/compute-unified-c3/air-cpu-apple-partial.json)
+六条日志hash和两SDK路线metadata已核实；source身份与SDK工具/来源身份分别保留，不重命名旧产物。
+本有限许可证登记修复的三交付风险已验，owner仍CANDIDATE等待C3统一裁决；不代签H2。
