@@ -221,12 +221,11 @@ const cd::CompletionVTable completion_vtable{
 Status drive_graph(RunState &run, bool &accepted) noexcept {
   // Bind metadata/owners are fixed. No Provider selection, tracing, graph
   // traversal, capacity growth or CPU weight upload occurs in this loop.
-  for (std::size_t id = 0; id < run.values.size(); ++id) {
+  for (auto id : run.plan->inputs) {
     if (run.cancel.load(std::memory_order_acquire))
       return Status::Cancelled("CPU+Apple cancelled before boundary preparation");
     auto &value = run.values[id];
     const auto &spec = run.plan->values[id];
-    if (!spec.id.valid() || spec.id.kind() != ValueKind::kInput) continue;
     if (value.native_input) {
       value.native_value = value.native_input;
       if (spec.cpu_use) {

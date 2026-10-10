@@ -168,6 +168,12 @@ Result<std::shared_ptr<const Plan>> compile_plan(const Graph &graph, Environment
         else plan->values[id.ordinal()].apple_use = true;
       }
     }
+    for (std::size_t i = 0; i < graph.input_count(); ++i) {
+      HYLE_ASSIGN_OR_RETURN(auto id, graph.input_id(i));
+      const auto &value = plan->values[id.ordinal()];
+      if (value.cpu_use || value.apple_use || value.published)
+        plan->inputs.push_back(id.ordinal());
+    }
     for (std::size_t begin = 0; begin < graph.node_count();) {
       if (!needed[begin]) { ++begin; continue; }
       const auto target = targets[begin];

@@ -40,6 +40,7 @@ struct Fragment final {
 struct Plan final {
   explicit Plan(mem::AllocatorRef owner)
       : allocator(owner), values(mem::StdAllocator<Value>(owner)),
+        inputs(mem::StdAllocator<std::size_t>(owner)),
         fragments(mem::StdAllocator<Fragment>(owner)) {}
   mem::AllocatorRef allocator;
   compute::ResourceBudget budget;
@@ -47,6 +48,7 @@ struct Plan final {
   Environment environment;
   compute::detail::ContextRef cpu_context;
   Vector<Value> values;
+  Vector<std::size_t> inputs;
   Vector<Fragment> fragments;
   std::size_t host_workspace_bytes = 0;
 };
