@@ -1,6 +1,6 @@
 # H3：CPU+Vulkan粗片段与offload基础机制
 
-<!-- MODULE REVIEW: AUDITED -->
+<!-- MODULE REVIEW: CANDIDATE -->
 
 - baseline：84e8bc28724df5759cd7d28202dbe78a06e714fe（H2 terminal、Windows唯一产品真相，工作树原干净）。
 - owner：compute_route_vulkan、graph_route_vulkan、新graph_route_cpu_vulkan；其他已关闭owner无具名缺陷不重开。
@@ -187,4 +187,16 @@ Direct/Graph、真实迁移 MatMul、两组合数学、资源寿命与接纳后 
 Windows/Air shared 安装包已真搬迁；每端五个独立安装消费者和三个新增公开头全部通过，Windows
 DLL 在 exe 同路径。[shared证据](../../../../evidence/correctness/compute-h3-vulkan-shared/README.md)。
 static 两端以及 WSL source/static/shared可适用构建仍未签；WSL实GPU运行继续用户已接受的
-UNQUALIFIED。四 owner 保持 AUDITED，不能从 source/shared PASS 提前关闭。
+UNQUALIFIED。该进展快照四 owner 仍为 AUDITED，不能从 source/shared PASS 提前关闭。
+
+## 不可变候选与余项
+
+本轮候选 97f9332ac（完整 SHA 在 registry），包含 H3-01至07的稳定 API/算法及普通 source/package
+入口；后续只有文档/证据和额外测试，没有产品实现变化。四 owner 进入 CANDIDATE，仍未 CLOSED。
+expert ID 固定 catalog 内从7变8、同一预编译 Graph 改绑得到新结果的补充 fixture 已在 Windows
+source/shared 定向通过；只补 contracts，不重做数学、资源实现或原 P0。
+
+Windows static 安装包已完成五消费者、三个新增公开头和真搬迁；初次全依赖 serial build owned peak
+11.402 GiB，未触发12 GiB保护，后续不重做该全构建。Air static 与 WSL可适用三交付继续串行；
+未知/未运行不签PASS，WSL实GPU维持已接受UNQUALIFIED。到这两批及最终资源/使用/负空间复核齐全
+才终结 H3。文档/状态切换仅 docs/closure，不能再发起 source/P0全集。

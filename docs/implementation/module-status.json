@@ -539,21 +539,24 @@
     },
     {
       "module": "compute_route_vulkan",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/compute-h3-cpu-vulkan-composition.md",
-      "summary": "H3 AUDITED：具名native seam审计完成，固定原Buffer/Device、run/fence/pending owner、CPU/Vulkan粗片段与同device/family迁移、共享预算/冷诊断六FIX；开始批量产品接线，不新增数学，WSL保留用户接受的GPU未资格边界。"
+      "summary": "H3 stable native composition/transfer candidate; Windows source/shared/static and Air source/shared qualified, Air static and WSL applicable delivery pending.",
+      "candidate": "97f9332ac358b95face192a7edd39cebadfb0265"
     },
     {
       "module": "graph_route_vulkan",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/compute-h3-cpu-vulkan-composition.md",
-      "summary": "H3 AUDITED：具名native seam审计完成，固定原Buffer/Device、run/fence/pending owner、CPU/Vulkan粗片段与同device/family迁移、共享预算/冷诊断六FIX；开始批量产品接线，不新增数学，WSL保留用户接受的GPU未资格边界。"
+      "summary": "H3 stable native composition/transfer candidate; Windows source/shared/static and Air source/shared qualified, Air static and WSL applicable delivery pending.",
+      "candidate": "97f9332ac358b95face192a7edd39cebadfb0265"
     },
     {
       "module": "compute_provider_ggml_vulkan",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/compute-h3-cpu-vulkan-composition.md",
-      "summary": "H3-07 audited: borrow existing transfer queue and submit locks; fixed shared-family upload, semaphore handoff and partial-prefix retirement, without new math or Provider changes."
+      "summary": "H3 stable native composition/transfer candidate; Windows source/shared/static and Air source/shared qualified, Air static and WSL applicable delivery pending.",
+      "candidate": "97f9332ac358b95face192a7edd39cebadfb0265"
     },
     {
       "module": "compute_ggml_runtime",
@@ -657,9 +660,10 @@
     },
     {
       "module": "graph_route_cpu_vulkan",
-      "state": "AUDITED",
-      "summary": "H3 AUDITED：具名native seam审计完成，固定原Buffer/Device、run/fence/pending owner、CPU/Vulkan粗片段与同device/family迁移、共享预算/冷诊断六FIX；开始批量产品接线，不新增数学，WSL保留用户接受的GPU未资格边界。",
-      "record": "docs/implementation/tasks/compute/compute-h3-cpu-vulkan-composition.md"
+      "state": "CANDIDATE",
+      "summary": "H3 stable native composition/transfer candidate; Windows source/shared/static and Air source/shared qualified, Air static and WSL applicable delivery pending.",
+      "record": "docs/implementation/tasks/compute/compute-h3-cpu-vulkan-composition.md",
+      "candidate": "97f9332ac358b95face192a7edd39cebadfb0265"
     }
   ]
 }
