@@ -270,15 +270,17 @@
     },
     {
       "module": "compute",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/compute-h1-cpu-cuda-composition.md",
-      "summary": "H1 AUDITED：用户已恢复goal；H1-07至09普通CPU存储/有界暂存、共享资源预算和准备诊断首批接线已齐，新增native能力待批量验收；旧候选证据保留，CUDA build1/test1，重型验证串行。"
+      "summary": "H1 CANDIDATE：H1-07至09普通CPU存储/有界暂存、共享请求字节预算及准备诊断已固定；旧证据保留，新候选批量补Windows/WSL数学、资源与三交付，CUDA build1/test1，未运行不签PASS。",
+      "candidate": "7eaf67b8a496ee19b609533980cd69e7efb5aa49"
     },
     {
       "module": "graph",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/compute-h1-cpu-cuda-composition.md",
-      "summary": "H1 AUDITED：用户已恢复goal；H1-07至09普通CPU存储/有界暂存、共享资源预算和准备诊断首批接线已齐，新增native能力待批量验收；旧候选证据保留，CUDA build1/test1，重型验证串行。"
+      "summary": "H1 CANDIDATE：H1-07至09普通CPU存储/有界暂存、共享请求字节预算及准备诊断已固定；旧证据保留，新候选批量补Windows/WSL数学、资源与三交付，CUDA build1/test1，未运行不签PASS。",
+      "candidate": "7eaf67b8a496ee19b609533980cd69e7efb5aa49"
     },
     {
       "module": "container_concurrent",
@@ -396,15 +398,17 @@
     },
     {
       "module": "compute_backend_cpu",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/compute-h1-cpu-cuda-composition.md",
-      "summary": "H1 AUDITED：用户已恢复goal；H1-07至09普通CPU存储/有界暂存、共享资源预算和准备诊断首批接线已齐，新增native能力待批量验收；旧候选证据保留，CUDA build1/test1，重型验证串行。"
+      "summary": "H1 CANDIDATE：H1-07至09普通CPU存储/有界暂存、共享请求字节预算及准备诊断已固定；旧证据保留，新候选批量补Windows/WSL数学、资源与三交付，CUDA build1/test1，未运行不签PASS。",
+      "candidate": "7eaf67b8a496ee19b609533980cd69e7efb5aa49"
     },
     {
       "module": "compute_backend_cuda",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/compute-h1-cpu-cuda-composition.md",
-      "summary": "H1 AUDITED：用户已恢复goal；H1-07至09普通CPU存储/有界暂存、共享资源预算和准备诊断首批接线已齐，新增native能力待批量验收；旧候选证据保留，CUDA build1/test1，重型验证串行。"
+      "summary": "H1 CANDIDATE：H1-07至09普通CPU存储/有界暂存、共享请求字节预算及准备诊断已固定；旧证据保留，新候选批量补Windows/WSL数学、资源与三交付，CUDA build1/test1，未运行不签PASS。",
+      "candidate": "7eaf67b8a496ee19b609533980cd69e7efb5aa49"
     },
     {
       "module": "compute_provider_native",
@@ -419,15 +423,17 @@
     },
     {
       "module": "compute_route_cpu",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/compute-h1-cpu-cuda-composition.md",
-      "summary": "H1 AUDITED：用户已恢复goal；H1-07至09普通CPU存储/有界暂存、共享资源预算和准备诊断首批接线已齐，新增native能力待批量验收；旧候选证据保留，CUDA build1/test1，重型验证串行。"
+      "summary": "H1 CANDIDATE：H1-07至09普通CPU存储/有界暂存、共享请求字节预算及准备诊断已固定；旧证据保留，新候选批量补Windows/WSL数学、资源与三交付，CUDA build1/test1，未运行不签PASS。",
+      "candidate": "7eaf67b8a496ee19b609533980cd69e7efb5aa49"
     },
     {
       "module": "graph_route_cpu",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/compute-h1-cpu-cuda-composition.md",
-      "summary": "H1 AUDITED：用户已恢复goal；H1-07至09普通CPU存储/有界暂存、共享资源预算和准备诊断首批接线已齐，新增native能力待批量验收；旧候选证据保留，CUDA build1/test1，重型验证串行。"
+      "summary": "H1 CANDIDATE：H1-07至09普通CPU存储/有界暂存、共享请求字节预算及准备诊断已固定；旧证据保留，新候选批量补Windows/WSL数学、资源与三交付，CUDA build1/test1，未运行不签PASS。",
+      "candidate": "7eaf67b8a496ee19b609533980cd69e7efb5aa49"
     },
     {
       "module": "compute_provider_cublas",
@@ -465,15 +471,17 @@
     },
     {
       "module": "compute_route_cuda",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/compute-h1-cpu-cuda-composition.md",
-      "summary": "H1 AUDITED：用户已恢复goal；H1-07至09普通CPU存储/有界暂存、共享资源预算和准备诊断首批接线已齐，新增native能力待批量验收；旧候选证据保留，CUDA build1/test1，重型验证串行。"
+      "summary": "H1 CANDIDATE：H1-07至09普通CPU存储/有界暂存、共享请求字节预算及准备诊断已固定；旧证据保留，新候选批量补Windows/WSL数学、资源与三交付，CUDA build1/test1，未运行不签PASS。",
+      "candidate": "7eaf67b8a496ee19b609533980cd69e7efb5aa49"
     },
     {
       "module": "graph_route_cuda",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/compute-h1-cpu-cuda-composition.md",
-      "summary": "H1 AUDITED：用户已恢复goal；H1-07至09普通CPU存储/有界暂存、共享资源预算和准备诊断首批接线已齐，新增native能力待批量验收；旧候选证据保留，CUDA build1/test1，重型验证串行。"
+      "summary": "H1 CANDIDATE：H1-07至09普通CPU存储/有界暂存、共享请求字节预算及准备诊断已固定；旧证据保留，新候选批量补Windows/WSL数学、资源与三交付，CUDA build1/test1，未运行不签PASS。",
+      "candidate": "7eaf67b8a496ee19b609533980cd69e7efb5aa49"
     },
     {
       "module": "compute_route_apple",
@@ -532,21 +540,24 @@
     },
     {
       "module": "compute_ggml_runtime",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/compute-h1-cpu-cuda-composition.md",
-      "summary": "H1 AUDITED：用户已恢复goal；H1-07至09普通CPU存储/有界暂存、共享资源预算和准备诊断首批接线已齐，新增native能力待批量验收；旧候选证据保留，CUDA build1/test1，重型验证串行。"
+      "summary": "H1 CANDIDATE：H1-07至09普通CPU存储/有界暂存、共享请求字节预算及准备诊断已固定；旧证据保留，新候选批量补Windows/WSL数学、资源与三交付，CUDA build1/test1，未运行不签PASS。",
+      "candidate": "7eaf67b8a496ee19b609533980cd69e7efb5aa49"
     },
     {
       "module": "compute_provider_ggml_cuda",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/compute-h1-cpu-cuda-composition.md",
-      "summary": "H1 AUDITED：用户已恢复goal；H1-07至09普通CPU存储/有界暂存、共享资源预算和准备诊断首批接线已齐，新增native能力待批量验收；旧候选证据保留，CUDA build1/test1，重型验证串行。"
+      "summary": "H1 CANDIDATE：H1-07至09普通CPU存储/有界暂存、共享请求字节预算及准备诊断已固定；旧证据保留，新候选批量补Windows/WSL数学、资源与三交付，CUDA build1/test1，未运行不签PASS。",
+      "candidate": "7eaf67b8a496ee19b609533980cd69e7efb5aa49"
     },
     {
       "module": "graph_provider_ggml_cuda",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/compute-h1-cpu-cuda-composition.md",
-      "summary": "H1 AUDITED：用户已恢复goal；H1-07至09普通CPU存储/有界暂存、共享资源预算和准备诊断首批接线已齐，新增native能力待批量验收；旧候选证据保留，CUDA build1/test1，重型验证串行。"
+      "summary": "H1 CANDIDATE：H1-07至09普通CPU存储/有界暂存、共享请求字节预算及准备诊断已固定；旧证据保留，新候选批量补Windows/WSL数学、资源与三交付，CUDA build1/test1，未运行不签PASS。",
+      "candidate": "7eaf67b8a496ee19b609533980cd69e7efb5aa49"
     },
     {
       "module": "compute_provider_flashinfer",
@@ -595,9 +606,10 @@
     },
     {
       "module": "graph_route_cpu_cuda",
-      "state": "AUDITED",
-      "summary": "H1 AUDITED：用户已恢复goal；H1-07至09普通CPU存储/有界暂存、共享资源预算和准备诊断首批接线已齐，新增native能力待批量验收；旧候选证据保留，CUDA build1/test1，重型验证串行。",
-      "record": "docs/implementation/tasks/compute/compute-h1-cpu-cuda-composition.md"
+      "state": "CANDIDATE",
+      "summary": "H1 CANDIDATE：H1-07至09普通CPU存储/有界暂存、共享请求字节预算及准备诊断已固定；旧证据保留，新候选批量补Windows/WSL数学、资源与三交付，CUDA build1/test1，未运行不签PASS。",
+      "record": "docs/implementation/tasks/compute/compute-h1-cpu-cuda-composition.md",
+      "candidate": "7eaf67b8a496ee19b609533980cd69e7efb5aa49"
     }
   ]
 }

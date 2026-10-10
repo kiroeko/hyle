@@ -1,6 +1,6 @@
 # H1：CPU+CUDA 粗片段、异步传输与流式权重
 
-<!-- MODULE REVIEW: AUDITED -->
+<!-- MODULE REVIEW: CANDIDATE -->
 
 - baseline：`061b46700`（C3按用户接受边界CLOSED）；Windows canonical。
 - 当前owner：graph、compute、graph_route_cpu、graph_route_cuda、compute_route_cpu、
@@ -151,7 +151,7 @@ CUDA streams/events/Completion、现有结果lease与Sched。Provider成熟完�
 - 每轮docs/closure/diff；按selector真实owner/消费者选择。文档/状态不重建/P1。
 - 具体阻塞说清，不能用两个Context、mixed SDK、copy/mock或空target冒充本包。
 
-原 H1-01至06审计/接线记录如下；当前恢复范围另含上节 H1-07至09，状态 AUDITED，未签整包完成。
+原 H1-01至06审计/接线记录如下；当前范围另含上节 H1-07至09；当前阶段以本卡标记及末尾候选为准，未签整包完成。
 H2/H3按其native域后续独立施工，增量图继续DEFER。
 
 ## 有限审计裁决
@@ -377,3 +377,13 @@ Windows installed shared SDK的组合/Direct/contracts三个实际消费者均�
 不放宽checker。该验证入口修正不换上述产品候选；WSL只覆盖这三个验证CMake文件，产品输入
 仍来自候选精确archive。共享SDK已生成的producer/库直接复用，只重配三个consumer。
 为了磁盘有界，三个Windows安装消费者的DLL资产共用一个exe目录，仍由统一stage helper完成。
+
+## 当前 Candidate
+
+- 完整不可变产品候选：`7eaf67b8a496ee19b609533980cd69e7efb5aa49`；H1-01至09同一产品范围，当前12个owner进入CANDIDATE。
+- 普通CPU/staging/device三域、共享ResourceBudget及weight选项、冷ResourceReport/ReplayReport已固定。
+- 最新语法/配置/文档与selector授权通过；新增native数学、预算/alias/失败/生命周期、三交付仍未验。
+- Windows沿原source producer对象与installed SDK批量入口；WSL随后精确同步产品候选，保持vendor/cache及未完成对象。
+- CUDA build1/test1，重型run串行；本批driver在每阶段及构建期间核对Windows可用内存，低于12GiB停止自己的进程树并保留对象，不能以中断签PASS。
+- 先source联合/Direct/contracts及普通CPU/CUDA消费者，再shared/static SDK/公开头/资产/搬迁；只修实际失败半径。
+- 不启动P1/C3全集。代码/API/算法/常态成本变化先退回实际owner AUDITED；文档和证据不换本候选。
