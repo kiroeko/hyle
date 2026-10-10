@@ -509,8 +509,8 @@ _hyle_declare_component(compute_provider_torch_cuda
 # Optional coarse CPU+CUDA composition has its own native progress/slot owner.
 # A single route never acquires its CPU or Sched closure.
 _hyle_declare_component(graph_route_cpu_cuda
-  PRIVATE_DEPS util_core sched compute_backend_cpu graph_route_cpu graph_route_cuda
-  PUBLIC_DEPS core graph compute_backend_cuda
+  PRIVATE_DEPS util_core error compute_backend_cpu graph_route_cpu graph_route_cuda
+  PUBLIC_DEPS core graph compute compute_backend_cuda sched
   SPLIT_PUBLIC_HEADERS hyle/graph/cpu_cuda.h)
 
 # Product facades are deliberately outside the factor DAG. They have no source,

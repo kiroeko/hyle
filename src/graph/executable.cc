@@ -7848,8 +7848,12 @@ compute::Queue *detail::SubmissionCursor::pending_queue() const noexcept {
 }
 
 void detail::SubmissionCursor::request_cancel() noexcept {
-  if (!finished_ && tail_error_.ok())
-    tail_error_ = Status::Cancelled("graph successors cancelled");
+  reject_successors(Status::Cancelled("graph successors cancelled"));
+}
+
+void detail::SubmissionCursor::reject_successors(Status terminal) noexcept {
+  if (!finished_ && tail_error_.ok() && !terminal.ok())
+    tail_error_ = std::move(terminal);
 }
 
 Result<bool> detail::SubmissionCursor::advance(bool wait_dependencies) noexcept {

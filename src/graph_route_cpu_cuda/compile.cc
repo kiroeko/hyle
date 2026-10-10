@@ -36,7 +36,7 @@ Result<CompiledGraph> compile(const Graph &graph, Environment environment,
                       .default_storage = kHostStorage}};
   const std::array lanes{ExecutionLane{.target = kCudaTarget},
                         ExecutionLane{.target = kCpuTarget}};
-  return detail::compile_cpu_gpu(
+  return graph::detail::compile_cpu_gpu(
       graph, {.storage_domains = storage, .targets = targets, .lanes = lanes},
       options, compute::cpu::kBackendId, compute::cuda::kBackendId);
 }

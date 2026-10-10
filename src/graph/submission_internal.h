@@ -35,6 +35,8 @@ public:
   }
   HYLE_GRAPH_API compute::Queue *pending_queue() const noexcept;
   HYLE_GRAPH_API void request_cancel() noexcept;
+  // Stop unaccepted successors while preserving the actual failing endpoint.
+  HYLE_GRAPH_API void reject_successors(Status terminal) noexcept;
   // Emits the actual final accepted prefix, including tail failure. This
   // retains all native owners even when its public handle is abandoned.
   HYLE_GRAPH_API Result<compute::Completion> finish() noexcept;

@@ -1,0 +1,42 @@
+{
+  "scope": "H1 partial wiring; syntax and configuration only",
+  "canonical_workspace": "C:\\public\\project-hyle\\hyle",
+  "compiler": "MSVC selected by VS 18 Enterprise VsDevCmd, x64; /std:c++latest /Zs",
+  "syntax_exit_code": 0,
+  "syntax_files": [
+    {
+      "path": "src/graph_route_cpu_cuda/compile.cc",
+      "sha256": "3cab8cebe6feca01810fe2eba23e2b1b66d417b927d949f91bb0f7b7f0009b3b"
+    },
+    {
+      "path": "src/graph_route_cpu_cuda/progress.cc",
+      "sha256": "fd9aa5491165e58ad6d4db9f8fd83b1e6dc139a9199b8760476f9bcbe0b2d3d5"
+    },
+    {
+      "path": "src/graph_route_cpu_cuda/invocation.cc",
+      "sha256": "4ef53725625db0ec33793e29fa4b756a15de7db062486b4316a216042d59cb93"
+    },
+    {
+      "path": "src/graph/executable.cc",
+      "sha256": "4c26a4e2c3a43d4df133c39b5d0926ab1dcc3e85cd63f343580ac003ef854b07"
+    },
+    {
+      "path": "src/compute_backend_cuda/cuda_backend.cc",
+      "sha256": "94b3afff0ba98031463e37c64d529ed212d3f1cc8da279a7910dd2763ef7ba59"
+    }
+  ],
+  "route_configuration": {
+    "entry": "python tests/tooling/compute_routes_test.py",
+    "tests": 11,
+    "verdict": "PASS"
+  },
+  "not_run": [
+    "link",
+    "joint CPU+CUDA math",
+    "async lifetime stress",
+    "copy/compute overlap",
+    "three deliveries",
+    "P1"
+  ],
+  "status": "H1 remains AUDITED"
+}

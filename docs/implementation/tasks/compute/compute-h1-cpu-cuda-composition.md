@@ -151,3 +151,21 @@ owned槽、权重迁移与集中验收。
 尾部，复用Event前必须观察终态；GPU错误可能不调用callback，使用既有fiber-aware timed wait
 与真实native poll观察错误，无新poll线程/忙转。该helper尚待组合Invocation驱动接入和native验收，
 不以函数名或源码推断重叠PASS。当前最近统一LOC统计62805行/273文件，统计后新增唤醒胶水未重计。
+
+H1-03/04继续接线：公开组合Invocation驱动private cursor，使用现Sched detached fiber；
+真实CUDA依赖经原生prefix通知唤醒，delegated episode保留其明确host等待。成功终态才可取得
+Results lease；ResultSlot在bind/prepare前检查旧结果，pending或retained结果拒绝覆盖。
+结果backing与包含ResultSlot的owner分离，避免引用环；公有Completion析构把晚到retention交给
+已保活worker而不隐藏等待，native prefix、通知尾部和result callbacks完成后才开放槽复用。
+取消只挡未接纳后继，close显式排空本Invocation，不关闭调用者Context/Queue/Scheduler。
+独立槽可用独立原生Queue；没有把全图阻塞submit放入后台线程冒充进展。
+
+本批5个实际CPP（组合compile/progress/invocation、Graph executable、CUDA backend）经MSVC
+`/Zs`语法检查通过；11项路线配置tests通过，修正公开Results/Sched直接依赖及private error边。
+该证据只签语法和配置，不签链接、数学、并发、生命周期、真实重叠、三交付或P1。
+H1-05权重/expert迁移及H1-06集中真实consumer与整包验收仍未完成，状态保持AUDITED。
+
+[本批接线记录](../../../../evidence/correctness/compute-h1-wiring/partial-wiring.json)保存实际CPP hash与
+未运行边界；[统一LOC报告](../../../../evidence/architecture/compute-entry-design/loc-h1-invocation.json)
+对已纳入Git的当前工作树统计，self-check PASS：Compute+Graph 63,272实现行/276文件，
+全库自实现不含测试158,499行。该工作树报告不冒充不可变候选或新数学能力完成。
