@@ -411,3 +411,8 @@ Windows static producer已实际构建及安装；installed static组合consumer
 提交余量16GiB、本轮private12GiB，每秒观察；触门仅停止自己stage。这不是硬配额或峰值已验。
 恢复时只续`static-consumers`，不重跑已通过source/shared或static producer。没有产品修改、
 native测试、WSL或P1；用户明确继续前保持重型停止。
+
+[SDK只读检查](../../../../evidence/correctness/compute-h1-offload-windows/sdk-readonly.json)已完成：
+shared/static八个changed头与候选一致，组合导出/Graph facade及recipe一致，61/37个导出库
+位置存在，shared三EXE及可达HYLE DLL共30份PE的直接导入可解析。边界只metadata/文件和
+直接导入，不代签安装头编译、static执行、搬迁或第三方loader内部。未启动编译/应用/WSL。

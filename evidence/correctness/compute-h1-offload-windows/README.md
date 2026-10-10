@@ -50,3 +50,22 @@ gated FFN、共享资源预算的strict/partial、超额回滚、alias去重、�
 只读API还取得本次开机历史提交峰值约178GiB；按Microsoft字段合同，CommitPeak是开机以来
 历史最大值，没有发生时间。最近八小时资源耗尽System event2004未找到；这两项都不能还原
 本次告警瞬间或证明其归因。当前重型停止约束继续有效，恢复标记只能在用户明确继续后使用。
+
+## 已生成SDK的只读检查
+
+[实际结果](sdk-readonly.json)确认shared/static各四个changed公开头与产品候选字节一致，共8项；
+两种SDK的路线集合、内部recipe一致性及组合导出/Graph facade引用正确，导出的61个shared和
+37个static库路径都存在。三份shared EXE及递归可达HYLE DLL共30个PE文件的直接导入可在exe
+目录、Windows System32或Windows API set解析；没有运行EXE或加载CUDA数学。
+
+本检查不解释CMake全部语义、不递归审查第三方DLL内部或loader-only加载，也不签installed
+standalone header编译、static consumer链接/执行、搬迁、WSL或native overlap。上面已通过的
+source/shared实际运行仍复用原receipt；恢复只补缺门，不重复producer。
+
+用户再次询问40GiB编译占用后，只读核对确认当前无cl/nvcc/ptxas/cicc/ninja/cmake/ctest任务，
+`wsl --list --running --quiet`无运行发行版，未为排查启动WSL。最近这批是共享producer转static的
+HYLE库/SIMD及少量CUDA源码编译；原guard停止位置是SIMD
+`math/transcendental_highway.cc`。该TU只编AVX2，但包含Highway、classic-MSVC限定的xsimd及
+HYLE向量数学模板，启用/O2和/Ob2；不能称它单TU重复编译全部ISA。既有单cl约8.2GiB观察
+不等于完整进程树峰值。历史receipt只有整机最小空闲量，无法证明40GiB归属；本轮没有重测
+重型编译来填这个历史缺口。static producer已完成，剩下Windows三份installed consumer。
