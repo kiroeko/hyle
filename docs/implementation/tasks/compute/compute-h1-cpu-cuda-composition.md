@@ -1,6 +1,6 @@
 # H1：CPU+CUDA 粗片段、异步传输与流式权重
 
-<!-- MODULE REVIEW: SCOPED -->
+<!-- MODULE REVIEW: AUDITED -->
 
 - baseline：`061b46700`（C3按用户接受边界CLOSED）；Windows canonical。
 - 当前owner：graph、compute、graph_route_cpu、graph_route_cuda、compute_route_cpu、
@@ -63,8 +63,8 @@ CUDA streams/events/Completion、现有结果lease与Sched。Provider成熟完�
 - 每轮docs/closure/diff；按selector真实owner/消费者选择。文档/状态不重建/P1。
 - 具体阻塞说清，不能用两个Context、mixed SDK、copy/mock或空target冒充本包。
 
-当前仅SCOPED，尚无产品FIX授权或实现。AUDITED须给出有限coverage/FIX、自然public形状、
-owner/lifetime/concurrency/error与完成账单；H2/H3按其native域后续独立施工，增量图继续DEFER。
+当前有限审计已完成并进入AUDITED，仅允许下列H1-01至06产品FIX；实现尚未验收。
+H2/H3按其native域后续独立施工，增量图继续DEFER。
 
 ## 有限审计裁决
 

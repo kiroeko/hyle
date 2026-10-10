@@ -270,15 +270,15 @@
     },
     {
       "module": "compute",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/compute-h1-cpu-cuda-composition.md",
-      "summary": "H1 SCOPED：用户新增真正CPU+CUDA粗片段执行、异步依赖/真实重叠/有界expert片段迁移；先有限原生审计，不写产品代码，保留C3未资格边界。"
+      "summary": "H1 AUDITED：有限H1-01至06固定；独立可选CPU+CUDA组合因子、保留合格region/冷规则、跨native资源/分段异步进展/owned槽及expert迁移；先批量接线后冻结验证。"
     },
     {
       "module": "graph",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/compute-h1-cpu-cuda-composition.md",
-      "summary": "H1 SCOPED：用户新增真正CPU+CUDA粗片段执行、异步依赖/真实重叠/有界expert片段迁移；先有限原生审计，不写产品代码，保留C3未资格边界。"
+      "summary": "H1 AUDITED：有限H1-01至06固定；独立可选CPU+CUDA组合因子、保留合格region/冷规则、跨native资源/分段异步进展/owned槽及expert迁移；先批量接线后冻结验证。"
     },
     {
       "module": "container_concurrent",
@@ -396,15 +396,15 @@
     },
     {
       "module": "compute_backend_cpu",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/compute-h1-cpu-cuda-composition.md",
-      "summary": "H1 SCOPED：用户新增真正CPU+CUDA粗片段执行、异步依赖/真实重叠/有界expert片段迁移；先有限原生审计，不写产品代码，保留C3未资格边界。"
+      "summary": "H1 AUDITED：有限H1-01至06固定；独立可选CPU+CUDA组合因子、保留合格region/冷规则、跨native资源/分段异步进展/owned槽及expert迁移；先批量接线后冻结验证。"
     },
     {
       "module": "compute_backend_cuda",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/compute-h1-cpu-cuda-composition.md",
-      "summary": "H1 SCOPED：用户新增真正CPU+CUDA粗片段执行、异步依赖/真实重叠/有界expert片段迁移；先有限原生审计，不写产品代码，保留C3未资格边界。"
+      "summary": "H1 AUDITED：有限H1-01至06固定；独立可选CPU+CUDA组合因子、保留合格region/冷规则、跨native资源/分段异步进展/owned槽及expert迁移；先批量接线后冻结验证。"
     },
     {
       "module": "compute_provider_native",
@@ -419,15 +419,15 @@
     },
     {
       "module": "compute_route_cpu",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/compute-h1-cpu-cuda-composition.md",
-      "summary": "H1 SCOPED：用户新增真正CPU+CUDA粗片段执行、异步依赖/真实重叠/有界expert片段迁移；先有限原生审计，不写产品代码，保留C3未资格边界。"
+      "summary": "H1 AUDITED：有限H1-01至06固定；独立可选CPU+CUDA组合因子、保留合格region/冷规则、跨native资源/分段异步进展/owned槽及expert迁移；先批量接线后冻结验证。"
     },
     {
       "module": "graph_route_cpu",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/compute-h1-cpu-cuda-composition.md",
-      "summary": "H1 SCOPED：用户新增真正CPU+CUDA粗片段执行、异步依赖/真实重叠/有界expert片段迁移；先有限原生审计，不写产品代码，保留C3未资格边界。"
+      "summary": "H1 AUDITED：有限H1-01至06固定；独立可选CPU+CUDA组合因子、保留合格region/冷规则、跨native资源/分段异步进展/owned槽及expert迁移；先批量接线后冻结验证。"
     },
     {
       "module": "compute_provider_cublas",
@@ -465,15 +465,15 @@
     },
     {
       "module": "compute_route_cuda",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/compute-h1-cpu-cuda-composition.md",
-      "summary": "H1 SCOPED：用户新增真正CPU+CUDA粗片段执行、异步依赖/真实重叠/有界expert片段迁移；先有限原生审计，不写产品代码，保留C3未资格边界。"
+      "summary": "H1 AUDITED：有限H1-01至06固定；独立可选CPU+CUDA组合因子、保留合格region/冷规则、跨native资源/分段异步进展/owned槽及expert迁移；先批量接线后冻结验证。"
     },
     {
       "module": "graph_route_cuda",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/compute-h1-cpu-cuda-composition.md",
-      "summary": "H1 SCOPED：用户新增真正CPU+CUDA粗片段执行、异步依赖/真实重叠/有界expert片段迁移；先有限原生审计，不写产品代码，保留C3未资格边界。"
+      "summary": "H1 AUDITED：有限H1-01至06固定；独立可选CPU+CUDA组合因子、保留合格region/冷规则、跨native资源/分段异步进展/owned槽及expert迁移；先批量接线后冻结验证。"
     },
     {
       "module": "compute_route_apple",
@@ -532,21 +532,21 @@
     },
     {
       "module": "compute_ggml_runtime",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/compute-h1-cpu-cuda-composition.md",
-      "summary": "H1 SCOPED：用户新增真正CPU+CUDA粗片段执行、异步依赖/真实重叠/有界expert片段迁移；先有限原生审计，不写产品代码，保留C3未资格边界。"
+      "summary": "H1 AUDITED：有限H1-01至06固定；独立可选CPU+CUDA组合因子、保留合格region/冷规则、跨native资源/分段异步进展/owned槽及expert迁移；先批量接线后冻结验证。"
     },
     {
       "module": "compute_provider_ggml_cuda",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/compute-h1-cpu-cuda-composition.md",
-      "summary": "H1 SCOPED：用户新增真正CPU+CUDA粗片段执行、异步依赖/真实重叠/有界expert片段迁移；先有限原生审计，不写产品代码，保留C3未资格边界。"
+      "summary": "H1 AUDITED：有限H1-01至06固定；独立可选CPU+CUDA组合因子、保留合格region/冷规则、跨native资源/分段异步进展/owned槽及expert迁移；先批量接线后冻结验证。"
     },
     {
       "module": "graph_provider_ggml_cuda",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/compute-h1-cpu-cuda-composition.md",
-      "summary": "H1 SCOPED：用户新增真正CPU+CUDA粗片段执行、异步依赖/真实重叠/有界expert片段迁移；先有限原生审计，不写产品代码，保留C3未资格边界。"
+      "summary": "H1 AUDITED：有限H1-01至06固定；独立可选CPU+CUDA组合因子、保留合格region/冷规则、跨native资源/分段异步进展/owned槽及expert迁移；先批量接线后冻结验证。"
     },
     {
       "module": "compute_provider_flashinfer",
@@ -595,8 +595,8 @@
     },
     {
       "module": "graph_route_cpu_cuda",
-      "state": "SCOPED",
-      "summary": "H1独立可选组合owner SCOPED：自然双端点Graph/分段进展/结果槽，现Sched与CPU/CUDA原生资源，单路线隔离；有限FIX和生命周期范围已定。",
+      "state": "AUDITED",
+      "summary": "H1 AUDITED：有限H1-01至06固定；独立可选CPU+CUDA组合因子、保留合格region/冷规则、跨native资源/分段异步进展/owned槽及expert迁移；先批量接线后冻结验证。",
       "record": "docs/implementation/tasks/compute/compute-h1-cpu-cuda-composition.md"
     }
   ]
