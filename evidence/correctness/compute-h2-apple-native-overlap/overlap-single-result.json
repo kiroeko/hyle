@@ -1,0 +1,59 @@
+{
+  "identity": {
+    "candidate": "37744b0ea778e85e2d74e960747d29b61e234d14",
+    "probe_archive_sha256": "0fd447077118d39c4e8e9bf3429b9fac6f62c3b02f59e0c8deead226cfe7031a",
+    "scope": "single original MLX GEMM actual dispatch count + Metal GPU interval; two fixed trials; earlier multi-dispatch CB trace diagnostic only"
+  },
+  "stages": [
+    {
+      "phase": "overlap-single-configure",
+      "argv": [
+        "/opt/homebrew/bin/cmake",
+        "-S",
+        "/Users/kiro/hyle-scratch/compute-unified/h2-batch/overlap-single-project",
+        "-B",
+        "/Users/kiro/hyle-scratch/compute-unified/h2-batch/overlap-single-build",
+        "-G",
+        "Ninja",
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DCMAKE_PREFIX_PATH=/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/h2-shared-sdk-relocated",
+        "-DCMAKE_OSX_DEPLOYMENT_TARGET=14.4"
+      ],
+      "exit": 0,
+      "stopped": null,
+      "seconds": 2.044780583,
+      "owned_peak_rss_bytes": 25067520,
+      "available_bytes_before": 7628570624,
+      "log": "/Users/kiro/hyle-scratch/compute-unified/h2-batch/overlap-single-configure.log"
+    },
+    {
+      "phase": "overlap-single-build",
+      "argv": [
+        "/opt/homebrew/bin/cmake",
+        "--build",
+        "/Users/kiro/hyle-scratch/compute-unified/h2-batch/overlap-single-build",
+        "--parallel",
+        "1"
+      ],
+      "exit": 0,
+      "stopped": null,
+      "seconds": 1.0441573750000002,
+      "owned_peak_rss_bytes": 9617408,
+      "available_bytes_before": 7535820800,
+      "log": "/Users/kiro/hyle-scratch/compute-unified/h2-batch/overlap-single-build.log"
+    },
+    {
+      "phase": "overlap-single-run",
+      "argv": [
+        "/Users/kiro/hyle-scratch/compute-unified/h2-batch/overlap-single-build/hyle_h2_metal_single_overlap"
+      ],
+      "exit": 0,
+      "stopped": null,
+      "seconds": 1.041398208,
+      "owned_peak_rss_bytes": 32768,
+      "available_bytes_before": 7505674240,
+      "log": "/Users/kiro/hyle-scratch/compute-unified/h2-batch/overlap-single-run.log"
+    }
+  ],
+  "scope": "source build/math only; installed SDK and full contracts still outstanding"
+}

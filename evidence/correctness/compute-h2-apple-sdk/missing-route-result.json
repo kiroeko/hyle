@@ -1,0 +1,36 @@
+[
+  {
+    "name": "missing-cpu",
+    "argv": [
+      "/opt/homebrew/bin/cmake",
+      "-S",
+      "/Users/kiro/hyle-scratch/compute-unified/h2-batch/missing-route-project",
+      "-B",
+      "/Users/kiro/hyle-scratch/compute-unified/h2-batch/missing-cpu",
+      "-G",
+      "Ninja",
+      "-DCMAKE_PREFIX_PATH=/Users/kiro/hyle-scratch/compute-unified/a-apple/selected-graph/shared-sdk-relocated"
+    ],
+    "sdk": "/Users/kiro/hyle-scratch/compute-unified/a-apple/selected-graph/shared-sdk-relocated",
+    "exit": 1,
+    "expected_missing": "cpu",
+    "diagnostic_present": true
+  },
+  {
+    "name": "missing-apple",
+    "argv": [
+      "/opt/homebrew/bin/cmake",
+      "-S",
+      "/Users/kiro/hyle-scratch/compute-unified/h2-batch/missing-route-project",
+      "-B",
+      "/Users/kiro/hyle-scratch/compute-unified/h2-batch/missing-apple",
+      "-G",
+      "Ninja",
+      "-DCMAKE_PREFIX_PATH=/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/shared-sdk-relocated"
+    ],
+    "sdk": "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/shared-sdk-relocated",
+    "exit": 1,
+    "expected_missing": "apple",
+    "diagnostic_present": true
+  }
+]

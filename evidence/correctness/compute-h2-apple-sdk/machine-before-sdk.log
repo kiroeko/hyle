@@ -1,0 +1,46 @@
+Mac16,12
+17179869184
+
+ProductName:		macOS
+ProductVersion:		27.0.1
+BuildVersion:		26A434
+
+Mach Virtual Memory Statistics: (page size of 16384 bytes)
+Pages free:                                    57819.
+Pages active:                                 397438.
+Pages inactive:                               405385.
+Pages speculative:                              9928.
+Pages throttled:                                   0.
+Pages wired down:                             108132.
+Pages purgeable:                                8362.
+"Translation faults":                      452672027.
+Pages copy-on-write:                         9281940.
+Pages zero filled:                         391164625.
+Pages reactivated:                          10984188.
+Pages purged:                                2859352.
+File-backed pages:                            526169.
+Anonymous pages:                              286582.
+Pages stored in compressor:                    88212.
+Pages occupied by compressor:                  31169.
+Decompressions:                             24652664.
+Compressions:                               55027245.
+Pageins:                                    18672072.
+Pageouts:                                      89555.
+Swapins:                                     1468970.
+Swapouts:                                    7777113.
+
+Filesystem      Size    Used   Avail Capacity iused ifree %iused  Mounted on
+/dev/disk3s5   228Gi   168Gi    33Gi    84%    2.5M  351M    1%   /System/Volumes/Data
+
+shared
+CMAKE_INSTALL_PREFIX:PATH=/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-staging
+HYLE_COMPUTE_ROUTES:STRING=cpu;apple
+HYLE_INSTALL:BOOL=ON
+HYLE_STATIC:BOOL=OFF
+CMAKE_HOME_DIRECTORY:INTERNAL=/Users/kiro/hyle-scratch/compute-unified/source-c8874688
+static
+CMAKE_INSTALL_PREFIX:PATH=/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-staging
+HYLE_COMPUTE_ROUTES:STRING=cpu;apple
+HYLE_INSTALL:BOOL=ON
+HYLE_STATIC:BOOL=ON
+CMAKE_HOME_DIRECTORY:INTERNAL=/Users/kiro/hyle-scratch/compute-unified/source-c8874688

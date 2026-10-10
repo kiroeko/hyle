@@ -316,3 +316,26 @@ if (!program) {
 需要主机调用跟踪时，构建时设置 `-DHYLE_TRACE=ON`，使用已有 Tracy client。
 prepare/compile、submit、checked wait 或 native owner 的执行范围随实际入口记录；默认 OFF 不
 求值跟踪参数、不创建 profiler 状态。这些是主机范围，不能解释为 GPU kernel 时间。
+
+## CPU/Apple组合与权重片段迁移
+
+选择`HYLE_COMPUTE_ROUTES="cpu;apple"`并链接`hyle::graph`即可取得`graph::cpu_apple`。
+普通入口为`compile → create_invocation(Scheduler, CPU Queue) → bind → prepare_replay → submit`，
+成功`OwnedResult`给出result lease。CPU/Sched与MLX原owner/stream分别保留，固定CPU/Apple
+片段沿各自已绑定规则执行，完整MLX/ggml region不被逐kernel拆开。仅准入fixed pure DAG；
+符号、effects或显式control edges不能被假装支持，普通单路线入口仍独立。
+
+Direct只需要`hyle::compute`与`apple_weights.h`：固定catalog/两槽，普通host源按ID和精确
+TensorDesc上传，`WeightBatch::binding`只发布成功ready的原生array。array alias、Graph绑定与
+旧结果保留native backing并禁止覆盖；`close`排空本owner，不关闭调用者的Context/Queue。
+图绑定/重置使冷准备和报告失效，动态payload更新不重新挑选Provider。共享存储不能省略执行排序。
+
+原生边界目前明确使用checked host completion，`HostWaitPolicy::kReject`拒绝该路径。相互独立的
+Metal传输与MLX计算可以重叠，但硬件/调度/带宽可能降低收益，不承诺每次都有吞吐提升。
+`ResourceBudget`按requested bytes管理host/native/metadata与旧lease；MLX私有分配需要显式partial，
+原生backing观察先按MTLBuffer去重，不能加到scope usage里冒充总显存或系统级预留。
+
+[Direct样例](../../samples/package/compute/apple_weights/README.md)和
+[完整CPU→Q4 FFN→CPU/正交分块样例](../../samples/package/graph/cpu_apple/README.md)
+使用同一源码/static/shared入口与`hyle_stage_runtime`，不手配Provider、metallib或动态库。
+引擎管理model/KV、offload比例和专家cache/预测/淘汰；本接口只提供放置、预算、迁移和寿命。

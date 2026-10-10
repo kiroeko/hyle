@@ -1,0 +1,14 @@
+{
+  "candidate": "37744b0ea778e85e2d74e960747d29b61e234d14",
+  "previous_product": "1989b1fe35b850d6dcc2da9d92e0b5056148a927",
+  "delta_sha256": "49b0fc8431f6c6c0d4c9018128bed84d75121df4d63bb525cc0e86ee24fef2bd",
+  "files": [
+    "src/graph_route_cpu_apple/plan.h",
+    "src/graph_route_cpu_apple/compile.cc",
+    "src/graph_route_cpu_apple/invocation.cc",
+    "docs/implementation/module-status.json",
+    "docs/implementation/status.md",
+    "docs/implementation/tasks/compute/compute-h2-cpu-apple-composition.md"
+  ],
+  "revalidation": "source/shared/static mixed Graph + contracts only; unchanged Direct/original/head domains reused"
+}

@@ -1,0 +1,15 @@
+Test project /Users/kiro/hyle-scratch/compute-unified/h2-batch/shared-installed-build
+    Start 1: hyle_h2_installed_weights
+1/5 Test #1: hyle_h2_installed_weights ............   Passed    5.25 sec
+    Start 2: hyle_h2_installed_graph
+2/5 Test #2: hyle_h2_installed_graph ..............   Passed    2.61 sec
+    Start 3: hyle_h2_installed_contracts
+3/5 Test #3: hyle_h2_installed_contracts ..........   Passed    0.44 sec
+    Start 4: hyle_h2_installed_original_compute
+4/5 Test #4: hyle_h2_installed_original_compute ...   Passed   14.57 sec
+    Start 5: hyle_h2_installed_original_graph
+5/5 Test #5: hyle_h2_installed_original_graph .....   Passed    0.72 sec
+
+100% tests passed, 0 tests failed out of 5
+
+Total Test time (real) =  23.58 sec

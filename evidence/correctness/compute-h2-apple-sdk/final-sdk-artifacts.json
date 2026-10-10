@@ -1,0 +1,74 @@
+[
+  {
+    "mode": "shared",
+    "original_prefix_absent": true,
+    "artifacts": [
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/h2-shared-sdk-relocated/include/hyle/compute/apple_memory.h",
+        "bytes": 2884,
+        "sha256": "be76682fcac639ecf32f6e2097b794737e6583fff8bcff17a491ec4b38c4602c"
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/h2-shared-sdk-relocated/include/hyle/compute/apple_weights.h",
+        "bytes": 3907,
+        "sha256": "78197354b92152d701f320078f373868152ba8d68268442bfc825742bd10809f"
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/h2-shared-sdk-relocated/include/hyle/graph/cpu_apple.h",
+        "bytes": 6849,
+        "sha256": "e4872049a1986b08fab66be9a0d1ab742497192f08022c6aa2af661c723efbad"
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/h2-shared-sdk-relocated/lib/mlx.metallib",
+        "bytes": 1455256,
+        "sha256": "2ae3af693d8e941861063c9f3ae5249e17665e8761837a9d87ab6e07002f568c"
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/h2-shared-sdk-relocated/lib/cmake/Hyle/HyleConfig.cmake",
+        "bytes": 4855,
+        "sha256": "3af8bb141660afacf8e846d5590504a72789092b474c594b617d634be09276ee"
+      }
+    ]
+  },
+  {
+    "mode": "static",
+    "original_prefix_absent": true,
+    "artifacts": [
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/h2-static-sdk-relocated/include/hyle/compute/apple_memory.h",
+        "bytes": 2884,
+        "sha256": "be76682fcac639ecf32f6e2097b794737e6583fff8bcff17a491ec4b38c4602c"
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/h2-static-sdk-relocated/include/hyle/compute/apple_weights.h",
+        "bytes": 3907,
+        "sha256": "78197354b92152d701f320078f373868152ba8d68268442bfc825742bd10809f"
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/h2-static-sdk-relocated/include/hyle/graph/cpu_apple.h",
+        "bytes": 6849,
+        "sha256": "e4872049a1986b08fab66be9a0d1ab742497192f08022c6aa2af661c723efbad"
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/h2-static-sdk-relocated/lib/mlx.metallib",
+        "bytes": 1455256,
+        "sha256": "2ae3af693d8e941861063c9f3ae5249e17665e8761837a9d87ab6e07002f568c"
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/h2-static-sdk-relocated/lib/cmake/Hyle/HyleConfig.cmake",
+        "bytes": 4862,
+        "sha256": "9d74bad0e7fe112c238520ddf41c7f50dc65e69c55e6d548059af56374d11236"
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/h2-static-sdk-relocated/lib/libhyle_graph_route_cpu_apple.a",
+        "bytes": 161072,
+        "sha256": "f303345e4690482fa11f3048c514e63f1df26ad9b094c4c5d8de4a8ce8946cf3"
+      },
+      {
+        "path": "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/h2-static-sdk-relocated/lib/libhyle_compute_route_apple.a",
+        "bytes": 771752,
+        "sha256": "b3496790e6c142cff502306f33d6d3ef290f217f0b5d80e06e2be7e4de2a26b8"
+      }
+    ]
+  }
+]

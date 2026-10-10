@@ -1,0 +1,5 @@
+{
+  "candidate": "37744b0ea778e85e2d74e960747d29b61e234d14",
+  "probe_archive_sha256": "0fd447077118d39c4e8e9bf3429b9fac6f62c3b02f59e0c8deead226cfe7031a",
+  "scope": "single original MLX GEMM actual dispatch count + Metal GPU interval; two fixed trials; earlier multi-dispatch CB trace diagnostic only"
+}

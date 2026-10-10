@@ -16,4 +16,4 @@ CPU片段使用应用借给HYLE的CPU Queue与Scheduler，GPU保留原Context/st
 资源预算只管请求字节；MLX私有分配未知，需要显式`allow_unattributed=true`，报告不承诺总物理内存。
 保留result lease到CPU读取/GPU使用结束；外部payload、资源、Queue、Scheduler与allocator仍由应用管理。
 
-H2仍在实施，当前示例待原生source/static/shared验收，不据源码或配置测试宣称完成。
+本例已在MacBook Air完成source/static/shared原生数学、资源与寿命验收。

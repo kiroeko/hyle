@@ -1,0 +1,59 @@
+{
+  "identity": {
+    "candidate": "37744b0ea778e85e2d74e960747d29b61e234d14",
+    "probe_archive_sha256": "46326b76c8d0c5e59728ce3dbfeb429be6e0b332f8634cdf7186d7300ff5e2bf",
+    "scope": "P0 actual original Metal blit/MLX compute GPU intervals; no speed comparison; fixed four trials"
+  },
+  "stages": [
+    {
+      "phase": "overlap-configure",
+      "argv": [
+        "/opt/homebrew/bin/cmake",
+        "-S",
+        "/Users/kiro/hyle-scratch/compute-unified/h2-batch/overlap-project",
+        "-B",
+        "/Users/kiro/hyle-scratch/compute-unified/h2-batch/overlap-build",
+        "-G",
+        "Ninja",
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DCMAKE_PREFIX_PATH=/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/h2-shared-sdk-relocated",
+        "-DCMAKE_OSX_DEPLOYMENT_TARGET=14.4"
+      ],
+      "exit": 0,
+      "stopped": null,
+      "seconds": 2.044152834,
+      "owned_peak_rss_bytes": 25100288,
+      "available_bytes_before": 7586545664,
+      "log": "/Users/kiro/hyle-scratch/compute-unified/h2-batch/overlap-configure.log"
+    },
+    {
+      "phase": "overlap-build",
+      "argv": [
+        "/opt/homebrew/bin/cmake",
+        "--build",
+        "/Users/kiro/hyle-scratch/compute-unified/h2-batch/overlap-build",
+        "--parallel",
+        "1"
+      ],
+      "exit": 0,
+      "stopped": null,
+      "seconds": 1.044332334,
+      "owned_peak_rss_bytes": 10043392,
+      "available_bytes_before": 7524859904,
+      "log": "/Users/kiro/hyle-scratch/compute-unified/h2-batch/overlap-build.log"
+    },
+    {
+      "phase": "overlap-run",
+      "argv": [
+        "/Users/kiro/hyle-scratch/compute-unified/h2-batch/overlap-build/hyle_h2_metal_overlap"
+      ],
+      "exit": 0,
+      "stopped": null,
+      "seconds": 1.0410620000000002,
+      "owned_peak_rss_bytes": 32768,
+      "available_bytes_before": 7474626560,
+      "log": "/Users/kiro/hyle-scratch/compute-unified/h2-batch/overlap-run.log"
+    }
+  ],
+  "scope": "source build/math only; installed SDK and full contracts still outstanding"
+}

@@ -36,11 +36,12 @@ operation 的提案/准备和 region 的资源资格/编译收到同一份信息
 Graph。只执行一个已知 operation 或 native kernel 时直接使用 [Compute](compute.md)。Graph 不是 Sched
 task graph，也不拥有模型循环、KV cache、batching、sampling 或 serving policy。
 
-模型级 CPU+GPU 联合推理不在 HYLE 功能范围内；host/device copy、host 提交与同 GPU 跨 Provider
-不属于这种联合计算。当前多 target/storage/lane 的通用基础设施不构成 CPU/GPU 模型划层能力的承诺；
-`hybrid replay` 仅表示 capture 与普通命令组合，不是 CPU+GPU 推理。四路线特化是当前架构方向，
-尚未完成的 backend/provider 或部署约束不会因本次文档校准而自动交付，见
-[Graph 设计](../architecture/graph-design.md#63-路线内编译与特化执行)。
+HYLE 提供CPU与一个GPU的显式粗片段组合机制；引擎仍负责模型加载、offload比例/层/专家策略、
+KV和请求循环。CPU+CUDA使用`hyle/graph/cpu_cuda.h`；CPU+MLX/Metal使用
+`hyle/graph/cpu_apple.h`与[可运行样例](../../samples/package/graph/cpu_apple/README.md)。
+组合必须选择对应的CPU与GPU路线，并显式给出允许的片段位置、资源和借用owner。GPU-only
+任务缺能力不会隐式转CPU。CPU+Vulkan的同类基础机制仍在后续H3，不能从混合SDK推导已完成。
+`hybrid replay`仍只表示capture与普通命令组合，和CPU/GPU放置是不同的轴。
 
 ## 普通 CUDA 入口
 

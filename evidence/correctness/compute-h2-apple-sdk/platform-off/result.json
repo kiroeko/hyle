@@ -1,0 +1,32 @@
+{
+  "candidate": "37744b0ea778e85e2d74e960747d29b61e234d14",
+  "exit": 0,
+  "no_apple_macro_or_sdk": true,
+  "launcher": "PowerShell native cmd invocation; Python detached cmd quoting failed before compiler and is not gate evidence",
+  "headers": [
+    {
+      "header": "hyle/compute/apple_memory.h",
+      "compiled": true,
+      "passed": true,
+      "log": "C:\\h7\\h2-apple-acceptance\\platform-off\\0.log"
+    },
+    {
+      "header": "hyle/compute/apple_weights.h",
+      "compiled": true,
+      "passed": true,
+      "log": "C:\\h7\\h2-apple-acceptance\\platform-off\\1.log"
+    },
+    {
+      "header": "hyle/graph/apple.h",
+      "compiled": true,
+      "passed": true,
+      "log": "C:\\h7\\h2-apple-acceptance\\platform-off\\2.log"
+    },
+    {
+      "header": "hyle/graph/cpu_apple.h",
+      "compiled": true,
+      "passed": true,
+      "log": "C:\\h7\\h2-apple-acceptance\\platform-off\\3.log"
+    }
+  ]
+}

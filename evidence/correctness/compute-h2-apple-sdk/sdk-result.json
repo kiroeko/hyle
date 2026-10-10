@@ -1,0 +1,286 @@
+{
+  "identity": {
+    "product_candidate": "1989b1fe35b850d6dcc2da9d92e0b5056148a927",
+    "authority_commit": "981f8f1117edb353e5fd8839b07a132af4fd6ec8",
+    "consumer_archive_sha256": "2ac9fcd39a2b1a8431710e1db108b495e3f522c28b9dc54188dedb476ceead4d"
+  },
+  "stages": [
+    {
+      "phase": "shared-sdk-configure",
+      "argv": [
+        "/opt/homebrew/bin/cmake",
+        "-S",
+        "/Users/kiro/hyle-scratch/compute-unified/source-c8874688",
+        "-B",
+        "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-build",
+        "-DHYLE_COMPONENTS=graph",
+        "-DHYLE_COMPUTE_ROUTES=cpu;apple",
+        "-DHYLE_INSTALL=ON"
+      ],
+      "exit": 0,
+      "stopped": null,
+      "seconds": 4.090651625,
+      "owned_peak_rss_bytes": 39845888,
+      "available_bytes_before": 7523123200,
+      "log": "/Users/kiro/hyle-scratch/compute-unified/h2-batch/shared-sdk-configure.log"
+    },
+    {
+      "phase": "shared-sdk-build",
+      "argv": [
+        "/opt/homebrew/bin/cmake",
+        "--build",
+        "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-build",
+        "--parallel",
+        "1"
+      ],
+      "exit": 0,
+      "stopped": null,
+      "seconds": 27.643782625,
+      "owned_peak_rss_bytes": 679297024,
+      "available_bytes_before": 7449624576,
+      "log": "/Users/kiro/hyle-scratch/compute-unified/h2-batch/shared-sdk-build.log"
+    },
+    {
+      "phase": "shared-sdk-install",
+      "argv": [
+        "/opt/homebrew/bin/cmake",
+        "--install",
+        "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-build"
+      ],
+      "exit": 0,
+      "stopped": null,
+      "seconds": 1.0423246670000026,
+      "owned_peak_rss_bytes": 2310144,
+      "available_bytes_before": 7458078720,
+      "log": "/Users/kiro/hyle-scratch/compute-unified/h2-batch/shared-sdk-install.log"
+    },
+    {
+      "phase": "shared-consumer-configure",
+      "argv": [
+        "/opt/homebrew/bin/cmake",
+        "-S",
+        "/Users/kiro/hyle-scratch/compute-unified/h2-batch/sdk-consumer-project",
+        "-B",
+        "/Users/kiro/hyle-scratch/compute-unified/h2-batch/shared-installed-build",
+        "-G",
+        "Ninja",
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DCMAKE_PREFIX_PATH=/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/h2-shared-sdk-relocated",
+        "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON"
+      ],
+      "exit": 0,
+      "stopped": null,
+      "seconds": 2.065260000000002,
+      "owned_peak_rss_bytes": 23871488,
+      "available_bytes_before": 7462191104,
+      "log": "/Users/kiro/hyle-scratch/compute-unified/h2-batch/shared-consumer-configure.log"
+    },
+    {
+      "phase": "shared-consumer-build",
+      "argv": [
+        "/opt/homebrew/bin/cmake",
+        "--build",
+        "/Users/kiro/hyle-scratch/compute-unified/h2-batch/shared-installed-build",
+        "--parallel",
+        "1"
+      ],
+      "exit": 0,
+      "stopped": null,
+      "seconds": 5.136086458000001,
+      "owned_peak_rss_bytes": 233144320,
+      "available_bytes_before": 7480639488,
+      "log": "/Users/kiro/hyle-scratch/compute-unified/h2-batch/shared-consumer-build.log"
+    },
+    {
+      "phase": "shared-consumer-test",
+      "argv": [
+        "/opt/homebrew/bin/ctest",
+        "--test-dir",
+        "/Users/kiro/hyle-scratch/compute-unified/h2-batch/shared-installed-build",
+        "-j",
+        "1",
+        "--output-on-failure"
+      ],
+      "exit": 0,
+      "stopped": null,
+      "seconds": 23.72398475,
+      "owned_peak_rss_bytes": 190267392,
+      "available_bytes_before": 7480868864,
+      "log": "/Users/kiro/hyle-scratch/compute-unified/h2-batch/shared-consumer-test.log"
+    },
+    {
+      "phase": "shared-header-configure",
+      "argv": [
+        "/opt/homebrew/bin/cmake",
+        "-S",
+        "/Users/kiro/hyle-scratch/compute-unified/h2-batch/shared-header-project",
+        "-B",
+        "/Users/kiro/hyle-scratch/compute-unified/h2-batch/shared-header-build",
+        "-G",
+        "Ninja",
+        "-DCMAKE_PREFIX_PATH=/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/h2-shared-sdk-relocated"
+      ],
+      "exit": 0,
+      "stopped": null,
+      "seconds": 3.073584958000005,
+      "owned_peak_rss_bytes": 23625728,
+      "available_bytes_before": 7874478080,
+      "log": "/Users/kiro/hyle-scratch/compute-unified/h2-batch/shared-header-configure.log"
+    },
+    {
+      "phase": "shared-header-build",
+      "argv": [
+        "/opt/homebrew/bin/cmake",
+        "--build",
+        "/Users/kiro/hyle-scratch/compute-unified/h2-batch/shared-header-build",
+        "--parallel",
+        "1"
+      ],
+      "exit": 0,
+      "stopped": null,
+      "seconds": 2.0711824580000098,
+      "owned_peak_rss_bytes": 143884288,
+      "available_bytes_before": 7877656576,
+      "log": "/Users/kiro/hyle-scratch/compute-unified/h2-batch/shared-header-build.log"
+    },
+    {
+      "phase": "static-sdk-configure",
+      "argv": [
+        "/opt/homebrew/bin/cmake",
+        "-S",
+        "/Users/kiro/hyle-scratch/compute-unified/source-c8874688",
+        "-B",
+        "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-build",
+        "-DHYLE_COMPONENTS=graph",
+        "-DHYLE_COMPUTE_ROUTES=cpu;apple",
+        "-DHYLE_INSTALL=ON"
+      ],
+      "exit": 0,
+      "stopped": null,
+      "seconds": 5.131691416999999,
+      "owned_peak_rss_bytes": 49709056,
+      "available_bytes_before": 7876706304,
+      "log": "/Users/kiro/hyle-scratch/compute-unified/h2-batch/static-sdk-configure.log"
+    },
+    {
+      "phase": "static-sdk-build",
+      "argv": [
+        "/opt/homebrew/bin/cmake",
+        "--build",
+        "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-build",
+        "--parallel",
+        "1"
+      ],
+      "exit": 0,
+      "stopped": null,
+      "seconds": 27.639782624999995,
+      "owned_peak_rss_bytes": 669564928,
+      "available_bytes_before": 7841103872,
+      "log": "/Users/kiro/hyle-scratch/compute-unified/h2-batch/static-sdk-build.log"
+    },
+    {
+      "phase": "static-sdk-install",
+      "argv": [
+        "/opt/homebrew/bin/cmake",
+        "--install",
+        "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-build"
+      ],
+      "exit": 0,
+      "stopped": null,
+      "seconds": 1.0434845829999944,
+      "owned_peak_rss_bytes": 1949696,
+      "available_bytes_before": 7800881152,
+      "log": "/Users/kiro/hyle-scratch/compute-unified/h2-batch/static-sdk-install.log"
+    },
+    {
+      "phase": "static-consumer-configure",
+      "argv": [
+        "/opt/homebrew/bin/cmake",
+        "-S",
+        "/Users/kiro/hyle-scratch/compute-unified/h2-batch/sdk-consumer-project",
+        "-B",
+        "/Users/kiro/hyle-scratch/compute-unified/h2-batch/static-installed-build",
+        "-G",
+        "Ninja",
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DCMAKE_PREFIX_PATH=/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/h2-static-sdk-relocated",
+        "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON"
+      ],
+      "exit": 0,
+      "stopped": null,
+      "seconds": 2.065644750000004,
+      "owned_peak_rss_bytes": 24117248,
+      "available_bytes_before": 7765344256,
+      "log": "/Users/kiro/hyle-scratch/compute-unified/h2-batch/static-consumer-configure.log"
+    },
+    {
+      "phase": "static-consumer-build",
+      "argv": [
+        "/opt/homebrew/bin/cmake",
+        "--build",
+        "/Users/kiro/hyle-scratch/compute-unified/h2-batch/static-installed-build",
+        "--parallel",
+        "1"
+      ],
+      "exit": 0,
+      "stopped": null,
+      "seconds": 5.135979959000011,
+      "owned_peak_rss_bytes": 232570880,
+      "available_bytes_before": 7762329600,
+      "log": "/Users/kiro/hyle-scratch/compute-unified/h2-batch/static-consumer-build.log"
+    },
+    {
+      "phase": "static-consumer-test",
+      "argv": [
+        "/opt/homebrew/bin/ctest",
+        "--test-dir",
+        "/Users/kiro/hyle-scratch/compute-unified/h2-batch/static-installed-build",
+        "-j",
+        "1",
+        "--output-on-failure"
+      ],
+      "exit": 0,
+      "stopped": null,
+      "seconds": 3.082880750000001,
+      "owned_peak_rss_bytes": 98271232,
+      "available_bytes_before": 7763394560,
+      "log": "/Users/kiro/hyle-scratch/compute-unified/h2-batch/static-consumer-test.log"
+    },
+    {
+      "phase": "static-header-configure",
+      "argv": [
+        "/opt/homebrew/bin/cmake",
+        "-S",
+        "/Users/kiro/hyle-scratch/compute-unified/h2-batch/static-header-project",
+        "-B",
+        "/Users/kiro/hyle-scratch/compute-unified/h2-batch/static-header-build",
+        "-G",
+        "Ninja",
+        "-DCMAKE_PREFIX_PATH=/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/h2-static-sdk-relocated"
+      ],
+      "exit": 0,
+      "stopped": null,
+      "seconds": 2.0645311669999984,
+      "owned_peak_rss_bytes": 24248320,
+      "available_bytes_before": 7701233664,
+      "log": "/Users/kiro/hyle-scratch/compute-unified/h2-batch/static-header-configure.log"
+    },
+    {
+      "phase": "static-header-build",
+      "argv": [
+        "/opt/homebrew/bin/cmake",
+        "--build",
+        "/Users/kiro/hyle-scratch/compute-unified/h2-batch/static-header-build",
+        "--parallel",
+        "1"
+      ],
+      "exit": 0,
+      "stopped": null,
+      "seconds": 2.064906124999993,
+      "owned_peak_rss_bytes": 140722176,
+      "available_bytes_before": 7709491200,
+      "log": "/Users/kiro/hyle-scratch/compute-unified/h2-batch/static-header-build.log"
+    }
+  ],
+  "scope": "H2 installed shared/static consumers, headers, relocation and assets"
+}

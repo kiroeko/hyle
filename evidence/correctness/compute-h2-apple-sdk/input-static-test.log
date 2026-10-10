@@ -1,0 +1,9 @@
+Test project /Users/kiro/hyle-scratch/compute-unified/h2-batch/static-installed-build
+    Start 2: hyle_h2_installed_graph
+1/2 Test #2: hyle_h2_installed_graph ..........   Passed    0.52 sec
+    Start 3: hyle_h2_installed_contracts
+2/2 Test #3: hyle_h2_installed_contracts ......   Passed    0.52 sec
+
+100% tests passed, 0 tests failed out of 2
+
+Total Test time (real) =   1.05 sec

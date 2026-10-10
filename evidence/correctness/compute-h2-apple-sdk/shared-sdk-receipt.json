@@ -1,0 +1,13 @@
+{
+  "identity": {
+    "product_candidate": "1989b1fe35b850d6dcc2da9d92e0b5056148a927",
+    "authority_commit": "981f8f1117edb353e5fd8839b07a132af4fd6ec8",
+    "consumer_archive_sha256": "2ac9fcd39a2b1a8431710e1db108b495e3f522c28b9dc54188dedb476ceead4d"
+  },
+  "linkage": "shared",
+  "original_prefix_absent": true,
+  "relocated_prefix": "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/h2-shared-sdk-relocated",
+  "headers": 4,
+  "consumers": 5,
+  "metallib_bytes": 1455256
+}

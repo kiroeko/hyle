@@ -80,9 +80,11 @@ sampling 和 serving 留在推理引擎。
 
 计算选择 CPU、CUDA、MLX/Metal、Vulkan 中的一条路线。CUDA 的普通入口和完整 FFN Graph
 已完成 R4 正确性、三交付与适用性能验收；Apple R5 与 Vulkan R6 也已完成各自有限验收。
-HYLE 不提供同一次模型计算由 CPU 与 GPU 分担层/FFN/专家的联合推理。纯 CPU 路线、GPU 的 host
-提交/输入输出传输/同步，以及同 GPU 多 Provider 组合不属于该排除项；选择 GPU 后不应期待缺算子
-自动交给 CPU。完整范围见 [架构边界](../architecture/compute-design.md#13-四条独立路线与明确非目标)。
+HYLE 提供host控制、传输/同步、同GPU多Provider和显式CPU/GPU粗片段基础机制；模型加载、
+层/专家offload策略和完整推理循环由引擎负责。GPU-only任务缺算子不会自动转CPU。
+Direct权重迁移分别使用`hyle/compute/cuda_weights.h`与`hyle/compute/apple_weights.h`；
+[Apple样例](../../samples/package/compute/apple_weights/README.md)保留真实原编码、native完成与array寿命。
+CPU大权重可留普通主存，跨端边界才申请native存储。Apple共享物理内存仍需要提交和完成排序。
 
 direct `prepare()` 仍接收具体 TensorDesc，不要求用户构造 shape program。需要 batch × tokens、concat
 输出轴等派生维度时，使用 [Graph 的独立与派生维度](graph.md#独立与派生维度)：默认 exact compile，

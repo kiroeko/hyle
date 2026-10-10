@@ -1,0 +1,23 @@
+a-cpu/selected-graph/shared-sdk-relocated False
+a-apple/selected-graph/shared-sdk-relocated True
+set(Hyle_AVAILABLE_COMPUTE_ROUTES "apple")
+    if(NOT _Hyle_requested IN_LIST Hyle_AVAILABLE_COMPUTE_ROUTES)
+        "Hyle SDK does not contain requested Compute route '${_Hyle_requested}'; available: ${Hyle_AVAILABLE_COMPUTE_ROUTES}")
+set(Hyle_AVAILABLE_FEATURES "compute_apple")
+if("compute_apple" IN_LIST Hyle_AVAILABLE_FEATURES)
+a-apple/selected-graph/static-sdk-relocated True
+set(Hyle_AVAILABLE_COMPUTE_ROUTES "apple")
+    if(NOT _Hyle_requested IN_LIST Hyle_AVAILABLE_COMPUTE_ROUTES)
+        "Hyle SDK does not contain requested Compute route '${_Hyle_requested}'; available: ${Hyle_AVAILABLE_COMPUTE_ROUTES}")
+set(Hyle_AVAILABLE_FEATURES "compute_apple")
+if("compute_apple" IN_LIST Hyle_AVAILABLE_FEATURES)
+  if (!encoder_) {
+    error_.check();
+    encoder_ = NS::RetainPtr(
+        buffer_->computeCommandEncoder(MTL::DispatchTypeConcurrent));
+    fence_ = NS::TransferPtr(device_.mtl_device()->newFence());
+  }
+  return encoder_.get();
+}
+xctrace 72 xcrun: error: unable to find utility "xctrace", not a developer tool or in PATH
+

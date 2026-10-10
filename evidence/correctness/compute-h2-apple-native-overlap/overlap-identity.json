@@ -1,0 +1,5 @@
+{
+  "candidate": "37744b0ea778e85e2d74e960747d29b61e234d14",
+  "probe_archive_sha256": "46326b76c8d0c5e59728ce3dbfeb429be6e0b332f8634cdf7186d7300ff5e2bf",
+  "scope": "P0 actual original Metal blit/MLX compute GPU intervals; no speed comparison; fixed four trials"
+}

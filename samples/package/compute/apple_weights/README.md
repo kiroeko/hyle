@@ -9,4 +9,4 @@
 
 共享物理内存仍有原生提交与完成顺序。`binding`拒绝pending/failed数据，返回的array及所有alias
 保留槽；`close`只排空迁移，不覆盖仍被计算程序/结果引用的权重。资源和allocator须晚于最后alias。
-H2仍在实施，当前示例待原生source/static/shared验收。
+本例已在MacBook Air完成source/static/shared原生验收。

@@ -1,6 +1,6 @@
 # H2：CPU+MLX/Metal粗片段与offload基础机制
 
-<!-- MODULE REVIEW: CANDIDATE -->
+<!-- MODULE REVIEW: CLOSED -->
 
 - baseline：`7f428d7a9`（H1 Windows/WSL完整合同CLOSED）；新factor身份登记`b842269f`。
 - canonical：Windows；唯一Apple验收机MacBook Air `Mac16,12`，2026-10-10实读M4/16GiB、
@@ -196,3 +196,45 @@ region已绑定仍需每次触碰全部内部value metadata，与重放只沿粗
 未变，与原candidate域匹配；统一组装记录指向新candidate但不重置资格预算。1989 shared/static
 各5项消费者/4个安装头实际通过，旧install prefix已真正rename；剩余只补受影响的混合/合同，
 不改接口、不测新数学/P1。任何新source反例仍须退回owner并固定有限修复。
+
+## H2 terminal：CPU+Apple基础机制收口
+
+最终candidate37744b0ea（完整hash见registry）。H2-01至06完成：显式粗片段、自然Direct/Graph、
+普通CPU主存与原native arrays、固定两槽迁移/真实完成、Sched粗进展与独立原Apple owner、共享
+requested-byte预算/冷报告以及三交付。以下为当前裁决，上文各时点状态和失败仍是历史事实。
+
+| Gate | 当前实际证据/边界 | Verdict |
+|---|---|---|
+| scope | 固定六FIX；主Q4 FFN和正交分块、动态weight真实消费；不做引擎、模型加载/策略、多GPU、算子扩张或增量依赖图 | PASS |
+| architecture | CPU/Apple原程序/region与完成语义独立，HYLE只管粗边界；复用Mem/预算/Results/Sched，无万能Queue、逐kernelvtable或新线程池 | PASS |
+| correctness | Air source五项有实际通过；独立数学oracle、两槽、ID/dtype/布局/范围/overflow/OOM/rollback、strict/partial、旧lease/更新、cancel/close/abandon/CPU接纳后GPU关闭失败；最后input目录改动定向source2/2 | PASS |
+| delivery | installed shared/static各五消费者/四头及真正rename搬迁；最终candidate定向两linkage各2/2，原不变域复用；native真实library/metallib/哈希、缺CPU/Apple genuine SDK diagnostic及Windows四头platform-off | PASS |
+| usability_docs | Direct链接compute、组合graph与唯一路线集合；公开头/两个样例及user指南说明调用顺序、bind/reset、借用寿命、完成/预算未知与engine职责 | PASS |
+| red_team | 独立终审核对owner循环、成功lease、失败排空/晚到、两槽保活、alias统计、metadata/OOM和source/install；发现O(all values)热扫描，依法有限修正并仅补该半径；未签原16-GEMM粗区间为单kernel证明 | PASS |
+| engineering_performance | P0 cold目录/绑定与资源准入，hot O(active inputs+粗片段+必要边界)、固定metadata/capacity，成熟MLX replay私有成本未知；original single-dispatch GEMM与real16MiB Metal blit两轮GPU区间相交；不宣称WIN/零分配或所有硬件收益 | PASS |
+
+### 资格与限制
+
+[源码/数学与合同](../../../../evidence/correctness/compute-h2-apple-source/README.md)、
+[安装SDK/有限修复与platform-off](../../../../evidence/correctness/compute-h2-apple-sdk/README.md)与
+[原生单dispatch时间线](../../../../evidence/correctness/compute-h2-apple-native-overlap/README.md)
+保留实际candidate、机器、命令和退出码。1989不变域证据按源码/接口/工具链/机器匹配复用；37744
+私有目录修正没有重置预算或重跑全库。所有适用声明gate已有实际结果；Apple native只在Air执行，
+Windows/WSL不是Apple运行平台，不制造该binary journey。C3十二WSL Vulkan仍UNQUALIFIED。
+
+fixed pure DAG、CPU+一个Apple GPU；符号/effects/control edges不支持该组合，保留其它原路线能力。
+跨native边界需要显式checked host completion，可以拒绝此路径。MLX原managed replay仍有私有
+分配/cache，严格全量内存预算拒绝未知，用户显式partial只约束managed请求字节；actual backing
+观察先去重，不能直接加到配额usage。资源/allocator/外部payload及Scheduler/Queue的借用寿命
+按公开头；旧result lease护住槽，裸view/复制array不自动把外部输入变不可变。取消不抢占已接纳
+native工作，close只排空本owner。不同硬件/带宽/占用可降低甚至没有copy/compute收益，本轮不
+宣称独立DMA引擎或每周期并行。引擎继续拥有loader、KV、offload比例、专家cache/predict/evict。
+
+合法reopen trigger：可复现数学/UB/寿命/并发/预算/交付缺陷；真实consumer证明本组合的常用机制
+缺失；相关依赖升级；合格同合同证据显示material成本回归。不能由历史指令/再审或研究探针重开。
+H2停止重型run；沿goal进入H3 CPU+Vulkan，按新的owner/card重新定界，不能复用H2 CLOSED授权。
+
+最终统一LOC：Compute+Graph 66,157实现行/289文件，全库自实现161,384行；
+[统一脚本快照](../../../../evidence/architecture/compute-entry-design/loc-h2-final.json)绑定37744b0ea，
+不含tests/samples/third_party。已清除Windows本轮168,115,141字节传输archives，保留源码、缓存、
+原始日志/脚本与三交付证据；清理仅明确本轮文件，不影响产品真相或用户修改。

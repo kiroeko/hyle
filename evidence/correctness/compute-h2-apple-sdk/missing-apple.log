@@ -1,0 +1,20 @@
+-- The CXX compiler identification is AppleClang 21.0.0.21000334
+-- Detecting CXX compiler ABI info
+-- Detecting CXX compiler ABI info - done
+-- Check for working CXX compiler: /usr/bin/c++ - skipped
+-- Detecting CXX compile features
+-- Detecting CXX compile features - done
+CMake Error at CMakeLists.txt:4 (find_package):
+  Found package configuration file:
+
+    /Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/shared-sdk-relocated/lib/cmake/Hyle/HyleConfig.cmake
+
+  but it set Hyle_FOUND to FALSE so package "Hyle" is considered to be NOT
+  FOUND.  Reason given by package:
+
+  Hyle SDK does not contain requested Compute route 'apple'; available:
+  cpu;vulkan
+
+
+
+-- Configuring incomplete, errors occurred!

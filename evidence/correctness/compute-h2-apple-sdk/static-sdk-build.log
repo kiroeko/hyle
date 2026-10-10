@@ -1,0 +1,60 @@
+[0/2] Re-checking globbed directories...
+[1/60] Building CXX object src/compute/CMakeFiles/hyle_compute.dir/resource_budget.cc.o
+[2/60] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/runtime.cc.o
+[3/60] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/ops/dispatch_ops.cc.o
+[4/60] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/random/random_dispatch.cc.o
+[5/60] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/search/search_dispatch.cc.o
+[6/60] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/narrow/narrow_dispatch.cc.o
+[7/60] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/scan/scan_dispatch.cc.o
+[8/60] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/dtype/dtype_dispatch.cc.o
+[9/60] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/math/math_dispatch.cc.o
+[10/60] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/sort/sort_dispatch.cc.o
+[11/60] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/bitpack/bitpack_dispatch.cc.o
+[12/60] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/ops/ops_scalar.cc.o
+[13/60] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/ops/ops_neon.cc.o
+[14/60] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/dtype_convert/dtype_convert_scalar.cc.o
+[15/60] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/dtype_convert/dtype_convert_neon.cc.o
+[16/60] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/scan/scan_scalar.cc.o
+[17/60] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/scan/scan_neon.cc.o
+[18/60] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/random/random_scalar.cc.o
+[19/60] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/random/random_neon.cc.o
+[20/60] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/search/search_scalar.cc.o
+[21/60] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/search/search_neon.cc.o
+[22/60] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/narrow/narrow_scalar.cc.o
+[23/60] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/narrow/narrow_neon.cc.o
+[24/60] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/bitpack/bitpack_scalar.cc.o
+[25/60] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/bitpack/bitpack_neon.cc.o
+[26/60] Linking CXX static library bin/libhyle_compute.a
+[27/60] Building CXX object src/platform_fs/CMakeFiles/hyle_platform_fs.dir/fs.cc.o
+[28/60] Linking CXX static library bin/libhyle_simd.a
+[29/60] Linking CXX static library bin/libhyle_platform_fs.a
+[30/60] Building CXX object src/mem_vm/CMakeFiles/hyle_mem_vm.dir/mapping.cc.o
+[31/60] Building CXX object src/mem_vm/CMakeFiles/hyle_mem_vm.dir/file_mapping.cc.o
+[32/60] Building CXX object src/mem_vm/CMakeFiles/hyle_mem_vm.dir/shared_mapping.cc.o
+[33/60] Building CXX object src/graph/CMakeFiles/hyle_graph.dir/executable.cc.o
+[34/60] Building CXX object src/graph/CMakeFiles/hyle_graph.dir/constant_artifact.cc.o
+[35/60] Building OBJCXX object src/compute_route_apple/CMakeFiles/hyle_compute_route_apple.dir/apple_memory.mm.o
+[36/60] Building OBJCXX object src/compute_route_apple/CMakeFiles/hyle_compute_route_apple.dir/apple_weights.mm.o
+[37/60] Linking CXX static library bin/libhyle_mem_vm.a
+[38/60] Building CXX object src/sched/CMakeFiles/hyle_sched.dir/fiber.cc.o
+[39/60] Building CXX object src/sched/CMakeFiles/hyle_sched.dir/scheduler.cc.o
+[40/60] Building CXX object src/sched/CMakeFiles/hyle_sched.dir/sync.cc.o
+[41/60] Building CXX object src/sched/CMakeFiles/hyle_sched.dir/join.cc.o
+[42/60] Building CXX object src/sched/CMakeFiles/hyle_sched.dir/blocking.cc.o
+[43/60] Building CXX object src/sched/CMakeFiles/hyle_sched.dir/cancel.cc.o
+[44/60] Building CXX object src/sched/CMakeFiles/hyle_sched.dir/task_scope.cc.o
+[45/60] Building CXX object src/sched/CMakeFiles/hyle_sched.dir/bulk.cc.o
+[46/60] Building ASM object src/sched/CMakeFiles/hyle_sched.dir/__/__/third_party/fcontext/asm/jump_arm64_aapcs_macho_gas.S.o
+[47/60] Building ASM object src/sched/CMakeFiles/hyle_sched.dir/__/__/third_party/fcontext/asm/make_arm64_aapcs_macho_gas.S.o
+[48/60] Building ASM object src/sched/CMakeFiles/hyle_sched.dir/__/__/third_party/fcontext/asm/ontop_arm64_aapcs_macho_gas.S.o
+[49/60] Linking CXX static library bin/libhyle_graph.a
+[50/60] Building CXX object src/graph_route_cpu/CMakeFiles/hyle_graph_route_cpu.dir/cpu_context.cc.o
+[51/60] Building CXX object src/graph_route_cpu/CMakeFiles/hyle_graph_route_cpu.dir/ggml_region.cc.o
+[52/60] Linking CXX static library bin/libhyle_compute_route_apple.a
+[53/60] Building CXX object src/graph_route_apple/CMakeFiles/hyle_graph_route_apple.dir/apple_lowering.cc.o
+[54/60] Linking CXX static library bin/libhyle_sched.a
+[55/60] Linking CXX static library bin/libhyle_graph_route_cpu.a
+[56/60] Linking CXX static library bin/libhyle_graph_route_apple.a
+[57/60] Building CXX object src/graph_route_cpu_apple/CMakeFiles/hyle_graph_route_cpu_apple.dir/compile.cc.o
+[58/60] Building CXX object src/graph_route_cpu_apple/CMakeFiles/hyle_graph_route_cpu_apple.dir/invocation.cc.o
+[59/60] Linking CXX static library bin/libhyle_graph_route_cpu_apple.a
