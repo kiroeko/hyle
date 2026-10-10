@@ -408,3 +408,8 @@ CPU批次/受管绝对路径检查后清理，释放741,239,406字节；source�
 [CUDA源构建身份](../../../../evidence/correctness/compute-unified-c3/wsl-cuda/source-recipe-identity.json)
 确认HYLE CXX为GCC14、NVCC为13.3.73（vendor host GNU13单独记录），CPU backend/oneDNN/
 Native/CPU Graph目录均未取得；这只签配置隔离事实，不签未完成的CUDA数学。
+
+WSL CUDA source Graph1.07s/Direct0.56s 已真实 PASS，原FFN消费者在RTX4070/SM8.9运行，
+不是枚举/copy资格；[收据](../../../../evidence/correctness/compute-unified-c3/wsl-cuda-partial.json)
+绑定a2476b62来源、原CTest与配置隔离事实。C3当前68 PASS / 22 UNRUN；原shared/static
+循环继续，不删除/重跑source、不增加P1，H1联合/异步/专家迁移仍未实施。

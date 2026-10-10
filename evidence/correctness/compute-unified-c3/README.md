@@ -5,7 +5,7 @@ It is not a terminal verdict for all platforms/routes, hybrid execution, or asyn
 
 [Delivery matrix](delivery-matrix.json) fixes the declared applicable scope: 15 platform/route groups,
 45 source/shared/static shapes, each with the existing Direct and Graph consumer. Consumer entries
-are documented per actual receipt; the current matrix records 66 PASS and 24 UNRUN.
+are documented per actual receipt; the current matrix records 68 PASS and 22 UNRUN.
 Earlier Vulkan failures remain archived. A mixed SDK entry runs each selected native route independently
 and cannot certify the later joint execution or asynchronous transfer work.
 
@@ -189,3 +189,7 @@ C3 is66/90; the next serial WSL CUDA batch has started. H1-H3 remain unimplement
 of two owned completed producer object trees, preserving source objects, relocated SDKs, consumers,
 cache and logs. [Actual CUDA source recipe](wsl-cuda/source-recipe-identity.json) records GCC14 C++,
 the separate NVCC host compiler and absence of HYLE CPU math roots. CUDA math remains unrun.
+
+[WSL CUDA source receipt](wsl-cuda-partial.json) now records actual ordinary FFN Graph1.07s/
+Direct0.56s PASS on RTX4070/SM8.9, with immutable source/archive identity and original CTest logs.
+The original driver continues shared/static. C3 is68/90; hybrid and full-model execution are not signed.

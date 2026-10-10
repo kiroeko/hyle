@@ -1,0 +1,18 @@
+{
+  "product_candidate": "a2476b62cfe49c1663998645c362392685c06eb1",
+  "validation_source_commit": "a2476b62cfe49c1663998645c362392685c06eb1",
+  "source_archive_sha256": "d0c2377d14be5752f6e1876a54d8c568cb1cc32a7066391bd784699a1ad14c86",
+  "source_location": "/root/hyle-scratch/compute-unified/source-7a7b4c3b",
+  "routes": "cuda",
+  "argv": [
+    "/root/hyle-scratch/compute-unified/source-7a7b4c3b/scripts/hyle-unix.sh",
+    "cmake",
+    "-DHYLE_SOURCE_DIR=/root/hyle-scratch/compute-unified/source-7a7b4c3b",
+    "-DHYLE_SMOKE_ROOT=/root/hyle-scratch/compute-unified/l-cuda",
+    "-DHYLE_SMOKE_COMPONENT=graph",
+    "-DHYLE_SMOKE_GENERATOR=Ninja",
+    "-DHYLE_SMOKE_COMPUTE_ROUTES=cuda",
+    "-P",
+    "/root/hyle-scratch/compute-unified/source-7a7b4c3b/cmake/HyleCiSelectedComponentSmoke.cmake"
+  ]
+}

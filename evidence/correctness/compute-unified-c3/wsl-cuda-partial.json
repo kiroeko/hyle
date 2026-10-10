@@ -1,0 +1,37 @@
+{
+  "scope": "Real CUDA-only source/shared/static ordinary Direct/Graph FFN; no H1 joint/async/expert qualification",
+  "product_candidate": "a2476b62cfe49c1663998645c362392685c06eb1",
+  "validation_source_commit": "a2476b62cfe49c1663998645c362392685c06eb1",
+  "source_archive_sha256": "d0c2377d14be5752f6e1876a54d8c568cb1cc32a7066391bd784699a1ad14c86",
+  "routes": "cuda",
+  "rows": [
+    {
+      "entry": "source-direct",
+      "verdict": "PASS",
+      "log": "evidence/correctness/compute-unified-c3/wsl-cuda/source-ctest.log",
+      "sha256": "340429d51918e03cbd481ce4a415867f1ecd9016f9bc1851d65f6b8eab3cfb40"
+    },
+    {
+      "entry": "source-graph",
+      "verdict": "PASS",
+      "log": "evidence/correctness/compute-unified-c3/wsl-cuda/source-ctest.log",
+      "sha256": "340429d51918e03cbd481ce4a415867f1ecd9016f9bc1851d65f6b8eab3cfb40"
+    },
+    {
+      "entry": "shared-direct",
+      "verdict": "UNRUN"
+    },
+    {
+      "entry": "shared-graph",
+      "verdict": "UNRUN"
+    },
+    {
+      "entry": "static-direct",
+      "verdict": "UNRUN"
+    },
+    {
+      "entry": "static-graph",
+      "verdict": "UNRUN"
+    }
+  ]
+}
