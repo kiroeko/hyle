@@ -506,9 +506,12 @@ _hyle_declare_component(compute_provider_torch_cuda
   PUBLIC_DEPS core compute
   SPLIT_PUBLIC_HEADERS hyle/compute/providers/torch_cuda.h)
 
-# H1 independently owns optional CPU+CUDA composition/progress. Identity only;
-# target metadata is fixed by its finite audit before implementation.
-_hyle_declare_component(graph_route_cpu_cuda QUEUED)
+# Optional coarse CPU+CUDA composition has its own native progress/slot owner.
+# A single route never acquires its CPU or Sched closure.
+_hyle_declare_component(graph_route_cpu_cuda
+  PRIVATE_DEPS util_core sched compute_backend_cpu graph_route_cpu graph_route_cuda
+  PUBLIC_DEPS core graph compute_backend_cuda
+  SPLIT_PUBLIC_HEADERS hyle/graph/cpu_cuda.h)
 
 # Product facades are deliberately outside the factor DAG. They have no source,
 # module status, or decision authority and must never be used by an internal
@@ -693,6 +696,10 @@ endif()
 if(NOT CMAKE_SCRIPT_MODE_FILE AND _hyle_selection_mode STREQUAL "product")
   include("${HYLE_SOURCE_DIR}/cmake/HyleComputeRoutes.cmake")
   hyle_resolve_compute_product_routes("${_hyle_requested_products}")
+  if("cpu" IN_LIST HYLE_COMPUTE_ROUTE_LIST AND
+     "cuda" IN_LIST HYLE_COMPUTE_ROUTE_LIST)
+    list(APPEND _HYLE_PRODUCT_FACTORS_GRAPH graph_route_cpu_cuda)
+  endif()
   foreach(_product IN ITEMS COMPUTE GRAPH)
     foreach(_route IN ITEMS cpu cuda apple vulkan)
       if(NOT _route IN_LIST HYLE_COMPUTE_ROUTE_LIST)

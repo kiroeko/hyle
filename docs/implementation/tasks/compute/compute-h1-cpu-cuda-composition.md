@@ -118,3 +118,16 @@ H1-06：普通双端点C++guide、推理与分块数值真实consumer、目标�
 
 这固定系统性合同与有限改动边界；内部state/容器/native callback细节在FIX中按实源码完成。
 未实现能力仍MISSING/PARTIAL，不把本审计或身份登记算成完成。
+
+### 首批产品接线（尚未native验收）
+
+H1-01/02已接入实际组合factor与cpu_cuda.h/compile.cc：普通cpu;cuda Graph自动取得组合，
+CPU/CUDA/Vulkan单路线不取得该factor或Sched；typed入口固定CUDA0/CPU1，要求exact-context
+pinned/device资源。Graph内部cold admission传入两backend身份并沿原variant/region/预算路径，
+普通compile同Device保护仍保留；无普通运行对象layout或hot字段变化。
+
+`compute_routes_test.py`原11 tests实跑通过，实际manifest增加混合/单路线隔离反证。
+首次新增case发现不必要PUBLIC route边及夹具目录分号，改为真实PRIVATE边/规范路径后通过；
+未放宽checker或改产品路线解析。selector针对首批产品授权READY，无unknown路径；其共享
+manifest superset不表示执行全部库数学，后续按本卡真实半径批验。CPP/数学/native库尚未编译或
+运行，不写PASS；H1-03～06继续施工，整包保持AUDITED，不将该入口当联合/异步完成。

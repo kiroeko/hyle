@@ -102,14 +102,16 @@ class ComputeRoutesTest(unittest.TestCase):
         # Actual manifest/configure path, no SDK stubs and no provider mock.
         for routes, expected, absent in (
             ("cpu", "compute_route_cpu;graph_route_cpu;compute_provider_native",
-             "compute_backend_cuda;compute_route_vulkan;compute_route_apple"),
+             "compute_backend_cuda;compute_route_vulkan;compute_route_apple;graph_route_cpu_cuda;sched"),
             ("cuda", "compute_backend_cuda;compute_route_cuda;graph_route_cuda",
-             "compute_backend_cpu;compute_provider_native;compute_route_vulkan"),
+             "compute_backend_cpu;compute_provider_native;compute_route_vulkan;graph_route_cpu_cuda;sched"),
             ("vulkan", "compute_route_vulkan;graph_route_vulkan;compute_provider_iree_vulkan",
-             "compute_backend_cpu;compute_backend_cuda;compute_route_apple"),
+             "compute_backend_cpu;compute_backend_cuda;compute_route_apple;graph_route_cpu_cuda;sched"),
+            ("cpu;cuda", "graph_route_cpu_cuda;graph_route_cpu;graph_route_cuda;sched;compute_provider_onednn",
+             "compute_route_vulkan;compute_route_apple"),
         ):
             with self.subTest(routes=routes):
-                source = self.directory / routes
+                source = self.directory / routes.replace(";", "-")
                 source.mkdir()
                 checks = ""
                 for factor in expected.split(";"):

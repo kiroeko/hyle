@@ -1,4 +1,6 @@
 #include "hyle/compute/backends/cuda.h"
+
+#include "resource_admission.h"
 #include "hyle/compute/detail/command_capture.h"
 
 #include <algorithm>
@@ -1319,11 +1321,45 @@ cuda_extension(const Queue &queue) noexcept {
                                                         kCudaExtensionId);
 }
 
+struct CompositionResources final {
+  const MemoryResource *host;
+  const MemoryResource *device;
+};
+
+Status composition_resources_call(void *backend_context, const void *,
+                                  void *call_context) noexcept {
+  const auto &resources = *static_cast<CompositionResources *>(call_context);
+  const auto *host = cuda::detail::resource_const(resources.host->ref());
+  const auto *device = cuda::detail::resource_const(resources.device->ref());
+  if (host == nullptr || device == nullptr ||
+      host->context() != backend_context ||
+      device->context() != backend_context) {
+    return Status::FailedPrecondition(
+        "CPU+CUDA resources require the exact CUDA Context");
+  }
+  return Status::Ok();
+}
+
 } // namespace
 
 Backend backend() noexcept {
   return compute::detail::BackendAccess::make(&kBackendVTable,
                                               BackendPayload{});
+}
+
+Status cuda::detail::validate_composition_resources(
+    const Context &context, const MemoryResource &host,
+    const MemoryResource &device) noexcept {
+  if (!host.valid() || !device.valid() ||
+      host.kind() != MemoryKind::kPinnedHost ||
+      device.kind() != MemoryKind::kDevice) {
+    return Status::InvalidArgument(
+        "CPU+CUDA composition requires pinned host and device resources");
+  }
+  HYLE_ASSIGN_OR_RETURN(auto extension, cuda_extension(context));
+  CompositionResources resources{&host, &device};
+  return compute::detail::BackendExtensionAccess::call(
+      extension, &composition_resources_call, &resources);
 }
 
 Result<Device> device(std::size_t ordinal) noexcept {

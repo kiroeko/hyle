@@ -18,6 +18,7 @@
 #include "../compute/completion_internal.h"
 #include "../compute/provider_internal.h"
 #include "../compute_ops/view_alias.h"
+#include "compile_internal.h"
 #include "graph_state.h"
 #include "hyle/compute/detail/completion_access.h"
 #include "hyle/compute/detail/queue_sequence.h"
@@ -8087,7 +8088,9 @@ Result<CompiledGraph> compile_plan(
     util::Ref<detail::SharedConstants> shared_constants = {},
     bool inherited_budget = false,
     util::Ref<detail::StorageBudgetState> invocation_storage = {},
-    util::Ref<detail::StorageBudgetState> compilation_storage = {}) noexcept {
+    util::Ref<detail::StorageBudgetState> compilation_storage = {},
+    compute::BackendId cpu_backend = {},
+    compute::BackendId gpu_backend = {}) noexcept {
   if (!options.workload.valid())
     return std::unexpected(Status::InvalidArgument("graph workload context"));
   if (!graph.valid()) {
@@ -8100,6 +8103,13 @@ Result<CompiledGraph> compile_plan(
   if (environment.targets.empty()) {
     return std::unexpected(Status::InvalidArgument(
         "compile environment has no execution targets"));
+  }
+  const bool cpu_gpu = cpu_backend.valid() || gpu_backend.valid();
+  if (cpu_gpu &&
+      (!cpu_backend.valid() || !gpu_backend.valid() ||
+       cpu_backend == gpu_backend || environment.targets.size() != 2)) {
+    return std::unexpected(Status::InvalidArgument(
+        "CPU+GPU graph admission requires exactly two distinct backends"));
   }
   if (environment.storage_domains.size() >
           (std::numeric_limits<std::uint32_t>::max)() ||
@@ -8130,11 +8140,16 @@ Result<CompiledGraph> compile_plan(
       return std::unexpected(Status::FailedPrecondition(
           "compile environment context is invalid or closed"));
     }
-    if (index != 0 &&
+    if (!cpu_gpu && index != 0 &&
         target.context->device() != environment.targets[0].context->device()) {
       return std::unexpected(
           Status::InvalidArgument("compute-backed graph requires one Device "
                                   "for all execution targets"));
+    }
+    if (cpu_gpu && target.context->device().backend_id() !=
+                       (index == 0 ? gpu_backend : cpu_backend)) {
+      return std::unexpected(Status::InvalidArgument(
+          "CPU+GPU graph target identities differ from native admission"));
     }
     if (!target.default_storage.valid() ||
         target.default_storage.ordinal() >=
@@ -8506,7 +8521,9 @@ remaining_compile_budget(CompileOptions options,
 
 Result<CompiledGraph> compile_family(const Graph &graph,
                                      CompileEnvironment environment,
-                                     CompileOptions options) noexcept {
+                                     CompileOptions options,
+                                     compute::BackendId cpu_backend = {},
+                                     compute::BackendId gpu_backend = {}) noexcept {
   const auto variants = options.exact_variants;
   if (!variants.empty() &&
       options.shape_policy != CompileShapePolicy::kDeclaredDomain)
@@ -8518,7 +8535,9 @@ Result<CompiledGraph> compile_family(const Graph &graph,
   options.exact_variants = {};
   detail::ConstantArtifactCache packing;
   HYLE_ASSIGN_OR_RETURN(auto result,
-                        compile_plan(graph, environment, options, packing));
+                        compile_plan(graph, environment, options, packing,
+                                     {}, false, {}, {}, cpu_backend,
+                                     gpu_backend));
   packing.commit_plan();
   if (variants.empty())
     return result;
@@ -8541,7 +8560,8 @@ Result<CompiledGraph> compile_family(const Graph &graph,
                           compile_plan(graph, environment, child_options,
                                        packing, plan.shared_constants, true,
                                        plan.invocation_storage,
-                                       plan.compilation_storage));
+                                       plan.compilation_storage, cpu_backend,
+                                       gpu_backend));
     packing.commit_plan();
     detail::ExecutableAccess::state(child.executable)->exact_variant_index =
         index;
@@ -8561,12 +8581,16 @@ Result<CompiledGraph> compile_family(const Graph &graph,
 
 } // namespace
 
-Result<CompiledGraph> compile(const Graph &graph,
-                              CompileEnvironment environment,
-                              CompileOptions options) noexcept {
+namespace {
+
+Result<CompiledGraph> compile_admitted(
+    const Graph &graph, CompileEnvironment environment, CompileOptions options,
+    compute::BackendId cpu_backend = {},
+    compute::BackendId gpu_backend = {}) noexcept {
   HYLE_TRACE_ZONE_NAMED("hyle.graph.compile");
   HYLE_ASSIGN_OR_RETURN(auto result,
-                        compile_family(graph, environment, options));
+                        compile_family(graph, environment, options,
+                                       cpu_backend, gpu_backend));
   const auto &plan = *detail::ExecutableAccess::state(result.executable);
   if (plan.compilation_storage) {
     // All family compilation scratch has died. Retained reports, signatures,
@@ -8583,6 +8607,20 @@ Result<CompiledGraph> compile(const Graph &graph,
       detail::CompileReportAccess::state(child)->compilation_storage = snapshot;
   }
   return result;
+}
+
+} // namespace
+
+Result<CompiledGraph> compile(const Graph &graph,
+                              CompileEnvironment environment,
+                              CompileOptions options) noexcept {
+  return compile_admitted(graph, environment, options);
+}
+
+Result<CompiledGraph> detail::compile_cpu_gpu(
+    const Graph &graph, CompileEnvironment environment, CompileOptions options,
+    compute::BackendId cpu_backend, compute::BackendId gpu_backend) noexcept {
+  return compile_admitted(graph, environment, options, cpu_backend, gpu_backend);
 }
 
 } // namespace hyle::graph
