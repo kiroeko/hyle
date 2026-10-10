@@ -517,25 +517,15 @@
     },
     {
       "module": "compute_route_apple",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/build/compute-mixed-shared-license-registration.md",
-      "summary": "C3限定修复CLOSED：共享DS4许可证登记唯一owner；完整CPU+Apple三交付与配置边界通过，运行数学/热路径不变。",
-      "candidate": "530e230bbc11e4fe12218a6a021ca15b009337c3",
-      "performance": {
-        "tier": "P0",
-        "evidence": "docs/implementation/tasks/build/compute-mixed-shared-license-registration.md"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/compute-h2-cpu-apple-composition.md",
+      "summary": "H2 SCOPED：CPU+MLX/Metal原生粗片段、普通主存、两槽迁移与异步/预算/诊断新准入；先固定有限native审计与FIX，不把mixed SDK或H1旧证据当Apple组合完成。"
     },
     {
       "module": "graph_route_apple",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/build/compute-c3-hardware-boundary-decision.md",
-      "summary": "C1/C2/R1/C3按用户接受边界CLOSED：统一入口/SDK/资产/配置/安装头与已验平台完成，78数学PASS；WSL Vulkan十二项实GPU运行UNQUALIFIED不阻塞，H1–H3未实现。",
-      "candidate": "2614676ee64bceddadcf791c218d6eea1f051c64",
-      "performance": {
-        "tier": "P0",
-        "evidence": "docs/implementation/tasks/build/compute-c3-hardware-boundary-decision.md"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/compute-h2-cpu-apple-composition.md",
+      "summary": "H2 SCOPED：CPU+MLX/Metal原生粗片段、普通主存、两槽迁移与异步/预算/诊断新准入；先固定有限native审计与FIX，不把mixed SDK或H1旧证据当Apple组合完成。"
     },
     {
       "module": "compute_route_vulkan",
@@ -661,8 +651,9 @@
     },
     {
       "module": "graph_route_cpu_apple",
-      "state": "QUEUED",
-      "summary": "H2新准入CPU+MLX/Metal粗片段组合身份；沿H1已完成合同提供普通CPU主存、native owner边界、异步/两槽迁移、共享预算/诊断，不创建空target。"
+      "state": "SCOPED",
+      "summary": "H2 SCOPED：CPU+MLX/Metal原生粗片段、普通主存、两槽迁移与异步/预算/诊断新准入；先固定有限native审计与FIX，不把mixed SDK或H1旧证据当Apple组合完成。",
+      "record": "docs/implementation/tasks/compute/compute-h2-cpu-apple-composition.md"
     }
   ]
 }

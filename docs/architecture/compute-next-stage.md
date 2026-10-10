@@ -266,8 +266,10 @@ H1 首先补齐并验证，H2/H3 在各自 native 域兑现相同任务；不复
 相同域的 payload/expert 选择更新继续复用固定程序。完整模型的分配策略、缓存与集成验收归引擎。
 
 具体源码反例、owner、H1-07至09及批量验收见
-[当前 H1 卡](../implementation/tasks/compute/compute-h1-cpu-cuda-composition.md#当前恢复合同offload-基础机制)。
-三项目前均未完成产品修复/验收；旧候选证据只覆盖其原合同，不代签新增能力。
+[H1 terminal](../implementation/tasks/compute/compute-h1-cpu-cuda-composition.md#h1-terminalcpucuda组合基础机制完成)。
+三项已在CPU+CUDA的当前候选完成Windows/WSL验收；CPU+Apple由
+[H2活动卡](../implementation/tasks/compute/compute-h2-cpu-apple-composition.md)继续定界，CPU+Vulkan随后实施。
+旧候选或单路线证据只覆盖原合同，不代签这两个新组合。
 
 恢复后先批量完成三项产品接线，API/算法固定再冻结一个新候选，集中验收受影响 source/static/shared
 消费者。CUDA 重型编译改为 build1/test1，重型 run 串行，启动前确认内存余量；因内存暂停时不启动。
