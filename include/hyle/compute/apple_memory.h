@@ -26,6 +26,8 @@ public:
   HYLE_COMPUTE_ROUTE_APPLE_API mem::MemoryResourceRef ref() const noexcept;
   // Cold allocation. The MLX array retains the native Buffer and quota until
   // its last alias disappears. Native allocator caches/rounding are excluded.
+  // MLX descriptor storage is opaque; a supplied budget must explicitly allow
+  // unattributed owners. A strict total scope rejects before native allocation.
   HYLE_COMPUTE_ROUTE_APPLE_API Result<mlx::core::array>
   allocate(const TensorDesc &description, ResourceBudget budget = {},
            ResourceBudgetCategory category = ResourceBudgetCategory::kWorkspace) const noexcept;

@@ -59,6 +59,7 @@ struct MemoryState final : mem::MemoryResource {
 
 struct ArrayStorage final {
   ResourceBudget::Reservation charge;
+  ResourceBudget::Reservation private_metadata;
   mem::Buffer buffer;
 };
 } // namespace detail
@@ -89,13 +90,18 @@ Result<mx::array> MemoryResource::allocate(const TensorDesc &description, Resour
     auto storage = std::allocate_shared<detail::ArrayStorage>(
         mem::StdAllocator<detail::ArrayStorage>(metadata));
     if (budget.valid()) {
+      // MLX owns its array descriptors. Do not pretend those opaque native
+      // allocations are included in our requested payload/control bytes.
+      HYLE_ASSIGN_OR_RETURN(storage->private_metadata, budget.reserve_unattributed(std::nullopt));
       HYLE_ASSIGN_OR_RETURN(storage->charge, budget.reserve(ref(), bytes, category));
     }
     HYLE_ASSIGN_OR_RETURN(storage->buffer, mem::Buffer::create(ref(), bytes, alignof(std::max_align_t)));
     mx::array result(spec.shape, spec.dtype, nullptr, {});
-    if (bytes != 0)
-      result.set_data(mx::allocator::Buffer(storage->buffer.native_handle()),
-                      [storage = std::move(storage)](mx::allocator::Buffer) {});
+    // Evaluate the handle before moving its owner into the deleter: function
+    // argument evaluation order must not decide whether storage is null.
+    const auto handle = storage->buffer.native_handle();
+    result.set_data(mx::allocator::Buffer(handle),
+                    [storage = std::move(storage)](mx::allocator::Buffer) {});
     result.set_status(mx::array::available);
     return result;
   } catch (...) { return std::unexpected(detail::native_exception()); }

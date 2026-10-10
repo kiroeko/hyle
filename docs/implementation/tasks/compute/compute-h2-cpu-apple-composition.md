@@ -113,3 +113,24 @@ payload归还后才释放Reservation。控制块复用Mem StdAllocator及Resourc
 中央public-header归属与Metal framework实际依赖已连接，owner为本卡AUDITED范围。11项路线配置、
 closure/docs及selector授权通过；公开新头/Objective-C++尚待集中native编译/运行，不能写功能PASS。
 剩余两槽迁移、Graph组合、报告与整包验收继续批量接线，不因本小片重跑旧H1或全库。
+
+### 两槽原生迁移接线（待native资格）
+
+新增apple_weights.h/apple_weights.mm：cold固定catalog与两组shared staging/destination backing，
+shared ResourceBudget在分配前计入两端payload和受控metadata；upload硬校验ID、完整TensorDesc、
+host可访问源、重复选择、容量与generation，再提交实际Metal blit和shared event。macOS blit的
+四字节extent限制由已计账native尾部padding承担，公开tensor保留原精确编码，不进行量化转换。
+
+每槽拥有原生transfer queue，可与现Apple Context stream独立提交；这尚不证明物理重叠。
+binding只允许成功ready的array，array alias保留选中槽，batch/Completion/array存活禁止槽复用。
+原生完成callback只保留backing，避免slot→command→slot循环；丢弃Completion的附加寿命在真实
+native终结后回调，completed handler内不调用waitUntilCompleted，避免等待自身。close只排空本池。
+
+当前为批量实施源码，不宣称原生编译、数学、资源或三交付PASS。Graph组合和整包固定候选仍待完成，
+按原六FIX继续；本小片只运行工具/文档合同检查，不重跑H1或旧四路线性能。
+
+完成回调在commit前注册，使用独立progress和backing；晚丢弃的Completion进入有界寿命链，在已注册
+回调真实终结时释放，不尝试commit后追加Metal回调。MLX数组描述符的私有分配保留unknown owner；
+显式partial预算才允许创建这些array，strict总账在native array分配前拒绝。已修正MemoryResource
+set_data实参求值顺序，先读取handle再移动owner，避免由编译器实参顺序造成空指针。
+路线配置11/11、closure59/schema4、docs898/4413和selector授权通过。native产品验收仍未运行。

@@ -451,7 +451,7 @@ _hyle_declare_component(compute_route_apple
   TRACE
   PRIVATE_DEPS container platform_thread compute_provider_ggml_metal
   PUBLIC_DEPS core compute compute_ops error mem
-  SPLIT_PUBLIC_HEADERS hyle/compute/apple.h hyle/compute/apple_memory.h hyle/compute/detail/apple_plan.h)
+  SPLIT_PUBLIC_HEADERS hyle/compute/apple.h hyle/compute/apple_memory.h hyle/compute/apple_weights.h hyle/compute/detail/apple_plan.h)
 _hyle_declare_component(graph_route_apple
   TRACE
   PUBLIC_DEPS core compute_ops compute_route_apple error graph
