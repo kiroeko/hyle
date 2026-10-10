@@ -658,6 +658,11 @@
         "tier": "P0",
         "evidence": "docs/implementation/tasks/compute/compute-h1-cpu-cuda-composition.md"
       }
+    },
+    {
+      "module": "graph_route_cpu_apple",
+      "state": "QUEUED",
+      "summary": "H2新准入CPU+MLX/Metal粗片段组合身份；沿H1已完成合同提供普通CPU主存、native owner边界、异步/两槽迁移、共享预算/诊断，不创建空target。"
     }
   ]
 }

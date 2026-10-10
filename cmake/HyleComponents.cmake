@@ -513,6 +513,9 @@ _hyle_declare_component(graph_route_cpu_cuda
   PUBLIC_DEPS core graph compute compute_backend_cuda compute_route_cuda sched
   SPLIT_PUBLIC_HEADERS hyle/graph/cpu_cuda.h)
 
+# Identity reservation for the admitted CPU+MLX/Metal coarse composition.
+_hyle_declare_component(graph_route_cpu_apple QUEUED)
+
 # Product facades are deliberately outside the factor DAG. They have no source,
 # module status, or decision authority and must never be used by an internal
 # factor edge. A facade only selects the exact factor roots that make one
