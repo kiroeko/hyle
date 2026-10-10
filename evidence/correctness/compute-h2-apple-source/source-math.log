@@ -1,0 +1,13 @@
+Test project /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build
+    Start 1: hyle_selected_source_consumer
+1/4 Test #1: hyle_selected_source_consumer ....   Passed   18.84 sec
+    Start 2: hyle_selected_source_compute
+2/4 Test #2: hyle_selected_source_compute .....   Passed    0.46 sec
+    Start 3: hyle_h2_apple_weights
+3/4 Test #3: hyle_h2_apple_weights ............   Passed    0.41 sec
+    Start 4: hyle_h2_cpu_apple
+4/4 Test #4: hyle_h2_cpu_apple ................   Passed    0.45 sec
+
+100% tests passed, 0 tests failed out of 4
+
+Total Test time (real) =  20.16 sec

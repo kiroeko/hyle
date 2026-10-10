@@ -1,0 +1,10 @@
+{
+  "identity": {
+    "commit": "6c415ae968827a04985f5aac94161fa0e1fbf847",
+    "archive_sha256": "e572c9cc813f7da33b5c6dd1a110504d19f9cd4dc55251fff92b9ed2e15b2c55",
+    "bytes": 164408261
+  },
+  "changed_files": 9715,
+  "unchanged_preserved_mtimes": 1771,
+  "obsolete_product_files_removed": []
+}

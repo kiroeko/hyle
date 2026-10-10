@@ -1,0 +1,20 @@
+Start testing: Oct 11 01:53 CST
+----------------------------------------------------------
+5/5 Testing: hyle_h2_contracts
+5/5 Test: hyle_h2_contracts
+Command: "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build/hyle_h2_contracts"
+Directory: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build
+"hyle_h2_contracts" start time: Oct 11 01:53 CST
+Output:
+----------------------------------------------------------
+CPU+Apple contracts: rejection, OOM, old leases, cancel, abandon and late failure passed
+<end of output>
+Test time =   2.34 sec
+----------------------------------------------------------
+Test Passed.
+"hyle_h2_contracts" end time: Oct 11 01:53 CST
+"hyle_h2_contracts" time elapsed: 00:00:02
+----------------------------------------------------------
+
+End testing: Oct 11 01:53 CST
+

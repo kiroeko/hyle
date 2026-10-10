@@ -1,0 +1,32 @@
+Mac16,12
+17179869184
+
+ProductName:		macOS
+ProductVersion:		27.0.1
+BuildVersion:		26A434
+
+Apple clang version 21.0.0 (clang-2100.3.34.2)
+Mach Virtual Memory Statistics: (page size of 16384 bytes)
+Pages free:                                    53991.
+Pages active:                                 386343.
+Pages inactive:                               389035.
+Pages speculative:                              8338.
+Pages throttled:                                   0.
+Pages wired down:                             139692.
+Pages purgeable:                               22984.
+"Translation faults":                      449272349.
+Pages copy-on-write:                         9136343.
+Pages zero filled:                         388893519.
+Pages reactivated:                          10964452.
+Pages purged:                                2821363.
+File-backed pages:                            505896.
+Anonymous pages:                              277820.
+Pages stored in compressor:                    91123.
+Pages occupied by compressor:                  32472.
+Decompressions:                             24645947.
+Compressions:                               55015847.
+Pageins:                                    18592324.
+Pageouts:                                      89538.
+Swapins:                                     1468794.
+Swapouts:                                    7777113.
+

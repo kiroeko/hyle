@@ -1,0 +1,5 @@
+Syntax repair src/compute_route_apple/apple_memory.mm
+exit=0
+Syntax repair src/compute_route_apple/apple_weights.mm
+exit=0
+H2_SYNTAX_FIX_COMPLETE

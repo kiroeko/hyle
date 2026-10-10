@@ -1,0 +1,68 @@
+{
+  "identity": {
+    "commit": "6c415ae968827a04985f5aac94161fa0e1fbf847",
+    "previous_commit": "40db759573fb9c551d3deec6ab46f40078a91cd6",
+    "changed_tus": [
+      "src/compute_route_apple/apple_memory.mm",
+      "src/compute_route_apple/apple_weights.mm"
+    ]
+  },
+  "units": [
+    {
+      "unit": "src/compute_route_apple/apple_memory.mm",
+      "argv": [
+        "/usr/bin/clang++",
+        "-std=c++23",
+        "-mmacosx-version-min=14.4",
+        "-DHYLE_COMPUTE_APPLE=1",
+        "-DHYLE_STATIC=1",
+        "-fblocks",
+        "-fsyntax-only",
+        "-Wall",
+        "-Wextra",
+        "-I/Users/kiro/hyle-scratch/compute-unified/h2-batch/snapshot/include",
+        "-I/Users/kiro/hyle-scratch/compute-unified/h2-batch/snapshot/src/compute",
+        "-I/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-relocated/include",
+        "-I/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-relocated/include/metal_cpp",
+        "/Users/kiro/hyle-scratch/compute-unified/h2-batch/snapshot/src/compute_route_apple/apple_memory.mm"
+      ],
+      "exit": 0,
+      "seconds": 0.5699005420000001,
+      "log": "/Users/kiro/hyle-scratch/compute-unified/h2-batch/syntax-fix-0.log"
+    },
+    {
+      "unit": "src/compute_route_apple/apple_weights.mm",
+      "argv": [
+        "/usr/bin/clang++",
+        "-std=c++23",
+        "-mmacosx-version-min=14.4",
+        "-DHYLE_COMPUTE_APPLE=1",
+        "-DHYLE_STATIC=1",
+        "-fblocks",
+        "-fsyntax-only",
+        "-Wall",
+        "-Wextra",
+        "-I/Users/kiro/hyle-scratch/compute-unified/h2-batch/snapshot/include",
+        "-I/Users/kiro/hyle-scratch/compute-unified/h2-batch/snapshot/src/compute",
+        "-I/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-relocated/include",
+        "-I/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-relocated/include/metal_cpp",
+        "/Users/kiro/hyle-scratch/compute-unified/h2-batch/snapshot/src/compute_route_apple/apple_weights.mm"
+      ],
+      "exit": 0,
+      "seconds": 0.570281125,
+      "log": "/Users/kiro/hyle-scratch/compute-unified/h2-batch/syntax-fix-1.log"
+    }
+  ],
+  "reused_unchanged_units": [
+    "src/graph_route_apple/apple_lowering.cc",
+    "src/graph_route_cpu_apple/compile.cc",
+    "src/graph_route_cpu_apple/invocation.cc",
+    "samples/package/compute/apple_weights/main.cc",
+    "samples/package/graph/cpu_apple/main.cc",
+    "syntax-header-0.cc",
+    "syntax-header-1.cc",
+    "syntax-header-2.cc",
+    "syntax-header-3.cc"
+  ],
+  "kind": "syntax only; no link/math/delivery verdict"
+}

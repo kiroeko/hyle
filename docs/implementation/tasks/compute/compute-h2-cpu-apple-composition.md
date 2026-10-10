@@ -154,3 +154,13 @@ CPU Graph workspace、metadata、原生边界和迁移共享ResourceBudget；MLX
 本机路线配置原11项通过；新CPU+Apple/单Apple隔离项最初查出public/type/private声明漏项，已修
 实际依赖边并仅定向重跑该项通过。当前所有数学/异常/重叠/三交付仍待Mac资格，不能以config通过
 代签PASS。下一批先做固定changed TU/headers语法检查，再集中固定候选source与installed交付。
+
+[固定Apple语法批次](../../../../evidence/correctness/compute-h2-apple-wiring-syntax/README.md)：
+7个产品/consumer TU及4个公开头实际编译；初始两个类型错误修复后只补查这两个，最终11项均有
+通过语法证据。仍不签link/数学/生命周期/重叠/三交付。6c415ae96为当前实施快照，owner仍AUDITED。
+统一统计Compute+Graph 66,151实现行/289文件；全库自实现161,378行，不含测试。
+
+[Air源码批次](../../../../evidence/correctness/compute-h2-apple-source/README.md)实际完成：普通CPU/Apple
+Compute/Graph及新Direct/混合Graph四消费者4/4；新增合同target定向1/1。GGUF逻辑轴的is_dense
+不等同native byte carrier的物理连续性，已保留原精确编码，provider继续原cold hard admission。
+安装static/shared、搬迁/头/缺路线、物理重叠与终审仍待完成；不把source通过写成整包CLOSED。

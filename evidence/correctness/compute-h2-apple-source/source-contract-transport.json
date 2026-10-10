@@ -1,0 +1,11 @@
+{
+  "commit": "1989b1fe35b850d6dcc2da9d92e0b5056148a927",
+  "source_baseline": "6c415ae968827a04985f5aac94161fa0e1fbf847",
+  "files": [
+    "src/compute_route_apple/apple_memory.mm",
+    "src/graph_route_cpu_apple/compile.cc",
+    "tests/graph/cpu_apple_contracts.cc",
+    "tests/graph/cpu_apple_contracts/CMakeLists.txt"
+  ],
+  "delta_sha256": "627abd73473ccbb8f35da66ade2b94a32e44da368cf2ad9dc5cd27519b6422c8"
+}

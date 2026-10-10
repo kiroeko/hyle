@@ -1,0 +1,27 @@
+In file included from /Users/kiro/hyle-scratch/compute-unified/h2-batch/snapshot/syntax-header-0.cc:1:
+In file included from /Users/kiro/hyle-scratch/compute-unified/h2-batch/snapshot/include/hyle/compute/apple_memory.h:3:
+In file included from /Users/kiro/hyle-scratch/compute-unified/h2-batch/snapshot/include/hyle/compute/apple.h:23:
+In file included from /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-relocated/include/mlx/array.h:10:
+/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-relocated/include/mlx/allocator.h:39:36: warning: unused parameter 'ptr' [-Wunused-parameter]
+   39 |   virtual Buffer make_buffer(void* ptr, size_t size) {
+      |                                    ^
+/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-relocated/include/mlx/allocator.h:39:48: warning: unused parameter 'size' [-Wunused-parameter]
+   39 |   virtual Buffer make_buffer(void* ptr, size_t size) {
+      |                                                ^
+/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-relocated/include/mlx/allocator.h:42:31: warning: unused parameter 'buffer' [-Wunused-parameter]
+   42 |   virtual void release(Buffer buffer) {}
+      |                               ^
+In file included from /Users/kiro/hyle-scratch/compute-unified/h2-batch/snapshot/syntax-header-0.cc:1:
+In file included from /Users/kiro/hyle-scratch/compute-unified/h2-batch/snapshot/include/hyle/compute/apple_memory.h:3:
+In file included from /Users/kiro/hyle-scratch/compute-unified/h2-batch/snapshot/include/hyle/compute/apple.h:23:
+In file included from /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-relocated/include/mlx/array.h:12:
+In file included from /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-relocated/include/mlx/dtype.h:9:
+In file included from /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-relocated/include/mlx/types/complex.h:5:
+In file included from /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-relocated/include/mlx/types/half_types.h:32:
+/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-relocated/include/mlx/types/bf16.h:29:3: warning: definition of implicit copy assignment operator for '_MLX_BFloat16' is deprecated because it has a user-declared copy constructor [-Wdeprecated-copy]
+   29 |   _MLX_BFloat16(_MLX_BFloat16 const&) = default;
+      |   ^
+/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-relocated/include/mlx/types/bf16.h:38:19: note: in implicit copy assignment operator for 'mlx::core::_MLX_BFloat16' first required here
+   38 |     return (*this = _MLX_BFloat16(x));
+      |                   ^
+4 warnings generated.

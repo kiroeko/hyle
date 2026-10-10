@@ -1,0 +1,84 @@
+{
+  "identity": {
+    "commit": "6c415ae968827a04985f5aac94161fa0e1fbf847",
+    "archive_sha256": "e572c9cc813f7da33b5c6dd1a110504d19f9cd4dc55251fff92b9ed2e15b2c55",
+    "bytes": 164408261
+  },
+  "stages": [
+    {
+      "phase": "source-configure",
+      "argv": [
+        "/opt/homebrew/bin/cmake",
+        "-S",
+        "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-parent",
+        "-B",
+        "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build",
+        "-DCMAKE_BUILD_TYPE=Release"
+      ],
+      "exit": 0,
+      "stopped": null,
+      "seconds": 6.141005166999999,
+      "owned_peak_rss_bytes": 39763968,
+      "available_bytes_before": 7058358272,
+      "log": "/Users/kiro/hyle-scratch/compute-unified/h2-batch/source-configure.log"
+    },
+    {
+      "phase": "source-dry-run",
+      "argv": [
+        "/opt/homebrew/bin/ninja",
+        "-C",
+        "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build",
+        "-n",
+        "hyle_h2_apple_weights",
+        "hyle_h2_cpu_apple",
+        "hyle_selected_source_consumer",
+        "hyle_selected_source_compute"
+      ],
+      "exit": 0,
+      "stopped": null,
+      "seconds": 1.0493717919999987,
+      "owned_peak_rss_bytes": 7290880,
+      "available_bytes_before": 6840221696,
+      "log": "/Users/kiro/hyle-scratch/compute-unified/h2-batch/source-dry-run.log"
+    },
+    {
+      "phase": "source-build",
+      "argv": [
+        "/opt/homebrew/bin/cmake",
+        "--build",
+        "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build",
+        "--parallel",
+        "1",
+        "--target",
+        "hyle_h2_apple_weights",
+        "hyle_h2_cpu_apple",
+        "hyle_selected_source_consumer",
+        "hyle_selected_source_compute"
+      ],
+      "exit": 0,
+      "stopped": null,
+      "seconds": 31.762594375,
+      "owned_peak_rss_bytes": 662667264,
+      "available_bytes_before": 6912425984,
+      "log": "/Users/kiro/hyle-scratch/compute-unified/h2-batch/source-build.log"
+    },
+    {
+      "phase": "source-math",
+      "argv": [
+        "/opt/homebrew/bin/ctest",
+        "--test-dir",
+        "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build",
+        "-j",
+        "1",
+        "--output-on-failure"
+      ],
+      "exit": 0,
+      "stopped": null,
+      "seconds": 20.630490459,
+      "owned_peak_rss_bytes": 193462272,
+      "available_bytes_before": 7167164416,
+      "log": "/Users/kiro/hyle-scratch/compute-unified/h2-batch/source-math.log"
+    }
+  ],
+  "scope": "source build/math only; installed SDK and full contracts still outstanding"
+}

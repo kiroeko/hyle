@@ -1,0 +1,69 @@
+{
+  "identity": {
+    "commit": "1989b1fe35b850d6dcc2da9d92e0b5056148a927",
+    "source_baseline": "6c415ae968827a04985f5aac94161fa0e1fbf847",
+    "files": [
+      "src/compute_route_apple/apple_memory.mm",
+      "src/graph_route_cpu_apple/compile.cc",
+      "tests/graph/cpu_apple_contracts.cc",
+      "tests/graph/cpu_apple_contracts/CMakeLists.txt"
+    ],
+    "delta_sha256": "627abd73473ccbb8f35da66ade2b94a32e44da368cf2ad9dc5cd27519b6422c8"
+  },
+  "stages": [
+    {
+      "phase": "source-contract-configure",
+      "argv": [
+        "/opt/homebrew/bin/cmake",
+        "-S",
+        "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-parent",
+        "-B",
+        "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build"
+      ],
+      "exit": 0,
+      "stopped": null,
+      "seconds": 6.133777417,
+      "owned_peak_rss_bytes": 49872896,
+      "available_bytes_before": 7974535168,
+      "log": "/Users/kiro/hyle-scratch/compute-unified/h2-batch/source-contract-configure.log"
+    },
+    {
+      "phase": "source-contract-build",
+      "argv": [
+        "/opt/homebrew/bin/cmake",
+        "--build",
+        "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build",
+        "--parallel",
+        "1",
+        "--target",
+        "hyle_h2_contracts"
+      ],
+      "exit": 0,
+      "stopped": null,
+      "seconds": 15.353829042,
+      "owned_peak_rss_bytes": 661504000,
+      "available_bytes_before": 7799652352,
+      "log": "/Users/kiro/hyle-scratch/compute-unified/h2-batch/source-contract-build.log"
+    },
+    {
+      "phase": "source-contract-test",
+      "argv": [
+        "/opt/homebrew/bin/ctest",
+        "--test-dir",
+        "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build",
+        "-j",
+        "1",
+        "-R",
+        "^hyle_h2_contracts$",
+        "--output-on-failure"
+      ],
+      "exit": 0,
+      "stopped": null,
+      "seconds": 3.148570750000001,
+      "owned_peak_rss_bytes": 12369920,
+      "available_bytes_before": 7764787200,
+      "log": "/Users/kiro/hyle-scratch/compute-unified/h2-batch/source-contract-test.log"
+    }
+  ],
+  "scope": "source build/math only; installed SDK and full contracts still outstanding"
+}
