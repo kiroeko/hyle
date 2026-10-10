@@ -653,10 +653,9 @@
     },
     {
       "module": "graph_route_cpu_apple",
-      "state": "CANDIDATE",
-      "summary": "H2 CANDIDATE：CPU/Apple粗片段、原生两槽/编码与生命周期、共享预算/冷报告已实现；Air源码数学4/4与合同1/1通过。固定1989b1fe3，集中补安装static/shared、资产/搬迁/安装头、native重叠及终审；未运行不签PASS。",
-      "record": "docs/implementation/tasks/compute/compute-h2-cpu-apple-composition.md",
-      "candidate": "1989b1fe35b850d6dcc2da9d92e0b5056148a927"
+      "state": "AUDITED",
+      "summary": "H2终审定向FIX：drive_graph每次扫描全部compiled value找输入，与只沿粗片段/必要边界的重放成本合同不符；冷编译固定输入索引。只变graph_route_cpu_apple私有计划/循环，数学、API及其它owner不变；按受影响半径补混合/合同验证。",
+      "record": "docs/implementation/tasks/compute/compute-h2-cpu-apple-composition.md"
     }
   ]
 }

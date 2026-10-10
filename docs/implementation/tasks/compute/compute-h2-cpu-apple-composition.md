@@ -1,6 +1,6 @@
 # H2：CPU+MLX/Metal粗片段与offload基础机制
 
-<!-- MODULE REVIEW: CANDIDATE -->
+<!-- MODULE REVIEW: AUDITED -->
 
 - baseline：`7f428d7a9`（H1 Windows/WSL完整合同CLOSED）；新factor身份登记`b842269f`。
 - canonical：Windows；唯一Apple验收机MacBook Air `Mac16,12`，2026-10-10实读M4/16GiB、
@@ -180,3 +180,14 @@ API/算法、普通入口和消费方均已接线，原生source数学及异常/
 真正rename搬迁、原生dylib/metallib和缺CPU/Apple路线诊断同批核实。原生copy/compute重叠另一次
 有界actual timeline取证；本包P0不启动数学性能比赛。终审核对cost、borrow、失败排空及全部gate。
 文档/状态提交不更新产品candidate、不重建或重跑已匹配的source/P1。当前未完成项不能写PASS。
+
+## 终审有限成本反例与回退
+
+已核实drive_graph约223行按run.values.size扫描全部编译value，只为找Graph输入；完整provider
+region已绑定仍需每次触碰全部内部value metadata，与重放只沿粗片段和必要边界的成本合同不符。
+不是数学或benchmark输赢。只将graph_route_cpu_apple退回AUDITED：新增冷input ordinal目录，hot
+仅处理固定的活跃输入。API、provider程序、布局/转换、资源及完成语义不变，不重开其它模块。
+
+停止集就是这三个私有文件；冷metadata配额继续计账。固定新candidate后，仅对source/shared/static
+混合Graph与合同consumer定向验证；原Direct权重、CPU/Apple原入口与公共头字节未变，复用已验
+资格，不为这处成本修复重跑全集。SDK1989批次是原candidate真实证据，不据此伪签新candidate。

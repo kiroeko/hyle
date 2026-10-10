@@ -70,7 +70,7 @@
 | compute_provider_iree_vulkan | CLOSED | P0 / [PASS](../../evidence/correctness/vulkan-parity-v4-delivery/final-audit.json) | [record](tasks/compute/vulkan-parity-final-audit.md) | Vulkan CLOSED: common Windows104/559/80/34/45/eight-family and current model/state scope, mature cold defaults, applicable Windows/Air/WSL three deliveries/OFF/headers/resources and final cleanup verified. No new self math or WIN; accepted P0 policy/P1 INCONCLUSIVE, WSL GPU unavailable and hardware/residency limits explicit. |
 | compute_provider_torch_cuda | CLOSED | P0 / [PASS](tasks/compute/cuda-final-u6-audit.md) | [record](tasks/compute/cuda-final-u6-audit.md) | CUDA有限goal CLOSED：固定模型/量化/MTP完整原计算与状态、两OS CUDA-only/mixed三交付、cold成熟默认/真实能力门、六重复公式BORROW和具名unique保留、U5 42步/源码SDK增量及终审清理完成。AA原FAIL/性能INCONCLUSIVE无新WIN；按授权ENGINEERING_DEFAULT/P0关闭，不签全设备SOTA或推理engine。 |
 | graph_route_cpu_cuda | CLOSED | P0 / [PASS](tasks/compute/compute-h1-cpu-cuda-composition.md) | [record](tasks/compute/compute-h1-cpu-cuda-composition.md) | H1 CLOSED：CPU+CUDA混合执行、双槽迁移、普通CPU主存/有界staging、共享预算及准备诊断完成；Windows/WSL三交付、安装头/搬迁、错误/寿命与当前native重叠通过。引擎策略、多GPU、Apple/Vulkan混合不在本包。 |
-| graph_route_cpu_apple | CANDIDATE | — | [record](tasks/compute/compute-h2-cpu-apple-composition.md) | H2 CANDIDATE：CPU/Apple粗片段、原生两槽/编码与生命周期、共享预算/冷报告已实现；Air源码数学4/4与合同1/1通过。固定1989b1fe3，集中补安装static/shared、资产/搬迁/安装头、native重叠及终审；未运行不签PASS。 |
+| graph_route_cpu_apple | AUDITED | — | [record](tasks/compute/compute-h2-cpu-apple-composition.md) | H2终审定向FIX：drive_graph每次扫描全部compiled value找输入，与只沿粗片段/必要边界的重放成本合同不符；冷编译固定输入索引。只变graph_route_cpu_apple私有计划/循环，数学、API及其它owner不变；按受影响半径补混合/合同验证。 |
 
 <!-- END GENERATED MODULE STATUS -->
 
