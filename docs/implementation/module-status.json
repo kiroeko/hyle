@@ -270,15 +270,15 @@
     },
     {
       "module": "compute",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/build/compute-c3-hardware-boundary-decision.md",
-      "summary": "用户明确恢复C3：保留WSL Vulkan十二项实GPU运行未资格，不阻塞后续；SCOPED仅对已有证据与限定边界重新裁决，无产品改动。"
+      "summary": "C3限定边界AUDITED：78项数学已验，12项WSL Vulkan实GPU未资格按用户决定保留为限制而不阻塞；有限FIX仅资格记录与状态，不改产品。"
     },
     {
       "module": "graph",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/build/compute-c3-hardware-boundary-decision.md",
-      "summary": "用户明确恢复C3：保留WSL Vulkan十二项实GPU运行未资格，不阻塞后续；SCOPED仅对已有证据与限定边界重新裁决，无产品改动。"
+      "summary": "C3限定边界AUDITED：78项数学已验，12项WSL Vulkan实GPU未资格按用户决定保留为限制而不阻塞；有限FIX仅资格记录与状态，不改产品。"
     },
     {
       "module": "container_concurrent",
@@ -352,9 +352,9 @@
     },
     {
       "module": "compute_provider_onednn",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/build/compute-c3-hardware-boundary-decision.md",
-      "summary": "用户明确恢复C3：保留WSL Vulkan十二项实GPU运行未资格，不阻塞后续；SCOPED仅对已有证据与限定边界重新裁决，无产品改动。"
+      "summary": "C3限定边界AUDITED：78项数学已验，12项WSL Vulkan实GPU未资格按用户决定保留为限制而不阻塞；有限FIX仅资格记录与状态，不改产品。"
     },
     {
       "module": "compute_provider_ggml",
@@ -391,33 +391,33 @@
     },
     {
       "module": "compute_backend_cpu",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/build/compute-c3-hardware-boundary-decision.md",
-      "summary": "用户明确恢复C3：保留WSL Vulkan十二项实GPU运行未资格，不阻塞后续；SCOPED仅对已有证据与限定边界重新裁决，无产品改动。"
+      "summary": "C3限定边界AUDITED：78项数学已验，12项WSL Vulkan实GPU未资格按用户决定保留为限制而不阻塞；有限FIX仅资格记录与状态，不改产品。"
     },
     {
       "module": "compute_backend_cuda",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/build/compute-c3-hardware-boundary-decision.md",
-      "summary": "用户明确恢复C3：保留WSL Vulkan十二项实GPU运行未资格，不阻塞后续；SCOPED仅对已有证据与限定边界重新裁决，无产品改动。"
+      "summary": "C3限定边界AUDITED：78项数学已验，12项WSL Vulkan实GPU未资格按用户决定保留为限制而不阻塞；有限FIX仅资格记录与状态，不改产品。"
     },
     {
       "module": "compute_provider_native",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/build/compute-c3-hardware-boundary-decision.md",
-      "summary": "用户明确恢复C3：保留WSL Vulkan十二项实GPU运行未资格，不阻塞后续；SCOPED仅对已有证据与限定边界重新裁决，无产品改动。"
+      "summary": "C3限定边界AUDITED：78项数学已验，12项WSL Vulkan实GPU未资格按用户决定保留为限制而不阻塞；有限FIX仅资格记录与状态，不改产品。"
     },
     {
       "module": "compute_route_cpu",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/build/compute-c3-hardware-boundary-decision.md",
-      "summary": "用户明确恢复C3：保留WSL Vulkan十二项实GPU运行未资格，不阻塞后续；SCOPED仅对已有证据与限定边界重新裁决，无产品改动。"
+      "summary": "C3限定边界AUDITED：78项数学已验，12项WSL Vulkan实GPU未资格按用户决定保留为限制而不阻塞；有限FIX仅资格记录与状态，不改产品。"
     },
     {
       "module": "graph_route_cpu",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/build/compute-c3-hardware-boundary-decision.md",
-      "summary": "用户明确恢复C3：保留WSL Vulkan十二项实GPU运行未资格，不阻塞后续；SCOPED仅对已有证据与限定边界重新裁决，无产品改动。"
+      "summary": "C3限定边界AUDITED：78项数学已验，12项WSL Vulkan实GPU未资格按用户决定保留为限制而不阻塞；有限FIX仅资格记录与状态，不改产品。"
     },
     {
       "module": "compute_provider_cublas",
@@ -455,15 +455,15 @@
     },
     {
       "module": "compute_route_cuda",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/build/compute-c3-hardware-boundary-decision.md",
-      "summary": "用户明确恢复C3：保留WSL Vulkan十二项实GPU运行未资格，不阻塞后续；SCOPED仅对已有证据与限定边界重新裁决，无产品改动。"
+      "summary": "C3限定边界AUDITED：78项数学已验，12项WSL Vulkan实GPU未资格按用户决定保留为限制而不阻塞；有限FIX仅资格记录与状态，不改产品。"
     },
     {
       "module": "graph_route_cuda",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/build/compute-c3-hardware-boundary-decision.md",
-      "summary": "用户明确恢复C3：保留WSL Vulkan十二项实GPU运行未资格，不阻塞后续；SCOPED仅对已有证据与限定边界重新裁决，无产品改动。"
+      "summary": "C3限定边界AUDITED：78项数学已验，12项WSL Vulkan实GPU未资格按用户决定保留为限制而不阻塞；有限FIX仅资格记录与状态，不改产品。"
     },
     {
       "module": "compute_route_apple",
@@ -478,21 +478,21 @@
     },
     {
       "module": "graph_route_apple",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/build/compute-c3-hardware-boundary-decision.md",
-      "summary": "用户明确恢复C3：保留WSL Vulkan十二项实GPU运行未资格，不阻塞后续；SCOPED仅对已有证据与限定边界重新裁决，无产品改动。"
+      "summary": "C3限定边界AUDITED：78项数学已验，12项WSL Vulkan实GPU未资格按用户决定保留为限制而不阻塞；有限FIX仅资格记录与状态，不改产品。"
     },
     {
       "module": "compute_route_vulkan",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/build/compute-c3-hardware-boundary-decision.md",
-      "summary": "用户明确恢复C3：保留WSL Vulkan十二项实GPU运行未资格，不阻塞后续；SCOPED仅对已有证据与限定边界重新裁决，无产品改动。"
+      "summary": "C3限定边界AUDITED：78项数学已验，12项WSL Vulkan实GPU未资格按用户决定保留为限制而不阻塞；有限FIX仅资格记录与状态，不改产品。"
     },
     {
       "module": "graph_route_vulkan",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/build/compute-c3-hardware-boundary-decision.md",
-      "summary": "用户明确恢复C3：保留WSL Vulkan十二项实GPU运行未资格，不阻塞后续；SCOPED仅对已有证据与限定边界重新裁决，无产品改动。"
+      "summary": "C3限定边界AUDITED：78项数学已验，12项WSL Vulkan实GPU未资格按用户决定保留为限制而不阻塞；有限FIX仅资格记录与状态，不改产品。"
     },
     {
       "module": "compute_provider_ggml_vulkan",
@@ -507,9 +507,9 @@
     },
     {
       "module": "compute_ggml_runtime",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/build/compute-c3-hardware-boundary-decision.md",
-      "summary": "用户明确恢复C3：保留WSL Vulkan十二项实GPU运行未资格，不阻塞后续；SCOPED仅对已有证据与限定边界重新裁决，无产品改动。"
+      "summary": "C3限定边界AUDITED：78项数学已验，12项WSL Vulkan实GPU未资格按用户决定保留为限制而不阻塞；有限FIX仅资格记录与状态，不改产品。"
     },
     {
       "module": "compute_provider_ggml_cuda",
