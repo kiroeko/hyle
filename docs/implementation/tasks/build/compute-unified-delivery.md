@@ -466,3 +466,11 @@ cpu;cuda，两consumer的CPU/CUDA宏同时启用，实际ldd无缺依赖、无LD
 [静态资源收据](../../../../evidence/correctness/compute-unified-c3/wsl-cpu-cuda/static-resource-receipt.json)
 和原批次日志已归档，C3当前78 PASS / 12 UNRUN。下一串行WSL vulkan build/install批次已启动，
 只有编译/资产/consumer链接门，实GPU数学仍未资格；H1–H3联合机制尚未实施。实现LOC仍62,508。
+
+WSL Vulkan原build-only三交付循环已exit0，原路线/feature/许可/export/搬迁断言和六consumer
+链接均完成，实际ldd无缺依赖、无LD覆盖；[交付收据](../../../../evidence/correctness/compute-unified-c3/wsl-vulkan-build-only/receipt.json)
+单独签build/install PASS，六项实GPU数学均未执行并保持BLOCKED。原安装SDK的25份公开头
+以bare与export-target实际宏两档/GCC14独立编译均PASS，Vulkan启用、CPU/CUDA未启用；
+[逐头收据](../../../../evidence/correctness/compute-unified-c3/wsl-vulkan-installed-headers/receipt.json)
+保留实际命令/SDK hash，不签其它平台或static宏全矩阵。C3当前78 PASS / 6 BLOCKED / 6 UNRUN。
+下一串行cpu;vulkan原build-only批次已启动，重用原完整交付检查，不把本数学BLOCKED当产品算子FAIL。
