@@ -1,0 +1,114 @@
+{
+  "candidate": "a2476b62cfe49c1663998645c362392685c06eb1",
+  "scope": "Current mixed-build baseline CPU backend command facts only, not a performance verdict",
+  "command_count": 15,
+  "commands_sha256": "0bf36d4e26019963044f6ec60ac6c257e03b200234f119c86840f90ab0e969af",
+  "any_avx2_enabled": false,
+  "rows": [
+    {
+      "isa_flags": [
+        "-DGGML_SCHED_MAX_COPIES=4",
+        "-DGGML_USE_CPU_REPACK"
+      ],
+      "avx2_enabled": false
+    },
+    {
+      "isa_flags": [
+        "-DGGML_SCHED_MAX_COPIES=4",
+        "-DGGML_USE_CPU_REPACK"
+      ],
+      "avx2_enabled": false
+    },
+    {
+      "isa_flags": [
+        "-DGGML_SCHED_MAX_COPIES=4",
+        "-DGGML_USE_CPU_REPACK"
+      ],
+      "avx2_enabled": false
+    },
+    {
+      "isa_flags": [
+        "-DGGML_SCHED_MAX_COPIES=4",
+        "-DGGML_USE_CPU_REPACK"
+      ],
+      "avx2_enabled": false
+    },
+    {
+      "isa_flags": [
+        "-DGGML_SCHED_MAX_COPIES=4",
+        "-DGGML_USE_CPU_REPACK"
+      ],
+      "avx2_enabled": false
+    },
+    {
+      "isa_flags": [
+        "-DGGML_SCHED_MAX_COPIES=4",
+        "-DGGML_USE_CPU_REPACK"
+      ],
+      "avx2_enabled": false
+    },
+    {
+      "isa_flags": [
+        "-DGGML_SCHED_MAX_COPIES=4",
+        "-DGGML_USE_CPU_REPACK"
+      ],
+      "avx2_enabled": false
+    },
+    {
+      "isa_flags": [
+        "-DGGML_SCHED_MAX_COPIES=4",
+        "-DGGML_USE_CPU_REPACK"
+      ],
+      "avx2_enabled": false
+    },
+    {
+      "isa_flags": [
+        "-DGGML_SCHED_MAX_COPIES=4",
+        "-DGGML_USE_CPU_REPACK"
+      ],
+      "avx2_enabled": false
+    },
+    {
+      "isa_flags": [
+        "-DGGML_SCHED_MAX_COPIES=4",
+        "-DGGML_USE_CPU_REPACK"
+      ],
+      "avx2_enabled": false
+    },
+    {
+      "isa_flags": [
+        "-DGGML_SCHED_MAX_COPIES=4",
+        "-DGGML_USE_CPU_REPACK"
+      ],
+      "avx2_enabled": false
+    },
+    {
+      "isa_flags": [
+        "-DGGML_SCHED_MAX_COPIES=4",
+        "-DGGML_USE_CPU_REPACK"
+      ],
+      "avx2_enabled": false
+    },
+    {
+      "isa_flags": [
+        "-DGGML_SCHED_MAX_COPIES=4",
+        "-DGGML_USE_CPU_REPACK"
+      ],
+      "avx2_enabled": false
+    },
+    {
+      "isa_flags": [
+        "-DGGML_SCHED_MAX_COPIES=4",
+        "-DGGML_USE_CPU_REPACK"
+      ],
+      "avx2_enabled": false
+    },
+    {
+      "isa_flags": [
+        "-DGGML_SCHED_MAX_COPIES=4",
+        "-DGGML_USE_CPU_REPACK"
+      ],
+      "avx2_enabled": false
+    }
+  ]
+}

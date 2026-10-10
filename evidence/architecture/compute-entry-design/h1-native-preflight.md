@@ -20,3 +20,38 @@ correctness/resource/cancel/close/replay/three-delivery and native overlap evide
 before product changes. Host-weight/GPU math and true CPU/GPU math remain different
 journeys. Engine placement/cache/prediction/eviction, multi-GPU and model loading
 remain outside this goal. None of the observations above proves those new journeys.
+
+## Bounded follow-up before H1 owner binding
+
+Read-only follow-up at `bb6e50521`, while the unchanged C3 CPU+Vulkan producer
+is still building. No product code or current owner state is changed.
+
+- `src/graph/executable.cc:8134` enforces the ordinary same-Device contract;
+  `Invocation` already has cold resource/queue preparation, immutable segments
+  and completion retention. Reuse those mechanisms; removing the guard alone
+  does not implement the distinct joint route.
+- `src/compute_backend_cpu/cpu_backend.cc:81` returns an immediate completion;
+  `wait_completion_impl` at line101 rejects an asynchronous backend completion. A GPU-to-CPU edge
+  needs an explicit reported wait or progress driven by the existing Sched;
+  CPU submission cannot be labeled device asynchronous.
+- `src/compute_backend_cuda/cuda_backend.cc:900` requires both transfer resources
+  to belong to the exact CUDA context. Host-accessible CUDA pinned storage is
+  admitted by the CPU backend; an arbitrary pageable CPU allocation is not an
+  asynchronous CUDA source. Staging, ownership and its cost must be explicit.
+- The current CPU program ABI (`src/compute_ggml_runtime/cpu_program_abi.h`) owns
+  initialization, thread pools, planning and compute; it exposes no native
+  `ggml_backend_t` factory. The generic mixed-build ggml CPU backend is not the
+  selected AVX2 program: all **15 actual backend compile commands** have no AVX2
+  enabled ([facts](h1-ggml-cpu-backend-facts.json),
+  [commands](h1-ggml-cpu-commands.txt)). Therefore calling the original scheduler
+  with a generic CPU backend does not establish preservation of qualified CPU
+  implementation rules. H1 must audit a qualified backend bridge or retain the
+  existing CPU Provider regions; this is not a timed performance LOSS.
+- `include/hyle/graph/executable.h:950` publishes borrowed outputs only after
+  successful completion, valid through the next submit/reset/destruction.
+  Existing result leases can retain a native owner; they cannot turn mutable
+  reused Graph backing into an immutable old output. Slot reuse must wait for
+  every applicable in-flight operation and retained result.
+
+These are finite integration constraints for the H1 card, not another overall
+architecture review, a new API decision or a claim that H1 has been implemented.
