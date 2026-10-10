@@ -1,0 +1,6 @@
+if(HYLE_COMPUTE_APPLE_ENABLED)
+  hyle_add_module(graph_route_cpu_apple SOURCES compile.cc invocation.cc)
+else()
+  hyle_add_module(graph_route_cpu_apple OPTIONAL_ABSENT)
+  set_property(TARGET hyle_graph_route_cpu_apple PROPERTY HYLE_INTERNAL_ONLY_ABSENT TRUE)
+endif()

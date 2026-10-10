@@ -63,6 +63,9 @@ struct CompileOptions final {
   // allocation failure rejects compilation. Null adds no report construction.
   CompileReport *report = nullptr;
   compute::WorkloadContext workload;
+  // Composition boundary: original MLX contiguous lowering stays inside the
+  // prepared native region. No CPU layout loop or per-run recompilation.
+  bool contiguous_outputs = false;
 };
 
 // Cold typed DAG -> compiled MLX regions and admitted whole ggml Metal regions.

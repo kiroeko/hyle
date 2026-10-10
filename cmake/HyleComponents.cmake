@@ -513,8 +513,12 @@ _hyle_declare_component(graph_route_cpu_cuda
   PUBLIC_DEPS core graph compute compute_backend_cuda compute_route_cuda sched
   SPLIT_PUBLIC_HEADERS hyle/graph/cpu_cuda.h)
 
-# Identity reservation for the admitted CPU+MLX/Metal coarse composition.
-_hyle_declare_component(graph_route_cpu_apple QUEUED)
+# Native coarse CPU+MLX/Metal composition. A single Apple route has no Sched/CPU edge.
+_hyle_declare_component(graph_route_cpu_apple
+  PRIVATE_DEPS util_core error mem compute compute_backend_cpu graph_route_cpu
+  PUBLIC_DEPS core graph graph_route_apple compute_route_apple sched
+  PUBLIC_TYPE_DEPS sched
+  SPLIT_PUBLIC_HEADERS hyle/graph/cpu_apple.h)
 
 # Product facades are deliberately outside the factor DAG. They have no source,
 # module status, or decision authority and must never be used by an internal
@@ -702,6 +706,10 @@ if(NOT CMAKE_SCRIPT_MODE_FILE AND _hyle_selection_mode STREQUAL "product")
   if("cpu" IN_LIST HYLE_COMPUTE_ROUTE_LIST AND
      "cuda" IN_LIST HYLE_COMPUTE_ROUTE_LIST)
     list(APPEND _HYLE_PRODUCT_FACTORS_GRAPH graph_route_cpu_cuda)
+  endif()
+  if("cpu" IN_LIST HYLE_COMPUTE_ROUTE_LIST AND
+     "apple" IN_LIST HYLE_COMPUTE_ROUTE_LIST)
+    list(APPEND _HYLE_PRODUCT_FACTORS_GRAPH graph_route_cpu_apple)
   endif()
   foreach(_product IN ITEMS COMPUTE GRAPH)
     foreach(_route IN ITEMS cpu cuda apple vulkan)

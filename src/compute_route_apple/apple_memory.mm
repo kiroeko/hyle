@@ -1,6 +1,8 @@
 #include "hyle/compute/apple_memory.h"
 
 #import <Metal/Metal.h>
+#include <cstdint>
+#include <cstring>
 #include <mlx/allocator.h>
 #include "hyle/mem/std_allocator.h"
 
@@ -105,5 +107,58 @@ Result<mx::array> MemoryResource::allocate(const TensorDesc &description, Resour
     result.set_status(mx::array::available);
     return result;
   } catch (...) { return std::unexpected(detail::native_exception()); }
+}
+Result<NativeStorage> MemoryResource::storage_info(const mx::array &array) const noexcept {
+  if (!valid() || array.status() != mx::array::available)
+    return std::unexpected(Status::FailedPrecondition("Apple storage requires a ready native array"));
+  if (array.offset() < 0)
+    return std::unexpected(Status::OutOfRange("Apple native array offset is negative"));
+  const auto handle = array.buffer().ptr();
+  if (handle == nullptr) {
+    if (array.nbytes() == 0) return NativeStorage{};
+    return std::unexpected(Status::InvalidArgument("Apple array has no native backing"));
+  }
+  id<MTLBuffer> buffer = (__bridge id<MTLBuffer>)handle;
+  const auto offset = static_cast<std::size_t>(array.offset());
+  if (buffer.storageMode != MTLStorageModeShared || offset > buffer.length ||
+      array.nbytes() > buffer.length - offset)
+    return std::unexpected(Status::InvalidArgument("Apple array exceeds shared native backing"));
+  return NativeStorage{handle, offset, array.nbytes(), buffer.length};
+}
+
+namespace {
+Status match_dense(const mx::array &array, const TensorDesc &description) noexcept {
+  HYLE_ASSIGN_OR_RETURN(auto spec, input_spec(description));
+  HYLE_ASSIGN_OR_RETURN(auto bytes, description.required_bytes());
+  if ((description.is_plain() && !description.is_dense()) ||
+      (description.storage_format().kind() == StorageFormatKind::kBlocked && !description.is_dense()) ||
+      array.shape() != spec.shape || array.dtype() != spec.dtype ||
+      !array.flags().row_contiguous || array.nbytes() != bytes)
+    return Status::InvalidArgument("Apple boundary requires the exact dense native carrier");
+  return Status::Ok();
+}
+} // namespace
+
+Status MemoryResource::copy_from_host(const mx::array &destination, ConstTensorView source) const noexcept {
+  if (!source.valid()) return Status::InvalidArgument("invalid Apple boundary source");
+  HYLE_RETURN_IF_ERROR(match_dense(destination, source.description()));
+  HYLE_ASSIGN_OR_RETURN(auto storage, storage_info(destination));
+  if (storage.view_bytes == 0) return Status::Ok();
+  HYLE_ASSIGN_OR_RETURN(auto mapping, source.storage().map_host());
+  id<MTLBuffer> buffer = (__bridge id<MTLBuffer>)storage.buffer;
+  std::memcpy(static_cast<std::byte *>(buffer.contents) + storage.offset_bytes,
+              mapping.data(), storage.view_bytes);
+  return mapping.close();
+}
+Status MemoryResource::copy_to_host(const mx::array &source, TensorView destination) const noexcept {
+  if (!destination.valid()) return Status::InvalidArgument("invalid Apple boundary destination");
+  HYLE_RETURN_IF_ERROR(match_dense(source, destination.description()));
+  HYLE_ASSIGN_OR_RETURN(auto storage, storage_info(source));
+  if (storage.view_bytes == 0) return Status::Ok();
+  HYLE_ASSIGN_OR_RETURN(auto mapping, destination.storage().map_host(mem::HostAccess::kWrite));
+  id<MTLBuffer> buffer = (__bridge id<MTLBuffer>)storage.buffer;
+  std::memcpy(mapping.data(), static_cast<const std::byte *>(buffer.contents) + storage.offset_bytes,
+              storage.view_bytes);
+  return mapping.close();
 }
 } // namespace hyle::compute::apple

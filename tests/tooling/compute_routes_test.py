@@ -141,6 +141,31 @@ class ComputeRoutesTest(unittest.TestCase):
             self.assertFalse(set(cache) & set(LEGACY))
             self.assertEqual(builds[name]["jobs"], 2)
 
+    def test_apple_composition_is_selected_only_with_cpu(self):
+        # Factor selection only. Native Apple build/runtime use the actual Air.
+        for routes, expected in (("apple", False), ("cpu;apple", True)):
+            with self.subTest(routes=routes):
+                source = self.directory / routes.replace(";", "-")
+                source.mkdir()
+                (source / "CMakeLists.txt").write_text(
+                    'cmake_minimum_required(VERSION 3.25)\nproject(apple_metadata LANGUAGES NONE)\n'
+                    'set(CMAKE_SYSTEM_NAME Darwin)\nset(HYLE_TARGET_PROCESSOR aarch64)\n'
+                    'set(HYLE_FCONTEXT_SUPPORTED TRUE)\n'
+                    f'set(HYLE_SOURCE_DIR "{ROOT.as_posix()}")\n'
+                    'set(HYLE_COMPONENTS graph)\nset(HYLE_BUILD_TESTS OFF)\n'
+                    f'set(HYLE_COMPUTE_ROUTES "{routes}")\n'
+                    f'include("{(ROOT / "cmake/HyleComponents.cmake").as_posix()}")\n'
+                    f'if({"NOT " if expected else ""}HYLE_BUILD_GRAPH_ROUTE_CPU_APPLE)\n'
+                    'message(FATAL_ERROR "CPU+Apple factor selection differs")\nendif()\n'
+                    + ('if(NOT HYLE_BUILD_SCHED OR NOT HYLE_BUILD_GRAPH_ROUTE_CPU)\n'
+                       'message(FATAL_ERROR "composition lacks CPU progress")\nendif()\n' if expected else
+                       'if(HYLE_BUILD_SCHED OR HYLE_BUILD_GRAPH_ROUTE_CPU)\n'
+                       'message(FATAL_ERROR "single Apple route acquired CPU/Sched")\nendif()\n'),
+                    encoding="utf-8")
+                result = subprocess.run(["cmake", "-S", str(source), "-B", str(source / "build")],
+                                        capture_output=True, text=True, timeout=20, **NO_WINDOW)
+                self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+
     def test_installed_requirements_assert_sdk_without_reconfiguring(self):
         # Package metadata fixture, not a native library/provider certificate.
         prepare = self.directory / "prepare"

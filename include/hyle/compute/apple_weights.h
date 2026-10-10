@@ -41,12 +41,14 @@ struct WeightSlotOptions final {
 class WeightBatch final {
 public:
   WeightBatch() noexcept = default;
-  WeightBatch(const WeightBatch &) = delete;
-  WeightBatch &operator=(const WeightBatch &) = delete;
+  WeightBatch(const WeightBatch &) noexcept = default;
+  WeightBatch &operator=(const WeightBatch &) noexcept = default;
   WeightBatch(WeightBatch &&) noexcept = default;
   WeightBatch &operator=(WeightBatch &&) noexcept = default;
   HYLE_COMPUTE_ROUTE_APPLE_API ~WeightBatch();
   bool valid() const noexcept { return state_ != nullptr; }
+  // Metadata is available while transfer is pending; it is not a payload view.
+  HYLE_COMPUTE_ROUTE_APPLE_API Result<TensorDesc> description(std::uint64_t id) const noexcept;
   HYLE_COMPUTE_ROUTE_APPLE_API Result<mlx::core::array>
   binding(std::uint64_t id) const noexcept;
   HYLE_COMPUTE_ROUTE_APPLE_API Result<CompletionPoll> poll() const noexcept;

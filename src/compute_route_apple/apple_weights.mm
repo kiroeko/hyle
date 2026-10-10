@@ -173,6 +173,12 @@ Status WeightBatch::wait() const noexcept {
   if (!state_) return Status::FailedPrecondition("empty Apple weight batch");
   return detail::wait_weight(*state_);
 }
+Result<TensorDesc> WeightBatch::description(std::uint64_t id) const noexcept {
+  if (!state_) return std::unexpected(Status::FailedPrecondition("empty Apple weight batch"));
+  for (std::size_t i = 0; i < state_->count; ++i)
+    if (state_->selected[i].spec.id == id) return state_->selected[i].spec.description;
+  return std::unexpected(Status::NotFound("Apple weight ID is not selected"));
+}
 Result<mx::array> WeightBatch::binding(std::uint64_t id) const noexcept {
   HYLE_ASSIGN_OR_RETURN(auto ready, poll());
   if (ready != CompletionPoll::kComplete)

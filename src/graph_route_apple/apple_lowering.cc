@@ -14,6 +14,7 @@
 #include <new>
 #include <optional>
 #include <utility>
+#include <mlx/ops.h>
 
 namespace hyle::graph::apple {
 namespace mx = mlx::core;
@@ -35,6 +36,7 @@ struct Plan {
   std::vector<compute::TensorDesc> descriptions;
   std::vector<mx::array> values;
   CustomLowering custom;
+  bool contiguous_outputs = false;
 };
 
 bool fixed_ggml_model_operation(const compute::Operation &operation) noexcept {
@@ -123,8 +125,10 @@ Result<std::vector<mx::array>> trace(const Plan &plan,
   }
   std::vector<mx::array> result;
   result.reserve(output_ids.size());
-  for (auto index : output_ids)
-    result.push_back(std::move(*values[index]));
+  for (auto index : output_ids) {
+    auto value = std::move(*values[index]);
+    result.push_back(plan.contiguous_outputs ? mx::contiguous(value, false, stream) : std::move(value));
+  }
   return result;
 }
 
@@ -244,6 +248,7 @@ static Result<ca::Program> compile_impl(const ca::Context &context,
     auto plan = std::make_shared<Plan>();
     plan->workload = options.workload;
     plan->custom = std::move(options.custom);
+    plan->contiguous_outputs = options.contiguous_outputs;
     plan->descriptions.resize(graph.value_count());
     std::vector<ca::InputSpec> specs;
     specs.reserve(graph.input_count());

@@ -134,3 +134,23 @@ native终结后回调，completed handler内不调用waitUntilCompleted，避免
 显式partial预算才允许创建这些array，strict总账在native array分配前拒绝。已修正MemoryResource
 set_data实参求值顺序，先读取handle再移动owner，避免由编译器实参顺序造成空指针。
 路线配置11/11、closure59/schema4、docs898/4413和selector授权通过。native产品验收仍未运行。
+
+### CPU/Apple粗片段产品接线（待native验收）
+
+新增graph_route_cpu_apple真实target、cpu_apple.h及cold compiler/独立Invocation。现typed DAG
+按显式NodePlacement分连续CPU/Apple片段并反向剔除dead pure节点；真实value-ID映射、全部端口
+与workload进入原CPU Graph/Apple Graph规则，完整四节点affine-Q4 FFN留在一个原MLX region。
+CPU片段仍由原Provider执行；边界布局归一化借用原CPU Copy和MLX contiguous lowering。
+不新增数学、万能Queue、私有线程池或runtime；现Sched coarse fiber等待原Apple Completion，
+CPU Queue检查exact Context，bind/reset使prepare与冷报告失效，旧结果/已接纳prefix保持owner。
+
+普通CPU-resident输入不分配native backing；只给真实crossing value分配受限boundary。普通host存储、
+CPU Graph workspace、metadata、原生边界和迁移共享ResourceBudget；MLX descriptor/region私有成本
+仍unknown，严格总账拒绝，显式partial给known requested与canonical MTLBuffer去重观察，两者不能
+相加冒充总显存。materialized constant拥有host bytes，Apple constants另有native owner；源可以
+在compile返回后释放。native输入/动态weight以原编码绑定，cold prepare明确等待ready，不热搜索。
+
+新增Direct weight sample及两条真实混合数学sample，source/static/shared使用相同公开入口。
+本机路线配置原11项通过；新CPU+Apple/单Apple隔离项最初查出public/type/private声明漏项，已修
+实际依赖边并仅定向重跑该项通过。当前所有数学/异常/重叠/三交付仍待Mac资格，不能以config通过
+代签PASS。下一批先做固定changed TU/headers语法检查，再集中固定候选source与installed交付。
