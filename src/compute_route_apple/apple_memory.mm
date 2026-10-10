@@ -1,0 +1,103 @@
+#include "hyle/compute/apple_memory.h"
+
+#import <Metal/Metal.h>
+#include <mlx/allocator.h>
+#include "hyle/mem/std_allocator.h"
+
+#include "apple_internal.h"
+
+namespace hyle::compute::apple {
+namespace mx = mlx::core;
+namespace detail {
+namespace { const char memory_authority = 0; }
+
+struct MemoryState final : mem::MemoryResource {
+  std::string_view name() const noexcept override { return "MLX shared Metal"; }
+  mem::MemoryProperties properties() const noexcept override {
+    return {.flags = mem::MemoryProperty::kHostAccessible |
+                     mem::MemoryProperty::kDeviceAccessible |
+                     mem::MemoryProperty::kHostDeviceCoherent,
+            .minimum_alignment = alignof(std::max_align_t),
+            .maximum_allocation = SIZE_MAX,
+            .domain = {&memory_authority, 0}};
+  }
+  Result<mem::ResourceAllocation> allocate(std::size_t bytes, std::size_t alignment) noexcept override {
+    if (alignment == 0 || (alignment & (alignment - 1)) != 0)
+      return std::unexpected(Status::InvalidArgument("Apple allocation alignment must be a power of two"));
+    if (bytes == 0) return mem::ResourceAllocation{nullptr, 0, alignment};
+    try {
+      auto buffer = mx::allocator::malloc(bytes);
+      if (buffer.ptr() == nullptr)
+        return std::unexpected(Status::ResourceExhausted("MLX buffer allocation failed"));
+      id<MTLBuffer> metal = (__bridge id<MTLBuffer>)buffer.ptr();
+      if (metal.storageMode != MTLStorageModeShared ||
+          (reinterpret_cast<std::uintptr_t>(metal.contents) & (alignment - 1)) != 0) {
+        mx::allocator::free(buffer);
+        return std::unexpected(Status::InvalidArgument("MLX backing cannot satisfy shared host alignment"));
+      }
+      return mem::ResourceAllocation{buffer.ptr(), bytes, alignment};
+    } catch (...) { return std::unexpected(native_exception()); }
+  }
+  void deallocate(mem::ResourceAllocation allocation) noexcept override {
+    if (allocation.native_handle != nullptr)
+      mx::allocator::free(mx::allocator::Buffer(allocation.native_handle));
+  }
+  Result<mem::ResourceHostMapping> map_host(void *handle, std::size_t offset,
+                                           std::size_t bytes, mem::HostAccess) noexcept override {
+    if (bytes == 0) return mem::ResourceHostMapping{};
+    id<MTLBuffer> metal = (__bridge id<MTLBuffer>)handle;
+    if (metal.storageMode != MTLStorageModeShared || offset > metal.length || bytes > metal.length - offset)
+      return std::unexpected(Status::InvalidArgument("Apple host map exceeds native shared backing"));
+    return mem::ResourceHostMapping{static_cast<std::byte *>(metal.contents) + offset, nullptr};
+  }
+  Status unmap_host(void *, void *, std::size_t, std::size_t, mem::HostAccess) noexcept override {
+    return Status::Ok();
+  }
+  Status flush(void *, std::size_t, std::size_t) noexcept override { return Status::Ok(); }
+  Status invalidate(void *, std::size_t, std::size_t) noexcept override { return Status::Ok(); }
+};
+
+struct ArrayStorage final {
+  ResourceBudget::Reservation charge;
+  mem::Buffer buffer;
+};
+} // namespace detail
+
+MemoryResource::MemoryResource(std::unique_ptr<detail::MemoryState> state) noexcept : state_(std::move(state)) {}
+MemoryResource::MemoryResource(MemoryResource &&) noexcept = default;
+MemoryResource &MemoryResource::operator=(MemoryResource &&) noexcept = default;
+MemoryResource::~MemoryResource() = default;
+
+Result<MemoryResource> MemoryResource::create(const Context &context) noexcept {
+  if (!context.valid()) return std::unexpected(Status::InvalidArgument("Apple memory requires a valid Context"));
+  try { return MemoryResource(std::make_unique<detail::MemoryState>()); }
+  catch (...) { return std::unexpected(detail::native_exception()); }
+}
+mem::MemoryResourceRef MemoryResource::ref() const noexcept {
+  return state_ ? mem::MemoryResourceRef(*state_) : mem::MemoryResourceRef{};
+}
+Result<mx::array> MemoryResource::allocate(const TensorDesc &description, ResourceBudget budget,
+                                         ResourceBudgetCategory category) const noexcept {
+  if (!valid()) return std::unexpected(Status::FailedPrecondition("Apple memory resource is empty"));
+  HYLE_ASSIGN_OR_RETURN(auto spec, input_spec(description));
+  HYLE_ASSIGN_OR_RETURN(auto bytes, description.required_bytes());
+  try {
+    auto metadata = mem::system_allocator();
+    if (budget.valid()) {
+      HYLE_ASSIGN_OR_RETURN(metadata, budget.metadata_allocator());
+    }
+    auto storage = std::allocate_shared<detail::ArrayStorage>(
+        mem::StdAllocator<detail::ArrayStorage>(metadata));
+    if (budget.valid()) {
+      HYLE_ASSIGN_OR_RETURN(storage->charge, budget.reserve(ref(), bytes, category));
+    }
+    HYLE_ASSIGN_OR_RETURN(storage->buffer, mem::Buffer::create(ref(), bytes, alignof(std::max_align_t)));
+    mx::array result(spec.shape, spec.dtype, nullptr, {});
+    if (bytes != 0)
+      result.set_data(mx::allocator::Buffer(storage->buffer.native_handle()),
+                      [storage = std::move(storage)](mx::allocator::Buffer) {});
+    result.set_status(mx::array::available);
+    return result;
+  } catch (...) { return std::unexpected(detail::native_exception()); }
+}
+} // namespace hyle::compute::apple

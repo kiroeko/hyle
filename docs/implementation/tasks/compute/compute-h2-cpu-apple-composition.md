@@ -102,3 +102,14 @@ compiled计划只读共享，每Invocation独立可变槽；所有输出以成�
 重放只沿固定粗片段与必要copy/等待；MLX managed replay允许其原allocator成本并报告未知，不称
 recorded零分配。迁移按selected bytes及实际native DMA；不变payload不重选Provider。
 三项owner已绑定，以上六FIX为本轮有限产品改动集；额外source/ABI/能力反例仍须重新定界。
+
+### 首批产品接线
+
+compute_route_apple新增真正MLX-backed shared Metal MemoryResource及apple_memory.h；通过现Mem
+资源/Buffer/map接普通host-accessible视图，native array的deleter保留Buffer与配额到最后alias，
+payload归还后才释放Reservation。控制块复用Mem StdAllocator及ResourceBudget metadata allocator，
+不是mock resource、普通host地址冒充MTLBuffer或另一套allocator。未设置MLX全局限额/编译器模式。
+
+中央public-header归属与Metal framework实际依赖已连接，owner为本卡AUDITED范围。11项路线配置、
+closure/docs及selector授权通过；公开新头/Objective-C++尚待集中native编译/运行，不能写功能PASS。
+剩余两槽迁移、Graph组合、报告与整包验收继续批量接线，不因本小片重跑旧H1或全库。
