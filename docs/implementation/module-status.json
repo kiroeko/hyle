@@ -539,25 +539,15 @@
     },
     {
       "module": "compute_route_vulkan",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/build/compute-c3-hardware-boundary-decision.md",
-      "summary": "C1/C2/R1/C3按用户接受边界CLOSED：统一入口/SDK/资产/配置/安装头与已验平台完成，78数学PASS；WSL Vulkan十二项实GPU运行UNQUALIFIED不阻塞，H1–H3未实现。",
-      "candidate": "2614676ee64bceddadcf791c218d6eea1f051c64",
-      "performance": {
-        "tier": "P0",
-        "evidence": "docs/implementation/tasks/build/compute-c3-hardware-boundary-decision.md"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/compute-h3-cpu-vulkan-composition.md",
+      "summary": "H3 SCOPED：用户准入CPU/Vulkan粗片段、原生两槽/异步完成、普通CPU存储、共享预算与冷诊断；基于84e8bc287绑定有限审计/六FIX候选，未实现新能力、不签原WSL十二项。"
     },
     {
       "module": "graph_route_vulkan",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/build/compute-c3-hardware-boundary-decision.md",
-      "summary": "C1/C2/R1/C3按用户接受边界CLOSED：统一入口/SDK/资产/配置/安装头与已验平台完成，78数学PASS；WSL Vulkan十二项实GPU运行UNQUALIFIED不阻塞，H1–H3未实现。",
-      "candidate": "2614676ee64bceddadcf791c218d6eea1f051c64",
-      "performance": {
-        "tier": "P0",
-        "evidence": "docs/implementation/tasks/build/compute-c3-hardware-boundary-decision.md"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/compute-h3-cpu-vulkan-composition.md",
+      "summary": "H3 SCOPED：用户准入CPU/Vulkan粗片段、原生两槽/异步完成、普通CPU存储、共享预算与冷诊断；基于84e8bc287绑定有限审计/六FIX候选，未实现新能力、不签原WSL十二项。"
     },
     {
       "module": "compute_provider_ggml_vulkan",
@@ -672,8 +662,9 @@
     },
     {
       "module": "graph_route_cpu_vulkan",
-      "state": "QUEUED",
-      "summary": "H3已准入的CPU+Vulkan粗片段身份预留；尚无target/源码/资格，不计完成功能。"
+      "state": "SCOPED",
+      "summary": "H3 SCOPED：用户准入CPU/Vulkan粗片段、原生两槽/异步完成、普通CPU存储、共享预算与冷诊断；基于84e8bc287绑定有限审计/六FIX候选，未实现新能力、不签原WSL十二项。",
+      "record": "docs/implementation/tasks/compute/compute-h3-cpu-vulkan-composition.md"
     }
   ]
 }
