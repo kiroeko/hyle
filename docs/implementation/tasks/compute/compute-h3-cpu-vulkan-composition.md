@@ -129,6 +129,8 @@ output owner 未计入冷基线的问题；候选把该固定引用在 cold seal
 未重跑原两个不受影响入口。Windows 整批 owned peak 0.560 GiB，修复批 0.274 GiB；Air 646 MiB。
 统一不可变快照统计：Compute+Graph 68,095 行/301 文件，全库非测试实现 163,322 行/652 文件。
 这些是 source 资格，installed static/shared、WSL build-only 与重叠尚未闭合。
+[source 证据](../../../../evidence/correctness/compute-h3-vulkan-source/README.md)与
+[原生时间线](../../../../evidence/correctness/compute-h3-vulkan-native-overlap/README.md)分别保留。
 
 一次原生 P0 探针用原 RecordedProgram/sample affine dispatch 和真实 WeightSlots VkBuffer copy，
 GPU query 装饰原调用，独立核实 512 个 dispatch 的 -1 不动点及 16,776,960 字节的 0.5 payload。

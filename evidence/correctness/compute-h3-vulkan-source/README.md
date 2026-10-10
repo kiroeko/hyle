@@ -17,3 +17,4 @@ no product is copied back from this disposable validation source.
 
 Receipts and logs are retained in this directory. `loc.json` uses the unified immutable implementation count:
 Compute+Graph 68,095 lines/301 files, library implementation 163,322 lines/652 files, excluding tests/samples.
+The copied configure log trims line-ending whitespace only; its original remains in the local acceptance directory.
