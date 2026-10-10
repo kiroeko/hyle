@@ -1,0 +1,573 @@
+{
+  "schema_version": 1,
+  "research_only": true,
+  "captured_at_utc": "2026-10-10T22:28:06.3144686Z",
+  "scope": "Real inference journeys; missing foundation mechanisms and implementation/consumer fit differences",
+  "hyle": {
+    "root": "C:\\public\\project-hyle\\hyle",
+    "baseline": "00fdc40c9311d862055591af3f0836d40e593dc7",
+    "product_code_changed": false,
+    "registry_changed": false,
+    "dependency_lock_changed": false,
+    "sources": [
+      {
+        "path": "include/hyle/mem/buffer.h",
+        "sha256": "346a4f810babb8c5dacba49faaf57903d998a3cbb49af12b8c62acc85f7be72c",
+        "bytes": 19273,
+        "inspection": "targeted source excerpts / declarations / call-site search; not exhaustive execution"
+      },
+      {
+        "path": "include/hyle/mem/buffer_pool.h",
+        "sha256": "b5bfcd6b861d2b54425c619097fdca65eb5ac6add7f0b443c815784c1e661951",
+        "bytes": 4331,
+        "inspection": "targeted source excerpts / declarations / call-site search; not exhaustive execution"
+      },
+      {
+        "path": "include/hyle/mem/range_allocator.h",
+        "sha256": "ad1b8455a5f940a08e9877526c21feaa2dd19c0344dcad01bd1e423ac898c20c",
+        "bytes": 4780,
+        "inspection": "targeted source excerpts / declarations / call-site search; not exhaustive execution"
+      },
+      {
+        "path": "include/hyle/mem/object_pool.h",
+        "sha256": "ddf1379e9dbcbe42f1dab99f3fcc28bac6af86e5dd6f3a818659b865a244a964",
+        "bytes": 10517,
+        "inspection": "targeted source excerpts / declarations / call-site search; not exhaustive execution"
+      },
+      {
+        "path": "include/hyle/mem/pool_loan.h",
+        "sha256": "9ad610a96ad71f9ca9eb64241d57e60d036aed6ac939d36fd143a1c1e06fa8c0",
+        "bytes": 1601,
+        "inspection": "targeted source excerpts / declarations / call-site search; not exhaustive execution"
+      },
+      {
+        "path": "include/hyle/mem/mapping.h",
+        "sha256": "98b1a1ea8c4d85eff4fb8ddeb0fd7a425e7619128c468ae29e11c5e3fbfd05c3",
+        "bytes": 7139,
+        "inspection": "targeted source excerpts / declarations / call-site search; not exhaustive execution"
+      },
+      {
+        "path": "include/hyle/mem/reclamation.h",
+        "sha256": "5349dd728c5fc371bcd5ac350038fbce8649439d3ce47eb4f0fa40fab8f84a40",
+        "bytes": 12202,
+        "inspection": "targeted source excerpts / declarations / call-site search; not exhaustive execution"
+      },
+      {
+        "path": "include/hyle/util/ref_counted.h",
+        "sha256": "47cc650a3bb704ace90bd718fc3e8f0b9d10485a32009551e3e7f456d9f5b5d6",
+        "bytes": 15931,
+        "inspection": "targeted source excerpts / declarations / call-site search; not exhaustive execution"
+      },
+      {
+        "path": "include/hyle/util/random.h",
+        "sha256": "28463daa826c69f453b5a9f2081b174002bcccc58394cb5833fdfe92757425df",
+        "bytes": 12750,
+        "inspection": "targeted source excerpts / declarations / call-site search; not exhaustive execution"
+      },
+      {
+        "path": "include/hyle/sched/task_scope.h",
+        "sha256": "0cf2d97ee6b9578e3b95e2126cdd90f47c35c83018722cb8f394bcebb1ca0bdd",
+        "bytes": 15510,
+        "inspection": "targeted source excerpts / declarations / call-site search; not exhaustive execution"
+      },
+      {
+        "path": "include/hyle/sched/sync.h",
+        "sha256": "dfcc2c05e0205a22ce42634643aec65ccf85eda7fccae40c7a353fb6ed1d56d5",
+        "bytes": 78297,
+        "inspection": "targeted source excerpts / declarations / call-site search; not exhaustive execution"
+      },
+      {
+        "path": "include/hyle/io/file.h",
+        "sha256": "385736644f18017bcc0f84c46e5de86505104f2369b3035fbea27e3b8a1f1106",
+        "bytes": 12742,
+        "inspection": "targeted source excerpts / declarations / call-site search; not exhaustive execution"
+      },
+      {
+        "path": "include/hyle/compute/tensor.h",
+        "sha256": "ac00f221a66d0f9044a2b49a1123a6b99a6c425568790898129c31d81519c538",
+        "bytes": 1980,
+        "inspection": "targeted source excerpts / declarations / call-site search; not exhaustive execution"
+      },
+      {
+        "path": "include/hyle/compute/tensor_desc.h",
+        "sha256": "e5496e00c643bcce2efbb42666773f4172243d10458b756d6f9881b0e677eb9a",
+        "bytes": 8700,
+        "inspection": "targeted source excerpts / declarations / call-site search; not exhaustive execution"
+      },
+      {
+        "path": "include/hyle/compute/operation.h",
+        "sha256": "e4ee275e58618a5e18e4c4cd4e5c749f9dd209102a3bdb854a5fac11acb2e079",
+        "bytes": 23068,
+        "inspection": "targeted source excerpts / declarations / call-site search; not exhaustive execution"
+      },
+      {
+        "path": "include/hyle/compute/model_ops.h",
+        "sha256": "d3f3b76c2ec0923b0b9ece176dfe7e484c053cb63bee24c27bcff182617ed1b9",
+        "bytes": 44086,
+        "inspection": "targeted source excerpts / declarations / call-site search; not exhaustive execution"
+      },
+      {
+        "path": "include/hyle/compute/provider.h",
+        "sha256": "1a4650e03cb2a0f6f46d22d914db197fb4bb7a59cd5aced180140feee0a7f337",
+        "bytes": 10124,
+        "inspection": "targeted source excerpts / declarations / call-site search; not exhaustive execution"
+      },
+      {
+        "path": "include/hyle/compute/prepared_operation.h",
+        "sha256": "3fe6a6f1ddc31c2181a208658e627be20933bde325ec0b63dba06281d007ed7b",
+        "bytes": 20309,
+        "inspection": "targeted source excerpts / declarations / call-site search; not exhaustive execution"
+      },
+      {
+        "path": "include/hyle/compute/transfer.h",
+        "sha256": "240e618942e9975640dac7ebcd4ce1b0fbbc2d01b1eb19a4576bf1be39e8090c",
+        "bytes": 2259,
+        "inspection": "targeted source excerpts / declarations / call-site search; not exhaustive execution"
+      },
+      {
+        "path": "include/hyle/compute/completion.h",
+        "sha256": "98b34b9ee4665e9aedac719504c029a509f304b0a4f566bf6b7f76d88dc2ef34",
+        "bytes": 1959,
+        "inspection": "targeted source excerpts / declarations / call-site search; not exhaustive execution"
+      },
+      {
+        "path": "include/hyle/compute/result.h",
+        "sha256": "7e4e55a4dbd1dde6deeca6630f023045ea18740867746ae1827d4f45b806d9ee",
+        "bytes": 4645,
+        "inspection": "targeted source excerpts / declarations / call-site search; not exhaustive execution"
+      },
+      {
+        "path": "include/hyle/compute/resource_budget.h",
+        "sha256": "7e04cba9fb6727e883ef89a66a80b1f50b363c0b250bf327711ac430b6f13c5b",
+        "bytes": 4499,
+        "inspection": "targeted source excerpts / declarations / call-site search; not exhaustive execution"
+      },
+      {
+        "path": "include/hyle/compute/backends/cuda.h",
+        "sha256": "6105a13ef265410f320346698cd20971d69c3cdbee25b0e4dd2f386487042ed6",
+        "bytes": 8253,
+        "inspection": "targeted source excerpts / declarations / call-site search; not exhaustive execution"
+      },
+      {
+        "path": "include/hyle/compute/cuda_weights.h",
+        "sha256": "4fdd66441bdedc22b4352f19a8e8bf89dfefc214fb695750d38fd9636aa13d44",
+        "bytes": 3818,
+        "inspection": "targeted source excerpts / declarations / call-site search; not exhaustive execution"
+      },
+      {
+        "path": "include/hyle/compute/apple_weights.h",
+        "sha256": "78197354b92152d701f320078f373868152ba8d68268442bfc825742bd10809f",
+        "bytes": 3907,
+        "inspection": "targeted source excerpts / declarations / call-site search; not exhaustive execution"
+      },
+      {
+        "path": "include/hyle/compute/vulkan_weights.h",
+        "sha256": "7d1edd718226dbec3bc270da7250930d23ba367201b0a3eecaea4a3f45d302ff",
+        "bytes": 3146,
+        "inspection": "targeted source excerpts / declarations / call-site search; not exhaustive execution"
+      },
+      {
+        "path": "include/hyle/compute/apple_memory.h",
+        "sha256": "be76682fcac639ecf32f6e2097b794737e6583fff8bcff17a491ec4b38c4602c",
+        "bytes": 2884,
+        "inspection": "targeted source excerpts / declarations / call-site search; not exhaustive execution"
+      },
+      {
+        "path": "include/hyle/compute/vulkan_memory.h",
+        "sha256": "daea725cb77a891beb924edde5db9ebe8fb3a370d4f889394555346529fa0e47",
+        "bytes": 4589,
+        "inspection": "targeted source excerpts / declarations / call-site search; not exhaustive execution"
+      },
+      {
+        "path": "include/hyle/compute/providers/flashinfer.h",
+        "sha256": "a430e5cabd6b93bebef5b8c9d89b6f3bce7e6b0a081763b49362ae94f3e72984",
+        "bytes": 1185,
+        "inspection": "targeted source excerpts / declarations / call-site search; not exhaustive execution"
+      },
+      {
+        "path": "include/hyle/graph/executable.h",
+        "sha256": "8494f631596c1fefa336385fb909e9a9baee7708549abd4c8b5e8ce1a203e75f",
+        "bytes": 45007,
+        "inspection": "targeted source excerpts / declarations / call-site search; not exhaustive execution"
+      },
+      {
+        "path": "include/hyle/graph/region_provider.h",
+        "sha256": "22b75e8e11f0763324385b607a14abec27ce1080d1302bfd9cdc8e9a99734d6b",
+        "bytes": 15731,
+        "inspection": "targeted source excerpts / declarations / call-site search; not exhaustive execution"
+      },
+      {
+        "path": "include/hyle/graph/cpu_cuda.h",
+        "sha256": "a7bb69686ae5f1e42449f4b9f8ecf2f3d6713a3329773aa154e3bd7cc9ac5207",
+        "bytes": 6800,
+        "inspection": "targeted source excerpts / declarations / call-site search; not exhaustive execution"
+      },
+      {
+        "path": "include/hyle/graph/cpu_apple.h",
+        "sha256": "e4872049a1986b08fab66be9a0d1ab742497192f08022c6aa2af661c723efbad",
+        "bytes": 6849,
+        "inspection": "targeted source excerpts / declarations / call-site search; not exhaustive execution"
+      },
+      {
+        "path": "include/hyle/graph/cpu_vulkan.h",
+        "sha256": "8e8a43ab38289b688bd2b7a99e9999632b41589d3474bdf93e2acbf401809519",
+        "bytes": 7110,
+        "inspection": "targeted source excerpts / declarations / call-site search; not exhaustive execution"
+      },
+      {
+        "path": "src/compute/transfer.cc",
+        "sha256": "17c274b95169748cc8bead5c3161b4398537ab1c5953f521146fc0e014ed1d91",
+        "bytes": 6851,
+        "inspection": "targeted source excerpts / declarations / call-site search; not exhaustive execution"
+      },
+      {
+        "path": "src/compute_route_cuda/weights.cc",
+        "sha256": "6521fc88a4650857b6b7a1c9447ddb3a8066833e94f682ad31b7a0d977cc2309",
+        "bytes": 14175,
+        "inspection": "targeted source excerpts / declarations / call-site search; not exhaustive execution"
+      },
+      {
+        "path": "src/compute_provider_flashinfer/flashinfer_provider.cc",
+        "sha256": "1e892862053dcdf665d1bced57e67bcda7537f470bb67f6a30e3377b6400ff5f",
+        "bytes": 19094,
+        "inspection": "targeted source excerpts / declarations / call-site search; not exhaustive execution"
+      },
+      {
+        "path": "src/graph_route_cpu_cuda/compile.cc",
+        "sha256": "ac51efee0c84ccf4a06aea54b8a10bbbb6dccc792ffcb781b07598c08f09295b",
+        "bytes": 2654,
+        "inspection": "targeted source excerpts / declarations / call-site search; not exhaustive execution"
+      },
+      {
+        "path": "src/graph_route_cpu_cuda/invocation.cc",
+        "sha256": "d069fb89c22f6f9f1d8b794859fe126a59eac465f046591d84f2880b57b1509e",
+        "bytes": 25621,
+        "inspection": "targeted source excerpts / declarations / call-site search; not exhaustive execution"
+      },
+      {
+        "path": "src/graph_route_cpu_cuda/progress.cc",
+        "sha256": "fd9aa5491165e58ad6d4db9f8fd83b1e6dc139a9199b8760476f9bcbe0b2d3d5",
+        "bytes": 1256,
+        "inspection": "targeted source excerpts / declarations / call-site search; not exhaustive execution"
+      },
+      {
+        "path": "src/graph_route_cpu_apple/compile.cc",
+        "sha256": "c38c6dc53dd4be5d65fd9bad6d3b8dbc9389a08605b90f09e5404b0508c092e5",
+        "bytes": 17986,
+        "inspection": "targeted source excerpts / declarations / call-site search; not exhaustive execution"
+      },
+      {
+        "path": "src/graph_route_cpu_vulkan/compile.cc",
+        "sha256": "dfacaf5b2d4462cf3bb29b638a0b7399efe168630164c50ab73f46b687cd0232",
+        "bytes": 18406,
+        "inspection": "targeted source excerpts / declarations / call-site search; not exhaustive execution"
+      },
+      {
+        "path": "src/graph/executable.cc",
+        "sha256": "2d531e044dbe629218bca074b2da06aef970a72f2c9ea2ab9d6f74760694a0cf",
+        "bytes": 379722,
+        "inspection": "targeted source excerpts / declarations / call-site search; not exhaustive execution"
+      },
+      {
+        "path": "src/graph/compile_internal.h",
+        "sha256": "14decb296fd33c221e98eef204c87e403b62da4e7e60218feb4c251ed385fab4",
+        "bytes": 490,
+        "inspection": "targeted source excerpts / declarations / call-site search; not exhaustive execution"
+      }
+    ]
+  },
+  "peers": [
+    {
+      "name": "sglang",
+      "root": "C:\\public\\project-hyle\\sglang",
+      "remote": "https://github.com/sgl-project/sglang.git",
+      "branch": "main",
+      "before": "06992c92ad4494fe9f9636e75be3e35040512447",
+      "after": "234ccba7f625e12639e621044496bcc6197c3758",
+      "fetched_default_branch_head": "234ccba7f625e12639e621044496bcc6197c3758",
+      "clean": true,
+      "update": "fetch --no-tags current default branch; merge --ff-only",
+      "sources": [
+        {
+          "path": "python/sglang/srt/mem_cache/memory_pool.py",
+          "sha256": "ca6ea1d842a273301a2d9c791e0625e5a9e37180d203c44b009d226d57ae4271",
+          "bytes": 251062,
+          "inspection": "targeted source excerpts / declarations / call-site search; not exhaustive execution"
+        },
+        {
+          "path": "python/sglang/srt/mem_cache/radix_cache.py",
+          "sha256": "516411ecd28bb0913b10e6f23200242f79ed21e5f1cdaeec20f74dc608efeaa1",
+          "bytes": 31004,
+          "inspection": "targeted source excerpts / declarations / call-site search; not exhaustive execution"
+        },
+        {
+          "path": "python/sglang/srt/mem_cache/allocator/paged.py",
+          "sha256": "c72f28d9c5b953a05fcc0a0451307ecdbfbfb756eca3f0073f7be3eb737d38f6",
+          "bytes": 14188,
+          "inspection": "targeted source excerpts / declarations / call-site search; not exhaustive execution"
+        },
+        {
+          "path": "python/sglang/srt/mem_cache/allocator/base.py",
+          "sha256": "52ec022545c0d5d794d3504c6ef514bee286a1fa09a92fc5fa7139b75b7c480e",
+          "bytes": 11656,
+          "inspection": "targeted source excerpts / declarations / call-site search; not exhaustive execution"
+        },
+        {
+          "path": "python/sglang/srt/mem_cache/hybrid_cache/hybrid_cache_controller.py",
+          "sha256": "0e62441e86fbcbac4da3e34553530e3ca638a057e9d9fb6f874930999fb6ebe3",
+          "bytes": 76920,
+          "inspection": "targeted source excerpts / declarations / call-site search; not exhaustive execution"
+        },
+        {
+          "path": "python/sglang/srt/mem_cache/l2_transfer.py",
+          "sha256": "1858a09ea22b023dddee4d8ea016d642783c1c1dc31511515f2f51f169b32b80",
+          "bytes": 7549,
+          "inspection": "targeted source excerpts / declarations / call-site search; not exhaustive execution"
+        },
+        {
+          "path": "python/sglang/srt/managers/cache_controller.py",
+          "sha256": "428d8a7e89da863e9804079352e9d16296bd9ecbc3af084018c8bc541ce84bda",
+          "bytes": 56101,
+          "inspection": "targeted source excerpts / declarations / call-site search; not exhaustive execution"
+        },
+        {
+          "path": "python/sglang/srt/utils/offloader.py",
+          "sha256": "dd22b59385b01b4a05ef98436679811b863c4a581e50d2a4753c2a3e0218899d",
+          "bytes": 21553,
+          "inspection": "targeted source excerpts / declarations / call-site search; not exhaustive execution"
+        },
+        {
+          "path": "python/sglang/srt/model_loader/weight_utils.py",
+          "sha256": "a7757701b108c2c383d315ede8b37a2c18ab0f393529ff8c06bdd290a020da64",
+          "bytes": 79232,
+          "inspection": "targeted source excerpts / declarations / call-site search; not exhaustive execution"
+        },
+        {
+          "path": "python/sglang/srt/model_executor/runner/decode_cuda_graph_runner.py",
+          "sha256": "efc9bcb776d8621968222c4928a189b1936f004c6c8f8ec46f9c278a6653d392",
+          "bytes": 75770,
+          "inspection": "targeted source excerpts / declarations / call-site search; not exhaustive execution"
+        },
+        {
+          "path": "python/sglang/srt/layers/sampler.py",
+          "sha256": "e208dacff2fac77b9ce42a1b8ab858f14a4ea2c5b571c66e87a5e43c5d39641f",
+          "bytes": 43349,
+          "inspection": "targeted source excerpts / declarations / call-site search; not exhaustive execution"
+        },
+        {
+          "path": "python/sglang/srt/managers/scheduler.py",
+          "sha256": "705fdfaacea7f3eff59e4103e078eadb9fd9adff7ce83948d6df6786f0c96a1f",
+          "bytes": 265382,
+          "inspection": "targeted source excerpts / declarations / call-site search; not exhaustive execution"
+        },
+        {
+          "path": "python/sglang/srt/layers/attention/flashinfer_backend.py",
+          "sha256": "a5649f67038153c35864b3f50d5c368071a56cbef75f266bec804dbf7e64363f",
+          "bytes": 107423,
+          "inspection": "targeted source excerpts / declarations / call-site search; not exhaustive execution"
+        }
+      ]
+    },
+    {
+      "name": "vllm",
+      "root": "C:\\public\\project-hyle\\vllm",
+      "remote": "https://github.com/vllm-project/vllm.git",
+      "branch": "main",
+      "before": "51918e252af4dfff381001f42b7ebe6a0454501b",
+      "after": "276fbcff2717bd934cfa37c8a2e4c391f3e7237b",
+      "fetched_default_branch_head": "276fbcff2717bd934cfa37c8a2e4c391f3e7237b",
+      "clean": true,
+      "update": "fetch --no-tags current default branch; merge --ff-only",
+      "sources": [
+        {
+          "path": "vllm/v1/core/block_pool.py",
+          "sha256": "6d1e0d89b43e3b2ae396906b9c2f0551dbe192b60d05f8c1ca2d93a91bbbeea3",
+          "bytes": 36242,
+          "inspection": "targeted source excerpts / declarations / call-site search; not exhaustive execution"
+        },
+        {
+          "path": "vllm/v1/core/kv_cache_utils.py",
+          "sha256": "171f1216cd4471f9e1613342785bc6238fca98b608c4107f88d3031c6b21e106",
+          "bytes": 111076,
+          "inspection": "targeted source excerpts / declarations / call-site search; not exhaustive execution"
+        },
+        {
+          "path": "vllm/v1/core/kv_cache_manager.py",
+          "sha256": "940d4cba8c5ad2c5f2d209beddbac97c812e83302266dc8e38f8e4b8683dccd1",
+          "bytes": 41414,
+          "inspection": "targeted source excerpts / declarations / call-site search; not exhaustive execution"
+        },
+        {
+          "path": "vllm/v1/core/single_type_kv_cache_manager.py",
+          "sha256": "c54c322716949b2ffe1ccb7624928c759be19329ee03b4c11ffbc27084df08a9",
+          "bytes": 118986,
+          "inspection": "targeted source excerpts / declarations / call-site search; not exhaustive execution"
+        },
+        {
+          "path": "vllm/v1/kv_offload/cpu/gpu_worker.py",
+          "sha256": "d074628708ad0378e9b73502c1f3945a647c531d54102a1db9f90ba1c7f98dff",
+          "bytes": 35101,
+          "inspection": "targeted source excerpts / declarations / call-site search; not exhaustive execution"
+        },
+        {
+          "path": "vllm/v1/kv_offload/cpu/common.py",
+          "sha256": "192fdaabd839011af4846db1ada440672cef8d643cc7e610175d23bee8275439",
+          "bytes": 944,
+          "inspection": "targeted source excerpts / declarations / call-site search; not exhaustive execution"
+        },
+        {
+          "path": "vllm/v1/simple_kv_offload/worker.py",
+          "sha256": "9c4d1805464159360f3a37b759e846716e90b106aceee8104360814125827da3",
+          "bytes": 15003,
+          "inspection": "targeted source excerpts / declarations / call-site search; not exhaustive execution"
+        },
+        {
+          "path": "vllm/v1/simple_kv_offload/copy_backend.py",
+          "sha256": "68a40d32b39079846eb68540122c762c1385619c5913b3f64174404e1ee5ee1f",
+          "bytes": 3948,
+          "inspection": "targeted source excerpts / declarations / call-site search; not exhaustive execution"
+        },
+        {
+          "path": "vllm/v1/kv_offload/tiering/backpressure.py",
+          "sha256": "b7d3c8a0abe98072865984be8fcb33cf519bf327260a8c65713d4ebb8a2ba92c",
+          "bytes": 13926,
+          "inspection": "targeted source excerpts / declarations / call-site search; not exhaustive execution"
+        },
+        {
+          "path": "vllm/v1/kv_offload/tiering/fs/io.py",
+          "sha256": "c12156b15a39f928262954e5c2aa7fea1e8b99caf7a596b2e647457bec4a7d33",
+          "bytes": 7371,
+          "inspection": "targeted source excerpts / declarations / call-site search; not exhaustive execution"
+        },
+        {
+          "path": "vllm/v1/worker/gpu/cudagraph_utils.py",
+          "sha256": "ef2aae2eb3ec5ea97d4732f65c886b7a4688247721aacf23e536485e0ffc05ab",
+          "bytes": 47768,
+          "inspection": "targeted source excerpts / declarations / call-site search; not exhaustive execution"
+        },
+        {
+          "path": "vllm/model_executor/model_loader/weight_utils.py",
+          "sha256": "15eeb78befb71c75240f5b20c762381905a8f54f83f252de914330b1dddb7dfe",
+          "bytes": 67668,
+          "inspection": "targeted source excerpts / declarations / call-site search; not exhaustive execution"
+        },
+        {
+          "path": "vllm/v1/core/sched/scheduler.py",
+          "sha256": "938c9ce589e4fd9a7a36065a1592fb091ee7f39fd52875f9d5410f8c05ad24e0",
+          "bytes": 162487,
+          "inspection": "targeted source excerpts / declarations / call-site search; not exhaustive execution"
+        },
+        {
+          "path": "vllm/v1/worker/gpu/states.py",
+          "sha256": "5ca84b57d4f4233ba4013ed42f44b7917cdd7a14b6ea4dabf4ba8de5c9d5f4d6",
+          "bytes": 5427,
+          "inspection": "targeted source excerpts / declarations / call-site search; not exhaustive execution"
+        },
+        {
+          "path": "vllm/v1/sample/ops/topk_topp_sampler.py",
+          "sha256": "970afd0e8565ddfdcf50dc99892d893b20cb186214cc35e15aeb97d1dba90bd0",
+          "bytes": 23994,
+          "inspection": "targeted source excerpts / declarations / call-site search; not exhaustive execution"
+        },
+        {
+          "path": "vllm/v1/kv_offload/cpu/manager.py",
+          "sha256": "e403633a3092d508be5c66c1096f3a0349f6e3c425fe6e6800a6fd0603ee6a95",
+          "bytes": 18041,
+          "inspection": "targeted source excerpts / declarations / call-site search; not exhaustive execution"
+        },
+        {
+          "path": "vllm/v1/attention/backends/flashinfer.py",
+          "sha256": "6cddac75c203ae2c8a257b275d42777d83466eb76c36f64d8e73630e79ace760",
+          "bytes": 124572,
+          "inspection": "targeted source excerpts / declarations / call-site search; not exhaustive execution"
+        }
+      ]
+    },
+    {
+      "name": "llama.cpp",
+      "root": "C:\\public\\project-hyle\\llama.cpp",
+      "remote": "https://github.com/ggml-org/llama.cpp.git",
+      "branch": "master",
+      "before": "4c9233c034fc450dcf34c7c0988aebe6da5cdf1a",
+      "after": "23b0202a189c44a54625aadcb37a946dd1d6278d",
+      "fetched_default_branch_head": "23b0202a189c44a54625aadcb37a946dd1d6278d",
+      "clean": true,
+      "update": "fetch --no-tags current default branch; merge --ff-only",
+      "sources": [
+        {
+          "path": "src/llama-memory.h",
+          "sha256": "c9ed12cafb89336408a700739a0d985daca1de599c7baa9db8ba62ecbedb1bd3",
+          "bytes": 4669,
+          "inspection": "targeted source excerpts / declarations / call-site search; not exhaustive execution"
+        },
+        {
+          "path": "src/llama-memory-recurrent.h",
+          "sha256": "434f6d2a26b88509d4e91cf4c0dd6b9f1600852f0b6816dd4e3efbe95d9d26ba",
+          "bytes": 6463,
+          "inspection": "targeted source excerpts / declarations / call-site search; not exhaustive execution"
+        },
+        {
+          "path": "src/llama-memory-recurrent.cpp",
+          "sha256": "51172be188d0eece2267c9105dc5a8d2c3ef7ebd58e88a6f562ac6ee36326f98",
+          "bytes": 47147,
+          "inspection": "targeted source excerpts / declarations / call-site search; not exhaustive execution"
+        },
+        {
+          "path": "src/llama-kv-cache.cpp",
+          "sha256": "4ac534956aa0b384a9a707c778527a4e7cd4ebfbea9c895e531b0935485de3c8",
+          "bytes": 98155,
+          "inspection": "targeted source excerpts / declarations / call-site search; not exhaustive execution"
+        },
+        {
+          "path": "src/llama-context.cpp",
+          "sha256": "a1571fdc9cd4feb030e6b4bac29cfff439fcff4d86608e1c93af8b3f8b08a120",
+          "bytes": 163815,
+          "inspection": "targeted source excerpts / declarations / call-site search; not exhaustive execution"
+        },
+        {
+          "path": "src/llama-graph.cpp",
+          "sha256": "86da19a980374c050b40516d4cc6595e3f9c5ff3cfb7ec91291726c25e7b3938",
+          "bytes": 148914,
+          "inspection": "targeted source excerpts / declarations / call-site search; not exhaustive execution"
+        },
+        {
+          "path": "src/llama-model-loader.cpp",
+          "sha256": "301f8250eef5b34d14617c7c9bf5c14bb60519d199751f4d829502a5107f0593",
+          "bytes": 78348,
+          "inspection": "targeted source excerpts / declarations / call-site search; not exhaustive execution"
+        },
+        {
+          "path": "ggml/src/ggml-backend.cpp",
+          "sha256": "9a1e17bb2ff6089e597a9bb487f004863e2ac486c1289a444058783a070e10ac",
+          "bytes": 101938,
+          "inspection": "targeted source excerpts / declarations / call-site search; not exhaustive execution"
+        },
+        {
+          "path": "src/llama-memory-hybrid.cpp",
+          "sha256": "907b769206d9b29b8ee2dd0f04ead29e99810843edaecb722ddbbac852d0bf1e",
+          "bytes": 9773,
+          "inspection": "targeted source excerpts / declarations / call-site search; not exhaustive execution"
+        },
+        {
+          "path": "src/llama-batch.cpp",
+          "sha256": "569aba3ff35c42a671536d3c3f8b50868e96f744ea13a8177c29258ec7edbd8f",
+          "bytes": 47549,
+          "inspection": "targeted source excerpts / declarations / call-site search; not exhaustive execution"
+        },
+        {
+          "path": "src/llama-sampler.cpp",
+          "sha256": "d0c147129ded606691b0b3e78562bec36f53459446aa7a5bac23bb93a01c86f6",
+          "bytes": 152022,
+          "inspection": "targeted source excerpts / declarations / call-site search; not exhaustive execution"
+        },
+        {
+          "path": "tools/server/server-queue.cpp",
+          "sha256": "168385b752fa70df9790f51179e34e375284a296cd44af92b41c5d25da32a2ba",
+          "bytes": 22141,
+          "inspection": "targeted source excerpts / declarations / call-site search; not exhaustive execution"
+        }
+      ]
+    }
+  ],
+  "validation_boundary": "Static source investigation. No peer build, inference, GPU run or performance qualification."
+}

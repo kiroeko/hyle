@@ -10,6 +10,8 @@
 
 用户新增的 Compute/Graph 设计工作：
 
+- [推理引擎实际需求与基础机制缺口调研](project/inference-foundation-gap-research-2026-10.md)：
+  更新三个参考仓库，沿真实推理旅程对照 HYLE；只形成有界调研与候选，不重开已关闭模块。
 - [构建、冷路由和 CPU/GPU 组合入口设计](build/compute-entry-design.md)：入口统计与有限后续施工包；
   本 goal 不改产品，通用增量依赖图只登记 DEFER。
 
