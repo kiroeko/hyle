@@ -163,3 +163,9 @@ metadata; no SDK rebuild, static-macro, other-platform or mathematical qualifica
 [actual active-route checks](air-installed-headers/active-receipt.json) separately compiled each of
 those headers with the installed `hyle::graph` usage requirements. Apple/Vulkan macros were confirmed
 in the compile commands; MLX and Vulkan declarations were active. This does not sign math or P1.
+
+[Windows active-route header evidence](windows-installed-headers/active-receipt.json) separately
+compiled all63 installed headers with actual exported target usage requirements (CPU+Vulkan32,
+CUDA31). Route defines were confirmed in compile commands. Both groups passed without rebuilding SDKs.
+[Completed producer object cleanup](windows-cpu-vulkan/cleanup-build-objects.json) freed4,464,806,780
+bytes while retaining SDKs, consumers, source artifacts, dependency cache and evidence.

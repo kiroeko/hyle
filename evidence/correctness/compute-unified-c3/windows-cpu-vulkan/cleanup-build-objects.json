@@ -1,0 +1,11 @@
+{
+  "scope": "Cleanup of completed, archived owned producer build objects only",
+  "removed_directories": [
+    "C:/h7/w-cpu-vulkan/selected-graph/shared-sdk-build",
+    "C:/h7/w-cpu-vulkan/selected-graph/static-sdk-build"
+  ],
+  "removed_bytes": 4464806780,
+  "qualification": "Six actual consumer PASS and batch_exit0; log SHA checks and no active producer verified by PS1",
+  "preserved": "both relocated SDKs, source build, all consumer EXEs/assets, dependency cache and evidence",
+  "script": ".scratch/compute-unified/cleanup-windows-vulkan-sdk-builds.ps1"
+}

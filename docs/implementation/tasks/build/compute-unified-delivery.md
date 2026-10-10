@@ -373,3 +373,14 @@ MODULE 缺失/恢复也已验证。C3 当前62 PASS / 28 UNRUN；原 shared/stat
 Apple/Vulkan 路线宏实际启用，MLX/Vulkan 公开声明与依赖可见。只编译头，不重建 SDK/运行GPU/P1。
 [Air 证据](../../../../evidence/correctness/compute-unified-c3/air-installed-headers/active-receipt.json)
 保留两种检查的边界，不能以未启用宏的空声明替代 active 资格；三交付样例继续保留原独立证据。
+
+C3 [验收范围对账](../../../../evidence/correctness/compute-unified-c3/gate-scope.md)汇集当前实际证据
+与剩余域，保留 selector superset/未运行区别；不再因文档/工具局部修正重跑无影响数学。
+WSL Vulkan 的 SDK 编译仍适用，真实 GPU 数学保持未资格，不能用 llvmpipe 代签。
+
+Windows 安装 target 的实际路线宏逐头资格也已完成：CPU+Vulkan32份、CUDA31份均 PASS，
+compile commands 确认真实 GPU/CPU presence 宏启用，原 export target 自动带入 SDK依赖。
+[激活头收据](../../../../evidence/correctness/compute-unified-c3/windows-installed-headers/active-receipt.json)
+不代签静态宏/WSL/数学。已完成 Windows CPU+Vulkan 的两个 SDK producer object目录经
+六PASS/exit0、日志SHA、路径/链接及无活动进程检查后清理，释放4,464,806,780字节；
+两个 relocated SDK、全部消费者、source、cache和证据保留。没有触碰活动WSL目录。
