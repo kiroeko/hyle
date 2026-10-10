@@ -7787,6 +7787,7 @@ detail::SubmissionCursor::SubmissionCursor(SubmissionCursor &&other) noexcept
     : state_(std::exchange(other.state_, nullptr)),
       next_segment_(other.next_segment_),
       tail_error_(std::move(other.tail_error_)), pending_(other.pending_),
+      pending_segment_(other.pending_segment_),
       finished_(other.finished_), retained_(other.retained_) {
   other.pending_ = nullptr;
 }
@@ -7799,6 +7800,7 @@ detail::SubmissionCursor &detail::SubmissionCursor::operator=(
     next_segment_ = other.next_segment_;
     tail_error_ = std::move(other.tail_error_);
     pending_ = std::exchange(other.pending_, nullptr);
+    pending_segment_ = other.pending_segment_;
     finished_ = other.finished_;
     retained_ = other.retained_;
   }
@@ -7835,6 +7837,16 @@ ExecutionTargetId detail::SubmissionCursor::next_target() const noexcept {
   return plan.lanes[plan.segments[next_segment_].lane.ordinal()].target;
 }
 
+compute::Queue *detail::SubmissionCursor::pending_queue() const noexcept {
+  if (state_ == nullptr || pending_ == nullptr ||
+      pending_segment_ >= state_->plan->segments.size())
+    return nullptr;
+  const auto lane = state_->plan->segments[pending_segment_].lane;
+  return shared_lane(*state_->plan, lane)
+             ? state_->queues[lane.ordinal()]
+             : nullptr;
+}
+
 void detail::SubmissionCursor::request_cancel() noexcept {
   if (!finished_ && tail_error_.ok())
     tail_error_ = Status::Cancelled("graph successors cancelled");
@@ -7847,6 +7859,7 @@ Result<bool> detail::SubmissionCursor::advance(bool wait_dependencies) noexcept 
   if (done())
     return true;
   pending_ = nullptr;
+  pending_segment_ = SIZE_MAX;
   const auto &plan = *state_->plan;
   const std::size_t segment_index = next_segment_;
   auto &tail_error = tail_error_;
@@ -7897,6 +7910,7 @@ Result<bool> detail::SubmissionCursor::advance(bool wait_dependencies) noexcept 
         }
         if (*host == compute::CompletionPoll::kPending) {
           pending_ = &source;
+          pending_segment_ = source_segment;
           return false;
         }
       } else if (route != ReplayDependencyRoute::kDeviceWait) {

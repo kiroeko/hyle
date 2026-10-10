@@ -145,3 +145,9 @@ H1-03分段core接线：将原提交算法拆为private SubmissionCursor begin/a
 组合owner须保活至finish，不把该内部cleanup当公开Completion析构行为。
 当前仅源码接线/反查，不签CPP/native正确性或async/overlap；下一步仍需Sched/native唤醒、
 owned槽、权重迁移与集中验收。
+
+组合native唤醒接缝接线：cursor同时提供实际pending Queue；CUDA stream只运行host callback
+来signal现Sched Event，不从callback调用CUDA或释放owner。后置native Completion包含callback
+尾部，复用Event前必须观察终态；GPU错误可能不调用callback，使用既有fiber-aware timed wait
+与真实native poll观察错误，无新poll线程/忙转。该helper尚待组合Invocation驱动接入和native验收，
+不以函数名或源码推断重叠PASS。当前最近统一LOC统计62805行/273文件，统计后新增唤醒胶水未重计。

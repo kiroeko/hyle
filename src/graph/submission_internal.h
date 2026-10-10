@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstddef>
+#include <cstdint>
 
 #include "hyle/graph/executable.h"
 
@@ -32,6 +33,7 @@ public:
   const compute::Completion *pending_dependency() const noexcept {
     return pending_;
   }
+  HYLE_GRAPH_API compute::Queue *pending_queue() const noexcept;
   HYLE_GRAPH_API void request_cancel() noexcept;
   // Emits the actual final accepted prefix, including tail failure. This
   // retains all native owners even when its public handle is abandoned.
@@ -44,6 +46,7 @@ private:
   std::size_t next_segment_ = 0;
   Status tail_error_{};
   const compute::Completion *pending_ = nullptr;
+  std::size_t pending_segment_ = SIZE_MAX;
   bool finished_ = false;
   bool retained_ = false;
 };
