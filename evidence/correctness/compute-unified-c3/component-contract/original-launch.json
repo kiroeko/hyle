@@ -1,0 +1,10 @@
+{
+  "source_commit": "3067016ca092b9f33f74f4693c79dc88ce252b28",
+  "argv": [
+    "cmake",
+    "-DHYLE_SOURCE_DIR=C:/public/project-hyle/hyle",
+    "-DHYLE_SMOKE_ROOT=C:/h7/component-contract",
+    "-P",
+    "cmake/HyleCiComponentContract.cmake"
+  ]
+}

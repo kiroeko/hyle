@@ -1,0 +1,45 @@
+CMake Error at cmake/HyleCiComponentContract.cmake:41 (message):
+  unselected source is outside the selected audit failed with exit code 1:
+
+  -- Building for: Visual Studio 18 2026
+
+  -- Selecting Windows SDK version 10.0.26100.0 to target Windows 10.0.26200.
+
+  -- Configuring incomplete, errors occurred!
+
+
+
+  CMake Error at C:/public/project-hyle/hyle/cmake/HyleComponents.cmake:690
+  (include):
+
+    include could not find requested file:
+
+
+
+      C:/h7/component-contract/component-contract/selected-audit-fixture/cmake/HyleComputeRoutes.cmake
+
+  Call Stack (most recent call first):
+
+    CMakeLists.txt:5 (include)
+
+
+
+
+
+  CMake Error at C:/public/project-hyle/hyle/cmake/HyleComponents.cmake:691
+  (hyle_resolve_compute_product_routes):
+
+    Unknown CMake command "hyle_resolve_compute_product_routes".
+
+  Call Stack (most recent call first):
+
+    CMakeLists.txt:5 (include)
+
+
+
+
+
+Call Stack (most recent call first):
+  cmake/HyleCiComponentContract.cmake:176 (_hyle_contract_run)
+
+

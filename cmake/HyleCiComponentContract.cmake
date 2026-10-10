@@ -167,6 +167,8 @@ file(WRITE
   "${_selected_audit_fixture}/include/hyle/core/environment.h" "")
 file(WRITE "${_selected_audit_fixture}/src/graph/probe.cc"
   "#include <hyle/obs/log.h>\n")
+file(COPY "${HYLE_SOURCE_DIR}/cmake/HyleComputeRoutes.cmake"
+  DESTINATION "${_selected_audit_fixture}/cmake")
 file(WRITE "${_selected_audit_fixture}/CMakeLists.txt"
 "cmake_minimum_required(VERSION 3.25)\n"
 "project(hyle_unselected_audit_contract LANGUAGES NONE)\n"
@@ -192,6 +194,8 @@ file(WRITE
   "${_selected_invalid_fixture}/include/hyle/core/environment.h" "")
 file(WRITE "${_selected_invalid_fixture}/src/core/probe.cc"
   "#include <hyle/obs/log.h>\n")
+file(COPY "${HYLE_SOURCE_DIR}/cmake/HyleComputeRoutes.cmake"
+  DESTINATION "${_selected_invalid_fixture}/cmake")
 file(WRITE "${_selected_invalid_fixture}/CMakeLists.txt"
 "cmake_minimum_required(VERSION 3.25)\n"
 "project(hyle_selected_audit_contract LANGUAGES NONE)\n"
