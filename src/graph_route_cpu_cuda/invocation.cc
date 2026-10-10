@@ -12,17 +12,46 @@
 #include "../graph/submission_internal.h"
 #include "hyle/compute/backends/cpu.h"
 #include "hyle/compute/detail/generated_result.h"
+#include "hyle/container/small_vector.h"
 #include "hyle/sched/scheduler.h"
 #include "hyle/sched/sync.h"
 #include "hyle/util/ref_counted.h"
 #include "progress.h"
+#include "weights_internal.h"
 
 namespace hyle::graph::cpu_cuda {
 namespace detail {
 
+struct WeightUse final {
+  ValueId value{};
+  WeightState *state = nullptr;
+  WeightUse() noexcept = default;
+  WeightUse(const WeightUse &) = delete;
+  WeightUse &operator=(const WeightUse &) = delete;
+  WeightUse(WeightUse &&other) noexcept
+      : value(other.value), state(std::exchange(other.state, nullptr)) {}
+  WeightUse &operator=(WeightUse &&other) noexcept {
+    if (this != &other) {
+      release_weight(state);
+      value = other.value;
+      state = std::exchange(other.state, nullptr);
+    }
+    return *this;
+  }
+  ~WeightUse() { release_weight(state); }
+  void reset(ValueId next_value = {}, WeightState *next_state = nullptr) noexcept {
+    retain_weight(next_state);
+    release_weight(state);
+    value = next_value;
+    state = next_state;
+  }
+};
+
 // Separate backing from the result slot: a result retains this backing, never
 // the owner that contains its own ResultSlot. This avoids a reference cycle.
 struct RunState final : util::RefCounted<RunState> {
+  explicit RunState(mem::AllocatorRef owner) noexcept
+      : allocator(owner), weights(owner), weight_prefixes(owner) {}
   mem::AllocatorRef allocator{};
   graph::Invocation invocation{};
   sched::Scheduler *scheduler = nullptr;
@@ -30,6 +59,8 @@ struct RunState final : util::RefCounted<RunState> {
   std::size_t queue_count = 0;
   compute::Queue *cuda_queue = nullptr;
   graph::detail::SubmissionCursor cursor{};
+  container::SmallVector<WeightUse, 2, mem::AllocatorRef> weights;
+  container::SmallVector<compute::Completion, 2, mem::AllocatorRef> weight_prefixes;
   sched::Event cuda_ready{};
   sched::Event finished{};
   std::mutex retirement_mutex{};
@@ -123,6 +154,8 @@ void destroy_completion(void *opaque,
 
 Result<compute::CompletionPoll> poll_completion(void *opaque) noexcept {
   auto &run = *static_cast<RunState *>(opaque);
+  if (run.running.load(std::memory_order_acquire))
+    return compute::CompletionPoll::kPending;
   std::lock_guard lock(run.retirement_mutex);
   if (!run.done)
     return compute::CompletionPoll::kPending;
@@ -133,7 +166,8 @@ Result<compute::CompletionPoll> poll_completion(void *opaque) noexcept {
 
 Status wait_completion(void *opaque) noexcept {
   auto &run = *static_cast<RunState *>(opaque);
-  run.finished.wait();
+  while (run.running.load(std::memory_order_acquire))
+    run.finished.wait_for(std::chrono::milliseconds(1));
   return terminal_status(run);
 }
 
@@ -171,6 +205,31 @@ void publish_terminal(RunState &run, Status terminal) noexcept {
 
 void drive(void *opaque) noexcept {
   auto &run = *static_cast<RunState *>(opaque);
+  // Fixed selections keep both device backing and upload prefix alive. Queue
+  // waits precede every shared CUDA segment on this exact native endpoint.
+  for (std::size_t i = 0; i < run.weights.size(); ++i) {
+    auto *weight = run.weights[i].state;
+    if (weight == nullptr)
+      continue;
+    if (run.cancel_requested.load(std::memory_order_acquire)) {
+      run.cursor.request_cancel();
+      break;
+    }
+    if (run.cuda_queue != nullptr) {
+      auto ordered = detail::order_weight(weight, *run.cuda_queue);
+      if (!ordered) {
+        run.cursor.reject_successors(std::move(ordered).error());
+        break;
+      }
+      run.weight_prefixes[i] = std::move(*ordered);
+    } else {
+      const auto ready = detail::wait_weight(weight);
+      if (!ready.ok()) {
+        run.cursor.reject_successors(ready);
+        break;
+      }
+    }
+  }
   while (!run.cursor.done()) {
     if (run.cancel_requested.load(std::memory_order_acquire)) {
       run.cursor.request_cancel();
@@ -214,6 +273,16 @@ void drive(void *opaque) noexcept {
     const auto native = prefix->wait();
     if (terminal.ok())
       terminal = native;
+  }
+  // An early graph rejection may still follow an accepted dependency prefix.
+  // Retire it and observe late errors before publishing this run's terminal.
+  for (auto &dependency : run.weight_prefixes) {
+    if (dependency.valid()) {
+      const auto status = dependency.wait();
+      if (terminal.ok())
+        terminal = status;
+      dependency = {};
+    }
   }
   run.cursor = {};
   publish_terminal(run, std::move(terminal));
@@ -295,8 +364,13 @@ Result<Invocation> Invocation::create(graph::Invocation &&invocation,
     allocator.deallocate(run_memory, sizeof(RunState), alignof(RunState));
     return std::unexpected(Status::ResourceExhausted("CPU+CUDA slot allocation"));
   }
-  auto *run = std::construct_at(static_cast<RunState *>(run_memory));
-  run->allocator = allocator;
+  auto *run = std::construct_at(static_cast<RunState *>(run_memory), allocator);
+  if (!run->weights.try_resize(plan.input_ids.size()) ||
+      !run->weight_prefixes.try_resize(plan.input_ids.size())) {
+    run->decref();
+    allocator.deallocate(state_memory, sizeof(InvocationState), alignof(InvocationState));
+    return std::unexpected(Status::ResourceExhausted("CPU+CUDA weight bindings"));
+  }
   run->invocation = std::move(invocation);
   run->scheduler = &scheduler;
   run->queue_count = queues.size();
@@ -314,18 +388,58 @@ Result<Invocation> Invocation::create(graph::Invocation &&invocation,
 
 Status Invocation::bind(ValueId value, compute::ConstTensorView tensor) noexcept {
   HYLE_RETURN_IF_ERROR(admit_write(state_));
-  return state_->run->invocation.bind(value, tensor);
+  HYLE_RETURN_IF_ERROR(state_->run->invocation.bind(value, tensor));
+  for (auto &weight : state_->run->weights)
+    if (weight.value == value)
+      weight.reset();
+  return Status::Ok();
 }
 Status Invocation::bind(ValueId value, compute::TensorView tensor) noexcept {
   HYLE_RETURN_IF_ERROR(admit_write(state_));
-  return state_->run->invocation.bind(value, tensor);
+  HYLE_RETURN_IF_ERROR(state_->run->invocation.bind(value, tensor));
+  for (auto &weight : state_->run->weights)
+    if (weight.value == value)
+      weight.reset();
+  return Status::Ok();
 }
 Status Invocation::reset() noexcept {
   HYLE_RETURN_IF_ERROR(admit_write(state_));
-  return state_->run->invocation.reset();
+  HYLE_RETURN_IF_ERROR(state_->run->invocation.reset());
+  for (auto &weight : state_->run->weights)
+    weight.reset();
+  return Status::Ok();
+}
+Status Invocation::bind(ValueId value, const WeightBatch &batch,
+                        std::uint64_t id) noexcept {
+  HYLE_RETURN_IF_ERROR(admit_write(state_));
+  HYLE_ASSIGN_OR_RETURN(auto tensor, batch.binding(id));
+  auto &run = *state_->run;
+  auto *slot = static_cast<detail::WeightUse *>(nullptr);
+  for (auto &weight : run.weights) {
+    if (weight.value == value) {
+      slot = &weight;
+      break;
+    }
+    if (slot == nullptr && weight.state == nullptr)
+      slot = &weight;
+  }
+  if (slot == nullptr)
+    return Status::ResourceExhausted("CPU+CUDA weight binding capacity");
+  HYLE_RETURN_IF_ERROR(run.invocation.bind(value, tensor));
+  slot->reset(value, detail::WeightAccess::state(batch));
+  return Status::Ok();
 }
 Status Invocation::prepare_replay(ReplayOptions options) noexcept {
   HYLE_RETURN_IF_ERROR(admit_write(state_));
+  auto &run = *state_->run;
+  if (run.cuda_queue != nullptr) {
+    const auto segments = run.invocation.executable().segment_count();
+    if (segments > SIZE_MAX - 4 ||
+        run.weights.size() > (SIZE_MAX - segments - 4) / 2)
+      return Status::ResourceExhausted("CPU+CUDA completion capacity overflows");
+    HYLE_RETURN_IF_ERROR(run.cuda_queue->reserve_completions(
+        segments + run.weights.size() * 2 + 4));
+  }
   return state_->run->invocation.prepare_replay(state_->run->bindings(), options);
 }
 

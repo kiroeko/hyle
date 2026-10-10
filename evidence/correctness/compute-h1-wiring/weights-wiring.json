@@ -1,0 +1,50 @@
+{
+  "scope": "H1 bounded migration and consumers; syntax/configuration only",
+  "syntax_verdict": "PASS",
+  "mode": "MSVC x64 /std:c++latest /Zs",
+  "route_configuration_tests": 11,
+  "route_configuration_verdict": "PASS",
+  "files": [
+    {
+      "path": "src/graph_route_cpu_cuda/compile.cc",
+      "sha256": "3cab8cebe6feca01810fe2eba23e2b1b66d417b927d949f91bb0f7b7f0009b3b"
+    },
+    {
+      "path": "src/graph_route_cpu_cuda/progress.cc",
+      "sha256": "fd9aa5491165e58ad6d4db9f8fd83b1e6dc139a9199b8760476f9bcbe0b2d3d5"
+    },
+    {
+      "path": "src/graph_route_cpu_cuda/invocation.cc",
+      "sha256": "8ffa1b8de6619b6294c3ff0a64905d7b11ff02d21859af6657740f9a6e7e7384"
+    },
+    {
+      "path": "src/graph_route_cpu_cuda/weights.cc",
+      "sha256": "ea0d44de25c166a054f5c60454c686b8a858e3c22f1fdf89c821bbe285584c0d"
+    },
+    {
+      "path": "src/graph/executable.cc",
+      "sha256": "4c26a4e2c3a43d4df133c39b5d0926ab1dcc3e85cd63f343580ac003ef854b07"
+    },
+    {
+      "path": "src/compute_backend_cuda/cuda_backend.cc",
+      "sha256": "94b3afff0ba98031463e37c64d529ed212d3f1cc8da279a7910dd2763ef7ba59"
+    },
+    {
+      "path": "samples/package/graph/cpu_cuda/main.cc",
+      "sha256": "959af8c14e8f60c243a85df045e8b71a357abe2d43017cd7ed87ec1cdab13b57"
+    },
+    {
+      "path": "samples/package/graph/cpu_cuda/inference.h",
+      "sha256": "6faf113b7874ff7ef7ff2035bf410ab6cc4ec3cccb6ac0fe738c7c017bac5602"
+    }
+  ],
+  "not_run": [
+    "link",
+    "joint mathematical consumers",
+    "lifetime runtime",
+    "physical overlap",
+    "three deliveries",
+    "P1"
+  ],
+  "product_state": "AUDITED"
+}

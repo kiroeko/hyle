@@ -169,3 +169,24 @@ H1-05权重/expert迁移及H1-06集中真实consumer与整包验收仍未完成�
 未运行边界；[统一LOC报告](../../../../evidence/architecture/compute-entry-design/loc-h1-invocation.json)
 对已纳入Git的当前工作树统计，self-check PASS：Compute+Graph 63,272实现行/276文件，
 全库自实现不含测试158,499行。该工作树报告不冒充不可变候选或新数学能力完成。
+
+H1-05产品接线：WeightSlots冷分配两组固定容量pinned/device backing及ID/TensorDesc目录；
+选择校验全部ID、真实物理描述、host可访问性、重复和对齐/容量，再暂存选中原始编码片段并
+提交真实CUDA DMA。source可用已有TensorView/Buffer subview表示具体范围，机制不转换/量化。
+Batch与native Completion分别保活backing，避免含Completion的owner自持引用环；旧batch或Graph
+绑定仍存时槽不可覆盖。组合Invocation冷分配权重绑定/依赖存储，typed bind自动保活，实际
+CUDA Queue记录DMA event依赖；delegated episode没有该端点时明确host barrier。
+普通重放只更新payload/绑定，不选Provider，不由库决定专家cache/淘汰；prepare额外预留native
+completion容量。原生已有CUDA reaper负责abandonment，未新建后台runtime。
+
+H1-06已新增普通source/installed同C++消费者、明确缺组合能力诊断与使用说明，位于
+[CPU+CUDA sample](../../../../samples/package/graph/cpu_cuda/README.md)。消费者包括CPU变换→CUDA矩阵→
+CPU结果消费的双槽、CPU normalization/casts→CUDA gated FFN→CPU完整片段，以及FP32/FP16片段选择、
+旧lease、绑定保活、重复、取消/close、abandonment的实际检查；异常返回也先排空借用工作。
+消费代码与6个产品CPP的MSVC语法检查通过，尚未链接/运行这些新检查，不能写数学/生命周期PASS。
+下一步执行一批实际source消费者，按失败定位修复；原生重叠、完整负向边界和三交付仍待验。
+新产品API已接线，整包仍AUDITED；不启动已完成C3全集或Provider性能赛跑。
+
+[本批语法/配置记录](../../../../evidence/correctness/compute-h1-wiring/weights-wiring.json)保留实际文件hash和
+未运行项；[最近统一统计](../../../../evidence/architecture/compute-entry-design/loc-h1-weights.json)
+self-check PASS：Compute+Graph 63,750实现行/278文件，全库自实现不含测试158,977行。
