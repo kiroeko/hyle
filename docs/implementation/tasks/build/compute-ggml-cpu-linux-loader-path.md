@@ -56,3 +56,7 @@ Linux shared/static/mixed 仍未签，本 owner 保持 CANDIDATE，继续原剩�
 原 Linux shared SDK 两普通消费者也已 PASS，Graph0.17s/Direct0.15s；搬移后 runtime
 自带 `$ORIGIN`，原 MODULE 在 SDK/lib，未带 build-tree loader路径或 LD覆盖。
 资源/导出/CTest 收据已归档，静态原循环继续；本 owner仍CANDIDATE，不把 shared 签成全部Linux/mixed完成。
+
+原 static 两普通消费者也 PASS，完整SDK循环exit0；主程序的实际ELF查找含搬移后的SDK/lib，
+原MODULE可取得，无LD覆盖。Linux CPU六项三交付已完成并独立归档；C3其它Linux/mixed域
+仍待批量资格，本owner保持CANDIDATE，不重跑CPU或Windows/Air/P1。

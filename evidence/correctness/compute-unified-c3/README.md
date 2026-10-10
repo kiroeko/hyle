@@ -5,7 +5,7 @@ It is not a terminal verdict for all platforms/routes, hybrid execution, or asyn
 
 [Delivery matrix](delivery-matrix.json) fixes the declared applicable scope: 15 platform/route groups,
 45 source/shared/static shapes, each with the existing Direct and Graph consumer. Consumer entries
-are documented per actual receipt; the current matrix records 64 PASS and 26 UNRUN.
+are documented per actual receipt; the current matrix records 66 PASS and 24 UNRUN.
 Earlier Vulkan failures remain archived. A mixed SDK entry runs each selected native route independently
 and cannot certify the later joint execution or asynchronous transfer work.
 
@@ -179,3 +179,8 @@ The original static loop continues; effective C3 count is64/90, with no hybrid/P
 isolated headers with the actual exported route definitions and GCC14.2.0. Existing bare-header checks
 also passed30. An initial GCC13 consumer is retained as a diagnostic, explicitly below the declared
 floor; only the small header consumer was corrected, without SDK/math/P1 repetition.
+
+WSL CPU static Graph/Direct also passed and the original SDK loop exited0. Both consumer ELF lookup
+paths include relocated SDK/lib, with the original CPU MODULE present and no LD override. Its source,
+shared and static six-entry group is complete. Updated receipts retain original loader failures.
+C3 is66/90; the next serial WSL CUDA batch has started. H1-H3 remain unimplemented.

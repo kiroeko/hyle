@@ -1,0 +1,21 @@
+{
+  "scope": "Actual relocated Linux CPU static SDK, ordinary Direct/Graph and private native program asset",
+  "candidate": "a2476b62cfe49c1663998645c362392685c06eb1",
+  "native_leaf": "libhyle_ggml_cpu_avx2_ffa4e8b8_bdae1e43311ee486.so",
+  "results": {
+    "graph": {
+      "lookup": [
+        "0x000000000000000f (RPATH)              Library rpath: [/root/.cache/hyle/dependencies/v1/sdks/torch-cpu/Linux-8dea5bcfed4b53ca0f6852517bea4b4d1f3ff1cc0c21da662e834d34af1ec824/libtorch/lib:/root/hyle-scratch/compute-unified/l-cpu/selected-graph/static-sdk-relocated/lib:/lib/intel64:/lib/intel64_win:/lib/win-x64]"
+      ],
+      "log": " 09:46 CST\n----------------------------------------------------------\n1/1 Testing: hyle_package_graph_cpp\n1/1 Test: hyle_package_graph_cpp\nCommand: \"/root/hyle-scratch/compute-unified/l-cpu/selected-graph/static-consumer/hyle_package_graph_cpp\"\nDirectory: /root/hyle-scratch/compute-unified/l-cpu/selected-graph/static-consumer\n\"hyle_package_graph_cpp\" start time: Oct 10 09:46 CST\nOutput:\n----------------------------------------------------------\n<end of output>\nTest time =   0.16 sec\n----------------------------------------------------------\nTest Passed.\n\"hyle_package_graph_cpp\" end time: Oct 10 09:46 CST\n\"hyle_package_graph_cpp\" time elapsed: 00:00:00\n----------------------------------------------------------\n\nEnd testing: Oct 10 09:46 CST\n"
+    },
+    "direct": {
+      "lookup": [
+        "0x000000000000000f (RPATH)              Library rpath: [/root/.cache/hyle/dependencies/v1/sdks/torch-cpu/Linux-8dea5bcfed4b53ca0f6852517bea4b4d1f3ff1cc0c21da662e834d34af1ec824/libtorch/lib:/root/hyle-scratch/compute-unified/l-cpu/selected-graph/static-sdk-relocated/lib:/lib/intel64:/lib/intel64_win:/lib/win-x64]"
+      ],
+      "log": "-----------------------------------------\n1/1 Testing: hyle_package_compute_cpp\n1/1 Test: hyle_package_compute_cpp\nCommand: \"/root/hyle-scratch/compute-unified/l-cpu/selected-graph/static-compute-consumer/hyle_package_compute_cpp\"\nDirectory: /root/hyle-scratch/compute-unified/l-cpu/selected-graph/static-compute-consumer\n\"hyle_package_compute_cpp\" start time: Oct 10 09:46 CST\nOutput:\n----------------------------------------------------------\n<end of output>\nTest time =   0.15 sec\n----------------------------------------------------------\nTest Passed.\n\"hyle_package_compute_cpp\" end time: Oct 10 09:46 CST\n\"hyle_package_compute_cpp\" time elapsed: 00:00:00\n----------------------------------------------------------\n\nEnd testing: Oct 10 09:46 CST\n"
+    }
+  },
+  "LD_LIBRARY_PATH": "",
+  "batch_exit_observed_by_parent": 0
+}

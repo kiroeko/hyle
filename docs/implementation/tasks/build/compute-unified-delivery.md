@@ -395,3 +395,9 @@ requirements/GCC14.2.0 单头 OBJECT 编译30份均 PASS，实际CPU/oneDNN宏�
 [逐头证据](../../../../evidence/correctness/compute-unified-c3/wsl-cpu-installed-headers/active-gcc14-receipt.json)
 保留第一次误用系统GCC13的额外诊断，未用其签GCC14门；只校正头 consumer，不重建SDK/数学/P1。
 其它WSL路线的安装头门须待对应包真实完成，静态宏档位不由此虚签。实现LOC无变化。
+
+原 WSL CPU static Graph/Direct 也已 PASS，原 SDK 循环exit0；static 主程序的实际 ELF
+查找含 relocated SDK/lib，原程序 MODULE 保留，未设置LD覆盖。
+[静态资源证据](../../../../evidence/correctness/compute-unified-c3/wsl-cpu/static-resource-receipt.json)
+与原 source/shared 合成六项三交付资格。C3 当前66 PASS / 24 UNRUN；下一串行 WSL CUDA
+已使用冻结a2476b62来源启动，CPU/source/shared/static不再重跑；H1–H3仍未实施。

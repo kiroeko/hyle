@@ -1,0 +1,18 @@
+Start testing: Oct 10 09:46 CST
+----------------------------------------------------------
+1/1 Testing: hyle_package_graph_cpp
+1/1 Test: hyle_package_graph_cpp
+Command: "/root/hyle-scratch/compute-unified/l-cpu/selected-graph/static-consumer/hyle_package_graph_cpp"
+Directory: /root/hyle-scratch/compute-unified/l-cpu/selected-graph/static-consumer
+"hyle_package_graph_cpp" start time: Oct 10 09:46 CST
+Output:
+----------------------------------------------------------
+<end of output>
+Test time =   0.16 sec
+----------------------------------------------------------
+Test Passed.
+"hyle_package_graph_cpp" end time: Oct 10 09:46 CST
+"hyle_package_graph_cpp" time elapsed: 00:00:00
+----------------------------------------------------------
+
+End testing: Oct 10 09:46 CST

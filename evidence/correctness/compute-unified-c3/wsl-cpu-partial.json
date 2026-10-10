@@ -31,14 +31,23 @@
     },
     {
       "entry": "static-direct",
-      "verdict": "UNRUN"
+      "verdict": "PASS",
+      "log": "evidence/correctness/compute-unified-c3/wsl-cpu/static-direct-ctest.log",
+      "sha256": "4fc1cd58507d058c032af59affd5f13e1f241846d89d1cc0b65a2fb43563f275",
+      "actual_routes": "cpu",
+      "recipe": "348a6cae71c17f1d47ab523ccad9d3dbfc50fc8188f6bb5b17107f934c9b60e3"
     },
     {
       "entry": "static-graph",
-      "verdict": "UNRUN"
+      "verdict": "PASS",
+      "log": "evidence/correctness/compute-unified-c3/wsl-cpu/static-graph-ctest.log",
+      "sha256": "f295dd386b28b2f3e2ea2e8d67a84b9605185ff02c1cca5f37d82d0ac47940c3",
+      "actual_routes": "cpu",
+      "recipe": "348a6cae71c17f1d47ab523ccad9d3dbfc50fc8188f6bb5b17107f934c9b60e3"
     }
   ],
   "source_log": "evidence/correctness/compute-unified-c3/wsl-cpu/source-ctest.log",
   "source_log_sha256": "5cd3d3c7579e89534ff119e1c13fcd2a287497f77889bd7a2dbc5086f75aa4c0",
-  "remaining": "Native SDK stages are tracked separately; unfinished entries remain UNRUN. No H1 joint/async/expert qualification."
+  "remaining": "Linux CPU source/shared/static six real consumers complete. Other WSL route groups and H1-H3 remain unqualified.",
+  "batch_exit": 0
 }
