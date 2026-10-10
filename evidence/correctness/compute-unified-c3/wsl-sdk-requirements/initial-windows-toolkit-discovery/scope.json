@@ -5,5 +5,8 @@
   "setup_reference": "docs/developer/setup/linux-wsl.md:32",
   "original_completed_passes": 0,
   "corrected_checks": 16,
-  "verdict": "FIXED_FIXTURE_ENV"
+  "verdict": "FIXED_FIXTURE_ENV",
+  "original_cache_git_ref": "c11f7d6ab6342734b88727537b5e57102fe9033f",
+  "original_cache_sha256": "c58795a11491613b51e14b9a6a1eb666a3fc3839811b4582732118990ad17d5e",
+  "cache_representation": "Readable copy; original exact bytes retained in original_cache_git_ref"
 }

@@ -13,5 +13,3 @@ CMake Warning:
   Manually-specified variables were not used by the project:
 
     FETCHCONTENT_FULLY_DISCONNECTED
-
-

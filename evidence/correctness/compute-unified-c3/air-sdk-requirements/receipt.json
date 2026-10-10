@@ -28,7 +28,10 @@
       "exit": 0,
       "verdict": "PASS",
       "log": "a-cpu-apple-shared-subset.log",
-      "log_sha256": "014d35ea9b0dd1bab087921538dc09aa5fd42c9222dfe1da2cfbf868b3ee09ff"
+      "log_sha256": "f682042ca8dfb49819c0dd51f0ef829ea48e991ebc5ae21639d73f509e14425d",
+      "original_log_sha256": "014d35ea9b0dd1bab087921538dc09aa5fd42c9222dfe1da2cfbf868b3ee09ff",
+      "original_log_git_ref": "c11f7d6ab6342734b88727537b5e57102fe9033f",
+      "log_representation": "Readable copy with trailing whitespace removed; original bytes retained at original_log_git_ref"
     },
     {
       "routes": "cpu;apple",
@@ -54,7 +57,10 @@
       "exit": 0,
       "verdict": "PASS",
       "log": "a-cpu-apple-shared-full.log",
-      "log_sha256": "22e27e33fcab33025dfd0cc632dc00e83c6aebcaa6a2d6607e8fc072b0760852"
+      "log_sha256": "24efa1b4d8eb90392b839cb7ac7b74507b5fd259fd0f8bd492d674df5dfdd55e",
+      "original_log_sha256": "22e27e33fcab33025dfd0cc632dc00e83c6aebcaa6a2d6607e8fc072b0760852",
+      "original_log_git_ref": "c11f7d6ab6342734b88727537b5e57102fe9033f",
+      "log_representation": "Readable copy with trailing whitespace removed; original bytes retained at original_log_git_ref"
     },
     {
       "routes": "cpu;apple",
@@ -80,7 +86,10 @@
       "exit": 1,
       "verdict": "PASS",
       "log": "a-cpu-apple-shared-absent.log",
-      "log_sha256": "bf770a99c882b824090067771eb86e80eb803141cd89fca2d47407a11fc76cc3"
+      "log_sha256": "8c3476675c13d5d7d6d02aa92e57a31a48956545009290678a99846eaeda3eba",
+      "original_log_sha256": "bf770a99c882b824090067771eb86e80eb803141cd89fca2d47407a11fc76cc3",
+      "original_log_git_ref": "c11f7d6ab6342734b88727537b5e57102fe9033f",
+      "log_representation": "Readable copy with trailing whitespace removed; original bytes retained at original_log_git_ref"
     },
     {
       "routes": "cpu;apple",
@@ -106,7 +115,10 @@
       "exit": 1,
       "verdict": "PASS",
       "log": "a-cpu-apple-shared-legacy.log",
-      "log_sha256": "6771c2d7d034d30598765206f54915b5090c33a29bfb798a3c500586a0b48a51"
+      "log_sha256": "60de5c8247ab278b2ff4d0652b41dcf4dd588257c5bdd1c429b7f6128d3ee274",
+      "original_log_sha256": "6771c2d7d034d30598765206f54915b5090c33a29bfb798a3c500586a0b48a51",
+      "original_log_git_ref": "c11f7d6ab6342734b88727537b5e57102fe9033f",
+      "log_representation": "Readable copy with trailing whitespace removed; original bytes retained at original_log_git_ref"
     },
     {
       "routes": "cpu;apple",
@@ -132,7 +144,10 @@
       "exit": 0,
       "verdict": "PASS",
       "log": "a-cpu-apple-static-subset.log",
-      "log_sha256": "95ea11fd54cf11b0ba97fd2f9eb61c103b290f66abb58e21e2bceba7df94d5a7"
+      "log_sha256": "615d2986987b6f5a1a17120a58fe52c253ee6a3c370dc687d008114b67c299f5",
+      "original_log_sha256": "95ea11fd54cf11b0ba97fd2f9eb61c103b290f66abb58e21e2bceba7df94d5a7",
+      "original_log_git_ref": "c11f7d6ab6342734b88727537b5e57102fe9033f",
+      "log_representation": "Readable copy with trailing whitespace removed; original bytes retained at original_log_git_ref"
     },
     {
       "routes": "cpu;apple",
@@ -158,7 +173,10 @@
       "exit": 0,
       "verdict": "PASS",
       "log": "a-cpu-apple-static-full.log",
-      "log_sha256": "06de9798c3a7cd9cfca71751b936ed35d3a47db97e65e49e509d21dd7a3aeead"
+      "log_sha256": "4993afc6218c06bb23e93c7303943c4455d6930818a3fd7e4bf59e1200f07a1b",
+      "original_log_sha256": "06de9798c3a7cd9cfca71751b936ed35d3a47db97e65e49e509d21dd7a3aeead",
+      "original_log_git_ref": "c11f7d6ab6342734b88727537b5e57102fe9033f",
+      "log_representation": "Readable copy with trailing whitespace removed; original bytes retained at original_log_git_ref"
     },
     {
       "routes": "cpu;apple",
@@ -184,7 +202,10 @@
       "exit": 1,
       "verdict": "PASS",
       "log": "a-cpu-apple-static-absent.log",
-      "log_sha256": "589a677174855cd42633d2b4838411dfb51023189780e69038260def1893e413"
+      "log_sha256": "d43d82767b73f3e404310111c32f294455c1bc6ef9a7e6b52eddde09994d010f",
+      "original_log_sha256": "589a677174855cd42633d2b4838411dfb51023189780e69038260def1893e413",
+      "original_log_git_ref": "c11f7d6ab6342734b88727537b5e57102fe9033f",
+      "log_representation": "Readable copy with trailing whitespace removed; original bytes retained at original_log_git_ref"
     },
     {
       "routes": "cpu;apple",
@@ -210,7 +231,10 @@
       "exit": 1,
       "verdict": "PASS",
       "log": "a-cpu-apple-static-legacy.log",
-      "log_sha256": "61d1298d83dd9349334e8f06c075d12b0bd910436b831af53b780438342e559d"
+      "log_sha256": "2d05e5e924047ed871076ef22a0b36306958a581d69a56937b2f186a6fe936dd",
+      "original_log_sha256": "61d1298d83dd9349334e8f06c075d12b0bd910436b831af53b780438342e559d",
+      "original_log_git_ref": "c11f7d6ab6342734b88727537b5e57102fe9033f",
+      "log_representation": "Readable copy with trailing whitespace removed; original bytes retained at original_log_git_ref"
     },
     {
       "routes": "cpu;vulkan",
@@ -236,7 +260,10 @@
       "exit": 0,
       "verdict": "PASS",
       "log": "a-cpu-vulkan-shared-subset.log",
-      "log_sha256": "dcc1f9b2e04ac856b204dc0fe3a03a708b0db0e150fab12f58f574c83d203259"
+      "log_sha256": "f6d98fde3159a6b1266a2aad3156cf00bd12e49432d21c5068b808891d575060",
+      "original_log_sha256": "dcc1f9b2e04ac856b204dc0fe3a03a708b0db0e150fab12f58f574c83d203259",
+      "original_log_git_ref": "c11f7d6ab6342734b88727537b5e57102fe9033f",
+      "log_representation": "Readable copy with trailing whitespace removed; original bytes retained at original_log_git_ref"
     },
     {
       "routes": "cpu;vulkan",
@@ -262,7 +289,10 @@
       "exit": 0,
       "verdict": "PASS",
       "log": "a-cpu-vulkan-shared-full.log",
-      "log_sha256": "ed0e1ba6665c9721502c1340a779d1e39b41e4b1a597308b47c904f532224680"
+      "log_sha256": "13760e8f9b0c59adc1dfa31605d76a0b70474c899aea847e9a10d3407fcd8fc7",
+      "original_log_sha256": "ed0e1ba6665c9721502c1340a779d1e39b41e4b1a597308b47c904f532224680",
+      "original_log_git_ref": "c11f7d6ab6342734b88727537b5e57102fe9033f",
+      "log_representation": "Readable copy with trailing whitespace removed; original bytes retained at original_log_git_ref"
     },
     {
       "routes": "cpu;vulkan",
@@ -288,7 +318,10 @@
       "exit": 1,
       "verdict": "PASS",
       "log": "a-cpu-vulkan-shared-absent.log",
-      "log_sha256": "2dee1afb7be833baba3ea2ea50b00ac7226b28c0d07bdbd1c5cc51f9f760bbc2"
+      "log_sha256": "8db7362f783c37654434c6423e386c2ac30ccdad06b4c0b10ad98591cb3b0153",
+      "original_log_sha256": "2dee1afb7be833baba3ea2ea50b00ac7226b28c0d07bdbd1c5cc51f9f760bbc2",
+      "original_log_git_ref": "c11f7d6ab6342734b88727537b5e57102fe9033f",
+      "log_representation": "Readable copy with trailing whitespace removed; original bytes retained at original_log_git_ref"
     },
     {
       "routes": "cpu;vulkan",
@@ -314,7 +347,10 @@
       "exit": 1,
       "verdict": "PASS",
       "log": "a-cpu-vulkan-shared-legacy.log",
-      "log_sha256": "1c9c6c438237e06a7293df00d73ca012dbe3726ad11099a2cab12e6b743a9ff8"
+      "log_sha256": "996baaafc0dd2a1d4c54396302161f12df10cb4e8b87b2406b8aadae4408742b",
+      "original_log_sha256": "1c9c6c438237e06a7293df00d73ca012dbe3726ad11099a2cab12e6b743a9ff8",
+      "original_log_git_ref": "c11f7d6ab6342734b88727537b5e57102fe9033f",
+      "log_representation": "Readable copy with trailing whitespace removed; original bytes retained at original_log_git_ref"
     },
     {
       "routes": "cpu;vulkan",
@@ -340,7 +376,10 @@
       "exit": 0,
       "verdict": "PASS",
       "log": "a-cpu-vulkan-static-subset.log",
-      "log_sha256": "030b511811063188398cb9ddbdc666404b1b66582556d90d47c7adb3ae5cb6ae"
+      "log_sha256": "e1ce8e7c2891b17347d82d4b2438660e65705759a5536b3ca8e42a7e92cb857a",
+      "original_log_sha256": "030b511811063188398cb9ddbdc666404b1b66582556d90d47c7adb3ae5cb6ae",
+      "original_log_git_ref": "c11f7d6ab6342734b88727537b5e57102fe9033f",
+      "log_representation": "Readable copy with trailing whitespace removed; original bytes retained at original_log_git_ref"
     },
     {
       "routes": "cpu;vulkan",
@@ -366,7 +405,10 @@
       "exit": 0,
       "verdict": "PASS",
       "log": "a-cpu-vulkan-static-full.log",
-      "log_sha256": "1dc954444711d815e4b00bf1235d31dc09d1f65b547c3d4774e27c247db7114d"
+      "log_sha256": "1f929d2e082413d4554024b07f92bf08d6a287a3022e08ddc73615212d51c766",
+      "original_log_sha256": "1dc954444711d815e4b00bf1235d31dc09d1f65b547c3d4774e27c247db7114d",
+      "original_log_git_ref": "c11f7d6ab6342734b88727537b5e57102fe9033f",
+      "log_representation": "Readable copy with trailing whitespace removed; original bytes retained at original_log_git_ref"
     },
     {
       "routes": "cpu;vulkan",
@@ -392,7 +434,10 @@
       "exit": 1,
       "verdict": "PASS",
       "log": "a-cpu-vulkan-static-absent.log",
-      "log_sha256": "d32af362451f93e3bcdd700d75176d519d3360abab154ec94273f4e1b3d4d959"
+      "log_sha256": "dd09dc9583b4319b59486a12f47ff2ae3f79352cf402946777277efc304abe15",
+      "original_log_sha256": "d32af362451f93e3bcdd700d75176d519d3360abab154ec94273f4e1b3d4d959",
+      "original_log_git_ref": "c11f7d6ab6342734b88727537b5e57102fe9033f",
+      "log_representation": "Readable copy with trailing whitespace removed; original bytes retained at original_log_git_ref"
     },
     {
       "routes": "cpu;vulkan",
@@ -418,7 +463,10 @@
       "exit": 1,
       "verdict": "PASS",
       "log": "a-cpu-vulkan-static-legacy.log",
-      "log_sha256": "dfa9f6ecfeacec5d540d1974c8b05901ed08096ea0f8aad1a8a6c391bb1acff2"
+      "log_sha256": "1293f065832f7e90d09f6769625b441ebe24edeb6be5ee77bc57edb2d209a92c",
+      "original_log_sha256": "dfa9f6ecfeacec5d540d1974c8b05901ed08096ea0f8aad1a8a6c391bb1acff2",
+      "original_log_git_ref": "c11f7d6ab6342734b88727537b5e57102fe9033f",
+      "log_representation": "Readable copy with trailing whitespace removed; original bytes retained at original_log_git_ref"
     }
   ],
   "hardware_model": "Mac16,12",

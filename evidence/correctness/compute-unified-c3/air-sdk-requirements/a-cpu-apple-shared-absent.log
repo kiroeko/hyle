@@ -15,6 +15,3 @@ CMake Error at CMakeLists.txt:3 (find_package):
 
   Hyle SDK does not contain requested Compute route 'cuda'; available:
   cpu;apple
-
-
-

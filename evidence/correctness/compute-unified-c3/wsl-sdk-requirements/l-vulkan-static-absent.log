@@ -14,6 +14,3 @@ CMake Error at CMakeLists.txt:3 (find_package):
   FOUND.  Reason given by package:
 
   Hyle SDK does not contain requested Compute route 'cpu'; available: vulkan
-
-
-

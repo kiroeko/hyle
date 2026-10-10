@@ -28,7 +28,10 @@
       "exit": 0,
       "verdict": "PASS",
       "log": "l-cpu-cuda-shared-subset.log",
-      "log_sha256": "523fcd4355d8c17c590f4e96b45bf013146b00386d44b93f5710a13a130396e9"
+      "log_sha256": "5379746199b7eb7d85588fcb475e60f8c6166b8e83fa4166732eb1d93359b4dc",
+      "original_log_sha256": "523fcd4355d8c17c590f4e96b45bf013146b00386d44b93f5710a13a130396e9",
+      "original_log_git_ref": "c11f7d6ab6342734b88727537b5e57102fe9033f",
+      "log_representation": "Readable copy with trailing whitespace removed; original bytes retained at original_log_git_ref"
     },
     {
       "routes": "cpu;cuda",
@@ -54,7 +57,10 @@
       "exit": 0,
       "verdict": "PASS",
       "log": "l-cpu-cuda-shared-full.log",
-      "log_sha256": "0f07664d2bea4ca1ba1dde809b258e8606555d1d61641402c65d40d8f5cd6429"
+      "log_sha256": "934a22139c38303509d32b36d01142e5dfea6df9923c8a4f011fea8bfab1fcf3",
+      "original_log_sha256": "0f07664d2bea4ca1ba1dde809b258e8606555d1d61641402c65d40d8f5cd6429",
+      "original_log_git_ref": "c11f7d6ab6342734b88727537b5e57102fe9033f",
+      "log_representation": "Readable copy with trailing whitespace removed; original bytes retained at original_log_git_ref"
     },
     {
       "routes": "cpu;cuda",
@@ -80,7 +86,10 @@
       "exit": 1,
       "verdict": "PASS",
       "log": "l-cpu-cuda-shared-absent.log",
-      "log_sha256": "aab30594917d87e3bdabd91a8b433fd929bad073ed30eebddf58a425e3941a16"
+      "log_sha256": "d03cc254d11a93a36cca2b47c59284b6aad1de9e8409da7190704b3f50d426af",
+      "original_log_sha256": "aab30594917d87e3bdabd91a8b433fd929bad073ed30eebddf58a425e3941a16",
+      "original_log_git_ref": "c11f7d6ab6342734b88727537b5e57102fe9033f",
+      "log_representation": "Readable copy with trailing whitespace removed; original bytes retained at original_log_git_ref"
     },
     {
       "routes": "cpu;cuda",
@@ -106,7 +115,10 @@
       "exit": 1,
       "verdict": "PASS",
       "log": "l-cpu-cuda-shared-legacy.log",
-      "log_sha256": "51d3058c9b6052de97ec830e16262c244b4f0c3650e74c40644f8c2848749bbf"
+      "log_sha256": "71015ecd5fa433588add9ec6448405fcb5719ef23aa1cad5093f7f73b36d4cf7",
+      "original_log_sha256": "51d3058c9b6052de97ec830e16262c244b4f0c3650e74c40644f8c2848749bbf",
+      "original_log_git_ref": "c11f7d6ab6342734b88727537b5e57102fe9033f",
+      "log_representation": "Readable copy with trailing whitespace removed; original bytes retained at original_log_git_ref"
     },
     {
       "routes": "cpu;cuda",
@@ -132,7 +144,10 @@
       "exit": 0,
       "verdict": "PASS",
       "log": "l-cpu-cuda-static-subset.log",
-      "log_sha256": "e1e437131e34791ba4519fadfdcc38405f07a2fd55980d473c22647d454a7270"
+      "log_sha256": "5cadd7249b455079231e6bb1096d8b6da1a0f4874e803698962b695df42e3a3b",
+      "original_log_sha256": "e1e437131e34791ba4519fadfdcc38405f07a2fd55980d473c22647d454a7270",
+      "original_log_git_ref": "c11f7d6ab6342734b88727537b5e57102fe9033f",
+      "log_representation": "Readable copy with trailing whitespace removed; original bytes retained at original_log_git_ref"
     },
     {
       "routes": "cpu;cuda",
@@ -158,7 +173,10 @@
       "exit": 0,
       "verdict": "PASS",
       "log": "l-cpu-cuda-static-full.log",
-      "log_sha256": "bf5dfc8110de5bc13eaa0cfa72f770fb43faf51ec9b4042f6a61485ef0db6506"
+      "log_sha256": "aac35bde7a3f11f715d4f901daf67cbff09dd0d605d56494f5ecde38c4eef296",
+      "original_log_sha256": "bf5dfc8110de5bc13eaa0cfa72f770fb43faf51ec9b4042f6a61485ef0db6506",
+      "original_log_git_ref": "c11f7d6ab6342734b88727537b5e57102fe9033f",
+      "log_representation": "Readable copy with trailing whitespace removed; original bytes retained at original_log_git_ref"
     },
     {
       "routes": "cpu;cuda",
@@ -184,7 +202,10 @@
       "exit": 1,
       "verdict": "PASS",
       "log": "l-cpu-cuda-static-absent.log",
-      "log_sha256": "fa56dd92ccf6b2d1903c398ba6d635c63f535d1188f0c8074176865e6e6d61cf"
+      "log_sha256": "88c182bab3c7ea69e75f5914c9d4e7293e6d6d4498a8fb35f0334d26097a38bb",
+      "original_log_sha256": "fa56dd92ccf6b2d1903c398ba6d635c63f535d1188f0c8074176865e6e6d61cf",
+      "original_log_git_ref": "c11f7d6ab6342734b88727537b5e57102fe9033f",
+      "log_representation": "Readable copy with trailing whitespace removed; original bytes retained at original_log_git_ref"
     },
     {
       "routes": "cpu;cuda",
@@ -210,7 +231,10 @@
       "exit": 1,
       "verdict": "PASS",
       "log": "l-cpu-cuda-static-legacy.log",
-      "log_sha256": "fe6680d4c530e2ac862e6d6499fd417f37d954f444898e28759a1d9d3cb1212c"
+      "log_sha256": "8ab8d02afc145434a0781633badf6107b2b09a671d5f76363ec045f295bf699e",
+      "original_log_sha256": "fe6680d4c530e2ac862e6d6499fd417f37d954f444898e28759a1d9d3cb1212c",
+      "original_log_git_ref": "c11f7d6ab6342734b88727537b5e57102fe9033f",
+      "log_representation": "Readable copy with trailing whitespace removed; original bytes retained at original_log_git_ref"
     },
     {
       "routes": "vulkan",
@@ -236,7 +260,10 @@
       "exit": 0,
       "verdict": "PASS",
       "log": "l-vulkan-shared-subset.log",
-      "log_sha256": "17c6d2f000850f00ccffd5c0727874efcc689329af4be065136bceea21c3098e"
+      "log_sha256": "8456ae37d27b590ad0f5279f607efea32944f36e103d4ff36b42ee1df2846972",
+      "original_log_sha256": "17c6d2f000850f00ccffd5c0727874efcc689329af4be065136bceea21c3098e",
+      "original_log_git_ref": "c11f7d6ab6342734b88727537b5e57102fe9033f",
+      "log_representation": "Readable copy with trailing whitespace removed; original bytes retained at original_log_git_ref"
     },
     {
       "routes": "vulkan",
@@ -262,7 +289,10 @@
       "exit": 0,
       "verdict": "PASS",
       "log": "l-vulkan-shared-full.log",
-      "log_sha256": "c1e5135302eae08276d9a5efb0ae96513ae09693eda52a68ac238e4fec67fef0"
+      "log_sha256": "8eb7d3c9b41d233ebedc4bf8d9ce79966b7299ee9313c60e287fb554de058658",
+      "original_log_sha256": "c1e5135302eae08276d9a5efb0ae96513ae09693eda52a68ac238e4fec67fef0",
+      "original_log_git_ref": "c11f7d6ab6342734b88727537b5e57102fe9033f",
+      "log_representation": "Readable copy with trailing whitespace removed; original bytes retained at original_log_git_ref"
     },
     {
       "routes": "vulkan",
@@ -288,7 +318,10 @@
       "exit": 1,
       "verdict": "PASS",
       "log": "l-vulkan-shared-absent.log",
-      "log_sha256": "f4688719bc8d9792c7fc816aa502a07f49c1ae6de43df291e35c843151b75aa0"
+      "log_sha256": "f87a0152129420235b536b39a3974bc30df66209ce2f4dda51fc865b65eb172b",
+      "original_log_sha256": "f4688719bc8d9792c7fc816aa502a07f49c1ae6de43df291e35c843151b75aa0",
+      "original_log_git_ref": "c11f7d6ab6342734b88727537b5e57102fe9033f",
+      "log_representation": "Readable copy with trailing whitespace removed; original bytes retained at original_log_git_ref"
     },
     {
       "routes": "vulkan",
@@ -314,7 +347,10 @@
       "exit": 1,
       "verdict": "PASS",
       "log": "l-vulkan-shared-legacy.log",
-      "log_sha256": "e22d815069661669f705ee6089664bd3bb4e61ee39f8070d2f3e7b8137bbd1dc"
+      "log_sha256": "299f08bbbfc62a657ea0c66531d5d21f9442043542e5a8d2b2e32ce6d17ab6d3",
+      "original_log_sha256": "e22d815069661669f705ee6089664bd3bb4e61ee39f8070d2f3e7b8137bbd1dc",
+      "original_log_git_ref": "c11f7d6ab6342734b88727537b5e57102fe9033f",
+      "log_representation": "Readable copy with trailing whitespace removed; original bytes retained at original_log_git_ref"
     },
     {
       "routes": "vulkan",
@@ -340,7 +376,10 @@
       "exit": 0,
       "verdict": "PASS",
       "log": "l-vulkan-static-subset.log",
-      "log_sha256": "3e746cca80244a36854da4549457bd141f8e8940605c66cc5c665103667abb01"
+      "log_sha256": "8612b07ccce5d748998cbe84f191196d6a402b92dd084aadf45dd0fa07b6604b",
+      "original_log_sha256": "3e746cca80244a36854da4549457bd141f8e8940605c66cc5c665103667abb01",
+      "original_log_git_ref": "c11f7d6ab6342734b88727537b5e57102fe9033f",
+      "log_representation": "Readable copy with trailing whitespace removed; original bytes retained at original_log_git_ref"
     },
     {
       "routes": "vulkan",
@@ -366,7 +405,10 @@
       "exit": 0,
       "verdict": "PASS",
       "log": "l-vulkan-static-full.log",
-      "log_sha256": "40ea244f17124f8c0d78faaec105cfa3e129257372e03589751a8670952d3ae1"
+      "log_sha256": "8bc9e7a7046011367b49e6a5fc1454aa283d490097620c3e532b8129dfa26853",
+      "original_log_sha256": "40ea244f17124f8c0d78faaec105cfa3e129257372e03589751a8670952d3ae1",
+      "original_log_git_ref": "c11f7d6ab6342734b88727537b5e57102fe9033f",
+      "log_representation": "Readable copy with trailing whitespace removed; original bytes retained at original_log_git_ref"
     },
     {
       "routes": "vulkan",
@@ -392,7 +434,10 @@
       "exit": 1,
       "verdict": "PASS",
       "log": "l-vulkan-static-absent.log",
-      "log_sha256": "4d59d1dfb28740db2071aa6299b1214a3d6768b9795b74fae4690e5be772da64"
+      "log_sha256": "851ab834f3e1cb0cb1eb3e620c043cdec1d09345e67538f0fe359d62b7fec38f",
+      "original_log_sha256": "4d59d1dfb28740db2071aa6299b1214a3d6768b9795b74fae4690e5be772da64",
+      "original_log_git_ref": "c11f7d6ab6342734b88727537b5e57102fe9033f",
+      "log_representation": "Readable copy with trailing whitespace removed; original bytes retained at original_log_git_ref"
     },
     {
       "routes": "vulkan",
@@ -418,7 +463,10 @@
       "exit": 1,
       "verdict": "PASS",
       "log": "l-vulkan-static-legacy.log",
-      "log_sha256": "9d21c2199d08ec7301d2eb6688f4875df5ac800fc78a2219a23e777fa96c1a19"
+      "log_sha256": "7e7a22de066ae05abf0e9130f0e628ee0ed4d1704deff9414e52d75a1879f9c4",
+      "original_log_sha256": "9d21c2199d08ec7301d2eb6688f4875df5ac800fc78a2219a23e777fa96c1a19",
+      "original_log_git_ref": "c11f7d6ab6342734b88727537b5e57102fe9033f",
+      "log_representation": "Readable copy with trailing whitespace removed; original bytes retained at original_log_git_ref"
     }
   ]
 }

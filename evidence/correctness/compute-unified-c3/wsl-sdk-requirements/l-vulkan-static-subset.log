@@ -6,7 +6,7 @@
 -- Detecting CXX compile features - done
 -- Performing Test CMAKE_HAVE_LIBC_PTHREAD
 -- Performing Test CMAKE_HAVE_LIBC_PTHREAD - Success
--- Found Threads: TRUE  
+-- Found Threads: TRUE
 -- Configuring done (4.8s)
 -- Generating done (0.0s)
 -- Build files have been written to: /root/hyle-scratch/compute-unified/wsl-sdk-requirements-native-cuda-path/l-vulkan-static-subset
@@ -14,5 +14,3 @@ CMake Warning:
   Manually-specified variables were not used by the project:
 
     FETCHCONTENT_FULLY_DISCONNECTED
-
-
