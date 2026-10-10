@@ -118,4 +118,36 @@ Direct migrated-weight MatMul、CPU norm/projection→完整 Q8_0 FFN→CPU 与�
 Windows MSVC 已完成新增 TU/公开头语法检查，修复一个环境字段名并补正确 private include 后，
 受影响 TU 与新增两消费者语法检查通过。这仅为接线诊断，尚未链接、运行 GPU 数学或三交付，
 不签本包完整 PASS。下一步集中 source 数学/合同，然后固定候选的 installed static/shared 与原生
-重叠取证。当前统一统计 Compute+Graph 68,078 行/301 个实现文件，测试与样例不计入。
+重叠取证。该接线快照统计 Compute+Graph 68,078 行/301 个实现文件，测试与样例不计入。
+
+### source 数学/寿命验收与 H3-07 定向接缝
+
+产品候选 ae0283e3b890d96945ac5116fd5afd3294a8f1cc：Windows 原两入口、Direct 权重 MatMul、组合
+Q8 FFN/正交管线和 contracts 已通过；Air 同批五项通过。首批组合重复执行暴露了下载槽内部
+output owner 未计入冷基线的问题；候选把该固定引用在 cold sealing 前纳入，保留普通外部 Tensor
+保护。仅重编受影响两个 target、复跑两个组合测试，并定向复核受改 close 路径的 Direct 权重入口，
+未重跑原两个不受影响入口。Windows 整批 owned peak 0.560 GiB，修复批 0.274 GiB；Air 646 MiB。
+统一不可变快照统计：Compute+Graph 68,095 行/301 文件，全库非测试实现 163,322 行/652 文件。
+这些是 source 资格，installed static/shared、WSL build-only 与重叠尚未闭合。
+
+一次原生 P0 探针用原 RecordedProgram/sample affine dispatch 和真实 WeightSlots VkBuffer copy，
+GPU query 装饰原调用，独立核实 512 个 dispatch 的 -1 不动点及 16,776,960 字节的 0.5 payload。
+RTX 4070/617.14 原 queue family 2 的时间线无交集；把 query reset 移至测量前仍无交集，不能签
+GPU transfer/compute overlap。不得把该结果解释为算子性能 FAIL 或硬件不存在独立队列。
+具名源码反例：native_runtime_impl.h 的 Native/with_queue 只暴露原 compute queue；锁定 ggml
+已创建 transfer_queue，但 H3 upload 仍经 compute queue。原生传输队列能力未接出，属于已准入
+迁移/重叠机制的实际缺口，不是 benchmark 新造数学/API。
+
+H3-07 新定向 owner compute_provider_ggml_vulkan 从 CLOSED→SCOPED，本轮 baseline 同为
+ae0283e3b890d96945ac5116fd5afd3294a8f1cc，旧 [macOS loader CLOSED](../build/vulkan-macos-loader-discovery.md)
+资格不撤销。现有 route owner
+仍只按已审计 H3-01至06实施；新增接缝在补充审计为 AUDITED 前不得写产品。
+
+有限 FIX：借原已创建 transfer queue/family 与原提交锁，不创建 VkDevice/线程/万能 Queue；必要
+payload backing 明确合法跨队列共享，transfer→compute 原生 semaphore/visibility 交接，公开 ready
+仍代表实际可用、可继续是 compute ordered prefix。原单队列设备保留有界正确路径并如实报告限制。
+跨队列接纳后失败必须排空实际已接纳队列、保留原诊断和旧 owner，不能丢 pending 或 CPU 重算。
+scope 只含 native bridge、route buffer/固定 transfer/原退休及相应 P0、寿命反例；不扩算子目录或
+改变数学/default Provider。先固定追加 seam 一遍源码审计/有限实现，再一批定向原生验证；保留上述
+数学事实，按实际改变的调用链补受影响验收，不重跑历史全集。停止预算：原生正交时间线两端各
+一个固定有界候选；失败先查实际队列/同步成本，有具体缺陷才修，不换 workload 无限试。

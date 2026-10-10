@@ -1,0 +1,52 @@
+{
+  "candidate": "ae0283e3b890d96945ac5116fd5afd3294a8f1cc",
+  "rows": [
+    {
+      "stage": "source-build-retained-owners",
+      "argv": [
+        "cmake",
+        "--build",
+        "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build",
+        "--parallel",
+        "1",
+        "--target",
+        "hyle_h3_cpu_vulkan",
+        "hyle_h3_cpu_vulkan_contracts"
+      ],
+      "exit": 0,
+      "seconds": 6.0939999998081475,
+      "stopped": null,
+      "before": {
+        "available_gib": 44.28086853027344,
+        "commit_headroom_gib": 40.47808837890625,
+        "owned_private_gib": 0.01059722900390625
+      },
+      "peak_owned_private_gib": 0.27361297607421875,
+      "log": "C:\\h7\\h3-vulkan-acceptance\\source-build-retained-owners.log"
+    },
+    {
+      "stage": "source-math-retained-owners",
+      "argv": [
+        "ctest",
+        "--test-dir",
+        "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build",
+        "-j",
+        "1",
+        "--output-on-failure",
+        "-R",
+        "^hyle_h3_cpu_vulkan"
+      ],
+      "exit": 0,
+      "seconds": 2.047000000020489,
+      "stopped": null,
+      "before": {
+        "available_gib": 44.273128509521484,
+        "commit_headroom_gib": 40.496700286865234,
+        "owned_private_gib": 0.01059722900390625
+      },
+      "peak_owned_private_gib": 0.0634307861328125,
+      "log": "C:\\h7\\h3-vulkan-acceptance\\source-math-retained-owners.log"
+    }
+  ],
+  "scope": "Windows source build/math/contracts; installed delivery and native overlap not yet qualified"
+}

@@ -1,0 +1,86 @@
+{
+  "identity": {
+    "commit": "ae0283e3b890d96945ac5116fd5afd3294a8f1cc",
+    "archive_sha256": "c4b2be1e6b2ba227b97690a63b836e1dc69668a7332a37e7f1e9c90a0dd1ba1c",
+    "bytes": 164491245
+  },
+  "stages": [
+    {
+      "phase": "source-configure",
+      "argv": [
+        "/opt/homebrew/bin/cmake",
+        "-S",
+        "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/source-parent",
+        "-B",
+        "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/source-build",
+        "-DCMAKE_BUILD_TYPE=Release"
+      ],
+      "exit": 0,
+      "stopped": null,
+      "seconds": 17.384652208000002,
+      "owned_peak_rss_bytes": 200392704,
+      "available_bytes_before": 7339130880,
+      "log": "/Users/kiro/hyle-scratch/compute-unified/h3-batch/source-configure.log"
+    },
+    {
+      "phase": "source-dry-run",
+      "argv": [
+        "/opt/homebrew/bin/ninja",
+        "-C",
+        "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/source-build",
+        "-n",
+        "hyle_h3_vulkan_weights",
+        "hyle_h3_cpu_vulkan",
+        "hyle_h3_cpu_vulkan_contracts",
+        "hyle_selected_source_consumer",
+        "hyle_selected_source_compute"
+      ],
+      "exit": 0,
+      "stopped": null,
+      "seconds": 1.0468911249999984,
+      "owned_peak_rss_bytes": 10715136,
+      "available_bytes_before": 7231635456,
+      "log": "/Users/kiro/hyle-scratch/compute-unified/h3-batch/source-dry-run.log"
+    },
+    {
+      "phase": "source-build",
+      "argv": [
+        "/opt/homebrew/bin/cmake",
+        "--build",
+        "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/source-build",
+        "--parallel",
+        "1",
+        "--target",
+        "hyle_h3_vulkan_weights",
+        "hyle_h3_cpu_vulkan",
+        "hyle_h3_cpu_vulkan_contracts",
+        "hyle_selected_source_consumer",
+        "hyle_selected_source_compute"
+      ],
+      "exit": 0,
+      "stopped": null,
+      "seconds": 41.979526082999996,
+      "owned_peak_rss_bytes": 677363712,
+      "available_bytes_before": 7230341120,
+      "log": "/Users/kiro/hyle-scratch/compute-unified/h3-batch/source-build.log"
+    },
+    {
+      "phase": "source-math",
+      "argv": [
+        "/opt/homebrew/bin/ctest",
+        "--test-dir",
+        "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/source-build",
+        "-j",
+        "1",
+        "--output-on-failure"
+      ],
+      "exit": 0,
+      "stopped": null,
+      "seconds": 8.376789875000007,
+      "owned_peak_rss_bytes": 21266432,
+      "available_bytes_before": 7655849984,
+      "log": "/Users/kiro/hyle-scratch/compute-unified/h3-batch/source-math.log"
+    }
+  ],
+  "scope": "source build/math only; installed SDK and native overlap and installed delivery still outstanding"
+}

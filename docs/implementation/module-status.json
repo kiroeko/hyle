@@ -551,14 +551,9 @@
     },
     {
       "module": "compute_provider_ggml_vulkan",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/build/vulkan-macos-loader-discovery.md",
-      "summary": "C3限定修复CLOSED：macOS默认Vulkan loader冷发现；Air Vulkan/CPU+Vulkan三交付与配置边界通过，无DYLD覆盖，不代签WSL实GPU。",
-      "candidate": "a1c22ac347583e8a9af3be3d8e8b55534afcd710",
-      "performance": {
-        "tier": "P0",
-        "evidence": "docs/implementation/tasks/build/vulkan-macos-loader-discovery.md"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/compute-h3-cpu-vulkan-composition.md",
+      "summary": "H3-07 scoped: expose the existing native transfer queue and lawful transfer/compute handoff; source math qualification is retained, no new math or provider winner."
     },
     {
       "module": "compute_ggml_runtime",

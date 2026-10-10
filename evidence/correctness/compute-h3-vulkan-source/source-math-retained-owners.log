@@ -1,0 +1,9 @@
+Test project C:/h7/w-cpu-vulkan/selected-graph/source-build
+    Start 4: hyle_h3_cpu_vulkan
+1/2 Test #4: hyle_h3_cpu_vulkan ...............   Passed    0.85 sec
+    Start 5: hyle_h3_cpu_vulkan_contracts
+2/2 Test #5: hyle_h3_cpu_vulkan_contracts .....   Passed    0.42 sec
+
+100% tests passed out of 2
+
+Total Test time (real) =   1.31 sec

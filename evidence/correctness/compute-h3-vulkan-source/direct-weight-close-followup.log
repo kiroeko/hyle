@@ -1,0 +1,19 @@
+Start testing: Oct 11 03:51 中国标准时间
+----------------------------------------------------------
+3/5 Testing: hyle_h3_vulkan_weights
+3/5 Test: hyle_h3_vulkan_weights
+Command: "C:/h7/w-cpu-vulkan/selected-graph/source-build/hyle_h3_vulkan_weights.exe"
+Directory: C:/h7/w-cpu-vulkan/selected-graph/source-build
+"hyle_h3_vulkan_weights" start time: Oct 11 03:51 中国标准时间
+Output:
+----------------------------------------------------------
+Vulkan Direct: native transfer, ready owner and mature MatMul passed
+<end of output>
+Test time =   0.18 sec
+----------------------------------------------------------
+Test Passed.
+"hyle_h3_vulkan_weights" end time: Oct 11 03:51 中国标准时间
+"hyle_h3_vulkan_weights" time elapsed: 00:00:00
+----------------------------------------------------------
+
+End testing: Oct 11 03:51 中国标准时间

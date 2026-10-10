@@ -1,0 +1,24 @@
+Test project C:/h7/w-cpu-vulkan/selected-graph/source-build
+    Start 1: hyle_selected_source_consumer
+1/5 Test #1: hyle_selected_source_consumer ....   Passed    0.64 sec
+    Start 2: hyle_selected_source_compute
+2/5 Test #2: hyle_selected_source_compute .....   Passed    0.52 sec
+    Start 3: hyle_h3_vulkan_weights
+3/5 Test #3: hyle_h3_vulkan_weights ...........   Passed    0.45 sec
+    Start 4: hyle_h3_cpu_vulkan
+4/5 Test #4: hyle_h3_cpu_vulkan ...............***Failed    0.57 sec
+Vulkan result tensor is still retained
+
+    Start 5: hyle_h3_cpu_vulkan_contracts
+5/5 Test #5: hyle_h3_cpu_vulkan_contracts .....***Failed    0.53 sec
+Vulkan result tensor is still retained
+
+
+60% tests passed, 2 tests failed out of 5
+
+Total Test time (real) =   2.81 sec
+
+The following tests FAILED:
+	  4 - hyle_h3_cpu_vulkan (Failed)
+	  5 - hyle_h3_cpu_vulkan_contracts (Failed)
+Errors while running CTest

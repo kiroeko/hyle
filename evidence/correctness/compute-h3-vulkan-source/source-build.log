@@ -1,0 +1,135 @@
+[0/2] Re-checking globbed directories...
+[1/122] Performing build step for 'vulkan-shaders-gen'
+ninja: no work to do.
+[2/122] Performing install step for 'vulkan-shaders-gen'
+-- Up-to-date: C:/h7/w-cpu-vulkan/selected-graph/source-build/Release/vulkan-shaders-gen.exe
+[3/122] Completed 'vulkan-shaders-gen'
+[4/122] Building CXX object hyle\src\compute\CMakeFiles\hyle_compute.dir\resource_budget.cc.obj
+[5/122] Linking CXX shared library hyle\src\compute\hyle_compute.dll
+[6/122] Linking CXX shared library hyle\src\compute_provider_ggml_vulkan\hyle_compute_provider_ggml_vulkan.dll
+[7/121] Building CXX object hyle\src\simd\CMakeFiles\hyle_simd.dir\runtime.cc.obj
+[8/121] Building CXX object hyle\src\simd\CMakeFiles\hyle_simd.dir\ops\dispatch_ops.cc.obj
+[9/121] Building CXX object hyle\src\simd\CMakeFiles\hyle_simd.dir\random\random_dispatch.cc.obj
+[10/121] Building CXX object hyle\src\simd\CMakeFiles\hyle_simd.dir\search\search_dispatch.cc.obj
+[11/121] Building CXX object hyle\src\simd\CMakeFiles\hyle_simd.dir\narrow\narrow_dispatch.cc.obj
+[12/121] Building CXX object hyle\src\simd\CMakeFiles\hyle_simd.dir\scan\scan_dispatch.cc.obj
+[13/121] Building CXX object hyle\src\simd\CMakeFiles\hyle_simd.dir\dtype\dtype_dispatch.cc.obj
+[14/121] Building CXX object hyle\src\simd\CMakeFiles\hyle_simd.dir\math\math_dispatch.cc.obj
+[15/121] Building CXX object hyle\src\simd\CMakeFiles\hyle_simd.dir\sort\sort_dispatch.cc.obj
+[16/121] Building CXX object hyle\src\simd\CMakeFiles\hyle_simd.dir\bitpack\bitpack_dispatch.cc.obj
+[17/121] Building CXX object hyle\src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\ops\ops_scalar.cc.obj
+[18/121] Building CXX object hyle\src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\ops\ops_sse4.cc.obj
+[19/121] Building CXX object hyle\src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\ops\ops_avx2.cc.obj
+[20/121] Building CXX object hyle\src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\ops\ops_avx512.cc.obj
+[21/121] Building CXX object hyle\src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\dtype_convert\dtype_convert_scalar.cc.obj
+[22/121] Building CXX object hyle\src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\dtype_convert\dtype_convert_sse4.cc.obj
+[23/121] Building CXX object hyle\src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\dtype_convert\dtype_convert_avx2.cc.obj
+[24/121] Building CXX object hyle\src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\dtype_convert\dtype_convert_avx512.cc.obj
+[25/121] Building CXX object hyle\src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\scan\scan_scalar.cc.obj
+[26/121] Building CXX object hyle\src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\scan\scan_sse4.cc.obj
+[27/121] Building CXX object hyle\src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\scan\scan_avx2.cc.obj
+[28/121] Building CXX object hyle\src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\scan\scan_avx512.cc.obj
+[29/121] Building CXX object hyle\src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\random\random_scalar.cc.obj
+[30/121] Building CXX object hyle\src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\random\random_sse4.cc.obj
+[31/121] Building CXX object hyle\src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\random\random_avx2.cc.obj
+[32/121] Building CXX object hyle\src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\random\random_avx512.cc.obj
+[33/121] Building CXX object hyle\src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\search\search_scalar.cc.obj
+[34/121] Building CXX object hyle\src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\search\search_sse4.cc.obj
+[35/121] Building CXX object hyle\src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\search\search_avx2.cc.obj
+[36/121] Building CXX object hyle\src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\search\search_avx512.cc.obj
+[37/121] Building CXX object hyle\src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\narrow\narrow_scalar.cc.obj
+[38/121] Building CXX object hyle\src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\narrow\narrow_sse4.cc.obj
+[39/121] Building CXX object hyle\src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\narrow\narrow_avx2.cc.obj
+[40/121] Building CXX object hyle\src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\narrow\narrow_avx512.cc.obj
+[41/121] Building CXX object hyle\src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\bitpack\bitpack_scalar.cc.obj
+[42/121] Building CXX object hyle\src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\bitpack\bitpack_sse4.cc.obj
+[43/121] Building CXX object hyle\src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\bitpack\bitpack_avx2.cc.obj
+[44/121] Building CXX object hyle\src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\bitpack\bitpack_avx512.cc.obj
+[45/121] Building CXX object hyle\src\platform_fs\CMakeFiles\hyle_platform_fs.dir\fs.cc.obj
+[46/121] Linking CXX shared library hyle\src\simd\hyle_simd.dll
+[47/121] Building CXX object hyle\src\graph\CMakeFiles\hyle_graph.dir\executable.cc.obj
+[48/121] Building CXX object hyle\src\graph\CMakeFiles\hyle_graph.dir\constant_artifact.cc.obj
+[49/121] Linking CXX shared library hyle\src\compute_backend_cpu\hyle_compute_backend_cpu.dll
+[50/121] Building CXX object hyle\src\platform_thread\CMakeFiles\hyle_platform_thread.dir\thread.cc.obj
+[51/121] Building CXX object hyle\src\platform_thread\CMakeFiles\hyle_platform_thread.dir\wait.cc.obj
+[52/121] Linking CXX shared library hyle\src\platform_fs\hyle_platform_fs.dll
+[53/121] Building CXX object hyle\src\mem_vm\CMakeFiles\hyle_mem_vm.dir\mapping.cc.obj
+[54/121] Building CXX object hyle\src\mem_vm\CMakeFiles\hyle_mem_vm.dir\file_mapping.cc.obj
+[55/121] Building CXX object hyle\src\mem_vm\CMakeFiles\hyle_mem_vm.dir\shared_mapping.cc.obj
+[56/121] Linking CXX shared library hyle\src\graph\hyle_graph.dll
+[57/121] Linking CXX shared library hyle\src\compute_provider_onednn\hyle_compute_provider_onednn.dll
+[58/121] Linking CXX shared library hyle\src\compute_provider_ggml\hyle_compute_provider_ggml.dll
+[59/121] Building CXX object hyle\src\graph_provider_onednn\CMakeFiles\hyle_graph_provider_onednn.dir\onednn_region_provider.cc.obj
+[60/121] Linking CXX shared library hyle\src\compute_provider_native\hyle_compute_provider_native.dll
+[61/121] Building CXX object hyle\src\compute_route_vulkan\CMakeFiles\hyle_compute_route_vulkan.dir\vulkan_device.cc.obj
+[62/121] Building CXX object hyle\src\compute_route_vulkan\CMakeFiles\hyle_compute_route_vulkan.dir\vulkan_memory.cc.obj
+[63/121] Building CXX object hyle\src\compute_route_vulkan\CMakeFiles\hyle_compute_route_vulkan.dir\vulkan_run.cc.obj
+[64/121] Building CXX object hyle\src\compute_route_vulkan\CMakeFiles\hyle_compute_route_vulkan.dir\vulkan_transfer.cc.obj
+[65/121] Building CXX object hyle\src\compute_route_vulkan\CMakeFiles\hyle_compute_route_vulkan.dir\vulkan_transfer_slot.cc.obj
+[66/121] Building CXX object hyle\src\compute_route_vulkan\CMakeFiles\hyle_compute_route_vulkan.dir\vulkan_weights.cc.obj
+[67/121] Building CXX object hyle\src\compute_route_vulkan\CMakeFiles\hyle_compute_route_vulkan.dir\vulkan_pipeline.cc.obj
+[68/121] Building CXX object hyle\src\compute_route_vulkan\CMakeFiles\hyle_compute_route_vulkan.dir\vulkan_operations.cc.obj
+[69/121] Building CXX object hyle\src\compute_route_vulkan\CMakeFiles\hyle_compute_route_vulkan.dir\vulkan_tensor.cc.obj
+[70/121] Building CXX object hyle\src\compute_route_vulkan\CMakeFiles\hyle_compute_route_vulkan.dir\vulkan_program.cc.obj
+[71/121] Building CXX object hyle\src\compute_route_vulkan\CMakeFiles\hyle_compute_route_vulkan.dir\vulkan_recorder.cc.obj
+[72/121] Building CXX object hyle\src\compute_route_vulkan\CMakeFiles\hyle_compute_route_vulkan.dir\vulkan_region.cc.obj
+[73/121] Building CXX object hyle\src\compute_route_vulkan\CMakeFiles\hyle_compute_route_vulkan.dir\vulkan_scatter.cc.obj
+[74/121] Building CXX object hyle\src\compute_route_vulkan\CMakeFiles\hyle_compute_route_vulkan.dir\vulkan_normalization.cc.obj
+[75/121] Building CXX object hyle\src\compute_route_vulkan\CMakeFiles\hyle_compute_route_vulkan.dir\vulkan_reduction.cc.obj
+[76/121] Building CXX object hyle\src\compute_route_vulkan\CMakeFiles\hyle_compute_route_vulkan.dir\vulkan_elementwise.cc.obj
+[77/121] Building CXX object hyle\src\compute_route_vulkan\CMakeFiles\hyle_compute_route_vulkan.dir\vulkan_iree.cc.obj
+[78/121] Building CXX object hyle\src\compute_route_vulkan\CMakeFiles\hyle_compute_route_vulkan.dir\vulkan_mlx.cc.obj
+[79/121] Building CXX object hyle\src\compute_route_vulkan\CMakeFiles\hyle_compute_route_vulkan.dir\vulkan_official.cc.obj
+[80/121] Building CXX object hyle\src\compute_route_vulkan\CMakeFiles\hyle_compute_route_vulkan.dir\vulkan_iq1.cc.obj
+[81/121] Linking CXX shared library hyle\src\platform_thread\hyle_platform_thread.dll
+[82/121] Linking CXX shared library hyle\src\mem_vm\hyle_mem_vm.dll
+[83/121] Building CXX object hyle\src\sched\CMakeFiles\hyle_sched.dir\fiber.cc.obj
+[84/121] Building CXX object hyle\src\sched\CMakeFiles\hyle_sched.dir\scheduler.cc.obj
+[85/121] Building CXX object hyle\src\sched\CMakeFiles\hyle_sched.dir\sync.cc.obj
+[86/121] Building CXX object hyle\src\sched\CMakeFiles\hyle_sched.dir\join.cc.obj
+[87/121] Building CXX object hyle\src\sched\CMakeFiles\hyle_sched.dir\blocking.cc.obj
+[88/121] Building CXX object hyle\src\sched\CMakeFiles\hyle_sched.dir\cancel.cc.obj
+[89/121] Building CXX object hyle\src\sched\CMakeFiles\hyle_sched.dir\task_scope.cc.obj
+[90/121] Building CXX object hyle\src\sched\CMakeFiles\hyle_sched.dir\bulk.cc.obj
+[91/121] Building ASM_MASM object hyle\src\sched\CMakeFiles\hyle_sched.dir\C_\public\project-hyle\hyle\third_party\fcontext\asm\jump_x86_64_ms_pe_masm.asm.obj
+Microsoft (R) Macro Assembler (x64) Version 14.50.35728.0
+Copyright (C) Microsoft Corporation.  All rights reserved.
+
+ Assembling: C:\public\project-hyle\hyle\third_party\fcontext\asm\jump_x86_64_ms_pe_masm.asm
+[92/121] Building ASM_MASM object hyle\src\sched\CMakeFiles\hyle_sched.dir\C_\public\project-hyle\hyle\third_party\fcontext\asm\make_x86_64_ms_pe_masm.asm.obj
+Microsoft (R) Macro Assembler (x64) Version 14.50.35728.0
+Copyright (C) Microsoft Corporation.  All rights reserved.
+
+ Assembling: C:\public\project-hyle\hyle\third_party\fcontext\asm\make_x86_64_ms_pe_masm.asm
+[93/121] Building ASM_MASM object hyle\src\sched\CMakeFiles\hyle_sched.dir\C_\public\project-hyle\hyle\third_party\fcontext\asm\ontop_x86_64_ms_pe_masm.asm.obj
+Microsoft (R) Macro Assembler (x64) Version 14.50.35728.0
+Copyright (C) Microsoft Corporation.  All rights reserved.
+
+ Assembling: C:\public\project-hyle\hyle\third_party\fcontext\asm\ontop_x86_64_ms_pe_masm.asm
+[94/121] Linking CXX shared library hyle\src\graph_provider_onednn\hyle_graph_provider_onednn.dll
+[95/121] Linking CXX shared library hyle\src\compute_route_cpu\hyle_compute_route_cpu.dll
+[96/121] Building CXX object hyle\src\graph_route_cpu\CMakeFiles\hyle_graph_route_cpu.dir\cpu_context.cc.obj
+[97/121] Building CXX object hyle\src\graph_route_cpu\CMakeFiles\hyle_graph_route_cpu.dir\ggml_region.cc.obj
+[98/121] Linking CXX shared library hyle\src\compute_route_vulkan\hyle_compute_route_vulkan.dll
+[99/121] Building CXX object hyle\src\graph_route_vulkan\CMakeFiles\hyle_graph_route_vulkan.dir\vulkan_lowering.cc.obj
+[100/121] Linking CXX shared library hyle\src\sched\hyle_sched.dll
+[101/121] Linking CXX shared library hyle\src\graph_route_cpu\hyle_graph_route_cpu.dll
+[102/121] Linking CXX shared library hyle\src\graph_route_vulkan\hyle_graph_route_vulkan.dll
+[103/121] Building CXX object hyle\src\graph_route_cpu_vulkan\CMakeFiles\hyle_graph_route_cpu_vulkan.dir\compile.cc.obj
+[104/121] Building CXX object hyle\src\graph_route_cpu_vulkan\CMakeFiles\hyle_graph_route_cpu_vulkan.dir\invocation.cc.obj
+[105/121] Linking CXX shared library hyle\src\graph_route_cpu_vulkan\hyle_graph_route_cpu_vulkan.dll
+[106/121] C:\WINDOWS\system32\cmd.exe /C "cd /D C:\h7\w-cpu-vulkan\selected-graph\source-build && "C:\Program Files\CMake\bin\cmake.exe" -P C:/h7/w-cpu-vulkan/selected-graph/source-build/hyle-runtime/hyle_selected_source_compute-Release.cmake"
+[107/121] C:\WINDOWS\system32\cmd.exe /C "cd /D C:\h7\w-cpu-vulkan\selected-graph\source-build && "C:\Program Files\CMake\bin\cmake.exe" -P C:/h7/w-cpu-vulkan/selected-graph/source-build/hyle-runtime/hyle_selected_source_consumer-Release.cmake"
+[108/121] C:\WINDOWS\system32\cmd.exe /C "cd /D C:\h7\w-cpu-vulkan\selected-graph\source-build && "C:\Program Files\CMake\bin\cmake.exe" -P C:/h7/w-cpu-vulkan/selected-graph/source-build/hyle-runtime/hyle_h3_vulkan_weights-Release.cmake"
+[109/121] C:\WINDOWS\system32\cmd.exe /C "cd /D C:\h7\w-cpu-vulkan\selected-graph\source-build && "C:\Program Files\CMake\bin\cmake.exe" -P C:/h7/w-cpu-vulkan/selected-graph/source-build/hyle-runtime/hyle_h3_cpu_vulkan-Release.cmake"
+[110/121] C:\WINDOWS\system32\cmd.exe /C "cd /D C:\h7\w-cpu-vulkan\selected-graph\source-build && "C:\Program Files\CMake\bin\cmake.exe" -P C:/h7/w-cpu-vulkan/selected-graph/source-build/hyle-runtime/hyle_h3_cpu_vulkan_contracts-Release.cmake"
+[111/121] Building CXX object CMakeFiles\hyle_selected_source_compute.dir\C_\public\project-hyle\hyle\samples\package\compute\cpp\main.cc.obj
+[112/121] Building CXX object CMakeFiles\hyle_selected_source_consumer.dir\C_\public\project-hyle\hyle\samples\package\graph\cpp\main.cc.obj
+[113/121] Building CXX object CMakeFiles\hyle_h3_vulkan_weights.dir\C_\public\project-hyle\hyle\samples\package\compute\vulkan_weights\main.cc.obj
+[114/121] Building CXX object CMakeFiles\hyle_h3_cpu_vulkan.dir\C_\public\project-hyle\hyle\samples\package\graph\cpu_vulkan\main.cc.obj
+[115/121] Building CXX object CMakeFiles\hyle_h3_cpu_vulkan_contracts.dir\C_\public\project-hyle\hyle\tests\graph\cpu_vulkan_contracts.cc.obj
+[116/121] Linking CXX executable hyle_selected_source_consumer.exe
+[117/121] Linking CXX executable hyle_selected_source_compute.exe
+[118/121] Linking CXX executable hyle_h3_vulkan_weights.exe
+[119/121] Linking CXX executable hyle_h3_cpu_vulkan.exe
+[120/121] Linking CXX executable hyle_h3_cpu_vulkan_contracts.exe

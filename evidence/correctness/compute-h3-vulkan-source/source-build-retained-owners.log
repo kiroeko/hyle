@@ -1,0 +1,16 @@
+[0/2] Re-checking globbed directories...
+[1/14] Performing build step for 'vulkan-shaders-gen'
+ninja: no work to do.
+[2/14] Performing install step for 'vulkan-shaders-gen'
+-- Up-to-date: C:/h7/w-cpu-vulkan/selected-graph/source-build/Release/vulkan-shaders-gen.exe
+[3/14] Completed 'vulkan-shaders-gen'
+[4/14] Building CXX object hyle\src\compute_route_vulkan\CMakeFiles\hyle_compute_route_vulkan.dir\vulkan_transfer_slot.cc.obj
+[5/14] Building CXX object hyle\src\compute_route_vulkan\CMakeFiles\hyle_compute_route_vulkan.dir\vulkan_weights.cc.obj
+[6/14] Linking CXX shared library hyle\src\compute_route_vulkan\hyle_compute_route_vulkan.dll
+[7/14] Linking CXX shared library hyle\src\graph_route_vulkan\hyle_graph_route_vulkan.dll
+[8/14] Building CXX object hyle\src\graph_route_cpu_vulkan\CMakeFiles\hyle_graph_route_cpu_vulkan.dir\invocation.cc.obj
+[9/14] Linking CXX shared library hyle\src\graph_route_cpu_vulkan\hyle_graph_route_cpu_vulkan.dll
+[10/14] C:\WINDOWS\system32\cmd.exe /C "cd /D C:\h7\w-cpu-vulkan\selected-graph\source-build && "C:\Program Files\CMake\bin\cmake.exe" -P C:/h7/w-cpu-vulkan/selected-graph/source-build/hyle-runtime/hyle_h3_cpu_vulkan-Release.cmake"
+[11/14] C:\WINDOWS\system32\cmd.exe /C "cd /D C:\h7\w-cpu-vulkan\selected-graph\source-build && "C:\Program Files\CMake\bin\cmake.exe" -P C:/h7/w-cpu-vulkan/selected-graph/source-build/hyle-runtime/hyle_h3_cpu_vulkan_contracts-Release.cmake"
+[12/14] Linking CXX executable hyle_h3_cpu_vulkan.exe
+[13/14] Linking CXX executable hyle_h3_cpu_vulkan_contracts.exe
