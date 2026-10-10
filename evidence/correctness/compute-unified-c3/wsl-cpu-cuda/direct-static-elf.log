@@ -1,0 +1,43 @@
+
+Dynamic section at offset 0x8bbb438 contains 40 entries:
+  Tag        Type                         Name/Value
+ 0x0000000000000001 (NEEDED)             Shared library: [libtorch_cuda.so]
+ 0x0000000000000001 (NEEDED)             Shared library: [libc10_cuda.so]
+ 0x0000000000000001 (NEEDED)             Shared library: [libcublas.so.13]
+ 0x0000000000000001 (NEEDED)             Shared library: [libcublasLt.so.13]
+ 0x0000000000000001 (NEEDED)             Shared library: [libcudart.so.13]
+ 0x0000000000000001 (NEEDED)             Shared library: [libcuda.so.1]
+ 0x0000000000000001 (NEEDED)             Shared library: [libtorch_cpu.so]
+ 0x0000000000000001 (NEEDED)             Shared library: [libc10.so]
+ 0x0000000000000001 (NEEDED)             Shared library: [libstdc++.so.6]
+ 0x0000000000000001 (NEEDED)             Shared library: [libm.so.6]
+ 0x0000000000000001 (NEEDED)             Shared library: [libgcc_s.so.1]
+ 0x0000000000000001 (NEEDED)             Shared library: [libc.so.6]
+ 0x0000000000000001 (NEEDED)             Shared library: [ld-linux-x86-64.so.2]
+ 0x000000000000000f (RPATH)              Library rpath: [/root/.cache/hyle/dependencies/v1/sdks/torch-cpu/Linux-8dea5bcfed4b53ca0f6852517bea4b4d1f3ff1cc0c21da662e834d34af1ec824/libtorch/lib:/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/static-sdk-relocated/lib:/root/.cache/hyle/dependencies/v1/sdks/torch-cuda-leaf/Linux-02c7258e917f3043c978b53acf6f02b818db0d0d85db0e58ae578af333b9b4e2-fab2a30375b0b92c/nvidia/cublas/lib:/root/.cache/hyle/dependencies/v1/sdks/torch-cuda-leaf/Linux-02c7258e917f3043c978b53acf6f02b818db0d0d85db0e58ae578af333b9b4e2-fab2a30375b0b92c/nvidia/cuda_cupti/lib:/root/.cache/hyle/dependencies/v1/sdks/torch-cuda-leaf/Linux-02c7258e917f3043c978b53acf6f02b818db0d0d85db0e58ae578af333b9b4e2-fab2a30375b0b92c/nvidia/cuda_nvrtc/lib:/root/.cache/hyle/dependencies/v1/sdks/torch-cuda-leaf/Linux-02c7258e917f3043c978b53acf6f02b818db0d0d85db0e58ae578af333b9b4e2-fab2a30375b0b92c/nvidia/cuda_runtime/lib:/root/.cache/hyle/dependencies/v1/sdks/torch-cuda-leaf/Linux-02c7258e917f3043c978b53acf6f02b818db0d0d85db0e58ae578af333b9b4e2-fab2a30375b0b92c/nvidia/cudnn/lib:/root/.cache/hyle/dependencies/v1/sdks/torch-cuda-leaf/Linux-02c7258e917f3043c978b53acf6f02b818db0d0d85db0e58ae578af333b9b4e2-fab2a30375b0b92c/nvidia/cufft/lib:/root/.cache/hyle/dependencies/v1/sdks/torch-cuda-leaf/Linux-02c7258e917f3043c978b53acf6f02b818db0d0d85db0e58ae578af333b9b4e2-fab2a30375b0b92c/nvidia/cufile/lib:/root/.cache/hyle/dependencies/v1/sdks/torch-cuda-leaf/Linux-02c7258e917f3043c978b53acf6f02b818db0d0d85db0e58ae578af333b9b4e2-fab2a30375b0b92c/nvidia/curand/lib:/root/.cache/hyle/dependencies/v1/sdks/torch-cuda-leaf/Linux-02c7258e917f3043c978b53acf6f02b818db0d0d85db0e58ae578af333b9b4e2-fab2a30375b0b92c/nvidia/cusolver/lib:/root/.cache/hyle/dependencies/v1/sdks/torch-cuda-leaf/Linux-02c7258e917f3043c978b53acf6f02b818db0d0d85db0e58ae578af333b9b4e2-fab2a30375b0b92c/nvidia/cusparse/lib:/root/.cache/hyle/dependencies/v1/sdks/torch-cuda-leaf/Linux-02c7258e917f3043c978b53acf6f02b818db0d0d85db0e58ae578af333b9b4e2-fab2a30375b0b92c/nvidia/cusparselt/lib:/root/.cache/hyle/dependencies/v1/sdks/torch-cuda-leaf/Linux-02c7258e917f3043c978b53acf6f02b818db0d0d85db0e58ae578af333b9b4e2-fab2a30375b0b92c/nvidia/nccl/lib:/root/.cache/hyle/dependencies/v1/sdks/torch-cuda-leaf/Linux-02c7258e917f3043c978b53acf6f02b818db0d0d85db0e58ae578af333b9b4e2-fab2a30375b0b92c/nvidia/nvjitlink/lib:/root/.cache/hyle/dependencies/v1/sdks/torch-cuda-leaf/Linux-02c7258e917f3043c978b53acf6f02b818db0d0d85db0e58ae578af333b9b4e2-fab2a30375b0b92c/nvidia/nvtx/lib:/root/.cache/hyle/dependencies/v1/sdks/torch-cuda-leaf/Linux-02c7258e917f3043c978b53acf6f02b818db0d0d85db0e58ae578af333b9b4e2-fab2a30375b0b92c/torch/lib:/lib/intel64:/lib/intel64_win:/lib/win-x64:/usr/local/cuda-13.3/targets/x86_64-linux/lib]
+ 0x000000000000000c (INIT)               0xaa000
+ 0x000000000000000d (FINI)               0x320b064
+ 0x0000000000000019 (INIT_ARRAY)         0x8b84e00
+ 0x000000000000001b (INIT_ARRAYSZ)       1320 (bytes)
+ 0x000000000000001a (FINI_ARRAY)         0x8b85328
+ 0x000000000000001c (FINI_ARRAYSZ)       16 (bytes)
+ 0x000000006ffffef5 (GNU_HASH)           0x3e8
+ 0x0000000000000005 (STRTAB)             0x4a60
+ 0x0000000000000006 (SYMTAB)             0x698
+ 0x000000000000000a (STRSZ)              27487 (bytes)
+ 0x000000000000000b (SYMENT)             24 (bytes)
+ 0x0000000000000015 (DEBUG)              0x0
+ 0x0000000000000003 (PLTGOT)             0x8bbc6f8
+ 0x0000000000000002 (PLTRELSZ)           14544 (bytes)
+ 0x0000000000000014 (PLTREL)             RELA
+ 0x0000000000000017 (JMPREL)             0xa5b68
+ 0x0000000000000007 (RELA)               0xbf08
+ 0x0000000000000008 (RELASZ)             629856 (bytes)
+ 0x0000000000000009 (RELAENT)            24 (bytes)
+ 0x0000000000000018 (BIND_NOW)           
+ 0x000000006ffffffb (FLAGS_1)            Flags: NOW PIE
+ 0x000000006ffffffe (VERNEED)            0xbb68
+ 0x000000006fffffff (VERNEEDNUM)         8
+ 0x000000006ffffff0 (VERSYM)             0xb5c0
+ 0x000000006ffffff9 (RELACOUNT)          23803
+ 0x0000000000000000 (NULL)               0x0

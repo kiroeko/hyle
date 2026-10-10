@@ -1,0 +1,23 @@
+{
+  "scope": "Actual complete relocated CPU+CUDA static SDK independent native math and runtime assets; not H1 joint/async/expert qualification",
+  "candidate": "a2476b62cfe49c1663998645c362392685c06eb1",
+  "actual_routes": "cpu;cuda",
+  "native_cpu_module": "libhyle_ggml_cpu_avx2_456172ec_f99368c68335266b.so",
+  "results": {
+    "graph": {
+      "seconds": "0.60",
+      "missing_runtime_dependencies": [],
+      "cpu_cuda_macros": true,
+      "ctest_sha256": "d93b0549e1c78660015497a90c57cfdba6f7a976f901e4547f18a8e092ee59a5"
+    },
+    "direct": {
+      "seconds": "0.69",
+      "missing_runtime_dependencies": [],
+      "cpu_cuda_macros": true,
+      "ctest_sha256": "6ba962d0362252eb47cb0570d2cf1f13c993a59249c4e22d09cb488b43aed02f"
+    }
+  },
+  "LD_LIBRARY_PATH": "",
+  "batch_exit_observed_by_parent": 0,
+  "performance": "No P1; correctness/delivery only"
+}

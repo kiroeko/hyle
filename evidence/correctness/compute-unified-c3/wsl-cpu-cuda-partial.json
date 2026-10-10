@@ -35,11 +35,19 @@
     },
     {
       "entry": "static-direct",
-      "verdict": "UNRUN"
+      "verdict": "PASS",
+      "log": "evidence/correctness/compute-unified-c3/wsl-cpu-cuda/static-direct-ctest.log",
+      "sha256": "6ba962d0362252eb47cb0570d2cf1f13c993a59249c4e22d09cb488b43aed02f",
+      "actual_routes": "cpu;cuda",
+      "recipe": "a1786f301b204177a5533ef30468b09f680a5459e5449914b270920cfc26303b"
     },
     {
       "entry": "static-graph",
-      "verdict": "UNRUN"
+      "verdict": "PASS",
+      "log": "evidence/correctness/compute-unified-c3/wsl-cpu-cuda/static-graph-ctest.log",
+      "sha256": "d93b0549e1c78660015497a90c57cfdba6f7a976f901e4547f18a8e092ee59a5",
+      "actual_routes": "cpu;cuda",
+      "recipe": "a1786f301b204177a5533ef30468b09f680a5459e5449914b270920cfc26303b"
     }
   ]
 }

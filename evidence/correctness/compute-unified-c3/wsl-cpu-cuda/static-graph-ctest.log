@@ -1,0 +1,20 @@
+Start testing: Oct 10 12:42 CST
+----------------------------------------------------------
+1/1 Testing: hyle_package_graph_cpp
+1/1 Test: hyle_package_graph_cpp
+Command: "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/static-consumer/hyle_package_graph_cpp"
+Directory: /root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/static-consumer
+"hyle_package_graph_cpp" start time: Oct 10 12:42 CST
+Output:
+----------------------------------------------------------
+ggml_cuda_init: found 1 CUDA devices (Total VRAM: 12281 MiB):
+  Device 0: NVIDIA GeForce RTX 4070, compute capability 8.9, VMM: yes, VRAM: 12281 MiB
+<end of output>
+Test time =   0.60 sec
+----------------------------------------------------------
+Test Passed.
+"hyle_package_graph_cpp" end time: Oct 10 12:42 CST
+"hyle_package_graph_cpp" time elapsed: 00:00:00
+----------------------------------------------------------
+
+End testing: Oct 10 12:42 CST

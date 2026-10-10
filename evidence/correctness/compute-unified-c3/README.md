@@ -5,7 +5,7 @@ It is not a terminal verdict for all platforms/routes, hybrid execution, or asyn
 
 [Delivery matrix](delivery-matrix.json) fixes the declared applicable scope: 15 platform/route groups,
 45 source/shared/static shapes, each with the existing Direct and Graph consumer. Consumer entries
-are documented per actual receipt; the current matrix records 76 PASS and 14 UNRUN.
+are documented per actual receipt; the current matrix records 78 PASS and 12 UNRUN.
 Earlier Vulkan failures remain archived. A mixed SDK entry runs each selected native route independently
 and cannot certify the later joint execution or asynchronous transfer work.
 

@@ -459,3 +459,10 @@ export/搬迁/consumer链接断言，仅省去三个GPU运行调用点（展开�
 结尾明确只签build/install，不签smoke/math PASS；[原文与派生hash](../../../../evidence/correctness/compute-unified-c3/wsl-vulkan-build-only/preparation.json)
 及实际派生driver/launcher已归档。当前只完成准备，无新增build/math PASS；CPU+CUDA原static
 批次结束后重型验证串行启动，两个Vulkan组实际运行仍保持未资格，不用软件设备替代。
+
+原WSL CPU+CUDA static Graph0.60s/Direct0.69s也已实际PASS，原整批exit0；安装路线精确
+cpu;cuda，两consumer的CPU/CUDA宏同时启用，实际ldd无缺依赖、无LD覆盖，原CPU MODULE
+留在SDK/lib。链接器对vendor CUDA12叶的原警告保留，未据此伪造运行失败。
+[静态资源收据](../../../../evidence/correctness/compute-unified-c3/wsl-cpu-cuda/static-resource-receipt.json)
+和原批次日志已归档，C3当前78 PASS / 12 UNRUN。下一串行WSL vulkan build/install批次已启动，
+只有编译/资产/consumer链接门，实GPU数学仍未资格；H1–H3联合机制尚未实施。实现LOC仍62,508。
