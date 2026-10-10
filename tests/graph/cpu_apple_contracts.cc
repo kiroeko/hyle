@@ -36,10 +36,34 @@ Status contracts() {
   HYLE_RETURN_IF_ERROR(require(!slots.upload(0, duplicate), "duplicate weight ID was accepted"));
   HYLE_RETURN_IF_ERROR(require(!slots.upload(0, bad_id), "unknown weight ID was accepted"));
   HYLE_RETURN_IF_ERROR(require(!slots.upload(0, bad_shape), "weight layout mismatch was accepted"));
+  HYLE_ASSIGN_OR_RETURN(auto half, c::TensorDesc::dense(c::DataType::kFloat16, std::array<std::int64_t, 2>{64, 64}));
+  HYLE_ASSIGN_OR_RETURN(auto half_source, c::ConstTensorView::create(half, source.buffer.view()));
+  const std::array bad_encoding{a::WeightFragment{7, half_source}};
+  HYLE_RETURN_IF_ERROR(require(!slots.upload(0, bad_encoding), "different physical weight dtype was accepted"));
   const std::array duplicate_catalog{catalog[0], catalog[0]};
   HYLE_RETURN_IF_ERROR(require(!a::WeightSlots::create(apple, memory, duplicate_catalog, 16384), "duplicate catalog was accepted"));
   HYLE_RETURN_IF_ERROR(require(!a::WeightSlots::create(apple, memory, catalog, 0), "zero capacity was accepted"));
   HYLE_RETURN_IF_ERROR(require(!a::WeightSlots::create(apple, memory, catalog, SIZE_MAX), "overflow capacity was accepted"));
+  {
+    HYLE_ASSIGN_OR_RETURN(auto bytes_desc, c::TensorDesc::dense(c::DataType::kUInt8, std::array<std::int64_t, 1>{3}));
+    HYLE_ASSIGN_OR_RETURN(auto bytes, tensor(bytes_desc));
+    const std::array<std::byte, 3> pattern{std::byte{1}, std::byte{2}, std::byte{255}};
+    HYLE_RETURN_IF_ERROR(bytes.buffer.view().write(pattern));
+    const std::array byte_catalog{a::WeightSpec{30, bytes_desc}};
+    HYLE_ASSIGN_OR_RETURN(auto byte_pool, a::WeightSlots::create(apple, memory, byte_catalog, 3));
+    const std::array byte_selection{a::WeightFragment{30, bytes.view.as_const()}};
+    HYLE_ASSIGN_OR_RETURN(auto batch, byte_pool.upload(0, byte_selection));
+    HYLE_RETURN_IF_ERROR(batch.wait());
+    HYLE_ASSIGN_OR_RETURN(auto array, batch.binding(30));
+    HYLE_RETURN_IF_ERROR(memory.copy_to_host(array, bytes.view));
+    std::array<std::byte, 3> actual;
+    HYLE_RETURN_IF_ERROR(bytes.buffer.view().read(actual));
+    HYLE_RETURN_IF_ERROR(require(actual == pattern, "four-byte native padding changed byte-carrier contents"));
+    mlx::core::array outside(array.shape(), array.dtype(), nullptr, {});
+    outside.copy_shared_buffer(array, outside.strides(), outside.flags(), outside.size(), 512 * 1024 * 1024);
+    outside.set_status(mlx::core::array::available);
+    HYLE_RETURN_IF_ERROR(require(!memory.copy_to_host(outside, bytes.view).ok(), "native byte range was not checked"));
+  }
   {
     m::QuotaAllocator quota(m::system_allocator(), 1);
     HYLE_RETURN_IF_ERROR(require(!a::WeightSlots::create(apple, memory, catalog, 16384,
