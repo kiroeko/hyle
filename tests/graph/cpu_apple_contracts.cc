@@ -5,6 +5,7 @@
 #undef main
 
 #include <hyle/mem/quota_allocator.h>
+#include <hyle/compute/low_precision.h>
 
 namespace {
 Status require(bool condition, const char *message) {
@@ -63,6 +64,26 @@ Status contracts() {
     outside.copy_shared_buffer(array, outside.strides(), outside.flags(), outside.size(), 512 * 1024 * 1024);
     outside.set_status(mlx::core::array::available);
     HYLE_RETURN_IF_ERROR(require(!memory.copy_to_host(outside, bytes.view).ok(), "native byte range was not checked"));
+  }
+  {
+    // A real GGUF row is 34 bytes and its logical [K,N] axes do not describe
+    // the native uint8 carrier. Preserve both encoding and padding boundary.
+    HYLE_ASSIGN_OR_RETURN(auto q8, c::gguf_weight_description(c::GgufQuantizedType::kQ8_0,
+        c::DataType::kFloat32, 32, 1));
+    HYLE_ASSIGN_OR_RETURN(auto encoded, tensor(q8));
+    std::array<std::byte, 34> pattern;
+    for (std::size_t i = 0; i < pattern.size(); ++i) pattern[i] = std::byte(i);
+    HYLE_RETURN_IF_ERROR(encoded.buffer.view().write(pattern));
+    const std::array q8_catalog{a::WeightSpec{31, q8}};
+    HYLE_ASSIGN_OR_RETURN(auto q8_pool, a::WeightSlots::create(apple, memory, q8_catalog, 34));
+    const std::array selection{a::WeightFragment{31, encoded.view.as_const()}};
+    HYLE_ASSIGN_OR_RETURN(auto batch, q8_pool.upload(0, selection));
+    HYLE_RETURN_IF_ERROR(batch.wait());
+    HYLE_ASSIGN_OR_RETURN(auto native, batch.binding(31));
+    HYLE_RETURN_IF_ERROR(memory.copy_to_host(native, encoded.view));
+    std::array<std::byte, 34> actual;
+    HYLE_RETURN_IF_ERROR(encoded.buffer.view().read(actual));
+    HYLE_RETURN_IF_ERROR(require(actual == pattern, "GGUF exact byte carrier was reinterpreted"));
   }
   {
     m::QuotaAllocator quota(m::system_allocator(), 1);

@@ -83,6 +83,8 @@ Result<mx::array> MemoryResource::allocate(const TensorDesc &description, Resour
                                          ResourceBudgetCategory category) const noexcept {
   if (!valid()) return std::unexpected(Status::FailedPrecondition("Apple memory resource is empty"));
   HYLE_ASSIGN_OR_RETURN(auto spec, input_spec(description));
+  if (description.is_plain() && !description.is_dense())
+    return std::unexpected(Status::InvalidArgument("Apple owned arrays require a dense plain carrier"));
   HYLE_ASSIGN_OR_RETURN(auto bytes, description.required_bytes());
   try {
     auto metadata = mem::system_allocator();
@@ -131,7 +133,6 @@ Status match_dense(const mx::array &array, const TensorDesc &description) noexce
   HYLE_ASSIGN_OR_RETURN(auto spec, input_spec(description));
   HYLE_ASSIGN_OR_RETURN(auto bytes, description.required_bytes());
   if ((description.is_plain() && !description.is_dense()) ||
-      (description.storage_format().kind() == StorageFormatKind::kBlocked && !description.is_dense()) ||
       array.shape() != spec.shape || array.dtype() != spec.dtype ||
       !array.flags().row_contiguous || array.nbytes() != bytes)
     return Status::InvalidArgument("Apple boundary requires the exact dense native carrier");

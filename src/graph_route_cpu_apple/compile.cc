@@ -16,8 +16,9 @@ namespace ca = compute::apple;
 Result<compute::TensorDesc> carrier(compute::TensorDesc description) noexcept {
   if (description.is_plain())
     return compute::TensorDesc::dense(description.data_type(), description.dimensions());
-  if (description.storage_format().kind() == compute::StorageFormatKind::kBlocked && !description.is_dense())
-    return std::unexpected(Status::Unimplemented("CPU+Apple blocked boundaries require dense physical storage"));
+  // Encoded values preserve their complete physical contract. GGUF [K,N]
+  // weights are contiguous native byte carriers even when is_dense() is false
+  // for the logical axes. The original native provider qualifies that layout.
   return description;
 }
 
