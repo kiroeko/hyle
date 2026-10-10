@@ -1,6 +1,6 @@
 # C3 终态对账与 WSL Vulkan 硬件限制
 
-<!-- MODULE REVIEW: BLOCKED -->
+<!-- MODULE REVIEW: SCOPED -->
 
 - 本记录承接[活动C1–C3/R1卡](compute-unified-delivery.md)，不重开历史任务。
 - 产品修正候选仍为各owner已登记的实际commit，最新产品修正a2476b62；文档不创建新candidate。
@@ -34,14 +34,18 @@ macOS loader与CPU+Apple许可证登记两项限定修复已各完成自己的�
 Direct/Graph三交付消费者并归档对应机器/driver/recipe身份；仅驱动/环境改变不默认重编或重跑其它域。
 H3仍按设计验证Windows/Air实GPU；该硬件限制不能被软件设备、copy或mock代签。
 
-## 待用户决定的有限取舍
+## 用户已决定的有限取舍
 
 建议允许后续H1–H3继续：保留这十二项BLOCKED及Linux Vulkan runtime未资格限制，
 承认C3的已验平台/编译交付边界足以作为后续施工输入；为共享owner按新H卡重新定界，
 新卡显式继承未资格限制，不宣称C3全平台通过、不静默解除旧阻塞。
 另一选择是保留原C3顺序门，待可用Linux Vulkan实GPU后再进入H1。
 
-这是改变C3→H1的前置裁决，尚未得到新的用户决定；不自动采用建议，不改实现目标。
+2026-10-10用户明确回复“保留资格，不用block”：保留十二项实际运行未资格事实，
+不以该本机硬件条件阻塞C3终局或后续H1–H3。当前记录按这一明确决定恢复SCOPED，
+有限动作仅为核对已有证据与限定资格边界，再依协议AUDITED/CANDIDATE/CLOSED；不写产品代码，
+不重建或重跑P1，不将未运行项改成PASS/NOT_APPLICABLE。
+该决定覆盖此前以十二项未验阻塞全C3的裁决；其原事实和BLOCKED历史保留在Git。
 H1–H3继续包含用户已授权的异步传输/依赖、真实重叠和引擎驱动expert片段迁移，
 缓存/预测/淘汰、多GPU和增量依赖图仍在本goal范围外。
 
