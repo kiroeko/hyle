@@ -423,3 +423,9 @@ WSL CUDA已安装公开头32份 bare/实际宏启用两档均PASS，实际命令
 与HYLE_COMPUTE_CUDA=1，依赖由导出的hyle::graph带入。
 [头资格](../../../../evidence/correctness/compute-unified-c3/wsl-cuda-installed-headers/active-gcc14-receipt.json)
 只签本平台安装头，未重建SDK/运行GPU/P1，不代签静态档位或其它WSL组合。静态原批次继续。
+
+原WSL CUDA static Graph0.73s/Direct0.63s 也已真实PASS，整批exit0；实际消费者ldd均无
+missing依赖，未设置LD覆盖。链接器对vendor CUDA12叶依赖的警告原文保留，不凭警告伪造
+运行失败或忽略运行缺件；[实际资源结果](../../../../evidence/correctness/compute-unified-c3/wsl-cuda/static-resource-receipt.json)
+区分这些事实。CUDA六项三交付完成，C3当前72 PASS / 18 UNRUN；下一串行WSL CPU+CUDA
+原批量入口已启动，组合只签两native路线分别执行，不签H1联合/异步/专家迁移。

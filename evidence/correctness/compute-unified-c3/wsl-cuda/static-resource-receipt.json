@@ -1,0 +1,17 @@
+{
+  "scope": "Actual relocated WSL CUDA static ordinary FFN, linker warnings retained separately from runtime ldd",
+  "candidate": "a2476b62cfe49c1663998645c362392685c06eb1",
+  "results": {
+    "graph": {
+      "test_seconds": "0.73",
+      "missing_runtime_dependencies": []
+    },
+    "direct": {
+      "test_seconds": "0.63",
+      "missing_runtime_dependencies": []
+    }
+  },
+  "LD_LIBRARY_PATH": "",
+  "batch_exit_observed_by_parent": 0,
+  "performance": "No P1; correctness/delivery only"
+}

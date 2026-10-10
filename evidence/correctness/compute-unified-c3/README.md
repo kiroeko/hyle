@@ -5,7 +5,7 @@ It is not a terminal verdict for all platforms/routes, hybrid execution, or asyn
 
 [Delivery matrix](delivery-matrix.json) fixes the declared applicable scope: 15 platform/route groups,
 45 source/shared/static shapes, each with the existing Direct and Graph consumer. Consumer entries
-are documented per actual receipt; the current matrix records 70 PASS and 20 UNRUN.
+are documented per actual receipt; the current matrix records 72 PASS and 18 UNRUN.
 Earlier Vulkan failures remain archived. A mixed SDK entry runs each selected native route independently
 and cannot certify the later joint execution or asynchronous transfer work.
 
@@ -202,3 +202,9 @@ the original static loop continues, without repeating source/shared or claiming 
 [WSL CUDA installed headers](wsl-cuda-installed-headers/active-gcc14-receipt.json) passed all32
 isolated headers both bare and with actual exported route usage. Compile commands confirm
 GCC14.2.0 and CUDA presence for each unit. SDKs/math/P1 were not rebuilt or repeated by this check.
+
+WSL CUDA static Graph0.73s/Direct0.63s passed, the original full batch exited0, and both actual
+consumer ldd results contain no missing runtime dependency without an LD override. Original linker
+warnings remain in the [complete log](wsl-cuda/completed-batch.log); the
+[runtime receipt](wsl-cuda/static-resource-receipt.json) distinguishes runtime facts from warnings.
+The six-entry CUDA group is complete. C3 is72/90; the next serial WSL CPU+CUDA batch has started.

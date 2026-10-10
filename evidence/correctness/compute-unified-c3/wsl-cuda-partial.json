@@ -35,11 +35,21 @@
     },
     {
       "entry": "static-direct",
-      "verdict": "UNRUN"
+      "verdict": "PASS",
+      "log": "evidence/correctness/compute-unified-c3/wsl-cuda/static-direct-ctest.log",
+      "sha256": "c0c16139f72b399e28980ccf019f586b5171a12adc02db56857acf03926613e1",
+      "actual_routes": "cuda",
+      "recipe": "2fdbb1a9bcb4a318f4f0e6daa298ac66ed2c984bd7a608ac702b5d0db2bf0153"
     },
     {
       "entry": "static-graph",
-      "verdict": "UNRUN"
+      "verdict": "PASS",
+      "log": "evidence/correctness/compute-unified-c3/wsl-cuda/static-graph-ctest.log",
+      "sha256": "59f617f59539babb9eb99f78ce28e3fdf33054ccbe5db4f4d4617d51dae1a29d",
+      "actual_routes": "cuda",
+      "recipe": "2fdbb1a9bcb4a318f4f0e6daa298ac66ed2c984bd7a608ac702b5d0db2bf0153"
     }
-  ]
+  ],
+  "batch_exit": 0,
+  "remaining": "Linux CUDA source/shared/static six real consumers complete. WSL CPU+CUDA/Vulkan groups and H1-H3 remain unqualified."
 }
