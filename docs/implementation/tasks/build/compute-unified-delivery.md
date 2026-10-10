@@ -451,3 +451,11 @@ WSL完整CPU+CUDA shared SDK 的39份公开头，原bare脚本与actual-export-t
 两档均实际PASS；逐命令确认GCC14、CPU/CUDA presence同时启用。
 [组合头证据](../../../../evidence/correctness/compute-unified-c3/wsl-cpu-cuda-installed-headers/active-gcc14-receipt.json)
 只签本组合安装头，不重建SDK或复跑数学/P1；原static批次继续，H1联合能力仍未签。
+
+WSL Vulkan 的[当前设备复核](../../../../evidence/correctness/compute-unified-c3/wsl-vulkan-build-only/current-device-facts.json)
+仍仅有llvmpipe type4，没有可签普通路线数学的physical GPU。剩余vulkan/cpu;vulkan三交付
+使用原冻结driver的build-only验证副本：保留全部configure/build/install/路线/feature/头/许可/
+export/搬迁/consumer链接断言，仅省去三个GPU运行调用点（展开为六项消费者），取消重置目录，
+结尾明确只签build/install，不签smoke/math PASS；[原文与派生hash](../../../../evidence/correctness/compute-unified-c3/wsl-vulkan-build-only/preparation.json)
+及实际派生driver/launcher已归档。当前只完成准备，无新增build/math PASS；CPU+CUDA原static
+批次结束后重型验证串行启动，两个Vulkan组实际运行仍保持未资格，不用软件设备替代。

@@ -1,0 +1,8 @@
+{
+  "scope": "Preparation only; no new build or math PASS",
+  "original_driver_sha256": "52ad0cc3d1e68682e12b671a4cae8516de234ecca0d088ac014aaec36e0d4090",
+  "scratch_driver_sha256": "e7208959bfdf2027131c09a72d9bfac8783654a6c4e84ef99224a39bad9a81cd",
+  "omitted_gpu_run_call_sites": 3,
+  "reason": "Device availability only. No runtime/math/shader/performance PASS.",
+  "kept": "Original configure/build/install/route/feature/header/license/export/relocation/consumer link checks"
+}
