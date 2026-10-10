@@ -133,6 +133,19 @@ TensorView 不拥有外部 payload，Graph Results 只保护其原声明 owner�
 新头单独编译通过。只读导入/native typed桥/自动Direct+Graph绑定及全部适用交付仍未完成。
 原borrow view保持原合同，不把当前手动use ticket样例当作F1-05/06自然入口已兑现。
 
+## F1-05 共同Direct适配冻结
+
+- baseline `78686e9fe3907df648496563db4db13038dc0200`；compute owner AUDITED。
+- `LeasedOperationInvocation::create(prepared, WriteLease workspace, options)` 冷创建原OperationInvocation、
+  按原input/output数量预置view数组和一次use episode容量；不改变旧Invocation布局或Provider程序。
+- 输入绑定拥有ReadLease，或显式在现有独占WriteLease下读取；输出借用WriteLease仅至submit返回。
+  submit先取全部views/校验端口，再加入use guards，调用原submit并自动attach真实Completion。
+  用户不再手写begin/add/attach，也不把错误输出publish为有效readlease。
+- workspace由适配持有并加入write use。accepted prefix的有效Completion是原接口不变量，
+  attach预留好metadata，无热分配；普通submit拒绝时ticket自动回退，不毒化未接受的write。
+- 同block输入/输出采用独占writer use去重，原Provider alias准入照旧；不为简单示例撤销in-place能力。
+- CPU/CUDA共有Direct路径先集中接线；Apple/Vulkan各自原生绑定与owned结果不经此Queue适配，另绑定原owner。
+
 ## 有限 FIX 集
 
 | FIX | 必须实现/定向修复 | 验收 |
