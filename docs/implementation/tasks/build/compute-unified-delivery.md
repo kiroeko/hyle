@@ -413,3 +413,8 @@ WSL CUDA source Graph1.07s/Direct0.56s 已真实 PASS，原FFN消费者在RTX407
 不是枚举/copy资格；[收据](../../../../evidence/correctness/compute-unified-c3/wsl-cuda-partial.json)
 绑定a2476b62来源、原CTest与配置隔离事实。C3当前68 PASS / 22 UNRUN；原shared/static
 循环继续，不删除/重跑source、不增加P1，H1联合/异步/专家迁移仍未实施。
+
+WSL CUDA relocated shared Graph0.65s/Direct0.55s 也已实际 PASS，19库/1138导出检查通过，
+两个共享库的实际ELF sibling `$ORIGIN` 与无LD覆盖证据见
+[资源收据](../../../../evidence/correctness/compute-unified-c3/wsl-cuda/shared-resource-receipt.json)。
+请求/安装metadata均为cuda，原static循环已经开始；C3当前70 PASS / 20 UNRUN，source/shared不重跑。

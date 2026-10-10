@@ -1,0 +1,13 @@
+{
+  "scope": "Actual relocated WSL CUDA-only shared SDK assets, ELF sibling lookup/export and ordinary FFN",
+  "candidate": "a2476b62cfe49c1663998645c362392685c06eb1",
+  "routes": "cuda",
+  "consumer_seconds": {
+    "graph": "0.65",
+    "direct": "0.55"
+  },
+  "exported_libraries": 19,
+  "exports_inspected": 1138,
+  "LD_LIBRARY_PATH": "",
+  "remaining": "static batch in progress; no H1 claim"
+}

@@ -5,7 +5,7 @@ It is not a terminal verdict for all platforms/routes, hybrid execution, or asyn
 
 [Delivery matrix](delivery-matrix.json) fixes the declared applicable scope: 15 platform/route groups,
 45 source/shared/static shapes, each with the existing Direct and Graph consumer. Consumer entries
-are documented per actual receipt; the current matrix records 68 PASS and 22 UNRUN.
+are documented per actual receipt; the current matrix records 70 PASS and 20 UNRUN.
 Earlier Vulkan failures remain archived. A mixed SDK entry runs each selected native route independently
 and cannot certify the later joint execution or asynchronous transfer work.
 
@@ -193,3 +193,8 @@ the separate NVCC host compiler and absence of HYLE CPU math roots. CUDA math re
 [WSL CUDA source receipt](wsl-cuda-partial.json) now records actual ordinary FFN Graph1.07s/
 Direct0.56s PASS on RTX4070/SM8.9, with immutable source/archive identity and original CTest logs.
 The original driver continues shared/static. C3 is68/90; hybrid and full-model execution are not signed.
+
+WSL CUDA relocated shared Graph0.65s/Direct0.55s also passed. The per-entry receipt binds actual CUDA
+route metadata and CTest; [resource receipt](wsl-cuda/shared-resource-receipt.json) confirms sibling
+ELF lookup, no LD override, and export hygiene across19 libraries/1138 exports. C3 is70/90;
+the original static loop continues, without repeating source/shared or claiming hybrid execution.

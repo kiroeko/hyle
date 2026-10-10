@@ -19,11 +19,19 @@
     },
     {
       "entry": "shared-direct",
-      "verdict": "UNRUN"
+      "verdict": "PASS",
+      "log": "evidence/correctness/compute-unified-c3/wsl-cuda/shared-direct-ctest.log",
+      "sha256": "f506c1a42f0822520c96cacb01d5dfd8337e3f9e2dfffe71a01852bd66f6e97b",
+      "actual_routes": "cuda",
+      "recipe": "b55314c61d676a203c84097e0e319728901a462ded29caf1bb1f57e4ca8042a5"
     },
     {
       "entry": "shared-graph",
-      "verdict": "UNRUN"
+      "verdict": "PASS",
+      "log": "evidence/correctness/compute-unified-c3/wsl-cuda/shared-graph-ctest.log",
+      "sha256": "7ea08a314edd927fb6716c5b7a6358682a47d1e07b0b1dc4a843c7afff13beb1",
+      "actual_routes": "cuda",
+      "recipe": "b55314c61d676a203c84097e0e319728901a462ded29caf1bb1f57e4ca8042a5"
     },
     {
       "entry": "static-direct",
