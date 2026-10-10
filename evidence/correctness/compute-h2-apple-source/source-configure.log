@@ -26,7 +26,7 @@ CMake Warning at /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-g
 -- Including CPU backend
 -- ARM detected
 -- Checking for ARM features using flags:
--- Adding CPU backend variant ggml-cpu:  
+-- Adding CPU backend variant ggml-cpu:
 -- Metal framework found
 -- Including METAL backend
 -- ggml version: 0.24.0

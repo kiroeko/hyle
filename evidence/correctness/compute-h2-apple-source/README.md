@@ -17,3 +17,5 @@
 [源同步/归属](source-sync.json)、[初始实际命令](source-result.json)、[4项CTest](source-math.log)、
 [定向合同批次](source-contract-result.json)与[合同真实stdout](source-contract-stdout.log)给出原始退出码。
 SDK与native overlap仍为未运行，后续独立补齐。
+
+configure log仅移除工具输出行尾空格；命令、退出码和语义内容不变，原始文件仍在Windows本轮记录目录。
