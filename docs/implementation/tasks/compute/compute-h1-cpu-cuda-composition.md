@@ -1,6 +1,6 @@
 # H1：CPU+CUDA 粗片段、异步传输与流式权重
 
-<!-- MODULE REVIEW: AUDITED -->
+<!-- MODULE REVIEW: CANDIDATE -->
 
 - baseline：`061b46700`（C3按用户接受边界CLOSED）；Windows canonical。
 - 当前owner：graph、compute、graph_route_cpu、graph_route_cuda、compute_route_cpu、
@@ -266,3 +266,14 @@ CMake入口，不要求普通用户include私有故障接缝。
   资源、借用寿命、取消、close、旧lease与不隐式fallback已在头及两个普通样例说明。
 
 候选实施/验证同一有限范围；失败仅修实际失败半径，公开合同/算法变化按协议退回AUDITED。
+
+## Candidate
+
+- 完整不可变产品候选：`3f938bd7bab0ebb2b4c598885d097800d5756a01`。tree从该Git commit取得。
+- 12个当前owner同批进入CANDIDATE；H1-01至06公开接口、对象语义和常态算法固定。
+- Windows source数学/contract与native trace对应文件hash均已留证；不重跑已经相同身份通过项。
+- 余下按Windows/WSL × source/shared/static × 组合、Direct权重、contracts三消费者批量验收，
+  build2/test1；源副本只从canonical candidate生成，同平台vendor对象/cache复用。
+- 普通同Device/单路线保护由contracts与路线配置反证；追加安装头/资产/缺组合能力与普通
+  CPU/CUDA消费者定向回归。WSL不同ABI/工具链实际运行，未运行不写PASS。
+- API/算法/常态layout变化须先退回AUDITED并记录实际反例；文档/证据不换candidate，不重跑P1。

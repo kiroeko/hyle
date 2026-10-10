@@ -270,15 +270,17 @@
     },
     {
       "module": "compute",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/compute-h1-cpu-cuda-composition.md",
-      "summary": "H1 AUDITED：有限H1-01至06固定；独立可选CPU+CUDA组合因子、保留合格region/冷规则、跨native资源/分段异步进展/owned槽及expert迁移；先批量接线后冻结验证。"
+      "summary": "H1 CANDIDATE：固定CPU/CUDA粗片段、可暂停进展、结果/weight双槽与Direct迁移API已接线；Windows实际数学/故障/生命周期与CUPTI物理重叠已验，按同一候选批量补Windows/WSL三交付；不签未运行门。",
+      "candidate": "3f938bd7bab0ebb2b4c598885d097800d5756a01"
     },
     {
       "module": "graph",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/compute-h1-cpu-cuda-composition.md",
-      "summary": "H1 AUDITED：有限H1-01至06固定；独立可选CPU+CUDA组合因子、保留合格region/冷规则、跨native资源/分段异步进展/owned槽及expert迁移；先批量接线后冻结验证。"
+      "summary": "H1 CANDIDATE：固定CPU/CUDA粗片段、可暂停进展、结果/weight双槽与Direct迁移API已接线；Windows实际数学/故障/生命周期与CUPTI物理重叠已验，按同一候选批量补Windows/WSL三交付；不签未运行门。",
+      "candidate": "3f938bd7bab0ebb2b4c598885d097800d5756a01"
     },
     {
       "module": "container_concurrent",
@@ -396,15 +398,17 @@
     },
     {
       "module": "compute_backend_cpu",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/compute-h1-cpu-cuda-composition.md",
-      "summary": "H1 AUDITED：有限H1-01至06固定；独立可选CPU+CUDA组合因子、保留合格region/冷规则、跨native资源/分段异步进展/owned槽及expert迁移；先批量接线后冻结验证。"
+      "summary": "H1 CANDIDATE：固定CPU/CUDA粗片段、可暂停进展、结果/weight双槽与Direct迁移API已接线；Windows实际数学/故障/生命周期与CUPTI物理重叠已验，按同一候选批量补Windows/WSL三交付；不签未运行门。",
+      "candidate": "3f938bd7bab0ebb2b4c598885d097800d5756a01"
     },
     {
       "module": "compute_backend_cuda",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/compute-h1-cpu-cuda-composition.md",
-      "summary": "H1 AUDITED：有限H1-01至06固定；独立可选CPU+CUDA组合因子、保留合格region/冷规则、跨native资源/分段异步进展/owned槽及expert迁移；先批量接线后冻结验证。"
+      "summary": "H1 CANDIDATE：固定CPU/CUDA粗片段、可暂停进展、结果/weight双槽与Direct迁移API已接线；Windows实际数学/故障/生命周期与CUPTI物理重叠已验，按同一候选批量补Windows/WSL三交付；不签未运行门。",
+      "candidate": "3f938bd7bab0ebb2b4c598885d097800d5756a01"
     },
     {
       "module": "compute_provider_native",
@@ -419,15 +423,17 @@
     },
     {
       "module": "compute_route_cpu",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/compute-h1-cpu-cuda-composition.md",
-      "summary": "H1 AUDITED：有限H1-01至06固定；独立可选CPU+CUDA组合因子、保留合格region/冷规则、跨native资源/分段异步进展/owned槽及expert迁移；先批量接线后冻结验证。"
+      "summary": "H1 CANDIDATE：固定CPU/CUDA粗片段、可暂停进展、结果/weight双槽与Direct迁移API已接线；Windows实际数学/故障/生命周期与CUPTI物理重叠已验，按同一候选批量补Windows/WSL三交付；不签未运行门。",
+      "candidate": "3f938bd7bab0ebb2b4c598885d097800d5756a01"
     },
     {
       "module": "graph_route_cpu",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/compute-h1-cpu-cuda-composition.md",
-      "summary": "H1 AUDITED：有限H1-01至06固定；独立可选CPU+CUDA组合因子、保留合格region/冷规则、跨native资源/分段异步进展/owned槽及expert迁移；先批量接线后冻结验证。"
+      "summary": "H1 CANDIDATE：固定CPU/CUDA粗片段、可暂停进展、结果/weight双槽与Direct迁移API已接线；Windows实际数学/故障/生命周期与CUPTI物理重叠已验，按同一候选批量补Windows/WSL三交付；不签未运行门。",
+      "candidate": "3f938bd7bab0ebb2b4c598885d097800d5756a01"
     },
     {
       "module": "compute_provider_cublas",
@@ -465,15 +471,17 @@
     },
     {
       "module": "compute_route_cuda",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/compute-h1-cpu-cuda-composition.md",
-      "summary": "H1 AUDITED：有限H1-01至06固定；独立可选CPU+CUDA组合因子、保留合格region/冷规则、跨native资源/分段异步进展/owned槽及expert迁移；先批量接线后冻结验证。"
+      "summary": "H1 CANDIDATE：固定CPU/CUDA粗片段、可暂停进展、结果/weight双槽与Direct迁移API已接线；Windows实际数学/故障/生命周期与CUPTI物理重叠已验，按同一候选批量补Windows/WSL三交付；不签未运行门。",
+      "candidate": "3f938bd7bab0ebb2b4c598885d097800d5756a01"
     },
     {
       "module": "graph_route_cuda",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/compute-h1-cpu-cuda-composition.md",
-      "summary": "H1 AUDITED：有限H1-01至06固定；独立可选CPU+CUDA组合因子、保留合格region/冷规则、跨native资源/分段异步进展/owned槽及expert迁移；先批量接线后冻结验证。"
+      "summary": "H1 CANDIDATE：固定CPU/CUDA粗片段、可暂停进展、结果/weight双槽与Direct迁移API已接线；Windows实际数学/故障/生命周期与CUPTI物理重叠已验，按同一候选批量补Windows/WSL三交付；不签未运行门。",
+      "candidate": "3f938bd7bab0ebb2b4c598885d097800d5756a01"
     },
     {
       "module": "compute_route_apple",
@@ -532,21 +540,24 @@
     },
     {
       "module": "compute_ggml_runtime",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/compute-h1-cpu-cuda-composition.md",
-      "summary": "H1 AUDITED：有限H1-01至06固定；独立可选CPU+CUDA组合因子、保留合格region/冷规则、跨native资源/分段异步进展/owned槽及expert迁移；先批量接线后冻结验证。"
+      "summary": "H1 CANDIDATE：固定CPU/CUDA粗片段、可暂停进展、结果/weight双槽与Direct迁移API已接线；Windows实际数学/故障/生命周期与CUPTI物理重叠已验，按同一候选批量补Windows/WSL三交付；不签未运行门。",
+      "candidate": "3f938bd7bab0ebb2b4c598885d097800d5756a01"
     },
     {
       "module": "compute_provider_ggml_cuda",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/compute-h1-cpu-cuda-composition.md",
-      "summary": "H1 AUDITED：有限H1-01至06固定；独立可选CPU+CUDA组合因子、保留合格region/冷规则、跨native资源/分段异步进展/owned槽及expert迁移；先批量接线后冻结验证。"
+      "summary": "H1 CANDIDATE：固定CPU/CUDA粗片段、可暂停进展、结果/weight双槽与Direct迁移API已接线；Windows实际数学/故障/生命周期与CUPTI物理重叠已验，按同一候选批量补Windows/WSL三交付；不签未运行门。",
+      "candidate": "3f938bd7bab0ebb2b4c598885d097800d5756a01"
     },
     {
       "module": "graph_provider_ggml_cuda",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/compute-h1-cpu-cuda-composition.md",
-      "summary": "H1 AUDITED：有限H1-01至06固定；独立可选CPU+CUDA组合因子、保留合格region/冷规则、跨native资源/分段异步进展/owned槽及expert迁移；先批量接线后冻结验证。"
+      "summary": "H1 CANDIDATE：固定CPU/CUDA粗片段、可暂停进展、结果/weight双槽与Direct迁移API已接线；Windows实际数学/故障/生命周期与CUPTI物理重叠已验，按同一候选批量补Windows/WSL三交付；不签未运行门。",
+      "candidate": "3f938bd7bab0ebb2b4c598885d097800d5756a01"
     },
     {
       "module": "compute_provider_flashinfer",
@@ -595,9 +606,10 @@
     },
     {
       "module": "graph_route_cpu_cuda",
-      "state": "AUDITED",
-      "summary": "H1 AUDITED：有限H1-01至06固定；独立可选CPU+CUDA组合因子、保留合格region/冷规则、跨native资源/分段异步进展/owned槽及expert迁移；先批量接线后冻结验证。",
-      "record": "docs/implementation/tasks/compute/compute-h1-cpu-cuda-composition.md"
+      "state": "CANDIDATE",
+      "summary": "H1 CANDIDATE：固定CPU/CUDA粗片段、可暂停进展、结果/weight双槽与Direct迁移API已接线；Windows实际数学/故障/生命周期与CUPTI物理重叠已验，按同一候选批量补Windows/WSL三交付；不签未运行门。",
+      "record": "docs/implementation/tasks/compute/compute-h1-cpu-cuda-composition.md",
+      "candidate": "3f938bd7bab0ebb2b4c598885d097800d5756a01"
     }
   ]
 }
