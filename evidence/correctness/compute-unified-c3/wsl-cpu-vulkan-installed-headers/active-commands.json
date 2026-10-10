@@ -1,0 +1,194 @@
+[
+{
+  "directory": "/root/hyle-scratch/compute-unified/wsl-cpu-vulkan-installed-headers/active-build",
+  "command": "/usr/bin/g++-14 -DHYLE_COMPUTE_CPU=1 -DHYLE_COMPUTE_ONEDNN=1 -DHYLE_COMPUTE_VULKAN=1 -DHYLE_GRAPH_ONEDNN=1 -isystem /root/hyle-scratch/compute-unified/l-cpu-vulkan/selected-graph/shared-sdk-relocated/include -O3 -DNDEBUG -std=gnu++23 -o CMakeFiles/header_0.dir/0.cc.o -c /root/hyle-scratch/compute-unified/wsl-cpu-vulkan-installed-headers/active-source/0.cc",
+  "file": "/root/hyle-scratch/compute-unified/wsl-cpu-vulkan-installed-headers/active-source/0.cc",
+  "output": "CMakeFiles/header_0.dir/0.cc.o"
+},
+{
+  "directory": "/root/hyle-scratch/compute-unified/wsl-cpu-vulkan-installed-headers/active-build",
+  "command": "/usr/bin/g++-14 -DHYLE_COMPUTE_CPU=1 -DHYLE_COMPUTE_ONEDNN=1 -DHYLE_COMPUTE_VULKAN=1 -DHYLE_GRAPH_ONEDNN=1 -isystem /root/hyle-scratch/compute-unified/l-cpu-vulkan/selected-graph/shared-sdk-relocated/include -O3 -DNDEBUG -std=gnu++23 -o CMakeFiles/header_1.dir/1.cc.o -c /root/hyle-scratch/compute-unified/wsl-cpu-vulkan-installed-headers/active-source/1.cc",
+  "file": "/root/hyle-scratch/compute-unified/wsl-cpu-vulkan-installed-headers/active-source/1.cc",
+  "output": "CMakeFiles/header_1.dir/1.cc.o"
+},
+{
+  "directory": "/root/hyle-scratch/compute-unified/wsl-cpu-vulkan-installed-headers/active-build",
+  "command": "/usr/bin/g++-14 -DHYLE_COMPUTE_CPU=1 -DHYLE_COMPUTE_ONEDNN=1 -DHYLE_COMPUTE_VULKAN=1 -DHYLE_GRAPH_ONEDNN=1 -isystem /root/hyle-scratch/compute-unified/l-cpu-vulkan/selected-graph/shared-sdk-relocated/include -O3 -DNDEBUG -std=gnu++23 -o CMakeFiles/header_2.dir/2.cc.o -c /root/hyle-scratch/compute-unified/wsl-cpu-vulkan-installed-headers/active-source/2.cc",
+  "file": "/root/hyle-scratch/compute-unified/wsl-cpu-vulkan-installed-headers/active-source/2.cc",
+  "output": "CMakeFiles/header_2.dir/2.cc.o"
+},
+{
+  "directory": "/root/hyle-scratch/compute-unified/wsl-cpu-vulkan-installed-headers/active-build",
+  "command": "/usr/bin/g++-14 -DHYLE_COMPUTE_CPU=1 -DHYLE_COMPUTE_ONEDNN=1 -DHYLE_COMPUTE_VULKAN=1 -DHYLE_GRAPH_ONEDNN=1 -isystem /root/hyle-scratch/compute-unified/l-cpu-vulkan/selected-graph/shared-sdk-relocated/include -O3 -DNDEBUG -std=gnu++23 -o CMakeFiles/header_3.dir/3.cc.o -c /root/hyle-scratch/compute-unified/wsl-cpu-vulkan-installed-headers/active-source/3.cc",
+  "file": "/root/hyle-scratch/compute-unified/wsl-cpu-vulkan-installed-headers/active-source/3.cc",
+  "output": "CMakeFiles/header_3.dir/3.cc.o"
+},
+{
+  "directory": "/root/hyle-scratch/compute-unified/wsl-cpu-vulkan-installed-headers/active-build",
+  "command": "/usr/bin/g++-14 -DHYLE_COMPUTE_CPU=1 -DHYLE_COMPUTE_ONEDNN=1 -DHYLE_COMPUTE_VULKAN=1 -DHYLE_GRAPH_ONEDNN=1 -isystem /root/hyle-scratch/compute-unified/l-cpu-vulkan/selected-graph/shared-sdk-relocated/include -O3 -DNDEBUG -std=gnu++23 -o CMakeFiles/header_4.dir/4.cc.o -c /root/hyle-scratch/compute-unified/wsl-cpu-vulkan-installed-headers/active-source/4.cc",
+  "file": "/root/hyle-scratch/compute-unified/wsl-cpu-vulkan-installed-headers/active-source/4.cc",
+  "output": "CMakeFiles/header_4.dir/4.cc.o"
+},
+{
+  "directory": "/root/hyle-scratch/compute-unified/wsl-cpu-vulkan-installed-headers/active-build",
+  "command": "/usr/bin/g++-14 -DHYLE_COMPUTE_CPU=1 -DHYLE_COMPUTE_ONEDNN=1 -DHYLE_COMPUTE_VULKAN=1 -DHYLE_GRAPH_ONEDNN=1 -isystem /root/hyle-scratch/compute-unified/l-cpu-vulkan/selected-graph/shared-sdk-relocated/include -O3 -DNDEBUG -std=gnu++23 -o CMakeFiles/header_5.dir/5.cc.o -c /root/hyle-scratch/compute-unified/wsl-cpu-vulkan-installed-headers/active-source/5.cc",
+  "file": "/root/hyle-scratch/compute-unified/wsl-cpu-vulkan-installed-headers/active-source/5.cc",
+  "output": "CMakeFiles/header_5.dir/5.cc.o"
+},
+{
+  "directory": "/root/hyle-scratch/compute-unified/wsl-cpu-vulkan-installed-headers/active-build",
+  "command": "/usr/bin/g++-14 -DHYLE_COMPUTE_CPU=1 -DHYLE_COMPUTE_ONEDNN=1 -DHYLE_COMPUTE_VULKAN=1 -DHYLE_GRAPH_ONEDNN=1 -isystem /root/hyle-scratch/compute-unified/l-cpu-vulkan/selected-graph/shared-sdk-relocated/include -O3 -DNDEBUG -std=gnu++23 -o CMakeFiles/header_6.dir/6.cc.o -c /root/hyle-scratch/compute-unified/wsl-cpu-vulkan-installed-headers/active-source/6.cc",
+  "file": "/root/hyle-scratch/compute-unified/wsl-cpu-vulkan-installed-headers/active-source/6.cc",
+  "output": "CMakeFiles/header_6.dir/6.cc.o"
+},
+{
+  "directory": "/root/hyle-scratch/compute-unified/wsl-cpu-vulkan-installed-headers/active-build",
+  "command": "/usr/bin/g++-14 -DHYLE_COMPUTE_CPU=1 -DHYLE_COMPUTE_ONEDNN=1 -DHYLE_COMPUTE_VULKAN=1 -DHYLE_GRAPH_ONEDNN=1 -isystem /root/hyle-scratch/compute-unified/l-cpu-vulkan/selected-graph/shared-sdk-relocated/include -O3 -DNDEBUG -std=gnu++23 -o CMakeFiles/header_7.dir/7.cc.o -c /root/hyle-scratch/compute-unified/wsl-cpu-vulkan-installed-headers/active-source/7.cc",
+  "file": "/root/hyle-scratch/compute-unified/wsl-cpu-vulkan-installed-headers/active-source/7.cc",
+  "output": "CMakeFiles/header_7.dir/7.cc.o"
+},
+{
+  "directory": "/root/hyle-scratch/compute-unified/wsl-cpu-vulkan-installed-headers/active-build",
+  "command": "/usr/bin/g++-14 -DHYLE_COMPUTE_CPU=1 -DHYLE_COMPUTE_ONEDNN=1 -DHYLE_COMPUTE_VULKAN=1 -DHYLE_GRAPH_ONEDNN=1 -isystem /root/hyle-scratch/compute-unified/l-cpu-vulkan/selected-graph/shared-sdk-relocated/include -O3 -DNDEBUG -std=gnu++23 -o CMakeFiles/header_8.dir/8.cc.o -c /root/hyle-scratch/compute-unified/wsl-cpu-vulkan-installed-headers/active-source/8.cc",
+  "file": "/root/hyle-scratch/compute-unified/wsl-cpu-vulkan-installed-headers/active-source/8.cc",
+  "output": "CMakeFiles/header_8.dir/8.cc.o"
+},
+{
+  "directory": "/root/hyle-scratch/compute-unified/wsl-cpu-vulkan-installed-headers/active-build",
+  "command": "/usr/bin/g++-14 -DHYLE_COMPUTE_CPU=1 -DHYLE_COMPUTE_ONEDNN=1 -DHYLE_COMPUTE_VULKAN=1 -DHYLE_GRAPH_ONEDNN=1 -isystem /root/hyle-scratch/compute-unified/l-cpu-vulkan/selected-graph/shared-sdk-relocated/include -O3 -DNDEBUG -std=gnu++23 -o CMakeFiles/header_9.dir/9.cc.o -c /root/hyle-scratch/compute-unified/wsl-cpu-vulkan-installed-headers/active-source/9.cc",
+  "file": "/root/hyle-scratch/compute-unified/wsl-cpu-vulkan-installed-headers/active-source/9.cc",
+  "output": "CMakeFiles/header_9.dir/9.cc.o"
+},
+{
+  "directory": "/root/hyle-scratch/compute-unified/wsl-cpu-vulkan-installed-headers/active-build",
+  "command": "/usr/bin/g++-14 -DHYLE_COMPUTE_CPU=1 -DHYLE_COMPUTE_ONEDNN=1 -DHYLE_COMPUTE_VULKAN=1 -DHYLE_GRAPH_ONEDNN=1 -isystem /root/hyle-scratch/compute-unified/l-cpu-vulkan/selected-graph/shared-sdk-relocated/include -O3 -DNDEBUG -std=gnu++23 -o CMakeFiles/header_10.dir/10.cc.o -c /root/hyle-scratch/compute-unified/wsl-cpu-vulkan-installed-headers/active-source/10.cc",
+  "file": "/root/hyle-scratch/compute-unified/wsl-cpu-vulkan-installed-headers/active-source/10.cc",
+  "output": "CMakeFiles/header_10.dir/10.cc.o"
+},
+{
+  "directory": "/root/hyle-scratch/compute-unified/wsl-cpu-vulkan-installed-headers/active-build",
+  "command": "/usr/bin/g++-14 -DHYLE_COMPUTE_CPU=1 -DHYLE_COMPUTE_ONEDNN=1 -DHYLE_COMPUTE_VULKAN=1 -DHYLE_GRAPH_ONEDNN=1 -isystem /root/hyle-scratch/compute-unified/l-cpu-vulkan/selected-graph/shared-sdk-relocated/include -O3 -DNDEBUG -std=gnu++23 -o CMakeFiles/header_11.dir/11.cc.o -c /root/hyle-scratch/compute-unified/wsl-cpu-vulkan-installed-headers/active-source/11.cc",
+  "file": "/root/hyle-scratch/compute-unified/wsl-cpu-vulkan-installed-headers/active-source/11.cc",
+  "output": "CMakeFiles/header_11.dir/11.cc.o"
+},
+{
+  "directory": "/root/hyle-scratch/compute-unified/wsl-cpu-vulkan-installed-headers/active-build",
+  "command": "/usr/bin/g++-14 -DHYLE_COMPUTE_CPU=1 -DHYLE_COMPUTE_ONEDNN=1 -DHYLE_COMPUTE_VULKAN=1 -DHYLE_GRAPH_ONEDNN=1 -isystem /root/hyle-scratch/compute-unified/l-cpu-vulkan/selected-graph/shared-sdk-relocated/include -O3 -DNDEBUG -std=gnu++23 -o CMakeFiles/header_12.dir/12.cc.o -c /root/hyle-scratch/compute-unified/wsl-cpu-vulkan-installed-headers/active-source/12.cc",
+  "file": "/root/hyle-scratch/compute-unified/wsl-cpu-vulkan-installed-headers/active-source/12.cc",
+  "output": "CMakeFiles/header_12.dir/12.cc.o"
+},
+{
+  "directory": "/root/hyle-scratch/compute-unified/wsl-cpu-vulkan-installed-headers/active-build",
+  "command": "/usr/bin/g++-14 -DHYLE_COMPUTE_CPU=1 -DHYLE_COMPUTE_ONEDNN=1 -DHYLE_COMPUTE_VULKAN=1 -DHYLE_GRAPH_ONEDNN=1 -isystem /root/hyle-scratch/compute-unified/l-cpu-vulkan/selected-graph/shared-sdk-relocated/include -O3 -DNDEBUG -std=gnu++23 -o CMakeFiles/header_13.dir/13.cc.o -c /root/hyle-scratch/compute-unified/wsl-cpu-vulkan-installed-headers/active-source/13.cc",
+  "file": "/root/hyle-scratch/compute-unified/wsl-cpu-vulkan-installed-headers/active-source/13.cc",
+  "output": "CMakeFiles/header_13.dir/13.cc.o"
+},
+{
+  "directory": "/root/hyle-scratch/compute-unified/wsl-cpu-vulkan-installed-headers/active-build",
+  "command": "/usr/bin/g++-14 -DHYLE_COMPUTE_CPU=1 -DHYLE_COMPUTE_ONEDNN=1 -DHYLE_COMPUTE_VULKAN=1 -DHYLE_GRAPH_ONEDNN=1 -isystem /root/hyle-scratch/compute-unified/l-cpu-vulkan/selected-graph/shared-sdk-relocated/include -O3 -DNDEBUG -std=gnu++23 -o CMakeFiles/header_14.dir/14.cc.o -c /root/hyle-scratch/compute-unified/wsl-cpu-vulkan-installed-headers/active-source/14.cc",
+  "file": "/root/hyle-scratch/compute-unified/wsl-cpu-vulkan-installed-headers/active-source/14.cc",
+  "output": "CMakeFiles/header_14.dir/14.cc.o"
+},
+{
+  "directory": "/root/hyle-scratch/compute-unified/wsl-cpu-vulkan-installed-headers/active-build",
+  "command": "/usr/bin/g++-14 -DHYLE_COMPUTE_CPU=1 -DHYLE_COMPUTE_ONEDNN=1 -DHYLE_COMPUTE_VULKAN=1 -DHYLE_GRAPH_ONEDNN=1 -isystem /root/hyle-scratch/compute-unified/l-cpu-vulkan/selected-graph/shared-sdk-relocated/include -O3 -DNDEBUG -std=gnu++23 -o CMakeFiles/header_15.dir/15.cc.o -c /root/hyle-scratch/compute-unified/wsl-cpu-vulkan-installed-headers/active-source/15.cc",
+  "file": "/root/hyle-scratch/compute-unified/wsl-cpu-vulkan-installed-headers/active-source/15.cc",
+  "output": "CMakeFiles/header_15.dir/15.cc.o"
+},
+{
+  "directory": "/root/hyle-scratch/compute-unified/wsl-cpu-vulkan-installed-headers/active-build",
+  "command": "/usr/bin/g++-14 -DHYLE_COMPUTE_CPU=1 -DHYLE_COMPUTE_ONEDNN=1 -DHYLE_COMPUTE_VULKAN=1 -DHYLE_GRAPH_ONEDNN=1 -isystem /root/hyle-scratch/compute-unified/l-cpu-vulkan/selected-graph/shared-sdk-relocated/include -O3 -DNDEBUG -std=gnu++23 -o CMakeFiles/header_16.dir/16.cc.o -c /root/hyle-scratch/compute-unified/wsl-cpu-vulkan-installed-headers/active-source/16.cc",
+  "file": "/root/hyle-scratch/compute-unified/wsl-cpu-vulkan-installed-headers/active-source/16.cc",
+  "output": "CMakeFiles/header_16.dir/16.cc.o"
+},
+{
+  "directory": "/root/hyle-scratch/compute-unified/wsl-cpu-vulkan-installed-headers/active-build",
+  "command": "/usr/bin/g++-14 -DHYLE_COMPUTE_CPU=1 -DHYLE_COMPUTE_ONEDNN=1 -DHYLE_COMPUTE_VULKAN=1 -DHYLE_GRAPH_ONEDNN=1 -isystem /root/hyle-scratch/compute-unified/l-cpu-vulkan/selected-graph/shared-sdk-relocated/include -O3 -DNDEBUG -std=gnu++23 -o CMakeFiles/header_17.dir/17.cc.o -c /root/hyle-scratch/compute-unified/wsl-cpu-vulkan-installed-headers/active-source/17.cc",
+  "file": "/root/hyle-scratch/compute-unified/wsl-cpu-vulkan-installed-headers/active-source/17.cc",
+  "output": "CMakeFiles/header_17.dir/17.cc.o"
+},
+{
+  "directory": "/root/hyle-scratch/compute-unified/wsl-cpu-vulkan-installed-headers/active-build",
+  "command": "/usr/bin/g++-14 -DHYLE_COMPUTE_CPU=1 -DHYLE_COMPUTE_ONEDNN=1 -DHYLE_COMPUTE_VULKAN=1 -DHYLE_GRAPH_ONEDNN=1 -isystem /root/hyle-scratch/compute-unified/l-cpu-vulkan/selected-graph/shared-sdk-relocated/include -O3 -DNDEBUG -std=gnu++23 -o CMakeFiles/header_18.dir/18.cc.o -c /root/hyle-scratch/compute-unified/wsl-cpu-vulkan-installed-headers/active-source/18.cc",
+  "file": "/root/hyle-scratch/compute-unified/wsl-cpu-vulkan-installed-headers/active-source/18.cc",
+  "output": "CMakeFiles/header_18.dir/18.cc.o"
+},
+{
+  "directory": "/root/hyle-scratch/compute-unified/wsl-cpu-vulkan-installed-headers/active-build",
+  "command": "/usr/bin/g++-14 -DHYLE_COMPUTE_CPU=1 -DHYLE_COMPUTE_ONEDNN=1 -DHYLE_COMPUTE_VULKAN=1 -DHYLE_GRAPH_ONEDNN=1 -isystem /root/hyle-scratch/compute-unified/l-cpu-vulkan/selected-graph/shared-sdk-relocated/include -O3 -DNDEBUG -std=gnu++23 -o CMakeFiles/header_19.dir/19.cc.o -c /root/hyle-scratch/compute-unified/wsl-cpu-vulkan-installed-headers/active-source/19.cc",
+  "file": "/root/hyle-scratch/compute-unified/wsl-cpu-vulkan-installed-headers/active-source/19.cc",
+  "output": "CMakeFiles/header_19.dir/19.cc.o"
+},
+{
+  "directory": "/root/hyle-scratch/compute-unified/wsl-cpu-vulkan-installed-headers/active-build",
+  "command": "/usr/bin/g++-14 -DHYLE_COMPUTE_CPU=1 -DHYLE_COMPUTE_ONEDNN=1 -DHYLE_COMPUTE_VULKAN=1 -DHYLE_GRAPH_ONEDNN=1 -isystem /root/hyle-scratch/compute-unified/l-cpu-vulkan/selected-graph/shared-sdk-relocated/include -O3 -DNDEBUG -std=gnu++23 -o CMakeFiles/header_20.dir/20.cc.o -c /root/hyle-scratch/compute-unified/wsl-cpu-vulkan-installed-headers/active-source/20.cc",
+  "file": "/root/hyle-scratch/compute-unified/wsl-cpu-vulkan-installed-headers/active-source/20.cc",
+  "output": "CMakeFiles/header_20.dir/20.cc.o"
+},
+{
+  "directory": "/root/hyle-scratch/compute-unified/wsl-cpu-vulkan-installed-headers/active-build",
+  "command": "/usr/bin/g++-14 -DHYLE_COMPUTE_CPU=1 -DHYLE_COMPUTE_ONEDNN=1 -DHYLE_COMPUTE_VULKAN=1 -DHYLE_GRAPH_ONEDNN=1 -isystem /root/hyle-scratch/compute-unified/l-cpu-vulkan/selected-graph/shared-sdk-relocated/include -O3 -DNDEBUG -std=gnu++23 -o CMakeFiles/header_21.dir/21.cc.o -c /root/hyle-scratch/compute-unified/wsl-cpu-vulkan-installed-headers/active-source/21.cc",
+  "file": "/root/hyle-scratch/compute-unified/wsl-cpu-vulkan-installed-headers/active-source/21.cc",
+  "output": "CMakeFiles/header_21.dir/21.cc.o"
+},
+{
+  "directory": "/root/hyle-scratch/compute-unified/wsl-cpu-vulkan-installed-headers/active-build",
+  "command": "/usr/bin/g++-14 -DHYLE_COMPUTE_CPU=1 -DHYLE_COMPUTE_ONEDNN=1 -DHYLE_COMPUTE_VULKAN=1 -DHYLE_GRAPH_ONEDNN=1 -isystem /root/hyle-scratch/compute-unified/l-cpu-vulkan/selected-graph/shared-sdk-relocated/include -O3 -DNDEBUG -std=gnu++23 -o CMakeFiles/header_22.dir/22.cc.o -c /root/hyle-scratch/compute-unified/wsl-cpu-vulkan-installed-headers/active-source/22.cc",
+  "file": "/root/hyle-scratch/compute-unified/wsl-cpu-vulkan-installed-headers/active-source/22.cc",
+  "output": "CMakeFiles/header_22.dir/22.cc.o"
+},
+{
+  "directory": "/root/hyle-scratch/compute-unified/wsl-cpu-vulkan-installed-headers/active-build",
+  "command": "/usr/bin/g++-14 -DHYLE_COMPUTE_CPU=1 -DHYLE_COMPUTE_ONEDNN=1 -DHYLE_COMPUTE_VULKAN=1 -DHYLE_GRAPH_ONEDNN=1 -isystem /root/hyle-scratch/compute-unified/l-cpu-vulkan/selected-graph/shared-sdk-relocated/include -O3 -DNDEBUG -std=gnu++23 -o CMakeFiles/header_23.dir/23.cc.o -c /root/hyle-scratch/compute-unified/wsl-cpu-vulkan-installed-headers/active-source/23.cc",
+  "file": "/root/hyle-scratch/compute-unified/wsl-cpu-vulkan-installed-headers/active-source/23.cc",
+  "output": "CMakeFiles/header_23.dir/23.cc.o"
+},
+{
+  "directory": "/root/hyle-scratch/compute-unified/wsl-cpu-vulkan-installed-headers/active-build",
+  "command": "/usr/bin/g++-14 -DHYLE_COMPUTE_CPU=1 -DHYLE_COMPUTE_ONEDNN=1 -DHYLE_COMPUTE_VULKAN=1 -DHYLE_GRAPH_ONEDNN=1 -isystem /root/hyle-scratch/compute-unified/l-cpu-vulkan/selected-graph/shared-sdk-relocated/include -O3 -DNDEBUG -std=gnu++23 -o CMakeFiles/header_24.dir/24.cc.o -c /root/hyle-scratch/compute-unified/wsl-cpu-vulkan-installed-headers/active-source/24.cc",
+  "file": "/root/hyle-scratch/compute-unified/wsl-cpu-vulkan-installed-headers/active-source/24.cc",
+  "output": "CMakeFiles/header_24.dir/24.cc.o"
+},
+{
+  "directory": "/root/hyle-scratch/compute-unified/wsl-cpu-vulkan-installed-headers/active-build",
+  "command": "/usr/bin/g++-14 -DHYLE_COMPUTE_CPU=1 -DHYLE_COMPUTE_ONEDNN=1 -DHYLE_COMPUTE_VULKAN=1 -DHYLE_GRAPH_ONEDNN=1 -isystem /root/hyle-scratch/compute-unified/l-cpu-vulkan/selected-graph/shared-sdk-relocated/include -O3 -DNDEBUG -std=gnu++23 -o CMakeFiles/header_25.dir/25.cc.o -c /root/hyle-scratch/compute-unified/wsl-cpu-vulkan-installed-headers/active-source/25.cc",
+  "file": "/root/hyle-scratch/compute-unified/wsl-cpu-vulkan-installed-headers/active-source/25.cc",
+  "output": "CMakeFiles/header_25.dir/25.cc.o"
+},
+{
+  "directory": "/root/hyle-scratch/compute-unified/wsl-cpu-vulkan-installed-headers/active-build",
+  "command": "/usr/bin/g++-14 -DHYLE_COMPUTE_CPU=1 -DHYLE_COMPUTE_ONEDNN=1 -DHYLE_COMPUTE_VULKAN=1 -DHYLE_GRAPH_ONEDNN=1 -isystem /root/hyle-scratch/compute-unified/l-cpu-vulkan/selected-graph/shared-sdk-relocated/include -O3 -DNDEBUG -std=gnu++23 -o CMakeFiles/header_26.dir/26.cc.o -c /root/hyle-scratch/compute-unified/wsl-cpu-vulkan-installed-headers/active-source/26.cc",
+  "file": "/root/hyle-scratch/compute-unified/wsl-cpu-vulkan-installed-headers/active-source/26.cc",
+  "output": "CMakeFiles/header_26.dir/26.cc.o"
+},
+{
+  "directory": "/root/hyle-scratch/compute-unified/wsl-cpu-vulkan-installed-headers/active-build",
+  "command": "/usr/bin/g++-14 -DHYLE_COMPUTE_CPU=1 -DHYLE_COMPUTE_ONEDNN=1 -DHYLE_COMPUTE_VULKAN=1 -DHYLE_GRAPH_ONEDNN=1 -isystem /root/hyle-scratch/compute-unified/l-cpu-vulkan/selected-graph/shared-sdk-relocated/include -O3 -DNDEBUG -std=gnu++23 -o CMakeFiles/header_27.dir/27.cc.o -c /root/hyle-scratch/compute-unified/wsl-cpu-vulkan-installed-headers/active-source/27.cc",
+  "file": "/root/hyle-scratch/compute-unified/wsl-cpu-vulkan-installed-headers/active-source/27.cc",
+  "output": "CMakeFiles/header_27.dir/27.cc.o"
+},
+{
+  "directory": "/root/hyle-scratch/compute-unified/wsl-cpu-vulkan-installed-headers/active-build",
+  "command": "/usr/bin/g++-14 -DHYLE_COMPUTE_CPU=1 -DHYLE_COMPUTE_ONEDNN=1 -DHYLE_COMPUTE_VULKAN=1 -DHYLE_GRAPH_ONEDNN=1 -isystem /root/hyle-scratch/compute-unified/l-cpu-vulkan/selected-graph/shared-sdk-relocated/include -O3 -DNDEBUG -std=gnu++23 -o CMakeFiles/header_28.dir/28.cc.o -c /root/hyle-scratch/compute-unified/wsl-cpu-vulkan-installed-headers/active-source/28.cc",
+  "file": "/root/hyle-scratch/compute-unified/wsl-cpu-vulkan-installed-headers/active-source/28.cc",
+  "output": "CMakeFiles/header_28.dir/28.cc.o"
+},
+{
+  "directory": "/root/hyle-scratch/compute-unified/wsl-cpu-vulkan-installed-headers/active-build",
+  "command": "/usr/bin/g++-14 -DHYLE_COMPUTE_CPU=1 -DHYLE_COMPUTE_ONEDNN=1 -DHYLE_COMPUTE_VULKAN=1 -DHYLE_GRAPH_ONEDNN=1 -isystem /root/hyle-scratch/compute-unified/l-cpu-vulkan/selected-graph/shared-sdk-relocated/include -O3 -DNDEBUG -std=gnu++23 -o CMakeFiles/header_29.dir/29.cc.o -c /root/hyle-scratch/compute-unified/wsl-cpu-vulkan-installed-headers/active-source/29.cc",
+  "file": "/root/hyle-scratch/compute-unified/wsl-cpu-vulkan-installed-headers/active-source/29.cc",
+  "output": "CMakeFiles/header_29.dir/29.cc.o"
+},
+{
+  "directory": "/root/hyle-scratch/compute-unified/wsl-cpu-vulkan-installed-headers/active-build",
+  "command": "/usr/bin/g++-14 -DHYLE_COMPUTE_CPU=1 -DHYLE_COMPUTE_ONEDNN=1 -DHYLE_COMPUTE_VULKAN=1 -DHYLE_GRAPH_ONEDNN=1 -isystem /root/hyle-scratch/compute-unified/l-cpu-vulkan/selected-graph/shared-sdk-relocated/include -O3 -DNDEBUG -std=gnu++23 -o CMakeFiles/header_30.dir/30.cc.o -c /root/hyle-scratch/compute-unified/wsl-cpu-vulkan-installed-headers/active-source/30.cc",
+  "file": "/root/hyle-scratch/compute-unified/wsl-cpu-vulkan-installed-headers/active-source/30.cc",
+  "output": "CMakeFiles/header_30.dir/30.cc.o"
+},
+{
+  "directory": "/root/hyle-scratch/compute-unified/wsl-cpu-vulkan-installed-headers/active-build",
+  "command": "/usr/bin/g++-14 -DHYLE_COMPUTE_CPU=1 -DHYLE_COMPUTE_ONEDNN=1 -DHYLE_COMPUTE_VULKAN=1 -DHYLE_GRAPH_ONEDNN=1 -isystem /root/hyle-scratch/compute-unified/l-cpu-vulkan/selected-graph/shared-sdk-relocated/include -O3 -DNDEBUG -std=gnu++23 -o CMakeFiles/header_31.dir/31.cc.o -c /root/hyle-scratch/compute-unified/wsl-cpu-vulkan-installed-headers/active-source/31.cc",
+  "file": "/root/hyle-scratch/compute-unified/wsl-cpu-vulkan-installed-headers/active-source/31.cc",
+  "output": "CMakeFiles/header_31.dir/31.cc.o"
+}
+]

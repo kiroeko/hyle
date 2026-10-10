@@ -484,3 +484,10 @@ graph exported-target路线/recipe与package变量一致，使用已填充离线
 CMake误取继承PATH的Windows nvcc.exe而缺Linux cudart；零旧PASS，原失败/Cache另存，
 按现行linux-wsl setup与原C3启动环境修正后16项通过。这是夹具环境纠正，不是产品数学FAIL，
 未修改产品或公共仪器，C3消费者矩阵仍78 PASS / 6 BLOCKED / 6 UNRUN。
+
+WSL CPU+Vulkan shared SDK已完成原安装/搬迁/两个consumer链接，原static循环继续。
+该实际SDK的32份公开头以bare与export-target实际CPU/Vulkan宏启用两档/GCC14独立编译均PASS；
+CUDA宏未启用。[逐头证据](../../../../evidence/correctness/compute-unified-c3/wsl-cpu-vulkan-installed-headers/receipt.json)
+含实际commands与原始日志归档，仅读取已安装SDK，不重建/运行GPU/P1。
+C3预声明bare/active安装头组至此全部完成；这不签static宏全矩阵，也不代替剩余static交付或
+WSL实GPU数学。消费者计数保持78 PASS / 6 BLOCKED / 6 UNRUN，实现LOC仍62,508。
