@@ -18,6 +18,7 @@ namespace detail {
 
 struct WeightBacking final : util::RefCounted<WeightBacking> {
   mem::AllocatorRef allocator{};
+  compute::ResourceBudget::Reservation host_charge{}, device_charge{};
   mem::Buffer host{}, device{};
   std::byte *host_pointer = nullptr;
   std::byte *device_pointer = nullptr;
@@ -96,7 +97,15 @@ Result<WeightState *> create_state(const compute::Context &context,
                                   mem::MemoryResourceRef device,
                                   std::span<const WeightSpec> catalog,
                                   std::size_t capacity,
-                                  mem::AllocatorRef allocator) noexcept {
+                                  mem::AllocatorRef allocator,
+                                  const compute::ResourceBudget &budget) noexcept {
+  compute::ResourceBudget::Reservation host_charge, device_charge;
+  if (budget) {
+    HYLE_ASSIGN_OR_RETURN(host_charge, budget.reserve(host, capacity,
+        compute::ResourceBudgetCategory::kMigration));
+    HYLE_ASSIGN_OR_RETURN(device_charge, budget.reserve(device, capacity,
+        compute::ResourceBudgetCategory::kMigration));
+  }
   std::size_t alignment = 256;
   for (const auto &entry : catalog)
     alignment = std::max(alignment, entry.description.required_alignment());
@@ -130,6 +139,8 @@ Result<WeightState *> create_state(const compute::Context &context,
   }
   state->backing = std::construct_at(static_cast<WeightBacking *>(memory));
   state->backing->allocator = allocator;
+  state->backing->host_charge = std::move(host_charge);
+  state->backing->device_charge = std::move(device_charge);
   state->backing->host = std::move(host_buffer);
   state->backing->device = std::move(device_buffer);
   state->backing->host_pointer = host_pointer;
@@ -199,7 +210,11 @@ Result<WeightSlots> WeightSlots::create(
     const compute::cuda::MemoryResource &host,
     const compute::cuda::MemoryResource &device,
     std::span<const WeightSpec> catalog, std::size_t capacity,
-    mem::AllocatorRef allocator) noexcept {
+    WeightSlotOptions options) noexcept {
+  auto allocator = options.allocator;
+  if (options.resource_budget) {
+    HYLE_ASSIGN_OR_RETURN(allocator, options.resource_budget.metadata_allocator());
+  }
   if (!allocator.valid() || catalog.empty() || capacity == 0)
     return std::unexpected(Status::InvalidArgument("invalid weight slot capacity"));
   HYLE_RETURN_IF_ERROR(compute::cuda::detail::validate_composition_resources(
@@ -215,7 +230,8 @@ Result<WeightSlots> WeightSlots::create(
   WeightSlots result;
   for (auto &state : result.states_) {
     HYLE_ASSIGN_OR_RETURN(state, create_state(context, host.ref(), device.ref(),
-                                             catalog, capacity, allocator));
+                                             catalog, capacity, allocator,
+                                             options.resource_budget));
   }
   return result;
 }

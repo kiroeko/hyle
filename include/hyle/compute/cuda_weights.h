@@ -6,6 +6,7 @@
 #include "hyle/compute/cuda.h"
 #include "hyle/compute/backends/cuda.h"
 #include "hyle/compute/tensor.h"
+#include "hyle/compute/resource_budget.h"
 #include "hyle/mem/allocator.h"
 
 namespace hyle::compute::cuda {
@@ -25,6 +26,13 @@ struct WeightSpec final {
 struct WeightFragment final {
   std::uint64_t id = 0;
   compute::ConstTensorView source{};
+};
+
+struct WeightSlotOptions final {
+  mem::AllocatorRef allocator = mem::system_allocator();
+  // Optional scope shared with Graph. Its metadata allocator takes precedence
+  // over allocator; both native backings are reserved before allocation.
+  compute::ResourceBudget resource_budget{};
 };
 
 // A selected device batch and its real upload prefix. binding() may describe
@@ -72,7 +80,7 @@ public:
          const compute::cuda::MemoryResource &host,
          const compute::cuda::MemoryResource &device,
          std::span<const WeightSpec> catalog, std::size_t capacity_bytes,
-         mem::AllocatorRef allocator = mem::system_allocator()) noexcept;
+         WeightSlotOptions options = {}) noexcept;
   HYLE_COMPUTE_ROUTE_CUDA_API Result<WeightBatch>
   upload(std::size_t slot, std::span<const WeightFragment> selection,
          compute::Queue &transfer_queue) noexcept;

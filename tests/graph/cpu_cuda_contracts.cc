@@ -73,9 +73,9 @@ Status contracts() noexcept {
   HYLE_ASSIGN_OR_RETURN(auto matrix, compute::TensorDesc::dense(compute::DataType::kFloat32, std::array<std::int64_t, 2>{64, 64}));
   HYLE_ASSIGN_OR_RETURN(auto scale_desc, compute::TensorDesc::dense(compute::DataType::kFloat32, std::array<std::int64_t, 1>{64}));
   HYLE_ASSIGN_OR_RETURN(auto source, tensor(mem::system_resource(), matrix));
-  HYLE_ASSIGN_OR_RETURN(auto input, tensor(host.ref(), row));
-  HYLE_ASSIGN_OR_RETURN(auto scale, tensor(host.ref(), scale_desc));
-  HYLE_ASSIGN_OR_RETURN(auto output, tensor(host.ref(), row));
+  HYLE_ASSIGN_OR_RETURN(auto input, tensor(mem::system_resource(), row));
+  HYLE_ASSIGN_OR_RETURN(auto scale, tensor(mem::system_resource(), scale_desc));
+  HYLE_ASSIGN_OR_RETURN(auto output, tensor(mem::system_resource(), row));
   std::array<float, 4096> data{};
   for (std::size_t i = 0; i < 64; ++i) data[i * 64 + i] = 2.0f;
   std::array<float, 64> ones; ones.fill(1.0f);
@@ -112,7 +112,7 @@ Status contracts() noexcept {
   AllocationBudget budget;
   for (int limit = 0; limit < 8; ++limit) {
     budget.remaining = limit;
-    auto failed = compute::cuda::WeightSlots::create(cuda, host, device, bigger_catalog, 16384, budget.ref());
+    auto failed = compute::cuda::WeightSlots::create(cuda, host, device, bigger_catalog, 16384, {.allocator = budget.ref()});
     HYLE_RETURN_IF_ERROR(require(!failed && failed.error().IsResourceExhausted(), "weight metadata OOM did not reject"));
     HYLE_RETURN_IF_ERROR(require(budget.live == 0, "partial weight allocation leaked"));
   }
@@ -133,10 +133,10 @@ Status contracts() noexcept {
   for (std::size_t i = 0; i < 3; ++i) { HYLE_ASSIGN_OR_RETURN(auto id, logical.node_id(i)); placements[i] = {id, i == 1 ? bridge::kCudaTarget : bridge::kCpuTarget, graph::PlacementStrength::kRequired}; }
   const std::array external{graph::ExternalResourceContract{x, bridge::kHostStorage}, graph::ExternalResourceContract{s, bridge::kHostStorage}, graph::ExternalResourceContract{w, bridge::kDeviceStorage}, graph::ExternalResourceContract{y, bridge::kHostStorage}};
   graph::CompileOptions options{.node_placements = placements, .external_resources = external};
-  HYLE_RETURN_IF_ERROR(require(!bridge::compile(logical, {&cpu, &cuda, &device, &device}, options), "wrong resource kind was accepted"));
-  HYLE_RETURN_IF_ERROR(require(!bridge::compile(logical, {&cpu, &cuda, &foreign_host, &device}, options), "mixed graph foreign resource was accepted"));
-  HYLE_RETURN_IF_ERROR(require(!bridge::compile(logical, {&cpu, &cuda, &host, &device, 0, 0}, options), "zero workspace budget was ignored"));
-  HYLE_ASSIGN_OR_RETURN(auto compiled, bridge::compile(logical, {&cpu, &cuda, &host, &device}, options));
+  HYLE_RETURN_IF_ERROR(require(!bridge::compile(logical, {&cpu, &cuda, mem::system_resource(), &device, &device}, options), "wrong resource kind was accepted"));
+  HYLE_RETURN_IF_ERROR(require(!bridge::compile(logical, {&cpu, &cuda, mem::system_resource(), &foreign_host, &device}, options), "mixed graph foreign resource was accepted"));
+  HYLE_RETURN_IF_ERROR(require(!bridge::compile(logical, {&cpu, &cuda, mem::system_resource(), &host, &device, 0, 0, 0}, options), "zero workspace budget was ignored"));
+  HYLE_ASSIGN_OR_RETURN(auto compiled, bridge::compile(logical, {&cpu, &cuda, mem::system_resource(), &host, &device}, options));
   const std::array ordinary_storage{graph::StorageDomain{device.ref()}, graph::StorageDomain{host.ref()}};
   const std::array ordinary_targets{graph::ExecutionTarget{&cuda, bridge::kDeviceStorage}, graph::ExecutionTarget{&cpu, bridge::kHostStorage}};
   HYLE_RETURN_IF_ERROR(require(!graph::compile(logical, {.storage_domains = ordinary_storage, .targets = ordinary_targets}, options),
@@ -160,6 +160,11 @@ Status contracts() noexcept {
   HYLE_RETURN_IF_ERROR(invocation.prepare_replay());
   Drain drain{scheduler};
   {
+    // Keep the already-ready device bytes borrowed through this scope, rather
+    // than inserting a typed weight wait before the CPU prefix under test.
+    HYLE_ASSIGN_OR_RETURN(auto ready_weight, weights.binding(7));
+    HYLE_RETURN_IF_ERROR(invocation.bind(w, ready_weight));
+    HYLE_RETURN_IF_ERROR(invocation.prepare_replay());
     // Real busy endpoint rejects the GPU successor after a synchronous CPU
     // prefix was accepted. No mock provider or device-loss injection is used.
     HYLE_ASSIGN_OR_RETURN(auto occupied, compute::detail::QueueSequence::begin(gpu));
@@ -235,13 +240,13 @@ Status contracts() noexcept {
   }
   controlled.close().IgnoreError();
   HYLE_ASSIGN_OR_RETURN(auto empty_desc, compute::TensorDesc::dense(compute::DataType::kFloat32, std::array<std::int64_t, 1>{0}));
-  HYLE_ASSIGN_OR_RETURN(auto empty_storage, tensor(host.ref(), empty_desc));
+  HYLE_ASSIGN_OR_RETURN(auto empty_storage, tensor(mem::system_resource(), empty_desc));
   HYLE_ASSIGN_OR_RETURN(auto empty_builder, graph::GraphBuilder::create());
   HYLE_ASSIGN_OR_RETURN(auto empty_input, empty_builder.input(empty_desc));
   HYLE_RETURN_IF_ERROR(empty_builder.publish(empty_input));
   HYLE_ASSIGN_OR_RETURN(auto empty_logical, std::move(empty_builder).finish());
   const std::array empty_external{graph::ExternalResourceContract{empty_input, bridge::kHostStorage}};
-  HYLE_ASSIGN_OR_RETURN(auto empty_compiled, bridge::compile(empty_logical, {&cpu, &cuda, &host, &device}, {.external_resources = empty_external}));
+  HYLE_ASSIGN_OR_RETURN(auto empty_compiled, bridge::compile(empty_logical, {&cpu, &cuda, mem::system_resource(), &host, &device}, {.external_resources = empty_external}));
   HYLE_ASSIGN_OR_RETURN(auto empty_native, empty_compiled.executable.create_invocation());
   HYLE_ASSIGN_OR_RETURN(auto empty_run, bridge::Invocation::create(std::move(empty_native), scheduler, {}));
   HYLE_RETURN_IF_ERROR(empty_run.bind(empty_input, empty_storage.view.as_const()));
@@ -255,7 +260,7 @@ Status contracts() noexcept {
   budget.remaining = 1000;
   {
     HYLE_ASSIGN_OR_RETURN(auto tracked_pool,
-        compute::cuda::WeightSlots::create(cuda, host, device, catalog, 16384, budget.ref()));
+        compute::cuda::WeightSlots::create(cuda, host, device, catalog, 16384, {.allocator = budget.ref()}));
     HYLE_ASSIGN_OR_RETURN(auto tracked_batch, tracked_pool.upload(0, selected, copy));
     HYLE_ASSIGN_OR_RETURN(auto next, compiled.executable.create_invocation());
     HYLE_ASSIGN_OR_RETURN(auto tracked,
@@ -277,6 +282,86 @@ Status contracts() noexcept {
   }
   scheduler.drain();
   HYLE_RETURN_IF_ERROR(require(budget.live == 0, "late result owner or bound weight metadata leaked"));
+  {
+    const std::array tight_limits{
+        compute::ResourceBudgetLimit{mem::system_resource(), 1024 * 1024},
+        compute::ResourceBudgetLimit{device.ref(), 32767},
+        compute::ResourceBudgetLimit{host.ref(), 65536}};
+    HYLE_ASSIGN_OR_RETURN(auto tight, compute::ResourceBudget::create({.limits = tight_limits}));
+    HYLE_ASSIGN_OR_RETURN(auto initial_host, tight.usage(mem::system_resource()));
+    HYLE_RETURN_IF_ERROR(require(!tight.reserve_unattributed(1) &&
+                                 !tight.reserve_unattributed(std::nullopt),
+                                 "strict budget accepted unassigned private storage"));
+    auto failed = compute::cuda::WeightSlots::create(cuda, host, device, catalog, 16384,
+                                                   {.resource_budget = tight});
+    HYLE_RETURN_IF_ERROR(require(!failed && failed.error().IsResourceExhausted(),
+                                 "two-slot migration exceeded shared device budget"));
+    HYLE_ASSIGN_OR_RETURN(auto failed_device, tight.usage(device.ref()));
+    HYLE_ASSIGN_OR_RETURN(auto failed_host, tight.usage(mem::system_resource()));
+    HYLE_ASSIGN_OR_RETURN(auto failed_staging, tight.usage(host.ref()));
+    HYLE_RETURN_IF_ERROR(require(failed_device.live_bytes == 0 &&
+                                 failed_staging.live_bytes == 0 &&
+                                 failed_host.live_bytes == initial_host.live_bytes,
+                                 "failed pool did not roll back shared reservations"));
+    const std::array full_limits{
+        compute::ResourceBudgetLimit{mem::system_resource(), 64 * 1024 * 1024},
+        compute::ResourceBudgetLimit{device.ref(), 64 * 1024 * 1024},
+        compute::ResourceBudgetLimit{host.ref(), 4 * 1024 * 1024}};
+    HYLE_ASSIGN_OR_RETURN(auto shared, compute::ResourceBudget::create(
+        {.limits = full_limits, .allow_unattributed = true}));
+    auto scoped_options = options;
+    scoped_options.resource_budget = shared;
+    HYLE_ASSIGN_OR_RETURN(auto scoped_compiled,
+        bridge::compile(logical, {&cpu, &cuda, mem::system_resource(), &host, &device}, scoped_options));
+    HYLE_ASSIGN_OR_RETURN(auto scoped_pool,
+        compute::cuda::WeightSlots::create(cuda, host, device, catalog, 16384,
+                                         {.resource_budget = shared}));
+    HYLE_ASSIGN_OR_RETURN(auto scoped_batch, scoped_pool.upload(0, selected, copy));
+    HYLE_RETURN_IF_ERROR(scoped_batch.wait());
+    HYLE_ASSIGN_OR_RETURN(auto scoped_native, scoped_compiled.executable.create_invocation());
+    HYLE_ASSIGN_OR_RETURN(auto scoped,
+        bridge::Invocation::create(std::move(scoped_native), scheduler, bindings));
+    HYLE_RETURN_IF_ERROR(require(!scoped.replay_report(), "unprepared report was published"));
+    HYLE_ASSIGN_OR_RETURN(auto aliased_scale,
+        compute::ConstTensorView::create(scale_desc, input.buffer.view()));
+    HYLE_RETURN_IF_ERROR(scoped.bind(x, input.view.as_const()));
+    HYLE_RETURN_IF_ERROR(scoped.bind(s, aliased_scale));
+    HYLE_RETURN_IF_ERROR(scoped.bind(w, scoped_batch, 7));
+    HYLE_RETURN_IF_ERROR(scoped.bind(y, output.view));
+    HYLE_RETURN_IF_ERROR(require(!scoped.prepare_replay({.host_wait = graph::HostWaitPolicy::kReject}).ok(),
+                                 "CPU successor ignored host-wait rejection"));
+    HYLE_RETURN_IF_ERROR(scoped.prepare_replay());
+    HYLE_ASSIGN_OR_RETURN(auto scoped_replay, scoped.replay_report());
+    HYLE_ASSIGN_OR_RETURN(auto scoped_resources, scoped.resource_report());
+    const auto migration = static_cast<std::size_t>(compute::ResourceBudgetCategory::kMigration);
+    HYLE_RETURN_IF_ERROR(require(scoped_replay.staging_copy_count == 4 &&
+                                 scoped_replay.weight_device_wait_count == 1 &&
+                                 scoped_replay.graph.host_wait_dependency_count != 0,
+                                 "prepared paths do not describe actual native boundaries"));
+    HYLE_RETURN_IF_ERROR(require(scoped_resources.boundary_view_bytes[bridge::kHostStorage.ordinal()] == 512 &&
+                                 scoped_resources.storage[bridge::kDeviceStorage.ordinal()].live_by_category[migration] == 32768 &&
+                                 scoped_resources.storage[bridge::kStagingStorage.ordinal()].live_by_category[migration] == 32768,
+                                 "resource report double-counted aliases or lost migration slots"));
+    HYLE_RETURN_IF_ERROR(scoped.bind(x, input.view.as_const()));
+    HYLE_RETURN_IF_ERROR(require(!scoped.replay_report() && !scoped.submit(),
+                                 "rebinding did not invalidate preparation"));
+    HYLE_RETURN_IF_ERROR(scoped.prepare_replay());
+    HYLE_ASSIGN_OR_RETURN(auto retained, scoped.run());
+    scoped = {};
+    scoped_batch = {};
+    scoped_pool = {};
+    scoped_compiled = {};
+    HYLE_ASSIGN_OR_RETURN(auto retained_usage, shared.usage(device.ref()));
+    HYLE_RETURN_IF_ERROR(require(retained_usage.live_bytes >= 16384,
+                                 "old result returned live device quota too early"));
+    retained = {};
+    scheduler.drain();
+    HYLE_ASSIGN_OR_RETURN(auto released_device, shared.usage(device.ref()));
+    HYLE_ASSIGN_OR_RETURN(auto released_staging, shared.usage(host.ref()));
+    HYLE_RETURN_IF_ERROR(require(released_device.live_bytes == 0 && released_staging.live_bytes == 0 &&
+                                 shared.unattributed_usage().unknown_private_owners == 0,
+                                 "last result did not retire shared resource charges"));
+  }
   HYLE_RETURN_IF_ERROR(pool.close());
   HYLE_RETURN_IF_ERROR(require(!pool.upload(1, selected, copy), "closed weight pool accepted work"));
   std::puts("H1 contracts: shape/format/context/range/overflow, bounded OOM rollback and accepted prefix failure passed");

@@ -17,11 +17,11 @@ inline hyle::Status inference_case(const compute::Context &cpu,
       compute::DataType::kFloat16, std::array<std::int64_t, 2>{128, 64}));
   HYLE_ASSIGN_OR_RETURN(auto out_desc, compute::TensorDesc::dense(
       compute::DataType::kFloat32, std::array<std::int64_t, 2>{1, 64}));
-  HYLE_ASSIGN_OR_RETURN(auto x_buffer, tensor(host.ref(), x_desc));
-  HYLE_ASSIGN_OR_RETURN(auto norm_buffer, tensor(host.ref(), norm_desc));
+  HYLE_ASSIGN_OR_RETURN(auto x_buffer, tensor(mem::system_resource(), x_desc));
+  HYLE_ASSIGN_OR_RETURN(auto norm_buffer, tensor(mem::system_resource(), norm_desc));
   HYLE_ASSIGN_OR_RETURN(auto gate_buffer, tensor(mem::system_resource(), gate_desc));
   HYLE_ASSIGN_OR_RETURN(auto down_buffer, tensor(mem::system_resource(), down_desc));
-  HYLE_ASSIGN_OR_RETURN(auto out_buffer, tensor(host.ref(), out_desc));
+  HYLE_ASSIGN_OR_RETURN(auto out_buffer, tensor(mem::system_resource(), out_desc));
   std::array<float, 128> ones;
   ones.fill(1.0f);
   HYLE_RETURN_IF_ERROR(x_buffer.buffer.view().write(std::as_bytes(std::span(ones))));
@@ -69,7 +69,7 @@ inline hyle::Status inference_case(const compute::Context &cpu,
       graph::ExternalResourceContract{down, bridge::kDeviceStorage},
       graph::ExternalResourceContract{y, bridge::kHostStorage}};
   HYLE_ASSIGN_OR_RETURN(auto compiled,
-      bridge::compile(logical, {&cpu, &cuda, &host, &device},
+      bridge::compile(logical, {&cpu, &cuda, mem::system_resource(), &host, &device},
           {.node_placements = placement, .external_resources = external,
            .workload = workload}));
   HYLE_ASSIGN_OR_RETURN(auto native, compiled.executable.create_invocation());

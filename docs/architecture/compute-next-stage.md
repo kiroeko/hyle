@@ -3,7 +3,7 @@
 > 用户授权的新范围。C1/C2/R1/C3在已接受边界内完成；WSL Vulkan十二项实GPU运行保留未资格而不阻塞。
 > CPU/GPU联合、异步、重叠和expert迁移的H1–H3仍须独立实施验收。
 > 2026-10-10 用户授权补齐 offload 基础边界：普通 CPU 存储与有界传输暂存分离、组合资源账单与预算、
-> 准备后的传输/等待诊断；纳入原 H1–H3，不新增阶段。H1 已退回 AUDITED，goal 因内存告警保持暂停。
+> 准备后的传输/等待诊断；纳入原 H1–H3，不新增阶段。H1 已退回 AUDITED；用户已恢复 goal，CUDA编译单任务。
 > 当前 owner/验收见[实施卡](../implementation/tasks/build/compute-unified-delivery.md)和 registry；
 > [原设计卡](../implementation/tasks/build/compute-entry-design.md)保存入口统计与设计事实。
 > 通用增量依赖图只登记为 DEFER 待办，本轮不实施、不增加组件或热路径成本。

@@ -1585,12 +1585,12 @@ Status materialize_constants(detail::PlanState &plan,
       continue;
     }
     HYLE_ASSIGN_OR_RETURN(const auto bytes, description.required_bytes());
-    mem::QuotaAllocator::Reservation charge;
+    detail::StorageCharge charge;
     if (plan.compilation_storage) {
-      auto reserved = plan.compilation_storage->reserve(bytes);
+      auto reserved = plan.compilation_storage->reserve_resource(
+          bytes, plan.storage_domains[storage].resource);
       if (!reserved)
-        return Status::ResourceExhausted(
-            "graph constant exceeds compilation peak storage budget");
+        return std::move(reserved).error();
       charge = std::move(*reserved);
     }
     HYLE_ASSIGN_OR_RETURN(
@@ -2895,8 +2895,8 @@ Status discover_region_candidates(
     const detail::GraphState *domain = nullptr) noexcept;
 
 struct CompilationReservation final {
-  mem::QuotaAllocator::Reservation resident;
-  mem::QuotaAllocator::Reservation transient;
+  detail::StorageCharge resident;
+  detail::StorageCharge transient;
 };
 
 Result<CompilationReservation> reserve_compilation_storage(
@@ -2913,14 +2913,13 @@ Result<CompilationReservation> reserve_compilation_storage(
         "graph provider compilation storage upper bound is unknown"));
   const auto resident = storage.resident_bytes.value_or(0);
   const auto peak = (std::max)(resident, storage.peak_bytes.value_or(0));
-  auto retained = plan.compilation_storage->reserve(resident);
+  auto retained = plan.compilation_storage->reserve_private(storage.resident_bytes);
   if (!retained)
-    return std::unexpected(Status::ResourceExhausted(
-        "graph provider exceeds compilation peak storage budget"));
-  auto transient = plan.compilation_storage->reserve(peak - resident);
+    return std::unexpected(std::move(retained).error());
+  auto transient = plan.compilation_storage->reserve_private(
+      storage.peak_bytes ? std::optional<std::size_t>{peak - resident} : std::nullopt);
   if (!transient)
-    return std::unexpected(Status::ResourceExhausted(
-        "graph provider exceeds compilation peak storage budget"));
+    return std::unexpected(std::move(transient).error());
   if (unknown)
     plan.compilation_storage->note_unknown();
   return CompilationReservation{std::move(*retained), std::move(*transient)};
@@ -3457,8 +3456,8 @@ Status prepare_placed_steps_attempt(
     return ordinal;
   };
 
-  auto append_copy = [&](std::uint32_t source,
-                         std::uint32_t destination) noexcept -> Status {
+  auto append_copy_step = [&](std::uint32_t source, std::uint32_t destination,
+                              std::uint32_t target) noexcept -> Status {
     const std::uint32_t input_begin =
         static_cast<std::uint32_t>(plan.node_inputs.size());
     const std::uint32_t output_begin =
@@ -3473,55 +3472,112 @@ Status prepare_placed_steps_attempt(
     const std::uint32_t source_storage = plan.instance_storage[source];
     const std::uint32_t destination_storage =
         plan.instance_storage[destination];
-    const mem::MemoryResourceRef source_resource =
-        plan.storage_domains[source_storage].resource;
-    const mem::MemoryResourceRef destination_resource =
-        plan.storage_domains[destination_storage].resource;
-    auto supports_route = [&](std::uint32_t target) noexcept -> Result<bool> {
-      for (const auto resource : {source_resource, destination_resource}) {
-        auto status = plan.targets[target].context.validate_resource(resource);
-        if (status.ok())
-          continue;
-        if (status.IsFailedPrecondition() || status.IsUnimplemented())
-          return false;
-        return std::unexpected(std::move(status));
-      }
-      return true;
-    };
+    if (!plan.steps.try_push_back(detail::PlanStep::copy(
+            input_begin, output_begin, *bytes, StorageDomainId{source_storage},
+            StorageDomainId{destination_storage}, ExecutionTargetId{target})))
+      return plan_allocation_failure();
+    plan.value_materialized[destination] = 1;
+    return Status::Ok();
+  };
+
+  auto supports_copy = [&](std::uint32_t target, std::uint32_t source,
+                           std::uint32_t destination) noexcept -> Result<bool> {
+    for (const auto storage : {source, destination}) {
+      auto status = plan.targets[target].context.validate_resource(
+          plan.storage_domains[storage].resource);
+      if (status.ok())
+        continue;
+      if (status.IsFailedPrecondition() || status.IsUnimplemented())
+        return false;
+      return std::unexpected(std::move(status));
+    }
+    return true;
+  };
+
+  auto copy_targets = [&](std::uint32_t source,
+                          std::uint32_t destination) noexcept -> Status {
     resource_choices.clear();
     for (unsigned preference = 0; preference != 3; ++preference) {
       for (std::size_t index = 0; index < target_count; ++index) {
         const auto storage = plan.targets[index].default_storage.ordinal();
-        const unsigned rank = storage == destination_storage ? 0
-                              : storage == source_storage    ? 1
-                                                             : 2;
+        const unsigned rank = storage == destination ? 0
+                              : storage == source    ? 1
+                                                     : 2;
         if (rank != preference)
           continue;
         HYLE_ASSIGN_OR_RETURN(
             const bool supports,
-            supports_route(static_cast<std::uint32_t>(index)));
+            supports_copy(static_cast<std::uint32_t>(index), source, destination));
         if (supports &&
             !resource_choices.try_push_back(static_cast<std::uint32_t>(index)))
           return plan_allocation_failure();
       }
     }
-    if (resource_choices.empty()) {
+    return Status::Ok();
+  };
+
+  auto select_copy_target = [&]() noexcept -> Result<std::uint32_t> {
+    return discovery.physical.choose(resource_choices,
+                                     options.max_route_search_states,
+                                     plan.search, outcome.search_limit);
+  };
+
+  auto append_copy = [&](std::uint32_t source,
+                         std::uint32_t destination) noexcept -> Status {
+    const auto source_storage = plan.instance_storage[source];
+    const auto destination_storage = plan.instance_storage[destination];
+    HYLE_RETURN_IF_ERROR(copy_targets(source_storage, destination_storage));
+    if (!resource_choices.empty()) {
+      HYLE_ASSIGN_OR_RETURN(const auto target, select_copy_target());
+      return append_copy_step(source, destination, target);
+    }
+
+    // Only explicit CPU/GPU admission can reach this branch. Ordinary Graph
+    // still requires one Device, and no direct native admission is weakened.
+    // One shared host domain supplies the two real Copy steps; its lifetime
+    // and workspace quota remain part of the existing physical plan.
+    if (target_count != 2 ||
+        plan.targets[0].context.device() == plan.targets[1].context.device()) {
       outcome.rejected_plan = true;
       return Status::Unimplemented(
           "no execution target can transfer between the selected resources");
     }
-    HYLE_ASSIGN_OR_RETURN(const auto execution_target,
-                          discovery.physical.choose(
-                              resource_choices, options.max_route_search_states,
-                              plan.search, outcome.search_limit));
-    if (!plan.steps.try_push_back(detail::PlanStep::copy(
-            input_begin, output_begin, *bytes, StorageDomainId{source_storage},
-            StorageDomainId{destination_storage},
-            ExecutionTargetId{execution_target}))) {
-      return plan_allocation_failure();
+
+    for (std::uint32_t storage = 0; storage < storage_count; ++storage) {
+      if (storage == source_storage || storage == destination_storage ||
+          !plan.storage_domains[storage].resource.properties().has(
+              mem::MemoryProperty::kHostAccessible))
+        continue;
+      bool from = false, to = false;
+      for (std::uint32_t target = 0; target < target_count; ++target) {
+        HYLE_ASSIGN_OR_RETURN(const bool accepts_source,
+                              supports_copy(target, source_storage, storage));
+        HYLE_ASSIGN_OR_RETURN(const bool accepts_destination,
+                              supports_copy(target, storage, destination_storage));
+        from |= accepts_source;
+        to |= accepts_destination;
+      }
+      if (from && to && !resource_choices.try_push_back(storage))
+        return plan_allocation_failure();
     }
-    plan.value_materialized[destination] = 1;
-    return Status::Ok();
+    if (resource_choices.empty()) {
+      outcome.rejected_plan = true;
+      return Status::Unimplemented("CPU+GPU boundary has no shared staging domain");
+    }
+    HYLE_ASSIGN_OR_RETURN(const auto storage, select_copy_target());
+    const auto value = plan.instance_values[source];
+    auto staged = instances[static_cast<std::size_t>(value) * storage_count + storage];
+    if (staged == kNone) {
+      HYLE_ASSIGN_OR_RETURN(staged, add_instance(value, storage, 0));
+    }
+    if (!plan.value_materialized[staged]) {
+      HYLE_RETURN_IF_ERROR(copy_targets(source_storage, storage));
+      HYLE_ASSIGN_OR_RETURN(const auto from, select_copy_target());
+      HYLE_RETURN_IF_ERROR(append_copy_step(source, staged, from));
+    }
+    HYLE_RETURN_IF_ERROR(copy_targets(storage, destination_storage));
+    HYLE_ASSIGN_OR_RETURN(const auto to, select_copy_target());
+    return append_copy_step(staged, destination, to);
   };
 
   auto ensure_local_instance =
@@ -6879,7 +6935,7 @@ Result<Invocation> Executable::create_invocation(
         Status::InvalidArgument("exact executable already has a fixed shape"));
   }
 
-  mem::QuotaAllocator::Reservation reservation;
+  detail::InvocationState::Reservation reservation(allocator);
   if (budget != nullptr) {
     HYLE_ASSIGN_OR_RETURN(const auto requirement,
                           invocation_storage_requirement(*state_));
@@ -6887,7 +6943,33 @@ Result<Invocation> Executable::create_invocation(
     if (!reserved)
       return std::unexpected(Status::ResourceExhausted(
           "graph shared invocation storage budget is exhausted"));
-    reservation = std::move(*reserved);
+    reservation.aggregate = std::move(*reserved);
+    const auto &resources = budget->resource_budget();
+    if (resources) {
+      if (!reservation.resources.try_reserve(
+              state_->workspace_resources.size() + state_->steps.size()))
+        return std::unexpected(invocation_allocation_failure());
+      for (std::size_t slot = 0; slot < state_->workspace_resources.size(); ++slot) {
+        HYLE_ASSIGN_OR_RETURN(auto report, state_->workspace_plan.resource_plan(slot));
+        HYLE_ASSIGN_OR_RETURN(auto charge,
+            resources.reserve(state_->workspace_resources[slot], report.peak_bytes,
+                              compute::ResourceBudgetCategory::kWorkspace));
+        if (!reservation.resources.try_push_back(std::move(charge)))
+          return std::unexpected(invocation_allocation_failure());
+      }
+      for (const auto &step : state_->steps) {
+        if (!step.emits_command() ||
+            (step.kind != detail::PlanStepKind::kOperation &&
+             step.kind != detail::PlanStepKind::kRegion))
+          continue;
+        const auto private_bytes = step.kind == detail::PlanStepKind::kOperation
+            ? step.operation.invocation_private_bytes()
+            : step.region.properties().invocation_private_bytes;
+        HYLE_ASSIGN_OR_RETURN(auto charge, resources.reserve_unattributed(private_bytes));
+        if (!reservation.resources.try_push_back(std::move(charge)))
+          return std::unexpected(invocation_allocation_failure());
+      }
+    }
     if (requirement.unknown)
       budget->note_unknown();
   }
@@ -6909,7 +6991,7 @@ Result<Invocation> Executable::create_invocation(
       detail::InvocationState(state_, std::move(*workspace), allocator);
   if (budget != nullptr)
     ::new (invocation->storage_reservation())
-        mem::QuotaAllocator::Reservation(std::move(reservation));
+        detail::InvocationState::Reservation(std::move(reservation));
   invocation->concrete_descriptions = std::move(concrete);
   invocation->specialization = std::move(signature);
   const std::size_t value_count = state_->instance_descriptions.size();
@@ -8393,7 +8475,10 @@ Result<CompiledGraph> compile_plan(
     return std::unexpected(Status::InvalidArgument("graph is invalid"));
   }
 
-  const auto backing = context.metadata_allocator();
+  auto backing = context.metadata_allocator();
+  if (options.resource_budget) {
+    HYLE_ASSIGN_OR_RETURN(backing, options.resource_budget.metadata_allocator());
+  }
   if (!backing.valid()) {
     return std::unexpected(Status::FailedPrecondition(
         "compute context has no metadata allocator"));
@@ -8405,7 +8490,7 @@ Result<CompiledGraph> compile_plan(
             backing,
             {.max_bytes = options.compilation_storage->max_peak_bytes,
              .unknown = options.compilation_storage->unknown},
-            {}, true));
+            {}, true, options.resource_budget));
     compilation_storage = util::adopt_ref(created);
   }
   const auto allocator =
@@ -8454,7 +8539,8 @@ Result<CompiledGraph> compile_plan(
   plan->compilation_storage = std::move(compilation_storage);
   if (options.invocation_storage && !invocation_storage) {
     auto created = detail::StorageBudgetState::create(
-        backing, *options.invocation_storage, allocator);
+        backing, *options.invocation_storage, allocator, false,
+        options.resource_budget);
     if (!created) {
       detail::release(plan);
       return std::unexpected(std::move(created).error());
@@ -8730,6 +8816,14 @@ Result<CompiledGraph> compile_admitted(
     compute::BackendId cpu_backend = {},
     compute::BackendId gpu_backend = {}) noexcept {
   HYLE_TRACE_ZONE_NAMED("hyle.graph.compile");
+  if (options.resource_budget) {
+    const auto unknown = options.resource_budget.allows_unattributed()
+        ? UnknownStoragePolicy::kAllow : UnknownStoragePolicy::kReject;
+    if (!options.compilation_storage)
+      options.compilation_storage = CompilationStorageLimits{SIZE_MAX, SIZE_MAX, unknown};
+    if (!options.invocation_storage)
+      options.invocation_storage = InvocationStorageLimits{SIZE_MAX, unknown};
+  }
   HYLE_ASSIGN_OR_RETURN(auto result,
                         compile_family(graph, environment, options,
                                        cpu_backend, gpu_backend));

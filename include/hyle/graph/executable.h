@@ -9,6 +9,7 @@
 #include "hyle/compute/device.h"
 #include "hyle/compute/prepared_operation.h"
 #include "hyle/compute/provider.h"
+#include "hyle/compute/resource_budget.h"
 #include "hyle/compute/tensor.h"
 #include "hyle/error/result.h"
 #include "hyle/graph/compile_report.h"
@@ -772,6 +773,9 @@ struct CompileOptions final {
   // Metadata and workspace stay charged until their actual last owner frees
   // them, including abandoned asynchronous Completion or retained signatures.
   std::optional<InvocationStorageLimits> invocation_storage{};
+  // Optional shared requested-byte scope across compiled storage, invocations
+  // and explicit native migration pools. Opaque private bounds remain separate.
+  compute::ResourceBudget resource_budget{};
   // Every used effect resource needs one binding. Backing is fixed/borrowed
   // for this Executable and all its Invocations/Completions. It must describe
   // what the operation implementation actually accesses; this does not pass

@@ -128,7 +128,7 @@ Outcome ConstantArtifactCache::acquire(
   if (!compatible.ok())
     return Outcome::error(std::move(compatible));
 
-  mem::QuotaAllocator::Reservation resident, transient;
+  StorageCharge resident, transient;
   const auto bounds = declaration.private_storage;
   if (plan.compilation_storage) {
     const auto limits = *options.compilation_storage;
@@ -139,11 +139,12 @@ Outcome ConstantArtifactCache::acquire(
       return budget_failure();
     const auto retained = bounds.resident_bytes.value_or(0);
     const auto peak = (std::max)(retained, bounds.peak_bytes.value_or(0));
-    auto charge = plan.compilation_storage->reserve(retained);
+    auto charge = plan.compilation_storage->reserve_private(bounds.resident_bytes);
     if (!charge)
       return budget_failure();
     resident = std::move(*charge);
-    charge = plan.compilation_storage->reserve(peak - retained);
+    charge = plan.compilation_storage->reserve_private(
+        bounds.peak_bytes ? std::optional<std::size_t>{peak - retained} : std::nullopt);
     if (!charge)
       return budget_failure();
     transient = std::move(*charge);

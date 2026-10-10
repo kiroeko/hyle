@@ -638,7 +638,7 @@ struct SharedConstants final : util::RefCounted<SharedConstants> {
     owner.deallocate(this, sizeof(SharedConstants), alignof(SharedConstants));
   }
   mem::AllocatorRef allocator;
-  container::SmallVector<mem::QuotaAllocator::Reservation, 0, mem::AllocatorRef>
+  container::SmallVector<StorageCharge, 0, mem::AllocatorRef>
       charges;
   container::SmallVector<mem::Buffer, 0, mem::AllocatorRef> buffers;
 };
@@ -705,7 +705,7 @@ struct PlanState final : util::RefCounted<PlanState> {
   ExecutionLaneRecords lanes;
   // Declared before the actual owners: return charges only after their storage
   // is destroyed. Empty/no allocation on ordinary unbudgeted compilation.
-  container::SmallVector<mem::QuotaAllocator::Reservation, 0, mem::AllocatorRef>
+  container::SmallVector<StorageCharge, 0, mem::AllocatorRef>
       constant_charges, artifact_charges;
   // Declared before steps: artifacts die before the constants they may borrow,
   // and buffers die before the retained Context/resource backend leases.
@@ -952,7 +952,12 @@ struct InvocationState final : util::RefCounted<InvocationState> {
     release(retained_plan);
   }
 
-  using Reservation = mem::QuotaAllocator::Reservation;
+  struct Reservation final {
+    explicit Reservation(mem::AllocatorRef allocator) noexcept : resources(allocator) {}
+    mem::QuotaAllocator::Reservation aggregate;
+    container::SmallVector<compute::ResourceBudget::Reservation, 0, mem::AllocatorRef>
+        resources;
+  };
   static constexpr std::size_t allocation_bytes(bool budgeted) noexcept {
     return sizeof(InvocationState) + (budgeted ? sizeof(Reservation) : 0);
   }

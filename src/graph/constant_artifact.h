@@ -40,7 +40,7 @@ struct ConstantArtifactState final : util::RefCounted<ConstantArtifactState> {
   mem::AllocatorRef allocator;
   compute::detail::ProviderExtensionRef extension;
   util::Ref<StorageBudgetState> budget;
-  mem::QuotaAllocator::Reservation charge;
+  StorageCharge charge;
   ConstantArtifactKey key;
   compute::ProviderCompilationStorage private_storage;
   ConstantArtifactPayload payload;

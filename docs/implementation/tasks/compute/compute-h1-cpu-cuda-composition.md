@@ -18,7 +18,8 @@
 新增范围 baseline：`eb8cb132d669cc364f560d8c7cb0d4585fac1f30`，Windows canonical，核对时工作树干净。
 本卡 12 个 owner 同批由 CANDIDATE 退回 AUDITED；前一产品候选
 `3f938bd7bab0ebb2b4c598885d097800d5756a01`及已通过证据保留为原合同事实，不是当前冻结候选。
-goal 因用户内存告警保持暂停；本轮只更新合同/registry，不启动产品修复、WSL 或 Mac 验证。
+范围更新时goal因用户内存告警暂停；用户随后明确恢复，并在界面恢复active。CUDA重型build1/test1，
+启动前确认内存余量，不启动多个producer或远程重型run。
 
 ### 有界审计与承载裁决
 
@@ -74,6 +75,32 @@ C1/C2/R1/C3 不因本补充重开。H2/H3 尚未启动，在各自 AUDITED 前�
 不含测试158,992行；本轮产品实现未变，不把范围/状态更新算成新增能力或进度。重型验证未启动。
 
 ## 正常任务与两条纵切
+
+### H1-07至09批量产品接线
+
+用户恢复后的首批源码已接齐，尚未签新增native验收。三域Environment及现Graph物理Copy规划
+接普通host→pinned→device及反向路径，保持ordinary同Device/native guard；512字节暂存的普通
+consumer另有16KiB CPU-resident真实MatMul权重，不为CPU数学全量pin。
+
+H1-08的字段归属已按实接线固定：Compute拥有可选 `ResourceBudget`，仅组合现Mem
+QuotaAllocator的资源登记、requested-byte admission和在途保活；Graph连接编译metadata/
+canonical constants/packing及所有Invocation workspace，CUDA Compute连接两槽真实backing。
+rawmetadata与Reservation持有scope，最后实际释放才归还；没有新的分配算法、GPU全局管理器或
+执行器。报告按metadata/constant/workspace/migration/external区分，unknown/unattributed私有
+成本独立；strict拒绝，显式partial允许而不承诺总显存。native resource/Context/Queue/Sched/
+driver控制及rounding不冒充已管理请求字节。普通未启预算Invocation没有新增常驻成员；预算
+retention放原有可选状态/尾部，普通packing charge仅空指针，迁移机制记录其新增metadata成本。
+
+组合 `resource_report` 冷汇总scope、边界range union及额外登记资源；`replay_report`/
+`dependency_route`自然暴露成功准备后的Graph/weight路径和host-wait约束，bind/reset使其失效。
+控制与参数metadata保留在冷准备，submit不搜索Provider或解释资源预算。借用native owner寿命
+与原结果/取消/排空合同保持，三交付全部使用这些同一公开类型。
+
+针对性contracts已补双槽超额回滚、strict/partial、alias去重、host-wait拒绝、准备失效与旧lease
+仍占配额。原busyGPU fixture改为借用已ready权重，避免先typed weight order就拒绝GPU，确保
+它检验真正CPU前缀之后的后继拒绝；原历史记录只保留其原实际结果，不代签新fixture。
+当前8个源码/consumer的MSVC语法检查通过，后续变化的4个文件也再次通过；这是syntax证据，
+不签数学、预算/错误/生命周期、三交付或WSL。新候选冻结后集中实际验收，不启动P1或C3全集。
 
 主纵切：静态typed推理子图含明确CPU-required片段与CUDA数学片段；引擎声明权重存放/允许执行
 位置和本次expert IDs/范围。编译绑定真实dtype/physical encoding/layout、model/artifact、hardware/

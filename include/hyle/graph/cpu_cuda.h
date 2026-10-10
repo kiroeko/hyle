@@ -2,6 +2,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <array>
 
 #include "hyle/compute/backends/cuda.h"
 #include "hyle/compute/result.h"
@@ -24,17 +25,44 @@ inline constexpr ExecutionTargetId kCudaTarget{0};
 inline constexpr ExecutionTargetId kCpuTarget{1};
 inline constexpr StorageDomainId kDeviceStorage{0};
 inline constexpr StorageDomainId kHostStorage{1};
+inline constexpr StorageDomainId kStagingStorage{2};
 
 // Explicit execution endpoints. Resources and their CUDA Context are borrowed
-// through every compiled artifact, invocation and completion. Host storage is
-// exact-context CUDA pinned memory; pageable inputs need explicit staging.
+// through every compiled artifact, invocation and completion. CPU math uses
+// ordinary host-accessible storage. Only crossing values use the exact-context
+// CUDA pinned staging domain; its workspace limit is per Invocation.
 struct Environment final {
   const compute::Context *cpu = nullptr;
   const compute::Context *cuda = nullptr;
-  const compute::cuda::MemoryResource *host = nullptr;
+  mem::MemoryResourceRef host = mem::system_resource();
+  const compute::cuda::MemoryResource *staging = nullptr;
   const compute::cuda::MemoryResource *device = nullptr;
   std::size_t host_workspace_budget_bytes = SIZE_MAX;
   std::size_t device_workspace_budget_bytes = SIZE_MAX;
+  std::size_t staging_workspace_budget_bytes = SIZE_MAX;
+};
+
+// Value snapshot of the exact successful cold preparation. Native ordering
+// permits overlap with independent work; neither these counts nor a pending
+// handle certify that particular hardware executed copy and math concurrently.
+struct ReplayReport final {
+  graph::ReplayReport graph{};
+  std::size_t staging_copy_count = 0;
+  std::size_t staging_copy_bytes = 0;
+  std::size_t weight_device_wait_count = 0;
+  std::size_t weight_host_wait_count = 0;
+};
+
+// Cold shared-scope snapshot, indexed by StorageDomainId, including every
+// plan/slot/pool using that budget and old leases. Boundary ranges may already
+// be charged: never blindly add them to managed bytes. Context/Queue/Scheduler
+// and driver storage are excluded; opaque bounds are not domain totals.
+struct ResourceReport final {
+  std::array<compute::ResourceBudgetUsage, 3> storage{};
+  std::array<std::size_t, 3> boundary_view_bytes{};
+  compute::UnattributedStorageUsage unattributed{};
+  std::size_t other_resource_count = 0, other_live_bytes = 0;
+  bool has_unknown_graph_storage_history = false;
 };
 
 // CUDA is the ordinary target; required CPU nodes use kCpuTarget in existing
@@ -107,6 +135,10 @@ public:
   HYLE_GRAPH_ROUTE_CPU_CUDA_API Status reset() noexcept;
   HYLE_GRAPH_ROUTE_CPU_CUDA_API Status
   prepare_replay(ReplayOptions options = {}) noexcept;
+  HYLE_GRAPH_ROUTE_CPU_CUDA_API Result<ReplayReport> replay_report() const noexcept;
+  HYLE_GRAPH_ROUTE_CPU_CUDA_API Result<ResourceReport> resource_report() const noexcept;
+  HYLE_GRAPH_ROUTE_CPU_CUDA_API Result<ReplayDependencyRoute>
+  dependency_route(std::size_t segment, std::size_t dependency) const noexcept;
   HYLE_GRAPH_ROUTE_CPU_CUDA_API Result<compute::OwnedResult<Results>>
   submit() noexcept;
   HYLE_GRAPH_ROUTE_CPU_CUDA_API Result<compute::ResultLease<Results>>

@@ -272,13 +272,13 @@
       "module": "compute",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/compute-h1-cpu-cuda-composition.md",
-      "summary": "H1 AUDITED：用户授权补齐普通CPU存储/有界暂存分离、组合资源账单/预算及准备后的传输/等待诊断（H1-07至09）；旧候选与已验Windows证据保留，新增能力未验；goal因内存告警暂停，不启动重型run。"
+      "summary": "H1 AUDITED：用户已恢复goal；H1-07至09普通CPU存储/有界暂存、共享资源预算和准备诊断首批接线已齐，新增native能力待批量验收；旧候选证据保留，CUDA build1/test1，重型验证串行。"
     },
     {
       "module": "graph",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/compute-h1-cpu-cuda-composition.md",
-      "summary": "H1 AUDITED：用户授权补齐普通CPU存储/有界暂存分离、组合资源账单/预算及准备后的传输/等待诊断（H1-07至09）；旧候选与已验Windows证据保留，新增能力未验；goal因内存告警暂停，不启动重型run。"
+      "summary": "H1 AUDITED：用户已恢复goal；H1-07至09普通CPU存储/有界暂存、共享资源预算和准备诊断首批接线已齐，新增native能力待批量验收；旧候选证据保留，CUDA build1/test1，重型验证串行。"
     },
     {
       "module": "container_concurrent",
@@ -398,13 +398,13 @@
       "module": "compute_backend_cpu",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/compute-h1-cpu-cuda-composition.md",
-      "summary": "H1 AUDITED：用户授权补齐普通CPU存储/有界暂存分离、组合资源账单/预算及准备后的传输/等待诊断（H1-07至09）；旧候选与已验Windows证据保留，新增能力未验；goal因内存告警暂停，不启动重型run。"
+      "summary": "H1 AUDITED：用户已恢复goal；H1-07至09普通CPU存储/有界暂存、共享资源预算和准备诊断首批接线已齐，新增native能力待批量验收；旧候选证据保留，CUDA build1/test1，重型验证串行。"
     },
     {
       "module": "compute_backend_cuda",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/compute-h1-cpu-cuda-composition.md",
-      "summary": "H1 AUDITED：用户授权补齐普通CPU存储/有界暂存分离、组合资源账单/预算及准备后的传输/等待诊断（H1-07至09）；旧候选与已验Windows证据保留，新增能力未验；goal因内存告警暂停，不启动重型run。"
+      "summary": "H1 AUDITED：用户已恢复goal；H1-07至09普通CPU存储/有界暂存、共享资源预算和准备诊断首批接线已齐，新增native能力待批量验收；旧候选证据保留，CUDA build1/test1，重型验证串行。"
     },
     {
       "module": "compute_provider_native",
@@ -421,13 +421,13 @@
       "module": "compute_route_cpu",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/compute-h1-cpu-cuda-composition.md",
-      "summary": "H1 AUDITED：用户授权补齐普通CPU存储/有界暂存分离、组合资源账单/预算及准备后的传输/等待诊断（H1-07至09）；旧候选与已验Windows证据保留，新增能力未验；goal因内存告警暂停，不启动重型run。"
+      "summary": "H1 AUDITED：用户已恢复goal；H1-07至09普通CPU存储/有界暂存、共享资源预算和准备诊断首批接线已齐，新增native能力待批量验收；旧候选证据保留，CUDA build1/test1，重型验证串行。"
     },
     {
       "module": "graph_route_cpu",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/compute-h1-cpu-cuda-composition.md",
-      "summary": "H1 AUDITED：用户授权补齐普通CPU存储/有界暂存分离、组合资源账单/预算及准备后的传输/等待诊断（H1-07至09）；旧候选与已验Windows证据保留，新增能力未验；goal因内存告警暂停，不启动重型run。"
+      "summary": "H1 AUDITED：用户已恢复goal；H1-07至09普通CPU存储/有界暂存、共享资源预算和准备诊断首批接线已齐，新增native能力待批量验收；旧候选证据保留，CUDA build1/test1，重型验证串行。"
     },
     {
       "module": "compute_provider_cublas",
@@ -467,13 +467,13 @@
       "module": "compute_route_cuda",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/compute-h1-cpu-cuda-composition.md",
-      "summary": "H1 AUDITED：用户授权补齐普通CPU存储/有界暂存分离、组合资源账单/预算及准备后的传输/等待诊断（H1-07至09）；旧候选与已验Windows证据保留，新增能力未验；goal因内存告警暂停，不启动重型run。"
+      "summary": "H1 AUDITED：用户已恢复goal；H1-07至09普通CPU存储/有界暂存、共享资源预算和准备诊断首批接线已齐，新增native能力待批量验收；旧候选证据保留，CUDA build1/test1，重型验证串行。"
     },
     {
       "module": "graph_route_cuda",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/compute-h1-cpu-cuda-composition.md",
-      "summary": "H1 AUDITED：用户授权补齐普通CPU存储/有界暂存分离、组合资源账单/预算及准备后的传输/等待诊断（H1-07至09）；旧候选与已验Windows证据保留，新增能力未验；goal因内存告警暂停，不启动重型run。"
+      "summary": "H1 AUDITED：用户已恢复goal；H1-07至09普通CPU存储/有界暂存、共享资源预算和准备诊断首批接线已齐，新增native能力待批量验收；旧候选证据保留，CUDA build1/test1，重型验证串行。"
     },
     {
       "module": "compute_route_apple",
@@ -534,19 +534,19 @@
       "module": "compute_ggml_runtime",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/compute-h1-cpu-cuda-composition.md",
-      "summary": "H1 AUDITED：用户授权补齐普通CPU存储/有界暂存分离、组合资源账单/预算及准备后的传输/等待诊断（H1-07至09）；旧候选与已验Windows证据保留，新增能力未验；goal因内存告警暂停，不启动重型run。"
+      "summary": "H1 AUDITED：用户已恢复goal；H1-07至09普通CPU存储/有界暂存、共享资源预算和准备诊断首批接线已齐，新增native能力待批量验收；旧候选证据保留，CUDA build1/test1，重型验证串行。"
     },
     {
       "module": "compute_provider_ggml_cuda",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/compute-h1-cpu-cuda-composition.md",
-      "summary": "H1 AUDITED：用户授权补齐普通CPU存储/有界暂存分离、组合资源账单/预算及准备后的传输/等待诊断（H1-07至09）；旧候选与已验Windows证据保留，新增能力未验；goal因内存告警暂停，不启动重型run。"
+      "summary": "H1 AUDITED：用户已恢复goal；H1-07至09普通CPU存储/有界暂存、共享资源预算和准备诊断首批接线已齐，新增native能力待批量验收；旧候选证据保留，CUDA build1/test1，重型验证串行。"
     },
     {
       "module": "graph_provider_ggml_cuda",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/compute-h1-cpu-cuda-composition.md",
-      "summary": "H1 AUDITED：用户授权补齐普通CPU存储/有界暂存分离、组合资源账单/预算及准备后的传输/等待诊断（H1-07至09）；旧候选与已验Windows证据保留，新增能力未验；goal因内存告警暂停，不启动重型run。"
+      "summary": "H1 AUDITED：用户已恢复goal；H1-07至09普通CPU存储/有界暂存、共享资源预算和准备诊断首批接线已齐，新增native能力待批量验收；旧候选证据保留，CUDA build1/test1，重型验证串行。"
     },
     {
       "module": "compute_provider_flashinfer",
@@ -596,7 +596,7 @@
     {
       "module": "graph_route_cpu_cuda",
       "state": "AUDITED",
-      "summary": "H1 AUDITED：用户授权补齐普通CPU存储/有界暂存分离、组合资源账单/预算及准备后的传输/等待诊断（H1-07至09）；旧候选与已验Windows证据保留，新增能力未验；goal因内存告警暂停，不启动重型run。",
+      "summary": "H1 AUDITED：用户已恢复goal；H1-07至09普通CPU存储/有界暂存、共享资源预算和准备诊断首批接线已齐，新增native能力待批量验收；旧候选证据保留，CUDA build1/test1，重型验证串行。",
       "record": "docs/implementation/tasks/compute/compute-h1-cpu-cuda-composition.md"
     }
   ]
