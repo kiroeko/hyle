@@ -101,3 +101,21 @@ handle是本路线allocation token，不把VkBuffer当CPU指针。native Tensor 
 
 这是有限FIX H3-02/05第一部分，尚未原生编译/数学/三交付；不据源码或资源枚举计本包完成。
 迁移固定池、native Program资源接线与组合继续批量实现，API稳定后按固定半径集中验收。
+
+### 组合与固定迁移池源码接线
+
+固定 TransferSlot 复用原 command/fence/retirement，WeightSlots 两槽按 catalog ID 与完整物理描述
+选择 payload，原生 Tensor/native owner 保留会拒绝覆盖。普通 CPU 存储留在主存；仅跨端值使用
+原 VkBuffer device/staging。CPU+Vulkan 粗片段编译保留原 CPU Graph 与完整 Vulkan 程序，准备时
+固定输入目录、原生输出和内部引用基线；执行不重新选 Provider 或重新规划。原 Vulkan Completion
+已经在原生工作和 Provider 尾项实际退休前维持 pending，组合进展沿用该保证与原 Sched。
+
+共享预算接 payload、controlled metadata 和所有槽，私有 managed/runtime 继续明确 unknown；
+准备报告区分主存、device、staging、native completion 等待和权重准备等待。新增普通消费者为
+Direct migrated-weight MatMul、CPU norm/projection→完整 Q8_0 FFN→CPU 与正交 abs→GPU矩阵/归一化
+→CPU；单独 contracts 覆盖坏 ID、容量、编码字节、OOM 回滚、旧 owner/结果、更新、取消和晚到失败。
+
+Windows MSVC 已完成新增 TU/公开头语法检查，修复一个环境字段名并补正确 private include 后，
+受影响 TU 与新增两消费者语法检查通过。这仅为接线诊断，尚未链接、运行 GPU 数学或三交付，
+不签本包完整 PASS。下一步集中 source 数学/合同，然后固定候选的 installed static/shared 与原生
+重叠取证。当前统一统计 Compute+Graph 68,078 行/301 个实现文件，测试与样例不计入。

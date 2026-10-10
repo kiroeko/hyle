@@ -2,6 +2,7 @@
 #include "vulkan_mlx.h"
 #include "vulkan_iq1.h"
 #include "vulkan_official.h"
+#include "vulkan_memory_internal.h"
 
 #include <algorithm>
 #include <cstring>
@@ -452,7 +453,9 @@ create_iree_stage(const std::shared_ptr<Run> &run, const Dispatch &dispatch,
         spec.kind == iv::ProgramKind::ScanExclusive || stage->finite_input_flag) {
       HYLE_ASSIGN_OR_RETURN(stage->flag_copy, create_run(run->runtime));
       HYLE_ASSIGN_OR_RETURN(stage->flag,
-                            allocate_buffer(run->runtime->device, 4, true));
+                            allocate_buffer(run->runtime->device, 4, true, false,
+                                {.budget = run->allocation.resource_budget,
+                                 .resource = run->allocation.staging != nullptr ? run->allocation.staging->ref() : mem::MemoryResourceRef{}}));
     }
     if (!run->async)
       run->async = std::make_unique<AsyncRun>();

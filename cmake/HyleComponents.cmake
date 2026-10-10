@@ -462,7 +462,7 @@ _hyle_declare_component(compute_route_vulkan
   TRACE
   PRIVATE_DEPS time compute_provider_ggml_vulkan compute_provider_iree_vulkan
   PUBLIC_DEPS core compute compute_ops error mem
-  SPLIT_PUBLIC_HEADERS hyle/compute/vulkan.h hyle/compute/vulkan_memory.h hyle/compute/detail/vulkan_plan.h)
+  SPLIT_PUBLIC_HEADERS hyle/compute/vulkan.h hyle/compute/vulkan_memory.h hyle/compute/vulkan_weights.h hyle/compute/detail/vulkan_plan.h)
 _hyle_declare_component(graph_route_vulkan
   TRACE
   PUBLIC_DEPS core compute_ops compute_route_vulkan error graph
@@ -521,7 +521,11 @@ _hyle_declare_component(graph_route_cpu_apple
   SPLIT_PUBLIC_HEADERS hyle/graph/cpu_apple.h)
 
 # Identity reservation for admitted native CPU+Vulkan coarse composition.
-_hyle_declare_component(graph_route_cpu_vulkan QUEUED)
+_hyle_declare_component(graph_route_cpu_vulkan
+  PRIVATE_DEPS util_core error mem compute compute_backend_cpu graph_route_cpu
+  PUBLIC_DEPS core graph graph_route_vulkan compute_route_vulkan sched
+  PUBLIC_TYPE_DEPS sched
+  SPLIT_PUBLIC_HEADERS hyle/graph/cpu_vulkan.h)
 
 # Product facades are deliberately outside the factor DAG. They have no source,
 # module status, or decision authority and must never be used by an internal
@@ -713,6 +717,10 @@ if(NOT CMAKE_SCRIPT_MODE_FILE AND _hyle_selection_mode STREQUAL "product")
   if("cpu" IN_LIST HYLE_COMPUTE_ROUTE_LIST AND
      "apple" IN_LIST HYLE_COMPUTE_ROUTE_LIST)
     list(APPEND _HYLE_PRODUCT_FACTORS_GRAPH graph_route_cpu_apple)
+  endif()
+  if("cpu" IN_LIST HYLE_COMPUTE_ROUTE_LIST AND
+     "vulkan" IN_LIST HYLE_COMPUTE_ROUTE_LIST)
+    list(APPEND _HYLE_PRODUCT_FACTORS_GRAPH graph_route_cpu_vulkan)
   endif()
   foreach(_product IN ITEMS COMPUTE GRAPH)
     foreach(_route IN ITEMS cpu cuda apple vulkan)

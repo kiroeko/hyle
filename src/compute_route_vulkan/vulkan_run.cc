@@ -30,9 +30,10 @@ Run::~Run() {
 }
 
 Result<std::shared_ptr<Run>>
-create_run(const std::shared_ptr<Runtime> &runtime) noexcept {
+create_run(const std::shared_ptr<Runtime> &runtime, mem::AllocatorRef allocator) noexcept {
   try {
-    auto run = std::make_shared<Run>();
+    if (!allocator.valid()) return std::unexpected(Status::InvalidArgument("invalid Vulkan run metadata allocator"));
+    auto run = std::allocate_shared<Run>(mem::StdAllocator<Run>(allocator), allocator);
     run->runtime = runtime;
     const auto &device = *runtime->device;
     VkCommandPoolCreateInfo pool{};

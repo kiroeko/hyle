@@ -4,6 +4,8 @@
 #include "vulkan_iq1.h"
 #include "vulkan_policy.h"
 #include "vulkan_tensor.h"
+#include "vulkan_memory_internal.h"
+#include "vulkan_composition_access.h"
 
 #include "hyle/compute/low_precision.h"
 #include "hyle/compute/model_ops.h"
@@ -97,7 +99,9 @@ Status allocate_values(const ProgramState &program, Run &run) noexcept {
     std::vector<std::shared_ptr<Buffer>> blocks;
     blocks.reserve(program.block_bytes.size());
     for (const auto bytes : program.block_bytes) {
-      auto buffer = allocate_buffer(program.runtime->device, bytes, false);
+      auto buffer = allocate_buffer(program.runtime->device, bytes, false, false,
+          {.budget = run.allocation.resource_budget,
+           .resource = run.allocation.device != nullptr ? run.allocation.device->ref() : mem::MemoryResourceRef{}});
       if (!buffer)
         return std::move(buffer).error();
       blocks.push_back(std::move(*buffer));
@@ -107,7 +111,9 @@ Status allocate_values(const ProgramState &program, Run &run) noexcept {
       if (program.status_value == value) {
         HYLE_ASSIGN_OR_RETURN(
             run.retained_buffers[value],
-            allocate_buffer(program.runtime->device, 4, true, true));
+            allocate_buffer(program.runtime->device, 4, true, true,
+                {.budget = run.allocation.resource_budget,
+                 .resource = run.allocation.staging != nullptr ? run.allocation.staging->ref() : mem::MemoryResourceRef{}}));
       } else if (program.values[value].constant)
         run.retained_buffers[value] =
             Access::buffer(program.values[value].constant);
@@ -452,9 +458,23 @@ std::span<const TensorDesc> Program::output_descriptions() const noexcept {
 }
 
 Result<Invocation>
-Program::create_invocation(mem::AllocatorRef allocator) const noexcept {
+Program::create_invocation(mem::AllocatorRef allocator, InvocationAllocation allocation) const noexcept {
   if (!state_)
     return std::unexpected(Status::InvalidArgument("invalid Vulkan program"));
+  compute::ResourceBudget::Reservation private_storage;
+  if (allocation.resource_budget) {
+    if (allocation.device == nullptr || allocation.staging == nullptr ||
+        !allocation.device->valid() || !allocation.staging->valid() ||
+        detail::MemoryAccess::runtime(*allocation.device) != state_->runtime ||
+        detail::MemoryAccess::runtime(*allocation.staging) != state_->runtime ||
+        allocation.device->ref().properties().has(mem::MemoryProperty::kHostAccessible) ||
+        !allocation.staging->ref().properties().has(mem::MemoryProperty::kHostAccessible))
+      return std::unexpected(Status::InvalidArgument("Vulkan invocation budget needs same-Device device/staging resources"));
+    HYLE_ASSIGN_OR_RETURN(allocator, allocation.resource_budget.metadata_allocator());
+    // Native region/control vectors retain their original owner allocations.
+    // Their unknown private cost is explicit, never silently counted as zero.
+    HYLE_ASSIGN_OR_RETURN(private_storage, allocation.resource_budget.reserve_unattributed(std::nullopt));
+  }
   {
     std::lock_guard lock(state_->runtime->mutex);
     if (state_->runtime->closed)
@@ -467,13 +487,15 @@ Program::create_invocation(mem::AllocatorRef allocator) const noexcept {
   if (!slot)
     return std::unexpected(std::move(slot).error());
   try {
-    auto invocation = std::make_shared<detail::InvocationState>();
+    auto invocation = std::allocate_shared<detail::InvocationState>(mem::StdAllocator<detail::InvocationState>(allocator));
     invocation->program = state_;
     invocation->slot = std::move(*slot);
-    auto run = detail::create_run(state_->runtime);
+    auto run = detail::create_run(state_->runtime, allocator);
     if (!run)
       return std::unexpected(std::move(run).error());
     invocation->run = std::move(*run);
+    invocation->run->allocation = allocation;
+    invocation->run->private_storage = std::move(private_storage);
     invocation->run->recording_owner = state_;
     auto status = detail::allocate_values(*state_, *invocation->run);
     if (!status.ok())
@@ -525,6 +547,30 @@ Program::create_invocation(mem::AllocatorRef allocator) const noexcept {
   }
 }
 
+Result<Tensor> detail::CompositionAccess::output(Invocation &invocation, std::size_t index) noexcept {
+  if (!invocation.state_ || invocation.state_->composition_sealed ||
+      index >= invocation.state_->results->tensors.size())
+    return std::unexpected(Status::InvalidArgument("invalid cold Vulkan composition output"));
+  std::lock_guard lock(invocation.state_->program->runtime->mutex);
+  if (invocation.state_->run->pending || invocation.state_->run->completion_owner)
+    return std::unexpected(Status::FailedPrecondition("Vulkan composition must bind before execution"));
+  invocation.state_->composition_preparing = true;
+  return invocation.state_->results->tensors[index];
+}
+Status detail::CompositionAccess::seal(Invocation &invocation) noexcept {
+  if (!invocation.state_ || invocation.state_->composition_sealed)
+    return Status::FailedPrecondition("Vulkan composition output references already sealed");
+  auto &state = *invocation.state_;
+  std::lock_guard lock(state.program->runtime->mutex);
+  if (state.run->pending || state.run->completion_owner || state.run->observers)
+    return Status::FailedPrecondition("Vulkan composition references cannot change after admission");
+  for (std::size_t i = 0; i < state.program->outputs.size(); ++i)
+    state.output_owner_counts[i] = state.run->retained_buffers[state.program->outputs[i]].use_count();
+  state.composition_sealed = true;
+  state.composition_preparing = false;
+  return Status::Ok();
+}
+
 Status Invocation::bind(std::span<const Tensor> inputs) noexcept {
   if (!state_ || inputs.size() != state_->program->inputs.size())
     return Status::InvalidArgument("Vulkan input binding arity");
@@ -552,7 +598,7 @@ Status Invocation::bind(std::span<const Tensor> inputs) noexcept {
     for (std::size_t index = 0; index < state_->program->outputs.size();
          ++index) {
       const auto output = state_->program->outputs[index];
-      if (state_->program->aliases[output].root != output &&
+      if (!state_->composition_preparing && state_->program->aliases[output].root != output &&
           run.retained_buffers[output].use_count() !=
               state_->output_owner_counts[index])
         return Status::FailedPrecondition(
@@ -648,6 +694,8 @@ Status Invocation::bind(std::span<const Tensor> inputs) noexcept {
 }
 
 Result<OwnedResult<Results>> Invocation::submit() noexcept {
+  if (state_ && state_->composition_preparing)
+    return std::unexpected(Status::FailedPrecondition("cold Vulkan composition outputs are not sealed"));
   if (!state_ || !state_->bound)
     return std::unexpected(
         Status::FailedPrecondition("Vulkan invocation inputs are unbound"));

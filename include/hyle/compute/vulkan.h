@@ -28,11 +28,21 @@
 #include "hyle/compute/operation.h"
 #include "hyle/compute/result.h"
 #include "hyle/compute/workload.h"
+#include "hyle/compute/resource_budget.h"
 #include "hyle/error/result.h"
 #include "hyle/mem/allocator.h"
 #include "hyle/mem/quota_allocator.h"
 
 namespace hyle::compute::vulkan {
+class MemoryResource;
+// Opt-in shared accounting for original native invocation buffers. Resources
+// must belong to this exact Context; private managed/runtime storage remains
+// separately unknown and requires explicit partial admission.
+struct InvocationAllocation final {
+  ResourceBudget resource_budget{};
+  const MemoryResource *device = nullptr;
+  const MemoryResource *staging = nullptr;
+};
 namespace detail {
 struct Buffer;
 struct Runtime;
@@ -43,6 +53,7 @@ struct InvocationState;
 struct RecorderState;
 struct Run;
 struct ResultValues;
+struct CompositionAccess;
 } // namespace detail
 
 // Cold facts used by fixed, qualified implementation rules. A compiled shader
@@ -271,7 +282,8 @@ public:
   output_descriptions() const noexcept;
   HYLE_COMPUTE_ROUTE_VULKAN_API Result<Invocation>
   create_invocation(mem::AllocatorRef result_allocator =
-                        mem::system_allocator()) const noexcept;
+                        mem::system_allocator(),
+                    InvocationAllocation allocation = {}) const noexcept;
 
 private:
   friend struct detail::Access;
@@ -307,6 +319,7 @@ private:
   friend struct detail::Access;
   explicit Invocation(std::shared_ptr<detail::InvocationState> state) noexcept
       : state_(std::move(state)) {}
+  friend struct detail::CompositionAccess;
   std::shared_ptr<detail::InvocationState> state_;
 };
 

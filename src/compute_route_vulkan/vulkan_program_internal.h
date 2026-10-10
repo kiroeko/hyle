@@ -90,6 +90,8 @@ struct InvocationState final {
   std::vector<long> output_owner_counts;
   cd::ResultSlot<Results> slot;
   bool bound = false;
+  bool composition_sealed = false;
+  bool composition_preparing = false;
 };
 
 struct RecorderState final {

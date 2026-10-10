@@ -6,10 +6,11 @@
 #include <optional>
 
 #include "hyle/compute/resource_budget.h"
+#include "hyle/compute/tensor.h"
 #include "hyle/mem/buffer.h"
 
 namespace hyle::compute::vulkan {
-namespace detail { struct MemoryState; struct MemoryAccess; }
+namespace detail { struct MemoryState; struct MemoryAccess; struct TransferState; struct TransferAccess; }
 
 enum class MemoryKind : unsigned char { kDevice, kStaging };
 
@@ -53,6 +54,35 @@ private:
   friend struct detail::MemoryAccess;
   explicit MemoryResource(std::unique_ptr<detail::MemoryState> state) noexcept;
   std::unique_ptr<detail::MemoryState> state_;
+};
+
+// One cold staging allocation, command pool/buffer and fence. Host sources are
+// borrowed only for upload's synchronous staging preparation. Returned native
+// Completions protect accepted work; download data is exposed by read() only
+// after successful terminal observation. All operations preserve exact bytes.
+// Copy origins must be four-byte aligned; use an existing typed Copy/repack for
+// other views. Reuse never grows capacity or reselects a Provider.
+// Handles are thread-compatible. Resource/allocator outlive late work; Context
+// collect/close retire abandoned prefixes using the original native runtime.
+class TransferSlot final {
+public:
+  TransferSlot() noexcept = default;
+  TransferSlot(const TransferSlot &) = delete;
+  TransferSlot &operator=(const TransferSlot &) = delete;
+  HYLE_COMPUTE_ROUTE_VULKAN_API TransferSlot(TransferSlot &&) noexcept;
+  HYLE_COMPUTE_ROUTE_VULKAN_API TransferSlot &operator=(TransferSlot &&) noexcept;
+  HYLE_COMPUTE_ROUTE_VULKAN_API ~TransferSlot();
+  bool valid() const noexcept { return state_ != nullptr; }
+  HYLE_COMPUTE_ROUTE_VULKAN_API static Result<TransferSlot>
+  create(const Context &context, const MemoryResource &staging,
+         std::size_t capacity_bytes, AllocationOptions options = {}) noexcept;
+  HYLE_COMPUTE_ROUTE_VULKAN_API Result<Completion>
+  upload(const Tensor &destination, ConstTensorView source) noexcept;
+  HYLE_COMPUTE_ROUTE_VULKAN_API Result<Completion> download(const Tensor &source) noexcept;
+  HYLE_COMPUTE_ROUTE_VULKAN_API Status read(TensorView destination) const noexcept;
+private:
+  friend struct detail::TransferAccess;
+  std::shared_ptr<detail::TransferState> state_;
 };
 } // namespace hyle::compute::vulkan
 #endif

@@ -1,0 +1,6 @@
+if(HYLE_COMPUTE_VULKAN_ENABLED)
+  hyle_add_module(graph_route_cpu_vulkan SOURCES compile.cc invocation.cc)
+else()
+  hyle_add_module(graph_route_cpu_vulkan OPTIONAL_ABSENT)
+  set_property(TARGET hyle_graph_route_cpu_vulkan PROPERTY HYLE_INTERNAL_ONLY_ABSENT TRUE)
+endif()

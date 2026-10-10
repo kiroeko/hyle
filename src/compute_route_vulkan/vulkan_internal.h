@@ -13,6 +13,7 @@
 #include "hyle/compute/route_policy.h"
 #include "hyle/compute/vulkan.h"
 #include "hyle/compute/resource_budget.h"
+#include "hyle/mem/std_allocator.h"
 
 namespace hyle::compute::vulkan::detail {
 namespace cd = hyle::compute::detail;
@@ -197,13 +198,17 @@ struct CheckedStatus final {
 // hot acceptance/abandonment does not grow a container or allocate a node.
 // All mutable execution state and membership are protected by Runtime::mutex.
 struct Run final {
+  explicit Run(mem::AllocatorRef allocator = mem::system_allocator())
+      : retained_buffers(mem::StdAllocator<std::shared_ptr<Buffer>>(allocator)) {}
   std::shared_ptr<Runtime> runtime;
   std::shared_ptr<Run> pending_owner;
   std::shared_ptr<Run> completion_owner;
-  std::vector<std::shared_ptr<Buffer>> retained_buffers;
+  std::vector<std::shared_ptr<Buffer>, mem::StdAllocator<std::shared_ptr<Buffer>>> retained_buffers;
   std::vector<VkDescriptorSet> descriptor_sets;
   std::vector<std::array<std::uint32_t, 3>> recorded_origins;
   std::shared_ptr<const void> recording_owner;
+  InvocationAllocation allocation;
+  compute::ResourceBudget::Reservation private_storage;
   std::unique_ptr<CheckedStatus> checked;
   VkCommandPool command_pool = VK_NULL_HANDLE;
   VkCommandBuffer command = VK_NULL_HANDLE;
@@ -275,7 +280,8 @@ allocate_buffer(const std::shared_ptr<Device> &device, VkDeviceSize bytes,
                 bool staging, bool shader_access = false,
                 BufferAllocation allocation = {}) noexcept;
 Result<std::shared_ptr<Run>>
-create_run(const std::shared_ptr<Runtime> &runtime) noexcept;
+create_run(const std::shared_ptr<Runtime> &runtime,
+           mem::AllocatorRef allocator = mem::system_allocator()) noexcept;
 Result<Completion> submit_locked(const std::shared_ptr<Run> &run,
                                  bool allow_closed = false) noexcept;
 Status collect(const std::shared_ptr<Runtime> &runtime, bool drain) noexcept;

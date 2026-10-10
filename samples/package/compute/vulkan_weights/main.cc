@@ -1,0 +1,67 @@
+#include <hyle/compute/vulkan_weights.h>
+
+#include <array>
+#include <cmath>
+#include <cstdio>
+#include <span>
+
+namespace {
+namespace c = hyle::compute;
+namespace v = c::vulkan;
+namespace m = hyle::mem;
+hyle::Status run() {
+  HYLE_ASSIGN_OR_RETURN(auto context, v::Context::create());
+  HYLE_ASSIGN_OR_RETURN(auto device, v::MemoryResource::create(context, v::MemoryKind::kDevice));
+  HYLE_ASSIGN_OR_RETURN(auto staging, v::MemoryResource::create(context, v::MemoryKind::kStaging));
+  HYLE_ASSIGN_OR_RETURN(auto matrix, c::TensorDesc::dense(c::DataType::kFloat32, std::array<std::int64_t, 2>{64, 64}));
+  HYLE_ASSIGN_OR_RETURN(auto row, c::TensorDesc::dense(c::DataType::kFloat32, std::array<std::int64_t, 2>{1, 64}));
+  HYLE_ASSIGN_OR_RETURN(auto source, m::Buffer::create(m::system_resource(), 16384));
+  std::array<float, 4096> identity{};
+  for (std::size_t i = 0; i < 64; ++i) identity[i * 64 + i] = 2.0f;
+  HYLE_RETURN_IF_ERROR(source.view().write(std::as_bytes(std::span(identity))));
+  HYLE_ASSIGN_OR_RETURN(auto source_tensor, c::ConstTensorView::create(matrix, source.view()));
+  const std::array catalog{v::WeightSpec{7, matrix}};
+  HYLE_ASSIGN_OR_RETURN(auto weights, v::WeightSlots::create(context, staging, device, catalog, 16384));
+  HYLE_ASSIGN_OR_RETURN(auto empty, weights.upload(1, {}));
+  HYLE_RETURN_IF_ERROR(empty.wait());
+  if (empty.binding(7)) return hyle::Status::Internal("empty Vulkan selection exposed data");
+  empty = {};
+  const std::array selection{v::WeightFragment{7, source_tensor}};
+  HYLE_ASSIGN_OR_RETURN(auto batch, weights.upload(0, selection));
+  HYLE_RETURN_IF_ERROR(batch.wait());
+  HYLE_ASSIGN_OR_RETURN(auto native_weight, batch.binding(7));
+  HYLE_ASSIGN_OR_RETURN(auto input, device.allocate(row));
+  HYLE_ASSIGN_OR_RETURN(auto transfer, v::TransferSlot::create(context, staging, 256));
+  HYLE_ASSIGN_OR_RETURN(auto input_buffer, m::Buffer::create(m::system_resource(), 256));
+  std::array<float, 64> values; values.fill(3.0f);
+  HYLE_RETURN_IF_ERROR(input_buffer.view().write(std::as_bytes(std::span(values))));
+  HYLE_ASSIGN_OR_RETURN(auto input_view, c::TensorView::create(row, input_buffer.view()));
+  HYLE_ASSIGN_OR_RETURN(auto upload, transfer.upload(input, input_view.as_const()));
+  HYLE_RETURN_IF_ERROR(upload.wait());
+  HYLE_ASSIGN_OR_RETURN(auto program, v::prepare(context, c::MatMul{}, row, matrix));
+  HYLE_ASSIGN_OR_RETURN(auto invocation, program.create_invocation());
+  const std::array inputs{input, native_weight};
+  HYLE_RETURN_IF_ERROR(invocation.bind(inputs));
+  HYLE_ASSIGN_OR_RETURN(auto pending, invocation.submit());
+  HYLE_ASSIGN_OR_RETURN(auto result, pending.wait());
+  HYLE_ASSIGN_OR_RETURN(auto download, transfer.download(result->tensors()[0]));
+  HYLE_RETURN_IF_ERROR(download.wait());
+  HYLE_RETURN_IF_ERROR(transfer.read(input_view));
+  HYLE_RETURN_IF_ERROR(input_buffer.view().read(std::as_writable_bytes(std::span(values))));
+  for (auto value : values)
+    if (!std::isfinite(value) || std::abs(value - 6.0f) > 1e-5f)
+      return hyle::Status::Internal("Vulkan migrated-weight MatMul differs");
+  batch = {};
+  if (weights.upload(0, selection))
+    return hyle::Status::Internal("Vulkan Tensor alias did not retain its weight slot");
+  HYLE_RETURN_IF_ERROR(weights.close());
+  std::printf("Vulkan Direct: native transfer, ready owner and mature MatMul passed\n");
+  return hyle::Status::Ok();
+}
+}
+int main() {
+  const auto status = run();
+  if (status.ok()) return 0;
+  std::fprintf(stderr, "%.*s\n", int(status.message().size()), status.message().data());
+  return 1;
+}
