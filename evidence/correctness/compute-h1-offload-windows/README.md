@@ -31,3 +31,22 @@ gated FFN、共享资源预算的strict/partial、超额回滚、alias去重、�
 归档均为小型文本、receipt及hash；没有复制producer、SDK或CUDA对象，没有启动P1，也没有
 以中断刷新性能/失败预算。
 文本日志仅剔除行尾空白；索引同时保存原始与归档sha256，未改日志内容或结果。
+
+## 停编译期间的启动保护补充
+
+后续task-private入口增加物理可用16GiB、系统提交余量16GiB和本轮进程树private memory12GiB
+三项观察门。系统提交页/限额使用Microsoft
+[GetPerformanceInfo](https://learn.microsoft.com/en-us/windows/win32/api/psapi/nf-psapi-getperformanceinfo)
+及[字段定义](https://learn.microsoft.com/en-us/windows/win32/api/psapi/ns-psapi-performance_information)，
+本轮进程树只统计当前runner及其实际子进程，不统计或结束用户程序。
+每秒采样，触门或监控失败仅停止自己的stage并留证；它不是OS硬内存配额，也不保证峰值无超调。
+
+[只读实测](memory-guard-readonly.json)只证明读取实际指标及缺少恢复标记时在启动子任务前拒绝；
+未运行重型job或实测触门终止，不能代签这些资格。新
+[driver](memory-guard-driver.py)保留独立版本，未覆盖前述实际验收所用旧driver。
+新增`static-consumers`私有恢复入口只接着已安装static SDK，先核对四个changed公开头与产品
+候选一致；不重复static producer、已通过source/shared或启动WSL。
+
+只读API还取得本次开机历史提交峰值约178GiB；按Microsoft字段合同，CommitPeak是开机以来
+历史最大值，没有发生时间。最近八小时资源耗尽System event2004未找到；这两项都不能还原
+本次告警瞬间或证明其归因。当前重型停止约束继续有效，恢复标记只能在用户明确继续后使用。

@@ -405,3 +405,9 @@ Windows static producer已实际构建及安装；installed static组合consumer
 尚未证明。仅物理余量不足以作为安全准入；恢复前须同时核对提交余量和编译进程峰值。用户
 明确恢复前不启动Windows/WSL重型验证。当前12个owner仍CANDIDATE，候选/API/算法不变；
 安装头/资产/搬迁、静态consumer、WSL及受影响native证据尚未齐，H1未签CLOSED。
+
+停编译期间仅补本轮task-private启动保护：[只读结果](../../../../evidence/correctness/compute-h1-offload-windows/memory-guard-readonly.json)
+证明系统提交指标/本轮进程树可读及缺少恢复标记时不启动子任务。后续观察门为物理可用16GiB、
+提交余量16GiB、本轮private12GiB，每秒观察；触门仅停止自己stage。这不是硬配额或峰值已验。
+恢复时只续`static-consumers`，不重跑已通过source/shared或static producer。没有产品修改、
+native测试、WSL或P1；用户明确继续前保持重型停止。

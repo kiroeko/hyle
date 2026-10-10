@@ -1,0 +1,30 @@
+{
+  "recorded_at_utc": "2026-10-10T13:06:23.076678+00:00",
+  "product_candidate": "7eaf67b8a496ee19b609533980cd69e7efb5aa49",
+  "monitor_driver_sha256": "0328fe64c5559cc7d5aca160fab0d6ddbb943357c21243dfce84b8b45f03ddc7",
+  "read_only_snapshot": {
+    "snapshot": {
+      "available_gib": 46.29994201660156,
+      "committed_gib": 35.36208724975586,
+      "commit_limit_gib": 75.28852844238281,
+      "commit_headroom_gib": 39.92644119262695,
+      "commit_peak_since_boot_gib": 178.4207992553711,
+      "owned_private_gib": 0.0115966796875,
+      "owned_processes": 2
+    },
+    "guards": {
+      "minimum_available_gib": 16,
+      "minimum_commit_headroom_gib": 16,
+      "maximum_owned_private_gib": 12
+    },
+    "claim": "read-only snapshot; no build or stop-trigger qualification"
+  },
+  "missing_resume_marker": {
+    "exit": 1,
+    "message": "Heavy validation remains held after user memory alarm; no child started."
+  },
+  "resource_exhaustion_log_query": "No System event2004 from Microsoft-Windows-Resource-Exhaustion-Detector in last eight hours at preceding read-only query",
+  "qualification_boundary": "Snapshot API and no-resume launch refusal only; no heavy job, guard-trigger kill or future peak qualification",
+  "mechanism": "Poll every second; stop only owned stage tree. These thresholds are observation guards, not an OS hard memory limit.",
+  "resume_path": "static-consumers reuses already installed static SDK; no static producer rebuild/install, source/shared rerun or WSL startup"
+}
