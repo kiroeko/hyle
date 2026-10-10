@@ -384,3 +384,8 @@ compile commands 确认真实 GPU/CPU presence 宏启用，原 export target 自
 不代签静态宏/WSL/数学。已完成 Windows CPU+Vulkan 的两个 SDK producer object目录经
 六PASS/exit0、日志SHA、路径/链接及无活动进程检查后清理，释放4,464,806,780字节；
 两个 relocated SDK、全部消费者、source、cache和证据保留。没有触碰活动WSL目录。
+
+WSL CPU relocated shared Graph0.17s/Direct0.15s 均实际 PASS，原程序 MODULE 在 SDK lib下，
+共享 runtime 自身 `$ORIGIN` 查找与17库/1354导出检查通过，无 LD覆盖。
+[资源收据](../../../../evidence/correctness/compute-unified-c3/wsl-cpu/shared-resource-receipt.json)
+与各 CTest/config 绑定；C3 当前64 PASS / 26 UNRUN。原静态循环继续，source/shared不重跑。

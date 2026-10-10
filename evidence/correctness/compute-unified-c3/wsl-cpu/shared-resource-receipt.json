@@ -1,0 +1,12 @@
+{
+  "scope": "Actual relocated Linux CPU shared runtime assets and sibling ELF lookup",
+  "candidate": "a2476b62cfe49c1663998645c362392685c06eb1",
+  "runtime_lookup": [
+    "0x000000000000001d (RUNPATH)            Library runpath: [$ORIGIN]"
+  ],
+  "native_cpu_leaf": "libhyle_ggml_cpu_avx2_ffa4e8b8_bdae1e43311ee486.so",
+  "exported_libraries": 17,
+  "exports_inspected": 1354,
+  "LD_LIBRARY_PATH": "",
+  "remaining": "static batch ongoing; no H1 claim"
+}

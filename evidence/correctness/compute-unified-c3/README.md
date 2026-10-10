@@ -5,7 +5,7 @@ It is not a terminal verdict for all platforms/routes, hybrid execution, or asyn
 
 [Delivery matrix](delivery-matrix.json) fixes the declared applicable scope: 15 platform/route groups,
 45 source/shared/static shapes, each with the existing Direct and Graph consumer. Consumer entries
-are documented per actual receipt; the current matrix records 62 PASS and 28 UNRUN.
+are documented per actual receipt; the current matrix records 64 PASS and 26 UNRUN.
 Earlier Vulkan failures remain archived. A mixed SDK entry runs each selected native route independently
 and cannot certify the later joint execution or asynchronous transfer work.
 
@@ -169,3 +169,8 @@ compiled all63 installed headers with actual exported target usage requirements 
 CUDA31). Route defines were confirmed in compile commands. Both groups passed without rebuilding SDKs.
 [Completed producer object cleanup](windows-cpu-vulkan/cleanup-build-objects.json) freed4,464,806,780
 bytes while retaining SDKs, consumers, source artifacts, dependency cache and evidence.
+
+The WSL CPU shared SDK's relocated Graph0.17s/Direct0.15s consumers also passed; updated
+[per-entry receipt](wsl-cpu-partial.json) binds actual config and logs. Its shared runtime has sibling
+`$ORIGIN`, the native CPU MODULE is in SDK/lib, and export hygiene passed17 libraries/1354 exports.
+The original static loop continues; effective C3 count is64/90, with no hybrid/P1 claim.

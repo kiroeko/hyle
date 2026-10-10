@@ -52,3 +52,7 @@ Windows 来源完整 archive SHA256 `d0c2377d14be5752f6e1876a54d8c568cb1cc32a706
 临时隐藏本轮 owned MODULE 后原 Graph exit12，恢复后 exit0，不静默改选数学实现。
 [当前收据](../../../../evidence/correctness/compute-unified-c3/wsl-cpu-partial.json)与原失败分开；
 Linux shared/static/mixed 仍未签，本 owner 保持 CANDIDATE，继续原剩余阶段，不重跑其它平台/P1。
+
+原 Linux shared SDK 两普通消费者也已 PASS，Graph0.17s/Direct0.15s；搬移后 runtime
+自带 `$ORIGIN`，原 MODULE 在 SDK/lib，未带 build-tree loader路径或 LD覆盖。
+资源/导出/CTest 收据已归档，静态原循环继续；本 owner仍CANDIDATE，不把 shared 签成全部Linux/mixed完成。

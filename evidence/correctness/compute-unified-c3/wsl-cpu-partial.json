@@ -15,11 +15,19 @@
     },
     {
       "entry": "shared-direct",
-      "verdict": "UNRUN"
+      "verdict": "PASS",
+      "log": "evidence/correctness/compute-unified-c3/wsl-cpu/shared-direct-ctest.log",
+      "sha256": "453020fa1aef5d44b9dd3306e08f2585564cb6da65b09e038739f1fcfa6be238",
+      "actual_routes": "cpu",
+      "recipe": "9aa6b3bbc96832650a1413237a43854bd1731720a3992c24db693f4c53de0e69"
     },
     {
       "entry": "shared-graph",
-      "verdict": "UNRUN"
+      "verdict": "PASS",
+      "log": "evidence/correctness/compute-unified-c3/wsl-cpu/shared-graph-ctest.log",
+      "sha256": "1edb8465d4736212d5a11c2a24ffc75cc27e571a09bf8e9ae3243c0d60052a82",
+      "actual_routes": "cpu",
+      "recipe": "9aa6b3bbc96832650a1413237a43854bd1731720a3992c24db693f4c53de0e69"
     },
     {
       "entry": "static-direct",
@@ -32,5 +40,5 @@
   ],
   "source_log": "evidence/correctness/compute-unified-c3/wsl-cpu/source-ctest.log",
   "source_log_sha256": "5cd3d3c7579e89534ff119e1c13fcd2a287497f77889bd7a2dbc5086f75aa4c0",
-  "remaining": "shared/static unchanged driver SDK loop remains unrun; preserve original source failure and native objects."
+  "remaining": "Native SDK stages are tracked separately; unfinished entries remain UNRUN. No H1 joint/async/expert qualification."
 }
