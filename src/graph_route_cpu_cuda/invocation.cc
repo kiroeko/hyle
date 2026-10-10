@@ -55,14 +55,16 @@ struct RunState final : util::RefCounted<RunState> {
   explicit RunState(mem::AllocatorRef owner) noexcept
       : allocator(owner), weights(owner), weight_prefixes(owner) {}
   mem::AllocatorRef allocator{};
+  // Bound batches also cover native Invocation destruction: provider state
+  // may borrow its tensor backing until its destructor finishes.
+  container::SmallVector<WeightUse, 2, mem::AllocatorRef> weights;
+  container::SmallVector<compute::Completion, 2, mem::AllocatorRef> weight_prefixes;
   graph::Invocation invocation{};
   sched::Scheduler *scheduler = nullptr;
   std::array<QueueBinding, 2> queues{};
   std::size_t queue_count = 0;
   compute::Queue *cuda_queue = nullptr;
   graph::detail::SubmissionCursor cursor{};
-  container::SmallVector<WeightUse, 2, mem::AllocatorRef> weights;
-  container::SmallVector<compute::Completion, 2, mem::AllocatorRef> weight_prefixes;
   sched::Event cuda_ready{};
   sched::Event finished{};
   std::mutex retirement_mutex{};

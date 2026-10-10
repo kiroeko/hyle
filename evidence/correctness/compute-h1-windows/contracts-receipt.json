@@ -1,0 +1,35 @@
+{
+  "scope": "Windows actual public contracts consumer; source/shared producer, no SDK or WSL claim",
+  "source": "WORKTREE after destruction-order fix",
+  "verdict": "PASS",
+  "checks": [
+    "fixed selection capacity",
+    "wrong shape/physical description",
+    "byte subview range and overflow",
+    "tensor extent overflow",
+    "duplicate/empty catalog and zero capacity",
+    "exact resource Context/kind and foreign Queue",
+    "invalid slot",
+    "weight cold metadata OOM at 8 successive allocation points with zero outstanding allocations",
+    "composition metadata OOM at 3 successive points, input not consumed",
+    "ordinary cross-device compile guard",
+    "zero workspace budget",
+    "unbound/wrong-shape admission",
+    "accepted CPU prefix followed by real busy GPU endpoint refusal, failed result and retired slot",
+    "changed expert ID/payload on fixed compiled program",
+    "actual pending native dependency, no ready result/rebind/reentry, deterministic cancellation",
+    "empty zero-step typed graph and output signature",
+    "late result lease survives public graph/weight owners; final allocation count zero",
+    "closed pool rejection"
+  ],
+  "file_sha256": {
+    "src/graph_route_cpu_cuda/invocation.cc": "5c5a3157f877c152924c68cafb96baafdba97e9cf8d513710963d71f62b488a1",
+    "tests/graph/cpu_cuda_contracts.cc": "6291e86c704347a3e6ec7d0d3dc87d1b02547e96fa753a4b359957f09d11be27",
+    "tests/graph/cpu_cuda_contracts/CMakeLists.txt": "fd904ac0ea795659be10ef8a3c1555c817d5803514ca37d72c59b92543ddf720"
+  },
+  "negative_native_fixture": "QueueSequence busy and native host callback gate; no mock provider, callback only waits on host input",
+  "not_run": [
+    "WSL",
+    "installed static/shared SDK"
+  ]
+}

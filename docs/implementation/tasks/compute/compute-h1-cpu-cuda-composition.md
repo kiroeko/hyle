@@ -226,3 +226,43 @@ Windows迁移机制的[物理重叠证据](../../../../evidence/correctness/comp
 [统一统计](../../../../evidence/architecture/compute-entry-design/loc-h1-direct-owner.json)self-check PASS：
 本批Compute+Graph 63,765实现行/279文件，全库自实现不含测试158,992行；namespace/owner迁移
 没有保留两份实现，Direct仅增加普通消费者，不新增数学。
+
+### 合同缺项补齐与API/实现冻结准备
+
+[实际contracts结果](../../../../evidence/correctness/compute-h1-windows/contracts-receipt.json)补齐Windows
+source负向/生命周期范围：全部选择容量、shape/物理描述、范围/溢出、重复/空目录、exact
+resource Context/kind、foreign Queue、无绑定/错误绑定与workspace零预算；weight metadata连续
+8个分配点和组合metadata连续3点的OOM回滚均无遗留分配、调用者Invocation未被消耗。
+busy真实GPU Queue在CPU前缀已接纳后拒绝后继，结果失败且slot退役；真实native callback只等待
+host gate，保证pending后检查无ready/reentry/rebind，再确定性取消并排空，不使用mock Provider。
+同compiled程序更换expert ID和payload得到不同正确数学；空零步typed图、保留结果后销毁公有
+Graph/weight owners与最后lease释放归零也通过。此consumer是tests中的独立source/installed
+CMake入口，不要求普通用户include私有故障接缝。
+
+源审补充了H1-04已有生命周期FIX：绑定weight backing的成员必须声明在Graph Invocation之前，
+保证Provider Invocation析构结束后才释放weight owner。此修复不改公开API/正常图对象layout、
+默认Provider或Scheduler；Windows基本两条数学消费者与contracts均对实际更新代码运行通过。
+
+有限H1-01至06的产品接线已齐，普通公开形状和算法停止变化；尚未签整包CLOSED。
+下一候选只补Windows/WSL source、installed shared/static三交付、头/资产与普通路线定向回归。
+已验语义和Native trace按相同源码/工具链/硬件身份复用，文档/状态不触发build/P1。
+
+#### 七问与P0冻结
+
+- 第三方与完整性：沿现锁定CPU ggml/oneDNN、CUDA cuBLAS/ggml等原native programs/regions；
+  主FFN/正交数值纵切真实通过，库不加载模型、管理KV/专家cache或新增数学。
+- 下层复用：现Mem backing/resource、Graph placement/variant/copy/liveness、Completion/ResultSlot、
+  Sched fiber/Event/pool与CUDA已有reaper；未修改闭合Mem/Sched或建立另一后台runtime。
+- 成本与并发：cold compile和固定slots；每池2×capacity pinned与2×capacity device，目录与selected
+  metadata有界。steady选择O(k log N+k²+selected bytes+alignment gaps)、DMA真实used bytes；
+  图进展O(segments+dependencies+fixed bound weights)，有真实CPU/native managed等待成本。
+  每次现Sched driver仍有成本，256KiB guarded tier复用；未知native库私有成本不记零。
+- 性能层：P0，成熟数学/规则未竞争或变更；新开销是必须的native边界/所有权与异步进展，
+  源码成本及CUPTI物理重叠已解释，不宣称加速或新WIN。本轮没有需靠计时裁决的Provider竞争，
+  P1不启动；普通单路线已有数学/性能资格不因state/docs重跑。
+- FFI/交付：仅自然C++句柄和route-specific CUDA interop，不添加C ABI；三交付/安装/移位仍须
+  实际候选验收，Windows统一stage helper将DLL放exe旁，用户只选择路线集合。
+- 易用性：Direct包含cuda_weights链接compute，无CPU/Graph/Sched；组合包含cpu_cuda链接graph，
+  资源、借用寿命、取消、close、旧lease与不隐式fallback已在头及两个普通样例说明。
+
+候选实施/验证同一有限范围；失败仅修实际失败半径，公开合同/算法变化按协议退回AUDITED。
