@@ -270,17 +270,15 @@
     },
     {
       "module": "compute",
-      "state": "CANDIDATE",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/compute-h1-cpu-cuda-composition.md",
-      "summary": "H1 CANDIDATE：固定CPU/CUDA粗片段、可暂停进展、结果/weight双槽与Direct迁移API已接线；Windows实际数学/故障/生命周期与CUPTI物理重叠已验，按同一候选批量补Windows/WSL三交付；不签未运行门。",
-      "candidate": "3f938bd7bab0ebb2b4c598885d097800d5756a01"
+      "summary": "H1 AUDITED：用户授权补齐普通CPU存储/有界暂存分离、组合资源账单/预算及准备后的传输/等待诊断（H1-07至09）；旧候选与已验Windows证据保留，新增能力未验；goal因内存告警暂停，不启动重型run。"
     },
     {
       "module": "graph",
-      "state": "CANDIDATE",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/compute-h1-cpu-cuda-composition.md",
-      "summary": "H1 CANDIDATE：固定CPU/CUDA粗片段、可暂停进展、结果/weight双槽与Direct迁移API已接线；Windows实际数学/故障/生命周期与CUPTI物理重叠已验，按同一候选批量补Windows/WSL三交付；不签未运行门。",
-      "candidate": "3f938bd7bab0ebb2b4c598885d097800d5756a01"
+      "summary": "H1 AUDITED：用户授权补齐普通CPU存储/有界暂存分离、组合资源账单/预算及准备后的传输/等待诊断（H1-07至09）；旧候选与已验Windows证据保留，新增能力未验；goal因内存告警暂停，不启动重型run。"
     },
     {
       "module": "container_concurrent",
@@ -398,17 +396,15 @@
     },
     {
       "module": "compute_backend_cpu",
-      "state": "CANDIDATE",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/compute-h1-cpu-cuda-composition.md",
-      "summary": "H1 CANDIDATE：固定CPU/CUDA粗片段、可暂停进展、结果/weight双槽与Direct迁移API已接线；Windows实际数学/故障/生命周期与CUPTI物理重叠已验，按同一候选批量补Windows/WSL三交付；不签未运行门。",
-      "candidate": "3f938bd7bab0ebb2b4c598885d097800d5756a01"
+      "summary": "H1 AUDITED：用户授权补齐普通CPU存储/有界暂存分离、组合资源账单/预算及准备后的传输/等待诊断（H1-07至09）；旧候选与已验Windows证据保留，新增能力未验；goal因内存告警暂停，不启动重型run。"
     },
     {
       "module": "compute_backend_cuda",
-      "state": "CANDIDATE",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/compute-h1-cpu-cuda-composition.md",
-      "summary": "H1 CANDIDATE：固定CPU/CUDA粗片段、可暂停进展、结果/weight双槽与Direct迁移API已接线；Windows实际数学/故障/生命周期与CUPTI物理重叠已验，按同一候选批量补Windows/WSL三交付；不签未运行门。",
-      "candidate": "3f938bd7bab0ebb2b4c598885d097800d5756a01"
+      "summary": "H1 AUDITED：用户授权补齐普通CPU存储/有界暂存分离、组合资源账单/预算及准备后的传输/等待诊断（H1-07至09）；旧候选与已验Windows证据保留，新增能力未验；goal因内存告警暂停，不启动重型run。"
     },
     {
       "module": "compute_provider_native",
@@ -423,17 +419,15 @@
     },
     {
       "module": "compute_route_cpu",
-      "state": "CANDIDATE",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/compute-h1-cpu-cuda-composition.md",
-      "summary": "H1 CANDIDATE：固定CPU/CUDA粗片段、可暂停进展、结果/weight双槽与Direct迁移API已接线；Windows实际数学/故障/生命周期与CUPTI物理重叠已验，按同一候选批量补Windows/WSL三交付；不签未运行门。",
-      "candidate": "3f938bd7bab0ebb2b4c598885d097800d5756a01"
+      "summary": "H1 AUDITED：用户授权补齐普通CPU存储/有界暂存分离、组合资源账单/预算及准备后的传输/等待诊断（H1-07至09）；旧候选与已验Windows证据保留，新增能力未验；goal因内存告警暂停，不启动重型run。"
     },
     {
       "module": "graph_route_cpu",
-      "state": "CANDIDATE",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/compute-h1-cpu-cuda-composition.md",
-      "summary": "H1 CANDIDATE：固定CPU/CUDA粗片段、可暂停进展、结果/weight双槽与Direct迁移API已接线；Windows实际数学/故障/生命周期与CUPTI物理重叠已验，按同一候选批量补Windows/WSL三交付；不签未运行门。",
-      "candidate": "3f938bd7bab0ebb2b4c598885d097800d5756a01"
+      "summary": "H1 AUDITED：用户授权补齐普通CPU存储/有界暂存分离、组合资源账单/预算及准备后的传输/等待诊断（H1-07至09）；旧候选与已验Windows证据保留，新增能力未验；goal因内存告警暂停，不启动重型run。"
     },
     {
       "module": "compute_provider_cublas",
@@ -471,17 +465,15 @@
     },
     {
       "module": "compute_route_cuda",
-      "state": "CANDIDATE",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/compute-h1-cpu-cuda-composition.md",
-      "summary": "H1 CANDIDATE：固定CPU/CUDA粗片段、可暂停进展、结果/weight双槽与Direct迁移API已接线；Windows实际数学/故障/生命周期与CUPTI物理重叠已验，按同一候选批量补Windows/WSL三交付；不签未运行门。",
-      "candidate": "3f938bd7bab0ebb2b4c598885d097800d5756a01"
+      "summary": "H1 AUDITED：用户授权补齐普通CPU存储/有界暂存分离、组合资源账单/预算及准备后的传输/等待诊断（H1-07至09）；旧候选与已验Windows证据保留，新增能力未验；goal因内存告警暂停，不启动重型run。"
     },
     {
       "module": "graph_route_cuda",
-      "state": "CANDIDATE",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/compute-h1-cpu-cuda-composition.md",
-      "summary": "H1 CANDIDATE：固定CPU/CUDA粗片段、可暂停进展、结果/weight双槽与Direct迁移API已接线；Windows实际数学/故障/生命周期与CUPTI物理重叠已验，按同一候选批量补Windows/WSL三交付；不签未运行门。",
-      "candidate": "3f938bd7bab0ebb2b4c598885d097800d5756a01"
+      "summary": "H1 AUDITED：用户授权补齐普通CPU存储/有界暂存分离、组合资源账单/预算及准备后的传输/等待诊断（H1-07至09）；旧候选与已验Windows证据保留，新增能力未验；goal因内存告警暂停，不启动重型run。"
     },
     {
       "module": "compute_route_apple",
@@ -540,24 +532,21 @@
     },
     {
       "module": "compute_ggml_runtime",
-      "state": "CANDIDATE",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/compute-h1-cpu-cuda-composition.md",
-      "summary": "H1 CANDIDATE：固定CPU/CUDA粗片段、可暂停进展、结果/weight双槽与Direct迁移API已接线；Windows实际数学/故障/生命周期与CUPTI物理重叠已验，按同一候选批量补Windows/WSL三交付；不签未运行门。",
-      "candidate": "3f938bd7bab0ebb2b4c598885d097800d5756a01"
+      "summary": "H1 AUDITED：用户授权补齐普通CPU存储/有界暂存分离、组合资源账单/预算及准备后的传输/等待诊断（H1-07至09）；旧候选与已验Windows证据保留，新增能力未验；goal因内存告警暂停，不启动重型run。"
     },
     {
       "module": "compute_provider_ggml_cuda",
-      "state": "CANDIDATE",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/compute-h1-cpu-cuda-composition.md",
-      "summary": "H1 CANDIDATE：固定CPU/CUDA粗片段、可暂停进展、结果/weight双槽与Direct迁移API已接线；Windows实际数学/故障/生命周期与CUPTI物理重叠已验，按同一候选批量补Windows/WSL三交付；不签未运行门。",
-      "candidate": "3f938bd7bab0ebb2b4c598885d097800d5756a01"
+      "summary": "H1 AUDITED：用户授权补齐普通CPU存储/有界暂存分离、组合资源账单/预算及准备后的传输/等待诊断（H1-07至09）；旧候选与已验Windows证据保留，新增能力未验；goal因内存告警暂停，不启动重型run。"
     },
     {
       "module": "graph_provider_ggml_cuda",
-      "state": "CANDIDATE",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/compute-h1-cpu-cuda-composition.md",
-      "summary": "H1 CANDIDATE：固定CPU/CUDA粗片段、可暂停进展、结果/weight双槽与Direct迁移API已接线；Windows实际数学/故障/生命周期与CUPTI物理重叠已验，按同一候选批量补Windows/WSL三交付；不签未运行门。",
-      "candidate": "3f938bd7bab0ebb2b4c598885d097800d5756a01"
+      "summary": "H1 AUDITED：用户授权补齐普通CPU存储/有界暂存分离、组合资源账单/预算及准备后的传输/等待诊断（H1-07至09）；旧候选与已验Windows证据保留，新增能力未验；goal因内存告警暂停，不启动重型run。"
     },
     {
       "module": "compute_provider_flashinfer",
@@ -606,10 +595,9 @@
     },
     {
       "module": "graph_route_cpu_cuda",
-      "state": "CANDIDATE",
-      "summary": "H1 CANDIDATE：固定CPU/CUDA粗片段、可暂停进展、结果/weight双槽与Direct迁移API已接线；Windows实际数学/故障/生命周期与CUPTI物理重叠已验，按同一候选批量补Windows/WSL三交付；不签未运行门。",
-      "record": "docs/implementation/tasks/compute/compute-h1-cpu-cuda-composition.md",
-      "candidate": "3f938bd7bab0ebb2b4c598885d097800d5756a01"
+      "state": "AUDITED",
+      "summary": "H1 AUDITED：用户授权补齐普通CPU存储/有界暂存分离、组合资源账单/预算及准备后的传输/等待诊断（H1-07至09）；旧候选与已验Windows证据保留，新增能力未验；goal因内存告警暂停，不启动重型run。",
+      "record": "docs/implementation/tasks/compute/compute-h1-cpu-cuda-composition.md"
     }
   ]
 }

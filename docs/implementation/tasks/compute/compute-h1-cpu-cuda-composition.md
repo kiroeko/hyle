@@ -1,6 +1,6 @@
 # H1：CPU+CUDA 粗片段、异步传输与流式权重
 
-<!-- MODULE REVIEW: CANDIDATE -->
+<!-- MODULE REVIEW: AUDITED -->
 
 - baseline：`061b46700`（C3按用户接受边界CLOSED）；Windows canonical。
 - 当前owner：graph、compute、graph_route_cpu、graph_route_cuda、compute_route_cpu、
@@ -11,6 +11,67 @@
   它拥有组合/进展，不成为新用户产品；普通cpu;cuda自动取得，单路线不取得CPU/Sched依赖。
 - 不重开Apple/Vulkan、Mem/Sched或无具体缺陷的算子owner；是否需要定向底层修复以有限反例为准。
 - C3十二项WSL Vulkan实GPU运行保留UNQUALIFIED，用户明确不block；不代签GPU数学，不阻止本H1。
+
+## 当前恢复合同：offload 基础机制
+
+2026-10-10 用户授权更新当前 goal，把普通主存、完整组合预算和实际准备诊断补入原 H1–H3。
+新增范围 baseline：`eb8cb132d669cc364f560d8c7cb0d4585fac1f30`，Windows canonical，核对时工作树干净。
+本卡 12 个 owner 同批由 CANDIDATE 退回 AUDITED；前一产品候选
+`3f938bd7bab0ebb2b4c598885d097800d5756a01`及已通过证据保留为原合同事实，不是当前冻结候选。
+goal 因用户内存告警保持暂停；本轮只更新合同/registry，不启动产品修复、WSL 或 Mac 验证。
+
+### 有界审计与承载裁决
+
+主纵切：引擎已决定 CPU/GPU 放置，普通主存中的 CPU-resident 权重参与 CPU 数学，只有实际跨端
+激活/选中权重经有界暂存搬运；GPU 继续执行完整成熟片段。正交纵切继续分块 CPU 变换→GPU 数学→
+CPU 消费，复用原双槽/lease/取消边界。GPU 层数、offload 比例、专家缓存、KV/batching 均属引擎策略。
+
+| 能力族 / 现状 | 有界源码反例 | 承载与 owner |
+|---|---|---|
+| CPU 普通存储与 staging 分离：PARTIAL | [cpu_cuda.h](../../../../include/hyle/graph/cpu_cuda.h) 的 Environment 只收 CUDA host/device resource；[compile.cc](../../../../src/graph_route_cpu_cuda/compile.cc)只建立 pinned/device 两域；[Graph binding](../../../../src/graph/executable.cc)要求 exact compiled resource。CPU-only 权重因而也受 pinned 约束 | BORROW 现 Mem host-accessible backing、Graph storage/Copy/liveness 和 CUDA native DMA；SELF 仅组合边界接线，由 graph_route_cpu_cuda/graph 拥有；不删 ordinary same-Device/native guard |
+| 完整组合账单：PARTIAL | Graph CompileStorageReport 主要按域报告 workspace，CompiledStorageReport/InvocationStorageUsage 有明确计费边界；WeightSlots 两个 pinned/device 容量未自然汇入同一组合视图。Environment workspace 限额不等于进程或设备总预算 | BORROW 现存储报告、配额/owner 与固定池容量；SELF 仅组合冷聚合及申明预算校验，graph_route_cpu_cuda/graph 与 compute_route_cuda 依实际字段归属负责；不重写 Mem 或造全局显存管理器 |
+| 已准备传输/等待诊断：PARTIAL | 普通 Invocation 有 ReplayReport/ReplayDependencyRoute，组合公有 Invocation 接纳后未自然暴露这些查询；组合 drive 另建立 weight native dependency 或显式 host barrier | BORROW 现 Graph report/native Completion；SELF 仅冷准备查询及组合新增依赖报告，graph_route_cpu_cuda 为 facade owner；host-wait 策略须覆盖实际组合路径 |
+
+这是一遍已具名源码反证后的有限审计，不授权重审算子、公共治理/性能仪器或完整模型 loader。
+维持当前 12-owner 批次；实际产品修改只能落到相应 AUDITED owner。原单路线优选、Provider 数学与
+C1/C2/R1/C3 不因本补充重开。H2/H3 尚未启动，在各自 AUDITED 前引用相同机制合同并定 native FIX。
+
+### 新增有限 FIX
+
+| ID | 允许改动与系统性合同 | 必须验收 / 当前结果 |
+|---|---|---|
+| H1-07 | 组合 Environment/编译绑定分别表达普通 CPU 存储、exact CUDA pinned staging 和 device 存储；CPU 内部数学直接使用普通 host-accessible backing，跨端边界复用现 Copy/DMA和受限暂存，必要分块/等待显式计费；不要求所有 CPU 权重搬进 pinned，不删除资源身份/格式保护 | 真正 CPU-resident 数学权重大于 staging 容量、CPU↔GPU 激活链、实际 FP32/FP16及适用物理描述、零/不足容量、overflow/OOM、借用/alias/取消/close/晚到完成；UNPROVEN |
+| H1-08 | 冷组合资源视图复用已有报告和显式迁移池容量，分别归属 CPU/device/staging，区分 compiled packing、每槽 workspace/metadata、全部在途槽、借用外部数据与未知/排除项；相同 canonical backing 不重复计费；在库可管理且已声明的范围内做预算 admission/回滚，不能只限制 workspace 或承诺系统级预留 | 正确汇总/共享去重、双槽与旧 lease 占用、已知/保守/未知区分、checked sums、有限预算拒绝及 OOM回滚；未知 native 成本严格预算需拒绝或明确申明 partial 口径；UNPROVEN |
+| H1-09 | 组合 facade 自然提供准备后的 Graph replay/依赖及 weight transfer 诊断；报告 native order、host barrier、staging/转换和重叠条件，覆盖组合新增 host-wait 拒绝语义；bind/reset 使准备报告失效，submit不新增规则解释、计时或全局观测 | 未准备/改绑失效、真实 shared/native 与适用 delegated/host 路径、拒绝策略、报告与执行一致、重复执行不重新资格化；UNPROVEN |
+
+公开形状冻结：继续使用单一 cpu_cuda 入口及原 CPU/CUDA target 身份，存储角色分开表达；预算及
+诊断采用已有强类型、Status/Result、owning cold report，报告寿命独立于借用 tensor backing。
+迁移槽和 Invocation 仍固定容量/独立并发槽；改变 payload 不改变 Provider，改变 storage/format/shape
+或执行位置则重新准备。CPU/CUDA借用 owner 必须活到完成，旧 result lease 继续阻止覆盖。
+精确成员/字段仅在上述职责与成本边界内实现；不保留没有需求的旧双域兼容 API。
+
+成本与七问增量：仍 P0，数学、成熟依赖版本/许可证、FFI与三交付原则不变；新增账单/诊断仅冷
+路径聚合，默认单路线对象不增加组合常驻字段。普通 CPU backing 不变成隐式 pinned 全量副本。
+迁移按必要 bytes 与固定容量计费；未知 Provider/driver 私有成本不填零。源/安装 SDK 的公共 guide
+须说明引擎给具体放置/预算、HYLE管理桥、外部 KV/权重如何计账，不以简单 copy 代签混合数学。
+
+### 批量实现、验收与停止
+
+- 恢复后先批量完成 H1-07至09，迁移本包消费者；不边补一个字段边重跑三交付全集。
+- API/算法固定后冻结一个新不可变候选。沿 Windows/WSL × source/shared/static 的原三消费者
+  批量入口补新增能力、头/资产/搬迁与原单路线直接回归；旧候选输入不同不自动 REUSED，逐门按
+  实际源码、合同、工具链和机器身份判断。已通过原数学/重叠证据保留，改变相应边界才定向补验。
+- CUDA 重型编译 build1/test1、重型验证串行；先确认内存余量。保留已编译对象/cache，暂停时不
+  启动旧候选 delivery runner，也不自动接着原 WSL 大批编译。不能用对象数量当 PASS。
+- 新增仅上述三个 FIX；每项最多一遍具名 source seam 核对，失败定向定位，不无限重构 API。
+  无新 Provider 竞争，不启动 P1；真实资源/能力反例超出三项时记录具体 blocker 由用户取舍。
+- 本次只运行 docs/state selector、带明确 previous-ref 的 closure、check-docs、diff及统一LOC。
+  新能力全部 UNPROVEN；待三项和原剩余适用验收真实完成才重新进入 CANDIDATE/CLOSED。
+
+本次更新轮实际结果：selector 仅选 docs/closure，134项跳过/复用理由保留；previous-ref 为上述
+`eb8cb132d`，12个 CANDIDATE→AUDITED转换检查通过，58-component/schema4及文档检查通过。
+统一 `scripts/loc-report.py` self-check PASS：Compute+Graph 63,765实现行/279文件，全库自实现
+不含测试158,992行；本轮产品实现未变，不把范围/状态更新算成新增能力或进度。重型验证未启动。
 
 ## 正常任务与两条纵切
 
@@ -53,7 +114,7 @@ CUDA streams/events/Completion、现有结果lease与Sched。Provider成熟完�
 
 ## 预声明验收与停止
 
-- 一批接线后冻结不可变候选；Windows/WSL实际CPU+CUDA主/正交完整数学、三交付，build2/test1。
+- 一批接线后冻结不可变候选；Windows/WSL实际CPU+CUDA主/正交完整数学、三交付，CUDA重型build1/test1。
 - 正常/空/错shape/错encoding/坏ID/范围/溢出、资源/OOM、重复payload/绑定、两槽busy、旧lease、
   accepted错误终态、request_cancel、plan close、丢弃completion后owner保活与销毁。
 - 原生stream/event依赖与copy/compute进展证据，host wait/转换/融合边界完整成本；不凭async命名签重叠。
@@ -63,7 +124,7 @@ CUDA streams/events/Completion、现有结果lease与Sched。Provider成熟完�
 - 每轮docs/closure/diff；按selector真实owner/消费者选择。文档/状态不重建/P1。
 - 具体阻塞说清，不能用两个Context、mixed SDK、copy/mock或空target冒充本包。
 
-当前有限审计已完成并进入AUDITED，仅允许下列H1-01至06产品FIX；实现尚未验收。
+原 H1-01至06审计/接线记录如下；当前恢复范围另含上节 H1-07至09，状态 AUDITED，未签整包完成。
 H2/H3按其native域后续独立施工，增量图继续DEFER。
 
 ## 有限审计裁决
@@ -267,7 +328,10 @@ CMake入口，不要求普通用户include私有故障接缝。
 
 候选实施/验证同一有限范围；失败仅修实际失败半径，公开合同/算法变化按协议退回AUDITED。
 
-## Candidate
+## 上一 Candidate 与已取证范围
+
+以下保留前一候选的历史事实。2026-10-10 新准入的 H1-07至09改变公开资源/预算/诊断合同，
+当前状态已经退回 AUDITED；不得把本节历史 CANDIDATE 当作新能力的冻结或 PASS。
 
 - 完整不可变产品候选：`3f938bd7bab0ebb2b4c598885d097800d5756a01`。tree从该Git commit取得。
 - 12个当前owner同批进入CANDIDATE；H1-01至06公开接口、对象语义和常态算法固定。

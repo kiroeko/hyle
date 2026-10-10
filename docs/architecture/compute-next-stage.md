@@ -2,6 +2,8 @@
 
 > 用户授权的新范围。C1/C2/R1/C3在已接受边界内完成；WSL Vulkan十二项实GPU运行保留未资格而不阻塞。
 > CPU/GPU联合、异步、重叠和expert迁移的H1–H3仍须独立实施验收。
+> 2026-10-10 用户授权补齐 offload 基础边界：普通 CPU 存储与有界传输暂存分离、组合资源账单与预算、
+> 准备后的传输/等待诊断；纳入原 H1–H3，不新增阶段。H1 已退回 AUDITED，goal 因内存告警保持暂停。
 > 当前 owner/验收见[实施卡](../implementation/tasks/build/compute-unified-delivery.md)和 registry；
 > [原设计卡](../implementation/tasks/build/compute-entry-design.md)保存入口统计与设计事实。
 > 通用增量依赖图只登记为 DEFER 待办，本轮不实施、不增加组件或热路径成本。
@@ -246,6 +248,30 @@ host 权重模式需真实分批容量/重用旅程，不能用设备枚举、�
 在途/更新/复用、expert IDs 每次改变但 Provider 固定、坏 ID/范围拒绝、OOM/cancel/close、
 丢弃 completion/旧 lease 的终态保活。只用 callback/polling 名称或两个独立任务耗时相近
 不能证明 overlap；若需计时，只对稳定候选的完整旅程有界运行，不扩大算子 P1。
+
+### 4.7 Offload 基础机制补充合同
+
+2026-10-10 用户授权把以下三项纳入当前七包 goal。引擎把显存预算、GPU 层数或比例转换为实际
+片段放置、tensor 描述和资源约束；HYLE 接收这些约束，不解析模型层、决定 offload 比例或管理 KV。
+H1 首先补齐并验证，H2/H3 在各自 native 域兑现相同任务；不复制 CUDA 类型或强造万能资源/Queue。
+
+| 基础机制 | 必须提供的自然路线 | 验收边界 |
+|---|---|---|
+| 普通 CPU 存储与暂存分离 | CPU 计算可直接消费普通 host-accessible 存储；只有跨设备边界需要有界暂存；CUDA pinned backing 是传输域，不是所有 CPU 权重的必选存储 | CPU-resident 权重大于 staging 容量仍可参与真实混合数学；上传/下载、别名、格式、OOM、取消和在途复用有完整合同 |
+| 组合资源账单与预算 | 复用现 Graph 的存储/工作区/生命周期报告及显式迁移池容量，按实际 CPU/device/staging 域汇总 compiled packing、每 invocation、全部在途槽及借用资源；分别标明已知值、保守上界、未知及排除项 | workspace 限额不冒充总显存限额；库内可管理资源按申明预算接纳，未知私有成本不能按零；外部权重/KV由引擎计入，实际共享 backing 不重复相加，旧结果保活仍占账单 |
+| 准备后的传输/等待诊断 | 组合入口自然查询已准备依赖及迁移的实际路径，复用现 ReplayReport/CompileReport；区分设备排序、CPU等待、暂存/转换与合法重叠条件 | 查询与实际执行一致，准备前或改绑失效有明确错误；host-wait 拒绝策略涵盖组合新增边界，热执行不搜索/计时/重新选择 |
+
+资源账单不承诺系统级显存预留或防止其他进程占用；driver/runtime 不可控成本明确列为未知或排除。
+设备可用内存只是引擎决策时的快照。预算改变导致放置/格式/shape 域变化时重新准备相应计划；
+相同域的 payload/expert 选择更新继续复用固定程序。完整模型的分配策略、缓存与集成验收归引擎。
+
+具体源码反例、owner、H1-07至09及批量验收见
+[当前 H1 卡](../implementation/tasks/compute/compute-h1-cpu-cuda-composition.md#当前恢复合同offload-基础机制)。
+三项目前均未完成产品修复/验收；旧候选证据只覆盖其原合同，不代签新增能力。
+
+恢复后先批量完成三项产品接线，API/算法固定再冻结一个新候选，集中验收受影响 source/static/shared
+消费者。CUDA 重型编译改为 build1/test1，重型 run 串行，启动前确认内存余量；因内存暂停时不启动。
+只补缺门和真正受影响项，同身份已通过证据复用；本次文档/状态更新不构建、不跑 P1、不重启 C3。
 
 ## 5. 增量依赖图只登记待办
 
