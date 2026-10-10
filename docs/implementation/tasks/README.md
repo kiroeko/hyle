@@ -10,6 +10,8 @@
 
 用户新增的 Compute/Graph 设计工作：
 
+- [资源与流送施工范围](../../architecture/compute-resource-streaming-design.md)：F1资源租约、F2批量搬运、
+  F3双向文件管线三张准备卡；真实解析结果在consumer侧，不扩为模型loader或cache策略。
 - [推理引擎实际需求与基础机制缺口调研](project/inference-foundation-gap-research-2026-10.md)：
   更新三个参考仓库，沿真实推理旅程对照 HYLE；只形成有界调研与候选，不重开已关闭模块。
 - [构建、冷路由和 CPU/GPU 组合入口设计](build/compute-entry-design.md)：入口统计与有限后续施工包；

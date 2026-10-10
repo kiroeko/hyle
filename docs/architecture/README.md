@@ -53,6 +53,7 @@ HYLE 是面向 AI 推理、异构渲染/资源流送、低延迟服务和工程�
 - [Compute/Graph 冷路由：真实模型画像、计算事实与确定性绑定](compute-routing-system.md)
 - [Compute/Graph 四路线：隔离、原生资源与 Provider 接入](compute-routes.md)
 - [下一阶段：统一计算配置、冷路由与CPU/GPU组合](compute-next-stage.md)：新设计 goal 的入口与有限施工；增量依赖图只登记待办，不代签当前实现。
+- [资源租约、批量搬运与文件管线设计](compute-resource-streaming-design.md)：F1–F3 的完整常用范围、成熟来源、owner与实施卡；尚未实施。
 
 ## 可信度边界
 

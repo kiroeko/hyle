@@ -1,0 +1,237 @@
+{
+  "schema_version": 1,
+  "stage": "design research only; no product implementation or runtime qualification",
+  "hyle_baseline": "edb2714384037b12a3d1e69839aa895fea17cec1",
+  "peers": [
+    {
+      "name": "sglang",
+      "commit": "234ccba7f625e12639e621044496bcc6197c3758",
+      "sources": [
+        {
+          "path": "python/sglang/srt/mem_cache/l2_transfer.py",
+          "sha256_worktree": "1858a09ea22b023dddee4d8ea016d642783c1c1dc31511515f2f51f169b32b80"
+        },
+        {
+          "path": "python/sglang/srt/managers/cache_controller.py",
+          "sha256_worktree": "428d8a7e89da863e9804079352e9d16296bd9ecbc3af084018c8bc541ce84bda"
+        },
+        {
+          "path": "python/sglang/srt/mem_cache/hybrid_cache/hybrid_cache_controller.py",
+          "sha256_worktree": "0e62441e86fbcbac4da3e34553530e3ca638a057e9d9fb6f874930999fb6ebe3"
+        },
+        {
+          "path": "python/sglang/srt/model_loader/weight_utils.py",
+          "sha256_worktree": "a7757701b108c2c383d315ede8b37a2c18ab0f393529ff8c06bdd290a020da64"
+        }
+      ]
+    },
+    {
+      "name": "vllm",
+      "commit": "276fbcff2717bd934cfa37c8a2e4c391f3e7237b",
+      "sources": [
+        {
+          "path": "vllm/v1/core/block_pool.py",
+          "sha256_worktree": "6d1e0d89b43e3b2ae396906b9c2f0551dbe192b60d05f8c1ca2d93a91bbbeea3"
+        },
+        {
+          "path": "vllm/v1/core/single_type_kv_cache_manager.py",
+          "sha256_worktree": "c54c322716949b2ffe1ccb7624928c759be19329ee03b4c11ffbc27084df08a9"
+        },
+        {
+          "path": "vllm/v1/core/sched/scheduler.py",
+          "sha256_worktree": "938c9ce589e4fd9a7a36065a1592fb091ee7f39fd52875f9d5410f8c05ad24e0"
+        },
+        {
+          "path": "vllm/v1/kv_offload/cpu/gpu_worker.py",
+          "sha256_worktree": "d074628708ad0378e9b73502c1f3945a647c531d54102a1db9f90ba1c7f98dff"
+        },
+        {
+          "path": "vllm/v1/kv_offload/tiering/fs/io.py",
+          "sha256_worktree": "c12156b15a39f928262954e5c2aa7fea1e8b99caf7a596b2e647457bec4a7d33"
+        },
+        {
+          "path": "vllm/model_executor/model_loader/weight_utils.py",
+          "sha256_worktree": "15eeb78befb71c75240f5b20c762381905a8f54f83f252de914330b1dddb7dfe"
+        },
+        {
+          "path": "csrc/libtorch_stable/cache_kernels.cu",
+          "sha256_worktree": "5ea4d65b32a10949bddc01fa788a78a5ab6532ee4fa62946f217806a8e754c12"
+        }
+      ]
+    },
+    {
+      "name": "llama.cpp",
+      "commit": "23b0202a189c44a54625aadcb37a946dd1d6278d",
+      "sources": [
+        {
+          "path": "src/llama-model-loader.cpp",
+          "sha256_worktree": "301f8250eef5b34d14617c7c9bf5c14bb60519d199751f4d829502a5107f0593"
+        },
+        {
+          "path": "ggml/src/ggml-backend.cpp",
+          "sha256_worktree": "9a1e17bb2ff6089e597a9bb487f004863e2ac486c1289a444058783a070e10ac"
+        },
+        {
+          "path": "src/llama-memory-hybrid.cpp",
+          "sha256_worktree": "907b769206d9b29b8ee2dd0f04ead29e99810843edaecb722ddbbac852d0bf1e"
+        }
+      ]
+    }
+  ],
+  "hyle_sources": [
+    {
+      "path": "include/hyle/compute/detail/completion_access.h",
+      "sha256_worktree": "8699638e39a1a7d5708cbb6a5e41f191228b3ac571b16b026eadcc1aa6765e34"
+    },
+    {
+      "path": "src/compute/completion.cc",
+      "sha256_worktree": "45befcb46ba54abc8a3f0d75e3cfe6387cfbc6b1571c027928e45fe6d6bfebda"
+    },
+    {
+      "path": "src/compute/completion_internal.h",
+      "sha256_worktree": "a1b80c32399f0b8c3bfa0927d72f94957f99abd30a134e78e3d226161e75cdec"
+    },
+    {
+      "path": "src/compute_backend_cuda/cuda_backend.cc",
+      "sha256_worktree": "94b3afff0ba98031463e37c64d529ed212d3f1cc8da279a7910dd2763ef7ba59"
+    },
+    {
+      "path": "src/compute_route_apple/apple_context.cc",
+      "sha256_worktree": "2521e837e58b76aedac5ec2903e3b7c86f9e426332290241286c8a94daecda24"
+    },
+    {
+      "path": "src/compute_route_apple/apple_weights.mm",
+      "sha256_worktree": "c15e7514bf7b509c19a94c7500d68ae42743388ad6664d117877594291016d6f"
+    },
+    {
+      "path": "src/compute_route_vulkan/vulkan_run.cc",
+      "sha256_worktree": "ff485a311d0d9b3383a9a48b0111bf9c4d4c19d934c5bbf23fe9023b82d9d0a0"
+    },
+    {
+      "path": "src/compute_route_vulkan/vulkan_transfer_slot.cc",
+      "sha256_worktree": "6fc68fec995841e687a414a8c739040e9198e5a34bb75d8d33ae713f4967f505"
+    },
+    {
+      "path": "src/io_core/file.cc",
+      "sha256_worktree": "d5e6714d6a64fa57ca1b298dae28367cce23435bdf0dd1dc94857fe824a420e1"
+    },
+    {
+      "path": "include/hyle/io/file.h",
+      "sha256_worktree": "385736644f18017bcc0f84c46e5de86505104f2369b3035fbea27e3b8a1f1106"
+    },
+    {
+      "path": "include/hyle/mem/range_allocator.h",
+      "sha256_worktree": "ad1b8455a5f940a08e9877526c21feaa2dd19c0344dcad01bd1e423ac898c20c"
+    },
+    {
+      "path": "cmake/HyleComponents.cmake",
+      "sha256_worktree": "10f4b153c68e405c53cf72d81917b7505e8b21fb5702c7f4be471baae7b9ff59"
+    }
+  ],
+  "local_model": {
+    "path": "C:\\Users\\kiro\\Downloads\\Qwen3.5-2B\\model.safetensors-00001-of-00001.safetensors",
+    "file_bytes": 4548221488,
+    "header_bytes": 76648,
+    "data_base": 76656,
+    "header_sha256": "ccba2c1f645fe59268f89ee7ea552e02ce6bf0c8a087bf332fb0e3bd99bfee9d",
+    "whole_model_read_or_hashed": false,
+    "inspection": "research-only header probe, not a product format parser",
+    "tensors": {
+      "model.language_model.layers.0.linear_attn.norm.weight": {
+        "dtype": "F32",
+        "shape": [
+          128
+        ],
+        "data_offsets": [
+          64,
+          576
+        ]
+      },
+      "model.language_model.layers.0.input_layernorm.weight": {
+        "dtype": "BF16",
+        "shape": [
+          2048
+        ],
+        "data_offsets": [
+          1017129088,
+          1017133184
+        ]
+      },
+      "model.language_model.layers.0.mlp.down_proj.weight": {
+        "dtype": "BF16",
+        "shape": [
+          2048,
+          6144
+        ],
+        "data_offsets": [
+          1059256480,
+          1084422304
+        ]
+      },
+      "model.language_model.layers.0.mlp.gate_proj.weight": {
+        "dtype": "BF16",
+        "shape": [
+          6144,
+          2048
+        ],
+        "data_offsets": [
+          1084422304,
+          1109588128
+        ]
+      },
+      "model.language_model.layers.0.mlp.up_proj.weight": {
+        "dtype": "BF16",
+        "shape": [
+          6144,
+          2048
+        ],
+        "data_offsets": [
+          1109588128,
+          1134753952
+        ]
+      },
+      "model.language_model.layers.0.post_attention_layernorm.weight": {
+        "dtype": "BF16",
+        "shape": [
+          2048
+        ],
+        "data_offsets": [
+          1134753952,
+          1134758048
+        ]
+      },
+      "mtp.layers.0.input_layernorm.weight": {
+        "dtype": "BF16",
+        "shape": [
+          2048
+        ],
+        "data_offsets": [
+          4443265728,
+          4443269824
+        ]
+      },
+      "mtp.layers.0.mlp.down_proj.weight": {
+        "dtype": "BF16",
+        "shape": [
+          2048,
+          6144
+        ],
+        "data_offsets": [
+          4443269824,
+          4468435648
+        ]
+      }
+    }
+  },
+  "native_docs": [
+    "https://docs.nvidia.com/cuda/cuda-runtime-api/cuda_runtime_api/group__CUDART__MEMORY.html",
+    "https://docs.vulkan.org/refpages/latest/refpages/source/vkCmdCopyBuffer.html",
+    "https://developer.apple.com/documentation/metal/mtlblitcommandencoder/copy%28from%3Asourceoffset%3Ato%3Adestinationoffset%3Asize%3A%29"
+  ],
+  "finite_fix_count": {
+    "F1": 8,
+    "F2": 7,
+    "F3": 8
+  },
+  "unknown_observation_cuda": "SOURCE_FIT_QUESTION, not injected/reproduced; qualification required before lease integration"
+}
