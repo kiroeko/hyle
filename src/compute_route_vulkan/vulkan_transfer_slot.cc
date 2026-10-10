@@ -42,16 +42,21 @@ Status visibility(const detail::Buffer &buffer, bool flush) noexcept {
                                     : device.fn.InvalidateMappedMemoryRanges(device.native.device, 1, &range),
                                flush ? "vkFlushMappedMemoryRanges" : "vkInvalidateMappedMemoryRanges");
 }
-Status record(detail::TransferState &slot, const Tensor &tensor, bool upload) noexcept {
+Status record(detail::TransferState &slot, const Tensor &tensor, bool upload,
+              std::size_t selected_bytes = SIZE_MAX) noexcept {
   auto &device = *slot.runtime->device;
   const auto &staging = detail::Access::buffer(slot.staging);
   const auto &native = detail::Access::buffer(tensor);
   HYLE_ASSIGN_OR_RETURN(auto bytes, tensor.description().required_bytes());
+  if (selected_bytes != SIZE_MAX) bytes = selected_bytes;
   HYLE_ASSIGN_OR_RETURN(auto padded, detail::buffer_capacity(bytes));
+  slot.run->transfer_submission = upload && native->transfer_eligible && staging->transfer_eligible &&
+      slot.run->transfer_command != VK_NULL_HANDLE;
+  const auto command = slot.run->transfer_submission ? slot.run->transfer_command : slot.run->command;
   VkCommandBufferBeginInfo begin{};
   begin.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
   begin.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-  HYLE_RETURN_IF_ERROR(detail::native_status(device.fn.BeginCommandBuffer(slot.run->command, &begin), "vkBeginCommandBuffer"));
+  HYLE_RETURN_IF_ERROR(detail::native_status(device.fn.BeginCommandBuffer(command, &begin), "vkBeginCommandBuffer"));
   // Scope the hazard to these exact buffers. Independent old compute/storage
   // does not acquire a fabricated global read/write dependency from this copy.
   VkBufferMemoryBarrier barrier{};
@@ -62,28 +67,51 @@ Status record(detail::TransferState &slot, const Tensor &tensor, bool upload) no
   barrier.size = padded;
   barrier.srcAccessMask = upload ? VK_ACCESS_HOST_WRITE_BIT : VK_ACCESS_SHADER_WRITE_BIT;
   barrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
-  device.fn.CmdPipelineBarrier(slot.run->command,
+  device.fn.CmdPipelineBarrier(command,
       upload ? VK_PIPELINE_STAGE_HOST_BIT : VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
       VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 1, &barrier, 0, nullptr);
   if (bytes != 0) {
     VkBufferCopy copy{upload ? 0 : native->offset, upload ? native->offset : 0, padded};
-    device.fn.CmdCopyBuffer(slot.run->command, upload ? staging->handle : native->handle,
+    device.fn.CmdCopyBuffer(command, upload ? staging->handle : native->handle,
                             upload ? native->handle : staging->handle, 1, &copy);
   }
   barrier.buffer = upload ? native->handle : staging->handle;
   barrier.offset = upload ? native->offset : 0;
   barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
   barrier.dstAccessMask = upload ? VK_ACCESS_SHADER_READ_BIT : VK_ACCESS_HOST_READ_BIT;
-  device.fn.CmdPipelineBarrier(slot.run->command, VK_PIPELINE_STAGE_TRANSFER_BIT,
-      upload ? VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT : VK_PIPELINE_STAGE_HOST_BIT,
-      0, 0, nullptr, 1, &barrier, 0, nullptr);
-  HYLE_RETURN_IF_ERROR(detail::native_status(device.fn.EndCommandBuffer(slot.run->command), "vkEndCommandBuffer"));
+  if (!slot.run->transfer_submission)
+    device.fn.CmdPipelineBarrier(command, VK_PIPELINE_STAGE_TRANSFER_BIT,
+        upload ? VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT : VK_PIPELINE_STAGE_HOST_BIT,
+        0, 0, nullptr, 1, &barrier, 0, nullptr);
+  HYLE_RETURN_IF_ERROR(detail::native_status(device.fn.EndCommandBuffer(command), "vkEndCommandBuffer"));
+  if (slot.run->transfer_submission) {
+    // Concurrent-family storage needs no ownership release/acquire. The
+    // transfer signal + compute ALL_COMMANDS wait provides visibility. This
+    // empty native submit preserves the original compute-prefix ready fence.
+    HYLE_RETURN_IF_ERROR(detail::native_status(device.fn.BeginCommandBuffer(slot.run->command, &begin), "vkBeginCommandBuffer(handoff)"));
+    HYLE_RETURN_IF_ERROR(detail::native_status(device.fn.EndCommandBuffer(slot.run->command), "vkEndCommandBuffer(handoff)"));
+  }
   slot.run->retained_buffers[0] = staging;
   slot.run->retained_buffers[1] = native;
   slot.description = tensor.description();
   slot.download = !upload;
   slot.submitted = false;
   return Status::Ok();
+}
+Status create_transfer_commands(detail::Run &run) noexcept {
+  const auto &device = *run.runtime->device;
+  if (!device.environment.distinct_transfer_queue) return Status::Ok();
+  VkCommandPoolCreateInfo pool{}; pool.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+  pool.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+  pool.queueFamilyIndex = device.transfer_queue_family;
+  HYLE_RETURN_IF_ERROR(detail::native_status(device.fn.CreateCommandPool(device.native.device, &pool, nullptr, &run.transfer_pool), "vkCreateCommandPool(transfer)"));
+  VkCommandBufferAllocateInfo command{}; command.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+  command.commandPool = run.transfer_pool; command.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY; command.commandBufferCount = 1;
+  HYLE_RETURN_IF_ERROR(detail::native_status(device.fn.AllocateCommandBuffers(device.native.device, &command, &run.transfer_command), "vkAllocateCommandBuffers(transfer)"));
+  VkFenceCreateInfo fence{}; fence.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+  HYLE_RETURN_IF_ERROR(detail::native_status(device.fn.CreateFence(device.native.device, &fence, nullptr, &run.transfer_fence), "vkCreateFence(transfer)"));
+  VkSemaphoreCreateInfo semaphore{}; semaphore.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+  return detail::native_status(device.fn.CreateSemaphore(device.native.device, &semaphore, nullptr, &run.transfer_ready), "vkCreateSemaphore(transfer)");
 }
 } // namespace
 
@@ -115,6 +143,7 @@ Result<TransferSlot> TransferSlot::create(const Context &context, const MemoryRe
     HYLE_ASSIGN_OR_RETURN(slot.state_->staging, staging.allocate(shape, options));
     HYLE_ASSIGN_OR_RETURN(slot.state_->run, detail::create_run(runtime, allocator));
     slot.state_->run->retained_buffers.resize(2);
+    HYLE_RETURN_IF_ERROR(create_transfer_commands(*slot.state_->run));
     return slot;
   } catch (const std::bad_alloc &) {
     return std::unexpected(Status::ResourceExhausted("Vulkan transfer slot metadata"));
@@ -174,33 +203,7 @@ Result<Completion> detail::TransferAccess::upload(
     HYLE_RETURN_IF_ERROR(part.source.storage().read({pointer + part.offset, bytes}));
   }
   HYLE_RETURN_IF_ERROR(visibility(staging, true));
-  // The catalog destination is a fixed raw carrier. Only selected bytes plus
-  // native alignment padding are transferred, not the whole reserved capacity.
-  auto &device = *state.runtime->device;
-  const auto &native = Access::buffer(destination);
-  VkCommandBufferBeginInfo begin{};
-  begin.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-  begin.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-  HYLE_RETURN_IF_ERROR(native_status(device.fn.BeginCommandBuffer(state.run->command, &begin), "vkBeginCommandBuffer"));
-  VkBufferMemoryBarrier barrier{};
-  barrier.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
-  barrier.srcQueueFamilyIndex = barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-  barrier.buffer = staging.handle; barrier.size = padded;
-  barrier.srcAccessMask = VK_ACCESS_HOST_WRITE_BIT; barrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
-  device.fn.CmdPipelineBarrier(state.run->command, VK_PIPELINE_STAGE_HOST_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT,
-                               0, 0, nullptr, 1, &barrier, 0, nullptr);
-  if (used != 0) {
-    VkBufferCopy copy{0, native->offset, padded};
-    device.fn.CmdCopyBuffer(state.run->command, staging.handle, native->handle, 1, &copy);
-  }
-  barrier.buffer = native->handle; barrier.offset = native->offset;
-  barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT; barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
-  device.fn.CmdPipelineBarrier(state.run->command, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
-                               0, 0, nullptr, 1, &barrier, 0, nullptr);
-  HYLE_RETURN_IF_ERROR(native_status(device.fn.EndCommandBuffer(state.run->command), "vkEndCommandBuffer"));
-  state.run->retained_buffers[0] = Access::buffer(state.staging);
-  state.run->retained_buffers[1] = native;
-  state.download = false; state.submitted = false;
+  HYLE_RETURN_IF_ERROR(record(state, destination, true, used));
   auto completion = submit_locked(state.run);
   if (completion) state.submitted = true;
   return completion;

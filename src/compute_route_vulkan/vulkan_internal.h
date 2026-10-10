@@ -91,6 +91,8 @@ inline RouteFacts route_facts(const Environment &environment) noexcept {
   X(ResetFences)                                                               \
   X(GetFenceStatus)                                                            \
   X(WaitForFences)                                                             \
+  X(CreateSemaphore)                                                          \
+  X(DestroySemaphore)                                                         \
   X(QueueSubmit)                                                               \
   X(QueueWaitIdle)                                                             \
   X(CreateShaderModule)                                                        \
@@ -131,6 +133,8 @@ struct Device final {
   DeviceFunctions fn;
   NativeDevice native;
   VkQueue queue = VK_NULL_HANDLE;
+  VkQueue transfer_queue = VK_NULL_HANDLE;
+  std::uint32_t transfer_queue_family = 0;
   VkPhysicalDeviceProperties properties{};
   VkPhysicalDeviceMemoryProperties memory_properties{};
   VkPhysicalDeviceDescriptorIndexingProperties descriptor_properties{};
@@ -145,6 +149,7 @@ struct BufferAllocation final {
   mem::MemoryResourceRef resource;
   compute::ResourceBudgetCategory category = compute::ResourceBudgetCategory::kWorkspace;
   mem::AllocatorRef allocator = mem::system_allocator();
+  bool transfer_access = false;
 };
 
 struct Buffer final {
@@ -160,6 +165,7 @@ struct Buffer final {
   VkMemoryPropertyFlags memory_flags = 0;
   void *mapped = nullptr;
   bool is_view = false;
+  bool transfer_eligible = false;
   // Cold opt-in accounting. One pointer on original owners; no hot scope
   // lookup or extra allocation when no shared requested-byte budget is used.
   BufferBudget *budget = nullptr;
@@ -214,6 +220,11 @@ struct Run final {
   VkCommandBuffer command = VK_NULL_HANDLE;
   VkDescriptorPool descriptor_pool = VK_NULL_HANDLE;
   VkFence fence = VK_NULL_HANDLE;
+  VkCommandPool transfer_pool = VK_NULL_HANDLE;
+  VkCommandBuffer transfer_command = VK_NULL_HANDLE;
+  VkFence transfer_fence = VK_NULL_HANDLE;
+  VkSemaphore transfer_ready = VK_NULL_HANDLE;
+  bool transfer_submission = false, transfer_submitted = false;
   VkFence completion_fence =
       VK_NULL_HANDLE;           // Borrowed last actual batch fence.
   std::vector<RunStage> stages; // Empty for the original single native batch.

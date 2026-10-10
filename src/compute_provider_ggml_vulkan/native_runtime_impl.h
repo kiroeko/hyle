@@ -106,6 +106,8 @@ Failure create(const Options &options, Runtime **result,
         // DeviceCreateInfo. Capture the enabled Int16 fact cold.
         device->physical_device.getFeatures().shaderInt16 != VK_FALSE,
         float_controls.shaderSignedZeroInfNanPreserveFloat32 != VK_FALSE};
+    native->transfer_queue = device->transfer_queue->handle->queue;
+    native->transfer_queue_family = device->transfer_queue->queue_family_index;
     *result = runtime;
     return {};
   } catch (...) {
@@ -119,11 +121,13 @@ void note_device_lost(Runtime *runtime) noexcept {
   runtime->device_lost.store(true);
 }
 
-Failure with_queue(Runtime *runtime, VkResult (*function)(void *, VkQueue),
-                   void *state) noexcept {
+namespace {
+Failure with_native_queue(Runtime *runtime, bool transfer,
+                          VkResult (*function)(void *, VkQueue), void *state) noexcept {
   try {
     Active active(runtime);
-    auto handle = runtime->instance.devices[0]->compute_queue->handle;
+    const auto &device = runtime->instance.devices[0];
+    auto handle = transfer ? device->transfer_queue->handle : device->compute_queue->handle;
     // This is also the upstream submit lock order, including its NVIDIA
     // cross-queue workaround. Do not call back into this owner in the body.
     std::unique_lock<std::mutex> device_guard;
@@ -137,6 +141,13 @@ Failure with_queue(Runtime *runtime, VkResult (*function)(void *, VkQueue),
   } catch (...) {
     return current_failure();
   }
+}
+} // namespace
+Failure with_queue(Runtime *runtime, VkResult (*function)(void *, VkQueue), void *state) noexcept {
+  return with_native_queue(runtime, false, function, state);
+}
+Failure with_transfer_queue(Runtime *runtime, VkResult (*function)(void *, VkQueue), void *state) noexcept {
+  return with_native_queue(runtime, true, function, state);
 }
 
 ggml_backend_buffer *borrow(VkBuffer handle, std::size_t bytes,

@@ -33,7 +33,7 @@ struct MemoryState final : mem::MemoryResource {
     if (runtime->closed) return std::unexpected(Status::FailedPrecondition("Vulkan context is closed"));
     if (!runtime->failure.ok()) return std::unexpected(runtime->failure);
     HYLE_ASSIGN_OR_RETURN(auto buffer, allocate_buffer(runtime->device, bytes,
-        kind == MemoryKind::kStaging, false, {.allocator = allocator}));
+        kind == MemoryKind::kStaging, false, {.allocator = allocator, .transfer_access = true}));
     if (buffer->mapped != nullptr && reinterpret_cast<std::uintptr_t>(buffer->mapped) % alignment != 0)
       return std::unexpected(Status::InvalidArgument("Vulkan staging cannot satisfy host alignment"));
     auto *storage = allocator.allocate(sizeof(AllocationToken), alignof(AllocationToken));
@@ -123,7 +123,8 @@ Result<Tensor> MemoryResource::allocate(const TensorDesc &description, Allocatio
   if (!runtime.failure.ok()) return std::unexpected(runtime.failure);
   HYLE_ASSIGN_OR_RETURN(auto buffer, detail::allocate_buffer(runtime.device, bytes,
       state_->kind == MemoryKind::kStaging, true,
-      {.budget = options.resource_budget, .resource = ref(), .category = options.category, .allocator = state_->allocator}));
+      {.budget = options.resource_budget, .resource = ref(), .category = options.category, .allocator = state_->allocator,
+       .transfer_access = true}));
   return detail::Access::tensor(description, std::move(buffer));
 }
 Result<NativeStorage> MemoryResource::storage_info(const Tensor &tensor) const noexcept {
@@ -131,6 +132,7 @@ Result<NativeStorage> MemoryResource::storage_info(const Tensor &tensor) const n
     return std::unexpected(Status::InvalidArgument("Vulkan tensor belongs to another native Device"));
   const auto &buffer = *detail::Access::buffer(tensor);
   return NativeStorage{buffer.handle, buffer.offset, buffer.bytes,
-      buffer.allocation_bytes != 0 ? std::optional<std::size_t>(buffer.allocation_bytes) : std::nullopt};
+      buffer.allocation_bytes != 0 ? std::optional<std::size_t>(buffer.allocation_bytes) : std::nullopt,
+      buffer.transfer_eligible};
 }
 } // namespace hyle::compute::vulkan

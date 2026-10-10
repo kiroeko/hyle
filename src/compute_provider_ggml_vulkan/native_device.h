@@ -70,6 +70,10 @@ public:
   // runs synchronously under the same locks as the upstream submit path.
   HYLE_GGML_VULKAN_INTERNAL_API Status with_queue(VkResult (*)(void *, VkQueue),
                                                   void *) const noexcept;
+  // Existing upstream transfer handle; aliases compute on single-queue devices.
+  // Identical native submit lock order, no new queue/device/runtime.
+  HYLE_GGML_VULKAN_INTERNAL_API Status
+  with_transfer_queue(VkResult (*)(void *, VkQueue), void *) const noexcept;
 
 private:
   friend class NativeGraph;

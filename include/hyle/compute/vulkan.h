@@ -80,6 +80,9 @@ struct Environment final {
   bool storage_update_after_bind = false;
   bool portability_subset = false;
   bool software_device = false;
+  std::uint32_t transfer_queue_family = 0;
+  // Capability only: actual copy/compute overlap needs native qualification.
+  bool distinct_transfer_queue = false;
 };
 
 struct ContextOptions final {

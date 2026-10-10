@@ -47,6 +47,8 @@ struct Native {
   std::uint32_t queue_create_flags = 0;
   bool shader_int16 = false;
   bool preserve_float32_specials = false;
+  VkQueue transfer_queue = VK_NULL_HANDLE;
+  std::uint32_t transfer_queue_family = 0;
 };
 enum class Error {
   None,
@@ -97,6 +99,7 @@ void *enter(Runtime *) noexcept;
 void leave(void *) noexcept;
 void note_device_lost(Runtime *) noexcept;
 Failure with_queue(Runtime *, VkResult (*)(void *, VkQueue), void *) noexcept;
+Failure with_transfer_queue(Runtime *, VkResult (*)(void *, VkQueue), void *) noexcept;
 Failure create_backend(Runtime *, ggml_backend **) noexcept;
 Failure allocate_buffer(Runtime *, std::size_t,
                         ggml_backend_buffer **) noexcept;

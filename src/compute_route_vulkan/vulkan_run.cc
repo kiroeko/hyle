@@ -19,6 +19,8 @@ Run::~Run() {
   const auto &device = *runtime->device;
   if (command_pool != VK_NULL_HANDLE)
     device.fn.DestroyCommandPool(device.native.device, command_pool, nullptr);
+  if (transfer_pool != VK_NULL_HANDLE)
+    device.fn.DestroyCommandPool(device.native.device, transfer_pool, nullptr);
   if (descriptor_pool != VK_NULL_HANDLE)
     device.fn.DestroyDescriptorPool(device.native.device, descriptor_pool,
                                     nullptr);
@@ -27,6 +29,10 @@ Run::~Run() {
                                                     std::memory_order_relaxed);
   if (fence != VK_NULL_HANDLE)
     device.fn.DestroyFence(device.native.device, fence, nullptr);
+  if (transfer_fence != VK_NULL_HANDLE)
+    device.fn.DestroyFence(device.native.device, transfer_fence, nullptr);
+  if (transfer_ready != VK_NULL_HANDLE)
+    device.fn.DestroySemaphore(device.native.device, transfer_ready, nullptr);
 }
 
 Result<std::shared_ptr<Run>>
@@ -92,12 +98,18 @@ bool device_lost(const Status &status) noexcept {
          NativeError{NativeErrorDomain::Vulkan, VK_ERROR_DEVICE_LOST};
 }
 
-Status drain_native(Device &device) noexcept {
-  return device.provider.with_queue(
+Status drain_native(Device &device, bool transfer) noexcept {
+  const auto compute = device.provider.with_queue(
       [](void *opaque, VkQueue queue) -> VkResult {
         return static_cast<Device *>(opaque)->fn.QueueWaitIdle(queue);
       },
       &device);
+  if (!transfer) return compute;
+  const auto copied = device.provider.with_transfer_queue(
+      [](void *opaque, VkQueue queue) -> VkResult {
+        return static_cast<Device *>(opaque)->fn.QueueWaitIdle(queue);
+      }, &device);
+  return !compute.ok() ? compute : copied;
 }
 
 VkResult drain_result(const Status &status) noexcept {
@@ -240,7 +252,7 @@ Result<CompletionPoll> observe(const std::shared_ptr<Run> &run,
     if (device_lost(runtime.failure)) {
       result = VK_ERROR_DEVICE_LOST;
     } else if (wait) {
-      const auto drained = drain_native(device);
+      const auto drained = drain_native(device, run->transfer_submitted);
       result = drain_result(drained);
       if (!drained.ok() && run->observation_error.ok())
         run->observation_error = drained;
@@ -265,7 +277,7 @@ Result<CompletionPoll> observe(const std::shared_ptr<Run> &run,
     if (wait) {
       // Only the exceptional path uses queue-wide drain. Preserve the original
       // diagnosis, even if an independent native observation proves completion.
-      result = drain_result(drain_native(device));
+      result = drain_result(drain_native(device, run->transfer_submitted));
       run->needs_drain = !run->stages.empty();
     }
   }
@@ -407,6 +419,42 @@ const cd::CompletionVTable completion_vtable{
       return Status::Ok();
     }};
 
+Status submit_transfer(Run &run, bool &accepted) noexcept {
+  auto &device = *run.runtime->device;
+  HYLE_RETURN_IF_ERROR(native_status(device.fn.ResetFences(device.native.device, 1, &run.transfer_fence), "vkResetFences(transfer)"));
+  struct Submission final {
+    PFN_vkQueueSubmit submit;
+    const VkSubmitInfo *info;
+    VkFence fence;
+  };
+  const auto submit = [](void *opaque, VkQueue queue) -> VkResult {
+    const auto &call = *static_cast<Submission *>(opaque);
+    return call.submit(queue, 1, call.info, call.fence);
+  };
+  VkSubmitInfo copy{}; copy.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+  copy.commandBufferCount = 1; copy.pCommandBuffers = &run.transfer_command;
+  copy.signalSemaphoreCount = 1; copy.pSignalSemaphores = &run.transfer_ready;
+  Submission first{device.fn.QueueSubmit, &copy, run.transfer_fence};
+  const auto copied = device.provider.with_transfer_queue(submit, &first);
+  if (!copied.ok()) return copied;
+  accepted = true; run.transfer_submitted = true;
+  VkPipelineStageFlags wait_stage = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
+  VkSubmitInfo handoff{}; handoff.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+  handoff.waitSemaphoreCount = 1; handoff.pWaitSemaphores = &run.transfer_ready;
+  handoff.pWaitDstStageMask = &wait_stage;
+  handoff.commandBufferCount = 1; handoff.pCommandBuffers = &run.command;
+  Submission second{device.fn.QueueSubmit, &handoff, run.fence};
+  const auto acquired = device.provider.with_queue(submit, &second);
+  if (!acquired.ok()) {
+    // A rejected handoff does not discard the already-accepted copy prefix.
+    // Like the original lone-submit policy, rejection admits no second work.
+    // The copy fence is the actual retirement proof; this slot cannot replay.
+    run.submission_failure = acquired;
+    run.completion_fence = run.transfer_fence;
+  }
+  return acquired;
+}
+
 } // namespace
 
 Result<Completion> submit_locked(const std::shared_ptr<Run> &run,
@@ -447,6 +495,7 @@ Result<Completion> submit_locked(const std::shared_ptr<Run> &run,
     }
   }
   run->needs_drain = false;
+  run->transfer_submitted = false;
   run->cancelled = false;
   bool accepted = false;
   if (run->async) {
@@ -454,8 +503,11 @@ Result<Completion> submit_locked(const std::shared_ptr<Run> &run,
     accepted = advance_async_locked(*run);
     status = run->submission_failure;
   } else if (run->stages.empty()) {
-    status = submit_native(device, run->command, run->fence);
-    accepted = status.ok();
+    if (run->transfer_submission) status = submit_transfer(*run, accepted);
+    else {
+      status = submit_native(device, run->command, run->fence);
+      accepted = status.ok();
+    }
   } else {
     for (std::size_t index = 0; index < run->stages.size(); ++index) {
       auto &stage = run->stages[index];

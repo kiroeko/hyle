@@ -163,6 +163,12 @@ Status add_copy(ReplayReport &report, std::size_t bytes) noexcept {
   report.host_copy_bytes += bytes;
   return Status::Ok();
 }
+Status add_upload(const RunState &run, std::size_t id, ReplayReport &report) noexcept {
+  HYLE_ASSIGN_OR_RETURN(auto storage, run.plan->environment.device->storage_info(*run.values[id].boundary));
+  if (storage.transfer_eligible) ++report.independent_upload_count;
+  else ++report.compute_queue_upload_count;
+  return Status::Ok();
+}
 
 Status await_completion(RunState &run, const compute::Completion &completion) noexcept {
   for (;;) {
@@ -588,6 +594,7 @@ Status Invocation::prepare_replay(ReplayOptions options) noexcept {
           HYLE_RETURN_IF_ERROR(allocate_transfer(run, id));
           value.native_value = value.boundary;
           HYLE_RETURN_IF_ERROR(add_copy(report, bytes));
+          HYLE_RETURN_IF_ERROR(add_upload(run, id, report));
           if (value.repack.valid()) {
             HYLE_RETURN_IF_ERROR(allocate_host(run, id));
             HYLE_ASSIGN_OR_RETURN(auto destination, host_tensor(run, id));
@@ -603,6 +610,7 @@ Status Invocation::prepare_replay(ReplayOptions options) noexcept {
       if (spec.producer == kCpuTarget && spec.vulkan_use) {
         value.native_value = value.boundary;
         HYLE_RETURN_IF_ERROR(add_copy(report, bytes));
+        HYLE_RETURN_IF_ERROR(add_upload(run, id, report));
       }
       if (spec.producer == kVulkanTarget && spec.cpu_use)
         HYLE_RETURN_IF_ERROR(add_copy(report, bytes));

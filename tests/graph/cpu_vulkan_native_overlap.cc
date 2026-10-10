@@ -59,7 +59,9 @@ hyle::Status run() {
   std::uint32_t family_count = 0; families(native.physical, &family_count, nullptr);
   std::vector<VkQueueFamilyProperties> properties(family_count);
   families(native.physical, &family_count, properties.data());
-  if (properties[native.queue_family].timestampValidBits < 32)
+  const auto bits = std::min(properties[native.queue_family].timestampValidBits,
+      properties[native.transfer_queue_family].timestampValidBits);
+  if (bits < 32)
     return hyle::Status::Unavailable("original queue lacks an applicable timestamp domain");
   const auto load = [&](const char *name) { return device.instance_fn.GetDeviceProcAddr(native.device, name); };
   const auto create_queries = reinterpret_cast<PFN_vkCreateQueryPool>(load("vkCreateQueryPool"));
@@ -119,7 +121,6 @@ hyle::Status run() {
   HYLE_RETURN_IF_ERROR(vk_status(get_queries(native.device, queries, 0, copy_query + 2,
       sizeof(ticks), ticks.data(), sizeof(std::uint64_t), VK_QUERY_RESULT_64_BIT | VK_QUERY_RESULT_WAIT_BIT), "vkGetQueryPoolResults"));
   std::uint32_t intersections = 0; std::uint64_t overlap = 0;
-  const auto bits = properties[native.queue_family].timestampValidBits;
   const auto mask = bits == 64 ? UINT64_MAX : (std::uint64_t{1} << bits) - 1;
   for (auto &tick : ticks) tick &= mask;
   for (std::uint32_t index = 0; index < dispatches; ++index) {
@@ -134,8 +135,9 @@ hyle::Status run() {
   HYLE_RETURN_IF_ERROR(context.download(weight, std::as_writable_bytes(std::span(host))));
   if (!std::ranges::all_of(host, [](float value) { return value == 0.5f; }) || copies != 1)
     return hyle::Status::Internal("original weight transfer oracle or copy count differs");
-  std::printf("{\"device\":\"%s\",\"queue_family\":%u,\"timestamp_bits\":%u,\"period_ns\":%.9g,\"dispatch_count\":%u,\"copy_count\":%u,\"payload_bytes\":%zu,\"copy_ticks\":[%llu,%llu],\"intersected_dispatch_brackets\":%u,\"intersection_ns\":%.9g,\"math_and_payload\":\"PASS\"}\n",
-      context.environment().device_name.c_str(), native.queue_family, bits, double(device.properties.limits.timestampPeriod),
+  std::printf("{\"device\":\"%s\",\"queue_family\":%u,\"transfer_family\":%u,\"distinct_transfer_queue\":%s,\"timestamp_bits\":%u,\"period_ns\":%.9g,\"dispatch_count\":%u,\"copy_count\":%u,\"payload_bytes\":%zu,\"copy_ticks\":[%llu,%llu],\"intersected_dispatch_brackets\":%u,\"intersection_ns\":%.9g,\"math_and_payload\":\"PASS\"}\n",
+      context.environment().device_name.c_str(), native.queue_family, native.transfer_queue_family,
+      context.environment().distinct_transfer_queue ? "true" : "false", bits, double(device.properties.limits.timestampPeriod),
       recorded, copies, byte_count, static_cast<unsigned long long>(ticks[copy_query]), static_cast<unsigned long long>(ticks[copy_query + 1]),
       intersections, double(overlap) * device.properties.limits.timestampPeriod);
   for (std::uint32_t index = 0; index < dispatches; ++index)

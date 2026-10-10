@@ -209,6 +209,12 @@ Status NativeDevice::with_queue(VkResult (*function)(void *, VkQueue),
   return failure(bridge::with_queue(state_->runtime, function, state));
 }
 
+Status NativeDevice::with_transfer_queue(VkResult (*function)(void *, VkQueue),
+                                         void *state) const noexcept {
+  if (!state_ || !function)
+    return Status::InvalidArgument("ggml Vulkan native transfer queue callback");
+  return failure(bridge::with_transfer_queue(state_->runtime, function, state));
+}
 Status NativeDevice::with_queue(
     const std::function<Status(VkQueue)> &function) const noexcept {
   if (!state_ || !function)

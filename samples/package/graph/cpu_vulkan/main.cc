@@ -115,6 +115,9 @@ Status ffn(b::Environment environment, hyle::sched::Scheduler &scheduler, c::Res
     HYLE_ASSIGN_OR_RETURN(auto report, run->replay_report());
     if (report.cpu_fragments != 2 || report.vulkan_fragments != 1 || report.host_copy_count != 2)
       return Status::Internal("CPU+Vulkan replay report differs");
+    if (report.independent_upload_count + report.compute_queue_upload_count != 1 ||
+        (environment.vulkan->environment().distinct_transfer_queue && report.independent_upload_count != 1))
+      return Status::Internal("CPU+Vulkan cold upload queue report differs");
   }
   for (int replay = 0; replay < 3; ++replay) {
     std::array<float, 64> values; double square = 0;

@@ -83,6 +83,10 @@ Result<std::shared_ptr<Device>> create_device(ContextOptions options) noexcept {
     device->native = {owner.instance, owner.physical, owner.device,
                       owner.queue_family};
     device->queue = owner.queue;
+    device->transfer_queue = owner.transfer_queue;
+    device->transfer_queue_family = owner.transfer_queue_family;
+    device->environment.transfer_queue_family = owner.transfer_queue_family;
+    device->environment.distinct_transfer_queue = owner.transfer_queue != VK_NULL_HANDLE && owner.transfer_queue != owner.queue;
     device->environment.loader_version = owner.loader_version;
     device->environment.storage_update_after_bind =
         owner.storage_update_after_bind;
@@ -184,6 +188,7 @@ void bind_view_buffer(Buffer &view, const std::shared_ptr<Buffer> &root,
   view.bytes = root ? root->bytes - byte_offset : 0;
   view.allocation_bytes = root ? root->allocation_bytes : 0;
   view.is_view = true;
+  view.transfer_eligible = root && root->transfer_eligible;
 }
 
 Result<std::shared_ptr<Buffer>>
@@ -222,6 +227,13 @@ allocate_buffer(const std::shared_ptr<Device> &device, VkDeviceSize bytes,
     if (!staging || shader_access)
       info.usage |= VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
     info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    const std::array families{device->native.queue_family, device->transfer_queue_family};
+    buffer->transfer_eligible = allocation.transfer_access && device->environment.distinct_transfer_queue;
+    if (buffer->transfer_eligible && families[0] != families[1]) {
+      info.sharingMode = VK_SHARING_MODE_CONCURRENT;
+      info.queueFamilyIndexCount = 2;
+      info.pQueueFamilyIndices = families.data();
+    }
     auto status =
         native_status(device->fn.CreateBuffer(device->native.device, &info,
                                               nullptr, &buffer->handle),

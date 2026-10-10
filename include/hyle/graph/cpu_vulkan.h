@@ -64,6 +64,7 @@ struct ReplayReport final {
   std::size_t host_repack_count = 0;
   std::size_t native_completion_wait_count = 0;
   std::size_t weight_preparation_wait_count = 0;
+  std::size_t independent_upload_count = 0, compute_queue_upload_count = 0;
 };
 struct ResourceReport final {
   // Requested managed bytes in the same scope, including other invocations,

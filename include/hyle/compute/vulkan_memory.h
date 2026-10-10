@@ -25,6 +25,7 @@ struct NativeStorage final {
   // Requested capacity differs from VkDeviceMemory requirements. Unknown for
   // external imports; never add this observation to managed scope usage.
   std::optional<std::size_t> allocation_bytes;
+  bool transfer_eligible = false; // Original compute and transfer families.
 };
 
 // Original route VkBuffer/VkDeviceMemory in the Context's exact Device/family.
@@ -64,6 +65,10 @@ private:
 // other views. Reuse never grows capacity or reselects a Provider.
 // Handles are thread-compatible. Resource/allocator outlive late work; Context
 // collect/close retire abandoned prefixes using the original native runtime.
+// Upload of eligible MemoryResource storage uses the original transfer queue
+// and a semaphore handoff to compute. Ready remains compute ordered-prefix
+// completion. Legacy/imported storage and downloads use the original compute
+// queue; queue availability alone does not prove physical overlap.
 class TransferSlot final {
 public:
   TransferSlot() noexcept = default;
