@@ -131,3 +131,8 @@ pinned/device资源。Graph内部cold admission传入两backend身份并沿原va
 未放宽checker或改产品路线解析。selector针对首批产品授权READY，无unknown路径；其共享
 manifest superset不表示执行全部库数学，后续按本卡真实半径批验。CPP/数学/native库尚未编译或
 运行，不写PASS；H1-03～06继续施工，整包保持AUDITED，不将该入口当联合/异步完成。
+
+首批产品提交6f7684f07；统一脚本对该不可变commit、全部compute/graph根及新组合源码根统计，
+[LOC结果](../../../../evidence/architecture/compute-entry-design/loc-h1-first-wiring.json)self-check PASS：
+Compute+Graph62,657 code lines/272 files，全库自实现不含测试157,884。不是自研数学行数，
+本片未新增数学算子；源码接线增加149行实现。下一步只继续H1-03～06，不启动已完成C3矩阵。
