@@ -1,0 +1,23 @@
+{
+  "scope": "F1-04 instrumented common/CUDA source correctness only, not full F1/SDK/other routes/P1",
+  "rows": [
+    {
+      "name": "hyle_compute_test.exe",
+      "returncode": 0,
+      "log": "evidence/correctness/foundation-f1-q0-windows/hyle_compute_test.exe.log"
+    },
+    {
+      "name": "hyle_compute_backend_cuda_test.exe",
+      "returncode": 0,
+      "log": "evidence/correctness/foundation-f1-q0-windows/hyle_compute_backend_cuda_test.exe.log"
+    },
+    {
+      "name": "hyle_compute_backend_cuda_late_failure_test.exe",
+      "returncode": 0,
+      "log": "evidence/correctness/foundation-f1-q0-windows/hyle_compute_backend_cuda_late_failure_test.exe.log"
+    }
+  ],
+  "candidate": "392d4503675fa095c3a89cc0a90641b4d48651cf",
+  "instrumented_binary_retained": false,
+  "notes": "Same product sources as candidate; instrumented runtime logs retained; small build cache switched to shipping afterward."
+}

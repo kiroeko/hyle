@@ -1,0 +1,11 @@
+Running main() from C:\public\tools\hyle-dependencies\v1\sources\googletest-063de7e9578f-162765170ae6\googletest\src\gtest_main.cc
+[==========] Running 1 test from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 1 test from CudaBackendLateFailure
+[ RUN      ] CudaBackendLateFailure.SurfacesNativeFailureAtCompletionBoundary
+[       OK ] CudaBackendLateFailure.SurfacesNativeFailureAtCompletionBoundary (86 ms)
+[----------] 1 test from CudaBackendLateFailure (86 ms total)
+
+[----------] Global test environment tear-down
+[==========] 1 test from 1 test suite ran. (86 ms total)
+[  PASSED  ] 1 test.

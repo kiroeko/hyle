@@ -96,6 +96,17 @@ TensorView 不拥有外部 payload，Graph Results 只保护其原声明 owner�
 | 进展、背压、取消/关闭 | Sched Semaphore/Channel/Waker/TaskScope/blocking handoff，IO read_exact_at/write_all_at | 无第二event loop/threadpool；原平台capability和生命周期不放宽 |
 | 冷设备/时间/诊断 | Platform、Time、Obs及原route facts/reports | 查询冷路径；普通submit不新增探测、全局registry或计时选路 |
 
+### F1-04 当前产品进展
+
+- 定向修复子候选 `392d4503675fa095c3a89cc0a90641b4d48651cf` 已接线；
+  [Windows资格收据](../../../../evidence/correctness/foundation-f1-q0-windows/README.md)为插桩95、shipping93项通过。
+- 完成共同attachment/native退役交接、CUDA未知观察保活/一次异常drain、首错保存、实际迟到失败与hook交付隔离。
+  未增加公共对象/EventSlot字段，不新增reaper，复用原Mem/Util与native提交。
+- 已做这份有限修复的源码review/P0与局部红队；整包API、三交付、其他平台/直接消费者与计时性能未验。
+  F1 owner继续AUDITED，不标记整包CANDIDATE/CLOSED；下一步是F1租约与typed Direct/Graph接缝。
+- 统一脚本self-check：Compute+Graph非测试68,284行/301文件；全库非测试163,511行/652文件。
+  Graph aggregate子错误/实际退役组合在F1-06接线前必须定向验证，本子批不代签它。
+
 ## 有限 FIX 集
 
 | FIX | 必须实现/定向修复 | 验收 |

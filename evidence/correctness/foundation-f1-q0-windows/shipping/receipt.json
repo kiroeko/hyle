@@ -1,0 +1,36 @@
+{
+  "scope": "F1-04 shipping-layout common/CUDA source correctness; fault-hook cases run separately in instrumented build",
+  "rows": [
+    {
+      "name": "hyle_compute_test.exe",
+      "returncode": 0,
+      "log": "evidence/correctness/foundation-f1-q0-windows/shipping/hyle_compute_test.exe.log"
+    },
+    {
+      "name": "hyle_compute_backend_cuda_test.exe",
+      "returncode": 0,
+      "log": "evidence/correctness/foundation-f1-q0-windows/shipping/hyle_compute_backend_cuda_test.exe.log"
+    },
+    {
+      "name": "hyle_compute_backend_cuda_late_failure_test.exe",
+      "returncode": 0,
+      "log": "evidence/correctness/foundation-f1-q0-windows/shipping/hyle_compute_backend_cuda_late_failure_test.exe.log"
+    }
+  ],
+  "candidate": "392d4503675fa095c3a89cc0a90641b4d48651cf",
+  "machine": {
+    "gpu": "RTX 4070",
+    "driver": "617.14",
+    "memory_mib": 12282,
+    "cuda_toolkit": "13.3.73",
+    "compiler": "MSVC 19.50.35728.0"
+  },
+  "artifact_sha256": {
+    "hyle_compute_test.exe": "5b13fca3dfddf67fe8168b5549114b0349232ddc8b7c1cedb00dd870b6848cef",
+    "hyle_compute_backend_cuda_test.exe": "484f1db27ac4a2078a9259d3f171c27b1168d0a2b129e3ab120d3f0837b9178c",
+    "hyle_compute_backend_cuda_late_failure_test.exe": "8ee3ec3e677e3384cbd53e9bc97cc8e3596f41e97e2d7d9c08b092c5408faba3",
+    "hyle_compute_backend_cuda.dll": "05065419c963efd5e69c19be5f39eddd68fec2c997a8dfd7a5a23e8b045397f6",
+    "hyle_compute.dll": "db7df4625fdbc8403b2b4f0629804ebf53038208fa876393223a81707c8e304a"
+  },
+  "shipping_fault_hook_absent": true
+}
