@@ -33,6 +33,14 @@ target_link_libraries(hyle_ggml_cpu_avx2 PRIVATE
   "$<TARGET_PROPERTY:ggml-cpu,LINK_LIBRARIES>")
 hyle_apply_sanitizer(hyle_ggml_cpu_avx2)
 add_dependencies(hyle_compute_ggml_runtime hyle_ggml_cpu_avx2)
+# dlopen uses the calling shared object's RUNPATH. The executable's runtime
+# paths do not supply this private sibling to a build-tree shared adapter.
+# Installed shared libraries already use the package's sibling $ORIGIN path.
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+  set_property(TARGET hyle_compute_ggml_runtime APPEND PROPERTY BUILD_RPATH
+    "$<TARGET_FILE_DIR:hyle_ggml_cpu_avx2>")
+endif()
+
 target_compile_definitions(hyle_compute_ggml_runtime PRIVATE
   HYLE_GGML_CPU_AVX2_PROGRAM=1
   HYLE_GGML_CPU_PROGRAM_LIBRARY="$<TARGET_FILE_NAME:hyle_ggml_cpu_avx2>")
