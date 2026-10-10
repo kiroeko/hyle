@@ -126,6 +126,13 @@ TensorView 不拥有外部 payload，Graph Results 只保护其原声明 owner�
   callback只更新use/失败并退引用，继续沿原runtime，不新建线程或timer。
 - 本子批只写共同核和有限所有权/容量/跨pool回归测试；四路线、数学消费、包交付/P1仍按后续FIX兑现。
 
+### 共同核初验进展
+
+`db93f2e069ba5b22098d2fba21bc0604ece01a57` 已新增bounded lease/use核，
+[Windows初验](../../../../evidence/correctness/foundation-f1-lease-core-windows/README.md) common69/CUDA29项通过，
+新头单独编译通过。只读导入/native typed桥/自动Direct+Graph绑定及全部适用交付仍未完成。
+原borrow view保持原合同，不把当前手动use ticket样例当作F1-05/06自然入口已兑现。
+
 ## 有限 FIX 集
 
 | FIX | 必须实现/定向修复 | 验收 |
