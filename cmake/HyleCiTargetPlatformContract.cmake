@@ -105,8 +105,9 @@ set(_hyle_fcontext_graph_source
 file(MAKE_DIRECTORY "${_hyle_fcontext_graph_source}")
 file(WRITE "${_hyle_fcontext_graph_source}/CMakeLists.txt"
 "cmake_minimum_required(VERSION 3.25)\n"
-"project(hyle_unsupported_fcontext_graph LANGUAGES NONE)\n"
+"project(hyle_unsupported_fcontext_graph LANGUAGES CXX)\n"
 "set(HYLE_SOURCE_DIR \"${HYLE_SOURCE_DIR}\")\n"
+"include(\"${HYLE_SOURCE_DIR}/cmake/HyleTargetPlatform.cmake\")\n"
 "set(HYLE_FCONTEXT_SUPPORTED FALSE)\n"
 "set(HYLE_COMPONENTS \"io;compute;graph\")\n"
 "include(\"${HYLE_SOURCE_DIR}/cmake/HyleComponents.cmake\")\n"

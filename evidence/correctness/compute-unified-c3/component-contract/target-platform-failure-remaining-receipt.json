@@ -1,0 +1,14 @@
+{
+  "source_commit": "bb6ca30d699b76af1f975cfa6aaf5cf7504e4323",
+  "tool_candidate": "788f9e80",
+  "resume": "Original contract from maintainer-all onward; preserved prefix, no root reset",
+  "VULKAN_SDK": "C:/public/tools/hyle-vulkan/1.4.357.0",
+  "argv": [
+    "cmake",
+    "-DHYLE_SOURCE_DIR=C:/public/project-hyle/hyle",
+    "-DHYLE_SMOKE_ROOT=C:/h7/component-contract",
+    "-P",
+    "C:/h7/transport/resume-component-contract.cmake"
+  ],
+  "exit": 1
+}

@@ -1,0 +1,68 @@
+CMake Error at C:/h7/transport/resume-component-contract.cmake:41 (message):
+  64-bit target-platform contract failed with exit code 1:
+
+
+
+  CMake Error at cmake/HyleCiTargetPlatformContract.cmake:30 (message):
+
+    unsupported target retains honest sched edge unexpectedly failed:
+
+
+
+    -- Building for: Visual Studio 18 2026
+
+
+
+    -- Selecting Windows SDK version 10.0.26100.0 to target Windows 10.0.26200.
+
+
+
+    -- Configuring incomplete, errors occurred!
+
+
+
+
+
+
+
+    CMake Error at C:/public/project-hyle/hyle/cmake/HyleComputeRoutes.cmake:52
+    (message):
+
+
+
+      The complete CPU route requires Windows/Linux x86_64 or macOS ARM64 for its
+      locked ATen SDK; 'Windows/' has no complete qualified CPU recipe.  Select
+      another supported route.
+
+
+
+    Call Stack (most recent call first):
+
+
+
+      C:/public/project-hyle/hyle/cmake/HyleComputeRoutes.cmake:114 (_hyle_check_compute_route_platform)
+      C:/public/project-hyle/hyle/cmake/HyleComponents.cmake:691 (hyle_resolve_compute_product_routes)
+      CMakeLists.txt:6 (include)
+
+
+
+
+
+
+
+
+
+
+
+  Call Stack (most recent call first):
+
+    cmake/HyleCiTargetPlatformContract.cmake:116 (_hyle_target_contract_run)
+
+
+
+
+
+Call Stack (most recent call first):
+  C:/h7/transport/resume-component-contract.cmake:755 (_hyle_contract_run)
+
+

@@ -25,3 +25,20 @@ P0：测试准备的一次文件复制，无产品运行期开销。没有产品
 适用检查：该原合同、docs/closure/diff、selector 对工具变更的记录；原 native batch 继续。
 
 当前已完成 SCOPED/审计，有限 FIX 已固定；实现与修正后验收尚未签。
+
+## 后续具名反例与再定界
+
+第一 FIX 两夹具已实际通过原正/反断言，工具候选 `788f9e80`；完整合同后段第一次因
+本机非系统路径的 Vulkan SDK 未传入而失败。传入已使用的标准 `VULKAN_SDK` 后只续跑
+未完成后段；all roots、IO、嵌入、依赖 cache、vendor/package registry 均继续通过。
+该次在嵌套 target-platform 合同失败，日志保留，未把任何后段未运行项写 PASS。
+
+实际新范围：`HyleCiTargetPlatformContract.cmake` 的 unsupported-fcontext metadata child
+仍 `LANGUAGES NONE`，未建立 target identity；普通完整 CPU 路线解析因此先以 `Windows/`
+拒绝，尚未到原 Sched 依赖断言。再审计并冻结唯一 FIX2：该 child 以真实 CXX 初始化，
+调用既有 `HyleTargetPlatform.cmake` 得到真实 ABI/目标身份，再设置模拟的 fcontext=false。
+不写死 x86、不删除 CPU admission、不放宽原 Sched/32-bit/目标身份断言，不改任何产品实现。
+
+预算新增仅为一个上述具名 fixture 纠正、一次既有 target-platform 合同以及原 master 在其后
+尚未运行的尾段。已通过前段和 GPU SDK 不重跑，公共平台/selector/perf 核心仍不改。
+本工具保持 AUDITED，范围仅追加这一个 fixture；未授权新产品能力或全库重审。
