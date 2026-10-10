@@ -1,0 +1,9 @@
+{
+  "scope": "Completed owned WSL CUDA SDK producer objects only",
+  "removed_directories": [
+    "/root/hyle-scratch/compute-unified/l-cuda/selected-graph/shared-sdk-build",
+    "/root/hyle-scratch/compute-unified/l-cuda/selected-graph/static-sdk-build"
+  ],
+  "removed_bytes": 709522760,
+  "preserved": "source objects, both relocated SDKs, consumers, logs, caches and canonical Windows product; active CPU+CUDA batch untouched"
+}

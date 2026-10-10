@@ -429,3 +429,8 @@ missing依赖，未设置LD覆盖。链接器对vendor CUDA12叶依赖的警告�
 运行失败或忽略运行缺件；[实际资源结果](../../../../evidence/correctness/compute-unified-c3/wsl-cuda/static-resource-receipt.json)
 区分这些事实。CUDA六项三交付完成，C3当前72 PASS / 18 UNRUN；下一串行WSL CPU+CUDA
 原批量入口已启动，组合只签两native路线分别执行，不签H1联合/异步/专家迁移。
+
+已完成WSL CUDA两个SDK producer objects目录经六PASS/exit0、实际metadata与无活动
+CUDA-only批次/绝对路径校验后清理，释放709,522,760字节；source、两个SDK、全部consumer/
+日志/cache保留，不触碰活动CPU+CUDA目录。[清理收据](../../../../evidence/correctness/compute-unified-c3/wsl-cuda/cleanup-sdk-build-objects.json)
+只记录产物管理，不新增完成项或重跑P1。

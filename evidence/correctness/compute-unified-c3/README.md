@@ -208,3 +208,7 @@ consumer ldd results contain no missing runtime dependency without an LD overrid
 warnings remain in the [complete log](wsl-cuda/completed-batch.log); the
 [runtime receipt](wsl-cuda/static-resource-receipt.json) distinguishes runtime facts from warnings.
 The six-entry CUDA group is complete. C3 is72/90; the next serial WSL CPU+CUDA batch has started.
+
+[Completed WSL CUDA producer cleanup](wsl-cuda/cleanup-sdk-build-objects.json) removed709,522,760
+bytes from two owned completed SDK build trees. Source objects, relocated SDKs, consumers, logs and
+caches remain; the active CPU+CUDA batch was not touched. No qualification count changes from cleanup.
