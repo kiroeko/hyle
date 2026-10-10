@@ -1,0 +1,36 @@
+{
+  "scope": "Actual full CPU ordinary source Direct/Graph after target-owned Linux native-program loader fix; no H1 joint/async/expert claim",
+  "product_candidate": "a2476b62cfe49c1663998645c362392685c06eb1",
+  "source_archive_sha256": "d0c2377d14be5752f6e1876a54d8c568cb1cc32a7066391bd784699a1ad14c86",
+  "source_location": "/root/hyle-scratch/compute-unified/source-7a7b4c3b",
+  "routes": "cpu",
+  "rows": [
+    {
+      "entry": "source-direct",
+      "verdict": "PASS"
+    },
+    {
+      "entry": "source-graph",
+      "verdict": "PASS"
+    },
+    {
+      "entry": "shared-direct",
+      "verdict": "UNRUN"
+    },
+    {
+      "entry": "shared-graph",
+      "verdict": "UNRUN"
+    },
+    {
+      "entry": "static-direct",
+      "verdict": "UNRUN"
+    },
+    {
+      "entry": "static-graph",
+      "verdict": "UNRUN"
+    }
+  ],
+  "source_log": "evidence/correctness/compute-unified-c3/wsl-cpu/source-ctest.log",
+  "source_log_sha256": "5cd3d3c7579e89534ff119e1c13fcd2a287497f77889bd7a2dbc5086f75aa4c0",
+  "remaining": "shared/static unchanged driver SDK loop remains unrun; preserve original source failure and native objects."
+}

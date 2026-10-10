@@ -512,9 +512,10 @@
     },
     {
       "module": "compute_ggml_runtime",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/build/compute-ggml-cpu-linux-loader-path.md",
-      "summary": "C3 Linux CPU loader AUDITED：已固定一个 target-local build RPATH 修正；数学、ABI、默认规则不变，原 source/shared/static 定向验收。"
+      "summary": "Linux CPU loader 限定修正已冻结；普通 source Direct/Graph 无 LD 覆盖 PASS，MODULE 缺失/恢复边界 PASS，剩余 Linux SDK/mixed 交付待验。",
+      "candidate": "a2476b62cfe49c1663998645c362392685c06eb1"
     },
     {
       "module": "compute_provider_ggml_cuda",

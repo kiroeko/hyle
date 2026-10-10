@@ -1,6 +1,6 @@
 {
   "scope": "C3 declared single-route and CPU+one-GPU source/shared/static SDK delivery, ordinary Direct/Graph consumers",
-  "product_candidate": "530e230bbc11e4fe12218a6a021ca15b009337c3",
+  "product_candidate": "a2476b62cfe49c1663998645c362392685c06eb1",
   "identity_note": "Each receipt retains its actual immutable product, full source archive, platform, recipe and linkage identity. The top-level candidate is the latest product repair, not a relabeling of earlier validated artifacts.",
   "meaning": "Mixed SDK consumers execute each selected route independently. This matrix does not certify H1-H3 joint execution, overlap, expert transfer, model capacity or all operator coverage.",
   "shape_count": 45,
@@ -118,8 +118,8 @@
       "routes": "cpu",
       "deliveries": {
         "source": {
-          "direct": "UNRUN",
-          "graph": "UNRUN"
+          "direct": "PASS",
+          "graph": "PASS"
         },
         "shared": {
           "direct": "UNRUN",
@@ -130,7 +130,9 @@
           "graph": "UNRUN"
         }
       },
-      "evidence": []
+      "evidence": [
+        "wsl-cpu-partial.json"
+      ]
     },
     {
       "platform": "Linux-WSL",

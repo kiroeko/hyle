@@ -1,0 +1,11 @@
+{
+  "scope": "actual Linux source default loader, no LD override; missing leaf fails before acceptance, restored original consumer succeeds",
+  "candidate": "a2476b62cfe49c1663998645c362392685c06eb1",
+  "missing_exit": 12,
+  "restored_exit": 0,
+  "runtime_runpath": [
+    "0x000000000000001d (RUNPATH)            Library runpath: [/root/hyle-scratch/compute-unified/l-cpu/selected-graph/source-build/hyle/src/compute_ggml_runtime:/root/hyle-scratch/compute-unified/l-cpu/selected-graph/source-build/hyle/src/mem:/root/hyle-scratch/compute-unified/l-cpu/selected-graph/source-build/hyle/src/platform:/root/hyle-scratch/compute-unified/l-cpu/selected-graph/source-build/hyle/src/error]"
+  ],
+  "module": "libhyle_ggml_cpu_avx2_ffa4e8b8_bdae1e43311ee486.so",
+  "LD_LIBRARY_PATH": ""
+}

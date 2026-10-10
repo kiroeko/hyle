@@ -1,6 +1,6 @@
 # C3 Linux ggml CPU 原生程序的装载路径修正
 
-<!-- MODULE REVIEW: AUDITED -->
+<!-- MODULE REVIEW: CANDIDATE -->
 
 - owner：`compute_ggml_runtime`；baseline `788f9e80`，原候选 `c96c7c6e`。
 - trigger：C3 WSL 完整 CPU source 编译成功，Direct PASS；普通 Graph 在创建 invocation
@@ -44,3 +44,11 @@ API/usability 与成本冻结：公开 C++、对象布局、资源借用、终�
 shared/static 两普通消费者和搬迁/资产；CPP/头/算法未改，Windows/Air 与 P1 不重跑。
 前序[原 F32 修正](../compute/vulkan-f32-matmul-admission-repair.md)及其实际证据仍保留；
 本卡不推翻、不重开那一数学范围，也不以本次 source 修复代签剩余 C3/H1–H3。
+
+候选：`a2476b62cfe49c1663998645c362392685c06eb1`，产品仅8行 CMake，无 CPP/头/算法变化。
+Windows 来源完整 archive SHA256 `d0c2377d14be5752f6e1876a54d8c568cb1cc32a7066391bd784699a1ad14c86`
+已在 WSL 核对，并 checksum 更新原 source；原 oneDNN objects 保留，54项增量编译/链接完成。
+原普通 source Graph0.16s/Direct0.14s 均 PASS；无 LD 覆盖，实际 runtime RUNPATH 含原 MODULE 目录。
+临时隐藏本轮 owned MODULE 后原 Graph exit12，恢复后 exit0，不静默改选数学实现。
+[当前收据](../../../../evidence/correctness/compute-unified-c3/wsl-cpu-partial.json)与原失败分开；
+Linux shared/static/mixed 仍未签，本 owner 保持 CANDIDATE，继续原剩余阶段，不重跑其它平台/P1。

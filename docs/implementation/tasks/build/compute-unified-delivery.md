@@ -352,3 +352,8 @@ C3 的组件合同发现最小源码夹具漏带路线解析文件，按
 WSL CPU source Direct 已 PASS；Graph 在创建 invocation 时无法装载原生 CPU 程序，
 按[Linux loader 修正卡](compute-ggml-cpu-linux-loader-path.md)定向退回实际 owner。
 原 objects/失败日志保留，不重启 source root；不将 loader 失败写成数值或性能失败。
+
+限定 Linux loader 修正已冻结 `a2476b62`；原 WSL CPU source 两消费者无 LD 覆盖均 PASS，
+MODULE 缺失/恢复也已验证。C3 当前62 PASS / 28 UNRUN；原 shared/static 剩余阶段继续。
+组件合同的两个原夹具断言已通过；后半段因启动时未传本机 Vulkan SDK 环境而失败，
+原失败另存，补正确环境后只恢复尚未通过的后半段，不重跑前段或全库数学。

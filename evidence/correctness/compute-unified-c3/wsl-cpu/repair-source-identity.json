@@ -1,0 +1,24 @@
+{
+  "candidate": "a2476b62cfe49c1663998645c362392685c06eb1",
+  "archive": "C:\\h7\\transport\\source-a2476b62.tar",
+  "sha256": "d0c2377d14be5752f6e1876a54d8c568cb1cc32a7066391bd784699a1ad14c86",
+  "bytes": 42987520,
+  "paths": [
+    "AGENTS.md",
+    "CMakeLists.txt",
+    "CMakePresets.json",
+    "LICENSE",
+    "README.md",
+    "SOURCE-MANIFEST.txt",
+    "THIRD_PARTY_NOTICES.md",
+    "cmake",
+    "hyle-offline-deps.cmake",
+    "include",
+    "samples",
+    "scripts",
+    "src",
+    "tests",
+    "third_party",
+    "docs/implementation/module-status.json"
+  ]
+}

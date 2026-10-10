@@ -146,3 +146,9 @@ Windows CPU+Vulkan static also passed both ordinary math consumers (Direct 1.15s
 with exact routes and DLLs adjacent to the EXEs. The original full batch exited 0; archived static
 logs/configuration complete this group. C3 now records 60/90 PASS, covering all five declared Windows
 and Air route groups. WSL batches and H1-H3 joint/async/expert work remain unqualified.
+
+The [WSL CPU source receipt](wsl-cpu-partial.json) signs Direct/Graph PASS after the bounded
+target-local Linux native-program loader repair at `a2476b62`. Its verified source archive and original
+failure/diagnostic remain separate. The original ordinary consumer succeeds without LD overrides;
+temporarily missing the owned native MODULE fails before admission and restoring it succeeds.
+C3 now records 62/90 PASS. WSL shared/static and other route batches, and H1-H3, remain unqualified.
