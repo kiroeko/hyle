@@ -107,6 +107,25 @@ TensorView 不拥有外部 payload，Graph Results 只保护其原声明 owner�
 - 统一脚本self-check：Compute+Graph非测试68,284行/301文件；全库非测试163,511行/652文件。
   Graph aggregate子错误/实际退役组合在F1-06接线前必须定向验证，本子批不代签它。
 
+## F1-01/02/03：共同 lease 核接口冻结
+
+- 当前baseline `711afd13f9a11b3534a880b8ea9a3f626bda852d`；compute owner仍AUDITED。
+- 新增opt-in `resource_leases.h`：LeasePool冷创建一块原MemoryResource backing，
+  allocate返回move-only WriteLease；publish成功转换为可复制ReadLease；ReadLease::try_write
+  仅在唯一reader、无native use、非只读import时转回写。subview只共享原block，不分配新控制节点。
+- 元数据复用ConcurrentBlockPool，offset复用RangeAllocator；RefCounted持有block/domain，
+  每block有generation、明确ready/failed与在途写计数。复制read/保活不增加热堆分配。
+- 独立LeaseUsePool冷分配固定episode和每episode资源槽；begin→read/write加入→attach真实Completion，
+  全部资源、索引及控制owner由CompletionRetention持到实际退休；一次batch可跨多个LeasePool。
+  未接受work时ticket析构撤销，接受work后必须attach正确Completion，不能用裸Status丢掉prefix。
+- 不同blocks独立，重复同block使用在batch中去重；活跃write不能重入，pending/失败write不得publish。
+  lease-aware Direct/Graph适配再负责自动绑定/提交，不把plain TensorView变成拥有者。
+- create在ResourceBudget按backing一次计账，元数据走同scope allocator；原资源/Context/allocator仍有
+  明确借用寿命。typed readonly导入/native array/tensor桥在原route owner绑定后实现，不能伪造空deleter。
+- stop/close不隐式全设备wait；显式host drain等待已接纳uses，旧readlease保留backing；
+  callback只更新use/失败并退引用，继续沿原runtime，不新建线程或timer。
+- 本子批只写共同核和有限所有权/容量/跨pool回归测试；四路线、数学消费、包交付/P1仍按后续FIX兑现。
+
 ## 有限 FIX 集
 
 | FIX | 必须实现/定向修复 | 验收 |
