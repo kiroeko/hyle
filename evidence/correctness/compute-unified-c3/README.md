@@ -158,3 +158,8 @@ C3 now records 62/90 PASS. WSL shared/static and other route batches, and H1-H3,
 bare-header checker on all installed Compute/Graph top-level, backend and Provider headers from the
 CPU+Vulkan and CUDA shared SDKs: 63 headers in ten groups passed. It binds actual compiler and SDK
 metadata; no SDK rebuild, static-macro, other-platform or mathematical qualification is inferred.
+
+[Air installed-header evidence](air-installed-headers/receipt.json) passed 60 bare headers, and
+[actual active-route checks](air-installed-headers/active-receipt.json) separately compiled each of
+those headers with the installed `hyle::graph` usage requirements. Apple/Vulkan macros were confirmed
+in the compile commands; MLX and Vulkan declarations were active. This does not sign math or P1.

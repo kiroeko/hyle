@@ -367,3 +367,9 @@ MODULE 缺失/恢复也已验证。C3 当前62 PASS / 28 UNRUN；原 shared/stat
 [收据](../../../../evidence/correctness/compute-unified-c3/windows-installed-headers/receipt.json)
 绑定实际 SDK config 与 compiler。此项只签 bare-header self-containment，不代签其它平台、
 静态宏档位或未运行的数学；SDK未重建，无P1，C3消费者计数仍62/90。
+
+实际 MacBook Air 的 CPU+Apple/CPU+Vulkan 安装头检查共8组/60份 bare headers PASS；
+又用已安装 `hyle::graph` 的真实 usage requirements 独立编译60份头，compile command 确认
+Apple/Vulkan 路线宏实际启用，MLX/Vulkan 公开声明与依赖可见。只编译头，不重建 SDK/运行GPU/P1。
+[Air 证据](../../../../evidence/correctness/compute-unified-c3/air-installed-headers/active-receipt.json)
+保留两种检查的边界，不能以未启用宏的空声明替代 active 资格；三交付样例继续保留原独立证据。

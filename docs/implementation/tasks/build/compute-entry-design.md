@@ -147,6 +147,9 @@ native资源、语义/取消/lease 和三交付做后续资格，不能照抄 ma
 
 C1/C2/R1 集中接线后才启动 C3，共享 dependency/cache/producer 工程。
 H1–H3 各自接线结束，按一个不可变 candidate 批量验证，不逐个边界/算子造新 build。
+
+C3 编译等待期间的[H1 原生接缝预审](../../../../evidence/architecture/compute-entry-design/h1-native-preflight.md)
+只记录本轮已核实的复用点和限制，不授权产品修改或签联合/异步能力；H1 仍须另卡绑定 owner。
 固定低并行 build 2 / test 1；host/GPU 重型验证串行；源码只从 Windows 精确同步。
 设计没有计时，因此不称新 SOTA；新数学或完整边界成本确受影响才预声明有预算 P1，
 只有一家合格成熟 Provider 时按正确接入和 P0 成本收口，不无限追加性能姿势。

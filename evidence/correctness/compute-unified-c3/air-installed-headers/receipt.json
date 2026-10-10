@@ -1,0 +1,259 @@
+{
+  "system": "Darwin",
+  "machine": "arm64",
+  "compiler": "Apple clang version 21.0.0 (clang-2100.3.34.2)",
+  "rows": [
+    {
+      "route": "cpu-apple",
+      "header_dir": "compute",
+      "headers": [
+        "apple.h",
+        "completion.h",
+        "cpu.h",
+        "custom_kernel.h",
+        "delegated_operation.h",
+        "device.h",
+        "low_precision.h",
+        "model_ops.h",
+        "operation.h",
+        "ops_visibility.h",
+        "prepared_operation.h",
+        "provider.h",
+        "resource_requirement.h",
+        "result.h",
+        "route_policy.h",
+        "tensor.h",
+        "tensor_desc.h",
+        "transfer.h",
+        "visibility.h",
+        "workload.h"
+      ],
+      "sdk_config_sha256": "b260407563e5f347c1cfe66476c2b3cbc2cec5f85e78da67c66f7aa197d74efc",
+      "exit": 0,
+      "argv": [
+        "/Library/Developer/CommandLineTools/usr/bin/python3",
+        "/Users/kiro/hyle-scratch/compute-unified/source-c8874688/scripts/header-self-contained.py",
+        "--module",
+        "compute_graph",
+        "--header-dir",
+        "compute",
+        "--include-dir",
+        "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-relocated/include",
+        "--cxx",
+        "/Library/Developer/CommandLineTools/usr/bin/clang++",
+        "--cxx-compiler-id",
+        "AppleClang"
+      ],
+      "log": "cpu-apple-compute.log",
+      "sha256": "7eaec929affa930fcaa050e8b500b56b8275da80e564cbca9b39fc21cf2e4685"
+    },
+    {
+      "route": "cpu-apple",
+      "header_dir": "compute/backends",
+      "headers": [
+        "cpu.h"
+      ],
+      "sdk_config_sha256": "b260407563e5f347c1cfe66476c2b3cbc2cec5f85e78da67c66f7aa197d74efc",
+      "exit": 0,
+      "argv": [
+        "/Library/Developer/CommandLineTools/usr/bin/python3",
+        "/Users/kiro/hyle-scratch/compute-unified/source-c8874688/scripts/header-self-contained.py",
+        "--module",
+        "compute_graph",
+        "--header-dir",
+        "compute/backends",
+        "--include-dir",
+        "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-relocated/include",
+        "--cxx",
+        "/Library/Developer/CommandLineTools/usr/bin/clang++",
+        "--cxx-compiler-id",
+        "AppleClang"
+      ],
+      "log": "cpu-apple-compute-backends.log",
+      "sha256": "9af7e68cefd7e1282d2da0ea87ff6647ca1770da37881eeb0498af249154bb35"
+    },
+    {
+      "route": "cpu-apple",
+      "header_dir": "compute/providers",
+      "headers": [
+        "ggml_cpu.h",
+        "native.h"
+      ],
+      "sdk_config_sha256": "b260407563e5f347c1cfe66476c2b3cbc2cec5f85e78da67c66f7aa197d74efc",
+      "exit": 0,
+      "argv": [
+        "/Library/Developer/CommandLineTools/usr/bin/python3",
+        "/Users/kiro/hyle-scratch/compute-unified/source-c8874688/scripts/header-self-contained.py",
+        "--module",
+        "compute_graph",
+        "--header-dir",
+        "compute/providers",
+        "--include-dir",
+        "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-relocated/include",
+        "--cxx",
+        "/Library/Developer/CommandLineTools/usr/bin/clang++",
+        "--cxx-compiler-id",
+        "AppleClang"
+      ],
+      "log": "cpu-apple-compute-providers.log",
+      "sha256": "285c6701d885ed5d96519138dfe9b124fad544e36e3eda94cebe52689b1dbeda"
+    },
+    {
+      "route": "cpu-apple",
+      "header_dir": "graph",
+      "headers": [
+        "apple.h",
+        "compile_report.h",
+        "cpu.h",
+        "executable.h",
+        "graph.h",
+        "region_provider.h",
+        "visibility.h"
+      ],
+      "sdk_config_sha256": "b260407563e5f347c1cfe66476c2b3cbc2cec5f85e78da67c66f7aa197d74efc",
+      "exit": 0,
+      "argv": [
+        "/Library/Developer/CommandLineTools/usr/bin/python3",
+        "/Users/kiro/hyle-scratch/compute-unified/source-c8874688/scripts/header-self-contained.py",
+        "--module",
+        "compute_graph",
+        "--header-dir",
+        "graph",
+        "--include-dir",
+        "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/shared-sdk-relocated/include",
+        "--cxx",
+        "/Library/Developer/CommandLineTools/usr/bin/clang++",
+        "--cxx-compiler-id",
+        "AppleClang"
+      ],
+      "log": "cpu-apple-graph.log",
+      "sha256": "8a9201a05301595845ba186504a85028e7c0dbe4354935469ebc80c4a9526016"
+    },
+    {
+      "route": "cpu-vulkan",
+      "header_dir": "compute",
+      "headers": [
+        "completion.h",
+        "cpu.h",
+        "custom_kernel.h",
+        "delegated_operation.h",
+        "device.h",
+        "low_precision.h",
+        "model_ops.h",
+        "operation.h",
+        "ops_visibility.h",
+        "prepared_operation.h",
+        "provider.h",
+        "resource_requirement.h",
+        "result.h",
+        "route_policy.h",
+        "tensor.h",
+        "tensor_desc.h",
+        "transfer.h",
+        "visibility.h",
+        "vulkan.h",
+        "workload.h"
+      ],
+      "sdk_config_sha256": "750d7b060b14a8575b7071a9380b084303f41bac711c5451fc15afa1f7825dd7",
+      "exit": 0,
+      "argv": [
+        "/Library/Developer/CommandLineTools/usr/bin/python3",
+        "/Users/kiro/hyle-scratch/compute-unified/source-c8874688/scripts/header-self-contained.py",
+        "--module",
+        "compute_graph",
+        "--header-dir",
+        "compute",
+        "--include-dir",
+        "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/shared-sdk-relocated/include",
+        "--cxx",
+        "/Library/Developer/CommandLineTools/usr/bin/clang++",
+        "--cxx-compiler-id",
+        "AppleClang"
+      ],
+      "log": "cpu-vulkan-compute.log",
+      "sha256": "7eaec929affa930fcaa050e8b500b56b8275da80e564cbca9b39fc21cf2e4685"
+    },
+    {
+      "route": "cpu-vulkan",
+      "header_dir": "compute/backends",
+      "headers": [
+        "cpu.h"
+      ],
+      "sdk_config_sha256": "750d7b060b14a8575b7071a9380b084303f41bac711c5451fc15afa1f7825dd7",
+      "exit": 0,
+      "argv": [
+        "/Library/Developer/CommandLineTools/usr/bin/python3",
+        "/Users/kiro/hyle-scratch/compute-unified/source-c8874688/scripts/header-self-contained.py",
+        "--module",
+        "compute_graph",
+        "--header-dir",
+        "compute/backends",
+        "--include-dir",
+        "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/shared-sdk-relocated/include",
+        "--cxx",
+        "/Library/Developer/CommandLineTools/usr/bin/clang++",
+        "--cxx-compiler-id",
+        "AppleClang"
+      ],
+      "log": "cpu-vulkan-compute-backends.log",
+      "sha256": "9af7e68cefd7e1282d2da0ea87ff6647ca1770da37881eeb0498af249154bb35"
+    },
+    {
+      "route": "cpu-vulkan",
+      "header_dir": "compute/providers",
+      "headers": [
+        "ggml_cpu.h",
+        "native.h"
+      ],
+      "sdk_config_sha256": "750d7b060b14a8575b7071a9380b084303f41bac711c5451fc15afa1f7825dd7",
+      "exit": 0,
+      "argv": [
+        "/Library/Developer/CommandLineTools/usr/bin/python3",
+        "/Users/kiro/hyle-scratch/compute-unified/source-c8874688/scripts/header-self-contained.py",
+        "--module",
+        "compute_graph",
+        "--header-dir",
+        "compute/providers",
+        "--include-dir",
+        "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/shared-sdk-relocated/include",
+        "--cxx",
+        "/Library/Developer/CommandLineTools/usr/bin/clang++",
+        "--cxx-compiler-id",
+        "AppleClang"
+      ],
+      "log": "cpu-vulkan-compute-providers.log",
+      "sha256": "285c6701d885ed5d96519138dfe9b124fad544e36e3eda94cebe52689b1dbeda"
+    },
+    {
+      "route": "cpu-vulkan",
+      "header_dir": "graph",
+      "headers": [
+        "compile_report.h",
+        "cpu.h",
+        "executable.h",
+        "graph.h",
+        "region_provider.h",
+        "visibility.h",
+        "vulkan.h"
+      ],
+      "sdk_config_sha256": "750d7b060b14a8575b7071a9380b084303f41bac711c5451fc15afa1f7825dd7",
+      "exit": 0,
+      "argv": [
+        "/Library/Developer/CommandLineTools/usr/bin/python3",
+        "/Users/kiro/hyle-scratch/compute-unified/source-c8874688/scripts/header-self-contained.py",
+        "--module",
+        "compute_graph",
+        "--header-dir",
+        "graph",
+        "--include-dir",
+        "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/shared-sdk-relocated/include",
+        "--cxx",
+        "/Library/Developer/CommandLineTools/usr/bin/clang++",
+        "--cxx-compiler-id",
+        "AppleClang"
+      ],
+      "log": "cpu-vulkan-graph.log",
+      "sha256": "8a9201a05301595845ba186504a85028e7c0dbe4354935469ebc80c4a9526016"
+    }
+  ]
+}
