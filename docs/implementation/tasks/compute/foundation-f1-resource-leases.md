@@ -1,16 +1,26 @@
 # F1：外部资源租约与最后使用后回收
 
-> 状态：READY_FOR_SCOPE，尚未启动实现或建立本轮产品证书。
+> 状态：SCOPED（2026-10-11）；实施 goal 已建立，尚未写本轮产品代码/建立证书。
 > component / owner：拟由 compute 负责共同控制；compute_backend_cpu/cuda 与
 > compute_route_cpu/cuda/apple/vulkan 负责实际 native 适配；Graph 及其四路线和 CPU+GPU 适配只改 leased 接缝。
 > 具体改到的 owner 才在启动时绑定；不重开全部 Provider/算子模块。
+
+## 当前启动绑定
+
+- 实际启动 HEAD / previous registry ref：`833e6844b8e0160ec3eadd3b1945aed577cdad84`，工作树干净。
+  其产品代码与设计基线 edb271438 相同，保留后续文档/证据提交，不回退。
+- 当前绑定 owner：`compute`、`compute_backend_cuda`，均由 CLOSED 合法进入 SCOPED。
+  trigger 为用户新增的外部 lease 完整旅程与 `poll_slot→Completion::settle/destroy` 的具体源码适配疑点。
+- 先做 F1-04 源协议/自然接口 AUDIT 并冻结有限实现；其他 native/Graph owner 当前继续 CLOSED，
+  真正需要修改时先绑定本卡、SCOPED/AUDITED，不从其历史卡恢复旧施工。
+- 未启动构建、故障注入、数学运行或性能；结果目前只有源码疑点，不写 FAIL/PASS。
 
 ## 共同执行合同
 
 - 基线：`edb2714384037b12a3d1e69839aa895fea17cec1`；设计见
   [资源与流送设计](../../../architecture/compute-resource-streaming-design.md)。
-- 本卡为准备完成的有限施工合同，尚未作为 registry 当前 record；当前 owner 仍 CLOSED，验证均未运行。
-  实施 goal 启动时先绑定实际 HEAD/工作树，保留后续/用户修改；按协议登记/SCOPED/AUDITED 后才改产品。
+- 本卡已作为 compute/compute_backend_cuda 的当前 SCOPED record；其他 owner 仍按 registry。
+  本轮产品验证未运行。已绑定实际 HEAD/工作树，保留后续/用户修改；完成 AUDITED 后才改产品。
 - 主纵切：量化推理的外部状态/权重范围及真实成熟数学消费。
   正交纵切：渲染资产流送和分块矩阵管线；不加入 token/layer/KV policy。
 - 复用 Mem/Util/Sched/IO/Compute/native 完成，不增加复制 kernel、数学算子、模型 loader 或第二套 runtime。

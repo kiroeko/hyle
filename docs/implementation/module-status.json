@@ -270,14 +270,9 @@
     },
     {
       "module": "compute",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/compute/compute-h1-cpu-cuda-composition.md",
-      "summary": "H1 CLOSED：CPU+CUDA混合执行、双槽迁移、普通CPU主存/有界staging、共享预算及准备诊断完成；Windows/WSL三交付、安装头/搬迁、错误/寿命与当前native重叠通过。引擎策略、多GPU、Apple/Vulkan混合不在本包。",
-      "candidate": "7eaf67b8a496ee19b609533980cd69e7efb5aa49",
-      "performance": {
-        "tier": "P0",
-        "evidence": "docs/implementation/tasks/compute/compute-h1-cpu-cuda-composition.md"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/foundation-f1-resource-leases.md",
+      "summary": "F1 SCOPED：新资源lease生命周期与原Completion attachment接缝审计；先定向核实CUDA观察错误/退休，不改数学Provider，F1-01至08有限范围。"
     },
     {
       "module": "graph",
@@ -417,14 +412,9 @@
     },
     {
       "module": "compute_backend_cuda",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/compute/compute-h1-cpu-cuda-composition.md",
-      "summary": "H1 CLOSED：CPU+CUDA混合执行、双槽迁移、普通CPU主存/有界staging、共享预算及准备诊断完成；Windows/WSL三交付、安装头/搬迁、错误/寿命与当前native重叠通过。引擎策略、多GPU、Apple/Vulkan混合不在本包。",
-      "candidate": "7eaf67b8a496ee19b609533980cd69e7efb5aa49",
-      "performance": {
-        "tier": "P0",
-        "evidence": "docs/implementation/tasks/compute/compute-h1-cpu-cuda-composition.md"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/foundation-f1-resource-leases.md",
+      "summary": "F1 SCOPED：核对poll/wait/destroy的非terminal观察错误与lease保活；先冻结错误分类和有限修复，当前尚未写产品代码。"
     },
     {
       "module": "compute_provider_native",
