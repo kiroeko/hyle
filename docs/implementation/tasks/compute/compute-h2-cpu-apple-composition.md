@@ -1,6 +1,6 @@
 # H2：CPU+MLX/Metal粗片段与offload基础机制
 
-<!-- MODULE REVIEW: SCOPED -->
+<!-- MODULE REVIEW: AUDITED -->
 
 - baseline：`7f428d7a9`（H1 Windows/WSL完整合同CLOSED）；新factor身份登记`b842269f`。
 - canonical：Windows；唯一Apple验收机MacBook Air `Mac16,12`，2026-10-10实读M4/16GiB、
@@ -28,7 +28,7 @@
 
 ## 有限审计与拟定FIX
 
-实施前在本卡完成AUDITED，固定实际native承载/API及成本；当前仅SCOPED，不授权产品实现。
+本卡现已完成AUDITED；下节固定实际native承载、API职责与成本后开始产品实施。
 调查上限：上述已具名接缝一遍、锁定MLX的buffer/stream/Metal completion源码一遍，至多一个
 有界native buffer/copy/可见性实验。不能无限重选整体架构或重审模型算子目录。
 
@@ -62,3 +62,43 @@ CPU消费，明确放置、CPU-resident权重及固定boundary容量。正交纵
   该identity未添加target/dependency/public header，未重编/重跑全库或P1。不能把scope登记算新能力完成。
 
 完成固定FIX及适用验收才CLOSED；超范围或native承载实质缺失要列明确问题与恢复条件，不能无限调查。
+
+## AUDITED：有界native审计完成与FIX冻结
+
+[机器身份](../../../../evidence/architecture/compute-entry-design/h2-native-preflight/machine.log)、
+[锁定MLX源码](../../../../evidence/architecture/compute-entry-design/h2-native-preflight/mlx-source.log)和
+[唯一buffer probe](../../../../evidence/architecture/compute-entry-design/h2-native-preflight/buffer-probe.json)
+已经实际取证：MLX Metal allocator使用shared/untracked buffer；4KiB真正Metal blit、shared event、
+CPU可见性与MLX alias保活通过，最后array deleter只执行一次。probe不签数学、H2完成或重叠。
+它确认可借用原native allocation/event，GPU和CPU对shared存储仍必须正确排序。
+
+### 固定实施形状
+
+- H2-01：新graph::cpu_apple组合入口拥有冷partition和原value-ID映射；CPU连续片段由现CPU
+  Graph编译，GPU连续片段由现Apple Graph编译，保留MLX/ggml成熟完整region。NodePlacement
+  表达CPU-required/Apple位置，真实workload与全部port描述继续传入原规则；CPU/GPU不隐式互换。
+- H2-02：Apple路线提供真正MLX-backed shared MemoryResource和有owner的array视图，复用Mem
+  native handle/map/Buffer与H1配额；普通CPU内部存储仍system/host resource，只有边界分配native
+  backing并做必要copy/repack。resource、外部payload借用规则显式，不造万能执行器/Queue。
+- H2-03：Apple Compute拥有固定两槽WeightSlots/WeightBatch，IDs/TensorDesc/范围先硬校验，
+  cold native staging/destination backing、实际Metal blit/shared event与native Completion保活；
+  array只在合法ready后暴露，旧batch/Graph绑定/结果阻止槽复用，不转换原编码或管理专家策略。
+- H2-04：组合Invocation借现Sched驱动CPU粗片段及原Apple Invocation；GPU仍在现Apple owner
+  thread/native stream执行。现Completion poll与fiber-aware timed Event处理host进展，不增加线程池；
+  native传输可独立提交并与GPU计算重叠，最终取证须actualGPU时间线，不靠poll命名推断。
+- H2-05：已管理CPU Graph存储、native边界/两迁移槽、metadata及old lease共享ResourceBudget；
+  MLX region的private allocation/cache仍未知，strict scope拒绝或用户显式partial。冷报告分别给
+  known requested bytes、actual canonical array backing观察值、private upper/unknown与driver排除，
+  不能直接重复相加。bind/reset使准备失效，host-wait拒绝覆盖native依赖和CPU边界。
+- H2-06：普通Direct权重迁移与Graph两纵切、所有失败/寿命及Air source/shared/static集中验收；
+  公开头和metallib/动态库/搬迁/缺路线同包完成，P0仍按上节固定成本边界，不填新数学。
+
+普通公开入口分别位于hyle/compute/apple_weights.h和hyle/graph/cpu_apple.h，只暴露本路线native
+MLX/Metal语义与CPU上下文。Direct链接compute，组合链接graph；单Apple路线不取得CPU/Sched。
+compiled计划只读共享，每Invocation独立可变槽；所有输出以成功OwnedResult/lease发布，失败保活
+并排空已接纳前缀，close只关本owner，外部Context/Queue/Scheduler及payload寿命由调用者保证。
+
+冷成本：partition/shape校验与程序绑定，固定目录/两槽/边界backing、metadata与CPU workspace。
+重放只沿固定粗片段与必要copy/等待；MLX managed replay允许其原allocator成本并报告未知，不称
+recorded零分配。迁移按selected bytes及实际native DMA；不变payload不重选Provider。
+三项owner已绑定，以上六FIX为本轮有限产品改动集；额外source/ABI/能力反例仍须重新定界。

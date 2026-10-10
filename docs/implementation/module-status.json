@@ -517,15 +517,15 @@
     },
     {
       "module": "compute_route_apple",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/compute-h2-cpu-apple-composition.md",
-      "summary": "H2 SCOPED：CPU+MLX/Metal原生粗片段、普通主存、两槽迁移与异步/预算/诊断新准入；先固定有限native审计与FIX，不把mixed SDK或H1旧证据当Apple组合完成。"
+      "summary": "H2 AUDITED：native shared-buffer/blit/event/alias probe通过，六项有限FIX及CPU/Apple粗片段、原owner进展、两槽迁移、共享预算/诊断已固定；开始批量产品接线，数学/重叠/三交付仍UNPROVEN。"
     },
     {
       "module": "graph_route_apple",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/compute-h2-cpu-apple-composition.md",
-      "summary": "H2 SCOPED：CPU+MLX/Metal原生粗片段、普通主存、两槽迁移与异步/预算/诊断新准入；先固定有限native审计与FIX，不把mixed SDK或H1旧证据当Apple组合完成。"
+      "summary": "H2 AUDITED：native shared-buffer/blit/event/alias probe通过，六项有限FIX及CPU/Apple粗片段、原owner进展、两槽迁移、共享预算/诊断已固定；开始批量产品接线，数学/重叠/三交付仍UNPROVEN。"
     },
     {
       "module": "compute_route_vulkan",
@@ -651,8 +651,8 @@
     },
     {
       "module": "graph_route_cpu_apple",
-      "state": "SCOPED",
-      "summary": "H2 SCOPED：CPU+MLX/Metal原生粗片段、普通主存、两槽迁移与异步/预算/诊断新准入；先固定有限native审计与FIX，不把mixed SDK或H1旧证据当Apple组合完成。",
+      "state": "AUDITED",
+      "summary": "H2 AUDITED：native shared-buffer/blit/event/alias probe通过，六项有限FIX及CPU/Apple粗片段、原owner进展、两槽迁移、共享预算/诊断已固定；开始批量产品接线，数学/重叠/三交付仍UNPROVEN。",
       "record": "docs/implementation/tasks/compute/compute-h2-cpu-apple-composition.md"
     }
   ]

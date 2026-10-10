@@ -1,0 +1,73 @@
+MLX sources:
+/Users/kiro/Library/Caches/hyle/dependencies/v1/sources/mlx-1f8e74e3f12f-95caa530dd41
+FILE /Users/kiro/Library/Caches/hyle/dependencies/v1/sources/mlx-1f8e74e3f12f-95caa530dd41/mlx/allocator.h
+12: // WARNING: Only Buffer objects constructed from and those that wrap
+14: class MLX_API Buffer {
+19:   explicit Buffer(void* ptr) : ptr_(ptr) {};
+36:   virtual Buffer malloc(size_t size) = 0;
+37:   virtual void free(Buffer buffer) = 0;
+38:   virtual size_t size(Buffer buffer) const = 0;
+39:   virtual Buffer make_buffer(void* ptr, size_t size) {
+40:     return Buffer{nullptr};
+42:   virtual void release(Buffer buffer) {}
+54: inline Buffer malloc(size_t size) {
+58: inline void free(Buffer buffer) {
+62: // Make a Buffer from a raw pointer of the given size without a copy.  If a
+66: inline Buffer make_buffer(void* ptr, size_t size) {
+71: inline void release(Buffer buffer) {
+FILE /Users/kiro/Library/Caches/hyle/dependencies/v1/sources/mlx-1f8e74e3f12f-95caa530dd41/mlx/array.h
+21: using Deleter = std::function<void(allocator::Buffer)>;
+73:       allocator::Buffer data,
+232:     allocator::Buffer buffer;
+234:     Data(allocator::Buffer buffer, Deleter d = allocator::free)
+240:       o.buffer = allocator::Buffer(nullptr);
+241:       o.d = [](allocator::Buffer) {};
+352:   allocator::Buffer& buffer() {
+355:   const allocator::Buffer& buffer() const {
+408:   void wait();
+440:   void set_data(allocator::Buffer buffer, Deleter d = allocator::free);
+442:   void set_data(
+443:       allocator::Buffer buffer,
+448:     set_data(buffer, data_size, std::move(strides), flags, 0, std::move(d));
+451:   void set_data(
+452:       allocator::Buffer buffer,
+459:   void copy_shared_buffer(
+466:   void copy_shared_buffer(const array& other);
+600:   set_data(allocator::malloc(size() * size_of(dtype())));
+FILE /Users/kiro/Library/Caches/hyle/dependencies/v1/sources/mlx-1f8e74e3f12f-95caa530dd41/mlx/backend/metal/device.h
+47:   void set_buffer(const MTL::Buffer* buf, int idx, int64_t offset = 0);
+93:   void wait_event(Event event, uint64_t value);
+94:   void signal_event(Event event, uint64_t value);
+99:   MTL::CommandBuffer* get_command_buffer() const {
+109:   // Buffer that stores encoded commands.
+111:   NS::SharedPtr<MTL::CommandBuffer> buffer_;
+120:   std::vector<Event> wait_events_;
+121:   std::vector<std::tuple<Event, uint64_t>> signal_events_;
+FILE /Users/kiro/Library/Caches/hyle/dependencies/v1/sources/mlx-1f8e74e3f12f-95caa530dd41/mlx/backend/metal/allocator.cpp
+16:     MTL::ResourceStorageModeShared | MTL::ResourceHazardTrackingModeUntracked;
+24: void* Buffer::raw_ptr() {
+28:   auto* buf = static_cast<MTL::Buffer*>(ptr_);
+29:   assert(buf->storageMode() != MTL::StorageModePrivate);
+30:   return buf->contents();
+37:   auto* buf = static_cast<MTL::Buffer*>(ptr);
+38:   return buf->storageMode() != MTL::StorageModePrivate;
+50:           [](MTL::Buffer* buf) { return buf->length(); },
+51:           [this](MTL::Buffer* buf) {
+107: Buffer MetalAllocator::malloc(size_t size) {
+110:     return Buffer{nullptr};
+114:   if (size > device_->maxBufferLength()) {
+118:         << " the maximum allowed buffer size of " << device_->maxBufferLength()
+130:   MTL::Buffer* buf = buffer_cache_.reuse_from_cache(size);
+149:       buf = heap_->newBuffer(size, resource_options);
+152:       buf = device_->newBuffer(size, resource_options);
+175:   return Buffer{static_cast<void*>(buf)};
+183: void MetalAllocator::free(Buffer buffer) {
+184:   auto buf = static_cast<MTL::Buffer*>(buffer.ptr());
+203: size_t MetalAllocator::size(Buffer buffer) const {
+204:   return static_cast<MTL::Buffer*>(buffer.ptr())->length();
+207: Buffer MetalAllocator::make_buffer(void* ptr, size_t size) {
+208:   auto buf = device_->newBuffer(ptr, size, resource_options, nullptr);
+210:     return Buffer{nullptr};
+217:   return Buffer{static_cast<void*>(buf)};
+220: void MetalAllocator::release(Buffer buffer) {
+221:   auto buf = static_cast<MTL::Buffer*>(buffer.ptr());
