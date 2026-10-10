@@ -90,7 +90,8 @@ Result<CompletionPoll> poll_weight(const WeightState &state) noexcept {
 Status wait_weight(const WeightState &state) noexcept {
   if (state.command != nil) [state.command waitUntilCompleted];
   const auto result = poll_weight(state);
-  return result ? Status::Ok() : result.error();
+  if (!result) return result.error();
+  return Status::Ok();
 }
 
 struct WeightCompletion final {

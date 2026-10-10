@@ -147,7 +147,7 @@ Status MemoryResource::copy_from_host(const mx::array &destination, ConstTensorV
   HYLE_ASSIGN_OR_RETURN(auto mapping, source.storage().map_host());
   id<MTLBuffer> buffer = (__bridge id<MTLBuffer>)storage.buffer;
   std::memcpy(static_cast<std::byte *>(buffer.contents) + storage.offset_bytes,
-              mapping.data(), storage.view_bytes);
+              mapping.bytes().data(), storage.view_bytes);
   return mapping.close();
 }
 Status MemoryResource::copy_to_host(const mx::array &source, TensorView destination) const noexcept {
@@ -156,8 +156,9 @@ Status MemoryResource::copy_to_host(const mx::array &source, TensorView destinat
   HYLE_ASSIGN_OR_RETURN(auto storage, storage_info(source));
   if (storage.view_bytes == 0) return Status::Ok();
   HYLE_ASSIGN_OR_RETURN(auto mapping, destination.storage().map_host(mem::HostAccess::kWrite));
+  HYLE_ASSIGN_OR_RETURN(auto bytes, mapping.writable_bytes());
   id<MTLBuffer> buffer = (__bridge id<MTLBuffer>)storage.buffer;
-  std::memcpy(mapping.data(), static_cast<const std::byte *>(buffer.contents) + storage.offset_bytes,
+  std::memcpy(bytes.data(), static_cast<const std::byte *>(buffer.contents) + storage.offset_bytes,
               storage.view_bytes);
   return mapping.close();
 }
