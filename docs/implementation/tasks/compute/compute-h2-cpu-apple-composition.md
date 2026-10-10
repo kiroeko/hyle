@@ -1,6 +1,6 @@
 # H2：CPU+MLX/Metal粗片段与offload基础机制
 
-<!-- MODULE REVIEW: AUDITED -->
+<!-- MODULE REVIEW: CANDIDATE -->
 
 - baseline：`7f428d7a9`（H1 Windows/WSL完整合同CLOSED）；新factor身份登记`b842269f`。
 - canonical：Windows；唯一Apple验收机MacBook Air `Mac16,12`，2026-10-10实读M4/16GiB、
@@ -168,3 +168,15 @@ Compute/Graph及新Direct/混合Graph四消费者4/4；新增合同target定向1
 1989b1fe3编码修复后统一脚本统计Compute+Graph 66,150实现行/289文件，全库自实现161,377行；
 对应[当前LOC快照](../../../../evidence/architecture/compute-entry-design/loc-h2-source-qualified.json)。
 本包仍未完成installed交付和native重叠，goal保持active，后续继续同一范围。
+
+## 固定candidate与剩余资格
+
+candidate：1989b1fe35b850d6dcc2da9d92e0b5056148a927。三owner由AUDITED进入CANDIDATE；六FIX的
+API/算法、普通入口和消费方均已接线，原生source数学及异常/寿命/资源已验。上文各时间点UNPROVEN
+仍为历史事实，不能据此重做已完成source阶段。产品变化须先依法退回AUDITED并列实际反例。
+
+剩余固定批次：复用已锁定Air source与shared/static对象，仅增量构建/安装真实CPU+Apple SDK；
+三普通旅程（Direct权重、混合Graph、合同consumer）及原入口共五项按linkage集中运行，独立安装头、
+真正rename搬迁、原生dylib/metallib和缺CPU/Apple路线诊断同批核实。原生copy/compute重叠另一次
+有界actual timeline取证；本包P0不启动数学性能比赛。终审核对cost、borrow、失败排空及全部gate。
+文档/状态提交不更新产品candidate、不重建或重跑已匹配的source/P1。当前未完成项不能写PASS。

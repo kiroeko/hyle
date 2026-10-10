@@ -517,15 +517,17 @@
     },
     {
       "module": "compute_route_apple",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/compute-h2-cpu-apple-composition.md",
-      "summary": "H2 AUDITED：native shared-buffer/blit/event/alias probe通过，六项有限FIX及CPU/Apple粗片段、原owner进展、两槽迁移、共享预算/诊断已固定；开始批量产品接线，数学/重叠/三交付仍UNPROVEN。"
+      "summary": "H2 CANDIDATE：CPU/Apple粗片段、原生两槽/编码与生命周期、共享预算/冷报告已实现；Air源码数学4/4与合同1/1通过。固定1989b1fe3，集中补安装static/shared、资产/搬迁/安装头、native重叠及终审；未运行不签PASS。",
+      "candidate": "1989b1fe35b850d6dcc2da9d92e0b5056148a927"
     },
     {
       "module": "graph_route_apple",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/compute-h2-cpu-apple-composition.md",
-      "summary": "H2 AUDITED：native shared-buffer/blit/event/alias probe通过，六项有限FIX及CPU/Apple粗片段、原owner进展、两槽迁移、共享预算/诊断已固定；开始批量产品接线，数学/重叠/三交付仍UNPROVEN。"
+      "summary": "H2 CANDIDATE：CPU/Apple粗片段、原生两槽/编码与生命周期、共享预算/冷报告已实现；Air源码数学4/4与合同1/1通过。固定1989b1fe3，集中补安装static/shared、资产/搬迁/安装头、native重叠及终审；未运行不签PASS。",
+      "candidate": "1989b1fe35b850d6dcc2da9d92e0b5056148a927"
     },
     {
       "module": "compute_route_vulkan",
@@ -651,9 +653,10 @@
     },
     {
       "module": "graph_route_cpu_apple",
-      "state": "AUDITED",
-      "summary": "H2 AUDITED：native shared-buffer/blit/event/alias probe通过，六项有限FIX及CPU/Apple粗片段、原owner进展、两槽迁移、共享预算/诊断已固定；开始批量产品接线，数学/重叠/三交付仍UNPROVEN。",
-      "record": "docs/implementation/tasks/compute/compute-h2-cpu-apple-composition.md"
+      "state": "CANDIDATE",
+      "summary": "H2 CANDIDATE：CPU/Apple粗片段、原生两槽/编码与生命周期、共享预算/冷报告已实现；Air源码数学4/4与合同1/1通过。固定1989b1fe3，集中补安装static/shared、资产/搬迁/安装头、native重叠及终审；未运行不签PASS。",
+      "record": "docs/implementation/tasks/compute/compute-h2-cpu-apple-composition.md",
+      "candidate": "1989b1fe35b850d6dcc2da9d92e0b5056148a927"
     }
   ]
 }
