@@ -1,0 +1,176 @@
+{
+  "system": "Linux",
+  "machine": "x86_64",
+  "compiler": "g++-14 (Ubuntu 14.2.0-4ubuntu2~24.04.1) 14.2.0",
+  "rows": [
+    {
+      "route": "cpu-cuda",
+      "header_dir": "compute",
+      "headers": [
+        "completion.h",
+        "cpu.h",
+        "cuda.h",
+        "custom_kernel.h",
+        "delegated_operation.h",
+        "device.h",
+        "low_precision.h",
+        "model_ops.h",
+        "operation.h",
+        "ops_visibility.h",
+        "prepared_operation.h",
+        "provider.h",
+        "resource_requirement.h",
+        "result.h",
+        "route_policy.h",
+        "tensor.h",
+        "tensor_desc.h",
+        "transfer.h",
+        "visibility.h",
+        "workload.h"
+      ],
+      "sdk_config_sha256": "6a20517e1fe3da9eb6263bb3c9ea4e854546d33ddd497fc23d131148bb3dc5bb",
+      "exit": 0,
+      "argv": [
+        "/usr/bin/python3",
+        "/root/hyle-scratch/compute-unified/source-7a7b4c3b/scripts/header-self-contained.py",
+        "--module",
+        "compute_graph",
+        "--header-dir",
+        "compute",
+        "--include-dir",
+        "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/shared-sdk-relocated/include",
+        "--cxx",
+        "/usr/bin/g++-14",
+        "--cxx-compiler-id",
+        "GNU",
+        "--extra-include-dir",
+        "/usr/local/cuda-13.3/include"
+      ],
+      "log": "cpu-cuda-compute.log",
+      "sha256": "7eaec929affa930fcaa050e8b500b56b8275da80e564cbca9b39fc21cf2e4685"
+    },
+    {
+      "route": "cpu-cuda",
+      "header_dir": "compute/backends",
+      "headers": [
+        "cpu.h",
+        "cuda.h"
+      ],
+      "sdk_config_sha256": "6a20517e1fe3da9eb6263bb3c9ea4e854546d33ddd497fc23d131148bb3dc5bb",
+      "exit": 0,
+      "argv": [
+        "/usr/bin/python3",
+        "/root/hyle-scratch/compute-unified/source-7a7b4c3b/scripts/header-self-contained.py",
+        "--module",
+        "compute_graph",
+        "--header-dir",
+        "compute/backends",
+        "--include-dir",
+        "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/shared-sdk-relocated/include",
+        "--cxx",
+        "/usr/bin/g++-14",
+        "--cxx-compiler-id",
+        "GNU",
+        "--extra-include-dir",
+        "/usr/local/cuda-13.3/include"
+      ],
+      "log": "cpu-cuda-compute-backends.log",
+      "sha256": "285c6701d885ed5d96519138dfe9b124fad544e36e3eda94cebe52689b1dbeda"
+    },
+    {
+      "route": "cpu-cuda",
+      "header_dir": "compute/providers",
+      "headers": [
+        "cublas.h",
+        "cuda.h",
+        "flashinfer.h",
+        "ggml_cpu.h",
+        "ggml_cuda.h",
+        "native.h",
+        "onednn.h",
+        "torch_cuda.h"
+      ],
+      "sdk_config_sha256": "6a20517e1fe3da9eb6263bb3c9ea4e854546d33ddd497fc23d131148bb3dc5bb",
+      "exit": 0,
+      "argv": [
+        "/usr/bin/python3",
+        "/root/hyle-scratch/compute-unified/source-7a7b4c3b/scripts/header-self-contained.py",
+        "--module",
+        "compute_graph",
+        "--header-dir",
+        "compute/providers",
+        "--include-dir",
+        "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/shared-sdk-relocated/include",
+        "--cxx",
+        "/usr/bin/g++-14",
+        "--cxx-compiler-id",
+        "GNU",
+        "--extra-include-dir",
+        "/usr/local/cuda-13.3/include"
+      ],
+      "log": "cpu-cuda-compute-providers.log",
+      "sha256": "9ce1deeee535e5df4b3c781266018514d6c650120a678123c8de64255d4d58e6"
+    },
+    {
+      "route": "cpu-cuda",
+      "header_dir": "graph",
+      "headers": [
+        "compile_report.h",
+        "cpu.h",
+        "cuda.h",
+        "executable.h",
+        "graph.h",
+        "region_provider.h",
+        "visibility.h"
+      ],
+      "sdk_config_sha256": "6a20517e1fe3da9eb6263bb3c9ea4e854546d33ddd497fc23d131148bb3dc5bb",
+      "exit": 0,
+      "argv": [
+        "/usr/bin/python3",
+        "/root/hyle-scratch/compute-unified/source-7a7b4c3b/scripts/header-self-contained.py",
+        "--module",
+        "compute_graph",
+        "--header-dir",
+        "graph",
+        "--include-dir",
+        "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/shared-sdk-relocated/include",
+        "--cxx",
+        "/usr/bin/g++-14",
+        "--cxx-compiler-id",
+        "GNU",
+        "--extra-include-dir",
+        "/usr/local/cuda-13.3/include"
+      ],
+      "log": "cpu-cuda-graph.log",
+      "sha256": "8a9201a05301595845ba186504a85028e7c0dbe4354935469ebc80c4a9526016"
+    },
+    {
+      "route": "cpu-cuda",
+      "header_dir": "graph/providers",
+      "headers": [
+        "ggml_cuda.h",
+        "onednn.h"
+      ],
+      "sdk_config_sha256": "6a20517e1fe3da9eb6263bb3c9ea4e854546d33ddd497fc23d131148bb3dc5bb",
+      "exit": 0,
+      "argv": [
+        "/usr/bin/python3",
+        "/root/hyle-scratch/compute-unified/source-7a7b4c3b/scripts/header-self-contained.py",
+        "--module",
+        "compute_graph",
+        "--header-dir",
+        "graph/providers",
+        "--include-dir",
+        "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/shared-sdk-relocated/include",
+        "--cxx",
+        "/usr/bin/g++-14",
+        "--cxx-compiler-id",
+        "GNU",
+        "--extra-include-dir",
+        "/usr/local/cuda-13.3/include"
+      ],
+      "log": "cpu-cuda-graph-providers.log",
+      "sha256": "285c6701d885ed5d96519138dfe9b124fad544e36e3eda94cebe52689b1dbeda"
+    }
+  ]
+}

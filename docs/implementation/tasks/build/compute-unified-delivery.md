@@ -446,3 +446,8 @@ WSL CPU+CUDA relocated shared Graph0.76s/Direct0.85s 也已实际PASS，metadata
 原CPU程序MODULE在SDK/lib，两个实际consumer的ldd无缺依赖、无LD覆盖；28库/1654导出检查通过。
 [资源收据](../../../../evidence/correctness/compute-unified-c3/wsl-cpu-cuda/shared-resource-receipt.json)
 与CTest/config已归档。C3当前76 PASS / 14 UNRUN，原static循环继续，不重跑source/shared/P1。
+
+WSL完整CPU+CUDA shared SDK 的39份公开头，原bare脚本与actual-export-target宏启用
+两档均实际PASS；逐命令确认GCC14、CPU/CUDA presence同时启用。
+[组合头证据](../../../../evidence/correctness/compute-unified-c3/wsl-cpu-cuda-installed-headers/active-gcc14-receipt.json)
+只签本组合安装头，不重建SDK或复跑数学/P1；原static批次继续，H1联合能力仍未签。

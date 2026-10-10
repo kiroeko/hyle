@@ -222,3 +222,7 @@ WSL CPU+CUDA relocated shared Graph0.76s/Direct0.85s also passed, with exact rou
 the original native CPU MODULE in SDK/lib and both actual consumer ldd results free of missing
 dependencies without LD overrides. [Resource evidence](wsl-cpu-cuda/shared-resource-receipt.json)
 records export hygiene across28 libraries/1654 exports. C3 is76/90; the original static loop continues.
+
+[WSL CPU+CUDA installed headers](wsl-cpu-cuda-installed-headers/active-gcc14-receipt.json) passed
+all39 isolated headers bare and with exported target usage. Every active command was checked for
+GCC14 and both CPU/CUDA presence. No SDK rebuild, mathematical repetition or H1 qualification follows.
