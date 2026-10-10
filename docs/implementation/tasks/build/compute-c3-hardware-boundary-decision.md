@@ -1,6 +1,6 @@
 # C3 终态对账与 WSL Vulkan 硬件限制
 
-<!-- MODULE REVIEW: CANDIDATE -->
+<!-- MODULE REVIEW: CLOSED -->
 
 - 本记录承接[活动C1–C3/R1卡](compute-unified-delivery.md)，不重开历史任务。
 - 产品修正候选仍为各owner已登记的实际commit，最新产品修正a2476b62；文档不创建新candidate。
@@ -59,6 +59,17 @@ correctness/delivery在已接受边界内PASS，十二项未资格单列而非PA
 有限记录FIX完成并冻结：无产品改动，各owner恢复其原不可变product SHA。
 当前矩阵78 PASS / 12 UNQUALIFIED，后者是用户明确接受的本机验证限制，不阻塞下一包。
 原build-only收据的BLOCKED字段说明当时未运行事实，当前施工结论由本用户决定及矩阵补充。
+
+## C3终局：CLOSED，保留未资格边界
+
+七门在用户明确接受的边界内PASS：统一入口/依赖/资产和冷规则review完成；所有三交付构建/
+安装头/现行配置与资源门完成；十三组78项真实数学PASS；文档与独立反证记录中的有限FIX已处理。
+P0沿原source结构账单，cold配置/loader修复无新的hot搜索或计时，Vulkan F32修复按完整精度
+与原shader成本裁决，不把半精度变快当赢家。无本卡产品FIX、无新增自研数学或P1。
+未运行的十二项明确UNQUALIFIED，用户接受它们为本机验证限制；CLOSED不表示Linux Vulkan
+实GPU数学已验、所有硬件绝对SOTA或H1–H3已实现。原失败、retraction、recipe和候选身份保留。
+reopen仅限已接受域内真实correctness/资源/公开交付缺陷、相关依赖变化，或用户要求补齐
+Linux Vulkan实GPU运行资格；同一硬件缺件不是自动再开整个C3的理由。
 
 Compute+Graph实现LOC仍62,508/268文件；最新产品以后只有文档/证据/格式变化，
 统一脚本原身份一致结果复用，不为本阻塞重跑数学/P1。

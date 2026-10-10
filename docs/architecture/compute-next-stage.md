@@ -1,6 +1,7 @@
 # Compute/Graph：统一配置、冷路由与 CPU/GPU 组合设计
 
-> 用户授权的新范围。统一配置/资产已进入固定候选、C3交付待验；组合能力尚未实施。
+> 用户授权的新范围。C1/C2/R1/C3在已接受边界内完成；WSL Vulkan十二项实GPU运行保留未资格而不阻塞。
+> CPU/GPU联合、异步、重叠和expert迁移的H1–H3仍须独立实施验收。
 > 当前 owner/验收见[实施卡](../implementation/tasks/build/compute-unified-delivery.md)和 registry；
 > [原设计卡](../implementation/tasks/build/compute-entry-design.md)保存入口统计与设计事实。
 > 通用增量依赖图只登记为 DEFER 待办，本轮不实施、不增加组件或热路径成本。
@@ -38,7 +39,7 @@ tests/bench 默认关闭、build jobs 2。源码嵌入和 preset 最终都进入
 第一版联合执行仅资格化 CPU+一个 GPU，不以多路线 SDK 推断 GPU+GPU 联合支持。
 CUDA-only 不拉 CPU 数学库；vendor 必需 host 控制代码不算 CPU Provider。
 
-以下命令使用当前统一配置候选；适用交付验收尚按 C3 卡进行，不据此宣称整包已关闭：
+以下命令使用当前统一配置；C3已按明确接受的验证边界完成，不据此宣称H1–H3联合能力已交付：
 
 ```text
 cmake --preset compute-cpu

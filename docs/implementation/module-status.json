@@ -270,17 +270,25 @@
     },
     {
       "module": "compute",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/build/compute-c3-hardware-boundary-decision.md",
-      "summary": "C3限定资格冻结：78数学PASS，十二项WSL Vulkan运行UNQUALIFIED按用户决定不阻塞；原产品candidate不变，无代码/ABI/算法修改。",
-      "candidate": "2614676ee64bceddadcf791c218d6eea1f051c64"
+      "summary": "C1/C2/R1/C3按用户接受边界CLOSED：统一入口/SDK/资产/配置/安装头与已验平台完成，78数学PASS；WSL Vulkan十二项实GPU运行UNQUALIFIED不阻塞，H1–H3未实现。",
+      "candidate": "2614676ee64bceddadcf791c218d6eea1f051c64",
+      "performance": {
+        "tier": "P0",
+        "evidence": "docs/implementation/tasks/build/compute-c3-hardware-boundary-decision.md"
+      }
     },
     {
       "module": "graph",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/build/compute-c3-hardware-boundary-decision.md",
-      "summary": "C3限定资格冻结：78数学PASS，十二项WSL Vulkan运行UNQUALIFIED按用户决定不阻塞；原产品candidate不变，无代码/ABI/算法修改。",
-      "candidate": "2614676ee64bceddadcf791c218d6eea1f051c64"
+      "summary": "C1/C2/R1/C3按用户接受边界CLOSED：统一入口/SDK/资产/配置/安装头与已验平台完成，78数学PASS；WSL Vulkan十二项实GPU运行UNQUALIFIED不阻塞，H1–H3未实现。",
+      "candidate": "2614676ee64bceddadcf791c218d6eea1f051c64",
+      "performance": {
+        "tier": "P0",
+        "evidence": "docs/implementation/tasks/build/compute-c3-hardware-boundary-decision.md"
+      }
     },
     {
       "module": "container_concurrent",
@@ -354,10 +362,14 @@
     },
     {
       "module": "compute_provider_onednn",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/build/compute-c3-hardware-boundary-decision.md",
-      "summary": "C3限定资格冻结：78数学PASS，十二项WSL Vulkan运行UNQUALIFIED按用户决定不阻塞；原产品candidate不变，无代码/ABI/算法修改。",
-      "candidate": "2614676ee64bceddadcf791c218d6eea1f051c64"
+      "summary": "C1/C2/R1/C3按用户接受边界CLOSED：统一入口/SDK/资产/配置/安装头与已验平台完成，78数学PASS；WSL Vulkan十二项实GPU运行UNQUALIFIED不阻塞，H1–H3未实现。",
+      "candidate": "2614676ee64bceddadcf791c218d6eea1f051c64",
+      "performance": {
+        "tier": "P0",
+        "evidence": "docs/implementation/tasks/build/compute-c3-hardware-boundary-decision.md"
+      }
     },
     {
       "module": "compute_provider_ggml",
@@ -394,38 +406,58 @@
     },
     {
       "module": "compute_backend_cpu",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/build/compute-c3-hardware-boundary-decision.md",
-      "summary": "C3限定资格冻结：78数学PASS，十二项WSL Vulkan运行UNQUALIFIED按用户决定不阻塞；原产品candidate不变，无代码/ABI/算法修改。",
-      "candidate": "2614676ee64bceddadcf791c218d6eea1f051c64"
+      "summary": "C1/C2/R1/C3按用户接受边界CLOSED：统一入口/SDK/资产/配置/安装头与已验平台完成，78数学PASS；WSL Vulkan十二项实GPU运行UNQUALIFIED不阻塞，H1–H3未实现。",
+      "candidate": "2614676ee64bceddadcf791c218d6eea1f051c64",
+      "performance": {
+        "tier": "P0",
+        "evidence": "docs/implementation/tasks/build/compute-c3-hardware-boundary-decision.md"
+      }
     },
     {
       "module": "compute_backend_cuda",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/build/compute-c3-hardware-boundary-decision.md",
-      "summary": "C3限定资格冻结：78数学PASS，十二项WSL Vulkan运行UNQUALIFIED按用户决定不阻塞；原产品candidate不变，无代码/ABI/算法修改。",
-      "candidate": "2614676ee64bceddadcf791c218d6eea1f051c64"
+      "summary": "C1/C2/R1/C3按用户接受边界CLOSED：统一入口/SDK/资产/配置/安装头与已验平台完成，78数学PASS；WSL Vulkan十二项实GPU运行UNQUALIFIED不阻塞，H1–H3未实现。",
+      "candidate": "2614676ee64bceddadcf791c218d6eea1f051c64",
+      "performance": {
+        "tier": "P0",
+        "evidence": "docs/implementation/tasks/build/compute-c3-hardware-boundary-decision.md"
+      }
     },
     {
       "module": "compute_provider_native",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/build/compute-c3-hardware-boundary-decision.md",
-      "summary": "C3限定资格冻结：78数学PASS，十二项WSL Vulkan运行UNQUALIFIED按用户决定不阻塞；原产品candidate不变，无代码/ABI/算法修改。",
-      "candidate": "2614676ee64bceddadcf791c218d6eea1f051c64"
+      "summary": "C1/C2/R1/C3按用户接受边界CLOSED：统一入口/SDK/资产/配置/安装头与已验平台完成，78数学PASS；WSL Vulkan十二项实GPU运行UNQUALIFIED不阻塞，H1–H3未实现。",
+      "candidate": "2614676ee64bceddadcf791c218d6eea1f051c64",
+      "performance": {
+        "tier": "P0",
+        "evidence": "docs/implementation/tasks/build/compute-c3-hardware-boundary-decision.md"
+      }
     },
     {
       "module": "compute_route_cpu",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/build/compute-c3-hardware-boundary-decision.md",
-      "summary": "C3限定资格冻结：78数学PASS，十二项WSL Vulkan运行UNQUALIFIED按用户决定不阻塞；原产品candidate不变，无代码/ABI/算法修改。",
-      "candidate": "2614676ee64bceddadcf791c218d6eea1f051c64"
+      "summary": "C1/C2/R1/C3按用户接受边界CLOSED：统一入口/SDK/资产/配置/安装头与已验平台完成，78数学PASS；WSL Vulkan十二项实GPU运行UNQUALIFIED不阻塞，H1–H3未实现。",
+      "candidate": "2614676ee64bceddadcf791c218d6eea1f051c64",
+      "performance": {
+        "tier": "P0",
+        "evidence": "docs/implementation/tasks/build/compute-c3-hardware-boundary-decision.md"
+      }
     },
     {
       "module": "graph_route_cpu",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/build/compute-c3-hardware-boundary-decision.md",
-      "summary": "C3限定资格冻结：78数学PASS，十二项WSL Vulkan运行UNQUALIFIED按用户决定不阻塞；原产品candidate不变，无代码/ABI/算法修改。",
-      "candidate": "2614676ee64bceddadcf791c218d6eea1f051c64"
+      "summary": "C1/C2/R1/C3按用户接受边界CLOSED：统一入口/SDK/资产/配置/安装头与已验平台完成，78数学PASS；WSL Vulkan十二项实GPU运行UNQUALIFIED不阻塞，H1–H3未实现。",
+      "candidate": "2614676ee64bceddadcf791c218d6eea1f051c64",
+      "performance": {
+        "tier": "P0",
+        "evidence": "docs/implementation/tasks/build/compute-c3-hardware-boundary-decision.md"
+      }
     },
     {
       "module": "compute_provider_cublas",
@@ -463,17 +495,25 @@
     },
     {
       "module": "compute_route_cuda",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/build/compute-c3-hardware-boundary-decision.md",
-      "summary": "C3限定资格冻结：78数学PASS，十二项WSL Vulkan运行UNQUALIFIED按用户决定不阻塞；原产品candidate不变，无代码/ABI/算法修改。",
-      "candidate": "2614676ee64bceddadcf791c218d6eea1f051c64"
+      "summary": "C1/C2/R1/C3按用户接受边界CLOSED：统一入口/SDK/资产/配置/安装头与已验平台完成，78数学PASS；WSL Vulkan十二项实GPU运行UNQUALIFIED不阻塞，H1–H3未实现。",
+      "candidate": "2614676ee64bceddadcf791c218d6eea1f051c64",
+      "performance": {
+        "tier": "P0",
+        "evidence": "docs/implementation/tasks/build/compute-c3-hardware-boundary-decision.md"
+      }
     },
     {
       "module": "graph_route_cuda",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/build/compute-c3-hardware-boundary-decision.md",
-      "summary": "C3限定资格冻结：78数学PASS，十二项WSL Vulkan运行UNQUALIFIED按用户决定不阻塞；原产品candidate不变，无代码/ABI/算法修改。",
-      "candidate": "2614676ee64bceddadcf791c218d6eea1f051c64"
+      "summary": "C1/C2/R1/C3按用户接受边界CLOSED：统一入口/SDK/资产/配置/安装头与已验平台完成，78数学PASS；WSL Vulkan十二项实GPU运行UNQUALIFIED不阻塞，H1–H3未实现。",
+      "candidate": "2614676ee64bceddadcf791c218d6eea1f051c64",
+      "performance": {
+        "tier": "P0",
+        "evidence": "docs/implementation/tasks/build/compute-c3-hardware-boundary-decision.md"
+      }
     },
     {
       "module": "compute_route_apple",
@@ -488,24 +528,36 @@
     },
     {
       "module": "graph_route_apple",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/build/compute-c3-hardware-boundary-decision.md",
-      "summary": "C3限定资格冻结：78数学PASS，十二项WSL Vulkan运行UNQUALIFIED按用户决定不阻塞；原产品candidate不变，无代码/ABI/算法修改。",
-      "candidate": "2614676ee64bceddadcf791c218d6eea1f051c64"
+      "summary": "C1/C2/R1/C3按用户接受边界CLOSED：统一入口/SDK/资产/配置/安装头与已验平台完成，78数学PASS；WSL Vulkan十二项实GPU运行UNQUALIFIED不阻塞，H1–H3未实现。",
+      "candidate": "2614676ee64bceddadcf791c218d6eea1f051c64",
+      "performance": {
+        "tier": "P0",
+        "evidence": "docs/implementation/tasks/build/compute-c3-hardware-boundary-decision.md"
+      }
     },
     {
       "module": "compute_route_vulkan",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/build/compute-c3-hardware-boundary-decision.md",
-      "summary": "C3限定资格冻结：78数学PASS，十二项WSL Vulkan运行UNQUALIFIED按用户决定不阻塞；原产品candidate不变，无代码/ABI/算法修改。",
-      "candidate": "2614676ee64bceddadcf791c218d6eea1f051c64"
+      "summary": "C1/C2/R1/C3按用户接受边界CLOSED：统一入口/SDK/资产/配置/安装头与已验平台完成，78数学PASS；WSL Vulkan十二项实GPU运行UNQUALIFIED不阻塞，H1–H3未实现。",
+      "candidate": "2614676ee64bceddadcf791c218d6eea1f051c64",
+      "performance": {
+        "tier": "P0",
+        "evidence": "docs/implementation/tasks/build/compute-c3-hardware-boundary-decision.md"
+      }
     },
     {
       "module": "graph_route_vulkan",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/build/compute-c3-hardware-boundary-decision.md",
-      "summary": "C3限定资格冻结：78数学PASS，十二项WSL Vulkan运行UNQUALIFIED按用户决定不阻塞；原产品candidate不变，无代码/ABI/算法修改。",
-      "candidate": "2614676ee64bceddadcf791c218d6eea1f051c64"
+      "summary": "C1/C2/R1/C3按用户接受边界CLOSED：统一入口/SDK/资产/配置/安装头与已验平台完成，78数学PASS；WSL Vulkan十二项实GPU运行UNQUALIFIED不阻塞，H1–H3未实现。",
+      "candidate": "2614676ee64bceddadcf791c218d6eea1f051c64",
+      "performance": {
+        "tier": "P0",
+        "evidence": "docs/implementation/tasks/build/compute-c3-hardware-boundary-decision.md"
+      }
     },
     {
       "module": "compute_provider_ggml_vulkan",
@@ -520,10 +572,14 @@
     },
     {
       "module": "compute_ggml_runtime",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/build/compute-c3-hardware-boundary-decision.md",
-      "summary": "C3限定资格冻结：78数学PASS，十二项WSL Vulkan运行UNQUALIFIED按用户决定不阻塞；原产品candidate不变，无代码/ABI/算法修改。",
-      "candidate": "a2476b62cfe49c1663998645c362392685c06eb1"
+      "summary": "C1/C2/R1/C3按用户接受边界CLOSED：统一入口/SDK/资产/配置/安装头与已验平台完成，78数学PASS；WSL Vulkan十二项实GPU运行UNQUALIFIED不阻塞，H1–H3未实现。",
+      "candidate": "a2476b62cfe49c1663998645c362392685c06eb1",
+      "performance": {
+        "tier": "P0",
+        "evidence": "docs/implementation/tasks/build/compute-c3-hardware-boundary-decision.md"
+      }
     },
     {
       "module": "compute_provider_ggml_cuda",

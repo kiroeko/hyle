@@ -1,6 +1,6 @@
 # C3 Linux ggml CPU 原生程序的装载路径修正
 
-<!-- MODULE REVIEW: BLOCKED -->
+<!-- MODULE REVIEW: CLOSED -->
 
 - owner：`compute_ggml_runtime`；baseline `788f9e80`，原候选 `c96c7c6e`。
 - trigger：C3 WSL 完整 CPU source 编译成功，Direct PASS；普通 Graph 在创建 invocation
@@ -75,3 +75,7 @@ CPU+Vulkan原source/shared/static编译、安装、链接及资源检查也已�
 未资格，因此owner聚合门保持INCONCLUSIVE/BLOCKED，不写全CLOSED。
 [C3硬件裁决](compute-c3-hardware-boundary-decision.md)保留原产品候选与明确恢复条件；
 共享scope的未资格不因本卡CPU成功消失，不重跑已完成CPU/CPU+CUDA或其它平台/P1。
+
+2026-10-10用户明确保留十二项未资格而不block，覆盖前一阻塞裁决。本owner随
+[接受边界终局](compute-c3-hardware-boundary-decision.md)CLOSED；CPU loader实际已验，
+Vulkan F32在Windows/Air有实GPU证据，Linux Vulkan运行保持UNQUALIFIED，不写数学PASS。
