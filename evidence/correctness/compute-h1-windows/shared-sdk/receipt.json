@@ -1,0 +1,32 @@
+{
+  "candidate": "3f938bd7bab0ebb2b4c598885d097800d5756a01",
+  "scope": "Windows actual installed shared SDK; CPU CUDA joint/Direct migration/contracts",
+  "compiler": "MSVC 19.50.35728.0",
+  "producer": "existing source producer objects, HYLE_STATIC=OFF, HYLE_INSTALL=ON",
+  "sdk_root": "C:\\h7\\h1-windows-delivery\\shared-sdk",
+  "runtime_assets": "single common executable directory; hyle_stage_runtime",
+  "route_query": "public HYLE_COMPUTE_ROUTES SDK assertions; consumer-only internal-alias check corrected",
+  "rows": [
+    {
+      "consumer": "joint",
+      "verdict": "PASS",
+      "actual_log": "joint-actual.log"
+    },
+    {
+      "consumer": "direct",
+      "verdict": "PASS",
+      "actual_log": "direct-actual.log"
+    },
+    {
+      "consumer": "contracts",
+      "verdict": "PASS",
+      "actual_log": "contracts-actual.log"
+    }
+  ],
+  "not_run": [
+    "static SDK",
+    "WSL",
+    "relocation",
+    "headers breadth"
+  ]
+}

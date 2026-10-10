@@ -277,3 +277,12 @@ CMake入口，不要求普通用户include私有故障接缝。
 - 普通同Device/单路线保护由contracts与路线配置反证；追加安装头/资产/缺组合能力与普通
   CPU/CUDA消费者定向回归。WSL不同ABI/工具链实际运行，未运行不写PASS。
 - API/算法/常态layout变化须先退回AUDITED并记录实际反例；文档/证据不换candidate，不重跑P1。
+
+Windows installed shared SDK的组合/Direct/contracts三个实际消费者均已通过，见
+[shared SDK结果](../../../../evidence/correctness/compute-h1-windows/shared-sdk/receipt.json)。
+首次consumer configure失败保留在本轮有界日志：SDK确实包含graph_route_cpu_cuda库、header及
+导出；验证样例把build-tree因子别名当作installed公共target。只修三处consumer CMake，使用
+既有公开HYLE_COMPUTE_ROUTES要求和公共graph/compute facade；不改库源码、导出或SDK recipe，
+不放宽checker。该验证入口修正不换上述产品候选；WSL只覆盖这三个验证CMake文件，产品输入
+仍来自候选精确archive。共享SDK已生成的producer/库直接复用，只重配三个consumer。
+为了磁盘有界，三个Windows安装消费者的DLL资产共用一个exe目录，仍由统一stage helper完成。

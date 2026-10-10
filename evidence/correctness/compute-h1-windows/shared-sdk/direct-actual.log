@@ -1,0 +1,21 @@
+Start testing: Oct 10 16:36 中国标准时间
+----------------------------------------------------------
+1/1 Testing: hyle_cuda_weights_sample
+1/1 Test: hyle_cuda_weights_sample
+Command: "C:/h7/h1-windows-delivery/shared-apps/hyle_cuda_weights_sample.exe"
+Directory: C:/h7/h1-windows-delivery/shared-direct
+"hyle_cuda_weights_sample" start time: Oct 10 16:36 中国标准时间
+Output:
+----------------------------------------------------------
+ggml_cuda_init: found 1 CUDA devices (Total VRAM: 12281 MiB):
+  Device 0: NVIDIA GeForce RTX 4070, compute capability 8.9, VMM: yes, VRAM: 12281 MiB
+Direct CUDA: selected weight DMA, native dependency and mature MatMul passed
+<end of output>
+Test time =   0.57 sec
+----------------------------------------------------------
+Test Passed.
+"hyle_cuda_weights_sample" end time: Oct 10 16:36 中国标准时间
+"hyle_cuda_weights_sample" time elapsed: 00:00:00
+----------------------------------------------------------
+
+End testing: Oct 10 16:36 中国标准时间
