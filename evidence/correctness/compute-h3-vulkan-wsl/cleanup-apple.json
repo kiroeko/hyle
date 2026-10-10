@@ -1,0 +1,14 @@
+{
+  "scope": "named H3 temporary static build and completed source archive only",
+  "sdk_and_source_caches_retained": true,
+  "rows": [
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/h3-static-sdk-build",
+      "bytes": 476822512
+    },
+    {
+      "path": "/Users/kiro/hyle-scratch/compute-unified/h3-handoff/source.tar.gz",
+      "bytes": 164513936
+    }
+  ]
+}

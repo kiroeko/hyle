@@ -41,7 +41,7 @@ KV和请求循环。CPU+CUDA使用`hyle/graph/cpu_cuda.h`；CPU+MLX/Metal使用
 `hyle/graph/cpu_apple.h`与[可运行样例](../../samples/package/graph/cpu_apple/README.md)；CPU+Vulkan使用
 `hyle/graph/cpu_vulkan.h`与[可运行样例](../../samples/package/graph/cpu_vulkan/README.md)。
 组合必须选择对应的CPU与GPU路线，并显式给出允许的片段位置、资源和借用owner。GPU-only
-任务缺能力不会隐式转CPU。CPU+Vulkan source/shared已在Windows/Air验收，剩余交付以
+任务缺能力不会隐式转CPU。CPU+Vulkan三交付已在Windows/Air验收，WSL编译/安装已验、实GPU未资格，具体以
 [H3卡](../implementation/tasks/compute/compute-h3-cpu-vulkan-composition.md)为准。
 `hybrid replay`仍只表示capture与普通命令组合，和CPU/GPU放置是不同的轴。
 

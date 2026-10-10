@@ -1,0 +1,191 @@
+{
+  "identity": {
+    "commit": "97f9332ac358b95face192a7edd39cebadfb0265",
+    "archive_sha256": "dcb95568afa605cd1f4d2031638ffc34eced1ac6501a3e4d950707cc42d654ca",
+    "bytes": 164513936
+  },
+  "rows": [
+    {
+      "stage": "source-configure",
+      "argv": [
+        "cmake",
+        "-S",
+        "/root/hyle-scratch/compute-unified/l-cpu-vulkan/selected-graph/source-parent",
+        "-B",
+        "/root/hyle-scratch/compute-unified/l-cpu-vulkan/selected-graph/source-build",
+        "-DCMAKE_BUILD_TYPE=Release"
+      ],
+      "exit": 0,
+      "seconds": 24.917142916000003,
+      "log": "/root/hyle-scratch/compute-unified/h3-wsl/source-configure.log"
+    },
+    {
+      "stage": "source-build",
+      "argv": [
+        "cmake",
+        "--build",
+        "/root/hyle-scratch/compute-unified/l-cpu-vulkan/selected-graph/source-build",
+        "--parallel",
+        "1"
+      ],
+      "exit": 0,
+      "seconds": 288.760392747,
+      "log": "/root/hyle-scratch/compute-unified/h3-wsl/source-build.log"
+    },
+    {
+      "stage": "shared-configure",
+      "argv": [
+        "cmake",
+        "-S",
+        "/root/hyle-scratch/compute-unified/source-7a7b4c3b",
+        "-B",
+        "/root/hyle-scratch/compute-unified/l-cpu-vulkan/selected-graph/shared-sdk-build",
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DCMAKE_INSTALL_PREFIX=/root/hyle-scratch/compute-unified/l-cpu-vulkan/selected-graph/h3-shared-sdk-staging",
+        "-DHYLE_COMPONENTS=graph",
+        "-DHYLE_COMPUTE_ROUTES=cpu;vulkan",
+        "-DHYLE_INSTALL=ON",
+        "-DHYLE_BUILD_TESTS=OFF",
+        "-DHYLE_BUILD_BENCH=OFF",
+        "-DHYLE_STATIC=OFF"
+      ],
+      "exit": 0,
+      "seconds": 18.295415004000006,
+      "log": "/root/hyle-scratch/compute-unified/h3-wsl/shared-configure.log"
+    },
+    {
+      "stage": "shared-build",
+      "argv": [
+        "cmake",
+        "--build",
+        "/root/hyle-scratch/compute-unified/l-cpu-vulkan/selected-graph/shared-sdk-build",
+        "--parallel",
+        "1"
+      ],
+      "exit": 0,
+      "seconds": 277.18331641300006,
+      "log": "/root/hyle-scratch/compute-unified/h3-wsl/shared-build.log"
+    },
+    {
+      "stage": "shared-install",
+      "argv": [
+        "cmake",
+        "--install",
+        "/root/hyle-scratch/compute-unified/l-cpu-vulkan/selected-graph/shared-sdk-build",
+        "--prefix",
+        "/root/hyle-scratch/compute-unified/l-cpu-vulkan/selected-graph/h3-shared-sdk-staging"
+      ],
+      "exit": 0,
+      "seconds": 0.11379730400005883,
+      "log": "/root/hyle-scratch/compute-unified/h3-wsl/shared-install.log"
+    },
+    {
+      "stage": "shared-consumer-configure",
+      "argv": [
+        "cmake",
+        "-S",
+        "/root/hyle-scratch/compute-unified/h3-wsl/consumer-shared",
+        "-B",
+        "/root/hyle-scratch/compute-unified/h3-wsl/consumer-build-shared",
+        "-G",
+        "Ninja",
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DCMAKE_PREFIX_PATH=/root/hyle-scratch/compute-unified/l-cpu-vulkan/selected-graph/h3-shared-sdk-relocated"
+      ],
+      "exit": 0,
+      "seconds": 21.349997529999996,
+      "log": "/root/hyle-scratch/compute-unified/h3-wsl/shared-consumer-configure.log"
+    },
+    {
+      "stage": "shared-consumer-build",
+      "argv": [
+        "cmake",
+        "--build",
+        "/root/hyle-scratch/compute-unified/h3-wsl/consumer-build-shared",
+        "--parallel",
+        "1"
+      ],
+      "exit": 0,
+      "seconds": 7.9277795230000265,
+      "log": "/root/hyle-scratch/compute-unified/h3-wsl/shared-consumer-build.log"
+    },
+    {
+      "stage": "static-configure",
+      "argv": [
+        "cmake",
+        "-S",
+        "/root/hyle-scratch/compute-unified/source-7a7b4c3b",
+        "-B",
+        "/root/hyle-scratch/compute-unified/l-cpu-vulkan/selected-graph/static-sdk-build",
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DCMAKE_INSTALL_PREFIX=/root/hyle-scratch/compute-unified/l-cpu-vulkan/selected-graph/h3-static-sdk-staging",
+        "-DHYLE_COMPONENTS=graph",
+        "-DHYLE_COMPUTE_ROUTES=cpu;vulkan",
+        "-DHYLE_INSTALL=ON",
+        "-DHYLE_BUILD_TESTS=OFF",
+        "-DHYLE_BUILD_BENCH=OFF",
+        "-DHYLE_STATIC=ON"
+      ],
+      "exit": 0,
+      "seconds": 18.546246713000073,
+      "log": "/root/hyle-scratch/compute-unified/h3-wsl/static-configure.log"
+    },
+    {
+      "stage": "static-build",
+      "argv": [
+        "cmake",
+        "--build",
+        "/root/hyle-scratch/compute-unified/l-cpu-vulkan/selected-graph/static-sdk-build",
+        "--parallel",
+        "1"
+      ],
+      "exit": 0,
+      "seconds": 279.69613092399993,
+      "log": "/root/hyle-scratch/compute-unified/h3-wsl/static-build.log"
+    },
+    {
+      "stage": "static-install",
+      "argv": [
+        "cmake",
+        "--install",
+        "/root/hyle-scratch/compute-unified/l-cpu-vulkan/selected-graph/static-sdk-build",
+        "--prefix",
+        "/root/hyle-scratch/compute-unified/l-cpu-vulkan/selected-graph/h3-static-sdk-staging"
+      ],
+      "exit": 0,
+      "seconds": 0.16405278100000942,
+      "log": "/root/hyle-scratch/compute-unified/h3-wsl/static-install.log"
+    },
+    {
+      "stage": "static-consumer-configure",
+      "argv": [
+        "cmake",
+        "-S",
+        "/root/hyle-scratch/compute-unified/h3-wsl/consumer-static",
+        "-B",
+        "/root/hyle-scratch/compute-unified/h3-wsl/consumer-build-static",
+        "-G",
+        "Ninja",
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DCMAKE_PREFIX_PATH=/root/hyle-scratch/compute-unified/l-cpu-vulkan/selected-graph/h3-static-sdk-relocated"
+      ],
+      "exit": 0,
+      "seconds": 0.714955578999934,
+      "log": "/root/hyle-scratch/compute-unified/h3-wsl/static-consumer-configure.log"
+    },
+    {
+      "stage": "static-consumer-build",
+      "argv": [
+        "cmake",
+        "--build",
+        "/root/hyle-scratch/compute-unified/h3-wsl/consumer-build-static",
+        "--parallel",
+        "1"
+      ],
+      "exit": 0,
+      "seconds": 9.130546953000021,
+      "log": "/root/hyle-scratch/compute-unified/h3-wsl/static-consumer-build.log"
+    }
+  ],
+  "runtime": "UNQUALIFIED: user-accepted WSL physical Vulkan GPU absence; no math, lifetime or overlap is signed here"
+}

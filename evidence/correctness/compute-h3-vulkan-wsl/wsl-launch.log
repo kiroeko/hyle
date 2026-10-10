@@ -1,0 +1,32 @@
+Running as unit: hyle-h3-vulkan-build.service; invocation ID: 06bf77061ac7427c8931a3a3444069de
+source-configure
+source-configure exit=0
+source-build
+source-build exit=0
+shared-configure
+shared-configure exit=0
+shared-build
+shared-build exit=0
+shared-install
+shared-install exit=0
+shared-consumer-configure
+shared-consumer-configure exit=0
+shared-consumer-build
+shared-consumer-build exit=0
+static-configure
+static-configure exit=0
+static-build
+static-build exit=0
+static-install
+static-install exit=0
+static-consumer-configure
+static-consumer-configure exit=0
+static-consumer-build
+static-consumer-build exit=0
+H3_WSL_BUILD_DELIVERY_COMPLETE; GPU RUNTIME REMAINS UNQUALIFIED
+Finished with result: success
+Main processes terminated with: code=exited/status=0
+Service runtime: 15min 53.798s
+CPU time consumed: 15min 40.585s
+Memory peak: 5.4G
+Memory swap peak: 0B

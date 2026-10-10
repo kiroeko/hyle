@@ -539,24 +539,36 @@
     },
     {
       "module": "compute_route_vulkan",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/compute/compute-h3-cpu-vulkan-composition.md",
-      "summary": "H3 stable native composition/transfer candidate; Windows source/shared/static and Air source/shared qualified, Air static and WSL applicable delivery pending.",
-      "candidate": "97f9332ac358b95face192a7edd39cebadfb0265"
+      "summary": "H3 CLOSED: native CPU/Vulkan composition, bounded two-slot migration, budgets/replay reports and real queue handoff; Win/Air all three deliveries/math/lifetime/P0, WSL applicable build/install qualified with user-accepted GPU UNQUALIFIED.",
+      "candidate": "97f9332ac358b95face192a7edd39cebadfb0265",
+      "performance": {
+        "tier": "P0",
+        "evidence": "evidence/correctness/compute-h3-vulkan-handoff/README.md"
+      }
     },
     {
       "module": "graph_route_vulkan",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/compute/compute-h3-cpu-vulkan-composition.md",
-      "summary": "H3 stable native composition/transfer candidate; Windows source/shared/static and Air source/shared qualified, Air static and WSL applicable delivery pending.",
-      "candidate": "97f9332ac358b95face192a7edd39cebadfb0265"
+      "summary": "H3 CLOSED: native CPU/Vulkan composition, bounded two-slot migration, budgets/replay reports and real queue handoff; Win/Air all three deliveries/math/lifetime/P0, WSL applicable build/install qualified with user-accepted GPU UNQUALIFIED.",
+      "candidate": "97f9332ac358b95face192a7edd39cebadfb0265",
+      "performance": {
+        "tier": "P0",
+        "evidence": "evidence/correctness/compute-h3-vulkan-handoff/README.md"
+      }
     },
     {
       "module": "compute_provider_ggml_vulkan",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/compute/compute-h3-cpu-vulkan-composition.md",
-      "summary": "H3 stable native composition/transfer candidate; Windows source/shared/static and Air source/shared qualified, Air static and WSL applicable delivery pending.",
-      "candidate": "97f9332ac358b95face192a7edd39cebadfb0265"
+      "summary": "H3 CLOSED: native CPU/Vulkan composition, bounded two-slot migration, budgets/replay reports and real queue handoff; Win/Air all three deliveries/math/lifetime/P0, WSL applicable build/install qualified with user-accepted GPU UNQUALIFIED.",
+      "candidate": "97f9332ac358b95face192a7edd39cebadfb0265",
+      "performance": {
+        "tier": "P0",
+        "evidence": "evidence/correctness/compute-h3-vulkan-handoff/README.md"
+      }
     },
     {
       "module": "compute_ggml_runtime",
@@ -660,10 +672,14 @@
     },
     {
       "module": "graph_route_cpu_vulkan",
-      "state": "CANDIDATE",
-      "summary": "H3 stable native composition/transfer candidate; Windows source/shared/static and Air source/shared qualified, Air static and WSL applicable delivery pending.",
+      "state": "CLOSED",
+      "summary": "H3 CLOSED: native CPU/Vulkan composition, bounded two-slot migration, budgets/replay reports and real queue handoff; Win/Air all three deliveries/math/lifetime/P0, WSL applicable build/install qualified with user-accepted GPU UNQUALIFIED.",
       "record": "docs/implementation/tasks/compute/compute-h3-cpu-vulkan-composition.md",
-      "candidate": "97f9332ac358b95face192a7edd39cebadfb0265"
+      "candidate": "97f9332ac358b95face192a7edd39cebadfb0265",
+      "performance": {
+        "tier": "P0",
+        "evidence": "evidence/correctness/compute-h3-vulkan-handoff/README.md"
+      }
     }
   ]
 }

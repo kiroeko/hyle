@@ -1,6 +1,6 @@
 # H3：CPU+Vulkan粗片段与offload基础机制
 
-<!-- MODULE REVIEW: CANDIDATE -->
+<!-- MODULE REVIEW: CLOSED -->
 
 - baseline：84e8bc28724df5759cd7d28202dbe78a06e714fe（H2 terminal、Windows唯一产品真相，工作树原干净）。
 - owner：compute_route_vulkan、graph_route_vulkan、新graph_route_cpu_vulkan；其他已关闭owner无具名缺陷不重开。
@@ -207,3 +207,54 @@ Windows/Air static也已通过五消费者、三新增公开头和真搬迁；�
 [static/边界证据](../../../../evidence/correctness/compute-h3-vulkan-static/README.md)。
 WSL批次仍在其12GiB、SwapMax0 unit中串行执行；只有适用source/static/shared编译/安装/consumer
 链接与头/config门，GPU数学/寿命/overlap继续用户接受的UNQUALIFIED。此处不签该批未完成门。
+
+## H3 terminal：CPU+Vulkan组合基础机制完成
+
+不可变产品候选 `97f9332ac358b95face192a7edd39cebadfb0265`。追加expert-ID fixture d2d1e86e3只改变
+测试；其source/shared在Windows/Air定向通过，static使用补充fixture。H3-01至07全部完成，四owner
+CANDIDATE→CLOSED。上文各UNRUN、旧fail和进度均为当时事实；本节是当前裁决。
+
+| Gate | 当前证据与边界 | Verdict |
+|---|---|---|
+| scope | CPU+一个Vulkan端点、显式粗片段、普通主存/有界staging、预算/诊断与固定两槽；不扩数学/loader/KV/offload策略/多GPU/增量图 | PASS |
+| architecture | 原CPU Graph/Sched与完整Vulkan程序/regions，原ggml device/两个native queue/锁/Completion-retirement；cross-family新缓冲和semaphore交接，旧buffer/下载原队列 | PASS |
+| correctness | Win/Air source各7项；真实Q8 FFN及正交管线、原入口/Direct、坏ID/description/capacity/overflow/OOM与回滚、旧owner/lease、bind/reset/host-wait、cancel/close/abandon/accepted失败；新增原copy接纳后拒绝handoff | PASS（接受域） |
+| delivery | Win/Air source及installed shared/static，各SDK五消费者/三个新增公开头/真搬迁；WSL三交付build/install/consumer链接/头/config/依赖通过，实GPU运行未签；三端genuine缺路线/禁用头，Windows DLL同exe | PASS（接受域） |
+| usability_docs | Direct链接compute，组合graph，唯一cpu;vulkan自动闭包；两个普通source/package样例与指南说明完整格式、固定IDs、冷准备/报告、borrow/ready/预算及engine职责 | PASS |
+| red_team | 固定原生/热输入目录、metadata未知、最后Buffer退budget、两槽alias/native owner、内部下载引用cold seal、失败prefix copy-fence、旧资源family、真实队列可见性及SDK实际调用复核；仅补expert-ID fixture，未改数学/重测全集 | PASS |
+| engineering_performance | P0 hot按active inputs/粗片段/必要copy；固定staging/命令/fence/目录，Provider不重选；Win/Air原生query与真实copy/512dispatch/math核实有交集；managed replay/private unknown单列，不称WIN或零分配 | PASS |
+
+### 完成映射与限制
+
+- H3-01/04：typed纯DAG冷partition、原完整regions、required CPU placement，独立invocation与成功lease，
+  失败/取消排空接纳prefix；actual Source/SDK math和contracts通过。
+- H3-02/05：普通CPU16KiB权重和512-byte native边界；原device/staging资源、严格格式/范围/flush/invalidate，
+  请求配额/控制metadata/所有槽与lease持账，未知private strict拒绝/显式partial，实际native backing去重。
+- H3-03/07：catalog/两槽、选中payload与ID变化、native owner不可覆盖；复用原传输队列、binary semaphore
+  与compute-prefix ready fence，handoff拒绝仍据原copy fence退休；旧source保护和P0反例不改写。
+- H3-06：三端source/static/shared适用交付与公开头/搬迁/缺路线/指南；不让用户补Provider菜单或DLL PATH。
+
+[原生source/失败/P0](../../../../evidence/correctness/compute-h3-vulkan-handoff/README.md)、
+[shared](../../../../evidence/correctness/compute-h3-vulkan-shared/README.md)、
+[static/负空间/IDs](../../../../evidence/correctness/compute-h3-vulkan-static/README.md)和
+[WSL](../../../../evidence/correctness/compute-h3-vulkan-wsl/README.md)保留机器、原命令、退出、身份/限额。
+WSL仅llvmpipe，GPU数学/寿命/overlap继续用户明确接受的UNQUALIFIED，未运行不PASS/N/A；
+三端产品源码只来自Windows。所有重型任务已终态，未因文档/状态复跑source/P0。
+
+本轮只签CPU+一个GPU的fixed pure DAG，符号/effects/control-edge组合仍明确拒绝；原单路线其它
+能力不撤回。host completion仍存在，kReject可拒绝；环境/transfer_eligible是能力，不是性能WIN。
+原private/driver成本未知/排除，requested-byte budget不冒充总物理预留；外部payload/资源/allocator/
+quota及Scheduler/CPU Queue按借用寿命存活，跨invocation外部冲突由调用者建立实际顺序。
+取消不抢占已接纳工作；成功lease护住槽但不把外部输入变immutable。独立队列/本机交集不保证任意
+硬件、占用、工作负载收益或独立DMA。引擎仍拥有模型loader、KV、层/比例、专家cache/predict/evict。
+
+合法reopen trigger：可复现数学/UB/寿命/并发/预算/交付缺陷，真实consumer缺失常用基础机制、已采用
+依赖升级或合格同合同material回归；用户要求补齐Linux Vulkan实GPU资格。历史TODO/再看一遍不授权。
+统一统计：Compute+Graph **68,204行/301文件**，全库非测试实现163,431行/652文件；
+[固定快照](../../../../evidence/correctness/compute-h3-vulkan-handoff/loc.json)排除测试/样例/第三方。
+H3停止重型run；七包原goal按[终审对照](../../../../evidence/architecture/compute-entry-design/final-goal-audit.md)
+完成后停止，不自动扩算子、推理引擎或DEFER增量图。
+
+最终统一工具self-check重新核实同一产品candidate的上述LOC；60组件均CLOSED，所有本轮进程已终态。
+固定清理脚本已删除Windows2,402,309,781字节及Air641,336,448字节H3临时static构建/运输文件，
+已验SDK、源码/依赖缓存与原日志保留。[清理与WSL终态收据](../../../../evidence/correctness/compute-h3-vulkan-wsl/README.md)。

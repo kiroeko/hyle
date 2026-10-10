@@ -461,7 +461,7 @@ fence 等待伪造跨队列可见性。`environment().distinct_transfer_queue`�
 选择 `HYLE_COMPUTE_ROUTES="cpu;vulkan"`自动加入 `hyle/graph/cpu_vulkan.h` 的粗片段组合和 Sched。
 主存、device、staging 分域预算与已准备的上传/等待报告均由组合提供；普通入口与资源限制见
 [组合样例](../../samples/package/graph/cpu_vulkan/README.md)。模型层/offload 比例、KV和专家策略由引擎决定。
-source/shared已在Windows/Air通过；完整当前交付状态见[H3卡](../implementation/tasks/compute/compute-h3-cpu-vulkan-composition.md)。
+三交付已在Windows/Air通过；WSL编译/安装已验、实GPU未资格，完整边界见[H3终局](../implementation/tasks/compute/compute-h3-cpu-vulkan-composition.md)。
 
 ## 可选编译诊断
 

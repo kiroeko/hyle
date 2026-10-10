@@ -20,4 +20,4 @@ RMSNorm→CPU。CPU 权重 16 KiB，而首条管线 native 边界仅 512 字节�
 
 源码：`cmake -S . -B build -DHYLE_SAMPLE_SOURCE=<hyle-source>`。
 安装包：`cmake -S . -B build -DCMAKE_PREFIX_PATH=<sdk>`；构建使用 `--parallel 1`。
-当前已完成 Windows/Air source 和 shared 验收，static/WSL 可适用交付仍按 H3 卡补齐。
+Windows/Air source/static/shared均已验收；WSL三交付编译/安装/链接已验，实GPU运行保持未资格。
