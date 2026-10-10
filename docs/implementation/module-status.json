@@ -270,17 +270,25 @@
     },
     {
       "module": "compute",
-      "state": "CANDIDATE",
+      "state": "BLOCKED",
       "record": "docs/implementation/tasks/build/compute-unified-delivery.md",
-      "summary": "统一构建/冷路由候选已修正条件资产producer；Windows CPU/CUDA三交付消费者全部通过，其余平台/路线/mixed矩阵仍待验，H1–H3未实施。",
-      "candidate": "2614676ee64bceddadcf791c218d6eea1f051c64"
+      "summary": "C3 BLOCKED：统一构建/SDK/资产及已验平台完成，78数学PASS、12实GPU数学因WSL仅软件设备BLOCKED；全部构建终态，H1–H3未实现。",
+      "candidate": "2614676ee64bceddadcf791c218d6eea1f051c64",
+      "blocked_from": "CANDIDATE",
+      "blocker": "C3 has 12 applicable WSL Vulkan/CPU+Vulkan real GPU consumer gates unqualified: loader exposes only llvmpipe type4. All build/install batches terminal; no product math FAIL inferred.",
+      "blocker_owner": "Validation hardware/environment; root agent maintains C3 qualification",
+      "resume_condition": "Run the two declared WSL/Linux Vulkan groups on a real GPU with recorded machine/driver/recipe identity, or obtain an explicit user decision for the documented qualified-platform boundary and H1 sequencing while retaining unqualified runtime gates."
     },
     {
       "module": "graph",
-      "state": "CANDIDATE",
+      "state": "BLOCKED",
       "record": "docs/implementation/tasks/build/compute-unified-delivery.md",
-      "summary": "统一构建/冷路由候选已修正条件资产producer；Windows CPU/CUDA三交付消费者全部通过，其余平台/路线/mixed矩阵仍待验，H1–H3未实施。",
-      "candidate": "2614676ee64bceddadcf791c218d6eea1f051c64"
+      "summary": "C3 BLOCKED：统一构建/SDK/资产及已验平台完成，78数学PASS、12实GPU数学因WSL仅软件设备BLOCKED；全部构建终态，H1–H3未实现。",
+      "candidate": "2614676ee64bceddadcf791c218d6eea1f051c64",
+      "blocked_from": "CANDIDATE",
+      "blocker": "C3 has 12 applicable WSL Vulkan/CPU+Vulkan real GPU consumer gates unqualified: loader exposes only llvmpipe type4. All build/install batches terminal; no product math FAIL inferred.",
+      "blocker_owner": "Validation hardware/environment; root agent maintains C3 qualification",
+      "resume_condition": "Run the two declared WSL/Linux Vulkan groups on a real GPU with recorded machine/driver/recipe identity, or obtain an explicit user decision for the documented qualified-platform boundary and H1 sequencing while retaining unqualified runtime gates."
     },
     {
       "module": "container_concurrent",
@@ -354,10 +362,14 @@
     },
     {
       "module": "compute_provider_onednn",
-      "state": "CANDIDATE",
+      "state": "BLOCKED",
       "record": "docs/implementation/tasks/build/compute-unified-delivery.md",
-      "summary": "统一构建/冷路由候选已修正条件资产producer；Windows CPU/CUDA三交付消费者全部通过，其余平台/路线/mixed矩阵仍待验，H1–H3未实施。",
-      "candidate": "2614676ee64bceddadcf791c218d6eea1f051c64"
+      "summary": "C3 BLOCKED：统一构建/SDK/资产及已验平台完成，78数学PASS、12实GPU数学因WSL仅软件设备BLOCKED；全部构建终态，H1–H3未实现。",
+      "candidate": "2614676ee64bceddadcf791c218d6eea1f051c64",
+      "blocked_from": "CANDIDATE",
+      "blocker": "C3 has 12 applicable WSL Vulkan/CPU+Vulkan real GPU consumer gates unqualified: loader exposes only llvmpipe type4. All build/install batches terminal; no product math FAIL inferred.",
+      "blocker_owner": "Validation hardware/environment; root agent maintains C3 qualification",
+      "resume_condition": "Run the two declared WSL/Linux Vulkan groups on a real GPU with recorded machine/driver/recipe identity, or obtain an explicit user decision for the documented qualified-platform boundary and H1 sequencing while retaining unqualified runtime gates."
     },
     {
       "module": "compute_provider_ggml",
@@ -394,38 +406,58 @@
     },
     {
       "module": "compute_backend_cpu",
-      "state": "CANDIDATE",
+      "state": "BLOCKED",
       "record": "docs/implementation/tasks/build/compute-unified-delivery.md",
-      "summary": "统一构建/冷路由候选已修正条件资产producer；Windows CPU/CUDA三交付消费者全部通过，其余平台/路线/mixed矩阵仍待验，H1–H3未实施。",
-      "candidate": "2614676ee64bceddadcf791c218d6eea1f051c64"
+      "summary": "C3 BLOCKED：统一构建/SDK/资产及已验平台完成，78数学PASS、12实GPU数学因WSL仅软件设备BLOCKED；全部构建终态，H1–H3未实现。",
+      "candidate": "2614676ee64bceddadcf791c218d6eea1f051c64",
+      "blocked_from": "CANDIDATE",
+      "blocker": "C3 has 12 applicable WSL Vulkan/CPU+Vulkan real GPU consumer gates unqualified: loader exposes only llvmpipe type4. All build/install batches terminal; no product math FAIL inferred.",
+      "blocker_owner": "Validation hardware/environment; root agent maintains C3 qualification",
+      "resume_condition": "Run the two declared WSL/Linux Vulkan groups on a real GPU with recorded machine/driver/recipe identity, or obtain an explicit user decision for the documented qualified-platform boundary and H1 sequencing while retaining unqualified runtime gates."
     },
     {
       "module": "compute_backend_cuda",
-      "state": "CANDIDATE",
+      "state": "BLOCKED",
       "record": "docs/implementation/tasks/build/compute-unified-delivery.md",
-      "summary": "统一构建/冷路由候选已修正条件资产producer；Windows CPU/CUDA三交付消费者全部通过，其余平台/路线/mixed矩阵仍待验，H1–H3未实施。",
-      "candidate": "2614676ee64bceddadcf791c218d6eea1f051c64"
+      "summary": "C3 BLOCKED：统一构建/SDK/资产及已验平台完成，78数学PASS、12实GPU数学因WSL仅软件设备BLOCKED；全部构建终态，H1–H3未实现。",
+      "candidate": "2614676ee64bceddadcf791c218d6eea1f051c64",
+      "blocked_from": "CANDIDATE",
+      "blocker": "C3 has 12 applicable WSL Vulkan/CPU+Vulkan real GPU consumer gates unqualified: loader exposes only llvmpipe type4. All build/install batches terminal; no product math FAIL inferred.",
+      "blocker_owner": "Validation hardware/environment; root agent maintains C3 qualification",
+      "resume_condition": "Run the two declared WSL/Linux Vulkan groups on a real GPU with recorded machine/driver/recipe identity, or obtain an explicit user decision for the documented qualified-platform boundary and H1 sequencing while retaining unqualified runtime gates."
     },
     {
       "module": "compute_provider_native",
-      "state": "CANDIDATE",
+      "state": "BLOCKED",
       "record": "docs/implementation/tasks/build/compute-unified-delivery.md",
-      "summary": "统一构建/冷路由候选已修正条件资产producer；Windows CPU/CUDA三交付消费者全部通过，其余平台/路线/mixed矩阵仍待验，H1–H3未实施。",
-      "candidate": "2614676ee64bceddadcf791c218d6eea1f051c64"
+      "summary": "C3 BLOCKED：统一构建/SDK/资产及已验平台完成，78数学PASS、12实GPU数学因WSL仅软件设备BLOCKED；全部构建终态，H1–H3未实现。",
+      "candidate": "2614676ee64bceddadcf791c218d6eea1f051c64",
+      "blocked_from": "CANDIDATE",
+      "blocker": "C3 has 12 applicable WSL Vulkan/CPU+Vulkan real GPU consumer gates unqualified: loader exposes only llvmpipe type4. All build/install batches terminal; no product math FAIL inferred.",
+      "blocker_owner": "Validation hardware/environment; root agent maintains C3 qualification",
+      "resume_condition": "Run the two declared WSL/Linux Vulkan groups on a real GPU with recorded machine/driver/recipe identity, or obtain an explicit user decision for the documented qualified-platform boundary and H1 sequencing while retaining unqualified runtime gates."
     },
     {
       "module": "compute_route_cpu",
-      "state": "CANDIDATE",
+      "state": "BLOCKED",
       "record": "docs/implementation/tasks/build/compute-unified-delivery.md",
-      "summary": "统一构建/冷路由候选已修正条件资产producer；Windows CPU/CUDA三交付消费者全部通过，其余平台/路线/mixed矩阵仍待验，H1–H3未实施。",
-      "candidate": "2614676ee64bceddadcf791c218d6eea1f051c64"
+      "summary": "C3 BLOCKED：统一构建/SDK/资产及已验平台完成，78数学PASS、12实GPU数学因WSL仅软件设备BLOCKED；全部构建终态，H1–H3未实现。",
+      "candidate": "2614676ee64bceddadcf791c218d6eea1f051c64",
+      "blocked_from": "CANDIDATE",
+      "blocker": "C3 has 12 applicable WSL Vulkan/CPU+Vulkan real GPU consumer gates unqualified: loader exposes only llvmpipe type4. All build/install batches terminal; no product math FAIL inferred.",
+      "blocker_owner": "Validation hardware/environment; root agent maintains C3 qualification",
+      "resume_condition": "Run the two declared WSL/Linux Vulkan groups on a real GPU with recorded machine/driver/recipe identity, or obtain an explicit user decision for the documented qualified-platform boundary and H1 sequencing while retaining unqualified runtime gates."
     },
     {
       "module": "graph_route_cpu",
-      "state": "CANDIDATE",
+      "state": "BLOCKED",
       "record": "docs/implementation/tasks/build/compute-unified-delivery.md",
-      "summary": "统一构建/冷路由候选已修正条件资产producer；Windows CPU/CUDA三交付消费者全部通过，其余平台/路线/mixed矩阵仍待验，H1–H3未实施。",
-      "candidate": "2614676ee64bceddadcf791c218d6eea1f051c64"
+      "summary": "C3 BLOCKED：统一构建/SDK/资产及已验平台完成，78数学PASS、12实GPU数学因WSL仅软件设备BLOCKED；全部构建终态，H1–H3未实现。",
+      "candidate": "2614676ee64bceddadcf791c218d6eea1f051c64",
+      "blocked_from": "CANDIDATE",
+      "blocker": "C3 has 12 applicable WSL Vulkan/CPU+Vulkan real GPU consumer gates unqualified: loader exposes only llvmpipe type4. All build/install batches terminal; no product math FAIL inferred.",
+      "blocker_owner": "Validation hardware/environment; root agent maintains C3 qualification",
+      "resume_condition": "Run the two declared WSL/Linux Vulkan groups on a real GPU with recorded machine/driver/recipe identity, or obtain an explicit user decision for the documented qualified-platform boundary and H1 sequencing while retaining unqualified runtime gates."
     },
     {
       "module": "compute_provider_cublas",
@@ -463,59 +495,91 @@
     },
     {
       "module": "compute_route_cuda",
-      "state": "CANDIDATE",
+      "state": "BLOCKED",
       "record": "docs/implementation/tasks/build/compute-unified-delivery.md",
-      "summary": "统一构建/冷路由候选已修正条件资产producer；Windows CPU/CUDA三交付消费者全部通过，其余平台/路线/mixed矩阵仍待验，H1–H3未实施。",
-      "candidate": "2614676ee64bceddadcf791c218d6eea1f051c64"
+      "summary": "C3 BLOCKED：统一构建/SDK/资产及已验平台完成，78数学PASS、12实GPU数学因WSL仅软件设备BLOCKED；全部构建终态，H1–H3未实现。",
+      "candidate": "2614676ee64bceddadcf791c218d6eea1f051c64",
+      "blocked_from": "CANDIDATE",
+      "blocker": "C3 has 12 applicable WSL Vulkan/CPU+Vulkan real GPU consumer gates unqualified: loader exposes only llvmpipe type4. All build/install batches terminal; no product math FAIL inferred.",
+      "blocker_owner": "Validation hardware/environment; root agent maintains C3 qualification",
+      "resume_condition": "Run the two declared WSL/Linux Vulkan groups on a real GPU with recorded machine/driver/recipe identity, or obtain an explicit user decision for the documented qualified-platform boundary and H1 sequencing while retaining unqualified runtime gates."
     },
     {
       "module": "graph_route_cuda",
-      "state": "CANDIDATE",
+      "state": "BLOCKED",
       "record": "docs/implementation/tasks/build/compute-unified-delivery.md",
-      "summary": "统一构建/冷路由候选已修正条件资产producer；Windows CPU/CUDA三交付消费者全部通过，其余平台/路线/mixed矩阵仍待验，H1–H3未实施。",
-      "candidate": "2614676ee64bceddadcf791c218d6eea1f051c64"
+      "summary": "C3 BLOCKED：统一构建/SDK/资产及已验平台完成，78数学PASS、12实GPU数学因WSL仅软件设备BLOCKED；全部构建终态，H1–H3未实现。",
+      "candidate": "2614676ee64bceddadcf791c218d6eea1f051c64",
+      "blocked_from": "CANDIDATE",
+      "blocker": "C3 has 12 applicable WSL Vulkan/CPU+Vulkan real GPU consumer gates unqualified: loader exposes only llvmpipe type4. All build/install batches terminal; no product math FAIL inferred.",
+      "blocker_owner": "Validation hardware/environment; root agent maintains C3 qualification",
+      "resume_condition": "Run the two declared WSL/Linux Vulkan groups on a real GPU with recorded machine/driver/recipe identity, or obtain an explicit user decision for the documented qualified-platform boundary and H1 sequencing while retaining unqualified runtime gates."
     },
     {
       "module": "compute_route_apple",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/build/compute-mixed-shared-license-registration.md",
-      "summary": "C3 CPU+Apple DS4 共享锁登记定向修正已冻结；原失败保留，恢复组合三交付验收。",
-      "candidate": "530e230bbc11e4fe12218a6a021ca15b009337c3"
+      "summary": "C3限定修复CLOSED：共享DS4许可证登记唯一owner；完整CPU+Apple三交付与配置边界通过，运行数学/热路径不变。",
+      "candidate": "530e230bbc11e4fe12218a6a021ca15b009337c3",
+      "performance": {
+        "tier": "P0",
+        "evidence": "docs/implementation/tasks/build/compute-mixed-shared-license-registration.md"
+      }
     },
     {
       "module": "graph_route_apple",
-      "state": "CANDIDATE",
+      "state": "BLOCKED",
       "record": "docs/implementation/tasks/build/compute-unified-delivery.md",
-      "summary": "统一构建/冷路由候选已修正条件资产producer；Windows CPU/CUDA三交付消费者全部通过，其余平台/路线/mixed矩阵仍待验，H1–H3未实施。",
-      "candidate": "2614676ee64bceddadcf791c218d6eea1f051c64"
+      "summary": "C3 BLOCKED：统一构建/SDK/资产及已验平台完成，78数学PASS、12实GPU数学因WSL仅软件设备BLOCKED；全部构建终态，H1–H3未实现。",
+      "candidate": "2614676ee64bceddadcf791c218d6eea1f051c64",
+      "blocked_from": "CANDIDATE",
+      "blocker": "C3 has 12 applicable WSL Vulkan/CPU+Vulkan real GPU consumer gates unqualified: loader exposes only llvmpipe type4. All build/install batches terminal; no product math FAIL inferred.",
+      "blocker_owner": "Validation hardware/environment; root agent maintains C3 qualification",
+      "resume_condition": "Run the two declared WSL/Linux Vulkan groups on a real GPU with recorded machine/driver/recipe identity, or obtain an explicit user decision for the documented qualified-platform boundary and H1 sequencing while retaining unqualified runtime gates."
     },
     {
       "module": "compute_route_vulkan",
-      "state": "CANDIDATE",
+      "state": "BLOCKED",
       "record": "docs/implementation/tasks/build/compute-unified-delivery.md",
-      "summary": "统一构建/冷路由候选已修正条件资产producer；Windows CPU/CUDA三交付消费者全部通过，其余平台/路线/mixed矩阵仍待验，H1–H3未实施。",
-      "candidate": "2614676ee64bceddadcf791c218d6eea1f051c64"
+      "summary": "C3 BLOCKED：统一构建/SDK/资产及已验平台完成，78数学PASS、12实GPU数学因WSL仅软件设备BLOCKED；全部构建终态，H1–H3未实现。",
+      "candidate": "2614676ee64bceddadcf791c218d6eea1f051c64",
+      "blocked_from": "CANDIDATE",
+      "blocker": "C3 has 12 applicable WSL Vulkan/CPU+Vulkan real GPU consumer gates unqualified: loader exposes only llvmpipe type4. All build/install batches terminal; no product math FAIL inferred.",
+      "blocker_owner": "Validation hardware/environment; root agent maintains C3 qualification",
+      "resume_condition": "Run the two declared WSL/Linux Vulkan groups on a real GPU with recorded machine/driver/recipe identity, or obtain an explicit user decision for the documented qualified-platform boundary and H1 sequencing while retaining unqualified runtime gates."
     },
     {
       "module": "graph_route_vulkan",
-      "state": "CANDIDATE",
+      "state": "BLOCKED",
       "record": "docs/implementation/tasks/build/compute-unified-delivery.md",
-      "summary": "统一构建/冷路由候选已修正条件资产producer；Windows CPU/CUDA三交付消费者全部通过，其余平台/路线/mixed矩阵仍待验，H1–H3未实施。",
-      "candidate": "2614676ee64bceddadcf791c218d6eea1f051c64"
+      "summary": "C3 BLOCKED：统一构建/SDK/资产及已验平台完成，78数学PASS、12实GPU数学因WSL仅软件设备BLOCKED；全部构建终态，H1–H3未实现。",
+      "candidate": "2614676ee64bceddadcf791c218d6eea1f051c64",
+      "blocked_from": "CANDIDATE",
+      "blocker": "C3 has 12 applicable WSL Vulkan/CPU+Vulkan real GPU consumer gates unqualified: loader exposes only llvmpipe type4. All build/install batches terminal; no product math FAIL inferred.",
+      "blocker_owner": "Validation hardware/environment; root agent maintains C3 qualification",
+      "resume_condition": "Run the two declared WSL/Linux Vulkan groups on a real GPU with recorded machine/driver/recipe identity, or obtain an explicit user decision for the documented qualified-platform boundary and H1 sequencing while retaining unqualified runtime gates."
     },
     {
       "module": "compute_provider_ggml_vulkan",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/build/vulkan-macos-loader-discovery.md",
-      "summary": "macOS Vulkan默认loader标准位置发现候选已冻结；不注入环境/安装driver，Air普通三交付待验。",
-      "candidate": "a1c22ac347583e8a9af3be3d8e8b55534afcd710"
+      "summary": "C3限定修复CLOSED：macOS默认Vulkan loader冷发现；Air Vulkan/CPU+Vulkan三交付与配置边界通过，无DYLD覆盖，不代签WSL实GPU。",
+      "candidate": "a1c22ac347583e8a9af3be3d8e8b55534afcd710",
+      "performance": {
+        "tier": "P0",
+        "evidence": "docs/implementation/tasks/build/vulkan-macos-loader-discovery.md"
+      }
     },
     {
       "module": "compute_ggml_runtime",
-      "state": "CANDIDATE",
+      "state": "BLOCKED",
       "record": "docs/implementation/tasks/build/compute-ggml-cpu-linux-loader-path.md",
-      "summary": "Linux CPU loader 限定修正已冻结；普通 source Direct/Graph 无 LD 覆盖 PASS，MODULE 缺失/恢复边界 PASS，剩余 Linux SDK/mixed 交付待验。",
-      "candidate": "a2476b62cfe49c1663998645c362392685c06eb1"
+      "summary": "C3 BLOCKED：统一构建/SDK/资产及已验平台完成，78数学PASS、12实GPU数学因WSL仅软件设备BLOCKED；全部构建终态，H1–H3未实现。",
+      "candidate": "a2476b62cfe49c1663998645c362392685c06eb1",
+      "blocked_from": "CANDIDATE",
+      "blocker": "C3 has 12 applicable WSL Vulkan/CPU+Vulkan real GPU consumer gates unqualified: loader exposes only llvmpipe type4. All build/install batches terminal; no product math FAIL inferred.",
+      "blocker_owner": "Validation hardware/environment; root agent maintains C3 qualification",
+      "resume_condition": "Run the two declared WSL/Linux Vulkan groups on a real GPU with recorded machine/driver/recipe identity, or obtain an explicit user decision for the documented qualified-platform boundary and H1 sequencing while retaining unqualified runtime gates."
     },
     {
       "module": "compute_provider_ggml_cuda",

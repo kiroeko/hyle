@@ -1,0 +1,86 @@
+{
+  "scope": "Original C3 source/shared/static compile/install/relocation/assets/consumer links; physical Vulkan GPU math not executed",
+  "candidate": "a2476b62cfe49c1663998645c362392685c06eb1",
+  "validation_source_commit": "a2476b62cfe49c1663998645c362392685c06eb1",
+  "source_archive_sha256": "d0c2377d14be5752f6e1876a54d8c568cb1cc32a7066391bd784699a1ad14c86",
+  "routes": "cpu;vulkan",
+  "build_install_exit": 0,
+  "LD_LIBRARY_PATH": "",
+  "driver_sha256": "e7208959bfdf2027131c09a72d9bfac8783654a6c4e84ef99224a39bad9a81cd",
+  "batch_log_sha256": "a6b9148f50b6cd5d18622615d43f67b99f09dfc2f1b7376c3108980ffa21d6d6",
+  "runtime_reason": "Only software Vulkan device; ordinary route requires physical GPU",
+  "rows": [
+    {
+      "entry": "source-graph",
+      "configure_build_link": "PASS",
+      "runtime": "BLOCKED",
+      "math_executed": false,
+      "missing_runtime_dependencies": [],
+      "ldd_log": "source-graph-ldd.log",
+      "recipe": null,
+      "native_cpu_modules": []
+    },
+    {
+      "entry": "source-direct",
+      "configure_build_link": "PASS",
+      "runtime": "BLOCKED",
+      "math_executed": false,
+      "missing_runtime_dependencies": [],
+      "ldd_log": "source-direct-ldd.log",
+      "recipe": null,
+      "native_cpu_modules": []
+    },
+    {
+      "entry": "shared-graph",
+      "configure_build_link": "PASS",
+      "runtime": "BLOCKED",
+      "math_executed": false,
+      "missing_runtime_dependencies": [],
+      "ldd_log": "shared-graph-ldd.log",
+      "recipe": "0c80c766c8c0016cad92b3e7d63cb077682e51d8dab4d4b4f75302c37a3ba18c",
+      "native_cpu_modules": [
+        "libhyle_ggml_cpu_avx2_456172ec_7d4fea280f67f983.so"
+      ]
+    },
+    {
+      "entry": "shared-direct",
+      "configure_build_link": "PASS",
+      "runtime": "BLOCKED",
+      "math_executed": false,
+      "missing_runtime_dependencies": [],
+      "ldd_log": "shared-direct-ldd.log",
+      "recipe": "0c80c766c8c0016cad92b3e7d63cb077682e51d8dab4d4b4f75302c37a3ba18c",
+      "native_cpu_modules": [
+        "libhyle_ggml_cpu_avx2_456172ec_7d4fea280f67f983.so"
+      ]
+    },
+    {
+      "entry": "static-graph",
+      "configure_build_link": "PASS",
+      "runtime": "BLOCKED",
+      "math_executed": false,
+      "missing_runtime_dependencies": [],
+      "ldd_log": "static-graph-ldd.log",
+      "recipe": "3f9c6c2d70478bcc0c625cdcae22ccef23f23a84009380d1067469e5653e9234",
+      "native_cpu_modules": [
+        "libhyle_ggml_cpu_avx2_456172ec_7d4fea280f67f983.so"
+      ]
+    },
+    {
+      "entry": "static-direct",
+      "configure_build_link": "PASS",
+      "runtime": "BLOCKED",
+      "math_executed": false,
+      "missing_runtime_dependencies": [],
+      "ldd_log": "static-direct-ldd.log",
+      "recipe": "3f9c6c2d70478bcc0c625cdcae22ccef23f23a84009380d1067469e5653e9234",
+      "native_cpu_modules": [
+        "libhyle_ggml_cpu_avx2_456172ec_7d4fea280f67f983.so"
+      ]
+    }
+  ],
+  "original_logs_archive": "original-logs.tar.gz",
+  "original_logs_archive_sha256": "5c9899414333c43e89cb1cac4a938d1fca5e0ff4fcdba861d27018a330ecd8e1",
+  "readable_batch_log_sha256": "4faf71ff15d07785cbb0156d9fd0e01b7fc457ea610fbe84459353513da7bf6a",
+  "log_representation": "batch_log_sha256 identifies exact raw archive member; readable logs remove trailing whitespace only"
+}

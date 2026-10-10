@@ -1,6 +1,6 @@
 # C1–C3 / R1：统一 Compute/Graph 配置与交付
 
-<!-- MODULE REVIEW: CANDIDATE -->
+<!-- MODULE REVIEW: BLOCKED -->
 
 - baseline：`0a167159e08bf2df021c0b7f7fc8942a4dc87c3e`；Windows canonical，启动工作树干净。
 - 用户已明确启动实施；[已定设计](../../../architecture/compute-next-stage.md)与
@@ -491,3 +491,14 @@ CUDA宏未启用。[逐头证据](../../../../evidence/correctness/compute-unifi
 含实际commands与原始日志归档，仅读取已安装SDK，不重建/运行GPU/P1。
 C3预声明bare/active安装头组至此全部完成；这不签static宏全矩阵，也不代替剩余static交付或
 WSL实GPU数学。消费者计数保持78 PASS / 6 BLOCKED / 6 UNRUN，实现LOC仍62,508。
+
+最后WSL CPU+Vulkan原static循环也已完成，三交付build/install整批exit0。实际六consumer
+依赖无缺件，shared/static保留本组合原AVX2 MODULE `456172ec_7d4fea280f67f983`，未套用CUDA
+组合的来源或模块名，无LD覆盖。[完整构建/资源收据](../../../../evidence/correctness/compute-unified-c3/wsl-cpu-vulkan-build-only/receipt.json)
+单独签compile/install/link PASS，实GPU数学未执行。C3最终当前矩阵78 PASS / 12 BLOCKED /
+0 UNRUN；全部原native批次已终态，无后台重型run。仅余本WSL无physical Vulkan GPU的
+十二项运行资格；C3不写全通过，H1–H3仍未实现。
+
+C3当前终局为BLOCKED，聚合correctness/delivery INCONCLUSIVE；
+[硬件限制与待决取舍](compute-c3-hardware-boundary-decision.md)给出已验结果、具体恢复条件
+和进入H1的有限方案。保留已验平台与原产物，不重启构建或追加研究来等待硬件变化。

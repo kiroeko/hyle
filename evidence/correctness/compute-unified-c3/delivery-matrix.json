@@ -204,19 +204,23 @@
       "routes": "cpu;vulkan",
       "deliveries": {
         "source": {
-          "direct": "UNRUN",
-          "graph": "UNRUN"
+          "direct": "BLOCKED",
+          "graph": "BLOCKED"
         },
         "shared": {
-          "direct": "UNRUN",
-          "graph": "UNRUN"
+          "direct": "BLOCKED",
+          "graph": "BLOCKED"
         },
         "static": {
-          "direct": "UNRUN",
-          "graph": "UNRUN"
+          "direct": "BLOCKED",
+          "graph": "BLOCKED"
         }
       },
-      "evidence": []
+      "evidence": [
+        "wsl-cpu-vulkan-build-only/receipt.json"
+      ],
+      "runtime_reason": "Only software Vulkan device; ordinary route requires physical GPU",
+      "build_install_verdict": "PASS"
     },
     {
       "platform": "Darwin-Air",

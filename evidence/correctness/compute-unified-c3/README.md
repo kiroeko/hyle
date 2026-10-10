@@ -5,9 +5,10 @@ It is not a terminal verdict for all platforms/routes, hybrid execution, or asyn
 
 [Delivery matrix](delivery-matrix.json) fixes the declared applicable scope: 15 platform/route groups,
 45 source/shared/static shapes, each with the existing Direct and Graph consumer. Consumer entries
-are documented per actual receipt; the current matrix records 78 PASS, 6 BLOCKED and 6 UNRUN.
-The six BLOCKED Vulkan entries have completed WSL compile/install/relocation/consumer-link
-checks in [their separate receipt](wsl-vulkan-build-only/receipt.json). They have no real GPU
+are documented per actual receipt; the current matrix records 78 PASS, 12 BLOCKED and 0 UNRUN.
+The twelve BLOCKED Vulkan and CPU+Vulkan entries have completed WSL compile/install/relocation/consumer-link
+checks in [Vulkan](wsl-vulkan-build-only/receipt.json) and [CPU+Vulkan](wsl-cpu-vulkan-build-only/receipt.json).
+They have no real GPU
 math qualification: the current WSL loader exposes only a software device.
 Earlier Vulkan failures remain archived. A mixed SDK entry runs each selected native route independently
 and cannot certify the later joint execution or asynchronous transfer work.

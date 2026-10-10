@@ -1,6 +1,6 @@
 # C3 macOS Vulkan 普通 loader 发现修正
 
-<!-- MODULE REVIEW: CANDIDATE -->
+<!-- MODULE REVIEW: CLOSED -->
 
 - owner：`compute_provider_ggml_vulkan`；baseline `c96c7c6eefb41f9aca71c92b4304814a731fe088`。
 - trigger：[Air 普通 source Direct/Graph 实际 loader 失败](../../../../evidence/correctness/compute-unified-c3/air-vulkan-loader-failure/receipt.json)。
@@ -34,3 +34,12 @@ Air普通source已实际PASS：明确`env -u DYLD_LIBRARY_PATH -u DYLD_FALLBACK_
 两SDK搬迁和实际HyleConfig日志已归档。普通入口未设置DYLD回退环境，driver/数学未改。
 本卡适用source/shared/static门完成；actor暂保CANDIDATE等待C3统一终审/其余直接需求绑定，
 不代签尚未完成的mixed平台矩阵或H1–H3。统一LOC当前62,508实现行，不含tests/third_party。
+
+## 限定修复终局：CLOSED
+
+本卡七门PASS，限定默认macOS冷loader发现：Air Vulkan与CPU+Vulkan均完成真实三交付数学，
+无DYLD覆盖；完整runtime assets、包metadata与当前离线route/recipe检查已有独立收据。
+显式路径不覆盖、无全局环境改写、非macOS不进入新分支，独立C3反证未发现新的本卡缺陷。
+P0为最多三次冷打开，不增加热成本，不升级依赖/改数学/建新通用loader；当前docs/closure/diff通过。
+原source loader FAIL与诊断保留，不代签WSL实GPU或H3。reopen仅限同域可复现默认发现/
+owner保活/交付缺陷，或实际新平台部署需求；本卡停止。

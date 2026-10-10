@@ -1,6 +1,6 @@
 # C3 Linux ggml CPU 原生程序的装载路径修正
 
-<!-- MODULE REVIEW: CANDIDATE -->
+<!-- MODULE REVIEW: BLOCKED -->
 
 - owner：`compute_ggml_runtime`；baseline `788f9e80`，原候选 `c96c7c6e`。
 - trigger：C3 WSL 完整 CPU source 编译成功，Direct PASS；普通 Graph 在创建 invocation
@@ -66,3 +66,12 @@ relocated shared/static SDK含原AVX2 MODULE、两consumer依赖无缺件。
 [混合CUDA收据](../../../../evidence/correctness/compute-unified-c3/wsl-cpu-cuda-partial.json)
 及其resource receipts保留冻结a2476b62来源/recipe。CPU+Vulkan source/shared编译与安装头已验，
 原static循环仍在运行，实GPU数学因本WSL仅软件设备仍未资格。本owner未因此关闭或重测前序成功域。
+
+## C3当前终局：BLOCKED
+
+CPU+Vulkan原source/shared/static编译、安装、链接及资源检查也已全部exit0，实际MODULE为
+`456172ec_7d4fea280f67f983`，两SDK原生模块齐全，无LD覆盖或缺ELF依赖。
+本限定CPU loader修复的已验域成立，承接的Vulkan F32与C3 Linux/mixed实GPU数学仍有十二项
+未资格，因此owner聚合门保持INCONCLUSIVE/BLOCKED，不写全CLOSED。
+[C3硬件裁决](compute-c3-hardware-boundary-decision.md)保留原产品候选与明确恢复条件；
+共享scope的未资格不因本卡CPU成功消失，不重跑已完成CPU/CPU+CUDA或其它平台/P1。

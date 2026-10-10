@@ -1,6 +1,6 @@
 # C3 CPU+Apple 共享源码依赖登记修正
 
-<!-- MODULE REVIEW: CANDIDATE -->
+<!-- MODULE REVIEW: CLOSED -->
 
 - owner：`compute_route_apple`；baseline `6e7af97eb`。
 - 需求：普通 `HYLE_COMPUTE_ROUTES=cpu;apple` 的完整源码及静态/动态 SDK。
@@ -49,3 +49,13 @@ Direct/Graph数学全部PASS、SDK循环exit0。新结果在独立air-cpu-apple-
 日志与撤回事实保留。[当前收据](../../../../evidence/correctness/compute-unified-c3/air-cpu-apple-partial.json)
 六条日志hash和两SDK路线metadata已核实；source身份与SDK工具/来源身份分别保留，不重命名旧产物。
 本有限许可证登记修复的三交付风险已验，owner仍CANDIDATE等待C3统一裁决；不代签H2。
+
+## 限定修复终局：CLOSED
+
+本卡scope/architecture/correctness/delivery/usability_docs/red_team/engineering_performance
+七门PASS，仅针对共享DS4登记条件：实际CPU+Apple三交付数学/完整metadata/许可证已通过，
+C3条件参数丢失反证已由独立工具修正并以正确SDK重验，当前离线subset/recipe/旧开关检查也通过。
+修正只在冷CMake决定一个已有lock的登记owner，P0无运行期成本；公开CPU/Apple数学、layout、
+Provider默认及热路径零变化，不启动P1。版本/许可证/既有registry/三交付归属复用原机制。
+当前文档与closure检查通过，无剩余本卡FIX。保留旧失败/错误资格，不代签共享C3或H2。
+reopen仅限新的重复/缺失登记、同scope的实际交付缺陷或新的公开需求；本卡停止。
