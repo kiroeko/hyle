@@ -1,0 +1,9 @@
+{
+  "scope": "Diagnostic-only configuration launched without the already-required native Linux CUDA PATH; not a SDK or math failure verdict",
+  "observed": "CMake selected Windows nvcc.exe from inherited WSL PATH and could not find Linux CUDA_CUDART",
+  "correction": "Same native Linux CUDA PATH as original qualified C3 driver; fresh failed-case configure because CMake caches tool discovery",
+  "setup_reference": "docs/developer/setup/linux-wsl.md:32",
+  "original_completed_passes": 0,
+  "corrected_checks": 16,
+  "verdict": "FIXED_FIXTURE_ENV"
+}

@@ -1,0 +1,20 @@
+-- The CXX compiler identification is AppleClang 21.0.0.21000334
+-- Detecting CXX compiler ABI info
+-- Detecting CXX compiler ABI info - done
+-- Check for working CXX compiler: /Library/Developer/CommandLineTools/usr/bin/clang++ - skipped
+-- Detecting CXX compile features
+-- Detecting CXX compile features - done
+-- Configuring incomplete, errors occurred!
+CMake Error at CMakeLists.txt:3 (find_package):
+  Found package configuration file:
+
+    /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-relocated/lib/cmake/Hyle/HyleConfig.cmake
+
+  but it set Hyle_FOUND to FALSE so package "Hyle" is considered to be NOT
+  FOUND.  Reason given by package:
+
+  HYLE_COMPUTE_ONEDNN is no longer a public build option; request
+  HYLE_COMPUTE_ROUTES or read this SDK's capabilities
+
+
+

@@ -1,0 +1,19 @@
+-- The CXX compiler identification is GNU 14.2.0
+-- Detecting CXX compiler ABI info
+-- Detecting CXX compiler ABI info - done
+-- Check for working CXX compiler: /usr/bin/g++-14 - skipped
+-- Detecting CXX compile features
+-- Detecting CXX compile features - done
+-- Unable to find cudart library.
+-- Configuring incomplete, errors occurred!
+CMake Error at /usr/share/cmake-3.28/Modules/FindPackageHandleStandardArgs.cmake:230 (message):
+  Could NOT find CUDAToolkit (missing: CUDA_CUDART) (found suitable version
+  "13.3.73", minimum required is "13.3")
+Call Stack (most recent call first):
+  /usr/share/cmake-3.28/Modules/FindPackageHandleStandardArgs.cmake:600 (_FPHSA_FAILURE_MESSAGE)
+  /usr/share/cmake-3.28/Modules/FindCUDAToolkit.cmake:1009 (find_package_handle_standard_args)
+  /usr/share/cmake-3.28/Modules/CMakeFindDependencyMacro.cmake:76 (find_package)
+  /root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/shared-sdk-relocated/lib/cmake/Hyle/HyleConfig.cmake:66 (find_dependency)
+  CMakeLists.txt:3 (find_package)
+
+

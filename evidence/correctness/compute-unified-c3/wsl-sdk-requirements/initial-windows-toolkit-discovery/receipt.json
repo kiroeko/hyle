@@ -1,0 +1,34 @@
+{
+  "scope": "Actual installed shared/static route subsets, absent routes, old controls and recipe queries; offline configure only, no SDK rebuild or math",
+  "platform": "Linux-6.18.40.1-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+  "machine": "x86_64",
+  "compiler": "g++-14 (Ubuntu 14.2.0-4ubuntu2~24.04.1) 14.2.0",
+  "rows": [
+    {
+      "routes": "cpu;cuda",
+      "linkage": "shared",
+      "case": "subset",
+      "argv": [
+        "cmake",
+        "-S",
+        "/root/hyle-scratch/compute-unified/wsl-sdk-requirements",
+        "-B",
+        "/root/hyle-scratch/compute-unified/wsl-sdk-requirements/l-cpu-cuda-shared-subset",
+        "-G",
+        "Ninja",
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DCMAKE_CXX_COMPILER=/usr/bin/g++-14",
+        "-DCMAKE_PREFIX_PATH=/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/shared-sdk-relocated",
+        "-DFETCHCONTENT_FULLY_DISCONNECTED=ON",
+        "-DHYLE_COMPUTE_ROUTES=CUDA"
+      ],
+      "sdk_config_sha256": "6a20517e1fe3da9eb6263bb3c9ea4e854546d33ddd497fc23d131148bb3dc5bb",
+      "expected_acceptance": true,
+      "expected_diagnostic": "",
+      "exit": 1,
+      "verdict": "FAIL",
+      "log": "l-cpu-cuda-shared-subset.log",
+      "log_sha256": "3aa930f93b8a313d73904490fcb88777c8298b1c22919f26a34d0ae0ba3f497e"
+    }
+  ]
+}

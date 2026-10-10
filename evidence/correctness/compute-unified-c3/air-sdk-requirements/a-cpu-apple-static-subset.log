@@ -1,0 +1,20 @@
+-- The CXX compiler identification is AppleClang 21.0.0.21000334
+-- Detecting CXX compiler ABI info
+-- Detecting CXX compiler ABI info - done
+-- Check for working CXX compiler: /Library/Developer/CommandLineTools/usr/bin/clang++ - skipped
+-- Detecting CXX compile features
+-- Detecting CXX compile features - done
+-- Performing Test CMAKE_HAVE_LIBC_PTHREAD
+-- Performing Test CMAKE_HAVE_LIBC_PTHREAD - Success
+-- Found Threads: TRUE
+-- HYLE: reusing locked CPU SDK at /Users/kiro/Library/Caches/hyle/dependencies/v1/sdks/torch-cpu/Darwin-be0642231d2008c7b90071fc0898d82a0c002d47f38350ebf3ed779fc01972d7/libtorch
+-- Found Torch: /Users/kiro/Library/Caches/hyle/dependencies/v1/sdks/torch-cpu/Darwin-be0642231d2008c7b90071fc0898d82a0c002d47f38350ebf3ed779fc01972d7/libtorch/lib/libtorch.dylib (Required is exact version "2.8.0")
+-- Configuring done (1.2s)
+-- Generating done (0.0s)
+-- Build files have been written to: /Users/kiro/hyle-scratch/compute-unified/air-sdk-requirements/a-cpu-apple-static-subset
+CMake Warning:
+  Manually-specified variables were not used by the project:
+
+    FETCHCONTENT_FULLY_DISCONNECTED
+
+

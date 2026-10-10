@@ -474,3 +474,13 @@ WSL Vulkan原build-only三交付循环已exit0，原路线/feature/许可/export
 [逐头收据](../../../../evidence/correctness/compute-unified-c3/wsl-vulkan-installed-headers/receipt.json)
 保留实际命令/SDK hash，不签其它平台或static宏全矩阵。C3当前78 PASS / 6 BLOCKED / 6 UNRUN。
 下一串行cpu;vulkan原build-only批次已启动，重用原完整交付检查，不把本数学BLOCKED当产品算子FAIL。
+
+实际现有SDK另完成32项配置边界：WSL CPU+CUDA/Vulkan与Air CPU+Apple/CPU+Vulkan，
+各shared/static的路线subset/full、缺路线拒绝、旧Provider开关拒绝全部PASS；同时查询compute/
+graph exported-target路线/recipe与package变量一致，使用已填充离线cache，无SDK重建/数学/P1。
+[WSL收据](../../../../evidence/correctness/compute-unified-c3/wsl-sdk-requirements/receipt.json)与
+[Air收据](../../../../evidence/correctness/compute-unified-c3/air-sdk-requirements/receipt.json)
+保留各实际SDK hash/编译器与Air Mac16,12当前身份。首次WSL夹具遗漏既有Linux CUDA PATH，
+CMake误取继承PATH的Windows nvcc.exe而缺Linux cudart；零旧PASS，原失败/Cache另存，
+按现行linux-wsl setup与原C3启动环境修正后16项通过。这是夹具环境纠正，不是产品数学FAIL，
+未修改产品或公共仪器，C3消费者矩阵仍78 PASS / 6 BLOCKED / 6 UNRUN。
