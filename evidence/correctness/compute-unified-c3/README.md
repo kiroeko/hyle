@@ -141,3 +141,8 @@ shared/static; effective C3 count is 56/90. No H3 joint/async/expert claim follo
 Windows CPU+Vulkan shared also passed both relocated ordinary math consumers with exact routes and
 DLLs adjacent to the EXEs. The partial receipt and logs bind the actual identities; effective C3 count
 is 58/90. The original driver continues static; source/shared are not rerun.
+
+Windows CPU+Vulkan static also passed both ordinary math consumers (Direct 1.15s, Graph 1.03s),
+with exact routes and DLLs adjacent to the EXEs. The original full batch exited 0; archived static
+logs/configuration complete this group. C3 now records 60/90 PASS, covering all five declared Windows
+and Air route groups. WSL batches and H1-H3 joint/async/expert work remain unqualified.

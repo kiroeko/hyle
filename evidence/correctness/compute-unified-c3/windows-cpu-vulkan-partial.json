@@ -86,15 +86,44 @@
     },
     {
       "entry": "static-direct",
-      "verdict": "UNRUN"
+      "verdict": "PASS",
+      "log": "evidence/correctness/compute-unified-c3/windows-cpu-vulkan/static-direct-ctest.log",
+      "sha256": "2a72c8292ebfa41b3294ab71c0d43bd0ec2bd978a5849f0525a4c62a655edcd8",
+      "actual_routes": "cpu;vulkan",
+      "recipe": "5e0f6875a8f3e60d99224af54fd4f3f74bf41bd8a7f9688cc7df798f76e7adf9",
+      "runtime_assets_beside_exe": [
+        "asmjit.dll",
+        "c10.dll",
+        "fbgemm.dll",
+        "hyle_ggml_cpu_avx2_456172ec_7d4fea280f67f983.dll",
+        "libiomp5md.dll",
+        "torch.dll",
+        "torch_cpu.dll",
+        "uv.dll"
+      ]
     },
     {
       "entry": "static-graph",
-      "verdict": "UNRUN"
+      "verdict": "PASS",
+      "log": "evidence/correctness/compute-unified-c3/windows-cpu-vulkan/static-graph-ctest.log",
+      "sha256": "c106e8fb5b786fd245aaa9d508d376cdcd16d0419546d4c01db1022d9f755bd1",
+      "actual_routes": "cpu;vulkan",
+      "recipe": "5e0f6875a8f3e60d99224af54fd4f3f74bf41bd8a7f9688cc7df798f76e7adf9",
+      "runtime_assets_beside_exe": [
+        "asmjit.dll",
+        "c10.dll",
+        "fbgemm.dll",
+        "hyle_ggml_cpu_avx2_456172ec_7d4fea280f67f983.dll",
+        "libiomp5md.dll",
+        "torch.dll",
+        "torch_cpu.dll",
+        "uv.dll"
+      ]
     }
   ],
   "source_log": "evidence/correctness/compute-unified-c3/windows-cpu-vulkan/source-ctest.log",
   "source_log_sha256": "bfa736dbcf29b739e5945e7de779ba32a247e44c24e645f7f62ec0125c7d1e3d",
   "source_log_encoding": "original Windows cp936 bytes retained",
-  "remaining": "Original fixed driver continues static; source/shared four real consumers passed. WSL and H1-H3 unproven."
+  "remaining": "Windows CPU+Vulkan all six consumers passed. WSL C3 batches and H1-H3 remain unproven.",
+  "batch_exit": 0
 }
