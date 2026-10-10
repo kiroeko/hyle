@@ -1044,6 +1044,9 @@ struct InvocationAccess final {
   static Invocation adopt(InvocationState *state) noexcept {
     return Invocation(state);
   }
+  static InvocationState *state(const Invocation &invocation) noexcept {
+    return invocation.state_;
+  }
 };
 
 struct SpecializationSignatureAccess final {

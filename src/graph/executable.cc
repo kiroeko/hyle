@@ -27,6 +27,7 @@
 #include "hyle/container/hash.h"
 #include "plan_state.h"
 #include "view_domain.h"
+#include "submission_internal.h"
 
 namespace hyle::graph {
 namespace {
@@ -7665,7 +7666,21 @@ Result<compute::Completion> Invocation::submit() noexcept {
 
 Result<compute::Completion>
 Invocation::submit(std::span<const QueueBinding> queues) noexcept {
+  HYLE_ASSIGN_OR_RETURN(auto submission,
+      detail::SubmissionCursor::begin(*this, queues, false));
+  while (!submission.done()) {
+    HYLE_ASSIGN_OR_RETURN(const bool advanced, submission.advance(true));
+    if (!advanced && submission.pending_dependency() != nullptr)
+      submission.pending_dependency()->wait().IgnoreError();
+  }
+  return submission.finish();
+}
+
+Result<detail::SubmissionCursor> detail::SubmissionCursor::begin(
+    Invocation &invocation, std::span<const QueueBinding> queues,
+    bool retain_invocation) noexcept {
   HYLE_TRACE_ZONE_NAMED("hyle.graph.submit");
+  auto *state_ = InvocationAccess::state(invocation);
   if (state_ == nullptr) {
     return std::unexpected(Status::FailedPrecondition("invocation is invalid"));
   }
@@ -7753,12 +7768,89 @@ Invocation::submit(std::span<const QueueBinding> queues) noexcept {
         "prepared graph replay lost a binding, transfer, or dependency route"));
   }
 
-  compute::Completion final_completion;
-  Status tail_error = Status::Ok();
+
   for (compute::Completion &completion : state_->segment_completions)
     completion = {};
-  for (std::size_t segment_index = 0; segment_index < plan.segments.size();
-       ++segment_index) {
+  SubmissionCursor result(state_, retain_invocation);
+  rollback.disarm();
+  return result;
+}
+
+detail::SubmissionCursor::SubmissionCursor(InvocationState *state,
+                                           bool retained) noexcept
+    : state_(state), retained_(retained) {
+  if (retained_)
+    retain(state_);
+}
+
+detail::SubmissionCursor::SubmissionCursor(SubmissionCursor &&other) noexcept
+    : state_(std::exchange(other.state_, nullptr)),
+      next_segment_(other.next_segment_),
+      tail_error_(std::move(other.tail_error_)), pending_(other.pending_),
+      finished_(other.finished_), retained_(other.retained_) {
+  other.pending_ = nullptr;
+}
+
+detail::SubmissionCursor &detail::SubmissionCursor::operator=(
+    SubmissionCursor &&other) noexcept {
+  if (this != &other) {
+    reset();
+    state_ = std::exchange(other.state_, nullptr);
+    next_segment_ = other.next_segment_;
+    tail_error_ = std::move(other.tail_error_);
+    pending_ = std::exchange(other.pending_, nullptr);
+    finished_ = other.finished_;
+    retained_ = other.retained_;
+  }
+  return *this;
+}
+
+detail::SubmissionCursor::~SubmissionCursor() { reset(); }
+
+void detail::SubmissionCursor::reset() noexcept {
+  if (state_ != nullptr && !finished_) {
+    // Private emergency cleanup only. Public asynchronous composition retains
+    // the cursor until finish() transfers this accepted prefix to Completion.
+    for (auto &completion : state_->segment_completions) {
+      if (completion.valid())
+        completion.wait().IgnoreError();
+    }
+    mark_invocation_terminal(state_, Status::Cancelled(
+        "graph submission cursor abandoned before completion handoff"));
+  }
+  auto *state = std::exchange(state_, nullptr);
+  if (retained_)
+    release(state);
+}
+
+bool detail::SubmissionCursor::done() const noexcept {
+  return state_ == nullptr || finished_ || !tail_error_.ok() ||
+         next_segment_ == state_->plan->segments.size();
+}
+
+ExecutionTargetId detail::SubmissionCursor::next_target() const noexcept {
+  if (done())
+    return {};
+  const auto &plan = *state_->plan;
+  return plan.lanes[plan.segments[next_segment_].lane.ordinal()].target;
+}
+
+void detail::SubmissionCursor::request_cancel() noexcept {
+  if (!finished_ && tail_error_.ok())
+    tail_error_ = Status::Cancelled("graph successors cancelled");
+}
+
+Result<bool> detail::SubmissionCursor::advance(bool wait_dependencies) noexcept {
+  if (state_ == nullptr || finished_)
+    return std::unexpected(Status::FailedPrecondition(
+        "graph submission cursor is invalid or finished"));
+  if (done())
+    return true;
+  pending_ = nullptr;
+  const auto &plan = *state_->plan;
+  const std::size_t segment_index = next_segment_;
+  auto &tail_error = tail_error_;
+  do {
     const detail::PlanSegment &segment = plan.segments[segment_index];
     const bool is_shared = shared_lane(plan, segment.lane);
     compute::Queue *queue =
@@ -7788,11 +7880,24 @@ Invocation::submit(std::span<const QueueBinding> queues) noexcept {
           route == ReplayDependencyRoute::kSynchronousSource)
         continue;
       if (route == ReplayDependencyRoute::kHostWait) {
-        Status host = source.wait();
-        if (!host.ok()) {
-          tail_error = std::move(host);
+        if (wait_dependencies) {
+          Status host = source.wait();
+          if (!host.ok()) {
+            tail_error = std::move(host);
+            continue_segment = false;
+            break;
+          }
+          continue;
+        }
+        auto host = source.poll();
+        if (!host) {
+          tail_error = std::move(host).error();
           continue_segment = false;
           break;
+        }
+        if (*host == compute::CompletionPoll::kPending) {
+          pending_ = &source;
+          return false;
         }
       } else if (route != ReplayDependencyRoute::kDeviceWait) {
         tail_error =
@@ -7909,8 +8014,20 @@ Invocation::submit(std::span<const QueueBinding> queues) noexcept {
     }
     if (!continue_segment)
       break;
-  }
 
+  } while (false);
+  if (tail_error_.ok())
+    ++next_segment_;
+  return true;
+}
+
+Result<compute::Completion> detail::SubmissionCursor::finish() noexcept {
+  if (state_ == nullptr || finished_ || !done())
+    return std::unexpected(Status::FailedPrecondition(
+        "graph submission cursor cannot finish while successors remain"));
+  const auto &plan = *state_->plan;
+  auto &tail_error = tail_error_;
+  compute::Completion final_completion;
   auto select_latest_queue_prefixes =
       [&](std::span<const std::uint32_t> candidates) noexcept {
         std::size_t count = 0;
@@ -7984,7 +8101,7 @@ Invocation::submit(std::span<const QueueBinding> queues) noexcept {
         completion.wait().IgnoreError();
     }
     mark_invocation_terminal(state_, failure);
-    rollback.disarm();
+    finished_ = true;
   };
 
   if (!tail_error.ok()) {
@@ -8007,8 +8124,15 @@ Invocation::submit(std::span<const QueueBinding> queues) noexcept {
       if (state_->queue_seen[lane] != 0)
         state_->aggregate_segments[count++] = state_->aggregate_segments[lane];
     }
-    if (count == 0)
+    if (count == 0) {
+      if (!plan.supports_concurrent_invocations)
+        state_->plan->exclusive_in_flight.store(false,
+                                               std::memory_order_release);
+      state_->phase.store(detail::InvocationPhase::kIdle,
+                          std::memory_order_release);
+      finished_ = true;
       return std::unexpected(std::move(tail_error));
+    }
     const auto selected =
         select_latest_queue_prefixes(std::span<const std::uint32_t>(
             state_->aggregate_segments.data(), count));
@@ -8033,7 +8157,7 @@ Invocation::submit(std::span<const QueueBinding> queues) noexcept {
 
   if (!compute::detail::CompletionAccess::has_async_state(final_completion)) {
     mark_invocation_terminal(state_, final_completion.wait());
-    rollback.disarm();
+    finished_ = true;
     return final_completion;
   }
 
@@ -8050,10 +8174,10 @@ Invocation::submit(std::span<const QueueBinding> queues) noexcept {
     // Drain before returning without a Completion, then retire the slot.
     final_completion.wait().IgnoreError();
     mark_invocation_terminal(state_, attached);
-    rollback.disarm();
+    finished_ = true;
     return std::unexpected(std::move(attached));
   }
-  rollback.disarm();
+  finished_ = true;
   return final_completion;
 }
 

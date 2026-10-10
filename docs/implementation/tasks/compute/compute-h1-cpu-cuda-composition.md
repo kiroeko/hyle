@@ -136,3 +136,12 @@ manifest superset不表示执行全部库数学，后续按本卡真实半径批
 [LOC结果](../../../../evidence/architecture/compute-entry-design/loc-h1-first-wiring.json)self-check PASS：
 Compute+Graph62,657 code lines/272 files，全库自实现不含测试157,884。不是自研数学行数，
 本片未新增数学算子；源码接线增加149行实现。下一步只继续H1-03～06，不启动已完成C3矩阵。
+
+H1-03分段core接线：将原提交算法拆为private SubmissionCursor begin/advance/finish，
+复用原admission、prepared bindings、native segment调用和最终多lane accepted-prefix assembly。
+组合advance遇host依赖pending可返回，不阻塞该提交调用；CPU/managed片段仍遵守其真实同步成本。
+普通submit使用borrowed stack cursor、原阻塞等待，不增加普通Invocation字段或额外retain原子。
+空前缀拒绝恢复Idle；已接纳错误仍以真实Completion保活并退役。private cursor意外丢弃会排空，
+组合owner须保活至finish，不把该内部cleanup当公开Completion析构行为。
+当前仅源码接线/反查，不签CPP/native正确性或async/overlap；下一步仍需Sched/native唤醒、
+owned槽、权重迁移与集中验收。
