@@ -198,3 +198,7 @@ WSL CUDA relocated shared Graph0.65s/Direct0.55s also passed. The per-entry rece
 route metadata and CTest; [resource receipt](wsl-cuda/shared-resource-receipt.json) confirms sibling
 ELF lookup, no LD override, and export hygiene across19 libraries/1138 exports. C3 is70/90;
 the original static loop continues, without repeating source/shared or claiming hybrid execution.
+
+[WSL CUDA installed headers](wsl-cuda-installed-headers/active-gcc14-receipt.json) passed all32
+isolated headers both bare and with actual exported route usage. Compile commands confirm
+GCC14.2.0 and CUDA presence for each unit. SDKs/math/P1 were not rebuilt or repeated by this check.

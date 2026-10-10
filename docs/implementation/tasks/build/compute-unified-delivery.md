@@ -418,3 +418,8 @@ WSL CUDA relocated shared Graph0.65s/Direct0.55s 也已实际 PASS，19库/1138�
 两个共享库的实际ELF sibling `$ORIGIN` 与无LD覆盖证据见
 [资源收据](../../../../evidence/correctness/compute-unified-c3/wsl-cuda/shared-resource-receipt.json)。
 请求/安装metadata均为cuda，原static循环已经开始；C3当前70 PASS / 20 UNRUN，source/shared不重跑。
+
+WSL CUDA已安装公开头32份 bare/实际宏启用两档均PASS，实际命令逐份确认GCC14.2.0
+与HYLE_COMPUTE_CUDA=1，依赖由导出的hyle::graph带入。
+[头资格](../../../../evidence/correctness/compute-unified-c3/wsl-cuda-installed-headers/active-gcc14-receipt.json)
+只签本平台安装头，未重建SDK/运行GPU/P1，不代签静态档位或其它WSL组合。静态原批次继续。
