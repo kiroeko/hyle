@@ -106,6 +106,17 @@
       "receipt": "windows-imported-mixed-vulkan-job.json",
       "log": "windows-imported-mixed-vulkan-test.log",
       "qualification": "Uses original relocated SDK with unchanged product candidate fc4ffbd16; only consumer tests changed. Links imported hyle::graph; no product source build."
+    },
+    {
+      "name": "MacBook Air CPU Vulkan original source lease math mixed contract and isolated ON headers",
+      "verdict": "PASS",
+      "candidate": "e399059002d17491ec1c87a0bf8f40f4642606ac",
+      "headers": 7,
+      "receipt": "vulkan-air-source-job.json",
+      "logs": [
+        "vulkan-air-source-lease-test.log",
+        "vulkan-air-source-mixed-test.log"
+      ]
     }
   ],
   "wsl_vulkan": {
@@ -184,6 +195,10 @@
     "windows-imported-mixed-vulkan-job.json": "09379d3c4f647434a429943aa29b9887ca64135501f0d03ee19aacc950c605d8",
     "windows-imported-mixed-vulkan-configure.log": "4c5b2fb4cfb0cd381a490f7ac70586832137e9cfa57a9e5c60c08f2d5306defa",
     "windows-imported-mixed-vulkan-build.log": "078814de71fcb6e6b25976a01d367c2bedb2728faf97b8d44ad801cc7e0eb86a",
-    "windows-imported-mixed-vulkan-test.log": "9e5f4cb9a7c7ba8331f9508e6b6a098d64db2bc72bb7a4d29f297cb1895344b6"
+    "windows-imported-mixed-vulkan-test.log": "9e5f4cb9a7c7ba8331f9508e6b6a098d64db2bc72bb7a4d29f297cb1895344b6",
+    "vulkan-air-source-job.json": "ecdbf2dd1fc00d4d270dc2f61232b8037b762b0fd67ff90ed0876f898f22f7d0",
+    "vulkan-air-source-build.log": "a075306efc16b039f03c8b3c601ee4c28d261c6ea831c84f72248263bff8e260",
+    "vulkan-air-source-lease-test.log": "3aa0830a6cf6ac16dd411a4b241f4de722521d5f3316d7291edf1365d5691bb8",
+    "vulkan-air-source-mixed-test.log": "438a8ee0684e75ce6e46d67dfeb25ab65f9cc924ccccfe656ad53fe02373ed92"
   }
 }

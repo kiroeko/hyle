@@ -609,6 +609,9 @@ archive 包含 LICENSE/THIRD_PARTY_NOTICES，镜像不可回写。只编译、�
 `hyle_h3_cpu_vulkan_contracts`；SDK imported `hyle::graph` 的同一两消费者确认正常数学、mixed ReadLease bind
 与生命周期，不启动未预声明的全算子/P1。真实 Vulkan 环境/原 consumer 输出决定资格，旧例外不代签。
 
+`e39905900` Air source 的普通 CPU/Vulkan Direct+Graph 租约数学、七个 ON 孤立头与原 mixed 合同消费者通过，
+实机/候选/命令/内存前检/原日志收入同一交付收据；source 不替 static/shared 或其他 OS 签字。
+
 ### P0 成本账（源码审计，完整裁决待剩余资格）
 
 以 `fc4ffbd16` 产品为准；后续消费者、测试与文档没有改变以下实现。B 为 pool 块上限，R 为本批资源数，
