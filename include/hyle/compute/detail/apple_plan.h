@@ -31,6 +31,7 @@ struct RegionPlan final {
 };
 
 struct ContextAccess final {
+  static const std::shared_ptr<Runtime> &runtime(const Context &context) noexcept { return context.state_; }
   HYLE_COMPUTE_ROUTE_APPLE_API static Result<Program>
   compile(const Context &context, RegionPlan plan) noexcept;
 };

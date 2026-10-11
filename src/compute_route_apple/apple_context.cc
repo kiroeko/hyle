@@ -20,6 +20,7 @@
 
 #include "apple_checks.h"
 #include "apple_internal.h"
+#include "apple_runtime_internal.h"
 #include "apple_recurrent.h"
 #include "completion_internal.h"
 #include "hyle/compute/detail/apple_plan.h"
@@ -155,25 +156,7 @@ void deliver(cd::CompletionLifetime lifetime, Status terminal,
 } // namespace
 
 namespace detail {
-struct Job {
-  void (*execute)(Job *) noexcept = nullptr;
-  Job *next = nullptr;
-};
-
-struct Runtime {
-  std::mutex queue_mutex;
-  std::mutex close_mutex;
-  platform::Parker wake;
-  platform::Thread thread;
-  std::atomic<std::uint64_t> owner_id{0};
-  Job *head = nullptr;
-  Job *tail = nullptr;
-  bool accepting = true;
-  Status failure;
-  Environment environment;
-  std::optional<mx::Stream> stream;
-
-  Status enqueue(Job &job) noexcept {
+Status Runtime::enqueue(Job &job) noexcept {
     {
       std::lock_guard lock(queue_mutex);
       if (!accepting)
@@ -191,13 +174,13 @@ struct Runtime {
     return Status::Ok();
   }
 
-  void poison(Status terminal) noexcept {
+void Runtime::poison(Status terminal) noexcept {
     std::lock_guard lock(queue_mutex);
     if (failure.ok())
       failure = std::move(terminal);
   }
 
-  void run() noexcept {
+void Runtime::run() noexcept {
     owner_id.store(platform::this_thread::get_id(), std::memory_order_release);
     for (;;) {
       Job *job;
@@ -219,7 +202,7 @@ struct Runtime {
     }
   }
 
-  Status close() noexcept {
+Status Runtime::close() noexcept {
     if (owner_id.load(std::memory_order_acquire) ==
         platform::this_thread::get_id())
       return Status::FailedPrecondition(
@@ -234,7 +217,6 @@ struct Runtime {
       thread.join();
     return failure;
   }
-};
 
 struct ColdJob : Job {
   // The owner thread still needs this word while waking the caller. Keep a
@@ -524,6 +506,17 @@ const cd::CompletionVTable completion_vtable{
           state.cancel.store(true, std::memory_order_release);
           return Status::Ok();
         }};
+Status qualify_copy_dependency(const std::shared_ptr<Runtime> &runtime, cd::CompletionDependency source) noexcept {
+  if (!source.terminal_hint) return Status::FailedPrecondition("Apple copy producer is empty");
+  if (!source.terminal_hint->ok()) return *source.terminal_hint;
+  if (!source.pending()) return Status::Ok();
+  if (source.vtable != &completion_vtable)
+    return Status::Unimplemented("Apple copy producer is not an original Runtime invocation");
+  const auto &state = *static_cast<InvocationState *>(source.state);
+  if (state.program->runtime != runtime) return Status::InvalidArgument("Apple copy producer Runtime differs");
+  if (state.done.load(std::memory_order_acquire) != 0 && !state.terminal.ok()) return state.terminal;
+  return Status::Ok();
+}
 } // namespace detail
 
 std::span<const mx::array> Results::arrays() const noexcept {

@@ -10,6 +10,7 @@
 #include "hyle/core/assert.h"
 
 #include "apple_internal.h"
+#include "apple_copy_internal.h"
 
 namespace hyle::compute::apple {
 namespace mx = mlx::core;
@@ -93,6 +94,16 @@ struct ImportedArrayStorage final : MemoryState {
     HYLE_FATAL_ASSERT(allocation.native_handle == owner.buffer().ptr());
   }
 };
+Result<CopySpan> copy_span(mem::ConstBufferView view) noexcept {
+  if (!view.valid() || dynamic_cast<MemoryState *>(&view.resource().resource()) == nullptr)
+    return std::unexpected(Status::InvalidArgument("Apple copy requires original Metal resource"));
+  id<MTLBuffer> buffer = (__bridge id<MTLBuffer>)view.native_handle();
+  if (buffer == nil || buffer.storageMode != MTLStorageModeShared ||
+      view.offset() > buffer.length || view.size() > buffer.length - view.offset())
+    return std::unexpected(Status::OutOfRange("Apple copy exceeds owned shared Metal backing"));
+  return CopySpan{view.native_handle(), {reinterpret_cast<std::uintptr_t>((__bridge void *)buffer.device),
+      reinterpret_cast<std::uintptr_t>(view.native_handle()), view.offset(), view.size(), 4}};
+}
 } // namespace detail
 
 MemoryResource::MemoryResource(std::unique_ptr<detail::MemoryState> state) noexcept : state_(std::move(state)) {}

@@ -224,6 +224,15 @@ native Run callback尾部仍可能释放其control block，metadata采用原Reso
 放弃全部句柄后的先行phase观察沿原Run的nonblocking observe，不能poll已清空的公开Completion。
 该实际回收门核对原Runtime.collect、每phase use归零、每allocation保活的metadata完全释放，
 仍不把GPU已执行和完成句柄已退休混为一件事。仅暴露私有poll helper，不增加进展线程或执行层。
+Apple沿原Runtime/Job FIFO及原MLX stream：原math Job在native同步后才退休，F2在该owner上
+结束旧encoder、创建一次原command buffer的blit pass、录制有限ranges，再由原CommandEncoder.synchronize
+commit/检查实际MCB结果。MLX buffer为untracked，因此不跳过原owner的实际同步边界；每native phase的
+worker host wait和vendor单次MCB/descriptor成本如实计入，不伪装提交者等待或新并行runtime。
+offset/size按[原Metal buffer copy规范](https://developer.apple.com/documentation/metal/mtlblitcommandencoder/copy%28from%3Asourceoffset%3Ato%3Adestinationoffset%3Asize%3A%29)
+在macOS均为4-byte约束；不同wrapper使用实际MTLDevice+MTLBuffer+byte origin检查alias。
+首批Air门固定为 `AppleCopyRecording.*` 与原 `AppleLeaseLifetime.*`、34项common控制回归：
+原GPU blit byte equality、三stage双向/同device、二slot/冷metadata replay、overlap/self/empty/offset/tail，
+configure300/build1800/exe120、build1/test1与4GiB。仅签此native接缝；公共对象/producer/数学/完整交付仍待验。
 首遍增加owned-view用例的fixture将raw-copy合法4-byte offset传给既有storage borrow factory，
 后者还要求native storage offset alignment；保留这次FAIL，fixture改为合法zero-origin外部carrier，
 再检验F2的unknown usage拒绝，不修改旧factory或放宽其合同。
