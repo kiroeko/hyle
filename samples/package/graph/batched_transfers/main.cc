@@ -11,6 +11,10 @@
 #include <hyle/compute/backends/cuda.h>
 #include <hyle/graph/cuda.h>
 #endif
+#if defined(HYLE_COMPUTE_APPLE)
+#include <hyle/compute/apple_memory.h>
+#include <hyle/graph/apple.h>
+#endif
 #if defined(HYLE_COMPUTE_VULKAN)
 #include <hyle/compute/vulkan_memory.h>
 #include <hyle/graph/vulkan.h>
@@ -25,6 +29,7 @@
 #include <cstdint>
 #include <span>
 #include <utility>
+#include <vector>
 
 namespace {
 namespace c = hyle::compute;
@@ -164,22 +169,31 @@ Status consume(c::Context &context, c::Queue &queue,
 
 // The application describes data and stages; every route still executes on
 // its own original owner. This helper never dispatches a native copy itself.
-template <class Invocation, class Submission, class Prepare, class Create,
-          class Consume>
+template <class Invocation, class Submission, std::size_t N, class Prepare,
+          class Create, class MakePayload, class Consume>
 Status transfer_groups(m::MemoryResourceRef host, m::MemoryResourceRef device,
-                       Prepare prepare, Create create, Consume consume_ready) {
-  std::array<c::CopyResourceSpec, 16> resources;
-  std::array<c::LeasePool, 16> pools;
+                       const std::array<std::size_t, N> &sizes, Prepare prepare,
+                       Create create, MakePayload make_payload, Consume consume_ready) {
+  static_assert(N >= 4 && N <= 8);
+  constexpr auto width = static_cast<unsigned>(N);
+  std::size_t payload_bytes = 0;
+  for (const auto bytes : sizes) {
+    if (bytes > 256) return Status::Internal("sample payload exceeds readback capacity");
+    payload_bytes += bytes;
+  }
+  std::array<c::CopyResourceSpec, 4 * N> resources;
+  std::array<c::LeasePool, 4 * N> pools;
   for (unsigned stage = 0; stage < 4; ++stage)
-    for (unsigned id = 0; id < 4; ++id) {
-      const auto index = stage * 4 + id;
-      resources[index] = {stage == 0 || stage == 3 ? host : device, kSizes[id]};
+    for (unsigned id = 0; id < width; ++id) {
+      const auto index = stage * width + id;
+      resources[index] = {stage == 0 || stage == 3 ? host : device, sizes[id]};
       HYLE_ASSIGN_OR_RETURN(pools[index], c::LeasePool::create(
           resources[index].resource, 1024, {.max_blocks = 2}));
     }
   HYLE_ASSIGN_OR_RETURN(auto stats, m::StatsAllocator::create(m::system_allocator()));
   HYLE_ASSIGN_OR_RETURN(auto program, prepare(
-      resources, c::CopyBatchOptions{.max_copies = 12, .max_phases = 6, .allocator = stats.get()}));
+      resources, c::CopyBatchOptions{.max_resources = 4 * width, .max_copies = 3 * width,
+                                    .max_phases = 6, .allocator = stats.get()}));
   std::array<Invocation, 2> slots;
   // Observe an accepted lane even when another lane returns an error, before
   // these borrowed resources/Queues leave scope. Submission destruction never waits.
@@ -190,19 +204,19 @@ Status transfer_groups(m::MemoryResourceRef host, m::MemoryResourceRef device,
   for (unsigned lane = 0; lane < 2; ++lane) {
     HYLE_ASSIGN_OR_RETURN(slots[lane], create(program, lane));
   }
-  std::array<c::CopyRange, 12> ranges;
+  std::array<c::CopyRange, 3 * N> ranges;
   for (unsigned stage = 0; stage < 3; ++stage)
-    for (unsigned id = 0; id < 4; ++id)
-      ranges[stage * 4 + id] = {{stage * 4 + id}, {(stage + 1) * 4 + id},
-                               {id / 2 * 3 + stage}, 0, 0, kSizes[id]};
+    for (unsigned id = 0; id < width; ++id)
+      ranges[stage * width + id] = {{stage * width + id}, {(stage + 1) * width + id},
+                                  {(id < 2 ? 0u : 3u) + stage}, 0, 0, sizes[id]};
   const auto cold_allocations = stats.snapshot().total_allocs;
   for (unsigned replay = 0; replay < 3; ++replay) {
     std::array<Submission, 2> submissions;
     for (unsigned lane = 0; lane < 2; ++lane) {
-      const Payload payload(lane);
-      for (unsigned id = 0; id < 16; ++id) {
-        HYLE_ASSIGN_OR_RETURN(auto writer, pools[id].allocate(kSizes[id % 4]));
-        if (id < 4) {
+      const auto payload = make_payload(lane);
+      for (unsigned id = 0; id < 4 * width; ++id) {
+        HYLE_ASSIGN_OR_RETURN(auto writer, pools[id].allocate(sizes[id % width]));
+        if (id < width) {
           HYLE_RETURN_IF_ERROR(writer.view()->write(payload.bytes(id)));
           HYLE_ASSIGN_OR_RETURN(auto source, writer.publish());
           HYLE_RETURN_IF_ERROR(slots[lane].bind_source({id}, source));
@@ -215,23 +229,23 @@ Status transfer_groups(m::MemoryResourceRef host, m::MemoryResourceRef device,
     }
     for (unsigned lane = 0; lane < 2; ++lane) {
       HYLE_RETURN_IF_ERROR(submissions[lane].wait());
-      std::array<c::ReadLease, 4> ready;
-      const Payload payload(lane);
-      for (unsigned id = 0; id < 4; ++id) {
+      std::array<c::ReadLease, N> ready;
+      const auto payload = make_payload(lane);
+      for (unsigned id = 0; id < width; ++id) {
         HYLE_ASSIGN_OR_RETURN(ready[id], submissions[lane].output(
-            {id / 2 * 3 + 1}, {8 + id}, 0, kSizes[id]));
+            {(id < 2 ? 0u : 3u) + 1}, {2 * width + id}, 0, sizes[id]));
         HYLE_ASSIGN_OR_RETURN(auto readback, submissions[lane].output(
-            {id / 2 * 3 + 2}, {12 + id}, 0, kSizes[id]));
-        std::array<std::byte, 128> bytes{};
-        const auto actual = std::span(bytes).first(kSizes[id]);
+            {(id < 2 ? 0u : 3u) + 2}, {3 * width + id}, 0, sizes[id]));
+        std::array<std::byte, 256> bytes{};
+        const auto actual = std::span(bytes).first(sizes[id]);
         HYLE_RETURN_IF_ERROR(readback.view()->read(actual));
         if (!std::ranges::equal(actual, payload.bytes(id)))
-          return Status::Internal("batch changed BF16 or GGUF encoded bytes");
+          return Status::Internal("batch changed BF16 or quantized encoded bytes");
       }
       HYLE_RETURN_IF_ERROR(consume_ready(ready, lane));
       const auto report = submissions[lane].report();
-      if (report.copies != 12 || report.phase_completions != 6 ||
-          report.logical_bytes != 3 * (8 + 8 + 128 + 68))
+      if (report.copies != 3 * width || report.phase_completions != 6 ||
+          report.logical_bytes != 3 * payload_bytes)
         return Status::Internal("copy phase accounting differs");
     }
     if (stats.snapshot().total_allocs != cold_allocations)
@@ -254,9 +268,10 @@ Status common(c::Context &context, m::MemoryResourceRef host,
     HYLE_ASSIGN_OR_RETURN(queue, context.create_queue());
   }
   return transfer_groups<c::CopyBatchInvocation, c::CopyBatchSubmission>(
-      host, device,
+      host, device, kSizes,
       [&](auto resources, auto options) { return c::CopyBatchProgram::prepare(context, resources, options); },
       [&](const auto &program, unsigned lane) { return c::CopyBatchInvocation::create(program, queues[lane]); },
+      [](unsigned lane) { return Payload(lane); },
       [&](const auto &ready, unsigned lane) { return consume(context, queues[lane], device, compile, ready, lane); });
 }
 #endif
@@ -311,9 +326,95 @@ Status vulkan() {
     return Status::Ok();
   };
   return transfer_groups<v::CopyBatchInvocation, v::CopyBatchSubmission>(
-      host.ref(), device.ref(),
+      host.ref(), device.ref(), kSizes,
       [&](auto resources, auto options) { return v::CopyBatchProgram::prepare(context, resources, options); },
-      [](const auto &program, unsigned) { return v::CopyBatchInvocation::create(program); }, consume_ready);
+      [](const auto &program, unsigned) { return v::CopyBatchInvocation::create(program); },
+      [](unsigned lane) { return Payload(lane); }, consume_ready);
+}
+#endif
+
+#if defined(HYLE_COMPUTE_APPLE)
+struct ApplePayload final {
+  Payload dense;
+  std::array<float, 64> activation;
+  std::array<std::uint32_t, 16> q4;
+  std::array<float, 2> scales{1, 1}, biases{0, -4};
+  explicit ApplePayload(unsigned lane) : dense(lane) {
+    activation.fill(lane == 0 ? 0.125f : 0.25f);
+    std::fill_n(q4.begin(), 8, 0x11111111u);
+    std::fill_n(q4.begin() + 8, 8, 0x22222222u);
+  }
+  std::span<const std::byte> bytes(unsigned id) const {
+    switch (id) {
+    case 0: case 1: return dense.bytes(id);
+    case 2: return std::as_bytes(std::span(activation));
+    case 3: return std::as_bytes(std::span(q4));
+    case 4: return std::as_bytes(std::span(scales));
+    default: return std::as_bytes(std::span(biases));
+    }
+  }
+};
+
+Status apple() {
+  namespace a = c::apple;
+  HYLE_ASSIGN_OR_RETURN(auto context, a::Context::create());
+  HYLE_ASSIGN_OR_RETURN(const auto &environment, context.environment());
+  std::printf("Apple device: %s; OS: %s\n", environment.device_name.c_str(), environment.os_runtime.c_str());
+  HYLE_ASSIGN_OR_RETURN(auto memory, a::MemoryResource::create(context));
+  constexpr std::array<std::size_t, 6> sizes{8, 8, 256, 64, 8, 8};
+  const auto consume_ready = [&](const std::array<c::ReadLease, 6> &ready, unsigned lane) -> Status {
+    HYLE_ASSIGN_OR_RETURN(auto bf, c::TensorDesc::dense(c::DataType::kBFloat16,
+        std::array<std::int64_t, 2>{2, 2}));
+    HYLE_ASSIGN_OR_RETURN(auto activation, c::TensorDesc::dense(c::DataType::kFloat32,
+        std::array<std::int64_t, 2>{1, 64}));
+    HYLE_ASSIGN_OR_RETURN(auto q4, a::affine_q4_description(2, 64));
+    HYLE_ASSIGN_OR_RETURN(auto scale, c::TensorDesc::dense(c::DataType::kFloat32,
+        std::array<std::int64_t, 2>{2, 1}));
+    HYLE_ASSIGN_OR_RETURN(auto q_output, c::TensorDesc::dense(c::DataType::kFloat32,
+        std::array<std::int64_t, 2>{1, 2}));
+    const std::array desc{bf, bf, activation, q4, scale, scale};
+    for (unsigned group = 0; group < 2; ++group) {
+      const auto first = group == 0 ? 0u : 2u, count = group == 0 ? 2u : 4u;
+      const c::Operation operation = group == 0 ? c::Operation(c::MatMul{})
+          : c::Operation(c::QuantizedMatMul{.mode = c::QuantizedWeightMode::kUnsignedAffine4});
+      std::vector<a::InputSpec> specs;
+      std::vector<a::LeasedInput> inputs;
+      std::vector<g::ValueId> ids;
+      HYLE_ASSIGN_OR_RETURN(auto builder, g::GraphBuilder::create());
+      for (unsigned index = first; index < first + count; ++index) {
+        HYLE_ASSIGN_OR_RETURN(auto spec, a::input_spec(desc[index]));
+        specs.push_back(std::move(spec));
+        inputs.push_back({desc[index], ready[index]});
+        HYLE_ASSIGN_OR_RETURN(auto id, builder.input(desc[index]));
+        ids.push_back(id);
+      }
+      HYLE_ASSIGN_OR_RETURN(auto direct_program, context.prepare(operation, specs));
+      HYLE_ASSIGN_OR_RETURN(auto direct, a::LeasedInvocation::create(direct_program, memory));
+      HYLE_RETURN_IF_ERROR(direct.bind(inputs));
+      HYLE_ASSIGN_OR_RETURN(auto done, direct.submit());
+      HYLE_ASSIGN_OR_RETURN(auto result, done.wait());
+      HYLE_ASSIGN_OR_RETURN(auto output, memory.import_readonly(result->arrays()[0], group == 0 ? bf : q_output));
+      HYLE_RETURN_IF_ERROR(check(output, group == 0 ? c::DataType::kBFloat16 : c::DataType::kFloat32, lane, group));
+
+      HYLE_ASSIGN_OR_RETURN(auto node, builder.add_node(operation, ids));
+      HYLE_ASSIGN_OR_RETURN(auto y, builder.result(node));
+      HYLE_RETURN_IF_ERROR(builder.publish(y));
+      HYLE_ASSIGN_OR_RETURN(auto graph, std::move(builder).finish());
+      HYLE_ASSIGN_OR_RETURN(auto program, g::apple::compile(context, graph));
+      HYLE_ASSIGN_OR_RETURN(auto invocation, a::LeasedInvocation::create(program, memory));
+      HYLE_RETURN_IF_ERROR(invocation.bind(inputs));
+      HYLE_ASSIGN_OR_RETURN(auto graph_done, invocation.submit());
+      HYLE_ASSIGN_OR_RETURN(auto graph_result, graph_done.wait());
+      HYLE_ASSIGN_OR_RETURN(auto graph_output, memory.import_readonly(graph_result->arrays()[0], group == 0 ? bf : q_output));
+      HYLE_RETURN_IF_ERROR(check(graph_output, group == 0 ? c::DataType::kBFloat16 : c::DataType::kFloat32, lane, group));
+    }
+    return Status::Ok();
+  };
+  return transfer_groups<a::CopyBatchInvocation, a::CopyBatchSubmission>(
+      memory.ref(), memory.ref(), sizes,
+      [&](auto resources, auto options) { return a::CopyBatchProgram::prepare(context, resources, options); },
+      [](const auto &program, unsigned) { return a::CopyBatchInvocation::create(program); },
+      [](unsigned lane) { return ApplePayload(lane); }, consume_ready);
 }
 #endif
 
@@ -336,7 +437,11 @@ Status run() {
   HYLE_RETURN_IF_ERROR(vulkan());
   std::puts("Vulkan: staged upload/D2D/readback, BF16+Q8 Direct/Graph and three replays passed");
 #endif
-#if !defined(HYLE_COMPUTE_CPU) && !defined(HYLE_COMPUTE_CUDA) && !defined(HYLE_COMPUTE_VULKAN)
+#if defined(HYLE_COMPUTE_APPLE)
+  HYLE_RETURN_IF_ERROR(apple());
+  std::puts("Apple: shared-resource GPU blits, BF16+original affine Q4 Direct/Graph and three replays passed");
+#endif
+#if !defined(HYLE_COMPUTE_CPU) && !defined(HYLE_COMPUTE_CUDA) && !defined(HYLE_COMPUTE_VULKAN) && !defined(HYLE_COMPUTE_APPLE)
   return Status::Unimplemented("batched transfer math sample requires a connected route");
 #endif
   return Status::Ok();

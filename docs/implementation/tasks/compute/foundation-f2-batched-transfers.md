@@ -364,6 +364,13 @@ CPU/CUDA源码消费者，不运行全算子/P1。native设备结果不能用hos
 样例两槽scope guard在失败返回时也逐槽drain，先观察已接受prefix再退出借用Queue/resource
 作用域；不依赖submission析构隐式等待。此样例变更沿同candidate精准复跑CPU/CUDA与CPU/Vulkan
 两个原source消费者，只build对应target，不重复未变的依赖configure或其他unit门。
+Apple同旅程使用原MLX affine Q4（独立packed/scales/biases）与BF16，六个输入范围、两个
+独立group/slot及各三phase；沿原shared Metal resource作GPU blit，读回全部原编码，再由原
+Direct/Graph MatMul/QuantizedMatMul消费ready lease。Air普通CPU+Apple source/static消费树
+运行同一sample，实际硬件/OS/工具链、完整archive/tree、4GiB/build1/test1及原300/1800/180秒门；
+只统计copy自身cold metadata，原MLX数学准备成本独立，不把shared visibility当零native copy。
+共享sample helper由固定四端口扩为其既有形状的四或六输入，原CPU/CUDA与CPU/Vulkan两门
+精准复跑。此阶段仍不代签SDK或fault全矩阵，也不重开已CLOSED数学/Graph owner。
 
 有限矩阵覆盖 R=0/1/多范围、同/不同 buffer pair、单/多 phase、重复 source、坏 ID、overlap、
 host/device 原编码、aligned/tail、pending 与 retained result。

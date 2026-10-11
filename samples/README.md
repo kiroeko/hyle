@@ -46,7 +46,7 @@ target_link_libraries(your_app PRIVATE hyle::container hyle::mem)  # 按需选�
 | [`package/compute/apple_weights/`](package/compute/apple_weights/) | compute / Apple | 两槽原生Metal迁移、原编码和native MatMul |
 | [`package/graph/cpu_apple/`](package/graph/cpu_apple/) | graph / CPU+Apple | 普通CPU主存、完整Q4 FFN、粗片段与独立结果 |
 | [`package/graph/resource_leases/`](package/graph/resource_leases/) | compute + graph | 四路线公开租约 Direct/Graph 数学、held completion drain、旧结果与 source alias；源码/安装使用相同入口 |
-| [`package/graph/batched_transfers/`](package/graph/batched_transfers/) | compute + graph | F2 批量搬运两组/两槽、BF16 与原编码 Q8 的 Direct/Graph 数学消费；当前接 CPU/CUDA/Vulkan，完整资格见活动收口卡 |
+| [`package/graph/batched_transfers/`](package/graph/batched_transfers/) | compute + graph | 四路线 F2 批量搬运两组/两槽、BF16 与原编码量化的 Direct/Graph 数学消费；CPU/CUDA/Vulkan 用 GGUF Q8，Apple 用 MLX affine Q4，完整资格见活动收口卡 |
 
 > 01-03 用源码 `add_subdirectory` 集成；04 及之后的编号示例与 `package/*/cpp` 用安装包集成。
 > `package/*/cpp` 是构建回归 fixture，不是额外的产品 API。
