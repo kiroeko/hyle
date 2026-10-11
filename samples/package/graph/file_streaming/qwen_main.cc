@@ -123,6 +123,29 @@ hyle::sched::Task<Result<hyle::io::File>> open_model(m::AllocatorRef, hyle::io::
   co_return co_await hyle::io::open_file(*io, 0, path,
       {.access = read_only ? hyle::io::FileAccess::kRead : hyle::io::FileAccess::kReadWrite});
 }
+template<class Consume>
+Result<std::array<c::ReadLease, 4>> read_math(c::FileResourcePipeline &pipeline, c::LeasePool &pool,
+    c::StreamFile file, const qwen_input::Manifest &manifest,
+    const std::array<std::uint64_t, 4> &saved_offsets, std::size_t total,
+    bool original, Consume &consume_ready) {
+  std::array<c::StreamReadRange, 4> ranges; std::array<c::StreamReadGroup, 4> groups;
+  for (std::size_t i = 0; i < ranges.size(); ++i) {
+    const auto &input = manifest.ranges[i]; ranges[i].file_offset = original ? input.offset : saved_offsets[i];
+    ranges[i].bytes = input.bytes; ranges[i].description = input.description;
+    HYLE_ASSIGN_OR_RETURN(ranges[i].destination, pool.allocate(input.bytes)); groups[i] = {i, std::span(ranges).subspan(i, 1)};
+  }
+  HYLE_ASSIGN_OR_RETURN(auto ticket, pipeline.read(c::StreamSource::file(std::move(file)), groups));
+  std::array<c::ReadLease, 4> ready;
+  for (std::size_t count = 0; count < ranges.size(); ++count) {
+    HYLE_ASSIGN_OR_RETURN(auto group, ticket.wait_next_ready()); HYLE_ASSIGN_OR_RETURN(ready[group.tag()], group.output(0));
+    HYLE_RETURN_IF_ERROR(consume_ready(ready[group.tag()], manifest.ranges[group.tag()]));
+    std::printf("Qwen %s %s: Direct/Graph reference passed\n", original ? "original" : "reloaded", manifest.ranges[group.tag()].name.c_str());
+  }
+  const auto result = ticket.wait(); HYLE_RETURN_IF_ERROR(result.status);
+  if (!result.retirement_proven || result.read_bytes != total || result.copied_bytes != total)
+    return std::unexpected(Status::Internal("Qwen range progress/retirement"));
+  return ready;
+}
 template<class Create, class Consume>
 Status stream(const qwen_input::Manifest &manifest, m::MemoryResourceRef resource, Create create, Consume consume_ready) {
   hyle::sched::Scheduler scheduler(2, m::system_allocator(), 256);
@@ -139,26 +162,7 @@ Status stream(const qwen_input::Manifest &manifest, m::MemoryResourceRef resourc
   std::array<std::uint64_t, 4> saved_offsets{};
   std::size_t total = 0;
   for (std::size_t i = 0; i < saved_offsets.size(); ++i) { saved_offsets[i] = total; total += manifest.ranges[i].bytes; }
-  const auto read_math = [&](c::StreamFile file, bool original) -> Result<std::array<c::ReadLease, 4>> {
-    std::array<c::StreamReadRange, 4> ranges; std::array<c::StreamReadGroup, 4> groups;
-    for (std::size_t i = 0; i < ranges.size(); ++i) {
-      const auto &input = manifest.ranges[i]; ranges[i].file_offset = original ? input.offset : saved_offsets[i];
-      ranges[i].bytes = input.bytes; ranges[i].description = input.description;
-      HYLE_ASSIGN_OR_RETURN(ranges[i].destination, pool.allocate(input.bytes)); groups[i] = {i, std::span(ranges).subspan(i, 1)};
-    }
-    HYLE_ASSIGN_OR_RETURN(auto ticket, pipeline.read(c::StreamSource::file(std::move(file)), groups));
-    std::array<c::ReadLease, 4> ready;
-    for (std::size_t count = 0; count < ranges.size(); ++count) {
-      HYLE_ASSIGN_OR_RETURN(auto group, ticket.wait_next_ready()); HYLE_ASSIGN_OR_RETURN(ready[group.tag()], group.output(0));
-      HYLE_RETURN_IF_ERROR(consume_ready(ready[group.tag()], manifest.ranges[group.tag()]));
-      std::printf("Qwen %s %s: Direct/Graph reference passed\n", original ? "original" : "reloaded", manifest.ranges[group.tag()].name.c_str());
-    }
-    const auto result = ticket.wait(); HYLE_RETURN_IF_ERROR(result.status);
-    if (!result.retirement_proven || result.read_bytes != total || result.copied_bytes != total)
-      return std::unexpected(Status::Internal("Qwen range progress/retirement"));
-    return ready;
-  };
-  HYLE_ASSIGN_OR_RETURN(auto ready, read_math(source, true));
+  HYLE_ASSIGN_OR_RETURN(auto ready, read_math(pipeline, pool, source, manifest, saved_offsets, total, true, consume_ready));
   static std::atomic<unsigned> sequence{0};
   const auto sink_path = "hyle_f3_qwen_" + std::to_string(sequence.fetch_add(1)) + ".tmp";
   struct Remove { const std::string &path; ~Remove() { hyle::platform::remove_file(path.c_str()).IgnoreError(); } } remove{sink_path};
@@ -192,7 +196,7 @@ Status stream(const qwen_input::Manifest &manifest, m::MemoryResourceRef resourc
     }
   }
   HYLE_RETURN_IF_ERROR(original_file.close()); HYLE_RETURN_IF_ERROR(saved_file.close());
-  HYLE_ASSIGN_OR_RETURN(auto reloaded, read_math(sink, false));
+  HYLE_ASSIGN_OR_RETURN(auto reloaded, read_math(pipeline, pool, sink, manifest, saved_offsets, total, false, consume_ready));
   reloaded = {}; HYLE_RETURN_IF_ERROR(pipeline.collect());
   std::printf("Qwen roundtrip logical bytes=%zu; staging=%zu; peak slots=%u; native bytes=%llu\n",
       total, pipeline.report().staging_bytes, pipeline.report().peak_slots,
