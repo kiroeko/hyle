@@ -32,7 +32,7 @@ TEST(VulkanLeaseBinding, OriginalOwnersDirectGraphAndReadonlyImport) {
   EXPECT_FALSE(other.binding(left, desc).has_value());
   EXPECT_FALSE(memory.binding(left, t::dense({3, 3})).has_value());
   EXPECT_FALSE(memory.import_readonly(left_native, {.allocator = {}}).has_value());
-  auto direct = v::prepare(context, c::MatMul{}, left_binding, right_binding).value();
+  auto direct = v::prepare(context, c::MatMul{}, desc, desc).value();
   auto direct_run = direct.create_invocation().value();
   ASSERT_TRUE(direct_run.bind(left_binding, right_binding).ok());
   auto direct_done = direct_run.submit().value();
