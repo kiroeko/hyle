@@ -441,6 +441,11 @@ host/device 数学、八次 metadata 无新增分配、旧结果保护与 held C
 其他适用平台、完整风险/头与缺席、installed static/shared/迁址及整包 P0/红队仍未完成，F1 继续 AUDITED。
 
 扩展现有 compute completion、graph cpu_cuda/apple/vulkan contracts 及 native route 用户样例；
+集中交付使用 `samples/package/graph/resource_leases`：只链接 `hyle::graph`，选择普通 routes，
+在同一消费者中通过公开 API 验 Direct/Graph MatMul、held completion drain、readonly/source alias。
+CPU/CUDA 另验八次 lease metadata 无增长、caller output 与旧结果拒绝；Apple/Vulkan 沿原 native
+Program/Results。复用本轮 source 树与原锁定 vendor 构建，仅编译受影响 HYLE 与新消费者，随后安装到
+本批独立 staging，迁址后分别运行 static/shared，Windows 检查 EXE 同目录 DLL。初轮失败原日志保留。
 保留原数学 reference，新增实际 lease 风险断言。只装饰 native observation/fault call，
 不能将 mock 结果当路线资格。至少两独立在途块、两个读者、一写者、旧结果、取消、OOM、部分失败、
 未知观察、自然 Direct/Graph 和完整 acquire/use/free；不全量重跑算子目录/P1。
