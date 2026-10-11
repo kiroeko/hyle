@@ -363,6 +363,6 @@ int main() {
     return 0;
   const auto message = status.message();
   std::fprintf(stderr, "resource leases: %.*s\n",
-               static_cast<int>(message.size()), message.data());
+               static_cast<int>(message.size()), message.data() ? message.data() : "");
   return 1;
 }
