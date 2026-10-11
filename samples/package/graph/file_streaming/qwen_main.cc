@@ -181,6 +181,10 @@ Status stream(const qwen_input::Manifest &manifest, m::MemoryResourceRef resourc
   const auto result = written.wait(); HYLE_RETURN_IF_ERROR(result.status);
   if (!result.retirement_proven || result.written_bytes != total) return Status::Internal("Qwen write progress/retirement");
   written = {}; writes = {}; ready = {}; HYLE_RETURN_IF_ERROR(pipeline.collect());
+  // The write record retained the read record's outputs. After collecting the
+  // released write, collect that original read before allocating the reload.
+  HYLE_RETURN_IF_ERROR(pipeline.collect());
+  if (pool.stats().live_blocks != 0) return Status::Unavailable("Qwen source leases still retained before reload");
   HYLE_ASSIGN_OR_RETURN(auto original_file, hyle::platform::open_random_access_file(manifest.file.c_str(), hyle::platform::kOpenRead));
   HYLE_ASSIGN_OR_RETURN(auto saved_file, hyle::platform::open_random_access_file(sink_path.c_str(), hyle::platform::kOpenRead));
   std::array<std::byte, 64 * 1024> original_bytes{}, saved_bytes{};
