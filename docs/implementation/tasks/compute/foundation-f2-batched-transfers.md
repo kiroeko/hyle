@@ -1,6 +1,7 @@
 # F2：准备后的原生批量范围搬运
 
 > 状态：READY_FOR_SCOPE；依赖 F1 的 guard/retirement 合同，不复制另一套 lease。
+> 实施前[原子/复合接缝源码审计](foundation-f2-source-audit.md)为定界输入，未授权产品修改或签运行资格。
 > component / owner：拟 compute、compute_backend_cpu/cuda、
 > compute_route_cpu/cuda/apple/vulkan；只有普通 Graph 需要本批 native binding 接缝时再绑定对应 owner。
 
