@@ -358,6 +358,23 @@ Owner继续AUDITED，未运行平台/三交付/negative/P0/全包red-team没有P
 其余 CPU/native/组合消费者、完整故障寿命矩阵、适用平台与三交付、新头/缺席、P0 和整包红队仍未完成。
 F1 owner 继续 AUDITED；F2/F3 仍 READY_FOR_SCOPE，未启动产品实现。
 
+### 共同 Direct/Graph drain 观察 owner 审计
+
+- baseline `1f7f1342b`；compute/graph 已 AUDITED，仅补 F1-05/06/07 的完成观察接缝。
+  共同 Graph drain 只等 busy 回调；未观察且仍持有的 public Completion 尚未交给 native destroy，
+  即使设备已完成也不能触发最后 retention。Direct 目前缺少本 adapter 的 close/drain 入口。
+- 两个 opt-in adapter 冷创建一个固定容量的完成观察 owner，拥有原 Completion；public Completion
+  只代理其 poll/wait/cancel。drain 明确观察这个原 Completion，不等调用方先放弃，不关闭所有 Queue。
+  原 native destroy 与 unknown retirement 继续保护原 attachment；不以错误或代理 handle 结束证明退役。
+- 每 owner 一个完成槽；旧 public handle 未观察/放弃时拒绝新提交，不能覆盖其错误或偷用新 episode。
+  完成槽和可能的嵌套 attachment 均冷分配；重复提交无 metadata 扩容。普通 borrowed 路径不变。
+  代理是完成/保活接缝，不是执行器或 Provider 路由；原 Queue/计划/数学和 completion 原生退休不变。
+- Graph 保持 accepted-prefix guard、旧结果和首错；放弃 adapter 时先释放其观察 owner 引用，避免
+  原 Completion attachment 与 Graph state 相互持有。公共代理仍能正常 wait，native 工作仍实际保活。
+- Direct 增加 close/drain，close 只停 adapter admission；drain 保存原错误，未知退役未证明则返回错误并保活。
+  有限验证：真实 CPU 数学/旧结果/重放计数、CUDA held Completion drain/abandon/unknown retirement，
+  既有定向 common/Graph/CUDA 测试与新头；平台/三交付仍按整包稳定候选集中验收。
+
 扩展现有 compute completion、graph cpu_cuda/apple/vulkan contracts 及 native route 用户样例；
 保留原数学 reference，新增实际 lease 风险断言。只装饰 native observation/fault call，
 不能将 mock 结果当路线资格。至少两独立在途块、两个读者、一写者、旧结果、取消、OOM、部分失败、
