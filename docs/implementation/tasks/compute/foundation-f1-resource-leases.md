@@ -191,11 +191,20 @@ TensorView 不拥有外部 payload，Graph Results 只保护其原声明 owner�
   sentinel 保持至外层 destroy；destroy 只交接 outer、保存首错、放弃各 child handle，不先观察再猜终态。
 - 已 completed 的 child 在 attach 时可 inline 退休；unknown 不能释放 outer；真正 native 全部退役才释放 outer。
   不增加线程、timer/reaper或公共对象字段，不重写计划/Provider 选择。
-- 验证是两独立真实 cuBLAS Graph 分支，给 CUDA native event wait 装饰一次观察故障并控制真实 stream prefix；
+- 验证是两独立真实 cuBLAS Graph 分支，给已接受的 native Completion 观察装饰一次未知错误并控制真实 stream prefix；
   外层等待错误不代表两个 native 分支结束，业务/Invocation/Completion 释放后仍安全，最终数学正确且回收一次。
   插桩隔离、空/inline child 和既有 Graph 核测试按实际影响执行；不是完整 Graph lease 资格。
 - 内部 host-dependency 在 aggregate 组装前的观察，仍须由后续 opt-in leased SubmissionCursor 接缝在接受处保护，
   本子 FIX 不把那个尚未实现路径写 PASS。预算仍沿本卡两次有限纠正，不重启历史 H1 验证队列。
+
+#### Graph aggregate 子 FIX 初验
+
+`7907afec8` 已实现观察前的嵌套 child 保活和实际退休 sentinel 交接；
+[Windows 初验](../../../../evidence/correctness/foundation-f1-graph-aggregate-windows/README.md)
+Graph core31、新真实双分支 cuBLAS 用例通过。未知观察是装饰真实 native Completion 的确定性测试错误，
+不声称已复现驱动错误；原 GPU 命令/退休照旧，已有 child read attachment 也保留。
+目前整包 owner 继续 AUDITED；后续还要 Graph 绑定/结果与接受处保护、native 其他路线、全部适用交付/平台和整包红队。
+统一脚本 self-check：Compute+Graph 非测试69,063行/305文件；全库非测试164,290行/656文件。
 
 | FIX | 必须实现/定向修复 | 验收 |
 |---|---|---|
