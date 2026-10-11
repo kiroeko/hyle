@@ -402,6 +402,15 @@ CMake/Ninja/已记录编译子进程均已结束。2026-10-12用户明确批准�
 给同一配置与同一构建树的剩余依赖及测试，并随后要求库编译按内存并行。本次追加独立计账，
 不删除原失败、不改变产品候选或重置原纠正预算；goal暂停期间未启动，恢复后才执行。
 
+恢复后j4复用全部oneDNN产物，41秒内推进到IO代码；原未改`tcp.cc`的error coroutine在GCC14
+`-O3`/ASan下触发`maybe-uninitialized`，旧sanitizer树继承的`HYLE_WERROR=ON`把它升级为编译失败。
+该失败保留；不是F3测试失败，也不能据此证明TCP无缺陷。GCC14
+[官方instrumentation说明](https://gcc.gnu.org/onlinedocs/gcc-14.1.0/gcc/Instrumentation-Options.html)
+明确提醒sanitizer可能增加此类假阳性，并建议不与Werror组合。正常HYLE本地默认WERROR=OFF。
+因此本批instrumented验证沿既有CMake选项使用WERROR=OFF，警告全数保留、`-O3`/sanitizer/原完整风险集不变，
+不加`-Wno-*`、不改TCP/Sched或公共工具、不代签TCP正确性；普通source/交付门继续按其原配置。
+恢复沿原追加预算的绝对截止时间，重配置/构建/测试共享剩余时间，绝不重新生成一笔1800秒预算。
+
 | FIX | 必须实现 | 验收 |
 |---|---|---|
 | F3-01 | 中央 compute_stream 身份/依赖/普通 route 及三交付投影 | 无环，无第二名单/空 target；静态共享source一致，不拉无关 CPU Provider |
