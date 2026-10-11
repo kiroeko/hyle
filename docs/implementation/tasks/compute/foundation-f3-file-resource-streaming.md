@@ -366,6 +366,16 @@ read=320/copied=256、首组GPU-ready仍保留原bytes；实际Fence观察/等�
 它们和Air Vulkan同fixture在此提交时尚未资格化，不以具名测试存在或Windows局部PASS代签。
 本轮所有失败/预算仍保留；剩余跨平台、sanitizer与交付继续按上文原范围。
 
+上述fixture的[第二批风险收据](../../../../evidence/correctness/foundation-f3-file-risk-acceptance/receipt.json)
+进一步签Windows CPU十项、Air Apple六项、Air Vulkan五项实际测试。CPU新增四项拒绝/源与描述寿命/
+readonly sink原错误/hot metadata OOM均通过；Apple真实GPU prefix被阻塞后接纳原Metal producer，
+正常依赖、取消、放弃控制和真正late Internal均保持原uses到实际退休、不错误ready；Air Vulkan复验同套
+unknown observation/后缀提交失败与producer边界。native uses归零与F3注入allocator balanced由实际断言证明，
+不外推驱动私有物理内存。产品f3d931c47完全不改；该批没有用修源码换掉原错误。
+
+原始正数short-write prefix与显式跨线程导出结果释放仍待直接资格化；WSL/sanitizer、安装交付、
+新头/缺席/迁址及最终P0/红队仍未完成，不能把本批21项测试成功当完整F3关闭。
+
 | FIX | 必须实现 | 验收 |
 |---|---|---|
 | F3-01 | 中央 compute_stream 身份/依赖/普通 route 及三交付投影 | 无环，无第二名单/空 target；静态共享source一致，不拉无关 CPU Provider |

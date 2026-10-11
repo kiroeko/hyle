@@ -1,0 +1,114 @@
+{
+  "schema_version": 1,
+  "product_commit": "f3d931c47777f7fbfd35dedf1f5e0734fa28ef6c",
+  "fixture_commit": "452eada9b770950d28f3b8e2d8ee3ac735d468ef",
+  "scope": "F3 selected Windows CPU and Air Apple/Vulkan file risk acceptance only",
+  "windows_cpu_tests_passed": 10,
+  "windows_cpu_inputs": [
+    {
+      "path": "src/compute_stream/CMakeLists.txt",
+      "sha256": "7a62b784ea399f732ae3a1f597315762045f0d952145be9b564d1df4ab76b198"
+    },
+    {
+      "path": "src/compute_stream/file_stream.cc",
+      "sha256": "2024e866175e892d7d14fef2421ede1929606f6ed7a225e0b26ccae9feb0c57b"
+    },
+    {
+      "path": "src/compute_stream/stream_sources.cc",
+      "sha256": "23859fad2971d11bfb029dfe1403989a9740832ce522b2c430d957a3e3fdeed2"
+    },
+    {
+      "path": "tests/compute_stream/CMakeLists.txt",
+      "sha256": "3b60d9ec5e9d55e5f699afd40e61fe94c7b0f585dc17a3f4aae3f86126f60c11"
+    },
+    {
+      "path": "tests/compute_stream/file_stream_test.cc",
+      "sha256": "6537b629e8c89957c05b2af5baa12e0a30baeeac34acf6b787fa13596e600b09"
+    },
+    {
+      "path": "cmake/HyleComponents.cmake",
+      "sha256": "4d968e454fb1bb8bfea8d9bea9a993fb79d7a027ac649d4e4e52af384f41fe0e"
+    },
+    {
+      "path": "include/hyle/compute/cpu.h",
+      "sha256": "bccb8e5d310086b41c6f010a84f56219ac33830e92e5da22ce2ff12cd608ccb6"
+    },
+    {
+      "path": "include/hyle/compute/file_stream.h",
+      "sha256": "b668f8b7480df6e0ade7785fe8a6581c6753ac422f1aae419caa33c38dae9cc6"
+    },
+    {
+      "path": "include/hyle/compute/detail/file_stream_access.h",
+      "sha256": "de668186ac0617204ed5473880f811a0268b1b07c842329a979b34b0c0f40d2e"
+    },
+    {
+      "path": "include/hyle/compute/detail/file_stream_copy.h",
+      "sha256": "27b8705a7731d63a953e3bd93118d9420a0b95168abd9b884ec37dea7e166dc0"
+    },
+    {
+      "path": "include/hyle/compute/detail/copy_stream_access.h",
+      "sha256": "31fef47df5169304feff1b20dbe46be744147ea7363d117d0344755daf84e350"
+    },
+    {
+      "path": "src/compute/batch_transfer.cc",
+      "sha256": "25367562e18d16b6d38b5ea80bf7eb89cff46243d73c7e84a99430470ba82fc1"
+    },
+    {
+      "path": "src/compute_route_cpu/file_stream.cc",
+      "sha256": "2a9acf645520fcc8c85f56cd3e4e9ef9689a948809dc8bf94c6bbd5a2538e297"
+    }
+  ],
+  "windows_cpu_compiler": "C:/Program Files/Microsoft Visual Studio/18/Enterprise/VC/Tools/MSVC/14.50.35717/bin/Hostx64/x64/cl.exe",
+  "air": [
+    {
+      "route": "apple",
+      "tests_passed": 6,
+      "identity": {
+        "hardware": "Mac16,12",
+        "memory": "17179869184",
+        "os": "ProductName:\t\tmacOS\nProductVersion:\t\t27.0.1\nBuildVersion:\t\t26A434",
+        "compiler": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin",
+        "cmake": "cmake version 4.3.4\n\nCMake suite maintained and supported by Kitware (kitware.com/cmake).",
+        "ninja": "1.13.2"
+      }
+    },
+    {
+      "route": "vulkan",
+      "tests_passed": 5,
+      "identity": {
+        "hardware": "Mac16,12",
+        "memory": "17179869184",
+        "os": "ProductName:\t\tmacOS\nProductVersion:\t\t27.0.1\nBuildVersion:\t\t26A434",
+        "compiler": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin",
+        "cmake": "cmake version 4.3.4\n\nCMake suite maintained and supported by Kitware (kitware.com/cmake).",
+        "ninja": "1.13.2"
+      }
+    }
+  ],
+  "cpu_risks": [
+    "Descriptions/offset/backing cap rejected before input permission move or IO/native acceptance.",
+    "Admitted owned File and cold-copied descriptors survive caller release.",
+    "Original readonly File write error preserves zero written bytes, one copied chunk and no ready; original file unchanged.",
+    "After admission injected metadata quota exhaustion reports original ResourceExhausted with no IO/ready and balanced owners."
+  ],
+  "apple_risks": [
+    "Actual MLX GPU prefix blocks original owner; accepted original Metal producer is retained by F3.",
+    "Normal producer file readback checks original bytes.",
+    "Cancel and abandon retain admitted native uses until real retirement.",
+    "Actual late original native failure preserves Internal with zero ready/file bytes."
+  ],
+  "vulkan_risks": "Same five original Windows-qualified file/producer/unknown/suffix fixtures on actual Air Apple M4 GPU.",
+  "allocator_verdict": "Actual native uses zero and injected F3 metadata balanced after explicit own-work retirement; no physical driver-private memory zero claim.",
+  "archive": {
+    "path": "evidence/correctness/foundation-f3-file-risk-acceptance/raw-results.zip",
+    "sha256": "69ab5ac5a0d60ae483dea9f72f1580506e99d4b0e18f9023059d3b7e0885179f"
+  },
+  "verdict": "PASS_WINDOWS_CPU_TEN_AND_AIR_APPLE_SIX_VULKAN_FIVE_FILE_RISK_TESTS_ONLY",
+  "unproven": [
+    "Positive partial short-write seam",
+    "F3 WSL/sanitizer and explicit cross-thread exported-result drop",
+    "Installed deliveries/new heads/absence/relocation",
+    "Final P0/red team/closure"
+  ],
+  "budget": "Original finite F3-02/04/06 acceptance, no product change/new FIX/budget reset; prior failures remain in their sealed receipts."
+}
