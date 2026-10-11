@@ -171,6 +171,19 @@
         "wsl-shared-mixed-test.log"
       ],
       "qualification": "Shipping tests-off producer; installation actually relocated; independent consumers link imported hyle::graph only."
+    },
+    {
+      "name": "Windows relocated cpu vulkan static SDK ordinary lease and imported mixed contract",
+      "verdict": "PASS",
+      "candidate": "3095e038afec049730dfae8916a9c9ac869d7ee6",
+      "receipt": "windows-cpu-vulkan-static-job.json",
+      "logs": [
+        "windows-cpu-vulkan-static-lease-test.log",
+        "windows-cpu-vulkan-static-mixed-test.log"
+      ],
+      "qualification": "Tests-off shipping producer, actual relocation, only imported hyle::graph consumers, EXE-local DLLs and system-only runtime PATH.",
+      "retained_initial_failure": "windows-cpu-vulkan-static-producer-configure.log",
+      "setup_correction": "Original configure missed Vulkan SDK discovery. Same installed SDK path added process-locally; failure retained and original producer configure alone resumed."
     }
   ],
   "wsl_vulkan": {
@@ -179,10 +192,9 @@
     "limitation": "Actual loader enumerates only type 4 llvmpipe software device. No native Vulkan math qualification is claimed; applicability follows current F1 card actual GPU rule."
   },
   "limitations": [
-    "Windows CPU Vulkan imported static managed composition still pending",
-    "WSL CUDA observation fault and final capability/risk/platform matrix still pending",
-    "Final P0 verdict and separate red team still pending",
-    "F1 owners remain AUDITED; F2/F3 have no product implementation"
+    "Only explicitly listed ordinary/installed/mixed platform and linkage journeys are qualified",
+    "Remaining matrix platform/delivery cells follow current F1 card; absent results remain unproven",
+    "F1 owners are CANDIDATE; final red-team/P0/terminal not signed; F2/F3 not implemented"
   ],
   "log_sha256": {
     "windows-vulkan-source.json": "e69aa6fb5fe31d67fde45290015a2422d4c4474ab6dff61ec877e668865f457c",
@@ -285,6 +297,16 @@
     "wsl-shared-configure.log": "040099e333e99087d95b22530de93400fe1107cd8fdc965e236f3a4d3c9bb08c",
     "wsl-shared-consumer-build.log": "14456f9c474342130e16e26d2e269c5ceb0f0c5a21dbc32080a15917cbe4150f",
     "wsl-shared-lease-test.log": "744cf36aff177ec2dab2273bb870e3c92c25b4377c6be1155c093f51730dad31",
-    "wsl-shared-mixed-test.log": "69d5a9c5b6b0ba8cb86ffc2dc9ecc650c8bdd19c9c9e2d8e341681a8be302be7"
+    "wsl-shared-mixed-test.log": "69d5a9c5b6b0ba8cb86ffc2dc9ecc650c8bdd19c9c9e2d8e341681a8be302be7",
+    "windows-cpu-vulkan-static-job.json": "3248a83d081c2e03a3e67ebe16693fb5e6b6c7cc5dc3d2b945b7dfd868b71ad5",
+    "windows-cpu-vulkan-static-producer-configure.log": "f2459e2e929745bb13414e7480ad4665237a90b717bd58f6e637e29923c06485",
+    "windows-cpu-vulkan-static-producer-configure-resume.log": "92427dccd841d1205c4c7a680938d892480b66a1c549b4744f807119e68dfd1c",
+    "windows-cpu-vulkan-static-producer-build.log": "4556da4f4a5bca7188023b3a645ce957d61228521046a981cbb7440982cd41cd",
+    "windows-cpu-vulkan-static-install.log": "7879906310fff5cdc85e548eaf2500c9c396cf0890abb5477c1eb56faef9b173",
+    "windows-cpu-vulkan-static-relocate.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "windows-cpu-vulkan-static-consumer-configure.log": "8b8dd2d11b9530f9982c6aec4a8e464b1a4701ff64e41213c9a902c97053c2bf",
+    "windows-cpu-vulkan-static-consumer-build.log": "c35ca34c53e939ceb4657d6d21a4450f5d5433d14a05113de1d7c4b8b51599c3",
+    "windows-cpu-vulkan-static-lease-test.log": "a7a41ff43f66bf61edc7cb85b79ef7cbb7a0d2b2f5fb72a895f92e688331c88d",
+    "windows-cpu-vulkan-static-mixed-test.log": "9e5f4cb9a7c7ba8331f9508e6b6a098d64db2bc72bb7a4d29f297cb1895344b6"
   }
 }

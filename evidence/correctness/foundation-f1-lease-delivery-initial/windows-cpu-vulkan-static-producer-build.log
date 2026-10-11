@@ -1,0 +1,1578 @@
+[0/2] Re-checking globbed directories...
+[1/1251] Creating directories for 'vulkan-shaders-gen'
+[2/1251] Building C object _deps\iv\build\runtime\src\iree\base\internal\CMakeFiles\iree_base_internal_time.objects.dir\time.c.obj
+[3/1251] No download step for 'vulkan-shaders-gen'
+[4/1251] Building C object _deps\iv\build\runtime\src\iree\base\CMakeFiles\iree_base_base.objects.dir\allocator.c.obj
+[5/1251] Building C object _deps\iv\build\runtime\src\iree\base\CMakeFiles\iree_base_base.objects.dir\bitfield.c.obj
+[6/1251] Building C object _deps\iv\build\runtime\src\iree\base\CMakeFiles\iree_base_base.objects.dir\bitmap.c.obj
+[7/1251] Building C object _deps\iv\build\runtime\src\iree\base\CMakeFiles\iree_base_base.objects.dir\printf.c.obj
+[8/1251] Building C object _deps\iv\build\runtime\src\iree\base\CMakeFiles\iree_base_base.objects.dir\status.c.obj
+[9/1251] Building C object _deps\iv\build\runtime\src\iree\base\CMakeFiles\iree_base_base.objects.dir\status_stack_trace.c.obj
+[10/1251] Building C object _deps\iv\build\runtime\src\iree\base\CMakeFiles\iree_base_base.objects.dir\string_builder.c.obj
+[11/1251] Building C object _deps\iv\build\runtime\src\iree\base\CMakeFiles\iree_base_base.objects.dir\string_view.c.obj
+[12/1251] Building C object _deps\iv\build\runtime\src\iree\base\CMakeFiles\iree_base_base.objects.dir\time.c.obj
+[13/1251] Building C object _deps\iv\build\runtime\src\iree\base\CMakeFiles\iree_base_base.objects.dir\wait_source.c.obj
+[14/1251] Building C object _deps\iv\build\runtime\src\iree\base\CMakeFiles\iree_base_base.objects.dir\allocator_libc.c.obj
+[15/1251] Linking C static library bin\iree_base_internal_time.lib
+[16/1251] No update step for 'vulkan-shaders-gen'
+[17/1251] Linking C static library bin\iree_base_base.lib
+[18/1251] Building C object _deps\iv\build\runtime\src\iree\base\internal\CMakeFiles\iree_base_internal_memory.objects.dir\memory.c.obj
+[19/1251] No patch step for 'vulkan-shaders-gen'
+[20/1251] Linking C static library bin\iree_base_internal_memory.lib
+[21/1251] Building C object _deps\iv\build\runtime\src\iree\base\internal\CMakeFiles\iree_base_internal_sysfs.objects.dir\sysfs.c.obj
+[22/1251] Building C object _deps\iv\build\runtime\src\iree\base\threading\CMakeFiles\iree_base_threading_threading.objects.dir\affinity.c.obj
+[23/1251] Building C object _deps\iv\build\runtime\src\iree\base\threading\CMakeFiles\iree_base_threading_threading.objects.dir\mutex.c.obj
+[24/1251] Building C object _deps\iv\build\runtime\src\iree\base\threading\CMakeFiles\iree_base_threading_threading.objects.dir\notification.c.obj
+[25/1251] Building C object _deps\iv\build\runtime\src\iree\base\threading\CMakeFiles\iree_base_threading_threading.objects.dir\numa_fallback.c.obj
+[26/1251] Building C object _deps\iv\build\runtime\src\iree\base\threading\CMakeFiles\iree_base_threading_threading.objects.dir\numa_linux.c.obj
+[27/1251] Building C object _deps\iv\build\runtime\src\iree\base\threading\CMakeFiles\iree_base_threading_threading.objects.dir\numa_win32.c.obj
+[28/1251] Building C object _deps\iv\build\runtime\src\iree\base\threading\CMakeFiles\iree_base_threading_threading.objects.dir\wait_address.c.obj
+[29/1251] Performing configure step for 'vulkan-shaders-gen'
+-- The C compiler identification is MSVC 19.50.35728.0
+-- The CXX compiler identification is MSVC 19.50.35728.0
+-- Detecting C compiler ABI info
+-- Detecting C compiler ABI info - done
+-- Check for working C compiler: C:/Program Files/Microsoft Visual Studio/18/Enterprise/VC/Tools/MSVC/14.50.35717/bin/Hostx64/x64/cl.exe - skipped
+-- Detecting C compile features
+-- Detecting C compile features - done
+-- Detecting CXX compiler ABI info
+-- Detecting CXX compiler ABI info - done
+-- Check for working CXX compiler: C:/Program Files/Microsoft Visual Studio/18/Enterprise/VC/Tools/MSVC/14.50.35717/bin/Hostx64/x64/cl.exe - skipped
+-- Detecting CXX compile features
+-- Detecting CXX compile features - done
+-- Performing Test CMAKE_HAVE_LIBC_PTHREAD
+-- Performing Test CMAKE_HAVE_LIBC_PTHREAD - Failed
+-- Looking for pthread_create in pthreads
+-- Looking for pthread_create in pthreads - not found
+-- Looking for pthread_create in pthread
+-- Looking for pthread_create in pthread - not found
+-- Found Threads: TRUE
+-- Enabling coopmat glslc support
+-- Enabling coopmat2 glslc support
+-- Enabling coopmat2 decode_vector glslc support
+-- Enabling dot glslc support
+-- Enabling bfloat16 glslc support
+-- Enabling E2M1 glslc support
+-- Enabling E4M3 glslc support
+-- Configuring done (2.0s)
+-- Generating done (0.0s)
+-- Build files have been written to: C:/h7/foundation-f1-sdk/w-cpu-vulkan-static-producer/_deps/gg-7d4fea280f67f983/src/vulkan-shaders-gen-build
+[30/1251] Building C object _deps\iv\build\runtime\src\iree\async\CMakeFiles\iree_async_async.objects.dir\address.c.obj
+[31/1251] Building C object _deps\iv\build\runtime\src\iree\async\CMakeFiles\iree_async_async.objects.dir\address_generic.c.obj
+[32/1251] Building C object _deps\iv\build\runtime\src\iree\async\CMakeFiles\iree_async_async.objects.dir\address_posix.c.obj
+[33/1251] Building C object _deps\iv\build\runtime\src\iree\async\CMakeFiles\iree_async_async.objects.dir\address_win32.c.obj
+[34/1251] Building C object _deps\iv\build\runtime\src\iree\async\CMakeFiles\iree_async_async.objects.dir\buffer_pool.c.obj
+[35/1251] Building C object _deps\iv\build\runtime\src\iree\async\CMakeFiles\iree_async_async.objects.dir\event.c.obj
+[36/1251] Building C object _deps\iv\build\runtime\src\iree\async\CMakeFiles\iree_async_async.objects.dir\file.c.obj
+[37/1251] Building C object _deps\iv\build\runtime\src\iree\async\CMakeFiles\iree_async_async.objects.dir\frontier.c.obj
+[38/1251] Building C object _deps\iv\build\runtime\src\iree\async\CMakeFiles\iree_async_async.objects.dir\frontier_tracker.c.obj
+[39/1251] Building C object _deps\iv\build\runtime\src\iree\async\CMakeFiles\iree_async_async.objects.dir\notification.c.obj
+[40/1251] Building C object _deps\iv\build\runtime\src\iree\async\CMakeFiles\iree_async_async.objects.dir\operation.c.obj
+[41/1251] Building C object _deps\iv\build\runtime\src\iree\async\CMakeFiles\iree_async_async.objects.dir\primitive.c.obj
+[42/1251] Building C object _deps\iv\build\runtime\src\iree\async\CMakeFiles\iree_async_async.objects.dir\proactor.c.obj
+[43/1251] Building C object _deps\iv\build\runtime\src\iree\async\CMakeFiles\iree_async_async.objects.dir\region.c.obj
+[44/1251] Building C object _deps\iv\build\runtime\src\iree\async\CMakeFiles\iree_async_async.objects.dir\semaphore.c.obj
+[45/1251] Building C object _deps\iv\build\runtime\src\iree\async\CMakeFiles\iree_async_async.objects.dir\slab.c.obj
+[46/1251] Building C object _deps\iv\build\runtime\src\iree\async\CMakeFiles\iree_async_async.objects.dir\socket.c.obj
+[47/1251] Building C object _deps\iv\build\runtime\src\iree\base\internal\CMakeFiles\iree_base_internal_atomic_slist.objects.dir\atomic_slist.c.obj
+[48/1251] Building C object _deps\iv\build\runtime\src\iree\base\internal\CMakeFiles\iree_base_internal_path.objects.dir\path.c.obj
+[49/1251] Linking C static library bin\iree_base_internal_sysfs.lib
+[50/1251] Linking C static library bin\iree_base_threading_threading.lib
+[51/1251] Building C object _deps\iv\build\runtime\src\iree\hal\utils\CMakeFiles\iree_hal_utils_platform_topology.objects.dir\platform_topology.c.obj
+[52/1251] Building C object _deps\iv\build\runtime\src\iree\hal\utils\CMakeFiles\iree_hal_utils_platform_topology.objects.dir\platform_topology_darwin.c.obj
+[53/1251] Building C object _deps\iv\build\runtime\src\iree\hal\utils\CMakeFiles\iree_hal_utils_platform_topology.objects.dir\platform_topology_fallback.c.obj
+[54/1251] Building C object _deps\iv\build\runtime\src\iree\hal\utils\CMakeFiles\iree_hal_utils_platform_topology.objects.dir\platform_topology_sysfs.c.obj
+[55/1251] Building C object _deps\iv\build\runtime\src\iree\hal\utils\CMakeFiles\iree_hal_utils_platform_topology.objects.dir\platform_topology_win32.c.obj
+[56/1251] Building C object _deps\iv\build\runtime\src\iree\io\CMakeFiles\iree_io_file_handle.objects.dir\file_contents.c.obj
+[57/1251] Building C object _deps\iv\build\runtime\src\iree\io\CMakeFiles\iree_io_file_handle.objects.dir\file_handle.c.obj
+[58/1251] Performing build step for 'vulkan-shaders-gen'
+[1/2] Building CXX object CMakeFiles\vulkan-shaders-gen.dir\vulkan-shaders-gen.cpp.obj
+[2/2] Linking CXX executable vulkan-shaders-gen.exe
+[59/1251] Building C object _deps\iv\build\build_tools\third_party\flatcc\CMakeFiles\iree-flatcc-cli.dir\__\__\__\__\src\third_party\flatcc\src\cli\flatcc_cli.c.obj
+[60/1251] Building C object _deps\iv\build\build_tools\third_party\flatcc\CMakeFiles\iree-flatcc-cli.dir\__\__\__\__\src\third_party\flatcc\external\hash\cmetrohash64.c.obj
+[61/1251] Building C object _deps\iv\build\build_tools\third_party\flatcc\CMakeFiles\iree-flatcc-cli.dir\__\__\__\__\src\third_party\flatcc\external\hash\str_set.c.obj
+[62/1251] Building C object _deps\iv\build\build_tools\third_party\flatcc\CMakeFiles\iree-flatcc-cli.dir\__\__\__\__\src\third_party\flatcc\external\hash\ptr_set.c.obj
+[63/1251] Building C object _deps\iv\build\build_tools\third_party\flatcc\CMakeFiles\iree-flatcc-cli.dir\__\__\__\__\src\third_party\flatcc\src\compiler\hash_tables\symbol_table.c.obj
+[64/1251] Building C object _deps\iv\build\build_tools\third_party\flatcc\CMakeFiles\iree-flatcc-cli.dir\__\__\__\__\src\third_party\flatcc\src\compiler\hash_tables\scope_table.c.obj
+[65/1251] Building C object _deps\iv\build\build_tools\third_party\flatcc\CMakeFiles\iree-flatcc-cli.dir\__\__\__\__\src\third_party\flatcc\src\compiler\hash_tables\name_table.c.obj
+[66/1251] Building C object _deps\iv\build\build_tools\third_party\flatcc\CMakeFiles\iree-flatcc-cli.dir\__\__\__\__\src\third_party\flatcc\src\compiler\hash_tables\schema_table.c.obj
+[67/1251] Building C object _deps\iv\build\build_tools\third_party\flatcc\CMakeFiles\iree-flatcc-cli.dir\__\__\__\__\src\third_party\flatcc\src\compiler\hash_tables\value_set.c.obj
+[68/1251] Building C object _deps\iv\build\build_tools\third_party\flatcc\CMakeFiles\iree-flatcc-cli.dir\__\__\__\__\src\third_party\flatcc\src\compiler\fileio.c.obj
+[69/1251] Building C object _deps\iv\build\build_tools\third_party\flatcc\CMakeFiles\iree-flatcc-cli.dir\__\__\__\__\src\third_party\flatcc\src\compiler\parser.c.obj
+[70/1251] Building C object _deps\iv\build\build_tools\third_party\flatcc\CMakeFiles\iree-flatcc-cli.dir\__\__\__\__\src\third_party\flatcc\src\compiler\semantics.c.obj
+[71/1251] Building C object _deps\iv\build\build_tools\third_party\flatcc\CMakeFiles\iree-flatcc-cli.dir\__\__\__\__\src\third_party\flatcc\src\compiler\coerce.c.obj
+[72/1251] Building C object _deps\iv\build\build_tools\third_party\flatcc\CMakeFiles\iree-flatcc-cli.dir\__\__\__\__\src\third_party\flatcc\src\compiler\codegen_schema.c.obj
+[73/1251] Building C object _deps\iv\build\build_tools\third_party\flatcc\CMakeFiles\iree-flatcc-cli.dir\__\__\__\__\src\third_party\flatcc\src\compiler\flatcc.c.obj
+[74/1251] Building C object _deps\iv\build\build_tools\third_party\flatcc\CMakeFiles\iree-flatcc-cli.dir\__\__\__\__\src\third_party\flatcc\src\compiler\codegen_c.c.obj
+[75/1251] Building C object _deps\iv\build\build_tools\third_party\flatcc\CMakeFiles\iree-flatcc-cli.dir\__\__\__\__\src\third_party\flatcc\src\compiler\codegen_c_reader.c.obj
+[76/1251] Building C object _deps\iv\build\build_tools\third_party\flatcc\CMakeFiles\iree-flatcc-cli.dir\__\__\__\__\src\third_party\flatcc\src\compiler\codegen_c_sort.c.obj
+[77/1251] Building C object _deps\iv\build\build_tools\third_party\flatcc\CMakeFiles\iree-flatcc-cli.dir\__\__\__\__\src\third_party\flatcc\src\compiler\codegen_c_builder.c.obj
+[78/1251] Building C object _deps\iv\build\build_tools\third_party\flatcc\CMakeFiles\iree-flatcc-cli.dir\__\__\__\__\src\third_party\flatcc\src\compiler\codegen_c_verifier.c.obj
+[79/1251] Building C object _deps\iv\build\build_tools\third_party\flatcc\CMakeFiles\iree-flatcc-cli.dir\__\__\__\__\src\third_party\flatcc\src\compiler\codegen_c_sorter.c.obj
+[80/1251] Building C object _deps\iv\build\build_tools\third_party\flatcc\CMakeFiles\iree-flatcc-cli.dir\__\__\__\__\src\third_party\flatcc\src\compiler\codegen_c_json_parser.c.obj
+[81/1251] Building C object _deps\iv\build\build_tools\third_party\flatcc\CMakeFiles\iree-flatcc-cli.dir\__\__\__\__\src\third_party\flatcc\src\compiler\codegen_c_json_printer.c.obj
+[82/1251] Building C object _deps\iv\build\build_tools\third_party\flatcc\CMakeFiles\iree-flatcc-cli.dir\__\__\__\__\src\third_party\flatcc\src\runtime\builder.c.obj
+[83/1251] Building C object _deps\iv\build\build_tools\third_party\flatcc\CMakeFiles\iree-flatcc-cli.dir\__\__\__\__\src\third_party\flatcc\src\runtime\emitter.c.obj
+[84/1251] Building C object _deps\iv\build\build_tools\third_party\flatcc\CMakeFiles\iree-flatcc-cli.dir\__\__\__\__\src\third_party\flatcc\src\runtime\refmap.c.obj
+[85/1251] Linking C static library bin\iree_async_async.lib
+[86/1251] Building C object _deps\iv\build\runtime\src\iree\async\util\CMakeFiles\iree_async_util_message_pool.objects.dir\message_pool.c.obj
+[87/1251] Building C object _deps\iv\build\runtime\src\iree\async\util\CMakeFiles\iree_async_util_operation_pool.objects.dir\operation_pool.c.obj
+[88/1251] Building C object _deps\iv\build\runtime\src\iree\async\util\CMakeFiles\iree_async_util_sequence_emulation.objects.dir\sequence_emulation.c.obj
+[89/1251] Building C object _deps\iv\build\runtime\src\iree\async\util\CMakeFiles\iree_async_util_signal.objects.dir\signal.c.obj
+[90/1251] Linking C static library bin\iree_base_internal_atomic_slist.lib
+[91/1251] Building C object _deps\iv\build\runtime\src\iree\base\internal\CMakeFiles\iree_base_internal_cpu.objects.dir\cpu.c.obj
+[92/1251] Linking C static library bin\iree_base_internal_path.lib
+[93/1251] Building C object _deps\iv\build\runtime\src\iree\base\threading\CMakeFiles\iree_base_threading_thread.objects.dir\thread.c.obj
+[94/1251] Building C object _deps\iv\build\runtime\src\iree\base\threading\CMakeFiles\iree_base_threading_thread.objects.dir\thread_darwin.c.obj
+[95/1251] Building C object _deps\iv\build\runtime\src\iree\base\threading\CMakeFiles\iree_base_threading_thread.objects.dir\thread_pthreads.c.obj
+[96/1251] Building C object _deps\iv\build\runtime\src\iree\base\threading\CMakeFiles\iree_base_threading_thread.objects.dir\thread_win32.c.obj
+[97/1251] Building C object _deps\iv\build\runtime\src\iree\hal\CMakeFiles\iree_hal_hal.objects.dir\allocator.c.obj
+[98/1251] Building C object _deps\iv\build\runtime\src\iree\hal\CMakeFiles\iree_hal_hal.objects.dir\allocator_heap.c.obj
+[99/1251] Building C object _deps\iv\build\runtime\src\iree\hal\CMakeFiles\iree_hal_hal.objects.dir\buffer.c.obj
+[100/1251] Building C object _deps\iv\build\runtime\src\iree\hal\CMakeFiles\iree_hal_hal.objects.dir\buffer_heap.c.obj
+[101/1251] Building C object _deps\iv\build\runtime\src\iree\hal\CMakeFiles\iree_hal_hal.objects.dir\buffer_transfer.c.obj
+[102/1251] Building C object _deps\iv\build\runtime\src\iree\hal\CMakeFiles\iree_hal_hal.objects.dir\buffer_view.c.obj
+[103/1251] Building C object _deps\iv\build\runtime\src\iree\hal\CMakeFiles\iree_hal_hal.objects.dir\buffer_view_util.c.obj
+[104/1251] Building C object _deps\iv\build\runtime\src\iree\hal\CMakeFiles\iree_hal_hal.objects.dir\channel.c.obj
+[105/1251] Building C object _deps\iv\build\runtime\src\iree\hal\CMakeFiles\iree_hal_hal.objects.dir\channel_provider.c.obj
+[106/1251] Building C object _deps\iv\build\runtime\src\iree\hal\CMakeFiles\iree_hal_hal.objects.dir\command_buffer.c.obj
+[107/1251] Building C object _deps\iv\build\runtime\src\iree\hal\CMakeFiles\iree_hal_hal.objects.dir\command_buffer_validation.c.obj
+[108/1251] Building C object _deps\iv\build\runtime\src\iree\hal\CMakeFiles\iree_hal_hal.objects.dir\device.c.obj
+[109/1251] Building C object _deps\iv\build\runtime\src\iree\hal\CMakeFiles\iree_hal_hal.objects.dir\device_group.c.obj
+[110/1251] Building C object _deps\iv\build\runtime\src\iree\hal\CMakeFiles\iree_hal_hal.objects.dir\driver.c.obj
+[111/1251] Building C object _deps\iv\build\runtime\src\iree\hal\CMakeFiles\iree_hal_hal.objects.dir\driver_registry.c.obj
+[112/1251] Building C object _deps\iv\build\runtime\src\iree\hal\CMakeFiles\iree_hal_hal.objects.dir\event.c.obj
+[113/1251] Building C object _deps\iv\build\runtime\src\iree\hal\CMakeFiles\iree_hal_hal.objects.dir\executable.c.obj
+[114/1251] Building C object _deps\iv\build\runtime\src\iree\hal\CMakeFiles\iree_hal_hal.objects.dir\executable_cache.c.obj
+[115/1251] Building C object _deps\iv\build\runtime\src\iree\hal\CMakeFiles\iree_hal_hal.objects.dir\fence.c.obj
+[116/1251] Building C object _deps\iv\build\runtime\src\iree\hal\CMakeFiles\iree_hal_hal.objects.dir\file.c.obj
+[117/1251] Building C object _deps\iv\build\runtime\src\iree\hal\CMakeFiles\iree_hal_hal.objects.dir\pool.c.obj
+[118/1251] Building C object _deps\iv\build\runtime\src\iree\hal\CMakeFiles\iree_hal_hal.objects.dir\pool_set.c.obj
+[119/1251] Building C object _deps\iv\build\runtime\src\iree\hal\CMakeFiles\iree_hal_hal.objects.dir\profile_metrics.c.obj
+[120/1251] Building C object _deps\iv\build\runtime\src\iree\hal\CMakeFiles\iree_hal_hal.objects.dir\profile_options.c.obj
+[121/1251] Building C object _deps\iv\build\runtime\src\iree\hal\CMakeFiles\iree_hal_hal.objects.dir\profile_sink.c.obj
+[122/1251] Building C object _deps\iv\build\runtime\src\iree\hal\CMakeFiles\iree_hal_hal.objects.dir\semaphore.c.obj
+[123/1251] Building C object _deps\iv\build\runtime\src\iree\hal\CMakeFiles\iree_hal_hal.objects.dir\string_util.c.obj
+[124/1251] Building C object _deps\iv\build\runtime\src\iree\hal\CMakeFiles\iree_hal_hal.objects.dir\topology.c.obj
+[125/1251] Building C object _deps\iv\build\runtime\src\iree\hal\CMakeFiles\iree_hal_hal.objects.dir\topology_builder.c.obj
+[126/1251] Linking C static library bin\iree_hal_utils_platform_topology.lib
+[127/1251] Linking C static library bin\iree_io_file_handle.lib
+[128/1251] Building C object src\compute_ggml_runtime\vendor\src\CMakeFiles\ggml-base.dir\ggml.c.obj
+[129/1251] Building CXX object src\compute_ggml_runtime\vendor\src\CMakeFiles\ggml-base.dir\ggml.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/EHc”(用“/EHc-”)
+[130/1251] Building C object src\compute_ggml_runtime\vendor\src\CMakeFiles\ggml-base.dir\ggml-alloc.c.obj
+[131/1251] Building CXX object src\compute_ggml_runtime\vendor\src\CMakeFiles\ggml-base.dir\ggml-backend.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/EHc”(用“/EHc-”)
+[132/1251] Building CXX object src\compute_ggml_runtime\vendor\src\CMakeFiles\ggml-base.dir\ggml-backend-meta.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/EHc”(用“/EHc-”)
+[133/1251] Building CXX object src\compute_ggml_runtime\vendor\src\CMakeFiles\ggml-base.dir\ggml-opt.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/EHc”(用“/EHc-”)
+[134/1251] Building CXX object src\compute_ggml_runtime\vendor\src\CMakeFiles\ggml-base.dir\ggml-threading.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/EHc”(用“/EHc-”)
+[135/1251] Building C object src\compute_ggml_runtime\vendor\src\CMakeFiles\ggml-base.dir\ggml-quants.c.obj
+[136/1251] Building CXX object src\compute_ggml_runtime\vendor\src\CMakeFiles\ggml-base.dir\gguf.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/EHc”(用“/EHc-”)
+[137/1251] Performing install step for 'vulkan-shaders-gen'
+-- Installing: C:/h7/foundation-f1-sdk/w-cpu-vulkan-static-producer/Release/vulkan-shaders-gen.exe
+[138/1251] Linking C executable _deps\iv\build\tools\iree-flatcc-cli.exe
+[139/1251] Building C object _deps\iv\build\runtime\src\iree\async\platform\iocp\CMakeFiles\iree_async_platform_iocp_iocp.objects.dir\proactor.c.obj
+[140/1251] Building C object _deps\iv\build\runtime\src\iree\async\platform\iocp\CMakeFiles\iree_async_platform_iocp_iocp.objects.dir\proactor_submit.c.obj
+[141/1251] Building C object _deps\iv\build\runtime\src\iree\async\platform\iocp\CMakeFiles\iree_async_platform_iocp_iocp.objects.dir\socket.c.obj
+[142/1251] Building C object _deps\iv\build\runtime\src\iree\async\platform\iocp\CMakeFiles\iree_async_platform_iocp_iocp.objects.dir\timer_list.c.obj
+[143/1251] Linking C static library bin\iree_async_util_message_pool.lib
+[144/1251] Linking C static library bin\iree_async_util_operation_pool.lib
+[145/1251] Building C object _deps\iv\build\runtime\src\iree\async\util\CMakeFiles\iree_async_util_proactor_thread.objects.dir\proactor_thread.c.obj
+[146/1251] Linking C static library bin\iree_async_util_sequence_emulation.lib
+[147/1251] Linking C static library bin\iree_async_util_signal.lib
+[148/1251] Linking C static library bin\iree_base_internal_cpu.lib
+[149/1251] Linking C static library bin\iree_base_threading_thread.lib
+[150/1251] Linking C static library bin\iree_hal_hal.lib
+[151/1251] Building C object _deps\iv\build\runtime\src\iree\hal\local\CMakeFiles\iree_hal_local_executable_environment.objects.dir\executable_environment.c.obj
+[152/1251] Linking CXX static library bin\ggml-base.lib
+[153/1251] Completed 'vulkan-shaders-gen'
+[154/1251] Building C object _deps\iv\build\build_tools\third_party\flatcc\CMakeFiles\flatcc_parsing.dir\__\__\__\__\src\third_party\flatcc\src\runtime\verifier.c.obj
+[155/1251] Building C object _deps\iv\build\runtime\src\iree\async\CMakeFiles\iree_async_platform.objects.dir\proactor_platform.c.obj
+[156/1251] Linking C static library bin\iree_async_platform_iocp_iocp.lib
+[157/1251] Building C object _deps\iv\build\runtime\src\iree\async\util\CMakeFiles\iree_async_util_proactor_thread_runner.objects.dir\proactor_thread_runner.c.obj
+[158/1251] Linking C static library bin\iree_async_util_proactor_thread.lib
+[159/1251] Building C object _deps\iv\build\runtime\src\iree\base\internal\CMakeFiles\iree_base_internal_arena.objects.dir\arena.c.obj
+[160/1251] Building C object _deps\iv\build\runtime\src\iree\base\internal\CMakeFiles\iree_base_internal_dynamic_library.objects.dir\dynamic_library_posix.c.obj
+[161/1251] Building C object _deps\iv\build\runtime\src\iree\base\internal\CMakeFiles\iree_base_internal_dynamic_library.objects.dir\dynamic_library_win32.c.obj
+[162/1251] Generating dummy_reader.h, dummy_builder.h, dummy_verifier.h, dummy_json_printer.h, dummy_json_parser.h
+[163/1251] Linking C static library bin\iree_hal_local_executable_environment.lib
+[164/1251] Building C object _deps\iv\build\runtime\src\iree\hal\local\CMakeFiles\iree_hal_local_executable_loader.objects.dir\executable_loader.c.obj
+[165/1251] Building C object _deps\iv\build\runtime\src\iree\hal\local\CMakeFiles\iree_hal_local_executable_loader.objects.dir\local_executable.c.obj
+[166/1251] Building C object _deps\iv\build\runtime\src\iree\hal\memory\CMakeFiles\iree_hal_memory_slab_provider.objects.dir\slab_provider.c.obj
+[167/1251] Building C object _deps\iv\build\runtime\src\iree\hal\memory\CMakeFiles\iree_hal_memory_tlsf.objects.dir\tlsf.c.obj
+[168/1251] Building C object _deps\iv\build\runtime\src\iree\hal\memory\CMakeFiles\iree_hal_memory_tracing.objects.dir\tracing.c.obj
+[169/1251] Building C object _deps\iv\build\runtime\src\iree\hal\utils\CMakeFiles\iree_hal_utils_profile_event_ring.objects.dir\profile_event_ring.c.obj
+[170/1251] Generating executable_debug_info_reader.h, executable_debug_info_builder.h, executable_debug_info_verifier.h, executable_debug_info_json_printer.h, executable_debug_info_json_parser.h
+[171/1251] Building CXX object src\error\CMakeFiles\hyle_error.dir\status.cc.obj
+[172/1251] Generate vulkan shaders header
+[173/1251] Generate vulkan shaders for acc.comp
+[174/1251] Generate vulkan shaders for add.comp
+[175/1251] Generate vulkan shaders for add1.comp
+[176/1251] Generate vulkan shaders for add_id.comp
+[177/1251] Generate vulkan shaders for arange.comp
+[178/1251] Generate vulkan shaders for argmax.comp
+[179/1251] Generate vulkan shaders for argsort.comp
+[180/1251] Generate vulkan shaders for argsort_large.comp
+[181/1251] Generate vulkan shaders for col2im_1d.comp
+[182/1251] Generate vulkan shaders for concat.comp
+[183/1251] Generate vulkan shaders for contig_copy.comp
+[184/1251] Generate vulkan shaders for conv2d_dw.comp
+[185/1251] Generate vulkan shaders for conv2d_mm.comp
+[186/1251] Generate vulkan shaders for conv3d_mm.comp
+[187/1251] Generate vulkan shaders for conv_transpose_1d.comp
+[188/1251] Generate vulkan shaders for copy.comp
+[189/1251] Generate vulkan shaders for copy_from_quant.comp
+[190/1251] Generate vulkan shaders for copy_to_quant.comp
+[191/1251] Generate vulkan shaders for copy_transpose.comp
+[192/1251] Generate vulkan shaders for copy_transpose_02.comp
+[193/1251] Generate vulkan shaders for count_equal.comp
+[194/1251] Generate vulkan shaders for count_experts.comp
+[195/1251] Generate vulkan shaders for cross_entropy_loss.comp
+[196/1251] Generate vulkan shaders for cross_entropy_loss_back.comp
+[197/1251] Generate vulkan shaders for cumsum.comp
+[198/1251] Generate vulkan shaders for cumsum_multipass1.comp
+[199/1251] Generate vulkan shaders for cumsum_multipass2.comp
+[200/1251] Generate vulkan shaders for dequant_f32.comp
+[201/1251] Generate vulkan shaders for dequant_iq1_m.comp
+[202/1251] Generate vulkan shaders for dequant_iq1_s.comp
+[203/1251] Generate vulkan shaders for dequant_iq2_s.comp
+[204/1251] Generate vulkan shaders for dequant_iq2_xs.comp
+[205/1251] Generate vulkan shaders for dequant_iq2_xxs.comp
+[206/1251] Generate vulkan shaders for dequant_iq3_s.comp
+[207/1251] Generate vulkan shaders for dequant_iq3_xxs.comp
+[208/1251] Generate vulkan shaders for dequant_iq4_nl.comp
+[209/1251] Generate vulkan shaders for dequant_iq4_xs.comp
+[210/1251] Generate vulkan shaders for dequant_mxfp4.comp
+[211/1251] Generate vulkan shaders for dequant_nvfp4.comp
+[212/1251] Generate vulkan shaders for dequant_q1_0.comp
+[213/1251] Generate vulkan shaders for dequant_q2_0.comp
+[214/1251] Generate vulkan shaders for dequant_q2_k.comp
+[215/1251] Generate vulkan shaders for dequant_q3_k.comp
+[216/1251] Generate vulkan shaders for dequant_q4_0.comp
+[217/1251] Generate vulkan shaders for dequant_q4_1.comp
+[218/1251] Generate vulkan shaders for dequant_q4_k.comp
+[219/1251] Generate vulkan shaders for dequant_q5_0.comp
+[220/1251] Generate vulkan shaders for dequant_q5_1.comp
+[221/1251] Generate vulkan shaders for dequant_q5_k.comp
+[222/1251] Generate vulkan shaders for dequant_q6_k.comp
+[223/1251] Generate vulkan shaders for dequant_q8_0.comp
+[224/1251] Generate vulkan shaders for dequant_tq1_0.comp
+[225/1251] Generate vulkan shaders for dequant_tq2_0.comp
+[226/1251] Generate vulkan shaders for diag.comp
+[227/1251] Generate vulkan shaders for diag_mask_inf.comp
+[228/1251] Generate vulkan shaders for div.comp
+[229/1251] Generate vulkan shaders for dsv4_hc_comb.comp
+[230/1251] Generate vulkan shaders for dsv4_hc_post.comp
+[231/1251] Generate vulkan shaders for dsv4_hc_pre.comp
+[232/1251] Generate vulkan shaders for fill.comp
+[233/1251] Generate vulkan shaders for flash_attn.comp
+[234/1251] Generate vulkan shaders for flash_attn_cm1.comp
+[235/1251] Generate vulkan shaders for flash_attn_cm2.comp
+[236/1251] Generate vulkan shaders for flash_attn_mask_opt.comp
+[237/1251] Generate vulkan shaders for flash_attn_split_k_reduce.comp
+[238/1251] Generate vulkan shaders for fwht.comp
+[239/1251] Generate vulkan shaders for gated_delta_net.comp
+[240/1251] Generate vulkan shaders for geglu.comp
+[241/1251] Generate vulkan shaders for geglu_erf.comp
+[242/1251] Generate vulkan shaders for geglu_quick.comp
+[243/1251] Generate vulkan shaders for get_rows.comp
+[244/1251] Generate vulkan shaders for get_rows_back.comp
+[245/1251] Generate vulkan shaders for get_rows_quant.comp
+[246/1251] Generate vulkan shaders for gla.comp
+[247/1251] Generate vulkan shaders for group_norm.comp
+[248/1251] Generate vulkan shaders for im2col.comp
+[249/1251] Generate vulkan shaders for im2col_3d.comp
+[250/1251] Generate vulkan shaders for l2_norm.comp
+[251/1251] Generate vulkan shaders for lightning_indexer.comp
+[252/1251] Generate vulkan shaders for log.comp
+[253/1251] Generate vulkan shaders for mul.comp
+[254/1251] Generate vulkan shaders for mul_mat_split_k_reduce.comp
+[255/1251] Generate vulkan shaders for mul_mat_vec.comp
+[256/1251] Generate vulkan shaders for mul_mat_vec_iq1_m.comp
+[257/1251] Generate vulkan shaders for mul_mat_vec_iq1_s.comp
+[258/1251] Generate vulkan shaders for mul_mat_vec_iq2_s.comp
+[259/1251] Generate vulkan shaders for mul_mat_vec_iq2_xs.comp
+[260/1251] Generate vulkan shaders for mul_mat_vec_iq2_xxs.comp
+[261/1251] Generate vulkan shaders for mul_mat_vec_iq3_s.comp
+[262/1251] Generate vulkan shaders for mul_mat_vec_iq3_xxs.comp
+[263/1251] Generate vulkan shaders for mul_mat_vec_iq4_xs.comp
+[264/1251] Generate vulkan shaders for mul_mat_vec_nc.comp
+[265/1251] Generate vulkan shaders for mul_mat_vec_p021.comp
+[266/1251] Generate vulkan shaders for mul_mat_vec_q2_k.comp
+[267/1251] Generate vulkan shaders for mul_mat_vec_q3_k.comp
+[268/1251] Generate vulkan shaders for mul_mat_vec_q4_k.comp
+[269/1251] Generate vulkan shaders for mul_mat_vec_q5_k.comp
+[270/1251] Generate vulkan shaders for mul_mat_vec_q6_k.comp
+[271/1251] Generate vulkan shaders for mul_mat_vec_tq1_0.comp
+[272/1251] Generate vulkan shaders for mul_mat_vec_tq2_0.comp
+[273/1251] Generate vulkan shaders for mul_mat_vecq.comp
+[274/1251] Generate vulkan shaders for mul_mm.comp
+[275/1251] Generate vulkan shaders for mul_mm_cm2.comp
+[276/1251] Generate vulkan shaders for mul_mmq.comp
+[277/1251] Generate vulkan shaders for multi_add.comp
+[278/1251] Generate vulkan shaders for norm.comp
+[279/1251] Generate vulkan shaders for opt_step_adamw.comp
+[280/1251] Generate vulkan shaders for opt_step_sgd.comp
+[281/1251] Generate vulkan shaders for out_prod.comp
+[282/1251] Generate vulkan shaders for pad.comp
+[283/1251] Generate vulkan shaders for pad_reflect_1d.comp
+[284/1251] Generate vulkan shaders for pool1d.comp
+[285/1251] Generate vulkan shaders for pool2d.comp
+[286/1251] Generate vulkan shaders for quantize_q8_1.comp
+[287/1251] Generate vulkan shaders for reglu.comp
+[288/1251] Generate vulkan shaders for repeat.comp
+[289/1251] Generate vulkan shaders for repeat_back.comp
+[290/1251] Generate vulkan shaders for rms_norm.comp
+[291/1251] Generate vulkan shaders for rms_norm_back.comp
+[292/1251] Generate vulkan shaders for rms_norm_partials.comp
+[293/1251] Generate vulkan shaders for roll.comp
+[294/1251] Generate vulkan shaders for rope_multi.comp
+[295/1251] Generate vulkan shaders for rope_neox.comp
+[296/1251] Generate vulkan shaders for rope_norm.comp
+[297/1251] Generate vulkan shaders for rope_vision.comp
+[298/1251] Generate vulkan shaders for scale.comp
+[299/1251] Generate vulkan shaders for silu_back.comp
+[300/1251] Generate vulkan shaders for snake.comp
+[301/1251] Generate vulkan shaders for soft_max.comp
+[302/1251] Generate vulkan shaders for soft_max_back.comp
+[303/1251] Generate vulkan shaders for soft_max_large1.comp
+[304/1251] Generate vulkan shaders for soft_max_large2.comp
+[305/1251] Generate vulkan shaders for soft_max_large3.comp
+[306/1251] Generate vulkan shaders for solve_tri.comp
+[307/1251] Generate vulkan shaders for ssm_conv.comp
+[308/1251] Generate vulkan shaders for ssm_scan.comp
+[309/1251] Generate vulkan shaders for sub.comp
+[310/1251] Generate vulkan shaders for sum_rows.comp
+[311/1251] Generate vulkan shaders for swiglu.comp
+[312/1251] Generate vulkan shaders for swiglu_clamp.comp
+[313/1251] Generate vulkan shaders for swiglu_oai.comp
+[314/1251] Generate vulkan shaders for timestep_embedding.comp
+[315/1251] Generate vulkan shaders for topk_argsort.comp
+[316/1251] Generate vulkan shaders for topk_moe.comp
+[317/1251] Generate vulkan shaders for topk_nary_search.comp
+[318/1251] Generate vulkan shaders for topk_radix_select.comp
+[319/1251] Generate vulkan shaders for tri.comp
+[320/1251] Generate vulkan shaders for unary.comp
+[321/1251] Generate vulkan shaders for upscale.comp
+[322/1251] Generate vulkan shaders for wkv6.comp
+[323/1251] Generate vulkan shaders for wkv7.comp
+[324/1251] Linking C static library bin\flatcc_parsing.lib
+[325/1251] Linking C static library bin\iree_async_platform.lib
+[326/1251] Building C object _deps\iv\build\runtime\src\iree\async\util\CMakeFiles\iree_async_util_proactor_pool.objects.dir\proactor_pool.c.obj
+[327/1251] Linking C static library bin\iree_async_util_proactor_thread_runner.lib
+[328/1251] Linking C static library bin\iree_base_internal_arena.lib
+[329/1251] Linking C static library bin\iree_base_internal_dynamic_library.lib
+[330/1251] Building C object _deps\iv\build\runtime\src\iree\hal\drivers\vulkan\util\CMakeFiles\iree_hal_drivers_vulkan_util_libvulkan.objects.dir\libvulkan.c.obj
+[331/1251] Linking C static library bin\iree_hal_local_executable_loader.lib
+[332/1251] Building C object _deps\iv\build\runtime\src\iree\hal\local\CMakeFiles\iree_hal_local_profile.objects.dir\profile.c.obj
+[333/1251] Building C object _deps\iv\build\runtime\src\iree\hal\local\CMakeFiles\iree_hal_local_transient_buffer.objects.dir\transient_buffer.c.obj
+[334/1251] Building C object _deps\iv\build\runtime\src\iree\hal\memory\CMakeFiles\iree_hal_memory_passthrough_pool.objects.dir\passthrough_pool.c.obj
+[335/1251] Linking C static library bin\iree_hal_memory_slab_provider.lib
+[336/1251] Linking C static library bin\iree_hal_memory_tlsf.lib
+[337/1251] Building C object _deps\iv\build\runtime\src\iree\hal\memory\CMakeFiles\iree_hal_memory_tlsf_pool.objects.dir\tlsf_pool.c.obj
+[338/1251] Linking C static library bin\iree_hal_memory_tracing.lib
+[339/1251] Building C object _deps\iv\build\runtime\src\iree\hal\utils\CMakeFiles\iree_hal_utils_executable_header.objects.dir\executable_header.c.obj
+[340/1251] Building C object _deps\iv\build\runtime\src\iree\hal\utils\CMakeFiles\iree_hal_utils_files.objects.dir\fd_file.c.obj
+[341/1251] Building C object _deps\iv\build\runtime\src\iree\hal\utils\CMakeFiles\iree_hal_utils_files.objects.dir\file_registry.c.obj
+[342/1251] Building C object _deps\iv\build\runtime\src\iree\hal\utils\CMakeFiles\iree_hal_utils_files.objects.dir\memory_file.c.obj
+[343/1251] Linking C static library bin\iree_hal_utils_profile_event_ring.lib
+[344/1251] Building C object _deps\iv\build\runtime\src\iree\hal\utils\CMakeFiles\iree_hal_utils_resource_set.objects.dir\resource_set.c.obj
+[345/1251] Generating bytecode_module_def_reader.h, bytecode_module_def_builder.h, bytecode_module_def_verifier.h, bytecode_module_def_json_printer.h, bytecode_module_def_json_parser.h
+[346/1251] Building C object _deps\iv\build\runtime\src\iree\hal\utils\CMakeFiles\iree_hal_utils_executable_debug_info.objects.dir\executable_debug_info.c.obj
+[347/1251] Generating vulkan_executable_def_reader.h, vulkan_executable_def_builder.h, vulkan_executable_def_verifier.h, vulkan_executable_def_json_printer.h, vulkan_executable_def_json_parser.h
+[348/1251] Building C object _deps\iv\build\runtime\src\iree\vm\CMakeFiles\iree_vm_impl.objects.dir\buffer.c.obj
+[349/1251] Building C object _deps\iv\build\runtime\src\iree\vm\CMakeFiles\iree_vm_impl.objects.dir\context.c.obj
+[350/1251] Building C object _deps\iv\build\runtime\src\iree\vm\CMakeFiles\iree_vm_impl.objects.dir\instance.c.obj
+[351/1251] Building C object _deps\iv\build\runtime\src\iree\vm\CMakeFiles\iree_vm_impl.objects.dir\invocation.c.obj
+[352/1251] Building C object _deps\iv\build\runtime\src\iree\vm\CMakeFiles\iree_vm_impl.objects.dir\list.c.obj
+[353/1251] Building C object _deps\iv\build\runtime\src\iree\vm\CMakeFiles\iree_vm_impl.objects.dir\loop.c.obj
+[354/1251] Building C object _deps\iv\build\runtime\src\iree\vm\CMakeFiles\iree_vm_impl.objects.dir\loop_inline.c.obj
+[355/1251] Building C object _deps\iv\build\runtime\src\iree\vm\CMakeFiles\iree_vm_impl.objects.dir\module.c.obj
+[356/1251] Building C object _deps\iv\build\runtime\src\iree\vm\CMakeFiles\iree_vm_impl.objects.dir\native_module.c.obj
+[357/1251] Building C object _deps\iv\build\runtime\src\iree\vm\CMakeFiles\iree_vm_impl.objects.dir\ref.c.obj
+[358/1251] Building C object _deps\iv\build\runtime\src\iree\vm\CMakeFiles\iree_vm_impl.objects.dir\shims.c.obj
+[359/1251] Building C object _deps\iv\build\runtime\src\iree\vm\CMakeFiles\iree_vm_impl.objects.dir\stack.c.obj
+[360/1251] Generating op_table.h
+[361/1251] Generating encoding_table.c, encoding_table.h
+[362/1251] Linking CXX static library bin\hyle_error.lib
+[363/1251] Building CXX object src\platform\CMakeFiles\hyle_platform_cpu_probe.dir\cpu.cc.obj
+[364/1251] Building CXX object src\platform\CMakeFiles\hyle_platform_cgroup_parser.dir\linux_cgroup.cc.obj
+[365/1251] Building CXX object src\platform\CMakeFiles\hyle_platform.dir\cpu_resource.cc.obj
+[366/1251] Building CXX object src\platform\CMakeFiles\hyle_platform.dir\dynlib.cc.obj
+[367/1251] Building CXX object src\platform\CMakeFiles\hyle_platform.dir\environment.cc.obj
+[368/1251] Building CXX object src\platform\CMakeFiles\hyle_platform.dir\host_memory.cc.obj
+[369/1251] Building CXX object src\platform\CMakeFiles\hyle_platform.dir\numa.cc.obj
+[370/1251] Building CXX object src\platform\CMakeFiles\hyle_platform.dir\process.cc.obj
+[371/1251] Building CXX object src\platform\CMakeFiles\hyle_platform.dir\random.cc.obj
+[372/1251] Building CXX object src\platform\CMakeFiles\hyle_platform.dir\virtual_memory.cc.obj
+[373/1251] Building CXX object src\mem\CMakeFiles\mimalloc_static.dir\__\__\third_party\mimalloc\src\static.c.obj
+[374/1251] Building C object src\compute_ggml_runtime\vendor\src\CMakeFiles\ggml-cpu.dir\ggml-cpu\ggml-cpu.c.obj
+[375/1251] Building CXX object src\compute_ggml_runtime\vendor\src\CMakeFiles\ggml-cpu.dir\ggml-cpu\ggml-cpu.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/EHc”(用“/EHc-”)
+[376/1251] Building CXX object src\compute_ggml_runtime\vendor\src\CMakeFiles\ggml-cpu.dir\ggml-cpu\repack.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/EHc”(用“/EHc-”)
+[377/1251] Building CXX object src\compute_ggml_runtime\vendor\src\CMakeFiles\ggml-cpu.dir\ggml-cpu\iqp.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/EHc”(用“/EHc-”)
+[378/1251] Building CXX object src\compute_ggml_runtime\vendor\src\CMakeFiles\ggml-cpu.dir\ggml-cpu\hbm.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/EHc”(用“/EHc-”)
+[379/1251] Building C object src\compute_ggml_runtime\vendor\src\CMakeFiles\ggml-cpu.dir\ggml-cpu\quants.c.obj
+[380/1251] Building CXX object src\compute_ggml_runtime\vendor\src\CMakeFiles\ggml-cpu.dir\ggml-cpu\traits.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/EHc”(用“/EHc-”)
+[381/1251] Building CXX object src\compute_ggml_runtime\vendor\src\CMakeFiles\ggml-cpu.dir\ggml-cpu\amx\amx.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/EHc”(用“/EHc-”)
+[382/1251] Building CXX object src\compute_ggml_runtime\vendor\src\CMakeFiles\ggml-cpu.dir\ggml-cpu\amx\mmq.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/EHc”(用“/EHc-”)
+[383/1251] Building CXX object src\compute_ggml_runtime\vendor\src\CMakeFiles\ggml-cpu.dir\ggml-cpu\binary-ops.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/EHc”(用“/EHc-”)
+[384/1251] Building CXX object src\compute_ggml_runtime\vendor\src\CMakeFiles\ggml-cpu.dir\ggml-cpu\unary-ops.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/EHc”(用“/EHc-”)
+[385/1251] Building CXX object src\compute_ggml_runtime\vendor\src\CMakeFiles\ggml-cpu.dir\ggml-cpu\vec.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/EHc”(用“/EHc-”)
+[386/1251] Building CXX object src\compute_ggml_runtime\vendor\src\CMakeFiles\ggml-cpu.dir\ggml-cpu\ops.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/EHc”(用“/EHc-”)
+[387/1251] Building C object src\compute_ggml_runtime\vendor\src\CMakeFiles\ggml-cpu.dir\ggml-cpu\arch\x86\quants.c.obj
+[388/1251] Building CXX object src\compute_ggml_runtime\vendor\src\CMakeFiles\ggml-cpu.dir\ggml-cpu\arch\x86\repack.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/EHc”(用“/EHc-”)
+[389/1251] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\ggml-vulkan.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/EHc”(用“/EHc-”)
+C:\h7\foundation-f1-sdk\w-cpu-vulkan-static-producer\src\compute_ggml_runtime\source-7d4fea280f67f983\src\ggml-vulkan\..\ggml-impl.h(1): warning C4819: 该文件包含不能在当前代码页(936)中表示的字符。请将该文件保存为 Unicode 格式以防止数据丢失
+C:\h7\foundation-f1-sdk\w-cpu-vulkan-static-producer\src\compute_ggml_runtime\source-7d4fea280f67f983\src\ggml-vulkan\ggml-vulkan.cpp(6222): warning C4003: 类函数宏的调用“IM2COL”参数不足
+C:\h7\foundation-f1-sdk\w-cpu-vulkan-static-producer\src\compute_ggml_runtime\source-7d4fea280f67f983\src\ggml-vulkan\ggml-vulkan.cpp(6492): warning C4003: 类函数宏的调用“CREATE_CONVS”参数不足
+C:\h7\foundation-f1-sdk\w-cpu-vulkan-static-producer\src\compute_ggml_runtime\source-7d4fea280f67f983\src\ggml-vulkan\ggml-vulkan.cpp(9653): warning C4319: “~”: 将“_Ty”扩展到更大的“uint64_t”时为零
+        with
+        [
+            _Ty=uint32_t
+        ]
+C:\h7\foundation-f1-sdk\w-cpu-vulkan-static-producer\src\compute_ggml_runtime\source-7d4fea280f67f983\src\ggml-vulkan\ggml-vulkan.cpp(13879): warning C4319: “~”: 将“uint32_t”扩展到更大的“size_t”时为零
+[390/1251] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\acc.comp.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/EHc”(用“/EHc-”)
+[391/1251] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\add.comp.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/EHc”(用“/EHc-”)
+[392/1251] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\add1.comp.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/EHc”(用“/EHc-”)
+[393/1251] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\add_id.comp.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/EHc”(用“/EHc-”)
+[394/1251] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\arange.comp.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/EHc”(用“/EHc-”)
+[395/1251] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\argmax.comp.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/EHc”(用“/EHc-”)
+[396/1251] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\argsort.comp.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/EHc”(用“/EHc-”)
+[397/1251] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\argsort_large.comp.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/EHc”(用“/EHc-”)
+[398/1251] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\col2im_1d.comp.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/EHc”(用“/EHc-”)
+[399/1251] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\concat.comp.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/EHc”(用“/EHc-”)
+[400/1251] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\contig_copy.comp.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/EHc”(用“/EHc-”)
+[401/1251] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\conv2d_dw.comp.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/EHc”(用“/EHc-”)
+[402/1251] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\conv2d_mm.comp.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/EHc”(用“/EHc-”)
+[403/1251] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\conv3d_mm.comp.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/EHc”(用“/EHc-”)
+[404/1251] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\conv_transpose_1d.comp.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/EHc”(用“/EHc-”)
+[405/1251] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\copy.comp.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/EHc”(用“/EHc-”)
+[406/1251] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\copy_from_quant.comp.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/EHc”(用“/EHc-”)
+[407/1251] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\copy_to_quant.comp.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/EHc”(用“/EHc-”)
+[408/1251] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\copy_transpose.comp.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/EHc”(用“/EHc-”)
+[409/1251] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\copy_transpose_02.comp.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/EHc”(用“/EHc-”)
+[410/1251] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\count_equal.comp.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/EHc”(用“/EHc-”)
+[411/1251] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\count_experts.comp.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/EHc”(用“/EHc-”)
+[412/1251] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\cross_entropy_loss.comp.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/EHc”(用“/EHc-”)
+[413/1251] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\cross_entropy_loss_back.comp.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/EHc”(用“/EHc-”)
+[414/1251] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\cumsum.comp.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/EHc”(用“/EHc-”)
+[415/1251] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\cumsum_multipass1.comp.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/EHc”(用“/EHc-”)
+[416/1251] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\cumsum_multipass2.comp.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/EHc”(用“/EHc-”)
+[417/1251] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\dequant_f32.comp.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/EHc”(用“/EHc-”)
+[418/1251] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\dequant_iq1_m.comp.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/EHc”(用“/EHc-”)
+[419/1251] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\dequant_iq1_s.comp.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/EHc”(用“/EHc-”)
+[420/1251] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\dequant_iq2_s.comp.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/EHc”(用“/EHc-”)
+[421/1251] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\dequant_iq2_xs.comp.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/EHc”(用“/EHc-”)
+[422/1251] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\dequant_iq2_xxs.comp.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/EHc”(用“/EHc-”)
+[423/1251] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\dequant_iq3_s.comp.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/EHc”(用“/EHc-”)
+[424/1251] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\dequant_iq3_xxs.comp.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/EHc”(用“/EHc-”)
+[425/1251] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\dequant_iq4_nl.comp.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/EHc”(用“/EHc-”)
+[426/1251] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\dequant_iq4_xs.comp.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/EHc”(用“/EHc-”)
+[427/1251] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\dequant_mxfp4.comp.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/EHc”(用“/EHc-”)
+[428/1251] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\dequant_nvfp4.comp.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/EHc”(用“/EHc-”)
+[429/1251] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\dequant_q1_0.comp.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/EHc”(用“/EHc-”)
+[430/1251] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\dequant_q2_0.comp.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/EHc”(用“/EHc-”)
+[431/1251] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\dequant_q2_k.comp.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/EHc”(用“/EHc-”)
+[432/1251] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\dequant_q3_k.comp.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/EHc”(用“/EHc-”)
+[433/1251] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\dequant_q4_0.comp.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/EHc”(用“/EHc-”)
+[434/1251] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\dequant_q4_1.comp.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/EHc”(用“/EHc-”)
+[435/1251] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\dequant_q4_k.comp.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/EHc”(用“/EHc-”)
+[436/1251] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\dequant_q5_0.comp.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/EHc”(用“/EHc-”)
+[437/1251] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\dequant_q5_1.comp.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/EHc”(用“/EHc-”)
+[438/1251] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\dequant_q5_k.comp.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/EHc”(用“/EHc-”)
+[439/1251] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\dequant_q6_k.comp.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/EHc”(用“/EHc-”)
+[440/1251] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\dequant_q8_0.comp.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/EHc”(用“/EHc-”)
+[441/1251] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\dequant_tq1_0.comp.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/EHc”(用“/EHc-”)
+[442/1251] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\dequant_tq2_0.comp.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/EHc”(用“/EHc-”)
+[443/1251] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\diag.comp.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/EHc”(用“/EHc-”)
+[444/1251] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\diag_mask_inf.comp.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/EHc”(用“/EHc-”)
+[445/1251] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\div.comp.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/EHc”(用“/EHc-”)
+[446/1251] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\dsv4_hc_comb.comp.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/EHc”(用“/EHc-”)
+[447/1251] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\dsv4_hc_post.comp.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/EHc”(用“/EHc-”)
+[448/1251] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\dsv4_hc_pre.comp.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/EHc”(用“/EHc-”)
+[449/1251] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\fill.comp.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/EHc”(用“/EHc-”)
+[450/1251] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\flash_attn.comp.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/EHc”(用“/EHc-”)
+[451/1251] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\flash_attn_cm1.comp.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/EHc”(用“/EHc-”)
+[452/1251] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\flash_attn_cm2.comp.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/EHc”(用“/EHc-”)
+[453/1251] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\flash_attn_mask_opt.comp.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/EHc”(用“/EHc-”)
+[454/1251] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\flash_attn_split_k_reduce.comp.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/EHc”(用“/EHc-”)
+[455/1251] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\fwht.comp.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/EHc”(用“/EHc-”)
+[456/1251] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\gated_delta_net.comp.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/EHc”(用“/EHc-”)
+[457/1251] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\geglu.comp.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/EHc”(用“/EHc-”)
+[458/1251] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\geglu_erf.comp.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/EHc”(用“/EHc-”)
+[459/1251] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\geglu_quick.comp.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/EHc”(用“/EHc-”)
+[460/1251] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\get_rows.comp.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/EHc”(用“/EHc-”)
+[461/1251] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\get_rows_back.comp.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/EHc”(用“/EHc-”)
+[462/1251] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\get_rows_quant.comp.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/EHc”(用“/EHc-”)
+[463/1251] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\gla.comp.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/EHc”(用“/EHc-”)
+[464/1251] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\group_norm.comp.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/EHc”(用“/EHc-”)
+[465/1251] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\im2col.comp.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/EHc”(用“/EHc-”)
+[466/1251] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\im2col_3d.comp.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/EHc”(用“/EHc-”)
+[467/1251] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\l2_norm.comp.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/EHc”(用“/EHc-”)
+[468/1251] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\lightning_indexer.comp.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/EHc”(用“/EHc-”)
+[469/1251] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\log.comp.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/EHc”(用“/EHc-”)
+[470/1251] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\mul.comp.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/EHc”(用“/EHc-”)
+[471/1251] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\mul_mat_split_k_reduce.comp.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/EHc”(用“/EHc-”)
+[472/1251] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\mul_mat_vec.comp.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/EHc”(用“/EHc-”)
+[473/1251] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\mul_mat_vec_iq1_m.comp.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/EHc”(用“/EHc-”)
+[474/1251] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\mul_mat_vec_iq1_s.comp.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/EHc”(用“/EHc-”)
+[475/1251] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\mul_mat_vec_iq2_s.comp.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/EHc”(用“/EHc-”)
+[476/1251] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\mul_mat_vec_iq2_xs.comp.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/EHc”(用“/EHc-”)
+[477/1251] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\mul_mat_vec_iq2_xxs.comp.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/EHc”(用“/EHc-”)
+[478/1251] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\mul_mat_vec_iq3_s.comp.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/EHc”(用“/EHc-”)
+[479/1251] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\mul_mat_vec_iq3_xxs.comp.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/EHc”(用“/EHc-”)
+[480/1251] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\mul_mat_vec_iq4_xs.comp.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/EHc”(用“/EHc-”)
+[481/1251] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\mul_mat_vec_nc.comp.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/EHc”(用“/EHc-”)
+[482/1251] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\mul_mat_vec_p021.comp.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/EHc”(用“/EHc-”)
+[483/1251] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\mul_mat_vec_q2_k.comp.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/EHc”(用“/EHc-”)
+[484/1251] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\mul_mat_vec_q3_k.comp.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/EHc”(用“/EHc-”)
+[485/1251] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\mul_mat_vec_q4_k.comp.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/EHc”(用“/EHc-”)
+[486/1251] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\mul_mat_vec_q5_k.comp.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/EHc”(用“/EHc-”)
+[487/1251] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\mul_mat_vec_q6_k.comp.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/EHc”(用“/EHc-”)
+[488/1251] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\mul_mat_vec_tq1_0.comp.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/EHc”(用“/EHc-”)
+[489/1251] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\mul_mat_vec_tq2_0.comp.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/EHc”(用“/EHc-”)
+[490/1251] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\mul_mat_vecq.comp.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/EHc”(用“/EHc-”)
+[491/1251] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\mul_mm.comp.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/EHc”(用“/EHc-”)
+[492/1251] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\mul_mm_cm2.comp.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/EHc”(用“/EHc-”)
+[493/1251] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\mul_mmq.comp.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/EHc”(用“/EHc-”)
+[494/1251] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\multi_add.comp.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/EHc”(用“/EHc-”)
+[495/1251] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\norm.comp.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/EHc”(用“/EHc-”)
+[496/1251] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\opt_step_adamw.comp.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/EHc”(用“/EHc-”)
+[497/1251] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\opt_step_sgd.comp.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/EHc”(用“/EHc-”)
+[498/1251] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\out_prod.comp.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/EHc”(用“/EHc-”)
+[499/1251] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\pad.comp.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/EHc”(用“/EHc-”)
+[500/1251] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\pad_reflect_1d.comp.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/EHc”(用“/EHc-”)
+[501/1251] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\pool1d.comp.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/EHc”(用“/EHc-”)
+[502/1251] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\pool2d.comp.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/EHc”(用“/EHc-”)
+[503/1251] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\quantize_q8_1.comp.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/EHc”(用“/EHc-”)
+[504/1251] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\reglu.comp.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/EHc”(用“/EHc-”)
+[505/1251] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\repeat.comp.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/EHc”(用“/EHc-”)
+[506/1251] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\repeat_back.comp.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/EHc”(用“/EHc-”)
+[507/1251] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\rms_norm.comp.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/EHc”(用“/EHc-”)
+[508/1251] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\rms_norm_back.comp.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/EHc”(用“/EHc-”)
+[509/1251] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\rms_norm_partials.comp.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/EHc”(用“/EHc-”)
+[510/1251] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\roll.comp.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/EHc”(用“/EHc-”)
+[511/1251] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\rope_multi.comp.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/EHc”(用“/EHc-”)
+[512/1251] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\rope_neox.comp.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/EHc”(用“/EHc-”)
+[513/1251] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\rope_norm.comp.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/EHc”(用“/EHc-”)
+[514/1251] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\rope_vision.comp.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/EHc”(用“/EHc-”)
+[515/1251] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\scale.comp.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/EHc”(用“/EHc-”)
+[516/1251] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\silu_back.comp.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/EHc”(用“/EHc-”)
+[517/1251] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\snake.comp.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/EHc”(用“/EHc-”)
+[518/1251] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\soft_max.comp.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/EHc”(用“/EHc-”)
+[519/1251] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\soft_max_back.comp.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/EHc”(用“/EHc-”)
+[520/1251] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\soft_max_large1.comp.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/EHc”(用“/EHc-”)
+[521/1251] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\soft_max_large2.comp.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/EHc”(用“/EHc-”)
+[522/1251] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\soft_max_large3.comp.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/EHc”(用“/EHc-”)
+[523/1251] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\solve_tri.comp.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/EHc”(用“/EHc-”)
+[524/1251] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\ssm_conv.comp.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/EHc”(用“/EHc-”)
+[525/1251] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\ssm_scan.comp.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/EHc”(用“/EHc-”)
+[526/1251] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\sub.comp.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/EHc”(用“/EHc-”)
+[527/1251] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\sum_rows.comp.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/EHc”(用“/EHc-”)
+[528/1251] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\swiglu.comp.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/EHc”(用“/EHc-”)
+[529/1251] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\swiglu_clamp.comp.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/EHc”(用“/EHc-”)
+[530/1251] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\swiglu_oai.comp.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/EHc”(用“/EHc-”)
+[531/1251] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\timestep_embedding.comp.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/EHc”(用“/EHc-”)
+[532/1251] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\topk_argsort.comp.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/EHc”(用“/EHc-”)
+[533/1251] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\topk_moe.comp.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/EHc”(用“/EHc-”)
+[534/1251] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\topk_nary_search.comp.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/EHc”(用“/EHc-”)
+[535/1251] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\topk_radix_select.comp.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/EHc”(用“/EHc-”)
+[536/1251] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\tri.comp.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/EHc”(用“/EHc-”)
+[537/1251] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\unary.comp.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/EHc”(用“/EHc-”)
+[538/1251] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\upscale.comp.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/EHc”(用“/EHc-”)
+[539/1251] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\wkv6.comp.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/EHc”(用“/EHc-”)
+[540/1251] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\wkv7.comp.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/EHc”(用“/EHc-”)
+[541/1251] Linking C static library bin\iree_async_util_proactor_pool.lib
+[542/1251] Building C object _deps\iv\build\runtime\src\iree\base\tooling\CMakeFiles\iree_base_tooling_flags.objects.dir\flags.c.obj
+[543/1251] Linking C static library bin\iree_hal_drivers_vulkan_util_libvulkan.lib
+[544/1251] Linking C static library bin\iree_hal_local_profile.lib
+[545/1251] Linking C static library bin\iree_hal_local_transient_buffer.lib
+[546/1251] Linking C static library bin\iree_hal_memory_passthrough_pool.lib
+[547/1251] Linking C static library bin\iree_hal_memory_tlsf_pool.lib
+[548/1251] Linking C static library bin\iree_hal_utils_executable_debug_info.lib
+[549/1251] Linking C static library bin\iree_hal_utils_executable_header.lib
+[550/1251] Linking C static library bin\iree_hal_utils_files.lib
+[551/1251] Linking C static library bin\iree_hal_utils_resource_set.lib
+[552/1251] Building C object _deps\iv\build\runtime\src\iree\modules\hal\CMakeFiles\iree_modules_hal_types.objects.dir\types.c.obj
+[553/1251] Building C object _deps\iv\build\runtime\src\iree\hal\drivers\vulkan\CMakeFiles\iree_hal_drivers_vulkan_vulkan.objects.dir\allocator.c.obj
+[554/1251] Building C object _deps\iv\build\runtime\src\iree\hal\drivers\vulkan\CMakeFiles\iree_hal_drivers_vulkan_vulkan.objects.dir\api.c.obj
+[555/1251] Building C object _deps\iv\build\runtime\src\iree\hal\drivers\vulkan\CMakeFiles\iree_hal_drivers_vulkan_vulkan.objects.dir\buffer.c.obj
+[556/1251] Building C object _deps\iv\build\runtime\src\iree\hal\drivers\vulkan\CMakeFiles\iree_hal_drivers_vulkan_vulkan.objects.dir\builtins.c.obj
+[557/1251] Building C object _deps\iv\build\runtime\src\iree\hal\drivers\vulkan\CMakeFiles\iree_hal_drivers_vulkan_vulkan.objects.dir\command_buffer.c.obj
+[558/1251] Building C object _deps\iv\build\runtime\src\iree\hal\drivers\vulkan\CMakeFiles\iree_hal_drivers_vulkan_vulkan.objects.dir\debug_utils.c.obj
+[559/1251] Building C object _deps\iv\build\runtime\src\iree\hal\drivers\vulkan\CMakeFiles\iree_hal_drivers_vulkan_vulkan.objects.dir\device_options.c.obj
+[560/1251] Building C object _deps\iv\build\runtime\src\iree\hal\drivers\vulkan\CMakeFiles\iree_hal_drivers_vulkan_vulkan.objects.dir\device_plan.c.obj
+[561/1251] Building C object _deps\iv\build\runtime\src\iree\hal\drivers\vulkan\CMakeFiles\iree_hal_drivers_vulkan_vulkan.objects.dir\driver.c.obj
+[562/1251] Building C object _deps\iv\build\runtime\src\iree\hal\drivers\vulkan\CMakeFiles\iree_hal_drivers_vulkan_vulkan.objects.dir\executable.c.obj
+[563/1251] Building C object _deps\iv\build\runtime\src\iree\hal\drivers\vulkan\CMakeFiles\iree_hal_drivers_vulkan_vulkan.objects.dir\executable_cache.c.obj
+[564/1251] Building C object _deps\iv\build\runtime\src\iree\hal\drivers\vulkan\CMakeFiles\iree_hal_drivers_vulkan_vulkan.objects.dir\logical_device.c.obj
+[565/1251] Building C object _deps\iv\build\runtime\src\iree\hal\drivers\vulkan\CMakeFiles\iree_hal_drivers_vulkan_vulkan.objects.dir\physical_device.c.obj
+[566/1251] Building C object _deps\iv\build\runtime\src\iree\hal\drivers\vulkan\CMakeFiles\iree_hal_drivers_vulkan_vulkan.objects.dir\physical_device_selection.c.obj
+[567/1251] Building C object _deps\iv\build\runtime\src\iree\hal\drivers\vulkan\CMakeFiles\iree_hal_drivers_vulkan_vulkan.objects.dir\queue.c.obj
+[568/1251] Building C object _deps\iv\build\runtime\src\iree\hal\drivers\vulkan\CMakeFiles\iree_hal_drivers_vulkan_vulkan.objects.dir\semaphore.c.obj
+[569/1251] Building C object _deps\iv\build\runtime\src\iree\hal\drivers\vulkan\CMakeFiles\iree_hal_drivers_vulkan_vulkan.objects.dir\slab_provider.c.obj
+[570/1251] Building C object _deps\iv\build\runtime\src\iree\hal\drivers\vulkan\CMakeFiles\iree_hal_drivers_vulkan_vulkan.objects.dir\sparse_buffer.c.obj
+[571/1251] Building C object _deps\iv\build\runtime\src\iree\hal\drivers\vulkan\CMakeFiles\iree_hal_drivers_vulkan_vulkan.objects.dir\spirv.c.obj
+[572/1251] Linking C static library bin\iree_vm_impl.lib
+[573/1251] Building C object _deps\iv\build\runtime\src\iree\vm\bytecode\isa\CMakeFiles\iree_vm_bytecode_isa_isa.objects.dir\encoding_table.c.obj
+[574/1251] Linking CXX static library bin\hyle_platform.lib
+[575/1251] Building CXX object src\mem\CMakeFiles\hyle_mem.dir\buffer.cc.obj
+[576/1251] Building CXX object src\mem\CMakeFiles\hyle_mem.dir\buffer_pool.cc.obj
+[577/1251] Building CXX object src\mem\CMakeFiles\hyle_mem.dir\composite_buffer.cc.obj
+[578/1251] Building CXX object src\mem\CMakeFiles\hyle_mem.dir\heap.cc.obj
+[579/1251] Building CXX object src\mem\CMakeFiles\hyle_mem.dir\lifetime_plan.cc.obj
+[580/1251] Building CXX object src\mem\CMakeFiles\hyle_mem.dir\range_allocator.cc.obj
+[581/1251] Building CXX object src\mem\CMakeFiles\hyle_mem.dir\resource.cc.obj
+[582/1251] Building CXX object src\mem\CMakeFiles\hyle_mem.dir\system.cc.obj
+[583/1251] Building CXX object src\mem\CMakeFiles\hyle_mem.dir\stats.cc.obj
+[584/1251] Linking CXX static library bin\mimalloc_static.lib
+[585/1251] Building CXX object src\compute_ops\CMakeFiles\hyle_compute_ops.dir\operation.cc.obj
+[586/1251] Building CXX object src\compute_ops\CMakeFiles\hyle_compute_ops.dir\tensor_desc.cc.obj
+[587/1251] Building CXX object src\compute_ops\CMakeFiles\hyle_compute_ops.dir\low_precision.cc.obj
+[588/1251] Building CXX object src\compute_ops\CMakeFiles\hyle_compute_ops.dir\weight_decode.cc.obj
+[589/1251] Building C object src\compute_ggml_runtime\CMakeFiles\hyle_ggml_cpu_avx2.dir\source-7d4fea280f67f983\src\ggml-cpu\ggml-cpu.c.obj
+[590/1251] Building CXX object src\compute_ggml_runtime\CMakeFiles\hyle_ggml_cpu_avx2.dir\source-7d4fea280f67f983\src\ggml-cpu\ggml-cpu.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/EHc”(用“/EHc-”)
+[591/1251] Building CXX object src\compute_ggml_runtime\CMakeFiles\hyle_ggml_cpu_avx2.dir\source-7d4fea280f67f983\src\ggml-cpu\repack.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/EHc”(用“/EHc-”)
+[592/1251] Building CXX object src\compute_ggml_runtime\CMakeFiles\hyle_ggml_cpu_avx2.dir\source-7d4fea280f67f983\src\ggml-cpu\iqp.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/EHc”(用“/EHc-”)
+[593/1251] Building CXX object src\compute_ggml_runtime\CMakeFiles\hyle_ggml_cpu_avx2.dir\source-7d4fea280f67f983\src\ggml-cpu\hbm.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/EHc”(用“/EHc-”)
+[594/1251] Building C object src\compute_ggml_runtime\CMakeFiles\hyle_ggml_cpu_avx2.dir\source-7d4fea280f67f983\src\ggml-cpu\quants.c.obj
+[595/1251] Building CXX object src\compute_ggml_runtime\CMakeFiles\hyle_ggml_cpu_avx2.dir\source-7d4fea280f67f983\src\ggml-cpu\traits.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/EHc”(用“/EHc-”)
+[596/1251] Building CXX object src\compute_ggml_runtime\CMakeFiles\hyle_ggml_cpu_avx2.dir\source-7d4fea280f67f983\src\ggml-cpu\amx\amx.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/EHc”(用“/EHc-”)
+[597/1251] Building CXX object src\compute_ggml_runtime\CMakeFiles\hyle_ggml_cpu_avx2.dir\source-7d4fea280f67f983\src\ggml-cpu\amx\mmq.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/EHc”(用“/EHc-”)
+[598/1251] Building CXX object src\compute_ggml_runtime\CMakeFiles\hyle_ggml_cpu_avx2.dir\source-7d4fea280f67f983\src\ggml-cpu\binary-ops.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/EHc”(用“/EHc-”)
+[599/1251] Building CXX object src\compute_ggml_runtime\CMakeFiles\hyle_ggml_cpu_avx2.dir\source-7d4fea280f67f983\src\ggml-cpu\unary-ops.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/EHc”(用“/EHc-”)
+[600/1251] Building CXX object src\compute_ggml_runtime\CMakeFiles\hyle_ggml_cpu_avx2.dir\source-7d4fea280f67f983\src\ggml-cpu\vec.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/EHc”(用“/EHc-”)
+[601/1251] Building CXX object src\compute_ggml_runtime\CMakeFiles\hyle_ggml_cpu_avx2.dir\source-7d4fea280f67f983\src\ggml-cpu\ops.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/EHc”(用“/EHc-”)
+[602/1251] Building C object src\compute_ggml_runtime\CMakeFiles\hyle_ggml_cpu_avx2.dir\source-7d4fea280f67f983\src\ggml-cpu\arch\x86\quants.c.obj
+[603/1251] Building CXX object src\compute_ggml_runtime\CMakeFiles\hyle_ggml_cpu_avx2.dir\source-7d4fea280f67f983\src\ggml-cpu\arch\x86\repack.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/EHc”(用“/EHc-”)
+[604/1251] Building CXX object src\compute_ggml_runtime\CMakeFiles\hyle_ggml_cpu_avx2.dir\cpu_program_export.cc.obj
+cl: 命令行 warning D9025 :正在重写“/EHc”(用“/EHc-”)
+[605/1251] Building CXX object src\compute_ggml_runtime\vendor\src\CMakeFiles\ggml.dir\ggml-backend-dl.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/EHc”(用“/EHc-”)
+[606/1251] Building CXX object src\compute_ggml_runtime\vendor\src\CMakeFiles\ggml.dir\ggml-backend-reg.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/EHc”(用“/EHc-”)
+[607/1251] Linking CXX static library bin\ggml-cpu.lib
+[608/1251] Linking CXX static library bin\ggml-vulkan.lib
+[609/1251] Linking C static library bin\iree_base_tooling_flags.lib
+[610/1251] Linking C static library bin\iree_hal_drivers_vulkan_vulkan.lib
+[611/1251] Building C object _deps\iv\build\runtime\src\iree\hal\drivers\vulkan\registration\CMakeFiles\iree_hal_drivers_vulkan_registration_registration.objects.dir\driver_module.c.obj
+[612/1251] Building C object _deps\iv\build\runtime\src\iree\modules\hal\CMakeFiles\iree_modules_hal_debugging.objects.dir\debugging.c.obj
+[613/1251] Linking C static library bin\iree_modules_hal_types.lib
+[614/1251] Building C object _deps\iv\build\runtime\src\iree\modules\hal\utils\CMakeFiles\iree_modules_hal_utils_buffer_diagnostics.objects.dir\buffer_diagnostics.c.obj
+[615/1251] Linking C static library bin\iree_vm_bytecode_isa_isa.lib
+[616/1251] Building C object _deps\iv\build\runtime\src\iree\vm\bytecode\utils\CMakeFiles\iree_vm_bytecode_utils_utils.objects.dir\block_list.c.obj
+[617/1251] Building C object _deps\iv\build\runtime\src\iree\vm\bytecode\utils\CMakeFiles\iree_vm_bytecode_utils_utils.objects.dir\features.c.obj
+[618/1251] Linking CXX static library bin\hyle_mem.lib
+[619/1251] Linking CXX static library bin\hyle_compute_ops.lib
+[620/1251] Building CXX object src\compute\CMakeFiles\hyle_compute.dir\command_capture.cc.obj
+[621/1251] Building CXX object src\compute\CMakeFiles\hyle_compute.dir\completion.cc.obj
+[622/1251] Building CXX object src\compute\CMakeFiles\hyle_compute.dir\custom_kernel.cc.obj
+[623/1251] Building CXX object src\compute\CMakeFiles\hyle_compute.dir\device.cc.obj
+[624/1251] Building CXX object src\compute\CMakeFiles\hyle_compute.dir\operation.cc.obj
+[625/1251] Building CXX object src\compute\CMakeFiles\hyle_compute.dir\provider.cc.obj
+[626/1251] Building CXX object src\compute\CMakeFiles\hyle_compute.dir\resource_budget.cc.obj
+[627/1251] Building CXX object src\compute\CMakeFiles\hyle_compute.dir\resource_leases.cc.obj
+[628/1251] Building CXX object src\compute\CMakeFiles\hyle_compute.dir\retained_completion.cc.obj
+[629/1251] Building CXX object src\compute\CMakeFiles\hyle_compute.dir\leased_operation.cc.obj
+[630/1251] Building CXX object src\compute\CMakeFiles\hyle_compute.dir\route_policy.cc.obj
+[631/1251] Building CXX object src\compute\CMakeFiles\hyle_compute.dir\result.cc.obj
+[632/1251] Building CXX object src\compute\CMakeFiles\hyle_compute.dir\shape_domain.cc.obj
+[633/1251] Building CXX object src\compute\CMakeFiles\hyle_compute.dir\shape_program.cc.obj
+[634/1251] Building CXX object src\compute\CMakeFiles\hyle_compute.dir\tensor_view.cc.obj
+[635/1251] Building CXX object src\compute\CMakeFiles\hyle_compute.dir\transfer.cc.obj
+[636/1251] Building CXX object src\compute\CMakeFiles\hyle_compute.dir\workload.cc.obj
+[637/1251] Building CXX object src\compute_ggml_runtime\CMakeFiles\hyle_compute_ggml_runtime.dir\metadata_arena.cc.obj
+[638/1251] Building CXX object src\compute_ggml_runtime\CMakeFiles\hyle_compute_ggml_runtime.dir\cpu_execution.cc.obj
+[639/1251] Building CXX object src\compute_ggml_runtime\CMakeFiles\hyle_compute_ggml_runtime.dir\cpu_program.cc.obj
+[640/1251] Linking CXX shared module bin\hyle_ggml_cpu_avx2_456172ec_7d4fea280f67f983.dll
+[641/1251] Linking CXX static library bin\ggml.lib
+[642/1251] Building C object _deps\iv\build\runtime\src\iree\hal\drivers\CMakeFiles\iree_hal_drivers_drivers.objects.dir\init.c.obj
+[643/1251] Linking C static library bin\iree_hal_drivers_vulkan_registration_registration.lib
+[644/1251] Linking C static library bin\iree_modules_hal_debugging.lib
+[645/1251] Building C object _deps\iv\build\runtime\src\iree\modules\hal\CMakeFiles\iree_modules_hal_hal.objects.dir\module.c.obj
+[646/1251] Linking C static library bin\iree_modules_hal_utils_buffer_diagnostics.lib
+[647/1251] Building C object _deps\iv\build\runtime\src\iree\vm\bytecode\CMakeFiles\iree_vm_bytecode_module.objects.dir\archive.c.obj
+[648/1251] Building C object _deps\iv\build\runtime\src\iree\vm\bytecode\CMakeFiles\iree_vm_bytecode_module.objects.dir\disassembler.c.obj
+[649/1251] Building C object _deps\iv\build\runtime\src\iree\vm\bytecode\CMakeFiles\iree_vm_bytecode_module.objects.dir\dispatch.c.obj
+[650/1251] Building C object _deps\iv\build\runtime\src\iree\vm\bytecode\CMakeFiles\iree_vm_bytecode_module.objects.dir\module.c.obj
+[651/1251] Building C object _deps\iv\build\runtime\src\iree\vm\bytecode\CMakeFiles\iree_vm_bytecode_module.objects.dir\verifier.c.obj
+[652/1251] Linking C static library bin\iree_vm_bytecode_utils_utils.lib
+[653/1251] Linking CXX static library bin\hyle_compute.lib
+[654/1251] Linking CXX static library bin\hyle_compute_ggml_runtime.lib
+[655/1251] Building CXX object src\compute_provider_ggml_vulkan\CMakeFiles\hyle_compute_provider_ggml_vulkan.dir\native_device.cc.obj
+[656/1251] Building CXX object src\compute_provider_ggml_vulkan\CMakeFiles\hyle_compute_provider_ggml_vulkan.dir\native_graph.cc.obj
+[657/1251] Building CXX object src\compute_provider_ggml_vulkan\CMakeFiles\hyle_compute_provider_ggml_vulkan.dir\region.cc.obj
+[658/1251] Linking C static library bin\iree_hal_drivers_drivers.lib
+[659/1251] Linking C static library bin\iree_modules_hal_hal.lib
+[660/1251] Building C object _deps\iv\build\runtime\src\iree\runtime\CMakeFiles\iree_runtime_impl.objects.dir\call.c.obj
+[661/1251] Building C object _deps\iv\build\runtime\src\iree\runtime\CMakeFiles\iree_runtime_impl.objects.dir\instance.c.obj
+[662/1251] Building C object _deps\iv\build\runtime\src\iree\runtime\CMakeFiles\iree_runtime_impl.objects.dir\session.c.obj
+[663/1251] Linking C static library bin\iree_vm_bytecode_module.lib
+[664/1251] Building CXX object src\time\CMakeFiles\hyle_time.dir\clock.cc.obj
+[665/1251] Building CXX object src\time\CMakeFiles\hyle_time.dir\interop.cc.obj
+[666/1251] Linking CXX static library bin\hyle_compute_provider_ggml_vulkan.lib
+[667/1251] Building CXX object src\compute_provider_iree_vulkan\CMakeFiles\hyle_compute_provider_iree_vulkan.dir\native_device.cc.obj
+[668/1251] Building CXX object src\compute_provider_iree_vulkan\CMakeFiles\hyle_compute_provider_iree_vulkan.dir\native_program.cc.obj
+[669/1251] Building CXX object src\compute_provider_iree_vulkan\CMakeFiles\hyle_compute_provider_iree_vulkan.dir\generated\programs.cc.obj
+[670/1251] Linking C static library bin\iree_runtime_unified.lib
+[671/1251] Building RC object _deps\onednn-build\src\CMakeFiles\dnnl.dir\version.rc.res
+[672/1251] Building CXX object _deps\onednn-build\src\common\CMakeFiles\dnnl_common.dir\batch_normalization.cpp.obj
+[673/1251] Building CXX object _deps\onednn-build\src\common\CMakeFiles\dnnl_common.dir\bfloat16.cpp.obj
+[674/1251] Building CXX object _deps\onednn-build\src\common\CMakeFiles\dnnl_common.dir\binary.cpp.obj
+[675/1251] Building CXX object _deps\onednn-build\src\common\CMakeFiles\dnnl_common.dir\broadcast_strategy.cpp.obj
+[676/1251] Building CXX object _deps\onednn-build\src\common\CMakeFiles\dnnl_common.dir\cache_blob_id.cpp.obj
+[677/1251] Building CXX object _deps\onednn-build\src\common\CMakeFiles\dnnl_common.dir\concat.cpp.obj
+[678/1251] Building CXX object _deps\onednn-build\src\common\CMakeFiles\dnnl_common.dir\convolution.cpp.obj
+[679/1251] Building CXX object _deps\onednn-build\src\common\CMakeFiles\dnnl_common.dir\convolution_pd.cpp.obj
+[680/1251] Building CXX object _deps\onednn-build\src\common\CMakeFiles\dnnl_common.dir\deconvolution.cpp.obj
+[681/1251] Building CXX object _deps\onednn-build\src\common\CMakeFiles\dnnl_common.dir\dnnl_debug.cpp.obj
+[682/1251] Building CXX object _deps\onednn-build\src\common\CMakeFiles\dnnl_common.dir\dnnl_debug_autogenerated.cpp.obj
+[683/1251] Building CXX object _deps\onednn-build\src\common\CMakeFiles\dnnl_common.dir\dnnl_threadpool.cpp.obj
+[684/1251] Building CXX object _deps\onednn-build\src\common\CMakeFiles\dnnl_common.dir\eltwise.cpp.obj
+[685/1251] Building CXX object _deps\onednn-build\src\common\CMakeFiles\dnnl_common.dir\engine.cpp.obj
+[686/1251] Building CXX object _deps\onednn-build\src\common\CMakeFiles\dnnl_common.dir\experimental.cpp.obj
+[687/1251] Building CXX object _deps\onednn-build\src\common\CMakeFiles\dnnl_common.dir\float4.cpp.obj
+[688/1251] Building CXX object _deps\onednn-build\src\common\CMakeFiles\dnnl_common.dir\float8.cpp.obj
+[689/1251] Building CXX object _deps\onednn-build\src\common\CMakeFiles\dnnl_common.dir\fpmath_mode.cpp.obj
+[690/1251] Building CXX object _deps\onednn-build\src\common\CMakeFiles\dnnl_common.dir\gated_mlp_iface.cpp.obj
+[691/1251] Building CXX object _deps\onednn-build\src\common\CMakeFiles\dnnl_common.dir\gemm.cpp.obj
+[692/1251] Building CXX object _deps\onednn-build\src\common\CMakeFiles\dnnl_common.dir\group_normalization.cpp.obj
+[693/1251] Building CXX object _deps\onednn-build\src\common\CMakeFiles\dnnl_common.dir\impl_list_item.cpp.obj
+[694/1251] Building CXX object _deps\onednn-build\src\common\CMakeFiles\dnnl_common.dir\inner_product.cpp.obj
+[695/1251] Building CXX object _deps\onednn-build\src\common\CMakeFiles\dnnl_common.dir\ittnotify.cpp.obj
+[696/1251] Building CXX object _deps\onednn-build\src\common\CMakeFiles\dnnl_common.dir\kernel_cache.cpp.obj
+[697/1251] Building CXX object _deps\onednn-build\src\common\CMakeFiles\dnnl_common.dir\layer_normalization.cpp.obj
+[698/1251] Building CXX object _deps\onednn-build\src\common\CMakeFiles\dnnl_common.dir\lrn.cpp.obj
+[699/1251] Building CXX object _deps\onednn-build\src\common\CMakeFiles\dnnl_common.dir\matmul.cpp.obj
+[700/1251] Building CXX object _deps\onednn-build\src\common\CMakeFiles\dnnl_common.dir\memory.cpp.obj
+[701/1251] Building CXX object _deps\onednn-build\src\common\CMakeFiles\dnnl_common.dir\memory_debug.cpp.obj
+[702/1251] Building CXX object _deps\onednn-build\src\common\CMakeFiles\dnnl_common.dir\memory_desc.cpp.obj
+[703/1251] Building CXX object _deps\onednn-build\src\common\CMakeFiles\dnnl_common.dir\memory_desc_wrapper.cpp.obj
+[704/1251] Building CXX object _deps\onednn-build\src\common\CMakeFiles\dnnl_common.dir\memory_storage.cpp.obj
+[705/1251] Building CXX object _deps\onednn-build\src\common\CMakeFiles\dnnl_common.dir\memory_tracking.cpp.obj
+[706/1251] Building CXX object _deps\onednn-build\src\common\CMakeFiles\dnnl_common.dir\memory_zero_pad.cpp.obj
+[707/1251] Building CXX object _deps\onednn-build\src\common\CMakeFiles\dnnl_common.dir\pooling.cpp.obj
+[708/1251] Building CXX object _deps\onednn-build\src\common\CMakeFiles\dnnl_common.dir\prelu.cpp.obj
+[709/1251] Building CXX object _deps\onednn-build\src\common\CMakeFiles\dnnl_common.dir\primitive_attr.cpp.obj
+[710/1251] Building CXX object _deps\onednn-build\src\common\CMakeFiles\dnnl_common.dir\primitive_attr_quant.cpp.obj
+[711/1251] Building CXX object _deps\onednn-build\src\common\CMakeFiles\dnnl_common.dir\primitive_cache.cpp.obj
+[712/1251] Building CXX object _deps\onednn-build\src\common\CMakeFiles\dnnl_common.dir\primitive_desc_iface.cpp.obj
+[713/1251] Building CXX object _deps\onednn-build\src\common\CMakeFiles\dnnl_common.dir\primitive_exec_types.cpp.obj
+[714/1251] Building CXX object _deps\onednn-build\src\common\CMakeFiles\dnnl_common.dir\primitive_hashing.cpp.obj
+[715/1251] Building CXX object _deps\onednn-build\src\common\CMakeFiles\dnnl_common.dir\primitive_serialization.cpp.obj
+[716/1251] Building CXX object _deps\onednn-build\src\common\CMakeFiles\dnnl_common.dir\query.cpp.obj
+[717/1251] Building CXX object _deps\onednn-build\src\common\CMakeFiles\dnnl_common.dir\reduction.cpp.obj
+[718/1251] Building CXX object _deps\onednn-build\src\common\CMakeFiles\dnnl_common.dir\reorder.cpp.obj
+[719/1251] Building CXX object _deps\onednn-build\src\common\CMakeFiles\dnnl_common.dir\resampling.cpp.obj
+[720/1251] Building CXX object _deps\onednn-build\src\common\CMakeFiles\dnnl_common.dir\rnn.cpp.obj
+[721/1251] Building CXX object _deps\onednn-build\src\common\CMakeFiles\dnnl_common.dir\rw_mutex.cpp.obj
+[722/1251] Building CXX object _deps\onednn-build\src\common\CMakeFiles\dnnl_common.dir\scratchpad.cpp.obj
+[723/1251] Building CXX object _deps\onednn-build\src\common\CMakeFiles\dnnl_common.dir\scratchpad_debug.cpp.obj
+[724/1251] Building CXX object _deps\onednn-build\src\common\CMakeFiles\dnnl_common.dir\sdpa_test_iface.cpp.obj
+[725/1251] Building CXX object _deps\onednn-build\src\common\CMakeFiles\dnnl_common.dir\shuffle.cpp.obj
+[726/1251] Building CXX object _deps\onednn-build\src\common\CMakeFiles\dnnl_common.dir\softmax.cpp.obj
+[727/1251] Building CXX object _deps\onednn-build\src\common\CMakeFiles\dnnl_common.dir\stream.cpp.obj
+[728/1251] Building CXX object _deps\onednn-build\src\common\CMakeFiles\dnnl_common.dir\stream_profiler.cpp.obj
+[729/1251] Building CXX object _deps\onednn-build\src\common\CMakeFiles\dnnl_common.dir\stream_threadpool.cpp.obj
+[730/1251] Building CXX object _deps\onednn-build\src\common\CMakeFiles\dnnl_common.dir\sum.cpp.obj
+[731/1251] Building CXX object _deps\onednn-build\src\common\CMakeFiles\dnnl_common.dir\utils.cpp.obj
+[732/1251] Building CXX object _deps\onednn-build\src\common\CMakeFiles\dnnl_common.dir\verbose.cpp.obj
+[733/1251] Building CXX object _deps\onednn-build\src\common\CMakeFiles\dnnl_common.dir\__\__\hyle-runtime\primitive_iface.cpp.obj
+[734/1251] Building CXX object _deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\bfloat16.cpp.obj
+[735/1251] Building CXX object _deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\binary_injector_utils.cpp.obj
+[736/1251] Building CXX object _deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\cpu_batch_normalization_list.cpp.obj
+[737/1251] Building CXX object _deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\cpu_batch_normalization_utils.cpp.obj
+[738/1251] Building CXX object _deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\cpu_binary_list.cpp.obj
+[739/1251] Building CXX object _deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\cpu_concat.cpp.obj
+[740/1251] Building CXX object _deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\cpu_convolution_list.cpp.obj
+[741/1251] Building CXX object _deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\cpu_deconvolution_list.cpp.obj
+[742/1251] Building CXX object _deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\cpu_eltwise_list.cpp.obj
+[743/1251] Building CXX object _deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\cpu_engine.cpp.obj
+[744/1251] Building CXX object _deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\cpu_group_normalization_list.cpp.obj
+[745/1251] Building CXX object _deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\cpu_inner_product_list.cpp.obj
+[746/1251] Building CXX object _deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\cpu_layer_normalization_list.cpp.obj
+[747/1251] Building CXX object _deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\cpu_lrn_list.cpp.obj
+[748/1251] Building CXX object _deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\cpu_pooling_list.cpp.obj
+[749/1251] Building CXX object _deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\cpu_prelu_list.cpp.obj
+[750/1251] Building CXX object _deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\cpu_reduction_list.cpp.obj
+[751/1251] Building CXX object _deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\cpu_resampling_list.cpp.obj
+[752/1251] Building CXX object _deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\cpu_rnn_list.cpp.obj
+[753/1251] Building CXX object _deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\cpu_shuffle_list.cpp.obj
+[754/1251] Building CXX object _deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\cpu_softmax_list.cpp.obj
+[755/1251] Building CXX object _deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\cpu_sum.cpp.obj
+[756/1251] Building CXX object _deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\float16.cpp.obj
+[757/1251] Building CXX object _deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\gemm_convolution.cpp.obj
+[758/1251] Building CXX object _deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\gemm_convolution_utils.cpp.obj
+[759/1251] Building CXX object _deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\gemm_inner_product.cpp.obj
+[760/1251] Building CXX object _deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\gemm_inner_product_utils.cpp.obj
+[761/1251] Building CXX object _deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\gemm_x8s8s32x_conv_zp_src_pad_comp.cpp.obj
+[762/1251] Building CXX object _deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\gemm_x8s8s32x_convolution.cpp.obj
+[763/1251] Building CXX object _deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\gemm_x8s8s32x_convolution_utils.cpp.obj
+[764/1251] Building CXX object _deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\gemm_x8s8s32x_inner_product.cpp.obj
+[765/1251] Building CXX object _deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\nchw_pooling.cpp.obj
+[766/1251] Building CXX object _deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\ncsp_batch_normalization.cpp.obj
+[767/1251] Building CXX object _deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\ncsp_group_normalization.cpp.obj
+[768/1251] Building CXX object _deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\nhwc_pooling.cpp.obj
+[769/1251] Building CXX object _deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\nspc_batch_normalization.cpp.obj
+[770/1251] Building CXX object _deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\platform.cpp.obj
+[771/1251] Building CXX object _deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\primitive_attr_postops.cpp.obj
+[772/1251] Building CXX object _deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\ref_batch_normalization.cpp.obj
+[773/1251] Building CXX object _deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\ref_binary.cpp.obj
+[774/1251] Building CXX object _deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\ref_convolution.cpp.obj
+[775/1251] Building CXX object _deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\ref_convolution_int8.cpp.obj
+[776/1251] Building CXX object _deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\ref_deconvolution.cpp.obj
+[777/1251] Building CXX object _deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\ref_eltwise.cpp.obj
+[778/1251] Building CXX object _deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\ref_group_normalization.cpp.obj
+[779/1251] Building CXX object _deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\ref_inner_product.cpp.obj
+[780/1251] Building CXX object _deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\ref_inner_product_int8.cpp.obj
+[781/1251] Building CXX object _deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\ref_layer_normalization.cpp.obj
+[782/1251] Building CXX object _deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\ref_lrn.cpp.obj
+[783/1251] Building CXX object _deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\ref_pooling.cpp.obj
+[784/1251] Building CXX object _deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\ref_prelu.cpp.obj
+[785/1251] Building CXX object _deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\ref_reduction.cpp.obj
+[786/1251] Building CXX object _deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\ref_resampling.cpp.obj
+[787/1251] Building CXX object _deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\ref_shuffle.cpp.obj
+[788/1251] Building CXX object _deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\ref_softmax.cpp.obj
+[789/1251] Building CXX object _deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\scale_utils.cpp.obj
+[790/1251] Building CXX object _deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\simple_concat.cpp.obj
+[791/1251] Building CXX object _deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\simple_layer_normalization.cpp.obj
+[792/1251] Building CXX object _deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\simple_resampling.cpp.obj
+[793/1251] Building CXX object _deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\simple_sum.cpp.obj
+[794/1251] Building CXX object _deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\zero_point_utils.cpp.obj
+[795/1251] Building CXX object _deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\gemm\bf16\ref_gemm_bf16.cpp.obj
+[796/1251] Building CXX object _deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\gemm\f32\gemm_utils_f32.cpp.obj
+[797/1251] Building CXX object _deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\gemm\f32\ref_gemm_f32.cpp.obj
+[798/1251] Building CXX object _deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\gemm\gemm.cpp.obj
+[799/1251] Building CXX object _deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\gemm\gemm_pack.cpp.obj
+[800/1251] Building CXX object _deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\gemm\s8x8s32\ref_gemm_s8x8s32.cpp.obj
+[801/1251] Building CXX object _deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\gemm\s8x8s32\simple_gemm_s8s8s32.cpp.obj
+[802/1251] Building CXX object _deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\matmul\cpu_matmul_list.cpp.obj
+[803/1251] Building CXX object _deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\matmul\gemm_bf16_matmul.cpp.obj
+[804/1251] Building CXX object _deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\matmul\gemm_f32_matmul.cpp.obj
+[805/1251] Building CXX object _deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\matmul\gemm_x8s8s32x_matmul.cpp.obj
+[806/1251] Building CXX object _deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\matmul\ref_grouped_gemm.cpp.obj
+[807/1251] Building CXX object _deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\matmul\ref_matmul.cpp.obj
+[808/1251] Building CXX object _deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\matmul\ref_matmul_int8.cpp.obj
+[809/1251] Building CXX object _deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\matmul\ref_sparse_matmul.cpp.obj
+[810/1251] Building CXX object _deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\reorder\cpu_reorder.cpp.obj
+[811/1251] Building CXX object _deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\reorder\cpu_reorder_comp_bf16_s8.cpp.obj
+[812/1251] Building CXX object _deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\reorder\cpu_reorder_comp_f32_s8.cpp.obj
+[813/1251] Building CXX object _deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\reorder\cpu_reorder_comp_s8_s8.cpp.obj
+[814/1251] Building CXX object _deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\reorder\cpu_reorder_regular_bf16.cpp.obj
+[815/1251] Building CXX object _deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\reorder\cpu_reorder_regular_f16.cpp.obj
+[816/1251] Building CXX object _deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\reorder\cpu_reorder_regular_f32_bf16.cpp.obj
+[817/1251] Building CXX object _deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\reorder\cpu_reorder_regular_f32_f16.cpp.obj
+[818/1251] Building CXX object _deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\reorder\cpu_reorder_regular_f32_f32.cpp.obj
+[819/1251] Building CXX object _deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\reorder\cpu_reorder_regular_f32_fp8.cpp.obj
+[820/1251] Building CXX object _deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\reorder\cpu_reorder_regular_f32_s32.cpp.obj
+[821/1251] Building CXX object _deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\reorder\cpu_reorder_regular_f32_s8.cpp.obj
+[822/1251] Building CXX object _deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\reorder\cpu_reorder_regular_f32_u8.cpp.obj
+[823/1251] Building CXX object _deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\reorder\cpu_reorder_regular_fp4.cpp.obj
+[824/1251] Building CXX object _deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\reorder\cpu_reorder_regular_fp8.cpp.obj
+[825/1251] Building CXX object _deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\reorder\cpu_reorder_regular_s32.cpp.obj
+[826/1251] Building CXX object _deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\reorder\cpu_reorder_regular_s4.cpp.obj
+[827/1251] Building CXX object _deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\reorder\cpu_reorder_regular_s8.cpp.obj
+[828/1251] Building CXX object _deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\reorder\cpu_reorder_regular_u4.cpp.obj
+[829/1251] Building CXX object _deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\reorder\cpu_reorder_regular_u8.cpp.obj
+[830/1251] Building CXX object _deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\rnn\brgemm_cell_common.cpp.obj
+[831/1251] Building CXX object _deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\rnn\cell_common.cpp.obj
+[832/1251] Building CXX object _deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\rnn\cell_gru.cpp.obj
+[833/1251] Building CXX object _deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\rnn\cell_gru_lbr.cpp.obj
+[834/1251] Building CXX object _deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\rnn\ref_postgemm_gru.cpp.obj
+[835/1251] Building CXX object _deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\rnn\ref_postgemm_gru_lbr.cpp.obj
+[836/1251] Building CXX object _deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\rnn\ref_postgemm_lstm.cpp.obj
+[837/1251] Building CXX object _deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\rnn\ref_postgemm_lstm_projection.cpp.obj
+[838/1251] Building CXX object _deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\rnn\ref_postgemm_rnn.cpp.obj
+[839/1251] Building CXX object _deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\rnn\ref_rnn.cpp.obj
+[840/1251] Building CXX object _deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\rnn\rnn_utils.cpp.obj
+[841/1251] Building CXX object _deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\ukernel\attr_params.cpp.obj
+[842/1251] Building CXX object _deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\ukernel\brgemm.cpp.obj
+[843/1251] Building CXX object _deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\ukernel\transform.cpp.obj
+[844/1251] Building CXX object _deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\jit_utils\jit_utils.cpp.obj
+[845/1251] Building CXX object _deps\onednn-build\src\cpu\CMakeFiles\dnnl_cpu.dir\jit_utils\linux_perf\linux_perf.cpp.obj
+[846/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\amx_tile_configure.cpp.obj
+[847/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\brgemm\brgemm.cpp.obj
+[848/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\brgemm\brgemm_containers.cpp.obj
+[849/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\brgemm\brgemm_utils.cpp.obj
+[850/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\brgemm\jit_brdgmm_kernel.cpp.obj
+[851/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\brgemm\jit_brgemm_amx_uker.cpp.obj
+[852/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\brgemm\jit_brgemm_kernel.cpp.obj
+[853/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\cpu_barrier.cpp.obj
+[854/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\cpu_isa_traits.cpp.obj
+[855/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\cpu_reducer.cpp.obj
+[856/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\amx\jit_avx512_core_amx_copy_kern.cpp.obj
+[857/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\amx\jit_avx512_core_amx_gemm_kern.cpp.obj
+[858/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\bf16\jit_avx512_core_gemm_bf16bf16f32_kern.cpp.obj
+[859/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\bf16\jit_avx512_core_gemv_bf16bf16f32_kern.cpp.obj
+[860/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\bf16\jit_avx512_core_s16_24x8_copy_an_kern_autogen.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/O2”(用“/Od”)
+[861/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\bf16\jit_avx512_core_s16_24x8_copy_at_kern_autogen.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/O2”(用“/Od”)
+[862/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\bf16\jit_avx512_core_s16_24x8_copy_bn_kern_autogen.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/O2”(用“/Od”)
+[863/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\bf16\jit_avx512_core_s16_24x8_copy_bt_kern_autogen.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/O2”(用“/Od”)
+[864/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\bf16\jit_avx512_core_s16_48x8_copy_an_kern_autogen.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/O2”(用“/Od”)
+[865/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\bf16\jit_avx512_core_s16_48x8_copy_at_kern_autogen.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/O2”(用“/Od”)
+[866/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\bf16\jit_avx512_core_s16_48x8_copy_bn_kern_autogen.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/O2”(用“/Od”)
+[867/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\bf16\jit_avx512_core_s16_48x8_copy_bt_kern_autogen.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/O2”(用“/Od”)
+[868/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\f32\jit_avx2_f32_copy_an_kern_autogen.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/O2”(用“/Od”)
+[869/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\f32\jit_avx2_f32_copy_at_kern_autogen.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/O2”(用“/Od”)
+[870/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\f32\jit_avx2_f32_copy_bn_kern_autogen.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/O2”(用“/Od”)
+[871/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\f32\jit_avx2_f32_copy_bt_kern_autogen.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/O2”(用“/Od”)
+[872/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\f32\jit_avx2_kernel_sgemm_kern.cpp.obj
+[873/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\f32\jit_avx512_common_gemm_f32.cpp.obj
+[874/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\f32\jit_avx512_core_f32_copy_an_kern_autogen.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/O2”(用“/Od”)
+[875/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\f32\jit_avx512_core_f32_copy_at_kern_part1_autogen.cpp.obj
+[876/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\f32\jit_avx512_core_f32_copy_at_kern_part2_autogen.cpp.obj
+[877/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\f32\jit_avx512_core_f32_copy_bn_kern_autogen.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/O2”(用“/Od”)
+[878/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\f32\jit_avx512_core_f32_copy_bt_kern_autogen.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/O2”(用“/Od”)
+[879/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\f32\jit_avx512_core_gemm_smalln_tn_f32_kern.cpp.obj
+[880/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\f32\jit_avx_f32_copy_an_kern_autogen.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/O2”(用“/Od”)
+[881/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\f32\jit_avx_f32_copy_at_kern_autogen.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/O2”(用“/Od”)
+[882/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\f32\jit_avx_f32_copy_bn_kern_autogen.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/O2”(用“/Od”)
+[883/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\f32\jit_avx_f32_copy_bt_kern_autogen.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/O2”(用“/Od”)
+[884/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\f32\jit_avx_gemm_f32.cpp.obj
+[885/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\f32\jit_avx_gemv_t_f32_kern.cpp.obj
+[886/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\f32\jit_avx_kernel_b0_sgemm_kern_part1_autogen.cpp.obj
+[887/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\f32\jit_avx_kernel_b0_sgemm_kern_part2_autogen.cpp.obj
+[888/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\f32\jit_avx_kernel_sgemm_kern_part1_autogen.cpp.obj
+[889/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\f32\jit_avx_kernel_sgemm_kern_part2_autogen.cpp.obj
+[890/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\f32\jit_sse41_f32_copy_an_kern_autogen.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/O2”(用“/Od”)
+[891/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\f32\jit_sse41_f32_copy_at_kern_autogen.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/O2”(用“/Od”)
+[892/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\f32\jit_sse41_f32_copy_bn_kern_autogen.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/O2”(用“/Od”)
+[893/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\f32\jit_sse41_f32_copy_bt_kern_autogen.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/O2”(用“/Od”)
+[894/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\f32\jit_sse41_gemv_n_f32_kern.cpp.obj
+[895/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\f32\jit_sse41_gemv_t_f32_kern.cpp.obj
+[896/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\f32\jit_sse41_kernel_b0_sgemm_kern_autogen.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/O2”(用“/Od”)
+[897/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\f32\jit_sse41_kernel_sgemm_kern_autogen.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/O2”(用“/Od”)
+[898/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\gemm_driver.cpp.obj
+[899/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\gemm_info.cpp.obj
+[900/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\gemm_pack.cpp.obj
+[901/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\gemv_driver.cpp.obj
+[902/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\s8x8s32\jit_avx2_gemm_s8u8s32_kern.cpp.obj
+[903/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\s8x8s32\jit_avx2_u8_copy_an_kern_autogen.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/O2”(用“/Od”)
+[904/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\s8x8s32\jit_avx2_u8_copy_at_kern_autogen.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/O2”(用“/Od”)
+[905/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\s8x8s32\jit_avx2_u8_copy_bn_kern_autogen.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/O2”(用“/Od”)
+[906/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\s8x8s32\jit_avx2_u8_copy_bt_kern_autogen.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/O2”(用“/Od”)
+[907/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\s8x8s32\jit_avx2_u8_copy_sum_an_kern_autogen.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/O2”(用“/Od”)
+[908/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\s8x8s32\jit_avx2_u8_copy_sum_at_kern_autogen.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/O2”(用“/Od”)
+[909/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\s8x8s32\jit_avx2_u8_copy_sum_bn_kern_autogen.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/O2”(用“/Od”)
+[910/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\s8x8s32\jit_avx2_u8_copy_sum_bt_kern_autogen.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/O2”(用“/Od”)
+[911/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\s8x8s32\jit_avx2_vnni_u8_copy_an_kern_autogen.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/O2”(用“/Od”)
+[912/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\s8x8s32\jit_avx2_vnni_u8_copy_at_kern_autogen.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/O2”(用“/Od”)
+[913/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\s8x8s32\jit_avx2_vnni_u8_copy_bn_kern_autogen.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/O2”(用“/Od”)
+[914/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\s8x8s32\jit_avx2_vnni_u8_copy_bt_kern_autogen.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/O2”(用“/Od”)
+[915/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\s8x8s32\jit_avx2_vnni_u8_copy_sum_an_kern_autogen.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/O2”(用“/Od”)
+[916/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\s8x8s32\jit_avx2_vnni_u8_copy_sum_at_kern_autogen.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/O2”(用“/Od”)
+[917/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\s8x8s32\jit_avx2_vnni_u8_copy_sum_bn_kern_autogen.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/O2”(用“/Od”)
+[918/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\s8x8s32\jit_avx2_vnni_u8_copy_sum_bt_kern_autogen.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/O2”(用“/Od”)
+[919/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\s8x8s32\jit_avx512_core_gemm_s8u8s32_kern.cpp.obj
+[920/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\s8x8s32\jit_avx512_core_gemv_s8x8s32.cpp.obj
+[921/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\s8x8s32\jit_avx512_core_kernel_gemv_s8x8s32_kern.cpp.obj
+[922/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\s8x8s32\jit_avx512_core_u8_copy_an_kern_autogen.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/O2”(用“/Od”)
+[923/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\s8x8s32\jit_avx512_core_u8_copy_at_kern_autogen.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/O2”(用“/Od”)
+[924/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\s8x8s32\jit_avx512_core_u8_copy_bn_kern_autogen.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/O2”(用“/Od”)
+[925/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\s8x8s32\jit_avx512_core_u8_copy_bt_kern_autogen.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/O2”(用“/Od”)
+[926/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\s8x8s32\jit_avx512_core_u8_copy_sum_an_kern_autogen.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/O2”(用“/Od”)
+[927/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\s8x8s32\jit_avx512_core_u8_copy_sum_at_kern_autogen.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/O2”(用“/Od”)
+[928/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\s8x8s32\jit_avx512_core_u8_copy_sum_bn_kern_autogen.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/O2”(用“/Od”)
+[929/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\s8x8s32\jit_avx512_core_u8_copy_sum_bt_kern_autogen.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/O2”(用“/Od”)
+[930/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\s8x8s32\jit_avx_kernel_b0_b_gemm_s8u8s32_kern_autogen.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/O2”(用“/Od”)
+[931/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\s8x8s32\jit_avx_kernel_b0_c_gemm_s8u8s32_kern_autogen.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/O2”(用“/Od”)
+[932/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\s8x8s32\jit_avx_kernel_b0_gemm_s8u8s32_kern_autogen.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/O2”(用“/Od”)
+[933/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\s8x8s32\jit_avx_kernel_b0_r_gemm_s8u8s32_kern_autogen.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/O2”(用“/Od”)
+[934/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\s8x8s32\jit_avx_kernel_b_gemm_s8u8s32_kern_autogen.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/O2”(用“/Od”)
+[935/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\s8x8s32\jit_avx_kernel_c_gemm_s8u8s32_kern_autogen.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/O2”(用“/Od”)
+[936/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\s8x8s32\jit_avx_kernel_gemm_s8u8s32_kern_autogen.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/O2”(用“/Od”)
+[937/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\s8x8s32\jit_avx_kernel_r_gemm_s8u8s32_kern_autogen.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/O2”(用“/Od”)
+[938/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\s8x8s32\jit_avx_u8_copy_an_kern_autogen.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/O2”(用“/Od”)
+[939/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\s8x8s32\jit_avx_u8_copy_at_kern_autogen.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/O2”(用“/Od”)
+[940/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\s8x8s32\jit_avx_u8_copy_bn_kern_autogen.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/O2”(用“/Od”)
+[941/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\s8x8s32\jit_avx_u8_copy_bt_kern_autogen.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/O2”(用“/Od”)
+[942/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\s8x8s32\jit_avx_u8_copy_sum_an_kern_autogen.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/O2”(用“/Od”)
+[943/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\s8x8s32\jit_avx_u8_copy_sum_at_kern_autogen.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/O2”(用“/Od”)
+[944/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\s8x8s32\jit_avx_u8_copy_sum_bn_kern_autogen.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/O2”(用“/Od”)
+[945/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\s8x8s32\jit_avx_u8_copy_sum_bt_kern_autogen.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/O2”(用“/Od”)
+[946/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\s8x8s32\jit_sse41_kernel_b0_b_gemm_s8u8s32_kern_autogen.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/O2”(用“/Od”)
+[947/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\s8x8s32\jit_sse41_kernel_b0_c_gemm_s8u8s32_kern_autogen.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/O2”(用“/Od”)
+[948/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\s8x8s32\jit_sse41_kernel_b0_gemm_s8u8s32_kern_autogen.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/O2”(用“/Od”)
+[949/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\s8x8s32\jit_sse41_kernel_b0_r_gemm_s8u8s32_kern_autogen.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/O2”(用“/Od”)
+[950/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\s8x8s32\jit_sse41_kernel_b_gemm_s8u8s32_kern_autogen.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/O2”(用“/Od”)
+[951/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\s8x8s32\jit_sse41_kernel_c_gemm_s8u8s32_kern_autogen.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/O2”(用“/Od”)
+[952/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\s8x8s32\jit_sse41_kernel_gemm_s8u8s32_kern_autogen.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/O2”(用“/Od”)
+[953/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\s8x8s32\jit_sse41_kernel_r_gemm_s8u8s32_kern_autogen.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/O2”(用“/Od”)
+[954/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\s8x8s32\jit_sse41_u8_copy_an_kern_autogen.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/O2”(用“/Od”)
+[955/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\s8x8s32\jit_sse41_u8_copy_at_kern_autogen.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/O2”(用“/Od”)
+[956/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\s8x8s32\jit_sse41_u8_copy_bn_kern_autogen.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/O2”(用“/Od”)
+[957/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\s8x8s32\jit_sse41_u8_copy_bt_kern_autogen.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/O2”(用“/Od”)
+[958/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\s8x8s32\jit_sse41_u8_copy_sum_an_kern_autogen.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/O2”(用“/Od”)
+[959/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\s8x8s32\jit_sse41_u8_copy_sum_at_kern_autogen.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/O2”(用“/Od”)
+[960/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\s8x8s32\jit_sse41_u8_copy_sum_bn_kern_autogen.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/O2”(用“/Od”)
+[961/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm\s8x8s32\jit_sse41_u8_copy_sum_bt_kern_autogen.cpp.obj
+cl: 命令行 warning D9025 :正在重写“/O2”(用“/Od”)
+[962/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm_bf16_convolution.cpp.obj
+[963/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\gemm_bf16_inner_product.cpp.obj
+[964/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\injectors\injector_utils.cpp.obj
+[965/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\injectors\jit_uni_binary_injector.cpp.obj
+[966/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\injectors\jit_uni_eltwise_injector.cpp.obj
+[967/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\injectors\jit_uni_postops_injector.cpp.obj
+[968/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\ip_convolution.cpp.obj
+[969/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\jit_avx2_1x1_conv_kernel_f32.cpp.obj
+[970/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\jit_avx2_1x1_convolution.cpp.obj
+[971/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\jit_avx2_conv_kernel_f32.cpp.obj
+[972/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\jit_avx2_convolution.cpp.obj
+[973/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\jit_avx512_common_1x1_conv_kernel.cpp.obj
+[974/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\jit_avx512_common_1x1_convolution.cpp.obj
+[975/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\jit_avx512_common_conv_kernel.cpp.obj
+[976/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\jit_avx512_common_convolution.cpp.obj
+[977/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\jit_avx512_core_amx_1x1_conv_kernel.cpp.obj
+[978/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\jit_avx512_core_amx_1x1_convolution.cpp.obj
+[979/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\jit_avx512_core_amx_conv_kernel.cpp.obj
+[980/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\jit_avx512_core_amx_convolution.cpp.obj
+[981/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\jit_avx512_core_amx_deconvolution.cpp.obj
+[982/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\jit_avx512_core_bf16_1x1_conv_kernel.cpp.obj
+[983/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\jit_avx512_core_bf16_1x1_convolution.cpp.obj
+[984/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\jit_avx512_core_bf16_conv_kernel.cpp.obj
+[985/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\jit_avx512_core_bf16_convolution.cpp.obj
+[986/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\jit_avx512_core_bf16_dw_conv_kernel.cpp.obj
+[987/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\jit_avx512_core_f16_dw_conv_kernel.cpp.obj
+[988/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\jit_avx512_core_fp16cvt.cpp.obj
+[989/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\jit_avx512_core_fp8cvt.cpp.obj
+[990/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\jit_avx512_core_resampling.cpp.obj
+[991/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\jit_avx512_core_x8s8s32x_1x1_conv_kernel.cpp.obj
+[992/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\jit_avx512_core_x8s8s32x_1x1_convolution.cpp.obj
+[993/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\jit_avx512_core_x8s8s32x_conv_kernel.cpp.obj
+[994/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\jit_avx512_core_x8s8s32x_convolution.cpp.obj
+[995/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\jit_avx512_core_x8s8s32x_deconvolution.cpp.obj
+[996/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\jit_avx512_sparse_decompress_kernel.cpp.obj
+[997/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\jit_brdgmm_dw_conv.cpp.obj
+[998/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\jit_brgemm_1x1_conv.cpp.obj
+[999/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\jit_brgemm_conv.cpp.obj
+[1000/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\jit_brgemm_conv_bwd.cpp.obj
+[1001/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\jit_brgemm_conv_bwd_copy_kernel.cpp.obj
+[1002/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\jit_brgemm_conv_bwd_strided.cpp.obj
+[1003/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\jit_brgemm_conv_bwd_trans_kernel.cpp.obj
+[1004/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\jit_brgemm_conv_bwd_utils.cpp.obj
+[1005/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\jit_brgemm_conv_bwd_w.cpp.obj
+[1006/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\jit_brgemm_conv_comp_pad_kernel.cpp.obj
+[1007/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\jit_brgemm_conv_trans_kernel.cpp.obj
+[1008/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\jit_brgemm_conv_utils.cpp.obj
+[1009/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\jit_brgemm_deconv.cpp.obj
+[1010/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\jit_brgemm_inner_product.cpp.obj
+[1011/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\jit_brgemm_inner_product_utils.cpp.obj
+[1012/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\jit_brgemm_post_ops.cpp.obj
+[1013/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\jit_brgemm_primitive_conf.cpp.obj
+[1014/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\jit_brgemm_transpose_utils.cpp.obj
+[1015/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\jit_gemm_inner_product_utils.cpp.obj
+[1016/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\jit_gemm_x8s8s32x_conv_zp_src_pad_comp.cpp.obj
+[1017/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\jit_gemm_x8s8s32x_convolution_utils.cpp.obj
+[1018/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\jit_generator.cpp.obj
+[1019/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\jit_sse41_1x1_conv_kernel_f32.cpp.obj
+[1020/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\jit_sse41_1x1_convolution.cpp.obj
+[1021/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\jit_sse41_conv_kernel_f32.cpp.obj
+[1022/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\jit_sse41_convolution.cpp.obj
+[1023/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\jit_transpose_utils.cpp.obj
+[1024/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\jit_uni_batch_normalization.cpp.obj
+[1025/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\jit_uni_batch_normalization_s8.cpp.obj
+[1026/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\jit_uni_binary.cpp.obj
+[1027/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\jit_uni_binary_kernel.cpp.obj
+[1028/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\jit_uni_convert_xf16.cpp.obj
+[1029/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\jit_uni_deconv_zp_pad_str_kernel.cpp.obj
+[1030/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\jit_uni_dw_conv_kernel_f32.cpp.obj
+[1031/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\jit_uni_dw_conv_kernel_utils.cpp.obj
+[1032/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\jit_uni_dw_convolution.cpp.obj
+[1033/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\jit_uni_eltwise.cpp.obj
+[1034/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\jit_uni_eltwise_int.cpp.obj
+[1035/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\jit_uni_group_normalization.cpp.obj
+[1036/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\jit_uni_i8i8_pooling.cpp.obj
+[1037/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\jit_uni_instance_normalization.cpp.obj
+[1038/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\jit_uni_layer_normalization.cpp.obj
+[1039/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\jit_uni_ncsp_convolution.cpp.obj
+[1040/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\jit_uni_pool_kernel.cpp.obj
+[1041/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\jit_uni_pooling.cpp.obj
+[1042/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\jit_uni_reduction.cpp.obj
+[1043/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\jit_uni_reduction_kernel.cpp.obj
+[1044/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\jit_uni_reorder.cpp.obj
+[1045/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\jit_uni_reorder_direct_copy.cpp.obj
+[1046/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\jit_uni_reorder_utils.cpp.obj
+[1047/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\jit_uni_resampling.cpp.obj
+[1048/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\jit_uni_resampling_kernel.cpp.obj
+[1049/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\jit_uni_softmax.cpp.obj
+[1050/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\jit_uni_tbb_batch_normalization.cpp.obj
+[1051/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\jit_uni_x8s8s32x_1x1_conv_kernel.cpp.obj
+[1052/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\jit_uni_x8s8s32x_1x1_convolution.cpp.obj
+[1053/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\jit_uni_x8s8s32x_conv_kernel.cpp.obj
+[1054/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\jit_uni_x8s8s32x_convolution.cpp.obj
+[1055/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\jit_uni_x8s8s32x_deconvolution.cpp.obj
+[1056/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\jit_uni_xf16_sum.cpp.obj
+[1057/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\lrn\jit_avx512_common_lrn.cpp.obj
+[1058/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\lrn\jit_avx512_common_lrn_bwd_base.cpp.obj
+[1059/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\lrn\jit_avx512_common_lrn_bwd_blocked.cpp.obj
+[1060/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\lrn\jit_avx512_common_lrn_bwd_nhwc.cpp.obj
+[1061/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\lrn\jit_avx512_common_lrn_fwd_base.cpp.obj
+[1062/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\lrn\jit_avx512_common_lrn_fwd_blocked.cpp.obj
+[1063/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\lrn\jit_avx512_common_lrn_fwd_nhwc.cpp.obj
+[1064/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\lrn\jit_uni_lrn.cpp.obj
+[1065/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\lrn\jit_uni_lrn_kernel.cpp.obj
+[1066/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\matmul\amx_blocking_heuristics.cpp.obj
+[1067/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\matmul\brgemm_matmul.cpp.obj
+[1068/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\matmul\brgemm_matmul_copy_utils.cpp.obj
+[1069/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\matmul\brgemm_matmul_reorders.cpp.obj
+[1070/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\matmul\brgemm_matmul_utils.cpp.obj
+[1071/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\matmul\jit_brgemm_matmul_per_mn_comp.cpp.obj
+[1072/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\matmul\jit_uni_sparse_matmul.cpp.obj
+[1073/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\matmul_inner_product.cpp.obj
+[1074/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\platform.cpp.obj
+[1075/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\prelu\jit_prelu_backward.cpp.obj
+[1076/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\prelu\jit_prelu_base_kernel.cpp.obj
+[1077/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\prelu\jit_prelu_forward.cpp.obj
+[1078/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\prelu\jit_prelu_reduction_kernel.cpp.obj
+[1079/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\prelu\jit_prelu_utils.cpp.obj
+[1080/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\prelu\jit_uni_prelu_backward_kernel.cpp.obj
+[1081/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\prelu\jit_uni_prelu_forward_kernel.cpp.obj
+[1082/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\rnn\brgemm_cell_common_bwd.cpp.obj
+[1083/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\rnn\brgemm_cell_common_fwd.cpp.obj
+[1084/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\rnn\brgemm_cell_common_reorders.cpp.obj
+[1085/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\rnn\brgemm_cell_common_utils.cpp.obj
+[1086/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\rnn\jit_brgemm_transpose_single_row.cpp.obj
+[1087/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\rnn\jit_diff_weights_peephole.cpp.obj
+[1088/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\rnn\jit_gates_reduction.cpp.obj
+[1089/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\rnn\rnn_brgemm_utils.cpp.obj
+[1090/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\shuffle\jit_uni_shuffle.cpp.obj
+[1091/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\shuffle\jit_uni_shuffle_kernel.cpp.obj
+[1092/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\ukernel\attr_params.cpp.obj
+[1093/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\ukernel\brgemm.cpp.obj
+[1094/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\ukernel\transform.cpp.obj
+[1095/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\utils\jit_io_helper.cpp.obj
+[1096/1251] Building CXX object _deps\onednn-build\src\cpu\x64\CMakeFiles\dnnl_cpu_x64.dir\utils\jit_regops.cpp.obj
+[1097/1251] Linking CXX static library bin\hyle_time.lib
+[1098/1251] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\runtime.cc.obj
+[1099/1251] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\ops\dispatch_ops.cc.obj
+[1100/1251] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\random\random_dispatch.cc.obj
+[1101/1251] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\search\search_dispatch.cc.obj
+[1102/1251] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\narrow\narrow_dispatch.cc.obj
+[1103/1251] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\scan\scan_dispatch.cc.obj
+[1104/1251] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\dtype\dtype_dispatch.cc.obj
+[1105/1251] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\dtype\cvt_fp8_scalar.cc.obj
+[1106/1251] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\math\math_dispatch.cc.obj
+[1107/1251] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\math\transcendental_scalar.cc.obj
+[1108/1251] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\math\activations.cc.obj
+[1109/1251] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\sort\sort_dispatch.cc.obj
+[1110/1251] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\sort\top_k.cc.obj
+[1111/1251] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\sort\vqsort_scalar.cc.obj
+[1112/1251] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\sort\radix_sort.cc.obj
+[1113/1251] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\bitpack\bitpack_dispatch.cc.obj
+[1114/1251] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\ops\dot_f16c.cc.obj
+[1115/1251] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\ops\dot_avx_vnni.cc.obj
+[1116/1251] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\ops\dot_avx512_vnni.cc.obj
+[1117/1251] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\ops\dot_avx512bf16.cc.obj
+[1118/1251] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\dtype\cvt_f16c.cc.obj
+[1119/1251] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\dtype\cvt_avx512bf16.cc.obj
+[1120/1251] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\math\transcendental_highway.cc.obj
+[1121/1251] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\sort\vqsort_hyle_avx2.cc.obj
+[1122/1251] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\math\transcendental_highway_avx512.cc.obj
+[1123/1251] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\ops\ops_scalar.cc.obj
+[1124/1251] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\ops\ops_sse4.cc.obj
+[1125/1251] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\ops\ops_avx2.cc.obj
+[1126/1251] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\ops\ops_avx512.cc.obj
+[1127/1251] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\dtype_convert\dtype_convert_scalar.cc.obj
+[1128/1251] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\dtype_convert\dtype_convert_sse4.cc.obj
+[1129/1251] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\dtype_convert\dtype_convert_avx2.cc.obj
+[1130/1251] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\dtype_convert\dtype_convert_avx512.cc.obj
+[1131/1251] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\scan\scan_scalar.cc.obj
+[1132/1251] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\scan\scan_sse4.cc.obj
+[1133/1251] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\scan\scan_avx2.cc.obj
+[1134/1251] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\scan\scan_avx512.cc.obj
+[1135/1251] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\random\random_scalar.cc.obj
+[1136/1251] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\random\random_sse4.cc.obj
+[1137/1251] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\random\random_avx2.cc.obj
+[1138/1251] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\random\random_avx512.cc.obj
+[1139/1251] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\search\search_scalar.cc.obj
+[1140/1251] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\search\search_sse4.cc.obj
+[1141/1251] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\search\search_avx2.cc.obj
+[1142/1251] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\search\search_avx512.cc.obj
+[1143/1251] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\narrow\narrow_scalar.cc.obj
+[1144/1251] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\narrow\narrow_sse4.cc.obj
+[1145/1251] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\narrow\narrow_avx2.cc.obj
+[1146/1251] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\narrow\narrow_avx512.cc.obj
+[1147/1251] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\bitpack\bitpack_scalar.cc.obj
+[1148/1251] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\bitpack\bitpack_sse4.cc.obj
+[1149/1251] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\bitpack\bitpack_avx2.cc.obj
+[1150/1251] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\bitpack\bitpack_avx512.cc.obj
+[1151/1251] Building CXX object src\container\CMakeFiles\hyle_container.dir\hash.cc.obj
+[1152/1251] Building CXX object src\container\CMakeFiles\hyle_container.dir\pod_vector.cc.obj
+[1153/1251] Building CXX object src\container\CMakeFiles\hyle_container.dir\flat_hash_map.cc.obj
+[1154/1251] Building CXX object src\container\CMakeFiles\hyle_container.dir\dynamic_bitset.cc.obj
+[1155/1251] Building CXX object src\container\CMakeFiles\hyle_container.dir\hash_xxh3_avx2.cc.obj
+[1156/1251] Building CXX object src\container\CMakeFiles\hyle_container.dir\generated\simd-dispatch\container_bitset\container_bitset_scalar.cc.obj
+[1157/1251] Building CXX object src\container\CMakeFiles\hyle_container.dir\generated\simd-dispatch\container_bitset\container_bitset_sse4.cc.obj
+[1158/1251] Building CXX object src\container\CMakeFiles\hyle_container.dir\generated\simd-dispatch\container_bitset\container_bitset_avx2.cc.obj
+[1159/1251] Building CXX object src\compute_backend_cpu\CMakeFiles\hyle_compute_backend_cpu.dir\cpu_backend.cc.obj
+[1160/1251] Linking CXX static library bin\hyle_compute_provider_iree_vulkan.lib
+[1161/1251] Linking CXX static library bin\dnnl.lib
+[1162/1251] Building CXX object src\platform_fs\CMakeFiles\hyle_platform_fs.dir\fs.cc.obj
+[1163/1251] Linking CXX static library bin\hyle_simd.lib
+[1164/1251] Linking CXX static library bin\hyle_container.lib
+[1165/1251] Building CXX object src\graph\CMakeFiles\hyle_graph.dir\graph.cc.obj
+[1166/1251] Building CXX object src\graph\CMakeFiles\hyle_graph.dir\effect_order.cc.obj
+[1167/1251] Building CXX object src\graph\CMakeFiles\hyle_graph.dir\executable.cc.obj
+[1168/1251] Building CXX object src\graph\CMakeFiles\hyle_graph.dir\view_domain.cc.obj
+[1169/1251] Building CXX object src\graph\CMakeFiles\hyle_graph.dir\constant_artifact.cc.obj
+[1170/1251] Building CXX object src\graph\CMakeFiles\hyle_graph.dir\leased_invocation.cc.obj
+[1171/1251] Building CXX object src\graph\CMakeFiles\hyle_graph.dir\lease_submission.cc.obj
+[1172/1251] Building CXX object src\compute_provider_onednn\CMakeFiles\hyle_compute_provider_onednn.dir\brgemm_internal.cc.obj
+[1173/1251] Building CXX object src\compute_provider_onednn\CMakeFiles\hyle_compute_provider_onednn.dir\normalization_internal.cc.obj
+cl: 命令行 warning D9025 :正在重写“/EHc”(用“/EHc-”)
+[1174/1251] Building CXX object src\compute_provider_onednn\CMakeFiles\hyle_compute_provider_onednn.dir\onednn_provider.cc.obj
+[1175/1251] Linking CXX static library bin\hyle_compute_backend_cpu.lib
+[1176/1251] Building CXX object src\compute_provider_ggml\CMakeFiles\hyle_compute_provider_ggml.dir\ggml_cpu_provider.cc.obj
+[1177/1251] Building CXX object src\compute_provider_ggml\CMakeFiles\hyle_compute_provider_ggml.dir\standard_index.cc.obj
+[1178/1251] Building CXX object src\compute_provider_native\CMakeFiles\hyle_compute_provider_native.dir\aten_cpu_provider.cc.obj
+[1179/1251] Building CXX object src\compute_provider_native\CMakeFiles\hyle_compute_provider_native.dir\cast.cc.obj
+[1180/1251] Building CXX object src\compute_provider_native\CMakeFiles\hyle_compute_provider_native.dir\default_rules.cc.obj
+[1181/1251] Building CXX object src\compute_provider_native\CMakeFiles\hyle_compute_provider_native.dir\ds4_quantization.cc.obj
+[1182/1251] Building CXX object src\compute_provider_native\CMakeFiles\hyle_compute_provider_native.dir\elementwise.cc.obj
+[1183/1251] Building CXX object src\compute_provider_native\CMakeFiles\hyle_compute_provider_native.dir\indexing.cc.obj
+[1184/1251] Building CXX object src\compute_provider_native\CMakeFiles\hyle_compute_provider_native.dir\native_provider.cc.obj
+[1185/1251] Building CXX object src\compute_provider_native\CMakeFiles\hyle_compute_provider_native.dir\normalization.cc.obj
+[1186/1251] Building CXX object src\compute_provider_native\CMakeFiles\hyle_compute_provider_native.dir\reduction.cc.obj
+[1187/1251] Building CXX object src\compute_provider_native\CMakeFiles\hyle_compute_provider_native.dir\transform.cc.obj
+[1188/1251] Building CXX object src\compute_provider_native\CMakeFiles\hyle_compute_provider_native.dir\transformer.cc.obj
+[1189/1251] Building CXX object src\compute_provider_native\CMakeFiles\hyle_compute_provider_native.dir\torch_cpu_program.cc.obj
+[1190/1251] Generating shaders/vulkan_shaders.cc, shaders/vulkan_shaders.h
+C:\public\project-hyle\hyle\src\compute_route_vulkan\shaders\tensor.comp
+C:\public\project-hyle\hyle\src\compute_route_vulkan\shaders\tensor.comp
+C:\public\project-hyle\hyle\src\compute_route_vulkan\shaders\integer_scan.comp
+C:\public\project-hyle\hyle\src\compute_route_vulkan\shaders\tensor.comp
+C:\public\project-hyle\hyle\src\compute_route_vulkan\shaders\tensor.comp
+C:\public\project-hyle\hyle\src\compute_route_vulkan\shaders\tensor.comp
+C:\public\project-hyle\hyle\src\compute_route_vulkan\shaders\tensor.comp
+[1191/1251] Building CXX object src\platform_thread\CMakeFiles\hyle_platform_thread.dir\thread.cc.obj
+[1192/1251] Building CXX object src\platform_thread\CMakeFiles\hyle_platform_thread.dir\wait.cc.obj
+[1193/1251] Linking CXX static library bin\hyle_platform_fs.lib
+[1194/1251] Building CXX object src\mem_vm\CMakeFiles\hyle_mem_vm.dir\mapping.cc.obj
+[1195/1251] Building CXX object src\mem_vm\CMakeFiles\hyle_mem_vm.dir\file_mapping.cc.obj
+[1196/1251] Building CXX object src\mem_vm\CMakeFiles\hyle_mem_vm.dir\shared_mapping.cc.obj
+[1197/1251] Linking CXX static library bin\hyle_graph.lib
+[1198/1251] Linking CXX static library bin\hyle_compute_provider_onednn.lib
+[1199/1251] Linking CXX static library bin\hyle_compute_provider_ggml.lib
+[1200/1251] Building CXX object src\graph_provider_onednn\CMakeFiles\hyle_graph_provider_onednn.dir\onednn_region_provider.cc.obj
+[1201/1251] Linking CXX static library bin\hyle_compute_provider_native.lib
+[1202/1251] Building CXX object src\compute_route_cpu\CMakeFiles\hyle_compute_route_cpu.dir\cpu_context.cc.obj
+[1203/1251] Building CXX object src\compute_route_cpu\CMakeFiles\hyle_compute_route_cpu.dir\default_policy.cc.obj
+[1204/1251] Building CXX object src\compute_route_vulkan\CMakeFiles\hyle_compute_route_vulkan.dir\vulkan_device.cc.obj
+[1205/1251] Building CXX object src\compute_route_vulkan\CMakeFiles\hyle_compute_route_vulkan.dir\vulkan_memory.cc.obj
+[1206/1251] Building CXX object src\compute_route_vulkan\CMakeFiles\hyle_compute_route_vulkan.dir\vulkan_leased_invocation.cc.obj
+[1207/1251] Building CXX object src\compute_route_vulkan\CMakeFiles\hyle_compute_route_vulkan.dir\vulkan_run.cc.obj
+[1208/1251] Building CXX object src\compute_route_vulkan\CMakeFiles\hyle_compute_route_vulkan.dir\vulkan_transfer.cc.obj
+[1209/1251] Building CXX object src\compute_route_vulkan\CMakeFiles\hyle_compute_route_vulkan.dir\vulkan_transfer_slot.cc.obj
+[1210/1251] Building CXX object src\compute_route_vulkan\CMakeFiles\hyle_compute_route_vulkan.dir\vulkan_weights.cc.obj
+[1211/1251] Building CXX object src\compute_route_vulkan\CMakeFiles\hyle_compute_route_vulkan.dir\vulkan_pipeline.cc.obj
+[1212/1251] Building CXX object src\compute_route_vulkan\CMakeFiles\hyle_compute_route_vulkan.dir\vulkan_operations.cc.obj
+[1213/1251] Building CXX object src\compute_route_vulkan\CMakeFiles\hyle_compute_route_vulkan.dir\vulkan_tensor.cc.obj
+[1214/1251] Building CXX object src\compute_route_vulkan\CMakeFiles\hyle_compute_route_vulkan.dir\vulkan_program.cc.obj
+[1215/1251] Building CXX object src\compute_route_vulkan\CMakeFiles\hyle_compute_route_vulkan.dir\vulkan_recorder.cc.obj
+[1216/1251] Building CXX object src\compute_route_vulkan\CMakeFiles\hyle_compute_route_vulkan.dir\vulkan_region.cc.obj
+[1217/1251] Building CXX object src\compute_route_vulkan\CMakeFiles\hyle_compute_route_vulkan.dir\vulkan_scatter.cc.obj
+[1218/1251] Building CXX object src\compute_route_vulkan\CMakeFiles\hyle_compute_route_vulkan.dir\vulkan_normalization.cc.obj
+[1219/1251] Building CXX object src\compute_route_vulkan\CMakeFiles\hyle_compute_route_vulkan.dir\vulkan_reduction.cc.obj
+[1220/1251] Building CXX object src\compute_route_vulkan\CMakeFiles\hyle_compute_route_vulkan.dir\vulkan_elementwise.cc.obj
+[1221/1251] Building CXX object src\compute_route_vulkan\CMakeFiles\hyle_compute_route_vulkan.dir\vulkan_iree.cc.obj
+[1222/1251] Building CXX object src\compute_route_vulkan\CMakeFiles\hyle_compute_route_vulkan.dir\vulkan_mlx.cc.obj
+[1223/1251] Building CXX object src\compute_route_vulkan\CMakeFiles\hyle_compute_route_vulkan.dir\vulkan_official.cc.obj
+[1224/1251] Building CXX object src\compute_route_vulkan\CMakeFiles\hyle_compute_route_vulkan.dir\vulkan_iq1.cc.obj
+[1225/1251] Building CXX object src\compute_route_vulkan\CMakeFiles\hyle_compute_route_vulkan.dir\shaders\vulkan_shaders.cc.obj
+[1226/1251] Linking CXX static library bin\hyle_platform_thread.lib
+[1227/1251] Linking CXX static library bin\hyle_mem_vm.lib
+[1228/1251] Building CXX object src\sched\CMakeFiles\hyle_sched.dir\fiber.cc.obj
+[1229/1251] Building CXX object src\sched\CMakeFiles\hyle_sched.dir\scheduler.cc.obj
+[1230/1251] Building CXX object src\sched\CMakeFiles\hyle_sched.dir\sync.cc.obj
+[1231/1251] Building CXX object src\sched\CMakeFiles\hyle_sched.dir\join.cc.obj
+[1232/1251] Building CXX object src\sched\CMakeFiles\hyle_sched.dir\blocking.cc.obj
+[1233/1251] Building CXX object src\sched\CMakeFiles\hyle_sched.dir\cancel.cc.obj
+[1234/1251] Building CXX object src\sched\CMakeFiles\hyle_sched.dir\task_scope.cc.obj
+[1235/1251] Building CXX object src\sched\CMakeFiles\hyle_sched.dir\bulk.cc.obj
+[1236/1251] Building ASM_MASM object src\sched\CMakeFiles\hyle_sched.dir\__\__\third_party\fcontext\asm\jump_x86_64_ms_pe_masm.asm.obj
+Microsoft (R) Macro Assembler (x64) Version 14.50.35728.0
+Copyright (C) Microsoft Corporation.  All rights reserved.
+
+ Assembling: C:\public\project-hyle\hyle\third_party\fcontext\asm\jump_x86_64_ms_pe_masm.asm
+[1237/1251] Building ASM_MASM object src\sched\CMakeFiles\hyle_sched.dir\__\__\third_party\fcontext\asm\make_x86_64_ms_pe_masm.asm.obj
+Microsoft (R) Macro Assembler (x64) Version 14.50.35728.0
+Copyright (C) Microsoft Corporation.  All rights reserved.
+
+ Assembling: C:\public\project-hyle\hyle\third_party\fcontext\asm\make_x86_64_ms_pe_masm.asm
+[1238/1251] Building ASM_MASM object src\sched\CMakeFiles\hyle_sched.dir\__\__\third_party\fcontext\asm\ontop_x86_64_ms_pe_masm.asm.obj
+Microsoft (R) Macro Assembler (x64) Version 14.50.35728.0
+Copyright (C) Microsoft Corporation.  All rights reserved.
+
+ Assembling: C:\public\project-hyle\hyle\third_party\fcontext\asm\ontop_x86_64_ms_pe_masm.asm
+[1239/1251] Linking CXX static library bin\hyle_graph_provider_onednn.lib
+[1240/1251] Linking CXX static library bin\hyle_compute_route_cpu.lib
+[1241/1251] Building CXX object src\graph_route_cpu\CMakeFiles\hyle_graph_route_cpu.dir\cpu_context.cc.obj
+[1242/1251] Building CXX object src\graph_route_cpu\CMakeFiles\hyle_graph_route_cpu.dir\ggml_region.cc.obj
+[1243/1251] Linking CXX static library bin\hyle_compute_route_vulkan.lib
+[1244/1251] Building CXX object src\graph_route_vulkan\CMakeFiles\hyle_graph_route_vulkan.dir\vulkan_lowering.cc.obj
+[1245/1251] Linking CXX static library bin\hyle_sched.lib
+[1246/1251] Linking CXX static library bin\hyle_graph_route_cpu.lib
+[1247/1251] Linking CXX static library bin\hyle_graph_route_vulkan.lib
+[1248/1251] Building CXX object src\graph_route_cpu_vulkan\CMakeFiles\hyle_graph_route_cpu_vulkan.dir\compile.cc.obj
+[1249/1251] Building CXX object src\graph_route_cpu_vulkan\CMakeFiles\hyle_graph_route_cpu_vulkan.dir\invocation.cc.obj
+[1250/1251] Linking CXX static library bin\hyle_graph_route_cpu_vulkan.lib

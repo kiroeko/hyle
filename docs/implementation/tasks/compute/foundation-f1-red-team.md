@@ -29,7 +29,7 @@ F1 允许的 include/src/cmake diff。已关闭 Mem/Provider/lowerer 的实现�
 | ID / severity | Finding | Disposition / 证据 |
 |---|---|---|
 | RT-01 LOW docs | 新 API 矩阵漏列 CUDA `into_lease_pool` 与 Apple `Program::input_count`，不能称“全部入口已反映” | 已补矩阵；input_count 由 native leased create 的容量准备消费；into_lease_pool 的原 native owning/rejection/free 用例已在 instrumented CUDA log PASS，相关产品 scope 与 candidate 相同；没有产品修改 |
-| RT-02 MEDIUM evidence | Windows CPU+Vulkan static 组合、Windows CPU+CUDA installed mixed 与 Air native Vulkan/控制格未逐一取证；不能由单路线或不同 OS 签整包 | OPEN；当前卡冻结精确入口并串行执行，失败日志保留。矩阵保持 UNPROVEN，完成后只附实际收据，不重开源码审查 |
+| RT-02 MEDIUM evidence | Windows CPU+Vulkan static 组合、Windows CPU+CUDA installed mixed 与 Air native Vulkan/控制格未逐一取证；不能由单路线或不同 OS 签整包 | PARTIAL/OPEN；CPU+Vulkan static ordinary/mixed 已实际通过并留原配置失败；CPU+CUDA 与 Air 格仍按冻结入口运行，未验保持 UNPROVEN，不重开源码审查 |
 | RT-03 LOW docs | 早期子收据的 pending/owners AUDITED 句子属于历史候选，不是当前阶段或新授权 | 当前阶段只看 registry 的 CANDIDATE 和当前矩阵；保留旧收据原事实，最终当前交付 aggregate/guide 的措辞随真实结果更新 |
 
 源码部分审查通过，未发现需要把 candidate 退回 AUDITED 的产品问题。

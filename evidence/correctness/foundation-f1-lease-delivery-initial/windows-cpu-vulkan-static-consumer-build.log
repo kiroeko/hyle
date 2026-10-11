@@ -1,0 +1,6 @@
+[1/6] C:\WINDOWS\system32\cmd.exe /C "cd /D C:\h7\foundation-f1-sdk\w-cpu-vulkan-static-consumer && "C:\Program Files\CMake\bin\cmake.exe" -P C:/h7/foundation-f1-sdk/w-cpu-vulkan-static-consumer/hyle-runtime/leases-Release.cmake"
+[2/6] C:\WINDOWS\system32\cmd.exe /C "cd /D C:\h7\foundation-f1-sdk\w-cpu-vulkan-static-consumer && "C:\Program Files\CMake\bin\cmake.exe" -P C:/h7/foundation-f1-sdk/w-cpu-vulkan-static-consumer/hyle-runtime/mixed-Release.cmake"
+[3/6] Building CXX object CMakeFiles\leases.dir\C_\public\project-hyle\hyle\samples\package\graph\resource_leases\main.cc.obj
+[4/6] Building CXX object CMakeFiles\mixed.dir\C_\public\project-hyle\hyle\tests\graph\cpu_vulkan_contracts.cc.obj
+[5/6] Linking CXX executable leases.exe
+[6/6] Linking CXX executable mixed.exe

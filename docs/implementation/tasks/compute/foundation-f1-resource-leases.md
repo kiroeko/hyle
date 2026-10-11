@@ -700,6 +700,11 @@ build1/test1，阶段前4GiB；与 WSL SDK/fault 重型 run 串行。安装到�
 保留原 configure log/job，runner 仅补相同 SDK 的进程级 `VULKAN_SDK/PATH` 后续同 producer configure，
 不清日志/换版本/重置预算。该设置同时用于独立 SDK consumer 的 native dependency discovery。
 
+同一 `3095e038a` producer 在补入相同 SDK 路径后 configure/build、install、实际迁址、独立 consumer
+configure/build、ordinary lease math 与原 CPU+Vulkan mixed consumer 全部通过。
+交付收据保留原 configure 退出1、后续全部阶段、EXE-local DLL hash 与 system-only runtime PATH；
+static managed ReadLease bind、取消/放弃与 accepted CPU prefix refusal 不再由 Vulkan-only consumer 代签。
+
 ### 平台/组合剩余精确格
 
 矩阵不以“没有单独运行”当作“已运行”：Windows 已迁址 CPU+CUDA static SDK（普通消费者已通过）
