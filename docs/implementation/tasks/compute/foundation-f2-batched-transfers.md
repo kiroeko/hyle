@@ -398,6 +398,10 @@ QueueWaitIdle观察持续装饰OOM，验证unknown不发布、不复用、保留
 原生prefix晚失败使已排队copy零native copy/不发布，旧成功ready仍可读，实际metadata/uses归零。
 仅原两测试文件维护，不改产品candidate/API/runtime，不增加kernel。Windows Vulkan及Air两
 native树build1/test1/4GiB，build1800/test120；Air运行前读实际身份，重型严格串行，预算不重置。
+首测试点de11365a9的Windows构建通过，fixture将原blocking wait误当作unknown时立即返回，
+测试进程120秒TIMEOUT；原日志保留。修正fixture为非阻塞collect诊断及独立观察线程的实际
+wait/drain握手：持续unknown期间确认wait未返回、uses仍在，恢复原观察后才join/退休并保留
+首错。pending output按现有Unavailable合同断言；不改变产品、不放宽门、不重置预算。
 
 WSL当前Vulkan loader实际仅枚举llvmpipe，按原卡条件记NO_QUALIFIED_GPU，GPU数学/native不运行。
 原CPU/Vulkan installed static/shared的构建、真实迁址、普通consumer编译、七安装头/Vulkan ON、

@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 
 #include <array>
+#include <atomic>
 #include <chrono>
 #include <string>
 #include <thread>
@@ -201,8 +202,8 @@ TEST(VulkanCopyProgram, AbandonedHandlesKeepOriginalRunsUntilActualRetirementAnd
 struct UnknownObservation final {
   d::Device &device;
   d::DeviceFunctions original;
-  bool armed = false;
-  unsigned polls = 0, waits = 0, drains = 0;
+  std::atomic<bool> armed{false};
+  std::atomic<unsigned> polls{0}, waits{0}, drains{0};
   static inline UnknownObservation *active = nullptr;
   explicit UnknownObservation(const v::Context &context)
       : device(*d::Access::runtime(context)->device), original(device.fn) {
@@ -242,10 +243,10 @@ TEST(VulkanCopyProgram, UnknownFenceAndDrainKeepUsesUntilActualRetirementWithout
     auto submitted = invocation.submit().value();
     UnknownObservation boundary(context); boundary.armed = true;
     auto unavailable = submitted.output({2}, {3}, 0, 32);
-    ASSERT_FALSE(unavailable); EXPECT_TRUE(unavailable.error().IsResourceExhausted());
-    EXPECT_TRUE(submitted.wait().IsResourceExhausted());
+    ASSERT_FALSE(unavailable); EXPECT_TRUE(unavailable.error().IsUnavailable());
+    EXPECT_TRUE(context.collect().IsResourceExhausted());
     EXPECT_TRUE(submitted.in_flight()); EXPECT_FALSE(invocation.reset().ok());
-    EXPECT_GT(boundary.polls, 0u); EXPECT_GT(boundary.waits, 0u); EXPECT_GT(boundary.drains, 0u);
+    EXPECT_GT(boundary.polls.load(), 0u);
     EXPECT_GT(metadata.used(), 0u);
     for (auto &pool : data.pools) EXPECT_GT(pool.stats().active_uses, 0u);
     if (abandon) {
@@ -254,12 +255,20 @@ TEST(VulkanCopyProgram, UnknownFenceAndDrainKeepUsesUntilActualRetirementWithout
       EXPECT_NE(d::Access::runtime(context)->pending, nullptr);
       EXPECT_GT(metadata.used(), 0u);
       for (auto &pool : data.pools) EXPECT_GT(pool.stats().active_uses, 0u);
-    }
-    boundary.armed = false;
-    if (abandon) {
+      EXPECT_GT(boundary.drains.load(), 0u);
+      boundary.armed = false;
       EXPECT_TRUE(context.close().IsResourceExhausted());
     } else {
-      EXPECT_TRUE(submitted.wait().IsResourceExhausted());
+      std::atomic<bool> returned{false}; hyle::Status terminal;
+      std::thread observer([&] { terminal = submitted.wait(); returned.store(true, std::memory_order_release); });
+      const auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(3);
+      while (boundary.drains.load() == 0 && std::chrono::steady_clock::now() < deadline) std::this_thread::yield();
+      EXPECT_GT(boundary.waits.load(), 0u); EXPECT_GT(boundary.drains.load(), 0u);
+      EXPECT_FALSE(returned.load(std::memory_order_acquire));
+      EXPECT_TRUE(submitted.in_flight());
+      for (auto &pool : data.pools) EXPECT_GT(pool.stats().active_uses, 0u);
+      boundary.armed = false;
+      observer.join(); EXPECT_TRUE(terminal.IsResourceExhausted());
       EXPECT_FALSE(submitted.in_flight());
       EXPECT_FALSE(submitted.output({2}, {3}, 0, 32));
       submitted = {}; invocation = {}; program = {};
