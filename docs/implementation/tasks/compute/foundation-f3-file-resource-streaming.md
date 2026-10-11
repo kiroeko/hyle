@@ -466,7 +466,7 @@ Windows新过期deadline、重复stop/close/drain、原用户资源仍可用组�
 | F3-07 | 原生四路线与实际math consumer、确定输入与资源成本/路径报告 | BF16/F32/至少一种已有block编码保持；copy后Direct+Graph真实输出对参考 |
 | F3-08 | 成熟GGUF/Safetensors消费示例、指南、SDK迁址/新头/包闭包与P0 | 解析器在consumer；本地Qwen混合dtype/ranges；DLL同目录，普通入口可发现 |
 
-## 当前不可变Candidate
+## 首个不可变Candidate（已被下述红队纠正替代）
 
 - 产品与普通consumer固定提交：`3b7b9b9b8f0e99205de0c43ce29b4467bdae46d5`；
   tree：`7ffc5f2cedc973dae3093fed36dde2d30ba8ca46`。此前f3d931c47到本提交的产品差异只为
@@ -519,6 +519,12 @@ Windows CUDA新suffix直接运行、当前source/安装数学及新头/迁址仍
 compute_stream从AUDITED回到CANDIDATE，其余五owner产品未变但绑定同一完整树。
 旧3b候选/静态SDK结果保留作历史；当前产品有限改动为上述原F3-06保活交接及O(QGR)扫描，
 产品/样例随后不再改。Windows CUDA新fixture与完整交付仍继续，未运行不写PASS。
+
+[Windows suffix复验](../../../../evidence/correctness/foundation-f3-windows-suffix-retirement/receipt.json)
+现签当前产品97858fbc8的七项CUDA公开API风险整组PASS，包括原失败的readonly首组/未启动
+producer后组。在普通shipping CPU/CUDA source树中添加独立fixture，不切换旧SDK profile，
+原oneDNN产物复用；实际active uses与F3 allocator在native退休后归零。
+当前原生与共同sanitizer风险已齐；当前Vulkan static安装交付运行中，其余交付/新头/终审仍待验。
 
 ## 解析器与真实权重验收
 

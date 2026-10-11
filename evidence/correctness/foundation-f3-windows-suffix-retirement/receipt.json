@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "product_commit": "97858fbc88a6b5a87f109290b956eeaeee632dd2",
+  "fixture_commit": "0fc9ce59d01cbbe4286aeaeed378982a7a0fa97d",
+  "scope": "Seven original F3 CUDA public API risk fixtures with ordinary shipping CPU/CUDA source artifacts; no SDK profile toggle or global correctness roots.",
+  "tests_passed": 7,
+  "compiler": "C:/Program Files/Microsoft Visual Studio/18/Enterprise/VC/Tools/MSVC/14.50.35717/bin/Hostx64/x64/cl.exe",
+  "verdict": "PASS_WINDOWS_F3_CUDA_SEVEN_PUBLIC_RISKS_ONLY",
+  "archive": {
+    "path": "evidence/correctness/foundation-f3-windows-suffix-retirement/raw-results.zip",
+    "sha256": "0291932b9dda74b3a237feb2edaddaa1cb48b58e11e156b56b319e77e3b3f658"
+  },
+  "limits": "No driver-private residency or installed/final closure verdict."
+}

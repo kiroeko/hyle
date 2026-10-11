@@ -1,7 +1,8 @@
 # F3逐能力验证矩阵
 
 本页由[活动卡](foundation-f3-file-resource-streaming.md)纳入。当前六owner为CANDIDATE，
-产品固定3b7b9b9b8；全部门尚未签署，旧收据各自的source身份、范围与原失败继续保留。
+产品固定97858fbc8；原3b候选的suffix环由真实红队反证后有限修复，全部门尚未签署，旧收据
+各自的source身份、范围与原失败继续保留。
 这里列出原八FIX的真实覆盖与缺证，不用测试总数或粗估完成百分比替代裁决。
 
 ## 证据入口
@@ -23,6 +24,10 @@
   后者包含过期deadline/重复stop/close及借用用户资源保持可用的直接组合。
 - [当前完整风险增量](../../../../evidence/correctness/foundation-f3-current-risks/receipt.json)：Air CPU十三、
   Apple六、Win/Air Vulkan各五、WSL CUDA六与共同ASan/UBSan/TSan各十三项，产品candidate固定。
+- [原suffix FAIL与纠正](../../../../evidence/correctness/foundation-f3-suffix-retirement/receipt.json)：
+  当前97858fbc8的WSL CUDA七、共同三sanitizer各十三、Air CPU十三/Apple六/Vulkan五、Win Vulkan五；
+  [Windows CUDA七项](../../../../evidence/correctness/foundation-f3-windows-suffix-retirement/receipt.json)
+  直接复验相同失败后缀组合，actual uses和allocator退休通过。
 
 ## 语义覆盖
 
@@ -43,10 +48,10 @@
 | 平台/路线 | source真实数学 | F3原生文件风险 | installed static/shared与新seam |
 |---|---|---|---|
 | Windows CPU | PASS | 当前十二项PASS，含deadline/repeat-close新fixture | UNPROVEN |
-| Windows CUDA | PASS | 六项PASS；共同格式清理增量待验 | UNPROVEN |
-| Windows Vulkan | PASS | 五项PASS；共同格式清理增量待验 | UNPROVEN |
+| Windows CUDA | 旧数学PASS，当前有限纠正后复验待齐 | 当前七项PASS，含未启动suffix producer | UNPROVEN |
+| Windows Vulkan | 旧数学PASS，当前有限纠正后复验待齐 | 当前五项PASS | UNPROVEN |
 | WSL CPU | PASS | 当前三sanitizer各十三项PASS，含deadline/short-write/跨线程 | UNPROVEN |
-| WSL CUDA | PASS | 当前六项增量PASS | UNPROVEN |
+| WSL CUDA | 旧数学PASS，当前有限纠正后复验待齐 | 当前七项PASS，含未启动suffix producer | UNPROVEN |
 | Air CPU | PASS | 当前共同十三项PASS，含POSIX short-write/跨线程/deadline | UNPROVEN |
 | Air Apple | PASS | 当前六项增量PASS | UNPROVEN |
 | Air Vulkan | PASS | 当前五项增量PASS | UNPROVEN |
