@@ -228,6 +228,9 @@ Graph core31、新真实双分支 cuBLAS 用例通过。未知观察是装饰真
   Completion 负责原 cancel 请求，取消不证明 GPU 结束。原资源/Context/allocator借用寿命保持明确。
 - 有限验收：真实 cuBLAS Direct+Graph 数学、两个 native 分支、旧结果/来源别名、重放计数、拒绝回退、
   accepted-prefix 观察故障/丢弃与关闭；后续 CPU/native routes 和三交付仍集中做，不以本入口编译代签。
+- accepted-prefix 故障资格用 graph owner 的私有 HYLE_TESTING TLS 观察装饰 seam：
+  仅在 opt-in accepted hook 已保活之后装饰真实 Completion，制造跨 lane 依赖的观察/交接失败。
+  原数学/设备/事件/retirement 不替换；shipping 没有 hook/额外分支，不重写公共仪器。
 
 | FIX | 必须实现/定向修复 | 验收 |
 |---|---|---|
