@@ -615,6 +615,10 @@ archive 包含 LICENSE/THIRD_PARTY_NOTICES，镜像不可回写。只编译、�
 随后同候选 Air Vulkan static producer/安装/实际迁址/独立构建/普通 lease 与 imported mixed 消费者全部通过，
 同一交付收据保存阶段日志；shared 尚未运行完成，其他平台与最终七门仍不能写 PASS。
 
+同候选 Air Vulkan shared 的 producer/安装/实际迁址/独立普通与 imported mixed 消费者全部通过，阶段日志入库。
+Air CPU+Apple、CPU+Vulkan 的普通租约与 managed ReadLease bind source/static/shared 格均已取证；
+当前本批 Air SDK job 全部终态。WSL 普通 CUDA/CPU 平台与交付、CUDA fault WSL 格和最终矩阵/红队仍未完成。
+
 ### WSL 普通 CPU/CUDA 三交付固定入口
 
 实际 GCC14.2.0、CUDA13.3.73、Ubuntu24.04.4/WSL2；复用

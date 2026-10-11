@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "scope": "Partial F1 Windows CPU CUDA Vulkan and MacBook Air CPU Apple source and relocated static shared lease delivery qualification",
+  "scope": "Partial F1 Windows CPU CUDA Vulkan and MacBook Air CPU Apple Vulkan source and relocated static shared lease delivery qualification",
   "candidate": "46cc16937d19952ddea0664df4609be9ed45e5a5",
   "product_candidate": "fc4ffbd1610eb3b24bf76709dc6e5e25b3d838d7",
   "tests": [
@@ -127,6 +127,16 @@
         "vulkan-air-static-lease-test.log",
         "vulkan-air-static-mixed-test.log"
       ]
+    },
+    {
+      "name": "MacBook Air relocated CPU Vulkan shared SDK ordinary lease and imported managed composition",
+      "verdict": "PASS",
+      "candidate": "e399059002d17491ec1c87a0bf8f40f4642606ac",
+      "receipt": "vulkan-air-shared-job.json",
+      "logs": [
+        "vulkan-air-shared-lease-test.log",
+        "vulkan-air-shared-mixed-test.log"
+      ]
     }
   ],
   "wsl_vulkan": {
@@ -216,6 +226,13 @@
     "vulkan-air-static-configure.log": "3ca29a9cb278299e10b17e475c17b147fce15b01e4d765fac1b75ce2e7a47739",
     "vulkan-air-static-consumer-build.log": "d8bc8143a90dee126455e7c8b723e8f7e02578bac4913d00939682fbdf1fda00",
     "vulkan-air-static-lease-test.log": "3aa0830a6cf6ac16dd411a4b241f4de722521d5f3316d7291edf1365d5691bb8",
-    "vulkan-air-static-mixed-test.log": "438a8ee0684e75ce6e46d67dfeb25ab65f9cc924ccccfe656ad53fe02373ed92"
+    "vulkan-air-static-mixed-test.log": "438a8ee0684e75ce6e46d67dfeb25ab65f9cc924ccccfe656ad53fe02373ed92",
+    "vulkan-air-shared-job.json": "a36d8a980b0b269bb981a73fc50f50d41af32c3520187aa044f62228776e66d7",
+    "vulkan-air-shared-producer.log": "9ee9a7fb4c7dd76d0d0a77e0feffc4432c986f623b9b91d320d446702a6e652f",
+    "vulkan-air-shared-install.log": "82095df56441861163233f17b86c1d8299e752c8ca0a8af0effd4c4167a32ee9",
+    "vulkan-air-shared-configure.log": "0e64babb47dd6181b2ce75eecbf687a92465dbcf4bcd55b1eb3dd8bf6feb61b7",
+    "vulkan-air-shared-consumer-build.log": "d8bc8143a90dee126455e7c8b723e8f7e02578bac4913d00939682fbdf1fda00",
+    "vulkan-air-shared-lease-test.log": "3aa0830a6cf6ac16dd411a4b241f4de722521d5f3316d7291edf1365d5691bb8",
+    "vulkan-air-shared-mixed-test.log": "438a8ee0684e75ce6e46d67dfeb25ab65f9cc924ccccfe656ad53fe02373ed92"
   }
 }
