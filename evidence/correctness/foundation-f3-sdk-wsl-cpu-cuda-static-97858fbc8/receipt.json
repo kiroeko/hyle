@@ -1,0 +1,36 @@
+{
+  "schema_version": 1,
+  "candidate": "97858fbc88a6b5a87f109290b956eeaeee632dd2",
+  "product_commit": "97858fbc88a6b5a87f109290b956eeaeee632dd2",
+  "host": "wsl",
+  "profile": "cpu-cuda",
+  "mode": "static",
+  "scope": "F3 ordinary relocated installed Graph file/GGUF/Qwen consumer and changed ON/OFF headers only",
+  "relocation": {
+    "original": "/root/hyle-scratch/compute-unified/foundation-f3-sdk-cpu-cuda-static-97858fbc8/staging",
+    "relocated": "/root/hyle-scratch/compute-unified/foundation-f3-sdk-cpu-cuda-static-97858fbc8/relocated",
+    "original_absent": true,
+    "Hyle_metadata_no_source_build_staging_paths": true
+  },
+  "header_scope": {
+    "count": 7,
+    "routes": "cpu;cuda",
+    "source_include_directory_requested": false
+  },
+  "absent_headers_and_route_diagnostics": [
+    "apple",
+    "vulkan"
+  ],
+  "runtime_dlls": null,
+  "identity": {
+    "os": "Linux kiro-workstation 6.18.40.1-microsoft-standard-WSL2 #1 SMP PREEMPT_DYNAMIC Fri Jul 31 22:12:15 UTC 2026 x86_64 x86_64 x86_64 GNU/Linux\n",
+    "compiler": "g++-14 (Ubuntu 14.2.0-4ubuntu2~24.04.1) 14.2.0\nCopyright (C) 2024 Free Software Foundation, Inc.\nThis is free software; see the source for copying conditions.  There is NO\nwarranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.\n\n"
+  },
+  "original_failures": "All earlier setup/validation/product failures retained in previous F3 receipts; this one SDK cell does not replace them.",
+  "archive": {
+    "path": "evidence/correctness/foundation-f3-sdk-wsl-cpu-cuda-static-97858fbc8/raw-results.zip",
+    "sha256": "79409f81986ac5b7e97700ad4c9e2e444b2c0d8604f2c9b21a04219eeb4f8def"
+  },
+  "verdict": "PASS_F3_WSL_CPU_CUDA_STATIC_RELOCATED_SDK_ONLY",
+  "limits": "Only the named host/profile/linkage/ordinary consumers/changed headers. Other deliveries and final closure remain unproven."
+}

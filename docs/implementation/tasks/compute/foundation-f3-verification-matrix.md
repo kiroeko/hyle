@@ -50,8 +50,8 @@
 | Windows CPU | PASS | 当前十二项PASS，含deadline/repeat-close新fixture | UNPROVEN |
 | Windows CUDA | 旧数学PASS，当前有限纠正后复验待齐 | 当前七项PASS，含未启动suffix producer | UNPROVEN |
 | Windows Vulkan | 当前installed两种linkage真实数学PASS；旧source身份保留 | 当前五项PASS | 当前迁址static/shared、六头、CPU/CUDA/Apple缺席及DLL同目录PASS，活动卡具名收据 |
-| WSL CPU | PASS | 当前三sanitizer各十三项PASS，含deadline/short-write/跨线程 | UNPROVEN |
-| WSL CUDA | 旧数学PASS，当前有限纠正后复验待齐 | 当前七项PASS，含未启动suffix producer | UNPROVEN |
+| WSL CPU | 当前installed static实际数学PASS；旧source身份保留 | 当前三sanitizer各十三项PASS，含deadline/short-write/跨线程 | 当前迁址static/七头/缺席/ldd PASS，shared运行中 |
+| WSL CUDA | 当前installed static实际数学PASS；旧source身份保留 | 当前七项PASS，含未启动suffix producer | 当前迁址static/七头/缺席/ldd PASS，shared运行中 |
 | Air CPU | PASS | 当前共同十三项PASS，含POSIX short-write/跨线程/deadline | UNPROVEN |
 | Air Apple | PASS | 当前六项增量PASS | UNPROVEN |
 | Air Vulkan | PASS | 当前五项增量PASS | UNPROVEN |

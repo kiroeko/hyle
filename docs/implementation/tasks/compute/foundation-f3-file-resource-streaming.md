@@ -540,6 +540,11 @@ producer后组。在普通shipping CPU/CUDA source树中添加独立fixture，�
 DLL同目录运行小GGUF与Qwen往返PASS，六头独立编译及CPU/CUDA/Apple缺席诊断PASS。
 Windows Vulkan当前static/shared已齐；WSL CPU/CUDA static正在运行，其他当前安装格仍待验。
 
+[WSL CPU/CUDA static交付](../../../../evidence/correctness/foundation-f3-sdk-wsl-cpu-cuda-static-97858fbc8/receipt.json)
+现签同97858fbc8完整源码：原树87项增量产物，真正迁址后独立普通Graph C++消费者原样配置，
+小GGUF与Qwen完整往返PASS、`ldd`无missing、新七头独立编译及Apple/Vulkan头/package请求缺席PASS。
+原锁定CUDA leaf链接warning保留；未改算法或SDK依赖锁。shared版本正在运行，其他当前格仍未验。
+
 ## 解析器与真实权重验收
 
 格式解析不进入 pipeline。GGUF 用现有 ggml 格式核；本地 Qwen3.5-2B 原始 Safetensors
