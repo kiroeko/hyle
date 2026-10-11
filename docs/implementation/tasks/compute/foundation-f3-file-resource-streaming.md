@@ -388,6 +388,12 @@ POSIX正数short-write fixture已加入但尚未运行；本卡当前F3 ASan/UBS
 ASan初次本地参数错误将factor与product route选择混用而被现有CMake拒绝；只修验证argv并保留失败，
 没有改公共工具/产品或重置预算。源码/输入已同步核验，原适用交付与最终门继续待验。
 
+随后同一ASan树的factor-only配置在原300秒上限TIMEOUT，日志显示旧cache位于Windows挂载盘，
+触发新的locked LibTorch CPU下载/准备；配置进程终止已核实，测试没有启动。只将验证配置指向
+已由WSL数学consumer使用的原Linux cache `/root/.cache/hyle/dependencies/v1`，锁定SDK身份不变；
+native-cache配置实际PASS，当前同一候选的instrumented依赖构建仍在运行，不能记成sanitizer测试PASS。
+原互斥参数FAIL及TIMEOUT的日志保留，改变cache位置不重置原产品纠正或配置/build/test预算。
+
 | FIX | 必须实现 | 验收 |
 |---|---|---|
 | F3-01 | 中央 compute_stream 身份/依赖/普通 route 及三交付投影 | 无环，无第二名单/空 target；静态共享source一致，不拉无关 CPU Provider |
