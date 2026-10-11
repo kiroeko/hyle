@@ -1,0 +1,12 @@
+{
+  "candidate": "c26261e3958c7eb46ecde2a4ba7c5654a03f1b93",
+  "tree": "185e3c211a65754f5487e7e1d19f8252e68f29d9",
+  "archive": "C:\\public\\project-hyle\\hyle\\.scratch\\foundation-f2\\apple-c26261e39.tar.gz",
+  "sha256": "c0e883ff07c5315a2b2947dc3a48d31f8ad6244b919aed957c01daf73891b85e",
+  "bytes": 174378061,
+  "source": "/Users/kiro/hyle-scratch/compute-unified/source-c8874688",
+  "stage": "/Users/kiro/hyle-scratch/compute-unified/foundation-f2-source-c26261e39",
+  "host": "kiro@172.22.10.198",
+  "hardware": "Mac16,12",
+  "sync": "full archive/checksum rsync, validation only"
+}

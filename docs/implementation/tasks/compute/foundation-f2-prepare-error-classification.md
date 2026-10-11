@@ -1,6 +1,6 @@
 # F2终审：准备阶段硬错误与资源不匹配的分类
 
-状态：AUDITED；owner仅compute；父轮[F2七FIX](foundation-f2-batched-transfers.md)。
+状态：CANDIDATE；owner仅compute；父轮[F2七FIX](foundation-f2-batched-transfers.md)。
 baseline/改前registry ref为4f3669630，产品snapshot为5b3efe2cc；原compute候选03162add0
 被本次实际ordinary消费者错误反证，依法退回AUDITED。CUDA/Apple/Vulkan owner保持原候选。
 
@@ -59,3 +59,21 @@ CPU backend两项实际FAIL以及首scratch selector组合拒绝。
 实际inventory固定16项一组、每进程仍120秒、重型串行，所有54组都运行且保留XML/日志；没有
 删掉慢用例、扩大单进程deadline、改公共工具或重置产品名额。当前分组资格仍运行，其他平台/
 ordinary SDK及完整剩余影响门继续未验；compute保持AUDITED，不提前CANDIDATE/CLOSED。
+
+16项分组的第9组也因累计时间120秒TIMEOUT：其中首项20.8秒、Dspark65.7秒与下一项7.8秒
+均已OK，后续用例未完成；没有新增产品FAIL。前8组XML逐项与请求集合完全一致，128项PASS。
+盘点发现list-tests参数注释前的尾空格须trim，否则后续过滤可能遗漏；尚未为这些未运行名称
+签PASS。固定同二进制/root从第129项逐case恢复，每进程仍120秒，XML必须与请求名称精确一致
+且无disabled/failure。原合并/分组两个TIMEOUT继续保留，不重复已资格化128项或重置产品预算。
+完整853项仍未验完，不将该fixture恢复写成整个Graph门PASS。
+
+## 新candidate
+
+产品c26261e3958c7eb46ecde2a4ba7c5654a03f1b93在上述固定单项FIX后停止变化，compute重新
+进入CANDIDATE，改前registry ref为c74f923a2。Windows完整backend58项、compute90项与Graph
+全部853项PASS，实际用例集合精确且无skipped/disabled；原两个TIMEOUT及名称trim修正保留。
+同一二进制、同root恢复完成，完整XML/log压缩包与逐文件SHA列在[收据](../../../../evidence/correctness/foundation-f2-prepare-error/receipt.json)。
+没有新API/layout/常态成本/数学或copy kernel。CUDA仍绑定5b3efe2cc，Apple/Vulkan仍绑定03162add0，
+其owner source scope未变。Air与WSL验证副本已从完整canonical Git archive更新到c26261e39，
+tree185e3c211a65754f5487e7e1d19f8252e68f29d9和archive SHA保存；其他平台/ordinary SDK与剩余
+扩展/终审继续待验，本卡不是CLOSED，不提前F3或把候选固定当作全部工程验收。

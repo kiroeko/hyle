@@ -1,8 +1,8 @@
 # F2 固定候选与剩余资格矩阵
 
 本页由[活动收口卡](foundation-f2-batched-transfers.md)纳入，只执行既定七FIX，不扩大F3或数学能力。
-当前compute因原ordinary prepare硬错误分类实际反例退回AUDITED，见[cold分类delta](foundation-f2-prepare-error-classification.md)；
-其他三owner保持候选。以下已通过旅程保持其实际scope，不扩大为此失败门或完整F2 PASS。
+当前compute的[cold分类delta](foundation-f2-prepare-error-classification.md)已通过Windows完整58/90/853项，重新CANDIDATE于c26261e39；
+其他三owner scope保持候选。后续ordinary消费者使用c26261e39全源码，未验平台/交付不由本格代签。
 产品候选：`03162add05d3e26fe3314c6bcdaafa5a277a3a76`。四owner为compute、compute_backend_cuda、
 compute_route_apple、compute_route_vulkan；其余owner保持原状态。候选后的文档/状态/证据不改变产品。
 

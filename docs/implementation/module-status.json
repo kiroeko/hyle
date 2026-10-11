@@ -270,9 +270,10 @@
     },
     {
       "module": "compute",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/foundation-f2-prepare-error-classification.md",
-      "summary": "F2终审AUDITED delta：既有ordinary prepare将provider硬Unimplemented误当safe decline的实际反例已定界；仅修cold resource-match与hard error分类，其他三owner候选保持，完整资格仍未CLOSED。"
+      "summary": "F2 CANDIDATE cold delta：pure resource mismatch与provider硬错误已分开，Windows backend58/compute90/Graph853完整实际通过，原FAIL/TIMEOUT保留；其他平台/SDK及余下扩展终审仍未CLOSED。",
+      "candidate": "c26261e3958c7eb46ecde2a4ba7c5654a03f1b93"
     },
     {
       "module": "graph",
