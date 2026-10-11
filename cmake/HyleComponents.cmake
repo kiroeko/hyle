@@ -527,6 +527,10 @@ _hyle_declare_component(graph_route_cpu_vulkan
   PUBLIC_TYPE_DEPS sched
   SPLIT_PUBLIC_HEADERS hyle/graph/cpu_vulkan.h)
 
+# F3 file/resource streaming: append identity before its scoped/audited round.
+# No target, public headers or dependencies exist while this factor is queued.
+_hyle_declare_component(compute_stream QUEUED)
+
 # Product facades are deliberately outside the factor DAG. They have no source,
 # module status, or decision authority and must never be used by an internal
 # factor edge. A facade only selects the exact factor roots that make one

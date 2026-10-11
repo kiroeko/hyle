@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "baseline_commit": "c07109296fa06db14c57ba76d3607c672df08b10",
+  "scope": "F3 identity reservation only; no target/API/dependency/source added; implemented factor metadata and facade projection unchanged",
+  "verdict": "PASS_DOCS_CLOSURE_ONLY",
+  "new_factor": "compute_stream",
+  "state": "QUEUED",
+  "implemented_factor_projection_unchanged": true,
+  "product_projection_unchanged": true,
+  "compiled_validation": "NOT_APPLICABLE_NO_IMPLEMENTATION_OR_TARGET_CHANGE",
+  "broad_selector_schedule": "NOT_EXECUTED_UNCHANGED_BOUNDARY per explicit user instruction; never PASS",
+  "manifest_sha256": "75c83f2146127c4020a103da063783eefbf5dd680e527b686b7c544585adae10"
+}

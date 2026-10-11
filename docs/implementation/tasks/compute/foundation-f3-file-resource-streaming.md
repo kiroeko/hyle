@@ -1,11 +1,22 @@
 # F3：有界文件与计算资源双向管线
 
-> 状态：READY_FOR_SCOPE；依赖 F1/F2 完成的资源/搬运合同。
-> component / owner：拟新内部 factor compute_stream（实施时登记 QUEUED）；
+> 状态：QUEUED；F1/F2 已CLOSED，compute_stream身份已登记，尚未SCOPED/AUDITED或写产品代码。
+> component / owner：新内部 factor compute_stream（当前仅QUEUED身份）；
 > native factory/adapter 归 compute_route_cpu/cuda/apple/vulkan，有限中央构建修改归 build_package。
 > IO/Sched/Mem 只消费既有能力；出现具体基础缺陷才另作定向 owner 修复。
 
 ## 共同执行合同
+
+### 当前启动绑定
+
+- 2026-10-12实际baseline：c07109296（[F2 terminal](foundation-f2-final-closure.md)已提交推送），
+  Windows canonical工作树干净，F1/F2 owner全部CLOSED。只登记compute_stream身份与QUEUED，
+  无target/依赖/公开头/源码，普通用户选择闭包不变；历史READY_FOR_SCOPE计划不当作实现证书。
+- 下一阶段仅按原F3-01至08冻结IO/Sched/F1/F2/native组合、source/sink拥有/借用、有限byte/slot/
+  group/旧结果预算、取消/实际退役与两向错误。完成SCOPED和AUDITED前不写产品。
+- 遵守用户本轮明确要求：只验实际修改owner、真实直接消费者、新API与对应三交付；未受影响
+  模块/成熟算子目录/其他facade不全局回放，复用已签且scope/合同/工具链/机器相符的F1/F2证据。
+  原调查/纠正与单线程/内存预算不因新记录、目录或跨日重置。
 
 - 基线：`edb2714384037b12a3d1e69839aa895fea17cec1`；设计见
   [资源与流送设计](../../../architecture/compute-resource-streaming-design.md)。

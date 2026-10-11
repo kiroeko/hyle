@@ -680,6 +680,11 @@
         "tier": "P0",
         "evidence": "docs/implementation/tasks/compute/foundation-f1-resource-leases.md"
       }
+    },
+    {
+      "module": "compute_stream",
+      "state": "QUEUED",
+      "summary": "F3已准入有界文件↔计算资源双向管线，仅追加身份；F1/F2 CLOSED，原八FIX待SCOPED/AUDITED，尚无产品target/API/源码/运行资格。"
     }
   ]
 }
