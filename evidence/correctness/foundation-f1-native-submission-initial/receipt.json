@@ -1,0 +1,53 @@
+{
+  "schema_version": 1,
+  "scope": "F1 Apple/Vulkan leased native submission initial qualification only",
+  "candidate": "b575cb2e74b58c40c8bf4d5a9a6afdcf01a4d7f2",
+  "session_recovery": {
+    "previous_thread": "01a0a567-c33a-7d62-8c85-107d179963d2",
+    "current_thread": "01a12920-2fa6-79d0-b3ed-fcb86f7f30e5",
+    "previous_goal_status": "blocked",
+    "stop_reason": "context_length_exceeded; subsequent remote compaction also exceeded context",
+    "last_completed_product_action_utc": "2026-10-11T01:38:55.363Z",
+    "recovered_goal_scope": "F1-F3, 23 finite FIX items; prior four-route R1-R7 closure remains evidence",
+    "research_origin": "docs/implementation/tasks/project/inference-foundation-gap-research-2026-10.md",
+    "later_candidates": "F4 explicit state versions/branches and F5 paged/ragged mature Provider seams remain later candidates; they are outside the active F1-F3 implementation goal",
+    "correction_budgets": "Inherited from current cards and prior execution; session recovery does not reset them"
+  },
+  "checks": [
+    {
+      "name": "Windows Vulkan native leased submission and closed source admission",
+      "verdict": "PASS",
+      "tests": 2,
+      "origin": "Completed in previous session at this exact candidate; not rerun during recovery",
+      "command": "C:/h7/w-vulkan-native/bin/hyle_graph_route_vulkan_test.exe --gtest_filter=VulkanLeaseBinding.*",
+      "log": "vulkan-leased-admission.log"
+    },
+    {
+      "name": "MacBook Air Apple native leased submission and closed source admission",
+      "verdict": "PASS",
+      "tests": 1,
+      "origin": "Recovery session synchronized the canonical candidate archive and incrementally rebuilt with parallel 1",
+      "command": "/Users/kiro/hyle-scratch/compute-unified/a-apple/selected-graph/shared-sdk-build/bin/hyle_graph_route_apple_test --gtest_filter=AppleLeaseBinding.SharedLeaseDirectGraphAndImportedNativeAlias",
+      "machine": {
+        "hardware": "Mac16,12",
+        "memory_bytes": 17179869184,
+        "os": "macOS 27.0.1",
+        "os_build": "26A434",
+        "compiler": "Apple clang 21.0.0 (clang-2100.3.34.2)",
+        "compiler_directory": "/Library/Developer/CommandLineTools/usr/bin",
+        "cmake": "4.3.4",
+        "ninja": "1.13.2"
+      },
+      "build_log": "apple-recovery-b575-build.log",
+      "log": "apple-recovery-b575-test.log",
+      "launcher_correction": "First test launch was rejected by zsh glob expansion before the test executed; exact test name then ran successfully. This is not a product failure."
+    }
+  ],
+  "remaining_unproven": [
+    "Complete F1 native and CPU consumers, CPU+GPU composition bindings and failure/lifetime matrix",
+    "All applicable F1 platforms, source/static/shared deliveries, header and absence boundaries",
+    "Full F1 P0 cost and final red-team verdict",
+    "F2 and F3 remain READY_FOR_SCOPE and have not started implementation"
+  ],
+  "module_state": "F1 owners remain AUDITED; these local results do not close F1"
+}

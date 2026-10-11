@@ -1,0 +1,9 @@
+[0/2] Re-checking globbed directories...
+[1/9] cd /Users/kiro/hyle-scratch/compute-unified/a-apple/selected-graph/shared-sdk-build/src/compute_route_apple && /opt/homebrew/bin/cmake -E copy_if_different /Users/kiro/hyle-scratch/compute-unified/a-apple/selected-graph/shared-sdk-build/_deps/mlx-build/mlx/backend/metal/kernels/mlx.metallib /Users/kiro/hyle-scratch/compute-unified/a-apple/selected-graph/shared-sdk-build/bin/mlx.metallib
+[2/9] Building CXX object src/compute_route_apple/CMakeFiles/hyle_compute_route_apple.dir/apple_leased_invocation.cc.o
+[3/9] Linking CXX shared library bin/libhyle_compute_route_apple.0.1.0.dylib
+[4/9] Creating library symlink bin/libhyle_compute_route_apple.dylib
+[5/9] Linking CXX shared library bin/libhyle_graph_route_apple.0.1.0.dylib
+[6/9] Creating library symlink bin/libhyle_graph_route_apple.dylib
+[7/9] Building CXX object tests/graph_route_apple/CMakeFiles/hyle_graph_route_apple_test.dir/lease_binding_test.cc.o
+[8/9] Linking CXX executable bin/hyle_graph_route_apple_test

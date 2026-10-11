@@ -1,0 +1,12 @@
+Running main() from /Users/kiro/Library/Caches/hyle/dependencies/v1/sources/googletest-063de7e9578f-162765170ae6/googletest/src/gtest_main.cc
+Note: Google Test filter = AppleLeaseBinding.SharedLeaseDirectGraphAndImportedNativeAlias
+[==========] Running 1 test from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 1 test from AppleLeaseBinding
+[ RUN      ] AppleLeaseBinding.SharedLeaseDirectGraphAndImportedNativeAlias
+[       OK ] AppleLeaseBinding.SharedLeaseDirectGraphAndImportedNativeAlias (48 ms)
+[----------] 1 test from AppleLeaseBinding (48 ms total)
+
+[----------] Global test environment tear-down
+[==========] 1 test from 1 test suite ran. (48 ms total)
+[  PASSED  ] 1 test.

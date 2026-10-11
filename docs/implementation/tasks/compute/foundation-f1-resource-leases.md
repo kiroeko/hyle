@@ -346,6 +346,18 @@ Owner继续AUDITED，未运行平台/三交付/negative/P0/全包red-team没有P
   原槽只增加一个可空LeaseUseBatch字段，无资源表/执行vtable/public对象字段。
   OwnedResultAccess计划撤回，继续复用LeaseAccess完成实际退休；普通结果布局和原Provider调度不变。
 
+### Native submission 初验与会话恢复
+
+`187df35b7` 已接入两路线的自动 native use admission 和实际 slot 退休；
+`b575cb2e7` 补齐 drain 原错误保留和 source pool 关闭后的拒绝。
+[精确候选收据](../../../../evidence/correctness/foundation-f1-native-submission-initial/receipt.json)
+保留旧会话该候选的 Windows Vulkan 两项 PASS，并补齐 MacBook Air 上最后修正后的 Apple 一项 PASS。
+原生 Direct/Graph 数学、未观察结果仍持有时 drain、source alias 与关闭拒绝属于本次局部资格。
+旧会话最后完成产品动作于 2026-10-11 09:38（北京时间），其后因上下文超限及压缩失败停止，
+不是产品 gate 失败；新会话继承 F1–F3 范围、有限 FIX 和原纠正预算。
+其余 CPU/native/组合消费者、完整故障寿命矩阵、适用平台与三交付、新头/缺席、P0 和整包红队仍未完成。
+F1 owner 继续 AUDITED；F2/F3 仍 READY_FOR_SCOPE，未启动产品实现。
+
 扩展现有 compute completion、graph cpu_cuda/apple/vulkan contracts 及 native route 用户样例；
 保留原数学 reference，新增实际 lease 风险断言。只装饰 native observation/fault call，
 不能将 mock 结果当路线资格。至少两独立在途块、两个读者、一写者、旧结果、取消、OOM、部分失败、
