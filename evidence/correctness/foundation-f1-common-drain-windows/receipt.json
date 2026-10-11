@@ -76,6 +76,15 @@
       "sha256": "4e159998122bc2b92e1c3c23aab4a4b709225e3ac9c45abd5cfa26f8dc934acf",
       "tested_candidate": "a69e8bc197efefbb40f7a0f6eb549c804e507063",
       "role": "historical directed qualification"
+    },
+    {
+      "name": "CPU ordinary-default leased Direct/Graph mathematics and zero warm lease metadata allocation",
+      "verdict": "PASS",
+      "tests": 2,
+      "tested_candidate": "3a19f2995e83ef9fbf121e398ea281125c66af58",
+      "delivery": "source static shipping validation snapshot; not installed SDK qualification",
+      "log": "cpu-lease-defaults.log",
+      "sha256": "db1c7947b679adbf8baf536aa1c3165f817793cfb3109205b8869b0f462b22c2"
     }
   ],
   "corrections": [
@@ -107,7 +116,12 @@
       ],
       "limitation": "Before final deferred-retirement header addition; final header needs recheck"
     },
-    "current_candidate": "NOT_RUN; final new helper declarations still need isolation check"
+    "current_candidate": {
+      "verdict": "PASS",
+      "tested_candidate": "3a19f2995e83ef9fbf121e398ea281125c66af58",
+      "count": 3,
+      "scope": "leased_operation.h, detail/retained_completion.h, leased_invocation.h including deferred retirement declarations"
+    }
   },
   "p0": {
     "verdict": "PARTIAL",
@@ -116,10 +130,20 @@
     "timed_performance": "NOT_RUN; no P1 winner claim"
   },
   "pending": [
-    "CPU ordinary-default source snapshot build is running; new CPU Direct/Graph tests are not PASS yet",
     "CPU+GPU composition bindings",
     "Remaining native and full failure/lifetime matrix, applicable other platforms and source/static/shared SDK deliveries",
-    "Final headers, full F1 P0/red-team; F2/F3 not implemented"
+    "New mixed route binding helper/route headers and full F1 P0/red-team remain pending"
   ],
-  "module_state": "AUDITED; not F1 terminal"
+  "module_state": "AUDITED; not F1 terminal",
+  "cpu_environment": {
+    "compiler": "MSVC 19.50.35728.0",
+    "linkage": "static",
+    "instrumentation": false,
+    "binary": "C:/h7/foundation-f1-cpu",
+    "source": "C:/h7/foundation-f1-cpu-source-3a19f2995",
+    "parallel": 1,
+    "torch": "locked CPU SDK 2.8.0",
+    "onednn": "3.13.4",
+    "ggml": "0.26.0 ffa4e8b80930029a35991f94e7c8a93cd67730ab-hyle"
+  }
 }

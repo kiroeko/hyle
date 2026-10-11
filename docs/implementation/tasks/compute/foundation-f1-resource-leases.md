@@ -384,9 +384,9 @@ Graph 原生前缀实际退休与外层附着 owner 的交接。
 原插桩失败仍保留：未知根错误后 drain 曾过早返回，已接受的三个块尚未退役；
 有限纠正分别恢复真实 latch 等待、将外层 attachment 退休绑定到全部 accepted prefixes，未更改原错误。
 真实 CUDA 故障装饰还验证外层 owner 在错误观察时不释放，原生最后退休后恰一次回收。
-新普通 CPU Direct/Graph 数学、旧结果/source alias 和八次 lease metadata 计数测试已写入；
-当前从固定 `3a19f2995` Windows archive 在独立 CPU static/shipping 验证树 build1 编译，未运行，不能写 PASS。
-最终 helper 新声明的隔离头检查、其他适用平台/三交付、CPU+GPU 组合和整包 P0/红队仍待完成。
+固定 `3a19f2995` Windows archive 的普通 CPU Direct/Graph 两项数学、旧结果/source alias 与八次 lease
+metadata 无新增分配检查已通过；同候选三个最终 helper/adapter 头隔离检查通过。CPU source/static/shipping
+测试树不是 installed SDK 资格；其他适用平台/三交付、CPU+GPU 组合和整包 P0/红队仍待完成。
 统一 33 路径 LOC self-check PASS：Compute+Graph 非测试 **70,266 行/313文件**，全库非测试 **165,493/664**。
 本子资格不关闭 F1，F2/F3 未启动；原预算和未验风险保留。
 
