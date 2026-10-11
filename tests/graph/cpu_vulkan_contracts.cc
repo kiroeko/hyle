@@ -3,6 +3,7 @@
 #undef main
 
 #include <hyle/mem/quota_allocator.h>
+#include <hyle/mem/stats.h>
 
 namespace {
 Status require(bool condition, const char *message) {
@@ -16,7 +17,81 @@ Status read_native(const v::Context &context, const v::MemoryResource &staging,
   HYLE_RETURN_IF_ERROR(copy.wait());
   return transfer.read(destination);
 }
+Status leased_contracts() {
+  HYLE_ASSIGN_OR_RETURN(auto cpu, g::cpu::create_context());
+  HYLE_ASSIGN_OR_RETURN(auto vulkan, v::Context::create());
+  HYLE_ASSIGN_OR_RETURN(auto device, v::MemoryResource::create(vulkan, v::MemoryKind::kDevice));
+  HYLE_ASSIGN_OR_RETURN(auto staging, v::MemoryResource::create(vulkan, v::MemoryKind::kStaging));
+  const b::Environment environment{.cpu = &cpu, .vulkan = &vulkan, .device = &device, .staging = &staging};
+  auto stats = m::StatsAllocator::create(m::system_allocator()).value();
+  hyle::sched::Scheduler scheduler(1, m::system_allocator(), 32);
+  HYLE_ASSIGN_OR_RETURN(auto queue, cpu.create_queue()); Drain drain{scheduler};
+  HYLE_ASSIGN_OR_RETURN(auto row, c::TensorDesc::dense(c::DataType::kFloat32, std::array<std::int64_t, 2>{1, 64}));
+  HYLE_ASSIGN_OR_RETURN(auto matrix, c::TensorDesc::dense(c::DataType::kFloat32, std::array<std::int64_t, 2>{64, 64}));
+  HYLE_ASSIGN_OR_RETURN(auto pool, c::LeasePool::create(m::system_resource(), 20 * 1024,
+      {.max_blocks = 2, .allocator = stats.get()}));
+  HYLE_ASSIGN_OR_RETURN(auto input_write, pool.allocate(256));
+  HYLE_ASSIGN_OR_RETURN(auto weight_write, pool.allocate(16384));
+  std::array<float, 64> values; for (std::size_t i = 0; i < values.size(); ++i) values[i] = float(i + 1) / 64;
+  std::array<float, 4096> diagonal{}; for (std::size_t i = 0; i < 64; ++i) diagonal[i * 64 + i] = 2;
+  HYLE_RETURN_IF_ERROR(input_write.view()->write(std::as_bytes(std::span(values))));
+  HYLE_RETURN_IF_ERROR(weight_write.view()->write(std::as_bytes(std::span(diagonal))));
+  HYLE_ASSIGN_OR_RETURN(auto input, input_write.publish());
+  HYLE_ASSIGN_OR_RETURN(auto weight, weight_write.publish());
+  auto reader = input;
+  HYLE_ASSIGN_OR_RETURN(auto builder, g::GraphBuilder::create());
+  HYLE_ASSIGN_OR_RETURN(auto x, builder.input(row));
+  HYLE_ASSIGN_OR_RETURN(auto w, builder.input(matrix));
+  HYLE_ASSIGN_OR_RETURN(auto first, builder.add(c::Unary{c::UnaryKind::kAbs}, x));
+  HYLE_ASSIGN_OR_RETURN(auto product, builder.add(c::MatMul{}, first, w));
+  HYLE_ASSIGN_OR_RETURN(auto output, builder.add(c::Unary{c::UnaryKind::kNeg}, product));
+  HYLE_RETURN_IF_ERROR(builder.publish(output)); HYLE_RETURN_IF_ERROR(builder.publish(x));
+  HYLE_ASSIGN_OR_RETURN(auto graph, std::move(builder).finish());
+  const std::array placement{g::NodePlacement{*graph.node_id(0), b::kCpuTarget, g::PlacementStrength::kRequired},
+                            g::NodePlacement{*graph.node_id(2), b::kCpuTarget, g::PlacementStrength::kRequired}};
+  HYLE_ASSIGN_OR_RETURN(auto program, b::compile(graph, environment, {.node_placements = placement, .allocator = stats.get()}));
+  HYLE_ASSIGN_OR_RETURN(auto invocation, program.create_invocation(scheduler, queue));
+  HYLE_RETURN_IF_ERROR(invocation.bind(x, row, input)); HYLE_RETURN_IF_ERROR(invocation.bind(w, matrix, weight));
+  HYLE_RETURN_IF_ERROR(invocation.prepare_replay());
+  { HYLE_ASSIGN_OR_RETURN(auto warm, invocation.run()); }
+  const auto cold = stats.snapshot().total_allocs;
+  for (int iteration = 0; iteration < 8; ++iteration) {
+    HYLE_ASSIGN_OR_RETURN(auto result, invocation.run());
+    HYLE_ASSIGN_OR_RETURN(auto tensor, result->output(output));
+    std::array<float, 64> actual;
+    HYLE_RETURN_IF_ERROR(tensor.storage().read(std::as_writable_bytes(std::span(actual))));
+    for (std::size_t i = 0; i < actual.size(); ++i)
+      HYLE_RETURN_IF_ERROR(require(std::abs(actual[i] + 2 * values[i]) < 1e-5f, "leased mixed math differs"));
+    HYLE_RETURN_IF_ERROR(require(!invocation.reset().ok(), "old mixed result did not guard reset"));
+    HYLE_RETURN_IF_ERROR(require(pool.stats().active_uses == 0, "successful native prefixes did not retire"));
+  }
+  HYLE_RETURN_IF_ERROR(require(stats.snapshot().total_allocs == cold, "mixed replay allocated lease metadata"));
+  HYLE_RETURN_IF_ERROR(require(!input.try_write().has_value(), "shared mixed source became writable"));
+  HYLE_RETURN_IF_ERROR(invocation.reset());
+  HYLE_ASSIGN_OR_RETURN(auto native_weight, vulkan.upload(matrix, std::as_bytes(std::span(diagonal))));
+  HYLE_ASSIGN_OR_RETURN(auto imported, device.import_readonly(native_weight));
+  HYLE_RETURN_IF_ERROR(invocation.bind(x, row, input)); HYLE_RETURN_IF_ERROR(invocation.bind(w, matrix, imported));
+  HYLE_RETURN_IF_ERROR(invocation.prepare_replay());
+  HYLE_ASSIGN_OR_RETURN(auto retained, invocation.run());
+  HYLE_ASSIGN_OR_RETURN(auto rejected_slot, program.create_invocation(scheduler, queue));
+  HYLE_RETURN_IF_ERROR(rejected_slot.bind(x, row, input)); HYLE_RETURN_IF_ERROR(rejected_slot.bind(w, matrix, imported));
+  HYLE_RETURN_IF_ERROR(rejected_slot.prepare_replay());
+  HYLE_RETURN_IF_ERROR(pool.close());
+  HYLE_RETURN_IF_ERROR(require(!rejected_slot.submit().has_value(), "closed mixed source accepted math"));
+  HYLE_RETURN_IF_ERROR(require(pool.stats().active_uses == 0, "closed source rejection leaked guards"));
+  rejected_slot = {}; invocation = {}; input.reset(); weight.reset(); reader.reset();
+  HYLE_ASSIGN_OR_RETURN(auto alias, retained->output(x));
+  std::array<float, 64> original;
+  HYLE_RETURN_IF_ERROR(alias.storage().read(std::as_writable_bytes(std::span(original))));
+  HYLE_RETURN_IF_ERROR(require(original == values, "mixed source alias lost its lease backing"));
+  HYLE_RETURN_IF_ERROR(require(pool.stats().live_blocks == 1, "old mixed result did not retain source"));
+  retained = {};
+  HYLE_RETURN_IF_ERROR(require(pool.stats().live_blocks == 0, "mixed source lease was not reclaimed"));
+  return Status::Ok();
+}
+
 Status contracts() {
+  HYLE_RETURN_IF_ERROR(leased_contracts());
   HYLE_ASSIGN_OR_RETURN(auto cpu, g::cpu::create_context());
   HYLE_ASSIGN_OR_RETURN(auto vulkan, v::Context::create());
   HYLE_ASSIGN_OR_RETURN(auto device, v::MemoryResource::create(vulkan, v::MemoryKind::kDevice));

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "hyle/compute/apple_weights.h"
+#include "hyle/compute/resource_leases.h"
 #include "hyle/graph/apple.h"
 #include "hyle/graph/executable.h"
 #include "hyle/visibility.h"
@@ -141,6 +142,10 @@ public:
   HYLE_GRAPH_ROUTE_CPU_APPLE_API ~Invocation();
   bool valid() const noexcept { return state_ != nullptr; }
   HYLE_GRAPH_ROUTE_CPU_APPLE_API Status bind(ValueId, compute::ConstTensorView) noexcept;
+  // Opt-in readonly permission. This input and its accepted native prefixes
+  // retain the lease through Results/source aliases. Other borrowed bindings
+  // keep their original lifetime contract. Bind/replay control is serialized.
+  HYLE_GRAPH_ROUTE_CPU_APPLE_API Status bind(ValueId, compute::TensorDesc, compute::ReadLease) noexcept;
   HYLE_GRAPH_ROUTE_CPU_APPLE_API Status bind(ValueId, const mlx::core::array &) noexcept;
   HYLE_GRAPH_ROUTE_CPU_APPLE_API Status
   bind(ValueId, const compute::apple::WeightBatch &, std::uint64_t id) noexcept;

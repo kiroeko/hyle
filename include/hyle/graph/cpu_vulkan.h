@@ -1,6 +1,7 @@
 #pragma once
 
 #include "hyle/compute/vulkan_weights.h"
+#include "hyle/compute/resource_leases.h"
 #include "hyle/graph/vulkan.h"
 #include "hyle/graph/executable.h"
 #include "hyle/visibility.h"
@@ -145,6 +146,10 @@ public:
   HYLE_GRAPH_ROUTE_CPU_VULKAN_API ~Invocation();
   bool valid() const noexcept { return state_ != nullptr; }
   HYLE_GRAPH_ROUTE_CPU_VULKAN_API Status bind(ValueId, compute::ConstTensorView) noexcept;
+  // Opt-in readonly permission. This input and its accepted native prefixes
+  // retain the lease through Results/source aliases. Other borrowed bindings
+  // keep their original lifetime contract. Bind/replay control is serialized.
+  HYLE_GRAPH_ROUTE_CPU_VULKAN_API Status bind(ValueId, compute::TensorDesc, compute::ReadLease) noexcept;
   HYLE_GRAPH_ROUTE_CPU_VULKAN_API Status bind(ValueId, const compute::vulkan::Tensor &) noexcept;
   HYLE_GRAPH_ROUTE_CPU_VULKAN_API Status
   bind(ValueId, const compute::vulkan::WeightBatch &, std::uint64_t id) noexcept;

@@ -11,6 +11,7 @@
 
 #include "../compute/completion_internal.h"
 #include "hyle/compute/detail/generated_result.h"
+#include "hyle/graph/detail/lease_submission.h"
 #include "hyle/sched/scheduler.h"
 #include "hyle/sched/sync.h"
 #include "hyle/util/ref_counted.h"
@@ -43,6 +44,7 @@ struct RunState final : util::RefCounted<RunState> {
         fragments(mem::StdAllocator<FragmentRun>(allocator)) {}
   std::shared_ptr<const Plan> plan;
   mem::AllocatorRef allocator;
+  graph::detail::LeaseSubmission leases;
   Vector<ValueRun> values;
   Vector<FragmentRun> fragments;
   sched::Scheduler *scheduler = nullptr;
@@ -152,6 +154,7 @@ Status add_copy(ReplayReport &report, std::size_t bytes) noexcept {
 }
 
 Status await_completion(RunState &run, const compute::Completion &completion) noexcept {
+  if (run.leases.valid()) HYLE_RETURN_IF_ERROR(run.leases.protect(completion));
   for (;;) {
     const auto ready = completion.poll();
     if (!ready) return ready.error();
@@ -200,7 +203,11 @@ const cd::CompletionVTable completion_vtable{
     },
     .poll = [](void *opaque) noexcept -> Result<compute::CompletionPoll> {
       auto &run = *static_cast<RunState *>(opaque);
-      if (run.running.load(std::memory_order_acquire)) return compute::CompletionPoll::kPending;
+      if (run.running.load(std::memory_order_acquire)) {
+        const auto error = run.leases.observed_error();
+        if (!error.ok()) return std::unexpected(error);
+        return compute::CompletionPoll::kPending;
+      }
       std::lock_guard lock(run.retirement_mutex);
       if (!run.done) return compute::CompletionPoll::kPending;
       if (!run.terminal.ok()) return std::unexpected(run.terminal);
@@ -208,8 +215,11 @@ const cd::CompletionVTable completion_vtable{
     },
     .wait = [](void *opaque) noexcept {
       auto &run = *static_cast<RunState *>(opaque);
-      while (run.running.load(std::memory_order_acquire))
+      while (run.running.load(std::memory_order_acquire)) {
+        const auto error = run.leases.observed_error();
+        if (!error.ok()) return error;
         run.finished.wait_for(std::chrono::milliseconds(1));
+      }
       std::lock_guard lock(run.retirement_mutex);
       return run.terminal;
     },
@@ -309,7 +319,8 @@ void drive(void *opaque) noexcept {
   auto &run = *static_cast<RunState *>(opaque);
   bool accepted = false;
   const auto status = drive_graph(run, accepted);
-  publish_terminal(run, status, accepted);
+  if (run.leases.valid()) run.leases.finish(status, accepted);
+  else publish_terminal(run, status, accepted);
   run.decref(); // existing Sched worker's admitted reference
 }
 
@@ -464,6 +475,8 @@ Status Invocation::bind(ValueId id, compute::ConstTensorView tensor) noexcept {
   value.host_input = tensor;
   value.native_input.reset(); value.weight.reset();
   run.prepared = false;
+  const auto slot = std::find(run.plan->inputs.begin(), run.plan->inputs.end(), index) - run.plan->inputs.begin();
+  run.leases.clear(static_cast<std::size_t>(slot));
   return Status::Ok();
 }
 Status Invocation::bind(ValueId id, const mx::array &array) noexcept {
@@ -475,6 +488,8 @@ Status Invocation::bind(ValueId id, const mx::array &array) noexcept {
   value.native_input = array;
   value.host_input = {}; value.weight.reset();
   run.prepared = false;
+  const auto slot = std::find(run.plan->inputs.begin(), run.plan->inputs.end(), index) - run.plan->inputs.begin();
+  run.leases.clear(static_cast<std::size_t>(slot));
   return Status::Ok();
 }
 Status Invocation::bind(ValueId id, const ca::WeightBatch &batch, std::uint64_t weight_id) noexcept {
@@ -489,6 +504,37 @@ Status Invocation::bind(ValueId id, const ca::WeightBatch &batch, std::uint64_t 
   value.weight = batch; value.weight_id = weight_id;
   value.host_input = {}; value.native_input.reset();
   run.prepared = false;
+  const auto slot = std::find(run.plan->inputs.begin(), run.plan->inputs.end(), index) - run.plan->inputs.begin();
+  run.leases.clear(static_cast<std::size_t>(slot));
+  return Status::Ok();
+}
+Status Invocation::bind(ValueId id, compute::TensorDesc description, compute::ReadLease source) noexcept {
+  HYLE_RETURN_IF_ERROR(admit(state_));
+  auto &run = *state_->run;
+  HYLE_ASSIGN_OR_RETURN(auto index, input_index(run, id));
+  if (!run.leases.valid()) {
+    const auto inputs = run.plan->inputs.size(), fragments = run.plan->fragments.size();
+    if (inputs > (SIZE_MAX - fragments) / 2) return Status::ResourceExhausted("CPU+Apple lease prefix capacity");
+    auto prefixes = 2 * inputs + fragments;
+    for (const auto &fragment : run.plan->fragments) {
+      if (fragment.outputs.size() > SIZE_MAX - prefixes)
+        return Status::ResourceExhausted("CPU+Apple lease prefix capacity");
+      prefixes += fragment.outputs.size();
+    }
+    HYLE_ASSIGN_OR_RETURN(run.leases, graph::detail::LeaseSubmission::create(inputs, prefixes,
+        {.allocator = run.allocator, .resource_budget = run.plan->budget}));
+  }
+  HYLE_ASSIGN_OR_RETURN(auto storage, source.view());
+  if (storage.resource() == run.plan->environment.native->ref()) {
+    HYLE_ASSIGN_OR_RETURN(auto native, run.plan->environment.native->binding(source, description,
+        {.allocator = run.allocator, .resource_budget = run.plan->budget}));
+    HYLE_RETURN_IF_ERROR(bind(id, native));
+  } else {
+    HYLE_ASSIGN_OR_RETURN(auto host, source.tensor(description));
+    HYLE_RETURN_IF_ERROR(bind(id, host));
+  }
+  const auto slot = std::find(run.plan->inputs.begin(), run.plan->inputs.end(), index) - run.plan->inputs.begin();
+  run.leases.bind(static_cast<std::size_t>(slot), std::move(source));
   return Status::Ok();
 }
 Status Invocation::reset() noexcept {
@@ -501,6 +547,7 @@ Status Invocation::reset() noexcept {
     value.native_input.reset(); value.native_value.reset(); value.weight.reset();
   }
   run.prepared = false;
+  run.leases.reset();
   return Status::Ok();
 }
 Status Invocation::prepare_replay(ReplayOptions options) noexcept {
@@ -611,7 +658,20 @@ Result<compute::OwnedResult<Results>> Invocation::submit() noexcept {
   HYLE_RETURN_IF_ERROR(admit(state_));
   auto &run = *state_->run;
   if (!run.prepared) return std::unexpected(Status::FailedPrecondition("CPU+Apple replay is not prepared"));
-  HYLE_RETURN_IF_ERROR(state_->write.emplace(Results(&run)));
+  if (run.leases.valid()) {
+    HYLE_RETURN_IF_ERROR(run.leases.begin(&run,
+        [](void *owner) noexcept { static_cast<RunState *>(owner)->incref(); },
+        [](void *owner) noexcept { static_cast<RunState *>(owner)->decref(); },
+        [](void *owner, Status terminal, bool accepted) noexcept {
+          publish_terminal(*static_cast<RunState *>(owner), std::move(terminal), accepted);
+        }));
+  }
+  const auto emplaced = state_->write.emplace(Results(&run));
+  if (!emplaced.ok()) {
+    if (run.leases.valid()) run.leases.finish(emplaced, false);
+    state_->write = {};
+    return std::unexpected(emplaced);
+  }
   run.finished.reset(); run.cancel.store(false, std::memory_order_relaxed);
   {
     std::lock_guard lock(run.retirement_mutex);
@@ -622,14 +682,16 @@ Result<compute::OwnedResult<Results>> Invocation::submit() noexcept {
   auto completion = cd::CompletionAccess::make(&completion_vtable, &run);
   auto result = state_->write.publish(std::move(completion));
   if (!result) {
-    publish_terminal(run, result.error(), false);
+    if (run.leases.valid()) run.leases.finish(result.error(), false);
+    else publish_terminal(run, result.error(), false);
     state_->write = {};
     return std::unexpected(result.error());
   }
   run.incref(); // Sched admission may start the driver immediately.
   const auto scheduled = run.scheduler->spawn_detached(&drive, &run, mem::kFiberStackLarge);
   if (!scheduled.ok()) {
-    publish_terminal(run, scheduled, false);
+    if (run.leases.valid()) run.leases.finish(scheduled, false);
+    else publish_terminal(run, scheduled, false);
     run.decref();
     return std::unexpected(scheduled);
   }

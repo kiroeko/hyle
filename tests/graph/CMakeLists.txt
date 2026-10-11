@@ -1,7 +1,7 @@
 find_package(Threads REQUIRED)
 
 hyle_add_header_self_contained_test(graph)
-hyle_add_test(graph SOURCES graph_test.cc)
+hyle_add_test(graph SOURCES graph_test.cc lease_submission_test.cc)
 if(HYLE_COMPUTE_CUDA_ENABLED AND TARGET hyle_compute_provider_cublas)
   hyle_add_test(graph NAME native_retirement
     SOURCES aggregate_native_retirement_test.cc
