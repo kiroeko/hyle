@@ -107,6 +107,23 @@ Status driver_status(CUresult error) noexcept {
                                                : std::string_view{});
 }
 
+bool terminal_driver_error(CUresult error) noexcept {
+  switch (error) {
+  case CUDA_ERROR_ILLEGAL_ADDRESS:
+  case CUDA_ERROR_LAUNCH_TIMEOUT:
+  case CUDA_ERROR_ASSERT:
+  case CUDA_ERROR_HARDWARE_STACK_ERROR:
+  case CUDA_ERROR_ILLEGAL_INSTRUCTION:
+  case CUDA_ERROR_MISALIGNED_ADDRESS:
+  case CUDA_ERROR_INVALID_ADDRESS_SPACE:
+  case CUDA_ERROR_INVALID_PC:
+  case CUDA_ERROR_LAUNCH_FAILED:
+    return true;
+  default:
+    return false;
+  }
+}
+
 Status combine_terminal(Status observed, Status hint) noexcept {
   return observed.ok() && !hint.ok() ? std::move(hint) : std::move(observed);
 }
@@ -136,7 +153,12 @@ ScopedPrimaryContext::~ScopedPrimaryContext() {
     return;
   CUcontext popped = nullptr;
   const CUresult result = cuCtxPopCurrent(&popped);
-  HYLE_FATAL_ASSERT(result == CUDA_SUCCESS);
+  if (result != CUDA_SUCCESS) {
+    // Terminal device execution errors can poison every later CUDA call.
+    // They already require process restart; cleanup must not add a host fatal.
+    HYLE_FATAL_ASSERT(terminal_driver_error(result));
+    return;
+  }
   HYLE_FATAL_ASSERT(popped == expected_);
 }
 

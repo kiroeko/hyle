@@ -236,6 +236,24 @@ const void *byte_pointer(mem::ConstBufferView view) noexcept {
 
 namespace {
 
+void release_native_allocation(ContextState *context, MemoryKind kind, void *pointer) noexcept {
+  ScopedPrimaryContext scope(context->primary);
+  if (!scope) {
+    const auto native = scope.status().native_error();
+    HYLE_FATAL_ASSERT(native.domain == NativeErrorDomain::CudaDriver &&
+                      terminal_driver_error(static_cast<CUresult>(native.code)));
+    return;
+  }
+  const CUresult released = kind == MemoryKind::kPinnedHost
+      ? cuMemFreeHost(pointer)
+      : cuMemFree(static_cast<CUdeviceptr>(reinterpret_cast<std::uintptr_t>(pointer)));
+  // The logical owner ends after native retirement. A sticky terminal CUDA
+  // error does not prove that this native allocation was freed: its residency
+  // stays unknown until the required process restart. Never reset a shared
+  // primary context or hide a non-terminal/malformed-handle error here.
+  HYLE_FATAL_ASSERT(released == CUDA_SUCCESS || terminal_driver_error(released));
+}
+
 class ResourceImpl final : public CudaResourceBase {
 public:
   ResourceImpl(compute::detail::ContextState *owner, ContextState *context,
@@ -303,14 +321,7 @@ public:
       HYLE_FATAL_ASSERT(allocation.size == 0);
       return;
     }
-    ScopedPrimaryContext scope(context_->primary);
-    HYLE_FATAL_ASSERT(scope.status().ok());
-    const CUresult released =
-        kind_ == MemoryKind::kPinnedHost
-            ? cuMemFreeHost(allocation.native_handle)
-            : cuMemFree(static_cast<CUdeviceptr>(
-                  reinterpret_cast<std::uintptr_t>(allocation.native_handle)));
-    HYLE_FATAL_ASSERT(released == CUDA_SUCCESS);
+    release_native_allocation(context_, kind_, allocation.native_handle);
     used_.fetch_sub(allocation.size, std::memory_order_relaxed);
     live_.fetch_sub(1, std::memory_order_relaxed);
   }
@@ -375,11 +386,7 @@ public:
     HYLE_FATAL_ASSERT(allocation.native_handle == expected_);
     if (!owning_ || allocation.native_handle == nullptr)
       return;
-    ScopedPrimaryContext scope(context_->primary);
-    HYLE_FATAL_ASSERT(scope.status().ok());
-    const CUresult released = cuMemFree(static_cast<CUdeviceptr>(
-        reinterpret_cast<std::uintptr_t>(allocation.native_handle)));
-    HYLE_FATAL_ASSERT(released == CUDA_SUCCESS);
+    release_native_allocation(context_, MemoryKind::kDevice, allocation.native_handle);
     expected_ = nullptr;
   }
 

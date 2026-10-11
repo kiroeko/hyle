@@ -207,6 +207,7 @@ Result<QueueState *> create_queue_state(ContextState *context,
 
 Status runtime_status(cudaError_t error) noexcept;
 Status driver_status(CUresult error) noexcept;
+bool terminal_driver_error(CUresult error) noexcept;
 Status combine_terminal(Status observed, Status hint) noexcept;
 
 compute::detail::EnqueueResult
