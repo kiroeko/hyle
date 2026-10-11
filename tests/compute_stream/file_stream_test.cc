@@ -5,7 +5,12 @@
 #include <cstdio>
 #include <optional>
 #include <string>
+#include <thread>
 #include <vector>
+#if !defined(_WIN32)
+#include <csignal>
+#include <sys/resource.h>
+#endif
 
 #include "hyle/compute/cpu.h"
 #include "hyle/mem/quota_allocator.h"
@@ -236,4 +241,58 @@ TEST(FileStream, AcceptedHotMetadataOomReportsFailureAndReleasesOriginalOwners) 
   EXPECT_FALSE(ticket.next_ready()); EXPECT_EQ(pipeline.report().io_calls, 0u);
   ticket = {}; pipeline.drain().IgnoreError(); no_hot_bytes.reset(); pipeline = {}; EXPECT_EQ(metadata.used(), 0u);
 }
+TEST(FileStream, ExportedReadyAndLeaseCanRetireOnAnotherThreadWithoutReusingHeldRecord) {
+  Runtime runtime({.max_requests = 1}); const auto input = bytes(); auto source = runtime.file(input);
+  auto pool = LeasePool::create(m::system_resource(), 1024).value();
+  auto ranges = read_ranges(pool); auto groups = read_groups(ranges);
+  auto ticket = runtime.pipeline.read(StreamSource::file(source), groups).value(); ASSERT_TRUE(ticket.wait().status.ok());
+  auto ready = ticket.next_ready().value(); auto lease = ready.output(0).value();
+  std::atomic<bool> release{false};
+  std::thread consumer([ready = std::move(ready), lease = std::move(lease), &release]() mutable {
+    release.wait(false, std::memory_order_acquire); lease.reset(); ready = {};
+  });
+  struct Join {
+    std::thread &thread; std::atomic<bool> &release;
+    ~Join() { release.store(true, std::memory_order_release); release.notify_all(); if (thread.joinable()) thread.join(); }
+  } join{consumer, release};
+  ticket = {}; ASSERT_TRUE(runtime.pipeline.collect().ok());
+  EXPECT_EQ(runtime.pipeline.report().live_requests, 1u); EXPECT_FALSE(runtime.pipeline.read({}, {}));
+  release.store(true, std::memory_order_release); release.notify_all(); consumer.join();
+  ASSERT_TRUE(runtime.pipeline.collect().ok()); EXPECT_EQ(pool.stats().live_blocks, 0u);
+  auto next = runtime.pipeline.read({}, {}).value(); EXPECT_TRUE(next.wait().status.ok());
+}
+#if !defined(_WIN32)
+TEST(FileStream, OriginalFileSizeLimitPreservesPositiveShortWritePrefixAndNoGroupReady) {
+  Runtime runtime; const auto input = bytes(); auto sink = runtime.file({}, 128);
+  auto pool = LeasePool::create(m::system_resource(), 1024).value();
+  auto writer = pool.allocate(128).value(); ASSERT_TRUE(writer.view()->write(std::span(input).first(128)).ok());
+  auto source = writer.publish().value();
+  std::array<StreamWriteRange, 1> ranges{StreamWriteRange::ready(source, 0, 0, 128)};
+  std::array<StreamWriteGroup, 1> groups{{{1, ranges}}};
+  struct Limit {
+    struct rlimit original{}; struct sigaction signal{};
+    bool limit_changed = false, signal_changed = false;
+    void restore() {
+      if (limit_changed) { EXPECT_EQ(setrlimit(RLIMIT_FSIZE, &original), 0); limit_changed = false; }
+      if (signal_changed) { EXPECT_EQ(sigaction(SIGXFSZ, &signal, nullptr), 0); signal_changed = false; }
+    }
+    ~Limit() { restore(); }
+  } limit;
+  ASSERT_EQ(getrlimit(RLIMIT_FSIZE, &limit.original), 0); ASSERT_GE(limit.original.rlim_max, 80u);
+  struct sigaction ignored{}; ignored.sa_handler = SIG_IGN; sigemptyset(&ignored.sa_mask);
+  ASSERT_EQ(sigaction(SIGXFSZ, &ignored, &limit.signal), 0); limit.signal_changed = true;
+  auto bounded = limit.original; bounded.rlim_cur = 80;
+  ASSERT_EQ(setrlimit(RLIMIT_FSIZE, &bounded), 0); limit.limit_changed = true;
+  auto admitted = runtime.pipeline.write(sink, groups);
+  // Restore before diagnostics/XML/log writes; only this child process's
+  // actual positional file IO is constrained, with its original signal kept.
+  if (!admitted) { limit.restore(); FAIL() << "bounded file write admission failed"; }
+  auto ticket = std::move(*admitted); auto result = ticket.wait(); limit.restore();
+  EXPECT_FALSE(result.status.ok()); EXPECT_TRUE(result.retirement_proven); EXPECT_EQ(result.ready_groups, 0u);
+  EXPECT_EQ(result.written_bytes, 80u); EXPECT_EQ(result.copied_bytes, 96u); EXPECT_FALSE(ticket.next_ready());
+  auto stored = p::open_random_access_file(runtime.paths.back().c_str(), p::kOpenRead).value();
+  std::array<std::byte, 128> prefix; ASSERT_EQ(stored.read_at(0, prefix).value(), 80u);
+  EXPECT_TRUE(std::equal(prefix.begin(), prefix.begin() + 80, input.begin()));
+}
+#endif
 } // namespace
