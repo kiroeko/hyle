@@ -54,3 +54,35 @@ SGLang `234ccba7f625e12639e621044496bcc6197c3758`。
 
 本页不先发明未审计的公共 API。只读核对完成后，按原卡合法定界；F3、GPU-produced dynamic IDs、
 复制/数学 kernel、跨 GPU 与应用缓存策略不混入本批。
+
+## SCOPED 后确认的两个适配问题
+
+当前 registry 已依法将四个实际 owner 置 SCOPED；以下是新 F2 consumer 的源协议适配问题，
+不是回头把已关闭的 F1 原合同写成失败。
+
+1. [F1 `add_use` / `publish`](../../../../src/compute/resource_leases.cc) 的写 use 独占，
+   `publish()` 要 root 唯一。完整 F2 journey 的 A→B、B→C 显式阶段若把 B 的写 guard 延伸到
+   全批结束，就不能在第一阶段真实完成后给消费者 ready B；若重新接纳 writer，则会与仍在途 use 冲突。
+   AUDIT 必须固定有序 read-after-write 的内部交接：原生依赖明确、实际写退休与成功确认后才能发布，
+   pending 后继只读 use 继续保活；已发布范围后续不能再写/重绑定，错误不得发布或污染已成功的独立组。
+   原 F1 public read/write/publish 的普通语义保留，不用整批 host wait 或伪造 readonly owner 缩减目标。
+2. [原 dependency 入口](../../../../src/compute/completion.cc) 返回 public Completion 的 exact vtable，
+   [QueueSequence](../../../../src/compute/device.cc)原样传给 native wait，
+   [CUDA wait](../../../../src/compute_backend_cuda/cuda_backend.cc)只接原 CUDA vtable/event。
+   F1 [RetainedCompletion](../../../../src/compute/retained_completion.cc) 是独立代理，不能直接充当原 CUDA
+   event identity。F2 的新依赖接缝须在原 owner 保活下识别/转交实际 native dependency，并保留
+   inline/known error/unknown 已交接退休的区别；不得伪造已完成或回退隐式 host sync。
+   优先使用 F2 的内部入口，不给所有旧 Completion/Queue/数学 submit 增加常态字段或泛型 dispatch。
+
+已定位 [BackendExtensionAccess](../../../../include/hyle/compute/detail/backend_extension.h) 的原 versioned
+Context capability 与 admitted enqueue，可承载 CUDA 冷能力/原 QueueSequence 录制，不新建 executor。
+本机13.3 `cuda.h` 对 `cuMemcpyBatchAsync` 映射 `_v2`，该签名没有旧12.8 failIdx；实际 ABI 与 cold resolve
+必须一致，不能复用 peer typedef 后直接 cast。Fallback 仍是该原 native stream 的合法 memcpy 命令。
+
+Apple 实机的锁定 MLX `mlx/backend/metal/device.h/.cpp` 有原 stream 的 CommandEncoder，
+`end_encoding/get_command_buffer/commit/synchronize`；本机 Metal header 有原 buffer blit。
+[HYLE 原 Runtime/Job](../../../../src/compute_route_apple/apple_context.cc)可以复用自己的 owner thread/admission。
+AUDIT 还须固定同 queue/跨 producer 的 ordering、MCB 单次使用、实际错误/退休与 opaque native allocation
+账单，不能新建全局 Metal Queue 或把 host memcpy 说成 native batch。
+
+上述仍为 SOURCE_ONLY；尚未故障复现、运行 F2 数学、写产品或进入 AUDITED。
