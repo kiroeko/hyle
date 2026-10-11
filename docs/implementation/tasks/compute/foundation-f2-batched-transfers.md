@@ -338,6 +338,13 @@ SHA/commit/tree、硬件/工具链/命令/log SHA；当前四路线公共入口�
 
 ## 预声明验证与停止
 
+普通数学接线阶段选新增 `samples/package/graph/batched_transfers`：先在Windows原CPU/CUDA
+源码消费树以普通 `hyle::graph` 运行两组/两槽/三次replay，BF16 dense及原GGUF Q8_0
+先host→device→device→host，逐字节读回，再由原Direct/Graph MatMul消费device ready leases。
+CPU用同合同host变体，不伪造device能力。此阶段不签Apple/Vulkan或SDK交付；两者接同一
+样例后再沿卡内全矩阵取证。build1/test1、4GiB、configure300/build1800/exe180，冷metadata
+allocator只统计CopyBatch自身；成熟数学准备/Graph编译成本不混入copy replay账。
+
 有限矩阵覆盖 R=0/1/多范围、同/不同 buffer pair、单/多 phase、重复 source、坏 ID、overlap、
 host/device 原编码、aligned/tail、pending 与 retained result。
 每路线对一次 staged upload、一次 D2H/read 与 D2D/host 合法变体作数学消费；故障只装饰真实 native calls。
