@@ -575,6 +575,12 @@ Air CPU/Apple shared收据现补入真正`DYLD_PRINT_LIBRARIES`运行：同一�
 及package请求缺席、DLL同目录与实际imports均PASS。没有再次重编oneDNN或切换SDK profile。
 Windows shared正在运行，WSL软件Vulkan两格及最终source复验/矩阵/红队仍待验。
 
+[当前Windows CPU/CUDA shared交付](../../../../evidence/correctness/foundation-f3-sdk-windows-cpu-cuda-shared-a5215036e/receipt.json)
+完成独立shared tree的62项产物构建、真实install/rename、普通find_package消费者、当前CPU/CUDA
+小GGUF与Qwen完整往返、七头及Apple/Vulkan缺席诊断，DLL同目录/最小PATH运行和实际imports均PASS。
+八个合格平台/路线installed static/shared profile格现已齐；WSL Vulkan已重新枚举只有llvmpipe，
+其GPU数学NOT_APPLICABLE，当前static适用构建/头/缺席/ldd门正在运行。最终source/矩阵/红队待齐。
+
 ## 解析器与真实权重验收
 
 格式解析不进入 pipeline。GGUF 用现有 ggml 格式核；本地 Qwen3.5-2B 原始 Safetensors
