@@ -557,6 +557,12 @@ CPU原GGUF/Apple原affine Q4小旅程、两路线同Qwen实际权重往返均PAS
 CUDA/Vulkan头与package请求缺席PASS。原Metal runtime asset同消费者接线、otool依赖记录保留；
 实际dyld路径补证待运行，不用otool名字代签加载位置。Air Vulkan static正在运行。
 
+Air CPU/Apple shared收据现补入真正`DYLD_PRINT_LIBRARIES`运行：同一普通consumer实际加载的
+25条HYLE dylib全部来自relocated/lib，数学再次PASS；原首份日志及Git证据身份保留。
+[Air Vulkan static交付](../../../../evidence/correctness/foundation-f3-sdk-air-vulkan-static-97858fbc8/receipt.json)
+也已完成当前产品的真实M4/MoltenVK数学与Qwen往返、迁址、新六头、CPU/CUDA/Apple头与路线
+请求缺席、原Vulkan/IREE闭包和consumer运行。shared版本正在运行，actual dyld路径同时记录。
+
 ## 解析器与真实权重验收
 
 格式解析不进入 pipeline。GGUF 用现有 ggml 格式核；本地 Qwen3.5-2B 原始 Safetensors
