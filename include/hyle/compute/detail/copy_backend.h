@@ -27,7 +27,7 @@ struct CopyBackendVTable final {
                     void **program, std::size_t *metadata_bytes) noexcept;
   void (*destroy_program)(void *program, mem::AllocatorRef allocator) noexcept;
   Status (*create_slot)(void *context, void *queue, void *program,
-                        std::uint32_t capacity, mem::AllocatorRef allocator,
+                        std::uint32_t capacity, std::uint32_t phase_capacity, mem::AllocatorRef allocator,
                         void **slot, std::size_t *metadata_bytes) noexcept;
   void (*destroy_slot)(void *slot, mem::AllocatorRef allocator) noexcept;
   Result<PhysicalCopyResource> (*physical)(void *context,

@@ -190,6 +190,13 @@ CUDA copy backend 接缝实现期另选原 `compute_backend_cuda` 构建树的 `
 只验证固定13.0 `_v2` ABI、同Context physical identity、H2D/D2D/D2H byte equality和有限replay；
 没有签整体permission/controller/数学/故障资格。该门同样build1/test1和上述内存/时间上限，
 新内部 `detail/copy_backend.h` 独立编译；全部端到端门继续待候选冻结。
+公共CPU/CUDA控制对象接线阶段增加原CUDA构建树的 `CudaCopyProgram.*`：
+二slot三阶段、last-write output、实际pending后继读、放弃/close/reset、失误不消费、空批/旧句柄及冷metadata回放账。
+CPU对等门仍用原CPU构建树的 `CpuCopyProgram.*`；两者只签对应实现期接缝，不代签最终数学/三交付。
+native slot冷创建加上本slot需要的原event容量；HYLE metadata计实际requested live bytes，
+含共享program与其全部live slots一次，opaque driver/event内部费用分别记unknown，有限ResourceBudget必须显式允许。
+报告将已冻结的wait账显式分成 `native_waits`（实际接纳的device dependency）与 `host_waits`，
+`native_calls` 计copy entry-point；phase只导入声明的直接先行边，hazard校验仍用传递闭包。
 
 ### 当前实施与首轮证据（2026-10-11）
 

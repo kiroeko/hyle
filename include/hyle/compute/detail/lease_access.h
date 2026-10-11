@@ -21,6 +21,9 @@ struct LeaseAccess final {
   // permission/lifetime operations, not execution or dependency validation.
   static HYLE_COMPUTE_API Status read_unique(LeaseUseBatch &uses, const ReadLease &lease) noexcept;
   static HYLE_COMPUTE_API Status ordered_read_unique(LeaseUseBatch &uses, const WriteLease &lease) noexcept;
+  // Borrow only into an F2 controller that records the declared producer
+  // before use; this never exposes a mutable alias through the public lease.
+  static HYLE_COMPUTE_API Result<mem::BufferView> ordered_view(const WriteLease &lease) noexcept;
   static HYLE_COMPUTE_API Status write_unique(LeaseUseBatch &uses, const WriteLease &lease,
                                              bool ordered_after_prior) noexcept;
   // A group may publish after its last successful actual write while ordered

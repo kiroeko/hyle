@@ -3,8 +3,10 @@
 #include <cstddef>
 #include <cstdint>
 #include <limits>
+#include <span>
 
 #include "hyle/compute/resource_budget.h"
+#include "hyle/compute/resource_leases.h"
 
 namespace hyle::compute {
 
@@ -60,8 +62,93 @@ struct CopyBatchReport final {
   std::uint32_t no_op_copies = 0;
   std::size_t logical_bytes = 0, physical_bytes = 0, staging_bytes = 0;
   std::size_t metadata_bytes = 0;
-  std::uint64_t native_calls = 0, phase_completions = 0, host_waits = 0;
+  // Copy entry-point calls, accepted native dependency waits, actual phase
+  // completion boundaries and explicit host waits are charged separately.
+  std::uint64_t native_calls = 0, native_waits = 0, phase_completions = 0, host_waits = 0;
   bool native_metadata_unknown = false;
+};
+
+class Context;
+class Queue;
+class CopyBatchInvocation;
+class CopyBatchSubmission;
+namespace detail { struct CopyProgramState; struct CopyInvocationState; }
+
+// Immutable prepared CPU/CUDA copy contract. Resources and allocator remain
+// borrowed; invocation/native retirement retain this program's cold metadata.
+class CopyBatchProgram final {
+public:
+  CopyBatchProgram() noexcept = default;
+  HYLE_COMPUTE_API CopyBatchProgram(const CopyBatchProgram &) noexcept;
+  HYLE_COMPUTE_API CopyBatchProgram &operator=(const CopyBatchProgram &) noexcept;
+  HYLE_COMPUTE_API CopyBatchProgram(CopyBatchProgram &&) noexcept;
+  HYLE_COMPUTE_API CopyBatchProgram &operator=(CopyBatchProgram &&) noexcept;
+  HYLE_COMPUTE_API ~CopyBatchProgram();
+  HYLE_COMPUTE_API static Result<CopyBatchProgram> prepare(
+      const Context &context, std::span<const CopyResourceSpec> resources,
+      CopyBatchOptions options = {}) noexcept;
+  bool valid() const noexcept { return state_ != nullptr; }
+  HYLE_COMPUTE_API void reset() noexcept;
+private:
+  friend class CopyBatchInvocation;
+  explicit CopyBatchProgram(detail::CopyProgramState *state) noexcept : state_(state) {}
+  detail::CopyProgramState *state_ = nullptr;
+};
+
+// Thread-compatible, independent fixed-capacity replay slot. The original
+// Queue wrapper is borrowed and must stay at its address until this slot and
+// every submission/native use retire. Failed bindings do not consume leases.
+class CopyBatchInvocation final {
+public:
+  CopyBatchInvocation() noexcept = default;
+  CopyBatchInvocation(const CopyBatchInvocation &) = delete;
+  CopyBatchInvocation &operator=(const CopyBatchInvocation &) = delete;
+  HYLE_COMPUTE_API CopyBatchInvocation(CopyBatchInvocation &&) noexcept;
+  HYLE_COMPUTE_API CopyBatchInvocation &operator=(CopyBatchInvocation &&) noexcept;
+  HYLE_COMPUTE_API ~CopyBatchInvocation();
+  HYLE_COMPUTE_API static Result<CopyBatchInvocation> create(const CopyBatchProgram &, Queue &) noexcept;
+  bool valid() const noexcept { return state_ != nullptr; }
+  HYLE_COMPUTE_API Status bind_source(CopyResourceId, const ReadLease &) noexcept;
+  HYLE_COMPUTE_API Status bind_mutable(CopyResourceId, WriteLease &&) noexcept;
+  HYLE_COMPUTE_API Status bind_producer(CopyResourceId, Completion &&) noexcept;
+  HYLE_COMPUTE_API Status prepare_replay(std::span<const CopyPhase>, std::span<const CopyRange>) noexcept;
+  HYLE_COMPUTE_API Result<CopyBatchSubmission> submit() noexcept;
+  // Reset is explicit after successful retirement or failure; a retained
+  // submission or unproven retirement rejects reset without changing bindings.
+  HYLE_COMPUTE_API Status reset() noexcept;
+  HYLE_COMPUTE_API Status close() noexcept;
+  HYLE_COMPUTE_API Status drain() noexcept;
+  HYLE_COMPUTE_API bool in_flight() const noexcept;
+  // Metadata counts the shared program and all its live cold slots once.
+  HYLE_COMPUTE_API CopyBatchReport report() const noexcept;
+private:
+  explicit CopyBatchInvocation(detail::CopyInvocationState *state) noexcept : state_(state) {}
+  detail::CopyInvocationState *state_ = nullptr;
+};
+
+// Retains one invocation slot. Destruction abandons observation without a host
+// wait; actual native retirement continues to own descriptors and resources.
+class CopyBatchSubmission final {
+public:
+  CopyBatchSubmission() noexcept = default;
+  CopyBatchSubmission(const CopyBatchSubmission &) = delete;
+  CopyBatchSubmission &operator=(const CopyBatchSubmission &) = delete;
+  HYLE_COMPUTE_API CopyBatchSubmission(CopyBatchSubmission &&) noexcept;
+  HYLE_COMPUTE_API CopyBatchSubmission &operator=(CopyBatchSubmission &&) noexcept;
+  HYLE_COMPUTE_API ~CopyBatchSubmission();
+  bool valid() const noexcept { return state_ != nullptr; }
+  // Nonblocking observation; output only covers successfully copied logical
+  // bytes of the block's last-write phase. Pending/unknown never publish data.
+  HYLE_COMPUTE_API Result<ReadLease> output(CopyPhaseId, CopyResourceId,
+                                          std::size_t offset, std::size_t bytes) noexcept;
+  HYLE_COMPUTE_API Status wait() noexcept;
+  HYLE_COMPUTE_API Status request_cancel() noexcept;
+  HYLE_COMPUTE_API bool in_flight() const noexcept;
+  HYLE_COMPUTE_API CopyBatchReport report() const noexcept;
+private:
+  friend class CopyBatchInvocation;
+  explicit CopyBatchSubmission(detail::CopyInvocationState *state) noexcept : state_(state) {}
+  detail::CopyInvocationState *state_ = nullptr;
 };
 
 } // namespace hyle::compute

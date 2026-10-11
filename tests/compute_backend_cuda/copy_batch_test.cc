@@ -36,7 +36,7 @@ struct NativeBatch final {
       self.table = static_cast<const detail::CopyBackendVTable *>(interface);
       HYLE_RETURN_IF_ERROR(self.table->prepare(context, mem::system_allocator(), &self.program, &self.program_bytes));
       return self.table->create_slot(context, detail::ContextAccess::backend_queue(*self.queue), self.program,
-          4, mem::system_allocator(), &self.slot, &self.slot_bytes);
+          4, 4, mem::system_allocator(), &self.slot, &self.slot_bytes);
     }, this);
   }
   hyle::Status bind(std::span<const detail::CopyBackendRange> ranges) noexcept {

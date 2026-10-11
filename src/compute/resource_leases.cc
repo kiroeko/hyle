@@ -225,6 +225,15 @@ Result<mem::BufferView> lease_view(LeaseBlock *block, std::size_t offset,
       static_cast<std::size_t>(block->range.offset()) + offset, size);
 }
 
+Result<mem::BufferView> LeaseAccess::ordered_view(const WriteLease &lease) noexcept {
+  if (!lease.block_) return std::unexpected(Status::FailedPrecondition("copy mutable lease is empty"));
+  std::lock_guard guard(lease.block_->domain->lock);
+  if (lease.block_->domain->closed || !lease.block_->writer)
+    return std::unexpected(Status::FailedPrecondition("copy mutable lease domain is closed"));
+  if (!lease.block_->failure.ok()) return std::unexpected(lease.block_->failure);
+  return lease_view(lease.block_, lease.offset_, lease.size_);
+}
+
 Result<LeaseDomain *> prepare_lease_domain(mem::MemoryResourceRef resource,
     std::size_t capacity, std::size_t alignment, LeasePoolOptions options) noexcept {
   if (!resource.valid() || capacity == 0 || options.max_blocks == 0 ||

@@ -3,6 +3,7 @@
 #include <cudaTypedefs.h>
 
 #include <memory>
+#include <mutex>
 #include <vector>
 
 #include "hyle/compute/detail/copy_backend.h"
@@ -62,11 +63,19 @@ void destroy_program(void *opaque, mem::AllocatorRef allocator) noexcept {
   allocator.deallocate(program, sizeof(BatchProgram), alignof(BatchProgram));
 }
 Status create_slot(void *opaque, void *queue_opaque, void *program_opaque,
-                   std::uint32_t capacity, mem::AllocatorRef allocator,
+                   std::uint32_t capacity, std::uint32_t phase_capacity, mem::AllocatorRef allocator,
                    void **output, std::size_t *metadata) noexcept {
   auto &queue = *static_cast<QueueState *>(queue_opaque);
   if (queue.context != opaque)
     return Status::InvalidArgument("CUDA copy queue context mismatch");
+  std::size_t existing;
+  { std::lock_guard guard(queue.slots_lock); existing = queue.capacity; }
+  if (phase_capacity == 0 || phase_capacity > 64 || phase_capacity > SIZE_MAX - existing)
+    return Status::ResourceExhausted("CUDA copy phase completion capacity overflow");
+  // Add this slot's capacity at cold creation, rather than asking each slot
+  // for the same minimum and allowing a second in-flight slot to grow on hot
+  // acquire. Rounded native event storage remains an explicit opaque cost.
+  HYLE_RETURN_IF_ERROR(queue.reserve(existing + phase_capacity));
   constexpr auto row_bytes = 2 * sizeof(CUdeviceptr) + sizeof(std::size_t) + sizeof(CopyBackendRange);
   if (capacity == 0 || capacity > (SIZE_MAX - sizeof(BatchSlot)) / row_bytes)
     return Status::ResourceExhausted("CUDA copy descriptor capacity overflow");
