@@ -45,6 +45,7 @@ struct LeasedInvocationState final : util::RefCounted<LeasedInvocationState> {
               mem::StdAllocator<compute::detail::CompletionRetention>> retentions;
   compute::LeaseUseBatch batch{};
   compute::detail::RetainedCompletion completion{};
+  compute::detail::CompletionLifetime completion_retirement{};
   util::SpinLock lock{};
   Status first_error{};
   std::atomic<std::size_t> remaining{0}, results{0};
@@ -101,6 +102,9 @@ void release_episode(void *opaque) noexcept {
   } else {
     state->batch = {}; // rejection before native acceptance does not poison
   }
+  const auto observation = std::exchange(state->completion_retirement, {});
+  observation.terminal(observation.state, terminal);
+  observation.release(observation.state);
   bool last;
   {
     // Include callback cleanup in drain's lock barrier. Its caller still has
@@ -310,6 +314,7 @@ Result<compute::Completion> LeasedInvocation::submit(std::span<const QueueBindin
   for (const auto &binding : state_->bindings)
     HYLE_RETURN_IF_ERROR(binding.exclusive ? batch.write(binding.write) : batch.read(binding.read));
   HYLE_ASSIGN_OR_RETURN(auto cursor, detail::SubmissionCursor::begin(state_->invocation, queues));
+  state_->completion_retirement = state_->completion.reserve_retirement();
   {
     std::lock_guard guard(state_->lock);
     state_->first_error = Status::Ok(); state_->accepted = false;
@@ -331,7 +336,7 @@ Result<compute::Completion> LeasedInvocation::submit(std::span<const QueueBindin
   }
   detail::release_episode(state_); // admission sentinel, never GPU preemption
   if (!completion) return std::unexpected(std::move(completion).error());
-  return state_->completion.publish(std::move(*completion));
+  return state_->completion.publish(std::move(*completion), true);
 }
 Result<LeasedGraphOutput> LeasedInvocation::output(ValueId value) noexcept {
   if (!state_) return std::unexpected(Status::FailedPrecondition("leased graph is empty"));

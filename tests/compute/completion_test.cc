@@ -150,6 +150,24 @@ TEST(Completion, RetainedObserverMayBeDroppedBeforePublicCompletion) {
   EXPECT_TRUE(native.destroyed);
 }
 
+TEST(Completion, RetainedCompoundObserverDoesNotTreatCachedRootErrorAsRetirement) {
+  auto owner = hyle::compute::detail::RetainedCompletion::create(hyle::mem::system_allocator()).value();
+  const auto retirement = owner.reserve_retirement();
+  auto completion = owner.publish(hyle::compute::Completion::completed(
+      hyle::Status::Unavailable("accepted prefix observation failed")), true);
+  LifetimeProbe probe;
+  hyle::compute::detail::CompletionLifetime lifetime{&probe, &observe_terminal, &release_lifetime};
+  ASSERT_TRUE(hyle::compute::detail::CompletionAccess::attach_lifetime(completion, lifetime).ok());
+  EXPECT_FALSE(completion.poll().has_value());
+  EXPECT_EQ(probe.release_count, 0u);
+  EXPECT_FALSE(owner.available());
+  retirement.terminal(retirement.state, hyle::Status::Unavailable("accepted prefix observation failed"));
+  retirement.release(retirement.state);
+  EXPECT_EQ(probe.release_count, 1u);
+  EXPECT_FALSE(probe.terminal_ok);
+  EXPECT_TRUE(owner.available());
+}
+
 TEST(Completion, ImmediateSuccessAndFailureRemainInline) {
   auto success = hyle::compute::Completion::completed();
   auto ready = success.poll();

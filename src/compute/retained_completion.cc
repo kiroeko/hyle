@@ -24,6 +24,7 @@ struct RetainedCompletionState final : util::RefCounted<RetainedCompletionState>
   util::SpinLock lock;
   Status retired_terminal, forwarded_hint;
   bool retired = false;
+  bool deferred_prepared = false;
   Status terminal;
 };
 namespace {
@@ -102,21 +103,32 @@ Result<RetainedCompletion> RetainedCompletion::create(mem::AllocatorRef allocato
   return RetainedCompletion(std::construct_at(static_cast<RetainedCompletionState *>(storage), allocator));
 }
 bool RetainedCompletion::available() const noexcept { return state_ && state_->is_unique(); }
-Completion RetainedCompletion::publish(Completion completion) noexcept {
-  HYLE_FATAL_ASSERT(available() && completion.valid());
-  state_->terminal = Status::Ok();
+CompletionLifetime RetainedCompletion::reserve_retirement() noexcept {
+  HYLE_FATAL_ASSERT(available());
   {
     std::lock_guard guard(state_->lock);
     state_->retired = false;
     state_->retired_terminal = Status::Ok();
     state_->forwarded_hint = Status::Ok();
   }
+  state_->terminal = Status::Ok();
+  state_->deferred_prepared = true;
+  state_->incref();
+  return {state_, &native_terminal, &native_release};
+}
+Completion RetainedCompletion::publish(Completion completion, bool deferred_retirement) noexcept {
+  HYLE_FATAL_ASSERT(state_ && completion.valid());
+  if (!deferred_retirement) {
+    auto retirement = reserve_retirement();
+    state_->retention.own = retirement;
+  }
+  HYLE_FATAL_ASSERT(state_->deferred_prepared);
+  state_->deferred_prepared = false;
   state_->original = std::move(completion);
   // Install the actual-retirement latch before any public observation. An
   // unknown observation may cache an error without firing this callback.
-  state_->incref();
-  state_->retention.own = {state_, &native_terminal, &native_release};
-  HYLE_FATAL_ASSERT(CompletionAccess::attach_retention(state_->original, state_->retention).ok());
+  if (!deferred_retirement)
+    HYLE_FATAL_ASSERT(CompletionAccess::attach_retention(state_->original, state_->retention).ok());
   state_->incref();
   return CompletionAccess::make(&proxy_vtable, state_);
 }
