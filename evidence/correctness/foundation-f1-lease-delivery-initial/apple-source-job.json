@@ -1,0 +1,62 @@
+{
+  "candidate": "8caae98734b6b58ef182a9d111d7f806c15294d2",
+  "mode": "source",
+  "source": "/Users/kiro/hyle-scratch/compute-unified/source-c8874688",
+  "routes": [
+    "cpu",
+    "apple"
+  ],
+  "compiler": "AppleClang21.0.0/libc++",
+  "machine": "Mac16,12/16GiB/macOS27.0.1",
+  "parallel": 1,
+  "stages": [
+    {
+      "name": "build",
+      "command": [
+        "/opt/homebrew/bin/cmake",
+        "--build",
+        "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build",
+        "--target",
+        "hyle_f1_leases",
+        "hyle_f1_headers",
+        "hyle_h2_contracts",
+        "--parallel",
+        "1"
+      ],
+      "pid": 18419,
+      "state": "terminal",
+      "available_bytes": 7011778560,
+      "log": "build.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "3ba54cac3347e2f472213109f67d5b308d5931ccffd7e3dfb80c8d9c1f5c002f"
+    },
+    {
+      "name": "lease-test",
+      "command": [
+        "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build/hyle_f1_leases"
+      ],
+      "pid": 18650,
+      "state": "terminal",
+      "available_bytes": 7323697152,
+      "log": "lease-test.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "f1208d667c93429472595d1f4c76cd71c5d3d3edd149e021030131da8b7b072d"
+    },
+    {
+      "name": "mixed-test",
+      "command": [
+        "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build/hyle_h2_contracts"
+      ],
+      "pid": 18653,
+      "state": "terminal",
+      "available_bytes": 7297777664,
+      "log": "mixed-test.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "4cd63a75aecc8a1837af896c4ae22dc624ec5266801b995eaa69ec4ddc8ad56d"
+    }
+  ],
+  "verdict": "PASS"
+}

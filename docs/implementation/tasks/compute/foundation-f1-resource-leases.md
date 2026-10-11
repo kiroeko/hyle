@@ -577,6 +577,10 @@ Windows Vulkan-only static producer 补齐当前产品后，`8caae9873` 迁址 s
 普通 Direct/Graph source/static/shared 格取得证据；新的 managed composition installed 调用与其他平台仍未证明，
 不能由这份单路线消费者收据关闭全部 seven owners。
 
+Air `8caae9873` source 的普通 CPU/Apple Direct+Graph 租约数学与原 mixed 合同消费者通过；
+七个最终 helper/native/managed 新头通过启用路线的孤立 TU 编译。原日志和机器/内存/命令收入同一交付收据，
+source 不是 installed SDK 证据；static/shared 与其真正 imported managed bind 调用仍待后续 stage。
+
 P0 静态账单须列新增 metadata/引用/锁，及旧普通路径不变的证据；
 热路径以计数验无 allocation/provider search，不为纳秒差改布局。
 

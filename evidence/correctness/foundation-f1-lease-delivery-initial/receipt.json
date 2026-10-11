@@ -65,6 +65,17 @@
       "candidate": "8caae98734b6b58ef182a9d111d7f806c15294d2",
       "receipt": "w-vulkan-static-sdk.json",
       "log": "w-vulkan-static-test.log"
+    },
+    {
+      "name": "MacBook Air ordinary CPU Apple source lease consumer and isolated headers plus original mixed contract",
+      "verdict": "PASS",
+      "candidate": "8caae98734b6b58ef182a9d111d7f806c15294d2",
+      "headers": 7,
+      "receipt": "apple-source-job.json",
+      "logs": [
+        "apple-source-lease-test.log",
+        "apple-source-mixed-test.log"
+      ]
     }
   ],
   "wsl_vulkan": {
@@ -119,6 +130,10 @@
     "w-vulkan-static-relocate.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
     "w-vulkan-static-configure.log": "4fc6d3f508c544a11b57c01a84d1437c78e973f038f7a5628da6ca0d0b87315d",
     "w-vulkan-static-build.log": "6a68eb100979c0c843cc57e1cf93b0e8fbb2c75948a1b51f7c03632d320bbb7b",
-    "w-vulkan-static-test.log": "045b330327a8b22e689052a181bcd296b594dd50f7215d9d6936b6bb06309e88"
+    "w-vulkan-static-test.log": "045b330327a8b22e689052a181bcd296b594dd50f7215d9d6936b6bb06309e88",
+    "apple-source-job.json": "f811db0159a5e4c5d703327bdf88c5334ddc63661c8c1466cd58645a4517f1e4",
+    "apple-source-build.log": "3ba54cac3347e2f472213109f67d5b308d5931ccffd7e3dfb80c8d9c1f5c002f",
+    "apple-source-lease-test.log": "f1208d667c93429472595d1f4c76cd71c5d3d3edd149e021030131da8b7b072d",
+    "apple-source-mixed-test.log": "4cd63a75aecc8a1837af896c4ae22dc624ec5266801b995eaa69ec4ddc8ad56d"
   }
 }
