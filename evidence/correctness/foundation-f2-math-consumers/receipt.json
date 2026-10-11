@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "scope": "F2 Windows ordinary source CPU/CUDA/static and CPU/Vulkan/shared copied BF16 and GGUF Q8 math; no installed SDK or other-host qualification",
-  "product_candidate": "acf53d114f50979d50952569a63821cddc5ab437",
-  "product_tree": "b0e345f05a5def284ebc2e7359bcb66bf6117b1f",
+  "scope": "F2 ordinary source copied BF16 and original quantization math on Windows CPU/CUDA/static, CPU/Vulkan/shared and Air CPU/Apple/shared; no installed SDK or complete native fault qualification",
+  "product_candidate": "09d9c29d3ccc474923b132e7093b69f88c89d62a",
+  "product_tree": "b4e2e5cee161542b1b88e2077e1b24cdb83406b5",
   "earlier_cpu_cuda_receipt": "windows-cpu-cuda.json",
   "checks": [
     "two independent copy slots",
@@ -12,7 +12,8 @@
     "BF16 and original GGUF Q8 bytes equal",
     "Direct and Graph mature MatMul independent scalar oracle",
     "copy metadata allocation count fixed",
-    "reset gives zero live blocks and active uses"
+    "reset gives zero live blocks and active uses",
+    "Apple original shared Metal GPU blits and native affine Q4 Direct/Graph oracle; no GGUF-to-MLX repack"
   ],
   "attempts": [
     {
@@ -102,11 +103,52 @@
           "sha256": "fc69a88e4832d3e40fa266a472ce7d70059e360fcfeda9e80dffadf7f274fb81"
         }
       }
+    },
+    {
+      "name": "air-cpu-apple",
+      "candidate": "09d9c29d3ccc474923b132e7093b69f88c89d62a",
+      "tree": "b4e2e5cee161542b1b88e2077e1b24cdb83406b5",
+      "routes": [
+        "cpu",
+        "apple"
+      ],
+      "verdict": "PASS",
+      "files": {
+        "build.log": {
+          "path": "air-cpu-apple-build.log",
+          "sha256": "384b95dd58c52d60476ff0aca4b8125f37657c495a9f520d2c7930cc096cb12b"
+        },
+        "configure.log": {
+          "path": "air-cpu-apple-configure.log",
+          "sha256": "a17b92d738291fc8e49b013a1ab036edf22f783b7f778d6bb99ce22286435512"
+        },
+        "job.json": {
+          "path": "air-cpu-apple-job.json",
+          "sha256": "cbac0968854b67f93a2f9dda776dc5c830f941acc885dd0e78a8c93d363f6e28"
+        },
+        "preflight.json": {
+          "path": "air-cpu-apple-preflight.json",
+          "sha256": "02268252d52b8047dbe1569cb3ae0730b7ff6fe676e10fbb29e0dbe15dc2404e"
+        },
+        "test.log": {
+          "path": "air-cpu-apple-test.log",
+          "sha256": "e402efb5db88ec558172d23e315afda8fcb44f47eff673fca47a73ed5c03038a"
+        }
+      },
+      "archive": "air-cpu-apple-archive.json",
+      "identity": {
+        "hardware": "Mac16,12",
+        "memory": "17179869184",
+        "os": "ProductName:\t\tmacOS\nProductVersion:\t\t27.0.1\nBuildVersion:\t\t26A434",
+        "compiler": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin",
+        "cmake": "cmake version 4.3.4\n\nCMake suite maintained and supported by Kitware (kitware.com/cmake).",
+        "ninja": "1.13.2"
+      }
     }
   ],
   "unproven": [
-    "Apple math",
-    "WSL/Air CPU and WSL CUDA math",
+    "Windows consumer regression after shared sample arity update",
+    "WSL CPU/CUDA and Air CPU/Vulkan math",
     "complete cross-platform native fault qualification",
     "installed static/shared SDK, relocation and absence/header matrix",
     "final P0 and red team"

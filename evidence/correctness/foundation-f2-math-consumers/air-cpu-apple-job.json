@@ -1,0 +1,78 @@
+{
+  "candidate": "09d9c29d3ccc474923b132e7093b69f88c89d62a",
+  "source": "/Users/kiro/hyle-scratch/compute-unified/source-c8874688",
+  "build": "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build",
+  "identity": {
+    "hardware": "Mac16,12",
+    "memory": "17179869184",
+    "os": "ProductName:\t\tmacOS\nProductVersion:\t\t27.0.1\nBuildVersion:\t\t26A434",
+    "compiler": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin",
+    "cmake": "cmake version 4.3.4\n\nCMake suite maintained and supported by Kitware (kitware.com/cmake).",
+    "ninja": "1.13.2"
+  },
+  "source_manifest": "HYLE full canonical Git archive\nGit commit: 09d9c29d3ccc474923b132e7093b69f88c89d62a\nGit tree: b4e2e5cee161542b1b88e2077e1b24cdb83406b5\n",
+  "scope": "F2 Apple and CPU ordinary source/shared copied BF16 and original affine Q4 math; SDK/full fault matrix unqualified",
+  "configuration": "Release/shared/source/shipping instrumentationOFF cpu;apple",
+  "parallel": 1,
+  "preflight": {
+    "verdict": "FAIL",
+    "reason": "runner asserted static but actual existing source consumer cache is shared; no configure/build/test ran",
+    "cache_identity": {
+      "HYLE_STATIC": "OFF",
+      "HYLE_COMPUTE_ROUTES": "cpu;apple"
+    },
+    "recovery": "reuse actual shared cache with corrected record, same candidate and verified empty root"
+  },
+  "stages": [
+    {
+      "name": "configure",
+      "command": [
+        "/opt/homebrew/bin/cmake",
+        "-S",
+        "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-parent",
+        "-B",
+        "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build"
+      ],
+      "pid": 26935,
+      "state": "terminal",
+      "available_bytes": 6986219520,
+      "log": "configure.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "a17b92d738291fc8e49b013a1ab036edf22f783b7f778d6bb99ce22286435512"
+    },
+    {
+      "name": "build",
+      "command": [
+        "/opt/homebrew/bin/cmake",
+        "--build",
+        "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build",
+        "--target",
+        "hyle_f2_batched_transfers",
+        "--parallel",
+        "1"
+      ],
+      "pid": 26999,
+      "state": "terminal",
+      "available_bytes": 7473414144,
+      "log": "build.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "384b95dd58c52d60476ff0aca4b8125f37657c495a9f520d2c7930cc096cb12b"
+    },
+    {
+      "name": "test",
+      "command": [
+        "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build/hyle_f2_batched_transfers"
+      ],
+      "pid": 27225,
+      "state": "terminal",
+      "available_bytes": 7477313536,
+      "log": "test.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "e402efb5db88ec558172d23e315afda8fcb44f47eff673fca47a73ed5c03038a"
+    }
+  ],
+  "verdict": "PASS"
+}

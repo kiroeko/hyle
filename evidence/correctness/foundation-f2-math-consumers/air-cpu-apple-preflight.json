@@ -1,0 +1,9 @@
+{
+  "verdict": "FAIL",
+  "reason": "runner asserted static but actual existing source consumer cache is shared; no configure/build/test ran",
+  "cache_identity": {
+    "HYLE_STATIC": "OFF",
+    "HYLE_COMPUTE_ROUTES": "cpu;apple"
+  },
+  "recovery": "reuse actual shared cache with corrected record, same candidate and verified empty root"
+}

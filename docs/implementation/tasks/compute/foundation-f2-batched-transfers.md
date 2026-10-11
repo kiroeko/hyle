@@ -349,6 +349,14 @@ software=no；两组BF16/Q8各沿实际staged upload→D2D→D2H、Direct/Graph�
 metadata allocation不增长并完成回收。[数学收据](../../../../evidence/correctness/foundation-f2-math-consumers/receipt.json)
 含各checkpoint精确tree、完整命令及逐日志SHA；没有把共有HYLE metadata账写成vendor零分配。
 Apple数学/其他主机与完整故障/SDK矩阵、P0终审红队继续UNPROVEN；四owner仍AUDITED，F3未实施。
+Apple普通数学 `09d9c29d3ccc474923b132e7093b69f88c89d62a` Air PASS：实际Mac16,12/M4/
+macOS27.0.1/AppleClang21，CPU+Apple source/shared同sample两组/两槽/三轮，BF16原bits及
+MLX affine Q4 packed/scales/biases全部读回，原Direct/Graph MatMul/QuantizedMatMul独立oracle
+通过；copy metadata无新增allocation，reset后uses/live blocks归零。首个scratch runner误判
+原source树为static，在cache断言退出，尚未configure/build/test；读取真实OFF cache后同candidate/
+同空日志目录按shared取证，原preflight FAIL和恢复事实列入[同一数学收据](../../../../evidence/correctness/foundation-f2-math-consumers/receipt.json)，
+不改产品、不重置预算、不拿本格签static SDK。共享sample arity变更的Windows两门及其他主机/
+完整fault与SDK、P0终审红队仍待验；四owner仍AUDITED，F3未实施。
 
 ## 预声明验证与停止
 
@@ -366,7 +374,7 @@ CPU/CUDA源码消费者，不运行全算子/P1。native设备结果不能用hos
 两个原source消费者，只build对应target，不重复未变的依赖configure或其他unit门。
 Apple同旅程使用原MLX affine Q4（独立packed/scales/biases）与BF16，六个输入范围、两个
 独立group/slot及各三phase；沿原shared Metal resource作GPU blit，读回全部原编码，再由原
-Direct/Graph MatMul/QuantizedMatMul消费ready lease。Air普通CPU+Apple source/static消费树
+Direct/Graph MatMul/QuantizedMatMul消费ready lease。Air普通CPU+Apple source/shared消费树
 运行同一sample，实际硬件/OS/工具链、完整archive/tree、4GiB/build1/test1及原300/1800/180秒门；
 只统计copy自身cold metadata，原MLX数学准备成本独立，不把shared visibility当零native copy。
 共享sample helper由固定四端口扩为其既有形状的四或六输入，原CPU/CUDA与CPU/Vulkan两门
