@@ -1,0 +1,57 @@
+[0/2] Re-checking globbed directories...
+[1/50] Building CXX object src/compute/CMakeFiles/hyle_compute.dir/batch_transfer.cc.o
+[2/50] Building CXX object src/compute/CMakeFiles/hyle_compute.dir/command_capture.cc.o
+[3/50] Building CXX object src/compute/CMakeFiles/hyle_compute.dir/copy_control.cc.o
+[4/50] Building CXX object src/compute/CMakeFiles/hyle_compute.dir/copy_ranges.cc.o
+[5/50] Building CXX object src/compute/CMakeFiles/hyle_compute.dir/custom_kernel.cc.o
+[6/50] Building CXX object src/compute/CMakeFiles/hyle_compute.dir/device.cc.o
+[7/50] Building CXX object src/compute/CMakeFiles/hyle_compute.dir/operation.cc.o
+[8/50] Building CXX object src/compute/CMakeFiles/hyle_compute.dir/provider.cc.o
+[9/50] Building CXX object src/compute/CMakeFiles/hyle_compute.dir/resource_leases.cc.o
+/Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/compute/resource_leases.cc:501:79: warning: result of comparison of constant 1152921504606846970 with expression of type 'std::uint32_t' (aka 'unsigned int') is always false [-Wtautological-constant-out-of-range-compare]
+  501 |       options.max_resources_per_batch == 0 || options.max_resources_per_batch >
+      |                                               ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ^
+  502 |           (SIZE_MAX - detail::kEntryOffset) / sizeof(detail::LeaseUseEntry))
+      |           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+1 warning generated.
+[10/50] Building CXX object src/compute/CMakeFiles/hyle_compute.dir/retained_completion.cc.o
+[11/50] Building CXX object src/compute/CMakeFiles/hyle_compute.dir/leased_operation.cc.o
+[12/50] Building CXX object src/compute/CMakeFiles/hyle_compute.dir/transfer.cc.o
+[13/50] Linking CXX shared library bin/libhyle_compute.0.1.0.dylib
+[14/50] cd /Users/kiro/hyle-scratch/compute-unified/a-apple/selected-graph/shared-sdk-build/src/compute_route_apple && /opt/homebrew/bin/cmake -E copy_if_different /Users/kiro/hyle-scratch/compute-unified/a-apple/selected-graph/shared-sdk-build/_deps/mlx-build/mlx/backend/metal/kernels/mlx.metallib /Users/kiro/hyle-scratch/compute-unified/a-apple/selected-graph/shared-sdk-build/bin/mlx.metallib
+[15/50] Creating library symlink bin/libhyle_compute.dylib
+[16/50] Building CXX object src/compute_route_apple/CMakeFiles/hyle_compute_route_apple.dir/apple_context.cc.o
+[17/50] Building CXX object src/compute_route_apple/CMakeFiles/hyle_compute_route_apple.dir/apple_operations.cc.o
+[18/50] Building CXX object src/compute_route_apple/CMakeFiles/hyle_compute_route_apple.dir/apple_tensor.cc.o
+[19/50] Building OBJCXX object src/compute_route_apple/CMakeFiles/hyle_compute_route_apple.dir/apple_memory.mm.o
+[20/50] Building OBJCXX object src/compute_route_apple/CMakeFiles/hyle_compute_route_apple.dir/apple_copy_recording.mm.o
+FAILED: [code=1] src/compute_route_apple/CMakeFiles/hyle_compute_route_apple.dir/apple_copy_recording.mm.o 
+/usr/bin/clang++ -DHYLE_COMPUTE_APPLE=1 -DHYLE_COMPUTE_ROUTE_APPLE_BUILD -Dhyle_compute_route_apple_EXPORTS -I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/include -I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/compute_route_apple -I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/compute_route_apple/../compute -I/Users/kiro/hyle-scratch/compute-unified/a-apple/selected-graph/shared-sdk-build/src/compute_route_apple -I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/third_party/bitsandbytes_apple -I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/third_party/awq_apple -I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/third_party/ggml_q4k_apple -I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/third_party/compressed_tensors_apple -isystem /Users/kiro/Library/Caches/hyle/dependencies/v1/sources/metal_cpp-f567ed836e4c-3874e9e28e8e -isystem /Users/kiro/hyle-scratch/compute-unified/a-apple/selected-graph/shared-sdk-build/_deps/mlx-338da189e54c0743/source -x objective-c++ -O3 -DNDEBUG -std=c++23 -arch arm64 -mmacosx-version-min=14.4 -fPIC -fvisibility-inlines-hidden -MD -MT src/compute_route_apple/CMakeFiles/hyle_compute_route_apple.dir/apple_copy_recording.mm.o -MF src/compute_route_apple/CMakeFiles/hyle_compute_route_apple.dir/apple_copy_recording.mm.o.d -o src/compute_route_apple/CMakeFiles/hyle_compute_route_apple.dir/apple_copy_recording.mm.o -c /Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/compute_route_apple/apple_copy_recording.mm
+In file included from /Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/compute_route_apple/apple_copy_recording.mm:1:
+In file included from /Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/compute_route_apple/apple_copy_internal.h:3:
+In file included from /Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/compute_route_apple/apple_runtime_internal.h:5:
+In file included from /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/c++/v1/mutex:196:
+/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/c++/v1/__mutex/lock_guard.h:32:5: error: 'this' argument to member function 'lock' has type 'mutex_type' (aka 'const std::mutex'), but function is not marked const
+   32 |     __m_.lock();
+      |     ^~~~
+/Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/compute_route_apple/apple_copy_recording.mm:215:19: note: in instantiation of member function 'std::lock_guard<const std::mutex>::lock_guard' requested here
+  215 |   std::lock_guard lock(state.completion_mutex);
+      |                   ^
+/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/c++/v1/__mutex/mutex.h:39:37: note: 'lock' declared here
+   39 |   _LIBCPP_ACQUIRE_CAPABILITY() void lock();
+      |                                     ^
+In file included from /Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/compute_route_apple/apple_copy_recording.mm:1:
+In file included from /Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/compute_route_apple/apple_copy_internal.h:3:
+In file included from /Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/compute_route_apple/apple_runtime_internal.h:5:
+In file included from /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/c++/v1/mutex:196:
+/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/c++/v1/__mutex/lock_guard.h:37:68: error: 'this' argument to member function 'unlock' has type 'mutex_type' (aka 'const std::mutex'), but function is not marked const
+   37 |   _LIBCPP_RELEASE_CAPABILITY _LIBCPP_HIDE_FROM_ABI ~lock_guard() { __m_.unlock(); }
+      |                                                                    ^~~~
+/Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/compute_route_apple/apple_copy_recording.mm:215:19: note: in instantiation of member function 'std::lock_guard<const std::mutex>::~lock_guard' requested here
+  215 |   std::lock_guard lock(state.completion_mutex);
+      |                   ^
+/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/c++/v1/__mutex/mutex.h:41:35: note: 'unlock' declared here
+   41 |   _LIBCPP_RELEASE_CAPABILITY void unlock() _NOEXCEPT;
+      |                                   ^
+2 errors generated.
+ninja: build stopped: subcommand failed.

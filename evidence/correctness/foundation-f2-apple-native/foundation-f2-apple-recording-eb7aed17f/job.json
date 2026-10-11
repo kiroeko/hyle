@@ -1,0 +1,61 @@
+{
+  "candidate": "eb7aed17faab539ae2a464d286c5e327293d8d40",
+  "source": "/Users/kiro/hyle-scratch/compute-unified/source-c8874688",
+  "build": "/Users/kiro/hyle-scratch/compute-unified/a-apple/selected-graph/shared-sdk-build",
+  "identity": {
+    "hardware": "Mac16,12",
+    "memory": "17179869184",
+    "os": "ProductName:\t\tmacOS\nProductVersion:\t\t27.0.1\nBuildVersion:\t\t26A434",
+    "compiler": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin",
+    "cmake": "cmake version 4.3.4\n\nCMake suite maintained and supported by Kitware (kitware.com/cmake).",
+    "ninja": "1.13.2"
+  },
+  "scope": "F2 original Apple Runtime/stream blit byte/alias/replay seam only; public controller/math/deliveries unqualified",
+  "configuration": "Release/shared/source/shipping instrumentationOFF testsON installOFF graph/apple",
+  "parallel": 1,
+  "stages": [
+    {
+      "name": "configure",
+      "command": [
+        "/opt/homebrew/bin/cmake",
+        "-S",
+        "/Users/kiro/hyle-scratch/compute-unified/source-c8874688",
+        "-B",
+        "/Users/kiro/hyle-scratch/compute-unified/a-apple/selected-graph/shared-sdk-build",
+        "-DHYLE_COMPONENTS=graph",
+        "-DHYLE_COMPUTE_ROUTES=apple",
+        "-DHYLE_BUILD_TESTS=ON",
+        "-DHYLE_BUILD_BENCH=OFF",
+        "-DHYLE_INSTALL=OFF",
+        "-DHYLE_TEST_INSTRUMENTATION=OFF"
+      ],
+      "pid": 23947,
+      "state": "terminal",
+      "available_bytes": 6803390464,
+      "log": "configure.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "f13a76f5f2f6e1e23b1116354f71c09804ea08e2c747e0e4aa00c93096160e60"
+    },
+    {
+      "name": "build",
+      "command": [
+        "/opt/homebrew/bin/cmake",
+        "--build",
+        "/Users/kiro/hyle-scratch/compute-unified/a-apple/selected-graph/shared-sdk-build",
+        "--target",
+        "hyle_compute_route_apple_test",
+        "hyle_compute_test",
+        "--parallel",
+        "1"
+      ],
+      "pid": 24233,
+      "state": "terminal",
+      "available_bytes": 7033028608,
+      "log": "build.log",
+      "exit_code": 1,
+      "verdict": "FAIL",
+      "sha256": "812f948cbf8901d250aad86cff343fd77cc2512e2c76003042473c85cc919fb2"
+    }
+  ]
+}

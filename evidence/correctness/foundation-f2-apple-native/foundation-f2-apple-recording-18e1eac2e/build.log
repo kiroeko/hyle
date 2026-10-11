@@ -1,0 +1,36 @@
+[0/2] Re-checking globbed directories...
+[1/32] cd /Users/kiro/hyle-scratch/compute-unified/a-apple/selected-graph/shared-sdk-build/src/compute_route_apple && /opt/homebrew/bin/cmake -E copy_if_different /Users/kiro/hyle-scratch/compute-unified/a-apple/selected-graph/shared-sdk-build/_deps/mlx-build/mlx/backend/metal/kernels/mlx.metallib /Users/kiro/hyle-scratch/compute-unified/a-apple/selected-graph/shared-sdk-build/bin/mlx.metallib
+[2/32] Building OBJCXX object src/compute_route_apple/CMakeFiles/hyle_compute_route_apple.dir/apple_copy_recording.mm.o
+[3/32] Building CXX object src/compute_route_apple/CMakeFiles/hyle_compute_route_apple.dir/apple_mature_float.cc.o
+[4/32] Building CXX object src/compute_route_apple/CMakeFiles/hyle_compute_route_apple.dir/apple_mature_gguf.cc.o
+[5/32] Linking CXX shared library bin/libhyle_compute_route_apple.0.1.0.dylib
+[6/32] Building CXX object tests/compute/CMakeFiles/hyle_compute_result_fixture.dir/result_owner_producer.cc.o
+[7/32] Creating library symlink bin/libhyle_compute_route_apple.dylib
+[8/32] Linking CXX shared library bin/libhyle_compute_result_fixture.dylib
+[9/32] Building CXX object tests/compute/CMakeFiles/hyle_compute_test.dir/completion_test.cc.o
+[10/32] Building CXX object tests/compute/CMakeFiles/hyle_compute_test.dir/copy_ranges_test.cc.o
+[11/32] Building CXX object tests/compute/CMakeFiles/hyle_compute_test.dir/provider_test.cc.o
+[12/32] Building CXX object tests/compute/CMakeFiles/hyle_compute_test.dir/resource_leases_test.cc.o
+/Users/kiro/hyle-scratch/compute-unified/source-c8874688/tests/compute/resource_leases_test.cc:140:8: warning: explicitly assigning value of variable of type 'hyle::compute::ReadLease' to itself [-Wself-assign-overloaded]
+  140 |   read = read;
+      |   ~~~~ ^ ~~~~
+1 warning generated.
+[13/32] Building CXX object tests/compute/CMakeFiles/hyle_compute_test.dir/route_policy_test.cc.o
+[14/32] Building CXX object tests/compute/CMakeFiles/hyle_compute_test.dir/shape_domain_test.cc.o
+[15/32] Building CXX object tests/compute/CMakeFiles/hyle_compute_test.dir/shape_program_test.cc.o
+[16/32] Building CXX object tests/compute/CMakeFiles/hyle_compute_test.dir/tensor_test.cc.o
+[17/32] Building CXX object tests/compute/CMakeFiles/hyle_compute_test.dir/workload_test.cc.o
+[18/32] Building CXX object tests/compute_route_apple/CMakeFiles/hyle_compute_route_apple_test.dir/copy_recording_test.cc.o
+[19/32] Building CXX object tests/compute_route_apple/CMakeFiles/hyle_compute_route_apple_test.dir/context_test.cc.o
+[20/32] Building CXX object tests/compute_route_apple/CMakeFiles/hyle_compute_route_apple_test.dir/operations_test.cc.o
+[21/32] Building CXX object tests/compute_route_apple/CMakeFiles/hyle_compute_route_apple_test.dir/d5_qwen35_execution_test.cc.o
+[22/32] Building CXX object tests/compute_route_apple/CMakeFiles/hyle_compute_route_apple_test.dir/tensor_test.cc.o
+[23/32] Building CXX object tests/compute_route_apple/CMakeFiles/hyle_compute_route_apple_test.dir/reduction_test.cc.o
+[24/32] Building CXX object tests/compute_route_apple/CMakeFiles/hyle_compute_route_apple_test.dir/indexing_test.cc.o
+[25/32] Building CXX object tests/compute_route_apple/CMakeFiles/hyle_compute_route_apple_test.dir/scatter_test.cc.o
+[26/32] Building CXX object tests/compute_route_apple/CMakeFiles/hyle_compute_route_apple_test.dir/lifecycle_test.cc.o
+[27/32] Building CXX object tests/compute_route_apple/CMakeFiles/hyle_compute_route_apple_test.dir/recurrent_test.cc.o
+[28/32] Building CXX object tests/compute_route_apple/CMakeFiles/hyle_compute_route_apple_test.dir/mlx_quantized_test.cc.o
+[29/32] Building CXX object tests/compute_route_apple/CMakeFiles/hyle_compute_route_apple_test.dir/mature_overlap_test.cc.o
+[30/32] Linking CXX executable bin/hyle_compute_test
+[31/32] Linking CXX executable bin/hyle_compute_route_apple_test

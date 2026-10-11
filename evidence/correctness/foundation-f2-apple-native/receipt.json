@@ -1,0 +1,30 @@
+{
+  "schema_version": 1,
+  "scope": "Air Mac16,12 AppleClang21 Release shared/source original Runtime/Job/Metal stream blit seam",
+  "checkpoints": [
+    {
+      "candidate": "eb7aed17faab539ae2a464d286c5e327293d8d40",
+      "tree": "0d66d919af8ff08297a2aed5859ab8ae1a9096be",
+      "directory": "foundation-f2-apple-recording-eb7aed17f",
+      "verdict": "FAIL",
+      "extra_files_sha256": {}
+    },
+    {
+      "candidate": "18e1eac2e5fcba105b4cb83485922181c6e45807",
+      "tree": "4fdecee47c7c5c0c3809cd7decda9815df922382",
+      "directory": "foundation-f2-apple-recording-18e1eac2e",
+      "verdict": "PASS",
+      "extra_files_sha256": {
+        "metrics.xml": "b252df1a2774745bc447911a254a581a099f6f351f07df8ca2993a4045c60f0f"
+      }
+    }
+  ],
+  "new_native_tests": 3,
+  "old_native_lease_tests": 3,
+  "common_tests": 34,
+  "headers_public_controller_native_producer_math_fault_matrix_static_installed_shared": "UNPROVEN",
+  "cold_hyle_metadata_replay": "PASS",
+  "native_driver_mcb_descriptor_metadata": "UNKNOWN",
+  "completion_boundary": "Original owner-thread CommandEncoder.synchronize commits and waits actual MCB; one reported worker host wait per native phase",
+  "original_failure_and_investigation_budget": "Inherited unchanged; original compiler failure retained"
+}

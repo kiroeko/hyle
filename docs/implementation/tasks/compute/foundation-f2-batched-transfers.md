@@ -300,6 +300,13 @@ empty dependency的真实prefix marker、失败不消费，以及全部句柄放
 configure FAIL、WORKTREEIntroducing未归属的selector BLOCKED及提交后owners明确AUDITED的READY，
 没有改公共checker；中央图导致的扩展component/package门列入稳定候选集中阶段，当前不代写PASS。
 CPU/CUDA/Vulkan公共program首轮接线已取证，Apple及本卡完整矩阵仍未完成，维持AUDITED。
+Apple native接缝 `18e1eac2e` 首轮PASS：Mac16,12/16GiB/macOS27.0.1/AppleClang21、
+3个新Metal blit与3个既有native lease生命周期用例、34项common回归；实际三stage GPU字节与3轮replay，
+HYLE冷metadata稳定，macOS offset/size/alias/self/empty及readonly imported view边界通过。
+[Air原始收据](../../../../evidence/correctness/foundation-f2-apple-native/receipt.json)保留首次const-mutex
+compile FAIL与有限重验、完整archive SHA/commit/tree和实际机器/命令/log SHA，非Windows或mock替代。
+原worker每phase一次CommandEncoder.synchronize明确计入host wait，vendor MCB/descriptor成本仍UNKNOWN；
+不宣称所有vendor热分配为零或物理重叠。独立头/Apple公共控制对象、producer/完整故障/数学/三交付待验。
 
 | FIX | 必须实现 | 验收 |
 |---|---|---|

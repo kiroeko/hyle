@@ -1,0 +1,91 @@
+{
+  "candidate": "18e1eac2e5fcba105b4cb83485922181c6e45807",
+  "source": "/Users/kiro/hyle-scratch/compute-unified/source-c8874688",
+  "build": "/Users/kiro/hyle-scratch/compute-unified/a-apple/selected-graph/shared-sdk-build",
+  "identity": {
+    "hardware": "Mac16,12",
+    "memory": "17179869184",
+    "os": "ProductName:\t\tmacOS\nProductVersion:\t\t27.0.1\nBuildVersion:\t\t26A434",
+    "compiler": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin",
+    "cmake": "cmake version 4.3.4\n\nCMake suite maintained and supported by Kitware (kitware.com/cmake).",
+    "ninja": "1.13.2"
+  },
+  "scope": "F2 original Apple Runtime/stream blit byte/alias/replay seam only; public controller/math/deliveries unqualified",
+  "configuration": "Release/shared/source/shipping instrumentationOFF testsON installOFF graph/apple",
+  "parallel": 1,
+  "stages": [
+    {
+      "name": "configure",
+      "command": [
+        "/opt/homebrew/bin/cmake",
+        "-S",
+        "/Users/kiro/hyle-scratch/compute-unified/source-c8874688",
+        "-B",
+        "/Users/kiro/hyle-scratch/compute-unified/a-apple/selected-graph/shared-sdk-build",
+        "-DHYLE_COMPONENTS=graph",
+        "-DHYLE_COMPUTE_ROUTES=apple",
+        "-DHYLE_BUILD_TESTS=ON",
+        "-DHYLE_BUILD_BENCH=OFF",
+        "-DHYLE_INSTALL=OFF",
+        "-DHYLE_TEST_INSTRUMENTATION=OFF"
+      ],
+      "pid": 24825,
+      "state": "terminal",
+      "available_bytes": 6800343040,
+      "log": "configure.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "dbed5da115efd37d226bd387ba4e43658a74478a5704e0b3b9711cf6a3f69229"
+    },
+    {
+      "name": "build",
+      "command": [
+        "/opt/homebrew/bin/cmake",
+        "--build",
+        "/Users/kiro/hyle-scratch/compute-unified/a-apple/selected-graph/shared-sdk-build",
+        "--target",
+        "hyle_compute_route_apple_test",
+        "hyle_compute_test",
+        "--parallel",
+        "1"
+      ],
+      "pid": 25097,
+      "state": "terminal",
+      "available_bytes": 6815449088,
+      "log": "build.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "3c07db0235022da693c40f733d16f265ed75700a34a96d9130e78da3bab2c1e2"
+    },
+    {
+      "name": "common",
+      "command": [
+        "/Users/kiro/hyle-scratch/compute-unified/a-apple/selected-graph/shared-sdk-build/bin/hyle_compute_test",
+        "--gtest_filter=CopyRanges.*:CopyLeaseHandoff.*:CopyDependency.*:ResourceLeases.*:Completion.*"
+      ],
+      "pid": 25213,
+      "state": "terminal",
+      "available_bytes": 7201521664,
+      "log": "common.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "70ac58993f01d3155cd9c24be43bf993ce9ab09d2160a4044e1bc972eefa01b4"
+    },
+    {
+      "name": "test",
+      "command": [
+        "/Users/kiro/hyle-scratch/compute-unified/a-apple/selected-graph/shared-sdk-build/bin/hyle_compute_route_apple_test",
+        "--gtest_filter=AppleCopyRecording.*:AppleLeaseLifetime.*",
+        "--gtest_output=xml:/Users/kiro/hyle-scratch/compute-unified/foundation-f2-apple-recording-18e1eac2e/metrics.xml"
+      ],
+      "pid": 25215,
+      "state": "terminal",
+      "available_bytes": 7194918912,
+      "log": "test.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "817c09e216c14a8c8c6588f26659ffb7bd8bd1eb62301bbf0caca543ed05b028"
+    }
+  ],
+  "verdict": "PASS"
+}
