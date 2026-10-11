@@ -392,6 +392,9 @@ HYLE_TESTING域中作两个native-call decorator，先调用真实cuGetProcAddre
 未知观测复用已有CompletionObservationHooks，不复制mock executor/byte kernel。故障预算仍沿
 原卡，build1/test1/4GiB与300/1800/120门；同native产品点的shipping ordinary math及WSL风险
 留候选矩阵取证。此门不宣称已在旧driver实机运行，也不签完整跨平台fault。
+首次 `522a99f1f` 生产库编译通过，新测试对Result空赋值在MSVC产生歧义，尚未运行GPU门。
+fixture改为明确释放Result持有的CopyBatchSubmission，保留原build FAIL，同机同门重验；
+不改变产品合同、不将日志路径/提交算新轮或预算重置。
 
 有限矩阵覆盖 R=0/1/多范围、同/不同 buffer pair、单/多 phase、重复 source、坏 ID、overlap、
 host/device 原编码、aligned/tail、pending 与 retained result。

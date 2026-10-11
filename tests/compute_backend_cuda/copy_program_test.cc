@@ -223,7 +223,7 @@ TEST(CudaCopyProgram, AcceptedFallbackSuffixErrorPreservesEarlierReadyGroupWitho
   EXPECT_EQ(submitted->report().native_calls, 3u);
   EXPECT_EQ(copy_fault_test::copies, 3u); EXPECT_EQ(copy_fault_test::probes, 1u);
   EXPECT_EQ(submitted->report().phase_completions, 2u);
-  submitted = {}; ASSERT_TRUE(invocation.reset().ok());
+  *submitted = CopyBatchSubmission{}; ASSERT_TRUE(invocation.reset().ok());
 }
 
 TEST(CudaCopyProgram, UnknownEventObservationAndUnsupportedCancelKeepActualPendingUsesAlive) {
