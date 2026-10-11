@@ -253,8 +253,15 @@ TEST(CudaCopyProgram, UnknownEventObservationAndUnsupportedCancelKeepActualPendi
   submitted = {}; invocation = {}; blocker = {};
   EXPECT_GT(metadata.used(), 0u); EXPECT_GT(data.pools[1].stats().active_uses, 0u);
   gate.release(); ASSERT_TRUE(context.drain().ok());
+  program.reset();
+  // Stream completion does not join the original abandoned-event reaper.
+  // Keep the borrowed allocator/resources alive until its actual callbacks free
+  // this invocation, with a finite deadline so a retained cycle still fails.
+  const auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(5);
+  while (metadata.used() != 0 && std::chrono::steady_clock::now() < deadline)
+    std::this_thread::sleep_for(std::chrono::milliseconds(1));
   for (auto &pool : data.pools) { EXPECT_EQ(pool.stats().active_uses, 0u); EXPECT_EQ(pool.stats().live_blocks, 0u); }
-  program.reset(); EXPECT_EQ(metadata.used(), 0u);
+  EXPECT_EQ(metadata.used(), 0u);
 }
 #endif
 } // namespace

@@ -395,6 +395,10 @@ HYLE_TESTING域中作两个native-call decorator，先调用真实cuGetProcAddre
 首次 `522a99f1f` 生产库编译通过，新测试对Result空赋值在MSVC产生歧义，尚未运行GPU门。
 fixture改为明确释放Result持有的CopyBatchSubmission，保留原build FAIL，同机同门重验；
 不改变产品合同、不将日志路径/提交算新轮或预算重置。
+`1986cb977` build/header/34项common PASS，7个CUDA用例PASS；最后unknown用例在回收
+断言FAIL，真实stream drain已完成，但原CompletionReaper仍异步退休被放弃event。
+fixture借用allocator/resource必须持续到原回调实际归零；复用该已有reaper，等待实际metadata
+清零设固定5秒deadline，再核对全部uses/live blocks。原FAIL保留，不加线程、mock完成或预算。
 
 有限矩阵覆盖 R=0/1/多范围、同/不同 buffer pair、单/多 phase、重复 source、坏 ID、overlap、
 host/device 原编码、aligned/tail、pending 与 retained result。
