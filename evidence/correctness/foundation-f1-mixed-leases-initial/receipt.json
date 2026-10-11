@@ -1,0 +1,69 @@
+{
+  "schema_version": 1,
+  "scope": "F1 native mixed readonly input binding and prefix retirement partial qualification",
+  "product_candidate": "fc4ffbd1610eb3b24bf76709dc6e5e25b3d838d7",
+  "tests": [
+    {
+      "name": "Common lease prefix protocol",
+      "verdict": "PASS",
+      "cases": 3,
+      "candidate": "7b9f9ae4291a97a87c936aa628025cd533c17446",
+      "log": "common-prefix.log",
+      "qualification": "Controlled completion protocol only; not native math"
+    },
+    {
+      "name": "Windows CPU+Vulkan original native mixed math and lease journey",
+      "verdict": "PASS",
+      "candidate": "5d3f0312355fcc20270aad7c862ea481cada2f27",
+      "log": "windows-vulkan.log",
+      "delivery": "source shared consumer; installed SDK not tested"
+    },
+    {
+      "name": "MacBook Air CPU+Apple original native mixed math and lease journey",
+      "verdict": "PASS",
+      "candidate": "5d3f0312355fcc20270aad7c862ea481cada2f27",
+      "log": "apple-contracts.log",
+      "delivery": "source shared consumer; installed SDK not tested"
+    }
+  ],
+  "coverage": [
+    "Readonly host and same-resource native input overloads",
+    "Original CPU/native/CPU mature math checked against independent scalar values",
+    "Eight replays with no injected metadata allocator calls after warmup",
+    "Two readers, original Results retaining source alias after business/adaptor drop",
+    "Closed source refuses new admission before math; uses return to zero",
+    "Existing managed composition rejection/OOM/cancel/abandon/late failure cases retained"
+  ],
+  "p0": {
+    "cost": "One nullable private RunState lease-owner pointer; cold O(inputs+prefixes) metadata, existing bounded lease use deduplication, one parent reference per accepted prefix; no extra math/copy command, Queue, reaper or thread",
+    "ordinary_path": "No table allocation unless new lease bind overload is used; nullable admission/completion protection checks are new and explicitly charged",
+    "counter": "PASS for eight warm replays in both native mixed consumers; not a timed performance winner"
+  },
+  "machine_apple": {
+    "hardware": "Mac16,12",
+    "memory_bytes": 17179869184,
+    "os": "macOS 27.0.1 26A434",
+    "compiler": "Apple clang 21.0.0 clang-2100.3.34.2",
+    "cmake": "4.3.4",
+    "ninja": "1.13.2"
+  },
+  "retained_initial_failure": {
+    "log": "vulkan-configure-original-error.log",
+    "reason": "Public ReadLease parameter required direct PUBLIC_DEPS compute; corrected only the two owned component declarations, without changing the checker"
+  },
+  "pending": [
+    "CPU+CUDA common leased plan consumer is building; not yet tested",
+    "New route/helper header isolation and absence matrix",
+    "Other applicable platforms, source/static/shared SDK/relocation and full F1 risk matrix",
+    "Full F1 P0 and final red-team; F2/F3 not implemented"
+  ],
+  "state": "F1 owners remain AUDITED; not whole F1 terminal",
+  "log_sha256": {
+    "common-prefix.log": "7b2347f74fa87a428ba12de3268bc69a1ede00fdbc63113ef5bc220b4cfaa824",
+    "windows-vulkan.log": "14a678736796bf6aeeb7e19151d06cf2954ebe97c7c78af2f7bc046c5ab9b950",
+    "apple-contracts.log": "eeb4371e49af496d222c2b7cd5e01a630f0c68d9a084feb0fd8fefc9a0a221d0",
+    "apple-build.log": "c5f0d3b20a426a851173bf415cdd531fbc7c362edd133d7eaa68413740097c95",
+    "apple-job.json": "ec26dc79e49e82e42549f7c21912a3a9152b91e36d32ce34e50c5d5f1a0d4bd7",
+    "vulkan-configure-original-error.log": "a496b2154cf24f48009e4be3aa88a72f9828e5faf7dbfb837c59bf2cef0db197"
+  }
+}

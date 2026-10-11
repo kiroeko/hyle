@@ -1,5 +1,41 @@
 # HYLE Compute：何时直接执行一个计算
 
+## 外部资源租约与 Direct 提交
+
+`hyle/compute/resource_leases.h` 的 `LeasePool` 冷创建有限 backing/块 metadata，
+`WriteLease` 表示独占写，成功发布后得到可复制的 `ReadLease`。两个读者、原生在途 use 或旧结果
+存在时，不得把同一块重新取得为 writer。非重叠块可独立使用；池的 resource、Context 和 allocator
+仍按公开声明的借用寿命保持有效。
+
+CPU/CUDA 的原 prepared operation 可用 `hyle/compute/leased_operation.h` 自动保护 bindings：
+
+```cpp
+auto lane = hyle::compute::LeasedOperationInvocation::create(
+    prepared, std::move(workspace_write_lease)).value();
+const std::array inputs{hyle::compute::LeasedInput(input_description, input_read_lease)};
+const std::array outputs{hyle::compute::LeasedOutput(output_description, output_write_lease)};
+auto done = lane.submit(queue, inputs, outputs).value();
+HYLE_RETURN_IF_ERROR(done.wait());
+auto ready = output_write_lease.publish().value();
+```
+
+这里的端口数量、描述和资源必须符合已准备的 `prepared`；零 workspace 时省略 workspace lease。
+初始化 host bytes 后才 publish；异步 writer 必须实际成功退休后才 publish，失败不会变成 ready。
+`LeasePool::adopt`/`ReadLease::adopt` 接管唯一 `mem::Buffer` 而不复制 payload，拒绝不消费输入；
+readonly adopt 永久只读。原 native buffer/array/tensor 的受控导入见各路线的 memory 头。
+所有未跟踪的 writable aliases 必须停止，不从裸 view 猜拥有权或就绪。
+
+`lane.close()` 停本 adapter 接纳，`lane.drain()` 观察已接受的原 Completion；调用方可以仍持有
+尚未观察的 `done`。一个冷完成槽要求先观察/丢弃旧 Completion 再 replay。控制与 Completion
+观察须外部串行化。未知错误不证明 GPU 已停，保活仍交给原 runtime；取消也不能提前释放 backing。
+池的 drain 等待 admitted uses，保留 reader 仍有效，并且不等待这些 reader 全部销毁。
+
+Apple/Vulkan 的 native Program 使用各自 memory 头里的 `LeasedInvocation` 与 `LeasedInput`；
+bind 冷建立 readonly native view，submit 自动接纳 use，原 native slot 的实际退休归还 use。
+结果/来源 alias 继续由原 native owner 保留。四路线接口独立，不需要通用 Queue 或自写 completion vector。
+新租约能力的完整资格仍看[当前 F1 施工卡](../implementation/tasks/compute/foundation-f1-resource-leases.md)，
+局部测试不代签所有平台或 installed SDK。
+
 > 本页描述当前 Compute runtime foundation、CPU operation surface 与 CUDA runtime；施工资格只以
 > [`module-status.json`](../implementation/module-status.json) 为准。普通 CPU 入口自动组装已构建的 oneDNN/ggml/ATen/Native 实现；
 > 标准 CPU 构建使用 `HYLE_COMPUTE_ROUTES=cpu`，自动接入该平台所需的合格 Provider。

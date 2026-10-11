@@ -426,6 +426,17 @@ metadata 无新增分配检查已通过；同候选三个最终 helper/adapter �
 - 新 public ReadLease 参数需要两 composition owner 直接 PUBLIC_DEPS compute；将其已有 private edge
   提升为 public，仅改变对应两个声明，按原中央投影验证。不能隐藏这个依赖或改公共 checker 绕过诊断。
 
+#### 组合接缝初验
+
+产品 `fc4ffbd16`、数学消费者 `5d3f03123` 的 CPU+Apple/Vulkan ReadLease 绑定与 prefix/result 保活已实现。
+[局部收据](../../../../evidence/correctness/foundation-f1-mixed-leases-initial/receipt.json)保存 Windows CPU+Vulkan、
+MacBook Air CPU+Apple 原成熟 CPU/native/CPU 数学 PASS：host/native 两种 source、独立标量对照、
+两 reader、旧结果/source alias 在 adapter 放弃后保活、closed source 拒绝及八次 metadata 无新增分配。
+原两 managed composition 的已有 rejection/OOM/cancel/abandon/late failure checks 也通过，
+共同 prefix 协议三项通过但不冒充 GPU 资格。首轮 public dependency 配置诊断及修正保留。
+CPU+CUDA 已加入原 compile/executable 与全部 QueueBinding 的共同 leased consumer，当前串行构建，未写 PASS。
+其他适用平台、完整风险/头与缺席、installed static/shared/迁址及整包 P0/红队仍未完成，F1 继续 AUDITED。
+
 扩展现有 compute completion、graph cpu_cuda/apple/vulkan contracts 及 native route 用户样例；
 保留原数学 reference，新增实际 lease 风险断言。只装饰 native observation/fault call，
 不能将 mock 结果当路线资格。至少两独立在途块、两个读者、一写者、旧结果、取消、OOM、部分失败、

@@ -993,7 +993,8 @@ Native FFI，也不承诺跨编译器/STL 的 C++ ABI。
 ## 外部租约绑定与只读结果
 
 `hyle/graph/leased_invocation.h` 提供 opt-in `LeasedInvocation`，包中随 `hyle::graph` 交付，
-不用额外构建开关。当前 F1 仍在施工，Windows CUDA 有局部资格；其他适用平台/路线及安装三交付尚待集中验收。
+不用额外构建开关。当前 F1 仍在施工，CPU/CUDA 与 native Apple/Vulkan 接缝有局部资格；
+其他适用平台/完整风险矩阵及安装三交付尚待集中验收。
 输入可以绑定 `ReadLease`，独占输入/输出可移动一个 `WriteLease`；描述、资源与 alias 仍由原计划检查。
 
 ```cpp
@@ -1016,6 +1017,15 @@ auto readonly_tensor = result.tensor().value();
 `close()` 停接纳、无隐藏全设备 wait，`drain()` 明确等待本实例的实际退役并保留首错；旧结果仍可读取。
 编译时借用常量与固定 effect footprint 保持原寿命合同，不因这个运行绑定 adapter 自动获得拥有权。
 wrapper options 的 budget 计自身 metadata；原程序/workspace 预算仍在 `CompileOptions` 中设置。
+控制与 public Completion 观察须串行化。每实例一个冷完成观察槽，旧 Completion 未观察/放弃时拒绝新提交；
+drain 能主动观察原 Completion，调用方仍持有该 public handle 时也能等待真正的 prefix 退休。
+
+CPU+CUDA 的 `cpu_cuda::compile` 返回共同 Executable，直接用上述 LeasedInvocation 与原全部 QueueBinding
+即可保护 host/device 输入和 caller 输出；原混合计划/资源域与成熟计算保持不变。
+CPU+Apple/Vulkan 的纯图 Invocation 提供 `bind(value_id, description, read_lease)`，同 native resource
+优先保留原 cold native binding，否则沿原合法 host 输入。bind/prepare 后重复 submit 不再创建 wrapper。
+每已接受 prefix 在观察前保活，原 Results 保留 source leases；来源 alias 在 adapter 放弃后仍由结果保护。
+其他借用 bind、编译时借用常量和 Context/resource/allocator 寿命仍需调用方遵守。
 
 ## 可选主机跟踪
 
