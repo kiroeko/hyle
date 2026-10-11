@@ -13,13 +13,13 @@ Windows/WSL该旅程及正常回归已有实证；后续SDK按包含delta的5b3e
 
 | FIX | 固定实现/消费方 | 当前证据与限制 |
 |---|---|---|
-| F2-01 | common batch值、固定program/invocation/submission；两native namespace同形入口 | CPU/CUDA/Apple/Vulkan首轮slot/replay/OOM/旧句柄取证；完整平台和SDK待验 |
-| F2-02 | canonical physical spans、排序alias scan、显式phase闭包、自复制/空批 | common 500组独立oracle及四native来源/对齐/alias用例；其他编译器和新头待验 |
-| F2-03 | CUDA固定13.0原batch ABI，冷缺席沿原same-stream memcpy | Win真实batch及decorated absence 1次探测/12次fallback copy；WSL与旧driver实机域不外推 |
+| F2-01 | common batch值、固定program/invocation/submission；两native namespace同形入口 | 四路线slot/replay/OOM/旧句柄及适用三平台/source/static/shared取证；聚合终审仍待验 |
+| F2-02 | canonical physical spans、排序alias scan、显式phase闭包、自复制/空批 | common 500组独立oracle、四native来源/对齐/alias、MSVC/GCC/AppleClang新头与WSL三sanitizer取证；最终审查待验 |
+| F2-03 | CUDA固定13.0原batch ABI，冷缺席沿原same-stream memcpy | Win/WSL真实batch及decorated absence/fault取证；Win1次探测/12次fallback copy，旧driver实机域不外推 |
 | F2-04 | Apple原Job/MLX stream、一次phase blit encoder、实际MCB同步 | Air原native/public/两槽数学取证；vendor成本unknown，worker每native phase实际host wait |
-| F2-05 | Vulkan原Run/pair regions/fence、flush/invalidate与已有handoff | Win实际GPU、owned-view、unknown external拒绝及首轮数学取证；Air与WSL GPU资格待验 |
-| F2-06 | root去重准入、guard交接、实际退休后ready、producer及partial prefix | 四路线首轮生命周期；Win CUDA cold fallback/suffix/unknown/unsupported cancel实物门；全平台故障待验 |
-| F2-07 | ordinary graph façade样例、原Direct/Graph数学、guide与有限成本账 | Win CPU/CUDA/Vulkan、Air CPU/Apple首轮BF16与原编码量化通过；SDK/最终P0与红队待验 |
+| F2-05 | Vulkan原Run/pair regions/fence、flush/invalidate与已有handoff | Win RTX4070/Air M4数学及unknown-fence实物通过；WSL实际仅llvmpipe，适用交付通过、GPU运行未运行 |
+| F2-06 | root去重准入、guard交接、实际退休后ready、producer及partial prefix | 四路线生命周期、CUDA冷缺席/后缀/unknown/cancel/producer晚失败、Vulkan unknown、Apple晚失败均取证；终审待验 |
+| F2-07 | ordinary graph façade样例、原Direct/Graph数学、guide与有限成本账 | 适用三平台四路线BF16/原编码量化source/static/shared已取证；selector扩展/最终P0与红队待验 |
 
 首轮证据：[共同控制](../../../../evidence/correctness/foundation-f2-common-controls/receipt.json)、
 [CPU](../../../../evidence/correctness/foundation-f2-cpu-program/receipt.json)、
@@ -179,3 +179,15 @@ Air另8项Apple copy PASS：原MLX square/Checkpoint在真实GPU prefix后抛原
 中已排队copy归Internal且零native copy/不发布，已有成功ready仍按实际bytes可读；借用allocator/
 resource保持到实际Jobs退休，所有uses/metadata/blocks最终归零。这是晚失败传播取证，不宣称
 测试了每个Metal vendor硬故障。当前仍需selector扩展、P0七问和独立源码红队后才可CLOSED。
+
+## 中央component-contract
+
+[完整收据](../../../../evidence/correctness/foundation-f2-component-contract/receipt.json)绑定5b3efe2cc原Git blob SHA及WSL/GCC14身份。
+原公共脚本保持不变，仅scratch副本四处--parallel 2替换为1。首轮已通过失败入口前的全部
+断言，在maintainer-all configure发现继承Windows CUDA_PATH选择/mnt/c的nvcc.exe，缺Linux
+cudart而FAIL；实际Linux库存在。缓存恢复初fixture留下两段孤立说明，CMake报parse error同时
+重新生成正确Linux Toolkit cache，该次FAIL也保存。cmake -N确认规范化cache后，同scratch root
+从maintainer-all原入口继续，原剩余全部assertions到最终HYLE component contracts passed。
+收据保存原/副本/恢复脚本SHA、错误cache前后、三次stage与完整失败日志，没有删掉原失败或
+重新签已通过门。该合同PASS不代签selector其他factor/header/delivery格、P0终审或红队；
+四owner仍CANDIDATE，goal继续F1–F3原范围。

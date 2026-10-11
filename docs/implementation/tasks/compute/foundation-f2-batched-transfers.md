@@ -408,6 +408,10 @@ GPU软件设备数学仍未运行。剩余selector component-contract使用原�
 仅将四处固定--parallel 2改为1以服从本卡内存合同，保存原/副本SHA及转换计数；不改公共脚本/
 产品。在WSL精确5b3efe2cc源码运行原全部contract assertions，专用可丢弃scratch root，整体
 1800秒上限/build1/test1、实际GCC14身份与4GiB检查；不扩建仪器或重置故障预算。
+中央component-contract最终PASS，见[完整收据](../../../../evidence/correctness/foundation-f2-component-contract/receipt.json)。首轮继承Windows CUDA_PATH错误与
+缓存恢复fixture的孤立说明parse FAIL均保留；Linux Toolkit身份固定、原CMake规范化cache通过
+cmake -N后，同root从失败入口继续原剩余断言。产品与公共工具未改，其他selector扩展/P0终审/
+红队继续待验。
 
 WSL当前Vulkan loader实际仅枚举llvmpipe，按原卡条件记NO_QUALIFIED_GPU，GPU数学/native不运行。
 原CPU/Vulkan installed static/shared的构建、真实迁址、普通consumer编译、七安装头/Vulkan ON、

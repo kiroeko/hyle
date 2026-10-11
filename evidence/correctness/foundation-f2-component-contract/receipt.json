@@ -1,0 +1,50 @@
+{
+  "schema_version": 1,
+  "product_candidate": "5b3efe2cce3fcab2bc55cf749af2d862a786ef25",
+  "scope": "F2 predeclared full central component contract. Only four resource parallel arguments adapted in scratch copy; public assertions and product unchanged.",
+  "verdict": "PASS",
+  "receipt": "job.json",
+  "coverage": "Original script prefix stopped at maintainer-all on first FAIL, proving all prior assertions passed; resume starts at that exact failed assertion and original remaining assertions reach final pass.",
+  "failures_retained": [
+    "Inherited Windows CUDA_PATH selected Windows nvcc.exe in WSL",
+    "Scratch removal left orphan cache docs; CMake regenerated valid Linux CUDA entries before bounded resume"
+  ],
+  "files": {
+    "cache-normalized-check.log": {
+      "path": "cache-normalized-check.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "contract-resume-2.log": {
+      "path": "contract-resume-2.log",
+      "sha256": "4b9541d90e6cc270fffba942b21a39855cdcab3c202971aa73424eedb24d22e4"
+    },
+    "contract-resume.log": {
+      "path": "contract-resume.log",
+      "sha256": "21eda210235d0a799c32db34264713ea9f5bbfdb81007b9831a7680483908df3"
+    },
+    "contract.log": {
+      "path": "contract.log",
+      "sha256": "d81873e04b757b19c82967cdf93657c3c30a526ec3f1d0325dad18db6ed5e789"
+    },
+    "failed-cache-after.txt": {
+      "path": "failed-cache-after.txt",
+      "sha256": "b90ea32379ad087a56a080eef7df5d128a5b90771544be58ed8e40970beac3c8"
+    },
+    "failed-cache-before.txt": {
+      "path": "failed-cache-before.txt",
+      "sha256": "60746376e4f5eacfa124797bc650642e8d2cd00257f378ee0456b1660629b373"
+    },
+    "HyleCiComponentContract-build1.cmake": {
+      "path": "HyleCiComponentContract-build1.cmake",
+      "sha256": "aabb034fde0af0b6bfa6f33a3829ecacb2bd73d920691f9eee07f7bc6a766179"
+    },
+    "HyleCiComponentContract-resume-build1.cmake": {
+      "path": "HyleCiComponentContract-resume-build1.cmake",
+      "sha256": "8b7a24ec6cc8b2d56bcfb6be93d4b1e67c7edc21b978728da7bf2e025feb47e1"
+    },
+    "job.json": {
+      "path": "job.json",
+      "sha256": "d1302ab462621a10bd7294c1738542ee61279c64532445838f1e4a72ca61b5b4"
+    }
+  }
+}

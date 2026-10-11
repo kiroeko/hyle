@@ -1,0 +1,95 @@
+{
+  "product_candidate": "5b3efe2cce3fcab2bc55cf749af2d862a786ef25",
+  "source_manifest": "HYLE full canonical Git archive\nGit commit: 5b3efe2cce3fcab2bc55cf749af2d862a786ef25\nGit tree: 7023c5780a7c99b10f0b41a4e27f3bf5899dea04\n",
+  "scope": "F2 predeclared full central component contract. Only four resource parallel arguments adapted in scratch copy; public assertions and product unchanged.",
+  "parallel": 1,
+  "original_script_sha256": "a5be28bdc082bfaf077cbeeffd3fb64b88199aa67f6a4c6d67272854d7484bf6",
+  "scratch_script_sha256": "aabb034fde0af0b6bfa6f33a3829ecacb2bd73d920691f9eee07f7bc6a766179",
+  "scratch_transform": {
+    "replacement": "--parallel 2 -> --parallel 1",
+    "count": 4
+  },
+  "identity": {
+    "compiler": "g++-14 (Ubuntu 14.2.0-4ubuntu2~24.04.1) 14.2.0\nCopyright (C) 2024 Free Software Foundation, Inc.\nThis is free software; see the source for copying conditions.  There is NO\nwarranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.\n\n",
+    "os": "Linux kiro-workstation 6.18.40.1-microsoft-standard-WSL2 #1 SMP PREEMPT_DYNAMIC Fri Jul 31 22:12:15 UTC 2026 x86_64 x86_64 x86_64 GNU/Linux\n",
+    "cmake": "cmake version 3.28.3\n\nCMake suite maintained and supported by Kitware (kitware.com/cmake).\n"
+  },
+  "stages": [
+    {
+      "name": "component-contract",
+      "command": [
+        "cmake",
+        "-DHYLE_SOURCE_DIR=/root/hyle-scratch/compute-unified/source-7a7b4c3b",
+        "-DHYLE_SMOKE_ROOT=/root/hyle-scratch/compute-unified/foundation-f2-component-contract-5b3efe2cc/smoke",
+        "-DHYLE_SMOKE_GENERATOR=Ninja",
+        "-P",
+        "/root/hyle-scratch/compute-unified/foundation-f2-component-contract-5b3efe2cc/HyleCiComponentContract-build1.cmake"
+      ],
+      "pid": 627,
+      "state": "terminal",
+      "available_bytes": 32477745152,
+      "log": "contract.log",
+      "exit_code": 1,
+      "verdict": "FAIL",
+      "sha256": "d81873e04b757b19c82967cdf93657c3c30a526ec3f1d0325dad18db6ed5e789"
+    },
+    {
+      "name": "component-contract-resume",
+      "command": [
+        "cmake",
+        "-DHYLE_SOURCE_DIR=/root/hyle-scratch/compute-unified/source-7a7b4c3b",
+        "-DHYLE_SMOKE_ROOT=/root/hyle-scratch/compute-unified/foundation-f2-component-contract-5b3efe2cc/smoke",
+        "-DHYLE_SMOKE_GENERATOR=Ninja",
+        "-P",
+        "/root/hyle-scratch/compute-unified/foundation-f2-component-contract-5b3efe2cc/HyleCiComponentContract-resume-build1.cmake"
+      ],
+      "pid": 627,
+      "state": "terminal",
+      "available_bytes": 32395124736,
+      "log": "contract-resume.log",
+      "exit_code": 1,
+      "verdict": "FAIL",
+      "sha256": "21eda210235d0a799c32db34264713ea9f5bbfdb81007b9831a7680483908df3"
+    },
+    {
+      "name": "component-contract-resume-2",
+      "command": [
+        "cmake",
+        "-DHYLE_SOURCE_DIR=/root/hyle-scratch/compute-unified/source-7a7b4c3b",
+        "-DHYLE_SMOKE_ROOT=/root/hyle-scratch/compute-unified/foundation-f2-component-contract-5b3efe2cc/smoke",
+        "-DHYLE_SMOKE_GENERATOR=Ninja",
+        "-P",
+        "/root/hyle-scratch/compute-unified/foundation-f2-component-contract-5b3efe2cc/HyleCiComponentContract-resume-build1.cmake"
+      ],
+      "pid": 1040,
+      "state": "terminal",
+      "available_bytes": 32538267648,
+      "log": "contract-resume-2.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "4b9541d90e6cc270fffba942b21a39855cdcab3c202971aa73424eedb24d22e4"
+    }
+  ],
+  "verdict": "PASS",
+  "recovery": {
+    "reason": "Inherited Windows CUDA_PATH caused FindCUDAToolkit to choose nvcc.exe under /mnt/c instead of Linux Toolkit; no product failure. Retain initial FAIL and resume remaining original assertions at maintainer-all stage in same scratch root.",
+    "removed_failed_cache_entries": [
+      "CUDAToolkit_BIN_DIR:PATH=/mnt/c/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v13.3/bin\n",
+      "CUDAToolkit_NVCC_EXECUTABLE:FILEPATH=/mnt/c/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v13.3/bin/nvcc.exe\n",
+      "CUDA_CUDART:FILEPATH=CUDA_CUDART-NOTFOUND\n"
+    ],
+    "cache_before_sha256": "60746376e4f5eacfa124797bc650642e8d2cd00257f378ee0456b1660629b373",
+    "cache_after_sha256": "b90ea32379ad087a56a080eef7df5d128a5b90771544be58ed8e40970beac3c8",
+    "resume_script_sha256": "8b7a24ec6cc8b2d56bcfb6be93d4b1e67c7edc21b978728da7bf2e025feb47e1",
+    "completed_prefix_line_count": 624,
+    "cuda_environment": {
+      "CUDA_PATH": "/usr/local/cuda-13.3",
+      "CUDA_HOME": "/usr/local/cuda-13.3",
+      "CUDAToolkit_ROOT": "/usr/local/cuda-13.3",
+      "CUDACXX": "/usr/local/cuda-13.3/bin/nvcc",
+      "CUDAHOSTCXX": "/usr/bin/g++-13",
+      "PATH": "/usr/local/cuda-13.3/bin:/usr/lib/wsl/lib:/usr/bin:/bin:/usr/sbin:/sbin"
+    }
+  },
+  "cache_edit_fixture_failure": "First scratch removal left orphan cache doc comments; CMake emitted parse errors but regenerated valid Linux Toolkit entries. Retain that FAIL; use normalized current cache without further editing."
+}

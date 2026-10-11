@@ -1,0 +1,134 @@
+CMake Error at /root/hyle-scratch/compute-unified/foundation-f2-component-contract-5b3efe2cc/HyleCiComponentContract-build1.cmake:41 (message):
+  maintainer all selects every implemented IO factor failed with exit code 1:
+
+  -- The CXX compiler identification is GNU 14.2.0
+
+  -- Detecting CXX compiler ABI info
+
+  -- Detecting CXX compiler ABI info - done
+
+  -- Check for working CXX compiler: /usr/bin/g++-14 - skipped
+
+  -- Detecting CXX compile features
+
+  -- Detecting CXX compile features - done
+
+  -- HYLE developer factors: requested='all'
+  resolved='core,container_intrusive,util_core,error,mem_reclaim,time,obs,math,timer_queue,platform,platform_thread,platform_fs,mem,mem_vm,simd,container,container_text,util_runtime,container_queue,sched,io_core,io_tls,io_http,io_http2,io_transfer,compute_ops,compute,graph,container_concurrent,io_watch,process,io_websocket,compute_provider_onednn,compute_backend_cpu,compute_ggml_runtime,compute_provider_ggml,graph_provider_onednn,compute_backend_cuda,compute_provider_native,compute_route_cpu,graph_route_cpu,compute_provider_cublas,compute_provider_marlin,compute_provider_cuda,compute_provider_flashinfer,compute_provider_ggml_cuda,compute_provider_torch_cuda,compute_route_cuda,graph_provider_ggml_cuda,graph_route_cuda,compute_provider_ggml_metal,compute_route_apple,graph_route_apple,compute_provider_ggml_vulkan,compute_provider_iree_vulkan,compute_route_vulkan,graph_route_vulkan,graph_route_cpu_cuda,graph_route_cpu_apple,graph_route_cpu_vulkan'
+  products=''
+
+  -- The C compiler identification is GNU 14.2.0
+
+  -- Detecting C compiler ABI info
+
+  -- Detecting C compiler ABI info - done
+
+  -- Check for working C compiler: /usr/bin/gcc-14 - skipped
+
+  -- Detecting C compile features
+
+  -- Detecting C compile features - done
+
+  -- HYLE_SANITIZER = off
+
+  -- HYLE_TESTING = OFF (test-only interfaces stripped -- zero in shipped
+  lib)
+
+  -- HYLE: io TLS OFF -- dependency probe skipped
+
+  -- DNNL_TARGET_ARCH: X64
+
+  -- ONEDNN_LIBRARY_TYPE: STATIC (default: SHARED)
+
+  -- ONEDNN_BUILD_GRAPH: OFF (default: ON)
+
+  -- ONEDNN_ENABLE_CONCURRENT_EXEC: ON (default: OFF)
+
+  -- ONEDNN_ENABLE_PRIMITIVE_CACHE: OFF (default: ON)
+
+  -- ONEDNN_ENABLE_WORKLOAD: INFERENCE (default: TRAINING)
+
+  -- ONEDNN_ENABLE_PRIMITIVE:
+  MATMUL;LAYER_NORMALIZATION;BINARY;ELTWISE;REORDER (default: ALL)
+
+  -- ONEDNN_EXPERIMENTAL_UKERNEL: ON (default: OFF)
+
+  -- ONEDNN_ENABLE_JIT_PROFILING: OFF (default: ON)
+
+  -- ONEDNN_ENABLE_ITT_TASKS: OFF (default: ON)
+
+  -- ONEDNN_VERBOSE: OFF (default: ON)
+
+  -- ONEDNN_CPU_RUNTIME: THREADPOOL (default: OMP)
+
+  -- ONEDNN_ENABLE_MAX_CPU_ISA: OFF (default: ON)
+
+  -- ONEDNN_ENABLE_CPU_ISA_HINTS: OFF (default: ON)
+
+  -- Performing Test CMAKE_HAVE_LIBC_PTHREAD
+
+  -- Performing Test CMAKE_HAVE_LIBC_PTHREAD - Success
+
+  -- Found Threads: TRUE
+
+  -- Found OpenMP_C: -fopenmp (found version "4.5")
+
+  -- Found OpenMP_CXX: -fopenmp (found version "4.5")
+
+  -- Found OpenMP: TRUE (found version "4.5")
+
+  -- Threadpool testing: standalone
+
+  -- Found OpenCL headers:
+  /root/.cache/hyle/dependencies/v1/sources/onednn-c531fe1a5cd6-5c0c833df87c/third_party/opencl
+
+
+  -- Found Git: /usr/bin/git (found version "2.43.0")
+
+  -- Enabled testing coverage: CI
+
+  -- Enabled workload: INFERENCE
+
+  -- Enabled primitives: MATMUL;LAYER_NORMALIZATION;BINARY;ELTWISE;REORDER
+
+  -- Enabled primitive CPU ISA: ALL
+
+  -- Enabled primitive GPU ISA: ALL
+
+  -- Enabled GeMM kernels ISA: ALL
+
+  -- Primitive cache is disabled
+
+  -- Experimental functionality for ukernels is enabled
+
+  -- HYLE: oneDNN v3.13.4 -- x64 BRGEMM, normalization and tensor primitives
+  enabled
+
+  -- Unable to find cudart library.
+
+  -- Configuring incomplete, errors occurred!
+
+
+
+  CMake Error at
+  /usr/share/cmake-3.28/Modules/FindPackageHandleStandardArgs.cmake:230
+  (message):
+
+    Could NOT find CUDAToolkit (missing: CUDA_CUDART) (found suitable version
+    "13.3.73", minimum required is "13.3")
+
+  Call Stack (most recent call first):
+
+    /usr/share/cmake-3.28/Modules/FindPackageHandleStandardArgs.cmake:600 (_FPHSA_FAILURE_MESSAGE)
+    /usr/share/cmake-3.28/Modules/FindCUDAToolkit.cmake:1009 (find_package_handle_standard_args)
+    cmake/HyleCudaDependencies.cmake:16 (find_package)
+    CMakeLists.txt:416 (hyle_configure_cuda_dependency)
+
+  
+
+
+
+Call Stack (most recent call first):
+  /root/hyle-scratch/compute-unified/foundation-f2-component-contract-5b3efe2cc/HyleCiComponentContract-build1.cmake:626 (_hyle_contract_run)
+
+
