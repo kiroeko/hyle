@@ -2,6 +2,7 @@ hyle_add_header_self_contained_test(compute_backend_cpu
   HEADER_DIR compute
   HEADERS backends/cpu.h)
 hyle_add_test(compute_backend_cpu SOURCES
+  copy_program_test.cc
   ../compute/device_test.cc
   ../compute/host_kernel_test.cc
   ../compute/custom_kernel_test.cc
