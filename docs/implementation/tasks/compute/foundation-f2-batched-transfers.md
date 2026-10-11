@@ -256,6 +256,12 @@ CPU `d16f07f92` 的MSVC Release/static/source首轮同样PASS：3个公共progra
 [CPU收据](../../../../evidence/correctness/foundation-f2-cpu-program/receipt.json)保留精确tree/命令/deps/log SHA。
 当前CPU/CUDA公共对象完成此首轮实现期检查；WSL/Air、Apple/Vulkan程序、真实数学与完整故障/交付矩阵
 尚未通过。没有把这些首轮用例计成七FIX全完成或CANDIDATE；四owner仍AUDITED。
+Vulkan `d256ca5b1` 的原录制门3项PASS；补齐owned-view来源后 `a09c9dd32` 的新增fixture在
+旧storage factory的alignment失败，`f65a5ed3a` 使用合法carrier后4项全部PASS。
+[原录制收据](../../../../evidence/correctness/foundation-f2-vulkan-recording/receipt.json)保留三个checkpoint及失败，
+每次34项common回归/实际header deps/独立头通过，XML实机为RTX4070而非software adapter。
+原生双向/同设备字节、同pair合并、独立pairs、3次replay无metadata增长、物理alias与合法readonly view已取证；
+尚无Vulkan公共租约Program/Invocation/Submission与producer/完整故障/数学/其他主机/三交付资格。
 
 | FIX | 必须实现 | 验收 |
 |---|---|---|

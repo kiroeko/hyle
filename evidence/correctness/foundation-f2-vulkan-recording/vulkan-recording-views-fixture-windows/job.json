@@ -1,0 +1,120 @@
+{
+  "candidate": "f65a5ed3a9b9580888df2f9c0f2c69f1e607d6ff",
+  "scope": "F2 Vulkan native copy recording byte/alias/pair/replay seam only; public controller, math, failures, other hosts and deliveries unqualified",
+  "configuration": "Release/shared/source/shipping/instrumentationOFF/installOFF",
+  "compiler": "C:/Program Files/Microsoft Visual Studio/18/Enterprise/VC/Tools/MSVC/14.50.35717/bin/Hostx64/x64/cl.exe",
+  "parallel": 1,
+  "stages": [
+    {
+      "name": "identity",
+      "command": [
+        "nvidia-smi",
+        "--query-gpu=name,uuid,driver_version,memory.total",
+        "--format=csv"
+      ],
+      "pid": 37164,
+      "state": "terminal",
+      "available_bytes": 46591451136,
+      "log": "identity.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "5ea583d0a4d43e0243d1237c000eb69187feff35d4a08503f2b025b47be63536"
+    },
+    {
+      "name": "build",
+      "command": [
+        "C:\\Program Files\\CMake\\bin\\cmake.EXE",
+        "--build",
+        "C:\\h7\\w-vulkan-native",
+        "--target",
+        "hyle_compute_route_vulkan_test",
+        "hyle_compute_test",
+        "--parallel",
+        "1"
+      ],
+      "pid": 45768,
+      "state": "terminal",
+      "available_bytes": 46595624960,
+      "log": "build.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "b2ed4c447199da37cfac48b5af93e8fac26802c8f14b90f807fb4bffea21755d"
+    },
+    {
+      "name": "deps",
+      "command": [
+        "C:/PROGRA~1/PYTHON~1/Scripts/ninja.exe",
+        "-C",
+        "C:\\h7\\w-vulkan-native",
+        "-t",
+        "deps",
+        "src/compute/CMakeFiles/hyle_compute.dir/copy_ranges.cc.obj"
+      ],
+      "pid": 45824,
+      "state": "terminal",
+      "available_bytes": 46777212928,
+      "log": "deps.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "126cc6138e2c1218e52c15eeed2d87b0143606eb9b5b0817e3cbf2475d45f835"
+    },
+    {
+      "name": "headers",
+      "command": [
+        "python",
+        "C:\\public\\project-hyle\\hyle\\scripts\\header-self-contained.py",
+        "--module",
+        "compute",
+        "--header",
+        "vulkan.h",
+        "--header",
+        "vulkan_memory.h",
+        "--include-dir",
+        "C:\\public\\project-hyle\\hyle\\include",
+        "--extra-include-dir",
+        "C:/public/tools/hyle-vulkan/1.4.357.0/include",
+        "--cxx",
+        "C:/Program Files/Microsoft Visual Studio/18/Enterprise/VC/Tools/MSVC/14.50.35717/bin/Hostx64/x64/cl.exe",
+        "--cxx-compiler-id",
+        "MSVC"
+      ],
+      "pid": 68080,
+      "state": "terminal",
+      "available_bytes": 46773366784,
+      "log": "headers.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "3fb57fef152150e862c112279f7bca20850fa8b2b16f953c178087149c40d910"
+    },
+    {
+      "name": "common",
+      "command": [
+        "C:\\h7\\w-vulkan-native\\bin\\hyle_compute_test.exe",
+        "--gtest_filter=CopyRanges.*:CopyLeaseHandoff.*:CopyDependency.*:ResourceLeases.*:Completion.*"
+      ],
+      "pid": 92292,
+      "state": "terminal",
+      "available_bytes": 46770319360,
+      "log": "common.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "385787fa753e787f76788d0881d30621122ec2383336448db7ed4d722cfddea6"
+    },
+    {
+      "name": "test",
+      "command": [
+        "C:\\h7\\w-vulkan-native\\bin\\hyle_compute_route_vulkan_test.exe",
+        "--gtest_filter=VulkanCopyRecording.*",
+        "--gtest_output=xml:C:\\public\\project-hyle\\hyle\\.scratch\\foundation-f2\\vulkan-recording-views-fixture-windows\\metrics.xml"
+      ],
+      "pid": 90548,
+      "state": "terminal",
+      "available_bytes": 46763515904,
+      "log": "test.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "deb6a6300a70cafb62cd44af16ee82663a9a362eca7e60fb92147b0842acc666"
+    }
+  ],
+  "verdict": "PASS"
+}

@@ -1,0 +1,48 @@
+{
+  "schema_version": 1,
+  "scope": "Windows MSVC Release shared source/shipping original Vulkan native copy-recording seam only",
+  "checkpoints": [
+    {
+      "candidate": "d256ca5b1cae178332fd6f8b933b450b84f61552",
+      "tree": "e9725cc7e41703c30e263326be41a0ff9b5434a4",
+      "directory": "vulkan-recording-windows",
+      "verdict": "PASS",
+      "tests": 3,
+      "failures": 0,
+      "device": {
+        "device_name": "NVIDIA GeForce RTX 4070",
+        "driver_name": "NVIDIA"
+      },
+      "metrics_xml_sha256": "ccfef47063ff8129375abd52cd8e15c67f6db179c805df334350b922a54d3f4f"
+    },
+    {
+      "candidate": "a09c9dd324ab7843ff6d2bd863f6d673dd59c36e",
+      "tree": "1ad24e476d345fc32149d71a7217ebd50d75dce9",
+      "directory": "vulkan-recording-views-windows",
+      "verdict": "FAIL",
+      "tests": 4,
+      "failures": 1,
+      "device": {
+        "device_name": "NVIDIA GeForce RTX 4070",
+        "driver_name": "NVIDIA"
+      },
+      "metrics_xml_sha256": "26173c6b1cee9a529da686c9785ab079cf7c290c6ffef444b3f0357f10eb5c05"
+    },
+    {
+      "candidate": "f65a5ed3a9b9580888df2f9c0f2c69f1e607d6ff",
+      "tree": "e9503081527a0098a385235f7f30281c8bedaa6e",
+      "directory": "vulkan-recording-views-fixture-windows",
+      "verdict": "PASS",
+      "tests": 4,
+      "failures": 0,
+      "device": {
+        "device_name": "NVIDIA GeForce RTX 4070",
+        "driver_name": "NVIDIA"
+      },
+      "metrics_xml_sha256": "1c67f29442e4525b020f8a12dc8dddad94d6bfc9ed2416b5524980b76a4dd310"
+    }
+  ],
+  "common_tests_per_checkpoint": 34,
+  "public_lease_controller_native_producer_failure_math_other_hosts_and_delivery": "UNPROVEN",
+  "original_investigation_correction_budget": "Retained unchanged; no fresh scope or budget from these implementation checkpoints"
+}

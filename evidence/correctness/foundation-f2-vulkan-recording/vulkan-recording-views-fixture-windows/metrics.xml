@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites tests="4" failures="0" disabled="0" errors="0" time="0.437" timestamp="2026-10-11T18:59:33.702" name="AllTests">
+  <testsuite name="VulkanCopyRecording" tests="4" failures="0" disabled="0" skipped="0" errors="0" time="0.437" timestamp="2026-10-11T18:59:33.702">
+    <testcase name="ThreeNativeBytePhasesAndPairRegionsReuseColdMetadata" file="C:\public\project-hyle\hyle\tests\compute_route_vulkan\copy_recording_test.cc" line="20" status="run" result="completed" time="0.166" timestamp="2026-10-11T18:59:33.702" classname="VulkanCopyRecording">
+      <properties>
+        <property name="device_name" value="NVIDIA GeForce RTX 4070"/>
+        <property name="driver_name" value="NVIDIA"/>
+      </properties>
+    </testcase>
+    <testcase name="IndependentBufferPairsShareOneNativePhaseAndSourceCanRepeat" file="C:\public\project-hyle\hyle\tests\compute_route_vulkan\copy_recording_test.cc" line="68" status="run" result="completed" time="0.07" timestamp="2026-10-11T18:59:33.869" classname="VulkanCopyRecording" />
+    <testcase name="AliasAlignmentForeignBackingAndSelfAreCheckedBeforeNativeAcceptance" file="C:\public\project-hyle\hyle\tests\compute_route_vulkan\copy_recording_test.cc" line="91" status="run" result="completed" time="0.126" timestamp="2026-10-11T18:59:33.940" classname="VulkanCopyRecording" />
+    <testcase name="OwnedReadonlyViewsPreservePhysicalAliasAndUnknownExternalUsageIsRejected" file="C:\public\project-hyle\hyle\tests\compute_route_vulkan\copy_recording_test.cc" line="119" status="run" result="completed" time="0.073" timestamp="2026-10-11T18:59:34.067" classname="VulkanCopyRecording" />
+  </testsuite>
+</testsuites>
