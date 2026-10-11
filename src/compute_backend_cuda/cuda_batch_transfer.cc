@@ -4,6 +4,7 @@
 
 #include <memory>
 #include <mutex>
+#include <utility>
 #include <vector>
 
 #include "hyle/compute/detail/copy_backend.h"
@@ -11,6 +12,9 @@
 
 namespace hyle::compute::cuda::detail {
 namespace {
+#if defined(HYLE_TESTING)
+thread_local CopyNativeHooks copy_hooks;
+#endif
 using compute::detail::CopyBackendRange;
 using compute::detail::EnqueueResult;
 template<class T> using Array = std::vector<T, mem::StdAllocator<T>>;
@@ -43,7 +47,12 @@ Status prepare(void *opaque, mem::AllocatorRef allocator, void **output,
   HYLE_RETURN_IF_ERROR(scope.status());
   void *entry = nullptr;
   CUdriverProcAddressQueryResult query = CU_GET_PROC_ADDRESS_SYMBOL_NOT_FOUND;
-  const auto found = cuGetProcAddress("cuMemcpyBatchAsync", &entry, 13000,
+  const auto found =
+#if defined(HYLE_TESTING)
+      copy_hooks.proc_address ? copy_hooks.proc_address("cuMemcpyBatchAsync", &entry, 13000,
+                                      CU_GET_PROC_ADDRESS_LEGACY_STREAM, &query) :
+#endif
+      cuGetProcAddress("cuMemcpyBatchAsync", &entry, 13000,
                                       CU_GET_PROC_ADDRESS_LEGACY_STREAM, &query);
   if (found != CUDA_SUCCESS && found != CUDA_ERROR_NOT_FOUND &&
       found != CUDA_ERROR_NOT_SUPPORTED)
@@ -161,7 +170,12 @@ EnqueueResult enqueue(void *opaque, void *queue_opaque, void *program_opaque,
   }
   for (std::size_t index = first; index < first + count; ++index) {
     ++*calls;
-    const auto result = cudaMemcpyAsync(byte_pointer(slot.ranges[index].destination),
+    const auto result =
+#if defined(HYLE_TESTING)
+        copy_hooks.memcpy_async ? copy_hooks.memcpy_async(byte_pointer(slot.ranges[index].destination),
+        byte_pointer(slot.ranges[index].source), slot.sizes[index], cudaMemcpyDefault, queue.stream) :
+#endif
+        cudaMemcpyAsync(byte_pointer(slot.ranges[index].destination),
         byte_pointer(slot.ranges[index].source), slot.sizes[index],
         cudaMemcpyDefault, queue.stream);
     if (result != cudaSuccess) return EnqueueResult::accepted_command(runtime_status(result));
@@ -172,5 +186,10 @@ const compute::detail::CopyBackendVTable table{
     &prepare, &destroy_program, &create_slot, &destroy_slot, &physical, &bind_slot, &enqueue};
 } // namespace
 
+#if defined(HYLE_TESTING)
+CopyNativeHooks set_copy_native_hooks(CopyNativeHooks hooks) noexcept {
+  return std::exchange(copy_hooks, hooks);
+}
+#endif
 const compute::detail::CopyBackendVTable *copy_batch_interface() noexcept { return &table; }
 } // namespace hyle::compute::cuda::detail

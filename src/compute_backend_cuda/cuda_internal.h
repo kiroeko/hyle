@@ -50,6 +50,16 @@ enum class FenceKind : unsigned char {
 };
 
 #if defined(HYLE_TESTING)
+// Narrow decorators for F2's original native calls; absent in shipped builds.
+struct CopyNativeHooks final {
+  CUresult (*proc_address)(const char *, void **, int, cuuint64_t,
+                          CUdriverProcAddressQueryResult *) noexcept = nullptr;
+  cudaError_t (*memcpy_async)(void *, const void *, std::size_t,
+                             cudaMemcpyKind, cudaStream_t) noexcept = nullptr;
+};
+HYLE_COMPUTE_BACKEND_CUDA_API CopyNativeHooks
+set_copy_native_hooks(CopyNativeHooks hooks) noexcept;
+
 struct CompletionObservationHooks final {
   cudaError_t (*query)(cudaEvent_t) noexcept = nullptr;
   cudaError_t (*wait)(cudaEvent_t) noexcept = nullptr;

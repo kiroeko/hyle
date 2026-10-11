@@ -8,6 +8,7 @@
 #include "hyle/compute/detail/backend_extension.h"
 #include "hyle/compute/detail/copy_backend.h"
 #include "../compute/context_state.h"
+#include "copy_fault_test_support.h"
 
 namespace {
 using namespace hyle::compute;
@@ -138,4 +139,37 @@ TEST(CudaCopyBatch, PhysicalIdentityUsesByteAddressAndRejectsForeignContext) {
   EXPECT_FALSE(wrong_endpoint.has_value());
   EXPECT_EQ(batch.calls, 0u);
 }
+#if defined(HYLE_TESTING)
+TEST(CudaCopyBatch, ColdAbsentBatchUsesRealSameStreamCopiesWithoutReprobing) {
+  auto context = Context::create(cuda::device(0).value()).value();
+  auto queue = context.create_queue().value();
+  auto host = cuda::MemoryResource::create(context, cuda::MemoryKind::kPinnedHost).value();
+  auto device = cuda::MemoryResource::create(context, cuda::MemoryKind::kDevice).value();
+  auto source = mem::Buffer::create(host.ref(), 32).value();
+  auto first = mem::Buffer::create(device.ref(), 32).value();
+  auto second = mem::Buffer::create(device.ref(), 32).value();
+  auto output = mem::Buffer::create(host.ref(), 32).value();
+  copy_fault_test::NativeScope decorated;
+  NativeBatch batch;
+  ASSERT_TRUE(batch.create(context, queue).ok());
+  for (unsigned replay = 0; replay < 3; ++replay) {
+    std::array<std::byte, 32> bytes, observed;
+    bytes.fill(std::byte(29 + replay));
+    ASSERT_TRUE(source.write(0, bytes).ok());
+    const std::array<detail::CopyBackendRange, 4> ranges{{
+        {first.view().subview(0, 16).value(), source.view().subview(0, 16).value()},
+        {first.view().subview(16, 16).value(), source.view().subview(16, 16).value()},
+        {second.view(), first.view()}, {output.view(), second.view()}}};
+    ASSERT_TRUE(batch.bind(ranges).ok());
+    auto upload = batch.submit(0, 2).value(), resident = batch.submit(2, 1).value(), readback = batch.submit(3, 1).value();
+    ASSERT_TRUE(readback.wait().ok()); ASSERT_TRUE(upload.wait().ok()); ASSERT_TRUE(resident.wait().ok());
+    ASSERT_TRUE(output.read(0, observed).ok()); EXPECT_EQ(observed, bytes);
+    EXPECT_EQ(copy_fault_test::probes, 1u);
+    EXPECT_EQ(batch.calls, 4u * (replay + 1));
+    EXPECT_EQ(copy_fault_test::copies, batch.calls);
+  }
+  RecordProperty("native_fallback_copies", copy_fault_test::copies);
+  RecordProperty("cold_proc_probes", copy_fault_test::probes);
+}
+#endif
 } // namespace

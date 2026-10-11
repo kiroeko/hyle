@@ -9,6 +9,7 @@
 #include "hyle/compute/batch_transfer.h"
 #include "hyle/compute/detail/retained_completion.h"
 #include "hyle/mem/quota_allocator.h"
+#include "copy_fault_test_support.h"
 
 namespace {
 using namespace hyle::compute;
@@ -198,4 +199,62 @@ TEST(CudaCopyProgram, CapacityAliasErrorProducerAndZeroBatchDoNotConsumeOrAccept
   auto moved = std::move(invocation); EXPECT_FALSE(invocation.valid());
   EXPECT_TRUE(invocation.drain().ok()); EXPECT_TRUE(moved.drain().ok());
 }
+#if defined(HYLE_TESTING)
+TEST(CudaCopyProgram, AcceptedFallbackSuffixErrorPreservesEarlierReadyGroupWithoutRetry) {
+  auto context = Context::create(cuda::device(0).value()).value();
+  auto queue = context.create_queue().value();
+  auto host = cuda::MemoryResource::create(context, cuda::MemoryKind::kPinnedHost).value();
+  auto device = cuda::MemoryResource::create(context, cuda::MemoryKind::kDevice).value();
+  auto resources = specs(host.ref(), device.ref()); Data data(resources);
+  Gate gate; GateGuard drain{gate, context};
+  copy_fault_test::NativeScope decorated;
+  auto program = CopyBatchProgram::prepare(context, resources).value();
+  auto invocation = CopyBatchInvocation::create(program, queue).value();
+  ASSERT_TRUE(data.bind(invocation, std::byte{43}).ok());
+  ASSERT_TRUE(invocation.prepare_replay(kPhases, kRanges).ok());
+  copy_fault_test::fail_copy = 3; // Phase 0's two H2D commands succeed first.
+  auto submitted = invocation.submit(); ASSERT_TRUE(submitted.has_value());
+  EXPECT_TRUE(submitted->wait().IsResourceExhausted());
+  auto ready = submitted->output({0}, {1}, 0, 32); ASSERT_TRUE(ready.has_value());
+  std::array<std::byte, 32> actual; ASSERT_TRUE(ready->view()->read(actual).ok());
+  for (auto byte : actual) EXPECT_EQ(byte, std::byte{43});
+  EXPECT_FALSE(submitted->output({2}, {3}, 0, 32).has_value());
+  EXPECT_FALSE(invocation.prepare_replay(kPhases, kRanges).ok());
+  EXPECT_EQ(submitted->report().native_calls, 3u);
+  EXPECT_EQ(copy_fault_test::copies, 3u); EXPECT_EQ(copy_fault_test::probes, 1u);
+  EXPECT_EQ(submitted->report().phase_completions, 2u);
+  submitted = {}; ASSERT_TRUE(invocation.reset().ok());
+}
+
+TEST(CudaCopyProgram, UnknownEventObservationAndUnsupportedCancelKeepActualPendingUsesAlive) {
+  auto context = Context::create(cuda::device(0).value()).value();
+  auto queue = context.create_queue().value();
+  auto host = cuda::MemoryResource::create(context, cuda::MemoryKind::kPinnedHost).value();
+  auto device = cuda::MemoryResource::create(context, cuda::MemoryKind::kDevice).value();
+  auto resources = specs(host.ref(), device.ref()); Data data(resources);
+  mem::QuotaAllocator metadata(mem::system_allocator());
+  Gate gate; GateGuard drain{gate, context};
+  auto program = CopyBatchProgram::prepare(context, resources, {.allocator = metadata.get()}).value();
+  auto invocation = CopyBatchInvocation::create(program, queue).value();
+  ASSERT_TRUE(data.bind(invocation, std::byte{59}).ok());
+  auto blocker = cuda::submit(queue, [&gate](cudaStream_t stream) noexcept { return cudaLaunchHostFunc(stream, &Gate::wait, &gate); }).value();
+  ASSERT_TRUE(invocation.prepare_replay(kPhases, kRanges).ok());
+  auto submitted = invocation.submit().value();
+  EXPECT_EQ(submitted.request_cancel().code(), hyle::StatusCode::Unimplemented);
+  {
+    copy_fault_test::ObservationScope observation;
+    copy_fault_test::fail_query = true;
+    EXPECT_FALSE(submitted.output({0}, {1}, 0, 32).has_value());
+    EXPECT_FALSE(copy_fault_test::fail_query);
+  }
+  EXPECT_TRUE(submitted.in_flight()); EXPECT_FALSE(invocation.reset().ok());
+  EXPECT_GT(data.pools[1].stats().active_uses, 0u);
+  EXPECT_GT(data.pools[1].stats().live_blocks, 0u);
+  submitted = {}; invocation = {}; blocker = {};
+  EXPECT_GT(metadata.used(), 0u); EXPECT_GT(data.pools[1].stats().active_uses, 0u);
+  gate.release(); ASSERT_TRUE(context.drain().ok());
+  for (auto &pool : data.pools) { EXPECT_EQ(pool.stats().active_uses, 0u); EXPECT_EQ(pool.stats().live_blocks, 0u); }
+  program.reset(); EXPECT_EQ(metadata.used(), 0u);
+}
+#endif
 } // namespace

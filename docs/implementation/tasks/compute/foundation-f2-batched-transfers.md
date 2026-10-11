@@ -384,6 +384,15 @@ Direct/Graph MatMul/QuantizedMatMul消费ready lease。Air普通CPU+Apple source
 共享sample helper由固定四端口扩为其既有形状的四或六输入，原CPU/CUDA与CPU/Vulkan两门
 精准复跑。此阶段仍不代签SDK或fault全矩阵，也不重开已CLOSED数学/Graph owner。
 
+CUDA剩余故障接线选原Windows instrumented树 `CudaCopyBatch.*:CudaCopyProgram.*` 与34项
+common；补冷batch缺席的原same-stream memcpy、已接受prefix后缀拒绝、真实pending event观测
+错误与原CUDA取消不支持但继续保活。冷资格/copy故障仅在private `cuda_internal.h` 的既有
+HYLE_TESTING域中作两个native-call decorator，先调用真实cuGetProcAddress/原memcpy，再保留
+或限制返回；shipping完全编译去除，无新public API、常态字段、runtime、Queue或工具core。
+未知观测复用已有CompletionObservationHooks，不复制mock executor/byte kernel。故障预算仍沿
+原卡，build1/test1/4GiB与300/1800/120门；同native产品点的shipping ordinary math及WSL风险
+留候选矩阵取证。此门不宣称已在旧driver实机运行，也不签完整跨平台fault。
+
 有限矩阵覆盖 R=0/1/多范围、同/不同 buffer pair、单/多 phase、重复 source、坏 ID、overlap、
 host/device 原编码、aligned/tail、pending 与 retained result。
 每路线对一次 staged upload、一次 D2H/read 与 D2D/host 合法变体作数学消费；故障只装饰真实 native calls。
