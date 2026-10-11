@@ -211,6 +211,11 @@ selector 的原生反向消费者与交付门按本卡集中阶段继续待验�
 CUDA接缝首构建在测试callback的返回类型推导失败（`HYLE_RETURN_IF_ERROR` 的传播代理与Status混合）；
 原生产库编译通过，未运行GPU测试。有限纠正1：fixture callback显式返回 `Status`，保留原失败日志并
 在同机器/树/命令重验；此处计入原两次有限纠正，不用新日志目录重置预算。
+同机有限纠正后 `3c83f434d` 的2个 CUDA byte-route 用例与新内部头 PASS。
+[原始收据](../../../../evidence/correctness/foundation-f2-cuda-backend/receipt.json)含首次失败与重验，
+实际 RTX4070/driver617.14；三轮H2D→D2D→D2H的9个phase实际9次driver batch calls，
+无CPU代跑。console首遍没有记录GTest property，唯一一次同binary XML补验只补调用数，未改变产品/预算。
+这仍只证明backend ABI/byte/replay接缝；public controller、权限/故障、数学、CPU/Apple/Vulkan和完整交付待验。
 
 | FIX | 必须实现 | 验收 |
 |---|---|---|

@@ -1,0 +1,39 @@
+{
+  "schema_version": 1,
+  "scope": "Windows CUDA backend fixed ABI and byte-route seam only; complete F2 qualification remains UNPROVEN",
+  "attempts": [
+    {
+      "candidate": "6c7bb71ceff6bc9d6ceb4b0742779b6110112b65",
+      "tree": "af78a0b97cd569434eb7c902bd6fcd53d114f2ff",
+      "directory": "cuda-backend-windows",
+      "verdict": "FAIL",
+      "native_metrics": null
+    },
+    {
+      "candidate": "3c83f434dbcfcd6031d3f17987448350da968cc2",
+      "tree": "389db08855c94df19d891c28cbd21dce2db1cad2",
+      "directory": "cuda-backend-windows-retry1",
+      "verdict": "PASS",
+      "native_metrics": {
+        "command": [
+          "C:/h7/foundation-f1-q0/bin/hyle_compute_backend_cuda_test.exe",
+          "--gtest_filter=CudaCopyBatch.*",
+          "--gtest_output=xml:C:\\public\\project-hyle\\hyle\\.scratch\\foundation-f2\\cuda-backend-windows-retry1\\metrics.xml"
+        ],
+        "exit_code": 0,
+        "available_bytes": 47418630144,
+        "reason": "Resolve native batch versus predeclared fallback call counts, absent from console-only first test log",
+        "replay_count": 3,
+        "accepted_phase_count": 9,
+        "native_calls": 9,
+        "selected_route": "batch_v13000",
+        "files": {
+          "metrics.xml": "f32fe5b8324aaf901d2ccc78dc17c938a4b216a998962a230f81f3d94dc7dd69",
+          "test-metrics.log": "0178b08fca78015823c21439e005fe55742647106097de7219c7219e060d7b6e"
+        }
+      }
+    }
+  ],
+  "corrective_attempts_used": 1,
+  "corrective_attempt_limit": 2
+}

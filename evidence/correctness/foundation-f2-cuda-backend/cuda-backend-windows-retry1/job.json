@@ -1,0 +1,102 @@
+{
+  "candidate": "3c83f434dbcfcd6031d3f17987448350da968cc2",
+  "scope": "F2 CUDA native ABI byte routes and fixed replay seam only; public controller, math, failures and deliveries unqualified",
+  "configuration": "Release/shared/source/instrumentationON/installOFF",
+  "compiler": "C:/Program Files/Microsoft Visual Studio/18/Enterprise/VC/Tools/MSVC/14.50.35717/bin/Hostx64/x64/cl.exe",
+  "parallel": 1,
+  "stages": [
+    {
+      "name": "identity",
+      "command": [
+        "nvidia-smi",
+        "--query-gpu=name,uuid,driver_version,memory.total",
+        "--format=csv"
+      ],
+      "pid": 87104,
+      "state": "terminal",
+      "available_bytes": 47416487936,
+      "log": "identity.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "5ea583d0a4d43e0243d1237c000eb69187feff35d4a08503f2b025b47be63536"
+    },
+    {
+      "name": "build",
+      "command": [
+        "C:\\Program Files\\CMake\\bin\\cmake.EXE",
+        "--build",
+        "C:\\h7\\foundation-f1-q0",
+        "--target",
+        "hyle_compute_backend_cuda_test",
+        "--parallel",
+        "1"
+      ],
+      "pid": 53932,
+      "state": "terminal",
+      "available_bytes": 47416524800,
+      "log": "build.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "b351fe5ca38ac1e4b3c56ee133db4294b2ebf1b9fe40fb484af7868d9a398b05"
+    },
+    {
+      "name": "headers",
+      "command": [
+        "python",
+        "C:\\public\\project-hyle\\hyle\\scripts\\header-self-contained.py",
+        "--module",
+        "compute",
+        "--header",
+        "detail/copy_backend.h",
+        "--include-dir",
+        "C:\\public\\project-hyle\\hyle\\include",
+        "--extra-include-dir",
+        "C:/h7/foundation-f1-sdk/w-cpu-cuda-shared-relocated/include",
+        "--cxx",
+        "C:/Program Files/Microsoft Visual Studio/18/Enterprise/VC/Tools/MSVC/14.50.35717/bin/Hostx64/x64/cl.exe",
+        "--cxx-compiler-id",
+        "MSVC"
+      ],
+      "pid": 76640,
+      "state": "terminal",
+      "available_bytes": 47427870720,
+      "log": "headers.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "10047ffae8dc087dc3bf4873ce9e50eb6be8fab68f2c438a22ae876583e509f3"
+    },
+    {
+      "name": "test",
+      "command": [
+        "C:\\h7\\foundation-f1-q0\\bin\\hyle_compute_backend_cuda_test.exe",
+        "--gtest_filter=CudaCopyBatch.*"
+      ],
+      "pid": 93064,
+      "state": "terminal",
+      "available_bytes": 47425617920,
+      "log": "test.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "37fedd8ba6381b2c705c6a490f19d838117426db13bcf9315771e8146847dce0"
+    }
+  ],
+  "verdict": "PASS",
+  "native_metrics": {
+    "command": [
+      "C:/h7/foundation-f1-q0/bin/hyle_compute_backend_cuda_test.exe",
+      "--gtest_filter=CudaCopyBatch.*",
+      "--gtest_output=xml:C:\\public\\project-hyle\\hyle\\.scratch\\foundation-f2\\cuda-backend-windows-retry1\\metrics.xml"
+    ],
+    "exit_code": 0,
+    "available_bytes": 47418630144,
+    "reason": "Resolve native batch versus predeclared fallback call counts, absent from console-only first test log",
+    "replay_count": 3,
+    "accepted_phase_count": 9,
+    "native_calls": 9,
+    "selected_route": "batch_v13000",
+    "files": {
+      "metrics.xml": "f32fe5b8324aaf901d2ccc78dc17c938a4b216a998962a230f81f3d94dc7dd69",
+      "test-metrics.log": "0178b08fca78015823c21439e005fe55742647106097de7219c7219e060d7b6e"
+    }
+  }
+}

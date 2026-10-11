@@ -1,0 +1,43 @@
+{
+  "candidate": "6c7bb71ceff6bc9d6ceb4b0742779b6110112b65",
+  "scope": "F2 CUDA native ABI byte routes and fixed replay seam only; public controller, math, failures and deliveries unqualified",
+  "configuration": "Release/shared/source/instrumentationON/installOFF",
+  "compiler": "C:/Program Files/Microsoft Visual Studio/18/Enterprise/VC/Tools/MSVC/14.50.35717/bin/Hostx64/x64/cl.exe",
+  "parallel": 1,
+  "stages": [
+    {
+      "name": "identity",
+      "command": [
+        "nvidia-smi",
+        "--query-gpu=name,uuid,driver_version,memory.total",
+        "--format=csv"
+      ],
+      "pid": 90392,
+      "state": "terminal",
+      "available_bytes": 47066382336,
+      "log": "identity.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "5ea583d0a4d43e0243d1237c000eb69187feff35d4a08503f2b025b47be63536"
+    },
+    {
+      "name": "build",
+      "command": [
+        "C:\\Program Files\\CMake\\bin\\cmake.EXE",
+        "--build",
+        "C:\\h7\\foundation-f1-q0",
+        "--target",
+        "hyle_compute_backend_cuda_test",
+        "--parallel",
+        "1"
+      ],
+      "pid": 60524,
+      "state": "terminal",
+      "available_bytes": 47071723520,
+      "log": "build.log",
+      "exit_code": 2,
+      "verdict": "FAIL",
+      "sha256": "a3133ec208bfde7f86533b9ee4e0c9befefd72a5f3cf8adf19ff9e8596aebe3f"
+    }
+  ]
+}
