@@ -535,6 +535,11 @@ producer后组。在普通shipping CPU/CUDA source树中添加独立fixture，�
 也已封存全部原运行与新头/缺席/迁址PASS，但它绑定红队纠正之前的3b产品，只作历史局部事实；
 当前产品沿原树做增量接线与相同consumer，不能拿旧数学输出代签新候选。
 
+[Windows Vulkan shared交付](../../../../evidence/correctness/foundation-f3-sdk-windows-vulkan-shared-7834ff2f9/receipt.json)
+进一步签同一97858fbc8产品、独立shared artifact树：100项构建后install/rename，普通消费者实际
+DLL同目录运行小GGUF与Qwen往返PASS，六头独立编译及CPU/CUDA/Apple缺席诊断PASS。
+Windows Vulkan当前static/shared已齐；WSL CPU/CUDA static正在运行，其他当前安装格仍待验。
+
 ## 解析器与真实权重验收
 
 格式解析不进入 pipeline。GGUF 用现有 ggml 格式核；本地 Qwen3.5-2B 原始 Safetensors

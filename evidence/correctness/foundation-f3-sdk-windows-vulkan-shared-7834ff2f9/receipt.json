@@ -1,0 +1,56 @@
+{
+  "schema_version": 1,
+  "candidate": "7834ff2f9f99c146e6e431f8ada7543a76548443",
+  "product_commit": "97858fbc88a6b5a87f109290b956eeaeee632dd2",
+  "host": "windows",
+  "profile": "vulkan",
+  "mode": "shared",
+  "scope": "F3 installed relocated ordinary Graph file/math/Qwen consumer plus changed ON/OFF headers only",
+  "relocation": {
+    "original": "C:\\h7\\foundation-f3-sdk\\windows-vulkan-shared-7834ff2f9\\staging",
+    "relocated": "C:\\h7\\foundation-f3-sdk\\windows-vulkan-shared-7834ff2f9\\relocated",
+    "original_absent": true,
+    "Hyle_metadata_no_source_build_staging_paths": true
+  },
+  "header_scope": {
+    "count": 6,
+    "CUDA": "OFF",
+    "Apple": "OFF",
+    "Vulkan": "ON",
+    "source_include_directory_requested": false
+  },
+  "absent_headers_and_route_diagnostics": [
+    "cpu",
+    "cuda",
+    "apple"
+  ],
+  "runtime_dlls": {
+    "hyle_compute.dll": "cd489740fa978cb08507ab05b71fec1f10dce820cb3129fad989803a199576fc",
+    "hyle_compute_ggml_runtime.dll": "7247d9958445154373337252b2f5a92e941e46e4c5df5672f5494a20a00a0a7b",
+    "hyle_compute_ops.dll": "d405a024fa28b353c1ed9f27a45d3318baf593f9e50274814ffdc6f1519d0d29",
+    "hyle_compute_provider_ggml_vulkan.dll": "d3a236fc0ea229a64a4a0b1356b8a07b398550fb078b64f5efd7bc3191ff136f",
+    "hyle_compute_provider_iree_vulkan.dll": "89c83cd42c66321d7e6ea0fc319ebe73542534adb4dee7227b496291dd99220e",
+    "hyle_compute_route_vulkan.dll": "3ecf3f93cb04904b845c719e49a6d7769f83a8602fcc48ada7712a47e390d1d5",
+    "hyle_compute_stream.dll": "a9d8c46696c62e5e623412a5b78f8eb4ecf86ccd7283d1f22d0b6c6bfb7eb5e4",
+    "hyle_container.dll": "2a84cc6f7dd1734c092c8d65806bcb1dfaddc5cd8013cce2bc090eb11e475ddb",
+    "hyle_error.dll": "deaf8bbc87a79299cc0ae16e0de06310e20cd177c6749c5e9d61b7ac1451c249",
+    "hyle_graph.dll": "5bfb72c790586e821809ba9871eea6dc6a9ed888b986515b45049561ff6d67e1",
+    "hyle_graph_route_vulkan.dll": "3bd3eeef19939f4ef6db337b9ee8d822685e477c8f180bb19503a773709aa2ad",
+    "hyle_io_core.dll": "dca00a372b47b1ac62528f352bdc63dc60057b015fcc76e98b6ab7f750d814e9",
+    "hyle_mem.dll": "0cf89d21d57a50982e15e896a28a0c72c5b0d0c263988de7e171d5aff964c63d",
+    "hyle_mem_vm.dll": "3f3b481c268a2cdf82e5e9b7c15f77898ab920e3d7c47cde3a6578871d0abb6c",
+    "hyle_platform.dll": "b4d8ce31e14d7fb53c804df58d0e3d3b40aec9bb8723450696ee414146d7be0f",
+    "hyle_platform_fs.dll": "eeb943a7f9c929d42af63975704043e9a9c1f64a64ac1bf6655defb8f64b9774",
+    "hyle_platform_thread.dll": "2f54aed04e57a6ddc4e5c7be12187f0aafc09e8867c89d8196aa2173fceebb4c",
+    "hyle_sched.dll": "b95b5442567f7a7c0bddca78569212b8bfa9686fe70e8e7f1c9e851800539b56",
+    "hyle_time.dll": "34a0d304589af84546cc749ea5f168c568abb550d42bfa683c9d90c28ffb0543"
+  },
+  "identity": "C:/Program Files/Microsoft Visual Studio/18/Enterprise/VC/Tools/MSVC/14.50.35717/bin/Hostx64/x64/cl.exe",
+  "original_failures": "All earlier setup/validation/product failures retained in previous F3 receipts; this one SDK cell does not replace them.",
+  "archive": {
+    "path": "evidence/correctness/foundation-f3-sdk-windows-vulkan-shared-7834ff2f9/raw-results.zip",
+    "sha256": "0e30547dbc22f1396797ab0e1ac15e7de9477739f3c44b6aa52488978864ebc3"
+  },
+  "verdict": "PASS_WINDOWS_F3_VULKAN_SHARED_RELOCATED_SDK_ONLY",
+  "limits": "Only the named host/profile/linkage/ordinary consumers/changed headers. Other deliveries and final closure remain unproven."
+}
