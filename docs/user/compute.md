@@ -1,5 +1,46 @@
 # HYLE Compute：何时直接执行一个计算
 
+## 有界文件与资源管线
+
+`hyle/compute/file_stream.h` 的 `FileResourcePipeline` 把原 IO、资源租约与批量搬运组合成
+分块文件旅程。从 `cpu/cuda/apple/vulkan::create_file_pipeline` 创建对应路线管线；CPU/CUDA
+沿原 Context、Queue，Apple/Vulkan 沿各自 Context。创建时明确 stage resource、目标资源域、
+槽数和有限 byte/request/group 容量。CUDA stage 使用原 pinned host resource；不把整个模型 pin。
+本能力正在 [F3 收口](../implementation/tasks/compute/foundation-f3-file-resource-streaming.md)，
+当前局部结果和待验平台/交付以该卡为准。
+
+`StreamFile::adopt` 接管已有 `io::File`，`borrow` 保留调用方地址稳定的 File；两者都需明确合法容量。
+File 与原 IoContext 的 owner worker 合同保持不变。`StreamSource` 也可接管或借用稳定只读
+`mem::FileMapping`，其范围偏移相对于映射的 logical bytes，期间不得修改或释放映射。
+模型格式由消费者解释；管线只接受已核验的 offset、bytes、description、group/tag 与目标 WriteLease。
+
+```cpp
+namespace c = hyle::compute;
+std::array<c::StreamReadRange, 1> ranges;
+ranges[0].file_offset = checked_offset;
+ranges[0].bytes = checked_bytes;
+ranges[0].destination = std::move(weight_writer);
+std::array<c::StreamReadGroup, 1> groups{{{layer_tag, ranges}}};
+auto ticket = pipeline.read(c::StreamSource::file(source), groups).value();
+auto group = ticket.wait_next_ready().value();
+auto weight = group.output(0).value();
+// weight 可直接绑定已有 Direct/Graph 租约入口；不必等待其他独立组。
+auto result = ticket.wait();
+HYLE_RETURN_IF_ERROR(result.status);
+```
+
+接纳失败不消费输入权限。一个 group 成功才返回 ready；后组 EOF/失败不会撤销前组结果。
+旧 ReadyGroup、ReadLease 与 native use 继续占有限容量，需要释放并 `collect()` 后才能复用。
+回写用 `StreamWriteRange::ready`，有原生生产者在途时用 `produced` 转交 WriteLease 与原 Completion；
+实际 producer 退休之前不会读取资源。文件短写保留实际 prefix，原子文件发布由应用选择。
+完整 read→math→write→reload→math 和本地 Qwen checked ranges 见
+[普通 C++ 样例](../../samples/package/graph/file_streaming/)。
+
+取消/deadline 在 chunk 边界停止后继，已接纳的 blocking IO/native 工作必须先退休，返回可能晚于 deadline。
+析构放弃观察并停止后继；需要等待本管线实际工作时显式 `drain()`。Context、Queue、resource 与
+allocator 必须活到所有原生 use 和保留结果结束；不会关闭调用方的整个 runtime。
+未知原生退役保持隔离与 `retirement_proven=false`，不能以逻辑释放推断 GPU 已停止或驱动私有内存归零。
+
 ## 外部资源租约与 Direct 提交
 
 `hyle/compute/resource_leases.h` 的 `LeasePool` 冷创建有限 backing/块 metadata，
