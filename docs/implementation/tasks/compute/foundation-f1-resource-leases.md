@@ -538,6 +538,17 @@ WSL 当前 `mmap_rnd_bits=32`；原 log/job 保留。上游有同类 runtime 地
 运行后本机 `mmap_rnd_bits` 仍为32。当前 ASan/UBSan/TSan 的预声明共同核格均取得29项通过，
 这是 host protocol 的资格，不能替代其余 native mixed fault、平台与三交付。
 
+### Managed composition lease 风险子批预声明
+
+只扩既有 `tests/graph/cpu_apple_contracts.cc` / `cpu_vulkan_contracts.cc` 的 `leased_contracts()`，
+复用原 CPU Abs→native MatMul→CPU Neg、原 Scheduler/Queue/资源和已编译 program。每路线固定三段：
+新的 lease bind slot 请求取消（完成先赢时仍必须检查原数值）、放弃 public Completion/slot 后由原
+scheduler/native retirement 排空且 source active uses 归零、成功接纳 CPU prefix 后让已关闭 native Context
+拒绝后继并保留原失败，最后 source uses 归零、失败 slot 不可重入。已有 old result/source alias/关闭源拒绝仍保留。
+这批不装饰 unknown fence，不将 native admission refusal 宣称为 unknown observation 资格；未知退役的原 helper
+协议与真实 CUDA/native 前缀证据继续分别列出。只改这两个测试消费者，不改产品或公共工具，原预算继承。
+Windows CPU+Vulkan 与 Air CPU+Apple 各复用原 source consumer 树，build1/test1；当前 CUDA SDK build 完成前不启动。
+
 P0 静态账单须列新增 metadata/引用/锁，及旧普通路径不变的证据；
 热路径以计数验无 allocation/provider search，不为纳秒差改布局。
 
