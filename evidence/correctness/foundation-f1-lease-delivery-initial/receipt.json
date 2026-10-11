@@ -137,6 +137,18 @@
         "vulkan-air-shared-lease-test.log",
         "vulkan-air-shared-mixed-test.log"
       ]
+    },
+    {
+      "name": "WSL ordinary CPU CUDA source leases original mixed plan and isolated headers",
+      "verdict": "PASS",
+      "candidate": "af92dd9dde87c187b3fc3727dc231977ea9af5af",
+      "headers": 7,
+      "receipt": "wsl-source-job.json",
+      "logs": [
+        "wsl-source-lease-test.log",
+        "wsl-source-mixed-test.log"
+      ],
+      "qualification": "Original consumer before safe empty-error-print correction; math/API unchanged. Linking and source warning retained."
     }
   ],
   "wsl_vulkan": {
@@ -233,6 +245,10 @@
     "vulkan-air-shared-configure.log": "0e64babb47dd6181b2ce75eecbf687a92465dbcf4bcd55b1eb3dd8bf6feb61b7",
     "vulkan-air-shared-consumer-build.log": "d8bc8143a90dee126455e7c8b723e8f7e02578bac4913d00939682fbdf1fda00",
     "vulkan-air-shared-lease-test.log": "3aa0830a6cf6ac16dd411a4b241f4de722521d5f3316d7291edf1365d5691bb8",
-    "vulkan-air-shared-mixed-test.log": "438a8ee0684e75ce6e46d67dfeb25ab65f9cc924ccccfe656ad53fe02373ed92"
+    "vulkan-air-shared-mixed-test.log": "438a8ee0684e75ce6e46d67dfeb25ab65f9cc924ccccfe656ad53fe02373ed92",
+    "wsl-source-job.json": "708724ca43b2c4422edae58cc33e855ecdae96b141a4de2b4eb1700c5d066851",
+    "wsl-source-build.log": "d6aebd43bf81ec9a7c6511017e0df53a108cb3d3df00f62d234f7a41a347314c",
+    "wsl-source-lease-test.log": "744cf36aff177ec2dab2273bb870e3c92c25b4377c6be1155c093f51730dad31",
+    "wsl-source-mixed-test.log": "69d5a9c5b6b0ba8cb86ffc2dc9ecc650c8bdd19c9c9e2d8e341681a8be302be7"
   }
 }

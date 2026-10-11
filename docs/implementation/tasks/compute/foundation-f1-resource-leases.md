@@ -632,6 +632,11 @@ SDK tests/bench OFF producer 安装到本批 staging 后实际迁址，独立消
 配置/构建各限300/3600秒，每消费者180秒；原失败保留，工具/仪器不得在模块里扩建；不跑全算子/P1。
 这批正常数学/SDK不替新 CUDA observation fault 的 WSL 格，后者仍由原冻结 F1-04 门取证。Air job 结束前不启动。
 
+WSL `af92dd9dd` source 普通 CPU/CUDA 租约 Direct/Graph 数学、七个 ON 头与原 CPU+CUDA 混合计划合同通过；
+命令/内存前检/编译器/原日志入同一交付收据。保留 link warnings 及样例错误打印的 GCC 警告；
+后者已在 Windows `8bf5b2ebe` 加空字符串回退（仅 sample 错误输出，不改产品 API/数学），下一 SDK 阶段同步该候选。
+source 不替 installed static/shared、CUDA observation fault 或最终红队签字。
+
 ### P0 成本账（源码审计，完整裁决待剩余资格）
 
 以 `fc4ffbd16` 产品为准；后续消费者、测试与文档没有改变以下实现。B 为 pool 块上限，R 为本批资源数，

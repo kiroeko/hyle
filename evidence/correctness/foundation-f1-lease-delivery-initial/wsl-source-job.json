@@ -1,0 +1,62 @@
+{
+  "candidate": "af92dd9dde87c187b3fc3727dc231977ea9af5af",
+  "mode": "source",
+  "source": "/root/hyle-scratch/compute-unified/source-7a7b4c3b",
+  "routes": [
+    "cpu",
+    "cuda"
+  ],
+  "compiler": "GCC14.2.0/libstdc++14",
+  "machine": "Ubuntu24.04.4/WSL2/x86_64/RTX4070",
+  "parallel": 1,
+  "stages": [
+    {
+      "name": "build",
+      "command": [
+        "/usr/bin/cmake",
+        "--build",
+        "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/source-build",
+        "--target",
+        "hyle_f1_leases",
+        "hyle_f1_headers",
+        "hyle_cpu_cuda_contracts",
+        "--parallel",
+        "1"
+      ],
+      "pid": 657,
+      "state": "terminal",
+      "available_bytes": 32396214272,
+      "log": "build.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "d6aebd43bf81ec9a7c6511017e0df53a108cb3d3df00f62d234f7a41a347314c"
+    },
+    {
+      "name": "lease-test",
+      "command": [
+        "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/source-build/hyle_f1_leases"
+      ],
+      "pid": 1113,
+      "state": "terminal",
+      "available_bytes": 31896436736,
+      "log": "lease-test.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "744cf36aff177ec2dab2273bb870e3c92c25b4377c6be1155c093f51730dad31"
+    },
+    {
+      "name": "mixed-test",
+      "command": [
+        "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/source-build/hyle_cpu_cuda_contracts"
+      ],
+      "pid": 1121,
+      "state": "terminal",
+      "available_bytes": 31921438720,
+      "log": "mixed-test.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "69d5a9c5b6b0ba8cb86ffc2dc9ecc650c8bdd19c9c9e2d8e341681a8be302be7"
+    }
+  ],
+  "verdict": "PASS"
+}
