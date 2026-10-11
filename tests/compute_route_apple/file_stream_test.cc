@@ -9,19 +9,25 @@ struct Native final {
   a::Context context = a::Context::create().value();
   a::MemoryResource memory = a::MemoryResource::create(context).value();
   ~Native() { context.close().IgnoreError(); }
-  c::FileResourcePipeline create(f::Host &runtime, unsigned slots = 2) {
+  hyle::Result<c::FileResourcePipeline> create(f::Host &runtime, unsigned slots = 2) {
     const std::array specs{c::CopyResourceSpec{memory.ref(), 1024}};
-    return a::create_file_pipeline(runtime.io, context, memory.ref(), specs, runtime.options(slots)).value();
+    return a::create_file_pipeline(runtime.io, context, memory.ref(), specs, runtime.options(slots));
   }
 };
 TEST(AppleFileStream, OriginalMetalTwoGroupsTwoSlotsThreeReplaysAndFileWriteback) {
   Native native; f::Host host; auto pool = c::LeasePool::create(native.memory.ref(), 2048).value();
-  auto pipeline = native.create(host); f::roundtrip(host, pipeline, pool);
+  auto created = native.create(host); char failure[512]{};
+  if (!created) created.error().ToString(failure, sizeof(failure));
+  ASSERT_TRUE(created.has_value()) << failure;
+  auto pipeline = std::move(*created); f::roundtrip(host, pipeline, pool);
   host.scheduler.shutdown(); EXPECT_TRUE(host.metadata.balanced());
 }
 TEST(AppleFileStream, ActualLaterFileEofKeepsEarlierMetalReady) {
   Native native; f::Host host; auto pool = c::LeasePool::create(native.memory.ref(), 2048).value();
-  auto pipeline = native.create(host, 1); f::late_eof(host, pipeline, pool);
+  auto created = native.create(host, 1); char failure[512]{};
+  if (!created) created.error().ToString(failure, sizeof(failure));
+  ASSERT_TRUE(created.has_value()) << failure;
+  auto pipeline = std::move(*created); f::late_eof(host, pipeline, pool);
   host.scheduler.shutdown(); EXPECT_TRUE(host.metadata.balanced());
 }
 } // namespace
