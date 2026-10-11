@@ -322,6 +322,25 @@ core pool drain不会等待这些native reader全部释放，原native Context�
 Owner继续AUDITED，未运行平台/三交付/negative/P0/全包red-team没有PASS；CPU+GPU组合接缝、完整F1和F2/F3仍待完成。
 统一clean candidate self-check：Compute+Graph非测试69,738行/308文件；全库164,965行/659文件。
 
+### Apple / Vulkan native submission adapter 冻结
+
+- baseline `d45bccdd7`；compute、compute_route_apple/vulkan 已 AUDITED。沿 F1-03/05/06/07，
+  原 cold native binding 保留为高级入口，不把其 reader引用当 native admission/drain 已完成。
+- 两路线各新增自己的 `LeasedInput {description, ReadLease}` 与 `LeasedInvocation`，
+  create 接原 Program、原 MemoryResource 和metadata options；bind冷创建native views，submit代理原Invocation。
+  Graph lowerer返回同一native Program，使用相同adapter即有Graph正常入口，不新造万能Queue/执行vtable。
+- create预留输入/native view数组与单 batch LeaseUsePool；bind允许冷metadata分配但不拷payload，
+  submit先从全部sources接纳read guards，原native接受后自动挂到OwnedResult真实Completion。
+  rejection回退；unknown/abandon仍沿原native实际退休；源Pool关闭后拒绝新use。
+- 复用内部门 `OwnedResultAccess` 取生产者可变Completion，普通OwnedResult public布局/行为不变。
+  原native完成同时退use guards；result/source-alias仍由原native强owner保留，不能覆盖旧native输出。
+- close仅停止该adapter，drain只显式等待已接纳native uses；不关闭用户Context/所有Queue，
+  retained readers/results继续有效并保持原resource/allocator寿命。cancel请求继续在返回OwnedResult上发出。
+- wrapper/state/view/use metadata按options allocator/budget冷准备；原nativeworkspace/private成本照原Program合同。
+  禁止每次submit重新构造nativebinding、查Provider、编译或增长metadata。public普通路径不加资源表。
+- 本批验源pool close拒绝、adapter close/drain、actual math+Graph/source alias、replay计数和abandon保活；
+  适用negative/其他平台与三交付仍按F1集中候选，不直接裁决F1关闭。
+
 扩展现有 compute completion、graph cpu_cuda/apple/vulkan contracts 及 native route 用户样例；
 保留原数学 reference，新增实际 lease 风险断言。只装饰 native observation/fault call，
 不能将 mock 结果当路线资格。至少两独立在途块、两个读者、一写者、旧结果、取消、OOM、部分失败、
