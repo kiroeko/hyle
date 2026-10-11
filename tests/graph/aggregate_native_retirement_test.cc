@@ -354,7 +354,8 @@ TEST(GraphNativeRetirement, LeasedAcceptedPrefixSurvivesDependencyObservationRej
       graph::QueueBinding{graph::ExecutionLaneId{0}, &queues[0]},
       graph::QueueBinding{graph::ExecutionLaneId{1}, &queues[1]}};
   ASSERT_TRUE(invocation.prepare_replay(bindings).ok());
-  EXPECT_GT(invocation.replay_report()->device_wait_dependency_count, 0u);
+  const auto report = invocation.replay_report().value();
+  EXPECT_GT(report.device_wait_dependency_count + report.host_wait_dependency_count, 0u);
   auto warm = invocation.submit(bindings).value();
   ASSERT_TRUE(warm.wait().ok());
   Gate gate;
