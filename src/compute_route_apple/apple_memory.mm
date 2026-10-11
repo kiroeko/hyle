@@ -77,6 +77,13 @@ struct ImportedArrayStorage final : MemoryState {
   mx::array owner;
   mem::AllocatorRef allocator;
   ResourceBudget::Reservation private_metadata;
+  mem::MemoryProperties properties() const noexcept override {
+    auto result = MemoryState::properties();
+    // Imported readonly byte views make no new allocation-alignment promise.
+    // The native carrier origin is checked separately when binding it.
+    result.minimum_alignment = 1;
+    return result;
+  }
   Result<mem::ResourceAllocation> allocate(std::size_t, std::size_t) noexcept override {
     return std::unexpected(Status::Unimplemented("imported MLX array cannot allocate storage"));
   }
