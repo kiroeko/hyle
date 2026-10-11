@@ -276,9 +276,9 @@
     },
     {
       "module": "graph",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/foundation-f1-resource-leases.md",
-      "summary": "F1 SCOPED：新增 lease-aware Graph 输入/输出保活旅程；定向核对 aggregate 子观察错误后的实际退休，原生提交与 Provider 计划复用，有限 F1-06 接缝。"
+      "summary": "F1 AUDITED：固定 aggregate 子 Completion 观察前嵌套保活与 sentinel 退休交接，复用原 Invocation/CompletionRetention；lease-aware 绑定/结果 façade 另冻结后实施。"
     },
     {
       "module": "container_concurrent",

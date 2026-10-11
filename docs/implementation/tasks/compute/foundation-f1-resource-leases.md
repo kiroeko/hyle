@@ -178,6 +178,25 @@ TensorView 不拥有外部 payload，Graph Results 只保护其原声明 owner�
   backing_alignment 只控制新分配，接管时以原 Buffer 对齐为准；不伪造更强对齐。
 - 定向验证：拥有权拒绝不消费、readonly 的多 reader/subview、不允许重入写、预算失败及 native 完成保活。
 
+### F1-06 Graph aggregate 定向 AUDIT
+
+- scope baseline `a04c01083`；本次先将 graph owner 置 AUDITED，只授权以下 aggregate 子 FIX；
+  lease-aware Graph 结果/绑定 façade 尚未冻结，不在这个子 FIX 中提前写它的产品代码。
+- 源码证据：poll_aggregate/wait_aggregate 会先观察子 Completion；unknown wait 可以把子状态交给原 native
+  retirement 并把公共 handle 变为缓存错误。旧 destroy_aggregate 在这之后才 attach_lifetime，不能补回保活。
+  `Completion::settle` 已修好真实 attachment 交接，因此 Graph 必须提前提供 child 保护。
+- make_aggregate_completion 在任何 public 观察之前，给全部 selected children 预挂 CompletionRetention；
+  复用既有冷 child 槽并保留 inherited attachment，不以 attach_lifetime 覆盖 lease 或其他已有 owner。
+- 每个 child guard 保持其原 Invocation 引用，unknown 观察后的 native callback 仍能安全访问 aggregate。
+  sentinel 保持至外层 destroy；destroy 只交接 outer、保存首错、放弃各 child handle，不先观察再猜终态。
+- 已 completed 的 child 在 attach 时可 inline 退休；unknown 不能释放 outer；真正 native 全部退役才释放 outer。
+  不增加线程、timer/reaper或公共对象字段，不重写计划/Provider 选择。
+- 验证是两独立真实 cuBLAS Graph 分支，给 CUDA native event wait 装饰一次观察故障并控制真实 stream prefix；
+  外层等待错误不代表两个 native 分支结束，业务/Invocation/Completion 释放后仍安全，最终数学正确且回收一次。
+  插桩隔离、空/inline child 和既有 Graph 核测试按实际影响执行；不是完整 Graph lease 资格。
+- 内部 host-dependency 在 aggregate 组装前的观察，仍须由后续 opt-in leased SubmissionCursor 接缝在接受处保护，
+  本子 FIX 不把那个尚未实现路径写 PASS。预算仍沿本卡两次有限纠正，不重启历史 H1 验证队列。
+
 | FIX | 必须实现/定向修复 | 验收 |
 |---|---|---|
 | F1-01 | 冷创建 owner、有限块/范围、generation、大小/对齐/metadata budget、拥有与只读导入 | 零/边界/溢出/OOM；旧 generation 不释放新块；真实 native backing |
