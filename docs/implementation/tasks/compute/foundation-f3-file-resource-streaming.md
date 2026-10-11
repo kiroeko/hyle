@@ -608,6 +608,12 @@ Windows shared正在运行，WSL软件Vulkan两格及最终source复验/矩阵/�
 
 ## 预声明验证与停止
 
+[最终source复验](../../../../evidence/correctness/foundation-f3-final-source/receipt.json)现签当前产品
+97858fbc8的Air CPU/Apple、Air Vulkan、WSL CPU/CUDA及Windows Vulkan普通Graph小样例与
+同Qwen往返；Windows CPU/CUDA当前source已在其static SDK收据中单独运行封存。
+四路线适用source及十二个installed profile/linkage格的适用部分均已运行，不代签WSL软件GPU数学。
+最后的explicit direct IO风险测试与最终全证据/LOC审查仍待齐，不能提前关闭。
+
 最后合同核对补原F3-03/04的explicit direct-IO接缝证据：新公共API fixture在Win/Linux真实
 `kDirect`打开临时文件，未对齐tail接纳前拒绝/不消费writer/零IO/native，然后4KiB stage分块
 读8KiB、回写另一个原为零的新临时文件并逐byte核对；不修改原source。macOS原IO明确无portable

@@ -1,0 +1,62 @@
+{
+  "schema_version": 1,
+  "product_commit": "97858fbc88a6b5a87f109290b956eeaeee632dd2",
+  "scope": "Current ordinary source Graph/selected route small mature encoded weight and real Qwen full file/math roundtrip only.",
+  "runs": [
+    {
+      "routes": "Air CPU/Apple",
+      "source_identity": "97858fbc88a6b5a87f109290b956eeaeee632dd2",
+      "identity": {
+        "hardware": "Mac16,12",
+        "memory": "17179869184",
+        "os": "ProductName:\t\tmacOS\nProductVersion:\t\t27.0.1\nBuildVersion:\t\t26A434",
+        "compiler": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin",
+        "cmake": "cmake version 4.3.4\n\nCMake suite maintained and supported by Kitware (kitware.com/cmake).",
+        "ninja": "1.13.2"
+      },
+      "parallel": 1
+    },
+    {
+      "routes": "Air Vulkan",
+      "source_identity": "97858fbc88a6b5a87f109290b956eeaeee632dd2",
+      "identity": {
+        "hardware": "Mac16,12",
+        "memory": "17179869184",
+        "os": "ProductName:\t\tmacOS\nProductVersion:\t\t27.0.1\nBuildVersion:\t\t26A434",
+        "compiler": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin",
+        "cmake": "cmake version 4.3.4\n\nCMake suite maintained and supported by Kitware (kitware.com/cmake).",
+        "ninja": "1.13.2"
+      },
+      "parallel": 1
+    },
+    {
+      "routes": "WSL CPU/CUDA",
+      "source_identity": "97858fbc88a6b5a87f109290b956eeaeee632dd2",
+      "identity": {
+        "os": "Linux kiro-workstation 6.18.40.1-microsoft-standard-WSL2 #1 SMP PREEMPT_DYNAMIC Fri Jul 31 22:12:15 UTC 2026 x86_64 x86_64 x86_64 GNU/Linux",
+        "compiler": "g++-14 (Ubuntu 14.2.0-4ubuntu2~24.04.1) 14.2.0\nCopyright (C) 2024 Free Software Foundation, Inc.\nThis is free software; see the source for copying conditions.  There is NO\nwarranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.",
+        "cmake": "cmake version 3.28.3\n\nCMake suite maintained and supported by Kitware (kitware.com/cmake).",
+        "cuda": "nvcc: NVIDIA (R) Cuda compiler driver\nCopyright (c) 2005-2026 NVIDIA Corporation\nBuilt on Tue_Jun_09_02:43:40_PM_PDT_2026\nCuda compilation tools, release 13.3, V13.3.73\nBuild cuda_13.3.r13.3/compiler.38244171_0",
+        "gpu": "NVIDIA GeForce RTX 4070, GPU-e7376560-6f5d-ec19-6ee4-3dd3a2c81ef8, 617.14"
+      },
+      "parallel": 4
+    },
+    {
+      "routes": "Windows Vulkan",
+      "source_identity": "50e01d4e623d712e9d8807f75690c8034f05ef79",
+      "identity": "C:/Program Files/Microsoft Visual Studio/18/Enterprise/VC/Tools/MSVC/14.50.35717/bin/Hostx64/x64/cl.exe",
+      "parallel": 4
+    }
+  ],
+  "windows_cpu_cuda": "Same product source-math/source-qwen explicitly run and sealed in foundation-f3-sdk-windows-cpu-cuda-static-f6db4d5b2.",
+  "source_subject": "Admitted readonly original file ranges -> fixed 2MiB stage/two slots -> early Direct+Graph -> new temporary sink -> bounded byte oracle -> same pool reload -> Direct+Graph reference.",
+  "input": "Original header and exact three BF16 projections plus F32 norm, 75,497,984 bytes. Checked official Safetensors and mature GGUF adapters; no whole checkpoint read/transfer/hash.",
+  "encoding": "CPU/CUDA/Vulkan mature GGUF Q8; Apple original affine Q4. Existing providers/kernels only.",
+  "original_warnings": "Locked WSL CUDA leaf 12/13 linker warnings retained; actual ordinary source correctness ran successfully.",
+  "archive": {
+    "path": "evidence/correctness/foundation-f3-final-source/raw-results.zip",
+    "sha256": "9e960e377b0b2d98a5a62199760d4937a50d2d9ea6845c64c2004f20e1e0335d"
+  },
+  "verdict": "PASS_CURRENT_F3_ALL_APPLICABLE_SOURCE_MATH_AND_QWEN_ONLY",
+  "limits": "Bounded exact ranges and named machines only; no full model/FFN/tokenizer/generation or throughput winner."
+}
