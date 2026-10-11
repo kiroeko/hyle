@@ -1,0 +1,10 @@
+[1/10] cd /Users/kiro/hyle-scratch/compute-unified/foundation-f2-air-sdk-static-5b3efe2cc/consumer && /opt/homebrew/bin/cmake -P /Users/kiro/hyle-scratch/compute-unified/foundation-f2-air-sdk-static-5b3efe2cc/consumer/hyle-apple-runtime/batch-Release.cmake
+[2/10] Building CXX object CMakeFiles/batch.dir/Users/kiro/hyle-scratch/compute-unified/source-c8874688/samples/package/graph/batched_transfers/main.cc.o
+[3/10] Linking CXX executable batch
+[4/10] Building CXX object CMakeFiles/headers.dir/header-0.cc.o
+[5/10] Building CXX object CMakeFiles/headers.dir/header-1.cc.o
+[6/10] Building CXX object CMakeFiles/headers.dir/header-2.cc.o
+[7/10] Building CXX object CMakeFiles/headers.dir/header-3.cc.o
+[8/10] Building CXX object CMakeFiles/headers.dir/header-4.cc.o
+[9/10] Building CXX object CMakeFiles/headers.dir/header-5.cc.o
+[10/10] Building CXX object CMakeFiles/headers.dir/header-6.cc.o

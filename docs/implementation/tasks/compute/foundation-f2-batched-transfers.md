@@ -392,6 +392,11 @@ gzip及archive SHA保留。其他平台/fault/头与SDK/P0终审红队仍待候�
 
 ## 预声明验证与停止
 
+Air CPU/Apple relocated static/shared普通BF16/原affine Q4数学、七installed头/Apple ON、CUDA/
+Vulkan头与package请求缺席及MLX metallib落地已取证，见[当前矩阵](foundation-f2-verification-matrix.md)
+和[Air完整SDK收据](../../../../evidence/correctness/foundation-f2-air-apple-sdk/receipt.json)。实际Mac16,12身份、完整Git archive/tree/
+SHA与每stage日志保留，仍build1/test1/4GiB。Air Vulkan/剩余风险/selector扩展/终审继续待验。
+
 Windows CPU/Vulkan source复验、relocated static/shared普通数学与七installed头、两native header/
 package route缺席及DLL同目录已取证，见[当前矩阵](foundation-f2-verification-matrix.md)与
 [完整Vulkan SDK收据](../../../../evidence/correctness/foundation-f2-windows-vulkan-sdk/receipt.json)。静态树locale/header deps

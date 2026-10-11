@@ -64,7 +64,7 @@ GPU stream drain和原CUDA abandoned-event reaper回调完成不同；借用allo
 |---|---|---|
 | Windows CPU/CUDA | PASS（5b3efe2cc source/static实际复验） | relocated static/shared数学、七头/CUDA ON、两native头与package路线缺席、DLL同目录、shipping hook缺席PASS；既定fault已取证，扩展/终审待验 |
 | Windows CPU/Vulkan | PASS（5b3efe2cc全源码下scope匹配实际source复验） | relocated static/shared数学、七头/Vulkan ON、CUDA/Apple头与package路线缺席、DLL同目录及真实header deps PASS；9 native/34 common已有首轮，unknown风险/终审待验 |
-| Air CPU/Apple | PASS（scope匹配） | source/relocated static/shared、新头/absence/MLX assets；10 native/34 common及实际故障/关闭 |
+| Air CPU/Apple | PASS（scope匹配source；新全源码installed复验） | relocated static/shared数学、七头/Apple ON、CUDA/Vulkan头与package请求缺席、MLX assets PASS；10 native/34 common首轮已取证，剩余故障/终审待验 |
 | Air CPU/Vulkan | UNPROVEN | 实际设备身份；对应native/common与ordinary数学、三交付/头/absence/迁址 |
 | WSL CPU/CUDA | PASS（scope匹配source/static；新delta安装消费已复验） | 新delta真实producer late＋15 CUDA/34 common PASS；relocated static/shared数学及七头/CUDA ON、Apple/Vulkan头缺席PASS；package路线请求诊断与扩展/终审仍待验 |
 | WSL Vulkan | GPU资格UNPROVEN | 先实际枚举loader/device；只有合格GPU才签数学。若仍仅llvmpipe，则记录本候选条件结果，完成适用构建/安装/头/absence格 |
@@ -125,3 +125,13 @@ static/shared ordinary hyle::graph消费者均通过两组/两槽/三轮原BF16/
 主动停止验证，原日志保留；只修生成cache并清理核验的build/src对象（含封装ggml生成对象），
 外部依赖缓存与产品源码未改。C语言覆盖全局prefix的第二个cache事实也保留，恢复后才签上述门。
 源码/头/SDK资格不能代签未运行native unknown-fence或其他平台，当前四owner仍CANDIDATE。
+
+## MacBook Air CPU/Apple installed static/shared
+
+[Air SDK收据](../../../../evidence/correctness/foundation-f2-air-apple-sdk/receipt.json)绑定5b3efe2cc完整canonical Git archive/
+tree/SHA，实际Mac16,12/M4/16GiB/macOS27.0.1/AppleClang21。两原production树单线程更新，
+install后真实rename迁址，旧prefix消失，Hyle metadata无source/build/staging路径。
+ordinary hyle::graph消费者实际原BF16/native affine Q4两组两槽三次搬运及Direct/Graph scalar
+oracle PASS；两SDK各七安装头独立编译（六common＋Apple ON），CUDA/Vulkan头及package请求
+均明确拒绝，available=cpu;apple。consumer MLX metallib与安装资产SHA匹配，并参与实际GPU
+数学运行。此格不代签Air Vulkan或尚未运行fault/selector扩展/终审，四owner仍CANDIDATE。

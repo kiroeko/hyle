@@ -1,0 +1,3 @@
+CPU: two copy groups/two slots, BF16+Q8 Direct/Graph and three replays passed
+Apple device: Apple M4; OS: Version 27.0.1 (Build 26A434)
+Apple: shared-resource GPU blits, BF16+original affine Q4 Direct/Graph and three replays passed
