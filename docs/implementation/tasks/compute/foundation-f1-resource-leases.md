@@ -340,6 +340,11 @@ Owner继续AUDITED，未运行平台/三交付/negative/P0/全包red-team没有P
   禁止每次submit重新构造nativebinding、查Provider、编译或增长metadata。public普通路径不加资源表。
 - 本批验源pool close拒绝、adapter close/drain、actual math+Graph/source alias、replay计数和abandon保活；
   适用negative/其他平台与三交付仍按F1集中候选，不直接裁决F1关闭。
+- drain反例审计修正：用户仍持有未观察OwnedResult时，单挂public Completion会延迟guard release，
+  无法自然排空。native adapter将 ticket交给原native槽，Apple真实finish / Vulkan已证明observe退休处释放，
+  私有wait_native只观察本槽；未证明退休返回原错误/Unavailable并保活，不循环重试或关闭所有Context。
+  原槽只增加一个可空LeaseUseBatch字段，无资源表/执行vtable/public对象字段。
+  OwnedResultAccess计划撤回，继续复用LeaseAccess完成实际退休；普通结果布局和原Provider调度不变。
 
 扩展现有 compute completion、graph cpu_cuda/apple/vulkan contracts 及 native route 用户样例；
 保留原数学 reference，新增实际 lease 风险断言。只装饰 native observation/fault call，
