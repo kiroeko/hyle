@@ -1,6 +1,6 @@
 # F3：有界文件与计算资源双向管线
 
-> 状态：AUDITED；六owner与原八FIX、API/生命周期及有限改动集已冻结，私有共同接缝已首验，完整管线待实现；F1/F2原轮已CLOSED。
+> 状态：AUDITED；共同/CPU文件管线主体已实现并首验，三GPU适配、真实数学与交付待验；F1/F2原轮已CLOSED。
 > component / owner：新内部 factor compute_stream；compute仅补下述私有租约/退役接缝；
 > native factory/adapter 归 compute_route_cpu/cuda/apple/vulkan；中央声明只投影这些owner的有限新边。
 > IO/Sched/Mem 只消费既有能力；出现具体基础缺陷才另作定向 owner 修复。
@@ -242,6 +242,22 @@ LeaseAccess原backing/最后reader观察；没有新增普通对象字段、nati
 拒绝交回、非法/readonly binding不消费、共享backing去重、额外reader/use占容量及closed pool最后reader均验证。
 这是F3-03/05的部分接缝，不是文件管线或完整F3验收；GPU pending/error/unknown、Apple/Vulkan交接、
 文件请求/双向实际IO、Qwen数学与三交付仍UNPROVEN，六owner保持AUDITED。
+
+#### 共同/CPU管线主体进展
+
+`bc9122a0492a771de790ad59d9760fca4817f14e`实现StreamFile/StreamSource拥有及借用、固定请求/group/
+range/stage/result记录、自然CPU工厂与中央新factor、原IO双向chunk、F2交接、逐组ready、背压、
+取消/stop/collect/close/drain；IO源worker 1→目标worker 0→reload的真实旅程已验证。
+[CPU主体收据](../../../../evidence/correctness/foundation-f3-cpu-subject/receipt.json)绑定全部实际源码：
+Windows六项文件风险/正常旅程PASS、受影响五头独立编译PASS，每项运行后注入allocator balanced。
+真实EOF保留138已读bytes/128已复制bytes与前组ready；旧导出ReadLease继续占request/backing容量。
+首次文件运行的owner-worker fatal以及最初CMake/fixture编译接线失败保留在同一raw archive，
+没有换目录重置预算；按原File affinity修复F3，未改IO/Sched/Mem产品。
+CPU route正常链接所需oneDNN等依赖已构建，不因此执行其算子目录或全局/P1验证。
+固定stack仅用既有Mem池，不是第二个线程池；drain等离栈及offload destroy确认，不等用户释放旧ready。
+metadata_bytes是固定共同/copy控制数组账单，原Mem/IO/框架分配由注入allocator观测，不宣称全部0分配。
+此项只证明共同/CPU主体首验，F3-01至08仍没有完整terminal：三GPU factory/producer/unknown/late，
+WSL/Air、sanitizer、Qwen混合dtype和GGUF实际Direct+Graph、source/static/shared交付、完整P0与终审继续待验。
 
 | FIX | 必须实现 | 验收 |
 |---|---|---|

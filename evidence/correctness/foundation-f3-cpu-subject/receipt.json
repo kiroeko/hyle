@@ -1,0 +1,146 @@
+{
+  "schema_version": 1,
+  "product_commit": "bc9122a0492a771de790ad59d9760fca4817f14e",
+  "product_tree": "9896c674f5a1144c93e2d9e5b4384988b540b1f8",
+  "verdict": "PASS_WINDOWS_CPU_SUBJECT_ONLY; complete F3 is UNPROVEN",
+  "host": {
+    "system": "Windows",
+    "release": "11",
+    "machine": "AMD64",
+    "node": "kiro-workstation"
+  },
+  "compiler": "C:/Program Files/Microsoft Visual Studio/18/Enterprise/VC/Tools/MSVC/14.50.35717/bin/Hostx64/x64/cl.exe",
+  "build": "C:\\h7\\foundation-f1-cpu",
+  "build_parallel": 1,
+  "test_parallel": 1,
+  "source_inputs": [
+    {
+      "path": "cmake/HyleComponents.cmake",
+      "sha256": "d43d0f0c67d810ecc94e6be43c3e8592b152ca9eeec61ba236cbf1920c777077"
+    },
+    {
+      "path": "docs/implementation/tasks/compute/foundation-f3-file-resource-streaming.md",
+      "sha256": "15b96166047fd797b86d3fa877e1d2fee4b5d19c74b33cb302f1a7c6a2701081"
+    },
+    {
+      "path": "include/hyle/compute/cpu.h",
+      "sha256": "bccb8e5d310086b41c6f010a84f56219ac33830e92e5da22ce2ff12cd608ccb6"
+    },
+    {
+      "path": "include/hyle/compute/detail/copy_stream_access.h",
+      "sha256": "31fef47df5169304feff1b20dbe46be744147ea7363d117d0344755daf84e350"
+    },
+    {
+      "path": "include/hyle/compute/detail/file_stream_access.h",
+      "sha256": "de668186ac0617204ed5473880f811a0268b1b07c842329a979b34b0c0f40d2e"
+    },
+    {
+      "path": "include/hyle/compute/detail/file_stream_copy.h",
+      "sha256": "74d8f42d8180d87d3bd600f533434a93566b994e9b1380061d27138ccf58d97a"
+    },
+    {
+      "path": "include/hyle/compute/file_stream.h",
+      "sha256": "ee841443965590b9a6dcbc622daf99907cdb5a7a000c3629aefa49301c2072cb"
+    },
+    {
+      "path": "src/compute/batch_transfer.cc",
+      "sha256": "25367562e18d16b6d38b5ea80bf7eb89cff46243d73c7e84a99430470ba82fc1"
+    },
+    {
+      "path": "src/compute_route_cpu/CMakeLists.txt",
+      "sha256": "e95430109b2872618304c9325cbc0504cb917ac47590923961ee00049b0c7d89"
+    },
+    {
+      "path": "src/compute_route_cpu/file_stream.cc",
+      "sha256": "5210834d9188abcce09fba27887ae6330ddb34a3463ba2d7e04e8bbf9f15a890"
+    },
+    {
+      "path": "src/compute_stream/CMakeLists.txt",
+      "sha256": "7a62b784ea399f732ae3a1f597315762045f0d952145be9b564d1df4ab76b198"
+    },
+    {
+      "path": "src/compute_stream/file_stream.cc",
+      "sha256": "e2901ff01cd5e68fb1359615991ade712d01a994d2942c3cbe40a1cefcba5378"
+    },
+    {
+      "path": "src/compute_stream/stream_sources.cc",
+      "sha256": "23859fad2971d11bfb029dfe1403989a9740832ce522b2c430d957a3e3fdeed2"
+    },
+    {
+      "path": "tests/compute_stream/CMakeLists.txt",
+      "sha256": "3b60d9ec5e9d55e5f699afd40e61fe94c7b0f585dc17a3f4aae3f86126f60c11"
+    },
+    {
+      "path": "tests/compute_stream/file_stream_test.cc",
+      "sha256": "9aae4c7ed06bc02727031f65c2576a7b7ee15ab12e8bcd21e01428f6f6d89d01"
+    }
+  ],
+  "raw_archive": {
+    "path": "evidence/correctness/foundation-f3-cpu-subject/raw-results.zip",
+    "sha256": "1c8be3024f0c21734e7cc4692c49dc758c49837f4cf751b51a7829ef046dc7b1"
+  },
+  "tests": {
+    "passed": 6,
+    "failed": 0,
+    "skipped": 0,
+    "xml": "raw-results.zip:files-drain-boundary.xml"
+  },
+  "headers": {
+    "command": [
+      "python",
+      "scripts/header-self-contained.py",
+      "--module",
+      "compute_stream",
+      "--header-dir",
+      "compute",
+      "--header",
+      "file_stream.h",
+      "--header",
+      "detail/file_stream_access.h",
+      "--header",
+      "detail/file_stream_copy.h",
+      "--header",
+      "cpu.h",
+      "--header",
+      "detail/copy_stream_access.h",
+      "--include-dir",
+      "include",
+      "--cxx",
+      "C:/Program Files/Microsoft Visual Studio/18/Enterprise/VC/Tools/MSVC/14.50.35717/bin/Hostx64/x64/cl.exe",
+      "--cxx-compiler-id",
+      "MSVC"
+    ],
+    "environment": {
+      "VSLANG": "1033"
+    },
+    "exit_code": 0,
+    "observed_stdout": "compute_stream C++ headers self-contained: 5",
+    "capture": "Executed via exec_command; exact returned result recorded, no inferred PASS."
+  },
+  "initial_failures_preserved": [
+    "CMake direct public/type dependency checks; corrected actual factor declarations only.",
+    "Initial Fiber finish-hook access and move-only stack expression; borrowed existing source-only FiberAccess, no Sched product changes.",
+    "Fixture StatsAllocator creation and test-only link declarations; corrected fixture only.",
+    "Actual first file run fatal at file.cc:1120: open/transfer must run on File owner worker. Fixture open pinned; groups now spawned on each original file worker."
+  ],
+  "new_mechanisms": [
+    "Fixed stage/request/group/old-result records; original IO exact positional helpers.",
+    "Original Scheduler pinned Fiber and post-stack finish, original bounded Mem FiberStackPool.",
+    "One existing BlockingJob cell per native slot, completion after job destroy, no new runtime/poller.",
+    "Original F1 permissions and F2 prepared native-byte programs; no new copy/math kernels."
+  ],
+  "scope_restriction": {
+    "executed": "New common/CPU actual file consumer, affected heads, source configure/build, docs/closure.",
+    "dependency_build": "oneDNN and other CPU route link prerequisites built, no provider test catalogs or P1 run.",
+    "not_selected": "Unchanged global factors/product test catalogs despite broad selector graph schedule.",
+    "deferred": "New native/math/source-static-shared package seams on full immutable candidate."
+  },
+  "unproven": [
+    "CUDA/Apple/Vulkan factories and actual adapters",
+    "pending/unknown/late native producer paths",
+    "CPU WSL/Air and common sanitizers",
+    "actual mixed-dtype Qwen and GGUF math Direct+Graph",
+    "source/static/shared SDK relocation/absence exports",
+    "full P0 risk matrix and final red team"
+  ]
+}
