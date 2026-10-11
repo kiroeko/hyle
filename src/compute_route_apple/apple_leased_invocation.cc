@@ -93,13 +93,9 @@ Status LeasedInvocation::close() noexcept {
 Status LeasedInvocation::drain() noexcept {
   if (!state_) return Status::Ok();
   close().IgnoreError();
-  Status terminal;
-  if (state_->inputs.active()) {
-    terminal = state_->invocation.wait_native();
-    if (!terminal.ok() && state_->inputs.active()) return terminal;
-  }
+  const auto terminal = state_->invocation.wait_native();
+  if (!terminal.ok() && state_->inputs.active()) return terminal;
   HYLE_RETURN_IF_ERROR(state_->inputs.drain());
   return terminal;
 }
 } // namespace hyle::compute::apple
-

@@ -74,4 +74,23 @@ TEST(VulkanLeaseBinding, OriginalOwnersDirectGraphAndReadonlyImport) {
   EXPECT_EQ(t::read(context, retained).value(),
             (std::vector<float>(left_values.begin(), left_values.end())));
 }
+TEST(VulkanLeaseBinding, ClosedSourceRejectsNativeAdmissionBeforeAnyMath) {
+  auto context = t::context().value();
+  auto memory = v::MemoryResource::create(context, v::MemoryKind::kDevice).value();
+  const auto desc = t::dense({2, 2});
+  auto pool = c::LeasePool::create(memory.ref(), 512, {.max_blocks = 2}).value();
+  auto first = pool.allocate(16).value(), second = pool.allocate(16).value();
+  // This negative case never accepts a native program; no uninitialized
+  // payload is consumed or treated as a numerical qualification.
+  auto left = first.publish().value(), right = second.publish().value();
+  auto program = v::prepare(context, c::MatMul{}, desc, desc).value();
+  auto run = v::LeasedInvocation::create(program, memory).value();
+  const std::array inputs{v::LeasedInput{desc, left}, v::LeasedInput{desc, right}};
+  ASSERT_TRUE(run.bind(inputs).ok());
+  ASSERT_TRUE(pool.close().ok());
+  auto rejected = run.submit();
+  ASSERT_FALSE(rejected.has_value());
+  EXPECT_EQ(rejected.error().message(), "lease domain is closed");
+  EXPECT_EQ(pool.stats().active_uses, 0u);
+}
 } // namespace

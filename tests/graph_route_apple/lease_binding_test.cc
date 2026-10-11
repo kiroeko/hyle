@@ -84,6 +84,11 @@ TEST(AppleLeaseBinding, SharedLeaseDirectGraphAndImportedNativeAlias) {
   auto rebound = memory.binding(imported, desc);
   ASSERT_TRUE(rebound.has_value()) << rebound.error().message();
   auto retained = std::move(*rebound);
+  direct_done = {}; direct_result = {};
+  ASSERT_TRUE(pool.close().ok());
+  auto rejected_after_source_close = direct_run.submit();
+  ASSERT_FALSE(rejected_after_source_close.has_value());
+  EXPECT_EQ(rejected_after_source_close.error().message(), "lease domain is closed");
   done = {}; result = {}; run = {}; program = {}; native_alias = mx::array(0); imported.reset();
   direct_done = {}; direct_result = {}; direct_run = {}; direct = {};
   for (std::size_t index = 0; index < 4; ++index)
