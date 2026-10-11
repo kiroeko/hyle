@@ -389,6 +389,10 @@ illegal-address kernel及原producer stream：host正常组先ready，另一原w
 deadline、Windows与WSL各原CUDA树build1/test1/4GiB、configure300/build1800/exe120；故障进程
 和原backend late-failure分开，不在已毒化primary Context中串跑。仅tests/CMake测试注册维护，
 产品candidate仍03162add0，不增加kernel、公开API或重开owner。
+首测试点 `56dbabad5` 独立target构建PASS，故障进程120秒TIMEOUT，原日志保留，未签GPU结果。
+fixture先用原kernel的cudaFuncGetAttributes完成冷module加载，再接host callback gate；仅增加
+测试用15秒watchdog释放gate及阶段日志，任何watchdog介入均FAIL，不执行新kernel或放宽ready门。
+这处理first-use加载的同步风险，同机/原门取证，不重置原预算。
 
 固定candidate的WSL补验已取证，见[当前矩阵](foundation-f2-verification-matrix.md)与
 [原始WSL收据](../../../../evidence/correctness/foundation-f2-wsl-qualification/receipt.json)：8 CUDA/34 common、

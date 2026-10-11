@@ -10,6 +10,11 @@ __global__ void illegal_address_kernel() {
 
 } // namespace
 
+cudaError_t prepare_illegal_address_kernel() noexcept {
+  cudaFuncAttributes attributes{};
+  return cudaFuncGetAttributes(&attributes, illegal_address_kernel);
+}
+
 cudaError_t launch_illegal_address_kernel(cudaStream_t stream) noexcept {
   illegal_address_kernel<<<1, 1, 0, stream>>>();
   return cudaPeekAtLastError();
