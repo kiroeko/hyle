@@ -1,0 +1,95 @@
+{
+  "schema_version": 1,
+  "product_commit": "19bede70475d7e9fd719a217b2f8b57a1d1c8aa3",
+  "validation_commit": "6c51a69a749bb4ebe684681849602a6b45074928",
+  "source_archive": {
+    "candidate": "6c51a69a749bb4ebe684681849602a6b45074928",
+    "tree": "0b10ab41429a7c1f2394f016d9236dfbe0dcdc89",
+    "archive": "C:\\public\\project-hyle\\hyle\\.scratch\\foundation-f3\\native-air-6c51a69a7.tar.gz",
+    "sha256": "f2adc9216d7052b0db760e21757a7b68418fbd556dd242ff8d74bf34cabff171",
+    "bytes": 176112816,
+    "source": "/Users/kiro/hyle-scratch/compute-unified/source-c8874688",
+    "stage": "/Users/kiro/hyle-scratch/compute-unified/foundation-f3-source-6c51a69a7",
+    "host": "kiro@172.22.10.198",
+    "hardware": "Mac16,12",
+    "sync": "Canonical full archive/checksum rsync; verification copy only."
+  },
+  "identity": {
+    "hardware": "Mac16,12",
+    "memory": "17179869184",
+    "os": "ProductName:\t\tmacOS\nProductVersion:\t\t27.0.1\nBuildVersion:\t\t26A434",
+    "compiler": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin",
+    "cmake": "cmake version 4.3.4\n\nCMake suite maintained and supported by Kitware (kitware.com/cmake).",
+    "ninja": "1.13.2"
+  },
+  "actual_gpu": "Apple M4",
+  "stages": [
+    {
+      "name": "configure",
+      "command": [
+        "/opt/homebrew/bin/cmake",
+        "-S",
+        "/Users/kiro/hyle-scratch/compute-unified/source-c8874688",
+        "-B",
+        "/Users/kiro/hyle-scratch/compute-unified/a-vulkan/selected-graph/shared-sdk-build",
+        "-DHYLE_COMPONENTS=compute"
+      ],
+      "pid": 35595,
+      "state": "terminal",
+      "available_bytes": 7108116480,
+      "log": "configure.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "b70cc02eb800417d2ad86970900a043eda46190dae73bfe2e26a3843e4029f2f"
+    },
+    {
+      "name": "build",
+      "command": [
+        "/opt/homebrew/bin/cmake",
+        "--build",
+        "/Users/kiro/hyle-scratch/compute-unified/a-vulkan/selected-graph/shared-sdk-build",
+        "--target",
+        "hyle_compute_route_vulkan_file_stream_test",
+        "--parallel",
+        "1"
+      ],
+      "pid": 35883,
+      "state": "terminal",
+      "available_bytes": 7289044992,
+      "log": "build.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "a0cfee20f08c27a4648b097bfa357ccb6cf5146485dea2b67a2d59764d1f8e2c"
+    },
+    {
+      "name": "files",
+      "command": [
+        "/Users/kiro/hyle-scratch/compute-unified/a-vulkan/selected-graph/shared-sdk-build/bin/hyle_compute_route_vulkan_file_stream_test",
+        "--gtest_filter=VulkanFileStream.*",
+        "--gtest_output=xml:/Users/kiro/hyle-scratch/compute-unified/foundation-f3-vulkan-6c51a69a7/files.xml"
+      ],
+      "pid": 36084,
+      "state": "terminal",
+      "available_bytes": 7200112640,
+      "log": "files.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "ecbed7628dacaf1680b169cdb81a4e8a64da7522827b8e58e3e174b7ac51d1dd"
+    }
+  ],
+  "tests_passed": 2,
+  "native_calls": 48,
+  "phase_completions": 48,
+  "archive": {
+    "path": "evidence/correctness/foundation-f3-air-vulkan-subject/raw-results.zip",
+    "sha256": "35b70dc8907bd18a45c72560b26f0b18d40975af10e0660375768fe751a19dca"
+  },
+  "verdict": "PASS_AIR_VULKAN_NATIVE_FILE_JOURNEYS_ONLY",
+  "unproven": [
+    "Windows GPU cooperative IO delta and WSL",
+    "native fault/cancel/pending/producer seams",
+    "actual mixed-dtype Qwen/GGUF Direct+Graph math",
+    "three deliveries/headers/relocation",
+    "complete P0 and red team"
+  ]
+}

@@ -272,7 +272,7 @@
       "module": "compute",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/foundation-f3-file-resource-streaming.md",
-      "summary": "F3 AUDITED：私有retired writer/geometry/无发布观察及backing接缝已用于共同CPU管线；局部CPU首验通过，三GPU/完整F3资格待验，原F1/F2证据保留。"
+      "summary": "F3 AUDITED：共同/CPU与三原生工厂已接，Windows CPU六项、原CUDA/Vulkan及修复后Air Apple/Vulkan各两项文件首验通过；host提交序列与blocking IO合作取消接缝已修，Windows新树/WSL、native故障、真实数学、三交付/P0/终审待验。"
     },
     {
       "module": "graph",
@@ -436,7 +436,7 @@
       "module": "compute_route_cpu",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/foundation-f3-file-resource-streaming.md",
-      "summary": "F3 AUDITED：共同/CPU有界双向文件管线、自然工厂、逐组ready/旧租约背压及原worker affinity已实现；Windows六项实际IO与五头首验PASS，GPU/数学/三交付/终审仍待验。"
+      "summary": "F3 AUDITED：共同/CPU与三原生工厂已接，Windows CPU六项、原CUDA/Vulkan及修复后Air Apple/Vulkan各两项文件首验通过；host提交序列与blocking IO合作取消接缝已修，Windows新树/WSL、native故障、真实数学、三交付/P0/终审待验。"
     },
     {
       "module": "graph_route_cpu",
@@ -487,7 +487,7 @@
       "module": "compute_route_cuda",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/foundation-f3-file-resource-streaming.md",
-      "summary": "F3 AUDITED：原八FIX、双向文件/映射与四路线工厂、固定槽/group/旧结果容量、取消排空及私有退役writer交接已冻结；尚未产品实现/运行资格，不重启F1/F2或无关全局门。"
+      "summary": "F3 AUDITED：共同/CPU与三原生工厂已接，Windows CPU六项、原CUDA/Vulkan及修复后Air Apple/Vulkan各两项文件首验通过；host提交序列与blocking IO合作取消接缝已修，Windows新树/WSL、native故障、真实数学、三交付/P0/终审待验。"
     },
     {
       "module": "graph_route_cuda",
@@ -504,7 +504,7 @@
       "module": "compute_route_apple",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/foundation-f3-file-resource-streaming.md",
-      "summary": "F3 AUDITED：原八FIX、双向文件/映射与四路线工厂、固定槽/group/旧结果容量、取消排空及私有退役writer交接已冻结；尚未产品实现/运行资格，不重启F1/F2或无关全局门。"
+      "summary": "F3 AUDITED：共同/CPU与三原生工厂已接，Windows CPU六项、原CUDA/Vulkan及修复后Air Apple/Vulkan各两项文件首验通过；host提交序列与blocking IO合作取消接缝已修，Windows新树/WSL、native故障、真实数学、三交付/P0/终审待验。"
     },
     {
       "module": "graph_route_apple",
@@ -521,7 +521,7 @@
       "module": "compute_route_vulkan",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/foundation-f3-file-resource-streaming.md",
-      "summary": "F3 AUDITED：原八FIX、双向文件/映射与四路线工厂、固定槽/group/旧结果容量、取消排空及私有退役writer交接已冻结；尚未产品实现/运行资格，不重启F1/F2或无关全局门。"
+      "summary": "F3 AUDITED：共同/CPU与三原生工厂已接，Windows CPU六项、原CUDA/Vulkan及修复后Air Apple/Vulkan各两项文件首验通过；host提交序列与blocking IO合作取消接缝已修，Windows新树/WSL、native故障、真实数学、三交付/P0/终审待验。"
     },
     {
       "module": "graph_route_vulkan",
@@ -659,7 +659,7 @@
     {
       "module": "compute_stream",
       "state": "AUDITED",
-      "summary": "F3 AUDITED：共同/CPU有界双向文件管线、自然工厂、逐组ready/旧租约背压及原worker affinity已实现；Windows六项实际IO与五头首验PASS，GPU/数学/三交付/终审仍待验。",
+      "summary": "F3 AUDITED：共同/CPU与三原生工厂已接，Windows CPU六项、原CUDA/Vulkan及修复后Air Apple/Vulkan各两项文件首验通过；host提交序列与blocking IO合作取消接缝已修，Windows新树/WSL、native故障、真实数学、三交付/P0/终审待验。",
       "record": "docs/implementation/tasks/compute/foundation-f3-file-resource-streaming.md"
     }
   ]

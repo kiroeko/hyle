@@ -1,0 +1,98 @@
+{
+  "schema_version": 1,
+  "product_commit": "19bede70475d7e9fd719a217b2f8b57a1d1c8aa3",
+  "validation_commit": "6c51a69a749bb4ebe684681849602a6b45074928",
+  "source_archive": {
+    "candidate": "6c51a69a749bb4ebe684681849602a6b45074928",
+    "tree": "0b10ab41429a7c1f2394f016d9236dfbe0dcdc89",
+    "archive": "C:\\public\\project-hyle\\hyle\\.scratch\\foundation-f3\\native-air-6c51a69a7.tar.gz",
+    "sha256": "f2adc9216d7052b0db760e21757a7b68418fbd556dd242ff8d74bf34cabff171",
+    "bytes": 176112816,
+    "source": "/Users/kiro/hyle-scratch/compute-unified/source-c8874688",
+    "stage": "/Users/kiro/hyle-scratch/compute-unified/foundation-f3-source-6c51a69a7",
+    "host": "kiro@172.22.10.198",
+    "hardware": "Mac16,12",
+    "sync": "Canonical full archive/checksum rsync; verification copy only."
+  },
+  "identity": {
+    "hardware": "Mac16,12",
+    "memory": "17179869184",
+    "os": "ProductName:\t\tmacOS\nProductVersion:\t\t27.0.1\nBuildVersion:\t\t26A434",
+    "compiler": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin",
+    "cmake": "cmake version 4.3.4\n\nCMake suite maintained and supported by Kitware (kitware.com/cmake).",
+    "ninja": "1.13.2"
+  },
+  "build": "/Users/kiro/hyle-scratch/compute-unified/a-apple/selected-graph/shared-sdk-build",
+  "stages": [
+    {
+      "name": "configure",
+      "command": [
+        "/opt/homebrew/bin/cmake",
+        "-S",
+        "/Users/kiro/hyle-scratch/compute-unified/source-c8874688",
+        "-B",
+        "/Users/kiro/hyle-scratch/compute-unified/a-apple/selected-graph/shared-sdk-build",
+        "-DHYLE_COMPONENTS=compute"
+      ],
+      "pid": 35108,
+      "state": "terminal",
+      "available_bytes": 6990512128,
+      "log": "configure.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "037f68b2da18700eee4253560a8199fa95c4b35466aa0d5165322aee6efdc850"
+    },
+    {
+      "name": "build",
+      "command": [
+        "/opt/homebrew/bin/cmake",
+        "--build",
+        "/Users/kiro/hyle-scratch/compute-unified/a-apple/selected-graph/shared-sdk-build",
+        "--target",
+        "hyle_compute_route_apple_file_stream_test",
+        "--parallel",
+        "1"
+      ],
+      "pid": 35412,
+      "state": "terminal",
+      "available_bytes": 6971113472,
+      "log": "build.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "a9605d36a0c280100c82e258041714836a98b5154c1aff051d5b38b10416f576"
+    },
+    {
+      "name": "files",
+      "command": [
+        "/Users/kiro/hyle-scratch/compute-unified/a-apple/selected-graph/shared-sdk-build/bin/hyle_compute_route_apple_file_stream_test",
+        "--gtest_filter=AppleFileStream.*",
+        "--gtest_output=xml:/Users/kiro/hyle-scratch/compute-unified/foundation-f3-apple-6c51a69a7/files.xml"
+      ],
+      "pid": 35573,
+      "state": "terminal",
+      "available_bytes": 7057276928,
+      "log": "files.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "a32eb9a27040c02c5a188b189c716e76ec4583a0bb02eb2d68c6f61e203364b2"
+    }
+  ],
+  "tests_passed": 2,
+  "native_calls": 48,
+  "phase_completions": 48,
+  "archive": {
+    "path": "evidence/correctness/foundation-f3-apple-subject/raw-results.zip",
+    "sha256": "327e47972e55ad437a9844e27291d8fa94b916d48b166c7aef91f324b4aa7f89"
+  },
+  "verdict": "PASS_AIR_APPLE_NATIVE_FILE_JOURNEYS_ONLY",
+  "original_failure": "Unimplemented: bounded file IO requires a natively cancellable backend. Original exceptions and two diagnostic reruns preserved.",
+  "correction": "F3 now uses its predeclared cooperative chunk cancellation/deadline, waits accepted original file work, and stops later chunks. No IO/Sched product changes or fake interruption.",
+  "unproven": [
+    "Air Vulkan (running, no PASS claimed)",
+    "Windows/WSL delta and CPU/Air portability",
+    "native pending/unknown/late/cancel risks",
+    "actual Qwen/GGUF Direct+Graph math",
+    "SDK three deliveries/headers/relocation",
+    "complete P0/final red team"
+  ]
+}

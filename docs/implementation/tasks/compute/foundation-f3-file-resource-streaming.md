@@ -262,6 +262,31 @@ metadata_bytes是固定共同/copy控制数组账单，原Mem/IO/框架分配由
 此项只证明共同/CPU主体首验，F3-01至08仍没有完整terminal：三GPU factory/producer/unknown/late，
 WSL/Air、sanitizer、Qwen混合dtype和GGUF实际Direct+Graph、source/static/shared交付、完整P0与终审继续待验。
 
+#### 三GPU工厂与文件首验进展
+
+产品接线`8b35c527f57a91f89545a11748ff7be64e080de1`加入自然CUDA/Apple/Vulkan工厂，
+共同冷目录/typed F2 slot适配与各自私有writer/geometry/不发布的退役观察；没有新增数学/复制kernel，
+也没有修改IO/Sched或native CUDA backend。三route从中央图取得compute_stream与IO公共类型边。
+CUDA actual双槽回写首次失败`ordered queue already has an active submission sequence`；
+F3 adapter只锁bind/prepare/submit，提交结束即解锁，不把IO或实际GPU等待串行化；复验通过。
+[Windows局部收据](../../../../evidence/correctness/foundation-f3-native-windows/receipt.json)签该产品内容的
+CUDA/Vulkan各两项真实GPU文件测试、各48次native calls/phase completions。旧SDK测试配置拒绝、
+旧Graph混合测试fragment缺席及Vulkan旧catalogue夹具缺头均保留；F3改用具名独立模块测试target，
+不借此重写公共工具或无关算子。CUDA原shipping SDK配置已恢复，只恢复配置不代签新SDK交付。
+
+Apple首验原错误`bounded file IO requires a natively cancellable backend`在原始日志及两次有限
+test-only诊断中保留。`19bede70475d7e9fd719a217b2f8b57a1d1c8aa3`按上文原cooperative合同
+修复共同F3 IO调用，不向blocking File伪造单操作取消，原IO产品不改。
+[Air Apple局部收据](../../../../evidence/correctness/foundation-f3-apple-subject/receipt.json)绑定完整
+canonical archive、Mac16,12/Clang21身份：两个真实Metal文件旅程、48次native calls/completions及
+allocator balanced PASS；同产品Windows CPU六项回归PASS。原CUDA/Apple两个产品接缝纠正计入
+本轮既有有限纠正记录，不因日期/目录/测试拆分重置。
+[Air Vulkan局部收据](../../../../evidence/correctness/foundation-f3-air-vulkan-subject/receipt.json)同树
+Mac16,12/实际Apple M4 GPU两个文件旅程及48次native calls/completions PASS；不代签WSL软件GPU。
+cooperative IO新树的Windows GPU/WSL增量、GPU
+producer/pending/unknown/late/cancel风险、实际Qwen混合dtype/GGUF Direct+Graph、三交付/P0/红队待验。
+六owner保持AUDITED，局部bytes成功不是F3七门或完整数学验收。
+
 | FIX | 必须实现 | 验收 |
 |---|---|---|
 | F3-01 | 中央 compute_stream 身份/依赖/普通 route 及三交付投影 | 无环，无第二名单/空 target；静态共享source一致，不拉无关 CPU Provider |
