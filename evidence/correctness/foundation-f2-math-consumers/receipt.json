@@ -144,13 +144,69 @@
         "cmake": "cmake version 4.3.4\n\nCMake suite maintained and supported by Kitware (kitware.com/cmake).",
         "ninja": "1.13.2"
       }
+    },
+    {
+      "name": "windows-cpu-cuda-arity",
+      "candidate": "d0bac591487894c5631c2a7f82000df32837e260",
+      "tree": "eeabf2ae3d54270b17c589150fe11957a93d61c1",
+      "routes": [
+        "cpu",
+        "cuda"
+      ],
+      "verdict": "PASS",
+      "files": {
+        "build.log": {
+          "path": "windows-cpu-cuda-arity-build.log",
+          "sha256": "c7913b79efe88079340c1ecf543eec655193a6047f4b2ed74a4473195f2a750b"
+        },
+        "identity.log": {
+          "path": "windows-cpu-cuda-arity-identity.log",
+          "sha256": "6eabbb42ac19d8fa18f925bc3aca48861fc7b2ffa478d3aacee5c68330c90532"
+        },
+        "job.json": {
+          "path": "windows-cpu-cuda-arity-job.json",
+          "sha256": "21e25390ed2bfeddf65773453f73d0d77f1a6f7375b5fccf58e633e78a558117"
+        },
+        "test.log": {
+          "path": "windows-cpu-cuda-arity-test.log",
+          "sha256": "3271158017abf57ae6807db27566533a7c20e115030cbf7a5411783d338ed67f"
+        }
+      }
+    },
+    {
+      "name": "windows-cpu-vulkan-arity",
+      "candidate": "d0bac591487894c5631c2a7f82000df32837e260",
+      "tree": "eeabf2ae3d54270b17c589150fe11957a93d61c1",
+      "routes": [
+        "cpu",
+        "vulkan"
+      ],
+      "verdict": "PASS",
+      "files": {
+        "build.log": {
+          "path": "windows-cpu-vulkan-arity-build.log",
+          "sha256": "44c8ce1f6510a46e26c57cf4f9be98c271194077e5ad4850b862c9d1126c7f78"
+        },
+        "identity.log": {
+          "path": "windows-cpu-vulkan-arity-identity.log",
+          "sha256": "6eabbb42ac19d8fa18f925bc3aca48861fc7b2ffa478d3aacee5c68330c90532"
+        },
+        "job.json": {
+          "path": "windows-cpu-vulkan-arity-job.json",
+          "sha256": "292493a3c99c5c989067d2812f8c48dbcd7f5447089fe4a02af64d0ab92404a1"
+        },
+        "test.log": {
+          "path": "windows-cpu-vulkan-arity-test.log",
+          "sha256": "fc69a88e4832d3e40fa266a472ce7d70059e360fcfeda9e80dffadf7f274fb81"
+        }
+      }
     }
   ],
   "unproven": [
-    "Windows consumer regression after shared sample arity update",
     "WSL CPU/CUDA and Air CPU/Vulkan math",
     "complete cross-platform native fault qualification",
     "installed static/shared SDK, relocation and absence/header matrix",
     "final P0 and red team"
-  ]
+  ],
+  "shared_sample_blob": "18604402138eb8aaa10d59bdf2a4d826251d2221"
 }

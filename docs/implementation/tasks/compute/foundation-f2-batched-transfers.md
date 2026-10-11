@@ -357,6 +357,10 @@ MLX affine Q4 packed/scales/biases全部读回，原Direct/Graph MatMul/Quantize
 同空日志目录按shared取证，原preflight FAIL和恢复事实列入[同一数学收据](../../../../evidence/correctness/foundation-f2-math-consumers/receipt.json)，
 不改产品、不重置预算、不拿本格签static SDK。共享sample arity变更的Windows两门及其他主机/
 完整fault与SDK、P0终审红队仍待验；四owner仍AUDITED，F3未实施。
+共享sample arity变更的Windows CPU/CUDA source/static与CPU/Vulkan source/shared两门
+`d0bac5914` 精准回归PASS；同一sample Git blob与上述Air产品点一致，原始命令/日志SHA与
+实际device身份追加同收据。当前四路线首轮搬运后BF16/原编码数学均已实际取证；其他平台/
+SDK及完整fault、P0终审红队继续未验，不将第一轮数学门算作F2收口。
 
 ## 预声明验证与停止
 

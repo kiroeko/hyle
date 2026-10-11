@@ -1,0 +1,4 @@
+[0/2] Re-checking globbed directories...
+[1/4] C:\WINDOWS\system32\cmd.exe /C "cd /D C:\h7\w-cpu-cuda\selected-graph\source-build && "C:\Program Files\CMake\bin\cmake.exe" -P C:/h7/w-cpu-cuda/selected-graph/source-build/hyle-runtime/hyle_f2_batched_transfers-Release.cmake"
+[2/4] Building CXX object CMakeFiles\hyle_f2_batched_transfers.dir\C_\public\project-hyle\hyle\samples\package\graph\batched_transfers\main.cc.obj
+[3/4] Linking CXX executable hyle_f2_batched_transfers.exe
