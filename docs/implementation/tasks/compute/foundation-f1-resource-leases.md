@@ -301,6 +301,14 @@ F1 继续 AUDITED，F2/F3 未启动，不把这些局部结果算作整包关闭
   必须停止；只用tracked Writer只能在native aliases消失后取得写。裸TensorView/resource寿命合同不变化。
 - 新测：实际成熟MatMul和Graph/source-alias、两reader、old结果/native handles阻止writer、业务lease放弃与native
   最后退休、wrong resource/desc/padding/strict budget拒绝。无空target/mock provider/copy-only代签。
+- 实施审计补充具名 consumer：Vulkan device Mem allocation 不能 host map，不能为初始化数学夹具把只读 native
+  binding 当写目的地。使用原 Context::upload 的 ready Tensor→import_readonly→binding 正常旅程；
+  Apple亦接 ready原生array的readonly导入。两者都沿本卡原有F1-01，并不新增复制程序或F2批搬运API。
+- 同Resource新增 `import_readonly`：Vulkan 接原Tensor描述/实际buffer owner，Apple接ready array与明确carrier描述。
+  importer保存真实native强owner，原source预算照旧；options只计本次metadata，不重复计原native backing。
+  shared read/subview共享一个import root；已存在native未知private成本不伪装进入本次预算。
+  Apple opaque descriptor/accounting仍显式承认；raw native producer必须先成功退休，不能从句柄推断就绪。
+  不允许重复包装变成writer，source/native writable aliases遵守只读合同。
 
 扩展现有 compute completion、graph cpu_cuda/apple/vulkan contracts 及 native route 用户样例；
 保留原数学 reference，新增实际 lease 风险断言。只装饰 native observation/fault call，
