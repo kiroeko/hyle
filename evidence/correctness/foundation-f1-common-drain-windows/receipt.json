@@ -1,0 +1,125 @@
+{
+  "schema_version": 1,
+  "scope": "F1 common leased completion observation and drain partial qualification",
+  "product_candidate": "d5fa8b99f67e59da277be1bdde5e3e24f5c475e6",
+  "latest_test_candidate": "3a19f2995e83ef9fbf121e398ea281125c66af58",
+  "baseline": "40c7921b1ca07ee569336b6d6ef7be0b4c9e43bb",
+  "checks": [
+    {
+      "name": "shipping-final-common",
+      "verdict": "PASS",
+      "tests": 18,
+      "log": "shipping-final-common.log",
+      "sha256": "e8b6435c06e20b548fa8ec26bc3b8e55b63fc7e9c1a8a2cac9549784c45aec6e",
+      "tested_candidate": "d5fa8b99f67e59da277be1bdde5e3e24f5c475e6",
+      "role": "current focused qualification"
+    },
+    {
+      "name": "shipping-final-cublas",
+      "verdict": "PASS",
+      "tests": 7,
+      "log": "shipping-final-cublas.log",
+      "sha256": "480f0fc3ed5b0b3cb2349285bd296771930319da7c80a1f8cfea7ab9271ca81b",
+      "tested_candidate": "d5fa8b99f67e59da277be1bdde5e3e24f5c475e6",
+      "role": "current focused qualification"
+    },
+    {
+      "name": "shipping-final-graph",
+      "verdict": "PASS",
+      "tests": 3,
+      "log": "shipping-final-graph.log",
+      "sha256": "15ec8a4f4532f6f8c89819878858072df6173c388ae50764b1b8b8295f060552",
+      "tested_candidate": "d5fa8b99f67e59da277be1bdde5e3e24f5c475e6",
+      "role": "current focused qualification"
+    },
+    {
+      "name": "instrumented-final-common",
+      "verdict": "PASS",
+      "tests": 18,
+      "log": "instrumented-final-common.log",
+      "sha256": "e8b6435c06e20b548fa8ec26bc3b8e55b63fc7e9c1a8a2cac9549784c45aec6e",
+      "tested_candidate": "3a19f2995e83ef9fbf121e398ea281125c66af58",
+      "role": "current focused qualification"
+    },
+    {
+      "name": "instrumented-final-graph",
+      "verdict": "PASS",
+      "tests": 4,
+      "log": "instrumented-final-graph.log",
+      "sha256": "25f1639bbc5ea395a1df007aee391505bf662f07fac455f010390f127409a157",
+      "tested_candidate": "3a19f2995e83ef9fbf121e398ea281125c66af58",
+      "role": "current focused qualification"
+    },
+    {
+      "name": "instrumented-cuda",
+      "verdict": "PASS",
+      "tests": 32,
+      "log": "instrumented-cuda.log",
+      "sha256": "872ed09e571d91a50475910c7869208f6b6c3473bb84e3ddf7b95ca6afb0d4ee",
+      "tested_candidate": "cf5860a8f86b573d7da87953068b1d52ed01140d",
+      "role": "historical directed qualification"
+    },
+    {
+      "name": "instrumented-graph",
+      "verdict": "FAIL",
+      "tests": null,
+      "log": "instrumented-graph.log",
+      "sha256": "a8c898d34571815d4d565212af731ec09d4112072d9061fdeace3e1b0ce82609",
+      "tested_candidate": "cf5860a8f86b573d7da87953068b1d52ed01140d",
+      "role": "original failure retained"
+    },
+    {
+      "name": "instrumented-graph-corrected",
+      "verdict": "PASS",
+      "tests": 4,
+      "log": "instrumented-graph-corrected.log",
+      "sha256": "4e159998122bc2b92e1c3c23aab4a4b709225e3ac9c45abd5cfa26f8dc934acf",
+      "tested_candidate": "a69e8bc197efefbb40f7a0f6eb549c804e507063",
+      "role": "historical directed qualification"
+    }
+  ],
+  "corrections": [
+    {
+      "candidate": "a69e8bc197efefbb40f7a0f6eb549c804e507063",
+      "reason": "Unknown observed root error returned before accepted prefixes retired; preserved original failing log and changed drain to wait actual retirement latch"
+    },
+    {
+      "candidate": "d5fa8b99f67e59da277be1bdde5e3e24f5c475e6",
+      "reason": "Compound cached root failure cannot prove all accepted prefix retirement; forward later public attachments through the existing Graph retirement latch"
+    }
+  ],
+  "source_review": [
+    "One cold observer slot and nested actual-retirement retention; public old episodes cannot be overwritten",
+    "Opt-in metadata and reference/lock cost only; unchanged borrowed Completion/OperationInvocation/Graph paths",
+    "Graph observer control reference drops before adapter root to avoid an attachment ownership cycle",
+    "Direct/Graph drain observes only its original accepted Completion; no new Queue, reaper, thread, Provider search or copy/math kernel",
+    "Graph external root attachment verified over an accepted real cuBLAS prefix with observation fault decoration"
+  ],
+  "headers": {
+    "historical_check": {
+      "verdict": "PASS",
+      "candidate": "a69e8bc19",
+      "count": 3,
+      "headers": [
+        "hyle/compute/leased_operation.h",
+        "hyle/compute/detail/retained_completion.h",
+        "hyle/graph/leased_invocation.h"
+      ],
+      "limitation": "Before final deferred-retirement header addition; final header needs recheck"
+    },
+    "current_candidate": "NOT_RUN; final new helper declarations still need isolation check"
+  },
+  "p0": {
+    "verdict": "PARTIAL",
+    "complexity": "O(1) bounded observer storage/reference handling plus original leased binding/accepted-prefix counts",
+    "hot_allocation": "Eight Direct and Graph CUDA replays made no additional calls to the injected lease metadata allocator",
+    "timed_performance": "NOT_RUN; no P1 winner claim"
+  },
+  "pending": [
+    "CPU ordinary-default source snapshot build is running; new CPU Direct/Graph tests are not PASS yet",
+    "CPU+GPU composition bindings",
+    "Remaining native and full failure/lifetime matrix, applicable other platforms and source/static/shared SDK deliveries",
+    "Final headers, full F1 P0/red-team; F2/F3 not implemented"
+  ],
+  "module_state": "AUDITED; not F1 terminal"
+}

@@ -1,0 +1,49 @@
+Running main() from C:\public\tools\hyle-dependencies\v1\sources\googletest-063de7e9578f-162765170ae6\googletest\src\gtest_main.cc
+Note: Google Test filter = Completion.*:ResourceLeases.*
+[==========] Running 18 tests from 2 test suites.
+[----------] Global test environment set-up.
+[----------] 11 tests from Completion
+[ RUN      ] Completion.RetainedObserverDrainsWhilePublicHandleIsHeld
+[       OK ] Completion.RetainedObserverDrainsWhilePublicHandleIsHeld (0 ms)
+[ RUN      ] Completion.RetainedObserverForwardsAttachmentOnlyAfterActualUnknownRetirement
+[       OK ] Completion.RetainedObserverForwardsAttachmentOnlyAfterActualUnknownRetirement (0 ms)
+[ RUN      ] Completion.RetainedObserverMayBeDroppedBeforePublicCompletion
+[       OK ] Completion.RetainedObserverMayBeDroppedBeforePublicCompletion (0 ms)
+[ RUN      ] Completion.RetainedCompoundObserverDoesNotTreatCachedRootErrorAsRetirement
+[       OK ] Completion.RetainedCompoundObserverDoesNotTreatCachedRootErrorAsRetirement (0 ms)
+[ RUN      ] Completion.ImmediateSuccessAndFailureRemainInline
+[       OK ] Completion.ImmediateSuccessAndFailureRemainInline (0 ms)
+[ RUN      ] Completion.CompositeRetentionPreservesBothOwnersAndRejectsReuse
+[       OK ] Completion.CompositeRetentionPreservesBothOwnersAndRejectsReuse (0 ms)
+[ RUN      ] Completion.SimulatedAsyncStateSupportsMovePollWaitAndCancel
+[       OK ] Completion.SimulatedAsyncStateSupportsMovePollWaitAndCancel (0 ms)
+[ RUN      ] Completion.LifetimeSettlesExactlyOnceAtObservedTerminal
+[       OK ] Completion.LifetimeSettlesExactlyOnceAtObservedTerminal (0 ms)
+[ RUN      ] Completion.AbandonedHandleDefersLifetimeUntilBackendTerminal
+[       OK ] Completion.AbandonedHandleDefersLifetimeUntilBackendTerminal (0 ms)
+[ RUN      ] Completion.AbandonedHandleTransfersSavedTailErrorToBackend
+[       OK ] Completion.AbandonedHandleTransfersSavedTailErrorToBackend (0 ms)
+[ RUN      ] Completion.FailedObservationHandsRetentionToActualRuntimeRetirement
+[       OK ] Completion.FailedObservationHandsRetentionToActualRuntimeRetirement (0 ms)
+[----------] 11 tests from Completion (0 ms total)
+
+[----------] 7 tests from ResourceLeases
+[ RUN      ] ResourceLeases.SharedReadersAndSubviewsPreventMutationAndHoldRange
+[       OK ] ResourceLeases.SharedReadersAndSubviewsPreventMutationAndHoldRange (0 ms)
+[ RUN      ] ResourceLeases.MetadataAndBackingCapsDoNotGrowAndOldOwnerCanOutlivePool
+[       OK ] ResourceLeases.MetadataAndBackingCapsDoNotGrowAndOldOwnerCanOutlivePool (0 ms)
+[ RUN      ] ResourceLeases.AbandonedCompletionKeepsBothPoolsUntilRealRetirement
+[       OK ] ResourceLeases.AbandonedCompletionKeepsBothPoolsUntilRealRetirement (0 ms)
+[ RUN      ] ResourceLeases.WriteFailureCannotPublishAndUnsubmittedUseRollsBack
+[       OK ] ResourceLeases.WriteFailureCannotPublishAndUnsubmittedUseRollsBack (0 ms)
+[ RUN      ] ResourceLeases.RejectedAttachmentRetainsTicketAndQuotaIncludesMetadata
+[       OK ] ResourceLeases.RejectedAttachmentRetainsTicketAndQuotaIncludesMetadata (0 ms)
+[ RUN      ] ResourceLeases.OwnedImportPreservesBackingAndReadonlyCannotBecomeWriter
+[       OK ] ResourceLeases.OwnedImportPreservesBackingAndReadonlyCannotBecomeWriter (0 ms)
+[ RUN      ] ResourceLeases.RejectedOwnedImportDoesNotConsumeBackingOrLeakBudget
+[       OK ] ResourceLeases.RejectedOwnedImportDoesNotConsumeBackingOrLeakBudget (0 ms)
+[----------] 7 tests from ResourceLeases (0 ms total)
+
+[----------] Global test environment tear-down
+[==========] 18 tests from 2 test suites ran. (0 ms total)
+[  PASSED  ] 18 tests.

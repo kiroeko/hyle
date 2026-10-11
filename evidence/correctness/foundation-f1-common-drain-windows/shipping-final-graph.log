@@ -1,0 +1,16 @@
+Running main() from C:\public\tools\hyle-dependencies\v1\sources\googletest-063de7e9578f-162765170ae6\googletest\src\gtest_main.cc
+Note: Google Test filter = GraphNativeRetirement.*
+[==========] Running 3 tests from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 3 tests from GraphNativeRetirement
+[ RUN      ] GraphNativeRetirement.ObservationErrorKeepsAllAcceptedCublasBranchesAlive
+[       OK ] GraphNativeRetirement.ObservationErrorKeepsAllAcceptedCublasBranchesAlive (126 ms)
+[ RUN      ] GraphNativeRetirement.LeasedGraphOwnsBindingsAndOldResultsPreventReplay
+[       OK ] GraphNativeRetirement.LeasedGraphOwnsBindingsAndOldResultsPreventReplay (4 ms)
+[ RUN      ] GraphNativeRetirement.LeasedPrivateOutputRetainsOriginalWorkspaceAfterAdapterDestruction
+[       OK ] GraphNativeRetirement.LeasedPrivateOutputRetainsOriginalWorkspaceAfterAdapterDestruction (2 ms)
+[----------] 3 tests from GraphNativeRetirement (133 ms total)
+
+[----------] Global test environment tear-down
+[==========] 3 tests from 1 test suite ran. (133 ms total)
+[  PASSED  ] 3 tests.

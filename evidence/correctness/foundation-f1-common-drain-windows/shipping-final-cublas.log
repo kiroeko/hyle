@@ -1,0 +1,24 @@
+Running main() from C:\public\tools\hyle-dependencies\v1\sources\googletest-063de7e9578f-162765170ae6\googletest\src\gtest_main.cc
+Note: Google Test filter = CublasProvider.*
+[==========] Running 7 tests from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 7 tests from CublasProvider
+[ RUN      ] CublasProvider.Float32LayoutsAndChangedInputsMatchDoubleOracle
+[       OK ] CublasProvider.Float32LayoutsAndChangedInputsMatchDoubleOracle (135 ms)
+[ RUN      ] CublasProvider.HalfDecodeAndPrefillUseIndependentLanes
+[       OK ] CublasProvider.HalfDecodeAndPrefillUseIndependentLanes (132 ms)
+[ RUN      ] CublasProvider.Bfloat16DecodeAndPrefillUseIndependentLanes
+[       OK ] CublasProvider.Bfloat16DecodeAndPrefillUseIndependentLanes (113 ms)
+[ RUN      ] CublasProvider.RejectsUnsupportedTypesAndHostOnlyResources
+[       OK ] CublasProvider.RejectsUnsupportedTypesAndHostOnlyResources (2 ms)
+[ RUN      ] CublasProvider.CompletionRetainsReleasedPreparedAndInvocation
+[       OK ] CublasProvider.CompletionRetainsReleasedPreparedAndInvocation (4 ms)
+[ RUN      ] CublasProvider.ColdMetadataFailuresRollBackAndReservedReplayDoesNotAllocate
+[       OK ] CublasProvider.ColdMetadataFailuresRollBackAndReservedReplayDoesNotAllocate (10 ms)
+[ RUN      ] CublasProvider.LeasedDirectRetainsNativeUsesAndReplaysWithoutLeaseAllocation
+[       OK ] CublasProvider.LeasedDirectRetainsNativeUsesAndReplaysWithoutLeaseAllocation (3 ms)
+[----------] 7 tests from CublasProvider (401 ms total)
+
+[----------] Global test environment tear-down
+[==========] 7 tests from 1 test suite ran. (401 ms total)
+[  PASSED  ] 7 tests.

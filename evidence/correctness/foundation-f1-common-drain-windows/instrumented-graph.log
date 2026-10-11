@@ -1,0 +1,26 @@
+Running main() from C:\public\tools\hyle-dependencies\v1\sources\googletest-063de7e9578f-162765170ae6\googletest\src\gtest_main.cc
+Note: Google Test filter = GraphNativeRetirement.*
+[==========] Running 4 tests from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 4 tests from GraphNativeRetirement
+[ RUN      ] GraphNativeRetirement.ObservationErrorKeepsAllAcceptedCublasBranchesAlive
+[       OK ] GraphNativeRetirement.ObservationErrorKeepsAllAcceptedCublasBranchesAlive (128 ms)
+[ RUN      ] GraphNativeRetirement.LeasedGraphOwnsBindingsAndOldResultsPreventReplay
+[       OK ] GraphNativeRetirement.LeasedGraphOwnsBindingsAndOldResultsPreventReplay (4 ms)
+[ RUN      ] GraphNativeRetirement.LeasedPrivateOutputRetainsOriginalWorkspaceAfterAdapterDestruction
+[       OK ] GraphNativeRetirement.LeasedPrivateOutputRetainsOriginalWorkspaceAfterAdapterDestruction (2 ms)
+[ RUN      ] GraphNativeRetirement.LeasedAcceptedPrefixSurvivesDependencyObservationRejection
+C:\public\project-hyle\hyle\tests\graph\aggregate_native_retirement_test.cc(394): error: Expected equality of these values:
+  pool.stats().active_uses
+    Which is: 3
+  0u
+    Which is: 0
+
+C:\public\project-hyle\hyle\tests\graph\aggregate_native_retirement_test.cc(397): error: Expected equality of these values:
+  pool.stats().live_blocks
+    Which is: 3
+  0u
+    Which is: 0
+
+HYLE fatal: live() == 0
+  at C:\public\project-hyle\hyle\src\compute_backend_cuda\cuda_memory.cc:338
