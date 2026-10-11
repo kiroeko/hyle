@@ -208,7 +208,7 @@ Result<ReadLease> MemoryResource::import_readonly(const mx::array &source, const
   if (!backing) { destroy_owner(owner); return std::unexpected(std::move(backing).error()); }
   auto imported = ReadLease::adopt(std::move(*backing), {.allocator = allocator});
   if (!imported) {
-    backing = {};
+    backing->reset().IgnoreError();
     destroy_owner(owner);
     return std::unexpected(std::move(imported).error());
   }
