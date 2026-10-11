@@ -473,6 +473,9 @@ DeadlineExceeded/零IO/零native/零ready；stop后接纳拒绝且输入writer�
 
 ## 预声明验证与停止
 
+原八FIX的逐能力风险、实际证据和剩余平台/交付格见[当前矩阵](foundation-f3-verification-matrix.md)。
+它明确新deadline/重复close fixture尚未运行、各installed gate尚未取证，不把局部PASS聚合为关闭。
+
 原固定容量、分配/锁/IO/native路径及实际字节成本已整理于[P0结构核对](foundation-f3-p0-cost-review.md)。
 该页明确已知控制数组、K个原fiber stack、热Task/IO/lease控制与vendor未知成本的不同边界，
 不代签尚未完成的交付/终审，也没有启动P1。
