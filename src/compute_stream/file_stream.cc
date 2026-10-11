@@ -386,6 +386,27 @@ void await_slot_job(FileStreamState &state, StreamSlotCell &slot) noexcept {
   state.lock.lock(); state.changed.wait(state.lock, [&] { return slot.job_done; }); state.lock.unlock();
 }
 
+// Failed, never-started groups still own admitted native producers. Move each
+// observation out of the monitor before destruction: the original retirement
+// callback re-enters this monitor and may release a retained pipeline owner.
+void abandon_failed_producers(FileStreamState &state) noexcept {
+  for (std::uint32_t r = 0; r < state.requests.size(); ++r) {
+    for (std::uint32_t g = 0; g < state.options.max_groups_per_request; ++g) {
+      for (std::uint32_t i = 0; i < state.options.max_ranges_per_group; ++i) {
+        Completion producer;
+        {
+          std::lock_guard guard(state.lock);
+          if (!state.requests[r].live || g >= state.requests[r].result.total_groups) break;
+          const auto &group = state.group(r, g);
+          if (group.phase != GroupPhase::kFailed || i >= group.count) break;
+          producer = std::move(state.range(r, g, i).producer);
+        }
+        // Native owner keeps the existing retention until actual retirement.
+      }
+    }
+  }
+}
+
 // IO waits suspend the existing fiber. Only native waits and mapping page
 // faults leave it through IoContext's original BlockingPool.
 sched::Task<Status> process_group(mem::AllocatorRef allocator, FileStreamState *state,
@@ -523,6 +544,7 @@ void stream_worker(void *opaque) noexcept {
     }
     --request.remaining; request.result.complete = request.remaining == 0;
     state.changed.notify_all(); state.lock.unlock();
+    abandon_failed_producers(state);
 }
 // Original Scheduler finish hook, called after leaving the Fiber stack. Destroy
 // the Fiber/stack before acknowledging drain. All state reference drops share
@@ -877,18 +899,20 @@ void FileResourcePipeline::reset() noexcept {
 }
 Result<StreamTicket> FileResourcePipeline::read(StreamSource source, std::span<StreamReadGroup> groups, io::OperationOptions options) noexcept {
   if (!state_) return std::unexpected(Status::FailedPrecondition("file stream pipeline is empty"));
-  HYLE_ASSIGN_OR_RETURN(auto index, admit(*state_, std::move(source), {}, groups, options)); return StreamTicket(state_, index);
+  HYLE_ASSIGN_OR_RETURN(auto index, admit(*state_, std::move(source), {}, groups, options));
+  detail::abandon_failed_producers(*state_); return StreamTicket(state_, index);
 }
 Result<StreamTicket> FileResourcePipeline::write(StreamFile sink, std::span<StreamWriteGroup> groups, io::OperationOptions options) noexcept {
   if (!state_) return std::unexpected(Status::FailedPrecondition("file stream pipeline is empty"));
-  HYLE_ASSIGN_OR_RETURN(auto index, admit(*state_, {}, std::move(sink), groups, options)); return StreamTicket(state_, index);
+  HYLE_ASSIGN_OR_RETURN(auto index, admit(*state_, {}, std::move(sink), groups, options));
+  detail::abandon_failed_producers(*state_); return StreamTicket(state_, index);
 }
 void FileResourcePipeline::stop_admission() noexcept {
   if (state_) { std::lock_guard guard(state_->lock); state_->admission_closed = true; }
 }
 Status FileResourcePipeline::collect() noexcept {
   if (!state_) return Status::Ok();
-  std::lock_guard guard(state_->lock); Status result;
+  std::unique_lock guard(state_->lock); Status result;
   for (std::uint32_t i = 0; i < state_->slots.size(); ++i) {
     auto &slot = state_->slots[i]; if (!slot.quarantined) continue;
     result.Update(state_->endpoint.observe(state_->endpoint.owner, i));
@@ -901,7 +925,8 @@ Status FileResourcePipeline::collect() noexcept {
     if (!other && state_->requests[slot.request].pending_producers == 0)
       state_->requests[slot.request].result.retirement_proven = true;
   }
-  detail::reclaim_locked(*state_); detail::kick_locked(*state_); state_->changed.notify_all(); return result;
+  detail::reclaim_locked(*state_); detail::kick_locked(*state_); state_->changed.notify_all();
+  guard.unlock(); detail::abandon_failed_producers(*state_); return result;
 }
 Status FileResourcePipeline::close() noexcept {
   if (!state_) return Status::Ok();

@@ -503,6 +503,11 @@ group Failed，不销毁其中Completion，形成state→Completion→retention�
 允许的纠正仅在退出共同锁后放弃未启动producer观察，使原native owner在实际退休时释放原retention。
 不得在锁内触发回调/释放，不隐藏等待或新增poller，未退休之前uses/stage仍须保活。
 
+定向纠正新增`abandon_failed_producers`：每次只在共同锁内将Failed组的一个Completion移出，
+锁外析构交原native owner；worker失败与spawn失败后的read/write/collect入口都覆盖。
+固定目录扫描上界O(QGR)，无新数组、分配、线程或常态字段；原producer退休前retention仍保留
+state/stage/uses。当前为AUDITED实施，复验尚未运行，旧candidate3b的交付只作历史局部证据。
+
 ## 解析器与真实权重验收
 
 格式解析不进入 pipeline。GGUF 用现有 ggml 格式核；本地 Qwen3.5-2B 原始 Safetensors
