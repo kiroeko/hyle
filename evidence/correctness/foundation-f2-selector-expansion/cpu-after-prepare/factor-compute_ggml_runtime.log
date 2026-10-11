@@ -1,0 +1,16 @@
+Test project C:/h7/foundation-f1-cpu
+    Start 131: hyle_ggml_runtime_source_contract_test
+1/4 Test #131: hyle_ggml_runtime_source_contract_test ...   Passed    0.16 sec
+    Start 132: hyle_compute_ggml_runtime_test
+2/4 Test #132: hyle_compute_ggml_runtime_test ...........   Passed    0.04 sec
+    Start 133: hyle_ggml_cpu_fault_test
+3/4 Test #133: hyle_ggml_cpu_fault_test .................   Passed    0.03 sec
+    Start 134: hyle_ggml_context_fault_test
+4/4 Test #134: hyle_ggml_context_fault_test .............   Passed    0.03 sec
+
+100% tests passed out of 4
+
+Label Time Summary:
+compute_ggml_runtime    =   0.25 sec*proc (4 tests)
+
+Total Test time (real) =   0.32 sec

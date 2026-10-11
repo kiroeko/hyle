@@ -1,6 +1,8 @@
 # F2 固定候选与剩余资格矩阵
 
 本页由[活动收口卡](foundation-f2-batched-transfers.md)纳入，只执行既定七FIX，不扩大F3或数学能力。
+2026-10-12用户纠正后：只验证实际受影响owner/直接消费者与公共交付风险；原selector全库
+扩展清单是历史调度输出，未受影响基础factor/其他facade停止回放，不是F2收口缺口，不伪签PASS。
 当前compute的[cold分类delta](foundation-f2-prepare-error-classification.md)已通过Windows完整58/90；Graph原846 PASS/7 skip经既有fixture补跑后853项执行PASS，
 产品形状固定并重新CANDIDATE于c26261e39；
 其他三owner scope保持候选。后续ordinary消费者使用c26261e39全源码，未验平台/交付不由本格代签。
@@ -79,7 +81,7 @@ copy_control/copy_backend/copy_ranges/lease_access/retained_completion及两nati
 中央private util边导致的selector component-contract/package扩展门在本candidate执行，保留selected/
 skipped理由，不修改公共工具。已有F1消费者只作直接回归，不重开F1或全部成熟算子。
 
-最后检查：完整selected适用门、closure（registry变化显式previous-ref）、docs、diff、P0运行账与
+最后检查：按上述实际影响定界的适用门、closure（registry变化显式previous-ref）、docs、diff、P0运行账与
 源代码红队/七问；所有适用格有实证才CLOSED。当前聚合资格UNPROVEN，不把表内首轮PASS扩大。
 
 ## WSL固定候选本批结果

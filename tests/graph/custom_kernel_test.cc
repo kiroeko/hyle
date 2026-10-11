@@ -10,6 +10,7 @@
 #include "../compute/workload_fixture.h"
 #include "hyle/graph/executable.h"
 #include "hyle/mem/quota_allocator.h"
+#include "hyle/mem/stats.h"
 
 namespace {
 using namespace custom_test;
@@ -81,8 +82,11 @@ TEST(GraphCustomKernel, WorkloadReachesColdOperationsAndOutlivesCallerFacts) {
 TEST(GraphCompilationStorage, TypedPrivateBoundsAreAdmittedBeforePrepare) {
   const auto logical = policy_graph();
   Probe probe;
-  auto context =
-      Context::create(cpu::device(), provider(probe).value()).value();
+  auto metadata = hyle::mem::StatsAllocator::create(hyle::mem::system_allocator()).value();
+  const std::array providers{ProviderBinding{provider(probe).value(), 100}};
+  auto context = Context::create(cpu::device(),
+      {.metadata_allocator = metadata.get(), .providers = providers}).value();
+  const auto context_metadata = metadata.snapshot().live_bytes;
   hyle::graph::CompileOptions options{.compilation_storage =
                                           hyle::graph::CompilationStorageLimits{
                                               .max_resident_bytes = 1U << 20}};
@@ -100,14 +104,22 @@ TEST(GraphCompilationStorage, TypedPrivateBoundsAreAdmittedBeforePrepare) {
   probe.compilation_storage = {.resident_bytes = 0, .peak_bytes = 0};
   auto plain = hyle::graph::compile(logical.graph, context, options).value();
   const auto base = plain.report.compilation_storage().value();
+  const auto base_metadata = metadata.snapshot().live_bytes;
   plain = {};
+  EXPECT_EQ(metadata.snapshot().live_bytes, context_metadata);
   probe.compilation_storage = {.resident_bytes = 4096, .peak_bytes = 1U << 18};
   auto charged = hyle::graph::compile(logical.graph, context, options).value();
   const auto usage = charged.report.compilation_storage().value();
-  EXPECT_EQ(usage.resident_bytes, base.resident_bytes + 4096);
+  const auto charged_metadata = metadata.snapshot().live_bytes;
+  ASSERT_GE(charged_metadata, base_metadata);
+  // Positive private reservations also retain charged control metadata.
+  // Observe requested bytes independently, rather than assuming zero cost.
+  EXPECT_EQ(usage.resident_bytes,
+            base.resident_bytes + 4096 + charged_metadata - base_metadata);
   EXPECT_GE(usage.peak_bytes, 1U << 18);
   EXPECT_FALSE(usage.has_unknown_storage);
   charged = {};
+  EXPECT_EQ(metadata.snapshot().live_bytes, context_metadata);
   options.compilation_storage->max_peak_bytes = 1U << 17;
   const auto prepares = probe.preparations.load();
   auto peak = hyle::graph::compile(logical.graph, context, options);

@@ -1,0 +1,15 @@
+Test project C:/h7/foundation-f1-cpu
+    Start 58: hyle_container_test
+1/3 Test #58: hyle_container_test .....................   Passed    0.13 sec
+    Start 59: hyle_container_isa_variants_test
+2/3 Test #59: hyle_container_isa_variants_test ........   Passed    0.03 sec
+    Start 60: hyle_container_hash_seed_process_test
+3/3 Test #60: hyle_container_hash_seed_process_test ...   Passed    0.06 sec
+
+100% tests passed out of 3
+
+Label Time Summary:
+container    =   0.23 sec*proc (3 tests)
+hash         =   0.06 sec*proc (1 test)
+
+Total Test time (real) =   0.29 sec

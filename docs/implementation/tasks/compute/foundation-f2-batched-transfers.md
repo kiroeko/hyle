@@ -403,6 +403,16 @@ gzip及archive SHA保留。其他平台/fault/头与SDK/P0终审红队仍待候�
 
 ## 预声明验证与停止
 
+2026-10-12用户明确：不涉及其他模块时没有全局验证必要。本轮以此收窄执行解释：selector因
+中央private util边变化产生的全库扩展清单保留为历史调度输出，不再作为完整全库待办。
+仅执行四个F2 owner、本轮改变的公共头/三交付接缝，以及真实直接消费的新copy/guard/prepare
+入口；未改变源码/API/target语义的基础factor、成熟算子目录与其他facade不继续回放。已运行
+的结果/FAIL保留，但不把未选门写PASS，也不重开CLOSED模块。公共selector不改。
+当前cold delta涉及common compute与CPU/CUDA数学准备；Graph原cold preparation seam是直接
+消费者，完成已发现的两项metadata fixture精确账单及相关生命周期/decline回归即可，不再
+重跑整个模型/基础目录。原四路线新batch的适用native风险/新头/普通SDK门仍按本卡完成，
+同source/contract/toolchain/machine scope匹配的既有证据复用。F1–F3产品范围不缩减。
+
 候选后[七问/源码终审输入](foundation-f2-final-review.md)已开始，尚非terminal。selector扩展按原
 完整计划在已有树低内存串行执行：先Windows CPU/common40个factor及其已有逐头suite，精确
 developer factor选择，不与普通product routes组合；TLS/HTTP2使用现有开发库。configure300/

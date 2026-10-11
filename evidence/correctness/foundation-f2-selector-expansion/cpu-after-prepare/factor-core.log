@@ -1,0 +1,18 @@
+Test project C:/h7/foundation-f1-cpu
+    Start 14: hyle_core_test
+1/4 Test #14: hyle_core_test ........................   Passed    0.12 sec
+    Start 15: hyle_core_release_assert_test
+2/4 Test #15: hyle_core_release_assert_test .........   Passed    0.04 sec
+    Start 17: hyle_core_codegen_audit_parser_test
+3/4 Test #17: hyle_core_codegen_audit_parser_test ...   Passed    0.08 sec
+    Start 18: hyle_core_codegen_test
+4/4 Test #18: hyle_core_codegen_test ................   Passed    0.10 sec
+
+100% tests passed out of 4
+
+Label Time Summary:
+codegen    =   0.18 sec*proc (2 tests)
+core       =   0.34 sec*proc (4 tests)
+tooling    =   0.08 sec*proc (1 test)
+
+Total Test time (real) =   0.39 sec

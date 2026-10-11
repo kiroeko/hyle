@@ -26,6 +26,7 @@
 #include "hyle/compute/route_policy.h"
 #include "hyle/graph/region_provider.h"
 #include "hyle/mem/buffer.h"
+#include "hyle/mem/stats.h"
 #include "provider_internal.h"
 #include "test_environment.h"
 
@@ -1901,7 +1902,8 @@ Graph make_reordered_non_contiguous_negations() {
   return std::move(builder).finish().value();
 }
 
-Context make_context(RegionProbe &probe) {
+Context make_context(RegionProbe &probe,
+                     hyle::mem::AllocatorRef metadata_allocator = {}) {
   const bool asynchronous = probe.asynchronous_backend ||
                             probe.mode == ProposalMode::kAsyncPairs ||
                             probe.mode == ProposalMode::kAsyncRejectSecond;
@@ -1909,7 +1911,8 @@ Context make_context(RegionProbe &probe) {
     const std::array providers{
         hyle::compute::ProviderBinding{region_provider(probe), 100},
         hyle::compute::ProviderBinding{hyle::compute::native::provider(), 200}};
-    return Context::create(async_device(probe), {.providers = providers})
+    return Context::create(async_device(probe),
+        {.metadata_allocator = metadata_allocator, .providers = providers})
         .value();
   }
   const std::array providers{
@@ -1917,7 +1920,7 @@ Context make_context(RegionProbe &probe) {
       hyle::compute::ProviderBinding{hyle::compute::ggml_cpu::provider(), 200},
       hyle::compute::ProviderBinding{hyle::compute::native::provider(), 300}};
   return Context::create(hyle::compute::cpu::device(),
-                         {.providers = providers})
+                         {.metadata_allocator = metadata_allocator, .providers = providers})
       .value();
 }
 
@@ -5766,14 +5769,18 @@ TEST(GraphCompilationStorage, RegionPreparePeakIsTransientNotRetainedPerStep) {
   const auto logical = make_negations(4);
   RegionProbe probe;
   probe.compilation_storage = {.resident_bytes = 0, .peak_bytes = 0};
-  auto context = make_context(probe);
+  auto metadata = hyle::mem::StatsAllocator::create(hyle::mem::system_allocator()).value();
+  auto context = make_context(probe, metadata.get());
+  const auto context_metadata = metadata.snapshot().live_bytes;
   CompileOptions options{
       .compilation_storage = hyle::graph::CompilationStorageLimits{},
       .operation_fallback = OperationFallbackPolicy::kReject};
   auto plain = hyle::graph::compile(logical.graph, context, options).value();
   ASSERT_EQ(plain.report.region_count(), 2U);
   const auto base = plain.report.compilation_storage().value();
+  const auto base_metadata = metadata.snapshot().live_bytes;
   plain = {};
+  EXPECT_EQ(metadata.snapshot().live_bytes, context_metadata);
   const auto private_peak = base.peak_bytes * 2;
   probe.compilation_storage = {.resident_bytes = 4096,
                                .peak_bytes = private_peak};
@@ -5782,10 +5789,15 @@ TEST(GraphCompilationStorage, RegionPreparePeakIsTransientNotRetainedPerStep) {
   auto charged = hyle::graph::compile(logical.graph, context, options);
   ASSERT_TRUE(charged) << charged.error().message();
   const auto usage = charged->report.compilation_storage().value();
-  EXPECT_EQ(usage.resident_bytes, base.resident_bytes + 8192);
+  const auto charged_metadata = metadata.snapshot().live_bytes;
+  ASSERT_GE(charged_metadata, base_metadata);
+  EXPECT_EQ(usage.resident_bytes,
+            base.resident_bytes + 8192 + charged_metadata - base_metadata);
   EXPECT_GE(usage.peak_bytes, private_peak);
   EXPECT_LT(usage.peak_bytes, 2 * private_peak);
   EXPECT_FALSE(usage.has_unknown_storage);
+  *charged = {};
+  EXPECT_EQ(metadata.snapshot().live_bytes, context_metadata);
 }
 
 TEST(GraphCompilationStorage,

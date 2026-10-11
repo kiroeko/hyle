@@ -1,6 +1,8 @@
 # F2 固定候选终审输入
 
 状态：REVIEW_IN_PROGRESS；本页由[F2活动卡](foundation-f2-batched-transfers.md)纳入，不是terminal。
+2026-10-12用户纠正：未受影响模块不全局验证。原selector广泛调度行不等于本轮全部风险，
+依活动卡收窄到owner/真实直接消费者/改变的公开交付，停止无关回放，不虚构未运行PASS。
 扩展CPU backend反例依法退回AUDITED后，cold分类delta已固定c26261e39并完成Windows58/90项，
 Graph853项精确集合中原846 PASS/7 fixture skip已用既有bounded fixture补跑，最终853项执行PASS，
 compute重新CANDIDATE；见[cold分类delta](foundation-f2-prepare-error-classification.md)。
@@ -34,7 +36,7 @@ owner scope不变，只有CUDA按[终态delta](foundation-f2-cuda-terminal-clean
 | R-F2-04 | 证据缺口 | Apple原GPU prefix晚失败必须阻止原FIFO中已排队copy发布，旧成功ready不丢失 | 同故障收据8项Apple copy PASS；不宣称覆盖全部vendor硬故障 |
 | R-F2-05 | 环境/工具资格 | WSL实际只有llvmpipe；CUDA设备可用不能代签Vulkan GPU | [真实枚举](../../../../evidence/correctness/foundation-f2-wsl-route-qualification/receipt.json)NO_QUALIFIED_GPU；GPU运行未运行，适用交付单独通过 |
 | R-F2-06 | 环境/fixture | Windows旧MSVC中文include prefix与英文输出不匹配；WSL继承Windows CUDA_PATH；scratch cache恢复遗留说明导致parse FAIL | [Windows SDK](../../../../evidence/correctness/foundation-f2-windows-vulkan-sdk/receipt.json)与[component合同](../../../../evidence/correctness/foundation-f2-component-contract/receipt.json)保留有界恢复、真实deps/工具链与全部失败；公共工具/产品未改 |
-| R-F2-07 | 尚未完成的工程门 | selector中央图扩展结果包含factor、逐头与其他产品delivery；当前仅部分门有对应实际证据 | UNPROVEN；继续原门，不写CLOSED，不提前F3 |
+| R-F2-07 | 验证范围过宽 | selector中央private边触发全库调度，被误当完整必跑清单；没有对应风险的基础/成熟目录不应回放 | 用户明确纠正后停止无关门，保留历史结果；只补实际影响门，不伪签PASS |
 | R-F2-08 | 产品correctness | 原ordinary prepare将provider kError/Unimplemented当作resource miss继续fallback，两项既有反例FAIL；纯resource-match必须与明确hard error分开 | 依法退回后固定c26261e39；Windows58/90/最终Graph853 PASS，原7 skip补齐且保留，恢复CANDIDATE，其他平台/SDK待验 |
 
 源代码复核没有把首错、unknown、逻辑metadata归零或旧证据改写为全局成功。当前未发现新增

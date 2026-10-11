@@ -29,5 +29,85 @@
       "path": "cpu-initial/job.json",
       "sha256": "f1f9637612269973e365fdd83b71fa5f6e2f0d953e3c48d800ef1c3b1ddb057b"
     }
-  }
+  },
+  "after_prepare": {
+    "product_candidate": "c26261e3958c7eb46ecde2a4ba7c5654a03f1b93",
+    "verdict": "PARTIAL_GRAPH_FIXTURE_FAIL",
+    "receipt": "cpu-after-prepare/job.json",
+    "scope": "Passed prior factor logs retained; CPU route833 exact-case qualification separately PASS. Graph two charge-record accounting fixtures failed, source unchanged; remaining global expansion stopped by explicit user scope correction. No unrun PASS.",
+    "files": {
+      "build.log": {
+        "path": "cpu-after-prepare/build.log",
+        "sha256": "6b9ea1747fb5bcebab1d2ff92aa0573db33a7551bbff9ef2c4d822fc5543a8ea"
+      },
+      "factor-compute_ggml_runtime.log": {
+        "path": "cpu-after-prepare/factor-compute_ggml_runtime.log",
+        "sha256": "125bcedb47934085aed91fb01c32d8a1382dfa41b6fe4d7f055dbffa8c910375"
+      },
+      "factor-compute_ops.log": {
+        "path": "cpu-after-prepare/factor-compute_ops.log",
+        "sha256": "8346aa9f9cf942d22073ddb8c1e53d7dd015498370148a1a74152c9e1f7bdfbb"
+      },
+      "factor-compute_provider_ggml.log": {
+        "path": "cpu-after-prepare/factor-compute_provider_ggml.log",
+        "sha256": "27708fa34311c31232536d5636de731ff5fece02ef8cd968266e5dff41a76b2d"
+      },
+      "factor-compute_provider_native.log": {
+        "path": "cpu-after-prepare/factor-compute_provider_native.log",
+        "sha256": "b6670073006a68bab074c07ee59bbc066d058c72d701f012345b36a6a58d5bf0"
+      },
+      "factor-compute_provider_onednn.log": {
+        "path": "cpu-after-prepare/factor-compute_provider_onednn.log",
+        "sha256": "22f440dc6366859f149b72effb9ee671893271b5d1096399dffe144e9bc32cc5"
+      },
+      "factor-compute_route_cpu.log": {
+        "path": "cpu-after-prepare/factor-compute_route_cpu.log",
+        "sha256": "e65f02fabcbdb57590759ae7d7f987f3138d207c6fd172ecfa1e4f2d4c58786d"
+      },
+      "factor-container.log": {
+        "path": "cpu-after-prepare/factor-container.log",
+        "sha256": "cee5c3593bea878c2cfdf42e89750c34782ad2e3ecc7a5989e0e1bf2d6e76853"
+      },
+      "factor-container_concurrent.log": {
+        "path": "cpu-after-prepare/factor-container_concurrent.log",
+        "sha256": "372ef457f710b0be49dc194d7fabeec28c2c5072f441578ba32050bc84c4c337"
+      },
+      "factor-container_intrusive.log": {
+        "path": "cpu-after-prepare/factor-container_intrusive.log",
+        "sha256": "987771ec021d1d9e0455f5cbc5b2ac4b7d3efb4b2eabd903d4cf1a963d6950a7"
+      },
+      "factor-container_queue.log": {
+        "path": "cpu-after-prepare/factor-container_queue.log",
+        "sha256": "890ace7c78b7293630d59a98c3bfdca90553022ff58e5b5c8c40305ff5ed718d"
+      },
+      "factor-container_text.log": {
+        "path": "cpu-after-prepare/factor-container_text.log",
+        "sha256": "ce62fde28ca4a6812de48ec13ac246e6c242e65bc84461d1072d440524b21e65"
+      },
+      "factor-core.log": {
+        "path": "cpu-after-prepare/factor-core.log",
+        "sha256": "de2946025e7452111dbead334ede10be73674949a44001f381960b579d93c1d9"
+      },
+      "factor-error.log": {
+        "path": "cpu-after-prepare/factor-error.log",
+        "sha256": "2db6e45ac0f9ec388c1f2d44012ae4682b38f304fcd661ffcb4d6214ea5c3fac"
+      },
+      "factor-graph.log": {
+        "path": "cpu-after-prepare/factor-graph.log",
+        "sha256": "be75ca8d3dc68ea87376f06406d6434a153c1cffd464301a786ae029a0def086"
+      },
+      "job.json": {
+        "path": "cpu-after-prepare/job.json",
+        "sha256": "f4b6760b7fa9b789d84d98d324287fa6918bc6027986f53af67cc0818e495bd8"
+      }
+    }
+  },
+  "cpu_route": {
+    "verdict": "PASS",
+    "count": 833,
+    "skipped": 0,
+    "receipt": "cpu-route/job.json",
+    "manifest": "cpu-route/manifest.json"
+  },
+  "scope_correction": "2026-10-12 user: no global verification when other modules are unaffected. Unaffected remaining factors/facades NOT_SELECTED_UNCHANGED_BOUNDARY, not PASS."
 }

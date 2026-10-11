@@ -1,0 +1,12 @@
+Test project C:/h7/foundation-f1-cpu
+    Start 124: compute_provider_native_default_rule_build_contract
+1/2 Test #124: compute_provider_native_default_rule_build_contract ...   Passed    0.60 sec
+    Start 125: hyle_compute_provider_native_test
+2/2 Test #125: hyle_compute_provider_native_test .....................   Passed    0.80 sec
+
+100% tests passed out of 2
+
+Label Time Summary:
+compute_provider_native    =   1.40 sec*proc (2 tests)
+
+Total Test time (real) =   1.45 sec

@@ -85,3 +85,18 @@ tree185e3c211a65754f5487e7e1d19f8252e68f29d9和archive SHA保存；其他平台/
 补跑全部7项，实际XML精确名称且无skip/failure。最终853个独立用例全部执行PASS，原7 skip、
 两个TIMEOUT与恢复全部原样保留在同一收据/压缩包；早先将exit0/完整集合误说无skip的表述
 已更正，不以覆盖历史日志制造资格。其他平台/SDK及完整剩余工程门仍未完成。
+
+WSL精确c26261e39副本的完整CPU backend58、compute91及CUDA15项精准资源/copy回归PASS，
+同收据保存Linux/GCC/CUDA实际身份与完整日志。初fixture向原CUDA-only测试树请求未登记的
+CPU backend target而FAIL；同树添加精确CPU test root后补验，不修改产品/重置预算。
+Windows剩余CPU/common五个Provider/ops门PASS；完整CPU路线CTest合并进程120秒TIMEOUT，
+父/子进程已确认退出。其完整833项实际inventory按同一候选二进制逐case120秒串行运行，
+既有已核验Qwen fixture启用，XML名称、disabled/failure/skip逐项记录；当前仍未完成。
+
+CPU路线完整833项已执行PASS且无skip/disabled。基础闭包继续时Graph两个旧精确字节fixture
+FAIL：正private预留会保留StorageChargeState，每制品多96字节实际metadata，两个region多192。
+Graph产品/source从F2 baseline未变，现有指南要求该metadata计入报告。仅维护两个fixture：
+用已有StatsAllocator独立观测plain/charged的实际live requested bytes差，再严格核对report
+增量等于声明private bytes加实际metadata差；并检查释放后归零。不以EXPECT_GE放宽账单、
+不改Graph产品/公开合同/预算核心、不重开CLOSED Graph。保留原FAIL，原CPU树仅重建Graph
+测试，完整Graph factor/test120复验；此类测试维护不重置产品FIX名额。

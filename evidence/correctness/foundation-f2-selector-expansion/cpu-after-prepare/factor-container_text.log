@@ -1,0 +1,12 @@
+Test project C:/h7/foundation-f1-cpu
+    Start 103: hyle_container_text_test
+1/2 Test #103: hyle_container_text_test ................   Passed    0.18 sec
+    Start 104: hyle_container_text_isa_variants_test
+2/2 Test #104: hyle_container_text_isa_variants_test ...   Passed    0.03 sec
+
+100% tests passed out of 2
+
+Label Time Summary:
+container_text    =   0.21 sec*proc (2 tests)
+
+Total Test time (real) =   0.27 sec
