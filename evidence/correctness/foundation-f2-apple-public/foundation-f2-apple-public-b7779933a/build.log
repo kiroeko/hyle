@@ -1,0 +1,75 @@
+[0/2] Re-checking globbed directories...
+[1/13] cd /Users/kiro/hyle-scratch/compute-unified/a-apple/selected-graph/shared-sdk-build/src/compute_route_apple && /opt/homebrew/bin/cmake -E copy_if_different /Users/kiro/hyle-scratch/compute-unified/a-apple/selected-graph/shared-sdk-build/_deps/mlx-build/mlx/backend/metal/kernels/mlx.metallib /Users/kiro/hyle-scratch/compute-unified/a-apple/selected-graph/shared-sdk-build/bin/mlx.metallib
+[2/13] Building CXX object src/compute_route_apple/CMakeFiles/hyle_compute_route_apple.dir/apple_leased_invocation.cc.o
+[3/13] Building OBJCXX object src/compute_route_apple/CMakeFiles/hyle_compute_route_apple.dir/apple_memory.mm.o
+[4/13] Building OBJCXX object src/compute_route_apple/CMakeFiles/hyle_compute_route_apple.dir/apple_copy_recording.mm.o
+[5/13] Building CXX object src/compute_route_apple/CMakeFiles/hyle_compute_route_apple.dir/apple_copy_program.cc.o
+FAILED: [code=1] src/compute_route_apple/CMakeFiles/hyle_compute_route_apple.dir/apple_copy_program.cc.o 
+/usr/bin/clang++ -DHYLE_COMPUTE_APPLE=1 -DHYLE_COMPUTE_ROUTE_APPLE_BUILD -Dhyle_compute_route_apple_EXPORTS -I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/include -I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/compute_route_apple -I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/compute_route_apple/../compute -I/Users/kiro/hyle-scratch/compute-unified/a-apple/selected-graph/shared-sdk-build/src/compute_route_apple -I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/third_party/bitsandbytes_apple -I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/third_party/awq_apple -I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/third_party/ggml_q4k_apple -I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/third_party/compressed_tensors_apple -isystem /Users/kiro/Library/Caches/hyle/dependencies/v1/sources/metal_cpp-f567ed836e4c-3874e9e28e8e -isystem /Users/kiro/hyle-scratch/compute-unified/a-apple/selected-graph/shared-sdk-build/_deps/mlx-338da189e54c0743/source -O3 -DNDEBUG -std=c++23 -arch arm64 -mmacosx-version-min=14.4 -fPIC -fvisibility=hidden -fvisibility-inlines-hidden -Wall -Wextra -Wpedantic -MD -MT src/compute_route_apple/CMakeFiles/hyle_compute_route_apple.dir/apple_copy_program.cc.o -MF src/compute_route_apple/CMakeFiles/hyle_compute_route_apple.dir/apple_copy_program.cc.o.d -o src/compute_route_apple/CMakeFiles/hyle_compute_route_apple.dir/apple_copy_program.cc.o -c /Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/compute_route_apple/apple_copy_program.cc
+/Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/compute_route_apple/apple_copy_program.cc:21:57: error: no member named 'StdAllocator' in namespace 'hyle::mem'
+   21 | template<class T> using CopyArray = std::vector<T, mem::StdAllocator<T>>;
+      |                                                         ^~~~~~~~~~~~
+/Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/compute_route_apple/apple_copy_program.cc:21:70: error: 'T' does not refer to a value
+   21 | template<class T> using CopyArray = std::vector<T, mem::StdAllocator<T>>;
+      |                                                                      ^
+/Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/compute_route_apple/apple_copy_program.cc:21:16: note: declared here
+   21 | template<class T> using CopyArray = std::vector<T, mem::StdAllocator<T>>;
+      |                ^
+/Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/compute_route_apple/apple_copy_program.cc:21:73: error: expected ';' after alias declaration
+   21 | template<class T> using CopyArray = std::vector<T, mem::StdAllocator<T>>;
+      |                                                                         ^
+      |                                                                         ;
+/Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/compute_route_apple/apple_copy_program.cc:35:3: error: no template named 'CopyArray'
+   35 |   CopyArray<CopyResourceSpec> specs;
+      |   ^
+/Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/compute_route_apple/apple_copy_program.cc:25:20: error: no member named 'StdAllocator' in namespace 'hyle::mem'
+   25 |         specs(mem::StdAllocator<CopyResourceSpec>(selected)) {}
+      |                    ^~~~~~~~~~~~
+/Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/compute_route_apple/apple_copy_program.cc:25:33: error: 'CopyResourceSpec' does not refer to a value
+   25 |         specs(mem::StdAllocator<CopyResourceSpec>(selected)) {}
+      |                                 ^
+/Users/kiro/hyle-scratch/compute-unified/source-c8874688/include/hyle/compute/batch_transfer.h:46:8: note: declared here
+   46 | struct CopyResourceSpec final {
+      |        ^
+/Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/compute_route_apple/apple_copy_program.cc:91:3: error: no template named 'CopyArray'
+   91 |   CopyArray<cd::CopyBinding> bindings;
+      |   ^
+/Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/compute_route_apple/apple_copy_program.cc:92:3: error: no template named 'CopyArray'
+   92 |   CopyArray<cd::PhysicalCopyResource> physical;
+      |   ^
+/Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/compute_route_apple/apple_copy_program.cc:93:3: error: no template named 'CopyArray'
+   93 |   CopyArray<cd::CopyInterval> intervals;
+      |   ^
+/Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/compute_route_apple/apple_copy_program.cc:94:3: error: no template named 'CopyArray'
+   94 |   CopyArray<cd::ResolvedCopyRange> copies;
+      |   ^
+/Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/compute_route_apple/apple_copy_program.cc:95:3: error: no template named 'CopyArray'
+   95 |   CopyArray<std::uint64_t> closure;
+      |   ^
+/Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/compute_route_apple/apple_copy_program.cc:96:3: error: no template named 'CopyArray'
+   96 |   CopyArray<CopyNativePhase *> phases;
+      |   ^
+/Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/compute_route_apple/apple_copy_program.cc:97:3: error: no template named 'CopyArray'
+   97 |   CopyArray<cd::CopyPhasePlan> plans;
+      |   ^
+/Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/compute_route_apple/apple_copy_program.cc:98:3: error: no template named 'CopyArray'
+   98 |   CopyArray<std::uint32_t> order, leader, last_write, producers;
+      |   ^
+/Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/compute_route_apple/apple_copy_program.cc:99:3: error: no template named 'CopyArray'
+   99 |   CopyArray<unsigned char> roles;
+      |   ^
+/Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/compute_route_apple/apple_copy_program.cc:100:3: error: no template named 'CopyArray'
+  100 |   CopyArray<cd::CopyRootUse> root_uses;
+      |   ^
+/Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/compute_route_apple/apple_copy_program.cc:101:3: error: no template named 'CopyArray'
+  101 |   CopyArray<cd::CopyWrittenSpan> written;
+      |   ^
+/Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/compute_route_apple/apple_copy_program.cc:102:3: error: no template named 'CopyArray'
+  102 |   CopyArray<cd::CopyBackendRange> ranges;
+      |   ^
+/Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/compute_route_apple/apple_copy_program.cc:103:3: error: no template named 'CopyArray'
+  103 |   CopyArray<LeaseUseBatch> tickets;
+      |   ^
+fatal error: too many errors emitted, stopping now [-ferror-limit=]
+20 errors generated.
+ninja: build stopped: subcommand failed.

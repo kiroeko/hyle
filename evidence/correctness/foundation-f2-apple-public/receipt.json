@@ -1,0 +1,30 @@
+{
+  "schema_version": 1,
+  "scope": "Air Mac16,12 AppleClang21 Release shared/source public F2 copy controller on original Runtime/FIFO/Metal stream",
+  "checkpoints": [
+    {
+      "candidate": "b7779933a98b4be32469f8155abbfed7d7097060",
+      "tree": "a87efcc431ca928555dc481464af90ca06b9a89e",
+      "directory": "foundation-f2-apple-public-b7779933a",
+      "verdict": "FAIL",
+      "extra_files_sha256": {}
+    },
+    {
+      "candidate": "2d491c1415329463b25eae0db1172c026caefce9",
+      "tree": "ab2fe54d2e4883c3f1eeadcb6a90f135660866d2",
+      "directory": "foundation-f2-apple-public-2d491c141",
+      "verdict": "PASS",
+      "extra_files_sha256": {
+        "metrics.xml": "7f41deb7d49caad559b9cda9e5623ec42bbf3a77a7c0f07cb79ebc194f682efc"
+      }
+    }
+  ],
+  "public_tests": 4,
+  "native_blit_tests": 3,
+  "original_lease_tests": 3,
+  "common_tests": 34,
+  "headers_copied_math_complete_fault_and_delivery_platform_matrix": "UNPROVEN",
+  "known_requested_metadata_replay": "PASS",
+  "opaque_driver_mcb_metadata": "UNKNOWN",
+  "original_investigation_failure_budget": "Retained; original build failure and exact followup both preserved"
+}

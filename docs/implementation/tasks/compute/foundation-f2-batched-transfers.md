@@ -317,6 +317,14 @@ HYLE冷metadata稳定，macOS offset/size/alias/self/empty及readonly imported v
 compile FAIL与有限重验、完整archive SHA/commit/tree和实际机器/命令/log SHA，非Windows或mock替代。
 原worker每phase一次CommandEncoder.synchronize明确计入host wait，vendor MCB/descriptor成本仍UNKNOWN；
 不宣称所有vendor热分配为零或物理重叠。独立头/Apple公共控制对象、producer/完整故障/数学/三交付待验。
+Apple公共对象 `2d491c141` 的Air首轮PASS：4项program/slot/phase/producer/early independent group/
+取消/放弃/reset/no-consume用例，复跑原3项blit、3项AppleLeaseLifetime和34项common。
+双slot/3replay的实际requested metadata稳定，原FIFO实际native producer与writer guard正确交接；
+真实GPU primitive边界被阻塞时，旧组仍可读，queued取消/丢弃不会提前释放，原close后metadata归零。
+[公共Apple收据](../../../../evidence/correctness/foundation-f2-apple-public/receipt.json)含首构建FAIL、完整archive
+SHA/commit/tree、硬件/工具链/命令/log SHA；当前四路线公共入口首轮均有实物证据。
+四owner仍AUDITED：实际BF16/原编码量化的Direct/Graph消费、fault全矩阵、平台/头/三交付/迁址/P0终审
+与稳定候选红队尚未完成，不能从这里跳到CANDIDATE或CLOSED；F3仍未实施。
 
 | FIX | 必须实现 | 验收 |
 |---|---|---|

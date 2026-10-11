@@ -1,0 +1,61 @@
+{
+  "candidate": "b7779933a98b4be32469f8155abbfed7d7097060",
+  "source": "/Users/kiro/hyle-scratch/compute-unified/source-c8874688",
+  "build": "/Users/kiro/hyle-scratch/compute-unified/a-apple/selected-graph/shared-sdk-build",
+  "identity": {
+    "hardware": "Mac16,12",
+    "memory": "17179869184",
+    "os": "ProductName:\t\tmacOS\nProductVersion:\t\t27.0.1\nBuildVersion:\t\t26A434",
+    "compiler": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin",
+    "cmake": "cmake version 4.3.4\n\nCMake suite maintained and supported by Kitware (kitware.com/cmake).",
+    "ninja": "1.13.2"
+  },
+  "scope": "F2 Apple public copy controller, original FIFO producer, ready/cancel/abandon and byte replay; full math/delivery/platform matrix unqualified",
+  "configuration": "Release/shared/source/shipping instrumentationOFF testsON installOFF graph/apple",
+  "parallel": 1,
+  "stages": [
+    {
+      "name": "configure",
+      "command": [
+        "/opt/homebrew/bin/cmake",
+        "-S",
+        "/Users/kiro/hyle-scratch/compute-unified/source-c8874688",
+        "-B",
+        "/Users/kiro/hyle-scratch/compute-unified/a-apple/selected-graph/shared-sdk-build",
+        "-DHYLE_COMPONENTS=graph",
+        "-DHYLE_COMPUTE_ROUTES=apple",
+        "-DHYLE_BUILD_TESTS=ON",
+        "-DHYLE_BUILD_BENCH=OFF",
+        "-DHYLE_INSTALL=OFF",
+        "-DHYLE_TEST_INSTRUMENTATION=OFF"
+      ],
+      "pid": 25450,
+      "state": "terminal",
+      "available_bytes": 6776242176,
+      "log": "configure.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "dbed5da115efd37d226bd387ba4e43658a74478a5704e0b3b9711cf6a3f69229"
+    },
+    {
+      "name": "build",
+      "command": [
+        "/opt/homebrew/bin/cmake",
+        "--build",
+        "/Users/kiro/hyle-scratch/compute-unified/a-apple/selected-graph/shared-sdk-build",
+        "--target",
+        "hyle_compute_route_apple_test",
+        "hyle_compute_test",
+        "--parallel",
+        "1"
+      ],
+      "pid": 25747,
+      "state": "terminal",
+      "available_bytes": 6837452800,
+      "log": "build.log",
+      "exit_code": 1,
+      "verdict": "FAIL",
+      "sha256": "ff6ce23b29386b1a95f51dc1a9feaf8da8b2b9f9b585625408c86544e36c980d"
+    }
+  ]
+}
