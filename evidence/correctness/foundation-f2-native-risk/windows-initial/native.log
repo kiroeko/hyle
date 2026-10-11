@@ -1,0 +1,22 @@
+Running main() from C:\public\tools\hyle-dependencies\v1\sources\googletest-063de7e9578f-162765170ae6\googletest\src\gtest_main.cc
+Note: Google Test filter = VulkanCopyProgram.*:VulkanCopyRecording.*
+[==========] Running 10 tests from 2 test suites.
+[----------] Global test environment set-up.
+[----------] 6 tests from VulkanCopyProgram
+[ RUN      ] VulkanCopyProgram.TwoSlotsPhaseReadyOldResultsAndReplayKeepActualMetadataFixed
+[       OK ] VulkanCopyProgram.TwoSlotsPhaseReadyOldResultsAndReplayKeepActualMetadataFixed (168 ms)
+[ RUN      ] VulkanCopyProgram.OriginalRetainedProducerOrdersPendingMutableSourceAndGuards
+[       OK ] VulkanCopyProgram.OriginalRetainedProducerOrdersPendingMutableSourceAndGuards (61 ms)
+[ RUN      ] VulkanCopyProgram.RejectedNativeSuffixPreservesSuccessfulEarlierGroupAndFailedSlot
+[       OK ] VulkanCopyProgram.RejectedNativeSuffixPreservesSuccessfulEarlierGroupAndFailedSlot (58 ms)
+[ RUN      ] VulkanCopyProgram.EmptyDependencyUsesActualPrefixAndBindingErrorsDoNotConsume
+[       OK ] VulkanCopyProgram.EmptyDependencyUsesActualPrefixAndBindingErrorsDoNotConsume (60 ms)
+[ RUN      ] VulkanCopyProgram.AbandonedHandlesKeepOriginalRunsUntilActualRetirementAndFreeMetadata
+[       OK ] VulkanCopyProgram.AbandonedHandlesKeepOriginalRunsUntilActualRetirementAndFreeMetadata (60 ms)
+[ RUN      ] VulkanCopyProgram.UnknownFenceAndDrainKeepUsesUntilActualRetirementWithoutReady
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\copy_program_test.cc(245): error: Value of: unavailable.error().IsResourceExhausted()
+  Actual: false
+Expected: true
+Google Test trace:
+C:\public\project-hyle\hyle\tests\compute_route_vulkan\copy_program_test.cc(232): false
+

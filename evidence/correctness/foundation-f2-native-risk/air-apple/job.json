@@ -1,0 +1,80 @@
+{
+  "product_candidate": "5b3efe2cce3fcab2bc55cf749af2d862a786ef25",
+  "test_commit": "8c27d8501b3c5550bbb2711ec60a60923ef74b3a",
+  "test_manifest": {
+    "product_candidate": "5b3efe2cce3fcab2bc55cf749af2d862a786ef25",
+    "test_commit": "8c27d8501b3c5550bbb2711ec60a60923ef74b3a",
+    "test_tree": "26eb25eb1425f74d4f6b19c9b4e52759360903cf",
+    "remote_source": "/Users/kiro/hyle-scratch/compute-unified/source-c8874688",
+    "files": {
+      "tests/compute_route_apple/copy_program_test.cc": "61049855474044f0a919e76cc4559a570b388df20f779c4e3052d603c00012ca",
+      "tests/compute_route_vulkan/copy_program_test.cc": "43bc6aa1c59f2f122d329f94f9080222edbe395f690356f0e14b16e8f74f8c46"
+    }
+  },
+  "identity": {
+    "hardware": "Mac16,12",
+    "memory": "17179869184",
+    "os": "ProductName:\t\tmacOS\nProductVersion:\t\t27.0.1\nBuildVersion:\t\t26A434",
+    "compiler": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin",
+    "cmake": "cmake version 4.3.4\n\nCMake suite maintained and supported by Kitware (kitware.com/cmake)."
+  },
+  "mode": "apple",
+  "build": "/Users/kiro/hyle-scratch/compute-unified/a-apple/selected-graph/shared-sdk-build",
+  "source_manifest": "HYLE full canonical Git archive\nGit commit: 5b3efe2cce3fcab2bc55cf749af2d862a786ef25\nGit tree: 7023c5780a7c99b10f0b41a4e27f3bf5899dea04\n",
+  "parallel": 1,
+  "stages": [
+    {
+      "name": "configure",
+      "command": [
+        "/opt/homebrew/bin/cmake",
+        "-S",
+        "/Users/kiro/hyle-scratch/compute-unified/source-c8874688",
+        "-B",
+        "/Users/kiro/hyle-scratch/compute-unified/a-apple/selected-graph/shared-sdk-build"
+      ],
+      "pid": 31876,
+      "state": "terminal",
+      "available_bytes": 6920126464,
+      "log": "configure.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "f684c771f8696b806b33cd645ff471b257267199870fb1eac6f928327e7841f7"
+    },
+    {
+      "name": "build",
+      "command": [
+        "/opt/homebrew/bin/cmake",
+        "--build",
+        "/Users/kiro/hyle-scratch/compute-unified/a-apple/selected-graph/shared-sdk-build",
+        "--target",
+        "hyle_compute_route_apple_test",
+        "--parallel",
+        "1"
+      ],
+      "pid": 32132,
+      "state": "terminal",
+      "available_bytes": 6928629760,
+      "log": "build.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "1324d85d653f75a1afb5c807b34a4ca5448adf57a21584d70879ab04f0e644f1"
+    },
+    {
+      "name": "native",
+      "command": [
+        "/Users/kiro/hyle-scratch/compute-unified/a-apple/selected-graph/shared-sdk-build/bin/hyle_compute_route_apple_test",
+        "--gtest_filter=AppleCopyProgram.*:AppleCopyRecording.*",
+        "--gtest_output=xml:/Users/kiro/hyle-scratch/compute-unified/foundation-f2-native-risk-air-apple-8c27d8501/native.xml"
+      ],
+      "pid": 32143,
+      "state": "terminal",
+      "available_bytes": 6974717952,
+      "log": "native.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "e5e0b89e6e0c1159f1fd8d8481c65e4eb696d4b44b544186ec27582b355e36fe"
+    }
+  ],
+  "scope": "F2 native original late failure/unknown retirement and copy regression only",
+  "verdict": "PASS"
+}

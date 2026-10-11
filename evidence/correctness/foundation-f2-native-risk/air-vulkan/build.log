@@ -1,0 +1,8 @@
+[0/2] Re-checking globbed directories...
+[1/6] Performing build step for 'vulkan-shaders-gen'
+ninja: no work to do.
+[2/6] Performing install step for 'vulkan-shaders-gen'
+-- Up-to-date: /Users/kiro/hyle-scratch/compute-unified/a-vulkan/selected-graph/shared-sdk-build/Release/./vulkan-shaders-gen
+[3/6] Completed 'vulkan-shaders-gen'
+[4/6] Building CXX object tests/compute_route_vulkan/CMakeFiles/hyle_compute_route_vulkan_test.dir/copy_program_test.cc.o
+[5/6] Linking CXX executable bin/hyle_compute_route_vulkan_test

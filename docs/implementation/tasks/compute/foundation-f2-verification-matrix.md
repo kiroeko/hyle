@@ -63,11 +63,11 @@ GPU stream drain和原CUDA abandoned-event reaper回调完成不同；借用allo
 | 平台/路线 | 当前ordinary source数学 | 必须完成的candidate资格 |
 |---|---|---|
 | Windows CPU/CUDA | PASS（5b3efe2cc source/static实际复验） | relocated static/shared数学、七头/CUDA ON、两native头与package路线缺席、DLL同目录、shipping hook缺席PASS；既定fault已取证，扩展/终审待验 |
-| Windows CPU/Vulkan | PASS（5b3efe2cc全源码下scope匹配实际source复验） | relocated static/shared数学、七头/Vulkan ON、CUDA/Apple头与package路线缺席、DLL同目录及真实header deps PASS；9 native/34 common已有首轮，unknown风险/终审待验 |
-| Air CPU/Apple | PASS（scope匹配source；新全源码installed复验） | relocated static/shared数学、七头/Apple ON、CUDA/Vulkan头与package请求缺席、MLX assets PASS；10 native/34 common首轮已取证，剩余故障/终审待验 |
-| Air CPU/Vulkan | PASS（5b3efe2cc全源码下source/shared） | 9 native/34 common、source与relocated static/shared数学、七头/Vulkan ON、CUDA/Apple缺席、实际dyld迁址加载PASS；剩余unknown风险/终审待验 |
+| Windows CPU/Vulkan | PASS（5b3efe2cc全源码下scope匹配实际source复验） | relocated static/shared数学、七头/Vulkan ON、CUDA/Apple缺席、DLL同目录及真实header deps PASS；补齐unknown观察/实际退休10 native PASS，扩展/终审待验 |
+| Air CPU/Apple | PASS（scope匹配source；新全源码installed复验） | relocated static/shared数学、七头/Apple ON、CUDA/Vulkan缺席、MLX assets PASS；补晚失败/旧ready/回收8 copy native PASS，扩展/终审待验 |
+| Air CPU/Vulkan | PASS（5b3efe2cc全源码下source/shared） | source与relocated static/shared数学、七头/Vulkan ON、CUDA/Apple缺席、实际dyld迁址加载PASS；补齐unknown观察/实际退休10 native PASS，扩展/终审待验 |
 | WSL CPU/CUDA | PASS（scope匹配source/static；新delta安装消费已复验） | 新delta真实producer late＋15 CUDA/34 common PASS；relocated static/shared数学及七头/CUDA ON、Apple/Vulkan头与package路线请求缺席PASS；扩展/终审仍待验 |
-| WSL Vulkan | 实际NO_QUALIFIED_GPU（仅llvmpipe） | relocated static/shared构建/七安装头/Vulkan ON、Apple/CUDA头及package请求缺席、实际ldd迁址解析PASS；GPU数学未运行；source embedding与扩展/终审待验 |
+| WSL Vulkan | 实际NO_QUALIFIED_GPU（仅llvmpipe） | source普通consumer及relocated static/shared构建/七安装头/Vulkan ON、Apple/CUDA缺席、实际ldd迁址解析PASS；GPU数学未运行；扩展/终审待验 |
 
 共同控制/CPU copy sanitizer使用原WSL ASan+UBSan与TSan树，固定34 common、3 CpuCopyProgram；
 TSan启动限制只按真实事实处理，不以ASan代签并发。header sole-include涵盖batch_transfer、
@@ -162,4 +162,20 @@ static/shared production树，单线程构建后install并真实rename，旧pref
 source/build/staging路径。两普通hyle::graph消费者实际编译链接PASS；各七installed头独立编译
 （六common＋Vulkan ON），Apple/CUDA头明确缺席，两个未构建路线请求各明确拒绝并列出cpu;vulkan。
 ldd无missing，shared的HYLE库全部实际来自relocated/lib。该收据只签适用交付，不签GPU数学；
-source embedding补构建、原生unknown/failure风险、selector扩展与P0终审仍待验，四owner仍CANDIDATE。
+source embedding普通consumer构建也已补PASS，同收据保存完整configure/build/ldd；没有运行
+软件设备数学。selector扩展与P0终审仍待验，四owner仍CANDIDATE。
+
+## 固定产品后的原生故障补齐
+
+[故障收据](../../../../evidence/correctness/foundation-f2-native-risk/receipt.json)绑定5b3efe2cc产品与8c27d8501测试点，产品scope不变。
+Windows RTX4070及Air M4/MoltenVK各10项Vulkan copy PASS：原Device实际提交后持续装饰fence/
+queue drain观察OOM，output保持pending、所有uses/metadata保活。普通持有分支实际等待线程
+在unknown期间未返回，恢复原观察后才退休且保留首错；放弃分支原Context.close失败时pending
+仍在，恢复原观察后才归零。两个分支都未发布失败ready或偷偷重放。
+de11365a9首fixture误读blocking wait/pending合同，Windows120秒TIMEOUT保留；只修fixture，
+没有产品修改、重置预算或放宽测试。Air同一测试文件SHA和实际主机/工具链身份已保存。
+
+Air另8项Apple copy PASS：原MLX square/Checkpoint在真实GPU prefix后抛原生边界错误，原FIFO
+中已排队copy归Internal且零native copy/不发布，已有成功ready仍按实际bytes可读；借用allocator/
+resource保持到实际Jobs退休，所有uses/metadata/blocks最终归零。这是晚失败传播取证，不宣称
+测试了每个Metal vendor硬故障。当前仍需selector扩展、P0七问和独立源码红队后才可CLOSED。

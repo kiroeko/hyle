@@ -1,0 +1,64 @@
+{
+  "candidate": "5b3efe2cce3fcab2bc55cf749af2d862a786ef25",
+  "source_manifest": "HYLE full canonical Git archive\nGit commit: 5b3efe2cce3fcab2bc55cf749af2d862a786ef25\nGit tree: 7023c5780a7c99b10f0b41a4e27f3bf5899dea04\n",
+  "build": "/root/hyle-scratch/compute-unified/l-cpu-vulkan/selected-graph/source-build",
+  "parallel": 1,
+  "scope": "WSL ordinary CPU/Vulkan source build only, no qualified GPU math",
+  "stages": [
+    {
+      "name": "configure",
+      "command": [
+        "cmake",
+        "-S",
+        "/root/hyle-scratch/compute-unified/l-cpu-vulkan/selected-graph/source-parent",
+        "-B",
+        "/root/hyle-scratch/compute-unified/l-cpu-vulkan/selected-graph/source-build"
+      ],
+      "pid": 628,
+      "state": "terminal",
+      "available_bytes": 32397897728,
+      "log": "configure.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "c84341602007b60e848c3f8721d98c1f599d2e16cc39e61f109d3892f0337278"
+    },
+    {
+      "name": "build",
+      "command": [
+        "cmake",
+        "--build",
+        "/root/hyle-scratch/compute-unified/l-cpu-vulkan/selected-graph/source-build",
+        "--target",
+        "hyle_f2_batched_transfers",
+        "--parallel",
+        "1"
+      ],
+      "pid": 717,
+      "state": "terminal",
+      "available_bytes": 32466288640,
+      "log": "build.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "13f666bb82550029bf6996ec3fdb492de52d2fbbba0815cfbe5e7e5cc757c505"
+    },
+    {
+      "name": "dynamic-deps",
+      "command": [
+        "ldd",
+        "/root/hyle-scratch/compute-unified/l-cpu-vulkan/selected-graph/source-build/hyle_f2_batched_transfers"
+      ],
+      "pid": 1288,
+      "state": "terminal",
+      "available_bytes": 32063623168,
+      "log": "dynamic-deps.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "6b9dc3d566501e8abbadc2056191e97cee96532a2be9090f20c493026863d76c"
+    }
+  ],
+  "verdict": "PASS_APPLICABLE_BUILD_NO_QUALIFIED_GPU",
+  "math": {
+    "verdict": "NOT_RUN_NO_QUALIFIED_GPU",
+    "reason": "Actual loader enumerated only llvmpipe software CPU device"
+  }
+}

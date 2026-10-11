@@ -1,0 +1,29 @@
+Running main() from /Users/kiro/Library/Caches/hyle/dependencies/v1/sources/googletest-063de7e9578f-162765170ae6/googletest/src/gtest_main.cc
+Note: Google Test filter = AppleCopyProgram.*:AppleCopyRecording.*
+[==========] Running 8 tests from 2 test suites.
+[----------] Global test environment set-up.
+[----------] 5 tests from AppleCopyProgram
+[ RUN      ] AppleCopyProgram.TwoSlotsPhaseOutputsAndThreeReplaysKeepActualMetadataFixed
+[       OK ] AppleCopyProgram.TwoSlotsPhaseOutputsAndThreeReplaysKeepActualMetadataFixed (33 ms)
+[ RUN      ] AppleCopyProgram.RetainedOriginalBlitProducerOrdersMutableSourceAndRetiresWriteGuard
+[       OK ] AppleCopyProgram.RetainedOriginalBlitProducerOrdersMutableSourceAndRetiresWriteGuard (4 ms)
+[ RUN      ] AppleCopyProgram.EarlyIndependentGroupStaysReadyDuringQueuedCancellationAndAbandonment
+[       OK ] AppleCopyProgram.EarlyIndependentGroupStaysReadyDuringQueuedCancellationAndAbandonment (21 ms)
+[ RUN      ] AppleCopyProgram.EmptyDependencyNoConsumeAndAbandonedMetadataFollowActualJobs
+[       OK ] AppleCopyProgram.EmptyDependencyNoConsumeAndAbandonedMetadataFollowActualJobs (3 ms)
+[ RUN      ] AppleCopyProgram.LateOriginalNativeFailureBlocksQueuedCopiesAndPreservesOldReady
+[       OK ] AppleCopyProgram.LateOriginalNativeFailureBlocksQueuedCopiesAndPreservesOldReady (4 ms)
+[----------] 5 tests from AppleCopyProgram (68 ms total)
+
+[----------] 3 tests from AppleCopyRecording
+[ RUN      ] AppleCopyRecording.OriginalGpuStreamBlitThreeStagesAndTwoColdSlotsPreserveBytes
+[       OK ] AppleCopyRecording.OriginalGpuStreamBlitThreeStagesAndTwoColdSlotsPreserveBytes (4 ms)
+[ RUN      ] AppleCopyRecording.RepeatedSourceAliasAndNativeTailConstraintsRejectBeforeJobAdmission
+[       OK ] AppleCopyRecording.RepeatedSourceAliasAndNativeTailConstraintsRejectBeforeJobAdmission (2 ms)
+[ RUN      ] AppleCopyRecording.ReadonlyImportedNativeViewKeepsOriginalPhysicalIdentity
+[       OK ] AppleCopyRecording.ReadonlyImportedNativeViewKeepsOriginalPhysicalIdentity (3 ms)
+[----------] 3 tests from AppleCopyRecording (9 ms total)
+
+[----------] Global test environment tear-down
+[==========] 8 tests from 2 test suites ran. (78 ms total)
+[  PASSED  ] 8 tests.

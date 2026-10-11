@@ -1,0 +1,58 @@
+{
+  "product_candidate": "5b3efe2cce3fcab2bc55cf749af2d862a786ef25",
+  "test_candidate": "de11365a921a40b80d111f135702d74838f054df",
+  "test_tree": "255e087c40c2eb7f22ee6ba7eb54623c7b863854",
+  "scope": "F2 Vulkan unknown fence/drain observed and abandoned branches plus original copy regression; product unchanged",
+  "build": "C:\\h7\\w-vulkan-native",
+  "compiler": "C:/Program Files/Microsoft Visual Studio/18/Enterprise/VC/Tools/MSVC/14.50.35717/bin/Hostx64/x64/cl.exe",
+  "parallel": 1,
+  "stages": [
+    {
+      "name": "identity",
+      "command": [
+        "nvidia-smi",
+        "--query-gpu=name,uuid,driver_version",
+        "--format=csv,noheader"
+      ],
+      "pid": 15852,
+      "state": "terminal",
+      "available_bytes": 37580427264,
+      "log": "identity.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "fc0da0dd7e8d2c9d1419aa11e4801acb7158a0e185c28122c0fd6292a65f4044"
+    },
+    {
+      "name": "build",
+      "command": [
+        "C:\\Program Files\\CMake\\bin\\cmake.EXE",
+        "--build",
+        "C:\\h7\\w-vulkan-native",
+        "--target",
+        "hyle_compute_route_vulkan_test",
+        "--parallel",
+        "1"
+      ],
+      "pid": 72112,
+      "state": "terminal",
+      "available_bytes": 37579530240,
+      "log": "build.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "5f14622c8dd84c2e2e53bc918e007879efb75ae0369c4afb8d7e37b57ba40f5c"
+    },
+    {
+      "name": "native",
+      "command": [
+        "C:\\h7\\w-vulkan-native\\bin\\hyle_compute_route_vulkan_test.exe",
+        "--gtest_filter=VulkanCopyProgram.*:VulkanCopyRecording.*",
+        "--gtest_output=xml:C:\\public\\project-hyle\\hyle\\.scratch\\foundation-f2\\native-risk-windows-de11365a9\\native.xml"
+      ],
+      "pid": 96172,
+      "state": "terminal",
+      "available_bytes": 44992434176,
+      "log": "native.log",
+      "verdict": "TIMEOUT"
+    }
+  ]
+}

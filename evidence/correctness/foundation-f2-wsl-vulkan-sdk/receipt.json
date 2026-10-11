@@ -2,7 +2,7 @@
   "schema_version": 1,
   "product_candidate": "5b3efe2cce3fcab2bc55cf749af2d862a786ef25",
   "source_manifest": "HYLE full canonical Git archive\nGit commit: 5b3efe2cce3fcab2bc55cf749af2d862a786ef25\nGit tree: 7023c5780a7c99b10f0b41a4e27f3bf5899dea04\n",
-  "scope": "WSL CPU/Vulkan relocated installed static/shared build, seven installed headers, negative header/route diagnostics and actual ldd resolution. Current software-only Vulkan does not qualify GPU math/native execution. Source-embedded build and final component/fault gates remain unproven.",
+  "scope": "WSL CPU/Vulkan relocated installed static/shared build, seven installed headers, negative header/route diagnostics and actual ldd resolution. Current software-only Vulkan does not qualify GPU math/native execution. Source-embedded ordinary consumer build also PASS. GPU execution and final component/fault gates remain unproven.",
   "vulkan_qualification": "../foundation-f2-wsl-route-qualification/receipt.json",
   "profiles": [
     {
@@ -143,5 +143,31 @@
         }
       }
     }
-  ]
+  ],
+  "source": {
+    "verdict": "PASS_APPLICABLE_BUILD_NO_QUALIFIED_GPU",
+    "receipt": "source/job.json",
+    "math": {
+      "verdict": "NOT_RUN_NO_QUALIFIED_GPU",
+      "reason": "Actual loader enumerated only llvmpipe software CPU device"
+    },
+    "files": {
+      "build.log": {
+        "path": "source/build.log",
+        "sha256": "13f666bb82550029bf6996ec3fdb492de52d2fbbba0815cfbe5e7e5cc757c505"
+      },
+      "configure.log": {
+        "path": "source/configure.log",
+        "sha256": "c84341602007b60e848c3f8721d98c1f599d2e16cc39e61f109d3892f0337278"
+      },
+      "dynamic-deps.log": {
+        "path": "source/dynamic-deps.log",
+        "sha256": "6b9dc3d566501e8abbadc2056191e97cee96532a2be9090f20c493026863d76c"
+      },
+      "job.json": {
+        "path": "source/job.json",
+        "sha256": "7f9a00ede332c667ce45df9a8ab65ee3e2c71166949e0ee83f7b6d75e8258239"
+      }
+    }
+  }
 }

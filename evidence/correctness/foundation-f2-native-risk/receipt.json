@@ -1,0 +1,117 @@
+{
+  "schema_version": 1,
+  "product_candidate": "5b3efe2cce3fcab2bc55cf749af2d862a786ef25",
+  "scope": "F2 Windows and Air Vulkan unknown observation/actual retirement, Air Apple late original native failure, and existing native copy regressions. Original Windows fixture TIMEOUT retained; corrected tests pass. No product changes or GPU math requalification claimed.",
+  "profiles": [
+    {
+      "profile": "windows-initial",
+      "test_commit": "de11365a921a40b80d111f135702d74838f054df",
+      "verdict": "TIMEOUT",
+      "receipt": "windows-initial/job.json",
+      "files": {
+        "build.log": {
+          "path": "windows-initial/build.log",
+          "sha256": "5f14622c8dd84c2e2e53bc918e007879efb75ae0369c4afb8d7e37b57ba40f5c"
+        },
+        "identity.log": {
+          "path": "windows-initial/identity.log",
+          "sha256": "fc0da0dd7e8d2c9d1419aa11e4801acb7158a0e185c28122c0fd6292a65f4044"
+        },
+        "job.json": {
+          "path": "windows-initial/job.json",
+          "sha256": "ddd49de590a5914bb92e32483b25cbdfcf017f3f9f309841a4a65d8616104356"
+        },
+        "native.log": {
+          "path": "windows-initial/native.log",
+          "sha256": "32f3d79a0d9850da102dd7ae62069d44829dbec2e3c0f0b0e555eb0f27ba4f96"
+        }
+      }
+    },
+    {
+      "profile": "windows",
+      "test_commit": "8c27d8501b3c5550bbb2711ec60a60923ef74b3a",
+      "verdict": "PASS",
+      "receipt": "windows/job.json",
+      "files": {
+        "build.log": {
+          "path": "windows/build.log",
+          "sha256": "fcbc00fd806f99e9b4607e764c5cab52562f0cf3850fa1161a4b0759cbd67a08"
+        },
+        "identity.log": {
+          "path": "windows/identity.log",
+          "sha256": "fc0da0dd7e8d2c9d1419aa11e4801acb7158a0e185c28122c0fd6292a65f4044"
+        },
+        "job.json": {
+          "path": "windows/job.json",
+          "sha256": "bea8ada3a658749ffad22e6f354ad755efbf22bf57d33ca06d3f37e822a3e73b"
+        },
+        "native.log": {
+          "path": "windows/native.log",
+          "sha256": "1c118ecfc0ac68b7225164c9cf2d02279b0c47e2f2bb5feae26f6a86eaf80935"
+        },
+        "native.xml": {
+          "path": "windows/native.xml",
+          "sha256": "e628bd61bb191057f994c46a8c23eeae12ab52a80f96d673fb8ae22ae0885437"
+        }
+      }
+    },
+    {
+      "profile": "air-vulkan",
+      "test_commit": "8c27d8501b3c5550bbb2711ec60a60923ef74b3a",
+      "verdict": "PASS",
+      "receipt": "air-vulkan/job.json",
+      "test_count": 10,
+      "files": {
+        "build.log": {
+          "path": "air-vulkan/build.log",
+          "sha256": "2a06b763fe7237718d238a7a183c73760e76f9512ecc7c939b493e3ce5192ee2"
+        },
+        "configure.log": {
+          "path": "air-vulkan/configure.log",
+          "sha256": "d9087551f8fe3d21e1dc45f7b07db6b1ea2bf4c40dc67dbc0472f19175322042"
+        },
+        "job.json": {
+          "path": "air-vulkan/job.json",
+          "sha256": "af2023e3f641680ec9549c52fb3653bc4ba24b0396087603c18fce4e98285d20"
+        },
+        "native.log": {
+          "path": "air-vulkan/native.log",
+          "sha256": "36c3a1938723fd2ae6fb6dce0da815c7923b779ba80227e513c78ddce749d904"
+        },
+        "native.xml": {
+          "path": "air-vulkan/native.xml",
+          "sha256": "855bb6a1e2b9fccd0bc730fd23d6c1e1b500ff268dd6e0c7482d8d50571e998b"
+        }
+      }
+    },
+    {
+      "profile": "air-apple",
+      "test_commit": "8c27d8501b3c5550bbb2711ec60a60923ef74b3a",
+      "verdict": "PASS",
+      "receipt": "air-apple/job.json",
+      "test_count": 8,
+      "files": {
+        "build.log": {
+          "path": "air-apple/build.log",
+          "sha256": "1324d85d653f75a1afb5c807b34a4ca5448adf57a21584d70879ab04f0e644f1"
+        },
+        "configure.log": {
+          "path": "air-apple/configure.log",
+          "sha256": "f684c771f8696b806b33cd645ff471b257267199870fb1eac6f928327e7841f7"
+        },
+        "job.json": {
+          "path": "air-apple/job.json",
+          "sha256": "ede4a6c6808b85a947b3436c6d44fd54669d9defcd4b846446d245cd05466b64"
+        },
+        "native.log": {
+          "path": "air-apple/native.log",
+          "sha256": "e5e0b89e6e0c1159f1fd8d8481c65e4eb696d4b44b544186ec27582b355e36fe"
+        },
+        "native.xml": {
+          "path": "air-apple/native.xml",
+          "sha256": "b575384647fdf9f063b29584f7a605580fc5be885009c32e303fa020766633fb"
+        }
+      }
+    }
+  ]
+}

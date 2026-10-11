@@ -402,6 +402,12 @@ native树build1/test1/4GiB，build1800/test120；Air运行前读实际身份，�
 测试进程120秒TIMEOUT；原日志保留。修正fixture为非阻塞collect诊断及独立观察线程的实际
 wait/drain握手：持续unknown期间确认wait未返回、uses仍在，恢复原观察后才join/退休并保留
 首错。pending output按现有Unavailable合同断言；不改变产品、不放宽门、不重置预算。
+修正测试点8c27d8501在Windows Vulkan10项及Air Vulkan10项/Apple8项全部PASS，完整初始失败/
+实际设备、test SHA与原日志见[故障收据](../../../../evidence/correctness/foundation-f2-native-risk/receipt.json)。WSL source普通consumer构建也补PASS，
+GPU软件设备数学仍未运行。剩余selector component-contract使用原中央脚本的scratch副本，
+仅将四处固定--parallel 2改为1以服从本卡内存合同，保存原/副本SHA及转换计数；不改公共脚本/
+产品。在WSL精确5b3efe2cc源码运行原全部contract assertions，专用可丢弃scratch root，整体
+1800秒上限/build1/test1、实际GCC14身份与4GiB检查；不扩建仪器或重置故障预算。
 
 WSL当前Vulkan loader实际仅枚举llvmpipe，按原卡条件记NO_QUALIFIED_GPU，GPU数学/native不运行。
 原CPU/Vulkan installed static/shared的构建、真实迁址、普通consumer编译、七安装头/Vulkan ON、
