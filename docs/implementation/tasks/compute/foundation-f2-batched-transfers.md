@@ -1,6 +1,7 @@
 # F2：准备后的原生批量范围搬运
 
-> 状态：四owner均为CANDIDATE；CUDA终态释放delta已固定于5b3efe2cc，完整资格仍待集中矩阵。
+> 状态：compute因ordinary prepare硬错误分类反例退回AUDITED；另三owner保持CANDIDATE。
+> CUDA终态释放delta固定于5b3efe2cc；完整资格仍待矩阵及当前cold分类delta。
 > 实施前[原子/复合接缝源码审计](foundation-f2-source-audit.md)为定界输入，未授权产品修改或签运行资格。
 > component / owner：拟 compute、compute_backend_cpu/cuda、
 > compute_route_cpu/cuda/apple/vulkan；只有普通 Graph 需要本批 native binding 接缝时再绑定对应 owner。
@@ -8,6 +9,11 @@
 ## 共同执行合同
 
 ### 固定candidate
+
+2026-10-11完整CPU/common扩展构建PASS、compute factor PASS，但原CPU backend两项准备错误
+用例实际FAIL：明确kError/Unimplemented被外层当safe decline继续fallback。仅compute按
+[cold分类delta](foundation-f2-prepare-error-classification.md)退回AUDITED，原31候选未能通过
+该ordinary旅程；其他三owner及既有copy证据保留。调查/FIX预算不重置，不回避失败或提前F3。
 
 CUDA释放delta已完成Windows/WSL实际反例及正常资源精准回归，backend重新进入CANDIDATE，
 绑定`5b3efe2cce3fcab2bc55cf749af2d862a786ef25`；原三个owner仍绑定03162add0且source scope未改。

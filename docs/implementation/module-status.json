@@ -270,10 +270,9 @@
     },
     {
       "module": "compute",
-      "state": "CANDIDATE",
-      "candidate": "03162add05d3e26fe3314c6bcdaafa5a277a3a76",
-      "record": "docs/implementation/tasks/compute/foundation-f2-batched-transfers.md",
-      "summary": "F2 CANDIDATE：原七FIX的四路线prepared copy/phase/ready、native依赖与租约交接、普通BF16/原编码量化Direct/Graph接线已固定；首轮数学与Windows CUDA故障取证，剩余平台/SDK/sanitizer/新头与P0终审红队按有限矩阵执行，尚未CLOSED。"
+      "state": "AUDITED",
+      "record": "docs/implementation/tasks/compute/foundation-f2-prepare-error-classification.md",
+      "summary": "F2终审AUDITED delta：既有ordinary prepare将provider硬Unimplemented误当safe decline的实际反例已定界；仅修cold resource-match与hard error分类，其他三owner候选保持，完整资格仍未CLOSED。"
     },
     {
       "module": "graph",

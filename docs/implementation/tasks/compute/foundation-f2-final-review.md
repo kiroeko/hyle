@@ -1,6 +1,7 @@
 # F2 固定候选终审输入
 
 状态：REVIEW_IN_PROGRESS；本页由[F2活动卡](foundation-f2-batched-transfers.md)纳入，不是terminal。
+扩展CPU backend实际反例已使compute退回AUDITED；见[cold分类delta](foundation-f2-prepare-error-classification.md)。
 产品snapshot为5b3efe2cce3fcab2bc55cf749af2d862a786ef25；compute/Apple/Vulkan的03162add0
 owner scope不变，只有CUDA按[终态delta](foundation-f2-cuda-terminal-cleanup.md)重新固定。
 候选后的测试维护与证据不授权修改产品。F3仍READY_FOR_SCOPE，未登记或实施。
@@ -32,8 +33,9 @@ owner scope不变，只有CUDA按[终态delta](foundation-f2-cuda-terminal-clean
 | R-F2-05 | 环境/工具资格 | WSL实际只有llvmpipe；CUDA设备可用不能代签Vulkan GPU | [真实枚举](../../../../evidence/correctness/foundation-f2-wsl-route-qualification/receipt.json)NO_QUALIFIED_GPU；GPU运行未运行，适用交付单独通过 |
 | R-F2-06 | 环境/fixture | Windows旧MSVC中文include prefix与英文输出不匹配；WSL继承Windows CUDA_PATH；scratch cache恢复遗留说明导致parse FAIL | [Windows SDK](../../../../evidence/correctness/foundation-f2-windows-vulkan-sdk/receipt.json)与[component合同](../../../../evidence/correctness/foundation-f2-component-contract/receipt.json)保留有界恢复、真实deps/工具链与全部失败；公共工具/产品未改 |
 | R-F2-07 | 尚未完成的工程门 | selector中央图扩展结果包含factor、逐头与其他产品delivery；当前仅部分门有对应实际证据 | UNPROVEN；继续原门，不写CLOSED，不提前F3 |
+| R-F2-08 | 产品correctness | 原ordinary prepare将provider kError/Unimplemented当作resource miss继续fallback，两项既有反例FAIL；纯resource-match必须与明确hard error分开 | compute依法退回AUDITED；固定cold分类delta，其他owner不重开 |
 
 源代码复核没有把首错、unknown、逻辑metadata归零或旧证据改写为全局成功。当前未发现新增
-公共语义/算法/布局改动的依据；如果剩余实际门产生具体产品反例，仍按owner协议裁决。
+公共API/布局改动的依据；已发现的cold错误分类反例只按上述固定delta修正，其他实际反例仍按owner协议裁决。
 本页不以测试数量或文档齐全替代工程关闭。最终terminal需补完整风险矩阵、七门、统一LOC与
 selected/skipped裁决，并在registry依法从CANDIDATE进入CLOSED后才启动F3。
