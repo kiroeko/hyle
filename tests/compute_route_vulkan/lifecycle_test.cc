@@ -1,4 +1,6 @@
 #include "hyle/compute/vulkan.h"
+#include "hyle/compute/vulkan_memory.h"
+#include "hyle/mem/stats.h"
 
 #include <array>
 #include <atomic>
@@ -136,6 +138,182 @@ struct NativeBoundary final {
     return active->original.InvalidateMappedMemoryRanges(device, count, ranges);
   }
 };
+
+struct DrainLeaseContext final {
+  v::Context &context;
+  ~DrainLeaseContext() { context.close().IgnoreError(); }
+};
+
+TEST(VulkanLeaseLifetime,
+     CancellationAndAbandonmentKeepImportedOwnerUntilDrain) {
+  auto stats =
+      hyle::mem::StatsAllocator::create(hyle::mem::system_allocator()).value();
+  {
+    auto context = t::context().value();
+    auto memory =
+        v::MemoryResource::create(context, v::MemoryKind::kDevice).value();
+    const auto desc = t::dense({2, 2});
+    auto input = t::upload(context, desc, t::data(4, 1)).value();
+    std::weak_ptr<const void> owner = input.native_owner();
+    auto source =
+        memory.import_readonly(input, {.allocator = stats.get()}).value();
+    auto program = v::prepare(context, c::MatMul{}, desc, desc).value();
+    NativeBoundary boundary(context);
+    DrainLeaseContext drain{context};
+    auto first =
+        v::LeasedInvocation::create(program, memory, {.allocator = stats.get()})
+            .value();
+    auto next =
+        v::LeasedInvocation::create(program, memory, {.allocator = stats.get()})
+            .value();
+    ASSERT_TRUE(first
+                    .bind(std::array{v::LeasedInput{desc, source},
+                                     v::LeasedInput{desc, source}})
+                    .ok());
+    ASSERT_TRUE(next.bind(std::array{v::LeasedInput{desc, source},
+                                     v::LeasedInput{desc, source}})
+                    .ok());
+    auto cancelled = first.submit().value();
+    ASSERT_TRUE(cancelled.request_cancel().ok());
+    auto failure = cancelled.wait();
+    ASSERT_FALSE(failure);
+    EXPECT_TRUE(failure.error().IsCancelled());
+    EXPECT_TRUE(first.drain().IsCancelled());
+    EXPECT_FALSE(first.in_flight());
+    cancelled = {};
+    boundary.waits.store(0);
+    auto abandoned = next.submit().value();
+    abandoned = {};
+    first = {};
+    next = {};
+    program = {};
+    source.reset();
+    input = {};
+    EXPECT_EQ(boundary.waits.load(), 0);
+    EXPECT_FALSE(owner.expired());
+    EXPECT_TRUE(context.close().ok());
+    EXPECT_TRUE(owner.expired());
+  }
+  EXPECT_TRUE(stats.balanced());
+}
+
+TEST(VulkanLeaseLifetime,
+     RejectedSuffixRetainsLeasesAndFirstErrorThroughNativePrefix) {
+  for (bool abandon : {false, true}) {
+    SCOPED_TRACE(abandon);
+    auto stats =
+        hyle::mem::StatsAllocator::create(hyle::mem::system_allocator())
+            .value();
+    {
+      auto context = t::context().value();
+      auto memory =
+          v::MemoryResource::create(context, v::MemoryKind::kDevice).value();
+      const auto desc = t::dense({17, 2048});
+      auto input = t::upload(context, desc, t::data(17 * 2048, 1)).value();
+      std::weak_ptr<const void> owner = input.native_owner();
+      auto source =
+          memory.import_readonly(input, {.allocator = stats.get()}).value();
+      // The same original native/managed/native plan as the established prefix
+      // fixture. Only binding/admission now goes through the public lease
+      // owner.
+      d::Plan plan;
+      plan.values.assign(4, {desc, {}});
+      plan.inputs = {0};
+      plan.outputs = {3};
+      plan.steps = {{c::Operation(c::Unary{c::UnaryKind::kRelu}),
+                     {0},
+                     {1},
+                     {},
+                     {1, 1, 1},
+                     {}},
+                    {c::Operation(c::RmsNorm{}), {1}, {2}, {}, {1, 1, 1}, {}},
+                    {c::Operation(c::Unary{c::UnaryKind::kRelu}),
+                     {2},
+                     {3},
+                     {},
+                     {1, 1, 1},
+                     {}}};
+      d::PlanFacts facts;
+      auto program = d::prepare_plan(context, plan, &facts).value();
+      ASSERT_EQ(facts.native_dispatch_count, 2U);
+      ASSERT_EQ(facts.managed_region_count, 1U);
+      NativeBoundary boundary(context);
+      DrainLeaseContext drain{context};
+      auto slot = v::LeasedInvocation::create(program, memory,
+                                              {.allocator = stats.get()})
+                      .value();
+      ASSERT_TRUE(slot.bind(std::array{v::LeasedInput{desc, source}}).ok());
+      boundary.fail_submit_on = 2;
+      auto work = slot.submit();
+      ASSERT_TRUE(work) << work.error().message();
+      ASSERT_EQ(boundary.submissions, 2);
+      ASSERT_NE(d::Access::runtime(context)->pending, nullptr);
+      if (abandon) {
+        work = c::OwnedResult<v::Results>{};
+        slot = {};
+        program = {};
+        source.reset();
+        input = {};
+        EXPECT_EQ(boundary.waits.load(), 0);
+        EXPECT_FALSE(owner.expired());
+        boundary.fail_idle = true;
+        EXPECT_TRUE(context.close().IsResourceExhausted());
+        EXPECT_NE(d::Access::runtime(context)->pending, nullptr);
+        EXPECT_FALSE(owner.expired());
+        EXPECT_TRUE(context.close().IsResourceExhausted());
+        EXPECT_EQ(d::Access::runtime(context)->pending, nullptr);
+        EXPECT_TRUE(owner.expired());
+      } else {
+        auto failed = work->wait();
+        ASSERT_FALSE(failed);
+        EXPECT_TRUE(failed.error().IsResourceExhausted());
+        EXPECT_FALSE(work->result());
+        EXPECT_TRUE(slot.drain().IsResourceExhausted());
+        EXPECT_FALSE(slot.in_flight());
+        EXPECT_FALSE(slot.submit());
+      }
+    }
+    EXPECT_TRUE(stats.balanced());
+  }
+}
+
+TEST(VulkanLeaseLifetime,
+     ZeroColdMetadataQuotaRejectsThenSameReadyImportComputes) {
+  auto stats =
+      hyle::mem::StatsAllocator::create(hyle::mem::system_allocator()).value();
+  {
+    auto context = t::context().value();
+    auto memory =
+        v::MemoryResource::create(context, v::MemoryKind::kDevice).value();
+    const auto desc = t::dense({2, 2});
+    const auto values = t::data(4, 1);
+    auto input = t::upload(context, desc, values).value();
+    auto source =
+        memory.import_readonly(input, {.allocator = stats.get()}).value();
+    auto program = v::prepare(context, c::MatMul{}, desc, desc).value();
+    DrainLeaseContext drain{context};
+    hyle::mem::QuotaAllocator quota(stats.get(), 0);
+    auto denied = v::LeasedInvocation::create(program, memory,
+                                              {.allocator = quota.get()});
+    ASSERT_FALSE(denied);
+    EXPECT_TRUE(denied.error().IsResourceExhausted());
+    EXPECT_TRUE(source.valid());
+    auto healthy =
+        v::LeasedInvocation::create(program, memory, {.allocator = stats.get()})
+            .value();
+    ASSERT_TRUE(healthy
+                    .bind(std::array{v::LeasedInput{desc, source},
+                                     v::LeasedInput{desc, source}})
+                    .ok());
+    auto done = healthy.submit().value();
+    auto result = done.wait();
+    ASSERT_TRUE(result) << result.error().message();
+    EXPECT_EQ(t::read(context, result->get()->tensors()[0]).value(),
+              t::matmul(values, values, 2, 2, 2));
+    EXPECT_TRUE(healthy.drain().ok());
+  }
+  EXPECT_TRUE(stats.balanced());
+}
 
 TEST(VulkanLifetime, IreeCheckedScanCopyFailuresDrainAcceptedPrefix) {
   for (int rejected_copy : {1, 2, 3}) {

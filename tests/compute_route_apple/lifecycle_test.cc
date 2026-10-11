@@ -1,4 +1,5 @@
 #include "hyle/compute/apple.h"
+#include "hyle/compute/apple_memory.h"
 
 #include <array>
 #include <atomic>
@@ -99,6 +100,168 @@ prepare(const a::Context &context,
             std::make_shared<Checkpoint>(stream, boundary), {prefix})};
       },
       specs);
+}
+
+struct DrainLeaseBoundary final {
+  a::Context &context;
+  std::shared_ptr<NativeBoundary> boundary;
+  ~DrainLeaseBoundary() {
+    boundary->release();
+    context.close().IgnoreError();
+  }
+};
+
+TEST(AppleLeaseLifetime,
+     QueuedCancellationAndAbandonmentRetireTwoNativeBlocks) {
+  auto stats =
+      hyle::mem::StatsAllocator::create(hyle::mem::system_allocator()).value();
+  {
+    auto boundary = std::make_shared<NativeBoundary>();
+    auto context = a::Context::create().value();
+    auto memory = a::MemoryResource::create(context).value();
+    auto pool =
+        c::LeasePool::create(memory.ref(), 1024,
+                             {.max_blocks = 2, .allocator = stats.get()})
+            .value();
+    DrainLeaseBoundary drain{context, boundary};
+    const auto desc = c::TensorDesc::dense(c::DataType::kFloat32,
+                                           std::array<std::int64_t, 1>{4})
+                          .value();
+    auto first_write = pool.allocate(16).value(),
+         next_write = pool.allocate(16).value();
+    const std::array<float, 4> a_values{1, 2, 3, 4}, b_values{5, 6, 7, 8};
+    ASSERT_TRUE(
+        first_write.view()->write(std::as_bytes(std::span(a_values))).ok());
+    ASSERT_TRUE(
+        next_write.view()->write(std::as_bytes(std::span(b_values))).ok());
+    auto first_source = first_write.publish().value(),
+         next_source = next_write.publish().value();
+    auto program = prepare(context, boundary).value();
+    auto first =
+        a::LeasedInvocation::create(program, memory, {.allocator = stats.get()})
+            .value();
+    auto next =
+        a::LeasedInvocation::create(program, memory, {.allocator = stats.get()})
+            .value();
+    ASSERT_TRUE(
+        first.bind(std::array{a::LeasedInput{desc, first_source}}).ok());
+    ASSERT_TRUE(next.bind(std::array{a::LeasedInput{desc, next_source}}).ok());
+    boundary->arm();
+    auto active = first.submit().value();
+    ASSERT_TRUE(boundary->entered());
+    auto queued = next.submit().value();
+    ASSERT_TRUE(queued.request_cancel().ok());
+    EXPECT_FALSE(queued.result());
+    EXPECT_EQ(pool.stats().active_uses, 2U);
+    active = {};
+    first = {};
+    first_source.reset();
+    next_source.reset();
+    EXPECT_EQ(pool.stats().live_blocks, 2U);
+    EXPECT_FALSE(pool.allocate(16));
+    boundary->release();
+    auto cancelled = queued.wait();
+    ASSERT_FALSE(cancelled);
+    EXPECT_TRUE(cancelled.error().IsCancelled());
+    EXPECT_TRUE(next.drain().IsCancelled());
+    EXPECT_FALSE(next.in_flight());
+    queued = {};
+    next = {};
+    program = {};
+    EXPECT_TRUE(context.close().ok());
+    EXPECT_EQ(pool.stats().active_uses, 0U);
+    EXPECT_EQ(pool.stats().live_blocks, 0U);
+    EXPECT_TRUE(pool.allocate(16));
+    EXPECT_TRUE(pool.close().ok());
+  }
+  EXPECT_TRUE(stats.balanced());
+}
+
+TEST(AppleLeaseLifetime,
+     LateNativeFailureCannotReleaseAbandonedLeaseBeforePrefixDrain) {
+  auto stats =
+      hyle::mem::StatsAllocator::create(hyle::mem::system_allocator()).value();
+  {
+    auto boundary = std::make_shared<NativeBoundary>();
+    auto context = a::Context::create().value();
+    auto memory = a::MemoryResource::create(context).value();
+    auto pool =
+        c::LeasePool::create(memory.ref(), 512,
+                             {.max_blocks = 1, .allocator = stats.get()})
+            .value();
+    DrainLeaseBoundary drain{context, boundary};
+    const auto desc = c::TensorDesc::dense(c::DataType::kFloat32,
+                                           std::array<std::int64_t, 1>{4})
+                          .value();
+    auto write = pool.allocate(16).value();
+    const std::array<float, 4> values{1, 2, 3, 4};
+    ASSERT_TRUE(write.view()->write(std::as_bytes(std::span(values))).ok());
+    auto source = write.publish().value();
+    auto program = prepare(context, boundary).value();
+    auto run =
+        a::LeasedInvocation::create(program, memory, {.allocator = stats.get()})
+            .value();
+    ASSERT_TRUE(run.bind(std::array{a::LeasedInput{desc, source}}).ok());
+    boundary->arm(true);
+    auto done = run.submit().value();
+    ASSERT_TRUE(boundary->entered());
+    EXPECT_FALSE(done.result());
+    done = {};
+    run = {};
+    program = {};
+    source.reset();
+    EXPECT_EQ(pool.stats().active_uses, 1U);
+    EXPECT_EQ(pool.stats().live_blocks, 1U);
+    EXPECT_FALSE(pool.allocate(16));
+    boundary->release();
+    auto closed = context.close();
+    EXPECT_TRUE(closed.IsInternal());
+    EXPECT_NE(closed.message().find("injected MLX native boundary failure"),
+              std::string_view::npos);
+    EXPECT_EQ(pool.stats().active_uses, 0U);
+    EXPECT_EQ(pool.stats().live_blocks, 0U);
+  }
+  EXPECT_TRUE(stats.balanced());
+}
+
+TEST(AppleLeaseLifetime, ZeroColdMetadataQuotaRejectsThenSameSourceComputes) {
+  auto stats =
+      hyle::mem::StatsAllocator::create(hyle::mem::system_allocator()).value();
+  {
+    auto boundary = std::make_shared<NativeBoundary>();
+    auto context = a::Context::create().value();
+    auto memory = a::MemoryResource::create(context).value();
+    auto pool =
+        c::LeasePool::create(memory.ref(), 512,
+                             {.max_blocks = 1, .allocator = stats.get()})
+            .value();
+    DrainLeaseBoundary drain{context, boundary};
+    const auto desc = c::TensorDesc::dense(c::DataType::kFloat32,
+                                           std::array<std::int64_t, 1>{4})
+                          .value();
+    auto write = pool.allocate(16).value();
+    const std::array<float, 4> values{1, 2, 3, 4};
+    ASSERT_TRUE(write.view()->write(std::as_bytes(std::span(values))).ok());
+    auto source = write.publish().value();
+    auto program = prepare(context, boundary).value();
+    hyle::mem::QuotaAllocator quota(stats.get(), 0);
+    auto denied = a::LeasedInvocation::create(program, memory,
+                                              {.allocator = quota.get()});
+    ASSERT_FALSE(denied);
+    EXPECT_TRUE(denied.error().IsResourceExhausted());
+    EXPECT_TRUE(source.valid());
+    auto run =
+        a::LeasedInvocation::create(program, memory, {.allocator = stats.get()})
+            .value();
+    ASSERT_TRUE(run.bind(std::array{a::LeasedInput{desc, source}}).ok());
+    auto done = run.submit().value();
+    auto result = done.wait();
+    ASSERT_TRUE(result) << result.error().message();
+    EXPECT_FLOAT_EQ(result->get()->arrays()[0].data<float>()[3], 16.f);
+    EXPECT_TRUE(run.drain().ok());
+    EXPECT_EQ(pool.stats().active_uses, 0U);
+  }
+  EXPECT_TRUE(stats.balanced());
 }
 
 TEST(AppleLifetime, QueuedCancellationAndAbandonmentDrainBeforeClose) {
