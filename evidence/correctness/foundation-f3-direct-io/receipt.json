@@ -1,0 +1,50 @@
+{
+  "schema_version": 1,
+  "product_commit": "97858fbc88a6b5a87f109290b956eeaeee632dd2",
+  "fixture_commit": "2f9c8200f9a0c219d2dfc52cfe7f2ed20e01329d",
+  "runs": [
+    {
+      "machine": "Windows CPU",
+      "tests_passed": 13,
+      "source_or_fixture": "2f9c8200f9a0c219d2dfc52cfe7f2ed20e01329d",
+      "identity": "C:/Program Files/Microsoft Visual Studio/18/Enterprise/VC/Tools/MSVC/14.50.35717/bin/Hostx64/x64/cl.exe"
+    },
+    {
+      "machine": "WSL asan",
+      "tests_passed": 14,
+      "source_or_fixture": "2f9c8200f9a0c219d2dfc52cfe7f2ed20e01329d",
+      "identity": null
+    },
+    {
+      "machine": "WSL ubsan",
+      "tests_passed": 14,
+      "source_or_fixture": "2f9c8200f9a0c219d2dfc52cfe7f2ed20e01329d",
+      "identity": null
+    },
+    {
+      "machine": "WSL tsan",
+      "tests_passed": 14,
+      "source_or_fixture": "2f9c8200f9a0c219d2dfc52cfe7f2ed20e01329d",
+      "identity": null
+    },
+    {
+      "machine": "Air CPU",
+      "tests_passed": 14,
+      "source_or_fixture": "2f9c8200f9a0c219d2dfc52cfe7f2ed20e01329d",
+      "identity": {
+        "hardware": "Mac16,12",
+        "os": "ProductName:\t\tmacOS\nProductVersion:\t\t27.0.1\nBuildVersion:\t\t26A434",
+        "compiler": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin"
+      }
+    }
+  ],
+  "direct_io": "Actual Windows/Linux original kDirect/non-buffered files. Unaligned 8191-byte tail rejected before consuming writer or IO/native calls; 4KiB stage reads 8KiB, writes a second initially-zero file, exact byte oracle passes.",
+  "macos": "Actual original Unimplemented rejection observed; portable direct-IO data journey NOT_APPLICABLE by original IO contract, not a native direct data PASS.",
+  "original_failures": "Private Windows test parent duplicated GoogleTest add_subdirectory and failed before tests; same-tree configure corrected to add it once. Raw failure retained, no product/tool rewrite or budget reset.",
+  "limits": "No new product changes, driver-private residency or throughput promise. Original sanitizer flags and twelve/thirteen prior risks preserved.",
+  "archive": {
+    "path": "evidence/correctness/foundation-f3-direct-io/raw-results.zip",
+    "sha256": "08743e1b1cbe897ae28410bff47062d003e2d6da02cae9469ebbd964d2aea548"
+  },
+  "verdict": "PASS_F3_EXPLICIT_DIRECT_IO_AND_COMMON_RISK_INCREMENT_ONLY"
+}

@@ -620,6 +620,14 @@ Windows shared正在运行，WSL软件Vulkan两格及最终source复验/矩阵/�
 direct合同，只核对原Unimplemented，不把该平台写成direct数据旅程PASS。
 本提交仅测试，产品candidate97858fbc8不变；运行前尚未证明，不新增FIX或重跑全库。
 
+[direct IO实际收据](../../../../evidence/correctness/foundation-f3-direct-io/receipt.json)现签Windows
+十三项、WSL ASan/UBSan/TSan各十四项及Air十四项PASS；Win/Linux真实对齐读8KiB并回写另一个
+原为零的临时文件逐byte符合，tail错误接纳前原样拒绝。Air实际观察原Unimplemented，
+macOS direct数据旅程明确NOT_APPLICABLE。私有Windows父工程重复GoogleTest导致的原configure
+FAIL保留，同树只修接线，不改产品、公共工具或重置已用预算。
+最终证据审核同时记录旧私有WSL增量runner残留的3b product label：实际full-source manifest、
+候选97858fbc8与共同TU SHA才是产品身份，原raw metadata保留，当前收据明确更正，不伪造旧执行。
+
 候选反证、原suffix FAIL/一次有限纠正及尚未完成交付边界见[红队记录](foundation-f3-final-review.md)。
 当前overall仍INCONCLUSIVE，不能因已通过若干安装格把F3写成CLOSED。
 

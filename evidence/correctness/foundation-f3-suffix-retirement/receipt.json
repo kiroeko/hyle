@@ -77,5 +77,6 @@
     "Windows CUDA new suffix test directly",
     "Current source/installed math and new headers/delivery after correction",
     "Final candidate/red team/all gates/closure"
-  ]
+  ],
+  "raw_metadata_note": "Legacy private WSL delta runner retained a stale product_commit label 3b in raw job.json. Actual full candidate/source_manifest 97858fbc8, archived source binding and changed TU SHA are authoritative; receipt names actual product. Original raw metadata preserved, no test/revision substitution."
 }
