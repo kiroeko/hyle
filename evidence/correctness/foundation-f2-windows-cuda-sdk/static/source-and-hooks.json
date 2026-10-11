@@ -1,0 +1,41 @@
+{
+  "product_candidate": "5b3efe2cce3fcab2bc55cf749af2d862a786ef25",
+  "scope": "updated Windows source/static ordinary math and shipping hook symbols after CUDA terminal delta",
+  "stages": [
+    {
+      "name": "source-math",
+      "command": [
+        "C:\\h7\\w-cpu-cuda\\selected-graph\\source-build\\hyle_f2_batched_transfers.exe"
+      ],
+      "exit_code": 0,
+      "verdict": "PASS",
+      "log": "source-math.log",
+      "sha256": "9739d5b5f4db7a3ad16cbedce815e6ee32693267505720c1b751eaced7ae137e"
+    },
+    {
+      "name": "static-symbols",
+      "command": [
+        "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\bin\\Hostx64\\x64\\dumpbin.exe",
+        "/symbols",
+        "C:\\h7\\w-cpu-cuda\\selected-graph\\source-build\\hyle\\src\\compute_backend_cuda\\hyle_compute_backend_cuda.lib"
+      ],
+      "exit_code": 0,
+      "verdict": "PASS",
+      "log": "static-symbols.log",
+      "sha256": "813a649b8a430be702f53d920ce18dd7fd132b181de03281b1cfa5a96de6fa73"
+    },
+    {
+      "name": "shared-exports",
+      "command": [
+        "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\bin\\Hostx64\\x64\\dumpbin.exe",
+        "/exports",
+        "C:/h7/w-cuda/selected-graph/shared-sdk-build/bin/hyle_compute_backend_cuda.dll"
+      ],
+      "exit_code": 0,
+      "verdict": "PASS",
+      "log": "shared-exports.log",
+      "sha256": "a85eb0a9d979b4ec31ca7d8ee95a444c8f4944ec02e3255110783f3dfa289893"
+    }
+  ],
+  "verdict": "PASS"
+}

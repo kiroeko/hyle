@@ -392,6 +392,11 @@ gzip及archive SHA保留。其他平台/fault/头与SDK/P0终审红队仍待候�
 
 ## 预声明验证与停止
 
+Windows CPU/CUDA的source、relocated static/shared普通消费、七installed头及两native header/
+package route缺席、DLL同目录与shipping hook缺席已按5b3efe2cc scope取证，见[当前矩阵](foundation-f2-verification-matrix.md)
+和[Windows收据](../../../../evidence/correctness/foundation-f2-windows-cuda-sdk/receipt.json)。scratch初文案匹配失败保留，未改产品或重置预算。
+剩余Windows Vulkan/Air/WSL细分与component-contract、最终P0红队继续待验，当前不CLOSED。
+
 WSL CPU/CUDA的installed static/shared首轮已通过，见[SDK矩阵](foundation-f2-verification-matrix.md)
 与[完整收据](../../../../evidence/correctness/foundation-f2-wsl-sdk/receipt.json)。包含5b3efe2cc释放delta，真实迁址/数学/七installed头及
 两个未选native header的明确缺席取证；首scratch fixture误列unselected头的FAIL保留，未修改产品。

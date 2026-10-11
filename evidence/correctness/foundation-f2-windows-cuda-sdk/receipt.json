@@ -1,0 +1,176 @@
+{
+  "schema_version": 1,
+  "product_candidate": "5b3efe2cce3fcab2bc55cf749af2d862a786ef25",
+  "tree": "7023c5780a7c99b10f0b41a4e27f3bf5899dea04",
+  "scope": "Windows CPU/CUDA source/static and relocated installed static/shared ordinary F2 math, installed headers, route/header absence and shipping DLL/hook hygiene; other hosts/routes unqualified",
+  "profiles": [
+    {
+      "mode": "static",
+      "verdict": "PASS",
+      "receipt": "static/job.json",
+      "files": {
+        "absence-header-apple.log": {
+          "path": "static/absence-header-apple.log",
+          "sha256": "3ad170a07506a915b70e3dcbed4aa19a5b03c7516a1ec583ccde4d11a666c786"
+        },
+        "absence-header-vulkan.log": {
+          "path": "static/absence-header-vulkan.log",
+          "sha256": "7ce91648c0b1f3fc7baa43af44911ccb3f32ffdb5b6253b5dad5a595374c2135"
+        },
+        "absence-route-apple.log": {
+          "path": "static/absence-route-apple.log",
+          "sha256": "d22fc19f12e305fa87bc7a904b72d32f5fc339b1feebfa633f3553a6762af933"
+        },
+        "absence-route-vulkan.log": {
+          "path": "static/absence-route-vulkan.log",
+          "sha256": "3e42f927eaa8f76bddce67653d9037a190ca9720f5ea57fe4732967549d7d149"
+        },
+        "configure.log": {
+          "path": "static/configure.log",
+          "sha256": "63062b6f7541957e121e5893b6bea4202ade51877e4c4a5cf42b94ba4cac501a"
+        },
+        "consumer-build.log": {
+          "path": "static/consumer-build.log",
+          "sha256": "7ccf3bf13dbed2617b58e2063b146bafbb87d2c301f2acb503702181d19a8a7a"
+        },
+        "consumer-configure.log": {
+          "path": "static/consumer-configure.log",
+          "sha256": "a8cc75fd12cf7b60d04464fc03091ca31e5d973fbbbe259f337cb38882a5618a"
+        },
+        "identity.log": {
+          "path": "static/identity.log",
+          "sha256": "fc0da0dd7e8d2c9d1419aa11e4801acb7158a0e185c28122c0fd6292a65f4044"
+        },
+        "imports.log": {
+          "path": "static/imports.log",
+          "sha256": "0d0707a1bfbee4736a4e9611766739af42b1140e5a1989b45337980c9555817a"
+        },
+        "install.log": {
+          "path": "static/install.log",
+          "sha256": "fefea54b4bd9a477e5477418f3b5a42aae607e04618c45a9d52855441ddf52da"
+        },
+        "job.json": {
+          "path": "static/job.json",
+          "sha256": "415f16a1a6a037cc86b0ca27899b001d38171a3001ad511c892a11800c3af281"
+        },
+        "math.log": {
+          "path": "static/math.log",
+          "sha256": "3271158017abf57ae6807db27566533a7c20e115030cbf7a5411783d338ed67f"
+        },
+        "producer.log": {
+          "path": "static/producer.log",
+          "sha256": "0d8c88fc65f6eab911deda62e501eb2eee63bf844ca936053163e92db32f7a42"
+        },
+        "shared-exports.log": {
+          "path": "static/shared-exports.log",
+          "sha256": "a85eb0a9d979b4ec31ca7d8ee95a444c8f4944ec02e3255110783f3dfa289893"
+        },
+        "source-and-hooks.json": {
+          "path": "static/source-and-hooks.json",
+          "sha256": "c785f4fd023bd4a30e63d2d5184ca54dc68e0bbd274cd6d2e57d2605525ea497"
+        },
+        "source-math.log": {
+          "path": "static/source-math.log",
+          "sha256": "9739d5b5f4db7a3ad16cbedce815e6ee32693267505720c1b751eaced7ae137e"
+        },
+        "static-symbols.log": {
+          "path": "static/static-symbols.log.gz",
+          "sha256": "f9e183325df03d1e78af941cf6ef39d3f93d4908be3cf146f30e6f7f0637d833",
+          "uncompressed_sha256": "813a649b8a430be702f53d920ce18dd7fd132b181de03281b1cfa5a96de6fa73",
+          "encoding": "gzip"
+        }
+      },
+      "dll_count": 39,
+      "relocation": {
+        "original": "C:\\h7\\foundation-f2-sdk\\windows-cpu-cuda-static-5b3efe2cc\\staging",
+        "relocated": "C:\\h7\\foundation-f2-sdk\\windows-cpu-cuda-static-5b3efe2cc\\relocated",
+        "original_absent": true,
+        "Hyle_metadata_no_source_build_staging_paths": true
+      }
+    },
+    {
+      "mode": "shared",
+      "verdict": "PASS",
+      "receipt": "shared/job.json",
+      "files": {
+        "absence-header-apple.log": {
+          "path": "shared/absence-header-apple.log",
+          "sha256": "f0ff04e1d0265d6a9d2f1dcf62223e95dd579f8112e2a3a375942c6d6547fc0e"
+        },
+        "absence-header-vulkan.log": {
+          "path": "shared/absence-header-vulkan.log",
+          "sha256": "4ab6ddd0d5a06c98fbe8eea7aac6905973a5bc5b092f33cd81f04ca0461283a0"
+        },
+        "absence-route-apple.log": {
+          "path": "shared/absence-route-apple.log",
+          "sha256": "e5b8a4da8852f895b5e5e3863e18a44181e18e97c45cd187031fbf8214cf9b40"
+        },
+        "absence-route-vulkan.log": {
+          "path": "shared/absence-route-vulkan.log",
+          "sha256": "6c83d1c23bfe247ef17ccc5a3ffef33d695793cc616a8cc7b658876627bc2c57"
+        },
+        "configure.log": {
+          "path": "shared/configure.log",
+          "sha256": "b8a24f300613eacf2075405bffa87019c20586942c5a3faaf59d614263070028"
+        },
+        "consumer-build.log": {
+          "path": "shared/consumer-build.log",
+          "sha256": "98e72bfa35294d82d7ea8b53d7707b1a396cc77b670d6a0b277e0ba98d6d0fe6"
+        },
+        "consumer-configure.log": {
+          "path": "shared/consumer-configure.log",
+          "sha256": "e5ccd5e16d9571cf5bc513ac5aa548b8533d719a027501dbf97569742842e7b0"
+        },
+        "identity.log": {
+          "path": "shared/identity.log",
+          "sha256": "fc0da0dd7e8d2c9d1419aa11e4801acb7158a0e185c28122c0fd6292a65f4044"
+        },
+        "imports.log": {
+          "path": "shared/imports.log",
+          "sha256": "687c41a4f265fbd53516f669d72f88b03a9aec4eda6609bcdcefc4f8afe52549"
+        },
+        "install.log": {
+          "path": "shared/install.log",
+          "sha256": "2c93e8f9abe1b67cfd49957f21a0c37c5aaa831e79a902071d37681b9a3378e5"
+        },
+        "job.json": {
+          "path": "shared/job.json",
+          "sha256": "0a4fa19671934f655275617aaf45dd81ddf5bd6e46801657f53c430dce749490"
+        },
+        "math.log": {
+          "path": "shared/math.log",
+          "sha256": "3271158017abf57ae6807db27566533a7c20e115030cbf7a5411783d338ed67f"
+        },
+        "producer.log": {
+          "path": "shared/producer.log",
+          "sha256": "8874d6237027ac909e45ed2236b78cc287513726b32cfa8b7189dce363fdfe89"
+        }
+      },
+      "dll_count": 69,
+      "relocation": {
+        "original": "C:\\h7\\foundation-f2-sdk\\windows-cpu-cuda-shared-5b3efe2cc\\staging",
+        "relocated": "C:\\h7\\foundation-f2-sdk\\windows-cpu-cuda-shared-5b3efe2cc\\relocated",
+        "original_absent": true,
+        "Hyle_metadata_no_source_build_staging_paths": true
+      }
+    }
+  ],
+  "source_math_hooks_receipt": "static/source-and-hooks.json",
+  "verdict": "PASS",
+  "checks": [
+    "actual source math after CUDA cleanup delta",
+    "real install then relocation, old prefix absent and no source/build/staging paths in Hyle metadata",
+    "seven installed headers individually compiled (six common plus CUDA ON)",
+    "Apple/Vulkan omitted headers and package route requests produce explicit diagnostics",
+    "ordinary hyle::graph two groups/two slots/three replays, BF16 and original GGUF Q8 Direct/Graph scalar oracle",
+    "runtime PATH contains only consumer plus Windows system directories, required DLL hashes recorded",
+    "original copy implementation symbol exists, static/shared shipping hook setters absent"
+  ],
+  "retained_fixture_failure": "static scratch diagnostic matcher initially omitted the actual does-not-contain route message; original command rejected route correctly; same logs/prefix only unfinished gates resumed",
+  "pending": [
+    "Windows Vulkan SDK",
+    "Air CPU/Apple and CPU/Vulkan SDK/platform checks",
+    "WSL package route configure absence diagnostics",
+    "component-contract/expanded selector and final P0/red team"
+  ]
+}

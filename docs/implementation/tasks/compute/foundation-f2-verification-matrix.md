@@ -62,7 +62,7 @@ GPU stream drain和原CUDA abandoned-event reaper回调完成不同；借用allo
 
 | 平台/路线 | 当前ordinary source数学 | 必须完成的candidate资格 |
 |---|---|---|
-| Windows CPU/CUDA | PASS（scope匹配；shipping更新后复验） | source/relocated static/shared、ON/OFF头、absence、DLL同目录；8 CUDA/34 common与适用实际late failure |
+| Windows CPU/CUDA | PASS（5b3efe2cc source/static实际复验） | relocated static/shared数学、七头/CUDA ON、两native头与package路线缺席、DLL同目录、shipping hook缺席PASS；既定fault已取证，扩展/终审待验 |
 | Windows CPU/Vulkan | PASS（scope匹配） | source/relocated static/shared、新头/absence/DLL；9 native/34 common及实际unknown-fence风险 |
 | Air CPU/Apple | PASS（scope匹配） | source/relocated static/shared、新头/absence/MLX assets；10 native/34 common及实际故障/关闭 |
 | Air CPU/Vulkan | UNPROVEN | 实际设备身份；对应native/common与ordinary数学、三交付/头/absence/迁址 |
@@ -101,3 +101,15 @@ ASan、独立UBSan各34 common＋3 CpuCopyProgram PASS，真实compile flags保�
 未选择头列为positive，原FAIL保留；同candidate/prefix只修scratch选择并补absence，未改产品/预算。
 ldd无missing dependency，shared HYLE库实际解析到relocated/lib。package拒绝未构建路线请求的
 configure诊断、其他平台SDK与selector扩展/终审继续UNPROVEN；当前四owner仍CANDIDATE。
+
+## Windows CPU/CUDA source/static/shared（含释放delta）
+
+[Windows SDK收据](../../../../evidence/correctness/foundation-f2-windows-cuda-sdk/receipt.json)绑定5b3efe2cc产品scope，
+validation commit与实际MSVC19.50/CUDA13.3/RTX4070/driver617.14、逐stage/log/DLL SHA均保存。
+两个生产树真实安装/rename迁址，原prefix消失且Hyle metadata无source/build/staging路径；普通
+hyle::graph消费者各七个独立安装头、原BF16/Q8搬运/Direct/Graph oracle通过。两native头按SKU
+缺席，Apple/Vulkan package路线请求均明确拒绝并列出cpu;cuda。static初scratch文案匹配遗漏
+实际does-not-contain诊断，原负向command已正确拒绝；同prefix/log只继续未运行门，事实保留。
+两consumer在仅consumer/System32/Windows的PATH下数学PASS，DLL同目录及hash保存。更新后的
+原source/static消费者也实际PASS；backend archive/共享DLL确认两个test hook setter缺席，真实
+copy implementation/public资源符号存在。其他平台/路线SDK、selector扩展/终审仍待验。
