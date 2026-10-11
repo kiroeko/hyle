@@ -148,6 +148,19 @@ TensorView 不拥有外部 payload，Graph Results 只保护其原声明 owner�
 
 ## 有限 FIX 集
 
+### F1-01 共同拥有导入冻结
+
+- baseline `65accb90c`，compute owner 继续 AUDITED；沿本卡已有拥有/只读导入范围。
+- `LeasePool::adopt(mem::Buffer&&, options)` 接管已有唯一 Buffer，复用它的实际资源、容量和对齐；
+  不再分配/复制 payload。所有有限 metadata 和 budget 准备成功后才移动 backing，失败保持输入所有权。
+- `ReadLease::adopt(mem::Buffer&&, options)` 接管一个已成功 ready 的拥有 Buffer 并发布永久只读 lease；
+  复制/subview 共享根，try_write 明确拒绝。单块 metadata 有界，原资源/Context/allocator 借用寿命不变。
+- adoption 要求既有裸 views/第三方别名不再并发写；不能从一个 borrowed view 猜拥有权或传空 deleter。
+  具体 native array/tensor 和受控外部 owner 导入仍由对应 native owner 的后续 scoped 桥承载。
+- 新分配的 create 保持先预算准入后实际 backing 分配；adopt 按同 backing 一次记账。
+  backing_alignment 只控制新分配，接管时以原 Buffer 对齐为准；不伪造更强对齐。
+- 定向验证：拥有权拒绝不消费、readonly 的多 reader/subview、不允许重入写、预算失败及 native 完成保活。
+
 | FIX | 必须实现/定向修复 | 验收 |
 |---|---|---|
 | F1-01 | 冷创建 owner、有限块/范围、generation、大小/对齐/metadata budget、拥有与只读导入 | 零/边界/溢出/OOM；旧 generation 不释放新块；真实 native backing |
