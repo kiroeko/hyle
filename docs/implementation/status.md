@@ -72,7 +72,7 @@
 | graph_route_cpu_cuda | CLOSED | P0 / [PASS](tasks/compute/compute-h1-cpu-cuda-composition.md) | [record](tasks/compute/compute-h1-cpu-cuda-composition.md) | H1 CLOSED：CPU+CUDA混合执行、双槽迁移、普通CPU主存/有界staging、共享预算及准备诊断完成；Windows/WSL三交付、安装头/搬迁、错误/寿命与当前native重叠通过。引擎策略、多GPU、Apple/Vulkan混合不在本包。 |
 | graph_route_cpu_apple | CLOSED | P0 / [PASS](tasks/compute/foundation-f1-resource-leases.md) | [record](tasks/compute/foundation-f1-resource-leases.md) | F1 CLOSED：有界租约/权限、自然 Direct/Graph 与组合保活、实际最后使用后回收；适用风险/平台/三交付、新头/缺席/迁址、七门与 P0 通过，精确限制见 terminal。 |
 | graph_route_cpu_vulkan | CLOSED | P0 / [PASS](tasks/compute/foundation-f1-resource-leases.md) | [record](tasks/compute/foundation-f1-resource-leases.md) | F1 CLOSED：有界租约/权限、自然 Direct/Graph 与组合保活、实际最后使用后回收；适用风险/平台/三交付、新头/缺席/迁址、七门与 P0 通过，精确限制见 terminal。 |
-| compute_stream | CANDIDATE | — | [record](tasks/compute/foundation-f3-file-resource-streaming.md) | F3 CANDIDATE：固定双向文件管线、四路线实际权重数学与原生寿命风险已实现并取证；当前产品微修/原deadline风险增量集中验收。安装static/shared、新头/缺席/迁址、最终P0/红队待验，不代签CLOSED。 |
+| compute_stream | AUDITED | — | [record](tasks/compute/foundation-f3-file-resource-streaming.md) | F3 AUDITED：候选红队真实反证首组失败撤销未启动suffix时，其已接纳producer保活形成环；仅修原F3-06共同控制的原生退休交接，原FAIL和全部预算保留，其他owner候选不变。 |
 
 <!-- END GENERATED MODULE STATUS -->
 

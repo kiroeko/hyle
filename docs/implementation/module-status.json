@@ -663,10 +663,9 @@
     },
     {
       "module": "compute_stream",
-      "state": "CANDIDATE",
-      "summary": "F3 CANDIDATE：固定双向文件管线、四路线实际权重数学与原生寿命风险已实现并取证；当前产品微修/原deadline风险增量集中验收。安装static/shared、新头/缺席/迁址、最终P0/红队待验，不代签CLOSED。",
-      "record": "docs/implementation/tasks/compute/foundation-f3-file-resource-streaming.md",
-      "candidate": "3b7b9b9b8f0e99205de0c43ce29b4467bdae46d5"
+      "state": "AUDITED",
+      "summary": "F3 AUDITED：候选红队真实反证首组失败撤销未启动suffix时，其已接纳producer保活形成环；仅修原F3-06共同控制的原生退休交接，原FAIL和全部预算保留，其他owner候选不变。",
+      "record": "docs/implementation/tasks/compute/foundation-f3-file-resource-streaming.md"
     }
   ]
 }

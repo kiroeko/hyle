@@ -1,6 +1,6 @@
 # F3：有界文件与计算资源双向管线
 
-> 状态：CANDIDATE；四路线主体/真实数学往返、原生风险及共同sanitizer已取证；三交付/终审待验；F1/F2原轮已CLOSED。
+> 状态：compute_stream退回AUDITED；其余五owner CANDIDATE。新红队反证原F3-06未启动suffix producer环；原FAIL保留，有限纠正及交付/终审待验。
 > component / owner：新内部 factor compute_stream；compute仅补下述私有租约/退役接缝；
 > native factory/adapter 归 compute_route_cpu/cuda/apple/vulkan；中央声明只投影这些owner的有限新边。
 > IO/Sched/Mem 只消费既有能力；出现具体基础缺陷才另作定向 owner 修复。
@@ -491,6 +491,17 @@ Windows CPU五个动作、Air native仅共同库/route链接增量；没有新�
 可能形成state→Completion→retention→state环。新增CUDA原生两组fixture，让第一组真实readonly
 File写错、第二组原GPU producer阻塞；drop控制后放行并核对实际uses/allocator是否退休。
 本提交仅增加测试，产品候选不改；未运行前保持UNPROVEN，不把源码疑点写成已证明FAIL。
+
+该反证随后在实际WSL CUDA上FAIL：首组真实readonly File写错后，request complete但第二组
+producer仍在未启动range里；drop后放行原GPU并drain，5秒内active uses仍为1、F3 allocator不balanced，
+隔离子进程在原StatsAllocator析构断言abort6。源码证据为`stream_worker`/`kick_locked`只标记queued
+group Failed，不销毁其中Completion，形成state→Completion→retention→state环。
+因此只有共同owner compute_stream从CANDIDATE退回AUDITED，previous-ref为`bf59b57f0`，
+其余五owner仍固定候选；不关闭、不伪造产品通过，也不修改IO/Sched/native backend。
+这是原F3-06已接纳producer的未完成组合，固定为一次共同控制交接纠正及定向验收；旧两次形状
+纠正、producer修正、原FAIL/TIMEOUT和追加ASan预算全部继续计账，不重新开始研究或扩新FIX。
+允许的纠正仅在退出共同锁后放弃未启动producer观察，使原native owner在实际退休时释放原retention。
+不得在锁内触发回调/释放，不隐藏等待或新增poller，未退休之前uses/stage仍须保活。
 
 ## 解析器与真实权重验收
 
