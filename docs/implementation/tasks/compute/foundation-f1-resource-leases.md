@@ -521,6 +521,26 @@ option 的独立配置，让 sanitizer 由已有 target helper 正常施加，�
 P0 静态账单须列新增 metadata/引用/锁，及旧普通路径不变的证据；
 热路径以计数验无 allocation/provider search，不为纳秒差改布局。
 
+### P0 成本账（源码审计，完整裁决待剩余资格）
+
+以 `fc4ffbd16` 产品为准；后续消费者、测试与文档没有改变以下实现。B 为 pool 块上限，R 为本批资源数，
+P 为原已接受 coarse completions。metadata 使用既有 allocator/pool，错误 Status 的原生翻译成本照旧计入。
+
+| 路线 | 冷准备与常驻存储 | 正常热路径成本 / 释放 | 适用边界与证据 |
+|---|---|---|---|
+| LeasePool | 一块原 backing、原 RangeAllocator 与固定 B 个 ConcurrentBlockPool 节点、一个 domain | allocate/free 沿原 range/pool 机制并持 domain SpinLock；reader copy/subview 一次 ref 增，drop 一次 ref 减；最后引用才归还 range/backing | 不复制 payload；budget 对 backing 一次计账；[源码](../../../../src/compute/resource_leases.cc)与当前九个 lease 核用例 |
+| LeaseUsePool | 固定 episode 数，每 episode 预置 R entries/Retention | begin 一次 pool 锁；第 r 次 add 扫描已有 entries，整批最坏 O(R²)，每不同 block 一次权限锁、ref/use 增；最后释放 O(R)，use 减并 notify 等待者 | 有界去重不声称线性；没有 per-submit heap/table 扩容；高 arity 成本不能藏成 O(1) |
+| 共同 Direct | opt-in owner、固定 input/output views、一个 use episode 与一个 observation slot；原 workspace lease | O(I+O) view 校验加上述去重；原 submit 一次；public poll/wait 多一层 proxy/原 observation；未知退役复用 native retention | 原 OperationInvocation/Completion 公共布局不变；八次重放只证明注入的 lease metadata allocator 无新增分配，不能证明 opaque vendor 成本为零 |
+| 共同 leased Graph | 固定 bindings、每原 segment + final 的 retention 与一个 observer；原 Invocation/workspace | binding 查找线性且属冷路径；submit 使用原 cursor/QueueBinding，R 资源准入，P 次 guard/counter；最后 actual prefixes/sentinel 才发布与回收 | 不重编计划/选 Provider；结果引用与 exported ReadLease 明确阻止覆盖；原数学/copy 命令数不增加 |
+| 原 Graph aggregate 修复 | 已有 cold child 槽从 lifetime 扩成 invocation 指针与 nested retention；槽数仍按原 lanes 冷分配 | 聚合组装 O(P)，每 selected child 新增 Invocation ref、remaining 增和观察前 attachment；最后 child 释放 ref/counter | 这是借用 Graph 路径也付出的 correctness 成本，[组装](../../../../src/graph/executable.cc)与[私有槽](../../../../src/graph/plan_state.h)可见；不能把所有 ordinary Graph 成本说成未变 |
+| Apple/Vulkan native adapter | opt-in owner、冷 native readonly wrappers/reader table/use pool；原 native slot 新增一个 nullable LeaseUseBatch 字段 | 普通 native slot 也承担这个私有字段与空 guard 检查；leased bind 冷构造，submit 准入并交原 slot，actual finish 退 guard | 没有新 Queue/reaper/thread、payload copy或数学 kernel；native private allocator/MLX descriptor 的不透明成本仍明示，当前风险与数学收据不证明全部 vendor 热成本 |
+| CPU+Apple/Vulkan 组合 | 原 RunState 一个 nullable owner 指针；首次 lease bind 才分配 inputs/prefixes 表，P capacity 冷检查 | ordinary 增加 submit/coarse completion 的空指针分支；leased R 准入、每 prefix 一次 parent ref/counter 与嵌套 retention，最后 body/actual prefix 联合 terminal | [helper](../../../../src/graph/lease_submission.cc)只保活/权限，不 dispatch；八次 metadata 计数通过，新 mixed native fault 格仍待验证 |
+| Completion/CUDA 退役修复 | 公共 Completion 与原 CUDA EventSlot 无新增字段；用已有 hint/retention/reaper | common settle 将原 lifetime/status 交原 destroy；正常 CUDA cache 已有 terminal 事实；异常 wait 最多一次原 stream drain，不能把观察错误当已退役 | 普通成功路径不加 context probe/全 device sync；错误路径额外排空是明确 safety 成本，真实 GPU 原错与最后回收已有证据 |
+
+close 为停接纳；drain 是显式 host wait，可走原 Completion/atomic wait；notify 只沿现有回收，不新建进展线程。
+上述是机制、复杂度与成本位置的账单，尚非完整 P0 PASS；没有真实 timed hotspot/同合同反例，当前不启动 P1/P2。
+最终 red-team、适用平台与三交付未齐，不能借这份源码账单进入 CLOSED。
+
 完成标准：F1-01至08及全部适用门真实通过，明确原借用 precondition 和未验硬件；
 精确报告所有 applicable 未验，不自动继承 WSL Vulkan 例外；按协议形成 terminal。
 F2 才提供 bulk copy，F4 才讨论版本历史/自动 CoW，本卡不扩成泛用事务系统。
