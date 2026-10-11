@@ -612,6 +612,9 @@ archive 包含 LICENSE/THIRD_PARTY_NOTICES，镜像不可回写。只编译、�
 `e39905900` Air source 的普通 CPU/Vulkan Direct+Graph 租约数学、七个 ON 孤立头与原 mixed 合同消费者通过，
 实机/候选/命令/内存前检/原日志收入同一交付收据；source 不替 static/shared 或其他 OS 签字。
 
+随后同候选 Air Vulkan static producer/安装/实际迁址/独立构建/普通 lease 与 imported mixed 消费者全部通过，
+同一交付收据保存阶段日志；shared 尚未运行完成，其他平台与最终七门仍不能写 PASS。
+
 ### P0 成本账（源码审计，完整裁决待剩余资格）
 
 以 `fc4ffbd16` 产品为准；后续消费者、测试与文档没有改变以下实现。B 为 pool 块上限，R 为本批资源数，

@@ -1,0 +1,4 @@
+[1/4] Building CXX object CMakeFiles/leases.dir/Users/kiro/hyle-scratch/compute-unified/source-c8874688/samples/package/graph/resource_leases/main.cc.o
+[2/4] Building CXX object CMakeFiles/mixed.dir/Users/kiro/hyle-scratch/compute-unified/source-c8874688/tests/graph/cpu_vulkan_contracts.cc.o
+[3/4] Linking CXX executable leases
+[4/4] Linking CXX executable mixed

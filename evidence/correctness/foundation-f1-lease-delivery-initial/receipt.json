@@ -117,6 +117,16 @@
         "vulkan-air-source-lease-test.log",
         "vulkan-air-source-mixed-test.log"
       ]
+    },
+    {
+      "name": "MacBook Air relocated CPU Vulkan static SDK ordinary lease and imported managed composition",
+      "verdict": "PASS",
+      "candidate": "e399059002d17491ec1c87a0bf8f40f4642606ac",
+      "receipt": "vulkan-air-static-job.json",
+      "logs": [
+        "vulkan-air-static-lease-test.log",
+        "vulkan-air-static-mixed-test.log"
+      ]
     }
   ],
   "wsl_vulkan": {
@@ -199,6 +209,13 @@
     "vulkan-air-source-job.json": "ecdbf2dd1fc00d4d270dc2f61232b8037b762b0fd67ff90ed0876f898f22f7d0",
     "vulkan-air-source-build.log": "a075306efc16b039f03c8b3c601ee4c28d261c6ea831c84f72248263bff8e260",
     "vulkan-air-source-lease-test.log": "3aa0830a6cf6ac16dd411a4b241f4de722521d5f3316d7291edf1365d5691bb8",
-    "vulkan-air-source-mixed-test.log": "438a8ee0684e75ce6e46d67dfeb25ab65f9cc924ccccfe656ad53fe02373ed92"
+    "vulkan-air-source-mixed-test.log": "438a8ee0684e75ce6e46d67dfeb25ab65f9cc924ccccfe656ad53fe02373ed92",
+    "vulkan-air-static-job.json": "291500bdf63500158c738d6f0799a42a1caa453e000f3732d913600fe600f430",
+    "vulkan-air-static-producer.log": "c125f2df79578f97d5425b45a79df5911501bf87b134c52648097d65d115accc",
+    "vulkan-air-static-install.log": "60c570c30806229c9f5dca6abf33c1012b8ba6c35e6a65b5d0850ac863e7c0ec",
+    "vulkan-air-static-configure.log": "3ca29a9cb278299e10b17e475c17b147fce15b01e4d765fac1b75ce2e7a47739",
+    "vulkan-air-static-consumer-build.log": "d8bc8143a90dee126455e7c8b723e8f7e02578bac4913d00939682fbdf1fda00",
+    "vulkan-air-static-lease-test.log": "3aa0830a6cf6ac16dd411a4b241f4de722521d5f3316d7291edf1365d5691bb8",
+    "vulkan-air-static-mixed-test.log": "438a8ee0684e75ce6e46d67dfeb25ab65f9cc924ccccfe656ad53fe02373ed92"
   }
 }
