@@ -1,0 +1,46 @@
+{
+  "candidate": "3be2dc6392248b8373fd7b08dcef0ae904517951",
+  "source": "/home/kiro/hyle-f1/sanitizers/source-3be2dc639224",
+  "build": "/home/kiro/hyle-f1/sanitizers/asan-ubsan-3be2dc639224",
+  "mode": "asan-ubsan",
+  "configuration": "GCC14.2/static/Release/shipping/OFF",
+  "parallel": 1,
+  "environment": {
+    "ASAN_OPTIONS": "halt_on_error=1:detect_leaks=1",
+    "UBSAN_OPTIONS": "halt_on_error=1:print_stacktrace=1",
+    "TSAN_OPTIONS": "halt_on_error=1"
+  },
+  "stages": [
+    {
+      "name": "configure",
+      "command": [
+        "/usr/bin/cmake",
+        "-S",
+        "/home/kiro/hyle-f1/sanitizers/source-3be2dc639224",
+        "-B",
+        "/home/kiro/hyle-f1/sanitizers/asan-ubsan-3be2dc639224",
+        "-G",
+        "Ninja",
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DCMAKE_CXX_COMPILER=/usr/bin/g++-14",
+        "-DHYLE_DEV_FACTORS=compute;graph",
+        "-DHYLE_BUILD_TESTS=ON",
+        "-DHYLE_BUILD_BENCH=OFF",
+        "-DHYLE_STATIC=ON",
+        "-DHYLE_TEST_INSTRUMENTATION=OFF",
+        "-DHYLE_INSTALL=OFF",
+        "-DHYLE_WERROR=ON",
+        "-DHYLE_DEP_SOURCE_CACHE=/mnt/c/public/tools/hyle-dependencies/v1",
+        "-DHYLE_SANITIZER=asan",
+        "-DCMAKE_CXX_FLAGS=-fsanitize=undefined -fno-sanitize-recover=all"
+      ],
+      "pid": 645,
+      "state": "terminal",
+      "available_bytes": 32414310400,
+      "log": "configure.log",
+      "exit_code": 1,
+      "verdict": "FAIL",
+      "sha256": "336767bd2ea3230ef26f7697eb9856d39d70545ab76c5ad7f22bac2a5fe2ee9e"
+    }
+  ]
+}

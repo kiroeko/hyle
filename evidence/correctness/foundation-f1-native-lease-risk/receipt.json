@@ -41,6 +41,13 @@
     "windows-vulkan-job.json": "efe730764bb36e388571ebb7b1926f5ee73e760c4b1ace2fd133eae03d6245ab",
     "apple-build.log": "35d03167d795b885095431b887200e4a7e5002f93450d9f4955e0c529fad7401",
     "apple-test.log": "2741cfea6f3a8088f0bcd96bf441597822e1516b009fd778228febb017c741cb",
-    "apple-job.json": "74465baf497e9d0d5b913455d1077ed2c520c8873baaeaeeb9b64c4b00dcd04d"
+    "apple-job.json": "74465baf497e9d0d5b913455d1077ed2c520c8873baaeaeeb9b64c4b00dcd04d",
+    "sanitizer-original-configure.log": "336767bd2ea3230ef26f7697eb9856d39d70545ab76c5ad7f22bac2a5fe2ee9e",
+    "sanitizer-original-job.json": "565c8a0b4b2eea423dead263fc7c7637503538d4edabaf49acb4312375e7a68a"
+  },
+  "retained_profile_failure": {
+    "log": "sanitizer-original-configure.log",
+    "job": "sanitizer-original-job.json",
+    "reason": "Global UBSan flags instrumented Core release-only try_compile and enabled debug assertions. F1 tests unrun. Correction uses independent pre-existing sanitizer target options without editing Core or tools."
   }
 }
