@@ -1,0 +1,90 @@
+{
+  "schema_version": 1,
+  "product_commit": "97858fbc88a6b5a87f109290b956eeaeee632dd2",
+  "fixture": "2f9c8200f9a0c219d2dfc52cfe7f2ed20e01329d",
+  "scope": "Ordinary Vulkan source add_subdirectory Graph consumers build only; actual GPU math NOT_APPLICABLE, only software llvmpipe available.",
+  "device_qualification": {
+    "vulkan": {
+      "loader": "libvulkan.so.1",
+      "devices": [
+        {
+          "api_version": 4211006,
+          "driver_version": 104865800,
+          "vendor_id": 65541,
+          "device_id": 0,
+          "device_type": 4,
+          "name": "llvmpipe (LLVM 20.1.2, 256 bits)",
+          "software": true
+        }
+      ],
+      "icds": {
+        "lvp_icd.json": {
+          "ICD": {
+            "api_version": "1.4.318",
+            "library_path": "libvulkan_lvp.so"
+          },
+          "file_format_version": "1.0.1"
+        },
+        "gfxstream_vk_icd.json": {
+          "ICD": {
+            "api_version": "1.1.318",
+            "library_path": "libvulkan_gfxstream.so"
+          },
+          "file_format_version": "1.0.1"
+        },
+        "radeon_icd.json": {
+          "ICD": {
+            "api_version": "1.4.318",
+            "library_path": "libvulkan_radeon.so"
+          },
+          "file_format_version": "1.0.1"
+        },
+        "intel_hasvk_icd.json": {
+          "ICD": {
+            "api_version": "1.3.318",
+            "library_path": "libvulkan_intel_hasvk.so"
+          },
+          "file_format_version": "1.0.1"
+        },
+        "asahi_icd.json": {
+          "ICD": {
+            "api_version": "1.4.318",
+            "library_path": "libvulkan_asahi.so"
+          },
+          "file_format_version": "1.0.1"
+        },
+        "virtio_icd.json": {
+          "ICD": {
+            "api_version": "1.4.318",
+            "library_path": "libvulkan_virtio.so"
+          },
+          "file_format_version": "1.0.1"
+        },
+        "intel_icd.json": {
+          "ICD": {
+            "api_version": "1.4.318",
+            "library_path": "libvulkan_intel.so"
+          },
+          "file_format_version": "1.0.1"
+        },
+        "nouveau_icd.json": {
+          "ICD": {
+            "api_version": "1.4.318",
+            "library_path": "libvulkan_nouveau.so"
+          },
+          "file_format_version": "1.0.1"
+        }
+      },
+      "qualified_gpu": false,
+      "scope": "current physical-device qualification only; no product math verdict",
+      "verdict": "NO_QUALIFIED_GPU"
+    }
+  },
+  "source_build": "Ordinary source parent uses Graph/add_subdirectory and selected Vulkan route. Both actual current consumer executables built; ldd has no missing dependency.",
+  "gpu_math": "NOT_APPLICABLE: actual loader enumerates only software llvmpipe type4.",
+  "archive": {
+    "path": "evidence/correctness/foundation-f3-wsl-vulkan-source/raw-results.zip",
+    "sha256": "8ca85c8392f9fc38e7b5930fc27170a9099dacec39f510ea160b88dcc06c2856"
+  },
+  "verdict": "PASS_WSL_VULKAN_ORDINARY_SOURCE_BUILD_ONLY_NO_GPU_MATH"
+}

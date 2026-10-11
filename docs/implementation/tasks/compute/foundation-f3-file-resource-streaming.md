@@ -1,6 +1,7 @@
 # F3：有界文件与计算资源双向管线
 
-> 状态：六owner CANDIDATE，当前产品97858fbc8；原F3-06 suffix producer环已有限修复并复验，原FAIL保留；当前交付/终审待验。
+> 状态：CLOSED，2026-10-12；六owner当前产品97858fbc8，原八FIX/七门与适用三交付通过。
+> 当前终态以[最终收口](foundation-f3-final-closure.md)和registry为准；本卡后文保留施工阶段/原失败事实，不恢复历史命令。
 > component / owner：新内部 factor compute_stream；compute仅补下述私有租约/退役接缝；
 > native factory/adapter 归 compute_route_cpu/cuda/apple/vulkan；中央声明只投影这些owner的有限新边。
 > IO/Sched/Mem 只消费既有能力；出现具体基础缺陷才另作定向 owner 修复。
@@ -82,13 +83,13 @@
 
 | Gate | 本轮所需证据 | 当前结果 |
 |---|---|---|
-| scope | 原八FIX、主/正交旅程、六owner及实际baseline | 固定范围已落实；不扩F4/F5 |
-| architecture | API/生命周期/依赖审计、现有原子组合与有限ledger | 产品已实现；完整交付图与最终审查待验 |
-| correctness | 02至07逐能力风险矩阵及四路线实际接缝 | 运行风险已齐；new installed headers尚待验，聚合INCONCLUSIVE |
-| delivery | 01/08 source/static/shared、新头、迁址及缺席 | NOT_RUN |
-| usability_docs | 普通C++自然工厂、双向与错误/close recipe | source指南/样例已运行；installed尚未验证 |
-| red_team | 候选冻结后独立一遍反证检查 | NOT_RUN |
-| engineering_performance | P0成本结构、有限容量与实际路径账单 | 源码/实际成本已记录；最终候选裁决待验 |
+| scope | 原八FIX、主/正交旅程、六owner及实际baseline | PASS，停止于F3 |
+| architecture | API/生命周期/依赖审计、现有原子组合与有限ledger | PASS，单图/原机制/四自然工厂 |
+| correctness | 02至07逐能力风险矩阵及四路线实际接缝 | PASS，当前native/共同14项sanitizer/新头/direct IO齐；平台NA明确 |
+| delivery | 01/08 source/static/shared、新头、迁址及缺席 | PASS，12个适用installed格/10格数学，当前source分别取证 |
+| usability_docs | 普通C++自然工厂、双向与错误/close recipe | PASS，ordinary Graph三交付/指南 |
+| red_team | 候选冻结后独立一遍反证检查 | PASS，原suffix FAIL及一次纠正/实测保留 |
+| engineering_performance | P0成本结构、有限容量与实际路径账单 | PASS P0，无timed赢家或vendor零成本外推 |
 
 ## 需求与来源
 

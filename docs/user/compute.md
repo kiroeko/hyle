@@ -6,8 +6,8 @@
 分块文件旅程。从 `cpu/cuda/apple/vulkan::create_file_pipeline` 创建对应路线管线；CPU/CUDA
 沿原 Context、Queue，Apple/Vulkan 沿各自 Context。创建时明确 stage resource、目标资源域、
 槽数和有限 byte/request/group 容量。CUDA stage 使用原 pinned host resource；不把整个模型 pin。
-本能力正在 [F3 收口](../implementation/tasks/compute/foundation-f3-file-resource-streaming.md)，
-当前局部结果和待验平台/交付以该卡为准。
+本能力已完成本轮四路线的适用 source/static/shared 资格，精确机器、风险和限制见
+[F3 最终收口](../implementation/tasks/compute/foundation-f3-final-closure.md)。
 
 `StreamFile::adopt` 接管已有 `io::File`，`borrow` 保留调用方地址稳定的 File；两者都需明确合法容量。
 File 与原 IoContext 的 owner worker 合同保持不变。`StreamSource` 也可接管或借用稳定只读

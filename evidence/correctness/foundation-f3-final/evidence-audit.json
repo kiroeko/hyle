@@ -1,0 +1,314 @@
+{
+  "schema_version": 1,
+  "product_candidate": "97858fbc88a6b5a87f109290b956eeaeee632dd2",
+  "product_tree": "6398479c76fdc9677206ee692943664814463ebd",
+  "product_diff_to_current_head": [],
+  "current_sdk_cells": 12,
+  "actual_math_sdk_cells": 10,
+  "software_vulkan_cells": 2,
+  "source_receipts": [
+    "foundation-f3-final-source",
+    "foundation-f3-sdk-windows-cpu-cuda-static-f6db4d5b2"
+  ],
+  "reviewed_receipts": [
+    {
+      "receipt": "evidence/correctness/foundation-f3-air-vulkan-subject/receipt.json",
+      "sha256": "b40f4ca7a80663b3f9f221210027c6e99461f4f91a859d9c7a720cdd88e7a762",
+      "verdict": "PASS_AIR_VULKAN_NATIVE_FILE_JOURNEYS_ONLY",
+      "verified_artifacts": [
+        "evidence/correctness/foundation-f3-air-vulkan-subject/raw-results.zip"
+      ]
+    },
+    {
+      "receipt": "evidence/correctness/foundation-f3-apple-subject/receipt.json",
+      "sha256": "cfbbab7ee7bb28fdca755cb2518eacec3cd2b7510517d4b540c924352a9ab535",
+      "verdict": "PASS_AIR_APPLE_NATIVE_FILE_JOURNEYS_ONLY",
+      "verified_artifacts": [
+        "evidence/correctness/foundation-f3-apple-subject/raw-results.zip"
+      ]
+    },
+    {
+      "receipt": "evidence/correctness/foundation-f3-asan/receipt.json",
+      "sha256": "2434b56fe0cdd6d7a9c7bfd132c168f082cfbd52e7c3aa55ae287311687cae1c",
+      "verdict": "PASS_WSL_F3_ASAN_TWELVE_RISKS_WITH_ORIGINAL_FAILURES_AND_USER_BUDGET_RETAINED",
+      "verified_artifacts": [
+        "evidence/correctness/foundation-f3-asan/raw-results.zip"
+      ]
+    },
+    {
+      "receipt": "evidence/correctness/foundation-f3-cpu-subject/receipt.json",
+      "sha256": "53d20528d3bb8e334d27c1383f2b5ef283942526f506871abd18b5849b76fb2a",
+      "verdict": "PASS_WINDOWS_CPU_SUBJECT_ONLY; complete F3 is UNPROVEN",
+      "verified_artifacts": [
+        "evidence/correctness/foundation-f3-cpu-subject/raw-results.zip"
+      ]
+    },
+    {
+      "receipt": "evidence/correctness/foundation-f3-current-risks/receipt.json",
+      "sha256": "91bf733be4de8cdf7baf3ff8f9701ff2e751d1b5d551781608c223a70ee4123f",
+      "verdict": "PASS_CURRENT_F3_SELECTED_PLATFORM_AND_COMMON_SANITIZER_RISKS_ONLY",
+      "verified_artifacts": [
+        "evidence/correctness/foundation-f3-current-risks/raw-results.zip"
+      ]
+    },
+    {
+      "receipt": "evidence/correctness/foundation-f3-direct-io/receipt.json",
+      "sha256": "05ee781ab5bda4135560369415e36fdb1f3f2dbefbd9429877304905014e5074",
+      "verdict": "PASS_F3_EXPLICIT_DIRECT_IO_AND_COMMON_RISK_INCREMENT_ONLY",
+      "verified_artifacts": [
+        "evidence/correctness/foundation-f3-direct-io/raw-results.zip"
+      ]
+    },
+    {
+      "receipt": "evidence/correctness/foundation-f3-file-risk-acceptance/receipt.json",
+      "sha256": "8ed021663422a5c1fbb56491bd66f34fe1192ba0cc26a7024cd0c8f48b62518f",
+      "verdict": "PASS_WINDOWS_CPU_TEN_AND_AIR_APPLE_SIX_VULKAN_FIVE_FILE_RISK_TESTS_ONLY",
+      "verified_artifacts": [
+        "evidence/correctness/foundation-f3-file-risk-acceptance/raw-results.zip"
+      ]
+    },
+    {
+      "receipt": "evidence/correctness/foundation-f3-final-source/receipt.json",
+      "sha256": "8d4fc5a39c4aee0d562e50b21fa72d0bd12f7c1b8f9fa9e6dd67c6fd11712fa0",
+      "verdict": "PASS_CURRENT_F3_ALL_APPLICABLE_SOURCE_MATH_AND_QWEN_ONLY",
+      "verified_artifacts": [
+        "evidence/correctness/foundation-f3-final-source/raw-results.zip"
+      ]
+    },
+    {
+      "receipt": "evidence/correctness/foundation-f3-handoff-windows/receipt.json",
+      "sha256": "c232178e0973dd17b40b395e8b604897b0a4ac3d84306b130018381d85454ff3",
+      "verdict": "PASS_WINDOWS_CPU_PRIVATE_HANDOFF_ONLY",
+      "verified_artifacts": [
+        "evidence/correctness/foundation-f3-handoff-windows/build.log",
+        "evidence/correctness/foundation-f3-handoff-windows/copy.log",
+        "evidence/correctness/foundation-f3-handoff-windows/copy.xml",
+        "evidence/correctness/foundation-f3-handoff-windows/job.json",
+        "evidence/correctness/foundation-f3-handoff-windows/selector-plan.zip"
+      ]
+    },
+    {
+      "receipt": "evidence/correctness/foundation-f3-identity/receipt.json",
+      "sha256": "4a8813815636bcb449bad88825b6a4530507afc8128b5b55ae3c0d969a5a448d",
+      "verdict": "PASS_DOCS_CLOSURE_ONLY",
+      "verified_artifacts": []
+    },
+    {
+      "receipt": "evidence/correctness/foundation-f3-math-air/receipt.json",
+      "sha256": "70441e21f849907076e43764eca4ab2525d2d3b27dc41337d29ee680884d7f8e",
+      "verdict": "PASS_AIR_CPU_APPLE_VULKAN_SOURCE_MATH_AND_EXACT_QWEN_RANGE_ROUNDTRIPS_ONLY",
+      "verified_artifacts": [
+        "evidence/correctness/foundation-f3-math-air/raw-results.zip"
+      ]
+    },
+    {
+      "receipt": "evidence/correctness/foundation-f3-math-roundtrip-windows/receipt.json",
+      "sha256": "ced41bb1a3a80ce83856ae462e84156abcbb9f76f3883e29c8e018e753e6910a",
+      "verdict": "PASS_WINDOWS_CPU_CUDA_VULKAN_SOURCE_MATURE_GGUF_AND_ACTUAL_QWEN_ROUNDTRIP_ONLY",
+      "verified_artifacts": [
+        "evidence/correctness/foundation-f3-math-roundtrip-windows/raw-results.zip"
+      ]
+    },
+    {
+      "receipt": "evidence/correctness/foundation-f3-math-windows/receipt.json",
+      "sha256": "b689a4a09b7d9aa448832046144302b7aabdea9f22d96e0ae1841a09b0f5efb0",
+      "verdict": "PASS_WINDOWS_CPU_CUDA_SOURCE_FILE_MATH_AND_ACTUAL_QWEN_RANGES_ONLY",
+      "verified_artifacts": [
+        "evidence/correctness/foundation-f3-math-windows/raw-results.zip"
+      ]
+    },
+    {
+      "receipt": "evidence/correctness/foundation-f3-native-windows/receipt.json",
+      "sha256": "1e20661a5b580c40e1d1e9bafc2fbb67532f72412f4632243176033eb5a5f724",
+      "verdict": "PASS_WINDOWS_CUDA_VULKAN_FILE_JOURNEYS_ONLY",
+      "verified_artifacts": [
+        "evidence/correctness/foundation-f3-native-windows/cuda-raw-results.zip",
+        "evidence/correctness/foundation-f3-native-windows/vulkan-raw-results.zip"
+      ]
+    },
+    {
+      "receipt": "evidence/correctness/foundation-f3-producer-lifetime/receipt.json",
+      "sha256": "6319c075014e91b7b140bce1bf0e1e963fea81dc14a90aaba7dd48d2760772b6",
+      "verdict": "PASS_WINDOWS_CUDA_PRODUCER_LIFETIME_AND_CPU_REGRESSION_ONLY",
+      "verified_artifacts": [
+        "evidence/correctness/foundation-f3-producer-lifetime/raw-results.zip"
+      ]
+    },
+    {
+      "receipt": "evidence/correctness/foundation-f3-scope/receipt.json",
+      "sha256": "6512ca4ba6d9b1b6a526545406e3df08006f50a414375ef7900a26920ba937bd",
+      "verdict": "PASS_SCOPED_MAINTENANCE_ONLY",
+      "verified_artifacts": []
+    },
+    {
+      "receipt": "evidence/correctness/foundation-f3-sdk-air-cpu-apple-shared-97858fbc8/receipt.json",
+      "sha256": "61aaf03cf2ee8c4f00330e712271766dc2e22c67caa18439822d25cbcc992d70",
+      "verdict": "PASS_F3_AIR_CPU_APPLE_SHARED_RELOCATED_SDK_ONLY",
+      "verified_artifacts": [
+        "evidence/correctness/foundation-f3-sdk-air-cpu-apple-shared-97858fbc8/raw-results.zip"
+      ]
+    },
+    {
+      "receipt": "evidence/correctness/foundation-f3-sdk-air-cpu-apple-static-97858fbc8/receipt.json",
+      "sha256": "263a41103dd6118361d832368259c18eb02c464d21b74847788fcee39c26d119",
+      "verdict": "PASS_F3_AIR_CPU_APPLE_STATIC_RELOCATED_SDK_ONLY",
+      "verified_artifacts": [
+        "evidence/correctness/foundation-f3-sdk-air-cpu-apple-static-97858fbc8/raw-results.zip"
+      ]
+    },
+    {
+      "receipt": "evidence/correctness/foundation-f3-sdk-air-vulkan-shared-97858fbc8/receipt.json",
+      "sha256": "6caf6f56ef626506bbae6bca241019003d8c4c3a41d6f5c27efab2a380eae722",
+      "verdict": "PASS_F3_AIR_VULKAN_SHARED_RELOCATED_SDK_ONLY",
+      "verified_artifacts": [
+        "evidence/correctness/foundation-f3-sdk-air-vulkan-shared-97858fbc8/raw-results.zip"
+      ]
+    },
+    {
+      "receipt": "evidence/correctness/foundation-f3-sdk-air-vulkan-static-97858fbc8/receipt.json",
+      "sha256": "a2a6ee0f0863f261db5450389a1b5a0e56dbaf3eb1a62e86cea42c12f9b4e265",
+      "verdict": "PASS_F3_AIR_VULKAN_STATIC_RELOCATED_SDK_ONLY",
+      "verified_artifacts": [
+        "evidence/correctness/foundation-f3-sdk-air-vulkan-static-97858fbc8/raw-results.zip"
+      ]
+    },
+    {
+      "receipt": "evidence/correctness/foundation-f3-sdk-windows-cpu-cuda-shared-a5215036e/receipt.json",
+      "sha256": "2600a48cbad43cde2ed1070c57d57e40a4c705dcb2244144e671604b1b9cb586",
+      "verdict": "PASS_WINDOWS_F3_CPU_CUDA_SHARED_RELOCATED_SDK_ONLY",
+      "verified_artifacts": [
+        "evidence/correctness/foundation-f3-sdk-windows-cpu-cuda-shared-a5215036e/raw-results.zip"
+      ]
+    },
+    {
+      "receipt": "evidence/correctness/foundation-f3-sdk-windows-cpu-cuda-static-8857b4459/receipt.json",
+      "sha256": "658ce230fb711698ec3dbf2f8a7a68afa1bf72a83acd47ce6b51a2c2d282a24e",
+      "verdict": "PASS_WINDOWS_F3_CPU_CUDA_STATIC_RELOCATED_SDK_ONLY",
+      "verified_artifacts": [
+        "evidence/correctness/foundation-f3-sdk-windows-cpu-cuda-static-8857b4459/raw-results.zip"
+      ]
+    },
+    {
+      "receipt": "evidence/correctness/foundation-f3-sdk-windows-cpu-cuda-static-f6db4d5b2/receipt.json",
+      "sha256": "b94924bdfbd5d59e08009523f68e2d3b6c2978b7e22196359ab3d4ef11819051",
+      "verdict": "PASS_WINDOWS_F3_CPU_CUDA_STATIC_RELOCATED_SDK_ONLY",
+      "verified_artifacts": [
+        "evidence/correctness/foundation-f3-sdk-windows-cpu-cuda-static-f6db4d5b2/raw-results.zip"
+      ]
+    },
+    {
+      "receipt": "evidence/correctness/foundation-f3-sdk-windows-vulkan-shared-7834ff2f9/receipt.json",
+      "sha256": "3699e94e83b68eb014603c58ef5d7de7631860b998030950afa012017f031746",
+      "verdict": "PASS_WINDOWS_F3_VULKAN_SHARED_RELOCATED_SDK_ONLY",
+      "verified_artifacts": [
+        "evidence/correctness/foundation-f3-sdk-windows-vulkan-shared-7834ff2f9/raw-results.zip"
+      ]
+    },
+    {
+      "receipt": "evidence/correctness/foundation-f3-sdk-windows-vulkan-static-c87521395/receipt.json",
+      "sha256": "5a26d56b9ba3dcb5fe83883dd19f4110d0c50fdae8edbf8c9abdf9d449c915db",
+      "verdict": "PASS_WINDOWS_F3_VULKAN_STATIC_RELOCATED_SDK_ONLY",
+      "verified_artifacts": [
+        "evidence/correctness/foundation-f3-sdk-windows-vulkan-static-c87521395/raw-results.zip"
+      ]
+    },
+    {
+      "receipt": "evidence/correctness/foundation-f3-sdk-wsl-cpu-cuda-shared-97858fbc8/receipt.json",
+      "sha256": "34469d765e4fd077feff325450a93ad8c4ea387ddb59e41d880f354a474d16a3",
+      "verdict": "PASS_F3_WSL_CPU_CUDA_SHARED_RELOCATED_SDK_ONLY",
+      "verified_artifacts": [
+        "evidence/correctness/foundation-f3-sdk-wsl-cpu-cuda-shared-97858fbc8/raw-results.zip"
+      ]
+    },
+    {
+      "receipt": "evidence/correctness/foundation-f3-sdk-wsl-cpu-cuda-static-97858fbc8/receipt.json",
+      "sha256": "c187a42cf1d7deec49d7ad31e5d8559c36a77642b25eb4d1b6e772a01fa51ae5",
+      "verdict": "PASS_F3_WSL_CPU_CUDA_STATIC_RELOCATED_SDK_ONLY",
+      "verified_artifacts": [
+        "evidence/correctness/foundation-f3-sdk-wsl-cpu-cuda-static-97858fbc8/raw-results.zip"
+      ]
+    },
+    {
+      "receipt": "evidence/correctness/foundation-f3-sdk-wsl-vulkan-shared-97858fbc8/receipt.json",
+      "sha256": "b37a14b0d95b90786a4b3068f36f220c47a8a31b4d080c8ec822a95103cf4a85",
+      "verdict": "PASS_F3_WSL_VULKAN_SHARED_RELOCATED_SDK_ONLY",
+      "verified_artifacts": [
+        "evidence/correctness/foundation-f3-sdk-wsl-vulkan-shared-97858fbc8/raw-results.zip"
+      ]
+    },
+    {
+      "receipt": "evidence/correctness/foundation-f3-sdk-wsl-vulkan-static-97858fbc8/receipt.json",
+      "sha256": "6dd267bf469d5051b42c327d9fa9c75b3d31f956ae2a9d7d308513e5e8df0921",
+      "verdict": "PASS_F3_WSL_VULKAN_STATIC_RELOCATED_SDK_ONLY",
+      "verified_artifacts": [
+        "evidence/correctness/foundation-f3-sdk-wsl-vulkan-static-97858fbc8/raw-results.zip"
+      ]
+    },
+    {
+      "receipt": "evidence/correctness/foundation-f3-suffix-retirement/receipt.json",
+      "sha256": "48ddbdc4900e0dd804c1f808cbd7370dae2e0fb38fb0cedec3b2e1692195a299",
+      "verdict": "PASS_F3_SUFFIX_RETIREMENT_AND_SELECTED_PLATFORM_REGRESSIONS_ONLY",
+      "verified_artifacts": [
+        "evidence/correctness/foundation-f3-suffix-retirement/raw-results.zip"
+      ]
+    },
+    {
+      "receipt": "evidence/correctness/foundation-f3-tsan/receipt.json",
+      "sha256": "a4d845490c7b5bf8aae85631f4040e41e91c290789b0e7238bf5d15f633b63e0",
+      "verdict": "PASS_WSL_F3_TSAN_TWELVE_RISKS_ONLY",
+      "verified_artifacts": [
+        "evidence/correctness/foundation-f3-tsan/raw-results.zip"
+      ]
+    },
+    {
+      "receipt": "evidence/correctness/foundation-f3-ubsan/receipt.json",
+      "sha256": "7b02769506abcc896a09869b033313d26e263a511ba8a4d214ce580868e39bf4",
+      "verdict": "PASS_WSL_F3_UBSAN_TWELVE_RISKS_ONLY",
+      "verified_artifacts": [
+        "evidence/correctness/foundation-f3-ubsan/raw-results.zip"
+      ]
+    },
+    {
+      "receipt": "evidence/correctness/foundation-f3-vulkan-file-faults/receipt.json",
+      "sha256": "7c868366c95a998384053a84754e26f4597d28be27b72b4479f67e161fdcbcf2",
+      "verdict": "PASS_WINDOWS_VULKAN_F3_NATIVE_FILE_FAULTS_AND_PRODUCER_SEAMS_ONLY",
+      "verified_artifacts": [
+        "evidence/correctness/foundation-f3-vulkan-file-faults/raw-results.zip"
+      ]
+    },
+    {
+      "receipt": "evidence/correctness/foundation-f3-windows-suffix-retirement/receipt.json",
+      "sha256": "904c0c49148a800ea512f81b3c6f491b75c1f67cf4b33b017b0fa61c719b9734",
+      "verdict": "PASS_WINDOWS_F3_CUDA_SEVEN_PUBLIC_RISKS_ONLY",
+      "verified_artifacts": [
+        "evidence/correctness/foundation-f3-windows-suffix-retirement/raw-results.zip"
+      ]
+    },
+    {
+      "receipt": "evidence/correctness/foundation-f3-wsl-cuda-deadline/receipt.json",
+      "sha256": "999b325d90d33bc7bdf68d77c7fa4e936506c942399ae90131fc6dc6b14d28e1",
+      "verdict": "PASS_WSL_CUDA_SIX_WINDOWS_CPU_TWELVE_F3_RISKS_ONLY",
+      "verified_artifacts": [
+        "evidence/correctness/foundation-f3-wsl-cuda-deadline/raw-results.zip"
+      ]
+    },
+    {
+      "receipt": "evidence/correctness/foundation-f3-wsl-math-exported-drop/receipt.json",
+      "sha256": "4ac9954195be514b53ac1f8bc531fb025790a257e3eb2d9f556b7a4fa0daad73",
+      "verdict": "PASS_WSL_CPU_CUDA_SOURCE_MATH_AND_WINDOWS_CPU_EXPORTED_CROSS_THREAD_DROP_ONLY",
+      "verified_artifacts": [
+        "evidence/correctness/foundation-f3-wsl-math-exported-drop/raw-results.zip"
+      ]
+    },
+    {
+      "receipt": "evidence/correctness/foundation-f3-wsl-vulkan-source/receipt.json",
+      "sha256": "a18813f67752eb7448cf0313097b974424118fe56795541f1a6b97e71a716aed",
+      "verdict": "PASS_WSL_VULKAN_ORDINARY_SOURCE_BUILD_ONLY_NO_GPU_MATH",
+      "verified_artifacts": [
+        "evidence/correctness/foundation-f3-wsl-vulkan-source/raw-results.zip"
+      ]
+    }
+  ],
+  "verdict": "PASS_DECLARED_RECEIPT_AND_ARCHIVE_INTEGRITY_ONLY",
+  "limit": "Artifact integrity does not alone prove semantic coverage; final matrix and red team make the original FIX/gate dispositions."
+}

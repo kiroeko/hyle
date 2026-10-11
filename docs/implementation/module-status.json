@@ -270,10 +270,14 @@
     },
     {
       "module": "compute",
-      "state": "CANDIDATE",
-      "record": "docs/implementation/tasks/compute/foundation-f3-file-resource-streaming.md",
-      "summary": "F3 CANDIDATE：原F3-06未启动suffix producer环已真实反证、共同owner退回AUDITED后有限修复并复验；四路线主体/数学与当前原生/sanitizer风险已取证，Windows CUDA新suffix与当前安装交付/新头/迁址及终审待验。",
-      "candidate": "97858fbc88a6b5a87f109290b956eeaeee632dd2"
+      "state": "CLOSED",
+      "record": "docs/implementation/tasks/compute/foundation-f3-final-closure.md",
+      "summary": "F3 CLOSED：原八FIX的有界双向文件/资源管线、四自然路线/逐组ready、实际Qwen BF16/F32与原编码Direct+Graph往返、当前native寿命/错误/取消/direct IO和三sanitizer风险、适用source/迁址static/shared/新头/缺席/运行库、P0与红队通过；原suffix FAIL/有限纠正保留，未测硬件/软件GPU及driver私有成本不外推。",
+      "candidate": "97858fbc88a6b5a87f109290b956eeaeee632dd2",
+      "performance": {
+        "tier": "P0",
+        "evidence": "docs/implementation/tasks/compute/foundation-f3-p0-cost-review.md"
+      }
     },
     {
       "module": "graph",
@@ -435,10 +439,14 @@
     },
     {
       "module": "compute_route_cpu",
-      "state": "CANDIDATE",
-      "record": "docs/implementation/tasks/compute/foundation-f3-file-resource-streaming.md",
-      "summary": "F3 CANDIDATE：原F3-06未启动suffix producer环已真实反证、共同owner退回AUDITED后有限修复并复验；四路线主体/数学与当前原生/sanitizer风险已取证，Windows CUDA新suffix与当前安装交付/新头/迁址及终审待验。",
-      "candidate": "97858fbc88a6b5a87f109290b956eeaeee632dd2"
+      "state": "CLOSED",
+      "record": "docs/implementation/tasks/compute/foundation-f3-final-closure.md",
+      "summary": "F3 CLOSED：原八FIX的有界双向文件/资源管线、四自然路线/逐组ready、实际Qwen BF16/F32与原编码Direct+Graph往返、当前native寿命/错误/取消/direct IO和三sanitizer风险、适用source/迁址static/shared/新头/缺席/运行库、P0与红队通过；原suffix FAIL/有限纠正保留，未测硬件/软件GPU及driver私有成本不外推。",
+      "candidate": "97858fbc88a6b5a87f109290b956eeaeee632dd2",
+      "performance": {
+        "tier": "P0",
+        "evidence": "docs/implementation/tasks/compute/foundation-f3-p0-cost-review.md"
+      }
     },
     {
       "module": "graph_route_cpu",
@@ -487,10 +495,14 @@
     },
     {
       "module": "compute_route_cuda",
-      "state": "CANDIDATE",
-      "record": "docs/implementation/tasks/compute/foundation-f3-file-resource-streaming.md",
-      "summary": "F3 CANDIDATE：原F3-06未启动suffix producer环已真实反证、共同owner退回AUDITED后有限修复并复验；四路线主体/数学与当前原生/sanitizer风险已取证，Windows CUDA新suffix与当前安装交付/新头/迁址及终审待验。",
-      "candidate": "97858fbc88a6b5a87f109290b956eeaeee632dd2"
+      "state": "CLOSED",
+      "record": "docs/implementation/tasks/compute/foundation-f3-final-closure.md",
+      "summary": "F3 CLOSED：原八FIX的有界双向文件/资源管线、四自然路线/逐组ready、实际Qwen BF16/F32与原编码Direct+Graph往返、当前native寿命/错误/取消/direct IO和三sanitizer风险、适用source/迁址static/shared/新头/缺席/运行库、P0与红队通过；原suffix FAIL/有限纠正保留，未测硬件/软件GPU及driver私有成本不外推。",
+      "candidate": "97858fbc88a6b5a87f109290b956eeaeee632dd2",
+      "performance": {
+        "tier": "P0",
+        "evidence": "docs/implementation/tasks/compute/foundation-f3-p0-cost-review.md"
+      }
     },
     {
       "module": "graph_route_cuda",
@@ -505,10 +517,14 @@
     },
     {
       "module": "compute_route_apple",
-      "state": "CANDIDATE",
-      "record": "docs/implementation/tasks/compute/foundation-f3-file-resource-streaming.md",
-      "summary": "F3 CANDIDATE：原F3-06未启动suffix producer环已真实反证、共同owner退回AUDITED后有限修复并复验；四路线主体/数学与当前原生/sanitizer风险已取证，Windows CUDA新suffix与当前安装交付/新头/迁址及终审待验。",
-      "candidate": "97858fbc88a6b5a87f109290b956eeaeee632dd2"
+      "state": "CLOSED",
+      "record": "docs/implementation/tasks/compute/foundation-f3-final-closure.md",
+      "summary": "F3 CLOSED：原八FIX的有界双向文件/资源管线、四自然路线/逐组ready、实际Qwen BF16/F32与原编码Direct+Graph往返、当前native寿命/错误/取消/direct IO和三sanitizer风险、适用source/迁址static/shared/新头/缺席/运行库、P0与红队通过；原suffix FAIL/有限纠正保留，未测硬件/软件GPU及driver私有成本不外推。",
+      "candidate": "97858fbc88a6b5a87f109290b956eeaeee632dd2",
+      "performance": {
+        "tier": "P0",
+        "evidence": "docs/implementation/tasks/compute/foundation-f3-p0-cost-review.md"
+      }
     },
     {
       "module": "graph_route_apple",
@@ -523,10 +539,14 @@
     },
     {
       "module": "compute_route_vulkan",
-      "state": "CANDIDATE",
-      "record": "docs/implementation/tasks/compute/foundation-f3-file-resource-streaming.md",
-      "summary": "F3 CANDIDATE：原F3-06未启动suffix producer环已真实反证、共同owner退回AUDITED后有限修复并复验；四路线主体/数学与当前原生/sanitizer风险已取证，Windows CUDA新suffix与当前安装交付/新头/迁址及终审待验。",
-      "candidate": "97858fbc88a6b5a87f109290b956eeaeee632dd2"
+      "state": "CLOSED",
+      "record": "docs/implementation/tasks/compute/foundation-f3-final-closure.md",
+      "summary": "F3 CLOSED：原八FIX的有界双向文件/资源管线、四自然路线/逐组ready、实际Qwen BF16/F32与原编码Direct+Graph往返、当前native寿命/错误/取消/direct IO和三sanitizer风险、适用source/迁址static/shared/新头/缺席/运行库、P0与红队通过；原suffix FAIL/有限纠正保留，未测硬件/软件GPU及driver私有成本不外推。",
+      "candidate": "97858fbc88a6b5a87f109290b956eeaeee632dd2",
+      "performance": {
+        "tier": "P0",
+        "evidence": "docs/implementation/tasks/compute/foundation-f3-p0-cost-review.md"
+      }
     },
     {
       "module": "graph_route_vulkan",
@@ -663,10 +683,14 @@
     },
     {
       "module": "compute_stream",
-      "state": "CANDIDATE",
-      "summary": "F3 CANDIDATE：原F3-06未启动suffix producer环已真实反证、共同owner退回AUDITED后有限修复并复验；四路线主体/数学与当前原生/sanitizer风险已取证，Windows CUDA新suffix与当前安装交付/新头/迁址及终审待验。",
-      "record": "docs/implementation/tasks/compute/foundation-f3-file-resource-streaming.md",
-      "candidate": "97858fbc88a6b5a87f109290b956eeaeee632dd2"
+      "state": "CLOSED",
+      "summary": "F3 CLOSED：原八FIX的有界双向文件/资源管线、四自然路线/逐组ready、实际Qwen BF16/F32与原编码Direct+Graph往返、当前native寿命/错误/取消/direct IO和三sanitizer风险、适用source/迁址static/shared/新头/缺席/运行库、P0与红队通过；原suffix FAIL/有限纠正保留，未测硬件/软件GPU及driver私有成本不外推。",
+      "record": "docs/implementation/tasks/compute/foundation-f3-final-closure.md",
+      "candidate": "97858fbc88a6b5a87f109290b956eeaeee632dd2",
+      "performance": {
+        "tier": "P0",
+        "evidence": "docs/implementation/tasks/compute/foundation-f3-p0-cost-review.md"
+      }
     }
   ]
 }
