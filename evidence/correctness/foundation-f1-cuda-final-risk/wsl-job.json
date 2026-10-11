@@ -1,0 +1,102 @@
+{
+  "candidate": "3034fc595abf5c2570e06dedbf195b34daf3fe72",
+  "source": "/home/kiro/hyle-f1/native-fault/source-3034fc595abf",
+  "build": "/home/kiro/hyle-f1/native-fault/build-3034fc595abf",
+  "configuration": "GCC14.2 CUDA13.3 Release shared instrumentationON installOFF",
+  "parallel": 1,
+  "stages": [
+    {
+      "name": "configure",
+      "command": [
+        "/usr/bin/cmake",
+        "-S",
+        "/home/kiro/hyle-f1/native-fault/source-3034fc595abf",
+        "-B",
+        "/home/kiro/hyle-f1/native-fault/build-3034fc595abf",
+        "-G",
+        "Ninja",
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DCMAKE_CXX_COMPILER=/usr/bin/g++-14",
+        "-DCMAKE_CUDA_COMPILER=/usr/local/cuda-13.3/bin/nvcc",
+        "-DHYLE_DEV_FACTORS=compute_backend_cuda;compute_provider_cublas;graph",
+        "-DHYLE_BUILD_TESTS=ON",
+        "-DHYLE_BUILD_BENCH=OFF",
+        "-DHYLE_TEST_INSTRUMENTATION=ON",
+        "-DHYLE_INSTALL=OFF",
+        "-DHYLE_STATIC=OFF",
+        "-DHYLE_DEP_SOURCE_CACHE=/root/.cache/hyle/dependencies/v1"
+      ],
+      "pid": 3847,
+      "state": "terminal",
+      "available_bytes": 32208539648,
+      "log": "configure.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "a59c5b9b83130fa4700eafda156b2d9285da17ea9d281fd2f93225a9bcaa30bf"
+    },
+    {
+      "name": "build",
+      "command": [
+        "/usr/bin/cmake",
+        "--build",
+        "/home/kiro/hyle-f1/native-fault/build-3034fc595abf",
+        "--target",
+        "hyle_compute_backend_cuda_test",
+        "hyle_compute_provider_cublas_test",
+        "hyle_graph_native_retirement_test",
+        "--parallel",
+        "1"
+      ],
+      "pid": 4074,
+      "state": "terminal",
+      "available_bytes": 31827386368,
+      "log": "build.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "9ac787a2634f5ee653b7f4253b6d0e315a0659f0edcf4cbb0a146c3ee948ee48"
+    },
+    {
+      "name": "backend",
+      "command": [
+        "/home/kiro/hyle-f1/native-fault/build-3034fc595abf/bin/hyle_compute_backend_cuda_test",
+        "--gtest_filter=CudaBackend.ObservationFailureKeepsActualWorkAndAbandonedOwnerAlive:CudaBackend.WaitObservationFailureDrainsOriginalStreamAndPreservesError"
+      ],
+      "pid": 4546,
+      "state": "terminal",
+      "available_bytes": 32070803456,
+      "log": "backend.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "5787aa4034baf3236f394464d857d6109ee5c5209f81f24c28e37d81efd86f2a"
+    },
+    {
+      "name": "direct",
+      "command": [
+        "/home/kiro/hyle-f1/native-fault/build-3034fc595abf/bin/hyle_compute_provider_cublas_test",
+        "--gtest_filter=CublasProvider.LeasedDirectRetainsNativeUsesAndReplaysWithoutLeaseAllocation"
+      ],
+      "pid": 4555,
+      "state": "terminal",
+      "available_bytes": 32088961024,
+      "log": "direct.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "70735f56c604306e4d2680dcb69645340b3286bb5e20c9ec6aff7663bc7837e6"
+    },
+    {
+      "name": "graph",
+      "command": [
+        "/home/kiro/hyle-f1/native-fault/build-3034fc595abf/bin/hyle_graph_native_retirement_test",
+        "--gtest_filter=GraphNativeRetirement.*"
+      ],
+      "pid": 4564,
+      "state": "terminal",
+      "available_bytes": 32044650496,
+      "log": "graph.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "0c8aba39c077fadaaee2bfc8201a3ac64a0b1c10fe603c2b506d6f660948b6be"
+    }
+  ],
+  "verdict": "PASS"
+}

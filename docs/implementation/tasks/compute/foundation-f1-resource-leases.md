@@ -664,6 +664,12 @@ F1-07 逐语义复核：CUDA 原 native cancellation 返回 `Unimplemented`（�
 各 exe timeout120，configure300/build1800，原失败保留，预算不重置；不换 shipping SDK 树为插桩，不跑其他算子/P1。
 shipping/common 的同产品配置证据已按各平台保留；该 fault 资格只签这份实际未知观察/前缀退役格。
 
+`3034fc595` WSL 独立 fault tree configure/build 与 backend2、Direct1、Graph4 全部通过；
+新的 CUDA lease cancellation 断言在 WSL 和 Windows 原 cuBLAS 单用例均通过。请求返回原
+`Unimplemented` 后仍 Pending、active uses 为2、输出不能 publish；释放真实 gate 后原数学和最终回收通过。
+[本批收据](../../../../evidence/correctness/foundation-f1-cuda-final-risk/receipt.json)保存两平台候选、
+配置、阶段前内存、原命令与日志，普通 shipping SDK 未改为插桩。最终矩阵/交付缺格与红队仍待裁决。
+
 ### Windows CPU+Vulkan installed static managed 接缝补格
 
 矩阵复核发现 Windows Vulkan-only static 已通过，但它没有链接 `graph_route_cpu_vulkan`，不能代签

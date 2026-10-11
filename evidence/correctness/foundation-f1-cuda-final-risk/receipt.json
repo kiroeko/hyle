@@ -1,0 +1,48 @@
+{
+  "schema_version": 1,
+  "scope": "F1 original CUDA observation faults actual cuBLAS leased Direct cancellation and native Graph prefix retirement qualification",
+  "product_candidate": "fc4ffbd1610eb3b24bf76709dc6e5e25b3d838d7",
+  "test_candidate": "3034fc595abf5c2570e06dedbf195b34daf3fe72",
+  "checks": [
+    {
+      "name": "WSL real CUDA observation and Graph retirement",
+      "verdict": "PASS",
+      "cases": {
+        "backend": 2,
+        "direct": 1,
+        "graph": 4
+      },
+      "receipt": "wsl-job.json",
+      "configuration": "GCC14.2 CUDA13.3 Release shared instrumentationON installOFF"
+    },
+    {
+      "name": "Windows cuBLAS leased Direct unsupported cancellation retains actual use",
+      "verdict": "PASS",
+      "cases": 1,
+      "receipt": "windows-cancel-job.json",
+      "configuration": "Release/shared/source/instrumentationON/installOFF"
+    }
+  ],
+  "qualification": [
+    "CUDA event observation errors decorate original real work; no mock math or new kernel",
+    "New request_cancel assertions observe original Unimplemented with still Pending and two pool uses; publication remains rejected",
+    "Original eight mathematical replays retained with no additional lease metadata allocator calls",
+    "Graph actual unknown accepted-prefix retirement, original error and private/alias/caller result ownership tested separately",
+    "Independent fault build does not change ordinary shipping SDK configuration"
+  ],
+  "pending": [
+    "Windows CPU Vulkan imported static managed delivery",
+    "Complete matrix source identity reuse audit, final P0 and separate red team"
+  ],
+  "log_sha256": {
+    "windows-cancel-build.log": "ee85b58ea76d02bcaa8b937cbb7aabd3175439574746cd51612807831f23bb4c",
+    "windows-cancel-job.json": "1638e88051341fc5a255c184a672e589873c4c2b772d37e15742ef5dfa67a294",
+    "windows-cancel-test.log": "1932924d0e554786cd4ff0e1d0685790f15f5afdcfc8592e43b3f0d48447136c",
+    "wsl-backend.log": "5787aa4034baf3236f394464d857d6109ee5c5209f81f24c28e37d81efd86f2a",
+    "wsl-build.log": "9ac787a2634f5ee653b7f4253b6d0e315a0659f0edcf4cbb0a146c3ee948ee48",
+    "wsl-configure.log": "a59c5b9b83130fa4700eafda156b2d9285da17ea9d281fd2f93225a9bcaa30bf",
+    "wsl-direct.log": "70735f56c604306e4d2680dcb69645340b3286bb5e20c9ec6aff7663bc7837e6",
+    "wsl-graph.log": "0c8aba39c077fadaaee2bfc8201a3ac64a0b1c10fe603c2b506d6f660948b6be",
+    "wsl-job.json": "1ac305358ae864a8b5bf937e7d3bfd041ff20ebe9460cd51240e27c51c4e0c00"
+  }
+}

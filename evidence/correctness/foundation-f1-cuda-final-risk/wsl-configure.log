@@ -1,0 +1,34 @@
+-- The CXX compiler identification is GNU 14.2.0
+-- Detecting CXX compiler ABI info
+-- Detecting CXX compiler ABI info - done
+-- Check for working CXX compiler: /usr/bin/g++-14 - skipped
+-- Detecting CXX compile features
+-- Detecting CXX compile features - done
+-- HYLE developer factors: requested='compute_backend_cuda;compute_provider_cublas;graph' resolved='core,container_intrusive,util_core,error,time,math,platform,platform_thread,mem,container,compute_ops,compute,graph,compute_backend_cuda,compute_provider_cublas' products=''
+-- The C compiler identification is GNU 13.3.0
+-- Detecting C compiler ABI info
+-- Detecting C compiler ABI info - done
+-- Check for working C compiler: /usr/bin/cc - skipped
+-- Detecting C compile features
+-- Detecting C compile features - done
+-- HYLE_SANITIZER = off
+-- HYLE_TESTING = ON (test-only interfaces compiled; not for shipped builds)
+-- Found CUDAToolkit: /usr/local/cuda-13.3/targets/x86_64-linux/include (found suitable version "13.3.73", minimum required is "13.3") 
+-- Performing Test CMAKE_HAVE_LIBC_PTHREAD
+-- Performing Test CMAKE_HAVE_LIBC_PTHREAD - Success
+-- Found Threads: TRUE  
+-- HYLE: CUDA backend ON -- found CUDA Toolkit 13.3.73 at '/usr/local/cuda-13.3'; capability enabled
+-- The CUDA compiler identification is NVIDIA 13.3.73
+-- Detecting CUDA compiler ABI info
+-- Detecting CUDA compiler ABI info - done
+-- Check for working CUDA compiler: /usr/local/cuda-13.3/bin/nvcc - skipped
+-- Detecting CUDA compile features
+-- Detecting CUDA compile features - done
+-- HYLE_TRACE = OFF (hooks compile to nothing -- zero cost)
+-- HYLE source package target unavailable (requires Git and a Git checkout)
+-- Found Python3: /usr/bin/python3 (found version "3.12.3") found components: Interpreter 
+-- HYLE tests: skipping Git-only LOC reporter outside a Git checkout
+-- HYLE 0.1.0 | GNU 14.2.0 | C++23 | sanitizer=off | linkage=shared | products= | factors=core,container_intrusive,util_core,error,time,math,platform,platform_thread,mem,container,compute_ops,compute,graph,compute_backend_cuda,compute_provider_cublas
+-- Configuring done (2.9s)
+-- Generating done (0.0s)
+-- Build files have been written to: /home/kiro/hyle-f1/native-fault/build-3034fc595abf

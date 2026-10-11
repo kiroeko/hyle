@@ -18,12 +18,12 @@ registry 当前七 owner 仍 AUDITED。产品实现固定于 `fc4ffbd1610eb3b24b
 | backing/range/generation F1-01 | `LeasePoolOptions/Stats`；`LeasePool::create/adopt/allocate/stats/valid`；move/析构 | 原子资源控制；SELF 少量 domain，BORROW Mem Buffer/RangeAllocator/ConcurrentBlockPool | COMPLETE；容量/metadata 有界，adopt 成功才接管，不复制 payload |
 | 读写/发布 F1-02 | `LeaseImportOptions`；`ReadLease::adopt/valid/size/generation/view/tensor/subview/try_write/reset`、copy/move/析构；`WriteLease::valid/size/generation/view/tensor/publish/reset`、move/析构 | 原子 permission；同 root 保守按整块权限，跨块独立 | COMPLETE；readonly import 永不提升，原生/外部未跟踪 writable aliases 是显式 precondition |
 | native use F1-03 | `LeaseUsePoolOptions`；`LeaseUsePool::create/begin/active_batches/valid/close/drain`、move/析构；`LeaseUseBatch::read/write/attach/valid`、move/析构 | 原子完成保活；BORROW 原 CompletionRetention/native retirement | COMPLETE；提交前预留，未接受回退，实际退休后释放，metadata/index 由原 owner 保活 |
-| 观察错误 F1-04 | 原 `Completion::poll/wait` 与 CUDA 原 submit/collect/drain；未增加普通用户接口 | 定向 correctness 修复；原 EventSlot/Reaper 与 Graph aggregate | COMPLETE 实现；WSL fault 资格仍 UNPROVEN |
+| 观察错误 F1-04 | 原 `Completion::poll/wait` 与 CUDA 原 submit/collect/drain；未增加普通用户接口 | 定向 correctness 修复；原 EventSlot/Reaper 与 Graph aggregate | COMPLETE；Windows 与 WSL 原 fault/Graph 退役均有证据 |
 | 共同 Direct F1-05 | `LeasedInput/Output/OperationOptions`；`LeasedOperationInvocation::create/valid/in_flight/provider/submit/close/drain`、move/析构 | 复合 glue；原 PreparedOperation/OperationInvocation/Queue | COMPLETE；输入/输出 view 冷预置，自动保留 use；一冷 completion slot |
 | common Graph F1-06 | `LeasedInvocationOptions`；`LeasedInvocation::create/valid/in_flight/bind` 两权限重载、`prepare_replay/replay_route/replay_report/reset/submit` 三原 QueueBinding 档、`output/close/drain`、move/析构；`LeasedGraphOutput::valid/tensor/storage_lease/reset`、copy/move/析构 | 复合 glue；原 Executable/Invocation/SubmissionCursor | COMPLETE；原计划/Provider 不变，旧结果阻止重放，caller/source alias 可导出 ReadLease，private output 保留原 owner |
 | native Direct/Graph F1-01/05/06 | Apple/Vulkan `MemoryResource::binding/import_readonly`；各自 `LeasedInput` 与 `LeasedInvocation::create/valid/in_flight/bind/submit/close/drain`、move/析构；CUDA `ExternalBuffer::into_read_lease` | native route adapter；BORROW 原 MLX array/Vulkan Tensor/owned CUDA Buffer 与原 Program/Results | COMPLETE；各自 native ownership，冷 readonly view，不引入共同万能资源/Queue |
 | CPU+GPU 组合 F1-06 | CPU+Apple/Vulkan 原 `Invocation::bind(ValueId, TensorDesc, ReadLease)`；CPU+CUDA 用共同 LeasedInvocation | 复合 glue；BORROW 原 mixed plan、native/host bind 与 Results | COMPLETE 实现；每 accepted prefix 在观察前保护，body sentinel 与真实 prefixes 联合 terminal |
-| 关闭/回收 F1-07 | 上述 `close/drain/reset`；原 Completion cancel、native Context collect/close/drain | 复用原进展/退役；无新 poller、线程或 reaper | COMPLETE 实现；CUDA cancellation 原返回 Unimplemented 的新断言尚待运行 |
+| 关闭/回收 F1-07 | 上述 `close/drain/reset`；原 Completion cancel、native Context collect/close/drain | 复用原进展/退役；无新 poller、线程或 reaper | COMPLETE；CUDA cancellation 原返回 Unimplemented 后仍保活，Windows/WSL 新断言通过 |
 | 构建/文档 F1-08 | `hyle::graph`/普通 compute routes；普通 sample；三个 detail protocol 头和原 `submit_guarded` 接缝 | 公开 user surface 与内部跨库协议分开 | PARTIAL 验收；Windows CPU+Vulkan static managed 格仍 UNPROVEN |
 
 所有 `valid/size/generation/stats` 只作冷查询；并不承诺这些字段可在原 control handle 的未同步并发修改中读取。
@@ -55,14 +55,16 @@ registry 当前七 owner 仍 AUDITED。产品实现固定于 `fc4ffbd1610eb3b24b
   native refusal：[mixed](../../../../evidence/correctness/foundation-f1-mixed-leases-initial/receipt.json)。
 - S：普通 Direct/Graph 与 installed imported mixed、ON/OFF 头、absence、迁址/DLL：
   [交付](../../../../evidence/correctness/foundation-f1-lease-delivery-initial/receipt.json)。
+- U：WSL 独立 CUDA fault2、cuBLAS Direct1、Graph retirement4，以及 Windows 新取消单用例：
+  [CUDA 本批风险](../../../../evidence/correctness/foundation-f1-cuda-final-risk/receipt.json)。
 
 | 能力旅程 | 正常/边界 | failure/OOM/overflow | move/ownership/teardown | cancel/concurrency/late use | 主/正交消费者 | 平台/交付 |
 |---|---|---|---|---|---|---|
 | F1-01/02 owner/permission | C 的有限块、subview、generation、多读阻写 PASS | C 的 checked arithmetic/预算/拒绝不消费 PASS | C/D/N 原 backing 与 readonly alias PASS | C 跨线程 reader、独立 block PASS | D/N/S 真实 ready 数据与矩阵/alias PASS | S 部分 PASS；最终 source identity 复核 UNPROVEN |
-| F1-03/04 native retirement | C/D/G actual retirement PASS | C/G unknown error 不提前回收 PASS；WSL CUDA fault UNPROVEN | D/G/N/L dropped handles 仍保活 PASS | C/L 取消不证明退休 PASS；新 CUDA lease cancellation 断言 UNPROVEN | 原数学与 actual prefix 保留，非 mock math PASS | Windows CUDA / Air Apple / Windows Vulkan 已取证；其余细分按下面表 |
-| F1-05 Direct | D/N/S 四路线成熟数学 PASS | D binding rollback、L cold OOM/accepted failure PASS | D/N/L last source alias/use 回收 PASS | L native cancel/abandon PASS；CUDA 新断言 UNPROVEN | 同时含 readonly import、bounded storage、MatMul PASS | S 当前 ordinary source/static/shared PASS；最终链接矩阵复核尚未裁决 |
+| F1-03/04 native retirement | C/D/G actual retirement PASS | C/G/U unknown error 不提前回收、首错与最终排空 PASS | D/G/N/L dropped handles 仍保活 PASS | C/L/U 取消不证明退休、仍保留 native use PASS | 原数学与 actual prefix 保留，非 mock math PASS | Windows/WSL CUDA / Air Apple / Windows Vulkan 已取证；其余细分按下面表 |
+| F1-05 Direct | D/N/S/U 四路线成熟数学 PASS | D binding rollback、L cold OOM/accepted failure PASS | D/N/L last source alias/use 回收 PASS | L/U native cancel/abandon 与原不支持取消合同 PASS | 同时含 readonly import、bounded storage、MatMul PASS | S 当前 ordinary source/static/shared PASS；最终链接矩阵复核尚未裁决 |
 | F1-06 Graph/组合 | G/M/S 原计划与 scalar reference PASS | G unknown prefix 与 M closed-native suffix 原错 PASS | G/N/M 旧结果/source/caller/private output PASS | C/L/M 原协议与实际 cancellation/abandon PASS；跨平台 fault 复核 UNPROVEN | 无新数学，原 CPU/native/CPU consumer PASS | Windows CPU+Vulkan imported static managed UNPROVEN；最终链接矩阵未裁决 |
-| F1-07 close/drain | C/D/G/N/S held Completion drain PASS | G/L/M 失败 slot/首错/拒绝后继 PASS | D/G/L/M 最后 guard 与保留 reader PASS | C host concurrency；L/M actual native 路线 PASS；CUDA 断言未运行 | 关闭本 owner、旧结果仍有效；无 device-wide 隐式 wait | 借用寿命/各 native mechanism 逐平台终审 UNPROVEN |
+| F1-07 close/drain | C/D/G/N/S held Completion drain PASS | G/L/M 失败 slot/首错/拒绝后继 PASS | D/G/L/M 最后 guard 与保留 reader PASS | C host concurrency；L/M/U actual native 路线 PASS | 关闭本 owner、旧结果仍有效；无 device-wide 隐式 wait | 借用寿命/各 native mechanism 逐平台终审 UNPROVEN |
 | F1-08 普通入口/P0 | S 公开 sample/自动 route 闭包 PASS | S absence、ON/OFF 新头 PASS | S actual SDK move/DLL PASS | 不新增进展引擎；代码账单已记录 | source/static/shared 普通 facade；细分保留 | 最后一 static managed 格、完整 P0/red-team UNPROVEN |
 
 CPU 已接受的同步工作没有可取消的在途 GPU 命令；其 inline Completion 在返回时已退休。
@@ -76,11 +78,11 @@ unknown-fence helper 的三个受控协议用例不代签实际 native GPU；M �
 
 | 实际平台 / 路线 | source 普通/混合 | relocated static 普通/混合 | relocated shared 普通/混合 | fault/lifetime 当前证据 |
 |---|---|---|---|---|
-| Windows CPU/CUDA | PASS / PASS | PASS / UNPROVEN（共同 lease 的静态导出已证明；mixed consumer 尚未单独记录） | CUDA-only 普通 PASS；CPU+CUDA mixed 未单独记录 | D/G 与 CUDA 原 fault PASS；新增 lease cancellation 断言待运行 |
+| Windows CPU/CUDA | PASS / PASS | PASS / UNPROVEN（共同 lease 的静态导出已证明；mixed consumer 尚未单独记录） | CUDA-only 普通 PASS；CPU+CUDA mixed 未单独记录 | D/G 与 CUDA 原 fault PASS；U 新 lease cancellation 断言 PASS |
 | Windows CPU/Vulkan | PASS / PASS | Vulkan-only 普通 PASS；CPU+Vulkan managed UNPROVEN | PASS / PASS | L/M PASS |
 | MacBook Air CPU/Apple | PASS / PASS | PASS / PASS | PASS / PASS | L/M PASS |
 | MacBook Air CPU/Vulkan | PASS / PASS | PASS / PASS | PASS / PASS | M admission refusal PASS；native L 对该平台尚未单独记录 |
-| WSL CPU/CUDA | PASS / PASS | PASS / PASS | PASS / PASS | C host sanitizer PASS；本轮 CUDA fault 独立树在运行 |
+| WSL CPU/CUDA | PASS / PASS | PASS / PASS | PASS / PASS | C host sanitizer、U 本轮 CUDA fault/Direct/Graph PASS |
 | WSL Vulkan | 未签 GPU 数学 | 未签 GPU 数学 | 未签 GPU 数学 | 实际 loader 仅 llvmpipe type4；当前卡按实际 GPU 资格条件，无合格 GPU |
 
 Windows CPU+CUDA mixed 与 Air Vulkan native fault 的证据能否由已测共同/原生机制组合覆盖，

@@ -1,0 +1,112 @@
+[0/2] Re-checking globbed directories...
+[1/103] Building CXX object src/error/CMakeFiles/hyle_error.dir/status.cc.o
+[2/103] Linking CXX shared library bin/libhyle_error.so.0.1.0
+[3/103] Creating library symlink bin/libhyle_error.so
+[4/103] Building CXX object src/time/CMakeFiles/hyle_time.dir/clock.cc.o
+[5/103] Building CXX object src/time/CMakeFiles/hyle_time.dir/interop.cc.o
+[6/103] Linking CXX shared library bin/libhyle_time.so.0.1.0
+[7/103] Creating library symlink bin/libhyle_time.so
+[8/103] Building CXX object src/platform/CMakeFiles/hyle_platform_cpu_probe.dir/cpu.cc.o
+[9/103] Building CXX object src/platform/CMakeFiles/hyle_platform_cgroup_parser.dir/linux_cgroup.cc.o
+[10/103] Building CXX object src/platform/CMakeFiles/hyle_platform.dir/cpu_resource.cc.o
+[11/103] Building CXX object src/platform/CMakeFiles/hyle_platform.dir/dynlib.cc.o
+[12/103] Building CXX object src/platform/CMakeFiles/hyle_platform.dir/environment.cc.o
+[13/103] Building CXX object src/platform/CMakeFiles/hyle_platform.dir/host_memory.cc.o
+[14/103] Building CXX object src/platform/CMakeFiles/hyle_platform.dir/numa.cc.o
+[15/103] Building CXX object src/platform/CMakeFiles/hyle_platform.dir/process.cc.o
+[16/103] Building CXX object src/platform/CMakeFiles/hyle_platform.dir/random.cc.o
+[17/103] Building CXX object src/platform/CMakeFiles/hyle_platform.dir/virtual_memory.cc.o
+[18/103] Linking CXX shared library bin/libhyle_platform.so.0.1.0
+[19/103] Creating library symlink bin/libhyle_platform.so
+[20/103] Building CXX object src/platform_thread/CMakeFiles/hyle_platform_thread.dir/thread.cc.o
+[21/103] Building CXX object src/platform_thread/CMakeFiles/hyle_platform_thread.dir/wait.cc.o
+[22/103] Linking CXX shared library bin/libhyle_platform_thread.so.0.1.0
+[23/103] Creating library symlink bin/libhyle_platform_thread.so
+[24/103] Building CXX object src/mem/CMakeFiles/hyle_mem.dir/buffer.cc.o
+[25/103] Building CXX object src/mem/CMakeFiles/hyle_mem.dir/buffer_pool.cc.o
+[26/103] Building CXX object src/mem/CMakeFiles/hyle_mem.dir/composite_buffer.cc.o
+[27/103] Building CXX object src/mem/CMakeFiles/hyle_mem.dir/heap.cc.o
+[28/103] Building CXX object src/mem/CMakeFiles/hyle_mem.dir/lifetime_plan.cc.o
+[29/103] Building CXX object src/mem/CMakeFiles/hyle_mem.dir/range_allocator.cc.o
+[30/103] Building CXX object src/mem/CMakeFiles/hyle_mem.dir/resource.cc.o
+[31/103] Building CXX object src/mem/CMakeFiles/hyle_mem.dir/system.cc.o
+[32/103] Building CXX object src/mem/CMakeFiles/hyle_mem.dir/stats.cc.o
+[33/103] Building C object src/mem/CMakeFiles/mimalloc_static.dir/__/__/third_party/mimalloc/src/static.c.o
+[34/103] Linking C static library bin/libmimalloc_static.a
+[35/103] Linking CXX shared library bin/libhyle_mem.so.0.1.0
+[36/103] Creating library symlink bin/libhyle_mem.so
+[37/103] Building CXX object src/container/CMakeFiles/hyle_container.dir/hash.cc.o
+[38/103] Building CXX object src/container/CMakeFiles/hyle_container.dir/pod_vector.cc.o
+[39/103] Building CXX object src/container/CMakeFiles/hyle_container.dir/flat_hash_map.cc.o
+[40/103] Building CXX object src/container/CMakeFiles/hyle_container.dir/dynamic_bitset.cc.o
+[41/103] Building CXX object src/container/CMakeFiles/hyle_container.dir/hash_xxh3_avx2.cc.o
+[42/103] Building CXX object src/container/CMakeFiles/hyle_container.dir/generated/simd-dispatch/container_bitset/container_bitset_scalar.cc.o
+[43/103] Building CXX object src/container/CMakeFiles/hyle_container.dir/generated/simd-dispatch/container_bitset/container_bitset_sse4.cc.o
+[44/103] Building CXX object src/container/CMakeFiles/hyle_container.dir/generated/simd-dispatch/container_bitset/container_bitset_avx2.cc.o
+[45/103] Building CXX object src/container/CMakeFiles/hyle_container.dir/generated/simd-dispatch/container_bitset/container_bitset_avx512.cc.o
+[46/103] Linking CXX shared library bin/libhyle_container.so.0.1.0
+[47/103] Creating library symlink bin/libhyle_container.so
+[48/103] Building CXX object src/compute_ops/CMakeFiles/hyle_compute_ops.dir/operation.cc.o
+[49/103] Building CXX object src/compute_ops/CMakeFiles/hyle_compute_ops.dir/tensor_desc.cc.o
+[50/103] Building CXX object src/compute_ops/CMakeFiles/hyle_compute_ops.dir/low_precision.cc.o
+[51/103] Building CXX object src/compute_ops/CMakeFiles/hyle_compute_ops.dir/weight_decode.cc.o
+[52/103] Linking CXX shared library bin/libhyle_compute_ops.so.0.1.0
+[53/103] Creating library symlink bin/libhyle_compute_ops.so
+[54/103] Building CXX object src/compute/CMakeFiles/hyle_compute.dir/command_capture.cc.o
+[55/103] Building CXX object src/compute/CMakeFiles/hyle_compute.dir/completion.cc.o
+[56/103] Building CXX object src/compute/CMakeFiles/hyle_compute.dir/custom_kernel.cc.o
+[57/103] Building CXX object src/compute/CMakeFiles/hyle_compute.dir/device.cc.o
+[58/103] Building CXX object src/compute/CMakeFiles/hyle_compute.dir/operation.cc.o
+[59/103] Building CXX object src/compute/CMakeFiles/hyle_compute.dir/provider.cc.o
+[60/103] Building CXX object src/compute/CMakeFiles/hyle_compute.dir/resource_budget.cc.o
+[61/103] Building CXX object src/compute/CMakeFiles/hyle_compute.dir/resource_leases.cc.o
+[62/103] Building CXX object src/compute/CMakeFiles/hyle_compute.dir/retained_completion.cc.o
+[63/103] Building CXX object src/compute/CMakeFiles/hyle_compute.dir/leased_operation.cc.o
+[64/103] Building CXX object src/compute/CMakeFiles/hyle_compute.dir/route_policy.cc.o
+[65/103] Building CXX object src/compute/CMakeFiles/hyle_compute.dir/result.cc.o
+[66/103] Building CXX object src/compute/CMakeFiles/hyle_compute.dir/shape_domain.cc.o
+[67/103] Building CXX object src/compute/CMakeFiles/hyle_compute.dir/shape_program.cc.o
+[68/103] Building CXX object src/compute/CMakeFiles/hyle_compute.dir/tensor_view.cc.o
+[69/103] Building CXX object src/compute/CMakeFiles/hyle_compute.dir/transfer.cc.o
+[70/103] Building CXX object src/compute/CMakeFiles/hyle_compute.dir/workload.cc.o
+[71/103] Linking CXX shared library bin/libhyle_compute.so.0.1.0
+[72/103] Creating library symlink bin/libhyle_compute.so
+[73/103] Building CXX object src/graph/CMakeFiles/hyle_graph.dir/graph.cc.o
+[74/103] Building CXX object src/graph/CMakeFiles/hyle_graph.dir/effect_order.cc.o
+[75/103] Building CXX object src/graph/CMakeFiles/hyle_graph.dir/executable.cc.o
+[76/103] Building CXX object src/graph/CMakeFiles/hyle_graph.dir/view_domain.cc.o
+[77/103] Building CXX object src/graph/CMakeFiles/hyle_graph.dir/constant_artifact.cc.o
+[78/103] Building CXX object src/graph/CMakeFiles/hyle_graph.dir/leased_invocation.cc.o
+[79/103] Building CXX object src/graph/CMakeFiles/hyle_graph.dir/lease_submission.cc.o
+[80/103] Linking CXX shared library bin/libhyle_graph.so.0.1.0
+[81/103] Creating library symlink bin/libhyle_graph.so
+[82/103] Building CXX object src/compute_backend_cuda/CMakeFiles/hyle_compute_backend_cuda.dir/cuda_backend.cc.o
+[83/103] Building CXX object src/compute_backend_cuda/CMakeFiles/hyle_compute_backend_cuda.dir/driver_release.cc.o
+[84/103] Building CXX object src/compute_backend_cuda/CMakeFiles/hyle_compute_backend_cuda.dir/cuda_memory.cc.o
+[85/103] Building CXX object src/compute_backend_cuda/CMakeFiles/hyle_compute_backend_cuda.dir/cuda_device_status.cc.o
+[86/103] Building CUDA object src/compute_backend_cuda/CMakeFiles/hyle_compute_backend_cuda.dir/device_status_kernel.cu.o
+[87/103] Linking CXX shared library bin/libhyle_compute_backend_cuda.so.0.1.0
+[88/103] Creating library symlink bin/libhyle_compute_backend_cuda.so
+[89/103] Building CXX object src/compute_provider_cublas/CMakeFiles/hyle_compute_provider_cublas.dir/cublas_provider.cc.o
+[90/103] Linking CXX shared library bin/libhyle_compute_provider_cublas.so.0.1.0
+[91/103] Creating library symlink bin/libhyle_compute_provider_cublas.so
+[92/103] Building CXX object _deps/googletest-build/googletest/CMakeFiles/gtest.dir/src/gtest-all.cc.o
+[93/103] Linking CXX static library lib/libgtest.a
+[94/103] Building CXX object _deps/googletest-build/googletest/CMakeFiles/gtest_main.dir/src/gtest_main.cc.o
+[95/103] Linking CXX static library lib/libgtest_main.a
+[96/103] Building CXX object tests/graph/CMakeFiles/hyle_graph_native_retirement_test.dir/aggregate_native_retirement_test.cc.o
+/home/kiro/hyle-f1/native-fault/source-3034fc595abf/tests/graph/aggregate_native_retirement_test.cc: In destructor ‘{anonymous}::Gate::~Gate()’:
+/home/kiro/hyle-f1/native-fault/source-3034fc595abf/tests/graph/aggregate_native_retirement_test.cc:52:8: warning: suggest explicit braces to avoid ambiguous ‘else’ [-Wdangling-else]
+   52 |     if (stream) EXPECT_EQ(cudaStreamSynchronize(stream), cudaSuccess);
+      |        ^
+[97/103] Linking CXX executable bin/hyle_graph_native_retirement_test
+[98/103] Building CXX object tests/compute_backend_cuda/CMakeFiles/hyle_compute_backend_cuda_test.dir/cuda_backend_test.cc.o
+[99/103] Building CXX object tests/compute_backend_cuda/CMakeFiles/hyle_compute_backend_cuda_test.dir/device_status_test.cc.o
+[100/103] Building CUDA object tests/compute_backend_cuda/CMakeFiles/hyle_compute_backend_cuda_test.dir/cuda_test_kernel.cu.o
+[101/103] Linking CXX executable bin/hyle_compute_backend_cuda_test
+[102/103] Building CXX object tests/compute_provider_cublas/CMakeFiles/hyle_compute_provider_cublas_test.dir/cublas_provider_test.cc.o
+/home/kiro/hyle-f1/native-fault/source-3034fc595abf/tests/compute_provider_cublas/cublas_provider_test.cc: In destructor ‘{anonymous}::LeasedStreamGate::~LeasedStreamGate()’:
+/home/kiro/hyle-f1/native-fault/source-3034fc595abf/tests/compute_provider_cublas/cublas_provider_test.cc:62:8: warning: suggest explicit braces to avoid ambiguous ‘else’ [-Wdangling-else]
+   62 |     if (stream) EXPECT_EQ(cudaStreamSynchronize(stream), cudaSuccess);
+      |        ^
+[103/103] Linking CXX executable bin/hyle_compute_provider_cublas_test

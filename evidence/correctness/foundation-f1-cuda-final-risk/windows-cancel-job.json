@@ -1,0 +1,43 @@
+{
+  "candidate": "3095e038afec049730dfae8916a9c9ac869d7ee6",
+  "test_candidate": "3034fc595abf5c2570e06dedbf195b34daf3fe72",
+  "configuration": "Release/shared/source/instrumentationON/installOFF",
+  "compiler": "C:/Program Files/Microsoft Visual Studio/18/Enterprise/VC/Tools/MSVC/14.50.35717/bin/Hostx64/x64/cl.exe",
+  "parallel": 1,
+  "stages": [
+    {
+      "name": "build",
+      "command": [
+        "C:\\Program Files\\CMake\\bin\\cmake.EXE",
+        "--build",
+        "C:\\h7\\foundation-f1-q0",
+        "--target",
+        "hyle_compute_provider_cublas_test",
+        "--parallel",
+        "1"
+      ],
+      "pid": 43452,
+      "state": "terminal",
+      "available_bytes": 32860053504,
+      "log": "build.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "ee85b58ea76d02bcaa8b937cbb7aabd3175439574746cd51612807831f23bb4c"
+    },
+    {
+      "name": "test",
+      "command": [
+        "C:\\h7\\foundation-f1-q0\\bin\\hyle_compute_provider_cublas_test.exe",
+        "--gtest_filter=CublasProvider.LeasedDirectRetainsNativeUsesAndReplaysWithoutLeaseAllocation"
+      ],
+      "pid": 93996,
+      "state": "terminal",
+      "available_bytes": 32949563392,
+      "log": "test.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "1932924d0e554786cd4ff0e1d0685790f15f5afdcfc8592e43b3f0d48447136c"
+    }
+  ],
+  "verdict": "PASS"
+}
