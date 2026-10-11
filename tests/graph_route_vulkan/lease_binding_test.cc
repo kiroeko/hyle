@@ -33,8 +33,9 @@ TEST(VulkanLeaseBinding, OriginalOwnersDirectGraphAndReadonlyImport) {
   EXPECT_FALSE(memory.binding(left, t::dense({3, 3})).has_value());
   EXPECT_FALSE(memory.import_readonly(left_native, {.allocator = {}}).has_value());
   auto direct = v::prepare(context, c::MatMul{}, desc, desc).value();
-  auto direct_run = direct.create_invocation().value();
-  ASSERT_TRUE(direct_run.bind(left_binding, right_binding).ok());
+  auto direct_run = v::LeasedInvocation::create(direct, memory).value();
+  std::array leased_inputs{v::LeasedInput{desc, left}, v::LeasedInput{desc, right}};
+  ASSERT_TRUE(direct_run.bind(leased_inputs).ok());
   auto direct_done = direct_run.submit().value();
   ASSERT_TRUE(direct_done.wait().has_value());
   auto direct_result = direct_done.result().value();
@@ -49,11 +50,17 @@ TEST(VulkanLeaseBinding, OriginalOwnersDirectGraphAndReadonlyImport) {
   ASSERT_TRUE(builder.publish(source_alias).ok());
   auto definition = std::move(builder).finish().value();
   auto program = g::vulkan::compile(context, definition).value();
-  auto run = program.create_invocation().value();
-  ASSERT_TRUE(run.bind(left_binding, right_binding).ok());
+  auto run = v::LeasedInvocation::create(program, memory).value();
+  ASSERT_TRUE(run.bind(leased_inputs).ok());
+  for (auto &input : leased_inputs) input.source.reset();
   left_native = {}; right_native = {}; left.reset(); right.reset();
   left_binding = {}; right_binding = {};
   auto done = run.submit().value();
+  // Drain must prove this native slot even while its result handle is held
+  // and has not yet been polled or waited.
+  ASSERT_TRUE(run.drain().ok());
+  EXPECT_FALSE(run.in_flight());
+  EXPECT_FALSE(run.submit().has_value());
   ASSERT_TRUE(done.wait().has_value());
   auto result = done.result().value();
   EXPECT_EQ(t::read(context, result->tensors()[0]).value(),

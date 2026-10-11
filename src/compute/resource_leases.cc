@@ -264,6 +264,12 @@ void detail::LeaseAccess::retain_resource_owner(LeasePool &pool, void *owner,
   pool.state_->release_resource_owner = release;
 }
 
+void detail::LeaseAccess::retire_native(LeaseUseBatch &uses, Status terminal) noexcept {
+  if (!uses.valid()) return;
+  auto retired = Completion::completed(std::move(terminal));
+  HYLE_FATAL_ASSERT(uses.attach(retired).ok());
+}
+
 Result<ReadLease> ReadLease::adopt(mem::Buffer &&backing, LeaseImportOptions options) noexcept {
   if (!backing.valid()) return std::unexpected(Status::InvalidArgument("lease backing is empty"));
   const auto bytes = backing.size();

@@ -11,7 +11,7 @@
 #include "hyle/mem/buffer.h"
 
 namespace hyle::compute::vulkan {
-namespace detail { struct MemoryState; struct MemoryAccess; struct TransferState; struct TransferAccess; }
+namespace detail { struct MemoryState; struct LeasedInvocationState; struct MemoryAccess; struct TransferState; struct TransferAccess; }
 
 enum class MemoryKind : unsigned char { kDevice, kStaging };
 
@@ -103,5 +103,35 @@ private:
   friend struct detail::TransferAccess;
   std::shared_ptr<detail::TransferState> state_;
 };
+struct LeasedInput final {
+  TensorDesc description{};
+  ReadLease source{};
+};
+
+// Opt-in native submission owner for both Direct and the route's Graph
+// Programs. bind constructs native views cold; submit automatically admits
+// sources and attaches their guards to the original native Completion.
+class LeasedInvocation final {
+public:
+  LeasedInvocation() noexcept = default;
+  LeasedInvocation(const LeasedInvocation &) = delete;
+  LeasedInvocation &operator=(const LeasedInvocation &) = delete;
+  HYLE_COMPUTE_ROUTE_VULKAN_API LeasedInvocation(LeasedInvocation &&) noexcept;
+  HYLE_COMPUTE_ROUTE_VULKAN_API LeasedInvocation &operator=(LeasedInvocation &&) noexcept;
+  HYLE_COMPUTE_ROUTE_VULKAN_API ~LeasedInvocation();
+  HYLE_COMPUTE_ROUTE_VULKAN_API static Result<LeasedInvocation>
+  create(const Program &program, const MemoryResource &memory,
+         LeaseImportOptions options = {}, InvocationAllocation allocation = {}) noexcept;
+  bool valid() const noexcept { return state_ != nullptr; }
+  HYLE_COMPUTE_ROUTE_VULKAN_API bool in_flight() const noexcept;
+  HYLE_COMPUTE_ROUTE_VULKAN_API Status bind(std::span<const LeasedInput> inputs) noexcept;
+  HYLE_COMPUTE_ROUTE_VULKAN_API Result<OwnedResult<Results>> submit() noexcept;
+  HYLE_COMPUTE_ROUTE_VULKAN_API Status close() noexcept;
+  HYLE_COMPUTE_ROUTE_VULKAN_API Status drain() noexcept;
+private:
+  explicit LeasedInvocation(detail::LeasedInvocationState *state) noexcept : state_(state) {}
+  detail::LeasedInvocationState *state_ = nullptr;
+};
+
 } // namespace hyle::compute::vulkan
 #endif

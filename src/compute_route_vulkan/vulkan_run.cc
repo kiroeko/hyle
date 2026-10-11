@@ -9,6 +9,7 @@
 #include <utility>
 
 #include "completion_internal.h"
+#include "hyle/compute/detail/lease_access.h"
 #include "hyle/core/compiler.h"
 #include "hyle/time/clock.h"
 
@@ -196,6 +197,7 @@ namespace {
 
 Result<CompletionPoll> observe(const std::shared_ptr<Run> &run,
                                bool wait) noexcept {
+  LeaseUseBatch uses;
   auto &runtime = *run->runtime;
   auto &device = *runtime.device;
   std::unique_lock lock(runtime.mutex);
@@ -328,6 +330,7 @@ Result<CompletionPoll> observe(const std::shared_ptr<Run> &run,
           run->submission_failure.ok())
         run->submission_failure = run->observation_error;
       run->pending = false;
+      uses = std::move(run->native_uses);
       *run->previous = run->next;
       if (run->next != nullptr)
         run->next->previous = run->previous;
@@ -342,6 +345,7 @@ Result<CompletionPoll> observe(const std::shared_ptr<Run> &run,
     terminal = run->terminal;
   }
   lock.unlock();
+  cd::LeaseAccess::retire_native(uses, terminal);
   // Result destruction can release external owner tokens. Never invoke such
   // destructors under the native queue lock.
   if (retired && abandoned.valid()) {
@@ -456,6 +460,13 @@ Status submit_transfer(Run &run, bool &accepted) noexcept {
 }
 
 } // namespace
+
+Status wait_native(const std::shared_ptr<Run> &run) noexcept {
+  auto retired = observe(run, true);
+  if (!retired) return std::move(retired).error();
+  return *retired == CompletionPoll::kComplete ? Status::Ok()
+      : Status::Unavailable("Vulkan native retirement is not yet proved");
+}
 
 Result<Completion> submit_locked(const std::shared_ptr<Run> &run,
                                  bool allow_closed) noexcept {

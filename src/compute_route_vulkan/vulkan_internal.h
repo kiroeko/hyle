@@ -232,6 +232,7 @@ struct Run final {
   Run *next = nullptr;
   Run **previous = nullptr;
   cd::CompletionLifetime abandoned;
+  LeaseUseBatch native_uses;
   Status hint;
   Status observation_error;
   Status terminal;
@@ -296,6 +297,7 @@ create_run(const std::shared_ptr<Runtime> &runtime,
 Result<Completion> submit_locked(const std::shared_ptr<Run> &run,
                                  bool allow_closed = false) noexcept;
 Status collect(const std::shared_ptr<Runtime> &runtime, bool drain) noexcept;
+Status wait_native(const std::shared_ptr<Run> &run) noexcept;
 Status submit_native(const Device &, VkCommandBuffer, VkFence) noexcept;
 // Runtime::mutex protects the route's stage cursor and native submissions.
 bool advance_async_locked(Run &) noexcept;

@@ -42,8 +42,9 @@ TEST(AppleLeaseBinding, SharedLeaseDirectGraphAndImportedNativeAlias) {
   auto prepared = context.prepare(c::MatMul{}, std::span<const mx::array>(inputs));
   ASSERT_TRUE(prepared.has_value()) << prepared.error().message();
   auto direct = std::move(*prepared);
-  auto direct_run = direct.create_invocation().value();
-  ASSERT_TRUE(direct_run.bind(inputs).ok());
+  auto direct_run = a::LeasedInvocation::create(direct, memory).value();
+  std::array leased_inputs{a::LeasedInput{desc, left}, a::LeasedInput{desc, right}};
+  ASSERT_TRUE(direct_run.bind(leased_inputs).ok());
   auto direct_done = direct_run.submit().value();
   ASSERT_TRUE(direct_done.wait().has_value());
   auto direct_result = direct_done.result().value();
@@ -60,11 +61,17 @@ TEST(AppleLeaseBinding, SharedLeaseDirectGraphAndImportedNativeAlias) {
   auto compiled = g::apple::compile(context, definition);
   ASSERT_TRUE(compiled.has_value()) << compiled.error().message();
   auto program = std::move(*compiled);
-  auto run = program.create_invocation().value();
-  ASSERT_TRUE(run.bind(inputs).ok());
+  auto run = a::LeasedInvocation::create(program, memory).value();
+  ASSERT_TRUE(run.bind(leased_inputs).ok());
+  for (auto &input : leased_inputs) input.source.reset();
   left.reset(); right.reset(); left_binding = mx::array(0); right_binding = mx::array(0);
   for (auto &input : inputs) input = mx::array(0);
   auto done = run.submit().value();
+  // Drain must prove this native slot even while its result handle is held
+  // and has not yet been polled or waited.
+  ASSERT_TRUE(run.drain().ok());
+  EXPECT_FALSE(run.in_flight());
+  EXPECT_FALSE(run.submit().has_value());
   ASSERT_TRUE(done.wait().has_value());
   auto result = done.result().value();
   for (std::size_t index = 0; index < 4; ++index)

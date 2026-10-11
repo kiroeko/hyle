@@ -25,6 +25,7 @@
 
 #include "hyle/compute/operation.h"
 #include "hyle/compute/result.h"
+#include "hyle/compute/resource_leases.h"
 #include "hyle/compute/workload.h"
 #include "hyle/error/result.h"
 #include "hyle/mem/allocator.h"
@@ -204,6 +205,7 @@ public:
   explicit operator bool() const noexcept { return valid(); }
   // Cold diagnostic snapshot; recompile to change the bound facts.
   HYLE_COMPUTE_ROUTE_APPLE_API WorkloadContext workload() const noexcept;
+  HYLE_COMPUTE_ROUTE_APPLE_API std::size_t input_count() const noexcept;
   HYLE_COMPUTE_ROUTE_APPLE_API Result<Invocation>
   create_invocation(mem::AllocatorRef result_allocator =
                         mem::system_allocator()) const noexcept;
@@ -237,6 +239,9 @@ public:
 
 private:
   friend class Program;
+  friend class LeasedInvocation;
+  HYLE_COMPUTE_ROUTE_APPLE_API Result<OwnedResult<Results>> submit_guarded(LeaseUseBatch uses) noexcept;
+  HYLE_COMPUTE_ROUTE_APPLE_API Status wait_native() noexcept;
   explicit Invocation(detail::InvocationState *state) noexcept
       : state_(state) {}
   detail::InvocationState *state_ = nullptr;

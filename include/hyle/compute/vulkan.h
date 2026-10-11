@@ -27,6 +27,7 @@
 
 #include "hyle/compute/operation.h"
 #include "hyle/compute/result.h"
+#include "hyle/compute/resource_leases.h"
 #include "hyle/compute/workload.h"
 #include "hyle/compute/resource_budget.h"
 #include "hyle/error/result.h"
@@ -320,6 +321,9 @@ public:
 
 private:
   friend struct detail::Access;
+  friend class LeasedInvocation;
+  HYLE_COMPUTE_ROUTE_VULKAN_API Result<OwnedResult<Results>> submit_guarded(LeaseUseBatch uses) noexcept;
+  HYLE_COMPUTE_ROUTE_VULKAN_API Status wait_native() noexcept;
   explicit Invocation(std::shared_ptr<detail::InvocationState> state) noexcept
       : state_(std::move(state)) {}
   friend struct detail::CompositionAccess;

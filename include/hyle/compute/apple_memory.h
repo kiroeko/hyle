@@ -9,7 +9,7 @@
 #include "hyle/mem/buffer.h"
 
 namespace hyle::compute::apple {
-namespace detail { struct MemoryState; }
+namespace detail { struct MemoryState; struct LeasedInvocationState; }
 
 struct NativeStorage final {
   const void *buffer = nullptr; // Original opaque MTLBuffer identity.
@@ -70,6 +70,36 @@ public:
 private:
   explicit MemoryResource(std::unique_ptr<detail::MemoryState> state) noexcept;
   std::unique_ptr<detail::MemoryState> state_;
+};
+
+struct LeasedInput final {
+  TensorDesc description{};
+  ReadLease source{};
+};
+
+// Opt-in native submission owner for both Direct and the route's Graph
+// Programs. bind constructs native views cold; submit automatically admits
+// sources and attaches their guards to the original native Completion.
+class LeasedInvocation final {
+public:
+  LeasedInvocation() noexcept = default;
+  LeasedInvocation(const LeasedInvocation &) = delete;
+  LeasedInvocation &operator=(const LeasedInvocation &) = delete;
+  HYLE_COMPUTE_ROUTE_APPLE_API LeasedInvocation(LeasedInvocation &&) noexcept;
+  HYLE_COMPUTE_ROUTE_APPLE_API LeasedInvocation &operator=(LeasedInvocation &&) noexcept;
+  HYLE_COMPUTE_ROUTE_APPLE_API ~LeasedInvocation();
+  HYLE_COMPUTE_ROUTE_APPLE_API static Result<LeasedInvocation>
+  create(const Program &program, const MemoryResource &memory,
+         LeaseImportOptions options = {}) noexcept;
+  bool valid() const noexcept { return state_ != nullptr; }
+  HYLE_COMPUTE_ROUTE_APPLE_API bool in_flight() const noexcept;
+  HYLE_COMPUTE_ROUTE_APPLE_API Status bind(std::span<const LeasedInput> inputs) noexcept;
+  HYLE_COMPUTE_ROUTE_APPLE_API Result<OwnedResult<Results>> submit() noexcept;
+  HYLE_COMPUTE_ROUTE_APPLE_API Status close() noexcept;
+  HYLE_COMPUTE_ROUTE_APPLE_API Status drain() noexcept;
+private:
+  explicit LeasedInvocation(detail::LeasedInvocationState *state) noexcept : state_(state) {}
+  detail::LeasedInvocationState *state_ = nullptr;
 };
 
 } // namespace hyle::compute::apple

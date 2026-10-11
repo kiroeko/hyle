@@ -23,6 +23,7 @@
 #include "apple_recurrent.h"
 #include "completion_internal.h"
 #include "hyle/compute/detail/apple_plan.h"
+#include "hyle/compute/detail/lease_access.h"
 #include "hyle/compute/detail/generated_result.h"
 #include "hyle/container/flat_hash_set.h"
 #include "hyle/platform/thread.h"
@@ -355,6 +356,7 @@ struct InvocationState : Job {
   std::shared_ptr<ProgramState> program;
   std::shared_ptr<ResultValues> values;
   cd::ResultSlot<Results> result_slot;
+  LeaseUseBatch native_uses;
   std::vector<mx::array> inputs;
   std::vector<std::unique_ptr<Recurrent>> recurrent;
   std::vector<std::optional<mx::array>> native_values;
@@ -426,6 +428,7 @@ void release(InvocationState *state) noexcept {
 
 void finish(InvocationState &state, Status terminal) noexcept {
   cd::CompletionLifetime abandoned;
+  LeaseUseBatch uses;
   Status hint;
   {
     std::lock_guard lock(state.completion_mutex);
@@ -434,8 +437,10 @@ void finish(InvocationState &state, Status terminal) noexcept {
       state.retired.store(true, std::memory_order_release);
     abandoned = std::exchange(state.abandoned, {});
     hint = std::move(state.terminal_hint);
+    uses = std::move(state.native_uses);
     state.done.store(1, std::memory_order_release);
   }
+  cd::LeaseAccess::retire_native(uses, terminal);
   platform::detail::wake_all(&state.done);
   deliver(abandoned, std::move(terminal), hint);
 }
@@ -803,6 +808,8 @@ Program::create_invocation(mem::AllocatorRef allocator) const noexcept {
   }
 }
 
+std::size_t Program::input_count() const noexcept { return state_ ? state_->inputs.size() : 0; }
+
 Invocation::Invocation(Invocation &&other) noexcept
     : state_(std::exchange(other.state_, nullptr)) {}
 Invocation &Invocation::operator=(Invocation &&other) noexcept {
@@ -841,6 +848,10 @@ Status Invocation::bind(std::span<const mx::array> inputs) noexcept {
 }
 
 Result<OwnedResult<Results>> Invocation::submit() noexcept {
+  return submit_guarded({});
+}
+
+Result<OwnedResult<Results>> Invocation::submit_guarded(LeaseUseBatch uses) noexcept {
   HYLE_TRACE_ZONE_NAMED("hyle.apple.submit");
   if (!state_)
     return std::unexpected(
@@ -859,6 +870,7 @@ Result<OwnedResult<Results>> Invocation::submit() noexcept {
   state_->terminal = Status::Ok();
   state_->cancel.store(false, std::memory_order_relaxed);
   state_->done.store(0, std::memory_order_release);
+  state_->native_uses = std::move(uses);
   detail::retain(state_); // Completion reference, released by its native vtable
   auto completion =
       cd::CompletionAccess::make(&detail::completion_vtable, state_);
@@ -875,5 +887,10 @@ Result<OwnedResult<Results>> Invocation::submit() noexcept {
     return std::unexpected(admitted);
   }
   return result;
+}
+
+Status Invocation::wait_native() noexcept {
+  if (!state_) return Status::FailedPrecondition("empty Apple native invocation");
+  return detail::completion_vtable.wait(state_);
 }
 } // namespace hyle::compute::apple

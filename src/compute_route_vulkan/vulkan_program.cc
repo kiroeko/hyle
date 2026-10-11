@@ -694,6 +694,10 @@ Status Invocation::bind(std::span<const Tensor> inputs) noexcept {
 }
 
 Result<OwnedResult<Results>> Invocation::submit() noexcept {
+  return submit_guarded({});
+}
+
+Result<OwnedResult<Results>> Invocation::submit_guarded(LeaseUseBatch uses) noexcept {
   if (state_ && state_->composition_preparing)
     return std::unexpected(Status::FailedPrecondition("cold Vulkan composition outputs are not sealed"));
   if (!state_ || !state_->bound)
@@ -719,10 +723,16 @@ Result<OwnedResult<Results>> Invocation::submit() noexcept {
     if (!status.ok())
       return std::unexpected(status);
     completion = detail::submit_locked(state_->run);
+    if (completion) state_->run->native_uses = std::move(uses);
   }
   if (!completion)
     return std::unexpected(std::move(completion).error());
   return writer->publish(std::move(*completion));
+}
+
+Status Invocation::wait_native() noexcept {
+  return state_ ? detail::wait_native(state_->run)
+      : Status::FailedPrecondition("empty Vulkan native invocation");
 }
 
 } // namespace hyle::compute::vulkan

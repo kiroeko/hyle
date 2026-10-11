@@ -11,5 +11,7 @@ struct LeaseAccess final {
                                                      ReleaseOwnerFn release) noexcept;
   static HYLE_COMPUTE_API void retain_resource_owner(LeasePool &pool, void *owner,
                                                      ReleaseOwnerFn release) noexcept;
+  // Native route calls this only after its original actual-retirement proof.
+  static HYLE_COMPUTE_API void retire_native(LeaseUseBatch &uses, Status terminal) noexcept;
 };
 } // namespace hyle::compute::detail

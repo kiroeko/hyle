@@ -1,7 +1,7 @@
 if(HYLE_COMPUTE_APPLE_ENABLED)
   configure_file(apple_build.h.in apple_build.h @ONLY)
   hyle_add_module(compute_route_apple TRACE SOURCES
-    apple_context.cc apple_operations.cc apple_tensor.cc
+    apple_context.cc apple_operations.cc apple_tensor.cc apple_leased_invocation.cc
     apple_environment.mm apple_memory.mm apple_weights.mm apple_recurrent.cc apple_mature_indexing.cc
     apple_mature_reduction.cc apple_mature_float.cc apple_mature_artifact.cc apple_mature_gguf.cc)
   hyle_audit_in_tree_dependencies(bitsandbytes_apple awq_apple compressed_tensors_apple ggml_q4k_apple

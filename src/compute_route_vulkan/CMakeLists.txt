@@ -13,7 +13,7 @@ if(HYLE_COMPUTE_VULKAN_ENABLED)
     DEPENDS build_shaders.py ${_shader_inputs} ${_tensor_shaders}
     VERBATIM)
   hyle_add_module(compute_route_vulkan TRACE SOURCES
-    vulkan_device.cc vulkan_memory.cc vulkan_run.cc vulkan_transfer.cc vulkan_transfer_slot.cc vulkan_weights.cc
+    vulkan_device.cc vulkan_memory.cc vulkan_leased_invocation.cc vulkan_run.cc vulkan_transfer.cc vulkan_transfer_slot.cc vulkan_weights.cc
     vulkan_pipeline.cc vulkan_operations.cc vulkan_tensor.cc vulkan_program.cc vulkan_recorder.cc vulkan_region.cc vulkan_scatter.cc
     vulkan_normalization.cc vulkan_reduction.cc vulkan_elementwise.cc vulkan_iree.cc vulkan_mlx.cc vulkan_official.cc vulkan_iq1.cc
     "${_shader_output}/vulkan_shaders.cc")
