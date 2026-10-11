@@ -20,8 +20,8 @@ hyle_file_streaming_qwen <output-directory>/ranges.tsv
 The Python adapter requires official `safetensors`, validates metadata and reads only the three
 layer-0 BF16 projections and F32 norm (about 72 MiB). It does not download weights or hash the
 whole checkpoint. The C++ consumer reads those original ranges using the pipeline and compares
-existing Direct/Graph mathematics against independent references. Its current implementation
-covers CPU/CUDA; Apple/Vulkan real-weight adapters are still pending. These programs are under
+existing Direct/Graph mathematics against independent references. The consumer uses each selected
+route's original Direct/Graph interfaces. CPU/CUDA source runs have passed; Apple/Vulkan qualification is pending. These programs are under
 F3 qualification, so this README does not claim source/static/shared or all-route acceptance.
 
 Cancellation and deadlines stop later chunks; already accepted file/native work must retire.

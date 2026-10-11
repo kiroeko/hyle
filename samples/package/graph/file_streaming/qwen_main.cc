@@ -12,6 +12,14 @@
 #include <hyle/compute/backends/cuda.h>
 #include <hyle/graph/cuda.h>
 #endif
+#if defined(HYLE_COMPUTE_APPLE)
+#include <hyle/compute/apple_memory.h>
+#include <hyle/graph/apple.h>
+#endif
+#if defined(HYLE_COMPUTE_VULKAN)
+#include <hyle/compute/vulkan_memory.h>
+#include <hyle/graph/vulkan.h>
+#endif
 
 #include <algorithm>
 #include <bit>
@@ -108,6 +116,7 @@ Status consume(c::Context &context, c::Queue &queue, m::MemoryResourceRef resour
   HYLE_ASSIGN_OR_RETURN(auto result, invocation.output(y)); HYLE_ASSIGN_OR_RETURN(auto lease, result.storage_lease());
   return check(lease, work, range);
 }
+#endif
 hyle::sched::Task<Result<hyle::io::File>> open_model(m::AllocatorRef, hyle::io::IoContext *io, std::string path) {
   co_return co_await hyle::io::open_file(*io, 0, path, {.access = hyle::io::FileAccess::kRead});
 }
@@ -143,11 +152,96 @@ Status stream(const qwen_input::Manifest &manifest, m::MemoryResourceRef resourc
       static_cast<unsigned long long>(result.read_bytes), pipeline.report().staging_bytes, pipeline.report().peak_slots);
   return pipeline.drain();
 }
+
+#if defined(HYLE_COMPUTE_APPLE)
+Status apple(const qwen_input::Manifest &manifest) {
+  namespace a = c::apple;
+  HYLE_ASSIGN_OR_RETURN(auto context, a::Context::create());
+  HYLE_ASSIGN_OR_RETURN(auto memory, a::MemoryResource::create(context));
+  return stream(manifest, memory.ref(),
+      [&](auto &io, auto specs, auto options) { return a::create_file_pipeline(io, context, memory.ref(), specs, options); },
+      [&](const c::ReadLease &weight, const qwen_input::Range &range) -> Status {
+        HYLE_ASSIGN_OR_RETURN(auto work, describe(range));
+        HYLE_ASSIGN_OR_RETURN(auto pool, c::LeasePool::create(memory.ref(), work.input.size()));
+        HYLE_ASSIGN_OR_RETURN(auto writer, pool.allocate(work.input.size()));
+        HYLE_RETURN_IF_ERROR(writer.view()->write(work.input));
+        HYLE_ASSIGN_OR_RETURN(auto input, writer.publish());
+        HYLE_ASSIGN_OR_RETURN(auto input_spec, a::input_spec(work.activation));
+        HYLE_ASSIGN_OR_RETURN(auto weight_spec, a::input_spec(work.weight));
+        const std::array specs{input_spec, weight_spec};
+        const std::array inputs{a::LeasedInput{work.activation, input}, a::LeasedInput{work.weight, weight}};
+        HYLE_ASSIGN_OR_RETURN(auto program, context.prepare(work.operation, specs));
+        HYLE_ASSIGN_OR_RETURN(auto direct, a::LeasedInvocation::create(program, memory));
+        HYLE_RETURN_IF_ERROR(direct.bind(inputs));
+        HYLE_ASSIGN_OR_RETURN(auto done, direct.submit()); HYLE_ASSIGN_OR_RETURN(auto result, done.wait());
+        HYLE_ASSIGN_OR_RETURN(auto output, memory.import_readonly(result->arrays()[0], work.output));
+        HYLE_RETURN_IF_ERROR(check(output, work, range));
+        HYLE_ASSIGN_OR_RETURN(auto builder, g::GraphBuilder::create());
+        HYLE_ASSIGN_OR_RETURN(auto x, builder.input(work.activation)); HYLE_ASSIGN_OR_RETURN(auto w, builder.input(work.weight));
+        HYLE_ASSIGN_OR_RETURN(auto node, builder.add_node(work.operation, std::array{x, w}));
+        HYLE_ASSIGN_OR_RETURN(auto y, builder.result(node)); HYLE_RETURN_IF_ERROR(builder.publish(y));
+        HYLE_ASSIGN_OR_RETURN(auto graph, std::move(builder).finish());
+        HYLE_ASSIGN_OR_RETURN(auto compiled, g::apple::compile(context, graph));
+        HYLE_ASSIGN_OR_RETURN(auto invocation, a::LeasedInvocation::create(compiled, memory));
+        HYLE_RETURN_IF_ERROR(invocation.bind(inputs));
+        HYLE_ASSIGN_OR_RETURN(auto graph_done, invocation.submit()); HYLE_ASSIGN_OR_RETURN(auto graph_result, graph_done.wait());
+        HYLE_ASSIGN_OR_RETURN(auto graph_output, memory.import_readonly(graph_result->arrays()[0], work.output));
+        return check(graph_output, work, range);
+      });
+}
+#endif
+
+#if defined(HYLE_COMPUTE_VULKAN)
+Status vulkan(const qwen_input::Manifest &manifest) {
+  namespace v = c::vulkan;
+  HYLE_ASSIGN_OR_RETURN(auto context, v::Context::create());
+  const auto &environment = context.environment();
+  std::printf("Qwen Vulkan device: %s; driver: %s %s; software: %s\n",
+      environment.device_name.c_str(), environment.driver_name.c_str(),
+      environment.driver_info.c_str(), environment.software_device ? "yes" : "no");
+  HYLE_ASSIGN_OR_RETURN(auto host, v::MemoryResource::create(context, v::MemoryKind::kStaging));
+  HYLE_ASSIGN_OR_RETURN(auto device, v::MemoryResource::create(context, v::MemoryKind::kDevice));
+  return stream(manifest, device.ref(),
+      [&](auto &io, auto specs, auto options) { return v::create_file_pipeline(io, context, host.ref(), specs, options); },
+      [&](const c::ReadLease &weight, const qwen_input::Range &range) -> Status {
+        HYLE_ASSIGN_OR_RETURN(auto work, describe(range));
+        HYLE_ASSIGN_OR_RETURN(auto pool, c::LeasePool::create(device.ref(), work.input.size()));
+        HYLE_ASSIGN_OR_RETURN(auto writer, pool.allocate(work.input.size()));
+        HYLE_RETURN_IF_ERROR(writer.view()->write(work.input));
+        HYLE_ASSIGN_OR_RETURN(auto input, writer.publish());
+        const std::array inputs{v::LeasedInput{work.activation, input}, v::LeasedInput{work.weight, weight}};
+        const std::array arguments{v::Argument(work.activation), v::Argument(work.weight)};
+        HYLE_ASSIGN_OR_RETURN(auto program, v::prepare(context, work.operation, arguments));
+        const auto checked_output = [&](const v::Tensor &tensor) -> Status {
+          HYLE_ASSIGN_OR_RETURN(auto bytes, work.output.required_bytes());
+          HYLE_ASSIGN_OR_RETURN(auto buffer, m::Buffer::create(m::system_resource(), bytes, 64));
+          HYLE_ASSIGN_OR_RETURN(auto mapping, buffer.view().map_host(m::HostAccess::kWrite));
+          HYLE_ASSIGN_OR_RETURN(auto destination, mapping.writable_bytes());
+          HYLE_RETURN_IF_ERROR(context.download(tensor, destination)); HYLE_RETURN_IF_ERROR(mapping.close());
+          HYLE_ASSIGN_OR_RETURN(auto output, c::ReadLease::adopt(std::move(buffer)));
+          return check(output, work, range);
+        };
+        HYLE_ASSIGN_OR_RETURN(auto direct, v::LeasedInvocation::create(program, device));
+        HYLE_RETURN_IF_ERROR(direct.bind(inputs));
+        HYLE_ASSIGN_OR_RETURN(auto done, direct.submit()); HYLE_ASSIGN_OR_RETURN(auto result, done.wait());
+        HYLE_RETURN_IF_ERROR(checked_output(result->tensors()[0]));
+        HYLE_ASSIGN_OR_RETURN(auto builder, g::GraphBuilder::create());
+        HYLE_ASSIGN_OR_RETURN(auto x, builder.input(work.activation)); HYLE_ASSIGN_OR_RETURN(auto w, builder.input(work.weight));
+        HYLE_ASSIGN_OR_RETURN(auto node, builder.add_node(work.operation, std::array{x, w}));
+        HYLE_ASSIGN_OR_RETURN(auto y, builder.result(node)); HYLE_RETURN_IF_ERROR(builder.publish(y));
+        HYLE_ASSIGN_OR_RETURN(auto graph, std::move(builder).finish());
+        HYLE_ASSIGN_OR_RETURN(auto compiled, g::vulkan::compile(context, graph));
+        HYLE_ASSIGN_OR_RETURN(auto invocation, v::LeasedInvocation::create(compiled, device));
+        HYLE_RETURN_IF_ERROR(invocation.bind(inputs));
+        HYLE_ASSIGN_OR_RETURN(auto graph_done, invocation.submit()); HYLE_ASSIGN_OR_RETURN(auto graph_result, graph_done.wait());
+        return checked_output(graph_result->tensors()[0]);
+      });
+}
 #endif
 Status run(const char *path) {
   HYLE_ASSIGN_OR_RETURN(auto input, qwen_input::read(path));
-#if !defined(HYLE_COMPUTE_CPU) && !defined(HYLE_COMPUTE_CUDA)
-  return Status::Unimplemented("Qwen file math consumer native Apple/Vulkan adapters are not yet implemented");
+#if !defined(HYLE_COMPUTE_CPU) && !defined(HYLE_COMPUTE_CUDA) && !defined(HYLE_COMPUTE_APPLE) && !defined(HYLE_COMPUTE_VULKAN)
+  return Status::Unimplemented("Qwen file math consumer requires a connected route");
 #endif
 #if defined(HYLE_COMPUTE_CPU)
   HYLE_ASSIGN_OR_RETURN(auto cpu, g::cpu::create_context()); HYLE_ASSIGN_OR_RETURN(auto queue, cpu.create_queue());
@@ -164,6 +258,12 @@ Status run(const char *path) {
   HYLE_RETURN_IF_ERROR(stream(input, device.ref(),
       [&](auto &io, auto specs, auto options) { return c::cuda::create_file_pipeline(io, cuda, transfer_cuda, host.ref(), specs, options); },
       [&](const auto &weight, const auto &range) { return consume(cuda, queue_cuda, device.ref(), [&](const g::Graph &graph) { return g::cuda::compile(graph, cuda, device.ref()); }, weight, range); }));
+#endif
+#if defined(HYLE_COMPUTE_APPLE)
+  HYLE_RETURN_IF_ERROR(apple(input));
+#endif
+#if defined(HYLE_COMPUTE_VULKAN)
+  HYLE_RETURN_IF_ERROR(vulkan(input));
 #endif
   return Status::Ok();
 }
