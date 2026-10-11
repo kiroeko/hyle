@@ -567,6 +567,10 @@ TEST(CublasProvider, LeasedDirectRetainsNativeUsesAndReplaysWithoutLeaseAllocati
   EXPECT_TRUE(invocation.in_flight());
   EXPECT_FALSE(output.publish().has_value());
   EXPECT_FALSE(output.view().has_value());
+  EXPECT_EQ(pending.request_cancel().code(), hyle::StatusCode::Unimplemented);
+  EXPECT_EQ(pending.poll().value(), compute::CompletionPoll::kPending);
+  EXPECT_EQ(pool.stats().active_uses, 2u);
+  EXPECT_FALSE(output.publish().has_value());
   EXPECT_FALSE(invocation.submit(queue, inputs, outputs).has_value());
   // Neither public completion/lane nor business input handles own retirement.
   left.reset(); right.reset();

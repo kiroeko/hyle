@@ -643,6 +643,12 @@ source 不替 installed static/shared、CUDA observation fault 或最终红队�
 普通 CPU/CUDA Direct+Graph 租约数学和原 CPU+CUDA managed contract 均通过，原阶段日志收入交付收据。
 同输入 shared SDK 正在串行验证；这份 static 结果不代签 shared 或下面的 observation fault。
 
+F1-07 逐语义复核：CUDA 原 native cancellation 返回 `Unimplemented`（不能中断已接受 stream work），
+现有真实 cuBLAS lease 用例还没有直接观察 proxy 的这一请求。只在该既有 gated MatMul 用例补
+`request_cancel()` 原错误、仍 Pending/uses 保留与不能 publish 的断言，保留原八次数学重放、
+业务/Completion 放弃和最后回收；不改产品、fixture 或新增 hook。Windows 原 cuBLAS 精确单用例与
+下面 WSL 同 filter 各运行一次，分别保存新测试候选；不要把“不支持取消”写成成功取消 GPU。
+
 普通 SDK job 全部终态后，Windows 同一不可变产品源在 WSL 独立 fault tree 用
 `HYLE_DEV_FACTORS=compute_backend_cuda;compute_provider_cublas;graph`、Release/shared、tests ON、
 `HYLE_TEST_INSTRUMENTATION=ON`、INSTALL OFF、build1/test1；GCC14.2/nvcc13.3/真实 RTX4070，阶段前4GiB。
