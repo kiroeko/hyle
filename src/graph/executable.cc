@@ -23,6 +23,7 @@
 #include "hyle/compute/detail/completion_access.h"
 #include "hyle/compute/detail/queue_sequence.h"
 #include "hyle/compute/transfer.h"
+#include "hyle/core/assert.h"
 #include "hyle/container/flat_hash_map.h"
 #include "hyle/container/hash.h"
 #include "plan_state.h"
@@ -75,7 +76,12 @@ void aggregate_child_terminal(void *opaque, const Status &terminal) noexcept {
 
 void aggregate_child_release(void *opaque) noexcept {
   auto *child = static_cast<detail::AggregateChildState *>(opaque);
+  auto *invocation = child->invocation;
+  child->invocation = nullptr;
   release_aggregate_episode(child->aggregate);
+  // The child owns this reference independently of the outer Completion:
+  // even an unreturnable prefix cannot destroy aggregate before native proof.
+  detail::release(invocation);
 }
 
 compute::Completion &
@@ -158,52 +164,16 @@ void destroy_aggregate(void *opaque,
                        compute::detail::CompletionLifetime lifetime,
                        Status terminal_hint) noexcept {
   auto &aggregate = *static_cast<detail::AggregateCompletionState *>(opaque);
-  if (!lifetime.valid()) {
-    for (std::size_t index = 0; index < aggregate.completion_count; ++index)
-      aggregate_terminal_completion(aggregate, index) = {};
-    return;
-  }
-
   {
     std::lock_guard lock(aggregate.lock);
-    aggregate.terminal = std::move(terminal_hint);
+    aggregate.terminal.Update(terminal_hint);
     aggregate.outer_lifetime = lifetime;
   }
-  // The sentinel prevents an inline child retirement from releasing the
-  // aggregate owner while the remaining child attachments are being built.
-  aggregate.remaining.store(1, std::memory_order_release);
+  // Every selected child was protected before any public poll/wait. An
+  // observation failure may already have handed its guard to the native
+  // reaper; a cached error cannot be used to decide whether to attach it now.
   for (std::size_t index = 0; index < aggregate.completion_count; ++index) {
-    compute::Completion &completion =
-        aggregate_terminal_completion(aggregate, index);
-    if (!completion.valid()) {
-      merge_aggregate_terminal(
-          aggregate, Status::Internal("graph terminal completion is invalid"));
-      continue;
-    }
-    auto polled = completion.poll();
-    if (!polled) {
-      merge_aggregate_terminal(aggregate, polled.error());
-      completion = {};
-      continue;
-    }
-    if (*polled == compute::CompletionPoll::kComplete) {
-      completion = {};
-      continue;
-    }
-
-    detail::AggregateChildState &child = aggregate.children[index];
-    child.aggregate = &aggregate;
-    child.lifetime = compute::detail::CompletionLifetime{
-        .state = &child,
-        .terminal = &aggregate_child_terminal,
-        .release = &aggregate_child_release,
-    };
-    aggregate.remaining.fetch_add(1, std::memory_order_relaxed);
-    // attach_lifetime consumes the counter episode on every return path.
-    compute::detail::CompletionAccess::attach_lifetime(completion,
-                                                       child.lifetime)
-        .IgnoreError();
-    completion = {};
+    aggregate_terminal_completion(aggregate, index) = {};
   }
   release_aggregate_episode(&aggregate);
 }
@@ -216,12 +186,26 @@ const compute::detail::CompletionVTable kAggregateCompletionVTable{
 };
 
 compute::Completion make_aggregate_completion(
-    detail::AggregateCompletionState &aggregate) noexcept {
-  aggregate.remaining.store(0, std::memory_order_relaxed);
+    detail::AggregateCompletionState &aggregate,
+    detail::InvocationState *invocation) noexcept {
+  // Keep a sentinel until the outer Completion hands off its lifetime.
+  aggregate.remaining.store(1, std::memory_order_relaxed);
   {
     std::lock_guard lock(aggregate.lock);
     aggregate.terminal = Status::Ok();
     aggregate.outer_lifetime = {};
+  }
+  for (std::size_t index = 0; index < aggregate.completion_count; ++index) {
+    auto &child = aggregate.children[index];
+    HYLE_FATAL_ASSERT(!child.retention.own.valid());
+    child.aggregate = &aggregate;
+    child.invocation = invocation;
+    child.retention.own = {&child, &aggregate_child_terminal, &aggregate_child_release};
+    detail::retain(invocation);
+    aggregate.remaining.fetch_add(1, std::memory_order_relaxed);
+    const auto attached = compute::detail::CompletionAccess::attach_retention(
+        aggregate_terminal_completion(aggregate, index), child.retention);
+    HYLE_FATAL_ASSERT(attached.ok());
   }
   return compute::detail::CompletionAccess::make(&kAggregateCompletionVTable,
                                                  &aggregate);
@@ -8184,7 +8168,7 @@ Result<compute::Completion> detail::SubmissionCursor::finish() noexcept {
     for (std::size_t index = 0; index < segments.size(); ++index)
       state_->aggregate_segments[index] = segments[index];
     state_->aggregate_completion.completion_count = segments.size();
-    final_completion = make_aggregate_completion(state_->aggregate_completion);
+    final_completion = make_aggregate_completion(state_->aggregate_completion, state_);
     if (!terminal.ok()) {
       merge_aggregate_terminal(state_->aggregate_completion, terminal);
       compute::detail::CompletionAccess::append_terminal(final_completion,

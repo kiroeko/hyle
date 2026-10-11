@@ -890,7 +890,8 @@ struct AggregateCompletionState;
 
 struct AggregateChildState final {
   AggregateCompletionState *aggregate = nullptr;
-  compute::detail::CompletionLifetime lifetime{};
+  InvocationState *invocation = nullptr;
+  compute::detail::CompletionRetention retention{};
 };
 
 using AggregateChildStates =

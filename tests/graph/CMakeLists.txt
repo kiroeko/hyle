@@ -2,6 +2,14 @@ find_package(Threads REQUIRED)
 
 hyle_add_header_self_contained_test(graph)
 hyle_add_test(graph SOURCES graph_test.cc)
+if(HYLE_COMPUTE_CUDA_ENABLED AND TARGET hyle_compute_provider_cublas)
+  hyle_add_test(graph NAME native_retirement
+    SOURCES aggregate_native_retirement_test.cc
+    DEPS hyle_compute_backend_cuda hyle_compute_provider_cublas)
+  target_include_directories(hyle_graph_native_retirement_test PRIVATE
+    "${CMAKE_CURRENT_SOURCE_DIR}/../../src/graph")
+  hyle_stage_runtime(hyle_graph_native_retirement_test)
+endif()
 if(HYLE_COMPUTE_CPU AND HYLE_GGML_CPU_ENABLED
    AND TARGET hyle_compute_backend_cpu AND TARGET hyle_compute_provider_native
    AND TARGET hyle_compute_provider_ggml)
