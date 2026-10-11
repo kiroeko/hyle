@@ -6,6 +6,8 @@ if(HYLE_COMPUTE_VULKAN_ENABLED)
       -o "${CMAKE_CURRENT_BINARY_DIR}/affine.spv" "${CMAKE_CURRENT_SOURCE_DIR}/affine.comp"
     DEPENDS affine.comp VERBATIM)
   hyle_add_test(compute_route_vulkan NAME file_stream SOURCES file_stream_test.cc)
+  target_include_directories(hyle_compute_route_vulkan_file_stream_test PRIVATE
+    "${HYLE_SOURCE_DIR}/src/compute_route_vulkan")
   hyle_stage_runtime(hyle_compute_route_vulkan_file_stream_test)
   hyle_add_test(compute_route_vulkan SOURCES copy_program_test.cc copy_recording_test.cc native_test.cc lifecycle_test.cc tensor_test.cc view_test.cc gate_norm_test.cc concat_test.cc reduction_test.cc provider_bridge_test.cc managed_region_test.cc
     d5_qwen35_profile_test.cc d5_qwen35_execution_test.cc topk_test.cc gather_test.cc scan_test.cc scatter_test.cc recurrent_test.cc

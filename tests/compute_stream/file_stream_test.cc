@@ -173,4 +173,67 @@ TEST(FileStream, ColdOomAndOwnedFileFailureAreRecoverableWithoutMovingInputs) {
       {.allocator = no_metadata.get()}).has_value());
   EXPECT_EQ(no_metadata.used(), 0u);
 }
+TEST(FileStream, DescriptionOffsetAndBackingQuotaRejectBeforeMovingOrDoingIo) {
+  Runtime runtime; const auto input = bytes(); auto source = runtime.file(input, UINT64_MAX);
+  auto pool = LeasePool::create(m::system_resource(), 1024).value();
+  auto ranges = read_ranges(pool); auto groups = read_groups(ranges);
+  ranges[0].description = TensorDesc::dense(DataType::kFloat32, std::array<std::int64_t, 1>{16}).value();
+  EXPECT_FALSE(runtime.pipeline.read(StreamSource::file(source), groups));
+  EXPECT_TRUE(ranges[0].destination.valid()); EXPECT_TRUE(ranges[1].destination.valid());
+  ranges[0].description.reset(); ranges[0].file_offset = UINT64_MAX - 8;
+  EXPECT_FALSE(runtime.pipeline.read(StreamSource::file(source), groups));
+  EXPECT_TRUE(ranges[0].destination.valid()); ranges[0].file_offset = 0;
+  auto oversized_pool = LeasePool::create(m::system_resource(), 8192).value();
+  ranges[0].destination = oversized_pool.allocate(128).value();
+  auto rejected = runtime.pipeline.read(StreamSource::file(source), groups);
+  ASSERT_FALSE(rejected); EXPECT_TRUE(rejected.error().IsUnavailable()); EXPECT_TRUE(ranges[0].destination.valid());
+  EXPECT_EQ(runtime.pipeline.report().io_calls, 0u); EXPECT_EQ(runtime.pipeline.report().native_calls, 0u);
+}
+TEST(FileStream, AcceptedSourceOwnsFileAndDescriptorsAfterCallerDropsThem) {
+  Runtime runtime; const auto input = bytes(); auto source = runtime.file(input);
+  auto pool = LeasePool::create(m::system_resource(), 1024).value(); StreamTicket ticket;
+  {
+    auto ranges = read_ranges(pool); auto groups = read_groups(ranges);
+    ticket = runtime.pipeline.read(StreamSource::file(source), groups).value();
+  }
+  source = {}; ASSERT_TRUE(ticket.wait().status.ok());
+  for (unsigned i = 0; i < 2; ++i) {
+    auto ready = ticket.next_ready().value();
+    expect_bytes(ready.output(0).value(), std::span(input).subspan((ready.tag() - 10) * 128, 128));
+  }
+}
+TEST(FileStream, OriginalReadonlySinkErrorKeepsZeroFileBytesAndDoesNotPublish) {
+  Runtime runtime; const auto input = bytes(); runtime.file(input);
+  auto raw = p::open_file(runtime.paths.back().c_str(), p::kOpenRead).value();
+  auto file = io::File::adopt(runtime.io, 0, std::move(raw)).value();
+  auto sink = StreamFile::adopt(std::move(file), input.size()).value();
+  auto pool = LeasePool::create(m::system_resource(), 1024).value();
+  auto writer = pool.allocate(input.size()).value(); ASSERT_TRUE(writer.view()->write(input).ok());
+  auto source = writer.publish().value();
+  std::array<StreamWriteRange, 1> ranges{StreamWriteRange::ready(source, 0, 0, input.size())};
+  std::array<StreamWriteGroup, 1> groups{{{1, ranges}}};
+  auto ticket = runtime.pipeline.write(sink, groups).value(); auto result = ticket.wait();
+  EXPECT_FALSE(result.status.ok()); EXPECT_TRUE(result.retirement_proven); EXPECT_EQ(result.ready_groups, 0u);
+  EXPECT_EQ(result.written_bytes, 0u); EXPECT_EQ(result.copied_bytes, 32u); EXPECT_FALSE(ticket.next_ready());
+  auto unchanged = p::open_random_access_file(runtime.paths.back().c_str(), p::kOpenRead).value();
+  std::array<std::byte, 256> output; ASSERT_EQ(unchanged.read_at(0, output).value(), output.size()); EXPECT_EQ(output, input);
+}
+TEST(FileStream, AcceptedHotMetadataOomReportsFailureAndReleasesOriginalOwners) {
+  Runtime runtime; const auto input = bytes(); auto source = runtime.file(input);
+  m::QuotaAllocator metadata(m::system_allocator());
+  const std::array specs{CopyResourceSpec{m::system_resource(), 2048}};
+  auto pipeline = cpu::create_file_pipeline(runtime.io, runtime.context, runtime.queue, m::system_resource(), specs,
+      {.allocator = metadata.get(), .staging_bytes_per_slot = 32, .staging_alignment = 16}).value();
+  struct Drain { FileResourcePipeline &pipeline; ~Drain() { pipeline.drain().IgnoreError(); pipeline = {}; } } drain{pipeline};
+  auto pool = LeasePool::create(m::system_resource(), 1024).value();
+  auto ranges = read_ranges(pool); auto groups = read_groups(ranges);
+  auto cancellation = sched::CancelToken::root(m::system_allocator());
+  auto no_hot_bytes = metadata.try_reserve_bytes(metadata.limit() - metadata.used()).value();
+  auto admitted = pipeline.read(StreamSource::file(source), groups, {.cancel = &cancellation});
+  ASSERT_TRUE(admitted); auto ticket = std::move(*admitted); source = {};
+  auto result = ticket.wait(); EXPECT_TRUE(result.status.IsResourceExhausted()); EXPECT_TRUE(result.retirement_proven);
+  EXPECT_EQ(result.ready_groups, 0u); EXPECT_EQ(result.read_bytes, 0u); EXPECT_EQ(result.copied_bytes, 0u);
+  EXPECT_FALSE(ticket.next_ready()); EXPECT_EQ(pipeline.report().io_calls, 0u);
+  ticket = {}; pipeline.drain().IgnoreError(); no_hot_bytes.reset(); pipeline = {}; EXPECT_EQ(metadata.used(), 0u);
+}
 } // namespace
