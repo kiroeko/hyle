@@ -1,0 +1,112 @@
+{
+  "schema_version": 1,
+  "product_commit": "f3d931c47777f7fbfd35dedf1f5e0734fa28ef6c",
+  "wsl_consumer_commit": "d64d56957e7e0bcc26f7695a3ed834390b6791b8",
+  "exported_drop_fixture_commit": "c36c40bedfb960384020c117703c4eda599a9359",
+  "scope": "WSL ordinary CPU/CUDA static source Qwen/GGUF mathematical roundtrip and Windows CPU exported cross-thread result release only",
+  "wsl_identity": {
+    "os": "Linux kiro-workstation 6.18.40.1-microsoft-standard-WSL2 #1 SMP PREEMPT_DYNAMIC Fri Jul 31 22:12:15 UTC 2026 x86_64 x86_64 x86_64 GNU/Linux",
+    "compiler": "g++-14 (Ubuntu 14.2.0-4ubuntu2~24.04.1) 14.2.0\nCopyright (C) 2024 Free Software Foundation, Inc.\nThis is free software; see the source for copying conditions.  There is NO\nwarranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.",
+    "cmake": "cmake version 3.28.3\n\nCMake suite maintained and supported by Kitware (kitware.com/cmake).",
+    "cuda": "nvcc: NVIDIA (R) Cuda compiler driver\nCopyright (c) 2005-2026 NVIDIA Corporation\nBuilt on Tue_Jun_09_02:43:40_PM_PDT_2026\nCuda compilation tools, release 13.3, V13.3.73\nBuild cuda_13.3.r13.3/compiler.38244171_0",
+    "gpu": "NVIDIA GeForce RTX 4070, GPU-e7376560-6f5d-ec19-6ee4-3dd3a2c81ef8, 617.14"
+  },
+  "wsl_stage_verdicts": [
+    {
+      "name": "configure",
+      "exit_code": 0
+    },
+    {
+      "name": "build",
+      "exit_code": 0
+    },
+    {
+      "name": "math",
+      "exit_code": 0
+    },
+    {
+      "name": "qwen",
+      "exit_code": 0
+    }
+  ],
+  "input": "evidence/correctness/foundation-f3-qwen-ranges/checked-input.json",
+  "sparse_mirror": {
+    "source": "/root/hyle-scratch/compute-unified/foundation-f3-qwen-input/model-ranges.safetensors",
+    "capacity": 4548221488,
+    "physical_file_bytes": 75579392,
+    "archive_sha256": "aff4f8f30d1690a8dfb492ca0fb559ced9cc74be003b8cc559c68aca91894247",
+    "whole_model_transferred": false,
+    "payload_verification": "Four exact original offset SHA256 plus original header PASS",
+    "gguf_sha256": "84df13fc1b41a46e280180a56cfd05a52c0cb47cfa77ee4326e1848e3dd4c66a"
+  },
+  "native_bytes_per_route": 226493952,
+  "staging_bytes": 2097152,
+  "peak_slots": 2,
+  "windows_cpu_tests_passed": 11,
+  "windows_cpu_inputs": [
+    {
+      "path": "src/compute_stream/CMakeLists.txt",
+      "sha256": "7a62b784ea399f732ae3a1f597315762045f0d952145be9b564d1df4ab76b198"
+    },
+    {
+      "path": "src/compute_stream/file_stream.cc",
+      "sha256": "2024e866175e892d7d14fef2421ede1929606f6ed7a225e0b26ccae9feb0c57b"
+    },
+    {
+      "path": "src/compute_stream/stream_sources.cc",
+      "sha256": "23859fad2971d11bfb029dfe1403989a9740832ce522b2c430d957a3e3fdeed2"
+    },
+    {
+      "path": "tests/compute_stream/CMakeLists.txt",
+      "sha256": "3b60d9ec5e9d55e5f699afd40e61fe94c7b0f585dc17a3f4aae3f86126f60c11"
+    },
+    {
+      "path": "tests/compute_stream/file_stream_test.cc",
+      "sha256": "97803b2a1a7427e9fc5a0426d74aa6241527ecfe2fc599e3840a82856d3856c5"
+    },
+    {
+      "path": "cmake/HyleComponents.cmake",
+      "sha256": "4d968e454fb1bb8bfea8d9bea9a993fb79d7a027ac649d4e4e52af384f41fe0e"
+    },
+    {
+      "path": "include/hyle/compute/cpu.h",
+      "sha256": "bccb8e5d310086b41c6f010a84f56219ac33830e92e5da22ce2ff12cd608ccb6"
+    },
+    {
+      "path": "include/hyle/compute/file_stream.h",
+      "sha256": "b668f8b7480df6e0ade7785fe8a6581c6753ac422f1aae419caa33c38dae9cc6"
+    },
+    {
+      "path": "include/hyle/compute/detail/file_stream_access.h",
+      "sha256": "de668186ac0617204ed5473880f811a0268b1b07c842329a979b34b0c0f40d2e"
+    },
+    {
+      "path": "include/hyle/compute/detail/file_stream_copy.h",
+      "sha256": "27b8705a7731d63a953e3bd93118d9420a0b95168abd9b884ec37dea7e166dc0"
+    },
+    {
+      "path": "include/hyle/compute/detail/copy_stream_access.h",
+      "sha256": "31fef47df5169304feff1b20dbe46be744147ea7363d117d0344755daf84e350"
+    },
+    {
+      "path": "src/compute/batch_transfer.cc",
+      "sha256": "25367562e18d16b6d38b5ea80bf7eb89cff46243d73c7e84a99430470ba82fc1"
+    },
+    {
+      "path": "src/compute_route_cpu/file_stream.cc",
+      "sha256": "2a9acf645520fcc8c85f56cd3e4e9ef9689a948809dc8bf94c6bbd5a2538e297"
+    }
+  ],
+  "cross_thread_risk": "A real other thread owns exported ReadyGroup/ReadLease; main collect/admission cannot reuse its record, after actual release/join the same finite record/backing becomes available.",
+  "archive": {
+    "path": "evidence/correctness/foundation-f3-wsl-math-exported-drop/raw-results.zip",
+    "sha256": "aa3b6d5335bec622467ed32a4ded85b4413f6c33c3357aa5284361875e106fc2"
+  },
+  "verdict": "PASS_WSL_CPU_CUDA_SOURCE_MATH_AND_WINDOWS_CPU_EXPORTED_CROSS_THREAD_DROP_ONLY",
+  "unproven": [
+    "Positive partial short write on POSIX",
+    "New F3 sanitizer/native CUDA WSL tests",
+    "Installed delivery and final closure"
+  ],
+  "limits": "Original four ranges only; no whole model/FFN, P1, private-driver bound or installed SDK verdict. Existing CUDA 12/13 locked leaf link warnings retained with actual successful runtime."
+}

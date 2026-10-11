@@ -376,6 +376,18 @@ unknown observation/后缀提交失败与producer边界。native uses归零与F3
 原始正数short-write prefix与显式跨线程导出结果释放仍待直接资格化；WSL/sanitizer、安装交付、
 新头/缺席/迁址及最终P0/红队仍未完成，不能把本批21项测试成功当完整F3关闭。
 
+[WSL数学与导出结果收据](../../../../evidence/correctness/foundation-f3-wsl-math-exported-drop/receipt.json)
+补签GNU14.2/实际RTX4070的普通CPU/CUDA static source：成熟GGUF及同四段原Qwen范围
+read→Direct/Graph→write→逐byte检查→reload→Direct/Graph均通过；stage 2MiB、峰值两slot及
+每路线226,493,952 actual native bytes。原锁定CUDA leaf的12/13链接warning保留，运行结果实际通过。
+输入仍是核验过的四范围稀疏副本，不传完整模型。
+
+fixture `c36c40bedfb960384020c117703c4eda599a9359`的Windows CPU十一项也通过：另一实际线程
+持有ReadyGroup/ReadLease时不能collect后复用；该线程实际释放并join后，同一有限record/backing恢复可用。
+POSIX正数short-write fixture已加入但尚未运行；本卡当前F3 ASan/UBSan/TSan与WSL CUDA native测试仍待验。
+ASan初次本地参数错误将factor与product route选择混用而被现有CMake拒绝；只修验证argv并保留失败，
+没有改公共工具/产品或重置预算。源码/输入已同步核验，原适用交付与最终门继续待验。
+
 | FIX | 必须实现 | 验收 |
 |---|---|---|
 | F3-01 | 中央 compute_stream 身份/依赖/普通 route 及三交付投影 | 无环，无第二名单/空 target；静态共享source一致，不拉无关 CPU Provider |
