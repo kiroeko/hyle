@@ -11,6 +11,7 @@
 #include "context_state.h"
 #include "hyle/compute/detail/backend_extension.h"
 #include "hyle/compute/detail/copy_backend.h"
+#include "hyle/compute/detail/copy_control.h"
 #include "hyle/compute/detail/lease_access.h"
 #include "hyle/compute/detail/retained_completion.h"
 #include "hyle/compute/transfer.h"
@@ -20,33 +21,6 @@
 
 namespace hyle::compute::detail {
 template<class T> using CopyArray = std::vector<T, mem::StdAllocator<T>>;
-
-// Opt-in cold allocation accounting. The program outlives every allocator
-// reference carried by slots; no callback or container grows at submit.
-struct CopyMetadata final {
-  mem::AllocatorRef base;
-  std::atomic<std::size_t> live{0};
-  mem::AllocatorRef allocator() noexcept {
-    return {[](void *opaque, std::size_t bytes, std::size_t alignment) noexcept -> void * {
-      auto &self = *static_cast<CopyMetadata *>(opaque);
-      auto *storage = self.base.allocate(bytes, alignment);
-      if (storage) self.live.fetch_add(bytes, std::memory_order_relaxed);
-      return storage;
-    }, [](void *opaque, void *storage, std::size_t bytes, std::size_t alignment) noexcept {
-      auto &self = *static_cast<CopyMetadata *>(opaque);
-      if (storage) self.live.fetch_sub(bytes, std::memory_order_relaxed);
-      self.base.deallocate(storage, bytes, alignment);
-    }, [](void *opaque, void *storage, std::size_t old_bytes, std::size_t bytes, std::size_t alignment) noexcept -> void * {
-      auto &self = *static_cast<CopyMetadata *>(opaque);
-      auto *updated = self.base.reallocate(storage, old_bytes, bytes, alignment);
-      if (updated || bytes == 0) {
-        self.live.fetch_add(bytes, std::memory_order_relaxed);
-        if (storage) self.live.fetch_sub(old_bytes, std::memory_order_relaxed);
-      }
-      return updated;
-    }, this};
-  }
-};
 
 struct CopyProgramState final : util::RefCounted<CopyProgramState> {
   explicit CopyProgramState(mem::AllocatorRef base, CopyBatchOptions selected) noexcept
@@ -68,15 +42,6 @@ struct CopyProgramState final : util::RefCounted<CopyProgramState> {
   CopyArray<CopyResourceSpec> specs;
 };
 
-struct CopyBinding final {
-  ReadLease read;
-  WriteLease write;
-  Completion producer;
-  mem::ConstBufferView source;
-  mem::BufferView destination;
-  mem::HostMapping mapping;
-  const void *root = nullptr;
-};
 struct CopyPhaseState final {
   CopyInvocationState *owner = nullptr;
   Completion completion;
@@ -86,16 +51,13 @@ struct CopyPhaseState final {
   std::size_t first = 0, copies = 0, use_first = 0, use_count = 0, producer_first = 0, producer_count = 0;
   std::uint64_t dependency_mask = 0;
 };
-struct CopyRootUse final { std::uint32_t binding = 0; bool write = false, ordered = false; };
-struct CopyWrittenSpan final { std::uint32_t binding = 0, phase = 0; std::size_t begin = 0, end = 0; };
-
 struct CopyInvocationState final : util::RefCounted<CopyInvocationState> {
   explicit CopyInvocationState(CopyProgramState *selected, Queue *endpoint) noexcept
       : program(selected), queue(endpoint), bindings(mem::StdAllocator<CopyBinding>(allocator())),
         physical(mem::StdAllocator<PhysicalCopyResource>(allocator())),
         intervals(mem::StdAllocator<CopyInterval>(allocator())), copies(mem::StdAllocator<ResolvedCopyRange>(allocator())),
         closure(mem::StdAllocator<std::uint64_t>(allocator())), phases(mem::StdAllocator<CopyPhaseState *>(allocator())),
-        root_order(mem::StdAllocator<std::uint32_t>(allocator())), root_leader(mem::StdAllocator<std::uint32_t>(allocator())),
+        plans(mem::StdAllocator<CopyPhasePlan>(allocator())), root_order(mem::StdAllocator<std::uint32_t>(allocator())), root_leader(mem::StdAllocator<std::uint32_t>(allocator())),
         last_write(mem::StdAllocator<std::uint32_t>(allocator())), producer_order(mem::StdAllocator<std::uint32_t>(allocator())),
         roles(mem::StdAllocator<unsigned char>(allocator())),
         root_uses(mem::StdAllocator<CopyRootUse>(allocator())), written(mem::StdAllocator<CopyWrittenSpan>(allocator())),
@@ -147,6 +109,7 @@ struct CopyInvocationState final : util::RefCounted<CopyInvocationState> {
   CopyArray<ResolvedCopyRange> copies;
   CopyArray<std::uint64_t> closure;
   CopyArray<CopyPhaseState *> phases;
+  CopyArray<CopyPhasePlan> plans;
   CopyArray<std::uint32_t> root_order, root_leader, last_write, producer_order;
   CopyArray<unsigned char> roles;
   CopyArray<CopyRootUse> root_uses;
@@ -301,7 +264,7 @@ Result<CopyBatchInvocation> CopyBatchInvocation::create(const CopyBatchProgram &
   try {
     state->bindings.resize(n); state->physical.resize(n);
     state->intervals.resize(static_cast<std::size_t>(r) * 2); state->copies.resize(r);
-    state->closure.resize(g); state->phases.reserve(g); state->tickets.resize(g);
+    state->plans.resize(g); state->closure.resize(g); state->phases.reserve(g); state->tickets.resize(g);
     state->root_order.resize(n); state->root_leader.resize(n); state->last_write.resize(n);
     state->producer_order.resize(static_cast<std::size_t>(r) * 2);
     state->roles.resize(n * g); state->root_uses.resize(static_cast<std::size_t>(r) * 2);
@@ -381,62 +344,21 @@ Status CopyBatchInvocation::prepare_replay(std::span<const CopyPhase> phases, st
   }
   HYLE_ASSIGN_OR_RETURN(auto report, detail::validate_copy_ranges(state_->physical, phases, ranges,
       state_->program->options, {state_->intervals, state_->copies, state_->closure}));
-  const auto n = state_->bindings.size();
-  for (std::size_t index = 0; index < n; ++index) state_->root_order[index] = static_cast<std::uint32_t>(index);
-  std::sort(state_->root_order.begin(), state_->root_order.end(), [state = state_](auto left, auto right) noexcept {
-    return std::less<const void *>{}(state->bindings[left].root, state->bindings[right].root);
-  });
-  std::uint32_t leader = UINT32_MAX;
-  for (auto id : state_->root_order) {
-    if (leader == UINT32_MAX || state_->bindings[id].root != state_->bindings[leader].root) leader = id;
-    state_->root_leader[id] = leader;
-  }
-  std::fill(state_->roles.begin(), state_->roles.end(), static_cast<unsigned char>(0));
-  std::fill(state_->last_write.begin(), state_->last_write.end(), UINT32_MAX);
+  HYLE_RETURN_IF_ERROR(detail::prepare_copy_control(state_->bindings, phases,
+      std::span(state_->copies).first(report.active_copies),
+      {state_->root_order, state_->root_leader, state_->last_write, state_->producer_order,
+       state_->roles, state_->root_uses, state_->written, state_->native_ranges, state_->plans}));
   for (std::size_t index = 0; index < report.active_copies; ++index) {
-    const auto &copy = state_->copies[index];
-    if (!state_->bindings[copy.destination].write.valid())
-      return Status::FailedPrecondition("copy destination requires mutable permission");
-    auto &source = state_->bindings[copy.source];
-    auto &destination = state_->bindings[copy.destination];
-    HYLE_ASSIGN_OR_RETURN(auto source_view, source.source.subview(copy.source_offset, copy.physical_bytes));
-    HYLE_ASSIGN_OR_RETURN(auto destination_view, destination.destination.subview(copy.destination_offset, copy.physical_bytes));
-    HYLE_ASSIGN_OR_RETURN(auto route, transfer_properties(*state_->queue, destination_view, source_view));
+    const auto &range = state_->native_ranges[index];
+    HYLE_ASSIGN_OR_RETURN(auto route, transfer_properties(*state_->queue, range.destination, range.source));
     (void)route;
-    state_->native_ranges[index] = {destination_view, source_view};
-    state_->roles[copy.phase * n + state_->root_leader[copy.source]] |= 1;
-    state_->roles[copy.phase * n + state_->root_leader[copy.destination]] |= 2;
-    if (source.producer.valid()) state_->roles[copy.phase * n + copy.source] |= 4;
-    if (destination.producer.valid()) state_->roles[copy.phase * n + copy.destination] |= 4;
-    state_->last_write[state_->root_leader[copy.destination]] = copy.phase;
-    state_->written[index] = {copy.destination, copy.phase, copy.destination_offset, copy.destination_offset + copy.logical_bytes};
   }
-  auto written = std::span(state_->written).first(report.active_copies);
-  std::sort(written.begin(), written.end(), [](const auto &left, const auto &right) noexcept {
-    if (left.binding != right.binding) return left.binding < right.binding;
-    if (left.begin != right.begin) return left.begin < right.begin;
-    return left.phase < right.phase;
-  });
-  std::size_t cursor = 0, use_count = 0, producer_count = 0;
-  for (std::size_t phase = 0; phase < phases.size(); ++phase) {
-    auto &slot = *state_->phases[phase];
+  for (std::size_t index = 0; index < phases.size(); ++index) {
+    auto &slot = *state_->phases[index]; const auto &plan = state_->plans[index];
     slot.completion = {}; slot.retired.store(false, std::memory_order_relaxed); slot.terminal = Status::Ok();
-    slot.first = cursor; slot.use_first = use_count; slot.producer_first = producer_count;
-    slot.dependency_mask = phases[phase].dependency_mask;
-    while (cursor < report.active_copies && state_->copies[cursor].phase == phase) ++cursor;
-    slot.copies = cursor - slot.first;
-    for (std::size_t id = 0; id < n; ++id) {
-      const auto role = state_->roles[phase * n + id];
-      if (role & 4) state_->producer_order[producer_count++] = static_cast<std::uint32_t>(id);
-      if (!(role & 3)) continue;
-      bool earlier = false;
-      for (std::size_t preceding = 0; preceding < phase; ++preceding)
-        earlier |= (state_->roles[preceding * n + id] & 2) != 0;
-      state_->root_uses[use_count++] = {static_cast<std::uint32_t>(id), (role & 2) != 0,
-                                       earlier || state_->bindings[id].producer.valid()};
-    }
-    slot.use_count = use_count - slot.use_first;
-    slot.producer_count = producer_count - slot.producer_first;
+    slot.first = plan.first; slot.copies = plan.copies; slot.use_first = plan.use_first; slot.use_count = plan.use_count;
+    slot.producer_first = plan.producer_first; slot.producer_count = plan.producer_count;
+    slot.dependency_mask = plan.dependency_mask;
   }
   if (state_->program->table) {
     struct Call { CopyInvocationState *state; std::size_t count; } call{state_, report.active_copies};
@@ -459,23 +381,8 @@ Result<CopyBatchSubmission> CopyBatchInvocation::submit() noexcept {
   if (!state_->prepared) return std::unexpected(Status::FailedPrecondition("copy replay is not prepared"));
   // Reserve every root's use before the first native acceptance. Rejection
   // rolls all tickets back; each phase consumes only its own reserved episode.
-  Status admission;
-  for (std::uint32_t phase = 0; phase < state_->phase_count && admission.ok(); ++phase) {
-    auto ticket = state_->uses.begin();
-    if (!ticket) { admission = ticket.error(); break; }
-    state_->tickets[phase] = std::move(*ticket);
-    const auto &slot = *state_->phases[phase];
-    for (std::size_t index = slot.use_first; index < slot.use_first + slot.use_count && admission.ok(); ++index) {
-      const auto &use = state_->root_uses[index]; const auto &binding = state_->bindings[use.binding];
-      admission = use.write ? detail::LeaseAccess::write_unique(state_->tickets[phase], binding.write, use.ordered)
-          : binding.write.valid() ? detail::LeaseAccess::ordered_read_unique(state_->tickets[phase], binding.write)
-                                  : detail::LeaseAccess::read_unique(state_->tickets[phase], binding.read);
-    }
-  }
-  if (!admission.ok()) {
-    for (auto &ticket : state_->tickets) ticket = {};
-    return std::unexpected(admission);
-  }
+  HYLE_RETURN_IF_ERROR(detail::admit_copy_control(state_->uses, state_->bindings,
+      std::span(state_->plans).first(state_->phase_count), state_->root_uses, state_->tickets));
   state_->prepared = false;
   for (std::uint32_t phase = 0; phase < state_->phase_count; ++phase) {
     auto &slot = *state_->phases[phase];
@@ -570,22 +477,22 @@ Result<ReadLease> CopyBatchSubmission::output(CopyPhaseId phase_id, CopyResource
     return std::unexpected(Status::Unavailable("copy block has a later write or no output"));
   if (offset > binding.source.size() || bytes > binding.source.size() - offset)
     return std::unexpected(Status::OutOfRange("copy output exceeds binding capacity"));
-  std::size_t covered = offset;
-  const auto end = offset + bytes;
-  for (std::size_t index = 0; index < state_->report.active_copies && covered < end; ++index) {
-    const auto &span = state_->written[index];
-    if (span.binding != resource.value || span.phase > phase_id.value || span.end <= covered) continue;
-    if (span.begin > covered) break;
-    if (!state_->phases[span.phase]->retired.load(std::memory_order_acquire)) {
-      auto prefix_observed = state_->phases[span.phase]->completion.poll();
-      if (!prefix_observed) return std::unexpected(prefix_observed.error());
-      if (*prefix_observed == CompletionPoll::kPending || !state_->phases[span.phase]->retired.load(std::memory_order_acquire))
+  HYLE_RETURN_IF_ERROR(detail::copy_output_coverage(std::span(state_->written).first(state_->report.active_copies),
+      resource, phase_id, offset, bytes));
+  // Every contributing write must have real successful retirement before the
+  // shared geometry/permission helper can publish its last-write block.
+  for (const auto &span : std::span(state_->written).first(state_->report.active_copies)) {
+    if (span.binding != resource.value || span.phase > phase_id.value ||
+        span.end <= offset || span.begin >= offset + bytes) continue;
+    auto &prefix = *state_->phases[span.phase];
+    if (!prefix.retired.load(std::memory_order_acquire)) {
+      auto observed_prefix = prefix.completion.poll();
+      if (!observed_prefix) return std::unexpected(observed_prefix.error());
+      if (*observed_prefix == CompletionPoll::kPending || !prefix.retired.load(std::memory_order_acquire))
         return std::unexpected(Status::Unavailable("copy output prefix is pending or unproven"));
     }
-    if (!state_->phases[span.phase]->terminal.ok()) return std::unexpected(state_->phases[span.phase]->terminal);
-    covered = (std::max)(covered, span.end);
+    if (!prefix.terminal.ok()) return std::unexpected(prefix.terminal);
   }
-  if (covered < end) return std::unexpected(Status::OutOfRange("copy output includes uncopied logical bytes"));
   if (binding.write.valid()) {
     HYLE_ASSIGN_OR_RETURN(binding.read, detail::LeaseAccess::publish_after_writes(binding.write));
   }

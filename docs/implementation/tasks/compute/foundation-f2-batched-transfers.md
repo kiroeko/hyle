@@ -207,6 +207,15 @@ Vulkan公共Program/Invocation/Submission、native producer/权限/故障、数�
 VkBuffer与byte offset；F2冷copy span沿该已有来源证明，使用Device+原VkBuffer+offset作canonical identity。
 原allocator每个root单独绑定Memory，views保持同handle；未知external借入为allocation_bytes=0，
 仍因copy usage/alias无证明明确拒绝。首批门包括实际lease binding/import_readonly view回放与unknown外部边界。
+公共Vulkan对象接线复用compiled `copy_control` 的root角色/预去重准入/逻辑覆盖算法；
+该helper不拥有Queue/native submit，CPU/CUDA仍沿原执行，Vulkan每phase仍沿原Run。
+Vulkan producer冷资格只接受同Runtime已完整入队的原native Run/inline；managed/async/unknown不猜prefix。
+实际子phase退休后用原nonblocking poll合并producer/先行checked status，再退休本phase写guard，错误不发布。
+native Run callback尾部仍可能释放其control block，metadata采用原ResourceBudget每allocation保活，
+不把program内嵌counter的地址留给最后callback之后的free；实际known requested bytes及opaque费用分别报告。
+本阶段增加 `VulkanCopyProgram.*`（二slot/三phase/原producer/old result/reset/close与真实故障prefix），
+精确复跑 `VulkanCopyRecording.*`、34项common，及共享控制抽取直接影响的原 `CpuCopyProgram.*` /
+`CudaCopyProgram.*:CudaCopyBatch.*`；仍串行原树/固定时限/4GiB，无全算子/P1。
 首遍增加owned-view用例的fixture将raw-copy合法4-byte offset传给既有storage borrow factory，
 后者还要求native storage offset alignment；保留这次FAIL，fixture改为合法zero-origin外部carrier，
 再检验F2的unknown usage拒绝，不修改旧factory或放宽其合同。

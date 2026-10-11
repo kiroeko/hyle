@@ -423,6 +423,28 @@ const cd::CompletionVTable completion_vtable{
       return Status::Ok();
     }};
 
+} // namespace
+
+Status qualify_copy_dependency(const std::shared_ptr<Runtime> &runtime, cd::CompletionDependency source) noexcept {
+  if (!source.terminal_hint) return Status::FailedPrecondition("Vulkan copy producer is empty");
+  if (!source.terminal_hint->ok()) return *source.terminal_hint;
+  if (!source.pending()) return Status::Ok();
+  if (source.vtable != &completion_vtable)
+    return Status::Unimplemented("Vulkan copy requires an original native Run producer");
+  const auto &run = *static_cast<Run *>(source.state);
+  if (run.runtime != runtime) return Status::InvalidArgument("Vulkan copy producer Runtime differs");
+  std::lock_guard lock(runtime->mutex);
+  if (run.async || run.needs_drain)
+    return Status::Unimplemented("Vulkan composed producer has no fixed native queue prefix");
+  for (const auto &stage : run.stages) if (stage.managed || stage.iree)
+    return Status::Unimplemented("Vulkan managed producer has no fixed native queue prefix");
+  if (!run.submission_failure.ok()) return run.submission_failure;
+  if (!run.observation_error.ok()) return run.observation_error;
+  if (!run.terminal.ok()) return run.terminal;
+  return Status::Ok();
+}
+
+namespace {
 Status submit_transfer(Run &run, bool &accepted) noexcept {
   auto &device = *run.runtime->device;
   HYLE_RETURN_IF_ERROR(native_status(device.fn.ResetFences(device.native.device, 1, &run.transfer_fence), "vkResetFences(transfer)"));

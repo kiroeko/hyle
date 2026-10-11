@@ -4,6 +4,7 @@ hyle_add_module(compute TRACE SOURCES
   batch_transfer.cc
   command_capture.cc
   completion.cc
+  copy_control.cc
   copy_ranges.cc
   custom_kernel.cc
   device.cc
