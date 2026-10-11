@@ -419,6 +419,12 @@ CMake/Ninja/已记录编译子进程均已结束。2026-10-12用户明确批准�
 完成时间在原用户追加预算的绝对截止之前。产品仍为f3d931c47，未因编译器诊断修改IO/Sched或F3产品。
 UBSan/TSan、WSL CUDA新接缝、安装交付/新头/缺席/迁址和最终P0/红队仍待验。
 
+[UBSan实际收据](../../../../evidence/correctness/foundation-f3-ubsan/receipt.json)进一步签同一候选十二项
+PASS、零runtime error、四个关键TU实际`-fsanitize=undefined -fno-sanitize-recover=all`，保持`-O3`和
+完整原风险集；使用独立binary树与原Linux dependency cache，j4/build、test1，未覆盖ASan产物。
+真正80-byte short-write prefix、跨线程导出结果释放及OOM/生命周期断言再次通过。
+TSan、WSL CUDA新接缝、安装交付及最终门仍待验。
+
 | FIX | 必须实现 | 验收 |
 |---|---|---|
 | F3-01 | 中央 compute_stream 身份/依赖/普通 route 及三交付投影 | 无环，无第二名单/空 target；静态共享source一致，不拉无关 CPU Provider |
