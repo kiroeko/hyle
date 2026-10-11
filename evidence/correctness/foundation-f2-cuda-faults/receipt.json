@@ -1,0 +1,129 @@
+{
+  "schema_version": 1,
+  "product_candidate": "03162add05d3e26fe3314c6bcdaafa5a277a3a76",
+  "product_tree": "300d1cbcc810ddb60c5097fa71c48bf2820670b3",
+  "scope": "Windows RTX4070/CUDA13.3/MSVC instrumented F2 faults and shipping CPU/CUDA ordinary math only; other platform/SDK/P0 final gates unqualified",
+  "attempts": [
+    {
+      "candidate": "522a99f1f1fb6af3f83b27c012863286b5f0a932",
+      "tree": "80c2c3e3b00a5766c554c8f78cf647582176f4a9",
+      "verdict": "FAIL",
+      "files": {
+        "build.log": {
+          "path": "522a99f1f/build.log",
+          "sha256": "06b9b81dde0f356ead0550050df021795ef2422d621b63cd15aeaafeea534b97"
+        },
+        "identity.log": {
+          "path": "522a99f1f/identity.log",
+          "sha256": "5ea583d0a4d43e0243d1237c000eb69187feff35d4a08503f2b025b47be63536"
+        },
+        "job.json": {
+          "path": "522a99f1f/job.json",
+          "sha256": "1843d88cc4dedce518db2d78525553d96b01a4066325e954bb239d3fe159bc81"
+        }
+      }
+    },
+    {
+      "candidate": "1986cb9779cd0989932b486f6f27d252aada2dd0",
+      "tree": "a06218cdb8845ecc58b69bd6412fbae298e7df77",
+      "verdict": "FAIL",
+      "files": {
+        "build.log": {
+          "path": "1986cb977/build.log",
+          "sha256": "20b0546c34091a86ff45ad40a536963f3f343539bb8719a8a0efac808855b63b"
+        },
+        "common.log": {
+          "path": "1986cb977/common.log",
+          "sha256": "385787fa753e787f76788d0881d30621122ec2383336448db7ed4d722cfddea6"
+        },
+        "deps.log": {
+          "path": "1986cb977/deps.log",
+          "sha256": "1a127eb5b1d570251449225338a6ec97c37f85142ef7e3f42ff8ceb5d403eae5"
+        },
+        "headers.log": {
+          "path": "1986cb977/headers.log",
+          "sha256": "db2f8431654c65ff13565b0affc08a69a56e925b27edade11d4433a086f9368a"
+        },
+        "identity.log": {
+          "path": "1986cb977/identity.log",
+          "sha256": "5ea583d0a4d43e0243d1237c000eb69187feff35d4a08503f2b025b47be63536"
+        },
+        "job.json": {
+          "path": "1986cb977/job.json",
+          "sha256": "c6527744536c5a4ad1cc05547f61b16e9c8fa46aa6c1d1f261548d4c3b2a350d"
+        },
+        "test.log": {
+          "path": "1986cb977/test.log",
+          "sha256": "41252c60d4b568305ac96fbf2c760e4a580458b22ebb5cbb6b33a4a86b00f09c"
+        }
+      }
+    },
+    {
+      "candidate": "03162add05d3e26fe3314c6bcdaafa5a277a3a76",
+      "tree": "300d1cbcc810ddb60c5097fa71c48bf2820670b3",
+      "verdict": "PASS",
+      "files": {
+        "build.log": {
+          "path": "03162add0/build.log",
+          "sha256": "6a48a7c070a9c8852ac1b41dce2d8d54ead937448ddcc7c3bd8cd0703045882d"
+        },
+        "common.log": {
+          "path": "03162add0/common.log",
+          "sha256": "385787fa753e787f76788d0881d30621122ec2383336448db7ed4d722cfddea6"
+        },
+        "deps.log": {
+          "path": "03162add0/deps.log",
+          "sha256": "1a127eb5b1d570251449225338a6ec97c37f85142ef7e3f42ff8ceb5d403eae5"
+        },
+        "headers.log": {
+          "path": "03162add0/headers.log",
+          "sha256": "db2f8431654c65ff13565b0affc08a69a56e925b27edade11d4433a086f9368a"
+        },
+        "identity.log": {
+          "path": "03162add0/identity.log",
+          "sha256": "5ea583d0a4d43e0243d1237c000eb69187feff35d4a08503f2b025b47be63536"
+        },
+        "job.json": {
+          "path": "03162add0/job.json",
+          "sha256": "30286258c969f60b6a71ecc99936a031e2337ff60b646d20e221d4c819df566a"
+        },
+        "metrics.xml": {
+          "path": "03162add0/metrics.xml",
+          "sha256": "9bea8eb5a07ff1c2d6bf4eb1ff9274847237e49605c04afbbf4d481904839f9f"
+        },
+        "shipping-symbols.json": {
+          "path": "03162add0/shipping-symbols.json",
+          "sha256": "56af616e0afc3a805f1d10990f36b5ed05a7cda9ef6bde15284fbe96f09d6062"
+        },
+        "shipping-symbols.log": {
+          "path": "03162add0/shipping-symbols.log.gz",
+          "sha256": "187c1f0b84b527cba8d0d8d1c88068441311626dcea038384ec0dc079e535870",
+          "uncompressed_sha256": "b8c19e14326be55df4c1ae24a98d4f440ccdd396c94edee2657843a6e2b8b4e1",
+          "encoding": "gzip"
+        },
+        "test.log": {
+          "path": "03162add0/test.log",
+          "sha256": "72cf47de21e7403bb29beb20f3ee4b0d79ad2625119e771d1b66896c654506af"
+        }
+      }
+    }
+  ],
+  "verdict": "PASS",
+  "test_counts": {
+    "cuda": 8,
+    "common": 34
+  },
+  "checks": {
+    "cold_absence": "real cuGetProcAddress decorated absent once; 12 original same-stream copies over 3 replays, unchanged bytes",
+    "accepted_suffix": "third real memcpy accepted then decorated OOM; earlier ready group retained, no retry or failed-group publication",
+    "unknown_and_cancel": "real pending event error; cancellation Unimplemented; uses survive dropped handles until actual original reaper callbacks; metadata/blocks/uses return to zero within fixed 5 seconds",
+    "shipping": "CPU/CUDA ordinary BF16/Q8 source/static math PASS, copy_batch_interface symbol exists and both test hook setters absent from actual archive"
+  },
+  "shipping_math_receipt": "shipping-math/job.json",
+  "shipping_symbols_receipt": "03162add0/shipping-symbols.json",
+  "limits": [
+    "capability absence decorated on current qualified driver, not an older-driver machine certificate",
+    "original reaper completion is asynchronous after stream drain",
+    "cross-platform faults and installed SDK matrix still UNPROVEN"
+  ]
+}

@@ -1,0 +1,44 @@
+[0/2] Re-checking globbed directories...
+[1/2] Re-running CMake...
+-- HYLE developer factors: requested='graph,compute_backend_cuda,compute_provider_cublas' resolved='core,container_intrusive,util_core,error,time,math,platform,platform_thread,mem,container,compute_ops,compute,graph,compute_backend_cuda,compute_provider_cublas' products=''
+-- HYLE_SANITIZER = off
+-- HYLE_TESTING = ON (test-only interfaces compiled; not for shipped builds)
+-- HYLE: CUDA backend ON -- found CUDA Toolkit 13.3.73 at 'C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v13.3'; capability enabled
+-- HYLE_TRACE = OFF (hooks compile to nothing -- zero cost)
+-- HYLE 0.1.0 | MSVC 19.50.35728.0 | C++23 | sanitizer=off | linkage=shared | products= | factors=core,container_intrusive,util_core,error,time,math,platform,platform_thread,mem,container,compute_ops,compute,graph,compute_backend_cuda,compute_provider_cublas
+-- Configuring done (9.6s)
+-- Generating done (0.2s)
+-- Build files have been written to: C:/h7/foundation-f1-q0
+[0/4] Re-checking globbed directories...
+[1/14] Building CXX object src\compute_backend_cuda\CMakeFiles\hyle_compute_backend_cuda.dir\cuda_backend.cc.obj
+[2/14] Building CXX object src\compute_backend_cuda\CMakeFiles\hyle_compute_backend_cuda.dir\cuda_batch_transfer.cc.obj
+[3/14] Building CXX object src\compute_backend_cuda\CMakeFiles\hyle_compute_backend_cuda.dir\cuda_memory.cc.obj
+[4/14] Building CXX object src\compute_backend_cuda\CMakeFiles\hyle_compute_backend_cuda.dir\cuda_device_status.cc.obj
+[5/14] Linking CXX shared library bin\hyle_compute_backend_cuda.dll
+[6/14] C:\WINDOWS\system32\cmd.exe /C "cd /D C:\h7\foundation-f1-q0\tests\compute_backend_cuda && "C:\Program Files\CMake\bin\cmake.exe" -P C:/h7/foundation-f1-q0/tests/compute_backend_cuda/hyle-runtime/hyle_compute_backend_cuda_test-Release.cmake"
+[7/14] Building CXX object tests\compute_backend_cuda\CMakeFiles\hyle_compute_backend_cuda_test.dir\cuda_backend_test.cc.obj
+[8/14] Building CXX object tests\compute_backend_cuda\CMakeFiles\hyle_compute_backend_cuda_test.dir\copy_batch_test.cc.obj
+[9/14] Building CXX object tests\compute_backend_cuda\CMakeFiles\hyle_compute_backend_cuda_test.dir\copy_program_test.cc.obj
+FAILED: [code=2] tests/compute_backend_cuda/CMakeFiles/hyle_compute_backend_cuda_test.dir/copy_program_test.cc.obj 
+"C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\bin\Hostx64\x64\cl.exe"  /nologo /TP -DGTEST_LINKED_AS_SHARED_LIBRARY=1 -DHYLE_COMPUTE_CUDA=1 -DHYLE_TESTING -IC:\public\project-hyle\hyle\src\compute_backend_cuda -IC:\public\project-hyle\hyle\include -external:I"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v13.3\include" -external:I"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v13.3\include\cccl" -external:IC:\public\tools\hyle-dependencies\v1\sources\googletest-063de7e9578f-162765170ae6\googletest\include -external:IC:\public\tools\hyle-dependencies\v1\sources\googletest-063de7e9578f-162765170ae6\googletest -external:W0 /DWIN32 /D_WINDOWS /EHsc /O2 /Ob2 /DNDEBUG -std:c++latest -MD /W4 /permissive- /wd4324 /Zc:__cplusplus /utf-8 /Zc:preprocessor /showIncludes /Fotests\compute_backend_cuda\CMakeFiles\hyle_compute_backend_cuda_test.dir\copy_program_test.cc.obj /Fdtests\compute_backend_cuda\CMakeFiles\hyle_compute_backend_cuda_test.dir\ /FS -c C:\public\project-hyle\hyle\tests\compute_backend_cuda\copy_program_test.cc
+C:\public\project-hyle\hyle\tests\compute_backend_cuda\copy_program_test.cc(226): error C2593: 'operator =' is ambiguous
+C:\public\project-hyle\hyle\include\hyle/error/result.h(456): note: could be 'hyle::Result<hyle::compute::CopyBatchSubmission> &hyle::Result<hyle::compute::CopyBatchSubmission>::operator =(hyle::Result<hyle::compute::CopyBatchSubmission> &&) noexcept'
+C:\public\project-hyle\hyle\include\hyle/error/result.h(455): note: or       'hyle::Result<hyle::compute::CopyBatchSubmission> &hyle::Result<hyle::compute::CopyBatchSubmission>::operator =(const hyle::Result<hyle::compute::CopyBatchSubmission> &)'
+C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\expected(439): note: or       'std::expected<T,hyle::detail::ResultError> &std::expected<T,hyle::detail::ResultError>::operator =(const std::expected<T,hyle::detail::ResultError> &)'
+        with
+        [
+            T=hyle::compute::CopyBatchSubmission
+        ]
+C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\expected(441): note: or       'std::expected<T,hyle::detail::ResultError> &std::expected<T,hyle::detail::ResultError>::operator =(std::expected<T,hyle::detail::ResultError> &&) noexcept'
+        with
+        [
+            T=hyle::compute::CopyBatchSubmission
+        ]
+C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\MSVC\14.50.35717\include\expected(471): note: or       'std::expected<T,hyle::detail::ResultError> &std::expected<T,hyle::detail::ResultError>::operator =<hyle::compute::CopyBatchSubmission>(_Uty &&) noexcept(<expr>)'
+        with
+        [
+            T=hyle::compute::CopyBatchSubmission,
+            _Uty=hyle::compute::CopyBatchSubmission
+        ]
+C:\public\project-hyle\hyle\tests\compute_backend_cuda\copy_program_test.cc(226): note: while trying to match the argument list '(hyle::Result<hyle::compute::CopyBatchSubmission>, initializer list)'
+ninja: build stopped: subcommand failed.

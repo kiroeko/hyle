@@ -1,0 +1,5 @@
+[0/2] Re-checking globbed directories...
+[1/5] C:\WINDOWS\system32\cmd.exe /C "cd /D C:\h7\foundation-f1-q0\tests\compute_backend_cuda && "C:\Program Files\CMake\bin\cmake.exe" -P C:/h7/foundation-f1-q0/tests/compute_backend_cuda/hyle-runtime/hyle_compute_backend_cuda_test-Release.cmake"
+[2/5] Building CXX object tests\compute_backend_cuda\CMakeFiles\hyle_compute_backend_cuda_test.dir\copy_program_test.cc.obj
+[3/5] Building CXX object tests\compute_backend_cuda\CMakeFiles\hyle_compute_backend_cuda_test.dir\device_status_test.cc.obj
+[4/5] Linking CXX executable bin\hyle_compute_backend_cuda_test.exe

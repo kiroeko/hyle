@@ -1,0 +1,21 @@
+{
+  "candidate": "e5f8cb6b1cb4d27c3b1d0dc2c4064f6d9b9d537e",
+  "scope": "actual Release/static/shipping CUDA backend archive after ordinary math rebuild",
+  "command": [
+    "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\bin\\Hostx64\\x64\\dumpbin.exe",
+    "/symbols",
+    "C:\\h7\\w-cpu-cuda\\selected-graph\\source-build\\hyle\\src\\compute_backend_cuda\\hyle_compute_backend_cuda.lib"
+  ],
+  "exit_code": 0,
+  "verdict": "PASS",
+  "archive": "C:\\h7\\w-cpu-cuda\\selected-graph\\source-build\\hyle\\src\\compute_backend_cuda\\hyle_compute_backend_cuda.lib",
+  "archive_sha256": "19288f749ede0593c638af09ed8a0c67bb21e506cc91822bafdd92e394707718",
+  "log": "shipping-symbols.log",
+  "sha256": "b8c19e14326be55df4c1ae24a98d4f440ccdd396c94edee2657843a6e2b8b4e1",
+  "checks": [
+    "real copy_batch_interface symbol exists",
+    "F2 copy hooks absent",
+    "original completion observation hooks absent"
+  ],
+  "preflight": "PATH lookup returned no dumpbin path; no command ran; actual compiler sibling tool exists and used explicitly"
+}

@@ -1,0 +1,8 @@
+[0/2] Re-checking globbed directories...
+[1/8] Building CXX object hyle\src\compute_backend_cuda\CMakeFiles\hyle_compute_backend_cuda.dir\cuda_backend.cc.obj
+[2/8] Building CXX object hyle\src\compute_backend_cuda\CMakeFiles\hyle_compute_backend_cuda.dir\cuda_batch_transfer.cc.obj
+[3/8] Building CXX object hyle\src\compute_backend_cuda\CMakeFiles\hyle_compute_backend_cuda.dir\cuda_memory.cc.obj
+[4/8] Building CXX object hyle\src\compute_backend_cuda\CMakeFiles\hyle_compute_backend_cuda.dir\cuda_device_status.cc.obj
+[5/8] Linking CXX static library hyle\src\compute_backend_cuda\hyle_compute_backend_cuda.lib
+[6/8] C:\WINDOWS\system32\cmd.exe /C "cd /D C:\h7\w-cpu-cuda\selected-graph\source-build && "C:\Program Files\CMake\bin\cmake.exe" -P C:/h7/w-cpu-cuda/selected-graph/source-build/hyle-runtime/hyle_f2_batched_transfers-Release.cmake"
+[7/8] Linking CXX executable hyle_f2_batched_transfers.exe

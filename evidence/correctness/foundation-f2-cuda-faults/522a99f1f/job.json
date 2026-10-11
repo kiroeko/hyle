@@ -1,0 +1,44 @@
+{
+  "candidate": "522a99f1f1fb6af3f83b27c012863286b5f0a932",
+  "scope": "F2 CUDA cold batch absence real fallback, accepted suffix failure, pending event fault and unsupported cancellation; full delivery and WSL faults unqualified",
+  "configuration": "Release/shared/source/instrumentationON/installOFF",
+  "compiler": "C:/Program Files/Microsoft Visual Studio/18/Enterprise/VC/Tools/MSVC/14.50.35717/bin/Hostx64/x64/cl.exe",
+  "parallel": 1,
+  "stages": [
+    {
+      "name": "identity",
+      "command": [
+        "nvidia-smi",
+        "--query-gpu=name,uuid,driver_version,memory.total",
+        "--format=csv"
+      ],
+      "pid": 87188,
+      "state": "terminal",
+      "available_bytes": 46827282432,
+      "log": "identity.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "5ea583d0a4d43e0243d1237c000eb69187feff35d4a08503f2b025b47be63536"
+    },
+    {
+      "name": "build",
+      "command": [
+        "C:\\Program Files\\CMake\\bin\\cmake.EXE",
+        "--build",
+        "C:\\h7\\foundation-f1-q0",
+        "--target",
+        "hyle_compute_backend_cuda_test",
+        "hyle_compute_test",
+        "--parallel",
+        "1"
+      ],
+      "pid": 83308,
+      "state": "terminal",
+      "available_bytes": 46831800320,
+      "log": "build.log",
+      "exit_code": 2,
+      "verdict": "FAIL",
+      "sha256": "06b9b81dde0f356ead0550050df021795ef2422d621b63cd15aeaafeea534b97"
+    }
+  ]
+}

@@ -1,0 +1,79 @@
+Running main() from C:\public\tools\hyle-dependencies\v1\sources\googletest-063de7e9578f-162765170ae6\googletest\src\gtest_main.cc
+Note: Google Test filter = CudaCopyBatch.*:CudaCopyProgram.*
+[==========] Running 8 tests from 2 test suites.
+[----------] Global test environment set-up.
+[----------] 3 tests from CudaCopyBatch
+[ RUN      ] CudaCopyBatch.BidirectionalSameDeviceByteRoutesAndColdSlotReplay
+[       OK ] CudaCopyBatch.BidirectionalSameDeviceByteRoutesAndColdSlotReplay (86 ms)
+[ RUN      ] CudaCopyBatch.PhysicalIdentityUsesByteAddressAndRejectsForeignContext
+[       OK ] CudaCopyBatch.PhysicalIdentityUsesByteAddressAndRejectsForeignContext (5 ms)
+[ RUN      ] CudaCopyBatch.ColdAbsentBatchUsesRealSameStreamCopiesWithoutReprobing
+[       OK ] CudaCopyBatch.ColdAbsentBatchUsesRealSameStreamCopiesWithoutReprobing (3 ms)
+[----------] 3 tests from CudaCopyBatch (95 ms total)
+
+[----------] 5 tests from CudaCopyProgram
+[ RUN      ] CudaCopyProgram.TwoIndependentSlotsPhaseBytesOldResultsAndNoHotMetadataGrowth
+[       OK ] CudaCopyProgram.TwoIndependentSlotsPhaseBytesOldResultsAndNoHotMetadataGrowth (4 ms)
+[ RUN      ] CudaCopyProgram.EarlyReadyRetainsPendingReadonlySuccessorAndAbandonedNativeWork
+[       OK ] CudaCopyProgram.EarlyReadyRetainsPendingReadonlySuccessorAndAbandonedNativeWork (11 ms)
+[ RUN      ] CudaCopyProgram.CapacityAliasErrorProducerAndZeroBatchDoNotConsumeOrAcceptWork
+[       OK ] CudaCopyProgram.CapacityAliasErrorProducerAndZeroBatchDoNotConsumeOrAcceptWork (3 ms)
+[ RUN      ] CudaCopyProgram.AcceptedFallbackSuffixErrorPreservesEarlierReadyGroupWithoutRetry
+[       OK ] CudaCopyProgram.AcceptedFallbackSuffixErrorPreservesEarlierReadyGroupWithoutRetry (3 ms)
+[ RUN      ] CudaCopyProgram.UnknownEventObservationAndUnsupportedCancelKeepActualPendingUsesAlive
+C:\public\project-hyle\hyle\tests\compute_backend_cuda\copy_program_test.cc(256): error: Expected equality of these values:
+  pool.stats().active_uses
+    Which is: 1
+  0u
+    Which is: 0
+
+C:\public\project-hyle\hyle\tests\compute_backend_cuda\copy_program_test.cc(256): error: Expected equality of these values:
+  pool.stats().live_blocks
+    Which is: 1
+  0u
+    Which is: 0
+
+C:\public\project-hyle\hyle\tests\compute_backend_cuda\copy_program_test.cc(256): error: Expected equality of these values:
+  pool.stats().active_uses
+    Which is: 2
+  0u
+    Which is: 0
+
+C:\public\project-hyle\hyle\tests\compute_backend_cuda\copy_program_test.cc(256): error: Expected equality of these values:
+  pool.stats().live_blocks
+    Which is: 1
+  0u
+    Which is: 0
+
+C:\public\project-hyle\hyle\tests\compute_backend_cuda\copy_program_test.cc(256): error: Expected equality of these values:
+  pool.stats().active_uses
+    Which is: 2
+  0u
+    Which is: 0
+
+C:\public\project-hyle\hyle\tests\compute_backend_cuda\copy_program_test.cc(256): error: Expected equality of these values:
+  pool.stats().live_blocks
+    Which is: 1
+  0u
+    Which is: 0
+
+C:\public\project-hyle\hyle\tests\compute_backend_cuda\copy_program_test.cc(256): error: Expected equality of these values:
+  pool.stats().active_uses
+    Which is: 1
+  0u
+    Which is: 0
+
+C:\public\project-hyle\hyle\tests\compute_backend_cuda\copy_program_test.cc(256): error: Expected equality of these values:
+  pool.stats().live_blocks
+    Which is: 1
+  0u
+    Which is: 0
+
+C:\public\project-hyle\hyle\tests\compute_backend_cuda\copy_program_test.cc(257): error: Expected equality of these values:
+  metadata.used()
+    Which is: 26000
+  0u
+    Which is: 0
+
+HYLE fatal: accounted_.load(std::memory_order_relaxed) == 0
+  at C:\public\project-hyle\hyle\include\hyle/mem/quota_allocator.h:71

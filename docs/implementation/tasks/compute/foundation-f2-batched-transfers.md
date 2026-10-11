@@ -362,6 +362,15 @@ MLX affine Q4 packed/scales/biases全部读回，原Direct/Graph MatMul/Quantize
 实际device身份追加同收据。当前四路线首轮搬运后BF16/原编码数学均已实际取证；其他平台/
 SDK及完整fault、P0终审红队继续未验，不将第一轮数学门算作F2收口。
 
+CUDA剩余故障 `03162add05d3e26fe3314c6bcdaafa5a277a3a76` Windows PASS：8项CUDA/34项common/
+3头与真实deps；冷缺席路径只有1次原proc探测、3replay共12次原same-stream memcpy，实际bytes
+一致。第三条原memcpy接纳后装饰OOM时先行group仍ready，失败后继不发布/不重试；真实pending
+event观测失败及原取消Unimplemented均持续保活，放弃后原reaper实际回收metadata/uses/blocks。
+[故障收据](../../../../evidence/correctness/foundation-f2-cuda-faults/receipt.json)保留首compile FAIL、首回收fixture FAIL及成功门、
+XML实数和全部日志SHA；不代签旧driver实机。shipping source/static普通CPU/CUDA数学同产品scope
+再次PASS，实际backend archive有copy_batch_interface而两个test hook setter缺席，原dumpbin全日志
+gzip及archive SHA保留。其他平台/fault/头与SDK/P0终审红队仍待候选集中取证，不提前CLOSED。
+
 ## 预声明验证与停止
 
 普通数学接线阶段选新增 `samples/package/graph/batched_transfers`：先在Windows原CPU/CUDA
