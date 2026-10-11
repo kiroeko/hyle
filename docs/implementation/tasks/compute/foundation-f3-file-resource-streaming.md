@@ -569,6 +569,12 @@ Air CPU/Apple shared收据现补入真正`DYLD_PRINT_LIBRARIES`运行：同一�
 不靠otool名字猜测加载来源。Air CPU/Apple与Vulkan四installed格已齐，Windows CPU/CUDA
 当前static在运行；其shared、WSL软件Vulkan适用交付和最终矩阵/红队仍待验。
 
+[当前Windows CPU/CUDA static交付](../../../../evidence/correctness/foundation-f3-sdk-windows-cpu-cuda-static-f6db4d5b2/receipt.json)
+现签修正后97858fbc8：原树44项增量并直接运行source小GGUF/Qwen数学PASS，再真实安装迁址，
+普通独立find_package消费者实际CPU/CUDA小旅程与Qwen往返、七头独立编译、Apple/Vulkan头
+及package请求缺席、DLL同目录与实际imports均PASS。没有再次重编oneDNN或切换SDK profile。
+Windows shared正在运行，WSL软件Vulkan两格及最终source复验/矩阵/红队仍待验。
+
 ## 解析器与真实权重验收
 
 格式解析不进入 pipeline。GGUF 用现有 ggml 格式核；本地 Qwen3.5-2B 原始 Safetensors
