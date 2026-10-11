@@ -1,0 +1,46 @@
+{
+  "schema_version": 1,
+  "candidate": "9d37cba017ae7a8a5ca4a74450f6ed234612c684",
+  "scope": "Native lease cancellation abandonment accepted-prefix failure and cold metadata refusal, partial F1 qualification",
+  "machines": {
+    "windows": "MSVC 19.50.35728.0 / RTX 4070 / driver 617.14 / CUDA 13.3.73",
+    "apple": "Mac16,12 / 16 GiB / macOS 27.0.1 26A434 / AppleClang 21.0.0 / CMake 4.3.4 / Ninja 1.13.2"
+  },
+  "configuration": "Release/shared/source/shipping, HYLE_TEST_INSTRUMENTATION=OFF, build1/test1",
+  "tests": [
+    {
+      "route": "Vulkan Windows",
+      "cases": 5,
+      "new_lease_cases": 3,
+      "verdict": "PASS",
+      "log": "windows-vulkan-test.log"
+    },
+    {
+      "route": "Apple MacBook Air",
+      "cases": 5,
+      "new_lease_cases": 3,
+      "verdict": "PASS",
+      "log": "apple-test.log"
+    }
+  ],
+  "proved": [
+    "Actual native work, original observation/failure interception only; no mock provider or new product hook",
+    "Cancellation returns original cancelled status and drain retires actual uses",
+    "Business handle and adapter abandonment do not destroy native source early",
+    "Accepted Vulkan native/managed prefix persists through rejected suffix and first failed idle observation; original error preserved, real final drain frees source",
+    "Apple two native blocks and queued cancellation retain active uses, reject reuse until actual native completion, then return both ranges",
+    "Cold metadata OOM preserves original ready source; normal retry executes real math; tracked metadata allocations balance"
+  ],
+  "pending": [
+    "CPU CUDA lease cancellation/negative details and native mixed lease fault qualification matrix",
+    "Applicable remaining platforms, SDK linkages, sanitizer, complete P0 and red team; owners remain AUDITED"
+  ],
+  "log_sha256": {
+    "windows-vulkan-build.log": "bc0d1b0162aee0d934045d9823f0be8000a3e5184642e19d86f26482ceb6c942",
+    "windows-vulkan-test.log": "58bbd604b1a208ac7bdb559517a03bb2c59a987667e732de0107985231785b23",
+    "windows-vulkan-job.json": "efe730764bb36e388571ebb7b1926f5ee73e760c4b1ace2fd133eae03d6245ab",
+    "apple-build.log": "35d03167d795b885095431b887200e4a7e5002f93450d9f4955e0c529fad7401",
+    "apple-test.log": "2741cfea6f3a8088f0bcd96bf441597822e1516b009fd778228febb017c741cb",
+    "apple-job.json": "74465baf497e9d0d5b913455d1077ed2c520c8873baaeaeeb9b64c4b00dcd04d"
+  }
+}

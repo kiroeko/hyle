@@ -1,0 +1,39 @@
+{
+  "candidate": "9d37cba017ae7a8a5ca4a74450f6ed234612c684",
+  "source": "/Users/kiro/hyle-scratch/compute-unified/source-c8874688",
+  "build": "/Users/kiro/hyle-scratch/compute-unified/a-apple/selected-graph/shared-sdk-build",
+  "configuration": "Release/shared/shipping/OFF/source",
+  "parallel": 1,
+  "stages": [
+    {
+      "stage": "build",
+      "pid": 17865,
+      "state": "terminal",
+      "command": [
+        "/opt/homebrew/bin/cmake",
+        "--build",
+        "/Users/kiro/hyle-scratch/compute-unified/a-apple/selected-graph/shared-sdk-build",
+        "--target",
+        "hyle_compute_route_apple_test",
+        "--parallel",
+        "1"
+      ],
+      "available_bytes": 6920650752,
+      "exit_code": 0,
+      "verdict": "PASS"
+    },
+    {
+      "stage": "test",
+      "pid": 18184,
+      "state": "terminal",
+      "command": [
+        "/Users/kiro/hyle-scratch/compute-unified/a-apple/selected-graph/shared-sdk-build/bin/hyle_compute_route_apple_test",
+        "--gtest_filter=AppleLeaseLifetime.*:AppleLifetime.QueuedCancellationAndAbandonmentDrainBeforeClose:AppleLifetime.LateNativeFailureDrainsAndFailsAlreadyQueuedWork"
+      ],
+      "available_bytes": 7297024000,
+      "exit_code": 0,
+      "verdict": "PASS"
+    }
+  ],
+  "verdict": "PASS"
+}

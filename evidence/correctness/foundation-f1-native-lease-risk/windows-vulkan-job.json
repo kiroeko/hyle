@@ -1,0 +1,13 @@
+{
+  "candidate": "9d37cba017ae7a8a5ca4a74450f6ed234612c684",
+  "binary": "C:/h7/w-vulkan-native",
+  "configuration": "Release/shared/shipping/OFF",
+  "build_exit_code": 0,
+  "command": [
+    "C:/h7/w-vulkan-native/bin/hyle_compute_route_vulkan_test.exe",
+    "--gtest_filter=VulkanLeaseLifetime.*:VulkanLifetime.CancellationAndAbandonmentKeepOwnersWithoutDestructorWait:VulkanLifetime.ManagedPrefixSurvivesRejectedNativeSuffixUntilDrain"
+  ],
+  "test_exit_code": 0,
+  "verdict": "PASS",
+  "log": "windows-vulkan-test.log"
+}

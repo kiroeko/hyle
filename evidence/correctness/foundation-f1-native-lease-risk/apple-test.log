@@ -1,0 +1,23 @@
+Running main() from /Users/kiro/Library/Caches/hyle/dependencies/v1/sources/googletest-063de7e9578f-162765170ae6/googletest/src/gtest_main.cc
+Note: Google Test filter = AppleLeaseLifetime.*:AppleLifetime.QueuedCancellationAndAbandonmentDrainBeforeClose:AppleLifetime.LateNativeFailureDrainsAndFailsAlreadyQueuedWork
+[==========] Running 5 tests from 2 test suites.
+[----------] Global test environment set-up.
+[----------] 3 tests from AppleLeaseLifetime
+[ RUN      ] AppleLeaseLifetime.QueuedCancellationAndAbandonmentRetireTwoNativeBlocks
+[       OK ] AppleLeaseLifetime.QueuedCancellationAndAbandonmentRetireTwoNativeBlocks (273 ms)
+[ RUN      ] AppleLeaseLifetime.LateNativeFailureCannotReleaseAbandonedLeaseBeforePrefixDrain
+[       OK ] AppleLeaseLifetime.LateNativeFailureCannotReleaseAbandonedLeaseBeforePrefixDrain (3 ms)
+[ RUN      ] AppleLeaseLifetime.ZeroColdMetadataQuotaRejectsThenSameSourceComputes
+[       OK ] AppleLeaseLifetime.ZeroColdMetadataQuotaRejectsThenSameSourceComputes (6 ms)
+[----------] 3 tests from AppleLeaseLifetime (283 ms total)
+
+[----------] 2 tests from AppleLifetime
+[ RUN      ] AppleLifetime.QueuedCancellationAndAbandonmentDrainBeforeClose
+[       OK ] AppleLifetime.QueuedCancellationAndAbandonmentDrainBeforeClose (5 ms)
+[ RUN      ] AppleLifetime.LateNativeFailureDrainsAndFailsAlreadyQueuedWork
+[       OK ] AppleLifetime.LateNativeFailureDrainsAndFailsAlreadyQueuedWork (3 ms)
+[----------] 2 tests from AppleLifetime (9 ms total)
+
+[----------] Global test environment tear-down
+[==========] 5 tests from 2 test suites ran. (292 ms total)
+[  PASSED  ] 5 tests.

@@ -500,6 +500,21 @@ Apple 观察两个在途 blocks 的 active uses/最终空闲；Vulkan 观察真�
 独立 cleanup guard 先释放原 native boundary 并排空 Context，再销毁 borrowed MemoryResource/allocator；
 断言失败也不能留下等待线程或提前释放测试资源。组合 lease/native fault 与其他平台资格仍另按矩阵兑现。
 
+`9d37cba01` 的 Windows Vulkan 与 MacBook Air Apple 各五项通过（每路线三个新 lease 用例和两个原夹具）；
+[native 风险收据](../../../../evidence/correctness/foundation-f1-native-lease-risk/receipt.json)
+保留 shipping/OFF 命令、source identity、内存前检及原始日志。已证明 native 取消/放弃、实际前缀失败保活、
+首错、冷 metadata OOM 后同源数学恢复与跟踪 metadata 平衡；尚未证明新的 managed composition lease fault 格。
+
+### WSL 共同核 sanitizer 子批预声明
+
+实际工具：Ubuntu24.04.4 / WSL2 6.18.40.1，GCC14.2.0，CMake3.28.3；当前可用内存约30GiB。
+仅 `HYLE_DEV_FACTORS=compute;graph` 的共同核，shipping/OFF、static、Release、build1/test1：
+ASan 加 `CMAKE_CXX_FLAGS=-fsanitize=undefined -fno-sanitize-recover=all` 验内存/UB；独立 TSan 树验权限/refcount 并发。
+Compute 过滤 `ResourceLeases.*:Completion.*:OwnedResult.*`，Graph 过滤 `LeaseSubmission.*`，每 exe timeout120秒，
+configure/build 分别限300/1800秒，启用 sanitizer 的 halt-on-error；不运行 GPU/vendor 或不相关算子目录。
+Windows immutable archive 是输入，WSL 为新的本批验证副本，不改产品/工具合同、不拷回源码；每阶段须有4GiB余量。
+ASan/UBSan 不替代 TSan 或实际 native 平台资格；runtime/环境不足记录原失败，不把未运行格签成 PASS。
+
 P0 静态账单须列新增 metadata/引用/锁，及旧普通路径不变的证据；
 热路径以计数验无 allocation/provider search，不为纳秒差改布局。
 
