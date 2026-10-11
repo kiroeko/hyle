@@ -636,15 +636,15 @@
     },
     {
       "module": "graph_route_cpu_apple",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/foundation-f1-resource-leases.md",
-      "summary": "F1 组合 SCOPED：外部 ReadLease 自然绑定、原生已接受前缀保活和原结果/source alias；只补租约接缝，不恢复旧 H2/H3 施工。"
+      "summary": "F1 组合 AUDITED：复用原 native/host bind 与 Completion、RunState/Results；冻结有限输入租约/accepted-prefix guard/sentinel，不改数学和原计划。"
     },
     {
       "module": "graph_route_cpu_vulkan",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/foundation-f1-resource-leases.md",
-      "summary": "F1 组合 SCOPED：外部 ReadLease 自然绑定、原生已接受前缀保活和原结果/source alias；只补租约接缝，不恢复旧 H2/H3 施工。"
+      "summary": "F1 组合 AUDITED：复用原 native/host bind 与 Completion、RunState/Results；冻结有限输入租约/accepted-prefix guard/sentinel，不改数学和原计划。"
     }
   ]
 }

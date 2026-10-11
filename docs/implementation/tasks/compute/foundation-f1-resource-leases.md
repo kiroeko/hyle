@@ -411,6 +411,19 @@ Graph 原生前缀实际退休与外层附着 owner 的交接。
   验证原成熟 CPU+GPU 数学、两读者/source alias、业务句柄放弃、close/rejection、OOM/replay metadata计数；
   宏缺席/新头、适用平台与三交付按集中候选执行，未运行保持未证明。
 
+#### 组合子轮 AUDIT
+
+- 原两路线 input_index/description/native_input/bind 已验证原输入形状；复用这些检查。
+  prepare_replay 只准备资源/绑定，不执行本次输入数学；ReadLease 绑定仍为 cold，不新增复制程序。
+- 每个 source/repack/fragment/copy 的 Completion 已在固定 drive_graph 顺序产生；在同一原 await 前
+  给 opt-in source owner 挂冷 guard 即可，不重写 Planner/Program/TransferSlot/Scheduler。
+- source owner 沿原 RunState/Results 存活；prefix guard 额外持有 RunState，保证 body 出错或业务放弃后
+  其输入/native views/metadata 不先销毁。body sentinel 与全部实际 prefix release 联合发布原 terminal。
+  poll 可报告已记录的观察错误；destroy 仍交接到原 outer owner，原错误不是 retirement proof。
+- 只实现冻结的 ReadLease bind、guard/sentinel 及 original result retention。纯图没有 mutable input，
+  caller-output 写租约继续由共同 Graph/CPU+CUDA 的既有 LeasedInvocation 承载，不制造虚构 native 写端口。
+- graph 及两 native composition owner 进入 AUDITED；其他 CLOSED Provider/lowerer 不重开。
+
 扩展现有 compute completion、graph cpu_cuda/apple/vulkan contracts 及 native route 用户样例；
 保留原数学 reference，新增实际 lease 风险断言。只装饰 native observation/fault call，
 不能将 mock 结果当路线资格。至少两独立在途块、两个读者、一写者、旧结果、取消、OOM、部分失败、
