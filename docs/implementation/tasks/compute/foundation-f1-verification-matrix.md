@@ -21,7 +21,7 @@ registry 当前七 owner 为 CANDIDATE。产品实现固定于 `fc4ffbd1610eb3b2
 | 观察错误 F1-04 | 原 `Completion::poll/wait` 与 CUDA 原 submit/collect/drain；未增加普通用户接口 | 定向 correctness 修复；原 EventSlot/Reaper 与 Graph aggregate | COMPLETE；Windows 与 WSL 原 fault/Graph 退役均有证据 |
 | 共同 Direct F1-05 | `LeasedInput/Output/OperationOptions`；`LeasedOperationInvocation::create/valid/in_flight/provider/submit/close/drain`、move/析构 | 复合 glue；原 PreparedOperation/OperationInvocation/Queue | COMPLETE；输入/输出 view 冷预置，自动保留 use；一冷 completion slot |
 | common Graph F1-06 | `LeasedInvocationOptions`；`LeasedInvocation::create/valid/in_flight/bind` 两权限重载、`prepare_replay/replay_route/replay_report/reset/submit` 三原 QueueBinding 档、`output/close/drain`、move/析构；`LeasedGraphOutput::valid/tensor/storage_lease/reset`、copy/move/析构 | 复合 glue；原 Executable/Invocation/SubmissionCursor | COMPLETE；原计划/Provider 不变，旧结果阻止重放，caller/source alias 可导出 ReadLease，private output 保留原 owner |
-| native Direct/Graph F1-01/05/06 | Apple/Vulkan `MemoryResource::binding/import_readonly`；各自 `LeasedInput` 与 `LeasedInvocation::create/valid/in_flight/bind/submit/close/drain`、move/析构；CUDA `ExternalBuffer::into_read_lease` | native route adapter；BORROW 原 MLX array/Vulkan Tensor/owned CUDA Buffer 与原 Program/Results | COMPLETE；各自 native ownership，冷 readonly view，不引入共同万能资源/Queue |
+| native Direct/Graph F1-01/05/06 | Apple/Vulkan `MemoryResource::binding/import_readonly`；Apple `Program::input_count` 冷查询；各自 `LeasedInput` 与 `LeasedInvocation::create/valid/in_flight/bind/submit/close/drain`、move/析构；CUDA `ExternalBuffer::into_read_lease/into_lease_pool` | native route adapter；BORROW 原 MLX array/Vulkan Tensor/owned CUDA Buffer 与原 Program/Results | COMPLETE；各自 native ownership，冷 readonly view，不引入共同万能资源/Queue |
 | CPU+GPU 组合 F1-06 | CPU+Apple/Vulkan 原 `Invocation::bind(ValueId, TensorDesc, ReadLease)`；CPU+CUDA 用共同 LeasedInvocation | 复合 glue；BORROW 原 mixed plan、native/host bind 与 Results | COMPLETE 实现；每 accepted prefix 在观察前保护，body sentinel 与真实 prefixes 联合 terminal |
 | 关闭/回收 F1-07 | 上述 `close/drain/reset`；原 Completion cancel、native Context collect/close/drain | 复用原进展/退役；无新 poller、线程或 reaper | COMPLETE；CUDA cancellation 原返回 Unimplemented 后仍保活，Windows/WSL 新断言通过 |
 | 构建/文档 F1-08 | `hyle::graph`/普通 compute routes；普通 sample；三个 detail protocol 头和原 `submit_guarded` 接缝 | 公开 user surface 与内部跨库协议分开 | PARTIAL 验收；Windows CPU+Vulkan static managed 格仍 UNPROVEN |
@@ -64,6 +64,12 @@ SDK、sanitizer、native/mixed risk 的 `include/src/cmake/third_party` 及根 C
   [交付](../../../../evidence/correctness/foundation-f1-lease-delivery-initial/receipt.json)。
 - U：WSL 独立 CUDA fault2、cuBLAS Direct1、Graph retirement4，以及 Windows 新取消单用例：
   [CUDA 本批风险](../../../../evidence/correctness/foundation-f1-cuda-final-risk/receipt.json)。
+
+CUDA 的拥有 pool 转换还由原 `CudaBackend.AdoptedNativeLeasePoolOwnsResourceAndBorrowedPayloadCannotMasquerade`
+取证：borrowed 两种转换拒绝且保持原 handle；拥有转换的 max_blocks0 拒绝不消费；成功转换后的 native
+reader/subview 在 pool root 丢弃后仍读到原数据，最后 reader 消失后原 native allocation 才释放。
+原 PASS 在 [instrumented CUDA 日志](../../../../evidence/correctness/foundation-f1-common-drain-windows/instrumented-cuda.log)；
+该具体产品 scope 与当前 candidate 相同。这是 native ownership 证据，不代签未运行的平台。
 
 | 能力旅程 | 正常/边界 | failure/OOM/overflow | move/ownership/teardown | cancel/concurrency/late use | 主/正交消费者 | 平台/交付 |
 |---|---|---|---|---|---|---|

@@ -779,6 +779,20 @@
       ],
       "verdict": "IDENTICAL",
       "changes": []
+    },
+    {
+      "scope": "Original adopted CUDA lease pool native ownership test product",
+      "previous": "cf5860a8f86b573d7da87953068b1d52ed01140d",
+      "candidate": "3034fc595abf5c2570e06dedbf195b34daf3fe72",
+      "paths": [
+        "src/compute/resource_leases.cc",
+        "include/hyle/compute/resource_leases.h",
+        "include/hyle/compute/detail/lease_access.h",
+        "src/compute_backend_cuda/cuda_memory.cc",
+        "include/hyle/compute/backends/cuda.h"
+      ],
+      "verdict": "IDENTICAL",
+      "changes": []
     }
   ],
   "limitation": "File identity and retained log integrity support reuse only within original semantic scope and recorded machine/toolchain; this is not a final correctness or delivery verdict."

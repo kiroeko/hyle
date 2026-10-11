@@ -4,6 +4,7 @@
 > 当前 registry 绑定 compute、graph、compute_backend_cuda、compute_route_apple/vulkan、
 > graph_route_cpu_apple/vulkan；F2/F3 尚未启动，不能把局部 PASS 当作整包关闭。
 > 当前逐能力、公开入口和平台/交付缺格见[验证矩阵](foundation-f1-verification-matrix.md)，未验不外推。
+> 冻结后[红队记录](foundation-f1-red-team.md)源码部分通过，证据 finding 仍 OPEN，整体尚未裁决。
 > component / owner：拟由 compute 负责共同控制；compute_backend_cpu/cuda 与
 > compute_route_cpu/cuda/apple/vulkan 负责实际 native 适配；Graph 及其四路线和 CPU+GPU 适配只改 leased 接缝。
 > 具体改到的 owner 才在启动时绑定；不重开全部 Provider/算子模块。
