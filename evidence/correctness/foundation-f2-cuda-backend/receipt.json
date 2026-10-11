@@ -32,6 +32,22 @@
           "test-metrics.log": "0178b08fca78015823c21439e005fe55742647106097de7219c7219e060d7b6e"
         }
       }
+    },
+    {
+      "candidate": "52e437c8e33135a57ab6a21b89fe655fde0763f2",
+      "tree": "dc0631cd781c744ee54b1e8ce3c5d48a08c8ab38",
+      "directory": "cuda-backend-endpoint-windows",
+      "verdict": "PASS",
+      "native_metrics": {
+        "native_calls": 9,
+        "replay_count": 3,
+        "accepted_phase_count": 9,
+        "selected_route": "batch_v13000",
+        "cold_endpoint_rejection": "PASS",
+        "files": {
+          "metrics.xml": "1ec6c3f6a72331b6e10c39bbe32336c69530f52ec29af38651fe7c0627420793"
+        }
+      }
     }
   ],
   "corrective_attempts_used": 1,

@@ -216,6 +216,8 @@ CUDA接缝首构建在测试callback的返回类型推导失败（`HYLE_RETURN_I
 实际 RTX4070/driver617.14；三轮H2D→D2D→D2H的9个phase实际9次driver batch calls，
 无CPU代跑。console首遍没有记录GTest property，唯一一次同binary XML补验只补调用数，未改变产品/预算。
 这仍只证明backend ABI/byte/replay接缝；public controller、权限/故障、数学、CPU/Apple/Vulkan和完整交付待验。
+冷slot追加原Queue identity防误用后，`52e437c8e` 同一精准门2项再次PASS，
+仍是9个phase/9次native batch；同Context另一Queue也在native接纳前拒绝，证据列入同一收据。
 
 | FIX | 必须实现 | 验收 |
 |---|---|---|

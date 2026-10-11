@@ -1,0 +1,95 @@
+{
+  "candidate": "52e437c8e33135a57ab6a21b89fe655fde0763f2",
+  "scope": "F2 CUDA native ABI byte routes and fixed replay seam only; public controller, math, failures and deliveries unqualified",
+  "configuration": "Release/shared/source/instrumentationON/installOFF",
+  "compiler": "C:/Program Files/Microsoft Visual Studio/18/Enterprise/VC/Tools/MSVC/14.50.35717/bin/Hostx64/x64/cl.exe",
+  "parallel": 1,
+  "stages": [
+    {
+      "name": "identity",
+      "command": [
+        "nvidia-smi",
+        "--query-gpu=name,uuid,driver_version,memory.total",
+        "--format=csv"
+      ],
+      "pid": 74188,
+      "state": "terminal",
+      "available_bytes": 47402164224,
+      "log": "identity.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "5ea583d0a4d43e0243d1237c000eb69187feff35d4a08503f2b025b47be63536"
+    },
+    {
+      "name": "build",
+      "command": [
+        "C:\\Program Files\\CMake\\bin\\cmake.EXE",
+        "--build",
+        "C:\\h7\\foundation-f1-q0",
+        "--target",
+        "hyle_compute_backend_cuda_test",
+        "--parallel",
+        "1"
+      ],
+      "pid": 39336,
+      "state": "terminal",
+      "available_bytes": 47408832512,
+      "log": "build.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "b519daf97254066f30e94c5a5d8ff09cfb9a2915fea302a28d098a38df0bd387"
+    },
+    {
+      "name": "headers",
+      "command": [
+        "python",
+        "C:\\public\\project-hyle\\hyle\\scripts\\header-self-contained.py",
+        "--module",
+        "compute",
+        "--header",
+        "detail/copy_backend.h",
+        "--include-dir",
+        "C:\\public\\project-hyle\\hyle\\include",
+        "--extra-include-dir",
+        "C:/h7/foundation-f1-sdk/w-cpu-cuda-shared-relocated/include",
+        "--cxx",
+        "C:/Program Files/Microsoft Visual Studio/18/Enterprise/VC/Tools/MSVC/14.50.35717/bin/Hostx64/x64/cl.exe",
+        "--cxx-compiler-id",
+        "MSVC"
+      ],
+      "pid": 73008,
+      "state": "terminal",
+      "available_bytes": 47422279680,
+      "log": "headers.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "10047ffae8dc087dc3bf4873ce9e50eb6be8fab68f2c438a22ae876583e509f3"
+    },
+    {
+      "name": "test",
+      "command": [
+        "C:\\h7\\foundation-f1-q0\\bin\\hyle_compute_backend_cuda_test.exe",
+        "--gtest_filter=CudaCopyBatch.*",
+        "--gtest_output=xml:C:\\public\\project-hyle\\hyle\\.scratch\\foundation-f2\\cuda-backend-endpoint-windows\\metrics.xml"
+      ],
+      "pid": 28876,
+      "state": "terminal",
+      "available_bytes": 47420456960,
+      "log": "test.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "0c212e0c0081a4b7e9e73da934387ea1774e91db03c129f78c787e6f9ea22b2a"
+    }
+  ],
+  "verdict": "PASS",
+  "native_metrics": {
+    "native_calls": 9,
+    "replay_count": 3,
+    "accepted_phase_count": 9,
+    "selected_route": "batch_v13000",
+    "cold_endpoint_rejection": "PASS",
+    "files": {
+      "metrics.xml": "1ec6c3f6a72331b6e10c39bbe32336c69530f52ec29af38651fe7c0627420793"
+    }
+  }
+}
