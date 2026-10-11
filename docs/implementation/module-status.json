@@ -270,9 +270,10 @@
     },
     {
       "module": "compute",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/foundation-f3-file-resource-streaming.md",
-      "summary": "F3 AUDITED：四路线文件主体及 Windows CPU/CUDA/Vulkan、Air CPU/Apple/Vulkan 的真实 Qwen BF16/F32 与原编码数学往返已局部通过；新 producer/fault 跨路线、WSL/sanitizer、安装 static/shared/headers 迁址及最终 P0/红队仍待验。"
+      "summary": "F3 CANDIDATE：固定双向文件管线、四路线实际权重数学与原生寿命风险已实现并取证；当前产品微修/原deadline风险增量集中验收。安装static/shared、新头/缺席/迁址、最终P0/红队待验，不代签CLOSED。",
+      "candidate": "3b7b9b9b8f0e99205de0c43ce29b4467bdae46d5"
     },
     {
       "module": "graph",
@@ -434,9 +435,10 @@
     },
     {
       "module": "compute_route_cpu",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/foundation-f3-file-resource-streaming.md",
-      "summary": "F3 AUDITED：四路线文件主体及 Windows CPU/CUDA/Vulkan、Air CPU/Apple/Vulkan 的真实 Qwen BF16/F32 与原编码数学往返已局部通过；新 producer/fault 跨路线、WSL/sanitizer、安装 static/shared/headers 迁址及最终 P0/红队仍待验。"
+      "summary": "F3 CANDIDATE：固定双向文件管线、四路线实际权重数学与原生寿命风险已实现并取证；当前产品微修/原deadline风险增量集中验收。安装static/shared、新头/缺席/迁址、最终P0/红队待验，不代签CLOSED。",
+      "candidate": "3b7b9b9b8f0e99205de0c43ce29b4467bdae46d5"
     },
     {
       "module": "graph_route_cpu",
@@ -485,9 +487,10 @@
     },
     {
       "module": "compute_route_cuda",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/foundation-f3-file-resource-streaming.md",
-      "summary": "F3 AUDITED：四路线文件主体及 Windows CPU/CUDA/Vulkan、Air CPU/Apple/Vulkan 的真实 Qwen BF16/F32 与原编码数学往返已局部通过；新 producer/fault 跨路线、WSL/sanitizer、安装 static/shared/headers 迁址及最终 P0/红队仍待验。"
+      "summary": "F3 CANDIDATE：固定双向文件管线、四路线实际权重数学与原生寿命风险已实现并取证；当前产品微修/原deadline风险增量集中验收。安装static/shared、新头/缺席/迁址、最终P0/红队待验，不代签CLOSED。",
+      "candidate": "3b7b9b9b8f0e99205de0c43ce29b4467bdae46d5"
     },
     {
       "module": "graph_route_cuda",
@@ -502,9 +505,10 @@
     },
     {
       "module": "compute_route_apple",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/foundation-f3-file-resource-streaming.md",
-      "summary": "F3 AUDITED：四路线文件主体及 Windows CPU/CUDA/Vulkan、Air CPU/Apple/Vulkan 的真实 Qwen BF16/F32 与原编码数学往返已局部通过；新 producer/fault 跨路线、WSL/sanitizer、安装 static/shared/headers 迁址及最终 P0/红队仍待验。"
+      "summary": "F3 CANDIDATE：固定双向文件管线、四路线实际权重数学与原生寿命风险已实现并取证；当前产品微修/原deadline风险增量集中验收。安装static/shared、新头/缺席/迁址、最终P0/红队待验，不代签CLOSED。",
+      "candidate": "3b7b9b9b8f0e99205de0c43ce29b4467bdae46d5"
     },
     {
       "module": "graph_route_apple",
@@ -519,9 +523,10 @@
     },
     {
       "module": "compute_route_vulkan",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/foundation-f3-file-resource-streaming.md",
-      "summary": "F3 AUDITED：四路线文件主体及 Windows CPU/CUDA/Vulkan、Air CPU/Apple/Vulkan 的真实 Qwen BF16/F32 与原编码数学往返已局部通过；新 producer/fault 跨路线、WSL/sanitizer、安装 static/shared/headers 迁址及最终 P0/红队仍待验。"
+      "summary": "F3 CANDIDATE：固定双向文件管线、四路线实际权重数学与原生寿命风险已实现并取证；当前产品微修/原deadline风险增量集中验收。安装static/shared、新头/缺席/迁址、最终P0/红队待验，不代签CLOSED。",
+      "candidate": "3b7b9b9b8f0e99205de0c43ce29b4467bdae46d5"
     },
     {
       "module": "graph_route_vulkan",
@@ -658,9 +663,10 @@
     },
     {
       "module": "compute_stream",
-      "state": "AUDITED",
-      "summary": "F3 AUDITED：四路线文件主体及 Windows CPU/CUDA/Vulkan、Air CPU/Apple/Vulkan 的真实 Qwen BF16/F32 与原编码数学往返已局部通过；新 producer/fault 跨路线、WSL/sanitizer、安装 static/shared/headers 迁址及最终 P0/红队仍待验。",
-      "record": "docs/implementation/tasks/compute/foundation-f3-file-resource-streaming.md"
+      "state": "CANDIDATE",
+      "summary": "F3 CANDIDATE：固定双向文件管线、四路线实际权重数学与原生寿命风险已实现并取证；当前产品微修/原deadline风险增量集中验收。安装static/shared、新头/缺席/迁址、最终P0/红队待验，不代签CLOSED。",
+      "record": "docs/implementation/tasks/compute/foundation-f3-file-resource-streaming.md",
+      "candidate": "3b7b9b9b8f0e99205de0c43ce29b4467bdae46d5"
     }
   ]
 }

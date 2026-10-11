@@ -1,6 +1,6 @@
 # F3：有界文件与计算资源双向管线
 
-> 状态：AUDITED；四路线主体/真实数学往返、共同三sanitizer和WSL CUDA已验；Air CPU及三交付/终审待验；F1/F2原轮已CLOSED。
+> 状态：CANDIDATE；四路线主体/真实数学往返、原生风险及共同sanitizer已取证；三交付/终审待验；F1/F2原轮已CLOSED。
 > component / owner：新内部 factor compute_stream；compute仅补下述私有租约/退役接缝；
 > native factory/adapter 归 compute_route_cpu/cuda/apple/vulkan；中央声明只投影这些owner的有限新边。
 > IO/Sched/Mem 只消费既有能力；出现具体基础缺陷才另作定向 owner 修复。
@@ -465,6 +465,19 @@ Windows新过期deadline、重复stop/close/drain、原用户资源仍可用组�
 | F3-06 | request cancel、stop/drain/close、abandon/late completion、partial acceptance | 原错误不吞；在途内核/IO不假取消；关闭本pipeline不关闭用户所有资源 |
 | F3-07 | 原生四路线与实际math consumer、确定输入与资源成本/路径报告 | BF16/F32/至少一种已有block编码保持；copy后Direct+Graph真实输出对参考 |
 | F3-08 | 成熟GGUF/Safetensors消费示例、指南、SDK迁址/新头/包闭包与P0 | 解析器在consumer；本地Qwen混合dtype/ranges；DLL同目录，普通入口可发现 |
+
+## 当前不可变Candidate
+
+- 产品与普通consumer固定提交：`3b7b9b9b8f0e99205de0c43ce29b4467bdae46d5`；
+  tree：`7ffc5f2cedc973dae3093fed36dde2d30ba8ca46`。此前f3d931c47到本提交的产品差异只为
+  共同getter两处换行，全部非空白token相同；算法、公共API/layout和成本不变。
+- 原deadline/重复close补证fixture：`332026e43164e285ea890e92487bcfb9844aebab`，不改变产品。
+  本轮状态转换previous-ref为`05ecad186`，六owner从AUDITED进入CANDIDATE，不跳级。
+- 四路线Direct+Graph实际Qwen/GGUF或原Apple编码source旅程已迁移到普通样例；
+  Win CPU十二项、Air CPU十三项以及当前Apple六/Vulkan五/WSL CUDA六增量已实际运行。
+  原三sanitizer十二项已封存，新增风险在相同树增量运行，完整收据随后落盘。
+- 候选之后只允许证据/文档/测试维护；产品新反例须按协议退回AUDITED。
+  installed static/shared、SDK迁址、新头/缺席与最终红队尚未完成，CANDIDATE不等于CLOSED。
 
 ## 解析器与真实权重验收
 

@@ -1,7 +1,7 @@
 # F3逐能力验证矩阵
 
-本页由[活动卡](foundation-f3-file-resource-streaming.md)纳入。当前六owner仍AUDITED，
-最终candidate与全部门尚未签署；旧收据各自的source身份、范围与原失败继续保留。
+本页由[活动卡](foundation-f3-file-resource-streaming.md)纳入。当前六owner为CANDIDATE，
+产品固定3b7b9b9b8；全部门尚未签署，旧收据各自的source身份、范围与原失败继续保留。
 这里列出原八FIX的真实覆盖与缺证，不用测试总数或粗估完成百分比替代裁决。
 
 ## 证据入口
@@ -43,11 +43,11 @@
 | Windows CPU | PASS | 当前十二项PASS，含deadline/repeat-close新fixture | UNPROVEN |
 | Windows CUDA | PASS | 六项PASS；共同格式清理增量待验 | UNPROVEN |
 | Windows Vulkan | PASS | 五项PASS；共同格式清理增量待验 | UNPROVEN |
-| WSL CPU | PASS | ASan/UBSan/TSan各十二项PASS；deadline新fixture待验 | UNPROVEN |
+| WSL CPU | PASS | 原三sanitizer十二项PASS；新增deadline当前ASan/UBSan十三项PASS，TSan增量运行 | UNPROVEN |
 | WSL CUDA | PASS | 六项原生风险PASS；当前微小格式变化增量待验 | UNPROVEN |
-| Air CPU | PASS | CPU共同十三项fixture尚未运行 | UNPROVEN |
-| Air Apple | PASS | 六项PASS；共同格式清理增量待验 | UNPROVEN |
-| Air Vulkan | PASS | 五项PASS；共同格式清理增量待验 | UNPROVEN |
+| Air CPU | PASS | 当前共同十三项PASS，含POSIX short-write/跨线程/deadline | UNPROVEN |
+| Air Apple | PASS | 当前六项增量PASS | UNPROVEN |
+| Air Vulkan | PASS | 当前五项增量PASS | UNPROVEN |
 | WSL Vulkan | NOT_APPLICABLE：实际只有软件llvmpipe，无合格原生GPU | native GPU运行NOT_APPLICABLE | source/安装构建、新头、缺席与运行库解析仍适用且UNPROVEN |
 
 原F1/F2未变的租约/数学/native机制与旧交付证据只能按身份/合同/工具链/机器匹配复用，
