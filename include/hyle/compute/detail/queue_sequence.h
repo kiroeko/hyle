@@ -82,6 +82,9 @@ public:
   // callers may then choose an explicit, reported host barrier.
   HYLE_COMPUTE_API EnqueueResult
   enqueue_wait(const Completion &source) noexcept;
+  // F2 owner-resolved dependency, with the original producer held through use.
+  // Known error is rejected before native acceptance; no implicit host wait.
+  HYLE_COMPUTE_API EnqueueResult enqueue_resolved_wait(CompletionDependency source) noexcept;
   // Finalize exactly once. An empty rejected prefix is returned as a Result
   // error after the backend releases its reserved terminal slot; any accepted
   // prefix is represented by a valid Completion carrying the first tail error.

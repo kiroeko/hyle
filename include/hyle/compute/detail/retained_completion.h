@@ -28,6 +28,11 @@ public:
   // cannot release lifetimes subsequently attached to the public proxy.
   HYLE_COMPUTE_API CompletionLifetime reserve_retirement() noexcept;
   HYLE_COMPUTE_API Status wait() noexcept;
+  // F2 opt-in dependency bridge. Resolves only this known retained owner;
+  // arbitrary backend/compound vtables remain opaque. The source owner stays
+  // alive and its control/observations are serialized through native use.
+  HYLE_COMPUTE_API static Result<CompletionDependency>
+  native_dependency(const Completion &source) noexcept;
   HYLE_COMPUTE_API void reset() noexcept;
 private:
   explicit RetainedCompletion(RetainedCompletionState *state) noexcept : state_(state) {}

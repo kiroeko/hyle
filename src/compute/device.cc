@@ -1073,6 +1073,15 @@ detail::QueueSequence::enqueue_wait(const Completion &source) noexcept {
   return result;
 }
 
+detail::EnqueueResult detail::QueueSequence::enqueue_resolved_wait(CompletionDependency source) noexcept {
+  if (queue_ == nullptr || source.terminal_hint == nullptr)
+    return EnqueueResult::rejected(Status::FailedPrecondition("copy dependency or sequence is invalid"));
+  if (!source.terminal_hint->ok()) return EnqueueResult::rejected(*source.terminal_hint);
+  if (!source.pending()) return EnqueueResult::no_op();
+  auto *state = detail::ContextAccess::state(*queue_);
+  return state->context->backend_vtable->wait_completion(state->backend_state, source.vtable, source.state);
+}
+
 Result<Completion> detail::QueueSequence::finish() noexcept {
   if (queue_ == nullptr) {
     return std::unexpected(

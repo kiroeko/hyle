@@ -140,4 +140,23 @@ Status RetainedCompletion::wait() noexcept {
 void RetainedCompletion::reset() noexcept {
   if (auto *state = std::exchange(state_, nullptr)) state->decref();
 }
+Result<CompletionDependency> RetainedCompletion::native_dependency(const Completion &source) noexcept {
+  if (!source.valid())
+    return std::unexpected(Status::FailedPrecondition("copy producer completion is empty"));
+  auto dependency = CompletionAccess::dependency(source);
+  const Status *error = nullptr;
+  for (unsigned depth = 0; depth < 32; ++depth) {
+    if (!error && dependency.terminal_hint && !dependency.terminal_hint->ok())
+      error = dependency.terminal_hint;
+    if (dependency.vtable != &proxy_vtable) {
+      if (error) dependency.terminal_hint = error;
+      return dependency;
+    }
+    auto &state = *static_cast<RetainedCompletionState *>(dependency.state);
+    if (!error && !state.terminal.ok()) error = &state.terminal;
+    // Read an identity, never poll/wait or infer retirement from cached status.
+    dependency = CompletionAccess::dependency(state.original);
+  }
+  return std::unexpected(Status::ResourceExhausted("copy producer retained dependency depth exceeded"));
+}
 } // namespace hyle::compute::detail

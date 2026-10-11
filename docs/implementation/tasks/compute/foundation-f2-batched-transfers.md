@@ -148,6 +148,9 @@ report 的正常与 empty/moved 行为明确，failed slot 不自动复用；clo
 - producer 必须有合法 owner 与显式 native/inline 依赖。新 F2 resolve 只识别原 retained owner 并转交实际
   pending identity，known error/unknown 已移交退休仍是错误；没有可用 native route 时明确拒绝或显式报告已选
   host boundary，不悄悄同步。程序/完成 metadata 不进入数学 Provider selection。
+  新内部 `RetainedCompletion::native_dependency` 只剥离已知 own proxy（有界32层），不 poll/wait、不把
+  compound/custom vtable 冒充 CUDA event；新的 `QueueSequence::enqueue_resolved_wait` 保留原借用 producer
+  身份/lifetime，known error在新接纳前拒绝。旧 enqueue_wait/Completion布局及旧 submit 路径不改。
 
 #### Native 固定路线
 
@@ -179,7 +182,7 @@ logical/physical/staging/metadata/unknown bytes，opaque driver/vendor 成本不
 ### 首批精准验证声明
 
 共同控制接线阶段仅选 `compute` 的新 range/phase/lease handoff/proxy依赖协议 tests 与既有
-`ResourceLeases.*:Completion.*` 相关回归，新 `CopyRanges.*:CopyLeaseHandoff.*` 控制协议与 header sole-include；复用本批 Windows共同/WSL compute构建，
+`ResourceLeases.*:Completion.*` 相关回归，新 `CopyRanges.*:CopyLeaseHandoff.*:CopyDependency.*` 控制协议与 header sole-include；复用本批 Windows共同/WSL compute构建，
 build1/test1、4GiB、configure300/build1800/exe120，不全算子/P1。真实 CUDA/Apple/Vulkan故障与数学、
 二组二槽及三交付在本包产品接线后按稳定候选集中运行，日志/预算不因阶段提交重置。
 

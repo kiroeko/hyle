@@ -104,6 +104,61 @@ void release_lifetime(void *state) noexcept {
   ++static_cast<LifetimeProbe *>(state)->release_count;
 }
 
+TEST(CopyDependency, RetainedNativeIdentityIsResolvedWithoutObservationOrRetirement) {
+  using namespace hyle::compute;
+  auto inner = detail::RetainedCompletion::create(hyle::mem::system_allocator()).value();
+  auto outer = detail::RetainedCompletion::create(hyle::mem::system_allocator()).value();
+  AsyncProbe probe;
+  auto wrapped = inner.publish(detail::CompletionAccess::make(&kAsyncVTable, &probe));
+  auto source = outer.publish(std::move(wrapped));
+  const auto dependency = detail::RetainedCompletion::native_dependency(source);
+  ASSERT_TRUE(dependency.has_value());
+  EXPECT_EQ(dependency->vtable, &kAsyncVTable);
+  EXPECT_EQ(dependency->state, &probe);
+  EXPECT_TRUE(dependency->pending());
+  EXPECT_EQ(probe.polls, 0u); EXPECT_EQ(probe.waits, 0u); EXPECT_FALSE(probe.destroyed);
+  EXPECT_FALSE(inner.available()); EXPECT_FALSE(outer.available());
+  ASSERT_TRUE(source.wait().ok());
+  EXPECT_TRUE(inner.available()); EXPECT_TRUE(outer.available());
+}
+
+TEST(CopyDependency, InlineErrorInvalidAndOuterTailHintArePreserved) {
+  using namespace hyle::compute;
+  auto invalid = detail::RetainedCompletion::native_dependency({});
+  EXPECT_FALSE(invalid.has_value());
+  auto inline_error = Completion::completed(hyle::Status::Cancelled("producer cancelled"));
+  auto dependency = detail::RetainedCompletion::native_dependency(inline_error).value();
+  EXPECT_FALSE(dependency.pending());
+  ASSERT_NE(dependency.terminal_hint, nullptr);
+  EXPECT_TRUE(dependency.terminal_hint->IsCancelled());
+  auto owner = detail::RetainedCompletion::create(hyle::mem::system_allocator()).value();
+  AsyncProbe probe;
+  auto source = owner.publish(detail::CompletionAccess::make(&kAsyncVTable, &probe));
+  detail::CompletionAccess::append_terminal(source, hyle::Status::Unavailable("producer tail rejected"));
+  dependency = detail::RetainedCompletion::native_dependency(source).value();
+  EXPECT_EQ(dependency.vtable, &kAsyncVTable);
+  EXPECT_TRUE(dependency.terminal_hint->IsUnavailable());
+  EXPECT_FALSE(source.wait().ok());
+}
+
+TEST(CopyDependency, CachedUnknownErrorCannotManufactureNativeSuccessOrRelease) {
+  using namespace hyle::compute;
+  auto owner = detail::RetainedCompletion::create(hyle::mem::system_allocator()).value();
+  AsyncProbe probe; probe.observation_failed = true;
+  auto source = owner.publish(detail::CompletionAccess::make(&kAsyncVTable, &probe));
+  EXPECT_FALSE(source.poll().has_value());
+  EXPECT_FALSE(owner.available());
+  auto dependency = detail::RetainedCompletion::native_dependency(source).value();
+  EXPECT_FALSE(dependency.pending());
+  EXPECT_TRUE(dependency.terminal_hint->IsUnavailable());
+  EXPECT_FALSE(probe.complete);
+  ASSERT_TRUE(probe.abandoned.valid());
+  probe.complete = true;
+  probe.abandoned.terminal(probe.abandoned.state, probe.abandoned_hint);
+  probe.abandoned.release(probe.abandoned.state); probe.abandoned = {};
+  EXPECT_TRUE(owner.available());
+}
+
 TEST(Completion, RetainedObserverDrainsWhilePublicHandleIsHeld) {
   auto owner = hyle::compute::detail::RetainedCompletion::create(hyle::mem::system_allocator()).value();
   AsyncProbe probe;
