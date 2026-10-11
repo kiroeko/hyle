@@ -66,7 +66,7 @@ GPU stream drain和原CUDA abandoned-event reaper回调完成不同；借用allo
 | Windows CPU/Vulkan | PASS（scope匹配） | source/relocated static/shared、新头/absence/DLL；9 native/34 common及实际unknown-fence风险 |
 | Air CPU/Apple | PASS（scope匹配） | source/relocated static/shared、新头/absence/MLX assets；10 native/34 common及实际故障/关闭 |
 | Air CPU/Vulkan | UNPROVEN | 实际设备身份；对应native/common与ordinary数学、三交付/头/absence/迁址 |
-| WSL CPU/CUDA | PASS（固定候选source/static） | 8 CUDA/34 common及原backend late failure PASS；installed static/shared、native ON头/absence/迁址、F2 producer actual late-failure仍待验 |
+| WSL CPU/CUDA | PASS（scope匹配source/static；新delta安装消费已复验） | 新delta真实producer late＋15 CUDA/34 common PASS；relocated static/shared数学及七头/CUDA ON、Apple/Vulkan头缺席PASS；package路线请求诊断与扩展/终审仍待验 |
 | WSL Vulkan | GPU资格UNPROVEN | 先实际枚举loader/device；只有合格GPU才签数学。若仍仅llvmpipe，则记录本候选条件结果，完成适用构建/安装/头/absence格 |
 
 共同控制/CPU copy sanitizer使用原WSL ASan+UBSan与TSan树，固定34 common、3 CpuCopyProgram；
@@ -88,4 +88,16 @@ Direct/Graph scalar oracle PASS。原Torch CUDA12 leaf/native CUDA13链接警告
 ASan、独立UBSan各34 common＋3 CpuCopyProgram PASS，真实compile flags保留；TSan同37项
 在一次进程级setarch -R恢复后PASS，初始unexpected mapping/exit66发生于任何用例运行前，原日志
 保留，无全局配置或suppression。六共同头及Apple/Vulkan OFF两头GCC sole-include PASS；native ON
-及installed SDK仍UNPROVEN。原backend late-failure不是F2 producer late-failure证书。
+及installed SDK当时仍UNPROVEN。原backend late-failure不是F2 producer late-failure证书。
+
+## WSL installed static/shared（含CUDA释放delta）
+
+[SDK收据](../../../../evidence/correctness/foundation-f2-wsl-sdk/receipt.json)绑定5b3efe2cc，原完整canonical archive
+与CUDA delta scope见[终态收据](../../../../evidence/correctness/foundation-f2-cuda-terminal-cleanup/receipt.json)。
+两生产树更新/安装后真实rename迁址，原prefix消失，Hyle CMake metadata无source/build/staging路径。
+普通hyle::graph消费者从安装头编译、两组两槽三轮原BF16/Q8搬运及Direct/Graph oracle PASS。
+各七头独立编译PASS（六common＋CUDA ON）；该CPU/CUDA SKU按合同不安装Apple/Vulkan头，
+两个negative include明确header not found，未把缺席当native OFF头编译。static首fixture误把这两个
+未选择头列为positive，原FAIL保留；同candidate/prefix只修scratch选择并补absence，未改产品/预算。
+ldd无missing dependency，shared HYLE库实际解析到relocated/lib。package拒绝未构建路线请求的
+configure诊断、其他平台SDK与selector扩展/终审继续UNPROVEN；当前四owner仍CANDIDATE。

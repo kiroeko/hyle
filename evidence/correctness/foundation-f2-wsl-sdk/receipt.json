@@ -1,0 +1,204 @@
+{
+  "schema_version": 1,
+  "product_candidate": "5b3efe2cce3fcab2bc55cf749af2d862a786ef25",
+  "scope": "WSL CPU/CUDA installed relocated static/shared F2 ordinary copied BF16/Q8 Direct/Graph and selected public headers; other platforms unqualified",
+  "profiles": [
+    {
+      "mode": "static",
+      "verdict": "PASS",
+      "receipt": "static/job.json",
+      "files": {
+        "absence-apple.log": {
+          "path": "static/absence-apple.log",
+          "sha256": "1e5357f72e36ac07700a6ac596efa6fed90a3688589a61d58938562fafbe1518"
+        },
+        "absence-vulkan.log": {
+          "path": "static/absence-vulkan.log",
+          "sha256": "6732a9fd9105bd709bcefda01183162faf80ff5b79c3674ce48ec2e432b637db"
+        },
+        "configure.log": {
+          "path": "static/configure.log",
+          "sha256": "2c66b2588273b83fd2159d50d8f22739146332d7afad3bb70be9def1241f41d3"
+        },
+        "consumer-build-recovery.log": {
+          "path": "static/consumer-build-recovery.log",
+          "sha256": "1fff340ee9279c8439bcd45c95fb4fc9ac5e461d479addbba09f8ce1b41452f5"
+        },
+        "consumer-build.log": {
+          "path": "static/consumer-build.log",
+          "sha256": "b045cb17a3a4d19c89e93366a18f69961a74452a8983f623fb551fbf59c95c6f"
+        },
+        "consumer-configure-recovery.log": {
+          "path": "static/consumer-configure-recovery.log",
+          "sha256": "4dc9f83b6b6d58161e98ef979992683b14ddeef8d02e2e829e04d75a7dfbdf82"
+        },
+        "consumer-configure.log": {
+          "path": "static/consumer-configure.log",
+          "sha256": "bc27932e03edb46a8e48c5dbdcba48ae445b47b10bb81c8f8bbbf78a75f5b9e9"
+        },
+        "dynamic-deps.log": {
+          "path": "static/dynamic-deps.log",
+          "sha256": "3cbdda7f5f3422798080fca5e2b772ef2422347f575fbeca7cc57418edf4d106"
+        },
+        "install.log": {
+          "path": "static/install.log",
+          "sha256": "a65450eef6eee4e05cdfb92fba1df05217ce805dcbe3d20ad74129e8f25df376"
+        },
+        "job.json": {
+          "path": "static/job.json",
+          "sha256": "75ff2001cb6827349930e161925f0810c426fa2d86f07b2fee0822ab36e74fbf"
+        },
+        "math.log": {
+          "path": "static/math.log",
+          "sha256": "884d80e6df6fd625b6bf39028b2891da1bdd8a3ab7aa36b0da37c165e10e1f9a"
+        },
+        "producer.log": {
+          "path": "static/producer.log",
+          "sha256": "167570865fe91392e3deee1510cc67d92bccbf40c4613fb21d75e69c529aac7b"
+        }
+      },
+      "header_count": 7,
+      "absence": [
+        {
+          "route": "apple",
+          "header": "apple_memory.h",
+          "command": [
+            "/usr/bin/g++-14",
+            "-std=c++23",
+            "-fsyntax-only",
+            "-I/root/hyle-scratch/compute-unified/foundation-f2-sdk-static-5b3efe2cc/relocated/include",
+            "/root/hyle-scratch/compute-unified/foundation-f2-sdk-static-5b3efe2cc/parent/absence-apple.cc"
+          ],
+          "exit_code": 1,
+          "verdict": "PASS_EXPECTED_ABSENT",
+          "log": "absence-apple.log",
+          "sha256": "1e5357f72e36ac07700a6ac596efa6fed90a3688589a61d58938562fafbe1518"
+        },
+        {
+          "route": "vulkan",
+          "header": "vulkan_memory.h",
+          "command": [
+            "/usr/bin/g++-14",
+            "-std=c++23",
+            "-fsyntax-only",
+            "-I/root/hyle-scratch/compute-unified/foundation-f2-sdk-static-5b3efe2cc/relocated/include",
+            "/root/hyle-scratch/compute-unified/foundation-f2-sdk-static-5b3efe2cc/parent/absence-vulkan.cc"
+          ],
+          "exit_code": 1,
+          "verdict": "PASS_EXPECTED_ABSENT",
+          "log": "absence-vulkan.log",
+          "sha256": "6732a9fd9105bd709bcefda01183162faf80ff5b79c3674ce48ec2e432b637db"
+        }
+      ],
+      "relocation": {
+        "original": "/root/hyle-scratch/compute-unified/foundation-f2-sdk-static-5b3efe2cc/staging",
+        "relocated": "/root/hyle-scratch/compute-unified/foundation-f2-sdk-static-5b3efe2cc/relocated",
+        "original_absent": true,
+        "Hyle_metadata_no_source_build_staging_paths": true
+      }
+    },
+    {
+      "mode": "shared",
+      "verdict": "PASS",
+      "receipt": "shared/job.json",
+      "files": {
+        "absence-apple.log": {
+          "path": "shared/absence-apple.log",
+          "sha256": "90f10ccc2a5efb32b949decda7b975ffc31be1d86a089c4c42c66b7ec307b68e"
+        },
+        "absence-vulkan.log": {
+          "path": "shared/absence-vulkan.log",
+          "sha256": "8613445188a8a658dc8dfe06c8dae44f4752a9bef993784237b1ad6b0a3f207e"
+        },
+        "configure.log": {
+          "path": "shared/configure.log",
+          "sha256": "95658234b9bef6b6fcfb62c011f2e851e0662adcb9b1f58360b72e1f26574cab"
+        },
+        "consumer-build.log": {
+          "path": "shared/consumer-build.log",
+          "sha256": "7ce181a8b9816bca99235a89d0139d2d15d59f964de3df93d0c1f1d2c44cc85c"
+        },
+        "consumer-configure.log": {
+          "path": "shared/consumer-configure.log",
+          "sha256": "a622140a0ff4cbe4aea632b752b4cba107b992351606194f4dff7e47e936004c"
+        },
+        "dynamic-deps.log": {
+          "path": "shared/dynamic-deps.log",
+          "sha256": "c6a21c0fca66a34f0fec3e771dcceab44985993bbe709cb40ac1db8c4fef5874"
+        },
+        "install.log": {
+          "path": "shared/install.log",
+          "sha256": "b7c922fe2d4b98b583513e4d21a1b0bbfeb10f92e13483e0186c192df6087b69"
+        },
+        "job.json": {
+          "path": "shared/job.json",
+          "sha256": "0fe245ec62ff4374eaa95cab92df39763e60134eb8481661d9e3285cf2461849"
+        },
+        "math.log": {
+          "path": "shared/math.log",
+          "sha256": "884d80e6df6fd625b6bf39028b2891da1bdd8a3ab7aa36b0da37c165e10e1f9a"
+        },
+        "producer.log": {
+          "path": "shared/producer.log",
+          "sha256": "59a1677fd2f712a1f1581497f68404d169266fcbfc9890477574fd31cde6581d"
+        }
+      },
+      "header_count": 7,
+      "absence": [
+        {
+          "route": "apple",
+          "header": "apple_memory.h",
+          "command": [
+            "/usr/bin/g++-14",
+            "-std=c++23",
+            "-fsyntax-only",
+            "-I/root/hyle-scratch/compute-unified/foundation-f2-sdk-shared-5b3efe2cc/relocated/include",
+            "/root/hyle-scratch/compute-unified/foundation-f2-sdk-shared-5b3efe2cc/parent/absence-apple.cc"
+          ],
+          "exit_code": 1,
+          "verdict": "PASS_EXPECTED_ABSENT",
+          "log": "absence-apple.log",
+          "sha256": "90f10ccc2a5efb32b949decda7b975ffc31be1d86a089c4c42c66b7ec307b68e"
+        },
+        {
+          "route": "vulkan",
+          "header": "vulkan_memory.h",
+          "command": [
+            "/usr/bin/g++-14",
+            "-std=c++23",
+            "-fsyntax-only",
+            "-I/root/hyle-scratch/compute-unified/foundation-f2-sdk-shared-5b3efe2cc/relocated/include",
+            "/root/hyle-scratch/compute-unified/foundation-f2-sdk-shared-5b3efe2cc/parent/absence-vulkan.cc"
+          ],
+          "exit_code": 1,
+          "verdict": "PASS_EXPECTED_ABSENT",
+          "log": "absence-vulkan.log",
+          "sha256": "8613445188a8a658dc8dfe06c8dae44f4752a9bef993784237b1ad6b0a3f207e"
+        }
+      ],
+      "relocation": {
+        "original": "/root/hyle-scratch/compute-unified/foundation-f2-sdk-shared-5b3efe2cc/staging",
+        "relocated": "/root/hyle-scratch/compute-unified/foundation-f2-sdk-shared-5b3efe2cc/relocated",
+        "original_absent": true,
+        "Hyle_metadata_no_source_build_staging_paths": true
+      }
+    }
+  ],
+  "verdict": "PASS",
+  "checks": [
+    "real install followed by rename, original prefix absent",
+    "Hyle CMake metadata contains no source/build/staging paths",
+    "ordinary hyle::graph consumer uses installed header paths only",
+    "seven headers: six common F2 and CUDA enabled, independently compiled",
+    "Apple/Vulkan headers intentionally absent in CPU/CUDA SKU; negative compile diagnostics retained",
+    "two groups/two slots/three replays, original bytes and scalar math oracle",
+    "actual ldd has no missing dependency; shared HYLE libraries resolve from relocated prefix"
+  ],
+  "retained_failure": "static positive fixture initially asked for unselected native headers; corrected scratch consumer scope and explicit absence probes on the same candidate/prefix; first FAIL preserved",
+  "pending": [
+    "Windows and Air SDK matrices",
+    "package route absence configure diagnostics",
+    "component-contract and selected expanded gates",
+    "final P0/red team"
+  ]
+}

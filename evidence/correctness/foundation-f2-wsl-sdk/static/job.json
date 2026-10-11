@@ -1,0 +1,214 @@
+{
+  "candidate": "5b3efe2cce3fcab2bc55cf749af2d862a786ef25",
+  "source_manifest": "HYLE full canonical Git archive\nGit commit: 5b3efe2cce3fcab2bc55cf749af2d862a786ef25\nGit tree: 7023c5780a7c99b10f0b41a4e27f3bf5899dea04\n",
+  "mode": "static",
+  "producer": "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/static-sdk-build",
+  "scope": "WSL CPU/CUDA installed relocated F2 ordinary Direct/Graph copied BF16/Q8 and headers; other platforms unqualified",
+  "identity": "g++-14 (Ubuntu 14.2.0-4ubuntu2~24.04.1) 14.2.0\nCopyright (C) 2024 Free Software Foundation, Inc.\nThis is free software; see the source for copying conditions.  There is NO\nwarranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.\n\n",
+  "parallel": 1,
+  "stages": [
+    {
+      "name": "configure",
+      "command": [
+        "/usr/bin/cmake",
+        "-S",
+        "/root/hyle-scratch/compute-unified/source-7a7b4c3b",
+        "-B",
+        "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/static-sdk-build"
+      ],
+      "pid": 614,
+      "state": "terminal",
+      "available_bytes": 32398135296,
+      "log": "configure.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "2c66b2588273b83fd2159d50d8f22739146332d7afad3bb70be9def1241f41d3"
+    },
+    {
+      "name": "producer",
+      "command": [
+        "/usr/bin/cmake",
+        "--build",
+        "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/static-sdk-build",
+        "--parallel",
+        "1"
+      ],
+      "pid": 656,
+      "state": "terminal",
+      "available_bytes": 32471552000,
+      "log": "producer.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "167570865fe91392e3deee1510cc67d92bccbf40c4613fb21d75e69c529aac7b"
+    },
+    {
+      "name": "install",
+      "command": [
+        "/usr/bin/cmake",
+        "--install",
+        "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/static-sdk-build",
+        "--prefix",
+        "/root/hyle-scratch/compute-unified/foundation-f2-sdk-static-5b3efe2cc/staging"
+      ],
+      "pid": 1192,
+      "state": "terminal",
+      "available_bytes": 31965265920,
+      "log": "install.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "a65450eef6eee4e05cdfb92fba1df05217ce805dcbe3d20ad74129e8f25df376"
+    },
+    {
+      "name": "consumer-configure",
+      "command": [
+        "/usr/bin/cmake",
+        "-S",
+        "/root/hyle-scratch/compute-unified/foundation-f2-sdk-static-5b3efe2cc/parent",
+        "-B",
+        "/root/hyle-scratch/compute-unified/foundation-f2-sdk-static-5b3efe2cc/consumer",
+        "-G",
+        "Ninja",
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DCMAKE_CXX_COMPILER=/usr/bin/g++-14",
+        "-DCMAKE_PREFIX_PATH=/root/hyle-scratch/compute-unified/foundation-f2-sdk-static-5b3efe2cc/relocated"
+      ],
+      "pid": 1193,
+      "state": "terminal",
+      "available_bytes": 32082841600,
+      "log": "consumer-configure.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "bc27932e03edb46a8e48c5dbdcba48ae445b47b10bb81c8f8bbbf78a75f5b9e9"
+    },
+    {
+      "name": "consumer-build",
+      "command": [
+        "/usr/bin/cmake",
+        "--build",
+        "/root/hyle-scratch/compute-unified/foundation-f2-sdk-static-5b3efe2cc/consumer",
+        "--parallel",
+        "1"
+      ],
+      "pid": 1244,
+      "state": "terminal",
+      "available_bytes": 32183058432,
+      "log": "consumer-build.log",
+      "exit_code": 1,
+      "verdict": "FAIL",
+      "sha256": "b045cb17a3a4d19c89e93366a18f69961a74452a8983f623fb551fbf59c95c6f"
+    },
+    {
+      "name": "consumer-configure-recovery",
+      "command": [
+        "/usr/bin/cmake",
+        "-S",
+        "/root/hyle-scratch/compute-unified/foundation-f2-sdk-static-5b3efe2cc/parent",
+        "-B",
+        "/root/hyle-scratch/compute-unified/foundation-f2-sdk-static-5b3efe2cc/consumer",
+        "-G",
+        "Ninja",
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DCMAKE_CXX_COMPILER=/usr/bin/g++-14",
+        "-DCMAKE_PREFIX_PATH=/root/hyle-scratch/compute-unified/foundation-f2-sdk-static-5b3efe2cc/relocated"
+      ],
+      "pid": 624,
+      "state": "terminal",
+      "available_bytes": 32407396352,
+      "log": "consumer-configure-recovery.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "4dc9f83b6b6d58161e98ef979992683b14ddeef8d02e2e829e04d75a7dfbdf82"
+    },
+    {
+      "name": "consumer-build-recovery",
+      "command": [
+        "/usr/bin/cmake",
+        "--build",
+        "/root/hyle-scratch/compute-unified/foundation-f2-sdk-static-5b3efe2cc/consumer",
+        "--parallel",
+        "1"
+      ],
+      "pid": 629,
+      "state": "terminal",
+      "available_bytes": 32445968384,
+      "log": "consumer-build-recovery.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "1fff340ee9279c8439bcd45c95fb4fc9ac5e461d479addbba09f8ce1b41452f5"
+    },
+    {
+      "name": "math",
+      "command": [
+        "/root/hyle-scratch/compute-unified/foundation-f2-sdk-static-5b3efe2cc/consumer/batch"
+      ],
+      "pid": 668,
+      "state": "terminal",
+      "available_bytes": 31993991168,
+      "log": "math.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "884d80e6df6fd625b6bf39028b2891da1bdd8a3ab7aa36b0da37c165e10e1f9a"
+    },
+    {
+      "name": "dynamic-deps",
+      "command": [
+        "/usr/bin/ldd",
+        "/root/hyle-scratch/compute-unified/foundation-f2-sdk-static-5b3efe2cc/consumer/batch"
+      ],
+      "pid": 676,
+      "state": "terminal",
+      "available_bytes": 32045928448,
+      "log": "dynamic-deps.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "3cbdda7f5f3422798080fca5e2b772ef2422347f575fbeca7cc57418edf4d106"
+    }
+  ],
+  "relocation": {
+    "original": "/root/hyle-scratch/compute-unified/foundation-f2-sdk-static-5b3efe2cc/staging",
+    "relocated": "/root/hyle-scratch/compute-unified/foundation-f2-sdk-static-5b3efe2cc/relocated",
+    "original_absent": true,
+    "Hyle_metadata_no_source_build_staging_paths": true
+  },
+  "recovery": "scratch positive header fixture asked for unselected Apple/Vulkan headers which are intentionally not installed; retain first FAIL and verify proper absence separately, same candidate/prefix",
+  "header_scope": {
+    "count": 7,
+    "CUDA": "ON",
+    "Apple": "not installed for this route set",
+    "Vulkan": "not installed for this route set",
+    "source_include_directory_requested": false
+  },
+  "absence": [
+    {
+      "route": "apple",
+      "header": "apple_memory.h",
+      "command": [
+        "/usr/bin/g++-14",
+        "-std=c++23",
+        "-fsyntax-only",
+        "-I/root/hyle-scratch/compute-unified/foundation-f2-sdk-static-5b3efe2cc/relocated/include",
+        "/root/hyle-scratch/compute-unified/foundation-f2-sdk-static-5b3efe2cc/parent/absence-apple.cc"
+      ],
+      "exit_code": 1,
+      "verdict": "PASS_EXPECTED_ABSENT",
+      "log": "absence-apple.log",
+      "sha256": "1e5357f72e36ac07700a6ac596efa6fed90a3688589a61d58938562fafbe1518"
+    },
+    {
+      "route": "vulkan",
+      "header": "vulkan_memory.h",
+      "command": [
+        "/usr/bin/g++-14",
+        "-std=c++23",
+        "-fsyntax-only",
+        "-I/root/hyle-scratch/compute-unified/foundation-f2-sdk-static-5b3efe2cc/relocated/include",
+        "/root/hyle-scratch/compute-unified/foundation-f2-sdk-static-5b3efe2cc/parent/absence-vulkan.cc"
+      ],
+      "exit_code": 1,
+      "verdict": "PASS_EXPECTED_ABSENT",
+      "log": "absence-vulkan.log",
+      "sha256": "6732a9fd9105bd709bcefda01183162faf80ff5b79c3674ce48ec2e432b637db"
+    }
+  ],
+  "verdict": "PASS"
+}

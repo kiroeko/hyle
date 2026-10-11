@@ -392,6 +392,11 @@ gzip及archive SHA保留。其他平台/fault/头与SDK/P0终审红队仍待候�
 
 ## 预声明验证与停止
 
+WSL CPU/CUDA的installed static/shared首轮已通过，见[SDK矩阵](foundation-f2-verification-matrix.md)
+与[完整收据](../../../../evidence/correctness/foundation-f2-wsl-sdk/receipt.json)。包含5b3efe2cc释放delta，真实迁址/数学/七installed头及
+两个未选native header的明确缺席取证；首scratch fixture误列unselected头的FAIL保留，未修改产品。
+其他平台/SDK路线请求诊断与component-contract/扩展门、最终P0红队仍待验，不据此CLOSED。
+
 候选测试维护补一个独立 `hyle_compute_backend_cuda_copy_late_failure_test` 进程，复用原
 illegal-address kernel及原producer stream：host正常组先ready，另一原writer producer先真实memset
 再晚失败，F2失败组不得发布，旧host组仍可读，实际guards/metadata退休归零。5秒ready/回收

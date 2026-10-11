@@ -1,0 +1,24 @@
+[1/11] Building CXX object CMakeFiles/batch.dir/root/hyle-scratch/compute-unified/source-7a7b4c3b/samples/package/graph/batched_transfers/main.cc.o
+/root/hyle-scratch/compute-unified/source-7a7b4c3b/samples/package/graph/batched_transfers/main.cc: In function ‘int main()’:
+/root/hyle-scratch/compute-unified/source-7a7b4c3b/samples/package/graph/batched_transfers/main.cc:455:44: warning: ‘%.*s’ directive argument is null [-Wformat-overflow=]
+  455 |   std::fprintf(stderr, "batched transfers: %.*s\n", static_cast<int>(message.size()), message.data());
+      |                                            ^~~~
+[2/11] Linking CXX executable batch
+/usr/bin/ld: warning: libcudart.so.12, needed by /root/.cache/hyle/dependencies/v1/sdks/torch-cuda-leaf/Linux-02c7258e917f3043c978b53acf6f02b818db0d0d85db0e58ae578af333b9b4e2-fab2a30375b0b92c/torch/lib/libtorch_cuda.so, may conflict with libcudart.so.13
+/usr/bin/ld: warning: libcublas.so.12, needed by /root/.cache/hyle/dependencies/v1/sdks/torch-cuda-leaf/Linux-02c7258e917f3043c978b53acf6f02b818db0d0d85db0e58ae578af333b9b4e2-fab2a30375b0b92c/torch/lib/libtorch_cuda.so, may conflict with libcublas.so.13
+/usr/bin/ld: warning: libcublasLt.so.12, needed by /root/.cache/hyle/dependencies/v1/sdks/torch-cuda-leaf/Linux-02c7258e917f3043c978b53acf6f02b818db0d0d85db0e58ae578af333b9b4e2-fab2a30375b0b92c/torch/lib/libtorch_cuda.so, may conflict with libcublasLt.so.13
+[3/11] Building CXX object CMakeFiles/headers.dir/header-0.cc.o
+[4/11] Building CXX object CMakeFiles/headers.dir/header-1.cc.o
+[5/11] Building CXX object CMakeFiles/headers.dir/header-2.cc.o
+[6/11] Building CXX object CMakeFiles/headers.dir/header-3.cc.o
+[7/11] Building CXX object CMakeFiles/headers.dir/header-4.cc.o
+[8/11] Building CXX object CMakeFiles/headers.dir/header-5.cc.o
+[9/11] Building CXX object CMakeFiles/headers.dir/header-6.cc.o
+[10/11] Building CXX object CMakeFiles/headers.dir/header-7.cc.o
+FAILED: CMakeFiles/headers.dir/header-7.cc.o 
+/usr/bin/g++-14 -DHYLE_COMPUTE_CPU=1 -DHYLE_COMPUTE_CUDA=1 -DHYLE_COMPUTE_FLASHINFER=1 -DHYLE_COMPUTE_ONEDNN=1 -DHYLE_COMPUTE_TORCH_CUDA=1 -DHYLE_GRAPH_ONEDNN=1 -DHYLE_STATIC -isystem /root/hyle-scratch/compute-unified/foundation-f2-sdk-static-5b3efe2cc/relocated/include -isystem /usr/local/cuda-13.3/targets/x86_64-linux/include -O3 -DNDEBUG -std=gnu++23 -MD -MT CMakeFiles/headers.dir/header-7.cc.o -MF CMakeFiles/headers.dir/header-7.cc.o.d -o CMakeFiles/headers.dir/header-7.cc.o -c /root/hyle-scratch/compute-unified/foundation-f2-sdk-static-5b3efe2cc/parent/header-7.cc
+/root/hyle-scratch/compute-unified/foundation-f2-sdk-static-5b3efe2cc/parent/header-7.cc:1:10: fatal error: hyle/compute/apple_memory.h: No such file or directory
+    1 | #include <hyle/compute/apple_memory.h>
+      |          ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+compilation terminated.
+ninja: build stopped: subcommand failed.

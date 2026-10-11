@@ -1,0 +1,4 @@
+-- HYLE: reusing locked CPU SDK at /root/.cache/hyle/dependencies/v1/sdks/torch-cpu/Linux-8dea5bcfed4b53ca0f6852517bea4b4d1f3ff1cc0c21da662e834d34af1ec824/libtorch
+-- Configuring done (4.9s)
+-- Generating done (0.0s)
+-- Build files have been written to: /root/hyle-scratch/compute-unified/foundation-f2-sdk-static-5b3efe2cc/consumer

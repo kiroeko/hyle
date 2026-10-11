@@ -1,0 +1,174 @@
+{
+  "candidate": "5b3efe2cce3fcab2bc55cf749af2d862a786ef25",
+  "source_manifest": "HYLE full canonical Git archive\nGit commit: 5b3efe2cce3fcab2bc55cf749af2d862a786ef25\nGit tree: 7023c5780a7c99b10f0b41a4e27f3bf5899dea04\n",
+  "mode": "shared",
+  "producer": "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/shared-sdk-build",
+  "scope": "WSL CPU/CUDA installed relocated F2 ordinary Direct/Graph copied BF16/Q8 and headers; other platforms unqualified",
+  "identity": "g++-14 (Ubuntu 14.2.0-4ubuntu2~24.04.1) 14.2.0\nCopyright (C) 2024 Free Software Foundation, Inc.\nThis is free software; see the source for copying conditions.  There is NO\nwarranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.\n\n",
+  "parallel": 1,
+  "stages": [
+    {
+      "name": "configure",
+      "command": [
+        "/usr/bin/cmake",
+        "-S",
+        "/root/hyle-scratch/compute-unified/source-7a7b4c3b",
+        "-B",
+        "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/shared-sdk-build"
+      ],
+      "pid": 611,
+      "state": "terminal",
+      "available_bytes": 32382107648,
+      "log": "configure.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "95658234b9bef6b6fcfb62c011f2e851e0662adcb9b1f58360b72e1f26574cab"
+    },
+    {
+      "name": "producer",
+      "command": [
+        "/usr/bin/cmake",
+        "--build",
+        "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/shared-sdk-build",
+        "--parallel",
+        "1"
+      ],
+      "pid": 653,
+      "state": "terminal",
+      "available_bytes": 32422670336,
+      "log": "producer.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "59a1677fd2f712a1f1581497f68404d169266fcbfc9890477574fd31cde6581d"
+    },
+    {
+      "name": "install",
+      "command": [
+        "/usr/bin/cmake",
+        "--install",
+        "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/shared-sdk-build",
+        "--prefix",
+        "/root/hyle-scratch/compute-unified/foundation-f2-sdk-shared-5b3efe2cc/staging"
+      ],
+      "pid": 1241,
+      "state": "terminal",
+      "available_bytes": 31857737728,
+      "log": "install.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "b7c922fe2d4b98b583513e4d21a1b0bbfeb10f92e13483e0186c192df6087b69"
+    },
+    {
+      "name": "consumer-configure",
+      "command": [
+        "/usr/bin/cmake",
+        "-S",
+        "/root/hyle-scratch/compute-unified/foundation-f2-sdk-shared-5b3efe2cc/parent",
+        "-B",
+        "/root/hyle-scratch/compute-unified/foundation-f2-sdk-shared-5b3efe2cc/consumer",
+        "-G",
+        "Ninja",
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DCMAKE_CXX_COMPILER=/usr/bin/g++-14",
+        "-DCMAKE_PREFIX_PATH=/root/hyle-scratch/compute-unified/foundation-f2-sdk-shared-5b3efe2cc/relocated"
+      ],
+      "pid": 1242,
+      "state": "terminal",
+      "available_bytes": 31850500096,
+      "log": "consumer-configure.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "a622140a0ff4cbe4aea632b752b4cba107b992351606194f4dff7e47e936004c"
+    },
+    {
+      "name": "consumer-build",
+      "command": [
+        "/usr/bin/cmake",
+        "--build",
+        "/root/hyle-scratch/compute-unified/foundation-f2-sdk-shared-5b3efe2cc/consumer",
+        "--parallel",
+        "1"
+      ],
+      "pid": 1297,
+      "state": "terminal",
+      "available_bytes": 31967485952,
+      "log": "consumer-build.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "7ce181a8b9816bca99235a89d0139d2d15d59f964de3df93d0c1f1d2c44cc85c"
+    },
+    {
+      "name": "math",
+      "command": [
+        "/root/hyle-scratch/compute-unified/foundation-f2-sdk-shared-5b3efe2cc/consumer/batch"
+      ],
+      "pid": 1339,
+      "state": "terminal",
+      "available_bytes": 31766949888,
+      "log": "math.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "884d80e6df6fd625b6bf39028b2891da1bdd8a3ab7aa36b0da37c165e10e1f9a"
+    },
+    {
+      "name": "dynamic-deps",
+      "command": [
+        "/usr/bin/ldd",
+        "/root/hyle-scratch/compute-unified/foundation-f2-sdk-shared-5b3efe2cc/consumer/batch"
+      ],
+      "pid": 1347,
+      "state": "terminal",
+      "available_bytes": 31845179392,
+      "log": "dynamic-deps.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "c6a21c0fca66a34f0fec3e771dcceab44985993bbe709cb40ac1db8c4fef5874"
+    }
+  ],
+  "relocation": {
+    "original": "/root/hyle-scratch/compute-unified/foundation-f2-sdk-shared-5b3efe2cc/staging",
+    "relocated": "/root/hyle-scratch/compute-unified/foundation-f2-sdk-shared-5b3efe2cc/relocated",
+    "original_absent": true,
+    "Hyle_metadata_no_source_build_staging_paths": true
+  },
+  "header_scope": {
+    "count": 7,
+    "CUDA": "ON",
+    "Apple": "not installed for this route set",
+    "Vulkan": "not installed for this route set",
+    "source_include_directory_requested": false
+  },
+  "absence": [
+    {
+      "route": "apple",
+      "header": "apple_memory.h",
+      "command": [
+        "/usr/bin/g++-14",
+        "-std=c++23",
+        "-fsyntax-only",
+        "-I/root/hyle-scratch/compute-unified/foundation-f2-sdk-shared-5b3efe2cc/relocated/include",
+        "/root/hyle-scratch/compute-unified/foundation-f2-sdk-shared-5b3efe2cc/parent/absence-apple.cc"
+      ],
+      "exit_code": 1,
+      "verdict": "PASS_EXPECTED_ABSENT",
+      "log": "absence-apple.log",
+      "sha256": "90f10ccc2a5efb32b949decda7b975ffc31be1d86a089c4c42c66b7ec307b68e"
+    },
+    {
+      "route": "vulkan",
+      "header": "vulkan_memory.h",
+      "command": [
+        "/usr/bin/g++-14",
+        "-std=c++23",
+        "-fsyntax-only",
+        "-I/root/hyle-scratch/compute-unified/foundation-f2-sdk-shared-5b3efe2cc/relocated/include",
+        "/root/hyle-scratch/compute-unified/foundation-f2-sdk-shared-5b3efe2cc/parent/absence-vulkan.cc"
+      ],
+      "exit_code": 1,
+      "verdict": "PASS_EXPECTED_ABSENT",
+      "log": "absence-vulkan.log",
+      "sha256": "8613445188a8a658dc8dfe06c8dae44f4752a9bef993784237b1ad6b0a3f207e"
+    }
+  ],
+  "verdict": "PASS"
+}

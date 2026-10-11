@@ -1,0 +1,4 @@
+/root/hyle-scratch/compute-unified/foundation-f2-sdk-shared-5b3efe2cc/parent/absence-vulkan.cc:1:10: fatal error: hyle/compute/vulkan_memory.h: No such file or directory
+    1 | #include <hyle/compute/vulkan_memory.h>
+      |          ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+compilation terminated.
