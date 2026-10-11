@@ -1,6 +1,6 @@
 # F3：有界文件与计算资源双向管线
 
-> 状态：SCOPED；F3范围已冻结，尚未AUDITED或写产品代码；F1/F2原轮已CLOSED。
+> 状态：AUDITED；六owner与原八FIX、API/生命周期及有限改动集已冻结，尚未写产品；F1/F2原轮已CLOSED。
 > component / owner：新内部 factor compute_stream；compute仅补下述私有租约/退役接缝；
 > native factory/adapter 归 compute_route_cpu/cuda/apple/vulkan；中央声明只投影这些owner的有限新边。
 > IO/Sched/Mem 只消费既有能力；出现具体基础缺陷才另作定向 owner 修复。
@@ -20,6 +20,9 @@
   actual-retirement后的writer交接及共享backing/最后reader观察；不重写F2 public输出合同或native copy。
 - 本阶段只核对原F3-01至08的IO/Sched/F1/F2/native组合、source/sink拥有/借用、有限byte/slot/
   group/旧结果预算、取消/实际退役与两向错误；完成AUDITED并提交状态前不写产品。
+- 形状审计输入见[源码与原模型头收据](../../../../evidence/correctness/foundation-f3-audit/inputs.json)。
+  SCOPED分别已提交2971a8bd5/c82627ce5；当前AUDITED转移以c82627ce5作previous-ref，
+  不跳过compute新接缝的SCOPED。审计只决定原八FIX，全部F3产品/运行门仍未验。
 - 遵守用户本轮明确要求：只验实际修改owner、真实直接消费者、新API与对应三交付；未受影响
   模块/成熟算子目录/其他facade不全局回放，复用已签且scope/合同/工具链/机器相符的F1/F2证据。
   原调查/纠正与单线程/内存预算不因新记录、目录或跨日重置。
@@ -77,7 +80,7 @@
 | Gate | 本轮所需证据 | 当前结果 |
 |---|---|---|
 | scope | 原八FIX、主/正交旅程、六owner及实际baseline | 已定界，尚未产品验收 |
-| architecture | API/生命周期/依赖审计、现有原子组合与有限ledger | UNPROVEN，AUDITED前完成 |
+| architecture | API/生命周期/依赖审计、现有原子组合与有限ledger | AUDITED形状冻结，产品接线仍UNPROVEN |
 | correctness | 02至07逐能力风险矩阵及四路线实际接缝 | NOT_RUN |
 | delivery | 01/08 source/static/shared、新头、迁址及缺席 | NOT_RUN |
 | usability_docs | 普通C++自然工厂、双向与错误/close recipe | NOT_RUN |
@@ -154,8 +157,10 @@ vLLM weight_utils 的成熟 ParallelLoader/source view 寿命，以及 tiering/f
 
 - `FileStreamOptions`：allocator=system_allocator、可选ResourceBudget；默认max_requests=4、
   max_groups_per_request=16、max_ranges_per_group=16、in_flight_slots=2、staging_bytes_per_slot=1MiB、
-  max_active_backing_bytes=128MiB。所有乘加溢出/零必要容量在冷create拒绝；用户可明确调容量，
+  staging_alignment=256、max_active_backing_bytes=128MiB。所有乘加溢出/零必要容量在冷create拒绝；用户可明确调容量，
   不新增CMake用户开关。stage必须host可访问，CUDA只此传输stage用原pinned资源。
+  direct File按原DirectIoAlignment检查实际stage pointer/offset/每chunk length，未满足在IO前拒绝；
+  tail不降为buffered，必要alignment由consumer明确配置。
 - `StreamFile`是可复制retained handle：`adopt(io::File&&, capacity_bytes)`或
   `borrow(io::File&, capacity_bytes)`；adopt失败不移动File。capacity是consumer明确的合法范围，
   不代表文件实际已含这些bytes，EOF仍从真实IO返回。借用File地址与IoContext必须活到所有请求实际退休。
@@ -164,8 +169,10 @@ vLLM weight_utils 的成熟 ParallelLoader/source view 寿命，以及 tiering/f
   通过原Mem checked bytes和stage BufferView::write复制有限chunk；映射page fault可能阻塞，
   此fill沿同BlockingPool offload并保留mapping owner，不制造copy kernel或whole-file缓存。
 - `StreamReadRange`包含file_offset、目标WriteLease、resource_offset、logical bytes、显式physical_bytes
-  和可选TensorDesc；`StreamReadGroup`是tag及range span。`StreamWriteRange`包含只读source lease、
-  可选producer Completion、resource_offset、file_offset与logical/physical bytes；write group同样只有tag/ranges。
+  和可选TensorDesc；`StreamReadGroup`是tag及range span。`StreamWriteRange`有两档：
+  `ready(ReadLease,...)`，或`produced(WriteLease&&,Completion&&,...)`，都含resource_offset、
+  file_offset与logical/physical bytes；write group同样只有tag/ranges。produced档在原F2 ordered mutable
+  source/producer路径真正退休前绝不host读；首chunk成功后可把已生产source转成readonly供后续chunk。
   描述符由consumer解释，typed范围必须完整覆盖desc encoding；同backing别名/offset/对齐/尾padding
   在任何IO/native接受前验证，不允许padding覆盖邻块。
 - 四路线固定自然工厂`cpu/cuda/apple/vulkan::create_file_pipeline`，参数为已有IoContext、原Context、
@@ -180,7 +187,8 @@ vLLM weight_utils 的成熟 ParallelLoader/source view 寿命，以及 tiering/f
   `result()`观察同一快照，`request_cancel()`只停止本请求后继。pending返回Unavailable，
   已取完且成功结束返回OutOfRange，失败仍保留首错和partial bytes，不丢已有ready。
 - `StreamReadyGroup`可复制，tag/range_count/`output(index)`提供覆盖范围的ReadLease；
-  写回组只报告实际write完成和bytes，不新造可读GPU输出。结果记录与导出的lease寿命分开计费。
+  写回组报告实际write完成和bytes，并可返回原source的readonly lease，不新造GPU输出或复制source。
+  结果记录与导出的lease寿命分开计费。
 - `stop_admission()`、非阻塞`collect()`/`close()`、显式`drain()`；close重复安全，未退休返回Unavailable。
   drain停止接纳并等已接受工作，不等用户放弃旧ready；Pipeline/Ticket析构放弃观察及停止后继，
   不隐藏join或全设备wait，不关闭借用用户File/Queue/Context/全IO runtime。

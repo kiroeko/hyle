@@ -270,9 +270,9 @@
     },
     {
       "module": "compute",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/foundation-f3-file-resource-streaming.md",
-      "summary": "F3 SCOPED：大目标跨chunk需要实际退役后的私有writer交接、共享backing计费和最后reader观察；仅补F3-03/05接缝，无核心反向依赖或普通对象新增字段，尚未实现。"
+      "summary": "F3 AUDITED：原八FIX、双向文件/映射与四路线工厂、固定槽/group/旧结果容量、取消排空及私有退役writer交接已冻结；尚未产品实现/运行资格，不重启F1/F2或无关全局门。"
     },
     {
       "module": "graph",
@@ -434,9 +434,9 @@
     },
     {
       "module": "compute_route_cpu",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/foundation-f3-file-resource-streaming.md",
-      "summary": "F3 SCOPED：原八FIX有界文件↔资源双向管线；自然四路线工厂、逐组ready/旧结果容量/取消排空及本地混合dtype数学旅程已定界，尚未AUDITED或修改产品；F1/F2旧terminal证据保留。"
+      "summary": "F3 AUDITED：原八FIX、双向文件/映射与四路线工厂、固定槽/group/旧结果容量、取消排空及私有退役writer交接已冻结；尚未产品实现/运行资格，不重启F1/F2或无关全局门。"
     },
     {
       "module": "graph_route_cpu",
@@ -485,9 +485,9 @@
     },
     {
       "module": "compute_route_cuda",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/foundation-f3-file-resource-streaming.md",
-      "summary": "F3 SCOPED：原八FIX有界文件↔资源双向管线；自然四路线工厂、逐组ready/旧结果容量/取消排空及本地混合dtype数学旅程已定界，尚未AUDITED或修改产品；F1/F2旧terminal证据保留。"
+      "summary": "F3 AUDITED：原八FIX、双向文件/映射与四路线工厂、固定槽/group/旧结果容量、取消排空及私有退役writer交接已冻结；尚未产品实现/运行资格，不重启F1/F2或无关全局门。"
     },
     {
       "module": "graph_route_cuda",
@@ -502,9 +502,9 @@
     },
     {
       "module": "compute_route_apple",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/foundation-f3-file-resource-streaming.md",
-      "summary": "F3 SCOPED：原八FIX有界文件↔资源双向管线；自然四路线工厂、逐组ready/旧结果容量/取消排空及本地混合dtype数学旅程已定界，尚未AUDITED或修改产品；F1/F2旧terminal证据保留。"
+      "summary": "F3 AUDITED：原八FIX、双向文件/映射与四路线工厂、固定槽/group/旧结果容量、取消排空及私有退役writer交接已冻结；尚未产品实现/运行资格，不重启F1/F2或无关全局门。"
     },
     {
       "module": "graph_route_apple",
@@ -519,9 +519,9 @@
     },
     {
       "module": "compute_route_vulkan",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/foundation-f3-file-resource-streaming.md",
-      "summary": "F3 SCOPED：原八FIX有界文件↔资源双向管线；自然四路线工厂、逐组ready/旧结果容量/取消排空及本地混合dtype数学旅程已定界，尚未AUDITED或修改产品；F1/F2旧terminal证据保留。"
+      "summary": "F3 AUDITED：原八FIX、双向文件/映射与四路线工厂、固定槽/group/旧结果容量、取消排空及私有退役writer交接已冻结；尚未产品实现/运行资格，不重启F1/F2或无关全局门。"
     },
     {
       "module": "graph_route_vulkan",
@@ -658,8 +658,8 @@
     },
     {
       "module": "compute_stream",
-      "state": "SCOPED",
-      "summary": "F3 SCOPED：原八FIX有界文件↔资源双向管线；自然四路线工厂、逐组ready/旧结果容量/取消排空及本地混合dtype数学旅程已定界，尚未AUDITED或修改产品；F1/F2旧terminal证据保留。",
+      "state": "AUDITED",
+      "summary": "F3 AUDITED：原八FIX、双向文件/映射与四路线工厂、固定槽/group/旧结果容量、取消排空及私有退役writer交接已冻结；尚未产品实现/运行资格，不重启F1/F2或无关全局门。",
       "record": "docs/implementation/tasks/compute/foundation-f3-file-resource-streaming.md"
     }
   ]
