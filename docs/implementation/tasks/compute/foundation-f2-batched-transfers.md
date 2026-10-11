@@ -91,6 +91,8 @@ Vulkan staging/device 双向及同设备合法 copy。无跨 GPU/peer/multi-GPU�
 共同值放在 `hyle/compute/batch_transfer.h`：`CopyResourceId/CopyPhaseId`、`CopyRange`、`CopyPhase`、
 `CopyResourceSpec`、`CopyBatchOptions`、`CopyBatchReport`。范围值为 source/destination IDs、各自 byte offset、
 byte count 与 phase ID；phase 有显式先行阶段 mask 与应用 group tag，不含 layer/token/model。
+`CopyRange::bytes` 是 logical bytes，`physical_bytes=0` 表示 exact copy；显式非零 padding 必须不小于
+logical、属于两个已拥有范围且参与全部 alias/预算校验。零 logical copy 不接受非零 padding。
 phase 数最多64，dependency 必须指向先前阶段且覆盖真实跨阶段 hazards；同 phase 是 independent copies。
 
 CPU/CUDA 共同 `compute::CopyBatchProgram/CopyBatchInvocation/CopyBatchSubmission` 的原执行入口是
