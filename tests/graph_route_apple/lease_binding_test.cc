@@ -37,7 +37,7 @@ TEST(AppleLeaseBinding, SharedLeaseDirectGraphAndImportedNativeAlias) {
   auto direct_run = direct.create_invocation().value();
   ASSERT_TRUE(direct_run.bind(inputs).ok());
   auto direct_done = direct_run.submit().value();
-  ASSERT_TRUE(direct_done.wait().ok());
+  ASSERT_TRUE(direct_done.wait().has_value());
   auto direct_result = direct_done.result().value();
   for (std::size_t index = 0; index < 4; ++index)
     EXPECT_FLOAT_EQ(direct_result->arrays()[0].data<float>()[index], expected[index]);
@@ -46,7 +46,8 @@ TEST(AppleLeaseBinding, SharedLeaseDirectGraphAndImportedNativeAlias) {
   const auto first = builder.input(desc).value(), second = builder.input(desc).value();
   const auto product = builder.add(c::MatMul{}, first, second).value();
   ASSERT_TRUE(builder.publish(product).ok());
-  ASSERT_TRUE(builder.publish(first).ok());
+  const auto source_alias = builder.add(c::View::slice(0, 0, 2).value(), first).value();
+  ASSERT_TRUE(builder.publish(source_alias).ok());
   auto definition = std::move(builder).finish().value();
   auto program = g::apple::compile(context, definition).value();
   auto run = program.create_invocation().value();
@@ -54,7 +55,7 @@ TEST(AppleLeaseBinding, SharedLeaseDirectGraphAndImportedNativeAlias) {
   left.reset(); right.reset(); left_binding = mx::array(0); right_binding = mx::array(0);
   for (auto &input : inputs) input = mx::array(0);
   auto done = run.submit().value();
-  ASSERT_TRUE(done.wait().ok());
+  ASSERT_TRUE(done.wait().has_value());
   auto result = done.result().value();
   for (std::size_t index = 0; index < 4; ++index)
     EXPECT_FLOAT_EQ(result->arrays()[0].data<float>()[index], expected[index]);

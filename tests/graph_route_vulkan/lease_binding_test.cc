@@ -36,7 +36,7 @@ TEST(VulkanLeaseBinding, OriginalOwnersDirectGraphAndReadonlyImport) {
   auto direct_run = direct.create_invocation().value();
   ASSERT_TRUE(direct_run.bind(left_binding, right_binding).ok());
   auto direct_done = direct_run.submit().value();
-  ASSERT_TRUE(direct_done.wait().ok());
+  ASSERT_TRUE(direct_done.wait().has_value());
   auto direct_result = direct_done.result().value();
   EXPECT_EQ(t::read(context, direct_result->tensors()[0]).value(),
             (std::vector<float>(expected.begin(), expected.end())));
@@ -45,7 +45,8 @@ TEST(VulkanLeaseBinding, OriginalOwnersDirectGraphAndReadonlyImport) {
   const auto a = builder.input(desc).value(), b = builder.input(desc).value();
   const auto product = builder.add(c::MatMul{}, a, b).value();
   ASSERT_TRUE(builder.publish(product).ok());
-  ASSERT_TRUE(builder.publish(a).ok());
+  const auto source_alias = builder.add(c::View::slice(0, 0, 2).value(), a).value();
+  ASSERT_TRUE(builder.publish(source_alias).ok());
   auto definition = std::move(builder).finish().value();
   auto program = g::vulkan::compile(context, definition).value();
   auto run = program.create_invocation().value();
@@ -53,7 +54,7 @@ TEST(VulkanLeaseBinding, OriginalOwnersDirectGraphAndReadonlyImport) {
   left_native = {}; right_native = {}; left.reset(); right.reset();
   left_binding = {}; right_binding = {};
   auto done = run.submit().value();
-  ASSERT_TRUE(done.wait().ok());
+  ASSERT_TRUE(done.wait().has_value());
   auto result = done.result().value();
   EXPECT_EQ(t::read(context, result->tensors()[0]).value(),
             (std::vector<float>(expected.begin(), expected.end())));
