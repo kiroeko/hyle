@@ -526,6 +526,15 @@ producer后组。在普通shipping CPU/CUDA source树中添加独立fixture，�
 原oneDNN产物复用；实际active uses与F3 allocator在native退休后归零。
 当前原生与共同sanitizer风险已齐；当前Vulkan static安装交付运行中，其余交付/新头/终审仍待验。
 
+[当前Windows Vulkan static交付](../../../../evidence/correctness/foundation-f3-sdk-windows-vulkan-static-c87521395/receipt.json)
+绑定修正后97858fbc8产品：旧producer树完成87项增量，真实install后rename、原prefix消失，
+普通独立C++项目仅find_package Graph且选择vulkan；原Direct/Graph小GGUF与同Qwen完整往返PASS，
+六个新/changed头独立编译、CPU/CUDA/Apple头缺席及三条原package诊断PASS，运行库同目录。
+新配置未要求任何内部factor/provider。共享版本正在运行，不代签其他交付格。
+[旧CPU/CUDA static交付](../../../../evidence/correctness/foundation-f3-sdk-windows-cpu-cuda-static-8857b4459/receipt.json)
+也已封存全部原运行与新头/缺席/迁址PASS，但它绑定红队纠正之前的3b产品，只作历史局部事实；
+当前产品沿原树做增量接线与相同consumer，不能拿旧数学输出代签新候选。
+
 ## 解析器与真实权重验收
 
 格式解析不进入 pipeline。GGUF 用现有 ggml 格式核；本地 Qwen3.5-2B 原始 Safetensors

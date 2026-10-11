@@ -1,0 +1,36 @@
+{
+  "schema_version": 1,
+  "candidate": "c87521395f447c23072135dc0a8be0a5cec3938b",
+  "product_commit": "97858fbc88a6b5a87f109290b956eeaeee632dd2",
+  "host": "windows",
+  "profile": "vulkan",
+  "mode": "static",
+  "scope": "F3 installed relocated ordinary Graph file/math/Qwen consumer plus changed ON/OFF headers only",
+  "relocation": {
+    "original": "C:\\h7\\foundation-f3-sdk\\windows-vulkan-static-c87521395\\staging",
+    "relocated": "C:\\h7\\foundation-f3-sdk\\windows-vulkan-static-c87521395\\relocated",
+    "original_absent": true,
+    "Hyle_metadata_no_source_build_staging_paths": true
+  },
+  "header_scope": {
+    "count": 6,
+    "CUDA": "OFF",
+    "Apple": "OFF",
+    "Vulkan": "ON",
+    "source_include_directory_requested": false
+  },
+  "absent_headers_and_route_diagnostics": [
+    "cpu",
+    "cuda",
+    "apple"
+  ],
+  "runtime_dlls": {},
+  "identity": "C:/Program Files/Microsoft Visual Studio/18/Enterprise/VC/Tools/MSVC/14.50.35717/bin/Hostx64/x64/cl.exe",
+  "original_failures": "All earlier setup/validation/product failures retained in previous F3 receipts; this one SDK cell does not replace them.",
+  "archive": {
+    "path": "evidence/correctness/foundation-f3-sdk-windows-vulkan-static-c87521395/raw-results.zip",
+    "sha256": "b94d24397d0a70e3300404183eec9b340f221d9e3887f8e12041da168c4eb7d9"
+  },
+  "verdict": "PASS_WINDOWS_F3_VULKAN_STATIC_RELOCATED_SDK_ONLY",
+  "limits": "Only the named host/profile/linkage/ordinary consumers/changed headers. Other deliveries and final closure remain unproven."
+}
