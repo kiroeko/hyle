@@ -1,6 +1,6 @@
 # F3：有界文件与计算资源双向管线
 
-> 状态：AUDITED；六owner与原八FIX、API/生命周期及有限改动集已冻结，尚未写产品；F1/F2原轮已CLOSED。
+> 状态：AUDITED；六owner与原八FIX、API/生命周期及有限改动集已冻结，私有共同接缝已首验，完整管线待实现；F1/F2原轮已CLOSED。
 > component / owner：新内部 factor compute_stream；compute仅补下述私有租约/退役接缝；
 > native factory/adapter 归 compute_route_cpu/cuda/apple/vulkan；中央声明只投影这些owner的有限新边。
 > IO/Sched/Mem 只消费既有能力；出现具体基础缺陷才另作定向 owner 修复。
@@ -22,14 +22,14 @@
   group/旧结果预算、取消/实际退役与两向错误；完成AUDITED并提交状态前不写产品。
 - 形状审计输入见[源码与原模型头收据](../../../../evidence/correctness/foundation-f3-audit/inputs.json)。
   SCOPED分别已提交2971a8bd5/c82627ce5；当前AUDITED转移以c82627ce5作previous-ref，
-  不跳过compute新接缝的SCOPED。审计只决定原八FIX，全部F3产品/运行门仍未验。
+  不跳过compute新接缝的SCOPED。审计只决定原八FIX；下面的局部实现证据不代签完整F3运行门。
 - 遵守用户本轮明确要求：只验实际修改owner、真实直接消费者、新API与对应三交付；未受影响
   模块/成熟算子目录/其他facade不全局回放，复用已签且scope/合同/工具链/机器相符的F1/F2证据。
   原调查/纠正与单线程/内存预算不因新记录、目录或跨日重置。
 
 - 最初设计研究基线：`edb2714384037b12a3d1e69839aa895fea17cec1`；不是本轮实施baseline，设计见
   [资源与流送设计](../../../architecture/compute-resource-streaming-design.md)。
-- 本卡现为上述六owner的registry当前record；产品验证均未运行。原设计研究收据作为需求输入，
+- 本卡现为上述六owner的registry当前record；完整F3产品验证待运行，局部接缝证据见后。原设计研究收据作为需求输入，
   不把原子API已存在或F1/F2 PASS写成本轮F3通过。
 - 主纵切：量化推理的外部状态/权重范围及真实成熟数学消费。
   正交纵切：渲染资产流送和分块矩阵管线；不加入 token/layer/KV policy。
@@ -220,6 +220,17 @@ vLLM weight_utils 的成熟 ParallelLoader/source view 寿命，以及 tiering/f
 复用原IO/Mem/Sched/F1/F2，不新建runtime；P0只做成本结构；只C++三交付无FFI；中央依赖/头/安装
 按新factor与四route投影；普通用户从四route工厂完成read→ready→math与write→reload，指南保留借用/取消/unknown坑。
 以上为AUDITED前形状结论，不是产品PASS；实现若发现必须改变owner/API/常态成本，先退回审计再改卡。
+
+#### 首项产品接缝进展
+
+`e6c1d88f1039b237ef1ce412030c706bb4d23c10`实现共同私有CopyStreamAccess writer交回和
+LeaseAccess原backing/最后reader观察；没有新增普通对象字段、native copy路径或核心反向依赖。
+[Windows收据](../../../../evidence/correctness/foundation-f3-handoff-windows/receipt.json)绑定精确source SHA：
+原CPU实际copy consumer五项PASS（含两项新接缝测试），受影响三个头独立编译PASS，原树build1仅十项增量。
+16-byte stage四chunk填满64-byte目标，同writer/generation保留、最后才统一publish；持有submission
+拒绝交回、非法/readonly binding不消费、共享backing去重、额外reader/use占容量及closed pool最后reader均验证。
+这是F3-03/05的部分接缝，不是文件管线或完整F3验收；GPU pending/error/unknown、Apple/Vulkan交接、
+文件请求/双向实际IO、Qwen数学与三交付仍UNPROVEN，六owner保持AUDITED。
 
 | FIX | 必须实现 | 验收 |
 |---|---|---|

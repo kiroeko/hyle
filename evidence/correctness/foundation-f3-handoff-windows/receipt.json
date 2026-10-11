@@ -1,0 +1,136 @@
+{
+  "schema_version": 1,
+  "product_commit": "e6c1d88f1039b237ef1ce412030c706bb4d23c10",
+  "product_tree": "317aeb78a7c7aff74d6940600996d0095a3bae91",
+  "host": {
+    "system": "Windows",
+    "release": "11",
+    "machine": "AMD64",
+    "node": "kiro-workstation"
+  },
+  "scope": "Private common F3 writer/backing seam only; pipeline/native adapters are not implemented here.",
+  "inputs": [
+    {
+      "path": "include/hyle/compute/batch_transfer.h",
+      "sha256": "32556fbd059940dcab2b4bc2b5090f7fab8ca583da48a58f88f04796953d9c50"
+    },
+    {
+      "path": "include/hyle/compute/detail/copy_stream_access.h",
+      "sha256": "dfc3079ce6219931373a5cba97f77054135f15fa12dfe98206e3364faeea4987"
+    },
+    {
+      "path": "include/hyle/compute/detail/lease_access.h",
+      "sha256": "7a5141b1f6a931254456e12fa76631b0a6d261e2cc296d43817c76d7faa02630"
+    },
+    {
+      "path": "src/compute/batch_transfer.cc",
+      "sha256": "b5c32a7aed0af122b76e8e7a203cd679da7a5573ca29d1bfc14f1fd3c6095c04"
+    },
+    {
+      "path": "src/compute/resource_leases.cc",
+      "sha256": "8300a4aa3579cf8f3fa01db5b7e3b9b60dd3e5d75bb646f162e0345b7864851f"
+    },
+    {
+      "path": "tests/compute_backend_cpu/copy_program_test.cc",
+      "sha256": "f8cce86c19efb7157fd0dfe7461c927202fcdb82e3344cb8428869a87cd7e015"
+    }
+  ],
+  "stages": [
+    {
+      "name": "build",
+      "command": [
+        "C:\\Program Files\\CMake\\bin\\cmake.EXE",
+        "--build",
+        "C:\\h7\\foundation-f1-cpu",
+        "--target",
+        "hyle_compute_backend_cpu_test",
+        "--parallel",
+        "1"
+      ],
+      "pid": 63940,
+      "state": "terminal",
+      "available_bytes": 40463912960,
+      "log": "build.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "71778e78615b48dacc2dce7b90ba358ee134572cd2925d9db42b31273eb9029a"
+    },
+    {
+      "name": "copy",
+      "command": [
+        "C:\\h7\\foundation-f1-cpu\\bin\\hyle_compute_backend_cpu_test.exe",
+        "--gtest_filter=CpuCopyProgram.*",
+        "--gtest_output=xml:C:\\public\\project-hyle\\hyle\\.scratch\\foundation-f3\\handoff-windows-1\\copy.xml"
+      ],
+      "pid": 90468,
+      "state": "terminal",
+      "available_bytes": 40051613696,
+      "log": "copy.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "0c037cbf3cf8f3fe5d0b69f2488bf838e82cbdd82fee165c82bcddf10bdfe7fb"
+    }
+  ],
+  "tests_passed": 5,
+  "headers": {
+    "command": [
+      "python",
+      "scripts/header-self-contained.py",
+      "--module",
+      "compute",
+      "--header",
+      "batch_transfer.h",
+      "--header",
+      "detail/copy_stream_access.h",
+      "--header",
+      "detail/lease_access.h",
+      "--include-dir",
+      "include",
+      "--cxx",
+      "C:/Program Files/Microsoft Visual Studio/18/Enterprise/VC/Tools/MSVC/14.50.35717/bin/Hostx64/x64/cl.exe",
+      "--cxx-compiler-id",
+      "MSVC"
+    ],
+    "environment": {
+      "VSLANG": "1033"
+    },
+    "exit_code": 0,
+    "observed_stdout": "compute C++ headers self-contained: 3",
+    "capture": "Executed separately through exec_command; recorded from its returned exit/output."
+  },
+  "selector_decision": {
+    "executed": "Actual selected CPU copy consumer, configure/build, three affected heads, docs/closure/diff.",
+    "deferred": "Full new F3 source/static/shared/native/Graph lifecycle only after its immutable full candidate.",
+    "not_selected": "Unchanged normal math/provider/global factor catalogs; user scope restriction, no PASS claimed."
+  },
+  "unproven": [
+    "GPU pending/unknown/error handoff",
+    "Apple/Vulkan private counterpart",
+    "Full F3 IO and requests",
+    "F3 three deliveries and model math",
+    "F3 final audit"
+  ],
+  "verdict": "PASS_WINDOWS_CPU_PRIVATE_HANDOFF_ONLY",
+  "artifacts": [
+    {
+      "path": "evidence/correctness/foundation-f3-handoff-windows/build.log",
+      "sha256": "71778e78615b48dacc2dce7b90ba358ee134572cd2925d9db42b31273eb9029a"
+    },
+    {
+      "path": "evidence/correctness/foundation-f3-handoff-windows/copy.log",
+      "sha256": "0c037cbf3cf8f3fe5d0b69f2488bf838e82cbdd82fee165c82bcddf10bdfe7fb"
+    },
+    {
+      "path": "evidence/correctness/foundation-f3-handoff-windows/copy.xml",
+      "sha256": "8be8b6c85fdd695c4c15c576eaf3b03561a9d494d134f66e613090949082748e"
+    },
+    {
+      "path": "evidence/correctness/foundation-f3-handoff-windows/job.json",
+      "sha256": "e63656b3222f310e6c7416c7aa9810412a00b834131be82e00e62340429adcdb"
+    },
+    {
+      "path": "evidence/correctness/foundation-f3-handoff-windows/selector-plan.zip",
+      "sha256": "c680ac1757babfd4385e5dee0c3571ae0b9511f24b8c4af1168d8261c3eb9a56"
+    }
+  ]
+}

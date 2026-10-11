@@ -1,0 +1,70 @@
+{
+  "baseline": "93a2cddabaf0c7fc5156f3c200be1d8bf653e184",
+  "scope": "F3 private CPU/CUDA controller writer handoff and existing lease backing observations; CPU actual copy path only",
+  "build": "C:\\h7\\foundation-f1-cpu",
+  "compiler": "C:/Program Files/Microsoft Visual Studio/18/Enterprise/VC/Tools/MSVC/14.50.35717/bin/Hostx64/x64/cl.exe",
+  "parallel": 1,
+  "stages": [
+    {
+      "name": "build",
+      "command": [
+        "C:\\Program Files\\CMake\\bin\\cmake.EXE",
+        "--build",
+        "C:\\h7\\foundation-f1-cpu",
+        "--target",
+        "hyle_compute_backend_cpu_test",
+        "--parallel",
+        "1"
+      ],
+      "pid": 63940,
+      "state": "terminal",
+      "available_bytes": 40463912960,
+      "log": "build.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "71778e78615b48dacc2dce7b90ba358ee134572cd2925d9db42b31273eb9029a"
+    },
+    {
+      "name": "copy",
+      "command": [
+        "C:\\h7\\foundation-f1-cpu\\bin\\hyle_compute_backend_cpu_test.exe",
+        "--gtest_filter=CpuCopyProgram.*",
+        "--gtest_output=xml:C:\\public\\project-hyle\\hyle\\.scratch\\foundation-f3\\handoff-windows-1\\copy.xml"
+      ],
+      "pid": 90468,
+      "state": "terminal",
+      "available_bytes": 40051613696,
+      "log": "copy.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "0c037cbf3cf8f3fe5d0b69f2488bf838e82cbdd82fee165c82bcddf10bdfe7fb"
+    }
+  ],
+  "inputs": [
+    {
+      "path": "include/hyle/compute/batch_transfer.h",
+      "sha256": "32556fbd059940dcab2b4bc2b5090f7fab8ca583da48a58f88f04796953d9c50"
+    },
+    {
+      "path": "include/hyle/compute/detail/copy_stream_access.h",
+      "sha256": "dfc3079ce6219931373a5cba97f77054135f15fa12dfe98206e3364faeea4987"
+    },
+    {
+      "path": "include/hyle/compute/detail/lease_access.h",
+      "sha256": "7a5141b1f6a931254456e12fa76631b0a6d261e2cc296d43817c76d7faa02630"
+    },
+    {
+      "path": "src/compute/batch_transfer.cc",
+      "sha256": "b5c32a7aed0af122b76e8e7a203cd679da7a5573ca29d1bfc14f1fd3c6095c04"
+    },
+    {
+      "path": "src/compute/resource_leases.cc",
+      "sha256": "8300a4aa3579cf8f3fa01db5b7e3b9b60dd3e5d75bb646f162e0345b7864851f"
+    },
+    {
+      "path": "tests/compute_backend_cpu/copy_program_test.cc",
+      "sha256": "f8cce86c19efb7157fd0dfe7461c927202fcdb82e3344cb8428869a87cd7e015"
+    }
+  ],
+  "verdict": "PASS_CPU_HANDOFF_ONLY"
+}

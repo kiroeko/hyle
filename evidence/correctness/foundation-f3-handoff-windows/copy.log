@@ -1,0 +1,20 @@
+Running main() from C:\public\tools\hyle-dependencies\v1\sources\googletest-063de7e9578f-162765170ae6\googletest\src\gtest_main.cc
+Note: Google Test filter = CpuCopyProgram.*
+[==========] Running 5 tests from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 5 tests from CpuCopyProgram
+[ RUN      ] CpuCopyProgram.TwoSlotsUseOriginalSynchronousCopyAndFixedMetadataReplay
+[       OK ] CpuCopyProgram.TwoSlotsUseOriginalSynchronousCopyAndFixedMetadataReplay (0 ms)
+[ RUN      ] CpuCopyProgram.LaterWriteBlocksEarlierOutputAndAliasHazardsRequireExplicitPhases
+[       OK ] CpuCopyProgram.LaterWriteBlocksEarlierOutputAndAliasHazardsRequireExplicitPhases (0 ms)
+[ RUN      ] CpuCopyProgram.PhysicalSelfCopyAcrossReadSubviewsEmptyInvalidAndOomHaveNoNativeWork
+[       OK ] CpuCopyProgram.PhysicalSelfCopyAcrossReadSubviewsEmptyInvalidAndOomHaveNoNativeWork (0 ms)
+[ RUN      ] CpuCopyProgram.StreamChunksKeepWholeTargetMutableUntilGroupPublication
+[       OK ] CpuCopyProgram.StreamChunksKeepWholeTargetMutableUntilGroupPublication (0 ms)
+[ RUN      ] CpuCopyProgram.StreamWithdrawalAndBackingAccountingPreserveOriginalOwners
+[       OK ] CpuCopyProgram.StreamWithdrawalAndBackingAccountingPreserveOriginalOwners (0 ms)
+[----------] 5 tests from CpuCopyProgram (0 ms total)
+
+[----------] Global test environment tear-down
+[==========] 5 tests from 1 test suite ran. (0 ms total)
+[  PASSED  ] 5 tests.

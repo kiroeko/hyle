@@ -272,7 +272,7 @@
       "module": "compute",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/foundation-f3-file-resource-streaming.md",
-      "summary": "F3 AUDITED：原八FIX、双向文件/映射与四路线工厂、固定槽/group/旧结果容量、取消排空及私有退役writer交接已冻结；尚未产品实现/运行资格，不重启F1/F2或无关全局门。"
+      "summary": "F3 AUDITED：私有writer交回/共享backing/最后reader观察已实现，Windows CPU实际copy五项及三头首验PASS；完整F3管线/native错误/三交付待验，不重启F1/F2或无关全局门。"
     },
     {
       "module": "graph",
