@@ -6,6 +6,7 @@
 #include <optional>
 
 #include "hyle/compute/resource_budget.h"
+#include "hyle/compute/resource_leases.h"
 #include "hyle/compute/tensor.h"
 #include "hyle/mem/buffer.h"
 
@@ -49,6 +50,19 @@ public:
   HYLE_COMPUTE_ROUTE_VULKAN_API mem::MemoryResourceRef ref() const noexcept;
   HYLE_COMPUTE_ROUTE_VULKAN_API Result<Tensor>
   allocate(const TensorDesc &description, AllocationOptions options = {}) const noexcept;
+  // Cold readonly native view over a lease from this exact device resource.
+  // Four-byte native tail capacity must be inside the owned source range.
+  // Tensor/Program/result owners retain the lease; no copy/new Vk allocation.
+  // Resource/allocator outlive aliases. Native writable aliases are forbidden.
+  // Options account wrapper metadata; original backing remains charged once.
+  HYLE_COMPUTE_ROUTE_VULKAN_API Result<Tensor>
+  binding(ReadLease source, const TensorDesc &description,
+          LeaseImportOptions options = {}) const noexcept;
+  // The producer must have retired successfully. Retains the actual native
+  // Tensor owner, permanently readonly; options cover new metadata only.
+  // Original native accounting/resource lifetime remains in force.
+  HYLE_COMPUTE_ROUTE_VULKAN_API Result<ReadLease>
+  import_readonly(const Tensor &source, LeaseImportOptions options = {}) const noexcept;
   HYLE_COMPUTE_ROUTE_VULKAN_API Result<NativeStorage>
   storage_info(const Tensor &tensor) const noexcept;
 private:

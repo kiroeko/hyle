@@ -3,8 +3,11 @@
 #import <Metal/Metal.h>
 #include <cstdint>
 #include <cstring>
+#include <limits>
 #include <mlx/allocator.h>
 #include "hyle/mem/std_allocator.h"
+#include "hyle/compute/detail/lease_access.h"
+#include "hyle/core/assert.h"
 
 #include "apple_internal.h"
 
@@ -13,7 +16,7 @@ namespace mx = mlx::core;
 namespace detail {
 namespace { const char memory_authority = 0; }
 
-struct MemoryState final : mem::MemoryResource {
+struct MemoryState : mem::MemoryResource {
   std::string_view name() const noexcept override { return "MLX shared Metal"; }
   mem::MemoryProperties properties() const noexcept override {
     return {.flags = mem::MemoryProperty::kHostAccessible |
@@ -64,6 +67,25 @@ struct ArrayStorage final {
   ResourceBudget::Reservation private_metadata;
   mem::Buffer buffer;
 };
+struct LeasedArrayStorage final {
+  ResourceBudget::Reservation private_metadata;
+  ReadLease source;
+};
+struct ImportedArrayStorage final : MemoryState {
+  ImportedArrayStorage(mx::array source, mem::AllocatorRef selected) noexcept
+      : owner(std::move(source)), allocator(selected) {}
+  mx::array owner;
+  mem::AllocatorRef allocator;
+  ResourceBudget::Reservation private_metadata;
+  Result<mem::ResourceAllocation> allocate(std::size_t, std::size_t) noexcept override {
+    return std::unexpected(Status::Unimplemented("imported MLX array cannot allocate storage"));
+  }
+  // The actual MLX array owns/free its buffer. This token is a readonly
+  // retained view, not a second MLX allocator ownership claim.
+  void deallocate(mem::ResourceAllocation allocation) noexcept override {
+    HYLE_FATAL_ASSERT(allocation.native_handle == owner.buffer().ptr());
+  }
+};
 } // namespace detail
 
 MemoryResource::MemoryResource(std::unique_ptr<detail::MemoryState> state) noexcept : state_(std::move(state)) {}
@@ -110,6 +132,90 @@ Result<mx::array> MemoryResource::allocate(const TensorDesc &description, Resour
     return result;
   } catch (...) { return std::unexpected(detail::native_exception()); }
 }
+Result<mx::array> MemoryResource::binding(ReadLease source, const TensorDesc &description,
+                                        LeaseImportOptions options) const noexcept {
+  if (!valid() || !options.allocator.valid())
+    return std::unexpected(Status::InvalidArgument("invalid Apple lease binding resource/allocator"));
+  HYLE_ASSIGN_OR_RETURN(auto tensor, source.tensor(description));
+  const auto storage = tensor.storage();
+  if (dynamic_cast<detail::MemoryState *>(&storage.resource().resource()) == nullptr ||
+      (description.is_plain() && !description.is_dense()))
+    return std::unexpected(Status::InvalidArgument("Apple lease requires original Metal resource and dense carrier"));
+  HYLE_ASSIGN_OR_RETURN(auto spec, input_spec(description));
+  HYLE_ASSIGN_OR_RETURN(auto bytes, description.required_bytes());
+  if (bytes == 0) return std::unexpected(Status::InvalidArgument("empty Apple lease binding"));
+  try {
+    auto allocator = options.allocator;
+    if (options.resource_budget.valid()) {
+      HYLE_ASSIGN_OR_RETURN(allocator, options.resource_budget.metadata_allocator());
+    }
+    auto owner = std::allocate_shared<detail::LeasedArrayStorage>(
+        mem::StdAllocator<detail::LeasedArrayStorage>(allocator));
+    if (options.resource_budget.valid()) {
+      HYLE_ASSIGN_OR_RETURN(owner->private_metadata,
+                           options.resource_budget.reserve_unattributed(std::nullopt));
+    }
+    mx::array result(spec.shape, spec.dtype, nullptr, {});
+    if (storage.offset() % result.itemsize() != 0 || bytes != result.nbytes() ||
+        storage.offset() / result.itemsize() > static_cast<std::size_t>(INT64_MAX))
+      return std::unexpected(Status::InvalidArgument("Apple lease carrier origin/size mismatch"));
+    id<MTLBuffer> metal = (__bridge id<MTLBuffer>)storage.native_handle();
+    if (metal == nil || metal.storageMode != MTLStorageModeShared ||
+        storage.offset() > metal.length || bytes > metal.length - storage.offset())
+      return std::unexpected(Status::InvalidArgument("Apple lease exceeds shared Metal backing"));
+    owner->source = std::move(source);
+    mx::array base(mx::Shape{1}, mx::uint8, nullptr, {});
+    base.set_data(mx::allocator::Buffer(storage.native_handle()),
+                  [retained = std::move(owner)](mx::allocator::Buffer) {});
+    result.copy_shared_buffer(base, result.strides(), result.flags(), result.size(),
+                             static_cast<std::int64_t>(storage.offset() / result.itemsize()));
+    result.set_status(mx::array::available);
+    return result;
+  } catch (...) { return std::unexpected(detail::native_exception()); }
+}
+
+Result<ReadLease> MemoryResource::import_readonly(const mx::array &source, const TensorDesc &description,
+                                                LeaseImportOptions options) const noexcept {
+  if (!valid() || !options.allocator.valid() || source.status() != mx::array::available ||
+      !source.flags().row_contiguous)
+    return std::unexpected(Status::InvalidArgument("Apple import requires a ready dense native array"));
+  HYLE_ASSIGN_OR_RETURN(auto spec, input_spec(description));
+  HYLE_ASSIGN_OR_RETURN(auto bytes, description.required_bytes());
+  if ((description.is_plain() && !description.is_dense()) || source.shape() != spec.shape ||
+      source.dtype() != spec.dtype || source.nbytes() != bytes || bytes == 0)
+    return std::unexpected(Status::InvalidArgument("Apple import description/carrier mismatch"));
+  HYLE_ASSIGN_OR_RETURN(auto info, storage_info(source));
+  auto allocator = options.allocator;
+  if (options.resource_budget.valid()) {
+    HYLE_ASSIGN_OR_RETURN(allocator, options.resource_budget.metadata_allocator());
+  }
+  auto *storage = allocator.allocate(sizeof(detail::ImportedArrayStorage), alignof(detail::ImportedArrayStorage));
+  if (!storage) return std::unexpected(Status::ResourceExhausted("Apple import owner metadata"));
+  auto *owner = std::construct_at(static_cast<detail::ImportedArrayStorage *>(storage), source, allocator);
+  const auto destroy_owner = [](void *opaque) noexcept {
+    auto *state = static_cast<detail::ImportedArrayStorage *>(opaque);
+    const auto selected = state->allocator;
+    std::destroy_at(state);
+    selected.deallocate(state, sizeof(detail::ImportedArrayStorage), alignof(detail::ImportedArrayStorage));
+  };
+  if (options.resource_budget.valid()) {
+    auto opaque = options.resource_budget.reserve_unattributed(std::nullopt);
+    if (!opaque) { destroy_owner(owner); return std::unexpected(std::move(opaque).error()); }
+    owner->private_metadata = std::move(*opaque);
+  }
+  auto backing = mem::Buffer::adopt(mem::MemoryResourceRef(*owner),
+      {const_cast<void *>(info.buffer), info.backing_bytes, 1});
+  if (!backing) { destroy_owner(owner); return std::unexpected(std::move(backing).error()); }
+  auto imported = ReadLease::adopt(std::move(*backing), {.allocator = allocator});
+  if (!imported) {
+    backing = {};
+    destroy_owner(owner);
+    return std::unexpected(std::move(imported).error());
+  }
+  compute::detail::LeaseAccess::retain_resource_owner(*imported, owner, destroy_owner);
+  return imported->subview(info.offset_bytes, bytes);
+}
+
 Result<NativeStorage> MemoryResource::storage_info(const mx::array &array) const noexcept {
   if (!valid() || array.status() != mx::array::available)
     return std::unexpected(Status::FailedPrecondition("Apple storage requires a ready native array"));

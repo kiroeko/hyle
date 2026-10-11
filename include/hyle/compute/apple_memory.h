@@ -4,6 +4,7 @@
 
 #if defined(HYLE_COMPUTE_APPLE)
 #include "hyle/compute/resource_budget.h"
+#include "hyle/compute/resource_leases.h"
 #include "hyle/compute/tensor.h"
 #include "hyle/mem/buffer.h"
 
@@ -39,6 +40,21 @@ public:
   HYLE_COMPUTE_ROUTE_APPLE_API Result<mlx::core::array>
   allocate(const TensorDesc &description, ResourceBudget budget = {},
            ResourceBudgetCategory category = ResourceBudgetCategory::kWorkspace) const noexcept;
+  // Cold readonly native view, no payload copy/eval/wait. Original native
+  // handles retain the source lease through bind/submit/results. Source must
+  // belong to this exact resource and use its dense physical carrier; native
+  // aliases must not mutate it. Resource outlives every returned array alias.
+  // Budget applies to wrapper/opaque descriptor metadata, not backing twice.
+  HYLE_COMPUTE_ROUTE_APPLE_API Result<mlx::core::array>
+  binding(ReadLease source, const TensorDesc &description,
+          LeaseImportOptions options = {}) const noexcept;
+  // Successfully ready dense native carrier. Retains the real MLX array,
+  // exports permanently readonly bytes; no inferred producer fence/copy.
+  // Options cover new metadata and acknowledge opaque native descriptors;
+  // existing native backing accounting is kept, never charged a second time.
+  HYLE_COMPUTE_ROUTE_APPLE_API Result<ReadLease>
+  import_readonly(const mlx::core::array &source, const TensorDesc &description,
+                  LeaseImportOptions options = {}) const noexcept;
   // Ready native Metal arrays only. Byte copies preserve exact physical
   // encoding and require dense carriers; strided host inputs use the existing
   // CPU Copy operation before this boundary. No implicit GPU wait/evaluation.

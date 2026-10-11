@@ -8,6 +8,11 @@ namespace hyle::compute::vulkan {
 namespace detail {
 struct AllocationToken final {
   std::shared_ptr<Buffer> buffer;
+  mem::AllocatorRef allocator;
+};
+struct LeaseViewOwner final {
+  std::shared_ptr<Buffer> backing;
+  ReadLease source;
 };
 
 struct MemoryState final : mem::MemoryResource {
@@ -38,14 +43,15 @@ struct MemoryState final : mem::MemoryResource {
       return std::unexpected(Status::InvalidArgument("Vulkan staging cannot satisfy host alignment"));
     auto *storage = allocator.allocate(sizeof(AllocationToken), alignof(AllocationToken));
     if (storage == nullptr) return std::unexpected(Status::ResourceExhausted("Vulkan resource token metadata"));
-    auto *token = std::construct_at(static_cast<AllocationToken *>(storage), std::move(buffer));
+    auto *token = std::construct_at(static_cast<AllocationToken *>(storage), std::move(buffer), allocator);
     return mem::ResourceAllocation{token, bytes, alignment};
   }
   void deallocate(mem::ResourceAllocation allocation) noexcept override {
     if (allocation.native_handle == nullptr) return;
     auto *token = static_cast<AllocationToken *>(allocation.native_handle);
+    const auto selected = token->allocator;
     std::destroy_at(token);
-    allocator.deallocate(token, sizeof(AllocationToken), alignof(AllocationToken));
+    selected.deallocate(token, sizeof(AllocationToken), alignof(AllocationToken));
   }
   Result<mem::ResourceHostMapping> map_host(void *handle, std::size_t offset,
                                            std::size_t bytes, mem::HostAccess) noexcept override {
@@ -127,6 +133,63 @@ Result<Tensor> MemoryResource::allocate(const TensorDesc &description, Allocatio
        .transfer_access = true}));
   return detail::Access::tensor(description, std::move(buffer));
 }
+Result<Tensor> MemoryResource::binding(ReadLease source, const TensorDesc &description,
+                                      LeaseImportOptions options) const noexcept {
+  if (!valid() || !options.allocator.valid() || state_->kind != MemoryKind::kDevice)
+    return std::unexpected(Status::InvalidArgument("Vulkan lease binding requires a device resource/allocator"));
+  HYLE_ASSIGN_OR_RETURN(auto tensor, source.tensor(description));
+  const auto storage = tensor.storage();
+  if (storage.resource() != ref() || storage.native_handle() == nullptr)
+    return std::unexpected(Status::InvalidArgument("Vulkan lease belongs to another resource"));
+  HYLE_ASSIGN_OR_RETURN(auto bytes, description.required_bytes());
+  HYLE_ASSIGN_OR_RETURN(auto capacity, detail::buffer_capacity(bytes));
+  const auto &backing = static_cast<const detail::AllocationToken *>(storage.native_handle())->buffer;
+  if (bytes == 0 || ((backing->offset + storage.offset()) & 3u) != 0 || capacity > storage.size() ||
+      storage.offset() > backing->bytes || storage.size() > backing->bytes - storage.offset())
+    return std::unexpected(Status::InvalidArgument("Vulkan lease origin/tail capacity exceeds owned range"));
+  try {
+    auto allocator = options.allocator;
+    if (options.resource_budget.valid()) {
+      HYLE_ASSIGN_OR_RETURN(allocator, options.resource_budget.metadata_allocator());
+    }
+    auto retained = std::allocate_shared<detail::LeaseViewOwner>(
+        mem::StdAllocator<detail::LeaseViewOwner>(allocator));
+    retained->backing = backing;
+    retained->source = std::move(source);
+    auto view = std::allocate_shared<detail::Buffer>(mem::StdAllocator<detail::Buffer>(allocator));
+    view->device = backing->device;
+    detail::bind_view_buffer(*view, backing, storage.offset());
+    view->bytes = storage.size();
+    view->external_owner = std::move(retained);
+    return detail::Access::tensor(description, std::move(view));
+  } catch (const std::bad_alloc &) {
+    return std::unexpected(Status::ResourceExhausted("Vulkan lease binding metadata"));
+  }
+}
+
+Result<ReadLease> MemoryResource::import_readonly(const Tensor &source, LeaseImportOptions options) const noexcept {
+  if (!valid() || !source.valid() || !options.allocator.valid())
+    return std::unexpected(Status::InvalidArgument("invalid Vulkan readonly import"));
+  const auto &native = detail::Access::buffer(source);
+  if (native->device != state_->runtime->device || native->bytes == 0 ||
+      (state_->kind == MemoryKind::kStaging) != (native->mapped != nullptr))
+    return std::unexpected(Status::InvalidArgument("Vulkan import device/memory kind mismatch"));
+  auto allocator = options.allocator;
+  if (options.resource_budget.valid()) {
+    HYLE_ASSIGN_OR_RETURN(allocator, options.resource_budget.metadata_allocator());
+  }
+  auto *storage = allocator.allocate(sizeof(detail::AllocationToken), alignof(detail::AllocationToken));
+  if (!storage) return std::unexpected(Status::ResourceExhausted("Vulkan import token metadata"));
+  auto *token = std::construct_at(static_cast<detail::AllocationToken *>(storage), native, allocator);
+  auto adopted = mem::Buffer::adopt(ref(), {token, static_cast<std::size_t>(native->bytes), 1});
+  if (!adopted) {
+    std::destroy_at(token);
+    allocator.deallocate(token, sizeof(detail::AllocationToken), alignof(detail::AllocationToken));
+    return std::unexpected(std::move(adopted).error());
+  }
+  return ReadLease::adopt(std::move(*adopted), {.allocator = allocator});
+}
+
 Result<NativeStorage> MemoryResource::storage_info(const Tensor &tensor) const noexcept {
   if (!valid() || !tensor.valid() || detail::Access::buffer(tensor)->device != state_->runtime->device)
     return std::unexpected(Status::InvalidArgument("Vulkan tensor belongs to another native Device"));
