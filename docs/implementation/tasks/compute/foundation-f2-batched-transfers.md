@@ -279,6 +279,15 @@ Vulkan `d256ca5b1` 的原录制门3项PASS；补齐owned-view来源后 `a09c9dd3
 每次34项common回归/实际header deps/独立头通过，XML实机为RTX4070而非software adapter。
 原生双向/同设备字节、同pair合并、独立pairs、3次replay无metadata增长、物理alias与合法readonly view已取证；
 尚无Vulkan公共租约Program/Invocation/Submission与producer/完整故障/数学/其他主机/三交付资格。
+公共Vulkan接线 `f7e49d924` 的8项门PASS；补actual Run观察后 `3391e2bd5` 的9项PASS，
+包括双slot三phase、原retained producer+pending mutable源、真实QueueSubmit后缀拒绝/前组保留、
+empty dependency的真实prefix marker、失败不消费，以及全部句柄放弃后原collect使use/metadata归零。
+该段共享控制抽取的原CPU3项/CUDA5项精准回归同candidate PASS，四次成功构建各34项common、
+实际header deps和3头通过；没有数学/完整其他平台/SDK交付P0终审资格。
+[公共Vulkan收据](../../../../evidence/correctness/foundation-f2-vulkan-public/receipt.json)保留首次direct edge
+configure FAIL、WORKTREEIntroducing未归属的selector BLOCKED及提交后owners明确AUDITED的READY，
+没有改公共checker；中央图导致的扩展component/package门列入稳定候选集中阶段，当前不代写PASS。
+CPU/CUDA/Vulkan公共program首轮接线已取证，Apple及本卡完整矩阵仍未完成，维持AUDITED。
 
 | FIX | 必须实现 | 验收 |
 |---|---|---|

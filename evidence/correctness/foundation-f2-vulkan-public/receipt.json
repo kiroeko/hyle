@@ -1,0 +1,58 @@
+{
+  "schema_version": 1,
+  "scope": "Windows Vulkan public native copy controller plus required CPU/CUDA shared-control regressions",
+  "checkpoints": [
+    {
+      "candidate": "f096e32ee0aab976dd4a58d3854ea6e6c8af5605",
+      "tree": "9b44c3bd4cdd0766269f98a71c6c4bb53b5bc137",
+      "directory": "vulkan-public-windows",
+      "verdict": "FAIL",
+      "focused_tests": null,
+      "extra_files_sha256": {}
+    },
+    {
+      "candidate": "f7e49d924177c38cab632e337f2cc7a6e4bda739",
+      "tree": "09faf0fcaf6797ae1d2598b6b958672c48d4a531",
+      "directory": "vulkan-public-dependency-windows",
+      "verdict": "PASS",
+      "focused_tests": 8,
+      "extra_files_sha256": {
+        "metrics.xml": "633487d228a0c8fa12ad198227869a87abc13537bbe3d1e7ddd02f842d4fc227"
+      }
+    },
+    {
+      "candidate": "3391e2bd563dde9d63ea118258894bea44ecde8c",
+      "tree": "0213f69be36a1ca194f7079855c8a651e57843e4",
+      "directory": "vulkan-public-abandon-windows",
+      "verdict": "PASS",
+      "focused_tests": 9,
+      "extra_files_sha256": {
+        "metrics.xml": "1ec7261c5bd6a7cc4f8c3457c35adfa3afc88e6f09b4b968188df68f8de3753e"
+      }
+    },
+    {
+      "candidate": "3391e2bd563dde9d63ea118258894bea44ecde8c",
+      "tree": "0213f69be36a1ca194f7079855c8a651e57843e4",
+      "directory": "cpu-control-regression-windows",
+      "verdict": "PASS",
+      "focused_tests": 3,
+      "extra_files_sha256": {
+        "metrics.xml": "d961dc61edc24844f1bce5f5db9e6fd2ba32d06543cc6bb3843e47f3a1ea4598"
+      }
+    },
+    {
+      "candidate": "3391e2bd563dde9d63ea118258894bea44ecde8c",
+      "tree": "0213f69be36a1ca194f7079855c8a651e57843e4",
+      "directory": "cuda-control-regression-windows",
+      "verdict": "PASS",
+      "focused_tests": 5,
+      "extra_files_sha256": {
+        "metrics.xml": "bc346651f3857d9ffca763ac2318c6e0e795224533a0068108986bc7c8103324"
+      }
+    }
+  ],
+  "common_tests_per_successful_checkpoint": 34,
+  "full_f2_other_platforms_apple_math_fault_matrix_installed_delivery": "UNPROVEN",
+  "investigation_failure_budget": "Inherited; original finite investigation corrections unchanged",
+  "selected_extended_component_and_delivery_gates": "Deferred to the stable F2 candidate matrix per closure card; not PASS"
+}

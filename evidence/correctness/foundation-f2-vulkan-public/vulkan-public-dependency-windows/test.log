@@ -1,0 +1,29 @@
+Running main() from C:\public\tools\hyle-dependencies\v1\sources\googletest-063de7e9578f-162765170ae6\googletest\src\gtest_main.cc
+Note: Google Test filter = VulkanCopyRecording.*:VulkanCopyProgram.*
+[==========] Running 8 tests from 2 test suites.
+[----------] Global test environment set-up.
+[----------] 4 tests from VulkanCopyProgram
+[ RUN      ] VulkanCopyProgram.TwoSlotsPhaseReadyOldResultsAndReplayKeepActualMetadataFixed
+[       OK ] VulkanCopyProgram.TwoSlotsPhaseReadyOldResultsAndReplayKeepActualMetadataFixed (286 ms)
+[ RUN      ] VulkanCopyProgram.OriginalRetainedProducerOrdersPendingMutableSourceAndGuards
+[       OK ] VulkanCopyProgram.OriginalRetainedProducerOrdersPendingMutableSourceAndGuards (66 ms)
+[ RUN      ] VulkanCopyProgram.RejectedNativeSuffixPreservesSuccessfulEarlierGroupAndFailedSlot
+[       OK ] VulkanCopyProgram.RejectedNativeSuffixPreservesSuccessfulEarlierGroupAndFailedSlot (63 ms)
+[ RUN      ] VulkanCopyProgram.EmptyDependencyUsesActualPrefixAndBindingErrorsDoNotConsume
+[       OK ] VulkanCopyProgram.EmptyDependencyUsesActualPrefixAndBindingErrorsDoNotConsume (62 ms)
+[----------] 4 tests from VulkanCopyProgram (478 ms total)
+
+[----------] 4 tests from VulkanCopyRecording
+[ RUN      ] VulkanCopyRecording.ThreeNativeBytePhasesAndPairRegionsReuseColdMetadata
+[       OK ] VulkanCopyRecording.ThreeNativeBytePhasesAndPairRegionsReuseColdMetadata (70 ms)
+[ RUN      ] VulkanCopyRecording.IndependentBufferPairsShareOneNativePhaseAndSourceCanRepeat
+[       OK ] VulkanCopyRecording.IndependentBufferPairsShareOneNativePhaseAndSourceCanRepeat (63 ms)
+[ RUN      ] VulkanCopyRecording.AliasAlignmentForeignBackingAndSelfAreCheckedBeforeNativeAcceptance
+[       OK ] VulkanCopyRecording.AliasAlignmentForeignBackingAndSelfAreCheckedBeforeNativeAcceptance (126 ms)
+[ RUN      ] VulkanCopyRecording.OwnedReadonlyViewsPreservePhysicalAliasAndUnknownExternalUsageIsRejected
+[       OK ] VulkanCopyRecording.OwnedReadonlyViewsPreservePhysicalAliasAndUnknownExternalUsageIsRejected (63 ms)
+[----------] 4 tests from VulkanCopyRecording (324 ms total)
+
+[----------] Global test environment tear-down
+[==========] 8 tests from 2 test suites ran. (803 ms total)
+[  PASSED  ] 8 tests.
