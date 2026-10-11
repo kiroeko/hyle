@@ -1,0 +1,37 @@
+{
+  "schema_version": 1,
+  "candidate": "97858fbc88a6b5a87f109290b956eeaeee632dd2",
+  "product_commit": "97858fbc88a6b5a87f109290b956eeaeee632dd2",
+  "host": "air",
+  "profile": "cpu-apple",
+  "mode": "static",
+  "scope": "F3 ordinary relocated installed Graph file/GGUF/Qwen consumer and changed ON/OFF headers only",
+  "relocation": {
+    "original": "/Users/kiro/hyle-scratch/compute-unified/foundation-f3-sdk-cpu-apple-static-97858fbc8/staging",
+    "relocated": "/Users/kiro/hyle-scratch/compute-unified/foundation-f3-sdk-cpu-apple-static-97858fbc8/relocated",
+    "original_absent": true,
+    "Hyle_metadata_no_source_build_staging_paths": true
+  },
+  "header_scope": {
+    "count": 7,
+    "routes": "cpu;apple",
+    "source_include_directory_requested": false
+  },
+  "absent_headers_and_route_diagnostics": [
+    "cuda",
+    "vulkan"
+  ],
+  "runtime_dlls": null,
+  "identity": {
+    "hardware": "Mac16,12",
+    "os": "ProductName:\t\tmacOS\nProductVersion:\t\t27.0.1\nBuildVersion:\t\t26A434",
+    "compiler": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin"
+  },
+  "original_failures": "All earlier setup/validation/product failures retained in previous F3 receipts; this one SDK cell does not replace them.",
+  "archive": {
+    "path": "evidence/correctness/foundation-f3-sdk-air-cpu-apple-static-97858fbc8/raw-results.zip",
+    "sha256": "950e836545f4fce3a0bd83fa55a9326e09c02cdf1d3f15493230b17fa00b39eb"
+  },
+  "verdict": "PASS_F3_AIR_CPU_APPLE_STATIC_RELOCATED_SDK_ONLY",
+  "limits": "Only the named host/profile/linkage/ordinary consumers/changed headers. Other deliveries and final closure remain unproven."
+}

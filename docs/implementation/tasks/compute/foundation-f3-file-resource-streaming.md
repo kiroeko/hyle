@@ -550,6 +550,13 @@ Windows Vulkan当前static/shared已齐；WSL CPU/CUDA static正在运行，其�
 诊断。`ldd`无missing且所有HYLE共享库实际来自relocated/lib；没有通过源码/旧build fallback运行。
 WSL CPU/CUDA两种installed linkage现已齐，Air CPU/Apple static开始运行，其余当前交付待验。
 
+Air CPU/Apple的[static](../../../../evidence/correctness/foundation-f3-sdk-air-cpu-apple-static-97858fbc8/receipt.json)
+与[shared](../../../../evidence/correctness/foundation-f3-sdk-air-cpu-apple-shared-97858fbc8/receipt.json)
+现签Mac16,12/Clang21上当前97858fbc8产品：真实install/rename、普通Graph独立C++项目、
+CPU原GGUF/Apple原affine Q4小旅程、两路线同Qwen实际权重往返均PASS，新七头独立编译及
+CUDA/Vulkan头与package请求缺席PASS。原Metal runtime asset同消费者接线、otool依赖记录保留；
+实际dyld路径补证待运行，不用otool名字代签加载位置。Air Vulkan static正在运行。
+
 ## 解析器与真实权重验收
 
 格式解析不进入 pipeline。GGUF 用现有 ggml 格式核；本地 Qwen3.5-2B 原始 Safetensors
