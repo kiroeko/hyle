@@ -34,6 +34,9 @@ namespace hyle::graph {
 namespace {
 
 using detail::add_compiled_storage;
+#if defined(HYLE_TESTING)
+thread_local detail::AcceptedCompletionFn accepted_observation_hook = nullptr;
+#endif
 
 Status plan_allocation_failure() noexcept {
   return Status::ResourceExhausted("graph plan metadata allocation failed");
@@ -7922,7 +7925,8 @@ void detail::SubmissionCursor::reject_successors(Status terminal) noexcept {
     tail_error_ = std::move(terminal);
 }
 
-Result<bool> detail::SubmissionCursor::advance(bool wait_dependencies) noexcept {
+Result<bool> detail::SubmissionCursor::advance(bool wait_dependencies,
+    AcceptedCompletionFn accepted, void *owner) noexcept {
   if (state_ == nullptr || finished_)
     return std::unexpected(Status::FailedPrecondition(
         "graph submission cursor is invalid or finished"));
@@ -8051,6 +8055,11 @@ Result<bool> detail::SubmissionCursor::advance(bool wait_dependencies) noexcept 
         break;
       }
       state_->segment_completions[segment_index] = std::move(*completion);
+      if (accepted) accepted(owner, segment_index, state_->segment_completions[segment_index]);
+#if defined(HYLE_TESTING)
+      if (accepted && accepted_observation_hook)
+        accepted_observation_hook(nullptr, segment_index, state_->segment_completions[segment_index]);
+#endif
     } else {
       std::size_t imported_count = 0;
       for (std::size_t dependency_index = segment.dependency_begin;
@@ -8093,6 +8102,11 @@ Result<bool> detail::SubmissionCursor::advance(bool wait_dependencies) noexcept 
           continue_segment = false;
         } else {
           state_->segment_completions[segment_index] = std::move(*completion);
+          if (accepted) accepted(owner, segment_index, state_->segment_completions[segment_index]);
+#if defined(HYLE_TESTING)
+          if (accepted && accepted_observation_hook)
+            accepted_observation_hook(nullptr, segment_index, state_->segment_completions[segment_index]);
+#endif
         }
       }
     }
@@ -8105,7 +8119,7 @@ Result<bool> detail::SubmissionCursor::advance(bool wait_dependencies) noexcept 
   return true;
 }
 
-Result<compute::Completion> detail::SubmissionCursor::finish() noexcept {
+Result<compute::Completion> detail::SubmissionCursor::finish(bool defer_retirement) noexcept {
   if (state_ == nullptr || finished_ || !done())
     return std::unexpected(Status::FailedPrecondition(
         "graph submission cursor cannot finish while successors remain"));
@@ -8184,7 +8198,7 @@ Result<compute::Completion> detail::SubmissionCursor::finish() noexcept {
       if (completion.valid())
         completion.wait().IgnoreError();
     }
-    mark_invocation_terminal(state_, failure);
+    if (!defer_retirement) mark_invocation_terminal(state_, failure);
     finished_ = true;
   };
 
@@ -8239,6 +8253,14 @@ Result<compute::Completion> detail::SubmissionCursor::finish() noexcept {
   if (!final_completion.valid())
     final_completion = compute::Completion::completed();
 
+  if (defer_retirement) {
+    // The opt-in owner has retained Invocation before admission and attached
+    // every accepted child before observation. It publishes the actual final
+    // terminal, so a cached observation error cannot release plan exclusion.
+    finished_ = true;
+    return final_completion;
+  }
+
   if (!compute::detail::CompletionAccess::has_async_state(final_completion)) {
     mark_invocation_terminal(state_, final_completion.wait());
     finished_ = true;
@@ -8264,6 +8286,15 @@ Result<compute::Completion> detail::SubmissionCursor::finish() noexcept {
   finished_ = true;
   return final_completion;
 }
+
+void detail::InvocationAccess::retire(Invocation &invocation, const Status &terminal) noexcept {
+  if (invocation.state_) mark_invocation_terminal(invocation.state_, terminal);
+}
+#if defined(HYLE_TESTING)
+detail::AcceptedCompletionFn detail::set_accepted_observation_hook(AcceptedCompletionFn hook) noexcept {
+  return std::exchange(accepted_observation_hook, hook);
+}
+#endif
 
 Result<CompiledGraph> compile(const Graph &graph,
                               const compute::Context &context,

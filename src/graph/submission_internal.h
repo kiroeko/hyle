@@ -8,6 +8,12 @@
 namespace hyle::graph::detail {
 
 struct InvocationState;
+using AcceptedCompletionFn = void (*)(void *owner, std::size_t segment,
+                                      compute::Completion &completion) noexcept;
+#if defined(HYLE_TESTING)
+// Native observation decoration only, after opt-in retention admission.
+HYLE_GRAPH_API AcceptedCompletionFn set_accepted_observation_hook(AcceptedCompletionFn hook) noexcept;
+#endif
 
 // Same-build coarse submission cursor. One admitted run retains its original
 // Invocation and fixed segment storage. A native composition owner drives it;
@@ -27,7 +33,9 @@ public:
   // false means an explicit host dependency remains pending. advance never
   // waits for that dependency. A CPU/native managed region may itself perform
   // its declared synchronous work, so the caller must use the right endpoint.
-  HYLE_GRAPH_API Result<bool> advance(bool wait_dependencies = false) noexcept;
+  HYLE_GRAPH_API Result<bool> advance(bool wait_dependencies = false,
+                                     AcceptedCompletionFn accepted = nullptr,
+                                     void *owner = nullptr) noexcept;
   HYLE_GRAPH_API bool done() const noexcept;
   HYLE_GRAPH_API ExecutionTargetId next_target() const noexcept;
   const compute::Completion *pending_dependency() const noexcept {
@@ -39,7 +47,12 @@ public:
   HYLE_GRAPH_API void reject_successors(Status terminal) noexcept;
   // Emits the actual final accepted prefix, including tail failure. This
   // retains all native owners even when its public handle is abandoned.
-  HYLE_GRAPH_API Result<compute::Completion> finish() noexcept;
+  // Opt-in owners can defer terminal publication until their preattached
+  // native-use guards prove retirement, including already-observed errors.
+  // Such an owner MUST retain Invocation and publish its actual terminal.
+  HYLE_GRAPH_API Result<compute::Completion>
+  finish(bool defer_retirement = false) noexcept;
+  const Status &submission_error() const noexcept { return tail_error_; }
 
 private:
   SubmissionCursor(InvocationState *state, bool retained) noexcept;

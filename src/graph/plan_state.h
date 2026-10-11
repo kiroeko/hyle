@@ -1047,6 +1047,7 @@ struct CompileReportAccess final {
 };
 
 struct InvocationAccess final {
+  static HYLE_GRAPH_API void retire(Invocation &invocation, const Status &terminal) noexcept;
   static Invocation adopt(InvocationState *state) noexcept {
     return Invocation(state);
   }
