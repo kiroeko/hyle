@@ -310,6 +310,18 @@ F1 继续 AUDITED，F2/F3 未启动，不把这些局部结果算作整包关闭
   Apple opaque descriptor/accounting仍显式承认；raw native producer必须先成功退休，不能从句柄推断就绪。
   不允许重复包装变成writer，source/native writable aliases遵守只读合同。
 
+### Apple/Vulkan 当前子轮初验
+
+候选 `0ee0c7779` 的 cold native binding / readonly import 已实现；
+[初验收据](../../../../evidence/correctness/foundation-f1-native-bindings-initial/README.md)
+Windows Vulkan与MacBook Air Apple各一个真实成熟MatMul+Graph/source-View-alias旅程通过，
+两个新memory头语法隔离检查通过，native-enabled消费者真实编译。Apple修复libc++拒绝分支显式reset与readonly
+import alignment承诺；均由Windows实施再同步。Vulkan runtime输入夹具按原Tensor-as-constant语义纠正。
+这是cold view/owner接缝资格，不是native提交admission/close/cancel全闭包；返回native readonly handles是持有reader，
+core pool drain不会等待这些native reader全部释放，原native Context与resource寿命/退休仍须遵守。
+Owner继续AUDITED，未运行平台/三交付/negative/P0/全包red-team没有PASS；CPU+GPU组合接缝、完整F1和F2/F3仍待完成。
+统一clean candidate self-check：Compute+Graph非测试69,738行/308文件；全库164,965行/659文件。
+
 扩展现有 compute completion、graph cpu_cuda/apple/vulkan contracts 及 native route 用户样例；
 保留原数学 reference，新增实际 lease 风险断言。只装饰 native observation/fault call，
 不能将 mock 结果当路线资格。至少两独立在途块、两个读者、一写者、旧结果、取消、OOM、部分失败、

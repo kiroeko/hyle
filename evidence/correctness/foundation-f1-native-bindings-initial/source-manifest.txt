@@ -1,0 +1,4 @@
+Canonical Windows source
+Git candidate 0ee0c77796a30b63ffd241413c9a63b2f798103a
+Full product/build/test snapshot
+Validation copy only
