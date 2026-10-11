@@ -526,6 +526,18 @@ option 的独立配置，让 sanitizer 由已有 target helper 正常施加，�
 UBSan 以原 option 的 `-fno-sanitize-recover=all` 与 halt-on-error 运行，没有 UB 报告；原日志独立保留。
 TSan 尚未取得结果，其他平台/交付与最终裁决仍未完成。
 
+TSan 首轮 Compute26 通过，Graph 进程在首个用例前以 `unexpected memory mapping`（exit66）拒绝启动。
+WSL 当前 `mmap_rnd_bits=32`；原 log/job 保留。上游有同类 runtime 地址映射
+[记录](https://github.com/google/sanitizers/issues/1716)，不据此假定本机根因或产品通过。
+只对这个已构建、同 candidate/flags/filter 的 Graph exe 预声明一次 `/usr/bin/setarch x86_64 -R` 进程级
+地址布局运行（setarch true 前检已成功），timeout120、`TSAN_OPTIONS=halt_on_error=1`，不加 suppression、
+不改系统 sysctl/Core/工具、不重编或重跑已通过 Compute。若仍拒绝启动，此格保持 BLOCKED/INCONCLUSIVE。
+
+这一次进程级 Graph 运行三项通过，未报告 race；Compute26 的原 TSan 运行也未报告 race。
+原 startup exit66 和 job 保留，单独补充 Graph 命令与日志，同 candidate/二进制/flags/filter，未加 suppression。
+运行后本机 `mmap_rnd_bits` 仍为32。当前 ASan/UBSan/TSan 的预声明共同核格均取得29项通过，
+这是 host protocol 的资格，不能替代其余 native mixed fault、平台与三交付。
+
 P0 静态账单须列新增 metadata/引用/锁，及旧普通路径不变的证据；
 热路径以计数验无 allocation/provider search，不为纳秒差改布局。
 

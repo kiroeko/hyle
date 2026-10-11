@@ -24,12 +24,25 @@
         "ubsan-compute.log",
         "ubsan-graph.log"
       ]
+    },
+    {
+      "name": "TSan",
+      "verdict": "PASS",
+      "compute_cases": 26,
+      "graph_cases": 3,
+      "receipt": "tsan-job.json",
+      "graph_completion": "tsan-graph-process-layout.json",
+      "logs": [
+        "tsan-compute.log",
+        "tsan-graph-process-layout.log"
+      ],
+      "retained_startup_failure": "tsan-graph.log",
+      "qualification": "Graph initial executable start failed with unexpected mapping before any case. One original binary process-layout run passed with halt_on_error=1; no suppression or global sysctl change."
     }
   ],
   "toolchain": "GCC 14.2.0 / libstdc++14 / CMake 3.28.3 / Ubuntu24.04.4 WSL2 6.18.40.1",
   "configuration": "Release/static/shipping/OFF compute and graph dev factors, one worker",
   "pending": [
-    "TSan unrun",
     "Remaining F1 native mixed lease faults, platform/SDK and full P0/red team"
   ],
   "log_sha256": {
@@ -42,6 +55,13 @@
     "ubsan-configure.log": "9e77c234464cc30cf8989583a72ca3adc16a6930f1a77de6f6e502dfd578f9df",
     "ubsan-build.log": "8b9d09d86ace356e910f615f6ef2321bf88c3ce7f67557bb5edf76b4fe7c011f",
     "ubsan-compute.log": "a895120a3a3fa8daef583650e3e6afea51881226977a7325cbbd3836754fbac0",
-    "ubsan-graph.log": "80d64e1494a03f9aa3597c3ec01268ef97336bb18020bb1ef6c0e175177d788c"
+    "ubsan-graph.log": "80d64e1494a03f9aa3597c3ec01268ef97336bb18020bb1ef6c0e175177d788c",
+    "tsan-job.json": "d5f81c22ca374acc6afd20a0aa5e26d4842e0506b588515cc3952e1868517b7f",
+    "tsan-configure.log": "f206725d86275073ab211f92ab2c6a22cd7cbf29ea2085c8e42f1d14087837a1",
+    "tsan-build.log": "8b9d09d86ace356e910f615f6ef2321bf88c3ce7f67557bb5edf76b4fe7c011f",
+    "tsan-compute.log": "326165148f19b1a60fa219e67e81054e6a4e99903026a6579eedc4bc0fb282b4",
+    "tsan-graph.log": "56e3c1f819a0535fd2dfc23f4c4b881e9b1e18dbc00f88c764ebbecd22831621",
+    "tsan-graph-process-layout.log": "ebc6094f5c851258af57e2d7dd6d0a9232a891b4962bb930be097cc8409a616d",
+    "tsan-graph-process-layout.json": "4d2245b187c58b6763798af18356176fe45bba6469644989d3bb004ac6783970"
   }
 }

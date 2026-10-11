@@ -1,0 +1,93 @@
+{
+  "candidate": "03242e7723cbd7f86d76b611f75e9db9f9a41a55",
+  "source": "/home/kiro/hyle-f1/sanitizers/source-03242e7723cb",
+  "build": "/home/kiro/hyle-f1/sanitizers/tsan-03242e7723cb",
+  "mode": "tsan",
+  "configuration": "GCC14.2/static/Release/shipping/OFF",
+  "parallel": 1,
+  "environment": {
+    "ASAN_OPTIONS": "halt_on_error=1:detect_leaks=1",
+    "UBSAN_OPTIONS": "halt_on_error=1:print_stacktrace=1",
+    "TSAN_OPTIONS": "halt_on_error=1"
+  },
+  "stages": [
+    {
+      "name": "configure",
+      "command": [
+        "/usr/bin/cmake",
+        "-S",
+        "/home/kiro/hyle-f1/sanitizers/source-03242e7723cb",
+        "-B",
+        "/home/kiro/hyle-f1/sanitizers/tsan-03242e7723cb",
+        "-G",
+        "Ninja",
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DCMAKE_CXX_COMPILER=/usr/bin/g++-14",
+        "-DHYLE_DEV_FACTORS=compute;graph",
+        "-DHYLE_BUILD_TESTS=ON",
+        "-DHYLE_BUILD_BENCH=OFF",
+        "-DHYLE_STATIC=ON",
+        "-DHYLE_TEST_INSTRUMENTATION=OFF",
+        "-DHYLE_INSTALL=OFF",
+        "-DHYLE_WERROR=ON",
+        "-DHYLE_DEP_SOURCE_CACHE=/mnt/c/public/tools/hyle-dependencies/v1",
+        "-DHYLE_SANITIZER=tsan"
+      ],
+      "pid": 628,
+      "state": "terminal",
+      "available_bytes": 32417439744,
+      "log": "configure.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "f206725d86275073ab211f92ab2c6a22cd7cbf29ea2085c8e42f1d14087837a1"
+    },
+    {
+      "name": "build",
+      "command": [
+        "/usr/bin/cmake",
+        "--build",
+        "/home/kiro/hyle-f1/sanitizers/tsan-03242e7723cb",
+        "--target",
+        "hyle_compute_test",
+        "hyle_graph_test",
+        "--parallel",
+        "1"
+      ],
+      "pid": 797,
+      "state": "terminal",
+      "available_bytes": 32393715712,
+      "log": "build.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "8b9d09d86ace356e910f615f6ef2321bf88c3ce7f67557bb5edf76b4fe7c011f"
+    },
+    {
+      "name": "compute",
+      "command": [
+        "/home/kiro/hyle-f1/sanitizers/tsan-03242e7723cb/bin/hyle_compute_test",
+        "--gtest_filter=ResourceLeases.*:Completion.*:OwnedResult.*"
+      ],
+      "pid": 1204,
+      "state": "terminal",
+      "available_bytes": 32388534272,
+      "log": "compute.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "326165148f19b1a60fa219e67e81054e6a4e99903026a6579eedc4bc0fb282b4"
+    },
+    {
+      "name": "graph",
+      "command": [
+        "/home/kiro/hyle-f1/sanitizers/tsan-03242e7723cb/bin/hyle_graph_test",
+        "--gtest_filter=LeaseSubmission.*"
+      ],
+      "pid": 1210,
+      "state": "terminal",
+      "available_bytes": 32430272512,
+      "log": "graph.log",
+      "exit_code": 66,
+      "verdict": "FAIL",
+      "sha256": "56e3c1f819a0535fd2dfc23f4c4b881e9b1e18dbc00f88c764ebbecd22831621"
+    }
+  ]
+}

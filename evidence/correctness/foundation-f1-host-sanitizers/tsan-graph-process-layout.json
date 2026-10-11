@@ -1,0 +1,19 @@
+{
+  "candidate": "03242e7723cbd7f86d76b611f75e9db9f9a41a55",
+  "command": [
+    "wsl",
+    "-d",
+    "Ubuntu-24.04",
+    "--",
+    "/usr/bin/env",
+    "TSAN_OPTIONS=halt_on_error=1",
+    "/usr/bin/setarch",
+    "x86_64",
+    "-R",
+    "/home/kiro/hyle-f1/sanitizers/tsan-03242e7723cb/bin/hyle_graph_test",
+    "--gtest_filter=LeaseSubmission.*"
+  ],
+  "exit_code": 0,
+  "verdict": "PASS",
+  "scope": "Single original Graph protocol exe with process-local ASLR disabled; original startup failure retained"
+}
