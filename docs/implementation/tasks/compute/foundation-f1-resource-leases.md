@@ -390,6 +390,27 @@ Graph 原生前缀实际退休与外层附着 owner 的交接。
 统一 33 路径 LOC self-check PASS：Compute+Graph 非测试 **70,266 行/313文件**，全库非测试 **165,493/664**。
 本子资格不关闭 F1，F2/F3 未启动；原预算和未验风险保留。
 
+### CPU+GPU 租约组合子轮 SCOPED
+
+- baseline / previous registry ref `440c7c847`；graph_route_cpu_apple/vulkan 因新 F1 外部租约绑定旅程
+  从 CLOSED 进入 SCOPED；旧 H2/H3 terminal 只作证据，不恢复原数学/交付施工队列。
+- CPU+CUDA 的 compile 已返回共同 Executable，使用现有 LeasedInvocation 和原 queue bindings；
+  本轮只补这个普通 consumer/recipe，不改 CLOSED 的 CPU+CUDA 产品 owner。
+- 两个 managed 组合 Invocation 新增 opt-in `bind(ValueId, TensorDesc, ReadLease)`，
+  在同 native resource 时优先用原 cold binding，否则只接受原合法 host view。其他借用 bind 保持原合同。
+  lease 保留在原 RunState，原 Results 的引用链覆盖输入/source alias；不创造第二套结果或执行器。
+- 共同 graph 只提供有限 permission/prefix-retention metadata，不提供 Queue/数学 dispatch。
+  原 RunState 增加可空 owner 指针；未使用新 overload 时不分配表。新增一次 submit admission 分支和
+  每原 coarse completion 的可空保护分支均纳入 P0，不把额外常态成本写成零。
+- 冷准备输入槽与 `2*inputs + fragments + fragment_outputs` 个已接受前缀槽，检查溢出，warm 不扩容。
+  接纳前保护 source，任何 prefix 的第一次观察前预挂 guard；原完成错误不证明退役。
+  最后 actual native release 与 body sentinel 全部归零后，才退 lease uses/发布原 outer completion。
+- 原 poll/wait/destroy 保存原错误；已观察未知错误仍由原 native retirement 保活，不能改成成功。
+  close 停后继并排空本 slot，旧结果继续保留 inputs；不关闭用户 Context/所有 Queue，不增加 reaper/thread。
+- 有限 FIX 仅两路线的绑定、prefix 保护和结果保活，及共同 metadata helper；F1-06/07/08 原风险与预算继承。
+  验证原成熟 CPU+GPU 数学、两读者/source alias、业务句柄放弃、close/rejection、OOM/replay metadata计数；
+  宏缺席/新头、适用平台与三交付按集中候选执行，未运行保持未证明。
+
 扩展现有 compute completion、graph cpu_cuda/apple/vulkan contracts 及 native route 用户样例；
 保留原数学 reference，新增实际 lease 风险断言。只装饰 native observation/fault call，
 不能将 mock 结果当路线资格。至少两独立在途块、两个读者、一写者、旧结果、取消、OOM、部分失败、
