@@ -134,8 +134,12 @@ TEST(VulkanCopyRecording, OwnedReadonlyViewsPreservePhysicalAliasAndUnknownExter
   auto slice = owned.subview(4, 16).value();
   const std::array<std::int64_t, 1> shape{{16}};
   auto description = c::TensorDesc::dense(c::DataType::kUInt8, shape).value();
-  auto tensor = device.binding(slice, description).value();
-  auto imported = device.import_readonly(tensor).value();
+  auto tensor_result = device.binding(slice, description);
+  ASSERT_TRUE(tensor_result.has_value()) << tensor_result.error().message();
+  auto tensor = std::move(*tensor_result);
+  auto imported_result = device.import_readonly(tensor);
+  ASSERT_TRUE(imported_result.has_value()) << imported_result.error().message();
+  auto imported = std::move(*imported_result);
   const auto &runtime = d::Access::runtime(context);
   auto root_span = d::MemoryAccess::copy_span(runtime, slice.view().value()).value();
   auto view_span = d::MemoryAccess::copy_span(runtime, imported.view().value()).value();
@@ -149,8 +153,12 @@ TEST(VulkanCopyRecording, OwnedReadonlyViewsPreservePhysicalAliasAndUnknownExter
   std::array<std::byte, 16> observed;
   ASSERT_TRUE(output.read(0, observed).ok());
   for (std::size_t index = 0; index < observed.size(); ++index) EXPECT_EQ(observed[index], bytes[index + 4]);
-  auto borrowed = context.borrow_ready(description, tensor.native_buffer(), tensor.native_offset(), 16,
-                                       tensor.native_owner()).value();
+  // The external storage factory's existing storage alignment is stronger
+  // than raw-copy alignment. Use a valid zero-origin carrier, then reject its
+  // missing copy backing/usage proof rather than failing the old factory.
+  auto borrowed_result = context.borrow_ready(description, tensor.native_buffer(), 0, 16, tensor.native_owner());
+  ASSERT_TRUE(borrowed_result.has_value()) << borrowed_result.error().message();
+  auto borrowed = std::move(*borrowed_result);
   auto unknown = device.import_readonly(borrowed).value();
   const std::array<c::detail::CopyBackendRange, 1> unknown_source{{{output.view(), unknown.view().value()}}};
   EXPECT_FALSE(d::bind_copy_recording(*read, unknown_source).ok());

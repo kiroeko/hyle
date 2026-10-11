@@ -207,6 +207,9 @@ Vulkan公共Program/Invocation/Submission、native producer/权限/故障、数�
 VkBuffer与byte offset；F2冷copy span沿该已有来源证明，使用Device+原VkBuffer+offset作canonical identity。
 原allocator每个root单独绑定Memory，views保持同handle；未知external借入为allocation_bytes=0，
 仍因copy usage/alias无证明明确拒绝。首批门包括实际lease binding/import_readonly view回放与unknown外部边界。
+首遍增加owned-view用例的fixture将raw-copy合法4-byte offset传给既有storage borrow factory，
+后者还要求native storage offset alignment；保留这次FAIL，fixture改为合法zero-origin外部carrier，
+再检验F2的unknown usage拒绝，不修改旧factory或放宽其合同。
 
 ### 当前实施与首轮证据（2026-10-11）
 
