@@ -441,6 +441,12 @@ empty optional deadline初始化。共同TU全部非空白token与f3d931c47一�
 遗漏成员的空初始化显式写出，没有新语义/API/layout/算法/成本。原sanitizer与native收据保留其
 精确旧source身份；另做受影响owner/直接route的增量正常门，不把旧SHA伪写成新candidate证据。
 
+最终逐能力矩阵核对发现原F3-06的deadline及正常重复stop/close只由源码/其他取消旅程间接支持，
+尚缺直接组合证据。补一个公开API fixture：真正过期的单调deadline在第一chunk前保留
+DeadlineExceeded/零IO/零native/零ready；stop后接纳拒绝且输入writer不移动，重复close/drain/collect，
+并验证借用Context/Queue/IoContext/Scheduler及原File仍可用。该测试属于原F3-06风险补证，
+不新增FIX或修改产品；本提交时尚未运行，不写PASS。
+
 | FIX | 必须实现 | 验收 |
 |---|---|---|
 | F3-01 | 中央 compute_stream 身份/依赖/普通 route 及三交付投影 | 无环，无第二名单/空 target；静态共享source一致，不拉无关 CPU Provider |

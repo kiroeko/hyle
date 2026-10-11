@@ -261,6 +261,31 @@ TEST(FileStream, ExportedReadyAndLeaseCanRetireOnAnotherThreadWithoutReusingHeld
   ASSERT_TRUE(runtime.pipeline.collect().ok()); EXPECT_EQ(pool.stats().live_blocks, 0u);
   auto next = runtime.pipeline.read({}, {}).value(); EXPECT_TRUE(next.wait().status.ok());
 }
+TEST(FileStream, ExpiredDeadlineAndRepeatedClosePreserveUserResourcesAndRejectNewWork) {
+  Runtime runtime; const auto input = bytes(); auto source = runtime.file(input);
+  auto pool = LeasePool::create(m::system_resource(), 1024).value();
+  auto ranges = read_ranges(pool); auto groups = read_groups(ranges);
+  auto ticket = runtime.pipeline.read(StreamSource::file(source), groups,
+      {.deadline = time::monotonic_now() - time::Duration{1}, .cancel = nullptr}).value();
+  auto result = ticket.wait(); EXPECT_TRUE(result.status.IsDeadlineExceeded());
+  EXPECT_TRUE(result.retirement_proven); EXPECT_EQ(result.ready_groups, 0u);
+  EXPECT_EQ(result.read_bytes, 0u); EXPECT_EQ(result.copied_bytes, 0u); EXPECT_FALSE(ticket.next_ready());
+  EXPECT_EQ(runtime.pipeline.report().io_calls, 0u); EXPECT_EQ(runtime.pipeline.report().native_calls, 0u);
+  ticket = {}; ASSERT_TRUE(runtime.pipeline.collect().ok());
+  runtime.pipeline.stop_admission(); runtime.pipeline.stop_admission();
+  auto rejected_ranges = read_ranges(pool); auto rejected_groups = read_groups(rejected_ranges);
+  auto rejected = runtime.pipeline.read(StreamSource::file(source), rejected_groups);
+  ASSERT_FALSE(rejected); EXPECT_TRUE(rejected.error().IsFailedPrecondition());
+  EXPECT_TRUE(rejected_ranges[0].destination.valid()); EXPECT_TRUE(rejected_ranges[1].destination.valid());
+  ASSERT_TRUE(runtime.pipeline.close().ok()); ASSERT_TRUE(runtime.pipeline.close().ok());
+  ASSERT_TRUE(runtime.pipeline.drain().ok()); ASSERT_TRUE(runtime.pipeline.collect().ok());
+  EXPECT_TRUE(source.valid()); EXPECT_TRUE(runtime.context.valid()); EXPECT_TRUE(runtime.queue.valid());
+  EXPECT_TRUE(runtime.io.valid()); EXPECT_TRUE(runtime.scheduler.accepting());
+  EXPECT_TRUE(runtime.file(input).valid());
+  auto stored = p::open_random_access_file(runtime.paths.front().c_str(), p::kOpenRead).value();
+  std::array<std::byte, 256> actual{}; ASSERT_EQ(stored.read_at(0, actual).value(), actual.size());
+  EXPECT_EQ(actual, input);
+}
 #if !defined(_WIN32)
 TEST(FileStream, OriginalFileSizeLimitPreservesPositiveShortWritePrefixAndNoGroupReady) {
   Runtime runtime; const auto input = bytes(); auto sink = runtime.file({}, 128);
