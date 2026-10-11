@@ -1,0 +1,16 @@
+{
+  "os": "Linux-6.18.40.1-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+  "create_instance": 0,
+  "devices": [
+    {
+      "name": "llvmpipe (LLVM 20.1.2, 256 bits)",
+      "api_version": 4211006,
+      "driver_version": 104865800,
+      "vendor_id": 65541,
+      "device_id": 0,
+      "device_type": 4
+    }
+  ],
+  "enumerate": 0,
+  "qualified_gpu_present": false
+}

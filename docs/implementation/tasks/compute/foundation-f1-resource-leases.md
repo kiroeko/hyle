@@ -1,11 +1,13 @@
 # F1：外部资源租约与最后使用后回收
 
-> 状态：AUDITED（2026-10-11），当前先实施 F1-04 的有限 completion 资格修复；其他 F1 接缝继续逐 owner 绑定。
+> 状态：AUDITED（2026-10-11），F1 共同核与四路线/组合接缝已接通，当前集中补齐风险和交付资格。
+> 当前 registry 绑定 compute、graph、compute_backend_cuda、compute_route_apple/vulkan、
+> graph_route_cpu_apple/vulkan；F2/F3 尚未启动，不能把局部 PASS 当作整包关闭。
 > component / owner：拟由 compute 负责共同控制；compute_backend_cpu/cuda 与
 > compute_route_cpu/cuda/apple/vulkan 负责实际 native 适配；Graph 及其四路线和 CPU+GPU 适配只改 leased 接缝。
 > 具体改到的 owner 才在启动时绑定；不重开全部 Provider/算子模块。
 
-## 当前启动绑定
+## 首次启动绑定（保留原阶段事实）
 
 - 实际启动 HEAD / previous registry ref：`833e6844b8e0160ec3eadd3b1945aed577cdad84`，工作树干净。
   其产品代码与设计基线 edb271438 相同，保留后续文档/证据提交，不回退。
@@ -439,6 +441,36 @@ host/device 数学、八次 metadata 无新增分配、旧结果保护与 held C
 共同核测试 `c73ac50d3` 的边界溢出拒绝、跨线程读者与独立块退役，以及 retained observer 共十三项通过。
 首轮跨线程夹具误用 exact-view read 的原失败日志保留；修正为 subview 后通过，产品没有因此改变。
 其他适用平台、完整风险/头与缺席、installed static/shared/迁址及整包 P0/红队仍未完成，F1 继续 AUDITED。
+
+### 集中交付首批结果
+
+消费者 `46cc16937` 的 Windows CPU/Vulkan source 与迁址后 shared SDK 已通过；
+[交付局部收据](../../../../evidence/correctness/foundation-f1-lease-delivery-initial/receipt.json)
+记录普通 `hyle::graph` 入口的 Direct/Graph 数学、CPU 八次 metadata 不增长、旧结果拒绝、
+held Completion drain、业务 owner 放弃后的 source alias 与最后回收。
+七个启用路线/共同头隔离编译及九个 OFF 头通过；不含的 Apple/CUDA 路线分别产生具名 SDK 诊断。
+SDK 从本批 staging 实际迁址，Hyle CMake metadata 无 canonical/source-build/staging 路径；
+测试 PATH 只有 EXE 同目录与 Windows 系统目录，DLL 列表与 hash 保留。
+Windows static、CUDA 与其他适用平台尚未验证，不能写整包 delivery PASS。
+
+本轮 WSL Vulkan loader 实际只枚举 llvmpipe（device type 4），未发现可资格化 GPU；
+保留 loader probe 与原始输出，按本卡实际 GPU 条件记录当前硬件边界，不沿用历史例外，也不宣称 GPU 数学通过。
+
+### 当前逐 FIX 资格覆盖
+
+| FIX / 能力 | 已取证的最小事实 | 尚未证明的适用风险 |
+|---|---|---|
+| F1-01 owner/range/import | 共同边界/溢出拒绝、预算/接管 rollback；CUDA owning Buffer、Apple/Vulkan readonly native backing | 其他平台的完整边界/OOM与所有 installed 交付格 |
+| F1-02 权限/发布/别名 | 共享读者阻止写、旧结果阻止覆盖；跨线程读者与独立块退役；原生 readonly alias | host sanitizer 与完整平台并发/销毁资格 |
+| F1-03 native guard/保活 | 共同模拟协议与真实 CUDA unknown prefix；Apple/Vulkan held native drain 和 source alias | 新 managed lease 分支的完整 native fault/cancel/abandon 矩阵 |
+| F1-04 CUDA 观察错误 | 实际 GPU 插桩/shipping；首错与 accepted prefix 保活、最后回收 | WSL 对本轮修复和新租约接缝的资格 |
+| F1-05 Direct | CPU/CUDA/Apple/Vulkan 原成熟数学；新 Windows CPU/Vulkan SDK 消费 | 其他适用平台/交付及新的 native lease failure/OOM/cancel 覆盖 |
+| F1-06 Graph/组合结果 | 四原路线与三个 CPU+GPU 组合原数学；caller/source alias、旧结果、正常 drain | 组合 lease 分支的真实 native 部分接受/unknown退役；余下平台/SDK格 |
+| F1-07 close/drain/最后回收 | closed source 拒绝、held Completion drain、共同跨线程/实际 CUDA late retirement | 四路线 lease cancellation、重复关闭与适用 sanitizer 总矩阵 |
+| F1-08 普通入口/交付/P0 | 指南、普通 source/shared SDK、迁址/DLL、新头 ON/OFF与路线缺席；局部热计数 | static与其他平台/路线交付、整包 P0 静态账单及最终红队 |
+
+这些是部分资格，不以测试数量或已实现函数数代替 `closure-correctness-v1` 的逐语义矩阵。
+全部适用格与七问完成前保持 AUDITED；未运行格没有 PASS，F2/F3 不提前计作产品进展。
 
 扩展现有 compute completion、graph cpu_cuda/apple/vulkan contracts 及 native route 用户样例；
 集中交付使用 `samples/package/graph/resource_leases`：只链接 `hyle::graph`，选择普通 routes，

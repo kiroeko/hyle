@@ -1,0 +1,73 @@
+{
+  "schema_version": 1,
+  "scope": "F1 Windows CPU/Vulkan lease source and relocated shared delivery partial qualification",
+  "candidate": "46cc16937d19952ddea0664df4609be9ed45e5a5",
+  "product_candidate": "fc4ffbd1610eb3b24bf76709dc6e5e25b3d838d7",
+  "tests": [
+    {
+      "name": "Ordinary public Direct and Graph source consumer",
+      "verdict": "PASS",
+      "routes": [
+        "cpu",
+        "vulkan"
+      ],
+      "log": "windows-vulkan-source-test.log"
+    },
+    {
+      "name": "Ordinary relocated shared SDK consumer with EXE local DLLs and system-only runtime PATH",
+      "verdict": "PASS",
+      "log": "w-cpu-vulkan-shared-test.log",
+      "receipt": "w-cpu-vulkan-shared-sdk.json"
+    },
+    {
+      "name": "Enabled Vulkan and generic isolated headers",
+      "verdict": "PASS",
+      "headers": 7,
+      "log": "windows-vulkan-source-build.log"
+    },
+    {
+      "name": "OFF isolated generic and guarded native/composition headers",
+      "verdict": "PASS",
+      "headers": 9,
+      "logs": [
+        "compute-headers-off.log",
+        "graph-headers-off.log"
+      ]
+    },
+    {
+      "name": "Absent Apple and CUDA routes fail with their named SDK diagnostic",
+      "verdict": "PASS",
+      "cases": 2,
+      "receipt": "absent-routes.json"
+    }
+  ],
+  "wsl_vulkan": {
+    "verdict": "NO_QUALIFIED_GPU",
+    "evidence": "wsl-vulkan-preflight.json",
+    "limitation": "Actual loader enumerates only type 4 llvmpipe software device. No native Vulkan math qualification is claimed; applicability follows current F1 card actual GPU rule."
+  },
+  "limitations": [
+    "Windows CPU+Vulkan only; installed static still pending",
+    "CUDA delivery and Air/WSL applicable journeys still pending",
+    "Complete F1 native lease fault/cancel/OOM coverage, sanitizers, full P0 and red team still pending",
+    "F1 owners remain AUDITED; F2/F3 have no product implementation"
+  ],
+  "log_sha256": {
+    "windows-vulkan-source.json": "e69aa6fb5fe31d67fde45290015a2422d4c4474ab6dff61ec877e668865f457c",
+    "windows-vulkan-source-build.log": "2a21f0f87b101e8bd5bdbc46c1cd1b59b10c11780090d07376eb6b8eb8460302",
+    "windows-vulkan-source-test.log": "a7a41ff43f66bf61edc7cb85b79ef7cbb7a0d2b2f5fb72a895f92e688331c88d",
+    "w-cpu-vulkan-shared-sdk.json": "335af99039c4f272a9455e88166f7478cdd1d2eb5b1ea0e45f6b0134ca879c54",
+    "w-cpu-vulkan-shared-install.log": "d0cc786440ee437559a5f4d24a601cc9a1375f44008abe21e0c318f65ffb2f51",
+    "w-cpu-vulkan-shared-relocate.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "w-cpu-vulkan-shared-configure.log": "561cec2cc0008561ef023ea268f3c2b96167a616938055d251d108aa76a0f9fc",
+    "w-cpu-vulkan-shared-build.log": "a32d43193735fd646d977e4262b82389654752723aaff573da4279b3bd50e4f3",
+    "w-cpu-vulkan-shared-test.log": "887ad7e13c4373136a89f60657ea2715be8becc2d6914ad46b544826699e5c84",
+    "compute-headers-off.log": "a772e8783ef86a029c368566ba4e38245cc2424cf6c2c11d6978ff6be1fec48b",
+    "graph-headers-off.log": "24960aee5c7d4b0076d2324642208409151f4f5533bcdb704fd65050514213a6",
+    "absent-routes.json": "6b625238fd8710dd289df16a56d3fe5c6ab5590d543c36adaf81411d5c19a0e8",
+    "absence-apple.log": "fc3e01bfc7bf93755868116ac1906f9558da52017ee5b8f744c271ccf08b96be",
+    "absence-cuda.log": "eaae907a51d2b58518e692035420f79d7580b67980f33b797bf9f49fccd9ff0b",
+    "wsl-vulkan-preflight.json": "d32393df821f582adea8166d007e07bef7c192c7f7956217cf315580f7d8540e",
+    "wsl-vulkan-probe.py": "18fdce40f2522ab3ed1bb044c04002883ac7fdcd3999d4f14220e01284a8ff69"
+  }
+}

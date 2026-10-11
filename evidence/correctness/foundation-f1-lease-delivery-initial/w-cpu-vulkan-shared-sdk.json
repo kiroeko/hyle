@@ -1,0 +1,147 @@
+{
+  "candidate": "46cc16937d19952ddea0664df4609be9ed45e5a5",
+  "source": "C:\\public\\project-hyle\\hyle",
+  "producer": "C:/h7/w-cpu-vulkan/selected-graph/source-build",
+  "routes": [
+    "cpu",
+    "vulkan"
+  ],
+  "linkage": "shared",
+  "delivery": "installed relocated SDK",
+  "compiler": "C:/Program Files/Microsoft Visual Studio/18/Enterprise/VC/Tools/MSVC/14.50.35717/bin/Hostx64/x64/cl.exe",
+  "stages": [
+    {
+      "name": "install",
+      "command": [
+        "C:\\Program Files\\CMake\\bin\\cmake.EXE",
+        "--install",
+        "C:/h7/w-cpu-vulkan/selected-graph/source-build",
+        "--config",
+        "Release",
+        "--prefix",
+        "C:\\h7\\foundation-f1-sdk\\w-cpu-vulkan-shared-staging"
+      ],
+      "pid": 46252,
+      "state": "terminal",
+      "log": "w-cpu-vulkan-shared-install.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "d0cc786440ee437559a5f4d24a601cc9a1375f44008abe21e0c318f65ffb2f51"
+    },
+    {
+      "name": "relocate",
+      "command": [
+        "pwsh",
+        "-NoProfile",
+        "-File",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\foundation-f1\\sdk\\move_sdk.ps1",
+        "-Staging",
+        "C:\\h7\\foundation-f1-sdk\\w-cpu-vulkan-shared-staging",
+        "-Relocated",
+        "C:\\h7\\foundation-f1-sdk\\w-cpu-vulkan-shared-relocated"
+      ],
+      "pid": 92968,
+      "state": "terminal",
+      "log": "w-cpu-vulkan-shared-relocate.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "name": "configure",
+      "command": [
+        "C:\\Program Files\\CMake\\bin\\cmake.EXE",
+        "-S",
+        "C:\\public\\project-hyle\\hyle\\samples\\package\\graph\\resource_leases",
+        "-B",
+        "C:\\h7\\foundation-f1-sdk\\w-cpu-vulkan-shared-consumer",
+        "-G",
+        "Ninja",
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DCMAKE_CXX_COMPILER=C:/Program Files/Microsoft Visual Studio/18/Enterprise/VC/Tools/MSVC/14.50.35717/bin/Hostx64/x64/cl.exe",
+        "-DCMAKE_PREFIX_PATH=C:\\h7\\foundation-f1-sdk\\w-cpu-vulkan-shared-relocated",
+        "-DHYLE_COMPUTE_ROUTES=cpu;vulkan"
+      ],
+      "pid": 84220,
+      "state": "terminal",
+      "log": "w-cpu-vulkan-shared-configure.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "561cec2cc0008561ef023ea268f3c2b96167a616938055d251d108aa76a0f9fc"
+    },
+    {
+      "name": "build",
+      "command": [
+        "C:\\Program Files\\CMake\\bin\\cmake.EXE",
+        "--build",
+        "C:\\h7\\foundation-f1-sdk\\w-cpu-vulkan-shared-consumer",
+        "--parallel",
+        "1"
+      ],
+      "pid": 85612,
+      "state": "terminal",
+      "log": "w-cpu-vulkan-shared-build.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "a32d43193735fd646d977e4262b82389654752723aaff573da4279b3bd50e4f3"
+    },
+    {
+      "name": "test",
+      "command": [
+        "C:\\Program Files\\CMake\\bin\\ctest.EXE",
+        "--test-dir",
+        "C:\\h7\\foundation-f1-sdk\\w-cpu-vulkan-shared-consumer",
+        "--output-on-failure",
+        "-R",
+        "^hyle_resource_leases_sample$",
+        "--timeout",
+        "180"
+      ],
+      "pid": 94504,
+      "state": "terminal",
+      "log": "w-cpu-vulkan-shared-test.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "887ad7e13c4373136a89f60657ea2715be8becc2d6914ad46b544826699e5c84"
+    }
+  ],
+  "package_paths": "No canonical source, producer build or staging prefix in Hyle CMake metadata",
+  "local_dlls": {
+    "asmjit.dll": "eb8f9c478bfc4b671f83b630c97424c60b4c948c0a8645fe588aed4f6bab5df5",
+    "c10.dll": "93bff2548e330df0f94ce3c71c531887d049ae645d1e38e3c08689e2d86a7888",
+    "fbgemm.dll": "250dc6f79b26e022ca3088e9b71a023598c7e997c96b62ef350a74fa1b501d81",
+    "hyle_compute.dll": "59c209c115da4ec4b7f7b6367cad8568c2a70b1061a6f40a37198c7692a1265a",
+    "hyle_compute_backend_cpu.dll": "cbea7dd684db2b9a5dbe8b1750aade3060544840684ac6916d6756ccc776b90f",
+    "hyle_compute_ggml_runtime.dll": "1505a4e48e404546eb00bfe3e11be9935c0339c9bee4006895e13890b3aac503",
+    "hyle_compute_ops.dll": "aef8bb0029787136079913c8463e2cd8709b6fa969e3945f927e487a53eaa9a0",
+    "hyle_compute_provider_ggml.dll": "5f6ec51eec7df924569027dcbfd10c293f41164633e25154fc98afe3237260ac",
+    "hyle_compute_provider_ggml_vulkan.dll": "d75cfedde79a08458a82a591063dd6dc0e753e0dd3ebf29cdb207ca49f15a6d9",
+    "hyle_compute_provider_iree_vulkan.dll": "01be72a5d7ade56da2d18ce766a5de3e8fcb7e3f8d4c12c01f56d7614fd68206",
+    "hyle_compute_provider_native.dll": "5951a5abead47d9bb891653933b7408e67f650753d28281d9ae4ccd89d56340c",
+    "hyle_compute_provider_onednn.dll": "59dd9118fa369cbafee38b0b5e7d18641375ae7e8b0f445209cc0ac62921bde1",
+    "hyle_compute_route_cpu.dll": "0395b3facb81e2f0b236077e23a179423d48cd04873bff342a7a2e8ec86fba43",
+    "hyle_compute_route_vulkan.dll": "0f98a52fa0ccdcbf7c82c7fdcb345d0c67c64de0eead45942b821cab6159d2f7",
+    "hyle_container.dll": "7587468a6fae4136651d597e9b7cd1eb410879af7305a91fedd5b29f49430978",
+    "hyle_error.dll": "09803ee2b5a8466a270e61917260f8dedf454a95b6b6963dbe1cd1528454d5da",
+    "hyle_ggml_cpu_avx2_456172ec_7d4fea280f67f983.dll": "b7b9b39ff34dcd3348a42e58c4928a6a3f55b7a55f3986b34e8fa8dfd6ab670a",
+    "hyle_graph.dll": "85f7b3ed72c7f36bf2202d151530cbeaf492267153b9ec23d5df2ebaf95d450d",
+    "hyle_graph_provider_onednn.dll": "a9cb896709db9bfd5a1796d6f2df76446506d15f079b2f31d6bfce0795f337ee",
+    "hyle_graph_route_cpu.dll": "c34e3770166ca17f9b54757ce685e0df84d22d29fb5948d2b29829a460436b1f",
+    "hyle_graph_route_cpu_vulkan.dll": "738ca62674e2048e2e496728311ecc837ff977b5a093be507b6bf01bb434bfa4",
+    "hyle_graph_route_vulkan.dll": "baa308c87b50bac826ba7e1db510f5a03b9aea5891dc756e76b3c96850c080cd",
+    "hyle_mem.dll": "10d29dbfd5eb761289b41161687b326eec11678a876d68799722b7941cc3c9fa",
+    "hyle_mem_vm.dll": "d308e502fdcf5724f7e75cba045aae86b7121af0a5dc553620403b02a7b1084a",
+    "hyle_platform.dll": "e30ff2073aa39c7adda9fabd947b1d81f393d7f449cf526d7a4ed13bef4f0e98",
+    "hyle_platform_fs.dll": "f273afe9d2564c5d42ee5b311f86708c53b0d9e09a6ae10534e39fca7749977c",
+    "hyle_platform_thread.dll": "6a1bd95106a7c26b07da72e14c30594dbcc20f2ad35a8d1735c14e048915801c",
+    "hyle_sched.dll": "c3e93e7390863d7dfffb63c8325959af493234e71c2d9a165a5e8fb76d55b074",
+    "hyle_simd.dll": "daefb1c5e5b827ad7a62fe6aa4767bd3697ad3ab443bb0937d147c4584231743",
+    "hyle_time.dll": "a4d6f78d233af94b20d5437592ccf4a58e705cbe583d5aa34b40fab3de618661",
+    "libiomp5md.dll": "d9d66ed25f1a0ea725fa3a41b22cfd5d182c19dbe4771d9c90ca02ad7466f6a1",
+    "torch.dll": "16a220e55b35fbfd946c26663eb3eefc76782872280cdc47ab0caea1babf0613",
+    "torch_cpu.dll": "2cb91cf2ba957fad5a17eab5bb7af6b3d73bbc98d94e2deeadc9fb9294eea809",
+    "uv.dll": "fa569e682fc5fb7a8eb94c6829af9f30a569748dbbc6bce39735d48bc960bcf8"
+  },
+  "runtime_path": "C:\\h7\\foundation-f1-sdk\\w-cpu-vulkan-shared-consumer;C:/Windows/System32;C:/Windows",
+  "verdict": "PASS"
+}

@@ -1,0 +1,24 @@
+{
+  "candidate": "46cc16937d19952ddea0664df4609be9ed45e5a5",
+  "source": "C:/public/project-hyle/hyle",
+  "binary": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build",
+  "targets": [
+    "hyle_f1_leases",
+    "hyle_f1_headers"
+  ],
+  "routes": [
+    "cpu",
+    "vulkan"
+  ],
+  "configuration": "Release/shipping/shared",
+  "parallel": 1,
+  "build_exit_code": 0,
+  "header_isolation": {
+    "verdict": "PASS",
+    "enabled_route": "vulkan",
+    "headers": 7
+  },
+  "test_exit_code": 0,
+  "test_verdict": "PASS",
+  "test_log": "windows-vulkan-source-test.log"
+}

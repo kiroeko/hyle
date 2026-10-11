@@ -1,0 +1,41 @@
+{
+  "verdict": "PASS",
+  "cases": [
+    {
+      "route": "apple",
+      "command": [
+        "C:/Program Files/CMake/bin/cmake.exe",
+        "-S",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\foundation-f1\\sdk\\absence",
+        "-B",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\foundation-f1\\sdk\\absence-apple",
+        "-G",
+        "Ninja",
+        "-DCMAKE_PREFIX_PATH=C:/h7/foundation-f1-sdk/w-cpu-vulkan-shared-relocated",
+        "-DHYLE_COMPUTE_ROUTES=apple"
+      ],
+      "exit_code": 1,
+      "expected": "Hyle SDK does not contain requested Compute route 'apple'",
+      "verdict": "PASS",
+      "log": "absence-apple.log"
+    },
+    {
+      "route": "cuda",
+      "command": [
+        "C:/Program Files/CMake/bin/cmake.exe",
+        "-S",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\foundation-f1\\sdk\\absence",
+        "-B",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\foundation-f1\\sdk\\absence-cuda",
+        "-G",
+        "Ninja",
+        "-DCMAKE_PREFIX_PATH=C:/h7/foundation-f1-sdk/w-cpu-vulkan-shared-relocated",
+        "-DHYLE_COMPUTE_ROUTES=cuda"
+      ],
+      "exit_code": 1,
+      "expected": "Hyle SDK does not contain requested Compute route 'cuda'",
+      "verdict": "PASS",
+      "log": "absence-cuda.log"
+    }
+  ]
+}

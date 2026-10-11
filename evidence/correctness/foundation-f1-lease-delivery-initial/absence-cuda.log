@@ -1,0 +1,14 @@
+-- Configuring incomplete, errors occurred!
+CMake Error at CMakeLists.txt:3 (find_package):
+  Found package configuration file:
+
+    C:/h7/foundation-f1-sdk/w-cpu-vulkan-shared-relocated/lib/cmake/Hyle/HyleConfig.cmake
+
+  but it set Hyle_FOUND to FALSE so package "Hyle" is considered to be NOT
+  FOUND.  Reason given by package:
+
+  Hyle SDK does not contain requested Compute route 'cuda'; available:
+  cpu;vulkan
+
+
+
