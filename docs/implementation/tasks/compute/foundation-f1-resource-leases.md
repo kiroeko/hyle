@@ -1,6 +1,6 @@
 # F1：外部资源租约与最后使用后回收
 
-> 状态：AUDITED（2026-10-11），F1 共同核与四路线/组合接缝已接通，当前集中补齐风险和交付资格。
+> 状态：CANDIDATE（2026-10-11），F1 共同核与四路线/组合接缝已固定，当前补齐剩余资格与终审。
 > 当前 registry 绑定 compute、graph、compute_backend_cuda、compute_route_apple/vulkan、
 > graph_route_cpu_apple/vulkan；F2/F3 尚未启动，不能把局部 PASS 当作整包关闭。
 > 当前逐能力、公开入口和平台/交付缺格见[验证矩阵](foundation-f1-verification-matrix.md)，未验不外推。
@@ -17,6 +17,18 @@
 - 先做 F1-04 源协议/自然接口 AUDIT 并冻结有限实现；其他 native/Graph owner 当前继续 CLOSED，
   真正需要修改时先绑定本卡、SCOPED/AUDITED，不从其历史卡恢复旧施工。
 - 未启动构建、故障注入、数学运行或性能；结果目前只有源码疑点，不写 FAIL/PASS。
+
+## 当前不可变 candidate
+
+- candidate：`3034fc595abf5c2570e06dedbf195b34daf3fe72`；当前产品实现与
+  `fc4ffbd1610eb3b24bf76709dc6e5e25b3d838d7` 完全相同，样例错误打印与测试取消断言已固定。
+- registry 改前 ref：`e630a93a7`。七个已 AUDITED owner 的 F1-01至08 产品接线与直接消费者完成，
+  API、算法、layout、常态成本和普通 sample 不再变化，依法进入 CANDIDATE，不跳至 CLOSED。
+- [能力/API/风险矩阵](foundation-f1-verification-matrix.md)与
+  [源码/原日志身份复核](../../../../evidence/correctness/foundation-f1-identity-audit/receipt.json)
+  绑定此 candidate；WSL 三交付与 CUDA fault 已通过，最后平台/组合格继续按下面已冻结入口运行。
+- 未验格、完整 P0/red-team/七门终态仍未证明；没有新增计时性能门。candidate 后只补证据/文档/测试维护，
+  任何产品合同、实现、layout 或常态成本的新问题均先退回 AUDITED，不在 CANDIDATE 状态改产品。
 
 ## 共同执行合同
 

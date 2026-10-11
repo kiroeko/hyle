@@ -270,15 +270,17 @@
     },
     {
       "module": "compute",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/foundation-f1-resource-leases.md",
-      "summary": "F1 AUDITED：固定共同Completion attachment交接与CUDA观察错误退役资格；复用既有EventSlot/CompletionRetention/Reaper，有限F1-04修复与native故障注入，其他F1接缝按当前卡后续绑定。"
+      "summary": "F1 candidate：有界资源/权限/use、自动 Direct 保活与完成观察已固定；剩余资格及终审按当前卡。",
+      "candidate": "3034fc595abf5c2570e06dedbf195b34daf3fe72"
     },
     {
       "module": "graph",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/foundation-f1-resource-leases.md",
-      "summary": "F1 AUDITED：固定 aggregate 子 Completion 观察前嵌套保活与 sentinel 退休交接，复用原 Invocation/CompletionRetention；lease-aware 绑定/结果 façade 另冻结后实施。"
+      "summary": "F1 candidate：leased binding/results、accepted prefix 与 aggregate 实际退役保护已固定；剩余资格及终审按当前卡。",
+      "candidate": "3034fc595abf5c2570e06dedbf195b34daf3fe72"
     },
     {
       "module": "container_concurrent",
@@ -407,9 +409,10 @@
     },
     {
       "module": "compute_backend_cuda",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/foundation-f1-resource-leases.md",
-      "summary": "F1 AUDITED：固定共同Completion attachment交接与CUDA观察错误退役资格；复用既有EventSlot/CompletionRetention/Reaper，有限F1-04修复与native故障注入，其他F1接缝按当前卡后续绑定。"
+      "summary": "F1 candidate：未知观察保留原错/真实 native 退役；Windows/WSL 定向资格通过，整包终审待完成。",
+      "candidate": "3034fc595abf5c2570e06dedbf195b34daf3fe72"
     },
     {
       "module": "compute_provider_native",
@@ -502,9 +505,10 @@
     },
     {
       "module": "compute_route_apple",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/foundation-f1-resource-leases.md",
-      "summary": "F1 AUDITED：固定同resource ReadLease→native binding、native强owner保活与冷metadata/范围/padding校验；只改memory接缝并验原Direct/Graph成熟数学。"
+      "summary": "F1 candidate：readonly native binding/import 与自然 Direct/Graph leased owner 已固定；当前卡继续最终资格。",
+      "candidate": "3034fc595abf5c2570e06dedbf195b34daf3fe72"
     },
     {
       "module": "graph_route_apple",
@@ -519,9 +523,10 @@
     },
     {
       "module": "compute_route_vulkan",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/foundation-f1-resource-leases.md",
-      "summary": "F1 AUDITED：固定同resource ReadLease→native binding、native强owner保活与冷metadata/范围/padding校验；只改memory接缝并验原Direct/Graph成熟数学。"
+      "summary": "F1 candidate：readonly native binding/import 与自然 Direct/Graph leased owner 已固定；剩余平台资格及终审待完成。",
+      "candidate": "3034fc595abf5c2570e06dedbf195b34daf3fe72"
     },
     {
       "module": "graph_route_vulkan",
@@ -636,15 +641,17 @@
     },
     {
       "module": "graph_route_cpu_apple",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/foundation-f1-resource-leases.md",
-      "summary": "F1 组合 AUDITED：复用原 native/host bind 与 Completion、RunState/Results；冻结有限输入租约/accepted-prefix guard/sentinel，不改数学和原计划。"
+      "summary": "F1 candidate：原组合 ReadLease bind、Results/source alias 与真实 prefixes/body 联合退役已固定。",
+      "candidate": "3034fc595abf5c2570e06dedbf195b34daf3fe72"
     },
     {
       "module": "graph_route_cpu_vulkan",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/foundation-f1-resource-leases.md",
-      "summary": "F1 组合 AUDITED：复用原 native/host bind 与 Completion、RunState/Results；冻结有限输入租约/accepted-prefix guard/sentinel，不改数学和原计划。"
+      "summary": "F1 candidate：原组合 ReadLease bind、Results/source alias 与真实 prefixes/body 联合退役已固定；Windows static 格待完成。",
+      "candidate": "3034fc595abf5c2570e06dedbf195b34daf3fe72"
     }
   ]
 }

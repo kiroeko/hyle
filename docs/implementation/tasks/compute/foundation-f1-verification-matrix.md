@@ -1,7 +1,7 @@
 # F1 当前能力与验证矩阵
 
 本页从[当前施工卡](foundation-f1-resource-leases.md)纳入，仅汇总本轮 F1-01至08，不授权新产品范围。
-registry 当前七 owner 仍 AUDITED。产品实现固定于 `fc4ffbd1610eb3b24bf76709dc6e5e25b3d838d7`；
+registry 当前七 owner 为 CANDIDATE。产品实现固定于 `fc4ffbd1610eb3b24bf76709dc6e5e25b3d838d7`；
 普通样例错误打印修正于 `8bf5b2ebea3021264128df34b25ed7e94964caa1`，CUDA 取消断言候选为
 `3034fc595abf5c2570e06dedbf195b34daf3fe72`。后两项没有改变产品 API、算法或布局。
 本页未完成最终 red-team/七门裁决；`UNPROVEN` 不能用于 CLOSED。
@@ -113,7 +113,8 @@ Apple on Windows/WSL 和 CUDA on Air 因 native 系统不支持是 NOT_APPLICABL
 
 `scope/architecture` 的准入与形状有源码/consumer/固定研究支持；`correctness/delivery/usability_docs/
 red_team/engineering_performance` 尚不能给出整体 PASS。candidate、LOC、source hash 复用核对、独立有界红队
-和最终七门必须在当前卡形成 terminal 后才能把七 owner 进入 CLOSED。
+和最终七门必须在当前卡形成 terminal 后才能把七 owner 进入 CLOSED。当前 candidate 已正式绑定
+`3034fc595`，LOC/source identity 已有上文证据，未完成的平台/交付与独立 red-team 继续保留 UNPROVEN。
 
 不可变 `3034fc595` 的统一 [LOC self-check](../../../../evidence/correctness/foundation-f1-identity-audit/loc-current.json)
 通过：全库2,258,724 code lines/5,668文件，自实现不含测试165,788/666，Compute+Graph 的同33路径
