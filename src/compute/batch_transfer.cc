@@ -12,6 +12,7 @@
 #include "hyle/compute/detail/backend_extension.h"
 #include "hyle/compute/detail/copy_backend.h"
 #include "hyle/compute/detail/copy_control.h"
+#include "hyle/compute/detail/copy_stream_access.h"
 #include "hyle/compute/detail/lease_access.h"
 #include "hyle/compute/detail/retained_completion.h"
 #include "hyle/compute/transfer.h"
@@ -309,6 +310,25 @@ Status CopyBatchInvocation::bind_source(CopyResourceId id, const ReadLease &sour
   binding.root = detail::LeaseAccess::identity(source);
   state_->physical[id.value] = physical; state_->prepared = false;
   return Status::Ok();
+}
+Result<WriteLease> detail::CopyStreamAccess::take_mutable(
+    CopyBatchInvocation &invocation, CopyResourceId id) noexcept {
+  auto *state = invocation.state_;
+  HYLE_RETURN_IF_ERROR(detail::valid_binding(state, id));
+  for (std::uint32_t index = 0; index < state->submitted; ++index) {
+    const auto &phase = *state->phases[index];
+    if (!phase.retired.load(std::memory_order_acquire))
+      return std::unexpected(Status::Unavailable("copy writer retirement is unproven"));
+    if (!phase.terminal.ok()) return std::unexpected(phase.terminal);
+  }
+  auto &binding = state->bindings[id.value];
+  if (!binding.write.valid())
+    return std::unexpected(Status::FailedPrecondition("copy binding has no mutable lease"));
+  auto writer = std::move(binding.write);
+  binding = {};
+  state->physical[id.value] = {};
+  state->prepared = false;
+  return writer;
 }
 Status CopyBatchInvocation::bind_mutable(CopyResourceId id, WriteLease &&destination) noexcept {
   HYLE_RETURN_IF_ERROR(detail::valid_binding(state_, id));

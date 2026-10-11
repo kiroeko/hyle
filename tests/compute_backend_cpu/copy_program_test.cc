@@ -4,6 +4,8 @@
 
 #include "hyle/compute/backends/cpu.h"
 #include "hyle/compute/batch_transfer.h"
+#include "hyle/compute/detail/copy_stream_access.h"
+#include "hyle/compute/detail/lease_access.h"
 #include "hyle/mem/quota_allocator.h"
 
 namespace {
@@ -117,5 +119,87 @@ TEST(CpuCopyProgram, PhysicalSelfCopyAcrossReadSubviewsEmptyInvalidAndOomHaveNoN
   ASSERT_TRUE(invocation.bind_source({0}, ready).ok());
   EXPECT_FALSE(invocation.bind_producer({0}, std::move(cancelled)).ok()); EXPECT_TRUE(cancelled.valid());
   EXPECT_TRUE(invocation.close().ok()); EXPECT_TRUE(invocation.drain().ok());
+}
+
+TEST(CpuCopyProgram, StreamChunksKeepWholeTargetMutableUntilGroupPublication) {
+  auto context = Context::create(cpu::device()).value();
+  auto queue = context.create_queue().value();
+  mem::QuotaAllocator metadata(mem::system_allocator());
+  const std::array resources{CopyResourceSpec{mem::system_resource(), 16},
+                            CopyResourceSpec{mem::system_resource(), 64}};
+  auto program = CopyBatchProgram::prepare(context, resources, {.allocator = metadata.get()}).value();
+  auto invocation = CopyBatchInvocation::create(program, queue).value();
+  auto stage_pool = LeasePool::create(mem::system_resource(), 256).value();
+  auto target_pool = LeasePool::create(mem::system_resource(), 256).value();
+  auto stage_writer = stage_pool.allocate(16).value();
+  auto target_writer = target_pool.allocate(64).value();
+  const auto target_generation = target_writer.generation();
+  const auto cold_metadata = metadata.used();
+  const std::array phases{CopyPhase{}};
+  for (std::size_t offset = 0; offset < 64; offset += 16) {
+    std::array<std::byte, 16> bytes;
+    for (std::size_t index = 0; index < bytes.size(); ++index)
+      bytes[index] = std::byte(offset + index);
+    ASSERT_TRUE(stage_writer.view()->write(bytes).ok());
+    auto stage = stage_writer.publish().value();
+    ASSERT_TRUE(invocation.bind_source({0}, stage).ok());
+    ASSERT_TRUE(invocation.bind_mutable({1}, std::move(target_writer)).ok());
+    const std::array ranges{CopyRange{{0}, {1}, {0}, 0, offset, bytes.size()}};
+    ASSERT_TRUE(invocation.prepare_replay(phases, ranges).ok());
+    auto submitted = invocation.submit().value();
+    ASSERT_TRUE(submitted.wait().ok());
+    // Current replay coverage cannot certify the whole group. A live result
+    // still owns the invocation even for synchronous CPU retirement.
+    EXPECT_FALSE(submitted.output({0}, {1}, 0, 64).has_value());
+    EXPECT_FALSE(hyle::compute::detail::CopyStreamAccess::take_mutable(invocation, {1}).has_value());
+    EXPECT_FALSE(stage.try_write().has_value());
+    submitted = {};
+    EXPECT_FALSE(hyle::compute::detail::CopyStreamAccess::take_mutable(invocation, {0}).has_value());
+    target_writer = hyle::compute::detail::CopyStreamAccess::take_mutable(invocation, {1}).value();
+    EXPECT_EQ(target_writer.generation(), target_generation);
+    EXPECT_FALSE(invocation.submit().has_value());
+    ASSERT_TRUE(invocation.reset().ok());
+    stage_writer = stage.try_write().value();
+    EXPECT_EQ(metadata.used(), cold_metadata);
+  }
+  auto ready = target_writer.publish().value();
+  std::array<std::byte, 64> output;
+  ASSERT_TRUE(ready.view()->read(output).ok());
+  for (std::size_t index = 0; index < output.size(); ++index)
+    EXPECT_EQ(output[index], std::byte(index));
+}
+
+TEST(CpuCopyProgram, StreamWithdrawalAndBackingAccountingPreserveOriginalOwners) {
+  auto context = Context::create(cpu::device()).value();
+  auto queue = context.create_queue().value();
+  auto program = CopyBatchProgram::prepare(context, specs()).value();
+  auto invocation = CopyBatchInvocation::create(program, queue).value();
+  auto pool = LeasePool::create(mem::system_resource(), 512).value();
+  auto first = pool.allocate(32).value(), second = pool.allocate(32).value();
+  const auto one = hyle::compute::detail::LeaseAccess::backing(first).value();
+  const auto two = hyle::compute::detail::LeaseAccess::backing(second).value();
+  EXPECT_EQ(one.identity, two.identity); EXPECT_EQ(one.bytes, 512u);
+  EXPECT_EQ(one.resource, mem::system_resource());
+  ASSERT_TRUE(invocation.bind_mutable({1}, std::move(first)).ok());
+  EXPECT_FALSE(hyle::compute::detail::CopyStreamAccess::take_mutable(invocation, {9}).has_value());
+  first = hyle::compute::detail::CopyStreamAccess::take_mutable(invocation, {1}).value();
+  auto ready = first.publish().value();
+  EXPECT_EQ(hyle::compute::detail::LeaseAccess::backing(ready)->identity, one.identity);
+  EXPECT_TRUE(hyle::compute::detail::LeaseAccess::unique_read_owner(ready));
+  auto reader = ready.subview(8, 8).value();
+  EXPECT_FALSE(hyle::compute::detail::LeaseAccess::unique_read_owner(ready));
+  reader.reset();
+  auto uses = LeaseUsePool::create().value();
+  {
+    auto admitted = uses.begin().value();
+    ASSERT_TRUE(admitted.read(ready).ok());
+    EXPECT_FALSE(hyle::compute::detail::LeaseAccess::unique_read_owner(ready));
+  }
+  ASSERT_TRUE(pool.close().ok());
+  // Accounting can release a last reader of a closed native owner without
+  // promoting it to a writer or replacing the owner's retention callback.
+  EXPECT_TRUE(hyle::compute::detail::LeaseAccess::unique_read_owner(ready));
+  EXPECT_FALSE(ready.try_write().has_value());
+  EXPECT_FALSE(hyle::compute::detail::LeaseAccess::backing(ReadLease{}).has_value());
 }
 } // namespace

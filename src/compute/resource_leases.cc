@@ -56,6 +56,22 @@ struct LeaseDomain final : util::RefCounted<LeaseDomain> {
   bool closed = false;
 };
 
+Result<LeaseBackingInfo> LeaseAccess::backing(const ReadLease &lease) noexcept {
+  if (!lease.block_) return std::unexpected(Status::FailedPrecondition("lease is empty"));
+  const auto *domain = lease.block_->domain;
+  return LeaseBackingInfo{domain, domain->backing.resource(), domain->backing.size()};
+}
+Result<LeaseBackingInfo> LeaseAccess::backing(const WriteLease &lease) noexcept {
+  if (!lease.block_) return std::unexpected(Status::FailedPrecondition("lease is empty"));
+  const auto *domain = lease.block_->domain;
+  return LeaseBackingInfo{domain, domain->backing.resource(), domain->backing.size()};
+}
+bool LeaseAccess::unique_read_owner(const ReadLease &lease) noexcept {
+  if (!lease.block_) return false;
+  std::lock_guard guard(lease.block_->domain->lock);
+  return lease.block_->is_unique();
+}
+
 void release_domain(LeaseDomain *owner) noexcept {
   bool last;
   {

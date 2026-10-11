@@ -72,7 +72,7 @@ class Context;
 class Queue;
 class CopyBatchInvocation;
 class CopyBatchSubmission;
-namespace detail { struct CopyProgramState; struct CopyInvocationState; }
+namespace detail { struct CopyProgramState; struct CopyInvocationState; struct CopyStreamAccess; }
 
 // Immutable prepared CPU/CUDA copy contract. Resources and allocator remain
 // borrowed; invocation/native retirement retain this program's cold metadata.
@@ -122,6 +122,7 @@ public:
   // Metadata counts the shared program and all its live cold slots once.
   HYLE_COMPUTE_API CopyBatchReport report() const noexcept;
 private:
+  friend struct detail::CopyStreamAccess;
   explicit CopyBatchInvocation(detail::CopyInvocationState *state) noexcept : state_(state) {}
   detail::CopyInvocationState *state_ = nullptr;
 };
