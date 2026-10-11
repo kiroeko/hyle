@@ -16,6 +16,7 @@
 #if defined(HYLE_COMPUTE_APPLE)
 #include <hyle/compute/apple_memory.h>
 #include <hyle/graph/apple.h>
+#include <mlx/ops.h>
 #endif
 #if defined(HYLE_COMPUTE_VULKAN)
 #include <hyle/compute/vulkan_memory.h>
@@ -211,6 +212,7 @@ Status stream(const qwen_input::Manifest &manifest, m::MemoryResourceRef resourc
 #if defined(HYLE_COMPUTE_APPLE)
 Status apple(const qwen_input::Manifest &manifest) {
   namespace a = c::apple;
+  namespace mx = mlx::core;
   HYLE_ASSIGN_OR_RETURN(auto context, a::Context::create());
   HYLE_ASSIGN_OR_RETURN(auto memory, a::MemoryResource::create(context));
   return stream(manifest, memory.ref(),
@@ -222,18 +224,33 @@ Status apple(const qwen_input::Manifest &manifest) {
         HYLE_RETURN_IF_ERROR(writer.view()->write(work.input));
         HYLE_ASSIGN_OR_RETURN(auto input, writer.publish());
         HYLE_ASSIGN_OR_RETURN(auto input_spec, a::input_spec(work.activation));
-        HYLE_ASSIGN_OR_RETURN(auto weight_spec, a::input_spec(work.weight));
+        const auto stored = range.description;
+        const auto transposed = stored.data_type() == c::DataType::kBFloat16;
+        HYLE_ASSIGN_OR_RETURN(auto weight_spec, a::input_spec(stored));
         const std::array specs{input_spec, weight_spec};
-        const std::array inputs{a::LeasedInput{work.activation, input}, a::LeasedInput{work.weight, weight}};
-        HYLE_ASSIGN_OR_RETURN(auto program, context.prepare(work.operation, specs));
+        const std::array inputs{a::LeasedInput{work.activation, input}, a::LeasedInput{stored, weight}};
+        a::Program program;
+        if (transposed) {
+          // External Metal lease carriers are dense. Keep the original stored
+          // matrix and form its view inside the mature native compiled region.
+          HYLE_ASSIGN_OR_RETURN(program, context.compile([](const auto &args, mx::Stream stream) {
+            return std::vector{mx::matmul(args[0], mx::transpose(args[1], stream), stream)};
+          }, specs));
+        } else { HYLE_ASSIGN_OR_RETURN(program, context.prepare(work.operation, specs)); }
         HYLE_ASSIGN_OR_RETURN(auto direct, a::LeasedInvocation::create(program, memory));
         HYLE_RETURN_IF_ERROR(direct.bind(inputs));
         HYLE_ASSIGN_OR_RETURN(auto done, direct.submit()); HYLE_ASSIGN_OR_RETURN(auto result, done.wait());
         HYLE_ASSIGN_OR_RETURN(auto output, memory.import_readonly(result->arrays()[0], work.output));
         HYLE_RETURN_IF_ERROR(check(output, work, range));
         HYLE_ASSIGN_OR_RETURN(auto builder, g::GraphBuilder::create());
-        HYLE_ASSIGN_OR_RETURN(auto x, builder.input(work.activation)); HYLE_ASSIGN_OR_RETURN(auto w, builder.input(work.weight));
-        HYLE_ASSIGN_OR_RETURN(auto node, builder.add_node(work.operation, std::array{x, w}));
+        HYLE_ASSIGN_OR_RETURN(auto x, builder.input(work.activation)); HYLE_ASSIGN_OR_RETURN(auto w, builder.input(stored));
+        auto graph_weight = w;
+        if (transposed) {
+          HYLE_ASSIGN_OR_RETURN(auto view, c::View::permute(std::array<std::int32_t, 2>{1, 0}));
+          HYLE_ASSIGN_OR_RETURN(auto permutation, builder.add_node(view, std::array{w}));
+          HYLE_ASSIGN_OR_RETURN(graph_weight, builder.result(permutation));
+        }
+        HYLE_ASSIGN_OR_RETURN(auto node, builder.add_node(work.operation, std::array{x, graph_weight}));
         HYLE_ASSIGN_OR_RETURN(auto y, builder.result(node)); HYLE_RETURN_IF_ERROR(builder.publish(y));
         HYLE_ASSIGN_OR_RETURN(auto graph, std::move(builder).finish());
         HYLE_ASSIGN_OR_RETURN(auto compiled, g::apple::compile(context, graph));
