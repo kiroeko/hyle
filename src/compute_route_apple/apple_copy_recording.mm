@@ -29,7 +29,7 @@ struct CopyRecording final : Job {
   // The worker owner is moved locally before done becomes visible.
   std::shared_ptr<CopyRecording> admitted_owner, completion_owner;
   std::weak_ptr<CopyRecording> self;
-  std::mutex completion_mutex;
+  mutable std::mutex completion_mutex;
   std::atomic<std::uint32_t> done{1};
   std::atomic<bool> cancel{false};
   std::atomic<std::uint64_t> calls{0}, waits{0};

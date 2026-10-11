@@ -233,6 +233,9 @@ offset/size按[原Metal buffer copy规范](https://developer.apple.com/documenta
 首批Air门固定为 `AppleCopyRecording.*` 与原 `AppleLeaseLifetime.*`、34项common控制回归：
 原GPU blit byte equality、三stage双向/同device、二slot/冷metadata replay、overlap/self/empty/offset/tail，
 configure300/build1800/exe120、build1/test1与4GiB。仅签此native接缝；公共对象/producer/数学/完整交付仍待验。
+首构建 `eb7aed17f` 在const report方法的mutex限定失败，未运行native测试；保留原configure/build日志。
+对opt-in recording的观测mutex加 `mutable`，不改变同步/原worker/API语义，再沿完整archive同树取证，
+不把编译器报错或新日志目录当作新产品轮/预算重置。
 首遍增加owned-view用例的fixture将raw-copy合法4-byte offset传给既有storage borrow factory，
 后者还要求native storage offset alignment；保留这次FAIL，fixture改为合法zero-origin外部carrier，
 再检验F2的unknown usage拒绝，不修改旧factory或放宽其合同。
