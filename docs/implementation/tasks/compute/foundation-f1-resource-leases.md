@@ -615,6 +615,19 @@ archive 包含 LICENSE/THIRD_PARTY_NOTICES，镜像不可回写。只编译、�
 随后同候选 Air Vulkan static producer/安装/实际迁址/独立构建/普通 lease 与 imported mixed 消费者全部通过，
 同一交付收据保存阶段日志；shared 尚未运行完成，其他平台与最终七门仍不能写 PASS。
 
+### WSL 普通 CPU/CUDA 三交付固定入口
+
+实际 GCC14.2.0、CUDA13.3.73、Ubuntu24.04.4/WSL2；复用
+`/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/source-build` / `static-sdk-build` /
+`shared-sdk-build`。它们当前绑定 `/root/hyle-scratch/compute-unified/source-7a7b4c3b` 这一可丢弃验证副本，
+运行前从 Windows immutable archive 同步、内容相同保留mtime，禁止反向覆盖；检查没有本批 live Linux build 后操作。
+复用实际 `/root/.cache/hyle/dependencies/v1` 锁定源与 CPU/CUDA SDK，原 g++14/nvcc13.3 构建合同不换参数。
+固定 `cpu;cuda`/唯一 `hyle::graph`、shipping/OFF、source→static→shared，build1/test1/阶段前4GiB。
+source 只编译运行同一 `resource_leases` 普通消费者、新头孤立 TU 与原 `hyle_cpu_cuda_contracts`；
+SDK tests/bench OFF producer 安装到本批 staging 后实际迁址，独立消费者链接 imported facade，验同一两入口。
+配置/构建各限300/3600秒，每消费者180秒；原失败保留，工具/仪器不得在模块里扩建；不跑全算子/P1。
+这批正常数学/SDK不替新 CUDA observation fault 的 WSL 格，后者仍由原冻结 F1-04 门取证。Air job 结束前不启动。
+
 ### P0 成本账（源码审计，完整裁决待剩余资格）
 
 以 `fc4ffbd16` 产品为准；后续消费者、测试与文档没有改变以下实现。B 为 pool 块上限，R 为本批资源数，
