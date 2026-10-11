@@ -238,7 +238,8 @@ TEST(ResourceLeases, CrossThreadReadersHoldGenerationWhileIndependentBlockRetire
   auto reader = [&](ReadLease owned) {
     ready.arrive_and_wait();
     std::array<std::byte, 16> data{};
-    if (!owned.view()->read(data).ok()) content_ok.store(false);
+    auto window = owned.subview(0, data.size());
+    if (!window || !window->view()->read(data).ok()) content_ok.store(false);
     for (auto value : data) if (value != std::byte{29}) content_ok.store(false);
     release.arrive_and_wait();
   };
