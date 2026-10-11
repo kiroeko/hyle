@@ -637,6 +637,18 @@ WSL `af92dd9dd` source 普通 CPU/CUDA 租约 Direct/Graph 数学、七个 ON �
 后者已在 Windows `8bf5b2ebe` 加空字符串回退（仅 sample 错误输出，不改产品 API/数学），下一 SDK 阶段同步该候选。
 source 不替 installed static/shared、CUDA observation fault 或最终红队签字。
 
+### WSL F1-04 / leased native prefix 固定资格
+
+普通 SDK job 全部终态后，Windows 同一不可变产品源在 WSL 独立 fault tree 用
+`HYLE_DEV_FACTORS=compute_backend_cuda;compute_provider_cublas;graph`、Release/shared、tests ON、
+`HYLE_TEST_INSTRUMENTATION=ON`、INSTALL OFF、build1/test1；GCC14.2/nvcc13.3/真实 RTX4070，阶段前4GiB。
+仅构建 `hyle_compute_backend_cuda_test`、`hyle_compute_provider_cublas_test`、`hyle_graph_native_retirement_test`；
+运行两个原 `CudaBackend.ObservationFailureKeepsActualWorkAndAbandonedOwnerAlive` /
+`WaitObservationFailureDrainsOriginalStreamAndPreservesError`、原 `CublasProvider.LeasedDirectRetainsNativeUsesAndReplaysWithoutLeaseAllocation`
+及 `GraphNativeRetirement.*`。原 hooks 只装饰实际 event 的观察返回，GPU命令与保活沿原 runtime，不写新 fixture/kernel。
+各 exe timeout120，configure300/build1800，原失败保留，预算不重置；不换 shipping SDK 树为插桩，不跑其他算子/P1。
+shipping/common 的同产品配置证据已按各平台保留；该 fault 资格只签这份实际未知观察/前缀退役格。
+
 ### P0 成本账（源码审计，完整裁决待剩余资格）
 
 以 `fc4ffbd16` 产品为准；后续消费者、测试与文档没有改变以下实现。B 为 pool 块上限，R 为本批资源数，
