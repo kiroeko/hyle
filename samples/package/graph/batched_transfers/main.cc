@@ -181,6 +181,12 @@ Status transfer_groups(m::MemoryResourceRef host, m::MemoryResourceRef device,
   HYLE_ASSIGN_OR_RETURN(auto program, prepare(
       resources, c::CopyBatchOptions{.max_copies = 12, .max_phases = 6, .allocator = stats.get()}));
   std::array<Invocation, 2> slots;
+  // Observe an accepted lane even when another lane returns an error, before
+  // these borrowed resources/Queues leave scope. Submission destruction never waits.
+  struct Drain final {
+    std::array<Invocation, 2> &slots;
+    ~Drain() { for (auto &slot : slots) if (slot.valid()) (void)slot.drain(); }
+  } drain{slots};
   for (unsigned lane = 0; lane < 2; ++lane) {
     HYLE_ASSIGN_OR_RETURN(slots[lane], create(program, lane));
   }
@@ -259,6 +265,10 @@ Status common(c::Context &context, m::MemoryResourceRef host,
 Status vulkan() {
   namespace v = c::vulkan;
   HYLE_ASSIGN_OR_RETURN(auto context, v::Context::create());
+  const auto &environment = context.environment();
+  std::printf("Vulkan device: %s; driver: %s %s; software: %s\n",
+              environment.device_name.c_str(), environment.driver_name.c_str(),
+              environment.driver_info.c_str(), environment.software_device ? "yes" : "no");
   HYLE_ASSIGN_OR_RETURN(auto host, v::MemoryResource::create(context, v::MemoryKind::kStaging));
   HYLE_ASSIGN_OR_RETURN(auto device, v::MemoryResource::create(context, v::MemoryKind::kDevice));
   const auto readable = [&](const v::Tensor &tensor) -> Result<c::ReadLease> {

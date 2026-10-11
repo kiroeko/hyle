@@ -354,6 +354,9 @@ allocator只统计CopyBatch自身；成熟数学准备/Graph编译成本不混�
 同旅程接Vulkan后增加Windows原CPU+Vulkan source/shared普通消费树同一sample门，
 量化沿原GGUF typed MatMul，结果沿原Context.download作独立oracle；复跑共享sample影响的
 CPU/CUDA源码消费者，不运行全算子/P1。native设备结果不能用host mapping读取device-only资源。
+样例两槽scope guard在失败返回时也逐槽drain，先观察已接受prefix再退出借用Queue/resource
+作用域；不依赖submission析构隐式等待。此样例变更沿同candidate精准复跑CPU/CUDA与CPU/Vulkan
+两个原source消费者，只build对应target，不重复未变的依赖configure或其他unit门。
 
 有限矩阵覆盖 R=0/1/多范围、同/不同 buffer pair、单/多 phase、重复 source、坏 ID、overlap、
 host/device 原编码、aligned/tail、pending 与 retained result。
