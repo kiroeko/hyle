@@ -197,6 +197,12 @@ native slot冷创建加上本slot需要的原event容量；HYLE metadata计实�
 含共享program与其全部live slots一次，opaque driver/event内部费用分别记unknown，有限ResourceBudget必须显式允许。
 报告将已冻结的wait账显式分成 `native_waits`（实际接纳的device dependency）与 `host_waits`，
 `native_calls` 计copy entry-point；phase只导入声明的直接先行边，hazard校验仍用传递闭包。
+Vulkan native录制实现期另选原Windows route构建树的 `VulkanCopyRecording.*`：实际GPU的
+buffer-pair regions合并、H2D/D2D/D2H三phase byte equality、二独立Run、重复source/self/empty、
+whole-phase overlap/对齐/容量/foreign Device和冷metadata replay；只签native接缝。
+仍build1/test1、configure300/build1800/exe120和4GiB；每phase复用原Run，合格idle host upload
+沿原transfer→compute handoff，其他沿原compute queue；未知external backing/transfer usage先明确拒绝。
+Vulkan公共Program/Invocation/Submission、native producer/权限/故障、数学及交付继续待验，不拿此门代签。
 
 ### 当前实施与首轮证据（2026-10-11）
 

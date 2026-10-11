@@ -115,6 +115,8 @@ Status create_transfer_commands(detail::Run &run) noexcept {
 }
 } // namespace
 
+Status detail::prepare_transfer_run(Run &run) noexcept { return create_transfer_commands(run); }
+
 TransferSlot::TransferSlot(TransferSlot &&) noexcept = default;
 TransferSlot &TransferSlot::operator=(TransferSlot &&) noexcept = default;
 TransferSlot::~TransferSlot() = default;

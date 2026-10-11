@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <cstdint>
+#include <cstring>
 #include <new>
 
 namespace hyle::compute::vulkan {
@@ -96,6 +97,31 @@ Result<std::shared_ptr<Buffer>> MemoryAccess::buffer(
 }
 const std::shared_ptr<Runtime> &MemoryAccess::runtime(const MemoryResource &resource) noexcept {
   return resource.state_->runtime;
+}
+Result<CopySpan> MemoryAccess::copy_span(const std::shared_ptr<Runtime> &runtime,
+                                       mem::ConstBufferView view) noexcept {
+  if (!runtime || !view.valid())
+    return std::unexpected(Status::InvalidArgument("Vulkan copy view is invalid"));
+  const auto *resource = dynamic_cast<const MemoryState *>(&view.resource().resource());
+  if (!resource || resource->runtime != runtime)
+    return std::unexpected(Status::InvalidArgument("Vulkan copy resource has another Device/family"));
+  if (view.size() == 0 && view.native_handle() == nullptr)
+    return CopySpan{{}, {reinterpret_cast<std::uintptr_t>(runtime->device.get()), 0, 0, 0, 4}, 0};
+  if (!view.native_handle()) return std::unexpected(Status::InvalidArgument("Vulkan copy token is empty"));
+  const auto &buffer = static_cast<const AllocationToken *>(view.native_handle())->buffer;
+  if (!buffer || buffer->device != runtime->device || buffer->memory == VK_NULL_HANDLE)
+    return std::unexpected(Status::Unimplemented("Vulkan imported copy backing/usage is not proven"));
+  // Original owned allocate_buffer always binds at memory offset zero and has
+  // TRANSFER_SRC/DST usage. Views preserve that actual memory plus byte offset.
+  if (view.offset() > buffer->bytes || view.size() > buffer->bytes - view.offset() ||
+      buffer->offset > SIZE_MAX || view.offset() > SIZE_MAX - static_cast<std::size_t>(buffer->offset))
+    return std::unexpected(Status::OutOfRange("Vulkan copy exceeds native backing"));
+  const auto origin = static_cast<std::size_t>(buffer->offset) + view.offset();
+  std::uint64_t memory_key = 0;
+  static_assert(sizeof(buffer->memory) <= sizeof(memory_key));
+  std::memcpy(&memory_key, &buffer->memory, sizeof(buffer->memory));
+  return CopySpan{buffer, {reinterpret_cast<std::uintptr_t>(runtime->device.get()), memory_key,
+                         origin, view.size(), 4}, static_cast<VkDeviceSize>(origin)};
 }
 } // namespace detail
 
