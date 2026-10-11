@@ -118,5 +118,30 @@
         "sha256": "285b88dc7d5f8b0f8da28d28a4b724d196899d78eba203deb997367c77c6d49e"
       }
     }
+  },
+  "graph_charge_fixture": {
+    "receipt": "graph-charge-fixture/job.json",
+    "test_commit": "1dcf0b53440127cf9f40e3b19da0a95877d9d7cb",
+    "verdict": "PASS",
+    "count": 17,
+    "scope": "Independent live requested metadata plus declared private bytes exactly matches reported delta; retained Context bytes preserved, extra compile owners return to baseline; product unchanged.",
+    "files": {
+      "build.log": {
+        "path": "graph-charge-fixture/build.log",
+        "sha256": "334facec04e4ea40615f2bee90c2c84577e0a471d0a69ec40d748da8151ef863"
+      },
+      "graph.log": {
+        "path": "graph-charge-fixture/graph.log",
+        "sha256": "78f11fcd8f17c4aad14d7284d534002846273ed5974bc5beaa3b7f210e7e2f4a"
+      },
+      "graph.xml": {
+        "path": "graph-charge-fixture/graph.xml",
+        "sha256": "d02e211a1a3fba64b7c3f2142416099443c5a967a1d4e7cb1ca2200fefe5d98c"
+      },
+      "job.json": {
+        "path": "graph-charge-fixture/job.json",
+        "sha256": "9d04af57588dfc162636eaa3740fbefc8a375ce664c89305a4f68b3ee748aa97"
+      }
+    }
   }
 }

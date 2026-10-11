@@ -1,0 +1,5 @@
+[0/2] Re-checking globbed directories...
+[1/5] C:\WINDOWS\system32\cmd.exe /C "cd /D C:\h7\foundation-f1-cpu\tests\graph && "C:\Program Files\CMake\bin\cmake.exe" -P C:/h7/foundation-f1-cpu/tests/graph/hyle-runtime/hyle_graph_executable_test-Release.cmake"
+[2/5] Building CXX object tests\graph\CMakeFiles\hyle_graph_executable_test.dir\custom_kernel_test.cc.obj
+[3/5] Building CXX object tests\graph\CMakeFiles\hyle_graph_executable_test.dir\region_provider_test.cc.obj
+[4/5] Linking CXX executable bin\hyle_graph_executable_test.exe

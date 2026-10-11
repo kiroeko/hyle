@@ -1,0 +1,46 @@
+{
+  "product_candidate": "c26261e3958c7eb46ecde2a4ba7c5654a03f1b93",
+  "test_candidate": "1dcf0b53440127cf9f40e3b19da0a95877d9d7cb",
+  "test_tree": "1475d07d54f088f203dbc41e00bc62cde87550e1",
+  "scope": "F2 scoped Graph cold-prepare/error and compilation storage fixture regression only; exact metadata observation, product unchanged",
+  "build": "C:\\h7\\foundation-f1-cpu",
+  "compiler": "C:/Program Files/Microsoft Visual Studio/18/Enterprise/VC/Tools/MSVC/14.50.35717/bin/Hostx64/x64/cl.exe",
+  "parallel": 1,
+  "stages": [
+    {
+      "name": "build",
+      "command": [
+        "C:\\Program Files\\CMake\\bin\\cmake.EXE",
+        "--build",
+        "C:\\h7\\foundation-f1-cpu",
+        "--target",
+        "hyle_graph_executable_test",
+        "--parallel",
+        "1"
+      ],
+      "pid": 15000,
+      "state": "terminal",
+      "available_bytes": 45842919424,
+      "log": "build.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "334facec04e4ea40615f2bee90c2c84577e0a471d0a69ec40d748da8151ef863"
+    },
+    {
+      "name": "graph",
+      "command": [
+        "C:\\h7\\foundation-f1-cpu\\bin\\hyle_graph_executable_test.exe",
+        "--gtest_filter=GraphCompilationStorage.*:GraphRegions.LeafError*:GraphRegions.LeafErrors*:GraphRegions.ExplicitLeafDeclines*:GraphRegions.LeafDecline*:GraphRegions.RegionAndLeafDeclines*",
+        "--gtest_output=xml:C:\\public\\project-hyle\\hyle\\.scratch\\foundation-f2\\graph-charge-fixture-windows-1dcf0b534\\graph.xml"
+      ],
+      "pid": 75848,
+      "state": "terminal",
+      "available_bytes": 45771128832,
+      "log": "graph.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "78f11fcd8f17c4aad14d7284d534002846273ed5974bc5beaa3b7f210e7e2f4a"
+    }
+  ],
+  "verdict": "PASS"
+}

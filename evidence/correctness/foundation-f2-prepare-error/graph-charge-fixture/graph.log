@@ -1,0 +1,47 @@
+Running main() from C:\public\tools\hyle-dependencies\v1\sources\googletest-063de7e9578f-162765170ae6\googletest\src\gtest_main.cc
+Note: Google Test filter = GraphCompilationStorage.*:GraphRegions.LeafError*:GraphRegions.LeafErrors*:GraphRegions.ExplicitLeafDeclines*:GraphRegions.LeafDecline*:GraphRegions.RegionAndLeafDeclines*
+[==========] Running 17 tests from 2 test suites.
+[----------] Global test environment set-up.
+[----------] 12 tests from GraphCompilationStorage
+[ RUN      ] GraphCompilationStorage.TypedPrivateBoundsAreAdmittedBeforePrepare
+[       OK ] GraphCompilationStorage.TypedPrivateBoundsAreAdmittedBeforePrepare (0 ms)
+[ RUN      ] GraphCompilationStorage.RejectedPrivateStorageAndPartialArtifactsAreReleased
+[       OK ] GraphCompilationStorage.RejectedPrivateStorageAndPartialArtifactsAreReleased (0 ms)
+[ RUN      ] GraphCompilationStorage.AccountsAllocatorRequestsWithoutPersistentDoubleCharge
+[       OK ] GraphCompilationStorage.AccountsAllocatorRequestsWithoutPersistentDoubleCharge (0 ms)
+[ RUN      ] GraphCompilationStorage.ExactLimitsAndRuntimeStorageAreIndependent
+[       OK ] GraphCompilationStorage.ExactLimitsAndRuntimeStorageAreIndependent (0 ms)
+[ RUN      ] GraphCompilationStorage.ZeroPeakAndInvalidPolicyAllocateNothing
+[       OK ] GraphCompilationStorage.ZeroPeakAndInvalidPolicyAllocateNothing (0 ms)
+[ RUN      ] GraphCompilationStorage.OomUnwindsTheEntireVariantFamily
+[       OK ] GraphCompilationStorage.OomUnwindsTheEntireVariantFamily (0 ms)
+[ RUN      ] GraphCompilationStorage.CanonicalBytesAreSharedAndReportsDoNotOwnPayload
+[       OK ] GraphCompilationStorage.CanonicalBytesAreSharedAndReportsDoNotOwnPayload (0 ms)
+[ RUN      ] GraphCompilationStorage.ConstantReservationPrecedesResourceAllocation
+[       OK ] GraphCompilationStorage.ConstantReservationPrecedesResourceAllocation (0 ms)
+[ RUN      ] GraphCompilationStorage.RegionDiscoveryAndResourceScratchShareCompileQuota
+[       OK ] GraphCompilationStorage.RegionDiscoveryAndResourceScratchShareCompileQuota (0 ms)
+[ RUN      ] GraphCompilationStorage.RegionUnknownAndInvalidBoundsPrecedeArtifactCreation
+[       OK ] GraphCompilationStorage.RegionUnknownAndInvalidBoundsPrecedeArtifactCreation (0 ms)
+[ RUN      ] GraphCompilationStorage.RegionPreparePeakIsTransientNotRetainedPerStep
+[       OK ] GraphCompilationStorage.RegionPreparePeakIsTransientNotRetainedPerStep (0 ms)
+[ RUN      ] GraphCompilationStorage.RegionDeclineCleansPrivateChargesBeforeReselection
+[       OK ] GraphCompilationStorage.RegionDeclineCleansPrivateChargesBeforeReselection (0 ms)
+[----------] 12 tests from GraphCompilationStorage (2 ms total)
+
+[----------] 5 tests from GraphRegions
+[ RUN      ] GraphRegions.ExplicitLeafDeclinesCanSelectAnotherTarget
+[       OK ] GraphRegions.ExplicitLeafDeclinesCanSelectAnotherTarget (2 ms)
+[ RUN      ] GraphRegions.LeafDeclineReleasesTheRegionPrefixBeforeReplanning
+[       OK ] GraphRegions.LeafDeclineReleasesTheRegionPrefixBeforeReplanning (0 ms)
+[ RUN      ] GraphRegions.RegionAndLeafDeclinesShareDiscoveryAndCumulativePrepareBudget
+[       OK ] GraphRegions.RegionAndLeafDeclinesShareDiscoveryAndCumulativePrepareBudget (0 ms)
+[ RUN      ] GraphRegions.LeafErrorDoesNotBecomeARetryAcrossProvidersOrTargets
+[       OK ] GraphRegions.LeafErrorDoesNotBecomeARetryAcrossProvidersOrTargets (0 ms)
+[ RUN      ] GraphRegions.LeafErrorsRemainFatalDuringBothRegionFallbackStages
+[       OK ] GraphRegions.LeafErrorsRemainFatalDuringBothRegionFallbackStages (0 ms)
+[----------] 5 tests from GraphRegions (3 ms total)
+
+[----------] Global test environment tear-down
+[==========] 17 tests from 2 test suites ran. (6 ms total)
+[  PASSED  ] 17 tests.
