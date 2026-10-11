@@ -423,6 +423,8 @@ Graph 原生前缀实际退休与外层附着 owner 的交接。
 - 只实现冻结的 ReadLease bind、guard/sentinel 及 original result retention。纯图没有 mutable input，
   caller-output 写租约继续由共同 Graph/CPU+CUDA 的既有 LeasedInvocation 承载，不制造虚构 native 写端口。
 - graph 及两 native composition owner 进入 AUDITED；其他 CLOSED Provider/lowerer 不重开。
+- 新 public ReadLease 参数需要两 composition owner 直接 PUBLIC_DEPS compute；将其已有 private edge
+  提升为 public，仅改变对应两个声明，按原中央投影验证。不能隐藏这个依赖或改公共 checker 绕过诊断。
 
 扩展现有 compute completion、graph cpu_cuda/apple/vulkan contracts 及 native route 用户样例；
 保留原数学 reference，新增实际 lease 风险断言。只装饰 native observation/fault call，
