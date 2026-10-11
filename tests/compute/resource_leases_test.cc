@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 
 #include <array>
+#include <atomic>
 #include <barrier>
 #include <thread>
 #include <limits>
@@ -248,7 +249,7 @@ TEST(ResourceLeases, CrossThreadReadersHoldGenerationWhileIndependentBlockRetire
   EXPECT_EQ(pool.stats().live_blocks, 1u);
   auto independent = pool.allocate(256).value();
   EXPECT_GT(independent.generation(), generation);
-  ASSERT_TRUE(independent.view()->fill(std::byte{41}).ok());
+  EXPECT_TRUE(independent.view()->fill(std::byte{41}).ok());
   independent.reset();
   release.arrive_and_wait();
   first_reader.join(); second_reader.join();
