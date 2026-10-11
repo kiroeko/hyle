@@ -195,4 +195,81 @@ TEST(VulkanCopyProgram, AbandonedHandlesKeepOriginalRunsUntilActualRetirementAnd
     EXPECT_EQ(pool.stats().active_uses, 0u); EXPECT_EQ(pool.stats().live_blocks, 0u);
   }
 }
+
+// Intercept only observation of this original Device. Actual submissions and
+// command buffers still execute on the GPU; OOM cannot prove their retirement.
+struct UnknownObservation final {
+  d::Device &device;
+  d::DeviceFunctions original;
+  bool armed = false;
+  unsigned polls = 0, waits = 0, drains = 0;
+  static inline UnknownObservation *active = nullptr;
+  explicit UnknownObservation(const v::Context &context)
+      : device(*d::Access::runtime(context)->device), original(device.fn) {
+    active = this;
+    device.fn.GetFenceStatus = poll;
+    device.fn.WaitForFences = wait;
+    device.fn.QueueWaitIdle = drain;
+  }
+  ~UnknownObservation() { device.fn = original; active = nullptr; }
+  static VKAPI_ATTR VkResult VKAPI_CALL poll(VkDevice device, VkFence fence) {
+    ++active->polls;
+    return active->armed ? VK_ERROR_OUT_OF_HOST_MEMORY : active->original.GetFenceStatus(device, fence);
+  }
+  static VKAPI_ATTR VkResult VKAPI_CALL wait(VkDevice device, std::uint32_t count,
+      const VkFence *fences, VkBool32 all, std::uint64_t timeout) {
+    ++active->waits;
+    return active->armed ? VK_ERROR_OUT_OF_HOST_MEMORY
+        : active->original.WaitForFences(device, count, fences, all, timeout);
+  }
+  static VKAPI_ATTR VkResult VKAPI_CALL drain(VkQueue queue) {
+    ++active->drains;
+    return active->armed ? VK_ERROR_OUT_OF_HOST_MEMORY : active->original.QueueWaitIdle(queue);
+  }
+};
+TEST(VulkanCopyProgram, UnknownFenceAndDrainKeepUsesUntilActualRetirementWithoutReady) {
+  for (bool abandon : {false, true}) {
+    SCOPED_TRACE(abandon);
+    auto context = vulkan_test::context().value(); ASSERT_FALSE(context.environment().software_device);
+    auto host = v::MemoryResource::create(context, v::MemoryKind::kStaging).value();
+    auto device = v::MemoryResource::create(context, v::MemoryKind::kDevice).value();
+    auto resources = specs(host.ref(), device.ref()); Data data(resources);
+    mem::QuotaAllocator metadata(mem::system_allocator()); DrainGuard drain{context};
+    auto program = v::CopyBatchProgram::prepare(context, resources, {.allocator = metadata.get()}).value();
+    auto invocation = v::CopyBatchInvocation::create(program).value();
+    ASSERT_TRUE(data.bind(invocation, std::byte{67}).ok());
+    ASSERT_TRUE(invocation.prepare_replay(kPhases, kRanges).ok());
+    auto submitted = invocation.submit().value();
+    UnknownObservation boundary(context); boundary.armed = true;
+    auto unavailable = submitted.output({2}, {3}, 0, 32);
+    ASSERT_FALSE(unavailable); EXPECT_TRUE(unavailable.error().IsResourceExhausted());
+    EXPECT_TRUE(submitted.wait().IsResourceExhausted());
+    EXPECT_TRUE(submitted.in_flight()); EXPECT_FALSE(invocation.reset().ok());
+    EXPECT_GT(boundary.polls, 0u); EXPECT_GT(boundary.waits, 0u); EXPECT_GT(boundary.drains, 0u);
+    EXPECT_GT(metadata.used(), 0u);
+    for (auto &pool : data.pools) EXPECT_GT(pool.stats().active_uses, 0u);
+    if (abandon) {
+      submitted = {}; invocation = {}; program = {};
+      EXPECT_TRUE(context.close().IsResourceExhausted());
+      EXPECT_NE(d::Access::runtime(context)->pending, nullptr);
+      EXPECT_GT(metadata.used(), 0u);
+      for (auto &pool : data.pools) EXPECT_GT(pool.stats().active_uses, 0u);
+    }
+    boundary.armed = false;
+    if (abandon) {
+      EXPECT_TRUE(context.close().IsResourceExhausted());
+    } else {
+      EXPECT_TRUE(submitted.wait().IsResourceExhausted());
+      EXPECT_FALSE(submitted.in_flight());
+      EXPECT_FALSE(submitted.output({2}, {3}, 0, 32));
+      submitted = {}; invocation = {}; program = {};
+      EXPECT_TRUE(context.close().ok());
+    }
+    EXPECT_EQ(d::Access::runtime(context)->pending, nullptr);
+    EXPECT_EQ(metadata.used(), 0u);
+    for (auto &pool : data.pools) {
+      EXPECT_EQ(pool.stats().active_uses, 0u); EXPECT_EQ(pool.stats().live_blocks, 0u);
+    }
+  }
+}
 } // namespace

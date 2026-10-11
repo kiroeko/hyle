@@ -93,10 +93,11 @@ TEST(AppleCopyProgram, RetainedOriginalBlitProducerOrdersMutableSourceAndRetires
 // Decorate actual MLX GPU evaluation after an original square prefix. Warmup
 // is unarmed; only this exact native invocation can hold the original owner.
 struct Gate final {
-  std::mutex mutex; std::condition_variable condition; bool armed = false, entered = false, released = false;
+  std::mutex mutex; std::condition_variable condition; bool armed = false, entered = false, released = false, fail = false;
   void wait() {
     std::unique_lock lock(mutex); if (!armed) return; entered = true; condition.notify_all();
     condition.wait(lock, [&] { return released; });
+    if (fail) throw std::runtime_error("injected F2 MLX native prefix failure");
   }
   void release() { std::lock_guard lock(mutex); released = true; condition.notify_all(); }
 };
@@ -161,5 +162,46 @@ TEST(AppleCopyProgram, EmptyDependencyNoConsumeAndAbandonedMetadataFollowActualJ
   // Closed context rejects before admission; the allocator remains untouched.
   EXPECT_FALSE(a::CopyBatchProgram::prepare(context, specs(memory.ref()), {.allocator = no_metadata.get()}).has_value());
   EXPECT_EQ(no_metadata.used(), 0u);
+}
+
+TEST(AppleCopyProgram, LateOriginalNativeFailureBlocksQueuedCopiesAndPreservesOldReady) {
+  auto context = a::Context::create().value(); auto memory = a::MemoryResource::create(context).value(); Data data(memory.ref());
+  mem::QuotaAllocator metadata(mem::system_allocator());
+  auto gate = std::make_shared<Gate>(); GateGuard release{gate, context};
+  {
+    const std::array inputs{a::InputSpec{{4}, mx::float32}};
+    auto native_program = context.compile([gate](const auto &args, mx::Stream stream) {
+      auto value = mx::square(args[0], stream);
+      return std::vector{mx::array(value.shape(), value.dtype(), std::make_shared<Checkpoint>(stream, gate), {value})};
+    }, inputs).value();
+    auto native = native_program.create_invocation().value();
+    auto program = a::CopyBatchProgram::prepare(context, specs(memory.ref()), {.allocator = metadata.get()}).value();
+    auto first = a::CopyBatchInvocation::create(program).value(), second = a::CopyBatchInvocation::create(program).value();
+    ASSERT_TRUE(data.bind(first, std::byte{29}).ok()); ASSERT_TRUE(first.prepare_replay(kPhases, kRanges).ok());
+    auto completed = first.submit().value(); ASSERT_TRUE(completed.wait().ok());
+    auto ready = completed.output({2}, {3}, 0, 32).value();
+    ASSERT_TRUE(data.bind(second, std::byte{83}).ok()); ASSERT_TRUE(second.prepare_replay(kPhases, kRanges).ok());
+    const std::array values{mx::array({1.f, 2.f, 3.f, 4.f})}; ASSERT_TRUE(native.bind(values).ok());
+    { std::lock_guard lock(gate->mutex); gate->armed = true; gate->fail = true; }
+    auto producer = native.submit().value();
+    { std::unique_lock lock(gate->mutex); ASSERT_TRUE(gate->condition.wait_for(lock, std::chrono::seconds(3), [&] { return gate->entered; })); }
+    auto queued = second.submit().value(); EXPECT_TRUE(queued.in_flight());
+    EXPECT_FALSE(queued.output({2}, {3}, 0, 32)); EXPECT_FALSE(second.reset().ok());
+    for (auto &pool : data.pools) EXPECT_GT(pool.stats().active_uses, 0u);
+    gate->release(); auto failed = producer.wait(); ASSERT_FALSE(failed); EXPECT_TRUE(failed.error().IsInternal());
+    EXPECT_TRUE(queued.wait().IsInternal()); EXPECT_FALSE(queued.output({2}, {3}, 0, 32));
+    EXPECT_FALSE(queued.in_flight()); EXPECT_EQ(queued.report().native_calls, 0u);
+    EXPECT_FALSE(second.prepare_replay(kPhases, kRanges).ok());
+    std::array<std::byte, 32> bytes; ASSERT_TRUE(ready.view()->read(bytes).ok());
+    for (auto byte : bytes) EXPECT_EQ(byte, std::byte{29});
+    queued = {}; second = {}; completed = {}; first = {}; program = {};
+    EXPECT_TRUE(context.close().IsInternal());
+    EXPECT_EQ(metadata.used(), 0u);
+    for (auto &pool : data.pools) EXPECT_EQ(pool.stats().active_uses, 0u);
+    EXPECT_EQ(data.pools[3].stats().live_blocks, 1u);
+    ready.reset();
+  }
+  EXPECT_EQ(metadata.used(), 0u);
+  for (auto &pool : data.pools) EXPECT_EQ(pool.stats().live_blocks, 0u);
 }
 } // namespace

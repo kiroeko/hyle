@@ -392,6 +392,13 @@ gzip及archive SHA保留。其他平台/fault/头与SDK/P0终审红队仍待候�
 
 ## 预声明验证与停止
 
+候选测试维护补原声明的两种未验故障：Vulkan对真实Device的原GetFenceStatus/WaitForFences/
+QueueWaitIdle观察持续装饰OOM，验证unknown不发布、不复用、保留所有uses；恢复实际观察后才
+退休并保留首错，正常持有及放弃两分支。Apple复用原MLX square/Checkpoint与原FIFO Runtime，
+原生prefix晚失败使已排队copy零native copy/不发布，旧成功ready仍可读，实际metadata/uses归零。
+仅原两测试文件维护，不改产品candidate/API/runtime，不增加kernel。Windows Vulkan及Air两
+native树build1/test1/4GiB，build1800/test120；Air运行前读实际身份，重型严格串行，预算不重置。
+
 WSL当前Vulkan loader实际仅枚举llvmpipe，按原卡条件记NO_QUALIFIED_GPU，GPU数学/native不运行。
 原CPU/Vulkan installed static/shared的构建、真实迁址、普通consumer编译、七安装头/Vulkan ON、
 Apple/CUDA header及package请求缺席与ldd路径均通过；CPU/CUDA两个SDK的Apple/Vulkan package
