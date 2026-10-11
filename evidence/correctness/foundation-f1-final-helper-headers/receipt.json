@@ -1,0 +1,39 @@
+{
+  "schema_version": 1,
+  "candidate": "3034fc595abf5c2570e06dedbf195b34daf3fe72",
+  "scope": "Two new common internal protocol headers in sole-include C++23 TUs, no product rebuild or link",
+  "checks": [
+    {
+      "kind": "windows",
+      "compiler": "C:/Program Files/Microsoft Visual Studio/18/Enterprise/VC/Tools/MSVC/14.50.35717/bin/Hostx64/x64/cl.exe",
+      "headers": 2,
+      "verdict": "PASS",
+      "receipt": "windows-job.json"
+    },
+    {
+      "kind": "wsl",
+      "compiler": "/usr/bin/g++-14",
+      "headers": 2,
+      "verdict": "PASS",
+      "receipt": "wsl-job.json"
+    },
+    {
+      "kind": "air",
+      "compiler": "/usr/bin/clang++",
+      "headers": 2,
+      "verdict": "PASS",
+      "receipt": "air-job.json"
+    }
+  ],
+  "log_sha256": {
+    "air-header-0.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "air-header-1.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "air-job.json": "bb603e5e2b7f927bb99c26478e43cd17321a85bd550f069af19c9dcef1e001c2",
+    "windows-header-0.log": "7332a4511584948efd21064d10daa85c40560923e1c03dfb3722e9e84ba42891",
+    "windows-header-1.log": "d5f02d754d9af778e21004f4154d36a3f94f5b124e988c9558535c990994f178",
+    "windows-job.json": "1edd55d68c940a5021601a2bebe36d55a4f5124f979acc07088fb26832a30d76",
+    "wsl-header-0.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "wsl-header-1.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "wsl-job.json": "64b5be74f0c4291edc18e0568dc8806f8e8bd7e1b9df31b27a95be4d97b27d5a"
+  }
+}

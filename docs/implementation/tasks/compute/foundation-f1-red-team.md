@@ -29,9 +29,10 @@ F1 允许的 include/src/cmake diff。已关闭 Mem/Provider/lowerer 的实现�
 | ID / severity | Finding | Disposition / 证据 |
 |---|---|---|
 | RT-01 LOW docs | 新 API 矩阵漏列 CUDA `into_lease_pool` 与 Apple `Program::input_count`，不能称“全部入口已反映” | 已补矩阵；input_count 由 native leased create 的容量准备消费；into_lease_pool 的原 native owning/rejection/free 用例已在 instrumented CUDA log PASS，相关产品 scope 与 candidate 相同；没有产品修改 |
-| RT-02 MEDIUM evidence | Windows CPU+Vulkan static 组合、Windows CPU+CUDA installed mixed 与 Air native Vulkan/控制格未逐一取证；不能由单路线或不同 OS 签整包 | PARTIAL/OPEN；CPU+Vulkan static ordinary/mixed、CPU+CUDA static mixed 和 Air 27/3/5 原 filters 已实际通过；只剩 CPU+CUDA shared 正在运行，未验保持 UNPROVEN，不重开源码审查 |
-| RT-03 LOW docs | 早期子收据的 pending/owners AUDITED 句子属于历史候选，不是当前阶段或新授权 | 当前阶段只看 registry 的 CANDIDATE 和当前矩阵；保留旧收据原事实，最终当前交付 aggregate/guide 的措辞随真实结果更新 |
+| RT-02 MEDIUM evidence | Windows CPU+Vulkan static 组合、Windows CPU+CUDA installed mixed 与 Air native Vulkan/控制格未逐一取证；不能由单路线或不同 OS 签整包 | CLOSED evidence；CPU+Vulkan static ordinary/mixed、CPU+CUDA static/shared mixed 和 Air 27/3/5 原 filters 分别通过，原失败保留。最终清单又发现两内部新头尚缺 sole-include，已按原新头门补三工具链各两项并保存 H 收据 |
+| RT-03 LOW docs | 早期子收据的 pending/owners AUDITED 句子属于历史候选，不是当前阶段或新授权 | CLOSED docs；历史子收据保留原阶段事实；当前 registry、terminal、矩阵与指南按实际最终结果更新，历史 pending 不授权新施工 |
 
 源码部分审查通过，未发现需要把 candidate 退回 AUDITED 的产品问题。
-整体 `red_team` 仍 **INCONCLUSIVE**：RT-02 的适用证据未齐，不能用源码审查绕过实际验证或提前 CLOSED。
-完整 P0/七门 terminal 同样须等剩余实际格与最终 doc/status/checker；未验不写 PASS。
+剩余已冻结验证已完成，两个内部头的三工具链隔离也通过；没有 OPEN finding。
+最终 `red_team` 为 **PASS**，仅签本轮 F1 有限范围与明确实测平台/交付。
+没有因文档/证据补齐重复源码扫描或新增计时。七门、限制与停止规则见当前施工卡 terminal。

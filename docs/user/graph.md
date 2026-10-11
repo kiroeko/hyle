@@ -993,8 +993,9 @@ Native FFI，也不承诺跨编译器/STL 的 C++ ABI。
 ## 外部租约绑定与只读结果
 
 `hyle/graph/leased_invocation.h` 提供 opt-in `LeasedInvocation`，包中随 `hyle::graph` 交付，
-不用额外构建开关。当前 F1 仍在施工，CPU/CUDA 与 native Apple/Vulkan 接缝有局部资格；
-其他适用平台/完整风险矩阵及安装三交付尚待集中验收。
+不用额外构建开关。F1 已完成本轮 CPU/CUDA、native Apple/Vulkan 及 CPU+GPU 组合的
+适用平台/风险与 source/static/shared 资格；精确范围见
+[F1 收口记录](../implementation/tasks/compute/foundation-f1-resource-leases.md)。
 独立消费者见 [`resource_leases`](../../samples/package/graph/resource_leases/)；同一 CMake 工程只链接
 `hyle::graph`，按启用路线调用公开 Direct/Graph 租约接口。源码集成传 `HYLE_SAMPLE_SOURCE`，
 安装包集成传 `CMAKE_PREFIX_PATH`，两者使用相同的 `HYLE_COMPUTE_ROUTES` 选择。

@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "scope": "Partial F1 Windows CPU CUDA Vulkan and MacBook Air CPU Apple Vulkan source and relocated static shared lease delivery qualification",
+  "scope": "F1 finite qualified Windows CPU CUDA Vulkan, WSL CPU CUDA, MacBook Air CPU Apple Vulkan ordinary and mixed source and relocated static shared lease journeys",
   "candidate": "46cc16937d19952ddea0664df4609be9ed45e5a5",
   "product_candidate": "fc4ffbd1610eb3b24bf76709dc6e5e25b3d838d7",
   "tests": [
@@ -192,6 +192,17 @@
       "receipt": "windows-imported-mixed-cuda-static-job.json",
       "log": "windows-imported-mixed-cuda-static-test.log",
       "qualification": "Original already qualified moved static SDK; only public mixed consumer compiled and run, system-only runtime PATH."
+    },
+    {
+      "name": "Windows relocated cpu cuda shared SDK ordinary lease and imported mixed contract",
+      "verdict": "PASS",
+      "candidate": "a0b22552f0278996759b5f8846f5ee189f5fc0f0",
+      "receipt": "windows-cpu-cuda-shared-job.json",
+      "logs": [
+        "windows-cpu-cuda-shared-lease-test.log",
+        "windows-cpu-cuda-shared-mixed-test.log"
+      ],
+      "qualification": "Tests-off shipping producer, actual relocation, only imported hyle::graph consumers, EXE-local DLLs and system-only runtime PATH."
     }
   ],
   "wsl_vulkan": {
@@ -200,9 +211,10 @@
     "limitation": "Actual loader enumerates only type 4 llvmpipe software device. No native Vulkan math qualification is claimed; applicability follows current F1 card actual GPU rule."
   },
   "limitations": [
-    "Only explicitly listed ordinary/installed/mixed platform and linkage journeys are qualified",
-    "Remaining matrix platform/delivery cells follow current F1 card; absent results remain unproven",
-    "F1 owners are CANDIDATE; final red-team/P0/terminal not signed; F2/F3 not implemented"
+    "Only listed actual machines/toolchains/routes/contracts are qualified",
+    "WSL Vulkan loader has no qualified GPU; no GPU math certificate or PASS is claimed",
+    "Borrowed Context/resource/Queue/allocator and readonly-import writable-alias preconditions remain",
+    "This receipt does not qualify F2/F3, untested devices, timed performance or a complete inference engine"
   ],
   "log_sha256": {
     "windows-vulkan-source.json": "e69aa6fb5fe31d67fde45290015a2422d4c4474ab6dff61ec877e668865f457c",
@@ -319,6 +331,15 @@
     "windows-imported-mixed-cuda-static-job.json": "4d971c3f0e8aae6e92e11741f7af2b3edd24ab52eceee48db364187224d43807",
     "windows-imported-mixed-cuda-static-configure.log": "a3958f17d4150c3a81d4ab66f7b341baa0622b1ace0d4a896db48c182b8ab2d3",
     "windows-imported-mixed-cuda-static-build.log": "074a09759f3a21989d481d0742482bc6cbcf01547c9fe4aee0b00fe99500eb45",
-    "windows-imported-mixed-cuda-static-test.log": "226645481f02d1c923956c064f767b093d9887e8cdc107aaad4f03f2eebfa09d"
+    "windows-imported-mixed-cuda-static-test.log": "226645481f02d1c923956c064f767b093d9887e8cdc107aaad4f03f2eebfa09d",
+    "windows-cpu-cuda-shared-job.json": "4a8ea3c88640180d87eab103c8aea1a5d73cbcb807e64988f3e5efdeecd95648",
+    "windows-cpu-cuda-shared-producer-configure.log": "e5dd2368d7159fcf243194874121d0773a7fa358453109800cea95ec1a847a73",
+    "windows-cpu-cuda-shared-producer-build.log": "5f2c33991c7db8102e6d0b10ef109f06acdd9a79aa535cd120388b47dfc98119",
+    "windows-cpu-cuda-shared-install.log": "e0909429fa7a9a9a347ccf8f4fcaac0c5cffd114c902a533bce5b999a28cacee",
+    "windows-cpu-cuda-shared-relocate.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "windows-cpu-cuda-shared-consumer-configure.log": "d2204871dd90386caa00ee77c08533fe4a35467378144a7adc066c0b09035e99",
+    "windows-cpu-cuda-shared-consumer-build.log": "8fe6a9d4ce70a69195a9ce65797a182479f7f899de405fa8fa32fd273cfb54f8",
+    "windows-cpu-cuda-shared-lease-test.log": "54a9ac798eec42bedcb0f8c0a538f78c23e0219f742825385fbb6d114922f40e",
+    "windows-cpu-cuda-shared-mixed-test.log": "226645481f02d1c923956c064f767b093d9887e8cdc107aaad4f03f2eebfa09d"
   }
 }

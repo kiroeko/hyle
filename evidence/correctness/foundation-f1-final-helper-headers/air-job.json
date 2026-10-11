@@ -1,0 +1,54 @@
+{
+  "kind": "air",
+  "current_candidate": "3034fc595abf5c2570e06dedbf195b34daf3fe72",
+  "source": "/Users/kiro/hyle-scratch/compute-unified/source-c8874688",
+  "sdk_context": "/Users/kiro/hyle-scratch/compute-unified/foundation-f1-vulkan-sdk/shared-relocated",
+  "compiler": "/usr/bin/clang++",
+  "platform": "macOS-27.0.1-arm64-arm-64bit",
+  "stages": [
+    {
+      "header": "hyle/compute/detail/lease_access.h",
+      "command": [
+        "/usr/bin/clang++",
+        "-std=c++23",
+        "-fsyntax-only",
+        "-I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/include",
+        "-I/Users/kiro/hyle-scratch/compute-unified/foundation-f1-vulkan-sdk/shared-relocated/include",
+        "-isysroot",
+        "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+        "/Users/kiro/hyle-scratch/compute-unified/foundation-f1-helper-headers/header-0.cc"
+      ],
+      "pid": 23347,
+      "state": "terminal",
+      "log": "header-0.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "header": "hyle/compute/detail/native_lease_inputs.h",
+      "command": [
+        "/usr/bin/clang++",
+        "-std=c++23",
+        "-fsyntax-only",
+        "-I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/include",
+        "-I/Users/kiro/hyle-scratch/compute-unified/foundation-f1-vulkan-sdk/shared-relocated/include",
+        "-isysroot",
+        "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+        "/Users/kiro/hyle-scratch/compute-unified/foundation-f1-helper-headers/header-1.cc"
+      ],
+      "pid": 23350,
+      "state": "terminal",
+      "log": "header-1.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ],
+  "source_manifest": "Canonical Windows source\nGit candidate e399059002d17491ec1c87a0bf8f40f4642606ac\nFull product/build/test snapshot\nValidation copy only\n",
+  "header_sha256": {
+    "hyle/compute/detail/lease_access.h": "8bd09fcbb50565b23c3fa1d503c480b2d374e89719cd78f7691133e3b361d286",
+    "hyle/compute/detail/native_lease_inputs.h": "57fa15f11a88bb50425e2d728d774240d0bcecf880410eb1636b30d3cf9e8aa7"
+  },
+  "verdict": "PASS"
+}

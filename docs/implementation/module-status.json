@@ -270,17 +270,25 @@
     },
     {
       "module": "compute",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/compute/foundation-f1-resource-leases.md",
-      "summary": "F1 candidate：有界资源/权限/use、自动 Direct 保活与完成观察已固定；剩余资格及终审按当前卡。",
-      "candidate": "3034fc595abf5c2570e06dedbf195b34daf3fe72"
+      "summary": "F1 CLOSED：有界租约/权限、自然 Direct/Graph 与组合保活、实际最后使用后回收；适用风险/平台/三交付、新头/缺席/迁址、七门与 P0 通过，精确限制见 terminal。",
+      "candidate": "3034fc595abf5c2570e06dedbf195b34daf3fe72",
+      "performance": {
+        "tier": "P0",
+        "evidence": "docs/implementation/tasks/compute/foundation-f1-resource-leases.md"
+      }
     },
     {
       "module": "graph",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/compute/foundation-f1-resource-leases.md",
-      "summary": "F1 candidate：leased binding/results、accepted prefix 与 aggregate 实际退役保护已固定；剩余资格及终审按当前卡。",
-      "candidate": "3034fc595abf5c2570e06dedbf195b34daf3fe72"
+      "summary": "F1 CLOSED：有界租约/权限、自然 Direct/Graph 与组合保活、实际最后使用后回收；适用风险/平台/三交付、新头/缺席/迁址、七门与 P0 通过，精确限制见 terminal。",
+      "candidate": "3034fc595abf5c2570e06dedbf195b34daf3fe72",
+      "performance": {
+        "tier": "P0",
+        "evidence": "docs/implementation/tasks/compute/foundation-f1-resource-leases.md"
+      }
     },
     {
       "module": "container_concurrent",
@@ -409,10 +417,14 @@
     },
     {
       "module": "compute_backend_cuda",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/compute/foundation-f1-resource-leases.md",
-      "summary": "F1 candidate：未知观察保留原错/真实 native 退役；Windows/WSL 定向资格通过，整包终审待完成。",
-      "candidate": "3034fc595abf5c2570e06dedbf195b34daf3fe72"
+      "summary": "F1 CLOSED：有界租约/权限、自然 Direct/Graph 与组合保活、实际最后使用后回收；适用风险/平台/三交付、新头/缺席/迁址、七门与 P0 通过，精确限制见 terminal。",
+      "candidate": "3034fc595abf5c2570e06dedbf195b34daf3fe72",
+      "performance": {
+        "tier": "P0",
+        "evidence": "docs/implementation/tasks/compute/foundation-f1-resource-leases.md"
+      }
     },
     {
       "module": "compute_provider_native",
@@ -505,10 +517,14 @@
     },
     {
       "module": "compute_route_apple",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/compute/foundation-f1-resource-leases.md",
-      "summary": "F1 candidate：readonly native binding/import 与自然 Direct/Graph leased owner 已固定；当前卡继续最终资格。",
-      "candidate": "3034fc595abf5c2570e06dedbf195b34daf3fe72"
+      "summary": "F1 CLOSED：有界租约/权限、自然 Direct/Graph 与组合保活、实际最后使用后回收；适用风险/平台/三交付、新头/缺席/迁址、七门与 P0 通过，精确限制见 terminal。",
+      "candidate": "3034fc595abf5c2570e06dedbf195b34daf3fe72",
+      "performance": {
+        "tier": "P0",
+        "evidence": "docs/implementation/tasks/compute/foundation-f1-resource-leases.md"
+      }
     },
     {
       "module": "graph_route_apple",
@@ -523,10 +539,14 @@
     },
     {
       "module": "compute_route_vulkan",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/compute/foundation-f1-resource-leases.md",
-      "summary": "F1 candidate：readonly native binding/import 与自然 Direct/Graph leased owner 已固定；剩余平台资格及终审待完成。",
-      "candidate": "3034fc595abf5c2570e06dedbf195b34daf3fe72"
+      "summary": "F1 CLOSED：有界租约/权限、自然 Direct/Graph 与组合保活、实际最后使用后回收；适用风险/平台/三交付、新头/缺席/迁址、七门与 P0 通过，精确限制见 terminal。",
+      "candidate": "3034fc595abf5c2570e06dedbf195b34daf3fe72",
+      "performance": {
+        "tier": "P0",
+        "evidence": "docs/implementation/tasks/compute/foundation-f1-resource-leases.md"
+      }
     },
     {
       "module": "graph_route_vulkan",
@@ -641,17 +661,25 @@
     },
     {
       "module": "graph_route_cpu_apple",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/compute/foundation-f1-resource-leases.md",
-      "summary": "F1 candidate：原组合 ReadLease bind、Results/source alias 与真实 prefixes/body 联合退役已固定。",
-      "candidate": "3034fc595abf5c2570e06dedbf195b34daf3fe72"
+      "summary": "F1 CLOSED：有界租约/权限、自然 Direct/Graph 与组合保活、实际最后使用后回收；适用风险/平台/三交付、新头/缺席/迁址、七门与 P0 通过，精确限制见 terminal。",
+      "candidate": "3034fc595abf5c2570e06dedbf195b34daf3fe72",
+      "performance": {
+        "tier": "P0",
+        "evidence": "docs/implementation/tasks/compute/foundation-f1-resource-leases.md"
+      }
     },
     {
       "module": "graph_route_cpu_vulkan",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "record": "docs/implementation/tasks/compute/foundation-f1-resource-leases.md",
-      "summary": "F1 candidate：原组合 ReadLease bind、Results/source alias 与真实 prefixes/body 联合退役已固定；Windows static 格待完成。",
-      "candidate": "3034fc595abf5c2570e06dedbf195b34daf3fe72"
+      "summary": "F1 CLOSED：有界租约/权限、自然 Direct/Graph 与组合保活、实际最后使用后回收；适用风险/平台/三交付、新头/缺席/迁址、七门与 P0 通过，精确限制见 terminal。",
+      "candidate": "3034fc595abf5c2570e06dedbf195b34daf3fe72",
+      "performance": {
+        "tier": "P0",
+        "evidence": "docs/implementation/tasks/compute/foundation-f1-resource-leases.md"
+      }
     }
   ]
 }

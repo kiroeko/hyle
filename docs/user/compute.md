@@ -33,8 +33,8 @@ readonly adopt 永久只读。原 native buffer/array/tensor 的受控导入见�
 Apple/Vulkan 的 native Program 使用各自 memory 头里的 `LeasedInvocation` 与 `LeasedInput`；
 bind 冷建立 readonly native view，submit 自动接纳 use，原 native slot 的实际退休归还 use。
 结果/来源 alias 继续由原 native owner 保留。四路线接口独立，不需要通用 Queue 或自写 completion vector。
-新租约能力的完整资格仍看[当前 F1 施工卡](../implementation/tasks/compute/foundation-f1-resource-leases.md)，
-局部测试不代签所有平台或 installed SDK。
+新租约能力已完成本轮四路线的适用平台与 source/static/shared 资格，精确环境与限制见
+[F1 收口记录](../implementation/tasks/compute/foundation-f1-resource-leases.md)。不外推未测设备/工具链。
 
 > 本页描述当前 Compute runtime foundation、CPU operation surface 与 CUDA runtime；施工资格只以
 > [`module-status.json`](../implementation/module-status.json) 为准。普通 CPU 入口自动组装已构建的 oneDNN/ggml/ATen/Native 实现；

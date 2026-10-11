@@ -1,0 +1,59 @@
+{
+  "kind": "windows",
+  "current_candidate": "3034fc595abf5c2570e06dedbf195b34daf3fe72",
+  "source": "C:\\public\\project-hyle\\hyle",
+  "sdk_context": "C:\\h7\\foundation-f1-sdk\\w-cpu-cuda-shared-relocated",
+  "compiler": "C:/Program Files/Microsoft Visual Studio/18/Enterprise/VC/Tools/MSVC/14.50.35717/bin/Hostx64/x64/cl.exe",
+  "platform": "Windows-11-10.0.26200-SP0",
+  "stages": [
+    {
+      "header": "hyle/compute/detail/lease_access.h",
+      "command": [
+        "C:/Program Files/Microsoft Visual Studio/18/Enterprise/VC/Tools/MSVC/14.50.35717/bin/Hostx64/x64/cl.exe",
+        "/nologo",
+        "/std:c++latest",
+        "/EHsc",
+        "/Zc:__cplusplus",
+        "/utf-8",
+        "/Zs",
+        "/TP",
+        "/IC:\\public\\project-hyle\\hyle\\include",
+        "/IC:\\h7\\foundation-f1-sdk\\w-cpu-cuda-shared-relocated\\include",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\foundation-f1\\sdk\\helper-headers-windows\\header-0.cc"
+      ],
+      "pid": 77156,
+      "state": "terminal",
+      "log": "header-0.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "7332a4511584948efd21064d10daa85c40560923e1c03dfb3722e9e84ba42891"
+    },
+    {
+      "header": "hyle/compute/detail/native_lease_inputs.h",
+      "command": [
+        "C:/Program Files/Microsoft Visual Studio/18/Enterprise/VC/Tools/MSVC/14.50.35717/bin/Hostx64/x64/cl.exe",
+        "/nologo",
+        "/std:c++latest",
+        "/EHsc",
+        "/Zc:__cplusplus",
+        "/utf-8",
+        "/Zs",
+        "/TP",
+        "/IC:\\public\\project-hyle\\hyle\\include",
+        "/IC:\\h7\\foundation-f1-sdk\\w-cpu-cuda-shared-relocated\\include",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\foundation-f1\\sdk\\helper-headers-windows\\header-1.cc"
+      ],
+      "pid": 91748,
+      "state": "terminal",
+      "log": "header-1.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "d5f02d754d9af778e21004f4154d36a3f94f5b124e988c9558535c990994f178"
+    }
+  ],
+  "header_sha256": {
+    "hyle/compute/detail/lease_access.h": "8bd09fcbb50565b23c3fa1d503c480b2d374e89719cd78f7691133e3b361d286",
+    "hyle/compute/detail/native_lease_inputs.h": "57fa15f11a88bb50425e2d728d774240d0bcecf880410eb1636b30d3cf9e8aa7"
+  },
+  "verdict": "PASS"
+}

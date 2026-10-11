@@ -1,10 +1,10 @@
 # F1：外部资源租约与最后使用后回收
 
-> 状态：CANDIDATE（2026-10-11），F1 共同核与四路线/组合接缝已固定，当前补齐剩余资格与终审。
+> 状态：CLOSED（2026-10-11），F1-01至08 与本卡适用风险/交付完成，七门和 P0 通过。
 > 当前 registry 绑定 compute、graph、compute_backend_cuda、compute_route_apple/vulkan、
-> graph_route_cpu_apple/vulkan；F2/F3 尚未启动，不能把局部 PASS 当作整包关闭。
+> graph_route_cpu_apple/vulkan；本记录仅签 F1，F2/F3 按各自施工卡另行定界。
 > 当前逐能力、公开入口和平台/交付缺格见[验证矩阵](foundation-f1-verification-matrix.md)，未验不外推。
-> 冻结后[红队记录](foundation-f1-red-team.md)源码部分通过，证据 finding 仍 OPEN，整体尚未裁决。
+> 冻结后[红队记录](foundation-f1-red-team.md)全部 findings 已处理，最终 PASS。
 > component / owner：拟由 compute 负责共同控制；compute_backend_cpu/cuda 与
 > compute_route_cpu/cuda/apple/vulkan 负责实际 native 适配；Graph 及其四路线和 CPU+GPU 适配只改 leased 接缝。
 > 具体改到的 owner 才在启动时绑定；不重开全部 Provider/算子模块。
@@ -31,7 +31,65 @@
 - 未验格、完整 P0/red-team/七门终态仍未证明；没有新增计时性能门。candidate 后只补证据/文档/测试维护，
   任何产品合同、实现、layout 或常态成本的新问题均先退回 AUDITED，不在 CANDIDATE 状态改产品。
 
-## 共同执行合同
+## Terminal：F1 有限范围完成
+
+- candidate：`3034fc595abf5c2570e06dedbf195b34daf3fe72`；产品与 `fc4ffbd16` 相同，后续均为
+  文档/状态/测试资格/证据。关闭改前 registry ref：`4cc4368b5`，七 owner 均已 CANDIDATE，不跳级。
+- 需求、全部新增 user/internal 入口、逐能力语义、平台/交付与七问的证据在
+  [完整矩阵](foundation-f1-verification-matrix.md)。原始命令、compiler/configuration、机器、阶段前内存、
+  接纳/退休事实与失败均在链接的 JSON/log；不从 test 数量推导功能完成。
+
+| FIX | 最终结果与分别取证 |
+|---|---|
+| F1-01 | PASS：有界 backing/ranges/generation 与预算/溢出/OOM；Buffer 拥有导入失败不消费；CUDA adopted resource/Context、Apple/Vulkan ready native readonly root 实际保活 |
+| F1-02 | PASS：shared readers/subviews 阻止写与复用、独占 writer、成功 publish、readonly 导入不能提升；非重叠块与跨线程 reader 归还分别验证 |
+| F1-03 | PASS：冷固定 uses/retention，未接受回退，actual native prefixes/body 才退休，业务/Completion/adapter 丢弃仍保活；无用户逐 token 手写 guard |
+| F1-04 | PASS：Windows/WSL 真实 CUDA query/wait 观察装饰、首错/实际排空/最后回收；unknown 不充当完成，原 reaper 处理未证明退休，shipping SDK 独立验证 |
+| F1-05 | PASS：CPU/CUDA/Apple/Vulkan 原成熟 Direct MatMul 与自然 leased 提交；真实拒绝/冷 OOM/取消/放弃/accepted failure、八次 injected lease metadata replay 计数 |
+| F1-06 | PASS：四路线原 Graph 与三种 CPU+GPU 组合；caller/source alias/private output 各自 owner，旧结果阻止覆盖/重放，观察前 guards 与实际 prefixes 保护 |
+| F1-07 | PASS：停接纳与明确 drain、held Completion、重复/失效 owner、原取消语义与最后回收；CUDA 原 Unimplemented 请求后仍 Pending/uses 保留，不声称停止 GPU |
+| F1-08 | PASS：普通 facade/routes、指南；适用 source/迁址 static/shared ordinary/mixed；ON/OFF、两个内部新头三工具链 sole-include、具名 absent route、Windows EXE-local DLL/system-only PATH；P0/红队完成 |
+
+| Gate | 命令/事实/证据 | Verdict |
+|---|---|---|
+| scope | 原设计/研究、固定 F1-01至08、主权重/状态与正交分块矩阵/alias 旅程；不包括 F2/F3/F4/F5、模型 policy 或新数学/copy kernel | PASS |
+| architecture | 实际 component/owner、原 Mem/Util/Completion/native/Graph/Sched 复用；两 mixed public ReadLease 合法 PUBLIC_DEPS compute，无公共治理改写/第二 runtime/万能 Queue | PASS |
+| correctness | 矩阵 C/D/G/N/L/M/U/A 的 checked boundary/OOM/concurrency/实际 native 数学/失败/晚到退休；WSL ASan/UBSan/TSan 原精确 filters，Air27/3/5，Windows/WSL CUDA fault 与 cancellation | PASS |
+| delivery | S 的各适用 source/static/shared ordinary+installed mixed；实际 staging rename/迁址、纯 imported facade、runtime DLL；七 ON/九 OFF及 H 的两个新内部头×三编译器，absent route named diagnostic | PASS |
+| usability_docs | user Compute/Graph 与独立 resource_leases sample；read/write、ready/failed、借用根寿命、一 cold completion slot、旧结果/readonly alias、close/drain 规则明确；docs/closure/selector 机械门 | PASS |
+| red_team | [冻结后有界红队](foundation-f1-red-team.md)，全部 API 回指、lifetime/OOM/concurrency、依赖/布局/成本/交付/文档 findings 均处理，未留下产品问题 | PASS |
+| engineering_performance | 本卡 P0 逐机制成本账与 actual replay allocator 计数；private/ordinary 成本明示，public Completion/旧 invocation 布局未变；无 unpriced vendor 为零/计时 winner，未启 P1/P2 | PASS |
+
+工程性能 tier 为 P0，最终 verdict PASS 只签结构成本合同：O(R²) bounded use 去重、O(R)/O(P) 释放、
+locks/refs/notify/代理 dispatch、普通 Graph child 保活与 native nullable 字段/分支已收费。
+正常 execute 不重编 plan/选 Provider、不新增数学/copy 命令或进展服务。新 metadata 冷分配且热容量不增长；
+vendor 私有成本仍按原预算/unknown 合同明示，不称零分配/全设备内存上界、统计 WIN 或 SOTA。
+release structure 由不变 public headers/布局、已收费 private 字段/分配大小及三交付实际导出/调用边验证；
+没有 source hint 或未裁决 timed hotspot，不额外采样/codegen 调优。
+
+适用域：CPU Windows/WSL/Air，CUDA Windows/WSL，Apple Air，Vulkan Windows/Air；精确版本和真实机器
+见各原收据。WSL Vulkan 实际仅 type4 llvmpipe，无合格 GPU，保留 `NO_QUALIFIED_GPU` 与未签 GPU数学，
+不改写成 PASS 或继承旧例外；本卡按实际 GPU 资格条件，没有这台宿主的 GPU 交付证书。
+Windows/WSL Apple 与 Air CUDA 因系统不支持 native runtime 为 NOT_APPLICABLE；不制造虚构 binary。
+不包括 Mac mini、其他 GPU/driver/SDK/compiler/stdlib、跨 GPU 或任意未跟踪 writable native aliases。
+原 Context/resource/Queue/allocator 与编译时 borrowed constants/effect footprints 仍须按公开寿命保留。
+
+保留的非产品首轮失败：archive 缺 LICENSE 的 Air install（同候选补文件只续 install）；
+TSan Graph 启动 mapping exit66（同 binary/filter 一次进程地址布局运行通过，无 suppression/sysctl 改动）；
+Windows 新 static producer 未指定已安装 Vulkan SDK（原配置失败保留、同版本路径续 configure）；
+所有 earlier 产品/fixture 纠正与预算事实仍在历史段/原收据，不因本次终态重置。
+
+LOC 使用不可变 candidate 的原统一脚本和33路径明确并集 self-check：全库2,258,724 code lines/5,668文件，
+自实现不含测试165,788/666，Compute+Graph70,561/315；原 JSON/工具身份见 identity-audit，不手加或当作进度。
+最终机械门按 change-impact selector 的 docs/closure 执行并保存 skipped reasons；registry 改动显式 previous-ref，
+本轮状态/文档不重新构建或跑 P1。
+
+reopen trigger：具名可复现 correctness/UB/lifetime/权限缺陷；当前真实 consumer 的新增常用 MUST；
+public 合同/算法/布局/交付或相关锁定依赖变化；已资格同合同 material 性能反例。
+出现新的合格 WSL Vulkan GPU 时对该实际平台资格单独定界，不从本证书外推。
+未来 F2/F3 的新范围按其卡合法重开实际 owner；本 CLOSED record 不授权历史“继续”或范围扩张。
+
+## 共同执行合同（保留实施阶段事实）
 
 - 基线：`edb2714384037b12a3d1e69839aa895fea17cec1`；设计见
   [资源与流送设计](../../../architecture/compute-resource-streaming-design.md)。
@@ -758,12 +816,12 @@ P 为原已接受 coarse completions。metadata 使用既有 allocator/pool，�
 | 共同 leased Graph | 固定 bindings、每原 segment + final 的 retention 与一个 observer；原 Invocation/workspace | binding 查找线性且属冷路径；submit 使用原 cursor/QueueBinding，R 资源准入，P 次 guard/counter；最后 actual prefixes/sentinel 才发布与回收 | 不重编计划/选 Provider；结果引用与 exported ReadLease 明确阻止覆盖；原数学/copy 命令数不增加 |
 | 原 Graph aggregate 修复 | 已有 cold child 槽从 lifetime 扩成 invocation 指针与 nested retention；槽数仍按原 lanes 冷分配 | 聚合组装 O(P)，每 selected child 新增 Invocation ref、remaining 增和观察前 attachment；最后 child 释放 ref/counter | 这是借用 Graph 路径也付出的 correctness 成本，[组装](../../../../src/graph/executable.cc)与[私有槽](../../../../src/graph/plan_state.h)可见；不能把所有 ordinary Graph 成本说成未变 |
 | Apple/Vulkan native adapter | opt-in owner、冷 native readonly wrappers/reader table/use pool；原 native slot 新增一个 nullable LeaseUseBatch 字段 | 普通 native slot 也承担这个私有字段与空 guard 检查；leased bind 冷构造，submit 准入并交原 slot，actual finish 退 guard | 没有新 Queue/reaper/thread、payload copy或数学 kernel；native private allocator/MLX descriptor 的不透明成本仍明示，当前风险与数学收据不证明全部 vendor 热成本 |
-| CPU+Apple/Vulkan 组合 | 原 RunState 一个 nullable owner 指针；首次 lease bind 才分配 inputs/prefixes 表，P capacity 冷检查 | ordinary 增加 submit/coarse completion 的空指针分支；leased R 准入、每 prefix 一次 parent ref/counter 与嵌套 retention，最后 body/actual prefix 联合 terminal | [helper](../../../../src/graph/lease_submission.cc)只保活/权限，不 dispatch；八次 metadata 计数通过，新 mixed native fault 格仍待验证 |
+| CPU+Apple/Vulkan 组合 | 原 RunState 一个 nullable owner 指针；首次 lease bind 才分配 inputs/prefixes 表，P capacity 冷检查 | ordinary 增加 submit/coarse completion 的空指针分支；leased R 准入、每 prefix 一次 parent ref/counter 与嵌套 retention，最后 body/actual prefix 联合 terminal | [helper](../../../../src/graph/lease_submission.cc)只保活/权限，不 dispatch；八次 metadata 计数与 M/L/A 风险已分别取证，unknown helper 协议不冒充 native GPU |
 | Completion/CUDA 退役修复 | 公共 Completion 与原 CUDA EventSlot 无新增字段；用已有 hint/retention/reaper | common settle 将原 lifetime/status 交原 destroy；正常 CUDA cache 已有 terminal 事实；异常 wait 最多一次原 stream drain，不能把观察错误当已退役 | 普通成功路径不加 context probe/全 device sync；错误路径额外排空是明确 safety 成本，真实 GPU 原错与最后回收已有证据 |
 
 close 为停接纳；drain 是显式 host wait，可走原 Completion/atomic wait；notify 只沿现有回收，不新建进展线程。
-上述是机制、复杂度与成本位置的账单，尚非完整 P0 PASS；没有真实 timed hotspot/同合同反例，当前不启动 P1/P2。
-最终 red-team、适用平台与三交付未齐，不能借这份源码账单进入 CLOSED。
+上述成本账已由 terminal 的源码/实际计数/交付与红队裁决为本轮 P0 PASS；没有真实 timed hotspot/同合同反例，
+本轮不启动 P1/P2。它不构成计时赢家或未测机器的性能证书。
 
 完成标准：F1-01至08及全部适用门真实通过，明确原借用 precondition 和未验硬件；
 精确报告所有 applicable 未验，不自动继承 WSL Vulkan 例外；按协议形成 terminal。

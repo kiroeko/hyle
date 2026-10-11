@@ -1,0 +1,74 @@
+{
+  "schema_version": 1,
+  "candidate": "3034fc595abf5c2570e06dedbf195b34daf3fe72",
+  "tree": "22751d8f76c51e08a5416fca11d730366a0d8add",
+  "source_product_candidate": "fc4ffbd1610eb3b24bf76709dc6e5e25b3d838d7",
+  "scope": "F1-01 through F1-08 finite lease and actual use retirement closure; F2/F3 not implemented",
+  "correctness_profile": "closure-correctness-v1",
+  "gates": {
+    "scope": "PASS",
+    "architecture": "PASS",
+    "correctness": "PASS",
+    "delivery": "PASS",
+    "usability_docs": "PASS",
+    "red_team": "PASS",
+    "engineering_performance": "PASS"
+  },
+  "performance": {
+    "tier": "P0",
+    "verdict": "PASS",
+    "contract": "Charged bounded metadata, complexity, references/locks/notify, original native retirement and actual replay allocator counts; no timing/SOTA claim"
+  },
+  "receipt_integrity": [
+    {
+      "receipt": "foundation-f1-lease-delivery-initial",
+      "files": 124,
+      "receipt_sha256": "ea15e04b647556a16260a2c03e4d5e4fe2996e18c80f83a23d49e4044bbfb504"
+    },
+    {
+      "receipt": "foundation-f1-host-sanitizers",
+      "files": 17,
+      "receipt_sha256": "b7e4a4f7efd662e87211f900593879bf42ec5c6f79527be6365c5d0312fc853e"
+    },
+    {
+      "receipt": "foundation-f1-native-lease-risk",
+      "files": 8,
+      "receipt_sha256": "4e39cbd16b39bea3b2b45ae9397d4d8d278f8e24068c31272865a85242fdcd41"
+    },
+    {
+      "receipt": "foundation-f1-mixed-leases-initial",
+      "files": 15,
+      "receipt_sha256": "8653cad4c970af093c0d2fe609dadcf723d2c87cb110b263998035e542947a8d"
+    },
+    {
+      "receipt": "foundation-f1-common-drain-windows",
+      "files": 9,
+      "receipt_sha256": "3d522e61f188e9d3adfb3ab1769e50c5d314d05bd90a29d972f0b8a7b45153d1"
+    },
+    {
+      "receipt": "foundation-f1-cuda-final-risk",
+      "files": 9,
+      "receipt_sha256": "050e7889c74608fc72d51a07a02d79502e1bf6f548148a7f53ea561110742b5d"
+    },
+    {
+      "receipt": "foundation-f1-air-final-risk",
+      "files": 6,
+      "receipt_sha256": "b5f98ca793491a5438f09c8e42be78882fe7e8ac548ca165fe1959edb76f2418"
+    },
+    {
+      "receipt": "foundation-f1-final-helper-headers",
+      "files": 9,
+      "receipt_sha256": "8ca5de3eadb695c0b37d999ab81b92bd61f25761a9b139ac06a0fe068ddcd53e"
+    }
+  ],
+  "loc_reference": "../foundation-f1-identity-audit/loc-current.json",
+  "conditional_hardware": "WSL Vulkan actual llvmpipe type4 only, no qualified GPU; no GPU math PASS or certificate",
+  "source_review": "docs/implementation/tasks/compute/foundation-f1-red-team.md",
+  "terminal": "docs/implementation/tasks/compute/foundation-f1-resource-leases.md",
+  "maintenance": {
+    "receipt": "maintenance-validation.json",
+    "sha256": "d531cc4ebbf7f9ca6ef4924e5f7dd6d2096ad08f44e74258b7d6384793ac8727",
+    "previous_registry_ref": "4cc4368b557335bff19712be3354853a47ed74a2",
+    "verdict": "PASS"
+  }
+}

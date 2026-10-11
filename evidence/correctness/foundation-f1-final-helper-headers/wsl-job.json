@@ -1,0 +1,50 @@
+{
+  "kind": "wsl",
+  "current_candidate": "3034fc595abf5c2570e06dedbf195b34daf3fe72",
+  "source": "/root/hyle-scratch/compute-unified/source-7a7b4c3b",
+  "sdk_context": "/root/hyle-scratch/compute-unified/foundation-f1-wsl-sdk/shared-relocated",
+  "compiler": "/usr/bin/g++-14",
+  "platform": "Linux-6.18.40.1-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+  "stages": [
+    {
+      "header": "hyle/compute/detail/lease_access.h",
+      "command": [
+        "/usr/bin/g++-14",
+        "-std=c++23",
+        "-fsyntax-only",
+        "-I/root/hyle-scratch/compute-unified/source-7a7b4c3b/include",
+        "-I/root/hyle-scratch/compute-unified/foundation-f1-wsl-sdk/shared-relocated/include",
+        "/root/hyle-scratch/compute-unified/foundation-f1-helper-headers/header-0.cc"
+      ],
+      "pid": 652,
+      "state": "terminal",
+      "log": "header-0.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "header": "hyle/compute/detail/native_lease_inputs.h",
+      "command": [
+        "/usr/bin/g++-14",
+        "-std=c++23",
+        "-fsyntax-only",
+        "-I/root/hyle-scratch/compute-unified/source-7a7b4c3b/include",
+        "-I/root/hyle-scratch/compute-unified/foundation-f1-wsl-sdk/shared-relocated/include",
+        "/root/hyle-scratch/compute-unified/foundation-f1-helper-headers/header-1.cc"
+      ],
+      "pid": 654,
+      "state": "terminal",
+      "log": "header-1.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ],
+  "source_manifest": "Canonical Windows source\nGit candidate 8bf5b2ebea3021264128df34b25ed7e94964caa1\nFull product/build/test snapshot\nValidation copy only\n",
+  "header_sha256": {
+    "hyle/compute/detail/lease_access.h": "8bd09fcbb50565b23c3fa1d503c480b2d374e89719cd78f7691133e3b361d286",
+    "hyle/compute/detail/native_lease_inputs.h": "57fa15f11a88bb50425e2d728d774240d0bcecf880410eb1636b30d3cf9e8aa7"
+  },
+  "verdict": "PASS"
+}
