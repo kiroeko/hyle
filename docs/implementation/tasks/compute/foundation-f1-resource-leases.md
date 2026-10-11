@@ -206,6 +206,29 @@ Graph core31、新真实双分支 cuBLAS 用例通过。未知观察是装饰真
 目前整包 owner 继续 AUDITED；后续还要 Graph 绑定/结果与接受处保护、native 其他路线、全部适用交付/平台和整包红队。
 统一脚本 self-check：Compute+Graph 非测试69,063行/305文件；全库非测试164,290行/656文件。
 
+### F1-06 共同 Graph 绑定 / 结果接口冻结
+
+- baseline `f8b93a264`，compute/graph owners AUDITED；只扩展本卡既有 Graph binding/result 与 accepted-prefix FIX。
+- 新 opt-in `LeasedInvocation::create(executable, options, shape)` 冷创建原 Invocation、固定 input/caller-output
+  绑定槽、一个 LeaseUseBatch 和每 segment 加一个 final 的 CompletionRetention；不重编计划或选择 Provider。
+  `bind(value, description, ReadLease)` 共享输入；WriteLease 的重载接管输入/输出的独占权限。
+  prepare_replay/submit 仍使用原 QueueBinding/原计划；零 Queue/单 Queue/多 Queue 都有原入口。
+- 输出 `LeasedGraphOutput` 是可复制的只读结果，保留整个原 Invocation 与所有绑定 backing；内部 workspace、
+  Executable 常量、source-alias 与 caller 输出均覆盖。tensor() 返回受此结果寿命保护的借用视图；
+  storage_lease() 对 caller/source-alias 返回对应 ReadLease，内部 workspace/Executable 输出以原 Graph result
+  owner 保活，不伪造可写 Buffer 拥有权。旧结果阻止本 Invocation 重放；单独导出的 ReadLease 也阻止对应写块复用。
+- 输出只在成功且真实全退休后可取；由输出借来的输入别名也保持源 lease。重新绑定/reset 不得破坏旧结果。
+  只读绑定不能当 mutable input 使用；独占输入由 adapter 拥有 WriteLease，读写 guards 与源/输出 alias 准入照原计划。
+- 内部 SubmissionCursor 的可选 accepted 回调在每个已接受 Completion 的任何后续观察前安装 guard；
+  opt-in finish 延迟原 Invocation terminal publication，由所有 child 与 final 的实际退休 latch 统一发布。
+  这也保持非 concurrent Provider 的原 plan exclusion，不能因缓存观察错误提早允许另一 Invocation。
+  原 public/borrowed submit 保持默认行为/对象布局，不增加资源表/万能 executor。
+- 拒绝且无 native acceptance 时回退 guard、不毒化 write；已接受 prefix 出错保存首错并保护到实际退役。
+  元数据冷分配，热 submit 不扩容。close 停接纳，drain 明确 host 等待本 adapter 已接纳工作；结果仍有效，
+  Completion 负责原 cancel 请求，取消不证明 GPU 结束。原资源/Context/allocator借用寿命保持明确。
+- 有限验收：真实 cuBLAS Direct+Graph 数学、两个 native 分支、旧结果/来源别名、重放计数、拒绝回退、
+  accepted-prefix 观察故障/丢弃与关闭；后续 CPU/native routes 和三交付仍集中做，不以本入口编译代签。
+
 | FIX | 必须实现/定向修复 | 验收 |
 |---|---|---|
 | F1-01 | 冷创建 owner、有限块/范围、generation、大小/对齐/metadata budget、拥有与只读导入 | 零/边界/溢出/OOM；旧 generation 不释放新块；真实 native backing |
