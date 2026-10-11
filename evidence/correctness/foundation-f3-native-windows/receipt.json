@@ -1,0 +1,60 @@
+{
+  "schema_version": 1,
+  "product_commit": "8b35c527f57a91f89545a11748ff7be64e080de1",
+  "test_commit": "fc4c8399e0f7b96463a4e4b3bb15b93ead242c38",
+  "scope": "Windows original native file byte journeys only; math/native faults/SDK and other hosts unproven",
+  "profiles": {
+    "cuda": {
+      "tests_passed": 2,
+      "native_calls": 48,
+      "phase_completions": 48,
+      "actual_gpu": "NVIDIA GeForce RTX 4070, GPU-e7376560-6f5d-ec19-6ee4-3dd3a2c81ef8, 617.14",
+      "build": "C:\\h7\\w-cuda\\selected-graph\\shared-sdk-build",
+      "compiler": "C:/Program Files/Microsoft Visual Studio/18/Enterprise/VC/Tools/MSVC/14.50.35717/bin/Hostx64/x64/cl.exe"
+    },
+    "vulkan": {
+      "tests_passed": 2,
+      "native_calls": 48,
+      "phase_completions": 48,
+      "actual_gpu": "NVIDIA GeForce RTX 4070, GPU-e7376560-6f5d-ec19-6ee4-3dd3a2c81ef8, 617.14",
+      "build": "C:\\h7\\w-vulkan-native",
+      "compiler": "C:/Program Files/Microsoft Visual Studio/18/Enterprise/VC/Tools/MSVC/14.50.35717/bin/Hostx64/x64/cl.exe"
+    }
+  },
+  "verdict": "PASS_WINDOWS_CUDA_VULKAN_FILE_JOURNEYS_ONLY",
+  "archives": [
+    {
+      "path": "evidence/correctness/foundation-f3-native-windows/cuda-raw-results.zip",
+      "sha256": "23216fb732b4e0b72d9affacd6ac4ffb8f76fdbea68810d5f0f5b0f1a10f2fbe"
+    },
+    {
+      "path": "evidence/correctness/foundation-f3-native-windows/vulkan-raw-results.zip",
+      "sha256": "2105bd5ecf79cc650a09ad0e50cde80da3694c9697772233595b5f5fb4786ee1"
+    }
+  ],
+  "sdk_configuration_restore": {
+    "command": [
+      "C:\\Program Files\\CMake\\bin\\cmake.EXE",
+      "-S",
+      "C:\\public\\project-hyle\\hyle",
+      "-B",
+      "C:/h7/w-cuda/selected-graph/shared-sdk-build",
+      "-DHYLE_BUILD_TESTS=OFF",
+      "-DHYLE_INSTALL=ON",
+      "-DHYLE_COMPONENTS=graph",
+      "-DHYLE_COMPUTE_ROUTES=cpu;cuda"
+    ],
+    "exit_code": 0,
+    "scope": "Restore original shipping SDK configuration; no build/install/delivery PASS."
+  },
+  "correction": "Original CUDA two-slot failure: thread-compatible Queue rejected concurrent host sequences. F3 adapter serializes bind/prepare/submit only, unlocks before completion wait/IO; actual two-slot three-replay recheck passed.",
+  "test_corrections": "Initial Vulkan fixture missing resource header and unrelated old catalogue missing ggml private header retained. F3 now has normal module-owned isolated targets with runtime staging; no global tooling/product changes.",
+  "unproven": [
+    "Apple/Air native file qualification (currently running; no PASS claimed)",
+    "WSL CPU/CUDA and Air Vulkan/CPU",
+    "pending/unknown/late/cancel native risk seams",
+    "mixed-dtype local Qwen and GGUF actual Direct+Graph math",
+    "three deliveries/new heads/relocation",
+    "full P0 and final red team"
+  ]
+}
