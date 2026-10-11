@@ -24,6 +24,20 @@
       "candidate": "5d3f0312355fcc20270aad7c862ea481cada2f27",
       "log": "apple-contracts.log",
       "delivery": "source shared consumer; installed SDK not tested"
+    },
+    {
+      "name": "Windows CPU+CUDA original common leased mixed plan",
+      "verdict": "PASS",
+      "candidate": "f74825bbb8a7930dbd551f169e7579d474d32460",
+      "log": "windows-cuda-contracts.log",
+      "delivery": "source static consumer; installed SDK not tested"
+    },
+    {
+      "name": "Common checked boundaries and cross-thread readers plus retained observer",
+      "verdict": "PASS",
+      "cases": 13,
+      "candidate": "c73ac50d300f51b5c9629acb897d0bf01fc84045",
+      "log": "common-final-boundaries.log"
     }
   ],
   "coverage": [
@@ -52,7 +66,6 @@
     "reason": "Public ReadLease parameter required direct PUBLIC_DEPS compute; corrected only the two owned component declarations, without changing the checker"
   },
   "pending": [
-    "CPU+CUDA common leased plan consumer is building; not yet tested",
     "New route/helper header isolation and absence matrix",
     "Other applicable platforms, source/static/shared SDK/relocation and full F1 risk matrix",
     "Full F1 P0 and final red-team; F2/F3 not implemented"
@@ -64,6 +77,13 @@
     "apple-contracts.log": "eeb4371e49af496d222c2b7cd5e01a630f0c68d9a084feb0fd8fefc9a0a221d0",
     "apple-build.log": "c5f0d3b20a426a851173bf415cdd531fbc7c362edd133d7eaa68413740097c95",
     "apple-job.json": "ec26dc79e49e82e42549f7c21912a3a9152b91e36d32ce34e50c5d5f1a0d4bd7",
-    "vulkan-configure-original-error.log": "a496b2154cf24f48009e4be3aa88a72f9828e5faf7dbfb837c59bf2cef0db197"
+    "vulkan-configure-original-error.log": "a496b2154cf24f48009e4be3aa88a72f9828e5faf7dbfb837c59bf2cef0db197",
+    "windows-cuda-contracts.log": "e0ae7cd6f06a953bb5ab7ad81a99d5206a0986e979415575ab7a73931f6e4961",
+    "common-final-boundaries.log": "718bf32c0f6284471e1c0031566e5e7932fb13389f7232c7ab0c731454f18846",
+    "common-original-fixture-error.log": "eaf92e63b289381d598ddd0248c025d7299c1c4d4f4e055d43621ee2128bcf3f"
+  },
+  "retained_fixture_failure": {
+    "log": "common-original-fixture-error.log",
+    "reason": "First thread reader passed 16 destination bytes to a full 256-byte exact-view read; corrected to read a 16-byte subview. No product change."
   }
 }

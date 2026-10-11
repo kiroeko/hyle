@@ -434,7 +434,10 @@ MacBook Air CPU+Apple 原成熟 CPU/native/CPU 数学 PASS：host/native 两种 
 两 reader、旧结果/source alias 在 adapter 放弃后保活、closed source 拒绝及八次 metadata 无新增分配。
 原两 managed composition 的已有 rejection/OOM/cancel/abandon/late failure checks 也通过，
 共同 prefix 协议三项通过但不冒充 GPU 资格。首轮 public dependency 配置诊断及修正保留。
-CPU+CUDA 已加入原 compile/executable 与全部 QueueBinding 的共同 leased consumer，当前串行构建，未写 PASS。
+CPU+CUDA 消费者 `f74825bbb` 已通过原 compile/executable 与全部 QueueBinding 的共同 leased 旅程：
+host/device 数学、八次 metadata 无新增分配、旧结果保护与 held Completion drain，原 H1 合同检查也通过。
+共同核测试 `c73ac50d3` 的边界溢出拒绝、跨线程读者与独立块退役，以及 retained observer 共十三项通过。
+首轮跨线程夹具误用 exact-view read 的原失败日志保留；修正为 subview 后通过，产品没有因此改变。
 其他适用平台、完整风险/头与缺席、installed static/shared/迁址及整包 P0/红队仍未完成，F1 继续 AUDITED。
 
 扩展现有 compute completion、graph cpu_cuda/apple/vulkan contracts 及 native route 用户样例；

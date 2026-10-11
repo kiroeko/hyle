@@ -1,0 +1,47 @@
+Running main() from C:\public\tools\hyle-dependencies\v1\sources\googletest-063de7e9578f-162765170ae6\googletest\src\gtest_main.cc
+Note: Google Test filter = ResourceLeases.*:Completion.Retained*
+[==========] Running 13 tests from 2 test suites.
+[----------] Global test environment set-up.
+[----------] 4 tests from Completion
+[ RUN      ] Completion.RetainedObserverDrainsWhilePublicHandleIsHeld
+[       OK ] Completion.RetainedObserverDrainsWhilePublicHandleIsHeld (0 ms)
+[ RUN      ] Completion.RetainedObserverForwardsAttachmentOnlyAfterActualUnknownRetirement
+[       OK ] Completion.RetainedObserverForwardsAttachmentOnlyAfterActualUnknownRetirement (0 ms)
+[ RUN      ] Completion.RetainedObserverMayBeDroppedBeforePublicCompletion
+[       OK ] Completion.RetainedObserverMayBeDroppedBeforePublicCompletion (0 ms)
+[ RUN      ] Completion.RetainedCompoundObserverDoesNotTreatCachedRootErrorAsRetirement
+[       OK ] Completion.RetainedCompoundObserverDoesNotTreatCachedRootErrorAsRetirement (0 ms)
+[----------] 4 tests from Completion (0 ms total)
+
+[----------] 9 tests from ResourceLeases
+[ RUN      ] ResourceLeases.SharedReadersAndSubviewsPreventMutationAndHoldRange
+[       OK ] ResourceLeases.SharedReadersAndSubviewsPreventMutationAndHoldRange (0 ms)
+[ RUN      ] ResourceLeases.MetadataAndBackingCapsDoNotGrowAndOldOwnerCanOutlivePool
+[       OK ] ResourceLeases.MetadataAndBackingCapsDoNotGrowAndOldOwnerCanOutlivePool (0 ms)
+[ RUN      ] ResourceLeases.AbandonedCompletionKeepsBothPoolsUntilRealRetirement
+[       OK ] ResourceLeases.AbandonedCompletionKeepsBothPoolsUntilRealRetirement (0 ms)
+[ RUN      ] ResourceLeases.WriteFailureCannotPublishAndUnsubmittedUseRollsBack
+[       OK ] ResourceLeases.WriteFailureCannotPublishAndUnsubmittedUseRollsBack (0 ms)
+[ RUN      ] ResourceLeases.RejectedAttachmentRetainsTicketAndQuotaIncludesMetadata
+[       OK ] ResourceLeases.RejectedAttachmentRetainsTicketAndQuotaIncludesMetadata (0 ms)
+[ RUN      ] ResourceLeases.OwnedImportPreservesBackingAndReadonlyCannotBecomeWriter
+[       OK ] ResourceLeases.OwnedImportPreservesBackingAndReadonlyCannotBecomeWriter (0 ms)
+[ RUN      ] ResourceLeases.RejectedOwnedImportDoesNotConsumeBackingOrLeakBudget
+[       OK ] ResourceLeases.RejectedOwnedImportDoesNotConsumeBackingOrLeakBudget (0 ms)
+[ RUN      ] ResourceLeases.CheckedCapacitySubviewAndMetadataArithmeticRejectBeforeMutation
+[       OK ] ResourceLeases.CheckedCapacitySubviewAndMetadataArithmeticRejectBeforeMutation (0 ms)
+[ RUN      ] ResourceLeases.CrossThreadReadersHoldGenerationWhileIndependentBlockRetires
+C:\public\project-hyle\hyle\tests\compute\resource_leases_test.cc(256): error: Value of: content_ok.load()
+  Actual: false
+Expected: true
+
+[  FAILED  ] ResourceLeases.CrossThreadReadersHoldGenerationWhileIndependentBlockRetires (0 ms)
+[----------] 9 tests from ResourceLeases (0 ms total)
+
+[----------] Global test environment tear-down
+[==========] 13 tests from 2 test suites ran. (0 ms total)
+[  PASSED  ] 12 tests.
+[  FAILED  ] 1 test, listed below:
+[  FAILED  ] ResourceLeases.CrossThreadReadersHoldGenerationWhileIndependentBlockRetires
+
+ 1 FAILED TEST

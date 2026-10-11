@@ -1,0 +1,4 @@
+F1 CPU+CUDA: original mixed plan, leased host/device math, eight allocation-free replays and held completion drain passed
+H1 contracts: shape/format/context/range/overflow, bounded OOM rollback and accepted prefix failure passed
+ggml_cuda_init: found 1 CUDA devices (Total VRAM: 12281 MiB):
+  Device 0: NVIDIA GeForce RTX 4070, compute capability 8.9, VMM: yes, VRAM: 12281 MiB
