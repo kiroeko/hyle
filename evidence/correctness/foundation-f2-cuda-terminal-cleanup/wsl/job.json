@@ -1,0 +1,121 @@
+{
+  "candidate": "5b3efe2cce3fcab2bc55cf749af2d862a786ef25",
+  "source_manifest": "HYLE full canonical Git archive\nGit commit: 5b3efe2cce3fcab2bc55cf749af2d862a786ef25\nGit tree: 7023c5780a7c99b10f0b41a4e27f3bf5899dea04\n",
+  "mode": "cuda",
+  "source": "/home/kiro/hyle-f1/native-fault/source-3034fc595abf",
+  "build": "/home/kiro/hyle-f1/native-fault/build-3034fc595abf",
+  "identity": {
+    "os": "Linux kiro-workstation 6.18.40.1-microsoft-standard-WSL2 #1 SMP PREEMPT_DYNAMIC Fri Jul 31 22:12:15 UTC 2026 x86_64 x86_64 x86_64 GNU/Linux",
+    "compiler": "g++-14 (Ubuntu 14.2.0-4ubuntu2~24.04.1) 14.2.0\nCopyright (C) 2024 Free Software Foundation, Inc.\nThis is free software; see the source for copying conditions.  There is NO\nwarranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.",
+    "cmake": "cmake version 3.28.3\n\nCMake suite maintained and supported by Kitware (kitware.com/cmake).",
+    "cuda": "nvcc: NVIDIA (R) Cuda compiler driver\nCopyright (c) 2005-2026 NVIDIA Corporation\nBuilt on Tue_Jun_09_02:43:40_PM_PDT_2026\nCuda compilation tools, release 13.3, V13.3.73\nBuild cuda_13.3.r13.3/compiler.38244171_0",
+    "gpu": "NVIDIA GeForce RTX 4070, GPU-e7376560-6f5d-ec19-6ee4-3dd3a2c81ef8, 617.14"
+  },
+  "preflight_failure": null,
+  "scope": "F2 selected WSL cuda qualification only; SDK/all-platform final verdict unproven",
+  "parallel": 1,
+  "environment": {
+    "ASAN_OPTIONS": "halt_on_error=1:detect_leaks=1",
+    "UBSAN_OPTIONS": "halt_on_error=1:print_stacktrace=1",
+    "TSAN_OPTIONS": "halt_on_error=1"
+  },
+  "stages": [
+    {
+      "name": "configure",
+      "command": [
+        "/usr/bin/cmake",
+        "-S",
+        "/home/kiro/hyle-f1/native-fault/source-3034fc595abf",
+        "-B",
+        "/home/kiro/hyle-f1/native-fault/build-3034fc595abf"
+      ],
+      "pid": 620,
+      "state": "terminal",
+      "available_bytes": 32418275328,
+      "log": "configure.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "a36771d22535875562d53306753806ff7dad24bd8ee516cb9709823dc61acdd2"
+    },
+    {
+      "name": "build",
+      "command": [
+        "/usr/bin/cmake",
+        "--build",
+        "/home/kiro/hyle-f1/native-fault/build-3034fc595abf",
+        "--target",
+        "hyle_compute_backend_cuda_test",
+        "hyle_compute_test",
+        "hyle_compute_backend_cuda_late_failure_test",
+        "hyle_compute_backend_cuda_copy_late_failure_test",
+        "--parallel",
+        "1"
+      ],
+      "pid": 694,
+      "state": "terminal",
+      "available_bytes": 32143020032,
+      "log": "build.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "8d2307e3497cd09cfeaba0f8b35d4e9c90f7c1171b5908314a647cbd557aad41"
+    },
+    {
+      "name": "common",
+      "command": [
+        "/home/kiro/hyle-f1/native-fault/build-3034fc595abf/bin/hyle_compute_test",
+        "--gtest_filter=CopyRanges.*:CopyLeaseHandoff.*:CopyDependency.*:ResourceLeases.*:Completion.*"
+      ],
+      "pid": 812,
+      "state": "terminal",
+      "available_bytes": 31908274176,
+      "log": "common.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "d72be2fc80389a39a09e533c7ece38b3c40b17621d91cbc869879bdc8392febd"
+    },
+    {
+      "name": "cuda",
+      "command": [
+        "/home/kiro/hyle-f1/native-fault/build-3034fc595abf/bin/hyle_compute_backend_cuda_test",
+        "--gtest_filter=CudaCopyBatch.*:CudaCopyProgram.*:CudaBackend.*Resource*:CudaBackend.*External*:CudaBackend.*Adopt*:CudaBackend.ContextEnvironmentMatchesNativeFactsAndOwnsItsSnapshot:CudaBackend.MemoryKindsExposeTruthfulSyncAndTypedPointerSemantics",
+        "--gtest_output=xml:/root/hyle-scratch/compute-unified/foundation-f2-cuda-5b3efe2cc/cuda.xml"
+      ],
+      "pid": 815,
+      "state": "terminal",
+      "available_bytes": 31926611968,
+      "log": "cuda.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "c460cba2bc21b63d105a1e10ddb4f8341df3d786251302d61b1e6c2d65d6e30b"
+    },
+    {
+      "name": "producer-late",
+      "command": [
+        "/home/kiro/hyle-f1/native-fault/build-3034fc595abf/bin/hyle_compute_backend_cuda_copy_late_failure_test",
+        "--gtest_filter=CudaCopyLateFailure.*"
+      ],
+      "pid": 824,
+      "state": "terminal",
+      "available_bytes": 31881035776,
+      "log": "producer-late.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "e9d102055e4d927b9aca2b7aa4b623d2a0fab2f7f84e991d7aa27c871936e740"
+    },
+    {
+      "name": "late",
+      "command": [
+        "/home/kiro/hyle-f1/native-fault/build-3034fc595abf/bin/hyle_compute_backend_cuda_late_failure_test",
+        "--gtest_filter=CudaBackendLateFailure.*"
+      ],
+      "pid": 834,
+      "state": "terminal",
+      "available_bytes": 32048398336,
+      "log": "late.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "3cf779ab930d330100fe1fd8219777d51498226a2816701135554d34d4052709"
+    }
+  ],
+  "verdict": "PASS"
+}

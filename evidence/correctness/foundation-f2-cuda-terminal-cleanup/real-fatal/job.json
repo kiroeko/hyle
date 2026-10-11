@@ -1,0 +1,61 @@
+{
+  "product_candidate": "03162add05d3e26fe3314c6bcdaafa5a277a3a76",
+  "test_candidate": "7e91e9ad5b40485e555f579053101e31dfc2e16b",
+  "test_tree": "992533f9c6b634ec33a79cca5360aed970ddb930",
+  "scope": "F2 actual CUDA producer late failure only; original backend fault separate process; product unchanged",
+  "build": "C:\\h7\\foundation-f1-q0",
+  "compiler": "C:/Program Files/Microsoft Visual Studio/18/Enterprise/VC/Tools/MSVC/14.50.35717/bin/Hostx64/x64/cl.exe",
+  "parallel": 1,
+  "stages": [
+    {
+      "name": "identity",
+      "command": [
+        "nvidia-smi",
+        "--query-gpu=name,uuid,driver_version",
+        "--format=csv,noheader"
+      ],
+      "pid": 82516,
+      "state": "terminal",
+      "available_bytes": 45772914688,
+      "log": "identity.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "fc0da0dd7e8d2c9d1419aa11e4801acb7158a0e185c28122c0fd6292a65f4044"
+    },
+    {
+      "name": "build",
+      "command": [
+        "C:\\Program Files\\CMake\\bin\\cmake.EXE",
+        "--build",
+        "C:\\h7\\foundation-f1-q0",
+        "--target",
+        "hyle_compute_backend_cuda_copy_late_failure_test",
+        "hyle_compute_backend_cuda_late_failure_test",
+        "--parallel",
+        "1"
+      ],
+      "pid": 55000,
+      "state": "terminal",
+      "available_bytes": 45761646592,
+      "log": "build.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "3cf28c817a99df8a1eaaeb8cf5805d8395c1b3db2c117e92aa3ddbc390ed3e7c"
+    },
+    {
+      "name": "producer",
+      "command": [
+        "C:\\h7\\foundation-f1-q0\\bin\\hyle_compute_backend_cuda_copy_late_failure_test.exe",
+        "--gtest_filter=CudaCopyLateFailure.*",
+        "--gtest_output=xml:C:\\public\\project-hyle\\hyle\\.scratch\\foundation-f2\\producer-late-windows-7e91e9ad5\\producer.xml"
+      ],
+      "pid": 61372,
+      "state": "terminal",
+      "available_bytes": 45760565248,
+      "log": "producer.log",
+      "exit_code": 3,
+      "verdict": "FAIL",
+      "sha256": "59c4bdd2a856dda1b8ac6adbb23b42002aaefe10bb290e819295b3a1f39fb55d"
+    }
+  ]
+}

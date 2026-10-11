@@ -819,6 +819,13 @@ CUDA command/copy segment。只创建 backend Context 不会自动装入计算 P
 同 Context 只表示事件可以互通，不表示不同 stream 天然有序。Graph 根据值依赖为跨 Queue 路线插入
 必要的 device wait；direct 调用方仍须建立完成依赖，不能仅靠 host 端先后调用保证另一 stream 已完成。
 
+真实非法地址、设备assert等终态执行错误会保留在Completion中，失败数据不会变成ready。按
+[CUDA错误合同](https://docs.nvidia.com/cuda/cuda-driver-api/cuda_driver_api/group__CUDA__TYPES.html)，
+这些错误使后续CUDA工作持续失败，继续使用CUDA需要退出并重启进程。HYLE不会自动reset共享
+primary context。已实际退休的HYLE guards与逻辑allocation owner可正常退出；native free若仍返回
+同类终态错误，原生allocation是否实际回收为UNKNOWN，不能把逻辑计数归零当作GPU residency归零。
+非终态错误和错误handle仍保留原诊断。精确本批边界见[F2终态释放记录](../implementation/tasks/compute/foundation-f2-cuda-terminal-cleanup.md)。
+
 CUDA `Buffer/View` 的 `write/fill/copy_from/read` 是同步存储操作：返回成功后本次操作已完成，可用于
 初始化权重后立即在独立 Queue 上消费。它们不是异步传输 API；设备写/填充/复制会等待自身默认流的完成，
 但不替你等待其他 non-blocking Queue 对同一 buffer 的在途访问。先显式完成冲突工作，再调用同步方法。

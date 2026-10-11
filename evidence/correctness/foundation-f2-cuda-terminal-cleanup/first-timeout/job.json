@@ -1,0 +1,59 @@
+{
+  "product_candidate": "03162add05d3e26fe3314c6bcdaafa5a277a3a76",
+  "test_candidate": "56dbabad5dcb29783096a0005470ae7f064fd60c",
+  "test_tree": "ac497140cd3521bcff9b30f64ba8a9453f3dc621",
+  "scope": "F2 actual CUDA producer late failure only; original backend fault separate process; product unchanged",
+  "build": "C:\\h7\\foundation-f1-q0",
+  "compiler": "C:/Program Files/Microsoft Visual Studio/18/Enterprise/VC/Tools/MSVC/14.50.35717/bin/Hostx64/x64/cl.exe",
+  "parallel": 1,
+  "stages": [
+    {
+      "name": "identity",
+      "command": [
+        "nvidia-smi",
+        "--query-gpu=name,uuid,driver_version",
+        "--format=csv,noheader"
+      ],
+      "pid": 48996,
+      "state": "terminal",
+      "available_bytes": 45960560640,
+      "log": "identity.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "fc0da0dd7e8d2c9d1419aa11e4801acb7158a0e185c28122c0fd6292a65f4044"
+    },
+    {
+      "name": "build",
+      "command": [
+        "C:\\Program Files\\CMake\\bin\\cmake.EXE",
+        "--build",
+        "C:\\h7\\foundation-f1-q0",
+        "--target",
+        "hyle_compute_backend_cuda_copy_late_failure_test",
+        "hyle_compute_backend_cuda_late_failure_test",
+        "--parallel",
+        "1"
+      ],
+      "pid": 41028,
+      "state": "terminal",
+      "available_bytes": 45960507392,
+      "log": "build.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "6bde387043c9e87f921781996994756d53199d2910340f0740281c5272aec350"
+    },
+    {
+      "name": "producer",
+      "command": [
+        "C:\\h7\\foundation-f1-q0\\bin\\hyle_compute_backend_cuda_copy_late_failure_test.exe",
+        "--gtest_filter=CudaCopyLateFailure.*",
+        "--gtest_output=xml:C:\\public\\project-hyle\\hyle\\.scratch\\foundation-f2\\producer-late-windows-56dbabad5\\producer.xml"
+      ],
+      "pid": 79624,
+      "state": "terminal",
+      "available_bytes": 45848571904,
+      "log": "producer.log",
+      "verdict": "TIMEOUT"
+    }
+  ]
+}

@@ -1,0 +1,181 @@
+{
+  "schema_version": 1,
+  "candidate": "5b3efe2cce3fcab2bc55cf749af2d862a786ef25",
+  "tree": "7023c5780a7c99b10f0b41a4e27f3bf5899dea04",
+  "base_candidate": "03162add05d3e26fe3314c6bcdaafa5a277a3a76",
+  "scope": "CUDA backend F2-06 terminal cleanup only; API/layout/normal fields unchanged; other owner scope preserved",
+  "verdict": "PASS",
+  "profiles": [
+    {
+      "name": "first-timeout",
+      "verdict": "TIMEOUT",
+      "receipt": "first-timeout/job.json",
+      "files": {
+        "build.log": {
+          "path": "first-timeout/build.log",
+          "sha256": "6bde387043c9e87f921781996994756d53199d2910340f0740281c5272aec350"
+        },
+        "identity.log": {
+          "path": "first-timeout/identity.log",
+          "sha256": "fc0da0dd7e8d2c9d1419aa11e4801acb7158a0e185c28122c0fd6292a65f4044"
+        },
+        "job.json": {
+          "path": "first-timeout/job.json",
+          "sha256": "fe0e23cd51ecdec9c48da05c0b52e577bdf65930836d7f6b2daf00aa90444412"
+        },
+        "producer.log": {
+          "path": "first-timeout/producer.log",
+          "sha256": "d9de017d1a30b47f97fb0398b3c91b8e272df74a3e894ea7ca347406e0748bec"
+        }
+      }
+    },
+    {
+      "name": "real-fatal",
+      "verdict": "FAIL",
+      "receipt": "real-fatal/job.json",
+      "files": {
+        "build.log": {
+          "path": "real-fatal/build.log",
+          "sha256": "3cf28c817a99df8a1eaaeb8cf5805d8395c1b3db2c117e92aa3ddbc390ed3e7c"
+        },
+        "identity.log": {
+          "path": "real-fatal/identity.log",
+          "sha256": "fc0da0dd7e8d2c9d1419aa11e4801acb7158a0e185c28122c0fd6292a65f4044"
+        },
+        "job.json": {
+          "path": "real-fatal/job.json",
+          "sha256": "8174b8986fdc5a0768b52e1a4f4aa1efb44d8a39b3f324924e05a4ca3559cc34"
+        },
+        "producer.log": {
+          "path": "real-fatal/producer.log",
+          "sha256": "59c4bdd2a856dda1b8ac6adbb23b42002aaefe10bb290e819295b3a1f39fb55d"
+        }
+      }
+    },
+    {
+      "name": "windows-late",
+      "verdict": "PASS",
+      "receipt": "windows-late/job.json",
+      "files": {
+        "backend.log": {
+          "path": "windows-late/backend.log",
+          "sha256": "feb195afc61e64e4d7c9bf6ad5a4a8eded9d175387cb92c3b06d4fb550ec765e"
+        },
+        "build.log": {
+          "path": "windows-late/build.log",
+          "sha256": "aa666c1f8fd8840856c5173fa79db3265d07cce2661a4907db42efc58b289ef0"
+        },
+        "identity.log": {
+          "path": "windows-late/identity.log",
+          "sha256": "fc0da0dd7e8d2c9d1419aa11e4801acb7158a0e185c28122c0fd6292a65f4044"
+        },
+        "job-before-product-identity.json": {
+          "path": "windows-late/job-before-product-identity.json",
+          "sha256": "28805ff302be5545ef5d6c74c3c264c7afd9d506269f896cfd0c445f83e1977a"
+        },
+        "job.json": {
+          "path": "windows-late/job.json",
+          "sha256": "df04221060fa37b75c544ae3ab2d261ecbf008a8a107954139ce12d43b5c7016"
+        },
+        "producer.log": {
+          "path": "windows-late/producer.log",
+          "sha256": "11c638083acaab20566b590696976fecb0c31dd926bc85b740e24b00b6b53aa4"
+        },
+        "producer.xml": {
+          "path": "windows-late/producer.xml",
+          "sha256": "17ab126092d189e58c608ae1846e83dcbecae2e3b3578c3c43b98bf9f8b66092"
+        }
+      }
+    },
+    {
+      "name": "windows-regression",
+      "verdict": "PASS",
+      "receipt": "windows-regression/job.json",
+      "files": {
+        "build.log": {
+          "path": "windows-regression/build.log",
+          "sha256": "c3b80ebdd300b75f1fd0cdd5a4839d26f3112843b4d067e83784496e03193785"
+        },
+        "common.log": {
+          "path": "windows-regression/common.log",
+          "sha256": "385787fa753e787f76788d0881d30621122ec2383336448db7ed4d722cfddea6"
+        },
+        "deps.log": {
+          "path": "windows-regression/deps.log",
+          "sha256": "1a127eb5b1d570251449225338a6ec97c37f85142ef7e3f42ff8ceb5d403eae5"
+        },
+        "headers.log": {
+          "path": "windows-regression/headers.log",
+          "sha256": "db2f8431654c65ff13565b0affc08a69a56e925b27edade11d4433a086f9368a"
+        },
+        "identity.log": {
+          "path": "windows-regression/identity.log",
+          "sha256": "5ea583d0a4d43e0243d1237c000eb69187feff35d4a08503f2b025b47be63536"
+        },
+        "job.json": {
+          "path": "windows-regression/job.json",
+          "sha256": "0bc3693ccfcf89f91e53d2ad93517fbb10a9f5547363348945249452ab26cf54"
+        },
+        "metrics.xml": {
+          "path": "windows-regression/metrics.xml",
+          "sha256": "3bf22f17da0bfbf6e804fb0826f99bf6a1fc0488378427902412c0991b27a981"
+        },
+        "test.log": {
+          "path": "windows-regression/test.log",
+          "sha256": "ada7bec7495d1ac463988772ade87766a088888c7b51a66f2501177607a3435f"
+        }
+      }
+    },
+    {
+      "name": "wsl",
+      "verdict": "PASS",
+      "receipt": "wsl/job.json",
+      "files": {
+        "build.log": {
+          "path": "wsl/build.log",
+          "sha256": "8d2307e3497cd09cfeaba0f8b35d4e9c90f7c1171b5908314a647cbd557aad41"
+        },
+        "common.log": {
+          "path": "wsl/common.log",
+          "sha256": "d72be2fc80389a39a09e533c7ece38b3c40b17621d91cbc869879bdc8392febd"
+        },
+        "configure.log": {
+          "path": "wsl/configure.log",
+          "sha256": "a36771d22535875562d53306753806ff7dad24bd8ee516cb9709823dc61acdd2"
+        },
+        "cuda.log": {
+          "path": "wsl/cuda.log",
+          "sha256": "c460cba2bc21b63d105a1e10ddb4f8341df3d786251302d61b1e6c2d65d6e30b"
+        },
+        "cuda.xml": {
+          "path": "wsl/cuda.xml",
+          "sha256": "76d7a37d68ca700fa33310ab5c929df1f2a69ace8b3647a16d604aa6962e0b8b"
+        },
+        "job.json": {
+          "path": "wsl/job.json",
+          "sha256": "2919943430517f350d27c51fcd56f71631d14affcf1e768cea513a663dc1bd65"
+        },
+        "late.log": {
+          "path": "wsl/late.log",
+          "sha256": "3cf779ab930d330100fe1fd8219777d51498226a2816701135554d34d4052709"
+        },
+        "producer-late.log": {
+          "path": "wsl/producer-late.log",
+          "sha256": "e9d102055e4d927b9aca2b7aa4b623d2a0fab2f7f84e991d7aa27c871936e740"
+        }
+      }
+    }
+  ],
+  "counts": {
+    "windows_normal_cuda": 14,
+    "wsl_normal_cuda": 15,
+    "common_each": 34,
+    "producer_late_each": 1,
+    "original_backend_late_each": 1
+  },
+  "native_physical_release": "UNKNOWN after sticky CUDA terminal error; process restart required; no automatic primary reset",
+  "pending": [
+    "remaining shipping source/SDK/new headers and general F2 candidate matrix",
+    "all-platform final P0/red team"
+  ]
+}

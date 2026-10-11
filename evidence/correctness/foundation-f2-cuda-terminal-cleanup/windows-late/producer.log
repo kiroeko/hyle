@@ -1,0 +1,17 @@
+Running main() from C:\public\tools\hyle-dependencies\v1\sources\googletest-063de7e9578f-162765170ae6\googletest\src\gtest_main.cc
+Note: Google Test filter = CudaCopyLateFailure.*
+[==========] Running 1 test from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 1 test from CudaCopyLateFailure
+[ RUN      ] CudaCopyLateFailure.ActualProducerFailureKeepsEarlierGroupAndNeverPublishesFailedOutput
+F2 late: cold loaded; enqueue producer
+F2 late: producer accepted; bind ranges
+F2 late: submit copy phases
+F2 late: copy accepted; observe early group
+F2 late: early group ready; release actual fault
+[       OK ] CudaCopyLateFailure.ActualProducerFailureKeepsEarlierGroupAndNeverPublishesFailedOutput (111 ms)
+[----------] 1 test from CudaCopyLateFailure (111 ms total)
+
+[----------] Global test environment tear-down
+[==========] 1 test from 1 test suite ran. (111 ms total)
+[  PASSED  ] 1 test.

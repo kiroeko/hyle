@@ -4,9 +4,10 @@
 产品候选：`03162add05d3e26fe3314c6bcdaafa5a277a3a76`。四owner为compute、compute_backend_cuda、
 compute_route_apple、compute_route_vulkan；其余owner保持原状态。候选后的文档/状态/证据不改变产品。
 
-当前例外：真实CudaCopyLateFailure在正常组ready后GPU晚失败，反证CUDA owned free的fatal边界；
-compute_backend_cuda仅按[固定终态释放delta](foundation-f2-cuda-terminal-cleanup.md)退回AUDITED。
-原其他三owner候选不变，03162add0不能签CUDA的这条失败旅程。SDK门先等此delta固定。
+CUDA例外已定界修复：真实CudaCopyLateFailure反证owned free的fatal边界，backend按
+[固定终态释放delta](foundation-f2-cuda-terminal-cleanup.md)退回AUDITED后重新CANDIDATE于
+`5b3efe2cce3fcab2bc55cf749af2d862a786ef25`。原其他三owner候选/source scope不变。
+Windows/WSL该旅程及正常回归已有实证；后续SDK按包含delta的5b3efe2cc全源码执行。
 
 ## 实施与已取证范围
 

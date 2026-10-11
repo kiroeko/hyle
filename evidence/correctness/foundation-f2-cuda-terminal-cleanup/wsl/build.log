@@ -1,0 +1,26 @@
+[0/2] Re-checking globbed directories...
+[1/16] Building CXX object src/compute_backend_cuda/CMakeFiles/hyle_compute_backend_cuda.dir/cuda_backend.cc.o
+[2/16] Building CXX object src/compute_backend_cuda/CMakeFiles/hyle_compute_backend_cuda.dir/cuda_batch_transfer.cc.o
+/home/kiro/hyle-f1/native-fault/source-3034fc595abf/src/compute_backend_cuda/cuda_batch_transfer.cc:38:84: warning: missing initializer for member ‘CUmemcpyAttributes_st::srcLocHint’ [-Wmissing-field-initializers]
+   38 |   CUmemcpyAttributes attributes{.srcAccessOrder = CU_MEMCPY_SRC_ACCESS_ORDER_STREAM};
+      |                                                                                    ^
+/home/kiro/hyle-f1/native-fault/source-3034fc595abf/src/compute_backend_cuda/cuda_batch_transfer.cc:38:84: warning: missing initializer for member ‘CUmemcpyAttributes_st::dstLocHint’ [-Wmissing-field-initializers]
+/home/kiro/hyle-f1/native-fault/source-3034fc595abf/src/compute_backend_cuda/cuda_batch_transfer.cc:38:84: warning: missing initializer for member ‘CUmemcpyAttributes_st::flags’ [-Wmissing-field-initializers]
+[3/16] Building CXX object src/compute_backend_cuda/CMakeFiles/hyle_compute_backend_cuda.dir/cuda_memory.cc.o
+[4/16] Building CXX object src/compute_backend_cuda/CMakeFiles/hyle_compute_backend_cuda.dir/cuda_device_status.cc.o
+[5/16] Linking CXX shared library bin/libhyle_compute_backend_cuda.so.0.1.0
+[6/16] Creating library symlink bin/libhyle_compute_backend_cuda.so
+[7/16] Building CXX object tests/compute_backend_cuda/CMakeFiles/hyle_compute_backend_cuda_test.dir/cuda_backend_test.cc.o
+[8/16] Building CXX object tests/compute_backend_cuda/CMakeFiles/hyle_compute_backend_cuda_test.dir/copy_batch_test.cc.o
+/home/kiro/hyle-f1/native-fault/source-3034fc595abf/tests/compute_backend_cuda/copy_batch_test.cc: In destructor ‘{anonymous}::NativeBatch::~NativeBatch()’:
+/home/kiro/hyle-f1/native-fault/source-3034fc595abf/tests/compute_backend_cuda/copy_batch_test.cc:28:8: warning: suggest explicit braces to avoid ambiguous ‘else’ [-Wdangling-else]
+   28 |     if (queue) EXPECT_TRUE(queue->drain().ok());
+      |        ^
+[9/16] Building CXX object tests/compute_backend_cuda/CMakeFiles/hyle_compute_backend_cuda_test.dir/copy_program_test.cc.o
+[10/16] Building CXX object tests/compute_backend_cuda/CMakeFiles/hyle_compute_backend_cuda_test.dir/device_status_test.cc.o
+[11/16] Linking CXX executable bin/hyle_compute_backend_cuda_test
+[12/16] Building CUDA object tests/compute_backend_cuda/CMakeFiles/hyle_compute_backend_cuda_late_failure_test.dir/cuda_failure_kernel.cu.o
+[13/16] Linking CXX executable bin/hyle_compute_backend_cuda_late_failure_test
+[14/16] Building CXX object tests/compute_backend_cuda/CMakeFiles/hyle_compute_backend_cuda_copy_late_failure_test.dir/copy_late_failure_test.cc.o
+[15/16] Building CUDA object tests/compute_backend_cuda/CMakeFiles/hyle_compute_backend_cuda_copy_late_failure_test.dir/cuda_failure_kernel.cu.o
+[16/16] Linking CXX executable bin/hyle_compute_backend_cuda_copy_late_failure_test

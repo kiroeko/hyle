@@ -1,0 +1,44 @@
+Running main() from C:\public\tools\hyle-dependencies\v1\sources\googletest-063de7e9578f-162765170ae6\googletest\src\gtest_main.cc
+Note: Google Test filter = CudaCopyBatch.*:CudaCopyProgram.*:CudaBackend.*Resource*:CudaBackend.*External*:CudaBackend.*Adopt*:CudaBackend.ContextEnvironmentMatchesNativeFactsAndOwnsItsSnapshot
+[==========] Running 14 tests from 3 test suites.
+[----------] Global test environment set-up.
+[----------] 6 tests from CudaBackend
+[ RUN      ] CudaBackend.ContextEnvironmentMatchesNativeFactsAndOwnsItsSnapshot
+[       OK ] CudaBackend.ContextEnvironmentMatchesNativeFactsAndOwnsItsSnapshot (87 ms)
+[ RUN      ] CudaBackend.SynchronousResourceInitializationPrecedesIndependentQueue
+[       OK ] CudaBackend.SynchronousResourceInitializationPrecedesIndependentQueue (4 ms)
+[ RUN      ] CudaBackend.AdoptedStreamIsReleasedAfterItsQueueAndCompletion
+[       OK ] CudaBackend.AdoptedStreamIsReleasedAfterItsQueueAndCompletion (3 ms)
+[ RUN      ] CudaBackend.ExternalBufferBorrowAndAdoptHaveDistinctOwnership
+[       OK ] CudaBackend.ExternalBufferBorrowAndAdoptHaveDistinctOwnership (2 ms)
+[ RUN      ] CudaBackend.AdoptedNativeLeasePoolOwnsResourceAndBorrowedPayloadCannotMasquerade
+[       OK ] CudaBackend.AdoptedNativeLeasePoolOwnsResourceAndBorrowedPayloadCannotMasquerade (2 ms)
+[ RUN      ] CudaBackend.RejectsExternalCaptureWithoutInvokingCommand
+[       OK ] CudaBackend.RejectsExternalCaptureWithoutInvokingCommand (2 ms)
+[----------] 6 tests from CudaBackend (103 ms total)
+
+[----------] 3 tests from CudaCopyBatch
+[ RUN      ] CudaCopyBatch.BidirectionalSameDeviceByteRoutesAndColdSlotReplay
+[       OK ] CudaCopyBatch.BidirectionalSameDeviceByteRoutesAndColdSlotReplay (2 ms)
+[ RUN      ] CudaCopyBatch.PhysicalIdentityUsesByteAddressAndRejectsForeignContext
+[       OK ] CudaCopyBatch.PhysicalIdentityUsesByteAddressAndRejectsForeignContext (4 ms)
+[ RUN      ] CudaCopyBatch.ColdAbsentBatchUsesRealSameStreamCopiesWithoutReprobing
+[       OK ] CudaCopyBatch.ColdAbsentBatchUsesRealSameStreamCopiesWithoutReprobing (2 ms)
+[----------] 3 tests from CudaCopyBatch (9 ms total)
+
+[----------] 5 tests from CudaCopyProgram
+[ RUN      ] CudaCopyProgram.TwoIndependentSlotsPhaseBytesOldResultsAndNoHotMetadataGrowth
+[       OK ] CudaCopyProgram.TwoIndependentSlotsPhaseBytesOldResultsAndNoHotMetadataGrowth (2 ms)
+[ RUN      ] CudaCopyProgram.EarlyReadyRetainsPendingReadonlySuccessorAndAbandonedNativeWork
+[       OK ] CudaCopyProgram.EarlyReadyRetainsPendingReadonlySuccessorAndAbandonedNativeWork (11 ms)
+[ RUN      ] CudaCopyProgram.CapacityAliasErrorProducerAndZeroBatchDoNotConsumeOrAcceptWork
+[       OK ] CudaCopyProgram.CapacityAliasErrorProducerAndZeroBatchDoNotConsumeOrAcceptWork (3 ms)
+[ RUN      ] CudaCopyProgram.AcceptedFallbackSuffixErrorPreservesEarlierReadyGroupWithoutRetry
+[       OK ] CudaCopyProgram.AcceptedFallbackSuffixErrorPreservesEarlierReadyGroupWithoutRetry (2 ms)
+[ RUN      ] CudaCopyProgram.UnknownEventObservationAndUnsupportedCancelKeepActualPendingUsesAlive
+[       OK ] CudaCopyProgram.UnknownEventObservationAndUnsupportedCancelKeepActualPendingUsesAlive (25 ms)
+[----------] 5 tests from CudaCopyProgram (45 ms total)
+
+[----------] Global test environment tear-down
+[==========] 14 tests from 3 test suites ran. (159 ms total)
+[  PASSED  ] 14 tests.

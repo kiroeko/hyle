@@ -413,9 +413,10 @@
     },
     {
       "module": "compute_backend_cuda",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
+      "candidate": "5b3efe2cce3fcab2bc55cf749af2d862a786ef25",
       "record": "docs/implementation/tasks/compute/foundation-f2-cuda-terminal-cleanup.md",
-      "summary": "F2-06 AUDITED delta：真实producer晚失败在正常组ready后触发CUDA owned free fatal；仅限定已有资源/context终态释放边界，原错误与未知native回收保留，无新API/常态字段，修复后沿独立Windows/WSL fault与直接消费者再冻结。"
+      "summary": "F2-06 CANDIDATE delta：真实晚失败后的CUDA资源/context终态释放边界已固定；Windows/WSL独立producer故障、原错误/旧组保留/guards回收与正常资源精准回归通过，native physical free仍UNKNOWN；剩余F2 SDK/全矩阵/P0终审红队未完成。"
     },
     {
       "module": "compute_provider_native",

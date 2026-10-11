@@ -1,6 +1,6 @@
 # F2：准备后的原生批量范围搬运
 
-> 状态：compute/Apple/Vulkan为CANDIDATE；CUDA backend因真实晚失败释放fatal退回AUDITED，限定delta见下。
+> 状态：四owner均为CANDIDATE；CUDA终态释放delta已固定于5b3efe2cc，完整资格仍待集中矩阵。
 > 实施前[原子/复合接缝源码审计](foundation-f2-source-audit.md)为定界输入，未授权产品修改或签运行资格。
 > component / owner：拟 compute、compute_backend_cpu/cuda、
 > compute_route_cpu/cuda/apple/vulkan；只有普通 Graph 需要本批 native binding 接缝时再绑定对应 owner。
@@ -9,9 +9,13 @@
 
 ### 固定candidate
 
+CUDA释放delta已完成Windows/WSL实际反例及正常资源精准回归，backend重新进入CANDIDATE，
+绑定`5b3efe2cce3fcab2bc55cf749af2d862a786ef25`；原三个owner仍绑定03162add0且source scope未改。
+当前SDK/后续资格使用包含此修复的5b3efe2cc全源码，历史退回记录及失败保留，预算不重置。
+
 2026-10-11晚失败反例：原kernel冷加载后正常组已实际ready，释放GPU故障时CUDA owned resource
 deallocate触发fatal。仅compute_backend_cuda按[终态释放delta](foundation-f2-cuda-terminal-cleanup.md)
-从CANDIDATE退回AUDITED，原03162add0对该失败旅程已被反证；其他三owner保持候选/原证据。
+曾从CANDIDATE退回AUDITED，原03162add0对该失败旅程已被反证；其他三owner保持候选/原证据。
 原固定七FIX/预算不重置，不自动恢复F1或提前F3；delta固定后再给CUDA绑定新不可变candidate。
 
 产品commit：`03162add05d3e26fe3314c6bcdaafa5a277a3a76`；四当前owner从AUDITED进入CANDIDATE，

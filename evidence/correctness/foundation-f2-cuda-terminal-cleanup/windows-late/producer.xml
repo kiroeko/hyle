@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites tests="1" failures="0" disabled="0" errors="0" time="0.111" timestamp="2026-10-11T21:10:00.010" name="AllTests">
+  <testsuite name="CudaCopyLateFailure" tests="1" failures="0" disabled="0" skipped="0" errors="0" time="0.111" timestamp="2026-10-11T21:10:00.010">
+    <testcase name="ActualProducerFailureKeepsEarlierGroupAndNeverPublishesFailedOutput" file="C:\public\project-hyle\hyle\tests\compute_backend_cuda\copy_late_failure_test.cc" line="37" status="run" result="completed" time="0.111" timestamp="2026-10-11T21:10:00.010" classname="CudaCopyLateFailure" />
+  </testsuite>
+</testsuites>

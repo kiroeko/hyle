@@ -1,6 +1,6 @@
 # F2 CUDA：真实晚失败后的资源释放反例
 
-状态：AUDITED；owner仅compute_backend_cuda；父轮仍是[F2七FIX](foundation-f2-batched-transfers.md)。
+状态：CANDIDATE；owner仅compute_backend_cuda；父轮仍是[F2七FIX](foundation-f2-batched-transfers.md)。
 baseline/改前registry ref：`7e91e9ad5b40485e555f579053101e31dfc2e16b`。
 原产品candidate为03162add0；compute/Apple/Vulkan保持其CANDIDATE，F1历史不重开。
 
@@ -40,3 +40,15 @@ writer producer真实晚失败后失败组不得发布，原错误保留，旧�
 shipping ordinary CPU/CUDA数学及hook absence沿原SDK矩阵。未改变的其他owner证据按scope复用。
 源码正常free路径/成功context恢复成本保持原等级；对非法地址后的native物理回收不签PASS。
 一个固定修复集、原失败预算与停止规则继续；仍有material矛盾则裁决，不无限扩建native工具。
+
+## 固定结果与新candidate
+
+`5b3efe2cce3fcab2bc55cf749af2d862a786ef25` 固定该单项delta，改前registry ref也是该commit。
+没有public API/layout/常态字段或新runtime，只在九个已定义终态Driver错误的释放/context-pop路径
+避免host二次fatal，正常free与成功pop的expected context检查保持。
+[Windows/WSL收据](../../../../evidence/correctness/foundation-f2-cuda-terminal-cleanup/receipt.json)保留TIMEOUT、实际产品fatal及修复：
+两平台各独立producer late 1项和原backend late 1项PASS；Windows14/WSL15项正常CUDA/拥有权/
+copy故障精准回归、两次34 common与Windows头/deps PASS。旧host组实际读回、失败组不发布，
+原CudaRuntime非法地址状态保留，watchdog未介入，HYLE guards/metadata归零。
+native physical free仍UNKNOWN，不由逻辑归零代签。原其他owner31候选scope及本delta之外证据按
+source/contract匹配复用；剩余shipping数学/SDK/头与F2全矩阵终审待验，当前不是CLOSED。
