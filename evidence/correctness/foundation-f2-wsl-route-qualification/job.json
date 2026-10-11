@@ -1,0 +1,168 @@
+{
+  "candidate": "5b3efe2cce3fcab2bc55cf749af2d862a786ef25",
+  "source_manifest": "HYLE full canonical Git archive\nGit commit: 5b3efe2cce3fcab2bc55cf749af2d862a786ef25\nGit tree: 7023c5780a7c99b10f0b41a4e27f3bf5899dea04\n",
+  "identity": {
+    "system": "Linux",
+    "node": "kiro-workstation",
+    "release": "6.18.40.1-microsoft-standard-WSL2",
+    "version": "#1 SMP PREEMPT_DYNAMIC Fri Jul 31 22:12:15 UTC 2026",
+    "machine": "x86_64",
+    "processor": "x86_64"
+  },
+  "parallel": 1,
+  "stages": [
+    {
+      "mode": "static",
+      "route": "apple",
+      "command": [
+        "cmake",
+        "-S",
+        "/root/hyle-scratch/compute-unified/foundation-f2-wsl-route-qualification-5b3efe2cc/static-apple",
+        "-B",
+        "/root/hyle-scratch/compute-unified/foundation-f2-wsl-route-qualification-5b3efe2cc/static-apple/build",
+        "-G",
+        "Ninja",
+        "-DCMAKE_CXX_COMPILER=/usr/bin/g++-14",
+        "-DCMAKE_PREFIX_PATH=/root/hyle-scratch/compute-unified/foundation-f2-sdk-static-5b3efe2cc/relocated"
+      ],
+      "exit_code": 1,
+      "verdict": "PASS_EXPECTED_ABSENT",
+      "log": "static-apple.log",
+      "sha256": "179afc015bd57951e268079d35f6a1108d436ca841e9ad75743e07b2cceebeb0"
+    },
+    {
+      "mode": "static",
+      "route": "vulkan",
+      "command": [
+        "cmake",
+        "-S",
+        "/root/hyle-scratch/compute-unified/foundation-f2-wsl-route-qualification-5b3efe2cc/static-vulkan",
+        "-B",
+        "/root/hyle-scratch/compute-unified/foundation-f2-wsl-route-qualification-5b3efe2cc/static-vulkan/build",
+        "-G",
+        "Ninja",
+        "-DCMAKE_CXX_COMPILER=/usr/bin/g++-14",
+        "-DCMAKE_PREFIX_PATH=/root/hyle-scratch/compute-unified/foundation-f2-sdk-static-5b3efe2cc/relocated"
+      ],
+      "exit_code": 1,
+      "verdict": "PASS_EXPECTED_ABSENT",
+      "log": "static-vulkan.log",
+      "sha256": "b12bd1ce99159601e4d7dd6af7ab7e69da0cf5a2f37658b2c11152f33abb2daa"
+    },
+    {
+      "mode": "shared",
+      "route": "apple",
+      "command": [
+        "cmake",
+        "-S",
+        "/root/hyle-scratch/compute-unified/foundation-f2-wsl-route-qualification-5b3efe2cc/shared-apple",
+        "-B",
+        "/root/hyle-scratch/compute-unified/foundation-f2-wsl-route-qualification-5b3efe2cc/shared-apple/build",
+        "-G",
+        "Ninja",
+        "-DCMAKE_CXX_COMPILER=/usr/bin/g++-14",
+        "-DCMAKE_PREFIX_PATH=/root/hyle-scratch/compute-unified/foundation-f2-sdk-shared-5b3efe2cc/relocated"
+      ],
+      "exit_code": 1,
+      "verdict": "PASS_EXPECTED_ABSENT",
+      "log": "shared-apple.log",
+      "sha256": "5216cdaf32d3dc745d1ef599ad2222b2954dd2da8a6f66eb5881cfdfd2107605"
+    },
+    {
+      "mode": "shared",
+      "route": "vulkan",
+      "command": [
+        "cmake",
+        "-S",
+        "/root/hyle-scratch/compute-unified/foundation-f2-wsl-route-qualification-5b3efe2cc/shared-vulkan",
+        "-B",
+        "/root/hyle-scratch/compute-unified/foundation-f2-wsl-route-qualification-5b3efe2cc/shared-vulkan/build",
+        "-G",
+        "Ninja",
+        "-DCMAKE_CXX_COMPILER=/usr/bin/g++-14",
+        "-DCMAKE_PREFIX_PATH=/root/hyle-scratch/compute-unified/foundation-f2-sdk-shared-5b3efe2cc/relocated"
+      ],
+      "exit_code": 1,
+      "verdict": "PASS_EXPECTED_ABSENT",
+      "log": "shared-vulkan.log",
+      "sha256": "273dd57454188244795aa5d1515d967d373845d67266e3f58291f25b8768b023"
+    }
+  ],
+  "loader_environment": {},
+  "vulkan": {
+    "loader": "libvulkan.so.1",
+    "devices": [
+      {
+        "api_version": 4211006,
+        "driver_version": 104865800,
+        "vendor_id": 65541,
+        "device_id": 0,
+        "device_type": 4,
+        "name": "llvmpipe (LLVM 20.1.2, 256 bits)",
+        "software": true
+      }
+    ],
+    "icds": {
+      "lvp_icd.json": {
+        "ICD": {
+          "api_version": "1.4.318",
+          "library_path": "libvulkan_lvp.so"
+        },
+        "file_format_version": "1.0.1"
+      },
+      "gfxstream_vk_icd.json": {
+        "ICD": {
+          "api_version": "1.1.318",
+          "library_path": "libvulkan_gfxstream.so"
+        },
+        "file_format_version": "1.0.1"
+      },
+      "radeon_icd.json": {
+        "ICD": {
+          "api_version": "1.4.318",
+          "library_path": "libvulkan_radeon.so"
+        },
+        "file_format_version": "1.0.1"
+      },
+      "intel_hasvk_icd.json": {
+        "ICD": {
+          "api_version": "1.3.318",
+          "library_path": "libvulkan_intel_hasvk.so"
+        },
+        "file_format_version": "1.0.1"
+      },
+      "asahi_icd.json": {
+        "ICD": {
+          "api_version": "1.4.318",
+          "library_path": "libvulkan_asahi.so"
+        },
+        "file_format_version": "1.0.1"
+      },
+      "virtio_icd.json": {
+        "ICD": {
+          "api_version": "1.4.318",
+          "library_path": "libvulkan_virtio.so"
+        },
+        "file_format_version": "1.0.1"
+      },
+      "intel_icd.json": {
+        "ICD": {
+          "api_version": "1.4.318",
+          "library_path": "libvulkan_intel.so"
+        },
+        "file_format_version": "1.0.1"
+      },
+      "nouveau_icd.json": {
+        "ICD": {
+          "api_version": "1.4.318",
+          "library_path": "libvulkan_nouveau.so"
+        },
+        "file_format_version": "1.0.1"
+      }
+    },
+    "qualified_gpu": false,
+    "scope": "current physical-device qualification only; no product math verdict",
+    "verdict": "NO_QUALIFIED_GPU"
+  },
+  "verdict": "PASS"
+}

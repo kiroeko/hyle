@@ -1,0 +1,4 @@
+/root/hyle-scratch/compute-unified/foundation-f2-wsl-vulkan-sdk-shared-5b3efe2cc/parent/absence-apple.cc:1:10: fatal error: hyle/compute/apple_memory.h: No such file or directory
+    1 | #include <hyle/compute/apple_memory.h>
+      |          ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+compilation terminated.

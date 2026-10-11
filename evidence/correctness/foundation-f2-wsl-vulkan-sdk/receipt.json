@@ -1,0 +1,147 @@
+{
+  "schema_version": 1,
+  "product_candidate": "5b3efe2cce3fcab2bc55cf749af2d862a786ef25",
+  "source_manifest": "HYLE full canonical Git archive\nGit commit: 5b3efe2cce3fcab2bc55cf749af2d862a786ef25\nGit tree: 7023c5780a7c99b10f0b41a4e27f3bf5899dea04\n",
+  "scope": "WSL CPU/Vulkan relocated installed static/shared build, seven installed headers, negative header/route diagnostics and actual ldd resolution. Current software-only Vulkan does not qualify GPU math/native execution. Source-embedded build and final component/fault gates remain unproven.",
+  "vulkan_qualification": "../foundation-f2-wsl-route-qualification/receipt.json",
+  "profiles": [
+    {
+      "mode": "static",
+      "verdict": "PASS_APPLICABLE_DELIVERY_NO_QUALIFIED_GPU",
+      "receipt": "static/job.json",
+      "header_count": 7,
+      "math": {
+        "verdict": "NOT_RUN_NO_QUALIFIED_GPU",
+        "qualification_receipt": "/root/hyle-scratch/compute-unified/foundation-f2-wsl-route-qualification-5b3efe2cc/job.json",
+        "reason": "Only actual llvmpipe CPU device is visible; never sign software Vulkan as GPU math"
+      },
+      "actual_shared_HYLE_load_paths": [],
+      "files": {
+        "absence-apple.log": {
+          "path": "static/absence-apple.log",
+          "sha256": "d5b1e1712ec8095b9960fb4cfb0ac398438bd1b929294c285b5c7f80fa629132"
+        },
+        "absence-cuda.log": {
+          "path": "static/absence-cuda.log",
+          "sha256": "3f0195752b458c96fd882aa75f66c6750ab4e65a1b5c9f5fc92828fff8680a7a"
+        },
+        "absence-route-apple.log": {
+          "path": "static/absence-route-apple.log",
+          "sha256": "924bc06b26cb2571caf215204b4f18634d540d2094ac314f9c90e6b524cf91f5"
+        },
+        "absence-route-cuda.log": {
+          "path": "static/absence-route-cuda.log",
+          "sha256": "bada1bbc957d2f07816c3c871565cf0f546be69ead7853c19070fa2c4631e241"
+        },
+        "configure.log": {
+          "path": "static/configure.log",
+          "sha256": "7a46b74c6b72dd9a99b4ed5a3ee772c60266b97da66d3435e06c9b9e6a34acb5"
+        },
+        "consumer-build.log": {
+          "path": "static/consumer-build.log",
+          "sha256": "7ce181a8b9816bca99235a89d0139d2d15d59f964de3df93d0c1f1d2c44cc85c"
+        },
+        "consumer-configure.log": {
+          "path": "static/consumer-configure.log",
+          "sha256": "01e99d96802501d9b2e2d3014735b88f73ceba28f87e8a3348a3e32a782ed6fc"
+        },
+        "dynamic-deps.log": {
+          "path": "static/dynamic-deps.log",
+          "sha256": "ad21fa0ad34fe6ca41426ee76b5306fca83ee5cba3dc0e2b762b8328a4e7aed5"
+        },
+        "install.log": {
+          "path": "static/install.log",
+          "sha256": "10f0ac6dcf426c6926b1a5cafa81f184c4821b71e3c27fddf6ebd7e1b8654553"
+        },
+        "job.json": {
+          "path": "static/job.json",
+          "sha256": "396e8ec7cd9f3fb0d786e325169d017fd768179019a268a44bfe1ad1f596092e"
+        },
+        "producer.log": {
+          "path": "static/producer.log",
+          "sha256": "bcc43e3916491a28dcc73024d7c6116b417d053fe506883e6693e878c38cccc5"
+        }
+      }
+    },
+    {
+      "mode": "shared",
+      "verdict": "PASS_APPLICABLE_DELIVERY_NO_QUALIFIED_GPU",
+      "receipt": "shared/job.json",
+      "header_count": 7,
+      "math": {
+        "verdict": "NOT_RUN_NO_QUALIFIED_GPU",
+        "qualification_receipt": "/root/hyle-scratch/compute-unified/foundation-f2-wsl-route-qualification-5b3efe2cc/job.json",
+        "reason": "Only actual llvmpipe CPU device is visible; never sign software Vulkan as GPU math"
+      },
+      "actual_shared_HYLE_load_paths": [
+        "libhyle_graph_route_cpu.so.0.1.0 => /root/hyle-scratch/compute-unified/foundation-f2-wsl-vulkan-sdk-shared-5b3efe2cc/relocated/lib/libhyle_graph_route_cpu.so.0.1.0 (0x000079e69b66f000)",
+        "libhyle_graph_route_vulkan.so.0.1.0 => /root/hyle-scratch/compute-unified/foundation-f2-wsl-vulkan-sdk-shared-5b3efe2cc/relocated/lib/libhyle_graph_route_vulkan.so.0.1.0 (0x000079e69b660000)",
+        "libhyle_graph.so.0.1.0 => /root/hyle-scratch/compute-unified/foundation-f2-wsl-vulkan-sdk-shared-5b3efe2cc/relocated/lib/libhyle_graph.so.0.1.0 (0x000079e69b5c5000)",
+        "libhyle_compute_route_vulkan.so.0.1.0 => /root/hyle-scratch/compute-unified/foundation-f2-wsl-vulkan-sdk-shared-5b3efe2cc/relocated/lib/libhyle_compute_route_vulkan.so.0.1.0 (0x000079e69b4f1000)",
+        "libhyle_compute.so.0.1.0 => /root/hyle-scratch/compute-unified/foundation-f2-wsl-vulkan-sdk-shared-5b3efe2cc/relocated/lib/libhyle_compute.so.0.1.0 (0x000079e69b48c000)",
+        "libhyle_compute_ops.so.0.1.0 => /root/hyle-scratch/compute-unified/foundation-f2-wsl-vulkan-sdk-shared-5b3efe2cc/relocated/lib/libhyle_compute_ops.so.0.1.0 (0x000079e69b476000)",
+        "libhyle_mem.so.0.1.0 => /root/hyle-scratch/compute-unified/foundation-f2-wsl-vulkan-sdk-shared-5b3efe2cc/relocated/lib/libhyle_mem.so.0.1.0 (0x000079e69b41b000)",
+        "libhyle_error.so.0.1.0 => /root/hyle-scratch/compute-unified/foundation-f2-wsl-vulkan-sdk-shared-5b3efe2cc/relocated/lib/libhyle_error.so.0.1.0 (0x000079e69b412000)",
+        "libhyle_graph_provider_onednn.so.0.1.0 => /root/hyle-scratch/compute-unified/foundation-f2-wsl-vulkan-sdk-shared-5b3efe2cc/relocated/lib/libhyle_graph_provider_onednn.so.0.1.0 (0x000079e69b3cf000)",
+        "libhyle_compute_route_cpu.so.0.1.0 => /root/hyle-scratch/compute-unified/foundation-f2-wsl-vulkan-sdk-shared-5b3efe2cc/relocated/lib/libhyle_compute_route_cpu.so.0.1.0 (0x000079e69b3c7000)",
+        "libhyle_compute_provider_native.so.0.1.0 => /root/hyle-scratch/compute-unified/foundation-f2-wsl-vulkan-sdk-shared-5b3efe2cc/relocated/lib/libhyle_compute_provider_native.so.0.1.0 (0x000079e69b373000)",
+        "libhyle_compute_provider_onednn.so.0.1.0 => /root/hyle-scratch/compute-unified/foundation-f2-wsl-vulkan-sdk-shared-5b3efe2cc/relocated/lib/libhyle_compute_provider_onednn.so.0.1.0 (0x000079e698c00000)",
+        "libhyle_compute_provider_ggml.so.0.1.0 => /root/hyle-scratch/compute-unified/foundation-f2-wsl-vulkan-sdk-shared-5b3efe2cc/relocated/lib/libhyle_compute_provider_ggml.so.0.1.0 (0x000079e69b2b1000)",
+        "libhyle_compute_backend_cpu.so.0.1.0 => /root/hyle-scratch/compute-unified/foundation-f2-wsl-vulkan-sdk-shared-5b3efe2cc/relocated/lib/libhyle_compute_backend_cpu.so.0.1.0 (0x000079e69b2ab000)",
+        "libhyle_container.so.0.1.0 => /root/hyle-scratch/compute-unified/foundation-f2-wsl-vulkan-sdk-shared-5b3efe2cc/relocated/lib/libhyle_container.so.0.1.0 (0x000079e69b29f000)",
+        "libhyle_time.so.0.1.0 => /root/hyle-scratch/compute-unified/foundation-f2-wsl-vulkan-sdk-shared-5b3efe2cc/relocated/lib/libhyle_time.so.0.1.0 (0x000079e69b296000)",
+        "libhyle_compute_provider_iree_vulkan.so.0.1.0 => /root/hyle-scratch/compute-unified/foundation-f2-wsl-vulkan-sdk-shared-5b3efe2cc/relocated/lib/libhyle_compute_provider_iree_vulkan.so.0.1.0 (0x000079e69ae3e000)",
+        "libhyle_compute_provider_ggml_vulkan.so.0.1.0 => /root/hyle-scratch/compute-unified/foundation-f2-wsl-vulkan-sdk-shared-5b3efe2cc/relocated/lib/libhyle_compute_provider_ggml_vulkan.so.0.1.0 (0x000079e696a00000)",
+        "libhyle_platform.so.0.1.0 => /root/hyle-scratch/compute-unified/foundation-f2-wsl-vulkan-sdk-shared-5b3efe2cc/relocated/lib/libhyle_platform.so.0.1.0 (0x000079e69ae13000)",
+        "libhyle_simd.so.0.1.0 => /root/hyle-scratch/compute-unified/foundation-f2-wsl-vulkan-sdk-shared-5b3efe2cc/relocated/lib/libhyle_simd.so.0.1.0 (0x000079e696600000)",
+        "libhyle_compute_ggml_runtime.so.0.1.0 => /root/hyle-scratch/compute-unified/foundation-f2-wsl-vulkan-sdk-shared-5b3efe2cc/relocated/lib/libhyle_compute_ggml_runtime.so.0.1.0 (0x000079e680800000)"
+      ],
+      "files": {
+        "absence-apple.log": {
+          "path": "shared/absence-apple.log",
+          "sha256": "2f6a22a819950cc3970fb501a3c182866969c9c3388474a270da477c7fc76019"
+        },
+        "absence-cuda.log": {
+          "path": "shared/absence-cuda.log",
+          "sha256": "d0de2f1e43c2960c9db3c95c3d4bca1bfe1075640deb7e87253bfb55bbe6ec8f"
+        },
+        "absence-route-apple.log": {
+          "path": "shared/absence-route-apple.log",
+          "sha256": "0ed80fd6d12cba89bae1394251230a5b3fa06cdba2f48ec4df764532d3a2406f"
+        },
+        "absence-route-cuda.log": {
+          "path": "shared/absence-route-cuda.log",
+          "sha256": "8fc7ec5ae0487d0d5fe7be5e426cfd50c6150057bd2a041bb2aced5d8473a3e7"
+        },
+        "configure.log": {
+          "path": "shared/configure.log",
+          "sha256": "67484c3351fa8825f1b6e97e289a7be8b2643e5ea2fe0c3f6c63aff482371565"
+        },
+        "consumer-build.log": {
+          "path": "shared/consumer-build.log",
+          "sha256": "7ce181a8b9816bca99235a89d0139d2d15d59f964de3df93d0c1f1d2c44cc85c"
+        },
+        "consumer-configure.log": {
+          "path": "shared/consumer-configure.log",
+          "sha256": "47d9bb3b32e88b2e0d364706c27360f66101d4795ff9bda4d9c59327e9049681"
+        },
+        "dynamic-deps.log": {
+          "path": "shared/dynamic-deps.log",
+          "sha256": "99539b311f6080a8c4ef87025e277981c6cc75a3efd22e6d078c3917700c151a"
+        },
+        "install.log": {
+          "path": "shared/install.log",
+          "sha256": "a9983408fef7de34db3ce2fea597fbee6d0967d59ec13fe8aabb2d9ec95ece44"
+        },
+        "job.json": {
+          "path": "shared/job.json",
+          "sha256": "3bf94c975b89a5e6b0d44db09872bffeed86ca03bc77c98edcbc39ee30cb1040"
+        },
+        "producer.log": {
+          "path": "shared/producer.log",
+          "sha256": "fc92bd56a362dcaa0b67af76747249f222215ac3f2e15326d888efbebee20a52"
+        }
+      }
+    }
+  ]
+}

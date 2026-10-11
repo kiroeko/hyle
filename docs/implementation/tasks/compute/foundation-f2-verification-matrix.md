@@ -66,8 +66,8 @@ GPU stream drain和原CUDA abandoned-event reaper回调完成不同；借用allo
 | Windows CPU/Vulkan | PASS（5b3efe2cc全源码下scope匹配实际source复验） | relocated static/shared数学、七头/Vulkan ON、CUDA/Apple头与package路线缺席、DLL同目录及真实header deps PASS；9 native/34 common已有首轮，unknown风险/终审待验 |
 | Air CPU/Apple | PASS（scope匹配source；新全源码installed复验） | relocated static/shared数学、七头/Apple ON、CUDA/Vulkan头与package请求缺席、MLX assets PASS；10 native/34 common首轮已取证，剩余故障/终审待验 |
 | Air CPU/Vulkan | PASS（5b3efe2cc全源码下source/shared） | 9 native/34 common、source与relocated static/shared数学、七头/Vulkan ON、CUDA/Apple缺席、实际dyld迁址加载PASS；剩余unknown风险/终审待验 |
-| WSL CPU/CUDA | PASS（scope匹配source/static；新delta安装消费已复验） | 新delta真实producer late＋15 CUDA/34 common PASS；relocated static/shared数学及七头/CUDA ON、Apple/Vulkan头缺席PASS；package路线请求诊断与扩展/终审仍待验 |
-| WSL Vulkan | GPU资格UNPROVEN | 先实际枚举loader/device；只有合格GPU才签数学。若仍仅llvmpipe，则记录本候选条件结果，完成适用构建/安装/头/absence格 |
+| WSL CPU/CUDA | PASS（scope匹配source/static；新delta安装消费已复验） | 新delta真实producer late＋15 CUDA/34 common PASS；relocated static/shared数学及七头/CUDA ON、Apple/Vulkan头与package路线请求缺席PASS；扩展/终审仍待验 |
+| WSL Vulkan | 实际NO_QUALIFIED_GPU（仅llvmpipe） | relocated static/shared构建/七安装头/Vulkan ON、Apple/CUDA头及package请求缺席、实际ldd迁址解析PASS；GPU数学未运行；source embedding与扩展/终审待验 |
 
 共同控制/CPU copy sanitizer使用原WSL ASan+UBSan与TSan树，固定34 common、3 CpuCopyProgram；
 TSan启动限制只按真实事实处理，不以ASan代签并发。header sole-include涵盖batch_transfer、
@@ -99,8 +99,9 @@ ASan、独立UBSan各34 common＋3 CpuCopyProgram PASS，真实compile flags保�
 各七头独立编译PASS（六common＋CUDA ON）；该CPU/CUDA SKU按合同不安装Apple/Vulkan头，
 两个negative include明确header not found，未把缺席当native OFF头编译。static首fixture误把这两个
 未选择头列为positive，原FAIL保留；同candidate/prefix只修scratch选择并补absence，未改产品/预算。
-ldd无missing dependency，shared HYLE库实际解析到relocated/lib。package拒绝未构建路线请求的
-configure诊断、其他平台SDK与selector扩展/终审继续UNPROVEN；当前四owner仍CANDIDATE。
+ldd无missing dependency，shared HYLE库实际解析到relocated/lib。未构建Apple/Vulkan路线的package
+请求在两个真实迁址prefix各明确拒绝并列出cpu;cuda，见[补齐收据](../../../../evidence/correctness/foundation-f2-wsl-route-qualification/receipt.json)。
+selector扩展/终审继续UNPROVEN；当前四owner仍CANDIDATE。
 
 ## Windows CPU/CUDA source/static/shared（含释放delta）
 
@@ -148,3 +149,17 @@ Direct/Graph scalar oracle PASS；实机Apple M4/MoltenVK1.4.1、software=no。
 在移除DYLD_LIBRARY_PATH/FALLBACK override后证明24条HYLE库全部来自relocated/lib。
 CPU/Apple共享包也补同样实际加载取证，23条HYLE库来自其relocated/lib，见[Apple SDK收据](../../../../evidence/correctness/foundation-f2-air-apple-sdk/receipt.json)。
 上述首轮故障/交付不扩大成未运行unknown-fence或最终七门；WSL Vulkan及扩展/终审仍待验。
+
+## WSL当前Vulkan资格与适用installed交付
+
+[当前资格收据](../../../../evidence/correctness/foundation-f2-wsl-route-qualification/receipt.json)实际调用系统Vulkan loader枚举physical devices，
+仅llvmpipe/LLVM20.1.2、CPU device type4；没有VK/MESA路线override。NVIDIA CUDA设备可用并不
+证明同一WSL的Vulkan GPU可用。本批GPU数学/native运行记NOT_RUN_NO_QUALIFIED_GPU，不签PASS。
+Windows RTX4070和Air M4/MoltenVK的真实GPU证据保持独立；不以软件设备替代它们。
+
+[适用SDK收据](../../../../evidence/correctness/foundation-f2-wsl-vulkan-sdk/receipt.json)绑定5b3efe2cc完整canonical源码/tree：复用原CPU/Vulkan
+static/shared production树，单线程构建后install并真实rename，旧prefix消失，Hyle metadata无
+source/build/staging路径。两普通hyle::graph消费者实际编译链接PASS；各七installed头独立编译
+（六common＋Vulkan ON），Apple/CUDA头明确缺席，两个未构建路线请求各明确拒绝并列出cpu;vulkan。
+ldd无missing，shared的HYLE库全部实际来自relocated/lib。该收据只签适用交付，不签GPU数学；
+source embedding补构建、原生unknown/failure风险、selector扩展与P0终审仍待验，四owner仍CANDIDATE。

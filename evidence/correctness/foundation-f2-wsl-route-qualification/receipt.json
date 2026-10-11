@@ -1,0 +1,40 @@
+{
+  "schema_version": 1,
+  "product_candidate": "5b3efe2cce3fcab2bc55cf749af2d862a786ef25",
+  "scope": "WSL CPU/CUDA static/shared missing-route package diagnostics and current Vulkan physical-device qualification, no GPU math certificate",
+  "source_manifest": "HYLE full canonical Git archive\nGit commit: 5b3efe2cce3fcab2bc55cf749af2d862a786ef25\nGit tree: 7023c5780a7c99b10f0b41a4e27f3bf5899dea04\n",
+  "vulkan_verdict": "NO_QUALIFIED_GPU",
+  "devices": [
+    {
+      "api_version": 4211006,
+      "driver_version": 104865800,
+      "vendor_id": 65541,
+      "device_id": 0,
+      "device_type": 4,
+      "name": "llvmpipe (LLVM 20.1.2, 256 bits)",
+      "software": true
+    }
+  ],
+  "files": {
+    "job.json": {
+      "path": "job.json",
+      "sha256": "a48b905befa21df225d4b024a5fa9fbd71cc44ffe0ed01fdef1ab9925baaf74f"
+    },
+    "shared-apple.log": {
+      "path": "shared-apple.log",
+      "sha256": "5216cdaf32d3dc745d1ef599ad2222b2954dd2da8a6f66eb5881cfdfd2107605"
+    },
+    "shared-vulkan.log": {
+      "path": "shared-vulkan.log",
+      "sha256": "273dd57454188244795aa5d1515d967d373845d67266e3f58291f25b8768b023"
+    },
+    "static-apple.log": {
+      "path": "static-apple.log",
+      "sha256": "179afc015bd57951e268079d35f6a1108d436ca841e9ad75743e07b2cceebeb0"
+    },
+    "static-vulkan.log": {
+      "path": "static-vulkan.log",
+      "sha256": "b12bd1ce99159601e4d7dd6af7ab7e69da0cf5a2f37658b2c11152f33abb2daa"
+    }
+  }
+}

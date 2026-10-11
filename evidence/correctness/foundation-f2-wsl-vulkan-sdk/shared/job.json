@@ -1,0 +1,204 @@
+{
+  "candidate": "5b3efe2cce3fcab2bc55cf749af2d862a786ef25",
+  "source_manifest": "HYLE full canonical Git archive\nGit commit: 5b3efe2cce3fcab2bc55cf749af2d862a786ef25\nGit tree: 7023c5780a7c99b10f0b41a4e27f3bf5899dea04\n",
+  "mode": "shared",
+  "producer": "/root/hyle-scratch/compute-unified/l-cpu-vulkan/selected-graph/shared-sdk-build",
+  "scope": "WSL CPU/Vulkan installed SDK build, relocation, seven headers and absent routes only; current loader has no qualified GPU, no math/native PASS",
+  "identity": "g++-14 (Ubuntu 14.2.0-4ubuntu2~24.04.1) 14.2.0\nCopyright (C) 2024 Free Software Foundation, Inc.\nThis is free software; see the source for copying conditions.  There is NO\nwarranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.\n\n",
+  "parallel": 1,
+  "stages": [
+    {
+      "name": "configure",
+      "command": [
+        "/usr/bin/cmake",
+        "-S",
+        "/root/hyle-scratch/compute-unified/source-7a7b4c3b",
+        "-B",
+        "/root/hyle-scratch/compute-unified/l-cpu-vulkan/selected-graph/shared-sdk-build"
+      ],
+      "pid": 1444,
+      "state": "terminal",
+      "available_bytes": 31975710720,
+      "log": "configure.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "67484c3351fa8825f1b6e97e289a7be8b2643e5ea2fe0c3f6c63aff482371565"
+    },
+    {
+      "name": "producer",
+      "command": [
+        "/usr/bin/cmake",
+        "--build",
+        "/root/hyle-scratch/compute-unified/l-cpu-vulkan/selected-graph/shared-sdk-build",
+        "--parallel",
+        "1"
+      ],
+      "pid": 1530,
+      "state": "terminal",
+      "available_bytes": 32386908160,
+      "log": "producer.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "fc92bd56a362dcaa0b67af76747249f222215ac3f2e15326d888efbebee20a52"
+    },
+    {
+      "name": "install",
+      "command": [
+        "/usr/bin/cmake",
+        "--install",
+        "/root/hyle-scratch/compute-unified/l-cpu-vulkan/selected-graph/shared-sdk-build",
+        "--prefix",
+        "/root/hyle-scratch/compute-unified/foundation-f2-wsl-vulkan-sdk-shared-5b3efe2cc/staging"
+      ],
+      "pid": 2124,
+      "state": "terminal",
+      "available_bytes": 31908810752,
+      "log": "install.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "a9983408fef7de34db3ce2fea597fbee6d0967d59ec13fe8aabb2d9ec95ece44"
+    },
+    {
+      "name": "consumer-configure",
+      "command": [
+        "/usr/bin/cmake",
+        "-S",
+        "/root/hyle-scratch/compute-unified/foundation-f2-wsl-vulkan-sdk-shared-5b3efe2cc/parent",
+        "-B",
+        "/root/hyle-scratch/compute-unified/foundation-f2-wsl-vulkan-sdk-shared-5b3efe2cc/consumer",
+        "-G",
+        "Ninja",
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DCMAKE_CXX_COMPILER=/usr/bin/g++-14",
+        "-DCMAKE_PREFIX_PATH=/root/hyle-scratch/compute-unified/foundation-f2-wsl-vulkan-sdk-shared-5b3efe2cc/relocated"
+      ],
+      "pid": 2125,
+      "state": "terminal",
+      "available_bytes": 31910092800,
+      "log": "consumer-configure.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "47d9bb3b32e88b2e0d364706c27360f66101d4795ff9bda4d9c59327e9049681"
+    },
+    {
+      "name": "consumer-build",
+      "command": [
+        "/usr/bin/cmake",
+        "--build",
+        "/root/hyle-scratch/compute-unified/foundation-f2-wsl-vulkan-sdk-shared-5b3efe2cc/consumer",
+        "--parallel",
+        "1"
+      ],
+      "pid": 2159,
+      "state": "terminal",
+      "available_bytes": 31921651712,
+      "log": "consumer-build.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "7ce181a8b9816bca99235a89d0139d2d15d59f964de3df93d0c1f1d2c44cc85c"
+    },
+    {
+      "name": "dynamic-deps",
+      "command": [
+        "/usr/bin/ldd",
+        "/root/hyle-scratch/compute-unified/foundation-f2-wsl-vulkan-sdk-shared-5b3efe2cc/consumer/batch"
+      ],
+      "pid": 2267,
+      "state": "terminal",
+      "available_bytes": 31804080128,
+      "log": "dynamic-deps.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "99539b311f6080a8c4ef87025e277981c6cc75a3efd22e6d078c3917700c151a"
+    }
+  ],
+  "relocation": {
+    "original": "/root/hyle-scratch/compute-unified/foundation-f2-wsl-vulkan-sdk-shared-5b3efe2cc/staging",
+    "relocated": "/root/hyle-scratch/compute-unified/foundation-f2-wsl-vulkan-sdk-shared-5b3efe2cc/relocated",
+    "original_absent": true,
+    "Hyle_metadata_no_source_build_staging_paths": true
+  },
+  "header_scope": {
+    "count": 7,
+    "Vulkan": "ON",
+    "Apple": "not installed for this route set",
+    "CUDA": "not installed for this route set",
+    "source_include_directory_requested": false
+  },
+  "absence": [
+    {
+      "route": "apple",
+      "header": "apple_memory.h",
+      "command": [
+        "/usr/bin/g++-14",
+        "-std=c++23",
+        "-fsyntax-only",
+        "-I/root/hyle-scratch/compute-unified/foundation-f2-wsl-vulkan-sdk-shared-5b3efe2cc/relocated/include",
+        "/root/hyle-scratch/compute-unified/foundation-f2-wsl-vulkan-sdk-shared-5b3efe2cc/parent/absence-apple.cc"
+      ],
+      "exit_code": 1,
+      "verdict": "PASS_EXPECTED_ABSENT",
+      "log": "absence-apple.log",
+      "sha256": "2f6a22a819950cc3970fb501a3c182866969c9c3388474a270da477c7fc76019"
+    },
+    {
+      "route": "cuda",
+      "header": "backends/cuda.h",
+      "command": [
+        "/usr/bin/g++-14",
+        "-std=c++23",
+        "-fsyntax-only",
+        "-I/root/hyle-scratch/compute-unified/foundation-f2-wsl-vulkan-sdk-shared-5b3efe2cc/relocated/include",
+        "/root/hyle-scratch/compute-unified/foundation-f2-wsl-vulkan-sdk-shared-5b3efe2cc/parent/absence-cuda.cc"
+      ],
+      "exit_code": 1,
+      "verdict": "PASS_EXPECTED_ABSENT",
+      "log": "absence-cuda.log",
+      "sha256": "d0de2f1e43c2960c9db3c95c3d4bca1bfe1075640deb7e87253bfb55bbe6ec8f"
+    }
+  ],
+  "math": {
+    "verdict": "NOT_RUN_NO_QUALIFIED_GPU",
+    "qualification_receipt": "/root/hyle-scratch/compute-unified/foundation-f2-wsl-route-qualification-5b3efe2cc/job.json",
+    "reason": "Only actual llvmpipe CPU device is visible; never sign software Vulkan as GPU math"
+  },
+  "absence_routes": [
+    {
+      "route": "apple",
+      "command": [
+        "/usr/bin/cmake",
+        "-S",
+        "/root/hyle-scratch/compute-unified/foundation-f2-wsl-vulkan-sdk-shared-5b3efe2cc/parent/route-apple",
+        "-B",
+        "/root/hyle-scratch/compute-unified/foundation-f2-wsl-vulkan-sdk-shared-5b3efe2cc/route-apple-build",
+        "-G",
+        "Ninja",
+        "-DCMAKE_CXX_COMPILER=/usr/bin/g++-14",
+        "-DCMAKE_PREFIX_PATH=/root/hyle-scratch/compute-unified/foundation-f2-wsl-vulkan-sdk-shared-5b3efe2cc/relocated"
+      ],
+      "exit_code": 1,
+      "verdict": "PASS_EXPECTED_ABSENT",
+      "log": "absence-route-apple.log",
+      "sha256": "0ed80fd6d12cba89bae1394251230a5b3fa06cdba2f48ec4df764532d3a2406f"
+    },
+    {
+      "route": "cuda",
+      "command": [
+        "/usr/bin/cmake",
+        "-S",
+        "/root/hyle-scratch/compute-unified/foundation-f2-wsl-vulkan-sdk-shared-5b3efe2cc/parent/route-cuda",
+        "-B",
+        "/root/hyle-scratch/compute-unified/foundation-f2-wsl-vulkan-sdk-shared-5b3efe2cc/route-cuda-build",
+        "-G",
+        "Ninja",
+        "-DCMAKE_CXX_COMPILER=/usr/bin/g++-14",
+        "-DCMAKE_PREFIX_PATH=/root/hyle-scratch/compute-unified/foundation-f2-wsl-vulkan-sdk-shared-5b3efe2cc/relocated"
+      ],
+      "exit_code": 1,
+      "verdict": "PASS_EXPECTED_ABSENT",
+      "log": "absence-route-cuda.log",
+      "sha256": "8fc7ec5ae0487d0d5fe7be5e426cfd50c6150057bd2a041bb2aced5d8473a3e7"
+    }
+  ],
+  "verdict": "PASS_APPLICABLE_DELIVERY_NO_QUALIFIED_GPU"
+}

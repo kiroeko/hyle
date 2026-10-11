@@ -392,6 +392,13 @@ gzip及archive SHA保留。其他平台/fault/头与SDK/P0终审红队仍待候�
 
 ## 预声明验证与停止
 
+WSL当前Vulkan loader实际仅枚举llvmpipe，按原卡条件记NO_QUALIFIED_GPU，GPU数学/native不运行。
+原CPU/Vulkan installed static/shared的构建、真实迁址、普通consumer编译、七安装头/Vulkan ON、
+Apple/CUDA header及package请求缺席与ldd路径均通过；CPU/CUDA两个SDK的Apple/Vulkan package
+拒绝诊断也补齐。见[当前矩阵](foundation-f2-verification-matrix.md)、[实际资格](../../../../evidence/correctness/foundation-f2-wsl-route-qualification/receipt.json)及
+[适用Vulkan交付收据](../../../../evidence/correctness/foundation-f2-wsl-vulkan-sdk/receipt.json)。未签软件GPU数学；source embedding/原生风险/
+selector扩展与最终审查继续待验，状态仍CANDIDATE。
+
 Air CPU/Vulkan原生9项/34 common、source与relocated static/shared原BF16/Q8数学、七installed头/
 Vulkan ON及CUDA/Apple缺席已取证，见[当前矩阵](foundation-f2-verification-matrix.md)和
 [Air Vulkan收据](../../../../evidence/correctness/foundation-f2-air-vulkan-qualification/receipt.json)。实机M4/MoltenVK1.4.1、software=no，

@@ -1,0 +1,4 @@
+/root/hyle-scratch/compute-unified/foundation-f2-wsl-vulkan-sdk-shared-5b3efe2cc/parent/absence-cuda.cc:1:10: fatal error: hyle/compute/backends/cuda.h: No such file or directory
+    1 | #include <hyle/compute/backends/cuda.h>
+      |          ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+compilation terminated.

@@ -1,0 +1,13 @@
+[1/9] Building CXX object CMakeFiles/batch.dir/root/hyle-scratch/compute-unified/source-7a7b4c3b/samples/package/graph/batched_transfers/main.cc.o
+/root/hyle-scratch/compute-unified/source-7a7b4c3b/samples/package/graph/batched_transfers/main.cc: In function ‘int main()’:
+/root/hyle-scratch/compute-unified/source-7a7b4c3b/samples/package/graph/batched_transfers/main.cc:455:44: warning: ‘%.*s’ directive argument is null [-Wformat-overflow=]
+  455 |   std::fprintf(stderr, "batched transfers: %.*s\n", static_cast<int>(message.size()), message.data());
+      |                                            ^~~~
+[2/9] Linking CXX executable batch
+[3/9] Building CXX object CMakeFiles/headers.dir/header-0.cc.o
+[4/9] Building CXX object CMakeFiles/headers.dir/header-1.cc.o
+[5/9] Building CXX object CMakeFiles/headers.dir/header-2.cc.o
+[6/9] Building CXX object CMakeFiles/headers.dir/header-3.cc.o
+[7/9] Building CXX object CMakeFiles/headers.dir/header-4.cc.o
+[8/9] Building CXX object CMakeFiles/headers.dir/header-5.cc.o
+[9/9] Building CXX object CMakeFiles/headers.dir/header-6.cc.o
