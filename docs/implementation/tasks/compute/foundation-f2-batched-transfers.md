@@ -10,7 +10,8 @@
 
 ### 固定candidate
 
-compute单项cold分类修复c26261e39已通过Windows完整backend58/compute90/Graph853项，按
+compute单项cold分类修复c26261e39已通过Windows完整backend58/compute90；Graph完整853项
+集合中原846 PASS/7 skip，已用既有bounded Qwen fixture补齐7项，最终853项执行PASS。按
 [delta卡](foundation-f2-prepare-error-classification.md)重新CANDIDATE；原TIMEOUT、实际产品FAIL与恢复均保存。
 后续ordinary消费者资格使用c26261e39全源码，其他owner scope不变；剩余门继续，不重置预算。
 

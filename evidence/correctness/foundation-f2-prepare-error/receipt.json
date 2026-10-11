@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "product_candidate": "c26261e3958c7eb46ecde2a4ba7c5654a03f1b93",
-  "scope": "Cold prepare classification delta: Windows CPU backend/common full tests passed; original full Graph process TIMEOUT, fixed-inventory partitioned qualification running, not yet PASS. Original pre-delta failures in selector-expansion receipt.",
-  "verdict": "PARTIAL_GRAPH_UNPROVEN",
+  "scope": "Windows CPU backend58 and compute90 full tests, CPU Graph853 unique cases PASS after retained 7 fixture skips and exact bounded local fixture recovery. Original timeouts retained; other platforms/SDK and full F2 final gates unproven.",
+  "verdict": "PASS_WINDOWS_COLD_DELTA",
   "counts": {
     "backend": 58,
     "common": 90
@@ -40,6 +40,28 @@
     "job.json": {
       "path": "windows/job.json",
       "sha256": "10948930eed60c8e5cc693182d56981c4bebc1207f6e171845fdf6aadeb9c642"
+    }
+  },
+  "graph": {
+    "receipt": "graph/job.json",
+    "fixture_recovery": "graph/fixture-recovery.json",
+    "manifest": "graph/manifest.json",
+    "verdict": "PASS_AFTER_FIXTURE_RECOVERY",
+    "count": 853,
+    "initial_skipped": 7,
+    "recovered": 7,
+    "remaining_skipped": 0,
+    "disabled": 0,
+    "archive_sha256": "a2d2f7f5611ce16450eac2a2bcaf9d597ea2264c44386713cf1ae22a1b2b0ffb"
+  },
+  "source_sync": {
+    "apple-source-c26261e39.json": {
+      "path": "source-sync/apple-source-c26261e39.json",
+      "sha256": "95df8c4808d26214f51215a960bb5babd80e7b9a09bc6afadea5e9a75f849095"
+    },
+    "wsl-source-c26261e39.json": {
+      "path": "source-sync/wsl-source-c26261e39.json",
+      "sha256": "a94258a8705a872d97d5ab01292a2c34dbe6fb9abd01249ed9f2b8ba22c65c80"
     }
   }
 }

@@ -71,9 +71,17 @@ ordinary SDK及完整剩余影响门继续未验；compute保持AUDITED，不提
 
 产品c26261e3958c7eb46ecde2a4ba7c5654a03f1b93在上述固定单项FIX后停止变化，compute重新
 进入CANDIDATE，改前registry ref为c74f923a2。Windows完整backend58项、compute90项与Graph
-全部853项PASS，实际用例集合精确且无skipped/disabled；原两个TIMEOUT及名称trim修正保留。
+完整853项精确匹配，846项执行PASS、7项因未设置既有本地Qwen fixture而SKIPPED，无disabled；
+归档时发现这一资格缺口，不能将模块进程exit0或完整名称集合写成853项执行PASS。原两个
+TIMEOUT及名称trim修正保留；仅补跑这7项，原产品shape/candidate不变。
 同一二进制、同root恢复完成，完整XML/log压缩包与逐文件SHA列在[收据](../../../../evidence/correctness/foundation-f2-prepare-error/receipt.json)。
 没有新API/layout/常态成本/数学或copy kernel。CUDA仍绑定5b3efe2cc，Apple/Vulkan仍绑定03162add0，
 其owner source scope未变。Air与WSL验证副本已从完整canonical Git archive更新到c26261e39，
 tree185e3c211a65754f5487e7e1d19f8252e68f29d9和archive SHA保存；其他平台/ordinary SDK与剩余
 扩展/终审继续待验，本卡不是CLOSED，不提前F3或把候选固定当作全部工程验收。
+
+归档核对后的7项skip已补：使用已有.scratch/d5-qwen35-six-profile-fixture，核对receipt中
+具名bounded文件SHA，不下载、不重散列4.55GB shard、不改模型文件。逐case120秒/单线程
+补跑全部7项，实际XML精确名称且无skip/failure。最终853个独立用例全部执行PASS，原7 skip、
+两个TIMEOUT与恢复全部原样保留在同一收据/压缩包；早先将exit0/完整集合误说无skip的表述
+已更正，不以覆盖历史日志制造资格。其他平台/SDK及完整剩余工程门仍未完成。

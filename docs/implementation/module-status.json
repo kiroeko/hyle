@@ -272,7 +272,7 @@
       "module": "compute",
       "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/foundation-f2-prepare-error-classification.md",
-      "summary": "F2 CANDIDATE cold delta：pure resource mismatch与provider硬错误已分开，Windows backend58/compute90/Graph853完整实际通过，原FAIL/TIMEOUT保留；其他平台/SDK及余下扩展终审仍未CLOSED。",
+      "summary": "F2 CANDIDATE cold delta：pure resource mismatch与provider硬错误已分开，Windows backend58/compute90/Graph853全部执行PASS（原7 fixture skip已补齐并保留）；原FAIL/TIMEOUT保留，其他平台/SDK及扩展终审未CLOSED。",
       "candidate": "c26261e3958c7eb46ecde2a4ba7c5654a03f1b93"
     },
     {
