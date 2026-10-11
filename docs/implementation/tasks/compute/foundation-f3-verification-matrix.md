@@ -19,6 +19,8 @@
 - 共同控制instrumentation：[ASan](../../../../evidence/correctness/foundation-f3-asan/receipt.json)、
   [UBSan](../../../../evidence/correctness/foundation-f3-ubsan/receipt.json)、
   [TSan](../../../../evidence/correctness/foundation-f3-tsan/receipt.json)各十二项实际风险。
+- 当前增量：[WSL CUDA六项与Windows CPU十二项](../../../../evidence/correctness/foundation-f3-wsl-cuda-deadline/receipt.json)，
+  后者包含过期deadline/重复stop/close及借用用户资源保持可用的直接组合。
 
 ## 语义覆盖
 
@@ -38,11 +40,11 @@
 
 | 平台/路线 | source真实数学 | F3原生文件风险 | installed static/shared与新seam |
 |---|---|---|---|
-| Windows CPU | PASS | 十一项PASS；deadline/repeat-close新fixture待验 | UNPROVEN |
+| Windows CPU | PASS | 当前十二项PASS，含deadline/repeat-close新fixture | UNPROVEN |
 | Windows CUDA | PASS | 六项PASS；共同格式清理增量待验 | UNPROVEN |
 | Windows Vulkan | PASS | 五项PASS；共同格式清理增量待验 | UNPROVEN |
 | WSL CPU | PASS | ASan/UBSan/TSan各十二项PASS；deadline新fixture待验 | UNPROVEN |
-| WSL CUDA | PASS | 六项原生风险构建正在运行，运行UNPROVEN | UNPROVEN |
+| WSL CUDA | PASS | 六项原生风险PASS；当前微小格式变化增量待验 | UNPROVEN |
 | Air CPU | PASS | CPU共同十三项fixture尚未运行 | UNPROVEN |
 | Air Apple | PASS | 六项PASS；共同格式清理增量待验 | UNPROVEN |
 | Air Vulkan | PASS | 五项PASS；共同格式清理增量待验 | UNPROVEN |

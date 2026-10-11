@@ -1,6 +1,6 @@
 # F3：有界文件与计算资源双向管线
 
-> 状态：AUDITED；四路线文件主体及Windows/Air真实数学往返已局部验收，剩余风险、WSL/sanitizer与三交付待验；F1/F2原轮已CLOSED。
+> 状态：AUDITED；四路线主体/真实数学往返、共同三sanitizer和WSL CUDA已验；Air CPU及三交付/终审待验；F1/F2原轮已CLOSED。
 > component / owner：新内部 factor compute_stream；compute仅补下述私有租约/退役接缝；
 > native factory/adapter 归 compute_route_cpu/cuda/apple/vulkan；中央声明只投影这些owner的有限新边。
 > IO/Sched/Mem 只消费既有能力；出现具体基础缺陷才另作定向 owner 修复。
@@ -82,13 +82,13 @@
 
 | Gate | 本轮所需证据 | 当前结果 |
 |---|---|---|
-| scope | 原八FIX、主/正交旅程、六owner及实际baseline | 已定界，尚未产品验收 |
-| architecture | API/生命周期/依赖审计、现有原子组合与有限ledger | AUDITED形状冻结，产品接线仍UNPROVEN |
-| correctness | 02至07逐能力风险矩阵及四路线实际接缝 | NOT_RUN |
+| scope | 原八FIX、主/正交旅程、六owner及实际baseline | 固定范围已落实；不扩F4/F5 |
+| architecture | API/生命周期/依赖审计、现有原子组合与有限ledger | 产品已实现；完整交付图与最终审查待验 |
+| correctness | 02至07逐能力风险矩阵及四路线实际接缝 | 局部PASS；Air CPU/当前微修增量未齐，聚合INCONCLUSIVE |
 | delivery | 01/08 source/static/shared、新头、迁址及缺席 | NOT_RUN |
-| usability_docs | 普通C++自然工厂、双向与错误/close recipe | NOT_RUN |
+| usability_docs | 普通C++自然工厂、双向与错误/close recipe | source指南/样例已运行；installed尚未验证 |
 | red_team | 候选冻结后独立一遍反证检查 | NOT_RUN |
-| engineering_performance | P0成本结构、有限容量与实际路径账单 | NOT_RUN |
+| engineering_performance | P0成本结构、有限容量与实际路径账单 | 源码/实际成本已记录；最终候选裁决待验 |
 
 ## 需求与来源
 
@@ -446,6 +446,14 @@ empty optional deadline初始化。共同TU全部非空白token与f3d931c47一�
 DeadlineExceeded/零IO/零native/零ready；stop后接纳拒绝且输入writer不移动，重复close/drain/collect，
 并验证借用Context/Queue/IoContext/Scheduler及原File仍可用。该测试属于原F3-06风险补证，
 不新增FIX或修改产品；本提交时尚未运行，不写PASS。
+
+[WSL CUDA与deadline收据](../../../../evidence/correctness/foundation-f3-wsl-cuda-deadline/receipt.json)
+现签真实RTX4070/GNU14.2六项原生CUDA文件测试，以及当前产品微修后的Windows CPU十二项。
+WSL当前完整c36c40bed source上的原producer排序、cancel、abandon、normal/empty hard error均实际通过，
+首次configure互斥失败与所有warning保留；同树j4完成，不跑依赖算子目录或重新计产品纠正。
+Windows新过期deadline、重复stop/close/drain、原用户资源仍可用组合实际PASS，增量仅编译/链接
+共同TU和测试（五个Ninja动作），无oneDNN/全库重编。Air共同十三项和当前四route增量正在补证，
+三交付、新头/缺席/迁址与最终红队仍待验。
 
 | FIX | 必须实现 | 验收 |
 |---|---|---|
