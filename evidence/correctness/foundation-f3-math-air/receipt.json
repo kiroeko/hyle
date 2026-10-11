@@ -1,0 +1,79 @@
+{
+  "schema_version": 1,
+  "product_commit": "f3d931c47777f7fbfd35dedf1f5e0734fa28ef6c",
+  "consumer_commit": "b890d9b61ad2334eba2be8dad0fe22dd0a1808eb",
+  "scope": "Air ordinary shared source CPU/Apple/Vulkan file mathematical roundtrips only",
+  "jobs": [
+    {
+      "route": "cpu-apple",
+      "job": "foundation-f3-math-cpu-apple-b890d9b61",
+      "identity": {
+        "hardware": "Mac16,12",
+        "memory": "17179869184",
+        "os": "ProductName:\t\tmacOS\nProductVersion:\t\t27.0.1\nBuildVersion:\t\t26A434",
+        "compiler": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin",
+        "cmake": "cmake version 4.3.4\n\nCMake suite maintained and supported by Kitware (kitware.com/cmake).",
+        "ninja": "1.13.2"
+      },
+      "samples": {
+        "main.cc": "a7805905bed127885a1fb99a2c4ce3e967f007ead9499eccd332c19c4535384a",
+        "qwen_main.cc": "eda056ba8e2d18268639b39c608f99ddb2123ab38797620517054c1b9bc9992d",
+        "qwen_input.h": "ea920ad98de7f51e4a57cd891529e92cdb8149028c67660dd7495a27b14eb63d"
+      },
+      "verdict": "PASS_SOURCE_AIR_CPU-APPLE_FILE_MATH_AND_QWEN_ONLY"
+    },
+    {
+      "route": "vulkan",
+      "job": "foundation-f3-math-vulkan-b890d9b61",
+      "identity": {
+        "hardware": "Mac16,12",
+        "memory": "17179869184",
+        "os": "ProductName:\t\tmacOS\nProductVersion:\t\t27.0.1\nBuildVersion:\t\t26A434",
+        "compiler": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin",
+        "cmake": "cmake version 4.3.4\n\nCMake suite maintained and supported by Kitware (kitware.com/cmake).",
+        "ninja": "1.13.2"
+      },
+      "samples": {
+        "main.cc": "a7805905bed127885a1fb99a2c4ce3e967f007ead9499eccd332c19c4535384a",
+        "qwen_main.cc": "eda056ba8e2d18268639b39c608f99ddb2123ab38797620517054c1b9bc9992d",
+        "qwen_input.h": "ea920ad98de7f51e4a57cd891529e92cdb8149028c67660dd7495a27b14eb63d"
+      },
+      "verdict": "PASS_SOURCE_AIR_VULKAN_FILE_MATH_AND_QWEN_ONLY"
+    }
+  ],
+  "input": "evidence/correctness/foundation-f3-qwen-ranges/checked-input.json",
+  "sparse_verification_mirror": {
+    "source": "/Users/kiro/hyle-scratch/compute-unified/foundation-f3-qwen-input/model-ranges.safetensors",
+    "capacity": 4548221488,
+    "physical_file_bytes": 75595776,
+    "whole_model_transferred": false,
+    "payload_verification": "Four exact original offset SHA256 plus original header PASS",
+    "archive_sha256": "aff4f8f30d1690a8dfb492ca0fb559ced9cc74be003b8cc559c68aca91894247"
+  },
+  "journey": "Four exact original Qwen BF16/F32 ranges -> early group Direct+Graph -> file write -> every original byte compared in 64KiB chunks -> reload -> Direct+Graph reference again. CPU/Vulkan small mature GGUF BF16/F32/Q8 and original Apple BF16/affine Q4 also passed.",
+  "logical_payload_bytes": 75497984,
+  "native_bytes_per_route": 226493952,
+  "staging_bytes": 2097152,
+  "peak_slots": 2,
+  "apple_adapter": "Keep dense original Metal lease carrier; mature MLX Direct compiled region transposes its view before MatMul; original Graph permute view followed by MatMul. No host weight transpose or new math/copy kernel.",
+  "initial_failures": [
+    "Original Apple external transposed lease rejected by original dense carrier contract.",
+    "First Graph view construction lacked explicit Operation wrapper and failed compile; both failed raw jobs preserved."
+  ],
+  "archive": {
+    "path": "evidence/correctness/foundation-f3-math-air/raw-results.zip",
+    "sha256": "7f66eab7677044ce18c2d2b64604af2126b0f8d0e7c7d59450cee5c166fa305e"
+  },
+  "verdict": "PASS_AIR_CPU_APPLE_VULKAN_SOURCE_MATH_AND_EXACT_QWEN_RANGE_ROUNDTRIPS_ONLY",
+  "limits": [
+    "Four ranges plus original header only; other sparse file ranges are holes and not qualified.",
+    "No full FFN/model/tokenizer/generation, P1 or driver-private residency bound.",
+    "No installed static/shared or final F3 closure claim."
+  ],
+  "unproven": [
+    "New producer/fault risks on remaining native routes",
+    "WSL and F3 sanitizer/control delta",
+    "Installed static/shared/relocation/new headers",
+    "Final P0 and red team"
+  ]
+}

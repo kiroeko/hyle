@@ -1,6 +1,6 @@
 # F3：有界文件与计算资源双向管线
 
-> 状态：AUDITED；四路线文件主体已实现并首验，Windows CPU/CUDA/Vulkan真实数学往返已验，Air数学、剩余风险与三交付待验；F1/F2原轮已CLOSED。
+> 状态：AUDITED；四路线文件主体及Windows/Air真实数学往返已局部验收，剩余风险、WSL/sanitizer与三交付待验；F1/F2原轮已CLOSED。
 > component / owner：新内部 factor compute_stream；compute仅补下述私有租约/退役接缝；
 > native factory/adapter 归 compute_route_cpu/cuda/apple/vulkan；中央声明只投影这些owner的有限新边。
 > IO/Sched/Mem 只消费既有能力；出现具体基础缺陷才另作定向 owner 修复。
@@ -332,7 +332,25 @@ stage仍为2MiB，峰值两个slot。消费者回收已释放write记录后再�
 
 Air验证使用校验过的稀疏验证副本：只传原header与四段约72MiB payload，保持原offset与capacity，
 其余模型范围是hole并明确不在本卡验收范围；不传/缓存完整4.55GB模型，不反向覆盖Windows产品。
-Air Apple/Vulkan数学与新生命周期接缝、WSL/sanitizer、故障边界、三交付和最终七门继续待验。
+该Windows收据不签Air数学、新生命周期接缝、WSL/sanitizer、故障边界、三交付或最终七门。
+
+#### Air四路线数学补齐后的证据边界
+
+consumer `b890d9b61ad2334eba2be8dad0fe22dd0a1808eb`在Mac16,12/M4/macOS27.0.1/Clang21上，
+普通shared source的CPU/Apple/Vulkan实际Qwen完整往返通过；每路线同样是四段75,497,984 bytes、
+2MiB stage、峰值两slot与226,493,952实际native bytes。原header和四payload在验证机再次逐段SHA核对；
+其他hole不读、不计资格。CPU/Vulkan成熟GGUF小样例及Apple原affine Q4小样例亦通过。
+[Air数学收据](../../../../evidence/correctness/foundation-f3-math-air/receipt.json)绑定完整canonical archive、
+实际机器/工具链、精确consumer SHA与全部原始失败/成功日志。
+
+Apple原dense carrier拒绝外部转置lease后，consumer保留原始dense Metal权重，Direct用已有MLX
+compiled region在内部做native transpose view→matmul，Graph用已有permute view→MatMul；
+没有host权重转置buffer、产品API改动或新kernel。首个Graph View缺显式Operation wrapper的编译失败也保留。
+这是原F3-07/08消费者接线，不重新打开F1/F2或重置产品预算；主体f3d931c47保持不变。
+
+至此四路线实际数学往返均有局部证据；六owner仍AUDITED，不能据此写八FIX/七门整体PASS。
+下一批只补本卡仍适用的source/sink/producer/fault风险、WSL/新控制sanitizer与安装static/shared、
+迁址/新头/缺席门，最后按不可变candidate做P0与红队裁决，不运行无关模块或算子全目录。
 
 | FIX | 必须实现 | 验收 |
 |---|---|---|
