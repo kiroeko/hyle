@@ -236,6 +236,14 @@ configure300/build1800/exe120、build1/test1与4GiB。仅签此native接缝；�
 首构建 `eb7aed17f` 在const report方法的mutex限定失败，未运行native测试；保留原configure/build日志。
 对opt-in recording的观测mutex加 `mutable`，不改变同步/原worker/API语义，再沿完整archive同树取证，
 不把编译器报错或新日志目录当作新产品轮/预算重置。
+Apple公共对象仍按已冻结同名program/invocation/submission、固定resources/ranges/phases及两个独立slot；
+借compiled copy_control、原ResourceBudget每allocation保活和原util_core refcount（显式private edge，
+不重开Util/改变普通开关）。原worker blit前作纯状态predicate，失败/取消停止后继native记录，
+phase guard只在实际成功MCB/FIFO退休后发布；empty dependency沿原Job marker而非伪造GPU完成。
+worker preflight与公共output/wait的同Completion观察由每opt-in invocation的递归mutex串行；
+阻塞wait先等待原recording observer，释放观察锁供worker运行，再裁决实际退休，不形成worker/调用者循环。
+本阶段Air门扩到 `AppleCopyProgram.*`（两slot/replay/producer/较早组/取消/放弃/close/reset），
+复跑 `AppleCopyRecording.*:AppleLeaseLifetime.*` 与34项common；独立头、数学和三交付留稳定候选集中门。
 首遍增加owned-view用例的fixture将raw-copy合法4-byte offset传给既有storage borrow factory，
 后者还要求native storage offset alignment；保留这次FAIL，fixture改为合法zero-origin外部carrier，
 再检验F2的unknown usage拒绝，不修改旧factory或放宽其合同。

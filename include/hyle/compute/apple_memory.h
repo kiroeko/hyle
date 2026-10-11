@@ -5,11 +5,80 @@
 #if defined(HYLE_COMPUTE_APPLE)
 #include "hyle/compute/resource_budget.h"
 #include "hyle/compute/resource_leases.h"
+#include "hyle/compute/batch_transfer.h"
 #include "hyle/compute/tensor.h"
 #include "hyle/mem/buffer.h"
 
 namespace hyle::compute::apple {
 namespace detail { struct MemoryState; struct LeasedInvocationState; }
+namespace detail { struct CopyProgramState; struct CopyInvocationState; }
+
+class CopyBatchInvocation;
+class CopyBatchSubmission;
+// Original Apple Runtime and native resources, with immutable cold limits.
+class CopyBatchProgram final {
+public:
+  CopyBatchProgram() noexcept = default;
+  HYLE_COMPUTE_ROUTE_APPLE_API CopyBatchProgram(const CopyBatchProgram &) noexcept;
+  HYLE_COMPUTE_ROUTE_APPLE_API CopyBatchProgram &operator=(const CopyBatchProgram &) noexcept;
+  HYLE_COMPUTE_ROUTE_APPLE_API CopyBatchProgram(CopyBatchProgram &&) noexcept;
+  HYLE_COMPUTE_ROUTE_APPLE_API CopyBatchProgram &operator=(CopyBatchProgram &&) noexcept;
+  HYLE_COMPUTE_ROUTE_APPLE_API ~CopyBatchProgram();
+  HYLE_COMPUTE_ROUTE_APPLE_API static Result<CopyBatchProgram> prepare(const Context &,
+      std::span<const CopyResourceSpec>, CopyBatchOptions options = {}) noexcept;
+  bool valid() const noexcept { return state_ != nullptr; }
+  HYLE_COMPUTE_ROUTE_APPLE_API void reset() noexcept;
+private:
+  friend class CopyBatchInvocation;
+  explicit CopyBatchProgram(detail::CopyProgramState *state) noexcept : state_(state) {}
+  detail::CopyProgramState *state_ = nullptr;
+};
+// Independent FIFO native Job slots; no common Compute Queue or second runtime.
+class CopyBatchInvocation final {
+public:
+  CopyBatchInvocation() noexcept = default;
+  CopyBatchInvocation(const CopyBatchInvocation &) = delete;
+  CopyBatchInvocation &operator=(const CopyBatchInvocation &) = delete;
+  HYLE_COMPUTE_ROUTE_APPLE_API CopyBatchInvocation(CopyBatchInvocation &&) noexcept;
+  HYLE_COMPUTE_ROUTE_APPLE_API CopyBatchInvocation &operator=(CopyBatchInvocation &&) noexcept;
+  HYLE_COMPUTE_ROUTE_APPLE_API ~CopyBatchInvocation();
+  HYLE_COMPUTE_ROUTE_APPLE_API static Result<CopyBatchInvocation> create(const CopyBatchProgram &) noexcept;
+  bool valid() const noexcept { return state_ != nullptr; }
+  HYLE_COMPUTE_ROUTE_APPLE_API Status bind_source(CopyResourceId, const ReadLease &) noexcept;
+  HYLE_COMPUTE_ROUTE_APPLE_API Status bind_mutable(CopyResourceId, WriteLease &&) noexcept;
+  HYLE_COMPUTE_ROUTE_APPLE_API Status bind_producer(CopyResourceId, Completion &&) noexcept;
+  HYLE_COMPUTE_ROUTE_APPLE_API Status prepare_replay(std::span<const CopyPhase>, std::span<const CopyRange>) noexcept;
+  HYLE_COMPUTE_ROUTE_APPLE_API Result<CopyBatchSubmission> submit() noexcept;
+  HYLE_COMPUTE_ROUTE_APPLE_API Status reset() noexcept;
+  HYLE_COMPUTE_ROUTE_APPLE_API Status close() noexcept;
+  HYLE_COMPUTE_ROUTE_APPLE_API Status drain() noexcept;
+  HYLE_COMPUTE_ROUTE_APPLE_API bool in_flight() const noexcept;
+  HYLE_COMPUTE_ROUTE_APPLE_API CopyBatchReport report() const noexcept;
+private:
+  explicit CopyBatchInvocation(detail::CopyInvocationState *state) noexcept : state_(state) {}
+  detail::CopyInvocationState *state_ = nullptr;
+};
+class CopyBatchSubmission final {
+public:
+  CopyBatchSubmission() noexcept = default;
+  CopyBatchSubmission(const CopyBatchSubmission &) = delete;
+  CopyBatchSubmission &operator=(const CopyBatchSubmission &) = delete;
+  HYLE_COMPUTE_ROUTE_APPLE_API CopyBatchSubmission(CopyBatchSubmission &&) noexcept;
+  HYLE_COMPUTE_ROUTE_APPLE_API CopyBatchSubmission &operator=(CopyBatchSubmission &&) noexcept;
+  HYLE_COMPUTE_ROUTE_APPLE_API ~CopyBatchSubmission();
+  bool valid() const noexcept { return state_ != nullptr; }
+  HYLE_COMPUTE_ROUTE_APPLE_API Result<ReadLease> output(CopyPhaseId, CopyResourceId,
+      std::size_t offset, std::size_t bytes) noexcept;
+  HYLE_COMPUTE_ROUTE_APPLE_API Status wait() noexcept;
+  HYLE_COMPUTE_ROUTE_APPLE_API Status request_cancel() noexcept;
+  HYLE_COMPUTE_ROUTE_APPLE_API bool in_flight() const noexcept;
+  HYLE_COMPUTE_ROUTE_APPLE_API CopyBatchReport report() const noexcept;
+private:
+  friend class CopyBatchInvocation;
+  explicit CopyBatchSubmission(detail::CopyInvocationState *state) noexcept : state_(state) {}
+  detail::CopyInvocationState *state_ = nullptr;
+};
+
 
 struct NativeStorage final {
   const void *buffer = nullptr; // Original opaque MTLBuffer identity.

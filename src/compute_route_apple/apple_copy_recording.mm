@@ -39,6 +39,9 @@ struct CopyRecording final : Job {
   CopyBatchReport report;
   std::uintptr_t device = 0;
   bool prepared = false;
+  bool prefix_marker = false;
+  CopyPreflight preflight = nullptr;
+  void *preflight_state = nullptr;
   CopyArray<cd::PhysicalCopyResource> physical;
   CopyArray<CopyRange> inputs;
   CopyArray<cd::CopyInterval> intervals;
@@ -70,7 +73,8 @@ void execute_copy(Job *job) noexcept {
     std::lock_guard lock(state.runtime->queue_mutex); terminal = state.runtime->failure;
   }
   if (state.cancel.load(std::memory_order_acquire)) terminal.Update(Status::Cancelled("Apple copy cancelled before native recording"));
-  if (terminal.ok()) {
+  if (terminal.ok() && state.preflight) terminal.Update(state.preflight(state.preflight_state));
+  if (terminal.ok() && state.report.active_copies != 0) {
     @autoreleasepool {
       try {
         auto &encoder = mlx::core::metal::get_command_encoder(*state.runtime->stream);
@@ -164,12 +168,13 @@ Result<std::shared_ptr<CopyRecording>> prepare_copy_recording_runtime(const std:
     return state;
   } catch (...) { return std::unexpected(native_exception()); }
 }
-Status bind_copy_recording(CopyRecording &state, std::span<const cd::CopyBackendRange> ranges) noexcept {
+Status bind_copy_recording(CopyRecording &state, std::span<const cd::CopyBackendRange> ranges, bool prefix_marker) noexcept {
   std::lock_guard lock(state.completion_mutex);
   if (state.done.load(std::memory_order_acquire) == 0 || state.completion_owner || state.admitted_owner)
     return Status::Unavailable("Apple copy phase is retained");
   if (!state.terminal.ok()) return state.terminal;
   state.prepared = false;
+  state.prefix_marker = prefix_marker;
   if (ranges.size() > state.limits.max_copies) return Status::ResourceExhausted("Apple copy range capacity exhausted");
   for (std::size_t index = 0; index < ranges.size(); ++index) {
     if (ranges[index].source.size() != ranges[index].destination.size()) return Status::InvalidArgument("Apple copy sizes differ");
@@ -198,7 +203,7 @@ Result<Completion> submit_copy_recording(CopyRecording &state) noexcept {
   if (!state.prepared || state.completion_owner || state.done.load(std::memory_order_acquire) == 0)
     return std::unexpected(Status::FailedPrecondition("Apple copy phase is not prepared/idle"));
   state.prepared = false;
-  if (state.report.active_copies == 0) return Completion::completed();
+  if (state.report.active_copies == 0 && !state.prefix_marker) return Completion::completed();
   auto owner = state.self.lock(); HYLE_FATAL_ASSERT(owner != nullptr);
   state.cancel.store(false, std::memory_order_relaxed); state.terminal = Status::Ok(); state.hint = Status::Ok();
   state.admitted_owner = owner; state.completion_owner = owner;
@@ -223,6 +228,21 @@ Status clear_copy_recording(CopyRecording &state) noexcept {
   if (state.done.load(std::memory_order_acquire) == 0 || state.completion_owner || state.admitted_owner)
     return Status::Unavailable("Apple copy phase is retained");
   state.prepared = false; return Status::Ok();
+}
+Status set_copy_preflight(CopyRecording &state, CopyPreflight predicate, void *opaque) noexcept {
+  std::lock_guard lock(state.completion_mutex);
+  if (state.done.load(std::memory_order_acquire) == 0 || state.completion_owner || state.admitted_owner)
+    return Status::Unavailable("Apple copy predicate slot is retained");
+  state.preflight = predicate; state.preflight_state = opaque; return Status::Ok();
+}
+Result<CompletionPoll> poll_copy_recording(const CopyRecording &state) noexcept {
+  if (state.done.load(std::memory_order_acquire) == 0) return CompletionPoll::kPending;
+  if (!state.terminal.ok()) return std::unexpected(state.terminal);
+  return CompletionPoll::kComplete;
+}
+Status wait_copy_recording(const CopyRecording &state) noexcept {
+  while (state.done.load(std::memory_order_acquire) == 0) platform::detail::wait_on_address(&state.done, 0);
+  return state.terminal;
 }
 Status qualify_recording_dependency(const std::shared_ptr<Runtime> &runtime, cd::CompletionDependency source) noexcept {
   if (source.vtable != &copy_completion_vtable) return qualify_copy_dependency(runtime, source);
