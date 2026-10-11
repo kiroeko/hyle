@@ -74,9 +74,55 @@ Status leased_contracts() {
   HYLE_RETURN_IF_ERROR(native_product.storage().read(std::as_writable_bytes(std::span(native_values))));
   for (std::size_t i = 0; i < native_values.size(); ++i)
     HYLE_RETURN_IF_ERROR(require(std::abs(native_values[i] + 2 * values[i]) < 1e-5f, "native leased mixed math differs"));
+  // The original plan and sources now exercise the opt-in lease branch on
+  // cancellation, public-handle abandonment and an accepted CPU prefix failure.
+  {
+    HYLE_ASSIGN_OR_RETURN(auto cancelled_slot, program.create_invocation(scheduler, queue));
+    HYLE_RETURN_IF_ERROR(cancelled_slot.bind(x, row, input));
+    HYLE_RETURN_IF_ERROR(cancelled_slot.bind(w, matrix, imported));
+    HYLE_RETURN_IF_ERROR(cancelled_slot.prepare_replay());
+    HYLE_ASSIGN_OR_RETURN(auto work, cancelled_slot.submit());
+    HYLE_RETURN_IF_ERROR(work.request_cancel());
+    auto completed = work.wait();
+    if (!completed) {
+      HYLE_RETURN_IF_ERROR(require(completed.error().IsCancelled(), "mixed lease cancellation lost its status"));
+    } else {
+      HYLE_ASSIGN_OR_RETURN(auto output_view, completed->get()->output(output));
+      std::array<float, 64> completed_values;
+      HYLE_RETURN_IF_ERROR(output_view.storage().read(std::as_writable_bytes(std::span(completed_values))));
+      for (std::size_t i = 0; i < completed_values.size(); ++i)
+        HYLE_RETURN_IF_ERROR(require(std::abs(completed_values[i] + 2 * values[i]) < 1e-5f,
+            "completion won cancellation with invalid math"));
+    }
+    HYLE_RETURN_IF_ERROR(require(pool.stats().active_uses == 0, "cancelled mixed lease uses did not retire"));
+  }
+  {
+    HYLE_ASSIGN_OR_RETURN(auto abandoned_slot, program.create_invocation(scheduler, queue));
+    HYLE_RETURN_IF_ERROR(abandoned_slot.bind(x, row, input));
+    HYLE_RETURN_IF_ERROR(abandoned_slot.bind(w, matrix, imported));
+    HYLE_RETURN_IF_ERROR(abandoned_slot.prepare_replay());
+    HYLE_ASSIGN_OR_RETURN(auto abandoned_work, abandoned_slot.submit());
+    abandoned_work = {}; abandoned_slot = {};
+    scheduler.drain();
+    HYLE_RETURN_IF_ERROR(require(pool.stats().active_uses == 0, "abandoned mixed lease uses did not retire"));
+  }
   HYLE_ASSIGN_OR_RETURN(auto rejected_slot, program.create_invocation(scheduler, queue));
   HYLE_RETURN_IF_ERROR(rejected_slot.bind(x, row, input)); HYLE_RETURN_IF_ERROR(rejected_slot.bind(w, matrix, imported));
   HYLE_RETURN_IF_ERROR(rejected_slot.prepare_replay());
+  {
+    HYLE_ASSIGN_OR_RETURN(auto late_slot, program.create_invocation(scheduler, queue));
+    HYLE_RETURN_IF_ERROR(late_slot.bind(x, row, input));
+    HYLE_RETURN_IF_ERROR(late_slot.bind(w, matrix, imported));
+    HYLE_RETURN_IF_ERROR(late_slot.prepare_replay());
+    HYLE_RETURN_IF_ERROR(apple.close());
+    HYLE_ASSIGN_OR_RETURN(auto accepted_prefix, late_slot.submit());
+    auto failed = accepted_prefix.wait();
+    HYLE_RETURN_IF_ERROR(require(!failed && failed.error().IsFailedPrecondition(),
+        "accepted mixed lease CPU prefix did not preserve native refusal"));
+    HYLE_RETURN_IF_ERROR(require(pool.stats().active_uses == 0, "failed mixed lease prefix did not retire"));
+    HYLE_RETURN_IF_ERROR(require(!late_slot.submit(), "failed mixed lease slot accepted a successor"));
+  }
+  std::printf("F1 CPU+apple: leased cancellation, abandonment and accepted CPU prefix refusal passed\n");
   HYLE_RETURN_IF_ERROR(pool.close());
   HYLE_RETURN_IF_ERROR(require(!rejected_slot.submit().has_value(), "closed mixed source accepted math"));
   HYLE_RETURN_IF_ERROR(require(pool.stats().active_uses == 0, "closed source rejection leaked guards"));
