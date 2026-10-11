@@ -578,8 +578,13 @@ Windows shared正在运行，WSL软件Vulkan两格及最终source复验/矩阵/�
 [当前Windows CPU/CUDA shared交付](../../../../evidence/correctness/foundation-f3-sdk-windows-cpu-cuda-shared-a5215036e/receipt.json)
 完成独立shared tree的62项产物构建、真实install/rename、普通find_package消费者、当前CPU/CUDA
 小GGUF与Qwen完整往返、七头及Apple/Vulkan缺席诊断，DLL同目录/最小PATH运行和实际imports均PASS。
-八个合格平台/路线installed static/shared profile格现已齐；WSL Vulkan已重新枚举只有llvmpipe，
+五个合格平台/路线组合的十个installed static/shared profile格现已齐；WSL Vulkan已重新枚举只有llvmpipe，
 其GPU数学NOT_APPLICABLE，当前static适用构建/头/缺席/ldd门正在运行。最终source/矩阵/红队待齐。
+
+[WSL Vulkan static适用交付](../../../../evidence/correctness/foundation-f3-sdk-wsl-vulkan-static-97858fbc8/receipt.json)
+现绑定本轮实际loader枚举仅llvmpipe/type4、qualified_gpu=false；不以旧例外代签native GPU数学。
+当前产品真实安装迁址、普通Graph消费者两个target构建、六头独立编译、CPU/CUDA/Apple缺席及
+`ldd`无missing均PASS，GPU运行明确NOT_APPLICABLE。shared适用门正在同一候选的独立树运行。
 
 ## 解析器与真实权重验收
 
