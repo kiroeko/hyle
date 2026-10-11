@@ -8,6 +8,7 @@ if(HYLE_COMPUTE_CUDA_ENABLED)
     EXTRA_INCLUDE_DIRS ${HYLE_CUDA_PUBLIC_INCLUDE_DIRS})
   hyle_add_test(compute_backend_cuda SOURCES
     cuda_backend_test.cc
+    copy_batch_test.cc
     device_status_test.cc
     cuda_test_kernel.cu)
   target_include_directories(hyle_compute_backend_cuda_test PRIVATE

@@ -186,6 +186,10 @@ logical/physical/staging/metadata/unknown bytes，opaque driver/vendor 成本不
 `ResourceLeases.*:Completion.*` 相关回归，新 `CopyRanges.*:CopyLeaseHandoff.*:CopyDependency.*` 控制协议与 header sole-include；复用本批 Windows共同/WSL compute构建，
 build1/test1、4GiB、configure300/build1800/exe120，不全算子/P1。真实 CUDA/Apple/Vulkan故障与数学、
 二组二槽及三交付在本包产品接线后按稳定候选集中运行，日志/预算不因阶段提交重置。
+CUDA copy backend 接缝实现期另选原 `compute_backend_cuda` 构建树的 `CudaCopyBatch.*`，
+只验证固定13.0 `_v2` ABI、同Context physical identity、H2D/D2D/D2H byte equality和有限replay；
+没有签整体permission/controller/数学/故障资格。该门同样build1/test1和上述内存/时间上限，
+新内部 `detail/copy_backend.h` 独立编译；全部端到端门继续待候选冻结。
 
 ### 当前实施与首轮证据（2026-10-11）
 

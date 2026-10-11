@@ -11,6 +11,7 @@
 #include "../compute/completion_internal.h"
 #include "../compute/context_state.h"
 #include "hyle/compute/backends/cuda.h"
+#include "hyle/compute/detail/copy_backend.h"
 #include "hyle/platform/thread.h"
 #include "hyle/util/ref_counted.h"
 #include "hyle/util/spin_lock.h"
@@ -27,6 +28,7 @@ struct ContextState;
 struct QueueState;
 struct EventSlot;
 struct CapturedCommandsState;
+const compute::detail::CopyBackendVTable *copy_batch_interface() noexcept;
 
 struct StatusReference final {
   StatusReference *next = nullptr;

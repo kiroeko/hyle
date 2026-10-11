@@ -1309,6 +1309,8 @@ const void *query_extension_impl(void *, BackendExtensionId id) noexcept {
     return &kCudaExtension;
   if (id == compute::detail::kCommandCaptureExtensionId)
     return &kCommandCaptureVTable;
+  if (id == compute::detail::kCopyBatchExtensionId)
+    return cuda::detail::copy_batch_interface();
   return nullptr;
 }
 
