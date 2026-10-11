@@ -63,7 +63,7 @@ GPU stream drain和原CUDA abandoned-event reaper回调完成不同；借用allo
 | 平台/路线 | 当前ordinary source数学 | 必须完成的candidate资格 |
 |---|---|---|
 | Windows CPU/CUDA | PASS（5b3efe2cc source/static实际复验） | relocated static/shared数学、七头/CUDA ON、两native头与package路线缺席、DLL同目录、shipping hook缺席PASS；既定fault已取证，扩展/终审待验 |
-| Windows CPU/Vulkan | PASS（scope匹配） | source/relocated static/shared、新头/absence/DLL；9 native/34 common及实际unknown-fence风险 |
+| Windows CPU/Vulkan | PASS（5b3efe2cc全源码下scope匹配实际source复验） | relocated static/shared数学、七头/Vulkan ON、CUDA/Apple头与package路线缺席、DLL同目录及真实header deps PASS；9 native/34 common已有首轮，unknown风险/终审待验 |
 | Air CPU/Apple | PASS（scope匹配） | source/relocated static/shared、新头/absence/MLX assets；10 native/34 common及实际故障/关闭 |
 | Air CPU/Vulkan | UNPROVEN | 实际设备身份；对应native/common与ordinary数学、三交付/头/absence/迁址 |
 | WSL CPU/CUDA | PASS（scope匹配source/static；新delta安装消费已复验） | 新delta真实producer late＋15 CUDA/34 common PASS；relocated static/shared数学及七头/CUDA ON、Apple/Vulkan头缺席PASS；package路线请求诊断与扩展/终审仍待验 |
@@ -113,3 +113,15 @@ hyle::graph消费者各七个独立安装头、原BF16/Q8搬运/Direct/Graph ora
 两consumer在仅consumer/System32/Windows的PATH下数学PASS，DLL同目录及hash保存。更新后的
 原source/static消费者也实际PASS；backend archive/共享DLL确认两个test hook setter缺席，真实
 copy implementation/public资源符号存在。其他平台/路线SDK、selector扩展/终审仍待验。
+
+## Windows CPU/Vulkan source/static/shared
+
+[Vulkan SDK收据](../../../../evidence/correctness/foundation-f2-windows-vulkan-sdk/receipt.json)按5b3efe2cc全源码/未改变的
+Vulkan product scope取证。实际RTX4070/NVIDIA617.14、software=no；source复验和真实迁址后的
+static/shared ordinary hyle::graph消费者均通过两组/两槽/三轮原BF16/Q8搬运与Direct/Graph oracle。
+两SDK各七头独立编译（六common＋Vulkan ON）、CUDA/Apple头缺席和未构建路线的package请求
+明确拒绝；consumer/System32/Windows的限定PATH下成功运行，DLL同目录及hash保留。
+两树实际Ninja #deps22包含batch_transfer.h。静态树初始C/C++中文前缀与英文cl输出不匹配，
+主动停止验证，原日志保留；只修生成cache并清理核验的build/src对象（含封装ggml生成对象），
+外部依赖缓存与产品源码未改。C语言覆盖全局prefix的第二个cache事实也保留，恢复后才签上述门。
+源码/头/SDK资格不能代签未运行native unknown-fence或其他平台，当前四owner仍CANDIDATE。

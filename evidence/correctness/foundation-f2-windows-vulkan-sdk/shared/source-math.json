@@ -1,0 +1,12 @@
+{
+  "product_candidate": "5b3efe2cce3fcab2bc55cf749af2d862a786ef25",
+  "scope": "Windows CPU/Vulkan ordinary source/shared F2 math same product scope",
+  "command": [
+    "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle_f2_batched_transfers.exe"
+  ],
+  "exit_code": 0,
+  "verdict": "PASS",
+  "runtime_path": "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build;C:/Windows/System32;C:/Windows",
+  "log": "source-math.log",
+  "sha256": "fc69a88e4832d3e40fa266a472ce7d70059e360fcfeda9e80dffadf7f274fb81"
+}

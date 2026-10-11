@@ -1,0 +1,2 @@
+absence-cuda.cc
+C:\h7\foundation-f2-sdk\windows-cpu-vulkan-shared-5b3efe2cc\parent\absence-cuda.cc(1): fatal error C1083: Cannot open include file: 'hyle/compute/backends/cuda.h': No such file or directory

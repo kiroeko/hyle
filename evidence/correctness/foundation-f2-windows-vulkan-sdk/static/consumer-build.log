@@ -1,0 +1,10 @@
+[1/10] C:\WINDOWS\system32\cmd.exe /C "cd /D C:\h7\foundation-f2-sdk\windows-cpu-vulkan-static-5b3efe2cc\consumer && "C:\Program Files\CMake\bin\cmake.exe" -P C:/h7/foundation-f2-sdk/windows-cpu-vulkan-static-5b3efe2cc/consumer/hyle-runtime/batch-Release.cmake"
+[2/10] Building CXX object CMakeFiles\batch.dir\C_\public\project-hyle\hyle\samples\package\graph\batched_transfers\main.cc.obj
+[3/10] Linking CXX executable batch.exe
+[4/10] Building CXX object CMakeFiles\headers.dir\header-0.cc.obj
+[5/10] Building CXX object CMakeFiles\headers.dir\header-1.cc.obj
+[6/10] Building CXX object CMakeFiles\headers.dir\header-2.cc.obj
+[7/10] Building CXX object CMakeFiles\headers.dir\header-3.cc.obj
+[8/10] Building CXX object CMakeFiles\headers.dir\header-4.cc.obj
+[9/10] Building CXX object CMakeFiles\headers.dir\header-5.cc.obj
+[10/10] Building CXX object CMakeFiles\headers.dir\header-6.cc.obj

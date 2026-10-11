@@ -1,0 +1,24 @@
+hyle/src/compute/CMakeFiles/hyle_compute.dir/copy_ranges.cc.obj: #deps 22, deps mtime 8134237720502942 (VALID)
+    ../../../../public/project-hyle/hyle/include/hyle/compute/batch_transfer.h
+    ../../../../public/project-hyle/hyle/include/hyle/compute/completion.h
+    ../../../../public/project-hyle/hyle/include/hyle/compute/detail/copy_ranges.h
+    ../../../../public/project-hyle/hyle/include/hyle/compute/ops_visibility.h
+    ../../../../public/project-hyle/hyle/include/hyle/compute/resource_budget.h
+    ../../../../public/project-hyle/hyle/include/hyle/compute/resource_leases.h
+    ../../../../public/project-hyle/hyle/include/hyle/compute/tensor.h
+    ../../../../public/project-hyle/hyle/include/hyle/compute/tensor_desc.h
+    ../../../../public/project-hyle/hyle/include/hyle/compute/visibility.h
+    ../../../../public/project-hyle/hyle/include/hyle/core/assert.h
+    ../../../../public/project-hyle/hyle/include/hyle/core/compiler.h
+    ../../../../public/project-hyle/hyle/include/hyle/core/detail/compiler_attributes.h
+    ../../../../public/project-hyle/hyle/include/hyle/core/detail/preprocessor.h
+    ../../../../public/project-hyle/hyle/include/hyle/core/environment.h
+    ../../../../public/project-hyle/hyle/include/hyle/error/result.h
+    ../../../../public/project-hyle/hyle/include/hyle/error/status.h
+    ../../../../public/project-hyle/hyle/include/hyle/mem/allocator.h
+    ../../../../public/project-hyle/hyle/include/hyle/mem/buffer.h
+    ../../../../public/project-hyle/hyle/include/hyle/mem/quota_allocator.h
+    ../../../../public/project-hyle/hyle/include/hyle/mem/resource.h
+    ../../../../public/project-hyle/hyle/include/hyle/mem/visibility.h
+    ../../../../public/project-hyle/hyle/include/hyle/visibility.h
+

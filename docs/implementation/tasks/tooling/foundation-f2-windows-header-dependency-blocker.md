@@ -1,5 +1,19 @@
 # F2 Windows 验证副本：MSVC/Ninja 头依赖缺失
 
+## 2026-10-11 Vulkan SDK 同类条件恢复
+
+F2固定候选SDK矩阵复用`C:/h7/foundation-f1-sdk/w-cpu-vulkan-static-producer`时，发生相反方向
+的同类locale条件：生成C/C++ compiler state与Ninja是中文prefix，而本批VSLANG1033 cl输出英文。
+停止该owned构建并保留原FAIL；确认进程终态后，只把两个生成compiler state改为英文，核验
+build/src之下的object后清理385项（含178项库内封装ggml生成对象）。产品/第三方源码、外部
+dependency cache与公共工具均未修改。第一次仅修C++时，后启用的C语言覆盖global prefix，
+该预检事实与后续C/C++一致恢复也保留，不覆盖日志或重置预算。
+恢复后原构建、安装/迁址、七安装头及普通CPU/Vulkan数学PASS；实际Ninja #deps22包含
+batch_transfer.h。共享树原C/C++英文prefix一致，同样取得#deps22与SDK/source运行PASS。
+[完整恢复与交付收据](../../../../evidence/correctness/foundation-f2-windows-vulkan-sdk/receipt.json)含缓存前后SHA、
+完整清理路径、初始/恢复日志与两个SDK逐stage/DLL身份。当前是该具名验证副本已恢复；
+不能据此宣称所有历史Windows树的Ninja依赖都合格。
+
 - scope：当前 F2 实现期 Windows 临时构建 `C:/h7/foundation-f1-q0`，不修改公共构建/selector/closure工具。
 - 具体事实：`1c1ce5f26` 新 `CopyBatchReport` 布局进入公共header后，Ninja只重编新增/改动 `.cc`；
   旧 `copy_ranges.cc.obj` 和其测试object仍为09:49 UTC，而header为10:20 UTC。

@@ -392,6 +392,12 @@ gzip及archive SHA保留。其他平台/fault/头与SDK/P0终审红队仍待候�
 
 ## 预声明验证与停止
 
+Windows CPU/Vulkan source复验、relocated static/shared普通数学与七installed头、两native header/
+package route缺席及DLL同目录已取证，见[当前矩阵](foundation-f2-verification-matrix.md)与
+[完整Vulkan SDK收据](../../../../evidence/correctness/foundation-f2-windows-vulkan-sdk/receipt.json)。静态树locale/header deps
+工具条件与有界生成cache恢复事实保留，真实#deps22包含新头后才签运行；不改公共工具/产品，
+不重置失败预算。Air/WSL剩余格、native unknown风险与component-contract/终审继续待验。
+
 Windows CPU/CUDA的source、relocated static/shared普通消费、七installed头及两native header/
 package route缺席、DLL同目录与shipping hook缺席已按5b3efe2cc scope取证，见[当前矩阵](foundation-f2-verification-matrix.md)
 和[Windows收据](../../../../evidence/correctness/foundation-f2-windows-cuda-sdk/receipt.json)。scratch初文案匹配失败保留，未改产品或重置预算。

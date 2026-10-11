@@ -1,0 +1,632 @@
+[0/2] Re-checking globbed directories...
+[1/423] Performing build step for 'vulkan-shaders-gen'
+ninja: no work to do.
+[2/423] Building C object src\compute_ggml_runtime\vendor\src\CMakeFiles\ggml-base.dir\ggml.c.obj
+[3/423] Building CXX object src\compute_ggml_runtime\vendor\src\CMakeFiles\ggml-base.dir\ggml.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[4/423] Building C object src\compute_ggml_runtime\vendor\src\CMakeFiles\ggml-base.dir\ggml-alloc.c.obj
+[5/423] Building CXX object src\compute_ggml_runtime\vendor\src\CMakeFiles\ggml-base.dir\ggml-backend.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[6/423] Building CXX object src\compute_ggml_runtime\vendor\src\CMakeFiles\ggml-base.dir\ggml-backend-meta.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[7/423] Building CXX object src\compute_ggml_runtime\vendor\src\CMakeFiles\ggml-base.dir\ggml-opt.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[8/423] Building CXX object src\compute_ggml_runtime\vendor\src\CMakeFiles\ggml-base.dir\ggml-threading.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[9/423] Building C object src\compute_ggml_runtime\vendor\src\CMakeFiles\ggml-base.dir\ggml-quants.c.obj
+[10/423] Building CXX object src\compute_ggml_runtime\vendor\src\CMakeFiles\ggml-base.dir\gguf.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[11/423] Performing install step for 'vulkan-shaders-gen'
+-- Up-to-date: C:/h7/foundation-f1-sdk/w-cpu-vulkan-static-producer/Release/vulkan-shaders-gen.exe
+[12/423] Linking CXX static library bin\ggml-base.lib
+[13/423] Completed 'vulkan-shaders-gen'
+[14/423] Building CXX object src\error\CMakeFiles\hyle_error.dir\status.cc.obj
+[15/423] Linking CXX static library bin\hyle_error.lib
+[16/423] Building CXX object src\platform\CMakeFiles\hyle_platform_cpu_probe.dir\cpu.cc.obj
+[17/423] Building CXX object src\platform\CMakeFiles\hyle_platform_cgroup_parser.dir\linux_cgroup.cc.obj
+[18/423] Building CXX object src\platform\CMakeFiles\hyle_platform.dir\cpu_resource.cc.obj
+[19/423] Building CXX object src\platform\CMakeFiles\hyle_platform.dir\dynlib.cc.obj
+[20/423] Building CXX object src\platform\CMakeFiles\hyle_platform.dir\environment.cc.obj
+[21/423] Building CXX object src\platform\CMakeFiles\hyle_platform.dir\host_memory.cc.obj
+[22/423] Building CXX object src\platform\CMakeFiles\hyle_platform.dir\numa.cc.obj
+[23/423] Building CXX object src\platform\CMakeFiles\hyle_platform.dir\process.cc.obj
+[24/423] Building CXX object src\platform\CMakeFiles\hyle_platform.dir\random.cc.obj
+[25/423] Building CXX object src\platform\CMakeFiles\hyle_platform.dir\virtual_memory.cc.obj
+[26/423] Building CXX object src\mem\CMakeFiles\mimalloc_static.dir\__\__\third_party\mimalloc\src\static.c.obj
+[27/423] Building C object src\compute_ggml_runtime\vendor\src\CMakeFiles\ggml-cpu.dir\ggml-cpu\ggml-cpu.c.obj
+[28/423] Building CXX object src\compute_ggml_runtime\vendor\src\CMakeFiles\ggml-cpu.dir\ggml-cpu\ggml-cpu.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[29/423] Building CXX object src\compute_ggml_runtime\vendor\src\CMakeFiles\ggml-cpu.dir\ggml-cpu\repack.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[30/423] Building CXX object src\compute_ggml_runtime\vendor\src\CMakeFiles\ggml-cpu.dir\ggml-cpu\iqp.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[31/423] Building CXX object src\compute_ggml_runtime\vendor\src\CMakeFiles\ggml-cpu.dir\ggml-cpu\hbm.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[32/423] Building C object src\compute_ggml_runtime\vendor\src\CMakeFiles\ggml-cpu.dir\ggml-cpu\quants.c.obj
+[33/423] Building CXX object src\compute_ggml_runtime\vendor\src\CMakeFiles\ggml-cpu.dir\ggml-cpu\traits.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[34/423] Building CXX object src\compute_ggml_runtime\vendor\src\CMakeFiles\ggml-cpu.dir\ggml-cpu\amx\amx.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[35/423] Building CXX object src\compute_ggml_runtime\vendor\src\CMakeFiles\ggml-cpu.dir\ggml-cpu\amx\mmq.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[36/423] Building CXX object src\compute_ggml_runtime\vendor\src\CMakeFiles\ggml-cpu.dir\ggml-cpu\binary-ops.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[37/423] Building CXX object src\compute_ggml_runtime\vendor\src\CMakeFiles\ggml-cpu.dir\ggml-cpu\unary-ops.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[38/423] Building CXX object src\compute_ggml_runtime\vendor\src\CMakeFiles\ggml-cpu.dir\ggml-cpu\vec.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[39/423] Building CXX object src\compute_ggml_runtime\vendor\src\CMakeFiles\ggml-cpu.dir\ggml-cpu\ops.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[40/423] Building C object src\compute_ggml_runtime\vendor\src\CMakeFiles\ggml-cpu.dir\ggml-cpu\arch\x86\quants.c.obj
+[41/423] Building CXX object src\compute_ggml_runtime\vendor\src\CMakeFiles\ggml-cpu.dir\ggml-cpu\arch\x86\repack.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[42/423] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\ggml-vulkan.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+C:\h7\foundation-f1-sdk\w-cpu-vulkan-static-producer\src\compute_ggml_runtime\source-7d4fea280f67f983\src\ggml-vulkan\..\ggml-impl.h(1): warning C4819: The file contains a character that cannot be represented in the current code page (936). Save the file in Unicode format to prevent data loss
+C:\h7\foundation-f1-sdk\w-cpu-vulkan-static-producer\src\compute_ggml_runtime\source-7d4fea280f67f983\src\ggml-vulkan\ggml-vulkan.cpp(6222): warning C4003: not enough arguments for function-like macro invocation 'IM2COL'
+C:\h7\foundation-f1-sdk\w-cpu-vulkan-static-producer\src\compute_ggml_runtime\source-7d4fea280f67f983\src\ggml-vulkan\ggml-vulkan.cpp(6492): warning C4003: not enough arguments for function-like macro invocation 'CREATE_CONVS'
+C:\h7\foundation-f1-sdk\w-cpu-vulkan-static-producer\src\compute_ggml_runtime\source-7d4fea280f67f983\src\ggml-vulkan\ggml-vulkan.cpp(9653): warning C4319: '~': zero extending '_Ty' to 'uint64_t' of greater size
+        with
+        [
+            _Ty=uint32_t
+        ]
+C:\h7\foundation-f1-sdk\w-cpu-vulkan-static-producer\src\compute_ggml_runtime\source-7d4fea280f67f983\src\ggml-vulkan\ggml-vulkan.cpp(13879): warning C4319: '~': zero extending 'uint32_t' to 'size_t' of greater size
+[43/423] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\acc.comp.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[44/423] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\add.comp.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[45/423] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\add1.comp.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[46/423] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\add_id.comp.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[47/423] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\arange.comp.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[48/423] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\argmax.comp.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[49/423] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\argsort.comp.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[50/423] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\argsort_large.comp.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[51/423] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\col2im_1d.comp.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[52/423] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\concat.comp.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[53/423] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\contig_copy.comp.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[54/423] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\conv2d_dw.comp.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[55/423] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\conv2d_mm.comp.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[56/423] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\conv3d_mm.comp.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[57/423] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\conv_transpose_1d.comp.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[58/423] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\copy.comp.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[59/423] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\copy_from_quant.comp.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[60/423] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\copy_to_quant.comp.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[61/423] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\copy_transpose.comp.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[62/423] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\copy_transpose_02.comp.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[63/423] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\count_equal.comp.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[64/423] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\count_experts.comp.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[65/423] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\cross_entropy_loss.comp.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[66/423] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\cross_entropy_loss_back.comp.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[67/423] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\cumsum.comp.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[68/423] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\cumsum_multipass1.comp.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[69/423] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\cumsum_multipass2.comp.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[70/423] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\dequant_f32.comp.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[71/423] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\dequant_iq1_m.comp.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[72/423] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\dequant_iq1_s.comp.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[73/423] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\dequant_iq2_s.comp.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[74/423] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\dequant_iq2_xs.comp.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[75/423] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\dequant_iq2_xxs.comp.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[76/423] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\dequant_iq3_s.comp.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[77/423] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\dequant_iq3_xxs.comp.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[78/423] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\dequant_iq4_nl.comp.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[79/423] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\dequant_iq4_xs.comp.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[80/423] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\dequant_mxfp4.comp.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[81/423] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\dequant_nvfp4.comp.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[82/423] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\dequant_q1_0.comp.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[83/423] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\dequant_q2_0.comp.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[84/423] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\dequant_q2_k.comp.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[85/423] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\dequant_q3_k.comp.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[86/423] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\dequant_q4_0.comp.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[87/423] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\dequant_q4_1.comp.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[88/423] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\dequant_q4_k.comp.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[89/423] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\dequant_q5_0.comp.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[90/423] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\dequant_q5_1.comp.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[91/423] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\dequant_q5_k.comp.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[92/423] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\dequant_q6_k.comp.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[93/423] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\dequant_q8_0.comp.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[94/423] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\dequant_tq1_0.comp.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[95/423] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\dequant_tq2_0.comp.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[96/423] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\diag.comp.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[97/423] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\diag_mask_inf.comp.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[98/423] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\div.comp.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[99/423] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\dsv4_hc_comb.comp.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[100/423] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\dsv4_hc_post.comp.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[101/423] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\dsv4_hc_pre.comp.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[102/423] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\fill.comp.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[103/423] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\flash_attn.comp.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[104/423] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\flash_attn_cm1.comp.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[105/423] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\flash_attn_cm2.comp.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[106/423] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\flash_attn_mask_opt.comp.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[107/423] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\flash_attn_split_k_reduce.comp.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[108/423] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\fwht.comp.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[109/423] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\gated_delta_net.comp.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[110/423] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\geglu.comp.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[111/423] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\geglu_erf.comp.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[112/423] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\geglu_quick.comp.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[113/423] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\get_rows.comp.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[114/423] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\get_rows_back.comp.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[115/423] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\get_rows_quant.comp.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[116/423] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\gla.comp.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[117/423] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\group_norm.comp.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[118/423] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\im2col.comp.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[119/423] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\im2col_3d.comp.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[120/423] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\l2_norm.comp.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[121/423] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\lightning_indexer.comp.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[122/423] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\log.comp.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[123/423] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\mul.comp.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[124/423] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\mul_mat_split_k_reduce.comp.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[125/423] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\mul_mat_vec.comp.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[126/423] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\mul_mat_vec_iq1_m.comp.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[127/423] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\mul_mat_vec_iq1_s.comp.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[128/423] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\mul_mat_vec_iq2_s.comp.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[129/423] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\mul_mat_vec_iq2_xs.comp.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[130/423] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\mul_mat_vec_iq2_xxs.comp.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[131/423] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\mul_mat_vec_iq3_s.comp.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[132/423] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\mul_mat_vec_iq3_xxs.comp.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[133/423] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\mul_mat_vec_iq4_xs.comp.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[134/423] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\mul_mat_vec_nc.comp.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[135/423] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\mul_mat_vec_p021.comp.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[136/423] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\mul_mat_vec_q2_k.comp.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[137/423] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\mul_mat_vec_q3_k.comp.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[138/423] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\mul_mat_vec_q4_k.comp.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[139/423] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\mul_mat_vec_q5_k.comp.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[140/423] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\mul_mat_vec_q6_k.comp.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[141/423] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\mul_mat_vec_tq1_0.comp.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[142/423] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\mul_mat_vec_tq2_0.comp.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[143/423] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\mul_mat_vecq.comp.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[144/423] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\mul_mm.comp.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[145/423] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\mul_mm_cm2.comp.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[146/423] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\mul_mmq.comp.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[147/423] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\multi_add.comp.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[148/423] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\norm.comp.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[149/423] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\opt_step_adamw.comp.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[150/423] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\opt_step_sgd.comp.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[151/423] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\out_prod.comp.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[152/423] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\pad.comp.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[153/423] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\pad_reflect_1d.comp.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[154/423] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\pool1d.comp.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[155/423] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\pool2d.comp.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[156/423] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\quantize_q8_1.comp.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[157/423] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\reglu.comp.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[158/423] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\repeat.comp.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[159/423] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\repeat_back.comp.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[160/423] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\rms_norm.comp.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[161/423] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\rms_norm_back.comp.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[162/423] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\rms_norm_partials.comp.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[163/423] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\roll.comp.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[164/423] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\rope_multi.comp.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[165/423] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\rope_neox.comp.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[166/423] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\rope_norm.comp.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[167/423] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\rope_vision.comp.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[168/423] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\scale.comp.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[169/423] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\silu_back.comp.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[170/423] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\snake.comp.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[171/423] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\soft_max.comp.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[172/423] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\soft_max_back.comp.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[173/423] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\soft_max_large1.comp.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[174/423] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\soft_max_large2.comp.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[175/423] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\soft_max_large3.comp.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[176/423] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\solve_tri.comp.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[177/423] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\ssm_conv.comp.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[178/423] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\ssm_scan.comp.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[179/423] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\sub.comp.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[180/423] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\sum_rows.comp.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[181/423] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\swiglu.comp.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[182/423] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\swiglu_clamp.comp.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[183/423] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\swiglu_oai.comp.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[184/423] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\timestep_embedding.comp.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[185/423] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\topk_argsort.comp.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[186/423] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\topk_moe.comp.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[187/423] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\topk_nary_search.comp.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[188/423] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\topk_radix_select.comp.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[189/423] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\tri.comp.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[190/423] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\unary.comp.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[191/423] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\upscale.comp.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[192/423] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\wkv6.comp.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[193/423] Building CXX object src\compute_ggml_runtime\vendor\src\ggml-vulkan\CMakeFiles\ggml-vulkan.dir\wkv7.comp.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[194/423] Linking CXX static library bin\hyle_platform.lib
+[195/423] Building CXX object src\mem\CMakeFiles\hyle_mem.dir\buffer.cc.obj
+[196/423] Building CXX object src\mem\CMakeFiles\hyle_mem.dir\buffer_pool.cc.obj
+[197/423] Building CXX object src\mem\CMakeFiles\hyle_mem.dir\composite_buffer.cc.obj
+[198/423] Building CXX object src\mem\CMakeFiles\hyle_mem.dir\heap.cc.obj
+[199/423] Building CXX object src\mem\CMakeFiles\hyle_mem.dir\lifetime_plan.cc.obj
+[200/423] Building CXX object src\mem\CMakeFiles\hyle_mem.dir\range_allocator.cc.obj
+[201/423] Building CXX object src\mem\CMakeFiles\hyle_mem.dir\resource.cc.obj
+[202/423] Building CXX object src\mem\CMakeFiles\hyle_mem.dir\system.cc.obj
+[203/423] Building CXX object src\mem\CMakeFiles\hyle_mem.dir\stats.cc.obj
+[204/423] Linking CXX static library bin\mimalloc_static.lib
+[205/423] Building CXX object src\compute_ops\CMakeFiles\hyle_compute_ops.dir\operation.cc.obj
+[206/423] Building CXX object src\compute_ops\CMakeFiles\hyle_compute_ops.dir\tensor_desc.cc.obj
+[207/423] Building CXX object src\compute_ops\CMakeFiles\hyle_compute_ops.dir\low_precision.cc.obj
+[208/423] Building CXX object src\compute_ops\CMakeFiles\hyle_compute_ops.dir\weight_decode.cc.obj
+[209/423] Building C object src\compute_ggml_runtime\CMakeFiles\hyle_ggml_cpu_avx2.dir\source-7d4fea280f67f983\src\ggml-cpu\ggml-cpu.c.obj
+[210/423] Building CXX object src\compute_ggml_runtime\CMakeFiles\hyle_ggml_cpu_avx2.dir\source-7d4fea280f67f983\src\ggml-cpu\ggml-cpu.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[211/423] Building CXX object src\compute_ggml_runtime\CMakeFiles\hyle_ggml_cpu_avx2.dir\source-7d4fea280f67f983\src\ggml-cpu\repack.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[212/423] Building CXX object src\compute_ggml_runtime\CMakeFiles\hyle_ggml_cpu_avx2.dir\source-7d4fea280f67f983\src\ggml-cpu\iqp.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[213/423] Building CXX object src\compute_ggml_runtime\CMakeFiles\hyle_ggml_cpu_avx2.dir\source-7d4fea280f67f983\src\ggml-cpu\hbm.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[214/423] Building C object src\compute_ggml_runtime\CMakeFiles\hyle_ggml_cpu_avx2.dir\source-7d4fea280f67f983\src\ggml-cpu\quants.c.obj
+[215/423] Building CXX object src\compute_ggml_runtime\CMakeFiles\hyle_ggml_cpu_avx2.dir\source-7d4fea280f67f983\src\ggml-cpu\traits.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[216/423] Building CXX object src\compute_ggml_runtime\CMakeFiles\hyle_ggml_cpu_avx2.dir\source-7d4fea280f67f983\src\ggml-cpu\amx\amx.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[217/423] Building CXX object src\compute_ggml_runtime\CMakeFiles\hyle_ggml_cpu_avx2.dir\source-7d4fea280f67f983\src\ggml-cpu\amx\mmq.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[218/423] Building CXX object src\compute_ggml_runtime\CMakeFiles\hyle_ggml_cpu_avx2.dir\source-7d4fea280f67f983\src\ggml-cpu\binary-ops.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[219/423] Building CXX object src\compute_ggml_runtime\CMakeFiles\hyle_ggml_cpu_avx2.dir\source-7d4fea280f67f983\src\ggml-cpu\unary-ops.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[220/423] Building CXX object src\compute_ggml_runtime\CMakeFiles\hyle_ggml_cpu_avx2.dir\source-7d4fea280f67f983\src\ggml-cpu\vec.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[221/423] Building CXX object src\compute_ggml_runtime\CMakeFiles\hyle_ggml_cpu_avx2.dir\source-7d4fea280f67f983\src\ggml-cpu\ops.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[222/423] Building C object src\compute_ggml_runtime\CMakeFiles\hyle_ggml_cpu_avx2.dir\source-7d4fea280f67f983\src\ggml-cpu\arch\x86\quants.c.obj
+[223/423] Building CXX object src\compute_ggml_runtime\CMakeFiles\hyle_ggml_cpu_avx2.dir\source-7d4fea280f67f983\src\ggml-cpu\arch\x86\repack.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[224/423] Building CXX object src\compute_ggml_runtime\CMakeFiles\hyle_ggml_cpu_avx2.dir\cpu_program_export.cc.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[225/423] Building CXX object src\compute_ggml_runtime\vendor\src\CMakeFiles\ggml.dir\ggml-backend-dl.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[226/423] Building CXX object src\compute_ggml_runtime\vendor\src\CMakeFiles\ggml.dir\ggml-backend-reg.cpp.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[227/423] Linking CXX static library bin\ggml-cpu.lib
+[228/423] Linking CXX static library bin\ggml-vulkan.lib
+[229/423] Linking CXX static library bin\hyle_mem.lib
+[230/423] Linking CXX static library bin\hyle_compute_ops.lib
+[231/423] Building CXX object src\compute\CMakeFiles\hyle_compute.dir\batch_transfer.cc.obj
+[232/423] Building CXX object src\compute\CMakeFiles\hyle_compute.dir\command_capture.cc.obj
+[233/423] Building CXX object src\compute\CMakeFiles\hyle_compute.dir\completion.cc.obj
+[234/423] Building CXX object src\compute\CMakeFiles\hyle_compute.dir\copy_control.cc.obj
+[235/423] Building CXX object src\compute\CMakeFiles\hyle_compute.dir\copy_ranges.cc.obj
+[236/423] Building CXX object src\compute\CMakeFiles\hyle_compute.dir\custom_kernel.cc.obj
+[237/423] Building CXX object src\compute\CMakeFiles\hyle_compute.dir\device.cc.obj
+[238/423] Building CXX object src\compute\CMakeFiles\hyle_compute.dir\operation.cc.obj
+[239/423] Building CXX object src\compute\CMakeFiles\hyle_compute.dir\provider.cc.obj
+[240/423] Building CXX object src\compute\CMakeFiles\hyle_compute.dir\resource_budget.cc.obj
+[241/423] Building CXX object src\compute\CMakeFiles\hyle_compute.dir\resource_leases.cc.obj
+[242/423] Building CXX object src\compute\CMakeFiles\hyle_compute.dir\retained_completion.cc.obj
+[243/423] Building CXX object src\compute\CMakeFiles\hyle_compute.dir\leased_operation.cc.obj
+[244/423] Building CXX object src\compute\CMakeFiles\hyle_compute.dir\route_policy.cc.obj
+[245/423] Building CXX object src\compute\CMakeFiles\hyle_compute.dir\result.cc.obj
+[246/423] Building CXX object src\compute\CMakeFiles\hyle_compute.dir\shape_domain.cc.obj
+[247/423] Building CXX object src\compute\CMakeFiles\hyle_compute.dir\shape_program.cc.obj
+[248/423] Building CXX object src\compute\CMakeFiles\hyle_compute.dir\tensor_view.cc.obj
+[249/423] Building CXX object src\compute\CMakeFiles\hyle_compute.dir\transfer.cc.obj
+[250/423] Building CXX object src\compute\CMakeFiles\hyle_compute.dir\workload.cc.obj
+[251/423] Building CXX object src\compute_ggml_runtime\CMakeFiles\hyle_compute_ggml_runtime.dir\metadata_arena.cc.obj
+[252/423] Building CXX object src\compute_ggml_runtime\CMakeFiles\hyle_compute_ggml_runtime.dir\cpu_execution.cc.obj
+[253/423] Building CXX object src\compute_ggml_runtime\CMakeFiles\hyle_compute_ggml_runtime.dir\cpu_program.cc.obj
+[254/423] Linking CXX shared module bin\hyle_ggml_cpu_avx2_456172ec_7d4fea280f67f983.dll
+[255/423] Linking CXX static library bin\ggml.lib
+[256/423] Linking CXX static library bin\hyle_compute.lib
+[257/423] Linking CXX static library bin\hyle_compute_ggml_runtime.lib
+[258/423] Building CXX object src\compute_provider_ggml_vulkan\CMakeFiles\hyle_compute_provider_ggml_vulkan.dir\native_device.cc.obj
+[259/423] Building CXX object src\compute_provider_ggml_vulkan\CMakeFiles\hyle_compute_provider_ggml_vulkan.dir\native_graph.cc.obj
+[260/423] Building CXX object src\compute_provider_ggml_vulkan\CMakeFiles\hyle_compute_provider_ggml_vulkan.dir\region.cc.obj
+[261/423] Building CXX object src\time\CMakeFiles\hyle_time.dir\clock.cc.obj
+[262/423] Building CXX object src\time\CMakeFiles\hyle_time.dir\interop.cc.obj
+[263/423] Linking CXX static library bin\hyle_compute_provider_ggml_vulkan.lib
+[264/423] Building CXX object src\compute_provider_iree_vulkan\CMakeFiles\hyle_compute_provider_iree_vulkan.dir\native_device.cc.obj
+[265/423] Building CXX object src\compute_provider_iree_vulkan\CMakeFiles\hyle_compute_provider_iree_vulkan.dir\native_program.cc.obj
+[266/423] Building CXX object src\compute_provider_iree_vulkan\CMakeFiles\hyle_compute_provider_iree_vulkan.dir\generated\programs.cc.obj
+[267/423] Building RC object _deps\onednn-build\src\CMakeFiles\dnnl.dir\version.rc.res
+[268/423] Linking CXX static library bin\hyle_time.lib
+[269/423] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\runtime.cc.obj
+[270/423] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\ops\dispatch_ops.cc.obj
+[271/423] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\random\random_dispatch.cc.obj
+[272/423] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\search\search_dispatch.cc.obj
+[273/423] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\narrow\narrow_dispatch.cc.obj
+[274/423] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\scan\scan_dispatch.cc.obj
+[275/423] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\dtype\dtype_dispatch.cc.obj
+[276/423] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\dtype\cvt_fp8_scalar.cc.obj
+[277/423] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\math\math_dispatch.cc.obj
+[278/423] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\math\transcendental_scalar.cc.obj
+[279/423] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\math\activations.cc.obj
+[280/423] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\sort\sort_dispatch.cc.obj
+[281/423] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\sort\top_k.cc.obj
+[282/423] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\sort\vqsort_scalar.cc.obj
+[283/423] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\sort\radix_sort.cc.obj
+[284/423] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\bitpack\bitpack_dispatch.cc.obj
+[285/423] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\ops\dot_f16c.cc.obj
+[286/423] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\ops\dot_avx_vnni.cc.obj
+[287/423] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\ops\dot_avx512_vnni.cc.obj
+[288/423] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\ops\dot_avx512bf16.cc.obj
+[289/423] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\dtype\cvt_f16c.cc.obj
+[290/423] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\dtype\cvt_avx512bf16.cc.obj
+[291/423] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\math\transcendental_highway.cc.obj
+[292/423] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\sort\vqsort_hyle_avx2.cc.obj
+[293/423] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\math\transcendental_highway_avx512.cc.obj
+[294/423] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\ops\ops_scalar.cc.obj
+[295/423] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\ops\ops_sse4.cc.obj
+[296/423] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\ops\ops_avx2.cc.obj
+[297/423] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\ops\ops_avx512.cc.obj
+[298/423] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\dtype_convert\dtype_convert_scalar.cc.obj
+[299/423] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\dtype_convert\dtype_convert_sse4.cc.obj
+[300/423] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\dtype_convert\dtype_convert_avx2.cc.obj
+[301/423] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\dtype_convert\dtype_convert_avx512.cc.obj
+[302/423] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\scan\scan_scalar.cc.obj
+[303/423] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\scan\scan_sse4.cc.obj
+[304/423] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\scan\scan_avx2.cc.obj
+[305/423] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\scan\scan_avx512.cc.obj
+[306/423] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\random\random_scalar.cc.obj
+[307/423] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\random\random_sse4.cc.obj
+[308/423] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\random\random_avx2.cc.obj
+[309/423] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\random\random_avx512.cc.obj
+[310/423] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\search\search_scalar.cc.obj
+[311/423] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\search\search_sse4.cc.obj
+[312/423] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\search\search_avx2.cc.obj
+[313/423] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\search\search_avx512.cc.obj
+[314/423] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\narrow\narrow_scalar.cc.obj
+[315/423] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\narrow\narrow_sse4.cc.obj
+[316/423] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\narrow\narrow_avx2.cc.obj
+[317/423] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\narrow\narrow_avx512.cc.obj
+[318/423] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\bitpack\bitpack_scalar.cc.obj
+[319/423] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\bitpack\bitpack_sse4.cc.obj
+[320/423] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\bitpack\bitpack_avx2.cc.obj
+[321/423] Building CXX object src\simd\CMakeFiles\hyle_simd.dir\generated\simd-dispatch\bitpack\bitpack_avx512.cc.obj
+[322/423] Building CXX object src\container\CMakeFiles\hyle_container.dir\hash.cc.obj
+[323/423] Building CXX object src\container\CMakeFiles\hyle_container.dir\pod_vector.cc.obj
+[324/423] Building CXX object src\container\CMakeFiles\hyle_container.dir\flat_hash_map.cc.obj
+[325/423] Building CXX object src\container\CMakeFiles\hyle_container.dir\dynamic_bitset.cc.obj
+[326/423] Building CXX object src\container\CMakeFiles\hyle_container.dir\hash_xxh3_avx2.cc.obj
+[327/423] Building CXX object src\container\CMakeFiles\hyle_container.dir\generated\simd-dispatch\container_bitset\container_bitset_scalar.cc.obj
+[328/423] Building CXX object src\container\CMakeFiles\hyle_container.dir\generated\simd-dispatch\container_bitset\container_bitset_sse4.cc.obj
+[329/423] Building CXX object src\container\CMakeFiles\hyle_container.dir\generated\simd-dispatch\container_bitset\container_bitset_avx2.cc.obj
+[330/423] Building CXX object src\compute_backend_cpu\CMakeFiles\hyle_compute_backend_cpu.dir\cpu_backend.cc.obj
+[331/423] Linking CXX static library bin\hyle_compute_provider_iree_vulkan.lib
+[332/423] Linking CXX static library bin\dnnl.lib
+[333/423] Building CXX object src\platform_fs\CMakeFiles\hyle_platform_fs.dir\fs.cc.obj
+[334/423] Linking CXX static library bin\hyle_simd.lib
+[335/423] Linking CXX static library bin\hyle_container.lib
+[336/423] Building CXX object src\graph\CMakeFiles\hyle_graph.dir\graph.cc.obj
+[337/423] Building CXX object src\graph\CMakeFiles\hyle_graph.dir\effect_order.cc.obj
+[338/423] Building CXX object src\graph\CMakeFiles\hyle_graph.dir\executable.cc.obj
+[339/423] Building CXX object src\graph\CMakeFiles\hyle_graph.dir\view_domain.cc.obj
+[340/423] Building CXX object src\graph\CMakeFiles\hyle_graph.dir\constant_artifact.cc.obj
+[341/423] Building CXX object src\graph\CMakeFiles\hyle_graph.dir\leased_invocation.cc.obj
+[342/423] Building CXX object src\graph\CMakeFiles\hyle_graph.dir\lease_submission.cc.obj
+[343/423] Building CXX object src\compute_provider_onednn\CMakeFiles\hyle_compute_provider_onednn.dir\brgemm_internal.cc.obj
+[344/423] Building CXX object src\compute_provider_onednn\CMakeFiles\hyle_compute_provider_onednn.dir\normalization_internal.cc.obj
+cl : Command line warning D9025 : overriding '/EHc' with '/EHc-'
+[345/423] Building CXX object src\compute_provider_onednn\CMakeFiles\hyle_compute_provider_onednn.dir\onednn_provider.cc.obj
+[346/423] Linking CXX static library bin\hyle_compute_backend_cpu.lib
+[347/423] Building CXX object src\compute_provider_ggml\CMakeFiles\hyle_compute_provider_ggml.dir\ggml_cpu_provider.cc.obj
+[348/423] Building CXX object src\compute_provider_ggml\CMakeFiles\hyle_compute_provider_ggml.dir\standard_index.cc.obj
+[349/423] Building CXX object src\compute_provider_native\CMakeFiles\hyle_compute_provider_native.dir\aten_cpu_provider.cc.obj
+[350/423] Building CXX object src\compute_provider_native\CMakeFiles\hyle_compute_provider_native.dir\cast.cc.obj
+[351/423] Building CXX object src\compute_provider_native\CMakeFiles\hyle_compute_provider_native.dir\default_rules.cc.obj
+[352/423] Building CXX object src\compute_provider_native\CMakeFiles\hyle_compute_provider_native.dir\ds4_quantization.cc.obj
+[353/423] Building CXX object src\compute_provider_native\CMakeFiles\hyle_compute_provider_native.dir\elementwise.cc.obj
+[354/423] Building CXX object src\compute_provider_native\CMakeFiles\hyle_compute_provider_native.dir\indexing.cc.obj
+[355/423] Building CXX object src\compute_provider_native\CMakeFiles\hyle_compute_provider_native.dir\native_provider.cc.obj
+[356/423] Building CXX object src\compute_provider_native\CMakeFiles\hyle_compute_provider_native.dir\normalization.cc.obj
+[357/423] Building CXX object src\compute_provider_native\CMakeFiles\hyle_compute_provider_native.dir\reduction.cc.obj
+[358/423] Building CXX object src\compute_provider_native\CMakeFiles\hyle_compute_provider_native.dir\transform.cc.obj
+[359/423] Building CXX object src\compute_provider_native\CMakeFiles\hyle_compute_provider_native.dir\transformer.cc.obj
+[360/423] Building CXX object src\compute_provider_native\CMakeFiles\hyle_compute_provider_native.dir\torch_cpu_program.cc.obj
+[361/423] Building CXX object src\platform_thread\CMakeFiles\hyle_platform_thread.dir\thread.cc.obj
+[362/423] Building CXX object src\platform_thread\CMakeFiles\hyle_platform_thread.dir\wait.cc.obj
+[363/423] Linking CXX static library bin\hyle_platform_fs.lib
+[364/423] Building CXX object src\mem_vm\CMakeFiles\hyle_mem_vm.dir\mapping.cc.obj
+[365/423] Building CXX object src\mem_vm\CMakeFiles\hyle_mem_vm.dir\file_mapping.cc.obj
+[366/423] Building CXX object src\mem_vm\CMakeFiles\hyle_mem_vm.dir\shared_mapping.cc.obj
+[367/423] Linking CXX static library bin\hyle_graph.lib
+[368/423] Linking CXX static library bin\hyle_compute_provider_onednn.lib
+[369/423] Linking CXX static library bin\hyle_compute_provider_ggml.lib
+[370/423] Building CXX object src\graph_provider_onednn\CMakeFiles\hyle_graph_provider_onednn.dir\onednn_region_provider.cc.obj
+[371/423] Linking CXX static library bin\hyle_compute_provider_native.lib
+[372/423] Building CXX object src\compute_route_cpu\CMakeFiles\hyle_compute_route_cpu.dir\cpu_context.cc.obj
+[373/423] Building CXX object src\compute_route_cpu\CMakeFiles\hyle_compute_route_cpu.dir\default_policy.cc.obj
+[374/423] Building CXX object src\compute_route_vulkan\CMakeFiles\hyle_compute_route_vulkan.dir\vulkan_device.cc.obj
+[375/423] Building CXX object src\compute_route_vulkan\CMakeFiles\hyle_compute_route_vulkan.dir\vulkan_memory.cc.obj
+[376/423] Building CXX object src\compute_route_vulkan\CMakeFiles\hyle_compute_route_vulkan.dir\vulkan_copy_recording.cc.obj
+[377/423] Building CXX object src\compute_route_vulkan\CMakeFiles\hyle_compute_route_vulkan.dir\vulkan_copy_program.cc.obj
+[378/423] Building CXX object src\compute_route_vulkan\CMakeFiles\hyle_compute_route_vulkan.dir\vulkan_leased_invocation.cc.obj
+[379/423] Building CXX object src\compute_route_vulkan\CMakeFiles\hyle_compute_route_vulkan.dir\vulkan_run.cc.obj
+[380/423] Building CXX object src\compute_route_vulkan\CMakeFiles\hyle_compute_route_vulkan.dir\vulkan_transfer.cc.obj
+[381/423] Building CXX object src\compute_route_vulkan\CMakeFiles\hyle_compute_route_vulkan.dir\vulkan_transfer_slot.cc.obj
+[382/423] Building CXX object src\compute_route_vulkan\CMakeFiles\hyle_compute_route_vulkan.dir\vulkan_weights.cc.obj
+[383/423] Building CXX object src\compute_route_vulkan\CMakeFiles\hyle_compute_route_vulkan.dir\vulkan_pipeline.cc.obj
+[384/423] Building CXX object src\compute_route_vulkan\CMakeFiles\hyle_compute_route_vulkan.dir\vulkan_operations.cc.obj
+[385/423] Building CXX object src\compute_route_vulkan\CMakeFiles\hyle_compute_route_vulkan.dir\vulkan_tensor.cc.obj
+[386/423] Building CXX object src\compute_route_vulkan\CMakeFiles\hyle_compute_route_vulkan.dir\vulkan_program.cc.obj
+[387/423] Building CXX object src\compute_route_vulkan\CMakeFiles\hyle_compute_route_vulkan.dir\vulkan_recorder.cc.obj
+[388/423] Building CXX object src\compute_route_vulkan\CMakeFiles\hyle_compute_route_vulkan.dir\vulkan_region.cc.obj
+[389/423] Building CXX object src\compute_route_vulkan\CMakeFiles\hyle_compute_route_vulkan.dir\vulkan_scatter.cc.obj
+[390/423] Building CXX object src\compute_route_vulkan\CMakeFiles\hyle_compute_route_vulkan.dir\vulkan_normalization.cc.obj
+[391/423] Building CXX object src\compute_route_vulkan\CMakeFiles\hyle_compute_route_vulkan.dir\vulkan_reduction.cc.obj
+[392/423] Building CXX object src\compute_route_vulkan\CMakeFiles\hyle_compute_route_vulkan.dir\vulkan_elementwise.cc.obj
+[393/423] Building CXX object src\compute_route_vulkan\CMakeFiles\hyle_compute_route_vulkan.dir\vulkan_iree.cc.obj
+[394/423] Building CXX object src\compute_route_vulkan\CMakeFiles\hyle_compute_route_vulkan.dir\vulkan_mlx.cc.obj
+[395/423] Building CXX object src\compute_route_vulkan\CMakeFiles\hyle_compute_route_vulkan.dir\vulkan_official.cc.obj
+[396/423] Building CXX object src\compute_route_vulkan\CMakeFiles\hyle_compute_route_vulkan.dir\vulkan_iq1.cc.obj
+[397/423] Building CXX object src\compute_route_vulkan\CMakeFiles\hyle_compute_route_vulkan.dir\shaders\vulkan_shaders.cc.obj
+[398/423] Linking CXX static library bin\hyle_platform_thread.lib
+[399/423] Linking CXX static library bin\hyle_mem_vm.lib
+[400/423] Building CXX object src\sched\CMakeFiles\hyle_sched.dir\fiber.cc.obj
+[401/423] Building CXX object src\sched\CMakeFiles\hyle_sched.dir\scheduler.cc.obj
+[402/423] Building CXX object src\sched\CMakeFiles\hyle_sched.dir\sync.cc.obj
+[403/423] Building CXX object src\sched\CMakeFiles\hyle_sched.dir\join.cc.obj
+[404/423] Building CXX object src\sched\CMakeFiles\hyle_sched.dir\blocking.cc.obj
+[405/423] Building CXX object src\sched\CMakeFiles\hyle_sched.dir\cancel.cc.obj
+[406/423] Building CXX object src\sched\CMakeFiles\hyle_sched.dir\task_scope.cc.obj
+[407/423] Building CXX object src\sched\CMakeFiles\hyle_sched.dir\bulk.cc.obj
+[408/423] Building ASM_MASM object src\sched\CMakeFiles\hyle_sched.dir\__\__\third_party\fcontext\asm\jump_x86_64_ms_pe_masm.asm.obj
+Microsoft (R) Macro Assembler (x64) Version 14.50.35728.0
+Copyright (C) Microsoft Corporation.  All rights reserved.
+
+ Assembling: C:\public\project-hyle\hyle\third_party\fcontext\asm\jump_x86_64_ms_pe_masm.asm
+[409/423] Building ASM_MASM object src\sched\CMakeFiles\hyle_sched.dir\__\__\third_party\fcontext\asm\make_x86_64_ms_pe_masm.asm.obj
+Microsoft (R) Macro Assembler (x64) Version 14.50.35728.0
+Copyright (C) Microsoft Corporation.  All rights reserved.
+
+ Assembling: C:\public\project-hyle\hyle\third_party\fcontext\asm\make_x86_64_ms_pe_masm.asm
+[410/423] Building ASM_MASM object src\sched\CMakeFiles\hyle_sched.dir\__\__\third_party\fcontext\asm\ontop_x86_64_ms_pe_masm.asm.obj
+Microsoft (R) Macro Assembler (x64) Version 14.50.35728.0
+Copyright (C) Microsoft Corporation.  All rights reserved.
+
+ Assembling: C:\public\project-hyle\hyle\third_party\fcontext\asm\ontop_x86_64_ms_pe_masm.asm
+[411/423] Linking CXX static library bin\hyle_graph_provider_onednn.lib
+[412/423] Linking CXX static library bin\hyle_compute_route_cpu.lib
+[413/423] Building CXX object src\graph_route_cpu\CMakeFiles\hyle_graph_route_cpu.dir\cpu_context.cc.obj
+[414/423] Building CXX object src\graph_route_cpu\CMakeFiles\hyle_graph_route_cpu.dir\ggml_region.cc.obj
+[415/423] Linking CXX static library bin\hyle_compute_route_vulkan.lib
+[416/423] Building CXX object src\graph_route_vulkan\CMakeFiles\hyle_graph_route_vulkan.dir\vulkan_lowering.cc.obj
+[417/423] Linking CXX static library bin\hyle_sched.lib
+[418/423] Linking CXX static library bin\hyle_graph_route_cpu.lib
+[419/423] Linking CXX static library bin\hyle_graph_route_vulkan.lib
+[420/423] Building CXX object src\graph_route_cpu_vulkan\CMakeFiles\hyle_graph_route_cpu_vulkan.dir\compile.cc.obj
+[421/423] Building CXX object src\graph_route_cpu_vulkan\CMakeFiles\hyle_graph_route_cpu_vulkan.dir\invocation.cc.obj
+[422/423] Linking CXX static library bin\hyle_graph_route_cpu_vulkan.lib
