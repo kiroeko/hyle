@@ -160,6 +160,17 @@
         "wsl-static-mixed-test.log"
       ],
       "qualification": "Shipping tests-off producer; installation actually relocated; independent consumers link imported hyle::graph only."
+    },
+    {
+      "name": "WSL relocated CPU CUDA shared SDK ordinary lease and imported mixed contract",
+      "verdict": "PASS",
+      "candidate": "8bf5b2ebea3021264128df34b25ed7e94964caa1",
+      "receipt": "wsl-shared-job.json",
+      "logs": [
+        "wsl-shared-lease-test.log",
+        "wsl-shared-mixed-test.log"
+      ],
+      "qualification": "Shipping tests-off producer; installation actually relocated; independent consumers link imported hyle::graph only."
     }
   ],
   "wsl_vulkan": {
@@ -168,7 +179,7 @@
     "limitation": "Actual loader enumerates only type 4 llvmpipe software device. No native Vulkan math qualification is claimed; applicability follows current F1 card actual GPU rule."
   },
   "limitations": [
-    "WSL shared SDK still pending",
+    "Windows CPU Vulkan imported static managed composition still pending",
     "WSL CUDA observation fault and final capability/risk/platform matrix still pending",
     "Final P0 verdict and separate red team still pending",
     "F1 owners remain AUDITED; F2/F3 have no product implementation"
@@ -267,6 +278,13 @@
     "wsl-static-configure.log": "c33bba741555850565797ca984ddfb38ccf5c4b3f355027657a04765d57b45fc",
     "wsl-static-consumer-build.log": "507c5d48ea38a3719663e8177f091f23673808ec9818b741db9dbb200ee9c3b0",
     "wsl-static-lease-test.log": "744cf36aff177ec2dab2273bb870e3c92c25b4377c6be1155c093f51730dad31",
-    "wsl-static-mixed-test.log": "69d5a9c5b6b0ba8cb86ffc2dc9ecc650c8bdd19c9c9e2d8e341681a8be302be7"
+    "wsl-static-mixed-test.log": "69d5a9c5b6b0ba8cb86ffc2dc9ecc650c8bdd19c9c9e2d8e341681a8be302be7",
+    "wsl-shared-job.json": "e642745f80250e2008e6b2ec3a9d432a92a542278d0f82d2f5d43b9fbf5c1215",
+    "wsl-shared-producer.log": "86d32e544ae7de277a4139dee063604adbd6b2ec3fe4a855172d8ace7a4e0922",
+    "wsl-shared-install.log": "c52aad89f1884409625180377d52938f67b2dc0dc285d93fe06d4a5e3bf5ff4d",
+    "wsl-shared-configure.log": "040099e333e99087d95b22530de93400fe1107cd8fdc965e236f3a4d3c9bb08c",
+    "wsl-shared-consumer-build.log": "14456f9c474342130e16e26d2e269c5ceb0f0c5a21dbc32080a15917cbe4150f",
+    "wsl-shared-lease-test.log": "744cf36aff177ec2dab2273bb870e3c92c25b4377c6be1155c093f51730dad31",
+    "wsl-shared-mixed-test.log": "69d5a9c5b6b0ba8cb86ffc2dc9ecc650c8bdd19c9c9e2d8e341681a8be302be7"
   }
 }

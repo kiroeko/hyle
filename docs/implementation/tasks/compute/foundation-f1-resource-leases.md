@@ -3,6 +3,7 @@
 > 状态：AUDITED（2026-10-11），F1 共同核与四路线/组合接缝已接通，当前集中补齐风险和交付资格。
 > 当前 registry 绑定 compute、graph、compute_backend_cuda、compute_route_apple/vulkan、
 > graph_route_cpu_apple/vulkan；F2/F3 尚未启动，不能把局部 PASS 当作整包关闭。
+> 当前逐能力、公开入口和平台/交付缺格见[验证矩阵](foundation-f1-verification-matrix.md)，未验不外推。
 > component / owner：拟由 compute 负责共同控制；compute_backend_cpu/cuda 与
 > compute_route_cpu/cuda/apple/vulkan 负责实际 native 适配；Graph 及其四路线和 CPU+GPU 适配只改 leased 接缝。
 > 具体改到的 owner 才在启动时绑定；不重开全部 Provider/算子模块。
@@ -642,6 +643,10 @@ source 不替 installed static/shared、CUDA observation fault 或最终红队�
 `8bf5b2ebe` WSL static SDK 的 producer、安装、实际迁址、独立消费者构建与两消费者运行全部通过。
 普通 CPU/CUDA Direct+Graph 租约数学和原 CPU+CUDA managed contract 均通过，原阶段日志收入交付收据。
 同输入 shared SDK 正在串行验证；这份 static 结果不代签 shared 或下面的 observation fault。
+
+随后同一 `8bf5b2ebe` WSL shared SDK 六阶段全部通过，普通租约数学与 imported CPU+CUDA mixed consumer
+均成功，原日志/身份保存。WSL CPU/CUDA 的 source/static/shared 普通与 mixed 格已分别取证；
+下面独立 fault 使用新增取消断言的 `3034fc595` archive，普通交付无需因测试/文档变化重建。
 
 F1-07 逐语义复核：CUDA 原 native cancellation 返回 `Unimplemented`（不能中断已接受 stream work），
 现有真实 cuBLAS lease 用例还没有直接观察 proxy 的这一请求。只在该既有 gated MatMul 用例补
