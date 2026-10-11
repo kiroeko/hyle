@@ -1,0 +1,59 @@
+{
+  "candidate": "8eb3e871b9a194c9db9c58cbb3e2020e741eea1d",
+  "producer_product_candidate": "fc4ffbd1610eb3b24bf76709dc6e5e25b3d838d7",
+  "original_sdk_receipt": "w-cpu-vulkan-shared-sdk.json",
+  "prefix": "C:\\h7\\foundation-f1-sdk\\w-cpu-vulkan-shared-relocated",
+  "linkage": "shared",
+  "stages": [
+    {
+      "name": "configure",
+      "command": [
+        "C:\\Program Files\\CMake\\bin\\cmake.EXE",
+        "-S",
+        "C:\\h7\\foundation-f1-sdk\\w-mixed-vulkan-parent",
+        "-B",
+        "C:\\h7\\foundation-f1-sdk\\w-mixed-vulkan-consumer",
+        "-G",
+        "Ninja",
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DCMAKE_CXX_COMPILER=C:/Program Files/Microsoft Visual Studio/18/Enterprise/VC/Tools/MSVC/14.50.35717/bin/Hostx64/x64/cl.exe",
+        "-DCMAKE_PREFIX_PATH=C:\\h7\\foundation-f1-sdk\\w-cpu-vulkan-shared-relocated"
+      ],
+      "pid": 20864,
+      "state": "terminal",
+      "log": "windows-imported-mixed-vulkan-configure.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "4c5b2fb4cfb0cd381a490f7ac70586832137e9cfa57a9e5c60c08f2d5306defa"
+    },
+    {
+      "name": "build",
+      "command": [
+        "C:\\Program Files\\CMake\\bin\\cmake.EXE",
+        "--build",
+        "C:\\h7\\foundation-f1-sdk\\w-mixed-vulkan-consumer",
+        "--parallel",
+        "1"
+      ],
+      "pid": 89552,
+      "state": "terminal",
+      "log": "windows-imported-mixed-vulkan-build.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "078814de71fcb6e6b25976a01d367c2bedb2728faf97b8d44ad801cc7e0eb86a"
+    },
+    {
+      "name": "test",
+      "command": [
+        "C:\\h7\\foundation-f1-sdk\\w-mixed-vulkan-consumer\\mixed.exe"
+      ],
+      "pid": 91652,
+      "state": "terminal",
+      "log": "windows-imported-mixed-vulkan-test.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "9e5f4cb9a7c7ba8331f9508e6b6a098d64db2bc72bb7a4d29f297cb1895344b6"
+    }
+  ],
+  "verdict": "PASS"
+}

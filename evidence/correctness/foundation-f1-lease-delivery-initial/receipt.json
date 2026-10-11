@@ -98,6 +98,14 @@
         "apple-shared-lease-test.log",
         "apple-shared-mixed-test.log"
       ]
+    },
+    {
+      "name": "Windows relocated CPU Vulkan shared SDK original managed ReadLease bind contract",
+      "verdict": "PASS",
+      "candidate": "8eb3e871b9a194c9db9c58cbb3e2020e741eea1d",
+      "receipt": "windows-imported-mixed-vulkan-job.json",
+      "log": "windows-imported-mixed-vulkan-test.log",
+      "qualification": "Uses original relocated SDK with unchanged product candidate fc4ffbd16; only consumer tests changed. Links imported hyle::graph; no product source build."
     }
   ],
   "wsl_vulkan": {
@@ -172,6 +180,10 @@
     "apple-shared-configure.log": "c8e355e519b12bd172f0c808aa1d27b5b6105ba75e0ebfe41e46e9293a529ac6",
     "apple-shared-consumer-build.log": "6bd27cf2492c57085f9f1376b073f5664f63b3991404d0466472d4c5cca02649",
     "apple-shared-lease-test.log": "f1208d667c93429472595d1f4c76cd71c5d3d3edd149e021030131da8b7b072d",
-    "apple-shared-mixed-test.log": "4cd63a75aecc8a1837af896c4ae22dc624ec5266801b995eaa69ec4ddc8ad56d"
+    "apple-shared-mixed-test.log": "4cd63a75aecc8a1837af896c4ae22dc624ec5266801b995eaa69ec4ddc8ad56d",
+    "windows-imported-mixed-vulkan-job.json": "09379d3c4f647434a429943aa29b9887ca64135501f0d03ee19aacc950c605d8",
+    "windows-imported-mixed-vulkan-configure.log": "4c5b2fb4cfb0cd381a490f7ac70586832137e9cfa57a9e5c60c08f2d5306defa",
+    "windows-imported-mixed-vulkan-build.log": "078814de71fcb6e6b25976a01d367c2bedb2728faf97b8d44ad801cc7e0eb86a",
+    "windows-imported-mixed-vulkan-test.log": "9e5f4cb9a7c7ba8331f9508e6b6a098d64db2bc72bb7a4d29f297cb1895344b6"
   }
 }

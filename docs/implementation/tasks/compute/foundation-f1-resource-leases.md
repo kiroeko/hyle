@@ -592,6 +592,11 @@ Air shared、Vulkan Air/WSL 对应平台与最终七门仍未全部证明。
 同一收据记录。CPU+Apple 的 source/static/shared 普通入口及 managed bind 接缝已取证；这不替其他平台、
 Vulkan Air、Windows managed SDK 调用或最终红队签字。当前没有本批正在运行的 Air SDK job。
 
+`8eb3e871b` Windows installed CPU+Vulkan shared consumer 对同一迁址 SDK（产品 `fc4ffbd16` 未变）
+只链接 imported `hyle::graph`，原 managed ReadLease bind 数学、metadata 计数、source alias、
+取消/放弃与 accepted CPU prefix 拒绝全部通过。新的 consumer/header/public edge 不再仅由空头或分开的
+单路线样例代签；编译/运行与 system-only PATH 记录保存。其他未声明完成的格仍按矩阵。
+
 P0 静态账单须列新增 metadata/引用/锁，及旧普通路径不变的证据；
 热路径以计数验无 allocation/provider search，不为纳秒差改布局。
 
