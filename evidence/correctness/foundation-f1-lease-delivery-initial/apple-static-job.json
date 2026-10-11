@@ -1,0 +1,140 @@
+{
+  "candidate": "8caae98734b6b58ef182a9d111d7f806c15294d2",
+  "mode": "static",
+  "source": "/Users/kiro/hyle-scratch/compute-unified/source-c8874688",
+  "routes": [
+    "cpu",
+    "apple"
+  ],
+  "compiler": "AppleClang21.0.0/libc++",
+  "machine": "Mac16,12/16GiB/macOS27.0.1",
+  "parallel": 1,
+  "stages": [
+    {
+      "name": "producer",
+      "command": [
+        "/opt/homebrew/bin/cmake",
+        "--build",
+        "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-build",
+        "--parallel",
+        "1"
+      ],
+      "pid": 18680,
+      "state": "terminal",
+      "available_bytes": 7317389312,
+      "log": "producer.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "7a54a989436dcd6bf559a6b6fea08f4d8e944b32de856c050fac31191975c472"
+    },
+    {
+      "name": "install",
+      "command": [
+        "/opt/homebrew/bin/cmake",
+        "--install",
+        "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-build",
+        "--prefix",
+        "/Users/kiro/hyle-scratch/compute-unified/foundation-f1-sdk/static-staging"
+      ],
+      "pid": 19221,
+      "state": "terminal",
+      "available_bytes": 7459651584,
+      "log": "install.log",
+      "exit_code": 1,
+      "verdict": "FAIL",
+      "sha256": "c30137f438c21951b40840dfa1ae1e52c1f5df47516e45113b298cc9370cf107"
+    },
+    {
+      "name": "install-resume",
+      "command": [
+        "/opt/homebrew/bin/cmake",
+        "--install",
+        "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-build",
+        "--prefix",
+        "/Users/kiro/hyle-scratch/compute-unified/foundation-f1-sdk/static-staging"
+      ],
+      "pid": 19314,
+      "state": "terminal",
+      "available_bytes": 7438172160,
+      "log": "install-resume.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "84d796dd0aab9c209cc45d2f9e698ab5d133b37ba124d171f64bb31859dc1bc9"
+    },
+    {
+      "name": "configure",
+      "command": [
+        "/opt/homebrew/bin/cmake",
+        "-S",
+        "/Users/kiro/hyle-scratch/compute-unified/foundation-f1-sdk/static-parent",
+        "-B",
+        "/Users/kiro/hyle-scratch/compute-unified/foundation-f1-sdk/static-consumer",
+        "-G",
+        "Ninja",
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DCMAKE_OSX_DEPLOYMENT_TARGET=14.4",
+        "-DCMAKE_PREFIX_PATH=/Users/kiro/hyle-scratch/compute-unified/foundation-f1-sdk/static-relocated"
+      ],
+      "pid": 19360,
+      "state": "terminal",
+      "available_bytes": 7390822400,
+      "log": "configure.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "88936d27b33802ac6606867d6145d4d1fa5c9b4baef4c83b353be69e2fcaafaf"
+    },
+    {
+      "name": "consumer-build",
+      "command": [
+        "/opt/homebrew/bin/cmake",
+        "--build",
+        "/Users/kiro/hyle-scratch/compute-unified/foundation-f1-sdk/static-consumer",
+        "--parallel",
+        "1"
+      ],
+      "pid": 19454,
+      "state": "terminal",
+      "available_bytes": 7359905792,
+      "log": "consumer-build.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "2861b77e64c6845ce70ab5333fc8dfa4f398c9898e26cc4102eed9afe4025d9c"
+    },
+    {
+      "name": "lease-test",
+      "command": [
+        "/Users/kiro/hyle-scratch/compute-unified/foundation-f1-sdk/static-consumer/leases"
+      ],
+      "pid": 19471,
+      "state": "terminal",
+      "available_bytes": 7359840256,
+      "log": "lease-test.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "f1208d667c93429472595d1f4c76cd71c5d3d3edd149e021030131da8b7b072d"
+    },
+    {
+      "name": "mixed-test",
+      "command": [
+        "/Users/kiro/hyle-scratch/compute-unified/foundation-f1-sdk/static-consumer/mixed"
+      ],
+      "pid": 19474,
+      "state": "terminal",
+      "available_bytes": 7353565184,
+      "log": "mixed-test.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "4cd63a75aecc8a1837af896c4ae22dc624ec5266801b995eaa69ec4ddc8ad56d"
+    }
+  ],
+  "snapshot_repair": {
+    "LICENSE": "edcbc4391ee471753cc9a7f8b410ad6fe8f65a3dc5a368a5c2fa06122316f478",
+    "THIRD_PARTY_NOTICES.md": "c4393a48e84aaab7631581b96ea1f9c85c8b915507e96cd46bb8b9c03d196d94"
+  },
+  "relocation": {
+    "original": "/Users/kiro/hyle-scratch/compute-unified/foundation-f1-sdk/static-staging",
+    "relocated": "/Users/kiro/hyle-scratch/compute-unified/foundation-f1-sdk/static-relocated",
+    "original_absent": true
+  },
+  "verdict": "PASS"
+}

@@ -1,0 +1,246 @@
+[0/2] Re-checking globbed directories...
+-- GLOB mismatch!
+The following files were added:
+  +/Users/kiro/hyle-scratch/compute-unified/source-c8874688/include/hyle/compute/detail/lease_access.h
+  +/Users/kiro/hyle-scratch/compute-unified/source-c8874688/include/hyle/compute/detail/native_lease_inputs.h
+  +/Users/kiro/hyle-scratch/compute-unified/source-c8874688/include/hyle/compute/detail/retained_completion.h
+  +/Users/kiro/hyle-scratch/compute-unified/source-c8874688/include/hyle/compute/leased_operation.h
+  +/Users/kiro/hyle-scratch/compute-unified/source-c8874688/include/hyle/compute/resource_leases.h
+  +/Users/kiro/hyle-scratch/compute-unified/source-c8874688/include/hyle/compute/vulkan_memory.h
+  +/Users/kiro/hyle-scratch/compute-unified/source-c8874688/include/hyle/compute/vulkan_weights.h
+-- GLOB mismatch!
+The following files were added:
+  +/Users/kiro/hyle-scratch/compute-unified/source-c8874688/include/hyle/graph/cpu_vulkan.h
+  +/Users/kiro/hyle-scratch/compute-unified/source-c8874688/include/hyle/graph/detail/lease_submission.h
+  +/Users/kiro/hyle-scratch/compute-unified/source-c8874688/include/hyle/graph/leased_invocation.h
+-- GLOB mismatch!
+The following files were added:
+  +/Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/compute/leased_operation.cc
+  +/Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/compute/resource_leases.cc
+  +/Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/compute/retained_completion.cc
+-- GLOB mismatch!
+The following files were added:
+  +/Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/compute_route_apple/apple_leased_invocation.cc
+-- GLOB mismatch!
+The following files were added:
+  +/Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/graph/lease_submission.cc
+  +/Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/graph/leased_invocation.cc
+[1/2] Re-running CMake...
+-- HYLE products: requested='graph' available='core,error,time,platform,simd,math,sched,compute,graph' factors='core,container_intrusive,util_core,error,time,math,timer_queue,platform,platform_thread,platform_fs,mem,mem_vm,simd,container,container_queue,sched,compute_ops,compute,graph,compute_provider_onednn,compute_backend_cpu,compute_ggml_runtime,compute_provider_ggml,graph_provider_onednn,compute_provider_native,compute_route_cpu,graph_route_cpu,compute_provider_ggml_metal,compute_route_apple,graph_route_apple,graph_route_cpu_apple'
+-- HYLE_SANITIZER = off
+-- HYLE_TESTING = OFF (test-only interfaces stripped -- zero in shipped lib)
+-- HYLE: oneDNN provider OFF -- dependency download skipped
+-- Using the multi-header code from /Users/kiro/Library/Caches/hyle/dependencies/v1/sources/json-9cca280a4d0c-6fc345093434/include/
+-- {fmt} version: 12.1.0
+-- Build type: Release
+-- Building MLX for arm64 processor on Darwin
+-- Metal found /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/System/Library/Frameworks/Metal.framework
+-- Building on macOS 27.0.1
+-- Building with macOS 27.0 SDK
+-- Building for macOS 14.4
+-- Metal version: 310
+-- Downloading json
+CMake Warning at /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-build/_deps/mlx-338da189e54c0743/source/mlx/backend/metal/CMakeLists.txt:107 (message):
+  NAX kernels require Metal 4, macOS SDK >= 26.2, and
+  MACOSX_DEPLOYMENT_TARGET >= 26.2 (SDK 27.0,
+  CMAKE_OSX_DEPLOYMENT_TARGET=14.4).  Building without NAX kernels.
+
+
+-- HYLE: MLX 0.32.2 Metal-only, cold JIT, native region enabled
+-- ggml source: 2263 files, 23 exact patches
+
+-- CMAKE_SYSTEM_PROCESSOR: arm64
+-- GGML_SYSTEM_ARCH: ARM
+-- Including CPU backend
+-- ARM detected
+-- Checking for ARM features using flags:
+-- Adding CPU backend variant ggml-cpu:  
+-- Metal framework found
+-- Including METAL backend
+-- ggml version: 0.24.0
+-- ggml commit:  456172ec733a135778adcd32d00e576a58232e45-hyle
+-- HYLE: reusing locked CPU SDK at /Users/kiro/Library/Caches/hyle/dependencies/v1/sdks/torch-cpu/Darwin-be0642231d2008c7b90071fc0898d82a0c002d47f38350ebf3ed779fc01972d7/libtorch
+-- HYLE: original TorchAO/ATen CPU low precision -- locked LibTorch 2.8.0
+-- HYLE_TRACE = OFF (hooks compile to nothing -- zero cost)
+-- HYLE source package target unavailable (requires Git and a Git checkout)
+-- HYLE 0.1.0 | AppleClang 21.0.0.21000334 | C++23 | sanitizer=off | linkage=static | products=core,error,time,platform,simd,math,sched,compute,graph | factors=core,container_intrusive,util_core,error,time,math,timer_queue,platform,platform_thread,platform_fs,mem,mem_vm,simd,container,container_queue,sched,compute_ops,compute,graph,compute_provider_onednn,compute_backend_cpu,compute_ggml_runtime,compute_provider_ggml,graph_provider_onednn,compute_provider_native,compute_route_cpu,graph_route_cpu,compute_provider_ggml_metal,compute_route_apple,graph_route_apple,graph_route_cpu_apple
+-- Configuring done (5.2s)
+-- Generating done (0.1s)
+-- Build files have been written to: /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-build
+[0/4] Re-checking globbed directories...
+[1/173] Building CXX object src/error/CMakeFiles/hyle_error.dir/status.cc.o
+[2/173] Linking CXX static library bin/libhyle_error.a
+[3/173] Building CXX object src/platform/CMakeFiles/hyle_platform_cpu_probe.dir/cpu.cc.o
+[4/173] Building CXX object src/platform/CMakeFiles/hyle_platform_cgroup_parser.dir/linux_cgroup.cc.o
+[5/173] Building CXX object src/platform/CMakeFiles/hyle_platform.dir/cpu_resource.cc.o
+[6/173] Building CXX object src/platform/CMakeFiles/hyle_platform.dir/dynlib.cc.o
+[7/173] Building CXX object src/platform/CMakeFiles/hyle_platform.dir/environment.cc.o
+[8/173] Building CXX object src/platform/CMakeFiles/hyle_platform.dir/host_memory.cc.o
+[9/173] Building CXX object src/platform/CMakeFiles/hyle_platform.dir/numa.cc.o
+[10/173] Building CXX object src/platform/CMakeFiles/hyle_platform.dir/process.cc.o
+[11/173] Building CXX object src/platform/CMakeFiles/hyle_platform.dir/random.cc.o
+[12/173] Building CXX object src/platform/CMakeFiles/hyle_platform.dir/virtual_memory.cc.o
+[13/173] Building C object src/mem/CMakeFiles/mimalloc_static.dir/__/__/third_party/mimalloc/src/static.c.o
+[14/173] Linking CXX static library bin/libhyle_platform.a
+[15/173] Building CXX object src/mem/CMakeFiles/hyle_mem.dir/buffer.cc.o
+[16/173] Building CXX object src/mem/CMakeFiles/hyle_mem.dir/buffer_pool.cc.o
+[17/173] Building CXX object src/mem/CMakeFiles/hyle_mem.dir/composite_buffer.cc.o
+[18/173] Building CXX object src/mem/CMakeFiles/hyle_mem.dir/heap.cc.o
+[19/173] Building CXX object src/mem/CMakeFiles/hyle_mem.dir/lifetime_plan.cc.o
+[20/173] Building CXX object src/mem/CMakeFiles/hyle_mem.dir/range_allocator.cc.o
+[21/173] Building CXX object src/mem/CMakeFiles/hyle_mem.dir/resource.cc.o
+[22/173] Building CXX object src/mem/CMakeFiles/hyle_mem.dir/system.cc.o
+[23/173] Building CXX object src/mem/CMakeFiles/hyle_mem.dir/stats.cc.o
+[24/173] Linking C static library bin/libmimalloc_static.a
+[25/173] Building CXX object src/compute_ops/CMakeFiles/hyle_compute_ops.dir/operation.cc.o
+[26/173] Building CXX object src/compute_ops/CMakeFiles/hyle_compute_ops.dir/tensor_desc.cc.o
+[27/173] Building CXX object src/compute_ops/CMakeFiles/hyle_compute_ops.dir/low_precision.cc.o
+[28/173] Building CXX object src/compute_ops/CMakeFiles/hyle_compute_ops.dir/weight_decode.cc.o
+[29/173] Linking CXX static library bin/libhyle_mem.a
+[30/173] Linking CXX static library bin/libhyle_compute_ops.a
+[31/173] Building CXX object src/compute/CMakeFiles/hyle_compute.dir/command_capture.cc.o
+[32/173] Building CXX object src/compute/CMakeFiles/hyle_compute.dir/completion.cc.o
+[33/173] Building CXX object src/compute/CMakeFiles/hyle_compute.dir/custom_kernel.cc.o
+[34/173] Building CXX object src/compute/CMakeFiles/hyle_compute.dir/device.cc.o
+[35/173] Building CXX object src/compute/CMakeFiles/hyle_compute.dir/operation.cc.o
+[36/173] Building CXX object src/compute/CMakeFiles/hyle_compute.dir/provider.cc.o
+[37/173] Building CXX object src/compute/CMakeFiles/hyle_compute.dir/resource_budget.cc.o
+[38/173] Building CXX object src/compute/CMakeFiles/hyle_compute.dir/resource_leases.cc.o
+/Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/compute/resource_leases.cc:459:79: warning: result of comparison of constant 1152921504606846970 with expression of type 'std::uint32_t' (aka 'unsigned int') is always false [-Wtautological-constant-out-of-range-compare]
+  459 |       options.max_resources_per_batch == 0 || options.max_resources_per_batch >
+      |                                               ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ^
+  460 |           (SIZE_MAX - detail::kEntryOffset) / sizeof(detail::LeaseUseEntry))
+      |           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+1 warning generated.
+[39/173] Building CXX object src/compute/CMakeFiles/hyle_compute.dir/retained_completion.cc.o
+[40/173] Building CXX object src/compute/CMakeFiles/hyle_compute.dir/leased_operation.cc.o
+[41/173] Building CXX object src/compute/CMakeFiles/hyle_compute.dir/route_policy.cc.o
+[42/173] Building CXX object src/compute/CMakeFiles/hyle_compute.dir/result.cc.o
+[43/173] Building CXX object src/compute/CMakeFiles/hyle_compute.dir/shape_domain.cc.o
+[44/173] Building CXX object src/compute/CMakeFiles/hyle_compute.dir/shape_program.cc.o
+[45/173] Building CXX object src/compute/CMakeFiles/hyle_compute.dir/tensor_view.cc.o
+[46/173] Building CXX object src/compute/CMakeFiles/hyle_compute.dir/transfer.cc.o
+[47/173] Building CXX object src/compute/CMakeFiles/hyle_compute.dir/workload.cc.o
+[48/173] Building CXX object src/time/CMakeFiles/hyle_time.dir/clock.cc.o
+[49/173] Building CXX object src/time/CMakeFiles/hyle_time.dir/interop.cc.o
+[50/173] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/runtime.cc.o
+[51/173] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/ops/dispatch_ops.cc.o
+[52/173] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/random/random_dispatch.cc.o
+[53/173] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/search/search_dispatch.cc.o
+[54/173] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/narrow/narrow_dispatch.cc.o
+[55/173] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/scan/scan_dispatch.cc.o
+[56/173] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/dtype/dtype_dispatch.cc.o
+[57/173] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/dtype/cvt_fp8_scalar.cc.o
+[58/173] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/math/math_dispatch.cc.o
+[59/173] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/math/transcendental_scalar.cc.o
+[60/173] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/math/activations.cc.o
+[61/173] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/sort/sort_dispatch.cc.o
+[62/173] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/sort/top_k.cc.o
+[63/173] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/sort/vqsort_scalar.cc.o
+[64/173] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/sort/radix_sort.cc.o
+[65/173] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/bitpack/bitpack_dispatch.cc.o
+[66/173] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/math/transcendental_highway_neon.cc.o
+[67/173] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/sort/vqsort_hyle_neon.cc.o
+[68/173] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/ops/ops_scalar.cc.o
+[69/173] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/ops/ops_neon.cc.o
+[70/173] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/dtype_convert/dtype_convert_scalar.cc.o
+[71/173] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/dtype_convert/dtype_convert_neon.cc.o
+[72/173] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/scan/scan_scalar.cc.o
+[73/173] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/scan/scan_neon.cc.o
+[74/173] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/random/random_scalar.cc.o
+[75/173] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/random/random_neon.cc.o
+[76/173] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/search/search_scalar.cc.o
+[77/173] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/search/search_neon.cc.o
+[78/173] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/narrow/narrow_scalar.cc.o
+[79/173] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/narrow/narrow_neon.cc.o
+[80/173] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/bitpack/bitpack_scalar.cc.o
+[81/173] Building CXX object src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/bitpack/bitpack_neon.cc.o
+[82/173] Linking CXX static library bin/libhyle_compute.a
+[83/173] Building CXX object src/compute_backend_cpu/CMakeFiles/hyle_compute_backend_cpu.dir/cpu_backend.cc.o
+[84/173] Building CXX object src/compute_ggml_runtime/CMakeFiles/hyle_compute_ggml_runtime.dir/metadata_arena.cc.o
+[85/173] Building CXX object src/compute_ggml_runtime/CMakeFiles/hyle_compute_ggml_runtime.dir/cpu_execution.cc.o
+[86/173] Building CXX object src/compute_ggml_runtime/CMakeFiles/hyle_compute_ggml_runtime.dir/cpu_program.cc.o
+[87/173] Linking CXX static library bin/libhyle_time.a
+[88/173] Building CXX object src/platform_thread/CMakeFiles/hyle_platform_thread.dir/thread.cc.o
+[89/173] Building CXX object src/platform_thread/CMakeFiles/hyle_platform_thread.dir/wait.cc.o
+[90/173] Building CXX object src/platform_fs/CMakeFiles/hyle_platform_fs.dir/fs.cc.o
+[91/173] Linking CXX static library bin/libhyle_simd.a
+[92/173] Building CXX object src/container/CMakeFiles/hyle_container.dir/hash.cc.o
+[93/173] Building CXX object src/container/CMakeFiles/hyle_container.dir/pod_vector.cc.o
+[94/173] Building CXX object src/container/CMakeFiles/hyle_container.dir/flat_hash_map.cc.o
+[95/173] Building CXX object src/container/CMakeFiles/hyle_container.dir/dynamic_bitset.cc.o
+[96/173] Building CXX object src/container/CMakeFiles/hyle_container.dir/bitset_ops_neon.cc.o
+[97/173] Building CXX object src/container/CMakeFiles/hyle_container.dir/generated/simd-dispatch/container_bitset/container_bitset_scalar.cc.o
+[98/173] Building CXX object src/container/CMakeFiles/hyle_container.dir/generated/simd-dispatch/container_bitset/container_bitset_neon.cc.o
+[99/173] Linking CXX static library bin/libhyle_compute_backend_cpu.a
+[100/173] Linking CXX static library bin/libhyle_compute_ggml_runtime.a
+[101/173] Building CXX object src/compute_provider_ggml/CMakeFiles/hyle_compute_provider_ggml.dir/ggml_cpu_provider.cc.o
+[102/173] Building CXX object src/compute_provider_ggml/CMakeFiles/hyle_compute_provider_ggml.dir/standard_index.cc.o
+[103/173] Building CXX object src/compute_provider_native/CMakeFiles/hyle_compute_provider_native.dir/aten_cpu_provider.cc.o
+[104/173] Building CXX object src/compute_provider_native/CMakeFiles/hyle_compute_provider_native.dir/cast.cc.o
+[105/173] Building CXX object src/compute_provider_native/CMakeFiles/hyle_compute_provider_native.dir/default_rules.cc.o
+[106/173] Building CXX object src/compute_provider_native/CMakeFiles/hyle_compute_provider_native.dir/ds4_quantization.cc.o
+[107/173] Building CXX object src/compute_provider_native/CMakeFiles/hyle_compute_provider_native.dir/elementwise.cc.o
+[108/173] Building CXX object src/compute_provider_native/CMakeFiles/hyle_compute_provider_native.dir/indexing.cc.o
+[109/173] Building CXX object src/compute_provider_native/CMakeFiles/hyle_compute_provider_native.dir/native_provider.cc.o
+[110/173] Building CXX object src/compute_provider_native/CMakeFiles/hyle_compute_provider_native.dir/normalization.cc.o
+[111/173] Building CXX object src/compute_provider_native/CMakeFiles/hyle_compute_provider_native.dir/reduction.cc.o
+[112/173] Building CXX object src/compute_provider_native/CMakeFiles/hyle_compute_provider_native.dir/transform.cc.o
+[113/173] Building CXX object src/compute_provider_native/CMakeFiles/hyle_compute_provider_native.dir/transformer.cc.o
+[114/173] Building CXX object src/compute_provider_native/CMakeFiles/hyle_compute_provider_native.dir/torch_cpu_program.cc.o
+[115/173] Building CXX object src/compute_provider_ggml_metal/CMakeFiles/hyle_compute_provider_ggml_metal.dir/native_program.cc.o
+[116/173] Linking CXX static library bin/libhyle_platform_thread.a
+[117/173] Linking CXX static library bin/libhyle_platform_fs.a
+[118/173] Building CXX object src/mem_vm/CMakeFiles/hyle_mem_vm.dir/mapping.cc.o
+[119/173] Building CXX object src/mem_vm/CMakeFiles/hyle_mem_vm.dir/file_mapping.cc.o
+[120/173] Building CXX object src/mem_vm/CMakeFiles/hyle_mem_vm.dir/shared_mapping.cc.o
+[121/173] Linking CXX static library bin/libhyle_container.a
+[122/173] Building CXX object src/graph/CMakeFiles/hyle_graph.dir/graph.cc.o
+[123/173] Building CXX object src/graph/CMakeFiles/hyle_graph.dir/effect_order.cc.o
+[124/173] Building CXX object src/graph/CMakeFiles/hyle_graph.dir/executable.cc.o
+[125/173] Building CXX object src/graph/CMakeFiles/hyle_graph.dir/view_domain.cc.o
+[126/173] Building CXX object src/graph/CMakeFiles/hyle_graph.dir/constant_artifact.cc.o
+[127/173] Building CXX object src/graph/CMakeFiles/hyle_graph.dir/leased_invocation.cc.o
+[128/173] Building CXX object src/graph/CMakeFiles/hyle_graph.dir/lease_submission.cc.o
+[129/173] Linking CXX static library bin/libhyle_compute_provider_ggml.a
+[130/173] Linking CXX static library bin/libhyle_compute_provider_native.a
+[131/173] Building CXX object src/compute_route_cpu/CMakeFiles/hyle_compute_route_cpu.dir/cpu_context.cc.o
+[132/173] Building CXX object src/compute_route_cpu/CMakeFiles/hyle_compute_route_cpu.dir/default_policy.cc.o
+[133/173] Linking CXX static library bin/libhyle_compute_provider_ggml_metal.a
+[134/173] Building CXX object src/compute_route_apple/CMakeFiles/hyle_compute_route_apple.dir/apple_context.cc.o
+[135/173] Building CXX object src/compute_route_apple/CMakeFiles/hyle_compute_route_apple.dir/apple_operations.cc.o
+[136/173] Building CXX object src/compute_route_apple/CMakeFiles/hyle_compute_route_apple.dir/apple_tensor.cc.o
+[137/173] Building CXX object src/compute_route_apple/CMakeFiles/hyle_compute_route_apple.dir/apple_leased_invocation.cc.o
+[138/173] Building OBJCXX object src/compute_route_apple/CMakeFiles/hyle_compute_route_apple.dir/apple_environment.mm.o
+[139/173] Building OBJCXX object src/compute_route_apple/CMakeFiles/hyle_compute_route_apple.dir/apple_memory.mm.o
+[140/173] Building OBJCXX object src/compute_route_apple/CMakeFiles/hyle_compute_route_apple.dir/apple_weights.mm.o
+[141/173] Building CXX object src/compute_route_apple/CMakeFiles/hyle_compute_route_apple.dir/apple_recurrent.cc.o
+[142/173] Building CXX object src/compute_route_apple/CMakeFiles/hyle_compute_route_apple.dir/apple_mature_indexing.cc.o
+[143/173] Building CXX object src/compute_route_apple/CMakeFiles/hyle_compute_route_apple.dir/apple_mature_reduction.cc.o
+[144/173] Building CXX object src/compute_route_apple/CMakeFiles/hyle_compute_route_apple.dir/apple_mature_float.cc.o
+[145/173] Building CXX object src/compute_route_apple/CMakeFiles/hyle_compute_route_apple.dir/apple_mature_artifact.cc.o
+[146/173] Building CXX object src/compute_route_apple/CMakeFiles/hyle_compute_route_apple.dir/apple_mature_gguf.cc.o
+[147/173] Linking CXX static library bin/libhyle_mem_vm.a
+[148/173] Building CXX object src/sched/CMakeFiles/hyle_sched.dir/fiber.cc.o
+[149/173] Building CXX object src/sched/CMakeFiles/hyle_sched.dir/scheduler.cc.o
+[150/173] Building CXX object src/sched/CMakeFiles/hyle_sched.dir/sync.cc.o
+[151/173] Building CXX object src/sched/CMakeFiles/hyle_sched.dir/join.cc.o
+[152/173] Building CXX object src/sched/CMakeFiles/hyle_sched.dir/blocking.cc.o
+[153/173] Building CXX object src/sched/CMakeFiles/hyle_sched.dir/cancel.cc.o
+[154/173] Building CXX object src/sched/CMakeFiles/hyle_sched.dir/task_scope.cc.o
+[155/173] Building CXX object src/sched/CMakeFiles/hyle_sched.dir/bulk.cc.o
+[156/173] Building ASM object src/sched/CMakeFiles/hyle_sched.dir/__/__/third_party/fcontext/asm/jump_arm64_aapcs_macho_gas.S.o
+[157/173] Building ASM object src/sched/CMakeFiles/hyle_sched.dir/__/__/third_party/fcontext/asm/make_arm64_aapcs_macho_gas.S.o
+[158/173] Building ASM object src/sched/CMakeFiles/hyle_sched.dir/__/__/third_party/fcontext/asm/ontop_arm64_aapcs_macho_gas.S.o
+[159/173] Linking CXX static library bin/libhyle_graph.a
+[160/173] Linking CXX static library bin/libhyle_compute_route_cpu.a
+[161/173] Building CXX object src/graph_route_cpu/CMakeFiles/hyle_graph_route_cpu.dir/cpu_context.cc.o
+[162/173] Building CXX object src/graph_route_cpu/CMakeFiles/hyle_graph_route_cpu.dir/ggml_region.cc.o
+[163/173] Linking CXX static library bin/libhyle_compute_route_apple.a
+[164/173] Building CXX object src/graph_route_apple/CMakeFiles/hyle_graph_route_apple.dir/apple_lowering.cc.o
+[165/173] Linking CXX static library bin/libhyle_sched.a
+[166/173] Linking CXX static library bin/libhyle_graph_route_cpu.a
+[167/173] Linking CXX static library bin/libhyle_graph_route_apple.a
+[168/173] Building CXX object src/graph_route_cpu_apple/CMakeFiles/hyle_graph_route_cpu_apple.dir/compile.cc.o
+[169/173] Building CXX object src/graph_route_cpu_apple/CMakeFiles/hyle_graph_route_cpu_apple.dir/invocation.cc.o
+[170/173] Linking CXX static library bin/libhyle_graph_route_cpu_apple.a

@@ -581,6 +581,13 @@ Air `8caae9873` source 的普通 CPU/Apple Direct+Graph 租约数学与原 mixed
 七个最终 helper/native/managed 新头通过启用路线的孤立 TU 编译。原日志和机器/内存/命令收入同一交付收据，
 source 不是 installed SDK 证据；static/shared 与其真正 imported managed bind 调用仍待后续 stage。
 
+同候选 Air static producer 完成；首次 install 因验证 archive 未包含根 `LICENSE` 拒绝。按原 install 声明
+补入同一 Windows Git candidate 的 `LICENSE` / `THIRD_PARTY_NOTICES.md`，保存 hash/原 log/job，只续 install，
+没有修改产品、重编 producer、删除失败日志或重置预算。实际迁址的 static SDK 普通 lease 数学与 imported
+`hyle::graph` CPU+Apple mixed contract 均通过，含新的 ReadLease bind、取消/放弃/accepted CPU prefix failure。
+当前收据保留全部阶段与原失败；后续 source bundle 必须包含这两份已声明 packaging 根文件。
+Air shared、Vulkan Air/WSL 对应平台与最终七门仍未全部证明。
+
 P0 静态账单须列新增 metadata/引用/锁，及旧普通路径不变的证据；
 热路径以计数验无 allocation/provider search，不为纳秒差改布局。
 

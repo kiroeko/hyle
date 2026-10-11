@@ -1,0 +1,48 @@
+{
+  "candidate": "8caae98734b6b58ef182a9d111d7f806c15294d2",
+  "mode": "static",
+  "source": "/Users/kiro/hyle-scratch/compute-unified/source-c8874688",
+  "routes": [
+    "cpu",
+    "apple"
+  ],
+  "compiler": "AppleClang21.0.0/libc++",
+  "machine": "Mac16,12/16GiB/macOS27.0.1",
+  "parallel": 1,
+  "stages": [
+    {
+      "name": "producer",
+      "command": [
+        "/opt/homebrew/bin/cmake",
+        "--build",
+        "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-build",
+        "--parallel",
+        "1"
+      ],
+      "pid": 18680,
+      "state": "terminal",
+      "available_bytes": 7317389312,
+      "log": "producer.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "7a54a989436dcd6bf559a6b6fea08f4d8e944b32de856c050fac31191975c472"
+    },
+    {
+      "name": "install",
+      "command": [
+        "/opt/homebrew/bin/cmake",
+        "--install",
+        "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/static-sdk-build",
+        "--prefix",
+        "/Users/kiro/hyle-scratch/compute-unified/foundation-f1-sdk/static-staging"
+      ],
+      "pid": 19221,
+      "state": "terminal",
+      "available_bytes": 7459651584,
+      "log": "install.log",
+      "exit_code": 1,
+      "verdict": "FAIL",
+      "sha256": "c30137f438c21951b40840dfa1ae1e52c1f5df47516e45113b298cc9370cf107"
+    }
+  ]
+}
