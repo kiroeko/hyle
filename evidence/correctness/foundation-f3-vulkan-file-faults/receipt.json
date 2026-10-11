@@ -1,0 +1,37 @@
+{
+  "schema_version": 1,
+  "product_commit": "f3d931c47777f7fbfd35dedf1f5e0734fa28ef6c",
+  "fixture_commit": "452eada9b770950d28f3b8e2d8ee3ac735d468ef",
+  "scope": "Windows actual native Vulkan F3 file/producer/fault lifetime seams only",
+  "tests_passed": 5,
+  "compiler": "C:/Program Files/Microsoft Visual Studio/18/Enterprise/VC/Tools/MSVC/14.50.35717/bin/Hostx64/x64/cl.exe",
+  "actual_gpu": "NVIDIA GeForce RTX 4070, GPU-e7376560-6f5d-ec19-6ee4-3dd3a2c81ef8, 617.14",
+  "source_inputs": [
+    {
+      "path": "tests/compute_route_vulkan/CMakeLists.txt",
+      "sha256": "bfa4b8c5e3ef7ef13c7cd502d9f7b50cab0eb9bc193637eecf5f5a6dc1f0258f"
+    },
+    {
+      "path": "tests/compute_route_vulkan/file_stream_test.cc",
+      "sha256": "9340822d9cfb606d9fb7698cb5cb836d8ad87b949652b4cc31e9297966ec3b0a"
+    }
+  ],
+  "risks": [
+    "Original queue submit rejected after first four successful chunks: earlier GPU-ready group preserves bytes, read=320/copied=256, original ResourceExhausted retained.",
+    "Original fence poll/wait/drain observation unknown while accepted copy owns guards: no ready, cancellation/abandonment does not free actual uses; restore actual observation, preserve original error, uses and metadata retire.",
+    "Original accepted native upload producer plus original LeaseUsePool/RetainedCompletion orders D2H before actual file bytes."
+  ],
+  "cost": "Fixed one slot for faults, existing two-slot replay regression, real use guards and injected F3 allocator balanced; native-private costs remain unknown.",
+  "archive": {
+    "path": "evidence/correctness/foundation-f3-vulkan-file-faults/raw-results.zip",
+    "sha256": "d1da64b8dffecbf3641c9013a15e4a172cd14dc535fd520fa77111203cc17655"
+  },
+  "verdict": "PASS_WINDOWS_VULKAN_F3_NATIVE_FILE_FAULTS_AND_PRODUCER_SEAMS_ONLY",
+  "unproven": [
+    "Air same fixtures",
+    "Apple added producer/late-fault cases",
+    "New CPU boundaries and WSL/sanitizers",
+    "Installed deliveries/final closure"
+  ],
+  "budget": "Original F3-02/04/06 risk acceptance, no product change/new FIX/budget reset; tests reuse original F2 native fault boundaries."
+}

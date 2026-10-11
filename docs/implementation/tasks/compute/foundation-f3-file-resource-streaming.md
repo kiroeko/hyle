@@ -352,6 +352,20 @@ compiled region在内部做native transpose view→matmul，Graph用已有permut
 下一批只补本卡仍适用的source/sink/producer/fault风险、WSL/新控制sanitizer与安装static/shared、
 迁址/新头/缺席门，最后按不可变candidate做P0与红队裁决，不运行无关模块或算子全目录。
 
+#### F3文件风险的直接原生资格化
+
+测试fixture `452eada9b770950d28f3b8e2d8ee3ac735d468ef`只补原F3-02/04/06风险，不改变产品。
+[Windows Vulkan故障收据](../../../../evidence/correctness/foundation-f3-vulkan-file-faults/receipt.json)
+签实际RTX4070/driver617.14五项：原两项文件旅程回归；原QueueSubmit在四个成功chunk后拒绝后缀，
+read=320/copied=256、首组GPU-ready仍保留原bytes；实际Fence观察/等待/drain未知时的取消与丢弃不释放
+真实uses或F3控制，恢复原生观察后保留首错且metadata归零；原native producer依赖使文件回写得到真实0x5d bytes。
+故障边界复用F2的原生函数表，不新增运行时、copy kernel或公共验证工具。
+
+本批还新增有限CPU描述/offset/backing拒绝、拥有source及caller描述寿命、原只读sink错误、已接纳hot OOM，
+以及Apple原MLX blocked prefix后真正接纳Metal producer的正常/取消/丢弃/late error测试。
+它们和Air Vulkan同fixture在此提交时尚未资格化，不以具名测试存在或Windows局部PASS代签。
+本轮所有失败/预算仍保留；剩余跨平台、sanitizer与交付继续按上文原范围。
+
 | FIX | 必须实现 | 验收 |
 |---|---|---|
 | F3-01 | 中央 compute_stream 身份/依赖/普通 route 及三交付投影 | 无环，无第二名单/空 target；静态共享source一致，不拉无关 CPU Provider |
