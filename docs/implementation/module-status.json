@@ -276,14 +276,9 @@
     },
     {
       "module": "graph",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/compute/compute-h1-cpu-cuda-composition.md",
-      "summary": "H1 CLOSED：CPU+CUDA混合执行、双槽迁移、普通CPU主存/有界staging、共享预算及准备诊断完成；Windows/WSL三交付、安装头/搬迁、错误/寿命与当前native重叠通过。引擎策略、多GPU、Apple/Vulkan混合不在本包。",
-      "candidate": "7eaf67b8a496ee19b609533980cd69e7efb5aa49",
-      "performance": {
-        "tier": "P0",
-        "evidence": "docs/implementation/tasks/compute/compute-h1-cpu-cuda-composition.md"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/foundation-f1-resource-leases.md",
+      "summary": "F1 SCOPED：新增 lease-aware Graph 输入/输出保活旅程；定向核对 aggregate 子观察错误后的实际退休，原生提交与 Provider 计划复用，有限 F1-06 接缝。"
     },
     {
       "module": "container_concurrent",

@@ -148,6 +148,23 @@ TensorView 不拥有外部 payload，Graph Results 只保护其原声明 owner�
 
 ## 有限 FIX 集
 
+### Direct / 拥有导入初验与 Graph 启动绑定
+
+- 共同产品子候选 `5a38cc09b`：Direct 自动保活、拥有 Buffer 接管/永久只读导入已实现；
+  [Windows 初验](../../../../evidence/correctness/foundation-f1-direct-import-windows/README.md)
+  common71、新真实 cuBLAS 数学用例及两个新头隔离通过；八次 replay 租约 metadata 不分配。
+  Graph、其他路线/平台、三交付及整包成本/红队仍未完成，不把子收据算作 F1 已关闭。
+- Graph 当前新绑定 baseline `5a38cc09b`；只因本轮新增 leased 正常旅程与具名 aggregate 适配疑点进入 SCOPED，
+  不恢复 H1 旧卡施工。compute / CUDA 已 AUDITED 的产品保留，其他 Graph/native route owner 仍 CLOSED。
+- 初步源审计发现 aggregate 只在 destroy 时给仍 pending 的 children 加 lifetime；
+  public poll/wait 若先把 unknown child 交给 native retirement，已丢掉随后连接 outer 的机会。
+  leased Graph 必须在 child 任何观察之前保活，不能以 child 非 OK 推断可回收。
+- Graph 本包范围是固定容量绑定/自动 native 保活及 owned/source-alias 结果；复用原 plan/Invocation、
+  CompletionRetention 与内部 SubmissionCursor。普通借用 TensorView 和原 Direct 布局不变；
+  定向 Graph aggregate 保护允许在既有冷 child 槽保存嵌套 retention，不增加第二 reaper/万能 Queue。
+- 后续 AUDITED 前冻结结果 owner、旧结果阻止覆盖和 accepted-prefix 保护接口；
+  未完成这份冻结前不写 Graph 产品代码，不以成熟库数学既有证据代签新的 leased 接缝。
+
 ### F1-01 共同拥有导入冻结
 
 - baseline `65accb90c`，compute owner 继续 AUDITED；沿本卡已有拥有/只读导入范围。
