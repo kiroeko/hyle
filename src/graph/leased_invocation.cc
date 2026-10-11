@@ -353,7 +353,9 @@ Status LeasedInvocation::drain() noexcept {
   if (!state_) return Status::Ok();
   close().IgnoreError();
   const auto observed = state_->completion.wait();
-  if (!observed.ok() && state_->busy.load(std::memory_order_acquire)) return observed;
+  // An observed error can already have handed a prefix to its native reaper.
+  // Drain still waits the actual-retirement latch, preserving that error;
+  // observing the public terminal is not proof that all children retired.
   while (state_->busy.load(std::memory_order_acquire)) state_->busy.wait(true, std::memory_order_acquire);
   std::lock_guard guard(state_->lock);
   state_->first_error.Update(observed);
