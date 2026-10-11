@@ -31,7 +31,7 @@ struct NativeBatch final {
   hyle::Status create(const Context &context, Queue &selected) noexcept {
     queue = &selected;
     HYLE_ASSIGN_OR_RETURN(extension, detail::BackendExtensionAccess::query(context, detail::kCopyBatchExtensionId));
-    return detail::BackendExtensionAccess::call(extension, [](void *context, const void *interface, void *opaque) noexcept {
+    return detail::BackendExtensionAccess::call(extension, [](void *context, const void *interface, void *opaque) noexcept -> hyle::Status {
       auto &self = *static_cast<NativeBatch *>(opaque);
       self.table = static_cast<const detail::CopyBackendVTable *>(interface);
       HYLE_RETURN_IF_ERROR(self.table->prepare(context, mem::system_allocator(), &self.program, &self.program_bytes));

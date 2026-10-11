@@ -208,6 +208,10 @@ selector 的原生反向消费者与交付门按本卡集中阶段继续待验�
 七FIX仍是部分实现，program/invocation/submission、CPU/CUDA/Apple/Vulkan native batch、
 二组二槽/真实编码数学/故障/三交付/P0与最终红队尚未完成；本卡维持 AUDITED。
 
+CUDA接缝首构建在测试callback的返回类型推导失败（`HYLE_RETURN_IF_ERROR` 的传播代理与Status混合）；
+原生产库编译通过，未运行GPU测试。有限纠正1：fixture callback显式返回 `Status`，保留原失败日志并
+在同机器/树/命令重验；此处计入原两次有限纠正，不用新日志目录重置预算。
+
 | FIX | 必须实现 | 验收 |
 |---|---|---|
 | F2-01 | CopyBatch/phase 的冷准备、固定资源域/metadata/byte budget 和范围绑定 | 稳定 replay 改 IDs/ranges，满容量/零批/溢出/OOM，无重新搜索 |
