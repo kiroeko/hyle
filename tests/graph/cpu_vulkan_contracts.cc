@@ -73,6 +73,11 @@ Status leased_contracts() {
   HYLE_RETURN_IF_ERROR(invocation.bind(x, row, input)); HYLE_RETURN_IF_ERROR(invocation.bind(w, matrix, imported));
   HYLE_RETURN_IF_ERROR(invocation.prepare_replay());
   HYLE_ASSIGN_OR_RETURN(auto retained, invocation.run());
+  HYLE_ASSIGN_OR_RETURN(auto native_product, retained->output(output));
+  std::array<float, 64> native_values;
+  HYLE_RETURN_IF_ERROR(native_product.storage().read(std::as_writable_bytes(std::span(native_values))));
+  for (std::size_t i = 0; i < native_values.size(); ++i)
+    HYLE_RETURN_IF_ERROR(require(std::abs(native_values[i] + 2 * values[i]) < 1e-5f, "native leased mixed math differs"));
   HYLE_ASSIGN_OR_RETURN(auto rejected_slot, program.create_invocation(scheduler, queue));
   HYLE_RETURN_IF_ERROR(rejected_slot.bind(x, row, input)); HYLE_RETURN_IF_ERROR(rejected_slot.bind(w, matrix, imported));
   HYLE_RETURN_IF_ERROR(rejected_slot.prepare_replay());
@@ -87,6 +92,7 @@ Status leased_contracts() {
   HYLE_RETURN_IF_ERROR(require(pool.stats().live_blocks == 1, "old mixed result did not retain source"));
   retained = {};
   HYLE_RETURN_IF_ERROR(require(pool.stats().live_blocks == 0, "mixed source lease was not reclaimed"));
+  std::printf("F1 CPU+vulkan: leased host/native math, eight allocation-free replays, closed admission and retained source alias passed\n");
   return Status::Ok();
 }
 
