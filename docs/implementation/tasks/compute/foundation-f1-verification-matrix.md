@@ -91,7 +91,7 @@ unknown-fence helper 的三个受控协议用例不代签实际 native GPU；M �
 
 | 实际平台 / 路线 | source 普通/混合 | relocated static 普通/混合 | relocated shared 普通/混合 | fault/lifetime 当前证据 |
 |---|---|---|---|---|
-| Windows CPU/CUDA | PASS / PASS | PASS / UNPROVEN（共同 lease 的静态导出已证明；mixed consumer 尚未单独记录） | CUDA-only 普通 PASS；CPU+CUDA mixed 未单独记录 | D/G 与 CUDA 原 fault PASS；U 新 lease cancellation 断言 PASS |
+| Windows CPU/CUDA | PASS / PASS | PASS / PASS | CUDA-only 普通 PASS；CPU+CUDA mixed 未单独记录 | D/G 与 CUDA 原 fault PASS；U 新 lease cancellation 断言 PASS |
 | Windows CPU/Vulkan | PASS / PASS | PASS / PASS | PASS / PASS | L/M PASS |
 | MacBook Air CPU/Apple | PASS / PASS | PASS / PASS | PASS / PASS | L/M PASS |
 | MacBook Air CPU/Vulkan | PASS / PASS | PASS / PASS | PASS / PASS | M admission refusal PASS；native L 对该平台尚未单独记录 |

@@ -184,6 +184,14 @@
       "qualification": "Tests-off shipping producer, actual relocation, only imported hyle::graph consumers, EXE-local DLLs and system-only runtime PATH.",
       "retained_initial_failure": "windows-cpu-vulkan-static-producer-configure.log",
       "setup_correction": "Original configure missed Vulkan SDK discovery. Same installed SDK path added process-locally; failure retained and original producer configure alone resumed."
+    },
+    {
+      "name": "Windows relocated CPU CUDA static SDK original imported mixed lease contract",
+      "verdict": "PASS",
+      "candidate": "5e03f895ccef7cd9a8bb5ca6d97e859bf35b9c3c",
+      "receipt": "windows-imported-mixed-cuda-static-job.json",
+      "log": "windows-imported-mixed-cuda-static-test.log",
+      "qualification": "Original already qualified moved static SDK; only public mixed consumer compiled and run, system-only runtime PATH."
     }
   ],
   "wsl_vulkan": {
@@ -307,6 +315,10 @@
     "windows-cpu-vulkan-static-consumer-configure.log": "8b8dd2d11b9530f9982c6aec4a8e464b1a4701ff64e41213c9a902c97053c2bf",
     "windows-cpu-vulkan-static-consumer-build.log": "c35ca34c53e939ceb4657d6d21a4450f5d5433d14a05113de1d7c4b8b51599c3",
     "windows-cpu-vulkan-static-lease-test.log": "a7a41ff43f66bf61edc7cb85b79ef7cbb7a0d2b2f5fb72a895f92e688331c88d",
-    "windows-cpu-vulkan-static-mixed-test.log": "9e5f4cb9a7c7ba8331f9508e6b6a098d64db2bc72bb7a4d29f297cb1895344b6"
+    "windows-cpu-vulkan-static-mixed-test.log": "9e5f4cb9a7c7ba8331f9508e6b6a098d64db2bc72bb7a4d29f297cb1895344b6",
+    "windows-imported-mixed-cuda-static-job.json": "4d971c3f0e8aae6e92e11741f7af2b3edd24ab52eceee48db364187224d43807",
+    "windows-imported-mixed-cuda-static-configure.log": "a3958f17d4150c3a81d4ab66f7b341baa0622b1ace0d4a896db48c182b8ab2d3",
+    "windows-imported-mixed-cuda-static-build.log": "074a09759f3a21989d481d0742482bc6cbcf01547c9fe4aee0b00fe99500eb45",
+    "windows-imported-mixed-cuda-static-test.log": "226645481f02d1c923956c064f767b093d9887e8cdc107aaad4f03f2eebfa09d"
   }
 }

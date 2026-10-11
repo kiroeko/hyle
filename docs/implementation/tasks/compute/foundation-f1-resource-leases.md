@@ -710,6 +710,9 @@ static managed ReadLease bind、取消/放弃与 accepted CPU prefix refusal 不
 矩阵不以“没有单独运行”当作“已运行”：Windows 已迁址 CPU+CUDA static SDK（普通消费者已通过）
 补运行原 `cpu_cuda_contracts.cc`，独立 consumer 只链接 imported `hyle::graph`，配置/构建300、exe180，
 EXE-local DLL/system-only PATH，保留原 prefix/product identity，不重编 producer。
+`5e03f895c` 的独立 Windows CPU+CUDA static installed mixed consumer configure/build/run 均通过，
+原混合数学、八次 metadata 无分配、held completion drain，以及原边界/OOM/accepted prefix 合同通过。
+已在交付收据保存阶段前内存、原日志与 DLL hash；原 producer/迁址 SDK 没有重编或被替换。
 Windows CPU+CUDA shared 复用已完成的 CUDA shared producer，在原 validation cache 将普通 routes 扩为
 `cpu;cuda`、tests/bench OFF、INSTALL ON、Release/shared/shipping/OFF；新本批 staging 迁址后独立
 运行普通租约和原 CPU+CUDA mixed 两消费者。configure300/build3600/install600、consumer180；
