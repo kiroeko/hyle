@@ -1,6 +1,7 @@
 #pragma once
 
 #include "hyle/compute/batch_transfer.h"
+#include "hyle/compute/detail/copy_ranges.h"
 
 namespace hyle::compute::detail {
 
@@ -14,6 +15,11 @@ struct CopyStreamAccess final {
   // binding and its prepared replay; the next chunk must bind and prepare again.
   static HYLE_COMPUTE_API Result<WriteLease> take_mutable(
       CopyBatchInvocation &invocation, CopyResourceId resource) noexcept;
+  // Immutable native geometry for admission, without consuming a permission.
+  static HYLE_COMPUTE_API Result<PhysicalCopyResource> physical(
+      CopyBatchInvocation &, mem::ConstBufferView, bool writable) noexcept;
+  // Nonblocking actual-retirement observation without publishing a write.
+  static HYLE_COMPUTE_API Status observe(CopyBatchInvocation &) noexcept;
 };
 
 } // namespace hyle::compute::detail

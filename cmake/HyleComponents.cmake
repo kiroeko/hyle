@@ -412,7 +412,8 @@ _hyle_declare_component(compute_provider_native
 # Compute never acquires a reverse dependency on Graph or its region providers.
 _hyle_declare_component(compute_route_cpu
   PRIVATE_DEPS compute_provider_native compute_provider_onednn compute_provider_ggml
-  PUBLIC_DEPS core compute compute_backend_cpu
+  PUBLIC_DEPS core compute compute_backend_cpu compute_stream io_core mem
+  PUBLIC_TYPE_DEPS compute_stream io_core mem
   SPLIT_PUBLIC_HEADERS hyle/compute/cpu.h)
 _hyle_declare_component(graph_route_cpu
   PRIVATE_DEPS compute_provider_native compute_provider_onednn
@@ -527,9 +528,15 @@ _hyle_declare_component(graph_route_cpu_vulkan
   PUBLIC_TYPE_DEPS sched
   SPLIT_PUBLIC_HEADERS hyle/graph/cpu_vulkan.h)
 
-# F3 file/resource streaming: append identity before its scoped/audited round.
-# No target, public headers or dependencies exist while this factor is queued.
-_hyle_declare_component(compute_stream QUEUED)
+# F3 composite control borrows the original IO/Scheduler and native copy owners.
+# Compute core never acquires a reverse edge to this factor.
+_hyle_declare_component(compute_stream
+  PRIVATE_DEPS core sched time util_core
+  PUBLIC_DEPS compute error io_core mem mem_vm
+  PUBLIC_TYPE_DEPS compute error io_core mem mem_vm
+  TEST_DEPS compute_route_cpu
+  SPLIT_PUBLIC_HEADERS hyle/compute/file_stream.h
+    hyle/compute/detail/file_stream_access.h hyle/compute/detail/file_stream_copy.h)
 
 # Product facades are deliberately outside the factor DAG. They have no source,
 # module status, or decision authority and must never be used by an internal

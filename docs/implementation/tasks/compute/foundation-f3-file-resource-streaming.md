@@ -196,9 +196,18 @@ vLLM weight_utils 的成熟 ParallelLoader/source view 寿命，以及 tiering/f
 #### 并发、进展与成本
 
 - 共同行程只有有限slot工作任务，由已有IoContextAccess取得其原Scheduler/BlockingPool；
-  不要求用户重复拼Scheduler身份或建新pool。create冷保留K个原Sched Task/Fiber及stage/F2 slot，
+  不要求用户重复拼Scheduler身份或建新runtime pool。create冷保留K个原Mem guarded stack及stage/F2 slot，
   通过原同步原语等待新工作；native阻塞wait用同BlockingPool offload，不阻塞Scheduler worker。
-  TaskScope要求析构前显式join；不把它藏进非阻塞Pipeline析构，使用原self-owned task/JoinHandle保活。
+  TaskScope要求析构前显式join；不把它藏进非阻塞Pipeline析构。源码核对JoinHandle在entry结果产生
+  时唤醒，TaskDriver清理在稍后的finish hook，不能用join结果代签实际清理。
+  每组在已有File.owner_worker上spawn_on，固定slot使用原Mem FiberStackPool冷保留并回收K个stack；
+  不移动或重新绑定已经启动的Fiber。现有source-only src/sched/fiber_access.h仅借set_on_finish，
+  不改Sched产品、不读写其runqueue、不向SDK用户暴露private hook。
+  原Scheduler finish hook离栈后回收stack，再在同一owner锁下退掉worker引用并通知drain；
+  析构只停止后继/放弃观察，accepted Fiber/native owner继续保活。没有第二runtime或私有poller。
+  native wait/mapping fill复用BlockingPool的既有BlockingJob，一槽一个冷embedded cell；destroy边界
+  后才通知文件Fiber，避免普通JoinHandle在job实际清理前发布。原IO read_exact_at/write_all_at继续复用，
+  不复制短传输/deadline/cancel算法；io_calls记composed IO入口次数，不冒充底层syscall数。
 - admission/状态快照与ready发布由原锁/ConditionVariable串行；Pipeline控制与同Ticket观察为
   thread-compatible，request_cancel和ReadyGroup/ReadLease复制释放跨线程沿原合同；
   同一个native slot只有一条工作任务修改，shared Context/Queue原host锁不绕过。
@@ -215,6 +224,8 @@ vLLM weight_utils 的成熟 ParallelLoader/source view 寿命，以及 tiering/f
   chunk数量O(ceil(bytes/stage))，每chunk使用原IO/复制/退休；报告原Task/IO/offload allocation和
   host waits，任何新增临时allocation走已注入且受有限预算的allocator，不以replay零分配代签整个旅程。
   同backing只计一次，external/managed/native private unknown分列，不把caller整个文件读入或全部CPU数据pin。
+  FileStreamReport的metadata_bytes计共同固定数组与copy-controller；原Mem租约/IO/Sched/offload
+  的分配留在各自注入allocator账本，P0 fixture以既有StatsAllocator测全部新增分配及归零，不能猜为0。
 
 七问裁决：第三方仍用原锁定native/成熟数学与consumer格式工具；MUST就是原八FIX与本表；
 复用原IO/Mem/Sched/F1/F2，不新建runtime；P0只做成本结构；只C++三交付无FFI；中央依赖/头/安装

@@ -330,6 +330,29 @@ Result<WriteLease> detail::CopyStreamAccess::take_mutable(
   state->prepared = false;
   return writer;
 }
+Result<detail::PhysicalCopyResource> detail::CopyStreamAccess::physical(
+    CopyBatchInvocation &invocation, mem::ConstBufferView view, bool writable) noexcept {
+  if (!invocation.state_)
+    return std::unexpected(Status::FailedPrecondition("copy invocation is empty"));
+  mem::HostMapping mapping;
+  return detail::bind_physical(*invocation.state_, view, writable, mapping);
+}
+Status detail::CopyStreamAccess::observe(CopyBatchInvocation &invocation) noexcept {
+  auto *state = invocation.state_;
+  if (!state) return Status::FailedPrecondition("copy invocation is empty");
+  Status result = state->tail;
+  for (std::uint32_t index = 0; index < state->submitted; ++index) {
+    auto &phase = *state->phases[index];
+    auto observed = phase.completion.poll();
+    if (!observed) { result.Update(observed.error()); continue; }
+    if (*observed == CompletionPoll::kPending || !phase.retired.load(std::memory_order_acquire)) {
+      result.Update(Status::Unavailable("copy retirement is pending"));
+    } else {
+      result.Update(phase.terminal);
+    }
+  }
+  return result;
+}
 Status CopyBatchInvocation::bind_mutable(CopyResourceId id, WriteLease &&destination) noexcept {
   HYLE_RETURN_IF_ERROR(detail::valid_binding(state_, id));
   HYLE_ASSIGN_OR_RETURN(auto view, detail::LeaseAccess::ordered_view(destination));
