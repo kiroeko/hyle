@@ -600,6 +600,15 @@ Vulkan Air、Windows managed SDK 调用或最终红队签字。当前没有本�
 P0 静态账单须列新增 metadata/引用/锁，及旧普通路径不变的证据；
 热路径以计数验无 allocation/provider search，不为纳秒差改布局。
 
+### Vulkan Air 固定交付入口
+
+Vulkan Air 继续同一普通入口/原 managed contract、孤立新头及迁址 SDK，复用
+`a-cpu-vulkan/selected-graph/source-build` / `static-sdk-build` / `shared-sdk-build`，固定 source→static→shared
+串行、build1/test1/阶段前4GiB。实际 Mac16,12/16GiB/macOS27.0.1/AppleClang21；Windows 当前 immutable
+archive 包含 LICENSE/THIRD_PARTY_NOTICES，镜像不可回写。只编译、运行 source 租约样例/七个 ON 头与
+`hyle_h3_cpu_vulkan_contracts`；SDK imported `hyle::graph` 的同一两消费者确认正常数学、mixed ReadLease bind
+与生命周期，不启动未预声明的全算子/P1。真实 Vulkan 环境/原 consumer 输出决定资格，旧例外不代签。
+
 ### P0 成本账（源码审计，完整裁决待剩余资格）
 
 以 `fc4ffbd16` 产品为准；后续消费者、测试与文档没有改变以下实现。B 为 pool 块上限，R 为本批资源数，
