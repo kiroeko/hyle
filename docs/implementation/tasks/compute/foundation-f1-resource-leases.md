@@ -518,6 +518,12 @@ ASan/UBSan 不替代 TSan 或实际 native 平台资格；runtime/环境不足�
 assertion，与这个特定 probe 的 disabled 断言要求冲突；尚未运行 F1 测试。保留原配置失败并改回三个原生
 option 的独立配置，让 sanitizer 由已有 target helper 正常施加，不修改 Core/公共工具或削弱断言。
 
+`03242e772` 的独立 ASan（包含 leak 检查）已通过 Compute26、Graph lease prefix3；
+[host sanitizer 收据](../../../../evidence/correctness/foundation-f1-host-sanitizers/receipt.json)
+保存配置/构建、精准 filter、runtime flags、机器/工具链与原日志。覆盖共同 permissions、overflow/OOM、
+跨线程 reader/最后回收、retained completion 与 managed prefix 的控制协议；不把 fake completion 协议
+改写成 native GPU/普通数学资格。独立 UBSan/TSan 尚未取得结果，其他平台/交付与最终裁决仍未完成。
+
 P0 静态账单须列新增 metadata/引用/锁，及旧普通路径不变的证据；
 热路径以计数验无 allocation/provider search，不为纳秒差改布局。
 

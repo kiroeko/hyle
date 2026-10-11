@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "candidate": "03242e7723cbd7f86d76b611f75e9db9f9a41a55",
+  "scope": "F1 host lease permissions completion retention and native-prefix composition protocol sanitizers; not native GPU math qualification",
+  "profiles": [
+    {
+      "name": "ASan",
+      "verdict": "PASS",
+      "compute_cases": 26,
+      "graph_cases": 3,
+      "receipt": "asan-job.json",
+      "logs": [
+        "asan-compute.log",
+        "asan-graph.log"
+      ]
+    }
+  ],
+  "toolchain": "GCC 14.2.0 / libstdc++14 / CMake 3.28.3 / Ubuntu24.04.4 WSL2 6.18.40.1",
+  "configuration": "Release/static/shipping/OFF compute and graph dev factors, one worker",
+  "pending": [
+    "UBSan and TSan unrun",
+    "Remaining F1 native mixed lease faults, platform/SDK and full P0/red team"
+  ],
+  "log_sha256": {
+    "asan-job.json": "689907beb69067b16df16d91676f5a5544b8dc42106d9897004dd3855b040f45",
+    "asan-configure.log": "ba0f5eec31db8df452c38bc5a2953f1fa9b088199f2a55d77e3dfd75905dd466",
+    "asan-build.log": "8b9d09d86ace356e910f615f6ef2321bf88c3ce7f67557bb5edf76b4fe7c011f",
+    "asan-compute.log": "a342570e3a7a625ecadab6410c856d87a886be59af5ee2ab5122cf65cdbe5f42",
+    "asan-graph.log": "1cd8ed6d9df7b20c076b7d469b30393216c0b149892adc98cd3cf85debc5b101"
+  }
+}

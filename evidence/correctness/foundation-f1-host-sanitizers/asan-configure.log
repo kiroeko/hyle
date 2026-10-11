@@ -1,0 +1,26 @@
+-- The CXX compiler identification is GNU 14.2.0
+-- Detecting CXX compiler ABI info
+-- Detecting CXX compiler ABI info - done
+-- Check for working CXX compiler: /usr/bin/g++-14 - skipped
+-- Detecting CXX compile features
+-- Detecting CXX compile features - done
+-- HYLE developer factors: requested='compute;graph' resolved='core,container_intrusive,util_core,error,math,platform,mem,container,compute_ops,compute,graph' products=''
+-- The C compiler identification is GNU 13.3.0
+-- Detecting C compiler ABI info
+-- Detecting C compiler ABI info - done
+-- Check for working C compiler: /usr/bin/cc - skipped
+-- Detecting C compile features
+-- Detecting C compile features - done
+-- HYLE_SANITIZER = asan
+-- HYLE_TESTING = OFF (tests exercise the shipping layout/hot paths)
+-- HYLE_TRACE = OFF (hooks compile to nothing -- zero cost)
+-- HYLE source package target unavailable (requires Git and a Git checkout)
+-- Performing Test CMAKE_HAVE_LIBC_PTHREAD
+-- Performing Test CMAKE_HAVE_LIBC_PTHREAD - Success
+-- Found Threads: TRUE  
+-- Found Python3: /usr/bin/python3 (found version "3.12.3") found components: Interpreter 
+-- HYLE tests: skipping Git-only LOC reporter outside a Git checkout
+-- HYLE 0.1.0 | GNU 14.2.0 | C++23 | sanitizer=asan | linkage=static | products= | factors=core,container_intrusive,util_core,error,math,platform,mem,container,compute_ops,compute,graph
+-- Configuring done (25.5s)
+-- Generating done (0.0s)
+-- Build files have been written to: /home/kiro/hyle-f1/sanitizers/asan-03242e7723cb
