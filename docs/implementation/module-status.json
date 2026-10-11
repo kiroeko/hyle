@@ -270,14 +270,9 @@
     },
     {
       "module": "compute",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/compute/foundation-f2-final-closure.md",
-      "summary": "F2 CLOSED：原七FIX四路线prepared batch/phase/ready/native依赖/replay、真实数学与适用三交付/生命周期/P0终审通过；cold错误与CUDA终态反例依法修复，原失败/未知成本/WSL软件GPU限制保留，未受影响全局门不回放。",
-      "candidate": "c26261e3958c7eb46ecde2a4ba7c5654a03f1b93",
-      "performance": {
-        "tier": "P0",
-        "evidence": "evidence/correctness/foundation-f2-final/receipt.json"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/foundation-f3-file-resource-streaming.md",
+      "summary": "F3 SCOPED：大目标跨chunk需要实际退役后的私有writer交接、共享backing计费和最后reader观察；仅补F3-03/05接缝，无核心反向依赖或普通对象新增字段，尚未实现。"
     },
     {
       "module": "graph",

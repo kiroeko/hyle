@@ -1,0 +1,156 @@
+{
+  "schema_version": 1,
+  "kind": "F3 shape and composition audit; no runtime proof",
+  "baseline": "2971a8bd55e8bc52076b1db5064b169bc1aa0b33",
+  "inputs": [
+    {
+      "path": "include/hyle/io/file.h",
+      "sha256": "385736644f18017bcc0f84c46e5de86505104f2369b3035fbea27e3b8a1f1106"
+    },
+    {
+      "path": "include/hyle/io/operation.h",
+      "sha256": "780ac4f2b61e2cf3d2bef2fa852e48b6b9789f6b156a1067599e385ca0d944d6"
+    },
+    {
+      "path": "include/hyle/io/detail/io_context_access.h",
+      "sha256": "898fe60ba5e8604fba78a03d3468be1c9a89b1a13e6f43208fbe80e601214061"
+    },
+    {
+      "path": "include/hyle/mem/mapping.h",
+      "sha256": "98b1a1ea8c4d85eff4fb8ddeb0fd7a425e7619128c468ae29e11c5e3fbfd05c3"
+    },
+    {
+      "path": "include/hyle/mem/buffer.h",
+      "sha256": "346a4f810babb8c5dacba49faaf57903d998a3cbb49af12b8c62acc85f7be72c"
+    },
+    {
+      "path": "include/hyle/sched/coro.h",
+      "sha256": "8694732bb1a069fde73f0359399b13f893d41c6981800f05cd824b293d93df54"
+    },
+    {
+      "path": "include/hyle/sched/task_scope.h",
+      "sha256": "0cf2d97ee6b9578e3b95e2126cdd90f47c35c83018722cb8f394bcebb1ca0bdd"
+    },
+    {
+      "path": "include/hyle/sched/join.h",
+      "sha256": "ddff411dbf716c7fa1566ef115e8ddbe8ab010f8db701d82c6ccfee4077f8df4"
+    },
+    {
+      "path": "include/hyle/sched/cancel.h",
+      "sha256": "11cd27341282367f7d366e7a802b09f0699c868903bdc5657ac59388b2a8b11e"
+    },
+    {
+      "path": "include/hyle/sched/blocking.h",
+      "sha256": "470034ee8a224d651c9947fd7d4a0627b1b8b6a929d87dca19fda4df2d673c9d"
+    },
+    {
+      "path": "include/hyle/sched/sync.h",
+      "sha256": "dfcc2c05e0205a22ce42634643aec65ccf85eda7fccae40c7a353fb6ed1d56d5"
+    },
+    {
+      "path": "include/hyle/compute/resource_leases.h",
+      "sha256": "22d7f2153ef8c0b1f6602b84ab00d96d75afc576f3b093a59749ab4f6891446d"
+    },
+    {
+      "path": "include/hyle/compute/detail/lease_access.h",
+      "sha256": "4951adad91a984ba12d905bcb352805a2fe9c70a205c544d47de9f5f190d7f51"
+    },
+    {
+      "path": "include/hyle/compute/batch_transfer.h",
+      "sha256": "f214b042f0b6d1ac77d601211ed796bc60cacc0115182fd192ace0313471e21c"
+    },
+    {
+      "path": "src/compute/resource_leases.cc",
+      "sha256": "d62f9d984cb8b0b129bbfea8157e2395783cdd36435b488740aad6cdf961ce60"
+    },
+    {
+      "path": "src/compute/batch_transfer.cc",
+      "sha256": "0bbe9efc55603f3cf316bcc76919c74c2d703edd661edfe89eee414cdd186cd2"
+    },
+    {
+      "path": "src/compute_route_apple/apple_copy_program.cc",
+      "sha256": "d48244321b8a15ec5fc6ea2973acac5ad804dd31069c69cc67a136f34ff0d9aa"
+    },
+    {
+      "path": "src/compute_route_vulkan/vulkan_copy_program.cc",
+      "sha256": "9f525715378ebbc296a9e4c039b553e178250355710c30046f34f0b7e58f9742"
+    },
+    {
+      "path": "src/io_core/file.cc",
+      "sha256": "d5e6714d6a64fa57ca1b298dae28367cce23435bdf0dd1dc94857fe824a420e1"
+    },
+    {
+      "path": "src/sched/task_scope.cc",
+      "sha256": "429093d4d118832e8c4a19f78c71b8bc10d75f576d115cf0e28862bc54bd9f8f"
+    },
+    {
+      "path": "cmake/HyleComponents.cmake",
+      "sha256": "75c83f2146127c4020a103da063783eefbf5dd680e527b686b7c544585adae10"
+    }
+  ],
+  "peer_reuse": "evidence/architecture/compute-resource-streaming-design/scope-research.json",
+  "findings": [
+    "F2 output coverage is current replay only; reset discards bindings. Small chunks cannot publish whole target.",
+    "F3 needs private successful-retirement writer handoff, not weaker F2 public output coverage.",
+    "Native lease domain already retains one resource owner; stream accounting must not overwrite it.",
+    "Existing IoContextAccess provides original Scheduler and BlockingPool, avoiding another runtime.",
+    "TaskScope destructor requires prior explicit join; nonblocking pipeline destruction uses existing self-owned tasks and detached JoinHandles."
+  ],
+  "local_input": {
+    "path": "C:\\Users\\kiro\\Downloads\\Qwen3.5-2B\\model.safetensors-00001-of-00001.safetensors",
+    "file_bytes": 4548221488,
+    "header_bytes": 76648,
+    "data_base": 76656,
+    "header_sha256": "ccba2c1f645fe59268f89ee7ea552e02ce6bf0c8a087bf332fb0e3bd99bfee9d",
+    "bounded_bytes_read": 76656,
+    "whole_file_read_or_hashed": false,
+    "tensors": {
+      "model.language_model.layers.0.linear_attn.norm.weight": {
+        "dtype": "F32",
+        "shape": [
+          128
+        ],
+        "data_offsets": [
+          64,
+          576
+        ]
+      },
+      "model.language_model.layers.0.mlp.down_proj.weight": {
+        "dtype": "BF16",
+        "shape": [
+          2048,
+          6144
+        ],
+        "data_offsets": [
+          1059256480,
+          1084422304
+        ]
+      },
+      "model.language_model.layers.0.mlp.gate_proj.weight": {
+        "dtype": "BF16",
+        "shape": [
+          6144,
+          2048
+        ],
+        "data_offsets": [
+          1084422304,
+          1109588128
+        ]
+      },
+      "model.language_model.layers.0.mlp.up_proj.weight": {
+        "dtype": "BF16",
+        "shape": [
+          6144,
+          2048
+        ],
+        "data_offsets": [
+          1109588128,
+          1134753952
+        ]
+      }
+    }
+  },
+  "product_validation": "NOT_RUN",
+  "probe_correction": "Initial scratch filter also matched mtp.layers.0.mlp; assertion stopped before writing receipt. Restricted to declared language-model layer 0.",
+  "remaining": "Implement and qualify original eight FIX across six scoped owners."
+}

@@ -1,7 +1,7 @@
 # F3：有界文件与计算资源双向管线
 
 > 状态：SCOPED；F3范围已冻结，尚未AUDITED或写产品代码；F1/F2原轮已CLOSED。
-> component / owner：新内部 factor compute_stream；
+> component / owner：新内部 factor compute_stream；compute仅补下述私有租约/退役接缝；
 > native factory/adapter 归 compute_route_cpu/cuda/apple/vulkan；中央声明只投影这些owner的有限新边。
 > IO/Sched/Mem 只消费既有能力；出现具体基础缺陷才另作定向 owner 修复。
 
@@ -13,7 +13,11 @@
   Windows canonical工作树干净，[F2 terminal](foundation-f2-final-closure.md)及QUEUED身份已提交推送。
   compute_stream由QUEUED进入SCOPED，四个Compute route由各自旧terminal进入本卡SCOPED；
   trigger是已准入F3用户旅程需要新的自然native pipeline factory/adapter及SDK依赖边，
-  不是重新审查旧数学或F1/F2缺陷。compute、CUDA backend、Graph、IO/Sched/Mem和Provider保持CLOSED。
+  不是重新审查旧数学或F1/F2缺陷。CUDA backend、Graph、IO/Sched/Mem和Provider保持CLOSED。
+- SCOPED源码核对发现具体组合缺口：三个F2 controller的`output()`只验证当前replay的写范围，
+  `reset()`销毁绑定，无法把一个大目标的独占写租约交回给下一小chunk；最后chunk不能代签整tensor。
+  compute由其[F2 terminal](foundation-f2-final-closure.md)进入本卡SCOPED，仅为F3-03/05补私有
+  actual-retirement后的writer交接及共享backing/最后reader观察；不重写F2 public输出合同或native copy。
 - 本阶段只核对原F3-01至08的IO/Sched/F1/F2/native组合、source/sink拥有/借用、有限byte/slot/
   group/旧结果预算、取消/实际退役与两向错误；完成AUDITED并提交状态前不写产品。
 - 遵守用户本轮明确要求：只验实际修改owner、真实直接消费者、新API与对应三交付；未受影响
@@ -22,7 +26,7 @@
 
 - 最初设计研究基线：`edb2714384037b12a3d1e69839aa895fea17cec1`；不是本轮实施baseline，设计见
   [资源与流送设计](../../../architecture/compute-resource-streaming-design.md)。
-- 本卡现为上述五owner的registry当前record；产品验证均未运行。原设计研究收据作为需求输入，
+- 本卡现为上述六owner的registry当前record；产品验证均未运行。原设计研究收据作为需求输入，
   不把原子API已存在或F1/F2 PASS写成本轮F3通过。
 - 主纵切：量化推理的外部状态/权重范围及真实成熟数学消费。
   正交纵切：渲染资产流送和分块矩阵管线；不加入 token/layer/KV policy。
@@ -51,7 +55,8 @@
   F2各路线CopyBatchProgram/Invocation/Submission。组合的请求、旧结果容量、取消与teardown缺口为SELF；
   原子与native拷贝为BORROW，文件原子发布及格式解释为APPLICATION。
 - 依赖方向：compute_stream共同控制依赖compute、io_core、sched、mem及mem_vm；四route依赖
-  compute_stream并拥有其原生factory/adapter。核心compute不反向依赖stream、Graph或IO。
+  compute_stream并拥有其原生factory/adapter。核心compute只提供私有数据/权限交接，
+  不反向依赖stream、Graph或IO，不增加普通Lease/Completion对象常态字段。
   中央图、新factor CMake和四route本地source列表只作必需接线；不修改公共selector/closure/性能工具。
 - 直接消费者：新增独立C++ file/resource consumer与F3风险测试；Graph只通过已存在lease binding组合。
   IO/Sched/Mem不改产品API；若出现具体基础缺陷，先另定该owner范围，不能顺手扩张。
@@ -71,7 +76,7 @@
 
 | Gate | 本轮所需证据 | 当前结果 |
 |---|---|---|
-| scope | 原八FIX、主/正交旅程、五owner及实际baseline | 已定界，尚未产品验收 |
+| scope | 原八FIX、主/正交旅程、六owner及实际baseline | 已定界，尚未产品验收 |
 | architecture | API/生命周期/依赖审计、现有原子组合与有限ledger | UNPROVEN，AUDITED前完成 |
 | correctness | 02至07逐能力风险矩阵及四路线实际接缝 | NOT_RUN |
 | delivery | 01/08 source/static/shared、新头、迁址及缺席 | NOT_RUN |
@@ -113,6 +118,100 @@ vLLM weight_utils 的成熟 ParallelLoader/source view 寿命，以及 tiering/f
   compute_stream 是内部解依赖因子，不新造必须手选的公开“Stream模式”。
 
 ## 有限 FIX 集
+
+### 源码审计与实现形状冻结（产品仍未运行）
+
+| 能力族 | 层级与现有证据 | 当前覆盖 | 裁决 |
+|---|---|---|---|
+| 定位读写/短传输 | IO原子，file.h及file.cc的read_exact_at/write_all_at | COMPLETE原子，MISSING管线 | BORROW原IO，SELF有限编排 |
+| 映射/源寿命 | Mem原子，mapping.h的FileMapping及checked bytes | COMPLETE原子，MISSING请求保活 | BORROW；共同层仅retain owner，不解析格式 |
+| 分块native搬运 | F2复合程序，三个copy controller及原native recording | PARTIAL跨chunk组合 | BORROW原程序；FIX私有retired writer交回，不扩大public output coverage |
+| 大目标逐组ready | F1权限原子及F2actual completion | MISSING文件组合 | SELF；完整组内全部声明范围成功才发布，旧组独立保留 |
+| 有界背压/结果容量 | F1 backing/blocks与ResourceBudget | PARTIAL结果与请求 | SELF固定请求/group/slot记录；BORROW quota，按共享backing去重 |
+| 取消/close/晚完成 | IO OperationOptions、Sched CancelToken/JoinHandle/BlockingPool、F2退休 | PARTIAL跨owner teardown | SELF停止后继与合并首错；BORROW实际等待/退休 |
+| 格式/math消费 | 现有成熟Provider与checked local inventory | ROUTED数学，MISSING F3 sample | BORROW ggml/官方manifest；APPLICATION格式、发布命名、模型策略 |
+
+现有公开入口全部回映为上述BORROW；F3新公开入口只回指双向文件旅程、请求/结果与显式终止。
+不新增benchmark入口、raw native函数回调、公开executor或另一种Queue。
+
+#### Owner与私有接缝
+
+- `include/hyle/compute/file_stream.h`与`src/compute_stream/`归compute_stream，中央
+  SPLIT_PUBLIC_HEADERS只登记此头；公开类型暴露compute/io/sched/mem时取PUBLIC边，纯实现依赖取PRIVATE。
+  四route各自自然头声明工厂及自身实现，PUBLIC依赖compute_stream；Graph路线继承原Compute route闭包。
+- compute仅允许在batch_transfer.h/controller增加私有friend/access、在现有LeaseAccess实现增加
+  backing identity/capacity及最后reader观察；不增加任何普通对象字段。共享header归compute，
+  Apple/Vulkan access实现归各自route。CUDA仍使用共同F2程序，不修改CUDA backend或vendor lock。
+- 私有`CopyStreamAccess::take_mutable(invocation,id)`只在无submission owner、无actual native use且
+  所有已提交phase成功时交回已有WriteLease；未提交绑定可撤回，未知/失败不会交回可发布writer。
+  交回后该binding失效，必须重新绑定/prepare。F3累计成功logical范围并仅在整组成功后publish；
+  不调用F2 output最后chunk扩大视图、不通过reinterpret/subview越过coverage gate。
+- 私有backing观察只读取现有domain与refcount/use，保持原锁与权限规则；ready记录内部保留ReadLease。
+  外部ReadyGroup、导出的ReadLease及native消费者任一保活都继续占请求/结果bytes；collect只有
+  最后reader/use归还且结果handle已释放才复用记录。不用retain_resource_owner覆盖native原owner。
+
+#### 固定公开对象与调用
+
+- `FileStreamOptions`：allocator=system_allocator、可选ResourceBudget；默认max_requests=4、
+  max_groups_per_request=16、max_ranges_per_group=16、in_flight_slots=2、staging_bytes_per_slot=1MiB、
+  max_active_backing_bytes=128MiB。所有乘加溢出/零必要容量在冷create拒绝；用户可明确调容量，
+  不新增CMake用户开关。stage必须host可访问，CUDA只此传输stage用原pinned资源。
+- `StreamFile`是可复制retained handle：`adopt(io::File&&, capacity_bytes)`或
+  `borrow(io::File&, capacity_bytes)`；adopt失败不移动File。capacity是consumer明确的合法范围，
+  不代表文件实际已含这些bytes，EOF仍从真实IO返回。借用File地址与IoContext必须活到所有请求实际退休。
+- `StreamSource::file(StreamFile)`、`adopt(mem::FileMapping&&)`、`borrow(const mem::FileMapping&)`；
+  mapping只读、稳定且不release/populate/并发改文件；mapping offset相对于已映射logical范围。
+  通过原Mem checked bytes和stage BufferView::write复制有限chunk；映射page fault可能阻塞，
+  此fill沿同BlockingPool offload并保留mapping owner，不制造copy kernel或whole-file缓存。
+- `StreamReadRange`包含file_offset、目标WriteLease、resource_offset、logical bytes、显式physical_bytes
+  和可选TensorDesc；`StreamReadGroup`是tag及range span。`StreamWriteRange`包含只读source lease、
+  可选producer Completion、resource_offset、file_offset与logical/physical bytes；write group同样只有tag/ranges。
+  描述符由consumer解释，typed范围必须完整覆盖desc encoding；同backing别名/offset/对齐/尾padding
+  在任何IO/native接受前验证，不允许padding覆盖邻块。
+- 四路线固定自然工厂`cpu/cuda/apple/vulkan::create_file_pipeline`，参数为已有IoContext、原Context、
+  CPU/CUDA原Queue（仅这两条）、stage resource、冷target resource specs及FileStreamOptions；
+  返回共同move-only `FileResourcePipeline`，不暴露内部factor或执行回调。
+- Pipeline的`read(source, mutable group span, OperationOptions)`与
+  `write(StreamFile sink, mutable group span, OperationOptions)`同步admit并返回move-only StreamTicket。
+  固定记录全部检查/接纳成功才移动WriteLease/Completion；容量满Unavailable，失败不消费输入。
+  descriptors/tag冷复制入固定数组，caller数组可随即释放，source/sink retained owner保留到实际IO/native退休。
+- `StreamTicket::next_ready()`非阻塞；`wait_next_ready()`按原Sched同步等待；
+  `wait()`返回完整StreamResult（Status、实际read/copied/written bytes、ready组数与retirement_proven），
+  `result()`观察同一快照，`request_cancel()`只停止本请求后继。pending返回Unavailable，
+  已取完且成功结束返回OutOfRange，失败仍保留首错和partial bytes，不丢已有ready。
+- `StreamReadyGroup`可复制，tag/range_count/`output(index)`提供覆盖范围的ReadLease；
+  写回组只报告实际write完成和bytes，不新造可读GPU输出。结果记录与导出的lease寿命分开计费。
+- `stop_admission()`、非阻塞`collect()`/`close()`、显式`drain()`；close重复安全，未退休返回Unavailable。
+  drain停止接纳并等已接受工作，不等用户放弃旧ready；Pipeline/Ticket析构放弃观察及停止后继，
+  不隐藏join或全设备wait，不关闭借用用户File/Queue/Context/全IO runtime。
+
+#### 并发、进展与成本
+
+- 共同行程只有有限slot工作任务，由已有IoContextAccess取得其原Scheduler/BlockingPool；
+  不要求用户重复拼Scheduler身份或建新pool。create冷保留K个原Sched Task/Fiber及stage/F2 slot，
+  通过原同步原语等待新工作；native阻塞wait用同BlockingPool offload，不阻塞Scheduler worker。
+  TaskScope要求析构前显式join；不把它藏进非阻塞Pipeline析构，使用原self-owned task/JoinHandle保活。
+- admission/状态快照与ready发布由原锁/ConditionVariable串行；Pipeline控制与同Ticket观察为
+  thread-compatible，request_cancel和ReadyGroup/ReadLease复制释放跨线程沿原合同；
+  同一个native slot只有一条工作任务修改，shared Context/Queue原host锁不绕过。
+- 一个group可大于stage，按有限chunk循环；独立groups可占不同slot。只有该chunk的IO和native
+  actual-retirement都已完成才复用stage，旧目标结果独立占backing与result记录，不能被后组复写。
+  FIFO接纳不承诺物理重叠或完成顺序；组成功即通知，不等整个request再发布。
+- Read：IO实际short progress→stage ready→F2原生copy→实际退役→交回writer→下一chunk；
+  全组成功后F1 publish。Write：F2保留producer/readonly source→原D2H或共享内存可见→stage
+  actual-ready→原write_all_at→计实际progress。write故障后的文件prefix不回滚，原子发布留给IO consumer。
+- 取消沿原OperationOptions/CancelToken；无法安全中断的read/write及GPUcopy必须退役，停止后续chunk。
+  unknown native observation保留slot/quarantine、retirement_proven=false、无ready/复用/假取消；
+  collect/drain只调用原退休入口，不新增定时poller或无限重试；原sticky CUDA进程终止合同继承。
+- 冷metadata为O(requests×groups×ranges + K×F2容量)，admit检查范围/别名/去重O(R log R)，
+  chunk数量O(ceil(bytes/stage))，每chunk使用原IO/复制/退休；报告原Task/IO/offload allocation和
+  host waits，任何新增临时allocation走已注入且受有限预算的allocator，不以replay零分配代签整个旅程。
+  同backing只计一次，external/managed/native private unknown分列，不把caller整个文件读入或全部CPU数据pin。
+
+七问裁决：第三方仍用原锁定native/成熟数学与consumer格式工具；MUST就是原八FIX与本表；
+复用原IO/Mem/Sched/F1/F2，不新建runtime；P0只做成本结构；只C++三交付无FFI；中央依赖/头/安装
+按新factor与四route投影；普通用户从四route工厂完成read→ready→math与write→reload，指南保留借用/取消/unknown坑。
+以上为AUDITED前形状结论，不是产品PASS；实现若发现必须改变owner/API/常态成本，先退回审计再改卡。
 
 | FIX | 必须实现 | 验收 |
 |---|---|---|

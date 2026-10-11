@@ -1,0 +1,59 @@
+{
+  "schema_version": 1,
+  "stage": "scope-compute",
+  "baseline": "2971a8bd5",
+  "checks": [
+    {
+      "command": [
+        "python",
+        "scripts/validation-select.py",
+        "plan",
+        "--base",
+        "2971a8bd5",
+        "--candidate",
+        "WORKTREE",
+        "--output",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\foundation-f3\\scope-compute-plan.json"
+      ],
+      "exit_code": 0,
+      "log": "evidence/correctness/foundation-f3-audit/scope-compute/check-1.log",
+      "sha256": "86ebd72fd0f116a45a33073cf36180601bd261b00e4c176a59e405eb5f821aef"
+    },
+    {
+      "command": [
+        "python",
+        "scripts/check-module-closure.py",
+        "--previous-ref",
+        "2971a8bd5"
+      ],
+      "exit_code": 0,
+      "log": "evidence/correctness/foundation-f3-audit/scope-compute/check-2.log",
+      "sha256": "326f81be1f6d2a3bb807aaa9f405efaa28d318ef82f46f98cffbcaf35d517364"
+    },
+    {
+      "command": [
+        "python",
+        "scripts/check-docs.py"
+      ],
+      "exit_code": 0,
+      "log": "evidence/correctness/foundation-f3-audit/scope-compute/check-3.log",
+      "sha256": "bd23a462016971ee34636cd924afc389eb0a8ddf49dd5fc3580bce33e8670b94"
+    },
+    {
+      "command": [
+        "git",
+        "diff",
+        "--check"
+      ],
+      "exit_code": 0,
+      "log": "evidence/correctness/foundation-f3-audit/scope-compute/check-4.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ],
+  "selector_archive": {
+    "path": "evidence/correctness/foundation-f3-audit/scope-compute/selector-plan.zip",
+    "sha256": "e1cc0a3329716f632c58a88169f919817ef713c1969fd9ced060e98c5daca617"
+  },
+  "verdict": "PASS_DOCS_CLOSURE_ONLY",
+  "product_tests": "NOT_RUN"
+}
