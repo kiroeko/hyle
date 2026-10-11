@@ -1,6 +1,6 @@
 # F3：有界文件与计算资源双向管线
 
-> 状态：compute_stream退回AUDITED；其余五owner CANDIDATE。新红队反证原F3-06未启动suffix producer环；原FAIL保留，有限纠正及交付/终审待验。
+> 状态：六owner CANDIDATE，当前产品97858fbc8；原F3-06 suffix producer环已有限修复并复验，原FAIL保留；当前交付/终审待验。
 > component / owner：新内部 factor compute_stream；compute仅补下述私有租约/退役接缝；
 > native factory/adapter 归 compute_route_cpu/cuda/apple/vulkan；中央声明只投影这些owner的有限新边。
 > IO/Sched/Mem 只消费既有能力；出现具体基础缺陷才另作定向 owner 修复。
@@ -513,6 +513,12 @@ state/stage/uses。当前为AUDITED实施，复验尚未运行，旧candidate3b�
 ASan/UBSan/TSan各十三、Air CPU十三/Apple六/Vulkan五及Windows Vulkan五项复验全部PASS。
 原失败用例不再残留active use或metadata；原GPU真正退休前仍保活，没有提前释放或隐藏等待。
 Windows CUDA新suffix直接运行、当前source/安装数学及新头/迁址仍待验；不代签全平台终态。
+
+纠正后不可变candidate现为`97858fbc88a6b5a87f109290b956eeaeee632dd2`，tree
+`6398479c76fdc9677206ee692943664814463ebd`。previous-ref `0fc9ce59d`：只有共同owner
+compute_stream从AUDITED回到CANDIDATE，其余五owner产品未变但绑定同一完整树。
+旧3b候选/静态SDK结果保留作历史；当前产品有限改动为上述原F3-06保活交接及O(QGR)扫描，
+产品/样例随后不再改。Windows CUDA新fixture与完整交付仍继续，未运行不写PASS。
 
 ## 解析器与真实权重验收
 
