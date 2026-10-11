@@ -1,0 +1,81 @@
+{
+  "schema_version": 1,
+  "product_commit": "97858fbc88a6b5a87f109290b956eeaeee632dd2",
+  "product_tree": "6398479c76fdc9677206ee692943664814463ebd",
+  "original_failure_fixture": "bf59b57f087f159d2e274bb1cacde62852b5b2a1",
+  "original_failure": "K1 first readonly file group errors; admitted blocked producer of unstarted second group remains in state/Completion/retention cycle. After actual GPU drain one active use and unbalanced F3 metadata, isolated child abort6.",
+  "finite_correction": "Only compute_stream returned CANDIDATE->AUDITED before product write. Move failed group Completion out under monitor, destroy outside monitor; original native owner retains through actual retirement. Worker, admission spawn failure and collect spawn failure paths covered. No new runtime/API/field/array/allocation.",
+  "runs": [
+    {
+      "label": "Air-CPU",
+      "tests_passed": 13,
+      "identity": {
+        "hardware": "Mac16,12",
+        "os": "ProductName:\t\tmacOS\nProductVersion:\t\t27.0.1\nBuildVersion:\t\t26A434",
+        "compiler": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin"
+      }
+    },
+    {
+      "label": "Air-Apple",
+      "tests_passed": 6,
+      "identity": {
+        "hardware": "Mac16,12",
+        "memory": "17179869184",
+        "os": "ProductName:\t\tmacOS\nProductVersion:\t\t27.0.1\nBuildVersion:\t\t26A434",
+        "compiler": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin",
+        "cmake": "cmake version 4.3.4\n\nCMake suite maintained and supported by Kitware (kitware.com/cmake).",
+        "ninja": "1.13.2"
+      }
+    },
+    {
+      "label": "Air-Vulkan",
+      "tests_passed": 5,
+      "identity": {
+        "hardware": "Mac16,12",
+        "memory": "17179869184",
+        "os": "ProductName:\t\tmacOS\nProductVersion:\t\t27.0.1\nBuildVersion:\t\t26A434",
+        "compiler": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin",
+        "cmake": "cmake version 4.3.4\n\nCMake suite maintained and supported by Kitware (kitware.com/cmake).",
+        "ninja": "1.13.2"
+      }
+    },
+    {
+      "label": "Windows-Vulkan",
+      "tests_passed": 5,
+      "identity": "C:/Program Files/Microsoft Visual Studio/18/Enterprise/VC/Tools/MSVC/14.50.35717/bin/Hostx64/x64/cl.exe"
+    },
+    {
+      "label": "WSL-cuda",
+      "tests_passed": 7,
+      "identity": null
+    },
+    {
+      "label": "WSL-asan",
+      "tests_passed": 13,
+      "identity": null
+    },
+    {
+      "label": "WSL-ubsan",
+      "tests_passed": 13,
+      "identity": null
+    },
+    {
+      "label": "WSL-tsan",
+      "tests_passed": 13,
+      "identity": null
+    }
+  ],
+  "common_changed_tu_sha256": "07d72e5da5469d500a22a2f9327107f677d9ca7da4b6e104046fc60751848916",
+  "cost_delta": "Fixed Failed directory traversal O(QGR); per-cell monitor entry, no native wait under lock.",
+  "budget": "One concrete original F3-06 suffix counterexample and one focused correction/acceptance; all previous errors/corrections/ASan timeout+supplement retained, no research/budget reset.",
+  "archive": {
+    "path": "evidence/correctness/foundation-f3-suffix-retirement/raw-results.zip",
+    "sha256": "ae2edbae8ea01d8c39cb388d122c0449b58705b1d9127c09f43fa5dc8320c36d"
+  },
+  "verdict": "PASS_F3_SUFFIX_RETIREMENT_AND_SELECTED_PLATFORM_REGRESSIONS_ONLY",
+  "unproven": [
+    "Windows CUDA new suffix test directly",
+    "Current source/installed math and new headers/delivery after correction",
+    "Final candidate/red team/all gates/closure"
+  ]
+}

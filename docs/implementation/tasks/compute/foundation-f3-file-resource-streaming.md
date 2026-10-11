@@ -508,6 +508,12 @@ group Failed，不销毁其中Completion，形成state→Completion→retention�
 固定目录扫描上界O(QGR)，无新数组、分配、线程或常态字段；原producer退休前retention仍保留
 state/stage/uses。当前为AUDITED实施，复验尚未运行，旧candidate3b的交付只作历史局部证据。
 
+[suffix退休收据](../../../../evidence/correctness/foundation-f3-suffix-retirement/receipt.json)现绑定
+产品`97858fbc88a6b5a87f109290b956eeaeee632dd2`与原FAIL：WSL CUDA整组七项、共同
+ASan/UBSan/TSan各十三、Air CPU十三/Apple六/Vulkan五及Windows Vulkan五项复验全部PASS。
+原失败用例不再残留active use或metadata；原GPU真正退休前仍保活，没有提前释放或隐藏等待。
+Windows CUDA新suffix直接运行、当前source/安装数学及新头/迁址仍待验；不代签全平台终态。
+
 ## 解析器与真实权重验收
 
 格式解析不进入 pipeline。GGUF 用现有 ggml 格式核；本地 Qwen3.5-2B 原始 Safetensors

@@ -22,6 +22,9 @@ L=QGR是保留记录的最大范围数。默认Q=4、G=16、R=16、K=2、S=1MiB�
   K个固定槽限制同时工作的group与原BlockingPool job；选下一group最多扫描QG，
   原F2 adapter的resource匹配最多O(T)。总成本包含真实C次IO/原native copy与有界调度扫描，
   不把文件IO、数学prepare/compile或原native等待算作零成本。
+- 候选红队证明未启动suffix producer保活环后，有限纠正增加O(QGR)的Failed目录扫描，
+  在group结束、成功接纳和collect返回前交原producer退休。每个Completion仅在锁内移出、锁外
+  析构，无新分配/数组/线程/对象字段；实际native退休前原retention继续占state/stage/uses。
 
 ## 内存与分配账单
 
