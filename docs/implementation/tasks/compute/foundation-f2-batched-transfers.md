@@ -336,6 +336,13 @@ SHA/commit/tree、硬件/工具链/命令/log SHA；当前四路线公共入口�
 | F2-06 | F1 guard 交接、partial acceptance、取消/丢弃/close、slot 退休与再绑定 | 第一项已接受后第二项失败，旧 bytes/index 不重用；真实未知退役路径 |
 | F2-07 | Direct/Graph 数学消费、逐组 ready、P0/三交付/文档 | 至少二组二槽，成熟数学消费复制后的真实量化/BF16数据，原规则不变 |
 
+Windows普通数学首轮 `db457ae0958d5425a815b4ddea664118e5e84253` PASS：原source/static/shipping
+CPU+CUDA façade消费者，两组/两槽/三次replay，实际BF16 dense与GGUF Q8_0 bytes完整读回，
+device ready leases由原Direct与Graph MatMul消费并对独立标量oracle；copy metadata allocation
+不增长，所有两槽bindings reset后uses/live blocks归零。[实机收据](../../../../evidence/correctness/foundation-f2-math-consumers/windows-cpu-cuda.json)
+与旁列完整configure/build/test/identity日志保留。Apple/Vulkan数学、其他主机及安装SDK未验；
+此产品点仍AUDITED，不把普通源码消费成功代签最终三交付。
+
 ## 预声明验证与停止
 
 普通数学接线阶段选新增 `samples/package/graph/batched_transfers`：先在Windows原CPU/CUDA

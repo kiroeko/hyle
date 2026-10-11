@@ -36,6 +36,51 @@ bind 冷建立 readonly native view，submit 自动接纳 use，原 native slot 
 新租约能力已完成本轮四路线的适用平台与 source/static/shared 资格，精确环境与限制见
 [F1 收口记录](../implementation/tasks/compute/foundation-f1-resource-leases.md)。不外推未测设备/工具链。
 
+## 准备批量范围搬运
+
+`hyle/compute/batch_transfer.h` 的 `CopyBatchProgram` 冷固定 CPU/CUDA Context、资源域、
+范围/阶段上限和 metadata budget；每个 `CopyBatchInvocation` 是独立运行槽，借用一个地址稳定的
+原 Queue。Apple/Vulkan 使用各自 memory 头中的同名类型及原 native Context，创建槽时省略 Queue。
+resource、Context、Queue 和自定义 allocator 均须活到所有槽与原生在途工作退休。
+
+```cpp
+namespace c = hyle::compute;
+const std::array resources{
+    c::CopyResourceSpec{host_resource, 4096},
+    c::CopyResourceSpec{device_resource, 4096}};
+auto program = c::CopyBatchProgram::prepare(context, resources).value();
+auto slot = c::CopyBatchInvocation::create(program, queue).value();
+HYLE_RETURN_IF_ERROR(slot.bind_source({0}, source_read_lease));
+HYLE_RETURN_IF_ERROR(slot.bind_mutable({1}, std::move(destination_write_lease)));
+const std::array<c::CopyPhase, 1> phases{{{0, 7}}};
+const std::array<c::CopyRange, 1> ranges{{{{0}, {1}, {0}, 0, 0, 4096}}};
+HYLE_RETURN_IF_ERROR(slot.prepare_replay(phases, ranges));
+auto copied = slot.submit().value();
+HYLE_RETURN_IF_ERROR(copied.wait());
+auto ready = copied.output({0}, {1}, 0, 4096).value();
+// ready.tensor(description) 可交给已有 Direct/Graph 租约消费者。
+```
+
+同阶段的范围必须独立：重复读取 source 合法，交叠写及读写冲突被拒绝。A→B→C 使用两个连续阶段，
+各后继的 `dependency_mask` 指向实际先行阶段；数组顺序不能代替依赖。`group_tag` 是调用方标识。
+一个 block 的最后写必须实际成功退休，`output` 才返回被成功复制的 logical 范围；pending、失败、
+取消与未知退役均不发布 ready。较早组可独立观察，后继 readonly 搬运仍保活它。
+生产者有尚未退休的写时，用 `bind_producer` 交接同 native owner 的实际 Completion；未知外部
+完成不能猜成 native fence。失败绑定不消费传入 lease/Completion。
+
+搬运保持原编码，不做 dtype 转换或量化重打包。`physical_bytes=0` 为 exact copy；显式 padding
+必须属于源和目标的已分配范围，计入 alias 与 byte budget。Metal 的 offset/size 为 4-byte 对齐；
+Vulkan 也必须符合原 buffer copy 约束，不能以向上取整越过邻块。
+`CopyBatchReport` 分别给出 logical/physical bytes、实际 copy calls、native dependencies、阶段完成
+和 host waits；`native_metadata_unknown` 表示 vendor 内部成本未知，不能据此宣称所有热分配为零。
+Apple 沿原 MLX owner 同步实际 command buffer，每 native phase 的 worker host wait 会计入报告。
+
+旧 submission 保留运行槽；观察、释放它后显式 `slot.reset()` 再绑定下一批。保留的 ready reader
+仍拥有旧数据。`close()` 停止接纳，`drain()` 观察实际工作；析构放弃观察时不会隐式 host wait，
+原 native owner 继续保活资源。设备失败的槽不承诺自动恢复，应按返回错误和实际退役情况重建。
+两组/两槽及原编码数学组合见[批量搬运样例](../../samples/package/graph/batched_transfers/)。
+F2 当前仍在验收，已取证范围及未验交付以[活动收口卡](../implementation/tasks/compute/foundation-f2-batched-transfers.md)为准。
+
 > 本页描述当前 Compute runtime foundation、CPU operation surface 与 CUDA runtime；施工资格只以
 > [`module-status.json`](../implementation/module-status.json) 为准。普通 CPU 入口自动组装已构建的 oneDNN/ggml/ATen/Native 实现；
 > 标准 CPU 构建使用 `HYLE_COMPUTE_ROUTES=cpu`，自动接入该平台所需的合格 Provider。
