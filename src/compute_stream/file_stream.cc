@@ -10,6 +10,7 @@
 #include <vector>
 
 #include "hyle/compute/detail/lease_access.h"
+#include "hyle/compute/detail/completion_access.h"
 #include "hyle/io/detail/io_context_access.h"
 #include "hyle/mem/std_allocator.h"
 #include "hyle/sched/cancel.h"
@@ -30,6 +31,10 @@ struct StreamRangeCell final {
   std::size_t offset = 0, bytes = 0, physical_bytes = 0;
   LeaseBackingInfo backing;
   PhysicalCopyResource physical;
+  FileStreamState *owner = nullptr;
+  std::uint32_t request = 0;
+  CompletionRetention producer_retention;
+  bool producer_retired = true;
 };
 struct StreamGroupCell final {
   GroupPhase phase = GroupPhase::kQueued;
@@ -45,6 +50,7 @@ struct StreamRequestCell final {
   StreamResult result;
   std::uint64_t sequence = 0;
   std::uint32_t remaining = 0;
+  std::uint32_t pending_producers = 0;
   bool live = false, ticket = false, write = false;
 };
 struct StreamSlotCell final {
@@ -66,7 +72,7 @@ struct StreamSlotCell final {
   Completion *job_producer = nullptr;
   std::uint64_t job_file_offset = 0;
   std::size_t job_source_offset = 0, job_destination_offset = 0, job_bytes = 0, job_physical = 0;
-  bool job_upload = false, job_done = true;
+  bool job_upload = false, job_done = true, job_producer_only = false;
 };
 struct StreamInterval final {
   std::uintptr_t space = 0;
@@ -128,6 +134,25 @@ void release_state(FileStreamState *state) noexcept {
   bool last;
   { std::lock_guard guard(state->lock); last = state->is_unique(); if (!last) state->decref(); }
   if (last) state->decref();
+}
+
+void producer_terminal(void *opaque, const Status &terminal) noexcept {
+  auto &range = *static_cast<StreamRangeCell *>(opaque); auto &state = *range.owner;
+  std::lock_guard guard(state.lock);
+  range.producer_retired = true;
+  state.requests[range.request].result.status.Update(terminal);
+}
+void producer_release(void *opaque) noexcept {
+  auto &range = *static_cast<StreamRangeCell *>(opaque); auto *state = range.owner;
+  {
+    std::lock_guard guard(state->lock); auto &request = state->requests[range.request];
+    --request.pending_producers;
+    bool pending = false;
+    for (const auto &slot : state->slots) pending |= slot.quarantined && slot.request == range.request;
+    if (!pending && request.pending_producers == 0) request.result.retirement_proven = true;
+    state->changed.notify_all();
+  }
+  release_state(state);
 }
 
 StreamCopyEndpoint::StreamCopyEndpoint(StreamCopyEndpoint &&other) noexcept { *this = std::move(other); }
@@ -291,7 +316,7 @@ bool readers_returned(FileStreamState &state, std::uint32_t r) noexcept {
 void reclaim_locked(FileStreamState &state) noexcept {
   for (std::uint32_t r = 0; r < state.requests.size(); ++r) {
     auto &request = state.requests[r];
-    if (!request.live || request.ticket || !request.result.complete || !request.result.retirement_proven ||
+    if (!request.live || request.ticket || !request.result.complete || request.pending_producers || !request.result.retirement_proven ||
         !readers_returned(state, r)) continue;
     for (std::uint32_t g = 0; g < request.result.total_groups; ++g) {
       auto &group = state.group(r, g);
@@ -332,7 +357,9 @@ void count_io(FileStreamState &state, StreamRequestCell &request, std::size_t by
 // One embedded cell per fixed slot avoids per-chunk heap jobs and survives OOM.
 void run_slot_job(void *opaque) noexcept {
   auto &slot = *static_cast<StreamSlotCell *>(opaque); auto &state = *slot.owner;
-  if (slot.job_mapping) {
+  if (slot.job_producer_only) {
+    slot.copy_result = {}; slot.copy_result.status = slot.job_producer->wait();
+  } else if (slot.job_mapping) {
     const auto fill = [&]() noexcept -> Status {
       HYLE_ASSIGN_OR_RETURN(auto source, slot.job_mapping->bytes(static_cast<std::size_t>(slot.job_file_offset), slot.job_bytes));
       HYLE_ASSIGN_OR_RETURN(auto destination, slot.job_stage.subview(0, slot.job_bytes)); return destination.write(source);
@@ -368,6 +395,13 @@ sched::Task<Status> process_group(mem::AllocatorRef allocator, FileStreamState *
   auto &group = state->group(r, g);
   for (std::uint32_t i = 0; i < group.count; ++i) {
     auto &range = state->range(r, g, i);
+    if (!range.bytes && range.producer.valid()) {
+      slot.job_mapping = nullptr; slot.job_producer_only = true; slot.job_producer = &range.producer;
+      await_slot_job(*state, slot); slot.job_producer_only = false;
+      if (!slot.copy_result.status.ok()) co_return slot.copy_result.status;
+      { std::lock_guard guard(state->lock);
+        if (!range.producer_retired) co_return Status::Unavailable("empty stream range producer retirement is unproven"); }
+    }
     for (std::size_t offset = 0; offset < range.bytes;) {
       auto checked = checkpoint(request); if (!checked.ok()) co_return checked;
       const auto bytes = (std::min)(range.bytes - offset, state->options.staging_bytes_per_slot);
@@ -469,6 +503,11 @@ void stream_worker(void *opaque) noexcept {
       terminal = work.result();
     }
     work = {}; // no child frame/borrow survives publication
+    // A cancelled/failed group may never have bound its producer into F2.
+    // Abandon observation now, so its original native retirement owner runs
+    // the retained release instead of forming state -> Completion -> state.
+    for (std::uint32_t i = 0; i < state.group(r, g).count; ++i)
+      state.range(r, g, i).producer = {};
     state.lock.lock();
     auto &request = state.requests[r]; auto &group = state.group(r, g);
     group.phase = terminal.ok() ? GroupPhase::kReady : GroupPhase::kFailed;
@@ -645,6 +684,9 @@ template<class Group> Result<std::uint32_t> admit(FileStreamState &state, Stream
         if (range.pending_source.valid()) {
           writable = true;
           if (!range.producer.valid()) return std::unexpected(Status::InvalidArgument("stream mutable source requires producer"));
+          const auto dependency = detail::CompletionAccess::dependency(range.producer);
+          if (dependency.terminal_hint && !dependency.terminal_hint->ok())
+            return std::unexpected(*dependency.terminal_hint);
           HYLE_ASSIGN_OR_RETURN(view, detail::LeaseAccess::ordered_view(range.pending_source));
           HYLE_ASSIGN_OR_RETURN(backing, detail::LeaseAccess::backing(range.pending_source));
         } else if (range.source.valid()) {
@@ -706,6 +748,16 @@ template<class Group> Result<std::uint32_t> admit(FileStreamState &state, Stream
       if constexpr (write) {
         range.reader = std::move(input.source); range.writer = std::move(input.pending_source);
         range.producer = std::move(input.producer);
+        range.owner = &state; range.request = selected;
+        if (detail::CompletionAccess::has_async_state(range.producer)) {
+          range.producer_retired = false;
+          ++request.pending_producers; request.result.retirement_proven = false; state.incref();
+          range.producer_retention.own = {&range, &detail::producer_terminal, &detail::producer_release};
+          // This valid, unused cold node cannot fail attachment. Terminal
+          // completions need no native handoff; async ones retain all cold
+          // pipeline resources through their original actual retirement.
+          HYLE_FATAL_ASSERT(detail::CompletionAccess::attach_retention(range.producer, range.producer_retention).ok());
+        }
       } else { range.writer = std::move(input.destination); }
     }
   }
@@ -842,7 +894,8 @@ Status FileResourcePipeline::collect() noexcept {
     slot.quarantined = false;
     bool other = false;
     for (const auto &pending : state_->slots) other |= pending.quarantined && pending.request == slot.request;
-    if (!other) state_->requests[slot.request].result.retirement_proven = true;
+    if (!other && state_->requests[slot.request].pending_producers == 0)
+      state_->requests[slot.request].result.retirement_proven = true;
   }
   detail::reclaim_locked(*state_); detail::kick_locked(*state_); state_->changed.notify_all(); return result;
 }
