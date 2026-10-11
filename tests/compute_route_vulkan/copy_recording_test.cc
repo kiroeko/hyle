@@ -115,4 +115,45 @@ TEST(VulkanCopyRecording, AliasAlignmentForeignBackingAndSelfAreCheckedBeforeNat
   EXPECT_FALSE(d::bind_copy_recording(*batch, wrong_device).ok());
   EXPECT_FALSE(d::submit_copy_recording(*batch).has_value());
 }
+
+TEST(VulkanCopyRecording, OwnedReadonlyViewsPreservePhysicalAliasAndUnknownExternalUsageIsRejected) {
+  auto context = vulkan_test::context().value(); ASSERT_FALSE(context.environment().software_device);
+  auto staging = v::MemoryResource::create(context, v::MemoryKind::kStaging).value();
+  auto device = v::MemoryResource::create(context, v::MemoryKind::kDevice).value();
+  auto input = mem::Buffer::create(staging.ref(), 32).value();
+  auto resident = mem::Buffer::create(device.ref(), 32).value();
+  auto output = mem::Buffer::create(staging.ref(), 16).value();
+  std::array<std::byte, 32> bytes;
+  for (unsigned index = 0; index < bytes.size(); ++index) bytes[index] = std::byte(index * 3 + 7);
+  ASSERT_TRUE(input.write(0, bytes).ok());
+  auto upload = d::prepare_copy_recording(context, 1).value();
+  const std::array<c::detail::CopyBackendRange, 1> to_device{{{resident.view(), input.view()}}};
+  ASSERT_TRUE(d::bind_copy_recording(*upload, to_device, true).ok());
+  auto completed = d::submit_copy_recording(*upload).value(); ASSERT_TRUE(completed.wait().ok());
+  auto owned = c::ReadLease::adopt(std::move(resident)).value();
+  auto slice = owned.subview(4, 16).value();
+  const std::array<std::int64_t, 1> shape{{16}};
+  auto description = c::TensorDesc::dense(c::DataType::kUInt8, shape).value();
+  auto tensor = device.binding(slice, description).value();
+  auto imported = device.import_readonly(tensor).value();
+  const auto &runtime = d::Access::runtime(context);
+  auto root_span = d::MemoryAccess::copy_span(runtime, slice.view().value()).value();
+  auto view_span = d::MemoryAccess::copy_span(runtime, imported.view().value()).value();
+  EXPECT_EQ(root_span.physical.address_space, view_span.physical.address_space);
+  EXPECT_EQ(root_span.physical.backing, view_span.physical.backing);
+  EXPECT_EQ(root_span.physical.origin, view_span.physical.origin);
+  auto read = d::prepare_copy_recording(context, 1).value();
+  const std::array<c::detail::CopyBackendRange, 1> to_host{{{output.view(), imported.view().value()}}};
+  ASSERT_TRUE(d::bind_copy_recording(*read, to_host).ok());
+  completed = d::submit_copy_recording(*read).value(); ASSERT_TRUE(completed.wait().ok());
+  std::array<std::byte, 16> observed;
+  ASSERT_TRUE(output.read(0, observed).ok());
+  for (std::size_t index = 0; index < observed.size(); ++index) EXPECT_EQ(observed[index], bytes[index + 4]);
+  auto borrowed = context.borrow_ready(description, tensor.native_buffer(), tensor.native_offset(), 16,
+                                       tensor.native_owner()).value();
+  auto unknown = device.import_readonly(borrowed).value();
+  const std::array<c::detail::CopyBackendRange, 1> unknown_source{{{output.view(), unknown.view().value()}}};
+  EXPECT_FALSE(d::bind_copy_recording(*read, unknown_source).ok());
+  EXPECT_FALSE(d::submit_copy_recording(*read).has_value());
+}
 } // namespace

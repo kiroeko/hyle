@@ -203,6 +203,10 @@ whole-phase overlap/对齐/容量/foreign Device和冷metadata replay；只签na
 仍build1/test1、configure300/build1800/exe120和4GiB；每phase复用原Run，合格idle host upload
 沿原transfer→compute handoff，其他沿原compute queue；未知external backing/transfer usage先明确拒绝。
 Vulkan公共Program/Invocation/Submission、native producer/权限/故障、数学及交付继续待验，不拿此门代签。
+原owned view的 `memory` 空是避免双重释放的正常形状，`bind_view_buffer` 已保留实际allocation_bytes、
+VkBuffer与byte offset；F2冷copy span沿该已有来源证明，使用Device+原VkBuffer+offset作canonical identity。
+原allocator每个root单独绑定Memory，views保持同handle；未知external借入为allocation_bytes=0，
+仍因copy usage/alias无证明明确拒绝。首批门包括实际lease binding/import_readonly view回放与unknown外部边界。
 
 ### 当前实施与首轮证据（2026-10-11）
 

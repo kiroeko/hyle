@@ -109,18 +109,20 @@ Result<CopySpan> MemoryAccess::copy_span(const std::shared_ptr<Runtime> &runtime
     return CopySpan{{}, {reinterpret_cast<std::uintptr_t>(runtime->device.get()), 0, 0, 0, 4}, 0};
   if (!view.native_handle()) return std::unexpected(Status::InvalidArgument("Vulkan copy token is empty"));
   const auto &buffer = static_cast<const AllocationToken *>(view.native_handle())->buffer;
-  if (!buffer || buffer->device != runtime->device || buffer->memory == VK_NULL_HANDLE)
+  if (!buffer || buffer->device != runtime->device || buffer->allocation_bytes == 0)
     return std::unexpected(Status::Unimplemented("Vulkan imported copy backing/usage is not proven"));
-  // Original owned allocate_buffer always binds at memory offset zero and has
-  // TRANSFER_SRC/DST usage. Views preserve that actual memory plus byte offset.
+  // Every original owned root has independent DeviceMemory and TRANSFER_SRC/
+  // DST usage. Its views preserve the same VkBuffer, byte offset and actual
+  // allocation_bytes, while clearing memory to prevent duplicate frees.
+  // Unknown external imports have no such allocation/usage proof.
   if (view.offset() > buffer->bytes || view.size() > buffer->bytes - view.offset() ||
       buffer->offset > SIZE_MAX || view.offset() > SIZE_MAX - static_cast<std::size_t>(buffer->offset))
     return std::unexpected(Status::OutOfRange("Vulkan copy exceeds native backing"));
   const auto origin = static_cast<std::size_t>(buffer->offset) + view.offset();
-  std::uint64_t memory_key = 0;
-  static_assert(sizeof(buffer->memory) <= sizeof(memory_key));
-  std::memcpy(&memory_key, &buffer->memory, sizeof(buffer->memory));
-  return CopySpan{buffer, {reinterpret_cast<std::uintptr_t>(runtime->device.get()), memory_key,
+  std::uint64_t backing_key = 0;
+  static_assert(sizeof(buffer->handle) <= sizeof(backing_key));
+  std::memcpy(&backing_key, &buffer->handle, sizeof(buffer->handle));
+  return CopySpan{buffer, {reinterpret_cast<std::uintptr_t>(runtime->device.get()), backing_key,
                          origin, view.size(), 4}, static_cast<VkDeviceSize>(origin)};
 }
 } // namespace detail
