@@ -399,6 +399,9 @@ fixture改为明确释放Result持有的CopyBatchSubmission，保留原build FAI
 断言FAIL，真实stream drain已完成，但原CompletionReaper仍异步退休被放弃event。
 fixture借用allocator/resource必须持续到原回调实际归零；复用该已有reaper，等待实际metadata
 清零设固定5秒deadline，再核对全部uses/live blocks。原FAIL保留，不加线程、mock完成或预算。
+hook只影响instrumented native-call decorator，原Windows CPU/CUDA shipping source/static树
+复跑同一ordinary math target并以dumpbin检查backend archive：`copy_batch_interface`确实存在，
+`set_copy_native_hooks`与原`set_completion_observation_hooks`均缺席；不拿test宏口头保证代签发布库。
 
 有限矩阵覆盖 R=0/1/多范围、同/不同 buffer pair、单/多 phase、重复 source、坏 ID、overlap、
 host/device 原编码、aligned/tail、pending 与 retained result。
