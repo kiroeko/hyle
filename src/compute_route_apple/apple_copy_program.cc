@@ -14,6 +14,7 @@
 #include "hyle/compute/detail/lease_access.h"
 #include "hyle/compute/detail/retained_completion.h"
 #include "hyle/core/assert.h"
+#include "hyle/mem/std_allocator.h"
 #include "hyle/util/ref_counted.h"
 
 namespace hyle::compute::apple::detail {

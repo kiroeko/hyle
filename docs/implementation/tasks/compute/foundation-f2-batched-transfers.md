@@ -244,6 +244,8 @@ worker preflight与公共output/wait的同Completion观察由每opt-in invocatio
 阻塞wait先等待原recording observer，释放观察锁供worker运行，再裁决实际退休，不形成worker/调用者循环。
 本阶段Air门扩到 `AppleCopyProgram.*`（两slot/replay/producer/较早组/取消/放弃/close/reset），
 复跑 `AppleCopyRecording.*:AppleLeaseLifetime.*` 与34项common；独立头、数学和三交付留稳定候选集中门。
+公共Apple首遍 `b7779933a` configure通过，编译发现新compiled source缺少直接StdAllocator include；
+补明确的 `hyle/mem/std_allocator.h`，原FAIL保留，同机器/命令/完整archive重验；未运行不写PASS。
 首遍增加owned-view用例的fixture将raw-copy合法4-byte offset传给既有storage borrow factory，
 后者还要求native storage offset alignment；保留这次FAIL，fixture改为合法zero-origin外部carrier，
 再检验F2的unknown usage拒绝，不修改旧factory或放宽其合同。
