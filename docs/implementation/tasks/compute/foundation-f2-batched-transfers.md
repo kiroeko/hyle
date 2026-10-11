@@ -351,6 +351,9 @@ device ready leases由原Direct与Graph MatMul消费并对独立标量oracle；c
 CPU用同合同host变体，不伪造device能力。此阶段不签Apple/Vulkan或SDK交付；两者接同一
 样例后再沿卡内全矩阵取证。build1/test1、4GiB、configure300/build1800/exe180，冷metadata
 allocator只统计CopyBatch自身；成熟数学准备/Graph编译成本不混入copy replay账。
+同旅程接Vulkan后增加Windows原CPU+Vulkan source/shared普通消费树同一sample门，
+量化沿原GGUF typed MatMul，结果沿原Context.download作独立oracle；复跑共享sample影响的
+CPU/CUDA源码消费者，不运行全算子/P1。native设备结果不能用host mapping读取device-only资源。
 
 有限矩阵覆盖 R=0/1/多范围、同/不同 buffer pair、单/多 phase、重复 source、坏 ID、overlap、
 host/device 原编码、aligned/tail、pending 与 retained result。

@@ -11,12 +11,18 @@
 #include <hyle/compute/backends/cuda.h>
 #include <hyle/graph/cuda.h>
 #endif
+#if defined(HYLE_COMPUTE_VULKAN)
+#include <hyle/compute/vulkan_memory.h>
+#include <hyle/graph/vulkan.h>
+#endif
 
 #include <algorithm>
 #include <array>
 #include <bit>
 #include <cmath>
 #include <cstdio>
+#include <cstddef>
+#include <cstdint>
 #include <span>
 #include <utility>
 
@@ -154,13 +160,14 @@ Status consume(c::Context &context, c::Queue &queue,
   return Status::Ok();
 }
 
-template <class Compile>
-Status common(c::Context &context, m::MemoryResourceRef host,
-              m::MemoryResourceRef device, Compile compile) {
-  std::array<c::Queue, 2> queues;
-  for (auto &queue : queues) {
-    HYLE_ASSIGN_OR_RETURN(queue, context.create_queue());
-  }
+#endif
+
+// The application describes data and stages; every route still executes on
+// its own original owner. This helper never dispatches a native copy itself.
+template <class Invocation, class Submission, class Prepare, class Create,
+          class Consume>
+Status transfer_groups(m::MemoryResourceRef host, m::MemoryResourceRef device,
+                       Prepare prepare, Create create, Consume consume_ready) {
   std::array<c::CopyResourceSpec, 16> resources;
   std::array<c::LeasePool, 16> pools;
   for (unsigned stage = 0; stage < 4; ++stage)
@@ -171,11 +178,11 @@ Status common(c::Context &context, m::MemoryResourceRef host,
           resources[index].resource, 1024, {.max_blocks = 2}));
     }
   HYLE_ASSIGN_OR_RETURN(auto stats, m::StatsAllocator::create(m::system_allocator()));
-  HYLE_ASSIGN_OR_RETURN(auto program, c::CopyBatchProgram::prepare(
-      context, resources, {.max_copies = 12, .max_phases = 6, .allocator = stats.get()}));
-  std::array<c::CopyBatchInvocation, 2> slots;
+  HYLE_ASSIGN_OR_RETURN(auto program, prepare(
+      resources, c::CopyBatchOptions{.max_copies = 12, .max_phases = 6, .allocator = stats.get()}));
+  std::array<Invocation, 2> slots;
   for (unsigned lane = 0; lane < 2; ++lane) {
-    HYLE_ASSIGN_OR_RETURN(slots[lane], c::CopyBatchInvocation::create(program, queues[lane]));
+    HYLE_ASSIGN_OR_RETURN(slots[lane], create(program, lane));
   }
   std::array<c::CopyRange, 12> ranges;
   for (unsigned stage = 0; stage < 3; ++stage)
@@ -184,7 +191,7 @@ Status common(c::Context &context, m::MemoryResourceRef host,
                                {id / 2 * 3 + stage}, 0, 0, kSizes[id]};
   const auto cold_allocations = stats.snapshot().total_allocs;
   for (unsigned replay = 0; replay < 3; ++replay) {
-    std::array<c::CopyBatchSubmission, 2> submissions;
+    std::array<Submission, 2> submissions;
     for (unsigned lane = 0; lane < 2; ++lane) {
       const Payload payload(lane);
       for (unsigned id = 0; id < 16; ++id) {
@@ -215,7 +222,7 @@ Status common(c::Context &context, m::MemoryResourceRef host,
         if (!std::ranges::equal(actual, payload.bytes(id)))
           return Status::Internal("batch changed BF16 or GGUF encoded bytes");
       }
-      HYLE_RETURN_IF_ERROR(consume(context, queues[lane], device, compile, ready, lane));
+      HYLE_RETURN_IF_ERROR(consume_ready(ready, lane));
       const auto report = submissions[lane].report();
       if (report.copies != 12 || report.phase_completions != 6 ||
           report.logical_bytes != 3 * (8 + 8 + 128 + 68))
@@ -230,6 +237,73 @@ Status common(c::Context &context, m::MemoryResourceRef host,
         return Status::Internal("math consumer retained a retired copy block");
   }
   return Status::Ok();
+}
+
+#if defined(HYLE_COMPUTE_CPU) || defined(HYLE_COMPUTE_CUDA)
+template <class Compile>
+Status common(c::Context &context, m::MemoryResourceRef host,
+              m::MemoryResourceRef device, Compile compile) {
+  std::array<c::Queue, 2> queues;
+  for (auto &queue : queues) {
+    HYLE_ASSIGN_OR_RETURN(queue, context.create_queue());
+  }
+  return transfer_groups<c::CopyBatchInvocation, c::CopyBatchSubmission>(
+      host, device,
+      [&](auto resources, auto options) { return c::CopyBatchProgram::prepare(context, resources, options); },
+      [&](const auto &program, unsigned lane) { return c::CopyBatchInvocation::create(program, queues[lane]); },
+      [&](const auto &ready, unsigned lane) { return consume(context, queues[lane], device, compile, ready, lane); });
+}
+#endif
+
+#if defined(HYLE_COMPUTE_VULKAN)
+Status vulkan() {
+  namespace v = c::vulkan;
+  HYLE_ASSIGN_OR_RETURN(auto context, v::Context::create());
+  HYLE_ASSIGN_OR_RETURN(auto host, v::MemoryResource::create(context, v::MemoryKind::kStaging));
+  HYLE_ASSIGN_OR_RETURN(auto device, v::MemoryResource::create(context, v::MemoryKind::kDevice));
+  const auto readable = [&](const v::Tensor &tensor) -> Result<c::ReadLease> {
+    HYLE_ASSIGN_OR_RETURN(auto bytes, tensor.description().required_bytes());
+    HYLE_ASSIGN_OR_RETURN(auto host_buffer, m::Buffer::create(m::system_resource(), bytes, 64));
+    HYLE_ASSIGN_OR_RETURN(auto mapped, host_buffer.view().map_host(m::HostAccess::kWrite));
+    HYLE_ASSIGN_OR_RETURN(auto destination, mapped.writable_bytes());
+    HYLE_RETURN_IF_ERROR(context.download(tensor, destination));
+    HYLE_RETURN_IF_ERROR(mapped.close());
+    return c::ReadLease::adopt(std::move(host_buffer));
+  };
+  const auto consume_ready = [&](const std::array<c::ReadLease, 4> &ready, unsigned lane) -> Status {
+    HYLE_ASSIGN_OR_RETURN(auto desc, descriptions());
+    for (unsigned group = 0; group < 2; ++group) {
+      const auto offset = group * 2;
+      const std::array inputs{v::LeasedInput{desc[offset], ready[offset]},
+                              v::LeasedInput{desc[offset + 1], ready[offset + 1]}};
+      HYLE_ASSIGN_OR_RETURN(auto direct_program, v::prepare(context, c::MatMul{}, desc[offset], desc[offset + 1]));
+      HYLE_ASSIGN_OR_RETURN(auto direct, v::LeasedInvocation::create(direct_program, device));
+      HYLE_RETURN_IF_ERROR(direct.bind(inputs));
+      HYLE_ASSIGN_OR_RETURN(auto done, direct.submit());
+      HYLE_ASSIGN_OR_RETURN(auto result, done.wait());
+      HYLE_ASSIGN_OR_RETURN(auto output, readable(result->tensors()[0]));
+      HYLE_RETURN_IF_ERROR(check(output, desc[offset].data_type(), lane, group));
+
+      HYLE_ASSIGN_OR_RETURN(auto builder, g::GraphBuilder::create());
+      HYLE_ASSIGN_OR_RETURN(auto a, builder.input(desc[offset]));
+      HYLE_ASSIGN_OR_RETURN(auto b, builder.input(desc[offset + 1]));
+      HYLE_ASSIGN_OR_RETURN(auto y, builder.add(c::MatMul{}, a, b));
+      HYLE_RETURN_IF_ERROR(builder.publish(y));
+      HYLE_ASSIGN_OR_RETURN(auto graph, std::move(builder).finish());
+      HYLE_ASSIGN_OR_RETURN(auto program, g::vulkan::compile(context, graph));
+      HYLE_ASSIGN_OR_RETURN(auto invocation, v::LeasedInvocation::create(program, device));
+      HYLE_RETURN_IF_ERROR(invocation.bind(inputs));
+      HYLE_ASSIGN_OR_RETURN(auto graph_done, invocation.submit());
+      HYLE_ASSIGN_OR_RETURN(auto graph_result, graph_done.wait());
+      HYLE_ASSIGN_OR_RETURN(auto graph_output, readable(graph_result->tensors()[0]));
+      HYLE_RETURN_IF_ERROR(check(graph_output, desc[offset].data_type(), lane, group));
+    }
+    return Status::Ok();
+  };
+  return transfer_groups<v::CopyBatchInvocation, v::CopyBatchSubmission>(
+      host.ref(), device.ref(),
+      [&](auto resources, auto options) { return v::CopyBatchProgram::prepare(context, resources, options); },
+      [](const auto &program, unsigned) { return v::CopyBatchInvocation::create(program); }, consume_ready);
 }
 #endif
 
@@ -247,6 +321,13 @@ Status run() {
   HYLE_RETURN_IF_ERROR(common(cuda, host.ref(), device.ref(),
       [&](const g::Graph &graph) { return g::cuda::compile(graph, cuda, device.ref()); }));
   std::puts("CUDA: staged upload/D2D/readback, BF16+Q8 Direct/Graph and three replays passed");
+#endif
+#if defined(HYLE_COMPUTE_VULKAN)
+  HYLE_RETURN_IF_ERROR(vulkan());
+  std::puts("Vulkan: staged upload/D2D/readback, BF16+Q8 Direct/Graph and three replays passed");
+#endif
+#if !defined(HYLE_COMPUTE_CPU) && !defined(HYLE_COMPUTE_CUDA) && !defined(HYLE_COMPUTE_VULKAN)
+  return Status::Unimplemented("batched transfer math sample requires a connected route");
 #endif
   return Status::Ok();
 }
