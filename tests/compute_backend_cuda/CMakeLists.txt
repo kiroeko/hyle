@@ -17,11 +17,15 @@ if(HYLE_COMPUTE_CUDA_ENABLED)
   hyle_add_test(compute_backend_cuda NAME late_failure SOURCES
     cuda_failure_test.cc
     cuda_failure_kernel.cu)
+  hyle_add_test(compute_backend_cuda NAME copy_late_failure SOURCES
+    copy_late_failure_test.cc
+    cuda_failure_kernel.cu)
   target_link_libraries(hyle_compute_backend_cuda_test PRIVATE
     CUDA::cuda_driver)
   foreach(_hyle_cuda_test IN ITEMS
       hyle_compute_backend_cuda_test
-      hyle_compute_backend_cuda_late_failure_test)
+      hyle_compute_backend_cuda_late_failure_test
+      hyle_compute_backend_cuda_copy_late_failure_test)
     set_target_properties(${_hyle_cuda_test} PROPERTIES
       CUDA_STANDARD 17
       CUDA_STANDARD_REQUIRED ON
@@ -34,7 +38,8 @@ if(HYLE_COMPUTE_CUDA_ENABLED)
     # nonstandard-extension diagnostic; ordinary HYLE C++ warnings stay intact.
     foreach(_hyle_cuda_test IN ITEMS
         hyle_compute_backend_cuda_test
-        hyle_compute_backend_cuda_late_failure_test)
+        hyle_compute_backend_cuda_late_failure_test
+        hyle_compute_backend_cuda_copy_late_failure_test)
       target_compile_options(${_hyle_cuda_test} PRIVATE
         "$<$<COMPILE_LANGUAGE:CUDA>:-Xcompiler=/utf-8>"
         "$<$<COMPILE_LANGUAGE:CUDA>:-Xcompiler=/wd4211>")

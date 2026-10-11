@@ -383,6 +383,13 @@ gzip及archive SHA保留。其他平台/fault/头与SDK/P0终审红队仍待候�
 
 ## 预声明验证与停止
 
+候选测试维护补一个独立 `hyle_compute_backend_cuda_copy_late_failure_test` 进程，复用原
+illegal-address kernel及原producer stream：host正常组先ready，另一原writer producer先真实memset
+再晚失败，F2失败组不得发布，旧host组仍可读，实际guards/metadata退休归零。5秒ready/回收
+deadline、Windows与WSL各原CUDA树build1/test1/4GiB、configure300/build1800/exe120；故障进程
+和原backend late-failure分开，不在已毒化primary Context中串跑。仅tests/CMake测试注册维护，
+产品candidate仍03162add0，不增加kernel、公开API或重开owner。
+
 固定candidate的WSL补验已取证，见[当前矩阵](foundation-f2-verification-matrix.md)与
 [原始WSL收据](../../../../evidence/correctness/foundation-f2-wsl-qualification/receipt.json)：8 CUDA/34 common、
 原backend late failure、ordinary BF16/Q8数学、ASan/UBSan/TSan各34＋3及八个共同/native OFF头。
