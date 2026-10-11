@@ -1,0 +1,15 @@
+{
+  "candidate": "e19ada061d4530f247ce5a2bf186a8dca6a8780c",
+  "exec_session_id": 18141,
+  "source": "C:/public/project-hyle/hyle",
+  "producer": "C:/h7/w-vulkan/selected-graph/static-sdk-build",
+  "routes": [
+    "vulkan"
+  ],
+  "linkage": "static",
+  "configuration": "Release/shipping/testsOFF/benchOFF",
+  "parallel": 1,
+  "state": "terminal",
+  "log": "windows-vulkan-static-producer-build.log",
+  "build_exit_code": 0
+}

@@ -572,6 +572,11 @@ SDK 消费同时额外编译、运行原 `cpu_apple_contracts.cc`（Windows CPU+
 不能由空头编译或单独 Direct/native Graph 代签。只改本批 scratch 父工程/入口，不重写公共构建工具。
 保存 candidate、source mirror、编译器、构建模式、命令、原日志与失败；部署副本不是产品源码来源。
 
+Windows Vulkan-only static producer 补齐当前产品后，`8caae9873` 迁址 static SDK 的普通租约消费者通过；
+同一交付收据保存四阶段与 test，EXE-local DLL/system-only PATH。至此 Windows CPU/CUDA/Vulkan 的已声明
+普通 Direct/Graph source/static/shared 格取得证据；新的 managed composition installed 调用与其他平台仍未证明，
+不能由这份单路线消费者收据关闭全部 seven owners。
+
 P0 静态账单须列新增 metadata/引用/锁，及旧普通路径不变的证据；
 热路径以计数验无 allocation/provider search，不为纳秒差改布局。
 

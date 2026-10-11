@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "scope": "F1 Windows CPU/Vulkan source/shared and CPU/CUDA source/static partial delivery qualification",
+  "scope": "Partial F1 Windows CPU CUDA Vulkan source and relocated static/shared lease delivery qualification",
   "candidate": "46cc16937d19952ddea0664df4609be9ed45e5a5",
   "product_candidate": "fc4ffbd1610eb3b24bf76709dc6e5e25b3d838d7",
   "tests": [
@@ -58,6 +58,13 @@
       "verdict": "PASS",
       "receipt": "w-cuda-shared-sdk.json",
       "log": "w-cuda-shared-test.log"
+    },
+    {
+      "name": "Ordinary relocated Vulkan static SDK lease Direct Graph consumer",
+      "verdict": "PASS",
+      "candidate": "8caae98734b6b58ef182a9d111d7f806c15294d2",
+      "receipt": "w-vulkan-static-sdk.json",
+      "log": "w-vulkan-static-test.log"
     }
   ],
   "wsl_vulkan": {
@@ -66,7 +73,7 @@
     "limitation": "Actual loader enumerates only type 4 llvmpipe software device. No native Vulkan math qualification is claimed; applicability follows current F1 card actual GPU rule."
   },
   "limitations": [
-    "Vulkan static and Air/WSL applicable journeys still pending",
+    "Air/WSL applicable journeys and installed managed composition lease consumer qualification still pending",
     "CUDA delivery and Air/WSL applicable journeys still pending",
     "Complete F1 native lease fault/cancel/OOM coverage, sanitizers, full P0 and red team still pending",
     "F1 owners remain AUDITED; F2/F3 have no product implementation"
@@ -104,6 +111,14 @@
     "w-cuda-shared-relocate.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
     "w-cuda-shared-configure.log": "6a2370b79db1c40f62ae93f6836c5357d5b924b951daadfeb6fcad25bb02e850",
     "w-cuda-shared-build.log": "9c49647c41484caef085922df2230842373b7801a0541223195502a03dcac0c2",
-    "w-cuda-shared-test.log": "b7f52e4b9c89887e42fbfa31f630bd52d6674eee461ba1bd1b0c062d933cb33e"
+    "w-cuda-shared-test.log": "b7f52e4b9c89887e42fbfa31f630bd52d6674eee461ba1bd1b0c062d933cb33e",
+    "windows-vulkan-static-producer-job.json": "c618c4fa6a4a16c917353cb04d47e5f3b18986807c7555f7c80cb632b9ec8a1d",
+    "windows-vulkan-static-producer-build.log": "b85aa36a104f420a291c85b94cfef78e71ddae2395c15c827124d9fb57e1f7e7",
+    "w-vulkan-static-sdk.json": "07d9305223cd218d9c7262ab6936fd3a261d47073a9f3c90647d6519cb90111d",
+    "w-vulkan-static-install.log": "5285e750befc0d204a2c6ad34981ea08f583aba96e9d54f1b4af0ce9f460a02e",
+    "w-vulkan-static-relocate.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "w-vulkan-static-configure.log": "4fc6d3f508c544a11b57c01a84d1437c78e973f038f7a5628da6ca0d0b87315d",
+    "w-vulkan-static-build.log": "6a68eb100979c0c843cc57e1cf93b0e8fbb2c75948a1b51f7c03632d320bbb7b",
+    "w-vulkan-static-test.log": "045b330327a8b22e689052a181bcd296b594dd50f7215d9d6936b6bb06309e88"
   }
 }

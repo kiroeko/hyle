@@ -1,0 +1,111 @@
+{
+  "candidate": "8caae98734b6b58ef182a9d111d7f806c15294d2",
+  "source": "C:\\public\\project-hyle\\hyle",
+  "producer": "C:/h7/w-vulkan/selected-graph/static-sdk-build",
+  "routes": [
+    "vulkan"
+  ],
+  "linkage": "static",
+  "delivery": "installed relocated SDK",
+  "compiler": "C:/Program Files/Microsoft Visual Studio/18/Enterprise/VC/Tools/MSVC/14.50.35717/bin/Hostx64/x64/cl.exe",
+  "stages": [
+    {
+      "name": "install",
+      "command": [
+        "C:\\Program Files\\CMake\\bin\\cmake.EXE",
+        "--install",
+        "C:/h7/w-vulkan/selected-graph/static-sdk-build",
+        "--config",
+        "Release",
+        "--prefix",
+        "C:\\h7\\foundation-f1-sdk\\w-vulkan-static-staging"
+      ],
+      "pid": 76756,
+      "state": "terminal",
+      "log": "w-vulkan-static-install.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "5285e750befc0d204a2c6ad34981ea08f583aba96e9d54f1b4af0ce9f460a02e"
+    },
+    {
+      "name": "relocate",
+      "command": [
+        "pwsh",
+        "-NoProfile",
+        "-File",
+        "C:\\public\\project-hyle\\hyle\\.scratch\\foundation-f1\\sdk\\move_sdk.ps1",
+        "-Staging",
+        "C:\\h7\\foundation-f1-sdk\\w-vulkan-static-staging",
+        "-Relocated",
+        "C:\\h7\\foundation-f1-sdk\\w-vulkan-static-relocated"
+      ],
+      "pid": 18648,
+      "state": "terminal",
+      "log": "w-vulkan-static-relocate.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "name": "configure",
+      "command": [
+        "C:\\Program Files\\CMake\\bin\\cmake.EXE",
+        "-S",
+        "C:\\public\\project-hyle\\hyle\\samples\\package\\graph\\resource_leases",
+        "-B",
+        "C:\\h7\\foundation-f1-sdk\\w-vulkan-static-consumer",
+        "-G",
+        "Ninja",
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DCMAKE_CXX_COMPILER=C:/Program Files/Microsoft Visual Studio/18/Enterprise/VC/Tools/MSVC/14.50.35717/bin/Hostx64/x64/cl.exe",
+        "-DCMAKE_PREFIX_PATH=C:\\h7\\foundation-f1-sdk\\w-vulkan-static-relocated",
+        "-DHYLE_COMPUTE_ROUTES=vulkan"
+      ],
+      "pid": 58232,
+      "state": "terminal",
+      "log": "w-vulkan-static-configure.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "4fc6d3f508c544a11b57c01a84d1437c78e973f038f7a5628da6ca0d0b87315d"
+    },
+    {
+      "name": "build",
+      "command": [
+        "C:\\Program Files\\CMake\\bin\\cmake.EXE",
+        "--build",
+        "C:\\h7\\foundation-f1-sdk\\w-vulkan-static-consumer",
+        "--parallel",
+        "1"
+      ],
+      "pid": 87444,
+      "state": "terminal",
+      "log": "w-vulkan-static-build.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "6a68eb100979c0c843cc57e1cf93b0e8fbb2c75948a1b51f7c03632d320bbb7b"
+    },
+    {
+      "name": "test",
+      "command": [
+        "C:\\Program Files\\CMake\\bin\\ctest.EXE",
+        "--test-dir",
+        "C:\\h7\\foundation-f1-sdk\\w-vulkan-static-consumer",
+        "--output-on-failure",
+        "-R",
+        "^hyle_resource_leases_sample$",
+        "--timeout",
+        "180"
+      ],
+      "pid": 84656,
+      "state": "terminal",
+      "log": "w-vulkan-static-test.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "045b330327a8b22e689052a181bcd296b594dd50f7215d9d6936b6bb06309e88"
+    }
+  ],
+  "package_paths": "No canonical source, producer build or staging prefix in Hyle CMake metadata",
+  "local_dlls": {},
+  "runtime_path": "C:\\h7\\foundation-f1-sdk\\w-vulkan-static-consumer;C:/Windows/System32;C:/Windows",
+  "verdict": "PASS"
+}
