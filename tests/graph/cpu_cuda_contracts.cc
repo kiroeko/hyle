@@ -9,6 +9,8 @@
 #include <chrono>
 #include <thread>
 #include <hyle/compute/detail/queue_sequence.h>
+#include <hyle/graph/leased_invocation.h>
+#include <hyle/mem/stats.h>
 
 namespace {
 struct NativeGate final {
@@ -142,6 +144,53 @@ Status contracts() noexcept {
   HYLE_RETURN_IF_ERROR(require(!graph::compile(logical, {.storage_domains = ordinary_storage, .targets = ordinary_targets}, options),
                                "ordinary compile silently enabled cross-device work"));
   const std::array bindings{graph::QueueBinding{graph::ExecutionLaneId{0}, &gpu}, graph::QueueBinding{graph::ExecutionLaneId{1}, &cpu_queue}};
+  {
+    // The original CPU+CUDA compiler produces the common executable. Its
+    // natural leased adapter reuses the same domains, plan and queue bindings.
+    auto metadata = mem::StatsAllocator::create(mem::system_allocator()).value();
+    HYLE_ASSIGN_OR_RETURN(auto host_leases, compute::LeasePool::create(mem::system_resource(), 1024,
+        {.max_blocks = 3, .allocator = metadata.get()}));
+    HYLE_ASSIGN_OR_RETURN(auto device_leases, compute::LeasePool::create(device.ref(), 16384,
+        {.max_blocks = 1, .allocator = metadata.get()}));
+    HYLE_ASSIGN_OR_RETURN(auto x_write, host_leases.allocate(256));
+    HYLE_ASSIGN_OR_RETURN(auto s_write, host_leases.allocate(256));
+    HYLE_ASSIGN_OR_RETURN(auto destination, host_leases.allocate(256));
+    HYLE_ASSIGN_OR_RETURN(auto w_write, device_leases.allocate(16384));
+    HYLE_RETURN_IF_ERROR(x_write.view()->write(std::as_bytes(std::span(ones))));
+    HYLE_RETURN_IF_ERROR(s_write.view()->write(std::as_bytes(std::span(ones))));
+    HYLE_RETURN_IF_ERROR(w_write.view()->write(std::as_bytes(std::span(data))));
+    HYLE_ASSIGN_OR_RETURN(auto x_read, x_write.publish());
+    HYLE_ASSIGN_OR_RETURN(auto s_read, s_write.publish());
+    HYLE_ASSIGN_OR_RETURN(auto w_read, w_write.publish());
+    HYLE_ASSIGN_OR_RETURN(auto leased, graph::LeasedInvocation::create(compiled.executable,
+        {.allocator = metadata.get()}));
+    HYLE_RETURN_IF_ERROR(leased.bind(x, row, x_read));
+    HYLE_RETURN_IF_ERROR(leased.bind(s, scale_desc, s_read));
+    HYLE_RETURN_IF_ERROR(leased.bind(w, matrix, w_read));
+    HYLE_RETURN_IF_ERROR(leased.bind(y, row, std::move(destination)));
+    x_read.reset(); s_read.reset(); w_read.reset();
+    HYLE_RETURN_IF_ERROR(leased.prepare_replay(bindings));
+    { HYLE_ASSIGN_OR_RETURN(auto warm, leased.submit(bindings)); HYLE_RETURN_IF_ERROR(warm.wait()); }
+    const auto cold = metadata.snapshot().total_allocs;
+    for (int iteration = 0; iteration < 8; ++iteration) {
+      HYLE_ASSIGN_OR_RETURN(auto result, leased.output(y));
+      HYLE_ASSIGN_OR_RETURN(auto view, result.tensor());
+      std::array<float, 64> actual;
+      HYLE_RETURN_IF_ERROR(view.storage().read(std::as_writable_bytes(std::span(actual))));
+      for (auto value : actual) HYLE_RETURN_IF_ERROR(require(std::abs(value - 2 / std::sqrt(1.00001f)) < 1e-4f,
+          "leased CPU+CUDA mixed math differs"));
+      HYLE_RETURN_IF_ERROR(require(!leased.submit(bindings).has_value(), "old mixed output allowed overwrite"));
+      result.reset();
+      HYLE_ASSIGN_OR_RETURN(auto next, leased.submit(bindings)); HYLE_RETURN_IF_ERROR(next.wait());
+    }
+    HYLE_RETURN_IF_ERROR(require(metadata.snapshot().total_allocs == cold, "CPU+CUDA lease replay allocated metadata"));
+    HYLE_ASSIGN_OR_RETURN(auto held, leased.submit(bindings));
+    HYLE_RETURN_IF_ERROR(leased.drain()); HYLE_RETURN_IF_ERROR(held.wait());
+    HYLE_RETURN_IF_ERROR(require(host_leases.stats().active_uses == 0 && device_leases.stats().active_uses == 0,
+        "CPU+CUDA drain did not retire both domains"));
+    HYLE_RETURN_IF_ERROR(require(!leased.submit(bindings).has_value(), "closed leased CPU+CUDA accepted work"));
+    std::printf("F1 CPU+CUDA: original mixed plan, leased host/device math, eight allocation-free replays and held completion drain passed\n");
+  }
   hyle::sched::Scheduler scheduler(1, mem::system_allocator(), 16);
   HYLE_ASSIGN_OR_RETURN(auto native, compiled.executable.create_invocation());
   for (int limit = 0; limit < 3; ++limit) {
