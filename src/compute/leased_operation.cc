@@ -5,6 +5,7 @@
 #include <vector>
 
 #include "hyle/core/assert.h"
+#include "hyle/compute/detail/retained_completion.h"
 #include "hyle/mem/std_allocator.h"
 
 namespace hyle::compute {
@@ -17,6 +18,8 @@ struct LeasedOperationState final {
   WriteLease workspace{};
   OperationInvocation invocation{};
   LeaseUsePool uses{};
+  RetainedCompletion completion{};
+  bool closed = false;
   std::vector<ConstTensorView, mem::StdAllocator<ConstTensorView>> inputs;
   std::vector<TensorView, mem::StdAllocator<TensorView>> outputs;
 };
@@ -67,6 +70,7 @@ Result<LeasedOperationInvocation> LeasedOperationInvocation::create(
   if (!storage) return std::unexpected(Status::ResourceExhausted("leased operation state metadata"));
   auto *state = std::construct_at(static_cast<detail::LeasedOperationState *>(storage), allocator);
   LeasedOperationInvocation result(state);
+  HYLE_ASSIGN_OR_RETURN(state->completion, detail::RetainedCompletion::create(allocator));
   try {
     state->inputs.resize(inputs);
     state->outputs.resize(outputs);
@@ -89,9 +93,12 @@ ProviderIdentity LeasedOperationInvocation::provider() const noexcept {
 Result<Completion> LeasedOperationInvocation::submit(Queue &queue,
     std::span<const LeasedInput> inputs, std::span<const LeasedOutput> outputs) noexcept {
   if (!state_) return std::unexpected(Status::FailedPrecondition("leased operation is empty"));
+  if (state_->closed) return std::unexpected(Status::FailedPrecondition("leased operation is closed"));
   if (inputs.size() != state_->inputs.size() || outputs.size() != state_->outputs.size())
     return std::unexpected(Status::InvalidArgument("leased operation port counts differ"));
   if (in_flight()) return std::unexpected(Status::Unavailable("leased operation is in flight"));
+  if (!state_->completion.available())
+    return std::unexpected(Status::Unavailable("old leased operation completion retains its slot"));
 
   // Capture borrowed views before write-use admission blocks mutable access.
   for (std::size_t index = 0; index < inputs.size(); ++index) {
@@ -123,6 +130,20 @@ Result<Completion> LeasedOperationInvocation::submit(Queue &queue,
   HYLE_FATAL_ASSERT(completion->valid());
   const auto attached = use.attach(*completion);
   HYLE_FATAL_ASSERT(attached.ok());
-  return std::move(*completion);
+  return state_->completion.publish(std::move(*completion));
+}
+Status LeasedOperationInvocation::close() noexcept {
+  if (!state_) return Status::Ok();
+  state_->closed = true;
+  state_->uses.close().IgnoreError();
+  return in_flight() ? Status::Unavailable("leased operation has native work") : Status::Ok();
+}
+Status LeasedOperationInvocation::drain() noexcept {
+  if (!state_) return Status::Ok();
+  close().IgnoreError();
+  const auto terminal = state_->completion.wait();
+  if (!terminal.ok() && state_->uses.active_batches() != 0) return terminal;
+  HYLE_RETURN_IF_ERROR(state_->uses.drain());
+  return terminal;
 }
 } // namespace hyle::compute

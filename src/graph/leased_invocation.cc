@@ -8,6 +8,7 @@
 #include <vector>
 
 #include "hyle/compute/detail/completion_access.h"
+#include "hyle/compute/detail/retained_completion.h"
 #include "hyle/core/assert.h"
 #include "hyle/mem/std_allocator.h"
 #include "hyle/util/ref_counted.h"
@@ -43,6 +44,7 @@ struct LeasedInvocationState final : util::RefCounted<LeasedInvocationState> {
   std::vector<compute::detail::CompletionRetention,
               mem::StdAllocator<compute::detail::CompletionRetention>> retentions;
   compute::LeaseUseBatch batch{};
+  compute::detail::RetainedCompletion completion{};
   util::SpinLock lock{};
   Status first_error{};
   std::atomic<std::size_t> remaining{0}, results{0};
@@ -71,6 +73,8 @@ Status control_ready(LeasedInvocationState *state) noexcept {
     return Status::Unavailable("leased graph invocation is in flight");
   if (state->results.load(std::memory_order_acquire) != 0)
     return Status::Unavailable("leased graph results still retain this invocation");
+  if (!state->completion.available())
+    return Status::Unavailable("old leased graph completion retains its slot");
   return Status::Ok();
 }
 void record_error(LeasedInvocationState *state, const Status &error) noexcept {
@@ -179,12 +183,14 @@ LeasedInvocation::LeasedInvocation(LeasedInvocation &&other) noexcept
     : state_(std::exchange(other.state_, nullptr)) {}
 LeasedInvocation &LeasedInvocation::operator=(LeasedInvocation &&other) noexcept {
   if (this != &other) {
-    if (state_) { close().IgnoreError(); detail::release_owner(state_); }
+    if (state_) { close().IgnoreError(); state_->completion.reset(); detail::release_owner(state_); }
     state_ = std::exchange(other.state_, nullptr);
   }
   return *this;
 }
-LeasedInvocation::~LeasedInvocation() { if (state_) { close().IgnoreError(); detail::release_owner(state_); } }
+LeasedInvocation::~LeasedInvocation() {
+  if (state_) { close().IgnoreError(); state_->completion.reset(); detail::release_owner(state_); }
+}
 Result<LeasedInvocation> LeasedInvocation::create(const Executable &executable,
     LeasedInvocationOptions options, std::span<const ShapeBinding> shape) noexcept {
   if (!executable.valid() || !options.allocator.valid())
@@ -205,6 +211,7 @@ Result<LeasedInvocation> LeasedInvocation::create(const Executable &executable,
   if (!storage) return std::unexpected(Status::ResourceExhausted("leased graph state metadata"));
   auto *state = std::construct_at(static_cast<detail::LeasedInvocationState *>(storage), allocator);
   LeasedInvocation result(state);
+  HYLE_ASSIGN_OR_RETURN(state->completion, compute::detail::RetainedCompletion::create(allocator));
   state->invocation = std::move(invocation); state->uses = std::move(uses);
   try {
     state->bindings.resize(inputs);
@@ -323,7 +330,8 @@ Result<compute::Completion> LeasedInvocation::submit(std::span<const QueueBindin
     detail::record_error(state_, completion.error());
   }
   detail::release_episode(state_); // admission sentinel, never GPU preemption
-  return completion;
+  if (!completion) return std::unexpected(std::move(completion).error());
+  return state_->completion.publish(std::move(*completion));
 }
 Result<LeasedGraphOutput> LeasedInvocation::output(ValueId value) noexcept {
   if (!state_) return std::unexpected(Status::FailedPrecondition("leased graph is empty"));
@@ -344,8 +352,11 @@ Status LeasedInvocation::close() noexcept {
 Status LeasedInvocation::drain() noexcept {
   if (!state_) return Status::Ok();
   close().IgnoreError();
+  const auto observed = state_->completion.wait();
+  if (!observed.ok() && state_->busy.load(std::memory_order_acquire)) return observed;
   while (state_->busy.load(std::memory_order_acquire)) state_->busy.wait(true, std::memory_order_acquire);
   std::lock_guard guard(state_->lock);
+  state_->first_error.Update(observed);
   return state_->first_error;
 }
 } // namespace hyle::graph

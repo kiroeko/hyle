@@ -11,6 +11,7 @@
 #include "completion_internal.h"
 #include "hyle/compute/completion.h"
 #include "hyle/compute/detail/generated_result.h"
+#include "hyle/compute/detail/retained_completion.h"
 #if !defined(HYLE_STATIC)
 #include "result_owner_fixture.h"
 #endif
@@ -101,6 +102,52 @@ void observe_terminal(void *state, const hyle::Status &terminal) noexcept {
 
 void release_lifetime(void *state) noexcept {
   ++static_cast<LifetimeProbe *>(state)->release_count;
+}
+
+TEST(Completion, RetainedObserverDrainsWhilePublicHandleIsHeld) {
+  auto owner = hyle::compute::detail::RetainedCompletion::create(hyle::mem::system_allocator()).value();
+  AsyncProbe probe;
+  auto completion = owner.publish(hyle::compute::detail::CompletionAccess::make(&kAsyncVTable, &probe));
+  EXPECT_FALSE(owner.available());
+  ASSERT_TRUE(owner.wait().ok());
+  EXPECT_EQ(probe.waits, 1u);
+  EXPECT_FALSE(owner.available()); // the old public episode must not be overwritten
+  ASSERT_TRUE(completion.wait().ok());
+  EXPECT_TRUE(owner.available());
+  EXPECT_EQ(probe.waits, 1u);
+}
+
+TEST(Completion, RetainedObserverForwardsAttachmentOnlyAfterActualUnknownRetirement) {
+  auto owner = hyle::compute::detail::RetainedCompletion::create(hyle::mem::system_allocator()).value();
+  AsyncProbe native;
+  native.observation_failed = true;
+  auto completion = owner.publish(hyle::compute::detail::CompletionAccess::make(&kAsyncVTable, &native));
+  LifetimeProbe probe;
+  hyle::compute::detail::CompletionLifetime lifetime{&probe, &observe_terminal, &release_lifetime};
+  ASSERT_TRUE(hyle::compute::detail::CompletionAccess::attach_lifetime(completion, lifetime).ok());
+  EXPECT_FALSE(completion.poll().has_value());
+  EXPECT_FALSE(owner.wait().ok());
+  EXPECT_EQ(probe.release_count, 0u);
+  EXPECT_FALSE(owner.available());
+  ASSERT_TRUE(native.abandoned.valid());
+  native.complete = true;
+  native.abandoned.terminal(native.abandoned.state, native.abandoned_hint);
+  native.abandoned.release(native.abandoned.state);
+  native.abandoned = {};
+  EXPECT_EQ(probe.terminal_count, 1u);
+  EXPECT_EQ(probe.release_count, 1u);
+  EXPECT_FALSE(probe.terminal_ok);
+  EXPECT_TRUE(owner.available());
+}
+
+TEST(Completion, RetainedObserverMayBeDroppedBeforePublicCompletion) {
+  auto owner = hyle::compute::detail::RetainedCompletion::create(hyle::mem::system_allocator()).value();
+  AsyncProbe native;
+  auto completion = owner.publish(hyle::compute::detail::CompletionAccess::make(&kAsyncVTable, &native));
+  owner.reset();
+  EXPECT_FALSE(native.destroyed);
+  EXPECT_TRUE(completion.wait().ok());
+  EXPECT_TRUE(native.destroyed);
 }
 
 TEST(Completion, ImmediateSuccessAndFailureRemainInline) {

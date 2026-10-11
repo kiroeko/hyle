@@ -55,6 +55,12 @@ public:
   HYLE_COMPUTE_API Result<Completion>
   submit(Queue &queue, std::span<const LeasedInput> inputs,
          std::span<const LeasedOutput> outputs) noexcept;
+  // Observations of this owner and its Completion are externally serialized.
+  // One cold completion slot: observe/drop an old Completion before replay.
+  HYLE_COMPUTE_API Status close() noexcept;
+  // Observes this accepted run even while its public Completion is held.
+  // Unknown retirement returns its original error and retains native uses.
+  HYLE_COMPUTE_API Status drain() noexcept;
 private:
   explicit LeasedOperationInvocation(detail::LeasedOperationState *state) noexcept : state_(state) {}
   detail::LeasedOperationState *state_ = nullptr;

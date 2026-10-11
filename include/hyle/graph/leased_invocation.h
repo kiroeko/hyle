@@ -72,6 +72,8 @@ public:
   HYLE_GRAPH_API Result<compute::Completion> submit(compute::Queue &queue) noexcept;
   HYLE_GRAPH_API Result<compute::Completion> submit(std::span<const QueueBinding> queues) noexcept;
   HYLE_GRAPH_API Result<LeasedGraphOutput> output(ValueId value) noexcept;
+  // Control and public Completion observations are externally serialized.
+  // Observe/drop the old public Completion before reusing its one cold slot.
   // Stops new admission without a device-wide wait. Existing results survive.
   HYLE_GRAPH_API Status close() noexcept;
   HYLE_GRAPH_API Status drain() noexcept;

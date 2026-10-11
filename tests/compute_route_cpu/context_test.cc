@@ -19,6 +19,7 @@
 #include "hyle/compute/cpu.h"
 #include "hyle/compute/low_precision.h"
 #include "hyle/compute/prepared_operation.h"
+#include "hyle/compute/leased_operation.h"
 #include "hyle/compute/providers/ggml_cpu.h"
 #include "hyle/compute/providers/native.h"
 #if defined(HYLE_COMPUTE_ONEDNN)
@@ -26,6 +27,7 @@
 #endif
 #if defined(HYLE_TEST_GRAPH_ROUTE_CPU)
 #include "hyle/graph/cpu.h"
+#include "hyle/graph/leased_invocation.h"
 #endif
 #include "hyle/mem/quota_allocator.h"
 #include "hyle/mem/stats.h"
@@ -65,6 +67,113 @@ TEST(CpuDefaultContext, MatureDefaultsHavePolicyWithoutModelOrHardwareProfile) {
   EXPECT_EQ(prepared->runtime_properties().replay_class,
             explicit_program->runtime_properties().replay_class);
 }
+
+TEST(CpuDefaultContext, LeasedMatMulKeepsPermissionsAndHasNoHotLeaseAllocation) {
+  auto context = create_context().value();
+  auto queue = context.create_queue().value();
+  auto stats = hyle::mem::StatsAllocator::create(hyle::mem::system_allocator()).value();
+  auto pool = LeasePool::create(hyle::mem::system_resource(), 1024,
+      {.max_blocks = 3, .allocator = stats.get()}).value();
+  auto left_write = pool.allocate(16).value(), right_write = pool.allocate(16).value();
+  auto output = pool.allocate(16).value();
+  const auto desc = matrix(2, 2);
+  const std::array<float, 4> values{1, 2, 3, 4}, identity{1, 0, 0, 1};
+  ASSERT_TRUE(left_write.view()->write(std::as_bytes(std::span(values))).ok());
+  ASSERT_TRUE(right_write.view()->write(std::as_bytes(std::span(identity))).ok());
+  auto left = left_write.publish().value(), right = right_write.publish().value();
+  auto prepared = prepare(context, Operation(MatMul{}),
+      std::array{left.tensor(desc).value(), right.tensor(desc).value()},
+      std::array{output.tensor(desc).value()}).value();
+  LeasePool workspace_pool;
+  WriteLease workspace;
+  const auto required = prepared.workspace_requirement();
+  if (required.size) {
+    const auto alignment = (std::max)(required.alignment, std::size_t{256});
+    workspace_pool = LeasePool::create(hyle::mem::system_resource(), required.size,
+        {.max_blocks = 1, .backing_alignment = alignment, .allocator = stats.get()}).value();
+    workspace = workspace_pool.allocate(required.size, alignment).value();
+  }
+  auto invocation = LeasedOperationInvocation::create(prepared, std::move(workspace),
+      {.allocator = stats.get()}).value();
+  const std::array inputs{LeasedInput(desc, left), LeasedInput(desc, right)};
+  const std::array outputs{LeasedOutput(desc, output)};
+  const auto cold = stats.snapshot().total_allocs;
+  for (int iteration = 0; iteration < 8; ++iteration) {
+    auto completion = invocation.submit(queue, inputs, outputs).value();
+    ASSERT_TRUE(completion.wait().ok());
+    auto ready = output.publish().value();
+    auto reader = ready;
+    EXPECT_FALSE(ready.try_write().has_value());
+    std::array<float, 4> actual{};
+    ASSERT_TRUE(ready.view()->read(std::as_writable_bytes(std::span(actual))).ok());
+    EXPECT_EQ(actual, values);
+    reader.reset();
+    output = ready.try_write().value();
+  }
+  EXPECT_EQ(stats.snapshot().total_allocs, cold);
+  auto held = invocation.submit(queue, inputs, outputs).value();
+  ASSERT_TRUE(invocation.drain().ok());
+  ASSERT_TRUE(held.wait().ok());
+  EXPECT_FALSE(invocation.submit(queue, inputs, outputs).has_value());
+  EXPECT_EQ(pool.stats().active_uses, 0u);
+}
+
+#if defined(HYLE_TEST_GRAPH_ROUTE_CPU)
+TEST(CpuDefaultContext, LeasedGraphRetainsCallerOutputAndSourceAliasThroughDrain) {
+  namespace graph = hyle::graph;
+  auto context = create_context().value();
+  auto queue = context.create_queue().value();
+  auto stats = hyle::mem::StatsAllocator::create(hyle::mem::system_allocator()).value();
+  auto pool = LeasePool::create(hyle::mem::system_resource(), 1024,
+      {.max_blocks = 3, .allocator = stats.get()}).value();
+  auto a_write = pool.allocate(16).value(), b_write = pool.allocate(16).value();
+  auto destination = pool.allocate(16).value();
+  const auto desc = matrix(2, 2);
+  const std::array<float, 4> values{1, 2, 3, 4}, identity{1, 0, 0, 1};
+  ASSERT_TRUE(a_write.view()->write(std::as_bytes(std::span(values))).ok());
+  ASSERT_TRUE(b_write.view()->write(std::as_bytes(std::span(identity))).ok());
+  auto left = a_write.publish().value(), right = b_write.publish().value();
+  auto builder = graph::GraphBuilder::create().value();
+  const auto a_id = builder.input(desc).value(), b_id = builder.input(desc).value();
+  const auto product = builder.add(MatMul{}, a_id, b_id).value();
+  ASSERT_TRUE(builder.publish(product).ok());
+  ASSERT_TRUE(builder.publish(a_id).ok());
+  auto definition = std::move(builder).finish().value();
+  auto compiled = graph::compile(definition, context).value();
+  auto invocation = graph::LeasedInvocation::create(compiled.executable,
+      {.allocator = stats.get()}).value();
+  ASSERT_TRUE(invocation.bind(a_id, desc, left).ok());
+  ASSERT_TRUE(invocation.bind(b_id, desc, right).ok());
+  ASSERT_TRUE(invocation.bind(product, desc, std::move(destination)).ok());
+  left.reset(); right.reset();
+  const auto cold = stats.snapshot().total_allocs;
+  for (int iteration = 0; iteration < 8; ++iteration) {
+    auto completion = invocation.submit(queue).value();
+    ASSERT_TRUE(completion.wait().ok());
+    auto result = invocation.output(product).value();
+    auto reader = result;
+    EXPECT_FALSE(invocation.reset().ok());
+    EXPECT_FALSE(invocation.submit(queue).has_value());
+    std::array<float, 4> actual{};
+    ASSERT_TRUE(result.tensor()->storage().read(std::as_writable_bytes(std::span(actual))).ok());
+    EXPECT_EQ(actual, values);
+  }
+  EXPECT_EQ(stats.snapshot().total_allocs, cold);
+  auto held = invocation.submit(queue).value();
+  ASSERT_TRUE(invocation.drain().ok());
+  EXPECT_EQ(pool.stats().active_uses, 0u);
+  ASSERT_TRUE(held.wait().ok());
+  auto result = invocation.output(a_id).value();
+  auto exported = result.storage_lease().value();
+  result.reset(); invocation = {};
+  EXPECT_EQ(pool.stats().live_blocks, 1u);
+  std::array<float, 4> actual{};
+  ASSERT_TRUE(exported.view()->read(std::as_writable_bytes(std::span(actual))).ok());
+  EXPECT_EQ(actual, values);
+  exported.reset();
+  EXPECT_EQ(pool.stats().live_blocks, 0u);
+}
+#endif
 
 #if defined(HYLE_COMPUTE_ONEDNN)
 TEST(CpuDefaultContext, PlainAndTransposedMatricesKeepQualifiedDefaults) {

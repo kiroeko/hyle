@@ -540,6 +540,25 @@ TEST(CublasProvider, LeasedDirectRetainsNativeUsesAndReplaysWithoutLeaseAllocati
   }
   EXPECT_EQ(metadata.allocations.load(), cold_allocations);
 
+  {
+    compute::LeasePool held_workspace_pool;
+    compute::WriteLease held_workspace;
+    if (needed.size) {
+      const auto alignment = (std::max)(needed.alignment, std::size_t{256});
+      held_workspace_pool = compute::LeasePool::create(resource.ref(), needed.size,
+          {.max_blocks = 1, .backing_alignment = alignment, .allocator = metadata.ref()}).value();
+      held_workspace = held_workspace_pool.allocate(needed.size, alignment).value();
+    }
+    auto held_run = compute::LeasedOperationInvocation::create(prepared,
+        std::move(held_workspace), {.allocator = metadata.ref()}).value();
+    auto held = held_run.submit(queue, inputs, outputs).value();
+    ASSERT_TRUE(held_run.drain().ok());
+    EXPECT_FALSE(held_run.in_flight());
+    EXPECT_FALSE(held_run.submit(queue, inputs, outputs).has_value());
+    ASSERT_TRUE(held.wait().ok());
+    EXPECT_EQ(pool.stats().active_uses, 0u);
+  }
+
   LeasedStreamGate gate;
   gate.stream = cuda::stream(queue).value();
   ASSERT_EQ(cudaLaunchHostFunc(gate.stream, &LeasedStreamGate::wait, &gate), cudaSuccess);

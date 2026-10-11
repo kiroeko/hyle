@@ -257,10 +257,11 @@ TEST(GraphNativeRetirement, LeasedGraphOwnsBindingsAndOldResultsPreventReplay) {
   EXPECT_FALSE(invocation.output(product).has_value());
   EXPECT_TRUE(invocation.close().IsUnavailable());
   EXPECT_FALSE(invocation.submit(queue).has_value());
-  pending = {}; // abandonment must preserve accepted native work
+  // An unobserved held Completion must not prevent this adapter from draining.
   EXPECT_EQ(pool.stats().active_uses, 3u);
   gate.release();
   ASSERT_TRUE(invocation.drain().ok());
+  ASSERT_TRUE(pending.wait().ok());
   EXPECT_EQ(pool.stats().active_uses, 0u);
   EXPECT_EQ(metadata.allocations, cold_allocations);
   auto alias = invocation.output(a_id).value();
