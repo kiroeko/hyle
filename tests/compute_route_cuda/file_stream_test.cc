@@ -118,4 +118,37 @@ TEST(CudaFileStream, FailedProducerNeverPublishesNormalOrEmptyWriteGroup) {
     pipeline.drain().IgnoreError(); pipeline = {}; host.scheduler.shutdown(); EXPECT_TRUE(host.metadata.balanced());
   }
 }
+TEST(CudaFileStream, FailedFirstGroupRetiresAdmittedProducerOfUnstartedSuffix) {
+  Native native; f::Host host;
+  auto pool = c::LeasePool::create(native.device.ref(), 2048).value();
+  auto writer = pool.allocate(256).value(); auto pointer = cu::pointer<std::byte>(writer.view().value()).value();
+  auto producer_queue = native.context.create_queue().value();
+  auto uses = c::LeaseUsePool::create().value(); auto use = uses.begin().value();
+  ASSERT_TRUE(use.write(writer).ok());
+  ProducerGate gate; ReleaseGate release{gate, native.context};
+  auto producer = cu::submit(producer_queue, [&gate, pointer](cudaStream_t stream) noexcept -> cudaError_t {
+    auto blocked = cudaLaunchHostFunc(stream, &ProducerGate::wait, &gate);
+    return blocked == cudaSuccess ? cudaMemsetAsync(pointer, 0x5d, 256, stream) : blocked;
+  }).value();
+  ASSERT_TRUE(use.attach(producer).ok());
+  auto sink = host.file({}, 512);
+  auto readonly = hyle::platform::open_file(host.paths.back().c_str(), hyle::platform::kOpenRead).value();
+  auto imported = hyle::io::File::adopt(host.io, 0, std::move(readonly)).value();
+  auto readonly_sink = c::StreamFile::adopt(std::move(imported), 512).value();
+  auto ready_writer = pool.allocate(256).value(); auto ready = ready_writer.publish().value();
+  std::array<c::StreamWriteRange, 2> ranges{
+      c::StreamWriteRange::ready(ready, 0, 0, 256),
+      c::StreamWriteRange::produced(std::move(writer), std::move(producer), 256, 0, 256)};
+  std::array<c::StreamWriteGroup, 2> groups{{{101, std::span(ranges).first(1)}, {102, std::span(ranges).subspan(1)}}};
+  auto pipeline = native.create(host, 1); auto ticket = pipeline.write(readonly_sink, groups).value();
+  auto result = ticket.wait(); EXPECT_FALSE(result.status.ok()); EXPECT_EQ(result.ready_groups, 0u);
+  EXPECT_EQ(result.written_bytes, 0u); EXPECT_FALSE(result.retirement_proven);
+  EXPECT_GT(pool.stats().active_uses, 0u);
+  ticket = {}; pipeline = {}; gate.release(); ASSERT_TRUE(native.context.drain().ok());
+  host.scheduler.shutdown();
+  const auto retired = std::chrono::steady_clock::now() + std::chrono::seconds(5);
+  while ((pool.stats().active_uses != 0 || !host.metadata.balanced()) && std::chrono::steady_clock::now() < retired)
+    std::this_thread::sleep_for(std::chrono::milliseconds(1));
+  EXPECT_EQ(pool.stats().active_uses, 0u); EXPECT_TRUE(host.metadata.balanced());
+}
 } // namespace

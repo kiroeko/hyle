@@ -486,6 +486,12 @@ Windows新过期deadline、重复stop/close/drain、原用户资源仍可用组�
 Windows CPU五个动作、Air native仅共同库/route链接增量；没有新产品纠正或全库测试。
 当前实际平台风险已齐，new installed头、普通static/shared/迁址和终审仍未完成。
 
+候选红队读取`stream_worker`/`kick_locked`发现一个尚未直接反证的原F3-06组合：K=1时，
+首组错误把尚未启动suffix标Failed；后组已接纳async producer的Completion仍在request目录中，
+可能形成state→Completion→retention→state环。新增CUDA原生两组fixture，让第一组真实readonly
+File写错、第二组原GPU producer阻塞；drop控制后放行并核对实际uses/allocator是否退休。
+本提交仅增加测试，产品候选不改；未运行前保持UNPROVEN，不把源码疑点写成已证明FAIL。
+
 ## 解析器与真实权重验收
 
 格式解析不进入 pipeline。GGUF 用现有 ggml 格式核；本地 Qwen3.5-2B 原始 Safetensors
