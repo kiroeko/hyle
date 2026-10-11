@@ -216,6 +216,11 @@ native Run callback尾部仍可能释放其control block，metadata采用原Reso
 本阶段增加 `VulkanCopyProgram.*`（二slot/三phase/原producer/old result/reset/close与真实故障prefix），
 精确复跑 `VulkanCopyRecording.*`、34项common，及共享控制抽取直接影响的原 `CpuCopyProgram.*` /
 `CudaCopyProgram.*:CudaCopyBatch.*`；仍串行原树/固定时限/4GiB，无全算子/P1。
+首次configure在中央include owner检查发现新native控制state直接使用已关闭 `util_core::RefCounted`，
+缺少route的direct private edge。实际borrow理由是原子refcount及最后native callback之后的metadata寿命；
+沿中央组件图只为当前AUDITED `compute_route_vulkan`补 `PRIVATE_DEPS util_core`，
+不重开Util、不实现私有refcount、不修改checker/公共工具或普通用户开关。该组件早已在Compute传递闭包，
+公开形状/owner/方向不变；保留首次configure失败，不据此重置本卡预算。
 首遍增加owned-view用例的fixture将raw-copy合法4-byte offset传给既有storage borrow factory，
 后者还要求native storage offset alignment；保留这次FAIL，fixture改为合法zero-origin外部carrier，
 再检验F2的unknown usage拒绝，不修改旧factory或放宽其合同。
