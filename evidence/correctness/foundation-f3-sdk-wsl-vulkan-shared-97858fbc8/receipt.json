@@ -1,0 +1,166 @@
+{
+  "schema_version": 1,
+  "candidate": "97858fbc88a6b5a87f109290b956eeaeee632dd2",
+  "product_commit": "97858fbc88a6b5a87f109290b956eeaeee632dd2",
+  "host": "wsl",
+  "profile": "vulkan",
+  "mode": "shared",
+  "scope": "F3 ordinary relocated installed Graph file/GGUF/Qwen consumer and changed ON/OFF headers only",
+  "relocation": {
+    "original": "/root/hyle-scratch/compute-unified/foundation-f3-sdk-vulkan-shared-97858fbc8/staging",
+    "relocated": "/root/hyle-scratch/compute-unified/foundation-f3-sdk-vulkan-shared-97858fbc8/relocated",
+    "original_absent": true,
+    "Hyle_metadata_no_source_build_staging_paths": true
+  },
+  "header_scope": {
+    "count": 6,
+    "routes": "vulkan",
+    "source_include_directory_requested": false
+  },
+  "absent_headers_and_route_diagnostics": [
+    "cpu",
+    "cuda",
+    "apple"
+  ],
+  "runtime_dlls": null,
+  "actual_dyld": null,
+  "identity": {
+    "os": "Linux kiro-workstation 6.18.40.1-microsoft-standard-WSL2 #1 SMP PREEMPT_DYNAMIC Fri Jul 31 22:12:15 UTC 2026 x86_64 x86_64 x86_64 GNU/Linux\n",
+    "compiler": "g++-14 (Ubuntu 14.2.0-4ubuntu2~24.04.1) 14.2.0\nCopyright (C) 2024 Free Software Foundation, Inc.\nThis is free software; see the source for copying conditions.  There is NO\nwarranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.\n\n"
+  },
+  "gpu_math": "NOT_APPLICABLE: actual WSL physical devices are software llvmpipe, no qualified native GPU. Installed consumer build/header/package/relocation gates remain applicable.",
+  "device_qualification": {
+    "vulkan": {
+      "loader": "libvulkan.so.1",
+      "devices": [
+        {
+          "api_version": 4211006,
+          "driver_version": 104865800,
+          "vendor_id": 65541,
+          "device_id": 0,
+          "device_type": 4,
+          "name": "llvmpipe (LLVM 20.1.2, 256 bits)",
+          "software": true
+        }
+      ],
+      "icds": {
+        "lvp_icd.json": {
+          "ICD": {
+            "api_version": "1.4.318",
+            "library_path": "libvulkan_lvp.so"
+          },
+          "file_format_version": "1.0.1"
+        },
+        "gfxstream_vk_icd.json": {
+          "ICD": {
+            "api_version": "1.1.318",
+            "library_path": "libvulkan_gfxstream.so"
+          },
+          "file_format_version": "1.0.1"
+        },
+        "radeon_icd.json": {
+          "ICD": {
+            "api_version": "1.4.318",
+            "library_path": "libvulkan_radeon.so"
+          },
+          "file_format_version": "1.0.1"
+        },
+        "intel_hasvk_icd.json": {
+          "ICD": {
+            "api_version": "1.3.318",
+            "library_path": "libvulkan_intel_hasvk.so"
+          },
+          "file_format_version": "1.0.1"
+        },
+        "asahi_icd.json": {
+          "ICD": {
+            "api_version": "1.4.318",
+            "library_path": "libvulkan_asahi.so"
+          },
+          "file_format_version": "1.0.1"
+        },
+        "virtio_icd.json": {
+          "ICD": {
+            "api_version": "1.4.318",
+            "library_path": "libvulkan_virtio.so"
+          },
+          "file_format_version": "1.0.1"
+        },
+        "intel_icd.json": {
+          "ICD": {
+            "api_version": "1.4.318",
+            "library_path": "libvulkan_intel.so"
+          },
+          "file_format_version": "1.0.1"
+        },
+        "nouveau_icd.json": {
+          "ICD": {
+            "api_version": "1.4.318",
+            "library_path": "libvulkan_nouveau.so"
+          },
+          "file_format_version": "1.0.1"
+        }
+      },
+      "qualified_gpu": false,
+      "scope": "current physical-device qualification only; no product math verdict",
+      "verdict": "NO_QUALIFIED_GPU"
+    }
+  },
+  "stages": [
+    {
+      "name": "configure",
+      "verdict": "PASS"
+    },
+    {
+      "name": "producer",
+      "verdict": "PASS"
+    },
+    {
+      "name": "install",
+      "verdict": "PASS"
+    },
+    {
+      "name": "consumer-configure",
+      "verdict": "PASS"
+    },
+    {
+      "name": "consumer-build",
+      "verdict": "PASS"
+    },
+    {
+      "name": "dependencies-hyle_file_streaming_sample",
+      "verdict": "PASS"
+    },
+    {
+      "name": "dependencies-hyle_file_streaming_qwen",
+      "verdict": "PASS"
+    },
+    {
+      "name": "headers-configure",
+      "verdict": "PASS"
+    },
+    {
+      "name": "headers-build",
+      "verdict": "PASS"
+    },
+    {
+      "name": "absence-route-cpu",
+      "verdict": "PASS_EXPECTED_ABSENT"
+    },
+    {
+      "name": "absence-route-cuda",
+      "verdict": "PASS_EXPECTED_ABSENT"
+    },
+    {
+      "name": "absence-route-apple",
+      "verdict": "PASS_EXPECTED_ABSENT"
+    }
+  ],
+  "original_failures": "All earlier setup/validation/product failures retained in previous F3 receipts; this one SDK cell does not replace them.",
+  "archive": {
+    "path": "evidence/correctness/foundation-f3-sdk-wsl-vulkan-shared-97858fbc8/raw-results.zip",
+    "sha256": "940fc379fb3a8e2640154436793edc7cb2f40cc1a3df4e62f447fe5dd26be01f"
+  },
+  "verdict": "PASS_F3_WSL_VULKAN_SHARED_RELOCATED_SDK_ONLY",
+  "limits": "Only the named host/profile/linkage/ordinary consumers/changed headers. Other deliveries and final closure remain unproven."
+}

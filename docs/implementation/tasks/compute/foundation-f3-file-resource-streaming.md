@@ -586,6 +586,13 @@ Windows shared正在运行，WSL软件Vulkan两格及最终source复验/矩阵/�
 当前产品真实安装迁址、普通Graph消费者两个target构建、六头独立编译、CPU/CUDA/Apple缺席及
 `ldd`无missing均PASS，GPU运行明确NOT_APPLICABLE。shared适用门正在同一候选的独立树运行。
 
+[WSL Vulkan shared适用交付](../../../../evidence/correctness/foundation-f3-sdk-wsl-vulkan-shared-97858fbc8/receipt.json)
+也完成真实安装迁址、两个普通consumer构建、六头/三条缺席及`ldd`无missing，HYLE共享库实际
+来自relocated/lib；原device枚举的qualified_gpu=false与未运行GPU数学一并写入收据。
+全部十二个本轮installed profile/linkage格的适用部分已取证，十个合格GPU/CPU组合实际数学运行。
+当前Air CPU/Apple source数学及Qwen复验PASS，Air Vulkan source运行中；Win Vulkan与WSL source
+当前产品复验、最终矩阵/证据审查待验，不扩大算子目录或P1。
+
 ## 解析器与真实权重验收
 
 格式解析不进入 pipeline。GGUF 用现有 ggml 格式核；本地 Qwen3.5-2B 原始 Safetensors
