@@ -43,6 +43,9 @@
   出现需性能裁决的具体反例才在稳定候选上按原统一仪器固定一次同合同有预算 P1，
   未资格/未运行如实记，不能无限换姿势或升级仪器。
 - build1/test1、重型串行、启动前确认内存余量；复用源码缓存/SDK 构建树，完成后只清本批临时产物。
+- 2026-10-12用户纠正后的当前执行策略：验证门与跨主机重型run仍串行，单门库构建按实际内存余量
+  使用j4（余量≥12GiB）、j2（≥8GiB）或j1（≥4GiB），test1；本条取代上面的旧build1一刀切。
+  不同配置只共享immutable source cache，不共享binary/subbuild目录；历史验证的并行度按原日志保留。
 - 每轮 selected gates、`check-module-closure.py`、`check-docs.py`；
   registry 变化带 `--previous-ref`。文档/状态阶段不构建/P1。提交推送用 `[skip ci]`。
 - 调研纠正预算：至多一个具体反例的一次补读、两次有限修复/验收；新公共语义或边界变化必须重新定界。
@@ -393,6 +396,11 @@ ASan初次本地参数错误将factor与product route选择混用而被现有CMa
 已由WSL数学consumer使用的原Linux cache `/root/.cache/hyle/dependencies/v1`，锁定SDK身份不变；
 native-cache配置实际PASS，当前同一候选的instrumented依赖构建仍在运行，不能记成sanitizer测试PASS。
 原互斥参数FAIL及TIMEOUT的日志保留，改变cache位置不重置原产品纠正或配置/build/test预算。
+
+native-cache的首次ASan build随后实际用完1800秒，日志停在未改的SIMD依赖，12项测试未启动。
+CMake/Ninja/已记录编译子进程均已结束。2026-10-12用户明确批准保留原TIMEOUT，追加一次1800秒
+给同一配置与同一构建树的剩余依赖及测试，并随后要求库编译按内存并行。本次追加独立计账，
+不删除原失败、不改变产品候选或重置原纠正预算；goal暂停期间未启动，恢复后才执行。
 
 | FIX | 必须实现 | 验收 |
 |---|---|---|
