@@ -1,27 +1,29 @@
 # F3：有界文件与计算资源双向管线
 
-> 状态：QUEUED；F1/F2 已CLOSED，compute_stream身份已登记，尚未SCOPED/AUDITED或写产品代码。
-> component / owner：新内部 factor compute_stream（当前仅QUEUED身份）；
-> native factory/adapter 归 compute_route_cpu/cuda/apple/vulkan，有限中央构建修改归 build_package。
+> 状态：SCOPED；F3范围已冻结，尚未AUDITED或写产品代码；F1/F2原轮已CLOSED。
+> component / owner：新内部 factor compute_stream；
+> native factory/adapter 归 compute_route_cpu/cuda/apple/vulkan；中央声明只投影这些owner的有限新边。
 > IO/Sched/Mem 只消费既有能力；出现具体基础缺陷才另作定向 owner 修复。
 
 ## 共同执行合同
 
 ### 当前启动绑定
 
-- 2026-10-12实际baseline：c07109296（[F2 terminal](foundation-f2-final-closure.md)已提交推送），
-  Windows canonical工作树干净，F1/F2 owner全部CLOSED。只登记compute_stream身份与QUEUED，
-  无target/依赖/公开头/源码，普通用户选择闭包不变；历史READY_FOR_SCOPE计划不当作实现证书。
-- 下一阶段仅按原F3-01至08冻结IO/Sched/F1/F2/native组合、source/sink拥有/借用、有限byte/slot/
-  group/旧结果预算、取消/实际退役与两向错误。完成SCOPED和AUDITED前不写产品。
+- 2026-10-12实际baseline：`a932606ee5796328742632e392d5c6c5595ce3fb`；
+  Windows canonical工作树干净，[F2 terminal](foundation-f2-final-closure.md)及QUEUED身份已提交推送。
+  compute_stream由QUEUED进入SCOPED，四个Compute route由各自旧terminal进入本卡SCOPED；
+  trigger是已准入F3用户旅程需要新的自然native pipeline factory/adapter及SDK依赖边，
+  不是重新审查旧数学或F1/F2缺陷。compute、CUDA backend、Graph、IO/Sched/Mem和Provider保持CLOSED。
+- 本阶段只核对原F3-01至08的IO/Sched/F1/F2/native组合、source/sink拥有/借用、有限byte/slot/
+  group/旧结果预算、取消/实际退役与两向错误；完成AUDITED并提交状态前不写产品。
 - 遵守用户本轮明确要求：只验实际修改owner、真实直接消费者、新API与对应三交付；未受影响
   模块/成熟算子目录/其他facade不全局回放，复用已签且scope/合同/工具链/机器相符的F1/F2证据。
   原调查/纠正与单线程/内存预算不因新记录、目录或跨日重置。
 
-- 基线：`edb2714384037b12a3d1e69839aa895fea17cec1`；设计见
+- 最初设计研究基线：`edb2714384037b12a3d1e69839aa895fea17cec1`；不是本轮实施baseline，设计见
   [资源与流送设计](../../../architecture/compute-resource-streaming-design.md)。
-- 本卡为准备完成的有限施工合同，尚未作为 registry 当前 record；当前 owner 仍 CLOSED，验证均未运行。
-  实施 goal 启动时先绑定实际 HEAD/工作树，保留后续/用户修改；按协议登记/SCOPED/AUDITED 后才改产品。
+- 本卡现为上述五owner的registry当前record；产品验证均未运行。原设计研究收据作为需求输入，
+  不把原子API已存在或F1/F2 PASS写成本轮F3通过。
 - 主纵切：量化推理的外部状态/权重范围及真实成熟数学消费。
   正交纵切：渲染资产流送和分块矩阵管线；不加入 token/layer/KV policy。
 - 复用 Mem/Util/Sched/IO/Compute/native 完成，不增加复制 kernel、数学算子、模型 loader 或第二套 runtime。
@@ -38,6 +40,44 @@
   registry 变化带 `--previous-ref`。文档/状态阶段不构建/P1。提交推送用 `[skip ci]`。
 - 调研纠正预算：至多一个具体反例的一次补读、两次有限修复/验收；新公共语义或边界变化必须重新定界。
   所有 FIX/适用门完成则 terminal；不能把研究/文档/旧 CLOSED 计作本轮产品完成。
+
+## 本轮SCOPED合同
+
+- 主consumer：本地Qwen3.5-2B checked ranges的BF16投影和F32规范化权重，
+  从原始文件分块进入真实资源，逐组Direct/Graph消费，再回写新临时文件并reload消费。
+- 正交consumer：只按byte range/group/tag工作的渲染资产与分块矩阵；不解释模型名、层号或dtype策略。
+- 已有原子：`io::File::read_some_at`/`write_some_at`及`read_exact_at`/`write_all_at`、
+  `mem::FileMapping::bytes`、Sched Task/TaskScope/BlockingPool、F1 LeasePool/ReadLease/WriteLease、
+  F2各路线CopyBatchProgram/Invocation/Submission。组合的请求、旧结果容量、取消与teardown缺口为SELF；
+  原子与native拷贝为BORROW，文件原子发布及格式解释为APPLICATION。
+- 依赖方向：compute_stream共同控制依赖compute、io_core、sched、mem及mem_vm；四route依赖
+  compute_stream并拥有其原生factory/adapter。核心compute不反向依赖stream、Graph或IO。
+  中央图、新factor CMake和四route本地source列表只作必需接线；不修改公共selector/closure/性能工具。
+- 直接消费者：新增独立C++ file/resource consumer与F3风险测试；Graph只通过已存在lease binding组合。
+  IO/Sched/Mem不改产品API；若出现具体基础缺陷，先另定该owner范围，不能顺手扩张。
+- 形状审计有界：只核对上述现有原子与四native owner，首轮不超过45分钟；沿用已固定peer与原
+  一次具体反例补读、两次有限纠正/验收，历史失败不因本卡状态/日志/日期重置；不重跑全库研究。
+- 验证预声明：F3-02至06逐项正常/边界/OOM/错误/寿命/取消/关闭测试，F3-07真实四路线数学，
+  F3-01/08只验新头和依赖接缝、普通source/static/shared、SDK迁址和路线缺席。
+  CPU在Win/WSL/Air，CUDA在Win/WSL，Apple只Air，Vulkan在Win/Air；WSL Vulkan实际GPU资格单列。
+  对共同控制执行ASan/UBSan及适用的跨线程释放/结果发布TSan；原F1/F2 native证据按身份匹配复用。
+- 机器运行前读实际身份及可用内存≥4GiB，build1/test1且各主机重型串行；configure300秒、
+  build1800秒、单测试120秒、独立consumer180秒。超时保存原始输出，不能换目录重置有限纠正。
+- P0成本结构门：固定K个stage/inflight槽、有限请求/groups/ranges/result记录、共享bytes账单；
+  确认分块上界和实际copy/native完成/host-wait，报告Task/IO/offload新增分配，不谎称全旅程零分配。
+  不执行P1/P2，不承诺厂家私有内存上限或吞吐赢家；新反例需重定界，不能无限追加benchmark。
+- 停止：八FIX及七门全部证明才CLOSED；适用门缺证写BLOCKED/INCONCLUSIVE。完成即停止F3，
+  不追加完整模型、F4/F5或其他模块全局验证。
+
+| Gate | 本轮所需证据 | 当前结果 |
+|---|---|---|
+| scope | 原八FIX、主/正交旅程、五owner及实际baseline | 已定界，尚未产品验收 |
+| architecture | API/生命周期/依赖审计、现有原子组合与有限ledger | UNPROVEN，AUDITED前完成 |
+| correctness | 02至07逐能力风险矩阵及四路线实际接缝 | NOT_RUN |
+| delivery | 01/08 source/static/shared、新头、迁址及缺席 | NOT_RUN |
+| usability_docs | 普通C++自然工厂、双向与错误/close recipe | NOT_RUN |
+| red_team | 候选冻结后独立一遍反证检查 | NOT_RUN |
+| engineering_performance | P0成本结构、有限容量与实际路径账单 | NOT_RUN |
 
 ## 需求与来源
 

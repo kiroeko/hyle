@@ -1,0 +1,114 @@
+{
+  "schema_version": 1,
+  "stage": "SCOPED; no F3 product/API implementation",
+  "baseline": "a932606ee5796328742632e392d5c6c5595ce3fb",
+  "owners": [
+    "compute_stream",
+    "compute_route_cpu",
+    "compute_route_cuda",
+    "compute_route_apple",
+    "compute_route_vulkan"
+  ],
+  "trigger": "Previously admitted F3 composite journey needs natural native factories and SDK edges.",
+  "checks": [
+    {
+      "command": [
+        "python",
+        "scripts/validation-select.py",
+        "plan",
+        "--base",
+        "a932606ee5796328742632e392d5c6c5595ce3fb",
+        "--candidate",
+        "WORKTREE",
+        "--output",
+        ".scratch/foundation-f3/scope-plan.json"
+      ],
+      "exit_code": 0,
+      "log": "evidence/correctness/foundation-f3-scope/check-1.log",
+      "sha256": "86ebd72fd0f116a45a33073cf36180601bd261b00e4c176a59e405eb5f821aef"
+    },
+    {
+      "command": [
+        "python",
+        "scripts/check-module-closure.py",
+        "--previous-ref",
+        "a932606ee5796328742632e392d5c6c5595ce3fb"
+      ],
+      "exit_code": 0,
+      "log": "evidence/correctness/foundation-f3-scope/check-2.log",
+      "sha256": "326f81be1f6d2a3bb807aaa9f405efaa28d318ef82f46f98cffbcaf35d517364"
+    },
+    {
+      "command": [
+        "python",
+        "scripts/check-docs.py"
+      ],
+      "exit_code": 0,
+      "log": "evidence/correctness/foundation-f3-scope/check-3.log",
+      "sha256": "bd23a462016971ee34636cd924afc389eb0a8ddf49dd5fc3580bce33e8670b94"
+    },
+    {
+      "command": [
+        "git",
+        "diff",
+        "--check"
+      ],
+      "exit_code": 0,
+      "log": "evidence/correctness/foundation-f3-scope/check-4.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ],
+  "inputs": [
+    {
+      "path": "include/hyle/io/file.h",
+      "sha256": "385736644f18017bcc0f84c46e5de86505104f2369b3035fbea27e3b8a1f1106"
+    },
+    {
+      "path": "include/hyle/io/operation.h",
+      "sha256": "780ac4f2b61e2cf3d2bef2fa852e48b6b9789f6b156a1067599e385ca0d944d6"
+    },
+    {
+      "path": "include/hyle/io/io_context.h",
+      "sha256": "97447d869458169ac8aa92e98b9a5e77ce49233d87568ff329d82c760b9b6beb"
+    },
+    {
+      "path": "include/hyle/mem/mapping.h",
+      "sha256": "98b1a1ea8c4d85eff4fb8ddeb0fd7a425e7619128c468ae29e11c5e3fbfd05c3"
+    },
+    {
+      "path": "include/hyle/sched/coro.h",
+      "sha256": "8694732bb1a069fde73f0359399b13f893d41c6981800f05cd824b293d93df54"
+    },
+    {
+      "path": "include/hyle/sched/task_scope.h",
+      "sha256": "0cf2d97ee6b9578e3b95e2126cdd90f47c35c83018722cb8f394bcebb1ca0bdd"
+    },
+    {
+      "path": "include/hyle/sched/blocking.h",
+      "sha256": "470034ee8a224d651c9947fd7d4a0627b1b8b6a929d87dca19fda4df2d673c9d"
+    },
+    {
+      "path": "include/hyle/compute/resource_leases.h",
+      "sha256": "22d7f2153ef8c0b1f6602b84ab00d96d75afc576f3b093a59749ab4f6891446d"
+    },
+    {
+      "path": "include/hyle/compute/batch_transfer.h",
+      "sha256": "f214b042f0b6d1ac77d601211ed796bc60cacc0115182fd192ace0313471e21c"
+    },
+    {
+      "path": "include/hyle/compute/apple_memory.h",
+      "sha256": "8e5cdbfdda98875ec20cefb7fc8c2bb881ca102e5c490cb867194fb99d0875dc"
+    },
+    {
+      "path": "include/hyle/compute/vulkan_memory.h",
+      "sha256": "4fa5ff837d73c0d23c9235f343530973f0746431f8de75f2176f3ce6bfc6e3ef"
+    },
+    {
+      "path": "cmake/HyleComponents.cmake",
+      "sha256": "75c83f2146127c4020a103da063783eefbf5dd680e527b686b7c544585adae10"
+    }
+  ],
+  "product_validation": "NOT_RUN; documentation/state scope only",
+  "skipped_reasons": "Full selector plan preserves all 138 skipped/reused gates; unaffected modules not replayed.",
+  "verdict": "PASS_SCOPED_MAINTENANCE_ONLY"
+}
