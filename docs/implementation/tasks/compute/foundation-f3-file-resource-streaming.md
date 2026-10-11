@@ -563,6 +563,12 @@ Air CPU/Apple shared收据现补入真正`DYLD_PRINT_LIBRARIES`运行：同一�
 也已完成当前产品的真实M4/MoltenVK数学与Qwen往返、迁址、新六头、CPU/CUDA/Apple头与路线
 请求缺席、原Vulkan/IREE闭包和consumer运行。shared版本正在运行，actual dyld路径同时记录。
 
+[Air Vulkan shared交付](../../../../evidence/correctness/foundation-f3-sdk-air-vulkan-shared-97858fbc8/receipt.json)
+同样完成当前产品的真实GPU数学/Qwen、迁址、新头和三条缺席路线诊断。
+两个普通consumer在`DYLD_PRINT_LIBRARIES`下实际运行，HYLE共享库全部来自relocated/lib；
+不靠otool名字猜测加载来源。Air CPU/Apple与Vulkan四installed格已齐，Windows CPU/CUDA
+当前static在运行；其shared、WSL软件Vulkan适用交付和最终矩阵/红队仍待验。
+
 ## 解析器与真实权重验收
 
 格式解析不进入 pipeline。GGUF 用现有 ggml 格式核；本地 Qwen3.5-2B 原始 Safetensors
