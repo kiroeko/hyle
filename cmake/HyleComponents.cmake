@@ -515,15 +515,15 @@ _hyle_declare_component(graph_route_cpu_cuda
 
 # Native coarse CPU+MLX/Metal composition. A single Apple route has no Sched/CPU edge.
 _hyle_declare_component(graph_route_cpu_apple
-  PRIVATE_DEPS util_core error mem compute compute_backend_cpu graph_route_cpu
-  PUBLIC_DEPS core graph graph_route_apple compute_route_apple sched
+  PRIVATE_DEPS util_core error mem compute_backend_cpu graph_route_cpu
+  PUBLIC_DEPS core compute graph graph_route_apple compute_route_apple sched
   PUBLIC_TYPE_DEPS sched
   SPLIT_PUBLIC_HEADERS hyle/graph/cpu_apple.h)
 
 # Identity reservation for admitted native CPU+Vulkan coarse composition.
 _hyle_declare_component(graph_route_cpu_vulkan
-  PRIVATE_DEPS util_core error mem compute compute_backend_cpu graph_route_cpu
-  PUBLIC_DEPS core graph graph_route_vulkan compute_route_vulkan sched
+  PRIVATE_DEPS util_core error mem compute_backend_cpu graph_route_cpu
+  PUBLIC_DEPS core compute graph graph_route_vulkan compute_route_vulkan sched
   PUBLIC_TYPE_DEPS sched
   SPLIT_PUBLIC_HEADERS hyle/graph/cpu_vulkan.h)
 
