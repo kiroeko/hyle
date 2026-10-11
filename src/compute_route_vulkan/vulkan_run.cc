@@ -443,6 +443,7 @@ Status qualify_copy_dependency(const std::shared_ptr<Runtime> &runtime, cd::Comp
   if (!run.terminal.ok()) return run.terminal;
   return Status::Ok();
 }
+Result<CompletionPoll> poll_native(const std::shared_ptr<Run> &run) noexcept { return observe(run, false); }
 
 namespace {
 Status submit_transfer(Run &run, bool &accepted) noexcept {

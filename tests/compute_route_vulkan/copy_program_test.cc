@@ -1,7 +1,9 @@
 #include <gtest/gtest.h>
 
 #include <array>
+#include <chrono>
 #include <string>
+#include <thread>
 
 #include "fixture.h"
 #include "vulkan_copy_internal.h"
@@ -162,5 +164,35 @@ TEST(VulkanCopyProgram, EmptyDependencyUsesActualPrefixAndBindingErrorsDoNotCons
   ASSERT_TRUE(invocation.prepare_replay({}, {}).ok()); auto empty = invocation.submit().value();
   EXPECT_FALSE(empty.in_flight()); EXPECT_EQ(empty.report().phase_completions, 0u); ASSERT_TRUE(empty.wait().ok());
   empty = {}; EXPECT_TRUE(invocation.close().ok()); EXPECT_TRUE(invocation.close().ok());
+}
+
+TEST(VulkanCopyProgram, AbandonedHandlesKeepOriginalRunsUntilActualRetirementAndFreeMetadata) {
+  auto context = vulkan_test::context().value(); ASSERT_FALSE(context.environment().software_device);
+  auto host = v::MemoryResource::create(context, v::MemoryKind::kStaging).value();
+  auto device = v::MemoryResource::create(context, v::MemoryKind::kDevice).value();
+  auto resources = specs(host.ref(), device.ref()); Data data(resources);
+  mem::QuotaAllocator metadata(mem::system_allocator()); DrainGuard drain{context};
+  {
+    auto program = v::CopyBatchProgram::prepare(context, resources, {.allocator = metadata.get()}).value();
+    auto invocation = v::CopyBatchInvocation::create(program).value();
+    ASSERT_TRUE(data.bind(invocation, std::byte{61}).ok());
+    ASSERT_TRUE(invocation.prepare_replay(kPhases, kRanges).ok());
+    auto submitted = invocation.submit().value();
+    EXPECT_GT(metadata.used(), 0u);
+  }
+  // No public observation has retired these original Runs, even if the GPU
+  // has executed them already. Abandonment must retain descriptors and uses.
+  EXPECT_GT(metadata.used(), 0u);
+  bool retired = false;
+  const auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(3);
+  while (std::chrono::steady_clock::now() < deadline) {
+    ASSERT_TRUE(context.collect().ok());
+    if (metadata.used() == 0) { retired = true; break; }
+    std::this_thread::yield();
+  }
+  EXPECT_TRUE(retired);
+  for (auto &pool : data.pools) {
+    EXPECT_EQ(pool.stats().active_uses, 0u); EXPECT_EQ(pool.stats().live_blocks, 0u);
+  }
 }
 } // namespace

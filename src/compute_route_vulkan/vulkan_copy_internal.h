@@ -21,4 +21,5 @@ HYLE_COMPUTE_ROUTE_VULKAN_API Result<Completion> submit_copy_recording(CopyRecor
 HYLE_COMPUTE_ROUTE_VULKAN_API CopyBatchReport copy_recording_report(const CopyRecording &recording) noexcept;
 Status clear_copy_recording(CopyRecording &recording) noexcept;
 Status copy_recording_terminal_hint(const CopyRecording &recording) noexcept;
+Result<CompletionPoll> poll_copy_recording(const CopyRecording &recording) noexcept;
 } // namespace hyle::compute::vulkan::detail

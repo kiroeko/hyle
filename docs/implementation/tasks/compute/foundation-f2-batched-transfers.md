@@ -221,6 +221,9 @@ native Run callback尾部仍可能释放其control block，metadata采用原Reso
 沿中央组件图只为当前AUDITED `compute_route_vulkan`补 `PRIVATE_DEPS util_core`，
 不重开Util、不实现私有refcount、不修改checker/公共工具或普通用户开关。该组件早已在Compute传递闭包，
 公开形状/owner/方向不变；保留首次configure失败，不据此重置本卡预算。
+放弃全部句柄后的先行phase观察沿原Run的nonblocking observe，不能poll已清空的公开Completion。
+该实际回收门核对原Runtime.collect、每phase use归零、每allocation保活的metadata完全释放，
+仍不把GPU已执行和完成句柄已退休混为一件事。仅暴露私有poll helper，不增加进展线程或执行层。
 首遍增加owned-view用例的fixture将raw-copy合法4-byte offset传给既有storage borrow factory，
 后者还要求native storage offset alignment；保留这次FAIL，fixture改为合法zero-origin外部carrier，
 再检验F2的unknown usage拒绝，不修改旧factory或放宽其合同。

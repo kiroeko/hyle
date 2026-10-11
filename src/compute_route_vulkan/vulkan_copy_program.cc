@@ -104,7 +104,8 @@ void phase_terminal(void *opaque, const Status &native) noexcept {
   auto dependencies = plan.dependency_mask;
   while (dependencies != 0) {
     const auto prior = static_cast<std::size_t>(std::countr_zero(dependencies));
-    auto &source = *state.phases[prior]; auto observed = source.completion.poll();
+    auto &source = *state.phases[prior];
+    auto observed = source.completion.valid() ? source.completion.poll() : poll_copy_recording(*source.recording);
     if (!observed) terminal.Update(observed.error());
     else if (*observed == CompletionPoll::kPending || !source.retired.load(std::memory_order_acquire))
       terminal.Update(Status::Unavailable("Vulkan copy predecessor retirement is unproven"));

@@ -203,6 +203,7 @@ Status copy_recording_terminal_hint(const CopyRecording &recording) noexcept {
   std::lock_guard lock(recording.runtime->mutex);
   return recording.run->submission_failure;
 }
+Result<CompletionPoll> poll_copy_recording(const CopyRecording &recording) noexcept { return poll_native(recording.run); }
 Status clear_copy_recording(CopyRecording &recording) noexcept {
   std::lock_guard lock(recording.runtime->mutex);
   const auto &run = *recording.run;

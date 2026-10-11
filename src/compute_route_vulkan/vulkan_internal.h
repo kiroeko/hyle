@@ -298,6 +298,7 @@ Result<Completion> submit_locked(const std::shared_ptr<Run> &run,
                                  bool allow_closed = false) noexcept;
 Status collect(const std::shared_ptr<Runtime> &runtime, bool drain) noexcept;
 Status wait_native(const std::shared_ptr<Run> &run) noexcept;
+Result<CompletionPoll> poll_native(const std::shared_ptr<Run> &run) noexcept;
 Status submit_native(const Device &, VkCommandBuffer, VkFence) noexcept;
 // F2 same-runtime ordering proof only; no poll, wait or invented semaphore.
 Status qualify_copy_dependency(const std::shared_ptr<Runtime> &, cd::CompletionDependency) noexcept;
