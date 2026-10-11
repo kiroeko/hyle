@@ -247,7 +247,7 @@ Status apple(const qwen_input::Manifest &manifest) {
         auto graph_weight = w;
         if (transposed) {
           HYLE_ASSIGN_OR_RETURN(auto view, c::View::permute(std::array<std::int32_t, 2>{1, 0}));
-          HYLE_ASSIGN_OR_RETURN(auto permutation, builder.add_node(view, std::array{w}));
+          HYLE_ASSIGN_OR_RETURN(auto permutation, builder.add_node(c::Operation(view), std::array{w}));
           HYLE_ASSIGN_OR_RETURN(graph_weight, builder.result(permutation));
         }
         HYLE_ASSIGN_OR_RETURN(auto node, builder.add_node(work.operation, std::array{x, graph_weight}));
