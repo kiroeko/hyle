@@ -436,6 +436,11 @@ WSL CUDA定向入口首次配置撞上原树继承的`HYLE_DEV_FACTORS`与produc
 当前仅构建独立CUDA文件测试target，不回放Graph/CPU Provider或无关算子目录；其六项运行、
 安装static/shared、新头/缺席/迁址与最终P0/红队仍待验。
 
+候选冻结前清理本轮instrumented编译揭示的两处共同getter误导缩进，以及两个测试中省略的
+empty optional deadline初始化。共同TU全部非空白token与f3d931c47一致；测试只是将原aggregate
+遗漏成员的空初始化显式写出，没有新语义/API/layout/算法/成本。原sanitizer与native收据保留其
+精确旧source身份；另做受影响owner/直接route的增量正常门，不把旧SHA伪写成新candidate证据。
+
 | FIX | 必须实现 | 验收 |
 |---|---|---|
 | F3-01 | 中央 compute_stream 身份/依赖/普通 route 及三交付投影 | 无环，无第二名单/空 target；静态共享source一致，不拉无关 CPU Provider |
@@ -461,6 +466,10 @@ WSL CUDA定向入口首次配置撞上原树继承的`HYLE_DEV_FACTORS`与produc
 完整模型、tokenizer和生成loop未实现，不能称“全模型推理验收”。
 
 ## 预声明验证与停止
+
+原固定容量、分配/锁/IO/native路径及实际字节成本已整理于[P0结构核对](foundation-f3-p0-cost-review.md)。
+该页明确已知控制数组、K个原fiber stack、热Task/IO/lease控制与vendor未知成本的不同边界，
+不代签尚未完成的交付/终审，也没有启动P1。
 
 正常 read→math、resource→file→reload→math、early group ready/late fail，
 source/sink寿命、EOF/short transfer、cancel、retained result、quota与未知private bytes，四路线及三交付。

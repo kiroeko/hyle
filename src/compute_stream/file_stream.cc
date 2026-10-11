@@ -795,10 +795,14 @@ void StreamReadyGroup::reset() noexcept {
   }
 }
 std::uint64_t StreamReadyGroup::tag() const noexcept {
-  if (!state_) return 0; std::lock_guard guard(state_->lock); return state_->group(request_, group_).tag;
+  if (!state_) return 0;
+  std::lock_guard guard(state_->lock);
+  return state_->group(request_, group_).tag;
 }
 std::uint32_t StreamReadyGroup::range_count() const noexcept {
-  if (!state_) return 0; std::lock_guard guard(state_->lock); return state_->group(request_, group_).count;
+  if (!state_) return 0;
+  std::lock_guard guard(state_->lock);
+  return state_->group(request_, group_).count;
 }
 Result<ReadLease> StreamReadyGroup::output(std::uint32_t index) const noexcept {
   if (!state_) return std::unexpected(Status::FailedPrecondition("stream ready group is empty"));

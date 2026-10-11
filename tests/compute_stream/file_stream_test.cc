@@ -162,7 +162,7 @@ TEST(FileStream, ImmutableMappingUsesBoundedStageAndCancellationDoesNotPublish) 
   EXPECT_EQ(runtime.pipeline.report().mapping_copy_bytes, 256u);
   auto cancellation = sched::CancelToken::root(m::system_allocator()); cancellation.cancel();
   auto cancelled_ranges = read_ranges(pool); auto cancelled_groups = read_groups(cancelled_ranges);
-  auto cancelled = runtime.pipeline.read(StreamSource::file(source), cancelled_groups, {.cancel = &cancellation}).value();
+  auto cancelled = runtime.pipeline.read(StreamSource::file(source), cancelled_groups, {.deadline = {}, .cancel = &cancellation}).value();
   EXPECT_TRUE(cancelled.wait().status.IsCancelled()); EXPECT_EQ(cancelled.result().ready_groups, 0u);
   EXPECT_EQ(cancelled.result().read_bytes, 0u); EXPECT_FALSE(cancelled.next_ready().has_value());
 }
@@ -234,7 +234,7 @@ TEST(FileStream, AcceptedHotMetadataOomReportsFailureAndReleasesOriginalOwners) 
   auto ranges = read_ranges(pool); auto groups = read_groups(ranges);
   auto cancellation = sched::CancelToken::root(m::system_allocator());
   auto no_hot_bytes = metadata.try_reserve_bytes(metadata.limit() - metadata.used()).value();
-  auto admitted = pipeline.read(StreamSource::file(source), groups, {.cancel = &cancellation});
+  auto admitted = pipeline.read(StreamSource::file(source), groups, {.deadline = {}, .cancel = &cancellation});
   ASSERT_TRUE(admitted); auto ticket = std::move(*admitted); source = {};
   auto result = ticket.wait(); EXPECT_TRUE(result.status.IsResourceExhausted()); EXPECT_TRUE(result.retirement_proven);
   EXPECT_EQ(result.ready_groups, 0u); EXPECT_EQ(result.read_bytes, 0u); EXPECT_EQ(result.copied_bytes, 0u);
