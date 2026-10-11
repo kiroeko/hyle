@@ -20,6 +20,7 @@ struct CopyBackendRange final {
 
 // All state and descriptor arrays are cold. bind_slot captures the complete
 // replay before acceptance; enqueue only selects a contiguous phase slice.
+// A slot is bound to the original queue used to qualify its native route.
 // Program/slot destruction requires their original actual native retirement.
 struct CopyBackendVTable final {
   Status (*prepare)(void *context, mem::AllocatorRef allocator,

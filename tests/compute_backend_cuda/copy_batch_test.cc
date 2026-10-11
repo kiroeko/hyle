@@ -129,6 +129,13 @@ TEST(CudaCopyBatch, PhysicalIdentityUsesByteAddressAndRejectsForeignContext) {
   const std::array<detail::CopyBackendRange, 1> invalid{{{backing.view(), foreign_backing.view()}}};
   EXPECT_FALSE(batch.bind(invalid).ok());
   EXPECT_FALSE(batch.submit(0, 1).has_value());
+  auto wrong_queue = context.create_queue().value();
+  auto wrong_endpoint = detail::BackendExtensionAccess::submit(batch.extension, wrong_queue,
+      [](void *context, const void *, void *queue, void *opaque) noexcept {
+    auto &batch = *static_cast<NativeBatch *>(opaque);
+    return batch.table->enqueue(context, queue, batch.program, batch.slot, 0, 0, &batch.calls);
+  }, &batch);
+  EXPECT_FALSE(wrong_endpoint.has_value());
   EXPECT_EQ(batch.calls, 0u);
 }
 } // namespace

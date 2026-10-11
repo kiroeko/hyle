@@ -29,6 +29,7 @@ struct BatchSlot final {
   Array<std::size_t> sizes;
   Array<CopyBackendRange> ranges;
   std::size_t count = 0;
+  QueueState *queue = nullptr; // borrowed original slot endpoint
   CUmemcpyAttributes attributes{.srcAccessOrder = CU_MEMCPY_SRC_ACCESS_ORDER_STREAM};
   std::size_t attribute_index = 0;
   bool use_batch = false;
@@ -83,6 +84,7 @@ Status create_slot(void *opaque, void *queue_opaque, void *program_opaque,
   // Imported legacy queues retain the original same-stream memcpy route.
   slot->use_batch = static_cast<BatchProgram *>(program_opaque)->batch != nullptr &&
                     queue.stream != nullptr && queue.stream != cudaStreamLegacy;
+  slot->queue = &queue;
   *output = slot;
   *metadata = sizeof(BatchSlot) + (slot->destinations.capacity() + slot->sources.capacity()) * sizeof(CUdeviceptr) +
               slot->sizes.capacity() * sizeof(std::size_t) + slot->ranges.capacity() * sizeof(CopyBackendRange);
@@ -133,7 +135,7 @@ EnqueueResult enqueue(void *opaque, void *queue_opaque, void *program_opaque,
                       std::uint64_t *calls) noexcept {
   auto &queue = *static_cast<QueueState *>(queue_opaque);
   auto &slot = *static_cast<BatchSlot *>(slot_opaque);
-  if (queue.context != opaque || first > slot.count || count > slot.count - first)
+  if (&queue != slot.queue || queue.context != opaque || first > slot.count || count > slot.count - first)
     return EnqueueResult::rejected(Status::InvalidArgument("CUDA copy phase slot is invalid"));
   if (count == 0) return EnqueueResult::no_op();
   if (slot.use_batch) {

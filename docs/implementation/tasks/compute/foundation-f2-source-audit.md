@@ -78,6 +78,10 @@ SGLang `234ccba7f625e12639e621044496bcc6197c3758`。
 Context capability 与 admitted enqueue，可承载 CUDA 冷能力/原 QueueSequence 录制，不新建 executor。
 本机13.3 `cuda.h` 对 `cuMemcpyBatchAsync` 映射 `_v2`，该签名没有旧12.8 failIdx；实际 ABI 与 cold resolve
 必须一致，不能复用 peer typedef 后直接 cast。Fallback 仍是该原 native stream 的合法 memcpy 命令。
+实现期核对本机 `cudaTypedefs.h`：`PFN_cuMemcpyBatchAsync_v13000` 是对应无failIdx签名，
+因此冷解析固定 `13000`，不使用动态driver版本或 `CUDA_VERSION` 去猜将来的revision。
+该做法按[NVIDIA Driver Entry Point合同](https://docs.nvidia.com/cuda/archive/13.0.2/cuda-driver-api/group__CUDA__DRIVER__ENTRY__POINT.html)
+与实际SDK配对；每slot固定原Queue endpoint及legacy/batch选择，不能换Queue后继续套用冷资格。
 
 Apple 实机的锁定 MLX `mlx/backend/metal/device.h/.cpp` 有原 stream 的 CommandEncoder，
 `end_encoding/get_command_buffer/commit/synchronize`；本机 Metal header 有原 buffer blit。
