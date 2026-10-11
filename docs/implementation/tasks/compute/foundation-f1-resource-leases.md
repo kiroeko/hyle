@@ -244,6 +244,19 @@ Graph core31、新真实双分支 cuBLAS 用例通过。未知观察是装饰真
 - 复用原 cudaFree/driver retirement、Common Buffer adopt 和有限metadata；无新 copy/kernel。
   原生消费者定向验 owned/borrow拒绝、OOM拒绝不消费、真实数学与 native completion 保活。
 
+### 当前共同 Graph / CUDA native owned 初验
+
+`64720f782` 已实现上述 Graph 自动 binding/result、每 accepted prefix 保活/延迟真实终态、
+CUDA owned external Buffer→ReadLease/LeasePool。拥有与拒绝、源码review/P0/局部红队及
+[Windows 初验](../../../../evidence/correctness/foundation-f1-leased-graph-native-owner-windows/README.md)
+完成：shipping13定向用例、插桩Graph4通过，三个头隔离编译，shipping两个hook导出不存在。
+八次 Direct/Graph replay metadata 无额外分配；真实 cuBLAS 与原 driver allocation、旧结果、private workspace、
+源 alias、pending close/drain、accepted-prefix failure 已验。夹具曾误断言两个 Context 必然 device wait，
+按实际显式 host-wait 纠正，原失败记录保留，不写成 GPU 产品性能失败。
+未完成：其余 native owner/普通 CPU 数学消费者、CPU+GPU组合绑定、适用平台与三交付及全包红队；
+F1 继续 AUDITED，F2/F3 未启动，不把这些局部结果算作整包关闭。
+统一统计 clean candidate self-check：Compute+Graph非测试69,557行/308文件；全库164,784行/659文件。
+
 | FIX | 必须实现/定向修复 | 验收 |
 |---|---|---|
 | F1-01 | 冷创建 owner、有限块/范围、generation、大小/对齐/metadata budget、拥有与只读导入 | 零/边界/溢出/OOM；旧 generation 不释放新块；真实 native backing |

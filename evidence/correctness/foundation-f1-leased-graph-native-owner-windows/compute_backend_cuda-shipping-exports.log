@@ -1,0 +1,79 @@
+Microsoft (R) COFF/PE Dumper Version 14.50.35728.0
+Copyright (C) Microsoft Corporation.  All rights reserved.
+
+
+Dump of file C:\h7\foundation-f1-q0\bin\hyle_compute_backend_cuda.dll
+
+File Type: DLL
+
+  Section contains the following exports for hyle_compute_backend_cuda.dll
+
+    00000000 characteristics
+    FFFFFFFF time date stamp
+        0.00 version
+           1 ordinal base
+          49 number of functions
+          49 number of names
+
+    ordinal hint RVA      name
+
+          1    0 00005060 ??0ExternalBuffer@cuda@compute@hyle@@AEAA@PEAX@Z
+          2    1 00009C40 ??0ExternalBuffer@cuda@compute@hyle@@QEAA@$$QEAV0123@@Z
+          3    2 00005070 ??0ExternalBuffer@cuda@compute@hyle@@QEAA@XZ
+          4    3 00005060 ??0MemoryResource@cuda@compute@hyle@@AEAA@PEAX@Z
+          5    4 00009C40 ??0MemoryResource@cuda@compute@hyle@@QEAA@$$QEAV0123@@Z
+          6    5 00005070 ??0MemoryResource@cuda@compute@hyle@@QEAA@XZ
+          7    6 00005080 ??0ScopedPrimaryContext@detail@cuda@compute@hyle@@QEAA@PEAUCUctx_st@@@Z
+          8    7 00009C60 ??1ExternalBuffer@cuda@compute@hyle@@QEAA@XZ
+          9    8 00009C90 ??1MemoryResource@cuda@compute@hyle@@QEAA@XZ
+         10    9 000051A0 ??1ScopedPrimaryContext@detail@cuda@compute@hyle@@QEAA@XZ
+         11    A 00009CA0 ??4ExternalBuffer@cuda@compute@hyle@@QEAAAEAV0123@$$QEAV0123@@Z
+         12    B 00009CF0 ??4MemoryResource@cuda@compute@hyle@@QEAAAEAV0123@$$QEAV0123@@Z
+         13    C 00005310 ??BExternalBuffer@cuda@compute@hyle@@QEBA_NXZ
+         14    D 00005310 ??BMemoryResource@cuda@compute@hyle@@QEBA_NXZ
+         15    E 0000BE40 ?acquire_device_status@detail@cuda@compute@hyle@@YA?AUEnqueueResult@134@AEAVQueue@34@PEAPEAI@Z
+         16    F 00009EF0 ?adopt@ExternalBuffer@cuda@compute@hyle@@SA?AV?$Result@VExternalBuffer@cuda@compute@hyle@@@4@AEBVContext@34@PEAX_K@Z
+         17   10 000055D0 ?adopt_stream@cuda@compute@hyle@@YA?AV?$Result@VQueue@compute@hyle@@@3@AEBVContext@23@PEAUCUstream_st@@@Z
+         18   11 000056D0 ?backend@cuda@compute@hyle@@YA?AVBackend@23@XZ
+         19   12 0000A190 ?borrow@ExternalBuffer@cuda@compute@hyle@@SA?AV?$Result@VExternalBuffer@cuda@compute@hyle@@@4@AEBVContext@34@PEAX_K@Z
+         20   13 000056F0 ?borrow_environment@detail@cuda@compute@hyle@@YAPEBUEnvironment@234@PEAX@Z
+         21   14 00005700 ?borrow_primary_context@detail@cuda@compute@hyle@@YAPEAUCUctx_st@@PEAX@Z
+         22   15 00005710 ?borrow_stream@cuda@compute@hyle@@YA?AV?$Result@VQueue@compute@hyle@@@3@AEBVContext@23@PEAUCUstream_st@@@Z
+         23   16 0000A1C0 ?const_pointer@detail@cuda@compute@hyle@@YA?AV?$Result@PEBX@4@VConstBufferView@mem@4@_K1@Z
+         24   17 0000A6C0 ?create@MemoryResource@cuda@compute@hyle@@SA?AV?$Result@VMemoryResource@cuda@compute@hyle@@@4@AEBVContext@34@W4MemoryKind@234@@Z
+         25   18 0000AD30 ?device@ExternalBuffer@cuda@compute@hyle@@QEBA?AVDevice@34@XZ
+         26   19 0000ADB0 ?device@MemoryResource@cuda@compute@hyle@@QEBA?AVDevice@34@XZ
+         27   1A 000062C0 ?device@cuda@compute@hyle@@YA?AV?$Result@VDevice@compute@hyle@@@3@_K@Z
+         28   1B 00006320 ?device_ordinal@cuda@compute@hyle@@YA?AV?$Result@H@3@VDevice@23@@Z
+         29   1C 00006550 ?environment@cuda@compute@hyle@@YA?AV?$Result@UEnvironment@cuda@compute@hyle@@@3@AEBVContext@23@@Z
+         30   1D 00006840 ?execution_context@cuda@compute@hyle@@YA?AV?$Result@PEAUcudaExecutionContext_st@@@3@AEBVContext@23@@Z
+         31   1E 0000AFD0 ?into_lease_pool@ExternalBuffer@cuda@compute@hyle@@QEHAA?AV?$Result@VLeasePool@compute@hyle@@@4@ULeasePoolOptions@34@@Z
+         32   1F 0000B140 ?into_read_lease@ExternalBuffer@cuda@compute@hyle@@QEHAA?AV?$Result@VReadLease@compute@hyle@@@4@ULeaseImportOptions@34@@Z
+         33   20 0000B2A0 ?kind@MemoryResource@cuda@compute@hyle@@QEBA?AW4MemoryKind@234@XZ
+         34   21 0000A1C0 ?mutable_pointer@detail@cuda@compute@hyle@@YA?AV?$Result@PEAX@4@VBufferView@mem@4@_K1@Z
+         35   22 00007120 ?primary_context@cuda@compute@hyle@@YA?AV?$Result@PEAUCUctx_st@@@3@AEBVContext@23@@Z
+         36   23 0000B960 ?ref@MemoryResource@cuda@compute@hyle@@QEBA?AVMemoryResourceRef@mem@4@XZ
+         37   24 00009C60 ?reset@ExternalBuffer@cuda@compute@hyle@@QEAAXXZ
+         38   25 0000B970 ?reset@MemoryResource@cuda@compute@hyle@@QEAAXXZ
+         39   26 0000BBA0 ?size@ExternalBuffer@cuda@compute@hyle@@QEBA_KXZ
+         40   27 000087E0 ?status@cuda@compute@hyle@@YA?AVStatus@3@W4cudaError@@@Z
+         41   28 00008800 ?status@cuda@compute@hyle@@YA?AVStatus@3@W4cudaError_enum@@@Z
+         42   29 00008820 ?stream@cuda@compute@hyle@@YA?AV?$Result@PEAUCUstream_st@@@3@AEBVQueue@23@@Z
+         43   2A 00008910 ?submit@cuda@compute@hyle@@YA?AV?$Result@VCompletion@compute@hyle@@@3@AEAVQueue@23@P6A?AVStatus@3@PEAUCUstream_st@@PEAX@_E2@Z
+         44   2B 0000BBE0 ?trim@MemoryResource@cuda@compute@hyle@@QEAA?AVStatus@4@XZ
+         45   2C 00005310 ?valid@ExternalBuffer@cuda@compute@hyle@@QEBA_NXZ
+         46   2D 00005310 ?valid@MemoryResource@cuda@compute@hyle@@QEBA_NXZ
+         47   2E 00008BB0 ?validate_composition_resources@detail@cuda@compute@hyle@@YA?AVStatus@4@AEBVContext@34@AEBVMemoryResource@234@1@Z
+         48   2F 0000BCD0 ?view@ExternalBuffer@cuda@compute@hyle@@QEAA?AVBufferView@mem@4@XZ
+         49   30 0000BCD0 ?view@ExternalBuffer@cuda@compute@hyle@@QEBA?AVConstBufferView@mem@4@XZ
+
+  Summary
+
+        B000 .data
+        1000 .nvFatBi
+        3000 .nv_fatb
+        1000 .pdata
+        B000 .rdata
+        1000 .reloc
+        1000 .rsrc
+       1B000 .text
