@@ -1,0 +1,68 @@
+Running main() from /mnt/c/public/tools/hyle-dependencies/v1/sources/googletest-063de7e9578f-162765170ae6/googletest/src/gtest_main.cc
+Note: Google Test filter = ResourceLeases.*:Completion.*:OwnedResult.*
+[==========] Running 26 tests from 3 test suites.
+[----------] Global test environment set-up.
+[----------] 11 tests from Completion
+[ RUN      ] Completion.RetainedObserverDrainsWhilePublicHandleIsHeld
+[       OK ] Completion.RetainedObserverDrainsWhilePublicHandleIsHeld (0 ms)
+[ RUN      ] Completion.RetainedObserverForwardsAttachmentOnlyAfterActualUnknownRetirement
+[       OK ] Completion.RetainedObserverForwardsAttachmentOnlyAfterActualUnknownRetirement (0 ms)
+[ RUN      ] Completion.RetainedObserverMayBeDroppedBeforePublicCompletion
+[       OK ] Completion.RetainedObserverMayBeDroppedBeforePublicCompletion (0 ms)
+[ RUN      ] Completion.RetainedCompoundObserverDoesNotTreatCachedRootErrorAsRetirement
+[       OK ] Completion.RetainedCompoundObserverDoesNotTreatCachedRootErrorAsRetirement (0 ms)
+[ RUN      ] Completion.ImmediateSuccessAndFailureRemainInline
+[       OK ] Completion.ImmediateSuccessAndFailureRemainInline (0 ms)
+[ RUN      ] Completion.CompositeRetentionPreservesBothOwnersAndRejectsReuse
+[       OK ] Completion.CompositeRetentionPreservesBothOwnersAndRejectsReuse (0 ms)
+[ RUN      ] Completion.SimulatedAsyncStateSupportsMovePollWaitAndCancel
+[       OK ] Completion.SimulatedAsyncStateSupportsMovePollWaitAndCancel (0 ms)
+[ RUN      ] Completion.LifetimeSettlesExactlyOnceAtObservedTerminal
+[       OK ] Completion.LifetimeSettlesExactlyOnceAtObservedTerminal (0 ms)
+[ RUN      ] Completion.AbandonedHandleDefersLifetimeUntilBackendTerminal
+[       OK ] Completion.AbandonedHandleDefersLifetimeUntilBackendTerminal (0 ms)
+[ RUN      ] Completion.AbandonedHandleTransfersSavedTailErrorToBackend
+[       OK ] Completion.AbandonedHandleTransfersSavedTailErrorToBackend (0 ms)
+[ RUN      ] Completion.FailedObservationHandsRetentionToActualRuntimeRetirement
+[       OK ] Completion.FailedObservationHandsRetentionToActualRuntimeRetirement (0 ms)
+[----------] 11 tests from Completion (0 ms total)
+
+[----------] 6 tests from OwnedResult
+[ RUN      ] OwnedResult.RetainedResultSurvivesSlotAndSubmissionAndBlocksOverwrite
+[       OK ] OwnedResult.RetainedResultSurvivesSlotAndSubmissionAndBlocksOverwrite (0 ms)
+[ RUN      ] OwnedResult.AbandonmentKeepsNativeOwnerUntilRealTerminal
+[       OK ] OwnedResult.AbandonmentKeepsNativeOwnerUntilRealTerminal (0 ms)
+[ RUN      ] OwnedResult.FailureAndCancellationDoNotPublishReadyLease
+[       OK ] OwnedResult.FailureAndCancellationDoNotPublishReadyLease (0 ms)
+[ RUN      ] OwnedResult.InvalidPublishPreservesAcceptedCompletionAndWriteCanRecover
+[       OK ] OwnedResult.InvalidPublishPreservesAcceptedCompletionAndWriteCanRecover (0 ms)
+[ RUN      ] OwnedResult.ColdAllocationFailureAndUnsubmittedRollback
+[       OK ] OwnedResult.ColdAllocationFailureAndUnsubmittedRollback (0 ms)
+[ RUN      ] OwnedResult.OveralignedOwnerAndConcurrentBeginAdmission
+[       OK ] OwnedResult.OveralignedOwnerAndConcurrentBeginAdmission (0 ms)
+[----------] 6 tests from OwnedResult (0 ms total)
+
+[----------] 9 tests from ResourceLeases
+[ RUN      ] ResourceLeases.SharedReadersAndSubviewsPreventMutationAndHoldRange
+[       OK ] ResourceLeases.SharedReadersAndSubviewsPreventMutationAndHoldRange (0 ms)
+[ RUN      ] ResourceLeases.MetadataAndBackingCapsDoNotGrowAndOldOwnerCanOutlivePool
+[       OK ] ResourceLeases.MetadataAndBackingCapsDoNotGrowAndOldOwnerCanOutlivePool (0 ms)
+[ RUN      ] ResourceLeases.AbandonedCompletionKeepsBothPoolsUntilRealRetirement
+[       OK ] ResourceLeases.AbandonedCompletionKeepsBothPoolsUntilRealRetirement (0 ms)
+[ RUN      ] ResourceLeases.WriteFailureCannotPublishAndUnsubmittedUseRollsBack
+[       OK ] ResourceLeases.WriteFailureCannotPublishAndUnsubmittedUseRollsBack (0 ms)
+[ RUN      ] ResourceLeases.RejectedAttachmentRetainsTicketAndQuotaIncludesMetadata
+[       OK ] ResourceLeases.RejectedAttachmentRetainsTicketAndQuotaIncludesMetadata (0 ms)
+[ RUN      ] ResourceLeases.OwnedImportPreservesBackingAndReadonlyCannotBecomeWriter
+[       OK ] ResourceLeases.OwnedImportPreservesBackingAndReadonlyCannotBecomeWriter (0 ms)
+[ RUN      ] ResourceLeases.RejectedOwnedImportDoesNotConsumeBackingOrLeakBudget
+[       OK ] ResourceLeases.RejectedOwnedImportDoesNotConsumeBackingOrLeakBudget (0 ms)
+[ RUN      ] ResourceLeases.CheckedCapacitySubviewAndMetadataArithmeticRejectBeforeMutation
+[       OK ] ResourceLeases.CheckedCapacitySubviewAndMetadataArithmeticRejectBeforeMutation (0 ms)
+[ RUN      ] ResourceLeases.CrossThreadReadersHoldGenerationWhileIndependentBlockRetires
+[       OK ] ResourceLeases.CrossThreadReadersHoldGenerationWhileIndependentBlockRetires (0 ms)
+[----------] 9 tests from ResourceLeases (1 ms total)
+
+[----------] Global test environment tear-down
+[==========] 26 tests from 3 test suites ran. (1 ms total)
+[  PASSED  ] 26 tests.

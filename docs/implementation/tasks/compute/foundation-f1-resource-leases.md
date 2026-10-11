@@ -522,7 +522,9 @@ option 的独立配置，让 sanitizer 由已有 target helper 正常施加，�
 [host sanitizer 收据](../../../../evidence/correctness/foundation-f1-host-sanitizers/receipt.json)
 保存配置/构建、精准 filter、runtime flags、机器/工具链与原日志。覆盖共同 permissions、overflow/OOM、
 跨线程 reader/最后回收、retained completion 与 managed prefix 的控制协议；不把 fake completion 协议
-改写成 native GPU/普通数学资格。独立 UBSan/TSan 尚未取得结果，其他平台/交付与最终裁决仍未完成。
+改写成 native GPU/普通数学资格。同一不可变输入的独立 UBSan 也通过 Compute26、Graph lease prefix3，
+UBSan 以原 option 的 `-fno-sanitize-recover=all` 与 halt-on-error 运行，没有 UB 报告；原日志独立保留。
+TSan 尚未取得结果，其他平台/交付与最终裁决仍未完成。
 
 P0 静态账单须列新增 metadata/引用/锁，及旧普通路径不变的证据；
 热路径以计数验无 allocation/provider search，不为纳秒差改布局。

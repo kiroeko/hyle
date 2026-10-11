@@ -1,0 +1,16 @@
+Running main() from /mnt/c/public/tools/hyle-dependencies/v1/sources/googletest-063de7e9578f-162765170ae6/googletest/src/gtest_main.cc
+Note: Google Test filter = LeaseSubmission.*
+[==========] Running 3 tests from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 3 tests from LeaseSubmission
+[ RUN      ] LeaseSubmission.UnknownObservationCannotRetireReadOrParentBeforeNativeRelease
+[       OK ] LeaseSubmission.UnknownObservationCannotRetireReadOrParentBeforeNativeRelease (0 ms)
+[ RUN      ] LeaseSubmission.UnacceptedBodyRollsBackAndClosedSourceRejectsBeforeAcceptance
+[       OK ] LeaseSubmission.UnacceptedBodyRollsBackAndClosedSourceRejectsBeforeAcceptance (0 ms)
+[ RUN      ] LeaseSubmission.ColdMetadataBudgetRejectsWithoutBeginningAnEpisode
+[       OK ] LeaseSubmission.ColdMetadataBudgetRejectsWithoutBeginningAnEpisode (0 ms)
+[----------] 3 tests from LeaseSubmission (0 ms total)
+
+[----------] Global test environment tear-down
+[==========] 3 tests from 1 test suite ran. (0 ms total)
+[  PASSED  ] 3 tests.
