@@ -1,0 +1,3 @@
+[1/3] C:\WINDOWS\system32\cmd.exe /C "cd /D C:\h7\foundation-f2-sdk\cold-windows-cpu-cuda-shared-c26261e39\consumer && "C:\Program Files\CMake\bin\cmake.exe" -P C:/h7/foundation-f2-sdk/cold-windows-cpu-cuda-shared-c26261e39/consumer/hyle-runtime/batch-Release.cmake"
+[2/3] Building CXX object CMakeFiles\batch.dir\C_\public\project-hyle\hyle\samples\package\graph\batched_transfers\main.cc.obj
+[3/3] Linking CXX executable batch.exe

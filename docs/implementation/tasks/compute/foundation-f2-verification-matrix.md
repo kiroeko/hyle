@@ -1,18 +1,22 @@
 # F2 固定候选与剩余资格矩阵
 
+当前：CLOSED，最终七门与限制见[terminal record](foundation-f2-final-closure.md)。
+下面早期pending/阶段描述保留为历史，不是当前待办或施工授权。
+
 本页由[活动收口卡](foundation-f2-batched-transfers.md)纳入，只执行既定七FIX，不扩大F3或数学能力。
 2026-10-12用户纠正后：只验证实际受影响owner/直接消费者与公共交付风险；原selector全库
 扩展清单是历史调度输出，未受影响基础factor/其他facade停止回放，不是F2收口缺口，不伪签PASS。
 当前compute的[cold分类delta](foundation-f2-prepare-error-classification.md)已通过Windows完整58/90；Graph原846 PASS/7 skip经既有fixture补跑后853项执行PASS，
 产品形状固定并重新CANDIDATE于c26261e39；
 其他三owner scope保持候选。后续ordinary消费者使用c26261e39全源码，未验平台/交付不由本格代签。
-产品候选：`03162add05d3e26fe3314c6bcdaafa5a277a3a76`。四owner为compute、compute_backend_cuda、
-compute_route_apple、compute_route_vulkan；其余owner保持原状态。候选后的文档/状态/证据不改变产品。
+当前全源码snapshot：`c26261e3958c7eb46ecde2a4ba7c5654a03f1b93`；compute绑定该cold delta，
+CUDA绑定5b3efe2cc，Apple/Vulkan绑定03162add0，其owner scope未变。其余owner保持原状态。
+下面首轮03162add0与5b3efe2cc记录属于历史资格，候选后的文档/测试/证据不改变产品。
 
 CUDA例外已定界修复：真实CudaCopyLateFailure反证owned free的fatal边界，backend按
 [固定终态释放delta](foundation-f2-cuda-terminal-cleanup.md)退回AUDITED后重新CANDIDATE于
 `5b3efe2cce3fcab2bc55cf749af2d862a786ef25`。原其他三owner候选/source scope不变。
-Windows/WSL该旅程及正常回归已有实证；后续SDK按包含delta的5b3efe2cc全源码执行。
+Windows/WSL该旅程及正常回归已有实证；新的cold分类delta也已纳入c26261e39全源码。
 
 ## 实施与已取证范围
 
@@ -83,6 +87,10 @@ skipped理由，不修改公共工具。已有F1消费者只作直接回归，�
 
 最后检查：按上述实际影响定界的适用门、closure（registry变化显式previous-ref）、docs、diff、P0运行账与
 源代码红队/七问；所有适用格有实证才CLOSED。当前聚合资格UNPROVEN，不把表内首轮PASS扩大。
+
+上述为冻结时的历史安排。终审已按用户纠正后的实际影响范围完成；cold分类修复的Windows
+source/static/shared、WSL与Air普通消费者均PASS，旧batch/native/API/package scope不变且已
+机械核对，相关旧门复用。无关全局扩展停止且不签PASS，当前聚合F2资格为PASS，见最终收据。
 
 ## WSL固定候选本批结果
 

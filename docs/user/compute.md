@@ -79,7 +79,7 @@ Apple 沿原 MLX owner 同步实际 command buffer，每 native phase 的 worker
 仍拥有旧数据。`close()` 停止接纳，`drain()` 观察实际工作；析构放弃观察时不会隐式 host wait，
 原 native owner 继续保活资源。设备失败的槽不承诺自动恢复，应按返回错误和实际退役情况重建。
 两组/两槽及原编码数学组合见[批量搬运样例](../../samples/package/graph/batched_transfers/)。
-F2 当前仍在验收，已取证范围及未验交付以[活动收口卡](../implementation/tasks/compute/foundation-f2-batched-transfers.md)为准。
+F2 有限范围已收口，实际平台/交付与未知成本限制见[最终记录](../implementation/tasks/compute/foundation-f2-final-closure.md)。
 
 > 本页描述当前 Compute runtime foundation、CPU operation surface 与 CUDA runtime；施工资格只以
 > [`module-status.json`](../implementation/module-status.json) 为准。普通 CPU 入口自动组装已构建的 oneDNN/ggml/ATen/Native 实现；

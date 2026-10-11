@@ -143,5 +143,152 @@
         "sha256": "9d04af57588dfc162636eaa3740fbefc8a375ce664c89305a4f68b3ee748aa97"
       }
     }
+  },
+  "windows_source_math": {
+    "verdict": "PASS",
+    "receipt": "windows-source-math/job.json",
+    "scope": "F2 cold prepare delta precise ordinary CPU/CUDA source BF16/GGUF Q8 Direct and Graph math consumer; no global modules/headers rerun",
+    "files": {
+      "build.log": {
+        "path": "windows-source-math/build.log",
+        "sha256": "dc696d686510d9e798b89378ec68ca6203fd5244a0af20602e61c6db9c96870a"
+      },
+      "job.json": {
+        "path": "windows-source-math/job.json",
+        "sha256": "b27da21838e31eb7f1f1e46c92f492261bd225749d6ae76f62e3dd964ab53c72"
+      },
+      "math.log": {
+        "path": "windows-source-math/math.log",
+        "sha256": "3271158017abf57ae6807db27566533a7c20e115030cbf7a5411783d338ed67f"
+      }
+    }
+  },
+  "unchanged_scope": {
+    "receipt": "cold-delta-reuse-scope.json"
+  },
+  "windows_sdk_static": {
+    "verdict": "PASS",
+    "receipt": "windows-sdk-static/job.json",
+    "scope": "Windows CPU/CUDA cold prepare delta relocated installed ordinary math only; unchanged API/header/absence gates reused by scope",
+    "reused_unchanged_gates": "Existing c262-vs-5b product diff only operation.cc; public headers/component/package inputs unchanged. Prior seven-header/route-absence/runtime staging qualification reused by matching scope, not rerun here.",
+    "files": {
+      "configure.log": {
+        "path": "windows-sdk-static/configure.log",
+        "sha256": "cca47f6388c3b09b3c621306f534c87d6b77516c10c7e489262d9fc68236a48a"
+      },
+      "consumer-build.log": {
+        "path": "windows-sdk-static/consumer-build.log",
+        "sha256": "b32a4e8ded674abaa8c683835242c6ebaa504dbadd69d4a4be5136a7c2bacd65"
+      },
+      "consumer-configure.log": {
+        "path": "windows-sdk-static/consumer-configure.log",
+        "sha256": "337aa7065cdc65caee12110433ccbe121a6e84f09ca2d569cb18ff2b0797dd5c"
+      },
+      "identity.log": {
+        "path": "windows-sdk-static/identity.log",
+        "sha256": "fc0da0dd7e8d2c9d1419aa11e4801acb7158a0e185c28122c0fd6292a65f4044"
+      },
+      "install.log": {
+        "path": "windows-sdk-static/install.log",
+        "sha256": "1cffdeae0c640947601bc3c6b11b91a02c180d1a566274c53401e5612bff9acd"
+      },
+      "job.json": {
+        "path": "windows-sdk-static/job.json",
+        "sha256": "94c02b529edbe2a4d4f58f32ce21fe6065c07e02e5a89c61f90c91e96c1341a8"
+      },
+      "math.log": {
+        "path": "windows-sdk-static/math.log",
+        "sha256": "3271158017abf57ae6807db27566533a7c20e115030cbf7a5411783d338ed67f"
+      },
+      "producer.log": {
+        "path": "windows-sdk-static/producer.log",
+        "sha256": "340ad5bd89273e285d97c3ec6cd402bc802da277803a27c7d0d391b8c3a182b4"
+      }
+    }
+  },
+  "windows_sdk_shared": {
+    "verdict": "PASS",
+    "receipt": "windows-sdk-shared/job.json",
+    "scope": "Windows CPU/CUDA cold prepare delta relocated installed ordinary math only; unchanged API/header/absence gates reused by scope",
+    "reused_unchanged_gates": "Existing c262-vs-5b product diff only operation.cc; public headers/component/package inputs unchanged. Prior seven-header/route-absence/runtime staging qualification reused by matching scope, not rerun here.",
+    "files": {
+      "configure.log": {
+        "path": "windows-sdk-shared/configure.log",
+        "sha256": "545a59693129e84c068de7984e2b3d0f6b0d19153f1d7abb3d92578e04a6ee18"
+      },
+      "consumer-build.log": {
+        "path": "windows-sdk-shared/consumer-build.log",
+        "sha256": "f32e055c8f93eedb6140c9ebe81891aca8fe33e7bcbde6b1ec64a6547a5b4c87"
+      },
+      "consumer-configure.log": {
+        "path": "windows-sdk-shared/consumer-configure.log",
+        "sha256": "fe748b44f08dea5fe08e19ab784a17fbaead1e53ab27be1485dd03aa03456160"
+      },
+      "identity.log": {
+        "path": "windows-sdk-shared/identity.log",
+        "sha256": "fc0da0dd7e8d2c9d1419aa11e4801acb7158a0e185c28122c0fd6292a65f4044"
+      },
+      "install.log": {
+        "path": "windows-sdk-shared/install.log",
+        "sha256": "6678645b18198f442566cb3a8baedd3dd9e9bae8e1f725b9d701714c68d49ea6"
+      },
+      "job.json": {
+        "path": "windows-sdk-shared/job.json",
+        "sha256": "fc593d77b3cc848bd2a47a19f12b4cc46cf2569cf977a39f3db1211e46f39be7"
+      },
+      "math.log": {
+        "path": "windows-sdk-shared/math.log",
+        "sha256": "3271158017abf57ae6807db27566533a7c20e115030cbf7a5411783d338ed67f"
+      },
+      "producer.log": {
+        "path": "windows-sdk-shared/producer.log",
+        "sha256": "48f42520e240ddc61e084d16278af314de8fa3d54804f8ed0d731ea214b30e24"
+      }
+    }
+  },
+  "wsl_source_math": {
+    "verdict": "PASS",
+    "receipt": "wsl-source-math/job.json",
+    "files": {
+      "build.log": {
+        "path": "wsl-source-math/build.log",
+        "sha256": "03b58730f9b777e88d633c74c15412ba94703fa1a4c8112ec20f5681890e0c0c"
+      },
+      "configure.log": {
+        "path": "wsl-source-math/configure.log",
+        "sha256": "9c71d177b82a337d5e8d61315cf7707024cb2053aec248f9673bf88f37103b34"
+      },
+      "job.json": {
+        "path": "wsl-source-math/job.json",
+        "sha256": "10b96d690ec5499272f7715c9d79b1888f20e1057f4f43a01a97216450821507"
+      },
+      "math.log": {
+        "path": "wsl-source-math/math.log",
+        "sha256": "884d80e6df6fd625b6bf39028b2891da1bdd8a3ab7aa36b0da37c165e10e1f9a"
+      }
+    }
+  },
+  "air_source_math": {
+    "verdict": "PASS",
+    "receipt": "air-source-math/job.json",
+    "scope": "F2 cold prepare delta AppleClang CPU/Apple ordinary source math; unchanged native/header/package evidence reused, no global gates",
+    "files": {
+      "build.log": {
+        "path": "air-source-math/build.log",
+        "sha256": "c23ee1713013cd791a92a5d5ac86172e7a54702606b5cf42a9adea15c0fc244c"
+      },
+      "configure.log": {
+        "path": "air-source-math/configure.log",
+        "sha256": "51a1eea113603d199e88b47891f2f0bd4d2a8636d743d2754f827356a9fd5a05"
+      },
+      "job.json": {
+        "path": "air-source-math/job.json",
+        "sha256": "c389ffe1f35efba152c4221fb1b099a039ea9fdcb1e8284cec85548e551dc93b"
+      },
+      "test.log": {
+        "path": "air-source-math/test.log",
+        "sha256": "e402efb5db88ec558172d23e315afda8fcb44f47eff673fca47a73ed5c03038a"
+      }
+    }
   }
 }

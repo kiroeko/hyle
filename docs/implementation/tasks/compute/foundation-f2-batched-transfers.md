@@ -1,7 +1,7 @@
 # F2：准备后的原生批量范围搬运
 
-> 状态：四owner均CANDIDATE；compute cold分类delta固定于c26261e39，CUDA终态delta固定于5b3efe2cc。
-> Apple/Vulkan仍绑定03162add0；完整资格继续按当前矩阵执行，尚未CLOSED。
+> 状态：CLOSED；四owner最终候选/七门/限制见[最终收口](foundation-f2-final-closure.md)。
+> 本页保留施工、失败与恢复历史，不再授权继续F2施工；F3按原goal独立启动。
 > 实施前[原子/复合接缝源码审计](foundation-f2-source-audit.md)为定界输入，未授权产品修改或签运行资格。
 > component / owner：拟 compute、compute_backend_cpu/cuda、
 > compute_route_cpu/cuda/apple/vulkan；只有普通 Graph 需要本批 native binding 接缝时再绑定对应 owner。

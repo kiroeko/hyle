@@ -1,13 +1,14 @@
 # F2 固定候选终审输入
 
-状态：REVIEW_IN_PROGRESS；本页由[F2活动卡](foundation-f2-batched-transfers.md)纳入，不是terminal。
+状态：PASS/CLOSED evidence；终审结论见[F2最终收口](foundation-f2-final-closure.md)。
+本页保留独立候选后finding与处理历史，不再授权继续源码扫描。
 2026-10-12用户纠正：未受影响模块不全局验证。原selector广泛调度行不等于本轮全部风险，
 依活动卡收窄到owner/真实直接消费者/改变的公开交付，停止无关回放，不虚构未运行PASS。
 扩展CPU backend反例依法退回AUDITED后，cold分类delta已固定c26261e39并完成Windows58/90项，
 Graph853项精确集合中原846 PASS/7 fixture skip已用既有bounded fixture补跑，最终853项执行PASS，
 compute重新CANDIDATE；见[cold分类delta](foundation-f2-prepare-error-classification.md)。
-产品snapshot为5b3efe2cce3fcab2bc55cf749af2d862a786ef25；compute/Apple/Vulkan的03162add0
-owner scope不变，只有CUDA按[终态delta](foundation-f2-cuda-terminal-cleanup.md)重新固定。
+产品snapshot为c26261e3958c7eb46ecde2a4ba7c5654a03f1b93；compute按cold delta重新固定，
+CUDA按[终态delta](foundation-f2-cuda-terminal-cleanup.md)绑定5b3efe2cc，Apple/Vulkan的03162add0 scope不变。
 候选后的测试维护与证据不授权修改产品。F3仍READY_FOR_SCOPE，未登记或实施。
 
 ## 七问与源码审查
@@ -23,7 +24,7 @@ owner scope不变，只有CUDA按[终态delta](foundation-f2-cuda-terminal-clean
 | 下层复用与owner | common helper只拥有range/permission/control；CPU/CUDA原QueueSequence，Apple原Runtime/Job，Vulkan原Run/Device/transfer handoff分别执行；private util_core直接边由中央声明投影 | 未发现第二runtime、通用native executor或新copy/math kernel |
 | 复杂度与同合同成本 | [当前P0账](foundation-f2-verification-matrix.md)与copy_ranges/copy_control/三个controller源码相符：排序alias/root而非R²比较，G≤64；所有slot容量冷固定，native calls/依赖/完成/host wait分账 | 不宣称P1赢家、vendor零分配或零host wait；最终P0聚合待影响门完成 |
 | C/FFI清洁度 | 新入口为C++ program/invocation/submission及值类型；原CUDA/Metal/Vulkan仅在所属private adapter，普通公共batch头没有vendor函数表或C schema | 本批无Native FFI交付 |
-| source/static/shared与依赖 | 当前矩阵有适用三平台四路线source及迁址static/shared、ON头/缺席诊断、Windows DLL与Air dyld/WSL ldd；中央component-contract已PASS | selector扩展factor/header/delivery逐项仍待裁决，不能以SDK数学包代签全部格 |
+| source/static/shared与依赖 | 当前矩阵有适用三平台四路线source及迁址static/shared、ON头/缺席诊断、Windows DLL与Air dyld/WSL ldd；中央component-contract已PASS | 只补cold delta实际影响的消费者/交付，未改变边界的证据复用；无关全局清单停止 |
 | C++易用性/指南/限制 | [指南](../../../user/compute.md)与公共batch头、普通graph façade样例核对：独立槽、显式phase与producer、last-write逻辑覆盖、旧结果/失败slot、borrow寿命与drain | 没有要求普通消费者选择内部factor/provider；关闭/未知成本限制保留 |
 
 ## 具名finding与处理
@@ -43,3 +44,8 @@ owner scope不变，只有CUDA按[终态delta](foundation-f2-cuda-terminal-clean
 公共API/布局改动的依据；已发现的cold错误分类反例只按上述固定delta修正，其他实际反例仍按owner协议裁决。
 本页不以测试数量或文档齐全替代工程关闭。最终terminal需补完整风险矩阵、七门、统一LOC与
 selected/skipped裁决，并在registry依法从CANDIDATE进入CLOSED后才启动F3。
+
+终审收束：两个真实产品反例均依法修复并固定，原失败保留；独立metadata账单17项与cold
+普通消费者已通过。旧batch/native/API/package范围机械一致，实际验证与合理复用完成，
+scope/合同外的全局调度行按用户要求排除而非伪签PASS。没有OPEN product finding；源码审查
+及全部适用F2工程门通过。vendor成本/CUDA physical free未知与WSL GPU资格限制继续明确。

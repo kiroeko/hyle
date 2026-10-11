@@ -1,0 +1,44 @@
+{
+  "product_candidate": "c26261e3958c7eb46ecde2a4ba7c5654a03f1b93",
+  "test_candidate": "1dcf0b53440127cf9f40e3b19da0a95877d9d7cb",
+  "test_tree": "1475d07d54f088f203dbc41e00bc62cde87550e1",
+  "scope": "F2 cold prepare delta precise ordinary CPU/CUDA source BF16/GGUF Q8 Direct and Graph math consumer; no global modules/headers rerun",
+  "build": "C:\\h7\\w-cpu-cuda\\selected-graph\\source-build",
+  "compiler": "C:/Program Files/Microsoft Visual Studio/18/Enterprise/VC/Tools/MSVC/14.50.35717/bin/Hostx64/x64/cl.exe",
+  "parallel": 1,
+  "stages": [
+    {
+      "name": "build",
+      "command": [
+        "C:\\Program Files\\CMake\\bin\\cmake.EXE",
+        "--build",
+        "C:\\h7\\w-cpu-cuda\\selected-graph\\source-build",
+        "--target",
+        "hyle_f2_batched_transfers",
+        "--parallel",
+        "1"
+      ],
+      "pid": 19496,
+      "state": "terminal",
+      "available_bytes": 45782511616,
+      "log": "build.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "dc696d686510d9e798b89378ec68ca6203fd5244a0af20602e61c6db9c96870a"
+    },
+    {
+      "name": "math",
+      "command": [
+        "C:\\h7\\w-cpu-cuda\\selected-graph\\source-build\\hyle_f2_batched_transfers.exe"
+      ],
+      "pid": 85540,
+      "state": "terminal",
+      "available_bytes": 45820170240,
+      "log": "math.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "3271158017abf57ae6807db27566533a7c20e115030cbf7a5411783d338ed67f"
+    }
+  ],
+  "verdict": "PASS"
+}

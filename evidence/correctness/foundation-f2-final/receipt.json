@@ -1,0 +1,183 @@
+{
+  "schema_version": 1,
+  "scope": "F2 original seven FIX only, actual affected four owners/consumers and public delivery; explicit user correction excludes unrelated global replay. F1 evidence unchanged, F3 not implemented.",
+  "product_snapshot": "c26261e3958c7eb46ecde2a4ba7c5654a03f1b93",
+  "product_tree": "185e3c211a65754f5487e7e1d19f8252e68f29d9",
+  "owners": {
+    "compute": "c26261e3958c7eb46ecde2a4ba7c5654a03f1b93",
+    "compute_backend_cuda": "5b3efe2cce3fcab2bc55cf749af2d862a786ef25",
+    "compute_route_apple": "03162add05d3e26fe3314c6bcdaafa5a277a3a76",
+    "compute_route_vulkan": "03162add05d3e26fe3314c6bcdaafa5a277a3a76"
+  },
+  "verdict": "PASS_SCOPED_F2",
+  "gates": {
+    "scope": "PASS",
+    "architecture": "PASS",
+    "correctness": "PASS",
+    "delivery": "PASS",
+    "usability_docs": "PASS",
+    "red_team": "PASS",
+    "engineering_performance": "PASS"
+  },
+  "performance_tier": "P0",
+  "sampled_performance": "NOT_APPLICABLE_NO_TIMED_CLAIM",
+  "source_evidence": [
+    {
+      "path": "evidence/correctness/foundation-f2-common-controls/receipt.json",
+      "sha256": "cf88ac8042bf84231cf293e29ce6bd82180de8af77cd25323fd942fbb22f27a7"
+    },
+    {
+      "path": "evidence/correctness/foundation-f2-cpu-program/receipt.json",
+      "sha256": "777e8152fd2e2335ce313a9d29808335e227dd4e4be53d7d0b0645f86d1dcbf2"
+    },
+    {
+      "path": "evidence/correctness/foundation-f2-cuda-backend/receipt.json",
+      "sha256": "03a64b287f7bf6c45c70f7bd09cfcd33c2226bca3ef8f7fe276ceedf344af96b"
+    },
+    {
+      "path": "evidence/correctness/foundation-f2-public-program/receipt.json",
+      "sha256": "603df477d8a88e7c9e37765ed6af2cbe7b02e11f28722387631f384e494bfe29"
+    },
+    {
+      "path": "evidence/correctness/foundation-f2-apple-native/receipt.json",
+      "sha256": "a104fba89788fc37c551b428345e12e14e30ebdb1a95224aa3c1f38a66b98294"
+    },
+    {
+      "path": "evidence/correctness/foundation-f2-apple-public/receipt.json",
+      "sha256": "2d45a146a06ebcdb4087ae7d74974ee3ffd4b4d5c765b5cf14faf41d16af04d7"
+    },
+    {
+      "path": "evidence/correctness/foundation-f2-vulkan-recording/receipt.json",
+      "sha256": "b398cf5c03982a64003b6d9deeeacf78d28538f1d892cfa84efa3024a4a36e49"
+    },
+    {
+      "path": "evidence/correctness/foundation-f2-vulkan-public/receipt.json",
+      "sha256": "605bd39c20bae156df2e00e3e6b48ac7d9c9535cffc71ce6aa5b275e31e9c0da"
+    },
+    {
+      "path": "evidence/correctness/foundation-f2-cuda-faults/receipt.json",
+      "sha256": "22d06a2b6d73034f80ce8d1f653a304c838b97299378d6f842c776ddee26e5eb"
+    },
+    {
+      "path": "evidence/correctness/foundation-f2-cuda-terminal-cleanup/receipt.json",
+      "sha256": "1864bacafa9a5143947ec4cda231ee7a3eec04e0107a44f268d506b38aa240b9"
+    },
+    {
+      "path": "evidence/correctness/foundation-f2-math-consumers/receipt.json",
+      "sha256": "0618c4049dcabf3f2af3529f570be47fd409c41b5af3e56900702df5dbecece0"
+    },
+    {
+      "path": "evidence/correctness/foundation-f2-wsl-qualification/receipt.json",
+      "sha256": "fecce8d77978d35eec68b5631863689c870c1812fd811328f44a346d5a4a22c9"
+    },
+    {
+      "path": "evidence/correctness/foundation-f2-wsl-sdk/receipt.json",
+      "sha256": "ce9390cd4734a291fadacee11f521a028126623a96ae7968f3b7ee4ab6c23cc0"
+    },
+    {
+      "path": "evidence/correctness/foundation-f2-windows-cuda-sdk/receipt.json",
+      "sha256": "cadd4d08063d0efaa5abfff429a057f04a5c4a922e3e9ac41a4c96bb237ac7d9"
+    },
+    {
+      "path": "evidence/correctness/foundation-f2-windows-vulkan-sdk/receipt.json",
+      "sha256": "af9afc9a175da49b9f0d796d63a41e1f00ab6846d4b673e1a7d4bff7f6c4564e"
+    },
+    {
+      "path": "evidence/correctness/foundation-f2-air-apple-sdk/receipt.json",
+      "sha256": "b02f9af546fd97fa2c7eb1559643e3af5d5bfb4e8ea336afc64674aabd7b37a0"
+    },
+    {
+      "path": "evidence/correctness/foundation-f2-air-vulkan-qualification/receipt.json",
+      "sha256": "f8310e97e4d9c2c7cacb4d3fa2527502f322eeb655a221285a497dc16ddb0796"
+    },
+    {
+      "path": "evidence/correctness/foundation-f2-wsl-vulkan-sdk/receipt.json",
+      "sha256": "8a6db20bb7500d40f14b4590a9640ab0778f8de8b5eb3fce387cb00b4915dbd0"
+    },
+    {
+      "path": "evidence/correctness/foundation-f2-wsl-route-qualification/receipt.json",
+      "sha256": "710ab3b3911171ddac58fd5777415e1fd91bc6f09166af8e08c2f49ee5b2f877"
+    },
+    {
+      "path": "evidence/correctness/foundation-f2-native-risk/receipt.json",
+      "sha256": "347a9cd347290cfc983a38effe6d04dfc1667894e9ad3182f7dd31f3df03d3f7"
+    },
+    {
+      "path": "evidence/correctness/foundation-f2-component-contract/receipt.json",
+      "sha256": "32c3613190478c181e1c22037cf6b459db1c03c40275b8291e96e3398390d0e6"
+    },
+    {
+      "path": "evidence/correctness/foundation-f2-prepare-error/receipt.json",
+      "sha256": "a6806ba21a7401a846f74b26262156c631e356c191299fdc64fc0352b9797936"
+    }
+  ],
+  "checked_referenced_hashes": 372,
+  "loc": [
+    {
+      "id": "repository",
+      "label": "full repository code",
+      "code": 2412351,
+      "files": 5882,
+      "selected_files": 12517,
+      "paths": [
+        "Git-tracked files at immutable commit"
+      ],
+      "languages": [
+        "all languages recognized by cloc"
+      ]
+    },
+    {
+      "id": "self_without_tests",
+      "label": "self-written excluding tests",
+      "code": 168556,
+      "files": 681,
+      "selected_files": 765,
+      "paths": [
+        "include/hyle",
+        "src"
+      ],
+      "languages": [
+        "C++",
+        "C/C++ Header",
+        "C",
+        "CUDA",
+        "Objective-C++",
+        "GLSL"
+      ]
+    },
+    {
+      "id": "module",
+      "label": "module implementation union (state:CANDIDATE)",
+      "code": 26930,
+      "files": 141,
+      "selected_files": 141,
+      "paths": [],
+      "languages": [
+        "C++",
+        "C/C++ Header",
+        "C",
+        "CUDA",
+        "Objective-C++",
+        "GLSL"
+      ]
+    }
+  ],
+  "loc_source_commit": "338438419afcf0b02748621c0d601b465fa0cabf",
+  "limitations": [
+    "WSL Vulkan only actual llvmpipe: no qualified GPU; GPU execution not run there, actual Windows/Air GPU evidence separate",
+    "CUDA sticky terminal physical allocation release UNKNOWN, process restart per native contract; HYLE logical ownership/guards retired",
+    "Vendor internal allocation/control cost UNKNOWN and native_metadata_unknown, no zero vendor allocation claim",
+    "Borrowed resource/allocator/Queue lifetime, explicit dependencies and native four-byte copy capacity constraints remain"
+  ],
+  "excluded_global_gates": "NOT_SELECTED_UNCHANGED_BOUNDARY, never PASS; original broad scheduling/failures retained",
+  "files": {
+    "evidence-audit.json": {
+      "path": "evidence-audit.json",
+      "sha256": "3ad2590fd7ecd10b93fe931f46ab851f1891e323bc7d27fe2321a6c7fbf005f1"
+    },
+    "owner-union-loc.json": {
+      "path": "owner-union-loc.json",
+      "sha256": "41191f9808df6c5f84f1d0fbab907b221db96e344f979509c766c98ee1eb35c6"
+    }
+  }
+}

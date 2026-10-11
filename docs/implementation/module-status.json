@@ -270,10 +270,14 @@
     },
     {
       "module": "compute",
-      "state": "CANDIDATE",
-      "record": "docs/implementation/tasks/compute/foundation-f2-prepare-error-classification.md",
-      "summary": "F2 CANDIDATE cold delta：pure resource mismatch与provider硬错误已分开，Windows backend58/compute90/Graph853全部执行PASS（原7 fixture skip已补齐并保留）；原FAIL/TIMEOUT保留，其他平台/SDK及扩展终审未CLOSED。",
-      "candidate": "c26261e3958c7eb46ecde2a4ba7c5654a03f1b93"
+      "state": "CLOSED",
+      "record": "docs/implementation/tasks/compute/foundation-f2-final-closure.md",
+      "summary": "F2 CLOSED：原七FIX四路线prepared batch/phase/ready/native依赖/replay、真实数学与适用三交付/生命周期/P0终审通过；cold错误与CUDA终态反例依法修复，原失败/未知成本/WSL软件GPU限制保留，未受影响全局门不回放。",
+      "candidate": "c26261e3958c7eb46ecde2a4ba7c5654a03f1b93",
+      "performance": {
+        "tier": "P0",
+        "evidence": "evidence/correctness/foundation-f2-final/receipt.json"
+      }
     },
     {
       "module": "graph",
@@ -413,10 +417,14 @@
     },
     {
       "module": "compute_backend_cuda",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "candidate": "5b3efe2cce3fcab2bc55cf749af2d862a786ef25",
-      "record": "docs/implementation/tasks/compute/foundation-f2-cuda-terminal-cleanup.md",
-      "summary": "F2-06 CANDIDATE delta：真实晚失败后的CUDA资源/context终态释放边界已固定；Windows/WSL独立producer故障、原错误/旧组保留/guards回收与正常资源精准回归通过，native physical free仍UNKNOWN；剩余F2 SDK/全矩阵/P0终审红队未完成。"
+      "record": "docs/implementation/tasks/compute/foundation-f2-final-closure.md",
+      "summary": "F2 CLOSED：原七FIX四路线prepared batch/phase/ready/native依赖/replay、真实数学与适用三交付/生命周期/P0终审通过；cold错误与CUDA终态反例依法修复，原失败/未知成本/WSL软件GPU限制保留，未受影响全局门不回放。",
+      "performance": {
+        "tier": "P0",
+        "evidence": "evidence/correctness/foundation-f2-final/receipt.json"
+      }
     },
     {
       "module": "compute_provider_native",
@@ -509,10 +517,14 @@
     },
     {
       "module": "compute_route_apple",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "candidate": "03162add05d3e26fe3314c6bcdaafa5a277a3a76",
-      "record": "docs/implementation/tasks/compute/foundation-f2-batched-transfers.md",
-      "summary": "F2 CANDIDATE：原七FIX的四路线prepared copy/phase/ready、native依赖与租约交接、普通BF16/原编码量化Direct/Graph接线已固定；首轮数学与Windows CUDA故障取证，剩余平台/SDK/sanitizer/新头与P0终审红队按有限矩阵执行，尚未CLOSED。"
+      "record": "docs/implementation/tasks/compute/foundation-f2-final-closure.md",
+      "summary": "F2 CLOSED：原七FIX四路线prepared batch/phase/ready/native依赖/replay、真实数学与适用三交付/生命周期/P0终审通过；cold错误与CUDA终态反例依法修复，原失败/未知成本/WSL软件GPU限制保留，未受影响全局门不回放。",
+      "performance": {
+        "tier": "P0",
+        "evidence": "evidence/correctness/foundation-f2-final/receipt.json"
+      }
     },
     {
       "module": "graph_route_apple",
@@ -527,10 +539,14 @@
     },
     {
       "module": "compute_route_vulkan",
-      "state": "CANDIDATE",
+      "state": "CLOSED",
       "candidate": "03162add05d3e26fe3314c6bcdaafa5a277a3a76",
-      "record": "docs/implementation/tasks/compute/foundation-f2-batched-transfers.md",
-      "summary": "F2 CANDIDATE：原七FIX的四路线prepared copy/phase/ready、native依赖与租约交接、普通BF16/原编码量化Direct/Graph接线已固定；首轮数学与Windows CUDA故障取证，剩余平台/SDK/sanitizer/新头与P0终审红队按有限矩阵执行，尚未CLOSED。"
+      "record": "docs/implementation/tasks/compute/foundation-f2-final-closure.md",
+      "summary": "F2 CLOSED：原七FIX四路线prepared batch/phase/ready/native依赖/replay、真实数学与适用三交付/生命周期/P0终审通过；cold错误与CUDA终态反例依法修复，原失败/未知成本/WSL软件GPU限制保留，未受影响全局门不回放。",
+      "performance": {
+        "tier": "P0",
+        "evidence": "evidence/correctness/foundation-f2-final/receipt.json"
+      }
     },
     {
       "module": "graph_route_vulkan",

@@ -1,0 +1,60 @@
+{
+  "product_candidate": "c26261e3958c7eb46ecde2a4ba7c5654a03f1b93",
+  "previous_product": "5b3efe2cce3fcab2bc55cf749af2d862a786ef25",
+  "changed_product_paths": [
+    "src/compute/operation.cc"
+  ],
+  "reuse_scope": "Listed batch/native/package inputs unchanged. Ordinary common prepare body changed, so its CPU/CUDA consumer validation remains required. Not a global-tree selector cache reuse or unrun PASS.",
+  "files": [
+    {
+      "path": "include/hyle/compute/batch_transfer.h",
+      "sha256": "f214b042f0b6d1ac77d601211ed796bc60cacc0115182fd192ace0313471e21c",
+      "unchanged": true
+    },
+    {
+      "path": "src/compute/batch_transfer.cc",
+      "sha256": "0bbe9efc55603f3cf316bcc76919c74c2d703edd661edfe89eee414cdd186cd2",
+      "unchanged": true
+    },
+    {
+      "path": "src/compute/copy_control.cc",
+      "sha256": "168e8079cdd6f660cd5c5d22d1da7056f4a932db7b219db9c6afeae5192df14b",
+      "unchanged": true
+    },
+    {
+      "path": "src/compute/copy_ranges.cc",
+      "sha256": "2dd034be00e8e33e861fb6b2fad47f949fdb327220e5ed2d63d95cb1fb42784d",
+      "unchanged": true
+    },
+    {
+      "path": "src/compute_backend_cuda/cuda_batch_transfer.cc",
+      "sha256": "8bff62fcf237cedb424b4916e283f36d438c3c9fe9876363f7efc9bdb8b4ec8a",
+      "unchanged": true
+    },
+    {
+      "path": "src/compute_route_apple/apple_copy_program.cc",
+      "sha256": "d48244321b8a15ec5fc6ea2973acac5ad804dd31069c69cc67a136f34ff0d9aa",
+      "unchanged": true
+    },
+    {
+      "path": "src/compute_route_apple/apple_copy_recording.mm",
+      "sha256": "109f892f872dba2d1d586f8a9e36cb70ec3bb4d12a77d83bffd942b5e186a1a8",
+      "unchanged": true
+    },
+    {
+      "path": "src/compute_route_vulkan/vulkan_copy_program.cc",
+      "sha256": "9f525715378ebbc296a9e4c039b553e178250355710c30046f34f0b7e58f9742",
+      "unchanged": true
+    },
+    {
+      "path": "src/compute_route_vulkan/vulkan_copy_recording.cc",
+      "sha256": "2e355ef10450c57aeba917fd4a0eb6108af4592f1816274252ec544c9cd6b493",
+      "unchanged": true
+    },
+    {
+      "path": "cmake/HyleComponents.cmake",
+      "sha256": "81ee10c65bbd80786f2cec5c0e0bb590c4ed0fad3caf344a71cd0e10ac983623",
+      "unchanged": true
+    }
+  ]
+}

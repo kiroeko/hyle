@@ -1,6 +1,7 @@
 # F2 CUDA：真实晚失败后的资源释放反例
 
-状态：CANDIDATE；owner仅compute_backend_cuda；父轮仍是[F2七FIX](foundation-f2-batched-transfers.md)。
+状态：CLOSED evidence；并入[F2最终收口](foundation-f2-final-closure.md)。owner仅compute_backend_cuda；
+父轮为[F2七FIX](foundation-f2-batched-transfers.md)。以下阶段句子为历史。
 baseline/改前registry ref：`7e91e9ad5b40485e555f579053101e31dfc2e16b`。
 原产品candidate为03162add0；compute/Apple/Vulkan保持其CANDIDATE，F1历史不重开。
 

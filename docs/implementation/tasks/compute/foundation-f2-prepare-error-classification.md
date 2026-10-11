@@ -1,6 +1,7 @@
 # F2终审：准备阶段硬错误与资源不匹配的分类
 
-状态：CANDIDATE；owner仅compute；父轮[F2七FIX](foundation-f2-batched-transfers.md)。
+状态：CLOSED evidence；本delta并入[F2最终收口](foundation-f2-final-closure.md)。
+owner仅compute；父轮[F2七FIX](foundation-f2-batched-transfers.md)。以下阶段句子为历史。
 baseline/改前registry ref为4f3669630，产品snapshot为5b3efe2cc；原compute候选03162add0
 被本次实际ordinary消费者错误反证，依法退回AUDITED。CUDA/Apple/Vulkan owner保持原候选。
 
@@ -100,3 +101,9 @@ Graph产品/source从F2 baseline未变，现有指南要求该metadata计入报�
 增量等于声明private bytes加实际metadata差；并检查释放后归零。不以EXPECT_GE放宽账单、
 不改Graph产品/公开合同/预算核心、不重开CLOSED Graph。保留原FAIL，原CPU树仅重建Graph
 测试，完整Graph factor/test120复验；此类测试维护不重置产品FIX名额。
+
+按用户的实际影响要求，只对GraphCompilationStorage及叶prepare错误/decline直接消费者作
+17项定向回归，Windows全部PASS，独立allocator计数核对精确增量与释放回Context基线。
+原两项FAIL保留，[同收据](../../../../evidence/correctness/foundation-f2-prepare-error/receipt.json)给出测试commit与完整XML/log；
+Graph产品/预算核心未改，其他全局factor与成熟模型目录不继续回放。当前只剩cold delta相关
+ordinary数学入口与必要交付更新、P0/LOC及最终裁决，不重新执行已证明不受影响的新头/故障门。

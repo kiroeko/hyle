@@ -1,0 +1,69 @@
+{
+  "candidate": "c26261e3958c7eb46ecde2a4ba7c5654a03f1b93",
+  "source": "/Users/kiro/hyle-scratch/compute-unified/source-c8874688",
+  "build": "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build",
+  "identity": {
+    "hardware": "Mac16,12",
+    "memory": "17179869184",
+    "os": "ProductName:\t\tmacOS\nProductVersion:\t\t27.0.1\nBuildVersion:\t\t26A434",
+    "compiler": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin",
+    "cmake": "cmake version 4.3.4\n\nCMake suite maintained and supported by Kitware (kitware.com/cmake).",
+    "ninja": "1.13.2"
+  },
+  "source_manifest": "HYLE full canonical Git archive\nGit commit: c26261e3958c7eb46ecde2a4ba7c5654a03f1b93\nGit tree: 185e3c211a65754f5487e7e1d19f8252e68f29d9\n",
+  "scope": "F2 cold prepare delta AppleClang CPU/Apple ordinary source math; unchanged native/header/package evidence reused, no global gates",
+  "configuration": "Release/shared/source/shipping instrumentationOFF cpu;apple",
+  "parallel": 1,
+  "stages": [
+    {
+      "name": "configure",
+      "command": [
+        "/opt/homebrew/bin/cmake",
+        "-S",
+        "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-parent",
+        "-B",
+        "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build"
+      ],
+      "pid": 32969,
+      "state": "terminal",
+      "available_bytes": 6820970496,
+      "log": "configure.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "51a1eea113603d199e88b47891f2f0bd4d2a8636d743d2754f827356a9fd5a05"
+    },
+    {
+      "name": "build",
+      "command": [
+        "/opt/homebrew/bin/cmake",
+        "--build",
+        "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build",
+        "--target",
+        "hyle_f2_batched_transfers",
+        "--parallel",
+        "1"
+      ],
+      "pid": 33048,
+      "state": "terminal",
+      "available_bytes": 6743900160,
+      "log": "build.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "c23ee1713013cd791a92a5d5ac86172e7a54702606b5cf42a9adea15c0fc244c"
+    },
+    {
+      "name": "test",
+      "command": [
+        "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build/hyle_f2_batched_transfers"
+      ],
+      "pid": 33173,
+      "state": "terminal",
+      "available_bytes": 7001456640,
+      "log": "test.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "e402efb5db88ec558172d23e315afda8fcb44f47eff673fca47a73ed5c03038a"
+    }
+  ],
+  "verdict": "PASS"
+}
