@@ -1,5 +1,6 @@
 #include "../compute_stream/native_journey.h"
 #include "fixture.h"
+#include "hyle/compute/vulkan_memory.h"
 
 namespace {
 namespace f = file_stream_test;
