@@ -270,14 +270,9 @@
     },
     {
       "module": "compute",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/compute/foundation-f1-resource-leases.md",
-      "summary": "F1 CLOSED：有界租约/权限、自然 Direct/Graph 与组合保活、实际最后使用后回收；适用风险/平台/三交付、新头/缺席/迁址、七门与 P0 通过，精确限制见 terminal。",
-      "candidate": "3034fc595abf5c2570e06dedbf195b34daf3fe72",
-      "performance": {
-        "tier": "P0",
-        "evidence": "docs/implementation/tasks/compute/foundation-f1-resource-leases.md"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/foundation-f2-batched-transfers.md",
+      "summary": "F2 SCOPED：绑定 F1 收口后的实际基线，审计原七 FIX 的有界批量范围/phase/ready与真实 native 依赖；未改产品或运行资格，其他闭包 owner 保持 CLOSED。"
     },
     {
       "module": "graph",
@@ -417,14 +412,9 @@
     },
     {
       "module": "compute_backend_cuda",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/compute/foundation-f1-resource-leases.md",
-      "summary": "F1 CLOSED：有界租约/权限、自然 Direct/Graph 与组合保活、实际最后使用后回收；适用风险/平台/三交付、新头/缺席/迁址、七门与 P0 通过，精确限制见 terminal。",
-      "candidate": "3034fc595abf5c2570e06dedbf195b34daf3fe72",
-      "performance": {
-        "tier": "P0",
-        "evidence": "docs/implementation/tasks/compute/foundation-f1-resource-leases.md"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/foundation-f2-batched-transfers.md",
+      "summary": "F2 SCOPED：绑定 F1 收口后的实际基线，审计原七 FIX 的有界批量范围/phase/ready与真实 native 依赖；未改产品或运行资格，其他闭包 owner 保持 CLOSED。"
     },
     {
       "module": "compute_provider_native",
@@ -517,14 +507,9 @@
     },
     {
       "module": "compute_route_apple",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/compute/foundation-f1-resource-leases.md",
-      "summary": "F1 CLOSED：有界租约/权限、自然 Direct/Graph 与组合保活、实际最后使用后回收；适用风险/平台/三交付、新头/缺席/迁址、七门与 P0 通过，精确限制见 terminal。",
-      "candidate": "3034fc595abf5c2570e06dedbf195b34daf3fe72",
-      "performance": {
-        "tier": "P0",
-        "evidence": "docs/implementation/tasks/compute/foundation-f1-resource-leases.md"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/foundation-f2-batched-transfers.md",
+      "summary": "F2 SCOPED：绑定 F1 收口后的实际基线，审计原七 FIX 的有界批量范围/phase/ready与真实 native 依赖；未改产品或运行资格，其他闭包 owner 保持 CLOSED。"
     },
     {
       "module": "graph_route_apple",
@@ -539,14 +524,9 @@
     },
     {
       "module": "compute_route_vulkan",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/compute/foundation-f1-resource-leases.md",
-      "summary": "F1 CLOSED：有界租约/权限、自然 Direct/Graph 与组合保活、实际最后使用后回收；适用风险/平台/三交付、新头/缺席/迁址、七门与 P0 通过，精确限制见 terminal。",
-      "candidate": "3034fc595abf5c2570e06dedbf195b34daf3fe72",
-      "performance": {
-        "tier": "P0",
-        "evidence": "docs/implementation/tasks/compute/foundation-f1-resource-leases.md"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/foundation-f2-batched-transfers.md",
+      "summary": "F2 SCOPED：绑定 F1 收口后的实际基线，审计原七 FIX 的有界批量范围/phase/ready与真实 native 依赖；未改产品或运行资格，其他闭包 owner 保持 CLOSED。"
     },
     {
       "module": "graph_route_vulkan",

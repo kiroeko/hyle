@@ -1,16 +1,34 @@
 # F2：准备后的原生批量范围搬运
 
-> 状态：READY_FOR_SCOPE；依赖 F1 的 guard/retirement 合同，不复制另一套 lease。
+> 状态：SCOPED（2026-10-11）；F1 已收口，沿原 guard/retirement 合同定界，不复制另一套 lease。
 > 实施前[原子/复合接缝源码审计](foundation-f2-source-audit.md)为定界输入，未授权产品修改或签运行资格。
 > component / owner：拟 compute、compute_backend_cpu/cuda、
 > compute_route_cpu/cuda/apple/vulkan；只有普通 Graph 需要本批 native binding 接缝时再绑定对应 owner。
 
 ## 共同执行合同
 
+### 当前实际启动绑定
+
+- 启动 baseline / 改前 registry ref：`7f53bf532b044803ea36f792196e446c66b58ac4`，Windows canonical
+  工作树干净；F1 七 owner 已 CLOSED，产品 source 与其固定 `3034fc595` 相同，不回退后续证据。
+- 具名 reopen trigger：本 goal 原 F2-01至07 的新增 prepared bulk ranges/explicit phases/ready
+  public journey；[源码审计](foundation-f2-source-audit.md)已证明已有 single-copy/TransferSlot
+  不能完整承载 bounded ranges、batch alias/producer/index lifetime 与一阶段真实完成。
+- 当前确定绑定 `compute`、`compute_backend_cuda`、`compute_route_apple`、`compute_route_vulkan`，
+  仅从 CLOSED 进入 SCOPED。CPU 原 byte copy/QueueSequence 先 BORROW；没有实际改动理由的
+  `compute_backend_cpu`、`compute_route_cpu/cuda`、Graph 与全部 Provider/lowerer 保持 CLOSED。
+  若审计发现确需新 public factory/graph seam，再以具体事实合法绑定 owner，不提前重开整闭包。
+- 原七 FIX、主量化权重/状态与正交资源流送/分块矩阵、四路线双向/同设备 copy、二组二槽、
+  原格式/BF16数学及三交付范围不缩减。未运行任何 F2 产品构建、数学/故障或 P1，不把只读审计当 PASS。
+- SCOPED 首轮源码/形状预算45分钟：沿已固定 peer 的三段源码与实际 SDK/native owner 核对，
+  冻结 physical identity/alias、端点/phase/group C++形状、F1 guard/producer/prefix 交接、错误/关闭、
+  冷热成本、public/内部边与普通 sample。原一次反例补读、两次有限修复/验收预算不增加或重置。
+  未完成 AUDITED/有限实现 ledger 前不写产品。新全库边界或公共语义矛盾立即定界/裁决，不无限研究。
+
 - 基线：`edb2714384037b12a3d1e69839aa895fea17cec1`；设计见
   [资源与流送设计](../../../architecture/compute-resource-streaming-design.md)。
-- 本卡为准备完成的有限施工合同，尚未作为 registry 当前 record；当前 owner 仍 CLOSED，验证均未运行。
-  实施 goal 启动时先绑定实际 HEAD/工作树，保留后续/用户修改；按协议登记/SCOPED/AUDITED 后才改产品。
+- 本卡已作为上述四 owner 的当前 SCOPED record；其他 owner 按 registry。验证均未运行。
+  保留后续/用户修改；完成 AUDITED 与固定有限实现 ledger 后才改产品。
 - 主纵切：量化推理的外部状态/权重范围及真实成熟数学消费。
   正交纵切：渲染资产流送和分块矩阵管线；不加入 token/layer/KV policy。
 - 复用 Mem/Util/Sched/IO/Compute/native 完成，不增加复制 kernel、数学算子、模型 loader 或第二套 runtime。
