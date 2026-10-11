@@ -1,0 +1,4 @@
+ggml_cuda_init: found 1 CUDA devices (Total VRAM: 12281 MiB):
+  Device 0: NVIDIA GeForce RTX 4070, compute capability 8.9, VMM: yes, VRAM: 12281 MiB
+CPU leased Direct+Graph math, eight replays and held drain passed
+CUDA leased Direct+Graph math, eight replays and held drain passed

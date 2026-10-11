@@ -453,6 +453,12 @@ SDK 从本批 staging 实际迁址，Hyle CMake metadata 无 canonical/source-bu
 测试 PATH 只有 EXE 同目录与 Windows 系统目录，DLL 列表与 hash 保留。
 Windows static、CUDA 与其他适用平台尚未验证，不能写整包 delivery PASS。
 
+后续 `207ad072e` 同一消费者的 Windows CPU+CUDA source/static 与实际迁址 static SDK 已通过：
+原普通 Context/Provider/Graph，独立矩阵结果、八次 lease metadata 无增长、旧结果拒绝、held Completion
+drain、source alias 与最后回收。static SDK 仍有原 vendor DLL，测试 PATH 同样只含 EXE 目录与系统目录。
+精确 source/build/install/relocate/configure/test 命令和原日志在同一收据；尚未证明 Vulkan static、CUDA shared、
+Air/WSL 对应交付格，不把一个 linkage 替另一格签字。
+
 本轮 WSL Vulkan loader 实际只枚举 llvmpipe（device type 4），未发现可资格化 GPU；
 保留 loader probe 与原始输出，按本卡实际 GPU 条件记录当前硬件边界，不沿用历史例外，也不宣称 GPU 数学通过。
 
@@ -481,6 +487,18 @@ Program/Results。复用本轮 source 树与原锁定 vendor 构建，仅编译�
 保留原数学 reference，新增实际 lease 风险断言。只装饰 native observation/fault call，
 不能将 mock 结果当路线资格。至少两独立在途块、两个读者、一写者、旧结果、取消、OOM、部分失败、
 未知观察、自然 Direct/Graph 和完整 acquire/use/free；不全量重跑算子目录/P1。
+
+### Native lease 风险子批预声明
+
+复用 `tests/compute_route_apple/lifecycle_test.cc` 的真实 MLX prefix/NativeBoundary/Checkpoint 与
+`tests/compute_route_vulkan/lifecycle_test.cc` 的原 Context PFN 边界。每路线固定三个新用例：
+取消/放弃后保活和回收、已接受前缀后失败保留首错及真实排空、零 metadata quota 冷拒绝后以同源恢复数学。
+Apple 观察两个在途 blocks 的 active uses/最终空闲；Vulkan 观察真实 native owner 弱引用、原 pending prefix
+和 metadata allocator 平衡。只有注入点返回固定错误，实际数学/native queue/退休照旧，不增加产品 hook。
+本子批只扩原测试文件，不修改产品；分别复用 shipping/OFF 的对应 native test 树，build1/test1，
+执行新 `AppleLeaseLifetime.*` / `VulkanLeaseLifetime.*` 及其具名原夹具用例。原失败与有限纠正预算继承。
+独立 cleanup guard 先释放原 native boundary 并排空 Context，再销毁 borrowed MemoryResource/allocator；
+断言失败也不能留下等待线程或提前释放测试资源。组合 lease/native fault 与其他平台资格仍另按矩阵兑现。
 
 P0 静态账单须列新增 metadata/引用/锁，及旧普通路径不变的证据；
 热路径以计数验无 allocation/provider search，不为纳秒差改布局。

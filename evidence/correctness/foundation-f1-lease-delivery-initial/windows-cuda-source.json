@@ -1,0 +1,21 @@
+{
+  "candidate": "207ad072e9ace6dbd4e3a40a4a867a6c5fb4c7c7",
+  "source": "C:/public/project-hyle/hyle",
+  "binary": "C:\\h7\\w-cpu-cuda\\selected-graph\\source-build",
+  "targets": [
+    "hyle_f1_leases"
+  ],
+  "routes": [
+    "cpu",
+    "cuda"
+  ],
+  "configuration": "Release/shipping/static",
+  "parallel": 1,
+  "state": "terminal",
+  "exec_session_id": 14251,
+  "build_log": "windows-cuda-source-build.log",
+  "build_exit_code": 0,
+  "test_exit_code": 0,
+  "test_verdict": "PASS",
+  "test_log": "windows-cuda-source-test.log"
+}

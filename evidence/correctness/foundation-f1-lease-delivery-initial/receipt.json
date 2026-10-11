@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "scope": "F1 Windows CPU/Vulkan lease source and relocated shared delivery partial qualification",
+  "scope": "F1 Windows CPU/Vulkan source/shared and CPU/CUDA source/static partial delivery qualification",
   "candidate": "46cc16937d19952ddea0664df4609be9ed45e5a5",
   "product_candidate": "fc4ffbd1610eb3b24bf76709dc6e5e25b3d838d7",
   "tests": [
@@ -39,6 +39,18 @@
       "verdict": "PASS",
       "cases": 2,
       "receipt": "absent-routes.json"
+    },
+    {
+      "name": "Ordinary public CPU CUDA static source lease consumer",
+      "verdict": "PASS",
+      "candidate": "207ad072e9ace6dbd4e3a40a4a867a6c5fb4c7c7",
+      "log": "windows-cuda-source-test.log"
+    },
+    {
+      "name": "Ordinary relocated CPU CUDA static SDK with EXE local vendor DLLs and system-only runtime PATH",
+      "verdict": "PASS",
+      "receipt": "w-cpu-cuda-static-sdk.json",
+      "log": "w-cpu-cuda-static-test.log"
     }
   ],
   "wsl_vulkan": {
@@ -47,7 +59,7 @@
     "limitation": "Actual loader enumerates only type 4 llvmpipe software device. No native Vulkan math qualification is claimed; applicability follows current F1 card actual GPU rule."
   },
   "limitations": [
-    "Windows CPU+Vulkan only; installed static still pending",
+    "CPU Vulkan static, CUDA shared and Air/WSL applicable journeys still pending",
     "CUDA delivery and Air/WSL applicable journeys still pending",
     "Complete F1 native lease fault/cancel/OOM coverage, sanitizers, full P0 and red team still pending",
     "F1 owners remain AUDITED; F2/F3 have no product implementation"
@@ -68,6 +80,15 @@
     "absence-apple.log": "fc3e01bfc7bf93755868116ac1906f9558da52017ee5b8f744c271ccf08b96be",
     "absence-cuda.log": "eaae907a51d2b58518e692035420f79d7580b67980f33b797bf9f49fccd9ff0b",
     "wsl-vulkan-preflight.json": "d32393df821f582adea8166d007e07bef7c192c7f7956217cf315580f7d8540e",
-    "wsl-vulkan-probe.py": "18fdce40f2522ab3ed1bb044c04002883ac7fdcd3999d4f14220e01284a8ff69"
+    "wsl-vulkan-probe.py": "18fdce40f2522ab3ed1bb044c04002883ac7fdcd3999d4f14220e01284a8ff69",
+    "windows-cuda-source.json": "d2d8e7bdbd23eaea8324106e2fcf8cd3517fe59d638b118b3cd97125986789d3",
+    "windows-cuda-source-build.log": "e12f22843354ad23350c678ec35a127fbc515e86ea2e8e4215c5680dff8cb5aa",
+    "windows-cuda-source-test.log": "54a9ac798eec42bedcb0f8c0a538f78c23e0219f742825385fbb6d114922f40e",
+    "w-cpu-cuda-static-sdk.json": "47b164804f06d72f2b8a8e47db0e336b8425a5a0d3fb21f00f871d02bd32a752",
+    "w-cpu-cuda-static-install.log": "ebafe4e8b750754b89faf6f00e60918fe387b92425161d39c1f8566dea38d659",
+    "w-cpu-cuda-static-relocate.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "w-cpu-cuda-static-configure.log": "6a9f445090a3b79fc7df094d2df06b97088101b7e5776dd9e43f1a94221a7d19",
+    "w-cpu-cuda-static-build.log": "34c8e2c4a79b8fb8c04fe0e017b854d8cd32ac5510fee9497948c05b1cb9191f",
+    "w-cpu-cuda-static-test.log": "7f1dac23d5883877ad909953b516cc2e7ee37da485278e2f54017579c13b1f2f"
   }
 }
