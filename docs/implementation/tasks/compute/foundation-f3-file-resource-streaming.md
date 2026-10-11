@@ -590,6 +590,9 @@ Windows shared正在运行，WSL软件Vulkan两格及最终source复验/矩阵/�
 
 ## 预声明验证与停止
 
+候选反证、原suffix FAIL/一次有限纠正及尚未完成交付边界见[红队记录](foundation-f3-final-review.md)。
+当前overall仍INCONCLUSIVE，不能因已通过若干安装格把F3写成CLOSED。
+
 原八FIX的逐能力风险、实际证据和剩余平台/交付格见[当前矩阵](foundation-f3-verification-matrix.md)。
 它明确新deadline/重复close fixture尚未运行、各installed gate尚未取证，不把局部PASS聚合为关闭。
 
