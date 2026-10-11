@@ -736,6 +736,15 @@ configure300/build1800、每 exe120，不全算子/P1；原日志/首错/native 
 覆盖 libc++ 共同控制与实际 native Vulkan lease cancel/abandon/accepted-prefix failure/冷 metadata OOM，
 不以 host 协议代签 GPU数学。Windows CPU+CUDA shared 是最后已声明交付格，整包终态仍待结果。
 
+### 最终两份内部新头隔离
+
+七个路线 ON 与九个 OFF 头已有隔离证据，但两个新增内部 header
+`compute/detail/lease_access.h` / `compute/detail/native_lease_inputs.h` 仅由产品 source 使用，
+没有 sole-include 日志。它们是无 native SDK 条件分支的共同 C++23 协议，不增加用户入口。
+补这两个精确头的独立 TU syntax-only，使用当前实际 MSVC19.50、WSL GCC14.2、Air AppleClang21
+及相同已资格 source 的 include/generated build context；每 compiler 顺序两个 TU、每进程120秒，
+不重新配置/构建产品或运行数学/P1。Windows shared SDK job 全部终态后执行，保留候选、命令与原日志。
+
 ### P0 成本账（源码审计，完整裁决待剩余资格）
 
 以 `fc4ffbd16` 产品为准；后续消费者、测试与文档没有改变以下实现。B 为 pool 块上限，R 为本批资源数，
