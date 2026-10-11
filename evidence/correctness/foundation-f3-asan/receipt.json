@@ -1,0 +1,87 @@
+{
+  "schema_version": 1,
+  "product_commit": "f3d931c47777f7fbfd35dedf1f5e0734fa28ef6c",
+  "fixture_commit": "c36c40bedfb960384020c117703c4eda599a9359",
+  "scope": "WSL actual ASan F3 common/CPU controller and file risk acceptance only",
+  "identity": {
+    "os": "Linux kiro-workstation 6.18.40.1-microsoft-standard-WSL2 #1 SMP PREEMPT_DYNAMIC Fri Jul 31 22:12:15 UTC 2026 x86_64 x86_64 x86_64 GNU/Linux",
+    "compiler": "g++-14 (Ubuntu 14.2.0-4ubuntu2~24.04.1) 14.2.0\nCopyright (C) 2024 Free Software Foundation, Inc.\nThis is free software; see the source for copying conditions.  There is NO\nwarranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.",
+    "cmake": "cmake version 3.28.3\n\nCMake suite maintained and supported by Kitware (kitware.com/cmake).",
+    "cuda": "nvcc: NVIDIA (R) Cuda compiler driver\nCopyright (c) 2005-2026 NVIDIA Corporation\nBuilt on Tue_Jun_09_02:43:40_PM_PDT_2026\nCuda compilation tools, release 13.3, V13.3.73\nBuild cuda_13.3.r13.3/compiler.38244171_0",
+    "gpu": "NVIDIA GeForce RTX 4070, GPU-e7376560-6f5d-ec19-6ee4-3dd3a2c81ef8, 617.14"
+  },
+  "tests_passed": 12,
+  "subject_compile_flags": {
+    "src/compute_stream/CMakeFiles/hyle_compute_stream.dir/file_stream.cc.o": "FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Wno-error=mismatched-new-delete -fsanitize=address -fno-omit-frame-pointer",
+    "src/compute_route_cpu/CMakeFiles/hyle_compute_route_cpu.dir/file_stream.cc.o": "FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Wno-error=mismatched-new-delete -fsanitize=address -fno-omit-frame-pointer",
+    "src/compute/CMakeFiles/hyle_compute.dir/batch_transfer.cc.o": "FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Wno-error=mismatched-new-delete -fsanitize=address -fno-omit-frame-pointer",
+    "tests/compute_stream/CMakeFiles/hyle_compute_stream_test.dir/file_stream_test.cc.o": "FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Wno-error=mismatched-new-delete -fsanitize=address -fno-omit-frame-pointer"
+  },
+  "source_inputs": [
+    {
+      "path": "src/compute_stream/file_stream.cc",
+      "sha256": "2024e866175e892d7d14fef2421ede1929606f6ed7a225e0b26ccae9feb0c57b"
+    },
+    {
+      "path": "src/compute_stream/stream_sources.cc",
+      "sha256": "23859fad2971d11bfb029dfe1403989a9740832ce522b2c430d957a3e3fdeed2"
+    },
+    {
+      "path": "src/compute_route_cpu/file_stream.cc",
+      "sha256": "2a9acf645520fcc8c85f56cd3e4e9ef9689a948809dc8bf94c6bbd5a2538e297"
+    },
+    {
+      "path": "src/compute/batch_transfer.cc",
+      "sha256": "25367562e18d16b6d38b5ea80bf7eb89cff46243d73c7e84a99430470ba82fc1"
+    },
+    {
+      "path": "include/hyle/compute/detail/file_stream_copy.h",
+      "sha256": "27b8705a7731d63a953e3bd93118d9420a0b95168abd9b884ec37dea7e166dc0"
+    },
+    {
+      "path": "tests/compute_stream/file_stream_test.cc",
+      "sha256": "97803b2a1a7427e9fc5a0426d74aa6241527ecfe2fc599e3840a82856d3856c5"
+    }
+  ],
+  "positive_partial_write": "Original POSIX process file-size limit: written=80, copied=96, ready=0, encoded prefix exactly preserved; original limits/signal restored before diagnostics.",
+  "cross_thread": "Real exported ReadLease/ReadyGroup drop from another thread, no early record reuse, actual final release/join frees finite record.",
+  "allocator": "Injected F3 metadata balanced and original active native uses zero after own-work retirement in the actual tests.",
+  "initial_failures": [
+    "Mutually exclusive factor/product selection configure FAIL.",
+    "Windows-mounted dependency cache configure TIMEOUT300.",
+    "Original build1 TIMEOUT1800 in unchanged SIMD dependency; no tests run.",
+    "User-approved j4 resume strict Werror build FAILED on existing TCP GCC14 maybe-uninitialized sanitizer diagnostic."
+  ],
+  "diagnostic_policy": {
+    "reference": "https://gcc.gnu.org/onlinedocs/gcc-14.1.0/gcc/Instrumentation-Options.html",
+    "basis": "GCC recommends against combining sanitizers and Werror due to increased false positive maybe-uninitialized diagnostics. Normal HYLE local default WERROR=OFF; retain warnings and original strict failure.",
+    "change": "Existing public HYLE_WERROR option OFF for this instrumented validation tree; no -Wno-* suppression, source or runtime sanitizer change.",
+    "scope": "No verdict about TCP correctness; complete original F3 FileStream risk set remains required.",
+    "original_supplement_start_epoch": 1791751256,
+    "original_supplement_deadline_epoch": 1791753056,
+    "remaining_seconds_at_resume": 1544.5432815551758,
+    "budget_reset": false
+  },
+  "user_budget_supplement": {
+    "authorization": "2026-10-12 user accepted one additional 1800 seconds, retaining original TIMEOUT; subsequently approved memory-aware library parallel build instead of uniform build1.",
+    "seconds": 1800,
+    "parallel": 4,
+    "test_parallel": 1,
+    "same_source_and_build": true,
+    "original_timeout_retained": true,
+    "available_bytes": 32475959296,
+    "completed_before_original_deadline": true
+  },
+  "archive": {
+    "path": "evidence/correctness/foundation-f3-asan/raw-results.zip",
+    "sha256": "b1817bb92105b013d28cf80aac66902e8ade9416db07973d9a63691feb6b8796"
+  },
+  "verdict": "PASS_WSL_F3_ASAN_TWELVE_RISKS_WITH_ORIGINAL_FAILURES_AND_USER_BUDGET_RETAINED",
+  "limits": "Warnings remain visible; no TCP correctness verdict or driver-private physical memory zero claim. Full original F3 test risk scope and ASan remain enabled.",
+  "unproven": [
+    "UBSan/TSan",
+    "WSL native CUDA F3 delta",
+    "Installed static/shared/new headers/absence/relocation",
+    "Final P0/red team/closure"
+  ]
+}
