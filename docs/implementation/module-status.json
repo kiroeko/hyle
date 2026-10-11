@@ -502,9 +502,9 @@
     },
     {
       "module": "compute_route_apple",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/foundation-f1-resource-leases.md",
-      "summary": "F1 SCOPED：冷 ReadLease 原生 binding 与 native Direct/Graph/source-alias 保活；复用原资源/Program/退休，不恢复旧 H2/H3 队列。"
+      "summary": "F1 AUDITED：固定同resource ReadLease→native binding、native强owner保活与冷metadata/范围/padding校验；只改memory接缝并验原Direct/Graph成熟数学。"
     },
     {
       "module": "graph_route_apple",
@@ -519,9 +519,9 @@
     },
     {
       "module": "compute_route_vulkan",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/foundation-f1-resource-leases.md",
-      "summary": "F1 SCOPED：冷 ReadLease 原生 binding 与 native Direct/Graph/source-alias 保活；复用原资源/Program/退休，不恢复旧 H2/H3 队列。"
+      "summary": "F1 AUDITED：固定同resource ReadLease→native binding、native强owner保活与冷metadata/范围/padding校验；只改memory接缝并验原Direct/Graph成熟数学。"
     },
     {
       "module": "graph_route_vulkan",

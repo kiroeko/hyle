@@ -283,6 +283,25 @@ F1 继续 AUDITED，F2/F3 未启动，不把这些局部结果算作整包关闭
 - MacBook Air已实际连接：Mac16,12、16 GiB、macOS27.0.1/26A434、CMake4.3.4、Ninja1.13.2。
   未编译，后续先读取实际 compiler/当前缓存；只用Air，Windows是唯一产品真相。
 
+### Apple / Vulkan 原生 binding 子轮 AUDIT
+
+- baseline `bca2fb233`；两 compute route owner 进入 AUDITED，有限产品只改各自 memory.h / memory implementation。
+- `MemoryResource::binding(ReadLease source, TensorDesc description, LeaseImportOptions options)` 冷返回各自的
+  原 MLX array / Vulkan Tensor。它保留实际 source ReadLease，native bind/Program/Graph/Results 原强 owner 链
+  自动延长 root 寿命，原 native complete/unknown retirement 不变；用户不手写 use token，也不增加共同 Queue。
+- 全部 native wrapping/descriptor metadata 在 binding 冷路径；repeat submit 不构造新 wrapper或复制payload。
+  options 只计 wrapper metadata；既有 source backing 的预算保留一次，Apple opaque MLX descriptors仍按
+  原明示 unattributed 合同，不把不可见 native 成本写成零。
+- Apple只接同一MemoryResource的 ready shared Metal backing；校验实际范围、dtype carrier、item-origin对齐和
+  carrier布局。使用MLX原copy_shared_buffer保留offset；捕获真ReadLease owner，不是空deleter假拥有。
+- Vulkan只接同一device MemoryResource（staging缺storage usage，拒绝作为数学binding），descriptor bounds
+  沿原native规则；四字节copy/storage尾容量必须已包含在source lease，不跨邻块偷用padding。
+  借原Buffer view/owner机制持有root及ReadLease，保留原device/family/transfer资格，无新shader/kernel。
+- 普通 native数组/Tensor本身可被更高级interop修改，返回binding是只读准入，所有未跟踪writable aliases
+  必须停止；只用tracked Writer只能在native aliases消失后取得写。裸TensorView/resource寿命合同不变化。
+- 新测：实际成熟MatMul和Graph/source-alias、两reader、old结果/native handles阻止writer、业务lease放弃与native
+  最后退休、wrong resource/desc/padding/strict budget拒绝。无空target/mock provider/copy-only代签。
+
 扩展现有 compute completion、graph cpu_cuda/apple/vulkan contracts 及 native route 用户样例；
 保留原数学 reference，新增实际 lease 风险断言。只装饰 native observation/fault call，
 不能将 mock 结果当路线资格。至少两独立在途块、两个读者、一写者、旧结果、取消、OOM、部分失败、
