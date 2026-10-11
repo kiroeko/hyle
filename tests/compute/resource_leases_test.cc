@@ -1,6 +1,9 @@
 #include <gtest/gtest.h>
 
 #include <array>
+#include <barrier>
+#include <thread>
+#include <limits>
 
 #include "completion_internal.h"
 #include "hyle/compute/detail/completion_access.h"
@@ -203,6 +206,58 @@ TEST(ResourceLeases, RejectedOwnedImportDoesNotConsumeBackingOrLeakBudget) {
   EXPECT_FALSE(LeasePool::adopt(std::move(backing), {.resource_budget = budget}).has_value());
   EXPECT_EQ(budget.usage(mem::system_resource())->live_bytes, before);
   EXPECT_TRUE(backing.valid());
+}
+
+TEST(ResourceLeases, CheckedCapacitySubviewAndMetadataArithmeticRejectBeforeMutation) {
+  EXPECT_FALSE(LeasePool::create(mem::system_resource(), 512, {.backing_alignment = 3}).has_value());
+  EXPECT_FALSE(LeaseUsePool::create({.max_batches = 0}).has_value());
+  EXPECT_FALSE(LeaseUsePool::create({.max_resources_per_batch = 0}).has_value());
+  auto pool = LeasePool::create(mem::system_resource(), 512, {.max_blocks = 2}).value();
+  auto write = pool.allocate(16).value();
+  EXPECT_FALSE(pool.allocate((std::numeric_limits<std::size_t>::max)()).has_value());
+  EXPECT_FALSE(pool.allocate(16, 3).has_value());
+  ASSERT_TRUE(write.view()->fill(std::byte{17}).ok());
+  auto read = write.publish().value();
+  EXPECT_FALSE(read.subview((std::numeric_limits<std::size_t>::max)(), 1).has_value());
+  EXPECT_FALSE(read.subview(15, 2).has_value());
+  std::array<std::byte, 16> actual;
+  ASSERT_TRUE(read.view()->read(actual).ok());
+  for (auto value : actual) EXPECT_EQ(value, std::byte{17});
+  EXPECT_EQ(pool.stats().live_blocks, 1u);
+}
+
+TEST(ResourceLeases, CrossThreadReadersHoldGenerationWhileIndependentBlockRetires) {
+  auto pool = LeasePool::create(mem::system_resource(), 1024, {.max_blocks = 2}).value();
+  auto first_write = pool.allocate(256).value(), other_write = pool.allocate(256).value();
+  ASSERT_TRUE(first_write.view()->fill(std::byte{29}).ok());
+  auto first = first_write.publish().value();
+  const auto generation = first.generation();
+  std::barrier ready(3), release(3);
+  std::atomic<bool> content_ok{true};
+  auto reader = [&](ReadLease owned) {
+    ready.arrive_and_wait();
+    std::array<std::byte, 16> data{};
+    if (!owned.view()->read(data).ok()) content_ok.store(false);
+    for (auto value : data) if (value != std::byte{29}) content_ok.store(false);
+    release.arrive_and_wait();
+  };
+  std::thread first_reader(reader, first), second_reader(reader, first.subview(16, 16).value());
+  ready.arrive_and_wait();
+  EXPECT_FALSE(first.try_write().has_value());
+  other_write.reset();
+  EXPECT_EQ(pool.stats().live_blocks, 1u);
+  auto independent = pool.allocate(256).value();
+  EXPECT_GT(independent.generation(), generation);
+  ASSERT_TRUE(independent.view()->fill(std::byte{41}).ok());
+  independent.reset();
+  release.arrive_and_wait();
+  first_reader.join(); second_reader.join();
+  EXPECT_TRUE(content_ok.load());
+  auto exclusive = first.try_write();
+  ASSERT_TRUE(exclusive.has_value());
+  EXPECT_EQ(exclusive->generation(), generation);
+  exclusive->reset();
+  EXPECT_EQ(pool.stats().allocated_bytes, 0u);
 }
 
 } // namespace
