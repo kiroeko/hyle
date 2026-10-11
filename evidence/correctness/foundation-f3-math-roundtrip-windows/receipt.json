@@ -1,0 +1,52 @@
+{
+  "schema_version": 1,
+  "product_commit": "f3d931c47777f7fbfd35dedf1f5e0734fa28ef6c",
+  "consumer_commit": "4a757351a707b17655d3aaf5471325c3dd3bb6f2",
+  "scope": "Windows ordinary source CPU/CUDA/Vulkan mathematical file roundtrip only; no installed SDK/final F3 claim",
+  "jobs": [
+    {
+      "job": "math-source-windows-cpu-cuda-roundtrip-reclaim",
+      "verdict": "PASS_SOURCE_WINDOWS_CPU_CUDA_FILE_MATH_AND_QWEN_ONLY",
+      "samples": {
+        "main.cc": "a7805905bed127885a1fb99a2c4ce3e967f007ead9499eccd332c19c4535384a",
+        "qwen_main.cc": "e65a644a5cb6b8641e7a4deb11c6d512a760810ee4d9a8db91aa1d73ab985b22",
+        "qwen_input.h": "ea920ad98de7f51e4a57cd891529e92cdb8149028c67660dd7495a27b14eb63d"
+      },
+      "compiler": "C:/Program Files/Microsoft Visual Studio/18/Enterprise/VC/Tools/MSVC/14.50.35717/bin/Hostx64/x64/cl.exe"
+    },
+    {
+      "job": "math-source-windows-vulkan-roundtrip",
+      "verdict": "PASS_SOURCE_WINDOWS_VULKAN_FILE_MATH_AND_QWEN_ONLY",
+      "samples": {
+        "main.cc": "a7805905bed127885a1fb99a2c4ce3e967f007ead9499eccd332c19c4535384a",
+        "qwen_main.cc": "e65a644a5cb6b8641e7a4deb11c6d512a760810ee4d9a8db91aa1d73ab985b22",
+        "qwen_input.h": "ea920ad98de7f51e4a57cd891529e92cdb8149028c67660dd7495a27b14eb63d"
+      },
+      "compiler": "C:/Program Files/Microsoft Visual Studio/18/Enterprise/VC/Tools/MSVC/14.50.35717/bin/Hostx64/x64/cl.exe"
+    }
+  ],
+  "real_input": "evidence/correctness/foundation-f3-qwen-ranges/checked-input.json",
+  "real_weight_journey": "All four original local Qwen ranges file read -> early group Direct+Graph -> file write -> every original byte compared in 64KiB chunks -> file reload -> repeated Direct+Graph reference.",
+  "logical_payload_bytes": 75497984,
+  "native_bytes_per_route": 226493952,
+  "staging_bytes": 2097152,
+  "peak_slots": 2,
+  "gguf": "Mature gguf 0.18.0 writer/reader checked actual original fixture offsets, BF16/F32/Q8 encoding and exact payload; normal small consumer read/math/write/reload/math, two lanes and three replays.",
+  "initial_failures": [
+    "Vulkan small activation cannot map device allocation; initial InvalidArgument retained; consumer uses original Context.upload and MemoryResource.import_readonly. Product unchanged.",
+    "Initial MSVC roundtrip build rejected the template-local read lambda; replaced with a named helper, preserving the original failed build.",
+    "Reload initially exhausted the unchanged target pool while the old read record remained retained by the released write record; consumer collects the two released records in order, preserving the original error and original capacity."
+  ],
+  "archive": {
+    "path": "evidence/correctness/foundation-f3-math-roundtrip-windows/raw-results.zip",
+    "sha256": "1ef27b27097fd72f6cc1723e07f0cabba4e5989dbc529e4c8d22a99813de51f9"
+  },
+  "verdict": "PASS_WINDOWS_CPU_CUDA_VULKAN_SOURCE_MATURE_GGUF_AND_ACTUAL_QWEN_ROUNDTRIP_ONLY",
+  "unproven": [
+    "Air Apple/Vulkan and WSL current delta",
+    "Remaining native faults/lifetime/sanitizers",
+    "Installed static/shared/headers/relocation",
+    "Final P0/closure/red team"
+  ],
+  "limits": "Independent sparse-input projection reference, no full FFN/full model/tokenizer/generation loop, no P1 or private driver-residency bound."
+}

@@ -1,6 +1,6 @@
 # F3：有界文件与计算资源双向管线
 
-> 状态：AUDITED；共同/CPU文件管线主体已实现并首验，三GPU适配、真实数学与交付待验；F1/F2原轮已CLOSED。
+> 状态：AUDITED；四路线文件主体已实现并首验，Windows CPU/CUDA/Vulkan真实数学往返已验，Air数学、剩余风险与三交付待验；F1/F2原轮已CLOSED。
 > component / owner：新内部 factor compute_stream；compute仅补下述私有租约/退役接缝；
 > native factory/adapter 归 compute_route_cpu/cuda/apple/vulkan；中央声明只投影这些owner的有限新边。
 > IO/Sched/Mem 只消费既有能力；出现具体基础缺陷才另作定向 owner 修复。
@@ -314,7 +314,25 @@ Windows CUDA六项（正常两项、真实producer排序、取消、丢弃控制
 官方Safetensors工具只核验并读取所声明原始范围，独立稀疏输入参考不靠HYLE算子生成；
 实际F3读取75,497,984 bytes，stage 2,097,152 bytes，峰值两个slot，不缓存完整4.55GB checkpoint。
 完整输入身份与范围见[checked input](../../../../evidence/correctness/foundation-f3-qwen-ranges/checked-input.json)。
-这不是完整FFN/模型生成验收；Apple/Vulkan真实权重数学、新生命周期风险及三交付仍待验，六owner保持AUDITED。
+这不是完整FFN/模型生成验收；该首份收据没有覆盖Apple/Vulkan或三交付，六owner保持AUDITED。
+
+#### Windows原始权重完整往返与成熟GGUF消费
+
+consumer `4a757351a707b17655d3aaf5471325c3dd3bb6f2`完成同一Qwen范围的双向旅程：
+read→逐组Direct/Graph→写新临时文件→64KiB chunk逐字节对照原权重→reload→Direct/Graph再次对参考。
+[往返收据](../../../../evidence/correctness/foundation-f3-math-roundtrip-windows/receipt.json)签CPU/CUDA/Vulkan
+三个真实Windows路线；每路线logical payload 75,497,984 bytes、实际native copies 226,493,952 bytes，
+stage仍为2MiB，峰值两个slot。消费者回收已释放write记录后再次collect原read记录，再从同一有限pool分配reload，
+未放大容量掩盖旧结果保活。
+
+同收据签成熟`gguf` writer/reader检查原始GGUF文件offset、BF16/F32/Q8编码/shape及bytes，
+普通小consumer沿这些原始范围读入、两lane三replay数学/回写/重读。Apple使用其原affine Q4表示；
+格式工具留在consumer，不增加产品parser/数学kernel。首次Vulkan device mapping错误、MSVC局部lambda编译错误
+及首次reload容量错误全部保留；修正只在consumer。原F3产品仍是f3d931c47，不重置产品纠正预算。
+
+Air验证使用校验过的稀疏验证副本：只传原header与四段约72MiB payload，保持原offset与capacity，
+其余模型范围是hole并明确不在本卡验收范围；不传/缓存完整4.55GB模型，不反向覆盖Windows产品。
+Air Apple/Vulkan数学与新生命周期接缝、WSL/sanitizer、故障边界、三交付和最终七门继续待验。
 
 | FIX | 必须实现 | 验收 |
 |---|---|---|

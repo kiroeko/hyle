@@ -34,7 +34,8 @@ layer-0 BF16 projections and F32 norm (about 72 MiB). It does not download weigh
 whole checkpoint. The C++ consumer reads those original ranges using the pipeline, compares
 existing Direct/Graph mathematics against independent references, writes a new temporary file,
 compares every stored original byte in bounded chunks, then reloads and repeats the mathematics. The consumer uses each selected
-route's original Direct/Graph interfaces. CPU/CUDA source runs have passed; Apple/Vulkan qualification is pending. These programs are under
+route's original Direct/Graph interfaces. Windows CPU/CUDA/Vulkan source roundtrips have passed;
+Air qualification is pending. These programs are under
 F3 qualification, so this README does not claim source/static/shared or all-route acceptance.
 
 Cancellation and deadlines stop later chunks; already accepted file/native work must retire.
