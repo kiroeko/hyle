@@ -1,0 +1,96 @@
+{
+  "candidate": "03162add05d3e26fe3314c6bcdaafa5a277a3a76",
+  "source_manifest": "HYLE full canonical Git archive\nGit commit: 03162add05d3e26fe3314c6bcdaafa5a277a3a76\nGit tree: 300d1cbcc810ddb60c5097fa71c48bf2820670b3\n",
+  "mode": "ubsan",
+  "source": "/home/kiro/hyle-f1/sanitizers/source-03242e7723cb",
+  "build": "/home/kiro/hyle-f1/sanitizers/ubsan-03242e7723cb",
+  "identity": {
+    "os": "Linux kiro-workstation 6.18.40.1-microsoft-standard-WSL2 #1 SMP PREEMPT_DYNAMIC Fri Jul 31 22:12:15 UTC 2026 x86_64 x86_64 x86_64 GNU/Linux",
+    "compiler": "g++-14 (Ubuntu 14.2.0-4ubuntu2~24.04.1) 14.2.0\nCopyright (C) 2024 Free Software Foundation, Inc.\nThis is free software; see the source for copying conditions.  There is NO\nwarranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.",
+    "cmake": "cmake version 3.28.3\n\nCMake suite maintained and supported by Kitware (kitware.com/cmake).",
+    "cuda": "nvcc: NVIDIA (R) Cuda compiler driver\nCopyright (c) 2005-2026 NVIDIA Corporation\nBuilt on Tue_Jun_09_02:43:40_PM_PDT_2026\nCuda compilation tools, release 13.3, V13.3.73\nBuild cuda_13.3.r13.3/compiler.38244171_0",
+    "gpu": "NVIDIA GeForce RTX 4070, GPU-e7376560-6f5d-ec19-6ee4-3dd3a2c81ef8, 617.14"
+  },
+  "preflight_failure": null,
+  "scope": "F2 selected WSL ubsan qualification only; SDK/all-platform final verdict unproven",
+  "parallel": 1,
+  "environment": {
+    "ASAN_OPTIONS": "halt_on_error=1:detect_leaks=1",
+    "UBSAN_OPTIONS": "halt_on_error=1:print_stacktrace=1",
+    "TSAN_OPTIONS": "halt_on_error=1"
+  },
+  "stages": [
+    {
+      "name": "configure",
+      "command": [
+        "/usr/bin/cmake",
+        "-S",
+        "/home/kiro/hyle-f1/sanitizers/source-03242e7723cb",
+        "-B",
+        "/home/kiro/hyle-f1/sanitizers/ubsan-03242e7723cb",
+        "-DHYLE_DEV_FACTORS=compute_backend_cpu;graph",
+        "-DHYLE_SANITIZER=ubsan"
+      ],
+      "pid": 1924,
+      "state": "terminal",
+      "available_bytes": 32396226560,
+      "log": "configure.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "813e160333102f0545db3740cd49608e996d18cbf79e8ca0d2331b52f8ff0aa5"
+    },
+    {
+      "name": "build",
+      "command": [
+        "/usr/bin/cmake",
+        "--build",
+        "/home/kiro/hyle-f1/sanitizers/ubsan-03242e7723cb",
+        "--target",
+        "hyle_compute_test",
+        "hyle_compute_backend_cpu_test",
+        "--parallel",
+        "1"
+      ],
+      "pid": 2003,
+      "state": "terminal",
+      "available_bytes": 32260616192,
+      "log": "build.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "2e1f62421a685be8a17383badcb92cd606e6f69485e89b0f7996cf03787f1f53"
+    },
+    {
+      "name": "common",
+      "command": [
+        "/home/kiro/hyle-f1/sanitizers/ubsan-03242e7723cb/bin/hyle_compute_test",
+        "--gtest_filter=CopyRanges.*:CopyLeaseHandoff.*:CopyDependency.*:ResourceLeases.*:Completion.*"
+      ],
+      "pid": 2144,
+      "state": "terminal",
+      "available_bytes": 32347897856,
+      "log": "common.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "21d641a5bd4853a25ea5e5dc44f30985af88538092593118e0f7baef5fd2e8dc"
+    },
+    {
+      "name": "cpu",
+      "command": [
+        "/home/kiro/hyle-f1/sanitizers/ubsan-03242e7723cb/bin/hyle_compute_backend_cpu_test",
+        "--gtest_filter=CpuCopyProgram.*"
+      ],
+      "pid": 2147,
+      "state": "terminal",
+      "available_bytes": 32342482944,
+      "log": "cpu.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "952721bf2e2fb26459976696ae1772e4da85e9ee63517e6255b9af4d30b70643"
+    }
+  ],
+  "sanitizer_flags": {
+    "log": "sanitizer-flags.log",
+    "sha256": "f0c97d965b643d6165c4766b2659260a288a6197ec32c0d76b0bbad170cdad75"
+  },
+  "verdict": "PASS"
+}

@@ -1,0 +1,150 @@
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=undefined -fno-sanitize-recover=all
+  FLAGS = -O3 -DNDEBUG -std=c++23 -fPIC -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=undefined -fno-sanitize-recover=all
+  FLAGS = -O3 -DNDEBUG -std=c++23 -fPIC -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=undefined -fno-sanitize-recover=all
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=undefined -fno-sanitize-recover=all
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=undefined -fno-sanitize-recover=all
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=undefined -fno-sanitize-recover=all
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=undefined -fno-sanitize-recover=all
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=undefined -fno-sanitize-recover=all
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=undefined -fno-sanitize-recover=all
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=undefined -fno-sanitize-recover=all
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=undefined -fno-sanitize-recover=all
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=undefined -fno-sanitize-recover=all
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=undefined -fno-sanitize-recover=all
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=undefined -fno-sanitize-recover=all
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=undefined -fno-sanitize-recover=all
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=undefined -fno-sanitize-recover=all
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=undefined -fno-sanitize-recover=all
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=undefined -fno-sanitize-recover=all
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=undefined -fno-sanitize-recover=all
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=undefined -fno-sanitize-recover=all
+  FLAGS = -O3 -DNDEBUG -std=c++23 -fvisibility=hidden -fvisibility-inlines-hidden -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=undefined -fno-sanitize-recover=all
+  FLAGS = -O3 -DNDEBUG -std=c++23 -fvisibility=hidden -fvisibility-inlines-hidden -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=undefined -fno-sanitize-recover=all
+  FLAGS = -O3 -DNDEBUG -std=c++23 -fvisibility=hidden -fvisibility-inlines-hidden -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=undefined -fno-sanitize-recover=all
+  FLAGS = -O3 -DNDEBUG -std=c++23 -fvisibility=hidden -fvisibility-inlines-hidden -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=undefined -fno-sanitize-recover=all
+  FLAGS = -O3 -DNDEBUG -std=c++23 -fvisibility=hidden -fvisibility-inlines-hidden -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=undefined -fno-sanitize-recover=all -mavx2 -mfma -mf16c -mbmi2
+  FLAGS = -O3 -DNDEBUG -std=c++23 -fvisibility=hidden -fvisibility-inlines-hidden -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=undefined -fno-sanitize-recover=all
+  FLAGS = -O3 -DNDEBUG -std=c++23 -fvisibility=hidden -fvisibility-inlines-hidden -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=undefined -fno-sanitize-recover=all -msse4.2
+  FLAGS = -O3 -DNDEBUG -std=c++23 -fvisibility=hidden -fvisibility-inlines-hidden -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=undefined -fno-sanitize-recover=all -mavx2 -mfma -mf16c -mbmi -mbmi2
+  FLAGS = -O3 -DNDEBUG -std=c++23 -fvisibility=hidden -fvisibility-inlines-hidden -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=undefined -fno-sanitize-recover=all -mavx512f -mavx512bw -mavx512vl -mavx512dq -mavx512cd -mavx2 -mfma -mf16c -mbmi -mbmi2
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=undefined -fno-sanitize-recover=all
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=undefined -fno-sanitize-recover=all
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=undefined -fno-sanitize-recover=all
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=undefined -fno-sanitize-recover=all
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=undefined -fno-sanitize-recover=all
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=undefined -fno-sanitize-recover=all
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=undefined -fno-sanitize-recover=all
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=undefined -fno-sanitize-recover=all
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=undefined -fno-sanitize-recover=all
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=undefined -fno-sanitize-recover=all
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=undefined -fno-sanitize-recover=all
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=undefined -fno-sanitize-recover=all
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=undefined -fno-sanitize-recover=all
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=undefined -fno-sanitize-recover=all
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=undefined -fno-sanitize-recover=all
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=undefined -fno-sanitize-recover=all
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=undefined -fno-sanitize-recover=all
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=undefined -fno-sanitize-recover=all
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=undefined -fno-sanitize-recover=all
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=undefined -fno-sanitize-recover=all
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=undefined -fno-sanitize-recover=all
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=undefined -fno-sanitize-recover=all
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=undefined -fno-sanitize-recover=all
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=undefined -fno-sanitize-recover=all
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=undefined -fno-sanitize-recover=all
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=undefined -fno-sanitize-recover=all
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=undefined -fno-sanitize-recover=all
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=undefined -fno-sanitize-recover=all
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=undefined -fno-sanitize-recover=all
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=undefined -fno-sanitize-recover=all
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=undefined -fno-sanitize-recover=all
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=undefined -fno-sanitize-recover=all
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=undefined -fno-sanitize-recover=all
+  LINK_FLAGS = -fsanitize=undefined -fno-sanitize-recover=all
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=undefined -fno-sanitize-recover=all
+  LINK_FLAGS = -fsanitize=undefined -fno-sanitize-recover=all
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=undefined -fno-sanitize-recover=all
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=undefined -fno-sanitize-recover=all
+  LINK_FLAGS = -fsanitize=undefined -fno-sanitize-recover=all
+  FLAGS = -O3 -DNDEBUG -std=c++23 -fno-exceptions -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=undefined -fno-sanitize-recover=all
+  LINK_FLAGS = -fsanitize=undefined -fno-sanitize-recover=all
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=undefined -fno-sanitize-recover=all
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=undefined -fno-sanitize-recover=all
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=undefined -fno-sanitize-recover=all
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=undefined -fno-sanitize-recover=all
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=undefined -fno-sanitize-recover=all
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=undefined -fno-sanitize-recover=all
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=undefined -fno-sanitize-recover=all
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=undefined -fno-sanitize-recover=all
+  LINK_FLAGS = -fsanitize=undefined -fno-sanitize-recover=all
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=undefined -fno-sanitize-recover=all
+  LINK_FLAGS = -fsanitize=undefined -fno-sanitize-recover=all
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=undefined -fno-sanitize-recover=all
+  LINK_FLAGS = -fsanitize=undefined -fno-sanitize-recover=all
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=undefined -fno-sanitize-recover=all
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=undefined -fno-sanitize-recover=all
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=undefined -fno-sanitize-recover=all
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=undefined -fno-sanitize-recover=all
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=undefined -fno-sanitize-recover=all
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=undefined -fno-sanitize-recover=all
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=undefined -fno-sanitize-recover=all
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=undefined -fno-sanitize-recover=all
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=undefined -fno-sanitize-recover=all
+  LINK_FLAGS = -fsanitize=undefined -fno-sanitize-recover=all
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=undefined -fno-sanitize-recover=all
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=undefined -fno-sanitize-recover=all
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=undefined -fno-sanitize-recover=all
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=undefined -fno-sanitize-recover=all
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=undefined -fno-sanitize-recover=all
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=undefined -fno-sanitize-recover=all
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=undefined -fno-sanitize-recover=all
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=undefined -fno-sanitize-recover=all
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=undefined -fno-sanitize-recover=all
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=undefined -fno-sanitize-recover=all
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=undefined -fno-sanitize-recover=all
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=undefined -fno-sanitize-recover=all
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=undefined -fno-sanitize-recover=all
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=undefined -fno-sanitize-recover=all
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=undefined -fno-sanitize-recover=all
+  LINK_FLAGS = -fsanitize=undefined -fno-sanitize-recover=all
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=undefined -fno-sanitize-recover=all
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=undefined -fno-sanitize-recover=all
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=undefined -fno-sanitize-recover=all
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=undefined -fno-sanitize-recover=all
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=undefined -fno-sanitize-recover=all
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=undefined -fno-sanitize-recover=all
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=undefined -fno-sanitize-recover=all
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=undefined -fno-sanitize-recover=all
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=undefined -fno-sanitize-recover=all
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=undefined -fno-sanitize-recover=all
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=undefined -fno-sanitize-recover=all
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=undefined -fno-sanitize-recover=all
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=undefined -fno-sanitize-recover=all
+  LINK_FLAGS = -fsanitize=undefined -fno-sanitize-recover=all
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=undefined -fno-sanitize-recover=all
+  LINK_FLAGS = -fsanitize=undefined -fno-sanitize-recover=all
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=undefined -fno-sanitize-recover=all
+  LINK_FLAGS = -fsanitize=undefined -fno-sanitize-recover=all
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=undefined -fno-sanitize-recover=all
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=undefined -fno-sanitize-recover=all
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=undefined -fno-sanitize-recover=all
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=undefined -fno-sanitize-recover=all
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=undefined -fno-sanitize-recover=all
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=undefined -fno-sanitize-recover=all
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=undefined -fno-sanitize-recover=all
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=undefined -fno-sanitize-recover=all
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=undefined -fno-sanitize-recover=all
+  LINK_FLAGS = -fsanitize=undefined -fno-sanitize-recover=all
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=undefined -fno-sanitize-recover=all
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=undefined -fno-sanitize-recover=all
+  LINK_FLAGS = -fsanitize=undefined -fno-sanitize-recover=all
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=undefined -fno-sanitize-recover=all
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=undefined -fno-sanitize-recover=all
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=undefined -fno-sanitize-recover=all
+  LINK_FLAGS = -fsanitize=undefined -fno-sanitize-recover=all
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=undefined -fno-sanitize-recover=all
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=undefined -fno-sanitize-recover=all
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=undefined -fno-sanitize-recover=all
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=undefined -fno-sanitize-recover=all
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=undefined -fno-sanitize-recover=all
+  LINK_FLAGS = -fsanitize=undefined -fno-sanitize-recover=all

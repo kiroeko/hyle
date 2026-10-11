@@ -1,0 +1,11 @@
+-- HYLE developer factors: requested='compute_backend_cuda;compute_provider_cublas;graph' resolved='core,container_intrusive,util_core,error,time,math,platform,platform_thread,mem,container,compute_ops,compute,graph,compute_backend_cuda,compute_provider_cublas' products=''
+-- HYLE_SANITIZER = off
+-- HYLE_TESTING = ON (test-only interfaces compiled; not for shipped builds)
+-- HYLE: CUDA backend ON -- found CUDA Toolkit 13.3.73 at '/usr/local/cuda-13.3'; capability enabled
+-- HYLE_TRACE = OFF (hooks compile to nothing -- zero cost)
+-- HYLE source package target unavailable (requires Git and a Git checkout)
+-- HYLE tests: skipping Git-only LOC reporter outside a Git checkout
+-- HYLE 0.1.0 | GNU 14.2.0 | C++23 | sanitizer=off | linkage=shared | products= | factors=core,container_intrusive,util_core,error,time,math,platform,platform_thread,mem,container,compute_ops,compute,graph,compute_backend_cuda,compute_provider_cublas
+-- Configuring done (1.8s)
+-- Generating done (0.0s)
+-- Build files have been written to: /home/kiro/hyle-f1/native-fault/build-3034fc595abf

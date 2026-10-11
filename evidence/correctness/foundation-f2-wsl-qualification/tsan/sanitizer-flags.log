@@ -1,0 +1,151 @@
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=thread -Wno-tsan
+  FLAGS = -O3 -DNDEBUG -std=c++23 -fPIC -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=thread -Wno-tsan
+  FLAGS = -O3 -DNDEBUG -std=c++23 -fPIC -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=thread -Wno-tsan
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=thread -Wno-tsan
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=thread -Wno-tsan
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=thread -Wno-tsan
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=thread -Wno-tsan
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=thread -Wno-tsan
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=thread -Wno-tsan
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=thread -Wno-tsan
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=thread -Wno-tsan
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=thread -Wno-tsan
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=thread -Wno-tsan
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=thread -Wno-tsan
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=thread -Wno-tsan
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=thread -Wno-tsan
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=thread -Wno-tsan
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=thread -Wno-tsan
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=thread -Wno-tsan
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=thread -Wno-tsan
+  FLAGS = -O3 -DNDEBUG -std=c17 -fPIC -fvisibility=hidden -w -fsanitize=thread -Wno-tsan
+  FLAGS = -O3 -DNDEBUG -std=c++23 -fvisibility=hidden -fvisibility-inlines-hidden -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=thread -Wno-tsan
+  FLAGS = -O3 -DNDEBUG -std=c++23 -fvisibility=hidden -fvisibility-inlines-hidden -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=thread -Wno-tsan
+  FLAGS = -O3 -DNDEBUG -std=c++23 -fvisibility=hidden -fvisibility-inlines-hidden -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=thread -Wno-tsan
+  FLAGS = -O3 -DNDEBUG -std=c++23 -fvisibility=hidden -fvisibility-inlines-hidden -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=thread -Wno-tsan
+  FLAGS = -O3 -DNDEBUG -std=c++23 -fvisibility=hidden -fvisibility-inlines-hidden -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=thread -Wno-tsan -mavx2 -mfma -mf16c -mbmi2
+  FLAGS = -O3 -DNDEBUG -std=c++23 -fvisibility=hidden -fvisibility-inlines-hidden -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=thread -Wno-tsan
+  FLAGS = -O3 -DNDEBUG -std=c++23 -fvisibility=hidden -fvisibility-inlines-hidden -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=thread -Wno-tsan -msse4.2
+  FLAGS = -O3 -DNDEBUG -std=c++23 -fvisibility=hidden -fvisibility-inlines-hidden -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=thread -Wno-tsan -mavx2 -mfma -mf16c -mbmi -mbmi2
+  FLAGS = -O3 -DNDEBUG -std=c++23 -fvisibility=hidden -fvisibility-inlines-hidden -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=thread -Wno-tsan -mavx512f -mavx512bw -mavx512vl -mavx512dq -mavx512cd -mavx2 -mfma -mf16c -mbmi -mbmi2
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=thread -Wno-tsan
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=thread -Wno-tsan
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=thread -Wno-tsan
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=thread -Wno-tsan
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=thread -Wno-tsan
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=thread -Wno-tsan
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=thread -Wno-tsan
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=thread -Wno-tsan
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=thread -Wno-tsan
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=thread -Wno-tsan
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=thread -Wno-tsan
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=thread -Wno-tsan
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=thread -Wno-tsan
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=thread -Wno-tsan
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=thread -Wno-tsan
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=thread -Wno-tsan
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=thread -Wno-tsan
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=thread -Wno-tsan
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=thread -Wno-tsan
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=thread -Wno-tsan
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=thread -Wno-tsan
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=thread -Wno-tsan
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=thread -Wno-tsan
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=thread -Wno-tsan
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=thread -Wno-tsan
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=thread -Wno-tsan
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=thread -Wno-tsan
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=thread -Wno-tsan
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=thread -Wno-tsan
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=thread -Wno-tsan
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=thread -Wno-tsan
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=thread -Wno-tsan
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=thread -Wno-tsan
+  LINK_FLAGS = -fsanitize=thread -Wno-tsan
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=thread -Wno-tsan
+  LINK_FLAGS = -fsanitize=thread -Wno-tsan
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=thread -Wno-tsan
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=thread -Wno-tsan
+  LINK_FLAGS = -fsanitize=thread -Wno-tsan
+  FLAGS = -O3 -DNDEBUG -std=c++23 -fno-exceptions -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=thread -Wno-tsan
+  LINK_FLAGS = -fsanitize=thread -Wno-tsan
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=thread -Wno-tsan
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=thread -Wno-tsan
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=thread -Wno-tsan
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=thread -Wno-tsan
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=thread -Wno-tsan
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=thread -Wno-tsan
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=thread -Wno-tsan
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=thread -Wno-tsan
+  LINK_FLAGS = -fsanitize=thread -Wno-tsan
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=thread -Wno-tsan
+  LINK_FLAGS = -fsanitize=thread -Wno-tsan
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=thread -Wno-tsan
+  LINK_FLAGS = -fsanitize=thread -Wno-tsan
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=thread -Wno-tsan
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=thread -Wno-tsan
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=thread -Wno-tsan
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=thread -Wno-tsan
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=thread -Wno-tsan
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=thread -Wno-tsan
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=thread -Wno-tsan
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=thread -Wno-tsan
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=thread -Wno-tsan
+  LINK_FLAGS = -fsanitize=thread -Wno-tsan
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=thread -Wno-tsan
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=thread -Wno-tsan
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=thread -Wno-tsan
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=thread -Wno-tsan
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=thread -Wno-tsan
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=thread -Wno-tsan
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=thread -Wno-tsan
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=thread -Wno-tsan
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=thread -Wno-tsan
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=thread -Wno-tsan
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=thread -Wno-tsan
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=thread -Wno-tsan
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=thread -Wno-tsan
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=thread -Wno-tsan
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=thread -Wno-tsan
+  LINK_FLAGS = -fsanitize=thread -Wno-tsan
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=thread -Wno-tsan
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=thread -Wno-tsan
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=thread -Wno-tsan
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=thread -Wno-tsan
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=thread -Wno-tsan
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=thread -Wno-tsan
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=thread -Wno-tsan
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=thread -Wno-tsan
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=thread -Wno-tsan
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=thread -Wno-tsan
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=thread -Wno-tsan
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=thread -Wno-tsan
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=thread -Wno-tsan
+  LINK_FLAGS = -fsanitize=thread -Wno-tsan
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=thread -Wno-tsan
+  LINK_FLAGS = -fsanitize=thread -Wno-tsan
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=thread -Wno-tsan
+  LINK_FLAGS = -fsanitize=thread -Wno-tsan
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=thread -Wno-tsan
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=thread -Wno-tsan
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=thread -Wno-tsan
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=thread -Wno-tsan
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=thread -Wno-tsan
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=thread -Wno-tsan
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=thread -Wno-tsan
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=thread -Wno-tsan
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=thread -Wno-tsan
+  LINK_FLAGS = -fsanitize=thread -Wno-tsan
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=thread -Wno-tsan
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=thread -Wno-tsan
+  LINK_FLAGS = -fsanitize=thread -Wno-tsan
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=thread -Wno-tsan
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=thread -Wno-tsan
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=thread -Wno-tsan
+  LINK_FLAGS = -fsanitize=thread -Wno-tsan
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=thread -Wno-tsan
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=thread -Wno-tsan
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=thread -Wno-tsan
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=thread -Wno-tsan
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=thread -Wno-tsan
+  LINK_FLAGS = -fsanitize=thread -Wno-tsan

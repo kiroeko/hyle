@@ -1,0 +1,204 @@
+{
+  "schema_version": 1,
+  "candidate": "03162add05d3e26fe3314c6bcdaafa5a277a3a76",
+  "tree": "300d1cbcc810ddb60c5097fa71c48bf2820670b3",
+  "source_archive": "source-archive.json",
+  "scope": "fixed F2 WSL CPU/CUDA selected correctness and ordinary source math; ASan UBSan TSan host controls and CPU copy; common headers and native OFF sole-include",
+  "profiles": [
+    {
+      "name": "cuda",
+      "verdict": "PASS",
+      "receipt": "cuda/job.json",
+      "files": {
+        "build.log": {
+          "path": "cuda/build.log",
+          "sha256": "1e4c7f6044f6a88ade0c736d84f6dc79d2297036f37a30813537b6b7a2cb28a3"
+        },
+        "common.log": {
+          "path": "cuda/common.log",
+          "sha256": "d72be2fc80389a39a09e533c7ece38b3c40b17621d91cbc869879bdc8392febd"
+        },
+        "configure.log": {
+          "path": "cuda/configure.log",
+          "sha256": "694d020225a4262d128bc6a02da2085c5dd4da2c1a85fb17d6204518b646c2b8"
+        },
+        "cuda.log": {
+          "path": "cuda/cuda.log",
+          "sha256": "c9e9ce62549d8a2c4d1a26544968bcb9dc455e5ff6ebb840c657893c0e293cc6"
+        },
+        "cuda.xml": {
+          "path": "cuda/cuda.xml",
+          "sha256": "8065e6ec4bf159d1598602c78d31c66662eb2c501267a238fefafc2bb547d0cd"
+        },
+        "job.json": {
+          "path": "cuda/job.json",
+          "sha256": "90f3710b60e00b6dae66ff30b8216e74b5491ae653063b6b4430fb8b03e3a13d"
+        },
+        "late.log": {
+          "path": "cuda/late.log",
+          "sha256": "3cf779ab930d330100fe1fd8219777d51498226a2816701135554d34d4052709"
+        }
+      }
+    },
+    {
+      "name": "math",
+      "verdict": "PASS",
+      "receipt": "math/job.json",
+      "files": {
+        "build.log": {
+          "path": "math/build.log",
+          "sha256": "948d684b3bcea0bccd17d53f2b17836f03e78a7ce09134435b9fb81dc660f27a"
+        },
+        "configure.log": {
+          "path": "math/configure.log",
+          "sha256": "7ee5a4ec72f14fa5d6a3e7f4c3c0388fb275db95b80dfdfc7951ca8123d7a726"
+        },
+        "job.json": {
+          "path": "math/job.json",
+          "sha256": "f7e022fe5618ee60a2b1c24050977ffae9b4730d7415176e7ac3285376d05ac4"
+        },
+        "math.log": {
+          "path": "math/math.log",
+          "sha256": "884d80e6df6fd625b6bf39028b2891da1bdd8a3ab7aa36b0da37c165e10e1f9a"
+        }
+      }
+    },
+    {
+      "name": "asan",
+      "verdict": "PASS",
+      "receipt": "asan/job.json",
+      "files": {
+        "build.log": {
+          "path": "asan/build.log",
+          "sha256": "2e1f62421a685be8a17383badcb92cd606e6f69485e89b0f7996cf03787f1f53"
+        },
+        "common.log": {
+          "path": "asan/common.log",
+          "sha256": "391585bbf2cca362d646ac71fd0764d1afe78399d234fa1b13a3f5b50e736cbf"
+        },
+        "configure.log": {
+          "path": "asan/configure.log",
+          "sha256": "ccdbd7ad50bd6a19817e2b52c5dc0208ce6f1e449e14d7ffd8ca514cd0e89235"
+        },
+        "cpu.log": {
+          "path": "asan/cpu.log",
+          "sha256": "f97ff2323b5e68a9e835f2ffd1bdd581ffd0f40ab3a15df489de31c72897d086"
+        },
+        "job.json": {
+          "path": "asan/job.json",
+          "sha256": "a08f5c042ffe4a25f70abe4421a20bf3f1fb072b2a3ba803aefd12f3560b4b77"
+        },
+        "sanitizer-flags.log": {
+          "path": "asan/sanitizer-flags.log",
+          "sha256": "fa26ca6fb6e027a7df269a3c90d2e27d5e087146c0ba5fb5191c51f4e498a83b"
+        }
+      }
+    },
+    {
+      "name": "ubsan",
+      "verdict": "PASS",
+      "receipt": "ubsan/job.json",
+      "files": {
+        "build.log": {
+          "path": "ubsan/build.log",
+          "sha256": "2e1f62421a685be8a17383badcb92cd606e6f69485e89b0f7996cf03787f1f53"
+        },
+        "common.log": {
+          "path": "ubsan/common.log",
+          "sha256": "21d641a5bd4853a25ea5e5dc44f30985af88538092593118e0f7baef5fd2e8dc"
+        },
+        "configure.log": {
+          "path": "ubsan/configure.log",
+          "sha256": "813e160333102f0545db3740cd49608e996d18cbf79e8ca0d2331b52f8ff0aa5"
+        },
+        "cpu.log": {
+          "path": "ubsan/cpu.log",
+          "sha256": "952721bf2e2fb26459976696ae1772e4da85e9ee63517e6255b9af4d30b70643"
+        },
+        "job.json": {
+          "path": "ubsan/job.json",
+          "sha256": "5fc05f8ea58b6d20c7e4cedb5b776908eeef809c04f84a1ccc91a566b8a1c273"
+        },
+        "sanitizer-flags.log": {
+          "path": "ubsan/sanitizer-flags.log",
+          "sha256": "f0c97d965b643d6165c4766b2659260a288a6197ec32c0d76b0bbad170cdad75"
+        }
+      }
+    },
+    {
+      "name": "tsan",
+      "verdict": "PASS",
+      "receipt": "tsan/job.json",
+      "files": {
+        "build.log": {
+          "path": "tsan/build.log",
+          "sha256": "2e1f62421a685be8a17383badcb92cd606e6f69485e89b0f7996cf03787f1f53"
+        },
+        "common-layout.log": {
+          "path": "tsan/common-layout.log",
+          "sha256": "9e2d61eb08e811c2ae51302dac09612e71aa37f2ee64ccd38be5370fe5df0def"
+        },
+        "common.log": {
+          "path": "tsan/common.log",
+          "sha256": "c5407c73861a3196b47cdb602fd13409ec2a7cd08027b1e27cadafad2380c5de"
+        },
+        "configure.log": {
+          "path": "tsan/configure.log",
+          "sha256": "b99d2a549a9443ce936c624b85941faeefd0edd49f991d232bb0aa589ec7c5f0"
+        },
+        "cpu-layout.log": {
+          "path": "tsan/cpu-layout.log",
+          "sha256": "c6475a8e6042d6a91fba299ad32c743a514b52a7c4922a6a3ea404e9a50282a6"
+        },
+        "job.json": {
+          "path": "tsan/job.json",
+          "sha256": "e9c5187e4644c2ada25b0e4062e5187e1f666375716c5be40c5c53ce432ed754"
+        },
+        "sanitizer-flags.log": {
+          "path": "tsan/sanitizer-flags.log",
+          "sha256": "580c5bd8924581014583140a1743e374b5312ef22610c6261ba64a26425390aa"
+        }
+      }
+    },
+    {
+      "name": "headers",
+      "verdict": "PASS",
+      "receipt": "headers/job.json",
+      "files": {
+        "headers.log": {
+          "path": "headers/headers.log",
+          "sha256": "5fe667a36dee781d3bfa8ba6642bf87e1aec1740372d7ce81610cd548f80e108"
+        },
+        "job.json": {
+          "path": "headers/job.json",
+          "sha256": "a07f143ca0f8805166eb0ff0c47e89eb709551c1cafbcbac577c7f10b755ab18"
+        }
+      }
+    }
+  ],
+  "counts": {
+    "cuda_copy": 8,
+    "common_cuda": 34,
+    "backend_late_failure": 1,
+    "asan_common_cpu": [
+      34,
+      3
+    ],
+    "ubsan_common_cpu": [
+      34,
+      3
+    ],
+    "tsan_common_cpu": [
+      34,
+      3
+    ],
+    "headers": 8
+  },
+  "tsan_condition": "initial unexpected mapping exit66 before tests; one process-local setarch x86_64 -R run per original binary passed; no suppressions or global changes",
+  "limits": [
+    "backend late-failure test signs original Completion boundary, not new F2 producer late-failure journey",
+    "header native ON variants and installed SDK still UNPROVEN",
+    "ordinary consumer link retains locked Torch CUDA12 leaf and native CUDA13.3; actual loader warnings retained, only sampled BF16/Q8 journey signed",
+    "other hosts/full SDK/P0 final red team not proved here"
+  ]
+}

@@ -61,7 +61,7 @@ GPU stream drain和原CUDA abandoned-event reaper回调完成不同；借用allo
 | Windows CPU/Vulkan | PASS（scope匹配） | source/relocated static/shared、新头/absence/DLL；9 native/34 common及实际unknown-fence风险 |
 | Air CPU/Apple | PASS（scope匹配） | source/relocated static/shared、新头/absence/MLX assets；10 native/34 common及实际故障/关闭 |
 | Air CPU/Vulkan | UNPROVEN | 实际设备身份；对应native/common与ordinary数学、三交付/头/absence/迁址 |
-| WSL CPU/CUDA | UNPROVEN | 当前完整候选同步；8 CUDA/34 common、actual late failure、ordinary数学、三交付/头/absence/迁址 |
+| WSL CPU/CUDA | PASS（固定候选source/static） | 8 CUDA/34 common及原backend late failure PASS；installed static/shared、native ON头/absence/迁址、F2 producer actual late-failure仍待验 |
 | WSL Vulkan | GPU资格UNPROVEN | 先实际枚举loader/device；只有合格GPU才签数学。若仍仅llvmpipe，则记录本候选条件结果，完成适用构建/安装/头/absence格 |
 
 共同控制/CPU copy sanitizer使用原WSL ASan+UBSan与TSan树，固定34 common、3 CpuCopyProgram；
@@ -73,3 +73,14 @@ skipped理由，不修改公共工具。已有F1消费者只作直接回归，�
 
 最后检查：完整selected适用门、closure（registry变化显式previous-ref）、docs、diff、P0运行账与
 源代码红队/七问；所有适用格有实证才CLOSED。当前聚合资格UNPROVEN，不把表内首轮PASS扩大。
+
+## WSL固定候选本批结果
+
+[WSL收据](../../../../evidence/correctness/foundation-f2-wsl-qualification/receipt.json)绑定上述精确candidate/tree与
+完整Git archive SHA。实际GCC14.2/CUDA13.3/RTX4070/driver617.14；8 CUDA、34 common与原backend
+隔离late-failure 1项PASS。普通CPU/CUDA source/static同sample两组/两槽/三轮原BF16/Q8 bytes及
+Direct/Graph scalar oracle PASS。原Torch CUDA12 leaf/native CUDA13链接警告保留，只签所运行旅程。
+ASan、独立UBSan各34 common＋3 CpuCopyProgram PASS，真实compile flags保留；TSan同37项
+在一次进程级setarch -R恢复后PASS，初始unexpected mapping/exit66发生于任何用例运行前，原日志
+保留，无全局配置或suppression。六共同头及Apple/Vulkan OFF两头GCC sole-include PASS；native ON
+及installed SDK仍UNPROVEN。原backend late-failure不是F2 producer late-failure证书。

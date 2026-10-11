@@ -1,0 +1,9 @@
+{
+  "candidate": "03162add05d3e26fe3314c6bcdaafa5a277a3a76",
+  "tree": "300d1cbcc810ddb60c5097fa71c48bf2820670b3",
+  "archive": "C:\\public\\project-hyle\\hyle\\.scratch\\foundation-f2\\wsl-03162add0.tar.gz",
+  "sha256": "416782978e8208faae24c49c7ae6449343152e55cea764ae74ed1f408d13a342",
+  "bytes": 173595536,
+  "stage": "/root/hyle-scratch/compute-unified/foundation-f2-source-03162add0",
+  "sync": "full exact Git archive/checksum rsync; disposable WSL validation only"
+}

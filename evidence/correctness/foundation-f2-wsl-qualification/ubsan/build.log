@@ -1,0 +1,26 @@
+[0/2] Re-checking globbed directories...
+[1/25] Building CXX object src/compute/CMakeFiles/hyle_compute.dir/batch_transfer.cc.o
+[2/25] Building CXX object src/compute/CMakeFiles/hyle_compute.dir/command_capture.cc.o
+[3/25] Building CXX object src/compute/CMakeFiles/hyle_compute.dir/copy_control.cc.o
+[4/25] Building CXX object src/compute/CMakeFiles/hyle_compute.dir/copy_ranges.cc.o
+[5/25] Building CXX object src/compute/CMakeFiles/hyle_compute.dir/custom_kernel.cc.o
+[6/25] Building CXX object src/compute/CMakeFiles/hyle_compute.dir/device.cc.o
+[7/25] Building CXX object src/compute/CMakeFiles/hyle_compute.dir/operation.cc.o
+[8/25] Building CXX object src/compute/CMakeFiles/hyle_compute.dir/provider.cc.o
+[9/25] Building CXX object src/compute/CMakeFiles/hyle_compute.dir/resource_leases.cc.o
+[10/25] Building CXX object src/compute/CMakeFiles/hyle_compute.dir/retained_completion.cc.o
+[11/25] Building CXX object src/compute/CMakeFiles/hyle_compute.dir/leased_operation.cc.o
+[12/25] Building CXX object src/compute/CMakeFiles/hyle_compute.dir/transfer.cc.o
+[13/25] Linking CXX static library bin/libhyle_compute.a
+[14/25] Building CXX object src/compute_backend_cpu/CMakeFiles/hyle_compute_backend_cpu.dir/cpu_backend.cc.o
+[15/25] Linking CXX static library bin/libhyle_compute_backend_cpu.a
+[16/25] Building CXX object tests/compute/CMakeFiles/hyle_compute_test.dir/completion_test.cc.o
+[17/25] Building CXX object tests/compute/CMakeFiles/hyle_compute_test.dir/copy_ranges_test.cc.o
+[18/25] Building CXX object tests/compute/CMakeFiles/hyle_compute_test.dir/resource_leases_test.cc.o
+[19/25] Linking CXX executable bin/hyle_compute_test
+[20/25] Building CXX object tests/compute_backend_cpu/CMakeFiles/hyle_compute_backend_cpu_test.dir/copy_program_test.cc.o
+[21/25] Building CXX object tests/compute_backend_cpu/CMakeFiles/hyle_compute_backend_cpu_test.dir/__/compute/device_test.cc.o
+[22/25] Building CXX object tests/compute_backend_cpu/CMakeFiles/hyle_compute_backend_cpu_test.dir/__/compute/host_kernel_test.cc.o
+[23/25] Building CXX object tests/compute_backend_cpu/CMakeFiles/hyle_compute_backend_cpu_test.dir/__/compute/custom_kernel_test.cc.o
+[24/25] Building CXX object tests/compute_backend_cpu/CMakeFiles/hyle_compute_backend_cpu_test.dir/runtime_provider_test.cc.o
+[25/25] Linking CXX executable bin/hyle_compute_backend_cpu_test

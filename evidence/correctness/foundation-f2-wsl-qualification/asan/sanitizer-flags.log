@@ -1,0 +1,151 @@
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=address -fno-omit-frame-pointer
+  FLAGS = -O3 -DNDEBUG -std=c++23 -fPIC -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=address -fno-omit-frame-pointer
+  FLAGS = -O3 -DNDEBUG -std=c++23 -fPIC -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=address -fno-omit-frame-pointer
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=address -fno-omit-frame-pointer
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=address -fno-omit-frame-pointer
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=address -fno-omit-frame-pointer
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=address -fno-omit-frame-pointer
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=address -fno-omit-frame-pointer
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=address -fno-omit-frame-pointer
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=address -fno-omit-frame-pointer
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=address -fno-omit-frame-pointer
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=address -fno-omit-frame-pointer
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=address -fno-omit-frame-pointer
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=address -fno-omit-frame-pointer
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=address -fno-omit-frame-pointer
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=address -fno-omit-frame-pointer
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=address -fno-omit-frame-pointer
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=address -fno-omit-frame-pointer
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=address -fno-omit-frame-pointer
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=address -fno-omit-frame-pointer
+  FLAGS = -O3 -DNDEBUG -std=c17 -fPIC -fvisibility=hidden -w -fsanitize=address -fno-omit-frame-pointer
+  FLAGS = -O3 -DNDEBUG -std=c++23 -fvisibility=hidden -fvisibility-inlines-hidden -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=address -fno-omit-frame-pointer
+  FLAGS = -O3 -DNDEBUG -std=c++23 -fvisibility=hidden -fvisibility-inlines-hidden -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=address -fno-omit-frame-pointer
+  FLAGS = -O3 -DNDEBUG -std=c++23 -fvisibility=hidden -fvisibility-inlines-hidden -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=address -fno-omit-frame-pointer
+  FLAGS = -O3 -DNDEBUG -std=c++23 -fvisibility=hidden -fvisibility-inlines-hidden -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=address -fno-omit-frame-pointer
+  FLAGS = -O3 -DNDEBUG -std=c++23 -fvisibility=hidden -fvisibility-inlines-hidden -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=address -fno-omit-frame-pointer -mavx2 -mfma -mf16c -mbmi2
+  FLAGS = -O3 -DNDEBUG -std=c++23 -fvisibility=hidden -fvisibility-inlines-hidden -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=address -fno-omit-frame-pointer
+  FLAGS = -O3 -DNDEBUG -std=c++23 -fvisibility=hidden -fvisibility-inlines-hidden -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=address -fno-omit-frame-pointer -msse4.2
+  FLAGS = -O3 -DNDEBUG -std=c++23 -fvisibility=hidden -fvisibility-inlines-hidden -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=address -fno-omit-frame-pointer -mavx2 -mfma -mf16c -mbmi -mbmi2
+  FLAGS = -O3 -DNDEBUG -std=c++23 -fvisibility=hidden -fvisibility-inlines-hidden -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=address -fno-omit-frame-pointer -mavx512f -mavx512bw -mavx512vl -mavx512dq -mavx512cd -mavx2 -mfma -mf16c -mbmi -mbmi2
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=address -fno-omit-frame-pointer
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=address -fno-omit-frame-pointer
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=address -fno-omit-frame-pointer
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=address -fno-omit-frame-pointer
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=address -fno-omit-frame-pointer
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=address -fno-omit-frame-pointer
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=address -fno-omit-frame-pointer
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=address -fno-omit-frame-pointer
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=address -fno-omit-frame-pointer
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=address -fno-omit-frame-pointer
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=address -fno-omit-frame-pointer
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=address -fno-omit-frame-pointer
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=address -fno-omit-frame-pointer
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=address -fno-omit-frame-pointer
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=address -fno-omit-frame-pointer
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=address -fno-omit-frame-pointer
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=address -fno-omit-frame-pointer
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=address -fno-omit-frame-pointer
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=address -fno-omit-frame-pointer
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=address -fno-omit-frame-pointer
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=address -fno-omit-frame-pointer
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=address -fno-omit-frame-pointer
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=address -fno-omit-frame-pointer
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=address -fno-omit-frame-pointer
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=address -fno-omit-frame-pointer
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=address -fno-omit-frame-pointer
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=address -fno-omit-frame-pointer
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=address -fno-omit-frame-pointer
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=address -fno-omit-frame-pointer
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=address -fno-omit-frame-pointer
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=address -fno-omit-frame-pointer
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=address -fno-omit-frame-pointer
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=address -fno-omit-frame-pointer
+  LINK_FLAGS = -fsanitize=address -fno-omit-frame-pointer
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=address -fno-omit-frame-pointer
+  LINK_FLAGS = -fsanitize=address -fno-omit-frame-pointer
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=address -fno-omit-frame-pointer
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=address -fno-omit-frame-pointer
+  LINK_FLAGS = -fsanitize=address -fno-omit-frame-pointer
+  FLAGS = -O3 -DNDEBUG -std=c++23 -fno-exceptions -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=address -fno-omit-frame-pointer
+  LINK_FLAGS = -fsanitize=address -fno-omit-frame-pointer
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=address -fno-omit-frame-pointer
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=address -fno-omit-frame-pointer
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=address -fno-omit-frame-pointer
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=address -fno-omit-frame-pointer
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=address -fno-omit-frame-pointer
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=address -fno-omit-frame-pointer
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=address -fno-omit-frame-pointer
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=address -fno-omit-frame-pointer
+  LINK_FLAGS = -fsanitize=address -fno-omit-frame-pointer
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=address -fno-omit-frame-pointer
+  LINK_FLAGS = -fsanitize=address -fno-omit-frame-pointer
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=address -fno-omit-frame-pointer
+  LINK_FLAGS = -fsanitize=address -fno-omit-frame-pointer
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=address -fno-omit-frame-pointer
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=address -fno-omit-frame-pointer
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=address -fno-omit-frame-pointer
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=address -fno-omit-frame-pointer
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=address -fno-omit-frame-pointer
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=address -fno-omit-frame-pointer
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=address -fno-omit-frame-pointer
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=address -fno-omit-frame-pointer
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=address -fno-omit-frame-pointer
+  LINK_FLAGS = -fsanitize=address -fno-omit-frame-pointer
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=address -fno-omit-frame-pointer
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=address -fno-omit-frame-pointer
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=address -fno-omit-frame-pointer
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=address -fno-omit-frame-pointer
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=address -fno-omit-frame-pointer
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=address -fno-omit-frame-pointer
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=address -fno-omit-frame-pointer
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=address -fno-omit-frame-pointer
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=address -fno-omit-frame-pointer
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=address -fno-omit-frame-pointer
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=address -fno-omit-frame-pointer
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=address -fno-omit-frame-pointer
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=address -fno-omit-frame-pointer
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=address -fno-omit-frame-pointer
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=address -fno-omit-frame-pointer
+  LINK_FLAGS = -fsanitize=address -fno-omit-frame-pointer
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=address -fno-omit-frame-pointer
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=address -fno-omit-frame-pointer
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=address -fno-omit-frame-pointer
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=address -fno-omit-frame-pointer
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=address -fno-omit-frame-pointer
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=address -fno-omit-frame-pointer
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=address -fno-omit-frame-pointer
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=address -fno-omit-frame-pointer
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=address -fno-omit-frame-pointer
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=address -fno-omit-frame-pointer
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=address -fno-omit-frame-pointer
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=address -fno-omit-frame-pointer
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=address -fno-omit-frame-pointer
+  LINK_FLAGS = -fsanitize=address -fno-omit-frame-pointer
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=address -fno-omit-frame-pointer
+  LINK_FLAGS = -fsanitize=address -fno-omit-frame-pointer
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=address -fno-omit-frame-pointer
+  LINK_FLAGS = -fsanitize=address -fno-omit-frame-pointer
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=address -fno-omit-frame-pointer
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=address -fno-omit-frame-pointer
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=address -fno-omit-frame-pointer
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=address -fno-omit-frame-pointer
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=address -fno-omit-frame-pointer
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=address -fno-omit-frame-pointer
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=address -fno-omit-frame-pointer
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=address -fno-omit-frame-pointer
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=address -fno-omit-frame-pointer
+  LINK_FLAGS = -fsanitize=address -fno-omit-frame-pointer
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=address -fno-omit-frame-pointer
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=address -fno-omit-frame-pointer
+  LINK_FLAGS = -fsanitize=address -fno-omit-frame-pointer
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=address -fno-omit-frame-pointer
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=address -fno-omit-frame-pointer
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=address -fno-omit-frame-pointer
+  LINK_FLAGS = -fsanitize=address -fno-omit-frame-pointer
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=address -fno-omit-frame-pointer
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=address -fno-omit-frame-pointer
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=address -fno-omit-frame-pointer
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=address -fno-omit-frame-pointer
+  FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Werror -Wno-error=mismatched-new-delete -fsanitize=address -fno-omit-frame-pointer
+  LINK_FLAGS = -fsanitize=address -fno-omit-frame-pointer

@@ -1,0 +1,29 @@
+Running main() from /root/.cache/hyle/dependencies/v1/sources/googletest-063de7e9578f-162765170ae6/googletest/src/gtest_main.cc
+Note: Google Test filter = CudaCopyBatch.*:CudaCopyProgram.*
+[==========] Running 8 tests from 2 test suites.
+[----------] Global test environment set-up.
+[----------] 3 tests from CudaCopyBatch
+[ RUN      ] CudaCopyBatch.BidirectionalSameDeviceByteRoutesAndColdSlotReplay
+[       OK ] CudaCopyBatch.BidirectionalSameDeviceByteRoutesAndColdSlotReplay (160 ms)
+[ RUN      ] CudaCopyBatch.PhysicalIdentityUsesByteAddressAndRejectsForeignContext
+[       OK ] CudaCopyBatch.PhysicalIdentityUsesByteAddressAndRejectsForeignContext (6 ms)
+[ RUN      ] CudaCopyBatch.ColdAbsentBatchUsesRealSameStreamCopiesWithoutReprobing
+[       OK ] CudaCopyBatch.ColdAbsentBatchUsesRealSameStreamCopiesWithoutReprobing (4 ms)
+[----------] 3 tests from CudaCopyBatch (172 ms total)
+
+[----------] 5 tests from CudaCopyProgram
+[ RUN      ] CudaCopyProgram.TwoIndependentSlotsPhaseBytesOldResultsAndNoHotMetadataGrowth
+[       OK ] CudaCopyProgram.TwoIndependentSlotsPhaseBytesOldResultsAndNoHotMetadataGrowth (5 ms)
+[ RUN      ] CudaCopyProgram.EarlyReadyRetainsPendingReadonlySuccessorAndAbandonedNativeWork
+[       OK ] CudaCopyProgram.EarlyReadyRetainsPendingReadonlySuccessorAndAbandonedNativeWork (5 ms)
+[ RUN      ] CudaCopyProgram.CapacityAliasErrorProducerAndZeroBatchDoNotConsumeOrAcceptWork
+[       OK ] CudaCopyProgram.CapacityAliasErrorProducerAndZeroBatchDoNotConsumeOrAcceptWork (4 ms)
+[ RUN      ] CudaCopyProgram.AcceptedFallbackSuffixErrorPreservesEarlierReadyGroupWithoutRetry
+[       OK ] CudaCopyProgram.AcceptedFallbackSuffixErrorPreservesEarlierReadyGroupWithoutRetry (3 ms)
+[ RUN      ] CudaCopyProgram.UnknownEventObservationAndUnsupportedCancelKeepActualPendingUsesAlive
+[       OK ] CudaCopyProgram.UnknownEventObservationAndUnsupportedCancelKeepActualPendingUsesAlive (4 ms)
+[----------] 5 tests from CudaCopyProgram (24 ms total)
+
+[----------] Global test environment tear-down
+[==========] 8 tests from 2 test suites ran. (196 ms total)
+[  PASSED  ] 8 tests.

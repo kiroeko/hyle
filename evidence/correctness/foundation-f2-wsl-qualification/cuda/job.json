@@ -1,0 +1,106 @@
+{
+  "candidate": "03162add05d3e26fe3314c6bcdaafa5a277a3a76",
+  "source_manifest": "HYLE full canonical Git archive\nGit commit: 03162add05d3e26fe3314c6bcdaafa5a277a3a76\nGit tree: 300d1cbcc810ddb60c5097fa71c48bf2820670b3\n",
+  "mode": "cuda",
+  "source": "/home/kiro/hyle-f1/native-fault/source-3034fc595abf",
+  "build": "/home/kiro/hyle-f1/native-fault/build-3034fc595abf",
+  "identity": {
+    "os": "Linux kiro-workstation 6.18.40.1-microsoft-standard-WSL2 #1 SMP PREEMPT_DYNAMIC Fri Jul 31 22:12:15 UTC 2026 x86_64 x86_64 x86_64 GNU/Linux",
+    "compiler": "g++-14 (Ubuntu 14.2.0-4ubuntu2~24.04.1) 14.2.0\nCopyright (C) 2024 Free Software Foundation, Inc.\nThis is free software; see the source for copying conditions.  There is NO\nwarranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.",
+    "cmake": "cmake version 3.28.3\n\nCMake suite maintained and supported by Kitware (kitware.com/cmake).",
+    "cuda": "nvcc: NVIDIA (R) Cuda compiler driver\nCopyright (c) 2005-2026 NVIDIA Corporation\nBuilt on Tue_Jun_09_02:43:40_PM_PDT_2026\nCuda compilation tools, release 13.3, V13.3.73\nBuild cuda_13.3.r13.3/compiler.38244171_0",
+    "gpu": "NVIDIA GeForce RTX 4070, GPU-e7376560-6f5d-ec19-6ee4-3dd3a2c81ef8, 617.14"
+  },
+  "preflight_failure": "identity PATH omitted /usr/lib/wsl/lib; nvidia-smi not found; no configure/build/test ran; recovered same empty root with exact tool path",
+  "scope": "F2 selected WSL cuda qualification only; SDK/all-platform final verdict unproven",
+  "parallel": 1,
+  "environment": {
+    "ASAN_OPTIONS": "halt_on_error=1:detect_leaks=1",
+    "UBSAN_OPTIONS": "halt_on_error=1:print_stacktrace=1",
+    "TSAN_OPTIONS": "halt_on_error=1"
+  },
+  "stages": [
+    {
+      "name": "configure",
+      "command": [
+        "/usr/bin/cmake",
+        "-S",
+        "/home/kiro/hyle-f1/native-fault/source-3034fc595abf",
+        "-B",
+        "/home/kiro/hyle-f1/native-fault/build-3034fc595abf"
+      ],
+      "pid": 667,
+      "state": "terminal",
+      "available_bytes": 32412483584,
+      "log": "configure.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "694d020225a4262d128bc6a02da2085c5dd4da2c1a85fb17d6204518b646c2b8"
+    },
+    {
+      "name": "build",
+      "command": [
+        "/usr/bin/cmake",
+        "--build",
+        "/home/kiro/hyle-f1/native-fault/build-3034fc595abf",
+        "--target",
+        "hyle_compute_backend_cuda_test",
+        "hyle_compute_test",
+        "hyle_compute_backend_cuda_late_failure_test",
+        "--parallel",
+        "1"
+      ],
+      "pid": 741,
+      "state": "terminal",
+      "available_bytes": 32250859520,
+      "log": "build.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "1e4c7f6044f6a88ade0c736d84f6dc79d2297036f37a30813537b6b7a2cb28a3"
+    },
+    {
+      "name": "common",
+      "command": [
+        "/home/kiro/hyle-f1/native-fault/build-3034fc595abf/bin/hyle_compute_test",
+        "--gtest_filter=CopyRanges.*:CopyLeaseHandoff.*:CopyDependency.*:ResourceLeases.*:Completion.*"
+      ],
+      "pid": 962,
+      "state": "terminal",
+      "available_bytes": 32047685632,
+      "log": "common.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "d72be2fc80389a39a09e533c7ece38b3c40b17621d91cbc869879bdc8392febd"
+    },
+    {
+      "name": "cuda",
+      "command": [
+        "/home/kiro/hyle-f1/native-fault/build-3034fc595abf/bin/hyle_compute_backend_cuda_test",
+        "--gtest_filter=CudaCopyBatch.*:CudaCopyProgram.*",
+        "--gtest_output=xml:/root/hyle-scratch/compute-unified/foundation-f2-cuda-03162add0/cuda.xml"
+      ],
+      "pid": 965,
+      "state": "terminal",
+      "available_bytes": 32055803904,
+      "log": "cuda.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "c9e9ce62549d8a2c4d1a26544968bcb9dc455e5ff6ebb840c657893c0e293cc6"
+    },
+    {
+      "name": "late",
+      "command": [
+        "/home/kiro/hyle-f1/native-fault/build-3034fc595abf/bin/hyle_compute_backend_cuda_late_failure_test",
+        "--gtest_filter=CudaBackendLateFailure.*"
+      ],
+      "pid": 974,
+      "state": "terminal",
+      "available_bytes": 32074461184,
+      "log": "late.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "3cf779ab930d330100fe1fd8219777d51498226a2816701135554d34d4052709"
+    }
+  ],
+  "verdict": "PASS"
+}

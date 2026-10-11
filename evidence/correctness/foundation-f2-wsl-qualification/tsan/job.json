@@ -1,0 +1,117 @@
+{
+  "candidate": "03162add05d3e26fe3314c6bcdaafa5a277a3a76",
+  "source_manifest": "HYLE full canonical Git archive\nGit commit: 03162add05d3e26fe3314c6bcdaafa5a277a3a76\nGit tree: 300d1cbcc810ddb60c5097fa71c48bf2820670b3\n",
+  "mode": "tsan",
+  "source": "/home/kiro/hyle-f1/sanitizers/source-03242e7723cb",
+  "build": "/home/kiro/hyle-f1/sanitizers/tsan-03242e7723cb",
+  "identity": {
+    "os": "Linux kiro-workstation 6.18.40.1-microsoft-standard-WSL2 #1 SMP PREEMPT_DYNAMIC Fri Jul 31 22:12:15 UTC 2026 x86_64 x86_64 x86_64 GNU/Linux",
+    "compiler": "g++-14 (Ubuntu 14.2.0-4ubuntu2~24.04.1) 14.2.0\nCopyright (C) 2024 Free Software Foundation, Inc.\nThis is free software; see the source for copying conditions.  There is NO\nwarranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.",
+    "cmake": "cmake version 3.28.3\n\nCMake suite maintained and supported by Kitware (kitware.com/cmake).",
+    "cuda": "nvcc: NVIDIA (R) Cuda compiler driver\nCopyright (c) 2005-2026 NVIDIA Corporation\nBuilt on Tue_Jun_09_02:43:40_PM_PDT_2026\nCuda compilation tools, release 13.3, V13.3.73\nBuild cuda_13.3.r13.3/compiler.38244171_0",
+    "gpu": "NVIDIA GeForce RTX 4070, GPU-e7376560-6f5d-ec19-6ee4-3dd3a2c81ef8, 617.14"
+  },
+  "preflight_failure": null,
+  "scope": "F2 selected WSL tsan qualification only; SDK/all-platform final verdict unproven",
+  "parallel": 1,
+  "environment": {
+    "ASAN_OPTIONS": "halt_on_error=1:detect_leaks=1",
+    "UBSAN_OPTIONS": "halt_on_error=1:print_stacktrace=1",
+    "TSAN_OPTIONS": "halt_on_error=1"
+  },
+  "stages": [
+    {
+      "name": "configure",
+      "command": [
+        "/usr/bin/cmake",
+        "-S",
+        "/home/kiro/hyle-f1/sanitizers/source-03242e7723cb",
+        "-B",
+        "/home/kiro/hyle-f1/sanitizers/tsan-03242e7723cb",
+        "-DHYLE_DEV_FACTORS=compute_backend_cpu;graph",
+        "-DHYLE_SANITIZER=tsan"
+      ],
+      "pid": 658,
+      "state": "terminal",
+      "available_bytes": 32418045952,
+      "log": "configure.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "b99d2a549a9443ce936c624b85941faeefd0edd49f991d232bb0aa589ec7c5f0"
+    },
+    {
+      "name": "build",
+      "command": [
+        "/usr/bin/cmake",
+        "--build",
+        "/home/kiro/hyle-f1/sanitizers/tsan-03242e7723cb",
+        "--target",
+        "hyle_compute_test",
+        "hyle_compute_backend_cpu_test",
+        "--parallel",
+        "1"
+      ],
+      "pid": 734,
+      "state": "terminal",
+      "available_bytes": 32338464768,
+      "log": "build.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "2e1f62421a685be8a17383badcb92cd606e6f69485e89b0f7996cf03787f1f53"
+    },
+    {
+      "name": "common",
+      "command": [
+        "/home/kiro/hyle-f1/sanitizers/tsan-03242e7723cb/bin/hyle_compute_test",
+        "--gtest_filter=CopyRanges.*:CopyLeaseHandoff.*:CopyDependency.*:ResourceLeases.*:Completion.*"
+      ],
+      "pid": 872,
+      "state": "terminal",
+      "available_bytes": 32381390848,
+      "log": "common.log",
+      "exit_code": 66,
+      "verdict": "FAIL",
+      "sha256": "c5407c73861a3196b47cdb602fd13409ec2a7cd08027b1e27cadafad2380c5de"
+    },
+    {
+      "name": "common-layout",
+      "command": [
+        "/usr/bin/setarch",
+        "x86_64",
+        "-R",
+        "/home/kiro/hyle-f1/sanitizers/tsan-03242e7723cb/bin/hyle_compute_test",
+        "--gtest_filter=CopyRanges.*:CopyLeaseHandoff.*:CopyDependency.*:ResourceLeases.*:Completion.*"
+      ],
+      "pid": 662,
+      "state": "terminal",
+      "available_bytes": 32342446080,
+      "log": "common-layout.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "9e2d61eb08e811c2ae51302dac09612e71aa37f2ee64ccd38be5370fe5df0def"
+    },
+    {
+      "name": "cpu-layout",
+      "command": [
+        "/usr/bin/setarch",
+        "x86_64",
+        "-R",
+        "/home/kiro/hyle-f1/sanitizers/tsan-03242e7723cb/bin/hyle_compute_backend_cpu_test",
+        "--gtest_filter=CpuCopyProgram.*"
+      ],
+      "pid": 666,
+      "state": "terminal",
+      "available_bytes": 32344219648,
+      "log": "cpu-layout.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "c6475a8e6042d6a91fba299ad32c743a514b52a7c4922a6a3ea404e9a50282a6"
+    }
+  ],
+  "sanitizer_flags": {
+    "log": "sanitizer-flags.log",
+    "sha256": "580c5bd8924581014583140a1743e374b5312ef22610c6261ba64a26425390aa"
+  },
+  "recovery": "one fixed process-local ASLR-disabled run per declared original binary; initial startup failure retained; no system changes/suppressions",
+  "verdict": "PASS"
+}

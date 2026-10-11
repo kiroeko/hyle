@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites tests="8" failures="0" disabled="0" errors="0" time="0.196" timestamp="2026-10-11T20:44:21.470" name="AllTests">
+  <testsuite name="CudaCopyBatch" tests="3" failures="0" disabled="0" skipped="0" errors="0" time="0.172" timestamp="2026-10-11T20:44:21.470">
+    <testcase name="BidirectionalSameDeviceByteRoutesAndColdSlotReplay" file="/home/kiro/hyle-f1/native-fault/source-3034fc595abf/tests/compute_backend_cuda/copy_batch_test.cc" line="61" status="run" result="completed" time="0.16" timestamp="2026-10-11T20:44:21.470" classname="CudaCopyBatch">
+      <properties>
+        <property name="copy_native_calls" value="9"/>
+      </properties>
+    </testcase>
+    <testcase name="PhysicalIdentityUsesByteAddressAndRejectsForeignContext" file="/home/kiro/hyle-f1/native-fault/source-3034fc595abf/tests/compute_backend_cuda/copy_batch_test.cc" line="103" status="run" result="completed" time="0.006" timestamp="2026-10-11T20:44:21.631" classname="CudaCopyBatch" />
+    <testcase name="ColdAbsentBatchUsesRealSameStreamCopiesWithoutReprobing" file="/home/kiro/hyle-f1/native-fault/source-3034fc595abf/tests/compute_backend_cuda/copy_batch_test.cc" line="143" status="run" result="completed" time="0.004" timestamp="2026-10-11T20:44:21.638" classname="CudaCopyBatch">
+      <properties>
+        <property name="native_fallback_copies" value="12"/>
+        <property name="cold_proc_probes" value="1"/>
+      </properties>
+    </testcase>
+  </testsuite>
+  <testsuite name="CudaCopyProgram" tests="5" failures="0" disabled="0" skipped="0" errors="0" time="0.024" timestamp="2026-10-11T20:44:21.643">
+    <testcase name="TwoIndependentSlotsPhaseBytesOldResultsAndNoHotMetadataGrowth" file="/home/kiro/hyle-f1/native-fault/source-3034fc595abf/tests/compute_backend_cuda/copy_program_test.cc" line="60" status="run" result="completed" time="0.005" timestamp="2026-10-11T20:44:21.643" classname="CudaCopyProgram" />
+    <testcase name="EarlyReadyRetainsPendingReadonlySuccessorAndAbandonedNativeWork" file="/home/kiro/hyle-f1/native-fault/source-3034fc595abf/tests/compute_backend_cuda/copy_program_test.cc" line="104" status="run" result="completed" time="0.005" timestamp="2026-10-11T20:44:21.648" classname="CudaCopyProgram" />
+    <testcase name="CapacityAliasErrorProducerAndZeroBatchDoNotConsumeOrAcceptWork" file="/home/kiro/hyle-f1/native-fault/source-3034fc595abf/tests/compute_backend_cuda/copy_program_test.cc" line="164" status="run" result="completed" time="0.004" timestamp="2026-10-11T20:44:21.654" classname="CudaCopyProgram" />
+    <testcase name="AcceptedFallbackSuffixErrorPreservesEarlierReadyGroupWithoutRetry" file="/home/kiro/hyle-f1/native-fault/source-3034fc595abf/tests/compute_backend_cuda/copy_program_test.cc" line="203" status="run" result="completed" time="0.003" timestamp="2026-10-11T20:44:21.659" classname="CudaCopyProgram" />
+    <testcase name="UnknownEventObservationAndUnsupportedCancelKeepActualPendingUsesAlive" file="/home/kiro/hyle-f1/native-fault/source-3034fc595abf/tests/compute_backend_cuda/copy_program_test.cc" line="229" status="run" result="completed" time="0.004" timestamp="2026-10-11T20:44:21.662" classname="CudaCopyProgram" />
+  </testsuite>
+</testsuites>

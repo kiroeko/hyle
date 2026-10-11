@@ -1,0 +1,74 @@
+{
+  "candidate": "03162add05d3e26fe3314c6bcdaafa5a277a3a76",
+  "source_manifest": "HYLE full canonical Git archive\nGit commit: 03162add05d3e26fe3314c6bcdaafa5a277a3a76\nGit tree: 300d1cbcc810ddb60c5097fa71c48bf2820670b3\n",
+  "mode": "math",
+  "source": "/root/hyle-scratch/compute-unified/source-7a7b4c3b",
+  "build": "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/source-build",
+  "identity": {
+    "os": "Linux kiro-workstation 6.18.40.1-microsoft-standard-WSL2 #1 SMP PREEMPT_DYNAMIC Fri Jul 31 22:12:15 UTC 2026 x86_64 x86_64 x86_64 GNU/Linux",
+    "compiler": "g++-14 (Ubuntu 14.2.0-4ubuntu2~24.04.1) 14.2.0\nCopyright (C) 2024 Free Software Foundation, Inc.\nThis is free software; see the source for copying conditions.  There is NO\nwarranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.",
+    "cmake": "cmake version 3.28.3\n\nCMake suite maintained and supported by Kitware (kitware.com/cmake).",
+    "cuda": "nvcc: NVIDIA (R) Cuda compiler driver\nCopyright (c) 2005-2026 NVIDIA Corporation\nBuilt on Tue_Jun_09_02:43:40_PM_PDT_2026\nCuda compilation tools, release 13.3, V13.3.73\nBuild cuda_13.3.r13.3/compiler.38244171_0",
+    "gpu": "NVIDIA GeForce RTX 4070, GPU-e7376560-6f5d-ec19-6ee4-3dd3a2c81ef8, 617.14"
+  },
+  "preflight_failure": null,
+  "scope": "F2 selected WSL math qualification only; SDK/all-platform final verdict unproven",
+  "parallel": 1,
+  "environment": {
+    "ASAN_OPTIONS": "halt_on_error=1:detect_leaks=1",
+    "UBSAN_OPTIONS": "halt_on_error=1:print_stacktrace=1",
+    "TSAN_OPTIONS": "halt_on_error=1"
+  },
+  "stages": [
+    {
+      "name": "configure",
+      "command": [
+        "/usr/bin/cmake",
+        "-S",
+        "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/source-parent",
+        "-B",
+        "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/source-build"
+      ],
+      "pid": 1010,
+      "state": "terminal",
+      "available_bytes": 32367624192,
+      "log": "configure.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "7ee5a4ec72f14fa5d6a3e7f4c3c0388fb275db95b80dfdfc7951ca8123d7a726"
+    },
+    {
+      "name": "build",
+      "command": [
+        "/usr/bin/cmake",
+        "--build",
+        "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/source-build",
+        "--target",
+        "hyle_f2_batched_transfers",
+        "--parallel",
+        "1"
+      ],
+      "pid": 1058,
+      "state": "terminal",
+      "available_bytes": 32422129664,
+      "log": "build.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "948d684b3bcea0bccd17d53f2b17836f03e78a7ce09134435b9fb81dc660f27a"
+    },
+    {
+      "name": "math",
+      "command": [
+        "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/source-build/hyle_f2_batched_transfers"
+      ],
+      "pid": 1600,
+      "state": "terminal",
+      "available_bytes": 31892283392,
+      "log": "math.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "884d80e6df6fd625b6bf39028b2891da1bdd8a3ab7aa36b0da37c165e10e1f9a"
+    }
+  ],
+  "verdict": "PASS"
+}

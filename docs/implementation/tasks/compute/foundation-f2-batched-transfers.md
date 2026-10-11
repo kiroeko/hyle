@@ -383,6 +383,12 @@ gzip及archive SHA保留。其他平台/fault/头与SDK/P0终审红队仍待候�
 
 ## 预声明验证与停止
 
+固定candidate的WSL补验已取证，见[当前矩阵](foundation-f2-verification-matrix.md)与
+[原始WSL收据](../../../../evidence/correctness/foundation-f2-wsl-qualification/receipt.json)：8 CUDA/34 common、
+原backend late failure、ordinary BF16/Q8数学、ASan/UBSan/TSan各34＋3及八个共同/native OFF头。
+TSan仅一次process-local布局恢复，初始FAIL保留；enabled SDK头/迁址及其他剩余格继续UNPROVEN。
+所有四owner仍CANDIDATE，不以这批PASS代签F2全部或提前启动F3。
+
 普通数学接线阶段选新增 `samples/package/graph/batched_transfers`：先在Windows原CPU/CUDA
 源码消费树以普通 `hyle::graph` 运行两组/两槽/三次replay，BF16 dense及原GGUF Q8_0
 先host→device→device→host，逐字节读回，再由原Direct/Graph MatMul消费device ready leases。

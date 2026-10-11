@@ -1,0 +1,50 @@
+[0/2] Re-checking globbed directories...
+[1/40] Building CXX object src/compute/CMakeFiles/hyle_compute.dir/batch_transfer.cc.o
+[2/40] Building CXX object src/compute/CMakeFiles/hyle_compute.dir/command_capture.cc.o
+[3/40] Building CXX object src/compute/CMakeFiles/hyle_compute.dir/copy_control.cc.o
+[4/40] Building CXX object src/compute/CMakeFiles/hyle_compute.dir/copy_ranges.cc.o
+[5/40] Building CXX object src/compute/CMakeFiles/hyle_compute.dir/custom_kernel.cc.o
+[6/40] Building CXX object src/compute/CMakeFiles/hyle_compute.dir/device.cc.o
+[7/40] Building CXX object src/compute/CMakeFiles/hyle_compute.dir/operation.cc.o
+[8/40] Building CXX object src/compute/CMakeFiles/hyle_compute.dir/provider.cc.o
+[9/40] Building CXX object src/compute/CMakeFiles/hyle_compute.dir/resource_leases.cc.o
+[10/40] Building CXX object src/compute/CMakeFiles/hyle_compute.dir/retained_completion.cc.o
+[11/40] Building CXX object src/compute/CMakeFiles/hyle_compute.dir/leased_operation.cc.o
+[12/40] Building CXX object src/compute/CMakeFiles/hyle_compute.dir/transfer.cc.o
+[13/40] Linking CXX shared library bin/libhyle_compute.so.0.1.0
+[14/40] Creating library symlink bin/libhyle_compute.so
+[15/40] Building CXX object src/compute_backend_cuda/CMakeFiles/hyle_compute_backend_cuda.dir/cuda_backend.cc.o
+[16/40] Building CXX object src/compute_backend_cuda/CMakeFiles/hyle_compute_backend_cuda.dir/cuda_batch_transfer.cc.o
+/home/kiro/hyle-f1/native-fault/source-3034fc595abf/src/compute_backend_cuda/cuda_batch_transfer.cc:38:84: warning: missing initializer for member ‘CUmemcpyAttributes_st::srcLocHint’ [-Wmissing-field-initializers]
+   38 |   CUmemcpyAttributes attributes{.srcAccessOrder = CU_MEMCPY_SRC_ACCESS_ORDER_STREAM};
+      |                                                                                    ^
+/home/kiro/hyle-f1/native-fault/source-3034fc595abf/src/compute_backend_cuda/cuda_batch_transfer.cc:38:84: warning: missing initializer for member ‘CUmemcpyAttributes_st::dstLocHint’ [-Wmissing-field-initializers]
+/home/kiro/hyle-f1/native-fault/source-3034fc595abf/src/compute_backend_cuda/cuda_batch_transfer.cc:38:84: warning: missing initializer for member ‘CUmemcpyAttributes_st::flags’ [-Wmissing-field-initializers]
+[17/40] Building CXX object src/compute_backend_cuda/CMakeFiles/hyle_compute_backend_cuda.dir/cuda_memory.cc.o
+[18/40] Building CXX object src/compute_backend_cuda/CMakeFiles/hyle_compute_backend_cuda.dir/cuda_device_status.cc.o
+[19/40] Linking CXX shared library bin/libhyle_compute_backend_cuda.so.0.1.0
+[20/40] Creating library symlink bin/libhyle_compute_backend_cuda.so
+[21/40] Building CXX object tests/compute/CMakeFiles/hyle_compute_result_fixture.dir/result_owner_producer.cc.o
+[22/40] Linking CXX shared library bin/libhyle_compute_result_fixture.so
+[23/40] Building CXX object tests/compute/CMakeFiles/hyle_compute_test.dir/completion_test.cc.o
+[24/40] Building CXX object tests/compute/CMakeFiles/hyle_compute_test.dir/copy_ranges_test.cc.o
+[25/40] Building CXX object tests/compute/CMakeFiles/hyle_compute_test.dir/provider_test.cc.o
+[26/40] Building CXX object tests/compute/CMakeFiles/hyle_compute_test.dir/resource_leases_test.cc.o
+[27/40] Building CXX object tests/compute/CMakeFiles/hyle_compute_test.dir/route_policy_test.cc.o
+[28/40] Building CXX object tests/compute/CMakeFiles/hyle_compute_test.dir/shape_domain_test.cc.o
+[29/40] Building CXX object tests/compute/CMakeFiles/hyle_compute_test.dir/shape_program_test.cc.o
+[30/40] Building CXX object tests/compute/CMakeFiles/hyle_compute_test.dir/tensor_test.cc.o
+[31/40] Building CXX object tests/compute/CMakeFiles/hyle_compute_test.dir/workload_test.cc.o
+[32/40] Linking CXX executable bin/hyle_compute_test
+[33/40] Building CXX object tests/compute_backend_cuda/CMakeFiles/hyle_compute_backend_cuda_test.dir/cuda_backend_test.cc.o
+[34/40] Building CXX object tests/compute_backend_cuda/CMakeFiles/hyle_compute_backend_cuda_test.dir/copy_batch_test.cc.o
+/home/kiro/hyle-f1/native-fault/source-3034fc595abf/tests/compute_backend_cuda/copy_batch_test.cc: In destructor ‘{anonymous}::NativeBatch::~NativeBatch()’:
+/home/kiro/hyle-f1/native-fault/source-3034fc595abf/tests/compute_backend_cuda/copy_batch_test.cc:28:8: warning: suggest explicit braces to avoid ambiguous ‘else’ [-Wdangling-else]
+   28 |     if (queue) EXPECT_TRUE(queue->drain().ok());
+      |        ^
+[35/40] Building CXX object tests/compute_backend_cuda/CMakeFiles/hyle_compute_backend_cuda_test.dir/copy_program_test.cc.o
+[36/40] Building CXX object tests/compute_backend_cuda/CMakeFiles/hyle_compute_backend_cuda_test.dir/device_status_test.cc.o
+[37/40] Linking CXX executable bin/hyle_compute_backend_cuda_test
+[38/40] Building CXX object tests/compute_backend_cuda/CMakeFiles/hyle_compute_backend_cuda_late_failure_test.dir/cuda_failure_test.cc.o
+[39/40] Building CUDA object tests/compute_backend_cuda/CMakeFiles/hyle_compute_backend_cuda_late_failure_test.dir/cuda_failure_kernel.cu.o
+[40/40] Linking CXX executable bin/hyle_compute_backend_cuda_late_failure_test
