@@ -1,0 +1,6 @@
+[1/6] cd /Users/kiro/hyle-scratch/compute-unified/foundation-f1-sdk/shared-consumer && /opt/homebrew/bin/cmake -P /Users/kiro/hyle-scratch/compute-unified/foundation-f1-sdk/shared-consumer/hyle-apple-runtime/leases-Release.cmake
+[2/6] cd /Users/kiro/hyle-scratch/compute-unified/foundation-f1-sdk/shared-consumer && /opt/homebrew/bin/cmake -P /Users/kiro/hyle-scratch/compute-unified/foundation-f1-sdk/shared-consumer/hyle-apple-runtime/mixed-Release.cmake
+[3/6] Building CXX object CMakeFiles/leases.dir/Users/kiro/hyle-scratch/compute-unified/source-c8874688/samples/package/graph/resource_leases/main.cc.o
+[4/6] Building CXX object CMakeFiles/mixed.dir/Users/kiro/hyle-scratch/compute-unified/source-c8874688/tests/graph/cpu_apple_contracts.cc.o
+[5/6] Linking CXX executable leases
+[6/6] Linking CXX executable mixed

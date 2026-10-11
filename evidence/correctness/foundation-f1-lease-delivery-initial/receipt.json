@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "scope": "Partial F1 Windows CPU CUDA Vulkan source and relocated static/shared lease delivery qualification",
+  "scope": "Partial F1 Windows CPU CUDA Vulkan and MacBook Air CPU Apple source and relocated static shared lease delivery qualification",
   "candidate": "46cc16937d19952ddea0664df4609be9ed45e5a5",
   "product_candidate": "fc4ffbd1610eb3b24bf76709dc6e5e25b3d838d7",
   "tests": [
@@ -88,6 +88,16 @@
       ],
       "retained_initial_failure": "apple-static-original-install.log",
       "qualification": "Initial source archive omitted root LICENSE/THIRD_PARTY_NOTICES. Same candidate files restored from Windows Git; original failure retained, existing producer not rebuilt, installation alone resumed and relocated."
+    },
+    {
+      "name": "MacBook Air relocated CPU Apple shared SDK ordinary lease and imported managed composition",
+      "verdict": "PASS",
+      "candidate": "8caae98734b6b58ef182a9d111d7f806c15294d2",
+      "receipt": "apple-shared-job.json",
+      "logs": [
+        "apple-shared-lease-test.log",
+        "apple-shared-mixed-test.log"
+      ]
     }
   ],
   "wsl_vulkan": {
@@ -155,6 +165,13 @@
     "apple-static-configure.log": "88936d27b33802ac6606867d6145d4d1fa5c9b4baef4c83b353be69e2fcaafaf",
     "apple-static-consumer-build.log": "2861b77e64c6845ce70ab5333fc8dfa4f398c9898e26cc4102eed9afe4025d9c",
     "apple-static-lease-test.log": "f1208d667c93429472595d1f4c76cd71c5d3d3edd149e021030131da8b7b072d",
-    "apple-static-mixed-test.log": "4cd63a75aecc8a1837af896c4ae22dc624ec5266801b995eaa69ec4ddc8ad56d"
+    "apple-static-mixed-test.log": "4cd63a75aecc8a1837af896c4ae22dc624ec5266801b995eaa69ec4ddc8ad56d",
+    "apple-shared-job.json": "3291e0523864672390552f294c97b14fa229b63fe326651cb36d721323d06a4a",
+    "apple-shared-producer.log": "a5b0172a36be8384296731e4c7b0b065f562533a264f2659830ceb09d8bc3ad2",
+    "apple-shared-install.log": "337aa53809a5dabbe0e2a96ac26a9fe54688d08b9176c4285d40396af7ee2d01",
+    "apple-shared-configure.log": "c8e355e519b12bd172f0c808aa1d27b5b6105ba75e0ebfe41e46e9293a529ac6",
+    "apple-shared-consumer-build.log": "6bd27cf2492c57085f9f1376b073f5664f63b3991404d0466472d4c5cca02649",
+    "apple-shared-lease-test.log": "f1208d667c93429472595d1f4c76cd71c5d3d3edd149e021030131da8b7b072d",
+    "apple-shared-mixed-test.log": "4cd63a75aecc8a1837af896c4ae22dc624ec5266801b995eaa69ec4ddc8ad56d"
   }
 }

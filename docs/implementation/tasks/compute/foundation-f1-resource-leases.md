@@ -588,6 +588,10 @@ source 不是 installed SDK 证据；static/shared 与其真正 imported managed
 当前收据保留全部阶段与原失败；后续 source bundle 必须包含这两份已声明 packaging 根文件。
 Air shared、Vulkan Air/WSL 对应平台与最终七门仍未全部证明。
 
+随后同一 `8caae9873` Air shared producer/安装/实际迁址/独立构建/普通 lease 与 imported mixed 消费者全部通过，
+同一收据记录。CPU+Apple 的 source/static/shared 普通入口及 managed bind 接缝已取证；这不替其他平台、
+Vulkan Air、Windows managed SDK 调用或最终红队签字。当前没有本批正在运行的 Air SDK job。
+
 P0 静态账单须列新增 metadata/引用/锁，及旧普通路径不变的证据；
 热路径以计数验无 allocation/provider search，不为纳秒差改布局。
 
