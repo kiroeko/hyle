@@ -38,6 +38,18 @@
       "cases": 13,
       "candidate": "c73ac50d300f51b5c9629acb897d0bf01fc84045",
       "log": "common-final-boundaries.log"
+    },
+    {
+      "name": "CPU+Vulkan Windows leased cancellation abandon and accepted CPU prefix native refusal",
+      "candidate": "ee403abf7ad93eb8e32e6c72388d857d3a5d03d3",
+      "verdict": "PASS",
+      "log": "windows-vulkan-lease-risk-test.log"
+    },
+    {
+      "name": "CPU+Apple Air leased cancellation abandon and accepted CPU prefix native refusal",
+      "candidate": "ee403abf7ad93eb8e32e6c72388d857d3a5d03d3",
+      "verdict": "PASS",
+      "log": "apple-lease-risk-test.log"
     }
   ],
   "coverage": [
@@ -46,7 +58,8 @@
     "Eight replays with no injected metadata allocator calls after warmup",
     "Two readers, original Results retaining source alias after business/adaptor drop",
     "Closed source refuses new admission before math; uses return to zero",
-    "Existing managed composition rejection/OOM/cancel/abandon/late failure cases retained"
+    "Existing managed composition rejection/OOM/cancel/abandon/late failure cases retained",
+    "New managed composition lease branches: cancellation with scalar math if completion wins, abandonment source use zero, accepted CPU prefix preserves native closed-context FailedPrecondition, use zero and failed slot refusal"
   ],
   "p0": {
     "cost": "One nullable private RunState lease-owner pointer; cold O(inputs+prefixes) metadata, existing bounded lease use deduplication, one parent reference per accepted prefix; no extra math/copy command, Queue, reaper or thread",
@@ -68,7 +81,8 @@
   "pending": [
     "New route/helper header isolation and absence matrix",
     "Other applicable platforms, source/static/shared SDK/relocation and full F1 risk matrix",
-    "Full F1 P0 and final red-team; F2/F3 not implemented"
+    "Full F1 P0 and final red-team; F2/F3 not implemented",
+    "These native admission refusals do not claim unknown-fence observation qualification"
   ],
   "state": "F1 owners remain AUDITED; not whole F1 terminal",
   "log_sha256": {
@@ -80,7 +94,13 @@
     "vulkan-configure-original-error.log": "a496b2154cf24f48009e4be3aa88a72f9828e5faf7dbfb837c59bf2cef0db197",
     "windows-cuda-contracts.log": "e0ae7cd6f06a953bb5ab7ad81a99d5206a0986e979415575ab7a73931f6e4961",
     "common-final-boundaries.log": "718bf32c0f6284471e1c0031566e5e7932fb13389f7232c7ab0c731454f18846",
-    "common-original-fixture-error.log": "eaf92e63b289381d598ddd0248c025d7299c1c4d4f4e055d43621ee2128bcf3f"
+    "common-original-fixture-error.log": "eaf92e63b289381d598ddd0248c025d7299c1c4d4f4e055d43621ee2128bcf3f",
+    "windows-vulkan-lease-risk-build.log": "8f3c63fca4c222abe80e4dfaa0422b79d61935ce0e261bef098d06133243dcfe",
+    "windows-vulkan-lease-risk-test.log": "9e5f4cb9a7c7ba8331f9508e6b6a098d64db2bc72bb7a4d29f297cb1895344b6",
+    "windows-vulkan-lease-risk-job.json": "b7cb8bfc67ff6ab210e3a2191889281a0fcf70303d960da046223c501122aca7",
+    "apple-lease-risk-build.log": "2bbb165a4d134b8122aa2f7cb6fe1dfe40d2d50c985499f4d769dda01d6043ac",
+    "apple-lease-risk-test.log": "4cd63a75aecc8a1837af896c4ae22dc624ec5266801b995eaa69ec4ddc8ad56d",
+    "apple-lease-risk-job.json": "75d3f6261b89070dad3f1981b3895879b9fa19bd4996b33d633a750d768112d8"
   },
   "retained_fixture_failure": {
     "log": "common-original-fixture-error.log",

@@ -51,6 +51,13 @@
       "verdict": "PASS",
       "receipt": "w-cpu-cuda-static-sdk.json",
       "log": "w-cpu-cuda-static-test.log"
+    },
+    {
+      "name": "Ordinary relocated CUDA shared SDK lease Direct Graph consumer",
+      "candidate": "68dab9c7cc27b4ab7ffea4720547e59bf3027233",
+      "verdict": "PASS",
+      "receipt": "w-cuda-shared-sdk.json",
+      "log": "w-cuda-shared-test.log"
     }
   ],
   "wsl_vulkan": {
@@ -59,7 +66,7 @@
     "limitation": "Actual loader enumerates only type 4 llvmpipe software device. No native Vulkan math qualification is claimed; applicability follows current F1 card actual GPU rule."
   },
   "limitations": [
-    "CPU Vulkan static, CUDA shared and Air/WSL applicable journeys still pending",
+    "Vulkan static and Air/WSL applicable journeys still pending",
     "CUDA delivery and Air/WSL applicable journeys still pending",
     "Complete F1 native lease fault/cancel/OOM coverage, sanitizers, full P0 and red team still pending",
     "F1 owners remain AUDITED; F2/F3 have no product implementation"
@@ -89,6 +96,14 @@
     "w-cpu-cuda-static-relocate.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
     "w-cpu-cuda-static-configure.log": "6a9f445090a3b79fc7df094d2df06b97088101b7e5776dd9e43f1a94221a7d19",
     "w-cpu-cuda-static-build.log": "34c8e2c4a79b8fb8c04fe0e017b854d8cd32ac5510fee9497948c05b1cb9191f",
-    "w-cpu-cuda-static-test.log": "7f1dac23d5883877ad909953b516cc2e7ee37da485278e2f54017579c13b1f2f"
+    "w-cpu-cuda-static-test.log": "7f1dac23d5883877ad909953b516cc2e7ee37da485278e2f54017579c13b1f2f",
+    "windows-cuda-shared-producer-job.json": "0823c1a280dad0262a8ae05bea3dc9b258576eea42a93ea524f66558fe2d6562",
+    "windows-cuda-shared-producer-build.log": "7ea9fcb66e63ae83bd9cb13ae7feccddb92da0352bccd9acdadad1cf78c709d6",
+    "w-cuda-shared-sdk.json": "dc8593b97f9d91d84ca02656e0730e781e631442be9ac3b49b0331f10ec95e55",
+    "w-cuda-shared-install.log": "e4b4e97406013bd3aa26f2513c5815b096506f4e91497b0e75d7454c0b0470a2",
+    "w-cuda-shared-relocate.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "w-cuda-shared-configure.log": "6a2370b79db1c40f62ae93f6836c5357d5b924b951daadfeb6fcad25bb02e850",
+    "w-cuda-shared-build.log": "9c49647c41484caef085922df2230842373b7801a0541223195502a03dcac0c2",
+    "w-cuda-shared-test.log": "b7f52e4b9c89887e42fbfa31f630bd52d6674eee461ba1bd1b0c062d933cb33e"
   }
 }

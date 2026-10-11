@@ -1,0 +1,10 @@
+{
+  "candidate": "ee403abf7ad93eb8e32e6c72388d857d3a5d03d3",
+  "configuration": "Windows CPU+Vulkan Release/shared/source/shipping/OFF",
+  "command": [
+    "C:/h7/w-cpu-vulkan/selected-graph/source-build/hyle_h3_cpu_vulkan_contracts.exe"
+  ],
+  "exit_code": 0,
+  "verdict": "PASS",
+  "log": "windows-vulkan-lease-risk-test.log"
+}

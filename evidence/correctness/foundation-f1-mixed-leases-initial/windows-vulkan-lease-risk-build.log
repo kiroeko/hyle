@@ -1,0 +1,9 @@
+[0/2] Re-checking globbed directories...
+[1/7] Performing build step for 'vulkan-shaders-gen'
+ninja: no work to do.
+[2/7] Performing install step for 'vulkan-shaders-gen'
+-- Up-to-date: C:/h7/w-cpu-vulkan/selected-graph/source-build/Release/vulkan-shaders-gen.exe
+[3/7] Completed 'vulkan-shaders-gen'
+[4/7] C:\WINDOWS\system32\cmd.exe /C "cd /D C:\h7\w-cpu-vulkan\selected-graph\source-build && "C:\Program Files\CMake\bin\cmake.exe" -P C:/h7/w-cpu-vulkan/selected-graph/source-build/hyle-runtime/hyle_h3_cpu_vulkan_contracts-Release.cmake"
+[5/7] Building CXX object CMakeFiles\hyle_h3_cpu_vulkan_contracts.dir\C_\public\project-hyle\hyle\tests\graph\cpu_vulkan_contracts.cc.obj
+[6/7] Linking CXX executable hyle_h3_cpu_vulkan_contracts.exe

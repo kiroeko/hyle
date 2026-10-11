@@ -1,0 +1,5 @@
+[0/2] Re-checking globbed directories...
+[1/5] cd /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build/hyle/src/compute_route_apple && /opt/homebrew/bin/cmake -E copy_if_different /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build/hyle/_deps/mlx-build/mlx/backend/metal/kernels/mlx.metallib /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build/hyle/_deps/mlx-build/mlx.metallib
+[2/5] cd /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build && /opt/homebrew/bin/cmake -P /Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build/hyle-apple-runtime/hyle_h2_contracts-Release.cmake
+[3/5] Building CXX object CMakeFiles/hyle_h2_contracts.dir/Users/kiro/hyle-scratch/compute-unified/source-c8874688/tests/graph/cpu_apple_contracts.cc.o
+[4/5] Linking CXX executable hyle_h2_contracts

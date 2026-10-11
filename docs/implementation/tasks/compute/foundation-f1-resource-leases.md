@@ -459,6 +459,10 @@ drain、source alias 与最后回收。static SDK 仍有原 vendor DLL，测试 
 精确 source/build/install/relocate/configure/test 命令和原日志在同一收据；尚未证明 Vulkan static、CUDA shared、
 Air/WSL 对应交付格，不把一个 linkage 替另一格签字。
 
+CUDA-only shared producer 补齐至本轮产品后，消费者 `68dab9c7c` 的迁址 shared SDK 也通过同一
+Direct/Graph 数学、八次 metadata 计数、held Completion drain 与 alias/最后回收；记录在原交付收据。
+EXE-local vendor/HYLE DLL 与 system-only PATH 检查通过，Vulkan static 与 Air/WSL 交付仍未证明。
+
 本轮 WSL Vulkan loader 实际只枚举 llvmpipe（device type 4），未发现可资格化 GPU；
 保留 loader probe 与原始输出，按本卡实际 GPU 条件记录当前硬件边界，不沿用历史例外，也不宣称 GPU 数学通过。
 
@@ -548,6 +552,12 @@ scheduler/native retirement 排空且 source active uses 归零、成功接纳 C
 这批不装饰 unknown fence，不将 native admission refusal 宣称为 unknown observation 资格；未知退役的原 helper
 协议与真实 CUDA/native 前缀证据继续分别列出。只改这两个测试消费者，不改产品或公共工具，原预算继承。
 Windows CPU+Vulkan 与 Air CPU+Apple 各复用原 source consumer 树，build1/test1；当前 CUDA SDK build 完成前不启动。
+
+测试候选 `ee403abf7` 的两路线原合同消费者均通过，命令/日志在原 mixed leases 收据：取消只保证请求语义，
+若正常完成先赢仍验证独立标量数学；放弃后 source active uses 归零；native Context 关闭后 CPU prefix 的
+已接受提交保留 `FailedPrecondition`、不回退其他路线，最后 native uses 归零且失败 slot 拒绝后继。
+原 host/native 数学、重放计数、source alias 与关闭源拒绝同时通过。这里不是 unknown fence 的错误注入，
+其资格继续按原 protocol/native retirement 证据与最终语义矩阵分别裁决。
 
 P0 静态账单须列新增 metadata/引用/锁，及旧普通路径不变的证据；
 热路径以计数验无 allocation/provider search，不为纳秒差改布局。

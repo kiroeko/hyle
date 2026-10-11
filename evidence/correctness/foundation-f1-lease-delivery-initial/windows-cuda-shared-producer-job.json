@@ -1,0 +1,15 @@
+{
+  "candidate": "416bb9fcd7dc88293523d9b18a54b2b77024e0a0",
+  "exec_session_id": 36182,
+  "source": "C:/public/project-hyle/hyle",
+  "producer": "C:/h7/w-cuda/selected-graph/shared-sdk-build",
+  "routes": [
+    "cuda"
+  ],
+  "linkage": "shared",
+  "configuration": "Release/shipping/testsOFF/benchOFF",
+  "parallel": 1,
+  "state": "terminal",
+  "log": "windows-cuda-shared-producer-build.log",
+  "build_exit_code": 0
+}
