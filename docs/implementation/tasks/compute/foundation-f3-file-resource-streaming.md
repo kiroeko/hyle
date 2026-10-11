@@ -218,6 +218,9 @@ vLLM weight_utils 的成熟 ParallelLoader/source view 寿命，以及 tiering/f
   全组成功后F1 publish。Write：F2保留producer/readonly source→原D2H或共享内存可见→stage
   actual-ready→原write_all_at→计实际progress。write故障后的文件prefix不回滚，原子发布留给IO consumer。
 - 取消沿原OperationOptions/CancelToken；无法安全中断的read/write及GPUcopy必须退役，停止后续chunk。
+  F3统一选择cooperative chunk档：token/deadline在管线边界检查，不向原File声明单操作强取消；
+  已接纳read_exact_at/write_all_at无伪造interrupt budget，返回可能晚于deadline，待实际IO退休后
+  停后继。该档同样支持Windows adopted handle与POSIX blocking文件，不按OS猜某个File的native_async。
   unknown native observation保留slot/quarantine、retirement_proven=false、无ready/复用/假取消；
   collect/drain只调用原退休入口，不新增定时poller或无限重试；原sticky CUDA进程终止合同继承。
 - 冷metadata为O(requests×groups×ranges + K×F2容量)，admit检查范围/别名/去重O(R log R)，

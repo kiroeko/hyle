@@ -199,6 +199,9 @@ public:
   bool valid() const noexcept { return state_ != nullptr; }
   // Success alone consumes destination/producer owners; all preflight errors
   // leave the input spans intact. Descriptor spans need not outlive admission.
+  // Cancellation/deadline is cooperative at chunk boundaries on every route.
+  // Accepted IO/native work retires first; a deadline does not interrupt an
+  // in-kernel blocking transfer or promise return before that transfer ends.
   HYLE_COMPUTE_STREAM_API Result<StreamTicket> read(StreamSource source,
       std::span<StreamReadGroup> groups, io::OperationOptions options = {}) noexcept;
   HYLE_COMPUTE_STREAM_API Result<StreamTicket> write(StreamFile sink,

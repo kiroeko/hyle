@@ -388,7 +388,11 @@ sched::Task<Status> process_group(mem::AllocatorRef allocator, FileStreamState *
           auto mapped = stage_view->map_host(); if (!mapped) co_return mapped.error();
           auto buffer = mapped->writable_bytes(); if (!buffer) co_return buffer.error();
           auto *file = FileStreamAccess::file(request.source);
-          auto task = io::read_exact_at(state->allocator, *file, range.file_offset + offset, buffer->first(bytes), request.io_options);
+          // File may use the original blocking fallback (kqueue/epoll or an
+          // adopted handle). Cancellation/deadline stops later chunks here;
+          // an accepted chunk retires before its stage/source can be released.
+          // Do not ask IO to pretend an in-kernel read is natively cancellable.
+          auto task = io::read_exact_at(state->allocator, *file, range.file_offset + offset, buffer->first(bytes));
           if (!task.valid()) co_return Status::ResourceExhausted("file stream read coroutine");
           auto transferred = co_await task; count_io(*state, request, transferred.bytes, false);
           if (!transferred.status.ok()) co_return transferred.status;
@@ -430,7 +434,7 @@ sched::Task<Status> process_group(mem::AllocatorRef allocator, FileStreamState *
       } else {
         auto mapped = slot.writer.view()->map_host(mem::HostAccess::kRead); if (!mapped) co_return mapped.error();
         auto *file = FileStreamAccess::file(request.sink);
-        auto task = io::write_all_at(state->allocator, *file, range.file_offset + offset, mapped->bytes().first(bytes), request.io_options);
+        auto task = io::write_all_at(state->allocator, *file, range.file_offset + offset, mapped->bytes().first(bytes));
         if (!task.valid()) co_return Status::ResourceExhausted("file stream write coroutine");
         auto transferred = co_await task; count_io(*state, request, transferred.bytes, true);
         if (!transferred.status.ok()) co_return transferred.status;
