@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "product_candidate": "5b3efe2cce3fcab2bc55cf749af2d862a786ef25",
+  "scope": "Initial F2 selector expansion CPU/common. Full build and compute factor passed; CPU backend two hard-prepare error regressions FAILED, so remaining factors/headers were not run. Compute legally returned to AUDITED for bounded delta.",
+  "verdict": "FAIL_COLD_PREPARE_CLASSIFICATION",
+  "receipt": "cpu-initial/job.json",
+  "files": {
+    "build.log": {
+      "path": "cpu-initial/build.log",
+      "sha256": "4c455e9ad2a87f7d9529031944008aacd4a75446d6b4125040c1c41ddde1bbdb"
+    },
+    "configure-recovery.log": {
+      "path": "cpu-initial/configure-recovery.log",
+      "sha256": "6d196b5f8a50d2c420b47a8e87c4fc16df137e99eacc0d5cf13a6e4e3a29886a"
+    },
+    "configure.log": {
+      "path": "cpu-initial/configure.log",
+      "sha256": "07831341e69375895b393f9efaadc5bdc6a391edadea797e3f168708c88d9949"
+    },
+    "factor-compute.log": {
+      "path": "cpu-initial/factor-compute.log",
+      "sha256": "0b6381cf5a2d2ecefc183cf72a444b939fae7789e1f75e5aca65271915f45c4e"
+    },
+    "factor-compute_backend_cpu.log": {
+      "path": "cpu-initial/factor-compute_backend_cpu.log",
+      "sha256": "653b65f7632588f2079b17bb13271728ca30732251988c910dab5a95120c9fa9"
+    },
+    "job.json": {
+      "path": "cpu-initial/job.json",
+      "sha256": "f1f9637612269973e365fdd83b71fa5f6e2f0d953e3c48d800ef1c3b1ddb057b"
+    }
+  }
+}

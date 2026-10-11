@@ -1,0 +1,163 @@
+-- HYLE developer factors: requested='compute,compute_backend_cpu,compute_ggml_runtime,compute_ops,compute_provider_ggml,compute_provider_native,compute_provider_onednn,compute_route_cpu,container,container_concurrent,container_intrusive,container_queue,container_text,core,error,graph,graph_provider_onednn,graph_route_cpu,io_core,io_http,io_http2,io_tls,io_transfer,io_watch,io_websocket,math,mem,mem_reclaim,mem_vm,obs,platform,platform_fs,platform_thread,process,sched,simd,time,timer_queue,util_core,util_runtime' resolved='core,container_intrusive,util_core,error,mem_reclaim,time,obs,math,timer_queue,platform,platform_thread,platform_fs,mem,mem_vm,simd,container,container_text,util_runtime,container_queue,sched,io_core,io_tls,io_http,io_http2,io_transfer,compute_ops,compute,graph,container_concurrent,io_watch,process,io_websocket,compute_provider_onednn,compute_backend_cpu,compute_ggml_runtime,compute_provider_ggml,graph_provider_onednn,compute_provider_native,compute_route_cpu,graph_route_cpu' products=''
+-- HYLE_SANITIZER = off
+-- HYLE_TESTING = OFF (tests exercise the shipping layout/hot paths)
+-- HYLE: io TLS ON -- enabled with OpenSSL 3.6.3
+-- HYLE dependency cache miss: downloading nghttp2 v1.70.0
+-- HYLE dependency source cached: nghttp2 @ C:/public/tools/hyle-dependencies/v1/sources/nghttp2-85e300c79fb6-ca7aa79a25b3
+-- Looking for arpa/inet.h
+-- Looking for arpa/inet.h - not found
+-- Looking for fcntl.h
+-- Looking for fcntl.h - found
+-- Looking for inttypes.h
+-- Looking for inttypes.h - found
+-- Looking for limits.h
+-- Looking for limits.h - found
+-- Looking for netdb.h
+-- Looking for netdb.h - not found
+-- Looking for netinet/in.h
+-- Looking for netinet/in.h - not found
+-- Looking for netinet/ip.h
+-- Looking for netinet/ip.h - not found
+-- Looking for pwd.h
+-- Looking for pwd.h - not found
+-- Looking for sys/socket.h
+-- Looking for sys/socket.h - not found
+-- Looking for sys/time.h
+-- Looking for sys/time.h - not found
+-- Looking for syslog.h
+-- Looking for syslog.h - not found
+-- Looking for unistd.h
+-- Looking for unistd.h - not found
+-- Looking for windows.h
+-- Looking for windows.h - found
+-- Looking for sys/types.h
+-- Looking for sys/types.h - found
+-- Looking for stdint.h
+-- Looking for stdint.h - found
+-- Looking for stddef.h
+-- Looking for stddef.h - found
+-- Check size of ssize_t
+-- Check size of ssize_t - failed
+-- Performing Test HAVE_STRUCT_TM_TM_GMTOFF
+-- Performing Test HAVE_STRUCT_TM_TM_GMTOFF - Failed
+-- Looking for _Exit
+-- Looking for _Exit - found
+-- Looking for accept4
+-- Looking for accept4 - not found
+-- Looking for clock_gettime
+-- Looking for clock_gettime - not found
+-- Looking for mkostemp
+-- Looking for mkostemp - not found
+-- Looking for pipe2
+-- Looking for pipe2 - not found
+-- Looking for GetTickCount64
+-- Looking for GetTickCount64 - found
+-- Looking for initgroups
+-- Looking for initgroups - not found
+-- Looking for CLOCK_MONOTONIC
+-- Looking for CLOCK_MONOTONIC - not found
+-- summary of build options:
+
+    Package version: 1.70.0
+    Library version: 43:5:29
+    Install prefix:  C:/Program Files (x86)/hyle
+    Target system:   Windows
+    Compiler:
+      Build type:     Release
+      C compiler:     C:/Program Files/Microsoft Visual Studio/18/Enterprise/VC/Tools/MSVC/14.50.35717/bin/Hostx64/x64/cl.exe
+      CFLAGS:         /O2 /Ob2  /DWIN32 /D_WINDOWS
+      C++ compiler:   C:/Program Files/Microsoft Visual Studio/18/Enterprise/VC/Tools/MSVC/14.50.35717/bin/Hostx64/x64/cl.exe
+      CXXFLAGS:       /O2 /Ob2  /DWIN32 /D_WINDOWS /EHsc
+      WARNCFLAGS:     
+      CXX1XCXXFLAGS:  
+      WARNCXXFLAGS:   
+    Python:
+      Python:          
+      Python3_VERSION: 
+    Test:
+      Failmalloc:     OFF
+      Build Test:     OFF
+    Libs:
+      OpenSSL:        TRUE (LIBS='')
+      wolfSSL:         (LIBS='')
+      Libxml2:         (LIBS='')
+      Libev:           (LIBS='')
+      Libc-ares:       (LIBS='')
+      Libngtcp2:       (LIBS='')
+      Libngtcp2_crypto_quictls:  (LIBS='')
+      Libngtcp2_crypto_libressl:  (LIBS='')
+      Libngtcp2_crypto_wolfssl:  (LIBS='')
+      Libnghttp3:      (LIBS='')
+      Libbpf:          (LIBS='')
+      Libevent(SSL):   (LIBS='')
+      Jansson:         (LIBS='')
+      Jemalloc:        (LIBS='')
+      Zlib:            (LIBS='')
+      Systemd:         (LIBS='')
+      Libbrotlienc:    (LIBS='')
+      Libbrotlidec:    (LIBS='')
+    Third-party:
+      http-parser:    
+      MRuby:          0
+      Neverbleed:     0
+    Features:
+      Applications:   OFF
+      HPACK tools:    OFF
+      Examples:       OFF
+      Threading:      OFF
+      HTTP/3(EXPERIMENTAL): OFF
+
+-- HYLE: nghttp2 v1.70.0 (85e300c79fb6dbcfa9c1013215c8710c1c2cd3d2) -- io-11 HTTP/2 enabled as a private static protocol core
+CMake Warning (deprecated) at C:/public/tools/hyle-dependencies/v1/sources/onednn-c531fe1a5cd6-5c0c833df87c/CMakeLists.txt:36 (cmake_policy):
+  The OLD behavior for policy CMP0146 will be removed from a future version
+  of CMake.
+
+  The cmake-policies(7) manual explains that the OLD behaviors of all
+  policies are deprecated and that a policy should be set to OLD only under
+  specific short-term circumstances.  Projects should be ported to the NEW
+  behavior and not rely on setting a policy to OLD.
+This warning is for project developers.  Use -Wno-author or -Wno-deprecated
+to suppress it.
+
+-- DNNL_TARGET_ARCH: X64
+-- ONEDNN_LIBRARY_TYPE: STATIC (default: SHARED)
+-- ONEDNN_BUILD_GRAPH: OFF (default: ON)
+-- ONEDNN_ENABLE_CONCURRENT_EXEC: ON (default: OFF)
+-- ONEDNN_ENABLE_PRIMITIVE_CACHE: OFF (default: ON)
+-- ONEDNN_ENABLE_WORKLOAD: INFERENCE (default: TRAINING)
+-- ONEDNN_ENABLE_PRIMITIVE: MATMUL;LAYER_NORMALIZATION;BINARY;ELTWISE;REORDER (default: ALL)
+-- ONEDNN_EXPERIMENTAL_UKERNEL: ON (default: OFF)
+-- ONEDNN_ENABLE_JIT_PROFILING: OFF (default: ON)
+-- ONEDNN_ENABLE_ITT_TASKS: OFF (default: ON)
+-- ONEDNN_VERBOSE: OFF (default: ON)
+-- ONEDNN_CPU_RUNTIME: THREADPOOL (default: OMP)
+-- ONEDNN_ENABLE_MAX_CPU_ISA: OFF (default: ON)
+-- ONEDNN_ENABLE_CPU_ISA_HINTS: OFF (default: ON)
+-- Threadpool testing: standalone
+-- Found OpenCL headers: C:/public/tools/hyle-dependencies/v1/sources/onednn-c531fe1a5cd6-5c0c833df87c/third_party/opencl
+-- Enabled testing coverage: CI
+-- Enabled workload: INFERENCE
+-- Enabled primitives: MATMUL;LAYER_NORMALIZATION;BINARY;ELTWISE;REORDER
+-- Enabled primitive CPU ISA: ALL
+-- Enabled primitive GPU ISA: ALL
+-- Enabled GeMM kernels ISA: ALL
+-- Primitive cache is disabled
+-- Experimental functionality for ukernels is enabled
+-- HYLE: oneDNN v3.13.4 -- x64 BRGEMM, normalization and tensor primitives enabled
+-- ggml source: 2319 files, 11 exact patches
+
+-- CMAKE_SYSTEM_PROCESSOR: AMD64
+-- CMAKE_GENERATOR_PLATFORM: 
+-- GGML_SYSTEM_ARCH: x86
+-- Including CPU backend
+-- x86 detected
+-- Adding CPU backend variant ggml-cpu:  
+-- ggml version: 0.26.0
+-- ggml commit:  ffa4e8b80930029a35991f94e7c8a93cd67730ab-hyle
+-- HYLE: reusing locked CPU SDK at C:/public/tools/hyle-dependencies/v1/sdks/torch-cpu/Windows-bf0079104e068dcbd60b2f8de589dc725282cbe865a85016cc5b8aa46cab519d/libtorch
+-- HYLE: original TorchAO/ATen CPU low precision -- locked LibTorch 2.8.0
+-- HYLE_TRACE = OFF (hooks compile to nothing -- zero cost)
+-- HYLE 0.1.0 | MSVC 19.50.35728.0 | C++23 | sanitizer=off | linkage=static | products= | factors=core,container_intrusive,util_core,error,mem_reclaim,time,obs,math,timer_queue,platform,platform_thread,platform_fs,mem,mem_vm,simd,container,container_text,util_runtime,container_queue,sched,io_core,io_tls,io_http,io_http2,io_transfer,compute_ops,compute,graph,container_concurrent,io_watch,process,io_websocket,compute_provider_onednn,compute_backend_cpu,compute_ggml_runtime,compute_provider_ggml,graph_provider_onednn,compute_provider_native,compute_route_cpu,graph_route_cpu
+-- Configuring done (46.7s)
+-- Generating done (0.8s)
+-- Build files have been written to: C:/h7/foundation-f1-cpu

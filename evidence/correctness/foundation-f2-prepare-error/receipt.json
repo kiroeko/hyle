@@ -1,0 +1,45 @@
+{
+  "schema_version": 1,
+  "product_candidate": "c26261e3958c7eb46ecde2a4ba7c5654a03f1b93",
+  "scope": "Cold prepare classification delta: Windows CPU backend/common full tests passed; original full Graph process TIMEOUT, fixed-inventory partitioned qualification running, not yet PASS. Original pre-delta failures in selector-expansion receipt.",
+  "verdict": "PARTIAL_GRAPH_UNPROVEN",
+  "counts": {
+    "backend": 58,
+    "common": 90
+  },
+  "receipt": "windows/job.json",
+  "files": {
+    "backend.log": {
+      "path": "windows/backend.log",
+      "sha256": "37ab5dfa182c92a3c450e250a6326a87769520d520358eea84016dc6c8bce43f"
+    },
+    "backend.xml": {
+      "path": "windows/backend.xml",
+      "sha256": "e7e8b0d275ebf08a7099a966936a65078668d1b1522b688ec42f218e7c6f4695"
+    },
+    "build.log": {
+      "path": "windows/build.log",
+      "sha256": "40390f51f02e182b7ec8b7a9bbe26b9068a2b2fc8c344d59ebc53d4e7fb3bc7c"
+    },
+    "common.log": {
+      "path": "windows/common.log",
+      "sha256": "a911d3a2c06b6d22b1ba4fc2547b796d1ec6b454f1fc5acd9e04999e3181c5f3"
+    },
+    "common.xml": {
+      "path": "windows/common.xml",
+      "sha256": "2dcbe9b3bd73c8b3683602fcafbf0de0c8f6435698956f9c8b39c846e192104e"
+    },
+    "graph.log": {
+      "path": "windows/graph.log",
+      "sha256": "5eee6bdfe97108ac0c0170dda10ce5920ded058a5ef7bad4cd6675e5943b9f29"
+    },
+    "identity.log": {
+      "path": "windows/identity.log",
+      "sha256": "fc0da0dd7e8d2c9d1419aa11e4801acb7158a0e185c28122c0fd6292a65f4044"
+    },
+    "job.json": {
+      "path": "windows/job.json",
+      "sha256": "10948930eed60c8e5cc693182d56981c4bebc1207f6e171845fdf6aadeb9c642"
+    }
+  }
+}

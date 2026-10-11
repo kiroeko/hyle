@@ -44,3 +44,18 @@ backend用例、共同控制/实际copy；必须同时保留hard error与原合�
 
 性能P0：只改变冷prepare的错误分类，没有新常态allocation、字段、锁、copy或native command。
 若还需新公共语义/owner或出现新material矛盾，停止并按父卡裁决；本卡不是terminal。
+
+## 固定实现与当前验证
+
+产品修复c26261e39只改operation.cc的三个纯resource predicate分类与ordinary hard-error传播，
+测试维护新增input/output/workspace mismatch必须在first provider prepare之前decline的真实
+public prepare旅程。registry另恢复原LF，语义diff只有compute的合法AUDITED退回，不改其他owner。
+[原扩展门收据](../../../../evidence/correctness/foundation-f2-selector-expansion/receipt.json)保留完整build PASS、compute PASS、
+CPU backend两项实际FAIL以及首scratch selector组合拒绝。
+
+[delta收据](../../../../evidence/correctness/foundation-f2-prepare-error/receipt.json)当前为PARTIAL：Windows完整CPU backend58项与compute90项PASS，
+原hard error/partial artifact回收、合法decline及新增三个resource predicate分支均实际通过。
+完整Graph原合并进程120秒TIMEOUT，停止前84项OK，不写整门PASS。按同一二进制/完整853项
+实际inventory固定16项一组、每进程仍120秒、重型串行，所有54组都运行且保留XML/日志；没有
+删掉慢用例、扩大单进程deadline、改公共工具或重置产品名额。当前分组资格仍运行，其他平台/
+ordinary SDK及完整剩余影响门继续未验；compute保持AUDITED，不提前CANDIDATE/CLOSED。

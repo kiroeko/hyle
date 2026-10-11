@@ -1,0 +1,87 @@
+{
+  "product_candidate": "c26261e3958c7eb46ecde2a4ba7c5654a03f1b93",
+  "test_candidate": "c26261e3958c7eb46ecde2a4ba7c5654a03f1b93",
+  "test_tree": "185e3c211a65754f5487e7e1d19f8252e68f29d9",
+  "scope": "F2 cold prepare error classification delta, original hard-error regressions, CPU and Graph direct consumers",
+  "build": "C:\\h7\\foundation-f1-cpu",
+  "compiler": "C:/Program Files/Microsoft Visual Studio/18/Enterprise/VC/Tools/MSVC/14.50.35717/bin/Hostx64/x64/cl.exe",
+  "parallel": 1,
+  "stages": [
+    {
+      "name": "identity",
+      "command": [
+        "nvidia-smi",
+        "--query-gpu=name,uuid,driver_version",
+        "--format=csv,noheader"
+      ],
+      "pid": 18968,
+      "state": "terminal",
+      "available_bytes": 45568266240,
+      "log": "identity.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "fc0da0dd7e8d2c9d1419aa11e4801acb7158a0e185c28122c0fd6292a65f4044"
+    },
+    {
+      "name": "build",
+      "command": [
+        "C:\\Program Files\\CMake\\bin\\cmake.EXE",
+        "--build",
+        "C:\\h7\\foundation-f1-cpu",
+        "--target",
+        "hyle_compute_backend_cpu_test",
+        "hyle_compute_test",
+        "hyle_graph_route_cpu_test",
+        "--parallel",
+        "1"
+      ],
+      "pid": 73312,
+      "state": "terminal",
+      "available_bytes": 45565796352,
+      "log": "build.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "40390f51f02e182b7ec8b7a9bbe26b9068a2b2fc8c344d59ebc53d4e7fb3bc7c"
+    },
+    {
+      "name": "backend",
+      "command": [
+        "C:\\h7\\foundation-f1-cpu\\bin\\hyle_compute_backend_cpu_test.exe",
+        "--gtest_output=xml:C:\\public\\project-hyle\\hyle\\.scratch\\foundation-f2\\prepare-error-windows-c26261e39\\backend.xml"
+      ],
+      "pid": 10444,
+      "state": "terminal",
+      "available_bytes": 45564002304,
+      "log": "backend.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "37ab5dfa182c92a3c450e250a6326a87769520d520358eea84016dc6c8bce43f"
+    },
+    {
+      "name": "common",
+      "command": [
+        "C:\\h7\\foundation-f1-cpu\\bin\\hyle_compute_test.exe",
+        "--gtest_output=xml:C:\\public\\project-hyle\\hyle\\.scratch\\foundation-f2\\prepare-error-windows-c26261e39\\common.xml"
+      ],
+      "pid": 72348,
+      "state": "terminal",
+      "available_bytes": 45562920960,
+      "log": "common.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "a911d3a2c06b6d22b1ba4fc2547b796d1ec6b454f1fc5acd9e04999e3181c5f3"
+    },
+    {
+      "name": "graph",
+      "command": [
+        "C:\\h7\\foundation-f1-cpu\\bin\\hyle_graph_route_cpu_test.exe",
+        "--gtest_output=xml:C:\\public\\project-hyle\\hyle\\.scratch\\foundation-f2\\prepare-error-windows-c26261e39\\graph.xml"
+      ],
+      "pid": 10832,
+      "state": "terminal",
+      "available_bytes": 45563756544,
+      "log": "graph.log",
+      "verdict": "TIMEOUT"
+    }
+  ]
+}

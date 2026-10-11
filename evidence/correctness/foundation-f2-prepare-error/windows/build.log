@@ -1,0 +1,8 @@
+[0/2] Re-checking globbed directories...
+[1/8] Building CXX object src\compute\CMakeFiles\hyle_compute.dir\operation.cc.obj
+[2/8] Linking CXX static library bin\hyle_compute.lib
+[3/8] C:\WINDOWS\system32\cmd.exe /C "cd /D C:\h7\foundation-f1-cpu\tests\graph_route_cpu && "C:\Program Files\CMake\bin\cmake.exe" -P C:/h7/foundation-f1-cpu/tests/graph_route_cpu/hyle-runtime/hyle_graph_route_cpu_test-Release.cmake"
+[4/8] Building CXX object tests\compute_backend_cpu\CMakeFiles\hyle_compute_backend_cpu_test.dir\runtime_provider_test.cc.obj
+[5/8] Linking CXX executable bin\hyle_compute_test.exe
+[6/8] Linking CXX executable bin\hyle_compute_backend_cpu_test.exe
+[7/8] Linking CXX executable bin\hyle_graph_route_cpu_test.exe

@@ -1,0 +1,227 @@
+Running main() from C:\public\tools\hyle-dependencies\v1\sources\googletest-063de7e9578f-162765170ae6\googletest\src\gtest_main.cc
+[==========] Running 853 tests from 29 test suites.
+[----------] Global test environment set-up.
+[----------] 4 tests from CpuCurrentRules
+[ RUN      ] CpuCurrentRules.ExactQualifiedRequestsAndNearbyMissesUseOrdinaryFactories
+[       OK ] CpuCurrentRules.ExactQualifiedRequestsAndNearbyMissesUseOrdinaryFactories (1 ms)
+[ RUN      ] CpuCurrentRules.MatureProjectionWinnerAndPhysicalLayoutMissKeepPrecision
+[       OK ] CpuCurrentRules.MatureProjectionWinnerAndPhysicalLayoutMissKeepPrecision (0 ms)
+[ RUN      ] CpuCurrentRules.PreparedReplayKeepsTheSelectedProgramAndChangedInputs
+[       OK ] CpuCurrentRules.PreparedReplayKeepsTheSelectedProgramAndChangedInputs (16 ms)
+[ RUN      ] CpuCurrentRules.OrdinaryGraphKeepsCompleteMatureRegionsBeforeLeafWins
+[       OK ] CpuCurrentRules.OrdinaryGraphKeepsCompleteMatureRegionsBeforeLeafWins (0 ms)
+[----------] 4 tests from CpuCurrentRules (18 ms total)
+
+[----------] 1 test from CpuExpandedGgufGraph
+[ RUN      ] CpuExpandedGgufGraph.OriginalFormatsProjectionExpertsAndEmbedding
+[       OK ] CpuExpandedGgufGraph.OriginalFormatsProjectionExpertsAndEmbedding (3 ms)
+[----------] 1 test from CpuExpandedGgufGraph (3 ms total)
+
+[----------] 3 tests from CpuMlxQuantizedGraph
+[ RUN      ] CpuMlxQuantizedGraph.OriginalScaleCastPreservesUnderflowSubnormalAndOverflow
+[       OK ] CpuMlxQuantizedGraph.OriginalScaleCastPreservesUnderflowSubnormalAndOverflow (10 ms)
+[ RUN      ] CpuMlxQuantizedGraph.MixedFormatsAndSelectedExperts
+[       OK ] CpuMlxQuantizedGraph.MixedFormatsAndSelectedExperts (5 ms)
+[ RUN      ] CpuMlxQuantizedGraph.OriginalAffineEmbeddingUsesSelectedRows
+[       OK ] CpuMlxQuantizedGraph.OriginalAffineEmbeddingUsesSelectedRows (0 ms)
+[----------] 3 tests from CpuMlxQuantizedGraph (16 ms total)
+
+[----------] 3 tests from CpuArtifactDecode
+[ RUN      ] CpuArtifactDecode.Nf4AndNestedScalesPreserveOriginalHighFirstOrder
+[       OK ] CpuArtifactDecode.Nf4AndNestedScalesPreserveOriginalHighFirstOrder (1 ms)
+[ RUN      ] CpuArtifactDecode.AwqAndCompressedTensorsUseDifferentOriginalWordLayouts
+[       OK ] CpuArtifactDecode.AwqAndCompressedTensorsUseDifferentOriginalWordLayouts (3 ms)
+[ RUN      ] CpuArtifactDecode.OriginalScaleDtypeRoundsBeforeExplicitFloat32Output
+[       OK ] CpuArtifactDecode.OriginalScaleDtypeRoundsBeforeExplicitFloat32Output (3 ms)
+[----------] 3 tests from CpuArtifactDecode (8 ms total)
+
+[----------] 5 tests from CpuDs4Roundtrip
+[ RUN      ] CpuDs4Roundtrip.OrdinaryEntryExhaustsFiniteBfloatAndReplaysBothFormats
+[       OK ] CpuDs4Roundtrip.OrdinaryEntryExhaustsFiniteBfloatAndReplaysBothFormats (19 ms)
+[ RUN      ] CpuDs4Roundtrip.MatureMidpointsAndLowScalesKeepExactNumericalBoundary
+[       OK ] CpuDs4Roundtrip.MatureMidpointsAndLowScalesKeepExactNumericalBoundary (2 ms)
+[ RUN      ] CpuDs4Roundtrip.FixedGroupCapabilityAndRecoveryAfterColdOom
+[       OK ] CpuDs4Roundtrip.FixedGroupCapabilityAndRecoveryAfterColdOom (0 ms)
+[ RUN      ] CpuDs4Roundtrip.ManagedGroup128DeclinesPreparedPolicyAndUnknownPrivateBudget
+[       OK ] CpuDs4Roundtrip.ManagedGroup128DeclinesPreparedPolicyAndUnknownPrivateBudget (0 ms)
+[ RUN      ] CpuDs4Roundtrip.MatureGroup128AllFiniteBfloatReplayAndFailureRecovery
+[       OK ] CpuDs4Roundtrip.MatureGroup128AllFiniteBfloatReplayAndFailureRecovery (9 ms)
+[----------] 5 tests from CpuDs4Roundtrip (32 ms total)
+
+[----------] 17 tests from CpuDefaultContext
+[ RUN      ] CpuDefaultContext.MatureDefaultsHavePolicyWithoutModelOrHardwareProfile
+[       OK ] CpuDefaultContext.MatureDefaultsHavePolicyWithoutModelOrHardwareProfile (0 ms)
+[ RUN      ] CpuDefaultContext.LeasedMatMulKeepsPermissionsAndHasNoHotLeaseAllocation
+[       OK ] CpuDefaultContext.LeasedMatMulKeepsPermissionsAndHasNoHotLeaseAllocation (0 ms)
+[ RUN      ] CpuDefaultContext.LeasedGraphRetainsCallerOutputAndSourceAliasThroughDrain
+[       OK ] CpuDefaultContext.LeasedGraphRetainsCallerOutputAndSourceAliasThroughDrain (0 ms)
+[ RUN      ] CpuDefaultContext.PlainAndTransposedMatricesKeepQualifiedDefaults
+[       OK ] CpuDefaultContext.PlainAndTransposedMatricesKeepQualifiedDefaults (0 ms)
+[ RUN      ] CpuDefaultContext.StableActivationDefaultUsesOriginalAtenProgram
+[       OK ] CpuDefaultContext.StableActivationDefaultUsesOriginalAtenProgram (0 ms)
+[ RUN      ] CpuDefaultContext.ColdFailureReleasesPartialProviderAssembly
+[       OK ] CpuDefaultContext.ColdFailureReleasesPartialProviderAssembly (0 ms)
+[ RUN      ] CpuDefaultContext.GgmlBindsThroughOrdinaryFactory
+[       OK ] CpuDefaultContext.GgmlBindsThroughOrdinaryFactory (0 ms)
+[ RUN      ] CpuDefaultContext.NativeQ8UsesOrdinaryDirectRouteAndReplays
+[       OK ] CpuDefaultContext.NativeQ8UsesOrdinaryDirectRouteAndReplays (0 ms)
+[ RUN      ] CpuDefaultContext.StandardIndexProgramsBindThroughOrdinaryFactory
+[       OK ] CpuDefaultContext.StandardIndexProgramsBindThroughOrdinaryFactory (0 ms)
+[ RUN      ] CpuDefaultContext.MatureScatterAddBindsThroughOrdinaryFactory
+[       OK ] CpuDefaultContext.MatureScatterAddBindsThroughOrdinaryFactory (0 ms)
+[ RUN      ] CpuDefaultContext.MatureNormalizationBindsThroughOrdinaryFactory
+[       OK ] CpuDefaultContext.MatureNormalizationBindsThroughOrdinaryFactory (0 ms)
+[ RUN      ] CpuDefaultContext.MatMulNeverFallsBackToLowerAccumulationPrecision
+[       OK ] CpuDefaultContext.MatMulNeverFallsBackToLowerAccumulationPrecision (0 ms)
+[ RUN      ] CpuDefaultContext.MatMulRulesAndChangedInputReplay
+[       OK ] CpuDefaultContext.MatMulRulesAndChangedInputReplay (1 ms)
+[ RUN      ] CpuDefaultContext.InvalidAndUnsupportedInputsRemainErrors
+[       OK ] CpuDefaultContext.InvalidAndUnsupportedInputsRemainErrors (0 ms)
+[ RUN      ] CpuDefaultContext.B2MatureDomainsBindThroughDefaultRuleSet
+[       OK ] CpuDefaultContext.B2MatureDomainsBindThroughDefaultRuleSet (0 ms)
+[ RUN      ] CpuDefaultContext.StableSoftplusUsesMatureBindingAcrossReplay
+[       OK ] CpuDefaultContext.StableSoftplusUsesMatureBindingAcrossReplay (0 ms)
+[ RUN      ] CpuDefaultContext.SelectUsesMatureProviderWithoutManualOrdering
+[       OK ] CpuDefaultContext.SelectUsesMatureProviderWithoutManualOrdering (0 ms)
+[----------] 17 tests from CpuDefaultContext (3 ms total)
+
+[----------] 37 tests from CpuDefaultGraph
+[ RUN      ] CpuDefaultGraph.D5Qwen35PrimaryGgufFfnUsesMixedMatureRegionsAndStableReplay
+[       OK ] CpuDefaultGraph.D5Qwen35PrimaryGgufFfnUsesMixedMatureRegionsAndStableReplay (1829 ms)
+[ RUN      ] CpuDefaultGraph.D5Qwen35FidelityGgufFfnUsesQ8MatureRegionsAndStableReplay
+[       OK ] CpuDefaultGraph.D5Qwen35FidelityGgufFfnUsesQ8MatureRegionsAndStableReplay (392 ms)
+[ RUN      ] CpuDefaultGraph.D5Qwen35PrimaryGgufAttentionSemanticsUseMatureRegionsAndReplay
+[       OK ] CpuDefaultGraph.D5Qwen35PrimaryGgufAttentionSemanticsUseMatureRegionsAndReplay (1 ms)
+[ RUN      ] CpuDefaultGraph.D5Qwen35FidelityGgufAttentionSemanticsUseMatureRegionsAndReplay
+[       OK ] CpuDefaultGraph.D5Qwen35FidelityGgufAttentionSemanticsUseMatureRegionsAndReplay (0 ms)
+[ RUN      ] CpuDefaultGraph.D5Qwen35PrimaryGgufGdnStateUsesMatureRegionsAndReplay
+[       OK ] CpuDefaultGraph.D5Qwen35PrimaryGgufGdnStateUsesMatureRegionsAndReplay (7 ms)
+[ RUN      ] CpuDefaultGraph.D5Qwen35FidelityGgufGdnStateUsesMatureRegionsAndReplay
+[       OK ] CpuDefaultGraph.D5Qwen35FidelityGgufGdnStateUsesMatureRegionsAndReplay (7 ms)
+[ RUN      ] CpuDefaultGraph.D5Qwen35PrimaryGgufExactMixedProjectionsUseNativeRegionsAndReplay
+[       OK ] CpuDefaultGraph.D5Qwen35PrimaryGgufExactMixedProjectionsUseNativeRegionsAndReplay (3649 ms)
+[ RUN      ] CpuDefaultGraph.D5Qwen38PrimaryGgufEveryStoredProjectionTypeUsesNativeRegionsAndReplay
+[       OK ] CpuDefaultGraph.D5Qwen38PrimaryGgufEveryStoredProjectionTypeUsesNativeRegionsAndReplay (52201 ms)
+[ RUN      ] CpuDefaultGraph.D5Qwen38FidelityGgufQ8ProjectionRolesUseNativeRegionsAndReplay
+[       OK ] CpuDefaultGraph.D5Qwen38FidelityGgufQ8ProjectionRolesUseNativeRegionsAndReplay (3048 ms)
+[ RUN      ] CpuDefaultGraph.D5Qwen38_24TGgufMoeWeightRolesUseNativeRegions
+[       OK ] CpuDefaultGraph.D5Qwen38_24TGgufMoeWeightRolesUseNativeRegions (4959 ms)
+[ RUN      ] CpuDefaultGraph.D5Qwen35FidelityGgufExactQ8ProjectionsUseNativeRegionsAndReplay
+[       OK ] CpuDefaultGraph.D5Qwen35FidelityGgufExactQ8ProjectionsUseNativeRegionsAndReplay (313 ms)
+[ RUN      ] CpuDefaultGraph.D5Qwen35FidelityGgufF16ProjectionsUseMatureRegionsAndReplay
+[       OK ] CpuDefaultGraph.D5Qwen35FidelityGgufF16ProjectionsUseMatureRegionsAndReplay (2118 ms)
+[ RUN      ] CpuDefaultGraph.D5Qwen35PrimaryGgufQuantizedEmbeddingUsesNativeRowsAndReplays
+[       OK ] CpuDefaultGraph.D5Qwen35PrimaryGgufQuantizedEmbeddingUsesNativeRowsAndReplays (0 ms)
+[ RUN      ] CpuDefaultGraph.D5Qwen38PrimaryGgufQuantizedEmbeddingUsesExactWidthAndReplays
+[       OK ] CpuDefaultGraph.D5Qwen38PrimaryGgufQuantizedEmbeddingUsesExactWidthAndReplays (2 ms)
+[ RUN      ] CpuDefaultGraph.D5Qwen38FidelityGgufQuantizedEmbeddingUsesExactWidthAndReplays
+[       OK ] CpuDefaultGraph.D5Qwen38FidelityGgufQuantizedEmbeddingUsesExactWidthAndReplays (0 ms)
+[ RUN      ] CpuDefaultGraph.D5Qwen35FidelityGgufF16EmbeddingUsesMatureRowsAndReplays
+[       OK ] CpuDefaultGraph.D5Qwen35FidelityGgufF16EmbeddingUsesMatureRowsAndReplays (3 ms)
+[ RUN      ] CpuDefaultGraph.D5Qwen35OfficialEmbeddingNormHeadAndFailureUseOnePreparedGraph
+C:\public\project-hyle\hyle\tests\graph_route_cpu\d5_qwen35_profile_test.cc(285): Skipped
+set HYLE_D5_QWEN35_FIXTURE to the prepared local fixture
+
+[  SKIPPED ] CpuDefaultGraph.D5Qwen35OfficialEmbeddingNormHeadAndFailureUseOnePreparedGraph (0 ms)
+[ RUN      ] CpuDefaultGraph.D5Qwen35OfficialBfloatFfnUsesMatureRegionsAndRealWeights
+C:\public\project-hyle\hyle\tests\graph_route_cpu\d5_qwen35_profile_test.cc(426): Skipped
+set HYLE_D5_QWEN35_FIXTURE to the prepared local fixture
+
+[  SKIPPED ] CpuDefaultGraph.D5Qwen35OfficialBfloatFfnUsesMatureRegionsAndRealWeights (0 ms)
+[ RUN      ] CpuDefaultGraph.D5Qwen35OfficialGqaNormRopeAndAttentionUseExactProfileAndReplay
+C:\public\project-hyle\hyle\tests\graph_route_cpu\d5_qwen35_profile_test.cc(529): Skipped
+set HYLE_D5_QWEN35_FIXTURE to the prepared local fixture
+
+[  SKIPPED ] CpuDefaultGraph.D5Qwen35OfficialGqaNormRopeAndAttentionUseExactProfileAndReplay (0 ms)
+[ RUN      ] CpuDefaultGraph.D5Qwen35OfficialCausalConvAndGdnUseExactProfileAndReplay
+C:\public\project-hyle\hyle\tests\graph_route_cpu\d5_qwen35_profile_test.cc(671): Skipped
+set HYLE_D5_QWEN35_FIXTURE to the prepared local fixture
+
+[  SKIPPED ] CpuDefaultGraph.D5Qwen35OfficialCausalConvAndGdnUseExactProfileAndReplay (0 ms)
+[ RUN      ] CpuDefaultGraph.D5Qwen35OfficialMtpAndBfloatBoundaryUseExactWeightsAndReplay
+C:\public\project-hyle\hyle\tests\graph_route_cpu\d5_qwen35_profile_test.cc(891): Skipped
+set HYLE_D5_QWEN35_FIXTURE to the prepared local fixture
+
+[  SKIPPED ] CpuDefaultGraph.D5Qwen35OfficialMtpAndBfloatBoundaryUseExactWeightsAndReplay (0 ms)
+[ RUN      ] CpuDefaultGraph.StableGateCarrierFeedsMatureMatMulAcrossNecessaryBoundary
+[       OK ] CpuDefaultGraph.StableGateCarrierFeedsMatureMatMulAcrossNecessaryBoundary (1 ms)
+[ RUN      ] CpuDefaultGraph.NativeQ8GraphImportsGgufBytesAndReplays
+[       OK ] CpuDefaultGraph.NativeQ8GraphImportsGgufBytesAndReplays (0 ms)
+[ RUN      ] CpuDefaultGraph.MatureMoeAndHyperConnectionBatchUsesOrdinaryGraphEntry
+[       OK ] CpuDefaultGraph.MatureMoeAndHyperConnectionBatchUsesOrdinaryGraphEntry (0 ms)
+[ RUN      ] CpuDefaultGraph.MatureLightningIndexerUsesOrdinaryGraphEntry
+[       OK ] CpuDefaultGraph.MatureLightningIndexerUsesOrdinaryGraphEntry (0 ms)
+[ RUN      ] CpuDefaultGraph.D5RealQwenProjectionUsesExactProfileAndReplays
+C:\public\project-hyle\hyle\tests\graph_route_cpu\graph_test.cc(321): Skipped
+set HYLE_D5_QWEN35_FIXTURE to the prepared local fixture
+
+[  SKIPPED ] CpuDefaultGraph.D5RealQwenProjectionUsesExactProfileAndReplays (0 ms)
+[ RUN      ] CpuDefaultGraph.MatureNormPostOpsFuseAndPreserveObservableBoundaries
+[       OK ] CpuDefaultGraph.MatureNormPostOpsFuseAndPreserveObservableBoundaries (2 ms)
+[ RUN      ] CpuDefaultGraph.MatureHalfLinearAndHadamardCompileAsOneReplayableRegion
+[       OK ] CpuDefaultGraph.MatureHalfLinearAndHadamardCompileAsOneReplayableRegion (0 ms)
+[ RUN      ] CpuDefaultGraph.MatureHalfGqaPrefillUsesOneCausalRegion
+[       OK ] CpuDefaultGraph.MatureHalfGqaPrefillUsesOneCausalRegion (0 ms)
+[ RUN      ] CpuDefaultGraph.NonModelGraphReplaysAndReclaimsItsOwners
+[       OK ] CpuDefaultGraph.NonModelGraphReplaysAndReclaimsItsOwners (0 ms)
+[ RUN      ] CpuDefaultGraph.HalfTensorFragmentHasIndependentReplayState
+[       OK ] CpuDefaultGraph.HalfTensorFragmentHasIndependentReplayState (40 ms)
+[ RUN      ] CpuDefaultGraph.ExpertCountsBecomeGatherOffsetsWithoutRecompilation
+[       OK ] CpuDefaultGraph.ExpertCountsBecomeGatherOffsetsWithoutRecompilation (0 ms)
+[ RUN      ] CpuDefaultGraph.SelectedGroupMeansBroadcastWithinOneMatureRegion
+[       OK ] CpuDefaultGraph.SelectedGroupMeansBroadcastWithinOneMatureRegion (0 ms)
+[ RUN      ] CpuDefaultGraph.MatureL2RegionPreservesEpsilonRoundingAndIndependentReplay
+[       OK ] CpuDefaultGraph.MatureL2RegionPreservesEpsilonRoundingAndIndependentReplay (2 ms)
+[ RUN      ] CpuDefaultGraph.StandardTopKPublishesBothOutputsAcrossReplay
+[       OK ] CpuDefaultGraph.StandardTopKPublishesBothOutputsAcrossReplay (0 ms)
+[ RUN      ] CpuDefaultGraph.MatureScatterAddReducesDuplicateRowsAndRejectsCurrentBadIndices
+[       OK ] CpuDefaultGraph.MatureScatterAddReducesDuplicateRowsAndRejectsCurrentBadIndices (0 ms)
+[ RUN      ] CpuDefaultGraph.FullConstantFfnUsesQualifiedGateAcrossTwoReplays
+[       OK ] CpuDefaultGraph.FullConstantFfnUsesQualifiedGateAcrossTwoReplays (1 ms)
+[----------] 37 tests from CpuDefaultGraph (68586 ms total)
+
+[----------] 9 tests from CpuGraphQwen38_24T
+[ RUN      ] CpuGraphQwen38_24T.D5ExactWidthCausalConvGraphReplay
+[       OK ] CpuGraphQwen38_24T.D5ExactWidthCausalConvGraphReplay (0 ms)
+[ RUN      ] CpuGraphQwen38_24T.D5GgufGroupedExpertKeepsNativeBlocksAndDynamicIds
+[       OK ] CpuGraphQwen38_24T.D5GgufGroupedExpertKeepsNativeBlocksAndDynamicIds (2906 ms)
+[ RUN      ] CpuGraphQwen38_24T.D5GgufAttentionGdnAndMtpUseRealRoleTypes
+[       OK ] CpuGraphQwen38_24T.D5GgufAttentionGdnAndMtpUseRealRoleTypes (1488 ms)
+[ RUN      ] CpuGraphQwen38_24T.D5GgufAttentionAndGdnProjectionRoleBatch
+[       OK ] CpuGraphQwen38_24T.D5GgufAttentionAndGdnProjectionRoleBatch (7612 ms)
+[ RUN      ] CpuGraphQwen38_24T.D5OfficialAttentionAndGdnProjectionRoleBatch
+[       OK ] CpuGraphQwen38_24T.D5OfficialAttentionAndGdnProjectionRoleBatch (1331 ms)
+[ RUN      ] CpuGraphQwen38_24T.D5FullRouterSharedExpertAndNearTieReplay
+[       OK ] CpuGraphQwen38_24T.D5FullRouterSharedExpertAndNearTieReplay (1107 ms)
+[ RUN      ] CpuGraphQwen38_24T.D5GgufFullRouterSharedExpertAndNearTieReplay
+[       OK ] CpuGraphQwen38_24T.D5GgufFullRouterSharedExpertAndNearTieReplay (9082 ms)
+[ RUN      ] CpuGraphQwen38_24T.D5OfficialBfloatGroupedExpertKeepsExactWidthsTopKPortsAndReplay
+[       OK ] CpuGraphQwen38_24T.D5OfficialBfloatGroupedExpertKeepsExactWidthsTopKPortsAndReplay (926 ms)
+[ RUN      ] CpuGraphQwen38_24T.D5OfficialRouterScoresAll512ExpertsAndNormalizesStableTop10
+[       OK ] CpuGraphQwen38_24T.D5OfficialRouterScoresAll512ExpertsAndNormalizesStableTop10 (4 ms)
+[----------] 9 tests from CpuGraphQwen38_24T (24462 ms total)
+
+[----------] 32 tests from CpuGraphMoeFragments
+[ RUN      ] CpuGraphMoeFragments.D5MatureClampBoundaries
+[       OK ] CpuGraphMoeFragments.D5MatureClampBoundaries (0 ms)
+[ RUN      ] CpuGraphMoeFragments.D5DeepSeekWeightedHyperConnectionAndHead
+[       OK ] CpuGraphMoeFragments.D5DeepSeekWeightedHyperConnectionAndHead (1315 ms)
+[ RUN      ] CpuGraphMoeFragments.D5DeepSeekFullAttentionChain
+[       OK ] CpuGraphMoeFragments.D5DeepSeekFullAttentionChain (2721 ms)
+[ RUN      ] CpuGraphMoeFragments.D5DeepSeekStatefulCompression
+[       OK ] CpuGraphMoeFragments.D5DeepSeekStatefulCompression (492 ms)
+[ RUN      ] CpuGraphMoeFragments.D5DeepSeekNativeSinkAttention
+[       OK ] CpuGraphMoeFragments.D5DeepSeekNativeSinkAttention (151 ms)
+[ RUN      ] CpuGraphMoeFragments.D5DeepSeekTokenTableRouting
+[       OK ] CpuGraphMoeFragments.D5DeepSeekTokenTableRouting (39 ms)
+[ RUN      ] CpuGraphMoeFragments.D5DeepSeekHashRoutingFeedsMixedWeightMoe
+[       OK ] CpuGraphMoeFragments.D5DeepSeekHashRoutingFeedsMixedWeightMoe (5745 ms)
+[ RUN      ] CpuGraphMoeFragments.D5ThirteenProfilesModelRouters
+[       OK ] CpuGraphMoeFragments.D5ThirteenProfilesModelRouters (57 ms)
+[ RUN      ] CpuGraphMoeFragments.D5ThirteenProfilesExpertActivation
+[       OK ] CpuGraphMoeFragments.D5ThirteenProfilesExpertActivation (3 ms)
+[ RUN      ] CpuGraphMoeFragments.D5OfficialFp4ExpertBatch
+[       OK ] CpuGraphMoeFragments.D5OfficialFp4ExpertBatch (288 ms)
+[ RUN      ] CpuGraphMoeFragments.D5OfficialKimiMixedStorageFullMoe
+[       OK ] CpuGraphMoeFragments.D5OfficialKimiMixedStorageFullMoe (438 ms)
+[ RUN      ] CpuGraphMoeFragments.D5EightGgufProfilesFullMoe

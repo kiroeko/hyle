@@ -1,0 +1,9 @@
+CMake Error at cmake/HyleComputeRoutes.cmake:124 (message):
+  HYLE_DEV_FACTORS derives native availability from its exact factor/test
+  closure.  Do not combine it with the product selector HYLE_COMPUTE_ROUTES.
+Call Stack (most recent call first):
+  cmake/HyleComponents.cmake:875 (hyle_resolve_compute_factor_routes)
+  CMakeLists.txt:102 (include)
+
+
+-- Configuring incomplete, errors occurred!
