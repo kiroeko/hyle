@@ -502,14 +502,9 @@
     },
     {
       "module": "compute_route_apple",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/compute/compute-h2-cpu-apple-composition.md",
-      "summary": "H2 CLOSED：CPU+Apple粗片段、普通CPU主存、原生两槽/保活、共享预算/冷报告及自然Direct/Graph完成；Air源码/installed static/shared、头/真实搬迁/资产/缺路线、错误/寿命与单dispatch原生重叠通过。引擎策略/多GPU/通用增量图不做，H3另轮。",
-      "candidate": "37744b0ea778e85e2d74e960747d29b61e234d14",
-      "performance": {
-        "tier": "P0",
-        "evidence": "docs/implementation/tasks/compute/compute-h2-cpu-apple-composition.md"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/foundation-f1-resource-leases.md",
+      "summary": "F1 SCOPED：冷 ReadLease 原生 binding 与 native Direct/Graph/source-alias 保活；复用原资源/Program/退休，不恢复旧 H2/H3 队列。"
     },
     {
       "module": "graph_route_apple",
@@ -524,14 +519,9 @@
     },
     {
       "module": "compute_route_vulkan",
-      "state": "CLOSED",
-      "record": "docs/implementation/tasks/compute/compute-h3-cpu-vulkan-composition.md",
-      "summary": "H3 CLOSED: native CPU/Vulkan composition, bounded two-slot migration, budgets/replay reports and real queue handoff; Win/Air all three deliveries/math/lifetime/P0, WSL applicable build/install qualified with user-accepted GPU UNQUALIFIED.",
-      "candidate": "97f9332ac358b95face192a7edd39cebadfb0265",
-      "performance": {
-        "tier": "P0",
-        "evidence": "evidence/correctness/compute-h3-vulkan-handoff/README.md"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/compute/foundation-f1-resource-leases.md",
+      "summary": "F1 SCOPED：冷 ReadLease 原生 binding 与 native Direct/Graph/source-alias 保活；复用原资源/Program/退休，不恢复旧 H2/H3 队列。"
     },
     {
       "module": "graph_route_vulkan",

@@ -270,6 +270,19 @@ F1 继续 AUDITED，F2/F3 未启动，不把这些局部结果算作整包关闭
 
 ## 预声明验证与停止
 
+### Apple / Vulkan 原生 binding 子轮 SCOPED
+
+- 实际 baseline / previous registry ref `73d9c847a`，Windows工作树干净；新增绑定 owner
+  `compute_route_apple`、`compute_route_vulkan`，因 F1 外部 range lease→原生 math/Graph 的新旅程重开。
+  两个 graph_route owner仍CLOSED：它们已生成各自原生 Program，本子轮只验证其直接消费，不改 lowerer。
+- 原 Apple Invocation::bind 保存 ready array owners，Vulkan Invocation::bind 保存原 Buffer owners，
+  原 Results/source-alias 已有对应 native retention。缺口是 common ReadLease backing 尚无无复制 native binding，
+  不能把现有 native owning handles当作已经保护了新 lease root。
+- 本子轮仅实现 MemoryResource 的 cold readonly binding；反向 native array/Tensor 只读导入与组合 owner
+  继续保留在 F1 后续，不因这一子入口而裁决全部 native FIX 完成。
+- MacBook Air已实际连接：Mac16,12、16 GiB、macOS27.0.1/26A434、CMake4.3.4、Ninja1.13.2。
+  未编译，后续先读取实际 compiler/当前缓存；只用Air，Windows是唯一产品真相。
+
 扩展现有 compute completion、graph cpu_cuda/apple/vulkan contracts 及 native route 用户样例；
 保留原数学 reference，新增实际 lease 风险断言。只装饰 native observation/fault call，
 不能将 mock 结果当路线资格。至少两独立在途块、两个读者、一写者、旧结果、取消、OOM、部分失败、
