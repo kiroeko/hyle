@@ -836,6 +836,17 @@ detail::OperationPreparationAccess::prepare_candidate(
         "operation proposal does not belong to the selected provider"));
   }
 
+  // A resource predicate has not entered provider preparation or accepted
+  // work. Its mismatch is a qualified decline; provider errors are not.
+  const auto resource_mismatch = [](Status mismatch)
+      -> Result<detail::ProviderPrepareAttempt> {
+    if (mismatch.IsUnimplemented())
+      return detail::ProviderPrepareAttempt{
+          .decline = detail::ProviderPrepareDecline::kUnsupported,
+          .reason = std::move(mismatch)};
+    return std::unexpected(std::move(mismatch));
+  };
+
   for (std::size_t index = 0; index < resources.inputs.size(); ++index) {
     status = validate_requirement(input_requirements[index]);
     if (!status.ok())
@@ -843,7 +854,7 @@ detail::OperationPreparationAccess::prepare_candidate(
     status =
         match_requirement(input_requirements[index], resources.inputs[index]);
     if (!status.ok())
-      return std::unexpected(std::move(status));
+      return resource_mismatch(std::move(status));
     status = state->backend_vtable->validate_resource(state->device,
                                                       resources.inputs[index]);
     if (!status.ok())
@@ -856,7 +867,7 @@ detail::OperationPreparationAccess::prepare_candidate(
     status =
         match_requirement(output_requirements[index], resources.outputs[index]);
     if (!status.ok())
-      return std::unexpected(std::move(status));
+      return resource_mismatch(std::move(status));
     status = state->backend_vtable->validate_resource(state->device,
                                                       resources.outputs[index]);
     if (!status.ok())
@@ -875,7 +886,7 @@ detail::OperationPreparationAccess::prepare_candidate(
       workspace_resource.valid()) {
     status = match_requirement(proposal.workspace_resource, workspace_resource);
     if (!status.ok())
-      return std::unexpected(std::move(status));
+      return resource_mismatch(std::move(status));
     status = state->backend_vtable->validate_resource(state->device,
                                                       workspace_resource);
     if (!status.ok())
@@ -1243,13 +1254,6 @@ prepare_for_mode(const Context &context, Operation operation,
     auto attempt = detail::OperationPreparationAccess::prepare_candidate(
         context, candidate.proposal, operation, inputs, outputs,
         input_requirements, output_requirements, resources);
-    if (!attempt && attempt.error().IsUnimplemented()) {
-      // A resource-specific miss is a cold candidate decline, not failure of
-      // the whole operation. Actual argument/internal failures still propagate.
-      unsupported = std::move(attempt).error();
-      unsupported_provider = candidate.proposal.provider.name;
-      continue;
-    }
     if (!attempt)
       return std::unexpected(std::move(attempt).error());
     if (attempt->succeeded())

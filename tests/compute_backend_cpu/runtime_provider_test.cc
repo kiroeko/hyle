@@ -164,6 +164,7 @@ struct AsyncOperationProbe final {
   bool return_partial_artifact = false;
   bool fail_invocation = false;
   std::size_t proposal_count = 0;
+  int resource_mismatch = -1; // input, output or caller workspace predicate
   std::size_t shape_dimension_count = 0;
   bool shape_shares_input_output_axis = false;
   hyle::compute::detail::ProviderShapeRange observed_shape_range{};
@@ -288,8 +289,8 @@ const hyle::compute::detail::ProviderPreparedVTable kAsyncPreparedVTable{
 hyle::Status propose_async_operation(
     void *context,
     const hyle::compute::detail::ProviderOperationRequest &request,
-    std::span<hyle::compute::detail::ResourceBindingRequirement>,
-    std::span<hyle::compute::detail::ResourceBindingRequirement>,
+    std::span<hyle::compute::detail::ResourceBindingRequirement> inputs,
+    std::span<hyle::compute::detail::ResourceBindingRequirement> outputs,
     hyle::compute::detail::ProviderOperationProposal *proposal) noexcept {
   auto &probe = *static_cast<AsyncOperationProbe *>(context);
   ++probe.proposal_count;
@@ -319,6 +320,13 @@ hyle::Status propose_async_operation(
       .implementation = probe.implementation,
       .policy = probe.policy,
   };
+  if (probe.resource_mismatch == 0)
+    inputs[0].forbidden_properties = hyle::mem::MemoryProperty::kHostAccessible;
+  else if (probe.resource_mismatch == 1)
+    outputs[0].forbidden_properties = hyle::mem::MemoryProperty::kHostAccessible;
+  else if (probe.resource_mismatch == 2)
+    proposal->workspace_resource.forbidden_properties =
+        hyle::mem::MemoryProperty::kHostAccessible;
   return hyle::Status::Ok();
 }
 
@@ -1514,6 +1522,29 @@ TEST(RuntimeProviders, DirectErrorCodesDoNotBecomeSafeDeclines) {
     EXPECT_EQ(first.prepared_destroy_count, 1u);
     EXPECT_EQ(fallback.proposal_count, 1u);
     EXPECT_EQ(fallback.prepare_count, 0u);
+  }
+}
+
+TEST(RuntimeProviders, ResourceMismatchDeclinesBeforeProviderPreparation) {
+  const auto description = hyle::compute::TensorDesc::dense(
+      hyle::compute::DataType::kFloat32, std::array<std::int64_t, 1>{8}).value();
+  for (int endpoint : {0, 1, 2}) {
+    SCOPED_TRACE(endpoint);
+    AsyncOperationProbe first, fallback;
+    first.resource_mismatch = endpoint;
+    const std::array providers{
+        hyle::compute::ProviderBinding{make_async_provider(first), 100},
+        hyle::compute::ProviderBinding{make_async_provider(fallback), 200}};
+    auto context = hyle::compute::Context::create(hyle::compute::cpu::device(),
+                                                {.providers = providers}).value();
+    auto prepared = hyle::compute::prepare(
+        context, hyle::compute::Unary{hyle::compute::UnaryKind::kNeg}, description);
+    ASSERT_TRUE(prepared) << prepared.error().message();
+    EXPECT_EQ(first.proposal_count, 1u); EXPECT_EQ(first.prepare_count, 0u);
+    EXPECT_EQ(first.prepared_destroy_count, 0u);
+    EXPECT_EQ(fallback.proposal_count, 1u); EXPECT_EQ(fallback.prepare_count, 1u);
+    *prepared = {};
+    EXPECT_EQ(fallback.prepared_destroy_count, 1u);
   }
 }
 
