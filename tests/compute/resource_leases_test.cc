@@ -156,4 +156,53 @@ TEST(ResourceLeases, RejectedAttachmentRetainsTicketAndQuotaIncludesMetadata) {
       {.max_blocks = 1, .resource_budget = budget}).has_value());
   EXPECT_EQ(budget.usage(mem::system_resource())->live_bytes, before);
 }
+TEST(ResourceLeases, OwnedImportPreservesBackingAndReadonlyCannotBecomeWriter) {
+  auto backing = mem::Buffer::create(mem::system_resource(), 512, 16).value();
+  const auto token = backing.native_handle();
+  ASSERT_TRUE(backing.view().fill(std::byte{23}).ok());
+  auto readonly = ReadLease::adopt(std::move(backing)).value();
+  EXPECT_FALSE(backing.valid());
+  EXPECT_EQ(readonly.view()->native_handle(), token);
+  auto piece = readonly.subview(16, 32).value();
+  readonly.reset();
+  EXPECT_FALSE(piece.try_write().has_value());
+  std::array<std::byte, 32> observed{};
+  ASSERT_TRUE(piece.view()->read(observed).ok());
+  for (auto value : observed) EXPECT_EQ(value, std::byte{23});
+  auto uses = LeaseUsePool::create({.max_batches = 1, .max_resources_per_batch = 1}).value();
+  auto use = uses.begin().value();
+  ASSERT_TRUE(use.read(piece).ok());
+  auto done = Completion::completed();
+  ASSERT_TRUE(use.attach(done).ok());
+  EXPECT_FALSE(piece.try_write().has_value());
+
+  auto writable_backing = mem::Buffer::create(mem::system_resource(), 512, 16).value();
+  const auto mutable_token = writable_backing.native_handle();
+  auto pool = LeasePool::adopt(std::move(writable_backing), {.max_blocks = 2}).value();
+  EXPECT_FALSE(writable_backing.valid());
+  auto write = pool.allocate(32, 16).value();
+  EXPECT_EQ(write.view()->native_handle(), mutable_token);
+  EXPECT_FALSE(pool.allocate(32, 256).has_value());
+}
+
+TEST(ResourceLeases, RejectedOwnedImportDoesNotConsumeBackingOrLeakBudget) {
+  auto backing = mem::Buffer::create(mem::system_resource(), 32 * 1024, 256).value();
+  const auto token = backing.native_handle();
+  EXPECT_FALSE(LeasePool::adopt(std::move(backing), {.max_blocks = 0}).has_value());
+  ASSERT_TRUE(backing.valid());
+  EXPECT_EQ(backing.native_handle(), token);
+  EXPECT_FALSE(ReadLease::adopt(std::move(backing), {.allocator = {}}).has_value());
+  ASSERT_TRUE(backing.valid());
+  const std::array limits{ResourceBudgetLimit{mem::system_resource(), 16 * 1024}};
+  auto budget = ResourceBudget::create({.limits = limits}).value();
+  const auto before = budget.usage(mem::system_resource())->live_bytes;
+  EXPECT_FALSE(ReadLease::adopt(std::move(backing), {.resource_budget = budget}).has_value());
+  EXPECT_EQ(budget.usage(mem::system_resource())->live_bytes, before);
+  ASSERT_TRUE(backing.valid());
+  EXPECT_EQ(backing.native_handle(), token);
+  EXPECT_FALSE(LeasePool::adopt(std::move(backing), {.resource_budget = budget}).has_value());
+  EXPECT_EQ(budget.usage(mem::system_resource())->live_bytes, before);
+  EXPECT_TRUE(backing.valid());
+}
+
 } // namespace

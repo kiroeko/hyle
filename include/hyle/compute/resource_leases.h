@@ -26,6 +26,11 @@ struct LeasePoolOptions final {
   ResourceBudget resource_budget{};
 };
 
+struct LeaseImportOptions final {
+  mem::AllocatorRef allocator = mem::system_allocator();
+  ResourceBudget resource_budget{};
+};
+
 struct LeasePoolStats final {
   std::size_t capacity_bytes = 0, allocated_bytes = 0, peak_bytes = 0;
   std::uint32_t live_blocks = 0, max_blocks = 0;
@@ -43,6 +48,11 @@ public:
   HYLE_COMPUTE_API ReadLease(ReadLease &&) noexcept;
   HYLE_COMPUTE_API ReadLease &operator=(ReadLease &&) noexcept;
   HYLE_COMPUTE_API ~ReadLease();
+  // Takes a ready, uniquely owned Buffer without copying its payload. Failure
+  // leaves backing owned by the caller. All untracked writable aliases must
+  // stop before import; this permission can never be promoted to a writer.
+  HYLE_COMPUTE_API static Result<ReadLease>
+  adopt(mem::Buffer &&backing, LeaseImportOptions options = {}) noexcept;
   bool valid() const noexcept { return block_ != nullptr; }
   explicit operator bool() const noexcept { return valid(); }
   std::size_t size() const noexcept { return block_ ? size_ : 0; }
@@ -109,6 +119,11 @@ public:
   HYLE_COMPUTE_API static Result<LeasePool>
   create(mem::MemoryResourceRef resource, std::size_t capacity_bytes,
          LeasePoolOptions options = {}) noexcept;
+  // Owns the existing allocation on success only. Its actual size/alignment
+  // are authoritative; options.backing_alignment applies only to create().
+  // Existing borrowed aliases must obey this pool's exclusive-write protocol.
+  HYLE_COMPUTE_API static Result<LeasePool>
+  adopt(mem::Buffer &&backing, LeasePoolOptions options = {}) noexcept;
   bool valid() const noexcept { return state_ != nullptr; }
   HYLE_COMPUTE_API Result<WriteLease> allocate(std::size_t bytes,
                                             std::size_t alignment = 256) noexcept;
@@ -120,6 +135,7 @@ public:
   // Scheduler consumers use their existing blocking handoff if needed.
   HYLE_COMPUTE_API Status drain() noexcept;
 private:
+  friend class ReadLease;
   explicit LeasePool(detail::LeaseDomain *state) noexcept : state_(state) {}
   detail::LeaseDomain *state_ = nullptr;
 };

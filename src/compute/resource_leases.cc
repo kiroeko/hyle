@@ -209,7 +209,65 @@ Result<mem::BufferView> lease_view(LeaseBlock *block, std::size_t offset,
   return block->domain->backing.view().subview(
       static_cast<std::size_t>(block->range.offset()) + offset, size);
 }
+
+Result<LeaseDomain *> prepare_lease_domain(mem::MemoryResourceRef resource,
+    std::size_t capacity, std::size_t alignment, LeasePoolOptions options) noexcept {
+  if (!resource.valid() || capacity == 0 || options.max_blocks == 0 ||
+      options.max_blocks == UINT32_MAX || !options.allocator.valid() ||
+      alignment == 0 || (alignment & (alignment - 1)) != 0)
+    return std::unexpected(Status::InvalidArgument("invalid lease pool capacity/resource/alignment"));
+  auto allocator = options.allocator;
+  if (options.resource_budget.valid()) {
+    HYLE_ASSIGN_OR_RETURN(allocator, options.resource_budget.metadata_allocator());
+  }
+  HYLE_ASSIGN_OR_RETURN(auto ranges, mem::RangeAllocator::create(
+      capacity, {.max_allocations = options.max_blocks, .metadata_allocator = allocator}));
+  auto *storage = allocator.allocate(sizeof(LeaseDomain), alignof(LeaseDomain));
+  if (!storage) return std::unexpected(Status::ResourceExhausted("lease domain metadata"));
+  auto *state = std::construct_at(static_cast<LeaseDomain *>(storage), allocator, options.max_blocks);
+  if (!state->blocks.valid()) {
+    state->decref();
+    return std::unexpected(Status::ResourceExhausted("lease block metadata"));
+  }
+  state->ranges = std::move(ranges);
+  if (options.resource_budget.valid()) {
+    auto charge = options.resource_budget.reserve(resource, capacity, ResourceBudgetCategory::kExternal);
+    if (!charge) {
+      state->decref();
+      return std::unexpected(std::move(charge).error());
+    }
+    state->charge = std::move(*charge);
+  }
+  return state;
+}
 } // namespace detail
+
+Result<ReadLease> ReadLease::adopt(mem::Buffer &&backing, LeaseImportOptions options) noexcept {
+  if (!backing.valid()) return std::unexpected(Status::InvalidArgument("lease backing is empty"));
+  const auto bytes = backing.size();
+  HYLE_ASSIGN_OR_RETURN(auto *state, detail::prepare_lease_domain(backing.resource(), bytes,
+      backing.alignment(), {.max_blocks = 1, .allocator = options.allocator,
+                            .resource_budget = options.resource_budget}));
+  LeasePool candidate(state);
+  auto *storage = state->blocks.allocate();
+  if (!storage) return std::unexpected(Status::ResourceExhausted("readonly lease block metadata"));
+  auto range = state->ranges.allocate(bytes, backing.alignment());
+  if (!range) {
+    state->blocks.deallocate(storage);
+    return std::unexpected(std::move(range).error());
+  }
+  state->incref();
+  auto *block = std::construct_at(static_cast<detail::LeaseBlock *>(storage), state,
+      std::move(*range), state->next_generation++);
+  block->writer = false;
+  block->writable = false;
+  // All fallible preparation is over. Drop only the cold root reference,
+  // without closing admission for the returned immutable native-use lease.
+  state->backing = std::move(backing);
+  candidate.state_ = nullptr;
+  detail::release_domain(state);
+  return ReadLease(block, 0, bytes);
+}
 
 ReadLease::ReadLease(const ReadLease &other) noexcept
     : block_(other.block_), offset_(other.offset_), size_(other.size_) {
@@ -300,32 +358,18 @@ Result<ReadLease> WriteLease::publish() noexcept {
 
 Result<LeasePool> LeasePool::create(mem::MemoryResourceRef resource, std::size_t capacity,
                                   LeasePoolOptions options) noexcept {
-  if (!resource.valid() || capacity == 0 || options.max_blocks == 0 ||
-      options.max_blocks == UINT32_MAX || !options.allocator.valid() ||
-      options.backing_alignment == 0 ||
-      (options.backing_alignment & (options.backing_alignment - 1)) != 0)
-    return std::unexpected(Status::InvalidArgument("invalid lease pool capacity/resource/alignment"));
-  auto allocator = options.allocator;
-  if (options.resource_budget.valid()) {
-    HYLE_ASSIGN_OR_RETURN(allocator, options.resource_budget.metadata_allocator());
-  }
-  HYLE_ASSIGN_OR_RETURN(auto ranges, mem::RangeAllocator::create(
-      capacity, {.max_allocations = options.max_blocks, .metadata_allocator = allocator}));
-  auto *storage = allocator.allocate(sizeof(detail::LeaseDomain), alignof(detail::LeaseDomain));
-  if (!storage) return std::unexpected(Status::ResourceExhausted("lease domain metadata"));
-  auto *state = std::construct_at(static_cast<detail::LeaseDomain *>(storage), allocator, options.max_blocks);
-  if (!state->blocks.valid()) {
-    state->decref();
-    return std::unexpected(Status::ResourceExhausted("lease block metadata"));
-  }
+  HYLE_ASSIGN_OR_RETURN(auto *state, detail::prepare_lease_domain(resource, capacity,
+      options.backing_alignment, options));
   LeasePool result(state);
-  state->ranges = std::move(ranges);
-  if (options.resource_budget.valid()) {
-    HYLE_ASSIGN_OR_RETURN(state->charge, options.resource_budget.reserve(
-        resource, capacity, ResourceBudgetCategory::kExternal));
-  }
   HYLE_ASSIGN_OR_RETURN(state->backing, mem::Buffer::create(resource, capacity, options.backing_alignment));
   return result;
+}
+Result<LeasePool> LeasePool::adopt(mem::Buffer &&backing, LeasePoolOptions options) noexcept {
+  if (!backing.valid()) return std::unexpected(Status::InvalidArgument("lease backing is empty"));
+  HYLE_ASSIGN_OR_RETURN(auto *state, detail::prepare_lease_domain(backing.resource(), backing.size(),
+      backing.alignment(), options));
+  state->backing = std::move(backing);
+  return LeasePool(state);
 }
 LeasePool::LeasePool(LeasePool &&other) noexcept : state_(std::exchange(other.state_, nullptr)) {}
 LeasePool &LeasePool::operator=(LeasePool &&other) noexcept {

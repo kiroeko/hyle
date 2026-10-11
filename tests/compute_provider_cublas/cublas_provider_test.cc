@@ -474,13 +474,14 @@ TEST(CublasProvider, LeasedDirectRetainsNativeUsesAndReplaysWithoutLeaseAllocati
       {.max_blocks = 3, .allocator = metadata.ref()}).value();
   const auto desc = matrix(compute::DataType::kFloat32, 2, 2, false);
   auto left_write = pool.allocate(16).value();
-  auto right_write = pool.allocate(16).value();
+  auto right_backing = mem::Buffer::create(resource.ref(), 16, 256).value();
   auto output = pool.allocate(16).value();
   const std::array<float, 4> a{1, 2, 3, 4}, identity{1, 0, 0, 1};
   ASSERT_TRUE(left_write.view()->write(std::as_bytes(std::span(a))).ok());
-  ASSERT_TRUE(right_write.view()->write(std::as_bytes(std::span(identity))).ok());
+  ASSERT_TRUE(right_backing.view().write(std::as_bytes(std::span(identity))).ok());
   auto left = left_write.publish().value();
-  auto right = right_write.publish().value();
+  auto right = compute::ReadLease::adopt(std::move(right_backing), {.allocator = metadata.ref()}).value();
+  EXPECT_FALSE(right.try_write().has_value());
   auto prepared = compute::prepare(owner, compute::Operation(compute::MatMul{}),
       std::array{left.tensor(desc).value(), right.tensor(desc).value()},
       std::array{output.tensor(desc).value()}).value();
@@ -537,8 +538,8 @@ TEST(CublasProvider, LeasedDirectRetainsNativeUsesAndReplaysWithoutLeaseAllocati
   for (auto &input : inputs) input.read.reset();
   invocation = {};
   pending = {};
-  EXPECT_EQ(pool.stats().live_blocks, 3u);
-  EXPECT_EQ(pool.stats().active_uses, 3u);
+  EXPECT_EQ(pool.stats().live_blocks, 2u);
+  EXPECT_EQ(pool.stats().active_uses, 2u);
   EXPECT_FALSE(output.publish().has_value());
   gate.release();
   ASSERT_TRUE(pool.drain().ok());
