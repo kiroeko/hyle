@@ -8,6 +8,8 @@ namespace detail { struct LeasedInvocationState; }
 
 struct LeasedInvocationOptions final {
   mem::AllocatorRef allocator = mem::system_allocator();
+  // Wrapper metadata only. Native workspace/program limits still belong to
+  // the original Executable's CompileOptions resource/storage budgets.
   compute::ResourceBudget resource_budget{};
 };
 
@@ -38,7 +40,8 @@ private:
 };
 
 // Opt-in fixed-capacity bindings over an existing compiled plan. Context,
-// resources, Queues and injected allocator outlive this owner, all submitted
+// resources, Queues, compile-time borrowed constants/effect footprints and
+// injected allocator outlive this owner, all submitted
 // native work and results. Control is thread-compatible; distinct readonly
 // result/lease handles may be copied/dropped under their native lifetime rules.
 class LeasedInvocation final {

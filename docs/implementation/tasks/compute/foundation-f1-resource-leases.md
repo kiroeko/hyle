@@ -232,6 +232,18 @@ Graph core31、新真实双分支 cuBLAS 用例通过。未知观察是装饰真
   仅在 opt-in accepted hook 已保活之后装饰真实 Completion，制造跨 lane 依赖的观察/交接失败。
   原数学/设备/事件/retirement 不替换；shipping 没有 hook/额外分支，不重写公共仪器。
 
+### F1-01 CUDA owned external Buffer 接缝冻结
+
+- baseline `aae604926`；compute / compute_backend_cuda owners 仍 AUDITED。沿已有 native 导入 FIX，
+  不重开 Provider/算子模块，也不修改原 CUDA 指针检查/分配/释放 API。
+- `ExternalBuffer::into_read_lease(options) &&` / `into_lease_pool(options) &&` 只接管确实 adopted 的 native Buffer；
+  borrowed buffer 没有实际 payload owner，拒绝转成拥有 lease。准备失败保持原 ExternalBuffer 不变。
+- 原 ExternalBufferState 本身持有 Context/resource；成功时移动其 mem::Buffer，并由 common lease domain
+  保留这个实际 native resource owner，直到 backing/预算退休之后才销毁。内部 LeaseAccess 只衔接 owner release，
+  不增加资源/执行 vtable，不用空 deleter。普通 Buffer 的既有 resource-borrow 合同不变。
+- 复用原 cudaFree/driver retirement、Common Buffer adopt 和有限metadata；无新 copy/kernel。
+  原生消费者定向验 owned/borrow拒绝、OOM拒绝不消费、真实数学与 native completion 保活。
+
 | FIX | 必须实现/定向修复 | 验收 |
 |---|---|---|
 | F1-01 | 冷创建 owner、有限块/范围、generation、大小/对齐/metadata budget、拥有与只读导入 | 零/边界/溢出/OOM；旧 generation 不释放新块；真实 native backing |

@@ -990,6 +990,33 @@ source、headers + static、headers + shared 都选择 `hyle::graph`。三种交
 Native FFI，也不承诺跨编译器/STL 的 C++ ABI。
 
 
+## 外部租约绑定与只读结果
+
+`hyle/graph/leased_invocation.h` 提供 opt-in `LeasedInvocation`，包中随 `hyle::graph` 交付，
+不用额外构建开关。当前 F1 仍在施工，Windows CUDA 有局部资格；其他适用平台/路线及安装三交付尚待集中验收。
+输入可以绑定 `ReadLease`，独占输入/输出可移动一个 `WriteLease`；描述、资源与 alias 仍由原计划检查。
+
+```cpp
+auto run = hyle::graph::LeasedInvocation::create(executable).value();
+HYLE_RETURN_IF_ERROR(run.bind(input_id, input_description, input_read_lease));
+HYLE_RETURN_IF_ERROR(run.bind(output_id, output_description, std::move(output_write_lease)));
+auto done = run.submit(queue).value();
+if (auto status = done.wait(); !status.ok()) return status;
+auto result = run.output(output_id).value();
+auto readonly_tensor = result.tensor().value();
+```
+
+示例的 `executable` 已按原 Graph 合同编译，pool、Context、资源、Queue 与 allocator 保持有效。
+成功写绑定才接管原 WriteLease。接口自动保留每段已接受的 native use，不用逐 token 手写 guard；
+观察失败或丢弃 Completion 也不能提前复用 backing。
+
+结果保留原 Invocation 和绑定数据。旧结果在时，replay/reset/rebind 会拒绝；普通 caller/source-alias 输出
+可用 `result.storage_lease()` 导出 ReadLease 再交 Direct，独立导出的读者同样阻止对应块覆盖。
+内部 workspace 与物化常量保留原 Graph owner，`tensor()` 可读，`storage_lease()` 不伪造独立 Buffer 所有权。
+`close()` 停接纳、无隐藏全设备 wait，`drain()` 明确等待本实例的实际退役并保留首错；旧结果仍可读取。
+编译时借用常量与固定 effect footprint 保持原寿命合同，不因这个运行绑定 adapter 自动获得拥有权。
+wrapper options 的 budget 计自身 metadata；原程序/workspace 预算仍在 `CompileOptions` 中设置。
+
 ## 可选主机跟踪
 
 构建时设置 `-DHYLE_TRACE=ON`，使用已有 Tracy client 观察真实 compile/submit/wait 的主机范围。
