@@ -64,6 +64,8 @@ SDK、sanitizer、native/mixed risk 的 `include/src/cmake/third_party` 及根 C
   [交付](../../../../evidence/correctness/foundation-f1-lease-delivery-initial/receipt.json)。
 - U：WSL 独立 CUDA fault2、cuBLAS Direct1、Graph retirement4，以及 Windows 新取消单用例：
   [CUDA 本批风险](../../../../evidence/correctness/foundation-f1-cuda-final-risk/receipt.json)。
+- A：MacBook Air libc++ 共同控制27、Graph protocol3、真实 native Vulkan lease lifetime5，46个相关
+  source/test blob 实际匹配：[Air 风险](../../../../evidence/correctness/foundation-f1-air-final-risk/receipt.json)。
 
 CUDA 的拥有 pool 转换还由原 `CudaBackend.AdoptedNativeLeasePoolOwnsResourceAndBorrowedPayloadCannotMasquerade`
 取证：borrowed 两种转换拒绝且保持原 handle；拥有转换的 max_blocks0 拒绝不消费；成功转换后的 native
@@ -76,8 +78,8 @@ reader/subview 在 pool root 丢弃后仍读到原数据，最后 reader 消失�
 | F1-01/02 owner/permission | C 的有限块、subview、generation、多读阻写 PASS | C 的 checked arithmetic/预算/拒绝不消费 PASS | C/D/N 原 backing 与 readonly alias PASS | C 跨线程 reader、独立 block PASS | D/N/S 真实 ready 数据与矩阵/alias PASS | 原 scope source identity 已复核；剩余平台/交付格仍按下表 |
 | F1-03/04 native retirement | C/D/G actual retirement PASS | C/G/U unknown error 不提前回收、首错与最终排空 PASS | D/G/N/L dropped handles 仍保活 PASS | C/L/U 取消不证明退休、仍保留 native use PASS | 原数学与 actual prefix 保留，非 mock math PASS | Windows/WSL CUDA / Air Apple / Windows Vulkan 已取证；其余细分按下面表 |
 | F1-05 Direct | D/N/S/U 四路线成熟数学 PASS | D binding rollback、L cold OOM/accepted failure PASS | D/N/L last source alias/use 回收 PASS | L/U native cancel/abandon 与原不支持取消合同 PASS | 同时含 readonly import、bounded storage、MatMul PASS | S 当前 ordinary source/static/shared PASS；最终链接矩阵复核尚未裁决 |
-| F1-06 Graph/组合 | G/M/S 原计划与 scalar reference PASS | G unknown prefix 与 M closed-native suffix 原错 PASS | G/N/M 旧结果/source/caller/private output PASS | C/L/M 原协议与实际 cancellation/abandon PASS；跨平台 fault 复核 UNPROVEN | 无新数学，原 CPU/native/CPU consumer PASS | Windows CPU+Vulkan imported static managed PASS；其余链接格依下表 |
-| F1-07 close/drain | C/D/G/N/S held Completion drain PASS | G/L/M 失败 slot/首错/拒绝后继 PASS | D/G/L/M 最后 guard 与保留 reader PASS | C host concurrency；L/M/U actual native 路线 PASS | 关闭本 owner、旧结果仍有效；无 device-wide 隐式 wait | 借用寿命/各 native mechanism 逐平台终审 UNPROVEN |
+| F1-06 Graph/组合 | G/M/S 原计划与 scalar reference PASS | G unknown prefix 与 M closed-native suffix 原错 PASS | G/N/M 旧结果/source/caller/private output PASS | C/L/M/A 原协议与实际 cancellation/abandon PASS | 无新数学，原 CPU/native/CPU consumer PASS | Windows CPU+Vulkan imported static managed PASS；其余链接格依下表 |
+| F1-07 close/drain | C/D/G/N/S held Completion drain PASS | G/L/M/A 失败 slot/首错/拒绝后继 PASS | D/G/L/M/A 最后 guard 与保留 reader PASS | C/A host concurrency；L/M/U/A actual native 路线 PASS | 关闭本 owner、旧结果仍有效；无 device-wide 隐式 wait | 对应实际机制已取证；最终七门尚待最后交付格 |
 | F1-08 普通入口/P0 | S 公开 sample/自动 route 闭包 PASS | S absence、ON/OFF 新头 PASS | S actual SDK move/DLL PASS | 不新增进展引擎；代码账单已记录 | source/static/shared 普通 facade；细分保留 | 余下 CPU+CUDA installed mixed、Air风险格、完整 P0/red-team UNPROVEN |
 
 CPU 已接受的同步工作没有可取消的在途 GPU 命令；其 inline Completion 在返回时已退休。
@@ -94,12 +96,12 @@ unknown-fence helper 的三个受控协议用例不代签实际 native GPU；M �
 | Windows CPU/CUDA | PASS / PASS | PASS / PASS | CUDA-only 普通 PASS；CPU+CUDA mixed 未单独记录 | D/G 与 CUDA 原 fault PASS；U 新 lease cancellation 断言 PASS |
 | Windows CPU/Vulkan | PASS / PASS | PASS / PASS | PASS / PASS | L/M PASS |
 | MacBook Air CPU/Apple | PASS / PASS | PASS / PASS | PASS / PASS | L/M PASS |
-| MacBook Air CPU/Vulkan | PASS / PASS | PASS / PASS | PASS / PASS | M admission refusal PASS；native L 对该平台尚未单独记录 |
+| MacBook Air CPU/Vulkan | PASS / PASS | PASS / PASS | PASS / PASS | M admission refusal、A 实际 native risk/控制 PASS |
 | WSL CPU/CUDA | PASS / PASS | PASS / PASS | PASS / PASS | C host sanitizer、U 本轮 CUDA fault/Direct/Graph PASS |
 | WSL Vulkan | 未签 GPU 数学 | 未签 GPU 数学 | 未签 GPU 数学 | 实际 loader 仅 llvmpipe type4；当前卡按实际 GPU 资格条件，无合格 GPU |
 
-Windows CPU+CUDA mixed 与 Air Vulkan native fault 的证据能否由已测共同/原生机制组合覆盖，
-需要终审按差异与合同裁决；不能把未单独运行写成真机 PASS，也不能在未定界时启动扩大测试。
+Windows CPU+CUDA shared 是最后已声明的交付格；其他当前表内普通/混合与适用 fault/control 格
+已有分别取证。未单独运行的格仍不能写成真机 PASS，也不能在未定界时启动扩大测试。
 Apple on Windows/WSL 和 CUDA on Air 因 native 系统不支持是 NOT_APPLICABLE；保持 OFF 头/absence
 资格，不制造虚构 binary。没有 Mac mini 或第二台 Formal Air 的资格。
 

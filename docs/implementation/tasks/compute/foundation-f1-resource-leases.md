@@ -729,6 +729,13 @@ configure300/build1800、每 exe120，不全算子/P1；原日志/首错/native 
 三项验证均与本批重型 SDK/fault 串行，阶段前4GiB、build1/test1；新产品反例才退回有限 FIX，
 未运行格保留 UNPROVEN，不把这份计划算作 PASS。
 
+同一 `e39905900` Air source 的 configure/build 和预声明 Compute/Graph/native Vulkan filters 全部通过。
+实际原日志为 Compute27、Graph3、Vulkan5（以该工具链实际编入用例为准，不沿用 WSL 的26计数）；
+[Air 风险收据](../../../../evidence/correctness/foundation-f1-air-final-risk/receipt.json)保存实机身份、
+46个当前 Windows Git product/test blob 与实际验证副本的 SHA256 一致性、阶段前内存和原日志。
+覆盖 libc++ 共同控制与实际 native Vulkan lease cancel/abandon/accepted-prefix failure/冷 metadata OOM，
+不以 host 协议代签 GPU数学。Windows CPU+CUDA shared 是最后已声明交付格，整包终态仍待结果。
+
 ### P0 成本账（源码审计，完整裁决待剩余资格）
 
 以 `fc4ffbd16` 产品为准；后续消费者、测试与文档没有改变以下实现。B 为 pool 块上限，R 为本批资源数，

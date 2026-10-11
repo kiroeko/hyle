@@ -1,0 +1,197 @@
+[0/2] Re-checking globbed directories...
+[1/160] Building CXX object src/error/CMakeFiles/hyle_error.dir/status.cc.o
+[2/160] Performing build step for 'vulkan-shaders-gen'
+ninja: no work to do.
+[3/160] Linking CXX shared library bin/libhyle_error.0.1.0.dylib
+[4/160] Performing install step for 'vulkan-shaders-gen'
+-- Up-to-date: /Users/kiro/hyle-scratch/compute-unified/a-vulkan/selected-graph/shared-sdk-build/Release/./vulkan-shaders-gen
+[5/160] Creating library symlink bin/libhyle_error.dylib
+[6/160] Building CXX object src/platform/CMakeFiles/hyle_platform_cpu_probe.dir/cpu.cc.o
+[7/160] Building CXX object src/platform/CMakeFiles/hyle_platform_cgroup_parser.dir/linux_cgroup.cc.o
+[8/160] Building CXX object src/platform/CMakeFiles/hyle_platform.dir/cpu_resource.cc.o
+[9/160] Building CXX object src/platform/CMakeFiles/hyle_platform.dir/dynlib.cc.o
+[10/160] Building CXX object src/platform/CMakeFiles/hyle_platform.dir/environment.cc.o
+[11/160] Building CXX object src/platform/CMakeFiles/hyle_platform.dir/host_memory.cc.o
+[12/160] Building CXX object src/platform/CMakeFiles/hyle_platform.dir/numa.cc.o
+[13/160] Building CXX object src/platform/CMakeFiles/hyle_platform.dir/process.cc.o
+[14/160] Building CXX object src/platform/CMakeFiles/hyle_platform.dir/random.cc.o
+[15/160] Building CXX object src/platform/CMakeFiles/hyle_platform.dir/virtual_memory.cc.o
+[16/160] Completed 'vulkan-shaders-gen'
+[17/160] Linking CXX shared library bin/libhyle_platform.0.1.0.dylib
+[18/160] Building C object src/mem/CMakeFiles/mimalloc_static.dir/__/__/third_party/mimalloc/src/static.c.o
+[19/160] Creating library symlink bin/libhyle_platform.dylib
+[20/160] Building CXX object src/mem/CMakeFiles/hyle_mem.dir/buffer.cc.o
+[21/160] Building CXX object src/mem/CMakeFiles/hyle_mem.dir/buffer_pool.cc.o
+[22/160] Building CXX object src/mem/CMakeFiles/hyle_mem.dir/composite_buffer.cc.o
+[23/160] Building CXX object src/mem/CMakeFiles/hyle_mem.dir/heap.cc.o
+[24/160] Building CXX object src/mem/CMakeFiles/hyle_mem.dir/lifetime_plan.cc.o
+[25/160] Building CXX object src/mem/CMakeFiles/hyle_mem.dir/range_allocator.cc.o
+[26/160] Building CXX object src/mem/CMakeFiles/hyle_mem.dir/resource.cc.o
+[27/160] Building CXX object src/mem/CMakeFiles/hyle_mem.dir/system.cc.o
+[28/160] Building CXX object src/mem/CMakeFiles/hyle_mem.dir/stats.cc.o
+[29/160] Linking C static library bin/libmimalloc_static.a
+[30/160] Building CXX object src/compute_ops/CMakeFiles/hyle_compute_ops.dir/operation.cc.o
+[31/160] Building CXX object src/compute_ops/CMakeFiles/hyle_compute_ops.dir/tensor_desc.cc.o
+[32/160] Building CXX object src/compute_ops/CMakeFiles/hyle_compute_ops.dir/low_precision.cc.o
+[33/160] Building CXX object src/compute_ops/CMakeFiles/hyle_compute_ops.dir/weight_decode.cc.o
+[34/160] Building CXX object src/compute_ggml_runtime/vendor/src/ggml-vulkan/CMakeFiles/ggml-vulkan.dir/ggml-vulkan.cpp.o
+[35/160] Linking CXX shared library bin/libhyle_mem.0.1.0.dylib
+[36/160] Linking CXX shared library bin/libhyle_compute_ops.0.1.0.dylib
+[37/160] Linking CXX static library bin/libggml-vulkan.a
+[38/160] Creating library symlink bin/libhyle_mem.dylib
+[39/160] Creating library symlink bin/libhyle_compute_ops.dylib
+[40/160] Building CXX object src/compute/CMakeFiles/hyle_compute.dir/command_capture.cc.o
+[41/160] Building CXX object src/compute/CMakeFiles/hyle_compute.dir/completion.cc.o
+[42/160] Building CXX object src/compute/CMakeFiles/hyle_compute.dir/custom_kernel.cc.o
+[43/160] Building CXX object src/compute/CMakeFiles/hyle_compute.dir/device.cc.o
+[44/160] Building CXX object src/compute/CMakeFiles/hyle_compute.dir/operation.cc.o
+[45/160] Building CXX object src/compute/CMakeFiles/hyle_compute.dir/provider.cc.o
+[46/160] Building CXX object src/compute/CMakeFiles/hyle_compute.dir/resource_budget.cc.o
+[47/160] Building CXX object src/compute/CMakeFiles/hyle_compute.dir/resource_leases.cc.o
+/Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/compute/resource_leases.cc:459:79: warning: result of comparison of constant 1152921504606846970 with expression of type 'std::uint32_t' (aka 'unsigned int') is always false [-Wtautological-constant-out-of-range-compare]
+  459 |       options.max_resources_per_batch == 0 || options.max_resources_per_batch >
+      |                                               ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ^
+  460 |           (SIZE_MAX - detail::kEntryOffset) / sizeof(detail::LeaseUseEntry))
+      |           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+1 warning generated.
+[48/160] Building CXX object src/compute/CMakeFiles/hyle_compute.dir/retained_completion.cc.o
+[49/160] Building CXX object src/compute/CMakeFiles/hyle_compute.dir/leased_operation.cc.o
+[50/160] Building CXX object src/compute/CMakeFiles/hyle_compute.dir/route_policy.cc.o
+[51/160] Building CXX object src/compute/CMakeFiles/hyle_compute.dir/result.cc.o
+[52/160] Building CXX object src/compute/CMakeFiles/hyle_compute.dir/shape_domain.cc.o
+[53/160] Building CXX object src/compute/CMakeFiles/hyle_compute.dir/shape_program.cc.o
+[54/160] Building CXX object src/compute/CMakeFiles/hyle_compute.dir/tensor_view.cc.o
+[55/160] Building CXX object src/compute/CMakeFiles/hyle_compute.dir/transfer.cc.o
+[56/160] Building CXX object src/compute/CMakeFiles/hyle_compute.dir/workload.cc.o
+[57/160] Building CXX object src/compute_ggml_runtime/CMakeFiles/hyle_compute_ggml_runtime.dir/metadata_arena.cc.o
+[58/160] Linking CXX shared library bin/libhyle_compute.0.1.0.dylib
+[59/160] Linking CXX shared library bin/libhyle_compute_ggml_runtime.0.1.0.dylib
+[60/160] Creating library symlink bin/libhyle_compute.dylib
+[61/160] Creating library symlink bin/libhyle_compute_ggml_runtime.dylib
+[62/160] Building CXX object src/compute_provider_ggml_vulkan/CMakeFiles/hyle_compute_provider_ggml_vulkan.dir/native_device.cc.o
+[63/160] Building CXX object src/compute_provider_ggml_vulkan/CMakeFiles/hyle_compute_provider_ggml_vulkan.dir/native_graph.cc.o
+[64/160] Building CXX object src/compute_provider_ggml_vulkan/CMakeFiles/hyle_compute_provider_ggml_vulkan.dir/region.cc.o
+[65/160] Linking CXX shared library bin/libhyle_compute_provider_ggml_vulkan.0.1.0.dylib
+[66/160] Building CXX object src/time/CMakeFiles/hyle_time.dir/clock.cc.o
+[67/160] Building CXX object src/time/CMakeFiles/hyle_time.dir/interop.cc.o
+[68/160] Creating library symlink bin/libhyle_compute_provider_ggml_vulkan.dylib
+[69/160] Building CXX object src/compute_provider_iree_vulkan/CMakeFiles/hyle_compute_provider_iree_vulkan.dir/native_device.cc.o
+[70/160] Building CXX object src/compute_provider_iree_vulkan/CMakeFiles/hyle_compute_provider_iree_vulkan.dir/native_program.cc.o
+[71/160] Building CXX object src/compute_provider_iree_vulkan/CMakeFiles/hyle_compute_provider_iree_vulkan.dir/generated/programs.cc.o
+[72/160] Linking CXX shared library bin/libhyle_time.0.1.0.dylib
+[73/160] Linking CXX shared library bin/libhyle_compute_provider_iree_vulkan.0.1.0.dylib
+[74/160] Creating library symlink bin/libhyle_time.dylib
+[75/160] Creating library symlink bin/libhyle_compute_provider_iree_vulkan.dylib
+[76/160] Generating shaders/vulkan_shaders.cc, shaders/vulkan_shaders.h
+/Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/compute_route_vulkan/shaders/tensor.comp
+/Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/compute_route_vulkan/shaders/tensor.comp
+/Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/compute_route_vulkan/shaders/integer_scan.comp
+/Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/compute_route_vulkan/shaders/tensor.comp
+/Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/compute_route_vulkan/shaders/tensor.comp
+/Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/compute_route_vulkan/shaders/tensor.comp
+/Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/compute_route_vulkan/shaders/tensor.comp
+[77/160] Building CXX object src/container/CMakeFiles/hyle_container.dir/hash.cc.o
+[78/160] Building CXX object src/container/CMakeFiles/hyle_container.dir/pod_vector.cc.o
+[79/160] Building CXX object src/container/CMakeFiles/hyle_container.dir/flat_hash_map.cc.o
+[80/160] Building CXX object src/container/CMakeFiles/hyle_container.dir/dynamic_bitset.cc.o
+[81/160] Building CXX object src/container/CMakeFiles/hyle_container.dir/bitset_ops_neon.cc.o
+[82/160] Building CXX object src/container/CMakeFiles/hyle_container.dir/generated/simd-dispatch/container_bitset/container_bitset_scalar.cc.o
+[83/160] Building CXX object src/container/CMakeFiles/hyle_container.dir/generated/simd-dispatch/container_bitset/container_bitset_neon.cc.o
+[84/160] Building CXX object src/compute_route_vulkan/CMakeFiles/hyle_compute_route_vulkan.dir/vulkan_device.cc.o
+[85/160] Building CXX object src/compute_route_vulkan/CMakeFiles/hyle_compute_route_vulkan.dir/vulkan_memory.cc.o
+[86/160] Building CXX object src/compute_route_vulkan/CMakeFiles/hyle_compute_route_vulkan.dir/vulkan_leased_invocation.cc.o
+[87/160] Building CXX object src/compute_route_vulkan/CMakeFiles/hyle_compute_route_vulkan.dir/vulkan_run.cc.o
+[88/160] Building CXX object src/compute_route_vulkan/CMakeFiles/hyle_compute_route_vulkan.dir/vulkan_transfer.cc.o
+[89/160] Building CXX object src/compute_route_vulkan/CMakeFiles/hyle_compute_route_vulkan.dir/vulkan_transfer_slot.cc.o
+[90/160] Building CXX object src/compute_route_vulkan/CMakeFiles/hyle_compute_route_vulkan.dir/vulkan_weights.cc.o
+[91/160] Building CXX object src/compute_route_vulkan/CMakeFiles/hyle_compute_route_vulkan.dir/vulkan_pipeline.cc.o
+[92/160] Building CXX object src/compute_route_vulkan/CMakeFiles/hyle_compute_route_vulkan.dir/vulkan_operations.cc.o
+[93/160] Building CXX object src/compute_route_vulkan/CMakeFiles/hyle_compute_route_vulkan.dir/vulkan_tensor.cc.o
+[94/160] Building CXX object src/compute_route_vulkan/CMakeFiles/hyle_compute_route_vulkan.dir/vulkan_program.cc.o
+[95/160] Building CXX object src/compute_route_vulkan/CMakeFiles/hyle_compute_route_vulkan.dir/vulkan_recorder.cc.o
+[96/160] Building CXX object src/compute_route_vulkan/CMakeFiles/hyle_compute_route_vulkan.dir/vulkan_region.cc.o
+[97/160] Building CXX object src/compute_route_vulkan/CMakeFiles/hyle_compute_route_vulkan.dir/vulkan_scatter.cc.o
+[98/160] Building CXX object src/compute_route_vulkan/CMakeFiles/hyle_compute_route_vulkan.dir/vulkan_normalization.cc.o
+[99/160] Building CXX object src/compute_route_vulkan/CMakeFiles/hyle_compute_route_vulkan.dir/vulkan_reduction.cc.o
+[100/160] Building CXX object src/compute_route_vulkan/CMakeFiles/hyle_compute_route_vulkan.dir/vulkan_elementwise.cc.o
+[101/160] Building CXX object src/compute_route_vulkan/CMakeFiles/hyle_compute_route_vulkan.dir/vulkan_iree.cc.o
+[102/160] Building CXX object src/compute_route_vulkan/CMakeFiles/hyle_compute_route_vulkan.dir/vulkan_mlx.cc.o
+[103/160] Building CXX object src/compute_route_vulkan/CMakeFiles/hyle_compute_route_vulkan.dir/vulkan_official.cc.o
+[104/160] Building CXX object src/compute_route_vulkan/CMakeFiles/hyle_compute_route_vulkan.dir/vulkan_iq1.cc.o
+[105/160] Building CXX object src/compute_route_vulkan/CMakeFiles/hyle_compute_route_vulkan.dir/shaders/vulkan_shaders.cc.o
+[106/160] Building CXX object _deps/googletest-build/googletest/CMakeFiles/gtest.dir/src/gtest-all.cc.o
+[107/160] Linking CXX shared library bin/libhyle_container.0.1.0.dylib
+[108/160] Linking CXX shared library bin/libhyle_compute_route_vulkan.0.1.0.dylib
+[109/160] Linking CXX static library lib/libgtest.a
+[110/160] Building CXX object _deps/googletest-build/googletest/CMakeFiles/gtest_main.dir/src/gtest_main.cc.o
+[111/160] Creating library symlink bin/libhyle_container.dylib
+[112/160] Building CXX object src/graph/CMakeFiles/hyle_graph.dir/graph.cc.o
+[113/160] Building CXX object src/graph/CMakeFiles/hyle_graph.dir/effect_order.cc.o
+[114/160] Building CXX object src/graph/CMakeFiles/hyle_graph.dir/executable.cc.o
+[115/160] Building CXX object src/graph/CMakeFiles/hyle_graph.dir/view_domain.cc.o
+[116/160] Building CXX object src/graph/CMakeFiles/hyle_graph.dir/constant_artifact.cc.o
+[117/160] Building CXX object src/graph/CMakeFiles/hyle_graph.dir/leased_invocation.cc.o
+[118/160] Building CXX object src/graph/CMakeFiles/hyle_graph.dir/lease_submission.cc.o
+[119/160] Creating library symlink bin/libhyle_compute_route_vulkan.dylib
+[120/160] Linking CXX static library lib/libgtest_main.a
+[121/160] Linking CXX shared library bin/libhyle_graph.0.1.0.dylib
+[122/160] Building CXX object tests/compute/CMakeFiles/hyle_compute_result_fixture.dir/result_owner_producer.cc.o
+[123/160] Generating affine.spv
+/Users/kiro/hyle-scratch/compute-unified/source-c8874688/tests/compute_route_vulkan/affine.comp
+[124/160] Creating library symlink bin/libhyle_graph.dylib
+[125/160] Linking CXX shared library bin/libhyle_compute_result_fixture.dylib
+[126/160] Building CXX object tests/compute/CMakeFiles/hyle_compute_test.dir/completion_test.cc.o
+[127/160] Building CXX object tests/compute/CMakeFiles/hyle_compute_test.dir/provider_test.cc.o
+[128/160] Building CXX object tests/compute/CMakeFiles/hyle_compute_test.dir/resource_leases_test.cc.o
+/Users/kiro/hyle-scratch/compute-unified/source-c8874688/tests/compute/resource_leases_test.cc:53:8: warning: explicitly assigning value of variable of type 'hyle::compute::ReadLease' to itself [-Wself-assign-overloaded]
+   53 |   read = read;
+      |   ~~~~ ^ ~~~~
+1 warning generated.
+[129/160] Building CXX object tests/compute/CMakeFiles/hyle_compute_test.dir/route_policy_test.cc.o
+[130/160] Building CXX object tests/compute/CMakeFiles/hyle_compute_test.dir/shape_domain_test.cc.o
+[131/160] Building CXX object tests/compute/CMakeFiles/hyle_compute_test.dir/shape_program_test.cc.o
+[132/160] Building CXX object tests/compute/CMakeFiles/hyle_compute_test.dir/tensor_test.cc.o
+[133/160] Building CXX object tests/compute/CMakeFiles/hyle_compute_test.dir/workload_test.cc.o
+[134/160] Building CXX object tests/graph/CMakeFiles/hyle_graph_test.dir/graph_test.cc.o
+[135/160] Building CXX object tests/graph/CMakeFiles/hyle_graph_test.dir/lease_submission_test.cc.o
+[136/160] Building CXX object tests/compute_route_vulkan/CMakeFiles/hyle_compute_route_vulkan_test.dir/native_test.cc.o
+[137/160] Building CXX object tests/compute_route_vulkan/CMakeFiles/hyle_compute_route_vulkan_test.dir/lifecycle_test.cc.o
+[138/160] Building CXX object tests/compute_route_vulkan/CMakeFiles/hyle_compute_route_vulkan_test.dir/tensor_test.cc.o
+[139/160] Building CXX object tests/compute_route_vulkan/CMakeFiles/hyle_compute_route_vulkan_test.dir/view_test.cc.o
+[140/160] Building CXX object tests/compute_route_vulkan/CMakeFiles/hyle_compute_route_vulkan_test.dir/gate_norm_test.cc.o
+[141/160] Building CXX object tests/compute_route_vulkan/CMakeFiles/hyle_compute_route_vulkan_test.dir/concat_test.cc.o
+[142/160] Building CXX object tests/compute_route_vulkan/CMakeFiles/hyle_compute_route_vulkan_test.dir/reduction_test.cc.o
+[143/160] Building CXX object tests/compute_route_vulkan/CMakeFiles/hyle_compute_route_vulkan_test.dir/provider_bridge_test.cc.o
+[144/160] Building CXX object tests/compute_route_vulkan/CMakeFiles/hyle_compute_route_vulkan_test.dir/managed_region_test.cc.o
+[145/160] Building CXX object tests/compute_route_vulkan/CMakeFiles/hyle_compute_route_vulkan_test.dir/d5_qwen35_profile_test.cc.o
+[146/160] Building CXX object tests/compute_route_vulkan/CMakeFiles/hyle_compute_route_vulkan_test.dir/d5_qwen35_execution_test.cc.o
+[147/160] Building CXX object tests/compute_route_vulkan/CMakeFiles/hyle_compute_route_vulkan_test.dir/topk_test.cc.o
+[148/160] Building CXX object tests/compute_route_vulkan/CMakeFiles/hyle_compute_route_vulkan_test.dir/gather_test.cc.o
+[149/160] Building CXX object tests/compute_route_vulkan/CMakeFiles/hyle_compute_route_vulkan_test.dir/scan_test.cc.o
+[150/160] Building CXX object tests/compute_route_vulkan/CMakeFiles/hyle_compute_route_vulkan_test.dir/scatter_test.cc.o
+[151/160] Building CXX object tests/compute_route_vulkan/CMakeFiles/hyle_compute_route_vulkan_test.dir/recurrent_test.cc.o
+[152/160] Building CXX object tests/compute_route_vulkan/CMakeFiles/hyle_compute_route_vulkan_test.dir/mxfp4_test.cc.o
+[153/160] Building CXX object tests/compute_route_vulkan/CMakeFiles/hyle_compute_route_vulkan_test.dir/gguf_test.cc.o
+In file included from /Users/kiro/hyle-scratch/compute-unified/source-c8874688/tests/compute_route_vulkan/gguf_test.cc:1:
+/Users/kiro/hyle-scratch/compute-unified/source-c8874688/tests/compute_route_vulkan/gguf_test_support.h:67:11: warning: enumeration values 'kIq1Xxxs', 'kIq1Xxs', and 'kIq1Xs' not handled in switch [-Wswitch]
+   67 |   switch (type) {
+      |           ^~~~
+/Users/kiro/hyle-scratch/compute-unified/source-c8874688/tests/compute_route_vulkan/gguf_test_support.h:67:11: note: add missing switch cases
+   67 |   switch (type) {
+      |           ^
+1 warning generated.
+[154/160] Building CXX object tests/compute_route_vulkan/CMakeFiles/hyle_compute_route_vulkan_test.dir/iree_test.cc.o
+[155/160] Building CXX object tests/compute_route_vulkan/CMakeFiles/hyle_compute_route_vulkan_test.dir/mature_tensor_test.cc.o
+[156/160] Building CXX object tests/compute_route_vulkan/CMakeFiles/hyle_compute_route_vulkan_test.dir/catalogue_test.cc.o
+In file included from /Users/kiro/hyle-scratch/compute-unified/source-c8874688/tests/compute_route_vulkan/catalogue_test.cc:2:
+In file included from /Users/kiro/hyle-scratch/compute-unified/source-c8874688/tests/compute_route_vulkan/catalogue_gguf_test_support.h:8:
+/Users/kiro/hyle-scratch/compute-unified/source-c8874688/tests/compute_route_vulkan/gguf_test_support.h:67:11: warning: enumeration values 'kIq1Xxxs', 'kIq1Xxs', and 'kIq1Xs' not handled in switch [-Wswitch]
+   67 |   switch (type) {
+      |           ^~~~
+/Users/kiro/hyle-scratch/compute-unified/source-c8874688/tests/compute_route_vulkan/gguf_test_support.h:67:11: note: add missing switch cases
+   67 |   switch (type) {
+      |           ^
+1 warning generated.
+[157/160] Linking CXX executable bin/hyle_compute_test
+[158/160] Linking CXX executable bin/hyle_graph_test
+[159/160] Linking CXX executable bin/hyle_compute_route_vulkan_test

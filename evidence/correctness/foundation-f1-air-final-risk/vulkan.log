@@ -1,0 +1,23 @@
+Running main() from /Users/kiro/Library/Caches/hyle/dependencies/v1/sources/googletest-063de7e9578f-162765170ae6/googletest/src/gtest_main.cc
+Note: Google Test filter = VulkanLeaseLifetime.*:VulkanLifetime.CancellationAndAbandonmentKeepOwnersWithoutDestructorWait:VulkanLifetime.ManagedPrefixSurvivesRejectedNativeSuffixUntilDrain
+[==========] Running 5 tests from 2 test suites.
+[----------] Global test environment set-up.
+[----------] 3 tests from VulkanLeaseLifetime
+[ RUN      ] VulkanLeaseLifetime.CancellationAndAbandonmentKeepImportedOwnerUntilDrain
+[       OK ] VulkanLeaseLifetime.CancellationAndAbandonmentKeepImportedOwnerUntilDrain (580 ms)
+[ RUN      ] VulkanLeaseLifetime.RejectedSuffixRetainsLeasesAndFirstErrorThroughNativePrefix
+[       OK ] VulkanLeaseLifetime.RejectedSuffixRetainsLeasesAndFirstErrorThroughNativePrefix (97 ms)
+[ RUN      ] VulkanLeaseLifetime.ZeroColdMetadataQuotaRejectsThenSameReadyImportComputes
+[       OK ] VulkanLeaseLifetime.ZeroColdMetadataQuotaRejectsThenSameReadyImportComputes (11 ms)
+[----------] 3 tests from VulkanLeaseLifetime (689 ms total)
+
+[----------] 2 tests from VulkanLifetime
+[ RUN      ] VulkanLifetime.CancellationAndAbandonmentKeepOwnersWithoutDestructorWait
+[       OK ] VulkanLifetime.CancellationAndAbandonmentKeepOwnersWithoutDestructorWait (11 ms)
+[ RUN      ] VulkanLifetime.ManagedPrefixSurvivesRejectedNativeSuffixUntilDrain
+[       OK ] VulkanLifetime.ManagedPrefixSurvivesRejectedNativeSuffixUntilDrain (79 ms)
+[----------] 2 tests from VulkanLifetime (91 ms total)
+
+[----------] Global test environment tear-down
+[==========] 5 tests from 2 test suites ran. (780 ms total)
+[  PASSED  ] 5 tests.

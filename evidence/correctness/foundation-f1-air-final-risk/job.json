@@ -1,0 +1,152 @@
+{
+  "candidate": "e399059002d17491ec1c87a0bf8f40f4642606ac",
+  "source": "/Users/kiro/hyle-scratch/compute-unified/source-c8874688",
+  "build": "/Users/kiro/hyle-scratch/compute-unified/a-vulkan/selected-graph/shared-sdk-build",
+  "identity": {
+    "hardware": "Mac16,12",
+    "memory": "17179869184",
+    "os": "ProductName:\t\tmacOS\nProductVersion:\t\t27.0.1\nBuildVersion:\t\t26A434",
+    "compiler": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin",
+    "cmake": "cmake version 4.3.4\n\nCMake suite maintained and supported by Kitware (kitware.com/cmake).",
+    "ninja": "1.13.2"
+  },
+  "configuration": "Release/shared/source/shipping instrumentationOFF testsON installOFF graph/vulkan",
+  "parallel": 1,
+  "stages": [
+    {
+      "name": "configure",
+      "command": [
+        "/opt/homebrew/bin/cmake",
+        "-S",
+        "/Users/kiro/hyle-scratch/compute-unified/source-c8874688",
+        "-B",
+        "/Users/kiro/hyle-scratch/compute-unified/a-vulkan/selected-graph/shared-sdk-build",
+        "-DHYLE_COMPONENTS=graph",
+        "-DHYLE_COMPUTE_ROUTES=vulkan",
+        "-DHYLE_BUILD_TESTS=ON",
+        "-DHYLE_BUILD_BENCH=OFF",
+        "-DHYLE_INSTALL=OFF",
+        "-DHYLE_TEST_INSTRUMENTATION=OFF"
+      ],
+      "pid": 22650,
+      "state": "terminal",
+      "available_bytes": 7089455104,
+      "log": "configure.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "509bc7a24037f28b67801fdbdcb1301da2285678677a6c335755b7cfe374f628"
+    },
+    {
+      "name": "build",
+      "command": [
+        "/opt/homebrew/bin/cmake",
+        "--build",
+        "/Users/kiro/hyle-scratch/compute-unified/a-vulkan/selected-graph/shared-sdk-build",
+        "--target",
+        "hyle_compute_test",
+        "hyle_graph_test",
+        "hyle_compute_route_vulkan_test",
+        "--parallel",
+        "1"
+      ],
+      "pid": 22906,
+      "state": "terminal",
+      "available_bytes": 7081984000,
+      "log": "build.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "8d38bc9fa42be6b5dfab1e7745cb184a8fb0135acc4e9e01bb989efb3d1c191d"
+    },
+    {
+      "name": "compute",
+      "command": [
+        "/Users/kiro/hyle-scratch/compute-unified/a-vulkan/selected-graph/shared-sdk-build/bin/hyle_compute_test",
+        "--gtest_filter=ResourceLeases.*:Completion.*:OwnedResult.*"
+      ],
+      "pid": 23282,
+      "state": "terminal",
+      "available_bytes": 7452098560,
+      "log": "compute.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "c99063ce8fd8c9f54796f7cdb992a4592a24caf6648c5471847c15886c2d5cd1"
+    },
+    {
+      "name": "graph",
+      "command": [
+        "/Users/kiro/hyle-scratch/compute-unified/a-vulkan/selected-graph/shared-sdk-build/bin/hyle_graph_test",
+        "--gtest_filter=LeaseSubmission.*"
+      ],
+      "pid": 23289,
+      "state": "terminal",
+      "available_bytes": 7411187712,
+      "log": "graph.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "2bde8980c39baf2871b1b01f99003f09b99af3754a8fe4a2660af05714dd8b4b"
+    },
+    {
+      "name": "vulkan",
+      "command": [
+        "/Users/kiro/hyle-scratch/compute-unified/a-vulkan/selected-graph/shared-sdk-build/bin/hyle_compute_route_vulkan_test",
+        "--gtest_filter=VulkanLeaseLifetime.*:VulkanLifetime.CancellationAndAbandonmentKeepOwnersWithoutDestructorWait:VulkanLifetime.ManagedPrefixSurvivesRejectedNativeSuffixUntilDrain"
+      ],
+      "pid": 23291,
+      "state": "terminal",
+      "available_bytes": 7411187712,
+      "log": "vulkan.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "0d87a8952d64dc674c514179b5b8a05f344006f39b7e15b47dc93e8e8f14b894"
+    }
+  ],
+  "source_hashes": {
+    "cmake/HyleComponents.cmake": "ed774de3124be45fac33225e9f0535deb62ffcb407e5f83ff7ad4ec122232b06",
+    "include/hyle/compute/apple.h": "49edf964d53300d6e00c7227e6ef56fd0de10c06364079f2be7a81f7466b636a",
+    "include/hyle/compute/apple_memory.h": "bf2ff085cb3f1c2fab2460cb5d9c89d44181a961f42a644cf7c42e2c7af3fcab",
+    "include/hyle/compute/backends/cuda.h": "9b1565cee1a199e46a524da1d244f6f5e1c3d8236bd5e69849583ee5ff27a91f",
+    "include/hyle/compute/detail/lease_access.h": "8bd09fcbb50565b23c3fa1d503c480b2d374e89719cd78f7691133e3b361d286",
+    "include/hyle/compute/detail/native_lease_inputs.h": "57fa15f11a88bb50425e2d728d774240d0bcecf880410eb1636b30d3cf9e8aa7",
+    "include/hyle/compute/detail/retained_completion.h": "c6b7672c5261e117d654e289b8f7fb29a2c9a441f20183ff5d416dc824b66460",
+    "include/hyle/compute/leased_operation.h": "f86ac789b456e8084061f068de2ac947fddbdaf552ed1042585dd5beb1c56185",
+    "include/hyle/compute/resource_leases.h": "22d7f2153ef8c0b1f6602b84ab00d96d75afc576f3b093a59749ab4f6891446d",
+    "include/hyle/compute/vulkan.h": "a72711fc9cd8c21c01b759c0a90951a079f8643df18097e3af0d6e260383ce24",
+    "include/hyle/compute/vulkan_memory.h": "2a0afe149f61039b35f209ef1c043b22b55cf2ad5da48fecdb0d75d4ea5a54b4",
+    "include/hyle/graph/cpu_apple.h": "c1e1a285c8d3a5a4847446060ad734f9beba8a02ba02cd7de86471587c73feb2",
+    "include/hyle/graph/cpu_vulkan.h": "8dc437f6289030c55ff4a450170e6b804a4b788d5c999b2211b90aed9396c638",
+    "include/hyle/graph/detail/lease_submission.h": "3a7263a3e8176f34ffda74194598eb064ddbcf35f66cbf7c066ae8a83226a0df",
+    "include/hyle/graph/leased_invocation.h": "adf1b31c77c4aaa82c6dc1d87273fa30c53ba695d30f97d91459dbe0a1341714",
+    "src/compute/CMakeLists.txt": "df195507c0cd79baf089944803c2f7c396c4a4c2c0df6fe37475b59ed4ae6e1d",
+    "src/compute/completion.cc": "97e28207d6798bcc367a5073f997e5a99cb70da1a0574898200250d730a05d48",
+    "src/compute/leased_operation.cc": "90a9657cdb55e86c811f2b05e05d05be7dd1f74237cc6b3b816d02bb037e2bd4",
+    "src/compute/resource_leases.cc": "137ef94fa59451003249445820580b06db771c82600820c97f0cd8e3bd68d3cb",
+    "src/compute/retained_completion.cc": "5c9e0df75969302108a6f53f981d181b84b323f8d90a71c3d8a4588ee0a9bdab",
+    "src/compute_backend_cuda/CMakeLists.txt": "f3244d4383efca70c0db1796a744d5874c23228531857868cf576bb8212dee2d",
+    "src/compute_backend_cuda/cuda_backend.cc": "0567c6bab441d5ed68e04b93c7c40b2b9e2b545f93152e2efa3552a0b03580cc",
+    "src/compute_backend_cuda/cuda_internal.h": "f970ac2ef0cd49c766ee14128075f41f22ae37fdcf617ec47e9d19e54328e10d",
+    "src/compute_backend_cuda/cuda_memory.cc": "66911407e1106d07e09eb5f3bb15700d247a1adf513226586dfd8953d618be9a",
+    "src/compute_route_apple/CMakeLists.txt": "b013820262cec7dc7cbdb466290fc82f2bdb76c2b948db13e105ac97ef468a78",
+    "src/compute_route_apple/apple_context.cc": "a9eef93b1eb9c0b2adb277027fd19ebe643a477ba276c303c993bce45a77f868",
+    "src/compute_route_apple/apple_leased_invocation.cc": "8a91d112b2b127a36d56f30a2625be8e3c890f63f155d463463ccc3d8902dcf0",
+    "src/compute_route_apple/apple_memory.mm": "7f584e85d300cc2006cc0e134bad51d0b84a25098e530525507747af0fb350b6",
+    "src/compute_route_vulkan/CMakeLists.txt": "e15a4a7374ef1d865c9eb7429eb6f5d02d285b4e682370be89606a3c710c3d21",
+    "src/compute_route_vulkan/vulkan_internal.h": "377d598aff268e8e76f28973d90f952e2f266a89c384d52f22d3b7fa67c5d2e2",
+    "src/compute_route_vulkan/vulkan_leased_invocation.cc": "d9f7217f62e8c5bf99094f575a60b6eea62e4d204ba480f648b605e3eafd5d6c",
+    "src/compute_route_vulkan/vulkan_memory.cc": "4c08b8cb6173d4dfad606da491a4a978ea03f5d138e136afcb0b4dd093e87c9f",
+    "src/compute_route_vulkan/vulkan_program.cc": "13574de43118478580ae8b7f2b0daad8d1384d17fdd5e5c64ec37b68367ab3c7",
+    "src/compute_route_vulkan/vulkan_run.cc": "c58341b9d565d1cb42980371291215eb901b1df0512f42e05df985dc5c8bb558",
+    "src/graph/CMakeLists.txt": "c922263f5bc03c5cbda1af8b9a0db7a9c6f22b28b99d720862870621468260f0",
+    "src/graph/executable.cc": "c48cbbd64137d99e7345613a0f99f84347e0762f816388a4f795b0b90ca36117",
+    "src/graph/lease_submission.cc": "7d287bc99a8050631068d454f21dcc15bc6fe02f7f0fdac76207e727d428bd1c",
+    "src/graph/leased_invocation.cc": "de12aea1cc3fdb483a1b8a84aa7893e27c9358fcfa41fa5a7ecd340f159fe604",
+    "src/graph/plan_state.h": "487cf8b66bd74689d85552e4b3c9da4cce443ddc2e5ae24caa59c3763d4e7256",
+    "src/graph/submission_internal.h": "6b9c9dbd5b52463a6eaef28d9412f990ad8abd838f865348c186590ce541dbda",
+    "src/graph_route_cpu_apple/invocation.cc": "7173812a1dd4a17de26834bd7900bcd72115bc65fdaa397187f317bb760fb5c9",
+    "src/graph_route_cpu_vulkan/invocation.cc": "e592defb8eb50f5edaf298e9f44314a518bbb2572d8757603d61a186d7a67a5e",
+    "tests/compute/resource_leases_test.cc": "a68162f22e61ce2643ea25fdc8c396bce5a598142d8f5cfe343f4819957e0ede",
+    "tests/compute/completion_test.cc": "8bf19aeb34a63c5fcb76d8caa46d106849e27817bb23b6c8bc08ed08aad58f11",
+    "tests/graph/lease_submission_test.cc": "8cca068e1f67875abf1f4d3906296dfdb411e3fb8f1b6b61ea47426892aea6f1",
+    "tests/compute_route_vulkan/lifecycle_test.cc": "cbf19c2b590bfae371fba2ee5767c060235c72becca99af8ef23d04356e8316d"
+  },
+  "verdict": "PASS"
+}

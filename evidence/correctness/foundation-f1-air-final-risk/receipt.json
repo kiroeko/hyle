@@ -1,0 +1,48 @@
+{
+  "schema_version": 1,
+  "candidate": "e399059002d17491ec1c87a0bf8f40f4642606ac",
+  "product_candidate": "fc4ffbd1610eb3b24bf76709dc6e5e25b3d838d7",
+  "current_candidate": "3034fc595abf5c2570e06dedbf195b34daf3fe72",
+  "identity": {
+    "hardware": "Mac16,12",
+    "memory": "17179869184",
+    "os": "ProductName:\t\tmacOS\nProductVersion:\t\t27.0.1\nBuildVersion:\t\t26A434",
+    "compiler": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin",
+    "cmake": "cmake version 4.3.4\n\nCMake suite maintained and supported by Kitware (kitware.com/cmake).",
+    "ninja": "1.13.2"
+  },
+  "configuration": "Release/shared/source/shipping instrumentationOFF testsON installOFF graph/vulkan",
+  "scope": "MacBook Air libc++ common lease/completion/prefix control plus actual native Vulkan lease lifetime qualification",
+  "source_qualification": "46 relevant product/test files match exact Git blob SHA256 from current fixed Windows candidate; source mirror is validation copy only",
+  "tests": [
+    {
+      "name": "Compute common permissions completion and owned-result control",
+      "cases": 27,
+      "verdict": "PASS",
+      "log": "compute.log"
+    },
+    {
+      "name": "Graph LeaseSubmission protocol",
+      "cases": 3,
+      "verdict": "PASS",
+      "log": "graph.log"
+    },
+    {
+      "name": "Native Vulkan lease cancel abandon accepted-prefix failure and cold metadata refusal plus original lifetime fixtures",
+      "cases": 5,
+      "verdict": "PASS",
+      "log": "vulkan.log"
+    }
+  ],
+  "receipt": "job.json",
+  "parallel": 1,
+  "limitation": "Source shipping/instrumentationOFF; these controls do not replace independently recorded installed SDK math or host sanitizers. Final F1 terminal still pending Windows CPU CUDA shared SDK and final gate adjudication.",
+  "log_sha256": {
+    "build.log": "8d38bc9fa42be6b5dfab1e7745cb184a8fb0135acc4e9e01bb989efb3d1c191d",
+    "compute.log": "c99063ce8fd8c9f54796f7cdb992a4592a24caf6648c5471847c15886c2d5cd1",
+    "configure.log": "509bc7a24037f28b67801fdbdcb1301da2285678677a6c335755b7cfe374f628",
+    "graph.log": "2bde8980c39baf2871b1b01f99003f09b99af3754a8fe4a2660af05714dd8b4b",
+    "job.json": "80c156f6c9d6c455f1b3dddb59f91830a83992240eded6e67634525e38526404",
+    "vulkan.log": "0d87a8952d64dc674c514179b5b8a05f344006f39b7e15b47dc93e8e8f14b894"
+  }
+}
