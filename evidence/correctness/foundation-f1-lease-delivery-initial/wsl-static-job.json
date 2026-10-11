@@ -1,0 +1,119 @@
+{
+  "candidate": "8bf5b2ebea3021264128df34b25ed7e94964caa1",
+  "mode": "static",
+  "source": "/root/hyle-scratch/compute-unified/source-7a7b4c3b",
+  "routes": [
+    "cpu",
+    "cuda"
+  ],
+  "compiler": "GCC14.2.0/libstdc++14",
+  "machine": "Ubuntu24.04.4/WSL2/x86_64/RTX4070",
+  "parallel": 1,
+  "stages": [
+    {
+      "name": "producer",
+      "command": [
+        "/usr/bin/cmake",
+        "--build",
+        "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/static-sdk-build",
+        "--parallel",
+        "1"
+      ],
+      "pid": 647,
+      "state": "terminal",
+      "available_bytes": 32404647936,
+      "log": "producer.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "d95de3beec6908981dfca6969d41d5d6cb9fbcf142e51b1ac03b6fdae4c48356"
+    },
+    {
+      "name": "install",
+      "command": [
+        "/usr/bin/cmake",
+        "--install",
+        "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/static-sdk-build",
+        "--prefix",
+        "/root/hyle-scratch/compute-unified/foundation-f1-wsl-sdk/static-staging"
+      ],
+      "pid": 2109,
+      "state": "terminal",
+      "available_bytes": 32058339328,
+      "log": "install.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "ced4e54edaca56ee9ae6981e37a8cafff46e1637836122e297d68283e8922098"
+    },
+    {
+      "name": "configure",
+      "command": [
+        "/usr/bin/cmake",
+        "-S",
+        "/root/hyle-scratch/compute-unified/foundation-f1-wsl-sdk/static-parent",
+        "-B",
+        "/root/hyle-scratch/compute-unified/foundation-f1-wsl-sdk/static-consumer",
+        "-G",
+        "Ninja",
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DCMAKE_CXX_COMPILER=/usr/bin/g++-14",
+        "-DCMAKE_PREFIX_PATH=/root/hyle-scratch/compute-unified/foundation-f1-wsl-sdk/static-relocated"
+      ],
+      "pid": 2110,
+      "state": "terminal",
+      "available_bytes": 32044482560,
+      "log": "configure.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "c33bba741555850565797ca984ddfb38ccf5c4b3f355027657a04765d57b45fc"
+    },
+    {
+      "name": "consumer-build",
+      "command": [
+        "/usr/bin/cmake",
+        "--build",
+        "/root/hyle-scratch/compute-unified/foundation-f1-wsl-sdk/static-consumer",
+        "--parallel",
+        "1"
+      ],
+      "pid": 2161,
+      "state": "terminal",
+      "available_bytes": 32177528832,
+      "log": "consumer-build.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "507c5d48ea38a3719663e8177f091f23673808ec9818b741db9dbb200ee9c3b0"
+    },
+    {
+      "name": "lease-test",
+      "command": [
+        "/root/hyle-scratch/compute-unified/foundation-f1-wsl-sdk/static-consumer/leases"
+      ],
+      "pid": 2185,
+      "state": "terminal",
+      "available_bytes": 32154914816,
+      "log": "lease-test.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "744cf36aff177ec2dab2273bb870e3c92c25b4377c6be1155c093f51730dad31"
+    },
+    {
+      "name": "mixed-test",
+      "command": [
+        "/root/hyle-scratch/compute-unified/foundation-f1-wsl-sdk/static-consumer/mixed"
+      ],
+      "pid": 2193,
+      "state": "terminal",
+      "available_bytes": 32146214912,
+      "log": "mixed-test.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "69d5a9c5b6b0ba8cb86ffc2dc9ecc650c8bdd19c9c9e2d8e341681a8be302be7"
+    }
+  ],
+  "relocation": {
+    "original": "/root/hyle-scratch/compute-unified/foundation-f1-wsl-sdk/static-staging",
+    "relocated": "/root/hyle-scratch/compute-unified/foundation-f1-wsl-sdk/static-relocated",
+    "original_absent": true
+  },
+  "verdict": "PASS"
+}

@@ -639,6 +639,10 @@ source 不替 installed static/shared、CUDA observation fault 或最终红队�
 
 ### WSL F1-04 / leased native prefix 固定资格
 
+`8bf5b2ebe` WSL static SDK 的 producer、安装、实际迁址、独立消费者构建与两消费者运行全部通过。
+普通 CPU/CUDA Direct+Graph 租约数学和原 CPU+CUDA managed contract 均通过，原阶段日志收入交付收据。
+同输入 shared SDK 正在串行验证；这份 static 结果不代签 shared 或下面的 observation fault。
+
 普通 SDK job 全部终态后，Windows 同一不可变产品源在 WSL 独立 fault tree 用
 `HYLE_DEV_FACTORS=compute_backend_cuda;compute_provider_cublas;graph`、Release/shared、tests ON、
 `HYLE_TEST_INSTRUMENTATION=ON`、INSTALL OFF、build1/test1；GCC14.2/nvcc13.3/真实 RTX4070，阶段前4GiB。
@@ -648,6 +652,18 @@ source 不替 installed static/shared、CUDA observation fault 或最终红队�
 及 `GraphNativeRetirement.*`。原 hooks 只装饰实际 event 的观察返回，GPU命令与保活沿原 runtime，不写新 fixture/kernel。
 各 exe timeout120，configure300/build1800，原失败保留，预算不重置；不换 shipping SDK 树为插桩，不跑其他算子/P1。
 shipping/common 的同产品配置证据已按各平台保留；该 fault 资格只签这份实际未知观察/前缀退役格。
+
+### Windows CPU+Vulkan installed static managed 接缝补格
+
+矩阵复核发现 Windows Vulkan-only static 已通过，但它没有链接 `graph_route_cpu_vulkan`，不能代签
+CPU+Vulkan managed ReadLease bind 的 static 导出。旧 H3 临时 static producer 已按其 terminal 清理，
+目前没有可复用的 CPU+Vulkan static producer；复用已有 dependency cache，建立本批独立 producer。
+固定普通 `HYLE_COMPONENTS=graph`、`HYLE_COMPUTE_ROUTES=cpu;vulkan`、Release/static、tests/bench OFF、
+INSTALL ON、shipping/OFF，不增加用户 factor/provider 开关。configure300/build1800/install600，
+build1/test1，阶段前4GiB；与 WSL SDK/fault 重型 run 串行。安装到本批新 staging 后真实迁址，
+独立父工程只链接 imported `hyle::graph`，运行同一 `resource_leases` 和原 `cpu_vulkan_contracts.cc`，
+每消费者180秒、EXE-local DLL/system-only PATH，保留命令、候选、日志与失败。只补这一个交付格，
+不恢复 H3 旧 task、不重跑算子/P1、不修改产品或公共构建工具。
 
 ### P0 成本账（源码审计，完整裁决待剩余资格）
 
