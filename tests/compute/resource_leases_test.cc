@@ -8,6 +8,7 @@
 
 #include "completion_internal.h"
 #include "hyle/compute/detail/completion_access.h"
+#include "hyle/compute/detail/lease_access.h"
 #include "hyle/compute/resource_leases.h"
 
 namespace {
@@ -38,6 +39,92 @@ const hyle::compute::detail::CompletionVTable kPending{
       static_cast<PendingUse *>(opaque)->done = true;
       return hyle::Status::Ok();
     }};
+
+// F2 control protocol only. These tests do not certify native ordering; the
+// copy owner must separately prove the original device/phase dependency.
+TEST(CopyLeaseHandoff, SuccessfulProducerCanPublishWhileOrderedReaderRemainsPending) {
+  auto pool = LeasePool::create(mem::system_resource(), 512, {.max_blocks = 1}).value();
+  auto writer = pool.allocate(256).value();
+  ASSERT_TRUE(writer.view()->fill(std::byte{37}).ok());
+  auto uses = LeaseUsePool::create({.max_batches = 2, .max_resources_per_batch = 1}).value();
+  auto produced = uses.begin().value(), consumed = uses.begin().value();
+  ASSERT_TRUE(detail::LeaseAccess::write_unique(produced, writer, false).ok());
+  ASSERT_TRUE(detail::LeaseAccess::ordered_read_unique(consumed, writer).ok());
+  PendingUse producing, consuming;
+  auto producer = detail::CompletionAccess::make(&kPending, &producing);
+  auto consumer = detail::CompletionAccess::make(&kPending, &consuming);
+  ASSERT_TRUE(produced.attach(producer).ok()); ASSERT_TRUE(consumed.attach(consumer).ok());
+  EXPECT_FALSE(detail::LeaseAccess::publish_after_writes(writer).has_value());
+  ASSERT_TRUE(producer.wait().ok());
+  EXPECT_EQ(pool.stats().active_uses, 1u);
+  EXPECT_FALSE(writer.view().has_value()); // even readonly native use excludes mutable access
+  EXPECT_FALSE(writer.publish().has_value()); // unchanged public rule
+  auto ready = detail::LeaseAccess::publish_after_writes(writer).value();
+  EXPECT_FALSE(writer.valid());
+  std::array<std::byte, 8> observed{};
+  ASSERT_TRUE(ready.subview(0, observed.size())->view()->read(observed).ok());
+  for (auto value : observed) EXPECT_EQ(value, std::byte{37});
+  EXPECT_FALSE(ready.try_write().has_value());
+  EXPECT_EQ(consumer.poll().value(), CompletionPoll::kPending);
+  ASSERT_TRUE(consumer.wait().ok());
+  EXPECT_EQ(pool.stats().active_uses, 0u);
+  EXPECT_TRUE(ready.try_write().has_value());
+}
+
+TEST(CopyLeaseHandoff, AllOrderedWritersMustActuallyRetireBeforeReady) {
+  auto pool = LeasePool::create(mem::system_resource(), 512, {.max_blocks = 1}).value();
+  auto writer = pool.allocate(256).value();
+  auto uses = LeaseUsePool::create({.max_batches = 2, .max_resources_per_batch = 1}).value();
+  auto first = uses.begin().value(), second = uses.begin().value();
+  ASSERT_TRUE(detail::LeaseAccess::write_unique(first, writer, false).ok());
+  ASSERT_TRUE(detail::LeaseAccess::write_unique(second, writer, true).ok());
+  PendingUse a, b;
+  auto one = detail::CompletionAccess::make(&kPending, &a);
+  auto two = detail::CompletionAccess::make(&kPending, &b);
+  ASSERT_TRUE(first.attach(one).ok()); ASSERT_TRUE(second.attach(two).ok());
+  ASSERT_TRUE(one.wait().ok());
+  EXPECT_FALSE(detail::LeaseAccess::publish_after_writes(writer).has_value());
+  EXPECT_EQ(pool.stats().active_uses, 1u);
+  ASSERT_TRUE(two.wait().ok());
+  EXPECT_TRUE(detail::LeaseAccess::publish_after_writes(writer).has_value());
+}
+
+TEST(CopyLeaseHandoff, ReadFailurePreservesReadyBytesButWriterFailureCannotPublish) {
+  auto pool = LeasePool::create(mem::system_resource(), 512, {.max_blocks = 2}).value();
+  auto writer = pool.allocate(256).value(), bad_writer = pool.allocate(256).value();
+  ASSERT_TRUE(writer.view()->fill(std::byte{19}).ok());
+  auto uses = LeaseUsePool::create({.max_batches = 2, .max_resources_per_batch = 1}).value();
+  auto read = uses.begin().value();
+  ASSERT_TRUE(detail::LeaseAccess::ordered_read_unique(read, writer).ok());
+  auto ready = detail::LeaseAccess::publish_after_writes(writer).value();
+  auto cancelled_read = Completion::completed(hyle::Status::Cancelled("reader cancelled"));
+  ASSERT_TRUE(read.attach(cancelled_read).ok());
+  std::array<std::byte, 8> observed{};
+  ASSERT_TRUE(ready.subview(0, observed.size())->view()->read(observed).ok());
+  for (auto value : observed) EXPECT_EQ(value, std::byte{19});
+  EXPECT_TRUE(ready.try_write().has_value());
+  auto write = uses.begin().value();
+  ASSERT_TRUE(detail::LeaseAccess::write_unique(write, bad_writer, false).ok());
+  auto failed_write = Completion::completed(hyle::Status::Unavailable("producer failed"));
+  ASSERT_TRUE(write.attach(failed_write).ok());
+  EXPECT_FALSE(bad_writer.publish().has_value());
+  EXPECT_FALSE(detail::LeaseAccess::publish_after_writes(bad_writer).has_value());
+}
+
+TEST(CopyLeaseHandoff, OrdinaryWriterCapacityAndClosedSourceChecksRemain) {
+  auto pool = LeasePool::create(mem::system_resource(), 512, {.max_blocks = 2}).value();
+  auto first = pool.allocate(256).value(), second = pool.allocate(256).value();
+  auto uses = LeaseUsePool::create({.max_batches = 2, .max_resources_per_batch = 1}).value();
+  auto one = uses.begin().value(), rejected = uses.begin().value();
+  ASSERT_TRUE(detail::LeaseAccess::write_unique(one, first, false).ok());
+  EXPECT_TRUE(detail::LeaseAccess::write_unique(rejected, first, false).IsUnavailable());
+  EXPECT_TRUE(detail::LeaseAccess::write_unique(one, second, false).IsResourceExhausted());
+  one = {};
+  auto ready = first.publish().value();
+  ASSERT_TRUE(pool.close().ok());
+  EXPECT_TRUE(detail::LeaseAccess::read_unique(rejected, ready).IsFailedPrecondition());
+  EXPECT_EQ(pool.stats().active_uses, 0u);
+}
 
 TEST(ResourceLeases, SharedReadersAndSubviewsPreventMutationAndHoldRange) {
   auto pool = LeasePool::create(mem::system_resource(), 1024, {.max_blocks = 2}).value();

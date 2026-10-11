@@ -145,7 +145,7 @@ void release_episode(void *opaque) noexcept {
       std::lock_guard guard(domain->lock);
       domain->incref();
       if (entry.write) {
-        HYLE_FATAL_ASSERT(block->writes == 1);
+        HYLE_FATAL_ASSERT(block->writes != 0);
         --block->writes;
       }
     }
@@ -174,14 +174,17 @@ void release_episode(void *opaque) noexcept {
   if (last_pool) pool->decref();
 }
 
+template<bool Unique = false, bool Ordered = false, bool ExclusiveRead = false>
 Status add_use(LeaseUseEpisode *episode, LeaseBlock *block, bool write) noexcept {
   if (episode == nullptr || block == nullptr)
     return Status::FailedPrecondition("resource use or lease is empty");
-  for (std::uint32_t index = 0; index < episode->count; ++index) {
-    const auto &entry = entries(episode)[index];
-    if (entry.block == block)
-      return entry.write == write ? Status::Ok()
-                                 : Status::InvalidArgument("one use cannot mix lease permissions");
+  if constexpr (!Unique) {
+    for (std::uint32_t index = 0; index < episode->count; ++index) {
+      const auto &entry = entries(episode)[index];
+      if (entry.block == block)
+        return entry.write == write ? Status::Ok()
+                                   : Status::InvalidArgument("one use cannot mix lease permissions");
+    }
   }
   if (episode->count == episode->pool->capacity)
     return Status::ResourceExhausted("resource use metadata capacity exhausted");
@@ -189,11 +192,17 @@ Status add_use(LeaseUseEpisode *episode, LeaseBlock *block, bool write) noexcept
   {
     std::lock_guard guard(domain->lock);
     if (domain->closed) return Status::FailedPrecondition("lease domain is closed");
-    if (block->writer != write)
+    if (block->writer != (write || ExclusiveRead))
       return Status::FailedPrecondition("resource use does not match lease permission");
     if (!block->failure.ok()) return block->failure;
-    if (write && block->writes != 0)
-      return Status::Unavailable("resource already has an admitted writer");
+    if constexpr (!Ordered) {
+      if (write && block->writes != 0)
+        return Status::Unavailable("resource already has an admitted writer");
+    }
+    if constexpr (Ordered) {
+      if (write && block->writes == UINT32_MAX)
+        return Status::ResourceExhausted("resource writer use count exhausted");
+    }
     if (write) ++block->writes;
     block->incref();
     domain->uses.fetch_add(1, std::memory_order_relaxed);
@@ -268,6 +277,30 @@ void detail::LeaseAccess::retire_native(LeaseUseBatch &uses, Status terminal) no
   if (!uses.valid()) return;
   auto retired = Completion::completed(std::move(terminal));
   HYLE_FATAL_ASSERT(uses.attach(retired).ok());
+}
+
+Status detail::LeaseAccess::read_unique(LeaseUseBatch &uses, const ReadLease &lease) noexcept {
+  return detail::add_use<true>(uses.state_, lease.block_, false);
+}
+Status detail::LeaseAccess::ordered_read_unique(LeaseUseBatch &uses, const WriteLease &lease) noexcept {
+  return detail::add_use<true, true, true>(uses.state_, lease.block_, false);
+}
+Status detail::LeaseAccess::write_unique(LeaseUseBatch &uses, const WriteLease &lease,
+                                       bool ordered_after_prior) noexcept {
+  return ordered_after_prior ? detail::add_use<true, true>(uses.state_, lease.block_, true)
+                             : detail::add_use<true>(uses.state_, lease.block_, true);
+}
+Result<ReadLease> detail::LeaseAccess::publish_after_writes(WriteLease &lease) noexcept {
+  if (!lease.block_)
+    return std::unexpected(Status::FailedPrecondition("copy output lease is empty"));
+  auto *block = lease.block_;
+  std::lock_guard guard(block->domain->lock);
+  if (block->writes != 0)
+    return std::unexpected(Status::Unavailable("copy output still has admitted writers"));
+  if (!block->failure.ok()) return std::unexpected(block->failure);
+  HYLE_FATAL_ASSERT(block->writer);
+  block->writer = false;
+  return ReadLease(std::exchange(lease.block_, nullptr), lease.offset_, lease.size_);
 }
 
 Result<ReadLease> ReadLease::adopt(mem::Buffer &&backing, LeaseImportOptions options) noexcept {
@@ -365,8 +398,8 @@ std::uint64_t WriteLease::generation() const noexcept { return block_ ? block_->
 Result<mem::BufferView> WriteLease::view() const noexcept {
   if (!block_) return std::unexpected(Status::FailedPrecondition("lease is empty"));
   std::lock_guard guard(block_->domain->lock);
-  if (block_->writes != 0)
-    return std::unexpected(Status::Unavailable("lease has an admitted writer"));
+  if (!block_->is_unique())
+    return std::unexpected(Status::Unavailable("lease has admitted native uses"));
   if (!block_->failure.ok()) return std::unexpected(block_->failure);
   return detail::lease_view(block_, offset_, size_);
 }

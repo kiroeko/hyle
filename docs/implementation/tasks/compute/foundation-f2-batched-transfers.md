@@ -142,6 +142,9 @@ report 的正常与 empty/moved 行为明确，failed slot 不自动复用；clo
   可以发布 B 的 ReadLease，仍在途的后继只读 uses 继续保活。普通 F1 public write/read/publish 入口不放宽。
   group 只发布相应 lease block 的最后写已实际退休的数据；同 block 未来还要写时不能提前发布，普通多组
   pipeline 使用独立块。失败/取消/unknown 不能发布；新 read 之后无后继 writer，旧 read 阻止复用。
+  内部 fast admission 由 cold root identity 去重；旧 public准入的搜索路径不增加 ordered分支。
+  WriteLease mutable view 在原 domain lock 下另查 root uniqueness，阻止新 ordered readonly native use 期间的
+  mutable alias；这是 lease opt-in view 的一次原 refcount读取成本，不给普通借用 TensorView/Queue增加字段。
 - producer 必须有合法 owner 与显式 native/inline 依赖。新 F2 resolve 只识别原 retained owner 并转交实际
   pending identity，known error/unknown 已移交退休仍是错误；没有可用 native route 时明确拒绝或显式报告已选
   host boundary，不悄悄同步。程序/完成 metadata 不进入数学 Provider selection。
@@ -176,7 +179,7 @@ logical/physical/staging/metadata/unknown bytes，opaque driver/vendor 成本不
 ### 首批精准验证声明
 
 共同控制接线阶段仅选 `compute` 的新 range/phase/lease handoff/proxy依赖协议 tests 与既有
-`ResourceLeases.*:Completion.*` 相关回归，header sole-include；复用本批 Windows共同/WSL compute构建，
+`ResourceLeases.*:Completion.*` 相关回归，新 `CopyRanges.*:CopyLeaseHandoff.*` 控制协议与 header sole-include；复用本批 Windows共同/WSL compute构建，
 build1/test1、4GiB、configure300/build1800/exe120，不全算子/P1。真实 CUDA/Apple/Vulkan故障与数学、
 二组二槽及三交付在本包产品接线后按稳定候选集中运行，日志/预算不因阶段提交重置。
 
