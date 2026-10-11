@@ -392,6 +392,12 @@ gzip及archive SHA保留。其他平台/fault/头与SDK/P0终审红队仍待候�
 
 ## 预声明验证与停止
 
+候选后[七问/源码终审输入](foundation-f2-final-review.md)已开始，尚非terminal。selector扩展按原
+完整计划在已有树低内存串行执行：先Windows CPU/common40个factor及其已有逐头suite，精确
+developer factor选择，不与普通product routes组合；TLS/HTTP2使用现有开发库。configure300/
+build1800/test120，原第一次scratch开关组合拒绝保留，同树只修命令/cache，不修改产品或
+公共selector。native各组、其他delivery格与最终P0/LOC按矩阵继续，未运行不签PASS。
+
 候选测试维护补原声明的两种未验故障：Vulkan对真实Device的原GetFenceStatus/WaitForFences/
 QueueWaitIdle观察持续装饰OOM，验证unknown不发布、不复用、保留所有uses；恢复实际观察后才
 退休并保留首错，正常持有及放弃两分支。Apple复用原MLX square/Checkpoint与原FIFO Runtime，
