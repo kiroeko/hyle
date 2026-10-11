@@ -27,6 +27,10 @@ namespace p = hyle::platform;
 sched::Task<Result<io::File>> open_async(m::AllocatorRef, io::IoContext *io, std::string path, unsigned owner) noexcept {
   co_return co_await io::open_file(*io, owner, path, {.access = io::FileAccess::kReadWrite});
 }
+sched::Task<Result<io::File>> open_direct(m::AllocatorRef, io::IoContext *io, std::string path) noexcept {
+  co_return co_await io::open_file(*io, 0, path,
+      {.access = io::FileAccess::kReadWrite, .cache = io::FileCacheMode::kDirect});
+}
 struct Runtime final {
   m::StatsAllocator metadata = m::StatsAllocator::create(m::system_allocator()).value();
   Context context = Context::create(cpu::device()).value();
@@ -260,6 +264,48 @@ TEST(FileStream, ExportedReadyAndLeaseCanRetireOnAnotherThreadWithoutReusingHeld
   release.store(true, std::memory_order_release); release.notify_all(); consumer.join();
   ASSERT_TRUE(runtime.pipeline.collect().ok()); EXPECT_EQ(pool.stats().live_blocks, 0u);
   auto next = runtime.pipeline.read({}, {}).value(); EXPECT_TRUE(next.wait().status.ok());
+}
+TEST(FileStream, ExplicitDirectIoUsesAlignedChunksAndRejectsMisalignedTailBeforeConsumption) {
+  Runtime runtime;
+  std::array<std::byte, 8192> input{};
+  for (std::size_t i = 0; i < input.size(); ++i) input[i] = std::byte(i % 251);
+  runtime.file(input);
+  auto opened = sched::spawn_task_on(runtime.scheduler, 0, m::system_allocator(),
+      open_direct(m::system_allocator(), &runtime.io, runtime.paths.back())).join().value();
+#if HYLE_OS_MACOS
+  ASSERT_FALSE(opened); EXPECT_TRUE(opened.error().IsUnimplemented());
+#else
+  ASSERT_TRUE(opened) << opened.error().message();
+  EXPECT_EQ(opened->cache_mode(), io::FileCacheMode::kDirect);
+  EXPECT_GT(opened->direct_alignment().length_alignment, 1u);
+  auto source = StreamFile::adopt(std::move(*opened), input.size()).value();
+  runtime.pipeline.drain().IgnoreError(); runtime.pipeline = {};
+  const std::array specs{CopyResourceSpec{m::system_resource(), input.size()}};
+  runtime.pipeline = cpu::create_file_pipeline(runtime.io, runtime.context, runtime.queue, m::system_resource(), specs,
+      {.allocator = runtime.metadata.get(), .in_flight_slots = 2, .staging_bytes_per_slot = 4096,
+       .staging_alignment = 4096, .max_active_backing_bytes = 32768}).value();
+  auto pool = LeasePool::create(m::system_resource(), 16384).value();
+  std::array<StreamReadRange, 1> ranges{{{.destination = pool.allocate(input.size()).value(), .bytes = input.size() - 1}}};
+  std::array<StreamReadGroup, 1> groups{{{111, ranges}}};
+  auto rejected = runtime.pipeline.read(StreamSource::file(source), groups);
+  ASSERT_FALSE(rejected); EXPECT_TRUE(rejected.error().IsInvalidArgument()); EXPECT_TRUE(ranges[0].destination.valid());
+  EXPECT_EQ(runtime.pipeline.report().io_calls, 0u); EXPECT_EQ(runtime.pipeline.report().native_calls, 0u);
+  ranges[0].bytes = input.size(); auto ticket = runtime.pipeline.read(StreamSource::file(source), groups).value();
+  ASSERT_TRUE(ticket.wait().status.ok()); auto ready = ticket.next_ready().value(); auto loaded = ready.output(0).value();
+  expect_bytes(loaded, input);
+  const std::array<std::byte, 8192> empty{};
+  runtime.file(empty); // second owned temporary file; original direct source is untouched
+  auto output = sched::spawn_task_on(runtime.scheduler, 0, m::system_allocator(),
+      open_direct(m::system_allocator(), &runtime.io, runtime.paths.back())).join().value();
+  ASSERT_TRUE(output); auto sink = StreamFile::adopt(std::move(*output), input.size()).value();
+  std::array<StreamWriteRange, 1> writing{StreamWriteRange::ready(loaded, 0, 0, input.size())};
+  std::array<StreamWriteGroup, 1> write_groups{{{112, writing}}};
+  auto write = runtime.pipeline.write(sink, write_groups).value(); auto result = write.wait();
+  ASSERT_TRUE(result.status.ok()); EXPECT_EQ(result.written_bytes, input.size()); EXPECT_EQ(result.ready_groups, 1u);
+  auto file = p::open_random_access_file(runtime.paths.back().c_str(), p::kOpenRead).value();
+  std::array<std::byte, 8192> actual{}; ASSERT_EQ(file.read_at(0, actual).value(), actual.size()); EXPECT_EQ(actual, input);
+  EXPECT_EQ(runtime.pipeline.report().staging_bytes, 8192u); EXPECT_LE(runtime.pipeline.report().peak_slots, 2u);
+#endif
 }
 TEST(FileStream, ExpiredDeadlineAndRepeatedClosePreserveUserResourcesAndRejectNewWork) {
   Runtime runtime; const auto input = bytes(); auto source = runtime.file(input);

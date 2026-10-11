@@ -608,6 +608,12 @@ Windows shared正在运行，WSL软件Vulkan两格及最终source复验/矩阵/�
 
 ## 预声明验证与停止
 
+最后合同核对补原F3-03/04的explicit direct-IO接缝证据：新公共API fixture在Win/Linux真实
+`kDirect`打开临时文件，未对齐tail接纳前拒绝/不消费writer/零IO/native，然后4KiB stage分块
+读8KiB、回写另一个原为零的新临时文件并逐byte核对；不修改原source。macOS原IO明确无portable
+direct合同，只核对原Unimplemented，不把该平台写成direct数据旅程PASS。
+本提交仅测试，产品candidate97858fbc8不变；运行前尚未证明，不新增FIX或重跑全库。
+
 候选反证、原suffix FAIL/一次有限纠正及尚未完成交付边界见[红队记录](foundation-f3-final-review.md)。
 当前overall仍INCONCLUSIVE，不能因已通过若干安装格把F3写成CLOSED。
 
