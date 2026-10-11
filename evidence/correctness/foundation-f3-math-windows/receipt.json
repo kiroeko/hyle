@@ -1,0 +1,40 @@
+{
+  "schema_version": 1,
+  "product_commit": "f3d931c47777f7fbfd35dedf1f5e0734fa28ef6c",
+  "sample_baseline": "f6fd122ef5ba7855e705a73034b10416a3b943c2",
+  "scope": "Windows ordinary static source CPU/CUDA F3 mathematical consumers only",
+  "jobs": [
+    {
+      "job": "math-source-windows-result-return",
+      "verdict": "PASS_SOURCE_CPU_CUDA_FILE_MATH_ONLY",
+      "sample": "samples/package/graph/file_streaming/main.cc",
+      "sha256": "f46f6836fec7b607845ccdd9014c72bb6ad395013a3f6d0c1c8593447457d029"
+    },
+    {
+      "job": "qwen-source-windows-1",
+      "verdict": "PASS_SOURCE_CPU_CUDA_ACTUAL_QWEN_RANGES_ONLY",
+      "sample": "samples/package/graph/file_streaming/qwen_main.cc",
+      "sha256": "f79e5a4f118c786d3b8c1f6e56903a8b9ee6a3efe0b982f596ea1c03d5d95431"
+    }
+  ],
+  "fixture_journey": "Two early-ready groups, BF16 and existing GGUF Q8 Direct+Graph, file write/reload/math, two lanes and three replays.",
+  "real_weight_journey": "Original local Qwen layer-0 three full BF16 projections and F32 norm, file ranges to early-ready Direct+Graph, independently checked sparse-input references.",
+  "real_weight_logical_bytes": 75497984,
+  "real_weight_staging_bytes": 2097152,
+  "real_weight_peak_slots": 2,
+  "checked_input": "evidence/correctness/foundation-f3-qwen-ranges/checked-input.json",
+  "compiler": "C:/Program Files/Microsoft Visual Studio/18/Enterprise/VC/Tools/MSVC/14.50.35717/bin/Hostx64/x64/cl.exe",
+  "archive": {
+    "path": "evidence/correctness/foundation-f3-math-windows/raw-results.zip",
+    "sha256": "77e0ef91db4820fa87b3e9140bd10230ab92ad52f4e5bc6392f68d8b8945323d"
+  },
+  "initial_failure": "Small consumer initial build returned Status directly from a Result lambda; raw build failure retained, fixed to std::unexpected(Status), then full consumer passed.",
+  "verdict": "PASS_WINDOWS_CPU_CUDA_SOURCE_FILE_MATH_AND_ACTUAL_QWEN_RANGES_ONLY",
+  "unproven": [
+    "Apple/Vulkan math",
+    "Installed static/shared and relocation",
+    "Remaining F3 native faults/lifetime/sanitizers",
+    "Final P0 and closure"
+  ],
+  "limits": "No full model/tokenizer/generation loop or P1 claim; no full-checkpoint read/hash, native private allocations remain unknown."
+}

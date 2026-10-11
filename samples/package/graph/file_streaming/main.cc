@@ -240,7 +240,7 @@ Status transfer_groups(m::MemoryResourceRef host, m::MemoryResourceRef device,
         }
         const auto result = ticket.wait(); HYLE_RETURN_IF_ERROR(result.status);
         if (!result.retirement_proven || result.read_bytes != total || result.copied_bytes != total)
-          return Status::Internal("file stream read progress/retirement mismatch");
+          return std::unexpected(Status::Internal("file stream read progress/retirement mismatch"));
         return ready;
       };
       HYLE_ASSIGN_OR_RETURN(auto ready, read_and_consume(source));

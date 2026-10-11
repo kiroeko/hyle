@@ -302,6 +302,20 @@ Windows CUDA六项（正常两项、真实producer排序、取消、丢弃控制
 这属于原F3-06未完成的pre-candidate implementation/acceptance，不新增FIX或重置已有纠正/失败记录。
 新producer节点的Apple/Vulkan、unknown/late/fault与sanitizer/跨平台仍未验；数学、三交付与七门未完成。
 
+#### Windows真实数学consumer局部验收
+
+新增独立普通Graph consumer `samples/package/graph/file_streaming`，沿同一F3 read→逐组ready→
+原Direct/Graph数学→write→reload→数学路径；CPU/CUDA两lane、三次replay的BF16与已有GGUF Q8编码
+输出均符合参考。初次样例Result lambda返回Status的编译失败保留，修为std::unexpected后整条旅程通过。
+[数学局部收据](../../../../evidence/correctness/foundation-f3-math-windows/receipt.json)绑定精确样例SHA及
+原始build/math日志，不代签安装SDK或全路线验收。
+
+同收据签真实本地Qwen第0层三个完整BF16投影和F32 norm的CPU/CUDA原Direct及Graph输出：
+官方Safetensors工具只核验并读取所声明原始范围，独立稀疏输入参考不靠HYLE算子生成；
+实际F3读取75,497,984 bytes，stage 2,097,152 bytes，峰值两个slot，不缓存完整4.55GB checkpoint。
+完整输入身份与范围见[checked input](../../../../evidence/correctness/foundation-f3-qwen-ranges/checked-input.json)。
+这不是完整FFN/模型生成验收；Apple/Vulkan真实权重数学、新生命周期风险及三交付仍待验，六owner保持AUDITED。
+
 | FIX | 必须实现 | 验收 |
 |---|---|---|
 | F3-01 | 中央 compute_stream 身份/依赖/普通 route 及三交付投影 | 无环，无第二名单/空 target；静态共享source一致，不拉无关 CPU Provider |
