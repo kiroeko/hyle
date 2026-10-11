@@ -65,7 +65,7 @@ GPU stream drain和原CUDA abandoned-event reaper回调完成不同；借用allo
 | Windows CPU/CUDA | PASS（5b3efe2cc source/static实际复验） | relocated static/shared数学、七头/CUDA ON、两native头与package路线缺席、DLL同目录、shipping hook缺席PASS；既定fault已取证，扩展/终审待验 |
 | Windows CPU/Vulkan | PASS（5b3efe2cc全源码下scope匹配实际source复验） | relocated static/shared数学、七头/Vulkan ON、CUDA/Apple头与package路线缺席、DLL同目录及真实header deps PASS；9 native/34 common已有首轮，unknown风险/终审待验 |
 | Air CPU/Apple | PASS（scope匹配source；新全源码installed复验） | relocated static/shared数学、七头/Apple ON、CUDA/Vulkan头与package请求缺席、MLX assets PASS；10 native/34 common首轮已取证，剩余故障/终审待验 |
-| Air CPU/Vulkan | UNPROVEN | 实际设备身份；对应native/common与ordinary数学、三交付/头/absence/迁址 |
+| Air CPU/Vulkan | PASS（5b3efe2cc全源码下source/shared） | 9 native/34 common、source与relocated static/shared数学、七头/Vulkan ON、CUDA/Apple缺席、实际dyld迁址加载PASS；剩余unknown风险/终审待验 |
 | WSL CPU/CUDA | PASS（scope匹配source/static；新delta安装消费已复验） | 新delta真实producer late＋15 CUDA/34 common PASS；relocated static/shared数学及七头/CUDA ON、Apple/Vulkan头缺席PASS；package路线请求诊断与扩展/终审仍待验 |
 | WSL Vulkan | GPU资格UNPROVEN | 先实际枚举loader/device；只有合格GPU才签数学。若仍仅llvmpipe，则记录本候选条件结果，完成适用构建/安装/头/absence格 |
 
@@ -135,3 +135,16 @@ ordinary hyle::graph消费者实际原BF16/native affine Q4两组两槽三次搬
 oracle PASS；两SDK各七安装头独立编译（六common＋Apple ON），CUDA/Vulkan头及package请求
 均明确拒绝，available=cpu;apple。consumer MLX metallib与安装资产SHA匹配，并参与实际GPU
 数学运行。此格不代签Air Vulkan或尚未运行fault/selector扩展/终审，四owner仍CANDIDATE。
+
+## MacBook Air CPU/Vulkan native/source/static/shared
+
+[Air Vulkan收据](../../../../evidence/correctness/foundation-f2-air-vulkan-qualification/receipt.json)绑定同一5b3efe2cc完整archive/
+tree/SHA与Mac16,12/AppleClang21实机身份。9项VulkanCopyRecording/Program和34 common PASS，
+包括原native producer、已接受前缀的后缀失败、旧ready/放弃回收及actual copy边界。普通CPU/
+Vulkan source/shared与真实迁址后的installed static/shared消费者均两组两槽三轮BF16/原GGUF Q8
+Direct/Graph scalar oracle PASS；实机Apple M4/MoltenVK1.4.1、software=no。
+两SDK各七安装头/Vulkan ON，CUDA/Apple头与package请求明确缺席；旧prefix消失，Hyle metadata
+无source/build/staging路径。共享consumer不要求Windows式DLL落地，实际DYLD_PRINT_LIBRARIES
+在移除DYLD_LIBRARY_PATH/FALLBACK override后证明24条HYLE库全部来自relocated/lib。
+CPU/Apple共享包也补同样实际加载取证，23条HYLE库来自其relocated/lib，见[Apple SDK收据](../../../../evidence/correctness/foundation-f2-air-apple-sdk/receipt.json)。
+上述首轮故障/交付不扩大成未运行unknown-fence或最终七门；WSL Vulkan及扩展/终审仍待验。

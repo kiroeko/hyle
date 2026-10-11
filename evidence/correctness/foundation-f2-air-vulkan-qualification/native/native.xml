@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites tests="9" failures="0" disabled="0" errors="0" time="0.129" timestamp="2026-10-11T22:09:55.485" name="AllTests">
+  <testsuite name="VulkanCopyProgram" tests="5" failures="0" disabled="0" skipped="0" errors="0" time="0.101" timestamp="2026-10-11T22:09:55.486">
+    <testcase name="TwoSlotsPhaseReadyOldResultsAndReplayKeepActualMetadataFixed" file="/Users/kiro/hyle-scratch/compute-unified/source-c8874688/tests/compute_route_vulkan/copy_program_test.cc" line="44" status="run" result="completed" time="0.066" timestamp="2026-10-11T22:09:55.486" classname="VulkanCopyProgram">
+      <properties>
+        <property name="device_name" value="Apple M4"/>
+      </properties>
+    </testcase>
+    <testcase name="OriginalRetainedProducerOrdersPendingMutableSourceAndGuards" file="/Users/kiro/hyle-scratch/compute-unified/source-c8874688/tests/compute_route_vulkan/copy_program_test.cc" line="77" status="run" result="completed" time="0.012" timestamp="2026-10-11T22:09:55.552" classname="VulkanCopyProgram" />
+    <testcase name="RejectedNativeSuffixPreservesSuccessfulEarlierGroupAndFailedSlot" file="/Users/kiro/hyle-scratch/compute-unified/source-c8874688/tests/compute_route_vulkan/copy_program_test.cc" line="121" status="run" result="completed" time="0.006" timestamp="2026-10-11T22:09:55.565" classname="VulkanCopyProgram" />
+    <testcase name="EmptyDependencyUsesActualPrefixAndBindingErrorsDoNotConsume" file="/Users/kiro/hyle-scratch/compute-unified/source-c8874688/tests/compute_route_vulkan/copy_program_test.cc" line="142" status="run" result="completed" time="0.007" timestamp="2026-10-11T22:09:55.571" classname="VulkanCopyProgram" />
+    <testcase name="AbandonedHandlesKeepOriginalRunsUntilActualRetirementAndFreeMetadata" file="/Users/kiro/hyle-scratch/compute-unified/source-c8874688/tests/compute_route_vulkan/copy_program_test.cc" line="169" status="run" result="completed" time="0.008" timestamp="2026-10-11T22:09:55.578" classname="VulkanCopyProgram" />
+  </testsuite>
+  <testsuite name="VulkanCopyRecording" tests="4" failures="0" disabled="0" skipped="0" errors="0" time="0.027" timestamp="2026-10-11T22:09:55.587">
+    <testcase name="ThreeNativeBytePhasesAndPairRegionsReuseColdMetadata" file="/Users/kiro/hyle-scratch/compute-unified/source-c8874688/tests/compute_route_vulkan/copy_recording_test.cc" line="20" status="run" result="completed" time="0.006" timestamp="2026-10-11T22:09:55.587" classname="VulkanCopyRecording">
+      <properties>
+        <property name="device_name" value="Apple M4"/>
+        <property name="driver_name" value="MoltenVK"/>
+      </properties>
+    </testcase>
+    <testcase name="IndependentBufferPairsShareOneNativePhaseAndSourceCanRepeat" file="/Users/kiro/hyle-scratch/compute-unified/source-c8874688/tests/compute_route_vulkan/copy_recording_test.cc" line="68" status="run" result="completed" time="0.005" timestamp="2026-10-11T22:09:55.594" classname="VulkanCopyRecording" />
+    <testcase name="AliasAlignmentForeignBackingAndSelfAreCheckedBeforeNativeAcceptance" file="/Users/kiro/hyle-scratch/compute-unified/source-c8874688/tests/compute_route_vulkan/copy_recording_test.cc" line="91" status="run" result="completed" time="0.006" timestamp="2026-10-11T22:09:55.599" classname="VulkanCopyRecording" />
+    <testcase name="OwnedReadonlyViewsPreservePhysicalAliasAndUnknownExternalUsageIsRejected" file="/Users/kiro/hyle-scratch/compute-unified/source-c8874688/tests/compute_route_vulkan/copy_recording_test.cc" line="119" status="run" result="completed" time="0.008" timestamp="2026-10-11T22:09:55.606" classname="VulkanCopyRecording" />
+  </testsuite>
+</testsuites>

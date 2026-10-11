@@ -147,11 +147,13 @@
     "ordinary hyle::graph installed consumer two groups/two slots/three replays, original BF16/Q4 bytes and Direct/Graph math oracle",
     "seven independent installed headers including Apple ON",
     "CUDA/Vulkan headers omitted and package requests rejected with cpu;apple availability",
-    "consumer MLX metallib matches installed asset SHA and real native GPU math executes"
+    "consumer MLX metallib matches installed asset SHA and real native GPU math executes",
+    "actual shared HYLE dyld paths resolve to relocated/lib with DYLD search overrides removed"
   ],
   "pending": [
     "Air CPU/Vulkan native source/static/shared",
     "remaining native fault/unknown and delivery matrix",
     "component-contract/expanded gates and final P0/red team"
-  ]
+  ],
+  "actual_shared_dyld": "shared/actual-dyld.json"
 }

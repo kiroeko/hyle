@@ -1,0 +1,9 @@
+[1/9] Building CXX object CMakeFiles/batch.dir/Users/kiro/hyle-scratch/compute-unified/source-c8874688/samples/package/graph/batched_transfers/main.cc.o
+[2/9] Linking CXX executable batch
+[3/9] Building CXX object CMakeFiles/headers.dir/header-0.cc.o
+[4/9] Building CXX object CMakeFiles/headers.dir/header-1.cc.o
+[5/9] Building CXX object CMakeFiles/headers.dir/header-2.cc.o
+[6/9] Building CXX object CMakeFiles/headers.dir/header-3.cc.o
+[7/9] Building CXX object CMakeFiles/headers.dir/header-4.cc.o
+[8/9] Building CXX object CMakeFiles/headers.dir/header-5.cc.o
+[9/9] Building CXX object CMakeFiles/headers.dir/header-6.cc.o

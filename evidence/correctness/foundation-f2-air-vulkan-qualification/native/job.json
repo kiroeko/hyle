@@ -1,0 +1,85 @@
+{
+  "candidate": "5b3efe2cce3fcab2bc55cf749af2d862a786ef25",
+  "mode": "native",
+  "source_manifest": "HYLE full canonical Git archive\nGit commit: 5b3efe2cce3fcab2bc55cf749af2d862a786ef25\nGit tree: 7023c5780a7c99b10f0b41a4e27f3bf5899dea04\n",
+  "source": "/Users/kiro/hyle-scratch/compute-unified/source-c8874688",
+  "build": "/Users/kiro/hyle-scratch/compute-unified/a-vulkan/selected-graph/shared-sdk-build",
+  "identity": {
+    "hardware": "Mac16,12",
+    "memory": "17179869184",
+    "os": "ProductName:\t\tmacOS\nProductVersion:\t\t27.0.1\nBuildVersion:\t\t26A434",
+    "compiler": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin",
+    "cmake": "cmake version 4.3.4\n\nCMake suite maintained and supported by Kitware (kitware.com/cmake)."
+  },
+  "scope": "Air Vulkan native F2 qualification only; SDK/all-platform final gates separate",
+  "parallel": 1,
+  "stages": [
+    {
+      "name": "configure",
+      "command": [
+        "/opt/homebrew/bin/cmake",
+        "-S",
+        "/Users/kiro/hyle-scratch/compute-unified/source-c8874688",
+        "-B",
+        "/Users/kiro/hyle-scratch/compute-unified/a-vulkan/selected-graph/shared-sdk-build"
+      ],
+      "pid": 29182,
+      "state": "terminal",
+      "available_bytes": 7068483584,
+      "log": "configure.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "ea6083df21a9418ea53d2a068739e12145ea5e82c5ddf54e0aa0d1a38254e1a9"
+    },
+    {
+      "name": "build",
+      "command": [
+        "/opt/homebrew/bin/cmake",
+        "--build",
+        "/Users/kiro/hyle-scratch/compute-unified/a-vulkan/selected-graph/shared-sdk-build",
+        "--target",
+        "hyle_compute_route_vulkan_test",
+        "hyle_compute_test",
+        "--parallel",
+        "1"
+      ],
+      "pid": 29437,
+      "state": "terminal",
+      "available_bytes": 6936330240,
+      "log": "build.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "298ffbc75a4f61049e1f30f433283ef4e24cfae8fc60d652f1f63bbffa6b68df"
+    },
+    {
+      "name": "common",
+      "command": [
+        "/Users/kiro/hyle-scratch/compute-unified/a-vulkan/selected-graph/shared-sdk-build/bin/hyle_compute_test",
+        "--gtest_filter=CopyRanges.*:CopyLeaseHandoff.*:CopyDependency.*:ResourceLeases.*:Completion.*"
+      ],
+      "pid": 29614,
+      "state": "terminal",
+      "available_bytes": 7123877888,
+      "log": "common.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "9549f2a3b0ad9e8add13efa6507e6650a5697d5e826af69469f535032f0af589"
+    },
+    {
+      "name": "native",
+      "command": [
+        "/Users/kiro/hyle-scratch/compute-unified/a-vulkan/selected-graph/shared-sdk-build/bin/hyle_compute_route_vulkan_test",
+        "--gtest_filter=VulkanCopyRecording.*:VulkanCopyProgram.*",
+        "--gtest_output=xml:/Users/kiro/hyle-scratch/compute-unified/foundation-f2-air-vulkan-native-5b3efe2cc/native.xml"
+      ],
+      "pid": 29616,
+      "state": "terminal",
+      "available_bytes": 7122616320,
+      "log": "native.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "9d22cb2aef14961992faaab224b7aab23b849b8e6139d175523e259e97bfaab4"
+    }
+  ],
+  "verdict": "PASS"
+}

@@ -392,6 +392,12 @@ gzip及archive SHA保留。其他平台/fault/头与SDK/P0终审红队仍待候�
 
 ## 预声明验证与停止
 
+Air CPU/Vulkan原生9项/34 common、source与relocated static/shared原BF16/Q8数学、七installed头/
+Vulkan ON及CUDA/Apple缺席已取证，见[当前矩阵](foundation-f2-verification-matrix.md)和
+[Air Vulkan收据](../../../../evidence/correctness/foundation-f2-air-vulkan-qualification/receipt.json)。实机M4/MoltenVK1.4.1、software=no，
+共享HYLE实际dyld加载来自relocated/lib；CPU/Apple共享也补同样真实路径证明。WSL Vulkan当前
+GPU资格与适用交付、余下unknown风险/selector扩展及最终P0红队继续待验，当前不CLOSED。
+
 Air CPU/Apple relocated static/shared普通BF16/原affine Q4数学、七installed头/Apple ON、CUDA/
 Vulkan头与package请求缺席及MLX metallib落地已取证，见[当前矩阵](foundation-f2-verification-matrix.md)
 和[Air完整SDK收据](../../../../evidence/correctness/foundation-f2-air-apple-sdk/receipt.json)。实际Mac16,12身份、完整Git archive/tree/

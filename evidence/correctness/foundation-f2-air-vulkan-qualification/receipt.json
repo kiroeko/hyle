@@ -1,0 +1,229 @@
+{
+  "schema_version": 1,
+  "candidate": "5b3efe2cce3fcab2bc55cf749af2d862a786ef25",
+  "tree": "7023c5780a7c99b10f0b41a4e27f3bf5899dea04",
+  "verdict": "PASS",
+  "scope": "MacBook Air CPU/Vulkan F2 native/common and ordinary source/relocated static/shared math, headers and absence; no other-platform or final aggregate qualification",
+  "profiles": [
+    {
+      "name": "native",
+      "verdict": "PASS",
+      "receipt": "native/job.json",
+      "identity": {
+        "hardware": "Mac16,12",
+        "memory": "17179869184",
+        "os": "ProductName:\t\tmacOS\nProductVersion:\t\t27.0.1\nBuildVersion:\t\t26A434",
+        "compiler": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin",
+        "cmake": "cmake version 4.3.4\n\nCMake suite maintained and supported by Kitware (kitware.com/cmake)."
+      },
+      "files": {
+        "build.log": {
+          "path": "native/build.log",
+          "sha256": "298ffbc75a4f61049e1f30f433283ef4e24cfae8fc60d652f1f63bbffa6b68df"
+        },
+        "common.log": {
+          "path": "native/common.log",
+          "sha256": "9549f2a3b0ad9e8add13efa6507e6650a5697d5e826af69469f535032f0af589"
+        },
+        "configure.log": {
+          "path": "native/configure.log",
+          "sha256": "ea6083df21a9418ea53d2a068739e12145ea5e82c5ddf54e0aa0d1a38254e1a9"
+        },
+        "job.json": {
+          "path": "native/job.json",
+          "sha256": "803450e2c893b33232cbc4826a21fa63825bb32d4043ae409c5ecf5343f79775"
+        },
+        "native.log": {
+          "path": "native/native.log",
+          "sha256": "9d22cb2aef14961992faaab224b7aab23b849b8e6139d175523e259e97bfaab4"
+        },
+        "native.xml": {
+          "path": "native/native.xml",
+          "sha256": "ccfd233d17be4900c7bcdbba0a4c2944110944e311145db78990d44c1f0f680a"
+        }
+      }
+    },
+    {
+      "name": "math",
+      "verdict": "PASS",
+      "receipt": "math/job.json",
+      "identity": {
+        "hardware": "Mac16,12",
+        "memory": "17179869184",
+        "os": "ProductName:\t\tmacOS\nProductVersion:\t\t27.0.1\nBuildVersion:\t\t26A434",
+        "compiler": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin",
+        "cmake": "cmake version 4.3.4\n\nCMake suite maintained and supported by Kitware (kitware.com/cmake)."
+      },
+      "files": {
+        "build.log": {
+          "path": "math/build.log",
+          "sha256": "2a11b8f687f42d9ac887a267e74cff077e250b0eca22669381fb877e1ab3c0cb"
+        },
+        "configure.log": {
+          "path": "math/configure.log",
+          "sha256": "735c8edda0b9add514eceff22b62b73e256962a161c5e82e1e1f518aef5145ea"
+        },
+        "job.json": {
+          "path": "math/job.json",
+          "sha256": "ae1306dd20f7254e48b2191e2252d3868cecc9df83345dfda7f310bb46b90a0a"
+        },
+        "math.log": {
+          "path": "math/math.log",
+          "sha256": "ec4f7e880889047c279314510624bf8952d1f38aa73cbc265417b209b6f871a6"
+        }
+      }
+    },
+    {
+      "name": "static",
+      "verdict": "PASS",
+      "receipt": "static/job.json",
+      "identity": {
+        "hardware": "Mac16,12",
+        "memory": "17179869184",
+        "os": "ProductName:\t\tmacOS\nProductVersion:\t\t27.0.1\nBuildVersion:\t\t26A434",
+        "compiler": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin",
+        "cmake": "cmake version 4.3.4\n\nCMake suite maintained and supported by Kitware (kitware.com/cmake).",
+        "ninja": "1.13.2"
+      },
+      "files": {
+        "absence-header-apple.log": {
+          "path": "static/absence-header-apple.log",
+          "sha256": "3a8af225b2ac2b6111689d0aa165797674b2be1329f3c89bb4ed92ddadc2b9ad"
+        },
+        "absence-header-cuda.log": {
+          "path": "static/absence-header-cuda.log",
+          "sha256": "c7356cacfff4d1721a5b4dd4d8643d0b7055173a8ca7c9e01c8a259ba88715df"
+        },
+        "absence-route-apple.log": {
+          "path": "static/absence-route-apple.log",
+          "sha256": "2be9c9bdae47abb78c712c58eaf3a568392b4dbb7f40b60839b0663b366fd01d"
+        },
+        "absence-route-cuda.log": {
+          "path": "static/absence-route-cuda.log",
+          "sha256": "10b9a117f6580a7cf970e85810e3b4c4b3b525b063cbc2d1e4246ac0dfc4bf89"
+        },
+        "configure.log": {
+          "path": "static/configure.log",
+          "sha256": "ab308b6e49c332b2049392f894d35b04f8c1050baae0aa1af47077467142121d"
+        },
+        "consumer-build.log": {
+          "path": "static/consumer-build.log",
+          "sha256": "84ed7fb61dcf51e1c7c83172ba9b887d454d2401907393808e93b514f3e805a5"
+        },
+        "consumer-configure.log": {
+          "path": "static/consumer-configure.log",
+          "sha256": "d386c8f6c6e86e698a334fe42b536acbfab54d5372538351dc6b7550bf57a9b8"
+        },
+        "dynamic-deps.log": {
+          "path": "static/dynamic-deps.log",
+          "sha256": "0df78755344285a9844838cbd0c7768910817ac6d863c4278cec2492a492de6d"
+        },
+        "install.log": {
+          "path": "static/install.log",
+          "sha256": "0c8b4449dd6ad9f285dfabf78f20ed652364d12da2c0affb5b74e3c98635d0e9"
+        },
+        "job.json": {
+          "path": "static/job.json",
+          "sha256": "0c07b648b164dfd3c186b1f33d8ab128435f836a3b387dd9b15f6d1e91df7834"
+        },
+        "math.log": {
+          "path": "static/math.log",
+          "sha256": "ec4f7e880889047c279314510624bf8952d1f38aa73cbc265417b209b6f871a6"
+        },
+        "producer.log": {
+          "path": "static/producer.log",
+          "sha256": "2e69c39e670a88a12efd37b268b4b0d19b95c017210c8a7170b974e833b9f62d"
+        }
+      }
+    },
+    {
+      "name": "shared",
+      "verdict": "PASS",
+      "receipt": "shared/job.json",
+      "identity": {
+        "hardware": "Mac16,12",
+        "memory": "17179869184",
+        "os": "ProductName:\t\tmacOS\nProductVersion:\t\t27.0.1\nBuildVersion:\t\t26A434",
+        "compiler": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin",
+        "cmake": "cmake version 4.3.4\n\nCMake suite maintained and supported by Kitware (kitware.com/cmake).",
+        "ninja": "1.13.2"
+      },
+      "files": {
+        "absence-header-apple.log": {
+          "path": "shared/absence-header-apple.log",
+          "sha256": "8b8ba3da953de00b3ef7b6ce57c9eadd6a09941cc5fb95cc37b6ba21db4d4d97"
+        },
+        "absence-header-cuda.log": {
+          "path": "shared/absence-header-cuda.log",
+          "sha256": "13cd246a99dd2091feeff46b64c4a942d52cc50868f5d816622bf6289155045c"
+        },
+        "absence-route-apple.log": {
+          "path": "shared/absence-route-apple.log",
+          "sha256": "437258db580a7f22e30a566f7e938fea7dca5d1da81db26e07d3d0db60702d1d"
+        },
+        "absence-route-cuda.log": {
+          "path": "shared/absence-route-cuda.log",
+          "sha256": "dbc3b270ded32e85c7291f95247f4be44253e1ec13696c0b4e291f1e109db693"
+        },
+        "actual-dyld.json": {
+          "path": "shared/actual-dyld.json",
+          "sha256": "bcfb059c7733be1af6b7fa076f231e5a5af0cc32261e375d312e4774cbec0678"
+        },
+        "actual-dyld.log": {
+          "path": "shared/actual-dyld.log",
+          "sha256": "ef75a95b7ab038f1a5c5604d19b97e0b255666668d7fdcd5310329210e3a9e11"
+        },
+        "configure.log": {
+          "path": "shared/configure.log",
+          "sha256": "fbe454954b51f64c55031f0c5ac6d3a80de308f958e8df02bf68aaa9e4b21246"
+        },
+        "consumer-build.log": {
+          "path": "shared/consumer-build.log",
+          "sha256": "84ed7fb61dcf51e1c7c83172ba9b887d454d2401907393808e93b514f3e805a5"
+        },
+        "consumer-configure.log": {
+          "path": "shared/consumer-configure.log",
+          "sha256": "5d4356eef7e0ea5d6573a1c181bc984df20a12801c222385551c86691ee33fa0"
+        },
+        "dynamic-deps.log": {
+          "path": "shared/dynamic-deps.log",
+          "sha256": "07ad93aac9875cf0ce050700330e523420cbe4f9acb57876be188988756a6d23"
+        },
+        "install.log": {
+          "path": "shared/install.log",
+          "sha256": "f1ed1ddf2feabecc12c2b23eb8701bfaf576d9f728c96b6bcafc529bcc121703"
+        },
+        "job.json": {
+          "path": "shared/job.json",
+          "sha256": "466771e679547d1d421d2d472bdff87b81f0b7eb1a02283c16fa897bcdd62fd0"
+        },
+        "math.log": {
+          "path": "shared/math.log",
+          "sha256": "ec4f7e880889047c279314510624bf8952d1f38aa73cbc265417b209b6f871a6"
+        },
+        "producer.log": {
+          "path": "shared/producer.log",
+          "sha256": "4e61c3d8978e7a7320905a6b1e096e06878e1add5ca37244f7f1e027113ac4fd"
+        }
+      }
+    }
+  ],
+  "counts": {
+    "native": 9,
+    "common": 34,
+    "installed_headers_each": 7
+  },
+  "checks": [
+    "actual Apple M4/MoltenVK1.4.1, software false",
+    "native retained producer, accepted suffix failure, old result/abandon retirement and real byte copy",
+    "ordinary CPU/Vulkan source and installed two groups/two slots/three replays BF16/original GGUF Q8 Direct/Graph scalar oracle",
+    "real install/rename relocation and old prefix absence; Hyle metadata no source/build/staging paths",
+    "seven independent installed headers Vulkan ON; CUDA/Apple omitted and requested routes explicitly rejected",
+    "shared actual dyld HYLE libraries resolve from relocated/lib, DYLD search overrides removed"
+  ],
+  "pending": [
+    "WSL Vulkan GPU qualification and applicable SDK",
+    "remaining native unknown/fault specifics",
+    "component-contract/expanded selector gates and final P0/red team"
+  ]
+}

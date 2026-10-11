@@ -1,0 +1,31 @@
+Running main() from /Users/kiro/Library/Caches/hyle/dependencies/v1/sources/googletest-063de7e9578f-162765170ae6/googletest/src/gtest_main.cc
+Note: Google Test filter = VulkanCopyRecording.*:VulkanCopyProgram.*
+[==========] Running 9 tests from 2 test suites.
+[----------] Global test environment set-up.
+[----------] 5 tests from VulkanCopyProgram
+[ RUN      ] VulkanCopyProgram.TwoSlotsPhaseReadyOldResultsAndReplayKeepActualMetadataFixed
+[       OK ] VulkanCopyProgram.TwoSlotsPhaseReadyOldResultsAndReplayKeepActualMetadataFixed (66 ms)
+[ RUN      ] VulkanCopyProgram.OriginalRetainedProducerOrdersPendingMutableSourceAndGuards
+[       OK ] VulkanCopyProgram.OriginalRetainedProducerOrdersPendingMutableSourceAndGuards (12 ms)
+[ RUN      ] VulkanCopyProgram.RejectedNativeSuffixPreservesSuccessfulEarlierGroupAndFailedSlot
+[       OK ] VulkanCopyProgram.RejectedNativeSuffixPreservesSuccessfulEarlierGroupAndFailedSlot (6 ms)
+[ RUN      ] VulkanCopyProgram.EmptyDependencyUsesActualPrefixAndBindingErrorsDoNotConsume
+[       OK ] VulkanCopyProgram.EmptyDependencyUsesActualPrefixAndBindingErrorsDoNotConsume (7 ms)
+[ RUN      ] VulkanCopyProgram.AbandonedHandlesKeepOriginalRunsUntilActualRetirementAndFreeMetadata
+[       OK ] VulkanCopyProgram.AbandonedHandlesKeepOriginalRunsUntilActualRetirementAndFreeMetadata (8 ms)
+[----------] 5 tests from VulkanCopyProgram (101 ms total)
+
+[----------] 4 tests from VulkanCopyRecording
+[ RUN      ] VulkanCopyRecording.ThreeNativeBytePhasesAndPairRegionsReuseColdMetadata
+[       OK ] VulkanCopyRecording.ThreeNativeBytePhasesAndPairRegionsReuseColdMetadata (6 ms)
+[ RUN      ] VulkanCopyRecording.IndependentBufferPairsShareOneNativePhaseAndSourceCanRepeat
+[       OK ] VulkanCopyRecording.IndependentBufferPairsShareOneNativePhaseAndSourceCanRepeat (5 ms)
+[ RUN      ] VulkanCopyRecording.AliasAlignmentForeignBackingAndSelfAreCheckedBeforeNativeAcceptance
+[       OK ] VulkanCopyRecording.AliasAlignmentForeignBackingAndSelfAreCheckedBeforeNativeAcceptance (6 ms)
+[ RUN      ] VulkanCopyRecording.OwnedReadonlyViewsPreservePhysicalAliasAndUnknownExternalUsageIsRejected
+[       OK ] VulkanCopyRecording.OwnedReadonlyViewsPreservePhysicalAliasAndUnknownExternalUsageIsRejected (8 ms)
+[----------] 4 tests from VulkanCopyRecording (27 ms total)
+
+[----------] Global test environment tear-down
+[==========] 9 tests from 2 test suites ran. (129 ms total)
+[  PASSED  ] 9 tests.

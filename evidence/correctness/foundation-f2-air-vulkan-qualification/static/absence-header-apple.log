@@ -1,0 +1,4 @@
+/Users/kiro/hyle-scratch/compute-unified/foundation-f2-air-vulkan-sdk-static-5b3efe2cc/parent/absence-apple.cc:1:10: fatal error: 'hyle/compute/apple_memory.h' file not found
+    1 | #include <hyle/compute/apple_memory.h>
+      |          ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+1 error generated.

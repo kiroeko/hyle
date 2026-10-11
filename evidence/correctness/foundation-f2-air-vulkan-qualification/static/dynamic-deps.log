@@ -1,0 +1,6 @@
+/Users/kiro/hyle-scratch/compute-unified/foundation-f2-air-vulkan-sdk-static-5b3efe2cc/consumer/batch:
+	@rpath/libtorch.dylib (compatibility version 0.0.0, current version 0.0.0)
+	@rpath/libtorch_cpu.dylib (compatibility version 0.0.0, current version 0.0.0)
+	@rpath/libc10.dylib (compatibility version 0.0.0, current version 0.0.0)
+	/usr/lib/libSystem.B.dylib (compatibility version 1.0.0, current version 1359.0.0)
+	/usr/lib/libc++.1.dylib (compatibility version 1.0.0, current version 2200.27.0)

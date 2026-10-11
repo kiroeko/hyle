@@ -1,0 +1,38 @@
+{
+  "candidate": "5b3efe2cce3fcab2bc55cf749af2d862a786ef25",
+  "route": "apple",
+  "command": [
+    "/Users/kiro/hyle-scratch/compute-unified/foundation-f2-air-sdk-shared-5b3efe2cc/consumer/batch"
+  ],
+  "exit_code": 0,
+  "verdict": "PASS",
+  "loaded_HYLE_rows": [
+    "dyld[31316]: <46CB77E8-9DE5-3D48-A9EC-6F4AEDC49D2B> /Users/kiro/hyle-scratch/compute-unified/foundation-f2-air-sdk-shared-5b3efe2cc/relocated/lib/libhyle_graph_route_cpu_apple.0.1.0.dylib",
+    "dyld[31316]: <E11D5B89-57BC-31F6-98BE-110223819270> /Users/kiro/hyle-scratch/compute-unified/foundation-f2-air-sdk-shared-5b3efe2cc/relocated/lib/libhyle_graph_route_cpu.0.1.0.dylib",
+    "dyld[31316]: <B43342FD-A461-3DC1-9D73-B1384A7E9B05> /Users/kiro/hyle-scratch/compute-unified/foundation-f2-air-sdk-shared-5b3efe2cc/relocated/lib/libhyle_compute_route_cpu.0.1.0.dylib",
+    "dyld[31316]: <F4F4F49B-AFDE-3356-8A5E-3A2FCC6F4727> /Users/kiro/hyle-scratch/compute-unified/foundation-f2-air-sdk-shared-5b3efe2cc/relocated/lib/libhyle_compute_provider_native.0.1.0.dylib",
+    "dyld[31316]: <C856BBFC-0958-3CD9-9FD6-7FE92D9E11EC> /Users/kiro/hyle-scratch/compute-unified/foundation-f2-air-sdk-shared-5b3efe2cc/relocated/lib/libhyle_graph_route_apple.0.1.0.dylib",
+    "dyld[31316]: <85E26000-E30B-33A8-97E8-A0341B8F537A> /Users/kiro/hyle-scratch/compute-unified/foundation-f2-air-sdk-shared-5b3efe2cc/relocated/lib/libhyle_graph.0.1.0.dylib",
+    "dyld[31316]: <D72350D6-850C-3513-A071-30159B8190C4> /Users/kiro/hyle-scratch/compute-unified/foundation-f2-air-sdk-shared-5b3efe2cc/relocated/lib/libhyle_compute_backend_cpu.0.1.0.dylib",
+    "dyld[31316]: <96000111-11CD-374F-961B-439D57B1DBC2> /Users/kiro/hyle-scratch/compute-unified/foundation-f2-air-sdk-shared-5b3efe2cc/relocated/lib/libhyle_compute_route_apple.0.1.0.dylib",
+    "dyld[31316]: <873F4733-29AD-3757-AF4F-BE9DEB10F540> /Users/kiro/hyle-scratch/compute-unified/foundation-f2-air-sdk-shared-5b3efe2cc/relocated/lib/libhyle_compute.0.1.0.dylib",
+    "dyld[31316]: <7288DE23-144B-3D3C-BA31-5828FA8360A2> /Users/kiro/hyle-scratch/compute-unified/foundation-f2-air-sdk-shared-5b3efe2cc/relocated/lib/libhyle_compute_ops.0.1.0.dylib",
+    "dyld[31316]: <B111436B-B422-3923-BF20-069F33C6E9E8> /Users/kiro/hyle-scratch/compute-unified/foundation-f2-air-sdk-shared-5b3efe2cc/relocated/lib/libhyle_sched.0.1.0.dylib",
+    "dyld[31316]: <A6DFEFB2-A716-31C4-A4FB-591BC757263F> /Users/kiro/hyle-scratch/compute-unified/foundation-f2-air-sdk-shared-5b3efe2cc/relocated/lib/libhyle_platform_thread.0.1.0.dylib",
+    "dyld[31316]: <D76EBB10-635E-3EE8-8EEC-CCF53EB74112> /Users/kiro/hyle-scratch/compute-unified/foundation-f2-air-sdk-shared-5b3efe2cc/relocated/lib/libhyle_mem_vm.0.1.0.dylib",
+    "dyld[31316]: <ED3EC086-CA4D-30C8-ACE7-8F04F20722CB> /Users/kiro/hyle-scratch/compute-unified/foundation-f2-air-sdk-shared-5b3efe2cc/relocated/lib/libhyle_mem.0.1.0.dylib",
+    "dyld[31316]: <9ACF7711-E27C-3EAC-A695-66AF8CDD5BCC> /Users/kiro/hyle-scratch/compute-unified/foundation-f2-air-sdk-shared-5b3efe2cc/relocated/lib/libhyle_platform_fs.0.1.0.dylib",
+    "dyld[31316]: <BE2B1AFD-B5D9-35D0-A390-497A306D564A> /Users/kiro/hyle-scratch/compute-unified/foundation-f2-air-sdk-shared-5b3efe2cc/relocated/lib/libhyle_platform.0.1.0.dylib",
+    "dyld[31316]: <BC34FF44-65A9-394A-882E-448D0AA70096> /Users/kiro/hyle-scratch/compute-unified/foundation-f2-air-sdk-shared-5b3efe2cc/relocated/lib/libhyle_error.0.1.0.dylib",
+    "dyld[31316]: <BF554C74-1967-32FB-B11C-5C794E4936BD> /Users/kiro/hyle-scratch/compute-unified/foundation-f2-air-sdk-shared-5b3efe2cc/relocated/lib/libhyle_time.0.1.0.dylib",
+    "dyld[31316]: <E18A132A-2D7F-3C7A-AEC3-78C404105A9B> /Users/kiro/hyle-scratch/compute-unified/foundation-f2-air-sdk-shared-5b3efe2cc/relocated/lib/libhyle_compute_provider_ggml.0.1.0.dylib",
+    "dyld[31316]: <259C0BBE-F4DA-36A3-B084-5701FF7E2E88> /Users/kiro/hyle-scratch/compute-unified/foundation-f2-air-sdk-shared-5b3efe2cc/relocated/lib/libhyle_simd.0.1.0.dylib",
+    "dyld[31316]: <5CFF0A90-C175-30F3-9E03-1F45CCB4ECF5> /Users/kiro/hyle-scratch/compute-unified/foundation-f2-air-sdk-shared-5b3efe2cc/relocated/lib/libhyle_compute_ggml_runtime.0.1.0.dylib",
+    "dyld[31316]: <70FD4203-5094-3704-B634-D3D704EF06BE> /Users/kiro/hyle-scratch/compute-unified/foundation-f2-air-sdk-shared-5b3efe2cc/relocated/lib/libhyle_container.0.1.0.dylib",
+    "dyld[31316]: <AAAE008C-29B2-3BC5-BAD6-BE0D8F787D26> /Users/kiro/hyle-scratch/compute-unified/foundation-f2-air-sdk-shared-5b3efe2cc/relocated/lib/libhyle_compute_provider_ggml_metal.0.1.0.dylib"
+  ],
+  "DYLD_LIBRARY_PATH_removed": true,
+  "DYLD_FALLBACK_LIBRARY_PATH_removed": true,
+  "log": "actual-dyld.log",
+  "sha256": "ef3068061796c6844859d7d894583d8f1a296792e9465a3bba91e5be0d620bcf"
+}
