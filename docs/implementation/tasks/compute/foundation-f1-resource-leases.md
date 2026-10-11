@@ -559,6 +559,19 @@ Windows CPU+Vulkan 与 Air CPU+Apple 各复用原 source consumer 树，build1/t
 原 host/native 数学、重放计数、source alias 与关闭源拒绝同时通过。这里不是 unknown fence 的错误注入，
 其资格继续按原 protocol/native retirement 证据与最终语义矩阵分别裁决。
 
+### 剩余 SDK 与 Air 固定入口
+
+继续本轮普通 `resource_leases` 消费者：Windows Vulkan static 用已有 Vulkan-only tests-off producer，
+CUDA shared 已取证；不恢复旧 U2/U3 脚本。Air 实际 Mac16,12/16GiB/macOS27.0.1/AppleClang21，
+复用 `a-cpu-apple/selected-graph/source-build`、`static-sdk-build`、`shared-sdk-build`，按 source→static→shared
+串行执行。普通路线 `cpu;apple` 与唯一 `hyle::graph` target；各 stage 前至少4GiB、build1/test1。
+source 添加同一消费者与最终新头的孤立 TU，原 `hyle_h2_contracts` 继续包含 mixed lease 旅程；
+static/shared producer 均 tests/bench OFF、shipping，安装到本批新 staging 后实际迁址，普通消费者独立构建/运行。
+SDK 消费同时额外编译、运行原 `cpu_apple_contracts.cc`（Windows CPU+Vulkan shared 同理），
+消费代码仅 public HYLE API，link 只用 imported `hyle::graph`，验证新的 managed `ReadLease bind` 导出/依赖，
+不能由空头编译或单独 Direct/native Graph 代签。只改本批 scratch 父工程/入口，不重写公共构建工具。
+保存 candidate、source mirror、编译器、构建模式、命令、原日志与失败；部署副本不是产品源码来源。
+
 P0 静态账单须列新增 metadata/引用/锁，及旧普通路径不变的证据；
 热路径以计数验无 allocation/provider search，不为纳秒差改布局。
 
