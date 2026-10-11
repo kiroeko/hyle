@@ -287,6 +287,21 @@ cooperative IO新树的Windows GPU/WSL增量、GPU
 producer/pending/unknown/late/cancel风险、实际Qwen混合dtype/GGUF Direct+Graph、三交付/P0/红队待验。
 六owner保持AUDITED，局部bytes成功不是F3七门或完整数学验收。
 
+#### F3-06已接纳producer生命周期接缝
+
+`f3d931c47777f7fbfd35dedf1f5e0734fa28ef6c`完成本FIX剩余的admitted source producer保活：
+每个已接纳async producer仅使用已有冷CompletionRetention，保留整个管线控制/stage直到原native
+实际退休；取消/失败组放弃未绑定producer观察，交原owner退休，避免state→Completion→state循环。
+pending producer计入retirement_proven与记录复用条件，零byte也不能绕过producer错误/完成。
+已知hard error在接纳前原样返回、不消费输入；仍pending的零byte沿原BlockingJob等原Completion，
+不制造强取消、第二runtime或新poller，也不改IO/Sched/CUDA backend或公开工具。
+[生命周期局部收据](../../../../evidence/correctness/foundation-f3-producer-lifetime/receipt.json)绑定
+Windows CUDA六项（正常两项、真实producer排序、取消、丢弃控制、normal/empty hard error）及CPU六项
+回归PASS。整组先后TIMEOUT120、析构前still-use fatal、空范围错误ready与include构建失败均原样保留；
+单项PASS没有覆盖原整组失败。新代码在CUDA整组连跑与原生uses/allocator归零后才签局部证据。
+这属于原F3-06未完成的pre-candidate implementation/acceptance，不新增FIX或重置已有纠正/失败记录。
+新producer节点的Apple/Vulkan、unknown/late/fault与sanitizer/跨平台仍未验；数学、三交付与七门未完成。
+
 | FIX | 必须实现 | 验收 |
 |---|---|---|
 | F3-01 | 中央 compute_stream 身份/依赖/普通 route 及三交付投影 | 无环，无第二名单/空 target；静态共享source一致，不拉无关 CPU Provider |

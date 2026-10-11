@@ -1,0 +1,43 @@
+{
+  "schema_version": 1,
+  "product_commit": "f3d931c47777f7fbfd35dedf1f5e0734fa28ef6c",
+  "product_tree": "02b893ae1957902f589cb7c6f388e75ecbe3a196",
+  "scope": "F3-06 admitted original producer lifetime only; not full F3 completion",
+  "native_cuda_tests_passed": 6,
+  "cpu_regression_tests_passed": 6,
+  "compiler": "C:/Program Files/Microsoft Visual Studio/18/Enterprise/VC/Tools/MSVC/14.50.35717/bin/Hostx64/x64/cl.exe",
+  "actual_gpu": "NVIDIA GeForce RTX 4070, GPU-e7376560-6f5d-ec19-6ee4-3dd3a2c81ef8, 617.14",
+  "archive": {
+    "path": "evidence/correctness/foundation-f3-producer-lifetime/raw-results.zip",
+    "sha256": "07058a3f5bd832657ab22bf71ec3a28b52af2b2920ed2633596b6060a63c867d"
+  },
+  "source_inputs": [
+    {
+      "path": "src/compute_stream/file_stream.cc",
+      "sha256": "2024e866175e892d7d14fef2421ede1929606f6ed7a225e0b26ccae9feb0c57b"
+    },
+    {
+      "path": "tests/compute_route_cuda/file_stream_test.cc",
+      "sha256": "cb73b1b1f2aff2d763ee5f01341949f6989ce940f0086593b89b5166cff65b3a"
+    }
+  ],
+  "initial_failures": [
+    "Premature fixture resource drop while original event reaper still retained one use: fatal preserved.",
+    "Two whole-suite TIMEOUT120 at pipeline drop before gate release; isolated pass did not sign aggregate.",
+    "Pipeline cancelled before F2 copy admission could free cold native stage while accepted input producer remained pending.",
+    "Empty write group bypassed cached producer hard error and falsely published ready.",
+    "Initial implementation include omission preserved in build logs."
+  ],
+  "finite_fix": "Original F3-06 source/teardown completion: reuse existing cold CompletionRetention per admitted producer, retain full pipeline through actual retirement, abandon unused producer observation to break cycles; reject known producer hard errors before moving inputs and wait original zero-byte producers.",
+  "mechanisms_unchanged": "No new runtime, thread/poller, copy/math kernels, IO/Sched/native CUDA backend or public tools changed.",
+  "budget": "Prior source-seam corrections and all failures retained, no original budget reset; this is remaining pre-candidate F3-06 implementation and acceptance.",
+  "verdict": "PASS_WINDOWS_CUDA_PRODUCER_LIFETIME_AND_CPU_REGRESSION_ONLY",
+  "unproven": [
+    "Other native producer/fault routes",
+    "Unknown/late native observation risks",
+    "Sanitizers and WSL/Air delta",
+    "Actual Qwen mixed-dtype/GGUF Direct+Graph math",
+    "Three deliveries/relocation/headers",
+    "Final P0/closure/red team"
+  ]
+}
