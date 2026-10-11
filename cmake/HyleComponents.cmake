@@ -440,7 +440,8 @@ _hyle_declare_component(compute_provider_cuda
 _hyle_declare_component(compute_route_cuda
   PRIVATE_DEPS platform platform_thread compute_ops container util_core compute_provider_cublas compute_provider_cuda
                compute_provider_flashinfer compute_provider_ggml_cuda compute_provider_torch_cuda
-  PUBLIC_DEPS core compute compute_backend_cuda mem
+  PUBLIC_DEPS core compute compute_backend_cuda mem compute_stream io_core
+  PUBLIC_TYPE_DEPS compute_stream io_core
   SPLIT_PUBLIC_HEADERS hyle/compute/cuda.h hyle/compute/cuda_weights.h)
 _hyle_declare_component(graph_route_cuda
   PRIVATE_DEPS compute_backend_cuda graph_provider_ggml_cuda
@@ -451,7 +452,8 @@ _hyle_declare_component(graph_route_cuda
 _hyle_declare_component(compute_route_apple
   TRACE
   PRIVATE_DEPS container platform_thread util_core compute_provider_ggml_metal
-  PUBLIC_DEPS core compute compute_ops error mem
+  PUBLIC_DEPS core compute compute_ops error mem compute_stream io_core
+  PUBLIC_TYPE_DEPS compute_stream io_core
   SPLIT_PUBLIC_HEADERS hyle/compute/apple.h hyle/compute/apple_memory.h hyle/compute/apple_weights.h hyle/compute/detail/apple_plan.h)
 _hyle_declare_component(graph_route_apple
   TRACE
@@ -462,7 +464,8 @@ _hyle_declare_component(graph_route_apple
 _hyle_declare_component(compute_route_vulkan
   TRACE
   PRIVATE_DEPS time util_core compute_provider_ggml_vulkan compute_provider_iree_vulkan
-  PUBLIC_DEPS core compute compute_ops error mem
+  PUBLIC_DEPS core compute compute_ops error mem compute_stream io_core
+  PUBLIC_TYPE_DEPS compute_stream io_core
   SPLIT_PUBLIC_HEADERS hyle/compute/vulkan.h hyle/compute/vulkan_memory.h hyle/compute/vulkan_weights.h hyle/compute/detail/vulkan_plan.h)
 _hyle_declare_component(graph_route_vulkan
   TRACE

@@ -10,6 +10,7 @@
 #include <vector>
 
 #include "apple_copy_internal.h"
+#include "apple_file_stream_access.h"
 #include "hyle/compute/detail/copy_control.h"
 #include "hyle/compute/detail/lease_access.h"
 #include "hyle/compute/detail/retained_completion.h"
@@ -272,6 +273,40 @@ Result<CopyBatchInvocation> CopyBatchInvocation::create(const CopyBatchProgram &
     HYLE_ASSIGN_OR_RETURN(state->opaque, program->options.resource_budget.reserve_unattributed(std::nullopt));
   }
   state->report.native_metadata_unknown = true; return result;
+}
+Result<WriteLease> detail::CopyStreamAccess::take_mutable(CopyBatchInvocation &invocation, CopyResourceId id) noexcept {
+  auto *state = invocation.state_;
+  if (!state) return std::unexpected(Status::FailedPrecondition("Apple copy invocation is empty"));
+  std::lock_guard lock(state->observations);
+  HYLE_RETURN_IF_ERROR(detail::valid_binding(state, id));
+  for (std::uint32_t index = 0; index < state->submitted; ++index) {
+    const auto &phase = *state->phases[index];
+    if (!phase.retired.load(std::memory_order_acquire))
+      return std::unexpected(Status::Unavailable("Apple copy writer retirement is unproven"));
+    if (!phase.terminal.ok()) return std::unexpected(phase.terminal);
+  }
+  auto &binding = state->bindings[id.value];
+  if (!binding.write.valid()) return std::unexpected(Status::FailedPrecondition("Apple copy binding has no writer"));
+  auto writer = std::move(binding.write); binding = {}; state->physical[id.value] = {}; state->prepared = false;
+  return writer;
+}
+Result<compute::detail::PhysicalCopyResource> detail::CopyStreamAccess::physical(
+    CopyBatchInvocation &invocation, mem::ConstBufferView view, bool) noexcept {
+  if (!invocation.state_) return std::unexpected(Status::FailedPrecondition("Apple copy invocation is empty"));
+  HYLE_ASSIGN_OR_RETURN(auto span, detail::copy_span(view)); return span.physical;
+}
+Status detail::CopyStreamAccess::observe(CopyBatchInvocation &invocation) noexcept {
+  auto *state = invocation.state_;
+  if (!state) return Status::FailedPrecondition("Apple copy invocation is empty");
+  std::lock_guard lock(state->observations); Status result = state->tail;
+  for (std::uint32_t index = 0; index < state->submitted; ++index) {
+    auto &phase = *state->phases[index]; auto observed = phase.completion.poll();
+    if (!observed) result.Update(observed.error());
+    else if (*observed == CompletionPoll::kPending || !phase.retired.load(std::memory_order_acquire))
+      result.Update(Status::Unavailable("Apple copy retirement is pending"));
+    else result.Update(phase.terminal);
+  }
+  return result;
 }
 Status CopyBatchInvocation::bind_source(CopyResourceId id, const ReadLease &source) noexcept {
   HYLE_RETURN_IF_ERROR(detail::valid_binding(state_, id)); HYLE_ASSIGN_OR_RETURN(auto view, source.view());

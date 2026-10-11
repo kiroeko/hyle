@@ -418,7 +418,10 @@ sched::Task<Status> process_group(mem::AllocatorRef allocator, FileStreamState *
         state->report.native_calls += copied->report.native_calls; state->report.native_waits += copied->report.native_waits;
         state->report.phase_completions += copied->report.phase_completions; state->report.host_waits += copied->report.host_waits;
         if (!copied->retirement_proven) { slot.quarantined = true; slot.request = r; request.result.retirement_proven = false; }
-        if (copied->status.ok()) request.result.copied_bytes += bytes;
+        if (copied->status.ok()) {
+          request.result.copied_bytes += bytes;
+          state->report.copied_physical_bytes += copied->report.physical_bytes;
+        }
       }
       if (!copied->status.ok()) co_return copied->status;
       if (!request.write) {

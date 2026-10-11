@@ -3,6 +3,7 @@
 #include <cstddef>
 
 #include "hyle/compute/device.h"
+#include "hyle/compute/file_stream.h"
 #include "hyle/visibility.h"
 
 #if defined(HYLE_STATIC)
@@ -35,6 +36,12 @@ struct DefaultContextOptions final {
 // Native MemoryResource and stream interop live in compute/backends/cuda.h.
 HYLE_COMPUTE_ROUTE_CUDA_API Result<Context>
 create_context(DefaultContextOptions options = {}) noexcept;
+
+// Uses the original CUDA Queue/batch program. Staging must be the Context's
+// original pinned-host resource; no CPU math provider is selected by streaming.
+HYLE_COMPUTE_ROUTE_CUDA_API Result<FileResourcePipeline> create_file_pipeline(
+    io::IoContext &, const Context &, Queue &, mem::MemoryResourceRef staging,
+    std::span<const CopyResourceSpec> targets, FileStreamOptions options = {}) noexcept;
 #endif
 
 } // namespace hyle::compute::cuda

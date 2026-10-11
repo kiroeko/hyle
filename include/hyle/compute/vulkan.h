@@ -26,6 +26,7 @@
 #include <vulkan/vulkan_core.h>
 
 #include "hyle/compute/operation.h"
+#include "hyle/compute/file_stream.h"
 #include "hyle/compute/result.h"
 #include "hyle/compute/resource_leases.h"
 #include "hyle/compute/workload.h"
@@ -402,5 +403,9 @@ private:
   std::shared_ptr<detail::RecorderState> state_;
 };
 
+// Original Runtime/transfer families and fences, without a common Queue.
+HYLE_COMPUTE_ROUTE_VULKAN_API Result<FileResourcePipeline> create_file_pipeline(
+    io::IoContext &, const Context &, mem::MemoryResourceRef staging,
+    std::span<const CopyResourceSpec> targets, FileStreamOptions options = {}) noexcept;
 } // namespace hyle::compute::vulkan
 #endif

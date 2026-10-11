@@ -135,6 +135,7 @@ struct FileStreamReport final {
   std::size_t external_backing_bytes = 0;
   std::uint32_t live_requests = 0, active_slots = 0, peak_slots = 0;
   std::uint64_t io_calls = 0, mapping_copy_bytes = 0;
+  std::uint64_t copied_physical_bytes = 0; // successful native-retired copies, including explicit padding
   std::uint64_t native_calls = 0, native_waits = 0, phase_completions = 0, host_waits = 0;
   bool native_metadata_unknown = false;
 };

@@ -24,6 +24,7 @@
 #include <mlx/stream.h>
 
 #include "hyle/compute/operation.h"
+#include "hyle/compute/file_stream.h"
 #include "hyle/compute/result.h"
 #include "hyle/compute/resource_leases.h"
 #include "hyle/compute/workload.h"
@@ -265,5 +266,9 @@ Context::prepare(Descriptor operation,
                  const WorkloadContext &workload) const noexcept {
   return prepare(Operation(std::move(operation)), inputs, workload);
 }
+// Original MLX/Metal stream and shared native resources; no common Queue.
+HYLE_COMPUTE_ROUTE_APPLE_API Result<FileResourcePipeline> create_file_pipeline(
+    io::IoContext &, const Context &, mem::MemoryResourceRef staging,
+    std::span<const CopyResourceSpec> targets, FileStreamOptions options = {}) noexcept;
 } // namespace hyle::compute::apple
 #endif

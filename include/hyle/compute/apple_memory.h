@@ -11,7 +11,7 @@
 
 namespace hyle::compute::apple {
 namespace detail { struct MemoryState; struct LeasedInvocationState; }
-namespace detail { struct CopyProgramState; struct CopyInvocationState; }
+namespace detail { struct CopyProgramState; struct CopyInvocationState; struct CopyStreamAccess; }
 
 class CopyBatchInvocation;
 class CopyBatchSubmission;
@@ -55,6 +55,7 @@ public:
   HYLE_COMPUTE_ROUTE_APPLE_API bool in_flight() const noexcept;
   HYLE_COMPUTE_ROUTE_APPLE_API CopyBatchReport report() const noexcept;
 private:
+  friend struct detail::CopyStreamAccess;
   explicit CopyBatchInvocation(detail::CopyInvocationState *state) noexcept : state_(state) {}
   detail::CopyInvocationState *state_ = nullptr;
 };

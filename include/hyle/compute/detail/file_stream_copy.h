@@ -2,6 +2,7 @@
 
 #include <array>
 #include <memory>
+#include <mutex>
 #include <utility>
 #include <vector>
 
@@ -22,6 +23,7 @@ struct FileStreamCopyOwner final {
         specs(mem::StdAllocator<CopyResourceSpec>(selected)), slots(mem::StdAllocator<Slot>(selected)) {}
   mem::AllocatorRef allocator;
   Program program;
+  std::mutex submission; // original thread-compatible Queue/Runtime host submission only
   std::vector<CopyResourceSpec, mem::StdAllocator<CopyResourceSpec>> specs;
   std::vector<Slot, mem::StdAllocator<Slot>> slots;
   static void destroy(void *opaque) noexcept {
@@ -45,8 +47,9 @@ struct FileStreamCopyOwner final {
       std::size_t physical_bytes, bool source_stage) noexcept {
     auto &self = *static_cast<FileStreamCopyOwner *>(opaque); auto &slot = self.slots[index];
     StreamCopyResult result;
-    bool prepared = false;
+    bool prepared = false, reported = false;
     const auto perform = [&]() noexcept -> Status {
+      std::unique_lock submit_lock(self.submission);
       HYLE_RETURN_IF_ERROR(slot.invocation.reset());
       mem::ConstBufferView source_view;
       if (mutable_source) { HYLE_ASSIGN_OR_RETURN(source_view, LeaseAccess::ordered_view(*mutable_source)); }
@@ -64,7 +67,12 @@ struct FileStreamCopyOwner final {
       HYLE_RETURN_IF_ERROR(slot.invocation.prepare_replay(phases, ranges));
       prepared = true;
       HYLE_ASSIGN_OR_RETURN(slot.submission, slot.invocation.submit());
-      HYLE_RETURN_IF_ERROR(slot.submission.wait());
+      // Do not serialize completion or IO. Other fixed slots may enqueue an
+      // independent native episode once this original host sequence ends.
+      submit_lock.unlock();
+      const auto waited = slot.submission.wait();
+      result.report = slot.invocation.report(); reported = true;
+      HYLE_RETURN_IF_ERROR(waited);
       slot.submission = {};
       HYLE_ASSIGN_OR_RETURN(destination, Access::take_mutable(slot.invocation, destination_id));
       if (mutable_source) {
@@ -73,7 +81,7 @@ struct FileStreamCopyOwner final {
       }
       HYLE_RETURN_IF_ERROR(slot.invocation.reset()); return Status::Ok();
     };
-    result.status = perform(); if (prepared) result.report = slot.invocation.report();
+    result.status = perform(); if (prepared && !reported) result.report = slot.invocation.report();
     result.retirement_proven = !slot.invocation.in_flight();
     if (!result.status.ok() && result.retirement_proven) {
       slot.submission = {}; slot.invocation.reset().IgnoreError();
@@ -116,5 +124,23 @@ Result<StreamCopyEndpoint> make_file_copy_endpoint(Program program,
   result.physical = &Owner::physical; result.copy = &Owner::copy; result.observe = &Owner::observe;
   result.in_flight = &Owner::in_flight; result.reset = &Owner::reset; result.report = &Owner::report;
   return result;
+}
+
+template<class Program, class Invocation, class Submission, class Access, class Prepare, class Create>
+Result<StreamCopyEndpoint> prepare_file_copy_endpoint(mem::MemoryResourceRef staging,
+    std::span<const CopyResourceSpec> targets, FileStreamOptions options, Prepare prepare, Create create) noexcept {
+  if (!options.allocator.valid() || targets.size() >= UINT32_MAX || !options.in_flight_slots)
+    return std::unexpected(Status::InvalidArgument("invalid stream capacities/allocator"));
+  auto allocator = options.allocator;
+  if (options.resource_budget.valid()) { HYLE_ASSIGN_OR_RETURN(allocator, options.resource_budget.metadata_allocator()); }
+  std::vector<CopyResourceSpec, mem::StdAllocator<CopyResourceSpec>> resources{mem::StdAllocator<CopyResourceSpec>(allocator)};
+  try {
+    resources.reserve(targets.size() + 1); resources.push_back({staging, options.staging_bytes_per_slot});
+    resources.insert(resources.end(), targets.begin(), targets.end());
+  } catch (...) { return std::unexpected(Status::ResourceExhausted("stream resource catalog")); }
+  HYLE_ASSIGN_OR_RETURN(auto program, prepare(std::span<const CopyResourceSpec>(resources), CopyBatchOptions{
+      .max_resources = static_cast<std::uint32_t>(resources.size()), .max_copies = 1, .max_phases = 1,
+      .max_bytes = options.staging_bytes_per_slot, .allocator = allocator, .resource_budget = options.resource_budget}));
+  return make_file_copy_endpoint<Program, Invocation, Submission, Access>(std::move(program), resources, options, std::move(create));
 }
 } // namespace hyle::compute::detail
