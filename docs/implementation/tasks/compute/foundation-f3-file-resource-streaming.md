@@ -84,7 +84,7 @@
 |---|---|---|
 | scope | 原八FIX、主/正交旅程、六owner及实际baseline | 固定范围已落实；不扩F4/F5 |
 | architecture | API/生命周期/依赖审计、现有原子组合与有限ledger | 产品已实现；完整交付图与最终审查待验 |
-| correctness | 02至07逐能力风险矩阵及四路线实际接缝 | 局部PASS；Air CPU/当前微修增量未齐，聚合INCONCLUSIVE |
+| correctness | 02至07逐能力风险矩阵及四路线实际接缝 | 运行风险已齐；new installed headers尚待验，聚合INCONCLUSIVE |
 | delivery | 01/08 source/static/shared、新头、迁址及缺席 | NOT_RUN |
 | usability_docs | 普通C++自然工厂、双向与错误/close recipe | source指南/样例已运行；installed尚未验证 |
 | red_team | 候选冻结后独立一遍反证检查 | NOT_RUN |
@@ -478,6 +478,13 @@ Windows新过期deadline、重复stop/close/drain、原用户资源仍可用组�
   原三sanitizer十二项已封存，新增风险在相同树增量运行，完整收据随后落盘。
 - 候选之后只允许证据/文档/测试维护；产品新反例须按协议退回AUDITED。
   installed static/shared、SDK迁址、新头/缺席与最终红队尚未完成，CANDIDATE不等于CLOSED。
+
+[当前风险收据](../../../../evidence/correctness/foundation-f3-current-risks/receipt.json)签Air CPU十三项、
+当前Air Apple六/Vulkan五、Windows Vulkan五、WSL CUDA六，以及同一新fixture的ASan/UBSan/TSan
+各十三项实际PASS。过期deadline/重复close、真正POSIX short-write与跨线程导出drop在Air和WSL
+直接运行；所有旧失败保留。当前微修没有依赖源码重编：WSL sanitizer各四个Ninja动作，
+Windows CPU五个动作、Air native仅共同库/route链接增量；没有新产品纠正或全库测试。
+当前实际平台风险已齐，new installed头、普通static/shared/迁址和终审仍未完成。
 
 ## 解析器与真实权重验收
 

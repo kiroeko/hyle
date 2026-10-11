@@ -1,0 +1,94 @@
+{
+  "schema_version": 1,
+  "product_candidate": "3b7b9b9b8f0e99205de0c43ce29b4467bdae46d5",
+  "product_tree": "7ffc5f2cedc973dae3093fed36dde2d30ba8ca46",
+  "scope": "Current F3 normal selected platform/native and thirteen common sanitizer risks only, ordinary math previous matched receipts retained.",
+  "runs": [
+    {
+      "label": "Air CPU",
+      "tests_passed": 13,
+      "candidate_or_fixture": "332026e43164e285ea890e92487bcfb9844aebab",
+      "identity": {
+        "hardware": "Mac16,12",
+        "os": "ProductName:\t\tmacOS\nProductVersion:\t\t27.0.1\nBuildVersion:\t\t26A434",
+        "compiler": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin"
+      },
+      "parallel": 1
+    },
+    {
+      "label": "Air Apple",
+      "tests_passed": 6,
+      "candidate_or_fixture": "332026e43164e285ea890e92487bcfb9844aebab",
+      "identity": {
+        "hardware": "Mac16,12",
+        "memory": "17179869184",
+        "os": "ProductName:\t\tmacOS\nProductVersion:\t\t27.0.1\nBuildVersion:\t\t26A434",
+        "compiler": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin",
+        "cmake": "cmake version 4.3.4\n\nCMake suite maintained and supported by Kitware (kitware.com/cmake).",
+        "ninja": "1.13.2"
+      },
+      "parallel": 1
+    },
+    {
+      "label": "Air Vulkan",
+      "tests_passed": 5,
+      "candidate_or_fixture": "332026e43164e285ea890e92487bcfb9844aebab",
+      "identity": {
+        "hardware": "Mac16,12",
+        "memory": "17179869184",
+        "os": "ProductName:\t\tmacOS\nProductVersion:\t\t27.0.1\nBuildVersion:\t\t26A434",
+        "compiler": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin",
+        "cmake": "cmake version 4.3.4\n\nCMake suite maintained and supported by Kitware (kitware.com/cmake).",
+        "ninja": "1.13.2"
+      },
+      "parallel": 1
+    },
+    {
+      "label": "Windows Vulkan",
+      "tests_passed": 5,
+      "candidate_or_fixture": "838c78bfd38dd122cdda03d6dd4386cb0e30e67b",
+      "identity": "C:/Program Files/Microsoft Visual Studio/18/Enterprise/VC/Tools/MSVC/14.50.35717/bin/Hostx64/x64/cl.exe",
+      "parallel": 1
+    },
+    {
+      "label": "WSL cuda",
+      "tests_passed": 6,
+      "candidate_or_fixture": "838c78bfd38dd122cdda03d6dd4386cb0e30e67b",
+      "identity": null,
+      "parallel": 4
+    },
+    {
+      "label": "WSL asan",
+      "tests_passed": 13,
+      "candidate_or_fixture": "838c78bfd38dd122cdda03d6dd4386cb0e30e67b",
+      "identity": null,
+      "parallel": 4
+    },
+    {
+      "label": "WSL ubsan",
+      "tests_passed": 13,
+      "candidate_or_fixture": "838c78bfd38dd122cdda03d6dd4386cb0e30e67b",
+      "identity": null,
+      "parallel": 4
+    },
+    {
+      "label": "WSL tsan",
+      "tests_passed": 13,
+      "candidate_or_fixture": "838c78bfd38dd122cdda03d6dd4386cb0e30e67b",
+      "identity": null,
+      "parallel": 4
+    }
+  ],
+  "new_risk": "Expired monotonic deadline before first chunk preserves DeadlineExceeded/zero IO/zero native/zero ready. Repeated stop/close/drain rejects new work without consuming writers or closing borrowed user resources.",
+  "original_failures": "All earlier F3 failures/timeouts remain in previously sealed evidence; current sanitizer trees/flags retain original accepted diagnostic policy and TSan process-local setarch recovery.",
+  "locator": "LOC computed from product candidate via canonical loc-report registry AUDITED union with self-check PASS; no hand-added historical counts.",
+  "archive": {
+    "path": "evidence/correctness/foundation-f3-current-risks/raw-results.zip",
+    "sha256": "1d50685a475b756feb98a3b580af57bba7b21075b2c7366c857c438899c5ac91"
+  },
+  "verdict": "PASS_CURRENT_F3_SELECTED_PLATFORM_AND_COMMON_SANITIZER_RISKS_ONLY",
+  "unproven": [
+    "Installed static/shared/new heads/absence/relocation",
+    "Final red team/all gates/closure"
+  ]
+}

@@ -21,6 +21,8 @@
   [TSan](../../../../evidence/correctness/foundation-f3-tsan/receipt.json)各十二项实际风险。
 - 当前增量：[WSL CUDA六项与Windows CPU十二项](../../../../evidence/correctness/foundation-f3-wsl-cuda-deadline/receipt.json)，
   后者包含过期deadline/重复stop/close及借用用户资源保持可用的直接组合。
+- [当前完整风险增量](../../../../evidence/correctness/foundation-f3-current-risks/receipt.json)：Air CPU十三、
+  Apple六、Win/Air Vulkan各五、WSL CUDA六与共同ASan/UBSan/TSan各十三项，产品candidate固定。
 
 ## 语义覆盖
 
@@ -43,8 +45,8 @@
 | Windows CPU | PASS | 当前十二项PASS，含deadline/repeat-close新fixture | UNPROVEN |
 | Windows CUDA | PASS | 六项PASS；共同格式清理增量待验 | UNPROVEN |
 | Windows Vulkan | PASS | 五项PASS；共同格式清理增量待验 | UNPROVEN |
-| WSL CPU | PASS | 原三sanitizer十二项PASS；新增deadline当前ASan/UBSan十三项PASS，TSan增量运行 | UNPROVEN |
-| WSL CUDA | PASS | 六项原生风险PASS；当前微小格式变化增量待验 | UNPROVEN |
+| WSL CPU | PASS | 当前三sanitizer各十三项PASS，含deadline/short-write/跨线程 | UNPROVEN |
+| WSL CUDA | PASS | 当前六项增量PASS | UNPROVEN |
 | Air CPU | PASS | 当前共同十三项PASS，含POSIX short-write/跨线程/deadline | UNPROVEN |
 | Air Apple | PASS | 当前六项增量PASS | UNPROVEN |
 | Air Vulkan | PASS | 当前五项增量PASS | UNPROVEN |
@@ -57,5 +59,5 @@
 ## 最终门
 
 scope及形状审计已有固定基线/八FIX/六owner；产品实现、普通consumer与指南均已有具名位置。
-P0源码与实际账单见[成本核对](foundation-f3-p0-cost-review.md)。candidate冻结、当前格式微修的
-增量owner门、剩余平台/交付、新fixture、最终红队和LOC复算尚未完成，全部完成后才裁决七门。
+P0源码与实际账单见[成本核对](foundation-f3-p0-cost-review.md)。candidate已冻结，当前微修和
+新fixture的平台/sanitizer增量及LOC self-check均已完成；剩余交付与最终红队完成后才裁决七门。
