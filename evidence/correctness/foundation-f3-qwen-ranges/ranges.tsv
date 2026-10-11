@@ -1,0 +1,7 @@
+HYLE_F3_QWEN_RANGES_V1
+C:\Users\kiro\Downloads\Qwen3.5-2B\model.safetensors-00001-of-00001.safetensors
+4548221488
+model.language_model.layers.0.mlp.gate_proj.weight	BF16	1084498960	25165824	6144	2048	6d99f0ade7791154ee7806b24444ead0d3dcb67b203dcd9304faae9cd69a2c42
+model.language_model.layers.0.mlp.up_proj.weight	BF16	1109664784	25165824	6144	2048	e603e29e2effc8e110dca2d2b1d20a5b9fe399ef7d4c48c289a9febb95472f5e
+model.language_model.layers.0.mlp.down_proj.weight	BF16	1059333136	25165824	2048	6144	fbafb4be6b6a3e93fb969b1679f7430a824cd912db98a83a7c4b9658e511d766
+model.language_model.layers.0.linear_attn.norm.weight	F32	76720	512	128	1	4f50f78402c71ebebcadcb6259c2883b4f0a441c17cacee8f626e5c9ad7118b7
