@@ -86,3 +86,7 @@ AUDIT 还须固定同 queue/跨 producer 的 ordering、MCB 单次使用、实�
 账单，不能新建全局 Metal Queue 或把 host memcpy 说成 native batch。
 
 上述仍为 SOURCE_ONLY；尚未故障复现、运行 F2 数学、写产品或进入 AUDITED。
+
+后续 `58bc5d72b` AUDIT 已在当前卡冻结 program/invocation/submission、explicit phase mask、物理区间
+排序/scan、F2专用ordered read与实际写退休发布、原 owner dependency桥、四路线执行分治及七项有限接线。
+四 owner 进入 AUDITED 只授权本卡有限产品实现；本页源调查不改写为 native runtime/math PASS。

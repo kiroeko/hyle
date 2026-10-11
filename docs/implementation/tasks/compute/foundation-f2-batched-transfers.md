@@ -1,6 +1,6 @@
 # F2：准备后的原生批量范围搬运
 
-> 状态：SCOPED（2026-10-11）；F1 已收口，沿原 guard/retirement 合同定界，不复制另一套 lease。
+> 状态：AUDITED（2026-10-11）；F2 七 FIX 的形状/owner/有限实现已固定，开始集中接线。
 > 实施前[原子/复合接缝源码审计](foundation-f2-source-audit.md)为定界输入，未授权产品修改或签运行资格。
 > component / owner：拟 compute、compute_backend_cpu/cuda、
 > compute_route_cpu/cuda/apple/vulkan；只有普通 Graph 需要本批 native binding 接缝时再绑定对应 owner。
@@ -27,8 +27,8 @@
 
 - 基线：`edb2714384037b12a3d1e69839aa895fea17cec1`；设计见
   [资源与流送设计](../../../architecture/compute-resource-streaming-design.md)。
-- 本卡已作为上述四 owner 的当前 SCOPED record；其他 owner 按 registry。验证均未运行。
-  保留后续/用户修改；完成 AUDITED 与固定有限实现 ledger 后才改产品。
+- 本卡已作为上述四 owner 的当前 AUDITED record；其他 owner 按 registry。验证均未运行。
+  以下 AUDIT/有限实现 ledger 固定后才改产品，后续新公共语义须重新裁决。
 - 主纵切：量化推理的外部状态/权重范围及真实成熟数学消费。
   正交纵切：渲染资产流送和分块矩阵管线；不加入 token/layer/KV policy。
 - 复用 Mem/Util/Sched/IO/Compute/native 完成，不增加复制 kernel、数学算子、模型 loader 或第二套 runtime。
@@ -73,6 +73,110 @@ Vulkan staging/device 双向及同设备合法 copy。无跨 GPU/peer/multi-GPU�
   但禁止每 copy 重建 plan/event/Completion。报告真实 native calls/groups/waits/staging。
 
 ## 有限 FIX 集
+
+### 当前 AUDIT / 形状冻结
+
+- AUDIT baseline / 改前 registry ref：`58bc5d72b`。沿原 seven FIX，实物 source/peer/SDK 证据见
+  [审计记录](foundation-f2-source-audit.md)，没有扩大调查文件或更新 dependency pin。
+- 共同字节描述/校验/有限 permission/control 属 `compute`；CPU/CUDA 只消费原 Context/QueueSequence，
+  CUDA 的 batch ABI 冷解析与 admitted native enqueue 属 `compute_backend_cuda`。
+  Apple/Vulkan 拥有自己的 native Program/Invocation/Submission，分别复用原 Runtime/Job 和 Run/Device。
+  共同 detail helper 只校验、权限、实际退休/ready，不 dispatch native work，不造万能 executor。
+- 不改现有 BackendVTable、Completion 公共布局或旧 ordinary submit 的常态字段；CUDA 借原 versioned
+  BackendExtensionRef 进行冷资格及原序列录制。只为新 F2 dependency 入口识别原 owner 的 actual native
+  identity；旧借用入口与 F1 normal API 语义保留。外部未知 callback/Completion 不猜 native fence。
+
+#### 自然 C++ 入口与独立运行槽
+
+共同值放在 `hyle/compute/batch_transfer.h`：`CopyResourceId/CopyPhaseId`、`CopyRange`、`CopyPhase`、
+`CopyResourceSpec`、`CopyBatchOptions`、`CopyBatchReport`。范围值为 source/destination IDs、各自 byte offset、
+byte count 与 phase ID；phase 有显式先行阶段 mask 与应用 group tag，不含 layer/token/model。
+phase 数最多64，dependency 必须指向先前阶段且覆盖真实跨阶段 hazards；同 phase 是 independent copies。
+
+CPU/CUDA 共同 `compute::CopyBatchProgram/CopyBatchInvocation/CopyBatchSubmission` 的原执行入口是
+Context/Queue；Apple/Vulkan 同名类型在其各自 namespace、native factory/context 下，资源/执行 owner 独立。
+它们共享普通字节描述与验证合同，不通过 common Queue 执行 MLX/Vulkan。
+
+```cpp
+auto program = CopyBatchProgram::prepare(context, resource_specs, options).value();
+auto first = CopyBatchInvocation::create(program, queue).value(); // native routes 用原 Context owner
+auto second = CopyBatchInvocation::create(program, other_queue).value();
+HYLE_RETURN_IF_ERROR(first.bind_source(source_id, ready_read));
+HYLE_RETURN_IF_ERROR(first.bind_mutable(destination_id, std::move(destination_write)));
+HYLE_RETURN_IF_ERROR(first.bind_producer(source_id, std::move(producer))); // 需要时显式交接
+HYLE_RETURN_IF_ERROR(first.prepare_replay(phases, ranges));
+auto submitted = first.submit().value();
+auto ready = submitted.output(phase_id, destination_id, offset, bytes); // 未真成功时 Unavailable/error
+HYLE_RETURN_IF_ERROR(submitted.wait());
+```
+
+所有 create/prepare/bind 返回 `Result/Status`；move-only invocation/submission，program 可共享不可变制品。
+program 冷固定 resource domain/capacity、native ABI/可用性与 metadata 上限；每 invocation 冷预置资源绑定、
+ranges/physical interval 索引、phase/producer/use/observation 槽。默认 resources16/copies64/phases4，
+显式有限扩容只在 cold create；至少两 invocation 独立 backing/在途槽，不将两业务槽折成同一个 mutable owner。
+source 绑定 ReadLease；mutable source/destination 接管 WriteLease，失败不消费。program/context/resource/allocator
+保持原借用寿命；实际 leases、index/descriptor、移动进来的 producer Completion 自动保活到本次真实最后使用。
+
+`prepare_replay(phases,ranges)` 在原固定资源内更新 host-known IDs/offsets/bytes，不重选 Provider/driver ABI。
+catalogue IDs 等价于有限 caller range 索引，不支持 GPU-produced IDs。新增资源绑定为显式冷操作，须没有在途
+native work/未放弃的 submission；旧 exported ReadLease 阻止对应块再次取得 writer。reset/close/drain/in_flight/
+report 的正常与 empty/moved 行为明确，failed slot 不自动复用；close 停接纳，drain 等实际已接受 work。
+每 invocation 一份 submission 冷槽；旧 submission 保留该槽，避免热扩建 callback/资源表。
+
+#### Alias、phase 与逐组 ready
+
+- 原资源 ID 不是 physical identity。CPU 用实际 host address；CUDA 用 context/address domain 与原 byte pointer；
+  Metal 用实际 shared contents/native backing；Vulkan 用 Device/memory或已知 native backing/offset。
+  native adapter 冷确定 canonical span，拒绝不能证明用途/alias 的外部 writable carrier，不以 wrapper 地址代签。
+- 全批 checked addition/容量/usage/device、各 phase destination 不交叠、source→destination overlap 同批拒绝；
+  重复 source 允许。exact self-copy 与零 byte ranges 在接纳前消除，空批有合法 inline completion。
+  多 phase 的 read/write hazards 必须由显式 dependency closure 覆盖；不得靠提交数组顺序默默接受相依批内 copy。
+- interval 索引冷预置，bind/更新做按 physical key/start 排序及线性 scan/union，O(R log R)；不做所有 range 两两比较。
+  每 phase used-root/读写角色在 bind 去重，submit 不重复范围排序。F1 现有 bounded dedup 的 O(N²) 成本不能藏进
+  O(R+G)：新 F2 使用已证明唯一 root 的内部准入，保留 permission/lock/ref 检查，O(N+R+G)（N为使用资源数）。
+- 每 phase 一个真实 native Completion。所有 native descriptors/可能引用的 data 保留到其原退休 callback；
+  partial acceptance 保存 prefix 和首错；whole submission 与 per-phase ready 分开，已成功独立组保留有效值。
+- mutable B 的 A→B、B→C 由 F2 内部、可证明 ordered read-use 交接；实际写 guard 退休/成功确认后，
+  可以发布 B 的 ReadLease，仍在途的后继只读 uses 继续保活。普通 F1 public write/read/publish 入口不放宽。
+  group 只发布相应 lease block 的最后写已实际退休的数据；同 block 未来还要写时不能提前发布，普通多组
+  pipeline 使用独立块。失败/取消/unknown 不能发布；新 read 之后无后继 writer，旧 read 阻止复用。
+- producer 必须有合法 owner 与显式 native/inline 依赖。新 F2 resolve 只识别原 retained owner 并转交实际
+  pending identity，known error/unknown 已移交退休仍是错误；没有可用 native route 时明确拒绝或显式报告已选
+  host boundary，不悄悄同步。程序/完成 metadata 不进入数学 Provider selection。
+
+#### Native 固定路线
+
+CPU 沿原 byte copy/原同步序列，phase completion inline；CUDA 在13.3实际 ABI冷解析 `_v2` 或
+同 stream 原 memcpy fallback，默认 STREAM，legacy/缺席能力不在热路径尝试后换策略。所有 host-known
+pointer/size/attribute 数组冷固定，fallback O(R) calls 如实记。原 QueueSequence 负责接纳/event/首错/退休。
+Apple 的 blit 使用原 MLX stream/CommandEncoder 与原 Context Job owner，MCB 单次使用/同 queue排序、
+visibility/error/真实等待明确；原 host→shared 边界与有限 staging 费用分别记录，不新建全局 Queue/进展线程。
+Vulkan 固定 pair grouping/VkBufferCopy、原 Run/fence/queue family/cache visibility；可用 transfer queue沿原
+handoff合同，legacy/imported 合法 compute queue或明确拒绝。tail 仅在已拥有的 source/destination physical
+capacity 内合法扩展，不能覆盖邻块；不新增 repack/copy kernel。每份报告列实际 copies/calls/groups/host waits、
+logical/physical/staging/metadata/unknown bytes，opaque driver/vendor 成本不冒充零。
+
+### 有限实现 ledger（不新增 FIX ID）
+
+| 原 FIX | 允许的产品接线 | 验收与停止边界 |
+|---|---|---|
+| F2-01 | 共同 descriptors/checked validator、各自 program/invocation/submission 与冷固定 metadata/预算/绑定 | R=0/1/多、IDs/capacity/overflow/OOM/失败不消费、二组二槽、ranges/catalogue replay不增长 |
+| F2-02 | canonical physical spans、排序/scan independent alias、explicit phase closure、自复制消除 | 跨 wrapper alias、重叠写/相依批拒绝、重复 source、显式 A→B→C 与空批/边界 |
+| F2-03 | CPU借原录制；CUDA原 backend cold batch/fallback、native producer依赖/descriptor保活 | 双向/同设备 byte equality、cold资格一次、native counts/STREAM ordering与失败prefix |
+| F2-04 | Apple原Job/MLX native stream blit、shared visibility、合法staging与ready/退休 | 非CPU冒充GPU；实际MCB/取消/失败/两组数学与allocator/native成本 |
+| F2-05 | Vulkan原Run的pair regions/record/submit/flush/invalidate/handoff与范围检查 | 真GPU、family/usage/tail、legacy/imported边界、一个phase completion/首错与排空 |
+| F2-06 | compute内F2专用预去重/ordered read准入、写退休后发布、retained native依赖桥与每phase actual latch | public F1回归；pending后继read保活、旧group、部分成功、OOM/取消/放弃/unknown/close/drain/slot失效 |
+| F2-07 | 普通facade样例与指南、原Direct/Graph数学消费者、P0账、头/absence/source/static/shared | 原编码/BF16/量化真实值，三平台/三交付/迁址/DLL、完整矩阵/七问/红队；未验不PASS |
+
+每项都先实现完整已冻结语义；native 细节允许有限补读，出现新 owner/公开形状/常态成本等级变化先退回审计。
+本次 AUDIT 是 SOURCE/设计裁决，全部七 FIX 的运行 verdict 仍 UNPROVEN，不据此关闭 F2。
+
+### 首批精准验证声明
+
+共同控制接线阶段仅选 `compute` 的新 range/phase/lease handoff/proxy依赖协议 tests 与既有
+`ResourceLeases.*:Completion.*` 相关回归，header sole-include；复用本批 Windows共同/WSL compute构建，
+build1/test1、4GiB、configure300/build1800/exe120，不全算子/P1。真实 CUDA/Apple/Vulkan故障与数学、
+二组二槽及三交付在本包产品接线后按稳定候选集中运行，日志/预算不因阶段提交重置。
 
 | FIX | 必须实现 | 验收 |
 |---|---|---|

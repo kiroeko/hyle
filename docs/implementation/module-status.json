@@ -270,9 +270,9 @@
     },
     {
       "module": "compute",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/foundation-f2-batched-transfers.md",
-      "summary": "F2 SCOPED：绑定 F1 收口后的实际基线，审计原七 FIX 的有界批量范围/phase/ready与真实 native 依赖；未改产品或运行资格，其他闭包 owner 保持 CLOSED。"
+      "summary": "F2 AUDITED：原七 FIX 的 prepared ranges/phase/ready、physical alias、ordered lease/native dependency交接与各原 runtime接线已固定；开始有限实现，全部运行资格尚未取得。"
     },
     {
       "module": "graph",
@@ -412,9 +412,9 @@
     },
     {
       "module": "compute_backend_cuda",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/foundation-f2-batched-transfers.md",
-      "summary": "F2 SCOPED：绑定 F1 收口后的实际基线，审计原七 FIX 的有界批量范围/phase/ready与真实 native 依赖；未改产品或运行资格，其他闭包 owner 保持 CLOSED。"
+      "summary": "F2 AUDITED：原七 FIX 的 prepared ranges/phase/ready、physical alias、ordered lease/native dependency交接与各原 runtime接线已固定；开始有限实现，全部运行资格尚未取得。"
     },
     {
       "module": "compute_provider_native",
@@ -507,9 +507,9 @@
     },
     {
       "module": "compute_route_apple",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/foundation-f2-batched-transfers.md",
-      "summary": "F2 SCOPED：绑定 F1 收口后的实际基线，审计原七 FIX 的有界批量范围/phase/ready与真实 native 依赖；未改产品或运行资格，其他闭包 owner 保持 CLOSED。"
+      "summary": "F2 AUDITED：原七 FIX 的 prepared ranges/phase/ready、physical alias、ordered lease/native dependency交接与各原 runtime接线已固定；开始有限实现，全部运行资格尚未取得。"
     },
     {
       "module": "graph_route_apple",
@@ -524,9 +524,9 @@
     },
     {
       "module": "compute_route_vulkan",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/foundation-f2-batched-transfers.md",
-      "summary": "F2 SCOPED：绑定 F1 收口后的实际基线，审计原七 FIX 的有界批量范围/phase/ready与真实 native 依赖；未改产品或运行资格，其他闭包 owner 保持 CLOSED。"
+      "summary": "F2 AUDITED：原七 FIX 的 prepared ranges/phase/ready、physical alias、ordered lease/native dependency交接与各原 runtime接线已固定；开始有限实现，全部运行资格尚未取得。"
     },
     {
       "module": "graph_route_vulkan",
