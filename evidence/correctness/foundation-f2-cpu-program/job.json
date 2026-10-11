@@ -1,0 +1,141 @@
+{
+  "candidate": "d16f07f927e895eb21b24c153de37f85eaa653e4",
+  "scope": "F2 Windows CPU public copy program synchronous semantics and common controls only; full math/routes/deliveries unqualified",
+  "configuration": "Release/static/source/instrumentationON/installOFF",
+  "compiler": "C:/Program Files/Microsoft Visual Studio/18/Enterprise/VC/Tools/MSVC/14.50.35717/bin/Hostx64/x64/cl.exe",
+  "parallel": 1,
+  "stages": [
+    {
+      "name": "identity",
+      "command": [
+        "python",
+        "-c",
+        "import platform;print(platform.platform());print(platform.machine())"
+      ],
+      "pid": 87104,
+      "state": "terminal",
+      "available_bytes": 47113928704,
+      "log": "identity.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "ee31dbd06d1e4674c867a87125a9cb34b2d47fc54a4e4aec08d977181d9e19de"
+    },
+    {
+      "name": "clean",
+      "command": [
+        "C:/PROGRA~1/PYTHON~1/Scripts/ninja.exe",
+        "-C",
+        "C:\\h7\\foundation-f1-cpu",
+        "-t",
+        "clean",
+        "hyle_compute_backend_cpu_test",
+        "hyle_compute_test"
+      ],
+      "pid": 45484,
+      "state": "terminal",
+      "available_bytes": 47123623936,
+      "log": "clean.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "20498bad2d7e7d756c408030ccb9269a63f84460c6b3f2a93da6cdf4feb49f82"
+    },
+    {
+      "name": "build",
+      "command": [
+        "C:\\Program Files\\CMake\\bin\\cmake.EXE",
+        "--build",
+        "C:\\h7\\foundation-f1-cpu",
+        "--target",
+        "hyle_compute_backend_cpu_test",
+        "hyle_compute_test",
+        "--parallel",
+        "1"
+      ],
+      "pid": 11096,
+      "state": "terminal",
+      "available_bytes": 47116546048,
+      "log": "build.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "b561487f8fa44073b36c9a183b730c9dfe81c7e6743a53ea92c62edb9573d1b4"
+    },
+    {
+      "name": "deps",
+      "command": [
+        "C:/PROGRA~1/PYTHON~1/Scripts/ninja.exe",
+        "-C",
+        "C:\\h7\\foundation-f1-cpu",
+        "-t",
+        "deps",
+        "src/compute/CMakeFiles/hyle_compute.dir/copy_ranges.cc.obj"
+      ],
+      "pid": 70800,
+      "state": "terminal",
+      "available_bytes": 46955962368,
+      "log": "deps.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "dd7a7b368017c8a394da3a03efc4112873c187f6acd0eb8e1e06cc685465a034"
+    },
+    {
+      "name": "headers",
+      "command": [
+        "python",
+        "C:\\public\\project-hyle\\hyle\\scripts\\header-self-contained.py",
+        "--module",
+        "compute",
+        "--header",
+        "batch_transfer.h",
+        "--header",
+        "detail/copy_backend.h",
+        "--header",
+        "detail/lease_access.h",
+        "--include-dir",
+        "C:\\public\\project-hyle\\hyle\\include",
+        "--extra-include-dir",
+        "C:/h7/foundation-f1-sdk/w-cpu-cuda-shared-relocated/include",
+        "--cxx",
+        "C:/Program Files/Microsoft Visual Studio/18/Enterprise/VC/Tools/MSVC/14.50.35717/bin/Hostx64/x64/cl.exe",
+        "--cxx-compiler-id",
+        "MSVC"
+      ],
+      "pid": 94476,
+      "state": "terminal",
+      "available_bytes": 46954856448,
+      "log": "headers.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "db2f8431654c65ff13565b0affc08a69a56e925b27edade11d4433a086f9368a"
+    },
+    {
+      "name": "common",
+      "command": [
+        "C:\\h7\\foundation-f1-cpu\\bin\\hyle_compute_test.exe",
+        "--gtest_filter=CopyRanges.*:CopyLeaseHandoff.*:CopyDependency.*:ResourceLeases.*:Completion.*"
+      ],
+      "pid": 42168,
+      "state": "terminal",
+      "available_bytes": 46950940672,
+      "log": "common.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "385787fa753e787f76788d0881d30621122ec2383336448db7ed4d722cfddea6"
+    },
+    {
+      "name": "test",
+      "command": [
+        "C:\\h7\\foundation-f1-cpu\\bin\\hyle_compute_backend_cpu_test.exe",
+        "--gtest_filter=CpuCopyProgram.*",
+        "--gtest_output=xml:C:\\public\\project-hyle\\hyle\\.scratch\\foundation-f2\\cpu-program-windows\\metrics.xml"
+      ],
+      "pid": 95076,
+      "state": "terminal",
+      "available_bytes": 46950379520,
+      "log": "test.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "6e096c4fc75e6949f1f1bf0a7b9a112c40e6ae72a39431bae531c6d49e78d742"
+    }
+  ],
+  "verdict": "PASS"
+}

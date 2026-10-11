@@ -1,0 +1,12 @@
+{
+  "schema_version": 1,
+  "candidate": "d16f07f927e895eb21b24c153de37f85eaa653e4",
+  "tree": "877b80117d9eb19463fe62e031d076ecdd7f70ba",
+  "scope": "Windows MSVC Release/static/source original CPU byte copy, public F2 controller and common controls",
+  "verdict": "PASS",
+  "public_cpu_tests": 3,
+  "common_tests": 34,
+  "headers": 3,
+  "metrics_xml_sha256": "fb556f85c86c6101237a336ee76a8a3143e8a4cdd132266f01bfb161b5288342",
+  "other_cpu_platforms_math_and_complete_delivery": "UNPROVEN"
+}

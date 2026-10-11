@@ -237,6 +237,12 @@ CUDA接缝首构建在测试callback的返回类型推导失败（`HYLE_RETURN_I
 后继readonly use仍保活，放弃两控制句柄后metadata实际归零/旧reader最后回收。
 [公共对象首轮收据](../../../../evidence/correctness/foundation-f2-public-program/receipt.json)保留两次attempt、
 单例diagnostic与依赖故障。CPU、Apple/Vulkan、实际数学/故障全矩阵/三交付仍待验，维持AUDITED。
+CPU `d16f07f92` 的MSVC Release/static/source首轮同样PASS：3个公共program用例、34项common回归与3头，
+复用原同步byte copy，无伪异步；二slot三轮不增长metadata，4次copy/3phase/零native与host waits，
+跨read子view的physical self-copy实际消除，later write不提前发布、失败绑定不消费及empty/OOM均通过。
+[CPU收据](../../../../evidence/correctness/foundation-f2-cpu-program/receipt.json)保留精确tree/命令/deps/log SHA。
+当前CPU/CUDA公共对象完成此首轮实现期检查；WSL/Air、Apple/Vulkan程序、真实数学与完整故障/交付矩阵
+尚未通过。没有把这些首轮用例计成七FIX全完成或CANDIDATE；四owner仍AUDITED。
 
 | FIX | 必须实现 | 验收 |
 |---|---|---|

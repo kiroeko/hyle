@@ -1,0 +1,146 @@
+[0/2] Re-checking globbed directories...
+-- GLOB mismatch!
+The following files were added:
+  +C:/public/project-hyle/hyle/include/hyle/compute/batch_transfer.h
+  +C:/public/project-hyle/hyle/include/hyle/compute/detail/copy_backend.h
+  +C:/public/project-hyle/hyle/include/hyle/compute/detail/copy_ranges.h
+-- GLOB mismatch!
+The following files were added:
+  +C:/public/project-hyle/hyle/include/hyle/graph/detail/lease_submission.h
+-- GLOB mismatch!
+The following files were added:
+  +C:/public/project-hyle/hyle/src/compute/batch_transfer.cc
+  +C:/public/project-hyle/hyle/src/compute/copy_ranges.cc
+-- GLOB mismatch!
+The following files were added:
+  +C:/public/project-hyle/hyle/src/graph/lease_submission.cc
+[1/2] Re-running CMake...
+-- HYLE developer factors: requested='graph_route_cpu' resolved='core,container_intrusive,util_core,error,time,math,timer_queue,platform,platform_thread,platform_fs,mem,mem_vm,simd,container,container_queue,sched,compute_ops,compute,graph,compute_provider_onednn,compute_backend_cpu,compute_ggml_runtime,compute_provider_ggml,graph_provider_onednn,compute_provider_native,compute_route_cpu,graph_route_cpu' products=''
+-- HYLE_SANITIZER = off
+-- HYLE_TESTING = OFF (tests exercise the shipping layout/hot paths)
+CMake Warning (deprecated) at C:/public/tools/hyle-dependencies/v1/sources/onednn-c531fe1a5cd6-5c0c833df87c/CMakeLists.txt:36 (cmake_policy):
+  The OLD behavior for policy CMP0146 will be removed from a future version
+  of CMake.
+
+  The cmake-policies(7) manual explains that the OLD behaviors of all
+  policies are deprecated and that a policy should be set to OLD only under
+  specific short-term circumstances.  Projects should be ported to the NEW
+  behavior and not rely on setting a policy to OLD.
+This warning is for project developers.  Use -Wno-author or -Wno-deprecated
+to suppress it.
+
+-- DNNL_TARGET_ARCH: X64
+-- ONEDNN_LIBRARY_TYPE: STATIC (default: SHARED)
+-- ONEDNN_BUILD_GRAPH: OFF (default: ON)
+-- ONEDNN_ENABLE_CONCURRENT_EXEC: ON (default: OFF)
+-- ONEDNN_ENABLE_PRIMITIVE_CACHE: OFF (default: ON)
+-- ONEDNN_ENABLE_WORKLOAD: INFERENCE (default: TRAINING)
+-- ONEDNN_ENABLE_PRIMITIVE: MATMUL;LAYER_NORMALIZATION;BINARY;ELTWISE;REORDER (default: ALL)
+-- ONEDNN_EXPERIMENTAL_UKERNEL: ON (default: OFF)
+-- ONEDNN_ENABLE_JIT_PROFILING: OFF (default: ON)
+-- ONEDNN_ENABLE_ITT_TASKS: OFF (default: ON)
+-- ONEDNN_VERBOSE: OFF (default: ON)
+-- ONEDNN_CPU_RUNTIME: THREADPOOL (default: OMP)
+-- ONEDNN_ENABLE_MAX_CPU_ISA: OFF (default: ON)
+-- ONEDNN_ENABLE_CPU_ISA_HINTS: OFF (default: ON)
+-- Threadpool testing: standalone
+-- Found OpenCL headers: C:/public/tools/hyle-dependencies/v1/sources/onednn-c531fe1a5cd6-5c0c833df87c/third_party/opencl
+-- Enabled testing coverage: CI
+-- Enabled workload: INFERENCE
+-- Enabled primitives: MATMUL;LAYER_NORMALIZATION;BINARY;ELTWISE;REORDER
+-- Enabled primitive CPU ISA: ALL
+-- Enabled primitive GPU ISA: ALL
+-- Enabled GeMM kernels ISA: ALL
+-- Primitive cache is disabled
+-- Experimental functionality for ukernels is enabled
+-- HYLE: oneDNN v3.13.4 -- x64 BRGEMM, normalization and tensor primitives enabled
+-- ggml source: 2319 files, 11 exact patches
+
+-- CMAKE_SYSTEM_PROCESSOR: AMD64
+-- CMAKE_GENERATOR_PLATFORM: 
+-- GGML_SYSTEM_ARCH: x86
+-- Including CPU backend
+-- x86 detected
+-- Adding CPU backend variant ggml-cpu:  
+-- ggml version: 0.26.0
+-- ggml commit:  ffa4e8b80930029a35991f94e7c8a93cd67730ab-hyle
+-- HYLE: reusing locked CPU SDK at C:/public/tools/hyle-dependencies/v1/sdks/torch-cpu/Windows-bf0079104e068dcbd60b2f8de589dc725282cbe865a85016cc5b8aa46cab519d/libtorch
+-- HYLE: original TorchAO/ATen CPU low precision -- locked LibTorch 2.8.0
+-- HYLE_TRACE = OFF (hooks compile to nothing -- zero cost)
+-- HYLE 0.1.0 | MSVC 19.50.35728.0 | C++23 | sanitizer=off | linkage=static | products= | factors=core,container_intrusive,util_core,error,time,math,timer_queue,platform,platform_thread,platform_fs,mem,mem_vm,simd,container,container_queue,sched,compute_ops,compute,graph,compute_provider_onednn,compute_backend_cpu,compute_ggml_runtime,compute_provider_ggml,graph_provider_onednn,compute_provider_native,compute_route_cpu,graph_route_cpu
+-- Configuring done (103.9s)
+-- Generating done (0.6s)
+-- Build files have been written to: C:/h7/foundation-f1-cpu
+[0/4] Re-checking globbed directories...
+[1/75] Building CXX object src\error\CMakeFiles\hyle_error.dir\status.cc.obj
+[2/75] Linking CXX static library bin\hyle_error.lib
+[3/75] Building CXX object src\platform\CMakeFiles\hyle_platform_cpu_probe.dir\cpu.cc.obj
+[4/75] Building CXX object src\platform\CMakeFiles\hyle_platform_cgroup_parser.dir\linux_cgroup.cc.obj
+[5/75] Building CXX object src\platform\CMakeFiles\hyle_platform.dir\cpu_resource.cc.obj
+[6/75] Building CXX object src\platform\CMakeFiles\hyle_platform.dir\dynlib.cc.obj
+[7/75] Building CXX object src\platform\CMakeFiles\hyle_platform.dir\environment.cc.obj
+[8/75] Building CXX object src\platform\CMakeFiles\hyle_platform.dir\host_memory.cc.obj
+[9/75] Building CXX object src\platform\CMakeFiles\hyle_platform.dir\numa.cc.obj
+[10/75] Building CXX object src\platform\CMakeFiles\hyle_platform.dir\process.cc.obj
+[11/75] Building CXX object src\platform\CMakeFiles\hyle_platform.dir\random.cc.obj
+[12/75] Building CXX object src\platform\CMakeFiles\hyle_platform.dir\virtual_memory.cc.obj
+[13/75] Building CXX object src\mem\CMakeFiles\mimalloc_static.dir\__\__\third_party\mimalloc\src\static.c.obj
+[14/75] Linking CXX static library bin\hyle_platform.lib
+[15/75] Building CXX object src\mem\CMakeFiles\hyle_mem.dir\buffer.cc.obj
+[16/75] Building CXX object src\mem\CMakeFiles\hyle_mem.dir\buffer_pool.cc.obj
+[17/75] Building CXX object src\mem\CMakeFiles\hyle_mem.dir\composite_buffer.cc.obj
+[18/75] Building CXX object src\mem\CMakeFiles\hyle_mem.dir\heap.cc.obj
+[19/75] Building CXX object src\mem\CMakeFiles\hyle_mem.dir\lifetime_plan.cc.obj
+[20/75] Building CXX object src\mem\CMakeFiles\hyle_mem.dir\range_allocator.cc.obj
+[21/75] Building CXX object src\mem\CMakeFiles\hyle_mem.dir\resource.cc.obj
+[22/75] Building CXX object src\mem\CMakeFiles\hyle_mem.dir\system.cc.obj
+[23/75] Building CXX object src\mem\CMakeFiles\hyle_mem.dir\stats.cc.obj
+[24/75] Linking CXX static library bin\mimalloc_static.lib
+[25/75] Building CXX object src\compute_ops\CMakeFiles\hyle_compute_ops.dir\operation.cc.obj
+[26/75] Building CXX object src\compute_ops\CMakeFiles\hyle_compute_ops.dir\tensor_desc.cc.obj
+[27/75] Building CXX object src\compute_ops\CMakeFiles\hyle_compute_ops.dir\low_precision.cc.obj
+[28/75] Building CXX object src\compute_ops\CMakeFiles\hyle_compute_ops.dir\weight_decode.cc.obj
+[29/75] Linking CXX static library bin\hyle_mem.lib
+[30/75] Linking CXX static library bin\hyle_compute_ops.lib
+[31/75] Building CXX object src\compute\CMakeFiles\hyle_compute.dir\batch_transfer.cc.obj
+[32/75] Building CXX object src\compute\CMakeFiles\hyle_compute.dir\command_capture.cc.obj
+[33/75] Building CXX object src\compute\CMakeFiles\hyle_compute.dir\completion.cc.obj
+[34/75] Building CXX object src\compute\CMakeFiles\hyle_compute.dir\copy_ranges.cc.obj
+[35/75] Building CXX object src\compute\CMakeFiles\hyle_compute.dir\custom_kernel.cc.obj
+[36/75] Building CXX object src\compute\CMakeFiles\hyle_compute.dir\device.cc.obj
+[37/75] Building CXX object src\compute\CMakeFiles\hyle_compute.dir\operation.cc.obj
+[38/75] Building CXX object src\compute\CMakeFiles\hyle_compute.dir\provider.cc.obj
+[39/75] Building CXX object src\compute\CMakeFiles\hyle_compute.dir\resource_budget.cc.obj
+[40/75] Building CXX object src\compute\CMakeFiles\hyle_compute.dir\resource_leases.cc.obj
+[41/75] Building CXX object src\compute\CMakeFiles\hyle_compute.dir\retained_completion.cc.obj
+[42/75] Building CXX object src\compute\CMakeFiles\hyle_compute.dir\leased_operation.cc.obj
+[43/75] Building CXX object src\compute\CMakeFiles\hyle_compute.dir\route_policy.cc.obj
+[44/75] Building CXX object src\compute\CMakeFiles\hyle_compute.dir\result.cc.obj
+[45/75] Building CXX object src\compute\CMakeFiles\hyle_compute.dir\shape_domain.cc.obj
+[46/75] Building CXX object src\compute\CMakeFiles\hyle_compute.dir\shape_program.cc.obj
+[47/75] Building CXX object src\compute\CMakeFiles\hyle_compute.dir\tensor_view.cc.obj
+[48/75] Building CXX object src\compute\CMakeFiles\hyle_compute.dir\transfer.cc.obj
+[49/75] Building CXX object src\compute\CMakeFiles\hyle_compute.dir\workload.cc.obj
+[50/75] Building CXX object C:\h7\w-cpu-cuda\selected-graph\source-build\hyle\_deps\googletest-build\googletest\CMakeFiles\gtest.dir\src\gtest-all.cc.obj
+[51/75] Linking CXX static library bin\hyle_compute.lib
+[52/75] Building CXX object src\compute_backend_cpu\CMakeFiles\hyle_compute_backend_cpu.dir\cpu_backend.cc.obj
+[53/75] Linking CXX static library lib\gtest.lib
+[54/75] Building CXX object C:\h7\w-cpu-cuda\selected-graph\source-build\hyle\_deps\googletest-build\googletest\CMakeFiles\gtest_main.dir\src\gtest_main.cc.obj
+[55/75] Linking CXX static library bin\hyle_compute_backend_cpu.lib
+[56/75] Linking CXX static library lib\gtest_main.lib
+[57/75] Building CXX object tests\compute\CMakeFiles\hyle_compute_test.dir\completion_test.cc.obj
+[58/75] Building CXX object tests\compute\CMakeFiles\hyle_compute_test.dir\copy_ranges_test.cc.obj
+[59/75] Building CXX object tests\compute\CMakeFiles\hyle_compute_test.dir\provider_test.cc.obj
+[60/75] Building CXX object tests\compute\CMakeFiles\hyle_compute_test.dir\resource_leases_test.cc.obj
+[61/75] Building CXX object tests\compute\CMakeFiles\hyle_compute_test.dir\route_policy_test.cc.obj
+[62/75] Building CXX object tests\compute\CMakeFiles\hyle_compute_test.dir\shape_domain_test.cc.obj
+[63/75] Building CXX object tests\compute\CMakeFiles\hyle_compute_test.dir\shape_program_test.cc.obj
+[64/75] Building CXX object tests\compute\CMakeFiles\hyle_compute_test.dir\tensor_test.cc.obj
+[65/75] Building CXX object tests\compute\CMakeFiles\hyle_compute_test.dir\workload_test.cc.obj
+[66/75] Building CXX object tests\compute_backend_cpu\CMakeFiles\hyle_compute_backend_cpu_test.dir\copy_program_test.cc.obj
+[67/75] Building CXX object tests\compute_backend_cpu\CMakeFiles\hyle_compute_backend_cpu_test.dir\__\compute\device_test.cc.obj
+[68/75] Building CXX object tests\compute_backend_cpu\CMakeFiles\hyle_compute_backend_cpu_test.dir\__\compute\host_kernel_test.cc.obj
+[69/75] Building CXX object tests\compute_backend_cpu\CMakeFiles\hyle_compute_backend_cpu_test.dir\__\compute\custom_kernel_test.cc.obj
+[70/75] Building CXX object tests\compute_backend_cpu\CMakeFiles\hyle_compute_backend_cpu_test.dir\runtime_provider_test.cc.obj
+[71/75] Linking CXX executable bin\hyle_compute_test.exe
+[72/75] Linking CXX executable bin\hyle_compute_backend_cpu_test.exe
