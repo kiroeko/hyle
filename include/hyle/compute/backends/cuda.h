@@ -12,6 +12,7 @@
 #include <cuda_runtime_api.h>
 
 #include "hyle/compute/completion.h"
+#include "hyle/compute/resource_leases.h"
 #include "hyle/compute/device.h"
 #include "hyle/compute/visibility.h"
 #include "hyle/error/result.h"
@@ -196,6 +197,12 @@ public:
   mem::ConstBufferView view() const noexcept;
   std::size_t size() const noexcept;
   Device device() const noexcept;
+  // Owns the adopted payload and its native resource/Context. Borrowed imports
+  // are rejected; all failures leave this wrapper owned by the caller.
+  // Readonly import requires completed producers and no concurrent writable
+  // aliases; it does not infer a fence for work submitted by another library.
+  Result<ReadLease> into_read_lease(LeaseImportOptions options = {}) && noexcept;
+  Result<LeasePool> into_lease_pool(LeasePoolOptions options = {}) && noexcept;
   void reset() noexcept;
 
 private:

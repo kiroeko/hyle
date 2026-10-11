@@ -136,6 +136,7 @@ public:
   HYLE_COMPUTE_API Status drain() noexcept;
 private:
   friend class ReadLease;
+  friend struct detail::LeaseAccess;
   explicit LeasePool(detail::LeaseDomain *state) noexcept : state_(state) {}
   detail::LeaseDomain *state_ = nullptr;
 };

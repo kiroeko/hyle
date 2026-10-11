@@ -914,6 +914,48 @@ TEST(CudaBackend, ExternalBufferBorrowAndAdoptHaveDistinctOwnership) {
   EXPECT_EQ(popped, *primary);
 }
 
+TEST(CudaBackend, AdoptedNativeLeasePoolOwnsResourceAndBorrowedPayloadCannotMasquerade) {
+  auto context = Context::create(cuda::device(0).value()).value();
+  const auto primary = cuda::primary_context(context).value();
+  ASSERT_EQ(cuCtxPushCurrent(primary), CUDA_SUCCESS);
+  struct PopPrimary final {
+    CUcontext expected;
+    ~PopPrimary() {
+      CUcontext popped = nullptr;
+      EXPECT_EQ(cuCtxPopCurrent(&popped), CUDA_SUCCESS);
+      EXPECT_EQ(popped, expected);
+    }
+  } pop{primary};
+  CUdeviceptr pointer = 0;
+  ASSERT_EQ(cuMemAlloc(&pointer, 1024), CUDA_SUCCESS);
+  auto borrowed = cuda::ExternalBuffer::borrow(context,
+      reinterpret_cast<void *>(pointer), 1024).value();
+  EXPECT_FALSE(std::move(borrowed).into_read_lease().has_value());
+  EXPECT_FALSE(std::move(borrowed).into_lease_pool().has_value());
+  EXPECT_TRUE(borrowed.valid());
+  borrowed.reset();
+  auto owned = cuda::ExternalBuffer::adopt(context,
+      reinterpret_cast<void *>(pointer), 1024).value();
+  EXPECT_FALSE(std::move(owned).into_lease_pool({.max_blocks = 0}).has_value());
+  EXPECT_TRUE(owned.valid());
+  auto pool = std::move(owned).into_lease_pool({.max_blocks = 2}).value();
+  EXPECT_FALSE(owned.valid());
+  auto writer = pool.allocate(256).value();
+  ASSERT_TRUE(writer.view()->fill(std::byte{42}).ok());
+  auto reader = writer.publish().value();
+  auto piece = reader.subview(16, 32).value();
+  pool = {}; // native resource was owned by the transferred ExternalBufferState
+  reader.reset();
+  std::array<std::byte, 32> observed{};
+  ASSERT_TRUE(piece.view()->read(observed).ok());
+  for (auto value : observed) EXPECT_EQ(value, std::byte{42});
+  CUdeviceptr base = 0;
+  std::size_t bytes = 0;
+  EXPECT_EQ(cuMemGetAddressRange(&base, &bytes, pointer), CUDA_SUCCESS);
+  piece.reset();
+  EXPECT_NE(cuMemGetAddressRange(&base, &bytes, pointer), CUDA_SUCCESS);
+}
+
 TEST(CudaBackend, RejectsExternalCaptureWithoutInvokingCommand) {
   auto device = cuda::device(0);
   ASSERT_TRUE(device.has_value()) << device.error().message();

@@ -474,13 +474,29 @@ TEST(CublasProvider, LeasedDirectRetainsNativeUsesAndReplaysWithoutLeaseAllocati
       {.max_blocks = 3, .allocator = metadata.ref()}).value();
   const auto desc = matrix(compute::DataType::kFloat32, 2, 2, false);
   auto left_write = pool.allocate(16).value();
-  auto right_backing = mem::Buffer::create(resource.ref(), 16, 256).value();
+  const auto primary = cuda::primary_context(owner).value();
+  ASSERT_EQ(cuCtxPushCurrent(primary), CUDA_SUCCESS);
+  struct PopPrimary final {
+    CUcontext expected;
+    ~PopPrimary() {
+      CUcontext popped = nullptr;
+      EXPECT_EQ(cuCtxPopCurrent(&popped), CUDA_SUCCESS);
+      EXPECT_EQ(popped, expected);
+    }
+  } pop{primary};
+  CUdeviceptr native_weight = 0;
+  ASSERT_EQ(cuMemAlloc(&native_weight, 16), CUDA_SUCCESS);
+  auto right_backing = cuda::ExternalBuffer::adopt(owner,
+      reinterpret_cast<void *>(native_weight), 16).value();
   auto output = pool.allocate(16).value();
   const std::array<float, 4> a{1, 2, 3, 4}, identity{1, 0, 0, 1};
   ASSERT_TRUE(left_write.view()->write(std::as_bytes(std::span(a))).ok());
   ASSERT_TRUE(right_backing.view().write(std::as_bytes(std::span(identity))).ok());
   auto left = left_write.publish().value();
-  auto right = compute::ReadLease::adopt(std::move(right_backing), {.allocator = metadata.ref()}).value();
+  EXPECT_FALSE(std::move(right_backing).into_read_lease({.allocator = {}}).has_value());
+  EXPECT_TRUE(right_backing.valid());
+  auto right = std::move(right_backing).into_read_lease({.allocator = metadata.ref()}).value();
+  EXPECT_FALSE(right_backing.valid());
   EXPECT_FALSE(right.try_write().has_value());
   auto prepared = compute::prepare(owner, compute::Operation(compute::MatMul{}),
       std::array{left.tensor(desc).value(), right.tensor(desc).value()},

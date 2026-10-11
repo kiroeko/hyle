@@ -1,4 +1,5 @@
 #include "hyle/compute/backends/cuda.h"
+#include "hyle/compute/detail/lease_access.h"
 
 #include <algorithm>
 #include <atomic>
@@ -359,6 +360,7 @@ public:
   // MemoryResourceRef already points at it, and preserves the rule that a
   // failed wrapper construction never steals the caller's allocation.
   void activate_ownership() noexcept { owning_ = true; }
+  bool owns_payload() const noexcept { return owning_; }
 
   std::string_view name() const noexcept override {
     return owning_ ? "hyle.cuda.external_adopted"
@@ -658,6 +660,28 @@ void ExternalBuffer::reset() noexcept {
     static_cast<detail::ExternalBufferState *>(state_)->destroy();
     state_ = nullptr;
   }
+}
+
+Result<ReadLease> ExternalBuffer::into_read_lease(LeaseImportOptions options) && noexcept {
+  auto *state = static_cast<detail::ExternalBufferState *>(state_);
+  if (!state || !state->resource.owns_payload())
+    return std::unexpected(Status::FailedPrecondition("CUDA lease requires an adopted native payload"));
+  HYLE_ASSIGN_OR_RETURN(auto lease, ReadLease::adopt(std::move(state->buffer), options));
+  compute::detail::LeaseAccess::retain_resource_owner(lease, state,
+      [](void *owner) noexcept { static_cast<detail::ExternalBufferState *>(owner)->destroy(); });
+  state_ = nullptr;
+  return lease;
+}
+
+Result<LeasePool> ExternalBuffer::into_lease_pool(LeasePoolOptions options) && noexcept {
+  auto *state = static_cast<detail::ExternalBufferState *>(state_);
+  if (!state || !state->resource.owns_payload())
+    return std::unexpected(Status::FailedPrecondition("CUDA lease pool requires an adopted native payload"));
+  HYLE_ASSIGN_OR_RETURN(auto pool, LeasePool::adopt(std::move(state->buffer), options));
+  compute::detail::LeaseAccess::retain_resource_owner(pool, state,
+      [](void *owner) noexcept { static_cast<detail::ExternalBufferState *>(owner)->destroy(); });
+  state_ = nullptr;
+  return pool;
 }
 
 } // namespace hyle::compute::cuda

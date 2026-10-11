@@ -7,6 +7,7 @@
 #include <utility>
 
 #include "hyle/compute/detail/completion_access.h"
+#include "hyle/compute/detail/lease_access.h"
 #include "hyle/core/assert.h"
 #include "hyle/mem/range_allocator.h"
 #include "hyle/mem/shared_pool.h"
@@ -36,10 +37,15 @@ struct LeaseDomain final : util::RefCounted<LeaseDomain> {
       : allocator(selected), blocks(selected, sizeof(LeaseBlock), count, alignof(LeaseBlock)) {}
   void destroy() noexcept {
     const auto selected = allocator;
+    const auto retained_owner = resource_owner;
+    const auto release_owner = release_resource_owner;
     this->~LeaseDomain();
     selected.deallocate(this, sizeof(LeaseDomain), alignof(LeaseDomain));
+    if (release_owner) release_owner(retained_owner);
   }
   mem::AllocatorRef allocator;
+  void *resource_owner = nullptr;
+  LeaseAccess::ReleaseOwnerFn release_resource_owner = nullptr;
   ResourceBudget::Reservation charge{};
   mem::Buffer backing{};
   mem::RangeAllocator ranges{};
@@ -241,6 +247,22 @@ Result<LeaseDomain *> prepare_lease_domain(mem::MemoryResourceRef resource,
   return state;
 }
 } // namespace detail
+
+void detail::LeaseAccess::retain_resource_owner(ReadLease &lease, void *owner,
+                                               ReleaseOwnerFn release) noexcept {
+  HYLE_FATAL_ASSERT(lease.block_ && owner && release);
+  auto *domain = lease.block_->domain;
+  HYLE_FATAL_ASSERT(!domain->resource_owner && !domain->release_resource_owner);
+  domain->resource_owner = owner;
+  domain->release_resource_owner = release;
+}
+void detail::LeaseAccess::retain_resource_owner(LeasePool &pool, void *owner,
+                                               ReleaseOwnerFn release) noexcept {
+  HYLE_FATAL_ASSERT(pool.state_ && owner && release);
+  HYLE_FATAL_ASSERT(!pool.state_->resource_owner && !pool.state_->release_resource_owner);
+  pool.state_->resource_owner = owner;
+  pool.state_->release_resource_owner = release;
+}
 
 Result<ReadLease> ReadLease::adopt(mem::Buffer &&backing, LeaseImportOptions options) noexcept {
   if (!backing.valid()) return std::unexpected(Status::InvalidArgument("lease backing is empty"));
