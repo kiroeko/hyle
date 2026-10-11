@@ -13,6 +13,7 @@
 #include <gtest/gtest.h>
 
 #include "hyle/compute/backends/cuda.h"
+#include "hyle/compute/leased_operation.h"
 #include "hyle/compute/prepared_operation.h"
 #include "hyle/compute/tensor.h"
 #include "hyle/mem/buffer.h"
@@ -23,6 +24,44 @@ namespace {
 namespace compute = hyle::compute;
 namespace cuda = compute::cuda;
 namespace mem = hyle::mem;
+
+struct LeaseMetadataCounter final {
+  std::atomic<std::size_t> allocations{0};
+  mem::AllocatorRef ref() noexcept {
+    return {
+        [](void *raw, std::size_t bytes, std::size_t alignment) noexcept {
+          static_cast<LeaseMetadataCounter *>(raw)->allocations.fetch_add(1);
+          return mem::system_allocator().allocate(bytes, alignment);
+        },
+        [](void *, void *pointer, std::size_t bytes, std::size_t alignment) noexcept {
+          mem::system_allocator().deallocate(pointer, bytes, alignment);
+        },
+        [](void *raw, void *pointer, std::size_t old_bytes, std::size_t bytes,
+           std::size_t alignment) noexcept {
+          static_cast<LeaseMetadataCounter *>(raw)->allocations.fetch_add(1);
+          return mem::system_allocator().reallocate(pointer, old_bytes, bytes, alignment);
+        }, this};
+  }
+};
+
+// Releases on every exit, including failed ASSERTs. The native stream remains
+// the lifetime boundary; teardown observes the callback's final host access.
+struct LeasedStreamGate final {
+  cudaStream_t stream = nullptr;
+  std::atomic<bool> released{false};
+  static void CUDART_CB wait(void *raw) {
+    auto &gate = *static_cast<LeasedStreamGate *>(raw);
+    gate.released.wait(false, std::memory_order_acquire);
+  }
+  void release() noexcept {
+    released.store(true, std::memory_order_release);
+    released.notify_all();
+  }
+  ~LeasedStreamGate() {
+    release();
+    if (stream) EXPECT_EQ(cudaStreamSynchronize(stream), cudaSuccess);
+  }
+};
 
 compute::Context context() {
   return compute::Context::create(cuda::device(0).value(),
@@ -423,6 +462,95 @@ TEST(CublasProvider,
     check_product(left, a, right, b, output);
   }
   EXPECT_EQ(allocator.live, 0u);
+}
+
+TEST(CublasProvider, LeasedDirectRetainsNativeUsesAndReplaysWithoutLeaseAllocation) {
+  auto owner = context();
+  auto resource = cuda::MemoryResource::create(owner, cuda::MemoryKind::kDevice).value();
+  auto queue = owner.create_queue().value();
+  ASSERT_TRUE(queue.reserve_completions(1).ok());
+  LeaseMetadataCounter metadata;
+  auto pool = compute::LeasePool::create(resource.ref(), 1024,
+      {.max_blocks = 3, .allocator = metadata.ref()}).value();
+  const auto desc = matrix(compute::DataType::kFloat32, 2, 2, false);
+  auto left_write = pool.allocate(16).value();
+  auto right_write = pool.allocate(16).value();
+  auto output = pool.allocate(16).value();
+  const std::array<float, 4> a{1, 2, 3, 4}, identity{1, 0, 0, 1};
+  ASSERT_TRUE(left_write.view()->write(std::as_bytes(std::span(a))).ok());
+  ASSERT_TRUE(right_write.view()->write(std::as_bytes(std::span(identity))).ok());
+  auto left = left_write.publish().value();
+  auto right = right_write.publish().value();
+  auto prepared = compute::prepare(owner, compute::Operation(compute::MatMul{}),
+      std::array{left.tensor(desc).value(), right.tensor(desc).value()},
+      std::array{output.tensor(desc).value()}).value();
+  compute::LeasePool workspace_pool;
+  compute::WriteLease workspace;
+  const auto needed = prepared.workspace_requirement();
+  if (needed.size) {
+    const auto alignment = needed.alignment > 256 ? needed.alignment : 256;
+    workspace_pool = compute::LeasePool::create(resource.ref(), needed.size,
+        {.max_blocks = 1, .backing_alignment = alignment, .allocator = metadata.ref()}).value();
+    workspace = workspace_pool.allocate(needed.size, alignment).value();
+  }
+  auto invocation = compute::LeasedOperationInvocation::create(prepared, std::move(workspace),
+      {.allocator = metadata.ref()}).value();
+  EXPECT_EQ(invocation.provider().id, compute::cublas::kProviderId);
+  std::array inputs{compute::LeasedInput(desc, left), compute::LeasedInput(desc, right)};
+  const std::array outputs{compute::LeasedOutput(desc, output)};
+
+  // Rejection does not admit/poison a writer and the same lane remains usable.
+  EXPECT_FALSE(invocation.submit(queue, {}, outputs).has_value());
+  const auto wrong_desc = matrix(compute::DataType::kFloat32, 1, 4, false);
+  EXPECT_FALSE(invocation.submit(queue, inputs,
+      std::array{compute::LeasedOutput(wrong_desc, output)}).has_value());
+  EXPECT_EQ(pool.stats().active_uses, 0u);
+  ASSERT_TRUE(output.view().has_value());
+  auto warm = invocation.submit(queue, inputs, outputs).value();
+  ASSERT_TRUE(warm.wait().ok()); // Mature SDK first-use work is outside replay.
+  const auto cold_allocations = metadata.allocations.load();
+  for (int iteration = 0; iteration < 8; ++iteration) {
+    auto completion = invocation.submit(queue, inputs, outputs).value();
+    ASSERT_TRUE(completion.wait().ok());
+    auto ready = output.publish().value();
+    auto old_result = ready;
+    EXPECT_FALSE(ready.try_write().has_value());
+    std::array<float, 4> observed{};
+    ASSERT_TRUE(ready.view()->read(std::as_writable_bytes(std::span(observed))).ok());
+    EXPECT_EQ(observed, a);
+    old_result.reset();
+    output = ready.try_write().value();
+  }
+  EXPECT_EQ(metadata.allocations.load(), cold_allocations);
+
+  LeasedStreamGate gate;
+  gate.stream = cuda::stream(queue).value();
+  ASSERT_EQ(cudaLaunchHostFunc(gate.stream, &LeasedStreamGate::wait, &gate), cudaSuccess);
+  auto pending = invocation.submit(queue, inputs, outputs).value();
+  EXPECT_EQ(pending.poll().value(), compute::CompletionPoll::kPending);
+  EXPECT_TRUE(invocation.in_flight());
+  EXPECT_FALSE(output.publish().has_value());
+  EXPECT_FALSE(output.view().has_value());
+  EXPECT_FALSE(invocation.submit(queue, inputs, outputs).has_value());
+  // Neither public completion/lane nor business input handles own retirement.
+  left.reset(); right.reset();
+  for (auto &input : inputs) input.read.reset();
+  invocation = {};
+  pending = {};
+  EXPECT_EQ(pool.stats().live_blocks, 3u);
+  EXPECT_EQ(pool.stats().active_uses, 3u);
+  EXPECT_FALSE(output.publish().has_value());
+  gate.release();
+  ASSERT_TRUE(pool.drain().ok());
+  ASSERT_TRUE(workspace_pool.drain().ok());
+  EXPECT_EQ(pool.stats().active_uses, 0u);
+  EXPECT_EQ(pool.stats().live_blocks, 1u);
+  auto ready = output.publish().value();
+  std::array<float, 4> observed{};
+  ASSERT_TRUE(ready.view()->read(std::as_writable_bytes(std::span(observed))).ok());
+  EXPECT_EQ(observed, a);
+  ready.reset();
+  EXPECT_EQ(pool.stats().live_blocks, 0u);
 }
 
 } // namespace
