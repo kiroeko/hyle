@@ -379,8 +379,20 @@ TEST(GraphNativeRetirement, LeasedAcceptedPrefixSurvivesDependencyObservationRej
     ASSERT_TRUE(submitted.has_value());
     completion = std::move(*submitted);
   }
+  struct RootLifetime final {
+    std::atomic<unsigned> releases{0};
+    std::atomic<bool> failed{false};
+  } root;
+  compute::detail::CompletionLifetime root_lifetime{
+      &root,
+      [](void *opaque, const hyle::Status &terminal) noexcept {
+        static_cast<RootLifetime *>(opaque)->failed.store(!terminal.ok());
+      },
+      [](void *opaque) noexcept { static_cast<RootLifetime *>(opaque)->releases.fetch_add(1); }};
+  ASSERT_TRUE(compute::detail::CompletionAccess::attach_lifetime(completion, root_lifetime).ok());
   auto observed = completion.poll();
   ASSERT_FALSE(observed.has_value());
+  EXPECT_EQ(root.releases.load(), 0u);
   EXPECT_TRUE(invocation.in_flight());
   EXPECT_EQ(pool.stats().active_uses, 3u);
   EXPECT_FALSE(invocation.output(output).has_value());
@@ -392,6 +404,8 @@ TEST(GraphNativeRetirement, LeasedAcceptedPrefixSurvivesDependencyObservationRej
   EXPECT_FALSE(retired.ok());
   EXPECT_EQ(retired.code(), observed.error().code());
   EXPECT_EQ(pool.stats().active_uses, 0u);
+  EXPECT_EQ(root.releases.load(), 1u);
+  EXPECT_TRUE(root.failed.load());
   EXPECT_FALSE(invocation.output(output).has_value());
   invocation = {};
   EXPECT_EQ(pool.stats().live_blocks, 0u);
