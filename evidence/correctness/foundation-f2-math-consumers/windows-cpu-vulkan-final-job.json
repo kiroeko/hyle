@@ -1,0 +1,61 @@
+{
+  "candidate": "acf53d114f50979d50952569a63821cddc5ab437",
+  "tree": "b0e345f05a5def284ebc2e7359bcb66bf6117b1f",
+  "scope": "F2 Windows ordinary CPU+Vulkan source/shared consumer; SDK and native Apple/Vulkan unqualified",
+  "routes": [
+    "cpu",
+    "vulkan"
+  ],
+  "compiler": "C:/Program Files/Microsoft Visual Studio/18/Enterprise/VC/Tools/MSVC/14.50.35717/bin/Hostx64/x64/cl.exe",
+  "parallel": 1,
+  "stages": [
+    {
+      "name": "identity",
+      "command": [
+        "nvidia-smi",
+        "--query-gpu=name,uuid,driver_version,memory.total",
+        "--format=csv,noheader"
+      ],
+      "pid": 78680,
+      "state": "terminal",
+      "available_bytes": 46836797440,
+      "log": "identity.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "6eabbb42ac19d8fa18f925bc3aca48861fc7b2ffa478d3aacee5c68330c90532"
+    },
+    {
+      "name": "build",
+      "command": [
+        "C:\\Program Files\\CMake\\bin\\cmake.EXE",
+        "--build",
+        "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build",
+        "--target",
+        "hyle_f2_batched_transfers",
+        "--parallel",
+        "1"
+      ],
+      "pid": 62964,
+      "state": "terminal",
+      "available_bytes": 46839164928,
+      "log": "build.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "44c8ce1f6510a46e26c57cf4f9be98c271194077e5ad4850b862c9d1126c7f78"
+    },
+    {
+      "name": "test",
+      "command": [
+        "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle_f2_batched_transfers.exe"
+      ],
+      "pid": 91180,
+      "state": "terminal",
+      "available_bytes": 46830665728,
+      "log": "test.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "fc69a88e4832d3e40fa266a472ce7d70059e360fcfeda9e80dffadf7f274fb81"
+    }
+  ],
+  "verdict": "PASS"
+}

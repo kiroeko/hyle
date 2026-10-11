@@ -1,0 +1,114 @@
+{
+  "schema_version": 1,
+  "scope": "F2 Windows ordinary source CPU/CUDA/static and CPU/Vulkan/shared copied BF16 and GGUF Q8 math; no installed SDK or other-host qualification",
+  "product_candidate": "acf53d114f50979d50952569a63821cddc5ab437",
+  "product_tree": "b0e345f05a5def284ebc2e7359bcb66bf6117b1f",
+  "earlier_cpu_cuda_receipt": "windows-cpu-cuda.json",
+  "checks": [
+    "two independent copy slots",
+    "two independent groups, six explicit phases",
+    "three replays per slot",
+    "native host-to-device/device-to-device/device-to-host (CPU synchronous host variant)",
+    "BF16 and original GGUF Q8 bytes equal",
+    "Direct and Graph mature MatMul independent scalar oracle",
+    "copy metadata allocation count fixed",
+    "reset gives zero live blocks and active uses"
+  ],
+  "attempts": [
+    {
+      "name": "windows-cpu-vulkan-first",
+      "candidate": "8a3bd9847602bd1e5c02189aed47f39a74ed6ae1",
+      "tree": "ad9e4494e0872e8321e2b3364ee6b77e450c9fcd",
+      "routes": [
+        "cpu",
+        "vulkan"
+      ],
+      "verdict": "PASS",
+      "files": {
+        "build.log": {
+          "path": "windows-cpu-vulkan-first-build.log",
+          "sha256": "f2fa9894fe9ee7845c1733cc7397bd91c687e99eb3a5643de6706f4777315a5e"
+        },
+        "configure.log": {
+          "path": "windows-cpu-vulkan-first-configure.log",
+          "sha256": "593fb2387f9fb2d25132eba72061b749ebb48791b302e3fa83963572d453332f"
+        },
+        "identity.log": {
+          "path": "windows-cpu-vulkan-first-identity.log",
+          "sha256": "6eabbb42ac19d8fa18f925bc3aca48861fc7b2ffa478d3aacee5c68330c90532"
+        },
+        "job.json": {
+          "path": "windows-cpu-vulkan-first-job.json",
+          "sha256": "a3ce320ed808c4f0a4934bd639b451f02893c47b3280ec8338da4bb62c029dd9"
+        },
+        "test.log": {
+          "path": "windows-cpu-vulkan-first-test.log",
+          "sha256": "eb041554c0954011d52ca9680f687701b881df2c63cf956cbfb712f1bf12d44d"
+        }
+      }
+    },
+    {
+      "name": "windows-cpu-cuda-final",
+      "candidate": "acf53d114f50979d50952569a63821cddc5ab437",
+      "tree": "b0e345f05a5def284ebc2e7359bcb66bf6117b1f",
+      "routes": [
+        "cpu",
+        "cuda"
+      ],
+      "verdict": "PASS",
+      "files": {
+        "build.log": {
+          "path": "windows-cpu-cuda-final-build.log",
+          "sha256": "c7913b79efe88079340c1ecf543eec655193a6047f4b2ed74a4473195f2a750b"
+        },
+        "identity.log": {
+          "path": "windows-cpu-cuda-final-identity.log",
+          "sha256": "6eabbb42ac19d8fa18f925bc3aca48861fc7b2ffa478d3aacee5c68330c90532"
+        },
+        "job.json": {
+          "path": "windows-cpu-cuda-final-job.json",
+          "sha256": "dd2f8bea545e441fed39a8fb7a1d0f3624382df3e87dd25ad585953689f8f271"
+        },
+        "test.log": {
+          "path": "windows-cpu-cuda-final-test.log",
+          "sha256": "3271158017abf57ae6807db27566533a7c20e115030cbf7a5411783d338ed67f"
+        }
+      }
+    },
+    {
+      "name": "windows-cpu-vulkan-final",
+      "candidate": "acf53d114f50979d50952569a63821cddc5ab437",
+      "tree": "b0e345f05a5def284ebc2e7359bcb66bf6117b1f",
+      "routes": [
+        "cpu",
+        "vulkan"
+      ],
+      "verdict": "PASS",
+      "files": {
+        "build.log": {
+          "path": "windows-cpu-vulkan-final-build.log",
+          "sha256": "44c8ce1f6510a46e26c57cf4f9be98c271194077e5ad4850b862c9d1126c7f78"
+        },
+        "identity.log": {
+          "path": "windows-cpu-vulkan-final-identity.log",
+          "sha256": "6eabbb42ac19d8fa18f925bc3aca48861fc7b2ffa478d3aacee5c68330c90532"
+        },
+        "job.json": {
+          "path": "windows-cpu-vulkan-final-job.json",
+          "sha256": "848a72197b263f8251815e6e5085b3ec3b27e760b686da89f8f050f419a6242d"
+        },
+        "test.log": {
+          "path": "windows-cpu-vulkan-final-test.log",
+          "sha256": "fc69a88e4832d3e40fa266a472ce7d70059e360fcfeda9e80dffadf7f274fb81"
+        }
+      }
+    }
+  ],
+  "unproven": [
+    "Apple math",
+    "WSL/Air CPU and WSL CUDA math",
+    "complete cross-platform native fault qualification",
+    "installed static/shared SDK, relocation and absence/header matrix",
+    "final P0 and red team"
+  ]
+}

@@ -342,6 +342,13 @@ device ready leases由原Direct与Graph MatMul消费并对独立标量oracle；c
 不增长，所有两槽bindings reset后uses/live blocks归零。[实机收据](../../../../evidence/correctness/foundation-f2-math-consumers/windows-cpu-cuda.json)
 与旁列完整configure/build/test/identity日志保留。Apple/Vulkan数学、其他主机及安装SDK未验；
 此产品点仍AUDITED，不把普通源码消费成功代签最终三交付。
+Vulkan普通数学 `8a3bd9847` 首遍PASS；共享样例补失败返回scope drain/实际设备身份后，
+固定产品 `acf53d114f50979d50952569a63821cddc5ab437` 的CPU/CUDA source/static与
+CPU/Vulkan source/shared精准回归均PASS。Vulkan Context实物为RTX4070/NVIDIA617.14/
+software=no；两组BF16/Q8各沿实际staged upload→D2D→D2H、Direct/Graph消费，两slot三轮
+metadata allocation不增长并完成回收。[数学收据](../../../../evidence/correctness/foundation-f2-math-consumers/receipt.json)
+含各checkpoint精确tree、完整命令及逐日志SHA；没有把共有HYLE metadata账写成vendor零分配。
+Apple数学/其他主机与完整故障/SDK矩阵、P0终审红队继续UNPROVEN；四owner仍AUDITED，F3未实施。
 
 ## 预声明验证与停止
 

@@ -1,0 +1,78 @@
+{
+  "candidate": "8a3bd9847602bd1e5c02189aed47f39a74ed6ae1",
+  "tree": "ad9e4494e0872e8321e2b3364ee6b77e450c9fcd",
+  "scope": "F2 Windows ordinary CPU+Vulkan source/shared consumer; SDK and native Apple/Vulkan unqualified",
+  "routes": [
+    "cpu",
+    "vulkan"
+  ],
+  "compiler": "C:/Program Files/Microsoft Visual Studio/18/Enterprise/VC/Tools/MSVC/14.50.35717/bin/Hostx64/x64/cl.exe",
+  "parallel": 1,
+  "stages": [
+    {
+      "name": "identity",
+      "command": [
+        "nvidia-smi",
+        "--query-gpu=name,uuid,driver_version,memory.total",
+        "--format=csv,noheader"
+      ],
+      "pid": 51568,
+      "state": "terminal",
+      "available_bytes": 46860591104,
+      "log": "identity.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "6eabbb42ac19d8fa18f925bc3aca48861fc7b2ffa478d3aacee5c68330c90532"
+    },
+    {
+      "name": "configure",
+      "command": [
+        "C:\\Program Files\\CMake\\bin\\cmake.EXE",
+        "-S",
+        "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-parent",
+        "-B",
+        "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build"
+      ],
+      "pid": 62816,
+      "state": "terminal",
+      "available_bytes": 46859157504,
+      "log": "configure.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "593fb2387f9fb2d25132eba72061b749ebb48791b302e3fa83963572d453332f"
+    },
+    {
+      "name": "build",
+      "command": [
+        "C:\\Program Files\\CMake\\bin\\cmake.EXE",
+        "--build",
+        "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build",
+        "--target",
+        "hyle_f2_batched_transfers",
+        "--parallel",
+        "1"
+      ],
+      "pid": 46256,
+      "state": "terminal",
+      "available_bytes": 46809034752,
+      "log": "build.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "f2fa9894fe9ee7845c1733cc7397bd91c687e99eb3a5643de6706f4777315a5e"
+    },
+    {
+      "name": "test",
+      "command": [
+        "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle_f2_batched_transfers.exe"
+      ],
+      "pid": 92908,
+      "state": "terminal",
+      "available_bytes": 46785683456,
+      "log": "test.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "eb041554c0954011d52ca9680f687701b881df2c63cf956cbfb712f1bf12d44d"
+    }
+  ],
+  "verdict": "PASS"
+}

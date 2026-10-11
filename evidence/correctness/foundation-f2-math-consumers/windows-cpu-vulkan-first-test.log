@@ -1,0 +1,2 @@
+CPU: two copy groups/two slots, BF16+Q8 Direct/Graph and three replays passed
+Vulkan: staged upload/D2D/readback, BF16+Q8 Direct/Graph and three replays passed
