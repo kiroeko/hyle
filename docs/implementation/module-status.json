@@ -413,10 +413,9 @@
     },
     {
       "module": "compute_backend_cuda",
-      "state": "CANDIDATE",
-      "candidate": "03162add05d3e26fe3314c6bcdaafa5a277a3a76",
-      "record": "docs/implementation/tasks/compute/foundation-f2-batched-transfers.md",
-      "summary": "F2 CANDIDATE：原七FIX的四路线prepared copy/phase/ready、native依赖与租约交接、普通BF16/原编码量化Direct/Graph接线已固定；首轮数学与Windows CUDA故障取证，剩余平台/SDK/sanitizer/新头与P0终审红队按有限矩阵执行，尚未CLOSED。"
+      "state": "AUDITED",
+      "record": "docs/implementation/tasks/compute/foundation-f2-cuda-terminal-cleanup.md",
+      "summary": "F2-06 AUDITED delta：真实producer晚失败在正常组ready后触发CUDA owned free fatal；仅限定已有资源/context终态释放边界，原错误与未知native回收保留，无新API/常态字段，修复后沿独立Windows/WSL fault与直接消费者再冻结。"
     },
     {
       "module": "compute_provider_native",
