@@ -1,0 +1,785 @@
+{
+  "schema_version": 1,
+  "candidate": "3034fc595abf5c2570e06dedbf195b34daf3fe72",
+  "log_integrity": [
+    {
+      "receipt": "foundation-f1-lease-delivery-initial",
+      "verified": [
+        {
+          "file": "windows-vulkan-source.json",
+          "sha256": "e69aa6fb5fe31d67fde45290015a2422d4c4474ab6dff61ec877e668865f457c"
+        },
+        {
+          "file": "windows-vulkan-source-build.log",
+          "sha256": "2a21f0f87b101e8bd5bdbc46c1cd1b59b10c11780090d07376eb6b8eb8460302"
+        },
+        {
+          "file": "windows-vulkan-source-test.log",
+          "sha256": "a7a41ff43f66bf61edc7cb85b79ef7cbb7a0d2b2f5fb72a895f92e688331c88d"
+        },
+        {
+          "file": "w-cpu-vulkan-shared-sdk.json",
+          "sha256": "335af99039c4f272a9455e88166f7478cdd1d2eb5b1ea0e45f6b0134ca879c54"
+        },
+        {
+          "file": "w-cpu-vulkan-shared-install.log",
+          "sha256": "d0cc786440ee437559a5f4d24a601cc9a1375f44008abe21e0c318f65ffb2f51"
+        },
+        {
+          "file": "w-cpu-vulkan-shared-relocate.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "file": "w-cpu-vulkan-shared-configure.log",
+          "sha256": "561cec2cc0008561ef023ea268f3c2b96167a616938055d251d108aa76a0f9fc"
+        },
+        {
+          "file": "w-cpu-vulkan-shared-build.log",
+          "sha256": "a32d43193735fd646d977e4262b82389654752723aaff573da4279b3bd50e4f3"
+        },
+        {
+          "file": "w-cpu-vulkan-shared-test.log",
+          "sha256": "887ad7e13c4373136a89f60657ea2715be8becc2d6914ad46b544826699e5c84"
+        },
+        {
+          "file": "compute-headers-off.log",
+          "sha256": "a772e8783ef86a029c368566ba4e38245cc2424cf6c2c11d6978ff6be1fec48b"
+        },
+        {
+          "file": "graph-headers-off.log",
+          "sha256": "24960aee5c7d4b0076d2324642208409151f4f5533bcdb704fd65050514213a6"
+        },
+        {
+          "file": "absent-routes.json",
+          "sha256": "6b625238fd8710dd289df16a56d3fe5c6ab5590d543c36adaf81411d5c19a0e8"
+        },
+        {
+          "file": "absence-apple.log",
+          "sha256": "fc3e01bfc7bf93755868116ac1906f9558da52017ee5b8f744c271ccf08b96be"
+        },
+        {
+          "file": "absence-cuda.log",
+          "sha256": "eaae907a51d2b58518e692035420f79d7580b67980f33b797bf9f49fccd9ff0b"
+        },
+        {
+          "file": "wsl-vulkan-preflight.json",
+          "sha256": "d32393df821f582adea8166d007e07bef7c192c7f7956217cf315580f7d8540e"
+        },
+        {
+          "file": "wsl-vulkan-probe.py",
+          "sha256": "18fdce40f2522ab3ed1bb044c04002883ac7fdcd3999d4f14220e01284a8ff69"
+        },
+        {
+          "file": "windows-cuda-source.json",
+          "sha256": "d2d8e7bdbd23eaea8324106e2fcf8cd3517fe59d638b118b3cd97125986789d3"
+        },
+        {
+          "file": "windows-cuda-source-build.log",
+          "sha256": "e12f22843354ad23350c678ec35a127fbc515e86ea2e8e4215c5680dff8cb5aa"
+        },
+        {
+          "file": "windows-cuda-source-test.log",
+          "sha256": "54a9ac798eec42bedcb0f8c0a538f78c23e0219f742825385fbb6d114922f40e"
+        },
+        {
+          "file": "w-cpu-cuda-static-sdk.json",
+          "sha256": "47b164804f06d72f2b8a8e47db0e336b8425a5a0d3fb21f00f871d02bd32a752"
+        },
+        {
+          "file": "w-cpu-cuda-static-install.log",
+          "sha256": "ebafe4e8b750754b89faf6f00e60918fe387b92425161d39c1f8566dea38d659"
+        },
+        {
+          "file": "w-cpu-cuda-static-relocate.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "file": "w-cpu-cuda-static-configure.log",
+          "sha256": "6a9f445090a3b79fc7df094d2df06b97088101b7e5776dd9e43f1a94221a7d19"
+        },
+        {
+          "file": "w-cpu-cuda-static-build.log",
+          "sha256": "34c8e2c4a79b8fb8c04fe0e017b854d8cd32ac5510fee9497948c05b1cb9191f"
+        },
+        {
+          "file": "w-cpu-cuda-static-test.log",
+          "sha256": "7f1dac23d5883877ad909953b516cc2e7ee37da485278e2f54017579c13b1f2f"
+        },
+        {
+          "file": "windows-cuda-shared-producer-job.json",
+          "sha256": "0823c1a280dad0262a8ae05bea3dc9b258576eea42a93ea524f66558fe2d6562"
+        },
+        {
+          "file": "windows-cuda-shared-producer-build.log",
+          "sha256": "7ea9fcb66e63ae83bd9cb13ae7feccddb92da0352bccd9acdadad1cf78c709d6"
+        },
+        {
+          "file": "w-cuda-shared-sdk.json",
+          "sha256": "dc8593b97f9d91d84ca02656e0730e781e631442be9ac3b49b0331f10ec95e55"
+        },
+        {
+          "file": "w-cuda-shared-install.log",
+          "sha256": "e4b4e97406013bd3aa26f2513c5815b096506f4e91497b0e75d7454c0b0470a2"
+        },
+        {
+          "file": "w-cuda-shared-relocate.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "file": "w-cuda-shared-configure.log",
+          "sha256": "6a2370b79db1c40f62ae93f6836c5357d5b924b951daadfeb6fcad25bb02e850"
+        },
+        {
+          "file": "w-cuda-shared-build.log",
+          "sha256": "9c49647c41484caef085922df2230842373b7801a0541223195502a03dcac0c2"
+        },
+        {
+          "file": "w-cuda-shared-test.log",
+          "sha256": "b7f52e4b9c89887e42fbfa31f630bd52d6674eee461ba1bd1b0c062d933cb33e"
+        },
+        {
+          "file": "windows-vulkan-static-producer-job.json",
+          "sha256": "c618c4fa6a4a16c917353cb04d47e5f3b18986807c7555f7c80cb632b9ec8a1d"
+        },
+        {
+          "file": "windows-vulkan-static-producer-build.log",
+          "sha256": "b85aa36a104f420a291c85b94cfef78e71ddae2395c15c827124d9fb57e1f7e7"
+        },
+        {
+          "file": "w-vulkan-static-sdk.json",
+          "sha256": "07d9305223cd218d9c7262ab6936fd3a261d47073a9f3c90647d6519cb90111d"
+        },
+        {
+          "file": "w-vulkan-static-install.log",
+          "sha256": "5285e750befc0d204a2c6ad34981ea08f583aba96e9d54f1b4af0ce9f460a02e"
+        },
+        {
+          "file": "w-vulkan-static-relocate.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "file": "w-vulkan-static-configure.log",
+          "sha256": "4fc6d3f508c544a11b57c01a84d1437c78e973f038f7a5628da6ca0d0b87315d"
+        },
+        {
+          "file": "w-vulkan-static-build.log",
+          "sha256": "6a68eb100979c0c843cc57e1cf93b0e8fbb2c75948a1b51f7c03632d320bbb7b"
+        },
+        {
+          "file": "w-vulkan-static-test.log",
+          "sha256": "045b330327a8b22e689052a181bcd296b594dd50f7215d9d6936b6bb06309e88"
+        },
+        {
+          "file": "apple-source-job.json",
+          "sha256": "f811db0159a5e4c5d703327bdf88c5334ddc63661c8c1466cd58645a4517f1e4"
+        },
+        {
+          "file": "apple-source-build.log",
+          "sha256": "3ba54cac3347e2f472213109f67d5b308d5931ccffd7e3dfb80c8d9c1f5c002f"
+        },
+        {
+          "file": "apple-source-lease-test.log",
+          "sha256": "f1208d667c93429472595d1f4c76cd71c5d3d3edd149e021030131da8b7b072d"
+        },
+        {
+          "file": "apple-source-mixed-test.log",
+          "sha256": "4cd63a75aecc8a1837af896c4ae22dc624ec5266801b995eaa69ec4ddc8ad56d"
+        },
+        {
+          "file": "apple-static-job.json",
+          "sha256": "083573e9b8324504650a5d3238337b2335bb64fddfa713fbf9c4ec7a4ba2392e"
+        },
+        {
+          "file": "apple-static-original-job.json",
+          "sha256": "64e606df95a8338bc9d6ac8a4f7e1ec1c352eb42c1cce1f2616872d2565b37ac"
+        },
+        {
+          "file": "apple-static-original-install.log",
+          "sha256": "c30137f438c21951b40840dfa1ae1e52c1f5df47516e45113b298cc9370cf107"
+        },
+        {
+          "file": "apple-static-producer.log",
+          "sha256": "7a54a989436dcd6bf559a6b6fea08f4d8e944b32de856c050fac31191975c472"
+        },
+        {
+          "file": "apple-static-install-resume.log",
+          "sha256": "84d796dd0aab9c209cc45d2f9e698ab5d133b37ba124d171f64bb31859dc1bc9"
+        },
+        {
+          "file": "apple-static-configure.log",
+          "sha256": "88936d27b33802ac6606867d6145d4d1fa5c9b4baef4c83b353be69e2fcaafaf"
+        },
+        {
+          "file": "apple-static-consumer-build.log",
+          "sha256": "2861b77e64c6845ce70ab5333fc8dfa4f398c9898e26cc4102eed9afe4025d9c"
+        },
+        {
+          "file": "apple-static-lease-test.log",
+          "sha256": "f1208d667c93429472595d1f4c76cd71c5d3d3edd149e021030131da8b7b072d"
+        },
+        {
+          "file": "apple-static-mixed-test.log",
+          "sha256": "4cd63a75aecc8a1837af896c4ae22dc624ec5266801b995eaa69ec4ddc8ad56d"
+        },
+        {
+          "file": "apple-shared-job.json",
+          "sha256": "3291e0523864672390552f294c97b14fa229b63fe326651cb36d721323d06a4a"
+        },
+        {
+          "file": "apple-shared-producer.log",
+          "sha256": "a5b0172a36be8384296731e4c7b0b065f562533a264f2659830ceb09d8bc3ad2"
+        },
+        {
+          "file": "apple-shared-install.log",
+          "sha256": "337aa53809a5dabbe0e2a96ac26a9fe54688d08b9176c4285d40396af7ee2d01"
+        },
+        {
+          "file": "apple-shared-configure.log",
+          "sha256": "c8e355e519b12bd172f0c808aa1d27b5b6105ba75e0ebfe41e46e9293a529ac6"
+        },
+        {
+          "file": "apple-shared-consumer-build.log",
+          "sha256": "6bd27cf2492c57085f9f1376b073f5664f63b3991404d0466472d4c5cca02649"
+        },
+        {
+          "file": "apple-shared-lease-test.log",
+          "sha256": "f1208d667c93429472595d1f4c76cd71c5d3d3edd149e021030131da8b7b072d"
+        },
+        {
+          "file": "apple-shared-mixed-test.log",
+          "sha256": "4cd63a75aecc8a1837af896c4ae22dc624ec5266801b995eaa69ec4ddc8ad56d"
+        },
+        {
+          "file": "windows-imported-mixed-vulkan-job.json",
+          "sha256": "09379d3c4f647434a429943aa29b9887ca64135501f0d03ee19aacc950c605d8"
+        },
+        {
+          "file": "windows-imported-mixed-vulkan-configure.log",
+          "sha256": "4c5b2fb4cfb0cd381a490f7ac70586832137e9cfa57a9e5c60c08f2d5306defa"
+        },
+        {
+          "file": "windows-imported-mixed-vulkan-build.log",
+          "sha256": "078814de71fcb6e6b25976a01d367c2bedb2728faf97b8d44ad801cc7e0eb86a"
+        },
+        {
+          "file": "windows-imported-mixed-vulkan-test.log",
+          "sha256": "9e5f4cb9a7c7ba8331f9508e6b6a098d64db2bc72bb7a4d29f297cb1895344b6"
+        },
+        {
+          "file": "vulkan-air-source-job.json",
+          "sha256": "ecdbf2dd1fc00d4d270dc2f61232b8037b762b0fd67ff90ed0876f898f22f7d0"
+        },
+        {
+          "file": "vulkan-air-source-build.log",
+          "sha256": "a075306efc16b039f03c8b3c601ee4c28d261c6ea831c84f72248263bff8e260"
+        },
+        {
+          "file": "vulkan-air-source-lease-test.log",
+          "sha256": "3aa0830a6cf6ac16dd411a4b241f4de722521d5f3316d7291edf1365d5691bb8"
+        },
+        {
+          "file": "vulkan-air-source-mixed-test.log",
+          "sha256": "438a8ee0684e75ce6e46d67dfeb25ab65f9cc924ccccfe656ad53fe02373ed92"
+        },
+        {
+          "file": "vulkan-air-static-job.json",
+          "sha256": "291500bdf63500158c738d6f0799a42a1caa453e000f3732d913600fe600f430"
+        },
+        {
+          "file": "vulkan-air-static-producer.log",
+          "sha256": "c125f2df79578f97d5425b45a79df5911501bf87b134c52648097d65d115accc"
+        },
+        {
+          "file": "vulkan-air-static-install.log",
+          "sha256": "60c570c30806229c9f5dca6abf33c1012b8ba6c35e6a65b5d0850ac863e7c0ec"
+        },
+        {
+          "file": "vulkan-air-static-configure.log",
+          "sha256": "3ca29a9cb278299e10b17e475c17b147fce15b01e4d765fac1b75ce2e7a47739"
+        },
+        {
+          "file": "vulkan-air-static-consumer-build.log",
+          "sha256": "d8bc8143a90dee126455e7c8b723e8f7e02578bac4913d00939682fbdf1fda00"
+        },
+        {
+          "file": "vulkan-air-static-lease-test.log",
+          "sha256": "3aa0830a6cf6ac16dd411a4b241f4de722521d5f3316d7291edf1365d5691bb8"
+        },
+        {
+          "file": "vulkan-air-static-mixed-test.log",
+          "sha256": "438a8ee0684e75ce6e46d67dfeb25ab65f9cc924ccccfe656ad53fe02373ed92"
+        },
+        {
+          "file": "vulkan-air-shared-job.json",
+          "sha256": "a36d8a980b0b269bb981a73fc50f50d41af32c3520187aa044f62228776e66d7"
+        },
+        {
+          "file": "vulkan-air-shared-producer.log",
+          "sha256": "9ee9a7fb4c7dd76d0d0a77e0feffc4432c986f623b9b91d320d446702a6e652f"
+        },
+        {
+          "file": "vulkan-air-shared-install.log",
+          "sha256": "82095df56441861163233f17b86c1d8299e752c8ca0a8af0effd4c4167a32ee9"
+        },
+        {
+          "file": "vulkan-air-shared-configure.log",
+          "sha256": "0e64babb47dd6181b2ce75eecbf687a92465dbcf4bcd55b1eb3dd8bf6feb61b7"
+        },
+        {
+          "file": "vulkan-air-shared-consumer-build.log",
+          "sha256": "d8bc8143a90dee126455e7c8b723e8f7e02578bac4913d00939682fbdf1fda00"
+        },
+        {
+          "file": "vulkan-air-shared-lease-test.log",
+          "sha256": "3aa0830a6cf6ac16dd411a4b241f4de722521d5f3316d7291edf1365d5691bb8"
+        },
+        {
+          "file": "vulkan-air-shared-mixed-test.log",
+          "sha256": "438a8ee0684e75ce6e46d67dfeb25ab65f9cc924ccccfe656ad53fe02373ed92"
+        },
+        {
+          "file": "wsl-source-job.json",
+          "sha256": "708724ca43b2c4422edae58cc33e855ecdae96b141a4de2b4eb1700c5d066851"
+        },
+        {
+          "file": "wsl-source-build.log",
+          "sha256": "d6aebd43bf81ec9a7c6511017e0df53a108cb3d3df00f62d234f7a41a347314c"
+        },
+        {
+          "file": "wsl-source-lease-test.log",
+          "sha256": "744cf36aff177ec2dab2273bb870e3c92c25b4377c6be1155c093f51730dad31"
+        },
+        {
+          "file": "wsl-source-mixed-test.log",
+          "sha256": "69d5a9c5b6b0ba8cb86ffc2dc9ecc650c8bdd19c9c9e2d8e341681a8be302be7"
+        },
+        {
+          "file": "wsl-static-job.json",
+          "sha256": "0a2a0d9a4d304781692cd0d661c0e94c4abb6266bab4f1e5d3645783e89c063c"
+        },
+        {
+          "file": "wsl-static-producer.log",
+          "sha256": "d95de3beec6908981dfca6969d41d5d6cb9fbcf142e51b1ac03b6fdae4c48356"
+        },
+        {
+          "file": "wsl-static-install.log",
+          "sha256": "ced4e54edaca56ee9ae6981e37a8cafff46e1637836122e297d68283e8922098"
+        },
+        {
+          "file": "wsl-static-configure.log",
+          "sha256": "c33bba741555850565797ca984ddfb38ccf5c4b3f355027657a04765d57b45fc"
+        },
+        {
+          "file": "wsl-static-consumer-build.log",
+          "sha256": "507c5d48ea38a3719663e8177f091f23673808ec9818b741db9dbb200ee9c3b0"
+        },
+        {
+          "file": "wsl-static-lease-test.log",
+          "sha256": "744cf36aff177ec2dab2273bb870e3c92c25b4377c6be1155c093f51730dad31"
+        },
+        {
+          "file": "wsl-static-mixed-test.log",
+          "sha256": "69d5a9c5b6b0ba8cb86ffc2dc9ecc650c8bdd19c9c9e2d8e341681a8be302be7"
+        },
+        {
+          "file": "wsl-shared-job.json",
+          "sha256": "e642745f80250e2008e6b2ec3a9d432a92a542278d0f82d2f5d43b9fbf5c1215"
+        },
+        {
+          "file": "wsl-shared-producer.log",
+          "sha256": "86d32e544ae7de277a4139dee063604adbd6b2ec3fe4a855172d8ace7a4e0922"
+        },
+        {
+          "file": "wsl-shared-install.log",
+          "sha256": "c52aad89f1884409625180377d52938f67b2dc0dc285d93fe06d4a5e3bf5ff4d"
+        },
+        {
+          "file": "wsl-shared-configure.log",
+          "sha256": "040099e333e99087d95b22530de93400fe1107cd8fdc965e236f3a4d3c9bb08c"
+        },
+        {
+          "file": "wsl-shared-consumer-build.log",
+          "sha256": "14456f9c474342130e16e26d2e269c5ceb0f0c5a21dbc32080a15917cbe4150f"
+        },
+        {
+          "file": "wsl-shared-lease-test.log",
+          "sha256": "744cf36aff177ec2dab2273bb870e3c92c25b4377c6be1155c093f51730dad31"
+        },
+        {
+          "file": "wsl-shared-mixed-test.log",
+          "sha256": "69d5a9c5b6b0ba8cb86ffc2dc9ecc650c8bdd19c9c9e2d8e341681a8be302be7"
+        }
+      ]
+    },
+    {
+      "receipt": "foundation-f1-host-sanitizers",
+      "verified": [
+        {
+          "file": "asan-job.json",
+          "sha256": "689907beb69067b16df16d91676f5a5544b8dc42106d9897004dd3855b040f45"
+        },
+        {
+          "file": "asan-configure.log",
+          "sha256": "ba0f5eec31db8df452c38bc5a2953f1fa9b088199f2a55d77e3dfd75905dd466"
+        },
+        {
+          "file": "asan-build.log",
+          "sha256": "8b9d09d86ace356e910f615f6ef2321bf88c3ce7f67557bb5edf76b4fe7c011f"
+        },
+        {
+          "file": "asan-compute.log",
+          "sha256": "a342570e3a7a625ecadab6410c856d87a886be59af5ee2ab5122cf65cdbe5f42"
+        },
+        {
+          "file": "asan-graph.log",
+          "sha256": "1cd8ed6d9df7b20c076b7d469b30393216c0b149892adc98cd3cf85debc5b101"
+        },
+        {
+          "file": "ubsan-job.json",
+          "sha256": "a44ddc23b34ebed08b53017c601981eb12b226dac37a378fd678ea9c511e0476"
+        },
+        {
+          "file": "ubsan-configure.log",
+          "sha256": "9e77c234464cc30cf8989583a72ca3adc16a6930f1a77de6f6e502dfd578f9df"
+        },
+        {
+          "file": "ubsan-build.log",
+          "sha256": "8b9d09d86ace356e910f615f6ef2321bf88c3ce7f67557bb5edf76b4fe7c011f"
+        },
+        {
+          "file": "ubsan-compute.log",
+          "sha256": "a895120a3a3fa8daef583650e3e6afea51881226977a7325cbbd3836754fbac0"
+        },
+        {
+          "file": "ubsan-graph.log",
+          "sha256": "80d64e1494a03f9aa3597c3ec01268ef97336bb18020bb1ef6c0e175177d788c"
+        },
+        {
+          "file": "tsan-job.json",
+          "sha256": "d5f81c22ca374acc6afd20a0aa5e26d4842e0506b588515cc3952e1868517b7f"
+        },
+        {
+          "file": "tsan-configure.log",
+          "sha256": "f206725d86275073ab211f92ab2c6a22cd7cbf29ea2085c8e42f1d14087837a1"
+        },
+        {
+          "file": "tsan-build.log",
+          "sha256": "8b9d09d86ace356e910f615f6ef2321bf88c3ce7f67557bb5edf76b4fe7c011f"
+        },
+        {
+          "file": "tsan-compute.log",
+          "sha256": "326165148f19b1a60fa219e67e81054e6a4e99903026a6579eedc4bc0fb282b4"
+        },
+        {
+          "file": "tsan-graph.log",
+          "sha256": "56e3c1f819a0535fd2dfc23f4c4b881e9b1e18dbc00f88c764ebbecd22831621"
+        },
+        {
+          "file": "tsan-graph-process-layout.log",
+          "sha256": "ebc6094f5c851258af57e2d7dd6d0a9232a891b4962bb930be097cc8409a616d"
+        },
+        {
+          "file": "tsan-graph-process-layout.json",
+          "sha256": "4d2245b187c58b6763798af18356176fe45bba6469644989d3bb004ac6783970"
+        }
+      ]
+    },
+    {
+      "receipt": "foundation-f1-native-lease-risk",
+      "verified": [
+        {
+          "file": "windows-vulkan-build.log",
+          "sha256": "bc0d1b0162aee0d934045d9823f0be8000a3e5184642e19d86f26482ceb6c942"
+        },
+        {
+          "file": "windows-vulkan-test.log",
+          "sha256": "58bbd604b1a208ac7bdb559517a03bb2c59a987667e732de0107985231785b23"
+        },
+        {
+          "file": "windows-vulkan-job.json",
+          "sha256": "efe730764bb36e388571ebb7b1926f5ee73e760c4b1ace2fd133eae03d6245ab"
+        },
+        {
+          "file": "apple-build.log",
+          "sha256": "35d03167d795b885095431b887200e4a7e5002f93450d9f4955e0c529fad7401"
+        },
+        {
+          "file": "apple-test.log",
+          "sha256": "2741cfea6f3a8088f0bcd96bf441597822e1516b009fd778228febb017c741cb"
+        },
+        {
+          "file": "apple-job.json",
+          "sha256": "74465baf497e9d0d5b913455d1077ed2c520c8873baaeaeeb9b64c4b00dcd04d"
+        },
+        {
+          "file": "sanitizer-original-configure.log",
+          "sha256": "336767bd2ea3230ef26f7697eb9856d39d70545ab76c5ad7f22bac2a5fe2ee9e"
+        },
+        {
+          "file": "sanitizer-original-job.json",
+          "sha256": "565c8a0b4b2eea423dead263fc7c7637503538d4edabaf49acb4312375e7a68a"
+        }
+      ]
+    },
+    {
+      "receipt": "foundation-f1-mixed-leases-initial",
+      "verified": [
+        {
+          "file": "common-prefix.log",
+          "sha256": "7b2347f74fa87a428ba12de3268bc69a1ede00fdbc63113ef5bc220b4cfaa824"
+        },
+        {
+          "file": "windows-vulkan.log",
+          "sha256": "14a678736796bf6aeeb7e19151d06cf2954ebe97c7c78af2f7bc046c5ab9b950"
+        },
+        {
+          "file": "apple-contracts.log",
+          "sha256": "eeb4371e49af496d222c2b7cd5e01a630f0c68d9a084feb0fd8fefc9a0a221d0"
+        },
+        {
+          "file": "apple-build.log",
+          "sha256": "c5f0d3b20a426a851173bf415cdd531fbc7c362edd133d7eaa68413740097c95"
+        },
+        {
+          "file": "apple-job.json",
+          "sha256": "ec26dc79e49e82e42549f7c21912a3a9152b91e36d32ce34e50c5d5f1a0d4bd7"
+        },
+        {
+          "file": "vulkan-configure-original-error.log",
+          "sha256": "a496b2154cf24f48009e4be3aa88a72f9828e5faf7dbfb837c59bf2cef0db197"
+        },
+        {
+          "file": "windows-cuda-contracts.log",
+          "sha256": "e0ae7cd6f06a953bb5ab7ad81a99d5206a0986e979415575ab7a73931f6e4961"
+        },
+        {
+          "file": "common-final-boundaries.log",
+          "sha256": "718bf32c0f6284471e1c0031566e5e7932fb13389f7232c7ab0c731454f18846"
+        },
+        {
+          "file": "common-original-fixture-error.log",
+          "sha256": "eaf92e63b289381d598ddd0248c025d7299c1c4d4f4e055d43621ee2128bcf3f"
+        },
+        {
+          "file": "windows-vulkan-lease-risk-build.log",
+          "sha256": "8f3c63fca4c222abe80e4dfaa0422b79d61935ce0e261bef098d06133243dcfe"
+        },
+        {
+          "file": "windows-vulkan-lease-risk-test.log",
+          "sha256": "9e5f4cb9a7c7ba8331f9508e6b6a098d64db2bc72bb7a4d29f297cb1895344b6"
+        },
+        {
+          "file": "windows-vulkan-lease-risk-job.json",
+          "sha256": "b7cb8bfc67ff6ab210e3a2191889281a0fcf70303d960da046223c501122aca7"
+        },
+        {
+          "file": "apple-lease-risk-build.log",
+          "sha256": "2bbb165a4d134b8122aa2f7cb6fe1dfe40d2d50c985499f4d769dda01d6043ac"
+        },
+        {
+          "file": "apple-lease-risk-test.log",
+          "sha256": "4cd63a75aecc8a1837af896c4ae22dc624ec5266801b995eaa69ec4ddc8ad56d"
+        },
+        {
+          "file": "apple-lease-risk-job.json",
+          "sha256": "75d3f6261b89070dad3f1981b3895879b9fa19bd4996b33d633a750d768112d8"
+        }
+      ]
+    },
+    {
+      "receipt": "foundation-f1-common-drain-windows",
+      "verified": [
+        {
+          "file": "shipping-final-common.log",
+          "sha256": "e8b6435c06e20b548fa8ec26bc3b8e55b63fc7e9c1a8a2cac9549784c45aec6e"
+        },
+        {
+          "file": "shipping-final-cublas.log",
+          "sha256": "480f0fc3ed5b0b3cb2349285bd296771930319da7c80a1f8cfea7ab9271ca81b"
+        },
+        {
+          "file": "shipping-final-graph.log",
+          "sha256": "15ec8a4f4532f6f8c89819878858072df6173c388ae50764b1b8b8295f060552"
+        },
+        {
+          "file": "instrumented-final-common.log",
+          "sha256": "e8b6435c06e20b548fa8ec26bc3b8e55b63fc7e9c1a8a2cac9549784c45aec6e"
+        },
+        {
+          "file": "instrumented-final-graph.log",
+          "sha256": "25f1639bbc5ea395a1df007aee391505bf662f07fac455f010390f127409a157"
+        },
+        {
+          "file": "instrumented-cuda.log",
+          "sha256": "872ed09e571d91a50475910c7869208f6b6c3473bb84e3ddf7b95ca6afb0d4ee"
+        },
+        {
+          "file": "instrumented-graph.log",
+          "sha256": "a8c898d34571815d4d565212af731ec09d4112072d9061fdeace3e1b0ce82609"
+        },
+        {
+          "file": "instrumented-graph-corrected.log",
+          "sha256": "4e159998122bc2b92e1c3c23aab4a4b709225e3ac9c45abd5cfa26f8dc934acf"
+        },
+        {
+          "file": "cpu-lease-defaults.log",
+          "sha256": "db1c7947b679adbf8baf536aa1c3165f817793cfb3109205b8869b0f462b22c2"
+        }
+      ]
+    },
+    {
+      "receipt": "foundation-f1-cuda-final-risk",
+      "verified": [
+        {
+          "file": "windows-cancel-build.log",
+          "sha256": "ee85b58ea76d02bcaa8b937cbb7aabd3175439574746cd51612807831f23bb4c"
+        },
+        {
+          "file": "windows-cancel-job.json",
+          "sha256": "1638e88051341fc5a255c184a672e589873c4c2b772d37e15742ef5dfa67a294"
+        },
+        {
+          "file": "windows-cancel-test.log",
+          "sha256": "1932924d0e554786cd4ff0e1d0685790f15f5afdcfc8592e43b3f0d48447136c"
+        },
+        {
+          "file": "wsl-backend.log",
+          "sha256": "5787aa4034baf3236f394464d857d6109ee5c5209f81f24c28e37d81efd86f2a"
+        },
+        {
+          "file": "wsl-build.log",
+          "sha256": "9ac787a2634f5ee653b7f4253b6d0e315a0659f0edcf4cbb0a146c3ee948ee48"
+        },
+        {
+          "file": "wsl-configure.log",
+          "sha256": "a59c5b9b83130fa4700eafda156b2d9285da17ea9d281fd2f93225a9bcaa30bf"
+        },
+        {
+          "file": "wsl-direct.log",
+          "sha256": "70735f56c604306e4d2680dcb69645340b3286bb5e20c9ec6aff7663bc7837e6"
+        },
+        {
+          "file": "wsl-graph.log",
+          "sha256": "0c8aba39c077fadaaee2bfc8201a3ac64a0b1c10fe603c2b506d6f660948b6be"
+        },
+        {
+          "file": "wsl-job.json",
+          "sha256": "1ac305358ae864a8b5bf937e7d3bfd041ff20ebe9460cd51240e27c51c4e0c00"
+        }
+      ]
+    }
+  ],
+  "source_identity": [
+    {
+      "scope": "final shipping product",
+      "previous": "fc4ffbd1610eb3b24bf76709dc6e5e25b3d838d7",
+      "candidate": "3034fc595abf5c2570e06dedbf195b34daf3fe72",
+      "paths": [
+        "include",
+        "src",
+        "cmake",
+        "third_party",
+        "CMakeLists.txt",
+        "CMakePresets.json"
+      ],
+      "verdict": "IDENTICAL",
+      "changes": []
+    },
+    {
+      "scope": "WSL and shipping delivery source",
+      "previous": "8bf5b2ebea3021264128df34b25ed7e94964caa1",
+      "candidate": "3034fc595abf5c2570e06dedbf195b34daf3fe72",
+      "paths": [
+        "include",
+        "src",
+        "cmake",
+        "third_party",
+        "CMakeLists.txt",
+        "CMakePresets.json"
+      ],
+      "verdict": "IDENTICAL",
+      "changes": []
+    },
+    {
+      "scope": "host sanitizer source",
+      "previous": "03242e7723cbd7f86d76b611f75e9db9f9a41a55",
+      "candidate": "3034fc595abf5c2570e06dedbf195b34daf3fe72",
+      "paths": [
+        "include",
+        "src",
+        "cmake",
+        "third_party",
+        "CMakeLists.txt",
+        "CMakePresets.json"
+      ],
+      "verdict": "IDENTICAL",
+      "changes": []
+    },
+    {
+      "scope": "native lease risk source",
+      "previous": "9d37cba017ae7a8a5ca4a74450f6ed234612c684",
+      "candidate": "3034fc595abf5c2570e06dedbf195b34daf3fe72",
+      "paths": [
+        "include",
+        "src",
+        "cmake",
+        "third_party",
+        "CMakeLists.txt",
+        "CMakePresets.json"
+      ],
+      "verdict": "IDENTICAL",
+      "changes": []
+    },
+    {
+      "scope": "managed lease risk source",
+      "previous": "ee403abf7ad93eb8e32e6c72388d857d3a5d03d3",
+      "candidate": "3034fc595abf5c2570e06dedbf195b34daf3fe72",
+      "paths": [
+        "include",
+        "src",
+        "cmake",
+        "third_party",
+        "CMakeLists.txt",
+        "CMakePresets.json"
+      ],
+      "verdict": "IDENTICAL",
+      "changes": []
+    },
+    {
+      "scope": "common drain source",
+      "previous": "3a19f2995e83ef9fbf121e398ea281125c66af58",
+      "candidate": "3034fc595abf5c2570e06dedbf195b34daf3fe72",
+      "paths": [
+        "src/compute",
+        "src/compute_backend_cuda",
+        "include/hyle/compute",
+        "src/graph/executable.cc",
+        "src/graph/leased_invocation.cc",
+        "src/graph/plan_state.h",
+        "src/graph/submission_internal.h",
+        "include/hyle/graph/leased_invocation.h"
+      ],
+      "verdict": "IDENTICAL",
+      "changes": []
+    },
+    {
+      "scope": "Air fixed source and selected control/native risk tests",
+      "previous": "e399059002d17491ec1c87a0bf8f40f4642606ac",
+      "candidate": "3034fc595abf5c2570e06dedbf195b34daf3fe72",
+      "paths": [
+        "include",
+        "src",
+        "cmake",
+        "third_party",
+        "CMakeLists.txt",
+        "CMakePresets.json",
+        "tests/compute",
+        "tests/graph/lease_submission_test.cc",
+        "tests/compute_route_vulkan/lifecycle_test.cc"
+      ],
+      "verdict": "IDENTICAL",
+      "changes": []
+    }
+  ],
+  "limitation": "File identity and retained log integrity support reuse only within original semantic scope and recorded machine/toolchain; this is not a final correctness or delivery verdict."
+}

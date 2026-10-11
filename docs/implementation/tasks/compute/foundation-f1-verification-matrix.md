@@ -38,6 +38,13 @@ registry 当前七 owner 仍 AUDITED。产品实现固定于 `fc4ffbd1610eb3b24b
 以下链接指向有实际命令/身份/原日志的收据，不把旧收据的历史 pending 句子恢复为新的待办授权。
 证据复用仍需最终逐文件/公开合同 hash 复核；未变化的产品不因文档提交重复构建。
 
+[本轮身份复核](../../../../evidence/correctness/foundation-f1-identity-audit/receipt.json)已逐一核对六组
+收据的原日志 SHA256；原 common drain 的逐 check hash 也匹配。`3034fc595` 与 shipping product、
+SDK、sanitizer、native/mixed risk 的 `include/src/cmake/third_party` 及根 CMake 文件逐文件一致；
+更早 common drain 的实际 compute/CUDA/common Graph 产品 scope 也一致。Air 当前 `e39905900` 的
+同产品 scope、共同核和拟选 native Vulkan risk 测试也逐文件一致。这里只签原语义范围的文件身份，
+不是用源一致取代未运行的平台/交付格。
+
 - C：共同核、Completion/OwnedResult、权限/溢出/OOM/跨线程协议与 ASan/UBSan/TSan：
   [host sanitizer](../../../../evidence/correctness/foundation-f1-host-sanitizers/receipt.json)，
   [最终边界](../../../../evidence/correctness/foundation-f1-mixed-leases-initial/receipt.json)。
@@ -60,7 +67,7 @@ registry 当前七 owner 仍 AUDITED。产品实现固定于 `fc4ffbd1610eb3b24b
 
 | 能力旅程 | 正常/边界 | failure/OOM/overflow | move/ownership/teardown | cancel/concurrency/late use | 主/正交消费者 | 平台/交付 |
 |---|---|---|---|---|---|---|
-| F1-01/02 owner/permission | C 的有限块、subview、generation、多读阻写 PASS | C 的 checked arithmetic/预算/拒绝不消费 PASS | C/D/N 原 backing 与 readonly alias PASS | C 跨线程 reader、独立 block PASS | D/N/S 真实 ready 数据与矩阵/alias PASS | S 部分 PASS；最终 source identity 复核 UNPROVEN |
+| F1-01/02 owner/permission | C 的有限块、subview、generation、多读阻写 PASS | C 的 checked arithmetic/预算/拒绝不消费 PASS | C/D/N 原 backing 与 readonly alias PASS | C 跨线程 reader、独立 block PASS | D/N/S 真实 ready 数据与矩阵/alias PASS | 原 scope source identity 已复核；剩余平台/交付格仍按下表 |
 | F1-03/04 native retirement | C/D/G actual retirement PASS | C/G/U unknown error 不提前回收、首错与最终排空 PASS | D/G/N/L dropped handles 仍保活 PASS | C/L/U 取消不证明退休、仍保留 native use PASS | 原数学与 actual prefix 保留，非 mock math PASS | Windows/WSL CUDA / Air Apple / Windows Vulkan 已取证；其余细分按下面表 |
 | F1-05 Direct | D/N/S/U 四路线成熟数学 PASS | D binding rollback、L cold OOM/accepted failure PASS | D/N/L last source alias/use 回收 PASS | L/U native cancel/abandon 与原不支持取消合同 PASS | 同时含 readonly import、bounded storage、MatMul PASS | S 当前 ordinary source/static/shared PASS；最终链接矩阵复核尚未裁决 |
 | F1-06 Graph/组合 | G/M/S 原计划与 scalar reference PASS | G unknown prefix 与 M closed-native suffix 原错 PASS | G/N/M 旧结果/source/caller/private output PASS | C/L/M 原协议与实际 cancellation/abandon PASS；跨平台 fault 复核 UNPROVEN | 无新数学，原 CPU/native/CPU consumer PASS | Windows CPU+Vulkan imported static managed UNPROVEN；最终链接矩阵未裁决 |
@@ -107,3 +114,8 @@ Apple on Windows/WSL 和 CUDA on Air 因 native 系统不支持是 NOT_APPLICABL
 `scope/architecture` 的准入与形状有源码/consumer/固定研究支持；`correctness/delivery/usability_docs/
 red_team/engineering_performance` 尚不能给出整体 PASS。candidate、LOC、source hash 复用核对、独立有界红队
 和最终七门必须在当前卡形成 terminal 后才能把七 owner 进入 CLOSED。
+
+不可变 `3034fc595` 的统一 [LOC self-check](../../../../evidence/correctness/foundation-f1-identity-audit/loc-current.json)
+通过：全库2,258,724 code lines/5,668文件，自实现不含测试165,788/666，Compute+Graph 的同33路径
+实现并集70,561/315。使用原统一脚本/明确边界；vendor/tests/samples/docs 不计入后两项，
+这些数字不是产品进度或数学 kernel 数量。完整 stdout/工具身份与 self-check 存在收据中。

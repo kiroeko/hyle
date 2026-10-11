@@ -682,6 +682,32 @@ build1/test1，阶段前4GiB；与 WSL SDK/fault 重型 run 串行。安装到�
 每消费者180秒、EXE-local DLL/system-only PATH，保留命令、候选、日志与失败。只补这一个交付格，
 不恢复 H3 旧 task、不重跑算子/P1、不修改产品或公共构建工具。
 
+该新 producer 首次 configure 因 runner 未传本机 SDK 路径，`FindVulkan` 缺少 loader/header/glslc 而退出1；
+没有编译产品或运行消费者。原合格树绑定实际 `C:/public/tools/hyle-vulkan/1.4.357.0`，三个文件存在。
+保留原 configure log/job，runner 仅补相同 SDK 的进程级 `VULKAN_SDK/PATH` 后续同 producer configure，
+不清日志/换版本/重置预算。该设置同时用于独立 SDK consumer 的 native dependency discovery。
+
+### 平台/组合剩余精确格
+
+矩阵不以“没有单独运行”当作“已运行”：Windows 已迁址 CPU+CUDA static SDK（普通消费者已通过）
+补运行原 `cpu_cuda_contracts.cc`，独立 consumer 只链接 imported `hyle::graph`，配置/构建300、exe180，
+EXE-local DLL/system-only PATH，保留原 prefix/product identity，不重编 producer。
+Windows CPU+CUDA shared 复用已完成的 CUDA shared producer，在原 validation cache 将普通 routes 扩为
+`cpu;cuda`、tests/bench OFF、INSTALL ON、Release/shared/shipping/OFF；新本批 staging 迁址后独立
+运行普通租约和原 CPU+CUDA mixed 两消费者。configure300/build3600/install600、consumer180；
+缓存不是产品源码，不以其后来配置回写旧收据，不换 SDK/数学 Provider 默认。
+
+MacBook Air 再以当前已冻结 `e39905900` source（与当前相关产品/三个测试文件逐文件相同）补 native Vulkan
+fault 与 libc++ 共同控制资格。实际新前检 Mac16,12/16GiB/macOS27.0.1/26A434/AppleClang21，
+复用 `a-vulkan/selected-graph/shared-sdk-build` 验证树：graph/vulkan、Release/shared、tests ON、
+INSTALL OFF、instrumentation OFF；它原已安装的 SDK 副本不改动，不反签后来 producer 配置。
+仅构建 `hyle_compute_test`、`hyle_graph_test`、`hyle_compute_route_vulkan_test`；运行原
+`ResourceLeases.*:Completion.*:OwnedResult.*`、`LeaseSubmission.*` 与
+`VulkanLeaseLifetime.*:VulkanLifetime.CancellationAndAbandonmentKeepOwnersWithoutDestructorWait:VulkanLifetime.ManagedPrefixSurvivesRejectedNativeSuffixUntilDrain`。
+configure300/build1800、每 exe120，不全算子/P1；原日志/首错/native drain 与 metadata 平衡依原测试观察。
+三项验证均与本批重型 SDK/fault 串行，阶段前4GiB、build1/test1；新产品反例才退回有限 FIX，
+未运行格保留 UNPROVEN，不把这份计划算作 PASS。
+
 ### P0 成本账（源码审计，完整裁决待剩余资格）
 
 以 `fc4ffbd16` 产品为准；后续消费者、测试与文档没有改变以下实现。B 为 pool 块上限，R 为本批资源数，
