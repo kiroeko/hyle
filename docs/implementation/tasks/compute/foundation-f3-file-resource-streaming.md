@@ -425,6 +425,17 @@ PASS、零runtime error、四个关键TU实际`-fsanitize=undefined -fno-sanitiz
 真正80-byte short-write prefix、跨线程导出结果释放及OOM/生命周期断言再次通过。
 TSan、WSL CUDA新接缝、安装交付及最终门仍待验。
 
+[TSan实际收据](../../../../evidence/correctness/foundation-f3-tsan/receipt.json)现签同一c36c40bed fixture
+十二项PASS、零race报告，四个关键TU逐项带实际`-O3 -fsanitize=thread`。首次测试进程在任何用例
+启动前因WSL地址布局冲突`unexpected memory mapping`退出66；原失败保留，只沿F2已验的方式执行
+一次进程级`setarch x86_64 -R`恢复，不修改系统设置、不加suppression、不重复尝试。
+共同控制的ASan/UBSan/TSan风险现均有实际证据；不代签GPU sanitizer或完整F3关闭。
+
+WSL CUDA定向入口首次配置撞上原树继承的`HYLE_DEV_FACTORS`与product选择互斥，失败日志保留；
+沿该维护树只选`compute_route_cuda;compute_stream`并清除product选择，重配置实际PASS。
+当前仅构建独立CUDA文件测试target，不回放Graph/CPU Provider或无关算子目录；其六项运行、
+安装static/shared、新头/缺席/迁址与最终P0/红队仍待验。
+
 | FIX | 必须实现 | 验收 |
 |---|---|---|
 | F3-01 | 中央 compute_stream 身份/依赖/普通 route 及三交付投影 | 无环，无第二名单/空 target；静态共享source一致，不拉无关 CPU Provider |

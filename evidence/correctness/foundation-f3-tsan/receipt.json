@@ -1,0 +1,64 @@
+{
+  "schema_version": 1,
+  "product_commit": "f3d931c47777f7fbfd35dedf1f5e0734fa28ef6c",
+  "fixture_commit": "c36c40bedfb960384020c117703c4eda599a9359",
+  "scope": "WSL actual TSan F3 common/CPU controller and twelve original file risks only",
+  "identity": {
+    "os": "Linux kiro-workstation 6.18.40.1-microsoft-standard-WSL2 #1 SMP PREEMPT_DYNAMIC Fri Jul 31 22:12:15 UTC 2026 x86_64 x86_64 x86_64 GNU/Linux",
+    "compiler": "g++-14 (Ubuntu 14.2.0-4ubuntu2~24.04.1) 14.2.0\nCopyright (C) 2024 Free Software Foundation, Inc.\nThis is free software; see the source for copying conditions.  There is NO\nwarranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.",
+    "cmake": "cmake version 3.28.3\n\nCMake suite maintained and supported by Kitware (kitware.com/cmake).",
+    "cuda": "nvcc: NVIDIA (R) Cuda compiler driver\nCopyright (c) 2005-2026 NVIDIA Corporation\nBuilt on Tue_Jun_09_02:43:40_PM_PDT_2026\nCuda compilation tools, release 13.3, V13.3.73\nBuild cuda_13.3.r13.3/compiler.38244171_0",
+    "gpu": "NVIDIA GeForce RTX 4070, GPU-e7376560-6f5d-ec19-6ee4-3dd3a2c81ef8, 617.14"
+  },
+  "parallel": 4,
+  "test_parallel": 1,
+  "tests_passed": 12,
+  "subject_compile_flags": {
+    "src/compute_stream/CMakeFiles/hyle_compute_stream.dir/file_stream.cc.o": "FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Wno-error=mismatched-new-delete -fsanitize=thread -Wno-tsan",
+    "src/compute_route_cpu/CMakeFiles/hyle_compute_route_cpu.dir/file_stream.cc.o": "FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Wno-error=mismatched-new-delete -fsanitize=thread -Wno-tsan",
+    "src/compute/CMakeFiles/hyle_compute.dir/batch_transfer.cc.o": "FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Wno-error=mismatched-new-delete -fsanitize=thread -Wno-tsan",
+    "tests/compute_stream/CMakeFiles/hyle_compute_stream_test.dir/file_stream_test.cc.o": "FLAGS = -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Wno-error=mismatched-new-delete -fsanitize=thread -Wno-tsan"
+  },
+  "source_inputs": [
+    {
+      "path": "src/compute_stream/file_stream.cc",
+      "sha256": "2024e866175e892d7d14fef2421ede1929606f6ed7a225e0b26ccae9feb0c57b"
+    },
+    {
+      "path": "src/compute_stream/stream_sources.cc",
+      "sha256": "23859fad2971d11bfb029dfe1403989a9740832ce522b2c430d957a3e3fdeed2"
+    },
+    {
+      "path": "src/compute_route_cpu/file_stream.cc",
+      "sha256": "2a9acf645520fcc8c85f56cd3e4e9ef9689a948809dc8bf94c6bbd5a2538e297"
+    },
+    {
+      "path": "src/compute/batch_transfer.cc",
+      "sha256": "25367562e18d16b6d38b5ea80bf7eb89cff46243d73c7e84a99430470ba82fc1"
+    },
+    {
+      "path": "include/hyle/compute/detail/file_stream_copy.h",
+      "sha256": "27b8705a7731d63a953e3bd93118d9420a0b95168abd9b884ec37dea7e166dc0"
+    },
+    {
+      "path": "tests/compute_stream/file_stream_test.cc",
+      "sha256": "97803b2a1a7427e9fc5a0426d74aa6241527ecfe2fc599e3840a82856d3856c5"
+    }
+  ],
+  "race_reports": 0,
+  "original_startup": "Unexpected memory mapping exit66 before tests retained. One setarch x86_64 -R recovery passed twelve tests; no system changes or suppressions.",
+  "positive_partial_write": "Actual original POSIX file size limit: written=80/copied=96/ready=0, exact original prefix retained.",
+  "allocator": "Actual injected F3 metadata balanced and native active uses zero after own-work retirement.",
+  "diagnostic_policy": "WERROR=OFF in GCC instrumented local verification, warnings preserved, -O3/TSan/full risk scope retained.",
+  "archive": {
+    "path": "evidence/correctness/foundation-f3-tsan/raw-results.zip",
+    "sha256": "57819b318067528ee1ce09c658ea957ff5811a563ec231ae49236ce55e936e2b"
+  },
+  "verdict": "PASS_WSL_F3_TSAN_TWELVE_RISKS_ONLY",
+  "limits": "No driver-private physical residency, TCP correctness, installed delivery or final F3 closure verdict.",
+  "unproven": [
+    "WSL native CUDA F3 delta",
+    "Installed static/shared/new headers/absence/relocation",
+    "Final P0/red team/closure"
+  ]
+}
