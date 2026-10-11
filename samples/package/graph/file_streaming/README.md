@@ -17,10 +17,23 @@ python prepare_qwen.py <local-model.safetensors> <output-directory>
 hyle_file_streaming_qwen <output-directory>/ranges.tsv
 ```
 
+The mature GGUF adapter creates a deterministic mixed BF16/F32/Q8 fixture, checks the
+original offsets/encodings/bytes with `gguf.GGUFReader`, and feeds the same small consumer:
+
+```text
+python prepare_gguf.py <fixture-directory>
+hyle_file_streaming_sample <fixture-directory>/gguf-ranges.tsv
+```
+
+Use a second path argument to `prepare_gguf.py` to check an existing matching fixture.
+This adapter requires the mature `gguf` Python package. It is a bounded format-consumer
+example, not a model loader. Apple continues to use its original affine Q4 fixture.
+
 The Python adapter requires official `safetensors`, validates metadata and reads only the three
 layer-0 BF16 projections and F32 norm (about 72 MiB). It does not download weights or hash the
-whole checkpoint. The C++ consumer reads those original ranges using the pipeline and compares
-existing Direct/Graph mathematics against independent references. The consumer uses each selected
+whole checkpoint. The C++ consumer reads those original ranges using the pipeline, compares
+existing Direct/Graph mathematics against independent references, writes a new temporary file,
+compares every stored original byte in bounded chunks, then reloads and repeats the mathematics. The consumer uses each selected
 route's original Direct/Graph interfaces. CPU/CUDA source runs have passed; Apple/Vulkan qualification is pending. These programs are under
 F3 qualification, so this README does not claim source/static/shared or all-route acceptance.
 

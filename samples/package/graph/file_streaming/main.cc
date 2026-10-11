@@ -5,6 +5,7 @@
 #include <hyle/compute/low_precision.h>
 #include <hyle/graph/leased_invocation.h>
 #include <hyle/mem/stats.h>
+#include "gguf_input.h"
 
 #if defined(HYLE_COMPUTE_CPU)
 #include <hyle/graph/cpu.h>
@@ -41,6 +42,7 @@ namespace g = hyle::graph;
 namespace m = hyle::mem;
 using hyle::Status;
 template <class T> using Result = hyle::Result<T>;
+const gguf_input::Fixture *gguf_fixture = nullptr;
 
 // One BF16 group and one GGUF Q8_0 group. Q8_0 has a half scale followed
 // by 32 signed codes per row; the sample keeps that existing file encoding.
@@ -175,9 +177,9 @@ Status consume(c::Context &context, c::Queue &queue,
 // owns IO/native ordering and bounded retirement. Math uses the existing
 // Direct/Graph consumers above, never a copy or math kernel in this sample.
 hyle::sched::Task<Result<hyle::io::File>> open_source(m::AllocatorRef,
-    hyle::io::IoContext *io, std::string path) {
+    hyle::io::IoContext *io, std::string path, bool read_only) {
   co_return co_await hyle::io::open_file(*io, 0, path,
-      {.access = hyle::io::FileAccess::kReadWrite});
+      {.access = read_only ? hyle::io::FileAccess::kRead : hyle::io::FileAccess::kReadWrite});
 }
 template<std::size_t N, class Create, class MakePayload, class Consume>
 Status transfer_groups(m::MemoryResourceRef host, m::MemoryResourceRef device,
@@ -206,29 +208,38 @@ Status transfer_groups(m::MemoryResourceRef host, m::MemoryResourceRef device,
       std::vector<std::byte> file_bytes;
       for (unsigned i = 0; i < N; ++i) file_bytes.insert(file_bytes.end(), payload.bytes(i).begin(), payload.bytes(i).end());
       const auto stem = "hyle_f3_math_" + std::to_string(sequence.fetch_add(1));
-      const auto source_path = stem + "_source.tmp", sink_path = stem + "_sink.tmp";
-      struct Files final { const std::string &a, &b; ~Files() {
-        hyle::platform::remove_file(a.c_str()).IgnoreError(); hyle::platform::remove_file(b.c_str()).IgnoreError(); } } files{source_path, sink_path};
-      HYLE_ASSIGN_OR_RETURN(auto raw, hyle::platform::open_file(source_path.c_str(),
-          hyle::platform::kOpenRead | hyle::platform::kOpenWrite | hyle::platform::kOpenCreate | hyle::platform::kOpenTruncate));
-      HYLE_RETURN_IF_ERROR(raw.write_all(file_bytes)); HYLE_RETURN_IF_ERROR(raw.close());
+      const auto external = N == 4 && gguf_fixture;
+      const auto source_path = external ? gguf_fixture->file : stem + "_source.tmp", sink_path = stem + "_sink.tmp";
+      struct Files final { const std::string &a, &b; bool external; ~Files() {
+        if (!external) hyle::platform::remove_file(a.c_str()).IgnoreError();
+        hyle::platform::remove_file(b.c_str()).IgnoreError(); } } files{source_path, sink_path, external};
+      if (!external) {
+        HYLE_ASSIGN_OR_RETURN(auto raw, hyle::platform::open_file(source_path.c_str(),
+            hyle::platform::kOpenRead | hyle::platform::kOpenWrite | hyle::platform::kOpenCreate | hyle::platform::kOpenTruncate));
+        HYLE_RETURN_IF_ERROR(raw.write_all(file_bytes)); HYLE_RETURN_IF_ERROR(raw.close());
+      }
       HYLE_ASSIGN_OR_RETURN(auto empty, hyle::platform::open_file(sink_path.c_str(),
           hyle::platform::kOpenRead | hyle::platform::kOpenWrite | hyle::platform::kOpenCreate | hyle::platform::kOpenTruncate));
       HYLE_RETURN_IF_ERROR(empty.close());
       auto open = [&](const std::string &path) -> Result<c::StreamFile> {
-        HYLE_ASSIGN_OR_RETURN(auto opened, hyle::sched::spawn_task_on(scheduler, 0, m::system_allocator(), open_source(m::system_allocator(), &io, path)).join());
-        HYLE_ASSIGN_OR_RETURN(auto file, std::move(opened)); return c::StreamFile::adopt(std::move(file), total);
+        HYLE_ASSIGN_OR_RETURN(auto opened, hyle::sched::spawn_task_on(scheduler, 0, m::system_allocator(),
+            open_source(m::system_allocator(), &io, path, path == source_path)).join());
+        HYLE_ASSIGN_OR_RETURN(auto file, std::move(opened));
+        return c::StreamFile::adopt(std::move(file), external && path == source_path ? gguf_fixture->capacity : total);
       };
       HYLE_ASSIGN_OR_RETURN(auto source, open(source_path)); HYLE_ASSIGN_OR_RETURN(auto sink, open(sink_path));
-      auto make_ranges = [&]() -> Result<std::array<c::StreamReadRange, N>> {
+      auto make_ranges = [&](bool original) -> Result<std::array<c::StreamReadRange, N>> {
         std::array<c::StreamReadRange, N> ranges;
         for (unsigned i = 0; i < N; ++i) {
           ranges[i].file_offset = offsets[i]; ranges[i].bytes = sizes[i];
+          if constexpr (N == 4) {
+            if (external && original) ranges[i].file_offset = gguf_fixture->offsets[lane][i];
+          }
           HYLE_ASSIGN_OR_RETURN(ranges[i].destination, pool.allocate(sizes[i]));
         } return ranges;
       };
-      auto read_and_consume = [&](c::StreamFile file) -> Result<std::array<c::ReadLease, N>> {
-        HYLE_ASSIGN_OR_RETURN(auto ranges, make_ranges());
+      auto read_and_consume = [&](c::StreamFile file, bool original) -> Result<std::array<c::ReadLease, N>> {
+        HYLE_ASSIGN_OR_RETURN(auto ranges, make_ranges(original));
         std::array<c::StreamReadGroup, 2> groups{{{10, std::span(ranges).first(2)}, {20, std::span(ranges).subspan(2)}}};
         HYLE_ASSIGN_OR_RETURN(auto ticket, pipeline.read(c::StreamSource::file(std::move(file)), groups));
         std::array<c::ReadLease, N> ready;
@@ -243,7 +254,7 @@ Status transfer_groups(m::MemoryResourceRef host, m::MemoryResourceRef device,
           return std::unexpected(Status::Internal("file stream read progress/retirement mismatch"));
         return ready;
       };
-      HYLE_ASSIGN_OR_RETURN(auto ready, read_and_consume(source));
+      HYLE_ASSIGN_OR_RETURN(auto ready, read_and_consume(source, true));
       std::array<c::StreamWriteRange, N> writes;
       for (unsigned i = 0; i < N; ++i) writes[i] = c::StreamWriteRange::ready(ready[i], offsets[i], 0, sizes[i]);
       std::array<c::StreamWriteGroup, 2> write_groups{{{30, std::span(writes).first(2)}, {40, std::span(writes).subspan(2)}}};
@@ -255,7 +266,7 @@ Status transfer_groups(m::MemoryResourceRef host, m::MemoryResourceRef device,
       std::vector<std::byte> bytes(total); HYLE_ASSIGN_OR_RETURN(auto actual, stored.read_at(0, bytes));
       if (actual != total || bytes != file_bytes) return Status::Internal("file stream changed original encoded bytes");
       HYLE_RETURN_IF_ERROR(stored.close());
-      HYLE_ASSIGN_OR_RETURN(auto reloaded, read_and_consume(sink));
+      HYLE_ASSIGN_OR_RETURN(auto reloaded, read_and_consume(sink, false));
       ready = {}; reloaded = {}; HYLE_RETURN_IF_ERROR(pipeline.collect());
     }
   }
@@ -463,7 +474,14 @@ Status run() {
 }
 } // namespace
 
-int main() {
+int main(int argc, char **argv) {
+  gguf_input::Fixture input;
+  if (argc > 2) { std::fprintf(stderr, "usage: hyle_file_streaming_sample [mature-tool-checked gguf-ranges.tsv]\n"); return 2; }
+  if (argc == 2) {
+    auto parsed = gguf_input::read(argv[1]);
+    if (!parsed) { std::fprintf(stderr, "invalid checked GGUF fixture\n"); return 2; }
+    input = std::move(*parsed); gguf_fixture = &input;
+  }
   const auto status = run();
   if (status.ok()) return 0;
   const auto message = status.message();
