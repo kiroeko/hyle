@@ -1,11 +1,21 @@
 # F2：准备后的原生批量范围搬运
 
-> 状态：AUDITED（2026-10-11）；F2 七 FIX 的形状/owner/有限实现已固定，开始集中接线。
+> 状态：CANDIDATE（2026-10-11）；F2 七 FIX 产品接线固定，完整资格按有限矩阵集中取证。
 > 实施前[原子/复合接缝源码审计](foundation-f2-source-audit.md)为定界输入，未授权产品修改或签运行资格。
 > component / owner：拟 compute、compute_backend_cpu/cuda、
 > compute_route_cpu/cuda/apple/vulkan；只有普通 Graph 需要本批 native binding 接缝时再绑定对应 owner。
 
 ## 共同执行合同
+
+### 固定candidate
+
+产品commit：`03162add05d3e26fe3314c6bcdaafa5a277a3a76`；四当前owner从AUDITED进入CANDIDATE，
+改前registry ref为`adf7555fa`。七FIX的API/layout/算法、四原runtime接线及ordinary消费者均已
+实施固定；[逐FIX/成本/剩余资格矩阵](foundation-f2-verification-matrix.md)是本轮当前执行清单。
+候选后不继续探索新能力或改产品，只有验证/文档/证据；若具体反例必须改产品则依法退回AUDITED。
+本节以下AUDIT/首轮状态描述是时间顺序证据，不代表当前仍可修改产品或所有资格已通过。
+四路线首轮数学与Windows CUDA补齐故障已有实物证据；适用其他平台/SDK/sanitizer/头/selector扩展/
+P0终审红队仍UNPROVEN。CANDIDATE不是CLOSED；不缩减F2，不提前启动F3。
 
 ### 当前实际启动绑定
 

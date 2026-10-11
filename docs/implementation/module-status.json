@@ -270,9 +270,10 @@
     },
     {
       "module": "compute",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
+      "candidate": "03162add05d3e26fe3314c6bcdaafa5a277a3a76",
       "record": "docs/implementation/tasks/compute/foundation-f2-batched-transfers.md",
-      "summary": "F2 AUDITED：原七 FIX 的 prepared ranges/phase/ready、physical alias、ordered lease/native dependency交接与各原 runtime接线已固定；开始有限实现，全部运行资格尚未取得。"
+      "summary": "F2 CANDIDATE：原七FIX的四路线prepared copy/phase/ready、native依赖与租约交接、普通BF16/原编码量化Direct/Graph接线已固定；首轮数学与Windows CUDA故障取证，剩余平台/SDK/sanitizer/新头与P0终审红队按有限矩阵执行，尚未CLOSED。"
     },
     {
       "module": "graph",
@@ -412,9 +413,10 @@
     },
     {
       "module": "compute_backend_cuda",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
+      "candidate": "03162add05d3e26fe3314c6bcdaafa5a277a3a76",
       "record": "docs/implementation/tasks/compute/foundation-f2-batched-transfers.md",
-      "summary": "F2 AUDITED：原七 FIX 的 prepared ranges/phase/ready、physical alias、ordered lease/native dependency交接与各原 runtime接线已固定；开始有限实现，全部运行资格尚未取得。"
+      "summary": "F2 CANDIDATE：原七FIX的四路线prepared copy/phase/ready、native依赖与租约交接、普通BF16/原编码量化Direct/Graph接线已固定；首轮数学与Windows CUDA故障取证，剩余平台/SDK/sanitizer/新头与P0终审红队按有限矩阵执行，尚未CLOSED。"
     },
     {
       "module": "compute_provider_native",
@@ -507,9 +509,10 @@
     },
     {
       "module": "compute_route_apple",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
+      "candidate": "03162add05d3e26fe3314c6bcdaafa5a277a3a76",
       "record": "docs/implementation/tasks/compute/foundation-f2-batched-transfers.md",
-      "summary": "F2 AUDITED：原七 FIX 的 prepared ranges/phase/ready、physical alias、ordered lease/native dependency交接与各原 runtime接线已固定；开始有限实现，全部运行资格尚未取得。"
+      "summary": "F2 CANDIDATE：原七FIX的四路线prepared copy/phase/ready、native依赖与租约交接、普通BF16/原编码量化Direct/Graph接线已固定；首轮数学与Windows CUDA故障取证，剩余平台/SDK/sanitizer/新头与P0终审红队按有限矩阵执行，尚未CLOSED。"
     },
     {
       "module": "graph_route_apple",
@@ -524,9 +527,10 @@
     },
     {
       "module": "compute_route_vulkan",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
+      "candidate": "03162add05d3e26fe3314c6bcdaafa5a277a3a76",
       "record": "docs/implementation/tasks/compute/foundation-f2-batched-transfers.md",
-      "summary": "F2 AUDITED：原七 FIX 的 prepared ranges/phase/ready、physical alias、ordered lease/native dependency交接与各原 runtime接线已固定；开始有限实现，全部运行资格尚未取得。"
+      "summary": "F2 CANDIDATE：原七FIX的四路线prepared copy/phase/ready、native依赖与租约交接、普通BF16/原编码量化Direct/Graph接线已固定；首轮数学与Windows CUDA故障取证，剩余平台/SDK/sanitizer/新头与P0终审红队按有限矩阵执行，尚未CLOSED。"
     },
     {
       "module": "graph_route_vulkan",
