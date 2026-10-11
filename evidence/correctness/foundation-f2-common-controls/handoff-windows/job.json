@@ -1,0 +1,73 @@
+{
+  "candidate": "651c202fa5f8b5696459564af21908857b2fc69c",
+  "scope": "F2 ordered lease control plus physical ranges and prior F1 control regressions; native transfer programs unqualified",
+  "configuration": "Release/shared/source/instrumentationON/installOFF",
+  "compiler": "C:/Program Files/Microsoft Visual Studio/18/Enterprise/VC/Tools/MSVC/14.50.35717/bin/Hostx64/x64/cl.exe",
+  "parallel": 1,
+  "stages": [
+    {
+      "name": "build",
+      "command": [
+        "C:\\Program Files\\CMake\\bin\\cmake.EXE",
+        "--build",
+        "C:\\h7\\foundation-f1-q0",
+        "--target",
+        "hyle_compute_test",
+        "--parallel",
+        "1"
+      ],
+      "pid": 55992,
+      "state": "terminal",
+      "available_bytes": 47481118720,
+      "log": "build.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "03ed7abc3fb325f62727aa0265f99d0e2ef9b26cc274550e2e6867d18c933d52"
+    },
+    {
+      "name": "headers",
+      "command": [
+        "python",
+        "C:\\public\\project-hyle\\hyle\\scripts\\header-self-contained.py",
+        "--module",
+        "compute",
+        "--header",
+        "batch_transfer.h",
+        "--header",
+        "detail/copy_ranges.h",
+        "--header",
+        "detail/lease_access.h",
+        "--include-dir",
+        "C:\\public\\project-hyle\\hyle\\include",
+        "--extra-include-dir",
+        "C:/h7/foundation-f1-sdk/w-cpu-cuda-shared-relocated/include",
+        "--cxx",
+        "C:/Program Files/Microsoft Visual Studio/18/Enterprise/VC/Tools/MSVC/14.50.35717/bin/Hostx64/x64/cl.exe",
+        "--cxx-compiler-id",
+        "MSVC"
+      ],
+      "pid": 62092,
+      "state": "terminal",
+      "available_bytes": 47483621376,
+      "log": "headers.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "db2f8431654c65ff13565b0affc08a69a56e925b27edade11d4433a086f9368a"
+    },
+    {
+      "name": "test",
+      "command": [
+        "C:\\h7\\foundation-f1-q0\\bin\\hyle_compute_test.exe",
+        "--gtest_filter=CopyRanges.*:CopyLeaseHandoff.*:ResourceLeases.*:Completion.*"
+      ],
+      "pid": 83344,
+      "state": "terminal",
+      "available_bytes": 47476871168,
+      "log": "test.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "fb12b0b1024f0495d5a505d561ccbc00346dd6334a2ecd145296a931f8fef24b"
+    }
+  ],
+  "verdict": "PASS"
+}

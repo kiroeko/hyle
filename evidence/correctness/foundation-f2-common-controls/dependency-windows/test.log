@@ -1,0 +1,90 @@
+Running main() from C:\public\tools\hyle-dependencies\v1\sources\googletest-063de7e9578f-162765170ae6\googletest\src\gtest_main.cc
+Note: Google Test filter = CopyRanges.*:CopyLeaseHandoff.*:CopyDependency.*:ResourceLeases.*:Completion.*
+[==========] Running 34 tests from 5 test suites.
+[----------] Global test environment set-up.
+[----------] 3 tests from CopyDependency
+[ RUN      ] CopyDependency.RetainedNativeIdentityIsResolvedWithoutObservationOrRetirement
+[       OK ] CopyDependency.RetainedNativeIdentityIsResolvedWithoutObservationOrRetirement (0 ms)
+[ RUN      ] CopyDependency.InlineErrorInvalidAndOuterTailHintArePreserved
+[       OK ] CopyDependency.InlineErrorInvalidAndOuterTailHintArePreserved (0 ms)
+[ RUN      ] CopyDependency.CachedUnknownErrorCannotManufactureNativeSuccessOrRelease
+[       OK ] CopyDependency.CachedUnknownErrorCannotManufactureNativeSuccessOrRelease (0 ms)
+[----------] 3 tests from CopyDependency (0 ms total)
+
+[----------] 11 tests from Completion
+[ RUN      ] Completion.RetainedObserverDrainsWhilePublicHandleIsHeld
+[       OK ] Completion.RetainedObserverDrainsWhilePublicHandleIsHeld (0 ms)
+[ RUN      ] Completion.RetainedObserverForwardsAttachmentOnlyAfterActualUnknownRetirement
+[       OK ] Completion.RetainedObserverForwardsAttachmentOnlyAfterActualUnknownRetirement (0 ms)
+[ RUN      ] Completion.RetainedObserverMayBeDroppedBeforePublicCompletion
+[       OK ] Completion.RetainedObserverMayBeDroppedBeforePublicCompletion (0 ms)
+[ RUN      ] Completion.RetainedCompoundObserverDoesNotTreatCachedRootErrorAsRetirement
+[       OK ] Completion.RetainedCompoundObserverDoesNotTreatCachedRootErrorAsRetirement (0 ms)
+[ RUN      ] Completion.ImmediateSuccessAndFailureRemainInline
+[       OK ] Completion.ImmediateSuccessAndFailureRemainInline (0 ms)
+[ RUN      ] Completion.CompositeRetentionPreservesBothOwnersAndRejectsReuse
+[       OK ] Completion.CompositeRetentionPreservesBothOwnersAndRejectsReuse (0 ms)
+[ RUN      ] Completion.SimulatedAsyncStateSupportsMovePollWaitAndCancel
+[       OK ] Completion.SimulatedAsyncStateSupportsMovePollWaitAndCancel (0 ms)
+[ RUN      ] Completion.LifetimeSettlesExactlyOnceAtObservedTerminal
+[       OK ] Completion.LifetimeSettlesExactlyOnceAtObservedTerminal (0 ms)
+[ RUN      ] Completion.AbandonedHandleDefersLifetimeUntilBackendTerminal
+[       OK ] Completion.AbandonedHandleDefersLifetimeUntilBackendTerminal (0 ms)
+[ RUN      ] Completion.AbandonedHandleTransfersSavedTailErrorToBackend
+[       OK ] Completion.AbandonedHandleTransfersSavedTailErrorToBackend (0 ms)
+[ RUN      ] Completion.FailedObservationHandsRetentionToActualRuntimeRetirement
+[       OK ] Completion.FailedObservationHandsRetentionToActualRuntimeRetirement (0 ms)
+[----------] 11 tests from Completion (0 ms total)
+
+[----------] 7 tests from CopyRanges
+[ RUN      ] CopyRanges.EmptyExactSelfCopyAndZeroRangesNeedNoNativeWork
+[       OK ] CopyRanges.EmptyExactSelfCopyAndZeroRangesNeedNoNativeWork (0 ms)
+[ RUN      ] CopyRanges.RepeatedReadsAndDistinctDestinationWindowsAreIndependent
+[       OK ] CopyRanges.RepeatedReadsAndDistinctDestinationWindowsAreIndependent (0 ms)
+[ RUN      ] CopyRanges.PhysicalAliasesAcrossDifferentBindingsDoNotEvadeChecks
+[       OK ] CopyRanges.PhysicalAliasesAcrossDifferentBindingsDoNotEvadeChecks (0 ms)
+[ RUN      ] CopyRanges.ProducerConsumerChainRequiresExplicitTransitivePhaseEdges
+[       OK ] CopyRanges.ProducerConsumerChainRequiresExplicitTransitivePhaseEdges (0 ms)
+[ RUN      ] CopyRanges.ExplicitPaddingIsChargedAndStaysInsideOwnedNativeRanges
+[       OK ] CopyRanges.ExplicitPaddingIsChargedAndStaysInsideOwnedNativeRanges (0 ms)
+[ RUN      ] CopyRanges.IDsByteCapsArithmeticAndScratchRefuseBeforeAdmission
+[       OK ] CopyRanges.IDsByteCapsArithmeticAndScratchRefuseBeforeAdmission (0 ms)
+[ RUN      ] CopyRanges.SweepMatchesIndependentSmallGeometricAndReachabilityModel
+[       OK ] CopyRanges.SweepMatchesIndependentSmallGeometricAndReachabilityModel (0 ms)
+[----------] 7 tests from CopyRanges (0 ms total)
+
+[----------] 4 tests from CopyLeaseHandoff
+[ RUN      ] CopyLeaseHandoff.SuccessfulProducerCanPublishWhileOrderedReaderRemainsPending
+[       OK ] CopyLeaseHandoff.SuccessfulProducerCanPublishWhileOrderedReaderRemainsPending (0 ms)
+[ RUN      ] CopyLeaseHandoff.AllOrderedWritersMustActuallyRetireBeforeReady
+[       OK ] CopyLeaseHandoff.AllOrderedWritersMustActuallyRetireBeforeReady (0 ms)
+[ RUN      ] CopyLeaseHandoff.ReadFailurePreservesReadyBytesButWriterFailureCannotPublish
+[       OK ] CopyLeaseHandoff.ReadFailurePreservesReadyBytesButWriterFailureCannotPublish (0 ms)
+[ RUN      ] CopyLeaseHandoff.OrdinaryWriterCapacityAndClosedSourceChecksRemain
+[       OK ] CopyLeaseHandoff.OrdinaryWriterCapacityAndClosedSourceChecksRemain (0 ms)
+[----------] 4 tests from CopyLeaseHandoff (0 ms total)
+
+[----------] 9 tests from ResourceLeases
+[ RUN      ] ResourceLeases.SharedReadersAndSubviewsPreventMutationAndHoldRange
+[       OK ] ResourceLeases.SharedReadersAndSubviewsPreventMutationAndHoldRange (0 ms)
+[ RUN      ] ResourceLeases.MetadataAndBackingCapsDoNotGrowAndOldOwnerCanOutlivePool
+[       OK ] ResourceLeases.MetadataAndBackingCapsDoNotGrowAndOldOwnerCanOutlivePool (0 ms)
+[ RUN      ] ResourceLeases.AbandonedCompletionKeepsBothPoolsUntilRealRetirement
+[       OK ] ResourceLeases.AbandonedCompletionKeepsBothPoolsUntilRealRetirement (0 ms)
+[ RUN      ] ResourceLeases.WriteFailureCannotPublishAndUnsubmittedUseRollsBack
+[       OK ] ResourceLeases.WriteFailureCannotPublishAndUnsubmittedUseRollsBack (0 ms)
+[ RUN      ] ResourceLeases.RejectedAttachmentRetainsTicketAndQuotaIncludesMetadata
+[       OK ] ResourceLeases.RejectedAttachmentRetainsTicketAndQuotaIncludesMetadata (0 ms)
+[ RUN      ] ResourceLeases.OwnedImportPreservesBackingAndReadonlyCannotBecomeWriter
+[       OK ] ResourceLeases.OwnedImportPreservesBackingAndReadonlyCannotBecomeWriter (0 ms)
+[ RUN      ] ResourceLeases.RejectedOwnedImportDoesNotConsumeBackingOrLeakBudget
+[       OK ] ResourceLeases.RejectedOwnedImportDoesNotConsumeBackingOrLeakBudget (0 ms)
+[ RUN      ] ResourceLeases.CheckedCapacitySubviewAndMetadataArithmeticRejectBeforeMutation
+[       OK ] ResourceLeases.CheckedCapacitySubviewAndMetadataArithmeticRejectBeforeMutation (0 ms)
+[ RUN      ] ResourceLeases.CrossThreadReadersHoldGenerationWhileIndependentBlockRetires
+[       OK ] ResourceLeases.CrossThreadReadersHoldGenerationWhileIndependentBlockRetires (0 ms)
+[----------] 9 tests from ResourceLeases (0 ms total)
+
+[----------] Global test environment tear-down
+[==========] 34 tests from 5 test suites ran. (1 ms total)
+[  PASSED  ] 34 tests.

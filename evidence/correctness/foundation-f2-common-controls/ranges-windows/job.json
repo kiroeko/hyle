@@ -1,0 +1,71 @@
+{
+  "candidate": "8107b6a23f9ecc9f207dbeb615fda0dec682e01f",
+  "scope": "F2 common range and phase control only; native transfer programs not qualified",
+  "configuration": "Release/shared/source/instrumentationON/installOFF",
+  "compiler": "C:/Program Files/Microsoft Visual Studio/18/Enterprise/VC/Tools/MSVC/14.50.35717/bin/Hostx64/x64/cl.exe",
+  "parallel": 1,
+  "stages": [
+    {
+      "name": "build",
+      "command": [
+        "C:\\Program Files\\CMake\\bin\\cmake.EXE",
+        "--build",
+        "C:\\h7\\foundation-f1-q0",
+        "--target",
+        "hyle_compute_test",
+        "--parallel",
+        "1"
+      ],
+      "pid": 56992,
+      "state": "terminal",
+      "available_bytes": 47561105408,
+      "log": "build.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "65886e598dabb5c3ca03869a1964720ac8d472fdd52d4951d6280b6a6960416c"
+    },
+    {
+      "name": "headers",
+      "command": [
+        "python",
+        "C:\\public\\project-hyle\\hyle\\scripts\\header-self-contained.py",
+        "--module",
+        "compute",
+        "--header",
+        "batch_transfer.h",
+        "--header",
+        "detail/copy_ranges.h",
+        "--include-dir",
+        "C:\\public\\project-hyle\\hyle\\include",
+        "--extra-include-dir",
+        "C:/h7/foundation-f1-sdk/w-cpu-cuda-shared-relocated/include",
+        "--cxx",
+        "C:/Program Files/Microsoft Visual Studio/18/Enterprise/VC/Tools/MSVC/14.50.35717/bin/Hostx64/x64/cl.exe",
+        "--cxx-compiler-id",
+        "MSVC"
+      ],
+      "pid": 24332,
+      "state": "terminal",
+      "available_bytes": 47472021504,
+      "log": "headers.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "3fb57fef152150e862c112279f7bca20850fa8b2b16f953c178087149c40d910"
+    },
+    {
+      "name": "test",
+      "command": [
+        "C:\\h7\\foundation-f1-q0\\bin\\hyle_compute_test.exe",
+        "--gtest_filter=CopyRanges.*:ResourceLeases.*:Completion.*"
+      ],
+      "pid": 30648,
+      "state": "terminal",
+      "available_bytes": 47443320832,
+      "log": "test.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "216b8afd8d37f7a66e367a2d1e0c5589979924aa9c25e2b65db9264e64341a3a"
+    }
+  ],
+  "verdict": "PASS"
+}

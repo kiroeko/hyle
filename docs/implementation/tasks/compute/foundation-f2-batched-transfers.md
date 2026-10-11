@@ -27,7 +27,8 @@
 
 - 基线：`edb2714384037b12a3d1e69839aa895fea17cec1`；设计见
   [资源与流送设计](../../../architecture/compute-resource-streaming-design.md)。
-- 本卡已作为上述四 owner 的当前 AUDITED record；其他 owner 按 registry。验证均未运行。
+- 本卡已作为上述四 owner 的当前 AUDITED record；其他 owner 按 registry。共同控制首轮见下表；
+  原生程序、数学与完整交付验证尚未运行。
   以下 AUDIT/有限实现 ledger 固定后才改产品，后续新公共语义须重新裁决。
 - 主纵切：量化推理的外部状态/权重范围及真实成熟数学消费。
   正交纵切：渲染资产流送和分块矩阵管线；不加入 token/layer/KV policy。
@@ -185,6 +186,23 @@ logical/physical/staging/metadata/unknown bytes，opaque driver/vendor 成本不
 `ResourceLeases.*:Completion.*` 相关回归，新 `CopyRanges.*:CopyLeaseHandoff.*:CopyDependency.*` 控制协议与 header sole-include；复用本批 Windows共同/WSL compute构建，
 build1/test1、4GiB、configure300/build1800/exe120，不全算子/P1。真实 CUDA/Apple/Vulkan故障与数学、
 二组二槽及三交付在本包产品接线后按稳定候选集中运行，日志/预算不因阶段提交重置。
+
+### 当前实施与首轮证据（2026-10-11）
+
+原始日志、candidate/tree、命令、exit code 与逐日志 SHA-256 保存在
+[共同控制收据](../../../../evidence/correctness/foundation-f2-common-controls/receipt.json)。
+这些是 Windows MSVC Release/shared/source 的实现期控制协议检查，不能代签原生搬运或其他交付。
+
+| 产品段 | 固定检查点 | 已运行结果 | 尚未证明 |
+|---|---|---|---|
+| 范围/物理 alias/显式阶段 | `8107b6a23` | 7新用例含500组独立模型比较，相关回归合计27项；2头独立编译 PASS | native usage、程序与replay |
+| 有序读保活/最后写退休后发布 | `651c202fa` | 4新协议用例，相关回归合计31项；3头独立编译 PASS | 真实GPU逐阶段退休/数学消费 |
+| retained producer identity/错误保留 | `73bae6e65` | 3新协议用例，相关回归合计34项；5头独立编译 PASS | 原生producer依赖及partial prefix |
+
+三个检查点 build1/test1，启动前实际可用内存均超过4GiB；没有P1。
+selector 的原生反向消费者与交付门按本卡集中阶段继续待验，保留完整 selected/skipped 清单。
+七FIX仍是部分实现，program/invocation/submission、CPU/CUDA/Apple/Vulkan native batch、
+二组二槽/真实编码数学/故障/三交付/P0与最终红队尚未完成；本卡维持 AUDITED。
 
 | FIX | 必须实现 | 验收 |
 |---|---|---|

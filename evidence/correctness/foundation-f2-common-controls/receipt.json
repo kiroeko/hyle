@@ -1,0 +1,35 @@
+{
+  "schema_version": 1,
+  "scope": "F2 common protocol slices, Windows MSVC Release shared source only",
+  "native_transfer_qualification": "UNPROVEN",
+  "other_platforms": "UNPROVEN",
+  "installed_delivery": "UNPROVEN",
+  "stages": [
+    {
+      "candidate": "8107b6a23f9ecc9f207dbeb615fda0dec682e01f",
+      "tree": "066b0234d02f03f28c78641acf5565a6a20fbcbd",
+      "directory": "ranges-windows",
+      "tests": 27,
+      "verdict": "PASS",
+      "scope": "F2 common range and phase control only; native transfer programs not qualified"
+    },
+    {
+      "candidate": "651c202fa5f8b5696459564af21908857b2fc69c",
+      "tree": "db3d370ba1369d88905c03a83883368c929983f0",
+      "directory": "handoff-windows",
+      "tests": 31,
+      "verdict": "PASS",
+      "scope": "F2 ordered lease control plus physical ranges and prior F1 control regressions; native transfer programs unqualified"
+    },
+    {
+      "candidate": "73bae6e6526cba7ea997ec028b7e0f38d8da2244",
+      "tree": "bd680f83ab722b31f1b6acdd4f027f69e8442cbc",
+      "directory": "dependency-windows",
+      "tests": 34,
+      "verdict": "PASS",
+      "scope": "F2 retained native dependency identity, ordered lease and range controls; native transfer programs unqualified"
+    }
+  ],
+  "deferred_selected_gates": "Full native consumers and source/static/shared matrix after complete F2 product wiring, per closure card",
+  "impact_plan_sha256": "9be5acba933364e5936b0d375eff81b4ad678b4233d291d09d5901aa39a78e97"
+}

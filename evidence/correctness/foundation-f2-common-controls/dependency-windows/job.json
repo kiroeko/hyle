@@ -1,0 +1,77 @@
+{
+  "candidate": "73bae6e6526cba7ea997ec028b7e0f38d8da2244",
+  "scope": "F2 retained native dependency identity, ordered lease and range controls; native transfer programs unqualified",
+  "configuration": "Release/shared/source/instrumentationON/installOFF",
+  "compiler": "C:/Program Files/Microsoft Visual Studio/18/Enterprise/VC/Tools/MSVC/14.50.35717/bin/Hostx64/x64/cl.exe",
+  "parallel": 1,
+  "stages": [
+    {
+      "name": "build",
+      "command": [
+        "C:\\Program Files\\CMake\\bin\\cmake.EXE",
+        "--build",
+        "C:\\h7\\foundation-f1-q0",
+        "--target",
+        "hyle_compute_test",
+        "--parallel",
+        "1"
+      ],
+      "pid": 78204,
+      "state": "terminal",
+      "available_bytes": 47431565312,
+      "log": "build.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "203b9b81d9e8eefd704fee78bb389af76952e3eae0bce9fd9570744239e29d48"
+    },
+    {
+      "name": "headers",
+      "command": [
+        "python",
+        "C:\\public\\project-hyle\\hyle\\scripts\\header-self-contained.py",
+        "--module",
+        "compute",
+        "--header",
+        "batch_transfer.h",
+        "--header",
+        "detail/copy_ranges.h",
+        "--header",
+        "detail/lease_access.h",
+        "--header",
+        "detail/retained_completion.h",
+        "--header",
+        "detail/queue_sequence.h",
+        "--include-dir",
+        "C:\\public\\project-hyle\\hyle\\include",
+        "--extra-include-dir",
+        "C:/h7/foundation-f1-sdk/w-cpu-cuda-shared-relocated/include",
+        "--cxx",
+        "C:/Program Files/Microsoft Visual Studio/18/Enterprise/VC/Tools/MSVC/14.50.35717/bin/Hostx64/x64/cl.exe",
+        "--cxx-compiler-id",
+        "MSVC"
+      ],
+      "pid": 58412,
+      "state": "terminal",
+      "available_bytes": 47433379840,
+      "log": "headers.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "a772e8783ef86a029c368566ba4e38245cc2424cf6c2c11d6978ff6be1fec48b"
+    },
+    {
+      "name": "test",
+      "command": [
+        "C:\\h7\\foundation-f1-q0\\bin\\hyle_compute_test.exe",
+        "--gtest_filter=CopyRanges.*:CopyLeaseHandoff.*:CopyDependency.*:ResourceLeases.*:Completion.*"
+      ],
+      "pid": 65756,
+      "state": "terminal",
+      "available_bytes": 47427620864,
+      "log": "test.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "385787fa753e787f76788d0881d30621122ec2383336448db7ed4d722cfddea6"
+    }
+  ],
+  "verdict": "PASS"
+}
