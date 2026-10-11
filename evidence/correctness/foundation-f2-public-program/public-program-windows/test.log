@@ -1,0 +1,40 @@
+Running main() from C:\public\tools\hyle-dependencies\v1\sources\googletest-063de7e9578f-162765170ae6\googletest\src\gtest_main.cc
+Note: Google Test filter = CudaCopyBatch.*:CudaCopyProgram.*
+[==========] Running 5 tests from 2 test suites.
+[----------] Global test environment set-up.
+[----------] 2 tests from CudaCopyBatch
+[ RUN      ] CudaCopyBatch.BidirectionalSameDeviceByteRoutesAndColdSlotReplay
+[       OK ] CudaCopyBatch.BidirectionalSameDeviceByteRoutesAndColdSlotReplay (74 ms)
+[ RUN      ] CudaCopyBatch.PhysicalIdentityUsesByteAddressAndRejectsForeignContext
+[       OK ] CudaCopyBatch.PhysicalIdentityUsesByteAddressAndRejectsForeignContext (4 ms)
+[----------] 2 tests from CudaCopyBatch (79 ms total)
+
+[----------] 3 tests from CudaCopyProgram
+[ RUN      ] CudaCopyProgram.TwoIndependentSlotsPhaseBytesOldResultsAndNoHotMetadataGrowth
+[       OK ] CudaCopyProgram.TwoIndependentSlotsPhaseBytesOldResultsAndNoHotMetadataGrowth (2 ms)
+[ RUN      ] CudaCopyProgram.EarlyReadyRetainsPendingReadonlySuccessorAndAbandonedNativeWork
+C:\public\project-hyle\hyle\tests\compute_backend_cuda\copy_program_test.cc(153): error: Value of: reclaimed
+  Actual: false
+Expected: true
+
+[  FAILED  ] CudaCopyProgram.EarlyReadyRetainsPendingReadonlySuccessorAndAbandonedNativeWork (2016 ms)
+[ RUN      ] CudaCopyProgram.CapacityAliasErrorProducerAndZeroBatchDoNotConsumeOrAcceptWork
+C:\public\project-hyle\hyle\tests\compute_backend_cuda\copy_program_test.cc(180): error: Value of: invocation.prepare_replay(phase, overlap).ok()
+  Actual: true
+Expected: false
+
+unknown file: error: SEH exception with code 0xc0000005 thrown in the test body.
+Stack trace:
+
+
+[  FAILED  ] CudaCopyProgram.CapacityAliasErrorProducerAndZeroBatchDoNotConsumeOrAcceptWork (3 ms)
+[----------] 3 tests from CudaCopyProgram (2022 ms total)
+
+[----------] Global test environment tear-down
+[==========] 5 tests from 2 test suites ran. (2102 ms total)
+[  PASSED  ] 3 tests.
+[  FAILED  ] 2 tests, listed below:
+[  FAILED  ] CudaCopyProgram.EarlyReadyRetainsPendingReadonlySuccessorAndAbandonedNativeWork
+[  FAILED  ] CudaCopyProgram.CapacityAliasErrorProducerAndZeroBatchDoNotConsumeOrAcceptWork
+
+ 2 FAILED TESTS

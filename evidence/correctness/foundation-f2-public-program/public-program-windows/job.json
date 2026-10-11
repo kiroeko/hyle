@@ -1,0 +1,119 @@
+{
+  "candidate": "1c1ce5f2625843409cb7a272129653dc8c97654b",
+  "scope": "F2 public CPU/CUDA controller qualified on real Windows CUDA plus common control regressions; CPU/Apple/Vulkan, math and deliveries unqualified",
+  "configuration": "Release/shared/source/instrumentationON/installOFF",
+  "compiler": "C:/Program Files/Microsoft Visual Studio/18/Enterprise/VC/Tools/MSVC/14.50.35717/bin/Hostx64/x64/cl.exe",
+  "parallel": 1,
+  "stages": [
+    {
+      "name": "identity",
+      "command": [
+        "nvidia-smi",
+        "--query-gpu=name,uuid,driver_version,memory.total",
+        "--format=csv"
+      ],
+      "pid": 59984,
+      "state": "terminal",
+      "available_bytes": 47372541952,
+      "log": "identity.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "5ea583d0a4d43e0243d1237c000eb69187feff35d4a08503f2b025b47be63536"
+    },
+    {
+      "name": "build",
+      "command": [
+        "C:\\Program Files\\CMake\\bin\\cmake.EXE",
+        "--build",
+        "C:\\h7\\foundation-f1-q0",
+        "--target",
+        "hyle_compute_backend_cuda_test",
+        "hyle_compute_test",
+        "--parallel",
+        "1"
+      ],
+      "pid": 53112,
+      "state": "terminal",
+      "available_bytes": 47376809984,
+      "log": "build.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "23818b7ca77cf08e68658f29d2fdb787d911c474580f426960556b1571a5eab6"
+    },
+    {
+      "name": "headers",
+      "command": [
+        "python",
+        "C:\\public\\project-hyle\\hyle\\scripts\\header-self-contained.py",
+        "--module",
+        "compute",
+        "--header",
+        "batch_transfer.h",
+        "--header",
+        "detail/copy_backend.h",
+        "--header",
+        "detail/lease_access.h",
+        "--include-dir",
+        "C:\\public\\project-hyle\\hyle\\include",
+        "--extra-include-dir",
+        "C:/h7/foundation-f1-sdk/w-cpu-cuda-shared-relocated/include",
+        "--cxx",
+        "C:/Program Files/Microsoft Visual Studio/18/Enterprise/VC/Tools/MSVC/14.50.35717/bin/Hostx64/x64/cl.exe",
+        "--cxx-compiler-id",
+        "MSVC"
+      ],
+      "pid": 95724,
+      "state": "terminal",
+      "available_bytes": 47339700224,
+      "log": "headers.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "db2f8431654c65ff13565b0affc08a69a56e925b27edade11d4433a086f9368a"
+    },
+    {
+      "name": "common",
+      "command": [
+        "C:\\h7\\foundation-f1-q0\\bin\\hyle_compute_test.exe",
+        "--gtest_filter=CopyRanges.*:CopyLeaseHandoff.*:CopyDependency.*:ResourceLeases.*:Completion.*"
+      ],
+      "pid": 87916,
+      "state": "terminal",
+      "available_bytes": 47341654016,
+      "log": "common.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "385787fa753e787f76788d0881d30621122ec2383336448db7ed4d722cfddea6"
+    },
+    {
+      "name": "test",
+      "command": [
+        "C:\\h7\\foundation-f1-q0\\bin\\hyle_compute_backend_cuda_test.exe",
+        "--gtest_filter=CudaCopyBatch.*:CudaCopyProgram.*",
+        "--gtest_output=xml:C:\\public\\project-hyle\\hyle\\.scratch\\foundation-f2\\public-program-windows\\metrics.xml"
+      ],
+      "pid": 46680,
+      "state": "terminal",
+      "available_bytes": 47341051904,
+      "log": "test.log",
+      "exit_code": 1,
+      "verdict": "FAIL",
+      "sha256": "267c0cd2aa03144000c18486a7ddcc3cd0df349d21c43f60e38532ec12d955d4"
+    }
+  ],
+  "isolated_diagnostic": {
+    "reason": "Distinguish intrinsic range/empty-slot failure from prior abandoned-native test interference",
+    "command": [
+      "C:/h7/foundation-f1-q0/bin/hyle_compute_backend_cuda_test.exe",
+      "--gtest_filter=CudaCopyProgram.CapacityAliasErrorProducerAndZeroBatchDoNotConsumeOrAcceptWork"
+    ],
+    "exit_code": 1,
+    "sha256": "9c5137402f430da4091fd5956c394ace06e922fa6446e37bcf5e227c989d41c1",
+    "log": "isolated-failure-diagnostic.log"
+  },
+  "extra_files": {
+    "isolated-failure-diagnostic.log": "9c5137402f430da4091fd5956c394ace06e922fa6446e37bcf5e227c989d41c1",
+    "metrics.xml": "eac12ec87b700d796a5d3a7b72709a55c09b9bfd1802eea337a008c688208d8e",
+    "stale-deps.log": "feddf7387c6ab3d2a7e97e9c2074e8a430c970a1d630d5f001eca177e536f954",
+    "stale-header-dependency.json": "651418419e4a64b5b0592c912d87a32141b9ec99df908611a88f7bb1b9435ef4"
+  }
+}

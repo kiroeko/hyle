@@ -12,4 +12,8 @@
   canonical `batch_transfer.h` 依赖，然后复跑原精准common/public CUDA门。
 - 独立fixture纠正：关闭后的LeasePool不能再取得writer；早完成用例改为验证actual metadata归零、
   只读数据仍正确及旧reader最后释放回收。该改动没有放宽关闭或提前释放语义。
-- 当前：恢复待验。未将失败预算重置为新轮；按F2有限纠正2取证，重验失败按本卡/模块卡停止裁决。
+- 当前：`4d937b2f8` 同临时树按上述精确清理重建87项完成；原object现在 `#deps 22`，包含canonical
+  `batch_transfer.h`。原精准34项common、5项native/public CUDA及3头全部PASS，恢复已验证。
+  失败预算没有重置；两次原有限纠正均已使用。后续本批Windows runner沿用匹配locale，不回写公共工具。
+  原失败、单例、旧mtime/hash/零deps以及新依赖输出见
+  [当前证据](../../../../evidence/correctness/foundation-f2-public-program/receipt.json)。

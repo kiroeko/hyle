@@ -1,0 +1,91 @@
+[0/2] Re-checking globbed directories...
+[1/87] Building CXX object src\error\CMakeFiles\hyle_error.dir\status.cc.obj
+[2/87] Linking CXX shared library bin\hyle_error.dll
+[3/87] Building CXX object src\platform\CMakeFiles\hyle_platform_cpu_probe.dir\cpu.cc.obj
+[4/87] Building CXX object src\platform\CMakeFiles\hyle_platform_cgroup_parser.dir\linux_cgroup.cc.obj
+[5/87] Building CXX object src\platform\CMakeFiles\hyle_platform.dir\cpu_resource.cc.obj
+[6/87] Building CXX object src\platform\CMakeFiles\hyle_platform.dir\dynlib.cc.obj
+[7/87] Building CXX object src\platform\CMakeFiles\hyle_platform.dir\environment.cc.obj
+[8/87] Building CXX object src\platform\CMakeFiles\hyle_platform.dir\host_memory.cc.obj
+[9/87] Building CXX object src\platform\CMakeFiles\hyle_platform.dir\numa.cc.obj
+[10/87] Building CXX object src\platform\CMakeFiles\hyle_platform.dir\process.cc.obj
+[11/87] Building CXX object src\platform\CMakeFiles\hyle_platform.dir\random.cc.obj
+[12/87] Building CXX object src\platform\CMakeFiles\hyle_platform.dir\virtual_memory.cc.obj
+[13/87] Building CXX object src\mem\CMakeFiles\mimalloc_static.dir\__\__\third_party\mimalloc\src\static.c.obj
+[14/87] Building CXX object src\time\CMakeFiles\hyle_time.dir\clock.cc.obj
+[15/87] Building CXX object src\time\CMakeFiles\hyle_time.dir\interop.cc.obj
+[16/87] Linking CXX shared library bin\hyle_platform.dll
+[17/87] Building CXX object src\mem\CMakeFiles\hyle_mem.dir\buffer.cc.obj
+[18/87] Building CXX object src\mem\CMakeFiles\hyle_mem.dir\buffer_pool.cc.obj
+[19/87] Building CXX object src\mem\CMakeFiles\hyle_mem.dir\composite_buffer.cc.obj
+[20/87] Building CXX object src\mem\CMakeFiles\hyle_mem.dir\heap.cc.obj
+[21/87] Building CXX object src\mem\CMakeFiles\hyle_mem.dir\lifetime_plan.cc.obj
+[22/87] Building CXX object src\mem\CMakeFiles\hyle_mem.dir\range_allocator.cc.obj
+[23/87] Building CXX object src\mem\CMakeFiles\hyle_mem.dir\resource.cc.obj
+[24/87] Building CXX object src\mem\CMakeFiles\hyle_mem.dir\system.cc.obj
+[25/87] Building CXX object src\mem\CMakeFiles\hyle_mem.dir\stats.cc.obj
+[26/87] Linking CXX static library bin\mimalloc_static.lib
+[27/87] Building CXX object src\compute_ops\CMakeFiles\hyle_compute_ops.dir\operation.cc.obj
+[28/87] Building CXX object src\compute_ops\CMakeFiles\hyle_compute_ops.dir\tensor_desc.cc.obj
+[29/87] Building CXX object src\compute_ops\CMakeFiles\hyle_compute_ops.dir\low_precision.cc.obj
+[30/87] Building CXX object src\compute_ops\CMakeFiles\hyle_compute_ops.dir\weight_decode.cc.obj
+[31/87] Linking CXX shared library bin\hyle_time.dll
+[32/87] Building CXX object src\platform_thread\CMakeFiles\hyle_platform_thread.dir\thread.cc.obj
+[33/87] Building CXX object src\platform_thread\CMakeFiles\hyle_platform_thread.dir\wait.cc.obj
+[34/87] Linking CXX shared library bin\hyle_mem.dll
+[35/87] Linking CXX shared library bin\hyle_compute_ops.dll
+[36/87] Building CXX object src\compute\CMakeFiles\hyle_compute.dir\batch_transfer.cc.obj
+[37/87] Building CXX object src\compute\CMakeFiles\hyle_compute.dir\command_capture.cc.obj
+[38/87] Building CXX object src\compute\CMakeFiles\hyle_compute.dir\completion.cc.obj
+[39/87] Building CXX object src\compute\CMakeFiles\hyle_compute.dir\copy_ranges.cc.obj
+[40/87] Building CXX object src\compute\CMakeFiles\hyle_compute.dir\custom_kernel.cc.obj
+[41/87] Building CXX object src\compute\CMakeFiles\hyle_compute.dir\device.cc.obj
+[42/87] Building CXX object src\compute\CMakeFiles\hyle_compute.dir\operation.cc.obj
+[43/87] Building CXX object src\compute\CMakeFiles\hyle_compute.dir\provider.cc.obj
+[44/87] Building CXX object src\compute\CMakeFiles\hyle_compute.dir\resource_budget.cc.obj
+[45/87] Building CXX object src\compute\CMakeFiles\hyle_compute.dir\resource_leases.cc.obj
+[46/87] Building CXX object src\compute\CMakeFiles\hyle_compute.dir\retained_completion.cc.obj
+[47/87] Building CXX object src\compute\CMakeFiles\hyle_compute.dir\leased_operation.cc.obj
+[48/87] Building CXX object src\compute\CMakeFiles\hyle_compute.dir\route_policy.cc.obj
+[49/87] Building CXX object src\compute\CMakeFiles\hyle_compute.dir\result.cc.obj
+[50/87] Building CXX object src\compute\CMakeFiles\hyle_compute.dir\shape_domain.cc.obj
+[51/87] Building CXX object src\compute\CMakeFiles\hyle_compute.dir\shape_program.cc.obj
+[52/87] Building CXX object src\compute\CMakeFiles\hyle_compute.dir\tensor_view.cc.obj
+[53/87] Building CXX object src\compute\CMakeFiles\hyle_compute.dir\transfer.cc.obj
+[54/87] Building CXX object src\compute\CMakeFiles\hyle_compute.dir\workload.cc.obj
+[55/87] Building CXX object _deps\googletest-build\googletest\CMakeFiles\gtest.dir\src\gtest-all.cc.obj
+[56/87] Linking CXX shared library bin\hyle_platform_thread.dll
+[57/87] Linking CXX shared library bin\hyle_compute.dll
+[58/87] Building CXX object src\compute_backend_cuda\CMakeFiles\hyle_compute_backend_cuda.dir\cuda_backend.cc.obj
+[59/87] Building CXX object src\compute_backend_cuda\CMakeFiles\hyle_compute_backend_cuda.dir\cuda_batch_transfer.cc.obj
+[60/87] Building CXX object src\compute_backend_cuda\CMakeFiles\hyle_compute_backend_cuda.dir\driver_release.cc.obj
+[61/87] Building CXX object src\compute_backend_cuda\CMakeFiles\hyle_compute_backend_cuda.dir\cuda_memory.cc.obj
+[62/87] Building CXX object src\compute_backend_cuda\CMakeFiles\hyle_compute_backend_cuda.dir\cuda_device_status.cc.obj
+[63/87] Building CUDA object src\compute_backend_cuda\CMakeFiles\hyle_compute_backend_cuda.dir\device_status_kernel.cu.obj
+device_status_kernel.cu
+tmpxft_0000cb2c_00000000-7_device_status_kernel.compute_89.cudafe1.cpp
+[64/87] Linking CXX shared library bin\gtest.dll
+[65/87] Building CXX object _deps\googletest-build\googletest\CMakeFiles\gtest_main.dir\src\gtest_main.cc.obj
+[66/87] Linking CXX shared library bin\hyle_compute_backend_cuda.dll
+[67/87] Linking CXX shared library bin\gtest_main.dll
+[68/87] Building CXX object tests\compute\CMakeFiles\hyle_compute_result_fixture.dir\result_owner_producer.cc.obj
+[69/87] C:\WINDOWS\system32\cmd.exe /C "cd /D C:\h7\foundation-f1-q0\tests\compute_backend_cuda && "C:\Program Files\CMake\bin\cmake.exe" -P C:/h7/foundation-f1-q0/tests/compute_backend_cuda/hyle-runtime/hyle_compute_backend_cuda_test-Release.cmake"
+[70/87] Linking CXX shared library bin\hyle_compute_result_fixture.dll
+[71/87] Building CXX object tests\compute\CMakeFiles\hyle_compute_test.dir\completion_test.cc.obj
+[72/87] Building CXX object tests\compute\CMakeFiles\hyle_compute_test.dir\copy_ranges_test.cc.obj
+[73/87] Building CXX object tests\compute\CMakeFiles\hyle_compute_test.dir\provider_test.cc.obj
+[74/87] Building CXX object tests\compute\CMakeFiles\hyle_compute_test.dir\resource_leases_test.cc.obj
+[75/87] Building CXX object tests\compute\CMakeFiles\hyle_compute_test.dir\route_policy_test.cc.obj
+[76/87] Building CXX object tests\compute\CMakeFiles\hyle_compute_test.dir\shape_domain_test.cc.obj
+[77/87] Building CXX object tests\compute\CMakeFiles\hyle_compute_test.dir\shape_program_test.cc.obj
+[78/87] Building CXX object tests\compute\CMakeFiles\hyle_compute_test.dir\tensor_test.cc.obj
+[79/87] Building CXX object tests\compute\CMakeFiles\hyle_compute_test.dir\workload_test.cc.obj
+[80/87] Building CXX object tests\compute_backend_cuda\CMakeFiles\hyle_compute_backend_cuda_test.dir\cuda_backend_test.cc.obj
+[81/87] Building CXX object tests\compute_backend_cuda\CMakeFiles\hyle_compute_backend_cuda_test.dir\copy_batch_test.cc.obj
+[82/87] Building CXX object tests\compute_backend_cuda\CMakeFiles\hyle_compute_backend_cuda_test.dir\copy_program_test.cc.obj
+[83/87] Building CXX object tests\compute_backend_cuda\CMakeFiles\hyle_compute_backend_cuda_test.dir\device_status_test.cc.obj
+[84/87] Building CUDA object tests\compute_backend_cuda\CMakeFiles\hyle_compute_backend_cuda_test.dir\cuda_test_kernel.cu.obj
+cuda_test_kernel.cu
+tmpxft_0000e0cc_00000000-8_cuda_test_kernel.cudafe1.cpp
+[85/87] Linking CXX executable bin\hyle_compute_test.exe
+[86/87] Linking CXX executable bin\hyle_compute_backend_cuda_test.exe

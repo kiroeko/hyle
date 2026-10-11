@@ -232,6 +232,11 @@ CUDA接缝首构建在测试callback的返回类型推导失败（`HYLE_RETURN_I
 [独立验证副本blocker](../tooling/foundation-f2-windows-header-dependency-blocker.md)记录事实与有限恢复。
 有限纠正2：fixture按关闭合同核对回收，scratch runner英文include输出并精确清理两个目标的artifact重建；
 原失败/诊断继续保留，新 public/common运行资格尚未取得，不增加或重置原两次纠正预算。
+`4d937b2f8` 有限重验PASS：3个公共CUDA用例、2个原生byte接缝用例及34项common回归，
+3头独立编译、真实header deps全部通过；没有热metadata增长，真实gated producer的较早组可以read，
+后继readonly use仍保活，放弃两控制句柄后metadata实际归零/旧reader最后回收。
+[公共对象首轮收据](../../../../evidence/correctness/foundation-f2-public-program/receipt.json)保留两次attempt、
+单例diagnostic与依赖故障。CPU、Apple/Vulkan、实际数学/故障全矩阵/三交付仍待验，维持AUDITED。
 
 | FIX | 必须实现 | 验收 |
 |---|---|---|

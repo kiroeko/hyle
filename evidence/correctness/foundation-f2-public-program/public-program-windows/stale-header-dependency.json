@@ -1,0 +1,29 @@
+{
+  "command": [
+    "C:/PROGRA~1/PYTHON~1/Scripts/ninja.exe",
+    "-C",
+    "C:/h7/foundation-f1-q0",
+    "-t",
+    "deps",
+    "src/compute/CMakeFiles/hyle_compute.dir/copy_ranges.cc.obj"
+  ],
+  "locale_mismatch": {
+    "configured_prefix": "Note: including file:",
+    "actual": "Chinese include lines"
+  },
+  "files": {
+    "include/hyle/compute/batch_transfer.h": {
+      "mtime_ns": 1791714043302674700,
+      "sha256": "f214b042f0b6d1ac77d601211ed796bc60cacc0115182fd192ace0313471e21c"
+    },
+    "C:/h7/foundation-f1-q0/src/compute/CMakeFiles/hyle_compute.dir/copy_ranges.cc.obj": {
+      "mtime_ns": 1791712172734206000,
+      "sha256": "17b667fa2d9b2222651f1398096dc9e2a9eecaf9d240435bd4911cc31b7200fd"
+    },
+    "C:/h7/foundation-f1-q0/tests/compute/CMakeFiles/hyle_compute_test.dir/copy_ranges_test.cc.obj": {
+      "mtime_ns": 1791712174351272200,
+      "sha256": "770e220f11409e33a2d8071c73205d6cb10b77c365eaf23d26fd8de3a4684ced"
+    }
+  },
+  "deps_log_sha256": "feddf7387c6ab3d2a7e97e9c2074e8a430c970a1d630d5f001eca177e536f954"
+}

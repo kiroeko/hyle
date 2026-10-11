@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites tests="5" failures="2" disabled="0" errors="0" time="2.102" timestamp="2026-10-11T18:21:37.960" name="AllTests">
+  <testsuite name="CudaCopyBatch" tests="2" failures="0" disabled="0" skipped="0" errors="0" time="0.079" timestamp="2026-10-11T18:21:37.960">
+    <testcase name="BidirectionalSameDeviceByteRoutesAndColdSlotReplay" file="C:\public\project-hyle\hyle\tests\compute_backend_cuda\copy_batch_test.cc" line="60" status="run" result="completed" time="0.074" timestamp="2026-10-11T18:21:37.960" classname="CudaCopyBatch">
+      <properties>
+        <property name="copy_native_calls" value="9"/>
+      </properties>
+    </testcase>
+    <testcase name="PhysicalIdentityUsesByteAddressAndRejectsForeignContext" file="C:\public\project-hyle\hyle\tests\compute_backend_cuda\copy_batch_test.cc" line="102" status="run" result="completed" time="0.004" timestamp="2026-10-11T18:21:38.035" classname="CudaCopyBatch" />
+  </testsuite>
+  <testsuite name="CudaCopyProgram" tests="3" failures="2" disabled="0" skipped="0" errors="0" time="2.022" timestamp="2026-10-11T18:21:38.039">
+    <testcase name="TwoIndependentSlotsPhaseBytesOldResultsAndNoHotMetadataGrowth" file="C:\public\project-hyle\hyle\tests\compute_backend_cuda\copy_program_test.cc" line="59" status="run" result="completed" time="0.002" timestamp="2026-10-11T18:21:38.039" classname="CudaCopyProgram" />
+    <testcase name="EarlyReadyRetainsPendingReadonlySuccessorAndAbandonedNativeWork" file="C:\public\project-hyle\hyle\tests\compute_backend_cuda\copy_program_test.cc" line="103" status="run" result="completed" time="2.016" timestamp="2026-10-11T18:21:38.042" classname="CudaCopyProgram">
+      <failure message="C:\public\project-hyle\hyle\tests\compute_backend_cuda\copy_program_test.cc:153&#x0A;Value of: reclaimed&#x0A;  Actual: false&#x0A;Expected: true&#x0A;" type=""><![CDATA[C:\public\project-hyle\hyle\tests\compute_backend_cuda\copy_program_test.cc:153
+Value of: reclaimed
+  Actual: false
+Expected: true
+]]></failure>
+    </testcase>
+    <testcase name="CapacityAliasErrorProducerAndZeroBatchDoNotConsumeOrAcceptWork" file="C:\public\project-hyle\hyle\tests\compute_backend_cuda\copy_program_test.cc" line="156" status="run" result="completed" time="0.003" timestamp="2026-10-11T18:21:40.059" classname="CudaCopyProgram">
+      <failure message="C:\public\project-hyle\hyle\tests\compute_backend_cuda\copy_program_test.cc:180&#x0A;Value of: invocation.prepare_replay(phase, overlap).ok()&#x0A;  Actual: true&#x0A;Expected: false&#x0A;" type=""><![CDATA[C:\public\project-hyle\hyle\tests\compute_backend_cuda\copy_program_test.cc:180
+Value of: invocation.prepare_replay(phase, overlap).ok()
+  Actual: true
+Expected: false
+]]></failure>
+      <failure message="unknown file&#x0A;SEH exception with code 0xc0000005 thrown in the test body." type=""><![CDATA[unknown file
+SEH exception with code 0xc0000005 thrown in the test body.
+Stack trace:
+
+]]></failure>
+    </testcase>
+  </testsuite>
+</testsuites>

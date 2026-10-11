@@ -1,0 +1,24 @@
+Running main() from C:\public\tools\hyle-dependencies\v1\sources\googletest-063de7e9578f-162765170ae6\googletest\src\gtest_main.cc
+Note: Google Test filter = CudaCopyProgram.CapacityAliasErrorProducerAndZeroBatchDoNotConsumeOrAcceptWork
+[==========] Running 1 test from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 1 test from CudaCopyProgram
+[ RUN      ] CudaCopyProgram.CapacityAliasErrorProducerAndZeroBatchDoNotConsumeOrAcceptWork
+C:\public\project-hyle\hyle\tests\compute_backend_cuda\copy_program_test.cc(180): error: Value of: invocation.prepare_replay(phase, overlap).ok()
+  Actual: true
+Expected: false
+
+unknown file: error: SEH exception with code 0xc0000005 thrown in the test body.
+Stack trace:
+
+
+[  FAILED  ] CudaCopyProgram.CapacityAliasErrorProducerAndZeroBatchDoNotConsumeOrAcceptWork (76 ms)
+[----------] 1 test from CudaCopyProgram (76 ms total)
+
+[----------] Global test environment tear-down
+[==========] 1 test from 1 test suite ran. (76 ms total)
+[  PASSED  ] 0 tests.
+[  FAILED  ] 1 test, listed below:
+[  FAILED  ] CudaCopyProgram.CapacityAliasErrorProducerAndZeroBatchDoNotConsumeOrAcceptWork
+
+ 1 FAILED TEST

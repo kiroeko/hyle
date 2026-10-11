@@ -1,0 +1,26 @@
+{
+  "schema_version": 1,
+  "scope": "Windows MSVC shared/source common protocol and real CUDA public copy-program stage only",
+  "attempts": [
+    {
+      "candidate": "1c1ce5f2625843409cb7a272129653dc8c97654b",
+      "tree": "bd13dac5c06926c3700cce558295fd68bf68d3d9",
+      "directory": "public-program-windows",
+      "verdict": "FAIL",
+      "native_tests": 5,
+      "native_failures": 2
+    },
+    {
+      "candidate": "4d937b2f80f62c397acc5c15828ac1a5178d8067",
+      "tree": "333063168f0cd5d9e3f7a6b679b7625beac81afe",
+      "directory": "public-program-windows-retry1",
+      "verdict": "PASS",
+      "native_tests": 5,
+      "native_failures": 0
+    }
+  ],
+  "corrective_attempts_used": 2,
+  "corrective_attempt_limit": 2,
+  "complete_f2_math_delivery_other_routes": "UNPROVEN",
+  "stale_first_common_verdict": "NOT_REUSABLE_FOR_NEW_HEADER: dependency graph was empty before exact target rebuild"
+}

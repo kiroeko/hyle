@@ -1,0 +1,144 @@
+{
+  "candidate": "4d937b2f80f62c397acc5c15828ac1a5178d8067",
+  "scope": "F2 public CPU/CUDA controller qualified on real Windows CUDA plus common control regressions; CPU/Apple/Vulkan, math and deliveries unqualified",
+  "configuration": "Release/shared/source/instrumentationON/installOFF",
+  "compiler": "C:/Program Files/Microsoft Visual Studio/18/Enterprise/VC/Tools/MSVC/14.50.35717/bin/Hostx64/x64/cl.exe",
+  "parallel": 1,
+  "stages": [
+    {
+      "name": "identity",
+      "command": [
+        "nvidia-smi",
+        "--query-gpu=name,uuid,driver_version,memory.total",
+        "--format=csv"
+      ],
+      "pid": 78512,
+      "state": "terminal",
+      "available_bytes": 47298854912,
+      "log": "identity.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "5ea583d0a4d43e0243d1237c000eb69187feff35d4a08503f2b025b47be63536"
+    },
+    {
+      "name": "clean",
+      "command": [
+        "C:/PROGRA~1/PYTHON~1/Scripts/ninja.exe",
+        "-C",
+        "C:\\h7\\foundation-f1-q0",
+        "-t",
+        "clean",
+        "hyle_compute_backend_cuda_test",
+        "hyle_compute_test"
+      ],
+      "pid": 87536,
+      "state": "terminal",
+      "available_bytes": 47295877120,
+      "log": "clean.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "f0e7fc0df2377a3004c8794e1c12dae963bdfc1d011b9687b884d88be5c19086"
+    },
+    {
+      "name": "build",
+      "command": [
+        "C:\\Program Files\\CMake\\bin\\cmake.EXE",
+        "--build",
+        "C:\\h7\\foundation-f1-q0",
+        "--target",
+        "hyle_compute_backend_cuda_test",
+        "hyle_compute_test",
+        "--parallel",
+        "1"
+      ],
+      "pid": 77340,
+      "state": "terminal",
+      "available_bytes": 47282089984,
+      "log": "build.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "23aa95b7a4096a040396fd4dfe901161c1271b96aa7e7b29a571fca514949efb"
+    },
+    {
+      "name": "deps",
+      "command": [
+        "C:/PROGRA~1/PYTHON~1/Scripts/ninja.exe",
+        "-C",
+        "C:\\h7\\foundation-f1-q0",
+        "-t",
+        "deps",
+        "src/compute/CMakeFiles/hyle_compute.dir/copy_ranges.cc.obj"
+      ],
+      "pid": 63600,
+      "state": "terminal",
+      "available_bytes": 47294021632,
+      "log": "deps.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "1a127eb5b1d570251449225338a6ec97c37f85142ef7e3f42ff8ceb5d403eae5"
+    },
+    {
+      "name": "headers",
+      "command": [
+        "python",
+        "C:\\public\\project-hyle\\hyle\\scripts\\header-self-contained.py",
+        "--module",
+        "compute",
+        "--header",
+        "batch_transfer.h",
+        "--header",
+        "detail/copy_backend.h",
+        "--header",
+        "detail/lease_access.h",
+        "--include-dir",
+        "C:\\public\\project-hyle\\hyle\\include",
+        "--extra-include-dir",
+        "C:/h7/foundation-f1-sdk/w-cpu-cuda-shared-relocated/include",
+        "--cxx",
+        "C:/Program Files/Microsoft Visual Studio/18/Enterprise/VC/Tools/MSVC/14.50.35717/bin/Hostx64/x64/cl.exe",
+        "--cxx-compiler-id",
+        "MSVC"
+      ],
+      "pid": 95572,
+      "state": "terminal",
+      "available_bytes": 47291813888,
+      "log": "headers.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "db2f8431654c65ff13565b0affc08a69a56e925b27edade11d4433a086f9368a"
+    },
+    {
+      "name": "common",
+      "command": [
+        "C:\\h7\\foundation-f1-q0\\bin\\hyle_compute_test.exe",
+        "--gtest_filter=CopyRanges.*:CopyLeaseHandoff.*:CopyDependency.*:ResourceLeases.*:Completion.*"
+      ],
+      "pid": 93204,
+      "state": "terminal",
+      "available_bytes": 47241052160,
+      "log": "common.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "385787fa753e787f76788d0881d30621122ec2383336448db7ed4d722cfddea6"
+    },
+    {
+      "name": "test",
+      "command": [
+        "C:\\h7\\foundation-f1-q0\\bin\\hyle_compute_backend_cuda_test.exe",
+        "--gtest_filter=CudaCopyBatch.*:CudaCopyProgram.*",
+        "--gtest_output=xml:C:\\public\\project-hyle\\hyle\\.scratch\\foundation-f2\\public-program-windows-retry1\\metrics.xml"
+      ],
+      "pid": 87548,
+      "state": "terminal",
+      "available_bytes": 47271694336,
+      "log": "test.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "0c90aa864d13ebaadb8e9ef76ed28f0a0fd5e6a8d9de6225a42ac273f152d505"
+    }
+  ],
+  "verdict": "PASS",
+  "extra_files": {
+    "metrics.xml": "afff7cb3ee217dc7eb584e60ba45f5a7dad009a8d5f4ae83f6a701aaac644d9e"
+  }
+}
