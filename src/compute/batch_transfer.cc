@@ -391,7 +391,7 @@ Status CopyBatchInvocation::prepare_replay(std::span<const CopyPhase> phases, st
     if (leader == UINT32_MAX || state_->bindings[id].root != state_->bindings[leader].root) leader = id;
     state_->root_leader[id] = leader;
   }
-  std::fill(state_->roles.begin(), state_->roles.end(), 0);
+  std::fill(state_->roles.begin(), state_->roles.end(), static_cast<unsigned char>(0));
   std::fill(state_->last_write.begin(), state_->last_write.end(), UINT32_MAX);
   for (std::size_t index = 0; index < report.active_copies; ++index) {
     const auto &copy = state_->copies[index];
@@ -577,9 +577,9 @@ Result<ReadLease> CopyBatchSubmission::output(CopyPhaseId phase_id, CopyResource
     if (span.binding != resource.value || span.phase > phase_id.value || span.end <= covered) continue;
     if (span.begin > covered) break;
     if (!state_->phases[span.phase]->retired.load(std::memory_order_acquire)) {
-      auto observed = state_->phases[span.phase]->completion.poll();
-      if (!observed) return std::unexpected(observed.error());
-      if (*observed == CompletionPoll::kPending || !state_->phases[span.phase]->retired.load(std::memory_order_acquire))
+      auto prefix_observed = state_->phases[span.phase]->completion.poll();
+      if (!prefix_observed) return std::unexpected(prefix_observed.error());
+      if (*prefix_observed == CompletionPoll::kPending || !state_->phases[span.phase]->retired.load(std::memory_order_acquire))
         return std::unexpected(Status::Unavailable("copy output prefix is pending or unproven"));
     }
     if (!state_->phases[span.phase]->terminal.ok()) return std::unexpected(state_->phases[span.phase]->terminal);

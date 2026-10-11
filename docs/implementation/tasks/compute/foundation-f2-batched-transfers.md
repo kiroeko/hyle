@@ -226,6 +226,13 @@ CUDA接缝首构建在测试callback的返回类型推导失败（`HYLE_RETURN_I
 冷slot追加原Queue identity防误用后，`52e437c8e` 同一精准门2项再次PASS，
 仍是9个phase/9次native batch；同Context另一Queue也在native接纳前拒绝，证据列入同一收据。
 
+公共对象首轮 `1c1ce5f26` build/header通过；两槽/三阶段/old-result/固定metadata用例通过，
+早ready用例错误地在pool.drain关闭之后期待writer；range/空批用例的异常经单例复现与Ninja deps核对，
+定位到验证树的MSVC locale头依赖丢失/混合新旧ABI。
+[独立验证副本blocker](../tooling/foundation-f2-windows-header-dependency-blocker.md)记录事实与有限恢复。
+有限纠正2：fixture按关闭合同核对回收，scratch runner英文include输出并精确清理两个目标的artifact重建；
+原失败/诊断继续保留，新 public/common运行资格尚未取得，不增加或重置原两次纠正预算。
+
 | FIX | 必须实现 | 验收 |
 |---|---|---|
 | F2-01 | CopyBatch/phase 的冷准备、固定资源域/metadata/byte budget 和范围绑定 | 稳定 replay 改 IDs/ranges，满容量/零批/溢出/OOM，无重新搜索 |

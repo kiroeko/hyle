@@ -107,7 +107,8 @@ TEST(CudaCopyProgram, EarlyReadyRetainsPendingReadonlySuccessorAndAbandonedNativ
   auto device = cuda::MemoryResource::create(context, cuda::MemoryKind::kDevice).value();
   auto resources = specs(host.ref(), device.ref());
   Data data(resources);
-  auto program = CopyBatchProgram::prepare(context, resources).value();
+  mem::QuotaAllocator metadata(mem::system_allocator());
+  auto program = CopyBatchProgram::prepare(context, resources, {.allocator = metadata.get()}).value();
   auto invocation = CopyBatchInvocation::create(program, queue).value();
   ASSERT_TRUE(data.bind(invocation, std::byte{41}).ok());
   Gate gate; GateGuard release{gate, context};
@@ -135,22 +136,28 @@ TEST(CudaCopyProgram, EarlyReadyRetainsPendingReadonlySuccessorAndAbandonedNativ
   EXPECT_EQ(data.pools[1].stats().active_uses, 1u);
   EXPECT_FALSE(invocation.close().ok());
   submitted = {}; invocation = {}; // abandon both controls; original retirement must keep the data/indices
+  program.reset(); // remaining metadata references must now belong to native retirement alone
   EXPECT_EQ(data.pools[1].stats().active_uses, 1u);
   EXPECT_FALSE(early.try_write().has_value());
   gate.release();
   ASSERT_TRUE(context.drain().ok());
   for (auto &pool : data.pools) ASSERT_TRUE(pool.drain().ok());
   EXPECT_EQ(data.pools[1].stats().active_uses, 0u);
-  // Native attachment release may trail the use counter: original context
-  // owner and all pool resources stay alive until this finite observation.
+  // drain closes the domains, so writer promotion is no longer legal. The
+  // actual metadata account proves the abandoned invocation retired instead.
   bool reclaimed = false;
   const auto retired_deadline = std::chrono::steady_clock::now() + std::chrono::seconds(2);
   while (std::chrono::steady_clock::now() < retired_deadline) {
-    auto writer = early.try_write();
-    if (writer) { reclaimed = true; break; }
+    if (metadata.used() == 0) { reclaimed = true; break; }
     std::this_thread::yield();
   }
   EXPECT_TRUE(reclaimed);
+  EXPECT_FALSE(early.try_write().has_value());
+  EXPECT_EQ(data.pools[1].stats().live_blocks, 1u);
+  std::array<std::byte, 32> observed;
+  ASSERT_TRUE(early.view()->read(observed).ok());
+  for (auto byte : observed) EXPECT_EQ(byte, std::byte{41});
+  early.reset(); EXPECT_EQ(data.pools[1].stats().live_blocks, 0u);
 }
 
 TEST(CudaCopyProgram, CapacityAliasErrorProducerAndZeroBatchDoNotConsumeOrAcceptWork) {
