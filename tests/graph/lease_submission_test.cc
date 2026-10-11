@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
 
-#include "../compute/completion_internal.h"
+#include "../../src/compute/completion_internal.h"
 #include "hyle/graph/detail/lease_submission.h"
 #include "hyle/mem/quota_allocator.h"
 
