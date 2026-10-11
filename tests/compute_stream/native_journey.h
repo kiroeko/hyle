@@ -4,6 +4,7 @@
 #include <array>
 #include <atomic>
 #include <string>
+#include <stdexcept>
 #include <vector>
 
 #include "hyle/compute/file_stream.h"
@@ -17,6 +18,11 @@ namespace m = hyle::mem;
 namespace p = hyle::platform;
 namespace io = hyle::io;
 namespace s = hyle::sched;
+template<class T> T checked(hyle::Result<T> result, const char *stage) {
+  if (!result) { char message[512]{}; result.error().ToString(message, sizeof(message));
+    throw std::runtime_error(std::string(stage) + ": " + message); }
+  return *std::move(result);
+}
 struct Host final {
   m::StatsAllocator metadata = m::StatsAllocator::create(m::system_allocator()).value();
   s::Scheduler scheduler{2, m::system_allocator(), 256};
@@ -29,10 +35,11 @@ struct Host final {
   c::StreamFile file(std::span<const std::byte> bytes, std::uint64_t capacity, unsigned owner = 0) {
     static std::atomic<unsigned> sequence{0};
     auto path = "hyle_f3_native_" + std::to_string(sequence.fetch_add(1)) + ".tmp"; paths.push_back(path);
-    auto raw = p::open_file(path.c_str(), p::kOpenRead | p::kOpenWrite | p::kOpenCreate | p::kOpenTruncate).value();
+    auto raw = checked(p::open_file(path.c_str(), p::kOpenRead | p::kOpenWrite | p::kOpenCreate | p::kOpenTruncate), "host file open");
     EXPECT_TRUE(raw.write_all(bytes).ok()); EXPECT_TRUE(raw.close().ok());
-    auto file = s::spawn_task_on(scheduler, owner, m::system_allocator(), open(m::system_allocator(), &io, path, owner)).join().value().value();
-    return c::StreamFile::adopt(std::move(file), capacity).value();
+    auto opened = checked(s::spawn_task_on(scheduler, owner, m::system_allocator(), open(m::system_allocator(), &io, path, owner)).join(), "host file task join");
+    auto file = checked(std::move(opened), "IO file open");
+    return checked(c::StreamFile::adopt(std::move(file), capacity), "stream file adopt");
   }
   c::FileStreamOptions options(unsigned slots = 2) {
     return {.allocator = metadata.get(), .max_requests = 2, .max_groups_per_request = 4,
@@ -63,8 +70,8 @@ inline void roundtrip(Host &host, c::FileResourcePipeline &pipeline, c::LeasePoo
   for (unsigned replay = 0; replay < 3; ++replay) {
     auto bytes = input(replay * 29); auto source = host.file(bytes, bytes.size(), 1); auto sink = host.file({}, bytes.size(), 0);
     auto reading = ranges(pool); auto requests = groups(reading);
-    auto ticket = pipeline.read(c::StreamSource::file(source), requests).value();
-    auto first = ticket.wait_next_ready().value(), second = ticket.wait_next_ready().value();
+    auto ticket = checked(pipeline.read(c::StreamSource::file(source), requests), "pipeline read admission");
+    auto first = checked(ticket.wait_next_ready(), "first native group ready"), second = checked(ticket.wait_next_ready(), "second native group ready");
     auto result = ticket.wait(); ASSERT_TRUE(result.status.ok()); EXPECT_TRUE(result.retirement_proven);
     EXPECT_EQ(result.ready_groups, 2u); EXPECT_EQ(result.read_bytes, 512u); EXPECT_EQ(result.copied_bytes, 512u);
     std::array<c::ReadLease, 2> ready;
@@ -93,8 +100,8 @@ inline void roundtrip(Host &host, c::FileResourcePipeline &pipeline, c::LeasePoo
 inline void late_eof(Host &host, c::FileResourcePipeline &pipeline, c::LeasePool &pool) {
   Drain drain{pipeline}; const auto bytes = input(); auto source = host.file(std::span(bytes).first(270), 512, 1);
   auto reading = ranges(pool); auto requests = groups(reading);
-  auto ticket = pipeline.read(c::StreamSource::file(source), requests).value();
-  auto early = ticket.wait_next_ready().value(); EXPECT_EQ(early.tag(), 41u);
+  auto ticket = checked(pipeline.read(c::StreamSource::file(source), requests), "EOF read admission");
+  auto early = checked(ticket.wait_next_ready(), "EOF first native group ready"); EXPECT_EQ(early.tag(), 41u);
   auto result = ticket.wait(); EXPECT_FALSE(result.status.ok()); EXPECT_TRUE(result.retirement_proven);
   EXPECT_EQ(result.read_bytes, 270u); EXPECT_EQ(result.copied_bytes, 256u); EXPECT_EQ(result.ready_groups, 1u);
   auto sink = host.file({}, 256);
