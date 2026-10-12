@@ -1,0 +1,6 @@
+{
+  "candidate": "25e4fb398e2a782ee60f916c3c6351c4736b6eda",
+  "verdict": "FAIL_IREE_TSAN_HEADER_RUNTIME_LAYOUT_MISMATCH",
+  "raw_sha256": "f394eb524a6109f895a2ac6387c5080cc3a258b757524869f0e77b10f5b88d8c",
+  "scope": "actual public F5 consumer failure and exact same-header sizeof/offsetof control; sanitizer seam defect owned by compute_provider_iree_vulkan"
+}
