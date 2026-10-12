@@ -108,3 +108,25 @@ Apple TSan实际公开consumer两次FAIL/-6：第一ragged F16数学通过后，
 [失败与对照](../../../../evidence/correctness/foundation-f5-native-apple-host-tsan-diagnostic/README.md)
 保留，仍INCONCLUSIVE_MLX_METAL_HOST_RACE_REPORT，不认定假阳性、不签PASS/NA，原native
 风险consumer尚未运行。当前无产品反证归因，产品仍固定；继续独立Vulkan补验与有限诊断。
+
+有限链接对照：同no-HYLE匹配deleter/attention源码，仅将同版本MLX archive换成已资格化
+Apple-only shared SDK的libmlx.dylib，24个真实GPU cold worker均退出0，TSAN_OPTIONS仍
+halt_on_error=1，无suppression/忽略module。此差分支持“static模板coalescing暴露未插桩
+vendor同步”的解释，但未instrument MLX/Metal整体仍不能由此判零race。
+允许在同Apple TSan root/原剩余build及consumer累计预算内只重链接原两消费者：全部
+HYLE/fixture原instrumented .o/.a不变，只原vendor MLX使用同候选SDK共享native library。
+原binary/静态失败保留，实际dylib/hash/otool与flags分别记录；此门只补HYLE-owned host
+并发facet，不替代普通static/shared SDK，不代签未插桩vendor整体。仍不改产品/公共仪器，
+不能因新binary名字重取预算。重链接与实际消费者须等当前Vulkan重型门完成后串行运行。
+
+Air Vulkan UBSan两消费者已实际PASS：
+[证据](../../../../evidence/correctness/foundation-f5-native-vulkan-host-ubsan/README.md)，configure
+14.322/300、build245.787/1800、consumer6.337/180。实际MoltenVK GPU数学与原风险fixture
+均执行，flags覆盖Vulkan program/memory/批模板/Graph。Vulkan TSan独立配置随后启动。
+
+Apple原两消费者以同HYLE已插桩objects、同候选native MLX DSO重链接后宿主数据竞争门
+已实际PASS：[证据](../../../../evidence/correctness/foundation-f5-native-apple-host-tsan/README.md)。
+原consumer/断言不变、TSAN_OPTIONS=halt_on_error=1，无suppression/忽略module/改exitcode。
+configure4.098/300、build含重链接146.363/1800、consumer含原两FAIL累计8.639/180。
+原静态binary/FAIL与no-HYLE差分完整保留；host facet通过不签MLX/Metal whole-process，
+后者仍INCONCLUSIVE且未instrument，不撤销独立诊断或把vendor工具限制写成语义NA。

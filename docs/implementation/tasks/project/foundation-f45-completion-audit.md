@@ -62,5 +62,13 @@ HYLE-owned地址/权限与quota证据不冒充GPU/driver总量；公共component
 [评估](foundation-post-goal-engine-effort-2026-10.md#2026-10-13固定实现后的核算)，但完整goal
 后验收与terminal仍待上述门真实裁决，不能以评估写完代替产品完成。
 
+后续有限对照：无HYLE matching-template程序只换同候选共享MLX后24个GPU cold worker
+退出0。Apple原两消费者沿同root/预算、同已插桩HYLE objects只重链接vendor DSO也均
+通过，宿主并发facet见
+[Apple TSan](../../../../evidence/correctness/foundation-f5-native-apple-host-tsan/README.md)。
+原静态MLX失败及vendor whole-process未插桩/INCONCLUSIVE保留，未用suppression。
+[Air Vulkan UBSan](../../../../evidence/correctness/foundation-f5-native-vulkan-host-ubsan/README.md)
+也已两consumer PASS；Vulkan TSan正在独立配置，组件合同预算问题仍待答复。
+
 最终必须补完全部原编号/七门的真实范围裁决、reopen triggers、20 owner合法terminal与
 用户要求的goal后基础库剩余缺口/单机单多请求engine自有LOC评估。现在不签CLOSED或complete。
