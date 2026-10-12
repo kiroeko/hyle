@@ -67,3 +67,8 @@ CANDIDATE，旧factor产品源码与原公开头未改变，F4终局风险/红�
 亦全部实际PASS；至此Windows混合路线四个installed格完成，真实state DLL/其他运行库hash及
 imports、受限PATH运行在各job/raw archive。native-only、WSL与Air对应格仍继续，未运行格
 不由这四个PASS代签。
+
+[Windows native-only Vulkan static](../../../../evidence/correctness/foundation-f4-native-sdk-windows-vulkan-static/README.md)
+实际PASS：无CPU factor/数学回退，原Vulkan Direct/Graph完整state消费者运行，三个新头独立
+编译；CPU/CUDA/Apple缺席请求明确拒绝。此时5/18个预声明installed格已验，动态native-only
+及WSL/Air剩余格仍未代签。
