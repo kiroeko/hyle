@@ -60,3 +60,10 @@ route依赖targets；自然Compute/Graph安装后rename迁址，metadata无原so
 消费者目录/系统目录；缺Apple/Vulkan请求得到具名拒绝。原库产物与runtime hashes、实际
 imports/完整stage原日志及时间见job/raw archive。其他installed格尚未因此代签；本卡继续
 CANDIDATE，旧factor产品源码与原公开头未改变，F4终局风险/红队仍沿主卡。
+
+同候选[Windows CPU+CUDA shared](../../../../evidence/correctness/foundation-f4-sdk-windows-cpu-cuda-shared/README.md)、
+[CPU+Vulkan static](../../../../evidence/correctness/foundation-f4-sdk-windows-cpu-vulkan-static/README.md)、
+[CPU+Vulkan shared](../../../../evidence/correctness/foundation-f4-sdk-windows-cpu-vulkan-shared/README.md)
+亦全部实际PASS；至此Windows混合路线四个installed格完成，真实state DLL/其他运行库hash及
+imports、受限PATH运行在各job/raw archive。native-only、WSL与Air对应格仍继续，未运行格
+不由这四个PASS代签。
