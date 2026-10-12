@@ -39,6 +39,7 @@ CPU actual失败与failed-ready/F5/F4纵切，native Apple/Vulkan实际queued/dr
 - sanitizer：WSL common ownership/layout/OOM/concurrency与真实CPU Direct/Graph，沿
   原build1800/test120/consumer180 budget；native host-control适用facet按实际平台/仪器
   定界，未可证明项不写PASS或NA。不会用CPU san代签GPU/private memory。
+  native host-control实际机器/消费者/仪器范围固定于[验证补充](foundation-f5-native-host-sanitizers.md)。
 - P0：复杂度、cold/warm成本、默认字段税与codegen、native UNKNOWN费用；自有LOC/测试/
   依赖/repo总量分别统计。无真实hotspot不自动P1。
 - guide与正交消费、与实现过程分离的一遍红队；全部原编号/风险/交付逐项证明后才CLOSED，
