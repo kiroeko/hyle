@@ -39,8 +39,8 @@
 
 ## 当前阶段
 
-SCOPED。本卡冻结有限需求与机器/预算，尚未授权产品实现。QUEUED身份尚无target/header/
-dependency；实现必须在独立AUDITED checkpoint后进行。
+AUDITED。两轮owner/consumer审计已结束，下列公开对象与生命周期冻结后实施六FIX。
+本checkpoint仍无target/header产品代码；实现与状态晋级分开提交。
 
 ## 能力初审与已确认复用
 
@@ -72,5 +72,63 @@ collection版本generation不同于单F1 block generation；opaque IDs不能用�
 | F4-05 | recurrent+conv+paged布局与正交资产集合public consumer，显式snapshot/恢复限制 | UNPROVEN |
 | F4-06 | 四route自然typed入口、三交付/新头/缺席/迁址、P0已知/未知账/guide及红队 | UNPROVEN |
 
-七门目前UNPROVEN；本轮target/公开形状、default容量、不可变成员导出与clone注册/退出合同
-尚待第二轮审计冻结。主/正交body都须沿普通public C++ API，不以private测试hook代签。
+七门目前UNPROVEN。主/正交body都须沿普通public C++ API，不以private测试hook代签。
+
+## 第二轮审计：API / owner / lifetime freeze
+
+- StateSchema::create复制有限StateEntrySpec；resource成员有TensorDesc/实际byte extent和可选
+  resource约束，metadata成员有明确byte长度。允许空schema，不接F1不能表达的零byte资源。
+  StateEntryId保留schema owner与ordinal，只由schema.entry产生，不能跨schema伪造/ABA。
+- StateStore::create预备V/D/retained-block目录，StateStoreOptions默认V16/D8/C4/retained-block128、
+  backing128MiB/host snapshot1MiB，所有上限可冷配置并checked overflow。没有自动eviction。
+  metadata通过inject allocator/ResourceBudget；外部已有backing是观察去重账，不重复reserve。
+- StateVersion是共享immutable目录handle；member返回原ReadLease，不复制payload。StateIdentity
+  保留原version owner/generation；复制O(1)，token仍占版本容量。导出ReadLease/native use可比
+  目录更晚释放，因此store另保有每F1 block的readonly tracking anchor，collect只在该anchor
+  成为唯一reader后移除；同pool根按LeaseAccess::backing完整capacity去重，不能按entry累加。
+- import完整预检IDs/重复/遗漏/描述/资源/总账后复制readonly handle；host metadata深复制成
+  自有readonly bytes。失败不消费caller source。Tensor/native import合法性沿F1原readonly
+  carrier；caller未停writable aliases不受此API救济。旧readonly数据不会被draft改写。
+- begin(base)自动分享成员；StateDraft为thread-compatible独占可变candidate。replace(id,ReadLease)
+  接成功pure output，replace_metadata复制新host snapshot；不强制clone原initial/final状态。
+  finalize只在全部成员ready/无pending writer/原错误成功时生成版本；未ready/容量满保留draft。
+- StateHead::create(store,initial)为可选store-local头；current返回version共享owner，
+  publish(expectedIdentity,candidate)检查same store/schema与open，在短monitor内切换，旧owner
+  在锁外释放。冲突不改变current/candidate，publication无GPU等待/数学/IO。
+- StateCloneRoute::prepare(store,resource/capacity,原CopyBatchProgram,typed create-invocation factory)
+  冷创建有限原F2 slots与目标LeasePool。factory只冷调用，不保留执行回调。共同core仅保存
+  对原typed objects的有限poll/cancel/drain/destroy生命周期桥，不增加native调度/Queue。
+  默认每slot完整dirty成员一次原F2 phase/range；不clone全集合，不半截伪编码块。
+- draft.clone_for_write(id,route)返回CloneTicket：保留draft/base和原native slot，非阻塞poll或
+  显式wait；源必须是成功readonly member，目的fresh独占。原F2 output→drop submission→
+  reset→try_write成功后才给StateWriter；此顺序不能借file-stream私有take_mutable绕开权限。
+  StateWriter持draft/store owner与独占WriteLease；publish借原F1检查全部writes后接回draft。
+  若原native update消费writer，可complete同原block/generation的成功ReadLease；错root拒绝。
+- pending clone/writer阻止finalize；取消/abandon标记candidate未完成并沿原F2真实退休；
+  registered slots没有反向持draft/store的owner环，未接纳/未开始suffix不持producer。未知完成
+  仍不复用slot。store.collect非阻塞poll abandoned native slots+tracking anchors；drain仅
+  等本store注册copy工作，不关闭caller Context或等待业务reader。close停止新draft/clone/head
+  发布，保留旧版本readonly消费；clone池跟随store/version/writer等F4 owners，不提前关domain。
+  最后F4 owner析构无隐藏等待，已接纳native backing沿原F2/F1实际退休继续保活，原resource/
+  Context/allocator依然按公开borrow合同由caller保活。
+- common header state_versions.h及typed clone header state_clone.h归compute_state；private
+  util_core/refcount与原F1 ledger，无Graph反向边。正常用户只用hyle::compute；新factor进入
+  Compute facade，native typed参数依原已选route。测试只取CPU backend以验证原F2 bytes copy，
+  不因copy消费CPU数学默认Provider全目录。
+
+正常草图：schema/Store→import complete members→Head.current→begin(base)→share/replace或
+clone_for_write→poll/wait取得writer→原数学/byte更新→publish/complete→finalize→
+head.publish(base.identity,candidate)。recurrent/conv/KV与资产集合只有schema/body不同。
+
+原Readonly ReadLease只表示成功导入/已publish权限，不表示后来某个只读数学任务失败能污染
+payload。F4不以任意read task状态替代writer成功证明，也不解释native unknown回滚。
+新store publication/record生命周期并发要独立TSan；旧F1/F2原机制只对新public journey定向验证。
+
+七问冻结：原锁/许可KEEP，两个纵切/三peer共同owner证据准入；BORROW已签lease/copy/native；
+P0固定目录与有限ledger冷扫描，warm native不加版本字段；同工具链C++无新FFI；四自然route/
+三交付、新头/缺路线按实际selected seams；guide必须解释完整schema、borrow/readonly、容量、
+expected-base冲突、实际prefix/unknown和opaque不能raw-clone。没有timed性能胜负结论。
+
+QUEUED identity只新增一条未实现声明，未改变原产品闭包/头/target；selector对中央manifest
+保守选择全图，原plan在.scratch/foundation-a/f4-queued-plan.json。按用户要求及本卡语义仅做
+closure中央身份/顺序与docs检查；不启动未受影响模块/全目录构建，不改公共selector来缩表。
