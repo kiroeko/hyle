@@ -1,5 +1,9 @@
 # F5 六FIX收口审计与预算裁决
 
+当前registry为25e4fb398 CANDIDATE；本页按后续章节累积审计历史，初始表的未验项只由
+后文精确新证据更新。当前活动授权在[候选卡](foundation-f5-candidate-validation.md)，不由
+历史AUDITED施工句恢复；完整closure未签。
+
 状态：AUDITED（2026-10-12 用户批准原故障门一次追加180秒，有限FIX已冻结）；baseline
 46b1d7e70。原[A/F4/F5目标](../../../architecture/compute-state-paged-design.md)、
 [F5主卡](foundation-f5-paged-ragged-batch.md)全部保留，不把已实现部分改成完成定义。
@@ -313,6 +317,35 @@ shared相同公开消费者真实未解析flashinfer::provider()，其原PRIVATE
 不能通过消费者补内部target绕过；compute_route_cuda已合法退AUDITED，执行
 [唯一package FIX](foundation-f5-cuda-public-provider-link.md)。其他19 owner数学/API候选未变；
 原完整F5/18格/适用san等保留，当前7 PASS、1 FAIL待修、10 NOT_RUN。
+
+## CUDA public-link修复及CPU三种san补验
+
+唯一compute_route_cuda seam修复已固定25e4fb398：中央PUBLIC FI边、实际FI资格guard内
+公开头include，以及非Linux BUILD_INTERFACE absent投影。原PRIVATE factory共享链接失败、
+owned-header配置失败均保留；没有新API/数学/常态字段/公共工具改写。20 owner统一候选。
+[Linux shared](../../../../evidence/correctness/foundation-f5-sdk-wsl-cpu-cuda-shared/README.md)
+与[static复验](../../../../evidence/correctness/foundation-f5-sdk-wsl-cpu-cuda-static-link-recheck/README.md)
+同root累计恢复普通公开Direct/Graph四域D256、迁址/头/缺席/loader PASS，不补内部target。
+
+[CPU控制器san](../../../../evidence/correctness/foundation-f5-cpu-controller-sanitizers/README.md)
+ASan/LSan、UBSan、TSan两消费者各PASS；实际flags覆盖Compute/Graph controller及原leased
+Graph宿主，完整八域/NaN padding/OOM/实际失败/F2失败不发布/精确页/append/F4/close/quota0
+日志齐全。同原common source/build预算，不重取1800；ASan首次private tests-on ownership
+配置失败修为普通CPU产品tests-off定向targets，原FAIL保留。native host-control适用san、
+其余SDK/P0/LOC/guide/正交/分离红队/最终engine工作量评估仍未由此签。
+
+Windows cpu,cuda同原root重新资格及实际absence factory编译门齐：
+[static](../../../../evidence/correctness/foundation-f5-sdk-windows-cpu-cuda-static-link-recheck/README.md)、
+[shared](../../../../evidence/correctness/foundation-f5-sdk-windows-cpu-cuda-shared-link-recheck/README.md)
+真实CUDA BatchPlanning unsupported及Graph预拒绝、CPU四域、14 supplied头、迁址/loader均PASS。
+正例证明CUDA public入口可编译，反例明确未准入FI factory不可编译；provider头/absent SDK
+factor均未供应。初次try_compile复制外库alias失败属private probe，改同项目两OBJECT目标；
+原FAIL/elapsed保留，正例计consumer-build预算，FI配置/反例共享同absence300预算。
+
+[精确影响映射](../../../../evidence/architecture/foundation-f5-cuda-link-impact/README.md)证明仅
+CUDA factor的FI直接边PUBLIC/PRIVATE归属变化，全部dependency union和其他factor/product行
+不变。Win Vulkan四格未选此factor且实际prefix没有cuda.h，保留77df原artifact/run/hash的
+25e资格，不伪造新run。当前完整SDK8/18，其他10格及上述剩余门保持未验。
 
 [公开native源码收据](../../../../evidence/correctness/foundation-f5-public-native-source/README.md)：
 Win Vulkan/Air Apple/Vulkan各四域Direct/Graph独立oracle共24、原F2/public页权限/同镜像/

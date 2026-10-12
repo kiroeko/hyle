@@ -19,6 +19,11 @@ Apple/Vulkan参考档真的在原GPU上执行，但它们把页/packed KV显式g
 数学；索引/掩码、GQA复制、payload/wait的费用必须计入。需要原native paged吞吐时，
 不能只看接口形状相同而假定性能已经对称。没有submit隐式plan、JIT或自动CPU fallback。
 
+Linux CUDA的公开factory随普通产品传递，消费者只链接hyle::compute/hyle::graph；
+cuda.h在实际HYLE_COMPUTE_FLASHINFER资格下供应原factory头，未准入平台不供应该API。
+完整公开D256 Direct/Graph用法见[可编译消费者](../../tests/compute_batch/public_batch_cuda_consumer.cc)，
+其输入与结果通过原lease接口读写，数学仍由锁定FlashInfer执行。
+
 ## 容量、有效区与版本
 
 先创建独立的BatchSchema。BatchCapacity固定storage、dtype、request/Q/KV/page/ref容量、

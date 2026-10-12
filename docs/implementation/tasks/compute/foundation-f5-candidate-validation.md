@@ -60,14 +60,28 @@ Compute/Graph不含SIMD，本批次数学不需要它。只把固定0/.125/.25/.
 为明确F16/BF16 word，不加产品边/API或新数学；原FAIL与同root预算保留，消费者重编译。
 product candidate77df未变，当前测试可补但资格按各实际fixture hash区分。
 
-当前SDK7/18：Win cpu,cuda、cpu,vulkan static/shared与native-only Vulkan static/shared，另WSL
-cpu,cuda static实际公开消费/迁址/供头/缺route/loader PASS；WSL shared具名link FAIL待修，
-其他10格仍NOT_RUN。Windows CUDA native batch只签
+当前SDK8/18：25e已完成Linux和Windows cpu,cuda static/shared的link修复后重新资格，
+shared原具名link FAIL已实际修复；Windows新negative factory门也PASS，证据见
+[static](../../../../evidence/correctness/foundation-f5-sdk-windows-cpu-cuda-static-link-recheck/README.md)
+与[shared](../../../../evidence/correctness/foundation-f5-sdk-windows-cpu-cuda-shared-link-recheck/README.md)。
+Win Vulkan四格不含此次CUDA seam，[精确图/输入映射](../../../../evidence/architecture/foundation-f5-cuda-link-impact/README.md)
+保留其新candidate资格，不冒充新run。其他10格仍NOT_RUN。
+Windows CUDA native batch只签
 具名拒绝，数学资格不冒充Linux FlashInfer。common33 ASan/UBSan/
-TSan均PASS，TSan启动exit66与process-local ASLR恢复保留，不代签控制器/native host-control。
+TSan均PASS，TSan启动exit66与process-local ASLR恢复保留；CPU控制器补验见下文，native
+host-control仍未由common/CPU代签。
 证据分别在foundation-f5-sdk-windows-cpu-vulkan-*、foundation-f5-native-sdk-windows-vulkan-*
 与[common san](../../../../evidence/correctness/foundation-f5-common-sanitizers/README.md)，
 完整剩余七门/原goal继续，不把这些局部门改成CLOSED标准。
+
+component configure合同新反证：普通源码CPU/tests=ON缺graph_batch test ownership fragment。
+按[有限测试归属补齐](foundation-f5-graph-batch-test-registration.md)补真实共同Graph测试与
+头登记；只测试/验证补充，25e产品/API冻结不变，原component FAIL/103.437秒保留。
+
+CPU实际控制器补验已完成：[ASan/LSan、UBSan、TSan](../../../../evidence/correctness/foundation-f5-cpu-controller-sanitizers/README.md)
+公开四域、完整八域Direct/Graph、cold OOM、实际失败/F2失败不发布、paged/ragged append/F4
+均PASS，实际编译command核对instrumentation。沿同source/tree/预算累计，原private配置
+FAIL保留；不代签CUDA/Apple/Vulkan native host-control或第三方GPU/private memory。
 
 Windows cpu,cuda两SDK格使用公开CPU consumer，加public_batch_cuda_absence_consumer在
 actual CUDA device上验证Direct BatchPlanning具名Unimplemented与typed ragged Graph

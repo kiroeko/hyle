@@ -1,0 +1,919 @@
+{
+  "candidate": "77df1c10c7a909d6f2a99a99551e599ddb74f096",
+  "scope": "CPU host Direct/Graph only; no CUDA/Apple/Vulkan/private GPU claim",
+  "jobs": {
+    "asan": {
+      "candidate": "77df1c10c7a909d6f2a99a99551e599ddb74f096",
+      "mode": "asan",
+      "source": "/home/kiro/hyle-f1/sanitizers/source-03242e7723cb",
+      "build": "/home/kiro/hyle-f1/sanitizers/asan-03242e7723cb",
+      "compiler": "g++-14 (Ubuntu 14.2.0-4ubuntu2~24.04.1) 14.2.0\nCopyright (C) 2024 Free Software Foundation, Inc.\nThis is free software; see the source for copying conditions.  There is NO\nwarranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.\n\n",
+      "scope": "F5 candidate common33 layout/materialization/page ownership/OOM/concurrency only; no old F4/operator catalogue",
+      "test_parallel": 1,
+      "stages": [
+        {
+          "name": "configure",
+          "command": [
+            "/usr/bin/cmake",
+            "-S",
+            "/home/kiro/hyle-f1/sanitizers/source-03242e7723cb",
+            "-B",
+            "/home/kiro/hyle-f1/sanitizers/asan-03242e7723cb",
+            "-UHYLE_COMPONENTS",
+            "-UHYLE_COMPUTE_ROUTES",
+            "-UCMAKE_PROJECT_TOP_LEVEL_INCLUDES",
+            "-DHYLE_DEV_FACTORS:STRING=compute_batch",
+            "-DHYLE_BUILD_TESTS:BOOL=ON",
+            "-DHYLE_BUILD_BENCH:BOOL=OFF",
+            "-DHYLE_INSTALL:BOOL=OFF",
+            "-DHYLE_SANITIZER:STRING=asan",
+            "-DHYLE_WERROR:BOOL=OFF"
+          ],
+          "pid": 634,
+          "state": "terminal",
+          "available_bytes": 32462585856,
+          "log": "configure.log",
+          "exit_code": 0,
+          "verdict": "PASS",
+          "elapsed": 7.778379296000004,
+          "sha256": "94d7a2f43ce7241478e8b0c7e4d8568a06dce2280c4846de02905519a2afc821"
+        },
+        {
+          "name": "build",
+          "command": [
+            "/usr/bin/cmake",
+            "--build",
+            "/home/kiro/hyle-f1/sanitizers/asan-03242e7723cb",
+            "--target",
+            "hyle_compute_batch_test",
+            "--parallel",
+            "4"
+          ],
+          "pid": 710,
+          "state": "terminal",
+          "available_bytes": 32287772672,
+          "log": "build.log",
+          "exit_code": 0,
+          "verdict": "PASS",
+          "elapsed": 9.069685410999995,
+          "sha256": "c7b6105140fd6483f682f018176c6b650038504d231892822ed12275dd44611a"
+        },
+        {
+          "name": "tests",
+          "command": [
+            "/home/kiro/hyle-f1/sanitizers/asan-03242e7723cb/bin/hyle_compute_batch_test",
+            "--gtest_output=xml:/root/hyle-scratch/compute-unified/foundation-f5-asan-77df1c10c/tests.xml"
+          ],
+          "pid": 779,
+          "state": "terminal",
+          "available_bytes": 32036306944,
+          "log": "tests.log",
+          "exit_code": 0,
+          "verdict": "PASS",
+          "elapsed": 0.11449413400001163,
+          "sha256": "d7185cb4cf4164785ab2e2835178cce0741d5a52f72afdd828597b0eb42a29a3"
+        },
+        {
+          "name": "cpu-configure",
+          "budget_group": "configure",
+          "command": [
+            "/usr/bin/cmake",
+            "-S",
+            "/home/kiro/hyle-f1/sanitizers/source-03242e7723cb",
+            "-B",
+            "/home/kiro/hyle-f1/sanitizers/asan-03242e7723cb",
+            "-DCMAKE_PROJECT_TOP_LEVEL_INCLUDES:FILEPATH=/root/hyle-scratch/compute-unified/foundation-f5-asan-77df1c10c/cpu-consumer.cmake",
+            "-DHYLE_DEV_FACTORS:STRING=compute_batch;graph_batch;graph_route_cpu;compute_state",
+            "-DHYLE_BUILD_TESTS:BOOL=ON",
+            "-DHYLE_BUILD_BENCH:BOOL=OFF",
+            "-DHYLE_INSTALL:BOOL=OFF",
+            "-DHYLE_SANITIZER:STRING=asan",
+            "-DHYLE_WERROR:BOOL=OFF"
+          ],
+          "pid": 647,
+          "state": "terminal",
+          "available_bytes": 32398983168,
+          "log": "cpu-configure.log",
+          "elapsed": 20.099062297,
+          "exit_code": 1,
+          "verdict": "FAIL",
+          "sha256": "7a273836303946dcdf39a475bd9d75bed8cfcf2f617ca38e28cd984ea32accbb"
+        },
+        {
+          "name": "cpu-configure-resume1",
+          "budget_group": "configure",
+          "command": [
+            "/usr/bin/cmake",
+            "-S",
+            "/home/kiro/hyle-f1/sanitizers/source-03242e7723cb",
+            "-B",
+            "/home/kiro/hyle-f1/sanitizers/asan-03242e7723cb",
+            "-DCMAKE_PROJECT_TOP_LEVEL_INCLUDES:FILEPATH=/root/hyle-scratch/compute-unified/foundation-f5-asan-77df1c10c/cpu-consumer.cmake",
+            "-UHYLE_DEV_FACTORS",
+            "-DHYLE_COMPONENTS:STRING=compute;graph",
+            "-DHYLE_COMPUTE_ROUTES:STRING=cpu",
+            "-DHYLE_BUILD_TESTS:BOOL=OFF",
+            "-DHYLE_BUILD_BENCH:BOOL=OFF",
+            "-DHYLE_INSTALL:BOOL=OFF",
+            "-DHYLE_SANITIZER:STRING=asan",
+            "-DHYLE_WERROR:BOOL=OFF"
+          ],
+          "pid": 648,
+          "state": "terminal",
+          "available_bytes": 32411643904,
+          "log": "cpu-configure-resume1.log",
+          "elapsed": 12.448061607999996,
+          "exit_code": 0,
+          "verdict": "PASS",
+          "sha256": "5058caa9b798eb8814ea2141674d397b59923053defec5762d48cc39779758bc"
+        },
+        {
+          "name": "cpu-build",
+          "budget_group": "build",
+          "command": [
+            "/usr/bin/cmake",
+            "--build",
+            "/home/kiro/hyle-f1/sanitizers/asan-03242e7723cb",
+            "--target",
+            "hyle_f5_san_cpu",
+            "hyle_f5_san_public_cpu",
+            "--parallel",
+            "4"
+          ],
+          "pid": 672,
+          "state": "terminal",
+          "available_bytes": 32534589440,
+          "log": "cpu-build.log",
+          "elapsed": 246.78686118700003,
+          "exit_code": 0,
+          "verdict": "PASS",
+          "sha256": "715f3797fe022b795ec76453a2a46cda3888854e77b04a8ac0bf93d6819ff8ab"
+        },
+        {
+          "name": "cpu-run-hyle_f5_san_public_cpu",
+          "budget_group": "consumer",
+          "command": [
+            "/home/kiro/hyle-f1/sanitizers/asan-03242e7723cb/bin/hyle_f5_san_public_cpu"
+          ],
+          "pid": 1037,
+          "state": "terminal",
+          "available_bytes": 32245018624,
+          "log": "cpu-run-hyle_f5_san_public_cpu.log",
+          "elapsed": 0.46501111300000275,
+          "exit_code": 0,
+          "verdict": "PASS",
+          "sha256": "59dcd4a4b09b268013e4b6b9b5f967464c3512a96b978fc8c7cadc7fc83ec632"
+        },
+        {
+          "name": "cpu-run-hyle_f5_san_cpu",
+          "budget_group": "consumer",
+          "command": [
+            "/home/kiro/hyle-f1/sanitizers/asan-03242e7723cb/bin/hyle_f5_san_cpu"
+          ],
+          "pid": 1039,
+          "state": "terminal",
+          "available_bytes": 32251400192,
+          "log": "cpu-run-hyle_f5_san_cpu.log",
+          "elapsed": 0.615083702999982,
+          "exit_code": 0,
+          "verdict": "PASS",
+          "sha256": "d09bd8e93092a90cefebc96afd69acf07916366f797e07c97684169d78c9a7f2"
+        }
+      ],
+      "inputs": [
+        {
+          "path": "src/compute_batch/CMakeLists.txt",
+          "sha256": "0eda46ceb8cef71b087ba3d02ce4bc972d83e78e0c03a7074fc4259577603a16"
+        },
+        {
+          "path": "src/compute_batch/batch_execution.cc",
+          "sha256": "6af0d9b26e37cde36972e3b0d40674c772cfdc3adbcaff83fb1ca3be967a8bb9"
+        },
+        {
+          "path": "src/compute_batch/batch_layout.cc",
+          "sha256": "9643f20396e320aac8f2184ddd243f996a70ee46e81487eb397fa3a54ac020f4"
+        },
+        {
+          "path": "src/compute_batch/batch_materialize.cc",
+          "sha256": "6313f696f2041ce06cc31f0ceeb8506906689bf3c475368d69232de7a943e967"
+        },
+        {
+          "path": "src/compute_batch/materialized_invocation.cc",
+          "sha256": "860a21558c660eba7c581507b62e89c5a75c57db7547c13c7d860c454b7b272a"
+        },
+        {
+          "path": "src/compute_batch/paged_arena.cc",
+          "sha256": "ee4fcd775f6cc9b1da8f781c40f8bc98481233444209316a48b2527b3964f142"
+        },
+        {
+          "path": "tests/compute_batch/CMakeLists.txt",
+          "sha256": "c1edd25e57c49dc096e3dc94031e445834d9c555297e85c203001b41a153cc05"
+        },
+        {
+          "path": "tests/compute_batch/allocation_fault_fixture.h",
+          "sha256": "7fc5d108ebfbe46853a14fb74b4c504721442757cd4aeab10f1314a9f03943dc"
+        },
+        {
+          "path": "tests/compute_batch/batch_layout_test.cc",
+          "sha256": "420b26027914ebc73c5654f49a363b7f5e707c031fe6100763de9295e03c5167"
+        },
+        {
+          "path": "tests/compute_batch/batch_materialize_test.cc",
+          "sha256": "d3e982acb98ccc6f6d22a5c04b0205a74df9d404117dc0a91460e0b5809eff3c"
+        },
+        {
+          "path": "tests/compute_batch/host_failure_fixture.h",
+          "sha256": "57bb705c7bbe4c2fc71e4cf228138b0fdbf03b6c78521343a018be3a120cdbd5"
+        },
+        {
+          "path": "tests/compute_batch/materialized_cpu_consumer.cc",
+          "sha256": "dc25540478345eb4f169f7bfc766ff6560e1b5af44bef5c130a090710f2273a3"
+        },
+        {
+          "path": "tests/compute_batch/materialized_host_controller_consumer.h",
+          "sha256": "e487b5249d1f65b8af7c3e3e466b4368a41de8f5d43f10c939e20a648b6af1a8"
+        },
+        {
+          "path": "tests/compute_batch/materialized_native_consumer.cc",
+          "sha256": "7b6c8292c693e3464040f92108dd06ee186d0ae927f0991eef650e2801f3a9c9"
+        },
+        {
+          "path": "tests/compute_batch/native_apple_failure_fixture.h",
+          "sha256": "fdb33f4f810aa078793a464450808da43e3d386721725a506e2c3697d4be2208"
+        },
+        {
+          "path": "tests/compute_batch/native_arena_direct_consumer.h",
+          "sha256": "42bbb89bd43d12f752719ef10efa261127004880d87cd005f2cd19c232ba888e"
+        },
+        {
+          "path": "tests/compute_batch/native_arena_graph_consumer.h",
+          "sha256": "d58f9c6e255c987a60ce30c8a8a8a2a06e4a3150e413875051b551acfd6ad1f8"
+        },
+        {
+          "path": "tests/compute_batch/native_arena_reference_consumer.h",
+          "sha256": "645db5b2f1ceb1dc8265f02724ed26a1212228a99876bbb15c25468c30a56ff0"
+        },
+        {
+          "path": "tests/compute_batch/native_direct_consumer.cc",
+          "sha256": "42ad7ea08a7e4a24fbccdfa7f80ae34c4ba170b4951c1cf6389183974f3ff7c0"
+        },
+        {
+          "path": "tests/compute_batch/native_fault_consumer.cc",
+          "sha256": "66a502d6ad383b2569b99f3f551a9b62812cb2d5cb466982e06776526e8190cd"
+        },
+        {
+          "path": "tests/compute_batch/native_graph_consumer.cc",
+          "sha256": "c9a100e55a0a32fe221419db8e322fd01bb31bc51781d350b4b5e9c523906a6e"
+        },
+        {
+          "path": "tests/compute_batch/native_graph_faults.h",
+          "sha256": "3ac208d6e43c0825f64a31d5426aa079ed4da3f24f6754926ee3fbd5122b734c"
+        },
+        {
+          "path": "tests/compute_batch/native_ragged_append_consumer.h",
+          "sha256": "74b44c5808eea2718ac7734ba53603c340ffbd23ba03ed390509114ce2156064"
+        },
+        {
+          "path": "tests/compute_batch/native_ragged_graph_append_consumer.h",
+          "sha256": "075ca164a8b9989b3994c19c6679cb07d58d6985e456ec0b1c86c555479065a0"
+        },
+        {
+          "path": "tests/compute_batch/native_vulkan_failure_fixture.h",
+          "sha256": "955af6a8f8ea20160f36f760866676997b99a12848dbd456108a72c20b030b90"
+        },
+        {
+          "path": "tests/compute_batch/paged_arena_test.cc",
+          "sha256": "9f42b74ba3b35df0daf73347e91be201ae461aceb76f38d944a9fb0f018fbdae"
+        },
+        {
+          "path": "tests/compute_batch/public_batch_cpu_consumer.cc",
+          "sha256": "70c2ae42b2a752577872ccabd399e7b3804e98cb3db15505c8dc6919144c773a"
+        },
+        {
+          "path": "tests/compute_batch/public_batch_native_consumer.cc",
+          "sha256": "0b2946f264b084893657d1c90c262fe881cb0dc1fd8db0835bfb58a5c6ba53e1"
+        },
+        {
+          "path": "tests/compute_batch/ragged_append_journey.h",
+          "sha256": "a4a236ece69637f6aa9e4d785ea94adea98e80b9d46ba4ca1229cbb5b8afce95"
+        }
+      ],
+      "actual_cases": 33,
+      "verdict": "PASS_F5_COMMON_ASAN_33",
+      "cpu_scope": "Actual CPU original Direct/Graph eight domains, paged/ragged append, cold OOM and accepted-error/F2 failure; public consumer; not GPU private memory",
+      "cpu_inputs": {
+        "materialized_cpu_consumer.cc": "dc25540478345eb4f169f7bfc766ff6560e1b5af44bef5c130a090710f2273a3",
+        "public_batch_cpu_consumer.cc": "70c2ae42b2a752577872ccabd399e7b3804e98cb3db15505c8dc6919144c773a"
+      },
+      "cpu_verdict": "PASS_F5_CPU_DIRECT_GRAPH_ASAN",
+      "verified_instrumented_commands": [
+        "/usr/bin/g++-14 -DHYLE_COMPUTE_CPU=1 -DHYLE_COMPUTE_ONEDNN=1 -DHYLE_DETAIL_SANITIZER_ADDRESS=1 -DHYLE_GRAPH_ONEDNN=1 -DHYLE_IO_HAS_COROUTINE_TRANSPORT=1 -DHYLE_STATIC -I/home/kiro/hyle-f1/sanitizers/source-03242e7723cb/include -O3 -DNDEBUG -std=c++23 -Wno-error=mismatched-new-delete -fsanitize=address -fno-omit-frame-pointer -MD -MT CMakeFiles/hyle_f5_san_cpu.dir/tests/compute_batch/materialized_cpu_consumer.cc.o -MF CMakeFiles/hyle_f5_san_cpu.dir/tests/compute_batch/materialized_cpu_consumer.cc.o.d -o CMakeFiles/hyle_f5_san_cpu.dir/tests/compute_batch/materialized_cpu_consumer.cc.o -c /home/kiro/hyle-f1/sanitizers/source-03242e7723cb/tests/compute_batch/materialized_cpu_consumer.cc",
+        "/usr/bin/g++-14 -DHYLE_COMPUTE_CPU=1 -DHYLE_COMPUTE_ONEDNN=1 -DHYLE_DETAIL_SANITIZER_ADDRESS=1 -DHYLE_GRAPH_ONEDNN=1 -DHYLE_IO_HAS_COROUTINE_TRANSPORT=1 -DHYLE_STATIC -I/home/kiro/hyle-f1/sanitizers/source-03242e7723cb/include -O3 -DNDEBUG -std=c++23 -Wno-error=mismatched-new-delete -fsanitize=address -fno-omit-frame-pointer -MD -MT CMakeFiles/hyle_f5_san_public_cpu.dir/tests/compute_batch/public_batch_cpu_consumer.cc.o -MF CMakeFiles/hyle_f5_san_public_cpu.dir/tests/compute_batch/public_batch_cpu_consumer.cc.o.d -o CMakeFiles/hyle_f5_san_public_cpu.dir/tests/compute_batch/public_batch_cpu_consumer.cc.o -c /home/kiro/hyle-f1/sanitizers/source-03242e7723cb/tests/compute_batch/public_batch_cpu_consumer.cc",
+        "/usr/bin/g++-14 -DHYLE_COMPUTE_BATCH_BUILD -DHYLE_DETAIL_SANITIZER_ADDRESS=1 -DHYLE_STATIC -I/home/kiro/hyle-f1/sanitizers/source-03242e7723cb/include -I/home/kiro/hyle-f1/sanitizers/source-03242e7723cb/src/compute_batch -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Wno-error=mismatched-new-delete -fsanitize=address -fno-omit-frame-pointer -MD -MT src/compute_batch/CMakeFiles/hyle_compute_batch.dir/materialized_invocation.cc.o -MF src/compute_batch/CMakeFiles/hyle_compute_batch.dir/materialized_invocation.cc.o.d -o src/compute_batch/CMakeFiles/hyle_compute_batch.dir/materialized_invocation.cc.o -c /home/kiro/hyle-f1/sanitizers/source-03242e7723cb/src/compute_batch/materialized_invocation.cc",
+        "/usr/bin/g++-14 -DHYLE_DETAIL_SANITIZER_ADDRESS=1 -DHYLE_GRAPH_BATCH_BUILD -DHYLE_STATIC -I/home/kiro/hyle-f1/sanitizers/source-03242e7723cb/include -I/home/kiro/hyle-f1/sanitizers/source-03242e7723cb/src/graph_batch -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Wno-error=mismatched-new-delete -fsanitize=address -fno-omit-frame-pointer -MD -MT src/graph_batch/CMakeFiles/hyle_graph_batch.dir/materialized_invocation.cc.o -MF src/graph_batch/CMakeFiles/hyle_graph_batch.dir/materialized_invocation.cc.o.d -o src/graph_batch/CMakeFiles/hyle_graph_batch.dir/materialized_invocation.cc.o -c /home/kiro/hyle-f1/sanitizers/source-03242e7723cb/src/graph_batch/materialized_invocation.cc",
+        "/usr/bin/g++-14 -DHYLE_DETAIL_SANITIZER_ADDRESS=1 -DHYLE_GRAPH_BUILD -DHYLE_STATIC -I/home/kiro/hyle-f1/sanitizers/source-03242e7723cb/include -I/home/kiro/hyle-f1/sanitizers/source-03242e7723cb/src/graph -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Wno-error=mismatched-new-delete -fsanitize=address -fno-omit-frame-pointer -MD -MT src/graph/CMakeFiles/hyle_graph.dir/leased_invocation.cc.o -MF src/graph/CMakeFiles/hyle_graph.dir/leased_invocation.cc.o.d -o src/graph/CMakeFiles/hyle_graph.dir/leased_invocation.cc.o -c /home/kiro/hyle-f1/sanitizers/source-03242e7723cb/src/graph/leased_invocation.cc"
+      ]
+    },
+    "ubsan": {
+      "candidate": "77df1c10c7a909d6f2a99a99551e599ddb74f096",
+      "mode": "ubsan",
+      "source": "/home/kiro/hyle-f1/sanitizers/source-03242e7723cb",
+      "build": "/home/kiro/hyle-f1/sanitizers/ubsan-03242e7723cb",
+      "compiler": "g++-14 (Ubuntu 14.2.0-4ubuntu2~24.04.1) 14.2.0\nCopyright (C) 2024 Free Software Foundation, Inc.\nThis is free software; see the source for copying conditions.  There is NO\nwarranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.\n\n",
+      "scope": "F5 candidate common33 layout/materialization/page ownership/OOM/concurrency only; no old F4/operator catalogue",
+      "test_parallel": 1,
+      "stages": [
+        {
+          "name": "configure",
+          "command": [
+            "/usr/bin/cmake",
+            "-S",
+            "/home/kiro/hyle-f1/sanitizers/source-03242e7723cb",
+            "-B",
+            "/home/kiro/hyle-f1/sanitizers/ubsan-03242e7723cb",
+            "-UHYLE_COMPONENTS",
+            "-UHYLE_COMPUTE_ROUTES",
+            "-UCMAKE_PROJECT_TOP_LEVEL_INCLUDES",
+            "-DHYLE_DEV_FACTORS:STRING=compute_batch",
+            "-DHYLE_BUILD_TESTS:BOOL=ON",
+            "-DHYLE_BUILD_BENCH:BOOL=OFF",
+            "-DHYLE_INSTALL:BOOL=OFF",
+            "-DHYLE_SANITIZER:STRING=ubsan",
+            "-DHYLE_WERROR:BOOL=OFF"
+          ],
+          "pid": 649,
+          "state": "terminal",
+          "available_bytes": 32404697088,
+          "log": "configure.log",
+          "exit_code": 0,
+          "verdict": "PASS",
+          "elapsed": 5.074229967000001,
+          "sha256": "4d91e283a42bb6e4241eb58aed9903b3b202a55efe721fcb1f0a61eaaf42562e"
+        },
+        {
+          "name": "build",
+          "command": [
+            "/usr/bin/cmake",
+            "--build",
+            "/home/kiro/hyle-f1/sanitizers/ubsan-03242e7723cb",
+            "--target",
+            "hyle_compute_batch_test",
+            "--parallel",
+            "4"
+          ],
+          "pid": 722,
+          "state": "terminal",
+          "available_bytes": 32272777216,
+          "log": "build.log",
+          "exit_code": 0,
+          "verdict": "PASS",
+          "elapsed": 7.4793371109999995,
+          "sha256": "9a7cebf3cdfef505af950e9ba3943d09a842ff9651a2c8b33be8dbbbc9213805"
+        },
+        {
+          "name": "tests",
+          "command": [
+            "/home/kiro/hyle-f1/sanitizers/ubsan-03242e7723cb/bin/hyle_compute_batch_test",
+            "--gtest_output=xml:/root/hyle-scratch/compute-unified/foundation-f5-ubsan-77df1c10c/tests.xml"
+          ],
+          "pid": 794,
+          "state": "terminal",
+          "available_bytes": 31789572096,
+          "log": "tests.log",
+          "exit_code": 0,
+          "verdict": "PASS",
+          "elapsed": 0.007661475000000806,
+          "sha256": "b1ed5132c1a0b7f287a6e2638ecc119c81798b9af3ac9946a8458de5a0a41279"
+        },
+        {
+          "name": "cpu-configure",
+          "budget_group": "configure",
+          "command": [
+            "/usr/bin/cmake",
+            "-S",
+            "/home/kiro/hyle-f1/sanitizers/source-03242e7723cb",
+            "-B",
+            "/home/kiro/hyle-f1/sanitizers/ubsan-03242e7723cb",
+            "-DCMAKE_PROJECT_TOP_LEVEL_INCLUDES:FILEPATH=/root/hyle-scratch/compute-unified/foundation-f5-ubsan-77df1c10c/cpu-consumer.cmake",
+            "-UHYLE_DEV_FACTORS",
+            "-DHYLE_COMPONENTS:STRING=compute;graph",
+            "-DHYLE_COMPUTE_ROUTES:STRING=cpu",
+            "-DHYLE_BUILD_TESTS:BOOL=OFF",
+            "-DHYLE_BUILD_BENCH:BOOL=OFF",
+            "-DHYLE_INSTALL:BOOL=OFF",
+            "-DHYLE_SANITIZER:STRING=ubsan",
+            "-DHYLE_WERROR:BOOL=OFF"
+          ],
+          "pid": 1056,
+          "state": "terminal",
+          "available_bytes": 32402911232,
+          "log": "cpu-configure.log",
+          "elapsed": 14.77307088699996,
+          "exit_code": 0,
+          "verdict": "PASS",
+          "sha256": "3994710f5f6b913bce1bcd5c3b34dd199fc9b427e87de84ff13049e7c7d863b8"
+        },
+        {
+          "name": "cpu-build",
+          "budget_group": "build",
+          "command": [
+            "/usr/bin/cmake",
+            "--build",
+            "/home/kiro/hyle-f1/sanitizers/ubsan-03242e7723cb",
+            "--target",
+            "hyle_f5_san_cpu",
+            "hyle_f5_san_public_cpu",
+            "--parallel",
+            "4"
+          ],
+          "pid": 1078,
+          "state": "terminal",
+          "available_bytes": 32508768256,
+          "log": "cpu-build.log",
+          "elapsed": 95.72973669800001,
+          "exit_code": 0,
+          "verdict": "PASS",
+          "sha256": "335ca10d775a74dddf805e4a8261a2f436d7144d952edeac77516f0994a05f26"
+        },
+        {
+          "name": "cpu-run-hyle_f5_san_public_cpu",
+          "budget_group": "consumer",
+          "command": [
+            "/home/kiro/hyle-f1/sanitizers/ubsan-03242e7723cb/bin/hyle_f5_san_public_cpu"
+          ],
+          "pid": 1407,
+          "state": "terminal",
+          "available_bytes": 32160743424,
+          "log": "cpu-run-hyle_f5_san_public_cpu.log",
+          "elapsed": 0.1648023349999903,
+          "exit_code": 0,
+          "verdict": "PASS",
+          "sha256": "59dcd4a4b09b268013e4b6b9b5f967464c3512a96b978fc8c7cadc7fc83ec632"
+        },
+        {
+          "name": "cpu-run-hyle_f5_san_cpu",
+          "budget_group": "consumer",
+          "command": [
+            "/home/kiro/hyle-f1/sanitizers/ubsan-03242e7723cb/bin/hyle_f5_san_cpu"
+          ],
+          "pid": 1408,
+          "state": "terminal",
+          "available_bytes": 32169480192,
+          "log": "cpu-run-hyle_f5_san_cpu.log",
+          "elapsed": 0.21499443299995846,
+          "exit_code": 0,
+          "verdict": "PASS",
+          "sha256": "d09bd8e93092a90cefebc96afd69acf07916366f797e07c97684169d78c9a7f2"
+        }
+      ],
+      "inputs": [
+        {
+          "path": "src/compute_batch/CMakeLists.txt",
+          "sha256": "0eda46ceb8cef71b087ba3d02ce4bc972d83e78e0c03a7074fc4259577603a16"
+        },
+        {
+          "path": "src/compute_batch/batch_execution.cc",
+          "sha256": "6af0d9b26e37cde36972e3b0d40674c772cfdc3adbcaff83fb1ca3be967a8bb9"
+        },
+        {
+          "path": "src/compute_batch/batch_layout.cc",
+          "sha256": "9643f20396e320aac8f2184ddd243f996a70ee46e81487eb397fa3a54ac020f4"
+        },
+        {
+          "path": "src/compute_batch/batch_materialize.cc",
+          "sha256": "6313f696f2041ce06cc31f0ceeb8506906689bf3c475368d69232de7a943e967"
+        },
+        {
+          "path": "src/compute_batch/materialized_invocation.cc",
+          "sha256": "860a21558c660eba7c581507b62e89c5a75c57db7547c13c7d860c454b7b272a"
+        },
+        {
+          "path": "src/compute_batch/paged_arena.cc",
+          "sha256": "ee4fcd775f6cc9b1da8f781c40f8bc98481233444209316a48b2527b3964f142"
+        },
+        {
+          "path": "tests/compute_batch/CMakeLists.txt",
+          "sha256": "c1edd25e57c49dc096e3dc94031e445834d9c555297e85c203001b41a153cc05"
+        },
+        {
+          "path": "tests/compute_batch/allocation_fault_fixture.h",
+          "sha256": "7fc5d108ebfbe46853a14fb74b4c504721442757cd4aeab10f1314a9f03943dc"
+        },
+        {
+          "path": "tests/compute_batch/batch_layout_test.cc",
+          "sha256": "420b26027914ebc73c5654f49a363b7f5e707c031fe6100763de9295e03c5167"
+        },
+        {
+          "path": "tests/compute_batch/batch_materialize_test.cc",
+          "sha256": "d3e982acb98ccc6f6d22a5c04b0205a74df9d404117dc0a91460e0b5809eff3c"
+        },
+        {
+          "path": "tests/compute_batch/host_failure_fixture.h",
+          "sha256": "57bb705c7bbe4c2fc71e4cf228138b0fdbf03b6c78521343a018be3a120cdbd5"
+        },
+        {
+          "path": "tests/compute_batch/materialized_cpu_consumer.cc",
+          "sha256": "dc25540478345eb4f169f7bfc766ff6560e1b5af44bef5c130a090710f2273a3"
+        },
+        {
+          "path": "tests/compute_batch/materialized_host_controller_consumer.h",
+          "sha256": "e487b5249d1f65b8af7c3e3e466b4368a41de8f5d43f10c939e20a648b6af1a8"
+        },
+        {
+          "path": "tests/compute_batch/materialized_native_consumer.cc",
+          "sha256": "7b6c8292c693e3464040f92108dd06ee186d0ae927f0991eef650e2801f3a9c9"
+        },
+        {
+          "path": "tests/compute_batch/native_apple_failure_fixture.h",
+          "sha256": "fdb33f4f810aa078793a464450808da43e3d386721725a506e2c3697d4be2208"
+        },
+        {
+          "path": "tests/compute_batch/native_arena_direct_consumer.h",
+          "sha256": "42bbb89bd43d12f752719ef10efa261127004880d87cd005f2cd19c232ba888e"
+        },
+        {
+          "path": "tests/compute_batch/native_arena_graph_consumer.h",
+          "sha256": "d58f9c6e255c987a60ce30c8a8a8a2a06e4a3150e413875051b551acfd6ad1f8"
+        },
+        {
+          "path": "tests/compute_batch/native_arena_reference_consumer.h",
+          "sha256": "645db5b2f1ceb1dc8265f02724ed26a1212228a99876bbb15c25468c30a56ff0"
+        },
+        {
+          "path": "tests/compute_batch/native_direct_consumer.cc",
+          "sha256": "42ad7ea08a7e4a24fbccdfa7f80ae34c4ba170b4951c1cf6389183974f3ff7c0"
+        },
+        {
+          "path": "tests/compute_batch/native_fault_consumer.cc",
+          "sha256": "66a502d6ad383b2569b99f3f551a9b62812cb2d5cb466982e06776526e8190cd"
+        },
+        {
+          "path": "tests/compute_batch/native_graph_consumer.cc",
+          "sha256": "c9a100e55a0a32fe221419db8e322fd01bb31bc51781d350b4b5e9c523906a6e"
+        },
+        {
+          "path": "tests/compute_batch/native_graph_faults.h",
+          "sha256": "3ac208d6e43c0825f64a31d5426aa079ed4da3f24f6754926ee3fbd5122b734c"
+        },
+        {
+          "path": "tests/compute_batch/native_ragged_append_consumer.h",
+          "sha256": "74b44c5808eea2718ac7734ba53603c340ffbd23ba03ed390509114ce2156064"
+        },
+        {
+          "path": "tests/compute_batch/native_ragged_graph_append_consumer.h",
+          "sha256": "075ca164a8b9989b3994c19c6679cb07d58d6985e456ec0b1c86c555479065a0"
+        },
+        {
+          "path": "tests/compute_batch/native_vulkan_failure_fixture.h",
+          "sha256": "955af6a8f8ea20160f36f760866676997b99a12848dbd456108a72c20b030b90"
+        },
+        {
+          "path": "tests/compute_batch/paged_arena_test.cc",
+          "sha256": "9f42b74ba3b35df0daf73347e91be201ae461aceb76f38d944a9fb0f018fbdae"
+        },
+        {
+          "path": "tests/compute_batch/public_batch_cpu_consumer.cc",
+          "sha256": "70c2ae42b2a752577872ccabd399e7b3804e98cb3db15505c8dc6919144c773a"
+        },
+        {
+          "path": "tests/compute_batch/public_batch_native_consumer.cc",
+          "sha256": "0b2946f264b084893657d1c90c262fe881cb0dc1fd8db0835bfb58a5c6ba53e1"
+        },
+        {
+          "path": "tests/compute_batch/ragged_append_journey.h",
+          "sha256": "a4a236ece69637f6aa9e4d785ea94adea98e80b9d46ba4ca1229cbb5b8afce95"
+        }
+      ],
+      "actual_cases": 33,
+      "verdict": "PASS_F5_COMMON_UBSAN_33",
+      "cpu_scope": "Actual CPU original Direct/Graph eight domains, paged/ragged append, cold OOM and accepted-error/F2 failure; public consumer; not GPU private memory",
+      "cpu_inputs": {
+        "materialized_cpu_consumer.cc": "dc25540478345eb4f169f7bfc766ff6560e1b5af44bef5c130a090710f2273a3",
+        "public_batch_cpu_consumer.cc": "70c2ae42b2a752577872ccabd399e7b3804e98cb3db15505c8dc6919144c773a"
+      },
+      "cpu_verdict": "PASS_F5_CPU_DIRECT_GRAPH_UBSAN",
+      "verified_instrumented_commands": [
+        "/usr/bin/g++-14 -DHYLE_COMPUTE_CPU=1 -DHYLE_COMPUTE_ONEDNN=1 -DHYLE_DETAIL_SANITIZER_UNDEFINED=1 -DHYLE_GRAPH_ONEDNN=1 -DHYLE_IO_HAS_COROUTINE_TRANSPORT=1 -DHYLE_STATIC -I/home/kiro/hyle-f1/sanitizers/source-03242e7723cb/include -O3 -DNDEBUG -std=c++23 -Wno-error=mismatched-new-delete -fsanitize=undefined -fno-sanitize-recover=all -MD -MT CMakeFiles/hyle_f5_san_cpu.dir/tests/compute_batch/materialized_cpu_consumer.cc.o -MF CMakeFiles/hyle_f5_san_cpu.dir/tests/compute_batch/materialized_cpu_consumer.cc.o.d -o CMakeFiles/hyle_f5_san_cpu.dir/tests/compute_batch/materialized_cpu_consumer.cc.o -c /home/kiro/hyle-f1/sanitizers/source-03242e7723cb/tests/compute_batch/materialized_cpu_consumer.cc",
+        "/usr/bin/g++-14 -DHYLE_COMPUTE_CPU=1 -DHYLE_COMPUTE_ONEDNN=1 -DHYLE_DETAIL_SANITIZER_UNDEFINED=1 -DHYLE_GRAPH_ONEDNN=1 -DHYLE_IO_HAS_COROUTINE_TRANSPORT=1 -DHYLE_STATIC -I/home/kiro/hyle-f1/sanitizers/source-03242e7723cb/include -O3 -DNDEBUG -std=c++23 -Wno-error=mismatched-new-delete -fsanitize=undefined -fno-sanitize-recover=all -MD -MT CMakeFiles/hyle_f5_san_public_cpu.dir/tests/compute_batch/public_batch_cpu_consumer.cc.o -MF CMakeFiles/hyle_f5_san_public_cpu.dir/tests/compute_batch/public_batch_cpu_consumer.cc.o.d -o CMakeFiles/hyle_f5_san_public_cpu.dir/tests/compute_batch/public_batch_cpu_consumer.cc.o -c /home/kiro/hyle-f1/sanitizers/source-03242e7723cb/tests/compute_batch/public_batch_cpu_consumer.cc",
+        "/usr/bin/g++-14 -DHYLE_COMPUTE_BATCH_BUILD -DHYLE_DETAIL_SANITIZER_UNDEFINED=1 -DHYLE_STATIC -I/home/kiro/hyle-f1/sanitizers/source-03242e7723cb/include -I/home/kiro/hyle-f1/sanitizers/source-03242e7723cb/src/compute_batch -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Wno-error=mismatched-new-delete -fsanitize=undefined -fno-sanitize-recover=all -MD -MT src/compute_batch/CMakeFiles/hyle_compute_batch.dir/materialized_invocation.cc.o -MF src/compute_batch/CMakeFiles/hyle_compute_batch.dir/materialized_invocation.cc.o.d -o src/compute_batch/CMakeFiles/hyle_compute_batch.dir/materialized_invocation.cc.o -c /home/kiro/hyle-f1/sanitizers/source-03242e7723cb/src/compute_batch/materialized_invocation.cc",
+        "/usr/bin/g++-14 -DHYLE_DETAIL_SANITIZER_UNDEFINED=1 -DHYLE_GRAPH_BATCH_BUILD -DHYLE_STATIC -I/home/kiro/hyle-f1/sanitizers/source-03242e7723cb/include -I/home/kiro/hyle-f1/sanitizers/source-03242e7723cb/src/graph_batch -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Wno-error=mismatched-new-delete -fsanitize=undefined -fno-sanitize-recover=all -MD -MT src/graph_batch/CMakeFiles/hyle_graph_batch.dir/materialized_invocation.cc.o -MF src/graph_batch/CMakeFiles/hyle_graph_batch.dir/materialized_invocation.cc.o.d -o src/graph_batch/CMakeFiles/hyle_graph_batch.dir/materialized_invocation.cc.o -c /home/kiro/hyle-f1/sanitizers/source-03242e7723cb/src/graph_batch/materialized_invocation.cc",
+        "/usr/bin/g++-14 -DHYLE_DETAIL_SANITIZER_UNDEFINED=1 -DHYLE_GRAPH_BUILD -DHYLE_STATIC -I/home/kiro/hyle-f1/sanitizers/source-03242e7723cb/include -I/home/kiro/hyle-f1/sanitizers/source-03242e7723cb/src/graph -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Wno-error=mismatched-new-delete -fsanitize=undefined -fno-sanitize-recover=all -MD -MT src/graph/CMakeFiles/hyle_graph.dir/leased_invocation.cc.o -MF src/graph/CMakeFiles/hyle_graph.dir/leased_invocation.cc.o.d -o src/graph/CMakeFiles/hyle_graph.dir/leased_invocation.cc.o -c /home/kiro/hyle-f1/sanitizers/source-03242e7723cb/src/graph/leased_invocation.cc"
+      ]
+    },
+    "tsan": {
+      "candidate": "77df1c10c7a909d6f2a99a99551e599ddb74f096",
+      "mode": "tsan",
+      "source": "/home/kiro/hyle-f1/sanitizers/source-03242e7723cb",
+      "build": "/home/kiro/hyle-f1/sanitizers/tsan-03242e7723cb",
+      "compiler": "g++-14 (Ubuntu 14.2.0-4ubuntu2~24.04.1) 14.2.0\nCopyright (C) 2024 Free Software Foundation, Inc.\nThis is free software; see the source for copying conditions.  There is NO\nwarranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.\n\n",
+      "scope": "F5 candidate common33 layout/materialization/page ownership/OOM/concurrency only; no old F4/operator catalogue",
+      "test_parallel": 1,
+      "stages": [
+        {
+          "name": "configure",
+          "command": [
+            "/usr/bin/cmake",
+            "-S",
+            "/home/kiro/hyle-f1/sanitizers/source-03242e7723cb",
+            "-B",
+            "/home/kiro/hyle-f1/sanitizers/tsan-03242e7723cb",
+            "-UHYLE_COMPONENTS",
+            "-UHYLE_COMPUTE_ROUTES",
+            "-UCMAKE_PROJECT_TOP_LEVEL_INCLUDES",
+            "-DHYLE_DEV_FACTORS:STRING=compute_batch",
+            "-DHYLE_BUILD_TESTS:BOOL=ON",
+            "-DHYLE_BUILD_BENCH:BOOL=OFF",
+            "-DHYLE_INSTALL:BOOL=OFF",
+            "-DHYLE_SANITIZER:STRING=tsan",
+            "-DHYLE_WERROR:BOOL=OFF"
+          ],
+          "pid": 650,
+          "state": "terminal",
+          "available_bytes": 32416378880,
+          "log": "configure.log",
+          "exit_code": 0,
+          "verdict": "PASS",
+          "elapsed": 5.873648837999999,
+          "sha256": "b11ac23e639155952dea74a01ea03c3534d6611a8e42bad031d7f037855dd32f"
+        },
+        {
+          "name": "build",
+          "command": [
+            "/usr/bin/cmake",
+            "--build",
+            "/home/kiro/hyle-f1/sanitizers/tsan-03242e7723cb",
+            "--target",
+            "hyle_compute_batch_test",
+            "--parallel",
+            "4"
+          ],
+          "pid": 724,
+          "state": "terminal",
+          "available_bytes": 32169267200,
+          "log": "build.log",
+          "exit_code": 0,
+          "verdict": "PASS",
+          "elapsed": 6.426891226999999,
+          "sha256": "9a7cebf3cdfef505af950e9ba3943d09a842ff9651a2c8b33be8dbbbc9213805"
+        },
+        {
+          "name": "tests",
+          "command": [
+            "/home/kiro/hyle-f1/sanitizers/tsan-03242e7723cb/bin/hyle_compute_batch_test",
+            "--gtest_output=xml:/root/hyle-scratch/compute-unified/foundation-f5-tsan-77df1c10c/tests.xml"
+          ],
+          "pid": 796,
+          "state": "terminal",
+          "available_bytes": 31666032640,
+          "log": "tests.log",
+          "exit_code": 66,
+          "verdict": "FAIL",
+          "elapsed": 0.0077643320000007066,
+          "sha256": "385ac408080d6683e66be8aa2662c4a5fc48b472b75fe79488b9bcf433d86ce5"
+        },
+        {
+          "name": "tests-resume1",
+          "command": [
+            "/usr/bin/setarch",
+            "x86_64",
+            "-R",
+            "/home/kiro/hyle-f1/sanitizers/tsan-03242e7723cb/bin/hyle_compute_batch_test",
+            "--gtest_output=xml:/root/hyle-scratch/compute-unified/foundation-f5-tsan-77df1c10c/tests.xml"
+          ],
+          "pid": 649,
+          "state": "terminal",
+          "available_bytes": 32464052224,
+          "log": "tests-resume1.log",
+          "exit_code": 0,
+          "verdict": "PASS",
+          "elapsed": 0.03218315199999999,
+          "sha256": "1caf28beb13f7e8135e98f7fd654af8a778bd0550f4f38db584d75cab2c18798"
+        },
+        {
+          "name": "cpu-configure",
+          "budget_group": "configure",
+          "command": [
+            "/usr/bin/cmake",
+            "-S",
+            "/home/kiro/hyle-f1/sanitizers/source-03242e7723cb",
+            "-B",
+            "/home/kiro/hyle-f1/sanitizers/tsan-03242e7723cb",
+            "-DCMAKE_PROJECT_TOP_LEVEL_INCLUDES:FILEPATH=/root/hyle-scratch/compute-unified/foundation-f5-tsan-77df1c10c/cpu-consumer.cmake",
+            "-UHYLE_DEV_FACTORS",
+            "-DHYLE_COMPONENTS:STRING=compute;graph",
+            "-DHYLE_COMPUTE_ROUTES:STRING=cpu",
+            "-DHYLE_BUILD_TESTS:BOOL=OFF",
+            "-DHYLE_BUILD_BENCH:BOOL=OFF",
+            "-DHYLE_INSTALL:BOOL=OFF",
+            "-DHYLE_SANITIZER:STRING=tsan",
+            "-DHYLE_WERROR:BOOL=OFF"
+          ],
+          "pid": 629,
+          "state": "terminal",
+          "available_bytes": 32447676416,
+          "log": "cpu-configure.log",
+          "elapsed": 14.991085845999976,
+          "exit_code": 0,
+          "verdict": "PASS",
+          "sha256": "259d9761062d2fb0e7092aa3e50cf1d3cb10cd623d7babf73c3e509d34959344"
+        },
+        {
+          "name": "cpu-build",
+          "budget_group": "build",
+          "command": [
+            "/usr/bin/cmake",
+            "--build",
+            "/home/kiro/hyle-f1/sanitizers/tsan-03242e7723cb",
+            "--target",
+            "hyle_f5_san_cpu",
+            "hyle_f5_san_public_cpu",
+            "--parallel",
+            "4"
+          ],
+          "pid": 653,
+          "state": "terminal",
+          "available_bytes": 32531902464,
+          "log": "cpu-build.log",
+          "elapsed": 43.76811006499997,
+          "exit_code": 0,
+          "verdict": "PASS",
+          "sha256": "e9dd34a03fe6c6e3b7a4eb580c09070b66c7a8e2433db844210a576ad2548c37"
+        },
+        {
+          "name": "cpu-run-hyle_f5_san_public_cpu",
+          "budget_group": "consumer",
+          "command": [
+            "/usr/bin/setarch",
+            "x86_64",
+            "-R",
+            "/home/kiro/hyle-f1/sanitizers/tsan-03242e7723cb/bin/hyle_f5_san_public_cpu"
+          ],
+          "pid": 990,
+          "state": "terminal",
+          "available_bytes": 31472472064,
+          "log": "cpu-run-hyle_f5_san_public_cpu.log",
+          "elapsed": 0.41519579600003453,
+          "exit_code": 0,
+          "verdict": "PASS",
+          "sha256": "59dcd4a4b09b268013e4b6b9b5f967464c3512a96b978fc8c7cadc7fc83ec632"
+        },
+        {
+          "name": "cpu-run-hyle_f5_san_cpu",
+          "budget_group": "consumer",
+          "command": [
+            "/usr/bin/setarch",
+            "x86_64",
+            "-R",
+            "/home/kiro/hyle-f1/sanitizers/tsan-03242e7723cb/bin/hyle_f5_san_cpu"
+          ],
+          "pid": 991,
+          "state": "terminal",
+          "available_bytes": 31491952640,
+          "log": "cpu-run-hyle_f5_san_cpu.log",
+          "elapsed": 0.9160747450000599,
+          "exit_code": 0,
+          "verdict": "PASS",
+          "sha256": "d09bd8e93092a90cefebc96afd69acf07916366f797e07c97684169d78c9a7f2"
+        }
+      ],
+      "inputs": [
+        {
+          "path": "src/compute_batch/CMakeLists.txt",
+          "sha256": "0eda46ceb8cef71b087ba3d02ce4bc972d83e78e0c03a7074fc4259577603a16"
+        },
+        {
+          "path": "src/compute_batch/batch_execution.cc",
+          "sha256": "6af0d9b26e37cde36972e3b0d40674c772cfdc3adbcaff83fb1ca3be967a8bb9"
+        },
+        {
+          "path": "src/compute_batch/batch_layout.cc",
+          "sha256": "9643f20396e320aac8f2184ddd243f996a70ee46e81487eb397fa3a54ac020f4"
+        },
+        {
+          "path": "src/compute_batch/batch_materialize.cc",
+          "sha256": "6313f696f2041ce06cc31f0ceeb8506906689bf3c475368d69232de7a943e967"
+        },
+        {
+          "path": "src/compute_batch/materialized_invocation.cc",
+          "sha256": "860a21558c660eba7c581507b62e89c5a75c57db7547c13c7d860c454b7b272a"
+        },
+        {
+          "path": "src/compute_batch/paged_arena.cc",
+          "sha256": "ee4fcd775f6cc9b1da8f781c40f8bc98481233444209316a48b2527b3964f142"
+        },
+        {
+          "path": "tests/compute_batch/CMakeLists.txt",
+          "sha256": "c1edd25e57c49dc096e3dc94031e445834d9c555297e85c203001b41a153cc05"
+        },
+        {
+          "path": "tests/compute_batch/allocation_fault_fixture.h",
+          "sha256": "7fc5d108ebfbe46853a14fb74b4c504721442757cd4aeab10f1314a9f03943dc"
+        },
+        {
+          "path": "tests/compute_batch/batch_layout_test.cc",
+          "sha256": "420b26027914ebc73c5654f49a363b7f5e707c031fe6100763de9295e03c5167"
+        },
+        {
+          "path": "tests/compute_batch/batch_materialize_test.cc",
+          "sha256": "d3e982acb98ccc6f6d22a5c04b0205a74df9d404117dc0a91460e0b5809eff3c"
+        },
+        {
+          "path": "tests/compute_batch/host_failure_fixture.h",
+          "sha256": "57bb705c7bbe4c2fc71e4cf228138b0fdbf03b6c78521343a018be3a120cdbd5"
+        },
+        {
+          "path": "tests/compute_batch/materialized_cpu_consumer.cc",
+          "sha256": "dc25540478345eb4f169f7bfc766ff6560e1b5af44bef5c130a090710f2273a3"
+        },
+        {
+          "path": "tests/compute_batch/materialized_host_controller_consumer.h",
+          "sha256": "e487b5249d1f65b8af7c3e3e466b4368a41de8f5d43f10c939e20a648b6af1a8"
+        },
+        {
+          "path": "tests/compute_batch/materialized_native_consumer.cc",
+          "sha256": "7b6c8292c693e3464040f92108dd06ee186d0ae927f0991eef650e2801f3a9c9"
+        },
+        {
+          "path": "tests/compute_batch/native_apple_failure_fixture.h",
+          "sha256": "fdb33f4f810aa078793a464450808da43e3d386721725a506e2c3697d4be2208"
+        },
+        {
+          "path": "tests/compute_batch/native_arena_direct_consumer.h",
+          "sha256": "42bbb89bd43d12f752719ef10efa261127004880d87cd005f2cd19c232ba888e"
+        },
+        {
+          "path": "tests/compute_batch/native_arena_graph_consumer.h",
+          "sha256": "d58f9c6e255c987a60ce30c8a8a8a2a06e4a3150e413875051b551acfd6ad1f8"
+        },
+        {
+          "path": "tests/compute_batch/native_arena_reference_consumer.h",
+          "sha256": "645db5b2f1ceb1dc8265f02724ed26a1212228a99876bbb15c25468c30a56ff0"
+        },
+        {
+          "path": "tests/compute_batch/native_direct_consumer.cc",
+          "sha256": "42ad7ea08a7e4a24fbccdfa7f80ae34c4ba170b4951c1cf6389183974f3ff7c0"
+        },
+        {
+          "path": "tests/compute_batch/native_fault_consumer.cc",
+          "sha256": "66a502d6ad383b2569b99f3f551a9b62812cb2d5cb466982e06776526e8190cd"
+        },
+        {
+          "path": "tests/compute_batch/native_graph_consumer.cc",
+          "sha256": "c9a100e55a0a32fe221419db8e322fd01bb31bc51781d350b4b5e9c523906a6e"
+        },
+        {
+          "path": "tests/compute_batch/native_graph_faults.h",
+          "sha256": "3ac208d6e43c0825f64a31d5426aa079ed4da3f24f6754926ee3fbd5122b734c"
+        },
+        {
+          "path": "tests/compute_batch/native_ragged_append_consumer.h",
+          "sha256": "74b44c5808eea2718ac7734ba53603c340ffbd23ba03ed390509114ce2156064"
+        },
+        {
+          "path": "tests/compute_batch/native_ragged_graph_append_consumer.h",
+          "sha256": "075ca164a8b9989b3994c19c6679cb07d58d6985e456ec0b1c86c555479065a0"
+        },
+        {
+          "path": "tests/compute_batch/native_vulkan_failure_fixture.h",
+          "sha256": "955af6a8f8ea20160f36f760866676997b99a12848dbd456108a72c20b030b90"
+        },
+        {
+          "path": "tests/compute_batch/paged_arena_test.cc",
+          "sha256": "9f42b74ba3b35df0daf73347e91be201ae461aceb76f38d944a9fb0f018fbdae"
+        },
+        {
+          "path": "tests/compute_batch/public_batch_cpu_consumer.cc",
+          "sha256": "70c2ae42b2a752577872ccabd399e7b3804e98cb3db15505c8dc6919144c773a"
+        },
+        {
+          "path": "tests/compute_batch/public_batch_native_consumer.cc",
+          "sha256": "0b2946f264b084893657d1c90c262fe881cb0dc1fd8db0835bfb58a5c6ba53e1"
+        },
+        {
+          "path": "tests/compute_batch/ragged_append_journey.h",
+          "sha256": "a4a236ece69637f6aa9e4d785ea94adea98e80b9d46ba4ca1229cbb5b8afce95"
+        }
+      ],
+      "recovery": {
+        "reason": "Known WSL/GCC TSan startup address layout; process-local ASLR disable only. Original exit66 preserved; no suppression or code/flags change.",
+        "budget_reset": false
+      },
+      "actual_cases": 33,
+      "verdict": "PASS_F5_COMMON_TSAN_33",
+      "cpu_scope": "Actual CPU original Direct/Graph eight domains, paged/ragged append, cold OOM and accepted-error/F2 failure; public consumer; not GPU private memory",
+      "cpu_inputs": {
+        "materialized_cpu_consumer.cc": "dc25540478345eb4f169f7bfc766ff6560e1b5af44bef5c130a090710f2273a3",
+        "public_batch_cpu_consumer.cc": "70c2ae42b2a752577872ccabd399e7b3804e98cb3db15505c8dc6919144c773a"
+      },
+      "cpu_verdict": "PASS_F5_CPU_DIRECT_GRAPH_TSAN",
+      "verified_instrumented_commands": [
+        "/usr/bin/g++-14 -DHYLE_COMPUTE_CPU=1 -DHYLE_COMPUTE_ONEDNN=1 -DHYLE_DETAIL_SANITIZER_THREAD=1 -DHYLE_GRAPH_ONEDNN=1 -DHYLE_IO_HAS_COROUTINE_TRANSPORT=1 -DHYLE_STATIC -I/home/kiro/hyle-f1/sanitizers/source-03242e7723cb/include -O3 -DNDEBUG -std=c++23 -Wno-error=mismatched-new-delete -fsanitize=thread -Wno-tsan -MD -MT CMakeFiles/hyle_f5_san_cpu.dir/tests/compute_batch/materialized_cpu_consumer.cc.o -MF CMakeFiles/hyle_f5_san_cpu.dir/tests/compute_batch/materialized_cpu_consumer.cc.o.d -o CMakeFiles/hyle_f5_san_cpu.dir/tests/compute_batch/materialized_cpu_consumer.cc.o -c /home/kiro/hyle-f1/sanitizers/source-03242e7723cb/tests/compute_batch/materialized_cpu_consumer.cc",
+        "/usr/bin/g++-14 -DHYLE_COMPUTE_CPU=1 -DHYLE_COMPUTE_ONEDNN=1 -DHYLE_DETAIL_SANITIZER_THREAD=1 -DHYLE_GRAPH_ONEDNN=1 -DHYLE_IO_HAS_COROUTINE_TRANSPORT=1 -DHYLE_STATIC -I/home/kiro/hyle-f1/sanitizers/source-03242e7723cb/include -O3 -DNDEBUG -std=c++23 -Wno-error=mismatched-new-delete -fsanitize=thread -Wno-tsan -MD -MT CMakeFiles/hyle_f5_san_public_cpu.dir/tests/compute_batch/public_batch_cpu_consumer.cc.o -MF CMakeFiles/hyle_f5_san_public_cpu.dir/tests/compute_batch/public_batch_cpu_consumer.cc.o.d -o CMakeFiles/hyle_f5_san_public_cpu.dir/tests/compute_batch/public_batch_cpu_consumer.cc.o -c /home/kiro/hyle-f1/sanitizers/source-03242e7723cb/tests/compute_batch/public_batch_cpu_consumer.cc",
+        "/usr/bin/g++-14 -DHYLE_COMPUTE_BATCH_BUILD -DHYLE_DETAIL_SANITIZER_THREAD=1 -DHYLE_STATIC -I/home/kiro/hyle-f1/sanitizers/source-03242e7723cb/include -I/home/kiro/hyle-f1/sanitizers/source-03242e7723cb/src/compute_batch -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Wno-error=mismatched-new-delete -fsanitize=thread -Wno-tsan -MD -MT src/compute_batch/CMakeFiles/hyle_compute_batch.dir/materialized_invocation.cc.o -MF src/compute_batch/CMakeFiles/hyle_compute_batch.dir/materialized_invocation.cc.o.d -o src/compute_batch/CMakeFiles/hyle_compute_batch.dir/materialized_invocation.cc.o -c /home/kiro/hyle-f1/sanitizers/source-03242e7723cb/src/compute_batch/materialized_invocation.cc",
+        "/usr/bin/g++-14 -DHYLE_DETAIL_SANITIZER_THREAD=1 -DHYLE_GRAPH_BATCH_BUILD -DHYLE_STATIC -I/home/kiro/hyle-f1/sanitizers/source-03242e7723cb/include -I/home/kiro/hyle-f1/sanitizers/source-03242e7723cb/src/graph_batch -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Wno-error=mismatched-new-delete -fsanitize=thread -Wno-tsan -MD -MT src/graph_batch/CMakeFiles/hyle_graph_batch.dir/materialized_invocation.cc.o -MF src/graph_batch/CMakeFiles/hyle_graph_batch.dir/materialized_invocation.cc.o.d -o src/graph_batch/CMakeFiles/hyle_graph_batch.dir/materialized_invocation.cc.o -c /home/kiro/hyle-f1/sanitizers/source-03242e7723cb/src/graph_batch/materialized_invocation.cc",
+        "/usr/bin/g++-14 -DHYLE_DETAIL_SANITIZER_THREAD=1 -DHYLE_GRAPH_BUILD -DHYLE_STATIC -I/home/kiro/hyle-f1/sanitizers/source-03242e7723cb/include -I/home/kiro/hyle-f1/sanitizers/source-03242e7723cb/src/graph -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Wno-error=mismatched-new-delete -fsanitize=thread -Wno-tsan -MD -MT src/graph/CMakeFiles/hyle_graph.dir/leased_invocation.cc.o -MF src/graph/CMakeFiles/hyle_graph.dir/leased_invocation.cc.o.d -o src/graph/CMakeFiles/hyle_graph.dir/leased_invocation.cc.o -c /home/kiro/hyle-f1/sanitizers/source-03242e7723cb/src/graph/leased_invocation.cc"
+      ]
+    }
+  },
+  "raw_sha256": "362447225952dc10e603e7d385f26da2180e65d32e848515782807321b7a4fd7"
+}

@@ -1,0 +1,44 @@
+{
+  "baseline": "77df1c10c7a909d6f2a99a99551e599ddb74f096",
+  "candidate": "25e4fb398e2a782ee60f916c3c6351c4736b6eda",
+  "changed_product_files": [
+    "cmake/HyleComponents.cmake",
+    "include/hyle/compute/cuda.h",
+    "src/compute_route_cuda/CMakeLists.txt"
+  ],
+  "exact_changed_graph_rows": [
+    {
+      "before": "factor|compute_route_cuda|FALSE|core;compute;compute_backend_cuda;mem;compute_stream;io_core|platform;platform_thread;compute_ops;container;util_core;compute_provider_cublas;compute_provider_cuda;compute_provider_flashinfer;compute_provider_ggml_cuda;compute_provider_torch_cuda||hyle/compute/cuda.h;hyle/compute/cuda_weights.h",
+      "after": "factor|compute_route_cuda|FALSE|core;compute;compute_backend_cuda;compute_provider_flashinfer;mem;compute_stream;io_core|platform;platform_thread;compute_ops;container;util_core;compute_provider_cublas;compute_provider_cuda;compute_provider_ggml_cuda;compute_provider_torch_cuda||hyle/compute/cuda.h;hyle/compute/cuda_weights.h"
+    }
+  ],
+  "all_dependency_unions_unchanged": true,
+  "other_factor_rows_and_products_identical": true,
+  "unchanged_sdk_cells": {
+    "foundation-f5-sdk-windows-cpu-vulkan-static": {
+      "original_candidate": "77df1c10c7a909d6f2a99a99551e599ddb74f096",
+      "qualification": "unchanged selected route inputs; CUDA factor/header absent, central closure/dependencies for every other factor unchanged",
+      "cuda_header_absent": true,
+      "original_receipt_sha256": "9bf343bd796b51a48b7d487ec6d1de51c514f31d85d72d86e85542416a8f1ee9"
+    },
+    "foundation-f5-sdk-windows-cpu-vulkan-shared": {
+      "original_candidate": "77df1c10c7a909d6f2a99a99551e599ddb74f096",
+      "qualification": "unchanged selected route inputs; CUDA factor/header absent, central closure/dependencies for every other factor unchanged",
+      "cuda_header_absent": true,
+      "original_receipt_sha256": "bb5807b8ac6ae5e17eef714c98a38f922605543143c2b5d647058a4ee48268e0"
+    },
+    "foundation-f5-native-sdk-windows-vulkan-static": {
+      "original_candidate": "77df1c10c7a909d6f2a99a99551e599ddb74f096",
+      "qualification": "unchanged selected route inputs; CUDA factor/header absent, central closure/dependencies for every other factor unchanged",
+      "cuda_header_absent": true,
+      "original_receipt_sha256": "8fe40cbe097a9c33bb81c26a74f0d1d86dade0f2c729374e2a2e6c23b8d799dc"
+    },
+    "foundation-f5-native-sdk-windows-vulkan-shared": {
+      "original_candidate": "77df1c10c7a909d6f2a99a99551e599ddb74f096",
+      "qualification": "unchanged selected route inputs; CUDA factor/header absent, central closure/dependencies for every other factor unchanged",
+      "cuda_header_absent": true,
+      "original_receipt_sha256": "daa5b06096212ab44413b02f76ce8f724e0f7840f48f628d4cccf760c73092de"
+    }
+  },
+  "validation_selection_note": "Selector conservatively marks every factor/product on any central manifest edit. The user goal and finite owner card restrict runtime validation to actual owner/direct consumers/package seams; no unrelated old operator suites replayed. Component contract runs separately; unchanged qualification is a source/graph proof, not newly run tests."
+}
