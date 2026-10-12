@@ -74,6 +74,8 @@
 | graph_route_cpu_vulkan | CLOSED | P0 / [PASS](../../evidence/architecture/foundation-a-p0/README.md) | [record](tasks/graph/foundation-a-final-closure.md) | Foundation A CLOSED：有限exact/control/qualified CPU effects与原身份/alias/OOM/失败前缀/取消/旧结果完成；18 installed格、原生缺CPU、实际Win/WSL/Air适用source及sanitizer、P0/LOC和终审通过。general/capture/GPU mutable/paged与整引擎性能不外推，F4/F5继续独立goal。 |
 | compute_stream | CLOSED | P0 / [PASS](tasks/compute/foundation-f3-p0-cost-review.md) | [record](tasks/compute/foundation-f3-final-closure.md) | F3 CLOSED：原八FIX的有界双向文件/资源管线、四自然路线/逐组ready、实际Qwen BF16/F32与原编码Direct+Graph往返、当前native寿命/错误/取消/direct IO和三sanitizer风险、适用source/迁址static/shared/新头/缺席/运行库、P0与红队通过；原suffix FAIL/有限纠正保留，未测硬件/软件GPU及driver私有成本不外推。 |
 | compute_state | CLOSED | P0 / [PASS](../../evidence/performance/foundation-f4-p0/README.md) | [record](tasks/compute/foundation-f4-final-closure.md) | F4 CLOSED：显式immutable集合/分享/dirty原F2 clone/成功发布/旧version与native-use保活，common24/三san及实际native故障、五source/18适用迁址SDK、P0/LOC/指南/红队通过；旧F1–F3与九package-only源码范围不改，F5/engine性能未代签。 |
+| compute_batch | QUEUED | — | — | F5身份预留：typed paged/ragged容量与metadata版本、原native显式batch preparation及四路线显式资格；无产品实现/target/公头。 |
+| graph_batch | QUEUED | — | — | F5身份预留：opt-in BatchPlanning与原Graph/region同slot协调接缝；普通19版region/Invocation不变，无产品实现。 |
 
 <!-- END GENERATED MODULE STATUS -->
 

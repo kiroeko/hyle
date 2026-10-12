@@ -702,6 +702,16 @@
         "tier": "P0",
         "evidence": "evidence/performance/foundation-f4-p0/README.md"
       }
+    },
+    {
+      "module": "compute_batch",
+      "state": "QUEUED",
+      "summary": "F5身份预留：typed paged/ragged容量与metadata版本、原native显式batch preparation及四路线显式资格；无产品实现/target/公头。"
+    },
+    {
+      "module": "graph_batch",
+      "state": "QUEUED",
+      "summary": "F5身份预留：opt-in BatchPlanning与原Graph/region同slot协调接缝；普通19版region/Invocation不变，无产品实现。"
     }
   ]
 }

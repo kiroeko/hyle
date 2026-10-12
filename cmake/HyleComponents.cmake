@@ -551,6 +551,10 @@ _hyle_declare_component(compute_state
   SPLIT_PUBLIC_HEADERS hyle/compute/state_versions.h hyle/compute/state_clone.h
     hyle/compute/detail/state_clone_access.h)
 
+  # F5 ownership reservations; no targets, headers or product roots yet.
+  _hyle_declare_component(compute_batch QUEUED)
+  _hyle_declare_component(graph_batch QUEUED)
+
 # Product facades are deliberately outside the factor DAG. They have no source,
 # module status, or decision authority and must never be used by an internal
 # factor edge. A facade only selects the exact factor roots that make one
