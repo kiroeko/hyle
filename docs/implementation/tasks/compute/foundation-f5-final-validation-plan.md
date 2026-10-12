@@ -31,7 +31,7 @@ native paged未准入，验证具名拒绝。WSL native Vulkan只有包资格，
 
 | host | 产品routes | static/shared格数 | 普通消费与资格 | 当前完整F5格 |
 |---|---|---|---|---|
-| Windows | cpu,cuda | 2 | CPU reference；CUDA native batch unsupported具名诊断/缺席与loader | NOT_RUN |
+| Windows | cpu,cuda | 2 | CPU reference；CUDA native batch unsupported具名诊断/缺席与loader | static/shared CANDIDATE PASS |
 | Windows | cpu,vulkan | 2 | CPU与actual Vulkan两条Direct/Graph；迁址/heads/absence/loader | static/shared CANDIDATE PASS |
 | Windows | vulkan only | 2 | actual Vulkan，无CPU factor/回退 | static/shared CANDIDATE PASS |
 | WSL | cpu,cuda | 2 | CPU与actual CUDA FI paged/ragged/D256 Direct/Graph | NOT_RUN |

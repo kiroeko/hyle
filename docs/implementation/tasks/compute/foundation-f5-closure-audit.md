@@ -289,6 +289,17 @@ public typed Direct与native Graph factory、same-layout镜像与old result拒�
 沿原Win Vulkan/Air Apple/Vulkan root/tree/config/预算累计，只定向新的public消费者；
 后续复制到隔离SDK目录，从自然Compute/Graph发现，不替代18格或candidate最终资格。
 
+## 固定candidate Windows cpu,cuda SDK
+
+77df1c10c的Windows cpu,cuda static/shared两格普通Compute/Graph迁址消费PASS：公开
+CPU四域Direct/Graph oracle；actual RTX4070 CUDA Direct BatchPlanning具名Unimplemented，
+typed ragged Graph执行前拒绝。各14 supplied头独立TU、Apple/Vulkan缺头/缺route、实际
+rename、无源码/build路径的package metadata、imports/干净loader与DLL hashes均记录。
+证据见[static](../../../../evidence/correctness/foundation-f5-sdk-windows-cpu-cuda-static/README.md)
+与[shared](../../../../evidence/correctness/foundation-f5-sdk-windows-cpu-cuda-shared/README.md)。
+static helper初次把已选CUDA头误列入Vulkan缺头断言，测试脚本已纠正；没有产品改动，
+原成功stage和elapsed保留。当前SDK6/18，Linux FI/D256及Air等其余12格未由此代签。
+
 [公开native源码收据](../../../../evidence/correctness/foundation-f5-public-native-source/README.md)：
 Win Vulkan/Air Apple/Vulkan各四域Direct/Graph独立oracle共24、原F2/public页权限/同镜像/
 old result通过。用户guide已加四路线选择、生命周期、explicit reference成本与capture缺席，

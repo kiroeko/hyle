@@ -48,9 +48,16 @@ Compute/Graph不含SIMD，本批次数学不需要它。只把固定0/.125/.25/.
 为明确F16/BF16 word，不加产品边/API或新数学；原FAIL与同root预算保留，消费者重编译。
 product candidate77df未变，当前测试可补但资格按各实际fixture hash区分。
 
-当前SDK4/18：Win cpu,vulkan static/shared与native-only Vulkan static/shared实际公开
-Direct/Graph/迁址/供头/缺route/loader PASS；其他14格仍NOT_RUN。common33 ASan/UBSan/
+当前SDK6/18：Win cpu,cuda、cpu,vulkan static/shared与native-only Vulkan static/shared实际公开
+消费/迁址/供头/缺route/loader PASS；其他12格仍NOT_RUN。Windows CUDA native batch只签
+具名拒绝，数学资格不冒充Linux FlashInfer。common33 ASan/UBSan/
 TSan均PASS，TSan启动exit66与process-local ASLR恢复保留，不代签控制器/native host-control。
 证据分别在foundation-f5-sdk-windows-cpu-vulkan-*、foundation-f5-native-sdk-windows-vulkan-*
 与[common san](../../../../evidence/correctness/foundation-f5-common-sanitizers/README.md)，
 完整剩余七门/原goal继续，不把这些局部门改成CLOSED标准。
+
+Windows cpu,cuda两SDK格使用公开CPU consumer，加public_batch_cuda_absence_consumer在
+actual CUDA device上验证Direct BatchPlanning具名Unimplemented与typed ragged Graph
+在执行前拒绝；不能调用缺席FlashInfer接口或拿Linux/CPU数学冒充此格。只测试补充、产品
+candidate77df未变。两格各原producer身份/tree/cache与F5新累计继续，supplier头按闭包、
+route absence与实际迁址/loader均实证；Linux native/D256另在其SDK格运行。
