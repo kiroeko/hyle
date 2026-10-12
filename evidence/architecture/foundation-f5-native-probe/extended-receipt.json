@@ -1,0 +1,160 @@
+{
+  "scope": "F5 SCOPED locked upstream C++ native paged/ragged lowering probe; not HYLE product/Graph/capture qualification",
+  "baseline": "db8861394",
+  "flashinfer_pin": "69ff11fc4954396d98326656dc85debd2223f637",
+  "identity": {
+    "os": "Linux kiro-workstation 6.18.40.1-microsoft-standard-WSL2 #1 SMP PREEMPT_DYNAMIC Fri Jul 31 22:12:15 UTC 2026 x86_64 x86_64 x86_64 GNU/Linux",
+    "gpu": "NVIDIA GeForce RTX 4070, GPU-e7376560-6f5d-ec19-6ee4-3dd3a2c81ef8, 617.14",
+    "nvcc": "nvcc: NVIDIA (R) Cuda compiler driver\nCopyright (c) 2005-2026 NVIDIA Corporation\nBuilt on Tue_Jun_09_02:43:40_PM_PDT_2026\nCuda compilation tools, release 13.3, V13.3.73\nBuild cuda_13.3.r13.3/compiler.38244171_0",
+    "host_compiler": "g++-14 (Ubuntu 14.2.0-4ubuntu2~24.04.1) 14.2.0\nCopyright (C) 2024 Free Software Foundation, Inc.\nThis is free software; see the source for copying conditions.  There is NO\nwarranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE."
+  },
+  "stages": [
+    {
+      "name": "build",
+      "command": [
+        "/usr/local/cuda-13.3/bin/nvcc",
+        "-std=c++17",
+        "-O2",
+        "-arch=sm_89",
+        "-ccbin",
+        "/usr/bin/g++-14",
+        "-DFLASHINFER_ENABLE_F16",
+        "-DFLASHINFER_ENABLE_BF16",
+        "-I/root/.cache/hyle/dependencies/v1/sources/flashinfer-69ff11fc4954-dda66e35e348/include",
+        "/root/hyle-scratch/foundation-f5-native-probe/native_batch_probe.cu",
+        "-o",
+        "/root/hyle-scratch/foundation-f5-native-probe/native_batch_probe"
+      ],
+      "pid": 659,
+      "state": "terminal",
+      "available_bytes": 32342892544,
+      "log": "build.log",
+      "input_sha256": "d4f2321c3d93d978ee9f50de76aecd11e9528304172a0caa1acf8f9cd6342120",
+      "elapsed": 16.807280410999997,
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "name": "run",
+      "command": [
+        "/root/hyle-scratch/foundation-f5-native-probe/native_batch_probe"
+      ],
+      "pid": 702,
+      "state": "terminal",
+      "available_bytes": 32289193984,
+      "log": "run.log",
+      "input_sha256": "d4f2321c3d93d978ee9f50de76aecd11e9528304172a0caa1acf8f9cd6342120",
+      "elapsed": 0.3646872409999986,
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "2a3cffdb7b39f7f0155ab634e1f54a2f30f82b0591c8885727bc7d808c5da5a5"
+    },
+    {
+      "name": "build-resume1",
+      "command": [
+        "/usr/local/cuda-13.3/bin/nvcc",
+        "-std=c++17",
+        "-O2",
+        "-arch=sm_89",
+        "-ccbin",
+        "/usr/bin/g++-14",
+        "-DFLASHINFER_ENABLE_F16",
+        "-DFLASHINFER_ENABLE_BF16",
+        "-I/root/.cache/hyle/dependencies/v1/sources/flashinfer-69ff11fc4954-dda66e35e348/include",
+        "/root/hyle-scratch/foundation-f5-native-probe/native_batch_probe.cu",
+        "-o",
+        "/root/hyle-scratch/foundation-f5-native-probe/native_batch_probe"
+      ],
+      "pid": 635,
+      "state": "terminal",
+      "available_bytes": 32423714816,
+      "log": "build-resume1.log",
+      "input_sha256": "117b715341be81e8d395cb40223a4a5d512bff0fadfe25864be505a7b30fd314",
+      "elapsed": 53.64821268499999,
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "name": "run-resume1",
+      "command": [
+        "/root/hyle-scratch/foundation-f5-native-probe/native_batch_probe"
+      ],
+      "pid": 674,
+      "state": "terminal",
+      "available_bytes": 32366899200,
+      "log": "run-resume1.log",
+      "input_sha256": "117b715341be81e8d395cb40223a4a5d512bff0fadfe25864be505a7b30fd314",
+      "elapsed": 0.6246363030000026,
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "c850f6462f631e014e4633c32afc65787d8e111bd12877ef04a0e6f9d376e0c2"
+    }
+  ],
+  "inputs": [
+    {
+      "path": "/root/hyle-scratch/foundation-f5-native-probe/native_batch_probe.cu",
+      "sha256": "117b715341be81e8d395cb40223a4a5d512bff0fadfe25864be505a7b30fd314"
+    },
+    {
+      "path": "/root/.cache/hyle/dependencies/v1/sources/flashinfer-69ff11fc4954-dda66e35e348/include/flashinfer/page.cuh",
+      "sha256": "98e0b40aa6a5007d767cc49b9a2421bf8df2fbea5045394982ea451892d03ace"
+    },
+    {
+      "path": "/root/.cache/hyle/dependencies/v1/sources/flashinfer-69ff11fc4954-dda66e35e348/include/flashinfer/attention/scheduler.cuh",
+      "sha256": "a11a39aea393cdb380ad9439aac9170cd96849d7426ebbb920c5c8cdadfcc575"
+    },
+    {
+      "path": "/root/.cache/hyle/dependencies/v1/sources/flashinfer-69ff11fc4954-dda66e35e348/include/flashinfer/attention/prefill.cuh",
+      "sha256": "f93cbea96e3a723254c15f5a52d6dd4c13e3892e88eb9b9fed1c0c0048c7d710"
+    },
+    {
+      "path": "/root/.cache/hyle/dependencies/v1/sources/flashinfer-69ff11fc4954-dda66e35e348/include/flashinfer/attention/default_prefill_params.cuh",
+      "sha256": "5b0545df7e134dc031e6a1179ec9c64a6d6b0e4d41b2cd98d3826165b3ed3615"
+    },
+    {
+      "path": "/root/.cache/hyle/dependencies/v1/sources/flashinfer-69ff11fc4954-dda66e35e348/include/flashinfer/attention/variants.cuh",
+      "sha256": "90a228dd71b3ce8030d663e2b16f67f840fe4a3e99912f8b47774d3fd905a080"
+    }
+  ],
+  "verdict": "PASS_NATIVE_CXX_PROBE_ONLY",
+  "binary_sha256": "6d4bb7d7c11f40e9666121210189c06efd81f0f1ad2d1bda89a560a9254e8794",
+  "input_history": [
+    [
+      {
+        "path": "/root/hyle-scratch/foundation-f5-native-probe/native_batch_probe.cu",
+        "sha256": "d4f2321c3d93d978ee9f50de76aecd11e9528304172a0caa1acf8f9cd6342120"
+      },
+      {
+        "path": "/root/.cache/hyle/dependencies/v1/sources/flashinfer-69ff11fc4954-dda66e35e348/include/flashinfer/page.cuh",
+        "sha256": "98e0b40aa6a5007d767cc49b9a2421bf8df2fbea5045394982ea451892d03ace"
+      },
+      {
+        "path": "/root/.cache/hyle/dependencies/v1/sources/flashinfer-69ff11fc4954-dda66e35e348/include/flashinfer/attention/scheduler.cuh",
+        "sha256": "a11a39aea393cdb380ad9439aac9170cd96849d7426ebbb920c5c8cdadfcc575"
+      },
+      {
+        "path": "/root/.cache/hyle/dependencies/v1/sources/flashinfer-69ff11fc4954-dda66e35e348/include/flashinfer/attention/prefill.cuh",
+        "sha256": "f93cbea96e3a723254c15f5a52d6dd4c13e3892e88eb9b9fed1c0c0048c7d710"
+      },
+      {
+        "path": "/root/.cache/hyle/dependencies/v1/sources/flashinfer-69ff11fc4954-dda66e35e348/include/flashinfer/attention/default_prefill_params.cuh",
+        "sha256": "5b0545df7e134dc031e6a1179ec9c64a6d6b0e4d41b2cd98d3826165b3ed3615"
+      },
+      {
+        "path": "/root/.cache/hyle/dependencies/v1/sources/flashinfer-69ff11fc4954-dda66e35e348/include/flashinfer/attention/variants.cuh",
+        "sha256": "90a228dd71b3ce8030d663e2b16f67f840fe4a3e99912f8b47774d3fd905a080"
+      }
+    ]
+  ],
+  "raw_archive": {
+    "name": "extended-raw.zip",
+    "sha256": "8769a464594df81151e902d754f2b05605ef89df333f5debc4d4ac377dedefce",
+    "stage_hashes_refer_to": "original archive entries"
+  },
+  "cumulative_seconds": {
+    "build": 70.45549309599998,
+    "run": 0.9893235440000012
+  }
+}

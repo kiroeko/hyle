@@ -89,3 +89,11 @@ Graph现存v19 PreparedRegion/RegionInvocation确实拥有opaque slot和workspac
 独立Direct slot不能冒充它；opt-in桥必须访问这同一原slot。Apple/Vulkan的原typed Program
 同样保留自身native owner，不能为统一签名转成共同Queue/CPU数学。原native原型后继续
 有限owner/API审计，状态仍SCOPED，六个FIX产品未开始。
+
+同原型根与累计预算核对head64/128/256、F16/BF16、paged/ragged共12场景PASS。
+head128长KV8193/4097实际native split-KV及merge执行：paged float workspace1,453,056字节/
+int604，ragged float1,486,080/int653；不能由batch shape或短域workspace0猜测plan相同。
+原planner临时vectors/occupancy/H2D与合并拓扑保留，未强制关闭split、未写新merge kernel。
+同根累计build70.455/run0.989秒，原4场景archive与精确输入历史仍保留。
+需变更的原Compute/Graph/FlashInfer接缝已按[独立卡](foundation-f5-owner-bridges.md)SCOPED，
+只允许新named extension/原region同slot桥/native批次承载，原19版/普通dense范围保留。

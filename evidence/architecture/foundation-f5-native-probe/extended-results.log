@@ -1,0 +1,12 @@
+NATIVE_CXX_PROBE paged F16 D=64 rows=3 requests=2 qlens=1,2 kvlens=19,10 shuffledPages=1 tail=3,10 GQA=2 cta=16 split=0 floatWorkspace=0 intWorkspace=64 maxError=0.000114918598 PASS
+NATIVE_CXX_PROBE ragged F16 D=64 rows=3 requests=2 qlens=1,2 kvlens=19,10 shuffledPages=1 tail=3,10 GQA=2 cta=16 split=0 floatWorkspace=0 intWorkspace=64 maxError=0.000114918598 PASS
+NATIVE_CXX_PROBE paged BF16 D=64 rows=3 requests=2 qlens=1,2 kvlens=19,10 shuffledPages=1 tail=3,10 GQA=2 cta=16 split=0 floatWorkspace=0 intWorkspace=64 maxError=0.00100582627 PASS
+NATIVE_CXX_PROBE ragged BF16 D=64 rows=3 requests=2 qlens=1,2 kvlens=19,10 shuffledPages=1 tail=3,10 GQA=2 cta=16 split=0 floatWorkspace=0 intWorkspace=64 maxError=0.00100582627 PASS
+NATIVE_CXX_PROBE paged F16 D=128 rows=3 requests=2 qlens=1,2 kvlens=8193,4097 shuffledPages=1 tail=1,1 GQA=2 cta=16 split=1 floatWorkspace=1453056 intWorkspace=604 maxError=2.63131998e-05 PASS
+NATIVE_CXX_PROBE ragged F16 D=128 rows=3 requests=2 qlens=1,2 kvlens=8193,4097 shuffledPages=1 tail=1,1 GQA=2 cta=16 split=1 floatWorkspace=1486080 intWorkspace=653 maxError=2.7811131e-05 PASS
+NATIVE_CXX_PROBE paged BF16 D=128 rows=3 requests=2 qlens=1,2 kvlens=8193,4097 shuffledPages=1 tail=1,1 GQA=2 cta=16 split=1 floatWorkspace=1453056 intWorkspace=604 maxError=0.000203713406 PASS
+NATIVE_CXX_PROBE ragged BF16 D=128 rows=3 requests=2 qlens=1,2 kvlens=8193,4097 shuffledPages=1 tail=1,1 GQA=2 cta=16 split=1 floatWorkspace=1486080 intWorkspace=653 maxError=0.000206542791 PASS
+NATIVE_CXX_PROBE paged F16 D=256 rows=3 requests=2 qlens=1,2 kvlens=19,10 shuffledPages=1 tail=3,10 GQA=2 cta=16 split=0 floatWorkspace=0 intWorkspace=64 maxError=0.000277775146 PASS
+NATIVE_CXX_PROBE ragged F16 D=256 rows=3 requests=2 qlens=1,2 kvlens=19,10 shuffledPages=1 tail=3,10 GQA=2 cta=16 split=0 floatWorkspace=0 intWorkspace=64 maxError=0.000277775146 PASS
+NATIVE_CXX_PROBE paged BF16 D=256 rows=3 requests=2 qlens=1,2 kvlens=19,10 shuffledPages=1 tail=3,10 GQA=2 cta=16 split=0 floatWorkspace=0 intWorkspace=64 maxError=0.00222755486 PASS
+NATIVE_CXX_PROBE ragged BF16 D=256 rows=3 requests=2 qlens=1,2 kvlens=19,10 shuffledPages=1 tail=3,10 GQA=2 cta=16 split=0 floatWorkspace=0 intWorkspace=64 maxError=0.00222755486 PASS

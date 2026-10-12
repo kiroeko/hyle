@@ -16,3 +16,12 @@ build约16.807秒/run约0.365秒只记录预算，不是吞吐benchmark。原源
 精确机器/工具链、命令、日志和二进制hash在receipt/raw.zip，build1800/run120预算。
 下一步依[活动卡](../../../docs/implementation/tasks/compute/foundation-f5-paged-ragged-batch.md)
 固定capacity/metadata generation/native最后使用与Graph同slot后才AUDITED写产品。
+
+同一原型根/配置沿原预算追加有限head/split核对，见extended-receipt.json/extended-raw.zip：
+head64/128/256 × F16/BF16 × paged/ragged，12场景全部独立oracle通过；原四场景收据保留。
+head128长KV8193/4097实际原planner split=1，paged float workspace1,453,056字节/int604，
+ragged float1,486,080/int653，原merge_indptr/tmp_v/tmp_s工作区和native合并真实执行；
+未强制disable_split_kv，也未自研merge kernel。最大error约F16 2.78e-5/BF16 2.07e-4。
+其他head短域仍no split，head256 BF16最大error约0.00223。H2D、原scheduler临时vectors/
+occupancy与workspace不免费；只证明这些fixture，不签任意容量/head/capture。
+同根累计build70.455秒/run0.989秒，无预算重置；正式HYLE生命周期/API与Graph仍未实现。
