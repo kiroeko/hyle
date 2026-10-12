@@ -1,0 +1,144 @@
+{
+  "previous_owners": [
+    {
+      "module": "compute",
+      "state": "CANDIDATE",
+      "record": "docs/implementation/tasks/compute/foundation-f5-candidate-validation.md",
+      "summary": "F5 CANDIDATE：冻结77df1c10c实现/API/算法，原owner有限scope与已过证据保留；完整18 SDK/适用san/P0/LOC/guide/分离红队等待裁决，未CLOSED。",
+      "candidate": "77df1c10c7a909d6f2a99a99551e599ddb74f096"
+    },
+    {
+      "module": "graph",
+      "state": "CANDIDATE",
+      "record": "docs/implementation/tasks/compute/foundation-f5-candidate-validation.md",
+      "summary": "F5 CANDIDATE：冻结77df1c10c实现/API/算法，原owner有限scope与已过证据保留；完整18 SDK/适用san/P0/LOC/guide/分离红队等待裁决，未CLOSED。",
+      "candidate": "77df1c10c7a909d6f2a99a99551e599ddb74f096"
+    },
+    {
+      "module": "compute_provider_onednn",
+      "state": "CANDIDATE",
+      "record": "docs/implementation/tasks/compute/foundation-f5-candidate-validation.md",
+      "summary": "F5 CANDIDATE：冻结77df1c10c实现/API/算法，原owner有限scope与已过证据保留；完整18 SDK/适用san/P0/LOC/guide/分离红队等待裁决，未CLOSED。",
+      "candidate": "77df1c10c7a909d6f2a99a99551e599ddb74f096"
+    },
+    {
+      "module": "graph_provider_onednn",
+      "state": "CANDIDATE",
+      "record": "docs/implementation/tasks/compute/foundation-f5-candidate-validation.md",
+      "summary": "F5 CANDIDATE：冻结77df1c10c实现/API/算法，原owner有限scope与已过证据保留；完整18 SDK/适用san/P0/LOC/guide/分离红队等待裁决，未CLOSED。",
+      "candidate": "77df1c10c7a909d6f2a99a99551e599ddb74f096"
+    },
+    {
+      "module": "compute_backend_cpu",
+      "state": "CANDIDATE",
+      "record": "docs/implementation/tasks/compute/foundation-f5-candidate-validation.md",
+      "summary": "F5 CANDIDATE：冻结77df1c10c实现/API/算法，原owner有限scope与已过证据保留；完整18 SDK/适用san/P0/LOC/guide/分离红队等待裁决，未CLOSED。",
+      "candidate": "77df1c10c7a909d6f2a99a99551e599ddb74f096"
+    },
+    {
+      "module": "compute_backend_cuda",
+      "state": "CANDIDATE",
+      "record": "docs/implementation/tasks/compute/foundation-f5-candidate-validation.md",
+      "summary": "F5 CANDIDATE：冻结77df1c10c实现/API/算法，原owner有限scope与已过证据保留；完整18 SDK/适用san/P0/LOC/guide/分离红队等待裁决，未CLOSED。",
+      "candidate": "77df1c10c7a909d6f2a99a99551e599ddb74f096"
+    },
+    {
+      "module": "compute_provider_native",
+      "state": "CANDIDATE",
+      "record": "docs/implementation/tasks/compute/foundation-f5-candidate-validation.md",
+      "summary": "F5 CANDIDATE：冻结77df1c10c实现/API/算法，原owner有限scope与已过证据保留；完整18 SDK/适用san/P0/LOC/guide/分离红队等待裁决，未CLOSED。",
+      "candidate": "77df1c10c7a909d6f2a99a99551e599ddb74f096"
+    },
+    {
+      "module": "compute_route_cpu",
+      "state": "CANDIDATE",
+      "record": "docs/implementation/tasks/compute/foundation-f5-candidate-validation.md",
+      "summary": "F5 CANDIDATE：冻结77df1c10c实现/API/算法，原owner有限scope与已过证据保留；完整18 SDK/适用san/P0/LOC/guide/分离红队等待裁决，未CLOSED。",
+      "candidate": "77df1c10c7a909d6f2a99a99551e599ddb74f096"
+    },
+    {
+      "module": "graph_route_cpu",
+      "state": "CANDIDATE",
+      "record": "docs/implementation/tasks/compute/foundation-f5-candidate-validation.md",
+      "summary": "F5 CANDIDATE：冻结77df1c10c实现/API/算法，原owner有限scope与已过证据保留；完整18 SDK/适用san/P0/LOC/guide/分离红队等待裁决，未CLOSED。",
+      "candidate": "77df1c10c7a909d6f2a99a99551e599ddb74f096"
+    },
+    {
+      "module": "graph_route_cuda",
+      "state": "CANDIDATE",
+      "record": "docs/implementation/tasks/compute/foundation-f5-candidate-validation.md",
+      "summary": "F5 CANDIDATE：冻结77df1c10c实现/API/算法，原owner有限scope与已过证据保留；完整18 SDK/适用san/P0/LOC/guide/分离红队等待裁决，未CLOSED。",
+      "candidate": "77df1c10c7a909d6f2a99a99551e599ddb74f096"
+    },
+    {
+      "module": "compute_route_apple",
+      "state": "CANDIDATE",
+      "record": "docs/implementation/tasks/compute/foundation-f5-candidate-validation.md",
+      "summary": "F5 CANDIDATE：冻结77df1c10c实现/API/算法，原owner有限scope与已过证据保留；完整18 SDK/适用san/P0/LOC/guide/分离红队等待裁决，未CLOSED。",
+      "candidate": "77df1c10c7a909d6f2a99a99551e599ddb74f096"
+    },
+    {
+      "module": "graph_route_apple",
+      "state": "CANDIDATE",
+      "record": "docs/implementation/tasks/compute/foundation-f5-candidate-validation.md",
+      "summary": "F5 CANDIDATE：冻结77df1c10c实现/API/算法，原owner有限scope与已过证据保留；完整18 SDK/适用san/P0/LOC/guide/分离红队等待裁决，未CLOSED。",
+      "candidate": "77df1c10c7a909d6f2a99a99551e599ddb74f096"
+    },
+    {
+      "module": "compute_route_vulkan",
+      "state": "CANDIDATE",
+      "record": "docs/implementation/tasks/compute/foundation-f5-candidate-validation.md",
+      "summary": "F5 CANDIDATE：冻结77df1c10c实现/API/算法，原owner有限scope与已过证据保留；完整18 SDK/适用san/P0/LOC/guide/分离红队等待裁决，未CLOSED。",
+      "candidate": "77df1c10c7a909d6f2a99a99551e599ddb74f096"
+    },
+    {
+      "module": "graph_route_vulkan",
+      "state": "CANDIDATE",
+      "record": "docs/implementation/tasks/compute/foundation-f5-candidate-validation.md",
+      "summary": "F5 CANDIDATE：冻结77df1c10c实现/API/算法，原owner有限scope与已过证据保留；完整18 SDK/适用san/P0/LOC/guide/分离红队等待裁决，未CLOSED。",
+      "candidate": "77df1c10c7a909d6f2a99a99551e599ddb74f096"
+    },
+    {
+      "module": "compute_provider_ggml_vulkan",
+      "state": "CANDIDATE",
+      "record": "docs/implementation/tasks/compute/foundation-f5-candidate-validation.md",
+      "summary": "F5 CANDIDATE：冻结77df1c10c实现/API/算法，原owner有限scope与已过证据保留；完整18 SDK/适用san/P0/LOC/guide/分离红队等待裁决，未CLOSED。",
+      "candidate": "77df1c10c7a909d6f2a99a99551e599ddb74f096"
+    },
+    {
+      "module": "compute_provider_flashinfer",
+      "state": "CANDIDATE",
+      "record": "docs/implementation/tasks/compute/foundation-f5-candidate-validation.md",
+      "summary": "F5 CANDIDATE：冻结77df1c10c实现/API/算法，原owner有限scope与已过证据保留；完整18 SDK/适用san/P0/LOC/guide/分离红队等待裁决，未CLOSED。",
+      "candidate": "77df1c10c7a909d6f2a99a99551e599ddb74f096"
+    },
+    {
+      "module": "compute_state",
+      "state": "CANDIDATE",
+      "record": "docs/implementation/tasks/compute/foundation-f5-candidate-validation.md",
+      "summary": "F5 CANDIDATE：冻结77df1c10c实现/API/算法，原owner有限scope与已过证据保留；完整18 SDK/适用san/P0/LOC/guide/分离红队等待裁决，未CLOSED。",
+      "candidate": "77df1c10c7a909d6f2a99a99551e599ddb74f096"
+    },
+    {
+      "module": "compute_batch",
+      "state": "CANDIDATE",
+      "summary": "F5 CANDIDATE：冻结77df1c10c实现/API/算法，原owner有限scope与已过证据保留；完整18 SDK/适用san/P0/LOC/guide/分离红队等待裁决，未CLOSED。",
+      "record": "docs/implementation/tasks/compute/foundation-f5-candidate-validation.md",
+      "candidate": "77df1c10c7a909d6f2a99a99551e599ddb74f096"
+    },
+    {
+      "module": "graph_batch",
+      "state": "CANDIDATE",
+      "summary": "F5 CANDIDATE：冻结77df1c10c实现/API/算法，原owner有限scope与已过证据保留；完整18 SDK/适用san/P0/LOC/guide/分离红队等待裁决，未CLOSED。",
+      "record": "docs/implementation/tasks/compute/foundation-f5-candidate-validation.md",
+      "candidate": "77df1c10c7a909d6f2a99a99551e599ddb74f096"
+    },
+    {
+      "module": "compute_route_cuda",
+      "state": "AUDITED",
+      "record": "docs/implementation/tasks/compute/foundation-f5-cuda-public-provider-link.md",
+      "summary": "F5 CUDA package seam AUDITED：真实Linux shared普通Compute/Graph消费者未传递公开FlashInfer factory；固定唯一PUBLIC link与非准入缺席投影FIX，原数学/API/预算保留。"
+    }
+  ],
+  "candidate": "65e2143ad181b6e6c5a55036270b76b8c63bd90d"
+}

@@ -1,6 +1,6 @@
 # F5 完整目标的候选验证计划
 
-当前状态：CANDIDATE，固定输入77df1c10c，20 owner沿[候选卡](foundation-f5-candidate-validation.md)
+当前状态：CANDIDATE，固定输入65e2143ad，20 owner沿[候选卡](foundation-f5-candidate-validation.md)
 合法冻结；此表不签CLOSED。原六FIX、A/F4已签
 范围、失败/预算均保留。[活动审计](foundation-f5-closure-audit.md)拥有当前事实；本页把剩余
 验证列成有限清单，不能以一个public consumer或一格SDK缩小完成定义。

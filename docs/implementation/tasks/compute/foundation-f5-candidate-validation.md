@@ -1,12 +1,14 @@
 # F5 固定candidate验证卡
 
-状态：CANDIDATE，固定candidate77df1c10c。此状态只冻结实现/API/算法，不签CLOSED、七门
+状态：CANDIDATE，固定candidate65e2143ad。此状态只冻结实现/API/算法，不签CLOSED、七门
 或完整goal。主范围仍[F5六FIX](foundation-f5-paged-ragged-batch.md)，完整验证矩阵仍
 [最终计划](foundation-f5-final-validation-plan.md)，guide为[公开用法](../../../user/batch-attention.md)。
 
 Linux shared SDK新反证使compute_route_cuda单owner退AUDITED，按
-[公开Provider link修复卡](foundation-f5-cuda-public-provider-link.md)执行唯一package FIX；
-其他19 owner仍固定77df候选。原六FIX与风险/失败预算不变，修复后再统一候选身份与证据资格。
+[公开Provider link修复卡](foundation-f5-cuda-public-provider-link.md)完成唯一package FIX并冻结
+65e2143ad。20 owner统一新候选，数学/API/算法仍77df原输入；原scope见
+[本次快照](../../../../evidence/architecture/foundation-f5-cuda-link-candidate-scope/owners.json)。
+原六FIX与风险/失败预算不变；新candidate重新裁决受影响package证据，不能先宣称link已PASS。
 
 20个本轮owners从AUDITED合法进入CANDIDATE，旧record/范围快照见
 [owner scope](../../../../evidence/architecture/foundation-f5-candidate-scope/owners.json)。实际
