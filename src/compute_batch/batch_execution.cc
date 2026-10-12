@@ -65,7 +65,7 @@ void native_terminal(void*opaque,const Status&status)noexcept{
   auto&s=*static_cast<d::BatchInvocationData*>(opaque);s.terminal=status;
 }
 void native_release(void*opaque)noexcept{
-  auto*s=static_cast<d::BatchInvocationData*>(opaque);s->pending.fetch_sub(1,std::memory_order_release);s->decref();
+  auto*s=static_cast<d::BatchInvocationData*>(opaque);s->pending.fetch_sub(1,std::memory_order_release);s->pending.notify_all();s->decref();
 }
 Result<d::BatchWorkspaceViews> workspace_views(d::BatchInvocationData&s)noexcept{
   d::BatchWorkspaceViews views;
@@ -228,7 +228,16 @@ Result<ReadLease> BatchInvocation::output()noexcept{
 }
 Status BatchInvocation::request_cancel()noexcept{if(!data_)return Status::Ok();data_->closed=true;data_->prepared=false;return Status::Ok();}
 Status BatchInvocation::close()noexcept{request_cancel().IgnoreError();return in_flight()?Status::Unavailable("batch native work still retires"):Status::Ok();}
-Status BatchInvocation::drain()noexcept{if(!data_)return Status::Ok();close().IgnoreError();const auto copy=data_->upload.drain();const auto native=data_->completion.wait();return !copy.ok()?copy:native;}
+Status BatchInvocation::drain()noexcept{
+  if(!data_)return Status::Ok();
+  close().IgnoreError();const auto copy=data_->upload.drain();const auto native=data_->completion.wait();
+  // An unknown observation can finish the public Completion while the original
+  // backend still owns its accepted prefix. Drain waits for actual retention.
+  const auto uses=data_->uses.drain();
+  for(auto pending=data_->pending.load(std::memory_order_acquire);pending;pending=data_->pending.load(std::memory_order_acquire))
+    data_->pending.wait(pending,std::memory_order_acquire);
+  return !copy.ok()?copy:!native.ok()?native:uses;
+}
 PreparedBatch::PreparedBatch(PreparedBatch&&b)noexcept:data_(std::exchange(b.data_,nullptr)),epoch_(b.epoch_){}
 PreparedBatch&PreparedBatch::operator=(PreparedBatch&&b)noexcept{if(this!=&b){PreparedBatch old(std::move(*this));data_=std::exchange(b.data_,nullptr);epoch_=b.epoch_;}return *this;}
 PreparedBatch::~PreparedBatch(){if(data_){--data_->tickets;data_->release_user();}}

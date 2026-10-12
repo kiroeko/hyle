@@ -1,0 +1,106 @@
+UpdateCTestConfiguration  from :C:/h7/foundation-f4/core-static/DartConfiguration.tcl
+Test project C:/h7/foundation-f4/core-static
+Constructing a list of tests
+Done constructing a list of tests
+Updating test list for fixtures
+Added 0 tests to meet fixture requirements
+Checking test dependency graph...
+Checking test dependency graph end
+test 38
+    Start 38: hyle_compute_batch_test
+
+38: Test command: C:\h7\foundation-f4\core-static\bin\hyle_compute_batch_test.exe
+38: Working Directory: C:/h7/foundation-f4/core-static/tests/compute_batch
+38: Test timeout computed to be: 10000000
+38: Running main() from C:\public\tools\hyle-dependencies\v1\sources\googletest-063de7e9578f-162765170ae6\googletest\src\gtest_main.cc
+38: [==========] Running 33 tests from 3 test suites.
+38: [----------] Global test environment set-up.
+38: [----------] 18 tests from BatchLayout
+38: [ RUN      ] BatchLayout.ActiveRowsAreDistinctFromPhysicalCapacityAndHostIsOwned
+38: [       OK ] BatchLayout.ActiveRowsAreDistinctFromPhysicalCapacityAndHostIsOwned (0 ms)
+38: [ RUN      ] BatchLayout.SameShapeNewPageValuesHaveNewGenerationAndOldVersionRemains
+38: [       OK ] BatchLayout.SameShapeNewPageValuesHaveNewGenerationAndOldVersionRemains (0 ms)
+38: [ RUN      ] BatchLayout.ForeignSchemaCannotAdmitAnIdenticalCapacityVersion
+38: [       OK ] BatchLayout.ForeignSchemaCannotAdmitAnIdenticalCapacityVersion (0 ms)
+38: [ RUN      ] BatchLayout.WrongIndptrStartMonotonicEndAndRequestCountAreRejected
+38: [       OK ] BatchLayout.WrongIndptrStartMonotonicEndAndRequestCountAreRejected (0 ms)
+38: [ RUN      ] BatchLayout.PhysicalPageBoundsAndTailBoundsAreCheckedBeforeSnapshot
+38: [       OK ] BatchLayout.PhysicalPageBoundsAndTailBoundsAreCheckedBeforeSnapshot (0 ms)
+38: [ RUN      ] BatchLayout.DuplicatePagesAreLegalReadonlySharing
+38: [       OK ] BatchLayout.DuplicatePagesAreLegalReadonlySharing (0 ms)
+38: [ RUN      ] BatchLayout.QueryWithoutKvAndCapacityExceededAreRejected
+38: [       OK ] BatchLayout.QueryWithoutKvAndCapacityExceededAreRejected (0 ms)
+38: [ RUN      ] BatchLayout.EmptyBatchAndEmptyRequestHaveExplicitEmptyEffectiveRegions
+38: [       OK ] BatchLayout.EmptyBatchAndEmptyRequestHaveExplicitEmptyEffectiveRegions (0 ms)
+38: [ RUN      ] BatchLayout.RaggedUsesPackedRowsAndRejectsPagedSideTables
+38: [       OK ] BatchLayout.RaggedUsesPackedRowsAndRejectsPagedSideTables (0 ms)
+38: [ RUN      ] BatchLayout.DtypeGqaIntegerAndPhysicalStrideOverflowAreRejected
+38: [       OK ] BatchLayout.DtypeGqaIntegerAndPhysicalStrideOverflowAreRejected (0 ms)
+38: [ RUN      ] BatchLayout.QuotaFailureDoesNotConsumeCallerSpansOrExistingVersion
+38: [       OK ] BatchLayout.QuotaFailureDoesNotConsumeCallerSpansOrExistingVersion (0 ms)
+38: [ RUN      ] BatchLayout.ExportedReadonlyBlobOutlivesAllSchemaAndVersionHandles
+38: [       OK ] BatchLayout.ExportedReadonlyBlobOutlivesAllSchemaAndVersionHandles (0 ms)
+38: [ RUN      ] BatchLayout.ConcurrentColdVersionsHaveDistinctGenerationAndOwnedData
+38: [       OK ] BatchLayout.ConcurrentColdVersionsHaveDistinctGenerationAndOwnedData (0 ms)
+38: [ RUN      ] BatchLayout.TypedAttentionPortShapesAndOpaqueMetadataEncodingAreChecked
+38: [       OK ] BatchLayout.TypedAttentionPortShapesAndOpaqueMetadataEncodingAreChecked (0 ms)
+38: [ RUN      ] BatchLayout.F4BranchSharesAndPublishesLayoutBlobWithoutMutatingOldVersion
+38: [       OK ] BatchLayout.F4BranchSharesAndPublishesLayoutBlobWithoutMutatingOldVersion (0 ms)
+38: [ RUN      ] BatchLayout.FixedBlockRootTransferKeepsNativeAdmissionWithoutOwnerCycle
+38: [       OK ] BatchLayout.FixedBlockRootTransferKeepsNativeAdmissionWithoutOwnerCycle (0 ms)
+38: [ RUN      ] BatchLayout.WholeArenaSubviewCannotBecomeAnIndependentFreePageWriter
+38: [       OK ] BatchLayout.WholeArenaSubviewCannotBecomeAnIndependentFreePageWriter (0 ms)
+38: [ RUN      ] BatchLayout.SeparatePageBlocksKeepReadUseAndFreePageWriteIndependent
+38: [       OK ] BatchLayout.SeparatePageBlocksKeepReadUseAndFreePageWriteIndependent (0 ms)
+38: [----------] 18 tests from BatchLayout (0 ms total)
+38: 
+38: [----------] 8 tests from BatchMaterialize
+38: [ RUN      ] BatchMaterialize.PhysicalPagesGqaAndRightAlignedCausalMaskExcludePadding
+38: [       OK ] BatchMaterialize.PhysicalPagesGqaAndRightAlignedCausalMaskExcludePadding (0 ms)
+38: [ RUN      ] BatchMaterialize.NoncausalUsesEveryValidKvButNeverTailPadding
+38: [       OK ] BatchMaterialize.NoncausalUsesEveryValidKvButNeverTailPadding (0 ms)
+38: [ RUN      ] BatchMaterialize.InactiveQueryCapacityReadsOnlyPagesOfTheFirstActiveQuery
+38: [       OK ] BatchMaterialize.InactiveQueryCapacityReadsOnlyPagesOfTheFirstActiveQuery (0 ms)
+38: [ RUN      ] BatchMaterialize.RaggedOffsetsAndNewLayoutDoNotChangeOldOwnedIndices
+38: [       OK ] BatchMaterialize.RaggedOffsetsAndNewLayoutDoNotChangeOldOwnedIndices (0 ms)
+38: [ RUN      ] BatchMaterialize.ForeignEmptyAndOverlongLayoutsAreRejectedBeforeGeneration
+38: [       OK ] BatchMaterialize.ForeignEmptyAndOverlongLayoutsAreRejectedBeforeGeneration (0 ms)
+38: [ RUN      ] BatchMaterialize.ExplicitHostAndLogicalByteCapsAreCheckedAtColdPreparation
+38: [       OK ] BatchMaterialize.ExplicitHostAndLogicalByteCapsAreCheckedAtColdPreparation (0 ms)
+38: [ RUN      ] BatchMaterialize.FlattenedI32AndProductOverflowRejectWithoutPayloadAllocation
+38: [       OK ] BatchMaterialize.FlattenedI32AndProductOverflowRejectWithoutPayloadAllocation (0 ms)
+38: [ RUN      ] BatchMaterialize.AllocatorOomPreservesOldVersionAndExportRetiresAfterControls
+38: [       OK ] BatchMaterialize.AllocatorOomPreservesOldVersionAndExportRetiresAfterControls (0 ms)
+38: [----------] 8 tests from BatchMaterialize (0 ms total)
+38: 
+38: [----------] 7 tests from PagedArena
+38: [ RUN      ] PagedArena.UsedPageReadersDoNotStopWritingAnUnreferencedPhysicalPage
+38: [       OK ] PagedArena.UsedPageReadersDoNotStopWritingAnUnreferencedPhysicalPage (0 ms)
+38: [ RUN      ] PagedArena.ForeignSchemaPageRangeAndIncompleteOrExcessiveSetsReject
+38: [       OK ] PagedArena.ForeignSchemaPageRangeAndIncompleteOrExcessiveSetsReject (0 ms)
+38: [ RUN      ] PagedArena.RepeatedPhysicalReferencesKeepOneActualGuard
+38: [       OK ] PagedArena.RepeatedPhysicalReferencesKeepOneActualGuard (0 ms)
+38: [ RUN      ] PagedArena.F4LedgerAndArenaDoNotPinEachOtherAfterLastReaderRetires
+38: [       OK ] PagedArena.F4LedgerAndArenaDoNotPinEachOtherAfterLastReaderRetires (0 ms)
+38: [ RUN      ] PagedArena.UnsubmittedWriterRestoresButConsumedAbandonNeverPretendsReady
+38: [       OK ] PagedArena.UnsubmittedWriterRestoresButConsumedAbandonNeverPretendsReady (0 ms)
+38: [ RUN      ] PagedArena.ByteCapacityAndMetadataOomAreExplicitAndOldGuardOutlivesControls
+38: [       OK ] PagedArena.ByteCapacityAndMetadataOomAreExplicitAndOldGuardOutlivesControls (0 ms)
+38: [ RUN      ] PagedArena.ActualF2PageCloneAppendAndF4PublishKeepOldStateAndShareCleanPage
+38: [       OK ] PagedArena.ActualF2PageCloneAppendAndF4PublishKeepOldStateAndShareCleanPage (0 ms)
+38: [----------] 7 tests from PagedArena (0 ms total)
+38: 
+38: [----------] Global test environment tear-down
+38: [==========] 33 tests from 3 test suites ran. (1 ms total)
+38: [  PASSED  ] 33 tests.
+1/1 Test #38: hyle_compute_batch_test ..........   Passed    0.04 sec
+
+The following tests passed:
+	hyle_compute_batch_test
+
+100% tests passed out of 1
+
+Label Time Summary:
+compute_batch    =   0.04 sec*proc (1 test)
+
+Total Test time (real) =   0.14 sec

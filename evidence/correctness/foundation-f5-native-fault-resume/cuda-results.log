@@ -1,0 +1,16 @@
+F5 phase: context/input preparation
+F5 phase: cold program/plan
+F5 phase: warm same native domain
+F5 phase: submit unknown observation episode
+F5 phase: native kernel accepted; installing retirement gate
+F5 phase: observe drain before releasing real CUDA prefix
+F5 phase: drain waited=1 guards held=1; release prefix
+F5 actual CUDA unknown poll/cancel/close/drain/guards/no-publication PASS
+F5 phase: context/input preparation
+F5 phase: cold program/plan
+F5 phase: warm same native domain
+F5 phase: submit unknown observation episode
+F5 phase: native kernel accepted; installing retirement gate
+F5 phase: observe drain before releasing real CUDA prefix
+F5 phase: drain waited=1 guards held=1; release prefix
+F5 actual CUDA unknown wait/cancel/close/drain/guards/no-publication PASS

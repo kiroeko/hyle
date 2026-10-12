@@ -36,7 +36,7 @@
 | same-version host/device/token/metadata | 原FI同slot、CPU fixed controller与native two-bank update实机 | 正常/旧version局部PASS；partial failure未验 |
 | producer未ready | 公共数学入口只ReadLease/PagedArenaRead，F2成功ready后才生产这类句柄；没有bind_producer/writer coercion | 不能因此把整个producer风险NA；仍需F5消费/失败ready路径证据 |
 | alias/effect/读写权限 | 页guards/free writers、Graph extra reader/copy/published/foreign proof拒绝、F4 clean sharing | 正常接缝PASS；实际失败prefix/alias最终门未验 |
-| old result/native use/close/escaped owner | Direct/Graph多数正常case、原F1晚guard与quota0 | 局部PASS；unknown/error下actual drain门INCONCLUSIVE |
+| old result/native use/close/escaped owner | Direct/Graph多数正常case、原F1晚guard与quota0；批准追加后native unknown poll/wait+cancel/close实际drain两episode通过 | 本有限unknown-retirement门PASS；不代签其他错误/abandon组合 |
 | cancel/abandon/unknown/native error/suffix | 原基础机制已签，不能代签F5新增组合 | F5适用门尚未完成 |
 | concurrency | immutable common版本并发生成/readonly分享、实际两个独立invocations | 控制对象原thread-compatible，不将并发control变适用；剩适用san/consumer退役未验 |
 | SDK/san/P0/guide/redteam | 有限source/header/owner工具链证据 | NOT_RUN/UNVERIFIED，不能写PASS或NA |
@@ -94,3 +94,17 @@ owner只有compute_batch（OBS-01测试、DRAIN-01局部实现），Graph/backen
 记录真实FAIL或PASS；若追加预算用尽仍无法裁决，按原方法BLOCKED/INCONCLUSIVE，不能续加。
 本门只选真实CUDA Direct consumer与文档/状态检查；公头无改动时复用已匹配头证据，
 其他风险/最终candidate的san及18 installed SDK格仍按原卡完成。
+
+## 本次恢复实际裁决
+
+[追加与修复收据](../../../../evidence/correctness/foundation-f5-native-fault-resume/README.md)：
+OBS-01到达断言阶段，consumer-resume11/12在实际prefix被阻塞、三input guards仍持有时
+输出drain waited=0，然后fixture资源析构fatal，原FAIL保留。反证触发DRAIN-01：显式drain
+等原uses/pending actual退役并保留首错，release通知atomic waiter；没有新runtime/API/字段。
+最终unknown poll/wait各一episode含cancel/close/Completion与token释放、Gate前等待/后guard
+归零、失败slot不发布/复用、quota0全部PASS。首次hang根因未裁决，不改写原TIMEOUT。
+
+同root累计configure16.403/build476.227/consumer190.072秒，总consumer上限360秒；
+批准新增180秒没有重置原180.030秒。Win common33项及CPU/Vulkan Direct/Graph实际消费者、
+WSL原CUDA Graph定向复核PASS；未变公头复用匹配证据。compute_batch保持AUDITED继续原
+六FIX，当前预算阻塞已解除；其余表中未验项、最终goal后foundation/engine估算仍未完成。
