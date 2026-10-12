@@ -630,14 +630,9 @@
     },
     {
       "module": "graph_route_cpu_cuda",
-      "state": "CLOSED",
-      "summary": "H1 CLOSED：CPU+CUDA混合执行、双槽迁移、普通CPU主存/有界staging、共享预算及准备诊断完成；Windows/WSL三交付、安装头/搬迁、错误/寿命与当前native重叠通过。引擎策略、多GPU、Apple/Vulkan混合不在本包。",
-      "record": "docs/implementation/tasks/compute/compute-h1-cpu-cuda-composition.md",
-      "candidate": "7eaf67b8a496ee19b609533980cd69e7efb5aa49",
-      "performance": {
-        "tier": "P0",
-        "evidence": "docs/implementation/tasks/compute/compute-h1-cpu-cuda-composition.md"
-      }
+      "state": "SCOPED",
+      "record": "docs/implementation/tasks/graph/foundation-a-cpu-cuda-variants.md",
+      "summary": "Foundation A CPU+CUDA SCOPED：有限 exact-only typed factory 接缝与真实消费者；不改变原 H1 执行与 general 合同。"
     },
     {
       "module": "graph_route_cpu_apple",
