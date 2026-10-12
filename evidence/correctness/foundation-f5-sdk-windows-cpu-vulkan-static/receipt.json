@@ -1,0 +1,418 @@
+{
+  "candidate": "77df1c10c7a909d6f2a99a99551e599ddb74f096",
+  "stage": "CANDIDATE public CPU/native Direct/Graph relocated static SDK cell; not final F5 closure",
+  "same_product_inputs_as_provisional_c092": true,
+  "installed_header_tus": 14,
+  "absent_header_files": {
+    "hyle/compute/apple_batch.h": true,
+    "hyle/compute/detail/apple_batch_access.h": true,
+    "hyle/graph/apple.h": true
+  },
+  "raw_sha256": "9a6533f90761845369e36fd6d4825f14e262377e09e0e371552aede80fca12f5",
+  "job": {
+    "candidate": "77df1c10c7a909d6f2a99a99551e599ddb74f096",
+    "snapshot": "bc7259f26e882972a58f0699214db4cdb20d4e0e",
+    "profile": "cpu-vulkan",
+    "mode": "static",
+    "producer": "C:\\h7\\foundation-a-sdk\\producer-cpu-vulkan-static",
+    "stages": [
+      {
+        "name": "identity",
+        "command": [
+          "nvidia-smi",
+          "--query-gpu=name,uuid,driver_version",
+          "--format=csv,noheader"
+        ],
+        "pid": 58072,
+        "state": "terminal",
+        "available_bytes": 44696936448,
+        "log": "identity.log",
+        "exit_code": 0,
+        "verdict": "PASS",
+        "elapsed": 0.06300000000192085,
+        "sha256": "fc0da0dd7e8d2c9d1419aa11e4801acb7158a0e185c28122c0fd6292a65f4044"
+      },
+      {
+        "name": "configure",
+        "command": [
+          "C:\\Program Files\\CMake\\bin\\cmake.EXE",
+          "-S",
+          "C:\\public\\project-hyle\\hyle",
+          "-B",
+          "C:\\h7\\foundation-a-sdk\\producer-cpu-vulkan-static",
+          "-G",
+          "Ninja",
+          "-DCMAKE_BUILD_TYPE=Release",
+          "-DCMAKE_CXX_COMPILER=C:/Program Files/Microsoft Visual Studio/18/Enterprise/VC/Tools/MSVC/14.50.35717/bin/Hostx64/x64/cl.exe",
+          "-DHYLE_COMPONENTS=compute;graph",
+          "-DHYLE_COMPUTE_ROUTES=cpu;vulkan",
+          "-DHYLE_BUILD_TESTS=OFF",
+          "-DHYLE_BUILD_BENCH=OFF",
+          "-DHYLE_INSTALL=ON",
+          "-DHYLE_STATIC=ON",
+          "-DHYLE_DEP_SOURCE_CACHE=C:/public/tools/hyle-dependencies/v1"
+        ],
+        "pid": 38032,
+        "state": "terminal",
+        "available_bytes": 44700078080,
+        "log": "configure.log",
+        "exit_code": 0,
+        "verdict": "PASS",
+        "elapsed": 95.93699999999808,
+        "sha256": "72336da89dee0772572d8d8c947910f2b3a9fa0df26d425a16124ab9ffe2290a"
+      },
+      {
+        "name": "producer",
+        "command": [
+          "C:\\Program Files\\CMake\\bin\\cmake.EXE",
+          "--build",
+          "C:\\h7\\foundation-a-sdk\\producer-cpu-vulkan-static",
+          "--target",
+          "hyle_compute_state",
+          "hyle_graph_route_cpu_vulkan",
+          "--parallel",
+          "4"
+        ],
+        "pid": 53004,
+        "state": "terminal",
+        "available_bytes": 44665835520,
+        "log": "producer.log",
+        "exit_code": 0,
+        "verdict": "PASS",
+        "elapsed": 42.9690000000046,
+        "sha256": "425b13a54875e686cb7f5e01e4a0a4c77c803acbe1b907ab95677a27dd1bc0fd"
+      },
+      {
+        "name": "install",
+        "command": [
+          "C:\\Program Files\\CMake\\bin\\cmake.EXE",
+          "--install",
+          "C:\\h7\\foundation-a-sdk\\producer-cpu-vulkan-static",
+          "--prefix",
+          "C:\\h7\\foundation-f5-sdk\\cpu-vulkan-static-c092c5ba3\\staging"
+        ],
+        "pid": 49988,
+        "state": "terminal",
+        "available_bytes": 44669566976,
+        "log": "install.log",
+        "exit_code": 0,
+        "verdict": "PASS",
+        "elapsed": 2.7339999999967404,
+        "sha256": "219785302df7112a14a91ea7e7d359e84dc7ac9b08c25f340ac8fe9269f07f06"
+      },
+      {
+        "name": "consumer-configure",
+        "command": [
+          "C:\\Program Files\\CMake\\bin\\cmake.EXE",
+          "-S",
+          "C:\\h7\\foundation-f5-sdk\\cpu-vulkan-static-c092c5ba3\\consumer-source",
+          "-B",
+          "C:\\h7\\foundation-f5-sdk\\cpu-vulkan-static-c092c5ba3\\consumer",
+          "-G",
+          "Ninja",
+          "-DCMAKE_BUILD_TYPE=Release",
+          "-DCMAKE_CXX_COMPILER=C:/Program Files/Microsoft Visual Studio/18/Enterprise/VC/Tools/MSVC/14.50.35717/bin/Hostx64/x64/cl.exe",
+          "-DCMAKE_PREFIX_PATH=C:\\h7\\foundation-f5-sdk\\cpu-vulkan-static-c092c5ba3\\relocated",
+          "-DHYLE_COMPUTE_ROUTES=cpu;vulkan",
+          "-DHYLE_DEP_SOURCE_CACHE=C:/public/tools/hyle-dependencies/v1"
+        ],
+        "pid": 55416,
+        "state": "terminal",
+        "available_bytes": 43681325056,
+        "log": "consumer-configure.log",
+        "exit_code": 0,
+        "verdict": "PASS",
+        "elapsed": 12.671999999998661,
+        "sha256": "804c146ead59a231b8c91dbb4def806eac9bae3e94a470a12c18b5b73e5c9a10",
+        "reuse_current_contract": false
+      },
+      {
+        "name": "consumer-build",
+        "command": [
+          "C:\\Program Files\\CMake\\bin\\cmake.EXE",
+          "--build",
+          "C:\\h7\\foundation-f5-sdk\\cpu-vulkan-static-c092c5ba3\\consumer",
+          "--parallel",
+          "4"
+        ],
+        "pid": 49684,
+        "state": "terminal",
+        "available_bytes": 44100194304,
+        "log": "consumer-build.log",
+        "exit_code": 0,
+        "verdict": "PASS",
+        "elapsed": 3.9069999999992433,
+        "sha256": "26e2ee9675f58f289f99b881131fb36540c7bb8a5ce6a9433d134e228a273c93",
+        "reuse_current_contract": false
+      },
+      {
+        "name": "imports-batch",
+        "command": [
+          "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\bin\\Hostx64\\x64\\dumpbin.exe",
+          "/DEPENDENTS",
+          "C:\\h7\\foundation-f5-sdk\\cpu-vulkan-static-c092c5ba3\\consumer\\batch.exe"
+        ],
+        "pid": 57036,
+        "state": "terminal",
+        "available_bytes": 43978502144,
+        "log": "imports-batch.log",
+        "exit_code": 0,
+        "verdict": "PASS",
+        "elapsed": 0.031000000002677552,
+        "sha256": "e89d38c7d71dcff173585333539bafd97e308c72a969284303043c8901372ad2"
+      },
+      {
+        "name": "run-batch",
+        "command": [
+          "C:\\h7\\foundation-f5-sdk\\cpu-vulkan-static-c092c5ba3\\consumer\\batch.exe"
+        ],
+        "pid": 51328,
+        "state": "terminal",
+        "available_bytes": 43978592256,
+        "log": "run-batch.log",
+        "exit_code": 0,
+        "verdict": "PASS",
+        "elapsed": 0.3280000000013388,
+        "sha256": "0674b0f8569280b0ae1d2233f94f560606191720ea9ccabf52056c95135edc0b"
+      },
+      {
+        "name": "absence-cuda",
+        "command": [
+          "C:\\Program Files\\CMake\\bin\\cmake.EXE",
+          "-S",
+          "C:\\h7\\foundation-f5-sdk\\cpu-vulkan-static-c092c5ba3\\absence-cuda",
+          "-B",
+          "C:\\h7\\foundation-f5-sdk\\cpu-vulkan-static-c092c5ba3\\absence-build-cuda",
+          "-G",
+          "Ninja",
+          "-DCMAKE_CXX_COMPILER=C:/Program Files/Microsoft Visual Studio/18/Enterprise/VC/Tools/MSVC/14.50.35717/bin/Hostx64/x64/cl.exe",
+          "-DCMAKE_PREFIX_PATH=C:\\h7\\foundation-f5-sdk\\cpu-vulkan-static-c092c5ba3\\relocated"
+        ],
+        "pid": 53072,
+        "state": "terminal",
+        "available_bytes": 44301869056,
+        "log": "absence-cuda.log",
+        "exit_code": 1,
+        "verdict": "PASS_EXPECTED_ABSENT",
+        "elapsed": 0.6409999999959837,
+        "sha256": "ac2d71cc8a72b0c5a4ea7c1fe7f7b430dd135c897915756377bfe5e624dca173"
+      },
+      {
+        "name": "absence-apple",
+        "command": [
+          "C:\\Program Files\\CMake\\bin\\cmake.EXE",
+          "-S",
+          "C:\\h7\\foundation-f5-sdk\\cpu-vulkan-static-c092c5ba3\\absence-apple",
+          "-B",
+          "C:\\h7\\foundation-f5-sdk\\cpu-vulkan-static-c092c5ba3\\absence-build-apple",
+          "-G",
+          "Ninja",
+          "-DCMAKE_CXX_COMPILER=C:/Program Files/Microsoft Visual Studio/18/Enterprise/VC/Tools/MSVC/14.50.35717/bin/Hostx64/x64/cl.exe",
+          "-DCMAKE_PREFIX_PATH=C:\\h7\\foundation-f5-sdk\\cpu-vulkan-static-c092c5ba3\\relocated"
+        ],
+        "pid": 50080,
+        "state": "terminal",
+        "available_bytes": 44330000384,
+        "log": "absence-apple.log",
+        "exit_code": 1,
+        "verdict": "PASS_EXPECTED_ABSENT",
+        "elapsed": 0.6410000000032596,
+        "sha256": "6eb7b92c6515754bb0c45da6f20077112392e4394036f87fdec192927b706886"
+      },
+      {
+        "name": "consumer-configure-resume1",
+        "command": [
+          "C:\\Program Files\\CMake\\bin\\cmake.EXE",
+          "-S",
+          "C:\\h7\\foundation-f5-sdk\\cpu-vulkan-static-c092c5ba3\\consumer-source",
+          "-B",
+          "C:\\h7\\foundation-f5-sdk\\cpu-vulkan-static-c092c5ba3\\consumer",
+          "-G",
+          "Ninja",
+          "-DCMAKE_BUILD_TYPE=Release",
+          "-DCMAKE_CXX_COMPILER=C:/Program Files/Microsoft Visual Studio/18/Enterprise/VC/Tools/MSVC/14.50.35717/bin/Hostx64/x64/cl.exe",
+          "-DCMAKE_PREFIX_PATH=C:\\h7\\foundation-f5-sdk\\cpu-vulkan-static-c092c5ba3\\relocated",
+          "-DHYLE_COMPUTE_ROUTES=cpu;vulkan",
+          "-DHYLE_DEP_SOURCE_CACHE=C:/public/tools/hyle-dependencies/v1"
+        ],
+        "pid": 48052,
+        "state": "terminal",
+        "available_bytes": 44829196288,
+        "log": "consumer-configure-resume1.log",
+        "exit_code": 0,
+        "verdict": "PASS",
+        "elapsed": 10.843000000000757,
+        "sha256": "fd19f236d7ba3ac7fbf07a34c3783223576068dfe70dcd2a5e2dc42b20eed467",
+        "reuse_current_contract": false
+      },
+      {
+        "name": "consumer-build-resume1",
+        "command": [
+          "C:\\Program Files\\CMake\\bin\\cmake.EXE",
+          "--build",
+          "C:\\h7\\foundation-f5-sdk\\cpu-vulkan-static-c092c5ba3\\consumer",
+          "--parallel",
+          "4"
+        ],
+        "pid": 54736,
+        "state": "terminal",
+        "available_bytes": 44815818752,
+        "log": "consumer-build-resume1.log",
+        "exit_code": 2,
+        "verdict": "FAIL",
+        "elapsed": 3.9069999999992433,
+        "sha256": "ee06dda599fd4fcd27a9a8137e513d5f133d417dcc4c76411ca1781af5bde392"
+      },
+      {
+        "name": "consumer-configure-resume2",
+        "command": [
+          "C:\\Program Files\\CMake\\bin\\cmake.EXE",
+          "-S",
+          "C:\\h7\\foundation-f5-sdk\\cpu-vulkan-static-c092c5ba3\\consumer-source",
+          "-B",
+          "C:\\h7\\foundation-f5-sdk\\cpu-vulkan-static-c092c5ba3\\consumer",
+          "-G",
+          "Ninja",
+          "-DCMAKE_BUILD_TYPE=Release",
+          "-DCMAKE_CXX_COMPILER=C:/Program Files/Microsoft Visual Studio/18/Enterprise/VC/Tools/MSVC/14.50.35717/bin/Hostx64/x64/cl.exe",
+          "-DCMAKE_PREFIX_PATH=C:\\h7\\foundation-f5-sdk\\cpu-vulkan-static-c092c5ba3\\relocated",
+          "-DHYLE_COMPUTE_ROUTES=cpu;vulkan",
+          "-DHYLE_DEP_SOURCE_CACHE=C:/public/tools/hyle-dependencies/v1"
+        ],
+        "pid": 53300,
+        "state": "terminal",
+        "available_bytes": 44549050368,
+        "log": "consumer-configure-resume2.log",
+        "exit_code": 0,
+        "verdict": "PASS",
+        "elapsed": 11.046999999998661,
+        "sha256": "f1b2a12930de6cccea5dd028f0c64bdc586f5c515fc9e7ce50f8f2fb4c2f978c"
+      },
+      {
+        "name": "consumer-build-resume2",
+        "command": [
+          "C:\\Program Files\\CMake\\bin\\cmake.EXE",
+          "--build",
+          "C:\\h7\\foundation-f5-sdk\\cpu-vulkan-static-c092c5ba3\\consumer",
+          "--parallel",
+          "4"
+        ],
+        "pid": 11192,
+        "state": "terminal",
+        "available_bytes": 44553916416,
+        "log": "consumer-build-resume2.log",
+        "exit_code": 0,
+        "verdict": "PASS",
+        "elapsed": 5.234000000004016,
+        "sha256": "01432368ea2c2e24921832d2c09f2c19ea4c70af597ea5eebe290ecfb39e577b"
+      },
+      {
+        "name": "imports-native",
+        "command": [
+          "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.50.35717\\bin\\Hostx64\\x64\\dumpbin.exe",
+          "/DEPENDENTS",
+          "C:\\h7\\foundation-f5-sdk\\cpu-vulkan-static-c092c5ba3\\consumer\\native.exe"
+        ],
+        "pid": 12876,
+        "state": "terminal",
+        "available_bytes": 44542631936,
+        "log": "imports-native.log",
+        "exit_code": 0,
+        "verdict": "PASS",
+        "elapsed": 0.01599999999598367,
+        "sha256": "17d39c3881a5a182a4b7f5301f58eaf70b9a182f310756fa3c314bd05823515b"
+      },
+      {
+        "name": "run-native",
+        "command": [
+          "C:\\h7\\foundation-f5-sdk\\cpu-vulkan-static-c092c5ba3\\consumer\\native.exe"
+        ],
+        "pid": 41388,
+        "state": "terminal",
+        "available_bytes": 44539469824,
+        "log": "run-native.log",
+        "exit_code": 0,
+        "verdict": "PASS",
+        "elapsed": 1.0309999999954016,
+        "sha256": "96e573a1b95dcc9a895cc1db1ca193e1f3f8da8e13f7ca14f171c3dbee65be83"
+      }
+    ],
+    "scope": "F5 AUDITED provisional SDK, immutable product input c092; public-only copied batch CPU Direct/Graph, new heads/absence/relocation/runtime; not CANDIDATE/final",
+    "test_parallel": 1,
+    "relocation": {
+      "staging_absent": true,
+      "renamed_prefix": "C:\\h7\\foundation-f5-sdk\\cpu-vulkan-static-c092c5ba3\\relocated",
+      "Hyle_metadata_no_source_build_staging_paths": true
+    },
+    "consumer_inputs": [
+      {
+        "path": "public_batch_cpu_consumer.cc",
+        "sha256": "70c2ae42b2a752577872ccabd399e7b3804e98cb3db15505c8dc6919144c773a"
+      },
+      {
+        "path": "public_batch_cpu_consumer.cc",
+        "sha256": "70c2ae42b2a752577872ccabd399e7b3804e98cb3db15505c8dc6919144c773a"
+      },
+      {
+        "path": "public_batch_native_consumer.cc",
+        "sha256": "0b2946f264b084893657d1c90c262fe881cb0dc1fd8db0835bfb58a5c6ba53e1"
+      },
+      {
+        "path": "public_batch_cpu_consumer.cc",
+        "sha256": "70c2ae42b2a752577872ccabd399e7b3804e98cb3db15505c8dc6919144c773a"
+      },
+      {
+        "path": "public_batch_native_consumer.cc",
+        "sha256": "0b2946f264b084893657d1c90c262fe881cb0dc1fd8db0835bfb58a5c6ba53e1"
+      }
+    ],
+    "runtime_dlls": {
+      "asmjit.dll": "eb8f9c478bfc4b671f83b630c97424c60b4c948c0a8645fe588aed4f6bab5df5",
+      "c10.dll": "93bff2548e330df0f94ce3c71c531887d049ae645d1e38e3c08689e2d86a7888",
+      "fbgemm.dll": "250dc6f79b26e022ca3088e9b71a023598c7e997c96b62ef350a74fa1b501d81",
+      "hyle_ggml_cpu_avx2_456172ec_7d4fea280f67f983.dll": "5c059ce4139647d1d14b6ce004dfc6809a45e4ecc0d00490c0f9c83fdfffc2c6",
+      "libiomp5md.dll": "d9d66ed25f1a0ea725fa3a41b22cfd5d182c19dbe4771d9c90ca02ad7466f6a1",
+      "torch.dll": "16a220e55b35fbfd946c26663eb3eefc76782872280cdc47ab0caea1babf0613",
+      "torch_cpu.dll": "2cb91cf2ba957fad5a17eab5bb7af6b3d73bbc98d94e2deeadc9fb9294eea809",
+      "uv.dll": "fa569e682fc5fb7a8eb94c6829af9f30a569748dbbc6bce39735d48bc960bcf8"
+    },
+    "candidate_history": [
+      {
+        "candidate": "c092c5ba3a3af91f814a944399cc2a1ba3e3b6fa",
+        "reason": "product/API inputs exactly unchanged; provisional stages remain historical, no budget reset"
+      }
+    ],
+    "consumer_contract": "public-cpu-native-full-headers-v1",
+    "resumes": [
+      {
+        "budget_reset": false,
+        "reason": "Same fixed candidate and configuration; original failures and elapsed retained"
+      },
+      {
+        "budget_reset": false,
+        "reason": "Same fixed candidate and configuration; original failures and elapsed retained"
+      }
+    ],
+    "verdict_history": [
+      "PASS_F5_PROVISIONAL_PUBLIC_SDK_CPU_VULKAN_STATIC_RELOCATED_SDK",
+      "FAIL_CURRENT_CONSUMER_CONTRACT_HEADER_SELECTION"
+    ],
+    "installed_header_contract": "selected factor headers only",
+    "absent_header_files": {
+      "hyle/compute/apple_batch.h": true,
+      "hyle/compute/detail/apple_batch_access.h": true,
+      "hyle/graph/apple.h": true
+    },
+    "verdict": "PASS_F5_CANDIDATE_CPU_NATIVE_SDK_CPU_VULKAN_STATIC_RELOCATED_SDK"
+  },
+  "budget_reset": false,
+  "totals": {
+    "configure": 95.93699999999808,
+    "producer": 42.9690000000046,
+    "install": 2.7339999999967404,
+    "consumer-configure": 34.56199999999808,
+    "consumer-build": 13.048000000002503,
+    "run-batch": 0.3280000000013388,
+    "run-native": 1.0309999999954016
+  }
+}

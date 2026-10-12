@@ -1,6 +1,7 @@
 # F5 完整目标的候选验证计划
 
-当前状态：AUDITED，baselinec092c5ba3；此表不签CANDIDATE或CLOSED。原六FIX、A/F4已签
+当前状态：CANDIDATE，固定输入77df1c10c，20 owner沿[候选卡](foundation-f5-candidate-validation.md)
+合法冻结；此表不签CLOSED。原六FIX、A/F4已签
 范围、失败/预算均保留。[活动审计](foundation-f5-closure-audit.md)拥有当前事实；本页把剩余
 验证列成有限清单，不能以一个public consumer或一格SDK缩小完成定义。
 
@@ -31,7 +32,7 @@ native paged未准入，验证具名拒绝。WSL native Vulkan只有包资格，
 | host | 产品routes | static/shared格数 | 普通消费与资格 | 当前完整F5格 |
 |---|---|---|---|---|
 | Windows | cpu,cuda | 2 | CPU reference；CUDA native batch unsupported具名诊断/缺席与loader | NOT_RUN |
-| Windows | cpu,vulkan | 2 | CPU与actual Vulkan两条Direct/Graph；迁址/heads/absence/loader | NOT_RUN；static已有CPU-only provisional证据，不算完整格 |
+| Windows | cpu,vulkan | 2 | CPU与actual Vulkan两条Direct/Graph；迁址/heads/absence/loader | static CANDIDATE PASS；shared NOT_RUN |
 | Windows | vulkan only | 2 | actual Vulkan，无CPU factor/回退 | NOT_RUN |
 | WSL | cpu,cuda | 2 | CPU与actual CUDA FI paged/ragged/D256 Direct/Graph | NOT_RUN |
 | WSL | vulkan only | 2 | source/package/headers/absence/relocation；软件GPU不代签数学 | NOT_RUN |
@@ -40,8 +41,9 @@ native paged未准入，验证具名拒绝。WSL native Vulkan只有包资格，
 | actual Air | apple only | 2 | actual Apple，无CPU factor/回退 | NOT_RUN |
 | actual Air | vulkan only | 2 | actual Vulkan，无CPU factor/回退 | NOT_RUN |
 
-全部18格的新common/Graph/route头独立TU、缺路线find_package具名拒绝、缺席route头可include
-且无route类型/符号、实际runtime依赖与迁址运行分别裁决。当前六个公开入口头prototype
+全部18格中实际供应的新common/Graph/route头独立TU、缺路线find_package具名拒绝、未选
+factor头不供应；完整源码另核缺席route头可include且无route类型/符号，SDK按现有factor
+安装集合核缺头/缺路线，不人为跨SKU借头。实际runtime依赖与迁址运行分别裁决。当前六个公开入口头prototype
 不代签四个detail新头或native split头。source/static/shared采用同工具链C++合同。
 
 每格configure300/producer build1800/consumer build1800/run180，旧配置身份相符树/cache可
