@@ -1,0 +1,4 @@
+public Vulkan ragged F16 Direct/Graph actual-native/GQA/tail/old-result mean=0.25 PASS
+public Vulkan ragged BF16 Direct/Graph actual-native/GQA/tail/old-result mean=0.25 PASS
+public Vulkan paged F16 Direct/Graph actual-native/GQA/tail/old-result mean=0.25 PASS
+public Vulkan paged BF16 Direct/Graph actual-native/GQA/tail/old-result mean=0.25 PASS

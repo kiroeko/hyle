@@ -15,6 +15,8 @@ HYLE 尚未正式发布，并按统一标准逐模块取证。模块页描述当
 
 ## 模块指南
 
+- [Paged/ragged批次attention](batch-attention.md)：四路线选择、显式准备、精确页/F4发布与原生差异。
+
 - [core](core.md)
 - [error](error.md)
 - [platform](platform.md)

@@ -279,3 +279,17 @@ failed ready纵切：完整F4 K/V/layout目录与expected-base head→原StateCl
 CPU各四episode通过，actual error无输出/open失败不复用；F2 clone失败不产writer、F5
 不submit、F4 head保持。CUDA正常public结果/token放弃→Gate前drain等guard、后OK；Graph
 known error actual wait后的open prepare拒绝。原全部失败/同root预算保留，产品/API未改。
+
+## 公开native SDK消费者准备
+
+baseline905415cff。新增public_batch_native_consumer只公开Compute/Graph/Apple或Vulkan API，
+由真实installed route宏选择，不forge能力，不include src/detail或调用trusted bridge。
+与公开CPU同四域和独立mean oracle，原F2上传Q/K/V/页，public PagedArenaRead精确权限，
+public typed Direct与native Graph factory、same-layout镜像与old result拒复用。source原型
+沿原Win Vulkan/Air Apple/Vulkan root/tree/config/预算累计，只定向新的public消费者；
+后续复制到隔离SDK目录，从自然Compute/Graph发现，不替代18格或candidate最终资格。
+
+[公开native源码收据](../../../../evidence/correctness/foundation-f5-public-native-source/README.md)：
+Win Vulkan/Air Apple/Vulkan各四域Direct/Graph独立oracle共24、原F2/public页权限/同镜像/
+old result通过。用户guide已加四路线选择、生命周期、explicit reference成本与capture缺席，
+只用公开消费者作可编译草图；仍不签installed格，完整six FIX与剩余七门不缩小。

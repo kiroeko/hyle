@@ -1,0 +1,4 @@
+public Apple ragged F16 Direct/Graph actual-native/GQA/tail/old-result mean=0.25 PASS
+public Apple ragged BF16 Direct/Graph actual-native/GQA/tail/old-result mean=0.25 PASS
+public Apple paged F16 Direct/Graph actual-native/GQA/tail/old-result mean=0.25 PASS
+public Apple paged BF16 Direct/Graph actual-native/GQA/tail/old-result mean=0.25 PASS
