@@ -42,3 +42,15 @@ Windows canonical只向WSL/Air disposable副本单向同步；actual Air先核�
 Mini不可用。重型跨机器串行、库按实时内存j4>=12GiB/j2>=8GiB/j1>=4GiB、test1。
 每轮docs/closure/diff，registry明确previous-ref；验证失败不绕过预算或扩大公共工具，
 有产品反证按协议回AUDITED。完整目标尚未达成，goal保持active。
+
+native-only Vulkan installed consumer首次暴露测试oracle误借SIMD头：此SKU selected
+Compute/Graph不含SIMD，本批次数学不需要它。只把固定0/.125/.25/.375/1的测试编码替换
+为明确F16/BF16 word，不加产品边/API或新数学；原FAIL与同root预算保留，消费者重编译。
+product candidate77df未变，当前测试可补但资格按各实际fixture hash区分。
+
+当前SDK4/18：Win cpu,vulkan static/shared与native-only Vulkan static/shared实际公开
+Direct/Graph/迁址/供头/缺route/loader PASS；其他14格仍NOT_RUN。common33 ASan/UBSan/
+TSan均PASS，TSan启动exit66与process-local ASLR恢复保留，不代签控制器/native host-control。
+证据分别在foundation-f5-sdk-windows-cpu-vulkan-*、foundation-f5-native-sdk-windows-vulkan-*
+与[common san](../../../../evidence/correctness/foundation-f5-common-sanitizers/README.md)，
+完整剩余七门/原goal继续，不把这些局部门改成CLOSED标准。

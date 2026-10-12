@@ -1,0 +1,81 @@
+Running main() from /mnt/c/public/tools/hyle-dependencies/v1/sources/googletest-063de7e9578f-162765170ae6/googletest/src/gtest_main.cc
+[==========] Running 33 tests from 3 test suites.
+[----------] Global test environment set-up.
+[----------] 18 tests from BatchLayout
+[ RUN      ] BatchLayout.ActiveRowsAreDistinctFromPhysicalCapacityAndHostIsOwned
+[       OK ] BatchLayout.ActiveRowsAreDistinctFromPhysicalCapacityAndHostIsOwned (79 ms)
+[ RUN      ] BatchLayout.SameShapeNewPageValuesHaveNewGenerationAndOldVersionRemains
+[       OK ] BatchLayout.SameShapeNewPageValuesHaveNewGenerationAndOldVersionRemains (0 ms)
+[ RUN      ] BatchLayout.ForeignSchemaCannotAdmitAnIdenticalCapacityVersion
+[       OK ] BatchLayout.ForeignSchemaCannotAdmitAnIdenticalCapacityVersion (0 ms)
+[ RUN      ] BatchLayout.WrongIndptrStartMonotonicEndAndRequestCountAreRejected
+[       OK ] BatchLayout.WrongIndptrStartMonotonicEndAndRequestCountAreRejected (0 ms)
+[ RUN      ] BatchLayout.PhysicalPageBoundsAndTailBoundsAreCheckedBeforeSnapshot
+[       OK ] BatchLayout.PhysicalPageBoundsAndTailBoundsAreCheckedBeforeSnapshot (0 ms)
+[ RUN      ] BatchLayout.DuplicatePagesAreLegalReadonlySharing
+[       OK ] BatchLayout.DuplicatePagesAreLegalReadonlySharing (0 ms)
+[ RUN      ] BatchLayout.QueryWithoutKvAndCapacityExceededAreRejected
+[       OK ] BatchLayout.QueryWithoutKvAndCapacityExceededAreRejected (0 ms)
+[ RUN      ] BatchLayout.EmptyBatchAndEmptyRequestHaveExplicitEmptyEffectiveRegions
+[       OK ] BatchLayout.EmptyBatchAndEmptyRequestHaveExplicitEmptyEffectiveRegions (0 ms)
+[ RUN      ] BatchLayout.RaggedUsesPackedRowsAndRejectsPagedSideTables
+[       OK ] BatchLayout.RaggedUsesPackedRowsAndRejectsPagedSideTables (0 ms)
+[ RUN      ] BatchLayout.DtypeGqaIntegerAndPhysicalStrideOverflowAreRejected
+[       OK ] BatchLayout.DtypeGqaIntegerAndPhysicalStrideOverflowAreRejected (0 ms)
+[ RUN      ] BatchLayout.QuotaFailureDoesNotConsumeCallerSpansOrExistingVersion
+[       OK ] BatchLayout.QuotaFailureDoesNotConsumeCallerSpansOrExistingVersion (0 ms)
+[ RUN      ] BatchLayout.ExportedReadonlyBlobOutlivesAllSchemaAndVersionHandles
+[       OK ] BatchLayout.ExportedReadonlyBlobOutlivesAllSchemaAndVersionHandles (0 ms)
+[ RUN      ] BatchLayout.ConcurrentColdVersionsHaveDistinctGenerationAndOwnedData
+[       OK ] BatchLayout.ConcurrentColdVersionsHaveDistinctGenerationAndOwnedData (1 ms)
+[ RUN      ] BatchLayout.TypedAttentionPortShapesAndOpaqueMetadataEncodingAreChecked
+[       OK ] BatchLayout.TypedAttentionPortShapesAndOpaqueMetadataEncodingAreChecked (0 ms)
+[ RUN      ] BatchLayout.F4BranchSharesAndPublishesLayoutBlobWithoutMutatingOldVersion
+[       OK ] BatchLayout.F4BranchSharesAndPublishesLayoutBlobWithoutMutatingOldVersion (0 ms)
+[ RUN      ] BatchLayout.FixedBlockRootTransferKeepsNativeAdmissionWithoutOwnerCycle
+[       OK ] BatchLayout.FixedBlockRootTransferKeepsNativeAdmissionWithoutOwnerCycle (0 ms)
+[ RUN      ] BatchLayout.WholeArenaSubviewCannotBecomeAnIndependentFreePageWriter
+[       OK ] BatchLayout.WholeArenaSubviewCannotBecomeAnIndependentFreePageWriter (0 ms)
+[ RUN      ] BatchLayout.SeparatePageBlocksKeepReadUseAndFreePageWriteIndependent
+[       OK ] BatchLayout.SeparatePageBlocksKeepReadUseAndFreePageWriteIndependent (0 ms)
+[----------] 18 tests from BatchLayout (81 ms total)
+
+[----------] 8 tests from BatchMaterialize
+[ RUN      ] BatchMaterialize.PhysicalPagesGqaAndRightAlignedCausalMaskExcludePadding
+[       OK ] BatchMaterialize.PhysicalPagesGqaAndRightAlignedCausalMaskExcludePadding (0 ms)
+[ RUN      ] BatchMaterialize.NoncausalUsesEveryValidKvButNeverTailPadding
+[       OK ] BatchMaterialize.NoncausalUsesEveryValidKvButNeverTailPadding (0 ms)
+[ RUN      ] BatchMaterialize.InactiveQueryCapacityReadsOnlyPagesOfTheFirstActiveQuery
+[       OK ] BatchMaterialize.InactiveQueryCapacityReadsOnlyPagesOfTheFirstActiveQuery (0 ms)
+[ RUN      ] BatchMaterialize.RaggedOffsetsAndNewLayoutDoNotChangeOldOwnedIndices
+[       OK ] BatchMaterialize.RaggedOffsetsAndNewLayoutDoNotChangeOldOwnedIndices (0 ms)
+[ RUN      ] BatchMaterialize.ForeignEmptyAndOverlongLayoutsAreRejectedBeforeGeneration
+[       OK ] BatchMaterialize.ForeignEmptyAndOverlongLayoutsAreRejectedBeforeGeneration (0 ms)
+[ RUN      ] BatchMaterialize.ExplicitHostAndLogicalByteCapsAreCheckedAtColdPreparation
+[       OK ] BatchMaterialize.ExplicitHostAndLogicalByteCapsAreCheckedAtColdPreparation (0 ms)
+[ RUN      ] BatchMaterialize.FlattenedI32AndProductOverflowRejectWithoutPayloadAllocation
+[       OK ] BatchMaterialize.FlattenedI32AndProductOverflowRejectWithoutPayloadAllocation (0 ms)
+[ RUN      ] BatchMaterialize.AllocatorOomPreservesOldVersionAndExportRetiresAfterControls
+[       OK ] BatchMaterialize.AllocatorOomPreservesOldVersionAndExportRetiresAfterControls (0 ms)
+[----------] 8 tests from BatchMaterialize (2 ms total)
+
+[----------] 7 tests from PagedArena
+[ RUN      ] PagedArena.UsedPageReadersDoNotStopWritingAnUnreferencedPhysicalPage
+[       OK ] PagedArena.UsedPageReadersDoNotStopWritingAnUnreferencedPhysicalPage (0 ms)
+[ RUN      ] PagedArena.ForeignSchemaPageRangeAndIncompleteOrExcessiveSetsReject
+[       OK ] PagedArena.ForeignSchemaPageRangeAndIncompleteOrExcessiveSetsReject (0 ms)
+[ RUN      ] PagedArena.RepeatedPhysicalReferencesKeepOneActualGuard
+[       OK ] PagedArena.RepeatedPhysicalReferencesKeepOneActualGuard (0 ms)
+[ RUN      ] PagedArena.F4LedgerAndArenaDoNotPinEachOtherAfterLastReaderRetires
+[       OK ] PagedArena.F4LedgerAndArenaDoNotPinEachOtherAfterLastReaderRetires (0 ms)
+[ RUN      ] PagedArena.UnsubmittedWriterRestoresButConsumedAbandonNeverPretendsReady
+[       OK ] PagedArena.UnsubmittedWriterRestoresButConsumedAbandonNeverPretendsReady (0 ms)
+[ RUN      ] PagedArena.ByteCapacityAndMetadataOomAreExplicitAndOldGuardOutlivesControls
+[       OK ] PagedArena.ByteCapacityAndMetadataOomAreExplicitAndOldGuardOutlivesControls (0 ms)
+[ RUN      ] PagedArena.ActualF2PageCloneAppendAndF4PublishKeepOldStateAndShareCleanPage
+[       OK ] PagedArena.ActualF2PageCloneAppendAndF4PublishKeepOldStateAndShareCleanPage (0 ms)
+[----------] 7 tests from PagedArena (0 ms total)
+
+[----------] Global test environment tear-down
+[==========] 33 tests from 3 test suites ran. (84 ms total)
+[  PASSED  ] 33 tests.

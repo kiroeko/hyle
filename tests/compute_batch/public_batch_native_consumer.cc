@@ -1,6 +1,5 @@
 #include <hyle/compute/batch_materialize.h>
 #include <hyle/graph/batch.h>
-#include <hyle/simd/dtype.h>
 #if defined(HYLE_COMPUTE_APPLE)
 #include <hyle/compute/apple_batch.h>
 #include <hyle/graph/apple.h>
@@ -25,7 +24,14 @@ constexpr const char*route="Vulkan";
 #endif
 using hyle::Status;
 Status check(bool value,const char*message){return value?Status::Ok():Status::Internal(message);}
-std::uint16_t encoded(float value,bool bf16){return bf16?hyle::simd::f32_to_bf16(value).bits:hyle::simd::f32_to_f16(value).bits;}
+// Fixed oracle inputs only; native-only Compute/Graph does not supply SIMD.
+std::uint16_t encoded(float value,bool bf16){
+  if(value==0)return 0;
+  if(value==.125f)return bf16?0x3e00u:0x3000u;
+  if(value==.25f)return bf16?0x3e80u:0x3400u;
+  if(value==.375f)return bf16?0x3ec0u:0x3600u;
+  return bf16?0x3f80u:0x3c00u; // Only remaining declared input is 1.
+}
 hyle::Result<c::ReadLease> upload(n::Context&context,c::LeasePool&host,hyle::mem::MemoryResourceRef gpu,hyle::mem::MemoryResourceRef staging,c::WriteLease&&target,std::span<const std::uint16_t> words){
   HYLE_ASSIGN_OR_RETURN(auto writer,host.allocate(words.size_bytes()));HYLE_RETURN_IF_ERROR(writer.view()->write(std::as_bytes(words)));HYLE_ASSIGN_OR_RETURN(auto source,writer.publish());
   const std::array specs{c::CopyResourceSpec{staging,words.size_bytes()},c::CopyResourceSpec{gpu,words.size_bytes()}};HYLE_ASSIGN_OR_RETURN(auto program,n::CopyBatchProgram::prepare(context,specs));HYLE_ASSIGN_OR_RETURN(auto copy,n::CopyBatchInvocation::create(program));
