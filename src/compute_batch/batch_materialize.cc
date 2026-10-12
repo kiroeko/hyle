@@ -92,6 +92,7 @@ Result<MaterializedBatchProgram> MaterializedBatchProgram::prepare(BatchSchema s
   return result;
 }
 std::span<const TensorDesc> MaterializedBatchProgram::descriptions()const noexcept{return data_?std::span(data_->values).first(data_->value_count):std::span<const TensorDesc>{};}
+BatchSchema MaterializedBatchProgram::schema()const noexcept{return data_?data_->schema:BatchSchema{};}
 std::span<const MaterializedBatchStep> MaterializedBatchProgram::steps()const noexcept{return data_?std::span(data_->steps).first(data_->step_count):std::span<const MaterializedBatchStep>{};}
 std::uint16_t MaterializedBatchProgram::output_value()const noexcept{return data_?data_->output:0;}
 MaterializedBatchCosts MaterializedBatchProgram::costs()const noexcept{return data_?data_->costs:MaterializedBatchCosts{};}

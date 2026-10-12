@@ -278,7 +278,7 @@
       "module": "graph",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/foundation-f5-owner-bridges.md",
-      "summary": "F5 Graph AUDITED实施：原region同slot/精确页guards消费，CUDA F16/BF16 append→F4发布→旧新旧六oracle及原两域12oracle通过；普通reader/alias/published容量拒绝，Win owner/WX与两独立头通过。reference逐页桥/完整controller/ragged/其他风险/SDK/san/终审未完成。"
+      "summary": "F5 Graph AUDITED实施：CUDA原region精确页闭环已验；CPU fixed host Graph controller/同版本metadata/reshape→Gather guards已实现，Win/WSL各24矩阵+8页oracle、五资格图/OOM/old-result/storage/close/escaped native-read/quota0通过。CPU Direct/native controllers/ragged/其他风险/SDK/san/终审继续。"
     },
     {
       "module": "container_concurrent",
@@ -621,13 +621,13 @@
     {
       "module": "compute_batch",
       "state": "AUDITED",
-      "summary": "F5 AUDITED实施：typed布局/原native规划与四路线reference已具首批证据；逐页arena与inactive Q读取footprint修正33项八头通过，CUDA Direct/Graph和Apple/Vulkan实际页append/F4旧新旧已验。CPU精确页桥/完整controller/ragged/其他故障/SDK/san/终审未完成。",
+      "summary": "F5 AUDITED实施：typed布局/native规划/四路线reference、逐页arena/33项八头、CUDA和Apple/Vulkan页闭环已验；CPU host Graph完整控制器/同版本metadata/精确Gather页消费与页append/F4也已验。CPU Direct/native controllers/ragged/其他故障/SDK/san/终审未完成。",
       "record": "docs/implementation/tasks/compute/foundation-f5-paged-ragged-batch.md"
     },
     {
       "module": "graph_batch",
       "state": "AUDITED",
-      "summary": "F5 Graph AUDITED实施：原region同slot/精确页guards消费，CUDA F16/BF16 append→F4发布→旧新旧六oracle及原两域12oracle通过；普通reader/alias/published容量拒绝，Win owner/WX与两独立头通过。reference逐页桥/完整controller/ragged/其他风险/SDK/san/终审未完成。",
+      "summary": "F5 Graph AUDITED实施：CUDA原region精确页闭环已验；CPU fixed host Graph controller/同版本metadata/reshape→Gather guards已实现，Win/WSL各24矩阵+8页oracle、五资格图/OOM/old-result/storage/close/escaped native-read/quota0通过。CPU Direct/native controllers/ragged/其他风险/SDK/san/终审继续。",
       "record": "docs/implementation/tasks/compute/foundation-f5-owner-bridges.md"
     }
   ]

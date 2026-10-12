@@ -25,5 +25,12 @@ struct RegionAccess final {
   HYLE_GRAPH_API static Status bind_projected(LeasedInvocation&,ValueId,
       compute::ConstTensorView,std::span<const compute::ReadLease>,
       compute::ProviderId,std::span<const std::uint32_t> reader_steps) noexcept;
+  // Same immutable Graph, uniquely qualified dense reshape -> checked Gather.
+  HYLE_GRAPH_API static Status bind_gather(LeasedInvocation&,const Graph&,
+      ValueId capacity,ValueId indices,compute::ConstTensorView,
+      std::span<const compute::ReadLease>) noexcept;
+  // Cold successful idle caller output only; empty after readonly publication.
+  HYLE_GRAPH_API static Result<compute::WriteLease> take_write(
+      LeasedInvocation&,ValueId caller_output) noexcept;
 };
 } // namespace hyle::graph::detail

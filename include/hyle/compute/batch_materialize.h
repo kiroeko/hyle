@@ -43,6 +43,7 @@ public:
   HYLE_COMPUTE_BATCH_API ~MaterializedBatchProgram();
   HYLE_COMPUTE_BATCH_API static Result<MaterializedBatchProgram> prepare(BatchSchema,MaterializedBatchOptions) noexcept;
   bool valid()const noexcept{return data_!=nullptr;}
+  HYLE_COMPUTE_BATCH_API BatchSchema schema()const noexcept;
   HYLE_COMPUTE_BATCH_API std::span<const TensorDesc> descriptions()const noexcept;
   HYLE_COMPUTE_BATCH_API std::span<const MaterializedBatchStep> steps()const noexcept;
   HYLE_COMPUTE_BATCH_API std::uint16_t output_value()const noexcept;

@@ -1,6 +1,11 @@
 #include <hyle/graph/batch.h>
 #if !defined(HYLE_F5_NATIVE_FIXTURE_ONLY)
 #include <hyle/graph/cpu.h>
+#include <hyle/mem/quota_allocator.h>
+#include <hyle/compute/state_versions.h>
+#include <hyle/compute/detail/lease_access.h>
+#include <hyle/compute/detail/paged_arena_access.h>
+#include <hyle/graph/detail/region_access.h>
 #endif
 #include <hyle/compute/leased_operation.h>
 #include <hyle/simd/dtype.h>
@@ -51,9 +56,22 @@ Status exercise(c::Context&context,c::Queue&queue,bool paged,bool bf16,bool caus
   HYLE_RETURN_IF_ERROR(oracle(q,k,v,layout,values[program.output_value()],bf16,causal));
   HYLE_ASSIGN_OR_RETURN(auto logical,g::batch::materialized_graph(program));const std::array domains{g::StorageDomain{hyle::mem::system_resource()}};const std::array targets{g::ExecutionTarget{&context,g::StorageDomainId{0}}};HYLE_ASSIGN_OR_RETURN(auto compiled,g::compile(logical.graph,{domains,targets,{}}));HYLE_ASSIGN_OR_RETURN(auto invocation,g::LeasedInvocation::create(compiled.executable));
   for(unsigned i=0;i<5;++i)HYLE_RETURN_IF_ERROR(invocation.bind(logical.inputs[i],descriptions[i],values[i]));HYLE_ASSIGN_OR_RETURN(auto writer,pool.allocate(q.size()*sizeof(std::uint16_t)));HYLE_RETURN_IF_ERROR(invocation.bind(logical.output,descriptions[0],std::move(writer)));HYLE_ASSIGN_OR_RETURN(auto done,invocation.submit(queue));HYLE_RETURN_IF_ERROR(done.wait());HYLE_ASSIGN_OR_RETURN(auto output,invocation.output(logical.output));HYLE_ASSIGN_OR_RETURN(auto lease,output.storage_lease());HYLE_RETURN_IF_ERROR(oracle(q,k,v,layout,lease,bf16,causal));
+  HYLE_ASSIGN_OR_RETURN(auto controlled,g::batch::MaterializedInvocation::create(context,program,queue,{.max_output_bytes=q.size()*sizeof(std::uint16_t)+64}));
+  HYLE_RETURN_IF_ERROR(controlled.prepare_batch(layout));HYLE_RETURN_IF_ERROR(controlled.prepare_batch(layout));
+  if(paged){
+    HYLE_ASSIGN_OR_RETURN(auto key_arena,c::PagedArena::create(schema,hyle::mem::system_resource(),{.max_backing_bytes=k.size()*sizeof(std::uint16_t)+64}));HYLE_ASSIGN_OR_RETURN(auto value_arena,c::PagedArena::create(schema,hyle::mem::system_resource(),{.max_backing_bytes=v.size()*sizeof(std::uint16_t)+64}));std::array<c::ReadLease,3> kp,vp;
+    const auto page_elements=std::size_t(cap.page_size)*cap.kv_heads*cap.head_dim;
+    for(std::size_t i=0;i<pages.size();++i){HYLE_ASSIGN_OR_RETURN(auto kw,key_arena.acquire(pages[i]));HYLE_ASSIGN_OR_RETURN(auto vw,value_arena.acquire(pages[i]));const auto offset=std::size_t(pages[i])*page_elements;HYLE_RETURN_IF_ERROR(kw.lease().view()->write(std::as_bytes(std::span(k).subspan(offset,page_elements))));HYLE_RETURN_IF_ERROR(vw.lease().view()->write(std::as_bytes(std::span(v).subspan(offset,page_elements))));HYLE_ASSIGN_OR_RETURN(kp[i],kw.publish());HYLE_ASSIGN_OR_RETURN(vp[i],vw.publish());}
+    HYLE_ASSIGN_OR_RETURN(auto kr,key_arena.read(layout,kp));HYLE_ASSIGN_OR_RETURN(auto vr,value_arena.read(layout,vp));HYLE_RETURN_IF_ERROR(controlled.bind(values[0],kr,vr));
+  }else{HYLE_RETURN_IF_ERROR(controlled.bind(values[0],values[1],values[2]));}
+  HYLE_ASSIGN_OR_RETURN(auto controller_done,controlled.submit());HYLE_RETURN_IF_ERROR(controller_done.wait());HYLE_ASSIGN_OR_RETURN(auto controller_output,controlled.output());HYLE_ASSIGN_OR_RETURN(auto controller_lease,controller_output.storage_lease());HYLE_RETURN_IF_ERROR(oracle(q,k,v,layout,controller_lease,bf16,causal));
+  HYLE_RETURN_IF_ERROR(require(controlled.version().layout()==layout,"host controller changed its owned metadata version"));
+  HYLE_RETURN_IF_ERROR(require(!controlled.prepare_batch(layout).ok(),"host controller old result allowed reset"));
+  std::printf("CPU host controller %s %s causal=%d precise-paged-or-ragged/same-generation/repeated-prepare PASS\n",paged?"paged":"ragged",bf16?"BF16":"F16",int(causal));
   std::printf("CPU explicit materialized %s %s causal=%d Direct/Graph NaN-padding PASS; host=%zu gather=%zu logical=%zu\n",paged?"paged":"ragged",bf16?"BF16":"F16",int(causal),program.costs().index_bytes+program.costs().mask_bytes,program.costs().gathered_kv_bytes,program.costs().logical_intermediate_bytes);return Status::Ok();
 }
-Status run(){HYLE_ASSIGN_OR_RETURN(auto context,g::cpu::create_context());HYLE_ASSIGN_OR_RETURN(auto queue,context.create_queue());for(bool paged:{true,false})for(bool bf16:{false,true})for(bool causal:{false,true})HYLE_RETURN_IF_ERROR(exercise(context,queue,paged,bf16,causal));return context.drain();}
+#include "materialized_host_controller_consumer.h"
+Status run(){HYLE_ASSIGN_OR_RETURN(auto context,g::cpu::create_context());HYLE_ASSIGN_OR_RETURN(auto queue,context.create_queue());struct Drain{c::Context&context;~Drain(){context.drain().IgnoreError();}}drain{context};for(bool paged:{true,false})for(bool bf16:{false,true})for(bool causal:{false,true})HYLE_RETURN_IF_ERROR(exercise(context,queue,paged,bf16,causal));HYLE_RETURN_IF_ERROR(hyle_f5_host_controller_fixture::run(context,queue));return context.drain();}
 #endif
 } // namespace
 #if !defined(HYLE_F5_NATIVE_FIXTURE_ONLY)

@@ -145,6 +145,81 @@ Status RegionAccess::bind_projected(LeasedInvocation&invocation,ValueId value,
   for(std::size_t i=1;i<pages.size();++i)state->bindings.push_back({.read=pages[i]});
   return Status::Ok();
 }
+Status RegionAccess::bind_gather(LeasedInvocation&invocation,const Graph&graph,
+    ValueId capacity,ValueId indices,compute::ConstTensorView tensor,
+    std::span<const compute::ReadLease> pages)noexcept{
+  auto*state=invocation.state_;HYLE_RETURN_IF_ERROR(control_ready(state));
+  auto*binding=find_binding(state,capacity);const auto*source=GraphAccess::state(graph);
+  const auto&plan=*InvocationAccess::state(state->invocation)->plan;
+  if(!source || source->generation!=plan.generation || capacity==indices ||
+     GraphIdentity::generation(capacity)!=source->generation || GraphIdentity::generation(indices)!=source->generation ||
+     capacity.kind()!=ValueKind::kInput || indices.kind()!=ValueKind::kInput ||
+     !binding || !binding->input || !tensor.valid() || !tensor.description().is_dense() || pages.empty())
+    return Status::InvalidArgument("gather projection requires the exact graph/input/footprint");
+  if(binding->read.valid() || binding->write.valid())
+    return Status::FailedPrecondition("gather projection needs reset before rebinding");
+  if(std::find(source->inputs.begin(),source->inputs.end(),indices.ordinal())==source->inputs.end())
+    return Status::InvalidArgument("gather indices are not an input of this graph");
+  NodeId reshape{},gather{};ValueId alias{};
+  for(std::size_t i=0;i<source->nodes.size();++i){const auto node=GraphIdentity::node(source->generation,std::uint32_t(i));
+    HYLE_ASSIGN_OR_RETURN(auto count,graph.node_input_count(node));
+    for(std::size_t port=0;port<count;++port){HYLE_ASSIGN_OR_RETURN(auto input,graph.node_input(node,port));if(input!=capacity)continue;
+      HYLE_ASSIGN_OR_RETURN(auto operation,graph.operation(node));const auto*view=operation.get_if<compute::View>();
+      if(reshape.valid() || !view || view->kind()!=compute::ViewKind::kReshape || count!=1)
+        return Status::InvalidArgument("capacity has a reader outside its unique reshape");
+      HYLE_ASSIGN_OR_RETURN(auto outputs,graph.node_output_count(node));if(outputs!=1)return Status::InvalidArgument("capacity reshape arity");
+      reshape=node;HYLE_ASSIGN_OR_RETURN(alias,graph.result(node));
+    }
+  }
+  if(!reshape.valid())return Status::InvalidArgument("capacity has no unique reshape");
+  for(std::size_t i=0;i<source->nodes.size();++i){const auto node=GraphIdentity::node(source->generation,std::uint32_t(i));
+    HYLE_ASSIGN_OR_RETURN(auto count,graph.node_input_count(node));
+    for(std::size_t port=0;port<count;++port){HYLE_ASSIGN_OR_RETURN(auto input,graph.node_input(node,port));if(input!=alias)continue;
+      HYLE_ASSIGN_OR_RETURN(auto operation,graph.operation(node));const auto*op=operation.get_if<compute::Gather>();
+      if(gather.valid() || !op || op->axis!=0 || op->bounds!=compute::IndexBoundsPolicy::kChecked || count!=2 || port!=0)
+        return Status::InvalidArgument("capacity alias has a reader outside its unique checked Gather");
+      HYLE_ASSIGN_OR_RETURN(auto supplied_indices,graph.node_input(node,1));if(supplied_indices!=indices)
+        return Status::InvalidArgument("capacity Gather uses foreign metadata");
+      gather=node;
+    }
+  }
+  if(!gather.valid() || std::find(source->outputs.begin(),source->outputs.end(),capacity.ordinal())!=source->outputs.end() ||
+     std::find(source->outputs.begin(),source->outputs.end(),alias.ordinal())!=source->outputs.end())
+    return Status::InvalidArgument("capacity/reshape cannot be published");
+  const auto root=plan.external_instances[capacity.ordinal()];bool consumed=false;
+  for(const auto&step:plan.steps){const auto nodes=std::span<const std::uint32_t>(plan.step_nodes).subspan(step.node_set_begin,step.node_count);
+    for(std::size_t port=0;port<step.input_count;++port){auto input=plan.node_inputs[step.input_begin+port];
+      auto origin=input;while(plan.alias_sources[origin]!=kNoInPlaceSource)origin=plan.alias_sources[origin];if(origin!=root)continue;
+      const auto logical=plan.instance_values[input];
+      if(logical!=capacity.ordinal() && logical!=alias.ordinal())return Status::InvalidArgument("capacity has an extra physical alias reader");
+      const auto has=[&](NodeId node){return std::find(nodes.begin(),nodes.end(),node.ordinal())!=nodes.end();};
+      if(step.kind==PlanStepKind::kView && !step.materializes && has(reshape))continue;
+      if(!has(gather) || (step.kind!=PlanStepKind::kRegion &&
+         !(step.kind==PlanStepKind::kOperation && step.operation.kind()==compute::OperationKind::kGather)))
+        return Status::InvalidArgument("capacity physical reader materializes/copies outside Gather");
+      consumed=true;
+    }
+  }
+  if(!consumed)return Status::InvalidArgument("capacity has no physical Gather reader");
+  if(pages.size()-1>state->bindings.capacity()-state->bindings.size())
+    return Status::ResourceExhausted("gather projection guard capacity exhausted");
+  const auto storage=tensor.storage();for(const auto&page:pages){HYLE_ASSIGN_OR_RETURN(auto view,page.view());
+    if(view.resource()!=storage.resource() || view.native_handle()!=storage.native_handle() ||
+       view.offset()<storage.offset() || view.offset()-storage.offset()>storage.size() ||
+       view.size()>storage.size()-(view.offset()-storage.offset()))return Status::InvalidArgument("gather page guard outside native capacity");
+  }
+  HYLE_RETURN_IF_ERROR(state->invocation.bind(capacity,tensor));
+  binding->read=pages.front();binding->description=tensor.description();binding->exclusive=false;
+  for(std::size_t i=1;i<pages.size();++i)state->bindings.push_back({.read=pages[i]});return Status::Ok();
+}
+Result<compute::WriteLease> RegionAccess::take_write(LeasedInvocation&invocation,ValueId value)noexcept{
+  auto*state=invocation.state_;HYLE_RETURN_IF_ERROR(control_ready(state));
+  if(InvocationAccess::state(state->invocation)->phase.load(std::memory_order_acquire)!=InvocationPhase::kIdle)
+    return std::unexpected(Status::FailedPrecondition("failed graph output cannot be reclaimed"));
+  auto*binding=find_binding(state,value);if(!binding || binding->input)
+    return std::unexpected(Status::InvalidArgument("only caller output writer can be reclaimed"));
+  return std::move(binding->write);
+}
 void record_error(LeasedInvocationState *state, const Status &error) noexcept {
   if (!error.ok()) {
     std::lock_guard guard(state->lock);

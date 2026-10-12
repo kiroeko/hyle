@@ -197,3 +197,46 @@ reference及append/F4完整闭环、三交付/san/P0/guide/终审继续，Window
 编译FAIL保留，显式if/else修正后沿同树/预算成功。[修正后定向复核](../../../../evidence/correctness/foundation-f5-graph-rechecks/README.md)
 补Win16项/五compute头独立TU及WSL同两域双节点12oracle再次PASS。Windows没有native
 paged数学资格；新Graph头独立TU/全部SDK格仍在F5-06。所有产品保持AUDITED。
+
+## AUDITED REF-HOST-GATHER：固定host reference控制器
+
+baseline 27ad7bde5。CPU fixed materialize的唯一K/V读路径是dense reshape→checked
+Gather；原G-PAGE只许native batch region且拒绝一切alias，不能接此真实consumer。
+graph/graph_batch沿本卡AUDITED增加以下有限FIX，保留原native bridge与普通对象/v19。
+
+- private RegionAccess::bind_gather以同一不可变Graph identity限定：capacity只能是input，
+  唯一logical读者为dense reshape，其唯一读者为axis0/checked Gather并用指定indices
+  input。capacity/reshape不能published，没有额外logical读者；physical plan任何capacity
+  root/alias读者必须是对应Gather operation或包含该node的原qualified region，边界copy、
+  View执行materialize和其他physical读取拒绝。实际页守卫仍原bindings/use/退休机制。
+- graph_batch::MaterializedInvocation::create(context,recipe,queue,options)冷生成它自己
+  的固定Graph并原compile/create，不接受caller可篡改的外部recipe证明或另一个Executable。
+  第一档明确host/system-resource reference，native Apple/Vulkan保持其原typed controller，
+  不把host签名当四route通用runtime。原math/preparation/regions/Queue/Completion全复用。
+  compute_batch只补MaterializedBatchProgram::schema冷readonly getter供固定capacity准入。
+- prepare_batch(layout)用同recipe生成owned同版本indices/mask，经原idle/result/completion
+  门reset；output固定冷分配且原F1 old lease/native use阻止覆写。bind(query,K/V)只允许
+  prepared完全相同layout/schema的PagedArenaRead；ragged为whole ready ReadLease。
+  metadata不让caller覆绑。submit仅原Graph执行，不warm生成索引/编译/规划或另造executor。
+  private take_write仅同idle/无old result/无old completion且成功原invocation，取回caller
+  output已有writer供显式reset；readonly时返回空，仍原F1 try_write核外部readers。避免
+  未提交episode的重复prepare丢掉独占output；不是任意permission extraction/新写入路径。
+- 冷output byte cap、wrapper allocator/ResourceBudget与原CompileOptions保持各自合同。
+  独立output backing owner只保recipe/allocator/budget，不反持pool；全部writer分配并接入
+  owner后冷detach原pool root，原result/storage lease逃逸后仍能native read，quota最后0。
+  错schema/layout/resource/bind失败不混用旧metadata，closed/failed invocation不假恢复。
+- 验证：原Win/WSL CPU actual math八域及新F16/BF16 paged append/F4旧新旧，乱页无0/
+  inactive Q/GQA、free-page/old-result/foreign proof/额外Copy/alias/published拒绝、byte cap/
+  OOM/close/escaped storage/native use/quota0。modified owner/Werror、新Graph头独立TU；
+  仍原预算根/机器串行，原native CUDA Graph定向复核，不跑旧算子全集。其余SDK/san/
+  ragged append/Direct CPU controller/native controller/完整故障与终审继续原六FIX，不缩水。
+  P0：逻辑/physical qualification只cold固定recipe有界节点，普通warm submit不加分支/字段。
+
+[Host controller实际收据](../../../../evidence/correctness/foundation-f5-host-controller-first/README.md)：
+Win/WSL各原16+新控制器8矩阵oracle、页闭环8oracle与五个qualification图通过；原CUDA
+Graph18oracle复核、共同33项八头与两个Graph头独立TU/owner-WX通过。重复prepare、未取
+output、错/duplicate bind、mixed generation、old result/storage、cold cap/metadata OOM/
+update OOM保旧结果、close/escaped native-read/quota0验证。第一次误用Graph allocator
+成员的MSVC编译FAIL保留，使用原metadata_allocator修正；普通产品无字段/数学变化。
+其中一次common头编译尾段与WSL CUDA增量门重叠已如实记录，不改预算或声称全程串行。
+仍AUDITED，CPU Direct/native controllers/ragged/其他风险/SDK/san/P0/guide/终审继续。

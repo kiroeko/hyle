@@ -326,3 +326,9 @@ P0仍O(Qcap*Hq*KVbound)冷owned metadata，额外原生/private bytes未变；�
 oracle。REF-FOOTPRINT及Apple/Vulkan private页绑定/原权限提交桥通过有限首批验收；
 同布局无page0引用、Q容量padding、GQA、F2实际页append/F4发布/旧新旧重读与quota0已
 验证。CPU精确页桥、完整controller/ragged、其他风险/SDK/san/P0/guide/终审仍未完成。
+
+CPU固定host Graph已按[REF-HOST-GATHER owner合同](foundation-f5-owner-bridges.md)实现
+完整prepare/bind/submit/output控制器，见[本轮实际证据](../../../../evidence/correctness/foundation-f5-host-controller-first/README.md)。
+same-generation owned metadata、exact reshape→Gather page guards、原Graph/math/退休
+复用与CPU真实append/F4/旧新旧均通过，保旧storage/OOM/escaped owner/最后quota0有实际
+反证。CPU Direct及其他native完整controller、ragged append和最终门仍继续全部六FIX。
