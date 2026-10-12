@@ -1,0 +1,10 @@
+{
+  "stage": "mechanical fixture LF restoration only; prior semantic OOM results reused",
+  "validated_commit": "da421bef3",
+  "path": "tests/compute_batch/materialized_host_controller_consumer.h",
+  "validated_sha256": "e3f24f636db8da57d03581606b1b5902112771f5b3667a0857819b97aaf50205",
+  "current_sha256": "e487b5249d1f65b8af7c3e3e466b4368a41de8f5d43f10c939e20a648b6af1a8",
+  "proof": "validated bytes with CRLF normalized to LF exactly equal current bytes",
+  "product_change": false,
+  "build_and_test": "SKIPPED proven format-only; no public/source product changes"
+}
