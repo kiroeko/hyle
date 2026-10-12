@@ -620,9 +620,13 @@
     },
     {
       "module": "compute_batch",
-      "state": "AUDITED",
-      "summary": "F5 AUDITED实施：四路线Direct/Graph controller、paged与ragged实际append/F4已验；新多request ragged跨七profile合72episode通过，prefix/append/tail费用明确。原矩阵/common33项九头证据复用；完整故障/18SDK格/san/P0/guide/终审未签。",
-      "record": "docs/implementation/tasks/compute/foundation-f5-paged-ragged-batch.md"
+      "state": "BLOCKED",
+      "blocked_from": "AUDITED",
+      "blocker": "原native Direct consumer风险门累计180.030/180秒；未知退休fixture在断言前TIMEOUT，drain疑点未裁决。",
+      "blocker_owner": "F5 native Direct风险验证预算",
+      "resume_condition": "明确批准保留原TIMEOUT，同配置/树/root追加一次有限180秒；先SCOPED/AUDITED只本fixture定位/actual retirement FIX，不重置旧预算。",
+      "summary": "F5 BLOCKED：四路线controller/paged/ragged实证保留，native unknown-retirement故障门TIMEOUT并用完consumer预算；未证明产品缺陷或完整风险PASS。SDK/san/P0/guide/终审尚未签，goal未完成。",
+      "record": "docs/implementation/tasks/compute/foundation-f5-closure-audit.md"
     },
     {
       "module": "graph_batch",
