@@ -239,3 +239,18 @@ queued math cancel/abandon/failure三input guards保持到原worker实际退休�
 open失败slot拒复用、quota0。Win/Air Vulkan known/unknown错误actual wait后未先close的
 prepare/submit均拒绝，原首错/fence证明/guards正确；旧Pending-result放弃路径证据保留。
 原正常/页/ragged/单KV与caller OOM通过，无产品/API变化，后续完整风险汇总与SDK/san等继续。
+
+## SDK消费者准备：只公开入口的真实普通消费
+
+baselinec092c5ba3。新增public_batch_cpu_consumer只包含公开Compute/Graph/CPU/simd头，
+不含src私有头、trusted bridge或产品测试宏；普通Compute+Graph链接。paged/ragged×F16/
+BF16四域，GQA4:2、active Q1/物理Q2、乱physical页2/0、非整尾、三有效KV的独立均值oracle
+核Direct/Graph，并保old-output门。先沿原CPU门source原型定向执行，固定候选后把同一
+consumer复制进隔离SDK目录，只从迁址prefix发现头/库。当前尚未签installed SDK或candidate。
+这是原F5-06准备工作，不重定义余下risk；native公开consumer、缺席头/负符号与18格仍保留。
+
+完整原要求与有限后续SDK/san/P0等回映见[最终验证计划](foundation-f5-final-validation-plan.md)。
+public CPU原型四域Direct/Graph通过；固定产品输入c092且产品代码未变时沿原身份producer
+完成Windows cpu-vulkan static的一格AUDITED provisional安装/实际rename/隔离复制消费者/
+六前端头TU/具名cuda与apple缺席/普通运行。这只签该public CPU旅程的安装消费，native
+Vulkan、detail/split头/负符号等未由此签，不把它算成18格最终资格或CANDIDATE。

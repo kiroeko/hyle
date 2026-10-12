@@ -1,0 +1,4 @@
+public CPU ragged F16 Direct/Graph GQA/causal/active-capacity/page-tail/old-output mean=0.25 PASS
+public CPU ragged BF16 Direct/Graph GQA/causal/active-capacity/page-tail/old-output mean=0.25 PASS
+public CPU paged F16 Direct/Graph GQA/causal/active-capacity/page-tail/old-output mean=0.25 PASS
+public CPU paged BF16 Direct/Graph GQA/causal/active-capacity/page-tail/old-output mean=0.25 PASS
