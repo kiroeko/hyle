@@ -161,3 +161,11 @@ Win共同16项/四头与WSL实际Direct四域各三布局oracle通过，原失�
 AUDITED；F5六FIX未全部完成，尤其Graph实际same-slot与四路线reference/append完整消费
 旅程/三交付/san/P0/终审继续。本轮不改原Graph v19/普通Invocation形状，不把native Direct
 证据替代Graph或Apple/Vulkan，也不声称Windows已有FlashInfer native paged。
+
+Graph原region同slot首批已实际通过，见[owner卡](foundation-f5-owner-bridges.md)和
+[native Graph证据](../../../../evidence/correctness/foundation-f5-native-graph-first/README.md)：
+两域各两节点串联共享一个metadata输入、两个独立计划slot及拓扑改变后12次oracle。
+同输入不同版本/重复node/metadata注入/第三slot/旧结果明确拒绝；共享readonly镜像在原
+Graph控制门之后释放/回收，未改变普通v19/Invocation常态字段。每region自己的显式
+metadata上传和规划费用保留。F5-04由接口落地推进到有限实际消费，仍不签完整风险，
+产品保持AUDITED；四路线reference/append/F4闭环及交付/san/P0/终审继续。

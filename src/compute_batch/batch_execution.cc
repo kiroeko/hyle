@@ -1,5 +1,6 @@
 #include "hyle/compute/batch_execution.h"
 #include "hyle/compute/detail/batch_provider.h"
+#include "hyle/compute/detail/batch_graph_access.h"
 #include "hyle/compute/detail/lease_access.h"
 #include "hyle/compute/detail/retained_completion.h"
 #include "hyle/core/assert.h"
@@ -40,11 +41,12 @@ struct BatchInvocationData final:util::RefCounted<BatchInvocationData>{
   BatchProgramData*program;BatchBuffers*buffers=nullptr;Queue*queue=nullptr;void*native=nullptr;
   WriteLease mirror,output,float_workspace,int_workspace,host_workspace,staging;
   ReadLease mirror_ready,output_ready,staging_ready;
+  ReadLease graph_shared_metadata;
   CopyBatchInvocation upload;LeaseUsePool uses;RetainedCompletion completion;
   BatchLayoutVersion layout;BatchPlanReport report;
   CompletionRetention native_retention{};std::atomic<std::uint32_t> pending{0};
   Status terminal;std::uint64_t epoch=0;std::uint32_t users=1,tickets=0;
-  bool closed=false,failed=false,prepared=false,ran=false;
+  bool closed=false,failed=false,prepared=false,ran=false,external_output=false;
 };
 } // namespace detail
 namespace {
@@ -70,7 +72,7 @@ Result<d::BatchWorkspaceViews> workspace_views(d::BatchInvocationData&s)noexcept
   HYLE_ASSIGN_OR_RETURN(views.float_workspace,s.float_workspace.view());
   HYLE_ASSIGN_OR_RETURN(views.int_workspace,s.int_workspace.view());
   HYLE_ASSIGN_OR_RETURN(views.host_workspace,s.host_workspace.view());
-  HYLE_ASSIGN_OR_RETURN(views.output,s.output.view());return views;
+  if(s.output.valid()){HYLE_ASSIGN_OR_RETURN(views.output,s.output.view());}return views;
 }
 Result<Completion> submit_native(d::BatchInvocationData&s,bool planning,
     std::span<const ReadLease> leases,std::span<const ConstTensorView> inputs,d::BatchWorkspaceViews views)noexcept{
@@ -103,6 +105,9 @@ BatchProgram&BatchProgram::operator=(BatchProgram&&p)noexcept{if(this!=&p){Batch
 BatchProgram::~BatchProgram(){if(data_)data_->decref();}
 BatchSchema BatchProgram::schema()const noexcept{return data_?data_->schema:BatchSchema{};}
 Result<BatchProgram> BatchProgram::prepare(const Context&context,BatchSchema schema,BatchProgramOptions options)noexcept{
+  return prepare(context,std::move(schema),std::move(options),{});
+}
+Result<BatchProgram> BatchProgram::prepare(const Context&context,BatchSchema schema,BatchProgramOptions options,ProviderInstanceId expected)noexcept{
   if(!context.valid() || !schema.valid() || !options.resource.valid() || !options.host_workspace.valid() || !options.allocator.valid() ||
      !options.max_invocations || options.max_invocations==UINT32_MAX || !options.max_float_workspace_bytes || !options.max_int_workspace_bytes || !std::isfinite(options.scale))
     return std::unexpected(Status::InvalidArgument("batch program options are invalid"));
@@ -112,6 +117,7 @@ Result<BatchProgram> BatchProgram::prepare(const Context&context,BatchSchema sch
   auto*p=a.construct<d::BatchProgramData>(std::move(schema),std::move(options),a);if(!p)return std::unexpected(Status::ResourceExhausted("batch program metadata"));
   BatchProgram result(p);
   for(std::size_t index=0;index<context.provider_count();++index){
+    if(expected.valid()){HYLE_ASSIGN_OR_RETURN(auto instance,context.provider_instance_id(index));if(instance!=expected)continue;}
     auto extension=d::ProviderExtensionAccess::query(context,index,d::kBatchPlanningExtensionId);
     if(!extension){if(extension.error().IsUnimplemented())continue;return std::unexpected(extension.error());}
     p->extension=std::move(*extension);break;
@@ -130,21 +136,24 @@ BatchInvocation::BatchInvocation(BatchInvocation&&v)noexcept:data_(std::exchange
 BatchInvocation&BatchInvocation::operator=(BatchInvocation&&v)noexcept{if(this!=&v){BatchInvocation old(std::move(*this));data_=std::exchange(v.data_,nullptr);}return *this;}
 BatchInvocation::~BatchInvocation(){if(data_)data_->release_user();}
 Result<BatchInvocation> BatchInvocation::create(const BatchProgram&program,Queue&queue)noexcept{
+  return create(program,queue,false);
+}
+Result<BatchInvocation> BatchInvocation::create(const BatchProgram&program,Queue&queue,bool external_output)noexcept{
   auto*p=program.data_;if(!p || !queue.valid())return std::unexpected(Status::InvalidArgument("batch invocation program/queue is invalid"));
   auto count=p->invocations.load(std::memory_order_relaxed);
   do{if(count==p->options.max_invocations)return std::unexpected(Status::Unavailable("batch invocation capacity retained"));}
   while(!p->invocations.compare_exchange_weak(count,count+1,std::memory_order_relaxed));
   auto*s=p->allocator.construct<d::BatchInvocationData>(p);if(!s){p->invocations.fetch_sub(1,std::memory_order_relaxed);return std::unexpected(Status::ResourceExhausted("batch invocation metadata"));}
-  BatchInvocation result(s);s->queue=&queue;
+  BatchInvocation result(s);s->queue=&queue;s->external_output=external_output;
   s->buffers=p->allocator.construct<d::BatchBuffers>(p);if(!s->buffers)return std::unexpected(Status::ResourceExhausted("batch buffer owner"));
   s->buffers->provider_owner=p->extension;
-  HYLE_ASSIGN_OR_RETURN(auto output,output_bytes(p->schema.capacity()));const auto mirror=p->schema.metadata_offsets().bytes;
+  HYLE_ASSIGN_OR_RETURN(auto output_capacity,output_bytes(p->schema.capacity()));const auto output=external_output?0u:output_capacity;const auto mirror=p->schema.metadata_offsets().bytes;
   std::size_t capacity=4u*256u;
   for(const auto bytes:{output,mirror,p->options.max_float_workspace_bytes,p->options.max_int_workspace_bytes}){if(bytes>SIZE_MAX-capacity)return std::unexpected(Status::OutOfRange("batch pool extent overflow"));capacity+=bytes;}
   HYLE_ASSIGN_OR_RETURN(s->buffers->device,LeasePool::create(p->options.resource,capacity,{.max_blocks=4,.allocator=p->allocator,.resource_budget=p->options.resource_budget}));
   if(mirror>SIZE_MAX-p->options.max_int_workspace_bytes-512u)return std::unexpected(Status::OutOfRange("batch host workspace extent overflow"));
   HYLE_ASSIGN_OR_RETURN(s->buffers->host,LeasePool::create(p->options.host_workspace,p->options.max_int_workspace_bytes+mirror+512u,{.max_blocks=2,.allocator=p->allocator,.resource_budget=p->options.resource_budget}));
-  HYLE_ASSIGN_OR_RETURN(s->mirror,s->buffers->device.allocate(mirror));HYLE_ASSIGN_OR_RETURN(s->output,s->buffers->device.allocate(output));
+  HYLE_ASSIGN_OR_RETURN(s->mirror,s->buffers->device.allocate(mirror));if(!external_output){HYLE_ASSIGN_OR_RETURN(s->output,s->buffers->device.allocate(output));}
   HYLE_ASSIGN_OR_RETURN(s->float_workspace,s->buffers->device.allocate(p->options.max_float_workspace_bytes));
   HYLE_ASSIGN_OR_RETURN(s->int_workspace,s->buffers->device.allocate(p->options.max_int_workspace_bytes));HYLE_ASSIGN_OR_RETURN(s->host_workspace,s->buffers->host.allocate(p->options.max_int_workspace_bytes));
   HYLE_ASSIGN_OR_RETURN(s->staging,s->buffers->host.allocate(mirror));
@@ -223,11 +232,46 @@ Result<Completion> PreparedBatch::run(std::span<const ReadLease>leases)noexcept{
     return std::unexpected(Status::FailedPrecondition("batch token is closed/stale/already consumed"));
   if(leases.size()!=3)return std::unexpected(Status::InvalidArgument("batch run needs Q/K/V readonly leases"));
   auto&s=*data_;HYLE_ASSIGN_OR_RETURN(auto descriptions,input_descriptions(s.program->schema.capacity()));
+  if(s.external_output)return std::unexpected(Status::FailedPrecondition("Graph batch slot requires its admitted original region"));
   std::array<ConstTensorView,3> inputs;
   for(std::size_t i=0;i<3;++i){HYLE_ASSIGN_OR_RETURN(inputs[i],leases[i].tensor(descriptions[i]));}
   HYLE_ASSIGN_OR_RETURN(auto views,workspace_views(s));
   auto submitted=submit_native(s,false,leases,inputs,views);
   if(!submitted){s.failed=true;s.prepared=false;return std::unexpected(submitted.error());}
   s.ran=true;s.prepared=false;return std::move(*submitted);
+}
+Result<BatchProgram> d::BatchGraphAccess::prepare(const Context&context,BatchSchema schema,BatchProgramOptions options,ProviderInstanceId instance)noexcept{
+  return BatchProgram::prepare(context,std::move(schema),std::move(options),instance);
+}
+Result<BatchInvocation> d::BatchGraphAccess::create(const BatchProgram&program,Queue&queue)noexcept{return BatchInvocation::create(program,queue,true);}
+Result<ReadLease> d::BatchGraphAccess::metadata(const BatchInvocation&invocation)noexcept{
+  if(!invocation.data_ || !invocation.data_->prepared)return std::unexpected(Status::FailedPrecondition("Graph batch slot is not prepared"));
+  return invocation.data_->graph_shared_metadata.valid()?invocation.data_->graph_shared_metadata:invocation.data_->mirror_ready;
+}
+Status d::BatchGraphAccess::share_metadata(BatchInvocation&target,const BatchInvocation&source)noexcept{
+  auto*t=target.data_;auto*s=source.data_;
+  if(!t || !s || !t->external_output || !s->external_output || !t->prepared || !s->prepared || t->ran || s->ran || t->layout!=s->layout)
+    return Status::InvalidArgument("shared Graph metadata needs the same prepared layout");
+  if(t->program->options.resource!=s->program->options.resource)
+    return Status::InvalidArgument("shared Graph metadata crosses resource domains");
+  t->graph_shared_metadata=s->mirror_ready;return Status::Ok();
+}
+void d::BatchGraphAccess::clear_shared_metadata(BatchInvocation&invocation)noexcept{
+  if(invocation.data_)invocation.data_->graph_shared_metadata.reset();
+}
+d::EnqueueResult d::BatchGraphAccess::enqueue(PreparedBatch&token,Queue&queue,std::span<const ConstTensorView>inputs,std::span<const TensorView>outputs)noexcept{
+  auto*s=token.data_;
+  if(!s || !s->external_output || s->queue!=&queue || s->closed || s->failed || !s->prepared || s->ran || token.epoch_!=s->epoch)
+    return EnqueueResult::rejected(Status::FailedPrecondition("Graph batch token/slot/queue is stale"));
+  if(inputs.size()!=4 || outputs.size()!=1)return EnqueueResult::rejected(Status::InvalidArgument("Graph batch region port count"));
+  auto descriptions=input_descriptions(s->program->schema.capacity());if(!descriptions)return EnqueueResult::rejected(descriptions.error());
+  for(std::size_t i=0;i<3;++i)if(inputs[i].description()!=(*descriptions)[i])return EnqueueResult::rejected(Status::InvalidArgument("Graph batch input capacity mismatch"));
+  auto mirror=(s->graph_shared_metadata.valid()?s->graph_shared_metadata:s->mirror_ready).view();if(!mirror)return EnqueueResult::rejected(mirror.error());const auto supplied=inputs[3].storage();
+  if(supplied.resource()!=mirror->resource() || supplied.native_handle()!=mirror->native_handle() || supplied.offset()!=mirror->offset() || supplied.size()!=mirror->size())
+    return EnqueueResult::rejected(Status::InvalidArgument("Graph batch metadata is not the prepared slot mirror"));
+  if(outputs[0].description()!=(*descriptions)[0])return EnqueueResult::rejected(Status::InvalidArgument("Graph batch output capacity mismatch"));
+  auto views=workspace_views(*s);if(!views)return EnqueueResult::rejected(views.error());views->metadata=*mirror;views->output=outputs[0].storage();
+  auto enqueued=s->program->table->run(s->native,queue,inputs.first(3),*views);
+  s->prepared=false;s->ran=true;return enqueued;
 }
 } // namespace hyle::compute

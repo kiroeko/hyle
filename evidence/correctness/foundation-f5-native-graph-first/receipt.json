@@ -1,0 +1,283 @@
+{
+  "stage": "AUDITED F5 native Graph implementation; not candidate/final",
+  "identity": {
+    "os": "Linux kiro-workstation 6.18.40.1-microsoft-standard-WSL2 #1 SMP PREEMPT_DYNAMIC Fri Jul 31 22:12:15 UTC 2026 x86_64 x86_64 x86_64 GNU/Linux",
+    "gpu": "NVIDIA GeForce RTX 4070, GPU-e7376560-6f5d-ec19-6ee4-3dd3a2c81ef8, 617.14",
+    "compiler": "g++-14 (Ubuntu 14.2.0-4ubuntu2~24.04.1) 14.2.0\nCopyright (C) 2024 Free Software Foundation, Inc.\nThis is free software; see the source for copying conditions.  There is NO\nwarranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.",
+    "nvcc": "nvcc: NVIDIA (R) Cuda compiler driver\nCopyright (c) 2005-2026 NVIDIA Corporation\nBuilt on Tue_Jun_09_02:43:40_PM_PDT_2026\nCuda compilation tools, release 13.3, V13.3.73\nBuild cuda_13.3.r13.3/compiler.38244171_0"
+  },
+  "scope": "F5 original Graph region/native batch same-slot public consumer only; no old operator tests",
+  "stages": [
+    {
+      "name": "configure",
+      "command": [
+        "cmake",
+        "-S",
+        "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/source-parent",
+        "-B",
+        "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/source-build"
+      ],
+      "pid": 655,
+      "state": "terminal",
+      "available_bytes": 32368996352,
+      "log": "configure.log",
+      "elapsed": 16.402683882999998,
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "39215490d0c74fcd4a6c7daf6f7f3d832134c9f5c241527b89160f4cb280efee"
+    },
+    {
+      "name": "build",
+      "command": [
+        "cmake",
+        "--build",
+        "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/source-build",
+        "--target",
+        "hyle_f5_native_graph",
+        "--parallel",
+        "4"
+      ],
+      "pid": 698,
+      "state": "terminal",
+      "available_bytes": 32426381312,
+      "log": "build.log",
+      "elapsed": 20.712575335,
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "d21cfd48fc683a5cbd9f9bf1c64833a5180acc0b0be8881c7e8af91e3284cef2"
+    },
+    {
+      "name": "consumer",
+      "command": [
+        "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/source-build/hyle_f5_native_graph"
+      ],
+      "pid": 926,
+      "state": "terminal",
+      "available_bytes": 31607119872,
+      "log": "consumer.log",
+      "elapsed": 0.6656575129999993,
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "60c2a0deea48ed9064ec3abe08ffc3864a6dcbfe7e75e296c5df8053feaf7950"
+    },
+    {
+      "name": "build-resume1",
+      "command": [
+        "cmake",
+        "--build",
+        "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/source-build",
+        "--target",
+        "hyle_f5_native_graph",
+        "--parallel",
+        "4"
+      ],
+      "pid": 659,
+      "state": "terminal",
+      "available_bytes": 32357347328,
+      "log": "build-resume1.log",
+      "elapsed": 3.3228383260000003,
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "ba1b3c313866c4583297aa853f69ce40a31b5272c07e68146d53a883e0192ddf"
+    },
+    {
+      "name": "consumer-resume1",
+      "command": [
+        "/root/hyle-scratch/compute-unified/l-cpu-cuda/selected-graph/source-build/hyle_f5_native_graph"
+      ],
+      "pid": 688,
+      "state": "terminal",
+      "available_bytes": 32069718016,
+      "log": "consumer-resume1.log",
+      "elapsed": 1.3669290820000004,
+      "exit_code": 0,
+      "verdict": "PASS",
+      "sha256": "3ed7dd5a3a4ff4c9ee7d4abb7d85cede4e440edd5d2745d42909e2827a7e3eb3"
+    }
+  ],
+  "test_parallel": 1,
+  "inputs": [
+    {
+      "path": "cmake/HyleComponents.cmake",
+      "sha256": "39932ad552831721509411d18c5f0774334c4583dd7f565e733c8c8a6aefb26f"
+    },
+    {
+      "path": "include/hyle/compute/batch_execution.h",
+      "sha256": "7ef7d2a547bda190310374e098ecdeddb029f140dc3c25bf3fb7384ebd4a084b"
+    },
+    {
+      "path": "include/hyle/compute/batch_layout.h",
+      "sha256": "654d7d3aedcbb9e50532e137ea3d89bb8aa0c5f5697879d4ff79455843fe5402"
+    },
+    {
+      "path": "include/hyle/compute/batch_ops.h",
+      "sha256": "fe837a188f82beb01570a817ce5fdaa804ee7abbe24a7aa64d48c31522f0d7c0"
+    },
+    {
+      "path": "include/hyle/compute/detail/batch_graph_access.h",
+      "sha256": "5fd73efbbe44befba9f4359550eb45a5fc5b24b583750faacbb8398de0c83184"
+    },
+    {
+      "path": "include/hyle/compute/detail/batch_provider.h",
+      "sha256": "1850c8e70ec085f83b6480bcac367c55a83b4a984dcc2cc6baf19e776872c146"
+    },
+    {
+      "path": "include/hyle/compute/detail/lease_access.h",
+      "sha256": "a51b7fd93c33f76820189c18ae37377d49b7aa320399dc32a75c78a2d6c10e18"
+    },
+    {
+      "path": "include/hyle/graph/batch.h",
+      "sha256": "57e56fb9beb49ef75f3e44b612e87be9102b761b77ae3abcde1309269389bc08"
+    },
+    {
+      "path": "include/hyle/graph/detail/region_access.h",
+      "sha256": "e330856ae980f677301e3e47a0329445c848f65f90a3e0588064213e0cee5e5a"
+    },
+    {
+      "path": "include/hyle/graph/leased_invocation.h",
+      "sha256": "093f1c04307abcc885c9d8ba0319531d10848ef500293da2289b6b038679ee75"
+    },
+    {
+      "path": "src/compute/resource_leases.cc",
+      "sha256": "6d6caa01b517ae13cd04044ebc8eb481d9b3338f45623dc5d341038f37729801"
+    },
+    {
+      "path": "src/compute_batch/CMakeLists.txt",
+      "sha256": "6f8c76bbeb7ca34e5351cecb8ccdb2ccd5d3b76def4f817488ef379255d53216"
+    },
+    {
+      "path": "src/compute_batch/batch_execution.cc",
+      "sha256": "f065607c0553cd13646960867afdc39ee5fc2d9d820e509ba2417167b3d9d4f6"
+    },
+    {
+      "path": "src/compute_batch/batch_layout.cc",
+      "sha256": "9643f20396e320aac8f2184ddd243f996a70ee46e81487eb397fa3a54ac020f4"
+    },
+    {
+      "path": "src/compute_provider_flashinfer/CMakeLists.txt",
+      "sha256": "3fdbbff300d73e419d7703752de90a38962665f22edd6678668b3f72f84237e0"
+    },
+    {
+      "path": "src/compute_provider_flashinfer/flashinfer_provider.cc",
+      "sha256": "d6f0e55ac6ed4198dd43f94d4f980594c7d971831ba75d15c5508c0021ac9cd3"
+    },
+    {
+      "path": "src/compute_provider_flashinfer/native_batch.cu",
+      "sha256": "aecdbf870616f08600359e00179e4a054513bdff861be5ebc1136db13e33d136"
+    },
+    {
+      "path": "src/compute_provider_flashinfer/native_batch.h",
+      "sha256": "503b895787443169bec1efbc299c6cbf5982e7baae0911d2f316f6980e7a5140"
+    },
+    {
+      "path": "src/graph/CMakeLists.txt",
+      "sha256": "51897f736b32321f1a85b650db8e212acbdc4d61ff3d4507996a8a59689716f3"
+    },
+    {
+      "path": "src/graph/leased_invocation.cc",
+      "sha256": "772f274d379f37af3dc05afda63e7305eb208e2fbbc851f11db35b45b3a02f0b"
+    },
+    {
+      "path": "src/graph/plan_state.h",
+      "sha256": "4f4388b8098fd6b85305fed8133d333ab779fe491403113f86ecd177bd9418fe"
+    },
+    {
+      "path": "src/graph/region_access.cc",
+      "sha256": "d313b47bc92b93f021aff1e8ca2410ee74513a933dd842e4c99fb561bdcdbbae"
+    },
+    {
+      "path": "src/graph_batch/CMakeLists.txt",
+      "sha256": "a1559a5745d51324405d7e89ecbf1c96d1fd59c556dda097ac548e19e9569420"
+    },
+    {
+      "path": "src/graph_batch/batch.cc",
+      "sha256": "8d6f16ebf5c8c173c7d7a68e3fa3e581c57d08d84cd540cc374ab195b7fe97f7"
+    },
+    {
+      "path": "tests/compute_batch/CMakeLists.txt",
+      "sha256": "176fcd583fe9a535326878e0817185263264f5d2fdfa7f6df6b5e965b5f7474a"
+    },
+    {
+      "path": "tests/compute_batch/batch_layout_test.cc",
+      "sha256": "8dac343cd30d4d2de1ac7c3f81bdb5cf40743c915b601a2c52435116578a21b5"
+    },
+    {
+      "path": "tests/compute_batch/native_direct_consumer.cc",
+      "sha256": "544225c8b6cc5414b50a1ad13d683d656b371112952e8764f679e6d37dfad600"
+    },
+    {
+      "path": "tests/compute_batch/native_graph_consumer.cc",
+      "sha256": "630ef3c63a34954dde09d80b60604f64d2eaa6eaf2355ece1f076a4a03783601"
+    }
+  ],
+  "input_history": [
+    [
+      {
+        "path": "cmake/HyleComponents.cmake",
+        "sha256": "39932ad552831721509411d18c5f0774334c4583dd7f565e733c8c8a6aefb26f"
+      },
+      {
+        "path": "src/compute_batch/CMakeLists.txt",
+        "sha256": "6f8c76bbeb7ca34e5351cecb8ccdb2ccd5d3b76def4f817488ef379255d53216"
+      },
+      {
+        "path": "src/compute_batch/batch_execution.cc",
+        "sha256": "b40d3f32f667a6371329a88b678d713446e277d02d1546f538ab80dbe47207c0"
+      },
+      {
+        "path": "src/compute_batch/batch_layout.cc",
+        "sha256": "9643f20396e320aac8f2184ddd243f996a70ee46e81487eb397fa3a54ac020f4"
+      },
+      {
+        "path": "src/compute_provider_flashinfer/CMakeLists.txt",
+        "sha256": "3fdbbff300d73e419d7703752de90a38962665f22edd6678668b3f72f84237e0"
+      },
+      {
+        "path": "src/compute_provider_flashinfer/flashinfer_provider.cc",
+        "sha256": "d6f0e55ac6ed4198dd43f94d4f980594c7d971831ba75d15c5508c0021ac9cd3"
+      },
+      {
+        "path": "src/compute_provider_flashinfer/native_attention.cu",
+        "sha256": "ee2638f5b4cb9f7f25be71027ab2e0f12a3e0229a6da574ef10e76be4d724146"
+      },
+      {
+        "path": "src/compute_provider_flashinfer/native_attention.h",
+        "sha256": "f8efa77d2aaa406a9992f5921c1dab0e675eaa6edac3105f16e683248bb724d7"
+      },
+      {
+        "path": "src/compute_provider_flashinfer/native_batch.cu",
+        "sha256": "aecdbf870616f08600359e00179e4a054513bdff861be5ebc1136db13e33d136"
+      },
+      {
+        "path": "src/compute_provider_flashinfer/native_batch.h",
+        "sha256": "503b895787443169bec1efbc299c6cbf5982e7baae0911d2f316f6980e7a5140"
+      },
+      {
+        "path": "include/hyle/compute/batch_layout.h",
+        "sha256": "654d7d3aedcbb9e50532e137ea3d89bb8aa0c5f5697879d4ff79455843fe5402"
+      },
+      {
+        "path": "include/hyle/compute/batch_ops.h",
+        "sha256": "fe837a188f82beb01570a817ce5fdaa804ee7abbe24a7aa64d48c31522f0d7c0"
+      },
+      {
+        "path": "include/hyle/compute/batch_execution.h",
+        "sha256": "7ef7d2a547bda190310374e098ecdeddb029f140dc3c25bf3fb7384ebd4a084b"
+      },
+      {
+        "path": "include/hyle/compute/detail/batch_provider.h",
+        "sha256": "1850c8e70ec085f83b6480bcac367c55a83b4a984dcc2cc6baf19e776872c146"
+      },
+      {
+        "path": "tests/compute_batch/native_graph_consumer.cc",
+        "sha256": "80a9a3e4fa34f731da5cf9ac4c58deecb8dea6aca667ee5e68cfa7922adfac9d"
+      }
+    ]
+  ],
+  "raw_archive": {
+    "name": "raw.zip",
+    "sha256": "07d3b3cc94b0adcf0e77f03d8bd1d048c2a2ec6787d4c00cc9672ea8f8213a1b",
+    "stage_hashes_refer_to": "original archive entries"
+  },
+  "qualification": "PASS_AUDITED_F5_NATIVE_GRAPH_TWO_DOMAINS_SHARED_METADATA_TWO_SLOTS; not candidate/final"
+}

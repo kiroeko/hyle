@@ -1,6 +1,7 @@
 #pragma once
 #include "hyle/compute/batch_ops.h"
 #include "hyle/compute/batch_transfer.h"
+#include "hyle/compute/provider.h"
 #include <optional>
 
 namespace hyle::compute {
@@ -25,7 +26,7 @@ struct BatchPlanReport final {
   std::uint32_t host_waits = 0;
   CopyBatchReport metadata_upload{};
 };
-namespace detail { struct BatchProgramData; struct BatchInvocationData; }
+namespace detail { struct BatchProgramData; struct BatchInvocationData; struct BatchGraphAccess; }
 class BatchInvocation;
 class PreparedBatch;
 // Cold, immutable native domain. Only explicit batch users acquire buffers,
@@ -43,6 +44,8 @@ public:
   HYLE_COMPUTE_BATCH_API BatchSchema schema() const noexcept;
 private:
   friend class BatchInvocation;
+  friend struct detail::BatchGraphAccess;
+  static Result<BatchProgram> prepare(const Context&,BatchSchema,BatchProgramOptions,ProviderInstanceId) noexcept;
   explicit BatchProgram(detail::BatchProgramData *p) noexcept:data_(p){}
   detail::BatchProgramData *data_=nullptr;
 };
@@ -74,6 +77,8 @@ public:
   HYLE_COMPUTE_BATCH_API Status drain() noexcept;
 private:
   friend class PreparedBatch;
+  friend struct detail::BatchGraphAccess;
+  static Result<BatchInvocation> create(const BatchProgram&,Queue&,bool external_output) noexcept;
   explicit BatchInvocation(detail::BatchInvocationData *p) noexcept:data_(p){}
   detail::BatchInvocationData *data_=nullptr;
   Result<PreparedBatch> prepare(const BatchLayoutVersion &,bool update) noexcept;
@@ -93,6 +98,7 @@ public:
   HYLE_COMPUTE_BATCH_API Result<Completion> run(std::span<const ReadLease> inputs) noexcept;
 private:
   friend class BatchInvocation;
+  friend struct detail::BatchGraphAccess;
   PreparedBatch(detail::BatchInvocationData *p,std::uint64_t epoch) noexcept:data_(p),epoch_(epoch){}
   detail::BatchInvocationData *data_=nullptr;
   std::uint64_t epoch_=0;

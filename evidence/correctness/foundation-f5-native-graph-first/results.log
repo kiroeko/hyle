@@ -1,0 +1,14 @@
+HYLE batch oracle maxError=0.000128634051 PASS
+HYLE batch oracle maxError=0.000140543438 PASS
+HYLE batch oracle maxError=0.000128634051 PASS
+HYLE batch oracle maxError=0.000140543438 PASS
+HYLE batch oracle maxError=7.07328965e-05 PASS
+HYLE batch oracle maxError=0.000105221591 PASS
+HYLE Graph original region paged F16 D64 same-slot/shared-metadata/two-slots/oracle/old-result PASS
+HYLE batch oracle maxError=3.63346144e-05 PASS
+HYLE batch oracle maxError=3.66750425e-06 PASS
+HYLE batch oracle maxError=3.63346144e-05 PASS
+HYLE batch oracle maxError=3.66750425e-06 PASS
+HYLE batch oracle maxError=3.63346144e-05 PASS
+HYLE batch oracle maxError=2.83173151e-06 PASS
+HYLE Graph original region ragged BF16 D128 same-slot/shared-metadata/two-slots/oracle/old-result PASS

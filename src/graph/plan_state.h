@@ -69,6 +69,7 @@ public:
       std::span<const compute::TensorView> outputs) noexcept;
 
 private:
+  friend struct RegionAccess;
   void reset() noexcept;
   friend class PreparedRegion;
   RegionInvocation(const PreparedRegion *prepared, void *state,
@@ -156,6 +157,7 @@ public:
       std::span<const compute::TensorView> outputs) const noexcept;
 
 private:
+  friend struct RegionAccess;
   friend class RegionInvocation;
   void reset() noexcept {
     if (prepared_.vtable != nullptr &&

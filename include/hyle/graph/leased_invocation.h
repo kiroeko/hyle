@@ -4,7 +4,7 @@
 #include "hyle/graph/executable.h"
 
 namespace hyle::graph {
-namespace detail { struct LeasedInvocationState; }
+namespace detail { struct LeasedInvocationState; struct RegionAccess; }
 
 struct LeasedInvocationOptions final {
   mem::AllocatorRef allocator = mem::system_allocator();
@@ -79,6 +79,7 @@ public:
   HYLE_GRAPH_API Status drain() noexcept;
 private:
   explicit LeasedInvocation(detail::LeasedInvocationState *state) noexcept : state_(state) {}
+  friend struct detail::RegionAccess;
   detail::LeasedInvocationState *state_ = nullptr;
 };
 } // namespace hyle::graph

@@ -1,0 +1,1 @@
+hyle_add_module(graph_batch SOURCES batch.cc)

@@ -139,3 +139,28 @@ graph_batch依赖graph/compute_batch/compute/error/mem及private core/util，不
 但不借caller局部指针。Native Apple/Vulkan后续explicit reference仍走其原typed Program与
 既有math，不能借此CUDA shared接口代签它们。当前有限G-01访问桥/G-02原region Provider与
 coordinator是F5-04分解，六FIX/四路线/append闭环及全部交付风险未缩减。
+
+## AUDITED Graph首批实际同slot消费
+
+[原Graph native旅程](../../../../evidence/correctness/foundation-f5-native-graph-first/README.md)
+实际通过：paged F16 D64短KV、ragged BF16 D128长KV，各两个串联节点共享一个IR metadata
+输入、两个独立invocation/计划/工作区；初始双slot与拓扑改变后共12次独立dense oracle。
+原region shared_submit运行原FlashInfer kernel并直接写原Graph外部F1输出，未建立第二
+executor/shadow输出。旧结果阻止prepare，第三slot受冷容量拒绝，metadata quota最后归零。
+
+同一个metadata ValueId必须对应完全相同的owned layout版本与device资源域，完整集合
+预检后才reset。每region仍有自身镜像/规划/上传且报告其真实费用；cold bridge持leader
+readonly mirror供同输入消费，绑定不会被后节点覆盖成另一generation。更新先释放所有
+shared readonly引用再重新取writer；部分准备失败清掉全部token/bindings，不能提交混合
+批次。重复node/同输入不同版本/caller metadata注入明确拒绝。metadata必须是显式Graph
+input，constant/device-produced页表未准入。普通v19/Invocation layout/submit合同不变。
+
+证据仍是AUDITED有限checkpoint，未签candidate/全F5。其余故障/取消/unknown、四路线
+reference及append/F4完整闭环、三交付/san/P0/guide/终审继续，Windows CUDA native paged
+仍未准入，不拿此WSL GPU结果代签其他route。
+
+[Windows首批编译](../../../../evidence/correctness/foundation-f5-graph-windows-first/README.md)
+新batch /WX、两Graph头普通TU与自然产品链接/运行通过；原MSVC move-only token ternary
+编译FAIL保留，显式if/else修正后沿同树/预算成功。[修正后定向复核](../../../../evidence/correctness/foundation-f5-graph-rechecks/README.md)
+补Win16项/五compute头独立TU及WSL同两域双节点12oracle再次PASS。Windows没有native
+paged数学资格；新Graph头独立TU/全部SDK格仍在F5-06。所有产品保持AUDITED。

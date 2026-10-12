@@ -272,13 +272,13 @@
       "module": "compute",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/foundation-f5-owner-bridges.md",
-      "summary": "F5 AUDITED：冷同instance BatchPlanning extension与原FlashInfer native paged/ragged prepare/plan/run接缝及有限Direct生命周期FIX冻结；旧dense/F1–F4范围保留，Graph桥仍SCOPED。"
+      "summary": "F5 AUDITED：冷同instance BatchPlanning extension与原FlashInfer native paged/ragged prepare/plan/run接缝及有限Direct生命周期FIX冻结；旧dense/F1–F4范围保留，Graph原region同slot桥已AUDITED实现并有有限native消费证据。"
     },
     {
       "module": "graph",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/foundation-f5-owner-bridges.md",
-      "summary": "F5 Graph AUDITED：cold原region/同slot访问、具名batch Provider wrapper与opt-in协调器/API/owner/生命周期固定；普通v19/layout/submit不改，原native kernel直接写Graph output，尚未验收。"
+      "summary": "F5 Graph AUDITED实施：原region同slot/native kernel直接写Graph输出；WSL两域双节点共享metadata/双独立slot与拓扑更新12次oracle通过，旧结果/错版本/第三slot拒绝；完整风险/四路线reference/append/交付/san/终审未完成。"
     },
     {
       "module": "container_concurrent",
@@ -532,7 +532,7 @@
       "module": "compute_provider_flashinfer",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/foundation-f5-owner-bridges.md",
-      "summary": "F5 AUDITED：冷同instance BatchPlanning extension与原FlashInfer native paged/ragged prepare/plan/run接缝及有限Direct生命周期FIX冻结；旧dense/F1–F4范围保留，Graph桥仍SCOPED。"
+      "summary": "F5 AUDITED：冷同instance BatchPlanning extension与原FlashInfer native paged/ragged prepare/plan/run接缝及有限Direct生命周期FIX冻结；旧dense/F1–F4范围保留，Graph原region同slot桥已AUDITED实现并有有限native消费证据。"
     },
     {
       "module": "compute_provider_ggml_metal",
@@ -621,13 +621,13 @@
     {
       "module": "compute_batch",
       "state": "AUDITED",
-      "summary": "F5 AUDITED实施：typed schema/owned layout与原F1/F2 batch执行shell、同slot mirror/epoch、explicit prepare/update/run/旧结果容量已接；Win16项/四头及WSL原native Direct四域三布局通过，Graph/四路线reference/append/交付/san/终审未完成。",
+      "summary": "F5 AUDITED实施：typed schema/owned layout与原F1/F2 batch执行shell、同slot mirror/epoch、explicit prepare/update/run/旧结果容量已接；Win16项/五头、WSL原native Direct四域三布局及Graph双节点/双slot有限旅程通过，完整风险/四路线reference/append/交付/san/终审未完成。",
       "record": "docs/implementation/tasks/compute/foundation-f5-paged-ragged-batch.md"
     },
     {
       "module": "graph_batch",
       "state": "AUDITED",
-      "summary": "F5 Graph AUDITED：cold原region/同slot访问、具名batch Provider wrapper与opt-in协调器/API/owner/生命周期固定；普通v19/layout/submit不改，原native kernel直接写Graph output，尚未验收。",
+      "summary": "F5 Graph AUDITED实施：原region同slot/native kernel直接写Graph输出；WSL两域双节点共享metadata/双独立slot与拓扑更新12次oracle通过，旧结果/错版本/第三slot拒绝；完整风险/四路线reference/append/交付/san/终审未完成。",
       "record": "docs/implementation/tasks/compute/foundation-f5-owner-bridges.md"
     }
   ]

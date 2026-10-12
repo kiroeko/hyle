@@ -1,4 +1,5 @@
 #include "hyle/graph/leased_invocation.h"
+#include "hyle/graph/detail/region_access.h"
 
 #include <atomic>
 #include <array>
@@ -52,6 +53,13 @@ struct LeasedInvocationState final : util::RefCounted<LeasedInvocationState> {
   std::atomic<bool> busy{false};
   bool accepted = false, closed = false;
 };
+Status RegionAccess::visit(LeasedInvocation&invocation,RegionAccessFn callback,void*user)noexcept{
+  auto*state=invocation.state_;
+  if(!state)return Status::FailedPrecondition("leased region invocation is empty");
+  if(state->closed || state->busy.load(std::memory_order_acquire) || state->results.load(std::memory_order_acquire) ||
+     !state->completion.available())return Status::Unavailable("leased region has closed/busy/old output/completion ownership");
+  return visit(state->invocation,callback,user);
+}
 
 void release_owner(LeasedInvocationState *state) noexcept {
   bool last;
