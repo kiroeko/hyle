@@ -620,8 +620,8 @@
     },
     {
       "module": "compute_batch",
-      "state": "SCOPED",
-      "summary": "F5 SCOPED恢复：用户批准原native Direct故障consumer同树/root一次追加180秒，保留TIMEOUT与全部历史累计；先固定fixture定位/actual retirement范围，原六FIX与未验收口门保留。",
+      "state": "AUDITED",
+      "summary": "F5 AUDITED恢复：原故障consumer一次追加180秒、历史TIMEOUT/累计保留；冻结OBS-01 fixture阶段/warm/accepted Gate，只有实际反证触发DRAIN-01原退役等待。六FIX及SDK/san/P0/终审保留未完成。",
       "record": "docs/implementation/tasks/compute/foundation-f5-closure-audit.md"
     },
     {

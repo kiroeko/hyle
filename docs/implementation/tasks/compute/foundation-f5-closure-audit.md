@@ -1,6 +1,6 @@
 # F5 六FIX收口审计与预算裁决
 
-状态：SCOPED（2026-10-12 用户批准原故障门一次追加180秒，先恢复范围）；baseline
+状态：AUDITED（2026-10-12 用户批准原故障门一次追加180秒，有限FIX已冻结）；baseline
 46b1d7e70。原[A/F4/F5目标](../../../architecture/compute-state-paged-design.md)、
 [F5主卡](foundation-f5-paged-ragged-batch.md)全部保留，不把已实现部分改成完成定义。
 本页是本轮核对与停止记录，不代签CANDIDATE、CLOSED或未运行项。
@@ -82,4 +82,15 @@ provider已接受kernel之后、原finish_sequence记录completion之前。unkno
 存在产品反证；只有实际断言失败才允许修改compute_batch实际退役等待。原六FIX、其余风险、
 SDK/san/P0/guide/终审与goal后工作量评估全部保留，本次预算不代签这些门。
 
-本阶段SCOPED仅记录恢复；下一阶段AUDITED固定有限FIX后才修改或运行本门。
+SCOPED恢复提交f73ae8761；本阶段AUDITED固定以下有限FIX，然后才修改或运行本门。
+
+| FIX | 现状与准入 | 固定改动及验收 |
+|---|---|---|
+| OBS-01 | 原fixture在断言前TIMEOUT；锁定peer prelaunch设置属性、原Graph fixture warm均已静态核对，但未证明hang根因 | stdout阶段锚；warm同domain；finish_sequence中在已接受kernel之后插Gate再委托原finish记录event。原unknown错误转发与真实资源退役不变；必须实际到达drain断言 |
+| DRAIN-01（仅runtime反证触发） | BatchInvocation::drain只等可观察Completion；unknown不保证actual退役，静态疑点不能代替失败 | 若断言证明提前返回，局部等待原LeaseUsePool和native pending actual退役、pending release通知；保留第一个错误，正常submit/plan/API/provider/runtime不变。相同fixture须证明Gate前阻塞、后实际guards释放且不发布/复用失败slot |
+
+owner只有compute_batch（OBS-01测试、DRAIN-01局部实现），Graph/backend/provider不修改。
+默认正常路径不增字段、线程、轮询器或新执行层；有条件等待只在显式drain。先运行OBS-01，
+记录真实FAIL或PASS；若追加预算用尽仍无法裁决，按原方法BLOCKED/INCONCLUSIVE，不能续加。
+本门只选真实CUDA Direct consumer与文档/状态检查；公头无改动时复用已匹配头证据，
+其他风险/最终candidate的san及18 installed SDK格仍按原卡完成。
