@@ -1,4 +1,5 @@
 #include "hyle/graph/executable.h"
+#include "hyle/graph/native_variants.h"
 
 #include "hyle/obs/trace.h"
 
@@ -438,6 +439,10 @@ Status bind_shape_values(const detail::GraphState &graph,
   return compute::detail::evaluate_shape_program(shape, values);
 }
 
+Result<SpecializationSignature> make_shape_signature(
+    const detail::GraphState &graph, std::span<const std::int64_t> values,
+    mem::AllocatorRef allocator) noexcept;
+
 template <std::size_t InlineCount>
 Result<SpecializationSignature> specialize_bound_descriptions(
     const detail::GraphState &graph, std::span<const std::int64_t> values,
@@ -464,6 +469,12 @@ Result<SpecializationSignature> specialize_bound_descriptions(
   if (!semantic.ok())
     return std::unexpected(std::move(semantic));
 
+  return make_shape_signature(graph, values, allocator);
+}
+
+Result<SpecializationSignature> make_shape_signature(
+    const detail::GraphState &graph, std::span<const std::int64_t> values,
+    mem::AllocatorRef allocator) noexcept {
   void *storage = allocator.allocate(sizeof(detail::SignatureState),
                                      alignof(detail::SignatureState));
   if (storage == nullptr)
@@ -637,10 +648,11 @@ Result<Graph>
 make_specialized_graph(const detail::GraphState &source,
                        std::span<const compute::TensorDesc> descriptions,
                        mem::AllocatorRef allocator,
-                       std::span<const std::int64_t> values) noexcept {
+                       std::span<const std::int64_t> values,
+                       bool retain_shape_program = true) noexcept {
   detail::BuilderState builder(source.generation, allocator);
-  if (!builder.dimensions.try_resize(source.dimensions.size()) ||
-      !builder.shape_guards.try_resize(source.shape_guards.size()) ||
+  if (!builder.dimensions.try_resize(retain_shape_program ? source.dimensions.size() : 0) ||
+      !builder.shape_guards.try_resize(retain_shape_program ? source.shape_guards.size() : 0) ||
       !builder.values.try_resize(source.values.size()) ||
       !builder.nodes.try_resize(source.nodes.size()) ||
       !builder.edges.try_resize(source.edges.size()) ||
@@ -651,9 +663,9 @@ make_specialized_graph(const detail::GraphState &source,
       !builder.dependencies.try_resize(source.dependencies.size())) {
     return std::unexpected(plan_allocation_failure());
   }
-  for (std::size_t index = 0; index < source.dimensions.size(); ++index)
+  for (std::size_t index = 0; index < builder.dimensions.size(); ++index)
     builder.dimensions[index] = source.dimensions[index];
-  for (std::size_t index = 0; index < source.shape_guards.size(); ++index)
+  for (std::size_t index = 0; index < builder.shape_guards.size(); ++index)
     builder.shape_guards[index] = source.shape_guards[index];
   for (std::size_t index = 0; index < source.values.size(); ++index) {
     auto spec = TensorSpec::concrete(descriptions[index]);
@@ -6245,6 +6257,33 @@ build_report(const detail::PlanState &plan, const detail::GraphState &graph,
 }
 
 } // namespace
+
+Result<SpecializationSignature> detail::native_shape_signature(
+    const Graph &graph, std::span<const ShapeBinding> shape,
+    mem::AllocatorRef allocator) noexcept {
+  const auto *logical = detail::GraphAccess::state(graph);
+  if (logical == nullptr || !allocator.valid())
+    return std::unexpected(Status::InvalidArgument("native shape graph or allocator is invalid"));
+  ShapeValues values(allocator);
+  HYLE_RETURN_IF_ERROR(bind_shape_values(*logical, shape, allocator, values));
+  return make_shape_signature(*logical, values, allocator);
+}
+
+Result<ExactGraph> specialize_exact(const Graph &graph,
+                                    std::span<const ShapeBinding> shape,
+                                    mem::AllocatorRef allocator) noexcept {
+  const auto *logical = detail::GraphAccess::state(graph);
+  if (logical == nullptr || !allocator.valid())
+    return std::unexpected(Status::InvalidArgument("exact graph or allocator is invalid"));
+  ShapeValues values(allocator);
+  HYLE_RETURN_IF_ERROR(bind_shape_values(*logical, shape, allocator, values));
+  container::SmallVector<compute::TensorDesc, 8, mem::AllocatorRef> descriptions(allocator);
+  HYLE_ASSIGN_OR_RETURN(auto signature,
+                        specialize_bound_descriptions(*logical, values, allocator, descriptions));
+  HYLE_ASSIGN_OR_RETURN(auto concrete,
+                        make_specialized_graph(*logical, descriptions, allocator, values, false));
+  return ExactGraph{std::move(concrete), std::move(signature)};
+}
 
 Result<bool> is_region_contractible(const Graph &graph,
                                     std::span<const NodeId> nodes,

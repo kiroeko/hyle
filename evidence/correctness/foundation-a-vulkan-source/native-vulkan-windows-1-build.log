@@ -1,0 +1,76 @@
+[0/2] Re-checking globbed directories...
+-- GLOB mismatch!
+The following files were added:
+  +C:/public/project-hyle/hyle/include/hyle/graph/native_variants.h
+-- GLOB mismatch!
+The following files were added:
+  +C:/public/project-hyle/hyle/src/graph/native_analysis.h
+[1/2] Re-running CMake...
+-- HYLE products: requested='graph' available='core,error,time,platform,math,sched,compute,graph' factors='core,container_intrusive,util_core,error,time,math,timer_queue,platform,platform_thread,platform_fs,mem,mem_vm,container,container_queue,sched,io_core,compute_ops,compute,graph,compute_ggml_runtime,compute_stream,compute_provider_ggml_vulkan,compute_provider_iree_vulkan,compute_route_vulkan,graph_route_vulkan'
+-- HYLE_SANITIZER = off
+-- HYLE_TESTING = OFF (test-only interfaces stripped -- zero in shipped lib)
+-- HYLE: CPU route OFF -- oneDNN dependency probe/download skipped
+-- ggml source: 2263 files, 15 exact patches
+
+-- CMAKE_SYSTEM_PROCESSOR: AMD64
+-- CMAKE_GENERATOR_PLATFORM: 
+-- GGML_SYSTEM_ARCH: x86
+-- Vulkan found
+-- GL_KHR_cooperative_matrix supported by glslc
+-- GL_NV_cooperative_matrix2 supported by glslc
+-- GL_NV_cooperative_matrix_decode_vector supported by glslc
+-- GL_EXT_integer_dot_product supported by glslc
+-- GL_EXT_bfloat16 supported by glslc
+-- GL_EXT_float_e2m1 supported by glslc
+-- GL_EXT_float_e4m3 supported by glslc
+-- Including Vulkan backend
+-- ggml version: 0.24.0
+-- ggml commit:  456172ec733a135778adcd32d00e576a58232e45-hyle
+-- IREE source: 7467 files, 15 exact patches, 7 offline programs
+
+-- IREE HAL drivers:
+--   - vulkan
+-- IREE HAL local executable library loaders:
+-- IREE HAL local executable plugin mechanisms:
+fatal: not a git repository (or any of the parent directories): .git
+-- Not adding LLVM/MLIR because the configuration does not require it
+-- *Not* building or importing IREE's compiler tools.
+   Set IREE_BUILD_COMPILER to build them or IREE_HOST_BIN_DIR to import them.
+-- Configuring IREE runtime plugins
+-- Runtime tracing disabled
+-- iree_allocator_system() using `IREE_ALLOCATOR_LIBC_*`
+-- IREE task topology: using platform-specific (Windows)
+-- HYLE_TRACE = OFF (hooks compile to nothing -- zero cost)
+-- HYLE 0.1.0 | MSVC 19.50.35728.0 | C++23 | sanitizer=off | linkage=shared | products=core,error,time,platform,math,sched,compute,graph | factors=core,container_intrusive,util_core,error,time,math,timer_queue,platform,platform_thread,platform_fs,mem,mem_vm,container,container_queue,sched,io_core,compute_ops,compute,graph,compute_ggml_runtime,compute_stream,compute_provider_ggml_vulkan,compute_provider_iree_vulkan,compute_route_vulkan,graph_route_vulkan
+-- Configuring done (120.8s)
+-- Generating done (2.6s)
+-- Build files have been written to: C:/h7/w-vulkan/selected-graph/source-build
+[0/4] Re-checking globbed directories...
+[1/29] Performing build step for 'vulkan-shaders-gen'
+ninja: no work to do.
+[2/29] Performing install step for 'vulkan-shaders-gen'
+-- Up-to-date: C:/h7/w-vulkan/selected-graph/source-build/Release/vulkan-shaders-gen.exe
+[3/29] Completed 'vulkan-shaders-gen'
+[4/29] Building CXX object hyle\src\compute_route_vulkan\CMakeFiles\hyle_compute_route_vulkan.dir\vulkan_operations.cc.obj
+[5/29] Building CXX object hyle\src\compute_route_vulkan\CMakeFiles\hyle_compute_route_vulkan.dir\vulkan_run.cc.obj
+[6/29] Building CXX object hyle\src\compute_route_vulkan\CMakeFiles\hyle_compute_route_vulkan.dir\vulkan_pipeline.cc.obj
+[7/29] Building CXX object hyle\src\compute_route_vulkan\CMakeFiles\hyle_compute_route_vulkan.dir\vulkan_tensor.cc.obj
+[8/29] Building CXX object hyle\src\compute_route_vulkan\CMakeFiles\hyle_compute_route_vulkan.dir\vulkan_recorder.cc.obj
+[9/29] Building CXX object hyle\src\graph\CMakeFiles\hyle_graph.dir\executable.cc.obj
+[10/29] Building CXX object hyle\src\compute_route_vulkan\CMakeFiles\hyle_compute_route_vulkan.dir\vulkan_program.cc.obj
+[11/29] Building CXX object hyle\src\compute_route_vulkan\CMakeFiles\hyle_compute_route_vulkan.dir\vulkan_scatter.cc.obj
+[12/29] Building CXX object hyle\src\compute_route_vulkan\CMakeFiles\hyle_compute_route_vulkan.dir\vulkan_normalization.cc.obj
+[13/29] Building CXX object hyle\src\compute_route_vulkan\CMakeFiles\hyle_compute_route_vulkan.dir\vulkan_region.cc.obj
+[14/29] Building CXX object hyle\src\compute_route_vulkan\CMakeFiles\hyle_compute_route_vulkan.dir\vulkan_reduction.cc.obj
+[15/29] Building CXX object hyle\src\compute_route_vulkan\CMakeFiles\hyle_compute_route_vulkan.dir\vulkan_elementwise.cc.obj
+[16/29] Building CXX object hyle\src\compute_route_vulkan\CMakeFiles\hyle_compute_route_vulkan.dir\vulkan_iree.cc.obj
+[17/29] Building CXX object hyle\src\compute_route_vulkan\CMakeFiles\hyle_compute_route_vulkan.dir\vulkan_mlx.cc.obj
+[18/29] Linking CXX shared library hyle\src\graph\hyle_graph.dll
+[19/29] Building CXX object hyle\src\compute_route_vulkan\CMakeFiles\hyle_compute_route_vulkan.dir\vulkan_official.cc.obj
+[20/29] Building CXX object hyle\src\compute_route_vulkan\CMakeFiles\hyle_compute_route_vulkan.dir\vulkan_iq1.cc.obj
+[21/29] Linking CXX shared library hyle\src\compute_route_vulkan\hyle_compute_route_vulkan.dll
+[22/29] Building CXX object hyle\src\graph_route_vulkan\CMakeFiles\hyle_graph_route_vulkan.dir\vulkan_lowering.cc.obj
+[23/29] Linking CXX shared library hyle\src\graph_route_vulkan\hyle_graph_route_vulkan.dll
+[24/29] C:\WINDOWS\system32\cmd.exe /C "cd /D C:\h7\w-vulkan\selected-graph\source-build && "C:\Program Files\CMake\bin\cmake.exe" -P C:/h7/w-vulkan/selected-graph/source-build/hyle-runtime/hyle_foundation_a_vulkan-Release.cmake"
+[25/29] Building CXX object CMakeFiles\hyle_foundation_a_vulkan.dir\C_\public\project-hyle\hyle\tests\graph\route_symmetry_vulkan.cc.obj
+[26/29] Linking CXX executable hyle_foundation_a_vulkan.exe

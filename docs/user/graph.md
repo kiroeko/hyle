@@ -13,6 +13,32 @@
 三交付与有限性能验收。两条路线各有冷编译、Program 与运行槽；本文后续 shared Queue、
 target/storage/lane 和 replay 细节主要描述 CPU/CUDA 路径，不是四条路线共用执行器的要求。
 
+Foundation A 当前在 [AUDITED 实施](../implementation/tasks/graph/foundation-a-route-symmetry.md)：
+Apple/Vulkan 及其 CPU 混合路线增加冷 `CompileOptions::shape` 与 `compile_variants`。
+`ExactNativeVariants` 只覆盖 caller 明确列出的精确点；例如 bounds 为 1..4、表只有 1 和 4，
+选择 2 会返回 Unimplemented。先选择 artifact，再调用原 create_invocation；reset/submit
+不改变形状，不运行 JIT。每个 slot 继续拥有自己的原生资源和旧结果权限。
+共同 [native_variants.h](../../include/hyle/graph/native_variants.h) 提供相同形状校验，
+`specialize_exact` 复用原 Graph 的 guards、输出推导和 symbolic ViewSpec，保留原 ValueId/NodeId。
+
+```cpp
+const std::array small{graph::ShapeBinding{batch, 1}};
+const std::array large{graph::ShapeBinding{batch, 4}};
+const std::array points{graph::ExactShapeVariant{small}, graph::ExactShapeVariant{large}};
+auto family = graph::vulkan::compile_variants(context, logical_graph, points);
+auto program = family->select(large);
+auto invocation = program->create_invocation(); // 原 native Vulkan 槽
+```
+
+各原生常量必须对所列每个形状都合法，任一点校验/准备失败则整表失败，原 caller tensor 不被消费。
+table/signature/artifact 的 allocator 和 native Context 按原合同保活；共享 ResourceBudget
+累计原 artifact 收费，MLX/driver 私有字节仍 UNKNOWN。精确表不证明 general/capture/零复制。
+pure control 前驱通过冷可达性保留，并在原生完成/barrier 边界排序；只有控制用途的输出可能需要
+物化，Apple managed region 与 hybrid 会有显式等待。hybrid `prepare_replay` 的
+`HostWaitPolicy::kReject` 仍可拒绝这些拓扑。外部 effects/resource ports 仍需真实 qualified carrier，
+当前 native admission 明确拒绝；CPU+CUDA 的既有 effect 能力不由此降级。
+上述 API 已接线，完整四路线与三交付资格尚未完成；不要把实施中的说明当作 CLOSED。
+
 当前已支持 exact specialization 与显式声明域的 general 路线（目前动态 Native RMSNorm、固定 hidden
 width），以及有限派生维度/guards、具名资源副作用域、有限 region 发现/重选、完整计划可行性规划、
 常量物化后的 source release、有限 exact variants、canonical 常量共享、编译制品累计存储准入、

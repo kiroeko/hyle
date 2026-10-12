@@ -1,4 +1,5 @@
 #include "hyle/graph/vulkan.h"
+#include "../graph/native_analysis.h"
 
 #include "hyle/obs/trace.h"
 
@@ -86,6 +87,7 @@ static Result<cv::Program> compile_impl(const cv::Context &context,
             "Vulkan Graph constant has no native owner"));
       plan.values[id.ordinal()].constant = constants[index];
     }
+    HYLE_ASSIGN_OR_RETURN(auto analysis, graph::detail::analyze_native_pure(graph));
     std::vector<bool> live(graph.value_count(), false);
     for (std::size_t index = 0; index < graph.output_count(); ++index) {
       HYLE_ASSIGN_OR_RETURN(auto id, graph.output_id(index));
@@ -98,15 +100,9 @@ static Result<cv::Program> compile_impl(const cv::Context &context,
     for (std::size_t index = graph.node_count(); index > 0; --index) {
       HYLE_ASSIGN_OR_RETURN(auto id, graph.node_id(index - 1));
       HYLE_ASSIGN_OR_RETURN(const auto &operation, graph.operation(id));
-      HYLE_ASSIGN_OR_RETURN(auto dependencies, graph.node_dependency_count(id));
       const auto traits = compute::operation_traits(operation);
-      if (traits.effect != compute::EffectKind::kPure ||
-          traits.resource_count != 0 || dependencies != 0)
-        return std::unexpected(
-            Status::Unimplemented("Vulkan Graph cannot lower effects or "
-                                  "explicit control dependencies"));
       HYLE_ASSIGN_OR_RETURN(auto output_count, graph.node_output_count(id));
-      bool needed = false;
+      bool needed = analysis.needed[index - 1] != 0;
       for (std::size_t port = 0; port < output_count; ++port) {
         HYLE_ASSIGN_OR_RETURN(auto value, graph.result(id, port));
         HYLE_RETURN_IF_ERROR(describe(value));
@@ -125,6 +121,8 @@ static Result<cv::Program> compile_impl(const cv::Context &context,
                                   "semantics and qualified custom outputs"));
       cv::detail::PlanStep step;
       step.operation = operation;
+      step.control_boundary = analysis.boundary[index - 1] != 0;
+      step.preserve_outputs = analysis.control_predecessor[index - 1] != 0;
       for (std::size_t port = 0; port < output_count; ++port) {
         HYLE_ASSIGN_OR_RETURN(auto output, graph.result(id, port));
         step.outputs.push_back(output.ordinal());
@@ -226,7 +224,13 @@ Result<cv::Program> compile(const cv::Context &context, const Graph &graph,
   auto *report = options.report;
   if (report != nullptr)
     *report = {};
-  auto program = compile_impl(context, graph, constants, std::move(options));
+  auto program = [&]() -> Result<cv::Program> {
+    if (graph.dimension_count() == 0 && options.shape.empty())
+      return compile_impl(context, graph, constants, std::move(options));
+    HYLE_ASSIGN_OR_RETURN(auto exact, specialize_exact(graph, options.shape));
+    options.shape = {};
+    return compile_impl(context, exact.graph, constants, std::move(options));
+  }();
   if (report != nullptr) {
     if (!program) {
       *report = {};

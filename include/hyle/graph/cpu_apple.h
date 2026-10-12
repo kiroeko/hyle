@@ -42,6 +42,7 @@ struct CompileOptions final {
   compute::ResourceBudget resource_budget{};
   mem::AllocatorRef allocator = mem::system_allocator();
   apple::CustomLowering custom{};
+  std::span<const ShapeBinding> shape{};
 };
 
 struct FragmentReport final {
@@ -84,7 +85,9 @@ class Invocation;
 // Immutable coarse plan. Apple is the default; kCpuTarget is an explicit
 // placement, never a fallback for a GPU preparation/execution failure. CPU
 // fragments keep original CPU Graph rules and Apple fragments keep whole native
-// regions. Fixed pure DAGs only; effects/symbolic/control edges are rejected.
+// regions. Pure DAGs use fixed or cold exact shape bindings/finite variants.
+// Explicit control endpoints form separate, ordered fragments; effects still
+// require a qualified carrier and are rejected by the current native admission.
 class Executable final {
 public:
   Executable() noexcept = default;
@@ -103,6 +106,21 @@ private:
 HYLE_GRAPH_ROUTE_CPU_APPLE_API Result<Executable>
 compile(const Graph &graph, Environment environment, CompileOptions options = {},
         CompileReport *report = nullptr) noexcept;
+
+using Variants = ExactNativeVariants<Executable>;
+inline Result<Variants> compile_variants(
+    const Graph &graph, Environment environment,
+    std::span<const ExactShapeVariant> variants, CompileOptions options = {}) noexcept {
+  if (!options.shape.empty())
+    return std::unexpected(Status::InvalidArgument("variant table supplies its own exact shapes"));
+  auto allocator = options.allocator;
+  if (options.resource_budget) {
+    HYLE_ASSIGN_OR_RETURN(allocator, options.resource_budget.metadata_allocator());
+  }
+  return Variants::prepare(graph, variants, [&](const Graph &point) {
+    return compile(point, environment, options);
+  }, allocator);
+}
 
 // Output references are borrowed through the successful ResultLease. Retain
 // that lease through CPU reads or GPU use; copying an array does not authorize

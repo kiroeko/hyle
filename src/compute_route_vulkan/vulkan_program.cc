@@ -252,6 +252,10 @@ Result<Program> prepare_plan(const Context &context, const Plan &plan,
     for (std::size_t index = 0; index < plan.steps.size(); ++index)
       for (const auto input : plan.steps[index].inputs)
         last_uses[input] = index;
+    for (const auto &step : plan.steps)
+      if (step.preserve_outputs)
+        for (const auto output : step.outputs)
+          last_uses[output] = plan.steps.size();
     for (std::size_t index = 0; index < plan.steps.size();) {
       const auto &step = plan.steps[index];
       if (matches_mature_default(*program, step, DefaultCarrier::kIree) &&
@@ -268,8 +272,9 @@ Result<Program> prepare_plan(const Context &context, const Plan &plan,
       }
       if (matches_mature_default(*program, step, DefaultCarrier::kGgml) &&
           managed_operation(*program, step)) {
-        auto end = index;
-        while (end < plan.steps.size() &&
+        auto end = index + 1;
+        while (!step.control_boundary && end < plan.steps.size() &&
+               !plan.steps[end].control_boundary &&
                matches_mature_default(*program, plan.steps[end], DefaultCarrier::kGgml) &&
                managed_operation(*program, plan.steps[end]))
           ++end;

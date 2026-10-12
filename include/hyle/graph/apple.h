@@ -2,6 +2,7 @@
 
 #include "hyle/compute/apple.h"
 #include "hyle/graph/graph.h"
+#include "hyle/graph/native_variants.h"
 #include "hyle/visibility.h"
 
 #if defined(HYLE_STATIC)
@@ -66,6 +67,8 @@ struct CompileOptions final {
   // Composition boundary: original MLX contiguous lowering stays inside the
   // prepared native region. No CPU layout loop or per-run recompilation.
   bool contiguous_outputs = false;
+  // Cold exact binding; no runtime JIT or general-shape claim.
+  std::span<const ShapeBinding> shape{};
 };
 
 // Cold typed DAG -> compiled MLX regions and admitted whole ggml Metal regions.
@@ -77,13 +80,28 @@ struct CompileOptions final {
 // Admits fixed, dense, pure tensors; MLX Q4 constants use
 // apple::kAffineQ4Format. Public GGUF block descriptions are admitted only as
 // native ggml Metal MatMul/GroupedMatMul weights and bind as uint8 carriers.
-// Symbolic dimensions, effects, explicit control edges and other encodings are
-// rejected. Each provider manages its own region's intermediates/fusion;
+// Symbolic dimensions require exact shape bindings; compile_variants prepares
+// a finite table. Pure control endpoints retain predecessor outputs and split
+// managed regions with explicit completion waits. Effects and other unsupported
+// encodings are rejected. Each provider manages its own intermediates/fusion;
 // cross-provider boundaries use checked completion waits, no shadow output copy.
 HYLE_GRAPH_ROUTE_APPLE_API Result<compute::apple::Program>
 compile(const compute::apple::Context &context, const Graph &graph,
         std::span<const mlx::core::array> constants = {},
         CompileOptions options = {}) noexcept;
+
+using Variants = ExactNativeVariants<compute::apple::Program>;
+inline Result<Variants> compile_variants(
+    const compute::apple::Context &context, const Graph &graph,
+    std::span<const ExactShapeVariant> variants,
+    std::span<const mlx::core::array> constants = {}, CompileOptions options = {}) noexcept {
+  if (!options.shape.empty())
+    return std::unexpected(Status::InvalidArgument("variant table supplies its own exact shapes"));
+  options.report = nullptr; // Per-artifact facts are not a single compile report.
+  return Variants::prepare(graph, variants, [&](const Graph &point) {
+    return compile(context, point, constants, options);
+  });
+}
 
 } // namespace hyle::graph::apple
 #endif

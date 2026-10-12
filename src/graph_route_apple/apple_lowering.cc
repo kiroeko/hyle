@@ -2,6 +2,7 @@
 #include "hyle/compute/low_precision.h"
 #include "hyle/compute/model_ops.h"
 #include "hyle/graph/apple.h"
+#include "../graph/native_analysis.h"
 
 #include "hyle/obs/trace.h"
 
@@ -25,6 +26,8 @@ struct Node {
   compute::Operation operation;
   std::vector<std::size_t> inputs;
   std::vector<std::size_t> outputs;
+  bool control_boundary = false;
+  bool preserve_outputs = false;
 };
 
 struct Plan {
@@ -171,7 +174,8 @@ Result<ca::Program> compile_regions(const ca::Context &context,
       continue;
     }
     auto end = begin + 1;
-    while (end < plan->nodes.size() &&
+    while (!first.control_boundary && end < plan->nodes.size() &&
+           !plan->nodes[end].control_boundary &&
            !ggml_model_operation(*plan, plan->nodes[end]))
       ++end;
     std::vector<bool> internal(native.values.size(), false);
@@ -184,7 +188,7 @@ Result<ca::Program> compile_regions(const ca::Context &context,
         }
       for (auto id : plan->nodes[i].outputs) {
         internal[id] = true;
-        if (last_use[id] >= end)
+        if (last_use[id] >= end || plan->nodes[i].preserve_outputs)
           region.outputs.push_back(id);
       }
     }
@@ -286,6 +290,7 @@ static Result<ca::Program> compile_impl(const ca::Context &context,
         report->logical_constant_bytes += bytes;
       }
     }
+    HYLE_ASSIGN_OR_RETURN(auto analysis, graph::detail::analyze_native_pure(graph));
     std::vector<bool> live(graph.value_count(), false);
     for (std::size_t i = 0; i < graph.output_count(); ++i) {
       HYLE_ASSIGN_OR_RETURN(auto id, graph.output_id(i));
@@ -298,17 +303,12 @@ static Result<ca::Program> compile_impl(const ca::Context &context,
     for (std::size_t i = graph.node_count(); i > 0; --i) {
       HYLE_ASSIGN_OR_RETURN(auto id, graph.node_id(i - 1));
       HYLE_ASSIGN_OR_RETURN(const auto &operation, graph.operation(id));
-      HYLE_ASSIGN_OR_RETURN(auto dependencies, graph.node_dependency_count(id));
-      const auto traits = compute::operation_traits(operation);
-      if (traits.effect != compute::EffectKind::kPure ||
-          traits.resource_count != 0 || dependencies != 0)
-        return std::unexpected(
-            Status::Unimplemented("Apple Graph cannot lower effects or "
-                                  "explicit control dependencies"));
       HYLE_ASSIGN_OR_RETURN(auto output_count, graph.node_output_count(id));
-      bool needed = false;
+      bool needed = analysis.needed[i - 1] != 0;
       Node node;
       node.operation = operation;
+      node.control_boundary = analysis.boundary[i - 1] != 0;
+      node.preserve_outputs = analysis.control_predecessor[i - 1] != 0;
       for (std::size_t port = 0; port < output_count; ++port) {
         HYLE_ASSIGN_OR_RETURN(auto value, graph.result(id, port));
         node.outputs.push_back(value.ordinal());
@@ -367,7 +367,9 @@ static Result<ca::Program> compile_impl(const ca::Context &context,
         std::ranges::any_of(plan->nodes, [&](const auto &node) {
           return ggml_model_operation(*plan, node);
         });
-    if (has_native_model_region) {
+    const bool has_control = std::ranges::any_of(plan->nodes,
+        [](const auto &node) { return node.control_boundary; });
+    if (has_native_model_region || has_control) {
       if (report != nullptr) {
         report->implementation_policy =
             "Original ggml Metal model regions and maximal MLX "
@@ -402,7 +404,13 @@ Result<ca::Program> compile(const ca::Context &context, const Graph &graph,
   auto *report = options.report;
   if (report != nullptr)
     *report = {};
-  auto program = compile_impl(context, graph, constants, std::move(options));
+  auto program = [&]() -> Result<ca::Program> {
+    if (graph.dimension_count() == 0 && options.shape.empty())
+      return compile_impl(context, graph, constants, std::move(options));
+    HYLE_ASSIGN_OR_RETURN(auto exact, specialize_exact(graph, options.shape));
+    options.shape = {};
+    return compile_impl(context, exact.graph, constants, std::move(options));
+  }();
   if (report != nullptr) {
     if (!program) {
       *report = {};

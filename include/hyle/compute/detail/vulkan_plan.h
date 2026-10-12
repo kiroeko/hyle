@@ -27,6 +27,10 @@ struct PlanStep final {
   Kernel custom;
   std::array<std::uint32_t, 3> groups{1, 1, 1};
   std::vector<std::byte> push_constants;
+  // Cold Graph control endpoints. Keep managed fusion on each side separate
+  // and materialize a control-only predecessor through the original recipe.
+  bool control_boundary = false;
+  bool preserve_outputs = false;
 };
 struct Plan final {
   WorkloadContext workload;

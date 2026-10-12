@@ -1,0 +1,355 @@
+{
+  "baseline": "845351fc2adf5259a72eb3492c363d6c666150df",
+  "scope": "Foundation A exact native variants/control-only predecessor/independent old result slots; cpu-vulkan",
+  "compiler": "C:/Program Files/Microsoft Visual Studio/18/Enterprise/VC/Tools/MSVC/14.50.35717/bin/Hostx64/x64/cl.exe",
+  "available_bytes": 39894724608,
+  "parallel": 4,
+  "stages": [
+    {
+      "name": "build",
+      "command": [
+        "C:\\Program Files\\CMake\\bin\\cmake.EXE",
+        "--build",
+        "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build",
+        "--target",
+        "hyle_foundation_a_vulkan",
+        "--parallel",
+        "4"
+      ],
+      "pid": 8536,
+      "state": "terminal",
+      "log": "build.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "elapsed": 7.766000000061467,
+      "sha256": "0508a6bb43f8bb0efcf6221c86f32dd422232ea6e93e4043619cf2f7bb8aedfc"
+    },
+    {
+      "name": "journey",
+      "command": [
+        "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle_foundation_a_vulkan.exe"
+      ],
+      "pid": 88052,
+      "state": "terminal",
+      "log": "journey.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "elapsed": 0.5,
+      "sha256": "c9a5b1a0e133e4341c612c1f24082d9e0bb844a3d4922973d2269f98109fa135"
+    }
+  ],
+  "inputs": [
+    {
+      "path": "src/graph/CMakeLists.txt",
+      "sha256": "c922263f5bc03c5cbda1af8b9a0db7a9c6f22b28b99d720862870621468260f0"
+    },
+    {
+      "path": "src/graph/compile_internal.h",
+      "sha256": "14decb296fd33c221e98eef204c87e403b62da4e7e60218feb4c251ed385fab4"
+    },
+    {
+      "path": "src/graph/constant_artifact.cc",
+      "sha256": "8036eb7024df9b4bf5fd247d0d1300213498c08c1a5c1805fff543bee60186f3"
+    },
+    {
+      "path": "src/graph/constant_artifact.h",
+      "sha256": "960a061d1e43d6fcd3164fe5e4fa13a6abba4ca3b048102ce2af1165c9870037"
+    },
+    {
+      "path": "src/graph/effect_order.cc",
+      "sha256": "e8c9fb549e26a75e48d409b8f9d98dbc1722e131b452ea51d7b1d4d52e362afc"
+    },
+    {
+      "path": "src/graph/executable.cc",
+      "sha256": "f431e983a0ad0c615723065a80ed8130505d28597620c41414655d116f034128"
+    },
+    {
+      "path": "src/graph/graph.cc",
+      "sha256": "e964ebad097fe7393c4fde7f5f3059203255ef1f64b5e46b744fa9a0ce886c46"
+    },
+    {
+      "path": "src/graph/graph_state.h",
+      "sha256": "e7b4b8e9c7d72c14e9e2990ba04727a83b4ca75ebd34c142cd92694779f76cce"
+    },
+    {
+      "path": "src/graph/lease_submission.cc",
+      "sha256": "7d287bc99a8050631068d454f21dcc15bc6fe02f7f0fdac76207e727d428bd1c"
+    },
+    {
+      "path": "src/graph/leased_invocation.cc",
+      "sha256": "de12aea1cc3fdb483a1b8a84aa7893e27c9358fcfa41fa5a7ecd340f159fe604"
+    },
+    {
+      "path": "src/graph/native_analysis.h",
+      "sha256": "7070f0ac0c96b2dc0bbb6a262cc80b331a31ed5c6a4d619efddb83077fa40652"
+    },
+    {
+      "path": "src/graph/plan_state.h",
+      "sha256": "487cf8b66bd74689d85552e4b3c9da4cce443ddc2e5ae24caa59c3763d4e7256"
+    },
+    {
+      "path": "src/graph/storage_budget.h",
+      "sha256": "3a2cd29a84f4b87bc58e8894e8bd59ac9e1404b370508d3c560889d16a3e4965"
+    },
+    {
+      "path": "src/graph/submission_internal.h",
+      "sha256": "6b9c9dbd5b52463a6eaef28d9412f990ad8abd838f865348c186590ce541dbda"
+    },
+    {
+      "path": "src/graph/view_domain.cc",
+      "sha256": "45269669ec92378f7b347458767f9aec4dd75608453bf84d103ef1b3a84ff176"
+    },
+    {
+      "path": "src/graph/view_domain.h",
+      "sha256": "cc50063a966d0092ca6fd456a2fa3a137ec104a2e0252f23c7d5ecb45d7cdf1b"
+    },
+    {
+      "path": "src/graph_route_vulkan/CMakeLists.txt",
+      "sha256": "bed5847903dd142404d16fd3a05abeaff0df46299d60e43b2386fd1ac34068e6"
+    },
+    {
+      "path": "src/graph_route_vulkan/vulkan_lowering.cc",
+      "sha256": "8a9d10c272817cf64f393e86a7b5790dd9f72db02c4761de900379d4f0bfde94"
+    },
+    {
+      "path": "src/graph_route_cpu_vulkan/CMakeLists.txt",
+      "sha256": "e075b7b60587e5166b04bf7872bea52e3f168a5f1f8b0eaec179df2a4f298d6a"
+    },
+    {
+      "path": "src/graph_route_cpu_vulkan/compile.cc",
+      "sha256": "278b0912ebbd5d688b46201db4f59efb80f484d39443207bbe0282c5e1c10723"
+    },
+    {
+      "path": "src/graph_route_cpu_vulkan/invocation.cc",
+      "sha256": "e592defb8eb50f5edaf298e9f44314a518bbb2572d8757603d61a186d7a67a5e"
+    },
+    {
+      "path": "src/graph_route_cpu_vulkan/plan.h",
+      "sha256": "a0bf32e0fddbcf78b12b19c92fcbc0d6643bc4773bf6e2d32abc05daf7c6bfd7"
+    },
+    {
+      "path": "src/compute_route_vulkan/build_shaders.py",
+      "sha256": "2e91e2c5f7845e402b6b285bd0746f03a2bccd5a9d89c11a685a66c7bee254aa"
+    },
+    {
+      "path": "src/compute_route_vulkan/CMakeLists.txt",
+      "sha256": "4cda79d06f351778e0ab6dba2cb7b3880fdf44b0912e5b62148bcc33e5c8f5bd"
+    },
+    {
+      "path": "src/compute_route_vulkan/file_stream.cc",
+      "sha256": "b3a04f58ec736001306bb238efc57b05f3caba19b1ddcb7413cc9ed7119bd31d"
+    },
+    {
+      "path": "src/compute_route_vulkan/vulkan_build.h.in",
+      "sha256": "52f5f2a02a7852c823d1543bafc3d0b9525ce0903d65b738ebbed6cb713f8e9a"
+    },
+    {
+      "path": "src/compute_route_vulkan/vulkan_composition_access.h",
+      "sha256": "654250f6a197fa4aa68838d59f9503bcc3d3c56ead5e086eec9dc4f1064c676e"
+    },
+    {
+      "path": "src/compute_route_vulkan/vulkan_copy_internal.h",
+      "sha256": "711571e9b9780707652c732adb6c8afa9b6982e4bc1392fb2dd97409e8c4f9c2"
+    },
+    {
+      "path": "src/compute_route_vulkan/vulkan_copy_program.cc",
+      "sha256": "41d0efa3898308c281c74fa19b2efb3e3ed8512c84bcd6743e498e787fa2321f"
+    },
+    {
+      "path": "src/compute_route_vulkan/vulkan_copy_recording.cc",
+      "sha256": "2e355ef10450c57aeba917fd4a0eb6108af4592f1816274252ec544c9cd6b493"
+    },
+    {
+      "path": "src/compute_route_vulkan/vulkan_device.cc",
+      "sha256": "c279ea75854e7e19a04c24877802e96ac031445249b7ba34ce562189f01c7c49"
+    },
+    {
+      "path": "src/compute_route_vulkan/vulkan_elementwise.cc",
+      "sha256": "35f20637c1c56a925a3b6480894254a9c621b538a6a104941323b07838c1f0b5"
+    },
+    {
+      "path": "src/compute_route_vulkan/vulkan_file_stream_access.h",
+      "sha256": "da1d38bc8b1573c4492091977f25c8b84f82e945e444c151edc6fec353c0c6da"
+    },
+    {
+      "path": "src/compute_route_vulkan/vulkan_internal.h",
+      "sha256": "622bdb184191db5f53db44733ba415ecb2b5e1d6cb24c247549bad28b4061165"
+    },
+    {
+      "path": "src/compute_route_vulkan/vulkan_iq1.cc",
+      "sha256": "a13ebf78593e2f1d7e0a94dbffacceba5c14f9941fd983d5f7ca95d23b161a06"
+    },
+    {
+      "path": "src/compute_route_vulkan/vulkan_iq1.h",
+      "sha256": "0292ab87e11ae5f53262be30009d3827e0494969f7b6fbd45e5cab5e6669a511"
+    },
+    {
+      "path": "src/compute_route_vulkan/vulkan_iree.cc",
+      "sha256": "e9d86c892f5193285ef455cbca335705a90e0c3690d32276efa34a80afb89940"
+    },
+    {
+      "path": "src/compute_route_vulkan/vulkan_iree.h",
+      "sha256": "7ddff582d6d8017d4372b564a912bf8cab2ef96ab67ee71f2b52071d1b2123e2"
+    },
+    {
+      "path": "src/compute_route_vulkan/vulkan_leased_invocation.cc",
+      "sha256": "d9f7217f62e8c5bf99094f575a60b6eea62e4d204ba480f648b605e3eafd5d6c"
+    },
+    {
+      "path": "src/compute_route_vulkan/vulkan_memory.cc",
+      "sha256": "86e75e36f4f1ad2110164cd9d27c867b411361aa869c8e28fba5842cb49f0796"
+    },
+    {
+      "path": "src/compute_route_vulkan/vulkan_memory_internal.h",
+      "sha256": "8ebd7b6d94316607937683f63a7e990e04ef1031330c4ba282c7970b66de371a"
+    },
+    {
+      "path": "src/compute_route_vulkan/vulkan_mlx.cc",
+      "sha256": "dca494fd5cf471ebe09b7e1710939f686d03c9bd6814140c823a47e31ed542a9"
+    },
+    {
+      "path": "src/compute_route_vulkan/vulkan_mlx.h",
+      "sha256": "ad36a316c71f36758d16699eec970058ba78104e89054617d1c2757209c2745a"
+    },
+    {
+      "path": "src/compute_route_vulkan/vulkan_normalization.cc",
+      "sha256": "90b25978d1ae851b107e8a0caa4962a502d3f0e18cbc8e17f7938896b97b6d33"
+    },
+    {
+      "path": "src/compute_route_vulkan/vulkan_official.cc",
+      "sha256": "f96ec913c578fc21eebd2b38c829caac85bba65d60e9f02556ed9a2836c6afbc"
+    },
+    {
+      "path": "src/compute_route_vulkan/vulkan_official.h",
+      "sha256": "6c4e128d70ec02469537d08b203a9b411ddf7ed071d617c3573748a63281dc6d"
+    },
+    {
+      "path": "src/compute_route_vulkan/vulkan_operations.cc",
+      "sha256": "8bcf46b8c05cc096c5761657d10049c83db83852827bb6b42b5694b7dac1d9d2"
+    },
+    {
+      "path": "src/compute_route_vulkan/vulkan_pipeline.cc",
+      "sha256": "59aec5b0eb94cadbd383236707e7813d6a763366ebdc2ec20010b5407d11ee2c"
+    },
+    {
+      "path": "src/compute_route_vulkan/vulkan_policy.h",
+      "sha256": "0652c58c8dddd89d52c7eb2ad051be15c218d2b7dc5634b517913a535d37bec9"
+    },
+    {
+      "path": "src/compute_route_vulkan/vulkan_program.cc",
+      "sha256": "5108515975e54acb4daf4f317f8644ba8c1adeae08fde76706bf789370e1e5a4"
+    },
+    {
+      "path": "src/compute_route_vulkan/vulkan_program_internal.h",
+      "sha256": "6b3e17e08406e4aa484b0e2a8a031f36441d86257aefedba8e261bde761a8eb9"
+    },
+    {
+      "path": "src/compute_route_vulkan/vulkan_recorder.cc",
+      "sha256": "de668bb1adabb6c69b12fb5484e9af904eac33fe73b2df4adb062d7eab250f4c"
+    },
+    {
+      "path": "src/compute_route_vulkan/vulkan_reduction.cc",
+      "sha256": "b8a292ec9f6eaca989acef7a0faaaa97a4c1cc1d26369f03aaee93a55629dc1f"
+    },
+    {
+      "path": "src/compute_route_vulkan/vulkan_region.cc",
+      "sha256": "d4292abb913adb1e41236289b00ee9cc559cfebe5bd2a23c2fbebf203a42e673"
+    },
+    {
+      "path": "src/compute_route_vulkan/vulkan_run.cc",
+      "sha256": "1324c6854fab98b64224ac6463b2a0eac4ab3c31525226649e49b7bdea0b2e96"
+    },
+    {
+      "path": "src/compute_route_vulkan/vulkan_scatter.cc",
+      "sha256": "458dd3af544a486a27864f2e36d09d98f9d540644f6d069cb7a229dd21875601"
+    },
+    {
+      "path": "src/compute_route_vulkan/vulkan_tensor.cc",
+      "sha256": "a188a4431b4c52d7d731970832e7ae6618b3fb082f2a274a1cfa38214f36c371"
+    },
+    {
+      "path": "src/compute_route_vulkan/vulkan_tensor.h",
+      "sha256": "dfb676a498d983b5adef61541979b15a7b8ada26ec8636c0a3bc349c618170b5"
+    },
+    {
+      "path": "src/compute_route_vulkan/vulkan_transfer.cc",
+      "sha256": "62b17eb21e8b393ffaf4ddc4f41352f9cddc74bfb84ab3c9d8ff3bfd80633661"
+    },
+    {
+      "path": "src/compute_route_vulkan/vulkan_transfer_internal.h",
+      "sha256": "8d7c9edf8c0e1bcc9a8f8a387064defdcfec3e558c661b5818615017b8615ab5"
+    },
+    {
+      "path": "src/compute_route_vulkan/vulkan_transfer_slot.cc",
+      "sha256": "5d604842fe0d06e8511cafa008f74c0b3573f032d8bf5657ce32b05f68fdf68d"
+    },
+    {
+      "path": "src/compute_route_vulkan/vulkan_weights.cc",
+      "sha256": "f8fcb6031851a856ffd0ac1fa588ae562308f4068d451627aa3c04b9de4b790d"
+    },
+    {
+      "path": "include/hyle/graph/apple.h",
+      "sha256": "afd3f28ad05fe0ec9ec392ef5d6838cdda63b4125c1a09aa902cfa4dfe6f31a1"
+    },
+    {
+      "path": "include/hyle/graph/compile_report.h",
+      "sha256": "c42c30527d581975c49ddfebb182b0ae7928d799eed91172cb631779a2ad5b4f"
+    },
+    {
+      "path": "include/hyle/graph/cpu.h",
+      "sha256": "207f78caafbec1e73966f0ead5563b51aa2aaf3e5eccabde15b6a20447a25f99"
+    },
+    {
+      "path": "include/hyle/graph/cpu_apple.h",
+      "sha256": "5cad3c0fc3bbf22b125f65c683e6eac053db07334e985641ffcb798893743eb4"
+    },
+    {
+      "path": "include/hyle/graph/cpu_cuda.h",
+      "sha256": "a7bb69686ae5f1e42449f4b9f8ecf2f3d6713a3329773aa154e3bd7cc9ac5207"
+    },
+    {
+      "path": "include/hyle/graph/cpu_vulkan.h",
+      "sha256": "c25e7e4709062a6ad0b40da0928e703fe80471b2331a414f075f31d9901d4df8"
+    },
+    {
+      "path": "include/hyle/graph/cuda.h",
+      "sha256": "059264fb0360cfd298ea7e543ac153b334209e04ab90f0e5a66ea2857f4986e3"
+    },
+    {
+      "path": "include/hyle/graph/executable.h",
+      "sha256": "8494f631596c1fefa336385fb909e9a9baee7708549abd4c8b5e8ce1a203e75f"
+    },
+    {
+      "path": "include/hyle/graph/graph.h",
+      "sha256": "c7a93ccf9fd1c86fb9dec286e7d3345aabcb1810c2fb6793a66093480a5a2136"
+    },
+    {
+      "path": "include/hyle/graph/leased_invocation.h",
+      "sha256": "adf1b31c77c4aaa82c6dc1d87273fa30c53ba695d30f97d91459dbe0a1341714"
+    },
+    {
+      "path": "include/hyle/graph/native_variants.h",
+      "sha256": "59132374915cb4ca88528952f4aa4c0a091e6660e4a128c49e4f503d21f4a96b"
+    },
+    {
+      "path": "include/hyle/graph/region_provider.h",
+      "sha256": "22b75e8e11f0763324385b607a14abec27ce1080d1302bfd9cdc8e9a99734d6b"
+    },
+    {
+      "path": "include/hyle/graph/visibility.h",
+      "sha256": "77700b210193f978cdec750c765fbf728e824409ace0566c1d870785fcb97005"
+    },
+    {
+      "path": "include/hyle/graph/vulkan.h",
+      "sha256": "b0c6285c265ad0290233b116200e292ee55bd1e68e95cc0bd74e9e521d8cf17b"
+    },
+    {
+      "path": "include/hyle/compute/detail/vulkan_plan.h",
+      "sha256": "88d3b62666ce55fba3a8e6b1b52348ec5d0377501b796ed6475b9c66d3cf8f2c"
+    },
+    {
+      "path": "tests/graph/route_symmetry_vulkan.cc",
+      "sha256": "01dea9806240c903933ae9942914066395851bd174a2ee14fb15aeaef9bba354"
+    }
+  ]
+}

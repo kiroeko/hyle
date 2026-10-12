@@ -2,6 +2,7 @@
 
 #include "hyle/compute/vulkan.h"
 #include "hyle/graph/graph.h"
+#include "hyle/graph/native_variants.h"
 #include "hyle/visibility.h"
 
 #if defined(HYLE_STATIC)
@@ -78,6 +79,8 @@ struct CompileOptions final {
   // rejects compilation. Null adds no report construction or retained state.
   CompileReport *report = nullptr;
   compute::WorkloadContext workload;
+  // Cold exact binding; no runtime JIT or general-shape claim.
+  std::span<const ShapeBinding> shape{};
 };
 
 // Fixed pure DAG in admitted Compute domains -> native pipelines and an
@@ -90,14 +93,29 @@ struct CompileOptions final {
 // providers retain their own graph encoding and private resource management.
 //
 // Built-ins share the Compute route's qualified dtype/shape domains. Custom
-// schemas require the cold native lowering above. Symbolic/effect/control-edge
-// graphs, unsupported alias schemas and input/constant-only published outputs
+// schemas require the cold native lowering above. Symbolic graphs require exact
+// bindings or a finite compile_variants table. Pure control endpoints separate
+// native regions and retain predecessor outputs through original barriers.
+// Effects, unsupported alias schemas and input/constant-only published outputs
 // are rejected explicitly. Typed TopK has two outputs; custom nodes require one.
 // Native buffer readiness is a caller contract.
 HYLE_GRAPH_ROUTE_VULKAN_API Result<compute::vulkan::Program>
 compile(const compute::vulkan::Context &context, const Graph &graph,
         std::span<const compute::vulkan::Tensor> constants = {},
         CompileOptions options = {}) noexcept;
+
+using Variants = ExactNativeVariants<compute::vulkan::Program>;
+inline Result<Variants> compile_variants(
+    const compute::vulkan::Context &context, const Graph &graph,
+    std::span<const ExactShapeVariant> variants,
+    std::span<const compute::vulkan::Tensor> constants = {}, CompileOptions options = {}) noexcept {
+  if (!options.shape.empty())
+    return std::unexpected(Status::InvalidArgument("variant table supplies its own exact shapes"));
+  options.report = nullptr;
+  return Variants::prepare(graph, variants, [&](const Graph &point) {
+    return compile(context, point, constants, options);
+  });
+}
 
 } // namespace hyle::graph::vulkan
 #endif

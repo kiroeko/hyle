@@ -1,4 +1,5 @@
 #include "plan.h"
+#include "../graph/native_analysis.h"
 
 #include <algorithm>
 #include <array>
@@ -125,6 +126,7 @@ Result<std::shared_ptr<const Plan>> compile_plan(const Graph &graph, Environment
         HYLE_ASSIGN_OR_RETURN(value.constant, compute::ConstTensorView::create(value.description, value.constant_storage.view()));
       }
     }
+    HYLE_ASSIGN_OR_RETURN(auto analysis, graph::detail::analyze_native_pure(graph, allocator));
     Vector<bool> live{mem::StdAllocator<bool>(allocator)};
     Vector<bool> needed{mem::StdAllocator<bool>(allocator)};
     Vector<std::size_t> last_use{mem::StdAllocator<std::size_t>(allocator)};
@@ -151,11 +153,7 @@ Result<std::shared_ptr<const Plan>> compile_plan(const Graph &graph, Environment
     }
     for (std::size_t i = graph.node_count(); i != 0; --i) {
       HYLE_ASSIGN_OR_RETURN(auto node, graph.node_id(i - 1));
-      HYLE_ASSIGN_OR_RETURN(const auto &operation, graph.operation(node));
-      HYLE_ASSIGN_OR_RETURN(auto dependencies, graph.node_dependency_count(node));
-      const auto traits = compute::operation_traits(operation);
-      if (traits.effect != compute::EffectKind::kPure || traits.resource_count != 0 || dependencies != 0)
-        return std::unexpected(Status::Unimplemented("CPU+Vulkan cannot lower effects or explicit control edges"));
+      needed[i - 1] = analysis.needed[i - 1] != 0;
       HYLE_ASSIGN_OR_RETURN(auto count, graph.node_output_count(node));
       for (std::size_t port = 0; port < count; ++port) {
         HYLE_ASSIGN_OR_RETURN(auto id, graph.result(node, port));
@@ -183,7 +181,8 @@ Result<std::shared_ptr<const Plan>> compile_plan(const Graph &graph, Environment
       if (!needed[begin]) { ++begin; continue; }
       const auto target = targets[begin];
       auto end = begin + 1;
-      while (end < graph.node_count() && (!needed[end] || targets[end] == target)) ++end;
+      while (!analysis.boundary[begin] && end < graph.node_count() &&
+             !analysis.boundary[end] && (!needed[end] || targets[end] == target)) ++end;
       HYLE_ASSIGN_OR_RETURN(auto builder, GraphBuilder::create({allocator}));
       Vector<ValueId> mapped{mem::StdAllocator<ValueId>(allocator)};
       mapped.resize(graph.value_count());
@@ -240,7 +239,7 @@ Result<std::shared_ptr<const Plan>> compile_plan(const Graph &graph, Environment
           HYLE_ASSIGN_OR_RETURN(auto original, graph.result(node, port));
           physical[original.ordinal()] = output_descriptions[port];
           HYLE_ASSIGN_OR_RETURN(mapped[original.ordinal()], builder.result(local_node, port));
-          if (last_use[original.ordinal()] < end) continue;
+          if (last_use[original.ordinal()] < end && !analysis.control_predecessor[index]) continue;
           auto output = mapped[original.ordinal()];
           auto &value = plan->values[original.ordinal()];
           value.fragment_output = true;
@@ -309,7 +308,17 @@ Result<std::shared_ptr<const Plan>> compile_plan(const Graph &graph, Environment
 Result<Executable> compile(const Graph &graph, Environment environment,
                            CompileOptions options, CompileReport *report) noexcept {
   if (report != nullptr) *report = {};
-  auto plan = compile_plan(graph, environment, std::move(options), report);
+  auto plan = [&]() -> Result<std::shared_ptr<const Plan>> {
+    if (graph.dimension_count() == 0 && options.shape.empty())
+      return compile_plan(graph, environment, std::move(options), report);
+    auto allocator = options.allocator;
+    if (options.resource_budget) {
+      HYLE_ASSIGN_OR_RETURN(allocator, options.resource_budget.metadata_allocator());
+    }
+    HYLE_ASSIGN_OR_RETURN(auto exact, specialize_exact(graph, options.shape, allocator));
+    options.shape = {};
+    return compile_plan(exact.graph, environment, std::move(options), report);
+  }();
   if (!plan) {
     if (report != nullptr) *report = {};
     return std::unexpected(std::move(plan).error());

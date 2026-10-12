@@ -1,0 +1,120 @@
+{
+  "baseline": "845351fc2adf5259a72eb3492c363d6c666150df",
+  "scope": "Foundation A shared exact binding/table and existing GraphBuilder semantic tests only",
+  "compiler": "C:/Program Files/Microsoft Visual Studio/18/Enterprise/VC/Tools/MSVC/14.50.35717/bin/Hostx64/x64/cl.exe",
+  "available_bytes": 41911447552,
+  "parallel": 4,
+  "stages": [
+    {
+      "name": "build",
+      "command": [
+        "C:\\Program Files\\CMake\\bin\\cmake.EXE",
+        "--build",
+        "C:\\h7\\w-cpu-cuda\\selected-graph\\source-build",
+        "--target",
+        "hyle_foundation_a_static",
+        "--parallel",
+        "4"
+      ],
+      "pid": 90244,
+      "state": "terminal",
+      "log": "build.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "elapsed": 75.35899999993853,
+      "sha256": "b7af60f57cf50c7a320143f7b9e10ecffaa1fc9a74b09330f65ff6a22fb12c19"
+    },
+    {
+      "name": "tests",
+      "command": [
+        "C:\\h7\\w-cpu-cuda\\selected-graph\\source-build\\hyle_foundation_a_static.exe",
+        "--gtest_output=xml:C:\\public\\project-hyle\\hyle\\.scratch\\foundation-a\\static-windows-fixture-correction\\tests.xml"
+      ],
+      "pid": 45620,
+      "state": "terminal",
+      "log": "tests.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "elapsed": 0.06199999991804361,
+      "sha256": "c4bb6a76e5f2616ffe0a1919799c87156babe79df1d0cfa369f7f901a12d659c"
+    }
+  ],
+  "inputs": [
+    {
+      "path": "src/graph/CMakeLists.txt",
+      "sha256": "c922263f5bc03c5cbda1af8b9a0db7a9c6f22b28b99d720862870621468260f0"
+    },
+    {
+      "path": "src/graph/compile_internal.h",
+      "sha256": "14decb296fd33c221e98eef204c87e403b62da4e7e60218feb4c251ed385fab4"
+    },
+    {
+      "path": "src/graph/constant_artifact.cc",
+      "sha256": "8036eb7024df9b4bf5fd247d0d1300213498c08c1a5c1805fff543bee60186f3"
+    },
+    {
+      "path": "src/graph/constant_artifact.h",
+      "sha256": "960a061d1e43d6fcd3164fe5e4fa13a6abba4ca3b048102ce2af1165c9870037"
+    },
+    {
+      "path": "src/graph/effect_order.cc",
+      "sha256": "e8c9fb549e26a75e48d409b8f9d98dbc1722e131b452ea51d7b1d4d52e362afc"
+    },
+    {
+      "path": "src/graph/executable.cc",
+      "sha256": "f431e983a0ad0c615723065a80ed8130505d28597620c41414655d116f034128"
+    },
+    {
+      "path": "src/graph/graph.cc",
+      "sha256": "e964ebad097fe7393c4fde7f5f3059203255ef1f64b5e46b744fa9a0ce886c46"
+    },
+    {
+      "path": "src/graph/graph_state.h",
+      "sha256": "e7b4b8e9c7d72c14e9e2990ba04727a83b4ca75ebd34c142cd92694779f76cce"
+    },
+    {
+      "path": "src/graph/lease_submission.cc",
+      "sha256": "7d287bc99a8050631068d454f21dcc15bc6fe02f7f0fdac76207e727d428bd1c"
+    },
+    {
+      "path": "src/graph/leased_invocation.cc",
+      "sha256": "de12aea1cc3fdb483a1b8a84aa7893e27c9358fcfa41fa5a7ecd340f159fe604"
+    },
+    {
+      "path": "src/graph/native_analysis.h",
+      "sha256": "7070f0ac0c96b2dc0bbb6a262cc80b331a31ed5c6a4d619efddb83077fa40652"
+    },
+    {
+      "path": "src/graph/plan_state.h",
+      "sha256": "487cf8b66bd74689d85552e4b3c9da4cce443ddc2e5ae24caa59c3763d4e7256"
+    },
+    {
+      "path": "src/graph/storage_budget.h",
+      "sha256": "3a2cd29a84f4b87bc58e8894e8bd59ac9e1404b370508d3c560889d16a3e4965"
+    },
+    {
+      "path": "src/graph/submission_internal.h",
+      "sha256": "6b9c9dbd5b52463a6eaef28d9412f990ad8abd838f865348c186590ce541dbda"
+    },
+    {
+      "path": "src/graph/view_domain.cc",
+      "sha256": "45269669ec92378f7b347458767f9aec4dd75608453bf84d103ef1b3a84ff176"
+    },
+    {
+      "path": "src/graph/view_domain.h",
+      "sha256": "cc50063a966d0092ca6fd456a2fa3a137ec104a2e0252f23c7d5ecb45d7cdf1b"
+    },
+    {
+      "path": "include/hyle/graph/native_variants.h",
+      "sha256": "ba0c83f836b62689498571d0a39ef8ab9b4ea066c31729a7a1895892b9b599b4"
+    },
+    {
+      "path": "tests/graph/native_variants_test.cc",
+      "sha256": "e62d57e6da2e869644342a70210f20fb9ee22f102d4e2be140e5d7a35c36e059"
+    },
+    {
+      "path": "tests/graph/graph_test.cc",
+      "sha256": "10203ee16060dc3aad5e3514ea27c4c76d30776bfbc573e76871b95189e3f101"
+    }
+  ]
+}
