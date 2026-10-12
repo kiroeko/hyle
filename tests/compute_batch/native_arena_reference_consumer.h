@@ -1,6 +1,21 @@
 #pragma once
 
 namespace hyle_f5_native_paged_fixture {
+template<class Create>
+Status cold_oom_points(Create&&create,bool graph_controller,bool bf16){
+  hyle_f5_fault_fixture::Allocator baseline;
+  const auto options=[](hyle::mem::AllocatorRef allocator){return c::MaterializedNativeBatchOptions{.max_metadata_backing_bytes=1u<<20,.allocator=allocator};};
+  {HYLE_ASSIGN_OR_RETURN(auto controller,create(options(baseline.ref())));HYLE_RETURN_IF_ERROR(controller.close());}
+  const auto count=baseline.attempts;
+  std::printf("%s %s %s cold metadata OOM baseline=%zu live=%zu\n",route,graph_controller?"Graph":"Direct",bf16?"BF16":"F16",count,baseline.live);
+  HYLE_RETURN_IF_ERROR(require(count>0 && count<=128 && !baseline.live,"native cold OOM baseline/count/cleanup differs"));
+  for(std::size_t point=0;point<count;++point){
+    hyle_f5_fault_fixture::Allocator fault;fault.fail=point;
+    {auto rejected=create(options(fault.ref()));HYLE_RETURN_IF_ERROR(require(!rejected && rejected.error().IsResourceExhausted(),"native controller metadata allocation failed but was accepted/misreported"));}
+    HYLE_RETURN_IF_ERROR(require(!fault.live,"native partial cold metadata allocation leaked"));
+    std::printf("%s %s %s cold metadata OOM point=%zu/%zu cleanup PASS\n",route,graph_controller?"Graph":"Direct",bf16?"BF16":"F16",point+1,count);
+  }return Status::Ok();
+}
 Result<c::ReadLease> page_upload(n::Context&context,c::LeasePool&staging_pool,
     hyle::mem::MemoryResourceRef staging,hyle::mem::MemoryResourceRef device,
     c::WriteLease&&destination,std::span<const std::byte> bytes){
@@ -37,6 +52,7 @@ Status exercise_impl(n::Context&context,n::MemoryResource&memory,n::MemoryResour
   for(bool graph_controller:{false,true}){
     const c::MaterializedNativeBatchOptions options{.max_metadata_backing_bytes=1u<<20,.allocator=metadata};
     auto create=[&](c::MaterializedNativeBatchOptions selected)->Result<n::MaterializedBatchInvocation>{if(graph_controller)return ng::prepare_materialized_batch(context,program,memory,staging,selected);return n::MaterializedBatchInvocation::create(context,program,memory,staging,selected);};
+    HYLE_RETURN_IF_ERROR(cold_oom_points(create,graph_controller,bf16));
     auto limited=options;limited.max_metadata_backing_bytes=1;HYLE_RETURN_IF_ERROR(require(create(limited).error().IsResourceExhausted(),"native controller metadata backing cap ignored"));
     {hyle::mem::QuotaAllocator empty(hyle::mem::system_allocator());auto full=empty.try_reserve_bytes(empty.remaining());HYLE_RETURN_IF_ERROR(require(bool(full),"native controller OOM fixture"));auto no_memory=options;no_memory.allocator=empty.get();HYLE_RETURN_IF_ERROR(require(create(no_memory).error().IsResourceExhausted(),"native controller cold metadata OOM ignored"));}
     HYLE_ASSIGN_OR_RETURN(auto controller,create(options));

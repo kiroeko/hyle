@@ -1,4 +1,5 @@
 #include <hyle/graph/batch.h>
+#include "allocation_fault_fixture.h"
 #if !defined(HYLE_F5_NATIVE_FIXTURE_ONLY)
 #include <hyle/graph/cpu.h>
 #include <hyle/mem/quota_allocator.h>

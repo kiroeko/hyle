@@ -26,22 +26,7 @@ struct DirectDriver final {
   Result<DirectOutput> output(){HYLE_ASSIGN_OR_RETURN(auto lease,value.output());return DirectOutput{std::move(lease)};}
   Status close(){return value.close();}
 };
-struct FaultAllocator final {
-  hyle::mem::AllocatorRef backing=hyle::mem::system_allocator();
-  std::size_t attempts=0,fail=SIZE_MAX,live=0;
-  hyle::mem::AllocatorRef ref()noexcept{
-    return {[](void*p,std::size_t bytes,std::size_t alignment)noexcept->void*{
-      auto&s=*static_cast<FaultAllocator*>(p);if(s.attempts++==s.fail)return nullptr;
-      auto*result=s.backing.allocate(bytes,alignment);s.live+=result!=nullptr;return result;
-    },[](void*p,void*data,std::size_t bytes,std::size_t alignment)noexcept{
-      auto&s=*static_cast<FaultAllocator*>(p);s.live-=data!=nullptr;s.backing.deallocate(data,bytes,alignment);
-    },[](void*p,void*data,std::size_t old_bytes,std::size_t bytes,std::size_t alignment)noexcept->void*{
-      auto&s=*static_cast<FaultAllocator*>(p);if(bytes && s.attempts++==s.fail)return nullptr;
-      auto*result=s.backing.reallocate(data,old_bytes,bytes,alignment);
-      if(!bytes)s.live-=data!=nullptr;else if(result && !data)++s.live;return result;
-    },this};
-  }
-};
+using FaultAllocator=hyle_f5_fault_fixture::Allocator;
 template<class Driver>
 Status cold_oom_points(c::Context&context,c::Queue&queue,const char*label){
   c::BatchCapacity cap{.storage=c::BatchStorage::kRagged,.max_requests=1,.max_query_rows=1,.max_kv_rows=2,.max_pages=0,.max_page_refs=0,.query_heads=4,.kv_heads=2,.head_dim=64,.page_size=1};

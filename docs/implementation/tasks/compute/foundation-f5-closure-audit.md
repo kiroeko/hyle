@@ -171,3 +171,23 @@ native terminal，令control failed；不在native callback写普通failed flag�
 terminal检查，最终三episode通过，原FAIL/TIMEOUT与197.157/360秒consumer累计保留。
 Win common33项/CPU完整消费与OOM位置/实际Vulkan、WSL Graph定向复核PASS，无API/字段变化。
 本轮完成上述有限门，完整六FIX与其余未验风险/18 installed SDK/san/P0/guide/终审继续。
+
+## AUDITED NATIVE-OOM-POINT-02：两原生route逐位置冷失败
+
+baseline4dd42b4cf，compute_route_apple/vulkan与graph native factory保持其原AUDITED范围。
+固定已有F16/BF16 paged reference recipe，Direct与Graph controller成功cold create实际计数
+（硬上限128），随后每次cold create仅在一个caller allocator位置失败，必须报告
+ResourceExhausted、完整释放已接纳metadata，并保留真实native资源owner。只覆盖经caller
+allocator的allocation，不代签MLX/ggml/driver私有heap、GPU执行失败或partial upload。
+
+把CPU既有逐位置FaultAllocator抽到test-only helper，行为不变，由原Win/WSL CPU门复核。
+新native位置进入原Win Vulkan/Air Apple/Air Vulkan consumer root/config/tree与各原累计
+configure300/build1800/consumer180；actual Air identity先读取，只有Mac16,12，机器重型串行。
+产品/API/公头不改；若出现runtime反证再固定实际owner局部FIX，不回放原全算子/全库。
+
+[两原生route逐位置收据](../../../../evidence/correctness/foundation-f5-native-cold-oom-points/README.md)：
+Win Vulkan与Air Vulkan各Direct/Graph×F16/BF16×59=236位置、Air Apple各53=212位置，
+原生共684全部ResourceExhausted并cleanup归零；CPU helper抽取后原118位置复核通过，
+共802。三个实际GPU profile的原正常/精确页/F4/metadata/old result/close/escaped result/
+ragged消费继续PASS。只签caller可控cold metadata，不签私有device heap或accepted partial。
+原profile root/config/tree/预算累计与actual Air身份保留；无产品/API变化，其他风险与收口继续。
