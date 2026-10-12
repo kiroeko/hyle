@@ -6,6 +6,10 @@
 #include "hyle/compute/file_stream.h"
 #include "hyle/visibility.h"
 
+#if defined(HYLE_COMPUTE_FLASHINFER)
+#include "hyle/compute/providers/flashinfer.h"
+#endif
+
 #if defined(HYLE_STATIC)
 #define HYLE_COMPUTE_ROUTE_CUDA_API
 #elif defined(HYLE_COMPUTE_ROUTE_CUDA_BUILD)
