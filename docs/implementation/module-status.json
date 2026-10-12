@@ -690,8 +690,8 @@
     },
     {
       "module": "compute_batch",
-      "state": "SCOPED",
-      "summary": "F5 SCOPED：六FIX/主与正交consumer、typed容量/metadata版本、原native显式prepare/update/run与Graph同slot opt-in边界及有限原型/验证预算已绑定；无产品实现，API/owner审计未完成。",
+      "state": "AUDITED",
+      "summary": "F5 compute_batch AUDITED：typed paged/ragged容量/schema、owned host metadata版本/身份/有效区与F1 export的API/依赖/生命周期及三项有限共同FIX已冻结；原Provider与Graph桥仍SCOPED，F5全部六FIX继续。",
       "record": "docs/implementation/tasks/compute/foundation-f5-paged-ragged-batch.md"
     },
     {

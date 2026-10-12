@@ -97,3 +97,46 @@ int604，ragged float1,486,080/int653；不能由batch shape或短域workspace0�
 同根累计build70.455/run0.989秒，原4场景archive与精确输入历史仍保留。
 需变更的原Compute/Graph/FlashInfer接缝已按[独立卡](foundation-f5-owner-bridges.md)SCOPED，
 只允许新named extension/原region同slot桥/native批次承载，原19版/普通dense范围保留。
+
+## AUDITED 共同端口与metadata冻结
+
+compute_batch进入AUDITED：本factor先拥有F5-01的typed容量/schema/不可变metadata与执行方
+共同消费的身份；F5-02..06及整个goal不缩减，原Provider/route执行controller与graph_batch
+同slot协调仍按其活动卡SCOPED审计，未经AUDITED不改它们的产品。
+
+| 能力族 | 现状/承载 | 有限动作与验收 |
+|---|---|---|
+| paged/ragged数学端口/容量与有效区 | MISSING；原dense schema不能表达page表 | SELF BatchCapacity+独立PagedAttention/RaggedAttention typed custom schema，不改旧Operation variant |
+| immutable host layout/schema identity | MISSING；两peer均host-known元数据 | SELF BatchSchema::create+version，BatchLayoutVersion保schema/owned F1 readonly blob，same-schema generation |
+| metadata/payload readonly/native保活 | 原F1/F2 COMPLETE | BORROW ReadLease/CopyBatch及原native actual retirement；本factor不再做fence/Queue |
+| plan/run与Graph同slot | PARTIAL，原C++ probe已验，HYLE尚缺桥 | 原Provider/Graph活动卡FIX，不能以本metadata实现代签 |
+| scheduler/token/page eviction/模型checkpoint | APPLICATION | 不解释业务policy；F4仍由consumer显式列完整state |
+
+冻结API：BatchCapacity含storage(kPaged/kRagged)、dtype(F16/BF16)、requests/query rows/
+logical KV rows/page arena/page refs硬上限、Q/KV heads/depth/page size；整数界限为原native
+int32/uint32端口，extent乘积checked。BatchSchema为immutable owned identity+线程安全cold
+generation allocator；BatchLayoutVersion是不可变共享handle。version接HostBatchLayout四个
+borrowed spans(query indptr/KV indptr/page IDs/tails)，先完整预检，再复制成owned固定容量
+host readonly blob；spans不保留。generation不由caller伪造，same-shape不同layout仍是新版本。
+每个版本保schema owner，schema ID跨实例不混用；计数耗尽拒绝，不复用identity/旧token。
+
+定义：query为packed[N,Hq,D]、K/V为paged[Pages,page,Hkv,D]或ragged[KVrows,Hkv,D]；
+输出capacity[Ncap,Hq,D]，active rows在layout。KV indptr为page refs或packed rows，page ID
+是物理页；非empty Q要求非empty KV且Qlen≤KVlen（right-aligned causal有有效位置）。
+empty batch与empty request只描述空有效区，不制造零byte F1资源；native数学是否empty
+run按原Provider验。重复page IDs可readonly分享，mutable append必须F4私有化/原writer。
+无填充KV进入有效区，末tail必须1..page，zero pages只能tail0。ragged不接page IDs/tails。
+snapshot固定容量host blob可原F2上传；export ReadLease用于F4显式资源成员分享/替换，opaque
+metadata编码不准raw dirty-clone。不是device生成页表验证或隐式D2H。
+
+依赖冻结：compute_batch PUBLIC compute/compute_ops/error/mem，PRIVATE core/util_core；
+不依赖Graph、路线Provider或compute_state，不产生反向环。公头batch_layout.h、batch_ops.h
+归新factor。版本冷分配计入inject allocator/ResourceBudget，blob bytes另计原mem资源；
+验证O(requests+page refs)，版本复制O(1)，常态Tensor/Invocation无新增字段或每步查表。
+新factor先由维护入口验证，只在真实façade接缝合法纳入后进入普通Compute产品；该接缝不能
+偷偷改CLOSED owner。两纵切同样只消费owned分段offset/index有效区，不把模型token语义下沉。
+
+本阶段有限FIX：F5-COMMON-01 checked schema/typed output推导，02 owned host layout版本/
+generation及F1 export，03界限/错表/alias共享/OOM/旧版本并发/empty测试与普通原型消费者。
+三项是F5六FIX的共同端口实现分解，不是替代目标。原native C++12场景与上游peer作为数学
+承载输入；snapshot runtime尚未验收，产品实现后仍需全部适用风险/交付及终审才能CANDIDATE。
