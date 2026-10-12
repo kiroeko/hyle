@@ -261,3 +261,11 @@ batch生命周期则是应审计的重复机制。目标应缩小第三类与昂
 host/device往返、plan/compile/allocation次数和等待，独立logits参照通过后才做定向P1/P2。
 先验证Linux CUDA成熟native，再验证Apple/Vulkan的驻留native等价消费是否满足同目标；
 失败应回到表中具体owner，不能由本研究自动扩本goal或启动完整engine。
+
+还须避免把F4的有界集合版本当每token的通用大页目录：其[P0账](../../../../evidence/performance/foundation-f4-p0/README.md)
+明确begin/finalize/末record释放O(E)，单成员replace还有有限ledger去重扫描，默认B128。
+这些是显式checkpoint/branch的已验成本，不是任意长KV目录的热路径资格。引擎可以只在
+需要完整checkpoint时使用F4，其余步骤沿F1实际独占写/只读/native retirement接线；是否
+能这样做由模型状态及旧读者寿命决定，不能默认绕过共享页权限。若真实consumer必须
+每token发布很大的完整目录且该费用成为material瓶颈，才产生compute_state的窄增量目录
+候选；当前未证明该MUST，不新增公共结构，也不把其未知工作量藏进14–30k保证。

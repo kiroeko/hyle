@@ -18,10 +18,10 @@
 | F4-06 | F4普通Compute façade/source/18 SDK/guide/P0 | 原范围CLOSED；F5新package公开FI link另有反证修复与复验 |
 | F5-01 | common33/CPU三san/native同版本、九disabled头/四负API、18 SDK | 实现/多数门已证明，native剩余san和最终风险裁决未完整 |
 | F5-02 | 原FI12域/long split、公开installed D256四域Direct/Graph | finite native资格已证明；仅Linux CUDA/SM89，Windows具名unsupported |
-| F5-03 | 原native prepare/run/unknown/close/failure与actual guards、各route风险/ASan；CUDA UBSan/TSan数据竞争 | Linux宿主有限facet通过；Air Apple/Vulkan UBSan/TSan补验中，整进程LSan/外库线程生命周期非PASS |
+| F5-03 | 原native prepare/run/unknown/close/failure与actual guards、各route风险/ASan；CUDA UBSan/TSan数据竞争；Air两route UBSan/TSan | HYLE-owned宿主有限facet通过；Apple native DSO资格/IREE TSAN ABI修复各有直接证据，整进程LSan/外库线程生命周期非PASS |
 | F5-04 | 原v19同slot/共享metadata与页权限、六submit/字段P0 | 默认tax/已声明失败同slot及分离源码终审已证；完整聚合仍待裁决 |
 | F5-05 | 七profile72 ragged、四路线paged/F2/F4、private UNKNOWN成本账 | bounded组合已证；guide正交已核，不签全平台同吞吐/capture |
-| F5-06 | 18 SDK raw/hash/candidate映射、source头/缺符号、模块测试/guide/P0/LOC及分离红队 | delivery矩阵/分离审查已证明；剩余Air san、组件聚合及最终terminal回映未完成，固定实现后engine评估已补但尚非goal完成后裁决 |
+| F5-06 | 18 SDK raw/hash/candidate映射、source头/缺符号、模块测试/guide/P0/LOC及分离红队，全部已声明宿主san facet | delivery矩阵/分离审查已证明；组件聚合及最终terminal回映未完成，固定实现后engine评估已补但尚非goal完成后裁决 |
 
 权威旧范围分别为[A terminal](../graph/foundation-a-final-closure.md)、
 [F4 terminal](../compute/foundation-f4-final-closure.md)。F5当前状态仍唯一由registry/活动
@@ -72,3 +72,13 @@ HYLE-owned地址/权限与quota证据不冒充GPU/driver总量；公共component
 
 最终必须补完全部原编号/七门的真实范围裁决、reopen triggers、20 owner合法terminal与
 用户要求的goal后基础库剩余缺口/单机单多请求engine自有LOC评估。现在不签CLOSED或complete。
+
+最后Air Vulkan TSan实际wait count异常由IREE sanitizer ABI不一致精确反证。独立
+[IREE配置卡](../compute/foundation-f5-iree-tsan-contract.md)合法SCOPED/AUDITED后仅同步
+原TSan开关，固定11c348e40；原20个F5 candidate25e的数学/API/普通源码输入不改，当前
+活动owner为21个。修复后同root/原预算两consumer全部PASS，
+[原18 SDK条件影响](../../../../evidence/architecture/foundation-f5-iree-tsan-impact/README.md)
+逐原configure日志证明OFF输入完全相同，保原资格不假新run。当前native宿主适用facet
+已经具证；完整风险/七门回映见[最终矩阵](../compute/foundation-f5-final-risk-matrix.md)。
+剩余组件合同为原272.140/300秒FAIL/INCONCLUSIVE，追加300秒问题仍待答复。最终须把
+21 owner各有限范围合法terminal与最终评估一并完成，不能因为其他门已过而跳过这一项。

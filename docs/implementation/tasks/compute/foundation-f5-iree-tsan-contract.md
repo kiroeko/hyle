@@ -40,3 +40,17 @@ source与san配置必须匹配、普通SDK投影复用；无新用户API，文�
 唯一FIX已在独立AUDITED产品commit完成，现合法冻结CANDIDATE，实际修复后gate待运行。
 原20个F5 owner仍各保25e固定输入，本owner新候选与其组合验证必须明确两份输入映射；
 不能把新增TSan配置改变伪装成所有SDK已经新run或重新取得原预算。
+
+修复后actual Air Vulkan两个原consumer已实际PASS：
+[TSan](../../../../evidence/correctness/foundation-f5-native-vulkan-host-tsan/README.md)。
+actual compile commands证明原IREE C proactor与HYLE adapter均-fsanitize=thread，原ABI
+反证/FAIL保持；configure27.794/300、build228.223/1800、consumer21.517/180累计。
+[普通条件影响](../../../../evidence/architecture/foundation-f5-iree-tsan-impact/README.md)
+逐byte证明只有TSan路径改变并逐18格原日志确认sanitizer=off，原SDK资格可保留，不是假新run。
+本owner候选仍须完整有限终审/terminal回映；组件全配置合同预算待答复，不能提前CLOSED。
+
+候选后root分离核查只读唯一两行FIX/实际compile commands及普通条件投影，没有新的
+API/常态字段/锁/算法/依赖版本或强迫普通产品instrument。原IREE runtime启用其原TSan
+bridge与compiler flags，实际消费者不再读错误count，全部风险断言保留；无suppression。
+统一LOC/self-check见同影响证据，本owner既有src native1375行，本FIX native增量0/CMake2。
+新配置补齐后旧数学/delivery/P0范围按精确不受影响事实保留，最终terminal不可删原FAIL。

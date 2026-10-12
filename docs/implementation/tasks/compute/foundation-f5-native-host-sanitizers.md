@@ -130,3 +130,13 @@ Apple原两消费者以同HYLE已插桩objects、同候选native MLX DSO重链�
 configure4.098/300、build含重链接146.363/1800、consumer含原两FAIL累计8.639/180。
 原静态binary/FAIL与no-HYLE差分完整保留；host facet通过不签MLX/Metal whole-process，
 后者仍INCONCLUSIVE且未instrument，不撤销独立诊断或把vendor工具限制写成语义NA。
+
+Vulkan TSan首consumer数学通过后IREE count=4560304736而FAIL，实际
+[layout反证](../../../../evidence/correctness/foundation-f5-native-vulkan-tsan-layout-failure/README.md)
+证明adapter带TSan/原runtime未带TSan，operation sizeof64/56、count offset80/72不一致。
+compute_provider_iree_vulkan按[独立窄卡](foundation-f5-iree-tsan-contract.md)合法reopen，唯一
+两行原IREE TSan开关同步固定11c348e40；其他20个F5 owner的25e输入不改。
+沿原root/预算增量17.281秒构建，原公开四域和native风险consumer现全部PASS：
+[实证](../../../../evidence/correctness/foundation-f5-native-vulkan-host-tsan/README.md)。
+实际commands同时核对IREE C proactor与HYLE adapter/新controller/Graph factory均instrument，
+不是私自改宏/抑制报告；原FAIL完整保留，总configure27.794、build228.223、consumer21.517。

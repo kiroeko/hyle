@@ -12,7 +12,7 @@
 | native plan/update/run，F5-02/03 | Linux FI原12域、long split/merge；公开installed D256四域Direct/Graph；原同indptr key复用plan | 实际四prepare失败/H2D/run错误、suffix停止、失效旧token、open失败拒复用；caller冷OOM与原limits | 独立slot/workspace/mirror、旧result/use阻止覆写；原pending/use实际退休后drain | actual CUDA正常放弃/取消/unknown Gate与late use；宿主地址ASan/UBSan/TSan数据竞争；vendor私有成本/整进程报告另限 | 自然Linux cpu,cuda static/shared；Windows native batch具名Unimplemented与Graph预拒绝，未准入数学不算PASS |
 | Graph同slot协调，F5-04 | 完整node/layout集合、shared metadata同version、原region实际slot/workspace；普通dense未新增规划 | 错NodeId/foreign/default/plan失败清token、actual region错误/suffix、open failed slot | 原leased Graph及F1/F2保持；不存在另一个native plan或可写whole-arena假alias | independent invocations和原retirement；控制对象外部串行；相应CPU/CUDA宿主三san及原实际故障 | 普通Compute/Graph消费，不补内部target；GCC字段/对象/六submit P0；其他工具链吞吐未由此证明 |
 | exact-page arena与append/F4，F5-05 | same-schema/layout/backing与精确页集合，乱页/tail；七profile72 ragged与四路线paged old/new/old | 错页/foreign/OOM、F2失败不产ready writer，F5不submit/F4不发布；used页不可取得writer | 原F1独立blocks/native guards，weak ready事实避免arena/state互持；旧页/版本保活、末quota0 | consumed writer须retain/complete；abandon不伪ready，未知实际退休不猜free；close/recreate合同明示 | public页资源→原F2→F4→Direct/Graph；分段矩阵/资产集合接口不解释token/model/eviction |
-| explicit CPU/Apple/Vulkan reference，F5-05/06 | 原Gather/View/Cast/MatMul/Softmax/Copy，非uniform/GQA/causal/NaN padding，same-generation两bank/双slots | caller cold OOM802总点中native684/CPU118；CPU actual error/failed-ready；Apple八queued与Vulkan16实际driver错误 | 原native Program/readonly Results/page imports，旧result/escaped owner/actual drain；不跑CPU fallback | CPU三san、Win Vulkan ASan；Air Apple ASan/UBSan与native DSO宿主TSan、Air Vulkan UBSan；Vulkan TSan待裁决 | actual native-only与CPU+GPU SDK独立供头/迁址/loader；WSL软件Vulkan只包；参考O(KV)费用不签高性能/capture |
+| explicit CPU/Apple/Vulkan reference，F5-05/06 | 原Gather/View/Cast/MatMul/Softmax/Copy，非uniform/GQA/causal/NaN padding，same-generation两bank/双slots | caller cold OOM802总点中native684/CPU118；CPU actual error/failed-ready；Apple八queued与Vulkan16实际driver错误 | 原native Program/readonly Results/page imports，旧result/escaped owner/actual drain；不跑CPU fallback | CPU三san、Win Vulkan ASan；Air Apple ASan/UBSan与native DSO宿主TSan、Air Vulkan UBSan/修复后TSan | actual native-only与CPU+GPU SDK独立供头/迁址/loader；WSL软件Vulkan只包；参考O(KV)费用不签高性能/capture |
 
 该表引用的具体命令、输入hash、失败预算和实际episode在
 [原收口审计](foundation-f5-closure-audit.md)、[native sanitizer卡](foundation-f5-native-host-sanitizers.md)
@@ -30,7 +30,7 @@ F2没有成功输出时不存在可绑定F5的ready lease，实际failed-ready�
 | Linux CUDA新宿主callback/retirement | 地址ASan、UBSan、TSan数据竞争三consumer实际通过 | NVIDIA库LSan与诊断线程生命周期仍INCONCLUSIVE；cuRAND对照差异保留，不称整进程零泄漏 |
 | Win actual Vulkan宿主 | MSVC ASan两个consumer实际通过 | MSVC没有UBSan/TSan/LSan；不可把不支持写成语义NA，不代签driver |
 | Air Apple宿主 | ASan/UBSan实际通过；原已插桩HYLE objects仅vendor MLX DSO分离后两个TSan consumer通过 | 原静态coalescing/GCD/MLX Data报告由无HYLE对照复现但仍保存FAIL；vendor未插桩整体INCONCLUSIVE，Apple LSan runtime不支持 |
-| Air actual Vulkan宿主 | UBSan两个consumer实际通过；同代码模板Win ASan独立证明访问facet | TSan独立配置尚在运行；MoltenVK/driver/private vendor未插桩，不外推Windows并发 |
+| Air actual Vulkan宿主 | UBSan与IREE配置修复后TSan两个consumer实际通过；Win ASan独立证明访问facet | MoltenVK/driver/private vendor未插桩，不外推Windows并发；原IREE ABI失败保留 |
 
 本轮必须证明HYLE-owned宿主和实际native权限/失败/退役，私有GPU storage/外库未插桩
 边界沿原卡已声明，不扩成driver内部审计。外库报告保INCONCLUSIVE，不伪NA或整套san
@@ -42,7 +42,7 @@ PASS；有可归因HYLE源码或跨边界使用错误的证据须退AUDITED，�
 |---|---|---|
 | scope | 六FIX与20 owner合法候选，原A/F4/F1–F3/R1–R7范围保留，无模型策略/新kernel/runtime | 已证明有限实现范围；最终terminal待聚合 |
 | architecture | compute_batch/state高于F1/F2且不反依赖Graph；Graph原region同slot、native原owner；package-only owners各保范围 | 已证明原固定合同；没有新接口/常态字段 |
-| correctness | 上述风险、原actual native故障和逐facet san | PENDING：Air Vulkan TSan尚未裁决，不能提前PASS |
+| correctness | 上述风险、原actual native故障和逐facet san | 原预声明HYLE-owned风险已具证；Vulkan TSan的IREE ABI反证按独立窄卡修复后两consumer通过，最终scope回映待terminal |
 | delivery | source资格、18 installed矩阵/实际rename/loader，CUDA公共FI link反例已修复验 | PENDING：独立component全配置合同原272.140/300未PASS，追加预算答复待定 |
 | usability_docs | public guide/实际隔离SDK消费者/正交映射，borrow/consumed writer/费用/unknown明确 | 已证明；不将guide存在签未运行API |
 | red_team | 固定源码/入口/风险/资格分离核查，原两个文档finding已纠正；后续san反证独立保留 | 源码有限审查完成；最终新增证据资格仍需回映 |
@@ -51,3 +51,9 @@ PASS；有可归因HYLE源码或跨边界使用错误的证据须退AUDITED，�
 reopen triggers沿原协议：可复现身份/权限/寿命/UB/交付缺陷、真实消费者证明的缺失常用
 机制、相关依赖升级或合格同合同material成本退化；历史TODO/重新看一遍/参考库多一个
 feature不授权重开。本表没有改变任何owner状态或把未裁决gate变为PASS。
+
+后续Air Vulkan TSan的原C runtime/adapter配置ABI反证已由独立
+[IREE窄FIX](foundation-f5-iree-tsan-contract.md)修复并实际复验通过；旧表中的“尚在运行”是
+该阶段事实。21个活动owner为原20个F5 + 仅TSan配置的IREE owner，各候选范围明确保留。
+普通18 SDK的[条件影响映射](../../../../evidence/architecture/foundation-f5-iree-tsan-impact/README.md)
+证明OFF产品资格不变；组件聚合仍待原预算答复，不以san完成代签交付工具门。

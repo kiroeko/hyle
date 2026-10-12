@@ -1,0 +1,237 @@
+{
+  "candidate": "11c348e404df2c3fc404056ff3a9e885d4d990bc",
+  "scope": "Actual Air vulkan F5 host tsan; no GPU or uninstrumented vendor-private qualification",
+  "raw_sha256": "b37f456f5e77483c0fb91b1088a657106b7ccdb009e6b1a643830b65dea9a548",
+  "budget_elapsed": {
+    "configure": 27.794171458,
+    "build": 228.22274487500002,
+    "consumer": 21.516739124999987
+  },
+  "job": {
+    "candidate": "11c348e404df2c3fc404056ff3a9e885d4d990bc",
+    "mode": "tsan",
+    "scope": "Actual Air Vulkan F5 host wrappers/Graph/worker ownership tsan; no GPU-private instrumentation claim",
+    "identity": {
+      "hardware": "Mac16,12",
+      "memory": "17179869184",
+      "os": "ProductName:\t\tmacOS\nProductVersion:\t\t27.0.1\nBuildVersion:\t\t26A434",
+      "compiler": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin",
+      "cmake": "cmake version 4.3.4\n\nCMake suite maintained and supported by Kitware (kitware.com/cmake)."
+    },
+    "build": "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-tsan/build",
+    "stages": [
+      {
+        "name": "configure",
+        "budget_group": "configure",
+        "command": [
+          "/opt/homebrew/bin/cmake",
+          "-S",
+          "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-tsan/parent",
+          "-B",
+          "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-tsan/build",
+          "-G",
+          "Ninja",
+          "-DCMAKE_BUILD_TYPE=Release",
+          "-DCMAKE_CXX_COMPILER=/usr/bin/clang++",
+          "-DHYLE_COMPONENTS=compute;graph",
+          "-DHYLE_COMPUTE_ROUTES=vulkan",
+          "-DHYLE_STATIC=ON",
+          "-DHYLE_BUILD_TESTS=OFF",
+          "-DHYLE_BUILD_BENCH=OFF",
+          "-DHYLE_INSTALL=OFF",
+          "-DHYLE_SANITIZER=tsan",
+          "-DHYLE_WERROR=OFF"
+        ],
+        "pid": 85518,
+        "state": "terminal",
+        "log": "configure.log",
+        "available_bytes": 8062042112,
+        "elapsed": 14.050038375,
+        "exit_code": 0,
+        "verdict": "PASS",
+        "sha256": "305c41fdbf4642bd3aeea2d63e4f624dfb12580e31b38f222d84d535dcb8c08f",
+        "reuse_current_contract": false
+      },
+      {
+        "name": "build",
+        "budget_group": "build",
+        "command": [
+          "/opt/homebrew/bin/cmake",
+          "--build",
+          "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-tsan/build",
+          "--target",
+          "native",
+          "public_native",
+          "--parallel",
+          "1"
+        ],
+        "pid": 85961,
+        "state": "terminal",
+        "log": "build.log",
+        "available_bytes": 7756513280,
+        "elapsed": 210.94156262500002,
+        "exit_code": 0,
+        "verdict": "PASS",
+        "sha256": "93f300b42ef278abc7055e51ff3bf3d977720f256bd622525931ba5668bbc889",
+        "reuse_current_contract": false
+      },
+      {
+        "name": "run-public_native",
+        "budget_group": "consumer",
+        "command": [
+          "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-tsan/build/public_native"
+        ],
+        "pid": 89812,
+        "state": "terminal",
+        "log": "run-public_native.log",
+        "available_bytes": 8101806080,
+        "elapsed": 3.8327250829999855,
+        "exit_code": 1,
+        "verdict": "FAIL",
+        "sha256": "c1b37b7193322c68fc5e2faa2b356fd4289d71505903b858a6319dcfcccf425a"
+      },
+      {
+        "name": "configure-resume1",
+        "budget_group": "configure",
+        "command": [
+          "/opt/homebrew/bin/cmake",
+          "-S",
+          "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-tsan/parent",
+          "-B",
+          "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-tsan/build",
+          "-G",
+          "Ninja",
+          "-DCMAKE_BUILD_TYPE=Release",
+          "-DCMAKE_CXX_COMPILER=/usr/bin/clang++",
+          "-DHYLE_COMPONENTS=compute;graph",
+          "-DHYLE_COMPUTE_ROUTES=vulkan",
+          "-DHYLE_STATIC=ON",
+          "-DHYLE_BUILD_TESTS=OFF",
+          "-DHYLE_BUILD_BENCH=OFF",
+          "-DHYLE_INSTALL=OFF",
+          "-DHYLE_SANITIZER=tsan",
+          "-DHYLE_WERROR=OFF"
+        ],
+        "pid": 89940,
+        "state": "terminal",
+        "log": "configure-resume1.log",
+        "available_bytes": 8056782848,
+        "elapsed": 13.744133083,
+        "exit_code": 0,
+        "verdict": "PASS",
+        "sha256": "a95b7fa77d4aa8b0c0e39d64a8c04397edcf661b5490f866a5cc436dd0a6d7de"
+      },
+      {
+        "name": "build-resume1",
+        "budget_group": "build",
+        "command": [
+          "/opt/homebrew/bin/cmake",
+          "--build",
+          "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-tsan/build",
+          "--target",
+          "native",
+          "public_native",
+          "--parallel",
+          "1"
+        ],
+        "pid": 90022,
+        "state": "terminal",
+        "log": "build-resume1.log",
+        "available_bytes": 7950057472,
+        "elapsed": 17.28118225,
+        "exit_code": 0,
+        "verdict": "PASS",
+        "sha256": "d2d06ef13e8cdb8f2c651e7fc66f9665ddeb5bb2ba7ecc4d351cb451cf63522f"
+      },
+      {
+        "name": "run-public_native-resume1",
+        "budget_group": "consumer",
+        "command": [
+          "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-tsan/build/public_native"
+        ],
+        "pid": 90807,
+        "state": "terminal",
+        "log": "run-public_native-resume1.log",
+        "available_bytes": 7890042880,
+        "elapsed": 3.878230875,
+        "exit_code": 0,
+        "verdict": "PASS",
+        "sha256": "00ba82aef9c3f5c6b1258d6a80ad95829021a3e95a8570a998d6dddbb1b9c005"
+      },
+      {
+        "name": "run-native",
+        "budget_group": "consumer",
+        "command": [
+          "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-tsan/build/native"
+        ],
+        "pid": 90810,
+        "state": "terminal",
+        "log": "run-native.log",
+        "available_bytes": 7899906048,
+        "elapsed": 13.805783167000001,
+        "exit_code": 0,
+        "verdict": "PASS",
+        "sha256": "3f5ed38d044bfdc45e4e320df0dd645a780be21b570c06230000171ce89d83e3"
+      }
+    ],
+    "fixture_inputs": {
+      "tests/compute_batch/host_failure_fixture.h": "57bb705c7bbe4c2fc71e4cf228138b0fdbf03b6c78521343a018be3a120cdbd5",
+      "tests/compute_batch/native_fault_consumer.cc": "66a502d6ad383b2569b99f3f551a9b62812cb2d5cb466982e06776526e8190cd",
+      "tests/compute_batch/materialized_cpu_consumer.cc": "dc25540478345eb4f169f7bfc766ff6560e1b5af44bef5c130a090710f2273a3",
+      "tests/compute_batch/CMakeLists.txt": "c1edd25e57c49dc096e3dc94031e445834d9c555297e85c203001b41a153cc05",
+      "tests/compute_batch/ragged_append_journey.h": "a4a236ece69637f6aa9e4d785ea94adea98e80b9d46ba4ca1229cbb5b8afce95",
+      "tests/compute_batch/native_ragged_graph_append_consumer.h": "075ca164a8b9989b3994c19c6679cb07d58d6985e456ec0b1c86c555479065a0",
+      "tests/compute_batch/native_arena_reference_consumer.h": "645db5b2f1ceb1dc8265f02724ed26a1212228a99876bbb15c25468c30a56ff0",
+      "tests/compute_batch/native_arena_graph_consumer.h": "d58f9c6e255c987a60ce30c8a8a8a2a06e4a3150e413875051b551acfd6ad1f8",
+      "tests/compute_batch/native_graph_faults.h": "3ac208d6e43c0825f64a31d5426aa079ed4da3f24f6754926ee3fbd5122b734c",
+      "tests/compute_batch/batch_materialize_test.cc": "d3e982acb98ccc6f6d22a5c04b0205a74df9d404117dc0a91460e0b5809eff3c",
+      "tests/compute_batch/materialized_host_controller_consumer.h": "e487b5249d1f65b8af7c3e3e466b4368a41de8f5d43f10c939e20a648b6af1a8",
+      "tests/compute_batch/batch_layout_test.cc": "420b26027914ebc73c5654f49a363b7f5e707c031fe6100763de9295e03c5167",
+      "tests/compute_batch/public_batch_native_consumer.cc": "b0947ad77c35d973f14c7abf80c2fdd0ebd77da3e62fc413161db789b4c334df",
+      "tests/compute_batch/materialized_native_consumer.cc": "7b6c8292c693e3464040f92108dd06ee186d0ae927f0991eef650e2801f3a9c9",
+      "tests/compute_batch/public_batch_cuda_consumer.cc": "eaef48f8b6b5e9770873a99505de354bf52bd2b9424b24256fef0a858ce93aed",
+      "tests/compute_batch/native_vulkan_failure_fixture.h": "955af6a8f8ea20160f36f760866676997b99a12848dbd456108a72c20b030b90",
+      "tests/compute_batch/native_apple_failure_fixture.h": "fdb33f4f810aa078793a464450808da43e3d386721725a506e2c3697d4be2208",
+      "tests/compute_batch/paged_arena_test.cc": "9f42b74ba3b35df0daf73347e91be201ae461aceb76f38d944a9fb0f018fbdae",
+      "tests/compute_batch/native_direct_consumer.cc": "42ad7ea08a7e4a24fbccdfa7f80ae34c4ba170b4951c1cf6389183974f3ff7c0",
+      "tests/compute_batch/native_ragged_append_consumer.h": "74b44c5808eea2718ac7734ba53603c340ffbd23ba03ed390509114ce2156064",
+      "tests/compute_batch/native_graph_consumer.cc": "c9a100e55a0a32fe221419db8e322fd01bb31bc51781d350b4b5e9c523906a6e",
+      "tests/compute_batch/native_arena_direct_consumer.h": "42bbb89bd43d12f752719ef10efa261127004880d87cd005f2cd19c232ba888e",
+      "tests/compute_batch/public_batch_cpu_consumer.cc": "70c2ae42b2a752577872ccabd399e7b3804e98cb3db15505c8dc6919144c773a",
+      "tests/compute_batch/allocation_fault_fixture.h": "7fc5d108ebfbe46853a14fb74b4c504721442757cd4aeab10f1314a9f03943dc"
+    },
+    "f5_candidate": "25e4fb398e2a782ee60f916c3c6351c4736b6eda",
+    "iree_config_input": {
+      "candidate": "11c348e404df2c3fc404056ff3a9e885d4d990bc",
+      "f5_candidate": "25e4fb398e2a782ee60f916c3c6351c4736b6eda",
+      "path": "src/compute_provider_iree_vulkan/CMakeLists.txt",
+      "sha256": "14ac0e9a4a7f32dbf0d561f01e01a1eac058ebef67f3dab0f05574cb4c0a9a44",
+      "scope": "IRE-TSAN-01; all original F5 manifest inputs unchanged; original budget and FAIL retained"
+    },
+    "input_epochs": [
+      {
+        "candidate": "11c348e404df2c3fc404056ff3a9e885d4d990bc",
+        "from_stage": 3,
+        "scope": "IRE-TSAN-01; all original F5 manifest inputs unchanged; original budget and FAIL retained"
+      }
+    ],
+    "verdict": "PASS_F5_ACTUAL_VULKAN_HOST_TSAN",
+    "verified_instrumented_commands": [
+      "/usr/bin/clang++ -DHYLE_COMPUTE_VULKAN=1 -DHYLE_DETAIL_SANITIZER_THREAD=1 -DHYLE_F5_VULKAN_TEST=1 -DHYLE_IO_HAS_COROUTINE_TRANSPORT=1 -DHYLE_STATIC -I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/include -isystem /Users/kiro/Library/Caches/hyle/dependencies/v1/sources/vulkan_headers-e3b1eec08173-69d6adc9001f/include -O3 -DNDEBUG -std=gnu++23 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -mmacosx-version-min=14.4 -fsanitize=thread -MD -MT CMakeFiles/native.dir/Users/kiro/hyle-scratch/compute-unified/source-c8874688/tests/compute_batch/materialized_native_consumer.cc.o -MF CMakeFiles/native.dir/Users/kiro/hyle-scratch/compute-unified/source-c8874688/tests/compute_batch/materialized_native_consumer.cc.o.d -o CMakeFiles/native.dir/Users/kiro/hyle-scratch/compute-unified/source-c8874688/tests/compute_batch/materialized_native_consumer.cc.o -c /Users/kiro/hyle-scratch/compute-unified/source-c8874688/tests/compute_batch/materialized_native_consumer.cc",
+      "/usr/bin/clang++ -DHYLE_COMPUTE_VULKAN=1 -DHYLE_DETAIL_SANITIZER_THREAD=1 -DHYLE_IO_HAS_COROUTINE_TRANSPORT=1 -DHYLE_STATIC -I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/include -isystem /Users/kiro/Library/Caches/hyle/dependencies/v1/sources/vulkan_headers-e3b1eec08173-69d6adc9001f/include -O3 -DNDEBUG -std=gnu++23 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -mmacosx-version-min=14.4 -fsanitize=thread -MD -MT CMakeFiles/public_native.dir/Users/kiro/hyle-scratch/compute-unified/source-c8874688/tests/compute_batch/public_batch_native_consumer.cc.o -MF CMakeFiles/public_native.dir/Users/kiro/hyle-scratch/compute-unified/source-c8874688/tests/compute_batch/public_batch_native_consumer.cc.o.d -o CMakeFiles/public_native.dir/Users/kiro/hyle-scratch/compute-unified/source-c8874688/tests/compute_batch/public_batch_native_consumer.cc.o -c /Users/kiro/hyle-scratch/compute-unified/source-c8874688/tests/compute_batch/public_batch_native_consumer.cc",
+      "/usr/bin/clang++ -DHYLE_COMPUTE_ROUTE_VULKAN_BUILD -DHYLE_COMPUTE_VULKAN=1 -DHYLE_DETAIL_SANITIZER_THREAD=1 -DHYLE_IO_HAS_COROUTINE_TRANSPORT=1 -DHYLE_STATIC -I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/include -I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/compute_route_vulkan -I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/compute_route_vulkan/../compute -I/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-tsan/build/hyle/src/compute_route_vulkan -I/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-tsan/build/hyle/src/compute_route_vulkan/shaders -isystem /Users/kiro/Library/Caches/hyle/dependencies/v1/sources/vulkan_headers-e3b1eec08173-69d6adc9001f/include -O3 -DNDEBUG -std=c++23 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -mmacosx-version-min=14.4 -Wall -Wextra -Wpedantic -fsanitize=thread -MD -MT hyle/src/compute_route_vulkan/CMakeFiles/hyle_compute_route_vulkan.dir/vulkan_materialized_invocation.cc.o -MF hyle/src/compute_route_vulkan/CMakeFiles/hyle_compute_route_vulkan.dir/vulkan_materialized_invocation.cc.o.d -o hyle/src/compute_route_vulkan/CMakeFiles/hyle_compute_route_vulkan.dir/vulkan_materialized_invocation.cc.o -c /Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/compute_route_vulkan/vulkan_materialized_invocation.cc",
+      "/usr/bin/clang++ -DHYLE_COMPUTE_VULKAN=1 -DHYLE_DETAIL_SANITIZER_THREAD=1 -DHYLE_GRAPH_ROUTE_VULKAN_BUILD -DHYLE_IO_HAS_COROUTINE_TRANSPORT=1 -DHYLE_STATIC -I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/include -I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/graph_route_vulkan -isystem /Users/kiro/Library/Caches/hyle/dependencies/v1/sources/vulkan_headers-e3b1eec08173-69d6adc9001f/include -O3 -DNDEBUG -std=c++23 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -mmacosx-version-min=14.4 -Wall -Wextra -Wpedantic -fsanitize=thread -MD -MT hyle/src/graph_route_vulkan/CMakeFiles/hyle_graph_route_vulkan.dir/vulkan_batch.cc.o -MF hyle/src/graph_route_vulkan/CMakeFiles/hyle_graph_route_vulkan.dir/vulkan_batch.cc.o.d -o hyle/src/graph_route_vulkan/CMakeFiles/hyle_graph_route_vulkan.dir/vulkan_batch.cc.o -c /Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/graph_route_vulkan/vulkan_batch.cc",
+      "/usr/bin/clang++ -DHYLE_COMPUTE_ROUTE_VULKAN_BUILD -DHYLE_COMPUTE_VULKAN=1 -DHYLE_DETAIL_SANITIZER_THREAD=1 -DHYLE_IO_HAS_COROUTINE_TRANSPORT=1 -DHYLE_STATIC -I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/include -I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/compute_route_vulkan -I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/compute_route_vulkan/../compute -I/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-tsan/build/hyle/src/compute_route_vulkan -I/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-tsan/build/hyle/src/compute_route_vulkan/shaders -isystem /Users/kiro/Library/Caches/hyle/dependencies/v1/sources/vulkan_headers-e3b1eec08173-69d6adc9001f/include -O3 -DNDEBUG -std=c++23 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -mmacosx-version-min=14.4 -Wall -Wextra -Wpedantic -fsanitize=thread -MD -MT hyle/src/compute_route_vulkan/CMakeFiles/hyle_compute_route_vulkan.dir/vulkan_batch.cc.o -MF hyle/src/compute_route_vulkan/CMakeFiles/hyle_compute_route_vulkan.dir/vulkan_batch.cc.o.d -o hyle/src/compute_route_vulkan/CMakeFiles/hyle_compute_route_vulkan.dir/vulkan_batch.cc.o -c /Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/compute_route_vulkan/vulkan_batch.cc",
+      "/usr/bin/clang++ -DHYLE_COMPUTE_BATCH_BUILD -DHYLE_DETAIL_SANITIZER_THREAD=1 -DHYLE_STATIC -I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/include -I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/compute_batch -O3 -DNDEBUG -std=c++23 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -mmacosx-version-min=14.4 -Wall -Wextra -Wpedantic -fsanitize=thread -MD -MT hyle/src/compute_batch/CMakeFiles/hyle_compute_batch.dir/materialized_invocation.cc.o -MF hyle/src/compute_batch/CMakeFiles/hyle_compute_batch.dir/materialized_invocation.cc.o.d -o hyle/src/compute_batch/CMakeFiles/hyle_compute_batch.dir/materialized_invocation.cc.o -c /Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/compute_batch/materialized_invocation.cc",
+      "/usr/bin/clang++ -DHYLE_COMPUTE_ROUTE_VULKAN_BUILD -DHYLE_COMPUTE_VULKAN=1 -DHYLE_DETAIL_SANITIZER_THREAD=1 -DHYLE_IO_HAS_COROUTINE_TRANSPORT=1 -DHYLE_STATIC -I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/include -I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/compute_route_vulkan -I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/compute_route_vulkan/../compute -I/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-tsan/build/hyle/src/compute_route_vulkan -I/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-tsan/build/hyle/src/compute_route_vulkan/shaders -isystem /Users/kiro/Library/Caches/hyle/dependencies/v1/sources/vulkan_headers-e3b1eec08173-69d6adc9001f/include -O3 -DNDEBUG -std=c++23 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -mmacosx-version-min=14.4 -Wall -Wextra -Wpedantic -fsanitize=thread -MD -MT hyle/src/compute_route_vulkan/CMakeFiles/hyle_compute_route_vulkan.dir/vulkan_materialized_invocation.cc.o -MF hyle/src/compute_route_vulkan/CMakeFiles/hyle_compute_route_vulkan.dir/vulkan_materialized_invocation.cc.o.d -o hyle/src/compute_route_vulkan/CMakeFiles/hyle_compute_route_vulkan.dir/vulkan_materialized_invocation.cc.o -c /Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/compute_route_vulkan/vulkan_materialized_invocation.cc",
+      "/usr/bin/clang++ -DHYLE_DETAIL_SANITIZER_THREAD=1 -DHYLE_GRAPH_BATCH_BUILD -DHYLE_STATIC -I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/include -I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/graph_batch -O3 -DNDEBUG -std=c++23 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -mmacosx-version-min=14.4 -Wall -Wextra -Wpedantic -fsanitize=thread -MD -MT hyle/src/graph_batch/CMakeFiles/hyle_graph_batch.dir/materialized_invocation.cc.o -MF hyle/src/graph_batch/CMakeFiles/hyle_graph_batch.dir/materialized_invocation.cc.o.d -o hyle/src/graph_batch/CMakeFiles/hyle_graph_batch.dir/materialized_invocation.cc.o -c /Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/graph_batch/materialized_invocation.cc",
+      "/usr/bin/clang++ -DHYLE_COMPUTE_ROUTE_VULKAN_BUILD -DHYLE_COMPUTE_VULKAN=1 -DHYLE_DETAIL_SANITIZER_THREAD=1 -DHYLE_IO_HAS_COROUTINE_TRANSPORT=1 -DHYLE_STATIC -I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/include -I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/compute_route_vulkan -I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/compute_route_vulkan/../compute -I/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-tsan/build/hyle/src/compute_route_vulkan -I/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-tsan/build/hyle/src/compute_route_vulkan/shaders -isystem /Users/kiro/Library/Caches/hyle/dependencies/v1/sources/vulkan_headers-e3b1eec08173-69d6adc9001f/include -O3 -DNDEBUG -std=c++23 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -mmacosx-version-min=14.4 -Wall -Wextra -Wpedantic -fsanitize=thread -MD -MT hyle/src/compute_route_vulkan/CMakeFiles/hyle_compute_route_vulkan.dir/vulkan_leased_invocation.cc.o -MF hyle/src/compute_route_vulkan/CMakeFiles/hyle_compute_route_vulkan.dir/vulkan_leased_invocation.cc.o.d -o hyle/src/compute_route_vulkan/CMakeFiles/hyle_compute_route_vulkan.dir/vulkan_leased_invocation.cc.o -c /Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/compute_route_vulkan/vulkan_leased_invocation.cc",
+      "/usr/bin/clang++ -DHYLE_DETAIL_SANITIZER_THREAD=1 -DHYLE_GRAPH_BUILD -DHYLE_STATIC -I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/include -I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/graph -O3 -DNDEBUG -std=c++23 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -mmacosx-version-min=14.4 -Wall -Wextra -Wpedantic -fsanitize=thread -MD -MT hyle/src/graph/CMakeFiles/hyle_graph.dir/leased_invocation.cc.o -MF hyle/src/graph/CMakeFiles/hyle_graph.dir/leased_invocation.cc.o.d -o hyle/src/graph/CMakeFiles/hyle_graph.dir/leased_invocation.cc.o -c /Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/graph/leased_invocation.cc",
+      "/usr/bin/clang++ -DHYLE_COMPUTE_ROUTE_VULKAN_BUILD -DHYLE_COMPUTE_VULKAN=1 -DHYLE_DETAIL_SANITIZER_THREAD=1 -DHYLE_IO_HAS_COROUTINE_TRANSPORT=1 -DHYLE_STATIC -I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/include -I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/compute_route_vulkan -I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/compute_route_vulkan/../compute -I/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-tsan/build/hyle/src/compute_route_vulkan -I/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-tsan/build/hyle/src/compute_route_vulkan/shaders -isystem /Users/kiro/Library/Caches/hyle/dependencies/v1/sources/vulkan_headers-e3b1eec08173-69d6adc9001f/include -O3 -DNDEBUG -std=c++23 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -mmacosx-version-min=14.4 -Wall -Wextra -Wpedantic -fsanitize=thread -MD -MT hyle/src/compute_route_vulkan/CMakeFiles/hyle_compute_route_vulkan.dir/vulkan_program.cc.o -MF hyle/src/compute_route_vulkan/CMakeFiles/hyle_compute_route_vulkan.dir/vulkan_program.cc.o.d -o hyle/src/compute_route_vulkan/CMakeFiles/hyle_compute_route_vulkan.dir/vulkan_program.cc.o -c /Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/compute_route_vulkan/vulkan_program.cc",
+      "/usr/bin/clang++ -DHYLE_COMPUTE_ROUTE_VULKAN_BUILD -DHYLE_COMPUTE_VULKAN=1 -DHYLE_DETAIL_SANITIZER_THREAD=1 -DHYLE_IO_HAS_COROUTINE_TRANSPORT=1 -DHYLE_STATIC -I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/include -I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/compute_route_vulkan -I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/compute_route_vulkan/../compute -I/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-tsan/build/hyle/src/compute_route_vulkan -I/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-tsan/build/hyle/src/compute_route_vulkan/shaders -isystem /Users/kiro/Library/Caches/hyle/dependencies/v1/sources/vulkan_headers-e3b1eec08173-69d6adc9001f/include -O3 -DNDEBUG -std=c++23 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -mmacosx-version-min=14.4 -Wall -Wextra -Wpedantic -fsanitize=thread -MD -MT hyle/src/compute_route_vulkan/CMakeFiles/hyle_compute_route_vulkan.dir/vulkan_memory.cc.o -MF hyle/src/compute_route_vulkan/CMakeFiles/hyle_compute_route_vulkan.dir/vulkan_memory.cc.o.d -o hyle/src/compute_route_vulkan/CMakeFiles/hyle_compute_route_vulkan.dir/vulkan_memory.cc.o -c /Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/compute_route_vulkan/vulkan_memory.cc",
+      "/usr/bin/cc -DIREE_ALLOCATOR_SYSTEM_CTL=iree_allocator_libc_ctl -I/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-tsan/build/hyle/_deps/iv/src -I/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-tsan/build/hyle/_deps/iv/build -I/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-tsan/build/hyle/_deps/iv/src/runtime/src -I/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-tsan/build/hyle/_deps/iv/build/runtime/src -g -fno-omit-frame-pointer -fsanitize=thread -O3 -DNDEBUG -std=gnu11 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -mmacosx-version-min=14.4 -fPIC -fvisibility=hidden -fvisibility=hidden -Werror -Wall -Wno-error=deprecated-declarations -Wno-extern-c-compat -Wno-invalid-offsetof -Wno-unused-const-variable -Wno-unused-function -Wno-unused-lambda-capture -Wno-unused-private-field -Wno-pointer-sign -Wno-char-subscripts -Wctad-maybe-unsupported -Wfloat-overflow-conversion -Wfloat-zero-conversion -Wfor-loop-analysis -Wformat-security -Wgnu-redeclared-enum -Wimplicit-fallthrough -Winfinite-recursion -Wliteral-conversion -Wlogical-op-parentheses -Wnon-virtual-dtor -Woverloaded-virtual -Wpointer-arith -Wself-assign -Wstring-conversion -Wtautological-overlap-compare -Wthread-safety -Wthread-safety-beta -Wunused-comparison -Wvla -fno-lax-vector-conversions -fmacro-prefix-map=/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-tsan/build/hyle/_deps/iv/src=src -DIREE_THREADING_ENABLE=1 -MD -MT hyle/_deps/iv/build/runtime/src/iree/async/CMakeFiles/iree_async_async.objects.dir/proactor.c.o -MF hyle/_deps/iv/build/runtime/src/iree/async/CMakeFiles/iree_async_async.objects.dir/proactor.c.o.d -o hyle/_deps/iv/build/runtime/src/iree/async/CMakeFiles/iree_async_async.objects.dir/proactor.c.o -c /Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-tsan/build/hyle/_deps/iv/src/runtime/src/iree/async/proactor.c",
+      "/usr/bin/cc -DIREE_ALLOCATOR_SYSTEM_CTL=iree_allocator_libc_ctl -I/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-tsan/build/hyle/_deps/iv/src -I/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-tsan/build/hyle/_deps/iv/build -I/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-tsan/build/hyle/_deps/iv/src/runtime/src -I/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-tsan/build/hyle/_deps/iv/build/runtime/src -g -fno-omit-frame-pointer -fsanitize=thread -O3 -DNDEBUG -std=gnu11 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -mmacosx-version-min=14.4 -fPIC -fvisibility=hidden -fvisibility=hidden -Werror -Wall -Wno-error=deprecated-declarations -Wno-extern-c-compat -Wno-invalid-offsetof -Wno-unused-const-variable -Wno-unused-function -Wno-unused-lambda-capture -Wno-unused-private-field -Wno-pointer-sign -Wno-char-subscripts -Wctad-maybe-unsupported -Wfloat-overflow-conversion -Wfloat-zero-conversion -Wfor-loop-analysis -Wformat-security -Wgnu-redeclared-enum -Wimplicit-fallthrough -Winfinite-recursion -Wliteral-conversion -Wlogical-op-parentheses -Wnon-virtual-dtor -Woverloaded-virtual -Wpointer-arith -Wself-assign -Wstring-conversion -Wtautological-overlap-compare -Wthread-safety -Wthread-safety-beta -Wunused-comparison -Wvla -fno-lax-vector-conversions -fmacro-prefix-map=/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-tsan/build/hyle/_deps/iv/src=src -DIREE_THREADING_ENABLE=1 -MD -MT hyle/_deps/iv/build/runtime/src/iree/async/platform/posix/CMakeFiles/iree_async_platform_posix_posix.objects.dir/proactor.c.o -MF hyle/_deps/iv/build/runtime/src/iree/async/platform/posix/CMakeFiles/iree_async_platform_posix_posix.objects.dir/proactor.c.o.d -o hyle/_deps/iv/build/runtime/src/iree/async/platform/posix/CMakeFiles/iree_async_platform_posix_posix.objects.dir/proactor.c.o -c /Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-vulkan-tsan/build/hyle/_deps/iv/src/runtime/src/iree/async/platform/posix/proactor.c",
+      "/usr/bin/clang++ -DHYLE_DETAIL_SANITIZER_THREAD=1 -DHYLE_IO_CORE_BUILD -DHYLE_IO_HAS_COROUTINE_TRANSPORT=1 -DHYLE_STATIC -I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/include -I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/io_core -O3 -DNDEBUG -std=c++23 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -mmacosx-version-min=14.4 -Wall -Wextra -Wpedantic -fsanitize=thread -MD -MT hyle/src/io_core/CMakeFiles/hyle_io_core.dir/proactor.cc.o -MF hyle/src/io_core/CMakeFiles/hyle_io_core.dir/proactor.cc.o.d -o hyle/src/io_core/CMakeFiles/hyle_io_core.dir/proactor.cc.o -c /Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/io_core/proactor.cc"
+    ]
+  }
+}
