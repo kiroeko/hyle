@@ -1,6 +1,6 @@
 # F4 Compute façade 安装闭包接缝
 
-状态：SCOPED。新[compute_state活动卡](foundation-f4-state-versions.md)已AUDITED，原Compute
+状态：AUDITED。新[compute_state活动卡](foundation-f4-state-versions.md)已AUDITED，原Compute
 公开产品新增state root是实际source/install/public发现合同变化；不是原F1–F3或native算法缺陷。
 
 ## Closure card
@@ -34,4 +34,19 @@
 本轮source/public header没有这些owner的产品diff；它们的新状态只允许façade接缝工作。
 old-scope.json与本卡同目录输入在
 [原状态快照](../../../../evidence/architecture/foundation-f4-package-scope/old-scope.json)。
-SCOPED阶段尚不能提交产品变更；独立AUDITED checkpoint后才提交现有state实现/中央root。
+已完成独立SCOPED checkpoint b157d0963。此前未提交façade root修改；现在按本卡冻结接缝。
+
+## 有限审计与七问
+
+| FIX | 允许变化 | 验收 |
+|---|---|---|
+| F4-PKG-01 | Compute façade加入state root与新factor唯一归属；旧九owner源码/公开头无diff | 普通Compute发现新API、actual source/SDK新闭包/头/迁址/缺路线/loader，各route原native对象可组合 |
+
+不改变旧factor直接依赖边/ABI/对象布局/算法/线程/metadata。只在Compute产品聚合选择新root，
+新state依赖旧Compute，不存在反向边。header owner及source/static/shared符号仍由新factor。
+中央manifest的保守全图测试选择保存理由；实际gate用F4 card的owners/new consumers/package
+seams，不运行旧算子全集。新源码身份/旧owner无diff随候选收据核对；未经验证SDK不写PASS。
+
+七问：锁/许可不变；主/正交完整state消费由F4卡覆盖；旧下层BORROW；P0只解释新增产品链接
+和opt-in状态对象、无timed赢家；同工具链C++无新FFI；实际Compute façade三交付与新公共头
+资格；指南明确State接口/原route选择/库依赖。故固定此一个FIX进入AUDITED，七门资格尚未签。

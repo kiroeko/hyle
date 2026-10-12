@@ -270,9 +270,9 @@
     },
     {
       "module": "compute",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/foundation-f4-package-seam.md",
-      "summary": "F4 package SCOPED：仅Compute façade新增state root/交付闭包；原F1–F3及native数学/执行/退休源码不改、已签范围保留；F4实际source/SDK与新头/缺路线/迁址按窄卡验证，不跑算子全集。"
+      "summary": "F4 package AUDITED：仅Compute façade新增state root/交付闭包；原F1–F3及native数学/执行/退休源码不改、已签范围保留；F4实际source/SDK与新头/缺路线/迁址按窄卡验证，不跑算子全集。"
     },
     {
       "module": "graph",
@@ -357,9 +357,9 @@
     },
     {
       "module": "compute_provider_onednn",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/foundation-f4-package-seam.md",
-      "summary": "F4 package SCOPED：仅Compute façade新增state root/交付闭包；原F1–F3及native数学/执行/退休源码不改、已签范围保留；F4实际source/SDK与新头/缺路线/迁址按窄卡验证，不跑算子全集。"
+      "summary": "F4 package AUDITED：仅Compute façade新增state root/交付闭包；原F1–F3及native数学/执行/退休源码不改、已签范围保留；F4实际source/SDK与新头/缺路线/迁址按窄卡验证，不跑算子全集。"
     },
     {
       "module": "compute_provider_ggml",
@@ -396,27 +396,27 @@
     },
     {
       "module": "compute_backend_cpu",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/foundation-f4-package-seam.md",
-      "summary": "F4 package SCOPED：仅Compute façade新增state root/交付闭包；原F1–F3及native数学/执行/退休源码不改、已签范围保留；F4实际source/SDK与新头/缺路线/迁址按窄卡验证，不跑算子全集。"
+      "summary": "F4 package AUDITED：仅Compute façade新增state root/交付闭包；原F1–F3及native数学/执行/退休源码不改、已签范围保留；F4实际source/SDK与新头/缺路线/迁址按窄卡验证，不跑算子全集。"
     },
     {
       "module": "compute_backend_cuda",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/foundation-f4-package-seam.md",
-      "summary": "F4 package SCOPED：仅Compute façade新增state root/交付闭包；原F1–F3及native数学/执行/退休源码不改、已签范围保留；F4实际source/SDK与新头/缺路线/迁址按窄卡验证，不跑算子全集。"
+      "summary": "F4 package AUDITED：仅Compute façade新增state root/交付闭包；原F1–F3及native数学/执行/退休源码不改、已签范围保留；F4实际source/SDK与新头/缺路线/迁址按窄卡验证，不跑算子全集。"
     },
     {
       "module": "compute_provider_native",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/foundation-f4-package-seam.md",
-      "summary": "F4 package SCOPED：仅Compute façade新增state root/交付闭包；原F1–F3及native数学/执行/退休源码不改、已签范围保留；F4实际source/SDK与新头/缺路线/迁址按窄卡验证，不跑算子全集。"
+      "summary": "F4 package AUDITED：仅Compute façade新增state root/交付闭包；原F1–F3及native数学/执行/退休源码不改、已签范围保留；F4实际source/SDK与新头/缺路线/迁址按窄卡验证，不跑算子全集。"
     },
     {
       "module": "compute_route_cpu",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/foundation-f4-package-seam.md",
-      "summary": "F4 package SCOPED：仅Compute façade新增state root/交付闭包；原F1–F3及native数学/执行/退休源码不改、已签范围保留；F4实际source/SDK与新头/缺路线/迁址按窄卡验证，不跑算子全集。"
+      "summary": "F4 package AUDITED：仅Compute façade新增state root/交付闭包；原F1–F3及native数学/执行/退休源码不改、已签范围保留；F4实际source/SDK与新头/缺路线/迁址按窄卡验证，不跑算子全集。"
     },
     {
       "module": "graph_route_cpu",
@@ -465,9 +465,9 @@
     },
     {
       "module": "compute_route_cuda",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/foundation-f4-package-seam.md",
-      "summary": "F4 package SCOPED：仅Compute façade新增state root/交付闭包；原F1–F3及native数学/执行/退休源码不改、已签范围保留；F4实际source/SDK与新头/缺路线/迁址按窄卡验证，不跑算子全集。"
+      "summary": "F4 package AUDITED：仅Compute façade新增state root/交付闭包；原F1–F3及native数学/执行/退休源码不改、已签范围保留；F4实际source/SDK与新头/缺路线/迁址按窄卡验证，不跑算子全集。"
     },
     {
       "module": "graph_route_cuda",
@@ -482,9 +482,9 @@
     },
     {
       "module": "compute_route_apple",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/foundation-f4-package-seam.md",
-      "summary": "F4 package SCOPED：仅Compute façade新增state root/交付闭包；原F1–F3及native数学/执行/退休源码不改、已签范围保留；F4实际source/SDK与新头/缺路线/迁址按窄卡验证，不跑算子全集。"
+      "summary": "F4 package AUDITED：仅Compute façade新增state root/交付闭包；原F1–F3及native数学/执行/退休源码不改、已签范围保留；F4实际source/SDK与新头/缺路线/迁址按窄卡验证，不跑算子全集。"
     },
     {
       "module": "graph_route_apple",
@@ -499,9 +499,9 @@
     },
     {
       "module": "compute_route_vulkan",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/foundation-f4-package-seam.md",
-      "summary": "F4 package SCOPED：仅Compute façade新增state root/交付闭包；原F1–F3及native数学/执行/退休源码不改、已签范围保留；F4实际source/SDK与新头/缺路线/迁址按窄卡验证，不跑算子全集。"
+      "summary": "F4 package AUDITED：仅Compute façade新增state root/交付闭包；原F1–F3及native数学/执行/退休源码不改、已签范围保留；F4实际source/SDK与新头/缺路线/迁址按窄卡验证，不跑算子全集。"
     },
     {
       "module": "graph_route_vulkan",
