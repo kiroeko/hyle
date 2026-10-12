@@ -365,3 +365,10 @@ Win/WSL各原16+Graph controller8+新Direct8=32矩阵oracle，两个controller�
 native guard/quota0通过。每Direct run实际11 stages/11 host waits，明确同步reference费用。
 common33项/八头、Win owner/WX通过；原GCC misleading-indentation warning修正及历史
 保留，预算同根。产品仍AUDITED；native controller/ragged/完整fault/SDK/san/终审继续。
+
+Apple/Vulkan typed Direct/原native Graph controller已按
+[合法owner有限FIX](foundation-f5-native-reference-bridges.md)落地，
+[三profile实证](../../../../evidence/correctness/foundation-f5-native-controller-first/README.md)
+各96矩阵+24页oracle、same-generation F2镜像/两固定banks/旧result gate/额度与最后quota0
+通过。CPU/CUDA已有controller不替代它们的原native runtime；native controller第一档有
+真实闭环，完整ragged append/fault/SDK/san/P0/guide/终审仍全部scope，产品保持AUDITED。

@@ -88,6 +88,17 @@ struct MaterializedBatchRunReport final {
   std::uint64_t layout_generation=0;
   std::uint32_t submitted_stages=0,host_waits=0;
 };
+struct MaterializedNativeBatchOptions final {
+  std::size_t max_metadata_backing_bytes=0;
+  mem::AllocatorRef allocator=mem::system_allocator();
+  ResourceBudget resource_budget{};
+};
+struct MaterializedNativeBatchReport final {
+  std::uint64_t layout_generation=0;
+  std::size_t staging_bytes=0,device_mirror_bytes=0,backing_bytes=0,uploaded_bytes=0;
+  std::uint64_t upload_host_waits=0;
+  std::uint32_t device_banks=2;
+};
 namespace detail {struct MaterializedBatchInvocationData;}
 // Explicit host/system-memory reference over original prepared Direct math.
 // Cold fixed buffers/operations; submit waits each accepted stage and reports

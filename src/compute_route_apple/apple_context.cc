@@ -24,6 +24,7 @@
 #include "apple_recurrent.h"
 #include "completion_internal.h"
 #include "hyle/compute/detail/apple_plan.h"
+#include "hyle/compute/detail/apple_batch_access.h"
 #include "hyle/compute/detail/lease_access.h"
 #include "hyle/compute/detail/generated_result.h"
 #include "hyle/container/flat_hash_set.h"
@@ -840,6 +841,12 @@ Status Invocation::bind(std::span<const mx::array> inputs) noexcept {
   return Status::Ok();
 }
 
+Status detail::PagedBatchAccess::reuse_gate(Invocation&invocation)noexcept{
+  auto*state=invocation.state_;if(!state)return Status::FailedPrecondition("empty Apple batch native slot");
+  std::lock_guard lock(state->binding_mutex);
+  if(!state->done.load(std::memory_order_acquire) || state->retired.load(std::memory_order_acquire))return Status::Unavailable("Apple batch native slot in flight/failed");
+  HYLE_ASSIGN_OR_RETURN(auto writer,state->result_slot.begin());return Status::Ok();
+}
 Result<OwnedResult<Results>> Invocation::submit() noexcept {
   return submit_guarded({});
 }

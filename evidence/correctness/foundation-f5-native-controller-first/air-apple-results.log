@@ -1,0 +1,183 @@
+Apple actual GPU Apple M4 / applegpu_g16g / Version 27.0.1 (Build 26A434)
+Apple metadata layout=1 staged=1920 uploaded=1920 hostWaits=2 PASS
+materialized independent oracle maxError=3.0380168e-05 PASS
+materialized independent oracle maxError=3.0380168e-05 PASS
+Apple metadata layout=2 staged=1920 uploaded=1920 hostWaits=2 PASS
+materialized independent oracle maxError=3.03596683e-05 PASS
+materialized independent oracle maxError=3.0380168e-05 PASS
+materialized independent oracle maxError=3.0380168e-05 PASS
+Apple metadata layout=3 staged=1920 uploaded=1920 hostWaits=2 PASS
+materialized independent oracle maxError=3.03596683e-05 PASS
+materialized independent oracle maxError=3.0380168e-05 PASS
+materialized independent oracle maxError=3.0380168e-05 PASS
+materialized independent oracle maxError=3.03596683e-05 PASS
+Apple native controller Direct paged F16 causal=0 two-banks/same-generation/two-slots/update PASS; backing=6138 uploaded=1920 waits=2
+materialized independent oracle maxError=3.0380168e-05 PASS
+materialized independent oracle maxError=3.0380168e-05 PASS
+materialized independent oracle maxError=3.03596683e-05 PASS
+Apple native controller Graph paged F16 causal=0 two-banks/same-generation/two-slots/update PASS; backing=6138 uploaded=1920 waits=2
+Apple explicit materialized paged F16 causal=0 native Direct/Graph NaN-padding/two-slots/update/old-result PASS
+Apple metadata layout=1 staged=1920 uploaded=1920 hostWaits=2 PASS
+materialized independent oracle maxError=5.72360158e-05 PASS
+materialized independent oracle maxError=5.72360158e-05 PASS
+Apple metadata layout=2 staged=1920 uploaded=1920 hostWaits=2 PASS
+materialized independent oracle maxError=3.03596683e-05 PASS
+materialized independent oracle maxError=5.72360158e-05 PASS
+materialized independent oracle maxError=5.72360158e-05 PASS
+Apple metadata layout=3 staged=1920 uploaded=1920 hostWaits=2 PASS
+materialized independent oracle maxError=3.03596683e-05 PASS
+materialized independent oracle maxError=5.72360158e-05 PASS
+materialized independent oracle maxError=5.72360158e-05 PASS
+materialized independent oracle maxError=3.03596683e-05 PASS
+Apple native controller Direct paged F16 causal=1 two-banks/same-generation/two-slots/update PASS; backing=6138 uploaded=1920 waits=2
+materialized independent oracle maxError=5.72360158e-05 PASS
+materialized independent oracle maxError=5.72360158e-05 PASS
+materialized independent oracle maxError=3.03596683e-05 PASS
+Apple native controller Graph paged F16 causal=1 two-banks/same-generation/two-slots/update PASS; backing=6138 uploaded=1920 waits=2
+Apple explicit materialized paged F16 causal=1 native Direct/Graph NaN-padding/two-slots/update/old-result PASS
+Apple metadata layout=1 staged=1920 uploaded=1920 hostWaits=2 PASS
+materialized independent oracle maxError=0.000243569365 PASS
+materialized independent oracle maxError=0.000243569365 PASS
+Apple metadata layout=2 staged=1920 uploaded=1920 hostWaits=2 PASS
+materialized independent oracle maxError=0.000243374406 PASS
+materialized independent oracle maxError=0.000243569365 PASS
+materialized independent oracle maxError=0.000243569365 PASS
+Apple metadata layout=3 staged=1920 uploaded=1920 hostWaits=2 PASS
+materialized independent oracle maxError=0.000243374406 PASS
+materialized independent oracle maxError=0.000243569365 PASS
+materialized independent oracle maxError=0.000243569365 PASS
+materialized independent oracle maxError=0.000243374406 PASS
+Apple native controller Direct paged BF16 causal=0 two-banks/same-generation/two-slots/update PASS; backing=6138 uploaded=1920 waits=2
+materialized independent oracle maxError=0.000243569365 PASS
+materialized independent oracle maxError=0.000243569365 PASS
+materialized independent oracle maxError=0.000243374406 PASS
+Apple native controller Graph paged BF16 causal=0 two-banks/same-generation/two-slots/update PASS; backing=6138 uploaded=1920 waits=2
+Apple explicit materialized paged BF16 causal=0 native Direct/Graph NaN-padding/two-slots/update/old-result PASS
+Apple metadata layout=1 staged=1920 uploaded=1920 hostWaits=2 PASS
+materialized independent oracle maxError=0.000483878487 PASS
+materialized independent oracle maxError=0.000483878487 PASS
+Apple metadata layout=2 staged=1920 uploaded=1920 hostWaits=2 PASS
+materialized independent oracle maxError=0.000243374406 PASS
+materialized independent oracle maxError=0.000483878487 PASS
+materialized independent oracle maxError=0.000483878487 PASS
+Apple metadata layout=3 staged=1920 uploaded=1920 hostWaits=2 PASS
+materialized independent oracle maxError=0.000243374406 PASS
+materialized independent oracle maxError=0.000483878487 PASS
+materialized independent oracle maxError=0.000483878487 PASS
+materialized independent oracle maxError=0.000243374406 PASS
+Apple native controller Direct paged BF16 causal=1 two-banks/same-generation/two-slots/update PASS; backing=6138 uploaded=1920 waits=2
+materialized independent oracle maxError=0.000483878487 PASS
+materialized independent oracle maxError=0.000483878487 PASS
+materialized independent oracle maxError=0.000243374406 PASS
+Apple native controller Graph paged BF16 causal=1 two-banks/same-generation/two-slots/update PASS; backing=6138 uploaded=1920 waits=2
+Apple explicit materialized paged BF16 causal=1 native Direct/Graph NaN-padding/two-slots/update/old-result PASS
+Apple metadata layout=1 staged=1920 uploaded=1920 hostWaits=2 PASS
+materialized independent oracle maxError=6.030212e-05 PASS
+materialized independent oracle maxError=6.030212e-05 PASS
+Apple metadata layout=2 staged=1920 uploaded=1920 hostWaits=2 PASS
+materialized independent oracle maxError=6.030212e-05 PASS
+materialized independent oracle maxError=6.030212e-05 PASS
+materialized independent oracle maxError=6.030212e-05 PASS
+Apple metadata layout=3 staged=1920 uploaded=1920 hostWaits=2 PASS
+materialized independent oracle maxError=6.030212e-05 PASS
+materialized independent oracle maxError=6.030212e-05 PASS
+materialized independent oracle maxError=6.030212e-05 PASS
+materialized independent oracle maxError=6.030212e-05 PASS
+Apple native controller Direct ragged F16 causal=0 two-banks/same-generation/two-slots/update PASS; backing=6138 uploaded=1920 waits=2
+materialized independent oracle maxError=6.030212e-05 PASS
+materialized independent oracle maxError=6.030212e-05 PASS
+materialized independent oracle maxError=6.030212e-05 PASS
+Apple native controller Graph ragged F16 causal=0 two-banks/same-generation/two-slots/update PASS; backing=6138 uploaded=1920 waits=2
+Apple explicit materialized ragged F16 causal=0 native Direct/Graph NaN-padding/two-slots/update/old-result PASS
+Apple metadata layout=1 staged=1920 uploaded=1920 hostWaits=2 PASS
+materialized independent oracle maxError=6.04093309e-05 PASS
+materialized independent oracle maxError=6.04093309e-05 PASS
+Apple metadata layout=2 staged=1920 uploaded=1920 hostWaits=2 PASS
+materialized independent oracle maxError=6.030212e-05 PASS
+materialized independent oracle maxError=6.04093309e-05 PASS
+materialized independent oracle maxError=6.04093309e-05 PASS
+Apple metadata layout=3 staged=1920 uploaded=1920 hostWaits=2 PASS
+materialized independent oracle maxError=6.030212e-05 PASS
+materialized independent oracle maxError=6.04093309e-05 PASS
+materialized independent oracle maxError=6.04093309e-05 PASS
+materialized independent oracle maxError=6.030212e-05 PASS
+Apple native controller Direct ragged F16 causal=1 two-banks/same-generation/two-slots/update PASS; backing=6138 uploaded=1920 waits=2
+materialized independent oracle maxError=6.04093309e-05 PASS
+materialized independent oracle maxError=6.04093309e-05 PASS
+materialized independent oracle maxError=6.030212e-05 PASS
+Apple native controller Graph ragged F16 causal=1 two-banks/same-generation/two-slots/update PASS; backing=6138 uploaded=1920 waits=2
+Apple explicit materialized ragged F16 causal=1 native Direct/Graph NaN-padding/two-slots/update/old-result PASS
+Apple metadata layout=1 staged=1920 uploaded=1920 hostWaits=2 PASS
+materialized independent oracle maxError=0.000483024423 PASS
+materialized independent oracle maxError=0.000483024423 PASS
+Apple metadata layout=2 staged=1920 uploaded=1920 hostWaits=2 PASS
+materialized independent oracle maxError=0.000483024423 PASS
+materialized independent oracle maxError=0.000483024423 PASS
+materialized independent oracle maxError=0.000483024423 PASS
+Apple metadata layout=3 staged=1920 uploaded=1920 hostWaits=2 PASS
+materialized independent oracle maxError=0.000483024423 PASS
+materialized independent oracle maxError=0.000483024423 PASS
+materialized independent oracle maxError=0.000483024423 PASS
+materialized independent oracle maxError=0.000483024423 PASS
+Apple native controller Direct ragged BF16 causal=0 two-banks/same-generation/two-slots/update PASS; backing=6138 uploaded=1920 waits=2
+materialized independent oracle maxError=0.000483024423 PASS
+materialized independent oracle maxError=0.000483024423 PASS
+materialized independent oracle maxError=0.000483024423 PASS
+Apple native controller Graph ragged BF16 causal=0 two-banks/same-generation/two-slots/update PASS; backing=6138 uploaded=1920 waits=2
+Apple explicit materialized ragged BF16 causal=0 native Direct/Graph NaN-padding/two-slots/update/old-result PASS
+Apple metadata layout=1 staged=1920 uploaded=1920 hostWaits=2 PASS
+materialized independent oracle maxError=0.000487680542 PASS
+materialized independent oracle maxError=0.000487680542 PASS
+Apple metadata layout=2 staged=1920 uploaded=1920 hostWaits=2 PASS
+materialized independent oracle maxError=0.000483024423 PASS
+materialized independent oracle maxError=0.000487680542 PASS
+materialized independent oracle maxError=0.000487680542 PASS
+Apple metadata layout=3 staged=1920 uploaded=1920 hostWaits=2 PASS
+materialized independent oracle maxError=0.000483024423 PASS
+materialized independent oracle maxError=0.000487680542 PASS
+materialized independent oracle maxError=0.000487680542 PASS
+materialized independent oracle maxError=0.000483024423 PASS
+Apple native controller Direct ragged BF16 causal=1 two-banks/same-generation/two-slots/update PASS; backing=6138 uploaded=1920 waits=2
+materialized independent oracle maxError=0.000487680542 PASS
+materialized independent oracle maxError=0.000487680542 PASS
+materialized independent oracle maxError=0.000483024423 PASS
+Apple native controller Graph ragged BF16 causal=1 two-banks/same-generation/two-slots/update PASS; backing=6138 uploaded=1920 waits=2
+Apple explicit materialized ragged BF16 causal=1 native Direct/Graph NaN-padding/two-slots/update/old-result PASS
+Apple metadata layout=1 staged=160 uploaded=160 hostWaits=2 PASS
+Apple paged reference F16 Direct episode=0 oracle=0.250 exact-page-guards PASS
+Apple metadata layout=2 staged=160 uploaded=160 hostWaits=2 PASS
+Apple paged reference F16 Direct episode=1 oracle=0.375 exact-page-guards PASS
+Apple metadata layout=1 staged=160 uploaded=160 hostWaits=2 PASS
+Apple paged reference F16 Direct episode=2 oracle=0.250 exact-page-guards PASS
+Apple metadata layout=1 staged=160 uploaded=160 hostWaits=2 PASS
+Apple paged reference F16 Graph episode=0 oracle=0.250 exact-page-guards PASS
+Apple metadata layout=2 staged=160 uploaded=160 hostWaits=2 PASS
+Apple paged reference F16 Graph episode=1 oracle=0.375 exact-page-guards PASS
+Apple metadata layout=1 staged=160 uploaded=160 hostWaits=2 PASS
+Apple paged reference F16 Graph episode=2 oracle=0.250 exact-page-guards PASS
+Apple typed page controller F16 Direct episode=0 oracle=0.250 PASS
+Apple typed page controller F16 Direct episode=1 oracle=0.375 PASS
+Apple typed page controller F16 Direct episode=2 oracle=0.250 PASS
+Apple typed page controller F16 Graph episode=0 oracle=0.250 PASS
+Apple typed page controller F16 Graph episode=1 oracle=0.375 PASS
+Apple typed page controller F16 Graph episode=2 oracle=0.250 PASS
+Apple native page append/F4 F16 clone=1024 append=512 whole-arena=5120 PASS
+Apple metadata layout=1 staged=160 uploaded=160 hostWaits=2 PASS
+Apple paged reference BF16 Direct episode=0 oracle=0.250 exact-page-guards PASS
+Apple metadata layout=2 staged=160 uploaded=160 hostWaits=2 PASS
+Apple paged reference BF16 Direct episode=1 oracle=0.375 exact-page-guards PASS
+Apple metadata layout=1 staged=160 uploaded=160 hostWaits=2 PASS
+Apple paged reference BF16 Direct episode=2 oracle=0.250 exact-page-guards PASS
+Apple metadata layout=1 staged=160 uploaded=160 hostWaits=2 PASS
+Apple paged reference BF16 Graph episode=0 oracle=0.250 exact-page-guards PASS
+Apple metadata layout=2 staged=160 uploaded=160 hostWaits=2 PASS
+Apple paged reference BF16 Graph episode=1 oracle=0.375 exact-page-guards PASS
+Apple metadata layout=1 staged=160 uploaded=160 hostWaits=2 PASS
+Apple paged reference BF16 Graph episode=2 oracle=0.250 exact-page-guards PASS
+Apple typed page controller BF16 Direct episode=0 oracle=0.250 PASS
+Apple typed page controller BF16 Direct episode=1 oracle=0.375 PASS
+Apple typed page controller BF16 Direct episode=2 oracle=0.250 PASS
+Apple typed page controller BF16 Graph episode=0 oracle=0.250 PASS
+Apple typed page controller BF16 Graph episode=1 oracle=0.375 PASS
+Apple typed page controller BF16 Graph episode=2 oracle=0.250 PASS
+Apple native page append/F4 BF16 clone=1024 append=512 whole-arena=5120 PASS

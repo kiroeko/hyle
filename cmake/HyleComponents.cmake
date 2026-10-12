@@ -457,7 +457,9 @@ _hyle_declare_component(compute_route_apple
   SPLIT_PUBLIC_HEADERS hyle/compute/apple.h hyle/compute/apple_memory.h hyle/compute/apple_weights.h hyle/compute/apple_batch.h hyle/compute/detail/apple_plan.h hyle/compute/detail/apple_batch_access.h)
 _hyle_declare_component(graph_route_apple
   TRACE
-  PUBLIC_DEPS core compute_ops compute_route_apple error graph
+  PRIVATE_DEPS graph_batch
+  PUBLIC_DEPS core compute_ops compute_route_apple compute_batch error graph
+  PUBLIC_TYPE_DEPS compute_batch compute_route_apple
   SPLIT_PUBLIC_HEADERS hyle/graph/apple.h)
 
 # Native Vulkan owners, independent of the CPU/CUDA/Apple executors.
@@ -469,7 +471,9 @@ _hyle_declare_component(compute_route_vulkan
   SPLIT_PUBLIC_HEADERS hyle/compute/vulkan.h hyle/compute/vulkan_memory.h hyle/compute/vulkan_weights.h hyle/compute/vulkan_batch.h hyle/compute/detail/vulkan_plan.h hyle/compute/detail/vulkan_batch_access.h)
 _hyle_declare_component(graph_route_vulkan
   TRACE
-  PUBLIC_DEPS core compute_ops compute_route_vulkan error graph
+  PRIVATE_DEPS graph_batch
+  PUBLIC_DEPS core compute_ops compute_route_vulkan compute_batch error graph
+  PUBLIC_TYPE_DEPS compute_batch compute_route_vulkan
   SPLIT_PUBLIC_HEADERS hyle/graph/vulkan.h)
 
 # The Vulkan implementation factor owns its native adapters.
@@ -560,7 +564,8 @@ _hyle_declare_component(compute_state
     SPLIT_PUBLIC_HEADERS hyle/compute/batch_layout.h hyle/compute/batch_ops.h
       hyle/compute/batch_execution.h hyle/compute/detail/batch_provider.h
       hyle/compute/detail/batch_graph_access.h hyle/compute/batch_materialize.h
-      hyle/compute/paged_arena.h hyle/compute/detail/paged_arena_access.h)
+        hyle/compute/paged_arena.h hyle/compute/detail/paged_arena_access.h
+        hyle/compute/detail/materialized_native_controller.h)
   _hyle_declare_component(graph_batch
     PRIVATE_DEPS core util_core
     PUBLIC_DEPS graph compute_batch compute error mem

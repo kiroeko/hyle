@@ -6,6 +6,7 @@
 #include "vulkan_tensor.h"
 #include "vulkan_memory_internal.h"
 #include "vulkan_composition_access.h"
+#include "hyle/compute/detail/vulkan_batch_access.h"
 
 #include "hyle/compute/low_precision.h"
 #include "hyle/compute/model_ops.h"
@@ -576,6 +577,15 @@ Status detail::CompositionAccess::seal(Invocation &invocation) noexcept {
   return Status::Ok();
 }
 
+Status detail::PagedBatchAccess::reuse_gate(Invocation&invocation)noexcept{
+  auto*state=invocation.state_.get();if(!state)return Status::FailedPrecondition("empty Vulkan batch native slot");
+  auto&runtime=*state->program->runtime;auto&run=*state->run;
+  std::lock_guard lock(runtime.mutex);
+  if(runtime.closed || !runtime.failure.ok() || !run.submission_failure.ok())return Status::FailedPrecondition("Vulkan batch native slot closed/failed");
+  if(run.pending || run.observers || run.retiring || run.completion_owner)return Status::Unavailable("Vulkan batch native slot in use");
+  for(std::size_t i=0;i<state->program->outputs.size();++i){const auto output=state->program->outputs[i];if(run.retained_buffers[output].use_count()!=state->output_owner_counts[i])return Status::Unavailable("Vulkan batch native output retained");}
+  HYLE_ASSIGN_OR_RETURN(auto writer,state->slot.begin());return Status::Ok();
+}
 Status Invocation::bind(std::span<const Tensor> inputs) noexcept {
   if (!state_ || inputs.size() != state_->program->inputs.size())
     return Status::InvalidArgument("Vulkan input binding arity");

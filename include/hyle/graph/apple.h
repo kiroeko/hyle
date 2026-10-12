@@ -26,8 +26,13 @@
 #include "hyle/compute/operation.h"
 #include "hyle/error/result.h"
 #include "hyle/graph/compile_report.h"
+#include "hyle/compute/apple_batch.h"
 
 namespace hyle::graph::apple {
+HYLE_GRAPH_ROUTE_APPLE_API Result<compute::apple::MaterializedBatchInvocation>
+prepare_materialized_batch(const compute::apple::Context&,compute::MaterializedBatchProgram,
+    const compute::apple::MemoryResource&device,const compute::apple::MemoryResource&staging,
+    compute::MaterializedNativeBatchOptions,const compute::WorkloadContext& = {})noexcept;
 
 // Cold extension for a pure custom Operation schema, e.g. fast::metal_kernel
 // in the same MLX runtime. Called only while tracing the region. Its outputs

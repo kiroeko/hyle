@@ -34,6 +34,20 @@ Status exercise_impl(n::Context&context,n::MemoryResource&memory,n::MemoryResour
     }
     HYLE_RETURN_IF_ERROR(n::detail::PagedBatchAccess::wait_native(invocation));
   }
+  for(bool graph_controller:{false,true}){
+    const c::MaterializedNativeBatchOptions options{.max_metadata_backing_bytes=1u<<20,.allocator=metadata};
+    auto create=[&](c::MaterializedNativeBatchOptions selected)->Result<n::MaterializedBatchInvocation>{if(graph_controller)return ng::prepare_materialized_batch(context,program,memory,staging,selected);return n::MaterializedBatchInvocation::create(context,program,memory,staging,selected);};
+    auto limited=options;limited.max_metadata_backing_bytes=1;HYLE_RETURN_IF_ERROR(require(create(limited).error().IsResourceExhausted(),"native controller metadata backing cap ignored"));
+    {hyle::mem::QuotaAllocator empty(hyle::mem::system_allocator());auto full=empty.try_reserve_bytes(empty.remaining());HYLE_RETURN_IF_ERROR(require(bool(full),"native controller OOM fixture"));auto no_memory=options;no_memory.allocator=empty.get();HYLE_RETURN_IF_ERROR(require(create(no_memory).error().IsResourceExhausted(),"native controller cold metadata OOM ignored"));}
+    HYLE_ASSIGN_OR_RETURN(auto controller,create(options));
+    for(unsigned episode=0;episode<3;++episode){const auto&layout=episode==1?next_layout:old_layout;const auto&kr=episode==1?new_keys:old_keys;const auto&vr=episode==1?new_values:old_values;
+      HYLE_RETURN_IF_ERROR(controller.prepare_batch(layout));HYLE_RETURN_IF_ERROR(controller.prepare_batch(layout));if(episode==1)HYLE_RETURN_IF_ERROR(require(!controller.bind(query,old_keys,vr).ok(),"native controller mixed page generations"));HYLE_RETURN_IF_ERROR(require(!controller.bind(incoming_k,kr,vr).ok() && !controller.submit(),"native controller accepted wrong Q/mixed bindings"));HYLE_RETURN_IF_ERROR(controller.bind(query,kr,vr));HYLE_ASSIGN_OR_RETURN(auto submitted,controller.submit());
+      {HYLE_ASSIGN_OR_RETURN(auto free,keys.acquire(4));HYLE_RETURN_IF_ERROR(require(free.valid() && !keys.acquire(2),"typed native controller pinned full arena"));}
+      HYLE_ASSIGN_OR_RETURN(auto result,submitted.wait());HYLE_ASSIGN_OR_RETURN(auto output,download(context,memory,*result,descriptions[0]));std::vector<std::uint16_t> actual(512);HYLE_RETURN_IF_ERROR(output.view()->read(std::as_writable_bytes(std::span(actual))));const float expected=episode==1?.375f:.25f;for(unsigned i=0;i<256;++i)HYLE_RETURN_IF_ERROR(require(std::abs(decode(actual[i],bf16)-expected)<.003f,"typed native controller page oracle differs"));HYLE_RETURN_IF_ERROR(require(!controller.prepare_batch(layout).ok(),"typed native old result allowed update"));
+      std::printf("%s typed page controller %s %s episode=%u oracle=%.3f PASS\n",route,bf16?"BF16":"F16",graph_controller?"Graph":"Direct",episode,expected);
+      if(episode==2){HYLE_RETURN_IF_ERROR(controller.close());HYLE_RETURN_IF_ERROR(require(!controller.prepare_batch(layout).ok() && !controller.submit(),"closed native controller accepted work"));controller={};HYLE_ASSIGN_OR_RETURN(auto escaped,download(context,memory,*result,descriptions[0]));HYLE_RETURN_IF_ERROR(require(escaped.valid(),"native result did not survive controller close/release"));}
+    }
+  }
   HYLE_RETURN_IF_ERROR(require(c::detail::LeaseAccess::identity(base.member(ids[0]).value())==c::detail::LeaseAccess::identity(current.member(ids[0]).value()),"reference clean state page lost sharing"));std::printf("%s native page append/F4 %s clone=%zu append=%zu whole-arena=%zu PASS\n",route,bf16?"BF16":"F16",2*bytes,bytes,10*bytes);return Status::Ok();
 }
 Status run(n::Context&context,n::MemoryResource&memory,n::MemoryResource&staging){for(bool bf16:{false,true}){hyle::mem::QuotaAllocator metadata(hyle::mem::system_allocator());const auto status=exercise_impl(context,memory,staging,bf16,metadata.get());if(!status.ok()){context.close().IgnoreError();return status;}HYLE_RETURN_IF_ERROR(require(metadata.used()==0,"reference native page wrapper/frame metadata leaked"));}return Status::Ok();}

@@ -52,6 +52,35 @@ Result<c::ReadLease> download(n::Context&context,n::MemoryResource&memory,const 
 #endif
   return host_bytes(host);
 }
+#include "native_arena_reference_consumer.h"
+Status controller_matrix(n::Context&context,n::MemoryResource&memory,n::MemoryResource&staging,
+    const c::MaterializedBatchProgram&program,c::BatchLayoutVersion layout,c::ReadLease query,
+    c::ReadLease key,c::ReadLease value,const std::vector<std::uint16_t>&q,
+    const std::vector<std::uint16_t>&k,const std::vector<std::uint16_t>&v,bool bf16,bool causal){
+  const auto cap=program.schema().capacity();const bool paged=cap.storage==c::BatchStorage::kPaged;
+  c::PagedArena key_arena,value_arena;c::PagedArenaRead kr,vr;std::array<c::ReadLease,3> kp,vp;
+  if(paged){HYLE_ASSIGN_OR_RETURN(key_arena,c::PagedArena::create(program.schema(),memory.ref(),{.max_backing_bytes=k.size()*2+64}));HYLE_ASSIGN_OR_RETURN(value_arena,c::PagedArena::create(program.schema(),memory.ref(),{.max_backing_bytes=v.size()*2+64}));HYLE_ASSIGN_OR_RETURN(auto host_pool,c::LeasePool::create(staging.ref(),1u<<20,{.max_blocks=8}));const auto page_elements=std::size_t(cap.page_size)*cap.kv_heads*cap.head_dim;
+    for(std::size_t i=0;i<layout.host().page_indices.size();++i){const auto page=layout.host().page_indices[i];HYLE_ASSIGN_OR_RETURN(auto kw,key_arena.acquire(page));HYLE_ASSIGN_OR_RETURN(auto vw,value_arena.acquire(page));HYLE_ASSIGN_OR_RETURN(kp[i],hyle_f5_native_paged_fixture::page_upload(context,host_pool,staging.ref(),memory.ref(),std::move(kw.lease()),std::as_bytes(std::span(k).subspan(std::size_t(page)*page_elements,page_elements))));HYLE_ASSIGN_OR_RETURN(vp[i],hyle_f5_native_paged_fixture::page_upload(context,host_pool,staging.ref(),memory.ref(),std::move(vw.lease()),std::as_bytes(std::span(v).subspan(std::size_t(page)*page_elements,page_elements))));HYLE_RETURN_IF_ERROR(kw.complete(kp[i]));HYLE_RETURN_IF_ERROR(vw.complete(vp[i]));}
+    HYLE_ASSIGN_OR_RETURN(kr,key_arena.read(layout,kp));HYLE_ASSIGN_OR_RETURN(vr,value_arena.read(layout,vp));
+  }
+  for(bool graph:{false,true}){
+    const c::MaterializedNativeBatchOptions options{.max_metadata_backing_bytes=1u<<20};
+    auto create=[&]()->Result<n::MaterializedBatchInvocation>{if(graph)return ng::prepare_materialized_batch(context,program,memory,staging,options);return n::MaterializedBatchInvocation::create(context,program,memory,staging,options);};
+    HYLE_ASSIGN_OR_RETURN(auto controller,create());HYLE_ASSIGN_OR_RETURN(auto independent,create());
+    const auto bind=[&](n::MaterializedBatchInvocation&slot,const c::BatchLayoutVersion&current)->Status{
+      if(paged){HYLE_ASSIGN_OR_RETURN(auto keys,key_arena.read(current,kp));HYLE_ASSIGN_OR_RETURN(auto values,value_arena.read(current,vp));return slot.bind(query,std::move(keys),std::move(values));}
+      return slot.bind(query,key,value);
+    };
+    HYLE_RETURN_IF_ERROR(controller.prepare_batch(layout));HYLE_RETURN_IF_ERROR(controller.prepare_batch(layout));HYLE_RETURN_IF_ERROR(bind(controller,layout));
+    HYLE_ASSIGN_OR_RETURN(auto submitted,controller.submit());HYLE_ASSIGN_OR_RETURN(auto result,submitted.wait());HYLE_ASSIGN_OR_RETURN(auto output,download(context,memory,*result,program.descriptions()[0]));HYLE_RETURN_IF_ERROR(oracle(q,k,v,layout,output,bf16,causal));HYLE_RETURN_IF_ERROR(require(!controller.prepare_batch(layout).ok(),"native controller old result allowed metadata update"));
+    HYLE_RETURN_IF_ERROR(independent.prepare_batch(layout));HYLE_RETURN_IF_ERROR(bind(independent,layout));HYLE_ASSIGN_OR_RETURN(auto other,independent.submit());HYLE_ASSIGN_OR_RETURN(auto other_result,other.wait());HYLE_ASSIGN_OR_RETURN(auto other_output,download(context,memory,*other_result,program.descriptions()[0]));HYLE_RETURN_IF_ERROR(oracle(q,k,v,layout,other_output,bf16,causal));other_output={};other_result={};other={};HYLE_RETURN_IF_ERROR(independent.drain());
+    output={};result={};submitted={};auto next_q=std::array<std::int32_t,3>{0,2,3};HYLE_ASSIGN_OR_RETURN(auto next,program.schema().version({next_q,layout.host().kv_indptr,layout.host().page_indices,layout.host().last_page_lengths}));
+    HYLE_RETURN_IF_ERROR(controller.prepare_batch(next));if(paged)HYLE_RETURN_IF_ERROR(require(!controller.bind(query,kr,vr).ok(),"native controller mixed metadata/page versions"));HYLE_RETURN_IF_ERROR(bind(controller,next));HYLE_ASSIGN_OR_RETURN(auto updated,controller.submit());HYLE_ASSIGN_OR_RETURN(auto current,updated.wait());HYLE_ASSIGN_OR_RETURN(auto current_output,download(context,memory,*current,program.descriptions()[0]));HYLE_RETURN_IF_ERROR(oracle(q,k,v,next,current_output,bf16,causal));const auto facts=controller.report();const auto bytes=program.costs().index_bytes+program.costs().mask_bytes;HYLE_RETURN_IF_ERROR(require(facts.layout_generation==next.generation() && facts.device_banks==2 && facts.device_mirror_bytes==2*bytes && facts.staging_bytes==bytes && facts.uploaded_bytes==bytes,"native controller hid mirror bank/metadata costs"));current_output={};current={};updated={};HYLE_RETURN_IF_ERROR(controller.drain());
+    HYLE_RETURN_IF_ERROR(require(facts.backing_bytes==3*bytes+378,"native controller hid backing padding"));
+    std::printf("%s native controller %s %s %s causal=%d two-banks/same-generation/two-slots/update PASS; backing=%zu uploaded=%zu waits=%llu\n",route,graph?"Graph":"Direct",paged?"paged":"ragged",bf16?"BF16":"F16",int(causal),facts.backing_bytes,facts.uploaded_bytes,static_cast<unsigned long long>(facts.upload_host_waits));
+  }
+  return Status::Ok();
+}
 Status exercise_native_impl(n::Context&context,n::MemoryResource&memory,n::MemoryResource&staging,bool paged,bool bf16,bool causal,hyle::mem::AllocatorRef metadata){
   c::BatchCapacity cap{.storage=paged?c::BatchStorage::kPaged:c::BatchStorage::kRagged,.data_type=bf16?c::DataType::kBFloat16:c::DataType::kFloat16,.max_requests=2,.max_query_rows=4,.max_kv_rows=32,.max_pages=paged?5u:0u,.max_page_refs=paged?3u:0u,.query_heads=4,.kv_heads=2,.head_dim=64,.page_size=paged?16u:1u};
   HYLE_ASSIGN_OR_RETURN(auto schema,c::BatchSchema::create(cap,{.allocator=metadata}));const std::array<std::int32_t,3> qptr{0,1,3},kvptr{0,paged?2:19,paged?3:29},pages{2,0,3};const std::array<std::int32_t,2> tails{3,10};
@@ -77,12 +106,12 @@ Status exercise_native_impl(n::Context&context,n::MemoryResource&memory,n::Memor
     HYLE_ASSIGN_OR_RETURN(auto next_upload,metadata_upload(context,host_pool,pool,staging.ref(),memory.ref(),next_version));inputs[3].source=next_upload[0];inputs[4].source=next_upload[1];HYLE_RETURN_IF_ERROR(invocation.bind(inputs));HYLE_ASSIGN_OR_RETURN(auto updated,invocation.submit());HYLE_ASSIGN_OR_RETURN(auto updated_result,updated.wait());HYLE_ASSIGN_OR_RETURN(auto updated_host,download(context,memory,*updated_result,descriptions[0]));HYLE_RETURN_IF_ERROR(oracle(q,k,v,next_layout,updated_host,bf16,causal));
     HYLE_RETURN_IF_ERROR(require(version.layout()==layout && version.layout()!=next_version.layout(),"native update replaced the old owned layout"));updated_host={};updated_result={};updated={};HYLE_RETURN_IF_ERROR(invocation.drain());
   }
+  HYLE_RETURN_IF_ERROR(controller_matrix(context,memory,staging,program,layout,leases[0],leases[1],leases[2],q,k,v,bf16,causal));
   std::printf("%s explicit materialized %s %s causal=%d native Direct/Graph NaN-padding/two-slots/update/old-result PASS\n",route,paged?"paged":"ragged",bf16?"BF16":"F16",int(causal));return Status::Ok();
 }
 Status exercise_native(n::Context&context,n::MemoryResource&memory,n::MemoryResource&staging,bool paged,bool bf16,bool causal){
   hyle::mem::QuotaAllocator metadata(hyle::mem::system_allocator());const auto status=exercise_native_impl(context,memory,staging,paged,bf16,causal,metadata.get());if(!status.ok()){context.close().IgnoreError();return status;}return require(metadata.used()==0,"native recipe retains common metadata after all controls/results retired");
 }
-#include "native_arena_reference_consumer.h"
 Status native_run(){HYLE_ASSIGN_OR_RETURN(auto context,n::Context::create());
 #if defined(HYLE_F5_APPLE_TEST)
   HYLE_ASSIGN_OR_RETURN(auto memory,n::MemoryResource::create(context));HYLE_ASSIGN_OR_RETURN(auto staging,n::MemoryResource::create(context));

@@ -26,8 +26,13 @@
 #include "hyle/compute/operation.h"
 #include "hyle/error/result.h"
 #include "hyle/graph/compile_report.h"
+#include "hyle/compute/vulkan_batch.h"
 
 namespace hyle::graph::vulkan {
+HYLE_GRAPH_ROUTE_VULKAN_API Result<compute::vulkan::MaterializedBatchInvocation>
+prepare_materialized_batch(const compute::vulkan::Context&,compute::MaterializedBatchProgram,
+    const compute::vulkan::MemoryResource&device,const compute::vulkan::MemoryResource&staging,
+    compute::MaterializedNativeBatchOptions,const compute::WorkloadContext& = {})noexcept;
 
 // One native shader may implement a complete fused custom fragment. Storage
 // bindings follow schema input order, then its single generated output. The

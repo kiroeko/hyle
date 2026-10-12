@@ -464,25 +464,25 @@
       "module": "compute_route_apple",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/foundation-f5-native-reference-bridges.md",
-      "summary": "F5 native reference AUDITED实施：原Direct/Graph八域48oracle及private精确页桥/原提交守卫已验；Win Vulkan、Air Apple/Vulkan各新增12次append/F4旧新旧oracle与两private头通过，quota0。CPU精确页桥/完整controller/ragged/其他故障/SDK/san/终审继续，原范围保留。"
+      "summary": "F5 native controller AUDITED实施：typed Direct/原Graph fixed factory、同版本F2镜像/两banks与精确页消费已接；Win Vulkan/Air Apple/Vulkan各96矩阵+24页oracle、六头及old-result/cap/OOM/close/escaped结果/quota0通过。ragged append/完整故障/SDK/san/终审继续，原范围保留。"
     },
     {
       "module": "graph_route_apple",
       "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/foundation-f5-package-seam.md",
-      "summary": "F5 package-only AUDITED：固定Compute/Graph新增batch roots/public发现与真实三交付/新头/缺路线/迁址/loader一个FIX，旧已签源码/算法范围保持。"
+      "record": "docs/implementation/tasks/compute/foundation-f5-native-reference-bridges.md",
+      "summary": "F5 native Graph controller AUDITED：固定不可变recipe冷factory与真实类型/依赖边已实现；三GPU profile各96矩阵+24页oracle/六独立头通过。原compiler/runtime/数学与已签范围保留，ragged/完整风险/SDK/san/终审继续。"
     },
     {
       "module": "compute_route_vulkan",
       "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/foundation-f5-native-reference-bridges.md",
-      "summary": "F5 native reference AUDITED实施：原Direct/Graph八域48oracle及private精确页桥/原提交守卫已验；Win Vulkan、Air Apple/Vulkan各新增12次append/F4旧新旧oracle与两private头通过，quota0。CPU精确页桥/完整controller/ragged/其他故障/SDK/san/终审继续，原范围保留。"
+      "summary": "F5 native controller AUDITED实施：typed Direct/原Graph fixed factory、同版本F2镜像/两banks与精确页消费已接；Win Vulkan/Air Apple/Vulkan各96矩阵+24页oracle、六头及old-result/cap/OOM/close/escaped结果/quota0通过。ragged append/完整故障/SDK/san/终审继续，原范围保留。"
     },
     {
       "module": "graph_route_vulkan",
       "state": "AUDITED",
-      "record": "docs/implementation/tasks/compute/foundation-f5-package-seam.md",
-      "summary": "F5 package-only AUDITED：固定Compute/Graph新增batch roots/public发现与真实三交付/新头/缺路线/迁址/loader一个FIX，旧已签源码/算法范围保持。"
+      "record": "docs/implementation/tasks/compute/foundation-f5-native-reference-bridges.md",
+      "summary": "F5 native Graph controller AUDITED：固定不可变recipe冷factory与真实类型/依赖边已实现；三GPU profile各96矩阵+24页oracle/六独立头通过。原compiler/runtime/数学与已签范围保留，ragged/完整风险/SDK/san/终审继续。"
     },
     {
       "module": "compute_provider_ggml_vulkan",
@@ -621,7 +621,7 @@
     {
       "module": "compute_batch",
       "state": "AUDITED",
-      "summary": "F5 AUDITED实施：四路线math/页闭环首批已验；CPU Direct与Graph固定控制器/同版本metadata/精确页消费已接，Win/WSL各32矩阵+16页oracle与common33项八头通过，Direct11stages/11waits明确计费。native controllers/ragged/完整故障/SDK/san/终审继续。",
+      "summary": "F5 AUDITED实施：四路线Direct/Graph controller与实际页闭环已有首批证据；CPU各32矩阵+16页、native三profile各96矩阵+24页oracle及common33项九头通过。CPU阶段wait/native双mirror费用明确；ragged append/完整故障/SDK/san/终审继续。",
       "record": "docs/implementation/tasks/compute/foundation-f5-paged-ragged-batch.md"
     },
     {

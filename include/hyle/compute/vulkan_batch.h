@@ -3,6 +3,7 @@
 
 #if defined(HYLE_COMPUTE_VULKAN)
 #include "hyle/compute/batch_materialize.h"
+#include "hyle/compute/vulkan_memory.h"
 namespace hyle::compute::vulkan {
 // Explicit GPU materialization reference over the original fixed native Plan.
 // Cold preparation qualifies each typed step; run uses the original Program
@@ -12,5 +13,35 @@ namespace hyle::compute::vulkan {
 // and driver storage remain additional. Not a native-paged/capture claim.
 HYLE_COMPUTE_ROUTE_VULKAN_API Result<Program> prepare_materialized_batch(
     const Context&,const MaterializedBatchProgram&,const WorkloadContext& = {}) noexcept;
+namespace detail {struct MaterializedInvocationData;struct PagedBatchAccess;}
+// Cold fixed native Program/slot and two metadata banks. Explicit prepare uses
+// original F2 to upload owned same-generation indices/mask; run never plans.
+// Control is externally serialized; Context/resources/allocator outlive native
+// work/results. Old native results block update. Budget covers mirror/wrapper
+// storage; native scratch/driver bytes retain their original unknown contract.
+class MaterializedBatchInvocation final {
+public:
+  MaterializedBatchInvocation()noexcept=default;
+  MaterializedBatchInvocation(const MaterializedBatchInvocation&)=delete;
+  MaterializedBatchInvocation&operator=(const MaterializedBatchInvocation&)=delete;
+  HYLE_COMPUTE_ROUTE_VULKAN_API MaterializedBatchInvocation(MaterializedBatchInvocation&&)noexcept;
+  HYLE_COMPUTE_ROUTE_VULKAN_API MaterializedBatchInvocation&operator=(MaterializedBatchInvocation&&)noexcept;
+  HYLE_COMPUTE_ROUTE_VULKAN_API ~MaterializedBatchInvocation();
+  HYLE_COMPUTE_ROUTE_VULKAN_API static Result<MaterializedBatchInvocation> create(const Context&,
+      compute::MaterializedBatchProgram,const MemoryResource&device,const MemoryResource&staging,
+      MaterializedNativeBatchOptions,const WorkloadContext& = {})noexcept;
+  bool valid()const noexcept{return data_!=nullptr;}
+  HYLE_COMPUTE_ROUTE_VULKAN_API Status prepare_batch(BatchLayoutVersion)noexcept;
+  HYLE_COMPUTE_ROUTE_VULKAN_API Status bind(ReadLease,PagedArenaRead,PagedArenaRead)noexcept;
+  HYLE_COMPUTE_ROUTE_VULKAN_API Status bind(ReadLease,ReadLease,ReadLease)noexcept;
+  HYLE_COMPUTE_ROUTE_VULKAN_API Result<OwnedResult<Results>> submit()noexcept;
+  HYLE_COMPUTE_ROUTE_VULKAN_API MaterializedNativeBatchReport report()const noexcept;
+  HYLE_COMPUTE_ROUTE_VULKAN_API Status close()noexcept;
+  HYLE_COMPUTE_ROUTE_VULKAN_API Status drain()noexcept;
+private:
+  friend struct detail::PagedBatchAccess;
+  explicit MaterializedBatchInvocation(detail::MaterializedInvocationData*p)noexcept:data_(p){}
+  detail::MaterializedInvocationData*data_=nullptr;
+};
 } // namespace hyle::compute::vulkan
 #endif

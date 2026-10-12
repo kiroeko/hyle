@@ -110,3 +110,41 @@ old IDs2/3→new2/1无page0。clone1024+append512，对比whole K/V arena5120未
 输出slot不可覆盖，修正测原submit拒绝，没有扩大产品权限。错误路径在原Context实际
 close/drain之后才销毁借用allocator/resource。bridge owner无普通对象字段变化，仍AUDITED。
 production same-generation controller、CPU精确页桥/ragged及其他完整F5风险继续本goal。
+
+## AUDITED REF-NATIVE-CONTROLLER：固定两route的同版本控制器
+
+baseline 4dbdf81db。compute_route_apple/vulkan实际bridge已AUDITED；graph_route_apple/
+vulkan原package-only AUDITED在本实际consumer trigger下扩为固定recipe Graph冷factory。
+当前AUDITED状态不回退SCOPED、不伪造BLOCKED；原Graph/code/maths signed scope保留。
+
+- typed MaterializedBatchInvocation::create冷准备原Direct Program；Graph同名prepare factory
+  冷生成不可变fixed materialized_graph并原native compile，再调用private qualified create。
+  公共create不接任意caller Program。Graph native owner只这一个factory，private graph_batch
+  实现依赖/public compute_batch类型边登记，不改原compiler/runtime/控制效果处理。
+- 固定common metadata glue仅按这两个native traits组合原Program/Invocation/F2/Memory/
+  permission接口，不执行数学或创建通用Queue/executor。prepare_batch生成owned snapshot，
+  staging及device indices/mask从cold fixed块上传；同版本bind Q/K/V，run无规划/编译/索引生成。
+- 原native输入保当前mirror readonly，不能原地覆写。cold固定两device banks与一个staging
+  bank，prepare选原bound bank之外的一份；未bind的重复prepare可复用候选bank。原copy
+  reset/ready lease/try_write保证真实退休及唯一权限；stage和两个device mirror实际字节分别
+  显示，max_metadata_backing_bytes硬上限，额外固定metadata绝不记0或无限grow。
+- private PagedBatchAccess::reuse_gate只原successful idle native slot与ResultSlot.begin/
+  rollback门，拒old result/completion/native outputs；可清无人旧结果payload，不accept
+  新math或改变常规bind合同。typed prepare必须先过门再改镜像；错误/unknown不发布或
+  复用失败slot，drain沿原native wait/F2/use真实退休。old result仍按原OwnedResult存活。
+- cold一次native view metadata检查；paged exact same-layout frames，ragged ready whole
+  readonly K/V，owned镜像仅本controller绑定；原native guard提交包括Q、actual pages/
+  ragged KV和两metadata。独立backing owner只recipe/allocator/budget，不反持pool，全部
+  writers分配后detach，native inputs/results/Completion沿原owner保资源，最终quota0。
+- 预声明：Win实际Vulkan及Air实际Apple/Vulkan Direct+Graph八域、双独立controller/
+  metadata更新与F16/BF16页append/F4旧新旧，old result gate、错layout/resource/cap/OOM/
+  partial/close/escaped owners；new头/实际owner Werror与source/shared；原预算根继续、
+  machines/heavy串行。全部fault/SDK/san/P0/guide/终审尚未因此签证，完整F5六FIX保留。
+
+[Native controller实际收据](../../../../evidence/correctness/foundation-f5-native-controller-first/README.md)：
+Win Vulkan、Air M4/MLX与M4/MoltenVK各96矩阵+24页oracle通过，新Direct/Graph typed
+control确实执行原native Program，同版本更新/双独立槽/两bank/repeated prepare/old result
+gate、cap/OOM/wrong Q/layout/close/escaped result/quota0有实际证据。示例backing6138/
+uploaded1920/host waits Apple2-Vulkan1计费明确。common33项九头及native/Graph六头每
+profile独立TU通过，原owner/类型边与package discovery同步。仍AUDITED，ragged append/
+完整fault/SDK/san/P0/guide/终审继续，不由本120 oracle/profile代签最终MUST。
