@@ -694,8 +694,9 @@
     },
     {
       "module": "compute_state",
-      "state": "QUEUED",
-      "summary": "F4显式不可变资源集合版本身份登记；schema/版本目录/有界draft、原F1/F2 dirty clone、expected-base发布与旧版本/native use保活按本goal定界，尚无产品API/target。"
+      "state": "SCOPED",
+      "summary": "F4 SCOPED：显式readonly集合schema/版本/有界draft、原F1/F2 dirty clone、expected-base发布及旧版本/native uses容量与退休；六FIX冻结，未有产品资格，单机高性能消费目标不以参考档代签。",
+      "record": "docs/implementation/tasks/compute/foundation-f4-state-versions.md"
     }
   ]
 }
