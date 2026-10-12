@@ -95,6 +95,27 @@ scope、architecture、correctness、delivery、usability_docs、red_team、engi
 
 ## 首批实施事实
 
+### A-04 第二次静态审计冻结
+
+新增 CPU hybrid CompileOptions::effect_bindings，复用 Graph 的 EffectResourceBinding。
+只允许显式放到 kCpuTarget 的 effects；GPU 默认或未知 carrier 仍明确拒绝。
+所有 effect 节点作为活节点，即使零输出/无 tensor consumer；每个 effect 冷分片，传入
+其原 resource ports/映射后的 footprints，并要求原 CPU Provider preserves_effects 资格。
+单片段 graph::compile 执行与 CPU/CUDA 相同的验证，不新增操作回调或执行接口。
+
+共同 bind_effect_resources 的全图 footprint 校验提取成 Graph-owned 静态 helper：完整 IDs、
+绑定次数、缺失 footprint、不同 resource ID 的范围 alias，以及 effect 与 constants/tensors
+的 alias 都复用原规则。hybrid 冷 compile 对全图 preflight，binding/prepare 对所有 caller
+host inputs 再检查；不能只在单片段检查而漏掉另一片段的 readonly tensor。
+native leased input 需使用原 F1 import/footprint 身份；无法证明同 backing 时拒绝 effect
+组合中的 opaque native input，不把 VkBuffer/MLX array 指针当 host alias identity。
+
+固定 footprint/backing 继续 borrowed，caller 跨 invocation 同步；无全局锁/新的 writer
+权限。CPU effects 无输出时依然拥有原 Completion/失败前缀，后继在原 driver 完成边界后
+执行；cancel/close/旧 result 保持原对象。没有 GPU mutable ports 的路线不假报 GPU effects。
+新增接口仍是 A-04 的有限范围，不添加模型策略、页写 kernel 或 universal Queue。
+本轮预声明的 effects/alias/producer/cancel/旧结果风险需要实际混合 consumer 证明。
+
 [共同精确形状](../../../../evidence/correctness/foundation-a-shared-exact/README.md) 39/39 PASS，
 包含原静态语义和新有限表、OOM、control reachability；
 [Win Vulkan source](../../../../evidence/correctness/foundation-a-vulkan-source/README.md) native 与

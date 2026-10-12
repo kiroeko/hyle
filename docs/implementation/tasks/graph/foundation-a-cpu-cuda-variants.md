@@ -18,5 +18,21 @@
   新头/缺 CUDA/迁址按实际 package seam；共用 shape guard/OOM 复用 A 共同证据；docs/closure/diff。
 - stop：原 compiler 任一点无法准备即拒绝全表；无法完成适用门则 BLOCKED/INCONCLUSIVE。
 
-当前 SCOPED，未写本 owner 产品代码。有限 A-CUDA-01：有限 typed factory 与真实 consumer。
+当前 AUDITED。有限 A-CUDA-01：有限 typed factory 与真实 consumer。
 七门仍 UNPROVEN；原 H1 CLOSED 只证明旧已签范围。
+
+审计冻结：Graph 的 kDeclaredDomain 必须保有全域 general artifact；此入口明确 exact-only。
+拒绝非空 options.shape/exact_variants 或非 kExact 策略。返回共享 Executable handle，沿原
+graph::Invocation 与 cpu_cuda::Invocation::create 取得独立 slots；无新 runtime/结果对象。
+各点先共同 metadata 预检，再原 compiler 准备；缺任一点/重复签名拒绝整表，选择不编译。
+
+原 CompiledStorageLimits/CompilationStorageLimits/InvocationStorageLimits 是 family-wide
+合同，逐点调用不能把限额重复算成多个额度。本最小入口拒绝有限 compiled_storage、
+compilation_storage 或 invocation_storage 配额，用户需使用已有共享 ResourceBudget；
+共同表 metadata 也通过其 metadata_allocator 收费。原普通 compile/general 配额不变，
+不宣称 ResourceBudget 覆盖未知 native 私有内存。对每点原 search caps 仍是每点合同，
+总工作明确为有限表长度乘各点 cap，不叫原 general compiler 的累计搜索 family。
+
+七问：原锁/许可证及 Provider KEEP；主/正交有限 shape 复合 cold glue SELF/BORROW；
+共享求值和执行器；P0 冷 O(V(D+N+E))、选 O(DV)、warm 原 native；C++ typed 无新 FFI；
+三交付/缺路线/头实际验证待做；指南明示 finite-only、显式预算与原 native 限制。

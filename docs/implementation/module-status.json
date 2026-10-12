@@ -630,9 +630,9 @@
     },
     {
       "module": "graph_route_cpu_cuda",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/graph/foundation-a-cpu-cuda-variants.md",
-      "summary": "Foundation A CPU+CUDA SCOPED：有限 exact-only typed factory 接缝与真实消费者；不改变原 H1 执行与 general 合同。"
+      "summary": "Foundation A CPU+CUDA AUDITED：A-CUDA-01 复用共同有限表与原 compiler；有限 storage 配额不假报 family 总账，资格尚未裁决。"
     },
     {
       "module": "graph_route_cpu_apple",
