@@ -1,0 +1,142 @@
+{
+  "baseline": "29d3c7a3ebe81f0e627986e2e8c8a393aa7832c8",
+  "candidate": "25e4fb398e2a782ee60f916c3c6351c4736b6eda",
+  "scope": "GCC14.2 shipping static CPU-CUDA SDK immutable artifacts; ordinary Graph warm code, no latency benchmark",
+  "archives": {
+    "f4": {
+      "path": "/root/hyle-scratch/compute-unified/foundation-f4-sdk-cpu-cuda-static-29d3c7a3e/relocated/lib/libhyle_graph.a",
+      "sha256": "9ba3a90ec4512b92ec5f8822f2e550dceec1f0c40fbeae3e3f36794b5daf9ce0",
+      "executable.cc.o": "f67f59621d20864a1339df0dd0d9556b49536327b80a729f99dfe88f56ee1dc0",
+      "leased_invocation.cc.o": "fc71e4f3364f48b559c491254dd984ea5af668aa01b1a7a8fb34a4fcf5b4e5a2"
+    },
+    "f5": {
+      "path": "/root/hyle-scratch/compute-unified/foundation-f5-sdk-cpu-cuda-static-77df1c10c/relocated/lib/libhyle_graph.a",
+      "sha256": "51e2c2db9537fd767c2dccfc642ccf3e4f75f01d30fafd48748e85b31487eebc",
+      "executable.cc.o": "f67f59621d20864a1339df0dd0d9556b49536327b80a729f99dfe88f56ee1dc0",
+      "leased_invocation.cc.o": "e5b5c0a763d95f1c1b9a8f7265858e8175ab01916704079e431556ba722183d0"
+    }
+  },
+  "functions": {
+    "hyle::graph::Invocation::submit(hyle::compute::Queue&)": {
+      "f4": {
+        "member": "executable.cc.o",
+        "size": 456,
+        "code_sha256": "0ba83c4f8b165f9810f656e1de7f2d47c2ea36e6dac8f0008a9f6118cf714616",
+        "address": 203584
+      },
+      "f5": {
+        "member": "executable.cc.o",
+        "size": 456,
+        "code_sha256": "0ba83c4f8b165f9810f656e1de7f2d47c2ea36e6dac8f0008a9f6118cf714616",
+        "address": 203584
+      },
+      "raw_code_identical": true
+    },
+    "hyle::graph::Invocation::submit(std::span<hyle::graph::QueueBinding const, 18446744073709551615ul>)": {
+      "f4": {
+        "member": "executable.cc.o",
+        "size": 511,
+        "code_sha256": "f0d04bac7cadec1aedafb6e3a9bd486cfb10800f16c4e87a860024786883fa51",
+        "address": 193936
+      },
+      "f5": {
+        "member": "executable.cc.o",
+        "size": 511,
+        "code_sha256": "f0d04bac7cadec1aedafb6e3a9bd486cfb10800f16c4e87a860024786883fa51",
+        "address": 193936
+      },
+      "raw_code_identical": true
+    },
+    "hyle::graph::Invocation::submit()": {
+      "f4": {
+        "member": "executable.cc.o",
+        "size": 246,
+        "code_sha256": "982a1a475e5751ada22668e084fdae4aca07f29706c4659dab41c61b302399b2",
+        "address": 204048
+      },
+      "f5": {
+        "member": "executable.cc.o",
+        "size": 246,
+        "code_sha256": "982a1a475e5751ada22668e084fdae4aca07f29706c4659dab41c61b302399b2",
+        "address": 204048
+      },
+      "raw_code_identical": true
+    },
+    "hyle::graph::LeasedInvocation::submit(hyle::compute::Queue&)": {
+      "f4": {
+        "member": "leased_invocation.cc.o",
+        "size": 553,
+        "code_sha256": "be38de48a89b665d08d31f773513d73f5254194d722a4f1036bb99e5985069f5",
+        "address": 17648
+      },
+      "f5": {
+        "member": "leased_invocation.cc.o",
+        "size": 553,
+        "code_sha256": "be38de48a89b665d08d31f773513d73f5254194d722a4f1036bb99e5985069f5",
+        "address": 25648
+      },
+      "raw_code_identical": true
+    },
+    "hyle::graph::LeasedInvocation::submit(std::span<hyle::graph::QueueBinding const, 18446744073709551615ul>)": {
+      "f4": {
+        "member": "leased_invocation.cc.o",
+        "size": 1830,
+        "code_sha256": "c6234f511a140b9a6cb33a8ed24a1e470f7bbe0fc6594783d6ea323b99acd53b",
+        "address": 15360
+      },
+      "f5": {
+        "member": "leased_invocation.cc.o",
+        "size": 1830,
+        "code_sha256": "396db18914acbc5e205f6a5c6548a9bf5f593727f0ae955c561011117daadb3b",
+        "address": 23360
+      },
+      "raw_code_identical": false,
+      "only_differences": "Three PC-relative calls to the same existing record_error helper, moved by added cold symbols; all other bytes identical",
+      "normalized_code_identical": true,
+      "call_offsets": {
+        "1270": "hyle::graph::detail::record_error(hyle::graph::detail::LeasedInvocationState*, hyle::Status const&) [clone .part.0]",
+        "1750": "hyle::graph::detail::record_error(hyle::graph::detail::LeasedInvocationState*, hyle::Status const&) [clone .part.0]",
+        "1783": "hyle::graph::detail::record_error(hyle::graph::detail::LeasedInvocationState*, hyle::Status const&) [clone .part.0]"
+      }
+    },
+    "hyle::graph::LeasedInvocation::submit()": {
+      "f4": {
+        "member": "leased_invocation.cc.o",
+        "size": 435,
+        "code_sha256": "1acf17aec3da08517da8daa6a0c719ece49f940d14eb527c9a9c8de0f4169d98",
+        "address": 17200
+      },
+      "f5": {
+        "member": "leased_invocation.cc.o",
+        "size": 435,
+        "code_sha256": "1acf17aec3da08517da8daa6a0c719ece49f940d14eb527c9a9c8de0f4169d98",
+        "address": 25200
+      },
+      "raw_code_identical": true
+    }
+  },
+  "record_error_helper": {
+    "f4": {
+      "name": "hyle::graph::detail::record_error(hyle::graph::detail::LeasedInvocationState*, hyle::Status const&) [clone .part.0]",
+      "size": 268,
+      "sha256": "177545b644c99257b17ab148f56b36323dfd39dad77948cce76cc65171adca7e"
+    },
+    "f5": {
+      "name": "hyle::graph::detail::record_error(hyle::graph::detail::LeasedInvocationState*, hyle::Status const&) [clone .part.0]",
+      "size": 268,
+      "sha256": "177545b644c99257b17ab148f56b36323dfd39dad77948cce76cc65171adca7e"
+    }
+  },
+  "ordinary_executable_object_identical": true,
+  "ordinary_state_source_proofs": {
+    "src/graph/leased_invocation.cc": {
+      "state_declaration_identical": true,
+      "sha256": "571e097dd6cec6a814dcf1fa827ed6601db0d51a1444ece0779702e686f95543"
+    },
+    "src/graph/plan_state.h": {
+      "state_declaration_identical": true,
+      "sha256": "6d1ba4b9122429465ee896b7d736aced20335220a33126ac3da590f6b21a416d"
+    }
+  },
+  "raw_sha256": "150c02d3c9881028c97ffd76ed33a03c76a3b59ea19a7f7cc9dce1a8de323231"
+}

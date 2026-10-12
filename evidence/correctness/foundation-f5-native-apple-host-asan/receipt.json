@@ -1,0 +1,162 @@
+{
+  "candidate": "25e4fb398e2a782ee60f916c3c6351c4736b6eda",
+  "scope": "Actual Air Apple host ASan; LSan unavailable in actual Apple runtime; no GPU private instrumentation claim",
+  "raw_sha256": "1121554b1563c995b20d94774008efd3a83b765c302d6d62a78a00325594ab1f",
+  "budget_elapsed": {
+    "configure": 3.9842975410000006,
+    "build": 155.514983791,
+    "consumer": 5.210534209000015
+  },
+  "job": {
+    "candidate": "25e4fb398e2a782ee60f916c3c6351c4736b6eda",
+    "scope": "Actual Air Apple F5 host wrappers/Graph/worker ownership ASan; no GPU-private instrumentation claim",
+    "identity": {
+      "hardware": "Mac16,12",
+      "memory": "17179869184",
+      "os": "ProductName:\t\tmacOS\nProductVersion:\t\t27.0.1\nBuildVersion:\t\t26A434",
+      "compiler": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin",
+      "cmake": "cmake version 4.3.4\n\nCMake suite maintained and supported by Kitware (kitware.com/cmake)."
+    },
+    "build": "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-asan/build",
+    "stages": [
+      {
+        "name": "configure",
+        "budget_group": "configure",
+        "command": [
+          "/opt/homebrew/bin/cmake",
+          "-S",
+          "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-asan/parent",
+          "-B",
+          "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-asan/build",
+          "-G",
+          "Ninja",
+          "-DCMAKE_BUILD_TYPE=Release",
+          "-DCMAKE_CXX_COMPILER=/usr/bin/clang++",
+          "-DHYLE_COMPONENTS=compute;graph",
+          "-DHYLE_COMPUTE_ROUTES=apple",
+          "-DHYLE_STATIC=ON",
+          "-DHYLE_BUILD_TESTS=OFF",
+          "-DHYLE_BUILD_BENCH=OFF",
+          "-DHYLE_INSTALL=OFF",
+          "-DHYLE_SANITIZER=asan",
+          "-DHYLE_WERROR=OFF"
+        ],
+        "pid": 74724,
+        "state": "terminal",
+        "log": "configure.log",
+        "available_bytes": 6927450112,
+        "elapsed": 3.9842975410000006,
+        "exit_code": 0,
+        "verdict": "PASS",
+        "sha256": "ca92ce3273a266cca04630909ace833a311b2da566cdd5e14d78b416e6f4fcc4"
+      },
+      {
+        "name": "build",
+        "budget_group": "build",
+        "command": [
+          "/opt/homebrew/bin/cmake",
+          "--build",
+          "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-asan/build",
+          "--target",
+          "native",
+          "public_native",
+          "--parallel",
+          "1"
+        ],
+        "pid": 75014,
+        "state": "terminal",
+        "log": "build.log",
+        "available_bytes": 7008944128,
+        "elapsed": 155.514983791,
+        "exit_code": 0,
+        "verdict": "PASS",
+        "sha256": "ce118fddc20f4f7cdf13cb43e4e978608eb2c12ba0286d5a2e1ccee7bed4f477"
+      },
+      {
+        "name": "run-public_native",
+        "budget_group": "consumer",
+        "command": [
+          "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-asan/build/public_native"
+        ],
+        "pid": 76645,
+        "state": "terminal",
+        "log": "run-public_native.log",
+        "available_bytes": 7223132160,
+        "elapsed": 1.0284567920000143,
+        "exit_code": -6,
+        "verdict": "FAIL",
+        "sha256": "0227fbd5f07d715d0d9fcc8e001589165819e457e46484c74bec9ce32908f91c"
+      },
+      {
+        "name": "run-public_native-resume1",
+        "budget_group": "consumer",
+        "command": [
+          "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-asan/build/public_native"
+        ],
+        "pid": 76672,
+        "state": "terminal",
+        "log": "run-public_native-resume1.log",
+        "available_bytes": 7362985984,
+        "elapsed": 1.770613917,
+        "exit_code": 0,
+        "verdict": "PASS",
+        "sha256": "b8725b08e1578cb03b8eb99a2f1c18fc06b6c9b6f469ad6796fde1edb4d8ee02"
+      },
+      {
+        "name": "run-native",
+        "budget_group": "consumer",
+        "command": [
+          "/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-asan/build/native"
+        ],
+        "pid": 76677,
+        "state": "terminal",
+        "log": "run-native.log",
+        "available_bytes": 7286702080,
+        "elapsed": 2.4114635,
+        "exit_code": 0,
+        "verdict": "PASS",
+        "sha256": "6a9e635d604798a8d83184510cb74e44ba4ee656e00304c1ab56f4c26d7cddaf"
+      }
+    ],
+    "fixture_inputs": {
+      "tests/compute_batch/host_failure_fixture.h": "57bb705c7bbe4c2fc71e4cf228138b0fdbf03b6c78521343a018be3a120cdbd5",
+      "tests/compute_batch/native_fault_consumer.cc": "66a502d6ad383b2569b99f3f551a9b62812cb2d5cb466982e06776526e8190cd",
+      "tests/compute_batch/materialized_cpu_consumer.cc": "dc25540478345eb4f169f7bfc766ff6560e1b5af44bef5c130a090710f2273a3",
+      "tests/compute_batch/CMakeLists.txt": "c1edd25e57c49dc096e3dc94031e445834d9c555297e85c203001b41a153cc05",
+      "tests/compute_batch/ragged_append_journey.h": "a4a236ece69637f6aa9e4d785ea94adea98e80b9d46ba4ca1229cbb5b8afce95",
+      "tests/compute_batch/native_ragged_graph_append_consumer.h": "075ca164a8b9989b3994c19c6679cb07d58d6985e456ec0b1c86c555479065a0",
+      "tests/compute_batch/native_arena_reference_consumer.h": "645db5b2f1ceb1dc8265f02724ed26a1212228a99876bbb15c25468c30a56ff0",
+      "tests/compute_batch/native_arena_graph_consumer.h": "d58f9c6e255c987a60ce30c8a8a8a2a06e4a3150e413875051b551acfd6ad1f8",
+      "tests/compute_batch/native_graph_faults.h": "3ac208d6e43c0825f64a31d5426aa079ed4da3f24f6754926ee3fbd5122b734c",
+      "tests/compute_batch/batch_materialize_test.cc": "d3e982acb98ccc6f6d22a5c04b0205a74df9d404117dc0a91460e0b5809eff3c",
+      "tests/compute_batch/materialized_host_controller_consumer.h": "e487b5249d1f65b8af7c3e3e466b4368a41de8f5d43f10c939e20a648b6af1a8",
+      "tests/compute_batch/batch_layout_test.cc": "420b26027914ebc73c5654f49a363b7f5e707c031fe6100763de9295e03c5167",
+      "tests/compute_batch/public_batch_native_consumer.cc": "b0947ad77c35d973f14c7abf80c2fdd0ebd77da3e62fc413161db789b4c334df",
+      "tests/compute_batch/materialized_native_consumer.cc": "7b6c8292c693e3464040f92108dd06ee186d0ae927f0991eef650e2801f3a9c9",
+      "tests/compute_batch/public_batch_cuda_consumer.cc": "eaef48f8b6b5e9770873a99505de354bf52bd2b9424b24256fef0a858ce93aed",
+      "tests/compute_batch/native_vulkan_failure_fixture.h": "955af6a8f8ea20160f36f760866676997b99a12848dbd456108a72c20b030b90",
+      "tests/compute_batch/native_apple_failure_fixture.h": "fdb33f4f810aa078793a464450808da43e3d386721725a506e2c3697d4be2208",
+      "tests/compute_batch/paged_arena_test.cc": "9f42b74ba3b35df0daf73347e91be201ae461aceb76f38d944a9fb0f018fbdae",
+      "tests/compute_batch/native_direct_consumer.cc": "42ad7ea08a7e4a24fbccdfa7f80ae34c4ba170b4951c1cf6389183974f3ff7c0",
+      "tests/compute_batch/native_ragged_append_consumer.h": "74b44c5808eea2718ac7734ba53603c340ffbd23ba03ed390509114ce2156064",
+      "tests/compute_batch/native_graph_consumer.cc": "c9a100e55a0a32fe221419db8e322fd01bb31bc51781d350b4b5e9c523906a6e",
+      "tests/compute_batch/native_arena_direct_consumer.h": "42bbb89bd43d12f752719ef10efa261127004880d87cd005f2cd19c232ba888e",
+      "tests/compute_batch/public_batch_cpu_consumer.cc": "70c2ae42b2a752577872ccabd399e7b3804e98cb3db15505c8dc6919144c773a",
+      "tests/compute_batch/allocation_fault_fixture.h": "7fc5d108ebfbe46853a14fb74b4c504721442757cd4aeab10f1314a9f03943dc"
+    },
+    "verdict": "PASS_F5_ACTUAL_APPLE_HOST_ASAN",
+    "verified_instrumented_commands": [
+      "/usr/bin/clang++ -DHYLE_COMPUTE_APPLE=1 -DHYLE_DETAIL_SANITIZER_ADDRESS=1 -DHYLE_F5_APPLE_TEST=1 -DHYLE_IO_HAS_COROUTINE_TRANSPORT=1 -DHYLE_STATIC -DMLX_STATIC -I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/include -isystem /Users/kiro/Library/Caches/hyle/dependencies/v1/sources/metal_cpp-f567ed836e4c-3874e9e28e8e -isystem /Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-asan/build/hyle/_deps/mlx-338da189e54c0743/source -O3 -DNDEBUG -std=gnu++23 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -mmacosx-version-min=14.4 -fsanitize=address -fno-omit-frame-pointer -MD -MT CMakeFiles/native.dir/Users/kiro/hyle-scratch/compute-unified/source-c8874688/tests/compute_batch/materialized_native_consumer.cc.o -MF CMakeFiles/native.dir/Users/kiro/hyle-scratch/compute-unified/source-c8874688/tests/compute_batch/materialized_native_consumer.cc.o.d -o CMakeFiles/native.dir/Users/kiro/hyle-scratch/compute-unified/source-c8874688/tests/compute_batch/materialized_native_consumer.cc.o -c /Users/kiro/hyle-scratch/compute-unified/source-c8874688/tests/compute_batch/materialized_native_consumer.cc",
+      "/usr/bin/clang++ -DHYLE_COMPUTE_APPLE=1 -DHYLE_DETAIL_SANITIZER_ADDRESS=1 -DHYLE_IO_HAS_COROUTINE_TRANSPORT=1 -DHYLE_STATIC -DMLX_STATIC -I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/include -isystem /Users/kiro/Library/Caches/hyle/dependencies/v1/sources/metal_cpp-f567ed836e4c-3874e9e28e8e -isystem /Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-asan/build/hyle/_deps/mlx-338da189e54c0743/source -O3 -DNDEBUG -std=gnu++23 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -mmacosx-version-min=14.4 -fsanitize=address -fno-omit-frame-pointer -MD -MT CMakeFiles/public_native.dir/Users/kiro/hyle-scratch/compute-unified/source-c8874688/tests/compute_batch/public_batch_native_consumer.cc.o -MF CMakeFiles/public_native.dir/Users/kiro/hyle-scratch/compute-unified/source-c8874688/tests/compute_batch/public_batch_native_consumer.cc.o.d -o CMakeFiles/public_native.dir/Users/kiro/hyle-scratch/compute-unified/source-c8874688/tests/compute_batch/public_batch_native_consumer.cc.o -c /Users/kiro/hyle-scratch/compute-unified/source-c8874688/tests/compute_batch/public_batch_native_consumer.cc",
+      "/usr/bin/clang++ -DHYLE_COMPUTE_APPLE=1 -DHYLE_COMPUTE_ROUTE_APPLE_BUILD -DHYLE_DETAIL_SANITIZER_ADDRESS=1 -DHYLE_IO_HAS_COROUTINE_TRANSPORT=1 -DHYLE_STATIC -DMLX_STATIC -I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/include -I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/compute_route_apple -I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/compute_route_apple/../compute -I/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-asan/build/hyle/src/compute_route_apple -I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/third_party/bitsandbytes_apple -I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/third_party/awq_apple -I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/third_party/ggml_q4k_apple -I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/third_party/compressed_tensors_apple -isystem /Users/kiro/Library/Caches/hyle/dependencies/v1/sources/metal_cpp-f567ed836e4c-3874e9e28e8e -isystem /Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-asan/build/hyle/_deps/mlx-338da189e54c0743/source -O3 -DNDEBUG -std=c++23 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -mmacosx-version-min=14.4 -Wall -Wextra -Wpedantic -fsanitize=address -fno-omit-frame-pointer -MD -MT hyle/src/compute_route_apple/CMakeFiles/hyle_compute_route_apple.dir/apple_materialized_invocation.cc.o -MF hyle/src/compute_route_apple/CMakeFiles/hyle_compute_route_apple.dir/apple_materialized_invocation.cc.o.d -o hyle/src/compute_route_apple/CMakeFiles/hyle_compute_route_apple.dir/apple_materialized_invocation.cc.o -c /Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/compute_route_apple/apple_materialized_invocation.cc",
+      "/usr/bin/clang++ -DHYLE_COMPUTE_APPLE=1 -DHYLE_DETAIL_SANITIZER_ADDRESS=1 -DHYLE_GRAPH_ROUTE_APPLE_BUILD -DHYLE_IO_HAS_COROUTINE_TRANSPORT=1 -DHYLE_STATIC -DMLX_STATIC -I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/include -I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/graph_route_apple -isystem /Users/kiro/Library/Caches/hyle/dependencies/v1/sources/metal_cpp-f567ed836e4c-3874e9e28e8e -isystem /Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-asan/build/hyle/_deps/mlx-338da189e54c0743/source -O3 -DNDEBUG -std=c++23 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -mmacosx-version-min=14.4 -Wall -Wextra -Wpedantic -fsanitize=address -fno-omit-frame-pointer -MD -MT hyle/src/graph_route_apple/CMakeFiles/hyle_graph_route_apple.dir/apple_batch.cc.o -MF hyle/src/graph_route_apple/CMakeFiles/hyle_graph_route_apple.dir/apple_batch.cc.o.d -o hyle/src/graph_route_apple/CMakeFiles/hyle_graph_route_apple.dir/apple_batch.cc.o -c /Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/graph_route_apple/apple_batch.cc",
+      "/usr/bin/clang++ -DHYLE_COMPUTE_APPLE=1 -DHYLE_COMPUTE_ROUTE_APPLE_BUILD -DHYLE_DETAIL_SANITIZER_ADDRESS=1 -DHYLE_IO_HAS_COROUTINE_TRANSPORT=1 -DHYLE_STATIC -DMLX_STATIC -I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/include -I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/compute_route_apple -I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/compute_route_apple/../compute -I/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-asan/build/hyle/src/compute_route_apple -I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/third_party/bitsandbytes_apple -I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/third_party/awq_apple -I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/third_party/ggml_q4k_apple -I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/third_party/compressed_tensors_apple -isystem /Users/kiro/Library/Caches/hyle/dependencies/v1/sources/metal_cpp-f567ed836e4c-3874e9e28e8e -isystem /Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-asan/build/hyle/_deps/mlx-338da189e54c0743/source -O3 -DNDEBUG -std=c++23 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -mmacosx-version-min=14.4 -Wall -Wextra -Wpedantic -fsanitize=address -fno-omit-frame-pointer -MD -MT hyle/src/compute_route_apple/CMakeFiles/hyle_compute_route_apple.dir/apple_batch.cc.o -MF hyle/src/compute_route_apple/CMakeFiles/hyle_compute_route_apple.dir/apple_batch.cc.o.d -o hyle/src/compute_route_apple/CMakeFiles/hyle_compute_route_apple.dir/apple_batch.cc.o -c /Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/compute_route_apple/apple_batch.cc",
+      "/usr/bin/clang++ -DHYLE_COMPUTE_BATCH_BUILD -DHYLE_DETAIL_SANITIZER_ADDRESS=1 -DHYLE_STATIC -I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/include -I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/compute_batch -O3 -DNDEBUG -std=c++23 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -mmacosx-version-min=14.4 -Wall -Wextra -Wpedantic -fsanitize=address -fno-omit-frame-pointer -MD -MT hyle/src/compute_batch/CMakeFiles/hyle_compute_batch.dir/batch_execution.cc.o -MF hyle/src/compute_batch/CMakeFiles/hyle_compute_batch.dir/batch_execution.cc.o.d -o hyle/src/compute_batch/CMakeFiles/hyle_compute_batch.dir/batch_execution.cc.o -c /Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/compute_batch/batch_execution.cc",
+      "/usr/bin/clang++ -DHYLE_COMPUTE_BATCH_BUILD -DHYLE_DETAIL_SANITIZER_ADDRESS=1 -DHYLE_STATIC -I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/include -I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/compute_batch -O3 -DNDEBUG -std=c++23 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -mmacosx-version-min=14.4 -Wall -Wextra -Wpedantic -fsanitize=address -fno-omit-frame-pointer -MD -MT hyle/src/compute_batch/CMakeFiles/hyle_compute_batch.dir/materialized_invocation.cc.o -MF hyle/src/compute_batch/CMakeFiles/hyle_compute_batch.dir/materialized_invocation.cc.o.d -o hyle/src/compute_batch/CMakeFiles/hyle_compute_batch.dir/materialized_invocation.cc.o -c /Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/compute_batch/materialized_invocation.cc",
+      "/usr/bin/clang++ -DHYLE_COMPUTE_APPLE=1 -DHYLE_COMPUTE_ROUTE_APPLE_BUILD -DHYLE_DETAIL_SANITIZER_ADDRESS=1 -DHYLE_IO_HAS_COROUTINE_TRANSPORT=1 -DHYLE_STATIC -DMLX_STATIC -I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/include -I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/compute_route_apple -I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/compute_route_apple/../compute -I/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-asan/build/hyle/src/compute_route_apple -I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/third_party/bitsandbytes_apple -I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/third_party/awq_apple -I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/third_party/ggml_q4k_apple -I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/third_party/compressed_tensors_apple -isystem /Users/kiro/Library/Caches/hyle/dependencies/v1/sources/metal_cpp-f567ed836e4c-3874e9e28e8e -isystem /Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-asan/build/hyle/_deps/mlx-338da189e54c0743/source -O3 -DNDEBUG -std=c++23 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -mmacosx-version-min=14.4 -Wall -Wextra -Wpedantic -fsanitize=address -fno-omit-frame-pointer -MD -MT hyle/src/compute_route_apple/CMakeFiles/hyle_compute_route_apple.dir/apple_materialized_invocation.cc.o -MF hyle/src/compute_route_apple/CMakeFiles/hyle_compute_route_apple.dir/apple_materialized_invocation.cc.o.d -o hyle/src/compute_route_apple/CMakeFiles/hyle_compute_route_apple.dir/apple_materialized_invocation.cc.o -c /Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/compute_route_apple/apple_materialized_invocation.cc",
+      "/usr/bin/clang++ -DHYLE_DETAIL_SANITIZER_ADDRESS=1 -DHYLE_GRAPH_BATCH_BUILD -DHYLE_STATIC -I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/include -I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/graph_batch -O3 -DNDEBUG -std=c++23 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -mmacosx-version-min=14.4 -Wall -Wextra -Wpedantic -fsanitize=address -fno-omit-frame-pointer -MD -MT hyle/src/graph_batch/CMakeFiles/hyle_graph_batch.dir/materialized_invocation.cc.o -MF hyle/src/graph_batch/CMakeFiles/hyle_graph_batch.dir/materialized_invocation.cc.o.d -o hyle/src/graph_batch/CMakeFiles/hyle_graph_batch.dir/materialized_invocation.cc.o -c /Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/graph_batch/materialized_invocation.cc",
+      "/usr/bin/clang++ -DHYLE_COMPUTE_APPLE=1 -DHYLE_COMPUTE_ROUTE_APPLE_BUILD -DHYLE_DETAIL_SANITIZER_ADDRESS=1 -DHYLE_IO_HAS_COROUTINE_TRANSPORT=1 -DHYLE_STATIC -DMLX_STATIC -I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/include -I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/compute_route_apple -I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/compute_route_apple/../compute -I/Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-asan/build/hyle/src/compute_route_apple -I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/third_party/bitsandbytes_apple -I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/third_party/awq_apple -I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/third_party/ggml_q4k_apple -I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/third_party/compressed_tensors_apple -isystem /Users/kiro/Library/Caches/hyle/dependencies/v1/sources/metal_cpp-f567ed836e4c-3874e9e28e8e -isystem /Users/kiro/hyle-scratch/compute-unified/foundation-f5-native-host-apple-asan/build/hyle/_deps/mlx-338da189e54c0743/source -O3 -DNDEBUG -std=c++23 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -mmacosx-version-min=14.4 -Wall -Wextra -Wpedantic -fsanitize=address -fno-omit-frame-pointer -MD -MT hyle/src/compute_route_apple/CMakeFiles/hyle_compute_route_apple.dir/apple_leased_invocation.cc.o -MF hyle/src/compute_route_apple/CMakeFiles/hyle_compute_route_apple.dir/apple_leased_invocation.cc.o.d -o hyle/src/compute_route_apple/CMakeFiles/hyle_compute_route_apple.dir/apple_leased_invocation.cc.o -c /Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/compute_route_apple/apple_leased_invocation.cc",
+      "/usr/bin/clang++ -DHYLE_DETAIL_SANITIZER_ADDRESS=1 -DHYLE_GRAPH_BUILD -DHYLE_STATIC -I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/include -I/Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/graph -O3 -DNDEBUG -std=c++23 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -mmacosx-version-min=14.4 -Wall -Wextra -Wpedantic -fsanitize=address -fno-omit-frame-pointer -MD -MT hyle/src/graph/CMakeFiles/hyle_graph.dir/leased_invocation.cc.o -MF hyle/src/graph/CMakeFiles/hyle_graph.dir/leased_invocation.cc.o.d -o hyle/src/graph/CMakeFiles/hyle_graph.dir/leased_invocation.cc.o -c /Users/kiro/hyle-scratch/compute-unified/source-c8874688/src/graph/leased_invocation.cc"
+    ]
+  }
+}

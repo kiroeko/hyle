@@ -375,6 +375,32 @@ Linux CUDA两格按此前真实资格/精确未影响映射保留，WSL Vulkan�
 自有代码量评估继续。公共component工具聚合仍INCONCLUSIVE，环境/原累计预算完整保留；
 module-status仍20 owner CANDIDATE，goal active，不把18格齐改成缩小的完成定义。
 
+## 源码缺席、两个native宿主ASan与P0/LOC
+
+[源码缺席](../../../../evidence/correctness/foundation-f5-source-route-absence/README.md)九个disabled
+route/access头独立TU与四native API具名缺席PASS；原MSVC ordinary compile contract遗漏的
+alignment warning FAIL保留，产品未改。
+
+[Windows Vulkan](../../../../evidence/correctness/foundation-f5-native-vulkan-host-asan/README.md)与
+[actual Air Apple](../../../../evidence/correctness/foundation-f5-native-apple-host-asan/README.md)
+宿主ASan二实际consumer均PASS，原错误/取消/unknown/旧结果/close/drain/append/F4/quota
+路径与实际flags齐。Win parent额外SIMD库误选查实只inline dtype oracle，保中止FAIL/time
+后同tree去无关库，build720.312/1800；Air runtime不支持LSan，保启动exit-6，detect_leaks=0
+后宿主ASan通过，未写LSan/GPU-private PASS。Linux CUDA ASan同固定25e正在独立树构建，
+native callback剩余UBSan/TSan适用facet仍按实际代码/平台核定，不由ASan代签。
+
+[普通Graph P0](../../../../evidence/performance/foundation-f5-ordinary-graph-p0/README.md)：两个
+普通state完整声明不变；匹配GCC14 shipping/static的原executable对象byte hash完全相同，
+六submit只有一个span方法三个同名error helper相对call位移，helper本体相同、无新增指令。
+[成本结构](../../../../evidence/performance/foundation-f5-cost-structure/README.md)明确版本M清零、
+page frame排序、冷workspace/metadata H2D/explicit plan-key/native与参考gather/waits费用，
+private UNKNOWN不写0，不签所有路线native性能/capture、不跑P1。
+
+[LOC](../../../../evidence/architecture/foundation-f5-loc-inventory/README.md)按原工具口径分开：
+新两个factor含公开头1437+400，F5对F4净增2610，全部自有native174338，20 owner完整union
+57297；历史19-owner/source-only数字保留但不冒充本轮总量。测试/工具/最终engine产品LOC
+及foundation剩余缺口仍待完整goal评估，guide正交/分离红队和组件聚合未由此签。
+
 [公开native源码收据](../../../../evidence/correctness/foundation-f5-public-native-source/README.md)：
 Win Vulkan/Air Apple/Vulkan各四域Direct/Graph独立oracle共24、原F2/public页权限/同镜像/
 old result通过。用户guide已加四路线选择、生命周期、explicit reference成本与capture缺席，

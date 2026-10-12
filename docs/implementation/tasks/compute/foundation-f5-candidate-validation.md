@@ -81,6 +81,33 @@ Win Vulkan四格不含此次CUDA seam，[精确图/输入映射](../../../../evi
 [shared](../../../../evidence/correctness/foundation-f5-sdk-wsl-vulkan-shared/README.md)软件设备包/loader
 PASS，不签GPU数学。源头缺席符号/native host-control san/P0/LOC/guide/红队等原待办仍保留，
 18格齐不等于完整F5 CLOSED。
+
+[源码路线缺席](../../../../evidence/correctness/foundation-f5-source-route-absence/README.md)已完成：
+九个disabled route/access头独立TU、四组新native API具名缺席PASS；原private MSVC
+alignment warning合同遗漏的编译FAIL保留。installed只按实际供应闭包验头，不借source越SKU。
+
+[普通Graph P0字段/codegen](../../../../evidence/performance/foundation-f5-ordinary-graph-p0/README.md)
+已证明匹配GCC14.2 shipping/static配置下普通state字段不变、executable对象完全相同、
+六submit无新增指令；一个span submit只有三个原error helper call相对位移变化。仍不代签
+完整成本账/其他编译器逐字节/吞吐或capture，native private UNKNOWN与最终LOC另核。
+
+[实际Windows Vulkan宿主ASan](../../../../evidence/correctness/foundation-f5-native-vulkan-host-asan/README.md)
+已PASS：原native/public两consumer，实际RTX、controller/Graph原flags核对；原parent处理器
+作用域配置FAIL与多余SIMD库构建中止/耗时保留，移除仅header-only oracle不需要的库链接
+后同tree剩余预算续跑。只签本宿主访问，不签MSVC LSan或GPU/driver私有内存。
+
+[actual Air Apple宿主ASan](../../../../evidence/correctness/foundation-f5-native-apple-host-asan/README.md)
+原public/native两消费者也PASS；实际Clang runtime不支持LSan，首进程启动FAIL保留后只
+禁用不支持的detect_leaks继续同树预算，没加suppression/改产品；GPU私有内存未由此证明。
+
+[固定产品LOC](../../../../evidence/architecture/foundation-f5-loc-inventory/README.md)已统计：
+compute_batch1437、graph_batch400（含public头），F5对F4净增2610；全部自有native174338，
+本轮20 owner完整union57297。源码/依赖/测试/全仓库口径不混用；测试/工具与最终引擎估计
+仍待完整goal收口，不把基础库新增2610直接称为引擎节省2610。
+
+[P0成本结构](../../../../evidence/performance/foundation-f5-cost-structure/README.md)核对版本/
+page frame/冷slot/显式plan-update/native run与reference metadata/gather/waits，保已知和
+UNKNOWN边界；不将参考O(KV)副本签为四路线高性能或capture，不据本轮结构启动P1。
 Windows CUDA native batch只签
 具名拒绝，数学资格不冒充Linux FlashInfer。common33 ASan/UBSan/
 TSan均PASS，TSan启动exit66与process-local ASLR恢复保留；CPU控制器补验见下文，native

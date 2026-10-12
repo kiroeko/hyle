@@ -1,0 +1,11 @@
+{
+  "candidate": "25e4fb398e2a782ee60f916c3c6351c4736b6eda",
+  "cloc": "2.08",
+  "full_repository_all_languages": 2785772,
+  "self_written_native_excluding_tests": 174338,
+  "compute_batch_src_and_public_headers": 1437,
+  "graph_batch_src_and_public_headers": 400,
+  "current_20_owner_union": 57297,
+  "f5_net_native_code_delta_from_f4": 2610,
+  "raw_sha256": "5bba7304e7df0977de4ac2596080afcf11201f6db5a469fe3f6a556df304182f"
+}

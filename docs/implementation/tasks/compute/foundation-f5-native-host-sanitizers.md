@@ -25,3 +25,17 @@ controller/coordinator以及消费者。原native runtime/library借用边界/�
 记录后同root累计，所有FAIL/TIMEOUT保留。不是重置已用common/CPU/native ordinary预算。
 库按实时内存j4/j2/j1，consumer1，跨机器重型串行。因公共工具/平台限制无法给必需verdict
 则精确记录独立条件，不能用未instrument运行或CPU替代证明。
+
+Windows Vulkan host ASan已实际PASS：[证据](../../../../evidence/correctness/foundation-f5-native-vulkan-host-asan/README.md)。
+configure累计153.844/300、build720.312/1800、两consumer9.422/180，包含全部原FAIL/
+中止时间。私有oracle只用dtype.h标量inline，不需要SIMD库，已移除额外完整SIMD产品选择；
+没有借此修改closed SIMD或改变实际数学。actual Air Apple资格见下文，Linux CUDA继续。
+
+actual Air Apple宿主ASan已PASS：[证据](../../../../evidence/correctness/foundation-f5-native-apple-host-asan/README.md)，
+build155.515/1800、两consumer5.211/180。同机器runtime明确拒绝detect_leaks而首进程
+exit-6未进入测试，保原FAIL/time，只按实际平台用detect_leaks=0继续；Apple LSan工具facet
+不支持，未冒充PASS或删整个san类别。GPU/MLX私有storage仍不由ASan证明。
+
+Linux CUDA ASan已启动原public D256、native Direct/Graph三消费者；普通CUDA产品闭包
+重用锁定source cache、独立tree，以原GCC14/CUDA13.3/SM89身份instrument宿主代码。
+实际source/worker callback的剩余UBSan/TSan适用性须按代码及平台继续核定，不写未跑PASS。
