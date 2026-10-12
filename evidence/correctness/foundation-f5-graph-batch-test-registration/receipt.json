@@ -1,0 +1,132 @@
+{
+  "candidate": "25e4fb398e2a782ee60f916c3c6351c4736b6eda",
+  "scope": "Test-only ownership registration; common Graph recipe/ports/lifetime/OOM and standalone batch header, no actual GPU execution claim",
+  "raw_sha256": "90dca34c53a1bad85fe335536c6f43cc53ba6dc693f3aef70ce22ffef73e33c9",
+  "job": {
+    "candidate": "25e4fb398e2a782ee60f916c3c6351c4736b6eda",
+    "scope": "test-only Graph batch registration; same common build/tree; three public Graph tests and one header; no old operator suites",
+    "stages": [
+      {
+        "name": "configure",
+        "command": [
+          "cmake",
+          "-S",
+          "C:\\public\\project-hyle\\hyle",
+          "-B",
+          "C:\\h7\\foundation-f4\\core-static",
+          "-G",
+          "Ninja",
+          "-DCMAKE_BUILD_TYPE=Release",
+          "-DCMAKE_CXX_COMPILER=C:/Program Files/Microsoft Visual Studio/18/Enterprise/VC/Tools/MSVC/14.50.35717/bin/Hostx64/x64/cl.exe",
+          "-DHYLE_DEV_FACTORS:STRING=compute_batch;graph_batch",
+          "-DHYLE_BUILD_TESTS:BOOL=ON",
+          "-DHYLE_BUILD_BENCH:BOOL=OFF",
+          "-DHYLE_INSTALL:BOOL=OFF",
+          "-DHYLE_STATIC:BOOL=ON",
+          "-DHYLE_TEST_INSTRUMENTATION:BOOL=OFF",
+          "-DHYLE_WERROR:BOOL=ON",
+          "-DHYLE_DEP_SOURCE_CACHE:PATH=C:/public/tools/hyle-dependencies/v1"
+        ],
+        "pid": 14580,
+        "state": "terminal",
+        "available_bytes": 47140515840,
+        "log": "configure.log",
+        "elapsed": 3.639999999999418,
+        "exit_code": 0,
+        "verdict": "PASS",
+        "sha256": "7af2d3897767b61fb94a59e8da605a038b6e2fc9d067d0b1f1145bd1b8ce8555"
+      },
+      {
+        "name": "build",
+        "command": [
+          "cmake",
+          "--build",
+          "C:\\h7\\foundation-f4\\core-static",
+          "--target",
+          "hyle_graph_batch_tests",
+          "--parallel",
+          "4"
+        ],
+        "pid": 56744,
+        "state": "terminal",
+        "available_bytes": 47188754432,
+        "log": "build.log",
+        "elapsed": 5.813000000001921,
+        "exit_code": 2,
+        "verdict": "FAIL",
+        "sha256": "1327358f507c463b7671ba6525f7cd366f40d337b2ad443263e01f772359feb7"
+      },
+      {
+        "name": "build-resume1",
+        "command": [
+          "cmake",
+          "--build",
+          "C:\\h7\\foundation-f4\\core-static",
+          "--target",
+          "hyle_graph_batch_tests",
+          "--parallel",
+          "4"
+        ],
+        "pid": 56280,
+        "state": "terminal",
+        "available_bytes": 47172927488,
+        "log": "build-resume1.log",
+        "elapsed": 1.8589999999967404,
+        "exit_code": 0,
+        "verdict": "PASS",
+        "sha256": "c74b51ba32e393fc0f86c7ce28aedbeac1ea283bac480525ccaad6eef250dfe0"
+      },
+      {
+        "name": "tests",
+        "command": [
+          "ctest",
+          "--test-dir",
+          "C:\\h7\\foundation-f4\\core-static",
+          "-R",
+          "^hyle_graph_batch_test$",
+          "--verbose",
+          "--output-on-failure",
+          "--no-tests=error",
+          "--parallel",
+          "1"
+        ],
+        "pid": 41044,
+        "state": "terminal",
+        "available_bytes": 47185866752,
+        "log": "tests.log",
+        "elapsed": 0.15600000000267755,
+        "exit_code": 0,
+        "verdict": "PASS",
+        "sha256": "07a54321ae02dca89dfd04b82433d111031452d157d28fce7258c45bbd3bb04f"
+      },
+      {
+        "name": "headers",
+        "command": [
+          "ctest",
+          "--test-dir",
+          "C:\\h7\\foundation-f4\\core-static",
+          "-R",
+          "^hyle_graph_batch_header_self_contained_test$",
+          "--verbose",
+          "--output-on-failure",
+          "--no-tests=error",
+          "--parallel",
+          "1"
+        ],
+        "pid": 51208,
+        "state": "terminal",
+        "available_bytes": 47181475840,
+        "log": "headers.log",
+        "elapsed": 0.8600000000005821,
+        "exit_code": 0,
+        "verdict": "PASS",
+        "sha256": "d0e0b16ae797d43c5986911bee129f723ab365f43a84ec25019b83ccf90a4997"
+      }
+    ],
+    "test_inputs": {
+      "tests/graph_batch/CMakeLists.txt": "74bbdfafac5147e324e5e92fa2bbbe49ff0754d1bf1d374df5427f76a6eed56f",
+      "tests/graph_batch/materialized_graph_test.cc": "7036eeb32edf7575c17df7db5574f971a0c27a0b2c11905d1dc49d99100401ef"
+    },
+    "verdict": "PASS_F5_GRAPH_REGISTRATION_THREE_TESTS_AND_HEADER"
+  }
+}

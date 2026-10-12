@@ -27,3 +27,12 @@
 工具链沿原失败预算续跑；新本factor所选测试按F5原configure300/build1800/test120/头120，
 同身份已有tree/cache复用，不回放旧算子全集。若产品事实要求新API或依赖，先退AUDITED，
 不能在测试补充里扩产品。每轮docs/closure/diff；最终F5七门仍全部按完整goal裁决。
+
+三项正常登记测试与batch.h独立TU已在MSVC19.50/shipping/static/WERROR实际PASS；
+[证据](../../../../evidence/correctness/foundation-f5-graph-batch-test-registration/README.md)保留
+首个测试Result={}模糊赋值的编译FAIL、同root累计及逐cold allocation回滚记录。
+只测试补充，product25e无变化。公共component配置合同正在同原总预算复验，不先写PASS。
+
+同budget复验已通过原CPU/tests=ON位置，随后停于graph-only要求完整Compute façade的
+旧工具断言；[独立工具跟进](../tooling/foundation-f5-component-facade-assertion.md)保存精确事实。
+本模块不修改公共工具/产品依赖来掩盖问题，聚合component门未PASS；测试归属FIX本身已验。

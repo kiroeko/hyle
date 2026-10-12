@@ -1,0 +1,33 @@
+{
+  "candidate": "25e4fb398e2a782ee60f916c3c6351c4736b6eda",
+  "scope": "configure-only central graph/package contract for one CUDA PUBLIC edge; no old module/operator tests",
+  "command": [
+    "cmake",
+    "-DHYLE_SOURCE_DIR=C:\\public\\project-hyle\\hyle",
+    "-DHYLE_SMOKE_ROOT=C:\\h7\\foundation-f5-component-link-contract",
+    "-DHYLE_SMOKE_GENERATOR=Ninja",
+    "-P",
+    "cmake/HyleCiComponentContract.cmake"
+  ],
+  "stages": [
+    {
+      "pid": 60120,
+      "state": "terminal",
+      "log": "run-0.log",
+      "elapsed": 103.43699999999808,
+      "exit_code": 1,
+      "verdict": "FAIL",
+      "sha256": "ed384412c4dd5c9ee443a2ccda7a69fa293f32e4aa6946306931ab15117d44db"
+    },
+    {
+      "pid": 16960,
+      "state": "terminal",
+      "log": "run-1.log",
+      "elapsed": 60.95300000000134,
+      "exit_code": 1,
+      "verdict": "FAIL",
+      "sha256": "20368298c55019c8167d7d8db96ff33b84ae29fe91d40f6d2e84e6fb4d9ac67f"
+    }
+  ],
+  "raw_sha256": "cd29042b76484db9d9d1b1a8b33c8242de686323a20a9ca57da92d093efcaf7f"
+}
