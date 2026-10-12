@@ -50,3 +50,13 @@ seams，不运行旧算子全集。新源码身份/旧owner无diff随候选收�
 七问：锁/许可不变；主/正交完整state消费由F4卡覆盖；旧下层BORROW；P0只解释新增产品链接
 和opt-in状态对象、无timed赢家；同工具链C++无新FFI；实际Compute façade三交付与新公共头
 资格；指南明确State接口/原route选择/库依赖。故固定此一个FIX进入AUDITED，七门资格尚未签。
+
+## Candidate 交付续记
+
+2026-10-12：[Windows CPU+CUDA static](../../../../evidence/correctness/foundation-f4-sdk-windows-cpu-cuda-static/README.md)
+实际PASS。固定29d3c7a3e，复用原MSVC/shipping/static/route树，只构建新state及直接Graph
+route依赖targets；自然Compute/Graph安装后rename迁址，metadata无原source/build/staging
+路径，普通消费者及三个独立公开头通过。消费者只在迁址prefix发现包，运行PATH只留
+消费者目录/系统目录；缺Apple/Vulkan请求得到具名拒绝。原库产物与runtime hashes、实际
+imports/完整stage原日志及时间见job/raw archive。其他installed格尚未因此代签；本卡继续
+CANDIDATE，旧factor产品源码与原公开头未改变，F4终局风险/红队仍沿主卡。
