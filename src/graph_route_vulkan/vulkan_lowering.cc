@@ -26,7 +26,7 @@ static Result<cv::Program> compile_impl(const cv::Context &context,
       graph.value_count() > (std::numeric_limits<std::uint32_t>::max)() / 2)
     return std::unexpected(Status::InvalidArgument(
         "Vulkan Graph needs a Context and published outputs"));
-  if (graph.dimension_count() != 0 || graph.effect_resource_count() != 0)
+  if (graph.dimension_count() != 0)
     return std::unexpected(
         Status::Unimplemented("Vulkan Graph admits fixed, pure regions only"));
   if (constants.size() != graph.constant_count())

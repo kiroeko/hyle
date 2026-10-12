@@ -8,6 +8,7 @@
 #include "hyle/compute/result.h"
 #include "hyle/compute/cuda_weights.h"
 #include "hyle/graph/executable.h"
+#include "hyle/graph/native_variants.h"
 #include "hyle/sched/scheduler.h"
 #include "hyle/visibility.h"
 
@@ -71,6 +72,29 @@ struct ResourceReport final {
 HYLE_GRAPH_ROUTE_CPU_CUDA_API Result<CompiledGraph>
 compile(const Graph &graph, Environment environment,
         CompileOptions options = {}) noexcept;
+
+using Variants = ExactNativeVariants<graph::Executable>;
+// Finite exact-only points. Existing declared-domain/general compilation keeps
+// its separate proof and cumulative quota contract. Use shared ResourceBudget
+// here; per-point compiler quotas cannot masquerade as a whole-family quota.
+inline Result<Variants> compile_variants(
+    const Graph &graph, Environment environment,
+    std::span<const ExactShapeVariant> variants, CompileOptions options = {}) noexcept {
+  if (!options.shape.empty() || !options.exact_variants.empty() ||
+      options.shape_policy != CompileShapePolicy::kExact)
+    return std::unexpected(Status::InvalidArgument("finite native variants supply exact shapes"));
+  if (options.compiled_storage.max_bytes != SIZE_MAX ||
+      options.compilation_storage.has_value() || options.invocation_storage.has_value())
+    return std::unexpected(Status::Unimplemented("finite native variants require shared ResourceBudget for family accounting"));
+  auto allocator = mem::system_allocator();
+  if (options.resource_budget) {
+    HYLE_ASSIGN_OR_RETURN(allocator, options.resource_budget.metadata_allocator());
+  }
+  return Variants::prepare(graph, variants, [&](const Graph &point) -> Result<graph::Executable> {
+    HYLE_ASSIGN_OR_RETURN(auto compiled, compile(point, environment, options));
+    return std::move(compiled.executable);
+  }, allocator);
+}
 
 namespace detail {
 struct RunState;

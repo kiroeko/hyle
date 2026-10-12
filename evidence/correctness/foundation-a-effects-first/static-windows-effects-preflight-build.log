@@ -1,0 +1,9 @@
+[0/2] Re-checking globbed directories...
+[1/9] Building CXX object hyle\src\graph_route_cpu_cuda\CMakeFiles\hyle_graph_route_cpu_cuda.dir\compile.cc.obj
+[2/9] Building CXX object hyle\src\graph_route_cpu_cuda\CMakeFiles\hyle_graph_route_cpu_cuda.dir\invocation.cc.obj
+[3/9] Building CXX object hyle\src\graph\CMakeFiles\hyle_graph.dir\executable.cc.obj
+[4/9] Linking CXX static library hyle\src\graph\hyle_graph.lib
+[5/9] Linking CXX static library hyle\src\graph_route_cpu_cuda\hyle_graph_route_cpu_cuda.lib
+[6/9] C:\WINDOWS\system32\cmd.exe /C "cd /D C:\h7\w-cpu-cuda\selected-graph\source-build && "C:\Program Files\CMake\bin\cmake.exe" -P C:/h7/w-cpu-cuda/selected-graph/source-build/hyle-runtime/hyle_foundation_a_static-Release.cmake"
+[7/9] Building CXX object CMakeFiles\hyle_foundation_a_static.dir\C_\public\project-hyle\hyle\tests\graph\native_variants_test.cc.obj
+[8/9] Linking CXX executable hyle_foundation_a_static.exe

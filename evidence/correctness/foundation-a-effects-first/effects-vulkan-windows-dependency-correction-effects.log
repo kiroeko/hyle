@@ -1,0 +1,29 @@
+Running main() from C:\public\tools\hyle-dependencies\v1\sources\googletest-063de7e9578f-162765170ae6\googletest\src\gtest_main.cc
+Note: Google Test filter = FoundationEffects.*:GraphRegions.NamedResourceExecutesAndInvocationRetainsItsPreparedOwner:GraphRegions.ValidatesBackingBeforePreparingAnyResourceOperation:GraphRegions.DifferentResourceIdsMustNotHideTheSameMemoryOrObject:GraphRegions.TensorBindingCannotHideAnEffectAliasInEitherBindingOrder:GraphRegions.ConstantsCannotHideAnEffectAlias:GraphRegions.ExactShapeSpecializationKeepsResourceIdentityAndBinding:GraphRegions.ResourceCompileAllocationFailuresRollBackAndCanRetry
+[==========] Running 8 tests from 2 test suites.
+[----------] Global test environment set-up.
+[----------] 7 tests from GraphRegions
+[ RUN      ] GraphRegions.NamedResourceExecutesAndInvocationRetainsItsPreparedOwner
+[       OK ] GraphRegions.NamedResourceExecutesAndInvocationRetainsItsPreparedOwner (0 ms)
+[ RUN      ] GraphRegions.ValidatesBackingBeforePreparingAnyResourceOperation
+[       OK ] GraphRegions.ValidatesBackingBeforePreparingAnyResourceOperation (0 ms)
+[ RUN      ] GraphRegions.DifferentResourceIdsMustNotHideTheSameMemoryOrObject
+[       OK ] GraphRegions.DifferentResourceIdsMustNotHideTheSameMemoryOrObject (0 ms)
+[ RUN      ] GraphRegions.TensorBindingCannotHideAnEffectAliasInEitherBindingOrder
+[       OK ] GraphRegions.TensorBindingCannotHideAnEffectAliasInEitherBindingOrder (2 ms)
+[ RUN      ] GraphRegions.ConstantsCannotHideAnEffectAlias
+[       OK ] GraphRegions.ConstantsCannotHideAnEffectAlias (0 ms)
+[ RUN      ] GraphRegions.ExactShapeSpecializationKeepsResourceIdentityAndBinding
+[       OK ] GraphRegions.ExactShapeSpecializationKeepsResourceIdentityAndBinding (0 ms)
+[ RUN      ] GraphRegions.ResourceCompileAllocationFailuresRollBackAndCanRetry
+[       OK ] GraphRegions.ResourceCompileAllocationFailuresRollBackAndCanRetry (3 ms)
+[----------] 7 tests from GraphRegions (7 ms total)
+
+[----------] 1 test from FoundationEffects
+[ RUN      ] FoundationEffects.CpuResourceWriteGpuMathCpuReadAndCrossFragmentAlias
+[       OK ] FoundationEffects.CpuResourceWriteGpuMathCpuReadAndCrossFragmentAlias (203 ms)
+[----------] 1 test from FoundationEffects (203 ms total)
+
+[----------] Global test environment tear-down
+[==========] 8 tests from 2 test suites ran. (210 ms total)
+[  PASSED  ] 8 tests.

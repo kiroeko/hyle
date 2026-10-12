@@ -43,6 +43,9 @@ struct CompileOptions final {
   mem::AllocatorRef allocator = mem::system_allocator();
   apple::CustomLowering custom{};
   std::span<const ShapeBinding> shape{};
+  // Fixed borrowed footprints for effects placed explicitly on the CPU.
+  // GPU effects require an actual qualified native carrier and are rejected.
+  std::span<const EffectResourceBinding> effect_bindings{};
 };
 
 struct FragmentReport final {
@@ -86,8 +89,9 @@ class Invocation;
 // placement, never a fallback for a GPU preparation/execution failure. CPU
 // fragments keep original CPU Graph rules and Apple fragments keep whole native
 // regions. Pure DAGs use fixed or cold exact shape bindings/finite variants.
-// Explicit control endpoints form separate, ordered fragments; effects still
-// require a qualified carrier and are rejected by the current native admission.
+// Explicit control/effect endpoints form separate, ordered fragments. CPU
+// effects keep the common compiler's resource/alias rules; GPU effects need a
+// qualified native carrier and are rejected by the current native admission.
 class Executable final {
 public:
   Executable() noexcept = default;

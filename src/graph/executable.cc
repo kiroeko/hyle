@@ -788,13 +788,15 @@ Status validate_effect_tensor_alias(const detail::PlanState &plan,
   return Status::Ok();
 }
 
-Status bind_effect_resources(detail::PlanState &plan,
-                             const detail::GraphState &graph,
-                             CompileOptions options) noexcept {
+using EffectBindings = detail::EffectBindings;
+
+Status collect_effect_bindings(
+    const detail::GraphState &graph, std::span<const EffectResourceBinding> bindings,
+    std::span<const ConstantBinding> constants, mem::AllocatorRef allocator, EffectBindings &result) noexcept {
   container::SmallVector<std::uint8_t, 16, mem::AllocatorRef> used(
-      plan.allocator);
+      allocator);
   container::SmallVector<std::uint8_t, 16, mem::AllocatorRef> bound(
-      plan.allocator);
+      allocator);
   if (!used.try_resize(graph.effect_resource_count) ||
       !bound.try_resize(graph.effect_resource_count))
     return plan_allocation_failure();
@@ -811,9 +813,9 @@ Status bind_effect_resources(detail::PlanState &plan,
       }
     }
   }
-  if (!plan.effect_bindings.try_reserve(used_count))
+  if (!result.try_reserve(used_count))
     return plan_allocation_failure();
-  for (const auto &binding : options.effect_bindings) {
+  for (const auto &binding : bindings) {
     if (!detail::owns(graph, binding.resource) || !binding.footprint.valid())
       return Status::InvalidArgument(
           "invalid effect resource footprint binding");
@@ -824,12 +826,12 @@ Status bind_effect_resources(detail::PlanState &plan,
     bound[ordinal] = 1;
     if (!used[ordinal])
       continue;
-    for (const auto &previous : plan.effect_bindings) {
+    for (const auto &previous : result) {
       if (overlaps(previous.footprint, binding.footprint))
         return Status::InvalidArgument("different effect resource IDs alias; "
                                        "use one ID or disjoint ranges");
     }
-    if (!plan.effect_bindings.try_push_back(binding))
+    if (!result.try_push_back(binding))
       return plan_allocation_failure();
   }
   for (std::size_t resource = 0; resource < used.size(); ++resource) {
@@ -837,10 +839,16 @@ Status bind_effect_resources(detail::PlanState &plan,
       return Status::InvalidArgument(
           "graph effect resource has no backing footprint");
   }
-  for (const auto &binding : options.constants)
-    HYLE_RETURN_IF_ERROR(validate_effect_tensor_alias(
-        plan, byte_range(binding.tensor.storage())));
+  for (const auto &binding : constants)
+    HYLE_RETURN_IF_ERROR(detail::validate_effect_tensor_alias(result, binding.tensor.storage()));
   return Status::Ok();
+}
+
+Status bind_effect_resources(detail::PlanState &plan,
+                             const detail::GraphState &graph,
+                             CompileOptions options) noexcept {
+  return collect_effect_bindings(graph, options.effect_bindings, options.constants,
+                                 plan.allocator, plan.effect_bindings);
 }
 
 bool matches_alias_range(ByteRange source, ByteRange output,
@@ -6267,6 +6275,23 @@ Result<SpecializationSignature> detail::native_shape_signature(
   ShapeValues values(allocator);
   HYLE_RETURN_IF_ERROR(bind_shape_values(*logical, shape, allocator, values));
   return make_shape_signature(*logical, values, allocator);
+}
+
+Status detail::collect_effect_bindings(
+    const Graph &graph, std::span<const EffectResourceBinding> bindings,
+    std::span<const ConstantBinding> constants, mem::AllocatorRef allocator, EffectBindings &output) noexcept {
+  const auto *state = GraphAccess::state(graph);
+  if (state == nullptr || !allocator.valid())
+    return Status::InvalidArgument("effect graph or allocator is invalid");
+  return graph::collect_effect_bindings(*state, bindings, constants, allocator, output);
+}
+
+Status detail::validate_effect_tensor_alias(std::span<const EffectResourceBinding> bindings,
+                                            mem::ConstBufferView tensor) noexcept {
+  for (const auto &binding : bindings)
+    if (binding.footprint.is_memory() && overlaps(byte_range(binding.footprint.memory_range()), byte_range(tensor)))
+      return Status::InvalidArgument("effect resource memory must not alias graph tensor storage");
+  return Status::Ok();
 }
 
 Result<ExactGraph> specialize_exact(const Graph &graph,

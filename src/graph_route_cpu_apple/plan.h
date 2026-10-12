@@ -3,6 +3,7 @@
 #include "hyle/graph/cpu_apple.h"
 #include "hyle/compute/detail/context_ref.h"
 #include "hyle/mem/std_allocator.h"
+#include "../graph/compile_internal.h"
 
 #include <optional>
 
@@ -41,7 +42,7 @@ struct Plan final {
   explicit Plan(mem::AllocatorRef owner)
       : allocator(owner), values(mem::StdAllocator<Value>(owner)),
         inputs(mem::StdAllocator<std::size_t>(owner)),
-        fragments(mem::StdAllocator<Fragment>(owner)) {}
+        fragments(mem::StdAllocator<Fragment>(owner)), effect_bindings(owner) {}
   mem::AllocatorRef allocator;
   compute::ResourceBudget budget;
   compute::WorkloadContext workload;
@@ -50,6 +51,7 @@ struct Plan final {
   Vector<Value> values;
   Vector<std::size_t> inputs;
   Vector<Fragment> fragments;
+  graph::detail::EffectBindings effect_bindings;
   std::size_t host_workspace_bytes = 0;
 };
 

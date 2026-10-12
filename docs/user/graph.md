@@ -36,7 +36,16 @@ table/signature/artifact 的 allocator 和 native Context 按原合同保活；�
 pure control 前驱通过冷可达性保留，并在原生完成/barrier 边界排序；只有控制用途的输出可能需要
 物化，Apple managed region 与 hybrid 会有显式等待。hybrid `prepare_replay` 的
 `HostWaitPolicy::kReject` 仍可拒绝这些拓扑。外部 effects/resource ports 仍需真实 qualified carrier，
-当前 native admission 明确拒绝；CPU+CUDA 的既有 effect 能力不由此降级。
+GPU native admission 明确拒绝未资格 carrier。CPU+Apple/Vulkan 可将 effect 显式放在
+`kCpuTarget`，用 `CompileOptions::effect_bindings` 声明实际固定 footprint；原 CPU Provider
+与 Graph 校验负责端口、alias 和执行。零输出 effect 不会被剪掉。不同资源 ID 的重叠 footprint、
+跨片段 tensor/constant alias、缺失/重复 binding 都拒绝；未知 native input/weight 的 alias
+无法核对时拒绝与 named effects 组合，caller 可选原 checked host binding。
+接受后失败保留实际写入的前缀，停止后继，不能假报 rollback。固定 footprint/backing 由 caller
+保活并跨 invocation 同步。普通公开 C++ 消费示例见
+[public_effect_consumer.cc](../../tests/graph/public_effect_consumer.cc)。
+CPU+CUDA 的既有 effect 能力保持原规则；其新增 `compile_variants` 返回原 Executable，
+显式有限表使用共享 ResourceBudget，不能将原 family-wide compiler 配额偷偷按点重置。
 上述 API 已接线，完整四路线与三交付资格尚未完成；不要把实施中的说明当作 CLOSED。
 
 当前已支持 exact specialization 与显式声明域的 general 路线（目前动态 Native RMSNorm、固定 hidden

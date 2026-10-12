@@ -21,11 +21,12 @@ struct NativeAnalysis final {
 };
 
 inline Result<NativeAnalysis> analyze_native_pure(
-    const Graph &graph, mem::AllocatorRef allocator = mem::system_allocator()) noexcept {
+    const Graph &graph, mem::AllocatorRef allocator = mem::system_allocator(),
+    std::span<const std::uint8_t> cpu_nodes = {}) noexcept {
   if (!graph || !allocator.valid())
     return std::unexpected(Status::InvalidArgument("native analysis requires graph and allocator"));
-  if (graph.effect_resource_count() != 0)
-    return std::unexpected(Status::Unimplemented("native Graph has no qualified external resource ports"));
+  if (!cpu_nodes.empty() && cpu_nodes.size() != graph.node_count())
+    return std::unexpected(Status::InvalidArgument("CPU effect admission mask size differs"));
   try {
     NativeAnalysis result(allocator);
     result.needed.resize(graph.node_count());
@@ -43,8 +44,11 @@ inline Result<NativeAnalysis> analyze_native_pure(
       const auto traits = compute::operation_traits(operation);
       // Even dead effects cannot be silently erased. A native effect needs
       // actual ports, permissions and a preserves_effects carrier first.
-      if (traits.effect != compute::EffectKind::kPure || traits.resource_count != 0)
-        return std::unexpected(Status::Unimplemented("native Graph has no qualified effect carrier"));
+      if (traits.effect != compute::EffectKind::kPure || traits.resource_count != 0) {
+        if (cpu_nodes.empty() || !cpu_nodes[i - 1])
+          return std::unexpected(Status::Unimplemented("native Graph has no qualified effect carrier"));
+        result.needed[i - 1] = result.boundary[i - 1] = 1;
+      }
       HYLE_ASSIGN_OR_RETURN(auto count, graph.node_output_count(node));
       for (std::size_t port = 0; port < count; ++port) {
         HYLE_ASSIGN_OR_RETURN(auto value, graph.result(node, port));

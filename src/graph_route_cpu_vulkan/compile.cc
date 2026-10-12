@@ -63,7 +63,7 @@ Status copy_constant(Plan &plan, detail::Value &value) noexcept {
 
 Result<std::shared_ptr<const Plan>> compile_plan(const Graph &graph, Environment environment,
                                                 CompileOptions options, CompileReport *report) noexcept {
-  if (!graph.valid() || graph.output_count() == 0 || environment.cpu == nullptr ||
+  if (!graph.valid() || environment.cpu == nullptr ||
       !environment.cpu->is_open() || environment.vulkan == nullptr || !environment.vulkan->valid() ||
       environment.device == nullptr || !environment.device->valid() || environment.staging == nullptr ||
       !environment.staging->valid() || !environment.host.valid() ||
@@ -71,7 +71,7 @@ Result<std::shared_ptr<const Plan>> compile_plan(const Graph &graph, Environment
       !environment.host.properties().has(mem::MemoryProperty::kHostAccessible) ||
       !options.workload.valid())
     return std::unexpected(Status::InvalidArgument("CPU+Vulkan requires live native endpoints and host storage"));
-  if (graph.dimension_count() != 0 || graph.effect_resource_count() != 0)
+  if (graph.dimension_count() != 0)
     return std::unexpected(Status::Unimplemented("CPU+Vulkan admits fixed pure DAGs only"));
   auto allocator = options.allocator;
   if (options.resource_budget) {
@@ -126,7 +126,6 @@ Result<std::shared_ptr<const Plan>> compile_plan(const Graph &graph, Environment
         HYLE_ASSIGN_OR_RETURN(value.constant, compute::ConstTensorView::create(value.description, value.constant_storage.view()));
       }
     }
-    HYLE_ASSIGN_OR_RETURN(auto analysis, graph::detail::analyze_native_pure(graph, allocator));
     Vector<bool> live{mem::StdAllocator<bool>(allocator)};
     Vector<bool> needed{mem::StdAllocator<bool>(allocator)};
     Vector<std::size_t> last_use{mem::StdAllocator<std::size_t>(allocator)};
@@ -144,6 +143,12 @@ Result<std::shared_ptr<const Plan>> compile_plan(const Graph &graph, Environment
           return std::unexpected(Status::InvalidArgument("duplicate CPU+Vulkan node placement"));
       targets[placement.node.ordinal()] = placement.target;
     }
+    graph::detail::NativeAnalysis::Flags cpu_nodes{mem::StdAllocator<std::uint8_t>(allocator)};
+    cpu_nodes.resize(graph.node_count());
+    for (std::size_t i = 0; i < targets.size(); ++i) cpu_nodes[i] = targets[i] == kCpuTarget;
+    HYLE_ASSIGN_OR_RETURN(auto analysis, graph::detail::analyze_native_pure(graph, allocator, cpu_nodes));
+    HYLE_RETURN_IF_ERROR(graph::detail::collect_effect_bindings(
+        graph, options.effect_bindings, options.constants, allocator, plan->effect_bindings));
     for (std::size_t i = 0; i < graph.output_count(); ++i) {
       HYLE_ASSIGN_OR_RETURN(auto id, graph.output_id(i));
       HYLE_RETURN_IF_ERROR(describe(id));
@@ -190,6 +195,9 @@ Result<std::shared_ptr<const Plan>> compile_plan(const Graph &graph, Environment
       physical.resize(graph.value_count());
       Vector<ConstantBinding> constants{mem::StdAllocator<ConstantBinding>(allocator)};
       std::vector<compute::vulkan::Tensor> native_constants;
+      Vector<EffectResourceBinding> effects{mem::StdAllocator<EffectResourceBinding>(allocator)};
+      Vector<EffectResourceId> resources{mem::StdAllocator<EffectResourceId>(allocator)};
+      resources.resize(graph.effect_resource_count());
       detail::Fragment fragment(allocator);
       fragment.target = target;
       std::size_t node_count = 0;
@@ -231,6 +239,23 @@ Result<std::shared_ptr<const Plan>> compile_plan(const Graph &graph, Environment
         }
         HYLE_ASSIGN_OR_RETURN(const auto &operation, graph.operation(node));
         HYLE_ASSIGN_OR_RETURN(auto local_node, builder.add_node(operation, arguments));
+        HYLE_ASSIGN_OR_RETURN(auto resource_count, graph.node_resource_count(node));
+        Vector<EffectResourceId> ports{mem::StdAllocator<EffectResourceId>(allocator)};
+        for (std::size_t port = 0; port < resource_count; ++port) {
+          HYLE_ASSIGN_OR_RETURN(auto original, graph.node_resource(node, port));
+          auto &local = resources[original.ordinal()];
+          if (!local.valid()) {
+            HYLE_ASSIGN_OR_RETURN(local, builder.effect_resource());
+            const auto binding = std::ranges::find_if(plan->effect_bindings,
+                [&](const auto &entry) { return entry.resource == original; });
+            if (binding == plan->effect_bindings.end())
+              return std::unexpected(Status::Internal("preflight effect footprint is missing"));
+            effects.push_back({local, binding->footprint});
+          }
+          ports.push_back(local);
+        }
+        if (!ports.empty()) HYLE_RETURN_IF_ERROR(builder.bind_resources(local_node, ports));
+
         HYLE_ASSIGN_OR_RETURN(auto output_count, graph.node_output_count(node));
         Vector<compute::TensorDesc> output_descriptions{mem::StdAllocator<compute::TensorDesc>(allocator)};
         output_descriptions.resize(output_count);
@@ -256,7 +281,7 @@ Result<std::shared_ptr<const Plan>> compile_plan(const Graph &graph, Environment
       FragmentReport facts{.target = target, .node_count = node_count};
       if (target == kCpuTarget) {
         HYLE_ASSIGN_OR_RETURN(auto compiled, graph::compile(native_graph, *environment.cpu,
-            {.constants = constants, .resource_budget = plan->budget, .workload = plan->workload}));
+            {.constants = constants, .resource_budget = plan->budget, .effect_bindings = effects, .workload = plan->workload}));
         fragment.cpu = std::move(compiled.executable);
         facts.cpu = std::move(compiled.report);
         if (fragment.cpu.workspace_bytes() > environment.host_workspace_budget_bytes - plan->host_workspace_bytes)

@@ -218,7 +218,7 @@ static Result<ca::Program> compile_impl(const ca::Context &context,
   if (!context || !graph || graph.output_count() == 0)
     return std::unexpected(Status::InvalidArgument(
         "Apple Graph needs a Context and published outputs"));
-  if (graph.dimension_count() != 0 || graph.effect_resource_count() != 0)
+  if (graph.dimension_count() != 0)
     return std::unexpected(
         Status::Unimplemented("Apple Graph admits fixed, pure regions only"));
   if (constants.size() != graph.constant_count())

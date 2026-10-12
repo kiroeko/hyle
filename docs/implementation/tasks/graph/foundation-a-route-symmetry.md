@@ -21,7 +21,8 @@
 - non-goals：F4/F5 产品代码、全引擎、自动 placer、运行时 JIT、padding/general 伪覆盖、
   新数学/copy kernel、万能 Queue、公共验证/构建/性能工具重写、重开 F1–F3。
 - 依赖：既有 Graph/Compute/Mem/Sched 与锁定 MLX/ggml/IREE；不升级依赖。
-  直接消费者：原 native 与 CPU+Apple/Vulkan 的普通 Graph consumers，CPU+CUDA 仅作合同比较。
+  直接消费者：原 native 与三 CPU hybrid 普通 Graph consumers；CPU+CUDA 新入口沿
+  [独立有限卡](foundation-a-cpu-cuda-variants.md)实施。
 - 性能：P0，检查冷表与 warm 路径、复制/等待/私有成本；本卡不运行 P1 或全算子目录。
 - 机器：Windows CPU/CUDA/Vulkan，WSL CPU/CUDA 与 sanitizer，Air Apple/Vulkan/CPU；
   Apple 运行前核对真实身份，仅 MacBook Air。WSL 软件 Vulkan 仅构建与包证据。
@@ -86,7 +87,7 @@ source/static/shared 使用同一 typed entry；公开新头归 Graph；文档�
 | A-01 | 共用既有静态合法性与身份，保留 native artifact/owner | 已接线；共同39项与 Win Vulkan/Air Apple source PASS；其他格待验 |
 | A-02 | 冷有限 exact artifact 表与创建时 coverage 拒绝、独立 slots | 已接线；Win Vulkan/Air Apple native+hybrid PASS；CPU+CUDA新表入口/三交付待验 |
 | A-03 | 真实 pure control liveness/顺序与禁止等待裁决 | 已接线；Win Vulkan/Air Apple native+hybrid PASS；完整风险/三交付待验 |
-| A-04 | 真实支持 effect 的端口/权限/alias；其余明确拒绝与旧结果合同 | UNPROVEN |
+| A-04 | 真实支持 effect 的端口/权限/alias；其余明确拒绝与旧结果合同 | CPU岛已接线；Win Vulkan公开consumer/内部8项PASS；Apple/完整风险/交付待验 |
 
 ## Gate
 
@@ -127,3 +128,10 @@ CPU hybrid 的 exact/control/旧槽结果数学 PASS，真实可用内存7GiB �
 这不代签 Apple 的全部失败/取消及 installed 交付。CPU+CUDA 保持原 compiler/公开路线，本轮新 finite-only table 的
 自然入口仍需纳入实际 owner 审计。A-04 尤其需要 CPU 岛上的原 effect/footprint 接线资格，
 不能把所有 native effects 的明确拒绝写成四路线整体对称完成。F4/F5 尚未启动产品施工。
+
+第二批：共同 effect footprint 校验提取后保持原 SmallVector0 容量与常态分配形状；CPU+Vulkan
+实际 write→GPU math→read、跨片段alias拒绝及七项原 effects/OOM 用例8/8 PASS。仅公开头的
+consumer 同样通过正常/接受后失败、zero-output effect 与 close 后 old native result。
+CPU+CUDA finite-only factory 两个形状/表外拒绝/真实 CPU→GPU→host math/旧 result 及错误
+family-wide quota 拒绝 PASS。unused resource 声明按实际 node ports 判定，不虚构 effect。
+共同最终40 tests PASS。所有记录仍为 AUDITED 实施检查点，原 failures/预算累计保留。

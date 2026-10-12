@@ -509,6 +509,8 @@ Status Invocation::bind(ValueId id, compute::ConstTensorView tensor) noexcept {
   if (!tensor.valid() || tensor.description() != run.plan->values[index].description ||
       !tensor.storage().resource().properties().has(mem::MemoryProperty::kHostAccessible))
     return Status::InvalidArgument("CPU+Vulkan host input description/storage differs");
+  HYLE_RETURN_IF_ERROR(graph::detail::validate_effect_tensor_alias(
+      run.plan->effect_bindings, tensor.storage()));
   auto &value = run.values[index];
   value.host_input = tensor;
   value.native_input.reset(); value.weight.reset();
@@ -521,6 +523,8 @@ Status Invocation::bind(ValueId id, const cv::Tensor &array) noexcept {
   HYLE_RETURN_IF_ERROR(admit(state_));
   auto &run = *state_->run;
   HYLE_ASSIGN_OR_RETURN(auto index, input_index(run, id));
+  if (!run.plan->effect_bindings.empty())
+    return Status::Unimplemented("effect composition requires a checked host footprint for native input alias admission");
   HYLE_RETURN_IF_ERROR(native_input(run.plan->values[index], array));
   HYLE_ASSIGN_OR_RETURN(auto storage, run.plan->environment.device->storage_info(array));
   (void)storage;
@@ -536,6 +540,8 @@ Status Invocation::bind(ValueId id, const ca::WeightBatch &batch, std::uint64_t 
   HYLE_RETURN_IF_ERROR(admit(state_));
   auto &run = *state_->run;
   HYLE_ASSIGN_OR_RETURN(auto index, input_index(run, id));
+  if (!run.plan->effect_bindings.empty())
+    return Status::Unimplemented("effect composition requires a checked host footprint for native weight alias admission");
   HYLE_ASSIGN_OR_RETURN(auto description, batch.description(weight_id));
   if (description != run.plan->values[index].carrier ||
       (run.plan->values[index].cpu_use && description != run.plan->values[index].description))
@@ -552,6 +558,12 @@ Status Invocation::bind(ValueId id, compute::TensorDesc description, compute::Re
   HYLE_RETURN_IF_ERROR(admit(state_));
   auto &run = *state_->run;
   HYLE_ASSIGN_OR_RETURN(auto index, input_index(run, id));
+  HYLE_ASSIGN_OR_RETURN(auto checked, source.view());
+  HYLE_RETURN_IF_ERROR(graph::detail::validate_effect_tensor_alias(
+      run.plan->effect_bindings, checked));
+  if (!run.plan->effect_bindings.empty() &&
+      !checked.resource().properties().has(mem::MemoryProperty::kHostAccessible))
+    return Status::Unimplemented("effect composition requires checked host lease footprint");
   if (!run.leases.valid()) {
     const auto inputs = run.plan->inputs.size(), fragments = run.plan->fragments.size();
     if (inputs > (SIZE_MAX - fragments) / 2) return Status::ResourceExhausted("CPU+Vulkan lease prefix capacity");

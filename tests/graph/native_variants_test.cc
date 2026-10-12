@@ -171,4 +171,17 @@ TEST(NativeReachability, ControlChainKeepsDataAncestorsWithoutRevivingUnrelatedD
   ASSERT_FALSE(oom); EXPECT_TRUE(oom.error().IsResourceExhausted());
   EXPECT_EQ(quota.used(), 0);
 }
+
+TEST(NativeReachability, UnusedResourceDeclarationDoesNotCreateAnEffectCarrier) {
+  auto builder=g::GraphBuilder::create().value();
+  ASSERT_TRUE(builder.effect_resource());
+  auto desc=c::TensorDesc::dense(c::DataType::kFloat32,std::array<std::int64_t,1>{8}).value();
+  auto input=builder.input(desc).value();
+  auto output=builder.add(c::Unary{c::UnaryKind::kNeg},input).value();
+  ASSERT_TRUE(builder.publish(output).ok());
+  auto graph=std::move(builder).finish().value();
+  auto analysis=g::detail::analyze_native_pure(graph);
+  ASSERT_TRUE(analysis);
+  EXPECT_TRUE(analysis->needed[0]);
+}
 } // namespace
