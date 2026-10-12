@@ -34,9 +34,12 @@ compilation_storage 或 invocation_storage 配额，用户需使用已有共享 
 总工作明确为有限表长度乘各点 cap，不叫原 general compiler 的累计搜索 family。
 
 七问：原锁/许可证及 Provider KEEP；主/正交有限 shape 复合 cold glue SELF/BORROW；
-共享求值和执行器；P0 冷 O(V(D+N+E))、选 O(DV)、warm 原 native；C++ typed 无新 FFI；
+共享求值和执行器；P0 冷 O(V(D+N+E)+V²D)、选 O(DV)、warm 原 native；C++ typed 无新 FFI；
 三交付/缺路线/头实际验证待做；指南明示 finite-only、显式预算与原 native 限制。
 
 Win source 首批 PASS：RTX4070 / CUDA13.3，两个有限精确形状、表外拒绝、CPU→CUDA→host
 数学、旧 result 阻止复用，以及不将有限 compiler 配额按点分裂。原 compiler/Queue/Provider
 没有新增执行路径；已通过不代表 WSL/installed/缺席/迁址或最终七门完成。
+
+Candidate：546b0d2468e5de29031c34668f4afa4bc31b9a17；finite typed factory/自然消费者已固定，
+原 budgets 与 failures 保持。剩余适用 WSL/三交付/缺席/迁址及终审需实际证据。

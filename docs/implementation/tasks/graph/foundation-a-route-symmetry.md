@@ -76,7 +76,7 @@ source/static/shared 使用同一 typed entry；公开新头归 Graph；文档�
 所有新增入口回指有限 shape consumer，取消/close/producer 沿原 Invocation，family 不起任务。
 
 七问：依赖锁与许可证沿固定研究 KEEP；功能仅按上表且外部 effects 不伪支持；复用原 Graph
-求值/Compute runtime/F1 owner；P0 冷 O(V(D+N+E))、选择 O(DV)、warm 原 artifact；C++ typed
+求值/Compute runtime/F1 owner；P0 冷 O(V(D+N+E)+V²D)（显式表查重）、选择 O(DV)、warm 原 artifact；C++ typed
 入口无新 FFI；新增公共头及四 factory 三交付需实际验证；guide 要明示 exact-only、等待与
 未知 private 成本。当前均为合同冻结，正确性/交付/红队尚未裁决。
 
@@ -144,3 +144,14 @@ alias_support。新增反例 PASS，共同41/41。纯 control MLX report 不再�
 公开 consumer 增加有界真实 CPU prefix cancellation：等待开始后取消、释放原 accepted callback，
 原写入41保留、GPU/read后继未开始、Cancelled；Win Vulkan PASS。只用测试自己的进度 gate，
 不新增产品 worker/reaper、执行器或回滚。Apple 最终候选同项待验。
+
+## Candidate
+
+product commit：546b0d2468e5de29031c34668f4afa4bc31b9a17。A-01..04 的有限实现与自然消费者
+已接线固定；七 owner 进入 CANDIDATE，correctness/delivery/redteam 的剩余适用格尚未签。
+API 包括共同 exact snapshot/family、三 hybrid 冷入口与 CPU effect footprints；原 native
+程序/Queue、F1–F3、general compiler不变。cold 查重 O(V²D)、表外拒绝、各 slot 原有
+private/managed 成本；warm 无新的 table 搜索/shape JIT/DAG合法性检查。
+本轮共同 helper 未新增线程/全局状态；现有并发框架不变，定向 ASan/UBSan 适用，
+新的 mutable global/shared 并发机制不存在，TSan 不为此重复全库。两槽/取消/旧結果仍有真实旅程门。
+后续只补 immutable 候选证据与说明；产品反例须先退回 AUDITED，预算延续。

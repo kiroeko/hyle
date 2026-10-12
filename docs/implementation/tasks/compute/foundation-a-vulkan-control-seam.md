@@ -47,3 +47,7 @@ control outputs 如实计入现 storage facts，不声称零成本。
 | A-VK-01 | 冷控制端点分片与 forced outputs，原 barriers/完成排序 | control-only 前驱真实执行、失败阻止后继；普通图原分片与 native owners 不变 |
 
 七门均 UNPROVEN，SCOPED 不代表资格。
+
+Candidate：546b0d2468e5de29031c34668f4afa4bc31b9a17。A-VK-01 实现固定，Win native/hybrid
+source 控制前驱/error 数学已签首批事实；Air Vulkan/installed/detail header 的剩余格待验。
+产品修改必须先退回 AUDITED，不以文档/日志提交重置原 budget。

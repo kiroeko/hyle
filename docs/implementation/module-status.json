@@ -281,9 +281,10 @@
     },
     {
       "module": "graph",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/graph/foundation-a-route-symmetry.md",
-      "summary": "Foundation A AUDITED：A-01..04 与冷精确 specialization/有限 native variants、control 活性和真实 native ordering 合同已冻结；仅有限 owner 实施，验证未裁决。"
+      "summary": "Foundation A CANDIDATE：有限 exact/control/qualified CPU effects 实现与自然消费者固定；已有定向 source 事实，剩余适用 sanitizer/交付/红队尚待裁决，原失败预算保留。",
+      "candidate": "546b0d2468e5de29031c34668f4afa4bc31b9a17"
     },
     {
       "module": "container_concurrent",
@@ -523,21 +524,24 @@
     },
     {
       "module": "graph_route_apple",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/graph/foundation-a-route-symmetry.md",
-      "summary": "Foundation A AUDITED：A-01..04 与冷精确 specialization/有限 native variants、control 活性和真实 native ordering 合同已冻结；仅有限 owner 实施，验证未裁决。"
+      "summary": "Foundation A CANDIDATE：有限 exact/control/qualified CPU effects 实现与自然消费者固定；已有定向 source 事实，剩余适用 sanitizer/交付/红队尚待裁决，原失败预算保留。",
+      "candidate": "546b0d2468e5de29031c34668f4afa4bc31b9a17"
     },
     {
       "module": "compute_route_vulkan",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/compute/foundation-a-vulkan-control-seam.md",
-      "summary": "Foundation A Vulkan control seam AUDITED：有限 A-VK-01，冷控制端点分片与物化输出复用原 native barriers/完成；验证尚未裁决。"
+      "summary": "Foundation A CANDIDATE：有限 exact/control/qualified CPU effects 实现与自然消费者固定；已有定向 source 事实，剩余适用 sanitizer/交付/红队尚待裁决，原失败预算保留。",
+      "candidate": "546b0d2468e5de29031c34668f4afa4bc31b9a17"
     },
     {
       "module": "graph_route_vulkan",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/graph/foundation-a-route-symmetry.md",
-      "summary": "Foundation A AUDITED：A-01..04 与冷精确 specialization/有限 native variants、control 活性和真实 native ordering 合同已冻结；仅有限 owner 实施，验证未裁决。"
+      "summary": "Foundation A CANDIDATE：有限 exact/control/qualified CPU effects 实现与自然消费者固定；已有定向 source 事实，剩余适用 sanitizer/交付/红队尚待裁决，原失败预算保留。",
+      "candidate": "546b0d2468e5de29031c34668f4afa4bc31b9a17"
     },
     {
       "module": "compute_provider_ggml_vulkan",
@@ -630,21 +634,24 @@
     },
     {
       "module": "graph_route_cpu_cuda",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/graph/foundation-a-cpu-cuda-variants.md",
-      "summary": "Foundation A CPU+CUDA AUDITED：A-CUDA-01 复用共同有限表与原 compiler；有限 storage 配额不假报 family 总账，资格尚未裁决。"
+      "summary": "Foundation A CANDIDATE：有限 exact/control/qualified CPU effects 实现与自然消费者固定；已有定向 source 事实，剩余适用 sanitizer/交付/红队尚待裁决，原失败预算保留。",
+      "candidate": "546b0d2468e5de29031c34668f4afa4bc31b9a17"
     },
     {
       "module": "graph_route_cpu_apple",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/graph/foundation-a-route-symmetry.md",
-      "summary": "Foundation A AUDITED：A-01..04 与冷精确 specialization/有限 native variants、control 活性和真实 native ordering 合同已冻结；仅有限 owner 实施，验证未裁决。"
+      "summary": "Foundation A CANDIDATE：有限 exact/control/qualified CPU effects 实现与自然消费者固定；已有定向 source 事实，剩余适用 sanitizer/交付/红队尚待裁决，原失败预算保留。",
+      "candidate": "546b0d2468e5de29031c34668f4afa4bc31b9a17"
     },
     {
       "module": "graph_route_cpu_vulkan",
-      "state": "AUDITED",
+      "state": "CANDIDATE",
       "record": "docs/implementation/tasks/graph/foundation-a-route-symmetry.md",
-      "summary": "Foundation A AUDITED：A-01..04 与冷精确 specialization/有限 native variants、control 活性和真实 native ordering 合同已冻结；仅有限 owner 实施，验证未裁决。"
+      "summary": "Foundation A CANDIDATE：有限 exact/control/qualified CPU effects 实现与自然消费者固定；已有定向 source 事实，剩余适用 sanitizer/交付/红队尚待裁决，原失败预算保留。",
+      "candidate": "546b0d2468e5de29031c34668f4afa4bc31b9a17"
     },
     {
       "module": "compute_stream",
