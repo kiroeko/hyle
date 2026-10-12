@@ -55,6 +55,10 @@ inline Result<NativeAnalysis> analyze_native_pure(
         result.needed[i - 1] |= live[value.ordinal()];
       }
       if (!result.needed[i - 1]) continue;
+      if (traits.alias == compute::AliasPolicy::kMustAliasInput0 &&
+          operation.kind() != compute::OperationKind::kView &&
+          (cpu_nodes.empty() || !cpu_nodes[i - 1]))
+        return std::unexpected(Status::Unimplemented("native custom schema has no qualified mandatory alias carrier"));
       HYLE_ASSIGN_OR_RETURN(count, graph.node_input_count(node));
       for (std::size_t port = 0; port < count; ++port) {
         HYLE_ASSIGN_OR_RETURN(auto value, graph.node_input(node, port));

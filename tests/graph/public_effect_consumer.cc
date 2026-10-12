@@ -9,7 +9,10 @@
 #include <hyle/sched/scheduler.h>
 
 #include <array>
+#include <atomic>
+#include <chrono>
 #include <cstdio>
+#include <thread>
 
 namespace {
 namespace c=hyle::compute;
@@ -29,6 +32,7 @@ Status require(bool value,const char *message){return value?Status::Ok():Status:
 // Consumer-owned resource operation, not a HYLE mathematical/copy kernel.
 // The immutable schema owns its exact action; the explicit footprint declares
 // the external memory it really touches. Caller keeps that backing alive.
+struct Gate { std::atomic<int> phase{0}; };
 struct Touch {
   static constexpr c::OperationId operation_id{0x464f554e44415449ULL,0x4f4e2d4546464543ULL};
   static constexpr std::string_view operation_name="consumer-resource-touch";
@@ -36,6 +40,7 @@ struct Touch {
   std::int32_t *observed=nullptr;
   bool write=false;
   bool fail=false;
+  Gate *gate=nullptr;
   c::OperationTraits operation_traits()const noexcept{
     return {.effect=c::EffectKind::kResourceAccess,.materializes=false,
             .resource_count=static_cast<std::uint8_t>(write?1:2)};
@@ -59,6 +64,11 @@ struct ResourceKernel {
       std::span<const c::TensorView> outputs)const noexcept{
     if(!inputs.empty()||!outputs.empty())return c::KernelCommandResult::rejected(Status::InvalidArgument("touch ports"));
     if(action.write)*action.state=41;else *action.observed=*action.state;
+    if(action.gate){
+      int idle=0;
+      if(action.gate->phase.compare_exchange_strong(idle,1))
+        while(action.gate->phase.load()==1)action.gate->phase.wait(1);
+    }
     return c::KernelCommandResult::accepted_command(action.fail?Status::DataLoss("accepted consumer write failed"):Status::Ok());
   }
 };
@@ -103,12 +113,13 @@ Status run(){
   HYLE_ASSIGN_OR_RETURN(auto input_storage,m::Buffer::create(m::system_resource(),4,64));
   const std::array<float,1> value{3};HYLE_RETURN_IF_ERROR(input_storage.view().write(std::as_bytes(std::span(value))));
   HYLE_ASSIGN_OR_RETURN(auto input_tensor,c::ConstTensorView::create(desc,input_storage.view()));
-  for(bool fail:{false,true}){
+  for(int scenario:{0,1,2}){
+    const bool fail=scenario==1;Gate gate;
     *word=7;observed=-1;
     HYLE_ASSIGN_OR_RETURN(auto builder,g::GraphBuilder::create());
     HYLE_ASSIGN_OR_RETURN(auto resource,builder.effect_resource());
     HYLE_ASSIGN_OR_RETURN(auto observation,builder.effect_resource());
-    HYLE_ASSIGN_OR_RETURN(auto write,builder.add_node(c::Operation::custom(Touch{word,&observed,true,fail}),{}));
+    HYLE_ASSIGN_OR_RETURN(auto write,builder.add_node(c::Operation::custom(Touch{word,&observed,true,fail,scenario==2?&gate:nullptr}),{}));
     HYLE_RETURN_IF_ERROR(builder.bind_resources(write,std::array{resource}));
     HYLE_ASSIGN_OR_RETURN(auto input,builder.input(desc));
     HYLE_ASSIGN_OR_RETURN(auto middle,builder.add_node(c::Operation(c::Unary{c::UnaryKind::kNeg}),std::array{input}));
@@ -125,8 +136,24 @@ Status run(){
     HYLE_ASSIGN_OR_RETURN(auto alias,c::ConstTensorView::create(desc,state.view()));
     HYLE_RETURN_IF_ERROR(require(slot.bind(input,alias).IsInvalidArgument(),"cross-fragment effect alias admitted"));
     HYLE_RETURN_IF_ERROR(slot.bind(input,input_tensor));HYLE_RETURN_IF_ERROR(slot.prepare_replay());
-    auto result=slot.run();
-    if(fail){HYLE_RETURN_IF_ERROR(require(!result&&result.error().IsDataLoss()&&*word==41&&observed==-1,"accepted effect prefix or failure propagation differs"));}
+    auto result=[&]() -> Result<c::ResultLease<b::Results>> {
+      if(scenario!=2)return slot.run();
+      HYLE_ASSIGN_OR_RETURN(auto submitted,slot.submit());
+      const auto deadline=std::chrono::steady_clock::now()+std::chrono::seconds(2);
+      while(gate.phase.load()==0&&std::chrono::steady_clock::now()<deadline)std::this_thread::yield();
+      if(gate.phase.load()!=1){
+        gate.phase.store(2);gate.phase.notify_all();
+        (void)submitted.request_cancel();(void)submitted.wait();
+        return std::unexpected(Status::DeadlineExceeded("consumer CPU prefix did not start"));
+      }
+      auto cancel=submitted.request_cancel();
+      gate.phase.store(2);gate.phase.notify_all();
+      if(!cancel.ok())return std::unexpected(cancel);
+      return submitted.wait();
+    }();
+    if(scenario==2){HYLE_RETURN_IF_ERROR(require(!result&&result.error().IsCancelled()&&*word==41&&observed==-1,
+        "cancelled CPU prefix did not retire before suppressing successors"));}
+    else if(fail){HYLE_RETURN_IF_ERROR(require(!result&&result.error().IsDataLoss()&&*word==41&&observed==-1,"accepted effect prefix or failure propagation differs"));}
     else{
       if(!result)return result.error();
       HYLE_RETURN_IF_ERROR(require(*word==41&&observed==41&&!slot.reset().ok(),"successful effect order or old result guard differs"));

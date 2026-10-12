@@ -1,0 +1,13 @@
+[0/2] Re-checking globbed directories...
+[1/11] Performing build step for 'vulkan-shaders-gen'
+ninja: no work to do.
+[2/11] Performing install step for 'vulkan-shaders-gen'
+-- Up-to-date: C:/h7/w-cpu-vulkan/selected-graph/source-build/Release/vulkan-shaders-gen.exe
+[3/11] Completed 'vulkan-shaders-gen'
+[4/11] Building CXX object hyle\src\graph_route_vulkan\CMakeFiles\hyle_graph_route_vulkan.dir\vulkan_lowering.cc.obj
+[5/11] Linking CXX shared library hyle\src\graph_route_vulkan\hyle_graph_route_vulkan.dll
+[6/11] Building CXX object hyle\src\graph_route_cpu_vulkan\CMakeFiles\hyle_graph_route_cpu_vulkan.dir\compile.cc.obj
+[7/11] Linking CXX shared library hyle\src\graph_route_cpu_vulkan\hyle_graph_route_cpu_vulkan.dll
+[8/11] C:\WINDOWS\system32\cmd.exe /C "cd /D C:\h7\w-cpu-vulkan\selected-graph\source-build && "C:\Program Files\CMake\bin\cmake.exe" -P C:/h7/w-cpu-vulkan/selected-graph/source-build/hyle-runtime/hyle_foundation_a_public_effects-Release.cmake"
+[9/11] Building CXX object CMakeFiles\hyle_foundation_a_public_effects.dir\C_\public\project-hyle\hyle\tests\graph\public_effect_consumer.cc.obj
+[10/11] Linking CXX executable hyle_foundation_a_public_effects.exe

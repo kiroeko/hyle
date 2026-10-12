@@ -184,4 +184,28 @@ TEST(NativeReachability, UnusedResourceDeclarationDoesNotCreateAnEffectCarrier) 
   ASSERT_TRUE(analysis);
   EXPECT_TRUE(analysis->needed[0]);
 }
+
+struct MandatoryAlias {
+  static constexpr c::OperationId operation_id{0x464f554e44415449ULL,0x414c494153544553ULL};
+  static constexpr std::string_view operation_name="mandatory-alias-test";
+  c::OperationTraits operation_traits()const noexcept {
+    return {.inputs={1,1},.outputs=1,.alias=c::AliasPolicy::kMustAliasInput0,.materializes=false};
+  }
+  hyle::Status infer_output_descriptions(std::span<const c::TensorDesc> inputs,std::span<c::TensorDesc> outputs)const noexcept {
+    if(inputs.size()!=1||outputs.size()!=1)return hyle::Status::InvalidArgument("alias test arity");
+    outputs[0]=inputs[0];return hyle::Status::Ok();
+  }
+};
+TEST(NativeReachability, MandatoryCustomAliasNeedsNativeQualificationWhileCpuKeepsOriginalAdmission) {
+  auto builder=g::GraphBuilder::create().value();
+  auto desc=c::TensorDesc::dense(c::DataType::kFloat32,std::array<std::int64_t,1>{8}).value();
+  auto input=builder.input(desc).value();
+  auto output=builder.add(c::Operation::custom(MandatoryAlias{}),input).value();
+  ASSERT_TRUE(builder.publish(output).ok());
+  auto graph=std::move(builder).finish().value();
+  auto native=g::detail::analyze_native_pure(graph);
+  ASSERT_FALSE(native);EXPECT_TRUE(native.error().IsUnimplemented());
+  const std::array<std::uint8_t,1> cpu{1};
+  EXPECT_TRUE(g::detail::analyze_native_pure(graph,m::system_allocator(),cpu));
+}
 } // namespace

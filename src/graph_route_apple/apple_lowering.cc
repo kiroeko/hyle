@@ -371,12 +371,13 @@ static Result<ca::Program> compile_impl(const ca::Context &context,
         [](const auto &node) { return node.control_boundary; });
     if (has_native_model_region || has_control) {
       if (report != nullptr) {
-        report->implementation_policy =
-            "Original ggml Metal model regions and maximal MLX "
-            "compiled regions; fixed cold binding";
-        report->numerical_policy +=
-            "; provider-owned GGUF MatMul/grouped expert/checked embedding and mHC/recurrent "
-            "F32 regions, explicit non-mutating initial/final state";
+        report->implementation_policy = has_native_model_region
+            ? "Original ggml Metal model regions and maximal MLX compiled regions; fixed cold binding"
+            : "Original MLX compiled regions split at explicit control endpoints; fixed cold binding";
+        if (has_native_model_region)
+          report->numerical_policy +=
+              "; provider-owned GGUF MatMul/grouped expert/checked embedding and mHC/recurrent "
+              "F32 regions, explicit non-mutating initial/final state";
         report->boundary_policy +=
             "; checked host completion at runtime boundaries; native MTLBuffer "
             "import; strided inputs use original MLX contiguous copy";

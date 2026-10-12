@@ -135,3 +135,12 @@ consumer 同样通过正常/接受后失败、zero-output effect 与 close 后 o
 CPU+CUDA finite-only factory 两个形状/表外拒绝/真实 CPU→GPU→host math/旧 result 及错误
 family-wide quota 拒绝 PASS。unused resource 声明按实际 node ports 判定，不虚构 effect。
 共同最终40 tests PASS。所有记录仍为 AUDITED 实施检查点，原 failures/预算累计保留。
+
+## 候选前红队事实
+
+独立一遍定向源码反证发现 Apple 未裁决 mandatory-alias custom，而 Vulkan 已拒绝；
+共同 NativeAnalysis 现在只对活 GPU custom 的未资格 must-alias 拒绝，CPU 交给原 artifact
+alias_support。新增反例 PASS，共同41/41。纯 control MLX report 不再声称实际含 ggml model region。
+公开 consumer 增加有界真实 CPU prefix cancellation：等待开始后取消、释放原 accepted callback，
+原写入41保留、GPU/read后继未开始、Cancelled；Win Vulkan PASS。只用测试自己的进度 gate，
+不新增产品 worker/reaper、执行器或回滚。Apple 最终候选同项待验。
