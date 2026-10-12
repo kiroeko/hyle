@@ -11,6 +11,7 @@
 #include <chrono>
 #include <cstdio>
 #include <future>
+#include <thread>
 #include <utility>
 
 namespace {
@@ -47,7 +48,7 @@ struct Decorator final {
   }
   ~Decorator(){context->backend_vtable=original;active=nullptr;}
 };
-Status run(bool wait_observation){
+Status run(bool wait_observation,bool close_before_retirement=true){
   std::puts("F5 phase: context/input preparation");
   hyle::mem::QuotaAllocator metadata(hyle::mem::system_allocator());
   {
@@ -62,8 +63,20 @@ Status run(bool wait_observation){
     HYLE_ASSIGN_OR_RETURN(auto done,prepared.run(inputs));
     const bool unknown=wait_observation?!done.wait().ok():!done.poll();
     HYLE_RETURN_IF_ERROR(require(unknown && invocation.in_flight() && !invocation.output(),"unknown observation lost F5 native guards/output gate"));
-    HYLE_RETURN_IF_ERROR(invocation.request_cancel());HYLE_RETURN_IF_ERROR(require(!invocation.close().ok(),"close claimed blocked CUDA work had retired"));
+    if(close_before_retirement){HYLE_RETURN_IF_ERROR(invocation.request_cancel());HYLE_RETURN_IF_ERROR(require(!invocation.close().ok(),"close claimed blocked CUDA work had retired"));}
     done={};prepared={};
+    if(!close_before_retirement){
+      gate.release();HYLE_RETURN_IF_ERROR(cu::status(cudaStreamSynchronize(gate.stream)));
+      const auto deadline=std::chrono::steady_clock::now()+std::chrono::seconds(5);
+      while(invocation.in_flight() && std::chrono::steady_clock::now()<deadline)std::this_thread::sleep_for(std::chrono::milliseconds(1));
+      HYLE_RETURN_IF_ERROR(require(!invocation.in_flight() && pool.stats().active_uses==0,"unknown native prefix did not actually retire"));
+      auto retry=invocation.prepare_batch(layout);
+      while(!retry && retry.error().IsUnavailable() && std::chrono::steady_clock::now()<deadline){std::this_thread::sleep_for(std::chrono::milliseconds(1));retry=invocation.prepare_batch(layout);}
+      const bool rejected=!retry && retry.error().IsFailedPrecondition();
+      std::printf("F5 unknown retired open slot prepare rejected=%d\n",rejected);if(retry)*retry={};invocation.drain().IgnoreError();invocation={};HYLE_RETURN_IF_ERROR(context.drain());
+      HYLE_RETURN_IF_ERROR(require(rejected,"unknown failed native slot reused after actual retirement"));
+      std::puts("F5 actual CUDA unknown open-slot/no-reuse/actual-retirement PASS");
+    }else{
     std::puts("F5 phase: observe drain before releasing real CUDA prefix");
     std::promise<void> started;auto entered=started.get_future();
     auto drained=std::async(std::launch::async,[&]{started.set_value();return invocation.drain();});entered.get();
@@ -76,8 +89,9 @@ Status run(bool wait_observation){
     invocation={};HYLE_RETURN_IF_ERROR(context.drain());
     HYLE_RETURN_IF_ERROR(require(waited,"F5 drain returned before real CUDA prefix retirement"));HYLE_RETURN_IF_ERROR(require(held && !terminal.ok() && retired,"F5 actual retirement/first error contract differs"));HYLE_RETURN_IF_ERROR(require(closed,"failed/closed F5 slot published or reused"));
     std::printf("F5 actual CUDA unknown %s/cancel/close/drain/guards/no-publication PASS\n",wait_observation?"wait":"poll");
+    }
   }
   return require(metadata.used()==0,"F5 fault native ownership metadata leaked");
 }
 }
-int main(){std::setvbuf(stdout,nullptr,_IONBF,0);for(bool wait_observation:{false,true}){const auto status=run(wait_observation);if(!status.ok()){char text[768]{};status.ToString(text,sizeof(text));std::fprintf(stderr,"F5 fault: %s\n",text);return 1;}}return 0;}
+int main(){std::setvbuf(stdout,nullptr,_IONBF,0);for(unsigned episode=0;episode<3;++episode){const auto status=run(episode==1,episode!=2);if(!status.ok()){char text[768]{};status.ToString(text,sizeof(text));std::fprintf(stderr,"F5 fault: %s\n",text);return 1;}}return 0;}

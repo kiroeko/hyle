@@ -183,6 +183,9 @@ Result<PreparedBatch> BatchInvocation::prepare(const BatchLayoutVersion&layout,b
   auto&s=*data_;
   if(!s.program->schema.owns(layout))return std::unexpected(Status::InvalidArgument("batch layout belongs to another schema"));
   if(s.tickets || in_flight() || !s.completion.available())return std::unexpected(Status::Unavailable("batch slot has a live ticket/native work/old completion"));
+  // Native callbacks publish terminal before releasing pending. Check only
+  // after actual retirement; an observation error must never reset the slot.
+  if(!s.terminal.ok()){s.failed=true;return std::unexpected(Status::FailedPrecondition("batch invocation native terminal failed"));}
   if(s.output_ready.valid() && !d::LeaseAccess::unique_read_owner(s.output_ready))return std::unexpected(Status::Unavailable("old batch output prevents slot overwrite"));
   if(s.epoch==UINT64_MAX)return std::unexpected(Status::OutOfRange("batch slot epoch exhausted"));
   if(s.output_ready.valid()){HYLE_ASSIGN_OR_RETURN(s.output,s.output_ready.try_write());}

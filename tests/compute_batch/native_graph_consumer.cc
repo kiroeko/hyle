@@ -4,16 +4,18 @@
 #include <hyle/graph/batch.h>
 #include "native_arena_graph_consumer.h"
 #include "native_ragged_graph_append_consumer.h"
+#include "native_graph_faults.h"
 namespace {
 namespace g=hyle::graph;namespace gb=g::batch;
-template<class T>Status graph_case(bool paged,unsigned depth,bool large){
+template<class T>Status graph_case(bool paged,unsigned depth,bool large,unsigned fault=0){
   hyle::mem::QuotaAllocator metadata(hyle::mem::system_allocator());
   {
     const unsigned n1=large?8193:19,n2=large?4097:10,refs1=(n1+15)/16,refs2=(n2+15)/16;
     c::BatchCapacity cap{.storage=paged?c::BatchStorage::kPaged:c::BatchStorage::kRagged,.data_type=std::is_same_v<T,half>?c::DataType::kFloat16:c::DataType::kBFloat16,
       .max_requests=2,.max_query_rows=3,.max_kv_rows=n1+n2,.max_pages=paged?refs1+refs2+1:0,.max_page_refs=paged?refs1+refs2:0,.query_heads=4,.kv_heads=2,.head_dim=depth,.page_size=paged?16u:1u};
     HYLE_ASSIGN_OR_RETURN(auto schema,c::BatchSchema::create(cap,{.allocator=metadata.get()}));
-    HYLE_ASSIGN_OR_RETURN(auto wrapped,gb::provider(c::flashinfer::provider(),schema,{.max_float_workspace_bytes=8u*1024u*1024u,.max_int_workspace_bytes=64u*1024u,.scale=1.f/std::sqrt(float(depth)),.allocator=metadata.get()}));
+    hyle_f5_graph_fault_fixture::RunDecorator region_runs(c::flashinfer::provider());
+    HYLE_ASSIGN_OR_RETURN(auto wrapped,gb::provider(region_runs.provider(),schema,{.max_float_workspace_bytes=8u*1024u*1024u,.max_int_workspace_bytes=64u*1024u,.scale=1.f/std::sqrt(float(depth)),.allocator=metadata.get()}));
     HYLE_ASSIGN_OR_RETURN(auto device_id,cu::device(0));HYLE_ASSIGN_OR_RETURN(auto context,c::Context::create(device_id,wrapped));HYLE_ASSIGN_OR_RETURN(auto queue,context.create_queue());
     HYLE_ASSIGN_OR_RETURN(auto device,cu::MemoryResource::create(context,cu::MemoryKind::kDevice));HYLE_ASSIGN_OR_RETURN(auto host,cu::MemoryResource::create(context,cu::MemoryKind::kPinnedHost));
     struct DrainBeforeResources{c::Context&context;~DrainBeforeResources(){context.drain().IgnoreError();}}drain_before_resources{context};
@@ -45,6 +47,42 @@ template<class T>Status graph_case(bool paged,unsigned depth,bool large){
       std::vector<T> first_values(q.size());HYLE_RETURN_IF_ERROR(first.view()->read(std::as_writable_bytes(std::span(first_values))));HYLE_ASSIGN_OR_RETURN(auto result,slot.output(second_output));HYLE_ASSIGN_OR_RETURN(auto second_lease,result.storage_lease());return oracle(first_values,k,v,version,cap,second_lease);
     };
     const std::array first_layouts{gb::NodeLayout{node,layout},gb::NodeLayout{second_node,layout}};
+    if(fault){
+      using hyle_f5_graph_fault_fixture::Decorator;using hyle_f5_graph_fault_fixture::Gate;
+      std::printf("F5 Graph fault episode=%u preparation\n",fault);
+      if(fault<=4){
+        Decorator decoration(context,fault);
+        const auto rejected=invocation.prepare_batch(first_layouts,false);
+        HYLE_RETURN_IF_ERROR(require(rejected.IsUnavailable() && decoration.count==fault,"Graph accepted preparation prefix failure did not stop/propagate"));
+        HYLE_RETURN_IF_ERROR(require(!invocation.submit() && !invocation.output(output_id),"Graph partial preparation published/submitted mixed metadata"));
+        HYLE_RETURN_IF_ERROR(require(!invocation.prepare_batch(first_layouts).ok(),"Graph failed native preparation accepted an old token retry"));
+        invocation.drain().IgnoreError();
+      }else{
+        HYLE_RETURN_IF_ERROR(invocation.prepare_batch(first_layouts));HYLE_RETURN_IF_ERROR(bind(invocation));
+        if(fault==6){auto warm=invocation.submit();if(!warm)return warm.error();HYLE_RETURN_IF_ERROR(warm->wait());*warm={};HYLE_RETURN_IF_ERROR(invocation.prepare_batch(first_layouts));HYLE_RETURN_IF_ERROR(bind(invocation));}
+        Gate gate;HYLE_ASSIGN_OR_RETURN(gate.stream,cu::stream(queue));
+        region_runs.count=0;region_runs.fail_at=fault==5?1:0;
+        Decorator decoration(context,fault==5?0:1,fault==6?&gate:nullptr);
+        auto submitted=invocation.submit();
+        if(fault==5){
+          Status terminal;if(submitted)terminal=submitted->wait();else terminal=submitted.error();
+          HYLE_RETURN_IF_ERROR(require(terminal.IsUnavailable() && region_runs.count==1,"Graph first region error accepted its dependent suffix/lost first error"));
+          if(submitted)*submitted={};HYLE_RETURN_IF_ERROR(require(!invocation.output(output_id) && !invocation.output(second_output),"Graph failed region published output"));
+          invocation.drain().IgnoreError();
+        }else{
+          HYLE_RETURN_IF_ERROR(require(submitted.has_value(),"Graph unknown fixture failed before accepted prefix"));
+          HYLE_RETURN_IF_ERROR(require(!submitted->poll() && decoration.count==1 && region_runs.count==2,"Graph unknown complete-segment observation differs"));*submitted={};invocation.close().IgnoreError();
+          std::promise<void> started;auto entered=started.get_future();auto drained=std::async(std::launch::async,[&]{started.set_value();return invocation.drain();});entered.get();
+          const bool waited=drained.wait_for(std::chrono::milliseconds(80))==std::future_status::timeout;
+          const bool held=pool.stats().active_uses>0;std::printf("F5 Graph unknown drain waited=%d guards held=%d\n",waited,held);gate.release();const auto terminal=drained.get();
+          HYLE_RETURN_IF_ERROR(require(waited && held && !terminal.ok() && pool.stats().active_uses==0,"Graph unknown drain lost actual prefix retirement/guards/error"));
+          HYLE_RETURN_IF_ERROR(require(!invocation.output(output_id) && !invocation.output(second_output),"Graph unknown episode published output"));
+        }
+      }
+      HYLE_RETURN_IF_ERROR(require(!invocation.prepare_batch(first_layouts).ok(),"Graph failed/closed coordinator reused old token"));
+      HYLE_RETURN_IF_ERROR(context.drain());HYLE_RETURN_IF_ERROR(require(pool.stats().active_uses==0,"Graph fault retained input native uses"));
+      std::printf("F5 Graph fault episode=%u no-mixed-token/no-publication/retirement PASS\n",fault);
+    }else{
     HYLE_RETURN_IF_ERROR(invocation.prepare_batch(first_layouts));HYLE_RETURN_IF_ERROR(bind(invocation));
     HYLE_ASSIGN_OR_RETURN(auto host_metadata,layout.metadata());HYLE_RETURN_IF_ERROR(require(!invocation.bind(inputs[3],descriptions[3],host_metadata).ok(),"caller replaced prepared Graph metadata"));
     HYLE_RETURN_IF_ERROR(require(!invocation.prepare_batch(std::array{gb::NodeLayout{node,layout},gb::NodeLayout{node,layout}}).ok(),"duplicate Graph node layout accepted"));
@@ -62,9 +100,10 @@ template<class T>Status graph_case(bool paged,unsigned depth,bool large){
     current_lease.reset();current.reset();second={};HYLE_RETURN_IF_ERROR(invocation.drain());HYLE_RETURN_IF_ERROR(context.drain());
     HYLE_RETURN_IF_ERROR(require(!invocation.prepare_batch(first_layouts).ok(),"closed Graph coordinator accepted preparation"));
     std::printf("HYLE Graph original region %s %s D%u same-slot/shared-metadata/two-slots/oracle/old-result PASS\n",paged?"paged":"ragged",std::is_same_v<T,half>?"F16":"BF16",depth);
+    }
   }
   const auto end=std::chrono::steady_clock::now()+std::chrono::seconds(5);while(metadata.used()&&std::chrono::steady_clock::now()<end)std::this_thread::sleep_for(std::chrono::milliseconds(1));return require(metadata.used()==0,"Graph batch configuration/slot metadata leaked");
 }
-Status graph_run(bool ragged_only=false){if(!ragged_only){HYLE_RETURN_IF_ERROR(graph_case<half>(true,64,false));HYLE_RETURN_IF_ERROR(graph_case<__nv_bfloat16>(false,128,true));HYLE_RETURN_IF_ERROR(hyle_f5_graph_arena_fixture::run());}return hyle_f5_cuda_ragged_graph_fixture::run();}
+Status graph_run(bool ragged_only=false){if(!ragged_only){for(unsigned fault=1;fault<=6;++fault)HYLE_RETURN_IF_ERROR(graph_case<half>(false,64,false,fault));for(bool paged:{false,true}){HYLE_RETURN_IF_ERROR(graph_case<half>(paged,256,false));HYLE_RETURN_IF_ERROR(graph_case<__nv_bfloat16>(paged,256,false));}HYLE_RETURN_IF_ERROR(graph_case<half>(true,64,false));HYLE_RETURN_IF_ERROR(graph_case<__nv_bfloat16>(false,128,true));HYLE_RETURN_IF_ERROR(hyle_f5_graph_arena_fixture::run());}return hyle_f5_cuda_ragged_graph_fixture::run();}
 } // namespace
 int main(int argc,char**){std::setvbuf(stdout,nullptr,_IONBF,0);const auto status=graph_run(argc>1);if(status.ok())return 0;char text[768]{};status.ToString(text,sizeof(text));std::fprintf(stderr,"F5 Graph: %s\n",text);return 1;}

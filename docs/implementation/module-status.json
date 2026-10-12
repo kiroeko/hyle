@@ -621,7 +621,7 @@
     {
       "module": "compute_batch",
       "state": "AUDITED",
-      "summary": "F5 AUDITED：批准原故障门一次追加180秒并保留TIMEOUT/累计；实际反证后修复native drain等待原uses/pending退役，unknown poll/wait+cancel/close两episode通过，定向common/CPU/Vulkan/CUDA Graph复核通过。其他完整风险/SDK/san/P0/终审未完成。",
+      "summary": "F5 AUDITED：四路线controller/页与ragged实证保留；native Graph四prepare失败/run suffix/unknown退役、D256四域已验；Direct unknown open失败slot反证后加actual退休门后的terminal检查，三episode通过。CPU118 OOM位置通过。其他完整风险/SDK/san/P0/终审未完成。",
       "record": "docs/implementation/tasks/compute/foundation-f5-closure-audit.md"
     },
     {

@@ -10,9 +10,9 @@
 | 原FIX | 当前可证明事实 | 未完成的原完成定义 |
 |---|---|---|
 | F5-01 | common33项/九头：typed capacity/active区、immutable identity/owned host metadata；原native/controller实机同版本mirrors | sanitizer/最终四route交付与完整风险未签 |
-| F5-02 | Linux CUDA真正原FI C++ plan/run、独立slot，short/long split+merge；原native probe覆盖64/128/256 | HYLE adapter/Graph D256实际消费尚需精确核对，不能用raw probe代签；故障门未签 |
-| F5-03 | prepare/update、同shape page/tail更新、KV topology replan、old token/output拒复用、明确copy/wait账 | accepted H2D/plan/run prefix failure/cancel/abandon/unknown/suffix/drain适用项不由正常case代签 |
-| F5-04 | 原v19 region同slot/metadata mirror与original Graph kernel，private native/Gather qualification和CPU/native controllers | 部分准备失败、多region suffix、actual unknown retirement等未验；普通warm成本/P0终审尚未完成 |
+| F5-02 | Linux CUDA真正原FI C++ plan/run、独立slot，short/long split+merge；实际HYLE adapter/Graph D256四域24独立oracle | standalone Direct D256 installed消费及其他风险/交付仍未签，不能用raw probe代签 |
+| F5-03 | prepare/update、同shape page/tail更新、KV topology replan、old token/output拒复用、明确copy/wait账；Graph四个H2D/plan失败、actual run suffix/unknown，Direct open failed slot拒复用已验 | 其他route与producer/partial/abandon/错误组合等完整适用项仍未完成 |
+| F5-04 | 原v19 region同slot/metadata mirror与original Graph kernel，private native/Gather qualification和CPU/native controllers；native partial prepare/region suffix/unknown actual drain已验 | 其他适用组合、普通warm成本/P0终审尚未完成 |
 | F5-05 | four routes Direct/Graph真实paged与ragged F2→F4发布→old/new/old，非uniform/GQA/causal与容量padding成本 | 完整错误/关闭矩阵、guide/正交消费终审尚未签；Windows CUDA native paged仍具名unsupported |
 | F5-06 | 普通source/static/shared初步消费者、新头有限TU、actual native GPU profiles已验 | 原18适用installed SDK格/缺符号/迁址/loader、san、P0/codegen/LOC、guide、分离红队、合法最终closure尚未完成 |
 
@@ -127,3 +127,47 @@ configure300/build1800/consumer180累计；不占用仅OBS-01/DRAIN-01批准的C
 Win MSVC/WERROR与WSL GCC各Direct14/Graph45 caller metadata位置全部ResourceExhausted且
 cleanup归零，共118位置；原实际CPU完整矩阵/精确页/资格/ragged consumer继续PASS。
 没有产品/API改动，原root/config/tree/累计预算保留；不代签provider私有allocation或其他route。
+
+## AUDITED GRAPH-FAIL-01：原native Graph接缝的有限错误组合
+
+baseline23b1e6672，goal恢复active。固定同一短ragged/F16/D64两node依赖Graph：四个
+prepare sequence位置（node1 H2D/plan、node2 H2D/plan）分别在真实accepted prefix之后
+给原finish_sequence追加具名错误，仍由原CUDA event/Completion退役。验证prepare返回
+原错误、清所有token/metadata binding、不能submit混合episode、资源实际释放/quota0。
+第五episode在第一个真实region原BatchProvider run返回accepted EnqueueResult后追加错误，
+由同配置cold Provider table装饰计实际run调用，核原错误、后续region未接纳、无输出、
+closed不可复用与drain。第六episode只在整个segment的region都已接受后插Gate并装饰unknown观察，
+不在后续kernel的prelaunch API之前阻塞；warm相同完整Graph后，核公共观察与token释放/
+close/drain不等于actual退休，Gate前guards保留、后归零、不发布失败输出。
+
+只有test-only backend与same-build cold Provider table观察装饰，原configuration retain/release
+hooks保持；全部原Provider/Graph kernel/F2/event/reaper/F1 use
+保持真实，未加产品测试开关/私有runtime。只现有native Graph consumer及小fixture helper；
+若有反证再固定其实际owner局部FIX，不顺手改公用runtime/工具。沿原
+`foundation-f5-native-graph` root、原config/tree，configure300/build1800/consumer180历史
+累计，六episode串行；不转移CUDA Direct的原TIMEOUT/追加预算。其他route的适用风险仍保留。
+
+实际审计发现原Graph将两个shared regions合并进一个queue sequence；不能用finish次数
+假充region次数。RUN episode改在原BatchProvider run的accepted EnqueueResult处追加错误，
+并计真实run次数；UNKNOWN在完整segment原finish处插Gate。原两次fixture编译FAIL与最初
+错误sequence计数造成的runtime FAIL保留，不因此修改产品。
+
+GRAPH-DOMAIN-01沿同一原Graph门再补D256的paged/ragged×F16/BF16四个短域，实际同一
+BatchProgram/native slots计划与Graph kernels，对原double独立oracle核双node/shared metadata/
+两slot/update/old result。只fixture，原HYLE已准入D256而未签其实际消费；不以raw probe代签，
+不把它写成standalone Direct D256交付证书（该形状仍在后续实际SDK Direct消费核对）。
+
+UNKNOWN-REUSE-01属于原OBS/DRAIN批准范围里的失败slot不可复用验收：Direct现有两episode
+都先cancel/close再drain，不能证明未主动关闭时unknown失败已经实际退休的slot不能prepare。
+追加一个同ragged域episode：unknown poll→释放Completion/token→释放真实Gate并同步原流，
+有限等待actual in_flight清零，然后在仍open Context中尝试prepare；只等Unavailable观察slot
+清理，不把pending当失败证明。必须拒绝失败slot。仍原Direct root累计360秒总上限，未追加
+预算。若runtime反证，固定局部FIX仅在prepare通过实际pending/use/completion门后检查原
+native terminal，令control failed；不在native callback写普通failed flag，避免引入并发数据竞争。
+
+[原生风险定向收据](../../../../evidence/correctness/foundation-f5-native-risk-recheck/README.md)：
+六Graph故障与四D256域24独立oracle通过，原正常/页/ragged消费保留。Direct第三episode实际
+反证consumer-resume16证明open失败slot在actual退休后可重新prepare；局部修复actual门后的
+terminal检查，最终三episode通过，原FAIL/TIMEOUT与197.157/360秒consumer累计保留。
+Win common33项/CPU完整消费与OOM位置/实际Vulkan、WSL Graph定向复核PASS，无API/字段变化。
+本轮完成上述有限门，完整六FIX与其余未验风险/18 installed SDK/san/P0/guide/终审继续。
