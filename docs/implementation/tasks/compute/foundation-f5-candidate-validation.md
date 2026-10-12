@@ -10,6 +10,9 @@ Linux shared SDK新反证使compute_route_cuda单owner退AUDITED，按
 [本次快照](../../../../evidence/architecture/foundation-f5-cuda-link-candidate-scope/owners.json)。
 原六FIX与风险/失败预算不变；新candidate重新裁决受影响package证据，不能先宣称link已PASS。
 
+当前逐能力/风险与七门的有限回映见[最终风险矩阵](foundation-f5-final-risk-matrix.md)。
+它补足当前sanitizer facet/外库限制与未裁决组件门，不改变原完成定义或提前签terminal。
+
 65e配置owned-header反证使compute_route_cuda再次退AUDITED，按同一link卡补实际资格guard
 include，25e4fb398的同root Linux shared普通公开Direct/Graph/D256 SDK已恢复PASS。
 20 owner现统一固定25e，[当前快照](../../../../evidence/architecture/foundation-f5-cuda-link-final-scope/owners.json)
