@@ -2,7 +2,7 @@
 
 ## Closure card
 
-- 状态：SCOPED；owner `compute_provider_ggml_vulkan`，baseline135954d68。
+- 状态：AUDITED；owner `compute_provider_ggml_vulkan`，baseline135954d68。
 - trigger：新真实F5一request、max_query_rows=max_kv_rows=1、Hq=Hkv=2、D64、F16
   reference Direct冷factory触发锁定原ggml.c:3382的`!ggml_is_transposed(a)` fatal。
   原Win Vulkan consumer-resume16 exit3221226505，发生在PFN故障注入前；不能把合法decode
@@ -40,7 +40,7 @@
 交付由F5 SDK格签；原consumer+docs/风险/红队如实验收。API/usability不新增入口，普通
 typed schema的合法unit容量应直接工作，不要求consumer人为增加capacity。
 
-SCOPED阶段尚未改产品；AUDITED后只允许固定下述一个FIX。
+已独立提交SCOPED；当前AUDITED固定下述唯一FIX，源合同核对完成后才实施。
 
 | FIX | 固定改动 | 验收 |
 |---|---|---|

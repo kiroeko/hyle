@@ -486,9 +486,9 @@
     },
     {
       "module": "compute_provider_ggml_vulkan",
-      "state": "SCOPED",
+      "state": "AUDITED",
       "record": "docs/implementation/tasks/compute/foundation-f5-vulkan-degenerate-matmul.md",
-      "summary": "F5具名unit MatMul缺陷SCOPED：真实ragged单query/单KV native Vulkan冷factory触发ggml transposed assert；仅plain right descriptor规范化，旧runtime/量化/其他数学不重开。"
+      "summary": "F5 unit MatMul缺陷AUDITED：冻结UNIT-STRIDE-01，plain right transpose后连续但transposed的unit域借原同形reshape重建stride；原非连续cont/量化/其他数学/runtime与API不变。"
     },
     {
       "module": "compute_ggml_runtime",
