@@ -2,7 +2,8 @@
 
 ## Closure card
 
-- 状态：AUDITED；owner compute_provider_iree_vulkan，baseline176fabcc331f193d9c93d1f525f9798319277762。
+- 状态：CANDIDATE；owner compute_provider_iree_vulkan，baseline176fabcc331f193d9c93d1f525f9798319277762。
+- 固定修复candidate：11c348e404df2c3fc404056ff3a9e885d4d990bc；唯一产品diff为上述两行开关。
 - trigger：actual Air Vulkan F5 TSan消费者原数学通过后IREE wait count异常；
   [具体反证](../../../../evidence/correctness/foundation-f5-native-vulkan-tsan-layout-failure/README.md)
   证明同一公开operation在adapter64字节/runtime56字节，count偏移80/72不同。
@@ -35,3 +36,7 @@
 source与san配置必须匹配、普通SDK投影复用；无新用户API，文档只记录san资格和失败预算。
 实际SCOPED记录已先于产品独立提交；现按原sizeof/offsetof反证固定唯一IRE-TSAN-01，
 完成SCOPED→AUDITED后只实施该开关同步。其余原F5完成定义、失败预算和未裁决门不变。
+
+唯一FIX已在独立AUDITED产品commit完成，现合法冻结CANDIDATE，实际修复后gate待运行。
+原20个F5 owner仍各保25e固定输入，本owner新候选与其组合验证必须明确两份输入映射；
+不能把新增TSan配置改变伪装成所有SDK已经新run或重新取得原预算。
