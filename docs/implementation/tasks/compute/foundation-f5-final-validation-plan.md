@@ -10,7 +10,7 @@
 |---|---|---|
 | F5-01 typed容量/有效区、owned host snapshot/同版本镜像 | common33项九头；native/CPU controllers同版本、两bank更新 | 固定candidate适用san；三交付/负符号；API/字段/codegen终审 |
 | F5-02 原FI native plan/run、独立slots与平台资格 | Linux Direct/Graph、short/long split merge；Graph D256四域24 oracle | installed ordinary CUDA Direct D256；Windows native paged具名unsupported，不用WSL代签 |
-| F5-03 失效/失败/H2D/actual退役 | CUDA Graph四prepare失败/run suffix/unknown；Direct open失败拒复用；Vulkan16 driver错误/unknown及open错误；Apple八queued失败/cancel/abandon | CPU实际错误边界、failed F2 ready→F5/F4不发布、CUDA Direct正常abandon与Graph open失败边界仍逐项核对，未证者不能PASS |
+| F5-03 失效/失败/H2D/actual退役 | CUDA Graph四prepare失败/run suffix/unknown/open错误；Direct open失败及正常public放弃；Vulkan16 driver错误/unknown/open错误；Apple八queued失败/cancel/abandon；CPU actual error与failed F2 ready→F5/F4不发布八episode | 逐项汇总不同风险facet、语义不适用精确说明与san后方可最终裁决；新反证不能藏在既有PASS后 |
 | F5-04 原Graph同slot规划/权限、普通warm不变 | 原region/两slot/共享镜像、native/gather资格拒绝、failure cleanup与实际drain | 普通Graph字段/submit codegen/P0差分；余下风险后才能冻结全部有限FIX |
 | F5-05 native/reference/pending、append/read/version/oracle/cost | 七profile72 ragged episode、四路线paged/F2/F4；明确参考copy/wait/private UNKNOWN | 当前user guide、正交消费核对与完整成本账；不宣称所有route吞吐/capture对称 |
 | F5-06 ordinary三交付、头/缺席/迁址/loader、风险/guide/P0/redteam | 当前source/shared真实native消费者；只公开CPU consumer源码原型及一格provisional static安装消费 | 下表18格完整资格、新头/negative symbols、san/P0/LOC/guide与分离红队；全部适用门证明后合法closure |

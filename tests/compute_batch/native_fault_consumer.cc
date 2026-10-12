@@ -35,20 +35,20 @@ const cd::CompletionVTable observation{
   .wait=[](void*)noexcept{return Status::Unavailable("F5 test observation lacks retirement proof");}
 };
 struct Decorator final {
-  cd::ContextState*context;const cd::BackendVTable*original;cd::BackendVTable table;Gate*gate=nullptr;
+  cd::ContextState*context;const cd::BackendVTable*original;cd::BackendVTable table;Gate*gate=nullptr;bool unknown=true;
   static inline Decorator*active=nullptr;
   explicit Decorator(c::Context&owner):context(cd::ContextAccess::state(owner)),original(context->backend_vtable),table(*original){
     table.finish_sequence=[](void*q,void*sequence,bool accepted,Status terminal)noexcept{
       auto&self=*active;auto*gate=std::exchange(self.gate,nullptr);
       if(gate){HYLE_FATAL_ASSERT(accepted);std::puts("F5 phase: native kernel accepted; installing retirement gate");HYLE_FATAL_ASSERT(cudaLaunchHostFunc(gate->stream,&Gate::wait,gate)==cudaSuccess);}
       auto completed=self.original->finish_sequence(q,sequence,accepted,std::move(terminal));
-      if(!gate)return completed;
+      if(!gate || !self.unknown)return completed;
       auto*state=new UnknownObservation{std::move(completed)};return cd::CompletionAccess::make(&observation,state);
     };active=this;context->backend_vtable=&table;
   }
   ~Decorator(){context->backend_vtable=original;active=nullptr;}
 };
-Status run(bool wait_observation,bool close_before_retirement=true){
+Status run(bool wait_observation,bool close_before_retirement=true,bool unknown_observation=true){
   std::puts("F5 phase: context/input preparation");
   hyle::mem::QuotaAllocator metadata(hyle::mem::system_allocator());
   {
@@ -58,12 +58,12 @@ Status run(bool wait_observation,bool close_before_retirement=true){
     HYLE_ASSIGN_OR_RETURN(auto program,c::BatchProgram::prepare(context,schema,{.resource=device.ref(),.host_workspace=host.ref(),.max_float_workspace_bytes=1u<<20,.max_int_workspace_bytes=64u<<10,.scale=.125f,.allocator=metadata.get()}));HYLE_ASSIGN_OR_RETURN(auto invocation,c::BatchInvocation::create(program,queue));HYLE_ASSIGN_OR_RETURN(auto prepared,invocation.prepare_batch(layout));
     std::puts("F5 phase: warm same native domain");
     HYLE_ASSIGN_OR_RETURN(auto warm,prepared.run(inputs));HYLE_RETURN_IF_ERROR(warm.wait());warm={};prepared={};HYLE_ASSIGN_OR_RETURN(prepared,invocation.prepare_batch(layout));
-    Decorator decorate(context);Gate gate;HYLE_ASSIGN_OR_RETURN(gate.stream,cu::stream(queue));decorate.gate=&gate;
+    Decorator decorate(context);Gate gate;HYLE_ASSIGN_OR_RETURN(gate.stream,cu::stream(queue));decorate.gate=&gate;decorate.unknown=unknown_observation;
     std::puts("F5 phase: submit unknown observation episode");
     HYLE_ASSIGN_OR_RETURN(auto done,prepared.run(inputs));
-    const bool unknown=wait_observation?!done.wait().ok():!done.poll();
+    bool unknown=false;if(unknown_observation)unknown=wait_observation?!done.wait().ok():!done.poll();else{auto pending=done.poll();unknown=pending && *pending==c::CompletionPoll::kPending;}
     HYLE_RETURN_IF_ERROR(require(unknown && invocation.in_flight() && !invocation.output(),"unknown observation lost F5 native guards/output gate"));
-    if(close_before_retirement){HYLE_RETURN_IF_ERROR(invocation.request_cancel());HYLE_RETURN_IF_ERROR(require(!invocation.close().ok(),"close claimed blocked CUDA work had retired"));}
+    if(close_before_retirement && unknown_observation){HYLE_RETURN_IF_ERROR(invocation.request_cancel());HYLE_RETURN_IF_ERROR(require(!invocation.close().ok(),"close claimed blocked CUDA work had retired"));}
     done={};prepared={};
     if(!close_before_retirement){
       gate.release();HYLE_RETURN_IF_ERROR(cu::status(cudaStreamSynchronize(gate.stream)));
@@ -87,11 +87,12 @@ Status run(bool wait_observation,bool close_before_retirement=true){
     const bool retired=!invocation.in_flight() && pool.stats().active_uses==0;
     const bool closed=!invocation.output() && !invocation.prepare_batch(layout);
     invocation={};HYLE_RETURN_IF_ERROR(context.drain());
-    HYLE_RETURN_IF_ERROR(require(waited,"F5 drain returned before real CUDA prefix retirement"));HYLE_RETURN_IF_ERROR(require(held && !terminal.ok() && retired,"F5 actual retirement/first error contract differs"));HYLE_RETURN_IF_ERROR(require(closed,"failed/closed F5 slot published or reused"));
-    std::printf("F5 actual CUDA unknown %s/cancel/close/drain/guards/no-publication PASS\n",wait_observation?"wait":"poll");
+    HYLE_RETURN_IF_ERROR(require(waited,"F5 drain returned before real CUDA prefix retirement"));HYLE_RETURN_IF_ERROR(require(held && (unknown_observation?!terminal.ok():terminal.ok()) && retired,"F5 actual retirement/first error contract differs"));HYLE_RETURN_IF_ERROR(require(closed,"failed/closed F5 slot published or reused"));
+    if(unknown_observation)std::printf("F5 actual CUDA unknown %s/cancel/close/drain/guards/no-publication PASS\n",wait_observation?"wait":"poll");
+    else std::puts("F5 actual CUDA normal public-result/token abandon/drain-success/guards PASS");
     }
   }
   return require(metadata.used()==0,"F5 fault native ownership metadata leaked");
 }
 }
-int main(){std::setvbuf(stdout,nullptr,_IONBF,0);for(unsigned episode=0;episode<3;++episode){const auto status=run(episode==1,episode!=2);if(!status.ok()){char text[768]{};status.ToString(text,sizeof(text));std::fprintf(stderr,"F5 fault: %s\n",text);return 1;}}return 0;}
+int main(){std::setvbuf(stdout,nullptr,_IONBF,0);for(unsigned episode=0;episode<4;++episode){const auto status=run(episode==1,episode!=2,episode!=3);if(!status.ok()){char text[768]{};status.ToString(text,sizeof(text));std::fprintf(stderr,"F5 fault: %s\n",text);return 1;}}return 0;}

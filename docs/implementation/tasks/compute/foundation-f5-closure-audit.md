@@ -254,3 +254,28 @@ public CPU原型四域Direct/Graph通过；固定产品输入c092且产品代码
 完成Windows cpu-vulkan static的一格AUDITED provisional安装/实际rename/隔离复制消费者/
 六前端头TU/具名cuda与apple缺席/普通运行。这只签该public CPU旅程的安装消费，native
 Vulkan、detail/split头/负符号等未由此签，不把它算成18格最终资格或CANDIDATE。
+
+## AUDITED CPU-ERROR-04 / FAILED-READY-04
+
+baselineee10e6bb6。原CPU backend finish_sequence同步返回Completion::completed；本轮只装饰
+真实Context的finish，在actual accepted CPU operation/copy后追加ResourceExhausted，仍
+转发原finish。Direct首个完成stage失败后须停止后续stage；Graph按原合并segment错误
+裁决，不以finish次数假充Graph节点suffix。Direct/Graph核无输出、open失败prepare/submit
+拒复用、真实guards归零、drain保首错。只同ragged F16固定recipe，不换Provider/math/runtime。
+
+failed ready纵切：完整F4 K/V/layout目录与expected-base head→原StateCloneRoute/F2 clone
+真实已接纳copy失败→CloneTicket.wait不产生writer、draft不能finalize、head保持原identity。
+同prepared F5 Direct/Graph不能bind缺失readonly K或submit；失败的实际ticket本来就不产生
+可消费的lease，空lease只表示缺失，不能充当ready。原key/value/layout保持readonly及quota0。
+只现CPU actual consumer与test-only小helper，原Win/WSL CPU root/config/tree/consumer180
+累计；产品/公头不变。原closed F4不重开，只验证新的F5组合，不回放F4全集。
+
+同原OBS/DRAIN actual退休范围再加一个正常Direct结果/token放弃episode：原CUDA event
+仍被已接纳kernel后的Gate挡住，不装unknown、不cancel，放弃public观察后drain必须等
+实际guards退休，返回成功而不制造取消错误。原Direct累计360秒总上限不变；Graph原门
+在known error wait后、未close时prepare拒复用，原metadata/normal/unknown证据保留。
+
+[补测收据](../../../../evidence/correctness/foundation-f5-failed-ready-abandon/README.md)：Win/WSL
+CPU各四episode通过，actual error无输出/open失败不复用；F2 clone失败不产writer、F5
+不submit、F4 head保持。CUDA正常public结果/token放弃→Gate前drain等guard、后OK；Graph
+known error actual wait后的open prepare拒绝。原全部失败/同root预算保留，产品/API未改。

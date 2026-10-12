@@ -68,6 +68,8 @@ template<class T>Status graph_case(bool paged,unsigned depth,bool large,unsigned
           Status terminal;if(submitted)terminal=submitted->wait();else terminal=submitted.error();
           HYLE_RETURN_IF_ERROR(require(terminal.IsUnavailable() && region_runs.count==1,"Graph first region error accepted its dependent suffix/lost first error"));
           if(submitted)*submitted={};HYLE_RETURN_IF_ERROR(require(!invocation.output(output_id) && !invocation.output(second_output),"Graph failed region published output"));
+          HYLE_RETURN_IF_ERROR(require(!invocation.prepare_batch(first_layouts).ok(),"Graph open failed coordinator reused after actual wait"));
+          std::puts("F5 Graph open accepted-error/actual-wait/no-reuse PASS");
           invocation.drain().IgnoreError();
         }else{
           HYLE_RETURN_IF_ERROR(require(submitted.has_value(),"Graph unknown fixture failed before accepted prefix"));

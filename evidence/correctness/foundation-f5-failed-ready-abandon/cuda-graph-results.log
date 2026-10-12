@@ -1,0 +1,81 @@
+F5 Graph fault episode=1 preparation
+F5 Graph fault accepted sequence=1 gate=0
+F5 Graph fault episode=1 no-mixed-token/no-publication/retirement PASS
+F5 Graph fault episode=2 preparation
+F5 Graph fault accepted sequence=2 gate=0
+F5 Graph fault episode=2 no-mixed-token/no-publication/retirement PASS
+F5 Graph fault episode=3 preparation
+F5 Graph fault accepted sequence=3 gate=0
+F5 Graph fault episode=3 no-mixed-token/no-publication/retirement PASS
+F5 Graph fault episode=4 preparation
+F5 Graph fault accepted sequence=4 gate=0
+F5 Graph fault episode=4 no-mixed-token/no-publication/retirement PASS
+F5 Graph fault episode=5 preparation
+F5 Graph actual region run=1 accepted; inject error before suffix
+F5 Graph open accepted-error/actual-wait/no-reuse PASS
+F5 Graph fault episode=5 no-mixed-token/no-publication/retirement PASS
+F5 Graph fault episode=6 preparation
+F5 Graph fault accepted sequence=1 gate=1
+F5 Graph unknown drain waited=1 guards held=1
+F5 Graph fault episode=6 no-mixed-token/no-publication/retirement PASS
+HYLE batch oracle maxError=0.000280819277 PASS
+HYLE batch oracle maxError=0.000295044899 PASS
+HYLE batch oracle maxError=0.000280819277 PASS
+HYLE batch oracle maxError=0.000295044899 PASS
+HYLE batch oracle maxError=0.000267155483 PASS
+HYLE batch oracle maxError=0.000291143415 PASS
+HYLE Graph original region ragged F16 D256 same-slot/shared-metadata/two-slots/oracle/old-result PASS
+HYLE batch oracle maxError=0.00239659189 PASS
+HYLE batch oracle maxError=0.00234197516 PASS
+HYLE batch oracle maxError=0.00239659189 PASS
+HYLE batch oracle maxError=0.00234197516 PASS
+HYLE batch oracle maxError=0.00201639917 PASS
+HYLE batch oracle maxError=0.00234197516 PASS
+HYLE Graph original region ragged BF16 D256 same-slot/shared-metadata/two-slots/oracle/old-result PASS
+HYLE batch oracle maxError=0.000289404382 PASS
+HYLE batch oracle maxError=0.000292251687 PASS
+HYLE batch oracle maxError=0.000289404382 PASS
+HYLE batch oracle maxError=0.000292251687 PASS
+HYLE batch oracle maxError=0.000275008701 PASS
+HYLE batch oracle maxError=0.00026539018 PASS
+HYLE Graph original region paged F16 D256 same-slot/shared-metadata/two-slots/oracle/old-result PASS
+HYLE batch oracle maxError=0.00226649054 PASS
+HYLE batch oracle maxError=0.00249202618 PASS
+HYLE batch oracle maxError=0.00226649054 PASS
+HYLE batch oracle maxError=0.00249202618 PASS
+HYLE batch oracle maxError=0.00219194855 PASS
+HYLE batch oracle maxError=0.00211097744 PASS
+HYLE Graph original region paged BF16 D256 same-slot/shared-metadata/two-slots/oracle/old-result PASS
+HYLE batch oracle maxError=0.000128634051 PASS
+HYLE batch oracle maxError=0.000140543438 PASS
+HYLE batch oracle maxError=0.000128634051 PASS
+HYLE batch oracle maxError=0.000140543438 PASS
+HYLE batch oracle maxError=7.07328965e-05 PASS
+HYLE batch oracle maxError=0.000105221591 PASS
+HYLE Graph original region paged F16 D64 same-slot/shared-metadata/two-slots/oracle/old-result PASS
+HYLE batch oracle maxError=3.63346144e-05 PASS
+HYLE batch oracle maxError=3.66750425e-06 PASS
+HYLE batch oracle maxError=3.63346144e-05 PASS
+HYLE batch oracle maxError=3.66750425e-06 PASS
+HYLE batch oracle maxError=3.63346144e-05 PASS
+HYLE batch oracle maxError=2.83173151e-06 PASS
+HYLE Graph original region ragged BF16 D128 same-slot/shared-metadata/two-slots/oracle/old-result PASS
+Graph projected rejection mode=0: InvalidArgument: projected capacity has an unqualified physical reader PASS
+Graph projected rejection mode=1: InvalidArgument: projected capacity cannot have a physical alias descendant PASS
+Graph projected rejection mode=2: InvalidArgument: projected capacity cannot be a graph output PASS
+Graph page branch oracle expected=0.250 PASS
+Graph page branch oracle expected=0.375 PASS
+Graph page branch oracle expected=0.250 PASS
+HYLE Graph paged arena F16 append/F4/publish/old-version/precise-page-use/escaped-result PASS; cloned=1024 appended=512 full-arena=4096
+Graph page branch oracle expected=0.250 PASS
+Graph page branch oracle expected=0.375 PASS
+Graph page branch oracle expected=0.250 PASS
+HYLE Graph paged arena BF16 append/F4/publish/old-version/precise-page-use/escaped-result PASS; cloned=1024 appended=512 full-arena=4096
+CUDA Graph ragged append F16 episode=0 first=0.250 second=0.625 PASS
+CUDA Graph ragged append F16 episode=1 first=0.375 second=0.625 PASS
+CUDA Graph ragged append F16 episode=2 first=0.250 second=0.625 PASS
+CUDA Graph ragged append/F4/repacked-second-request F16 clone=2560 append=512 tail-init=1024 total=4096 PASS
+CUDA Graph ragged append BF16 episode=0 first=0.250 second=0.625 PASS
+CUDA Graph ragged append BF16 episode=1 first=0.375 second=0.625 PASS
+CUDA Graph ragged append BF16 episode=2 first=0.250 second=0.625 PASS
+CUDA Graph ragged append/F4/repacked-second-request BF16 clone=2560 append=512 tail-init=1024 total=4096 PASS

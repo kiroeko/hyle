@@ -8,6 +8,7 @@
 #include <hyle/compute/detail/paged_arena_access.h>
 #include <hyle/graph/detail/region_access.h>
 #include "ragged_append_journey.h"
+#include "host_failure_fixture.h"
 #endif
 #include <hyle/compute/leased_operation.h>
 #include <hyle/simd/dtype.h>
@@ -94,7 +95,7 @@ Status ragged_append(c::Context&context,c::Queue&queue){
     HYLE_RETURN_IF_ERROR(require(metadata.used()==0,"ragged host controller metadata leaked"));
   }return Status::Ok();
 }
-Status run(bool ragged_only=false){HYLE_ASSIGN_OR_RETURN(auto context,g::cpu::create_context());HYLE_ASSIGN_OR_RETURN(auto queue,context.create_queue());struct Drain{c::Context&context;~Drain(){context.drain().IgnoreError();}}drain{context};if(!ragged_only){for(bool paged:{true,false})for(bool bf16:{false,true})for(bool causal:{false,true})HYLE_RETURN_IF_ERROR(exercise(context,queue,paged,bf16,causal));HYLE_RETURN_IF_ERROR(hyle_f5_host_controller_fixture::run(context,queue));}HYLE_RETURN_IF_ERROR(ragged_append(context,queue));return context.drain();}
+Status run(bool ragged_only=false){HYLE_ASSIGN_OR_RETURN(auto context,g::cpu::create_context());HYLE_ASSIGN_OR_RETURN(auto queue,context.create_queue());struct Drain{c::Context&context;~Drain(){context.drain().IgnoreError();}}drain{context};if(!ragged_only){HYLE_RETURN_IF_ERROR(hyle_f5_host_failure_fixture::run());for(bool paged:{true,false})for(bool bf16:{false,true})for(bool causal:{false,true})HYLE_RETURN_IF_ERROR(exercise(context,queue,paged,bf16,causal));HYLE_RETURN_IF_ERROR(hyle_f5_host_controller_fixture::run(context,queue));}HYLE_RETURN_IF_ERROR(ragged_append(context,queue));return context.drain();}
 #endif
 } // namespace
 #if !defined(HYLE_F5_NATIVE_FIXTURE_ONLY)

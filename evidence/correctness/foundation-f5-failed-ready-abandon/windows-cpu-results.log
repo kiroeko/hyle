@@ -1,0 +1,160 @@
+CPU Direct actual accepted-error/no-output/open-failed-no-reuse/retirement PASS
+CPU Direct actual F2-failed-ready/F5-no-submit/F4-head-unchanged PASS
+CPU Graph actual accepted-error/no-output/open-failed-no-reuse/retirement PASS
+CPU Graph actual F2-failed-ready/F5-no-submit/F4-head-unchanged PASS
+materialized independent oracle maxError=3.0380168e-05 PASS
+materialized independent oracle maxError=3.0380168e-05 PASS
+materialized independent oracle maxError=3.0380168e-05 PASS
+materialized independent oracle maxError=3.0380168e-05 PASS
+CPU Direct controller paged F16 causal=0 same-generation/stages=11/waits=11 PASS
+CPU host controller paged F16 causal=0 precise-paged-or-ragged/same-generation/repeated-prepare PASS
+CPU explicit materialized paged F16 causal=0 Direct/Graph NaN-padding PASS; host=1920 gather=98304 logical=553984
+materialized independent oracle maxError=5.72360158e-05 PASS
+materialized independent oracle maxError=5.72360158e-05 PASS
+materialized independent oracle maxError=5.72360158e-05 PASS
+materialized independent oracle maxError=5.72360158e-05 PASS
+CPU Direct controller paged F16 causal=1 same-generation/stages=11/waits=11 PASS
+CPU host controller paged F16 causal=1 precise-paged-or-ragged/same-generation/repeated-prepare PASS
+CPU explicit materialized paged F16 causal=1 Direct/Graph NaN-padding PASS; host=1920 gather=98304 logical=553984
+materialized independent oracle maxError=0.000243569365 PASS
+materialized independent oracle maxError=0.000243569365 PASS
+materialized independent oracle maxError=0.000243569365 PASS
+materialized independent oracle maxError=0.000243569365 PASS
+CPU Direct controller paged BF16 causal=0 same-generation/stages=11/waits=11 PASS
+CPU host controller paged BF16 causal=0 precise-paged-or-ragged/same-generation/repeated-prepare PASS
+CPU explicit materialized paged BF16 causal=0 Direct/Graph NaN-padding PASS; host=1920 gather=98304 logical=553984
+materialized independent oracle maxError=0.000483878487 PASS
+materialized independent oracle maxError=0.000483878487 PASS
+materialized independent oracle maxError=0.000483878487 PASS
+materialized independent oracle maxError=0.000483878487 PASS
+CPU Direct controller paged BF16 causal=1 same-generation/stages=11/waits=11 PASS
+CPU host controller paged BF16 causal=1 precise-paged-or-ragged/same-generation/repeated-prepare PASS
+CPU explicit materialized paged BF16 causal=1 Direct/Graph NaN-padding PASS; host=1920 gather=98304 logical=553984
+materialized independent oracle maxError=6.030212e-05 PASS
+materialized independent oracle maxError=6.030212e-05 PASS
+materialized independent oracle maxError=6.030212e-05 PASS
+materialized independent oracle maxError=6.030212e-05 PASS
+CPU Direct controller ragged F16 causal=0 same-generation/stages=11/waits=11 PASS
+CPU host controller ragged F16 causal=0 precise-paged-or-ragged/same-generation/repeated-prepare PASS
+CPU explicit materialized ragged F16 causal=0 Direct/Graph NaN-padding PASS; host=1920 gather=98304 logical=529408
+materialized independent oracle maxError=6.04093309e-05 PASS
+materialized independent oracle maxError=6.04093309e-05 PASS
+materialized independent oracle maxError=6.04093309e-05 PASS
+materialized independent oracle maxError=6.04093309e-05 PASS
+CPU Direct controller ragged F16 causal=1 same-generation/stages=11/waits=11 PASS
+CPU host controller ragged F16 causal=1 precise-paged-or-ragged/same-generation/repeated-prepare PASS
+CPU explicit materialized ragged F16 causal=1 Direct/Graph NaN-padding PASS; host=1920 gather=98304 logical=529408
+materialized independent oracle maxError=0.000483024423 PASS
+materialized independent oracle maxError=0.000483024423 PASS
+materialized independent oracle maxError=0.000483024423 PASS
+materialized independent oracle maxError=0.000483024423 PASS
+CPU Direct controller ragged BF16 causal=0 same-generation/stages=11/waits=11 PASS
+CPU host controller ragged BF16 causal=0 precise-paged-or-ragged/same-generation/repeated-prepare PASS
+CPU explicit materialized ragged BF16 causal=0 Direct/Graph NaN-padding PASS; host=1920 gather=98304 logical=529408
+materialized independent oracle maxError=0.000487680542 PASS
+materialized independent oracle maxError=0.000487680542 PASS
+materialized independent oracle maxError=0.000487680542 PASS
+materialized independent oracle maxError=0.000487680542 PASS
+CPU Direct controller ragged BF16 causal=1 same-generation/stages=11/waits=11 PASS
+CPU host controller ragged BF16 causal=1 precise-paged-or-ragged/same-generation/repeated-prepare PASS
+CPU explicit materialized ragged BF16 causal=1 Direct/Graph NaN-padding PASS; host=1920 gather=98304 logical=529408
+CPU Direct cold metadata OOM point=1/14 cleanup PASS
+CPU Direct cold metadata OOM point=2/14 cleanup PASS
+CPU Direct cold metadata OOM point=3/14 cleanup PASS
+CPU Direct cold metadata OOM point=4/14 cleanup PASS
+CPU Direct cold metadata OOM point=5/14 cleanup PASS
+CPU Direct cold metadata OOM point=6/14 cleanup PASS
+CPU Direct cold metadata OOM point=7/14 cleanup PASS
+CPU Direct cold metadata OOM point=8/14 cleanup PASS
+CPU Direct cold metadata OOM point=9/14 cleanup PASS
+CPU Direct cold metadata OOM point=10/14 cleanup PASS
+CPU Direct cold metadata OOM point=11/14 cleanup PASS
+CPU Direct cold metadata OOM point=12/14 cleanup PASS
+CPU Direct cold metadata OOM point=13/14 cleanup PASS
+CPU Direct cold metadata OOM point=14/14 cleanup PASS
+CPU Graph cold metadata OOM point=1/45 cleanup PASS
+CPU Graph cold metadata OOM point=2/45 cleanup PASS
+CPU Graph cold metadata OOM point=3/45 cleanup PASS
+CPU Graph cold metadata OOM point=4/45 cleanup PASS
+CPU Graph cold metadata OOM point=5/45 cleanup PASS
+CPU Graph cold metadata OOM point=6/45 cleanup PASS
+CPU Graph cold metadata OOM point=7/45 cleanup PASS
+CPU Graph cold metadata OOM point=8/45 cleanup PASS
+CPU Graph cold metadata OOM point=9/45 cleanup PASS
+CPU Graph cold metadata OOM point=10/45 cleanup PASS
+CPU Graph cold metadata OOM point=11/45 cleanup PASS
+CPU Graph cold metadata OOM point=12/45 cleanup PASS
+CPU Graph cold metadata OOM point=13/45 cleanup PASS
+CPU Graph cold metadata OOM point=14/45 cleanup PASS
+CPU Graph cold metadata OOM point=15/45 cleanup PASS
+CPU Graph cold metadata OOM point=16/45 cleanup PASS
+CPU Graph cold metadata OOM point=17/45 cleanup PASS
+CPU Graph cold metadata OOM point=18/45 cleanup PASS
+CPU Graph cold metadata OOM point=19/45 cleanup PASS
+CPU Graph cold metadata OOM point=20/45 cleanup PASS
+CPU Graph cold metadata OOM point=21/45 cleanup PASS
+CPU Graph cold metadata OOM point=22/45 cleanup PASS
+CPU Graph cold metadata OOM point=23/45 cleanup PASS
+CPU Graph cold metadata OOM point=24/45 cleanup PASS
+CPU Graph cold metadata OOM point=25/45 cleanup PASS
+CPU Graph cold metadata OOM point=26/45 cleanup PASS
+CPU Graph cold metadata OOM point=27/45 cleanup PASS
+CPU Graph cold metadata OOM point=28/45 cleanup PASS
+CPU Graph cold metadata OOM point=29/45 cleanup PASS
+CPU Graph cold metadata OOM point=30/45 cleanup PASS
+CPU Graph cold metadata OOM point=31/45 cleanup PASS
+CPU Graph cold metadata OOM point=32/45 cleanup PASS
+CPU Graph cold metadata OOM point=33/45 cleanup PASS
+CPU Graph cold metadata OOM point=34/45 cleanup PASS
+CPU Graph cold metadata OOM point=35/45 cleanup PASS
+CPU Graph cold metadata OOM point=36/45 cleanup PASS
+CPU Graph cold metadata OOM point=37/45 cleanup PASS
+CPU Graph cold metadata OOM point=38/45 cleanup PASS
+CPU Graph cold metadata OOM point=39/45 cleanup PASS
+CPU Graph cold metadata OOM point=40/45 cleanup PASS
+CPU Graph cold metadata OOM point=41/45 cleanup PASS
+CPU Graph cold metadata OOM point=42/45 cleanup PASS
+CPU Graph cold metadata OOM point=43/45 cleanup PASS
+CPU Graph cold metadata OOM point=44/45 cleanup PASS
+CPU Graph cold metadata OOM point=45/45 cleanup PASS
+host gather qualification mode=0 OK PASS
+host gather qualification mode=1 InvalidArgument: capacity has a reader outside its unique reshape PASS
+host gather qualification mode=2 InvalidArgument: capacity Gather uses foreign metadata PASS
+host gather qualification mode=3 InvalidArgument: capacity/reshape cannot be published PASS
+host gather qualification mode=4 InvalidArgument: gather projection requires the exact graph/input/footprint PASS
+host page controller F16 oracle=0.250 PASS
+host page controller F16 oracle=0.375 PASS
+host page controller F16 oracle=0.375 PASS
+host page controller F16 oracle=0.250 PASS
+host page controller F16 append/F4/same-generation/old-result/OOM/close PASS; clone=1024 append=512 whole=5120
+host page controller BF16 oracle=0.250 PASS
+host page controller BF16 oracle=0.375 PASS
+host page controller BF16 oracle=0.375 PASS
+host page controller BF16 oracle=0.250 PASS
+host page controller BF16 append/F4/same-generation/old-result/OOM/close PASS; clone=1024 append=512 whole=5120
+host page controller F16 oracle=0.250 PASS
+host page controller F16 oracle=0.375 PASS
+host page controller F16 oracle=0.375 PASS
+host page controller F16 oracle=0.250 PASS
+host page controller F16 append/F4/same-generation/old-result/OOM/close PASS; clone=1024 append=512 whole=5120
+host page controller BF16 oracle=0.250 PASS
+host page controller BF16 oracle=0.375 PASS
+host page controller BF16 oracle=0.375 PASS
+host page controller BF16 oracle=0.250 PASS
+host page controller BF16 append/F4/same-generation/old-result/OOM/close PASS; clone=1024 append=512 whole=5120
+CPU Direct ragged append F16 episode=0 first=0.250 second=0.625 PASS
+CPU Direct ragged append F16 episode=1 first=0.375 second=0.625 PASS
+CPU Direct ragged append F16 episode=2 first=0.250 second=0.625 PASS
+CPU Direct ragged append/F4/repacked-second-request F16 clone=2560 append=512 tail-init=1024 total=4096 PASS
+CPU Direct ragged append BF16 episode=0 first=0.250 second=0.625 PASS
+CPU Direct ragged append BF16 episode=1 first=0.375 second=0.625 PASS
+CPU Direct ragged append BF16 episode=2 first=0.250 second=0.625 PASS
+CPU Direct ragged append/F4/repacked-second-request BF16 clone=2560 append=512 tail-init=1024 total=4096 PASS
+CPU Graph ragged append F16 episode=0 first=0.250 second=0.625 PASS
+CPU Graph ragged append F16 episode=1 first=0.375 second=0.625 PASS
+CPU Graph ragged append F16 episode=2 first=0.250 second=0.625 PASS
+CPU Graph ragged append/F4/repacked-second-request F16 clone=2560 append=512 tail-init=1024 total=4096 PASS
+CPU Graph ragged append BF16 episode=0 first=0.250 second=0.625 PASS
+CPU Graph ragged append BF16 episode=1 first=0.375 second=0.625 PASS
+CPU Graph ragged append BF16 episode=2 first=0.250 second=0.625 PASS
+CPU Graph ragged append/F4/repacked-second-request BF16 clone=2560 append=512 tail-init=1024 total=4096 PASS
