@@ -10,6 +10,9 @@ Linux shared SDK新反证使compute_route_cuda单owner退AUDITED，按
 [本次快照](../../../../evidence/architecture/foundation-f5-cuda-link-candidate-scope/owners.json)。
 原六FIX与风险/失败预算不变；新candidate重新裁决受影响package证据，不能先宣称link已PASS。
 
+65e配置owned-header反证使compute_route_cuda再次退AUDITED，按同一link卡补实际资格guard
+include，其他19 owner固定65e。此精确状态以registry为准；不能把未运行的修复签PASS。
+
 20个本轮owners从AUDITED合法进入CANDIDATE，旧record/范围快照见
 [owner scope](../../../../evidence/architecture/foundation-f5-candidate-scope/owners.json)。实际
 桥、package-only、native factory和UNIT-STRIDE分别保其原有限范围；A/F4及其余CLOSED

@@ -40,6 +40,10 @@ API/usability冻结：已有Context::create(device, flashinfer::provider())与gr
 
 | FIX | 固定改动 | 验收 |
 |---|---|---|
-| CUDA-PUBLIC-LINK | 中央compute_route_cuda的既有FI边改为PUBLIC；owner目录对非Linux未准入placeholder只保BUILD_INTERFACE，静态/共享安装均不要求未导出factor | 同root失败shared自然消费恢复，static数学保持；Windows无FI宏/符号与SDK缺席保持 |
+| CUDA-PUBLIC-LINK | 中央compute_route_cuda的既有FI边改为PUBLIC；cuda.h在实际FI资格guard内直接包含公开factory头，使owned-header与PUBLIC边对账；owner目录对非Linux未准入placeholder只保BUILD_INTERFACE，静态/共享安装均不要求未导出factor | 同root失败shared自然消费恢复，static数学保持；Windows无FI宏/符号与SDK缺席保持 |
 
 候选卡原20owner范围、F5六FIX、其余SDK/san/P0/LOC/guide/红队保留，单个link PASS不签整个goal。
+
+65e2143ad重配置由中央owned-header校验拒绝：PUBLIC边须实际owned头直接include对应component。
+原FAIL保留；只compute_route_cuda再次退AUDITED补同一FIX的资格guard include。其他19 owner
+固定65e，不把PUBLIC_TYPE_DEPS伪造为类型需求或修改checker绕过合同。
