@@ -7,5 +7,8 @@
   "graph_batch_src_and_public_headers": 400,
   "current_20_owner_union": 57297,
   "f5_net_native_code_delta_from_f4": 2610,
-  "raw_sha256": "5bba7304e7df0977de4ac2596080afcf11201f6db5a469fe3f6a556df304182f"
+  "raw_sha256": "5bba7304e7df0977de4ac2596080afcf11201f6db5a469fe3f6a556df304182f",
+  "f5_native_test_code_delta": 1862,
+  "f5_tracked_test_build_tool_code_delta": 5,
+  "tests_tools_sha256": "647e106ff3589477ea09b768c646c14420a4227b5ea2c1e0dd6b185ea04e5b0c"
 }

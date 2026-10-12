@@ -100,6 +100,11 @@ alignment warning合同遗漏的编译FAIL保留。installed只按实际供应�
 原public/native两消费者也PASS；实际Clang runtime不支持LSan，首进程启动FAIL保留后只
 禁用不支持的detect_leaks继续同树预算，没加suppression/改产品；GPU私有内存未由此证明。
 
+[Linux CUDA地址ASan](../../../../evidence/correctness/foundation-f5-native-cuda-host-asan/README.md)
+原public/Direct/Graph三consumer已PASS，cuInit shadow-gap与native vendor LSan退出失败均
+保原日志/同树预算/独立no-HYLE对照；只地址门PASS，LSan总体仍外库报告INCONCLUSIVE，
+不隐藏cuRAND差异或写成零泄漏。剩余native UBSan/TSan与整体risk audit继续。
+
 [固定产品LOC](../../../../evidence/architecture/foundation-f5-loc-inventory/README.md)已统计：
 compute_batch1437、graph_batch400（含public头），F5对F4净增2610；全部自有native174338，
 本轮20 owner完整union57297。源码/依赖/测试/全仓库口径不混用；测试/工具与最终引擎估计
@@ -108,6 +113,10 @@ compute_batch1437、graph_batch400（含public头），F5对F4净增2610；全�
 [P0成本结构](../../../../evidence/performance/foundation-f5-cost-structure/README.md)核对版本/
 page frame/冷slot/显式plan-update/native run与reference metadata/gather/waits，保已知和
 UNKNOWN边界；不将参考O(KV)副本签为四路线高性能或capture，不据本轮结构启动P1。
+
+[易用性与正交旅程核对](../../../../evidence/correctness/foundation-f5-usability-orthogonal/README.md)
+把user guide各公开入口回到真实18 SDK与分段矩阵/资源版本旅程，明确借用/prepare/old-result/
+失败发布及reference费用；不借此签完整模型/渲染器、高性能或分离红队。
 Windows CUDA native batch只签
 具名拒绝，数学资格不冒充Linux FlashInfer。common33 ASan/UBSan/
 TSan均PASS，TSan启动exit66与process-local ASLR恢复保留；CPU控制器补验见下文，native

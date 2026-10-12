@@ -34,3 +34,8 @@ factor检查不变；不修改产品选择、façade规则、closure checker、s
 不得重置预算。原定向F5模块/显式SKU交付证据不由这个全factor配置失败撤销。
 
 第三次日志见[环境失败与断言修复范围](../../../../evidence/correctness/foundation-f5-component-vulkan-environment/README.md)。
+
+private runner环境补充已准备：实际既有C:/public/tools/hyle-vulkan/1.4.357.0、glslc与
+vulkan-1.lib均存在，PATH与VULKAN_SDK沿已过SDK身份。还未重跑。全合同一次cold configure
+曾用107.750秒，原剩27.860不足；恢复全聚合门需用户追加一次300秒，保全部原FAIL/time，
+不改工具核心/产品或换root重取预算。等待期间继续其余F5独立门，不把整个goal标blocked。

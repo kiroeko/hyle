@@ -401,6 +401,20 @@ private UNKNOWN不写0，不签所有路线native性能/capture、不跑P1。
 57297；历史19-owner/source-only数字保留但不冒充本轮总量。测试/工具/最终engine产品LOC
 及foundation剩余缺口仍待完整goal评估，guide正交/分离红队和组件聚合未由此签。
 
+## CUDA地址ASan与LSan仪器/外库边界
+
+原Graph拒绝额外CPU reader的真实fixture需要CPU route，补依赖同树后native ASan编译完成；
+最初cuInit OOM在无HYLE原生CUDA control复现，采用NVIDIA公开要求protect_shadow_gap=0
+后恢复原GPU调用。原所有FAIL/时间保留，地址ASan的public D256、原Direct/Graph风险三
+consumer实际PASS，[证据](../../../../evidence/correctness/foundation-f5-native-cuda-host-asan/README.md)
+含实际instrument flags、身份/诊断/control源码，未修改产品或加suppression。
+
+LSan独立detect_leaks=1三诊断仍退出1：2320/8、1000/5、8920/35，分配首非ASan帧均原
+NVIDIA库；无HYLE CUDA/NVML对照精确复现前两者和Graph driver/NVML部分，Graph多出的
+cuRAND ELF-init栈与不同加载次序对照保持差异。地址门PASS不等于LSan总体PASS，native
+private UNKNOWN和外库仪器限制进入最终审计，不用quota0/生命周期数学代签整进程扫描。
+UBSan/TSan native callback facet尚未完成，易用性映射已核但不代签分离红队或完整goal。
+
 [公开native源码收据](../../../../evidence/correctness/foundation-f5-public-native-source/README.md)：
 Win Vulkan/Air Apple/Vulkan各四域Direct/Graph独立oracle共24、原F2/public页权限/同镜像/
 old result通过。用户guide已加四路线选择、生命周期、explicit reference成本与capture缺席，

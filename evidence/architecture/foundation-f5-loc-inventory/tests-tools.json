@@ -1,0 +1,55 @@
+{
+  "baseline": "29d3c7a3ebe81f0e627986e2e8c8a393aa7832c8",
+  "snapshot": "eb772da8409e5fec395c51a588c4589fd7d723cf",
+  "product_candidate": "25e4fb398e2a782ee60f916c3c6351c4736b6eda",
+  "scope": "Tracked F5 tests/ownership CMake plus one public configuration-tool assertion. Scratch runners/evidence/doc/vendor excluded; all native tests are self-owned verification not future engine product code",
+  "metrics": {
+    "native_tests": {
+      "before_code": 0,
+      "after_code": 1862,
+      "net_delta": 1862,
+      "before_files": 0,
+      "after_files": 26,
+      "paths": [
+        "tests/compute_batch/allocation_fault_fixture.h",
+        "tests/compute_batch/batch_layout_test.cc",
+        "tests/compute_batch/batch_materialize_test.cc",
+        "tests/compute_batch/host_failure_fixture.h",
+        "tests/compute_batch/materialized_cpu_consumer.cc",
+        "tests/compute_batch/materialized_host_controller_consumer.h",
+        "tests/compute_batch/materialized_native_consumer.cc",
+        "tests/compute_batch/native_apple_failure_fixture.h",
+        "tests/compute_batch/native_arena_direct_consumer.h",
+        "tests/compute_batch/native_arena_graph_consumer.h",
+        "tests/compute_batch/native_arena_reference_consumer.h",
+        "tests/compute_batch/native_direct_consumer.cc",
+        "tests/compute_batch/native_fault_consumer.cc",
+        "tests/compute_batch/native_graph_consumer.cc",
+        "tests/compute_batch/native_graph_faults.h",
+        "tests/compute_batch/native_ragged_append_consumer.h",
+        "tests/compute_batch/native_ragged_graph_append_consumer.h",
+        "tests/compute_batch/native_vulkan_failure_fixture.h",
+        "tests/compute_batch/paged_arena_test.cc",
+        "tests/compute_batch/public_batch_cpu_consumer.cc",
+        "tests/compute_batch/public_batch_cuda_absence_consumer.cc",
+        "tests/compute_batch/public_batch_cuda_consumer.cc",
+        "tests/compute_batch/public_batch_native_consumer.cc",
+        "tests/compute_batch/public_batch_vulkan_software_probe.cc",
+        "tests/compute_batch/ragged_append_journey.h",
+        "tests/graph_batch/materialized_graph_test.cc"
+      ]
+    },
+    "tracked_test_build_and_tool": {
+      "before_code": 1318,
+      "after_code": 1323,
+      "net_delta": 5,
+      "before_files": 1,
+      "after_files": 3,
+      "paths": [
+        "cmake/HyleCiComponentContract.cmake",
+        "tests/compute_batch/CMakeLists.txt",
+        "tests/graph_batch/CMakeLists.txt"
+      ]
+    }
+  }
+}

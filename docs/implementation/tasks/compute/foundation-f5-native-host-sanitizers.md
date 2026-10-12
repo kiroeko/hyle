@@ -39,3 +39,26 @@ exit-6未进入测试，保原FAIL/time，只按实际平台用detect_leaks=0继
 Linux CUDA ASan已启动原public D256、native Direct/Graph三消费者；普通CUDA产品闭包
 重用锁定source cache、独立tree，以原GCC14/CUDA13.3/SM89身份instrument宿主代码。
 实际source/worker callback的剩余UBSan/TSan适用性须按代码及平台继续核定，不写未跑PASS。
+
+Linux native callback明确是适用并发facet：新BatchInvocationData的terminal由原native
+完成callback写入，pending release/acquire保护其消费；新Coordinator和原F1 use/retained
+completion跨线程退休。不能以控制对象externally serialized删除该风险。
+补GCC UBSan/TSan两个独立配置，各固定原F5 configure300/build1800/consumer180累计。
+验证parent可用内部精确factor graph_batch/compute_provider_flashinfer/compute_backend_cuda/
+compute_state/graph_route_cpu，后者是原projected_rejections的额外CPU reader拒绝用例真实
+依赖，不能因主体走CUDA而漏链接。三消费者仍调用同一公开API和原FI真实GPU路径；只减少未被该fixture消费的
+默认ggml/torch/cuBLAS库编译，不裁剪用户产品或改Provider选择。普通SKU的三交付已由18
+SDK另证。新san root首次登记后不更名重取预算，跨机器重型仍串行。
+
+Linux ASan首build555.387秒编译完但Graph fixture因上述CPU依赖遗漏link FAIL；同tree原
+剩余build1244.613秒补真实CPU路线，原失败/时间保留，不修改fixture来跳过拒绝风险。
+
+Linux CUDA地址访问ASan三consumer现已PASS：[证据](../../../../evidence/correctness/foundation-f5-native-cuda-host-asan/README.md)。
+首运行先cuInit OOM而未运行数学；无HYLE原生对照复现，按NVIDIA文档设置
+protect_shadow_gap=0后driver/数学运行恢复。detect_leaks=1的独立诊断保退出FAIL：public
+2320/8、Direct1000/5、Graph8920/35，分配首帧均CUDA/NVML/cuRAND；无HYLE对照精确复现
+前两者与Graph driver部分，cuRAND差异保持限定。地址门detect_leaks=0通过，没有任何
+suppression/改产品；LSan总体INCONCLUSIVE_NATIVE_VENDOR_REPORTS，不称GPU或整进程泄漏门PASS。
+
+UBSan已在合法top-level maintainer factor入口构建；首次误把该选项用于embedding parent
+的配置FAIL保留后，只修私有入口，不改产品/公共工具。TSan仍待同有限facet实际验证。

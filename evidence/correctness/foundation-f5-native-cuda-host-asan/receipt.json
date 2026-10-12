@@ -1,0 +1,296 @@
+{
+  "candidate": "25e4fb398e2a782ee60f916c3c6351c4736b6eda",
+  "scope": "Actual Linux FI host asan; GPU kernel/driver memory not instrumented, no silent CPU fallback",
+  "raw_sha256": "10411629d20a85efa0f1f5cc4aa5046ff56234a55d7f10562579ab0e085fa62c",
+  "budget_elapsed": {
+    "configure": 24.319782308000047,
+    "build": 1137.48944899,
+    "consumer": 10.56772701099976
+  },
+  "job": {
+    "candidate": "25e4fb398e2a782ee60f916c3c6351c4736b6eda",
+    "mode": "asan",
+    "scope": "Actual Linux FI native Direct/Graph/D256 host sanitizer, no GPU kernel/driver private access claim",
+    "identity": {
+      "os": "Linux kiro-workstation 6.18.40.1-microsoft-standard-WSL2 #1 SMP PREEMPT_DYNAMIC Fri Jul 31 22:12:15 UTC 2026 x86_64 x86_64 x86_64 GNU/Linux",
+      "compiler": "g++-14 (Ubuntu 14.2.0-4ubuntu2~24.04.1) 14.2.0\nCopyright (C) 2024 Free Software Foundation, Inc.\nThis is free software; see the source for copying conditions.  There is NO\nwarranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.",
+      "nvcc": "nvcc: NVIDIA (R) Cuda compiler driver\nCopyright (c) 2005-2026 NVIDIA Corporation\nBuilt on Tue_Jun_09_02:43:40_PM_PDT_2026\nCuda compilation tools, release 13.3, V13.3.73\nBuild cuda_13.3.r13.3/compiler.38244171_0",
+      "gpu": "NVIDIA GeForce RTX 4070, GPU-e7376560-6f5d-ec19-6ee4-3dd3a2c81ef8, 617.14"
+    },
+    "build": "/root/hyle-scratch/compute-unified/foundation-f5-native-host-cuda-asan/build",
+    "stages": [
+      {
+        "name": "configure",
+        "budget_group": "configure",
+        "command": [
+          "/usr/bin/cmake",
+          "-S",
+          "/root/hyle-scratch/compute-unified/foundation-f5-native-host-cuda-asan/parent",
+          "-B",
+          "/root/hyle-scratch/compute-unified/foundation-f5-native-host-cuda-asan/build",
+          "-G",
+          "Ninja",
+          "-DCMAKE_BUILD_TYPE=Release",
+          "-DCMAKE_CXX_COMPILER=/usr/bin/g++-14",
+          "-DCMAKE_CUDA_HOST_COMPILER=/usr/bin/g++-14",
+          "-DCMAKE_CUDA_COMPILER=/usr/local/cuda-13.3/bin/nvcc",
+          "-DCMAKE_CUDA_ARCHITECTURES=89-real",
+          "-DHYLE_COMPONENTS=compute;graph",
+          "-DHYLE_COMPUTE_ROUTES=cuda",
+          "-DHYLE_STATIC=ON",
+          "-DHYLE_BUILD_TESTS=OFF",
+          "-DHYLE_BUILD_BENCH=OFF",
+          "-DHYLE_INSTALL=OFF",
+          "-DHYLE_SANITIZER=asan",
+          "-DHYLE_WERROR=OFF"
+        ],
+        "pid": 650,
+        "state": "terminal",
+        "log": "configure.log",
+        "available_bytes": 32428482560,
+        "elapsed": 12.435380407,
+        "exit_code": 0,
+        "verdict": "PASS",
+        "sha256": "890333d1ebc0119e5379f92f24b93ca354f81d92504bdeccd2fc40a6e97fa87c",
+        "reuse_current_contract": false
+      },
+      {
+        "name": "build",
+        "budget_group": "build",
+        "command": [
+          "/usr/bin/cmake",
+          "--build",
+          "/root/hyle-scratch/compute-unified/foundation-f5-native-host-cuda-asan/build",
+          "--target",
+          "public_cuda",
+          "direct",
+          "graph",
+          "--parallel",
+          "4"
+        ],
+        "pid": 838,
+        "state": "terminal",
+        "log": "build.log",
+        "available_bytes": 32224329728,
+        "elapsed": 555.392295289,
+        "exit_code": 1,
+        "verdict": "FAIL",
+        "sha256": "b2fe5d76ded8496f8e81a372db91e94aa49fb2bd01e4737a7f64e005b8e10f98"
+      },
+      {
+        "name": "configure-resume1",
+        "budget_group": "configure",
+        "command": [
+          "/usr/bin/cmake",
+          "-S",
+          "/root/hyle-scratch/compute-unified/foundation-f5-native-host-cuda-asan/parent",
+          "-B",
+          "/root/hyle-scratch/compute-unified/foundation-f5-native-host-cuda-asan/build",
+          "-G",
+          "Ninja",
+          "-DCMAKE_BUILD_TYPE=Release",
+          "-DCMAKE_CXX_COMPILER=/usr/bin/g++-14",
+          "-DCMAKE_CUDA_HOST_COMPILER=/usr/bin/g++-14",
+          "-DCMAKE_CUDA_COMPILER=/usr/local/cuda-13.3/bin/nvcc",
+          "-DCMAKE_CUDA_ARCHITECTURES=89-real",
+          "-DHYLE_COMPONENTS=compute;graph",
+          "-DHYLE_COMPUTE_ROUTES=cpu;cuda",
+          "-DHYLE_STATIC=ON",
+          "-DHYLE_BUILD_TESTS=OFF",
+          "-DHYLE_BUILD_BENCH=OFF",
+          "-DHYLE_INSTALL=OFF",
+          "-DHYLE_SANITIZER=asan",
+          "-DHYLE_WERROR=OFF"
+        ],
+        "pid": 624,
+        "state": "terminal",
+        "log": "configure-resume1.log",
+        "available_bytes": 32441008128,
+        "elapsed": 11.884401901000047,
+        "exit_code": 0,
+        "verdict": "PASS",
+        "sha256": "002f55e7e7ef739655e1c611a8b607edf6a6a0e6603034ed508e55b7c7713489"
+      },
+      {
+        "name": "build-resume1",
+        "budget_group": "build",
+        "command": [
+          "/usr/bin/cmake",
+          "--build",
+          "/root/hyle-scratch/compute-unified/foundation-f5-native-host-cuda-asan/build",
+          "--target",
+          "public_cuda",
+          "direct",
+          "graph",
+          "--parallel",
+          "4"
+        ],
+        "pid": 726,
+        "state": "terminal",
+        "log": "build-resume1.log",
+        "available_bytes": 32458547200,
+        "elapsed": 582.097153701,
+        "exit_code": 0,
+        "verdict": "PASS",
+        "sha256": "5b6c4e3f9fb3afd92ff8ca3c7ba8ed7e2f48adeca27c75a7a8365fc77dd3f7d2"
+      },
+      {
+        "name": "run-public_cuda",
+        "budget_group": "consumer",
+        "command": [
+          "/root/hyle-scratch/compute-unified/foundation-f5-native-host-cuda-asan/build/public_cuda"
+        ],
+        "pid": 3060,
+        "state": "terminal",
+        "log": "run-public_cuda.log",
+        "available_bytes": 32163553280,
+        "elapsed": 0.9165303800000402,
+        "exit_code": 1,
+        "verdict": "FAIL",
+        "sha256": "25adb97164af6800940835a8fda83fa6797a18198e7a7c4b3962d3732cad1eca"
+      },
+      {
+        "name": "run-public_cuda-resume1",
+        "budget_group": "consumer",
+        "command": [
+          "/root/hyle-scratch/compute-unified/foundation-f5-native-host-cuda-asan/build/public_cuda"
+        ],
+        "pid": 624,
+        "state": "terminal",
+        "log": "run-public_cuda-resume1.log",
+        "available_bytes": 32440381440,
+        "elapsed": 1.0159457519998796,
+        "exit_code": 1,
+        "verdict": "FAIL",
+        "sha256": "a307b01b7bd899119ea546e39199f632ecc8aac1f37226a1c837511ef86c161d"
+      },
+      {
+        "name": "run-public_cuda-resume2",
+        "budget_group": "consumer",
+        "command": [
+          "/root/hyle-scratch/compute-unified/foundation-f5-native-host-cuda-asan/build/public_cuda"
+        ],
+        "pid": 645,
+        "state": "terminal",
+        "log": "run-public_cuda-resume2.log",
+        "available_bytes": 32460083200,
+        "elapsed": 0.8149811190000946,
+        "exit_code": 0,
+        "verdict": "PASS",
+        "sha256": "5f5775c28f5f191be75e68e6b6c1ff42300f71c122407883bbfff333a4ce0d1b"
+      },
+      {
+        "name": "run-direct",
+        "budget_group": "consumer",
+        "command": [
+          "/root/hyle-scratch/compute-unified/foundation-f5-native-host-cuda-asan/build/direct"
+        ],
+        "pid": 653,
+        "state": "terminal",
+        "log": "run-direct.log",
+        "available_bytes": 32449675264,
+        "elapsed": 1.5666039669999918,
+        "exit_code": 0,
+        "verdict": "PASS",
+        "sha256": "ee690ec954fe2310d73b81ba4b9f1d5adb4aae0b89f8915f8449be50b1799e86"
+      },
+      {
+        "name": "run-graph",
+        "budget_group": "consumer",
+        "command": [
+          "/root/hyle-scratch/compute-unified/foundation-f5-native-host-cuda-asan/build/graph"
+        ],
+        "pid": 661,
+        "state": "terminal",
+        "log": "run-graph.log",
+        "available_bytes": 32448679936,
+        "elapsed": 2.3177941120000014,
+        "exit_code": 0,
+        "verdict": "PASS",
+        "sha256": "272a297a94834267bf2e3f58aed881e4806d7ea82e1b2ffebc0cef7731f3b898"
+      },
+      {
+        "name": "diagnostic-lsan-direct",
+        "budget_group": "consumer",
+        "command": [
+          "/root/hyle-scratch/compute-unified/foundation-f5-native-host-cuda-asan/build/direct"
+        ],
+        "pid": 648,
+        "state": "terminal",
+        "log": "diagnostic-lsan-direct.log",
+        "ASAN_OPTIONS": "halt_on_error=1:protect_shadow_gap=0:detect_leaks=1",
+        "elapsed": 1.7677066889998514,
+        "exit_code": 1,
+        "verdict": "LSAN_DIAGNOSTIC_EXTERNAL_OR_PRODUCT_UNRESOLVED",
+        "sha256": "601cdc3ff9a538749a048c597ff072179589b08d2002cbaa5cfedffaa5bf60ec"
+      },
+      {
+        "name": "diagnostic-lsan-graph",
+        "budget_group": "consumer",
+        "command": [
+          "/root/hyle-scratch/compute-unified/foundation-f5-native-host-cuda-asan/build/graph"
+        ],
+        "pid": 657,
+        "state": "terminal",
+        "log": "diagnostic-lsan-graph.log",
+        "ASAN_OPTIONS": "halt_on_error=1:protect_shadow_gap=0:detect_leaks=1",
+        "elapsed": 2.1681649919999018,
+        "exit_code": 1,
+        "verdict": "LSAN_DIAGNOSTIC_EXTERNAL_OR_PRODUCT_UNRESOLVED",
+        "sha256": "b8b7ce7088b15d0593d17cf40563b12b224b306d3adcfd283c7e186b3fb3a17f"
+      }
+    ],
+    "fixture_inputs": {
+      "tests/compute_batch/batch_layout_test.cc": "420b26027914ebc73c5654f49a363b7f5e707c031fe6100763de9295e03c5167",
+      "tests/compute_batch/materialized_native_consumer.cc": "7b6c8292c693e3464040f92108dd06ee186d0ae927f0991eef650e2801f3a9c9",
+      "tests/compute_batch/native_vulkan_failure_fixture.h": "955af6a8f8ea20160f36f760866676997b99a12848dbd456108a72c20b030b90",
+      "tests/compute_batch/ragged_append_journey.h": "a4a236ece69637f6aa9e4d785ea94adea98e80b9d46ba4ca1229cbb5b8afce95",
+      "tests/compute_batch/CMakeLists.txt": "c1edd25e57c49dc096e3dc94031e445834d9c555297e85c203001b41a153cc05",
+      "tests/compute_batch/native_arena_graph_consumer.h": "d58f9c6e255c987a60ce30c8a8a8a2a06e4a3150e413875051b551acfd6ad1f8",
+      "tests/compute_batch/native_graph_consumer.cc": "c9a100e55a0a32fe221419db8e322fd01bb31bc51781d350b4b5e9c523906a6e",
+      "tests/compute_batch/native_direct_consumer.cc": "42ad7ea08a7e4a24fbccdfa7f80ae34c4ba170b4951c1cf6389183974f3ff7c0",
+      "tests/compute_batch/materialized_cpu_consumer.cc": "dc25540478345eb4f169f7bfc766ff6560e1b5af44bef5c130a090710f2273a3",
+      "tests/compute_batch/native_apple_failure_fixture.h": "fdb33f4f810aa078793a464450808da43e3d386721725a506e2c3697d4be2208",
+      "tests/compute_batch/public_batch_cuda_consumer.cc": "eaef48f8b6b5e9770873a99505de354bf52bd2b9424b24256fef0a858ce93aed",
+      "tests/compute_batch/native_ragged_graph_append_consumer.h": "075ca164a8b9989b3994c19c6679cb07d58d6985e456ec0b1c86c555479065a0",
+      "tests/compute_batch/allocation_fault_fixture.h": "7fc5d108ebfbe46853a14fb74b4c504721442757cd4aeab10f1314a9f03943dc",
+      "tests/compute_batch/batch_materialize_test.cc": "d3e982acb98ccc6f6d22a5c04b0205a74df9d404117dc0a91460e0b5809eff3c",
+      "tests/compute_batch/public_batch_vulkan_software_probe.cc": "6f11ec5d46a69ecc9399885d43a691fc2e9990082e88169b7a496fa67171d07f",
+      "tests/compute_batch/native_graph_faults.h": "3ac208d6e43c0825f64a31d5426aa079ed4da3f24f6754926ee3fbd5122b734c",
+      "tests/compute_batch/materialized_host_controller_consumer.h": "e487b5249d1f65b8af7c3e3e466b4368a41de8f5d43f10c939e20a648b6af1a8",
+      "tests/compute_batch/native_arena_direct_consumer.h": "42bbb89bd43d12f752719ef10efa261127004880d87cd005f2cd19c232ba888e",
+      "tests/compute_batch/host_failure_fixture.h": "57bb705c7bbe4c2fc71e4cf228138b0fdbf03b6c78521343a018be3a120cdbd5",
+      "tests/compute_batch/public_batch_native_consumer.cc": "b0947ad77c35d973f14c7abf80c2fdd0ebd77da3e62fc413161db789b4c334df",
+      "tests/compute_batch/native_arena_reference_consumer.h": "645db5b2f1ceb1dc8265f02724ed26a1212228a99876bbb15c25468c30a56ff0",
+      "tests/compute_batch/native_ragged_append_consumer.h": "74b44c5808eea2718ac7734ba53603c340ffbd23ba03ed390509114ce2156064",
+      "tests/compute_batch/paged_arena_test.cc": "9f42b74ba3b35df0daf73347e91be201ae461aceb76f38d944a9fb0f018fbdae",
+      "tests/compute_batch/public_batch_cpu_consumer.cc": "70c2ae42b2a752577872ccabd399e7b3804e98cb3db15505c8dc6919144c773a",
+      "tests/compute_batch/native_fault_consumer.cc": "66a502d6ad383b2569b99f3f551a9b62812cb2d5cb466982e06776526e8190cd"
+    },
+    "fixture_dependency_history": [
+      {
+        "reason": "Original projected reader rejection fixture genuinely calls CPU context; add its actual graph CPU route, preserve native GPU path and original link FAIL/time",
+        "budget_reset": false
+      }
+    ],
+    "asan_configuration": {
+      "ASAN_OPTIONS": "halt_on_error=1:protect_shadow_gap=0:detect_leaks=0",
+      "reason": "NVIDIA-required CUDA shadow-gap compatibility independently proved with no-HYLE control; address-access gate separate from LSan. Original LSan FAIL retained and native vendor reports not called PASS.",
+      "reference": "https://docs.nvidia.com/rapidsmpf/latest/getting-started/"
+    },
+    "lsan_verdict": "INCONCLUSIVE_NATIVE_VENDOR_REPORTS: public HYLE 2320 bytes/8 allocations exactly reproduced by no-HYLE CUDA/NVML init/query/shutdown/dlclose; not whole-process LSan PASS",
+    "verdict": "PASS_F5_ACTUAL_CUDA_HOST_ASAN",
+    "verified_instrumented_commands": [
+      "/usr/bin/g++-14 -DHYLE_COMPUTE_CPU=1 -DHYLE_COMPUTE_CUDA=1 -DHYLE_COMPUTE_FLASHINFER=1 -DHYLE_COMPUTE_ONEDNN=1 -DHYLE_COMPUTE_TORCH_CUDA=1 -DHYLE_DETAIL_SANITIZER_ADDRESS=1 -DHYLE_GRAPH_ONEDNN=1 -DHYLE_IO_HAS_COROUTINE_TRANSPORT=1 -DHYLE_STATIC -I/root/hyle-scratch/compute-unified/source-7a7b4c3b/include -isystem /usr/local/cuda-13.3/targets/x86_64-linux/include -O3 -DNDEBUG -std=gnu++23 -Wno-error=mismatched-new-delete -fsanitize=address -fno-omit-frame-pointer -MD -MT CMakeFiles/public_cuda.dir/root/hyle-scratch/compute-unified/source-7a7b4c3b/tests/compute_batch/public_batch_cuda_consumer.cc.o -MF CMakeFiles/public_cuda.dir/root/hyle-scratch/compute-unified/source-7a7b4c3b/tests/compute_batch/public_batch_cuda_consumer.cc.o.d -o CMakeFiles/public_cuda.dir/root/hyle-scratch/compute-unified/source-7a7b4c3b/tests/compute_batch/public_batch_cuda_consumer.cc.o -c /root/hyle-scratch/compute-unified/source-7a7b4c3b/tests/compute_batch/public_batch_cuda_consumer.cc",
+      "/usr/bin/g++-14 -DHYLE_COMPUTE_CPU=1 -DHYLE_COMPUTE_CUDA=1 -DHYLE_COMPUTE_FLASHINFER=1 -DHYLE_COMPUTE_ONEDNN=1 -DHYLE_COMPUTE_TORCH_CUDA=1 -DHYLE_DETAIL_SANITIZER_ADDRESS=1 -DHYLE_GRAPH_ONEDNN=1 -DHYLE_IO_HAS_COROUTINE_TRANSPORT=1 -DHYLE_STATIC -I/root/hyle-scratch/compute-unified/source-7a7b4c3b/include -isystem /usr/local/cuda-13.3/targets/x86_64-linux/include -O3 -DNDEBUG -std=gnu++23 -Wno-error=mismatched-new-delete -fsanitize=address -fno-omit-frame-pointer -MD -MT CMakeFiles/direct.dir/root/hyle-scratch/compute-unified/source-7a7b4c3b/tests/compute_batch/native_direct_consumer.cc.o -MF CMakeFiles/direct.dir/root/hyle-scratch/compute-unified/source-7a7b4c3b/tests/compute_batch/native_direct_consumer.cc.o.d -o CMakeFiles/direct.dir/root/hyle-scratch/compute-unified/source-7a7b4c3b/tests/compute_batch/native_direct_consumer.cc.o -c /root/hyle-scratch/compute-unified/source-7a7b4c3b/tests/compute_batch/native_direct_consumer.cc",
+      "/usr/bin/g++-14 -DHYLE_COMPUTE_CPU=1 -DHYLE_COMPUTE_CUDA=1 -DHYLE_COMPUTE_FLASHINFER=1 -DHYLE_COMPUTE_ONEDNN=1 -DHYLE_COMPUTE_TORCH_CUDA=1 -DHYLE_DETAIL_SANITIZER_ADDRESS=1 -DHYLE_GRAPH_ONEDNN=1 -DHYLE_IO_HAS_COROUTINE_TRANSPORT=1 -DHYLE_STATIC -I/root/hyle-scratch/compute-unified/source-7a7b4c3b/include -isystem /usr/local/cuda-13.3/targets/x86_64-linux/include -O3 -DNDEBUG -std=gnu++23 -Wno-error=mismatched-new-delete -fsanitize=address -fno-omit-frame-pointer -MD -MT CMakeFiles/graph.dir/root/hyle-scratch/compute-unified/source-7a7b4c3b/tests/compute_batch/native_graph_consumer.cc.o -MF CMakeFiles/graph.dir/root/hyle-scratch/compute-unified/source-7a7b4c3b/tests/compute_batch/native_graph_consumer.cc.o.d -o CMakeFiles/graph.dir/root/hyle-scratch/compute-unified/source-7a7b4c3b/tests/compute_batch/native_graph_consumer.cc.o -c /root/hyle-scratch/compute-unified/source-7a7b4c3b/tests/compute_batch/native_graph_consumer.cc",
+      "/usr/bin/g++-14 -DHYLE_COMPUTE_BATCH_BUILD -DHYLE_DETAIL_SANITIZER_ADDRESS=1 -DHYLE_STATIC -I/root/hyle-scratch/compute-unified/source-7a7b4c3b/include -I/root/hyle-scratch/compute-unified/source-7a7b4c3b/src/compute_batch -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Wno-error=mismatched-new-delete -fsanitize=address -fno-omit-frame-pointer -MD -MT hyle/src/compute_batch/CMakeFiles/hyle_compute_batch.dir/batch_execution.cc.o -MF hyle/src/compute_batch/CMakeFiles/hyle_compute_batch.dir/batch_execution.cc.o.d -o hyle/src/compute_batch/CMakeFiles/hyle_compute_batch.dir/batch_execution.cc.o -c /root/hyle-scratch/compute-unified/source-7a7b4c3b/src/compute_batch/batch_execution.cc",
+      "/usr/bin/g++-14 -DHYLE_DETAIL_SANITIZER_ADDRESS=1 -DHYLE_GRAPH_BATCH_BUILD -DHYLE_STATIC -I/root/hyle-scratch/compute-unified/source-7a7b4c3b/include -I/root/hyle-scratch/compute-unified/source-7a7b4c3b/src/graph_batch -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Wno-error=mismatched-new-delete -fsanitize=address -fno-omit-frame-pointer -MD -MT hyle/src/graph_batch/CMakeFiles/hyle_graph_batch.dir/batch.cc.o -MF hyle/src/graph_batch/CMakeFiles/hyle_graph_batch.dir/batch.cc.o.d -o hyle/src/graph_batch/CMakeFiles/hyle_graph_batch.dir/batch.cc.o -c /root/hyle-scratch/compute-unified/source-7a7b4c3b/src/graph_batch/batch.cc",
+      "/usr/bin/g++-14 -DHYLE_DETAIL_SANITIZER_ADDRESS=1 -DHYLE_GRAPH_BUILD -DHYLE_STATIC -I/root/hyle-scratch/compute-unified/source-7a7b4c3b/include -I/root/hyle-scratch/compute-unified/source-7a7b4c3b/src/graph -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Wno-error=mismatched-new-delete -fsanitize=address -fno-omit-frame-pointer -MD -MT hyle/src/graph/CMakeFiles/hyle_graph.dir/leased_invocation.cc.o -MF hyle/src/graph/CMakeFiles/hyle_graph.dir/leased_invocation.cc.o.d -o hyle/src/graph/CMakeFiles/hyle_graph.dir/leased_invocation.cc.o -c /root/hyle-scratch/compute-unified/source-7a7b4c3b/src/graph/leased_invocation.cc",
+      "/usr/bin/g++-14 -DFLASHINFER_ENABLE_BF16 -DFLASHINFER_ENABLE_F16 -DHYLE_COMPUTE_CUDA=1 -DHYLE_COMPUTE_FLASHINFER=1 -DHYLE_COMPUTE_PROVIDER_FLASHINFER_BUILD -DHYLE_DETAIL_SANITIZER_ADDRESS=1 -DHYLE_STATIC -I/root/hyle-scratch/compute-unified/source-7a7b4c3b/include -I/root/hyle-scratch/compute-unified/source-7a7b4c3b/src/compute_provider_flashinfer -I/root/hyle-scratch/compute-unified/source-7a7b4c3b/src/compute_provider_flashinfer/../compute -I/root/hyle-scratch/compute-unified/source-7a7b4c3b/src/compute_provider_flashinfer/../compute_backend_cuda -isystem /root/.cache/hyle/dependencies/v1/sources/flashinfer-69ff11fc4954-dda66e35e348/include -isystem /usr/local/cuda-13.3/targets/x86_64-linux/include -O3 -DNDEBUG -std=c++23 -Wall -Wextra -Wpedantic -Wno-error=mismatched-new-delete -fsanitize=address -fno-omit-frame-pointer -MD -MT hyle/src/compute_provider_flashinfer/CMakeFiles/hyle_compute_provider_flashinfer.dir/flashinfer_provider.cc.o -MF hyle/src/compute_provider_flashinfer/CMakeFiles/hyle_compute_provider_flashinfer.dir/flashinfer_provider.cc.o.d -o hyle/src/compute_provider_flashinfer/CMakeFiles/hyle_compute_provider_flashinfer.dir/flashinfer_provider.cc.o -c /root/hyle-scratch/compute-unified/source-7a7b4c3b/src/compute_provider_flashinfer/flashinfer_provider.cc"
+    ]
+  },
+  "lsan_controls_sha256": "3720446f7be4d13537f57620f88bf950bc44bbde9fa6eecab30f792cdd27a292",
+  "address_sanitizer_verdict": "PASS",
+  "whole_process_lsan_verdict": "INCONCLUSIVE_VENDOR_REPORTS"
+}
