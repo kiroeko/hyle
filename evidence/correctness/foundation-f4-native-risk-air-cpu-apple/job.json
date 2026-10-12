@@ -1,0 +1,141 @@
+{
+  "profile": "cpu-apple",
+  "identity": {
+    "hardware": "Mac16,12",
+    "memory": "17179869184",
+    "os": "ProductName:\t\tmacOS\nProductVersion:\t\t27.0.1\nBuildVersion:\t\t26A434",
+    "compiler": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin"
+  },
+  "stage": "AUDITED implementation, not candidate",
+  "scope": "F4 actual M4 native source Direct/Graph recurrent/conv/layout + orthogonal asset/state clone only",
+  "stages": [
+    {
+      "name": "configure",
+      "command": [
+        "/opt/homebrew/bin/cmake",
+        "-S",
+        "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-parent",
+        "-B",
+        "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build"
+      ],
+      "pid": 59639,
+      "state": "terminal",
+      "available_bytes": 7210958848,
+      "log": "configure.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "elapsed": 5.762172916,
+      "sha256": "44345687be22f6af7c71c5d2837ff7336d00d5761d5a5d8cef0593d9b39e6c6b"
+    },
+    {
+      "name": "build",
+      "command": [
+        "/opt/homebrew/bin/cmake",
+        "--build",
+        "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build",
+        "--target",
+        "hyle_f4_native_risks",
+        "--parallel",
+        "1"
+      ],
+      "pid": 59717,
+      "state": "terminal",
+      "available_bytes": 7161315328,
+      "log": "build.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "elapsed": 13.448953959,
+      "sha256": "1b8abdc05576e920601251883fed2c45ed3417d012d0fd3756cc42cfe52bb942"
+    },
+    {
+      "name": "consumer",
+      "command": [
+        "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build/hyle_f4_native_risks"
+      ],
+      "pid": 59810,
+      "state": "terminal",
+      "available_bytes": 7166902272,
+      "log": "consumer.log",
+      "exit_code": 1,
+      "verdict": "FAIL",
+      "elapsed": 2.075508124999999,
+      "sha256": "b309e89d631e481b4b690bb8b6994454bddb001f93d94e305dd16780c496a6f6"
+    },
+    {
+      "name": "build-resume1",
+      "command": [
+        "/opt/homebrew/bin/cmake",
+        "--build",
+        "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build",
+        "--target",
+        "hyle_f4_native_risks",
+        "--parallel",
+        "1"
+      ],
+      "pid": 59863,
+      "state": "terminal",
+      "available_bytes": 7183466496,
+      "log": "build-resume1.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "elapsed": 1.0501555,
+      "sha256": "f978e9dea94399da83688fb5b9042ae654c0917aa4c16c583570b3f739485c68"
+    },
+    {
+      "name": "consumer-resume1",
+      "command": [
+        "/Users/kiro/hyle-scratch/compute-unified/a-cpu-apple/selected-graph/source-build/hyle_f4_native_risks"
+      ],
+      "pid": 59878,
+      "state": "terminal",
+      "available_bytes": 7181680640,
+      "log": "consumer-resume1.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "elapsed": 0.506081708,
+      "sha256": "a0ab75b62b934f2c84153db1dfa2faab0387b1f3fc2601c73af42f689b5ceb76"
+    }
+  ],
+  "test_parallel": 1,
+  "inputs": [
+    {
+      "path": "tests/compute_state/native_fault_consumer.cc",
+      "sha256": "034c3f0d1aed1a668d85c3c4cd9ae49121de20ae060b157233e255133ac7ac1a"
+    },
+    {
+      "path": "cmake/HyleComponents.cmake",
+      "sha256": "80ba60ecfa94bc73672a1a1f7cda765c943ccdfd2af685e2047ce9f55e9da092"
+    },
+    {
+      "path": "src/compute_state/CMakeLists.txt",
+      "sha256": "74c451450ce59a4f0f465f654211b34f683db2bb5e2fcd8e19ca030073bab76c"
+    },
+    {
+      "path": "src/compute_state/state_internal.h",
+      "sha256": "20f419f2361a13d224eba3023f630b360bcd37e7135a28e13ba931b5d4073b05"
+    },
+    {
+      "path": "src/compute_state/state_versions.cc",
+      "sha256": "65a605065c4df264f093fe164ec1579d8e8cc45db773e17922c07f1faed056b9"
+    },
+    {
+      "path": "include/hyle/compute/state_versions.h",
+      "sha256": "a83193baa10ff4f00fc6eb7289b7f25091038096877ee3dc3aa0053a7b5ca878"
+    },
+    {
+      "path": "include/hyle/compute/state_clone.h",
+      "sha256": "1e20c2363bb1fc6c1aa7b6b72247d5f1a2fde4d4f5ab04e5c2e7791c14d64b3f"
+    },
+    {
+      "path": "include/hyle/compute/detail/state_clone_access.h",
+      "sha256": "b56629d38582f595a9b46eb74d9e6d4b983868bf3a73cf91fb4a965248ee9608"
+    }
+  ],
+  "candidate": "29d3c7a3ebe81f0e627986e2e8c8a393aa7832c8",
+  "qualification": "PASS_F4_NATIVE_FAULT_JOURNEY; test-only overlay; product candidate unchanged",
+  "raw_archive": {
+    "name": "raw-logs.zip",
+    "sha256": "3219f1b38a24644e4facf4e9a9798b56493639c5f47df263fa8c5686da7e0b88",
+    "stage_hashes_refer_to": "original archive entries"
+  }
+}

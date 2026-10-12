@@ -1,7 +1,7 @@
 # 显式只读集合版本与 dirty clone
 
-当前F4处于[AUDITED实施](../implementation/tasks/compute/foundation-f4-state-versions.md)，
-共同层与部分真实route消费者已有结果；其余风险/SDK资格仍按registry，不把本文当CLOSED证书。
+当前F4处于[CANDIDATE验证](../implementation/tasks/compute/foundation-f4-state-versions.md)，
+共同层与四route消费者已有结果；其余风险/SDK资格仍按registry，不把本文当CLOSED证书。
 入口在[State API](../../include/hyle/compute/state_versions.h)及
 [typed clone API](../../include/hyle/compute/state_clone.h)，产品target为hyle::compute。
 与Graph组合的普通consumer选择compute和graph两个产品及实际route。

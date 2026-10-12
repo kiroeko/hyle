@@ -1,0 +1,203 @@
+{
+  "profile": "cpu-vulkan",
+  "stage": "AUDITED implementation, not candidate",
+  "scope": "F4 public ordinary source Direct/Graph recurrent/conv/layout + orthogonal asset/state clone only",
+  "stages": [
+    {
+      "name": "configure",
+      "command": [
+        "cmake",
+        "-S",
+        "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-parent",
+        "-B",
+        "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build"
+      ],
+      "pid": 41524,
+      "state": "terminal",
+      "available_bytes": 45249724416,
+      "log": "configure.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "elapsed": 55.98499999999967,
+      "sha256": "9d780ee18fe7d0934d20420f5d41529ada825cfbe9a4b822a57e0047fa33eb0a"
+    },
+    {
+      "name": "build",
+      "command": [
+        "cmake",
+        "--build",
+        "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build",
+        "--target",
+        "hyle_f4_native_risks",
+        "--parallel",
+        "4"
+      ],
+      "pid": 3088,
+      "state": "terminal",
+      "available_bytes": 45635158016,
+      "log": "build.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "elapsed": 27.063000000000102,
+      "sha256": "0e5bc7f36226e1cc3f1598147b9828af836866774b3aec9a7d8205512cf8526a"
+    },
+    {
+      "name": "consumer",
+      "command": [
+        "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle_f4_native_risks.exe"
+      ],
+      "pid": 27976,
+      "state": "terminal",
+      "available_bytes": 45004197888,
+      "log": "consumer.log",
+      "exit_code": 4294967295,
+      "verdict": "FAIL",
+      "elapsed": 95.35899999999947,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "name": "build-resume1",
+      "command": [
+        "cmake",
+        "--build",
+        "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build",
+        "--target",
+        "hyle_f4_native_risks",
+        "--parallel",
+        "4"
+      ],
+      "pid": 26560,
+      "state": "terminal",
+      "available_bytes": 44400013312,
+      "log": "build-resume1.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "elapsed": 3.094000000000051,
+      "sha256": "43acb0c19fc1a3b346d1178e5ef58a0ed924f37e2378afbee90277222e5c0acf"
+    },
+    {
+      "name": "consumer-resume1",
+      "command": [
+        "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle_f4_native_risks.exe"
+      ],
+      "pid": 41732,
+      "state": "terminal",
+      "available_bytes": 44407341056,
+      "log": "consumer-resume1.log",
+      "exit_code": 1,
+      "verdict": "FAIL",
+      "elapsed": 0.18800000000010186,
+      "sha256": "ee717a525fd104075631419bed61d6b3d0e108711eb951aad4d8512286704ecc"
+    },
+    {
+      "name": "build-resume2",
+      "command": [
+        "cmake",
+        "--build",
+        "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build",
+        "--target",
+        "hyle_f4_native_risks",
+        "--parallel",
+        "4"
+      ],
+      "pid": 43228,
+      "state": "terminal",
+      "available_bytes": 44325945344,
+      "log": "build-resume2.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "elapsed": 3.07799999999952,
+      "sha256": "43acb0c19fc1a3b346d1178e5ef58a0ed924f37e2378afbee90277222e5c0acf"
+    },
+    {
+      "name": "consumer-resume2",
+      "command": [
+        "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle_f4_native_risks.exe"
+      ],
+      "pid": 42664,
+      "state": "terminal",
+      "available_bytes": 44347596800,
+      "log": "consumer-resume2.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "elapsed": 0.25,
+      "sha256": "5ab25fae5d317f17eb66f970adcf89380a806a021f7b15d57cd2487b2b34ad3c"
+    },
+    {
+      "name": "build-resume3",
+      "command": [
+        "cmake",
+        "--build",
+        "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build",
+        "--target",
+        "hyle_f4_native_risks",
+        "--parallel",
+        "4"
+      ],
+      "pid": 30212,
+      "state": "terminal",
+      "available_bytes": 44280311808,
+      "log": "build-resume3.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "elapsed": 3.016000000000531,
+      "sha256": "43acb0c19fc1a3b346d1178e5ef58a0ed924f37e2378afbee90277222e5c0acf"
+    },
+    {
+      "name": "consumer-resume3",
+      "command": [
+        "C:\\h7\\w-cpu-vulkan\\selected-graph\\source-build\\hyle_f4_native_risks.exe"
+      ],
+      "pid": 41204,
+      "state": "terminal",
+      "available_bytes": 44392968192,
+      "log": "consumer-resume3.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "elapsed": 0.23399999999946886,
+      "sha256": "5ab25fae5d317f17eb66f970adcf89380a806a021f7b15d57cd2487b2b34ad3c"
+    }
+  ],
+  "test_parallel": 1,
+  "inputs": [
+    {
+      "path": "tests/compute_state/native_fault_consumer.cc",
+      "sha256": "ad4745438968e7a43cab53a3dbb73d8080666371a35f959bacac34ed8b61b800"
+    },
+    {
+      "path": "cmake/HyleComponents.cmake",
+      "sha256": "80ba60ecfa94bc73672a1a1f7cda765c943ccdfd2af685e2047ce9f55e9da092"
+    },
+    {
+      "path": "src/compute_state/CMakeLists.txt",
+      "sha256": "74c451450ce59a4f0f465f654211b34f683db2bb5e2fcd8e19ca030073bab76c"
+    },
+    {
+      "path": "src/compute_state/state_internal.h",
+      "sha256": "20f419f2361a13d224eba3023f630b360bcd37e7135a28e13ba931b5d4073b05"
+    },
+    {
+      "path": "src/compute_state/state_versions.cc",
+      "sha256": "65a605065c4df264f093fe164ec1579d8e8cc45db773e17922c07f1faed056b9"
+    },
+    {
+      "path": "include/hyle/compute/state_versions.h",
+      "sha256": "a83193baa10ff4f00fc6eb7289b7f25091038096877ee3dc3aa0053a7b5ca878"
+    },
+    {
+      "path": "include/hyle/compute/state_clone.h",
+      "sha256": "1e20c2363bb1fc6c1aa7b6b72247d5f1a2fde4d4f5ab04e5c2e7791c14d64b3f"
+    },
+    {
+      "path": "include/hyle/compute/detail/state_clone_access.h",
+      "sha256": "b56629d38582f595a9b46eb74d9e6d4b983868bf3a73cf91fb4a965248ee9608"
+    }
+  ],
+  "candidate": "29d3c7a3ebe81f0e627986e2e8c8a393aa7832c8",
+  "qualification": "PASS_F4_NATIVE_FAULT_JOURNEY; test-only overlay; product candidate unchanged",
+  "raw_archive": {
+    "name": "raw-logs.zip",
+    "sha256": "dde45ce9526fe4e51ff10730f94e2ca5006da600bb1200dce33f6319109d9501",
+    "stage_hashes_refer_to": "original archive entries"
+  }
+}

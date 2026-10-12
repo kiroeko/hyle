@@ -1,0 +1,42 @@
+[0/2] Re-checking globbed directories...
+[1/40] Performing build step for 'vulkan-shaders-gen'
+ninja: no work to do.
+[2/40] Performing install step for 'vulkan-shaders-gen'
+-- Up-to-date: /Users/kiro/hyle-scratch/compute-unified/a-cpu-vulkan/selected-graph/source-build/Release/./vulkan-shaders-gen
+[3/40] Completed 'vulkan-shaders-gen'
+[4/40] Building CXX object hyle/src/simd/CMakeFiles/hyle_simd.dir/runtime.cc.o
+[5/40] Building CXX object hyle/src/simd/CMakeFiles/hyle_simd.dir/ops/dispatch_ops.cc.o
+[6/40] Building CXX object hyle/src/simd/CMakeFiles/hyle_simd.dir/random/random_dispatch.cc.o
+[7/40] Building CXX object hyle/src/simd/CMakeFiles/hyle_simd.dir/search/search_dispatch.cc.o
+[8/40] Building CXX object hyle/src/simd/CMakeFiles/hyle_simd.dir/narrow/narrow_dispatch.cc.o
+[9/40] Building CXX object hyle/src/simd/CMakeFiles/hyle_simd.dir/scan/scan_dispatch.cc.o
+[10/40] Building CXX object hyle/src/simd/CMakeFiles/hyle_simd.dir/dtype/dtype_dispatch.cc.o
+[11/40] Building CXX object hyle/src/simd/CMakeFiles/hyle_simd.dir/math/math_dispatch.cc.o
+[12/40] Building CXX object hyle/src/simd/CMakeFiles/hyle_simd.dir/sort/sort_dispatch.cc.o
+[13/40] Building CXX object hyle/src/simd/CMakeFiles/hyle_simd.dir/bitpack/bitpack_dispatch.cc.o
+[14/40] Building CXX object hyle/src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/ops/ops_scalar.cc.o
+[15/40] Building CXX object hyle/src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/ops/ops_neon.cc.o
+[16/40] Building CXX object hyle/src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/dtype_convert/dtype_convert_scalar.cc.o
+[17/40] Building CXX object hyle/src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/dtype_convert/dtype_convert_neon.cc.o
+[18/40] Building CXX object hyle/src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/scan/scan_scalar.cc.o
+[19/40] Building CXX object hyle/src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/scan/scan_neon.cc.o
+[20/40] Building CXX object hyle/src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/random/random_scalar.cc.o
+[21/40] Building CXX object hyle/src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/random/random_neon.cc.o
+[22/40] Building CXX object hyle/src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/search/search_scalar.cc.o
+[23/40] Building CXX object hyle/src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/search/search_neon.cc.o
+[24/40] Building CXX object hyle/src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/narrow/narrow_scalar.cc.o
+[25/40] Building CXX object hyle/src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/narrow/narrow_neon.cc.o
+[26/40] Building CXX object hyle/src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/bitpack/bitpack_scalar.cc.o
+[27/40] Building CXX object hyle/src/simd/CMakeFiles/hyle_simd.dir/generated/simd-dispatch/bitpack/bitpack_neon.cc.o
+[28/40] Linking CXX shared library hyle/src/simd/libhyle_simd.0.1.0.dylib
+[29/40] Creating library symlink hyle/src/simd/libhyle_simd.dylib
+[30/40] Linking CXX shared library hyle/src/compute_provider_native/libhyle_compute_provider_native.0.1.0.dylib
+[31/40] Creating library symlink hyle/src/compute_provider_native/libhyle_compute_provider_native.dylib
+[32/40] Linking CXX shared library hyle/src/compute_route_cpu/libhyle_compute_route_cpu.0.1.0.dylib
+[33/40] Creating library symlink hyle/src/compute_route_cpu/libhyle_compute_route_cpu.dylib
+[34/40] Linking CXX shared library hyle/src/graph_route_cpu/libhyle_graph_route_cpu.0.1.0.dylib
+[35/40] Creating library symlink hyle/src/graph_route_cpu/libhyle_graph_route_cpu.dylib
+[36/40] Linking CXX shared library hyle/src/graph_route_cpu_vulkan/libhyle_graph_route_cpu_vulkan.0.1.0.dylib
+[37/40] Building CXX object CMakeFiles/hyle_f4_native_risks.dir/Users/kiro/hyle-scratch/compute-unified/source-c8874688/tests/compute_state/native_fault_consumer.cc.o
+[38/40] Creating library symlink hyle/src/graph_route_cpu_vulkan/libhyle_graph_route_cpu_vulkan.dylib
+[39/40] Linking CXX executable hyle_f4_native_risks

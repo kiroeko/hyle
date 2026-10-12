@@ -1,0 +1,109 @@
+{
+  "candidate": "29d3c7a3ebe81f0e627986e2e8c8a393aa7832c8",
+  "mode": "ubsan",
+  "source": "/home/kiro/hyle-f1/sanitizers/source-03242e7723cb",
+  "build": "/home/kiro/hyle-f1/sanitizers/ubsan-03242e7723cb",
+  "compiler": "g++-14 (Ubuntu 14.2.0-4ubuntu2~24.04.1) 14.2.0\nCopyright (C) 2024 Free Software Foundation, Inc.\nThis is free software; see the source for copying conditions.  There is NO\nwarranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.\n\n",
+  "scope": "F4 actual24 state/ownership/concurrency and original CPU F2 cases only; no Graph/operator catalogue",
+  "test_parallel": 1,
+  "stages": [
+    {
+      "name": "configure",
+      "command": [
+        "/usr/bin/cmake",
+        "-S",
+        "/home/kiro/hyle-f1/sanitizers/source-03242e7723cb",
+        "-B",
+        "/home/kiro/hyle-f1/sanitizers/ubsan-03242e7723cb",
+        "-UHYLE_COMPONENTS",
+        "-UHYLE_COMPUTE_ROUTES",
+        "-UCMAKE_PROJECT_TOP_LEVEL_INCLUDES",
+        "-DHYLE_DEV_FACTORS:STRING=compute_state",
+        "-DHYLE_BUILD_TESTS:BOOL=ON",
+        "-DHYLE_BUILD_BENCH:BOOL=OFF",
+        "-DHYLE_INSTALL:BOOL=OFF",
+        "-DHYLE_SANITIZER:STRING=ubsan",
+        "-DHYLE_WERROR:BOOL=OFF"
+      ],
+      "pid": 765,
+      "state": "terminal",
+      "available_bytes": 32592568320,
+      "log": "configure.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "elapsed": 5.403149834000004,
+      "sha256": "54850bbb4e1298a63da1c975539bb76ea11c36c97703601f91eb5a216faa29df"
+    },
+    {
+      "name": "build",
+      "command": [
+        "/usr/bin/cmake",
+        "--build",
+        "/home/kiro/hyle-f1/sanitizers/ubsan-03242e7723cb",
+        "--target",
+        "hyle_compute_state_test",
+        "--parallel",
+        "4"
+      ],
+      "pid": 839,
+      "state": "terminal",
+      "available_bytes": 32397037568,
+      "log": "build.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "elapsed": 3.9343737420000053,
+      "sha256": "18bb90e0b714696ec9c6f25c200aeb685413c678d88a9a414b91c5854a2e9922"
+    },
+    {
+      "name": "tests",
+      "command": [
+        "/home/kiro/hyle-f1/sanitizers/ubsan-03242e7723cb/bin/hyle_compute_state_test",
+        "--gtest_output=xml:/root/hyle-scratch/compute-unified/foundation-f4-ubsan-29d3c7a3e/tests.xml"
+      ],
+      "pid": 864,
+      "state": "terminal",
+      "available_bytes": 32083214336,
+      "log": "tests.log",
+      "exit_code": 0,
+      "verdict": "PASS",
+      "elapsed": 0.007963470999996503,
+      "sha256": "f3a5f15abed71f493543efd47105c875f98988f0bf5891eb855043921f6ed74f"
+    }
+  ],
+  "inputs": [
+    {
+      "path": "src/compute_state/CMakeLists.txt",
+      "sha256": "74c451450ce59a4f0f465f654211b34f683db2bb5e2fcd8e19ca030073bab76c"
+    },
+    {
+      "path": "src/compute_state/state_internal.h",
+      "sha256": "20f419f2361a13d224eba3023f630b360bcd37e7135a28e13ba931b5d4073b05"
+    },
+    {
+      "path": "src/compute_state/state_versions.cc",
+      "sha256": "65a605065c4df264f093fe164ec1579d8e8cc45db773e17922c07f1faed056b9"
+    },
+    {
+      "path": "tests/compute_state/CMakeLists.txt",
+      "sha256": "e83afb1bde79a86f519eb0afa80a4442aabd362f8177973eaec8f08b332bb75b"
+    },
+    {
+      "path": "tests/compute_state/public_consumer/CMakeLists.txt",
+      "sha256": "61c53e179c83396e2eb1387dfe89789f482be9786ff28ac8b66830a49afbd025"
+    },
+    {
+      "path": "tests/compute_state/public_state_consumer.cc",
+      "sha256": "6a82c25a36838ca6b05c04205ec7f43a53408908286c44b9ccc4c5c54c5aa297"
+    },
+    {
+      "path": "tests/compute_state/state_clone_test.cc",
+      "sha256": "6ab9e748f0af893e981236c33fe1b2f00cdd6b9211f427dbd1c7f144d1c3c52b"
+    },
+    {
+      "path": "tests/compute_state/state_versions_test.cc",
+      "sha256": "02f5c867ea12cac0bbf74fe176efb742749dfec098497993efadb5544640faea"
+    }
+  ],
+  "actual_cases": 24,
+  "verdict": "PASS_F4_UBSAN_24"
+}

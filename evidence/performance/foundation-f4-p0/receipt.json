@@ -1,0 +1,39 @@
+{
+  "candidate": "29d3c7a3ebe81f0e627986e2e8c8a393aa7832c8",
+  "tier": "P0",
+  "verdict": "PASS_STRUCTURAL_COST; no timed direction",
+  "inputs": [
+    {
+      "path": "src/compute_state/state_versions.cc",
+      "sha256": "65a605065c4df264f093fe164ec1579d8e8cc45db773e17922c07f1faed056b9"
+    },
+    {
+      "path": "src/compute_state/state_internal.h",
+      "sha256": "20f419f2361a13d224eba3023f630b360bcd37e7135a28e13ba931b5d4073b05"
+    },
+    {
+      "path": "include/hyle/compute/state_versions.h",
+      "sha256": "a83193baa10ff4f00fc6eb7289b7f25091038096877ee3dc3aa0053a7b5ca878"
+    },
+    {
+      "path": "include/hyle/compute/state_clone.h",
+      "sha256": "1e20c2363bb1fc6c1aa7b6b72247d5f1a2fde4d4f5ab04e5c2e7791c14d64b3f"
+    },
+    {
+      "path": "include/hyle/compute/detail/state_clone_access.h",
+      "sha256": "b56629d38582f595a9b46eb74d9e6d4b983868bf3a73cf91fb4a965248ee9608"
+    }
+  ],
+  "codegen": {
+    "compiler": "MSVC 19.50.35728.0",
+    "object": "C:\\h7\\foundation-f4\\core-static\\src\\compute_state\\CMakeFiles\\hyle_compute_state.dir\\state_versions.cc.obj",
+    "object_sha256": "3ecc619cd923a5883b366805560eee380d72be709d777fb5800ae92cfbfc6354",
+    "archive_sha256": "f6539315fa68b42f7d0d4601638375d59eaa78c35291cfaeee36d1ed2531a1e1",
+    "command": [
+      "dumpbin.exe",
+      "/DISASM",
+      "C:\\h7\\foundation-f4\\core-static\\src\\compute_state\\CMakeFiles\\hyle_compute_state.dir\\state_versions.cc.obj"
+    ],
+    "observation": "Successful publication unlocks at 0x1c0 before previous record release at 0x1da. Failure paths may allocate Status text; not allocation-free on errors."
+  }
+}

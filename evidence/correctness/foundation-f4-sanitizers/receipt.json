@@ -1,0 +1,49 @@
+{
+  "candidate": "29d3c7a3ebe81f0e627986e2e8c8a393aa7832c8",
+  "rows": [
+    {
+      "mode": "asan",
+      "candidate": "29d3c7a3ebe81f0e627986e2e8c8a393aa7832c8",
+      "actual_cases": 24,
+      "archive": "asan-raw.zip",
+      "sha256": "5aa345205f4892bf25081d28e4e84f458bbd9cd4807382ee992228792e4e46eb",
+      "verdict": "PASS_F4_ASAN_24",
+      "preserved_failures": []
+    },
+    {
+      "mode": "ubsan",
+      "candidate": "29d3c7a3ebe81f0e627986e2e8c8a393aa7832c8",
+      "actual_cases": 24,
+      "archive": "ubsan-raw.zip",
+      "sha256": "120c8ac404dcb515792d17ab8e708be9fff4fbe7de9669c7940e9c7a51643bc3",
+      "verdict": "PASS_F4_UBSAN_24",
+      "preserved_failures": []
+    },
+    {
+      "mode": "tsan",
+      "candidate": "29d3c7a3ebe81f0e627986e2e8c8a393aa7832c8",
+      "actual_cases": 24,
+      "archive": "tsan-raw.zip",
+      "sha256": "b4a59dc8cc6075bae5baccb375cceea469d7c22524fd57a643b479f640b5e731",
+      "verdict": "PASS_F4_TSAN_24",
+      "preserved_failures": [
+        {
+          "name": "tests",
+          "command": [
+            "/home/kiro/hyle-f1/sanitizers/tsan-03242e7723cb/bin/hyle_compute_state_test",
+            "--gtest_output=xml:/root/hyle-scratch/compute-unified/foundation-f4-tsan-29d3c7a3e/tests.xml"
+          ],
+          "pid": 975,
+          "state": "terminal",
+          "available_bytes": 32157487104,
+          "log": "tests.log",
+          "exit_code": 66,
+          "verdict": "FAIL",
+          "elapsed": 0.007654544999994073,
+          "sha256": "ffc44c5b3827d0cdfc5310ea6147bdb2d4d137979301642825e9e58b0ea726d9"
+        }
+      ]
+    }
+  ],
+  "scope": "Only F4 common/CPU copy/publication/record ownership risks; no GPU or full module catalogue"
+}

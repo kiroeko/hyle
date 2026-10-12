@@ -181,6 +181,33 @@ P0固定目录与有限ledger冷扫描，warm native不加版本字段；同工�
 三交付、新头/缺路线按实际selected seams；guide必须解释完整schema、borrow/readonly、容量、
 expected-base冲突、实际prefix/unknown和opaque不能raw-clone。没有timed性能胜负结论。
 
+## Candidate 验证续记
+
+2026-10-12：固定29d3c7a3e，以下新增证据只补test/文档，不改产品candidate：
+
+- [三sanitizer](../../../../evidence/correctness/foundation-f4-sanitizers/README.md)：
+  WSL GCC14.2原shipping factor compute_state及CPU copy backend，ASan/UBSan/TSan各实际24项
+  PASS。TSan首次进程在测试启动前exit66，保留原失败/累计时间；同flags/tree仅进程级
+  setarch x86_64 -R后通过，无suppression或全局系统修改。
+- [Windows CUDA故障](../../../../evidence/correctness/foundation-f4-native-risk-windows-cpu-cuda/README.md)：
+  原host callback挡住实际F4 copy，cancel/全控件abandon/concurrent wait与close均不提前
+  发布或释放source native use，退休后旧源保持和metadata归零。
+- Vulkan unknown观察：[Windows](../../../../evidence/correctness/foundation-f4-native-risk-windows-cpu-vulkan/README.md)、
+  [实际Air](../../../../evidence/correctness/foundation-f4-native-risk-air-cpu-vulkan/README.md)。
+  通过原private设备fn table注入原fence/queue观察错误，未证明退休不发布/回收/rearm，
+  cancel/abandon解除注入后实际退休，旧源保持。原fixture自阻塞和no-op rearm断言失败
+  完整保留，未通过修改产品或重置预算消除。
+- [Air Apple故障](../../../../evidence/correctness/foundation-f4-native-risk-air-cpu-apple/README.md)：
+  原MLX owner真实pending→F4 copy，cancel/abandon/concurrent close与late Internal prefix
+  四场景PASS。首轮allocator余额检查早于原owner清理retired Job；最终在显式Context.close
+  join后检查，原FAIL保留，不给F4新增隐式native wait。
+- [P0与LOC](../../../../evidence/performance/foundation-f4-p0/README.md)：目录/ledger有限扫描、
+  share零payload copy、dirty按实际bytes、head成功临界区O(1)，末record释放O(E)在外，
+  冷ledger有O(B²+EB+E²)而非无界paged热路径。原MSVC对象代码和完整1147行边界已封存。
+
+当前CANDIDATE继续；WSL普通source、各installed static/shared与其loader/迁址/缺路线、新头，
+完整风险矩阵和候选后红队尚未全部裁决，不能CLOSED，也不表示F5已有产品实现。
+
 QUEUED identity只新增一条未实现声明，未改变原产品闭包/头/target；selector对中央manifest
 保守选择全图，原plan在.scratch/foundation-a/f4-queued-plan.json。按用户要求及本卡语义仅做
 closure中央身份/顺序与docs检查；不启动未受影响模块/全目录构建，不改公共selector来缩表。
