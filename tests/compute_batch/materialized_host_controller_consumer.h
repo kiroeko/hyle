@@ -26,6 +26,40 @@ struct DirectDriver final {
   Result<DirectOutput> output(){HYLE_ASSIGN_OR_RETURN(auto lease,value.output());return DirectOutput{std::move(lease)};}
   Status close(){return value.close();}
 };
+struct FaultAllocator final {
+  hyle::mem::AllocatorRef backing=hyle::mem::system_allocator();
+  std::size_t attempts=0,fail=SIZE_MAX,live=0;
+  hyle::mem::AllocatorRef ref()noexcept{
+    return {[](void*p,std::size_t bytes,std::size_t alignment)noexcept->void*{
+      auto&s=*static_cast<FaultAllocator*>(p);if(s.attempts++==s.fail)return nullptr;
+      auto*result=s.backing.allocate(bytes,alignment);s.live+=result!=nullptr;return result;
+    },[](void*p,void*data,std::size_t bytes,std::size_t alignment)noexcept{
+      auto&s=*static_cast<FaultAllocator*>(p);s.live-=data!=nullptr;s.backing.deallocate(data,bytes,alignment);
+    },[](void*p,void*data,std::size_t old_bytes,std::size_t bytes,std::size_t alignment)noexcept->void*{
+      auto&s=*static_cast<FaultAllocator*>(p);if(bytes && s.attempts++==s.fail)return nullptr;
+      auto*result=s.backing.reallocate(data,old_bytes,bytes,alignment);
+      if(!bytes)s.live-=data!=nullptr;else if(result && !data)++s.live;return result;
+    },this};
+  }
+};
+template<class Driver>
+Status cold_oom_points(c::Context&context,c::Queue&queue,const char*label){
+  c::BatchCapacity cap{.storage=c::BatchStorage::kRagged,.max_requests=1,.max_query_rows=1,.max_kv_rows=2,.max_pages=0,.max_page_refs=0,.query_heads=4,.kv_heads=2,.head_dim=64,.page_size=1};
+  HYLE_ASSIGN_OR_RETURN(auto schema,c::BatchSchema::create(cap));
+  HYLE_ASSIGN_OR_RETURN(auto recipe,c::MaterializedBatchProgram::prepare(schema,{.max_kv_per_request=2,.max_host_metadata_bytes=1u<<20,.max_logical_intermediate_bytes=1u<<20,.scale=.125f}));
+  const auto options=[](hyle::mem::AllocatorRef allocator){g::batch::MaterializedInvocationOptions value{.max_output_bytes=1088,.leases={.allocator=allocator}};return value;};
+  FaultAllocator baseline;
+  {HYLE_ASSIGN_OR_RETURN(auto controller,Driver::create(context,recipe,queue,options(baseline.ref())));HYLE_RETURN_IF_ERROR(controller.close());}
+  const auto count=baseline.attempts;
+  HYLE_RETURN_IF_ERROR(require(count>0 && count<=64 && !baseline.live,"cold controller OOM baseline/count/cleanup differs"));
+  for(std::size_t point=0;point<count;++point){
+    FaultAllocator fault;fault.fail=point;
+    {auto rejected=Driver::create(context,recipe,queue,options(fault.ref()));HYLE_RETURN_IF_ERROR(require(!rejected && rejected.error().IsResourceExhausted(),"cold controller failed metadata allocation was accepted/misreported"));}
+    HYLE_RETURN_IF_ERROR(require(!fault.live,"cold controller partial metadata allocation leaked"));
+    std::printf("CPU %s cold metadata OOM point=%zu/%zu cleanup PASS\n",label,point+1,count);
+  }
+  return Status::Ok();
+}
 template<class Driver=g::batch::MaterializedInvocation>
 Status exercise(c::Context&context,c::Queue&queue,bool bf16){
   hyle::mem::QuotaAllocator metadata(hyle::mem::system_allocator());c::ReadLease escaped;
@@ -56,5 +90,5 @@ Status exercise(c::Context&context,c::Queue&queue,bool bf16){
   }
   HYLE_RETURN_IF_ERROR(require(metadata.used()>0,"escaped host output lost its owner"));HYLE_ASSIGN_OR_RETURN(auto uses,c::LeaseUsePool::create());HYLE_ASSIGN_OR_RETURN(auto use,uses.begin());HYLE_RETURN_IF_ERROR(use.read(escaped));escaped.reset();HYLE_RETURN_IF_ERROR(require(metadata.used()>0,"host output native read-use did not retain owner"));use={};return require(metadata.used()==0,"host controller/recipe/output metadata leaked");
 }
-Status run(c::Context&context,c::Queue&queue){HYLE_RETURN_IF_ERROR(qualification(context));HYLE_RETURN_IF_ERROR(exercise(context,queue,false));HYLE_RETURN_IF_ERROR(exercise(context,queue,true));HYLE_RETURN_IF_ERROR(exercise<DirectDriver>(context,queue,false));return exercise<DirectDriver>(context,queue,true);}
+Status run(c::Context&context,c::Queue&queue){HYLE_RETURN_IF_ERROR(cold_oom_points<DirectDriver>(context,queue,"Direct"));HYLE_RETURN_IF_ERROR(cold_oom_points<g::batch::MaterializedInvocation>(context,queue,"Graph"));HYLE_RETURN_IF_ERROR(qualification(context));HYLE_RETURN_IF_ERROR(exercise(context,queue,false));HYLE_RETURN_IF_ERROR(exercise(context,queue,true));HYLE_RETURN_IF_ERROR(exercise<DirectDriver>(context,queue,false));return exercise<DirectDriver>(context,queue,true);}
 } // namespace hyle_f5_host_controller_fixture

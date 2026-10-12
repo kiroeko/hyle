@@ -108,3 +108,22 @@ OBS-01到达断言阶段，consumer-resume11/12在实际prefix被阻塞、三inp
 批准新增180秒没有重置原180.030秒。Win common33项及CPU/Vulkan Direct/Graph实际消费者、
 WSL原CUDA Graph定向复核PASS；未变公头复用匹配证据。compute_batch保持AUDITED继续原
 六FIX，当前预算阻塞已解除；其余表中未验项、最终goal后foundation/engine估算仍未完成。
+
+## 2026-10-12 继续施工：有限OOM位置核对
+
+用户要求“查，不能block”；预算阻塞已经解除，旧goal控制器状态不作为工程停止条件。
+compute_batch/graph_batch保持AUDITED，不重开A/F4。本轮先执行原风险矩阵里的
+OOM-POINT-01：CPU Direct与Graph固定reference controller cold create的caller可控metadata
+allocation逐位置失败。先测相同配置成功路径的实际allocation次数，硬上限64，逐一注入
+一次失败，检查ResourceExhausted与全部已接纳metadata释放；成功基线须有真实controller。
+原provider内部不经caller allocator的未知费用不由此代签；不改产品分配协议/公开API。
+
+只修改现有CPU实际consumer fixture，复用原Win/WSL CPU consumer root/config/tree与
+configure300/build1800/consumer180累计；不占用仅OBS-01/DRAIN-01批准的CUDA追加预算。
+本次只对应actual direct consumers与docs/closure/diff，公头未变继续复用匹配证据。
+若发现真实产品反证，先在AUDITED卡固定局部FIX再修改；不因为审计未完成再次把goal标blocked。
+
+[OOM位置收据](../../../../evidence/correctness/foundation-f5-cold-oom-points/README.md)：
+Win MSVC/WERROR与WSL GCC各Direct14/Graph45 caller metadata位置全部ResourceExhausted且
+cleanup归零，共118位置；原实际CPU完整矩阵/精确页/资格/ragged consumer继续PASS。
+没有产品/API改动，原root/config/tree/累计预算保留；不代签provider私有allocation或其他route。
