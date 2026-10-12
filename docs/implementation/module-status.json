@@ -620,12 +620,8 @@
     },
     {
       "module": "compute_batch",
-      "state": "BLOCKED",
-      "blocked_from": "AUDITED",
-      "blocker": "原native Direct consumer风险门累计180.030/180秒；未知退休fixture在断言前TIMEOUT，drain疑点未裁决。",
-      "blocker_owner": "F5 native Direct风险验证预算",
-      "resume_condition": "明确批准保留原TIMEOUT，同配置/树/root追加一次有限180秒；先SCOPED/AUDITED只本fixture定位/actual retirement FIX，不重置旧预算。",
-      "summary": "F5 BLOCKED：四路线controller/paged/ragged实证保留，native unknown-retirement故障门TIMEOUT并用完consumer预算；未证明产品缺陷或完整风险PASS。SDK/san/P0/guide/终审尚未签，goal未完成。",
+      "state": "SCOPED",
+      "summary": "F5 SCOPED恢复：用户批准原native Direct故障consumer同树/root一次追加180秒，保留TIMEOUT与全部历史累计；先固定fixture定位/actual retirement范围，原六FIX与未验收口门保留。",
       "record": "docs/implementation/tasks/compute/foundation-f5-closure-audit.md"
     },
     {

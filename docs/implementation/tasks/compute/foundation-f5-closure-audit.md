@@ -1,6 +1,6 @@
 # F5 六FIX收口审计与预算裁决
 
-状态：BLOCKED/INCONCLUSIVE（compute_batch native unknown-retirement gate）；baseline
+状态：SCOPED（2026-10-12 用户批准原故障门一次追加180秒，先恢复范围）；baseline
 46b1d7e70。原[A/F4/F5目标](../../../architecture/compute-state-paged-design.md)、
 [F5主卡](foundation-f5-paged-ragged-batch.md)全部保留，不把已实现部分改成完成定义。
 本页是本轮核对与停止记录，不代签CANDIDATE、CLOSED或未运行项。
@@ -44,7 +44,7 @@
 原无证明的类别保持未验；任何未来NA必须指出具体API/语义不适用，不能以成本大或工具不足
 替代验证。最终goal后用户要求的剩余foundation与单机单/多请求engine self-LOC评估仍保留。
 
-## 本轮真实故障门与停止
+## 原故障门与停止记录（保留）
 
 source审查提出BatchInvocation::drain只wait Completion、未显式等pending/use的疑点，尚未
 以runtime证明。新增native_fault_consumer借原CUDA流的真实kernel/event/reaper和test-only
@@ -67,3 +67,19 @@ cudaFuncSetAttribute（4278），header hash和原Graph warm-before-Gate参照�
 [静态补查](../../../../evidence/correctness/foundation-f5-native-fault-timeout/static-followup.json)。
 这不是hang根因/运行断言；获有限追加后应先加阶段锚、warm原domain，并把Gate移到provider
 已接受kernel之后/sequence completion之前。没有获批就不启动本门或改blocked产品。
+
+## 2026-10-12 有限恢复范围
+
+用户回复“追加预算”，满足上述恢复条件。恢复baseline为9c4dca4bd，原TIMEOUT与
+consumer累计180.029564707秒保留；只给同一个CUDA Direct consumer gate追加一次180秒，
+总上限360秒。configure300/build1800原累计不变；同root
+`/root/hyle-scratch/compute-unified/foundation-f5-native-direct`、同source/build/config/machine，
+每次resume仍扣除全部历史stage elapsed。不得另建预算根、重跑全部算子或更改公共验证工具。
+
+固定范围：fixture增加阶段stdout、先warm相同ragged domain，然后将CUDA host Gate放在
+provider已接受kernel之后、原finish_sequence记录completion之前。unknown观察仍只装饰
+原completion，真实CUDA event/reaper/F1 use不替换。先验actual drain与guards，再裁决是否
+存在产品反证；只有实际断言失败才允许修改compute_batch实际退役等待。原六FIX、其余风险、
+SDK/san/P0/guide/终审与goal后工作量评估全部保留，本次预算不代签这些门。
+
+本阶段SCOPED仅记录恢复；下一阶段AUDITED固定有限FIX后才修改或运行本门。
