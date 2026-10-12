@@ -140,3 +140,16 @@ metadata编码不准raw dirty-clone。不是device生成页表验证或隐式D2H
 generation及F1 export，03界限/错表/alias共享/OOM/旧版本并发/empty测试与普通原型消费者。
 三项是F5六FIX的共同端口实现分解，不是替代目标。原native C++12场景与上游peer作为数学
 承载输入；snapshot runtime尚未验收，产品实现后仍需全部适用风险/交付及终审才能CANDIDATE。
+
+## AUDITED 共同端口首批实现
+
+[首批证据](../../../../evidence/correctness/foundation-f5-common-first/README.md)：Win MSVC19.50/
+shipping/WERROR，实际15项及两新公头独立TU PASS。typed容量与paged/ragged输出推导、完整
+host布局预检、fixed-capacity owned只读blob/schema generation、foreign schema/错表/页尾/
+GQA/整数与stride overflow/empty/OOM/并发版本/晚于schema的F1导出；真实F4分支替换/发布后
+旧layout值保持。首fixture假设F1截断read/写拒绝码错误修正，原FAIL与累计预算保留。
+只新compute_batch factor及F4 TEST_DEPS；没有原Provider/Graph/全算子验证或产品改动。
+
+现产品仍AUDITED，不是candidate或F5六FIX完成：device mirror、真正HYLE native规划/执行、
+Graph同slot、四路线明确参考/append闭环、三交付/san/P0/终审继续按活动卡。新factor未加入
+普通Compute façade，此发现接缝后续须独立合法scope，不在CLOSED旧owner顺手改产品根。

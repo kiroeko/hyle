@@ -551,8 +551,13 @@ _hyle_declare_component(compute_state
   SPLIT_PUBLIC_HEADERS hyle/compute/state_versions.h hyle/compute/state_clone.h
     hyle/compute/detail/state_clone_access.h)
 
-  # F5 ownership reservations; no targets, headers or product roots yet.
-  _hyle_declare_component(compute_batch QUEUED)
+  # F5 metadata is independent of native execution and Graph owners.
+  _hyle_declare_component(compute_batch
+    PRIVATE_DEPS core util_core
+    PUBLIC_DEPS compute compute_ops error mem
+    PUBLIC_TYPE_DEPS compute compute_ops error mem
+    TEST_DEPS compute_state
+    SPLIT_PUBLIC_HEADERS hyle/compute/batch_layout.h hyle/compute/batch_ops.h)
   _hyle_declare_component(graph_batch QUEUED)
 
 # Product facades are deliberately outside the factor DAG. They have no source,
