@@ -1,5 +1,9 @@
 # F5 固定candidate验证卡
 
+本轮已按[最终terminal](foundation-f5-final-closure.md)收口。本页保候选阶段/全部失败历史，
+不再是产品施工授权；当前registry指向terminal。原20 owner的数学25e与独立IREE配置11c348
+组成固定整体11c348e40，21 owner仅关闭各原有限范围；原待答复/待跑句由最终证据裁决。
+
 状态：CANDIDATE，固定candidate25e4fb398。此状态只冻结实现/API/算法，不签CLOSED、七门
 或完整goal。主范围仍[F5六FIX](foundation-f5-paged-ragged-batch.md)，完整验证矩阵仍
 [最终计划](foundation-f5-final-validation-plan.md)，guide为[公开用法](../../../user/batch-attention.md)。

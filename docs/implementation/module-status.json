@@ -270,17 +270,25 @@
     },
     {
       "module": "compute",
-      "state": "CANDIDATE",
-      "record": "docs/implementation/tasks/compute/foundation-f5-candidate-validation.md",
-      "summary": "F5 CANDIDATE25e4fb398：唯一CUDA公开factory link与资格guard include修复冻结，Linux shared真实普通SDK消费恢复；数学/API/算法与77df相同，原scope/FAIL/elapsed保留，未CLOSED。",
-      "candidate": "25e4fb398e2a782ee60f916c3c6351c4736b6eda"
+      "state": "CLOSED",
+      "record": "docs/implementation/tasks/compute/foundation-f5-final-closure.md",
+      "summary": "F5 finite typed paged/ragged and state/Graph seams CLOSED; actual native/reference qualifications, host risks, SDK18 and component contract verified. IREE owner only TSAN configuration fix; original scopes and vendor/capture/performance limits retained.",
+      "candidate": "11c348e404df2c3fc404056ff3a9e885d4d990bc",
+      "performance": {
+        "tier": "P0",
+        "evidence": "evidence/correctness/foundation-f5-final/receipt.json"
+      }
     },
     {
       "module": "graph",
-      "state": "CANDIDATE",
-      "record": "docs/implementation/tasks/compute/foundation-f5-candidate-validation.md",
-      "summary": "F5 CANDIDATE25e4fb398：唯一CUDA公开factory link与资格guard include修复冻结，Linux shared真实普通SDK消费恢复；数学/API/算法与77df相同，原scope/FAIL/elapsed保留，未CLOSED。",
-      "candidate": "25e4fb398e2a782ee60f916c3c6351c4736b6eda"
+      "state": "CLOSED",
+      "record": "docs/implementation/tasks/compute/foundation-f5-final-closure.md",
+      "summary": "F5 finite typed paged/ragged and state/Graph seams CLOSED; actual native/reference qualifications, host risks, SDK18 and component contract verified. IREE owner only TSAN configuration fix; original scopes and vendor/capture/performance limits retained.",
+      "candidate": "11c348e404df2c3fc404056ff3a9e885d4d990bc",
+      "performance": {
+        "tier": "P0",
+        "evidence": "evidence/correctness/foundation-f5-final/receipt.json"
+      }
     },
     {
       "module": "container_concurrent",
@@ -354,10 +362,14 @@
     },
     {
       "module": "compute_provider_onednn",
-      "state": "CANDIDATE",
-      "record": "docs/implementation/tasks/compute/foundation-f5-candidate-validation.md",
-      "summary": "F5 CANDIDATE25e4fb398：唯一CUDA公开factory link与资格guard include修复冻结，Linux shared真实普通SDK消费恢复；数学/API/算法与77df相同，原scope/FAIL/elapsed保留，未CLOSED。",
-      "candidate": "25e4fb398e2a782ee60f916c3c6351c4736b6eda"
+      "state": "CLOSED",
+      "record": "docs/implementation/tasks/compute/foundation-f5-final-closure.md",
+      "summary": "F5 finite typed paged/ragged and state/Graph seams CLOSED; actual native/reference qualifications, host risks, SDK18 and component contract verified. IREE owner only TSAN configuration fix; original scopes and vendor/capture/performance limits retained.",
+      "candidate": "11c348e404df2c3fc404056ff3a9e885d4d990bc",
+      "performance": {
+        "tier": "P0",
+        "evidence": "evidence/correctness/foundation-f5-final/receipt.json"
+      }
     },
     {
       "module": "compute_provider_ggml",
@@ -372,10 +384,14 @@
     },
     {
       "module": "graph_provider_onednn",
-      "state": "CANDIDATE",
-      "record": "docs/implementation/tasks/compute/foundation-f5-candidate-validation.md",
-      "summary": "F5 CANDIDATE25e4fb398：唯一CUDA公开factory link与资格guard include修复冻结，Linux shared真实普通SDK消费恢复；数学/API/算法与77df相同，原scope/FAIL/elapsed保留，未CLOSED。",
-      "candidate": "25e4fb398e2a782ee60f916c3c6351c4736b6eda"
+      "state": "CLOSED",
+      "record": "docs/implementation/tasks/compute/foundation-f5-final-closure.md",
+      "summary": "F5 finite typed paged/ragged and state/Graph seams CLOSED; actual native/reference qualifications, host risks, SDK18 and component contract verified. IREE owner only TSAN configuration fix; original scopes and vendor/capture/performance limits retained.",
+      "candidate": "11c348e404df2c3fc404056ff3a9e885d4d990bc",
+      "performance": {
+        "tier": "P0",
+        "evidence": "evidence/correctness/foundation-f5-final/receipt.json"
+      }
     },
     {
       "module": "compute_ops",
@@ -390,38 +406,58 @@
     },
     {
       "module": "compute_backend_cpu",
-      "state": "CANDIDATE",
-      "record": "docs/implementation/tasks/compute/foundation-f5-candidate-validation.md",
-      "summary": "F5 CANDIDATE25e4fb398：唯一CUDA公开factory link与资格guard include修复冻结，Linux shared真实普通SDK消费恢复；数学/API/算法与77df相同，原scope/FAIL/elapsed保留，未CLOSED。",
-      "candidate": "25e4fb398e2a782ee60f916c3c6351c4736b6eda"
+      "state": "CLOSED",
+      "record": "docs/implementation/tasks/compute/foundation-f5-final-closure.md",
+      "summary": "F5 finite typed paged/ragged and state/Graph seams CLOSED; actual native/reference qualifications, host risks, SDK18 and component contract verified. IREE owner only TSAN configuration fix; original scopes and vendor/capture/performance limits retained.",
+      "candidate": "11c348e404df2c3fc404056ff3a9e885d4d990bc",
+      "performance": {
+        "tier": "P0",
+        "evidence": "evidence/correctness/foundation-f5-final/receipt.json"
+      }
     },
     {
       "module": "compute_backend_cuda",
-      "state": "CANDIDATE",
-      "record": "docs/implementation/tasks/compute/foundation-f5-candidate-validation.md",
-      "summary": "F5 CANDIDATE25e4fb398：唯一CUDA公开factory link与资格guard include修复冻结，Linux shared真实普通SDK消费恢复；数学/API/算法与77df相同，原scope/FAIL/elapsed保留，未CLOSED。",
-      "candidate": "25e4fb398e2a782ee60f916c3c6351c4736b6eda"
+      "state": "CLOSED",
+      "record": "docs/implementation/tasks/compute/foundation-f5-final-closure.md",
+      "summary": "F5 finite typed paged/ragged and state/Graph seams CLOSED; actual native/reference qualifications, host risks, SDK18 and component contract verified. IREE owner only TSAN configuration fix; original scopes and vendor/capture/performance limits retained.",
+      "candidate": "11c348e404df2c3fc404056ff3a9e885d4d990bc",
+      "performance": {
+        "tier": "P0",
+        "evidence": "evidence/correctness/foundation-f5-final/receipt.json"
+      }
     },
     {
       "module": "compute_provider_native",
-      "state": "CANDIDATE",
-      "record": "docs/implementation/tasks/compute/foundation-f5-candidate-validation.md",
-      "summary": "F5 CANDIDATE25e4fb398：唯一CUDA公开factory link与资格guard include修复冻结，Linux shared真实普通SDK消费恢复；数学/API/算法与77df相同，原scope/FAIL/elapsed保留，未CLOSED。",
-      "candidate": "25e4fb398e2a782ee60f916c3c6351c4736b6eda"
+      "state": "CLOSED",
+      "record": "docs/implementation/tasks/compute/foundation-f5-final-closure.md",
+      "summary": "F5 finite typed paged/ragged and state/Graph seams CLOSED; actual native/reference qualifications, host risks, SDK18 and component contract verified. IREE owner only TSAN configuration fix; original scopes and vendor/capture/performance limits retained.",
+      "candidate": "11c348e404df2c3fc404056ff3a9e885d4d990bc",
+      "performance": {
+        "tier": "P0",
+        "evidence": "evidence/correctness/foundation-f5-final/receipt.json"
+      }
     },
     {
       "module": "compute_route_cpu",
-      "state": "CANDIDATE",
-      "record": "docs/implementation/tasks/compute/foundation-f5-candidate-validation.md",
-      "summary": "F5 CANDIDATE25e4fb398：唯一CUDA公开factory link与资格guard include修复冻结，Linux shared真实普通SDK消费恢复；数学/API/算法与77df相同，原scope/FAIL/elapsed保留，未CLOSED。",
-      "candidate": "25e4fb398e2a782ee60f916c3c6351c4736b6eda"
+      "state": "CLOSED",
+      "record": "docs/implementation/tasks/compute/foundation-f5-final-closure.md",
+      "summary": "F5 finite typed paged/ragged and state/Graph seams CLOSED; actual native/reference qualifications, host risks, SDK18 and component contract verified. IREE owner only TSAN configuration fix; original scopes and vendor/capture/performance limits retained.",
+      "candidate": "11c348e404df2c3fc404056ff3a9e885d4d990bc",
+      "performance": {
+        "tier": "P0",
+        "evidence": "evidence/correctness/foundation-f5-final/receipt.json"
+      }
     },
     {
       "module": "graph_route_cpu",
-      "state": "CANDIDATE",
-      "record": "docs/implementation/tasks/compute/foundation-f5-candidate-validation.md",
-      "summary": "F5 CANDIDATE25e4fb398：唯一CUDA公开factory link与资格guard include修复冻结，Linux shared真实普通SDK消费恢复；数学/API/算法与77df相同，原scope/FAIL/elapsed保留，未CLOSED。",
-      "candidate": "25e4fb398e2a782ee60f916c3c6351c4736b6eda"
+      "state": "CLOSED",
+      "record": "docs/implementation/tasks/compute/foundation-f5-final-closure.md",
+      "summary": "F5 finite typed paged/ragged and state/Graph seams CLOSED; actual native/reference qualifications, host risks, SDK18 and component contract verified. IREE owner only TSAN configuration fix; original scopes and vendor/capture/performance limits retained.",
+      "candidate": "11c348e404df2c3fc404056ff3a9e885d4d990bc",
+      "performance": {
+        "tier": "P0",
+        "evidence": "evidence/correctness/foundation-f5-final/receipt.json"
+      }
     },
     {
       "module": "compute_provider_cublas",
@@ -459,52 +495,80 @@
     },
     {
       "module": "compute_route_cuda",
-      "state": "CANDIDATE",
-      "record": "docs/implementation/tasks/compute/foundation-f5-candidate-validation.md",
-      "summary": "F5 CANDIDATE25e4fb398：唯一CUDA公开factory link与资格guard include修复冻结，Linux shared真实普通SDK消费恢复；数学/API/算法与77df相同，原scope/FAIL/elapsed保留，未CLOSED。",
-      "candidate": "25e4fb398e2a782ee60f916c3c6351c4736b6eda"
+      "state": "CLOSED",
+      "record": "docs/implementation/tasks/compute/foundation-f5-final-closure.md",
+      "summary": "F5 finite typed paged/ragged and state/Graph seams CLOSED; actual native/reference qualifications, host risks, SDK18 and component contract verified. IREE owner only TSAN configuration fix; original scopes and vendor/capture/performance limits retained.",
+      "candidate": "11c348e404df2c3fc404056ff3a9e885d4d990bc",
+      "performance": {
+        "tier": "P0",
+        "evidence": "evidence/correctness/foundation-f5-final/receipt.json"
+      }
     },
     {
       "module": "graph_route_cuda",
-      "state": "CANDIDATE",
-      "record": "docs/implementation/tasks/compute/foundation-f5-candidate-validation.md",
-      "summary": "F5 CANDIDATE25e4fb398：唯一CUDA公开factory link与资格guard include修复冻结，Linux shared真实普通SDK消费恢复；数学/API/算法与77df相同，原scope/FAIL/elapsed保留，未CLOSED。",
-      "candidate": "25e4fb398e2a782ee60f916c3c6351c4736b6eda"
+      "state": "CLOSED",
+      "record": "docs/implementation/tasks/compute/foundation-f5-final-closure.md",
+      "summary": "F5 finite typed paged/ragged and state/Graph seams CLOSED; actual native/reference qualifications, host risks, SDK18 and component contract verified. IREE owner only TSAN configuration fix; original scopes and vendor/capture/performance limits retained.",
+      "candidate": "11c348e404df2c3fc404056ff3a9e885d4d990bc",
+      "performance": {
+        "tier": "P0",
+        "evidence": "evidence/correctness/foundation-f5-final/receipt.json"
+      }
     },
     {
       "module": "compute_route_apple",
-      "state": "CANDIDATE",
-      "record": "docs/implementation/tasks/compute/foundation-f5-candidate-validation.md",
-      "summary": "F5 CANDIDATE25e4fb398：唯一CUDA公开factory link与资格guard include修复冻结，Linux shared真实普通SDK消费恢复；数学/API/算法与77df相同，原scope/FAIL/elapsed保留，未CLOSED。",
-      "candidate": "25e4fb398e2a782ee60f916c3c6351c4736b6eda"
+      "state": "CLOSED",
+      "record": "docs/implementation/tasks/compute/foundation-f5-final-closure.md",
+      "summary": "F5 finite typed paged/ragged and state/Graph seams CLOSED; actual native/reference qualifications, host risks, SDK18 and component contract verified. IREE owner only TSAN configuration fix; original scopes and vendor/capture/performance limits retained.",
+      "candidate": "11c348e404df2c3fc404056ff3a9e885d4d990bc",
+      "performance": {
+        "tier": "P0",
+        "evidence": "evidence/correctness/foundation-f5-final/receipt.json"
+      }
     },
     {
       "module": "graph_route_apple",
-      "state": "CANDIDATE",
-      "record": "docs/implementation/tasks/compute/foundation-f5-candidate-validation.md",
-      "summary": "F5 CANDIDATE25e4fb398：唯一CUDA公开factory link与资格guard include修复冻结，Linux shared真实普通SDK消费恢复；数学/API/算法与77df相同，原scope/FAIL/elapsed保留，未CLOSED。",
-      "candidate": "25e4fb398e2a782ee60f916c3c6351c4736b6eda"
+      "state": "CLOSED",
+      "record": "docs/implementation/tasks/compute/foundation-f5-final-closure.md",
+      "summary": "F5 finite typed paged/ragged and state/Graph seams CLOSED; actual native/reference qualifications, host risks, SDK18 and component contract verified. IREE owner only TSAN configuration fix; original scopes and vendor/capture/performance limits retained.",
+      "candidate": "11c348e404df2c3fc404056ff3a9e885d4d990bc",
+      "performance": {
+        "tier": "P0",
+        "evidence": "evidence/correctness/foundation-f5-final/receipt.json"
+      }
     },
     {
       "module": "compute_route_vulkan",
-      "state": "CANDIDATE",
-      "record": "docs/implementation/tasks/compute/foundation-f5-candidate-validation.md",
-      "summary": "F5 CANDIDATE25e4fb398：唯一CUDA公开factory link与资格guard include修复冻结，Linux shared真实普通SDK消费恢复；数学/API/算法与77df相同，原scope/FAIL/elapsed保留，未CLOSED。",
-      "candidate": "25e4fb398e2a782ee60f916c3c6351c4736b6eda"
+      "state": "CLOSED",
+      "record": "docs/implementation/tasks/compute/foundation-f5-final-closure.md",
+      "summary": "F5 finite typed paged/ragged and state/Graph seams CLOSED; actual native/reference qualifications, host risks, SDK18 and component contract verified. IREE owner only TSAN configuration fix; original scopes and vendor/capture/performance limits retained.",
+      "candidate": "11c348e404df2c3fc404056ff3a9e885d4d990bc",
+      "performance": {
+        "tier": "P0",
+        "evidence": "evidence/correctness/foundation-f5-final/receipt.json"
+      }
     },
     {
       "module": "graph_route_vulkan",
-      "state": "CANDIDATE",
-      "record": "docs/implementation/tasks/compute/foundation-f5-candidate-validation.md",
-      "summary": "F5 CANDIDATE25e4fb398：唯一CUDA公开factory link与资格guard include修复冻结，Linux shared真实普通SDK消费恢复；数学/API/算法与77df相同，原scope/FAIL/elapsed保留，未CLOSED。",
-      "candidate": "25e4fb398e2a782ee60f916c3c6351c4736b6eda"
+      "state": "CLOSED",
+      "record": "docs/implementation/tasks/compute/foundation-f5-final-closure.md",
+      "summary": "F5 finite typed paged/ragged and state/Graph seams CLOSED; actual native/reference qualifications, host risks, SDK18 and component contract verified. IREE owner only TSAN configuration fix; original scopes and vendor/capture/performance limits retained.",
+      "candidate": "11c348e404df2c3fc404056ff3a9e885d4d990bc",
+      "performance": {
+        "tier": "P0",
+        "evidence": "evidence/correctness/foundation-f5-final/receipt.json"
+      }
     },
     {
       "module": "compute_provider_ggml_vulkan",
-      "state": "CANDIDATE",
-      "record": "docs/implementation/tasks/compute/foundation-f5-candidate-validation.md",
-      "summary": "F5 CANDIDATE25e4fb398：唯一CUDA公开factory link与资格guard include修复冻结，Linux shared真实普通SDK消费恢复；数学/API/算法与77df相同，原scope/FAIL/elapsed保留，未CLOSED。",
-      "candidate": "25e4fb398e2a782ee60f916c3c6351c4736b6eda"
+      "state": "CLOSED",
+      "record": "docs/implementation/tasks/compute/foundation-f5-final-closure.md",
+      "summary": "F5 finite typed paged/ragged and state/Graph seams CLOSED; actual native/reference qualifications, host risks, SDK18 and component contract verified. IREE owner only TSAN configuration fix; original scopes and vendor/capture/performance limits retained.",
+      "candidate": "11c348e404df2c3fc404056ff3a9e885d4d990bc",
+      "performance": {
+        "tier": "P0",
+        "evidence": "evidence/correctness/foundation-f5-final/receipt.json"
+      }
     },
     {
       "module": "compute_ggml_runtime",
@@ -541,10 +605,14 @@
     },
     {
       "module": "compute_provider_flashinfer",
-      "state": "CANDIDATE",
-      "record": "docs/implementation/tasks/compute/foundation-f5-candidate-validation.md",
-      "summary": "F5 CANDIDATE25e4fb398：唯一CUDA公开factory link与资格guard include修复冻结，Linux shared真实普通SDK消费恢复；数学/API/算法与77df相同，原scope/FAIL/elapsed保留，未CLOSED。",
-      "candidate": "25e4fb398e2a782ee60f916c3c6351c4736b6eda"
+      "state": "CLOSED",
+      "record": "docs/implementation/tasks/compute/foundation-f5-final-closure.md",
+      "summary": "F5 finite typed paged/ragged and state/Graph seams CLOSED; actual native/reference qualifications, host risks, SDK18 and component contract verified. IREE owner only TSAN configuration fix; original scopes and vendor/capture/performance limits retained.",
+      "candidate": "11c348e404df2c3fc404056ff3a9e885d4d990bc",
+      "performance": {
+        "tier": "P0",
+        "evidence": "evidence/correctness/foundation-f5-final/receipt.json"
+      }
     },
     {
       "module": "compute_provider_ggml_metal",
@@ -560,10 +628,14 @@
     },
     {
       "module": "compute_provider_iree_vulkan",
-      "state": "CANDIDATE",
-      "record": "docs/implementation/tasks/compute/foundation-f5-iree-tsan-contract.md",
-      "summary": "Finite F5 consumer sanitizer seam: synchronize original IREE TSan runtime with adapter conditional operation layout; no normal math/API/provider/build-core change.",
-      "candidate": "11c348e404df2c3fc404056ff3a9e885d4d990bc"
+      "state": "CLOSED",
+      "record": "docs/implementation/tasks/compute/foundation-f5-final-closure.md",
+      "summary": "F5 finite typed paged/ragged and state/Graph seams CLOSED; actual native/reference qualifications, host risks, SDK18 and component contract verified. IREE owner only TSAN configuration fix; original scopes and vendor/capture/performance limits retained.",
+      "candidate": "11c348e404df2c3fc404056ff3a9e885d4d990bc",
+      "performance": {
+        "tier": "P0",
+        "evidence": "evidence/correctness/foundation-f5-final/receipt.json"
+      }
     },
     {
       "module": "compute_provider_torch_cuda",
@@ -622,24 +694,36 @@
     },
     {
       "module": "compute_state",
-      "state": "CANDIDATE",
-      "record": "docs/implementation/tasks/compute/foundation-f5-candidate-validation.md",
-      "summary": "F5 CANDIDATE25e4fb398：唯一CUDA公开factory link与资格guard include修复冻结，Linux shared真实普通SDK消费恢复；数学/API/算法与77df相同，原scope/FAIL/elapsed保留，未CLOSED。",
-      "candidate": "25e4fb398e2a782ee60f916c3c6351c4736b6eda"
+      "state": "CLOSED",
+      "record": "docs/implementation/tasks/compute/foundation-f5-final-closure.md",
+      "summary": "F5 finite typed paged/ragged and state/Graph seams CLOSED; actual native/reference qualifications, host risks, SDK18 and component contract verified. IREE owner only TSAN configuration fix; original scopes and vendor/capture/performance limits retained.",
+      "candidate": "11c348e404df2c3fc404056ff3a9e885d4d990bc",
+      "performance": {
+        "tier": "P0",
+        "evidence": "evidence/correctness/foundation-f5-final/receipt.json"
+      }
     },
     {
       "module": "compute_batch",
-      "state": "CANDIDATE",
-      "summary": "F5 CANDIDATE25e4fb398：唯一CUDA公开factory link与资格guard include修复冻结，Linux shared真实普通SDK消费恢复；数学/API/算法与77df相同，原scope/FAIL/elapsed保留，未CLOSED。",
-      "record": "docs/implementation/tasks/compute/foundation-f5-candidate-validation.md",
-      "candidate": "25e4fb398e2a782ee60f916c3c6351c4736b6eda"
+      "state": "CLOSED",
+      "record": "docs/implementation/tasks/compute/foundation-f5-final-closure.md",
+      "summary": "F5 finite typed paged/ragged and state/Graph seams CLOSED; actual native/reference qualifications, host risks, SDK18 and component contract verified. IREE owner only TSAN configuration fix; original scopes and vendor/capture/performance limits retained.",
+      "candidate": "11c348e404df2c3fc404056ff3a9e885d4d990bc",
+      "performance": {
+        "tier": "P0",
+        "evidence": "evidence/correctness/foundation-f5-final/receipt.json"
+      }
     },
     {
       "module": "graph_batch",
-      "state": "CANDIDATE",
-      "summary": "F5 CANDIDATE25e4fb398：唯一CUDA公开factory link与资格guard include修复冻结，Linux shared真实普通SDK消费恢复；数学/API/算法与77df相同，原scope/FAIL/elapsed保留，未CLOSED。",
-      "record": "docs/implementation/tasks/compute/foundation-f5-candidate-validation.md",
-      "candidate": "25e4fb398e2a782ee60f916c3c6351c4736b6eda"
+      "state": "CLOSED",
+      "record": "docs/implementation/tasks/compute/foundation-f5-final-closure.md",
+      "summary": "F5 finite typed paged/ragged and state/Graph seams CLOSED; actual native/reference qualifications, host risks, SDK18 and component contract verified. IREE owner only TSAN configuration fix; original scopes and vendor/capture/performance limits retained.",
+      "candidate": "11c348e404df2c3fc404056ff3a9e885d4d990bc",
+      "performance": {
+        "tier": "P0",
+        "evidence": "evidence/correctness/foundation-f5-final/receipt.json"
+      }
     }
   ]
 }

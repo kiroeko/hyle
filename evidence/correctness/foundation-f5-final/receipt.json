@@ -1,0 +1,750 @@
+{
+  "candidate": "11c348e404df2c3fc404056ff3a9e885d4d990bc",
+  "f5_math_api_candidate": "25e4fb398e2a782ee60f916c3c6351c4736b6eda",
+  "stage": "Final finite F5/IRE-TSAN-01 qualification; outside vendor facets retained as limits",
+  "owners": [
+    "compute",
+    "graph",
+    "compute_provider_onednn",
+    "graph_provider_onednn",
+    "compute_backend_cpu",
+    "compute_backend_cuda",
+    "compute_provider_native",
+    "compute_route_cpu",
+    "graph_route_cpu",
+    "compute_route_cuda",
+    "graph_route_cuda",
+    "compute_route_apple",
+    "graph_route_apple",
+    "compute_route_vulkan",
+    "graph_route_vulkan",
+    "compute_provider_ggml_vulkan",
+    "compute_provider_flashinfer",
+    "compute_provider_iree_vulkan",
+    "compute_state",
+    "compute_batch",
+    "graph_batch"
+  ],
+  "gates": {
+    "scope": "PASS",
+    "architecture": "PASS",
+    "correctness": "PASS",
+    "delivery": "PASS",
+    "usability_docs": "PASS",
+    "red_team": "PASS",
+    "engineering_performance": "PASS"
+  },
+  "performance_tier": "P0",
+  "sdk_cells": [
+    {
+      "cell": "foundation-f5-sdk-windows-cpu-cuda-static-link-recheck",
+      "original_candidate": "25e4fb398e2a782ee60f916c3c6351c4736b6eda",
+      "previously_qualified_for": "25e4fb398e2a782ee60f916c3c6351c4736b6eda",
+      "qualified_for": "11c348e404df2c3fc404056ff3a9e885d4d990bc",
+      "raw_sha256": "b7f974ae63bc8c098d61d709585e6fd8d14cb960f3d912f3855a44b3f98b12aa",
+      "configure_sanitizer_proof": [
+        {
+          "log": "configure-resume1.log",
+          "summary": "-- HYLE 0.1.0 | MSVC 19.50.35728.0 | C++23 | sanitizer=off | linkage=static | products=core,error,time,platform,simd,math,sched,compute,graph | factors=core,container_intrusive,util_core,error,time,math,timer_queue,platform,platform_thread,platform_fs,mem,mem_vm,simd,container,container_queue,sched,io_core,compute_ops,compute,graph,compute_provider_onednn,compute_backend_cpu,compute_ggml_runtime,compute_provider_ggml,graph_provider_onednn,compute_backend_cuda,compute_provider_native,compute_stream,compute_route_cpu,graph_route_cpu,compute_provider_cublas,compute_provider_cuda,compute_provider_ggml_cuda,compute_provider_torch_cuda,compute_batch,compute_provider_flashinfer,compute_route_cuda,graph_provider_ggml_cuda,graph_route_cuda,graph_batch,graph_route_cpu_cuda,compute_state"
+        },
+        {
+          "log": "configure.log",
+          "summary": "-- HYLE 0.1.0 | MSVC 19.50.35728.0 | C++23 | sanitizer=off | linkage=static | products=core,error,time,platform,simd,math,sched,compute,graph | factors=core,container_intrusive,util_core,error,time,math,timer_queue,platform,platform_thread,platform_fs,mem,mem_vm,simd,container,container_queue,sched,io_core,compute_ops,compute,graph,compute_provider_onednn,compute_backend_cpu,compute_ggml_runtime,compute_provider_ggml,graph_provider_onednn,compute_backend_cuda,compute_provider_native,compute_stream,compute_route_cpu,graph_route_cpu,compute_provider_cublas,compute_provider_cuda,compute_batch,compute_provider_flashinfer,compute_provider_ggml_cuda,compute_provider_torch_cuda,compute_route_cuda,graph_provider_ggml_cuda,graph_route_cuda,graph_batch,graph_route_cpu_cuda,compute_state"
+        }
+      ],
+      "reused": true,
+      "scope": "same ordinary OFF product inputs after removing unreachable TSAN-only branch; no new run"
+    },
+    {
+      "cell": "foundation-f5-sdk-windows-cpu-cuda-shared-link-recheck",
+      "original_candidate": "25e4fb398e2a782ee60f916c3c6351c4736b6eda",
+      "previously_qualified_for": "25e4fb398e2a782ee60f916c3c6351c4736b6eda",
+      "qualified_for": "11c348e404df2c3fc404056ff3a9e885d4d990bc",
+      "raw_sha256": "7dd7848a17d7cd82f1c7a3ada0dd071e51fa2ab71ef40741cc2f24f9b1f59b54",
+      "configure_sanitizer_proof": [
+        {
+          "log": "configure-resume1.log",
+          "summary": "-- HYLE 0.1.0 | MSVC 19.50.35728.0 | C++23 | sanitizer=off | linkage=shared | products=core,error,time,platform,simd,math,sched,compute,graph | factors=core,container_intrusive,util_core,error,time,math,timer_queue,platform,platform_thread,platform_fs,mem,mem_vm,simd,container,container_queue,sched,io_core,compute_ops,compute,graph,compute_provider_onednn,compute_backend_cpu,compute_ggml_runtime,compute_provider_ggml,graph_provider_onednn,compute_backend_cuda,compute_provider_native,compute_stream,compute_route_cpu,graph_route_cpu,compute_provider_cublas,compute_provider_cuda,compute_provider_ggml_cuda,compute_provider_torch_cuda,compute_batch,compute_provider_flashinfer,compute_route_cuda,graph_provider_ggml_cuda,graph_route_cuda,graph_batch,graph_route_cpu_cuda,compute_state"
+        },
+        {
+          "log": "configure.log",
+          "summary": "-- HYLE 0.1.0 | MSVC 19.50.35728.0 | C++23 | sanitizer=off | linkage=shared | products=core,error,time,platform,simd,math,sched,compute,graph | factors=core,container_intrusive,util_core,error,time,math,timer_queue,platform,platform_thread,platform_fs,mem,mem_vm,simd,container,container_queue,sched,io_core,compute_ops,compute,graph,compute_provider_onednn,compute_backend_cpu,compute_ggml_runtime,compute_provider_ggml,graph_provider_onednn,compute_backend_cuda,compute_provider_native,compute_stream,compute_route_cpu,graph_route_cpu,compute_provider_cublas,compute_provider_cuda,compute_batch,compute_provider_flashinfer,compute_provider_ggml_cuda,compute_provider_torch_cuda,compute_route_cuda,graph_provider_ggml_cuda,graph_route_cuda,graph_batch,graph_route_cpu_cuda,compute_state"
+        }
+      ],
+      "reused": true,
+      "scope": "same ordinary OFF product inputs after removing unreachable TSAN-only branch; no new run"
+    },
+    {
+      "cell": "foundation-f5-sdk-windows-cpu-vulkan-static",
+      "original_candidate": "77df1c10c7a909d6f2a99a99551e599ddb74f096",
+      "previously_qualified_for": "25e4fb398e2a782ee60f916c3c6351c4736b6eda",
+      "qualified_for": "11c348e404df2c3fc404056ff3a9e885d4d990bc",
+      "raw_sha256": "9a6533f90761845369e36fd6d4825f14e262377e09e0e371552aede80fca12f5",
+      "configure_sanitizer_proof": [
+        {
+          "log": "configure.log",
+          "summary": "-- HYLE 0.1.0 | MSVC 19.50.35728.0 | C++23 | sanitizer=off | linkage=static | products=core,error,time,platform,simd,math,sched,compute,graph | factors=core,container_intrusive,util_core,error,time,math,timer_queue,platform,platform_thread,platform_fs,mem,mem_vm,simd,container,container_queue,sched,io_core,compute_ops,compute,graph,compute_provider_onednn,compute_backend_cpu,compute_ggml_runtime,compute_provider_ggml,graph_provider_onednn,compute_provider_native,compute_stream,compute_route_cpu,graph_route_cpu,compute_batch,graph_batch,compute_provider_ggml_vulkan,compute_provider_iree_vulkan,compute_route_vulkan,graph_route_vulkan,graph_route_cpu_vulkan,compute_state"
+        }
+      ],
+      "reused": true,
+      "scope": "same ordinary OFF product inputs after removing unreachable TSAN-only branch; no new run"
+    },
+    {
+      "cell": "foundation-f5-sdk-windows-cpu-vulkan-shared",
+      "original_candidate": "77df1c10c7a909d6f2a99a99551e599ddb74f096",
+      "previously_qualified_for": "25e4fb398e2a782ee60f916c3c6351c4736b6eda",
+      "qualified_for": "11c348e404df2c3fc404056ff3a9e885d4d990bc",
+      "raw_sha256": "7d366d631267492cbcad914d1cd9acc524cb1724a54176f21c271bb1bbc8c1e3",
+      "configure_sanitizer_proof": [
+        {
+          "log": "configure.log",
+          "summary": "-- HYLE 0.1.0 | MSVC 19.50.35728.0 | C++23 | sanitizer=off | linkage=shared | products=core,error,time,platform,simd,math,sched,compute,graph | factors=core,container_intrusive,util_core,error,time,math,timer_queue,platform,platform_thread,platform_fs,mem,mem_vm,simd,container,container_queue,sched,io_core,compute_ops,compute,graph,compute_provider_onednn,compute_backend_cpu,compute_ggml_runtime,compute_provider_ggml,graph_provider_onednn,compute_provider_native,compute_stream,compute_route_cpu,graph_route_cpu,compute_batch,graph_batch,compute_provider_ggml_vulkan,compute_provider_iree_vulkan,compute_route_vulkan,graph_route_vulkan,graph_route_cpu_vulkan,compute_state"
+        }
+      ],
+      "reused": true,
+      "scope": "same ordinary OFF product inputs after removing unreachable TSAN-only branch; no new run"
+    },
+    {
+      "cell": "foundation-f5-native-sdk-windows-vulkan-static",
+      "original_candidate": "77df1c10c7a909d6f2a99a99551e599ddb74f096",
+      "previously_qualified_for": "25e4fb398e2a782ee60f916c3c6351c4736b6eda",
+      "qualified_for": "11c348e404df2c3fc404056ff3a9e885d4d990bc",
+      "raw_sha256": "51806ada8d6d0d203264f8b580699e37be0628a98ed51f0fafcc0da675e4e5e0",
+      "configure_sanitizer_proof": [
+        {
+          "log": "configure.log",
+          "summary": "-- HYLE 0.1.0 | MSVC 19.50.35728.0 | C++23 | sanitizer=off | linkage=static | products=core,error,time,platform,math,sched,compute,graph | factors=core,container_intrusive,util_core,error,time,math,timer_queue,platform,platform_thread,platform_fs,mem,mem_vm,container,container_queue,sched,io_core,compute_ops,compute,graph,compute_ggml_runtime,compute_stream,compute_batch,graph_batch,compute_provider_ggml_vulkan,compute_provider_iree_vulkan,compute_route_vulkan,graph_route_vulkan,compute_state"
+        }
+      ],
+      "reused": true,
+      "scope": "same ordinary OFF product inputs after removing unreachable TSAN-only branch; no new run"
+    },
+    {
+      "cell": "foundation-f5-native-sdk-windows-vulkan-shared",
+      "original_candidate": "77df1c10c7a909d6f2a99a99551e599ddb74f096",
+      "previously_qualified_for": "25e4fb398e2a782ee60f916c3c6351c4736b6eda",
+      "qualified_for": "11c348e404df2c3fc404056ff3a9e885d4d990bc",
+      "raw_sha256": "3d2e1b292d6fca5e0d39b99e96ebdf1aeecc09c8b6f0b78a71f9f4e28b85666a",
+      "configure_sanitizer_proof": [
+        {
+          "log": "configure.log",
+          "summary": "-- HYLE 0.1.0 | MSVC 19.50.35728.0 | C++23 | sanitizer=off | linkage=shared | products=core,error,time,platform,math,sched,compute,graph | factors=core,container_intrusive,util_core,error,time,math,timer_queue,platform,platform_thread,platform_fs,mem,mem_vm,container,container_queue,sched,io_core,compute_ops,compute,graph,compute_ggml_runtime,compute_stream,compute_batch,graph_batch,compute_provider_ggml_vulkan,compute_provider_iree_vulkan,compute_route_vulkan,graph_route_vulkan,compute_state"
+        }
+      ],
+      "reused": true,
+      "scope": "same ordinary OFF product inputs after removing unreachable TSAN-only branch; no new run"
+    },
+    {
+      "cell": "foundation-f5-sdk-wsl-cpu-cuda-static-link-recheck",
+      "original_candidate": "25e4fb398e2a782ee60f916c3c6351c4736b6eda",
+      "previously_qualified_for": "25e4fb398e2a782ee60f916c3c6351c4736b6eda",
+      "qualified_for": "11c348e404df2c3fc404056ff3a9e885d4d990bc",
+      "raw_sha256": "1a962f9ad197e09572ef0b5e5f862acc7451797bbaa154667248f4feb51abc7d",
+      "configure_sanitizer_proof": [
+        {
+          "log": "configure-resume1.log",
+          "summary": "-- HYLE 0.1.0 | GNU 14.2.0 | C++23 | sanitizer=off | linkage=static | products=core,error,time,platform,simd,math,sched,compute,graph | factors=core,container_intrusive,util_core,error,time,math,timer_queue,platform,platform_thread,platform_fs,mem,mem_vm,simd,container,container_queue,sched,io_core,compute_ops,compute,graph,compute_provider_onednn,compute_backend_cpu,compute_ggml_runtime,compute_provider_ggml,graph_provider_onednn,compute_backend_cuda,compute_provider_native,compute_stream,compute_route_cpu,graph_route_cpu,compute_provider_cublas,compute_provider_cuda,compute_provider_ggml_cuda,compute_provider_torch_cuda,compute_batch,compute_provider_flashinfer,compute_route_cuda,graph_provider_ggml_cuda,graph_route_cuda,graph_batch,graph_route_cpu_cuda,compute_state"
+        },
+        {
+          "log": "configure.log",
+          "summary": "-- HYLE 0.1.0 | GNU 14.2.0 | C++23 | sanitizer=off | linkage=static | products=core,error,time,platform,simd,math,sched,compute,graph | factors=core,container_intrusive,util_core,error,time,math,timer_queue,platform,platform_thread,platform_fs,mem,mem_vm,simd,container,container_queue,sched,io_core,compute_ops,compute,graph,compute_provider_onednn,compute_backend_cpu,compute_ggml_runtime,compute_provider_ggml,graph_provider_onednn,compute_backend_cuda,compute_provider_native,compute_stream,compute_route_cpu,graph_route_cpu,compute_provider_cublas,compute_provider_cuda,compute_batch,compute_provider_flashinfer,compute_provider_ggml_cuda,compute_provider_torch_cuda,compute_route_cuda,graph_provider_ggml_cuda,graph_route_cuda,graph_batch,graph_route_cpu_cuda,compute_state"
+        }
+      ],
+      "reused": true,
+      "scope": "same ordinary OFF product inputs after removing unreachable TSAN-only branch; no new run"
+    },
+    {
+      "cell": "foundation-f5-sdk-wsl-cpu-cuda-shared",
+      "original_candidate": "25e4fb398e2a782ee60f916c3c6351c4736b6eda",
+      "previously_qualified_for": "25e4fb398e2a782ee60f916c3c6351c4736b6eda",
+      "qualified_for": "11c348e404df2c3fc404056ff3a9e885d4d990bc",
+      "raw_sha256": "68ee1b6c8bbdbdc5950165eee40fbd19ed7bbd3cbd5a8ae29232d6844f5d86e4",
+      "configure_sanitizer_proof": [
+        {
+          "log": "configure-resume2.log",
+          "summary": "-- HYLE 0.1.0 | GNU 14.2.0 | C++23 | sanitizer=off | linkage=shared | products=core,error,time,platform,simd,math,sched,compute,graph | factors=core,container_intrusive,util_core,error,time,math,timer_queue,platform,platform_thread,platform_fs,mem,mem_vm,simd,container,container_queue,sched,io_core,compute_ops,compute,graph,compute_provider_onednn,compute_backend_cpu,compute_ggml_runtime,compute_provider_ggml,graph_provider_onednn,compute_backend_cuda,compute_provider_native,compute_stream,compute_route_cpu,graph_route_cpu,compute_provider_cublas,compute_provider_cuda,compute_provider_ggml_cuda,compute_provider_torch_cuda,compute_batch,compute_provider_flashinfer,compute_route_cuda,graph_provider_ggml_cuda,graph_route_cuda,graph_batch,graph_route_cpu_cuda,compute_state"
+        },
+        {
+          "log": "configure.log",
+          "summary": "-- HYLE 0.1.0 | GNU 14.2.0 | C++23 | sanitizer=off | linkage=shared | products=core,error,time,platform,simd,math,sched,compute,graph | factors=core,container_intrusive,util_core,error,time,math,timer_queue,platform,platform_thread,platform_fs,mem,mem_vm,simd,container,container_queue,sched,io_core,compute_ops,compute,graph,compute_provider_onednn,compute_backend_cpu,compute_ggml_runtime,compute_provider_ggml,graph_provider_onednn,compute_backend_cuda,compute_provider_native,compute_stream,compute_route_cpu,graph_route_cpu,compute_provider_cublas,compute_provider_cuda,compute_batch,compute_provider_flashinfer,compute_provider_ggml_cuda,compute_provider_torch_cuda,compute_route_cuda,graph_provider_ggml_cuda,graph_route_cuda,graph_batch,graph_route_cpu_cuda,compute_state"
+        }
+      ],
+      "reused": true,
+      "scope": "same ordinary OFF product inputs after removing unreachable TSAN-only branch; no new run"
+    },
+    {
+      "cell": "foundation-f5-sdk-wsl-vulkan-static",
+      "original_candidate": "25e4fb398e2a782ee60f916c3c6351c4736b6eda",
+      "previously_qualified_for": "25e4fb398e2a782ee60f916c3c6351c4736b6eda",
+      "qualified_for": "11c348e404df2c3fc404056ff3a9e885d4d990bc",
+      "raw_sha256": "daf860681c6d613dcd8728a626c3d1ec5f3d9a004ebcf18ac123cfabed9f4f3e",
+      "configure_sanitizer_proof": [
+        {
+          "log": "configure.log",
+          "summary": "-- HYLE 0.1.0 | GNU 14.2.0 | C++23 | sanitizer=off | linkage=static | products=core,error,time,platform,math,sched,compute,graph | factors=core,container_intrusive,util_core,error,time,math,timer_queue,platform,platform_thread,platform_fs,mem,mem_vm,container,container_queue,sched,io_core,compute_ops,compute,graph,compute_ggml_runtime,compute_stream,compute_batch,graph_batch,compute_provider_ggml_vulkan,compute_provider_iree_vulkan,compute_route_vulkan,graph_route_vulkan,compute_state"
+        }
+      ],
+      "reused": true,
+      "scope": "same ordinary OFF product inputs after removing unreachable TSAN-only branch; no new run"
+    },
+    {
+      "cell": "foundation-f5-sdk-wsl-vulkan-shared",
+      "original_candidate": "25e4fb398e2a782ee60f916c3c6351c4736b6eda",
+      "previously_qualified_for": "25e4fb398e2a782ee60f916c3c6351c4736b6eda",
+      "qualified_for": "11c348e404df2c3fc404056ff3a9e885d4d990bc",
+      "raw_sha256": "4fcb394a3b72cbf52d213520011e7cab4e9bd64bb58569b8a8379c192f194d74",
+      "configure_sanitizer_proof": [
+        {
+          "log": "configure.log",
+          "summary": "-- HYLE 0.1.0 | GNU 14.2.0 | C++23 | sanitizer=off | linkage=shared | products=core,error,time,platform,math,sched,compute,graph | factors=core,container_intrusive,util_core,error,time,math,timer_queue,platform,platform_thread,platform_fs,mem,mem_vm,container,container_queue,sched,io_core,compute_ops,compute,graph,compute_ggml_runtime,compute_stream,compute_batch,graph_batch,compute_provider_ggml_vulkan,compute_provider_iree_vulkan,compute_route_vulkan,graph_route_vulkan,compute_state"
+        }
+      ],
+      "reused": true,
+      "scope": "same ordinary OFF product inputs after removing unreachable TSAN-only branch; no new run"
+    },
+    {
+      "cell": "foundation-f5-sdk-air-cpu-apple-static",
+      "original_candidate": "25e4fb398e2a782ee60f916c3c6351c4736b6eda",
+      "previously_qualified_for": "25e4fb398e2a782ee60f916c3c6351c4736b6eda",
+      "qualified_for": "11c348e404df2c3fc404056ff3a9e885d4d990bc",
+      "raw_sha256": "1068e610978ff85f239d1639ba09ea7d36659446c7e48f6bf4fe0da3b0c1555d",
+      "configure_sanitizer_proof": [
+        {
+          "log": "configure.log",
+          "summary": "-- HYLE 0.1.0 | AppleClang 21.0.0.21000334 | C++23 | sanitizer=off | linkage=static | products=core,error,time,platform,simd,math,sched,compute,graph | factors=core,container_intrusive,util_core,error,time,math,timer_queue,platform,platform_thread,platform_fs,mem,mem_vm,simd,container,container_queue,sched,io_core,compute_ops,compute,graph,compute_provider_onednn,compute_backend_cpu,compute_ggml_runtime,compute_provider_ggml,graph_provider_onednn,compute_provider_native,compute_stream,compute_route_cpu,graph_route_cpu,compute_batch,compute_provider_ggml_metal,compute_route_apple,graph_batch,graph_route_apple,graph_route_cpu_apple,compute_state"
+        }
+      ],
+      "reused": true,
+      "scope": "same ordinary OFF product inputs after removing unreachable TSAN-only branch; no new run"
+    },
+    {
+      "cell": "foundation-f5-sdk-air-cpu-apple-shared",
+      "original_candidate": "25e4fb398e2a782ee60f916c3c6351c4736b6eda",
+      "previously_qualified_for": "25e4fb398e2a782ee60f916c3c6351c4736b6eda",
+      "qualified_for": "11c348e404df2c3fc404056ff3a9e885d4d990bc",
+      "raw_sha256": "627e46200f4d4aaf3bc222c6d49c7695d79f0f4b02bcf9d570074ee61f7a22b6",
+      "configure_sanitizer_proof": [
+        {
+          "log": "configure.log",
+          "summary": "-- HYLE 0.1.0 | AppleClang 21.0.0.21000334 | C++23 | sanitizer=off | linkage=shared | products=core,error,time,platform,simd,math,sched,compute,graph | factors=core,container_intrusive,util_core,error,time,math,timer_queue,platform,platform_thread,platform_fs,mem,mem_vm,simd,container,container_queue,sched,io_core,compute_ops,compute,graph,compute_provider_onednn,compute_backend_cpu,compute_ggml_runtime,compute_provider_ggml,graph_provider_onednn,compute_provider_native,compute_stream,compute_route_cpu,graph_route_cpu,compute_batch,compute_provider_ggml_metal,compute_route_apple,graph_batch,graph_route_apple,graph_route_cpu_apple,compute_state"
+        }
+      ],
+      "reused": true,
+      "scope": "same ordinary OFF product inputs after removing unreachable TSAN-only branch; no new run"
+    },
+    {
+      "cell": "foundation-f5-sdk-air-cpu-vulkan-static",
+      "original_candidate": "25e4fb398e2a782ee60f916c3c6351c4736b6eda",
+      "previously_qualified_for": "25e4fb398e2a782ee60f916c3c6351c4736b6eda",
+      "qualified_for": "11c348e404df2c3fc404056ff3a9e885d4d990bc",
+      "raw_sha256": "37e94345a93fd636bb0d896c81604871508e723341411a35f62fecb0f9e02038",
+      "configure_sanitizer_proof": [
+        {
+          "log": "configure.log",
+          "summary": "-- HYLE 0.1.0 | AppleClang 21.0.0.21000334 | C++23 | sanitizer=off | linkage=static | products=core,error,time,platform,simd,math,sched,compute,graph | factors=core,container_intrusive,util_core,error,time,math,timer_queue,platform,platform_thread,platform_fs,mem,mem_vm,simd,container,container_queue,sched,io_core,compute_ops,compute,graph,compute_provider_onednn,compute_backend_cpu,compute_ggml_runtime,compute_provider_ggml,graph_provider_onednn,compute_provider_native,compute_stream,compute_route_cpu,graph_route_cpu,compute_batch,graph_batch,compute_provider_ggml_vulkan,compute_provider_iree_vulkan,compute_route_vulkan,graph_route_vulkan,graph_route_cpu_vulkan,compute_state"
+        }
+      ],
+      "reused": true,
+      "scope": "same ordinary OFF product inputs after removing unreachable TSAN-only branch; no new run"
+    },
+    {
+      "cell": "foundation-f5-sdk-air-cpu-vulkan-shared",
+      "original_candidate": "25e4fb398e2a782ee60f916c3c6351c4736b6eda",
+      "previously_qualified_for": "25e4fb398e2a782ee60f916c3c6351c4736b6eda",
+      "qualified_for": "11c348e404df2c3fc404056ff3a9e885d4d990bc",
+      "raw_sha256": "5000f792aa8f148e0e9e4ef6ac458e6bbdff3205d38c92f62619a04af4e6b8cf",
+      "configure_sanitizer_proof": [
+        {
+          "log": "configure.log",
+          "summary": "-- HYLE 0.1.0 | AppleClang 21.0.0.21000334 | C++23 | sanitizer=off | linkage=shared | products=core,error,time,platform,simd,math,sched,compute,graph | factors=core,container_intrusive,util_core,error,time,math,timer_queue,platform,platform_thread,platform_fs,mem,mem_vm,simd,container,container_queue,sched,io_core,compute_ops,compute,graph,compute_provider_onednn,compute_backend_cpu,compute_ggml_runtime,compute_provider_ggml,graph_provider_onednn,compute_provider_native,compute_stream,compute_route_cpu,graph_route_cpu,compute_batch,graph_batch,compute_provider_ggml_vulkan,compute_provider_iree_vulkan,compute_route_vulkan,graph_route_vulkan,graph_route_cpu_vulkan,compute_state"
+        }
+      ],
+      "reused": true,
+      "scope": "same ordinary OFF product inputs after removing unreachable TSAN-only branch; no new run"
+    },
+    {
+      "cell": "foundation-f5-sdk-air-apple-static",
+      "original_candidate": "25e4fb398e2a782ee60f916c3c6351c4736b6eda",
+      "previously_qualified_for": "25e4fb398e2a782ee60f916c3c6351c4736b6eda",
+      "qualified_for": "11c348e404df2c3fc404056ff3a9e885d4d990bc",
+      "raw_sha256": "6b6338ca805ac5db0f119a8faab742edb61cb4cda660de9e3df244c205a6437b",
+      "configure_sanitizer_proof": [
+        {
+          "log": "configure.log",
+          "summary": "-- HYLE 0.1.0 | AppleClang 21.0.0.21000334 | C++23 | sanitizer=off | linkage=static | products=core,error,time,platform,math,sched,compute,graph | factors=core,container_intrusive,util_core,error,time,math,timer_queue,platform,platform_thread,platform_fs,mem,mem_vm,container,container_queue,sched,io_core,compute_ops,compute,graph,compute_ggml_runtime,compute_stream,compute_batch,compute_provider_ggml_metal,compute_route_apple,graph_batch,graph_route_apple,compute_state"
+        }
+      ],
+      "reused": true,
+      "scope": "same ordinary OFF product inputs after removing unreachable TSAN-only branch; no new run"
+    },
+    {
+      "cell": "foundation-f5-sdk-air-apple-shared",
+      "original_candidate": "25e4fb398e2a782ee60f916c3c6351c4736b6eda",
+      "previously_qualified_for": "25e4fb398e2a782ee60f916c3c6351c4736b6eda",
+      "qualified_for": "11c348e404df2c3fc404056ff3a9e885d4d990bc",
+      "raw_sha256": "01b0414d3424c499f48451e31d88138ab94d30c78ec014778ccf19e3b04f0741",
+      "configure_sanitizer_proof": [
+        {
+          "log": "configure.log",
+          "summary": "-- HYLE 0.1.0 | AppleClang 21.0.0.21000334 | C++23 | sanitizer=off | linkage=shared | products=core,error,time,platform,math,sched,compute,graph | factors=core,container_intrusive,util_core,error,time,math,timer_queue,platform,platform_thread,platform_fs,mem,mem_vm,container,container_queue,sched,io_core,compute_ops,compute,graph,compute_ggml_runtime,compute_stream,compute_batch,compute_provider_ggml_metal,compute_route_apple,graph_batch,graph_route_apple,compute_state"
+        }
+      ],
+      "reused": true,
+      "scope": "same ordinary OFF product inputs after removing unreachable TSAN-only branch; no new run"
+    },
+    {
+      "cell": "foundation-f5-sdk-air-vulkan-static",
+      "original_candidate": "25e4fb398e2a782ee60f916c3c6351c4736b6eda",
+      "previously_qualified_for": "25e4fb398e2a782ee60f916c3c6351c4736b6eda",
+      "qualified_for": "11c348e404df2c3fc404056ff3a9e885d4d990bc",
+      "raw_sha256": "a187f0af33f09cd74a2abd5a75599b1b9d0a09b32976de71c24d188c65e3f26f",
+      "configure_sanitizer_proof": [
+        {
+          "log": "configure.log",
+          "summary": "-- HYLE 0.1.0 | AppleClang 21.0.0.21000334 | C++23 | sanitizer=off | linkage=static | products=core,error,time,platform,math,sched,compute,graph | factors=core,container_intrusive,util_core,error,time,math,timer_queue,platform,platform_thread,platform_fs,mem,mem_vm,container,container_queue,sched,io_core,compute_ops,compute,graph,compute_ggml_runtime,compute_stream,compute_batch,graph_batch,compute_provider_ggml_vulkan,compute_provider_iree_vulkan,compute_route_vulkan,graph_route_vulkan,compute_state"
+        }
+      ],
+      "reused": true,
+      "scope": "same ordinary OFF product inputs after removing unreachable TSAN-only branch; no new run"
+    },
+    {
+      "cell": "foundation-f5-sdk-air-vulkan-shared",
+      "original_candidate": "25e4fb398e2a782ee60f916c3c6351c4736b6eda",
+      "previously_qualified_for": "25e4fb398e2a782ee60f916c3c6351c4736b6eda",
+      "qualified_for": "11c348e404df2c3fc404056ff3a9e885d4d990bc",
+      "raw_sha256": "df99668b811c9dcba1672aa0bdd6c786cec999f08caf516a4ad5c721e9ad4d5a",
+      "configure_sanitizer_proof": [
+        {
+          "log": "configure.log",
+          "summary": "-- HYLE 0.1.0 | AppleClang 21.0.0.21000334 | C++23 | sanitizer=off | linkage=shared | products=core,error,time,platform,math,sched,compute,graph | factors=core,container_intrusive,util_core,error,time,math,timer_queue,platform,platform_thread,platform_fs,mem,mem_vm,container,container_queue,sched,io_core,compute_ops,compute,graph,compute_ggml_runtime,compute_stream,compute_batch,graph_batch,compute_provider_ggml_vulkan,compute_provider_iree_vulkan,compute_route_vulkan,graph_route_vulkan,compute_state"
+        }
+      ],
+      "reused": true,
+      "scope": "same ordinary OFF product inputs after removing unreachable TSAN-only branch; no new run"
+    }
+  ],
+  "evidence": [
+    {
+      "receipt": "evidence/correctness/foundation-f5-paged-arena-first/receipt.json",
+      "receipt_sha256": "31976e0fa12b2e37a8d97ffa70e76eec9541a9d95ba56c2329d5c2268386e0f4",
+      "raw_sha256": null,
+      "archives": [
+        {
+          "name": "common-raw.zip",
+          "sha256": "e6be7f5c1a906281a67a238950303a3be6976b0615d8ce081d7b64350fc02643"
+        },
+        {
+          "name": "native-direct-raw.zip",
+          "sha256": "4b211762dd4b4293ea910244f763da0e6031563660d08eb215b93f584ae8b0b0"
+        }
+      ],
+      "scope": "exact original facet and original failures retained; not whole-process vendor qualification"
+    },
+    {
+      "receipt": "evidence/correctness/foundation-f5-graph-page-recheck/receipt.json",
+      "receipt_sha256": "df2c439bf6fc70ccae4feedd08618f126b025131467bbbfc5d1cc511747c9416",
+      "raw_sha256": null,
+      "archives": [
+        {
+          "name": "native-raw.zip",
+          "sha256": "ecb74ba6472b68ea1681256edeeed6752a760e2d76d00e01de7452dc18a9e2eb"
+        },
+        {
+          "name": "windows-raw.zip",
+          "sha256": "7920fdf24da2a9ea0734a62fe9e0e5e6262da85c16c652df807b9a9e3b96c56e"
+        }
+      ],
+      "scope": "exact original facet and original failures retained; not whole-process vendor qualification"
+    },
+    {
+      "receipt": "evidence/correctness/foundation-f5-host-controller-first/receipt.json",
+      "receipt_sha256": "ae109cfbd57f280539fa7efc6f635278d884a1af7b861dcc8a0bb9a1e815f555",
+      "raw_sha256": null,
+      "archives": [
+        {
+          "name": "common-raw.zip",
+          "sha256": "96dda0f952eaf0ad99696cb5df830f3bd575197688d90cd52069c6a2499ee134"
+        },
+        {
+          "name": "windows-cpu-raw.zip",
+          "sha256": "18fa5c7a87a01ff3254e011b874f6e26f9f3956565186d02c2dba76580473fbb"
+        },
+        {
+          "name": "wsl-cpu-raw.zip",
+          "sha256": "996cd6b5691e9bc03442c8a2867c1c1e3106988e947c4b7ed9dc623c42601f64"
+        },
+        {
+          "name": "wsl-native-graph-raw.zip",
+          "sha256": "b7c0a11ebfd8527b9c348c1f0511fe5587bf7ba3fffc0dccce9fe396a1a1824a"
+        }
+      ],
+      "scope": "exact original facet and original failures retained; not whole-process vendor qualification"
+    },
+    {
+      "receipt": "evidence/correctness/foundation-f5-direct-host-controller-first/receipt.json",
+      "receipt_sha256": "1693a27c92fc67d7c8c778ab034bed1b5f5d005f7a7a159f3d9cee512036163e",
+      "raw_sha256": null,
+      "archives": [
+        {
+          "name": "common-raw.zip",
+          "sha256": "9d765a3146fc87041e741202d7d1464d57b99f6292879ac3947fe5a2e4aca0c9"
+        },
+        {
+          "name": "windows-cpu-raw.zip",
+          "sha256": "1bf9ba7cedbd533100754106982bd66dda5ca1aac9ad8980707bf48adaed64a3"
+        },
+        {
+          "name": "wsl-cpu-raw.zip",
+          "sha256": "c2a019e54b5a7859dc25a271ea745b62154b61550ab1d1eb3ebfe4d5aabb5046"
+        }
+      ],
+      "scope": "exact original facet and original failures retained; not whole-process vendor qualification"
+    },
+    {
+      "receipt": "evidence/correctness/foundation-f5-native-controller-first/receipt.json",
+      "receipt_sha256": "23ed46943f579c437ffa2ee0cc5223adcd5325a5390a0e5558d82f34138e4ce3",
+      "raw_sha256": null,
+      "archives": [
+        {
+          "name": "air-apple-raw.zip",
+          "sha256": "aaa18f237e9bb0e60281e70d9e5647e662a32e1b946ecb274f709e99327a6391"
+        },
+        {
+          "name": "air-vulkan-raw.zip",
+          "sha256": "4d30b3e60ecbbe756c9a3cbdcaf4ce599011c70f1126c48ff4709e1b32be41cb"
+        },
+        {
+          "name": "common-raw.zip",
+          "sha256": "9e98eb34e06b9af7fb530b6923ba1d53bbf07340f3e1a92a132586bc5ab0d1de"
+        },
+        {
+          "name": "windows-vulkan-raw.zip",
+          "sha256": "1fd3a4abab147db5917b14515abb55fb60ae9d29896cd09095e87c248633423f"
+        }
+      ],
+      "scope": "exact original facet and original failures retained; not whole-process vendor qualification"
+    },
+    {
+      "receipt": "evidence/correctness/foundation-f5-ragged-append-first/receipt.json",
+      "receipt_sha256": "8e3e7509fc568040c1367a4590f6c64a51ceeaae81a850c1433bcd4928be4e84",
+      "raw_sha256": null,
+      "archives": [
+        {
+          "name": "air-apple-raw.zip",
+          "sha256": "fc32e8d3382bb17957219e77223ffc73a0e42f29d5f3be50b712e3cccf7090b8"
+        },
+        {
+          "name": "air-vulkan-raw.zip",
+          "sha256": "6340922377fa51e4d1427c06bb41ce0efec8d7b58f3da21197058107bb1601f2"
+        },
+        {
+          "name": "windows-cpu-raw.zip",
+          "sha256": "0965aa77553a980fd0d7d8f55746302562e15c46ff0a6c333441a96be0a3660b"
+        },
+        {
+          "name": "windows-vulkan-raw.zip",
+          "sha256": "455c3408c96197a5858915d844a0771a00a427cdc06c7e3cd53e4615c3e23cef"
+        },
+        {
+          "name": "wsl-cpu-raw.zip",
+          "sha256": "7e53e72e96bd2d5682436ffa4547f3b8a73f9e1f2221870dfd9d5afaee74c370"
+        },
+        {
+          "name": "wsl-cuda-direct-raw.zip",
+          "sha256": "b2f2b5625dffc817f86183da43d5a3218009f61bb1ec93b87e914f277f0b7ffe"
+        },
+        {
+          "name": "wsl-cuda-graph-raw.zip",
+          "sha256": "98ae7b3ce281b009ea11e8779d7b760d00071ab5a704ca6f6d99e62e6ed7045a"
+        }
+      ],
+      "scope": "exact original facet and original failures retained; not whole-process vendor qualification"
+    },
+    {
+      "receipt": "evidence/correctness/foundation-f5-native-cold-oom-points/receipt.json",
+      "receipt_sha256": "f8107624e91ec779411c0374b2ed92bbb5880617f88f05c205aebe0057b066e7",
+      "raw_sha256": null,
+      "archives": [
+        {
+          "name": "air-apple-raw.zip",
+          "sha256": "883a4f5a0dfd68d70af248e71c7db397eb0f82e9f6e6c8a6994f37ede454b010"
+        },
+        {
+          "name": "air-vulkan-raw.zip",
+          "sha256": "115aec6911ad0472cc3dbbc0ac46b2d452a2f2301f2d3acd4a411bb03770f84b"
+        },
+        {
+          "name": "windows-cpu-raw.zip",
+          "sha256": "5b0fe154bf3536ebc3f842855638b9d22dac6ce6903db2cef26ee6b820d06847"
+        },
+        {
+          "name": "windows-vulkan-raw.zip",
+          "sha256": "b251c8ff3018c519846704ffc7be1784fc6a97234237e4fe243a257c34674c8a"
+        },
+        {
+          "name": "wsl-cpu-raw.zip",
+          "sha256": "065138066189317ec7c52fdfecd2ffe395481bc95e6f6d69f6f5a3194120bdaa"
+        }
+      ],
+      "scope": "exact original facet and original failures retained; not whole-process vendor qualification"
+    },
+    {
+      "receipt": "evidence/correctness/foundation-f5-native-risk-recheck/receipt.json",
+      "receipt_sha256": "591a07291c7a35b6757f7620904c223dfb1cfb7c5d5eb3d69a4a95ebef46427a",
+      "raw_sha256": null,
+      "archives": [
+        {
+          "name": "cuda-direct-raw.zip",
+          "sha256": "85442b347832f90d0944e7d12a1ae76d001b74a865670f57a84688f66326fb56"
+        },
+        {
+          "name": "cuda-graph-raw.zip",
+          "sha256": "8a0a3fa8d8c50d1740cc0afdd6b9090515a4182d564a95c02c303e53a6786fc2"
+        },
+        {
+          "name": "windows-common-raw.zip",
+          "sha256": "e332e42c4220e7b6378a788a80c0faecd5ef97de889892e1ed1e121d2ea4fa95"
+        },
+        {
+          "name": "windows-cpu-raw.zip",
+          "sha256": "4a92e65a2b0bcbaf9e7a38cf69336949383bafb0981019d54605ed51bd2ebe66"
+        },
+        {
+          "name": "windows-vulkan-raw.zip",
+          "sha256": "b5e61a34fe9ad9a0363179d81fd10734155d31b1d4ec0df5cead7ebcaed82f9e"
+        }
+      ],
+      "scope": "exact original facet and original failures retained; not whole-process vendor qualification"
+    },
+    {
+      "receipt": "evidence/correctness/foundation-f5-native-queued-lifetime/receipt.json",
+      "receipt_sha256": "82fd1378983890d5e5f5e8a3a62775c70b26a0efc0fa76d9d52209dd158a6e0a",
+      "raw_sha256": null,
+      "archives": [
+        {
+          "name": "air-apple-raw.zip",
+          "sha256": "6f1101fe37a2f17486e52cd62bfa0b8cf8b58e3f6e1071f6a57ce47659a62412"
+        },
+        {
+          "name": "air-vulkan-raw.zip",
+          "sha256": "bf9181b80530a59a5cb3f74bd815eb43b5e66274ea9f0a54b5840cb730555cfe"
+        },
+        {
+          "name": "windows-vulkan-raw.zip",
+          "sha256": "03d65885501de3eb6cc6c55e6431615c25a86a3747664a98767f5bc80086396f"
+        }
+      ],
+      "scope": "exact original facet and original failures retained; not whole-process vendor qualification"
+    },
+    {
+      "receipt": "evidence/correctness/foundation-f5-failed-ready-abandon/receipt.json",
+      "receipt_sha256": "d4df5544774902f9e4ec10f27377f89fa3e243797fc7ec04701f2a494dbbbb00",
+      "raw_sha256": null,
+      "archives": [
+        {
+          "name": "cuda-direct-raw.zip",
+          "sha256": "ee63737d5c2076fcd28f5783310f87b68c858eaf3315989f5dc0fdc2b1a46da8"
+        },
+        {
+          "name": "cuda-graph-raw.zip",
+          "sha256": "09b879521519357249a671869b6d036389879e7ae4f3e505bf74084d30a05b61"
+        },
+        {
+          "name": "windows-cpu-raw.zip",
+          "sha256": "d1e50af5ddcf74d108d2449c15659caf6e00c057a70b9c2b617b9f8f8c83919c"
+        },
+        {
+          "name": "wsl-cpu-raw.zip",
+          "sha256": "6d019e6fe8ca72124a1700394d7f1fc5762435b11e77ab038a4d5fda759b831d"
+        }
+      ],
+      "scope": "exact original facet and original failures retained; not whole-process vendor qualification"
+    },
+    {
+      "receipt": "evidence/correctness/foundation-f5-public-native-source/receipt.json",
+      "receipt_sha256": "860ed356cde887f4c9368475fd0504f2fddadcfc0786425bda6968dfd0bc8756",
+      "raw_sha256": null,
+      "archives": [
+        {
+          "name": "air-apple-raw.zip",
+          "sha256": "08bc41c072abcef7ef3654f08f41e81430ada55feca601e89d7fe64bb15d20a3"
+        },
+        {
+          "name": "air-vulkan-raw.zip",
+          "sha256": "0bfeb4ba0149141304422d6697f8e30638509f1e80a1f314294514c9070901b0"
+        },
+        {
+          "name": "windows-vulkan-raw.zip",
+          "sha256": "640dd17c5cc74d9d2f7d05bc8ef2f304b42572c1d6a76ee111dbf21c5b2fc483"
+        }
+      ],
+      "scope": "exact original facet and original failures retained; not whole-process vendor qualification"
+    },
+    {
+      "receipt": "evidence/correctness/foundation-f5-source-route-absence/receipt.json",
+      "receipt_sha256": "36ef422937816bba1bd89d2e301d22a67b1061742cb274b11905d223261bcd09",
+      "raw_sha256": "ac13fed67bb78d729c7fc1fc393b2f1bb6a7480c34e222941191bf054d6e953b",
+      "archives": [],
+      "scope": "exact original facet and original failures retained; not whole-process vendor qualification"
+    },
+    {
+      "receipt": "evidence/correctness/foundation-f5-common-sanitizers/receipt.json",
+      "receipt_sha256": "beac6913e6c22d04fcf144adeecb60643091899c70a29eee3012feee8779a30a",
+      "raw_sha256": null,
+      "archives": [
+        {
+          "name": "asan-raw.zip",
+          "sha256": "e0737ca5c0f7ba169c5780c4df2baee14c0abeedf6e28865066bd40fa957dc26"
+        },
+        {
+          "name": "tsan-raw.zip",
+          "sha256": "9d863f352ecd5e3b99a6a7f833749ef9fe471df019b4383d2efb02bc6623c9d8"
+        },
+        {
+          "name": "ubsan-raw.zip",
+          "sha256": "ed0668ab4e8ccaa9c1e1483febcdb304503a2c30dbda903b0d32bd4e92f4fe11"
+        }
+      ],
+      "scope": "exact original facet and original failures retained; not whole-process vendor qualification"
+    },
+    {
+      "receipt": "evidence/correctness/foundation-f5-cpu-controller-sanitizers/receipt.json",
+      "receipt_sha256": "7a81fe90d32910dcfcb88d4097448abc88a943b37fef6f1384a98e8b5e137ebc",
+      "raw_sha256": "362447225952dc10e603e7d385f26da2180e65d32e848515782807321b7a4fd7",
+      "archives": [],
+      "scope": "exact original facet and original failures retained; not whole-process vendor qualification"
+    },
+    {
+      "receipt": "evidence/correctness/foundation-f5-graph-batch-test-registration/receipt.json",
+      "receipt_sha256": "6eb35828e6a4dfbc4acc6a8d3ef2c14ee147217b007aa3ac7eb54a68c4c00d26",
+      "raw_sha256": "90dca34c53a1bad85fe335536c6f43cc53ba6dc693f3aef70ce22ffef73e33c9",
+      "archives": [],
+      "scope": "exact original facet and original failures retained; not whole-process vendor qualification"
+    },
+    {
+      "receipt": "evidence/correctness/foundation-f5-native-vulkan-host-asan/receipt.json",
+      "receipt_sha256": "00ef4add1d074f6615c8df22060c7430470ed0990bf5d806ab294f1c20b8df48",
+      "raw_sha256": "a44bbcf009c34f6033aedd80a880039ba9bcc03b212f6584b444e4720ae4022d",
+      "archives": [],
+      "scope": "exact original facet and original failures retained; not whole-process vendor qualification"
+    },
+    {
+      "receipt": "evidence/correctness/foundation-f5-native-apple-host-asan/receipt.json",
+      "receipt_sha256": "e150924fd7a69e094530c5d28a6901f4ae0d0de313a613af4659d558e6c9a00f",
+      "raw_sha256": "1121554b1563c995b20d94774008efd3a83b765c302d6d62a78a00325594ab1f",
+      "archives": [],
+      "scope": "exact original facet and original failures retained; not whole-process vendor qualification"
+    },
+    {
+      "receipt": "evidence/correctness/foundation-f5-native-cuda-host-asan/receipt.json",
+      "receipt_sha256": "9fe4babf2095dc6588867bf8a055b125ce7d9799fcfaa660f244ee14048890ed",
+      "raw_sha256": "10411629d20a85efa0f1f5cc4aa5046ff56234a55d7f10562579ab0e085fa62c",
+      "archives": [],
+      "scope": "exact original facet and original failures retained; not whole-process vendor qualification"
+    },
+    {
+      "receipt": "evidence/correctness/foundation-f5-native-cuda-host-ubsan/receipt.json",
+      "receipt_sha256": "e62099f20b209029a2bfb72faa1fe7ba09ff4fb91672a641a381d7b078638384",
+      "raw_sha256": "e310df654099bdd32bc6fb6abc6ff12f20f4f7756328661199ed0843e57d630d",
+      "archives": [],
+      "scope": "exact original facet and original failures retained; not whole-process vendor qualification"
+    },
+    {
+      "receipt": "evidence/correctness/foundation-f5-native-cuda-host-tsan/receipt.json",
+      "receipt_sha256": "95d7a3da489b2588887269e8ba93a324ed1bff9b16ef54a7279e248a14dfcac9",
+      "raw_sha256": "fe1add9db19b3cbdf35e2ce7fa630822a9dc811a71d1a29405ba83efb0ee41eb",
+      "archives": [],
+      "scope": "exact original facet and original failures retained; not whole-process vendor qualification"
+    },
+    {
+      "receipt": "evidence/correctness/foundation-f5-native-apple-host-ubsan/receipt.json",
+      "receipt_sha256": "be0b20c563b7290affa4a0aa8df01574d3177d6e0a1f39e82e173ba13442c616",
+      "raw_sha256": "d5ace181e55d4194f6d1694072d380295e225ef472b5cf92f8ce3f7bd95f40a3",
+      "archives": [],
+      "scope": "exact original facet and original failures retained; not whole-process vendor qualification"
+    },
+    {
+      "receipt": "evidence/correctness/foundation-f5-native-apple-host-tsan/receipt.json",
+      "receipt_sha256": "d3b4c9288a85a599dcaaf785be8acb3267b37fe185aab79bb5d80ac2978765d0",
+      "raw_sha256": "aff7cd7eeac5537adc25b9766bab5a5296c9f52bc3783f8e117458cf8f178200",
+      "archives": [],
+      "scope": "exact original facet and original failures retained; not whole-process vendor qualification"
+    },
+    {
+      "receipt": "evidence/correctness/foundation-f5-native-vulkan-host-ubsan/receipt.json",
+      "receipt_sha256": "6e858b3d8024e92688c2f5b8d4194265796698303dcc8ab2245b5ad725685c37",
+      "raw_sha256": "4f2ae820a5f851fe2ed5e6835078bba077732a63b2d7382ded98af2bd5812030",
+      "archives": [],
+      "scope": "exact original facet and original failures retained; not whole-process vendor qualification"
+    },
+    {
+      "receipt": "evidence/correctness/foundation-f5-native-vulkan-host-tsan/receipt.json",
+      "receipt_sha256": "f3c0ae9cf931786e5e0eb492a38eb9aeb1a27d9e7318efcb03255e8e67664e7c",
+      "raw_sha256": "b37f456f5e77483c0fb91b1088a657106b7ccdb009e6b1a643830b65dea9a548",
+      "archives": [],
+      "scope": "exact original facet and original failures retained; not whole-process vendor qualification"
+    },
+    {
+      "receipt": "evidence/correctness/foundation-f5-separated-redteam/receipt.json",
+      "receipt_sha256": "83f5c6430ab76344f12d87f2f0d414a9dc35221481b3a13637a46e054bc7b2c9",
+      "raw_sha256": null,
+      "archives": [],
+      "scope": "exact original facet and original failures retained; not whole-process vendor qualification"
+    },
+    {
+      "receipt": "evidence/correctness/foundation-f5-component-facade-correction/receipt.json",
+      "receipt_sha256": "82aab97317aaf2a3431bb8055b3462e542d5c8ef22fc7ffbb0e117fc8484c8dc",
+      "raw_sha256": "7fa82a3c6cee39915a1d7011a3331093c16ed44a55a403d4b388e90f893b2cfb",
+      "archives": [],
+      "scope": "exact original facet and original failures retained; not whole-process vendor qualification"
+    },
+    {
+      "receipt": "evidence/correctness/foundation-f5-sdk-complete-matrix/receipt.json",
+      "receipt_sha256": "05b6dbadf40c407a9524b9b77dc460431492fef9205585b32ec33491e7715367",
+      "raw_sha256": null,
+      "archives": [],
+      "scope": "exact original facet and original failures retained; not whole-process vendor qualification"
+    }
+  ],
+  "component_budget": {
+    "elapsed": 856.2969999999987,
+    "limit": 1200,
+    "extensions": [
+      {
+        "seconds": 300,
+        "authorization": "2026-10-13 user: \u8ffd\u52a0\uff0c\u4e0d\u7528\u518d\u95ee\u4e86\uff0c\u7c7b\u4f3c\u7684\u60c5\u51b5\u90fd\u589e\u52a0\u65f6\u95f4",
+        "elapsed_before": 272.1399999999994,
+        "original_limit_seconds": 300,
+        "same_root": "C:\\public\\project-hyle\\hyle\\.scratch\\foundation-f5\\component-link-contract",
+        "same_toolchain": "C:/Program Files/Microsoft Visual Studio/18/Enterprise/VC/Tools/MSVC/14.50.35717/bin/Hostx64/x64/cl.exe"
+      },
+      {
+        "seconds": 600,
+        "authorization": "2026-10-13 user standing authorization for similar validation time extensions",
+        "elapsed_before": 600.25,
+        "reason": "Full unchanged script has no resume entry; 327.860-second retry reached later cases but timed out, preserve and allow one full 600-second retry",
+        "same_root": "C:\\public\\project-hyle\\hyle\\.scratch\\foundation-f5\\component-link-contract",
+        "same_toolchain": "C:/Program Files/Microsoft Visual Studio/18/Enterprise/VC/Tools/MSVC/14.50.35717/bin/Hostx64/x64/cl.exe"
+      }
+    ]
+  },
+  "loc": {
+    "self_native": 174338,
+    "owner_union": 58672,
+    "owner_files": 280,
+    "f5_native_net_from_f4": 2610,
+    "compute_batch": 1437,
+    "graph_batch": 400,
+    "native_tests_net": 1862,
+    "test_tool_net": 5,
+    "iree_cmake_net": 2
+  },
+  "limits": [
+    "Native FI paged/ragged only qualified Linux CUDA/SM89; Windows named unsupported",
+    "CPU/Apple/Vulkan explicit materialize reference costs and capture=false retained",
+    "WSL Vulkan two SDK cells software package/loader only",
+    "Host sanitizer does not instrument GPU kernels/private drivers/vendor processes; foreign leak/thread/static-MLX diagnostics retained, no whole-process zero-race/zero-leak claim",
+    "No actual full model or engine high-performance P1/P2 qualified"
+  ],
+  "ordinary_p0_receipt_sha256": "88f086e93bc706fbc7feda529775a1b0144ab6af25ca3f74eb28ebbdc6823d47"
+}

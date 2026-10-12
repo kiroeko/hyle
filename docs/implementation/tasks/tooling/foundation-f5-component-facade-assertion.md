@@ -60,3 +60,9 @@ Time/Container/IO/缓存/许可等共享工具合同。第三次在第626行all�
 contract附近；没有产品反证。按用户standing授权再有限追加600秒，总上限1200，原
 全部FAIL/TIMEOUT/elapsed继续计入。新run只增加CMake原trace观察选项来标记真实停止
 case，不改public脚本/断言/产品、不换root预算；库/测试仍原并行度且本次重型独占。
+
+最终状态：CLOSED_TOOL_FIX。追加600后的原完整脚本实际PASS256.047秒，累计856.297/1200；
+已到原最终“HYLE component contracts passed”，全部旧case保留。原三FAIL/一次TIMEOUT、
+SDK环境修复、唯一一行断言差分与standing时间授权在
+[完整证据](../../../../evidence/correctness/foundation-f5-component-facade-correction/README.md)。
+没有改全局仪器/产品图来让脚本绿；本工具任务不授权新的模块产品改动。

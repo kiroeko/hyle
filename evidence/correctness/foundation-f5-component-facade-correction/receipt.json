@@ -1,0 +1,134 @@
+{
+  "candidate": "11c348e404df2c3fc404056ff3a9e885d4d990bc",
+  "f5_candidate": "25e4fb398e2a782ee60f916c3c6351c4736b6eda",
+  "scope": "Full original component contract; one-line graph-only assertion correction independently scoped; actual Core/container_intrusive/io_transfer build cases included",
+  "total_elapsed": 856.2969999999987,
+  "original_budget": 300,
+  "budget": 1200,
+  "script_sha256": "e8756bd79405ff867ed54cc82f707ede6cb957d1804dbad94a2bcf8df9f0880b",
+  "raw_sha256": "7fa82a3c6cee39915a1d7011a3331093c16ed44a55a403d4b388e90f893b2cfb",
+  "job": {
+    "candidate": "25e4fb398e2a782ee60f916c3c6351c4736b6eda",
+    "scope": "configure-only central graph/package contract for one CUDA PUBLIC edge; no old module/operator tests",
+    "command": [
+      "cmake",
+      "-DHYLE_SOURCE_DIR=C:\\public\\project-hyle\\hyle",
+      "-DHYLE_SMOKE_ROOT=C:\\h7\\foundation-f5-component-link-contract",
+      "-DHYLE_SMOKE_GENERATOR=Ninja",
+      "-P",
+      "cmake/HyleCiComponentContract.cmake"
+    ],
+    "stages": [
+      {
+        "pid": 60120,
+        "state": "terminal",
+        "log": "run-0.log",
+        "elapsed": 103.43699999999808,
+        "exit_code": 1,
+        "verdict": "FAIL",
+        "sha256": "ed384412c4dd5c9ee443a2ccda7a69fa293f32e4aa6946306931ab15117d44db"
+      },
+      {
+        "pid": 16960,
+        "state": "terminal",
+        "log": "run-1.log",
+        "elapsed": 60.95300000000134,
+        "exit_code": 1,
+        "verdict": "FAIL",
+        "sha256": "20368298c55019c8167d7d8db96ff33b84ae29fe91d40f6d2e84e6fb4d9ac67f"
+      },
+      {
+        "pid": 5196,
+        "state": "terminal",
+        "log": "run-2.log",
+        "elapsed": 107.75,
+        "exit_code": 1,
+        "verdict": "FAIL",
+        "sha256": "f75dc92498dc0c8fc32e451e3f64ca6c3b60f4b04a347d23e0ec34d324782935"
+      },
+      {
+        "pid": 47940,
+        "state": "terminal",
+        "log": "run-3.log",
+        "command": [
+          "cmake",
+          "-DHYLE_SOURCE_DIR=C:\\public\\project-hyle\\hyle",
+          "-DHYLE_SMOKE_ROOT=C:\\h7\\foundation-f5-component-link-contract",
+          "-DHYLE_SMOKE_GENERATOR=Ninja",
+          "-P",
+          "cmake/HyleCiComponentContract.cmake"
+        ],
+        "limit_seconds": 600,
+        "remaining_before": 327.8600000000006,
+        "candidate": "11c348e404df2c3fc404056ff3a9e885d4d990bc",
+        "environment": {
+          "compiler": "C:/Program Files/Microsoft Visual Studio/18/Enterprise/VC/Tools/MSVC/14.50.35717/bin/Hostx64/x64/cl.exe",
+          "VULKAN_SDK": "C:/public/tools/hyle-vulkan/1.4.357.0"
+        },
+        "elapsed": 328.1100000000006,
+        "exit_code": -9,
+        "verdict": "TIMEOUT",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "pid": 59304,
+        "state": "terminal",
+        "log": "run-4.log",
+        "command": [
+          "cmake",
+          "--trace-source=C:\\public\\project-hyle\\hyle\\cmake\\HyleCiComponentContract.cmake",
+          "--trace-format=json-v1",
+          "--trace-redirect=C:\\public\\project-hyle\\hyle\\.scratch\\foundation-f5\\component-link-contract\\run-4-trace.jsonl",
+          "-DHYLE_SOURCE_DIR=C:\\public\\project-hyle\\hyle",
+          "-DHYLE_SMOKE_ROOT=C:\\h7\\foundation-f5-component-link-contract",
+          "-DHYLE_SMOKE_GENERATOR=Ninja",
+          "-P",
+          "cmake/HyleCiComponentContract.cmake"
+        ],
+        "limit_seconds": 1200,
+        "remaining_before": 599.75,
+        "candidate": "11c348e404df2c3fc404056ff3a9e885d4d990bc",
+        "environment": {
+          "compiler": "C:/Program Files/Microsoft Visual Studio/18/Enterprise/VC/Tools/MSVC/14.50.35717/bin/Hostx64/x64/cl.exe",
+          "VULKAN_SDK": "C:/public/tools/hyle-vulkan/1.4.357.0"
+        },
+        "elapsed": 256.04699999999866,
+        "exit_code": 0,
+        "verdict": "PASS",
+        "sha256": "2af176384658743fcb9129bc268268a3493522f20c20033ea1d3a6be32138f34"
+      }
+    ],
+    "budget_extensions": [
+      {
+        "seconds": 300,
+        "authorization": "2026-10-13 user: \u8ffd\u52a0\uff0c\u4e0d\u7528\u518d\u95ee\u4e86\uff0c\u7c7b\u4f3c\u7684\u60c5\u51b5\u90fd\u589e\u52a0\u65f6\u95f4",
+        "elapsed_before": 272.1399999999994,
+        "original_limit_seconds": 300,
+        "same_root": "C:\\public\\project-hyle\\hyle\\.scratch\\foundation-f5\\component-link-contract",
+        "same_toolchain": "C:/Program Files/Microsoft Visual Studio/18/Enterprise/VC/Tools/MSVC/14.50.35717/bin/Hostx64/x64/cl.exe"
+      },
+      {
+        "seconds": 600,
+        "authorization": "2026-10-13 user standing authorization for similar validation time extensions",
+        "elapsed_before": 600.25,
+        "reason": "Full unchanged script has no resume entry; 327.860-second retry reached later cases but timed out, preserve and allow one full 600-second retry",
+        "same_root": "C:\\public\\project-hyle\\hyle\\.scratch\\foundation-f5\\component-link-contract",
+        "same_toolchain": "C:/Program Files/Microsoft Visual Studio/18/Enterprise/VC/Tools/MSVC/14.50.35717/bin/Hostx64/x64/cl.exe"
+      }
+    ],
+    "current_candidate": "11c348e404df2c3fc404056ff3a9e885d4d990bc",
+    "current_scope": "Full unchanged component contract, including original Core/container_intrusive/io_transfer build cases; old inaccurate configure-only label retained in history",
+    "tool_inputs": [
+      {
+        "sha256": "e8756bd79405ff867ed54cc82f707ede6cb957d1804dbad94a2bcf8df9f0880b",
+        "stage_index": 3,
+        "scope": "Original script or independently scoped one-line graph-only assertion correction; no product change or budget reset"
+      },
+      {
+        "sha256": "e8756bd79405ff867ed54cc82f707ede6cb957d1804dbad94a2bcf8df9f0880b",
+        "stage_index": 4,
+        "scope": "Original script or independently scoped one-line graph-only assertion correction; no product change or budget reset"
+      }
+    ]
+  }
+}

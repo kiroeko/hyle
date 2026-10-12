@@ -1,6 +1,10 @@
 # 显式状态版本、分页计算与四路线组合设计
 
-> 决策：DESIGN_PROPOSED。来源为用户要求的F4/F5与四路线不对称研究；
+> 决策：ACCEPTED，原有限A/F4/F5已于2026-10-13按
+> [完整完成审计](../implementation/tasks/project/foundation-f45-completion-audit.md)验收。
+> 下文保留原设计草图；当前公开接口以[state指南](../user/state-versions.md)和
+> [batch指南](../user/batch-attention.md)为准，不外推所有native性能/capture/general。
+> 来源为用户要求的F4/F5与四路线不对称研究；
 > [源码研究与固定身份](../implementation/tasks/project/foundation-f45-reference-research-2026-10.md)
 > 及[原缺口](../implementation/tasks/project/inference-foundation-gap-research-2026-10.md)。
 > F1–F3已在原有限范围CLOSED；本页不改变registry、不授权跳过SCOPED/AUDITED、不证明实现或性能。

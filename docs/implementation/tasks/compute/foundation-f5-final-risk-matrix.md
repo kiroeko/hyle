@@ -1,8 +1,8 @@
 # F5固定实现的最终风险回映
 
-状态：CANDIDATE审计补充，product25e4fb398。原六FIX、20 owner、平台资格和预算不变；
-不是terminal record，不签CLOSED。当前授权仍由[候选卡](foundation-f5-candidate-validation.md)
-及registry给出，原历史尝试由各receipt保留。
+状态：最终收口风险回映，F5数学25e与IREE配置11c348e40。原六FIX、20 owner及独立IREE
+窄FIX、平台资格和累计预算保持；terminal见[最终记录](foundation-f5-final-closure.md)。
+原历史尝试由各receipt保留，此页不授权重开或新产品范围。
 
 ## 原六FIX与逐能力证明
 
@@ -40,13 +40,13 @@ PASS；有可归因HYLE源码或跨边界使用错误的证据须退AUDITED，�
 
 | Gate | 证据 | 当前裁决 |
 |---|---|---|
-| scope | 六FIX与20 owner合法候选，原A/F4/F1–F3/R1–R7范围保留，无模型策略/新kernel/runtime | 已证明有限实现范围；最终terminal待聚合 |
-| architecture | compute_batch/state高于F1/F2且不反依赖Graph；Graph原region同slot、native原owner；package-only owners各保范围 | 已证明原固定合同；没有新接口/常态字段 |
-| correctness | 上述风险、原actual native故障和逐facet san | 原预声明HYLE-owned风险已具证；Vulkan TSan的IREE ABI反证按独立窄卡修复后两consumer通过，最终scope回映待terminal |
-| delivery | source资格、18 installed矩阵/实际rename/loader，CUDA公共FI link反例已修复验 | PENDING：独立component全配置合同原272.140/300未PASS，追加预算答复待定 |
-| usability_docs | public guide/实际隔离SDK消费者/正交映射，borrow/consumed writer/费用/unknown明确 | 已证明；不将guide存在签未运行API |
-| red_team | 固定源码/入口/风险/资格分离核查，原两个文档finding已纠正；后续san反证独立保留 | 源码有限审查完成；最终新增证据资格仍需回映 |
-| engineering_performance | P0成本结构/ordinary字段和codegen/独立产品测试工具LOC | 已证明P0结构；未自动P1，不签引擎吞吐或capture |
+| scope | 六FIX、21 owner各合法有限范围，原A/F4/F1–F3/R1–R7保留，无模型策略/新kernel/runtime | PASS |
+| architecture | compute_batch/state高于F1/F2且不反依赖Graph；Graph原region同slot、native原owner；package-only各保范围 | PASS |
+| correctness | 上述风险、实际native故障/各宿主san；IREE ABI反证依法两行修复后两consumer通过，vendor限制保留 | PASS，本scope |
+| delivery | source、18 SDK/rename/loader，CUDA public FI link修复、IREE OFF条件映射；完整component脚本最终通过 | PASS |
+| usability_docs | public guide/实际隔离SDK消费者/正交映射，borrow/consumed writer/费用/unknown明确 | PASS |
+| red_team | 固定源码/入口/风险分离核查、文档finding纠正；后续反证/全部最终raw资格与49文件hash再核 | PASS |
+| engineering_performance | P0结构/ordinary字段与codegen/固定产品测试工具LOC，不签引擎吞吐或capture | PASS P0 |
 
 reopen triggers沿原协议：可复现身份/权限/寿命/UB/交付缺陷、真实消费者证明的缺失常用
 机制、相关依赖升级或合格同合同material成本退化；历史TODO/重新看一遍/参考库多一个
@@ -57,3 +57,9 @@ feature不授权重开。本表没有改变任何owner状态或把未裁决gate�
 该阶段事实。21个活动owner为原20个F5 + 仅TSan配置的IREE owner，各候选范围明确保留。
 普通18 SDK的[条件影响映射](../../../../evidence/architecture/foundation-f5-iree-tsan-impact/README.md)
 证明OFF产品资格不变；组件聚合仍待原预算答复，不以san完成代签交付工具门。
+
+用户2026-10-13授权类似验证直接有限续时；component原三FAIL、追加300后的TIMEOUT均
+计入，再追加600后同原脚本完整PASS256.047秒，累计856.297/1200。
+[完整组件证据](../../../../evidence/correctness/foundation-f5-component-facade-correction/README.md)
+与[最终聚合收据](../../../../evidence/correctness/foundation-f5-final/receipt.json)给出当前裁决，
+原FAIL/限制作历史保留，不把缺少native/全模型/P1工作纳入本goal完成量。

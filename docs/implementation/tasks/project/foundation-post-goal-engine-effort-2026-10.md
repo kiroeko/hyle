@@ -1,5 +1,10 @@
 # A/F4/F5 完成后的引擎工作量与消费适配评估
 
+2026-10-13最终核算：A/F4/F5各原有限范围已CLOSED，F5整体产品candidate11c348e40，
+其中数学/API仍25e、最后只有IREE TSAN配置两行。以[terminal](../compute/foundation-f5-final-closure.md)
+和[最终原证据/代码量](../../../../evidence/correctness/foundation-f5-final/receipt.json)为输入；
+下文早期“尚未收口”的阶段说明作为历史保留，由本最终段更新当前结论。
+
 2026-10-12，RESEARCH_ESTIMATE。用户在活动 goal 中要求评估：少量模型、四路线、量化、流式输出，
 并明确最终目标是**单机高性能推理，单请求及多请求都覆盖**。此记录是按既定 goal **全部通过后的条件预测**，不是引擎实现、当前能力证书或
 新模块施工卡。原估计调查时A已有限范围CLOSED、F4/F5未实施，原产品候选546b0d2468e5de29031c34668f4afa4bc31b9a17、HEAD41d8f60784b358822a4b1a7abe5482d2a53d593f。
@@ -269,3 +274,36 @@ host/device往返、plan/compile/allocation次数和等待，独立logits参照�
 能这样做由模型状态及旧读者寿命决定，不能默认绕过共享页权限。若真实consumer必须
 每token发布很大的完整目录且该费用成为material瓶颈，才产生compute_state的窄增量目录
 候选；当前未证明该MUST，不新增公共结构，也不把其未知工作量藏进14–30k保证。
+
+## goal收口后的最终评估
+
+本次按最终候选/registry、18 SDK、四路线paged/ragged append→read→F4与实际failure/
+retirement、各宿主san和完整组件脚本进行核算；没有为统计再跑全库/旧算子或实现engine。
+最终自有native174338，21 owner源码/公头union58672/280files，两个新factor含公头
+1437+400，F5对F4产品native净增2610；native测试净增1862，测试登记/工具净增5，
+IREE配置净增2行CMake。全仓库/依赖/文档/证据另口径，不能算作基础库新增或engine节省。
+
+| 面向用户最终目标的事项 | 收口后裁决 | 剩余工作归属 |
+|---|---|---|
+| 有限shape/控制依赖/状态分享与成功发布/同版本batch和真实退休 | 在已声明域及各route自然owner上共同合同已实现并验收；表外/未准入明确拒绝 | consumer选择bucket/checkpoint/page key，合理engine策略 |
+| 原资源最后使用/范围copy/文件管线/页写读接缝 | F1–F5原有限完整journey可复用，无需engine再写这些底层协议 | 普通HYLE接线；新未支持格式须具体反证 |
+| 四路线高性能KV消费 | Linux CUDA FI是原生成熟paged/ragged；CPU/Apple/Vulkan当前新batch为显式参考，额外全KV gather、GQA/F32/Copy/等待可观测 | 高性能consumer资格缺口；目标模型证明需native/equivalent seam时再准入对应route/Provider |
+| 真实模型/量化KV/位置/多步增长及logits→sampling | 原组件和小纵切通过，完整所选模型组合尚未验证；不由算子数量或SDK数学推出 | engine模型/格式/位置/采样；重复通用layout/输出桥才属于基础库 |
+| 单/多请求调度、prefix/cache/admission/淘汰 | 不属于本goal的公共基础机制 | engine策略，复用Sched/IO/F1–F5 |
+| capture/general/GPU effect与总私有内存 | 各实际native资格不同；capture=false、未资格mutation拒绝、private UNKNOWN保留 | 不为形式对称扩万能API；真实性能/模型需求才生成窄后续卡 |
+
+因此对“单机单/多请求高性能”的结论为：**基础寿命/版本/批次机制已具备，整模型正确性
+和四路线高性能仍未证明**。最主要风险是参考档每decode步额外O(context) KV搬运，以及
+目标编码/有效长度/驻留native消费的实际接缝；这与attention数学本来读取历史KV的费用不同。
+F4大目录的O(E)/有限ledger成本也必须按真实checkpoint使用频率核定，不保证逐token大目录便宜。
+
+依据固定实现校正后，engine仍规划14,000–30,000自有产品行、10,000–20,000测试行，
+约12–24人周；依赖所选数学/layout已准入，尚无真实engine prototype校准。
+基础库残留另列：已有native dense足够且只缺窄桥时约500–3,000产品行/2–8人周；
+若四路线多请求均要求高效native/equivalent且需两个成熟adapter，约3,000–8,000行/
+8–16人周，测试另计。不是当前已复现的固定bug清单，不能把有条件预测当可靠工作上界。
+没有同一engine前后基线，仍不给净减少百分比或机械减2610行；原M1–M7逐项归属见上表。
+
+本次评估完成，不启动新engine或F6。下一轮若启动真实消费者，应先固定模型/编码/目标
+机器/上下文和单多请求合同，再量实际额外copy/wait/planning/适配行；只有具体重复glue
+或合格material成本退化才重开对应基础owner，领域代码不会自动下沉。

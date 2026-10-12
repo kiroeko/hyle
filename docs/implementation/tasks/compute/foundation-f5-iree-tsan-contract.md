@@ -54,3 +54,7 @@ API/常态字段/锁/算法/依赖版本或强迫普通产品instrument。原IRE
 bridge与compiler flags，实际消费者不再读错误count，全部风险断言保留；无suppression。
 统一LOC/self-check见同影响证据，本owner既有src native1375行，本FIX native增量0/CMake2。
 新配置补齐后旧数学/delivery/P0范围按精确不受影响事实保留，最终terminal不可删原FAIL。
+
+本唯一FIX现按[F5整体terminal](foundation-f5-final-closure.md)关闭：完整组件合同已实际
+通过，原普通SDK OFF条件映射与实际IREE/HYLE TSAN flags/消费者资格齐，原错误保留。
+本owner只补IRE-TSAN-01，不重签或扩大旧Provider数学；当前状态只看registry/terminal。
